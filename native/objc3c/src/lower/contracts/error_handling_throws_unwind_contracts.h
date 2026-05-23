@@ -21,10 +21,10 @@ inline constexpr const char
         "native-lowering-emits-hidden-error-out-abi-propagation-operators-and-do-catch-control-flow-through-real-ir-and-object-artifacts";
 inline constexpr const char
     *kObjc3ErrorHandlingThrowsAbiPropagationLoweringFailClosedModel =
-        "generalized-foreign-exception-abi-and-runtime-bridge-helper-contract-remain-deferred-to-the-error_handling-error-runtime-bridge-helper-boundary";
+        "typed-error-payload-abi-generalized-foreign-exception-abi-and-runtime-bridge-helper-contract-remain-deferred-to-the-error_handling-error-runtime-bridge-helper-boundary";
 inline constexpr const char
     *kObjc3ErrorHandlingThrowsAbiPropagationLoweringNonGoalModel =
-        "no-generalized-foreign-exception-abi-no-stable-cross-module-replay-claim-yet";
+        "no-typed-error-abi-lowering-no-silent-typed-throws-erasure-no-generalized-foreign-exception-abi";
 
 struct Objc3ThrowsPropagationLoweringContract {
   std::size_t throws_propagation_sites = 0;

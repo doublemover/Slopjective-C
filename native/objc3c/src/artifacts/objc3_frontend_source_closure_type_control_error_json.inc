@@ -53,8 +53,12 @@ std::string BuildTypeSystemTypeSourceClosureSummaryJson(
       << (summary.typed_keypath_literal_source_supported ? "true" : "false")
       << ",\"optional_member_access_fail_closed\":"
       << (summary.optional_member_access_fail_closed ? "true" : "false")
-      << ",\"value_optional_type_fail_closed\":"
-      << (summary.value_optional_type_fail_closed ? "true" : "false")
+      << ",\"value_optional_type_signature_sites\":"
+      << summary.value_optional_type_signature_sites
+      << ",\"value_optional_type_signature_source_supported\":"
+      << (summary.value_optional_type_signature_source_supported ? "true" : "false")
+      << ",\"value_optional_runtime_execution_fail_closed\":"
+      << (summary.value_optional_runtime_execution_fail_closed ? "true" : "false")
       << ",\"value_optional_issue_ref\":"
       << summary.value_optional_issue_ref
       << ",\"value_optional_canonical_spelling\":\""
@@ -222,8 +226,14 @@ std::string BuildErrorHandlingErrorSourceClosureSummaryJson(
       << ",\"try_keyword_sites\":" << summary.try_keyword_sites
       << ",\"throw_keyword_sites\":" << summary.throw_keyword_sites
       << ",\"catch_keyword_sites\":" << summary.catch_keyword_sites
+      << ",\"typed_throws_declaration_sites\":"
+      << summary.typed_throws_declaration_sites
+      << ",\"typed_throws_payload_arity_supported\":"
+      << summary.typed_throws_payload_arity_supported
       << ",\"throws_declaration_source_supported\":"
       << (summary.throws_declaration_source_supported ? "true" : "false")
+      << ",\"typed_throws_source_supported\":"
+      << (summary.typed_throws_source_supported ? "true" : "false")
       << ",\"result_carrier_source_supported\":"
       << (summary.result_carrier_source_supported ? "true" : "false")
       << ",\"ns_error_bridging_source_supported\":"
@@ -238,6 +248,8 @@ std::string BuildErrorHandlingErrorSourceClosureSummaryJson(
       << (summary.catch_keyword_reserved ? "true" : "false")
       << ",\"typed_throws_fail_closed\":"
       << (summary.typed_throws_fail_closed ? "true" : "false")
+      << ",\"typed_throws_abi_lowering_fail_closed\":"
+      << (summary.typed_throws_abi_lowering_fail_closed ? "true" : "false")
       << ",\"typed_throws_issue_ref\":"
       << summary.typed_throws_issue_ref
       << ",\"typed_throws_canonical_syntax\":\""

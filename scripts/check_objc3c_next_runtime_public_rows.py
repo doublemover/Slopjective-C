@@ -511,9 +511,7 @@ ADVANCED_RUNTIME_UMBRELLA_EVIDENCE = {
 }
 
 
-RESERVED_UMBRELLA_ROWS = {
-    "runtime.object-model.full-realization": "8154 object-model umbrella",
-}
+RESERVED_UMBRELLA_ROWS: dict[str, str] = {}
 
 
 def _load_json(path: Path) -> dict[str, Any]:
@@ -772,7 +770,7 @@ def _check_advanced_runtime_reserved_umbrella(
         "language.advanced-runtime-closure evidence-map rows must publish the advanced-runtime support claim",
     )
 
-    summary = str(umbrella.get("summary", ""))
+    summary = str(umbrella.get("summary", "")).lower()
     for boundary_id, required_text in ADVANCED_RUNTIME_RESERVED_BOUNDARIES.items():
         _append(
             failures,

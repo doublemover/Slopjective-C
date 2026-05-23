@@ -939,91 +939,127 @@
     },
     {
       "capability_id": "runtime.object-model.full-realization",
+      "support_claim": "objc3c.behavior.runtime.object-model.full-realization",
       "evidence_kind": "doc",
       "path": "docs/support/hard_cutover_capability_truth.md"
     },
     {
       "capability_id": "runtime.object-model.full-realization",
-      "evidence_kind": "doc",
-      "path": "spec/MODULE_METADATA_AND_ABI_TABLES.md"
-    },
-    {
-      "capability_id": "runtime.object-model.full-realization",
+      "support_claim": "objc3c.behavior.runtime.object-model.full-realization",
       "evidence_kind": "doc",
       "path": "docs/runbooks/objc3c_object_model_closure.md"
     },
     {
       "capability_id": "runtime.object-model.full-realization",
+      "support_claim": "objc3c.behavior.runtime.object-model.full-realization",
       "evidence_kind": "source",
-      "path": "scripts/objc3c_runtime_acceptance/domains/object_model_capability_split.py"
+      "path": "native/objc3c/src/runtime/classes/class_graph.cpp"
     },
     {
       "capability_id": "runtime.object-model.full-realization",
+      "support_claim": "objc3c.behavior.runtime.object-model.full-realization",
+      "evidence_kind": "source",
+      "path": "native/objc3c/src/runtime/images/registration.cpp"
+    },
+    {
+      "capability_id": "runtime.object-model.full-realization",
+      "support_claim": "objc3c.behavior.runtime.object-model.full-realization",
+      "evidence_kind": "source",
+      "path": "native/objc3c/src/runtime/storage/property_layout_realization.cpp"
+    },
+    {
+      "capability_id": "runtime.object-model.full-realization",
+      "support_claim": "objc3c.behavior.runtime.object-model.full-realization",
+      "evidence_kind": "source",
+      "path": "native/objc3c/src/runtime/public/objc3_runtime_reflection.h"
+    },
+    {
+      "capability_id": "runtime.object-model.full-realization",
+      "support_claim": "objc3c.behavior.runtime.object-model.full-realization",
+      "evidence_kind": "source",
+      "path": "native/objc3c/src/runtime/public/objc3_runtime_reflection.cpp"
+    },
+    {
+      "capability_id": "runtime.object-model.full-realization",
+      "support_claim": "objc3c.behavior.runtime.object-model.full-realization",
+      "evidence_kind": "source",
+      "path": "native/objc3c/src/runtime/public/objc3_runtime_reflection_debug_anchor.cpp"
+    },
+    {
+      "capability_id": "runtime.object-model.full-realization",
+      "support_claim": "objc3c.behavior.runtime.object-model.full-realization",
+      "evidence_kind": "source",
+      "path": "scripts/objc3c_editor_tooling/artifact_inspector.py"
+    },
+    {
+      "capability_id": "runtime.object-model.full-realization",
+      "support_claim": "objc3c.behavior.runtime.object-model.full-realization",
+      "evidence_kind": "source",
+      "path": "scripts/objc3c_editor_tooling/model.py"
+    },
+    {
+      "capability_id": "runtime.object-model.full-realization",
+      "support_claim": "objc3c.behavior.runtime.object-model.full-realization",
+      "evidence_kind": "source",
+      "path": "scripts/objc3c_object_model_debugger_proof/model.py"
+    },
+    {
+      "capability_id": "runtime.object-model.full-realization",
+      "support_claim": "objc3c.behavior.runtime.object-model.full-realization",
       "evidence_kind": "test",
-      "path": "tests/tooling/fixtures/object_model_closure/full_realization_combined_readiness_contract.json"
+      "path": "tests/tooling/fixtures/object_model_closure/full_realization_combined_readiness_contract.json",
+      "command": "npm run objc3c -- validate-object-model-debugger-proof"
     },
     {
       "capability_id": "runtime.object-model.full-realization",
+      "support_claim": "objc3c.behavior.runtime.object-model.full-realization",
       "evidence_kind": "test",
       "path": "tests/tooling/fixtures/object_model_closure/debugger_value_inspection_replay_contract.json",
       "command": "npm run objc3c -- validate-object-model-debugger-proof"
     },
     {
       "capability_id": "runtime.object-model.full-realization",
+      "support_claim": "objc3c.behavior.runtime.object-model.full-realization",
+      "evidence_kind": "test",
+      "path": "tests/tooling/fixtures/object_model_closure/debug_anchor_identity_replay_contract.json"
+    },
+    {
+      "capability_id": "runtime.object-model.full-realization",
+      "support_claim": "objc3c.behavior.runtime.object-model.full-realization",
+      "evidence_kind": "test",
+      "path": "tests/native/runtime/object_model/full_realization_combined_reflection_replay_contract.objc3",
+      "command": "npm run objc3c -- validate-object-model-conformance"
+    },
+    {
+      "capability_id": "runtime.object-model.full-realization",
+      "support_claim": "objc3c.behavior.runtime.object-model.full-realization",
+      "evidence_kind": "test",
+      "path": "tests/native/runtime/object_model/debug_anchor_identity_replay_probe.cpp"
+    },
+    {
+      "capability_id": "runtime.object-model.full-realization",
+      "support_claim": "objc3c.behavior.runtime.object-model.full-realization",
       "evidence_kind": "test",
       "path": "tests/tooling/fixtures/cross_lane_e2e/object_reflection_debugger.expectation.json",
       "command": "npm run objc3c -- validate-cross-lane-e2e"
     },
     {
       "capability_id": "runtime.object-model.full-realization",
-      "evidence_kind": "source",
-      "path": "native/objc3c/src/runtime/public/objc3_runtime_reflection.h"
-    },
-    {
-      "capability_id": "runtime.object-model.full-realization",
-      "evidence_kind": "source",
-      "path": "native/objc3c/src/runtime/public/objc3_runtime_reflection.cpp"
-    },
-    {
-      "capability_id": "runtime.object-model.full-realization",
-      "evidence_kind": "source",
-      "path": "native/objc3c/src/runtime/public/objc3_runtime_reflection_debug_anchor.cpp"
-    },
-    {
-      "capability_id": "runtime.object-model.full-realization",
-      "evidence_kind": "test",
-      "path": "tests/tooling/fixtures/object_model_closure/debug_anchor_identity_replay_contract.json"
-    },
-    {
-      "capability_id": "runtime.object-model.full-realization",
-      "evidence_kind": "test",
-      "path": "tests/native/runtime/object_model/debug_anchor_identity_replay_probe.cpp"
-    },
-    {
-      "capability_id": "runtime.object-model.full-realization",
-      "evidence_kind": "test",
-      "path": "tests/native/runtime/object_model/full_realization_combined_reflection_replay_contract.objc3"
-    },
-    {
-      "capability_id": "runtime.object-model.full-realization",
-      "evidence_kind": "source",
-      "path": "scripts/objc3c_object_model_debugger_proof/model.py"
-    },
-    {
-      "capability_id": "runtime.object-model.full-realization",
-      "evidence_kind": "test",
-      "path": "scripts/check_objc3c_object_model_debugger_proof.py",
-      "command": "npm run objc3c -- validate-object-model-debugger-proof"
-    },
-    {
-      "capability_id": "runtime.object-model.full-realization",
+      "support_claim": "objc3c.behavior.runtime.object-model.full-realization",
       "evidence_kind": "test",
       "path": "tests/tooling/test_runtime_object_model_full_realization_readiness.py"
     },
     {
       "capability_id": "runtime.object-model.full-realization",
+      "support_claim": "objc3c.behavior.runtime.object-model.full-realization",
       "evidence_kind": "test",
       "path": "tests/tooling/test_runtime_capability_public_split.py"
+    },
+    {
+      "capability_id": "runtime.object-model.full-realization",
+      "support_claim": "objc3c.behavior.runtime.object-model.full-realization",
+      "evidence_kind": "source",
+      "path": "scripts/objc3c_runtime_acceptance/domains/object_model_capability_split.py"
     },
     {
       "capability_id": "language.protocols.protocol-qualified-existential-value-flow",

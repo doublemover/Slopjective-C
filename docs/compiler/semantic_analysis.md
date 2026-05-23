@@ -3,16 +3,19 @@
 Semantic support claims require canonical diagnostics or executable tests.
 Rejected behavior is represented by diagnostics, not alternate acceptance paths.
 
-Typed throws, value optionals, and match expressions are not semantic support
-claims in the current slice. Statement-form guarded match patterns are admitted
-only as `case pattern where bool_condition: { ... }`; the guard is checked after
+Typed throws is a source/interface semantic surface in the current slice, while
+typed error ABI/lowering/runtime execution remains unclaimed. Value optionals
+and match expressions are not semantic support claims in the current slice.
+Statement-form guarded match patterns are admitted only as `case pattern where
+bool_condition: { ... }`; the guard is checked after
 pattern binding, must type-check as `bool`, and a guarded catch-all does not make
 the match exhaustive by itself. Parser/source-closure records must keep match
 expressions fail-closed until result typing, interface preservation, lowering,
 and runtime semantics exist for that feature family.
 For #8233 and #8234 specifically, source-closure and textual-interface import
-records may publish only reserved markers: typed throws stays `none` or bare
-`untyped` with zero typed payload arity, while value optionals stay
+records may publish typed throws as `typed` only with one preserved payload,
+`typed-error-abi-deferred`, and `runtime_execution_claimed=false`; erased or
+drifted typed payload metadata fails closed. Value optionals stay
 `reserved-rejected-before-sema` with no layout, nullable-pointer conversion,
 nil-to-scalar coercion, or throws/result conversion.
 
@@ -36,10 +39,11 @@ semantic support.
 
 The #8207 umbrella contract lives in
 `tests/tooling/fixtures/native/language_evolution_umbrella_contract.json` and
-keeps semantic promotion bounded: typed throws, value optionals, runtime
-generic reification, match expressions, and strict profiles cannot be widened
-from source-only metadata, generated reports, or Objective-C 2 compatibility
-paths. Statement-form guarded match remains the only admitted #8236 surface.
+keeps semantic promotion bounded: typed throws cannot widen past source/interface
+metadata into runtime lowering, and value optionals, runtime generic
+reification, match expressions, and strict profiles cannot be widened from
+source-only metadata, generated reports, or Objective-C 2 compatibility paths.
+Statement-form guarded match remains the only admitted #8236 surface.
 
 The semantic-analysis owner boundary is:
 

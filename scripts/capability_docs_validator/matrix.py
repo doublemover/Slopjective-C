@@ -30,16 +30,16 @@ OBJECT_MODEL_BROAD_SCOPE_PHRASES = (
 FOUNDATION_BOUNDARY_EXPECTATIONS = (
     {
         "id": "runtime.object-model.full-realization",
-        "state": "reserved",
+        "state": "implemented",
         "summary_tokens": (
-            "production compiler-owned object-model source identity",
-            "debugger-grade stepping over the integrated object-model production artifact path remain reserved",
+            "debugger-grade identity graph",
+            "integrated object-model statement stepping",
         ),
         "evidence_paths": (
             "tests/tooling/fixtures/object_model_closure/debugger_value_inspection_replay_contract.json",
             "tests/tooling/fixtures/cross_lane_e2e/object_reflection_debugger.expectation.json",
         ),
-        "no_support_claims": True,
+        "support_claims": ("objc3c.behavior.runtime.object-model.full-realization",),
     },
     {
         "id": "language.advanced-runtime-closure",

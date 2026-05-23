@@ -82,9 +82,9 @@ std::string RenderDashboardCountObject(std::initializer_list<const char *> keys,
 std::string RenderDashboardProfileCounts() {
   std::ostringstream out;
   JsonObjectWriter counts(out);
-  counts.IntField("pass", 1);
+  counts.IntField("pass", 3);
   counts.IntField("fail", 0);
-  counts.IntField("blocked", 3);
+  counts.IntField("blocked", 1);
   counts.IntField("incomplete", 0);
   return FinishJsonObject(counts, out);
 }
@@ -104,10 +104,9 @@ std::string RenderDashboardProfiles() {
   std::ostringstream out;
   objc3::io::json::JsonArrayWriter profiles(out);
   profiles.RawJsonValue(RenderDashboardProfile("core", "pass", "[]"));
-  profiles.RawJsonValue(RenderDashboardProfile(
-      "strict", "blocked", "[\"BLK-STRICT-PROFILES\"]"));
-  profiles.RawJsonValue(RenderDashboardProfile(
-      "strict-concurrency", "blocked", "[\"BLK-STRICT-PROFILES\"]"));
+  profiles.RawJsonValue(RenderDashboardProfile("strict", "pass", "[]"));
+  profiles.RawJsonValue(
+      RenderDashboardProfile("strict-concurrency", "pass", "[]"));
   profiles.RawJsonValue(RenderDashboardProfile(
       "strict-system", "blocked", "[\"BLK-STRICT-PROFILES\"]"));
   profiles.End();
@@ -161,17 +160,17 @@ std::string RenderDashboardBlockers() {
   blocker.StringField("state", "open");
   blocker.StringField(
       "title",
-      "Strict profiles remain targeted but unclaimed until runtime-backed support lands");
+      "Strict-system remains targeted but unclaimed until system evidence lands");
   blocker.RawJsonField(
       "dependency_ids",
       BuildIndentedStringArrayJson({"B-04", "B-10", "B-11", "B-12"}, "    "));
   blocker.RawJsonField(
       "profile_ids",
       BuildIndentedStringArrayJson(
-          {"strict", "strict-concurrency", "strict-system"}, "    "));
+          {"strict-system"}, "    "));
   blocker.StringField("created_at", kObjc3DeterministicReplayTimestamp);
   blocker.StringField("owner", "objc3-roadmap");
-  blocker.StringField("failure_code", "DASH-B04-STRICT-PROFILES-NOT-CLAIMED");
+  blocker.StringField("failure_code", "DASH-B04-STRICT-SYSTEM-NOT-CLAIMED");
   blocker.RawJsonField(
       "artifact_refs",
       BuildIndentedStringArrayJson({"ART-B04-REPORT", "ART-B10-PUBLICATION",
@@ -230,7 +229,7 @@ std::string RenderDashboardChangeHistory() {
   entry.StringField("changed_at", kObjc3DeterministicReplayTimestamp);
   entry.StringField(
       "summary",
-      "Deterministic claim dashboard refresh with strict profiles blocked.");
+      "Deterministic claim dashboard refresh with strict-system blocked.");
 
   std::ostringstream out;
   objc3::io::json::JsonArrayWriter history(out);

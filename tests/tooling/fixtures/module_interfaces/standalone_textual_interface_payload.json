@@ -57,13 +57,47 @@
               "value_optional_contract": {
                 "issue_ref": 8234,
                 "canonical_spelling": "Optional<T>",
-                "source_status": "reserved-rejected-before-sema",
+                "source_status": "type-signature-admitted-runtime-execution-fail-closed",
                 "lowercase_alias_accepted": false,
-                "abi_layout_status": "reserved-no-layout",
+                "abi_layout_status": "stable-contract-runtime-lowering-deferred",
+                "abi_layout_id": "objc3.value_optional.inline_presence_payload.v1",
+                "presence_field": "has_value",
+                "payload_storage_field": "payload",
+                "runtime_execution_supported": false,
+                "lowering_supported": false,
                 "nil_to_scalar_coercion_allowed": false,
                 "nullable_pointer_conversion_allowed": false,
                 "throws_result_conversion_allowed": false,
-                "interface_roundtrip_status": "reserved-feature-marker-imported"
+                "interface_roundtrip_status": "type-signature-carrier-imported-runtime-deferred",
+                "optional_type": {
+                  "record_id": "optional_type",
+                  "type_id": "Optional<T>",
+                  "payload_type": "T",
+                  "abi_layout": "objc3.value_optional.inline_presence_payload.v1",
+                  "canonical_spelling": "Optional<T>"
+                },
+                "optional_value": {
+                  "record_id": "optional_value",
+                  "value_id": "optional-value-carrier",
+                  "optional_type": "Optional<T>",
+                  "presence_state": "has_value",
+                  "payload_storage": "payload"
+                },
+                "optional_flow": {
+                  "record_id": "optional_flow",
+                  "source_span": "type-signature",
+                  "narrowing_kind": "binding-or-guard-binding",
+                  "before_type": "Optional<T>",
+                  "after_type": "T",
+                  "cleanup_contract": "payload-cleanup-after-narrowed-scope"
+                },
+                "optional_rejection": {
+                  "record_id": "optional_rejection",
+                  "source_span": "type-signature",
+                  "spelling": "optional<T>",
+                  "conversion_attempt": "lowercase-alias-or-runtime-conversion",
+                  "diagnostic": "O3C004/O3P159"
+                }
               }
             },
             "effects": {
@@ -77,11 +111,16 @@
                 "throws_kind": "none",
                 "declared_error_type": "",
                 "typed_payload_arity": 0,
-                "typed_payload_status": "reserved-rejected-before-sema",
+                "typed_payload_status": "not-declared",
+                "typed_payload_generic_suffix": "",
+                "typed_payload_generic_suffix_terminated": true,
+                "typed_payload_pointer_depth": 0,
+                "typed_payload_lowering_ready": false,
+                "runtime_execution_claimed": false,
                 "silent_erasure_allowed": false,
                 "multi_payload_supported": false,
-                "abi_status": "reserved-no-lowering",
-                "interface_roundtrip_status": "reserved-feature-marker-imported"
+                "abi_status": "none",
+                "interface_roundtrip_status": "not-applicable"
               },
               "throws_profile": "",
               "actor_nonisolated": false,
@@ -150,13 +189,47 @@
         "value_optional_contract": {
           "issue_ref": 8234,
           "canonical_spelling": "Optional<T>",
-          "source_status": "reserved-rejected-before-sema",
+          "source_status": "type-signature-admitted-runtime-execution-fail-closed",
           "lowercase_alias_accepted": false,
-          "abi_layout_status": "reserved-no-layout",
+          "abi_layout_status": "stable-contract-runtime-lowering-deferred",
+          "abi_layout_id": "objc3.value_optional.inline_presence_payload.v1",
+          "presence_field": "has_value",
+          "payload_storage_field": "payload",
+          "runtime_execution_supported": false,
+          "lowering_supported": false,
           "nil_to_scalar_coercion_allowed": false,
           "nullable_pointer_conversion_allowed": false,
           "throws_result_conversion_allowed": false,
-          "interface_roundtrip_status": "reserved-feature-marker-imported"
+          "interface_roundtrip_status": "type-signature-carrier-imported-runtime-deferred",
+          "optional_type": {
+            "record_id": "optional_type",
+            "type_id": "Optional<T>",
+            "payload_type": "T",
+            "abi_layout": "objc3.value_optional.inline_presence_payload.v1",
+            "canonical_spelling": "Optional<T>"
+          },
+          "optional_value": {
+            "record_id": "optional_value",
+            "value_id": "optional-value-carrier",
+            "optional_type": "Optional<T>",
+            "presence_state": "has_value",
+            "payload_storage": "payload"
+          },
+          "optional_flow": {
+            "record_id": "optional_flow",
+            "source_span": "type-signature",
+            "narrowing_kind": "binding-or-guard-binding",
+            "before_type": "Optional<T>",
+            "after_type": "T",
+            "cleanup_contract": "payload-cleanup-after-narrowed-scope"
+          },
+          "optional_rejection": {
+            "record_id": "optional_rejection",
+            "source_span": "type-signature",
+            "spelling": "optional<T>",
+            "conversion_attempt": "lowercase-alias-or-runtime-conversion",
+            "diagnostic": "O3C004/O3P159"
+          }
         }
       },
       "effects": {
@@ -170,11 +243,16 @@
           "throws_kind": "none",
           "declared_error_type": "",
           "typed_payload_arity": 0,
-          "typed_payload_status": "reserved-rejected-before-sema",
+          "typed_payload_status": "not-declared",
+          "typed_payload_generic_suffix": "",
+          "typed_payload_generic_suffix_terminated": true,
+          "typed_payload_pointer_depth": 0,
+          "typed_payload_lowering_ready": false,
+          "runtime_execution_claimed": false,
           "silent_erasure_allowed": false,
           "multi_payload_supported": false,
-          "abi_status": "reserved-no-lowering",
-          "interface_roundtrip_status": "reserved-feature-marker-imported"
+          "abi_status": "none",
+          "interface_roundtrip_status": "not-applicable"
         },
         "throws_profile": "",
         "actor_nonisolated": false,
@@ -238,7 +316,9 @@
   },
   "issue_refs": [
     8238,
-    8208
+    8208,
+    8233,
+    8234
   ],
   "source_truth_policy": {
     "source_truth": "native-artifact-schema-fixture-public-command",
@@ -280,6 +360,32 @@
       "case_id": "reserved-roundtrip",
       "target": "interface_roundtrip.parse_status",
       "expected_failure": "reserved importer status cannot satisfy support",
+      "fail_closed": true,
+      "diagnostic": "O3IFC8238"
+    },
+    {
+      "case_id": "typed-throws-abi-lowering",
+      "target": "declarations[*].effects.typed_throws",
+      "expected_failure": "typed throws cannot claim runtime execution or untyped error-out ABI",
+      "fail_closed": true
+    },
+    {
+      "case_id": "typed-throws-interface-contract-drift",
+      "target": "declarations[*].effects.typed_throws.declared_error_type",
+      "expected_failure": "typed throws payload spelling must round-trip without erasure",
+      "fail_closed": true
+    },
+    {
+      "case_id": "value-optional-lowering",
+      "target": "declarations[*].type_signature.value_optional_type",
+      "expected_failure": "value optional runtime execution and lowering remain fail-closed",
+      "fail_closed": true,
+      "diagnostic": "O3P159"
+    },
+    {
+      "case_id": "value-optional-layout-drift",
+      "target": "declarations[*].type_signature.value_optional_contract.abi_layout_id",
+      "expected_failure": "value optional ABI layout identity drift rejected",
       "fail_closed": true,
       "diagnostic": "O3IFC8238"
     }

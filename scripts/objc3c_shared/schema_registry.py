@@ -91,6 +91,9 @@ SCHEMA_PATHS: dict[str, Path] = {
     "objc3c-platform-toolchain-support-evidence-v1": ROOT
     / "schemas"
     / "objc3c-platform-toolchain-support-evidence-v1.schema.json",
+    "objc3c-platform-expansion-claim-contract-v1": ROOT
+    / "schemas"
+    / "objc3c-platform-expansion-claim-contract-v1.schema.json",
     "objc3c-platform-support-source-truth-v1": ROOT
     / "schemas"
     / "objc3c-platform-support-source-truth-v1.schema.json",

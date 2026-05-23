@@ -19,15 +19,15 @@
   "entries": [
     {
       "umbrella_capability_id": "runtime.object-model.full-realization",
-      "current_state": "reserved",
+      "current_state": "implemented",
       "target_state": "implemented",
-      "readiness_state": "blocked",
-      "intended_public_meaning": "Objective-C 3.0 object metadata, class/category/protocol realization, property and ivar reflection, registration replay, debugger-grade reflection, source identity, and runtime query behavior are complete as an integrated runtime surface rather than a set of narrow owner rows.",
+      "readiness_state": "ready",
+      "intended_public_meaning": "Objective-C 3.0 object metadata, class/category/protocol realization, property and ivar reflection, registration replay, debugger-grade reflection, source identity, runtime query behavior, and integrated object-model statement stepping are complete as one Objective-C 3 runtime surface.",
       "forbidden_overclaims": [
-        "Full object-model runtime support from class graph source alone.",
-        "Debugger-grade reflection from private snapshots or generated manifests alone.",
         "Objective-C 2 runtime compatibility.",
         "Swift or C++ runtime mirroring.",
+        "Dynamic forwarding or arbitrary foreign runtime dispatch.",
+        "Broad full-source-map publication for every production artifact path.",
         "Issue comments, PR bodies, or tmp reports as support evidence."
       ],
       "required_prerequisite_rows": [
@@ -112,9 +112,9 @@
         },
         {
           "id": "debugger-source-identity",
-          "description": "Production source identity and native debug-info evidence now cover the integrated object-model identity set; broad debugger stepping over that production artifact path remains reserved for the umbrella.",
-          "status": "blocked",
-          "blocker_id": "object-model-debugger-source-identity"
+          "description": "Production source identity, native debug-info evidence, runtime debug-trace step ids, and statement stepping cover the integrated object-model identity set.",
+          "status": "satisfied",
+          "path": "scripts/objc3c_editor_tooling/model.py"
         }
       ],
       "required_public_commands": [
@@ -138,9 +138,9 @@
         },
         {
           "id": "debugger-integration",
-          "description": "Bounded statement stepping is implemented by runtime.debug-trace.statement-stepping; debugger-grade stepping over the integrated object-model production artifact path remains blocked for the umbrella.",
-          "status": "blocked",
-          "blocker_id": "object-model-debugger-source-identity"
+          "description": "Bounded statement stepping is implemented by runtime.debug-trace.statement-stepping and is now integrated with the object-model production artifact path.",
+          "status": "satisfied",
+          "command": "npm run objc3c -- validate-object-model-debugger-proof"
         }
       ],
       "required_positive_fixtures": [
@@ -244,7 +244,7 @@
       "required_docs": [
         {
           "id": "hard-cutover-boundary",
-          "description": "Hard-cutover capability truth continues to state the reserved umbrella boundary.",
+          "description": "Hard-cutover capability truth states the promoted object-model envelope and the still-reserved compatibility/full-source-map boundaries.",
           "status": "satisfied",
           "path": "docs/support/hard_cutover_capability_truth.md"
         },
@@ -279,22 +279,13 @@
         ],
         "rule": "Generated outputs may summarize checked source, fixtures, and matrix/evidence rows, but cannot satisfy object-model full-realization readiness by themselves."
       },
-      "promotion_blockers": [
-        {
-          "blocker_id": "object-model-debugger-source-identity",
-          "summary": "Bounded runtime debug-anchor identity, replayable object-model value inspection, a canonical frontend artifact/runtime inventory probe, compiler-owned production source identity rows for class/metaclass/category/protocol/property/ivar/selector/method/reflection/replay, emitted native debug-info evidence, production source-map/native-line-table publication, bounded statement stepping, LLDB replay, inline-frame source maps, and typed-keypath debugger metadata now exist, but full debugger-grade object-model stepping is not yet complete on the production artifact path.",
-          "missing_work": [
-            "Production debugger statement-stepping integration for the integrated object-model artifact path, beyond the bounded implemented statement-stepping row."
-          ],
-          "tracking_issue": "#8198"
-        }
-      ],
+      "promotion_blockers": [],
       "final_promotion_criteria": [
-        "The umbrella matrix row changes to implemented in docs/support/capability_matrix.json.",
+        "The umbrella matrix row is implemented in docs/support/capability_matrix.json.",
         "All required prerequisite rows remain implemented with evidence-map rows.",
         "All readiness requirements are satisfied.",
         "No promotion blockers remain.",
-        "Debugger-grade reflection and source identity are covered by public npm-bridge commands without relying on private snapshots or generated reports."
+        "Debugger-grade reflection, source identity, and statement stepping are covered by public npm-bridge commands without relying on private snapshots or generated reports."
       ]
     },
     {

@@ -52,6 +52,15 @@ bool IsCompatibleCanonicalSemanticType(
              rhs.nullability_facts_authoritative &&
          lhs.has_invalid_nullability_suffix ==
              rhs.has_invalid_nullability_suffix &&
+         lhs.is_value_optional == rhs.is_value_optional &&
+         lhs.value_optional_payload_type_spelling ==
+             rhs.value_optional_payload_type_spelling &&
+         lhs.value_optional_payload_value_type ==
+             rhs.value_optional_payload_value_type &&
+         lhs.value_optional_runtime_execution_supported ==
+             rhs.value_optional_runtime_execution_supported &&
+         lhs.value_optional_lowering_supported ==
+             rhs.value_optional_lowering_supported &&
          lhs.has_invalid_type_suffix == rhs.has_invalid_type_suffix &&
          lhs.deterministic == rhs.deterministic &&
          lhs.canonical_spelling == rhs.canonical_spelling &&

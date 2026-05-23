@@ -11,7 +11,7 @@ namespace {
 
 // Registry-owned artifact schemas keep payload identity separate from file path
 // so contract_id and schema_id based artifacts can use the same lookup surface.
-constexpr std::array<ArtifactSchemaContract, 7> kBaseArtifactSchemaContracts{{
+constexpr std::array<ArtifactSchemaContract, 8> kBaseArtifactSchemaContracts{{
     {"objc3c-public-command-contract-v1",
      "contract_id",
      "objc3c-public-command-contract-v1",
@@ -26,6 +26,13 @@ constexpr std::array<ArtifactSchemaContract, 7> kBaseArtifactSchemaContracts{{
      "schemas/objc3c-standalone-textual-interface-payload-v1.schema.json",
      "native/objc3c/src/artifacts/json/artifact_schema_contract_table.cpp",
      "module-interface"},
+    {"objc3c-value-optionals-contract-v1",
+     "contract_id",
+     "objc3c.value_optional.contract.v1",
+     "https://objc3c.dev/schemas/objc3c-value-optionals-contract-v1.schema.json",
+     "schemas/objc3c-value-optionals-contract-v1.schema.json",
+     "native/objc3c/src/artifacts/json/artifact_schema_contract_table.cpp",
+     "language-types"},
     {"objc3c-validation-acceptance-artifact-index-v1",
      "contract_id",
      "objc3c.validation.acceptance.artifact.index.v1",

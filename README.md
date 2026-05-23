@@ -153,8 +153,9 @@ generated reports.
   and storage metadata.
 - Runtime debug trace payloads for structured inspection, async task lanes, and
   error-unwind lanes.
-- Runtime debug-anchor identity and value-inspection evidence for bounded
-  object-model/source identity rows.
+- Runtime debug-anchor identity, value-inspection evidence, native debug-info
+  evidence, and statement stepping for the integrated object-model production
+  artifact path.
 - Block copy/dispose/invoke helpers, byref forwarding, ownership transfer
   hooks, error bridge cleanup, task continuation lifecycle, async actors, actor
   mailbox isolation, and property behavior materialization.
@@ -232,8 +233,9 @@ also carries integrated programs that force systems to interact:
   17-case negative matrix.
 - Object reflection and debugger artifacts: class/metaclass/category/protocol/
   property/ivar/selector/reflection/replay evidence, runtime debug anchors,
-  value-inspection records, source graph links, object inventories, and bounded
-  source identity.
+  value-inspection records, source graph links, object inventories, source-map
+  and native line-table rows, emitted native debug-info evidence, and
+  statement stepping on the integrated object-model artifact path.
 - Text, collections, and packages: runtime text builders, collection literals,
   `for-in`, package import metadata, provider import surfaces, source graph
   package nodes, and declaration debug anchors.
@@ -247,10 +249,10 @@ also carries integrated programs that force systems to interact:
 The matrix is intentionally explicit about boundaries. Important reserved or
 rejected rows include:
 
-- Full object-model realization as one umbrella support claim. Narrow object
-  rows are implemented, and debugger-grade proof has advanced, but full source
-  maps beyond bounded identity rows and umbrella-wide promotion across every
-  production path are still reserved.
+- Objective-C 2 runtime compatibility, Swift/C++ runtime mirroring, dynamic
+  forwarding, and broad full-source-map publication for every production
+  artifact path. Objective-C 3 object-model realization itself is implemented
+  by the checked runtime/debugger identity graph.
 - Broad advanced-runtime guarantees beyond the integrated Objective-C 3 runtime
   envelope. The combined fixture compiles, links, and runs with checked runtime
   evidence, while broad scheduler fairness, Swift ABI mirroring, distributed

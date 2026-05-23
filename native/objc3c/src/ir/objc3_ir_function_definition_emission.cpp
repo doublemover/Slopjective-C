@@ -15,7 +15,7 @@
 namespace {
 
 std::string BuildObjc3IRFunctionDefinitionSignature(
-    const std::vector<FuncParam> &params, bool throws_declared) {
+    const std::vector<FuncParam> &params, bool throws_error_out_abi_ready) {
   std::ostringstream signature;
   for (std::size_t i = 0; i < params.size(); ++i) {
     if (i != 0) {
@@ -23,7 +23,7 @@ std::string BuildObjc3IRFunctionDefinitionSignature(
     }
     signature << LLVMScalarType(params[i].type) << " %arg" << i;
   }
-  if (throws_declared) {
+  if (throws_error_out_abi_ready) {
     if (!params.empty()) {
       signature << ", ";
     }
@@ -139,7 +139,8 @@ void EmitObjc3IRFunctionDefinition(
     const Objc3IRFunctionDefinitionEmissionCallbacks &callbacks,
     std::ostringstream &out) {
   out << "define " << LLVMScalarType(fn.return_type) << " @" << fn.name << "("
-      << BuildObjc3IRFunctionDefinitionSignature(fn.params, fn.throws_declared)
+      << BuildObjc3IRFunctionDefinitionSignature(
+             fn.params, fn.throws_declared && !fn.typed_throws_declared)
       << ") {\n";
   out << "entry:\n";
 
@@ -149,8 +150,14 @@ void EmitObjc3IRFunctionDefinition(
       fn.async_declared && Objc3IRExecutorAffinityTag(fn) != 0;
   ctx.async_resume_entry_tag = Objc3IRAsyncResumeEntryTag(fn);
   ctx.async_executor_tag = Objc3IRExecutorAffinityTag(fn);
-  if (fn.throws_declared) {
+  if (fn.throws_declared && !fn.typed_throws_declared) {
     ctx.function_error_out_param = "%error_out";
+  }
+  if (fn.typed_throws_declared) {
+    ctx.entry_lines.push_back(
+        "  ; typed throws ABI lowering deferred for " +
+        fn.typed_throws_payload.canonical_spelling +
+        "; no untyped error_out parameter emitted");
   }
   ctx.arc_return_insert_retain =
       EffectiveArcReturnInsertRetain(fn, arc_mode_enabled);
@@ -181,7 +188,8 @@ void EmitObjc3IRMethodDefinition(
   out << "define " << LLVMScalarType(method.return_type) << " @"
       << method_def.symbol << "("
       << BuildObjc3IRFunctionDefinitionSignature(method.params,
-                                                 method.throws_declared)
+                                                 method.throws_declared &&
+                                                     !method.typed_throws_declared)
       << ") {\n";
   out << "entry:\n";
 
@@ -198,8 +206,14 @@ void EmitObjc3IRMethodDefinition(
   ctx.current_method_is_class_method = method.is_class_method;
   ctx.async_resume_entry_tag = Objc3IRAsyncResumeEntryTag(method_def);
   ctx.async_executor_tag = Objc3IRExecutorAffinityTag(method);
-  if (method.throws_declared) {
+  if (method.throws_declared && !method.typed_throws_declared) {
     ctx.function_error_out_param = "%error_out";
+  }
+  if (method.typed_throws_declared) {
+    ctx.entry_lines.push_back(
+        "  ; typed throws ABI lowering deferred for " +
+        method.typed_throws_payload.canonical_spelling +
+        "; no untyped error_out parameter emitted");
   }
   ctx.arc_return_insert_retain =
       EffectiveArcReturnInsertRetain(method, arc_mode_enabled);

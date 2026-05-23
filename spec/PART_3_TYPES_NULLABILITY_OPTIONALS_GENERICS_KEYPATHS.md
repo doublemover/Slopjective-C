@@ -365,29 +365,41 @@ More generally:
 
 In strict mode, `b` must be type-compatible with the unwrapped type of `a`; otherwise error.
 
-### 3.3.5 Future value-optional ABI reservation (v1 guardrails) {#part-3-3-5}
+### 3.3.5 Value-optional type-signature carrier and ABI guardrails {#part-3-3-5}
 
-Objective‑C 3.0 v1 does not define a first-class value optional ABI (`Optional<T>` layout/tagged payload semantics).
+Objective‑C 3.0 v1 admits canonical `Optional<T>` in source type
+signatures as a source/interface carrier. The carrier has a stable ABI contract
+identity, `objc3.value_optional.inline_presence_payload.v1`, with explicit
+`has_value` presence and `payload` storage fields, but v1 does not yet provide
+runnable construction, unwrap, property/ivar storage layout, IR payload
+emission, or call ABI lowering for that carrier.
 
-The following spellings are reserved for a future revision and are ill-formed in v1 user code unless escaped per [§1.3.3](#part-1-3-2):
+The following remain ill-formed in v1 user code unless escaped per
+[§1.3.3](#part-1-3-2):
 
 - `optional<...>` in type positions.
-- `Optional<...>` in type positions.
+- `Optional<...>` in executable function or method bodies, property/ivar
+  storage, runtime construction, runtime unwrap, or ABI-lowered call surfaces.
 - `.some(...)` and `.none` in optional-constructor/pattern positions.
 
 The current #8234 compiler contract owns the canonical spelling boundary but
-does not claim value-optional execution: `Optional<T>` is rejected with `O3P159`
-before type admission, no layout/tagged-payload ABI is emitted, and textual
-interfaces may carry only reserved feature-marker metadata rather than semantic
-value-optional type support.
+does not claim value-optional execution: canonical `Optional<T>` type
+signatures may be parsed, semantically carried, and round-tripped through
+textual interfaces, while executable use and layout/lowering claims are rejected
+with `O3P159`. Textual interfaces must preserve the value-optional carrier
+metadata and must fail closed on layout identity drift.
 
 #### 3.3.5.1 Future-compat constraints (v1) {#part-3-3-5-1}
 
 To avoid blocking a future value optional design:
 
 - `T?`/`T!` in v1 remain reference-nullability sugar only and shall not imply a value layout contract.
-- v1 parser and interface emitters shall keep the reserved spellings above unavailable for unrelated language/library features.
-- Module metadata and textual interfaces shall preserve optional/nullability semantics via extensible encoding so a future value-optional kind can be added without redefining existing v1 fields.
+- v1 parser and interface emitters shall keep lowercase optional aliases,
+  constructors, property/ivar storage, and executable lowering unavailable for
+  unrelated language/library features.
+- Module metadata and textual interfaces shall preserve value-optional carrier
+  metadata separately from reference nullability so runtime construction and ABI
+  lowering can be added without redefining existing v1 fields.
 - Diagnostics for non-reference optional operations should be worded as “not supported in v1” rather than “never supported,” preserving future-extension wording without accepting another source mode.
 - `Optional<id>` remains distinct from nullable object-pointer spelling. A
   producer shall not lower it as `id?`, nullable `id`, or any other object
@@ -399,17 +411,18 @@ To avoid blocking a future value optional design:
 
 #### 3.3.5.2 Canonical future spelling policy (v0.11 decision) {#part-3-3-5-2}
 
-Per [D-013](DECISIONS_LOG.md#decisions-d-013), any future value-optional feature shall use
-`Optional<T>` as the canonical source spelling.
+Per [D-013](DECISIONS_LOG.md#decisions-d-013), the value-optional
+type-signature carrier uses `Optional<T>` as the canonical source spelling, and
+any future runtime-complete value-optional feature shall keep that spelling.
 
 - `optional<T>` is not canonical and shall not be treated as an alias.
 - Canonical mode rejects `optional<T>` with `O3C004` and may provide a
   canonicalization fix-it to `Optional<T>`; the fix-it does not make
   `optional<T>` an accepted compatibility spelling.
-- Canonical textual interface emission for future value-optionals shall use `Optional<T>`.
-- Nested lowercase spellings such as `optional<Optional<T>>` are rejected before
-  type admission. The outer lowercase spelling is not a compatibility shim for
-  the canonical reserved spelling.
+- Canonical textual interface emission for value-optionals shall use `Optional<T>`.
+- Nested lowercase spellings such as `optional<Optional<T>>` and
+  `Optional<optional<T>>` are rejected before type admission. Lowercase spelling
+  is not a compatibility shim for the canonical carrier.
 
 ---
 

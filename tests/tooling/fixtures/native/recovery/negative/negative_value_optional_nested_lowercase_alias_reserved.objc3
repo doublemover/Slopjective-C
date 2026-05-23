@@ -1,6 +1,4 @@
 // Expected diagnostic code(s): O3C004.
 module NegativeValueOptionalNestedLowercaseAliasReserved;
 
-fn main(value: optional<Optional<i32>>) -> i32 {
-  return 0;
-}
+extern fn nested(value: Optional<optional<i32>>) -> i32;

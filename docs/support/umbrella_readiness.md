@@ -18,17 +18,17 @@ Consumer rule: Umbrella readiness may explain why a reserved umbrella row is blo
 
 ## runtime.object-model.full-realization
 
-- Current state: `reserved`
+- Current state: `implemented`
 - Target state: `implemented`
-- Readiness state: `blocked`
-- Intended public meaning: Objective-C 3.0 object metadata, class/category/protocol realization, property and ivar reflection, registration replay, debugger-grade reflection, source identity, and runtime query behavior are complete as an integrated runtime surface rather than a set of narrow owner rows.
+- Readiness state: `ready`
+- Intended public meaning: Objective-C 3.0 object metadata, class/category/protocol realization, property and ivar reflection, registration replay, debugger-grade reflection, source identity, runtime query behavior, and integrated object-model statement stepping are complete as one Objective-C 3 runtime surface.
 
 ### Forbidden Overclaims
 
-- Full object-model runtime support from class graph source alone.
-- Debugger-grade reflection from private snapshots or generated manifests alone.
 - Objective-C 2 runtime compatibility.
 - Swift or C++ runtime mirroring.
+- Dynamic forwarding or arbitrary foreign runtime dispatch.
+- Broad full-source-map publication for every production artifact path.
 - Issue comments, PR bodies, or tmp reports as support evidence.
 
 ### Prerequisite Rows
@@ -52,14 +52,14 @@ Consumer rule: Umbrella readiness may explain why a reserved umbrella row is blo
 - `satisfied` Runtime public reflection exposes bounded debug-anchor identity records for class, category, protocol, property, ivar, and method rows. (path: `tests/tooling/fixtures/object_model_closure/debug_anchor_identity_replay_contract.json`)
 - `satisfied` Checked object-model debugger proof links source-map records, native line-table rows, debug-map runtime anchors, runtime reflection debug anchors, and value-inspection records. (path: `tests/tooling/fixtures/object_model_closure/debugger_value_inspection_replay_contract.json`)
 - `satisfied` The object-model debugger proof command now compiles the integrated object-model fixture through the canonical frontend path and validates the emitted manifest, source graph, object artifact, runtime inventory, artifact inspector, fail-closed debug-map boundary, emitted native debug-info evidence, and compiler-owned object-model source-map/native-line-table publication for class, metaclass, category, protocol, property, ivar, selector, method, reflection, and replay rows. (path: `scripts/check_objc3c_object_model_debugger_proof.py`)
-- `blocked` Production source identity and native debug-info evidence now cover the integrated object-model identity set; broad debugger stepping over that production artifact path remains reserved for the umbrella. (blocker_id: `object-model-debugger-source-identity`)
+- `satisfied` Production source identity, native debug-info evidence, runtime debug-trace step ids, and statement stepping cover the integrated object-model identity set. (path: `scripts/objc3c_editor_tooling/model.py`)
 
 #### Public Commands
 
 - `satisfied` Runtime object-model conformance remains replayable through the npm bridge. (command: `npm run objc3c -- validate-object-model-conformance`)
 - `satisfied` Public runtime reflection API remains replayable through the npm bridge. (command: `npm run objc3c -- validate-public-runtime-reflection-api`)
 - `satisfied` Object-model debugger source-map, line-table, debug-anchor, value-inspection linkage, production frontend artifact/runtime inventory proof, compiler-owned object-model source identity rows for the full integrated identity set, emitted native debug-info evidence, and source-map/native-line-table publication remain replayable through the npm bridge. (command: `npm run objc3c -- validate-object-model-debugger-proof`)
-- `blocked` Bounded statement stepping is implemented by runtime.debug-trace.statement-stepping; debugger-grade stepping over the integrated object-model production artifact path remains blocked for the umbrella. (blocker_id: `object-model-debugger-source-identity`)
+- `satisfied` Bounded statement stepping is implemented by runtime.debug-trace.statement-stepping and is now integrated with the object-model production artifact path. (command: `npm run objc3c -- validate-object-model-debugger-proof`)
 
 #### Positive Fixtures
 
@@ -90,7 +90,7 @@ Consumer rule: Umbrella readiness may explain why a reserved umbrella row is blo
 
 #### Docs
 
-- `satisfied` Hard-cutover capability truth continues to state the reserved umbrella boundary. (path: `docs/support/hard_cutover_capability_truth.md`)
+- `satisfied` Hard-cutover capability truth states the promoted object-model envelope and the still-reserved compatibility/full-source-map boundaries. (path: `docs/support/hard_cutover_capability_truth.md`)
 - `satisfied` Object-model closure runbook remains checked in. (path: `docs/runbooks/objc3c_object_model_closure.md`)
 - `satisfied` Combined readiness test remains checked in to enforce lifetime, source-anchor, and negative-boundary evidence. (path: `tests/tooling/test_runtime_object_model_full_realization_readiness.py`)
 - `satisfied` Object-model debugger proof checker remains covered by fail-closed tests. (path: `tests/tooling/test_runtime_object_model_full_realization_readiness.py`)
@@ -109,16 +109,15 @@ Consumer rule: Umbrella readiness may explain why a reserved umbrella row is blo
 
 ### Promotion Blockers
 
-- `object-model-debugger-source-identity`: Bounded runtime debug-anchor identity, replayable object-model value inspection, a canonical frontend artifact/runtime inventory probe, compiler-owned production source identity rows for class/metaclass/category/protocol/property/ivar/selector/method/reflection/replay, emitted native debug-info evidence, production source-map/native-line-table publication, bounded statement stepping, LLDB replay, inline-frame source maps, and typed-keypath debugger metadata now exist, but full debugger-grade object-model stepping is not yet complete on the production artifact path.
-  - Production debugger statement-stepping integration for the integrated object-model artifact path, beyond the bounded implemented statement-stepping row.
+- None
 
 ### Final Promotion Criteria
 
-- The umbrella matrix row changes to implemented in docs/support/capability_matrix.json.
+- The umbrella matrix row is implemented in docs/support/capability_matrix.json.
 - All required prerequisite rows remain implemented with evidence-map rows.
 - All readiness requirements are satisfied.
 - No promotion blockers remain.
-- Debugger-grade reflection and source identity are covered by public npm-bridge commands without relying on private snapshots or generated reports.
+- Debugger-grade reflection, source identity, and statement stepping are covered by public npm-bridge commands without relying on private snapshots or generated reports.
 
 ## language.advanced-runtime-closure
 

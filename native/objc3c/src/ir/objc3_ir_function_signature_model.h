@@ -16,6 +16,12 @@ struct LoweredFunctionSignature {
   std::vector<bool> param_insert_autorelease;
   std::vector<bool> param_has_lifetime_bridge;
   bool throws_declared = false;
+  bool typed_throws_declared = false;
+  bool throws_error_out_abi_ready = false;
+  std::string typed_throws_error_type_spelling;
+  bool has_value_optional_type_signature = false;
+  bool value_optional_lowering_supported = false;
+  std::string value_optional_payload_type_spelling;
   bool objc_nserror_declared = false;
   bool objc_status_code_declared = false;
   bool return_insert_retain = false;

@@ -40,7 +40,9 @@ struct Objc3ToolingMachineReadableConformanceReportContractSummary {
 inline bool IsReadyObjc3ToolingMachineReadableConformanceReportContractSummary(
     const Objc3ToolingMachineReadableConformanceReportContractSummary &summary) {
   const bool language_profile_valid =
-      summary.effective_language_profile == "canonical";
+      summary.effective_language_profile == "canonical" ||
+      summary.effective_language_profile == "strict" ||
+      summary.effective_language_profile == "strict-concurrency";
   return !summary.contract_id.empty() &&
          !summary.dependency_contract_id.empty() &&
          !summary.lowering_contract_id.empty() &&

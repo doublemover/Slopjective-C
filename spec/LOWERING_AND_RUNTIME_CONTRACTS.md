@@ -1875,10 +1875,15 @@ Implementations should avoid duplicating retains/releases when `a` is an object 
 
 ### C.3.3 Postfix propagation `?` (recommended) {#c-3-3}
 
-The postfix propagation operator in Parts 3 and 6 should lower to a structured early-exit:
+The postfix propagation operator in Parts 3 and 6 should lower to a structured
+early-exit for carriers whose runtime ABI is implemented:
 
-- `Optional<T>` carrier: `if (!x) return nil; else use *x;`
+- future runtime-complete `Optional<T>` carrier: `if (!x.has_value) return absent; else use x.payload;`
 - `Result<T,E>` carrier: `if (isErr(x)) return Err(e); else use t;`
+
+In the v1 #8234 slice, `Optional<T>` is a source/interface type-signature
+carrier only. It must not lower through this path until construction, unwrap,
+layout, and call ABI support are implemented.
 
 Implementations should preserve left-to-right evaluation and should not introduce hidden temporaries with observable lifetimes beyond what ARC already requires.
 

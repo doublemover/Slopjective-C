@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from pathlib import Path
 
+import pytest
+
 from objc3c_llvm_capabilities_probe_assertions import (
     assert_clang_missing_payload,
     assert_filetype_unsupported_payload,
@@ -31,6 +33,11 @@ from objc3c_llvm_capabilities_probe_subprocess import (
     fake_mixed_toolchain_root_run,
 )
 from objc3c_llvm_capabilities_probe_support import PACKAGE_JSON, probe
+
+
+@pytest.fixture(autouse=True)
+def clear_llvm_root_default(monkeypatch) -> None:
+    monkeypatch.delenv("LLVM_ROOT", raising=False)
 
 
 def test_probe_passes_when_clang_and_llc_capabilities_are_detected(
@@ -221,6 +228,36 @@ def test_probe_accepts_official_windows_install_root_when_llvm_config_is_absent(
 
     assert exit_code == 0
     assert_windows_install_root_header_library_payload(load_json(summary_out))
+
+
+def test_probe_defaults_to_configured_llvm_root_when_present(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    install_root = tmp_path / "LLVM"
+    bin_dir = install_root / "bin"
+    include_dir = install_root / "include"
+    lib_dir = install_root / "lib"
+    bin_dir.mkdir(parents=True)
+    include_dir.mkdir()
+    lib_dir.mkdir()
+    for tool in ("clang.exe", "clang++.exe", "llc.exe", "llvm-ar.exe", "llvm-config.exe"):
+        (bin_dir / tool).write_text("", encoding="utf-8")
+
+    monkeypatch.setenv("LLVM_ROOT", str(install_root))
+    monkeypatch.setattr(probe.subprocess, "run", fake_mixed_toolchain_root_run)
+    summary_out = tmp_path / "summary.json"
+    exit_code = probe.run(["--summary-out", str(summary_out)])
+    payload = load_json(summary_out)
+
+    assert exit_code == 0
+    assert payload["ok"] is True
+    assert payload["toolchain_identity"]["claimable"] is True
+    assert payload["toolchain_resolution"]["clang"]["configured_path"] == str(bin_dir / "clang.exe")
+    assert payload["toolchain_resolution"]["clang++"]["configured_path"] == str(bin_dir / "clang++.exe")
+    assert payload["toolchain_resolution"]["llc"]["configured_path"] == str(bin_dir / "llc.exe")
+    assert payload["toolchain_resolution"]["llvm-ar"]["configured_path"] == str(bin_dir / "llvm-ar.exe")
+    assert payload["toolchain_resolution"]["llvm-config"]["configured_path"] == str(bin_dir / "llvm-config.exe")
 
 
 def test_package_wires_llvm_capability_probe_script() -> None:

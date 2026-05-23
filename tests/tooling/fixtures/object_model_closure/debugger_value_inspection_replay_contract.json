@@ -10,9 +10,9 @@
     8212
   ],
   "capability_id": "runtime.object-model.full-realization",
-  "public_status": "reserved",
-  "support_claim_published": false,
-  "readiness_role": "checked object-model debugger proof composition for the reserved full-realization umbrella",
+  "public_status": "implemented",
+  "support_claim_published": true,
+  "readiness_role": "checked object-model debugger proof composition for the implemented full-realization umbrella",
   "public_command": "npm run objc3c -- validate-object-model-debugger-proof",
   "production_artifact_probe": {
     "contract_id": "objc3c.object_model.production_artifact_probe.v1",
@@ -74,9 +74,9 @@
     },
     "debug_map_boundary": {
       "full_source_map_publication": "fail-closed",
-      "statement_stepping": "fail-closed",
+      "statement_stepping": "supported",
       "native_debug_info_evidence": "required",
-      "boundary_reason": "the production compiler path must publish object-model source-map records and native line-table rows from the canonical manifest now, and native debug-info failure must be tied to emitted object section and IR debug-metadata evidence before debugger stepping can open"
+      "boundary_reason": "the production compiler path publishes object-model source-map records, native line-table rows, emitted native debug-info evidence, and runtime debug-trace statement-step ids from the canonical manifest before the umbrella is promoted"
     }
   },
   "reflection_abi_governance": {
@@ -109,18 +109,6 @@
     "object_model_source_map_native_line_table": "required",
     "full_source_map_publication": "fail-closed"
   },
-  "statement_step_reservation_contract": {
-    "contract_id": "objc3c.object_model.statement_step_reservation.fail_closed.v1",
-    "status": "reserved",
-    "fail_closed": true,
-    "required_candidate_status": "native-line-table-ready-stepping-blocked",
-    "requires_exact_source_native_line_anchor": true,
-    "requires_source_map_row_identity_alignment": true,
-    "requires_emitted_native_debug_info": true,
-    "blocked_by": [
-      "runtime-debug-trace-statement-stepping-integration"
-    ]
-  },
   "source_map_bundle": "tests/tooling/fixtures/developer_tooling/debug_source_maps/positive.json",
   "debugger_replay": "tests/tooling/fixtures/developer_tooling/debugger_integration/replay.json",
   "lldb_protocol_contract": "tests/tooling/fixtures/developer_tooling/debugger_integration/lldb_protocol_contract.json",
@@ -136,9 +124,9 @@
       8202
     ],
     "capability_id": "runtime.object-model.full-realization",
-    "public_status": "reserved",
-    "support_claim_published": false,
-    "readiness_role": "source-owned glue for debugger-grade object-model readiness without promoting full runtime object-model realization",
+    "public_status": "implemented",
+    "support_claim_published": true,
+    "readiness_role": "source-owned glue for debugger-grade object-model readiness and the promoted full runtime object-model realization claim",
     "required_contracts": {
       "debug_source_map_bundle": {
         "path": "tests/tooling/fixtures/developer_tooling/debug_source_maps/positive.json",
@@ -201,8 +189,8 @@
       {
         "capability_id": "runtime.object-model.full-realization",
         "issue": 8212,
-        "recommended_status": "reserved",
-        "support_claim_published": false,
+        "recommended_status": "implemented",
+        "support_claim_published": true,
         "evidence_contract": "tests/tooling/fixtures/object_model_closure/debugger_value_inspection_replay_contract.json"
       }
     ],
@@ -323,7 +311,7 @@
       }
     ],
     "umbrella_boundary": {
-      "promotes_umbrella": false,
+      "promotes_umbrella": true,
       "generated_only_maps_can_promote": false,
       "typed_keypath_fallback_allowed": false,
       "lldb_protocol_drift_allowed": false,
@@ -940,10 +928,10 @@
       ]
     },
     {
-      "case_id": "statement-step-reservation-contract-drift",
-      "expected_code": "statement-step-reservation-contract-drift",
+      "case_id": "statement-step-integration-contract-drift",
+      "expected_code": "statement-step-integration-contract-drift",
       "mutation_path": [
-        "statement_step_reservation_contract",
+        "statement_step_integration_contract",
         "required_candidate_status"
       ]
     },
@@ -962,7 +950,19 @@
     "requires_debug_anchor_replay_contract": true,
     "requires_replayable_debugger_value_commands": true,
     "uses_private_testing_snapshots_as_public_truth": false,
-    "promotes_umbrella": false,
+    "promotes_umbrella": true,
     "creates_objective_c2_compatibility_claim": false
+  },
+  "support_claim": "objc3c.behavior.runtime.object-model.full-realization",
+  "statement_step_integration_contract": {
+    "contract_id": "objc3c.object_model.statement_step_integration.supported.v1",
+    "status": "supported",
+    "fail_closed": false,
+    "required_candidate_status": "runtime-debug-trace-statement-stepping-supported",
+    "requires_exact_source_native_line_anchor": true,
+    "requires_source_map_row_identity_alignment": true,
+    "requires_emitted_native_debug_info": true,
+    "statement_stepping_evidence_id": "object-model.statement-stepping.production-source-line-table",
+    "blocked_by": []
   }
 }

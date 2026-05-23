@@ -788,9 +788,15 @@ def _native_debug_info_evidence_payload(
         blocked_by.append("native-object-lacks-debug-line-section")
     if not llvm_debug_metadata_present:
         blocked_by.append("compiler-ir-lacks-llvm-di-locations")
-    blocked_by.append("runtime-debug-trace-statement-stepping-integration")
+    statement_stepping_supported = (
+        emitted_native_debug_info_supported and native_line_table_supported
+    )
+    if not statement_stepping_supported:
+        blocked_by.append("runtime-debug-trace-statement-stepping-integration")
     fail_closed_reason = (
-        "native object lacks debug info and debug line-table sections"
+        ""
+        if statement_stepping_supported
+        else "native object lacks debug info and debug line-table sections"
         if not native_debug_sections and not native_line_table_sections
         else "native object lacks debug line-table sections"
         if not native_line_table_sections
@@ -821,8 +827,13 @@ def _native_debug_info_evidence_payload(
         "llvm_debug_location_count": llvm_debug_location_count,
         "emitted_native_debug_info_supported": emitted_native_debug_info_supported,
         "native_line_table_supported": native_line_table_supported,
-        "statement_stepping_supported": False,
-        "fail_closed": True,
+        "statement_stepping_supported": statement_stepping_supported,
+        "statement_stepping_evidence_id": (
+            "object-model.statement-stepping.production-source-line-table"
+            if statement_stepping_supported
+            else ""
+        ),
+        "fail_closed": not statement_stepping_supported,
         "fail_closed_reason": fail_closed_reason,
         "blocked_by": blocked_by,
     }

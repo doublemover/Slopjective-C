@@ -17,7 +17,7 @@
     "tests/tooling/fixtures/parser_conformance_corpus/reject_typed_throws_payload.objc3",
     "tests/tooling/fixtures/parser_conformance_corpus/reject_value_optional_type.objc3"
   ],
-  "support_boundary": "canonical rejection owns the rejected parser conformance cases A010-C002 through A010-C013. These fixtures are hard-cutover parser diagnostic evidence for noncanonical pointer parameter type syntax, malformed parameter punctuation, extern without fn, duplicate pure and throws modifiers, misplaced pure after fn, and reserved language-evolution syntax for value optionals, typed throws, match expressions, and guarded match patterns. They are not retired-source acceptance, compatibility acceptance, retired route acceptance, preview feature support, or alternate parser support.",
+  "support_boundary": "canonical rejection owns the rejected parser conformance cases A010-C002 through A010-C013. These fixtures are hard-cutover parser diagnostic evidence for noncanonical pointer parameter type syntax, malformed parameter punctuation, extern without fn, duplicate pure and throws modifiers, misplaced pure after fn, value-optional runtime/lowering boundaries, invalid typed-throws payload shapes, match expressions, and guarded match patterns. They are not retired-source acceptance, compatibility acceptance, retired route acceptance, preview feature support, or alternate parser support.",
   "phase_support_claim_authority": false,
   "negative_claim_authority": true,
   "selectors": [
@@ -47,8 +47,8 @@
     "reject_reason:removed-declaration-spelling",
     "reject_reason:duplicate-modifier",
     "reject_reason:misplaced-qualifier",
-    "reject_reason:reserved-value-optionals",
-    "reject_reason:reserved-typed-throws",
+    "reject_reason:value-optional-runtime-lowering-fail-closed",
+    "reject_reason:invalid-typed-throws-payload-shape",
     "reject_reason:reserved-match-expressions",
     "reject_reason:reserved-guarded-patterns",
     "*old-mode*",
@@ -65,5 +65,5 @@
     "*generated_only*"
   ],
   "canonical_anchor": "tests/native/parser/negative",
-  "retired_surface_rule": "rejected parser corpus cases, reserved language-evolution syntax, old-mode parser rows, gate parser rows, retired route parser rows, compatibility parser rows, migration-only parser rows, generated-only rows, evidence-log rows, legacy-looking positives, and alternate parser acceptance paths are canonical rejection, strict-error, absent-support, or provenance-only evidence"
+  "retired_surface_rule": "rejected parser corpus cases, fail-closed language-evolution syntax, invalid typed-throws payload shapes, old-mode parser rows, gate parser rows, retired route parser rows, compatibility parser rows, migration-only parser rows, generated-only rows, evidence-log rows, legacy-looking positives, and alternate parser acceptance paths are canonical rejection, strict-error, absent-support, or provenance-only evidence"
 }

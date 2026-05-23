@@ -46,11 +46,32 @@ std::string EmitObjc3IRDirectFunctionCall(
     return callbacks.emit_unsupported_i32_value(
         "concurrency task runtime helper lowering requires async objc_executor affinity");
   }
+  if (signature != nullptr && signature->typed_throws_declared) {
+    const std::string payload =
+        signature->typed_throws_error_type_spelling.empty()
+            ? "unknown"
+            : signature->typed_throws_error_type_spelling;
+    return callbacks.emit_unsupported_i32_value(
+        "typed throws lowering is deferred for payload " + payload +
+        "; no untyped error_out ABI erasure is allowed");
+  }
+  if (signature != nullptr && signature->has_value_optional_type_signature &&
+      !signature->value_optional_lowering_supported) {
+    const std::string payload =
+        signature->value_optional_payload_type_spelling.empty()
+            ? "unknown"
+            : signature->value_optional_payload_type_spelling;
+    return callbacks.emit_unsupported_i32_value(
+        "value optional lowering is deferred for payload " + payload +
+        "; no ABI emission or nullable-pointer erasure is allowed");
+  }
 
   std::vector<std::string> args;
   std::vector<std::string> post_call_release_values;
   args.reserve(expr->args.size() +
-               (signature != nullptr && signature->throws_declared ? 1u : 0u));
+               (signature != nullptr && signature->throws_error_out_abi_ready
+                    ? 1u
+                    : 0u));
   post_call_release_values.reserve(expr->args.size());
   for (std::size_t i = 0; i < expr->args.size(); ++i) {
     std::string arg_i32 = callbacks.emit_expr(expr->args[i].get());
@@ -80,7 +101,7 @@ std::string EmitObjc3IRDirectFunctionCall(
             : ValueType::I32;
     AppendObjc3IRLoweredCallArg(args, arg_i32, expected_type, ctx, callbacks);
   }
-  if (signature != nullptr && signature->throws_declared) {
+  if (signature != nullptr && signature->throws_error_out_abi_ready) {
     args.push_back("ptr " + throws_error_slot_ptr);
   }
   std::ostringstream arglist;

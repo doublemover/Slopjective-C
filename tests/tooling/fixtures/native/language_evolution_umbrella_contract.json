@@ -18,24 +18,31 @@
       "feature_id": "typed_throws",
       "issue_ref": 8233,
       "contract": "tests/tooling/fixtures/native/language_evolution_typed_throws_value_optionals_contract.json",
-      "support_state": "reserved_fail_closed",
+      "support_state": "source_owned_interface_preserved_lowering_fail_closed",
       "negative_case_ids": [
         "negative_typed_throws_reserved",
         "negative_typed_throws_empty_payload_reserved",
         "negative_typed_throws_multi_payload_reserved",
-        "negative_typed_throws_erasure_mismatch_reserved"
+        "negative_typed_throws_erasure_mismatch_reserved",
+        "typed_throws_abi_lifting_negative",
+        "typed_throws_interface_mismatch_negative"
       ]
     },
     {
       "feature_id": "value_optionals",
       "issue_ref": 8234,
       "contract": "tests/tooling/fixtures/native/language_evolution_typed_throws_value_optionals_contract.json",
-      "support_state": "reserved_fail_closed",
+      "support_state": "source_owned_type_signatures_interface_preserved_runtime_lowering_fail_closed",
       "negative_case_ids": [
         "negative_value_optional_canonical_reserved",
         "negative_value_optional_nullable_pointer_conversion_reserved",
         "negative_value_optional_nil_scalar_coercion_reserved",
-        "negative_value_optional_nested_lowercase_alias_reserved"
+        "negative_value_optional_nested_lowercase_alias_reserved",
+        "negative_value_optional_property_layout_unsupported",
+        "negative_value_optional_nullable_suffix_mismatch",
+        "value_optionals_layout_mismatch_negative",
+        "value_optionals_lowering_claim_negative",
+        "value_optionals_interface_mismatch_negative"
       ]
     },
     {
@@ -89,15 +96,15 @@
     "objc3c.behavior.language.generics.generic-callable-reification"
   ],
   "reserved_public_claims": [
-    "language.errors.typed-throws",
-    "language.types.value-optionals",
+    "language.errors.typed-throws-runtime-lowering",
+    "language.types.value-optionals-runtime-lowering",
     "language.control-flow.type-test-patterns",
     "language.profiles.strict",
     "language.profiles.strict-concurrency"
   ],
   "hard_fail_closed_requirements": [
-    "typed throws payloads are not silently erased into untyped throws",
-    "Optional<T> does not alias nullable object pointers or nil-to-scalar coercions",
+    "single typed throws payloads are source/interface-preserved and are not silently erased into untyped throws",
+    "Optional<T> type signatures are source/interface carriers only and do not alias nullable object pointers or nil-to-scalar coercions",
     "generic callable metadata preserves erased-default versus declaration-scoped explicit-reified policy without implying module-wide reification",
     "guarded match admits only bool where conditions; expression-position match is supported only for the bounded typed pattern/result surface and still fails closed for type-test patterns and unsupported result payload lowering",
     "strict and strict-concurrency profile names are not aliases for canonical or core",
@@ -106,21 +113,21 @@
   "lead_support_row_recommendations": [
     {
       "row_id": "language.evolution.umbrella-alignment",
-      "status": "reserved-source-owned-fail-closed",
+      "status": "source-owned-fail-closed-boundaries",
       "evidence": [
         "tests/tooling/fixtures/native/language_evolution_umbrella_contract.json"
       ]
     },
     {
       "row_id": "language.errors.typed-throws",
-      "status": "reserved",
+      "status": "source-owned-interface-preserved-lowering-fail-closed",
       "evidence": [
         "tests/tooling/fixtures/native/language_evolution_typed_throws_value_optionals_contract.json"
       ]
     },
     {
       "row_id": "language.types.value-optionals",
-      "status": "reserved",
+      "status": "source-owned-type-signature-carrier-runtime-lowering-fail-closed",
       "evidence": [
         "tests/tooling/fixtures/native/language_evolution_typed_throws_value_optionals_contract.json"
       ]

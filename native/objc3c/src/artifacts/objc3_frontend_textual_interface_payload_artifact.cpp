@@ -48,15 +48,92 @@ JsonValue ValueOptionalContract() {
   JsonObject contract;
   contract["issue_ref"] = SizeValue(8234u);
   contract["canonical_spelling"] = JsonValue::String("Optional<T>");
-  contract["source_status"] = JsonValue::String("reserved-rejected-before-sema");
+  contract["source_status"] =
+      JsonValue::String("type-signature-admitted-runtime-execution-fail-closed");
   contract["lowercase_alias_accepted"] = JsonValue::Bool(false);
-  contract["abi_layout_status"] = JsonValue::String("reserved-no-layout");
+  contract["abi_layout_status"] =
+      JsonValue::String("stable-contract-runtime-lowering-deferred");
+  contract["abi_layout_id"] = JsonValue::String(kObjc3ValueOptionalAbiLayoutId);
+  contract["presence_field"] = JsonValue::String("has_value");
+  contract["payload_storage_field"] = JsonValue::String("payload");
+  contract["runtime_execution_supported"] = JsonValue::Bool(false);
+  contract["lowering_supported"] = JsonValue::Bool(false);
   contract["nil_to_scalar_coercion_allowed"] = JsonValue::Bool(false);
   contract["nullable_pointer_conversion_allowed"] = JsonValue::Bool(false);
   contract["throws_result_conversion_allowed"] = JsonValue::Bool(false);
   contract["interface_roundtrip_status"] =
-      JsonValue::String("reserved-feature-marker-imported");
+      JsonValue::String("type-signature-carrier-imported-runtime-deferred");
+  JsonObject optional_type;
+  optional_type["record_id"] = JsonValue::String("optional_type");
+  optional_type["type_id"] = JsonValue::String("Optional<T>");
+  optional_type["payload_type"] = JsonValue::String("T");
+  optional_type["abi_layout"] = JsonValue::String(kObjc3ValueOptionalAbiLayoutId);
+  optional_type["canonical_spelling"] = JsonValue::String("Optional<T>");
+  contract["optional_type"] = JsonValue::ObjectValue(std::move(optional_type));
+  JsonObject optional_value;
+  optional_value["record_id"] = JsonValue::String("optional_value");
+  optional_value["value_id"] = JsonValue::String("optional-value-carrier");
+  optional_value["optional_type"] = JsonValue::String("Optional<T>");
+  optional_value["presence_state"] = JsonValue::String("has_value");
+  optional_value["payload_storage"] = JsonValue::String("payload");
+  contract["optional_value"] = JsonValue::ObjectValue(std::move(optional_value));
+  JsonObject optional_flow;
+  optional_flow["record_id"] = JsonValue::String("optional_flow");
+  optional_flow["source_span"] = JsonValue::String("type-signature");
+  optional_flow["narrowing_kind"] =
+      JsonValue::String("binding-or-guard-binding");
+  optional_flow["before_type"] = JsonValue::String("Optional<T>");
+  optional_flow["after_type"] = JsonValue::String("T");
+  optional_flow["cleanup_contract"] =
+      JsonValue::String("payload-cleanup-after-narrowed-scope");
+  contract["optional_flow"] = JsonValue::ObjectValue(std::move(optional_flow));
+  JsonObject optional_rejection;
+  optional_rejection["record_id"] = JsonValue::String("optional_rejection");
+  optional_rejection["source_span"] = JsonValue::String("type-signature");
+  optional_rejection["spelling"] = JsonValue::String("optional<T>");
+  optional_rejection["conversion_attempt"] =
+      JsonValue::String("lowercase-alias-or-runtime-conversion");
+  optional_rejection["diagnostic"] = JsonValue::String("O3C004/O3P159");
+  contract["optional_rejection"] =
+      JsonValue::ObjectValue(std::move(optional_rejection));
   return JsonValue::ObjectValue(std::move(contract));
+}
+
+JsonValue ValueOptionalTypeShape(
+    const Objc3ValueOptionalTypeDescriptor &descriptor) {
+  JsonObject shape;
+  shape["present"] = JsonValue::Bool(descriptor.present);
+  shape["contract_id"] = JsonValue::String(descriptor.contract_id);
+  shape["canonical_spelling"] =
+      JsonValue::String(descriptor.present
+                            ? "Optional<" + descriptor.payload_type_spelling + ">"
+                            : std::string{});
+  shape["payload_type"] = JsonValue::String(descriptor.payload_type_spelling);
+  shape["payload_value_type"] =
+      JsonValue::String(TypeName(descriptor.payload_value_type));
+  shape["payload_object_pointer"] =
+      JsonValue::Bool(descriptor.payload_object_pointer);
+  shape["payload_object_pointer_type_name"] =
+      JsonValue::String(descriptor.payload_object_pointer_type_name);
+  shape["payload_generic"] = JsonValue::Bool(descriptor.payload_generic);
+  shape["payload_nested_value_optional"] =
+      JsonValue::Bool(descriptor.payload_nested_value_optional);
+  shape["abi_layout_id"] = JsonValue::String(descriptor.abi_layout_id);
+  shape["presence_field"] = JsonValue::String(descriptor.presence_field);
+  shape["payload_storage_field"] =
+      JsonValue::String(descriptor.payload_storage_field);
+  shape["runtime_execution_supported"] =
+      JsonValue::Bool(descriptor.runtime_execution_supported);
+  shape["lowering_supported"] = JsonValue::Bool(descriptor.lowering_supported);
+  shape["nil_to_scalar_coercion_allowed"] =
+      JsonValue::Bool(descriptor.nil_to_scalar_coercion_allowed);
+  shape["nullable_pointer_conversion_allowed"] =
+      JsonValue::Bool(descriptor.nullable_pointer_conversion_allowed);
+  shape["throws_result_conversion_allowed"] =
+      JsonValue::Bool(descriptor.throws_result_conversion_allowed);
+  shape["cleanup_contract_preserved"] =
+      JsonValue::Bool(descriptor.cleanup_contract_preserved);
+  return JsonValue::ObjectValue(std::move(shape));
 }
 
 JsonValue GenericParams(const std::vector<Objc3GenericParamDecl> &params,
@@ -86,6 +163,7 @@ JsonValue ParamTypeShape(const FuncParam &param,
   object["object_pointer_type_name"] =
       JsonValue::String(param.object_pointer_type_name);
   object["generic_suffix"] = JsonValue::String(param.generic_suffix_text);
+  object["value_optional_type"] = ValueOptionalTypeShape(param.value_optional);
   object["pointer_depth"] = SizeValue(param.pointer_declarator_depth);
   object["nullability_profile"] =
       JsonValue::String(param.nullability_flow_profile);
@@ -117,6 +195,8 @@ JsonValue FunctionTypeSignature(const FunctionDecl &function,
       JsonValue::String(function.return_object_pointer_type_name);
   signature["result_generic_suffix"] =
       JsonValue::String(function.return_generic_suffix_text);
+  signature["result_value_optional_type"] =
+      ValueOptionalTypeShape(function.return_value_optional);
   signature["result_pointer_depth"] =
       SizeValue(function.return_pointer_declarator_depth);
   signature["parameters"] = ParamTypeShapes(function.params, input_path);
@@ -134,6 +214,8 @@ JsonValue MethodTypeSignature(const Objc3MethodDecl &method,
       JsonValue::String(method.return_object_pointer_type_name);
   signature["result_generic_suffix"] =
       JsonValue::String(method.return_generic_suffix_text);
+  signature["result_value_optional_type"] =
+      ValueOptionalTypeShape(method.return_value_optional);
   signature["result_pointer_depth"] =
       SizeValue(method.return_pointer_declarator_depth);
   signature["parameters"] = ParamTypeShapes(method.params, input_path);
@@ -141,27 +223,65 @@ JsonValue MethodTypeSignature(const Objc3MethodDecl &method,
   return JsonValue::ObjectValue(std::move(signature));
 }
 
-JsonValue TypedThrowsContract(bool throws_declared) {
+std::string ThrowsKind(bool throws_declared, bool typed_throws_declared) {
+  if (typed_throws_declared) {
+    return "typed";
+  }
+  return throws_declared ? "untyped" : "none";
+}
+
+std::string DeclaredErrorType(bool throws_declared,
+                              bool typed_throws_declared,
+                              const Objc3TypedThrowsPayload &payload) {
+  if (typed_throws_declared) {
+    return payload.canonical_spelling;
+  }
+  return throws_declared ? "id<Error>" : "";
+}
+
+JsonValue TypedThrowsContract(bool throws_declared,
+                              bool typed_throws_declared,
+                              const Objc3TypedThrowsPayload &payload) {
+  const std::string throws_kind =
+      ThrowsKind(throws_declared, typed_throws_declared);
+  const std::string declared_error_type =
+      DeclaredErrorType(throws_declared, typed_throws_declared, payload);
   JsonObject contract;
   contract["issue_ref"] = SizeValue(8233u);
   contract["canonical_syntax"] = JsonValue::String("throws(E)");
-  contract["throws_kind"] =
-      JsonValue::String(throws_declared ? "untyped" : "none");
-  contract["declared_error_type"] =
-      JsonValue::String(throws_declared ? "id<Error>" : "");
-  contract["typed_payload_arity"] = SizeValue(0u);
+  contract["throws_kind"] = JsonValue::String(throws_kind);
+  contract["declared_error_type"] = JsonValue::String(declared_error_type);
+  contract["typed_payload_arity"] =
+      SizeValue(typed_throws_declared ? 1u : 0u);
   contract["typed_payload_status"] =
-      JsonValue::String("reserved-rejected-before-sema");
+      JsonValue::String(typed_throws_declared
+                            ? "source-preserved-lowering-fail-closed"
+                            : "not-declared");
+  contract["typed_payload_generic_suffix"] =
+      JsonValue::String(payload.generic_suffix_text);
+  contract["typed_payload_generic_suffix_terminated"] =
+      JsonValue::Bool(!typed_throws_declared ||
+                      payload.generic_suffix_terminated);
+  contract["typed_payload_pointer_depth"] =
+      SizeValue(payload.pointer_declarator_depth);
+  contract["typed_payload_lowering_ready"] = JsonValue::Bool(false);
+  contract["runtime_execution_claimed"] = JsonValue::Bool(false);
   contract["silent_erasure_allowed"] = JsonValue::Bool(false);
   contract["multi_payload_supported"] = JsonValue::Bool(false);
-  contract["abi_status"] = JsonValue::String("reserved-no-lowering");
+  contract["abi_status"] = JsonValue::String(
+      typed_throws_declared ? "typed-error-abi-deferred"
+                            : (throws_declared ? "untyped-error-out-abi"
+                                               : "none"));
   contract["interface_roundtrip_status"] =
-      JsonValue::String("reserved-feature-marker-imported");
+      JsonValue::String(typed_throws_declared ? "typed-payload-preserved"
+                                              : "not-applicable");
   return JsonValue::ObjectValue(std::move(contract));
 }
 
 JsonValue Effects(bool async_declared,
                   bool throws_declared,
+                  bool typed_throws_declared,
+                  const Objc3TypedThrowsPayload &typed_throws_payload,
                   bool nonisolated_declared,
                   bool executor_affinity_declared,
                   const std::string &executor_affinity_kind,
@@ -172,10 +292,12 @@ JsonValue Effects(bool async_declared,
   effects["async"] = JsonValue::Bool(async_declared);
   effects["throws"] = JsonValue::Bool(throws_declared);
   effects["throws_kind"] =
-      JsonValue::String(throws_declared ? "untyped" : "none");
-  effects["declared_error_type"] =
-      JsonValue::String(throws_declared ? "id<Error>" : "");
-  effects["typed_throws"] = TypedThrowsContract(throws_declared);
+      JsonValue::String(ThrowsKind(throws_declared, typed_throws_declared));
+  effects["declared_error_type"] = JsonValue::String(
+      DeclaredErrorType(throws_declared, typed_throws_declared,
+                        typed_throws_payload));
+  effects["typed_throws"] = TypedThrowsContract(
+      throws_declared, typed_throws_declared, typed_throws_payload);
   effects["throws_profile"] = JsonValue::String(throws_profile);
   effects["actor_nonisolated"] = JsonValue::Bool(nonisolated_declared);
   effects["actor_isolation_profile"] = JsonValue::String(actor_profile);
@@ -190,6 +312,8 @@ JsonValue Effects(bool async_declared,
 
 JsonValue FunctionEffects(const FunctionDecl &function) {
   return Effects(function.async_declared, function.throws_declared,
+                 function.typed_throws_declared,
+                 function.typed_throws_payload,
                  function.objc_nonisolated_declared,
                  function.executor_affinity_declared,
                  function.executor_affinity_kind,
@@ -200,6 +324,8 @@ JsonValue FunctionEffects(const FunctionDecl &function) {
 
 JsonValue MethodEffects(const Objc3MethodDecl &method) {
   return Effects(method.async_declared, method.throws_declared,
+                 method.typed_throws_declared,
+                 method.typed_throws_payload,
                  method.objc_nonisolated_declared,
                  method.executor_affinity_declared,
                  method.executor_affinity_kind,
@@ -253,6 +379,8 @@ JsonValue PropertyTypeSignature(const Objc3PropertyDecl &property,
   signature["object_pointer_type_name"] =
       JsonValue::String(property.object_pointer_type_name);
   signature["generic_suffix"] = JsonValue::String(property.generic_suffix_text);
+  signature["value_optional_type"] =
+      ValueOptionalTypeShape(property.value_optional);
   signature["pointer_depth"] = SizeValue(property.pointer_declarator_depth);
   signature["nullability_profile"] =
       JsonValue::String(property.nullability_flow_profile);
@@ -502,6 +630,8 @@ JsonValue IssueRefs() {
   JsonArray issue_refs;
   issue_refs.push_back(SizeValue(8238u));
   issue_refs.push_back(SizeValue(8208u));
+  issue_refs.push_back(SizeValue(8233u));
+  issue_refs.push_back(SizeValue(8234u));
   return JsonValue::ArrayValue(std::move(issue_refs));
 }
 
@@ -549,6 +679,23 @@ JsonValue NegativeCases() {
   cases.push_back(NegativeCase(
       "reserved-roundtrip", "interface_roundtrip.parse_status",
       "reserved importer status cannot satisfy support", "O3IFC8238"));
+  cases.push_back(NegativeCase(
+      "typed-throws-abi-lowering", "declarations[*].effects.typed_throws",
+      "typed throws cannot claim runtime execution or untyped error-out ABI"));
+  cases.push_back(NegativeCase(
+      "typed-throws-interface-contract-drift",
+      "declarations[*].effects.typed_throws.declared_error_type",
+      "typed throws payload spelling must round-trip without erasure"));
+  cases.push_back(NegativeCase(
+      "value-optional-lowering",
+      "declarations[*].type_signature.value_optional_type",
+      "value optional runtime execution and lowering remain fail-closed",
+      "O3P159"));
+  cases.push_back(NegativeCase(
+      "value-optional-layout-drift",
+      "declarations[*].type_signature.value_optional_contract.abi_layout_id",
+      "value optional ABI layout identity drift rejected",
+      "O3IFC8238"));
   return JsonValue::ArrayValue(std::move(cases));
 }
 

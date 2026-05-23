@@ -111,7 +111,7 @@ This bundle expands [Part 3](#part-3) (types/optionals), [Part 6](#part-6) (erro
 This revision makes three “ship/no‑ship” decisions:
 
 1. Optional chaining (`?.`, `[x? foo]`) is **reference-only** in v1 (no scalar/struct chaining).
-2. `throws` is **untyped** in v1 (always `id<Error>`); typed throws is deferred.
+2. Runnable `throws` is **untyped** in v1 (always `id<Error>`); typed throws is source/interface metadata only until a typed error ABI exists.
 3. Task spawning remains **library-defined** in v1; no `task {}` keyword syntax (compiler recognition uses standardized attributes).
 
 ## v0.5 update {#intro-v0-5-update}

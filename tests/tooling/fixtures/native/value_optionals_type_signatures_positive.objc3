@@ -1,0 +1,10 @@
+module ValueOptionalsTypeSignaturesPositive;
+
+extern fn maybeCount(value: Optional<i32>, enabled: Optional<bool>) -> Optional<i32>;
+extern fn maybeReceiver(value: Optional<id>, owner: Optional<Class>) -> Optional<id>;
+
+@interface ValueOptionalCarrier
+- (Optional<i32>)nextValue:(Optional<i32>)seed;
+- (Optional<id>)maybeObject:(Optional<id>)candidate;
+@end
+

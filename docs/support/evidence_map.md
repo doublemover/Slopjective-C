@@ -179,23 +179,26 @@ diagnostic, documentation, or boundary evidence only.
 | `runtime.object-model.bounded-query-snapshots` | `objc3c.behavior.runtime.object-model-bounded-query-snapshots` | `source` | `native/objc3c/src/runtime/classes/object_model_query_snapshot.cpp` |  |
 | `runtime.object-model.bounded-query-snapshots` | `objc3c.behavior.runtime.object-model-bounded-query-snapshots` | `source` | `native/objc3c/src/runtime/classes/protocol_conformance_snapshots.cpp` |  |
 | `runtime.object-model.bounded-query-snapshots` | `objc3c.behavior.runtime.object-model-bounded-query-snapshots` | `source` | `native/objc3c/src/runtime/reflection/property_snapshot_api.cpp` |  |
-| `runtime.object-model.full-realization` |  | `doc` | `docs/support/hard_cutover_capability_truth.md` |  |
-| `runtime.object-model.full-realization` |  | `doc` | `spec/MODULE_METADATA_AND_ABI_TABLES.md` |  |
-| `runtime.object-model.full-realization` |  | `doc` | `docs/runbooks/objc3c_object_model_closure.md` |  |
-| `runtime.object-model.full-realization` |  | `source` | `scripts/objc3c_runtime_acceptance/domains/object_model_capability_split.py` |  |
-| `runtime.object-model.full-realization` |  | `test` | `tests/tooling/fixtures/object_model_closure/full_realization_combined_readiness_contract.json` |  |
-| `runtime.object-model.full-realization` |  | `test` | `tests/tooling/fixtures/object_model_closure/debugger_value_inspection_replay_contract.json` | `npm run objc3c -- validate-object-model-debugger-proof` |
-| `runtime.object-model.full-realization` |  | `test` | `tests/tooling/fixtures/cross_lane_e2e/object_reflection_debugger.expectation.json` | `npm run objc3c -- validate-cross-lane-e2e` |
-| `runtime.object-model.full-realization` |  | `source` | `native/objc3c/src/runtime/public/objc3_runtime_reflection.h` |  |
-| `runtime.object-model.full-realization` |  | `source` | `native/objc3c/src/runtime/public/objc3_runtime_reflection.cpp` |  |
-| `runtime.object-model.full-realization` |  | `source` | `native/objc3c/src/runtime/public/objc3_runtime_reflection_debug_anchor.cpp` |  |
-| `runtime.object-model.full-realization` |  | `test` | `tests/tooling/fixtures/object_model_closure/debug_anchor_identity_replay_contract.json` |  |
-| `runtime.object-model.full-realization` |  | `test` | `tests/native/runtime/object_model/debug_anchor_identity_replay_probe.cpp` |  |
-| `runtime.object-model.full-realization` |  | `test` | `tests/native/runtime/object_model/full_realization_combined_reflection_replay_contract.objc3` |  |
-| `runtime.object-model.full-realization` |  | `source` | `scripts/objc3c_object_model_debugger_proof/model.py` |  |
-| `runtime.object-model.full-realization` |  | `test` | `scripts/check_objc3c_object_model_debugger_proof.py` | `npm run objc3c -- validate-object-model-debugger-proof` |
-| `runtime.object-model.full-realization` |  | `test` | `tests/tooling/test_runtime_object_model_full_realization_readiness.py` |  |
-| `runtime.object-model.full-realization` |  | `test` | `tests/tooling/test_runtime_capability_public_split.py` |  |
+| `runtime.object-model.full-realization` | `objc3c.behavior.runtime.object-model.full-realization` | `doc` | `docs/support/hard_cutover_capability_truth.md` |  |
+| `runtime.object-model.full-realization` | `objc3c.behavior.runtime.object-model.full-realization` | `doc` | `docs/runbooks/objc3c_object_model_closure.md` |  |
+| `runtime.object-model.full-realization` | `objc3c.behavior.runtime.object-model.full-realization` | `source` | `native/objc3c/src/runtime/classes/class_graph.cpp` |  |
+| `runtime.object-model.full-realization` | `objc3c.behavior.runtime.object-model.full-realization` | `source` | `native/objc3c/src/runtime/images/registration.cpp` |  |
+| `runtime.object-model.full-realization` | `objc3c.behavior.runtime.object-model.full-realization` | `source` | `native/objc3c/src/runtime/storage/property_layout_realization.cpp` |  |
+| `runtime.object-model.full-realization` | `objc3c.behavior.runtime.object-model.full-realization` | `source` | `native/objc3c/src/runtime/public/objc3_runtime_reflection.h` |  |
+| `runtime.object-model.full-realization` | `objc3c.behavior.runtime.object-model.full-realization` | `source` | `native/objc3c/src/runtime/public/objc3_runtime_reflection.cpp` |  |
+| `runtime.object-model.full-realization` | `objc3c.behavior.runtime.object-model.full-realization` | `source` | `native/objc3c/src/runtime/public/objc3_runtime_reflection_debug_anchor.cpp` |  |
+| `runtime.object-model.full-realization` | `objc3c.behavior.runtime.object-model.full-realization` | `source` | `scripts/objc3c_editor_tooling/artifact_inspector.py` |  |
+| `runtime.object-model.full-realization` | `objc3c.behavior.runtime.object-model.full-realization` | `source` | `scripts/objc3c_editor_tooling/model.py` |  |
+| `runtime.object-model.full-realization` | `objc3c.behavior.runtime.object-model.full-realization` | `source` | `scripts/objc3c_object_model_debugger_proof/model.py` |  |
+| `runtime.object-model.full-realization` | `objc3c.behavior.runtime.object-model.full-realization` | `test` | `tests/tooling/fixtures/object_model_closure/full_realization_combined_readiness_contract.json` | `npm run objc3c -- validate-object-model-debugger-proof` |
+| `runtime.object-model.full-realization` | `objc3c.behavior.runtime.object-model.full-realization` | `test` | `tests/tooling/fixtures/object_model_closure/debugger_value_inspection_replay_contract.json` | `npm run objc3c -- validate-object-model-debugger-proof` |
+| `runtime.object-model.full-realization` | `objc3c.behavior.runtime.object-model.full-realization` | `test` | `tests/tooling/fixtures/object_model_closure/debug_anchor_identity_replay_contract.json` |  |
+| `runtime.object-model.full-realization` | `objc3c.behavior.runtime.object-model.full-realization` | `test` | `tests/native/runtime/object_model/full_realization_combined_reflection_replay_contract.objc3` | `npm run objc3c -- validate-object-model-conformance` |
+| `runtime.object-model.full-realization` | `objc3c.behavior.runtime.object-model.full-realization` | `test` | `tests/native/runtime/object_model/debug_anchor_identity_replay_probe.cpp` |  |
+| `runtime.object-model.full-realization` | `objc3c.behavior.runtime.object-model.full-realization` | `test` | `tests/tooling/fixtures/cross_lane_e2e/object_reflection_debugger.expectation.json` | `npm run objc3c -- validate-cross-lane-e2e` |
+| `runtime.object-model.full-realization` | `objc3c.behavior.runtime.object-model.full-realization` | `test` | `tests/tooling/test_runtime_object_model_full_realization_readiness.py` |  |
+| `runtime.object-model.full-realization` | `objc3c.behavior.runtime.object-model.full-realization` | `test` | `tests/tooling/test_runtime_capability_public_split.py` |  |
+| `runtime.object-model.full-realization` | `objc3c.behavior.runtime.object-model.full-realization` | `source` | `scripts/objc3c_runtime_acceptance/domains/object_model_capability_split.py` |  |
 | `language.protocols.protocol-qualified-existential-value-flow` | `objc3c.behavior.language.protocols.protocol-qualified-existential-value-flow` | `test` | `tests/tooling/fixtures/native/protocol_qualified_existential_value_flow.objc3` | `npm run objc3c -- validate-conformance-corpus` |
 | `language.protocols.protocol-qualified-existential-value-flow` | `objc3c.behavior.language.protocols.protocol-qualified-existential-value-flow` | `test` | `tests/tooling/fixtures/native/protocol_composition_existential_value_flow.objc3` |  |
 | `language.protocols.protocol-qualified-existential-value-flow` | `objc3c.behavior.language.protocols.protocol-qualified-existential-value-flow` | `test` | `tests/tooling/fixtures/native/type_semantic_model_closure_positive.objc3` |  |

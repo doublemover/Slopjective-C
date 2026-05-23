@@ -98,6 +98,7 @@ bool Objc3IRValueTypeUsesTypedDispatch(ValueType type) {
     case ValueType::Unknown:
     case ValueType::I32:
     case ValueType::Function:
+    case ValueType::Optional:
     case ValueType::TextHandle:
       return false;
   }
@@ -136,6 +137,7 @@ int Objc3IRRuntimeDispatchReturnKindForValueType(ValueType type) {
     case ValueType::I32:
     case ValueType::Unknown:
     case ValueType::Function:
+    case ValueType::Optional:
     case ValueType::TextHandle:
       break;
   }

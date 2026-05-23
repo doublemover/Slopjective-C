@@ -96,6 +96,22 @@ bool HasInteropLifetimeBridge(const FunctionDecl &fn) {
                      });
 }
 
+void MarkValueOptionalSignature(
+    LoweredFunctionSignature &signature,
+    const Objc3ValueOptionalTypeDescriptor &descriptor) {
+  if (!descriptor.present) {
+    return;
+  }
+  signature.has_value_optional_type_signature = true;
+  signature.value_optional_lowering_supported =
+      signature.value_optional_lowering_supported ||
+      descriptor.lowering_supported;
+  if (signature.value_optional_payload_type_spelling.empty()) {
+    signature.value_optional_payload_type_spelling =
+        descriptor.payload_type_spelling;
+  }
+}
+
 std::map<std::string, LoweredFunctionSignature>
 BuildLoweredFunctionSignatures(const Objc3Program &program) {
   std::map<std::string, LoweredFunctionSignature> signatures;
@@ -103,6 +119,12 @@ BuildLoweredFunctionSignatures(const Objc3Program &program) {
     LoweredFunctionSignature signature;
     signature.return_type = fn.return_type;
     signature.throws_declared = fn.throws_declared;
+    signature.typed_throws_declared = fn.typed_throws_declared;
+    signature.throws_error_out_abi_ready =
+        fn.throws_declared && !fn.typed_throws_declared;
+    signature.typed_throws_error_type_spelling =
+        fn.typed_throws_payload.canonical_spelling;
+    MarkValueOptionalSignature(signature, fn.return_value_optional);
     signature.objc_nserror_declared = fn.objc_nserror_declared;
     signature.objc_status_code_declared = fn.objc_status_code_declared;
     signature.objc_status_code_mapping_symbol =
@@ -132,6 +154,7 @@ BuildLoweredFunctionSignatures(const Objc3Program &program) {
     for (std::size_t param_index = 0; param_index < fn.params.size();
          ++param_index) {
       const auto &param = fn.params[param_index];
+      MarkValueOptionalSignature(signature, param.value_optional);
       signature.param_types.push_back(param.type);
       signature.param_insert_retain.push_back(
           EffectiveArcParamInsertRetain(param, false));

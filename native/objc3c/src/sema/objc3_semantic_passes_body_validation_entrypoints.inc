@@ -5,10 +5,13 @@
 
 void ValidateSemanticBodies(const Objc3ParsedProgram &program, const Objc3SemanticIntegrationSurface &surface,
                             const Objc3SemanticValidationOptions &options,
+                            Objc3SemaLanguageProfile language_profile,
                             std::vector<std::string> &diagnostics) {
   const Objc3SemanticBodyValidationContext context =
       BuildObjc3SemanticBodyValidationContext(program, surface, options, diagnostics);
   const Objc3Program &ast = *context.ast;
+  const bool strict_concurrency =
+      Objc3SemaLanguageProfileUsesStrictConcurrency(language_profile);
   std::vector<std::string> protocol_definition_diagnostics;
   const std::unordered_map<std::string, Objc3ProtocolSemanticDefinition>
       protocol_definitions = BuildProtocolSemanticDefinitions(
@@ -96,11 +99,14 @@ void ValidateSemanticBodies(const Objc3ParsedProgram &program, const Objc3Semant
     if (!fn.is_prototype) {
       const Objc3ConcurrencyTaskCallableLegalityProfile task_legality_profile =
           BuildConcurrencyTaskCallableLegalityProfile(fn.body);
-      DiagnoseConcurrencyTaskCallableLegality(fn.body, fn.async_declared, diagnostics);
-      DiagnoseConcurrencyExecutorAffinityCompletion(
-          task_legality_profile, fn.async_declared,
-          fn.executor_affinity_declared, fn.executor_affinity_kind, fn.line,
-          fn.column, diagnostics);
+      if (strict_concurrency) {
+        DiagnoseConcurrencyTaskCallableLegality(fn.body, fn.async_declared,
+                                                diagnostics);
+        DiagnoseConcurrencyExecutorAffinityCompletion(
+            task_legality_profile, fn.async_declared,
+            fn.executor_affinity_declared, fn.executor_affinity_kind, fn.line,
+            fn.column, diagnostics);
+      }
       DiagnoseOwnershipResourceMoveSemantics(fn.body, scopes, diagnostics);
       std::unordered_set<std::string> borrowed_parameter_names;
       for (const auto &param : fn.params) {
@@ -158,12 +164,14 @@ void ValidateSemanticBodies(const Objc3ParsedProgram &program, const Objc3Semant
           "method '" + MethodSelectorName(method) + "' in implementation '" +
               implementation_decl.name + "'",
           diagnostics);
-      DiagnoseConcurrencyActorMethodIsolationRules(
-          method, IsActorInterfaceOwner(actor_interfaces, implementation_decl.name),
-          method.line, method.column, diagnostics);
-      DiagnoseConcurrencyActorRaceHazardRules(
-          method, IsActorInterfaceOwner(actor_interfaces, implementation_decl.name),
-          method.line, method.column, diagnostics);
+      if (strict_concurrency) {
+        DiagnoseConcurrencyActorMethodIsolationRules(
+            method, IsActorInterfaceOwner(actor_interfaces, implementation_decl.name),
+            method.line, method.column, diagnostics);
+        DiagnoseConcurrencyActorRaceHazardRules(
+            method, IsActorInterfaceOwner(actor_interfaces, implementation_decl.name),
+            method.line, method.column, diagnostics);
+      }
       if (method.executor_affinity_declared && !method.async_declared) {
         diagnostics.push_back(MakeDiag(
             method.line, method.column, "O3S224",
@@ -200,12 +208,14 @@ void ValidateSemanticBodies(const Objc3ParsedProgram &program, const Objc3Semant
 
       const Objc3ConcurrencyTaskCallableLegalityProfile task_legality_profile =
           BuildConcurrencyTaskCallableLegalityProfile(method.body);
-      DiagnoseConcurrencyTaskCallableLegality(method.body, method.async_declared,
-                                        diagnostics);
-      DiagnoseConcurrencyExecutorAffinityCompletion(
-          task_legality_profile, method.async_declared,
-          method.executor_affinity_declared, method.executor_affinity_kind,
-          method.line, method.column, diagnostics);
+      if (strict_concurrency) {
+        DiagnoseConcurrencyTaskCallableLegality(method.body, method.async_declared,
+                                          diagnostics);
+        DiagnoseConcurrencyExecutorAffinityCompletion(
+            task_legality_profile, method.async_declared,
+            method.executor_affinity_declared, method.executor_affinity_kind,
+            method.line, method.column, diagnostics);
+      }
       DiagnoseOwnershipResourceMoveSemantics(method.body, scopes, diagnostics);
       std::unordered_set<std::string> borrowed_parameter_names;
       for (const auto &param : method.params) {
@@ -245,9 +255,11 @@ void ValidateSemanticBodies(const Objc3ParsedProgram &program, const Objc3Semant
 
   for (const auto &interface_decl : ast.interfaces) {
     for (const auto &method : interface_decl.methods) {
-      DiagnoseConcurrencyActorMethodIsolationRules(method, interface_decl.is_actor,
-                                             method.line, method.column,
-                                             diagnostics);
+      if (strict_concurrency) {
+        DiagnoseConcurrencyActorMethodIsolationRules(method, interface_decl.is_actor,
+                                               method.line, method.column,
+                                               diagnostics);
+      }
     }
   }
 }

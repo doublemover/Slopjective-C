@@ -26,16 +26,16 @@ Optional chaining for scalar/struct returns is **not** supported in v1.
 
 ---
 
-## D-002: `throws` is untyped in v1; typed throws deferred {#decisions-d-002}
+## D-002: `throws` runtime propagation is untyped in v1; typed throws is source/interface-only {#decisions-d-002}
 
-**Decision:** The v1 `throws` effect is always **untyped**, with thrown values of type `id<Error>`.
+**Decision:** The v1 runnable `throws` effect is **untyped**, with thrown values of type `id<Error>`.
 
-Typed throws syntax (e.g., `throws(E)`) is reserved for future extension but is not part of v1 grammar/semantics.
+Typed throws syntax (for example, `throws(E)`) is admitted as a source/interface effect payload with exactly one preserved error type. Typed error ABI, lowering, and runtime execution remain deferred.
 
 **Rationale:**
 
 - Objective‑C’s runtime dynamism and mixed-language interop (NSError, C return codes) favor a single error supertype.
-- Typed throws adds significant complexity to generics, bridging, and ABI/lowering.
+- Typed throws adds significant complexity to generics, bridging, and ABI/lowering, so v1 preserves the source payload without claiming typed runtime propagation.
 
 **Spec impact:** [Part 6](#part-6).
 
@@ -196,13 +196,19 @@ It is required for **any operation that may suspend**, including:
 
 ## D-013: Future value-optionals use canonical `Optional<T>` spelling {#decisions-d-013}
 
-**Decision:** If a future value-optional feature is standardized, its canonical source spelling is `Optional<T>`.
+**Decision:** The value-optional type-signature carrier uses canonical
+`Optional<T>` source spelling. If a future runtime-complete value-optional
+feature is standardized, it keeps that spelling.
 `optional<T>` is not canonical and remains a reserved rejected spelling.
 
 In conforming modes:
 
-- parsers and interface emitters shall treat `Optional<T>` as the canonical spelling,
-- textual interfaces shall emit `Optional<T>` when value-optionals are represented,
+- parsers and interface emitters shall treat `Optional<T>` as the canonical
+  type-signature spelling,
+- textual interfaces shall emit `Optional<T>` when value-optional carriers are
+  represented,
+- executable construction, unwrap, property/ivar storage, and ABI lowering
+  remain fail-closed until their runtime contracts are implemented,
 - `optional<T>` shall be rejected before type admission; diagnostics may offer a
   canonicalization fix-it to `Optional<T>` but shall not accept the lowercase
   spelling as a compatibility alias.

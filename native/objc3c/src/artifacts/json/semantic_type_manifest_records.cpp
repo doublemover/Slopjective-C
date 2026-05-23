@@ -43,6 +43,16 @@ void WriteSemanticCanonicalTypeManifestRecord(
                           type.generic_arguments_source_order);
   object.StringArrayField("generic_arguments_lexicographic",
                           type.generic_arguments_lexicographic);
+  object.BoolField("is_value_optional", type.is_value_optional);
+  object.StringField("value_optional_payload_type_spelling",
+                     type.value_optional_payload_type_spelling);
+  object.StringField(
+      "value_optional_payload_value_type",
+      objc3c::support::ValueTypeName(type.value_optional_payload_value_type));
+  object.BoolField("value_optional_runtime_execution_supported",
+                   type.value_optional_runtime_execution_supported);
+  object.BoolField("value_optional_lowering_supported",
+                   type.value_optional_lowering_supported);
   object.StringField("replay_key", type.replay_key);
   object.BoolField("deterministic", type.deterministic);
   object.End();

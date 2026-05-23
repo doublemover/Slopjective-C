@@ -1,4 +1,4 @@
-"""Strict-profile fail-closed claim policy runtime acceptance case."""
+"""Strict-profile claim policy runtime acceptance case."""
 
 from __future__ import annotations
 
@@ -16,8 +16,30 @@ from .release_claims_owner_contracts import release_claims_case_summary
 def check_strict_profile_claim_implementation_case(run_dir: Path) -> CaseResult:
     case_dir = run_dir / "strict-profile-claim-implementation"
     fixture = ROOT / Path(RELEASE_CLAIMABLE_SURFACE_FIXTURE)
-    rejected_profiles = ["strict", "strict-concurrency", "strict-system"]
+    accepted_profiles = ["strict", "strict-concurrency"]
+    rejected_profiles = ["strict-system"]
     summaries: list[dict[str, Any]] = []
+
+    for profile in accepted_profiles:
+        compile_dir = case_dir / profile
+        result, _ = run_fixture_compile(
+            fixture,
+            compile_dir,
+            extra_args=["--objc3-conformance-profile", profile],
+            write_provenance=False,
+        )
+        diagnostic_text = (result.stderr or result.stdout).strip()
+        expect(
+            result.returncode == 0,
+            f"expected {profile} conformance selection to compile",
+        )
+        summaries.append(
+            {
+                "profile": profile,
+                "returncode": result.returncode,
+                "diagnostic": diagnostic_text,
+            }
+        )
 
     for profile in rejected_profiles:
         compile_dir = case_dir / profile
@@ -35,11 +57,9 @@ def check_strict_profile_claim_implementation_case(run_dir: Path) -> CaseResult:
         expect(
             f"unsupported --objc3-conformance-profile selection: {profile}"
             in diagnostic_text
-            and "claimed profiles: core" in diagnostic_text
-            and (
-                "rejected built-in profiles: strict, strict-concurrency, strict-system"
-                in diagnostic_text
-            ),
+            and "claimed profiles: core, strict, strict-concurrency"
+            in diagnostic_text
+            and "rejected built-in profiles: strict-system" in diagnostic_text,
             f"expected {profile} rejection to publish the centralized claim policy diagnostic",
         )
         summaries.append(
@@ -52,7 +72,7 @@ def check_strict_profile_claim_implementation_case(run_dir: Path) -> CaseResult:
 
     return CaseResult(
         case_id="strict-profile-claim-implementation",
-        probe="fail-closed-native-cli-selection-for-targeted-but-unclaimed-strict-profiles",
+        probe="native-cli-selection-accepts-strict-profiles-and-fails-closed-for-strict-system",
         fixture=RELEASE_CLAIMABLE_SURFACE_FIXTURE,
         claim_class="compile-coupled-inspection",
         passed=True,

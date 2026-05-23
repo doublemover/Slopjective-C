@@ -2434,6 +2434,47 @@
       ]
     },
     {
+      "support_claim": "objc3c.behavior.runtime.object-model.full-realization",
+      "capability_id": "runtime.object-model.full-realization",
+      "owner_phase": "runtime",
+      "conformance_fixture": "tests/tooling/fixtures/object_model_closure/full_realization_combined_readiness_contract.json",
+      "traceability_fixture": "tests/tooling/fixtures/object_model_closure/debugger_value_inspection_replay_contract.json",
+      "runnable_command": "npm run objc3c -- validate-object-model-debugger-proof",
+      "runtime_acceptance_case": "object-model-full-realization-debugger-grade-proof",
+      "positive_evidence": [
+        "tests/tooling/fixtures/object_model_closure/full_realization_combined_readiness_contract.json",
+        "tests/tooling/fixtures/object_model_closure/debugger_value_inspection_replay_contract.json",
+        "tests/tooling/fixtures/object_model_closure/debug_anchor_identity_replay_contract.json",
+        "tests/native/runtime/object_model/full_realization_combined_reflection_replay_contract.objc3",
+        "tests/tooling/fixtures/cross_lane_e2e/object_reflection_debugger.expectation.json",
+        "native/objc3c/src/runtime/classes/class_graph.cpp",
+        "native/objc3c/src/runtime/images/registration.cpp",
+        "native/objc3c/src/runtime/storage/property_layout_realization.cpp",
+        "native/objc3c/src/runtime/public/objc3_runtime_reflection.h",
+        "native/objc3c/src/runtime/public/objc3_runtime_reflection_debug_anchor.cpp",
+        "scripts/objc3c_editor_tooling/artifact_inspector.py",
+        "scripts/objc3c_editor_tooling/model.py",
+        "scripts/objc3c_object_model_debugger_proof/model.py"
+      ],
+      "negative_evidence": [
+        "tests/tooling/fixtures/object_model_closure/debugger_value_inspection_replay_contract.json",
+        "tests/tooling/fixtures/object_model_closure/full_realization_combined_readiness_contract.json",
+        "tests/tooling/fixtures/object_model_closure/behavior_owner_splits/canonical_rejection.json",
+        "tests/tooling/runtime/protocol_category_invalid_metadata_probe.cpp",
+        "tests/tooling/runtime/property_ivar_invalid_layout_probe.cpp",
+        "tests/tooling/runtime/deterministic_reset_replay_probe.cpp"
+      ],
+      "required_diagnostic_codes": [
+        "O3RT002",
+        "O3RT004"
+      ],
+      "source_truth_requirements": [
+        "Full realization is claimed only for the Objective-C 3 runtime identity graph backed by checked source, runtime metadata, public reflection snapshots, source-map/native-line-table rows, emitted native debug info, and statement stepping evidence.",
+        "The object-model debugger proof command must replay the production artifact path and reject generated-only maps, stale native line tables, LLDB protocol drift, typed-keypath fallback interpretation, and object-debug identity mismatch.",
+        "Objective-C 2 compatibility, Swift/C++ runtime mirroring, dynamic forwarding, and broad full-source-map publication remain outside this support claim."
+      ]
+    },
+    {
       "support_claim": "objc3c.behavior.runtime.public-reflection-api",
       "capability_id": "runtime.public-api.reflection",
       "owner_phase": "runtime",

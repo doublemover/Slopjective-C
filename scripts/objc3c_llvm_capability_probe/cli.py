@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import os
 import sys
 from pathlib import Path
 from typing import Sequence
@@ -31,13 +32,21 @@ from .reports import build_summary, collect_failures, missing_contract_payload
 from .reports import build_toolchain_identity
 
 
+def _default_llvm_tool(tool_name: str) -> Path:
+    llvm_root = os.environ.get("LLVM_ROOT")
+    if llvm_root:
+        suffix = ".exe" if os.name == "nt" and not tool_name.endswith(".exe") else ""
+        return Path(llvm_root) / "bin" / f"{tool_name}{suffix}"
+    return Path(tool_name)
+
+
 def parse_args(argv: Sequence[str]) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=DESCRIPTION)
-    parser.add_argument("--clang", type=Path, default=Path("clang"))
-    parser.add_argument("--clangxx", type=Path, default=Path("clang++"))
-    parser.add_argument("--llc", type=Path, default=Path("llc"))
-    parser.add_argument("--llvm-ar", type=Path, default=Path("llvm-ar"))
-    parser.add_argument("--llvm-config", type=Path, default=Path("llvm-config"))
+    parser.add_argument("--clang", type=Path, default=_default_llvm_tool("clang"))
+    parser.add_argument("--clangxx", type=Path, default=_default_llvm_tool("clang++"))
+    parser.add_argument("--llc", type=Path, default=_default_llvm_tool("llc"))
+    parser.add_argument("--llvm-ar", type=Path, default=_default_llvm_tool("llvm-ar"))
+    parser.add_argument("--llvm-config", type=Path, default=_default_llvm_tool("llvm-config"))
     parser.add_argument("--summary-out", type=Path, default=DEFAULT_SUMMARY_OUT)
     return parser.parse_args(argv)
 

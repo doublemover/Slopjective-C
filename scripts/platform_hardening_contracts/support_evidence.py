@@ -14,6 +14,8 @@ from .contract_predicates import expect
 from .source_surface_catalog import (
     HOSTED_RUNNER_CAPABILITY_SUMMARIES_PATH,
     HOSTED_RUNNER_CAPABILITY_SUMMARIES_SCHEMA_PATH,
+    PLATFORM_EXPANSION_CLAIM_CONTRACT_PATH,
+    PLATFORM_EXPANSION_CLAIM_CONTRACT_SCHEMA_PATH,
     PLATFORM_TOOLCHAIN_SUPPORT_EVIDENCE_PATH,
     PLATFORM_TOOLCHAIN_SUPPORT_EVIDENCE_SCHEMA_PATH,
 )
@@ -99,6 +101,17 @@ def load_hosted_runner_capability_summaries() -> dict[str, Any]:
         payload,
         schema,
         label=repo_rel(HOSTED_RUNNER_CAPABILITY_SUMMARIES_PATH),
+    )
+    return payload
+
+
+def load_platform_expansion_claim_contract() -> dict[str, Any]:
+    schema = load_json_object(PLATFORM_EXPANSION_CLAIM_CONTRACT_SCHEMA_PATH)
+    payload = load_json_object(PLATFORM_EXPANSION_CLAIM_CONTRACT_PATH)
+    validate_json_schema(
+        payload,
+        schema,
+        label=repo_rel(PLATFORM_EXPANSION_CLAIM_CONTRACT_PATH),
     )
     return payload
 
@@ -299,6 +312,332 @@ def _validate_hosted_runner_capability_summaries(
         required_summary_ids <= summary_ids,
         "hosted runner capability summaries are missing required source-truth cases",
     )
+
+
+def _contracts_by_id(rows: Iterable[dict[str, Any]]) -> dict[str, dict[str, Any]]:
+    contracts: dict[str, dict[str, Any]] = {}
+    for row in rows:
+        for contract in row.get("negative_contracts", []):
+            if not isinstance(contract, dict):
+                continue
+            contract_id = str(contract.get("contract_id", ""))
+            if contract_id:
+                contracts[contract_id] = contract
+    return contracts
+
+
+def _native_object_statuses(native_contract: dict[str, Any]) -> set[str]:
+    status_fields = (
+        "success_status",
+        "missing_llc_status",
+        "missing_filetype_status",
+        "mixed_toolchain_status",
+        "mismatched_version_status",
+        "unsupported_version_status",
+        "unresolved_version_status",
+    )
+    return {str(native_contract[field]) for field in status_fields if native_contract.get(field)}
+
+
+def _validate_platform_expansion_object_emission_cases(
+    contract: dict[str, Any],
+    native_contract: dict[str, Any],
+) -> None:
+    known_statuses = _native_object_statuses(native_contract)
+    positive_status = str(native_contract.get("success_status", ""))
+    seen_statuses: set[str] = set()
+    for case in contract.get("object_emission_truth_cases", []):
+        case_id = str(case.get("case_id", ""))
+        status = str(case.get("status", ""))
+        seen_statuses.add(status)
+        expect(status in known_statuses, f"{case_id} used unknown native object emission status: {status}")
+        expect(case.get("required_tool") == "llc", f"{case_id} did not require llc")
+        expect(case.get("required_probe") == "llc --filetype=obj", f"{case_id} did not require llc --filetype=obj")
+        expect(case.get("clang_substitute_allowed") is False, f"{case_id} allowed clang substitute object emission")
+        expect(case.get("toolchain_identity_required") is True, f"{case_id} did not require coherent toolchain identity")
+        if bool(case.get("positive_case")):
+            expect(status == positive_status, f"{case_id} positive object-emission case did not use the success status")
+            expect(not case.get("blocks_surfaces"), f"{case_id} positive object-emission case blocked support surfaces")
+            continue
+        expect(status != positive_status, f"{case_id} negative object-emission case used the success status")
+        expect(
+            {"package", "execution", "publication"} <= {str(item) for item in case.get("blocks_surfaces", [])},
+            f"{case_id} negative object-emission case did not block package execution and publication",
+        )
+    expect(
+        known_statuses <= seen_statuses,
+        "platform expansion object-emission cases did not cover every native object status",
+    )
+
+
+def _validate_platform_expansion_hosted_cases(
+    contract: dict[str, Any],
+    *,
+    boundary_supported_platform_ids: set[str],
+) -> None:
+    hosted_payload = load_hosted_runner_capability_summaries()
+    hosted_by_id = {
+        str(summary.get("summary_id")): summary
+        for summary in hosted_payload.get("summaries", [])
+        if isinstance(summary, dict) and summary.get("summary_id")
+    }
+    for case in contract.get("hosted_runner_projection_cases", []):
+        summary_id = str(case.get("summary_id", ""))
+        hosted = hosted_by_id.get(summary_id)
+        expect(hosted is not None, f"platform expansion hosted case missing upstream summary {summary_id}")
+        expect(hosted.get("issue_ref") == case.get("issue_ref"), f"{summary_id} issue_ref drifted from hosted summary")
+        expect(hosted.get("summary_kind") == case.get("summary_kind"), f"{summary_id} summary_kind drifted from hosted summary")
+        expect(hosted.get("hosted_runner") == case.get("hosted_runner"), f"{summary_id} hosted_runner drifted from hosted summary")
+        expect(hosted.get("claim_state") == case.get("claim_state"), f"{summary_id} claim_state drifted from hosted summary")
+        expect(hosted.get("platform_ids") == case.get("platform_ids"), f"{summary_id} platform_ids drifted from hosted summary")
+        expect(hosted.get("publication_allowed") == case.get("publication_allowed"), f"{summary_id} publication_allowed drifted from hosted summary")
+        expect(
+            hosted.get("native_object_emission_status") == case.get("native_object_emission_status"),
+            f"{summary_id} native object status drifted from hosted summary",
+        )
+        platform_ids = {str(platform_id) for platform_id in case.get("platform_ids", [])}
+        if bool(case.get("publication_allowed")):
+            expect(platform_ids <= boundary_supported_platform_ids, f"{summary_id} projected unsupported hosted platforms")
+            continue
+        expect(not platform_ids, f"{summary_id} non-publication hosted case listed platforms")
+        expect(str(case.get("projection_rule", "")), f"{summary_id} missing projection rule")
+
+
+def _validate_platform_expansion_platform_cases(
+    contract: dict[str, Any],
+    *,
+    payload: dict[str, Any],
+    package_variant_rows: dict[str, dict[str, Any]],
+    unsupported_host_policy: dict[str, Any],
+) -> None:
+    support_rows = {
+        str(row.get("row_id")): row
+        for row in payload.get("support_rows", [])
+        if isinstance(row, dict) and row.get("row_id")
+    }
+    support_negative_contracts = _contracts_by_id(payload.get("support_rows", []))
+    package_negative_contracts = _contracts_by_id(package_variant_rows.values())
+    failure_ids = _unsupported_failure_ids(unsupported_host_policy) | {
+        str(failure_class.get("failure_id"))
+        for failure_class in unsupported_host_policy.get("hard_fail_classes", [])
+        if isinstance(failure_class, dict) and failure_class.get("failure_id")
+    }
+    for case in contract.get("platform_claim_cases", []):
+        case_id = str(case.get("case_id", ""))
+        row_id = str(case.get("support_row_id", ""))
+        row = support_rows.get(row_id)
+        expect(row is not None, f"{case_id} missing support row {row_id}")
+        platform_id = str(case.get("platform_id", ""))
+        expect(row.get("platform_id") == platform_id, f"{case_id} platform_id drifted from support row")
+        expect(row.get("issue_ref") == case.get("issue_ref"), f"{case_id} issue_ref drifted from support row")
+        expect(row.get("support_state") == case.get("claim_state"), f"{case_id} claim_state drifted from support row")
+        expect(case.get("publication_allowed") is False, f"{case_id} unexpectedly allowed publication")
+        identity = case.get("platform_identity", {})
+        expect(identity.get("host_os") == row.get("host_os"), f"{case_id} host_os drifted from support row")
+        expect(identity.get("host_arch") == row.get("host_arch"), f"{case_id} host_arch drifted from support row")
+        expect(identity.get("host_triples") == row.get("host_triples"), f"{case_id} host triples drifted from support row")
+        expect(
+            set(str(item) for item in case.get("required_promotion_evidence", []))
+            == set(REQUIRED_SUPPORTED_EVIDENCE_CLASSES),
+            f"{case_id} promotion evidence does not require build package install execution",
+        )
+        expect(
+            set(str(item) for item in case.get("required_missing_evidence_classes", []))
+            == set(str(item) for item in row.get("required_missing_evidence_classes", [])),
+            f"{case_id} missing evidence drifted from support row",
+        )
+        expect(
+            set(str(item) for item in case.get("required_toolchain_components", []))
+            == set(str(item) for item in row.get("required_toolchain_components", [])),
+            f"{case_id} required toolchain components drifted from support row",
+        )
+        package_row_id = str(case.get("package_variant_row_id", ""))
+        package_row = package_variant_rows.get(package_row_id)
+        expect(package_row is not None, f"{case_id} missing package variant row {package_row_id}")
+        expect(package_row.get("claim_state") == "fail-closed", f"{case_id} package row is not fail-closed")
+        expect(not package_row.get("platform_ids"), f"{case_id} package row widened support")
+        expect(package_row_id in row.get("package_variant_row_ids", []), f"{case_id} package row not referenced by support row")
+        expect(
+            {str(item) for item in case.get("fail_closed_failure_ids", [])} <= failure_ids,
+            f"{case_id} listed fail-closed failure ids outside unsupported host policy",
+        )
+        available_negative_contracts = set(support_negative_contracts) | set(package_negative_contracts)
+        expect(
+            {str(item) for item in case.get("negative_contract_ids", [])} <= available_negative_contracts,
+            f"{case_id} referenced a missing negative contract",
+        )
+        artifact = case.get("artifact_contract", {})
+        expect(
+            artifact.get("object_emission_alone_supports_platform") is False,
+            f"{case_id} allowed object emission alone to support the platform",
+        )
+        expect(str(artifact.get("native_object_emission_status", "")), f"{case_id} missing native object status")
+
+
+def _validate_platform_expansion_package_identity_cases(
+    contract: dict[str, Any],
+    *,
+    package_variant_rows: dict[str, dict[str, Any]],
+) -> None:
+    for case in contract.get("package_variant_identity_cases", []):
+        identity_id = str(case.get("identity_id", ""))
+        row_id = str(case.get("row_id", ""))
+        row = package_variant_rows.get(row_id)
+        expect(row is not None, f"{identity_id} missing package variant row {row_id}")
+        for field_name in (
+            "issue_ref",
+            "variant_kind",
+            "target_platform_id",
+            "platform_ids",
+            "claim_state",
+            "package_id",
+            "channel_scope",
+        ):
+            expect(row.get(field_name) == case.get(field_name), f"{identity_id} {field_name} drifted from package row")
+        expect(
+            row.get("runtime_library_contract", {}).get("runtime_library_ids") == case.get("runtime_library_ids"),
+            f"{identity_id} runtime library identity drifted from package row",
+        )
+        expect(
+            row.get("metadata_freshness_guard", {}).get("metadata_source") == case.get("metadata_source"),
+            f"{identity_id} metadata source drifted from package row",
+        )
+        required_classes = {str(item) for item in row.get("required_evidence_classes", [])}
+        expect(
+            {str(item) for item in case.get("required_promotion_evidence", [])} <= required_classes,
+            f"{identity_id} promotion evidence is not a subset of package row requirements",
+        )
+        if row.get("claim_state") != "evidence-bound":
+            expect(
+                case.get("default_release_runtime_mutation_allowed") is False,
+                f"{identity_id} allowed default release runtime mutation for an unsupported or reserved row",
+            )
+            expect(case.get("blocked_publication_conditions"), f"{identity_id} missing blocked publication conditions")
+
+
+def _validate_platform_expansion_sanitizer_cases(
+    contract: dict[str, Any],
+    *,
+    payload: dict[str, Any],
+    package_variant_rows: dict[str, dict[str, Any]],
+) -> None:
+    sanitizer_rows = {
+        str(row.get("variant_id")): row
+        for row in payload.get("sanitizer_variants", [])
+        if isinstance(row, dict) and row.get("variant_id")
+    }
+    sanitizer_negative_contracts = _contracts_by_id(payload.get("sanitizer_variants", []))
+    package_negative_contracts = _contracts_by_id(package_variant_rows.values())
+    for case in contract.get("sanitizer_runtime_package_cases", []):
+        variant_id = str(case.get("variant_id", ""))
+        row = sanitizer_rows.get(variant_id)
+        expect(row is not None, f"{variant_id} missing sanitizer variant row")
+        for field_name in (
+            "issue_ref",
+            "sanitizer",
+            "claim_state",
+            "platform_ids",
+            "package_variant_row_id",
+            "package_id",
+            "install_guard",
+            "required_promotion_evidence",
+            "required_missing_evidence_classes",
+        ):
+            expect(row.get(field_name) == case.get(field_name), f"{variant_id} {field_name} drifted from sanitizer row")
+        package_row_id = str(case.get("package_variant_row_id", ""))
+        package_row = package_variant_rows.get(package_row_id)
+        expect(package_row is not None, f"{variant_id} missing package variant row {package_row_id}")
+        expect(package_row.get("claim_state") == "reserved", f"{variant_id} package row must remain reserved")
+        expect(package_row.get("package_id") == case.get("package_id"), f"{variant_id} package_id drifted from package row")
+        expect(
+            package_row.get("runtime_library_contract", {}).get("runtime_library_ids") == case.get("runtime_library_ids"),
+            f"{variant_id} runtime libraries drifted from package row",
+        )
+        build_contract = row.get("build_contract", {})
+        expect(
+            set(str(item) for item in case.get("compiler_flags", []))
+            <= set(str(item) for item in build_contract.get("compiler_flags", [])),
+            f"{variant_id} compiler flags drifted from sanitizer build contract",
+        )
+        expect(
+            set(str(item) for item in case.get("linker_flags", []))
+            <= set(str(item) for item in build_contract.get("linker_flags", [])),
+            f"{variant_id} linker flags drifted from sanitizer build contract",
+        )
+        expect(
+            set(str(item) for item in case.get("environment_requirements", []))
+            <= set(str(item) for item in build_contract.get("environment_requirements", [])),
+            f"{variant_id} environment requirements drifted from sanitizer build contract",
+        )
+        if str(case.get("sanitizer")) == "undefined":
+            expect(
+                build_contract.get("mode") == case.get("mode_policy"),
+                f"{variant_id} UBSan mode policy drifted from build contract",
+            )
+        expect(
+            "not support truth" in str(case.get("report_truth_policy", "")),
+            f"{variant_id} report truth policy must keep reports out of support truth",
+        )
+        available_negative_contracts = set(sanitizer_negative_contracts) | set(package_negative_contracts)
+        expect(
+            {str(item) for item in case.get("negative_contract_ids", [])} <= available_negative_contracts,
+            f"{variant_id} referenced a missing sanitizer negative contract",
+        )
+
+
+def _validate_platform_expansion_claim_contract(
+    payload: dict[str, Any],
+    *,
+    package_variant_rows: dict[str, dict[str, Any]],
+    boundary_supported_platform_ids: set[str],
+    unsupported_host_policy: dict[str, Any],
+) -> dict[str, Any]:
+    contract = load_platform_expansion_claim_contract()
+    expect(
+        set(contract.get("issue_refs", [])) == {8228, 8229, 8230, 8231, 8232},
+        "platform expansion claim contract issue refs drifted",
+    )
+    authority = contract.get("source_authority", {})
+    expect(authority.get("publication_boundary") == "windows-x64-only", "platform expansion widened publication boundary")
+    expect(authority.get("generated_reports_are_source_truth") is False, "platform expansion allowed generated source truth")
+    expect(authority.get("sanitizer_reports_are_support_truth") is False, "platform expansion treated sanitizer reports as support truth")
+    upstream = contract.get("upstream_sources", {})
+    expect(
+        upstream.get("platform_toolchain_support_evidence") == repo_rel(PLATFORM_TOOLCHAIN_SUPPORT_EVIDENCE_PATH),
+        "platform expansion contract upstream support evidence path drifted",
+    )
+    expect(
+        upstream.get("hosted_runner_capability_summaries") == repo_rel(HOSTED_RUNNER_CAPABILITY_SUMMARIES_PATH),
+        "platform expansion contract hosted runner source path drifted",
+    )
+    expect(
+        "native object emission success from clang substitute output"
+        in {str(item) for item in contract.get("forbidden_overclaims", [])},
+        "platform expansion contract missing clang substitute overclaim guard",
+    )
+
+    native_contract = payload["llvm_version_support_matrix"]["native_object_emission_contract"]
+    _validate_platform_expansion_object_emission_cases(contract, native_contract)
+    _validate_platform_expansion_hosted_cases(
+        contract,
+        boundary_supported_platform_ids=boundary_supported_platform_ids,
+    )
+    _validate_platform_expansion_platform_cases(
+        contract,
+        payload=payload,
+        package_variant_rows=package_variant_rows,
+        unsupported_host_policy=unsupported_host_policy,
+    )
+    _validate_platform_expansion_package_identity_cases(
+        contract,
+        package_variant_rows=package_variant_rows,
+    )
+    _validate_platform_expansion_sanitizer_cases(
+        contract,
+        payload=payload,
+        package_variant_rows=package_variant_rows,
+    )
+    return contract
 
 
 def _require_no_claims_outside_boundary(
@@ -793,9 +1132,17 @@ def validate_platform_toolchain_support_evidence(
             expect(str(evidence_id) in records_by_id, f"{sanitizer['variant_id']} missing sanitizer evidence {evidence_id}")
             _policy_record_is_fail_closed(records_by_id[str(evidence_id)])
 
+    _validate_platform_expansion_claim_contract(
+        payload,
+        package_variant_rows=package_variant_rows,
+        boundary_supported_platform_ids=boundary_supported_ids,
+        unsupported_host_policy=unsupported_host_policy,
+    )
+
 
 def build_support_evidence_matrix_sections(payload: dict[str, Any]) -> dict[str, Any]:
     records = payload["evidence_records"]
+    expansion_contract = load_platform_expansion_claim_contract()
     return {
         "support_evidence_contract": {
             "contract_id": payload["contract_id"],
@@ -813,6 +1160,28 @@ def build_support_evidence_matrix_sections(payload: dict[str, Any]) -> dict[str,
             "llvm_version_support_matrix": payload["llvm_version_support_matrix"],
             "sanitizer_variants": payload["sanitizer_variants"],
         },
+        "platform_expansion_claim_contract": {
+            "contract_id": expansion_contract["contract_id"],
+            "schema_path": expansion_contract["schema_path"],
+            "source_path": expansion_contract["source_path"],
+            "issue_refs": expansion_contract["issue_refs"],
+            "platform_claim_case_ids": [
+                str(case["case_id"])
+                for case in expansion_contract["platform_claim_cases"]
+            ],
+            "package_variant_identity_ids": [
+                str(case["identity_id"])
+                for case in expansion_contract["package_variant_identity_cases"]
+            ],
+            "sanitizer_runtime_variant_ids": [
+                str(case["variant_id"])
+                for case in expansion_contract["sanitizer_runtime_package_cases"]
+            ],
+            "object_emission_truth_case_ids": [
+                str(case["case_id"])
+                for case in expansion_contract["object_emission_truth_cases"]
+            ],
+        },
         "evidence_records": records,
         "support_evidence_ids": [str(record["evidence_id"]) for record in records],
     }
@@ -822,6 +1191,7 @@ def build_support_evidence_summary(payload: dict[str, Any]) -> dict[str, Any]:
     supported_rows = [row for row in payload["support_rows"] if row["support_state"] == "supported"]
     unsupported_rows = [row for row in payload["support_rows"] if row["support_state"] == "unsupported"]
     records = payload["evidence_records"]
+    expansion_contract = load_platform_expansion_claim_contract()
     return {
         "contract_id": "objc3c.platform.toolchain.support.evidence.summary.v1",
         "status": "PASS",
@@ -839,6 +1209,14 @@ def build_support_evidence_summary(payload: dict[str, Any]) -> dict[str, Any]:
             for row in payload["llvm_version_support_matrix"]["matrix_entries"]
         ],
         "sanitizer_variant_ids": [str(row["variant_id"]) for row in payload["sanitizer_variants"]],
+        "platform_expansion_claim_contract": {
+            "contract_id": expansion_contract["contract_id"],
+            "platform_claim_case_count": len(expansion_contract["platform_claim_cases"]),
+            "hosted_runner_projection_case_count": len(expansion_contract["hosted_runner_projection_cases"]),
+            "package_variant_identity_case_count": len(expansion_contract["package_variant_identity_cases"]),
+            "sanitizer_runtime_package_case_count": len(expansion_contract["sanitizer_runtime_package_cases"]),
+            "object_emission_truth_case_count": len(expansion_contract["object_emission_truth_cases"]),
+        },
         "supporting_evidence_ids": [
             str(record["evidence_id"])
             for record in records
@@ -860,6 +1238,7 @@ __all__ = [
     "build_support_evidence_summary",
     "evidence_records_by_id",
     "load_hosted_runner_capability_summaries",
+    "load_platform_expansion_claim_contract",
     "load_platform_toolchain_support_evidence",
     "validate_platform_toolchain_support_evidence",
 ]

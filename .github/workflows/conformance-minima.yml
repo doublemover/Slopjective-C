@@ -9,6 +9,9 @@ on:
       - "tests/tooling/fixtures/cross_lane_e2e/**"
       - "scripts/check_conformance_suite.ps1"
       - "scripts/check_objc3c_cross_lane_e2e.py"
+      - "scripts/install_objc3c_ci_llvm.ps1"
+      - "scripts/probe_objc3c_llvm_capabilities.py"
+      - "scripts/objc3c_llvm_capability_probe/**"
       - "scripts/objc3c_workflow/actions/application_conformance.py"
       - "scripts/objc3c_workflow/action_catalog_conformance.py"
       - "scripts/objc3c_workflow/action_handlers_reporting_conformance_stress.py"
@@ -22,6 +25,9 @@ on:
       - "tests/tooling/fixtures/cross_lane_e2e/**"
       - "scripts/check_conformance_suite.ps1"
       - "scripts/check_objc3c_cross_lane_e2e.py"
+      - "scripts/install_objc3c_ci_llvm.ps1"
+      - "scripts/probe_objc3c_llvm_capabilities.py"
+      - "scripts/objc3c_llvm_capability_probe/**"
       - "scripts/objc3c_workflow/actions/application_conformance.py"
       - "scripts/objc3c_workflow/action_catalog_conformance.py"
       - "scripts/objc3c_workflow/action_handlers_reporting_conformance_stress.py"
@@ -43,6 +49,7 @@ jobs:
       CL_MPCount: "4"
       LLVM_PARALLEL_COMPILE_JOBS: "4"
       OBJC3C_NATIVE_BUILD_PARALLELISM: "4"
+      OBJC3C_CI_LLVM_VERSION: "22.1.6"
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -60,59 +67,9 @@ jobs:
       - name: Install Python workflow dependencies
         run: python -m pip install --upgrade jsonschema
 
-      - name: Resolve LLVM object-emission tools
+      - name: Install coherent LLVM toolchain
         shell: pwsh
-        run: |
-          $ErrorActionPreference = "Stop"
-
-          function Resolve-Executable {
-            param(
-              [Parameter(Mandatory = $true)]
-              [string] $Name,
-              [string[]] $CandidateDirectories = @()
-            )
-            foreach ($directory in $CandidateDirectories) {
-              if ([string]::IsNullOrWhiteSpace($directory)) {
-                continue
-              }
-              $candidate = Join-Path $directory $Name
-              if (Test-Path -LiteralPath $candidate -PathType Leaf) {
-                return (Resolve-Path -LiteralPath $candidate).Path
-              }
-            }
-            $command = Get-Command $Name -ErrorAction SilentlyContinue
-            if ($null -ne $command -and -not [string]::IsNullOrWhiteSpace($command.Source)) {
-              return $command.Source
-            }
-            return $null
-          }
-
-          $candidateDirectories = @()
-          if (-not [string]::IsNullOrWhiteSpace($env:LLVM_ROOT)) {
-            $candidateDirectories += (Join-Path $env:LLVM_ROOT "bin")
-          }
-          $candidateDirectories += "C:\Program Files\LLVM\bin"
-
-          $llc = Resolve-Executable -Name "llc.exe" -CandidateDirectories $candidateDirectories
-          if ([string]::IsNullOrWhiteSpace($llc)) {
-            choco install llvm -y --no-progress
-            $candidateDirectories = @("C:\Program Files\LLVM\bin") + $candidateDirectories
-            $llc = Resolve-Executable -Name "llc.exe" -CandidateDirectories $candidateDirectories
-          }
-          if ([string]::IsNullOrWhiteSpace($llc)) {
-            throw "llc.exe was not found after LLVM tool resolution"
-          }
-
-          $llvmBin = Split-Path -Parent $llc
-          Add-Content -Path $env:GITHUB_PATH -Value $llvmBin
-          Add-Content -Path $env:GITHUB_ENV -Value "OBJC3C_NATIVE_EXECUTION_LLC_PATH=$llc"
-
-          $clangxx = Resolve-Executable -Name "clang++.exe" -CandidateDirectories @($llvmBin)
-          if (-not [string]::IsNullOrWhiteSpace($clangxx)) {
-            Add-Content -Path $env:GITHUB_ENV -Value "OBJC3C_NATIVE_EXECUTION_CLANG_PATH=$clangxx"
-          }
-          "Resolved llc: $llc"
-          "Resolved clang++: $clangxx"
+        run: ./scripts/install_objc3c_ci_llvm.ps1
 
       - name: Install Node dependencies
         run: npm ci

@@ -171,7 +171,7 @@ inline constexpr const char *kObjc3RunnableFeatureClaimTruthModel =
 inline constexpr const char *kObjc3FeatureClaimStrictnessTruthSurfaceContractId =
     "objc3c.feature.claim.strictness.truth.surface.v1";
 inline constexpr const char *kObjc3FeatureClaimStrictnessTruthDriverSurfaceModel =
-    "language-version-and-compatibility-live-strictness-and-feature-macro-fail-closed";
+    "language-version-language-profile-strictness-and-strict-concurrency-live-feature-macro-fail-closed";
 
 inline constexpr const char *kObjc3RunnableFeatureClaimModule =
     "runnable:module-declaration";
@@ -219,8 +219,12 @@ inline constexpr const char *kObjc3SourceOnlyFeatureClaimNilCoalescing =
     "source-only:nil-coalescing";
 inline constexpr const char *kObjc3SourceOnlyFeatureClaimTypedKeyPathLiterals =
     "source-only:typed-keypath-literals";
+inline constexpr const char *kObjc3SourceOnlyFeatureClaimValueOptionalTypeSignatures =
+    "source-only:value-optional-type-signatures";
 inline constexpr const char *kObjc3SourceOnlyFeatureClaimThrowsDeclarations =
     "source-only:throws-declarations";
+inline constexpr const char *kObjc3SourceOnlyFeatureClaimTypedThrowsDeclarations =
+    "source-only:typed-throws-declarations";
 inline constexpr const char *kObjc3SourceOnlyFeatureClaimAsyncDeclarations =
     "source-only:async-declarations";
 inline constexpr const char *kObjc3SourceOnlyFeatureClaimAwaitExpressions =
@@ -233,6 +237,8 @@ inline constexpr const char *kObjc3SourceOnlyFeatureClaimNSErrorBridgingProfiles
     "source-only:nserror-bridging-profiles";
 inline constexpr const char *kObjc3ErrorHandlingFailClosedConstructTypedThrows =
     "error_handling-fail-closed:typed-throws";
+inline constexpr const char *kObjc3ErrorHandlingFailClosedConstructTypedThrowsAbiLowering =
+    "error_handling-fail-closed:typed-throws-abi-lowering";
 inline constexpr const char *kObjc3ErrorHandlingFailClosedConstructTryExpressions =
     "error_handling-fail-closed:try-expressions";
 inline constexpr const char *kObjc3ErrorHandlingFailClosedConstructThrowStatements =

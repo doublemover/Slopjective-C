@@ -279,5 +279,9 @@ static Objc3MethodInfo BuildMethodInfo(const Objc3MethodDecl &method,
   info.is_class_method = method.is_class_method;
   info.has_definition = method.has_body;
   info.throws_declared = method.throws_declared;
+  info.typed_throws_declared = method.typed_throws_declared;
+  info.typed_throws_error_type_spelling =
+      method.typed_throws_payload.canonical_spelling;
+  info.typed_throws_abi_lowering_ready = false;
   return info;
 }

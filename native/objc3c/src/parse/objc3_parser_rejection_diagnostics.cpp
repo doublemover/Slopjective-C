@@ -62,7 +62,7 @@ std::string BuildObjc3ReservedValueOptionalTypeDiagnostic(
   return BuildObjc3ParserDiagnosticWithRecovery(
       token,
       kObjc3ParserDiagnosticReservedValueOptionalCode,
-      "Optional<T> value optionals are reserved until value-optional ABI, lowering, and interface roundtrip are implemented; Optional<T> remains distinct from nullable object pointers and nil-to-scalar conversions",
+      "Optional<T> value optional type signatures are source/interface carriers only; construction, unwrap, ABI emission, lowering, nullable-pointer conversion, and nil-to-scalar conversion remain fail-closed",
       "parser-reserved-value-optional-type-rejection",
       "type spelling");
 }
@@ -73,10 +73,10 @@ std::string BuildObjc3ReservedTypedThrowsDiagnostic(
   return BuildObjc3ParserDiagnosticWithRecovery(
       token,
       kObjc3ParserDiagnosticReservedTypedThrowsCode,
-      "typed throws payloads are reserved; use bare throws or remove the parenthesized error type; typed-payload-shape=" +
+      "typed throws accepts exactly one source-preserved error payload; empty, multi-payload, malformed, or non-type payloads fail closed before ABI/lowering; typed-payload-shape=" +
           std::string(payload_shape) +
           "; parenthesized payloads are not silently erased into untyped throws",
-      "parser-reserved-typed-throws-rejection",
+      "parser-typed-throws-payload-shape-rejection",
       "throws clause");
 }
 

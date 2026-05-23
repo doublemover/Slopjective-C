@@ -12,18 +12,6 @@ bool RejectRemovedOptionalTemplateAliasLead(
   return true;
 }
 
-bool RejectReservedValueOptionalTypeLead(
-    const std::vector<Objc3LexToken> &tokens,
-    std::size_t index,
-    std::vector<std::string> &diagnostics) {
-  if (!IsObjc3ReservedValueOptionalTypeLead(tokens, index)) {
-    return false;
-  }
-  diagnostics.push_back(
-      BuildObjc3ReservedValueOptionalTypeDiagnostic(PeekToken(tokens, index)));
-  return true;
-}
-
 void EmitExpectedCStyleTypeDiagnostic(
     unsigned diag_line,
     unsigned diag_column,
@@ -59,6 +47,36 @@ void EmitCStyleVoidParameterDiagnostic(
       diag_column,
       "O3P108",
       "void is only allowed as '(void)' in C-style parameter lists"));
+}
+
+bool FinalizeObjc3CStyleValueOptionalType(
+    Objc3CStyleFunctionTypeParseResult &result,
+    std::vector<std::string> &diagnostics) {
+  if (!result.value_optional.present) {
+    return true;
+  }
+  if (!result.has_generic_suffix || !result.generic_suffix_terminated) {
+    diagnostics.push_back(MakeDiag(
+        result.value_optional.line, result.value_optional.column, "O3P114",
+        "Optional<T> value optional type requires a terminated payload suffix"));
+    return false;
+  }
+  result.value_optional = BuildObjc3ValueOptionalDescriptor(
+      result.generic_suffix_text, result.value_optional.line,
+      result.value_optional.column);
+  if (result.value_optional.payload_type_spelling.empty()) {
+    diagnostics.push_back(MakeDiag(
+        result.value_optional.line, result.value_optional.column, "O3P114",
+        "Optional<T> value optional type requires exactly one payload type"));
+    return false;
+  }
+  if (result.value_optional.payload_lowercase_optional_alias) {
+    diagnostics.push_back(MakeDiag(
+        result.value_optional.line, result.value_optional.column, "O3C004",
+        "optional<T> aliases are rejected inside Optional<T> payloads; use canonical Optional<T> spelling"));
+    return false;
+  }
+  return true;
 }
 
 }  // namespace

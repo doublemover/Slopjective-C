@@ -1,6 +1,7 @@
 #pragma once
 
 struct Objc3FrontendPipelineResult;
+struct Objc3FrontendOptions;
 struct Objc3LexerCanonicalLiteralRejectionCounts;
 struct Objc3SemanticValidationOptions;
 struct Objc3SemaPassManagerInput;
@@ -12,6 +13,7 @@ void CaptureObjc3FrontendCanonicalLiteralRejections(
 
 void PopulateObjc3FrontendSemaInputHandoff(
     Objc3FrontendPipelineResult &result,
+    const Objc3FrontendOptions &options,
     const Objc3SemanticValidationOptions &semantic_options,
     Objc3SemaPassManagerInput &sema_input);
 

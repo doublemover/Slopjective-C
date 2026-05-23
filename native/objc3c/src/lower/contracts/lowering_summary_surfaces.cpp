@@ -81,7 +81,9 @@ std::string Objc3ErrorHandlingThrowsAbiPropagationLoweringSummary() {
   // Part 6 lowering implementation anchor: lane-C now materializes
   // the runnable hidden error-out ABI, propagation operators, status/NSError
   // bridge propagation, and do/catch control-flow in real native IR/object
-  // artifacts while deferring the D001 runtime-helper contract tranche.
+  // artifacts for untyped throws. Typed throws remains source/interface
+  // preserved and explicitly blocked from silent untyped ABI erasure until its
+  // own payload ABI lowering lands.
   out << "contract=" << kObjc3ErrorHandlingThrowsAbiPropagationLoweringContractId
       << ";source_model="
       << kObjc3ErrorHandlingThrowsAbiPropagationLoweringSourceModel

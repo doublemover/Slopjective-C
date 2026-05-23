@@ -1,0 +1,47 @@
+{
+  "contract_id": "objc3c.value_optional.contract.v1",
+  "issue_ref": 8234,
+  "canonical_spelling": "Optional<T>",
+  "source_status": "type-signature-admitted-runtime-execution-fail-closed",
+  "abi_layout": {
+    "layout_id": "objc3.value_optional.inline_presence_payload.v1",
+    "presence_field": "has_value",
+    "payload_storage_field": "payload",
+    "runtime_execution_supported": false,
+    "lowering_supported": false
+  },
+  "interface_roundtrip_status": "type-signature-carrier-imported-runtime-deferred",
+  "records": {
+    "optional_type": {
+      "type_id": "Optional<i32>",
+      "payload_type": "i32",
+      "abi_layout": "objc3.value_optional.inline_presence_payload.v1",
+      "canonical_spelling": "Optional<i32>"
+    },
+    "optional_value": {
+      "value_id": "source-only:optional-i32-carrier",
+      "optional_type": "Optional<i32>",
+      "presence_state": "has_value",
+      "payload_storage": "payload"
+    },
+    "optional_flow": {
+      "source_span": "tests/tooling/fixtures/native/value_optionals_type_signatures_positive.objc3:3:1",
+      "narrowing_kind": "binding-or-guard-binding",
+      "before_type": "Optional<i32>",
+      "after_type": "i32",
+      "cleanup_contract": "payload-cleanup-after-narrowed-scope"
+    },
+    "optional_rejection": {
+      "source_span": "tests/tooling/fixtures/native/recovery/negative/negative_value_optional_nested_lowercase_alias_reserved.objc3:4:1",
+      "spelling": "optional<i32>",
+      "conversion_attempt": "lowercase-alias",
+      "diagnostic": "O3C004"
+    }
+  },
+  "fail_closed": {
+    "lowercase_alias_accepted": false,
+    "nil_to_scalar_coercion_allowed": false,
+    "nullable_pointer_conversion_allowed": false,
+    "throws_result_conversion_allowed": false
+  }
+}

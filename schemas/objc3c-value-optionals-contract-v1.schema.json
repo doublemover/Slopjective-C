@@ -1,0 +1,146 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://objc3c.dev/schemas/objc3c-value-optionals-contract-v1.schema.json",
+  "title": "Objective-C 3 Value Optional Contract v1",
+  "x-objc3c-artifact-contract": {
+    "schema_id": "objc3c-value-optionals-contract-v1",
+    "payload_id_field": "contract_id",
+    "payload_id_value": "objc3c.value_optional.contract.v1",
+    "registry_owner": "native/objc3c/src/artifacts/json/artifact_schema_contract_table.cpp",
+    "artifact_family": "language-types"
+  },
+  "type": "object",
+  "required": [
+    "contract_id",
+    "issue_ref",
+    "canonical_spelling",
+    "source_status",
+    "abi_layout",
+    "interface_roundtrip_status",
+    "records",
+    "fail_closed"
+  ],
+  "properties": {
+    "contract_id": { "const": "objc3c.value_optional.contract.v1" },
+    "issue_ref": { "const": 8234 },
+    "canonical_spelling": { "const": "Optional<T>" },
+    "source_status": {
+      "const": "type-signature-admitted-runtime-execution-fail-closed"
+    },
+    "abi_layout": {
+      "type": "object",
+      "required": [
+        "layout_id",
+        "presence_field",
+        "payload_storage_field",
+        "runtime_execution_supported",
+        "lowering_supported"
+      ],
+      "properties": {
+        "layout_id": {
+          "const": "objc3.value_optional.inline_presence_payload.v1"
+        },
+        "presence_field": { "const": "has_value" },
+        "payload_storage_field": { "const": "payload" },
+        "runtime_execution_supported": { "const": false },
+        "lowering_supported": { "const": false }
+      },
+      "additionalProperties": false
+    },
+    "interface_roundtrip_status": {
+      "const": "type-signature-carrier-imported-runtime-deferred"
+    },
+    "records": {
+      "type": "object",
+      "required": [
+        "optional_type",
+        "optional_value",
+        "optional_flow",
+        "optional_rejection"
+      ],
+      "properties": {
+        "optional_type": { "$ref": "#/$defs/optionalType" },
+        "optional_value": { "$ref": "#/$defs/optionalValue" },
+        "optional_flow": { "$ref": "#/$defs/optionalFlow" },
+        "optional_rejection": { "$ref": "#/$defs/optionalRejection" }
+      },
+      "additionalProperties": false
+    },
+    "fail_closed": {
+      "type": "object",
+      "required": [
+        "lowercase_alias_accepted",
+        "nil_to_scalar_coercion_allowed",
+        "nullable_pointer_conversion_allowed",
+        "throws_result_conversion_allowed"
+      ],
+      "properties": {
+        "lowercase_alias_accepted": { "const": false },
+        "nil_to_scalar_coercion_allowed": { "const": false },
+        "nullable_pointer_conversion_allowed": { "const": false },
+        "throws_result_conversion_allowed": { "const": false }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "optionalType": {
+      "type": "object",
+      "required": ["type_id", "payload_type", "abi_layout", "canonical_spelling"],
+      "properties": {
+        "type_id": { "type": "string", "minLength": 1 },
+        "payload_type": { "type": "string", "minLength": 1 },
+        "abi_layout": {
+          "const": "objc3.value_optional.inline_presence_payload.v1"
+        },
+        "canonical_spelling": {
+          "pattern": "^Optional<.+>$"
+        }
+      },
+      "additionalProperties": false
+    },
+    "optionalValue": {
+      "type": "object",
+      "required": ["value_id", "optional_type", "presence_state", "payload_storage"],
+      "properties": {
+        "value_id": { "type": "string", "minLength": 1 },
+        "optional_type": { "type": "string", "minLength": 1 },
+        "presence_state": { "const": "has_value" },
+        "payload_storage": { "const": "payload" }
+      },
+      "additionalProperties": false
+    },
+    "optionalFlow": {
+      "type": "object",
+      "required": [
+        "source_span",
+        "narrowing_kind",
+        "before_type",
+        "after_type",
+        "cleanup_contract"
+      ],
+      "properties": {
+        "source_span": { "type": "string", "minLength": 1 },
+        "narrowing_kind": {
+          "enum": ["if-let", "guard-let", "binding-or-guard-binding"]
+        },
+        "before_type": { "pattern": "^Optional<.+>$" },
+        "after_type": { "type": "string", "minLength": 1 },
+        "cleanup_contract": { "type": "string", "minLength": 1 }
+      },
+      "additionalProperties": false
+    },
+    "optionalRejection": {
+      "type": "object",
+      "required": ["source_span", "spelling", "conversion_attempt", "diagnostic"],
+      "properties": {
+        "source_span": { "type": "string", "minLength": 1 },
+        "spelling": { "type": "string", "minLength": 1 },
+        "conversion_attempt": { "type": "string", "minLength": 1 },
+        "diagnostic": { "pattern": "^O3" }
+      },
+      "additionalProperties": false
+    }
+  }
+}

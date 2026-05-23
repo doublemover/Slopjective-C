@@ -28,6 +28,7 @@ struct FunctionDecl {
   bool return_instancetype_spelling = false;
   bool return_object_pointer_type_spelling = false;
   std::string return_object_pointer_type_name;
+  Objc3ValueOptionalTypeDescriptor return_value_optional;
   std::string return_typecheck_family_symbol;
   bool has_return_generic_suffix = false;
   bool return_generic_suffix_terminated = true;
@@ -123,6 +124,8 @@ struct FunctionDecl {
   bool retainable_c_family_profile_is_normalized = false;
   std::string retainable_c_family_profile;
   bool throws_declared = false;
+  bool typed_throws_declared = false;
+  Objc3TypedThrowsPayload typed_throws_payload;
   bool throws_declaration_profile_is_normalized = false;
   std::string throws_declaration_profile;
   bool result_like_profile_is_normalized = false;

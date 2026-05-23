@@ -1,4 +1,3 @@
-fn risky() throws(Error) -> i32 {
+fn risky() throws(Error, OtherError) -> i32 {
   return 1;
 }
-

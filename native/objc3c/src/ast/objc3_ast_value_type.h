@@ -12,5 +12,6 @@ enum class ValueType {
   ObjCProtocol,
   ObjCInstancetype,
   ObjCObjectPtr,
+  Optional,
   TextHandle
 };

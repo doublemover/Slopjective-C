@@ -50,6 +50,20 @@ std::string StringMember(const JsonObject &object,
   return text;
 }
 
+std::string StringMemberAllowEmpty(
+    const JsonObject &object,
+    const std::string &name,
+    Objc3StandaloneTextualInterfaceImportResult &result,
+    const std::string &json_path) {
+  const JsonValue *value = FindMember(object, name);
+  if (value == nullptr || !value->IsString()) {
+    AddDiagnostic(result, "required string member missing: " + name,
+                  json_path);
+    return {};
+  }
+  return value->AsString();
+}
+
 const JsonArray &ArrayMember(
     const JsonObject &object,
     const std::string &name,
@@ -242,7 +256,7 @@ std::size_t CountTopLevelKind(const JsonArray &declarations,
   return count;
 }
 
-void ValidateValueOptionalReservedContract(
+void ValidateValueOptionalContract(
     const JsonObject &type_signature,
     Objc3StandaloneTextualInterfaceImportResult &result,
     const std::string &json_path) {
@@ -252,12 +266,25 @@ void ValidateValueOptionalReservedContract(
                      json_path + "/value_optional_contract");
   ExpectStringMember(contract, "canonical_spelling", "Optional<T>", result,
                      json_path + "/value_optional_contract");
-  ExpectStringMember(contract, "source_status", "reserved-rejected-before-sema",
+  ExpectStringMember(contract, "source_status",
+                     "type-signature-admitted-runtime-execution-fail-closed",
                      result, json_path + "/value_optional_contract");
   ExpectBoolMember(contract, "lowercase_alias_accepted", false, result,
                    json_path + "/value_optional_contract");
-  ExpectStringMember(contract, "abi_layout_status", "reserved-no-layout",
-                     result, json_path + "/value_optional_contract");
+  ExpectStringMember(contract, "abi_layout_status",
+                     "stable-contract-runtime-lowering-deferred", result,
+                     json_path + "/value_optional_contract");
+  ExpectStringMember(contract, "abi_layout_id",
+                     kObjc3ValueOptionalAbiLayoutId, result,
+                     json_path + "/value_optional_contract");
+  ExpectStringMember(contract, "presence_field", "has_value", result,
+                     json_path + "/value_optional_contract");
+  ExpectStringMember(contract, "payload_storage_field", "payload", result,
+                     json_path + "/value_optional_contract");
+  ExpectBoolMember(contract, "runtime_execution_supported", false, result,
+                   json_path + "/value_optional_contract");
+  ExpectBoolMember(contract, "lowering_supported", false, result,
+                   json_path + "/value_optional_contract");
   ExpectBoolMember(contract, "nil_to_scalar_coercion_allowed", false, result,
                    json_path + "/value_optional_contract");
   ExpectBoolMember(contract, "nullable_pointer_conversion_allowed", false,
@@ -265,11 +292,17 @@ void ValidateValueOptionalReservedContract(
   ExpectBoolMember(contract, "throws_result_conversion_allowed", false, result,
                    json_path + "/value_optional_contract");
   ExpectStringMember(contract, "interface_roundtrip_status",
-                     "reserved-feature-marker-imported", result,
+                     "type-signature-carrier-imported-runtime-deferred", result,
                      json_path + "/value_optional_contract");
+  const char *required_records[] = {"optional_type", "optional_value",
+                                    "optional_flow", "optional_rejection"};
+  for (const char *record : required_records) {
+    (void)ObjectMember(contract, record, result,
+                       json_path + "/value_optional_contract");
+  }
 }
 
-void ValidateTypedThrowsReservedContract(
+void ValidateTypedThrowsContract(
     const JsonObject &effects,
     Objc3StandaloneTextualInterfaceImportResult &result,
     const std::string &json_path) {
@@ -282,40 +315,94 @@ void ValidateTypedThrowsReservedContract(
   const std::string throws_kind =
       StringMember(effects, "throws_kind", result, json_path);
   const std::string declared_error_type =
-      StringMember(effects, "declared_error_type", result, json_path);
+      StringMemberAllowEmpty(effects, "declared_error_type", result,
+                             json_path);
   ExpectStringMember(contract, "throws_kind", throws_kind, result,
                      json_path + "/typed_throws");
-  ExpectStringMember(contract, "declared_error_type", declared_error_type,
-                     result, json_path + "/typed_throws");
-  if (throws_kind != "none" && throws_kind != "untyped") {
+  if (StringMemberAllowEmpty(contract, "declared_error_type", result,
+                             json_path + "/typed_throws") !=
+      declared_error_type) {
     AddDiagnostic(result,
-                  "typed throws metadata must remain none or untyped in v1",
+                  "language evolution typed throws contract drift for declared_error_type",
+                  json_path + "/typed_throws/declared_error_type");
+  }
+  const bool throws_declared = BoolMember(effects, "throws", result, json_path);
+  if (throws_kind != "none" && throws_kind != "untyped" &&
+      throws_kind != "typed") {
+    AddDiagnostic(result,
+                  "typed throws metadata must be none, untyped, or typed",
                   json_path + "/throws_kind");
   }
-  if (throws_kind == "none" && !declared_error_type.empty()) {
+  if (throws_kind == "none") {
+    if (throws_declared) {
+      AddDiagnostic(result,
+                    "non-throwing declarations must not set throws=true",
+                    json_path + "/throws");
+    }
+    if (!declared_error_type.empty()) {
+      AddDiagnostic(result,
+                    "non-throwing declarations must not import an error type",
+                    json_path + "/declared_error_type");
+    }
+  }
+  if (throws_kind == "untyped" && !throws_declared) {
     AddDiagnostic(result,
-                  "non-throwing declarations must not import an error type",
-                  json_path + "/declared_error_type");
+                  "untyped throws declarations must set throws=true",
+                  json_path + "/throws");
   }
   if (throws_kind == "untyped" && declared_error_type != "id<Error>") {
     AddDiagnostic(result,
                   "untyped throws declarations must import id<Error> only",
                   json_path + "/declared_error_type");
   }
-  ExpectNumberMember(contract, "typed_payload_arity", 0.0, result,
+  if (throws_kind == "typed") {
+    if (!throws_declared) {
+      AddDiagnostic(result,
+                    "typed throws declarations must set throws=true",
+                    json_path + "/throws");
+    }
+    if (declared_error_type.empty()) {
+      AddDiagnostic(result,
+                    "typed throws declarations must preserve an error payload",
+                    json_path + "/declared_error_type");
+    }
+    ExpectNumberMember(contract, "typed_payload_arity", 1.0, result,
+                       json_path + "/typed_throws");
+    ExpectStringMember(contract, "typed_payload_status",
+                       "source-preserved-lowering-fail-closed", result,
+                       json_path + "/typed_throws");
+    ExpectStringMember(contract, "abi_status", "typed-error-abi-deferred",
+                       result, json_path + "/typed_throws");
+    ExpectStringMember(contract, "interface_roundtrip_status",
+                       "typed-payload-preserved", result,
+                       json_path + "/typed_throws");
+  } else {
+    ExpectNumberMember(contract, "typed_payload_arity", 0.0, result,
+                       json_path + "/typed_throws");
+    ExpectStringMember(contract, "typed_payload_status", "not-declared",
+                       result, json_path + "/typed_throws");
+    ExpectStringMember(contract, "abi_status",
+                       throws_kind == "untyped" ? "untyped-error-out-abi"
+                                                : "none",
+                       result, json_path + "/typed_throws");
+    ExpectStringMember(contract, "interface_roundtrip_status",
+                       "not-applicable", result,
+                       json_path + "/typed_throws");
+  }
+  (void)StringMemberAllowEmpty(contract, "typed_payload_generic_suffix", result,
+                               json_path + "/typed_throws");
+  ExpectBoolMember(contract, "typed_payload_generic_suffix_terminated", true,
+                   result, json_path + "/typed_throws");
+  (void)NumberMember(contract, "typed_payload_pointer_depth", result,
                      json_path + "/typed_throws");
-  ExpectStringMember(contract, "typed_payload_status",
-                     "reserved-rejected-before-sema", result,
-                     json_path + "/typed_throws");
+  ExpectBoolMember(contract, "typed_payload_lowering_ready", false, result,
+                   json_path + "/typed_throws");
+  ExpectBoolMember(contract, "runtime_execution_claimed", false, result,
+                   json_path + "/typed_throws");
   ExpectBoolMember(contract, "silent_erasure_allowed", false, result,
                    json_path + "/typed_throws");
   ExpectBoolMember(contract, "multi_payload_supported", false, result,
                    json_path + "/typed_throws");
-  ExpectStringMember(contract, "abi_status", "reserved-no-lowering", result,
-                     json_path + "/typed_throws");
-  ExpectStringMember(contract, "interface_roundtrip_status",
-                     "reserved-feature-marker-imported", result,
-                     json_path + "/typed_throws");
 }
 
 void ValidateLanguageEvolutionReservedContracts(
@@ -325,12 +412,11 @@ void ValidateLanguageEvolutionReservedContracts(
     Objc3StandaloneTextualInterfaceImportResult &result,
     const std::string &json_path) {
   if (kind == "function" || kind == "method" || kind == "property") {
-    ValidateValueOptionalReservedContract(type_signature, result,
-                                          json_path + "/type_signature");
+    ValidateValueOptionalContract(type_signature, result,
+                                  json_path + "/type_signature");
   }
   if (kind == "function" || kind == "method") {
-    ValidateTypedThrowsReservedContract(effects, result,
-                                        json_path + "/effects");
+    ValidateTypedThrowsContract(effects, result, json_path + "/effects");
   }
 }
 
@@ -491,9 +577,11 @@ void ValidateSourceTruthPolicy(
     Objc3StandaloneTextualInterfaceImportResult &result) {
   (void)ArrayMember(payload, "issue_refs", result, "/");
   if (!ArrayContainsNumber(payload, "issue_refs", 8238.0) ||
+      !ArrayContainsNumber(payload, "issue_refs", 8233.0) ||
+      !ArrayContainsNumber(payload, "issue_refs", 8234.0) ||
       !ArrayContainsNumber(payload, "issue_refs", 8208.0)) {
     AddDiagnostic(result,
-                  "payload issue_refs must include #8238 and #8208",
+                  "payload issue_refs must include #8238, #8233, #8234, and #8208",
                   "/issue_refs");
   }
 
@@ -550,7 +638,11 @@ void ValidateNegativeCases(
       ArrayMember(payload, "negative_cases", result, "/");
   std::set<std::string> missing = {"stale-schema", "unlocked-import",
                                    "hidden-declaration", "count-drift",
-                                   "reserved-roundtrip"};
+                                   "reserved-roundtrip",
+                                   "typed-throws-abi-lowering",
+                                   "typed-throws-interface-contract-drift",
+                                   "value-optional-lowering",
+                                   "value-optional-layout-drift"};
   for (std::size_t i = 0; i < negative_cases.size(); ++i) {
     const std::string json_path = "/negative_cases/" + std::to_string(i);
     if (!negative_cases[i].IsObject()) {

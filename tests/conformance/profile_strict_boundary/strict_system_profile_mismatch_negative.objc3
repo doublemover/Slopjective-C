@@ -1,0 +1,6 @@
+// Profile mismatch fixture: source is valid, but strict-system remains rejected.
+module StrictSystemProfileMismatchNegative;
+
+fn main() -> i32 {
+  return 0;
+}

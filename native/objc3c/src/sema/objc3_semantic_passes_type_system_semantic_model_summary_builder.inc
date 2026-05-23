@@ -101,6 +101,8 @@ Objc3TypeSystemTypeSemanticModelSummary BuildTypeSystemTypeSemanticModelSummary(
       summary.canonical_object_type_entries <= summary.canonical_type_entries &&
       summary.canonical_protocol_qualified_entries <=
           summary.canonical_type_entries &&
+      summary.canonical_value_optional_entries <=
+          summary.canonical_type_entries &&
       summary.generic_collection_descriptor_entries <=
           summary.generic_collection_type_entries &&
       summary.generic_collection_iterator_entries <=
@@ -120,7 +122,8 @@ Objc3TypeSystemTypeSemanticModelSummary BuildTypeSystemTypeSemanticModelSummary(
       summary.optional_propagation_sites == summary.nil_coalescing_sites &&
       summary.guard_binding_exit_enforcement_sites <=
           summary.guard_binding_sites;
-  summary.ready_for_lowering_and_runtime = summary.deterministic;
+  summary.ready_for_lowering_and_runtime =
+      summary.deterministic && summary.canonical_value_optional_entries == 0u;
   std::ostringstream out;
   out << summary.contract_id << ";bindings=" << summary.optional_binding_sites
       << ";clauses=" << summary.optional_binding_clause_sites
@@ -148,6 +151,8 @@ Objc3TypeSystemTypeSemanticModelSummary BuildTypeSystemTypeSemanticModelSummary(
       << summary.canonical_protocol_qualified_entries
       << ";canonical-generics="
       << summary.canonical_generic_argument_entries
+      << ";canonical-value-optionals="
+      << summary.canonical_value_optional_entries
       << ";generic-collection-types="
       << summary.generic_collection_type_entries
       << ";generic-collection-descriptors="

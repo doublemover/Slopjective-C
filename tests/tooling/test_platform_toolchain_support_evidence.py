@@ -9,6 +9,7 @@ import pytest
 from scripts.platform_hardening_contracts.report_payloads import build_support_matrix_payload
 from scripts.platform_hardening_contracts.support_evidence import (
     load_hosted_runner_capability_summaries,
+    load_platform_expansion_claim_contract,
     load_platform_toolchain_support_evidence,
     validate_platform_toolchain_support_evidence,
 )
@@ -42,6 +43,7 @@ def validate_evidence(payload: dict) -> None:
 def test_platform_toolchain_support_evidence_fixture_validates() -> None:
     evidence = load_platform_toolchain_support_evidence()
     hosted_summaries = load_hosted_runner_capability_summaries()
+    expansion_contract = load_platform_expansion_claim_contract()
     unsupported_host_policy = load_fixture(
         "tests/tooling/fixtures/platform_hardening/unsupported_host_fail_closed_policy.json"
     )
@@ -63,6 +65,38 @@ def test_platform_toolchain_support_evidence_fixture_validates() -> None:
     assert {
         summary["summary_id"]: summary["publication_allowed"]
         for summary in hosted_summaries["summaries"]
+    } == {
+        "objc3c.hosted.windows-x64.supported.current": True,
+        "objc3c.hosted.linux-x64.unsupported": False,
+        "objc3c.hosted.darwin-arm64.unsupported": False,
+        "objc3c.hosted.sanitizer.address.reserved": False,
+        "objc3c.hosted.sanitizer.undefined.reserved": False,
+        "objc3c.hosted.toolchain.missing-llc.fail-closed": False,
+        "objc3c.hosted.toolchain.mixed-root.fail-closed": False,
+        "objc3c.hosted.toolchain.mismatched-version.fail-closed": False,
+    }
+    assert expansion_contract["source_authority"] == {
+        "support_claims_require_checked_source": True,
+        "generated_reports_are_source_truth": False,
+        "support_claims_require_live_network": False,
+        "publication_boundary": "windows-x64-only",
+        "package_variant_identity_source": "checked-in-package-variant-rows",
+        "sanitizer_reports_are_support_truth": False,
+    }
+    assert {
+        case["platform_id"]: case["artifact_contract"]["object_format"]
+        for case in expansion_contract["platform_claim_cases"]
+    } == {
+        "linux-x64": "ELF",
+        "darwin-arm64": "Mach-O",
+    }
+    assert all(
+        case["artifact_contract"]["object_emission_alone_supports_platform"] is False
+        for case in expansion_contract["platform_claim_cases"]
+    )
+    assert {
+        case["summary_id"]: case["publication_allowed"]
+        for case in expansion_contract["hosted_runner_projection_cases"]
     } == {
         "objc3c.hosted.windows-x64.supported.current": True,
         "objc3c.hosted.linux-x64.unsupported": False,
@@ -326,6 +360,22 @@ def test_platform_support_matrix_publishes_issue_owned_evidence_sections() -> No
         "missing_runtime_behavior": "fail-closed-before-package-install",
         "mixed_runtime_behavior": "fail-closed",
     }
+    expansion = payload["platform_expansion_claim_contract"]
+    assert expansion["contract_id"] == "objc3c.platform.expansion.claim.contract.v1"
+    assert expansion["issue_refs"] == [8228, 8229, 8230, 8231, 8232]
+    assert expansion["platform_claim_case_ids"] == [
+        "objc3c.platform.linux-x64.fail-closed.claim-case",
+        "objc3c.platform.darwin-arm64.fail-closed.claim-case",
+    ]
+    assert {
+        "objc3c.package.identity.sanitizer.asan.reserved",
+        "objc3c.package.identity.sanitizer.ubsan.reserved",
+    } <= set(expansion["package_variant_identity_ids"])
+    assert {
+        "objc3c.object-emission.reject.missing-llc",
+        "objc3c.object-emission.reject.mixed-toolchain-root",
+        "objc3c.object-emission.reject.mismatched-tool-version",
+    } <= set(expansion["object_emission_truth_case_ids"])
 
     sanitizer_rows = {
         row["variant_id"]: row
@@ -446,6 +496,17 @@ def test_platform_toolchain_support_evidence_rejects_sanitizer_missing_promotion
     evidence["sanitizer_variants"][0]["required_promotion_evidence"] = ["package", "install"]
 
     with pytest.raises(RuntimeError, match="sanitizer promotion prerequisites"):
+        validate_evidence(evidence)
+
+
+def test_platform_toolchain_support_evidence_rejects_expansion_package_identity_drift() -> None:
+    evidence = deepcopy(load_platform_toolchain_support_evidence())
+    for row in evidence["package_variant_rows"]:
+        if row["row_id"] == "objc3c.package.sanitizer.asan.reserved":
+            row["package_id"] = "org.objc3c.runtime:objc3c-runtime-release"
+            break
+
+    with pytest.raises(RuntimeError, match="package_id drifted"):
         validate_evidence(evidence)
 
 

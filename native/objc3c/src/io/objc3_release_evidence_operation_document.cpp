@@ -43,7 +43,7 @@ std::string BuildObjc3ReleaseEvidenceOperationArtifactDocumentJson(
       "spec/conformance/objc3_conformance_evidence_bundle_schema.md");
   operation.StringArrayField(
       "targeted_profile_ids",
-      {"strict", "strict-concurrency", "strict-system"});
+      {"strict-system"});
   operation.StringArrayField(
       "corpus_shard_ids",
       {"parser", "semantic", "lowering_abi", "module_roundtrip",

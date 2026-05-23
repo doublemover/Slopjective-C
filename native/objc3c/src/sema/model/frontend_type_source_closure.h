@@ -13,9 +13,9 @@ inline constexpr const char *kObjc3TypeSystemTypeSourceClosureContractId =
 inline constexpr const char *kObjc3TypeSystemTypeSourceClosureSurfacePath =
     "frontend.pipeline.semantic_surface.objc_type_system_type_source_closure";
 inline constexpr const char *kObjc3TypeSystemTypeSourceClosureSourceModel =
-    "protocol-optional-partitions-object-pointer-nullability-generic-suffixes-optional-bindings-optional-sends-optional-member-access-nil-coalescing-and-typed-keypaths-are-live-parser-owned-source-surfaces-while-Optional-value-optionals-remain-reserved";
+    "protocol-optional-partitions-object-pointer-nullability-generic-suffixes-optional-bindings-optional-sends-optional-member-access-nil-coalescing-typed-keypaths-and-Optional-value-optional-type-signatures-are-live-parser-owned-source-surfaces";
 inline constexpr const char *kObjc3TypeSystemTypeSourceClosureFailureModel =
-    "value-optionals-remain-parse-owned-fail-closed-until-ABI-interface-roundtrip-and-lowering-support-land";
+    "value-optional-runtime-execution-and-lowering-remain-fail-closed-until ABI storage emission and runtime construction semantics land";
 inline constexpr const char *kObjc3TypeSystemTypeSemanticModelContractId =
     "objc3c.type_system.type.semantic.model.v1";
 inline constexpr const char *kObjc3TypeSystemTypeSemanticModelSurfacePath =
@@ -42,6 +42,7 @@ struct Objc3FrontendTypeSystemTypeSourceClosureSummary {
       kObjc3SourceOnlyFeatureClaimOptionalSends,
       kObjc3SourceOnlyFeatureClaimNilCoalescing,
       kObjc3SourceOnlyFeatureClaimTypedKeyPathLiterals,
+      kObjc3SourceOnlyFeatureClaimValueOptionalTypeSignatures,
   };
   std::vector<std::string> unsupported_claim_ids = {
       kObjc3UnsupportedFeatureClaimValueOptionals,
@@ -63,6 +64,7 @@ struct Objc3FrontendTypeSystemTypeSourceClosureSummary {
   std::size_t optional_member_access_sites = 0;
   std::size_t nil_coalescing_sites = 0;
   std::size_t typed_keypath_literal_sites = 0;
+  std::size_t value_optional_type_signature_sites = 0;
   bool protocol_optional_partition_source_supported = false;
   bool object_pointer_nullability_source_supported = false;
   bool pragmatic_generic_suffix_source_supported = false;
@@ -70,8 +72,9 @@ struct Objc3FrontendTypeSystemTypeSourceClosureSummary {
   bool optional_send_source_supported = false;
   bool nil_coalescing_source_supported = false;
   bool typed_keypath_literal_source_supported = false;
+  bool value_optional_type_signature_source_supported = false;
   bool optional_member_access_fail_closed = false;
-  bool value_optional_type_fail_closed = false;
+  bool value_optional_runtime_execution_fail_closed = false;
   std::size_t value_optional_issue_ref = 8234;
   std::string value_optional_canonical_spelling = "Optional<T>";
   std::string value_optional_reserved_diagnostic_code =
@@ -82,9 +85,10 @@ struct Objc3FrontendTypeSystemTypeSourceClosureSummary {
   bool value_optional_nil_to_scalar_coercion_allowed = false;
   bool value_optional_nullable_pointer_conversion_allowed = false;
   bool value_optional_throws_conversion_allowed = false;
-  std::string value_optional_abi_status = "reserved-no-layout";
+  std::string value_optional_abi_status =
+      "stable-contract-runtime-lowering-deferred";
   std::string value_optional_interface_roundtrip_status =
-      "reserved-feature-marker-imported";
+      "type-signature-carrier-imported-runtime-deferred";
   bool nil_coalescing_fail_closed = false;
   bool typed_keypath_literal_fail_closed = false;
   bool deterministic_handoff = false;

@@ -7,14 +7,16 @@
   "umbrella_contract": "tests/tooling/fixtures/native/language_evolution_umbrella_contract.json",
   "profile_claim_policy": {
     "claimed_public_profiles": [
-      "core"
+      "core",
+      "strict",
+      "strict-concurrency"
     ],
     "native_frontend_profiles": [
-      "canonical"
+      "canonical",
+      "strict",
+      "strict-concurrency"
     ],
     "targeted_release_evidence_profiles": [
-      "strict",
-      "strict-concurrency",
       "strict-system"
     ],
     "selection_source_anchor": "native/objc3c/src/config/objc3_language_profile_validation.cpp",
@@ -29,60 +31,28 @@
       "profile_id": "canonical",
       "selection_state": "accepted",
       "language_profile": "canonical",
-      "support_boundary": "Native frontend compilation remains canonical-only."
+      "support_boundary": "Native frontend compilation keeps canonical as the default language profile."
+    },
+    {
+      "profile_id": "strict",
+      "selection_state": "accepted",
+      "language_profile": "strict",
+      "support_boundary": "Native frontend compilation accepts strict profile selection with strict diagnostics enabled."
+    },
+    {
+      "profile_id": "strict-concurrency",
+      "selection_state": "accepted",
+      "language_profile": "strict-concurrency",
+      "support_boundary": "Native frontend compilation accepts strict-concurrency profile selection with actor isolation, sendability, task lifecycle, and scheduler enforcement enabled."
     },
     {
       "profile_id": "core",
       "selection_state": "claimed-conformance-profile",
       "language_profile": "canonical",
-      "support_boundary": "Public conformance publication may claim core only."
+      "support_boundary": "Public conformance publication may claim core, strict, and strict-concurrency."
     }
   ],
   "rejected_profiles": [
-    {
-      "profile_id": "strict",
-      "selection_state": "rejected-missing-release-evidence",
-      "diagnostic_codes": [
-        "O3C036"
-      ],
-      "required_capabilities": [
-        "match-expression-result-typing",
-        "strict-diagnostics",
-        "textual-interface-roundtrip",
-        "package-replay-publication",
-        "public-release-evidence"
-      ],
-      "disabled_allowances": [
-        "retired-mode",
-        "legacy-alias",
-        "local-temp-evidence",
-        "parser-recognition-only-feature-macro"
-      ],
-      "rejection_policy": "Selection is rejected before compilation until all required rows have durable public evidence."
-    },
-    {
-      "profile_id": "strict-concurrency",
-      "selection_state": "rejected-missing-runtime-evidence",
-      "diagnostic_codes": [
-        "O3C037"
-      ],
-      "required_capabilities": [
-        "actor-isolation",
-        "sendability",
-        "task-lifecycle",
-        "scheduler",
-        "actor-mailbox-runtime-guarantees",
-        "public-release-evidence"
-      ],
-      "disabled_allowances": [
-        "retired-mode",
-        "legacy-alias",
-        "source-only-concurrency-claim",
-        "local-temp-evidence",
-        "parser-recognition-only-feature-macro"
-      ],
-      "rejection_policy": "Selection is rejected before compilation until concurrency runtime prerequisites have durable public evidence."
-    },
     {
       "profile_id": "strict-system",
       "selection_state": "rejected-target-only-profile",
@@ -107,18 +77,6 @@
   ],
   "negative_selection_fixtures": [
     {
-      "case_id": "strict_language_profile_reserved",
-      "selection": "strict",
-      "expected_diagnostic": "O3C036",
-      "forbidden_outcome": "strict treated as an alias of canonical or core"
-    },
-    {
-      "case_id": "strict_concurrency_language_profile_reserved",
-      "selection": "strict-concurrency",
-      "expected_diagnostic": "O3C037",
-      "forbidden_outcome": "strict-concurrency treated as source-only concurrency support"
-    },
-    {
       "case_id": "strict_concurrency_alias_rejected",
       "selection": "strict_concurrency",
       "expected_diagnostic": "O3C001",
@@ -133,19 +91,11 @@
   ],
   "remaining_blockers": [
     {
-      "blocker_id": "strict-profile-release-evidence",
+      "blocker_id": "strict-system-release-evidence",
       "required_next_work": [
-        "strict diagnostics and match-expression result typing",
-        "textual-interface roundtrip and package replay evidence",
-        "public conformance publication that claims strict without aliasing canonical or core"
-      ]
-    },
-    {
-      "blocker_id": "strict-concurrency-runtime-evidence",
-      "required_next_work": [
-        "actor isolation and sendability enforcement",
-        "task lifecycle, scheduler, and mailbox runtime guarantees",
-        "public conformance publication that claims strict-concurrency without source-only concurrency support"
+        "platform-release evidence",
+        "strict and strict-concurrency profile validation replay",
+        "public conformance publication that claims strict-system without aliasing strict-concurrency"
       ]
     }
   ]

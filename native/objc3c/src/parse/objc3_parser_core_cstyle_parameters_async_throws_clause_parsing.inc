@@ -74,6 +74,144 @@
     return "single-payload";
   }
 
+  bool ParseTypedThrowsGenericSuffix(Objc3TypedThrowsPayload &payload) {
+    if (!Match(TokenKind::Less)) {
+      return true;
+    }
+    const Token &open = Previous();
+    payload.has_generic_suffix = true;
+    payload.generic_suffix_terminated = false;
+    payload.generic_suffix_text = "<";
+    int depth = 1;
+    while (depth > 0 && !At(TokenKind::Eof)) {
+      if (Match(TokenKind::Less)) {
+        payload.generic_suffix_text += "<";
+        ++depth;
+        continue;
+      }
+      if (Match(TokenKind::Greater)) {
+        payload.generic_suffix_text += ">";
+        --depth;
+        if (depth == 0) {
+          payload.generic_suffix_terminated = true;
+        }
+        continue;
+      }
+      if (Match(TokenKind::GreaterGreater)) {
+        if (depth >= 2) {
+          payload.generic_suffix_text += ">>";
+          depth -= 2;
+          if (depth == 0) {
+            payload.generic_suffix_terminated = true;
+          }
+          continue;
+        }
+        payload.generic_suffix_text += ">>";
+        depth = -1;
+        break;
+      }
+      payload.generic_suffix_text += Advance().text;
+    }
+    if (!payload.generic_suffix_terminated) {
+      diagnostics_.push_back(BuildObjc3ReservedTypedThrowsDiagnostic(
+          open, "malformed-unclosed-payload"));
+      return false;
+    }
+    return true;
+  }
+
+  std::string BuildTypedThrowsPayloadSpelling(
+      const Objc3TypedThrowsPayload &payload) const {
+    std::string spelling;
+    if (payload.id_spelling) {
+      spelling = "id";
+    } else if (payload.class_spelling) {
+      spelling = "Class";
+    } else if (payload.instancetype_spelling) {
+      spelling = "instancetype";
+    } else {
+      spelling = payload.object_pointer_type_name;
+    }
+    spelling += payload.generic_suffix_text;
+    for (unsigned i = 0; i < payload.pointer_declarator_depth; ++i) {
+      spelling += "*";
+    }
+    return spelling;
+  }
+
+  bool ParseTypedThrowsPayloadTypeHead(Objc3TypedThrowsPayload &payload) {
+    if (Match(TokenKind::KwId)) {
+      const Token &type_token = Previous();
+      payload.type = ValueType::ObjCId;
+      payload.id_spelling = true;
+      payload.line = type_token.line;
+      payload.column = type_token.column;
+      return true;
+    }
+    if (Match(TokenKind::KwClass)) {
+      const Token &type_token = Previous();
+      payload.type = ValueType::ObjCClass;
+      payload.class_spelling = true;
+      payload.line = type_token.line;
+      payload.column = type_token.column;
+      return true;
+    }
+    if (Match(TokenKind::KwInstancetype)) {
+      const Token &type_token = Previous();
+      payload.type = ValueType::ObjCInstancetype;
+      payload.instancetype_spelling = true;
+      payload.line = type_token.line;
+      payload.column = type_token.column;
+      return true;
+    }
+    if (At(TokenKind::Identifier)) {
+      const Token type_token = Advance();
+      payload.type = ValueType::ObjCObjectPtr;
+      payload.object_pointer_type_spelling = true;
+      payload.object_pointer_type_name = type_token.text;
+      payload.line = type_token.line;
+      payload.column = type_token.column;
+      return true;
+    }
+    diagnostics_.push_back(BuildObjc3ReservedTypedThrowsDiagnostic(
+        Peek(), "malformed-payload-type"));
+    return false;
+  }
+
+  bool ParseTypedThrowsPayload(Objc3TypedThrowsPayload &payload,
+                               const Token &throws_token) {
+    const std::string payload_shape = ClassifyReservedTypedThrowsPayloadShape();
+    if (payload_shape != "single-payload") {
+      diagnostics_.push_back(
+          BuildObjc3ReservedTypedThrowsDiagnostic(throws_token, payload_shape));
+      return false;
+    }
+
+    if (!Match(TokenKind::LParen)) {
+      diagnostics_.push_back(BuildObjc3ReservedTypedThrowsDiagnostic(
+          throws_token, "absent-payload"));
+      return false;
+    }
+    if (!ParseTypedThrowsPayloadTypeHead(payload)) {
+      return false;
+    }
+    if (!ParseTypedThrowsGenericSuffix(payload)) {
+      return false;
+    }
+    while (Match(TokenKind::Star)) {
+      payload.has_pointer_declarator = true;
+      ++payload.pointer_declarator_depth;
+    }
+    if (!Match(TokenKind::RParen)) {
+      diagnostics_.push_back(BuildObjc3ReservedTypedThrowsDiagnostic(
+          throws_token, "malformed-payload-type"));
+      return false;
+    }
+    payload.declared = true;
+    payload.canonical_spelling = BuildTypedThrowsPayloadSpelling(payload);
+    return true;
+  }
+
   bool ParseOptionalThrowsClause(FunctionDecl &fn) {
     if (!AtThrowsClauseKeyword()) {
       return true;
@@ -85,10 +223,14 @@
       return false;
     }
     if (At(TokenKind::LParen)) {
-      diagnostics_.push_back(
-          BuildObjc3ReservedTypedThrowsDiagnostic(
-              throws_token, ClassifyReservedTypedThrowsPayloadShape()));
-      return false;
+      Objc3TypedThrowsPayload payload;
+      if (!ParseTypedThrowsPayload(payload, throws_token)) {
+        return false;
+      }
+      fn.throws_declared = true;
+      fn.typed_throws_declared = true;
+      fn.typed_throws_payload = payload;
+      return true;
     }
     fn.throws_declared = true;
     return true;
@@ -105,10 +247,14 @@
       return false;
     }
     if (At(TokenKind::LParen)) {
-      diagnostics_.push_back(
-          BuildObjc3ReservedTypedThrowsDiagnostic(
-              throws_token, ClassifyReservedTypedThrowsPayloadShape()));
-      return false;
+      Objc3TypedThrowsPayload payload;
+      if (!ParseTypedThrowsPayload(payload, throws_token)) {
+        return false;
+      }
+      method.throws_declared = true;
+      method.typed_throws_declared = true;
+      method.typed_throws_payload = payload;
+      return true;
     }
     method.throws_declared = true;
     return true;

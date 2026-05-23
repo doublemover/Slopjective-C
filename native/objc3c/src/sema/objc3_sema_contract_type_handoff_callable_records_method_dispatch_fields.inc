@@ -5,3 +5,6 @@
   bool is_class_method = false;
   bool has_definition = false;
   bool throws_declared = false;
+  bool typed_throws_declared = false;
+  std::string typed_throws_error_type_spelling;
+  bool typed_throws_abi_lowering_ready = false;

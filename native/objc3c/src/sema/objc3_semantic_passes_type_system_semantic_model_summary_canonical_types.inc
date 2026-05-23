@@ -15,6 +15,9 @@ static void AccumulateCanonicalTypeSemanticModelSummary(
   }
   summary.canonical_generic_argument_entries +=
       type.generic_arguments_lexicographic.size();
+  if (type.is_value_optional) {
+    ++summary.canonical_value_optional_entries;
+  }
   const Objc3GenericCollectionTypeModel collection_model =
       BuildObjc3GenericCollectionTypeModel(type);
   if (IsObjc3GenericCollectionKind(collection_model.kind)) {

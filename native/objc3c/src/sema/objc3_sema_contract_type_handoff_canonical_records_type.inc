@@ -29,6 +29,11 @@ struct Objc3SemanticCanonicalType {
   std::vector<std::string> generic_arguments_lexicographic;
   bool generic_arguments_facts_authoritative = false;
   bool has_invalid_generic_suffix = false;
+  bool is_value_optional = false;
+  std::string value_optional_payload_type_spelling;
+  ValueType value_optional_payload_value_type = ValueType::Unknown;
+  bool value_optional_runtime_execution_supported = false;
+  bool value_optional_lowering_supported = false;
   bool has_explicit_nullability = false;
   bool nullability_facts_authoritative = false;
   bool has_invalid_nullability_suffix = false;

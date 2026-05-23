@@ -75,5 +75,6 @@
     "capability_matrix: #8211 typed keypath lowering carries debugger-grade nested component type/source/object-model metadata",
     "evidence_map: #8211 links IR typed-keypath descriptor emission to source-map, diagnostic, and component metadata",
     "umbrella_readiness: #8212/#8202 remains reserved until lead validation compiles native IR and runs typed-keypath fixtures"
-  ]
+  ],
+  "integration_notes": []
 }

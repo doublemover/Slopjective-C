@@ -4,11 +4,13 @@ Parser behavior is described through capability rows and executable tests.
 Unsupported grammar remains rejected or reserved until the capability matrix
 marks the behavior implemented.
 
-Current v1 parser truth is fail-closed for `throws(E)` typed throws payloads,
-canonical `Optional<T>` value optionals, expression-position `match`, and `=>`
-match arms. For #8233, empty, single, multi, and malformed parenthesized
-`throws(...)` payload shapes are parser-owned `O3P182` rejections and are never
-erased into bare untyped `throws`. For #8234, canonical `Optional<T>` remains
+Current v1 parser truth admits single-payload `throws(E)` as a source-owned
+typed-throws effect while staying fail-closed for canonical `Optional<T>` value
+optionals, expression-position `match`, and `=>` match arms. For #8233, empty,
+multi, malformed, and non-type parenthesized `throws(...)` payload shapes are
+parser-owned `O3P182` rejections and are never erased into bare untyped
+`throws`; exactly one type payload is preserved for later interface contracts.
+For #8234, canonical `Optional<T>` remains
 `O3P159` reserved, lowercase `optional<T>` remains `O3C004` removed spelling
 rather than an alias, and neither spelling enables nil-to-scalar or
 nullable-pointer conversion. The parser-owned diagnostic symbols are
@@ -17,10 +19,11 @@ nullable-pointer conversion. The parser-owned diagnostic symbols are
 `kObjc3ParserDiagnosticRemovedOptionalAliasCode` in the language-evolution
 reserved diagnostic contract; parser and source-closure summaries may publish
 those identifiers as fail-closed anchors, not support claims.
-Standalone textual-interface import also treats these rows as hard reserved
-contracts: `throws(E)` metadata may import only `none` or bare `untyped`
-records with zero typed payload arity, and `Optional<T>` metadata may import
-only the reserved feature marker with no ABI layout or implicit conversions.
+Standalone textual-interface import also treats these rows as hard contracts:
+`throws(E)` metadata may import `typed` only with one preserved payload, no
+runtime execution claim, and no untyped erasure; `none` and bare `untyped`
+records keep zero typed payload arity. `Optional<T>` metadata may import only
+the reserved feature marker with no ABI layout or implicit conversions.
 Statement-form
 `match (expr) { case pattern where condition: { ... } default: { ... } }` is
 the only guarded-pattern spelling admitted by the parser; `where` remains
@@ -42,9 +45,10 @@ release evidence, not a native frontend language profile.
 
 The #8207 umbrella language-evolution contract is source-owned at
 `tests/tooling/fixtures/native/language_evolution_umbrella_contract.json`.
-It binds the reserved typed-throws/value-optional/generic-reification/profile
-surfaces and the bounded statement-form guarded-match surface to checked-in
-fixtures only. Temp reports, generated projections, Objective-C 2
+It binds the source-owned typed-throws surface, the reserved
+value-optional/generic-reification/profile surfaces, and the bounded
+statement-form guarded-match surface to checked-in fixtures only. Temp reports,
+generated projections, Objective-C 2
 compatibility paths, and alias spellings are not parser evidence.
 
 Parser support claims are owned by:

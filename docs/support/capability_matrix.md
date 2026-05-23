@@ -104,6 +104,7 @@ unavailable, schema, workflow, owner-boundary, or evidence-boundary rows.
 | `objc3c.behavior.runtime.object-model-interface-method-table` | `runtime` | `tests/native/runtime/object_model/interface_method_table_contract.objc3` | `npm run objc3c -- test-behavior-matrix` | `runtime.object-model.interface-method-table` |
 | `objc3c.behavior.runtime.object-model-property-ivar-reflection` | `runtime` | `tests/native/runtime/object_model/property_ivar_reflection_contract.objc3` | `npm run objc3c -- test-behavior-matrix` | `runtime.object-model.property-ivar-reflection` |
 | `objc3c.behavior.runtime.object-model-registration-replay` | `runtime` | `tests/native/runtime/object_model/registration_replay_contract.objc3` | `npm run objc3c -- test-behavior-matrix` | `runtime.object-model.registration-replay` |
+| `objc3c.behavior.runtime.object-model.full-realization` | `runtime` | `tests/tooling/fixtures/object_model_closure/full_realization_combined_readiness_contract.json` | `npm run objc3c -- validate-object-model-debugger-proof` | `runtime.object-model.full-realization` |
 | `objc3c.behavior.runtime.public-reflection-api` | `runtime` | `tests/tooling/fixtures/objc3c/public_runtime_reflection_api_contract.json` | `npm run objc3c -- validate-public-runtime-reflection-api` | `runtime.public-api.reflection` |
 | `objc3c.behavior.runtime.strict-dispatch-error` | `runtime` | `tests/native/runtime/dispatch/message_send_runtime_dispatch_strict_error.objc3` | `npm run objc3c -- test-behavior-matrix` | `runtime.dispatch.strict-error` |
 | `objc3c.behavior.runtime.typed-keypath.debugger-lowering` | `ir` | `tests/tooling/fixtures/native/typed_keypath_debugger_lowering_contract.json` | `npm run objc3c -- validate-object-model-debugger-proof` | `runtime.typed-keypath.debugger-lowering` |
@@ -728,9 +729,9 @@ the canonical manifest fixture and public npm command above.
 ### Full object-model runtime realization
 
 - Capability ID: `runtime.object-model.full-realization`
-- State: `reserved`
-- Support claims: None
-- Summary: This umbrella row no longer carries public support by itself. Public behavior claims are published by the narrower implemented rows for interface method tables, class/metaclass graphs, category/protocol registration, property/ivar reflection, registration replay, bounded query snapshots, and public reflection. A combined #8198 readiness contract ties class/metaclass/category/protocol/property/ivar/selector/reflection/replay evidence together, the debugger proof slice ties production compiler-owned object-model source identity rows for that same identity set, native line-table rows, emitted native debug-info evidence, debug-map runtime anchors, runtime debug-anchor replay, value-inspection records, debug-anchor ABI governance, and production source-map/native-line-table publication together, and the cross-lane object/reflection/debugger family exercises executable runtime behavior plus production artifact inspection. Full realization, broad full-source-map publication across every production path, typed keypath lowering in the combined fixture, and debugger-grade stepping over the integrated object-model production artifact path remain reserved.
+- State: `implemented`
+- Support claims: `objc3c.behavior.runtime.object-model.full-realization`
+- Summary: Objective-C 3.0 full object-model runtime realization is implemented as a debugger-grade identity graph for the Objective-C 3 runtime: class/metaclass/category/protocol/property/ivar/selector/method metadata, registration replay, public reflection snapshots, debug-anchor identity, value inspection, production source-map/native-line-table rows, emitted native debug-info evidence, LLDB/debugger replay contracts, typed-keypath debugger metadata, and integrated object-model statement stepping agree through checked public commands. This is not an Objective-C 2 runtime compatibility claim, a Swift/C++ runtime mirror, a dynamic-forwarding claim, or broad full-source-map publication for every production artifact path.
 - Owner modules:
   - `native/objc3c/src/runtime/classes/class_graph.cpp`
   - `native/objc3c/src/runtime/images/registration.cpp`
@@ -741,22 +742,25 @@ the canonical manifest fixture and public npm command above.
   - `native/objc3c/src/runtime/public/objc3_runtime_reflection_debug_anchor.cpp`
 - Evidence:
   - doc: `docs/support/hard_cutover_capability_truth.md`
-  - doc: `spec/MODULE_METADATA_AND_ABI_TABLES.md`
   - doc: `docs/runbooks/objc3c_object_model_closure.md`
-  - source: `scripts/objc3c_runtime_acceptance/domains/object_model_capability_split.py`
-  - test: `tests/tooling/fixtures/object_model_closure/full_realization_combined_readiness_contract.json`
-  - test: `tests/tooling/fixtures/object_model_closure/debugger_value_inspection_replay_contract.json` via `npm run objc3c -- validate-object-model-debugger-proof`
-  - test: `tests/tooling/fixtures/cross_lane_e2e/object_reflection_debugger.expectation.json` via `npm run objc3c -- validate-cross-lane-e2e`
+  - source: `native/objc3c/src/runtime/classes/class_graph.cpp`
+  - source: `native/objc3c/src/runtime/images/registration.cpp`
+  - source: `native/objc3c/src/runtime/storage/property_layout_realization.cpp`
   - source: `native/objc3c/src/runtime/public/objc3_runtime_reflection.h`
   - source: `native/objc3c/src/runtime/public/objc3_runtime_reflection.cpp`
   - source: `native/objc3c/src/runtime/public/objc3_runtime_reflection_debug_anchor.cpp`
-  - test: `tests/tooling/fixtures/object_model_closure/debug_anchor_identity_replay_contract.json`
-  - test: `tests/native/runtime/object_model/debug_anchor_identity_replay_probe.cpp`
-  - test: `tests/native/runtime/object_model/full_realization_combined_reflection_replay_contract.objc3`
+  - source: `scripts/objc3c_editor_tooling/artifact_inspector.py`
+  - source: `scripts/objc3c_editor_tooling/model.py`
   - source: `scripts/objc3c_object_model_debugger_proof/model.py`
-  - test: `scripts/check_objc3c_object_model_debugger_proof.py` via `npm run objc3c -- validate-object-model-debugger-proof`
+  - test: `tests/tooling/fixtures/object_model_closure/full_realization_combined_readiness_contract.json` via `npm run objc3c -- validate-object-model-debugger-proof`
+  - test: `tests/tooling/fixtures/object_model_closure/debugger_value_inspection_replay_contract.json` via `npm run objc3c -- validate-object-model-debugger-proof`
+  - test: `tests/tooling/fixtures/object_model_closure/debug_anchor_identity_replay_contract.json`
+  - test: `tests/native/runtime/object_model/full_realization_combined_reflection_replay_contract.objc3` via `npm run objc3c -- validate-object-model-conformance`
+  - test: `tests/native/runtime/object_model/debug_anchor_identity_replay_probe.cpp`
+  - test: `tests/tooling/fixtures/cross_lane_e2e/object_reflection_debugger.expectation.json` via `npm run objc3c -- validate-cross-lane-e2e`
   - test: `tests/tooling/test_runtime_object_model_full_realization_readiness.py`
   - test: `tests/tooling/test_runtime_capability_public_split.py`
+  - source: `scripts/objc3c_runtime_acceptance/domains/object_model_capability_split.py`
 
 ### Protocol-qualified existential value flow
 

@@ -98,9 +98,9 @@
       "type": "array",
       "items": {
         "type": "integer",
-        "enum": [8208, 8238]
+        "enum": [8208, 8233, 8234, 8238]
       },
-      "minItems": 2,
+      "minItems": 4,
       "uniqueItems": true
     },
     "source_truth_policy": {
@@ -109,7 +109,7 @@
     "negative_cases": {
       "type": "array",
       "items": { "$ref": "#/$defs/negativeCase" },
-      "minItems": 5,
+      "minItems": 7,
       "uniqueItems": true
     },
     "public_commands": {
@@ -262,11 +262,89 @@
         "name": { "type": "string", "minLength": 1 },
         "visibility": { "enum": ["public", "package", "internal"] },
         "type_signature": { "type": "object" },
-        "effects": { "type": "object" },
+        "effects": {
+          "oneOf": [
+            {
+              "type": "object",
+              "maxProperties": 0
+            },
+            {
+              "$ref": "#/$defs/declarationEffects"
+            }
+          ]
+        },
         "generics": { "type": "array" },
         "ownership": { "type": "object" },
         "runtime_metadata": { "type": "object" },
         "source_anchor": { "$ref": "#/$defs/sourceAnchor" }
+      },
+      "additionalProperties": false
+    },
+    "declarationEffects": {
+      "type": "object",
+      "required": [
+        "async",
+        "throws",
+        "throws_kind",
+        "declared_error_type",
+        "typed_throws"
+      ],
+      "properties": {
+        "async": { "type": "boolean" },
+        "throws": { "type": "boolean" },
+        "throws_kind": { "enum": ["none", "untyped", "typed"] },
+        "declared_error_type": { "type": "string" },
+        "typed_throws": { "$ref": "#/$defs/typedThrowsContract" },
+        "throws_profile": { "type": "string" },
+        "actor_nonisolated": { "type": "boolean" },
+        "actor_isolation_profile": { "type": "string" },
+        "executor_affinity_declared": { "type": "boolean" },
+        "executor_affinity_kind": { "type": "string" },
+        "executor_affinity_name": { "type": "string" }
+      },
+      "additionalProperties": true
+    },
+    "typedThrowsContract": {
+      "type": "object",
+      "required": [
+        "issue_ref",
+        "canonical_syntax",
+        "throws_kind",
+        "declared_error_type",
+        "typed_payload_arity",
+        "typed_payload_status",
+        "typed_payload_generic_suffix",
+        "typed_payload_generic_suffix_terminated",
+        "typed_payload_pointer_depth",
+        "typed_payload_lowering_ready",
+        "runtime_execution_claimed",
+        "silent_erasure_allowed",
+        "multi_payload_supported",
+        "abi_status",
+        "interface_roundtrip_status"
+      ],
+      "properties": {
+        "issue_ref": { "const": 8233 },
+        "canonical_syntax": { "const": "throws(E)" },
+        "throws_kind": { "enum": ["none", "untyped", "typed"] },
+        "declared_error_type": { "type": "string" },
+        "typed_payload_arity": { "enum": [0, 1] },
+        "typed_payload_status": {
+          "enum": ["not-declared", "source-preserved-lowering-fail-closed"]
+        },
+        "typed_payload_generic_suffix": { "type": "string" },
+        "typed_payload_generic_suffix_terminated": { "const": true },
+        "typed_payload_pointer_depth": { "type": "number" },
+        "typed_payload_lowering_ready": { "const": false },
+        "runtime_execution_claimed": { "const": false },
+        "silent_erasure_allowed": { "const": false },
+        "multi_payload_supported": { "const": false },
+        "abi_status": {
+          "enum": ["none", "untyped-error-out-abi", "typed-error-abi-deferred"]
+        },
+        "interface_roundtrip_status": {
+          "enum": ["not-applicable", "typed-payload-preserved"]
+        }
       },
       "additionalProperties": false
     },

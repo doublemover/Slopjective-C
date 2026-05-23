@@ -53,26 +53,28 @@ def _assert_repo_file(relative_path: str) -> None:
     assert (ROOT / relative_path).is_file(), relative_path
 
 
-def test_typed_throws_and_value_optionals_remain_reserved_fail_closed() -> None:
+def test_typed_throws_source_owned_and_value_optionals_contract_boundaries() -> None:
     contract = _read_json(TYPED_THROWS_OPTIONALS)
 
     assert contract["contract_id"] == (
-        "objc3c.language_evolution.typed_throws_value_optionals.reserved.v1"
+        "objc3c.language_evolution.typed_throws_value_optionals.source_owned.v1"
     )
     assert contract["umbrella_issue_ref"] == 8207
     assert contract["issues"] == {"typed_throws": 8233, "value_optionals": 8234}
     assert contract["support_state"] == {
-        "typed_throws": "reserved_fail_closed",
-        "value_optionals": "reserved_fail_closed",
+        "typed_throws": "source_owned_interface_preserved_lowering_fail_closed",
+        "value_optionals": "source_owned_type_signatures_interface_preserved_runtime_lowering_fail_closed",
     }
-    assert contract["typed_throws"]["accepted_payload_arity"] == 0
+    assert contract["typed_throws"]["accepted_payload_arity"] == 1
     assert contract["typed_throws"]["diagnostic_symbol"] == (
         "kObjc3ParserDiagnosticReservedTypedThrowsCode"
     )
     assert contract["typed_throws"]["silent_erasure_allowed"] is False
     assert contract["typed_throws"]["interface_roundtrip_status"] == (
-        "reserved-feature-marker-imported"
+        "typed-payload-preserved"
     )
+    assert contract["typed_throws"]["abi_status"] == "typed-error-abi-deferred"
+    assert contract["typed_throws"]["runtime_execution_claimed"] is False
     assert contract["value_optionals"]["lowercase_alias_accepted"] is False
     assert contract["value_optionals"]["canonical_diagnostic_symbol"] == (
         "kObjc3ParserDiagnosticReservedValueOptionalCode"
@@ -83,7 +85,7 @@ def test_typed_throws_and_value_optionals_remain_reserved_fail_closed() -> None:
     assert contract["value_optionals"]["nil_to_scalar_coercion_allowed"] is False
     assert contract["value_optionals"]["nullable_pointer_conversion_allowed"] is False
     assert contract["value_optionals"]["interface_roundtrip_status"] == (
-        "reserved-feature-marker-imported"
+        "type-signature-carrier-imported-runtime-deferred"
     )
     assert contract["public_claim_boundary"]["support_claims"] == []
     assert contract["public_claim_boundary"]["no_compatibility_aliases"] is True
@@ -94,7 +96,7 @@ def test_typed_throws_and_value_optionals_remain_reserved_fail_closed() -> None:
         "runtime_lowering_claim_allowed": False,
     }
     assert contract["diagnostic_code_symbols"] == {
-        "typed_throws_reserved": {
+        "typed_throws_invalid_payload_shape": {
             "symbol": "kObjc3ParserDiagnosticReservedTypedThrowsCode",
             "code": "O3P182",
             "owner": "parser",
@@ -120,12 +122,26 @@ def test_typed_throws_and_value_optionals_remain_reserved_fail_closed() -> None:
         "negative_value_optional_nullable_pointer_conversion_reserved.objc3": "O3P159",
         "negative_value_optional_nil_scalar_coercion_reserved.objc3": "O3P159",
         "negative_value_optional_nested_lowercase_alias_reserved.objc3": "O3C004",
+        "negative_value_optional_property_layout_unsupported.objc3": "O3P159",
+        "negative_value_optional_nullable_suffix_mismatch.objc3": "O3P159",
     }
     observed = {
         Path(row["fixture"]).name: row["expected_diagnostic"]
         for row in contract["negative_fixtures"]
+        if "expected_diagnostic" in row
     }
     assert observed == expected_codes
+    assert {
+        Path(row["fixture"]).name
+        for row in contract["negative_fixtures"]
+        if (
+            "expected_contract" in row
+            and Path(row["fixture"]).name.startswith("typed_throws_")
+        )
+    } == {
+        "typed_throws_abi_lifting_negative.contract.json",
+        "typed_throws_interface_mismatch_negative.contract.json",
+    }
     for anchor in contract["source_anchors"]:
         _assert_repo_file(str(anchor))
     type_source = (
@@ -173,6 +189,8 @@ def test_typed_throws_and_value_optionals_remain_reserved_fail_closed() -> None:
     for row in contract["negative_fixtures"]:
         fixture_path = str(row["fixture"])
         _assert_repo_file(fixture_path)
+        if "expected_diagnostic" not in row:
+            continue
         fixture_text = (ROOT / fixture_path).read_text(encoding="utf-8")
         assert str(row["expected_diagnostic"]) in fixture_text
 
@@ -186,11 +204,9 @@ def test_strict_and_strict_concurrency_profiles_reject_without_aliases() -> None
         "tests/tooling/fixtures/native/language_evolution_umbrella_contract.json"
     )
     assert matrix["profile_claim_policy"] == {
-        "claimed_public_profiles": ["core"],
-        "native_frontend_profiles": ["canonical"],
+        "claimed_public_profiles": ["core", "strict", "strict-concurrency"],
+        "native_frontend_profiles": ["canonical", "strict", "strict-concurrency"],
         "targeted_release_evidence_profiles": [
-            "strict",
-            "strict-concurrency",
             "strict-system",
         ],
         "strict_profile_aliases_allowed": False,
@@ -205,11 +221,11 @@ def test_strict_and_strict_concurrency_profiles_reject_without_aliases() -> None
     accepted = {row["profile_id"]: row for row in matrix["accepted_profiles"]}
     rejected = {row["profile_id"]: row for row in matrix["rejected_profiles"]}
     assert accepted["canonical"]["selection_state"] == "accepted"
+    assert accepted["strict"]["selection_state"] == "accepted"
+    assert accepted["strict-concurrency"]["selection_state"] == "accepted"
     assert accepted["core"]["selection_state"] == "claimed-conformance-profile"
-    assert rejected["strict"]["diagnostic_codes"] == ["O3C036"]
-    assert rejected["strict-concurrency"]["diagnostic_codes"] == ["O3C037"]
-    assert "legacy-alias" in rejected["strict"]["disabled_allowances"]
-    assert "source-only-concurrency-claim" in rejected["strict-concurrency"][
+    assert rejected["strict-system"]["diagnostic_codes"] == ["O3C038"]
+    assert "native-frontend-selection" in rejected["strict-system"][
         "disabled_allowances"
     ]
 
@@ -218,8 +234,6 @@ def test_strict_and_strict_concurrency_profiles_reject_without_aliases() -> None
         for row in matrix["negative_selection_fixtures"]
     }
     assert cases == {
-        "strict_language_profile_reserved": ("strict", "O3C036"),
-        "strict_concurrency_language_profile_reserved": ("strict-concurrency", "O3C037"),
         "strict_system_target_profile_rejected": ("strict-system", "O3C038"),
         "strict_concurrency_alias_rejected": ("strict_concurrency", "O3C001"),
     }
@@ -227,8 +241,6 @@ def test_strict_and_strict_concurrency_profiles_reject_without_aliases() -> None
     profile_source = (
         ROOT / "native" / "objc3c" / "src" / "config" / "objc3_language_profile_validation.cpp"
     ).read_text(encoding="utf-8")
-    assert "O3C036" in profile_source
-    assert "O3C037" in profile_source
     assert "O3C038" in profile_source
     assert "strict-concurrency" in profile_source
     assert "strict-system" in profile_source
@@ -402,6 +414,13 @@ def test_language_evolution_umbrella_keeps_claims_source_owned_and_fail_closed()
         _assert_repo_file(str(row["contract"]))
         assert row["support_state"]
         assert row["negative_case_ids"]
+    assert contracts["typed_throws"]["support_state"] == (
+        "source_owned_interface_preserved_lowering_fail_closed"
+    )
+    assert "language.errors.typed-throws-runtime-lowering" in contract[
+        "reserved_public_claims"
+    ]
+    assert "language.errors.typed-throws" not in contract["reserved_public_claims"]
     assert "language.profiles.strict" in contract["reserved_public_claims"]
     assert "language.profiles.strict-concurrency" in contract["reserved_public_claims"]
     assert "language.generics.generic-callable-reification" not in contract[
@@ -427,6 +446,9 @@ def test_language_evolution_umbrella_keeps_claims_source_owned_and_fail_closed()
     }
     assert support_rows["language.generics.generic-callable-reification"]["status"] == (
         "source-owned-generic-callable-policy"
+    )
+    assert support_rows["language.errors.typed-throws"]["status"] == (
+        "source-owned-interface-preserved-lowering-fail-closed"
     )
     assert support_rows["language.control-flow.statement-guarded-match"]["status"] == (
         "supported-bounded-statement-and-expression"

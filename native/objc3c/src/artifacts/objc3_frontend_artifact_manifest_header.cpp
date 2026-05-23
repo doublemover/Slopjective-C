@@ -10,8 +10,15 @@ namespace {
 using objc3::io::EscapeJsonString;
 
 const char *LanguageProfileName(Objc3FrontendLanguageProfile mode) {
-  (void)mode;
-  return "canonical";
+  switch (mode) {
+    case Objc3FrontendLanguageProfile::kCanonical:
+      return "canonical";
+    case Objc3FrontendLanguageProfile::kStrict:
+      return "strict";
+    case Objc3FrontendLanguageProfile::kStrictConcurrency:
+      return "strict-concurrency";
+  }
+  return "unknown";
 }
 
 const char *ArcModeName(Objc3FrontendArcMode mode) {
@@ -45,8 +52,8 @@ void AppendObjc3FrontendArtifactManifestHeader(
   manifest
       << "    \"canonical_rejection_diagnostics_selection_supported\":false,\n";
   manifest << "    \"canonical_literal_rejection_diagnostics_hard_error\":true,\n";
-  manifest << "    \"strictness_selection_supported\":false,\n";
-  manifest << "    \"strict_concurrency_selection_supported\":false,\n";
+  manifest << "    \"strictness_selection_supported\":true,\n";
+  manifest << "    \"strict_concurrency_selection_supported\":true,\n";
   manifest << "    \"feature_macro_surface_supported\":false,\n";
   manifest << "    \"feature_claim_truth_surface_contract_id\":\""
            << kObjc3FeatureClaimStrictnessTruthSurfaceContractId << "\",\n";

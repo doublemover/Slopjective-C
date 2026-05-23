@@ -46,7 +46,7 @@ def check_claimability_semantics_release_policy_case(run_dir: Path) -> CaseResul
     )
     expect(
         validation.returncode == 0,
-        "expected conformance validation to succeed for the current claimed core profile",
+        "expected conformance validation to succeed for the current claimed core profile and published strict-profile set",
     )
     validation_payload = json.loads(
         (validation_dir / "module.objc3-conformance-validation.json").read_text(
@@ -60,14 +60,23 @@ def check_claimability_semantics_release_policy_case(run_dir: Path) -> CaseResul
         release_candidate_matrix_path.read_text(encoding="utf-8")
     )
 
-    strict_reject_dir = case_dir / "strict-reject"
-    strict_reject, _ = run_fixture_compile(
+    strict_accept_dir = case_dir / "strict-accept"
+    strict_accept, _ = run_fixture_compile(
         fixture,
-        strict_reject_dir,
+        strict_accept_dir,
         extra_args=["--objc3-conformance-profile", "strict"],
         write_provenance=False,
     )
-    strict_reject_text = (strict_reject.stderr or strict_reject.stdout).strip()
+    strict_system_reject_dir = case_dir / "strict-system-reject"
+    strict_system_reject, _ = run_fixture_compile(
+        fixture,
+        strict_system_reject_dir,
+        extra_args=["--objc3-conformance-profile", "strict-system"],
+        write_provenance=False,
+    )
+    strict_system_reject_text = (
+        strict_system_reject.stderr or strict_system_reject.stdout
+    ).strip()
 
     yaml_reject = run(
         [
@@ -87,39 +96,46 @@ def check_claimability_semantics_release_policy_case(run_dir: Path) -> CaseResul
         "expected yaml conformance emission to fail closed",
     )
     expect(
-        "claimed publication format: json; targeted release-evidence profiles: strict, strict-concurrency, strict-system"
+        "claimed publication format: json; targeted release-evidence profiles: strict-system"
         in yaml_text,
         "expected yaml emission rejection to publish the centralized format policy diagnostic",
     )
 
     expect(
-        publication.get("supported_profile_ids") == ["core"]
+        publication.get("supported_profile_ids")
+        == ["core", "strict", "strict-concurrency"]
         and publication.get("rejected_profile_ids")
-        == ["strict", "strict-concurrency", "strict-system"],
-        "expected conformance publication to preserve the centralized core-only claim policy profile sets",
+        == ["strict-system"],
+        "expected conformance publication to preserve the centralized strict-profile claim policy sets",
     )
     expect(
-        validation_payload.get("supported_profile_ids") == ["core"]
+        validation_payload.get("supported_profile_ids")
+        == ["core", "strict", "strict-concurrency"]
         and validation_payload.get("rejected_profile_ids")
-        == ["strict", "strict-concurrency", "strict-system"],
-        "expected conformance validation to preserve the centralized core-only claim policy profile sets",
+        == ["strict-system"],
+        "expected conformance validation to preserve the centralized strict-profile claim policy sets",
     )
     expect(
-        strict_reject.returncode != 0
-        and "unsupported --objc3-conformance-profile selection: strict"
-        in strict_reject_text
-        and "claimed profiles: core" in strict_reject_text,
-        "expected strict profile selection to fail closed through the centralized claim policy",
+        strict_accept.returncode == 0,
+        "expected strict profile selection to compile through the centralized claim policy",
+    )
+    expect(
+        strict_system_reject.returncode != 0
+        and "unsupported --objc3-conformance-profile selection: strict-system"
+        in strict_system_reject_text
+        and "claimed profiles: core, strict, strict-concurrency"
+        in strict_system_reject_text,
+        "expected strict-system profile selection to fail closed through the centralized claim policy",
     )
     expect(
         publication.get("advanced_feature_targeted_profile_ids")
-        == ["strict", "strict-concurrency", "strict-system"]
+        == ["strict-system"]
         and validation_payload.get("advanced_feature_targeted_profile_ids")
-        == ["strict", "strict-concurrency", "strict-system"]
+        == ["strict-system"]
         and advanced_feature_gate.get("targeted_profile_ids")
-        == ["strict", "strict-concurrency", "strict-system"]
+        == ["strict-system"]
         and release_candidate_matrix.get("targeted_profile_ids")
-        == ["strict", "strict-concurrency", "strict-system"],
+        == ["strict-system"],
         "expected publication, validation, gate, and matrix artifacts to preserve one centralized release-targeting policy",
     )
 
@@ -137,7 +153,8 @@ def check_claimability_semantics_release_policy_case(run_dir: Path) -> CaseResul
                 "targeted_profile_ids": publication.get(
                     "advanced_feature_targeted_profile_ids"
                 ),
-                "strict_reject_returncode": strict_reject.returncode,
+                "strict_accept_returncode": strict_accept.returncode,
+                "strict_system_reject_returncode": strict_system_reject.returncode,
                 "yaml_reject_returncode": yaml_reject.returncode,
             },
         ),

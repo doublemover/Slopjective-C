@@ -205,6 +205,32 @@ void CollectTypeSystemTypeSourceClosureStmtSites(
   }
 }
 
+void CollectValueOptionalFunctionTypeSites(
+    const FunctionDecl &fn,
+    Objc3FrontendTypeSystemTypeSourceClosureSummary &summary) {
+  if (fn.return_value_optional.present) {
+    ++summary.value_optional_type_signature_sites;
+  }
+  for (const FuncParam &param : fn.params) {
+    if (param.value_optional.present) {
+      ++summary.value_optional_type_signature_sites;
+    }
+  }
+}
+
+void CollectValueOptionalMethodTypeSites(
+    const Objc3MethodDecl &method,
+    Objc3FrontendTypeSystemTypeSourceClosureSummary &summary) {
+  if (method.return_value_optional.present) {
+    ++summary.value_optional_type_signature_sites;
+  }
+  for (const FuncParam &param : method.params) {
+    if (param.value_optional.present) {
+      ++summary.value_optional_type_signature_sites;
+    }
+  }
+}
+
 }  // namespace
 
 Objc3FrontendTypeSystemTypeSourceClosureSummary
@@ -247,15 +273,28 @@ BuildTypeSystemTypeSourceClosureSummary(
   summary.optional_send_source_supported = true;
   summary.nil_coalescing_source_supported = true;
   summary.typed_keypath_literal_source_supported = true;
+  summary.value_optional_type_signature_source_supported = true;
   summary.optional_member_access_fail_closed = false;
-  summary.value_optional_type_fail_closed = true;
+  summary.value_optional_runtime_execution_fail_closed = true;
   for (const auto &fn : program.functions) {
+    CollectValueOptionalFunctionTypeSites(fn, summary);
     for (const auto &stmt : fn.body) {
       CollectTypeSystemTypeSourceClosureStmtSites(stmt.get(), summary);
     }
   }
+  for (const auto &interface_decl : program.interfaces) {
+    for (const auto &method : interface_decl.methods) {
+      CollectValueOptionalMethodTypeSites(method, summary);
+    }
+  }
+  for (const auto &protocol_decl : program.protocols) {
+    for (const auto &method : protocol_decl.methods) {
+      CollectValueOptionalMethodTypeSites(method, summary);
+    }
+  }
   for (const auto &implementation : program.implementations) {
     for (const auto &method : implementation.methods) {
+      CollectValueOptionalMethodTypeSites(method, summary);
       for (const auto &stmt : method.body) {
         CollectTypeSystemTypeSourceClosureStmtSites(stmt.get(), summary);
       }

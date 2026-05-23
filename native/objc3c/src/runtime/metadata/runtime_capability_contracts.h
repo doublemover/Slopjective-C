@@ -17,9 +17,9 @@ inline constexpr const char *kObjc3ConformancePublicationContractId =
 inline constexpr const char *kObjc3ConformanceClaimOperationsContractId =
     "objc3c.toolchain.conformance.claim.operations.v1";
 inline constexpr const char *kObjc3ConformanceClaimSelectionModel =
-    "canonical-language-profile-drives-current-publication-surface";
+    "core-strict-and-strict-concurrency-language-profiles-drive-current-publication-surface";
 inline constexpr const char *kObjc3ConformanceClaimFailureModel =
-    "strictness-and-strict-concurrency-remain-fail-closed-and-unclaimed";
+    "strict-system-remains-fail-closed-and-unclaimed";
 inline constexpr const char *kObjc3AdvancedFeatureOpsContractId =
     "objc3c.advanced.feature.ci.runbook.dashboard.contract.v1";
 inline constexpr const char *kObjc3AdvancedFeatureReportingContractId =

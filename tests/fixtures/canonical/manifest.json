@@ -646,6 +646,12 @@
       "owner_phase": "sema",
       "behavior_fixture": "tests/tooling/fixtures/stdlib_collections/generic_collection_type_model_contract.json",
       "executable_command": "npm run objc3c -- validate-conformance-corpus"
+    },
+    {
+      "claim_id": "objc3c.behavior.runtime.object-model.full-realization",
+      "owner_phase": "runtime",
+      "behavior_fixture": "tests/tooling/fixtures/object_model_closure/full_realization_combined_readiness_contract.json",
+      "executable_command": "npm run objc3c -- validate-object-model-debugger-proof"
     }
   ],
   "fixtures": [
@@ -1502,6 +1508,22 @@
       "expected_diagnostic_code": "O3C004"
     },
     {
+      "path": "tests/tooling/fixtures/native/recovery/negative/negative_value_optional_property_layout_unsupported.objc3",
+      "origin": "hand-authored",
+      "owner_phase": "parser",
+      "behavior_family": "types",
+      "fixture_kind": "canonical_rejection",
+      "expected_diagnostic_code": "O3P159"
+    },
+    {
+      "path": "tests/tooling/fixtures/native/recovery/negative/negative_value_optional_nullable_suffix_mismatch.objc3",
+      "origin": "hand-authored",
+      "owner_phase": "parser",
+      "behavior_family": "types",
+      "fixture_kind": "canonical_rejection",
+      "expected_diagnostic_code": "O3P159"
+    },
+    {
       "path": "tests/tooling/fixtures/native/recovery/positive/match_guarded_pattern_statement.objc3",
       "origin": "hand-authored",
       "owner_phase": "sema",
@@ -2328,6 +2350,14 @@
       "origin": "hand-authored",
       "owner_phase": "sema",
       "behavior_family": "stdlib-collections-generic-type-model",
+      "fixture_kind": "positive",
+      "expected_diagnostic_code": ""
+    },
+    {
+      "path": "tests/tooling/fixtures/object_model_closure/full_realization_combined_readiness_contract.json",
+      "origin": "hand-authored",
+      "owner_phase": "runtime",
+      "behavior_family": "object-model-full-realization",
       "fixture_kind": "positive",
       "expected_diagnostic_code": ""
     }

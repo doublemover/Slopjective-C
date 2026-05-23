@@ -54,7 +54,13 @@
     } else if (AtRemovedOptionalTemplateAlias()) {
       return RejectRemovedOptionalTemplateAlias(Peek());
     } else if (AtReservedValueOptionalType()) {
-      return RejectReservedValueOptionalType(Peek());
+      const Token type_token = Advance();
+      fn.return_type = ValueType::Optional;
+      fn.return_value_optional.present = true;
+      fn.return_value_optional.source_type_admitted = true;
+      fn.return_value_optional.semantic_carrier_modeled = true;
+      fn.return_value_optional.line = type_token.line;
+      fn.return_value_optional.column = type_token.column;
     } else if (At(TokenKind::Identifier)) {
       const Token type_token = Advance();
       CaptureFunctionReturnIdentifierSpelling(fn, type_token);

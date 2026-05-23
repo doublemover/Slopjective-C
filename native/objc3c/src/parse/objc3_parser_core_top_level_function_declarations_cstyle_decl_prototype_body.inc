@@ -17,6 +17,9 @@
       block_failed_ = false;
       return false;
     }
+    if (RejectValueOptionalExecutableFunction(fn)) {
+      return false;
+    }
 
     PublishTopLevelCStyleFunctionDecl(program, fn);
     return true;

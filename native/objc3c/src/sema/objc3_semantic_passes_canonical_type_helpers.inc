@@ -26,6 +26,9 @@ static Objc3SemanticCanonicalTypeKind CanonicalTypeKindForValueType(
   if (type == ValueType::Function) {
     return Objc3SemanticCanonicalTypeKind::Function;
   }
+  if (type == ValueType::Optional) {
+    return Objc3SemanticCanonicalTypeKind::ValueOptional;
+  }
   if (type == ValueType::Unknown) {
     return Objc3SemanticCanonicalTypeKind::Unknown;
   }
@@ -144,8 +147,43 @@ static std::string CanonicalTypeReplayKey(
       << (type.nullability_facts_authoritative ? 1 : 0) << ":"
       << (type.has_explicit_nullability ? 1 : 0) << ":"
       << (type.has_invalid_nullability_suffix ? 1 : 0)
+      << ";value-optional="
+      << (type.is_value_optional ? 1 : 0) << ":"
+      << type.value_optional_payload_type_spelling << ":"
+      << objc3c::support::ValueTypeName(
+             type.value_optional_payload_value_type) << ":"
+      << (type.value_optional_runtime_execution_supported ? 1 : 0) << ":"
+      << (type.value_optional_lowering_supported ? 1 : 0)
       << ";invalid=" << (type.has_invalid_type_suffix ? 1 : 0);
   return out.str();
+}
+
+static void ApplyValueOptionalCanonicalDescriptor(
+    Objc3SemanticCanonicalType &type,
+    const Objc3ValueOptionalTypeDescriptor &descriptor) {
+  if (!descriptor.present) {
+    return;
+  }
+  type.value_type = ValueType::Optional;
+  type.kind = Objc3SemanticCanonicalTypeKind::ValueOptional;
+  type.is_value_optional = true;
+  type.value_optional_payload_type_spelling =
+      descriptor.payload_type_spelling;
+  type.value_optional_payload_value_type = descriptor.payload_value_type;
+  type.value_optional_runtime_execution_supported =
+      descriptor.runtime_execution_supported;
+  type.value_optional_lowering_supported = descriptor.lowering_supported;
+  type.object_type_facts_authoritative = true;
+  type.is_objc_object_reference = false;
+  type.is_objc_id_object = false;
+  type.is_objc_class_object = false;
+  type.is_objc_metaclass_object = false;
+  type.is_objc_protocol_object = false;
+  type.is_objc_instancetype_object = false;
+  type.is_objc_named_object_pointer = false;
+  type.canonical_spelling =
+      "Optional<" + descriptor.payload_type_spelling + ">";
+  type.replay_key = CanonicalTypeReplayKey(type);
 }
 
 static Objc3SemanticCanonicalType BuildCanonicalSemanticType(
@@ -254,7 +292,7 @@ static Objc3SemanticCanonicalType BuildCanonicalSemanticTypeFromParam(
     const std::unordered_set<std::string> *generic_interface_names) {
   const ProtocolCompositionInfo protocol_composition =
       BuildProtocolCompositionInfoFromParam(param, generic_interface_names);
-  return BuildCanonicalSemanticType(
+  Objc3SemanticCanonicalType type = BuildCanonicalSemanticType(
       param.type, param.vector_spelling, param.vector_base_spelling,
       param.vector_lane_count, param.id_spelling, param.class_spelling,
       param.sel_spelling, param.instancetype_spelling,
@@ -268,6 +306,8 @@ static Objc3SemanticCanonicalType BuildCanonicalSemanticTypeFromParam(
       HasInvalidNullabilityParamTypeSuffix(param),
       protocol_composition.has_invalid_protocol_composition,
       HasInvalidParamTypeSuffix(param));
+  ApplyValueOptionalCanonicalDescriptor(type, param.value_optional);
+  return type;
 }
 
 static Objc3SemanticCanonicalType BuildCanonicalSemanticTypeFromFunctionReturn(
@@ -275,7 +315,7 @@ static Objc3SemanticCanonicalType BuildCanonicalSemanticTypeFromFunctionReturn(
     const std::unordered_set<std::string> *generic_interface_names) {
   const ProtocolCompositionInfo protocol_composition =
       BuildProtocolCompositionInfoFromFunctionReturn(fn, generic_interface_names);
-  return BuildCanonicalSemanticType(
+  Objc3SemanticCanonicalType type = BuildCanonicalSemanticType(
       fn.return_type, fn.return_vector_spelling, fn.return_vector_base_spelling,
       fn.return_vector_lane_count, fn.return_id_spelling, fn.return_class_spelling,
       fn.return_sel_spelling, fn.return_instancetype_spelling,
@@ -292,6 +332,8 @@ static Objc3SemanticCanonicalType BuildCanonicalSemanticTypeFromFunctionReturn(
           HasInvalidPointerReturnTypeDeclarator(fn) ||
           HasInvalidNullabilityReturnTypeSuffix(fn) ||
           HasInvalidOwnershipQualifierReturnTypeSuffix(fn));
+  ApplyValueOptionalCanonicalDescriptor(type, fn.return_value_optional);
+  return type;
 }
 
 static Objc3SemanticCanonicalType BuildCanonicalSemanticTypeFromMethodReturn(
@@ -299,7 +341,7 @@ static Objc3SemanticCanonicalType BuildCanonicalSemanticTypeFromMethodReturn(
     const std::unordered_set<std::string> *generic_interface_names) {
   const ProtocolCompositionInfo protocol_composition =
       BuildProtocolCompositionInfoFromMethodReturn(method, generic_interface_names);
-  return BuildCanonicalSemanticType(
+  Objc3SemanticCanonicalType type = BuildCanonicalSemanticType(
       method.return_type, method.return_vector_spelling,
       method.return_vector_base_spelling, method.return_vector_lane_count,
       method.return_id_spelling, method.return_class_spelling,
@@ -320,11 +362,13 @@ static Objc3SemanticCanonicalType BuildCanonicalSemanticTypeFromMethodReturn(
           HasInvalidPointerReturnTypeDeclarator(method) ||
           HasInvalidNullabilityReturnTypeSuffix(method) ||
           HasInvalidOwnershipQualifierReturnTypeSuffix(method));
+  ApplyValueOptionalCanonicalDescriptor(type, method.return_value_optional);
+  return type;
 }
 
 static Objc3SemanticCanonicalType BuildCanonicalSemanticTypeFromProperty(
     const Objc3PropertyDecl &property) {
-  return BuildCanonicalSemanticType(
+  Objc3SemanticCanonicalType type = BuildCanonicalSemanticType(
       property.type, property.vector_spelling, property.vector_base_spelling,
       property.vector_lane_count, property.id_spelling, property.class_spelling,
       property.sel_spelling, property.instancetype_spelling,
@@ -339,4 +383,6 @@ static Objc3SemanticCanonicalType BuildCanonicalSemanticTypeFromProperty(
       property.is_null_resettable, HasInvalidGenericPropertyTypeSuffix(property),
       HasInvalidNullabilityPropertyTypeSuffix(property), false,
       HasInvalidPropertyTypeSuffix(property));
+  ApplyValueOptionalCanonicalDescriptor(type, property.value_optional);
+  return type;
 }

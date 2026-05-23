@@ -12,17 +12,22 @@ Objc3CStyleFunctionTypeParseResult ParseObjc3CStyleFunctionType(
     return result;
   }
 
-  if (RejectReservedValueOptionalTypeLead(tokens, index, diagnostics)) {
-    return result;
-  }
-
   if (!ParseObjc3CStyleTypeSpelling(tokens, index, result, diagnostics)) {
     EmitExpectedCStyleTypeDiagnostic(
         diag_line, diag_column, diagnostic_context, diagnostics);
     return result;
   }
 
+  if (!FinalizeObjc3CStyleValueOptionalType(result, diagnostics)) {
+    return result;
+  }
+
   ParseObjc3CStylePointerDepth(tokens, index, result);
+  if (result.value_optional.present && result.pointer_depth > 0u) {
+    diagnostics.push_back(BuildObjc3ReservedValueOptionalTypeDiagnostic(
+        PeekToken(tokens, index)));
+    return result;
+  }
 
   if (!ApplyObjc3CStylePointerSemantics(
           tokens, index, diag_line, diag_column, result, diagnostics)) {

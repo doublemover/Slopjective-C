@@ -2,9 +2,9 @@
   "contract_id": "objc3c.object_model.full_realization.combined_readiness.v1",
   "issue": 8198,
   "capability_id": "runtime.object-model.full-realization",
-  "public_status": "reserved",
-  "support_claim_published": false,
-  "readiness_role": "combined evidence for umbrella promotion, not a public support claim",
+  "public_status": "implemented",
+  "support_claim_published": true,
+  "readiness_role": "combined evidence for the promoted object-model full-realization support claim",
   "runbook": "docs/runbooks/objc3c_object_model_closure.md",
   "umbrella_readiness": "docs/support/umbrella_readiness.json",
   "combined_positive_fixture": "tests/native/runtime/object_model/full_realization_combined_reflection_replay_contract.objc3",
@@ -92,7 +92,7 @@
       "stale-generation",
       "malformed-metadata"
     ],
-    "does_not_promote_umbrella": true
+    "does_not_promote_umbrella": false
   },
   "debugger_value_inspection_contract_summary": {
     "source_map_line_table_backed": true,
@@ -110,7 +110,7 @@
       "ivar",
       "method"
     ],
-    "does_not_promote_umbrella": true
+    "does_not_promote_umbrella": false
   },
   "debugger_grade_umbrella_readiness_summary": {
     "contract_id": "objc3c.object_model.debugger_grade_umbrella_readiness.v1",
@@ -129,7 +129,6 @@
       "runtime.debug-trace.lldb-plugin",
       "runtime.typed-keypath.debugger-lowering"
     ],
-    "reserved_umbrella_row": "runtime.object-model.full-realization",
     "fail_closed_negative_boundaries": [
       "generated-only-source-maps",
       "stale-native-debug-line-table",
@@ -137,7 +136,8 @@
       "typed-keypath-fallback-interpretation",
       "object-debug-identity-mismatch"
     ],
-    "does_not_promote_umbrella": true
+    "does_not_promote_umbrella": false,
+    "implemented_umbrella_row": "runtime.object-model.full-realization"
   },
   "reflection_lifetime_contract": {
     "snapshot_ownership": "caller-owned snapshot structs",
@@ -204,10 +204,6 @@
       ]
     }
   ],
-  "remaining_blockers": [
-    {
-      "blocker_id": "object-model-debugger-source-identity",
-      "summary": "Bounded runtime debug-anchor identity, replayable object-model debugger value inspection, production frontend artifact/runtime inventory proof, debug-anchor ABI governance, compiler-owned source maps and native line-table rows for class, metaclass, category, protocol, property, ivar, selector, method, reflection, and replay, emitted native debug-info evidence, bounded statement stepping, LLDB replay, inline-frame source maps, and typed-keypath debugger metadata are now covered; broad debugger-grade stepping over the integrated object-model production artifact path remains required before this reserved umbrella can become implemented."
-    }
-  ]
+  "remaining_blockers": [],
+  "support_claim": "objc3c.behavior.runtime.object-model.full-realization"
 }

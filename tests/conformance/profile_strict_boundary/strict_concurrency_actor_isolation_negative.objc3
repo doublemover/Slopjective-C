@@ -1,0 +1,16 @@
+// Strict-concurrency negative fixture: objc_nonisolated is actor-only.
+module StrictConcurrencyActorIsolationNegative;
+
+@interface NonActorWorker
+- (i32)run:(i32)seed __attribute__((objc_nonisolated));
+@end
+
+@implementation NonActorWorker
+- (i32)run:(i32)seed __attribute__((objc_nonisolated)) {
+  return seed;
+}
+@end
+
+fn main() -> i32 {
+  return 0;
+}

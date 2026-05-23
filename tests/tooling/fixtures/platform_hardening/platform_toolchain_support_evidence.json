@@ -1068,7 +1068,9 @@
         "scripts/probe_objc3c_llvm_capabilities.py",
         "scripts/objc3c_llvm_capability_probe/reports.py",
         "tests/tooling/fixtures/platform_hardening/hosted_runner_capability_summaries.json",
+        "tests/tooling/fixtures/platform_hardening/platform_expansion_claim_contract.json",
         "schemas/objc3c-platform-hosted-runner-capability-summaries-v1.schema.json",
+        "schemas/objc3c-platform-expansion-claim-contract-v1.schema.json",
         "scripts/check_objc3c_cross_lane_e2e.py",
         "tests/tooling/test_probe_objc3c_llvm_capabilities.py"
       ],
@@ -1179,6 +1181,7 @@
       "claim_weight": "policy",
       "source_paths": [
         "tests/tooling/fixtures/platform_hardening/unsupported_host_fail_closed_policy.json",
+        "tests/tooling/fixtures/platform_hardening/platform_expansion_claim_contract.json",
         "scripts/platform_hardening_contracts/contract_predicates.py"
       ],
       "replay_commands": [
@@ -1201,6 +1204,7 @@
       "claim_weight": "policy",
       "source_paths": [
         "tests/tooling/fixtures/platform_hardening/unsupported_host_fail_closed_policy.json",
+        "tests/tooling/fixtures/platform_hardening/platform_expansion_claim_contract.json",
         "scripts/platform_hardening_contracts/contract_predicates.py"
       ],
       "replay_commands": [
@@ -1224,6 +1228,8 @@
       "claim_weight": "policy",
       "source_paths": [
         "tests/tooling/fixtures/platform_hardening/platform_toolchain_support_evidence.json",
+        "tests/tooling/fixtures/platform_hardening/platform_expansion_claim_contract.json",
+        "schemas/objc3c-platform-expansion-claim-contract-v1.schema.json",
         "tests/tooling/fixtures/security_hardening/sanitizer_validation_contract.json"
       ],
       "replay_commands": [

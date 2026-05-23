@@ -25,6 +25,17 @@ bool IsSameSemanticType(const SemanticTypeInfo &lhs, const SemanticTypeInfo &rhs
     return AreSameObjc3GenericCollectionTypeModel(
         lhs.generic_collection_model, rhs.generic_collection_model);
   }
+  if (lhs.canonical_type.is_value_optional ||
+      rhs.canonical_type.is_value_optional) {
+    return lhs.canonical_type.is_value_optional &&
+           rhs.canonical_type.is_value_optional &&
+           lhs.canonical_type.value_optional_payload_type_spelling ==
+               rhs.canonical_type.value_optional_payload_type_spelling &&
+           lhs.canonical_type.value_optional_runtime_execution_supported ==
+               rhs.canonical_type.value_optional_runtime_execution_supported &&
+           lhs.canonical_type.value_optional_lowering_supported ==
+               rhs.canonical_type.value_optional_lowering_supported;
+  }
   if (!lhs.is_vector) {
     if (lhs.is_callable) {
       return lhs.callable_param_types == rhs.callable_param_types &&
@@ -63,6 +74,9 @@ std::string SemanticTypeName(const SemanticTypeInfo &info) {
       }
       out << ") -> " << objc3c::support::ValueTypeName(info.callable_return_type);
       return out.str();
+    }
+    if (info.canonical_type.is_value_optional) {
+      return info.canonical_type.canonical_spelling;
     }
     return objc3c::support::ValueTypeName(info.type);
   }

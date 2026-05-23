@@ -7,6 +7,9 @@ const char *LLVMScalarType(ValueType type) {
   if (type == ValueType::Void) {
     return "void";
   }
+  if (type == ValueType::Optional) {
+    return "%objc3.value_optional";
+  }
   return "i32";
 }
 
@@ -41,6 +44,9 @@ ValueType RuntimeMetadataValueType(const std::string &type_name) {
   if (type_name == "Text" || type_name == "Objc3Text" ||
       type_name == "text-handle") {
     return ValueType::TextHandle;
+  }
+  if (type_name == "optional" || type_name == "Optional") {
+    return ValueType::Optional;
   }
   if (type_name == "unknown") {
     return ValueType::Unknown;

@@ -8,12 +8,10 @@ from ..expectation_matching import expect
 
 
 EXPECTED_OPTIONAL_GAP_IDS = ["throws", "async-await", "actors", "blocks", "arc"]
-EXPECTED_CLAIMED_PROFILES = ["core"]
-EXPECTED_REJECTED_PROFILES = ["strict", "strict-concurrency", "strict-system"]
-EXPECTED_TARGETED_PROFILES = ["strict", "strict-concurrency", "strict-system"]
+EXPECTED_CLAIMED_PROFILES = ["core", "strict", "strict-concurrency"]
+EXPECTED_REJECTED_PROFILES = ["strict-system"]
+EXPECTED_TARGETED_PROFILES = ["strict-system"]
 EXPECTED_UNSUPPORTED_FEATURE_CLAIM_IDS = [
-    "unsupported:strictness-selection",
-    "unsupported:strict-concurrency-selection",
     "unsupported:throws",
     "unsupported:async-await",
     "unsupported:actors",
@@ -72,18 +70,18 @@ def expect_residual_non_claimable_gap_surfaces(
         publication.get("selected_profile") == "core"
         and publication.get("selected_profile_supported") is True
         and publication.get("supported_profile_ids") == EXPECTED_CLAIMED_PROFILES,
-        "expected native publication to publish only the currently claimable core profile",
+        "expected native publication to publish the currently claimable core, strict, and strict-concurrency profiles",
     )
     expect(
         publication.get("rejected_profile_ids") == EXPECTED_REJECTED_PROFILES,
-        "expected native publication to reject built-in strict profiles until runtime-backed support lands",
+        "expected native publication to reject only strict-system until system evidence lands",
     )
     expect(
         runtime_capability_report.get("claimed_profile_ids")
         == EXPECTED_CLAIMED_PROFILES
         and runtime_capability_report.get("not_claimed_profile_ids")
         == EXPECTED_REJECTED_PROFILES,
-        "expected runtime capability report to publish only core as claimed and strict profiles as not claimed",
+        "expected runtime capability report to publish core, strict, and strict-concurrency as claimed and strict-system as not claimed",
     )
     expect(
         report.get("unsupported_feature_claim_ids")
@@ -103,7 +101,7 @@ def expect_residual_non_claimable_gap_surfaces(
         advanced_feature_gate.get("targeted_profile_ids") == EXPECTED_TARGETED_PROFILES
         and release_candidate_matrix.get("targeted_profile_ids")
         == EXPECTED_TARGETED_PROFILES,
-        "expected release gate sidecars to keep targeting the advanced strict profiles without claiming them",
+        "expected release gate sidecars to keep targeting only the unclaimed strict-system profile",
     )
     expect(
         release_candidate_matrix.get("advanced_feature_gate_artifact")

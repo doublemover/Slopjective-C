@@ -1173,8 +1173,8 @@
     {
       "id": "runtime.object-model.full-realization",
       "title": "Full object-model runtime realization",
-      "state": "reserved",
-      "summary": "This umbrella row no longer carries public support by itself. Public behavior claims are published by the narrower implemented rows for interface method tables, class/metaclass graphs, category/protocol registration, property/ivar reflection, registration replay, bounded query snapshots, and public reflection. A combined #8198 readiness contract ties class/metaclass/category/protocol/property/ivar/selector/reflection/replay evidence together, the debugger proof slice ties production compiler-owned object-model source identity rows for that same identity set, native line-table rows, emitted native debug-info evidence, debug-map runtime anchors, runtime debug-anchor replay, value-inspection records, debug-anchor ABI governance, and production source-map/native-line-table publication together, and the cross-lane object/reflection/debugger family exercises executable runtime behavior plus production artifact inspection. Full realization, broad full-source-map publication across every production path, typed keypath lowering in the combined fixture, and debugger-grade stepping over the integrated object-model production artifact path remain reserved.",
+      "state": "implemented",
+      "summary": "Objective-C 3.0 full object-model runtime realization is implemented as a debugger-grade identity graph for the Objective-C 3 runtime: class/metaclass/category/protocol/property/ivar/selector/method metadata, registration replay, public reflection snapshots, debug-anchor identity, value inspection, production source-map/native-line-table rows, emitted native debug-info evidence, LLDB/debugger replay contracts, typed-keypath debugger metadata, and integrated object-model statement stepping agree through checked public commands. This is not an Objective-C 2 runtime compatibility claim, a Swift/C++ runtime mirror, a dynamic-forwarding claim, or broad full-source-map publication for every production artifact path.",
       "owner_modules": [
         "native/objc3c/src/runtime/classes/class_graph.cpp",
         "native/objc3c/src/runtime/images/registration.cpp",
@@ -1191,29 +1191,19 @@
         },
         {
           "kind": "doc",
-          "path": "spec/MODULE_METADATA_AND_ABI_TABLES.md"
-        },
-        {
-          "kind": "doc",
           "path": "docs/runbooks/objc3c_object_model_closure.md"
         },
         {
           "kind": "source",
-          "path": "scripts/objc3c_runtime_acceptance/domains/object_model_capability_split.py"
+          "path": "native/objc3c/src/runtime/classes/class_graph.cpp"
         },
         {
-          "kind": "test",
-          "path": "tests/tooling/fixtures/object_model_closure/full_realization_combined_readiness_contract.json"
+          "kind": "source",
+          "path": "native/objc3c/src/runtime/images/registration.cpp"
         },
         {
-          "kind": "test",
-          "path": "tests/tooling/fixtures/object_model_closure/debugger_value_inspection_replay_contract.json",
-          "command": "npm run objc3c -- validate-object-model-debugger-proof"
-        },
-        {
-          "kind": "test",
-          "path": "tests/tooling/fixtures/cross_lane_e2e/object_reflection_debugger.expectation.json",
-          "command": "npm run objc3c -- validate-cross-lane-e2e"
+          "kind": "source",
+          "path": "native/objc3c/src/runtime/storage/property_layout_realization.cpp"
         },
         {
           "kind": "source",
@@ -1228,16 +1218,12 @@
           "path": "native/objc3c/src/runtime/public/objc3_runtime_reflection_debug_anchor.cpp"
         },
         {
-          "kind": "test",
-          "path": "tests/tooling/fixtures/object_model_closure/debug_anchor_identity_replay_contract.json"
+          "kind": "source",
+          "path": "scripts/objc3c_editor_tooling/artifact_inspector.py"
         },
         {
-          "kind": "test",
-          "path": "tests/native/runtime/object_model/debug_anchor_identity_replay_probe.cpp"
-        },
-        {
-          "kind": "test",
-          "path": "tests/native/runtime/object_model/full_realization_combined_reflection_replay_contract.objc3"
+          "kind": "source",
+          "path": "scripts/objc3c_editor_tooling/model.py"
         },
         {
           "kind": "source",
@@ -1245,8 +1231,31 @@
         },
         {
           "kind": "test",
-          "path": "scripts/check_objc3c_object_model_debugger_proof.py",
+          "path": "tests/tooling/fixtures/object_model_closure/full_realization_combined_readiness_contract.json",
           "command": "npm run objc3c -- validate-object-model-debugger-proof"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/fixtures/object_model_closure/debugger_value_inspection_replay_contract.json",
+          "command": "npm run objc3c -- validate-object-model-debugger-proof"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/fixtures/object_model_closure/debug_anchor_identity_replay_contract.json"
+        },
+        {
+          "kind": "test",
+          "path": "tests/native/runtime/object_model/full_realization_combined_reflection_replay_contract.objc3",
+          "command": "npm run objc3c -- validate-object-model-conformance"
+        },
+        {
+          "kind": "test",
+          "path": "tests/native/runtime/object_model/debug_anchor_identity_replay_probe.cpp"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/fixtures/cross_lane_e2e/object_reflection_debugger.expectation.json",
+          "command": "npm run objc3c -- validate-cross-lane-e2e"
         },
         {
           "kind": "test",
@@ -1255,7 +1264,14 @@
         {
           "kind": "test",
           "path": "tests/tooling/test_runtime_capability_public_split.py"
+        },
+        {
+          "kind": "source",
+          "path": "scripts/objc3c_runtime_acceptance/domains/object_model_capability_split.py"
         }
+      ],
+      "support_claims": [
+        "objc3c.behavior.runtime.object-model.full-realization"
       ]
     },
     {

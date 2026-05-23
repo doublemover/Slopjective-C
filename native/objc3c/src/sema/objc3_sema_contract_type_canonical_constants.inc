@@ -30,22 +30,22 @@ inline constexpr const char *kObjc3CompatibilityStrictnessClaimSemanticsSurfaceP
 // truthful split between live selections, source-only downgraded claims, and
 // fail-closed unsupported advanced surfaces around the runnable core.
 inline constexpr const char *kObjc3CompatibilityStrictnessClaimSemanticModel =
-    "canonical-selection-only-strictness-and-concurrency-claims-remain-fail-closed";
+    "core-strict-and-strict-concurrency-selection-backed-by-profile-enforcement";
 inline constexpr const char *kObjc3CompatibilityStrictnessClaimDowngradeModel =
     "source-only-claims-remain-recognized-but-never-promote-to-runnable";
 inline constexpr const char *kObjc3CompatibilityStrictnessClaimRejectionModel =
-    "strictness-strict-concurrency-and-feature-macro-claims-remain-fail-closed";
+    "strict-system-and-feature-macro-claims-remain-fail-closed";
 inline constexpr const char *kObjc3CompatibilityStrictnessClaimCanonicalInterfaceTruthModel =
     "no-standalone-interface-payload-yet-and-any-future-canonical-interface-must-stay-bounded-to-runnable-and-source-downgraded-claims";
 inline constexpr const char *kObjc3CompatibilityStrictnessClaimSeparateCompilationMacroTruthModel =
     "suppressed-feature-macro-claims-remain-unpublished-across-manifest-interface-and-conformance-surfaces-until-executable";
 inline constexpr const char *kObjc3CompatibilityStrictnessClaimCanonicalInterfacePayloadMode =
     "no-standalone-interface-payload-yet";
-inline constexpr std::size_t kObjc3CompatibilityStrictnessClaimValidLanguageProfileCount = 1u;
-inline constexpr std::size_t kObjc3CompatibilityStrictnessClaimLiveSelectionSurfaceCount = 2u;
-inline constexpr std::size_t kObjc3CompatibilityStrictnessClaimValidSelectionCombinationCount = 1u;
+inline constexpr std::size_t kObjc3CompatibilityStrictnessClaimValidLanguageProfileCount = 3u;
+inline constexpr std::size_t kObjc3CompatibilityStrictnessClaimLiveSelectionSurfaceCount = 4u;
+inline constexpr std::size_t kObjc3CompatibilityStrictnessClaimValidSelectionCombinationCount = 3u;
 inline constexpr std::size_t kObjc3CompatibilityStrictnessClaimRunnableFeatureCount = 7u;
 inline constexpr std::size_t kObjc3CompatibilityStrictnessClaimSourceOnlyFeatureCount = 6u;
-inline constexpr std::size_t kObjc3CompatibilityStrictnessClaimRejectedFeatureCount = 11u;
-inline constexpr std::size_t kObjc3CompatibilityStrictnessClaimRejectedSelectionSurfaceCount = 3u;
+inline constexpr std::size_t kObjc3CompatibilityStrictnessClaimRejectedFeatureCount = 9u;
+inline constexpr std::size_t kObjc3CompatibilityStrictnessClaimRejectedSelectionSurfaceCount = 1u;
 inline constexpr std::size_t kObjc3CompatibilityStrictnessClaimSuppressedMacroClaimCount = 3u;

@@ -33,6 +33,25 @@ std::string EmitObjc3IRCallExpression(
       return callbacks.emit_unsupported_i32_value(
           "try lowering requires declared callable signature");
     }
+    if (operand_signature->typed_throws_declared) {
+      const std::string payload =
+          operand_signature->typed_throws_error_type_spelling.empty()
+              ? "unknown"
+              : operand_signature->typed_throws_error_type_spelling;
+      return callbacks.emit_unsupported_i32_value(
+          "try lowering for typed throws payload " + payload +
+          " requires typed error ABI support");
+    }
+    if (operand_signature->has_value_optional_type_signature &&
+        !operand_signature->value_optional_lowering_supported) {
+      const std::string payload =
+          operand_signature->value_optional_payload_type_spelling.empty()
+              ? "unknown"
+              : operand_signature->value_optional_payload_type_spelling;
+      return callbacks.emit_unsupported_i32_value(
+          "try lowering for value optional payload " + payload +
+          " requires value optional ABI support");
+    }
     const std::string result_ptr =
         "%try.result.addr." + std::to_string(ctx.temp_counter++);
     const std::string error_slot =
@@ -61,7 +80,7 @@ std::string EmitObjc3IRCallExpression(
             "try lowering received bridged operand without failure condition");
       }
       failure_cond = bridge_failure_condition;
-    } else if (operand_signature->throws_declared) {
+    } else if (operand_signature->throws_error_out_abi_ready) {
       const std::string has_error = callbacks.new_temp(ctx);
       const std::string loaded_error =
           callbacks.emit_load_thrown_error(error_slot, ctx);
@@ -118,7 +137,26 @@ std::string EmitObjc3IRCallExpression(
   }
   const LoweredFunctionSignature *signature =
       callbacks.lookup_function_signature(expr->ident);
-  if (signature != nullptr && signature->throws_declared) {
+  if (signature != nullptr && signature->typed_throws_declared) {
+    const std::string payload =
+        signature->typed_throws_error_type_spelling.empty()
+            ? "unknown"
+            : signature->typed_throws_error_type_spelling;
+    return callbacks.emit_unsupported_i32_value(
+        "typed throws call lowering for payload " + payload +
+        " requires typed error ABI support");
+  }
+  if (signature != nullptr && signature->has_value_optional_type_signature &&
+      !signature->value_optional_lowering_supported) {
+    const std::string payload =
+        signature->value_optional_payload_type_spelling.empty()
+            ? "unknown"
+            : signature->value_optional_payload_type_spelling;
+    return callbacks.emit_unsupported_i32_value(
+        "value optional call lowering for payload " + payload +
+        " requires value optional ABI support");
+  }
+  if (signature != nullptr && signature->throws_error_out_abi_ready) {
     const std::string ignored_error_slot =
         callbacks.build_throws_error_slot_alloca(ctx, "ignored");
     ctx.code_lines.push_back("  store i32 0, ptr " + ignored_error_slot +

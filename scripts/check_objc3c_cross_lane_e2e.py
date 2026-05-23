@@ -1083,10 +1083,10 @@ def validate_object_reflection_debugger_proof(
     debug_map = require_object(model.debug, f"{family_id}.debug_source_map")
     if debug_map.get("supported") is not True or debug_map.get("object_artifact_present") is not True:
         raise RuntimeError(f"{family_id}.debug map must be tied to the emitted object artifact")
-    if debug_map.get("source_map_supported") is not False:
-        raise RuntimeError(f"{family_id}.debug map must keep full source maps fail-closed")
-    if debug_map.get("statement_level_stepping") is not False:
-        raise RuntimeError(f"{family_id}.debug map must keep statement stepping fail-closed")
+    if debug_map.get("source_map_supported") is not True:
+        raise RuntimeError(f"{family_id}.debug map must publish object-model source maps")
+    if debug_map.get("statement_level_stepping") is not True:
+        raise RuntimeError(f"{family_id}.debug map must publish object-model statement stepping")
     declaration_breakpoint_anchors = validate_minimum_count(
         family_id=family_id,
         actual=debug_map.get("declaration_breakpoint_anchor_count"),
@@ -1125,13 +1125,15 @@ def validate_object_reflection_debugger_proof(
         proof.get("reserved_rows_not_promoted"),
         f"{family_id}.object_reflection_debugger_proof.reserved_rows_not_promoted",
     )
-    for required_row in (
-        "runtime.object-model.full-realization",
-        "runtime.debug-trace.statement-stepping",
-        "runtime.debug-trace.full-source-map-publication",
-    ):
+    for required_row in ("runtime.debug-trace.full-source-map-publication",):
         if required_row not in reserved_rows:
             raise RuntimeError(f"{family_id}.object reflection proof must keep {required_row} reserved")
+    for promoted_row in (
+        "runtime.object-model.full-realization",
+        "runtime.debug-trace.statement-stepping",
+    ):
+        if promoted_row in reserved_rows:
+            raise RuntimeError(f"{family_id}.object reflection proof must not reserve promoted row {promoted_row}")
 
     return {
         "status": "PASS",
@@ -3252,7 +3254,8 @@ def validate_expectation(
             raise RuntimeError(f"{family_id}.{section_name} must not mark generated artifacts as source truth")
 
     boundary = require_object(expectation.get("capability_boundary"), f"{family_id}.capability_boundary")
-    if boundary.get("cannot_promote_reserved_rows") is not True:
+    expected_no_reserved_promotion = family_id != "object_reflection_debugger"
+    if boundary.get("cannot_promote_reserved_rows") is not expected_no_reserved_promotion:
         raise RuntimeError(f"{family_id}.capability_boundary must forbid reserved-row promotion")
     require_list(boundary.get("referenced_capability_rows"), f"{family_id}.capability_boundary.rows")
     return expectation

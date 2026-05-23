@@ -11,7 +11,7 @@ _Normative baseline references used in this part: [NR-C18](#part-0-2-1), [NR-LLV
 - ObjC 3.0 v1 does not add a dedicated `never throws` marker; absence of `throws` is the canonical non-throwing form.
 - Generic non-throwing requirements are expressed using non-throwing function/block types, not a new keyword or attribute.
 - Nil-to-error mapping is explicit and library-defined via canonical `objc3.errors` helpers (`orThrow` and `okOr`), not language sugar.
-- Typed throws is not a v1 behavior claim; v1 reserves syntax/metadata slots and requires canonical diagnostics for typed-throws metadata.
+- Typed throws is a source/interface metadata surface only: a single `throws(E)` payload is preserved, invalid payload shapes remain canonical diagnostics, and typed error ABI/lowering/runtime behavior is not a v1 claim.
 
 ### v0.9 resolved decisions {#part-6-v0-9-resolved-decisions}
 
@@ -31,7 +31,7 @@ _Normative baseline references used in this part: [NR-C18](#part-0-2-1), [NR-LLV
 ### v0.4 resolved decisions {#part-6-v0-4-resolved-decisions}
 
 - `throws` is **untyped** in v1: thrown values are `id<Error>`.
-- Typed throws syntax `throws(E)` is reserved for future extension and is not part of v1 grammar.
+- Typed throws syntax `throws(E)` is admitted as a source/interface effect payload only; runtime execution still uses the untyped `id<Error>` model until a typed error ABI is specified.
 
 Objective‑C 3.0 standardizes a modern, explicit error model that can be used in new code while interoperating with existing Cocoa and system APIs.
 
@@ -262,42 +262,54 @@ Recommended patterns for generic and callable APIs:
 - If an API should accept both throwing and non-throwing callables, declare the parameter as throwing and rely on the implicit non-throwing to throwing conversion in [§6.3.4](#part-6-3-4).
 - When adapting a throwing callable to a non-throwing callable, use an explicit adapter that handles the error path.
 
-### 6.3.7 Reserved typed-throws slots (not in v1) {#part-6-3-7}
+### 6.3.7 Source-owned typed-throws payloads {#part-6-3-7}
 
-Typed throws is reserved and unavailable in ObjC 3.0 v1. The #8233 compiler
-contract owns parser diagnostics and default metadata slots only; it is not a
-runtime, ABI, lowering, or textual-interface support claim for typed error
-payloads.
+Typed throws is source-admitted for a single payload in ObjC 3.0 v1, but it is
+not yet a runtime, ABI, or lowering support claim. The #8233 compiler contract
+owns the parser payload shape, AST preservation, textual-interface metadata, and
+fail-closed boundaries that prevent silent erasure into bare `throws`.
 
-Reserved source syntax slots:
+Source syntax:
 
-- `throws(type-name)`
-- `throws(type-name, ...)`
+- `throws(type-name)` is admitted as a typed effect payload.
+- `throws(type-name, ...)`, `throws()`, malformed payloads, and non-type payloads
+  are rejected.
 
 v1 parser and diagnostics requirements:
 
-- A declaration using `throws(` ... `)` shall be rejected in v1 mode with a diagnostic that typed throws is unsupported in v1.
-- Parser-owned typed-throws rejections cover empty payloads (`throws()`), single
-  payloads (`throws(E)`), multi-payload spellings (`throws(E1, E2)`), and
-  malformed unclosed payloads as fail-closed `O3P182` cases.
-- A compiler shall not reinterpret `throws(...)` as bare `throws`, and shall not silently erase the parenthesized payload.
-- A fix-it may suggest replacing `throws(...)` with bare `throws` when preserving behavior.
+- A declaration using exactly one source type payload in `throws(` ... `)` shall
+  preserve the canonical payload spelling in the frontend source model.
+- Parser-owned typed-throws rejections cover empty payloads (`throws()`),
+  multi-payload spellings (`throws(E1, E2)`), malformed unclosed payloads, and
+  non-type payloads as fail-closed `O3P182` cases.
+- A compiler shall not reinterpret `throws(E)` as bare `throws`, and shall not
+  silently erase the parenthesized payload.
+- A fix-it may suggest replacing an invalid `throws(...)` shape with bare
+  `throws` only when that explicitly drops the typed payload.
 
-Reserved metadata slots for module/interface exchange:
+Metadata slots for module/interface exchange:
 
-- `throws_kind`: enum slot. v1 requires `untyped`; `typed` is reserved.
-- `throws_type_arity`: unsigned slot. v1 requires `0`.
-- `throws_type_refs`: sequence slot of canonical type references. v1 requires empty.
+- `throws_kind`: enum slot. v1 producers may emit `none`, `untyped`, or `typed`.
+- `typed_payload_arity`: unsigned slot. v1 typed throws requires `1`; untyped
+  and non-throwing declarations require `0`.
+- `declared_error_type`: canonical source payload spelling for typed throws,
+  `id<Error>` for bare throws, and empty for non-throwing declarations.
 - A declaration with bare `throws` has effect record `throws_kind=untyped`,
-  `throws_type_arity=0`, and the v1 declared error carrier `id<Error>`.
+  `typed_payload_arity=0`, and the v1 declared error carrier `id<Error>`.
+- A declaration with `throws(E)` has effect record `throws_kind=typed`,
+  `typed_payload_arity=1`, and `declared_error_type=E`.
 - A declaration without `throws` has effect record `throws_kind=none` and
-  `throws_type_arity=0`.
+  `typed_payload_arity=0`.
 
-Version constraints:
+Version and lowering constraints:
 
-- A v1 consumer that imports non-v1 typed-throws metadata values (for example, `throws_kind=typed`, non-zero arity, or non-empty type refs) shall emit an incompatibility diagnostic and reject that declaration for v1 conformance.
-- A producer targeting v1 shall not emit non-v1 typed-throws metadata values.
-- Untyped and typed declarations are effect-signature-distinct across module boundaries unless a later version explicitly defines a conversion rule.
+- A v1 consumer that imports typed-throws metadata with erased payload spelling,
+  zero typed payload arity, a mismatched `declared_error_type`, or a runtime
+  execution/lowering claim shall emit an incompatibility diagnostic and reject
+  that declaration for v1 conformance.
+- A producer targeting v1 shall mark typed throws ABI/lowering as deferred.
+- Untyped and typed declarations are effect-signature-distinct across module
+  boundaries unless a later version explicitly defines a conversion rule.
 
 ---
 
@@ -314,9 +326,12 @@ throw-statement:
 
 A `throw` statement is permitted only within a `throws` function or within a `catch` block.
 
-In v1, `throws` is untyped. The thrown expression shall be convertible to `id<Error>`.
+In v1, runnable `throws` remains untyped. The thrown expression shall be
+convertible to `id<Error>`.
 
-Typed throws forms (for example, `throws(E)`) are reserved in v1; their diagnostic handling is defined in [§6.3.7](#part-6-3-7).
+Typed throws forms (for example, `throws(E)`) preserve their source payload in
+the frontend/interface contract, but runtime propagation for typed payloads is
+deferred as defined in [§6.3.7](#part-6-3-7).
 
 ### 6.4.3 Dynamic semantics {#part-6-4-3}
 
@@ -556,7 +571,7 @@ Minimum diagnostics:
 ### 6.13.1 Typed throws {#part-6-13-1}
 
 Typed throws syntax may later restrict throwable error sets.
-ObjC 3.0 v1 intentionally ships only untyped `throws`; [§6.3.7](#part-6-3-7) defines the reserved typed-throws handling.
+ObjC 3.0 v1 intentionally ships only untyped runnable propagation; [§6.3.7](#part-6-3-7) defines the source/interface typed-throws payload contract and its deferred ABI boundary.
 
 ## M267 current implementation closeout note
 

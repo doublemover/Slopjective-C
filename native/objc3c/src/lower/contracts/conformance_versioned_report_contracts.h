@@ -30,7 +30,7 @@ inline constexpr const char
         "unsupported-claims-remain-published-as-known-unsupported-without-runnable-overclaim";
 inline constexpr const char
     *kObjc3VersionedConformanceReportSelectionModel =
-        "canonical-selection-only-strictness-and-concurrency-claims-remain-fail-closed";
+        "core-strict-and-strict-concurrency-selection-supported-strict-system-fail-closed";
 inline constexpr const char
     *kObjc3VersionedConformanceReportCanonicalInterfaceMode =
         "no-standalone-interface-payload-yet";

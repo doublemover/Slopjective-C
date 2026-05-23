@@ -1,7 +1,7 @@
 // Expected diagnostic code(s): O3P182.
 module NegativeTypedThrowsErasureMismatchReserved;
 
-extern fn typed() throws(Error) -> i32;
+extern fn typed() throws(Error, OtherError) -> i32;
 
 fn caller() throws -> i32 {
   return try typed();

@@ -88,9 +88,9 @@ inline constexpr const char *kObjc3ErrorHandlingErrorSourceClosureContractId =
 inline constexpr const char *kObjc3ErrorHandlingErrorSourceClosureSurfacePath =
     "frontend.pipeline.semantic_surface.objc_error_handling_error_source_closure";
 inline constexpr const char *kObjc3ErrorHandlingErrorSourceClosureSourceModel =
-    "bare-throws-declarations-result-carrier-profiles-nserror-bridging-profiles-and-canonical-error-bridge-markers-are-live-frontend-owned-source-surfaces-while-typed-throws-try-throw-and-do-catch-remain-reserved-fail-closed";
+    "bare-throws-declarations-single-payload-typed-throws-result-carrier-profiles-nserror-bridging-profiles-and-canonical-error-bridge-markers-are-live-frontend-owned-source-surfaces-while-typed-throws-abi-lowering-try-throw-and-do-catch-remain-fail-closed";
 inline constexpr const char *kObjc3ErrorHandlingErrorSourceClosureFailureModel =
-    "typed-throws-try-expressions-throw-statements-and-do-catch-remain-parse-owned-fail-closed-boundaries-until-runnable-error_handling-sema-lowering-interface-and-runtime-work";
+    "typed-throws-preserves-one-source-payload-through-interface-contracts-but-typed-error-abi-lowering-runtime-execution-try-expressions-throw-statements-and-do-catch-remain-fail-closed-boundaries-until-runnable-error_handling-work";
 
 struct Objc3FrontendErrorHandlingErrorSourceClosureSummary {
   std::string contract_id = kObjc3ErrorHandlingErrorSourceClosureContractId;
@@ -99,11 +99,12 @@ struct Objc3FrontendErrorHandlingErrorSourceClosureSummary {
   std::string failure_model = kObjc3ErrorHandlingErrorSourceClosureFailureModel;
   std::vector<std::string> source_only_claim_ids = {
       kObjc3SourceOnlyFeatureClaimThrowsDeclarations,
+      kObjc3SourceOnlyFeatureClaimTypedThrowsDeclarations,
       kObjc3SourceOnlyFeatureClaimResultCarrierProfiles,
       kObjc3SourceOnlyFeatureClaimNSErrorBridgingProfiles,
   };
   std::vector<std::string> fail_closed_construct_ids = {
-      kObjc3ErrorHandlingFailClosedConstructTypedThrows,
+      kObjc3ErrorHandlingFailClosedConstructTypedThrowsAbiLowering,
       kObjc3ErrorHandlingFailClosedConstructTryExpressions,
       kObjc3ErrorHandlingFailClosedConstructThrowStatements,
       kObjc3ErrorHandlingFailClosedConstructDoCatchStatements,
@@ -126,7 +127,10 @@ struct Objc3FrontendErrorHandlingErrorSourceClosureSummary {
   std::size_t try_keyword_sites = 0;
   std::size_t throw_keyword_sites = 0;
   std::size_t catch_keyword_sites = 0;
+  std::size_t typed_throws_declaration_sites = 0;
+  std::size_t typed_throws_payload_arity_supported = 1;
   bool throws_declaration_source_supported = false;
+  bool typed_throws_source_supported = false;
   bool result_carrier_source_supported = false;
   bool ns_error_bridging_source_supported = false;
   bool error_bridge_marker_source_supported = false;
@@ -134,18 +138,20 @@ struct Objc3FrontendErrorHandlingErrorSourceClosureSummary {
   bool throw_keyword_reserved = false;
   bool catch_keyword_reserved = false;
   bool typed_throws_fail_closed = false;
+  bool typed_throws_abi_lowering_fail_closed = false;
   std::size_t typed_throws_issue_ref = 8233;
   std::string typed_throws_canonical_syntax = "throws(E)";
   std::string typed_throws_reserved_diagnostic_code =
       kObjc3ParserDiagnosticReservedTypedThrowsCode;
-  bool typed_throws_single_payload_reserved = true;
+  bool typed_throws_single_payload_reserved = false;
   bool typed_throws_empty_payload_rejected = true;
   bool typed_throws_multi_payload_rejected = true;
   bool typed_throws_silent_erasure_allowed = false;
-  std::string typed_throws_effect_record_status = "bare-throws-untyped-only";
-  std::string typed_throws_abi_status = "reserved-no-lowering";
+  std::string typed_throws_effect_record_status =
+      "typed-and-untyped-effects-preserved";
+  std::string typed_throws_abi_status = "typed-error-abi-deferred";
   std::string typed_throws_interface_roundtrip_status =
-      "reserved-feature-marker-imported";
+      "typed-payload-preserved";
   bool try_fail_closed = false;
   bool throw_fail_closed = false;
   bool do_catch_fail_closed = false;

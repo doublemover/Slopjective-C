@@ -55,8 +55,15 @@ inline std::string BuildObjc3ParseArtifactReplayKey(
 }
 
 inline const char *Objc3FrontendLanguageProfileName(const Objc3FrontendLanguageProfile mode) {
-  (void)mode;
-  return "canonical";
+  switch (mode) {
+    case Objc3FrontendLanguageProfile::kCanonical:
+      return "canonical";
+    case Objc3FrontendLanguageProfile::kStrict:
+      return "strict";
+    case Objc3FrontendLanguageProfile::kStrictConcurrency:
+      return "strict-concurrency";
+  }
+  return "unknown";
 }
 
 inline bool IsObjc3LanguageVersionPragmaContractConsistent(

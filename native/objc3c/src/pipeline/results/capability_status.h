@@ -8,7 +8,7 @@ inline bool IsReadyObjc3FrontendTypeSystemTypeSourceClosureSummary(
          summary.frontend_surface_path == kObjc3TypeSystemTypeSourceClosureSurfacePath &&
          summary.source_model == kObjc3TypeSystemTypeSourceClosureSourceModel &&
          summary.failure_model == kObjc3TypeSystemTypeSourceClosureFailureModel &&
-         summary.source_only_claim_ids.size() == 7 &&
+         summary.source_only_claim_ids.size() == 8 &&
          summary.source_only_claim_ids[0] ==
              kObjc3SourceOnlyFeatureClaimProtocolOptionalPartitions &&
          summary.source_only_claim_ids[1] ==
@@ -23,6 +23,8 @@ inline bool IsReadyObjc3FrontendTypeSystemTypeSourceClosureSummary(
              kObjc3SourceOnlyFeatureClaimNilCoalescing &&
          summary.source_only_claim_ids[6] ==
              kObjc3SourceOnlyFeatureClaimTypedKeyPathLiterals &&
+         summary.source_only_claim_ids[7] ==
+             kObjc3SourceOnlyFeatureClaimValueOptionalTypeSignatures &&
          summary.unsupported_claim_ids.size() == 1 &&
          summary.unsupported_claim_ids[0] ==
              kObjc3UnsupportedFeatureClaimValueOptionals &&
@@ -36,8 +38,9 @@ inline bool IsReadyObjc3FrontendTypeSystemTypeSourceClosureSummary(
          summary.optional_send_source_supported &&
          summary.nil_coalescing_source_supported &&
          summary.typed_keypath_literal_source_supported &&
+         summary.value_optional_type_signature_source_supported &&
          !summary.optional_member_access_fail_closed &&
-         summary.value_optional_type_fail_closed &&
+         summary.value_optional_runtime_execution_fail_closed &&
          summary.value_optional_issue_ref == 8234u &&
          summary.value_optional_canonical_spelling == "Optional<T>" &&
          summary.value_optional_reserved_diagnostic_code ==
@@ -47,9 +50,10 @@ inline bool IsReadyObjc3FrontendTypeSystemTypeSourceClosureSummary(
          !summary.value_optional_nil_to_scalar_coercion_allowed &&
          !summary.value_optional_nullable_pointer_conversion_allowed &&
          !summary.value_optional_throws_conversion_allowed &&
-         summary.value_optional_abi_status == "reserved-no-layout" &&
+         summary.value_optional_abi_status ==
+             "stable-contract-runtime-lowering-deferred" &&
          summary.value_optional_interface_roundtrip_status ==
-             "reserved-feature-marker-imported" &&
+             "type-signature-carrier-imported-runtime-deferred" &&
          summary.deterministic_handoff &&
          summary.ready_for_semantic_expansion &&
          !summary.replay_key.empty() && summary.failure_reason.empty();
@@ -121,16 +125,18 @@ inline bool IsReadyObjc3FrontendErrorHandlingErrorSourceClosureSummary(
              kObjc3ErrorHandlingErrorSourceClosureSurfacePath &&
          summary.source_model == kObjc3ErrorHandlingErrorSourceClosureSourceModel &&
          summary.failure_model == kObjc3ErrorHandlingErrorSourceClosureFailureModel &&
-         summary.source_only_claim_ids.size() == 3 &&
+         summary.source_only_claim_ids.size() == 4 &&
          summary.source_only_claim_ids[0] ==
              kObjc3SourceOnlyFeatureClaimThrowsDeclarations &&
          summary.source_only_claim_ids[1] ==
-             kObjc3SourceOnlyFeatureClaimResultCarrierProfiles &&
+             kObjc3SourceOnlyFeatureClaimTypedThrowsDeclarations &&
          summary.source_only_claim_ids[2] ==
+             kObjc3SourceOnlyFeatureClaimResultCarrierProfiles &&
+         summary.source_only_claim_ids[3] ==
              kObjc3SourceOnlyFeatureClaimNSErrorBridgingProfiles &&
          summary.fail_closed_construct_ids.size() == 4 &&
          summary.fail_closed_construct_ids[0] ==
-             kObjc3ErrorHandlingFailClosedConstructTypedThrows &&
+             kObjc3ErrorHandlingFailClosedConstructTypedThrowsAbiLowering &&
          summary.fail_closed_construct_ids[1] ==
              kObjc3ErrorHandlingFailClosedConstructTryExpressions &&
          summary.fail_closed_construct_ids[2] ==
@@ -138,23 +144,26 @@ inline bool IsReadyObjc3FrontendErrorHandlingErrorSourceClosureSummary(
          summary.fail_closed_construct_ids[3] ==
              kObjc3ErrorHandlingFailClosedConstructDoCatchStatements &&
          summary.throws_declaration_source_supported &&
+         summary.typed_throws_source_supported &&
          summary.result_carrier_source_supported &&
          summary.ns_error_bridging_source_supported &&
          summary.error_bridge_marker_source_supported &&
          summary.try_keyword_reserved && summary.throw_keyword_reserved &&
          summary.catch_keyword_reserved && summary.typed_throws_fail_closed &&
+         summary.typed_throws_abi_lowering_fail_closed &&
+         summary.typed_throws_payload_arity_supported == 1u &&
          summary.typed_throws_issue_ref == 8233u &&
          summary.typed_throws_canonical_syntax == "throws(E)" &&
          summary.typed_throws_reserved_diagnostic_code == "O3P182" &&
-         summary.typed_throws_single_payload_reserved &&
+         !summary.typed_throws_single_payload_reserved &&
          summary.typed_throws_empty_payload_rejected &&
          summary.typed_throws_multi_payload_rejected &&
          !summary.typed_throws_silent_erasure_allowed &&
          summary.typed_throws_effect_record_status ==
-             "bare-throws-untyped-only" &&
-         summary.typed_throws_abi_status == "reserved-no-lowering" &&
+             "typed-and-untyped-effects-preserved" &&
+         summary.typed_throws_abi_status == "typed-error-abi-deferred" &&
          summary.typed_throws_interface_roundtrip_status ==
-             "reserved-feature-marker-imported" &&
+             "typed-payload-preserved" &&
          summary.try_fail_closed &&
          summary.throw_fail_closed && summary.do_catch_fail_closed &&
          summary.deterministic_handoff &&

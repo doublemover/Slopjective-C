@@ -16,6 +16,7 @@ SUPPORT_TIER_POLICY_PATH = PLATFORM_FIXTURE_ROOT / "platform_support_tier_policy
 UNSUPPORTED_HOST_POLICY_PATH = PLATFORM_FIXTURE_ROOT / "unsupported_host_fail_closed_policy.json"
 HOSTED_RUNNER_CAPABILITY_SUMMARIES_PATH = PLATFORM_FIXTURE_ROOT / "hosted_runner_capability_summaries.json"
 TOOLCHAIN_ARCHIVE_POLICY_PATH = PLATFORM_FIXTURE_ROOT / "toolchain_archive_claim_policy.json"
+PLATFORM_EXPANSION_CLAIM_CONTRACT_PATH = PLATFORM_FIXTURE_ROOT / "platform_expansion_claim_contract.json"
 PLATFORM_MATRIX_ARTIFACT_CONTRACT_PATH = PLATFORM_FIXTURE_ROOT / "platform_matrix_artifact_contract.json"
 BUILD_PACKAGE_VALIDATION_CONTRACT_PATH = PLATFORM_FIXTURE_ROOT / "build_package_validation_contract.json"
 TOOLCHAIN_RANGE_REPLAY_CONTRACT_PATH = PLATFORM_FIXTURE_ROOT / "toolchain_range_replay_contract.json"
@@ -29,6 +30,7 @@ RELEASE_RUNBOOK_PATH = ROOT / "docs" / "runbooks" / "objc3c_release_operations.m
 PLATFORM_SUPPORT_MATRIX_SCHEMA_PATH = ROOT / "schemas" / "objc3c-platform-support-matrix-v1.schema.json"
 PLATFORM_TOOLCHAIN_SUPPORT_EVIDENCE_SCHEMA_PATH = ROOT / "schemas" / "objc3c-platform-toolchain-support-evidence-v1.schema.json"
 HOSTED_RUNNER_CAPABILITY_SUMMARIES_SCHEMA_PATH = ROOT / "schemas" / "objc3c-platform-hosted-runner-capability-summaries-v1.schema.json"
+PLATFORM_EXPANSION_CLAIM_CONTRACT_SCHEMA_PATH = ROOT / "schemas" / "objc3c-platform-expansion-claim-contract-v1.schema.json"
 
 SUPPORT_MATRIX_ARTIFACT_PATH = PLATFORM_ARTIFACT_ROOT / "objc3c-platform-matrix.json"
 SUPPORT_MATRIX_SUMMARY_PATH = PLATFORM_REPORT_ROOT / "platform-matrix-summary.json"
@@ -99,6 +101,8 @@ __all__ = [
     "PACKAGING_RUNBOOK_PATH",
     "PLATFORM_ARTIFACT_ROOT",
     "PLATFORM_FIXTURE_ROOT",
+    "PLATFORM_EXPANSION_CLAIM_CONTRACT_PATH",
+    "PLATFORM_EXPANSION_CLAIM_CONTRACT_SCHEMA_PATH",
     "PLATFORM_HARDENING_INTEGRATION_SUMMARY_PATH",
     "PLATFORM_HARDENING_SUMMARY_BUILDERS",
     "PLATFORM_HARDENING_SUMMARY_PATHS",

@@ -24,6 +24,13 @@ void EmitObjc3IRExternalFunctionDeclarations(
       continue;
     }
     const LoweredFunctionSignature &signature = entry.second;
+    if (signature.has_value_optional_type_signature &&
+        !signature.value_optional_lowering_supported) {
+      out << "; value optional source-only signature not emitted for @"
+          << entry.first << " (O3P159)\n";
+      emitted = true;
+      continue;
+    }
     std::ostringstream params;
     for (std::size_t i = 0; i < signature.param_types.size(); ++i) {
       if (i != 0) {
@@ -31,7 +38,7 @@ void EmitObjc3IRExternalFunctionDeclarations(
       }
       params << LLVMScalarType(signature.param_types[i]);
     }
-    if (signature.throws_declared) {
+    if (signature.throws_error_out_abi_ready) {
       if (!signature.param_types.empty()) {
         params << ", ";
       }

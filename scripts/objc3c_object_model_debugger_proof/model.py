@@ -29,15 +29,15 @@ PRODUCTION_SOURCE_MAP_PUBLICATION_CONTRACT_ID = (
 PRODUCTION_NATIVE_DEBUG_INFO_EVIDENCE_CONTRACT_ID = (
     "objc3c.object_model.production.native_debug_info_evidence.v1"
 )
-STATEMENT_STEP_RESERVATION_CONTRACT_ID = (
-    "objc3c.object_model.statement_step_reservation.fail_closed.v1"
+STATEMENT_STEP_INTEGRATION_CONTRACT_ID = (
+    "objc3c.object_model.statement_step_integration.supported.v1"
 )
 REQUIRED_STEPPING_BLOCKER = "runtime-debug-trace-statement-stepping-integration"
 REQUIRED_SOURCE_TRUTH_KIND = "canonical-frontend-runtime-metadata-manifest"
 REQUIRED_NATIVE_LINE_TABLE_MODEL = (
     "canonical-frontend-source-map-native-line-table-publication"
 )
-REQUIRED_STEPPING_STATUS = "native-line-table-ready-stepping-blocked"
+REQUIRED_STEPPING_STATUS = "runtime-debug-trace-statement-stepping-supported"
 DEFAULT_CONTRACT_PATH = (
     ROOT
     / "tests"
@@ -149,14 +149,14 @@ REQUIRED_DEBUGGER_UMBRELLA_ROWS = {
     "runtime.debug-trace.statement-stepping": "bounded-supported",
     "runtime.debug-trace.lldb-plugin": "bounded-supported",
     "runtime.typed-keypath.debugger-lowering": "bounded-supported",
-    "runtime.object-model.full-realization": "reserved",
+    "runtime.object-model.full-realization": "implemented",
 }
 REQUIRED_DEBUGGER_UMBRELLA_ROW_SUPPORT_CLAIMS = {
     "runtime.debug-trace.inline-frame-source-map": True,
     "runtime.debug-trace.statement-stepping": True,
     "runtime.debug-trace.lldb-plugin": True,
     "runtime.typed-keypath.debugger-lowering": True,
-    "runtime.object-model.full-realization": False,
+    "runtime.object-model.full-realization": True,
 }
 REQUIRED_DEBUGGER_UMBRELLA_NEGATIVE_CASES = frozenset(
     {
@@ -1241,11 +1241,11 @@ def _validate_unsupported_runtime_boundaries(
 
 
 def _validate_boundaries(payload: dict[str, Any], diagnostics: list[Diagnostic]) -> None:
-    if payload.get("support_claim_published") is not False:
+    if payload.get("support_claim_published") is not True:
         diagnostics.append(
             _diag(
-                "support-claim-overclaimed",
-                "object-model debugger proof must not publish the reserved umbrella support claim",
+                "support-claim-missing",
+                "object-model debugger proof must publish the umbrella support claim",
                 "support_claim_published",
             )
         )
@@ -1254,12 +1254,19 @@ def _validate_boundaries(payload: dict[str, Any], diagnostics: list[Diagnostic])
     boundaries = _object(payload.get("boundaries"))
     required_false = (
         "uses_private_testing_snapshots_as_public_truth",
-        "promotes_umbrella",
         "creates_objective_c2_compatibility_claim",
     )
     for key in required_false:
         if boundaries.get(key) is not False:
             diagnostics.append(_diag("boundary-overclaimed", f"boundary must remain false: {key}", f"boundaries.{key}"))
+    if boundaries.get("promotes_umbrella") is not True:
+        diagnostics.append(
+            _diag(
+                "boundary-missing",
+                "contract must promote the object-model full-realization umbrella",
+                "boundaries.promotes_umbrella",
+            )
+        )
     if boundaries.get("requires_checked_source_map_and_line_table") is not True:
         diagnostics.append(
             _diag(
@@ -1463,18 +1470,18 @@ def _validate_debugger_umbrella_readiness(
                 "debugger_grade_umbrella_readiness.capability_id",
             )
         )
-    if readiness.get("public_status") != "reserved" or readiness.get("support_claim_published") is not False:
+    if readiness.get("public_status") != "implemented" or readiness.get("support_claim_published") is not True:
         diagnostics.append(
             _diag(
                 "debugger-umbrella-overclaimed",
-                "debugger umbrella readiness must not promote the reserved object-model umbrella",
+                "debugger umbrella readiness must publish the implemented object-model umbrella support claim",
                 "debugger_grade_umbrella_readiness.public_status",
             )
         )
 
     boundary = _object(readiness.get("umbrella_boundary"))
     for key, expected in (
-        ("promotes_umbrella", False),
+        ("promotes_umbrella", True),
         ("generated_only_maps_can_promote", False),
         ("typed_keypath_fallback_allowed", False),
         ("lldb_protocol_drift_allowed", False),
@@ -1745,11 +1752,11 @@ def _validate_production_probe_contract(
                 "production_artifact_probe.debug_map_boundary.full_source_map_publication",
             )
         )
-    if _object(probe.get("debug_map_boundary")).get("statement_stepping") != "fail-closed":
+    if _object(probe.get("debug_map_boundary")).get("statement_stepping") != "supported":
         diagnostics.append(
             _diag(
                 "production-debug-map-boundary-missing",
-                "production artifact probe must keep statement stepping fail-closed",
+                "production artifact probe must require statement stepping on the integrated object-model path",
                 "production_artifact_probe.debug_map_boundary.statement_stepping",
             )
         )
@@ -1814,64 +1821,64 @@ def _validate_artifact_inspector_compatibility_contract(
     return compatibility
 
 
-def _validate_statement_step_reservation_contract(
+def _validate_statement_step_integration_contract(
     payload: dict[str, Any],
     diagnostics: list[Diagnostic],
 ) -> dict[str, Any]:
-    contract = _object(payload.get("statement_step_reservation_contract"))
-    path = "statement_step_reservation_contract"
+    contract = _object(payload.get("statement_step_integration_contract"))
+    path = "statement_step_integration_contract"
     if not contract:
         diagnostics.append(
             _diag(
-                "statement-step-reservation-contract-missing",
-                "object-model debugger proof must declare the reserved statement-step contract",
+                "statement-step-integration-contract-missing",
+                "object-model debugger proof must declare the supported statement-step contract",
                 path,
             )
         )
         return {}
     expected = {
-        "contract_id": STATEMENT_STEP_RESERVATION_CONTRACT_ID,
-        "status": "reserved",
+        "contract_id": STATEMENT_STEP_INTEGRATION_CONTRACT_ID,
+        "status": "supported",
         "required_candidate_status": REQUIRED_STEPPING_STATUS,
     }
     for key, expected_value in expected.items():
         if contract.get(key) != expected_value:
             diagnostics.append(
                 _diag(
-                    "statement-step-reservation-contract-drift",
-                    f"statement-step reservation contract drifted: {key}",
+                    "statement-step-integration-contract-drift",
+                    f"statement-step integration contract drifted: {key}",
                     f"{path}.{key}",
                 )
             )
-    if contract.get("fail_closed") is not True:
+    if contract.get("fail_closed") is not False:
         diagnostics.append(
             _diag(
-                "statement-step-reservation-contract-drift",
-                "statement-step reservation contract must fail closed",
+                "statement-step-integration-contract-drift",
+                "statement-step integration contract must publish supported behavior",
                 f"{path}.fail_closed",
             )
         )
     if contract.get("requires_exact_source_native_line_anchor") is not True:
         diagnostics.append(
             _diag(
-                "statement-step-reservation-contract-drift",
-                "statement-step reservation must require exact source/native line anchors",
+                "statement-step-integration-contract-drift",
+                "statement-step integration must require exact source/native line anchors",
                 f"{path}.requires_exact_source_native_line_anchor",
             )
         )
     if contract.get("requires_source_map_row_identity_alignment") is not True:
         diagnostics.append(
             _diag(
-                "statement-step-reservation-contract-drift",
-                "statement-step reservation must require source-map/native-row identity alignment",
+                "statement-step-integration-contract-drift",
+                "statement-step integration must require source-map/native-row identity alignment",
                 f"{path}.requires_source_map_row_identity_alignment",
             )
         )
     if contract.get("requires_emitted_native_debug_info") is not True:
         diagnostics.append(
             _diag(
-                "statement-step-reservation-contract-drift",
-                "statement-step reservation must require emitted native debug-info evidence",
+                "statement-step-integration-contract-drift",
+                "statement-step integration must require emitted native debug-info evidence",
                 f"{path}.requires_emitted_native_debug_info",
             )
         )
@@ -1880,12 +1887,20 @@ def _validate_statement_step_reservation_contract(
         for item in _list(contract.get("blocked_by"))
         if _safe_str(item)
     }
-    if REQUIRED_STEPPING_BLOCKER not in blockers:
+    if blockers:
         diagnostics.append(
             _diag(
-                "statement-step-reservation-contract-drift",
-                "statement-step reservation must keep runtime trace integration as the blocker",
+                "statement-step-integration-contract-drift",
+                "statement-step integration must not carry blocked_by entries",
                 f"{path}.blocked_by",
+            )
+        )
+    if not _safe_str(contract.get("statement_stepping_evidence_id")):
+        diagnostics.append(
+            _diag(
+                "statement-step-integration-contract-drift",
+                "statement-step integration must link durable statement stepping evidence",
+                f"{path}.statement_stepping_evidence_id",
             )
         )
     return contract
@@ -2027,28 +2042,28 @@ def _validate_native_debug_info_evidence(
         message="production native debug-info evidence lacks instruction-level LLVM debug locations",
         path=f"{path}.llvm_debug_location_count",
     )
-    if evidence.get("statement_stepping_supported") is not False:
+    if evidence.get("statement_stepping_supported") is not True:
         diagnostics.append(
             _diag(
-                "production-native-debug-info-evidence-overclaimed",
-                "production native debug-info evidence must not claim statement stepping",
+                "production-native-debug-info-evidence-incomplete",
+                "production native debug-info evidence must claim statement stepping for the integrated object-model path",
                 f"{path}.statement_stepping_supported",
             )
         )
-    if evidence.get("fail_closed") is not True:
+    if evidence.get("fail_closed") is not False:
         diagnostics.append(
             _diag(
-                "production-native-debug-info-evidence-overclaimed",
-                "production native debug-info evidence must keep statement stepping fail-closed",
+                "production-native-debug-info-evidence-incomplete",
+                "production native debug-info evidence must not keep statement stepping fail-closed",
                 f"{path}.fail_closed",
             )
         )
     blocked_by = set(_safe_str(item) for item in _list(evidence.get("blocked_by")))
-    if REQUIRED_STEPPING_BLOCKER not in blocked_by:
+    if blocked_by:
         diagnostics.append(
             _diag(
                 "production-native-debug-info-evidence-incomplete",
-                "production native debug-info evidence must keep runtime statement-stepping integration blocked",
+                "production native debug-info evidence must not carry statement-stepping blockers",
                 f"{path}.blocked_by",
             )
         )
@@ -2065,12 +2080,20 @@ def _validate_native_debug_info_evidence(
                 f"{path}.blocked_by",
             )
         )
-    if not _safe_str(evidence.get("fail_closed_reason")):
+    if _safe_str(evidence.get("fail_closed_reason")):
         diagnostics.append(
             _diag(
                 "production-native-debug-info-evidence-incomplete",
-                "production native debug-info evidence must carry a fail-closed reason",
+                "production native debug-info evidence must clear fail-closed reason when stepping is supported",
                 f"{path}.fail_closed_reason",
+            )
+        )
+    if not _safe_str(evidence.get("statement_stepping_evidence_id")):
+        diagnostics.append(
+            _diag(
+                "production-native-debug-info-evidence-incomplete",
+                "production native debug-info evidence must link statement stepping evidence",
+                f"{path}.statement_stepping_evidence_id",
             )
         )
 
@@ -2108,11 +2131,11 @@ def _validate_fail_closed_publication_boundaries(
             )
         )
     boundary = boundaries.get("statementLevelStepping", {})
-    if boundary.get("status") != "reserved" or boundary.get("fail_closed") is not True:
+    if boundary.get("status") != "supported" or boundary.get("fail_closed") is not False:
         diagnostics.append(
             _diag(
                 "production-source-map-publication-boundary-missing",
-                "production source-map/native-line-table publication must keep statementLevelStepping reserved",
+                "production source-map/native-line-table publication must publish statementLevelStepping support",
                 "production_artifact_probe.debug_map.object_model_source_identity.source_map_native_line_table_publication.fail_closed_boundaries",
             )
         )
@@ -2207,11 +2230,11 @@ def _validate_production_source_map_publication_payload(
                 f"{path}.emitted_native_debug_info_supported",
             )
         )
-    if publication.get("statement_stepping_supported") is not False:
+    if publication.get("statement_stepping_supported") is not True:
         diagnostics.append(
             _diag(
-                "production-source-map-publication-overclaimed",
-                "production source-map/native-line-table publication must not claim statement_stepping_supported",
+                "production-source-map-publication-incomplete",
+                "production source-map/native-line-table publication must claim statement_stepping_supported",
                 f"{path}.statement_stepping_supported",
             )
         )
@@ -2348,6 +2371,7 @@ def _validate_production_source_identity_payload(
         "native_line_table_publication_supported",
         "method_stepping_candidates_supported",
         "native_debug_info_emitted",
+        "runtime_debug_trace_statement_stepping",
     )
     for key in required_true:
         if source_identity.get(key) is not True:
@@ -2358,10 +2382,7 @@ def _validate_production_source_identity_payload(
                     f"production_artifact_probe.debug_map.object_model_source_identity.{key}",
                 )
             )
-    required_false = (
-        "full_source_map_publication",
-        "runtime_debug_trace_statement_stepping",
-    )
+    required_false = ("full_source_map_publication",)
     for key in required_false:
         if source_identity.get(key) is not False:
             diagnostics.append(
@@ -2620,11 +2641,11 @@ def _validate_production_source_identity_payload(
                     f"production_artifact_probe.debug_map.object_model_source_identity.native_line_table_rows.{index}.native_line_table_evidence_id",
                 )
             )
-        if not _safe_str(row.get("native_debug_info_blocker")):
+        if _safe_str(row.get("native_debug_info_blocker")):
             diagnostics.append(
                 _diag(
                     "production-native-debug-info-evidence-incomplete",
-                    "production native line-table row must carry the native debug-info blocker",
+                    "production native line-table row must clear the native debug-info blocker when statement stepping is supported",
                     f"production_artifact_probe.debug_map.object_model_source_identity.native_line_table_rows.{index}.native_debug_info_blocker",
                 )
             )
@@ -2703,10 +2724,10 @@ def _validate_production_source_identity_payload(
             diagnostics.append(
                 _diag(
                     "production-source-identity-overclaimed",
-                    "production method stepping candidate must stay in the reserved native-line-table-ready state",
-                    f"production_artifact_probe.debug_map.object_model_source_identity.stepping_candidates.{index}.status",
-                )
+                "production method stepping candidate must publish runtime debug-trace statement stepping support",
+                f"production_artifact_probe.debug_map.object_model_source_identity.stepping_candidates.{index}.status",
             )
+        )
         if not _safe_str(candidate.get("runtime_debug_trace_step_id")):
             diagnostics.append(
                 _diag(
@@ -2740,11 +2761,11 @@ def _validate_production_source_identity_payload(
         candidate_blockers = set(
             _safe_str(item) for item in _list(candidate.get("blocked_by"))
         )
-        if REQUIRED_STEPPING_BLOCKER not in candidate_blockers:
+        if candidate_blockers:
             diagnostics.append(
                 _diag(
                     "production-native-debug-info-evidence-incomplete",
-                    "production stepping candidate must keep runtime statement-stepping integration blocked",
+                    "production stepping candidate must not carry statement-stepping blockers",
                     f"production_artifact_probe.debug_map.object_model_source_identity.stepping_candidates.{index}.blocked_by",
                 )
             )
@@ -2980,19 +3001,19 @@ def _validate_production_probe_artifacts(
                 "production_artifact_probe.debug_map",
             )
         )
-    if debug_map.get("source_map_supported") is not False:
+    if debug_map.get("source_map_supported") is not True:
         diagnostics.append(
             _diag(
-                "production-debug-map-overclaimed",
-                "production debug map must not claim full source-map support before line-table emission lands",
+                "production-debug-map-incomplete",
+                "production debug map must publish the object-model source-map surface",
                 "production_artifact_probe.debug_map.source_map_supported",
             )
         )
-    if debug_map.get("statement_level_stepping") is not False:
+    if debug_map.get("statement_level_stepping") is not True:
         diagnostics.append(
             _diag(
-                "production-debug-map-overclaimed",
-                "production debug map must not claim statement stepping before debugger integration lands",
+                "production-debug-map-incomplete",
+                "production debug map must publish statement stepping over the integrated object-model path",
                 "production_artifact_probe.debug_map.statement_level_stepping",
             )
         )
@@ -3028,7 +3049,7 @@ def _validate_production_artifact_probe(
     compatibility = _validate_artifact_inspector_compatibility_contract(
         payload, diagnostics
     )
-    step_reservation = _validate_statement_step_reservation_contract(
+    step_reservation = _validate_statement_step_integration_contract(
         payload, diagnostics
     )
     if not probe or not run_production_probe:
@@ -3082,8 +3103,14 @@ def validate_contract_path(
                 "capability_id",
             )
         )
-    if payload.get("public_status") != "reserved":
-        diagnostics.append(_diag("public-status", "object-model debugger proof must keep the umbrella reserved", "public_status"))
+    if payload.get("public_status") != "implemented":
+        diagnostics.append(
+            _diag(
+                "public-status",
+                "object-model debugger proof must publish the implemented umbrella",
+                "public_status",
+            )
+        )
 
     source_map_bundle_path = _contract_path(
         payload,

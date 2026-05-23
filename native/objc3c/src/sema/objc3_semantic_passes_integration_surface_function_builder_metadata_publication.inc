@@ -1,6 +1,10 @@
       info.has_definition = !fn.is_prototype;
       info.is_pure_annotation = fn.is_pure;
       info.throws_declared = fn.throws_declared;
+      info.typed_throws_declared = fn.typed_throws_declared;
+      info.typed_throws_error_type_spelling =
+          fn.typed_throws_payload.canonical_spelling;
+      info.typed_throws_abi_lowering_ready = false;
       const bool has_macro_marker = fn.objc_macro_declared;
       const bool has_macro_package = fn.objc_macro_package_declared;
       const bool has_macro_provenance = fn.objc_macro_provenance_declared;
