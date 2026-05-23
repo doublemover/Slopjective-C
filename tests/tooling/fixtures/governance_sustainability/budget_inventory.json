@@ -101,7 +101,6 @@
     "scripts/ci/check_task_hygiene.py",
     "scripts/ci/run_task_hygiene_gate.py",
     "scripts/check_repo_superclean_surface.py",
-    "scripts/check_documentation_surface.py",
     "scripts/check_objc3c_dependency_boundaries.py",
     "docs/runbooks/objc3c_maintainer_workflows.md",
     "docs/runbooks/objc3c_public_command_surface.md",

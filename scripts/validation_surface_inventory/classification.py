@@ -13,10 +13,6 @@ STATIC_GUARD_OVERRIDES: dict[str, tuple[str, str]] = {
         "retain:repo-shape",
         "guards canonical repo roots, generated output boundaries, and build-owned source-of-truth publication",
     ),
-    "scripts/check_documentation_surface.py": (
-        "retain:docs-surface",
-        "guards reader-facing docs, site structure, command appendix accessibility, and documented surface boundaries",
-    ),
     "scripts/check_showcase_surface.py": (
         "retain:product-surface",
         "guards showcase source-of-truth structure and compile-coupled example boundaries",

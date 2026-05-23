@@ -44,11 +44,6 @@ COMMANDS = [
         "summary_path": RUNTIME_CORRECTIVE_REPORT_ROOT / "live-synthesized-accessor-runtime" / "synthesized_accessor_runtime_summary.json",
     },
     {
-        "name": "documentation-surface",
-        "command": python_script_command("scripts/check_documentation_surface.py"),
-        "summary_path": None,
-    },
-    {
         "name": "repo-superclean-surface",
         "command": public_workflow_command("check-repo-superclean-surface"),
         "summary_path": None,

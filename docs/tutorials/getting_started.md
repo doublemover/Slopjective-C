@@ -154,8 +154,7 @@ This getting-started tutorial should stay coupled to these live inputs:
   - `showcase/patchKit/main.objc3`
 - command truth and documentation guardrails:
   - `docs/runbooks/objc3c_public_command_surface.md`
-  - `npm run objc3c -- check-documentation-surface`
-  - `scripts/check_documentation_surface.py`
+  - `npm run objc3c -- check-public-command-surface`
 
 ## Explicit Non-Goals
 

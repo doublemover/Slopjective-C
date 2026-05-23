@@ -327,6 +327,8 @@ def run_checked(
         encoding="utf-8",
     )
     if check and result.returncode != 0:
+        print(f"[fail] {domain} command failed; captured log follows: {repo_rel(log_path)}", file=sys.stderr)
+        print(log_path.read_text(encoding="utf-8"), file=sys.stderr)
         raise RuntimeError(
             f"{domain} proof command failed with exit {result.returncode}: {repo_rel(log_path)}"
         )

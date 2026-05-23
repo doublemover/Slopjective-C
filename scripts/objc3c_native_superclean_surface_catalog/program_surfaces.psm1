@@ -88,7 +88,6 @@ function New-Objc3cNativeRepoSupercleanProgramSurfaces {
         integration_entrypoint = "validate-stdlib-program"
         packaged_validation_entrypoint = "validate-runnable-stdlib-program"
         integration_actions = New-Objc3cNativeRepoSupercleanActionList -Actions @(
-          "check-documentation-surface",
           "validate-getting-started",
           "validate-showcase",
           "validate-stdlib-foundation",
@@ -101,7 +100,6 @@ function New-Objc3cNativeRepoSupercleanProgramSurfaces {
         )
       })
       public_actions = New-Objc3cNativeRepoSupercleanActionList -Actions @(
-        "check-documentation-surface",
         "check-showcase-surface",
         "validate-getting-started",
         "validate-showcase",

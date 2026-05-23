@@ -29,7 +29,7 @@
       ],
       "required_actions": [
         "build-public-command-surface",
-        "check-documentation-surface"
+        "check-public-command-surface"
       ]
     },
     {

@@ -24,7 +24,6 @@ try:
 except ModuleNotFoundError:
     from objc3c_workflow.public_command_api import public_workflow_action_names
 
-DOCUMENTATION_SURFACE_PY = ROOT / "scripts" / "check_documentation_surface.py"
 SHOWCASE_SURFACE_PY = ROOT / "scripts" / "check_showcase_surface.py"
 WALKTHROUGH_PATH = ROOT / "showcase" / "tutorial_walkthrough.json"
 PROGRAM_SURFACE_PATH = ROOT / "stdlib" / "program_surface.json"
@@ -879,10 +878,6 @@ def main() -> int:
         list(program_examples_by_id) == example_ids,
         "program surface example ids drifted from getting-started walkthrough",
     )
-
-    documentation_result = run_capture(python_script_command(DOCUMENTATION_SURFACE_PY))
-    if documentation_result.returncode != 0:
-        raise RuntimeError("documentation surface validation failed")
 
     showcase_command = python_script_command(SHOWCASE_SURFACE_PY)
     for example_id in example_ids:

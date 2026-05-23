@@ -8,11 +8,12 @@ DOCS_PROFILE_RULES: dict[str, ValidationProfileRule] = {
     "docs": profile_rule(
         path_prefixes=("docs/", "site/", "README", "CHANGELOG", "package.json"),
         recommended_actions=(
-            "check-documentation-surface",
+            "check-site",
+            "check-native-docs",
             "check-markdown",
             "check-public-command-surface",
         ),
-        exhaustive_actions=("validate-documentation-surface",),
+        exhaustive_actions=("build-site", "build-native-docs", "build-public-command-surface"),
         deferred_actions=(
             "runtime acceptance",
             "execution smoke",

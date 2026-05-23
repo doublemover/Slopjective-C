@@ -12,9 +12,8 @@ OWNER_FACADES = {
         "owners": ("docs_documentation", "docs_paths", "docs_public_commands"),
         "exports": (
             "action_build_site",
-            "action_check_documentation_surface",
             "action_check_public_command_budget",
-            "action_validate_documentation_surface",
+            "action_validate_umbrella_readiness",
         ),
         "handlers": (WORKFLOW_ROOT / "action_handlers_core.py",),
     },

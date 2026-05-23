@@ -59,7 +59,6 @@ of inventing a second examples tree inside `stdlib/`.
 - package bridge: `npm run objc3c -- <action>`
 - public actions:
   - `npm run objc3c -- check-stdlib-surface`
-  - `npm run objc3c -- check-documentation-surface`
   - `npm run objc3c -- check-showcase-surface`
   - `npm run objc3c -- validate-getting-started`
   - `npm run objc3c -- validate-showcase`
@@ -72,7 +71,6 @@ of inventing a second examples tree inside `stdlib/`.
 - `showcase/signalMesh/main.objc3`
 - `showcase/patchKit/main.objc3`
 - `scripts/check_stdlib_surface.py`
-- `scripts/check_documentation_surface.py`
 - `scripts/check_showcase_surface.py`
 - `scripts/check_showcase_integration.py`
 - `scripts/check_getting_started_integration.py`
@@ -135,7 +133,6 @@ Top-level workflow entrypoints:
 
 Integration flow:
 
-- `npm run objc3c -- check-documentation-surface`
 - `npm run objc3c -- validate-getting-started`
 - `npm run objc3c -- validate-showcase`
 - `npm run objc3c -- validate-stdlib-foundation`
@@ -155,7 +152,6 @@ Report roots:
 
 ## Exact Live Commands
 
-- `npm run objc3c -- check-documentation-surface`
 - `npm run objc3c -- check-showcase-surface`
 - `npm run objc3c -- validate-getting-started`
 - `npm run objc3c -- validate-showcase`

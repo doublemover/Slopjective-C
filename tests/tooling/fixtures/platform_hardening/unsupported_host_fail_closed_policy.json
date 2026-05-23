@@ -92,7 +92,6 @@
       "action_id": "capability-inspection-only",
       "allowed_actions": [
         "check-llvm-capabilities",
-        "check-documentation-surface",
         "check-repo-superclean-surface"
       ],
       "claim_boundary": "read-only inspection must not widen support-tier or install claims and must not continue build package or install flows"

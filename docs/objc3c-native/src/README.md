@@ -58,9 +58,9 @@ adding sidecar scaffolding:
   - `npm run objc3c -- check-public-command-surface`
 - public command budget path:
   - `npm run objc3c -- check-public-command-budget`
-- reader-facing documentation surface validation:
-  - `npm run objc3c -- check-documentation-surface`
-  - `npm run objc3c -- validate-documentation-surface`
+- generated documentation checks:
+  - `npm run objc3c -- check-site`
+  - `npm run objc3c -- check-native-docs`
 
 ## Canonical Naming And Path Rules
 
@@ -142,5 +142,5 @@ Explicit non-goals for this fragment tree:
 
 - Rebuild: `npm run objc3c -- build-native-docs`
 - Drift check: `npm run objc3c -- check-native-docs`
-- Reader surface check: `npm run objc3c -- check-documentation-surface`
-- Full docs workflow validation: `npm run objc3c -- validate-documentation-surface`
+- Site drift check: `npm run objc3c -- check-site`
+- Public command appendix drift check: `npm run objc3c -- check-public-command-surface`

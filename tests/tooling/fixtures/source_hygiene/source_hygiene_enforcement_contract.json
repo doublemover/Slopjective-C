@@ -12,7 +12,6 @@
     "scan_root_owner": "scripts/source_hygiene/roots.py",
     "pattern_owner": "scripts/source_hygiene/patterns.py",
     "generated_report_owner": "scripts/source_hygiene/generated_reports.py",
-    "docs_surface_owner": "scripts/check_documentation_surface_model.py",
     "capability_truth_owner": "scripts/capability_docs_validator/validation.py",
     "public_claim_drift_owner": "scripts/check_objc3c_public_claim_drift.py"
   },

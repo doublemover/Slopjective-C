@@ -1,1 +1,0 @@
-"""Documentation surface checker helpers."""

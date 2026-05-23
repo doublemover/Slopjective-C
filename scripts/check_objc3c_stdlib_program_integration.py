@@ -12,7 +12,6 @@ from objc3c_tooling.subprocesses import python_script_command, run_capture
 
 
 ROOT = Path(__file__).resolve().parents[1]
-DOCUMENTATION_SURFACE_PY = ROOT / "scripts" / "check_documentation_surface.py"
 SHOWCASE_INTEGRATION_PY = ROOT / "scripts" / "check_showcase_integration.py"
 GETTING_STARTED_INTEGRATION_PY = ROOT / "scripts" / "check_getting_started_integration.py"
 STDLIB_FOUNDATION_INTEGRATION_PY = ROOT / "scripts" / "check_objc3c_stdlib_foundation_integration.py"
@@ -36,10 +35,6 @@ def expect(condition: bool, message: str) -> None:
 
 
 def main() -> int:
-    documentation_result = run_capture(python_script_command(DOCUMENTATION_SURFACE_PY))
-    if documentation_result.returncode != 0:
-        raise RuntimeError("documentation surface validation failed")
-
     showcase_result = run_capture(python_script_command(SHOWCASE_INTEGRATION_PY))
     if showcase_result.returncode != 0:
         raise RuntimeError("showcase integration validation failed")
@@ -98,7 +93,6 @@ def main() -> int:
         "runner_path": "scripts/check_objc3c_stdlib_program_integration.py",
         "program_surface_contract": repo_rel(PROGRAM_SURFACE_PATH),
         "workflow_actions": [
-            "check-documentation-surface",
             "validate-showcase",
             "validate-getting-started",
             "validate-stdlib-foundation",

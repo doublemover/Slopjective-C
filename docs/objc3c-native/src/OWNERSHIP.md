@@ -43,8 +43,8 @@ is deliberately changed.
 1. Edit only source fragments in `docs/objc3c-native/src/`.
 1. Run `npm run objc3c -- build-native-docs` to regenerate output.
 1. Run `npm run objc3c -- check-native-docs` and require pass.
-1. Run `npm run objc3c -- check-documentation-surface` when the reader-facing
-   structure, machine-appendix boundary, or public command references change.
+1. Run `npm run objc3c -- check-public-command-surface` when public command
+   references change.
 1. Run `npm run objc3c -- check-public-command-budget` when public command
    appendix or package bridge ownership changes.
 1. Commit fragment edits and generated output together when output changed.

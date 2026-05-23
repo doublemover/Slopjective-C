@@ -74,7 +74,6 @@ def validate_program_surface(
         "integration_entrypoint": "validate-stdlib-program",
         "packaged_validation_entrypoint": "validate-runnable-stdlib-program",
         "integration_actions": [
-            "check-documentation-surface",
             "validate-getting-started",
             "validate-showcase",
             "validate-stdlib-foundation",
@@ -88,7 +87,6 @@ def validate_program_surface(
     }:
         return "program surface workflow_surface drifted"
     if program_surface.get("public_actions") != [
-        "check-documentation-surface",
         "check-showcase-surface",
         "validate-getting-started",
         "validate-showcase",
@@ -102,7 +100,6 @@ def validate_program_surface(
     ]:
         return "program surface public_actions drifted"
     if program_surface.get("command_surfaces") != {
-        "check_documentation_surface": "npm run objc3c -- check-documentation-surface",
         "check_showcase_surface": "npm run objc3c -- check-showcase-surface",
         "validate_getting_started": "npm run objc3c -- validate-getting-started",
         "validate_showcase": "npm run objc3c -- validate-showcase",

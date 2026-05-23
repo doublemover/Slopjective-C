@@ -114,7 +114,7 @@ Governance-sustainability entrypoint:
 - `tests/tooling/fixtures/governance_sustainability/stewardship_semantics.json`
   defines the maintainer, contributor, and package-governance operating model
 - governance sustainability must stay on the existing task-hygiene,
-  repo-superclean, documentation-surface, dependency-boundary, and public
+  repo-superclean, dependency-boundary, and public
   workflow-runner surfaces instead of inventing sidecar milestone wrappers,
   duplicate planning roots, or spreadsheet-only waiver tracking
 - use `npm run objc3c -- validate-governance-sustainability` before widening
@@ -244,23 +244,17 @@ npm run objc3c -- build-native-contracts
 ```powershell
 npm run objc3c -- test-smoke
 npm run objc3c -- test-ci
-npm run objc3c -- validate-documentation-surface
+npm run objc3c -- check-site
+npm run objc3c -- check-native-docs
+npm run objc3c -- check-public-command-surface
 npm run objc3c -- validate-repo-superclean
 ```
 
-`npm run objc3c -- test-ci` now includes the compact documentation integration surface:
+`npm run objc3c -- test-ci` includes the compact generated-documentation integration surface:
 
 - generated site drift,
 - generated native-doc drift,
-- generated public-command-surface drift,
-- and reader-facing documentation/readability boundary checks.
-
-`npm run objc3c -- validate-documentation-surface` runs the full documentation build/check pass:
-
-- rebuild the published site output,
-- rebuild the generated native implementation docs,
-- rebuild the generated public command appendix,
-- and then re-check all three outputs plus the reader-facing documentation surface.
+- generated public-command-surface drift.
 
 ## Direct tools
 

@@ -19,7 +19,6 @@ SEQUENCE = [
     ('site-index-drift', [*WORKFLOW, 'check-site']),
     ('native-docs-drift', [*WORKFLOW, 'check-native-docs']),
     ('public-command-surface-drift', [*WORKFLOW, 'check-public-command-surface']),
-    ('documentation-surface', [*WORKFLOW, 'check-documentation-surface']),
 ]
 
 

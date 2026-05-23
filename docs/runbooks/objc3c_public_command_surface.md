@@ -4,8 +4,8 @@ This runbook is generated from the canonical public command contract.
 It is an operator-facing appendix, not the primary onboarding or project-explanation surface.
 
 - Package bridge count: `1`
-- Operator action count: `167`
-- Maintainer action count: `72`
+- Operator action count: `166`
+- Maintainer action count: `71`
 - Runner path: `package.json scripts.objc3c -> scripts.objc3c_workflow`
 - Contract builder: `scripts/build_objc3c_public_command_contract.py`
 - Contract artifact: `tmp/artifacts/public-command-surface/objc3c-public-command-contract.json`
@@ -101,7 +101,6 @@ It is an operator-facing appendix, not the primary onboarding or project-explana
 | `validate-developer-tooling` | `validate` | `repo` | `developer-facing inspect and trace commands stay executable, artifact-backed, and tied to the live frontend runner` | `fixed-shape` | `python:scripts/check_objc3c_developer_tooling_integration.py` |
 | `validate-distribution-credibility` | `validate` | `nightly` | `distribution trust signals, clean package-install evidence, release-drill reporting, dashboard publication, and trust-report publication stay executable on the live shipped release surfaces` | `pass-through` | `runner-internal distribution-credibility child actions` |
 | `validate-distribution-credibility-end-to-end` | `validate` | `full` | `distribution credibility artifacts stay coherent with the live package-channel, clean package-install, release-operations, trust-signal, release-drill, and operator-action evidence paths` | `fixed-shape` | `python:scripts/check_objc3c_distribution_credibility_end_to_end.py` |
-| `validate-documentation-surface` | `validate` | `docs` | `site output, native docs, command appendix, and reader-facing onboarding remain buildable, in sync, and explicit` | `fixed-shape` | `runner-internal + generated documentation checks` |
 | `validate-error-conformance` | `validate` | `full` | `integrated error conformance over the live runtime architecture workflow` | `fixed-shape` | `python:scripts/check_objc3c_runnable_error_conformance.py` |
 | `validate-external-validation` | `validate` | `repo` | `external evidence intake, replay, and publication stay executable on the live workflow` | `fixed-shape` | `runner-internal external-validation child actions` |
 | `validate-external-validation-integration` | `validate` | `repo` | `integrated external-validation reports stay coherent across source-surface, replay, and publication outputs` | `fixed-shape` | `python:scripts/check_objc3c_external_validation_integration.py` |
@@ -205,7 +204,6 @@ It is an operator-facing appendix, not the primary onboarding or project-explana
 | `check-developer-tooling-editor-source-truth` | `check` | `repo` | `editor tooling claims stay rooted in checked-in source contracts, capability rows, evidence-map rows, and registered npm bridge commands` | `fixed-shape` | `python:scripts/check_developer_tooling_editor_source_truth.py` |
 | `check-distribution-credibility-schema-surface` | `check` | `repo` | `distribution dashboard and trust-report artifacts stay on checked-in schema contracts` | `fixed-shape` | `python:scripts/check_distribution_credibility_schema_surface.py` |
 | `check-distribution-credibility-surface` | `check` | `repo` | `distribution credibility only publishes from the checked-in trust-signal, install-doc, operator, drill, workflow, and artifact contracts` | `fixed-shape` | `python:scripts/check_distribution_credibility_source_surface.py` |
-| `check-documentation-surface` | `check` | `docs` | `reader-facing onboarding, site structure, and machine-appendix boundary stay accessible and explicit` | `fixed-shape` | `python:scripts/check_documentation_surface.py` |
 | `check-external-support-claim-gate` | `check` | `repo` | `support and adoption claims fail closed when external validation evidence is missing stale non-reproducible or local-only` | `fixed-shape` | `python:scripts/check_objc3c_external_support_claim_gate.py` |
 | `check-external-validation-surface` | `check` | `repo` | `external validation stays rooted in checked-in trust, intake, quarantine, and artifact contracts` | `fixed-shape` | `python:scripts/check_external_validation_source_surface.py` |
 | `check-hosted-llvm-capabilities` | `check` | `ci` | `hosted Windows CI publishes capability truth only from clang plus llc object-emission probe evidence` | `fixed-shape` | `python:scripts/probe_objc3c_llvm_capabilities.py --summary-out tmp/artifacts/objc3c-native/m144/llvm_capabilities/summary.json` |

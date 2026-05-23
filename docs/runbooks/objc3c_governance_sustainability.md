@@ -124,7 +124,6 @@ Current governance entry surfaces:
 
 - `npm run objc3c -- check-task-hygiene`
 - `npm run objc3c -- check-repo-superclean-surface`
-- `npm run objc3c -- check-documentation-surface`
 - `npm run objc3c -- check-dependency-boundaries`
 - `docs/runbooks/objc3c_maintainer_workflows.md`
 - `docs/runbooks/objc3c_public_command_surface.md`

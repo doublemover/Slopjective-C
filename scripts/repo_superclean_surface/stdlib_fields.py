@@ -74,7 +74,6 @@ STDLIB_SURFACE_FIELDS = (
                 "integration_entrypoint": "validate-stdlib-program",
                 "packaged_validation_entrypoint": "validate-runnable-stdlib-program",
                 "integration_actions": [
-                    "check-documentation-surface",
                     "validate-getting-started",
                     "validate-showcase",
                     "validate-stdlib-foundation",
@@ -87,7 +86,6 @@ STDLIB_SURFACE_FIELDS = (
                 ],
             },
             "public_actions": [
-                "check-documentation-surface",
                 "check-showcase-surface",
                 "validate-getting-started",
                 "validate-showcase",

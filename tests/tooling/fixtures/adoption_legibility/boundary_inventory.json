@@ -79,8 +79,6 @@
   "package_bridge": "objc3c",
   "required_actions": [
     "build-public-command-surface",
-    "check-documentation-surface",
-    "validate-documentation-surface",
     "validate-showcase",
     "validate-runnable-showcase",
     "materialize-project-template",
