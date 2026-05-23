@@ -15,6 +15,52 @@ TOOLING_VALIDATION_ACTION_SPECS: dict[str, ActionSpec] = {
             "and tied to the live frontend runner"
         ),
     ),
+    "validate-language-service": ActionSpec(
+        "validate-language-service",
+        "replay checked Objective-C 3 language-service requests and validate source-graph-backed responses",
+        "python:scripts/check_objc3c_language_service.py",
+        validation_tier="repo",
+        guarantee_owner=(
+            "language-service request dispatch, document lifecycle, workspace indexing, "
+            "cache invalidation, and unsupported request boundaries stay fixture-backed"
+        ),
+    ),
+    "validate-debug-source-maps": ActionSpec(
+        "validate-debug-source-maps",
+        "validate Objective-C 3 source maps, debug maps, provenance links, and native line-table rows",
+        "python:scripts/check_objc3c_debug_source_maps.py",
+        validation_tier="repo",
+        guarantee_owner=(
+            "debug/source-map artifacts fail closed when source graph nodes, source digests, "
+            "provenance links, optimization preservation claims, package identity, or native "
+            "line-table rows drift"
+        ),
+    ),
+    "validate-debugger-integration": ActionSpec(
+        "validate-debugger-integration",
+        "validate replayable LLDB debugger commands, value inspection, and source-map-backed stepping records",
+        "python:scripts/check_objc3c_debugger_integration.py",
+        validation_tier="repo",
+        guarantee_owner=(
+            "debugger stepping and LLDB command claims stay replayable and fail closed unless "
+            "source maps, debug-map entries, native line-table rows, object/debug anchors, and "
+            "debug-preserved build settings all agree"
+        ),
+        pass_through_args=True,
+    ),
+    "validate-object-model-debugger-proof": ActionSpec(
+        "validate-object-model-debugger-proof",
+        "validate object-model debugger source maps, native line tables, debug anchors, and value inspection links",
+        "python:scripts/check_objc3c_object_model_debugger_proof.py",
+        validation_tier="repo",
+        guarantee_owner=(
+            "object-model debugger proof stays fail-closed unless source-map entries, "
+            "debug-map records, native line-table rows, runtime reflection debug anchors, "
+            "and replayable value-inspection commands all point at the same runtime "
+            "reflection identities"
+        ),
+        pass_through_args=True,
+    ),
     "validate-bonus-experiences": ActionSpec(
         "validate-bonus-experiences",
         "run the integrated bonus-experience validation flow across the live showcase tutorial and template surfaces",

@@ -147,9 +147,12 @@ Field notes:
 
 ## Unsupported runnable-claim fixture notes
 
-- `unsupported_feature_claim_throws.objc3` is a compile-stage negative expecting `O3S221` because parsed `throws` declarations are not runnable native-mode coverage.
 - `unsupported_feature_claim_arc_parameter_ownership.objc3` is a compile-stage negative expecting `O3S221` because ARC parameter ownership qualifiers are not runnable native-mode coverage without an explicit ARC-mode lane.
 - `unsupported_feature_claim_arc_return_ownership.objc3` is a compile-stage negative expecting `O3S221` because ARC return ownership qualifiers are not runnable native-mode coverage without an explicit ARC-mode lane.
+
+## Error-control fixture notes
+
+- `throwing_call_requires_try_negative.objc3` is a compile-stage negative expecting `O3S341`; native error-control syntax is accepted, but a throwing function call must be explicitly marked with `try`, `try?`, or `try!`.
 
 ## Block ARC fixture notes
 

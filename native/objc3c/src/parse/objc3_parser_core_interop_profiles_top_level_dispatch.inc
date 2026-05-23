@@ -43,6 +43,7 @@
     } else {
       const Token &token = Peek();
       diagnostics_.push_back(BuildObjc3UnsupportedTopLevelDiagnostic(token));
+      Advance();
       SynchronizeTopLevel();
     }
   }

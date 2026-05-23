@@ -15,6 +15,29 @@ static void AccumulateCanonicalTypeSemanticModelSummary(
   }
   summary.canonical_generic_argument_entries +=
       type.generic_arguments_lexicographic.size();
+  const Objc3GenericCollectionTypeModel collection_model =
+      BuildObjc3GenericCollectionTypeModel(type);
+  if (IsObjc3GenericCollectionKind(collection_model.kind)) {
+    ++summary.generic_collection_type_entries;
+    if (!collection_model.runtime_descriptor_identity.empty()) {
+      ++summary.generic_collection_descriptor_entries;
+    }
+    if (collection_model.kind == Objc3GenericCollectionKind::Iterator ||
+        collection_model.kind == Objc3GenericCollectionKind::MapIterator) {
+      ++summary.generic_collection_iterator_entries;
+    }
+    if (collection_model.mutability ==
+        Objc3GenericCollectionMutability::Mutable) {
+      ++summary.generic_collection_mutable_entries;
+    }
+    if (collection_model.variance ==
+        Objc3GenericCollectionVariance::Invariant) {
+      ++summary.generic_collection_invariant_entries;
+    }
+    if (!IsReadyObjc3GenericCollectionTypeModel(collection_model)) {
+      ++summary.generic_collection_invalid_entries;
+    }
+  }
   switch (type.nullability) {
     case Objc3SemanticCanonicalNullability::Nullable:
       ++summary.canonical_nullable_entries;

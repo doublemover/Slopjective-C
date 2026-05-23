@@ -59,6 +59,13 @@ objc3_runtime_dispatch_typed_from_class_checked(
     int a2,
     int a3);
 
+/*
+ * Abort the current process with the canonical strict-dispatch diagnostic for
+ * status_code. Lowered unchecked value entrypoints use this after a checked
+ * dispatch helper returns a strict-error status envelope.
+ */
+void objc3_runtime_abort_dispatch_status_i32(int status_code);
+
 #ifdef __cplusplus
 }
 #endif

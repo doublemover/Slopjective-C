@@ -38,7 +38,7 @@ def build_runtime_package_loader_bridge_abi_surface(
         "internal_header_path": RUNTIME_BOOTSTRAP_INTERNAL_HEADER_PATH,
         "authoritative_case_ids": authoritative_case_ids,
         "runtime_abi_model": (
-            "private-runtime-snapshots-publish-package-loader-topology-bridge-generation-readiness-and-invalid-descriptor-fail-closed-diagnostics-through-the-live-runtime-library-without-public-abi-widening"
+            "private-runtime-snapshots-publish-package-loader-topology-deferred-bridge-generation-disabled-state-and-invalid-descriptor-fail-closed-diagnostics-through-the-live-runtime-library-without-public-abi-widening"
         ),
         "authoritative_code_paths": [
             "native/objc3c/src/runtime/objc3_runtime_bootstrap_internal.h",

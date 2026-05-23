@@ -3,21 +3,44 @@ module objc3_text_smoke;
 extern fn objc3_runtime_stdlib_text_utf8_literal_i32(byte_count: i32, unit_count: i32, valid_utf8: i32) -> i32;
 extern fn objc3_runtime_stdlib_text_byte_count_i32(handle: i32) -> i32;
 extern fn objc3_runtime_stdlib_text_unit_count_i32(handle: i32) -> i32;
+extern fn objc3_runtime_stdlib_text_scalar_count_i32(handle: i32) -> i32;
+extern fn objc3_runtime_stdlib_text_scalar_at_or_i32(handle: i32, scalar_index: i32, default_value: i32) -> i32;
 extern fn objc3_runtime_stdlib_text_is_valid_utf8_i32(handle: i32) -> i32;
 extern fn objc3_runtime_stdlib_text_byte_at_or_i32(handle: i32, byte_index: i32, default_value: i32) -> i32;
 extern fn objc3_runtime_stdlib_text_prefix_units_i32(handle: i32, requested_units: i32) -> i32;
 extern fn objc3_runtime_stdlib_text_concat_i32(left_handle: i32, right_handle: i32) -> i32;
+extern fn objc3_runtime_stdlib_text_builder_i32() -> i32;
+extern fn objc3_runtime_stdlib_text_builder_append_i32_i32(builder_handle: i32, value: i32) -> i32;
+extern fn objc3_runtime_stdlib_text_builder_append_scalar_i32(builder_handle: i32, scalar: i32) -> i32;
+extern fn objc3_runtime_stdlib_text_builder_build_i32(builder_handle: i32) -> i32;
+extern fn objc3_runtime_stdlib_text_scalar_iterator_i32(handle: i32) -> i32;
+extern fn objc3_runtime_stdlib_text_scalar_iterator_next_or_i32(iterator_handle: i32, default_value: i32) -> i32;
+extern fn objc3_runtime_stdlib_text_equal_i32(left_handle: i32, right_handle: i32) -> i32;
+extern fn objc3_runtime_stdlib_text_compare_i32(left_handle: i32, right_handle: i32) -> i32;
+extern fn objc3_runtime_stdlib_text_format_i32_i32(value: i32) -> i32;
 extern fn objc3_runtime_stdlib_text_last_status_i32() -> i32;
 
 fn main() {
   let left = objc3_runtime_stdlib_text_utf8_literal_i32(5, 5, 1);
   let right = objc3_runtime_stdlib_text_utf8_literal_i32(6, 6, 1);
   let joined = objc3_runtime_stdlib_text_concat_i32(left, right);
+  let builder = objc3_runtime_stdlib_text_builder_i32();
+  let builder_count = objc3_runtime_stdlib_text_builder_append_i32_i32(builder, 42)
+    + objc3_runtime_stdlib_text_builder_append_scalar_i32(builder, 33);
+  let built = objc3_runtime_stdlib_text_builder_build_i32(builder);
+  let formatted = objc3_runtime_stdlib_text_format_i32_i32(42);
+  let iterator = objc3_runtime_stdlib_text_scalar_iterator_i32(built);
   return joined
     + objc3_runtime_stdlib_text_byte_count_i32(joined)
     + objc3_runtime_stdlib_text_unit_count_i32(joined)
+    + objc3_runtime_stdlib_text_scalar_count_i32(built)
+    + objc3_runtime_stdlib_text_scalar_at_or_i32(built, 0, 0)
     + objc3_runtime_stdlib_text_is_valid_utf8_i32(joined)
     + objc3_runtime_stdlib_text_byte_at_or_i32(joined, 0, 0)
     + objc3_runtime_stdlib_text_prefix_units_i32(joined, 4)
+    + builder_count
+    + objc3_runtime_stdlib_text_scalar_iterator_next_or_i32(iterator, 0)
+    + objc3_runtime_stdlib_text_equal_i32(formatted, built)
+    + objc3_runtime_stdlib_text_compare_i32(formatted, built)
     + objc3_runtime_stdlib_text_last_status_i32();
 }

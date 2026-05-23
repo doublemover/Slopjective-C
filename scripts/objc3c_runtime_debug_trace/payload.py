@@ -316,7 +316,25 @@ def _event_counts(events: list[dict[str, Any]]) -> dict[str, int]:
     return dict(sorted(counts.items()))
 
 
+def _native_debug_info_evidence(debug_map: dict[str, Any]) -> dict[str, Any]:
+    evidence = _object_payload(debug_map.get("native_debug_info_evidence"))
+    if evidence:
+        return evidence
+    source_identity = _object_payload(debug_map.get("object_model_source_identity"))
+    return _object_payload(source_identity.get("native_debug_info_evidence"))
+
+
+def _native_debug_info_blocker(debug_map: dict[str, Any]) -> str:
+    evidence = _native_debug_info_evidence(debug_map)
+    return str(
+        evidence.get("fail_closed_reason", "")
+        or debug_map.get("stepping_retired_route_reason", "")
+        or "native line-table evidence is not emitted on the canonical toolchain path"
+    )
+
+
 def _support_boundary(debug_map: dict[str, Any]) -> dict[str, Any]:
+    native_debug_info_evidence = _native_debug_info_evidence(debug_map)
     return {
         "debug_metadata_public_abi": False,
         "runtime_debug_surfaces": "internal-private-testing-snapshots",
@@ -324,6 +342,8 @@ def _support_boundary(debug_map: dict[str, Any]) -> dict[str, Any]:
         "source_map_supported": debug_map.get("source_map_supported") is True,
         "statement_level_stepping": debug_map.get("statement_level_stepping") is True,
         "statement_level_stepping_status": "fail-closed",
+        "native_debug_info_evidence": native_debug_info_evidence,
+        "native_debug_info_fail_closed_reason": _native_debug_info_blocker(debug_map),
         "debugger_model": str(debug_map.get("debugger_model", "") or ""),
     }
 
@@ -643,6 +663,7 @@ def _inspection_queries(
     *,
     source_path: str,
     runtime_inspector: dict[str, Any],
+    debug_map: dict[str, Any],
     path_records: dict[str, dict[str, Any]],
     runtime_trace_contracts: dict[str, Any],
     source_span_evidence: list[dict[str, Any]],
@@ -660,6 +681,7 @@ def _inspection_queries(
         for span in source_span_evidence
         if str(span.get("span_id", "") or "")
     ]
+    native_debug_info_blocker = _native_debug_info_blocker(debug_map)
     return [
         _supported_query(
             query_id="debug.source-to-artifact.declaration-anchors",
@@ -745,7 +767,7 @@ def _inspection_queries(
             surface="statement_level_stepping",
             support_class="line-table-evidence-not-emitted",
             evidence_input_labels=["debug_map"],
-            unpublished_reason="native line-table evidence is not emitted on the canonical toolchain path",
+            unpublished_reason=native_debug_info_blocker,
         ),
         _reserved_query(
             query_id="debug.full-source-map.publication",
@@ -769,10 +791,15 @@ def _source_mapping(debug_map: dict[str, Any]) -> dict[str, Any]:
         _anchor_span_id(_object_payload(anchor))
         for anchor in anchors
     ]
+    native_debug_info_evidence = _native_debug_info_evidence(debug_map)
     return {
         "model": "manifest-declaration-coordinate-anchors",
         "full_source_map_status": "reserved",
         "statement_level_stepping": debug_map.get("statement_level_stepping") is True,
+        "native_debug_info_evidence_id": str(
+            native_debug_info_evidence.get("evidence_id", "") or ""
+        ),
+        "native_debug_info_fail_closed_reason": _native_debug_info_blocker(debug_map),
         "declaration_anchor_count": len(anchors),
         "span_evidence_count": len(span_ids),
         "span_evidence_ids": span_ids,
@@ -800,6 +827,7 @@ def _runtime_inspection_summary(runtime_inspector: dict[str, Any]) -> dict[str, 
 def _support_handoff(
     path_records: dict[str, dict[str, Any]],
     runtime_trace_contracts: dict[str, Any],
+    debug_map: dict[str, Any],
 ) -> dict[str, Any]:
     evidence_ids = [
         "OBJ3-NEXT-023.schema.runtime-debug-trace.v1",
@@ -841,6 +869,7 @@ def _support_handoff(
             if str(lane.get("trace_domain", "") or "") == "error"
         ]
     )
+    native_debug_info_blocker = _native_debug_info_blocker(debug_map)
     return {
         "capability_rows": [
             {
@@ -866,7 +895,7 @@ def _support_handoff(
                 "capability_id": "objc3c.behavior.runtime.debug_trace.statement_stepping",
                 "status": "reserved",
                 "evidence_ids": ["OBJ3-NEXT-023.fixture.runtime-debug-trace"],
-                "unpublished_reason": "native line-table evidence is not emitted on the canonical toolchain path",
+                "unpublished_reason": native_debug_info_blocker,
             },
             {
                 "capability_id": "objc3c.behavior.runtime.debug_trace.full_source_map",
@@ -1007,6 +1036,7 @@ def build_runtime_debug_trace_payload(
         "inspection_queries": _inspection_queries(
             source_path=source_path,
             runtime_inspector=runtime_inspector,
+            debug_map=debug_map,
             path_records=path_records,
             runtime_trace_contracts=source_contracts,
             source_span_evidence=source_span_evidence,
@@ -1024,6 +1054,6 @@ def build_runtime_debug_trace_payload(
             runtime_inspector=runtime_inspector,
             debug_map_path=debug_map_path,
         ),
-        "support_handoff": _support_handoff(path_records, source_contracts),
+        "support_handoff": _support_handoff(path_records, source_contracts, debug_map),
         "steps": steps or [],
     }

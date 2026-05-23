@@ -68,10 +68,9 @@ static bool TryResolveTypedKeyPathValidatedOwner(
     return true;
   }
 
-  const SemanticTypeInfo local_type =
-      ScopeLookupType(scopes, expr.typed_keypath_root_name);
-  if (!IsUnknownSemanticType(local_type)) {
-    return IsObjCReferenceSemanticType(local_type);
+  if (const SemanticTypeInfo *local_type =
+          ScopeLookupTypeOrNull(scopes, expr.typed_keypath_root_name)) {
+    return IsObjCReferenceSemanticType(*local_type);
   }
 
   auto global_it = globals.find(expr.typed_keypath_root_name);

@@ -1,0 +1,26 @@
+{
+  "module": "SourceGraphNegativeDemo",
+  "globals": [
+    {
+      "name": "globalCounter",
+      "line": 1,
+      "column": 5
+    }
+  ],
+  "functions": [
+    {
+      "name": "main",
+      "line": 5,
+      "column": 5
+    }
+  ],
+  "source_graph": {
+    "nodes": [
+      "globalCounter",
+      "main"
+    ],
+    "edges": [
+      "main->globalCounter"
+    ]
+  }
+}

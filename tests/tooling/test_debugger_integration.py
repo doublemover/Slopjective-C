@@ -1,0 +1,133 @@
+from __future__ import annotations
+
+import json
+import sys
+from copy import deepcopy
+from pathlib import Path
+from typing import Any
+
+ROOT = Path(__file__).resolve().parents[2]
+SCRIPTS_ROOT = ROOT / "scripts"
+for import_root in (ROOT, SCRIPTS_ROOT):
+    import_root_text = str(import_root)
+    if import_root_text not in sys.path:
+        sys.path.insert(0, import_root_text)
+
+from scripts.objc3c_debugger_integration import (
+    generate_stepping_plan_path,
+    validate_replay_path,
+)
+from scripts.objc3c_workflow.action_catalog import ACTION_SPECS
+from scripts.objc3c_workflow.action_handlers import ACTION_HANDLERS
+
+FIXTURE = (
+    ROOT
+    / "tests"
+    / "tooling"
+    / "fixtures"
+    / "developer_tooling"
+    / "debugger_integration"
+    / "replay.json"
+)
+
+
+def load_json(path: Path = FIXTURE) -> dict[str, Any]:
+    payload = json.loads(path.read_text(encoding="utf-8"))
+    assert isinstance(payload, dict)
+    return payload
+
+
+def mutated_fixture(tmp_path: Path, mutation_path: list[object], value: object) -> Path:
+    payload = deepcopy(load_json())
+    cursor: Any = payload
+    for part in mutation_path[:-1]:
+        cursor = cursor[part]
+    cursor[mutation_path[-1]] = value
+    path = tmp_path / "debugger-replay-mutated.json"
+    path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
+    return path
+
+
+def diagnostic_codes(path: Path) -> set[str]:
+    return {diagnostic.code for diagnostic in validate_replay_path(path).diagnostics}
+
+
+def test_debugger_integration_fixture_validates_lldb_commands_and_source_backed_steps() -> None:
+    result = validate_replay_path(FIXTURE)
+
+    assert result.ok is True
+    assert result.diagnostics == ()
+
+    plan = generate_stepping_plan_path(FIXTURE)
+    assert plan["ok"] is True
+    assert plan["contract_id"] == "objc3c.debugger-integration.stepping-plan.v1"
+    assert {step["step_kind"] for step in plan["steps"]} == {
+        "statement",
+        "function",
+        "method",
+        "message-send",
+    }
+    for step in plan["steps"]:
+        assert step["source_file"] == "tests/tooling/fixtures/developer_tooling/debug_source_maps/source.objc3"
+        assert step["source_line"] > 0
+        assert step["native_line"] > 0
+        assert step["object_debug_line_anchor"]
+        assert step["source_map_entry_id"].startswith("smap.")
+        assert step["native_line_table_row_id"].startswith("lt.")
+
+
+def test_debugger_integration_public_action_is_registered() -> None:
+    action = ACTION_SPECS["validate-debugger-integration"]
+
+    assert action.backend == "python:scripts/check_objc3c_debugger_integration.py"
+    assert action.validation_tier == "repo"
+    assert action.pass_through_args is True
+    assert "validate-debugger-integration" in ACTION_HANDLERS
+
+
+def test_debugger_integration_rejects_stepping_without_line_table_anchor(tmp_path: Path) -> None:
+    path = mutated_fixture(tmp_path, ["stepping_plan", "records", 0, "native_line_table_row_id"], "")
+
+    assert "line-table-row-missing" in diagnostic_codes(path)
+
+
+def test_debugger_integration_rejects_stepping_without_source_line_anchor(tmp_path: Path) -> None:
+    path = mutated_fixture(tmp_path, ["stepping_plan", "records", 0, "source_line"], 0)
+
+    assert "stepping-anchor-missing" in diagnostic_codes(path)
+
+
+def test_debugger_integration_rejects_stepping_without_object_debug_anchor(tmp_path: Path) -> None:
+    path = mutated_fixture(tmp_path, ["stepping_plan", "records", 0, "object_debug_line_anchor"], "")
+
+    assert "stepping-anchor-missing" in diagnostic_codes(path)
+
+
+def test_debugger_integration_fails_closed_for_unsupported_debug_configuration(tmp_path: Path) -> None:
+    path = mutated_fixture(tmp_path, ["debug_configuration", "optimization"], "release-optimized")
+    codes = diagnostic_codes(path)
+
+    assert "debug-configuration-unsupported" in codes
+    assert "stepping-debug-config-unsupported" in codes
+
+
+def test_debugger_integration_rejects_unsupported_lldb_command(tmp_path: Path) -> None:
+    path = mutated_fixture(tmp_path, ["lldb_plugin", "commands", 10, "plugin_command"], "objc3 step time-travel")
+
+    assert "lldb-command-unsupported" in diagnostic_codes(path)
+
+
+def test_debugger_integration_rejects_unsupported_record_that_claims_stepping(tmp_path: Path) -> None:
+    path = mutated_fixture(tmp_path, ["stepping_plan", "records", 4, "claims_stepping"], True)
+
+    assert "stepping-overclaimed" in diagnostic_codes(path)
+
+
+def test_debugger_integration_returns_structured_diagnostic_for_invalid_json(tmp_path: Path) -> None:
+    malformed = tmp_path / "malformed.json"
+    malformed.write_text("{not-json", encoding="utf-8")
+
+    result = validate_replay_path(malformed)
+
+    assert result.ok is False
+    assert "replay-json-invalid" in {diagnostic.code for diagnostic in result.diagnostics}

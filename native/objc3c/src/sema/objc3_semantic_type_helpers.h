@@ -1,5 +1,6 @@
 #pragma once
 
+#include "sema/model/generic_collection_type_model.h"
 #include "sema/objc3_sema_contract.h"
 
 #include <string>
@@ -20,6 +21,8 @@ struct SemanticTypeInfo {
   std::string vector_base_spelling;
   unsigned vector_lane_count = 1;
   bool is_callable = false;
+  bool is_generic_collection = false;
+  Objc3GenericCollectionTypeModel generic_collection_model;
   std::vector<ValueType> callable_param_types;
   ValueType callable_return_type = ValueType::Unknown;
   bool callable_block_runtime_handle_candidate = false;
@@ -30,6 +33,7 @@ struct SemanticTypeInfo {
   SemanticOwnershipKind ownership_kind = SemanticOwnershipKind::None;
   bool has_nullability_suffix = false;
   bool is_refined_nonnull_reference = false;
+  bool is_mutable_binding = false;
   std::string object_pointer_type_name;
 };
 

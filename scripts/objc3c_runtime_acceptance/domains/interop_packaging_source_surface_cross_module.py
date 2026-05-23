@@ -29,6 +29,8 @@ def build_runtime_cross_module_package_interop_source_surface(
             "<emit-prefix>.runtime-registration-manifest.json",
             "<emit-prefix>.runtime-registration-descriptor.json",
             "<emit-prefix>.runtime-import-surface.json",
+        ],
+        "deferred_bridge_artifact_paths": [
             "<emit-prefix>.interop-bridge.h",
             "<emit-prefix>.interop-bridge.modulemap",
             "<emit-prefix>.interop-bridge.json",
@@ -52,7 +54,7 @@ def build_runtime_cross_module_package_interop_source_surface(
             "frontend.pipeline.semantic_surface.objc_interop_header_module_and_bridge_generation",
         ],
         "source_surface_model": (
-            "cross-module-runtime-packaging-publishes-one-compile-coupled-import-surface-and-bridge-artifact-boundary-for-foreign-cpp-and-swift-facing-interop-facts"
+            "cross-module-runtime-packaging-publishes-one-compile-coupled-import-surface-and-deferred-bridge-artifact-boundary-for-foreign-cpp-and-swift-facing-interop-facts-without-claiming-generated-header-modulemap-or-bridge-json-artifacts"
         ),
         "authoritative_case_ids": authoritative_case_ids,
         "authoritative_fixture_paths": [

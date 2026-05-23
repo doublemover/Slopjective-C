@@ -1,0 +1,18 @@
+// Expected advanced-runtime diagnostic: advanced-runtime.property-behavior-conflict
+module AdvancedRuntimeClosureNegativePropertyBehaviorConflict;
+
+@interface PropertyBehaviorConflict
+@property (strong, weak, behavior=Observed) id value;
+@property (readonly, behavior=Projected, setter=setValue:) id mirror;
+@end
+
+@implementation PropertyBehaviorConflict
+@property (strong, weak, behavior=Observed) id value;
+@property (readonly, behavior=Projected, setter=setValue:) id mirror;
+
+- (id)mirror {
+  // property behavior conflict: projected readonly state cannot also publish a
+  // mutating setter and conflicting strong/weak ownership behavior.
+  return self.value;
+}
+@end

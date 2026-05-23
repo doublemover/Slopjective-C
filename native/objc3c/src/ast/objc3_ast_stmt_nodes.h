@@ -13,6 +13,8 @@ struct ReturnStmt;
 struct IfStmt;
 struct DoWhileStmt;
 struct ForStmt;
+struct ForInStmt;
+struct CollectionMutationStmt;
 struct SwitchStmt;
 struct WhileStmt;
 struct BlockStmt;
@@ -26,6 +28,7 @@ struct Stmt {
     If,
     DoWhile,
     For,
+    ForIn,
     Switch,
     While,
     Break,
@@ -33,6 +36,7 @@ struct Stmt {
     Empty,
     Block,
     Defer,
+    CollectionMutation,
     Expr
   };
   Kind kind = Kind::Expr;
@@ -42,9 +46,11 @@ struct Stmt {
   std::unique_ptr<IfStmt> if_stmt;
   std::unique_ptr<DoWhileStmt> do_while_stmt;
   std::unique_ptr<ForStmt> for_stmt;
+  std::unique_ptr<ForInStmt> for_in_stmt;
   std::unique_ptr<SwitchStmt> switch_stmt;
   std::unique_ptr<WhileStmt> while_stmt;
   std::unique_ptr<BlockStmt> block_stmt;
+  std::unique_ptr<CollectionMutationStmt> collection_mutation_stmt;
   std::unique_ptr<ExprStmt> expr_stmt;
   unsigned line = 1;
   unsigned column = 1;
@@ -53,6 +59,7 @@ struct Stmt {
 struct LetStmt {
   std::string name;
   std::unique_ptr<Expr> value;
+  bool mutable_binding = false;
   bool cleanup_attribute_declared = false;
   bool cleanup_sugar_declared = false;
   std::string cleanup_function_symbol;
@@ -109,6 +116,7 @@ struct ForClause {
   std::string name;
   std::string op = "=";
   std::unique_ptr<Expr> value;
+  bool mutable_binding = false;
   unsigned line = 1;
   unsigned column = 1;
 };
@@ -118,6 +126,26 @@ struct ForStmt {
   std::unique_ptr<Expr> condition;
   ForClause step;
   std::vector<std::unique_ptr<Stmt>> body;
+  unsigned line = 1;
+  unsigned column = 1;
+};
+
+struct ForInStmt {
+  std::string value_name;
+  std::string key_name;
+  std::unique_ptr<Expr> collection;
+  std::vector<std::unique_ptr<Stmt>> body;
+  bool has_key_binding = false;
+  unsigned line = 1;
+  unsigned column = 1;
+};
+
+struct CollectionMutationStmt {
+  enum class Kind { IndexSet, Delete };
+  Kind kind = Kind::IndexSet;
+  std::string collection_name;
+  std::unique_ptr<Expr> key_or_index;
+  std::unique_ptr<Expr> value;
   unsigned line = 1;
   unsigned column = 1;
 };

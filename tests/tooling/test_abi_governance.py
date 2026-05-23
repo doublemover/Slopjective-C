@@ -49,7 +49,7 @@ def test_abi_governance_accepts_checked_in_manifest(tmp_path: Path) -> None:
     observed = {
         item["extractor_id"]: item for item in summary["surface_extractors"]  # type: ignore[index]
     }
-    assert observed["runtime-public-c-header-symbols"]["observed_count"] == 124
+    assert observed["runtime-public-c-header-symbols"]["observed_count"] == 199
     assert observed["stdlib-module-abi-signatures"]["observed_count"] == 153
     assert observed["package-lock-abi-identity-schema"]["observed_count"] == 3
     assert summary["release_blocker_issue_refs"] == ["#8173"]

@@ -16,14 +16,25 @@ inline bool RuntimeSnapshotCopiesSucceeded(const ProbeRun &run) {
          run.strict_error_second.status == 0 &&
          run.strict_error_first_dispatch.status == 0 &&
          run.strict_error_second_dispatch.status == 0 &&
-         run.strict_error_entry.status == 0;
+         run.strict_error_entry.status == 0 &&
+         run.cache_aware_dispatch.status == 0 &&
+         run.cache_aware_stale_dispatch.status == 0 &&
+         run.cache_aware_malformed_dispatch.status == 0 &&
+         run.cache_aware_missing_validation_dispatch.status == 0;
 }
 
 inline bool FixtureReturnValuesMatch(const ProbeRun &run) {
   return run.implicit_value == 3 && run.explicit_value == 5 &&
          run.mixed_first_value == 12 && run.mixed_second_value == 12 &&
          run.strict_error_first_value == run.strict_error_expected &&
-         run.strict_error_second_value == run.strict_error_expected;
+         run.strict_error_second_value == run.strict_error_expected &&
+         run.cache_aware_prepare_status == OBJC3_RUNTIME_DISPATCH_STATUS_OK &&
+         run.cache_aware_value == 4 &&
+         run.cache_aware_stale_value == run.cache_aware_value &&
+         run.cache_aware_malformed_status ==
+             OBJC3_RUNTIME_DISPATCH_STATUS_MALFORMED_METADATA &&
+         run.cache_aware_missing_validation_status ==
+             OBJC3_RUNTIME_DISPATCH_STATUS_MALFORMED_METADATA;
 }
 
 inline bool SeededEntriesMatch(const ProbeRun &run) {
@@ -42,6 +53,46 @@ inline bool SeededEntriesMatch(const ProbeRun &run) {
          explicit_entry.fast_path_seeded == 1 &&
          explicit_entry.effective_direct_dispatch == 1 &&
          run.explicit_entry.fast_path_reason == "direct";
+}
+
+inline bool RuntimeCacheAbiFieldsMatch(const ProbeRun &run) {
+  const auto &baseline = run.baseline.state;
+  const auto &direct = run.direct.state;
+  const auto &strict_first = run.strict_error_first.state;
+  const auto &dynamic_entry = run.dynamic_entry.entry;
+  const auto &explicit_entry = run.explicit_entry.entry;
+  const auto &strict_entry = run.strict_error_entry.entry;
+
+  const bool baseline_invalidation_is_initial_or_reset =
+      baseline.last_invalidation_reason ==
+          OBJC3_RUNTIME_METHOD_CACHE_INVALIDATION_NONE ||
+      baseline.last_invalidation_reason ==
+          OBJC3_RUNTIME_METHOD_CACHE_INVALIDATION_RESET;
+  const bool strict_invalidation_is_initial_or_reset =
+      strict_first.last_invalidation_reason ==
+          baseline.last_invalidation_reason;
+
+  return baseline.abi_version == OBJC3_RUNTIME_METHOD_CACHE_ABI_VERSION &&
+         direct.abi_version == OBJC3_RUNTIME_METHOD_CACHE_ABI_VERSION &&
+         strict_first.abi_version == OBJC3_RUNTIME_METHOD_CACHE_ABI_VERSION &&
+         dynamic_entry.abi_version == OBJC3_RUNTIME_METHOD_CACHE_ABI_VERSION &&
+         explicit_entry.abi_version == OBJC3_RUNTIME_METHOD_CACHE_ABI_VERSION &&
+         strict_entry.abi_version == OBJC3_RUNTIME_METHOD_CACHE_ABI_VERSION &&
+         baseline.next_cache_entry_generation ==
+             baseline.cache_entry_count + 1 &&
+         direct.next_cache_entry_generation ==
+             baseline.next_cache_entry_generation &&
+         strict_first.next_cache_entry_generation ==
+             strict_first.cache_entry_count + 1 &&
+         baseline_invalidation_is_initial_or_reset &&
+         strict_invalidation_is_initial_or_reset &&
+         dynamic_entry.cache_entry_generation != 0 &&
+         explicit_entry.cache_entry_generation != 0 &&
+         strict_entry.cache_entry_generation != 0 &&
+         dynamic_entry.miss_status == OBJC3_RUNTIME_DISPATCH_STATUS_OK &&
+         explicit_entry.miss_status == OBJC3_RUNTIME_DISPATCH_STATUS_OK &&
+         strict_entry.miss_status ==
+             OBJC3_RUNTIME_DISPATCH_STATUS_UNKNOWN_SELECTOR;
 }
 
 inline bool DirectCallsLeaveRuntimeCountersUnchanged(const ProbeRun &run) {
@@ -162,15 +213,123 @@ inline bool StrictErrorCacheEntryMatches(const ProbeRun &run) {
          run.strict_error_entry.fast_path_reason.empty();
 }
 
+inline bool CacheAwareDispatchRecordsMatch(const ProbeRun &run) {
+  const auto &valid = run.cache_aware_dispatch.record;
+  const auto &stale = run.cache_aware_stale_dispatch.record;
+  const auto &malformed = run.cache_aware_malformed_dispatch.record;
+  const auto &missing_validation =
+      run.cache_aware_missing_validation_dispatch.record;
+  const char *expected_source =
+      "tests/tooling/fixtures/native/live_dispatch_fast_path_positive.objc3";
+
+  return valid.abi_version == OBJC3_RUNTIME_CACHE_AWARE_DISPATCH_ABI_VERSION &&
+         valid.descriptor_valid == 1 &&
+         valid.fallback_used == 0 &&
+         valid.used_cache == 1 &&
+         valid.used_fast_path == 1 &&
+         valid.strict_error == 0 &&
+         valid.status_code == OBJC3_RUNTIME_DISPATCH_STATUS_OK &&
+         valid.invalidation_reason ==
+             OBJC3_RUNTIME_METHOD_CACHE_INVALIDATION_NONE &&
+         valid.selector_stable_id != 0 &&
+         valid.selector_stable_id ==
+             run.dynamic_entry.entry.selector_stable_id &&
+         valid.normalized_receiver_identity != 0 &&
+         valid.cache_entry_generation ==
+             run.dynamic_entry.entry.cache_entry_generation &&
+         valid.class_graph_generation ==
+             run.mixed_second.state.class_graph_generation &&
+         valid.category_attachment_generation ==
+             run.mixed_second.state.category_attachment_generation &&
+         valid.protocol_declaration_generation ==
+             run.mixed_second.state.protocol_declaration_generation &&
+         valid.storage_surface_generation ==
+             run.mixed_second.state.storage_surface_generation &&
+         valid.method_surface_generation ==
+             run.mixed_second.state.method_surface_generation &&
+         valid.method_target_identity != 0 &&
+         valid.source_line == 1 &&
+         valid.source_column == 1 &&
+         run.cache_aware_dispatch.selector == "dynamicEscape" &&
+         run.cache_aware_dispatch.source_path == expected_source &&
+         run.cache_aware_dispatch.dispatch_path == "cache-hit-fast-path" &&
+         run.cache_aware_dispatch.implementation_kind ==
+             "emitted-method-body" &&
+         run.cache_aware_dispatch.diagnostic_code.empty() &&
+         stale.abi_version == OBJC3_RUNTIME_CACHE_AWARE_DISPATCH_ABI_VERSION &&
+         stale.descriptor_valid == 0 &&
+         stale.fallback_used == 1 &&
+         stale.used_cache == 1 &&
+         stale.used_fast_path == 1 &&
+         stale.strict_error == 0 &&
+         stale.status_code == OBJC3_RUNTIME_DISPATCH_STATUS_OK &&
+         stale.invalidation_reason ==
+             OBJC3_RUNTIME_METHOD_CACHE_INVALIDATION_STALE_GENERATION &&
+         stale.cache_entry_generation ==
+             run.dynamic_entry.entry.cache_entry_generation &&
+         stale.method_target_identity == valid.method_target_identity &&
+         run.cache_aware_stale_dispatch.selector == "dynamicEscape" &&
+         run.cache_aware_stale_dispatch.source_path == expected_source &&
+         run.cache_aware_stale_dispatch.dispatch_path == "cache-hit-fast-path" &&
+         malformed.abi_version ==
+             OBJC3_RUNTIME_CACHE_AWARE_DISPATCH_ABI_VERSION &&
+         malformed.descriptor_valid == 0 &&
+         malformed.fallback_used == 0 &&
+         malformed.used_cache == 0 &&
+         malformed.used_fast_path == 0 &&
+         malformed.strict_error == 0 &&
+         malformed.status_code ==
+             OBJC3_RUNTIME_DISPATCH_STATUS_MALFORMED_METADATA &&
+         malformed.invalidation_reason ==
+             OBJC3_RUNTIME_METHOD_CACHE_INVALIDATION_NONE &&
+         malformed.cache_entry_generation == 0 &&
+         malformed.method_target_identity == 0 &&
+         run.cache_aware_malformed_dispatch.selector == "dynamicEscape" &&
+         run.cache_aware_malformed_dispatch.source_path == expected_source &&
+         run.cache_aware_malformed_dispatch.dispatch_path ==
+             "cache-aware-descriptor-error" &&
+         run.cache_aware_malformed_dispatch.implementation_kind ==
+             "strict-dispatch-error" &&
+         run.cache_aware_malformed_dispatch.diagnostic_code ==
+             "O3RT004" &&
+         run.cache_aware_missing_validation_status ==
+             OBJC3_RUNTIME_DISPATCH_STATUS_MALFORMED_METADATA &&
+         missing_validation.abi_version ==
+             OBJC3_RUNTIME_CACHE_AWARE_DISPATCH_ABI_VERSION &&
+         missing_validation.descriptor_flags ==
+             OBJC3_RUNTIME_CACHE_AWARE_DISPATCH_DEBUG_VISIBLE &&
+         missing_validation.descriptor_valid == 0 &&
+         missing_validation.fallback_used == 0 &&
+         missing_validation.used_cache == 0 &&
+         missing_validation.used_fast_path == 0 &&
+         missing_validation.strict_error == 0 &&
+         missing_validation.status_code ==
+             OBJC3_RUNTIME_DISPATCH_STATUS_MALFORMED_METADATA &&
+         missing_validation.cache_entry_generation == 0 &&
+         missing_validation.method_target_identity == 0 &&
+         run.cache_aware_missing_validation_dispatch.selector ==
+             "dynamicEscape" &&
+         run.cache_aware_missing_validation_dispatch.source_path ==
+             expected_source &&
+         run.cache_aware_missing_validation_dispatch.dispatch_path ==
+             "cache-aware-descriptor-error" &&
+         run.cache_aware_missing_validation_dispatch.implementation_kind ==
+             "strict-dispatch-error" &&
+         run.cache_aware_missing_validation_dispatch.diagnostic_code ==
+             "O3RT004";
+}
+
 inline bool ProbeAssertionsPassed(const ProbeRun &run) {
   return RuntimeSnapshotCopiesSucceeded(run) && FixtureReturnValuesMatch(run) &&
          SeededEntriesMatch(run) &&
+         RuntimeCacheAbiFieldsMatch(run) &&
          DirectCallsLeaveRuntimeCountersUnchanged(run) &&
          FirstMixedDispatchHitsClassFinalFastPath(run) &&
          SecondMixedDispatchReusesClassFinalFastPath(run) &&
          FirstStrictDispatchErrorSeedsStrictErrorEntry(run) &&
          SecondStrictDispatchErrorHitsCachedStrictErrorEntry(run) &&
-         StrictErrorCacheEntryMatches(run);
+         StrictErrorCacheEntryMatches(run) &&
+         CacheAwareDispatchRecordsMatch(run);
 }
 
 } // namespace live_dispatch_fast_path_probe

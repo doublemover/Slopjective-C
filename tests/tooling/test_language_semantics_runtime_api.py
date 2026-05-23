@@ -71,7 +71,13 @@ def test_language_semantics_runtime_api_contract_matches_sources() -> None:
     probe = _read(PROBE_PATH)
 
     assert contract["contract_id"] == "objc3c.runtime.language-semantics.api.v1"
-    assert set(contract["issues"]) == {8160, 8164, 8166, 8167}
+    assert contract["abi_version"] == 5
+    assert set(contract["issues"]) == {8160, 8164, 8166, 8167, 8199}
+    assert set(contract["advanced_runtime_native_snapshot_fields"]) == {
+        "native_artifact_evidence",
+        "native_executable_umbrella_support",
+        "native_artifact_contract",
+    }
     assert '#include "runtime/public/objc3_runtime_language_semantics.h"' in umbrella
     assert "public/objc3_runtime_language_semantics.cpp" in cmake
     assert "public/objc3_runtime_language_semantics.h" in cmake
@@ -79,6 +85,16 @@ def test_language_semantics_runtime_api_contract_matches_sources() -> None:
     assert "typedef struct objc3_runtime_language_semantics_surface_snapshot" in header
     assert "associated_type_support" in header
     assert "dynamic_existential_dispatch_support" in header
+    assert "combined_runtime_evidence" in header
+    assert "negative_combination_evidence" in header
+    assert "source_identity_evidence" in header
+    assert "canonical_source_debug_map_evidence" in header
+    assert "native_artifact_evidence" in header
+    assert "native_executable_umbrella_support" in header
+    assert "canonical_source_map_record_count" in header
+    assert "canonical_native_line_table_record_count" in header
+    assert "native_artifact_contract" in header
+    assert "unsupported_combination_diagnostic" in header
     assert "unsupported_associated_type_diagnostic" in header
     assert "unsupported_dynamic_dispatch_diagnostic" in header
 
@@ -106,7 +122,7 @@ def test_language_semantics_runtime_api_rows_bind_real_runtime_anchors() -> None
     probe = _read(PROBE_PATH)
 
     assert "kRuntimeLanguageSemanticsSurfaces" in implementation
-    assert "objc3_runtime_language_semantics_surface_count() == 4u" in probe
+    assert "objc3_runtime_language_semantics_surface_count() == 5u" in probe
     for row in contract["surface_rows"]:
         assert str(row["issue"]) in implementation
         assert row["support_claim"] in implementation
@@ -116,11 +132,22 @@ def test_language_semantics_runtime_api_rows_bind_real_runtime_anchors() -> None
         assert row["positive_fixture"] in implementation
         assert row["negative_fixture"] in implementation
         assert row["diagnostic_code"] in implementation
+        if "combined_fixture" in row:
+            assert row["combined_fixture"] in implementation
+        if "combined_contract" in row:
+            assert row["combined_contract"] in implementation
+        if "canonical_source_debug_map_bundle" in row:
+            assert row["canonical_source_debug_map_bundle"] in implementation
+        if "native_artifact_contract" in row:
+            assert row["native_artifact_contract"] in implementation
+        if "public_command" in row:
+            assert row["public_command"] in implementation
         for optional_runtime_field in (
             "witness_metadata_key",
             "conformance_metadata_key",
             "unsupported_associated_type_diagnostic",
             "unsupported_dynamic_dispatch_diagnostic",
+            "unsupported_combination_diagnostic",
         ):
             if optional_runtime_field in row:
                 assert row[optional_runtime_field] in runtime_evidence
@@ -132,6 +159,8 @@ def test_language_semantics_runtime_api_rows_bind_real_runtime_anchors() -> None
     assert "QueryRealizedClassProtocolConformanceUnlocked" in implementation
     assert "RuntimeResultFailClosedOwnershipModel" in implementation
     assert "objc3_runtime_spawn_task_i32+objc3_runtime_executor_hop_i32+" in implementation
+    assert "build_advanced_runtime_capability_split_contract" in implementation
+    assert "combined_runtime_identity_contract" in implementation
 
 
 def test_language_semantics_runtime_api_is_bound_to_km_handoff_contracts() -> None:

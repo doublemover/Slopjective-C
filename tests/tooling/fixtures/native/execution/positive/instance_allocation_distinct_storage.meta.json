@@ -2,7 +2,11 @@
   "schema_version": 1,
   "fixture": "instance_allocation_distinct_storage.objc3",
   "execution": {
-    "runtime_dispatch_symbol": "objc3_runtime_dispatch_i32",
-    "requires_live_runtime_dispatch": true
+    "requires_live_runtime_dispatch": true,
+    "runtime_dispatch_symbols": [
+      "objc3_runtime_dispatch_typed_value",
+      "objc3_runtime_prepare_cache_aware_dispatch_descriptor",
+      "objc3_runtime_cache_aware_dispatch_i32_checked"
+    ]
   }
 }

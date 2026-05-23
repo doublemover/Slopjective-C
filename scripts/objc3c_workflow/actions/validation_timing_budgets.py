@@ -11,11 +11,18 @@ VALIDATION_TIMING_BUDGET_OWNER = "validation_timing_budgets"
 VALIDATION_TIMING_HARD_BLOCKING_DECISION_OWNER = "validation_timing_budgets"
 DEFAULT_COMPOSITE_ELAPSED_THRESHOLD_SECONDS = 120.0
 COMPOSITE_ELAPSED_THRESHOLD_SECONDS_BY_ACTION = {
+    # Public test composites have distinct cold Windows envelopes. The generic
+    # fallback remains small for ad-hoc composites; these named gates are the
+    # source-owned validation lanes operators actually run.
+    "test-smoke": 150.0,
+    "test-full": 180.0,
+    "test-ci": 3600.0,
+    "test-nightly": 21600.0,
     # Release composites include nested native performance, package, and
     # publication gates. Keep these hard-blocking, but budget the cold Windows
     # release lane instead of warmed developer-cache expectations.
     "validate-performance-governance": 1800.0,
-    "validate-release-foundation": 3000.0,
+    "validate-release-foundation": 3600.0,
     "validate-packaging-channels": 3300.0,
     "validate-release-operations": 3600.0,
     "validate-distribution-credibility": 4200.0,
@@ -25,6 +32,19 @@ COMPOSITE_ELAPSED_THRESHOLD_SECONDS_BY_ACTION = {
     # first run, so the hard budget tracks the end-to-end lane instead of a
     # warmed no-op expectation.
     "validate-stress": 900.0,
+}
+DEFAULT_RUNTIME_ACCEPTANCE_THRESHOLD_SECONDS = 60.0
+DEFAULT_EXECUTION_SMOKE_THRESHOLD_SECONDS = 90.0
+DEFAULT_EXECUTION_REPLAY_THRESHOLD_SECONDS = 30.0
+
+RUNTIME_ACCEPTANCE_THRESHOLD_SECONDS_BY_ACTION = {
+    "test-nightly": 240.0,
+}
+EXECUTION_SMOKE_THRESHOLD_SECONDS_BY_ACTION = {
+    "test-nightly": 150.0,
+}
+EXECUTION_REPLAY_THRESHOLD_SECONDS_BY_ACTION = {
+    "test-nightly": 120.0,
 }
 
 
@@ -41,6 +61,33 @@ def composite_elapsed_threshold_seconds(composite_action: str | None) -> float:
     )
 
 
+def runtime_acceptance_threshold_seconds(composite_action: str | None) -> float:
+    if composite_action is None:
+        return DEFAULT_RUNTIME_ACCEPTANCE_THRESHOLD_SECONDS
+    return RUNTIME_ACCEPTANCE_THRESHOLD_SECONDS_BY_ACTION.get(
+        composite_action,
+        DEFAULT_RUNTIME_ACCEPTANCE_THRESHOLD_SECONDS,
+    )
+
+
+def execution_smoke_threshold_seconds(composite_action: str | None) -> float:
+    if composite_action is None:
+        return DEFAULT_EXECUTION_SMOKE_THRESHOLD_SECONDS
+    return EXECUTION_SMOKE_THRESHOLD_SECONDS_BY_ACTION.get(
+        composite_action,
+        DEFAULT_EXECUTION_SMOKE_THRESHOLD_SECONDS,
+    )
+
+
+def execution_replay_threshold_seconds(composite_action: str | None) -> float:
+    if composite_action is None:
+        return DEFAULT_EXECUTION_REPLAY_THRESHOLD_SECONDS
+    return EXECUTION_REPLAY_THRESHOLD_SECONDS_BY_ACTION.get(
+        composite_action,
+        DEFAULT_EXECUTION_REPLAY_THRESHOLD_SECONDS,
+    )
+
+
 def validation_speed_budgets(
     runtime_acceptance: dict[str, object] | None,
     execution_smoke: dict[str, object] | None,
@@ -53,21 +100,27 @@ def validation_speed_budgets(
     budgets = [
         {
             "name": "runtime_acceptance_elapsed_seconds",
-            "threshold_seconds": 60.0,
+            "threshold_seconds": runtime_acceptance_threshold_seconds(
+                composite_action
+            ),
             "actual_seconds": safe_float(
                 runtime_acceptance.get("elapsed_seconds") if runtime_acceptance else None
             ),
         },
         {
             "name": "execution_smoke_elapsed_seconds",
-            "threshold_seconds": 90.0,
+            "threshold_seconds": execution_smoke_threshold_seconds(
+                composite_action
+            ),
             "actual_seconds": safe_float(
                 execution_smoke.get("elapsed_seconds") if execution_smoke else None
             ),
         },
         {
             "name": "execution_replay_elapsed_seconds",
-            "threshold_seconds": 30.0,
+            "threshold_seconds": execution_replay_threshold_seconds(
+                composite_action
+            ),
             "actual_seconds": safe_float(
                 execution_replay.get("elapsed_seconds") if execution_replay else None
             ),

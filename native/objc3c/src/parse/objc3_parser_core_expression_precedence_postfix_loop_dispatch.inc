@@ -21,6 +21,24 @@
         continue;
       }
 
+      if (Match(TokenKind::LBracket)) {
+        const Token open = Previous();
+        auto index = ParseExpression();
+        if (index == nullptr) {
+          return nullptr;
+        }
+        if (!Match(TokenKind::RBracket)) {
+          const Token &token = Peek();
+          diagnostics_.push_back(MakeDiag(
+              token.line, token.column, "O3P215",
+              "missing ']' after collection index expression"));
+          return nullptr;
+        }
+        expr = BuildObjc3IndexAccessExpr(open, std::move(expr),
+                                         std::move(index));
+        continue;
+      }
+
       break;
     }
     return expr;

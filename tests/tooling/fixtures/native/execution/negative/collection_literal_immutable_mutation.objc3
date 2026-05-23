@@ -1,0 +1,7 @@
+module CollectionLiteralImmutableMutation;
+
+fn main() -> i32 {
+  let numbers = #array[1, 2];
+  numbers[0] = 3;
+  return numbers[0];
+}

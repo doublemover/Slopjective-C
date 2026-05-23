@@ -1,0 +1,17 @@
+// Expected advanced-runtime diagnostic: advanced-runtime.block-async-error-boundary
+module AdvancedRuntimeClosureNegativeBlockAsyncError;
+
+extern fn riskyAdvancedRuntime(value: i32) throws -> i32;
+
+async fn throwsThroughBlock(owner: id) throws -> i32
+    __attribute__((objc_executor(main))) {
+  let handler = ^[strong owner] {
+    return try riskyAdvancedRuntime(1);
+  };
+  return await handler();
+}
+
+async fn invalidBlockAsyncError(owner: id) -> i32
+    __attribute__((objc_executor(main))) {
+  return await throwsThroughBlock(owner);
+}

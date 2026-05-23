@@ -1,3 +1,14 @@
+          const auto recover_invalid_case_label = [&](const Token &token) {
+            case_stmt.value_line = token.line;
+            case_stmt.value_column = token.column;
+            case_stmt.value = 0;
+            while (!At(TokenKind::Colon) && !At(TokenKind::KwCase) &&
+                   !At(TokenKind::KwDefault) && !At(TokenKind::RBrace) &&
+                   !At(TokenKind::Eof)) {
+              Advance();
+            }
+          };
+
           if (Match(TokenKind::Number)) {
             case_stmt.value_line = Previous().line;
             case_stmt.value_column = Previous().column;
@@ -6,12 +17,13 @@
             const Token sign = Previous();
             if (!Match(TokenKind::Number)) {
               diagnostics_.push_back(MakeDiag(sign.line, sign.column, "O3P103", "invalid case label expression"));
-              return nullptr;
+              recover_invalid_case_label(sign);
+            } else {
+              case_stmt.value_line = sign.line;
+              case_stmt.value_column = sign.column;
+              const int magnitude = std::atoi(Previous().text.c_str());
+              case_stmt.value = sign.kind == TokenKind::Minus ? -magnitude : magnitude;
             }
-            case_stmt.value_line = sign.line;
-            case_stmt.value_column = sign.column;
-            const int magnitude = std::atoi(Previous().text.c_str());
-            case_stmt.value = sign.kind == TokenKind::Minus ? -magnitude : magnitude;
           } else if (Match(TokenKind::KwTrue) || Match(TokenKind::KwFalse)) {
             case_stmt.value_line = Previous().line;
             case_stmt.value_column = Previous().column;
@@ -23,9 +35,9 @@
                 : qualifier.kind == TokenKind::KwExtern ? "unexpected qualifier 'extern' in case label expression"
                                                         : "unexpected qualifier 'async' in case label expression";
             diagnostics_.push_back(MakeDiag(qualifier.line, qualifier.column, "O3P100", message));
-            return nullptr;
+            recover_invalid_case_label(qualifier);
           } else {
             const Token &token = Peek();
             diagnostics_.push_back(MakeDiag(token.line, token.column, "O3P103", "invalid case label expression"));
-            return nullptr;
+            recover_invalid_case_label(token);
           }

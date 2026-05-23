@@ -1,0 +1,141 @@
+{
+  "schema_version": 1,
+  "contract_id": "objc3c.stdlib.collections.generic_type_model.v1",
+  "issue_ref": 8184,
+  "scope": "generic-collection-type-model",
+  "collection_shapes": [
+    {
+      "public_spelling": "Array<T>",
+      "kind": "Array",
+      "arity": 1,
+      "element_identity": true,
+      "key_identity": false,
+      "value_identity": false,
+      "mutability": "immutable",
+      "variance": "invariant"
+    },
+    {
+      "public_spelling": "MutableArray<T>",
+      "kind": "MutableArray",
+      "arity": 1,
+      "element_identity": true,
+      "key_identity": false,
+      "value_identity": false,
+      "mutability": "mutable",
+      "variance": "invariant"
+    },
+    {
+      "public_spelling": "Slice<T>",
+      "kind": "Slice",
+      "arity": 1,
+      "element_identity": true,
+      "key_identity": false,
+      "value_identity": false,
+      "mutability": "immutable-view",
+      "variance": "invariant"
+    },
+    {
+      "public_spelling": "Map<K,V>",
+      "kind": "Map",
+      "arity": 2,
+      "element_identity": false,
+      "key_identity": true,
+      "value_identity": true,
+      "mutability": "immutable",
+      "variance": "invariant"
+    },
+    {
+      "public_spelling": "MutableMap<K,V>",
+      "kind": "MutableMap",
+      "arity": 2,
+      "element_identity": false,
+      "key_identity": true,
+      "value_identity": true,
+      "mutability": "mutable",
+      "variance": "invariant"
+    },
+    {
+      "public_spelling": "Set<T>",
+      "kind": "Set",
+      "arity": 1,
+      "element_identity": true,
+      "key_identity": false,
+      "value_identity": false,
+      "mutability": "immutable",
+      "variance": "invariant"
+    },
+    {
+      "public_spelling": "MutableSet<T>",
+      "kind": "MutableSet",
+      "arity": 1,
+      "element_identity": true,
+      "key_identity": false,
+      "value_identity": false,
+      "mutability": "mutable",
+      "variance": "invariant"
+    },
+    {
+      "public_spelling": "Iterator<T>",
+      "kind": "Iterator",
+      "arity": 1,
+      "element_identity": true,
+      "key_identity": false,
+      "value_identity": false,
+      "mutability": "immutable",
+      "variance": "invariant"
+    },
+    {
+      "public_spelling": "MapIterator<K,V>",
+      "kind": "MapIterator",
+      "arity": 2,
+      "element_identity": false,
+      "key_identity": true,
+      "value_identity": true,
+      "mutability": "immutable",
+      "variance": "invariant"
+    }
+  ],
+  "source_truth": [
+    "native/objc3c/src/sema/model/generic_collection_type_model.h",
+    "native/objc3c/src/sema/objc3_semantic_generic_collection_type_model.h",
+    "native/objc3c/src/sema/objc3_semantic_generic_collection_type_model.cpp",
+    "native/objc3c/src/sema/objc3_semantic_type_factory.cpp",
+    "native/objc3c/src/sema/objc3_semantic_type_relations.cpp",
+    "native/objc3c/src/sema/objc3_semantic_type_lowering_contract.h",
+    "native/objc3c/src/sema/objc3_semantic_passes_type_system_semantic_model_summary_canonical_types.inc",
+    "native/objc3c/src/sema/objc3_semantic_passes_type_system_semantic_model_summary_builder.inc"
+  ],
+  "diagnostics": {
+    "missing_type_argument": "O3S206",
+    "unsupported_key_type": "O3S206",
+    "unsupported_element_type": "O3S206",
+    "nested_generic_shape_not_supported": "O3S206",
+    "mutable_immutable_mismatch": "O3S206",
+    "abi_descriptor_mismatch": "O3S206"
+  },
+  "support_claims": [
+    {
+      "support_claim": "objc3c.behavior.stdlib.collections.generic-type-model",
+      "capability_id": "stdlib.collections.generic-type-model",
+      "owner_phase": "sema"
+    },
+    {
+      "support_claim": "objc3c.behavior.runtime.collections.type-descriptors",
+      "capability_id": "runtime.collections.type-descriptors",
+      "owner_phase": "sema"
+    },
+    {
+      "support_claim": "objc3c.behavior.language.generics.collection-identity",
+      "capability_id": "language.generics.collection-identity",
+      "owner_phase": "sema"
+    }
+  ],
+  "non_goals": [
+    "collection literals",
+    "mutation syntax",
+    "syntax-level for-in integration",
+    "Foundation collection bridging",
+    "collection display",
+    "string interpolation"
+  ]
+}

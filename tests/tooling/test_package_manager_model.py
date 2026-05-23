@@ -16,6 +16,7 @@ from objc3c_package_manager.model import (  # noqa: E402
     PACKAGE_MANAGER_TAMPER_CODE,
     build_lock_components,
     collect_lock_model_failures,
+    default_trust_policy_payload,
     package_manifest_rel_path,
 )
 from objc3c_package_manager.registry import (  # noqa: E402
@@ -75,10 +76,13 @@ def lock_payload() -> dict[str, object]:
         "dependencies": components["dependencies"],
         "provenance": components["provenance"],
         "resolution_plan": components["resolution_plan"],
+        "trust_policy": default_trust_policy_payload(),
         "digest_inputs": components["digest_inputs"],
         "replay": {
             "commands": [
                 "npm run objc3c -- build-package-lock",
+                "npm run objc3c -- package-sign",
+                "npm run objc3c -- package-verify",
                 "npm run objc3c -- validate-package-manager-model",
                 "npm run objc3c -- validate-package-authoring",
             ]
@@ -296,6 +300,10 @@ def test_local_registry_dependency_version_drift_fails_closed() -> None:
 
 def test_package_manager_public_action_and_owner_contract_are_registered() -> None:
     assert "validate-package-manager-model" in PACKAGE_LOCK_ACTION_SPECS
+    assert "package-sign" in PACKAGE_LOCK_ACTION_SPECS
+    assert "package-verify" in PACKAGE_LOCK_ACTION_SPECS
+    assert PACKAGE_LOCK_ACTION_SPECS["package-sign"].pass_through_args
+    assert PACKAGE_LOCK_ACTION_SPECS["package-verify"].pass_through_args
     action = PACKAGE_LOCK_ACTION_SPECS["validate-package-manager-model"]
     assert action.backend == "python:scripts/check_objc3c_package_manager_model.py"
     public_action = next(
@@ -309,3 +317,5 @@ def test_package_manager_public_action_and_owner_contract_are_registered() -> No
     assert contract.owner_role == "package-ecosystem-manager-owner"
     assert "package_manager_model_contract.json" in " ".join(contract.source_contracts)
     assert not contract.wrapper_only_allowed
+    assert ecosystem_publication_owner_contract("package-sign").owner_role == "package-ecosystem-trust-owner"
+    assert ecosystem_publication_owner_contract("package-verify").owner_role == "package-ecosystem-trust-owner"

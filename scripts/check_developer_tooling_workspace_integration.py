@@ -66,22 +66,28 @@ def main() -> int:
 
     editor_surface_path = ROOT / str(editor_tooling.get("editor_surface_path", "")) if editor_tooling.get("editor_surface_path") else Path()
     workspace_index_path = ROOT / str(editor_tooling.get("workspace_index_path", "")) if editor_tooling.get("workspace_index_path") else Path()
+    source_graph_path = ROOT / str(editor_tooling.get("source_graph_path", "")) if editor_tooling.get("source_graph_path") else Path()
     artifact_inspector_path = ROOT / str(editor_tooling.get("artifact_inspector_path", "")) if editor_tooling.get("artifact_inspector_path") else Path()
     formatter_path = ROOT / str(editor_tooling.get("formatter_path", "")) if editor_tooling.get("formatter_path") else Path()
     debug_path = ROOT / str(editor_tooling.get("debug_path", "")) if editor_tooling.get("debug_path") else Path()
     expect(editor_surface_path.is_file(), "workspace editor surface path missing on disk", failures)
     expect(workspace_index_path.is_file(), "workspace semantic index path missing on disk", failures)
+    expect(source_graph_path.is_file(), "workspace source graph path missing on disk", failures)
     expect(artifact_inspector_path.is_file(), "workspace artifact inspector path missing on disk", failures)
     expect(formatter_path.is_file(), "workspace formatter path missing on disk", failures)
     expect(debug_path.is_file(), "workspace debug path missing on disk", failures)
 
     editor_surface = load_json(editor_surface_path) if editor_surface_path.is_file() else {}
     workspace_index = load_json(workspace_index_path) if workspace_index_path.is_file() else {}
+    source_graph = load_json(source_graph_path) if source_graph_path.is_file() else {}
     artifact_inspector = load_json(artifact_inspector_path) if artifact_inspector_path.is_file() else {}
     expect(editor_surface.get("formatter", {}).get("supported") is True, "workspace editor surface formatter not supported", failures)
     expect(editor_surface.get("debug", {}).get("supported") is True, "workspace editor surface debug not supported", failures)
     expect(editor_surface.get("artifact_inspector", {}).get("supported") is True, "workspace editor surface artifact inspector not supported", failures)
+    expect(editor_surface.get("source_graph", {}) == source_graph, "workspace editor surface source graph drifted from generated payload", failures)
     expect(editor_surface.get("debug", {}).get("statement_level_stepping") is False, "workspace editor surface must keep statement stepping fail-closed", failures)
+    expect(source_graph.get("contract_id") == "objc3c.developer.tooling.source.graph.v1", "workspace source graph contract id drifted", failures)
+    expect(source_graph.get("evidence", {}).get("lexical_candidates_authoritative") is False, "workspace source graph overpublished lexical references", failures)
     expect(workspace_index.get("available") is True, "workspace semantic index not available", failures)
     expect(artifact_inspector.get("contract_id") == "objc3c.developer.tooling.artifact.inspector.v1", "workspace artifact inspector contract id drifted", failures)
     expect("manifest" in artifact_inspector.get("inspected_artifact_kinds", []), "workspace artifact inspector did not inspect manifest", failures)

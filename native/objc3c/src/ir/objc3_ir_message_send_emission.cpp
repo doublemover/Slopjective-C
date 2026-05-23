@@ -3,6 +3,7 @@
 #include <cstddef>
 #include <string>
 #include <unordered_set>
+#include <vector>
 
 #include "ast/objc3_ast.h"
 #include "ir/objc3_ir_control_flow_ops.h"
@@ -24,7 +25,12 @@ LoweredMessageSend LowerObjc3IRMessageSendHeader(
 std::string EmitObjc3IRRuntimeDispatch(
     const LoweredMessageSend &lowered, FunctionContext &ctx,
     const Objc3IRMessageSendEmissionOptions &options,
-    const Objc3IRMessageSendEmissionCallbacks &callbacks);
+    const Objc3IRMessageSendEmissionCallbacks &callbacks,
+    std::string *result_block_label = nullptr);
+
+bool Objc3IRMessageSendIsEligibleForCacheAwareDispatch(
+    const LoweredMessageSend &lowered,
+    const Objc3IRMessageSendLoweringPlan &plan);
 
 std::string ApplyObjc3IRMethodFamilyArcResultCleanup(
     const LoweredMessageSend &lowered, const std::string &value,
@@ -98,6 +104,19 @@ bool Objc3IRValueTypeUsesTypedDispatch(ValueType type) {
   return false;
 }
 
+bool Objc3IRMessageSendIsEligibleForCacheAwareDispatch(
+    const LoweredMessageSend &lowered,
+    const Objc3IRMessageSendLoweringPlan &plan) {
+  return plan.emits_cache_aware_dispatch &&
+         !lowered.uses_from_class_dispatch &&
+         !Objc3IRValueTypeUsesTypedDispatch(lowered.runtime_return_type) &&
+         lowered.dispatch_symbol ==
+             kObjc3RuntimeDispatchLoweringCanonicalEntrypointSymbol &&
+         lowered.args.size() == kObjc3RuntimeDispatchDefaultArgs &&
+         lowered.explicit_arg_count <= kObjc3RuntimeDispatchDefaultArgs &&
+         lowered.runtime_return_type == ValueType::I32;
+}
+
 int Objc3IRRuntimeDispatchReturnKindForValueType(ValueType type) {
   switch (type) {
     case ValueType::Bool:
@@ -169,6 +188,40 @@ bool Objc3IRMessageFamilyProducesObjectReference(const Expr *expr) {
          expr->method_family_name == "init";
 }
 
+bool TryResolveObjc3IRRuntimeDispatchReturnTypeBySelector(
+    const std::string &selector,
+    const Objc3IRMessageSendEmissionOptions &options,
+    ValueType &resolved_return_type) {
+  if (selector.empty()) {
+    return false;
+  }
+  const std::string instance_selector_suffix = "|instance|" + selector;
+  bool found = false;
+  ValueType candidate = ValueType::Unknown;
+  for (const auto &entry : options.runtime_dispatch_return_types_by_key) {
+    const std::string &key = entry.first;
+    if (key.size() < instance_selector_suffix.size() ||
+        key.compare(key.size() - instance_selector_suffix.size(),
+                    instance_selector_suffix.size(),
+                    instance_selector_suffix) != 0) {
+      continue;
+    }
+    if (!found) {
+      found = true;
+      candidate = entry.second;
+      continue;
+    }
+    if (candidate != entry.second) {
+      return false;
+    }
+  }
+  if (!found || candidate == ValueType::Unknown) {
+    return false;
+  }
+  resolved_return_type = candidate;
+  return true;
+}
+
 ValueType ResolveObjc3IRRuntimeDispatchReturnType(
     const Expr *expr, const FunctionContext &ctx,
     const Objc3IRMessageSendEmissionOptions &options) {
@@ -189,6 +242,12 @@ ValueType ResolveObjc3IRRuntimeDispatchReturnType(
     owner_name = superclass_it == options.runtime_dispatch_superclass_by_name.end()
                      ? std::string{}
                      : superclass_it->second;
+  }
+  ValueType selector_return_type = ValueType::Unknown;
+  if (TryResolveObjc3IRRuntimeDispatchReturnTypeBySelector(
+          expr != nullptr ? expr->selector : "", options,
+          selector_return_type)) {
+    return selector_return_type;
   }
   if (Objc3IRMessageFamilyProducesObjectReference(expr)) {
     return ValueType::ObjCId;
@@ -224,6 +283,8 @@ LoweredMessageSend LowerObjc3IRMessageSendHeader(
     lowered.receiver = callbacks.emit_expr(expr->receiver.get(), ctx);
   }
   lowered.selector = expr->selector;
+  lowered.source_line = expr->line;
+  lowered.source_column = expr->column;
   lowered.method_family_name = expr->method_family_name;
   lowered.method_family_returns_retained_result =
       expr->method_family_returns_retained_result;
@@ -274,7 +335,8 @@ LoweredMessageSend LowerObjc3IRMessageSendExpr(
 std::string EmitObjc3IRRuntimeDispatch(
     const LoweredMessageSend &lowered, FunctionContext &ctx,
     const Objc3IRMessageSendEmissionOptions &options,
-    const Objc3IRMessageSendEmissionCallbacks &callbacks) {
+    const Objc3IRMessageSendEmissionCallbacks &callbacks,
+    std::string *result_block_label) {
   const Objc3IRMessageSendLoweringPlan plan =
       BuildObjc3IRMessageSendLoweringPlan(
           lowered.selector, lowered.dispatch_surface_family,
@@ -366,7 +428,8 @@ std::string EmitObjc3IRRuntimeDispatch(
   }
 
   const auto emit_dispatch_call = [&](const std::string &dispatch_value,
-                                      std::string &failure_reason) {
+                                      std::string &failure_reason,
+                                      std::string *dispatch_result_block_label) {
     // dispatch-surface classification anchor: instance/class/super/dynamic
     // message sends that survive folding all route through the live runtime family;
     // direct dispatch remains an explicit non-goal for this freeze.
@@ -430,6 +493,44 @@ std::string EmitObjc3IRRuntimeDispatch(
             lowered.runtime_return_type);
     request.strict_no_retired_route = plan.strict_no_retired_route;
     request.strict_no_compatibility = plan.strict_no_compatibility;
+    if (Objc3IRMessageSendIsEligibleForCacheAwareDispatch(lowered, plan)) {
+      Objc3IRCacheAwareDispatchCallRequest cache_request;
+      cache_request.result_value = dispatch_value;
+      cache_request.result_envelope_value = callbacks.new_temp(ctx);
+      cache_request.prepare_status_value = callbacks.new_temp(ctx);
+      cache_request.prepare_status_ok_value = callbacks.new_temp(ctx);
+      cache_request.status_value = callbacks.new_temp(ctx);
+      cache_request.status_ok_value = callbacks.new_temp(ctx);
+      cache_request.descriptor_ptr =
+          "%objc3.cache_aware.dispatch.descriptor." +
+          std::to_string(ctx.temp_counter++);
+      cache_request.selector_ptr = selector_ptr;
+      cache_request.receiver = lowered.receiver;
+      cache_request.args = lowered.args;
+      cache_request.source_line = lowered.source_line;
+      cache_request.source_column = lowered.source_column;
+      cache_request.strict_no_retired_route = plan.strict_no_retired_route;
+      cache_request.strict_no_compatibility = plan.strict_no_compatibility;
+      if (!Objc3IRCacheAwareDispatchCallRequestOwnsResult(cache_request)) {
+        failure_reason =
+            "cache-aware dispatch result is missing explicit IR ownership";
+        return false;
+      }
+      const std::string strict_failure_label =
+          callbacks.new_label(ctx, "cache_dispatch_strict_fail_");
+      const std::string value_label =
+          callbacks.new_label(ctx, "cache_dispatch_value_");
+      const std::vector<std::string> cache_lines =
+          BuildObjc3IRCacheAwareDispatchCall(cache_request,
+                                             strict_failure_label, value_label);
+      ctx.code_lines.insert(ctx.code_lines.end(), cache_lines.begin(),
+                            cache_lines.end());
+      options.runtime_dispatch_call_state.NoteCacheAwareDispatchCall();
+      if (dispatch_result_block_label != nullptr) {
+        *dispatch_result_block_label = value_label;
+      }
+      return true;
+    }
     if (!Objc3IRRuntimeDispatchCallRequestOwnsResult(request)) {
       failure_reason =
           "runtime dispatch result is missing explicit IR ownership";
@@ -444,7 +545,8 @@ std::string EmitObjc3IRRuntimeDispatch(
   if (plan.receiver_dispatch_policy.emit_dispatch_without_nil_branch) {
     const std::string dispatch_value = callbacks.new_temp(ctx);
     std::string failure_reason;
-    if (!emit_dispatch_call(dispatch_value, failure_reason)) {
+    if (!emit_dispatch_call(dispatch_value, failure_reason,
+                            result_block_label)) {
       return callbacks.emit_unsupported_i32_value(failure_reason);
     }
     callbacks.invalidate_global_proof_state(ctx);
@@ -465,13 +567,15 @@ std::string EmitObjc3IRRuntimeDispatch(
   ctx.code_lines.push_back(BuildObjc3IRBranchLine(merge_label));
   ctx.code_lines.push_back(BuildObjc3IRLabelLine(dispatch_label));
   std::string failure_reason;
-  if (!emit_dispatch_call(dispatch_value, failure_reason)) {
+  std::string dispatch_result_label = dispatch_label;
+  if (!emit_dispatch_call(dispatch_value, failure_reason,
+                          &dispatch_result_label)) {
     return callbacks.emit_unsupported_i32_value(failure_reason);
   }
   ctx.code_lines.push_back(BuildObjc3IRBranchLine(merge_label));
   ctx.code_lines.push_back(BuildObjc3IRLabelLine(merge_label));
   ctx.code_lines.push_back(BuildObjc3IRI32PhiLine(
-      out, "0", nil_label, dispatch_value, dispatch_label));
+      out, "0", nil_label, dispatch_value, dispatch_result_label));
   callbacks.invalidate_global_proof_state(ctx);
   return out;
 }
@@ -557,12 +661,14 @@ std::string EmitObjc3IRMessageSendExpr(
     ctx.code_lines.push_back(BuildObjc3IRLabelLine(dispatch_label));
     lowered.receiver_dispatch_facts = Objc3IRKnownNonNilReceiverFacts();
     MaterializeObjc3IRMessageSendArgs(expr, lowered, ctx, callbacks);
+    std::string dispatch_result_label = dispatch_label;
     const std::string dispatch_value =
-        EmitObjc3IRRuntimeDispatch(lowered, ctx, options, callbacks);
+        EmitObjc3IRRuntimeDispatch(lowered, ctx, options, callbacks,
+                                   &dispatch_result_label);
     ctx.code_lines.push_back(BuildObjc3IRBranchLine(merge_label));
     ctx.code_lines.push_back(BuildObjc3IRLabelLine(merge_label));
     ctx.code_lines.push_back(BuildObjc3IRI32PhiLine(
-        out, "0", nil_label, dispatch_value, dispatch_label));
+        out, "0", nil_label, dispatch_value, dispatch_result_label));
     return ApplyObjc3IRMethodFamilyArcResultCleanup(
         lowered, out, ctx, options);
   }

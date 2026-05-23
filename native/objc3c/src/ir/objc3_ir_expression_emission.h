@@ -33,7 +33,8 @@ struct Objc3IRExpressionEmissionCallbacks {
                             FunctionContext &ctx,
                             const std::string &throws_error_slot_ptr,
                             bool *bridge_failed_out,
-                            std::string *bridge_error_value_out)>
+                            std::string *bridge_error_value_out,
+                            std::string *bridge_failure_condition_out)>
       emit_direct_function_call;
   std::function<std::string(FunctionContext &ctx, const std::string &prefix)>
       build_throws_error_slot_alloca;

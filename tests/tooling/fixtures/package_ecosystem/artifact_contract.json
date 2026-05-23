@@ -11,6 +11,7 @@
   "schemas": {
     "package_manifest": "schemas/objc3c-package-manifest-v1.schema.json",
     "package_lock": "schemas/objc3c-package-lock-v1.schema.json",
+    "package_signing_trust": "schemas/objc3c-package-signing-trust-v1.schema.json",
     "offline_mirror_index": "schemas/objc3c-package-offline-mirror-index-v1.schema.json",
     "local_registry_index": "schemas/objc3c-package-local-registry-index-v1.schema.json",
     "install_receipt": "schemas/objc3c-package-install-receipt-v1.schema.json"
@@ -80,6 +81,8 @@
       ],
       "public_actions": [
         "build-package-lock",
+        "package-sign",
+        "package-verify",
         "validate-package-manager-model"
       ],
       "claim_boundary": "deterministic local lock evidence only; no hosted registry, package-manager parity, or network-dependent install claim"
@@ -134,6 +137,8 @@
   "required_actions": [
     "package-runnable-toolchain",
     "build-package-lock",
+    "package-sign",
+    "package-verify",
     "validate-package-manager-model",
     "validate-package-authoring",
     "validate-package-mirror",

@@ -12,6 +12,7 @@ from objc3c_fixture_catalog_behavior import (
     assert_recovery_readme_documents_phase_boundaries,
     assert_retired_unsupported_feature_claim_duplicates_are_absent,
     assert_runtime_dispatch_symbols_are_only_live_dispatch_contracts,
+    assert_throwing_call_requires_try_sidecar_is_compile_rejection,
     assert_unsupported_feature_claim_sidecars_are_compile_rejections,
 )
 from objc3c_fixture_catalog_fixtures import (
@@ -59,6 +60,10 @@ def test_parser_conformance_manifest_tracks_strict_rejection_cases() -> None:
 
 def test_unsupported_feature_claim_sidecars_are_compile_rejections() -> None:
     assert_unsupported_feature_claim_sidecars_are_compile_rejections()
+
+
+def test_throwing_call_requires_try_sidecar_is_compile_rejection() -> None:
+    assert_throwing_call_requires_try_sidecar_is_compile_rejection()
 
 
 def test_retired_unsupported_feature_claim_duplicates_are_absent() -> None:

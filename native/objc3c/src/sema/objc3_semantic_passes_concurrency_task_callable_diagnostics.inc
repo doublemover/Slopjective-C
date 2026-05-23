@@ -64,6 +64,12 @@ static void DiagnoseConcurrencyTaskCallableLegalityExpr(
                                         inside_async_context, diagnostics);
   DiagnoseConcurrencyTaskCallableLegalityExpr(expr->third.get(), profile,
                                         inside_async_context, diagnostics);
+  for (const auto &key : expr->collection_keys) {
+    DiagnoseConcurrencyTaskCallableLegalityExpr(key.get(), profile, inside_async_context, diagnostics);
+  }
+  for (const auto &value : expr->collection_values) {
+    DiagnoseConcurrencyTaskCallableLegalityExpr(value.get(), profile, inside_async_context, diagnostics);
+  }
   for (const auto &arg : expr->args) {
     DiagnoseConcurrencyTaskCallableLegalityExpr(arg.get(), profile,
                                           inside_async_context, diagnostics);
@@ -140,6 +146,14 @@ static void DiagnoseConcurrencyTaskCallableLegalityStmt(
       }
     }
     return;
+  case Stmt::Kind::ForIn:
+    if (stmt->for_in_stmt != nullptr) {
+      DiagnoseConcurrencyTaskCallableLegalityExpr(stmt->for_in_stmt->collection.get(), profile, inside_async_context, diagnostics);
+      for (const auto &body_stmt : stmt->for_in_stmt->body) {
+        DiagnoseConcurrencyTaskCallableLegalityStmt(body_stmt.get(), profile, inside_async_context, diagnostics);
+      }
+    }
+    return;
   case Stmt::Kind::Switch:
     if (stmt->switch_stmt != nullptr) {
       DiagnoseConcurrencyTaskCallableLegalityExpr(
@@ -178,6 +192,12 @@ static void DiagnoseConcurrencyTaskCallableLegalityStmt(
     if (stmt->expr_stmt != nullptr) {
       DiagnoseConcurrencyTaskCallableLegalityExpr(stmt->expr_stmt->value.get(), profile,
                                             inside_async_context, diagnostics);
+    }
+    return;
+  case Stmt::Kind::CollectionMutation:
+    if (stmt->collection_mutation_stmt != nullptr) {
+      DiagnoseConcurrencyTaskCallableLegalityExpr(stmt->collection_mutation_stmt->key_or_index.get(), profile, inside_async_context, diagnostics);
+      DiagnoseConcurrencyTaskCallableLegalityExpr(stmt->collection_mutation_stmt->value.get(), profile, inside_async_context, diagnostics);
     }
     return;
   case Stmt::Kind::Break:

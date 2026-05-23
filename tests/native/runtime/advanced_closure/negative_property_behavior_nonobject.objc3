@@ -1,0 +1,10 @@
+// Expected advanced-runtime diagnostic: advanced-runtime.property-behavior-nonobject
+module AdvancedRuntimeClosureNegativeProperty;
+
+@interface InvalidAdvancedRuntimeProperty
+@property (strong, behavior=Observed) i32 counter;
+@end
+
+@implementation InvalidAdvancedRuntimeProperty
+@property (strong, behavior=Observed) i32 counter;
+@end

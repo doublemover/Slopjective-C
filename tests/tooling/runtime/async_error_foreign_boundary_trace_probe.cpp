@@ -1,4 +1,5 @@
 #include <cstdio>
+#include <string>
 
 #include "runtime/objc3_runtime_bootstrap_internal.h"
 
@@ -24,6 +25,14 @@ int main() {
   objc3_runtime_error_bridge_state_snapshot error_snapshot{};
   const int error_status =
       objc3_runtime_copy_error_bridge_state_for_testing(&error_snapshot);
+  const std::string last_foreign_exception_kind_name =
+      error_snapshot.last_foreign_exception_kind_name != nullptr
+          ? error_snapshot.last_foreign_exception_kind_name
+          : "";
+  const std::string last_catch_kind_name =
+      error_snapshot.last_catch_kind_name != nullptr
+          ? error_snapshot.last_catch_kind_name
+          : "";
 
   objc3_runtime_reset_for_testing();
 
@@ -69,13 +78,12 @@ int main() {
   std::printf("last_foreign_exception_bridge_result=%d\n",
               error_snapshot.last_foreign_exception_bridge_result);
   std::printf("last_foreign_exception_kind_name=%s\n",
-              error_snapshot.last_foreign_exception_kind_name != nullptr
-                  ? error_snapshot.last_foreign_exception_kind_name
-                  : "<null>");
+              last_foreign_exception_kind_name.empty()
+                  ? "<null>"
+                  : last_foreign_exception_kind_name.c_str());
   std::printf("last_catch_kind_name=%s\n",
-              error_snapshot.last_catch_kind_name != nullptr
-                  ? error_snapshot.last_catch_kind_name
-                  : "<null>");
+              last_catch_kind_name.empty() ? "<null>"
+                                           : last_catch_kind_name.c_str());
 
   std::printf("task_status=%d\n", task_status);
   std::printf("task_scope=%d\n", scope);
@@ -138,6 +146,8 @@ int main() {
       error_snapshot.last_foreign_exception_kind != 9 ||
       error_snapshot.last_foreign_exception_bridge_result !=
           OBJC3_RUNTIME_FOREIGN_EXCEPTION_BRIDGE_INVALID_KIND ||
+      last_foreign_exception_kind_name != "unsupported-foreign-exception" ||
+      last_catch_kind_name != "unknown" ||
       task_status != OBJC3_RUNTIME_REGISTRATION_STATUS_OK || scope != 1 ||
       add_task != 1 || add_second_task != 1 || cancel_all != 31 ||
       task_snapshot.lifecycle_state !=

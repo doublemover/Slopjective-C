@@ -31,15 +31,9 @@ def check_textual_binary_interface_parity_source_surface_case(
             encoding="utf-8"
         )
     )
-    bridge_json = json.loads(
-        (compile_dir / "module.interop-bridge.json").read_text(encoding="utf-8")
-    )
-    bridge_header = (compile_dir / "module.interop-bridge.h").read_text(
-        encoding="utf-8"
-    )
-    bridge_modulemap = (compile_dir / "module.interop-bridge.modulemap").read_text(
-        encoding="utf-8"
-    )
+    bridge_header_path = compile_dir / "module.interop-bridge.h"
+    bridge_modulemap_path = compile_dir / "module.interop-bridge.modulemap"
+    bridge_json_path = compile_dir / "module.interop-bridge.json"
     semantic_surface = (
         manifest.get("frontend", {}).get("pipeline", {}).get("semantic_surface", {})
     )
@@ -76,42 +70,40 @@ def check_textual_binary_interface_parity_source_surface_case(
         == "objc3c.interop.header.module.and.bridge.generation.v1",
         "expected header/module bridge provider runtime import surface to preserve the bridge-generation contract",
     )
+    for artifact_path, label in (
+        (bridge_header_path, "bridge header"),
+        (bridge_modulemap_path, "bridge modulemap"),
+        (bridge_json_path, "bridge json"),
+    ):
+        expect(
+            not artifact_path.exists(),
+            f"expected textual/binary source-surface provider not to publish the deferred {label} artifact",
+        )
     expect(
-        bridge_json.get("header_artifact_relative_path")
+        bridge_generation_surface.get("header_artifact_relative_path")
         == runtime_bridge_packet.get("header_artifact_relative_path")
-        == "module.interop-bridge.h",
-        "expected header/module bridge provider textual and binary surfaces to preserve the header artifact path",
-    )
-    expect(
-        bridge_json.get("module_artifact_relative_path")
+        == "module.interop-bridge.h"
+        and bridge_generation_surface.get("module_artifact_relative_path")
         == runtime_bridge_packet.get("module_artifact_relative_path")
-        == "module.interop-bridge.modulemap",
-        "expected header/module bridge provider textual and binary surfaces to preserve the modulemap artifact path",
-    )
-    expect(
-        bridge_json.get("bridge_artifact_relative_path")
+        == "module.interop-bridge.modulemap"
+        and bridge_generation_surface.get("bridge_artifact_relative_path")
         == runtime_bridge_packet.get("bridge_artifact_relative_path")
         == "module.interop-bridge.json",
-        "expected header/module bridge provider textual and binary surfaces to preserve the bridge-json artifact path",
+        "expected header/module bridge provider source and runtime import surfaces to preserve the canonical deferred bridge artifact paths",
     )
     expect(
-        bridge_json.get("runtime_generation_ready") is True
-        and bridge_json.get("cross_module_packaging_ready") is True
-        and bridge_json.get("deterministic") is True
-        and runtime_bridge_packet.get("runtime_generation_ready") is True
-        and runtime_bridge_packet.get("cross_module_packaging_ready") is True
-        and runtime_bridge_packet.get("deterministic") is True,
-        "expected header/module bridge provider textual and binary surfaces to agree on readiness and determinism",
+        bridge_generation_surface.get("runtime_generation_ready") is False
+        and bridge_generation_surface.get("cross_module_packaging_ready") is False
+        and bridge_generation_surface.get("deterministic") is False
+        and runtime_bridge_packet.get("runtime_generation_ready") is False
+        and runtime_bridge_packet.get("cross_module_packaging_ready") is False
+        and runtime_bridge_packet.get("deterministic") is False,
+        "expected textual/binary source-surface provider to preserve bridge paths without claiming generated bridge artifacts",
     )
     expect(
-        bridge_json.get("module_name") == runtime_import_surface.get("module_name"),
-        "expected header/module bridge provider bridge json and runtime import surface to preserve one module name",
-    )
-    expect(
-        len(bridge_json.get("foreign_callables", [])) == 2
-        and runtime_bridge_packet.get("local_foreign_callable_count") == 2
+        runtime_bridge_packet.get("local_foreign_callable_count") == 2
         and foreign_preservation_surface.get("local_foreign_callable_count") == 2,
-        "expected header/module bridge provider textual and binary surfaces to preserve two foreign callables",
+        "expected header/module bridge provider source surfaces to preserve two foreign callables",
     )
     expect(
         annotation_source_surface.get("swift_name_annotation_sites") == 1
@@ -119,41 +111,27 @@ def check_textual_binary_interface_parity_source_surface_case(
         and annotation_source_surface.get("header_name_annotation_sites") == 2,
         "expected header/module bridge provider source-completion surface to preserve the foreign C++/Swift annotation inventory",
     )
-    for snippet, label in (
-        ("module.interop-bridge.h", "header artifact path"),
-        ("module.interop-bridge.modulemap", "modulemap artifact path"),
-        ("ffiInbound", "primary foreign callable"),
-        ("ffiHeaderBridge", "header-only foreign callable"),
-        ("BridgeProviderGate", "C++ bridge annotation"),
-        ("BridgeProvider.forward", "Swift bridge annotation"),
-    ):
-        expect(
-            snippet in bridge_header,
-            f"expected generated interop bridge header to preserve the {label}",
-        )
-    expect(
-        "module.interop-bridge.h" in bridge_modulemap
-        and "_objc3_interop_bridge" in bridge_modulemap,
-        "expected generated interop bridge modulemap to preserve the bridge module identity",
-    )
-
     return CaseResult(
         case_id="textual-binary-interface-parity-source-surface",
-        probe="compile-manifest-runtime-import-surface-bridge-header-modulemap-and-bridge-json",
+        probe="compile-manifest-runtime-import-surface-and-deferred-bridge-boundary",
         fixture=INTEROP_HEADER_MODULE_PROVIDER_FIXTURE,
         claim_class="compile-coupled-inspection",
         passed=True,
         summary={
             "module_name": runtime_import_surface.get("module_name"),
-            "foreign_callable_count": len(bridge_json.get("foreign_callables", [])),
-            "header_artifact_relative_path": bridge_json.get(
-                "header_artifact_relative_path"
+            "foreign_callable_count": runtime_bridge_packet.get(
+                "local_foreign_callable_count"
             ),
-            "module_artifact_relative_path": bridge_json.get(
-                "module_artifact_relative_path"
+            "bridge_artifact_paths_deferred": [
+                "module.interop-bridge.h",
+                "module.interop-bridge.modulemap",
+                "module.interop-bridge.json",
+            ],
+            "runtime_generation_ready": runtime_bridge_packet.get(
+                "runtime_generation_ready"
             ),
-            "bridge_artifact_relative_path": bridge_json.get(
-                "bridge_artifact_relative_path"
+            "cross_module_packaging_ready": runtime_bridge_packet.get(
+                "cross_module_packaging_ready"
             ),
         },
     )

@@ -104,23 +104,49 @@
     "trust": {
       "type": "object",
       "required": [
+        "contract_id",
+        "signature_id",
         "signature_format",
+        "signing_backend",
+        "signer_id",
         "signing_key_id",
-        "subject",
+        "trust_root_id",
+        "subject_kind",
+        "subject_package_id",
+        "subject_version",
+        "package_namespace",
+        "artifact_digest",
+        "manifest_digest",
+        "abi_identity",
+        "language_version",
         "signature",
-        "trust_scope",
         "revocation_state",
-        "revocation_policy"
+        "verification_policy",
+        "signed_at_utc",
+        "provenance"
       ],
       "additionalProperties": false,
       "properties": {
-        "signature_format": { "const": "objc3c-local-sha256-v1" },
+        "contract_id": { "const": "objc3c.package_ecosystem.signature_envelope.v1" },
+        "signature_id": { "type": "string", "pattern": "^sha256:[0-9a-f]{64}$" },
+        "signature_format": { "const": "objc3c-deterministic-test-sha256-v1" },
+        "signing_backend": { "const": "deterministic-test-replay" },
+        "signer_id": { "const": "objc3c-local-package-signer-v1" },
         "signing_key_id": { "const": "objc3c-local-package-key-v1" },
-        "subject": { "type": "string", "minLength": 1 },
+        "trust_root_id": { "const": "objc3c-local-deterministic-trust-root-v1" },
+        "subject_kind": { "const": "package-manifest" },
+        "subject_package_id": { "type": "string", "minLength": 1 },
+        "subject_version": { "type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$" },
+        "package_namespace": { "type": "string", "minLength": 1 },
+        "artifact_digest": { "type": "string", "pattern": "^sha256:[0-9a-f]{64}$" },
+        "manifest_digest": { "type": "string", "pattern": "^sha256:[0-9a-f]{64}$" },
+        "abi_identity": { "const": "objc3-abi-2025Q4" },
+        "language_version": { "const": "3.0" },
         "signature": { "type": "string", "pattern": "^sha256:[0-9a-f]{64}$" },
-        "trust_scope": { "const": "checked-in-local-package-source" },
         "revocation_state": { "const": "not-revoked" },
-        "revocation_policy": { "const": "revoked-package-ids-fail-resolution" }
+        "verification_policy": { "const": "fail-closed-local-digest-trust-root-revocation-v1" },
+        "signed_at_utc": { "const": "omitted-for-deterministic-replay" },
+        "provenance": { "const": "deterministic-local-fixture-replay-only" }
       }
     }
   }

@@ -1,4 +1,4 @@
-// Expected diagnostic code(s): O3P107, O3P100.
+// Expected diagnostic code(s): O3P107.
 module NegativeSwitchParserMissingDefaultColon;
 
 fn main() -> i32 {

@@ -27,6 +27,152 @@ OBJECT_MODEL_BROAD_SCOPE_PHRASES = (
     "public reflection abi",
 )
 
+FOUNDATION_BOUNDARY_EXPECTATIONS = (
+    {
+        "id": "runtime.object-model.full-realization",
+        "state": "reserved",
+        "summary_tokens": (
+            "production compiler-owned object-model source identity",
+            "statement-level debugger stepping remain reserved",
+        ),
+        "evidence_paths": (
+            "tests/tooling/fixtures/object_model_closure/debugger_value_inspection_replay_contract.json",
+            "tests/tooling/fixtures/cross_lane_e2e/object_reflection_debugger.expectation.json",
+        ),
+        "no_support_claims": True,
+    },
+    {
+        "id": "language.advanced-runtime-closure",
+        "state": "reserved",
+        "summary_tokens": (
+            "17-case negative-matrix",
+            "native executable closure",
+        ),
+        "evidence_paths": (
+            "tests/native/runtime/advanced_closure/negative_matrix.contract.json",
+            "tests/tooling/fixtures/advanced_runtime_closure/combined_runtime_identity_contract.json",
+            "tests/tooling/fixtures/cross_lane_e2e/advanced_runtime_closure.expectation.json",
+        ),
+        "no_support_claims": True,
+    },
+    {
+        "id": "compiler.optimization.method-inlining",
+        "state": "reserved",
+        "summary_tokens": (
+            "production ir still retains",
+            "fails closed",
+        ),
+        "evidence_paths": (
+            "tests/tooling/fixtures/cross_lane_e2e/optimization_runtime_equivalence.expectation.json",
+            "tests/tooling/fixtures/semantic_optimization_pipeline/reserved_method_inlining_skip.json",
+        ),
+        "no_support_claims": True,
+    },
+    {
+        "id": "modules.direct-import-syntax",
+        "state": "reserved",
+        "summary_tokens": (
+            "direct @import module syntax remains reserved",
+            "without promoting direct import syntax",
+        ),
+        "evidence_paths": (
+            "tests/tooling/fixtures/cross_lane_e2e/text_collections_package.expectation.json",
+        ),
+        "no_support_claims": True,
+    },
+    {
+        "id": "runtime.debug-trace.full-source-map-publication",
+        "state": "reserved",
+        "summary_tokens": (
+            "full source-map publication remains reserved",
+            "statement stepping",
+        ),
+        "evidence_paths": (
+            "tests/tooling/fixtures/cross_lane_e2e/text_collections_package.expectation.json",
+            "tests/tooling/fixtures/developer_tooling/runtime_debug_trace/debug-map.json",
+        ),
+        "no_support_claims": True,
+    },
+    {
+        "id": "runtime.debug-trace.statement-stepping",
+        "state": "reserved",
+        "summary_tokens": (
+            "statement-level debugger stepping is fail-closed",
+            "emitted on the canonical toolchain path",
+        ),
+        "evidence_paths": (
+            "tests/tooling/fixtures/developer_tooling/runtime_debug_trace/debug-map.json",
+        ),
+        "no_support_claims": True,
+    },
+    {
+        "id": "ecosystem.package-manager.public-hosted-registry",
+        "state": "reserved",
+        "summary_tokens": (
+            "public hosted package registry support remains reserved",
+            "fail-closed hosted-registry",
+        ),
+        "evidence_paths": (
+            "tests/tooling/fixtures/cross_lane_e2e/distribution_package_lifecycle.expectation.json",
+        ),
+        "no_support_claims": True,
+    },
+)
+
+FOUNDATION_IMPLEMENTED_EVIDENCE_EXPECTATIONS = (
+    {
+        "id": "stdlib.text.runtime-builder-interpolation",
+        "evidence_paths": (
+            "tests/tooling/fixtures/cross_lane_e2e/text_collections_package.expectation.json",
+        ),
+    },
+    {
+        "id": "language.collections.literal-syntax-runtime-backed",
+        "evidence_paths": (
+            "tests/tooling/fixtures/cross_lane_e2e/text_collections_package.expectation.json",
+        ),
+    },
+    {
+        "id": "language.collections.for-in-syntax-runtime-backed",
+        "evidence_paths": (
+            "tests/tooling/fixtures/cross_lane_e2e/text_collections_package.expectation.json",
+        ),
+    },
+    {
+        "id": "runtime.interop.package-loader-bridge",
+        "evidence_paths": (
+            "tests/tooling/fixtures/cross_lane_e2e/text_collections_package.expectation.json",
+        ),
+    },
+    {
+        "id": "compiler.optimization.devirtualization",
+        "evidence_paths": (
+            "tests/tooling/fixtures/cross_lane_e2e/optimization_runtime_equivalence.expectation.json",
+        ),
+    },
+    {
+        "id": "ecosystem.package-install.clean-distribution",
+        "evidence_paths": (
+            "tests/tooling/fixtures/cross_lane_e2e/distribution_package_lifecycle.expectation.json",
+        ),
+    },
+    {
+        "id": "release.operations.channel-lifecycle",
+        "evidence_paths": (
+            "tests/tooling/fixtures/cross_lane_e2e/distribution_package_lifecycle.expectation.json",
+        ),
+    },
+    {
+        "id": "conformance.public.stable-suite-manifest",
+        "evidence_paths": (
+            "tests/tooling/fixtures/cross_lane_e2e/text_collections_package.expectation.json",
+            "tests/tooling/fixtures/cross_lane_e2e/optimization_runtime_equivalence.expectation.json",
+            "tests/tooling/fixtures/cross_lane_e2e/advanced_runtime_closure.expectation.json",
+            "tests/tooling/fixtures/cross_lane_e2e/distribution_package_lifecycle.expectation.json",
+        ),
+    },
+)
+
 
 def _require_matrix_shape(matrix: dict[str, Any]) -> list[dict[str, Any]]:
     capabilities = matrix.get("capabilities")
@@ -127,3 +273,70 @@ def _validate_object_model_scope(rows: list[dict[str, Any]]) -> None:
                 "runtime object-model source ownership under "
                 + ", ".join(OBJECT_MODEL_RUNTIME_SOURCE_PREFIXES)
             )
+
+
+def _evidence_paths(row: dict[str, Any]) -> set[str]:
+    return {
+        str(item.get("path"))
+        for item in row.get("evidence", [])
+        if isinstance(item, dict) and isinstance(item.get("path"), str)
+    }
+
+
+def _require_expected_evidence(
+    *,
+    row: dict[str, Any],
+    expected_paths: tuple[str, ...],
+) -> None:
+    capability_id = str(row["id"])
+    paths = _evidence_paths(row)
+    missing = [path for path in expected_paths if path not in paths]
+    if missing:
+        raise CapabilityDocsError(
+            f"{capability_id} is missing required boundary evidence: "
+            + ", ".join(missing)
+        )
+
+
+def _validate_foundation_boundary_rows(rows: list[dict[str, Any]]) -> None:
+    rows_by_id = {str(row["id"]): row for row in rows}
+
+    for expected in FOUNDATION_BOUNDARY_EXPECTATIONS:
+        capability_id = str(expected["id"])
+        row = rows_by_id.get(capability_id)
+        if row is None:
+            raise CapabilityDocsError(f"missing capability boundary row: {capability_id}")
+        expected_state = str(expected["state"])
+        if row["state"] != expected_state:
+            raise CapabilityDocsError(
+                f"{capability_id} must remain {expected_state}, found {row['state']}"
+            )
+        if expected.get("no_support_claims") and _row_support_claims(row):
+            raise CapabilityDocsError(f"{capability_id} must not publish support claims")
+        summary = str(row.get("summary", "")).lower()
+        missing_tokens = [
+            token for token in expected["summary_tokens"] if token not in summary
+        ]
+        if missing_tokens:
+            raise CapabilityDocsError(
+                f"{capability_id} summary is missing boundary tokens: "
+                + ", ".join(missing_tokens)
+            )
+        _require_expected_evidence(
+            row=row,
+            expected_paths=expected["evidence_paths"],
+        )
+
+    for expected in FOUNDATION_IMPLEMENTED_EVIDENCE_EXPECTATIONS:
+        capability_id = str(expected["id"])
+        row = rows_by_id.get(capability_id)
+        if row is None:
+            raise CapabilityDocsError(f"missing implemented capability row: {capability_id}")
+        if row["state"] != "implemented":
+            raise CapabilityDocsError(
+                f"{capability_id} must remain implemented, found {row['state']}"
+            )
+        _require_expected_evidence(
+            row=row,
+            expected_paths=expected["evidence_paths"],
+        )

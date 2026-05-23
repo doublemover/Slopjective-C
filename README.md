@@ -1,228 +1,282 @@
-# Slopjective-C
+# Objective-C 3.0
 
-Slopjective-C is the native Objective-C 3.0 compiler, runtime,
-standard-library, package, showcase, and validation workspace. It takes checked
-`.objc3` programs through a native compiler pipeline, publishes compiler
-artifacts, links against an Objective-C 3 runtime surface, and keeps public
-claims tied to replayable `npm run objc3c -- <action>` commands.
+Slopjective-C is the native Objective-C 3.0 compiler, runtime, standard
+library, package, tooling, and validation workspace. It takes `.objc3` source
+through a checked compiler pipeline, emits LLVM/native artifacts, links against
+an Objective-C 3 runtime surface, and ties public support claims to replayable
+`npm run objc3c -- <action>` commands.
 
-Objective-C with a spine: modules, typed functions, strict dispatch contracts,
-runtime metadata, package manifests, public conformance rows, and a standard
-library that is validated as code.
+The project is built around one rule: if a feature is described as supported,
+there is a checked source, fixture, schema, runtime probe, or public command
+that owns that claim. Prose introduces the system; the capability matrix and
+evidence map define exact support.
 
-## The Hook
+## Start With The Language
 
-Objective-C 3.0 in this repo starts with familiar message syntax and adds
-capabilities Objective-C 2.0 did not put behind one native compiler contract:
+Objective-C 3.0 keeps Objective-C message syntax and runtime-oriented
+programming, then adds a typed module language around it: module declarations,
+typed functions, strict semantic flow, runtime-backed text and collection
+values, package metadata, source/debug artifacts, and fail-closed diagnostics.
 
-- module-scoped compilation,
-- typed free functions beside Objective-C classes,
-- typed method signatures and typed semantic flow,
-- async/executor annotations,
-- protocol and property metadata surfaced through the runtime,
-- source string literals lowered into runtime-owned text handles,
-- checked package, interop, ABI, and conformance artifacts.
-
-Here is a checked-in program from `showcase/signalMesh/main.objc3`:
+This checked fixture compiles and runs through the native execution smoke path:
 
 ```objc
-module SignalMesh;
+module CollectionLiteralsMutationForIn;
 
-extern fn task_runtime_cancelled_value() -> i32;
+fn main() -> i32 {
+  var numbers = #array[1, 2, 3, 4];
+  numbers += 5;
+  numbers[1] = 7;
+  delete numbers[0];
 
-fn bridgeStatus(seed: i32) {
-  return seed + 4;
-}
+  var unique = #set[2, 2, 3, 4];
+  unique += 5;
+  delete unique[4];
 
-async fn dispatchStatus(seed: i32) -> i32 __attribute__((objc_executor(named("com.example.signalmesh")))) {
-  if (task_runtime_cancelled_value()) {
-    return 0;
+  var lookup = #map[1: 10, 2: 20];
+  lookup[2] = 25;
+  delete lookup[1];
+
+  var arraySum = 0;
+  for (item in numbers) {
+    arraySum += item;
   }
-  return bridgeStatus(seed);
-}
 
-@interface SignalMeshBox
-- (i32) loadStatus async __attribute__((objc_executor(main)));
-- (i32) currentStatus;
-+ (i32) sharedStatus;
-@end
-
-@implementation SignalMeshBox
-- (i32) loadStatus async __attribute__((objc_executor(main))) {
-  return await dispatchStatus(5);
-}
-
-- (i32) currentStatus {
-  return 9;
-}
-
-+ (i32) sharedStatus {
-  return 4;
-}
-@end
-
-fn foldStatus(seed: i32) {
-  let state = seed + [SignalMeshBox sharedStatus];
-  if (state > 10) {
-    return state;
+  var setSum = 0;
+  for (item in unique) {
+    setSum += item;
   }
-  return 10;
-}
 
-fn main() {
-  let box = [[SignalMeshBox alloc] init];
-  return foldStatus([box currentStatus]);
+  var mapSum = 0;
+  for (key, value in lookup) {
+    mapSum += key + value;
+  }
+
+  return numbers[0] + #array[8, 9][1] + arraySum + setSum + mapSum;
 }
 ```
 
-Build the native toolchain and compile it:
+That example combines language and runtime features Objective-C 2.0 never put
+behind one compiler contract: typed module functions, concrete runtime-owned
+collection literals, indexed mutation, `for-in` lowering, strict runtime
+handles, and deterministic failure modes.
+
+The text runtime has a matching source-level path:
+
+```objc
+module SourceStringInterpolationTextI32;
+
+extern fn objc3_runtime_stdlib_text_byte_count_i32(handle: Text) -> i32;
+extern fn objc3_runtime_stdlib_text_equal_i32(left_handle: Text, right_handle: Text) -> i32;
+
+fn main() -> i32 {
+  let label = "count";
+  let value = 42;
+  let actual = "\(label)=\(value)";
+  let expected = "count=42";
+  if (objc3_runtime_stdlib_text_equal_i32(actual, expected) != 1) {
+    return 70;
+  }
+  return objc3_runtime_stdlib_text_byte_count_i32(actual);
+}
+```
+
+Compile either fixture from a fresh checkout after setup:
 
 ```powershell
-npm ci
-python -m pip install --upgrade pytest jsonschema
-npm run objc3c -- build-native-binaries
-npm run objc3c -- compile-objc3c showcase/signalMesh/main.objc3 --out-dir tmp/readme-signalMesh --emit-prefix module
+npm run objc3c -- compile-objc3c tests/tooling/fixtures/native/execution/positive/collection_literals_mutation_for_in.objc3 --out-dir tmp/readme-collections --emit-prefix module
+npm run objc3c -- compile-objc3c tests/tooling/fixtures/native/execution/positive/source_string_interpolation_text_i32.objc3 --out-dir tmp/readme-text --emit-prefix module
 ```
 
-The native build publishes the compiler, C API runner, and runtime archive under
-`artifacts/`. The compile command writes diagnostics, manifest data, LLVM IR,
-object-output records, and frontend metadata under the selected output root.
+## Current Support Snapshot
 
-## Start Here
+The checked capability matrix currently contains 110 rows:
 
-Use this README for orientation, first-session commands, and the shortest path
-to a compiled Objective-C 3.0 program. It also routes to the support matrix,
-public command bridge, tutorial set, showcase portfolio, and published site.
+- 86 implemented rows
+- 11 internal implementation or workflow-owner rows
+- 10 reserved rows
+- 3 rejected rows
 
-Canonical roots:
+Authoritative support data lives in:
 
-- `README.md`: top-level technical orientation and first-session routing.
-- `CONTRIBUTING.md`: contributor boundaries and repository hygiene.
-- `docs/tutorials/`: guided setup, walkthrough, comparison, and sample paths.
-- `showcase/README.md`: checked example portfolio.
-- `showcase/applicationFrameworkSamples/README.md`: package-aware sample
-  libraries and apps.
-- `docs/runbooks/objc3c_public_command_surface.md`: synchronized command
-  reference.
-- `docs/support/capability_matrix.json`: machine-readable capability contract.
+- [`docs/support/capability_matrix.json`](docs/support/capability_matrix.json)
+- [`docs/support/evidence_map.json`](docs/support/evidence_map.json)
+- [`docs/support/capability_matrix.md`](docs/support/capability_matrix.md)
+- [`docs/support/umbrella_readiness.md`](docs/support/umbrella_readiness.md)
 
-## Current State
-
-The checked capability matrix currently contains 93 rows:
-
-- 73 implemented rows,
-- 8 internal implementation-owner rows,
-- 9 reserved rows,
-- 3 rejected rows.
-
-The implemented public surface is broad enough to work through actual language,
-runtime, tooling, package, and release paths while still being strict about what
-is not claimed. The matrix lives at
-[`docs/support/capability_matrix.json`](docs/support/capability_matrix.json);
-the reader-facing version is
-[`docs/support/capability_matrix.md`](docs/support/capability_matrix.md).
+Only `implemented` rows with manifest-backed `objc3c.behavior.*` claims are
+public Objective-C 3.0 behavior. `reserved`, `rejected`, and `internal` rows
+are deliberately not promoted by README text, PR bodies, issue comments, or
+generated reports.
 
 ## What Works Now
 
-### Compiler
+### Compiler And Language
 
 - Canonical `.objc3` module parsing.
-- Typed semantic flow for current scalar, function, expression, and control-flow
-  surfaces.
-- Module-level `fn`, `pure fn`, `let`, and `extern fn` declarations.
-- Typed Objective-C interface, implementation, method, property, category, and
-  protocol declarations.
-- Structured parser/sema diagnostics with recovery and fix-it records where the
-  language surface defines them.
-- Strict runtime-dispatch lowering.
-- LLVM IR module emission and native object emission.
-- Semantic-preserving optimization pipeline governance.
+- Typed module-level `fn`, `pure fn`, `let`, `var`, and `extern fn`
+  declarations.
+- Typed Objective-C interfaces, implementations, methods, categories,
+  protocols, properties, and selector-bearing declarations.
+- Parser and semantic diagnostics with structured recovery/fix-it records where
+  the language surface defines them.
+- Typed flow for current scalar, function, expression, statement, control-flow,
+  protocol, generic, ownership, and effect surfaces.
+- Protocol-qualified existentials, witness-model evidence, generic
+  protocol-qualified arguments, callable type parameters, variance and
+  specialization evidence, and collection generic identity semantics.
+- Block capture and escape legality, ownership/memory-model checks, ARC cleanup
+  integration, try/catch semantics, and error-unwind cleanup lowering.
+- Source string literals and `Text` interpolation lowering through the checked
+  stdlib text runtime.
+- `#array`, `#map`, and `#set` literals for current concrete i32-backed
+  collection rows, plus indexed mutation, append-style mutation, deletion, and
+  syntax-level `for-in` lowering.
+- Strict runtime-dispatch lowering, LLVM IR module emission, and native object
+  emission.
+- Semantic-preserving optimization governance, cache-aware dispatch proof, and
+  exact-target devirtualization for checked supported cases.
 
 ### Runtime
 
-- Strict dispatch error behavior.
-- Class realization, method tables, categories, protocols, properties, ivars,
-  selector metadata, and registration replay.
-- Public reflection APIs for supported class, protocol, property, selector, and
-  storage metadata.
+- Strict dispatch errors and checked runtime dispatch entrypoints.
+- Runtime method-cache snapshots, invalidation generations, stale-generation
+  fallback, and bounded cache visibility.
+- Class and metaclass realization, interface method tables, category/protocol
+  registration, property and ivar reflection, selector metadata, registration
+  replay, and bounded query snapshots.
+- Public C reflection APIs for supported class, protocol, property, selector,
+  and storage metadata.
 - Runtime debug trace payloads for structured inspection, async task lanes, and
   error-unwind lanes.
-- Ownership hooks, block copy/dispose/invoke records, byref forwarding, error
-  bridge cleanup, task continuation lifecycle, and actor mailbox isolation.
-
-### Language Features
-
-- Protocol-qualified existential value flow.
-- Existential witness model evidence.
-- Generic protocol-qualified arguments.
-- Callable type parameters.
-- Variance and specialization evidence.
-- Ownership and memory-model contracts.
-- Block escape and capture legality.
-- Property behavior semantics.
-- Derive inventory and macro provenance contracts.
-- Deterministic macro safety and host-cache boundaries.
+- Runtime debug-anchor identity and value-inspection evidence for bounded
+  object-model/source identity rows.
+- Block copy/dispose/invoke helpers, byref forwarding, ownership transfer
+  hooks, error bridge cleanup, task continuation lifecycle, async actors, actor
+  mailbox isolation, and property behavior materialization.
+- Mixed-image replay, imported runtime package replay, package loader bridge
+  behavior, and cross-module generic metadata where their implemented rows
+  define the support boundary.
 
 ### Standard Library
 
-Checked modules live under `stdlib/modules/`.
+Checked modules live under [`stdlib/modules/`](stdlib/modules/).
 
-- `objc3.text`: runtime-backed UTF-8 record shape, byte span shape, source string
-  literal text-handle lowering, byte/unit counts, concatenation, prefix helpers,
-  and fail-closed status reporting.
-- `objc3.collections`: concrete i32 arrays, slices, aggregation, mutable map
-  insert/update, set iteration, and deterministic iterator guards.
-- `objc3.concurrency`: task spawn, task-group cancellation, executor hop, and
-  actor mailbox helper surfaces.
+- `objc3.text`: runtime-owned UTF-8 text storage, string-view and byte-span
+  shapes, byte counts, equality, basic i32 formatting, source string literal
+  lowering, source interpolation lowering, text builders, Unicode scalar
+  counting/access/iteration, and stable failure status for invalid handles or
+  mutation during iteration.
+- `objc3.collections`: concrete i32 array, slice, map-entry, set-iteration, and
+  descriptor runtime shapes; deterministic collection handles; indexed lookup
+  and mutation; append-style insertion; deletion; invalid/stale handle
+  rejection; and generic collection identity/type descriptor evidence.
+- `objc3.concurrency`: task spawn, task-group cancellation, executor hop, actor
+  mailbox helper surfaces, and runtime-backed v1 concurrency contracts.
+- `stdlib.core`: shared runtime-backed storage substrate used by the checked
+  standard-library rows.
 
-### Modules And Interop
+### Packages, Modules, And Interop
 
-- Public import lookup.
-- Visibility, reexport, and rebuild contracts.
-- Dependency-graph diagnostics.
-- Stale cache input rejection.
-- Missing module, import cycle, duplicate export, hidden declaration, and ABI
-  mismatch diagnostics.
-- Runtime import/package metadata, mixed-image replay, C header import/export
-  metadata, Swift/C++ annotation metadata, and Objective-C 2 adjacent metadata
-  preservation where the checked interop rows define it.
+- Public import lookup and visibility/reexport/rebuild contracts.
+- Dependency graph diagnostics, stale cache rejection, missing module
+  diagnostics, import cycle diagnostics, duplicate export diagnostics, hidden
+  declaration diagnostics, and ABI mismatch diagnostics.
+- Package manager local registry model, deterministic package locks, offline
+  mirror records, local trust envelopes, install/update/uninstall/rollback
+  receipts, package signing, package verification, and clean distribution
+  checks.
+- Runnable toolchain package channels, release manifests, SBOM/provenance
+  publication, release operation policy, release channel lifecycle, ABI/API
+  drift checks, and platform/toolchain support matrix checks.
+- Runtime import/package metadata, interop package loader bridge evidence,
+  mixed-image replay, C header import/export metadata, Swift/C++ annotation
+  metadata, and Objective-C 2 adjacent metadata preservation where the checked
+  interop rows define it.
 
-### Tooling And Product Workflow
+### Developer Tooling
 
 - One public command bridge: `npm run objc3c -- <action>`.
-- Formatter/LSP/workspace/artifact-inspector payloads.
-- First-run product path checks.
-- Stable public conformance suite manifest and replay package.
-- Local package manager model, registry mirror, package lock, install receipt,
-  update receipt, and clean distribution checks.
-- ABI governance, release operation policy, release channel lifecycle, and
-  platform/toolchain matrix checks.
+- Formatter, LSP/workspace, source graph, artifact inspector, runtime
+  inspector, playground/repro, compile observability, and validation timing
+  surfaces.
+- Language-service replay for diagnostics, hover, definitions, document
+  symbols, workspace symbols, lifecycle invalidation, and unsupported request
+  failures.
+- Artifact inspection for emitted object bytes, symbol tables, sections,
+  runtime metadata, package identities, receipts, trust rows, source graph
+  records, and debug-map links.
+- Public conformance suite manifest, public conformance scorecard/reporting,
+  external validation replay, stress/fuzz/minimization surfaces, and nightly
+  orchestration.
 
-### Platform
+### Cross-Lane Programs
 
-`windows-x64` is the supported host row. Linux, macOS, sanitizer variants, and
-broader toolchain ranges are represented explicitly as rejected, reserved, or
-internal rows until their own evidence exists.
+Objective-C 3.0 support is not only checked feature-by-feature. This branch
+also carries integrated programs that force systems to interact:
+
+- Advanced runtime closure: blocks, ownership, ARC cleanup, errors, async,
+  actors, cancellation, property behaviors, macro provenance, package replay,
+  source/debug records, ABI records, native object/IR/manifest evidence, and a
+  17-case negative matrix.
+- Object reflection and debugger artifacts: class/metaclass/category/protocol/
+  property/ivar/selector/reflection/replay evidence, runtime debug anchors,
+  value-inspection records, source graph links, object inventories, and bounded
+  source identity.
+- Text, collections, and packages: runtime text builders, collection literals,
+  `for-in`, package import metadata, provider import surfaces, source graph
+  package nodes, and declaration debug anchors.
+- Optimization/runtime equivalence: cache-aware dispatch and exact-target
+  devirtualization proof while method inlining remains fail-closed.
+- Distribution package lifecycle: package manager behavior, package channels,
+  release evidence, and tamper/fail-closed distribution checks.
+
+## What Remains Reserved
+
+The matrix is intentionally explicit about boundaries. Important reserved or
+rejected rows include:
+
+- Full object-model realization as one umbrella support claim. Narrow object
+  rows are implemented, and debugger-grade proof has advanced, but full source
+  maps beyond bounded identity rows, emitted native debug info, broader typed
+  keypath lowering, and statement-level debugger stepping are still reserved.
+- Full advanced-runtime closure as one umbrella support claim. Narrow block,
+  ARC, error, async, actor, property, macro, and package/replay rows are
+  implemented, but native executable link/run for the full umbrella fixture and
+  broad scheduler/Swift ABI/distributed actor/arbitrary macro-host guarantees
+  remain reserved.
+- Direct `@import` module syntax. Current package/import evidence uses checked
+  metadata import surfaces, public cross-module lookup, and package workspace
+  edges.
+- Public hosted package registry and live network dependency resolution.
+  Current package evidence is local/offline/deterministic.
+- Method inlining. Exact-target devirtualization is implemented; method
+  inlining remains reserved until ownership, inline-frame source-map,
+  callee-body identity, and side-effect/invalidation replay proofs exist.
+- Full source-map publication, statement stepping, and LLDB plugin integration.
+- Linux x64 and macOS arm64 host support. Windows x64 is the supported Tier 1
+  host row.
+- AddressSanitizer and UndefinedBehaviorSanitizer package/install/native
+  execution variants.
 
 ## Fresh Setup
 
-This repository is easiest to use on Windows with PowerShell 7.
+The supported host row is Windows x64 with PowerShell 7.
 
 Install prerequisites:
 
 - PowerShell 7 (`pwsh`)
 - Node.js and `npm`
 - Python 3 with `pip`
-- LLVM at `C:\Program Files\LLVM` or referenced by `LLVM_ROOT`
+- LLVM at `C:\Program Files\LLVM`, or set `LLVM_ROOT`
 
 LLVM tools used by the native path:
 
 - `clang++.exe`
+- `llc.exe`
 - `llvm-lib.exe`
 - `libclang.lib` or `clang.lib`
 - LLVM headers under `include/`
-
-The compile/link/run path also uses `llc.exe`.
 
 From a fresh clone:
 
@@ -239,21 +293,24 @@ If LLVM is installed somewhere else:
 $env:LLVM_ROOT = 'D:\path\to\LLVM'
 ```
 
-Build the compiler and runtime archive:
+Build the compiler, C API runner, and runtime archive:
 
 ```powershell
 npm run objc3c -- build-native-binaries
 ```
 
+The build publishes native outputs under `artifacts/` and writes machine-owned
+intermediate/replay outputs under `tmp/`.
+
 ## First Working Session
 
-Compile a checked-in program:
+Compile a checked fixture:
 
 ```powershell
-npm run objc3c -- compile-objc3c tests/tooling/fixtures/native/hello.objc3 --out-dir tmp/readme-hello --emit-prefix module
+npm run objc3c -- compile-objc3c tests/tooling/fixtures/native/execution/positive/basic_i32_return_main.objc3 --out-dir tmp/readme-basic --emit-prefix module
 ```
 
-Run a bounded smoke path:
+Run the default smoke path:
 
 ```powershell
 npm run objc3c -- test-smoke
@@ -266,17 +323,30 @@ $env:OBJC3C_NATIVE_EXECUTION_LLC_PATH = 'C:\Program Files\LLVM\bin\llc.exe'
 npm run objc3c -- test-execution-smoke
 ```
 
+Run the full nightly validation profile:
+
+```powershell
+npm run objc3c -- test-nightly
+```
+
+Nightly runs the broad compiler/runtime/conformance/stress/package/release
+profile and writes its integrated report to
+`tmp/reports/objc3c-public-workflow/test-nightly.json`.
+
 ## Showcase
 
-Read and compile the checked examples when you want the fastest feel for the
-language:
+The showcase sources are the fastest way to read Objective-C 3.0 as an
+application language:
 
-- `showcase/auroraBoard/main.objc3`: modules, protocols, categories,
-  properties, reflection-shaped metadata, and object-model declarations.
-- `showcase/signalMesh/main.objc3`: typed status flow, executor annotations,
-  async-shaped declarations, runtime messaging, and Objective-C message syntax.
-- `showcase/patchKit/main.objc3`: derive annotations, macro provenance
-  annotations, property-behavior syntax, and interop-shaped declarations.
+- [`showcase/auroraBoard/main.objc3`](showcase/auroraBoard/main.objc3):
+  modules, protocols, categories, properties, reflection-shaped metadata, and
+  object-model declarations.
+- [`showcase/signalMesh/main.objc3`](showcase/signalMesh/main.objc3): typed
+  status flow, executor annotations, async-shaped declarations, runtime
+  messaging, and Objective-C message syntax.
+- [`showcase/patchKit/main.objc3`](showcase/patchKit/main.objc3): derive
+  annotations, macro provenance annotations, property behavior syntax, and
+  interop-shaped declarations.
 
 Compile one:
 
@@ -284,7 +354,7 @@ Compile one:
 npm run objc3c -- compile-objc3c showcase/auroraBoard/main.objc3 --out-dir tmp/readme-auroraBoard --emit-prefix module
 ```
 
-Validate the showcase portfolio:
+Validate the portfolio:
 
 ```powershell
 npm run objc3c -- check-showcase-surface
@@ -292,12 +362,12 @@ npm run objc3c -- validate-showcase
 ```
 
 Package-aware sample libraries and apps live under
-`showcase/applicationFrameworkSamples/`:
+[`showcase/applicationFrameworkSamples/`](showcase/applicationFrameworkSamples/):
 
-- object runtime sample library,
-- interop adapter sample library,
-- stdlib text and collections CLI sample,
-- async runtime application sample.
+- object runtime sample library
+- interop adapter sample library
+- stdlib text and collections CLI sample
+- async runtime application sample
 
 Validate them with:
 
@@ -307,7 +377,7 @@ npm run objc3c -- validate-application-framework-samples
 
 ## Public Command Surface
 
-Use this shape for normal work:
+Normal user-facing work goes through one command shape:
 
 ```powershell
 npm run objc3c -- <action>
@@ -315,87 +385,66 @@ npm run objc3c -- <action>
 
 Common actions:
 
-- build: `build-native-binaries`, `build-native-contracts`, `build-native-full`
-- compile: `compile-objc3c`
-- examples: `check-showcase-surface`, `validate-showcase`
-- docs: `build-site`, `build-native-docs`, `build-public-command-surface`
-- validation: `test-smoke`, `test-ci`, `test-runtime-acceptance-fast`
-- conformance: `validate-conformance-corpus`, `check-conformance-minima`
-- stdlib: `validate-stdlib-foundation`
-- modules: `validate-module-interop-contracts`
-- interop: `validate-interop-conformance`, `validate-runnable-interop`
-- packages: `validate-package-manager-model`, `validate-package-mirror`,
-  `validate-package-install-distribution`
-- release: `validate-abi-governance`, `validate-release-operations`
+- Build: `build-native-binaries`, `build-native-contracts`,
+  `build-native-full`, `build-native-reconfigure`
+- Compile/proof: `compile-objc3c`, `proof-objc3c`
+- Inspect: `inspect-artifact`, `inspect-source-graph`,
+  `inspect-language-service`, `inspect-debug-map`, `trace-runtime-debug`
+- Test: `test-smoke`, `test-ci`, `test-full`, `test-nightly`,
+  `test-execution-smoke`, `test-runtime-acceptance-fast`
+- Conformance: `validate-conformance-corpus`, `check-conformance-minima`,
+  `validate-public-conformance-reporting`
+- Runtime: `validate-object-model-conformance`,
+  `validate-public-runtime-reflection-api`, `validate-cache-aware-dispatch`,
+  `validate-advanced-runtime-closure`
+- Standard library: `validate-stdlib-foundation`
+- Modules/interop: `validate-module-interop-contracts`,
+  `validate-interop-conformance`, `validate-runnable-interop`
+- Packages: `validate-package-manager-model`, `validate-package-mirror`,
+  `validate-package-install-distribution`, `package-install`,
+  `package-verify`, `package-sign`
+- Release: `validate-abi-governance`, `validate-release-foundation`,
+  `validate-packaging-channels`, `validate-release-operations`,
+  `validate-distribution-credibility`
 
-The synchronized command reference is
+The generated command appendix is
 [`docs/runbooks/objc3c_public_command_surface.md`](docs/runbooks/objc3c_public_command_surface.md).
-
-## Spec Structure
-
-Specification and reader-facing docs are split by role:
-
-- `spec/`: language, ABI, runtime, and metadata contracts.
-- `docs/tutorials/`: task-oriented reader paths.
-- `docs/runbooks/`: operator and maintainer workflows.
-- `docs/support/`: capability claims, evidence maps, schema examples, and claim
-  ownership.
-- `site/`: source for the published site.
-
-Support prose in these files must route back to the capability matrix and
-evidence map. A spec chapter, runbook, tutorial, generated artifact, or issue
-closeout payload does not promote a reserved or internal row into public runtime
-behavior.
-
-## Exact Support Boundaries
-
-The README is an orientation page. Exact claims come from the capability matrix,
-evidence map, fixtures, schemas, native probes, and public replay commands.
-
-Current explicit boundaries:
-
-- Objective-C 2 source syntax is not accepted as Objective-C 3 source.
-- Full Swift and C++ ABI import are reserved.
-- Hosted registry and network dependency resolution are not part of the package
-  manager row.
-- Full IDE behavior, rename, semantic tokens, generalized code actions, and
-  statement stepping are outside the checked tooling row.
-- Unicode scalar iteration, normalization, formatting, interpolation,
-  source-level text mutation, and Foundation text bridging are outside the
-  current text row.
-- Collection literals, dictionary literals, set literals, generic collection
-  ABI, arbitrary-length owned array storage, syntax-level for-in integration,
-  non-i32 hashing, map iteration, and set deletion are outside the current
-  collections row.
-- Linux, macOS, sanitizer variants, and broad LLVM version ranges need their own
-  platform evidence before they become supported host rows.
 
 ## Repository Map
 
-- `native/objc3c/`: compiler, parser, sema, lowering, IR, runtime, C API, and
-  driver implementation.
-- `stdlib/`: checked standard-library workspace and module contracts.
-- `showcase/`: example portfolio and application-framework samples.
-- `docs/tutorials/`: setup, walkthrough, comparison, and sample guides.
-- `docs/support/`: capability matrix, evidence map, schema examples, and claim
-  ownership.
-- `docs/runbooks/`: operator and maintainer workflows.
-- `docs/objc3c-native/src/`: native compiler/runtime architecture source.
-- `schemas/`: artifact, report, package, runtime, and release schema contracts.
-- `scripts/`: build, validation, packaging, report, and workflow tooling.
-- `tests/`: native behavior, conformance, runtime, stress, and tooling coverage.
-- `site/`: public overview source and generated page.
+- [`native/objc3c/`](native/objc3c/): compiler, parser, sema, lowering, IR,
+  runtime, C API, driver, support, diagnostics, pipeline, artifacts, and tools.
+- [`stdlib/`](stdlib/): checked standard-library modules and runtime contracts.
+- [`showcase/`](showcase/): example programs and package-aware application
+  framework samples.
+- [`spec/`](spec/): language, ABI, runtime, interop, metadata, package, and
+  release contracts.
+- [`docs/tutorials/`](docs/tutorials/): setup, walkthrough, comparison, and
+  sample guides.
+- [`docs/support/`](docs/support/): capability matrix, evidence map, umbrella
+  readiness, support truth, schema examples, and claim ownership.
+- [`docs/runbooks/`](docs/runbooks/): operator and maintainer workflows.
+- [`docs/objc3c-native/src/`](docs/objc3c-native/src/): native
+  compiler/runtime architecture source.
+- [`schemas/`](schemas/): artifact, report, package, runtime, tooling,
+  conformance, and release schema contracts.
+- [`scripts/`](scripts/): build, validation, package, release, report, and
+  workflow tooling.
+- [`tests/`](tests/): native behavior, conformance, runtime, stress, e2e, and
+  tooling coverage.
+- [`site/`](site/): public overview source and generated page.
 - `tmp/`, `artifacts/`: machine-owned build, package, compiler, and replay
   outputs.
 
 ## Reading Path
 
-1. Compile `showcase/signalMesh/main.objc3`.
+1. Compile
+   [`tests/tooling/fixtures/native/execution/positive/collection_literals_mutation_for_in.objc3`](tests/tooling/fixtures/native/execution/positive/collection_literals_mutation_for_in.objc3).
 2. Read [`docs/tutorials/getting_started.md`](docs/tutorials/getting_started.md).
 3. Read [`showcase/README.md`](showcase/README.md).
-4. Check exact rows in
+4. Check exact support rows in
    [`docs/support/capability_matrix.md`](docs/support/capability_matrix.md).
-5. Open [`docs/objc3c-native.md`](docs/objc3c-native.md) for compiler/runtime
+5. Read [`docs/objc3c-native.md`](docs/objc3c-native.md) for compiler/runtime
    architecture.
 
 ## Development Notes
@@ -404,6 +453,8 @@ Current explicit boundaries:
 - Treat `native/objc3c/` as the compiler/runtime implementation root.
 - Treat `stdlib/` as the checked standard-library root.
 - Treat `showcase/` as the checked example source root.
+- Treat `docs/support/capability_matrix.json` and
+  `docs/support/evidence_map.json` as support truth.
 - Treat `tmp/` and `artifacts/` as machine-owned output roots.
 - Update generated checked-in docs through their owner actions.
 

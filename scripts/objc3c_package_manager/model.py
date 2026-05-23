@@ -8,19 +8,26 @@ have their own replayable evidence.
 from __future__ import annotations
 
 from dataclasses import dataclass
-import hashlib
 import json
 from pathlib import Path
 from typing import Any, Iterable
+
+from .digests import file_digest, stable_digest
+from .trust import (
+    LOCAL_PACKAGE_SIGNATURE_FORMAT,
+    LOCAL_PACKAGE_TRUST_KEY_ID,
+    PACKAGE_MANAGER_TAMPER_CODE,
+    collect_lock_package_trust_failures,
+    collect_manifest_trust_failures,
+    default_trust_policy_payload,
+    sign_manifest_trust_envelope,
+)
 
 PACKAGE_MANIFEST_CONTRACT_ID = "objc3c.package_ecosystem.package_manifest.v1"
 LOCAL_PACKAGE_LANGUAGE_VERSION = "3.0"
 LOCAL_PACKAGE_LANGUAGE_MODE = "strict"
 LOCAL_PACKAGE_ABI_IDENTITY = "objc3-abi-2025Q4"
-LOCAL_PACKAGE_TRUST_KEY_ID = "objc3c-local-package-key-v1"
-LOCAL_PACKAGE_SIGNATURE_FORMAT = "objc3c-local-sha256-v1"
 LOCAL_PACKAGE_HOST_PLATFORM = "windows-x64"
-PACKAGE_MANAGER_TAMPER_CODE = "O3PKG8055"
 
 
 @dataclass(frozen=True)
@@ -31,21 +38,6 @@ class PackageManagerPaths:
 
 def public_workflow_command(action: str) -> str:
     return f"npm run objc3c -- {action}"
-
-
-def stable_digest(payload: Any) -> str:
-    encoded = json.dumps(
-        payload,
-        sort_keys=True,
-        separators=(",", ":"),
-        ensure_ascii=True,
-        allow_nan=False,
-    ).encode("utf-8")
-    return "sha256:" + hashlib.sha256(encoded).hexdigest()
-
-
-def file_digest(path: Path) -> str:
-    return "sha256:" + hashlib.sha256(path.read_bytes()).hexdigest()
 
 
 def package_namespace(package_id: str) -> str:
@@ -90,16 +82,23 @@ def package_version_from_module(module: dict[str, Any]) -> str:
     return f"{major}.{minor}.{patch}"
 
 
-def trust_payload(package_id: str, signing_material: dict[str, Any]) -> dict[str, str]:
-    return {
-        "signature_format": LOCAL_PACKAGE_SIGNATURE_FORMAT,
-        "signing_key_id": LOCAL_PACKAGE_TRUST_KEY_ID,
-        "subject": package_id,
-        "signature": stable_digest(signing_material),
-        "trust_scope": "checked-in-local-package-source",
-        "revocation_state": "not-revoked",
-        "revocation_policy": "revoked-package-ids-fail-resolution",
-    }
+def trust_payload(package_id: str, signing_material: dict[str, Any]) -> dict[str, Any]:
+    package_version = str(signing_material.get("package_version", ""))
+    source_digest = str(signing_material.get("source_digest", ""))
+    manifest_digest = str(signing_material.get("manifest_digest", source_digest))
+    abi_identity = str(signing_material.get("abi_identity", LOCAL_PACKAGE_ABI_IDENTITY))
+    language_version = str(signing_material.get("language_version", LOCAL_PACKAGE_LANGUAGE_VERSION))
+    return sign_manifest_trust_envelope(
+        {
+            "package_id": package_id,
+            "package_namespace": package_namespace(package_id),
+            "package_version": package_version,
+            "source_digest": source_digest,
+            "language": {"version": language_version},
+            "abi": {"identity": abi_identity},
+        },
+        manifest_digest=manifest_digest,
+    )
 
 
 def dependency_payload(package_id: str, *, required_version: str) -> dict[str, str]:
@@ -124,6 +123,7 @@ def manifest_signing_material(manifest: dict[str, Any]) -> dict[str, Any]:
         "abi_identity": manifest.get("abi", {}).get("identity")
         if isinstance(manifest.get("abi"), dict)
         else None,
+        "manifest_digest": manifest.get("manifest_digest"),
         "dependencies": manifest.get("dependencies"),
     }
 
@@ -131,6 +131,7 @@ def manifest_signing_material(manifest: dict[str, Any]) -> dict[str, Any]:
 def package_manifest_digest(manifest: dict[str, Any]) -> str:
     payload = dict(manifest)
     payload.pop("manifest_digest", None)
+    payload.pop("trust", None)
     return stable_digest(payload)
 
 
@@ -145,15 +146,6 @@ def package_manifest_payload(
     runtime_symbols: list[str],
     replay_actions: list[str],
 ) -> dict[str, Any]:
-    signing_material = {
-        "package_id": package_id,
-        "source": source,
-        "source_digest": source_digest,
-        "package_version": package_version,
-        "language_version": LOCAL_PACKAGE_LANGUAGE_VERSION,
-        "abi_identity": LOCAL_PACKAGE_ABI_IDENTITY,
-        "dependencies": dependencies,
-    }
     payload: dict[str, Any] = {
         "contract_id": PACKAGE_MANIFEST_CONTRACT_ID,
         "package_id": package_id,
@@ -178,12 +170,15 @@ def package_manifest_payload(
             "network_resolution": "unsupported-fail-closed",
             "offline_mirror_required": True,
         },
-        "trust": trust_payload(package_id, signing_material),
         "replay": {
             "commands": [public_workflow_command(action) for action in replay_actions],
         },
     }
-    payload["manifest_digest"] = stable_digest(payload)
+    payload["manifest_digest"] = package_manifest_digest(payload)
+    payload["trust"] = sign_manifest_trust_envelope(
+        payload,
+        manifest_digest=str(payload["manifest_digest"]),
+    )
     return payload
 
 
@@ -499,6 +494,8 @@ def collect_lock_model_failures(lock: dict[str, Any], *, root: Path) -> list[str
     raw_packages = lock.get("packages", [])
     raw_dependencies = lock.get("dependencies", [])
     raw_provenance = lock.get("provenance", [])
+    raw_trust_policy = lock.get("trust_policy")
+    trust_policy = raw_trust_policy if isinstance(raw_trust_policy, dict) else default_trust_policy_payload()
     if not isinstance(raw_packages, list):
         return [f"{PACKAGE_MANAGER_TAMPER_CODE}: lock packages field is not a list"]
     if not isinstance(raw_dependencies, list):
@@ -549,6 +546,12 @@ def collect_lock_model_failures(lock: dict[str, Any], *, root: Path) -> list[str
         if not isinstance(trust, dict):
             failures.append(f"{PACKAGE_MANAGER_TAMPER_CODE}: missing trust envelope for {package_id}")
         else:
+            failures.extend(
+                collect_lock_package_trust_failures(
+                    package,
+                    trust_policy=trust_policy,
+                )
+            )
             if trust.get("signing_key_id") != LOCAL_PACKAGE_TRUST_KEY_ID:
                 failures.append(f"{PACKAGE_MANAGER_TAMPER_CODE}: signing key drift for {package_id}")
             if trust.get("revocation_state") != "not-revoked":
@@ -580,7 +583,18 @@ def collect_lock_model_failures(lock: dict[str, Any], *, root: Path) -> list[str
                     failures.append(f"{PACKAGE_MANAGER_TAMPER_CODE}: package manifest digest field drift for {package_id}")
                 if manifest_digest != manifest.get("digest"):
                     failures.append(f"{PACKAGE_MANAGER_TAMPER_CODE}: package manifest digest mismatch for {package_id}")
-                expected_trust = trust_payload(package_id, manifest_signing_material(manifest_payload))
+                failures.extend(
+                    collect_manifest_trust_failures(
+                        manifest_payload,
+                        manifest_digest=str(manifest.get("digest", "")),
+                        trust_policy=trust_policy,
+                    )
+                )
+                expected_trust = sign_manifest_trust_envelope(
+                    manifest_payload,
+                    manifest_digest=str(manifest.get("digest", "")),
+                    trust_policy=trust_policy,
+                )
                 if manifest_payload.get("trust") != expected_trust:
                     failures.append(f"{PACKAGE_MANAGER_TAMPER_CODE}: package manifest trust signature drift for {package_id}")
                 if isinstance(trust, dict) and trust != expected_trust:

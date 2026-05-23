@@ -1,0 +1,1072 @@
+{
+  "contract_id": "objc3c.debug-source-maps.v1",
+  "source": {
+    "path": "tests/native/runtime/advanced_closure/combined_positive.objc3",
+    "sha256": "426c9863157ad0246fb8a3aa0c946e183e26d528f0f42dfe1c1311b624bd3c41"
+  },
+  "debug_policy": {
+    "statement_stepping_requested": false,
+    "statement_stepping_supported": false,
+    "reserved_capabilities": [
+      "runtime.debug-trace.statement-stepping",
+      "runtime.debug-trace.lldb-plugin"
+    ]
+  },
+  "required_record_kinds": [
+    "ownership-cleanup-edge",
+    "async-suspension-point",
+    "method",
+    "error-bridge-edge",
+    "property-access",
+    "macro-expansion",
+    "runtime-helper-call"
+  ],
+  "capabilities": {
+    "rows": [
+      {
+        "row_id": "compiler.artifacts.source-map",
+        "status": "supported",
+        "evidence": [
+          "source_maps"
+        ]
+      },
+      {
+        "row_id": "compiler.artifacts.native-line-table",
+        "status": "supported",
+        "evidence": [
+          "native_line_tables"
+        ]
+      },
+      {
+        "row_id": "tooling.debug.debug-map",
+        "status": "supported",
+        "evidence": [
+          "debug_maps"
+        ]
+      },
+      {
+        "row_id": "runtime.debug-trace.statement-stepping",
+        "status": "reserved",
+        "evidence": [
+          "debug_policy.reserved_capabilities"
+        ]
+      },
+      {
+        "row_id": "runtime.debug-trace.lldb-plugin",
+        "status": "reserved",
+        "evidence": [
+          "debug_policy.reserved_capabilities"
+        ]
+      }
+    ]
+  },
+  "source_graph": {
+    "graph_id": "advanced-runtime-closure.combined.source-graph",
+    "nodes": [
+      {
+        "id": "advanced-runtime.source.ownership-block",
+        "symbol": "ownershipAndBlockLane",
+        "kind": "ownership-cleanup-edge",
+        "source_digest": "426c9863157ad0246fb8a3aa0c946e183e26d528f0f42dfe1c1311b624bd3c41",
+        "package_boundary_id": "pkg.advanced-runtime-closure",
+        "range": {
+          "line": 62,
+          "column": 1,
+          "end_line": 72,
+          "end_column": 2
+        }
+      },
+      {
+        "id": "advanced-runtime.source.async-cancellation",
+        "symbol": "asyncCancellationLane",
+        "kind": "async-suspension-point",
+        "source_digest": "426c9863157ad0246fb8a3aa0c946e183e26d528f0f42dfe1c1311b624bd3c41",
+        "package_boundary_id": "pkg.advanced-runtime-closure",
+        "range": {
+          "line": 74,
+          "column": 1,
+          "end_line": 82,
+          "end_column": 2
+        }
+      },
+      {
+        "id": "advanced-runtime.source.actor-mailbox",
+        "symbol": "AdvancedRuntimeClosureActor.run",
+        "kind": "method",
+        "source_digest": "426c9863157ad0246fb8a3aa0c946e183e26d528f0f42dfe1c1311b624bd3c41",
+        "package_boundary_id": "pkg.advanced-runtime-closure",
+        "range": {
+          "line": 89,
+          "column": 1,
+          "end_line": 94,
+          "end_column": 2
+        }
+      },
+      {
+        "id": "advanced-runtime.source.error-bridge",
+        "symbol": "statusBridgeAdvancedRuntime",
+        "kind": "error-bridge-edge",
+        "source_digest": "426c9863157ad0246fb8a3aa0c946e183e26d528f0f42dfe1c1311b624bd3c41",
+        "package_boundary_id": "pkg.advanced-runtime-closure",
+        "range": {
+          "line": 32,
+          "column": 1,
+          "end_line": 37,
+          "end_column": 2
+        }
+      },
+      {
+        "id": "advanced-runtime.source.property-behavior",
+        "symbol": "AdvancedRuntimeClosureModel.value",
+        "kind": "property-access",
+        "source_digest": "426c9863157ad0246fb8a3aa0c946e183e26d528f0f42dfe1c1311b624bd3c41",
+        "package_boundary_id": "pkg.advanced-runtime-closure",
+        "range": {
+          "line": 52,
+          "column": 1,
+          "end_line": 60,
+          "end_column": 5
+        }
+      },
+      {
+        "id": "advanced-runtime.source.macro-provenance",
+        "symbol": "AdvancedRuntimeClosureTrace",
+        "kind": "macro-expansion",
+        "source_digest": "426c9863157ad0246fb8a3aa0c946e183e26d528f0f42dfe1c1311b624bd3c41",
+        "package_boundary_id": "pkg.advanced-runtime-closure",
+        "range": {
+          "line": 39,
+          "column": 1,
+          "end_line": 46,
+          "end_column": 2
+        }
+      },
+      {
+        "id": "advanced-runtime.source.package-replay",
+        "symbol": "AdvancedRuntimeClosureKit.replay",
+        "kind": "runtime-helper-call",
+        "source_digest": "426c9863157ad0246fb8a3aa0c946e183e26d528f0f42dfe1c1311b624bd3c41",
+        "package_boundary_id": "pkg.advanced-runtime-closure",
+        "range": {
+          "line": 15,
+          "column": 1,
+          "end_line": 19,
+          "end_column": 73
+        }
+      }
+    ]
+  },
+  "language_service": {
+    "anchors": [
+      {
+        "anchor_id": "hover.advanced-runtime.ownership-block",
+        "kind": "hover",
+        "source_graph_node_id": "advanced-runtime.source.ownership-block",
+        "source_digest": "426c9863157ad0246fb8a3aa0c946e183e26d528f0f42dfe1c1311b624bd3c41",
+        "symbol": "ownershipAndBlockLane"
+      },
+      {
+        "anchor_id": "definition.advanced-runtime.ownership-block",
+        "kind": "definition",
+        "source_graph_node_id": "advanced-runtime.source.ownership-block",
+        "source_digest": "426c9863157ad0246fb8a3aa0c946e183e26d528f0f42dfe1c1311b624bd3c41",
+        "symbol": "ownershipAndBlockLane"
+      },
+      {
+        "anchor_id": "hover.advanced-runtime.async-cancellation",
+        "kind": "hover",
+        "source_graph_node_id": "advanced-runtime.source.async-cancellation",
+        "source_digest": "426c9863157ad0246fb8a3aa0c946e183e26d528f0f42dfe1c1311b624bd3c41",
+        "symbol": "asyncCancellationLane"
+      },
+      {
+        "anchor_id": "definition.advanced-runtime.async-cancellation",
+        "kind": "definition",
+        "source_graph_node_id": "advanced-runtime.source.async-cancellation",
+        "source_digest": "426c9863157ad0246fb8a3aa0c946e183e26d528f0f42dfe1c1311b624bd3c41",
+        "symbol": "asyncCancellationLane"
+      },
+      {
+        "anchor_id": "hover.advanced-runtime.actor-mailbox",
+        "kind": "hover",
+        "source_graph_node_id": "advanced-runtime.source.actor-mailbox",
+        "source_digest": "426c9863157ad0246fb8a3aa0c946e183e26d528f0f42dfe1c1311b624bd3c41",
+        "symbol": "AdvancedRuntimeClosureActor.run"
+      },
+      {
+        "anchor_id": "definition.advanced-runtime.actor-mailbox",
+        "kind": "definition",
+        "source_graph_node_id": "advanced-runtime.source.actor-mailbox",
+        "source_digest": "426c9863157ad0246fb8a3aa0c946e183e26d528f0f42dfe1c1311b624bd3c41",
+        "symbol": "AdvancedRuntimeClosureActor.run"
+      },
+      {
+        "anchor_id": "hover.advanced-runtime.error-bridge",
+        "kind": "hover",
+        "source_graph_node_id": "advanced-runtime.source.error-bridge",
+        "source_digest": "426c9863157ad0246fb8a3aa0c946e183e26d528f0f42dfe1c1311b624bd3c41",
+        "symbol": "statusBridgeAdvancedRuntime"
+      },
+      {
+        "anchor_id": "definition.advanced-runtime.error-bridge",
+        "kind": "definition",
+        "source_graph_node_id": "advanced-runtime.source.error-bridge",
+        "source_digest": "426c9863157ad0246fb8a3aa0c946e183e26d528f0f42dfe1c1311b624bd3c41",
+        "symbol": "statusBridgeAdvancedRuntime"
+      },
+      {
+        "anchor_id": "hover.advanced-runtime.property-behavior",
+        "kind": "hover",
+        "source_graph_node_id": "advanced-runtime.source.property-behavior",
+        "source_digest": "426c9863157ad0246fb8a3aa0c946e183e26d528f0f42dfe1c1311b624bd3c41",
+        "symbol": "AdvancedRuntimeClosureModel.value"
+      },
+      {
+        "anchor_id": "definition.advanced-runtime.property-behavior",
+        "kind": "definition",
+        "source_graph_node_id": "advanced-runtime.source.property-behavior",
+        "source_digest": "426c9863157ad0246fb8a3aa0c946e183e26d528f0f42dfe1c1311b624bd3c41",
+        "symbol": "AdvancedRuntimeClosureModel.value"
+      },
+      {
+        "anchor_id": "hover.advanced-runtime.macro-provenance",
+        "kind": "hover",
+        "source_graph_node_id": "advanced-runtime.source.macro-provenance",
+        "source_digest": "426c9863157ad0246fb8a3aa0c946e183e26d528f0f42dfe1c1311b624bd3c41",
+        "symbol": "AdvancedRuntimeClosureTrace"
+      },
+      {
+        "anchor_id": "definition.advanced-runtime.macro-provenance",
+        "kind": "definition",
+        "source_graph_node_id": "advanced-runtime.source.macro-provenance",
+        "source_digest": "426c9863157ad0246fb8a3aa0c946e183e26d528f0f42dfe1c1311b624bd3c41",
+        "symbol": "AdvancedRuntimeClosureTrace"
+      },
+      {
+        "anchor_id": "hover.advanced-runtime.package-replay",
+        "kind": "hover",
+        "source_graph_node_id": "advanced-runtime.source.package-replay",
+        "source_digest": "426c9863157ad0246fb8a3aa0c946e183e26d528f0f42dfe1c1311b624bd3c41",
+        "symbol": "AdvancedRuntimeClosureKit.replay"
+      },
+      {
+        "anchor_id": "definition.advanced-runtime.package-replay",
+        "kind": "definition",
+        "source_graph_node_id": "advanced-runtime.source.package-replay",
+        "source_digest": "426c9863157ad0246fb8a3aa0c946e183e26d528f0f42dfe1c1311b624bd3c41",
+        "symbol": "AdvancedRuntimeClosureKit.replay"
+      }
+    ]
+  },
+  "runtime_state_links": [
+    {
+      "link_id": "runtime-source-debug.ownership-block",
+      "features": [
+        "ownership",
+        "blocks"
+      ],
+      "runtime_state_record_ids": [
+        "runtime-state.blocks-ownership"
+      ],
+      "source_graph_record_id": "source-graph.ownership-block",
+      "debug_map_record_id": "debug-map.ownership-block",
+      "abi_record_ids": [
+        "abi.blocks-ownership"
+      ],
+      "source_graph_node_id": "advanced-runtime.source.ownership-block",
+      "source_map_entry_id": "advanced-runtime.smap.ownership-block",
+      "debug_map_entry_id": "advanced-runtime.dmap.ownership-block",
+      "native_line_table_row_ids": [
+        "advanced-runtime.lt.ownership-block"
+      ],
+      "runtime_anchor_ids": [
+        "runtime.anchor.block-copy-dispose",
+        "runtime.anchor.ownership-cleanup"
+      ]
+    },
+    {
+      "link_id": "runtime-source-debug.async-cancellation",
+      "features": [
+        "async",
+        "cancellation"
+      ],
+      "runtime_state_record_ids": [
+        "runtime-state.async-cancellation"
+      ],
+      "source_graph_record_id": "source-graph.async-cancellation",
+      "debug_map_record_id": "debug-map.async-cancellation",
+      "abi_record_ids": [
+        "abi.async-actor-cancellation"
+      ],
+      "source_graph_node_id": "advanced-runtime.source.async-cancellation",
+      "source_map_entry_id": "advanced-runtime.smap.async-cancellation",
+      "debug_map_entry_id": "advanced-runtime.dmap.async-cancellation",
+      "native_line_table_row_ids": [
+        "advanced-runtime.lt.async-cancellation"
+      ],
+      "runtime_anchor_ids": [
+        "runtime.anchor.task-cancellation",
+        "runtime.anchor.await-suspension"
+      ]
+    },
+    {
+      "link_id": "runtime-source-debug.actor-mailbox",
+      "features": [
+        "actor",
+        "async"
+      ],
+      "runtime_state_record_ids": [
+        "runtime-state.actor-mailbox"
+      ],
+      "source_graph_record_id": "source-graph.actor-mailbox",
+      "debug_map_record_id": "debug-map.actor-mailbox",
+      "abi_record_ids": [
+        "abi.async-actor-cancellation"
+      ],
+      "source_graph_node_id": "advanced-runtime.source.actor-mailbox",
+      "source_map_entry_id": "advanced-runtime.smap.actor-mailbox",
+      "debug_map_entry_id": "advanced-runtime.dmap.actor-mailbox",
+      "native_line_table_row_ids": [
+        "advanced-runtime.lt.actor-mailbox"
+      ],
+      "runtime_anchor_ids": [
+        "runtime.anchor.actor-mailbox",
+        "runtime.anchor.executor-binding"
+      ]
+    },
+    {
+      "link_id": "runtime-source-debug.error-bridge",
+      "features": [
+        "error",
+        "async"
+      ],
+      "runtime_state_record_ids": [
+        "runtime-state.error-bridge"
+      ],
+      "source_graph_record_id": "source-graph.error-bridge",
+      "debug_map_record_id": "debug-map.error-bridge",
+      "abi_record_ids": [
+        "abi.error-bridge"
+      ],
+      "source_graph_node_id": "advanced-runtime.source.error-bridge",
+      "source_map_entry_id": "advanced-runtime.smap.error-bridge",
+      "debug_map_entry_id": "advanced-runtime.dmap.error-bridge",
+      "native_line_table_row_ids": [
+        "advanced-runtime.lt.error-bridge"
+      ],
+      "runtime_anchor_ids": [
+        "runtime.anchor.error-status-bridge",
+        "runtime.anchor.error-catch"
+      ]
+    },
+    {
+      "link_id": "runtime-source-debug.property-behavior",
+      "features": [
+        "property"
+      ],
+      "runtime_state_record_ids": [
+        "runtime-state.property-behavior"
+      ],
+      "source_graph_record_id": "source-graph.property-behavior",
+      "debug_map_record_id": "debug-map.property-behavior",
+      "abi_record_ids": [
+        "abi.property-behavior"
+      ],
+      "source_graph_node_id": "advanced-runtime.source.property-behavior",
+      "source_map_entry_id": "advanced-runtime.smap.property-behavior",
+      "debug_map_entry_id": "advanced-runtime.dmap.property-behavior",
+      "native_line_table_row_ids": [
+        "advanced-runtime.lt.property-behavior"
+      ],
+      "runtime_anchor_ids": [
+        "runtime.anchor.property-layout",
+        "runtime.anchor.property-accessor"
+      ]
+    },
+    {
+      "link_id": "runtime-source-debug.macro-provenance",
+      "features": [
+        "macro"
+      ],
+      "runtime_state_record_ids": [
+        "runtime-state.macro-host-cache"
+      ],
+      "source_graph_record_id": "source-graph.macro-provenance",
+      "debug_map_record_id": "debug-map.macro-provenance",
+      "abi_record_ids": [
+        "abi.macro-host-cache"
+      ],
+      "source_graph_node_id": "advanced-runtime.source.macro-provenance",
+      "source_map_entry_id": "advanced-runtime.smap.macro-provenance",
+      "debug_map_entry_id": "advanced-runtime.dmap.macro-provenance",
+      "native_line_table_row_ids": [
+        "advanced-runtime.lt.macro-provenance"
+      ],
+      "runtime_anchor_ids": [
+        "runtime.anchor.macro-host-cache",
+        "runtime.anchor.macro-sandbox"
+      ]
+    },
+    {
+      "link_id": "runtime-source-debug.package-replay",
+      "features": [
+        "package_replay"
+      ],
+      "runtime_state_record_ids": [
+        "runtime-state.package-replay"
+      ],
+      "source_graph_record_id": "source-graph.package-replay",
+      "debug_map_record_id": "debug-map.package-replay",
+      "abi_record_ids": [
+        "abi.package-replay"
+      ],
+      "source_graph_node_id": "advanced-runtime.source.package-replay",
+      "source_map_entry_id": "advanced-runtime.smap.package-replay",
+      "debug_map_entry_id": "advanced-runtime.dmap.package-replay",
+      "native_line_table_row_ids": [
+        "advanced-runtime.lt.package-replay"
+      ],
+      "runtime_anchor_ids": [
+        "runtime.anchor.package-import",
+        "runtime.anchor.mixed-image-replay"
+      ]
+    }
+  ],
+  "source_maps": [
+    {
+      "entry_id": "advanced-runtime.smap.ownership-block",
+      "record_kind": "ownership-cleanup-edge",
+      "source_file": "tests/native/runtime/advanced_closure/combined_positive.objc3",
+      "source_range": {
+        "line": 62,
+        "column": 1,
+        "end_line": 72,
+        "end_column": 2
+      },
+      "ast_node_id": "ast.advanced-runtime.ownership-block",
+      "source_graph_node_id": "advanced-runtime.source.ownership-block",
+      "source_digest": "426c9863157ad0246fb8a3aa0c946e183e26d528f0f42dfe1c1311b624bd3c41",
+      "lowering_stage_id": "lowering.advanced-runtime-closure.combined",
+      "ir_anchor": "ir.advanced-runtime.ownership-block",
+      "ir_symbol": "_objc3_AdvancedRuntimeClosure_ownership_block",
+      "object_debug_line_anchor": "obj.line.advanced-runtime.ownership-block",
+      "native_symbol": "_objc3_advanced_runtime_ownership_block",
+      "generated_artifact_id": "artifact.advanced-runtime.ownership-block",
+      "generated": false,
+      "classification": "original",
+      "provenance_link_id": "",
+      "capability_rows": [
+        "compiler.artifacts.source-map",
+        "compiler.artifacts.native-line-table",
+        "tooling.debug.debug-map"
+      ],
+      "language_service_anchor_ids": [
+        "hover.advanced-runtime.ownership-block",
+        "definition.advanced-runtime.ownership-block"
+      ],
+      "optimization_claim_ids": [
+        "opt.retained_result_cleanup"
+      ],
+      "runtime_anchor_ids": [
+        "runtime.anchor.block-copy-dispose",
+        "runtime.anchor.ownership-cleanup"
+      ],
+      "package_boundary_id": "pkg.advanced-runtime-closure",
+      "native_line_table_row_ids": [
+        "advanced-runtime.lt.ownership-block"
+      ]
+    },
+    {
+      "entry_id": "advanced-runtime.smap.async-cancellation",
+      "record_kind": "async-suspension-point",
+      "source_file": "tests/native/runtime/advanced_closure/combined_positive.objc3",
+      "source_range": {
+        "line": 74,
+        "column": 1,
+        "end_line": 82,
+        "end_column": 2
+      },
+      "ast_node_id": "ast.advanced-runtime.async-cancellation",
+      "source_graph_node_id": "advanced-runtime.source.async-cancellation",
+      "source_digest": "426c9863157ad0246fb8a3aa0c946e183e26d528f0f42dfe1c1311b624bd3c41",
+      "lowering_stage_id": "lowering.advanced-runtime-closure.combined",
+      "ir_anchor": "ir.advanced-runtime.async-cancellation",
+      "ir_symbol": "_objc3_AdvancedRuntimeClosure_async_cancellation",
+      "object_debug_line_anchor": "obj.line.advanced-runtime.async-cancellation",
+      "native_symbol": "_objc3_advanced_runtime_async_cancellation",
+      "generated_artifact_id": "artifact.advanced-runtime.async-cancellation",
+      "generated": false,
+      "classification": "original",
+      "provenance_link_id": "",
+      "capability_rows": [
+        "compiler.artifacts.source-map",
+        "compiler.artifacts.native-line-table",
+        "tooling.debug.debug-map"
+      ],
+      "language_service_anchor_ids": [
+        "hover.advanced-runtime.async-cancellation",
+        "definition.advanced-runtime.async-cancellation"
+      ],
+      "optimization_claim_ids": [
+        "opt.nil_receiver_folding"
+      ],
+      "runtime_anchor_ids": [
+        "runtime.anchor.task-cancellation",
+        "runtime.anchor.await-suspension"
+      ],
+      "package_boundary_id": "pkg.advanced-runtime-closure",
+      "native_line_table_row_ids": [
+        "advanced-runtime.lt.async-cancellation"
+      ]
+    },
+    {
+      "entry_id": "advanced-runtime.smap.actor-mailbox",
+      "record_kind": "method",
+      "source_file": "tests/native/runtime/advanced_closure/combined_positive.objc3",
+      "source_range": {
+        "line": 89,
+        "column": 1,
+        "end_line": 94,
+        "end_column": 2
+      },
+      "ast_node_id": "ast.advanced-runtime.actor-mailbox",
+      "source_graph_node_id": "advanced-runtime.source.actor-mailbox",
+      "source_digest": "426c9863157ad0246fb8a3aa0c946e183e26d528f0f42dfe1c1311b624bd3c41",
+      "lowering_stage_id": "lowering.advanced-runtime-closure.combined",
+      "ir_anchor": "ir.advanced-runtime.actor-mailbox",
+      "ir_symbol": "_objc3_AdvancedRuntimeClosure_actor_mailbox",
+      "object_debug_line_anchor": "obj.line.advanced-runtime.actor-mailbox",
+      "native_symbol": "_objc3_advanced_runtime_actor_mailbox",
+      "generated_artifact_id": "artifact.advanced-runtime.actor-mailbox",
+      "generated": false,
+      "classification": "original",
+      "provenance_link_id": "",
+      "capability_rows": [
+        "compiler.artifacts.source-map",
+        "compiler.artifacts.native-line-table",
+        "tooling.debug.debug-map"
+      ],
+      "language_service_anchor_ids": [
+        "hover.advanced-runtime.actor-mailbox",
+        "definition.advanced-runtime.actor-mailbox"
+      ],
+      "optimization_claim_ids": [
+        "opt.direct_dispatch"
+      ],
+      "runtime_anchor_ids": [
+        "runtime.anchor.actor-mailbox",
+        "runtime.anchor.executor-binding"
+      ],
+      "package_boundary_id": "pkg.advanced-runtime-closure",
+      "native_line_table_row_ids": [
+        "advanced-runtime.lt.actor-mailbox"
+      ]
+    },
+    {
+      "entry_id": "advanced-runtime.smap.error-bridge",
+      "record_kind": "error-bridge-edge",
+      "source_file": "tests/native/runtime/advanced_closure/combined_positive.objc3",
+      "source_range": {
+        "line": 32,
+        "column": 1,
+        "end_line": 37,
+        "end_column": 2
+      },
+      "ast_node_id": "ast.advanced-runtime.error-bridge",
+      "source_graph_node_id": "advanced-runtime.source.error-bridge",
+      "source_digest": "426c9863157ad0246fb8a3aa0c946e183e26d528f0f42dfe1c1311b624bd3c41",
+      "lowering_stage_id": "lowering.advanced-runtime-closure.combined",
+      "ir_anchor": "ir.advanced-runtime.error-bridge",
+      "ir_symbol": "_objc3_AdvancedRuntimeClosure_error_bridge",
+      "object_debug_line_anchor": "obj.line.advanced-runtime.error-bridge",
+      "native_symbol": "_objc3_advanced_runtime_error_bridge",
+      "generated_artifact_id": "artifact.advanced-runtime.error-bridge",
+      "generated": false,
+      "classification": "original",
+      "provenance_link_id": "",
+      "capability_rows": [
+        "compiler.artifacts.source-map",
+        "compiler.artifacts.native-line-table",
+        "tooling.debug.debug-map"
+      ],
+      "language_service_anchor_ids": [
+        "hover.advanced-runtime.error-bridge",
+        "definition.advanced-runtime.error-bridge"
+      ],
+      "optimization_claim_ids": [
+        "opt.cache_aware_dispatch"
+      ],
+      "runtime_anchor_ids": [
+        "runtime.anchor.error-status-bridge",
+        "runtime.anchor.error-catch"
+      ],
+      "package_boundary_id": "pkg.advanced-runtime-closure",
+      "native_line_table_row_ids": [
+        "advanced-runtime.lt.error-bridge"
+      ]
+    },
+    {
+      "entry_id": "advanced-runtime.smap.property-behavior",
+      "record_kind": "property-access",
+      "source_file": "tests/native/runtime/advanced_closure/combined_positive.objc3",
+      "source_range": {
+        "line": 52,
+        "column": 1,
+        "end_line": 60,
+        "end_column": 5
+      },
+      "ast_node_id": "ast.advanced-runtime.property-behavior",
+      "source_graph_node_id": "advanced-runtime.source.property-behavior",
+      "source_digest": "426c9863157ad0246fb8a3aa0c946e183e26d528f0f42dfe1c1311b624bd3c41",
+      "lowering_stage_id": "lowering.advanced-runtime-closure.combined",
+      "ir_anchor": "ir.advanced-runtime.property-behavior",
+      "ir_symbol": "_objc3_AdvancedRuntimeClosure_property_behavior",
+      "object_debug_line_anchor": "obj.line.advanced-runtime.property-behavior",
+      "native_symbol": "_objc3_advanced_runtime_property_behavior",
+      "generated_artifact_id": "artifact.advanced-runtime.property-behavior",
+      "generated": false,
+      "classification": "original",
+      "provenance_link_id": "",
+      "capability_rows": [
+        "compiler.artifacts.source-map",
+        "compiler.artifacts.native-line-table",
+        "tooling.debug.debug-map"
+      ],
+      "language_service_anchor_ids": [
+        "hover.advanced-runtime.property-behavior",
+        "definition.advanced-runtime.property-behavior"
+      ],
+      "optimization_claim_ids": [
+        "opt.devirtualization"
+      ],
+      "runtime_anchor_ids": [
+        "runtime.anchor.property-layout",
+        "runtime.anchor.property-accessor"
+      ],
+      "package_boundary_id": "pkg.advanced-runtime-closure",
+      "native_line_table_row_ids": [
+        "advanced-runtime.lt.property-behavior"
+      ]
+    },
+    {
+      "entry_id": "advanced-runtime.smap.macro-provenance",
+      "record_kind": "macro-expansion",
+      "source_file": "tests/native/runtime/advanced_closure/combined_positive.objc3",
+      "source_range": {
+        "line": 39,
+        "column": 1,
+        "end_line": 46,
+        "end_column": 2
+      },
+      "ast_node_id": "ast.advanced-runtime.macro-provenance",
+      "source_graph_node_id": "advanced-runtime.source.macro-provenance",
+      "source_digest": "426c9863157ad0246fb8a3aa0c946e183e26d528f0f42dfe1c1311b624bd3c41",
+      "lowering_stage_id": "lowering.advanced-runtime-closure.combined",
+      "ir_anchor": "ir.advanced-runtime.macro-provenance",
+      "ir_symbol": "_objc3_AdvancedRuntimeClosure_macro_provenance",
+      "object_debug_line_anchor": "obj.line.advanced-runtime.macro-provenance",
+      "native_symbol": "_objc3_advanced_runtime_macro_provenance",
+      "generated_artifact_id": "artifact.advanced-runtime.macro-provenance",
+      "generated": false,
+      "classification": "original",
+      "provenance_link_id": "",
+      "capability_rows": [
+        "compiler.artifacts.source-map",
+        "compiler.artifacts.native-line-table",
+        "tooling.debug.debug-map"
+      ],
+      "language_service_anchor_ids": [
+        "hover.advanced-runtime.macro-provenance",
+        "definition.advanced-runtime.macro-provenance"
+      ],
+      "optimization_claim_ids": [
+        "opt.method_inlining"
+      ],
+      "runtime_anchor_ids": [
+        "runtime.anchor.macro-host-cache",
+        "runtime.anchor.macro-sandbox"
+      ],
+      "package_boundary_id": "pkg.advanced-runtime-closure",
+      "native_line_table_row_ids": [
+        "advanced-runtime.lt.macro-provenance"
+      ]
+    },
+    {
+      "entry_id": "advanced-runtime.smap.package-replay",
+      "record_kind": "runtime-helper-call",
+      "source_file": "tests/native/runtime/advanced_closure/combined_positive.objc3",
+      "source_range": {
+        "line": 15,
+        "column": 1,
+        "end_line": 19,
+        "end_column": 73
+      },
+      "ast_node_id": "ast.advanced-runtime.package-replay",
+      "source_graph_node_id": "advanced-runtime.source.package-replay",
+      "source_digest": "426c9863157ad0246fb8a3aa0c946e183e26d528f0f42dfe1c1311b624bd3c41",
+      "lowering_stage_id": "lowering.advanced-runtime-closure.combined",
+      "ir_anchor": "ir.advanced-runtime.package-replay",
+      "ir_symbol": "_objc3_AdvancedRuntimeClosure_package_replay",
+      "object_debug_line_anchor": "obj.line.advanced-runtime.package-replay",
+      "native_symbol": "_objc3_advanced_runtime_package_replay",
+      "generated_artifact_id": "artifact.advanced-runtime.package-replay",
+      "generated": false,
+      "classification": "original",
+      "provenance_link_id": "",
+      "capability_rows": [
+        "compiler.artifacts.source-map",
+        "compiler.artifacts.native-line-table",
+        "tooling.debug.debug-map"
+      ],
+      "language_service_anchor_ids": [
+        "hover.advanced-runtime.package-replay",
+        "definition.advanced-runtime.package-replay"
+      ],
+      "optimization_claim_ids": [],
+      "runtime_anchor_ids": [
+        "runtime.anchor.package-import",
+        "runtime.anchor.mixed-image-replay"
+      ],
+      "package_boundary_id": "pkg.advanced-runtime-closure",
+      "native_line_table_row_ids": [
+        "advanced-runtime.lt.package-replay"
+      ]
+    }
+  ],
+  "debug_maps": [
+    {
+      "entry_id": "advanced-runtime.dmap.ownership-block",
+      "source_map_entry_id": "advanced-runtime.smap.ownership-block",
+      "source_graph_node_id": "advanced-runtime.source.ownership-block",
+      "source_digest": "426c9863157ad0246fb8a3aa0c946e183e26d528f0f42dfe1c1311b624bd3c41",
+      "ir_symbol": "_objc3_AdvancedRuntimeClosure_ownership_block",
+      "native_symbol": "_objc3_advanced_runtime_ownership_block",
+      "object_debug_line_anchor": "obj.line.advanced-runtime.ownership-block",
+      "runtime_anchor_ids": [
+        "runtime.anchor.block-copy-dispose",
+        "runtime.anchor.ownership-cleanup"
+      ],
+      "hover_anchor_id": "hover.advanced-runtime.ownership-block",
+      "definition_anchor_id": "definition.advanced-runtime.ownership-block"
+    },
+    {
+      "entry_id": "advanced-runtime.dmap.async-cancellation",
+      "source_map_entry_id": "advanced-runtime.smap.async-cancellation",
+      "source_graph_node_id": "advanced-runtime.source.async-cancellation",
+      "source_digest": "426c9863157ad0246fb8a3aa0c946e183e26d528f0f42dfe1c1311b624bd3c41",
+      "ir_symbol": "_objc3_AdvancedRuntimeClosure_async_cancellation",
+      "native_symbol": "_objc3_advanced_runtime_async_cancellation",
+      "object_debug_line_anchor": "obj.line.advanced-runtime.async-cancellation",
+      "runtime_anchor_ids": [
+        "runtime.anchor.task-cancellation",
+        "runtime.anchor.await-suspension"
+      ],
+      "hover_anchor_id": "hover.advanced-runtime.async-cancellation",
+      "definition_anchor_id": "definition.advanced-runtime.async-cancellation"
+    },
+    {
+      "entry_id": "advanced-runtime.dmap.actor-mailbox",
+      "source_map_entry_id": "advanced-runtime.smap.actor-mailbox",
+      "source_graph_node_id": "advanced-runtime.source.actor-mailbox",
+      "source_digest": "426c9863157ad0246fb8a3aa0c946e183e26d528f0f42dfe1c1311b624bd3c41",
+      "ir_symbol": "_objc3_AdvancedRuntimeClosure_actor_mailbox",
+      "native_symbol": "_objc3_advanced_runtime_actor_mailbox",
+      "object_debug_line_anchor": "obj.line.advanced-runtime.actor-mailbox",
+      "runtime_anchor_ids": [
+        "runtime.anchor.actor-mailbox",
+        "runtime.anchor.executor-binding"
+      ],
+      "hover_anchor_id": "hover.advanced-runtime.actor-mailbox",
+      "definition_anchor_id": "definition.advanced-runtime.actor-mailbox"
+    },
+    {
+      "entry_id": "advanced-runtime.dmap.error-bridge",
+      "source_map_entry_id": "advanced-runtime.smap.error-bridge",
+      "source_graph_node_id": "advanced-runtime.source.error-bridge",
+      "source_digest": "426c9863157ad0246fb8a3aa0c946e183e26d528f0f42dfe1c1311b624bd3c41",
+      "ir_symbol": "_objc3_AdvancedRuntimeClosure_error_bridge",
+      "native_symbol": "_objc3_advanced_runtime_error_bridge",
+      "object_debug_line_anchor": "obj.line.advanced-runtime.error-bridge",
+      "runtime_anchor_ids": [
+        "runtime.anchor.error-status-bridge",
+        "runtime.anchor.error-catch"
+      ],
+      "hover_anchor_id": "hover.advanced-runtime.error-bridge",
+      "definition_anchor_id": "definition.advanced-runtime.error-bridge"
+    },
+    {
+      "entry_id": "advanced-runtime.dmap.property-behavior",
+      "source_map_entry_id": "advanced-runtime.smap.property-behavior",
+      "source_graph_node_id": "advanced-runtime.source.property-behavior",
+      "source_digest": "426c9863157ad0246fb8a3aa0c946e183e26d528f0f42dfe1c1311b624bd3c41",
+      "ir_symbol": "_objc3_AdvancedRuntimeClosure_property_behavior",
+      "native_symbol": "_objc3_advanced_runtime_property_behavior",
+      "object_debug_line_anchor": "obj.line.advanced-runtime.property-behavior",
+      "runtime_anchor_ids": [
+        "runtime.anchor.property-layout",
+        "runtime.anchor.property-accessor"
+      ],
+      "hover_anchor_id": "hover.advanced-runtime.property-behavior",
+      "definition_anchor_id": "definition.advanced-runtime.property-behavior"
+    },
+    {
+      "entry_id": "advanced-runtime.dmap.macro-provenance",
+      "source_map_entry_id": "advanced-runtime.smap.macro-provenance",
+      "source_graph_node_id": "advanced-runtime.source.macro-provenance",
+      "source_digest": "426c9863157ad0246fb8a3aa0c946e183e26d528f0f42dfe1c1311b624bd3c41",
+      "ir_symbol": "_objc3_AdvancedRuntimeClosure_macro_provenance",
+      "native_symbol": "_objc3_advanced_runtime_macro_provenance",
+      "object_debug_line_anchor": "obj.line.advanced-runtime.macro-provenance",
+      "runtime_anchor_ids": [
+        "runtime.anchor.macro-host-cache",
+        "runtime.anchor.macro-sandbox"
+      ],
+      "hover_anchor_id": "hover.advanced-runtime.macro-provenance",
+      "definition_anchor_id": "definition.advanced-runtime.macro-provenance"
+    },
+    {
+      "entry_id": "advanced-runtime.dmap.package-replay",
+      "source_map_entry_id": "advanced-runtime.smap.package-replay",
+      "source_graph_node_id": "advanced-runtime.source.package-replay",
+      "source_digest": "426c9863157ad0246fb8a3aa0c946e183e26d528f0f42dfe1c1311b624bd3c41",
+      "ir_symbol": "_objc3_AdvancedRuntimeClosure_package_replay",
+      "native_symbol": "_objc3_advanced_runtime_package_replay",
+      "object_debug_line_anchor": "obj.line.advanced-runtime.package-replay",
+      "runtime_anchor_ids": [
+        "runtime.anchor.package-import",
+        "runtime.anchor.mixed-image-replay"
+      ],
+      "hover_anchor_id": "hover.advanced-runtime.package-replay",
+      "definition_anchor_id": "definition.advanced-runtime.package-replay"
+    }
+  ],
+  "native_line_tables": [
+    {
+      "row_id": "advanced-runtime.lt.ownership-block",
+      "source_map_entry_id": "advanced-runtime.smap.ownership-block",
+      "source_graph_node_id": "advanced-runtime.source.ownership-block",
+      "source_file": "tests/native/runtime/advanced_closure/combined_positive.objc3",
+      "source_digest": "426c9863157ad0246fb8a3aa0c946e183e26d528f0f42dfe1c1311b624bd3c41",
+      "native_symbol": "_objc3_advanced_runtime_ownership_block",
+      "object_debug_line_anchor": "obj.line.advanced-runtime.ownership-block",
+      "package_boundary_id": "pkg.advanced-runtime-closure",
+      "source_range": {
+        "line": 62,
+        "column": 1,
+        "end_line": 72,
+        "end_column": 2
+      },
+      "native_line": 410
+    },
+    {
+      "row_id": "advanced-runtime.lt.async-cancellation",
+      "source_map_entry_id": "advanced-runtime.smap.async-cancellation",
+      "source_graph_node_id": "advanced-runtime.source.async-cancellation",
+      "source_file": "tests/native/runtime/advanced_closure/combined_positive.objc3",
+      "source_digest": "426c9863157ad0246fb8a3aa0c946e183e26d528f0f42dfe1c1311b624bd3c41",
+      "native_symbol": "_objc3_advanced_runtime_async_cancellation",
+      "object_debug_line_anchor": "obj.line.advanced-runtime.async-cancellation",
+      "package_boundary_id": "pkg.advanced-runtime-closure",
+      "source_range": {
+        "line": 74,
+        "column": 1,
+        "end_line": 82,
+        "end_column": 2
+      },
+      "native_line": 411
+    },
+    {
+      "row_id": "advanced-runtime.lt.actor-mailbox",
+      "source_map_entry_id": "advanced-runtime.smap.actor-mailbox",
+      "source_graph_node_id": "advanced-runtime.source.actor-mailbox",
+      "source_file": "tests/native/runtime/advanced_closure/combined_positive.objc3",
+      "source_digest": "426c9863157ad0246fb8a3aa0c946e183e26d528f0f42dfe1c1311b624bd3c41",
+      "native_symbol": "_objc3_advanced_runtime_actor_mailbox",
+      "object_debug_line_anchor": "obj.line.advanced-runtime.actor-mailbox",
+      "package_boundary_id": "pkg.advanced-runtime-closure",
+      "source_range": {
+        "line": 89,
+        "column": 1,
+        "end_line": 94,
+        "end_column": 2
+      },
+      "native_line": 412
+    },
+    {
+      "row_id": "advanced-runtime.lt.error-bridge",
+      "source_map_entry_id": "advanced-runtime.smap.error-bridge",
+      "source_graph_node_id": "advanced-runtime.source.error-bridge",
+      "source_file": "tests/native/runtime/advanced_closure/combined_positive.objc3",
+      "source_digest": "426c9863157ad0246fb8a3aa0c946e183e26d528f0f42dfe1c1311b624bd3c41",
+      "native_symbol": "_objc3_advanced_runtime_error_bridge",
+      "object_debug_line_anchor": "obj.line.advanced-runtime.error-bridge",
+      "package_boundary_id": "pkg.advanced-runtime-closure",
+      "source_range": {
+        "line": 32,
+        "column": 1,
+        "end_line": 37,
+        "end_column": 2
+      },
+      "native_line": 413
+    },
+    {
+      "row_id": "advanced-runtime.lt.property-behavior",
+      "source_map_entry_id": "advanced-runtime.smap.property-behavior",
+      "source_graph_node_id": "advanced-runtime.source.property-behavior",
+      "source_file": "tests/native/runtime/advanced_closure/combined_positive.objc3",
+      "source_digest": "426c9863157ad0246fb8a3aa0c946e183e26d528f0f42dfe1c1311b624bd3c41",
+      "native_symbol": "_objc3_advanced_runtime_property_behavior",
+      "object_debug_line_anchor": "obj.line.advanced-runtime.property-behavior",
+      "package_boundary_id": "pkg.advanced-runtime-closure",
+      "source_range": {
+        "line": 52,
+        "column": 1,
+        "end_line": 60,
+        "end_column": 5
+      },
+      "native_line": 414
+    },
+    {
+      "row_id": "advanced-runtime.lt.macro-provenance",
+      "source_map_entry_id": "advanced-runtime.smap.macro-provenance",
+      "source_graph_node_id": "advanced-runtime.source.macro-provenance",
+      "source_file": "tests/native/runtime/advanced_closure/combined_positive.objc3",
+      "source_digest": "426c9863157ad0246fb8a3aa0c946e183e26d528f0f42dfe1c1311b624bd3c41",
+      "native_symbol": "_objc3_advanced_runtime_macro_provenance",
+      "object_debug_line_anchor": "obj.line.advanced-runtime.macro-provenance",
+      "package_boundary_id": "pkg.advanced-runtime-closure",
+      "source_range": {
+        "line": 39,
+        "column": 1,
+        "end_line": 46,
+        "end_column": 2
+      },
+      "native_line": 415
+    },
+    {
+      "row_id": "advanced-runtime.lt.package-replay",
+      "source_map_entry_id": "advanced-runtime.smap.package-replay",
+      "source_graph_node_id": "advanced-runtime.source.package-replay",
+      "source_file": "tests/native/runtime/advanced_closure/combined_positive.objc3",
+      "source_digest": "426c9863157ad0246fb8a3aa0c946e183e26d528f0f42dfe1c1311b624bd3c41",
+      "native_symbol": "_objc3_advanced_runtime_package_replay",
+      "object_debug_line_anchor": "obj.line.advanced-runtime.package-replay",
+      "package_boundary_id": "pkg.advanced-runtime-closure",
+      "source_range": {
+        "line": 15,
+        "column": 1,
+        "end_line": 19,
+        "end_column": 73
+      },
+      "native_line": 416
+    }
+  ],
+  "provenance_links": [],
+  "optimization_preservation": {
+    "claims": [
+      {
+        "claim_id": "opt.nil_receiver_folding",
+        "transform_kind": "nil-receiver-folding",
+        "source_map_entry_ids": [
+          "advanced-runtime.smap.async-cancellation"
+        ],
+        "native_line_table_row_ids": [
+          "advanced-runtime.lt.async-cancellation"
+        ],
+        "preserves_source_map": true,
+        "invalidates_source_map": false,
+        "debugger_safe": true,
+        "diagnostic": "advanced runtime closure source-map and native line-table preservation remains checked"
+      },
+      {
+        "claim_id": "opt.direct_dispatch",
+        "transform_kind": "direct-dispatch",
+        "source_map_entry_ids": [
+          "advanced-runtime.smap.actor-mailbox"
+        ],
+        "native_line_table_row_ids": [
+          "advanced-runtime.lt.actor-mailbox"
+        ],
+        "preserves_source_map": true,
+        "invalidates_source_map": false,
+        "debugger_safe": true,
+        "diagnostic": "advanced runtime closure source-map and native line-table preservation remains checked"
+      },
+      {
+        "claim_id": "opt.retained_result_cleanup",
+        "transform_kind": "retained-result-cleanup",
+        "source_map_entry_ids": [
+          "advanced-runtime.smap.ownership-block"
+        ],
+        "native_line_table_row_ids": [
+          "advanced-runtime.lt.ownership-block"
+        ],
+        "preserves_source_map": true,
+        "invalidates_source_map": false,
+        "debugger_safe": true,
+        "diagnostic": "advanced runtime closure source-map and native line-table preservation remains checked"
+      },
+      {
+        "claim_id": "opt.devirtualization",
+        "transform_kind": "devirtualization",
+        "source_map_entry_ids": [
+          "advanced-runtime.smap.property-behavior"
+        ],
+        "native_line_table_row_ids": [
+          "advanced-runtime.lt.property-behavior"
+        ],
+        "preserves_source_map": true,
+        "invalidates_source_map": false,
+        "debugger_safe": true,
+        "diagnostic": "advanced runtime closure source-map and native line-table preservation remains checked"
+      },
+      {
+        "claim_id": "opt.method_inlining",
+        "transform_kind": "method-inlining",
+        "source_map_entry_ids": [
+          "advanced-runtime.smap.macro-provenance"
+        ],
+        "native_line_table_row_ids": [
+          "advanced-runtime.lt.macro-provenance"
+        ],
+        "preserves_source_map": true,
+        "invalidates_source_map": false,
+        "debugger_safe": true,
+        "diagnostic": "advanced runtime closure source-map and native line-table preservation remains checked"
+      },
+      {
+        "claim_id": "opt.cache_aware_dispatch",
+        "transform_kind": "cache-aware-dispatch",
+        "source_map_entry_ids": [
+          "advanced-runtime.smap.error-bridge"
+        ],
+        "native_line_table_row_ids": [
+          "advanced-runtime.lt.error-bridge"
+        ],
+        "preserves_source_map": true,
+        "invalidates_source_map": false,
+        "debugger_safe": true,
+        "diagnostic": "advanced runtime closure source-map and native line-table preservation remains checked"
+      }
+    ]
+  },
+  "package_boundaries": {
+    "boundaries": [
+      {
+        "boundary_id": "pkg.advanced-runtime-closure",
+        "package_id": "advanced-runtime-closure",
+        "module_id": "AdvancedRuntimeClosureCombinedPositive",
+        "source_graph_node_ids": [
+          "advanced-runtime.source.ownership-block",
+          "advanced-runtime.source.async-cancellation",
+          "advanced-runtime.source.actor-mailbox",
+          "advanced-runtime.source.error-bridge",
+          "advanced-runtime.source.property-behavior",
+          "advanced-runtime.source.macro-provenance",
+          "advanced-runtime.source.package-replay"
+        ],
+        "source_digest": "426c9863157ad0246fb8a3aa0c946e183e26d528f0f42dfe1c1311b624bd3c41"
+      }
+    ]
+  }
+}

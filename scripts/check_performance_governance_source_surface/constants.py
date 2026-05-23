@@ -68,11 +68,13 @@ EXPECTED_CHECKED_IN_SOURCES = (
     "tests/tooling/fixtures/runtime_performance/workload_replay_contract.json",
     "tests/tooling/fixtures/runtime_performance/metadata_resilience_contract.json",
     "tests/tooling/fixtures/runtime_performance/stress_sanitizer_contract.json",
+    "scripts/probe_objc3c_runtime_scale_evidence.py",
 )
 
 EXPECTED_BUILD_SCRIPTS = (
     "scripts/build_objc3c_performance_dashboard.py",
     "scripts/publish_objc3c_performance_report.py",
+    "scripts/probe_objc3c_runtime_scale_evidence.py",
     "scripts/check_objc3c_performance_governance_contract_linkage.py",
     "scripts/check_objc3c_performance_governance_integration.py",
     "scripts/check_objc3c_performance_governance_end_to_end.py",
@@ -102,6 +104,7 @@ EXPECTED_OWNER_SPLIT = {
         "tests/tooling/fixtures/runtime_performance/workload_replay_contract.json",
         "tests/tooling/fixtures/runtime_performance/metadata_resilience_contract.json",
         "tests/tooling/fixtures/runtime_performance/stress_sanitizer_contract.json",
+        "scripts/probe_objc3c_runtime_scale_evidence.py",
         "schemas/objc3c-runtime-performance-telemetry-v1.schema.json",
     ],
     "public_performance_report": [

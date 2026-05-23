@@ -12,10 +12,12 @@ from capability_docs_validator.constants import (
     MATRIX_DOC,
     MATRIX_PATH,
     PHASE_OWNER_CONTRACT_PATH,
+    UMBRELLA_READINESS_DOC,
 )
 from capability_docs_validator.conformance import _phase_contract_rows
 from capability_docs_validator.manifest import _manifest_support_claims
 from capability_docs_validator.support_links import _row_support_claims
+from capability_docs_validator.umbrella_readiness import render_umbrella_readiness_doc
 
 
 GENERATED_HEADER = (
@@ -255,8 +257,9 @@ def render_support_docs(
     evidence_map: dict[str, Any],
     manifest: dict[str, Any],
     phase_owner_contracts: dict[str, Any],
+    umbrella_readiness: dict[str, Any] | None = None,
 ) -> dict[Path, str]:
-    return {
+    rendered = {
         MATRIX_DOC: render_capability_matrix_doc(
             matrix=matrix,
             rows=rows,
@@ -265,6 +268,9 @@ def render_support_docs(
         ),
         EVIDENCE_DOC: render_evidence_map_doc(evidence_map=evidence_map),
     }
+    if umbrella_readiness is not None:
+        rendered[UMBRELLA_READINESS_DOC] = render_umbrella_readiness_doc(umbrella_readiness)
+    return rendered
 
 
 def _validate_generated_docs(rendered_docs: dict[Path, str]) -> None:

@@ -13,6 +13,9 @@ DISTRIBUTION_CREDIBILITY_DASHBOARD_PY = (
 DISTRIBUTION_CREDIBILITY_PUBLICATION_PY = (
     ROOT / "scripts" / "publish_objc3c_distribution_trust_report.py"
 )
+RELEASE_OPERATIONS_INTEGRATION_PY = (
+    ROOT / "scripts" / "check_objc3c_release_operations_integration.py"
+)
 DISTRIBUTION_CREDIBILITY_END_TO_END_PY = (
     ROOT / "scripts" / "check_objc3c_distribution_credibility_end_to_end.py"
 )
@@ -23,4 +26,5 @@ __all__ = [
     "DISTRIBUTION_CREDIBILITY_END_TO_END_PY",
     "DISTRIBUTION_CREDIBILITY_PUBLICATION_PY",
     "DISTRIBUTION_CREDIBILITY_SOURCE_SURFACE_PY",
+    "RELEASE_OPERATIONS_INTEGRATION_PY",
 ]

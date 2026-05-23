@@ -19,6 +19,7 @@ BUILD_NATIVE_DOCS_ACTION = "build-native-docs"
 CHECK_NATIVE_DOCS_ACTION = "check-native-docs"
 CHECK_DOCUMENTATION_SURFACE_ACTION = "check-documentation-surface"
 VALIDATE_DOCUMENTATION_SURFACE_ACTION = "validate-documentation-surface"
+VALIDATE_UMBRELLA_READINESS_ACTION = "validate-umbrella-readiness"
 
 BUILD_NATIVE_DOCS_SUMMARY = "build the generated native implementation docs"
 CHECK_NATIVE_DOCS_SUMMARY = "check generated native implementation docs for drift"
@@ -28,6 +29,9 @@ CHECK_DOCUMENTATION_SURFACE_SUMMARY = (
 VALIDATE_DOCUMENTATION_SURFACE_SUMMARY = (
     "run the full documentation build and reader-surface validation flow"
 )
+VALIDATE_UMBRELLA_READINESS_SUMMARY = (
+    "validate schema-backed umbrella capability readiness gates"
+)
 
 BUILD_NATIVE_DOCS_BACKEND = f"python:{NATIVE_DOCS_SCRIPT}"
 CHECK_NATIVE_DOCS_BACKEND = f"{BUILD_NATIVE_DOCS_BACKEND} --check"
@@ -35,10 +39,14 @@ CHECK_DOCUMENTATION_SURFACE_BACKEND = f"python:{DOCUMENTATION_SURFACE_SCRIPT}"
 VALIDATE_DOCUMENTATION_SURFACE_BACKEND = (
     "runner-internal + generated documentation checks"
 )
+VALIDATE_UMBRELLA_READINESS_BACKEND = (
+    "python:scripts/check_objc3c_umbrella_readiness.py --check"
+)
 
 NATIVE_DOCS_VALIDATION_TIER = "docs"
 DOCUMENTATION_SURFACE_VALIDATION_TIER = "docs"
 DOCUMENTATION_VALIDATION_TIER = "docs"
+UMBRELLA_READINESS_VALIDATION_TIER = "docs"
 
 NATIVE_DOCS_GUARANTEE_OWNER = (
     "generated native implementation documentation stays in sync with "
@@ -52,6 +60,11 @@ DOCUMENTATION_VALIDATION_GUARANTEE_OWNER = (
     "site output, native docs, command appendix, and reader-facing onboarding "
     "remain buildable, in sync, and explicit"
 )
+UMBRELLA_READINESS_GUARANTEE_OWNER = (
+    "broad umbrella capability rows remain blocked until schema-backed "
+    "readiness prerequisites, evidence, fixtures, docs, and negative "
+    "boundaries are satisfied"
+)
 
 BUILD_SITE_COMMAND = (sys.executable, SITE_PY)
 CHECK_SITE_COMMAND = (sys.executable, SITE_PY, "--check")
@@ -64,6 +77,11 @@ CHECK_PUBLIC_COMMAND_SURFACE_COMMAND = (
     "--check",
 )
 CHECK_DOCUMENTATION_SURFACE_COMMAND = (sys.executable, DOCUMENTATION_SURFACE_PY)
+VALIDATE_UMBRELLA_READINESS_COMMAND = (
+    sys.executable,
+    "scripts/check_objc3c_umbrella_readiness.py",
+    "--check",
+)
 DOCUMENTATION_VALIDATION_COMMANDS = (
     BUILD_SITE_COMMAND,
     BUILD_NATIVE_DOCS_COMMAND,
@@ -116,3 +134,7 @@ def action_validate_documentation_surface(_: list[str]) -> int:
         if rc != 0:
             return rc
     return 0
+
+
+def action_validate_umbrella_readiness(_: list[str]) -> int:
+    return run([str(part) for part in VALIDATE_UMBRELLA_READINESS_COMMAND])

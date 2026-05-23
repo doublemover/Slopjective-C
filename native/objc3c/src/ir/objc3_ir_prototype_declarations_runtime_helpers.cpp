@@ -21,6 +21,56 @@ namespace {
 
 constexpr const char *kObjc3RuntimeStdlibTextUtf8StorageI32Symbol =
     "objc3_runtime_stdlib_text_utf8_storage_i32";
+constexpr const char *kObjc3RuntimeStdlibTextBuilderI32Symbol =
+    "objc3_runtime_stdlib_text_builder_i32";
+constexpr const char *kObjc3RuntimeStdlibTextBuilderAppendTextI32Symbol =
+    "objc3_runtime_stdlib_text_builder_append_text_i32";
+constexpr const char *kObjc3RuntimeStdlibTextBuilderAppendI32I32Symbol =
+    "objc3_runtime_stdlib_text_builder_append_i32_i32";
+constexpr const char *kObjc3RuntimeStdlibTextBuilderBuildI32Symbol =
+    "objc3_runtime_stdlib_text_builder_build_i32";
+constexpr const char *kObjc3RuntimeStdlibCollectionsArray3I32Symbol =
+    "objc3_runtime_stdlib_collections_array3_i32";
+constexpr const char *kObjc3RuntimeStdlibCollectionsArrayStorageI32Symbol =
+    "objc3_runtime_stdlib_collections_array_storage_i32";
+constexpr const char *kObjc3RuntimeStdlibCollectionsMutableArrayI32Symbol =
+    "objc3_runtime_stdlib_collections_mutable_array_i32";
+constexpr const char *kObjc3RuntimeStdlibCollectionsMutableArrayAppendI32Symbol =
+    "objc3_runtime_stdlib_collections_mutable_array_append_i32";
+constexpr const char *kObjc3RuntimeStdlibCollectionsMutableArraySetI32Symbol =
+    "objc3_runtime_stdlib_collections_mutable_array_set_i32";
+constexpr const char *kObjc3RuntimeStdlibCollectionsMutableArrayRemoveAtI32Symbol =
+    "objc3_runtime_stdlib_collections_mutable_array_remove_at_i32";
+constexpr const char *kObjc3RuntimeStdlibCollectionsArrayGetOrI32Symbol =
+    "objc3_runtime_stdlib_collections_array_get_or_i32";
+constexpr const char *kObjc3RuntimeStdlibCollectionsArrayIteratorI32Symbol =
+    "objc3_runtime_stdlib_collections_array_iterator_i32";
+constexpr const char *kObjc3RuntimeStdlibCollectionsMapEmptyI32Symbol =
+    "objc3_runtime_stdlib_collections_map_empty_i32";
+constexpr const char *kObjc3RuntimeStdlibCollectionsMapInsertI32Symbol =
+    "objc3_runtime_stdlib_collections_map_insert_i32";
+constexpr const char *kObjc3RuntimeStdlibCollectionsMapDeleteI32Symbol =
+    "objc3_runtime_stdlib_collections_map_delete_i32";
+constexpr const char *kObjc3RuntimeStdlibCollectionsMapLookupOrI32Symbol =
+    "objc3_runtime_stdlib_collections_map_lookup_or_i32";
+constexpr const char *kObjc3RuntimeStdlibCollectionsMapKeyIteratorI32Symbol =
+    "objc3_runtime_stdlib_collections_map_key_iterator_i32";
+constexpr const char *kObjc3RuntimeStdlibCollectionsMapValueIteratorI32Symbol =
+    "objc3_runtime_stdlib_collections_map_value_iterator_i32";
+constexpr const char *kObjc3RuntimeStdlibCollectionsSet3I32Symbol =
+    "objc3_runtime_stdlib_collections_set3_i32";
+constexpr const char *kObjc3RuntimeStdlibCollectionsSetStorageI32Symbol =
+    "objc3_runtime_stdlib_collections_set_storage_i32";
+constexpr const char *kObjc3RuntimeStdlibCollectionsSetInsertI32Symbol =
+    "objc3_runtime_stdlib_collections_set_insert_i32";
+constexpr const char *kObjc3RuntimeStdlibCollectionsSetDeleteI32Symbol =
+    "objc3_runtime_stdlib_collections_set_delete_i32";
+constexpr const char *kObjc3RuntimeStdlibCollectionsSetIteratorI32Symbol =
+    "objc3_runtime_stdlib_collections_set_iterator_i32";
+constexpr const char *kObjc3RuntimeStdlibCollectionsIteratorNextOrI32Symbol =
+    "objc3_runtime_stdlib_collections_iterator_next_or_i32";
+constexpr const char *kObjc3RuntimeStdlibCollectionsLastStatusI32Symbol =
+    "objc3_runtime_stdlib_collections_last_status_i32";
 
 bool Objc3IRFunctionRequiresArcHelperDeclarations(
     const FunctionDecl &fn, const Objc3IRFrontendMetadata &frontend_metadata) {
@@ -118,6 +168,8 @@ bool Objc3IRExprRequiresTextLiteralHelperDeclarations(const Expr *expr) {
   switch (expr->kind) {
     case Expr::Kind::StringLiteral:
       return true;
+    case Expr::Kind::StringInterpolation:
+      return true;
     case Expr::Kind::Binary:
       return Objc3IRExprRequiresTextLiteralHelperDeclarations(
                  expr->left.get()) ||
@@ -150,6 +202,23 @@ bool Objc3IRExprRequiresTextLiteralHelperDeclarations(const Expr *expr) {
         }
       }
       return false;
+    case Expr::Kind::CollectionLiteral:
+      for (const auto &key : expr->collection_keys) {
+        if (Objc3IRExprRequiresTextLiteralHelperDeclarations(key.get())) {
+          return true;
+        }
+      }
+      for (const auto &value : expr->collection_values) {
+        if (Objc3IRExprRequiresTextLiteralHelperDeclarations(value.get())) {
+          return true;
+        }
+      }
+      return false;
+    case Expr::Kind::IndexAccess:
+      return Objc3IRExprRequiresTextLiteralHelperDeclarations(
+                 expr->left.get()) ||
+             Objc3IRExprRequiresTextLiteralHelperDeclarations(
+                 expr->right.get());
     case Expr::Kind::Number:
     case Expr::Kind::BoolLiteral:
     case Expr::Kind::NilLiteral:
@@ -161,9 +230,73 @@ bool Objc3IRExprRequiresTextLiteralHelperDeclarations(const Expr *expr) {
   return false;
 }
 
+bool Objc3IRExprRequiresCollectionHelperDeclarations(const Expr *expr) {
+  if (expr == nullptr) {
+    return false;
+  }
+  switch (expr->kind) {
+    case Expr::Kind::CollectionLiteral:
+    case Expr::Kind::IndexAccess:
+      return true;
+    case Expr::Kind::Binary:
+      return Objc3IRExprRequiresCollectionHelperDeclarations(
+                 expr->left.get()) ||
+             Objc3IRExprRequiresCollectionHelperDeclarations(
+                 expr->right.get());
+    case Expr::Kind::Conditional:
+      return Objc3IRExprRequiresCollectionHelperDeclarations(
+                 expr->left.get()) ||
+             Objc3IRExprRequiresCollectionHelperDeclarations(
+                 expr->right.get()) ||
+             Objc3IRExprRequiresCollectionHelperDeclarations(
+                 expr->third.get());
+    case Expr::Kind::Call:
+    case Expr::Kind::Try:
+    case Expr::Kind::Throw:
+      for (const auto &arg : expr->args) {
+        if (Objc3IRExprRequiresCollectionHelperDeclarations(arg.get())) {
+          return true;
+        }
+      }
+      return false;
+    case Expr::Kind::MessageSend:
+      if (Objc3IRExprRequiresCollectionHelperDeclarations(
+              expr->receiver.get())) {
+        return true;
+      }
+      for (const auto &arg : expr->args) {
+        if (Objc3IRExprRequiresCollectionHelperDeclarations(arg.get())) {
+          return true;
+        }
+      }
+      return false;
+    case Expr::Kind::StringInterpolation:
+      for (const auto &arg : expr->args) {
+        if (Objc3IRExprRequiresCollectionHelperDeclarations(arg.get())) {
+          return true;
+        }
+      }
+      return false;
+    case Expr::Kind::Number:
+    case Expr::Kind::BoolLiteral:
+    case Expr::Kind::NilLiteral:
+    case Expr::Kind::StringLiteral:
+    case Expr::Kind::Identifier:
+    case Expr::Kind::KeyPathLiteral:
+    case Expr::Kind::BlockLiteral:
+      return false;
+  }
+  return false;
+}
+
 bool Objc3IRForClauseRequiresTextLiteralHelperDeclarations(
     const ForClause &clause) {
   return Objc3IRExprRequiresTextLiteralHelperDeclarations(clause.value.get());
+}
+
+bool Objc3IRForClauseRequiresCollectionHelperDeclarations(
+    const ForClause &clause) {
+  return Objc3IRExprRequiresCollectionHelperDeclarations(clause.value.get());
 }
 
 bool Objc3IRStmtRequiresTextLiteralHelperDeclarations(const Stmt *stmt) {
@@ -239,6 +372,27 @@ bool Objc3IRStmtRequiresTextLiteralHelperDeclarations(const Stmt *stmt) {
         }
       }
       return false;
+    case Stmt::Kind::ForIn:
+      if (stmt->for_in_stmt == nullptr) {
+        return false;
+      }
+      if (Objc3IRExprRequiresTextLiteralHelperDeclarations(
+              stmt->for_in_stmt->collection.get())) {
+        return true;
+      }
+      for (const auto &loop_stmt : stmt->for_in_stmt->body) {
+        if (Objc3IRStmtRequiresTextLiteralHelperDeclarations(
+                loop_stmt.get())) {
+          return true;
+        }
+      }
+      return false;
+    case Stmt::Kind::CollectionMutation:
+      return stmt->collection_mutation_stmt != nullptr &&
+             (Objc3IRExprRequiresTextLiteralHelperDeclarations(
+                  stmt->collection_mutation_stmt->key_or_index.get()) ||
+              Objc3IRExprRequiresTextLiteralHelperDeclarations(
+                  stmt->collection_mutation_stmt->value.get()));
     case Stmt::Kind::Switch:
       if (stmt->switch_stmt == nullptr) {
         return false;
@@ -291,6 +445,130 @@ bool Objc3IRStmtRequiresTextLiteralHelperDeclarations(const Stmt *stmt) {
   return false;
 }
 
+bool Objc3IRStmtRequiresCollectionHelperDeclarations(const Stmt *stmt) {
+  if (stmt == nullptr) {
+    return false;
+  }
+  switch (stmt->kind) {
+    case Stmt::Kind::Let:
+      return stmt->let_stmt != nullptr &&
+             Objc3IRExprRequiresCollectionHelperDeclarations(
+                 stmt->let_stmt->value.get());
+    case Stmt::Kind::Assign:
+      return stmt->assign_stmt != nullptr &&
+             Objc3IRExprRequiresCollectionHelperDeclarations(
+                 stmt->assign_stmt->value.get());
+    case Stmt::Kind::CollectionMutation:
+      return true;
+    case Stmt::Kind::Return:
+      return stmt->return_stmt != nullptr &&
+             Objc3IRExprRequiresCollectionHelperDeclarations(
+                 stmt->return_stmt->value.get());
+    case Stmt::Kind::Expr:
+      return stmt->expr_stmt != nullptr &&
+             Objc3IRExprRequiresCollectionHelperDeclarations(
+                 stmt->expr_stmt->value.get());
+    case Stmt::Kind::ForIn:
+      return true;
+    case Stmt::Kind::For:
+      if (stmt->for_stmt == nullptr) {
+        return false;
+      }
+      if (Objc3IRForClauseRequiresCollectionHelperDeclarations(
+              stmt->for_stmt->init) ||
+          Objc3IRExprRequiresCollectionHelperDeclarations(
+              stmt->for_stmt->condition.get()) ||
+          Objc3IRForClauseRequiresCollectionHelperDeclarations(
+              stmt->for_stmt->step)) {
+        return true;
+      }
+      for (const auto &loop_stmt : stmt->for_stmt->body) {
+        if (Objc3IRStmtRequiresCollectionHelperDeclarations(loop_stmt.get())) {
+          return true;
+        }
+      }
+      return false;
+    case Stmt::Kind::If:
+      if (stmt->if_stmt == nullptr) {
+        return false;
+      }
+      if (Objc3IRExprRequiresCollectionHelperDeclarations(
+              stmt->if_stmt->condition.get())) {
+        return true;
+      }
+      for (const auto &then_stmt : stmt->if_stmt->then_body) {
+        if (Objc3IRStmtRequiresCollectionHelperDeclarations(then_stmt.get())) {
+          return true;
+        }
+      }
+      for (const auto &else_stmt : stmt->if_stmt->else_body) {
+        if (Objc3IRStmtRequiresCollectionHelperDeclarations(else_stmt.get())) {
+          return true;
+        }
+      }
+      return false;
+    case Stmt::Kind::DoWhile:
+      if (stmt->do_while_stmt == nullptr) {
+        return false;
+      }
+      for (const auto &loop_stmt : stmt->do_while_stmt->body) {
+        if (Objc3IRStmtRequiresCollectionHelperDeclarations(loop_stmt.get())) {
+          return true;
+        }
+      }
+      return Objc3IRExprRequiresCollectionHelperDeclarations(
+          stmt->do_while_stmt->condition.get());
+    case Stmt::Kind::Switch:
+      if (stmt->switch_stmt == nullptr) {
+        return false;
+      }
+      if (Objc3IRExprRequiresCollectionHelperDeclarations(
+              stmt->switch_stmt->condition.get())) {
+        return true;
+      }
+      for (const auto &case_stmt : stmt->switch_stmt->cases) {
+        for (const auto &case_body_stmt : case_stmt.body) {
+          if (Objc3IRStmtRequiresCollectionHelperDeclarations(
+                  case_body_stmt.get())) {
+            return true;
+          }
+        }
+      }
+      return false;
+    case Stmt::Kind::While:
+      if (stmt->while_stmt == nullptr) {
+        return false;
+      }
+      if (Objc3IRExprRequiresCollectionHelperDeclarations(
+              stmt->while_stmt->condition.get())) {
+        return true;
+      }
+      for (const auto &loop_stmt : stmt->while_stmt->body) {
+        if (Objc3IRStmtRequiresCollectionHelperDeclarations(loop_stmt.get())) {
+          return true;
+        }
+      }
+      return false;
+    case Stmt::Kind::Block:
+    case Stmt::Kind::Defer:
+      if (stmt->block_stmt == nullptr) {
+        return false;
+      }
+      for (const auto &nested_stmt : stmt->block_stmt->body) {
+        if (Objc3IRStmtRequiresCollectionHelperDeclarations(
+                nested_stmt.get())) {
+          return true;
+        }
+      }
+      return false;
+    case Stmt::Kind::Break:
+    case Stmt::Kind::Continue:
+    case Stmt::Kind::Empty:
+      return false;
+  }
+  return false;
+}
+
 bool Objc3IRRequiresTextLiteralHelperDeclarations(
     const Objc3IRPrototypeDeclarationOptions &options) {
   for (const auto &global : options.program.globals) {
@@ -309,6 +587,32 @@ bool Objc3IRRequiresTextLiteralHelperDeclarations(
     for (const auto &method : implementation.methods) {
       for (const auto &stmt : method.body) {
         if (Objc3IRStmtRequiresTextLiteralHelperDeclarations(stmt.get())) {
+          return true;
+        }
+      }
+    }
+  }
+  return false;
+}
+
+bool Objc3IRRequiresCollectionHelperDeclarations(
+    const Objc3IRPrototypeDeclarationOptions &options) {
+  for (const auto &global : options.program.globals) {
+    if (Objc3IRExprRequiresCollectionHelperDeclarations(global.value.get())) {
+      return true;
+    }
+  }
+  for (const auto &fn : options.program.functions) {
+    for (const auto &stmt : fn.body) {
+      if (Objc3IRStmtRequiresCollectionHelperDeclarations(stmt.get())) {
+        return true;
+      }
+    }
+  }
+  for (const auto &implementation : options.program.implementations) {
+    for (const auto &method : implementation.methods) {
+      for (const auto &stmt : method.body) {
+        if (Objc3IRStmtRequiresCollectionHelperDeclarations(stmt.get())) {
           return true;
         }
       }
@@ -351,7 +655,8 @@ bool Objc3IRRequiresRuntimeHelperDeclarations(
          frontend_metadata
                  .block_copy_dispose_lowering_dispose_helper_required_sites >
              0u ||
-         Objc3IRRequiresTextLiteralHelperDeclarations(options);
+         Objc3IRRequiresTextLiteralHelperDeclarations(options) ||
+         Objc3IRRequiresCollectionHelperDeclarations(options);
 }
 
 void EmitObjc3IRRuntimeHelperDeclarations(
@@ -532,4 +837,147 @@ void EmitObjc3IRRuntimeHelperDeclarations(
       "declare i32 @" +
           std::string(kObjc3RuntimeStdlibTextUtf8StorageI32Symbol) +
           "(ptr, i32)\n");
+  EmitObjc3IRDeclarationOnce(
+      declared_symbols, emitted, out,
+      kObjc3RuntimeStdlibTextBuilderI32Symbol,
+      "declare i32 @" +
+          std::string(kObjc3RuntimeStdlibTextBuilderI32Symbol) + "()\n");
+  EmitObjc3IRDeclarationOnce(
+      declared_symbols, emitted, out,
+      kObjc3RuntimeStdlibTextBuilderAppendTextI32Symbol,
+      "declare i32 @" +
+          std::string(kObjc3RuntimeStdlibTextBuilderAppendTextI32Symbol) +
+          "(i32, i32)\n");
+  EmitObjc3IRDeclarationOnce(
+      declared_symbols, emitted, out,
+      kObjc3RuntimeStdlibTextBuilderAppendI32I32Symbol,
+      "declare i32 @" +
+          std::string(kObjc3RuntimeStdlibTextBuilderAppendI32I32Symbol) +
+          "(i32, i32)\n");
+  EmitObjc3IRDeclarationOnce(
+      declared_symbols, emitted, out,
+      kObjc3RuntimeStdlibTextBuilderBuildI32Symbol,
+      "declare i32 @" +
+          std::string(kObjc3RuntimeStdlibTextBuilderBuildI32Symbol) +
+          "(i32)\n");
+  EmitObjc3IRDeclarationOnce(
+      declared_symbols, emitted, out, kObjc3RuntimeStdlibCollectionsArray3I32Symbol,
+      "declare i32 @" + std::string(kObjc3RuntimeStdlibCollectionsArray3I32Symbol) +
+          "(i32, i32, i32, i32)\n");
+  EmitObjc3IRDeclarationOnce(
+      declared_symbols, emitted, out,
+      kObjc3RuntimeStdlibCollectionsArrayStorageI32Symbol,
+      "declare i32 @" +
+          std::string(kObjc3RuntimeStdlibCollectionsArrayStorageI32Symbol) +
+          "(ptr, i32)\n");
+  EmitObjc3IRDeclarationOnce(
+      declared_symbols, emitted, out,
+      kObjc3RuntimeStdlibCollectionsMutableArrayI32Symbol,
+      "declare i32 @" +
+          std::string(kObjc3RuntimeStdlibCollectionsMutableArrayI32Symbol) +
+          "()\n");
+  EmitObjc3IRDeclarationOnce(
+      declared_symbols, emitted, out,
+      kObjc3RuntimeStdlibCollectionsMutableArrayAppendI32Symbol,
+      "declare i32 @" +
+          std::string(kObjc3RuntimeStdlibCollectionsMutableArrayAppendI32Symbol) +
+          "(i32, i32)\n");
+  EmitObjc3IRDeclarationOnce(
+      declared_symbols, emitted, out,
+      kObjc3RuntimeStdlibCollectionsMutableArraySetI32Symbol,
+      "declare i32 @" +
+          std::string(kObjc3RuntimeStdlibCollectionsMutableArraySetI32Symbol) +
+          "(i32, i32, i32)\n");
+  EmitObjc3IRDeclarationOnce(
+      declared_symbols, emitted, out,
+      kObjc3RuntimeStdlibCollectionsMutableArrayRemoveAtI32Symbol,
+      "declare i32 @" +
+          std::string(kObjc3RuntimeStdlibCollectionsMutableArrayRemoveAtI32Symbol) +
+          "(i32, i32)\n");
+  EmitObjc3IRDeclarationOnce(
+      declared_symbols, emitted, out,
+      kObjc3RuntimeStdlibCollectionsArrayGetOrI32Symbol,
+      "declare i32 @" +
+          std::string(kObjc3RuntimeStdlibCollectionsArrayGetOrI32Symbol) +
+          "(i32, i32, i32)\n");
+  EmitObjc3IRDeclarationOnce(
+      declared_symbols, emitted, out,
+      kObjc3RuntimeStdlibCollectionsArrayIteratorI32Symbol,
+      "declare i32 @" +
+          std::string(kObjc3RuntimeStdlibCollectionsArrayIteratorI32Symbol) +
+          "(i32)\n");
+  EmitObjc3IRDeclarationOnce(
+      declared_symbols, emitted, out, kObjc3RuntimeStdlibCollectionsMapEmptyI32Symbol,
+      "declare i32 @" + std::string(kObjc3RuntimeStdlibCollectionsMapEmptyI32Symbol) +
+          "()\n");
+  EmitObjc3IRDeclarationOnce(
+      declared_symbols, emitted, out,
+      kObjc3RuntimeStdlibCollectionsMapInsertI32Symbol,
+      "declare i32 @" +
+          std::string(kObjc3RuntimeStdlibCollectionsMapInsertI32Symbol) +
+          "(i32, i32, i32)\n");
+  EmitObjc3IRDeclarationOnce(
+      declared_symbols, emitted, out,
+      kObjc3RuntimeStdlibCollectionsMapDeleteI32Symbol,
+      "declare i32 @" +
+          std::string(kObjc3RuntimeStdlibCollectionsMapDeleteI32Symbol) +
+          "(i32, i32)\n");
+  EmitObjc3IRDeclarationOnce(
+      declared_symbols, emitted, out,
+      kObjc3RuntimeStdlibCollectionsMapLookupOrI32Symbol,
+      "declare i32 @" +
+          std::string(kObjc3RuntimeStdlibCollectionsMapLookupOrI32Symbol) +
+          "(i32, i32, i32)\n");
+  EmitObjc3IRDeclarationOnce(
+      declared_symbols, emitted, out,
+      kObjc3RuntimeStdlibCollectionsMapKeyIteratorI32Symbol,
+      "declare i32 @" +
+          std::string(kObjc3RuntimeStdlibCollectionsMapKeyIteratorI32Symbol) +
+          "(i32)\n");
+  EmitObjc3IRDeclarationOnce(
+      declared_symbols, emitted, out,
+      kObjc3RuntimeStdlibCollectionsMapValueIteratorI32Symbol,
+      "declare i32 @" +
+          std::string(kObjc3RuntimeStdlibCollectionsMapValueIteratorI32Symbol) +
+          "(i32)\n");
+  EmitObjc3IRDeclarationOnce(
+      declared_symbols, emitted, out, kObjc3RuntimeStdlibCollectionsSet3I32Symbol,
+      "declare i32 @" + std::string(kObjc3RuntimeStdlibCollectionsSet3I32Symbol) +
+          "(i32, i32, i32, i32)\n");
+  EmitObjc3IRDeclarationOnce(
+      declared_symbols, emitted, out,
+      kObjc3RuntimeStdlibCollectionsSetStorageI32Symbol,
+      "declare i32 @" +
+          std::string(kObjc3RuntimeStdlibCollectionsSetStorageI32Symbol) +
+          "(ptr, i32)\n");
+  EmitObjc3IRDeclarationOnce(
+      declared_symbols, emitted, out,
+      kObjc3RuntimeStdlibCollectionsSetInsertI32Symbol,
+      "declare i32 @" +
+          std::string(kObjc3RuntimeStdlibCollectionsSetInsertI32Symbol) +
+          "(i32, i32)\n");
+  EmitObjc3IRDeclarationOnce(
+      declared_symbols, emitted, out,
+      kObjc3RuntimeStdlibCollectionsSetDeleteI32Symbol,
+      "declare i32 @" +
+          std::string(kObjc3RuntimeStdlibCollectionsSetDeleteI32Symbol) +
+          "(i32, i32)\n");
+  EmitObjc3IRDeclarationOnce(
+      declared_symbols, emitted, out,
+      kObjc3RuntimeStdlibCollectionsSetIteratorI32Symbol,
+      "declare i32 @" +
+          std::string(kObjc3RuntimeStdlibCollectionsSetIteratorI32Symbol) +
+          "(i32)\n");
+  EmitObjc3IRDeclarationOnce(
+      declared_symbols, emitted, out,
+      kObjc3RuntimeStdlibCollectionsIteratorNextOrI32Symbol,
+      "declare i32 @" +
+          std::string(kObjc3RuntimeStdlibCollectionsIteratorNextOrI32Symbol) +
+          "(i32, i32)\n");
+  EmitObjc3IRDeclarationOnce(
+      declared_symbols, emitted, out,
+      kObjc3RuntimeStdlibCollectionsLastStatusI32Symbol,
+      "declare i32 @" +
+          std::string(kObjc3RuntimeStdlibCollectionsLastStatusI32Symbol) +
+          "()\n");
 }

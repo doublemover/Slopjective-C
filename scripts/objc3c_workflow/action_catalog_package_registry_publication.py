@@ -35,6 +35,16 @@ PACKAGE_LOCAL_REGISTRY_INDEX_SCHEMA = PackageSchemaContract(
     document_contract_id="objc3c.package_ecosystem.local_registry_index.v1",
 )
 
+PACKAGE_HOSTED_REGISTRY_INDEX_SCHEMA = PackageSchemaContract(
+    contract_key="hosted_registry_index",
+    schema_path="schemas/objc3c-package-hosted-registry-index-v1.schema.json",
+    schema_id=(
+        "https://objc3c.dev/schemas/"
+        "objc3c-package-hosted-registry-index-v1.schema.json"
+    ),
+    document_contract_id="objc3c.package_ecosystem.hosted_registry_index.v1",
+)
+
 PACKAGE_REGISTRY_LOCAL_INDEX_PATH = (
     "tmp/artifacts/package-ecosystem/registry/local-package-index.json"
 )
@@ -50,6 +60,17 @@ PACKAGE_OFFLINE_MIRROR_CACHE_ROOT = (
 PACKAGE_OFFLINE_MIRROR_RESTORE_RECEIPT_PATH = (
     "tmp/artifacts/package-ecosystem/offline-install/"
     "objc3c-offline-mirror-restore-receipt.json"
+)
+PACKAGE_HOSTED_REGISTRY_FIXTURE_PATH = (
+    "tests/tooling/fixtures/package_ecosystem/hosted_registry/"
+    "hosted-registry-index.json"
+)
+PACKAGE_HOSTED_REGISTRY_MIRROR_FIXTURE_PATH = (
+    "tests/tooling/fixtures/package_ecosystem/hosted_registry/"
+    "offline-mirror-index.json"
+)
+PACKAGE_HOSTED_REGISTRY_RESOLUTION_SUMMARY_PATH = (
+    "tmp/reports/package-ecosystem/hosted-registry-resolution-summary.json"
 )
 
 
@@ -115,6 +136,53 @@ PACKAGE_REGISTRY_PUBLIC_ACTIONS = (
             PACKAGE_REGISTRY_PUBLICATION_METADATA_PATH,
         ),
     ),
+    PackagePublicWorkflowAction(
+        action="validate-package-registry-model",
+        summary=(
+            "validate hosted registry fixture metadata, signatures, digests, "
+            "revocations, and offline mirror pins"
+        ),
+        script_path="scripts/check_objc3c_package_registry_model.py",
+        validation_tier="repo",
+        guarantee_owner=(
+            "hosted registry resolution stays deterministic from checked-in "
+            "fixture metadata and offline mirror pins; live network fetches "
+            "fail closed"
+        ),
+        schema_contracts=(
+            PACKAGE_HOSTED_REGISTRY_INDEX_SCHEMA,
+            PACKAGE_OFFLINE_MIRROR_SCHEMA,
+        ),
+        source_paths=(
+            PACKAGE_HOSTED_REGISTRY_FIXTURE_PATH,
+            PACKAGE_HOSTED_REGISTRY_MIRROR_FIXTURE_PATH,
+        ),
+        generated_paths=(PACKAGE_HOSTED_REGISTRY_RESOLUTION_SUMMARY_PATH,),
+    ),
+    PackagePublicWorkflowAction(
+        action="package-registry-resolve",
+        summary=(
+            "resolve one hosted package record from checked-in fixture "
+            "metadata and offline mirror pins"
+        ),
+        script_path="scripts/check_objc3c_package_registry_model.py",
+        validation_tier="repo",
+        guarantee_owner=(
+            "package registry resolution rejects network fetches, missing "
+            "metadata, digest/signature drift, revocations, and ambiguous "
+            "candidates"
+        ),
+        schema_contracts=(
+            PACKAGE_HOSTED_REGISTRY_INDEX_SCHEMA,
+            PACKAGE_OFFLINE_MIRROR_SCHEMA,
+        ),
+        source_paths=(
+            PACKAGE_HOSTED_REGISTRY_FIXTURE_PATH,
+            PACKAGE_HOSTED_REGISTRY_MIRROR_FIXTURE_PATH,
+        ),
+        generated_paths=(PACKAGE_HOSTED_REGISTRY_RESOLUTION_SUMMARY_PATH,),
+        pass_through_args=True,
+    ),
 )
 
 
@@ -124,6 +192,10 @@ __all__ = [
     "PACKAGE_OFFLINE_MIRROR_RESTORE_RECEIPT_PATH",
     "PACKAGE_OFFLINE_MIRROR_SCHEMA",
     "PACKAGE_LOCAL_REGISTRY_INDEX_SCHEMA",
+    "PACKAGE_HOSTED_REGISTRY_FIXTURE_PATH",
+    "PACKAGE_HOSTED_REGISTRY_INDEX_SCHEMA",
+    "PACKAGE_HOSTED_REGISTRY_MIRROR_FIXTURE_PATH",
+    "PACKAGE_HOSTED_REGISTRY_RESOLUTION_SUMMARY_PATH",
     "PACKAGE_REGISTRY_LOCAL_INDEX_PATH",
     "PACKAGE_REGISTRY_PUBLICATION_LAYERS",
     "PACKAGE_REGISTRY_PUBLICATION_METADATA_PATH",

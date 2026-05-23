@@ -3,10 +3,22 @@ module objc3_text;
 extern fn objc3_runtime_stdlib_text_utf8_literal_i32(byte_count: i32, unit_count: i32, valid_utf8: i32) -> i32;
 extern fn objc3_runtime_stdlib_text_byte_count_i32(handle: i32) -> i32;
 extern fn objc3_runtime_stdlib_text_unit_count_i32(handle: i32) -> i32;
+extern fn objc3_runtime_stdlib_text_scalar_count_i32(handle: i32) -> i32;
+extern fn objc3_runtime_stdlib_text_scalar_at_or_i32(handle: i32, scalar_index: i32, default_value: i32) -> i32;
 extern fn objc3_runtime_stdlib_text_is_valid_utf8_i32(handle: i32) -> i32;
 extern fn objc3_runtime_stdlib_text_byte_at_or_i32(handle: i32, byte_index: i32, default_value: i32) -> i32;
 extern fn objc3_runtime_stdlib_text_prefix_units_i32(handle: i32, requested_units: i32) -> i32;
 extern fn objc3_runtime_stdlib_text_concat_i32(left_handle: i32, right_handle: i32) -> i32;
+extern fn objc3_runtime_stdlib_text_builder_i32() -> i32;
+extern fn objc3_runtime_stdlib_text_builder_append_text_i32(builder_handle: i32, text_handle: i32) -> i32;
+extern fn objc3_runtime_stdlib_text_builder_append_i32_i32(builder_handle: i32, value: i32) -> i32;
+extern fn objc3_runtime_stdlib_text_builder_append_scalar_i32(builder_handle: i32, scalar: i32) -> i32;
+extern fn objc3_runtime_stdlib_text_builder_build_i32(builder_handle: i32) -> i32;
+extern fn objc3_runtime_stdlib_text_scalar_iterator_i32(handle: i32) -> i32;
+extern fn objc3_runtime_stdlib_text_scalar_iterator_next_or_i32(iterator_handle: i32, default_value: i32) -> i32;
+extern fn objc3_runtime_stdlib_text_equal_i32(left_handle: i32, right_handle: i32) -> i32;
+extern fn objc3_runtime_stdlib_text_compare_i32(left_handle: i32, right_handle: i32) -> i32;
+extern fn objc3_runtime_stdlib_text_format_i32_i32(value: i32) -> i32;
 extern fn objc3_runtime_stdlib_text_last_status_i32() -> i32;
 
 let Objc3TextStatusOk = 0;
@@ -14,7 +26,14 @@ let Objc3TextStatusInvalidHandle = 30641;
 let Objc3TextStatusInvalidShape = 30642;
 let Objc3TextStatusMalformedUtf8 = 30643;
 let Objc3TextStatusOutOfBounds = 30644;
+let Objc3TextStatusOutputTooSmall = 30645;
 let Objc3TextStatusStorageUnavailable = 30646;
+let Objc3TextStatusCrossKindHandle = 30647;
+let Objc3TextStatusStaleHandle = 30648;
+let Objc3TextStatusMalformedDescriptor = 30649;
+let Objc3TextStatusCapacityExceeded = 30650;
+let Objc3TextStatusMutatedDuringIteration = 30651;
+let Objc3TextStatusOverflow = 30652;
 
 fn objc3_text_utf8_literal(byte_count: i32, unit_count: i32, valid_utf8: i32) {
   return objc3_runtime_stdlib_text_utf8_literal_i32(byte_count, unit_count, valid_utf8);
@@ -26,6 +45,14 @@ fn objc3_text_byte_count(handle: i32) {
 
 fn objc3_text_unit_count(handle: i32) {
   return objc3_runtime_stdlib_text_unit_count_i32(handle);
+}
+
+fn objc3_text_scalar_count(handle: i32) {
+  return objc3_runtime_stdlib_text_scalar_count_i32(handle);
+}
+
+fn objc3_text_scalar_at_or(handle: i32, scalar_index: i32, default_value: i32) {
+  return objc3_runtime_stdlib_text_scalar_at_or_i32(handle, scalar_index, default_value);
 }
 
 fn objc3_text_is_valid_utf8(handle: i32) {
@@ -42,6 +69,46 @@ fn objc3_text_prefix_units(handle: i32, requested_units: i32) {
 
 fn objc3_text_concat(left_handle: i32, right_handle: i32) {
   return objc3_runtime_stdlib_text_concat_i32(left_handle, right_handle);
+}
+
+fn objc3_text_builder() {
+  return objc3_runtime_stdlib_text_builder_i32();
+}
+
+fn objc3_text_builder_append_text(builder_handle: i32, text_handle: i32) {
+  return objc3_runtime_stdlib_text_builder_append_text_i32(builder_handle, text_handle);
+}
+
+fn objc3_text_builder_append_i32(builder_handle: i32, value: i32) {
+  return objc3_runtime_stdlib_text_builder_append_i32_i32(builder_handle, value);
+}
+
+fn objc3_text_builder_append_scalar(builder_handle: i32, scalar: i32) {
+  return objc3_runtime_stdlib_text_builder_append_scalar_i32(builder_handle, scalar);
+}
+
+fn objc3_text_builder_build(builder_handle: i32) {
+  return objc3_runtime_stdlib_text_builder_build_i32(builder_handle);
+}
+
+fn objc3_text_scalar_iterator(handle: i32) {
+  return objc3_runtime_stdlib_text_scalar_iterator_i32(handle);
+}
+
+fn objc3_text_scalar_iterator_next_or(iterator_handle: i32, default_value: i32) {
+  return objc3_runtime_stdlib_text_scalar_iterator_next_or_i32(iterator_handle, default_value);
+}
+
+fn objc3_text_equal(left_handle: i32, right_handle: i32) {
+  return objc3_runtime_stdlib_text_equal_i32(left_handle, right_handle);
+}
+
+fn objc3_text_compare(left_handle: i32, right_handle: i32) {
+  return objc3_runtime_stdlib_text_compare_i32(left_handle, right_handle);
+}
+
+fn objc3_text_format_i32(value: i32) {
+  return objc3_runtime_stdlib_text_format_i32_i32(value);
 }
 
 fn objc3_text_last_status() {

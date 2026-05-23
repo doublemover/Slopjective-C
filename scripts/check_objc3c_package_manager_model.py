@@ -24,6 +24,7 @@ from objc3c_package_manager.model import (
     PACKAGE_MANIFEST_CONTRACT_ID,
     collect_lock_model_failures,
 )
+from objc3c_shared.schema_registry import validate_registered_schema
 
 
 CONTRACT_PATH = ROOT / "tests" / "tooling" / "fixtures" / "package_ecosystem" / "package_manager_model_contract.json"
@@ -60,6 +61,7 @@ def main() -> int:
     contract = load_json(CONTRACT_PATH)
     lock = load_json(LOCK_PATH) if LOCK_PATH.is_file() else {}
     package_manager = lock.get("package_manager", {})
+    trust_policy = lock.get("trust_policy", {})
     packages = lock.get("packages", [])
     dependencies = lock.get("dependencies", [])
     manifests = []
@@ -81,6 +83,14 @@ def main() -> int:
     expect(package_manager.get("abi_identity") == LOCAL_PACKAGE_ABI_IDENTITY, "ABI identity drifted", failures)
     expect(package_manager.get("network_resolution") == "unsupported-fail-closed", "network resolution must fail closed", failures)
     expect(package_manager.get("hosted_registry") == "unsupported-fail-closed-if-claimed", "hosted registry must fail closed", failures)
+    try:
+        validate_registered_schema(
+            trust_policy,
+            "objc3c-package-signing-trust-v1",
+            label="package signing trust policy",
+        )
+    except (KeyError, RuntimeError) as exc:
+        failures.append(f"{PACKAGE_MANAGER_TAMPER_CODE}: package signing trust policy schema validation failed: {exc}")
     expect(len(manifests) == len(packages), "manifest count must match package count", failures)
     expect(len(packages) >= int(contract["minimum_package_count"]), "package graph lost package roots", failures)
     expect(len(dependencies) >= int(contract["minimum_dependency_count"]), "package graph lost dependency edges", failures)
@@ -93,6 +103,8 @@ def main() -> int:
         expect(manifest.get("registry", {}).get("network_resolution") == "unsupported-fail-closed", f"manifest network support widened for {package_id}", failures)
         trust = manifest.get("trust", {})
         expect(isinstance(trust, dict) and trust.get("signing_key_id") == LOCAL_PACKAGE_TRUST_KEY_ID, f"manifest signing key drifted for {package_id}", failures)
+        expect(isinstance(trust, dict) and trust.get("trust_root_id") == "objc3c-local-deterministic-trust-root-v1", f"manifest trust root drifted for {package_id}", failures)
+        expect(isinstance(trust, dict) and trust.get("signing_backend") == "deterministic-test-replay", f"manifest signing backend drifted for {package_id}", failures)
         expect(isinstance(trust, dict) and trust.get("revocation_state") == "not-revoked", f"manifest revocation drifted for {package_id}", failures)
 
     action_names = {
@@ -118,6 +130,8 @@ def main() -> int:
         "language_version": package_manager.get("language_version") if isinstance(package_manager, dict) else None,
         "abi_identity": package_manager.get("abi_identity") if isinstance(package_manager, dict) else None,
         "trust_key_id": LOCAL_PACKAGE_TRUST_KEY_ID,
+        "trust_root_id": "objc3c-local-deterministic-trust-root-v1",
+        "production_signing_backend": trust_policy.get("production_signing_backend") if isinstance(trust_policy, dict) else None,
         "network_resolution": package_manager.get("network_resolution") if isinstance(package_manager, dict) else None,
         "hosted_registry": package_manager.get("hosted_registry") if isinstance(package_manager, dict) else None,
         "tamper_diagnostic": PACKAGE_MANAGER_TAMPER_CODE,

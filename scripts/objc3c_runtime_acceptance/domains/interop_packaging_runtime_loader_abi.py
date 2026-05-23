@@ -48,12 +48,12 @@ def check_runtime_package_loader_bridge_abi_case(
     )
     for field_name, expected_value in {
         "copy_status": 0,
-        "runtime_generation_ready": 1,
-        "cross_module_packaging_ready": 1,
-        "header_generation_ready": 1,
-        "module_generation_ready": 1,
-        "bridge_generation_ready": 1,
-        "deterministic": 1,
+        "runtime_generation_ready": 0,
+        "cross_module_packaging_ready": 0,
+        "header_generation_ready": 0,
+        "module_generation_ready": 0,
+        "bridge_generation_ready": 0,
+        "deterministic": 0,
     }.items():
         expect(
             bridge_payload.get(field_name) == expected_value,

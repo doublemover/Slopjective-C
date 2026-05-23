@@ -16,6 +16,8 @@ Objc3IRMessageSendLoweringPlan BuildObjc3IRMessageSendLoweringPlan(
   plan.arc_mode_enabled = arc_mode_enabled;
   plan.method_family_retained_result_cleanup_required =
       arc_mode_enabled && method_family_returns_retained_result;
+  plan.cache_aware_abi_available =
+      kObjc3RuntimeCacheAwareDispatchAbiAvailable;
   plan.uses_canonical_runtime_entrypoint =
       UsesCanonicalObjc3RuntimeDispatchEntrypoint(dispatch_surface_family);
   plan.owns_dispatch_result = Objc3LoweringStrictOwnerModelIsReady(
@@ -59,6 +61,8 @@ Objc3IRMessageSendLoweringPlan BuildObjc3IRMessageSendLoweringPlan(
   plan.emits_nil_checked_dispatch =
       plan.receiver_dispatch_policy.emit_nil_checked_dispatch;
   plan.emits_runtime_dispatch = !plan.elides_to_nil_result;
+  plan.emits_cache_aware_dispatch =
+      plan.cache_aware_abi_available && plan.emits_runtime_dispatch;
   return plan;
 }
 

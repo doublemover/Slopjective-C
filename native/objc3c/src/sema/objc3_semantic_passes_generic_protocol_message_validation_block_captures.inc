@@ -3,8 +3,8 @@ static bool ResolveBlockCaptureSemanticType(
     const std::unordered_map<std::string, ValueType> &globals,
     const std::string &name,
     SemanticTypeInfo &resolved_type) {
-  resolved_type = ScopeLookupType(scopes, name);
-  if (!IsUnknownSemanticType(resolved_type)) {
+  if (const SemanticTypeInfo *local_type = ScopeLookupTypeOrNull(scopes, name)) {
+    resolved_type = *local_type;
     return true;
   }
   const auto global_it = globals.find(name);

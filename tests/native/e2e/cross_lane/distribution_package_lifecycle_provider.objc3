@@ -1,0 +1,6 @@
+// #8200 provider module for the cross-lane distribution package lifecycle E2E.
+module CrossLanePublishedToolchain;
+
+fn publishedLifecycleSeed() -> i32 {
+  return 17;
+}

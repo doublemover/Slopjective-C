@@ -1,0 +1,14 @@
+{
+  "schema_version": 1,
+  "fixture": "collection_descriptor_immutable_parameter_mutation.objc3",
+  "expect_failure": {
+    "stage": "compile",
+    "required_diagnostic_tokens": [
+      "collection mutation target 'values' must be mutable",
+      "Array<i32>"
+    ]
+  },
+  "execution": {
+    "requires_live_runtime_dispatch": false
+  }
+}

@@ -23,6 +23,9 @@ RUNTIME_ACCEPTANCE_ACTION_HANDLERS: dict[str, ActionHandler] = {
     "test-runtime-acceptance-concurrency": (
         runtime_test_acceptance.action_test_runtime_acceptance_concurrency
     ),
+    "validate-cache-aware-dispatch": (
+        runtime_test_acceptance.action_validate_cache_aware_dispatch
+    ),
 }
 
 

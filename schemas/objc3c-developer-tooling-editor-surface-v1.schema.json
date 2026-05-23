@@ -12,6 +12,7 @@
     "language_server",
     "navigation",
     "source_index",
+    "source_graph",
     "workspace_index",
     "artifact_inspector",
     "formatter",
@@ -50,6 +51,9 @@
     },
     "source_index": {
       "$ref": "#/$defs/sourceIndex"
+    },
+    "source_graph": {
+      "$ref": "#/$defs/sourceGraph"
     },
     "workspace_index": {
       "$ref": "#/$defs/workspaceIndex"
@@ -451,6 +455,259 @@
       },
       "additionalProperties": false
     },
+    "sourceGraphConsumerStatus": {
+      "type": "object",
+      "required": [
+        "supported",
+        "support_class",
+        "evidence_ids",
+        "fail_closed",
+        "unpublished_reason"
+      ],
+      "properties": {
+        "supported": {
+          "type": "boolean"
+        },
+        "support_class": {
+          "type": "string",
+          "minLength": 1
+        },
+        "evidence_ids": {
+          "$ref": "#/$defs/stringArray"
+        },
+        "fail_closed": {
+          "type": "boolean"
+        },
+        "unpublished_reason": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "sourceGraphEvidence": {
+      "type": "object",
+      "required": [
+        "source_truth_inputs",
+        "manifest_path",
+        "compiler_graph_fields",
+        "source_index_digest",
+        "workspace_index_digest",
+        "compiler_declaration_coordinates",
+        "native_compiler_source_graph_present",
+        "semantic_reference_closure",
+        "lexical_candidates_authoritative",
+        "reference_authority",
+        "package_authority",
+        "unsupported_authoritative_claims"
+      ],
+      "properties": {
+        "source_truth_inputs": {
+          "$ref": "#/$defs/stringArray"
+        },
+        "manifest_path": {
+          "type": "string"
+        },
+        "compiler_graph_fields": {
+          "type": "array",
+          "items": {
+            "type": "object"
+          }
+        },
+        "source_index_digest": {
+          "$ref": "#/$defs/optionalSha256"
+        },
+        "workspace_index_digest": {
+          "$ref": "#/$defs/optionalSha256"
+        },
+        "compiler_declaration_coordinates": {
+          "type": "boolean"
+        },
+        "native_compiler_source_graph_present": {
+          "type": "boolean"
+        },
+        "semantic_reference_closure": {
+          "type": "boolean"
+        },
+        "lexical_candidates_authoritative": {
+          "const": false
+        },
+        "reference_authority": {
+          "type": "string",
+          "minLength": 1
+        },
+        "package_authority": {
+          "type": "string",
+          "minLength": 1
+        },
+        "unsupported_authoritative_claims": {
+          "$ref": "#/$defs/stringArray"
+        }
+      },
+      "additionalProperties": false
+    },
+    "sourceGraph": {
+      "type": "object",
+      "required": [
+        "contract_id",
+        "source_path",
+        "module_name",
+        "available",
+        "fail_closed",
+        "support_class",
+        "graph_truth_model",
+        "evidence",
+        "node_count",
+        "edge_count",
+        "declaration_node_count",
+        "reference_candidate_count",
+        "semantic_reference_count",
+        "package_node_count",
+        "package_dependency_edge_count",
+        "semantic_token_count",
+        "nodes",
+        "edges",
+        "declarations",
+        "reference_candidates",
+        "navigation_consumers",
+        "references",
+        "rename",
+        "semantic_tokens",
+        "package_provenance",
+        "consumer_capabilities",
+        "diagnostics",
+        "source_graph_digest",
+        "deterministic_ordering",
+        "retired_route_reason",
+        "remaining_native_compiler_work"
+      ],
+      "properties": {
+        "contract_id": {
+          "const": "objc3c.developer.tooling.source.graph.v1"
+        },
+        "source_path": {
+          "type": "string",
+          "minLength": 1
+        },
+        "module_name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "available": {
+          "type": "boolean"
+        },
+        "fail_closed": {
+          "type": "boolean"
+        },
+        "support_class": {
+          "type": "string",
+          "minLength": 1
+        },
+        "graph_truth_model": {
+          "type": "string",
+          "minLength": 1
+        },
+        "evidence": {
+          "$ref": "#/$defs/sourceGraphEvidence"
+        },
+        "node_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "edge_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "declaration_node_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "reference_candidate_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "semantic_reference_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "package_node_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "package_dependency_edge_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "semantic_token_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "nodes": {
+          "type": "array",
+          "items": {
+            "type": "object"
+          }
+        },
+        "edges": {
+          "type": "array",
+          "items": {
+            "type": "object"
+          }
+        },
+        "declarations": {
+          "type": "array",
+          "items": {
+            "type": "object"
+          }
+        },
+        "reference_candidates": {
+          "type": "array",
+          "items": {
+            "type": "object"
+          }
+        },
+        "navigation_consumers": {
+          "type": "object"
+        },
+        "references": {
+          "type": "object"
+        },
+        "rename": {
+          "type": "object"
+        },
+        "semantic_tokens": {
+          "type": "object"
+        },
+        "package_provenance": {
+          "type": "object"
+        },
+        "consumer_capabilities": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/$defs/sourceGraphConsumerStatus"
+          }
+        },
+        "diagnostics": {
+          "type": "array",
+          "items": {
+            "type": "object"
+          }
+        },
+        "source_graph_digest": {
+          "$ref": "#/$defs/sha256"
+        },
+        "deterministic_ordering": {
+          "type": "string",
+          "minLength": 1
+        },
+        "retired_route_reason": {
+          "type": "string"
+        },
+        "remaining_native_compiler_work": {
+          "$ref": "#/$defs/stringArray"
+        }
+      },
+      "additionalProperties": false
+    },
     "lspDiagnosticTransport": {
       "type": "object",
       "required": [
@@ -562,6 +819,8 @@
         "diagnostic_transport",
         "source_index_backed_hover",
         "source_index_digest",
+        "source_graph_backed_references",
+        "source_graph_digest",
         "capability_evidence_roots",
         "publication_boundary",
         "supported_capability_ids",
@@ -585,6 +844,12 @@
           "type": "boolean"
         },
         "source_index_digest": {
+          "$ref": "#/$defs/optionalSha256"
+        },
+        "source_graph_backed_references": {
+          "type": "boolean"
+        },
+        "source_graph_digest": {
           "$ref": "#/$defs/optionalSha256"
         },
         "diagnostic_transport": {
@@ -826,6 +1091,8 @@
         "definition_targets",
         "hover_targets",
         "source_index",
+        "source_graph_digest",
+        "source_graph_navigation",
         "workspace_index",
         "retired_route_reason"
       ],
@@ -947,6 +1214,12 @@
         "source_index": {
           "$ref": "#/$defs/sourceIndex"
         },
+        "source_graph_digest": {
+          "$ref": "#/$defs/optionalSha256"
+        },
+        "source_graph_navigation": {
+          "type": "object"
+        },
         "workspace_index": {
           "$ref": "#/$defs/workspaceIndex"
         },
@@ -1016,7 +1289,12 @@
         "ir",
         "object",
         "runtime_imports",
+        "runtime_inventory",
+        "package_inventory",
         "source_graph",
+        "artifact_links",
+        "provenance",
+        "inventory_validation",
         "source_index",
         "inspection_commands",
         "retired_route_reason"
@@ -1170,6 +1448,21 @@
             "path",
             "size_bytes",
             "sha256",
+            "object_format",
+            "expected_sha256",
+            "digest_matches",
+            "inventory_source_model",
+            "tool_inventory_available",
+            "inventory_available",
+            "inventory_digest",
+            "symbol_count",
+            "symbols",
+            "section_count",
+            "sections",
+            "exported_runtime_helper_count",
+            "exported_runtime_helpers",
+            "imported_runtime_helper_count",
+            "imported_runtime_helpers",
             "object_symbol_inventory_command",
             "object_section_inventory_command",
             "inspection_ready",
@@ -1188,6 +1481,83 @@
             },
             "sha256": {
               "$ref": "#/$defs/optionalSha256"
+            },
+            "object_format": {
+              "type": "string"
+            },
+            "expected_sha256": {
+              "$ref": "#/$defs/optionalSha256"
+            },
+            "digest_matches": {
+              "type": "boolean"
+            },
+            "inventory_source_model": {
+              "type": "string",
+              "minLength": 1
+            },
+            "tool_inventory_available": {
+              "type": "boolean"
+            },
+            "inventory_available": {
+              "type": "boolean"
+            },
+            "inventory_digest": {
+              "$ref": "#/$defs/optionalSha256"
+            },
+            "inventory_diagnostics": {
+              "$ref": "#/$defs/stringArray"
+            },
+            "symbol_count": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "symbols": {
+              "type": "array",
+              "items": {
+                "type": [
+                  "object",
+                  "string"
+                ]
+              }
+            },
+            "section_count": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "sections": {
+              "type": "array",
+              "items": {
+                "type": [
+                  "object",
+                  "string"
+                ]
+              }
+            },
+            "exported_runtime_helper_count": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "exported_runtime_helpers": {
+              "type": "array",
+              "items": {
+                "type": [
+                  "object",
+                  "string"
+                ]
+              }
+            },
+            "imported_runtime_helper_count": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "imported_runtime_helpers": {
+              "type": "array",
+              "items": {
+                "type": [
+                  "object",
+                  "string"
+                ]
+              }
             },
             "object_symbol_inventory_command": {
               "type": "string"
@@ -1252,6 +1622,280 @@
           },
           "additionalProperties": false
         },
+        "runtime_inventory": {
+          "type": "object",
+          "required": [
+            "available",
+            "reflection_abi_version",
+            "runtime_metadata_link",
+            "inventory_digest",
+            "class_record_count",
+            "class_records",
+            "selector_record_count",
+            "selector_records",
+            "method_record_count",
+            "method_records",
+            "property_record_count",
+            "property_records",
+            "protocol_record_count",
+            "protocol_records",
+            "category_record_count",
+            "category_records",
+            "stdlib_helper_references",
+            "runtime_import_package_records",
+            "retired_route_reason"
+          ],
+          "properties": {
+            "available": {
+              "type": "boolean"
+            },
+            "reflection_abi_version": {
+              "type": "string"
+            },
+            "runtime_metadata_link": {
+              "type": "string"
+            },
+            "inventory_digest": {
+              "$ref": "#/$defs/optionalSha256"
+            },
+            "class_record_count": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "class_records": {
+              "type": "array",
+              "items": {
+                "type": [
+                  "object",
+                  "string"
+                ]
+              }
+            },
+            "selector_record_count": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "selector_records": {
+              "type": "array",
+              "items": {
+                "type": [
+                  "object",
+                  "string"
+                ]
+              }
+            },
+            "method_record_count": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "method_records": {
+              "type": "array",
+              "items": {
+                "type": [
+                  "object",
+                  "string"
+                ]
+              }
+            },
+            "property_record_count": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "property_records": {
+              "type": "array",
+              "items": {
+                "type": [
+                  "object",
+                  "string"
+                ]
+              }
+            },
+            "protocol_record_count": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "protocol_records": {
+              "type": "array",
+              "items": {
+                "type": [
+                  "object",
+                  "string"
+                ]
+              }
+            },
+            "category_record_count": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "category_records": {
+              "type": "array",
+              "items": {
+                "type": [
+                  "object",
+                  "string"
+                ]
+              }
+            },
+            "stdlib_helper_references": {
+              "type": "array",
+              "items": {
+                "type": [
+                  "object",
+                  "string"
+                ]
+              }
+            },
+            "runtime_import_package_records": {
+              "type": "array",
+              "items": {
+                "type": "object"
+              }
+            },
+            "runtime_artifact_count": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "runtime_artifacts": {
+              "type": "array",
+              "items": {
+                "type": [
+                  "object",
+                  "string"
+                ]
+              }
+            },
+            "retired_route_reason": {
+              "type": "string"
+            }
+          },
+          "additionalProperties": false
+        },
+        "package_inventory": {
+          "type": "object",
+          "required": [
+            "available",
+            "module_identity",
+            "package_identity",
+            "abi_identity",
+            "package_identity_source",
+            "abi_identity_source",
+            "manifest_package_identity",
+            "registry_package_identity",
+            "receipt_package_identities",
+            "identity_mismatch",
+            "registry_identity",
+            "manifest_trust_status",
+            "registry_trust_status",
+            "package_operation_receipts",
+            "package_operation_receipt_count",
+            "untrusted_receipt_count",
+            "retired_route_reason"
+          ],
+          "properties": {
+            "available": {
+              "type": "boolean"
+            },
+            "module_identity": {
+              "type": "string"
+            },
+            "package_identity": {
+              "type": "string"
+            },
+            "abi_identity": {
+              "type": "string"
+            },
+            "package_identity_source": {
+              "type": "string"
+            },
+            "abi_identity_source": {
+              "type": "string"
+            },
+            "manifest_package_identity": {
+              "type": "string"
+            },
+            "registry_package_identity": {
+              "type": "string"
+            },
+            "receipt_package_identities": {
+              "$ref": "#/$defs/stringArray"
+            },
+            "identity_mismatch": {
+              "type": "boolean"
+            },
+            "registry_identity": {
+              "type": "string"
+            },
+            "manifest_trust_status": {
+              "type": "string"
+            },
+            "registry_trust_status": {
+              "type": "string"
+            },
+            "package_operation_receipts": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "required": [
+                  "path",
+                  "available",
+                  "operation",
+                  "package_id",
+                  "sha256",
+                  "expected_sha256",
+                  "digest_matches",
+                  "trust_status",
+                  "trusted",
+                  "retired_route_reason"
+                ],
+                "properties": {
+                  "path": {
+                    "type": "string"
+                  },
+                  "available": {
+                    "type": "boolean"
+                  },
+                  "operation": {
+                    "type": "string"
+                  },
+                  "package_id": {
+                    "type": "string"
+                  },
+                  "sha256": {
+                    "$ref": "#/$defs/optionalSha256"
+                  },
+                  "expected_sha256": {
+                    "$ref": "#/$defs/optionalSha256"
+                  },
+                  "digest_matches": {
+                    "type": "boolean"
+                  },
+                  "trust_status": {
+                    "type": "string"
+                  },
+                  "trusted": {
+                    "type": "boolean"
+                  },
+                  "retired_route_reason": {
+                    "type": "string"
+                  }
+                },
+                "additionalProperties": false
+              }
+            },
+            "package_operation_receipt_count": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "untrusted_receipt_count": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "retired_route_reason": {
+              "type": "string"
+            }
+          },
+          "additionalProperties": false
+        },
         "source_graph": {
           "type": "object",
           "required": [
@@ -1300,6 +1944,104 @@
             },
             "retired_route_reason": {
               "type": "string"
+            }
+          },
+          "additionalProperties": false
+        },
+        "artifact_links": {
+          "type": "object",
+          "required": [
+            "manifest_link",
+            "ir_link",
+            "diagnostics_link",
+            "runtime_metadata_link",
+            "source_graph_link",
+            "source_graph_digest",
+            "debug_map_link",
+            "optimization_trace_link"
+          ],
+          "properties": {
+            "manifest_link": {
+              "type": "string"
+            },
+            "ir_link": {
+              "type": "string"
+            },
+            "diagnostics_link": {
+              "type": "string"
+            },
+            "runtime_metadata_link": {
+              "type": "string"
+            },
+            "source_graph_link": {
+              "type": "string"
+            },
+            "source_graph_digest": {
+              "$ref": "#/$defs/optionalSha256"
+            },
+            "debug_map_link": {
+              "type": "string"
+            },
+            "optimization_trace_link": {
+              "type": "string"
+            }
+          },
+          "additionalProperties": false
+        },
+        "provenance": {
+          "type": "object",
+          "required": [
+            "available",
+            "generated",
+            "source_truth_inputs",
+            "generated_artifacts",
+            "retired_route_reason"
+          ],
+          "properties": {
+            "available": {
+              "type": "boolean"
+            },
+            "generated": {
+              "type": "boolean"
+            },
+            "source_truth_inputs": {
+              "$ref": "#/$defs/stringArray"
+            },
+            "generated_artifacts": {
+              "type": "array",
+              "items": {
+                "type": [
+                  "object",
+                  "string"
+                ]
+              }
+            },
+            "retired_route_reason": {
+              "type": "string"
+            }
+          },
+          "additionalProperties": false
+        },
+        "inventory_validation": {
+          "type": "object",
+          "required": [
+            "inventory_ready",
+            "fail_closed",
+            "fail_closed_reasons",
+            "unsupported_inventory_notes"
+          ],
+          "properties": {
+            "inventory_ready": {
+              "type": "boolean"
+            },
+            "fail_closed": {
+              "type": "boolean"
+            },
+            "fail_closed_reasons": {
+              "$ref": "#/$defs/stringArray"
+            },
+            "unsupported_inventory_notes": {
+              "$ref": "#/$defs/stringArray"
             }
           },
           "additionalProperties": false

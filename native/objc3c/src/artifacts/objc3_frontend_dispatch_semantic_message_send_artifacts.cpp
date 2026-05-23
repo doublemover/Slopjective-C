@@ -49,6 +49,18 @@ void WalkMessageSendLoweringExpr(const Expr *expr, Visitor &visitor) {
         WalkMessageSendLoweringExpr(arg.get(), visitor);
       }
       return;
+    case Expr::Kind::CollectionLiteral:
+      for (const auto &key : expr->collection_keys) {
+        WalkMessageSendLoweringExpr(key.get(), visitor);
+      }
+      for (const auto &value : expr->collection_values) {
+        WalkMessageSendLoweringExpr(value.get(), visitor);
+      }
+      return;
+    case Expr::Kind::IndexAccess:
+      WalkMessageSendLoweringExpr(expr->left.get(), visitor);
+      WalkMessageSendLoweringExpr(expr->right.get(), visitor);
+      return;
     default:
       return;
   }
@@ -121,6 +133,16 @@ void WalkMessageSendLoweringStmt(const Stmt *stmt, Visitor &visitor) {
         WalkMessageSendLoweringStmt(body_stmt.get(), visitor);
       }
       return;
+    case Stmt::Kind::ForIn:
+      if (stmt->for_in_stmt == nullptr) {
+        return;
+      }
+      WalkMessageSendLoweringExpr(stmt->for_in_stmt->collection.get(),
+                                  visitor);
+      for (const auto &body_stmt : stmt->for_in_stmt->body) {
+        WalkMessageSendLoweringStmt(body_stmt.get(), visitor);
+      }
+      return;
     case Stmt::Kind::Switch:
       if (stmt->switch_stmt == nullptr) {
         return;
@@ -150,6 +172,15 @@ void WalkMessageSendLoweringStmt(const Stmt *stmt, Visitor &visitor) {
       for (const auto &body_stmt : stmt->block_stmt->body) {
         WalkMessageSendLoweringStmt(body_stmt.get(), visitor);
       }
+      return;
+    case Stmt::Kind::CollectionMutation:
+      if (stmt->collection_mutation_stmt == nullptr) {
+        return;
+      }
+      WalkMessageSendLoweringExpr(
+          stmt->collection_mutation_stmt->key_or_index.get(), visitor);
+      WalkMessageSendLoweringExpr(
+          stmt->collection_mutation_stmt->value.get(), visitor);
       return;
     case Stmt::Kind::Break:
     case Stmt::Kind::Continue:

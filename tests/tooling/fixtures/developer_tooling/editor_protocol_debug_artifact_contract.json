@@ -14,6 +14,7 @@
     "tmp/reports/developer-tooling/editor-surface/language-server-capabilities.json",
     "tmp/reports/developer-tooling/editor-surface/navigation-index.json",
     "tmp/reports/developer-tooling/editor-surface/workspace-index.json",
+    "tmp/reports/developer-tooling/editor-surface/source-graph.json",
     "tmp/reports/developer-tooling/editor-surface/artifact-inspector.json",
     "tmp/reports/developer-tooling/editor-surface/formatter-output.json",
     "tmp/reports/developer-tooling/editor-surface/debug-map.json",
@@ -21,6 +22,7 @@
   ],
   "public_actions": [
     "inspect-editor-tooling",
+    "inspect-source-graph",
     "format-objc3c",
     "trace-runtime-debug",
     "validate-developer-tooling"
@@ -31,6 +33,7 @@
     "language_server",
     "navigation",
     "workspace_index",
+    "source_graph",
     "artifact_inspector",
     "formatter",
     "debug",

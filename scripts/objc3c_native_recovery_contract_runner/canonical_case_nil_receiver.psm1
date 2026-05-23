@@ -105,7 +105,7 @@ function Get-CoreRecoveryNilReceiverCaseDefinitions {
       Source = "tests/tooling/fixtures/native/recovery/positive/message_send_nil_mutable_global_identifier_non_elided.objc3"
       CaseName = "objc3_dispatch_nil_mutable_global_identifier_non_elided"
       RequireLl = $true
-      RequiredLlTokens = @("declare i32 @objc3_runtime_dispatch_i32(", "call i32 @objc3_runtime_dispatch_i32(", "define i32 @objc3c_entry")
+      RequiredLlTokens = @("declare { i32, i32, i32, i32, i32, ptr, ptr, ptr, ptr, ptr } @objc3_runtime_cache_aware_dispatch_i32_checked(", "call { i32, i32, i32, i32, i32, ptr, ptr, ptr, ptr, ptr } @objc3_runtime_cache_aware_dispatch_i32_checked(", "declare i32 @objc3_runtime_prepare_cache_aware_dispatch_descriptor(", "call i32 @objc3_runtime_prepare_cache_aware_dispatch_descriptor(", "define i32 @objc3c_entry")
       RequiredManifestTokens = @('"runtime_dispatch_arg_slots":4', '"selector_global_ordering":"lexicographic"')
       RequireObjc3ManifestSurface = $true
     },
@@ -113,7 +113,7 @@ function Get-CoreRecoveryNilReceiverCaseDefinitions {
       Source = "tests/tooling/fixtures/native/recovery/positive/message_send_nil_global_identifier_post_call_non_elided.objc3"
       CaseName = "objc3_dispatch_nil_global_identifier_post_call_non_elided"
       RequireLl = $true
-      RequiredLlTokens = @("declare i32 @objc3_runtime_dispatch_i32(", "call i32 @objc3_runtime_dispatch_i32(", "define i32 @objc3c_entry")
+      RequiredLlTokens = @("declare { i32, i32, i32, i32, i32, ptr, ptr, ptr, ptr, ptr } @objc3_runtime_cache_aware_dispatch_i32_checked(", "call { i32, i32, i32, i32, i32, ptr, ptr, ptr, ptr, ptr } @objc3_runtime_cache_aware_dispatch_i32_checked(", "declare i32 @objc3_runtime_prepare_cache_aware_dispatch_descriptor(", "call i32 @objc3_runtime_prepare_cache_aware_dispatch_descriptor(", "define i32 @objc3c_entry")
       RequiredManifestTokens = @('"runtime_dispatch_arg_slots":4', '"selector_global_ordering":"lexicographic"')
       RequireObjc3ManifestSurface = $true
     },

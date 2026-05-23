@@ -107,6 +107,37 @@ static void ValidateAssignmentCompatibility(const std::string &target_name, cons
   if (!found_target) {
     return;
   }
+  if (op == "+=" && target_type.is_generic_collection &&
+      IsReadyObjc3GenericCollectionTypeModel(
+          target_type.generic_collection_model)) {
+    const Objc3GenericCollectionTypeModel &model =
+        target_type.generic_collection_model;
+    if (!IsObjc3MutableCollectionKind(model.kind)) {
+      diagnostics.push_back(MakeDiag(
+          line, column, "O3S206",
+          "type mismatch: compound assignment '+=' requires a mutable collection target, got '" +
+              SemanticTypeName(target_type) + "'"));
+      return;
+    }
+    if (model.kind == Objc3GenericCollectionKind::MutableArray ||
+        model.kind == Objc3GenericCollectionKind::MutableSet) {
+      if (!IsUnknownSemanticType(value_type) &&
+          !IsObjc3CollectionValueCompatibleWithIdentity(
+              model.element_type_identity, value_type)) {
+        diagnostics.push_back(MakeDiag(
+            line, column, "O3S206",
+            "type mismatch: collection append to '" + target_name +
+                "' expects '" + model.element_type_identity + "', got '" +
+                SemanticTypeName(value_type) + "'"));
+      }
+      return;
+    }
+    diagnostics.push_back(MakeDiag(
+        line, column, "O3S206",
+        "type mismatch: compound assignment '+=' is unsupported for '" +
+            SemanticTypeName(target_type) + "'"));
+    return;
+  }
   if (!IsUnknownSemanticType(target_type) && !IsScalarI32CompatibleType(target_type)) {
     diagnostics.push_back(MakeDiag(line, column, "O3S206",
                                    "type mismatch: compound assignment '" + op + "' target '" + target_name +

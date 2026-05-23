@@ -29,9 +29,9 @@ typedef objc3c_frontend_borrowed_c_string_t objc3c_frontend_borrowed_text_t;
  *   llvm-direct backend and fails before pipeline execution when absent.
  * - language_version must be OBJC3C_FRONTEND_LANGUAGE_VERSION_OBJECTIVE_C_3;
  *   zero is not a default.
- * - allow_live_error_runtime_surface admits the private runtime-owned
- *   try/throw/throws proof surface; leave zero for canonical fail-closed
- *   public compiles.
+ * - allow_live_error_runtime_surface admits the runtime-owned try/throw/throws
+ *   proof surface for manifest-only probes; native IR/object emission enables
+ *   the same runnable surface automatically.
  * - imported_runtime_surface_paths points at caller-owned borrowed paths and
  *   imported_runtime_surface_path_count names the exact number of entries.
  * - Set unused pointers to NULL.

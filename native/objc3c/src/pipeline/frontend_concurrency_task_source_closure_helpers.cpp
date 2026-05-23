@@ -57,6 +57,12 @@ void CollectConcurrencyTaskGroupCancellationExprSites(
   for (const auto &arg : expr->args) {
     CollectConcurrencyTaskGroupCancellationExprSites(arg.get(), summary);
   }
+  for (const auto &key : expr->collection_keys) {
+    CollectConcurrencyTaskGroupCancellationExprSites(key.get(), summary);
+  }
+  for (const auto &value : expr->collection_values) {
+    CollectConcurrencyTaskGroupCancellationExprSites(value.get(), summary);
+  }
 }
 
 void CollectConcurrencyTaskGroupCancellationStmtSites(
@@ -76,6 +82,14 @@ void CollectConcurrencyTaskGroupCancellationStmtSites(
     if (stmt->assign_stmt != nullptr) {
       CollectConcurrencyTaskGroupCancellationExprSites(
           stmt->assign_stmt->value.get(), summary);
+    }
+    return;
+  case Stmt::Kind::CollectionMutation:
+    if (stmt->collection_mutation_stmt != nullptr) {
+      CollectConcurrencyTaskGroupCancellationExprSites(
+          stmt->collection_mutation_stmt->key_or_index.get(), summary);
+      CollectConcurrencyTaskGroupCancellationExprSites(
+          stmt->collection_mutation_stmt->value.get(), summary);
     }
     return;
   case Stmt::Kind::Return:
@@ -117,6 +131,16 @@ void CollectConcurrencyTaskGroupCancellationStmtSites(
       CollectConcurrencyTaskGroupCancellationExprSites(
           stmt->for_stmt->step.value.get(), summary);
       for (const auto &body_stmt : stmt->for_stmt->body) {
+        CollectConcurrencyTaskGroupCancellationStmtSites(body_stmt.get(),
+                                                         summary);
+      }
+    }
+    return;
+  case Stmt::Kind::ForIn:
+    if (stmt->for_in_stmt != nullptr) {
+      CollectConcurrencyTaskGroupCancellationExprSites(
+          stmt->for_in_stmt->collection.get(), summary);
+      for (const auto &body_stmt : stmt->for_in_stmt->body) {
         CollectConcurrencyTaskGroupCancellationStmtSites(body_stmt.get(),
                                                          summary);
       }

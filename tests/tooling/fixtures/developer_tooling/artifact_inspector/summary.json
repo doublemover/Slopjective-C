@@ -3,35 +3,236 @@
   "input_path": "tests/tooling/fixtures/developer_tooling/artifact_inspector/source.objc3",
   "out_dir": "tests/tooling/fixtures/developer_tooling/artifact_inspector",
   "emit_prefix": "module",
+  "ir_object_backend": "clang",
   "status": 0,
+  "process_exit_code": 0,
   "success": true,
-  "paths": {
-    "summary": "tests/tooling/fixtures/developer_tooling/artifact_inspector/summary.json",
-    "diagnostics": "tests/tooling/fixtures/developer_tooling/artifact_inspector/diagnostics.json",
-    "manifest": "tests/tooling/fixtures/developer_tooling/artifact_inspector/manifest.json",
-    "ir": "tests/tooling/fixtures/developer_tooling/artifact_inspector/module.ll",
-    "object": "",
-    "runtime_metadata_binary": "tests/tooling/fixtures/developer_tooling/artifact_inspector/runtime-metadata.bin"
+  "semantic_skipped": false,
+  "paths": {"summary":"tests/tooling/fixtures/developer_tooling/artifact_inspector/summary.json","diagnostics":"tests/tooling/fixtures/developer_tooling/artifact_inspector/module.diagnostics.json","manifest":"tests/tooling/fixtures/developer_tooling/artifact_inspector/module.manifest.json","ir":"tests/tooling/fixtures/developer_tooling/artifact_inspector/module.ll","object":"tests/tooling/fixtures/developer_tooling/artifact_inspector/module.obj","runtime_metadata_binary":"tests/tooling/fixtures/developer_tooling/artifact_inspector/module.runtime-metadata.bin"},
+  "last_error": "",
+  "result_error_message": "",
+  "result_error_message_present": false,
+  "c_api_ownership": {"result_handle_owner":"frontend-c-api-owned-result-handle","result_release_function":"objc3c_frontend_c_owned_result_destroy","result_release_timing":"compile-session-guard-destructor","publication_snapshot_owner":"runner-public-result-snapshot","context_lifetime":"created-before-compile-destroyed-after-snapshot","compile_options_lifetime":"borrowed-pointers-owned-by-runner-invocation","standalone_string_release_function":"objc3c_frontend_c_string_release","error_message":{"accessor_name":"objc3c_frontend_c_owned_result_error_message","accessor_view":"borrowed-until-owned-result-destroy","null_contract":"must-be-null-on-success","payload_owner":"owned-result-handle","present":false,"release_function":"objc3c_frontend_c_owned_result_destroy","snapshot_owner":"runner-public-result-snapshot"},"artifacts":[{"accessor_view":"borrowed-until-owned-result-destroy","name":"diagnostics","null_contract":"absent-or-not-requested","path_accessor":"objc3c_frontend_c_owned_result_artifact_path","path_snapshot_present":true,"payload_owner":"owned-result-handle","presence_accessor":"objc3c_frontend_c_owned_result_has_artifact","produced":true,"release_function":"objc3c_frontend_c_owned_result_destroy","required_by_runner":true,"snapshot_owner":"runner-public-result-snapshot"},{"accessor_view":"borrowed-until-owned-result-destroy","name":"manifest","null_contract":"absent-or-not-requested","path_accessor":"objc3c_frontend_c_owned_result_artifact_path","path_snapshot_present":true,"payload_owner":"owned-result-handle","presence_accessor":"objc3c_frontend_c_owned_result_has_artifact","produced":true,"release_function":"objc3c_frontend_c_owned_result_destroy","required_by_runner":true,"snapshot_owner":"runner-public-result-snapshot"},{"accessor_view":"borrowed-until-owned-result-destroy","name":"ir","null_contract":"absent-or-not-requested","path_accessor":"objc3c_frontend_c_owned_result_artifact_path","path_snapshot_present":true,"payload_owner":"owned-result-handle","presence_accessor":"objc3c_frontend_c_owned_result_has_artifact","produced":true,"release_function":"objc3c_frontend_c_owned_result_destroy","required_by_runner":true,"snapshot_owner":"runner-public-result-snapshot"},{"accessor_view":"borrowed-until-owned-result-destroy","name":"object","null_contract":"absent-or-not-requested","path_accessor":"objc3c_frontend_c_owned_result_artifact_path","path_snapshot_present":true,"payload_owner":"owned-result-handle","presence_accessor":"objc3c_frontend_c_owned_result_has_artifact","produced":true,"release_function":"objc3c_frontend_c_owned_result_destroy","required_by_runner":true,"snapshot_owner":"runner-public-result-snapshot"},{"accessor_view":"borrowed-until-owned-result-destroy","name":"runtime_metadata_binary","null_contract":"absent-or-not-requested","path_accessor":"objc3c_frontend_c_owned_result_artifact_path","path_snapshot_present":true,"payload_owner":"owned-result-handle","presence_accessor":"objc3c_frontend_c_owned_result_has_artifact","produced":true,"release_function":"objc3c_frontend_c_owned_result_destroy","required_by_runner":false,"snapshot_owner":"runner-public-result-snapshot"}]},
+  "stages": {
+    "lex": {
+      "stage": 0,
+      "attempted": true,
+      "skipped": false,
+      "diagnostics_total": 0,
+      "diagnostics_notes": 0,
+      "diagnostics_warnings": 0,
+      "diagnostics_errors": 0,
+      "diagnostics_fatals": 0
+    },
+    "parse": {
+      "stage": 1,
+      "attempted": true,
+      "skipped": false,
+      "diagnostics_total": 0,
+      "diagnostics_notes": 0,
+      "diagnostics_warnings": 0,
+      "diagnostics_errors": 0,
+      "diagnostics_fatals": 0
+    },
+    "sema": {
+      "stage": 2,
+      "attempted": true,
+      "skipped": false,
+      "diagnostics_total": 0,
+      "diagnostics_notes": 0,
+      "diagnostics_warnings": 0,
+      "diagnostics_errors": 0,
+      "diagnostics_fatals": 0
+    },
+    "lower": {
+      "stage": 3,
+      "attempted": true,
+      "skipped": false,
+      "diagnostics_total": 0,
+      "diagnostics_notes": 0,
+      "diagnostics_warnings": 0,
+      "diagnostics_errors": 0,
+      "diagnostics_fatals": 0
+    },
+    "emit": {
+      "stage": 4,
+      "attempted": true,
+      "skipped": false,
+      "diagnostics_total": 0,
+      "diagnostics_notes": 0,
+      "diagnostics_warnings": 0,
+      "diagnostics_errors": 0,
+      "diagnostics_fatals": 0
+    }
   },
   "observability": {
     "status_name": "ok",
+    "last_attempted_stage": "emit",
+    "blocking_stage": "emit",
+    "highest_diagnostic_severity": "none",
+    "result_error_message_present": false,
+    "diagnostics_total": 0,
+    "diagnostics_notes": 0,
+    "diagnostics_warnings": 0,
+    "diagnostics_errors": 0,
+    "diagnostics_fatals": 0,
+    "artifact_presence": {
+      "summary": true,
+      "diagnostics": true,
+      "manifest": true,
+      "ir": true,
+      "object": true,
+      "runtime_metadata_binary": true
+    },
     "dump_commands": {
       "summary": "Get-Content -Raw 'tests/tooling/fixtures/developer_tooling/artifact_inspector/summary.json'",
-      "diagnostics": "Get-Content -Raw 'tests/tooling/fixtures/developer_tooling/artifact_inspector/diagnostics.json'",
-      "manifest": "Get-Content -Raw 'tests/tooling/fixtures/developer_tooling/artifact_inspector/manifest.json'",
-      "ir": "Get-Content -Raw 'tests/tooling/fixtures/developer_tooling/artifact_inspector/module.ll'"
+      "diagnostics": "Get-Content -Raw 'tests/tooling/fixtures/developer_tooling/artifact_inspector/module.diagnostics.json'",
+      "manifest": "Get-Content -Raw 'tests/tooling/fixtures/developer_tooling/artifact_inspector/module.manifest.json'",
+      "ir": "Get-Content -Raw 'tests/tooling/fixtures/developer_tooling/artifact_inspector/module.ll'",
+      "object": "Get-Content -Raw 'tests/tooling/fixtures/developer_tooling/artifact_inspector/module.obj'"
     }
   },
-  "runtime_imports": [
-    {
-      "module": "objc3.core",
-      "symbol": "objc3_runtime_bootstrap"
-    }
-  ],
   "runtime_inspector": {
     "contract_id": "objc3c.runtime.metadata.object.inspection.harness.v1",
-    "available": false,
-    "dump_commands": {},
-    "availability_reason": "artifact inspector fixture intentionally omits native object bytes"
+    "publication_contract_id": "objc3c.runtime.metadata.section.publication.v1",
+    "available": true,
+    "active_emit_prefix": "module",
+    "fixture_path": "tests/tooling/fixtures/native/runtime_metadata_object_inspection_zero_descriptor.objc3",
+    "object_path": "tests/tooling/fixtures/developer_tooling/artifact_inspector/module.obj",
+    "section_inventory_row_key": "zero-descriptor-section-inventory",
+    "symbol_inventory_row_key": "zero-descriptor-symbol-inventory",
+    "section_inventory_command": "llvm-readobj --sections 'tests/tooling/fixtures/developer_tooling/artifact_inspector/module.obj'",
+    "symbol_inventory_command": "llvm-objdump --syms 'tests/tooling/fixtures/developer_tooling/artifact_inspector/module.obj'",
+    "realized_class_graph_snapshot_symbol": "objc3_runtime_copy_realized_class_graph_state_for_testing",
+    "realized_class_entry_snapshot_symbol": "objc3_runtime_copy_realized_class_entry_for_testing",
+    "runtime_instance_entry_snapshot_symbol": "objc3_runtime_copy_instance_entry_for_testing",
+    "property_registry_state_snapshot_symbol": "objc3_runtime_copy_property_registry_state_for_testing",
+    "property_entry_snapshot_symbol": "objc3_runtime_copy_property_entry_for_testing",
+    "storage_accessor_snapshot_symbol": "objc3_runtime_copy_storage_accessor_implementation_snapshot_for_testing",
+    "protocol_conformance_query_symbol": "objc3_runtime_copy_protocol_conformance_query_for_testing",
+    "object_model_query_state_snapshot_symbol": "objc3_runtime_copy_object_model_query_state_for_testing",
+    "arc_debug_state_snapshot_symbol": "objc3_runtime_copy_arc_debug_state_for_testing",
+    "object_model_private_snapshot_boundary": "runtime-owned-private-testing-snapshots-no-public-reflection-abi",
+    "object_identity_model": "stable-base-identity-plus-instance-and-class-receiver-identities",
+    "instance_allocation_model": "runtime-owned-allocation-ordinal-and-zero-initialized-storage-record",
+    "dispatch_cache_observability_model": "strict-cache-hit-validation-with-stale-diagnostic-and-snapshots",
+    "runtime_abi_boundary_model": "private-block-and-arc-helper-entrypoints-plus-testing-snapshots-define-the-live-runtime-abi-without-widening-the-public-runtime-header",
+    "block_runtime_model": "descriptor-backed-promote-invoke-and-handle-lifetime-for-supported-block-records-stay-on-bootstrap-internal-runtime-entrypoints",
+    "block_descriptor_model": "storage-slot-zero-carries-an-internal-descriptor-pointer-whose-record-preserves-size-captures-flags-arity-and-invoke-thunk",
+    "block_invoke_thunk_model": "runtime-invocation-plans-call-the-descriptor-owned-i32-invoke-thunk-with-copied-runtime-owned-storage",
+    "arc_runtime_model": "retain-release-autorelease-autoreleasepool-and-current-property-weak-helper-traffic-stays-on-bootstrap-internal-runtime-entrypoints",
+    "fail_closed_model": "public-runtime-header-remains-registration-lookup-dispatch-only-until-deliberate-runtime-abi-widening",
+    "dump_commands": {
+      "object_sections": "llvm-readobj --sections 'tests/tooling/fixtures/developer_tooling/artifact_inspector/module.obj'",
+      "object_symbols": "llvm-objdump --syms 'tests/tooling/fixtures/developer_tooling/artifact_inspector/module.obj'"
+    },
+    "availability_reason": ""
+  },
+  "bonus_experiences": {
+    "contract_id": "objc3c.bonus.experiences.boundary.v1",
+    "product_boundary_model": "public-runner compile inspect trace showcase and tutorial flows define the current bonus experience product boundary",
+    "runtime_boundary_model": "frontend-c-api summary artifacts and runtime inspection ABI snapshots define the live runtime boundary for bonus experiences",
+    "fail_closed_model": "no sidecar playground service visual shell or template catalog is authoritative until it is implemented on the live public runner and checked-in example roots",
+    "playground": {
+      "available": true,
+      "source_path": "tests/tooling/fixtures/developer_tooling/artifact_inspector/source.objc3",
+      "summary_path": "tests/tooling/fixtures/developer_tooling/artifact_inspector/summary.json",
+      "artifact_roots": [
+        "tmp/artifacts/playground",
+        "tmp/reports/playground",
+        "tmp/artifacts/showcase"
+      ],
+      "public_actions": [
+        "materialize-playground-workspace",
+        "compile-objc3c",
+        "inspect-playground-repro",
+        "inspect-compile-observability",
+        "trace-compile-stages"
+      ],
+      "dump_commands": {
+        "summary": "Get-Content -Raw 'tests/tooling/fixtures/developer_tooling/artifact_inspector/summary.json'",
+        "diagnostics": "Get-Content -Raw 'tests/tooling/fixtures/developer_tooling/artifact_inspector/module.diagnostics.json'",
+        "manifest": "Get-Content -Raw 'tests/tooling/fixtures/developer_tooling/artifact_inspector/module.manifest.json'",
+        "repro_runner": "& 'artifacts/bin/objc3c-frontend-c-api-runner.exe' 'tests/tooling/fixtures/developer_tooling/artifact_inspector/source.objc3' --out-dir 'tests/tooling/fixtures/developer_tooling/artifact_inspector' --emit-prefix 'module' --clang 'clang' --llc 'llc' --summary-out 'tests/tooling/fixtures/developer_tooling/artifact_inspector/summary.json' --objc3-ir-object-backend 'clang' --dump-playground-repro-json"
+      }
+    },
+    "runtime_inspector_and_capability_explorer": {
+      "available": true,
+      "object_path": "tests/tooling/fixtures/developer_tooling/artifact_inspector/module.obj",
+      "runtime_metadata_binary_path": "tests/tooling/fixtures/developer_tooling/artifact_inspector/module.runtime-metadata.bin",
+      "public_actions": [
+        "inspect-runtime-inspector",
+        "inspect-capability-explorer",
+        "benchmark-runtime-inspector",
+        "trace-compile-stages",
+        "validate-developer-tooling"
+      ],
+      "capability_probe_action": "npm run objc3c -- inspect-capability-explorer",
+      "capability_summary_report_path": "tmp/reports/objc3c-public-workflow/capability-explorer.json",
+      "dump_commands": {
+        "ir": "Get-Content -Raw 'tests/tooling/fixtures/developer_tooling/artifact_inspector/module.ll'",
+        "object": "Get-Content -Raw 'tests/tooling/fixtures/developer_tooling/artifact_inspector/module.obj'"
+      }
+    },
+    "template_and_demo_harness": {
+      "available": true,
+      "source_roots": [
+        "showcase/portfolio.json",
+        "showcase/tutorial_walkthrough.json",
+        "docs/tutorials/build_run_verify.md",
+        "docs/tutorials/guided_walkthrough.md"
+      ],
+      "public_actions": [
+        "validate-showcase",
+        "validate-runnable-showcase",
+        "validate-getting-started"
+      ]
+    }
+  },
+  "output_contract": {
+    "diagnostics_schema_version": "1.0.0",
+    "summary_mode": "objc3c-frontend-c-api-runner-v1",
+    "scaffold_key": "cli-reporting-output-contract-scaffold:v1:diagnostics_schema_version_pinned=true;summary_mode_pinned=true;out_dir_ready=true;emit_prefix_ready=true;diagnostics_output_path_ready=true;summary_output_path_ready=true;stage_report_output_contract_ready=true;modular_split_ready=true",
+    "core_feature_key": "cli-reporting-output-contract-core-feature:v1:scaffold_ready=true;summary_mode_pinned=true;diagnostics_schema_version_pinned=true;summary_output_path_deterministic=true;diagnostics_output_path_deterministic=true;output_paths_distinct=true;stage_report_output_contract_ready=true;core_feature_impl_ready=true",
+    "core_feature_expansion_key": "cli-reporting-output-contract-core-feature-expansion:v1:core_feature_surface_ready=true;summary_output_path_contract_consistent=true;diagnostics_output_path_contract_consistent=true;diagnostics_filename_matches_emit_prefix=true;core_feature_expansion_ready=true;core_feature_impl_ready=true;core_feature_key=cli-reporting-output-contract-core-feature:v1:scaffold_ready=true;summary_mode_pinned=true;diagnostics_schema_version_pinned=true;summary_output_path_deterministic=true;diagnostics_output_path_deterministic=true;output_paths_distinct=true;stage_report_output_contract_ready=true;core_feature_impl_ready=true;summary_output_path=tests/tooling/fixtures/developer_tooling/artifact_inspector/summary.json;diagnostics_output_path=tests/tooling/fixtures/developer_tooling/artifact_inspector/module.diagnostics.json",
+    "edge_case_consistency_contract_key": "cli-reporting-output-contract-edge-case-consistency:v1:core_feature_expansion_ready=true;summary_output_extension_compatible=true;diagnostics_output_suffix_compatible=true;case_folded_paths_distinct=true;output_paths_control_char_free=true;edge_case_consistency_contract_consistent=true;edge_case_consistency_contract_ready=false;core_feature_impl_ready=true;core_feature_expansion_key=cli-reporting-output-contract-core-feature-expansion:v1:core_feature_surface_ready=true;summary_output_path_contract_consistent=true;diagnostics_output_path_contract_consistent=true;diagnostics_filename_matches_emit_prefix=true;core_feature_expansion_ready=true;core_feature_impl_ready=true;core_feature_key=cli-reporting-output-contract-core-feature:v1:scaffold_ready=true;summary_mode_pinned=true;diagnostics_schema_version_pinned=true;summary_output_path_deterministic=true;diagnostics_output_path_deterministic=true;output_paths_distinct=true;stage_report_output_contract_ready=true;core_feature_impl_ready=true;summary_output_path=tests/tooling/fixtures/developer_tooling/artifact_inspector/summary.json;diagnostics_output_path=tests/tooling/fixtures/developer_tooling/artifact_inspector/module.diagnostics.json",
+    "edge_case_robustness_key": "cli-reporting-output-contract-edge-case-robustness:v1:edge_case_consistency_contract_ready=true;summary_output_parent_present=true;diagnostics_output_parent_present=true;output_paths_within_length_budget=true;output_paths_no_trailing_space=true;edge_case_expansion_consistent=true;edge_case_robustness_consistent=true;edge_case_robustness_ready=false;core_feature_impl_ready=true;edge_case_consistency_contract_key=cli-reporting-output-contract-edge-case-consistency:v1:core_feature_expansion_ready=true;summary_output_extension_compatible=true;diagnostics_output_suffix_compatible=true;case_folded_paths_distinct=true;output_paths_control_char_free=true;edge_case_consistency_contract_consistent=true;edge_case_consistency_contract_ready=false;core_feature_impl_ready=true;core_feature_expansion_key=cli-reporting-output-contract-core-feature-expansion:v1:core_feature_surface_ready=true;summary_output_path_contract_consistent=true;diagnostics_output_path_contract_consistent=true;diagnostics_filename_matches_emit_prefix=true;core_feature_expansion_ready=true;core_feature_impl_ready=true;core_feature_key=cli-reporting-output-contract-core-feature:v1:scaffold_ready=true;summary_mode_pinned=true;diagnostics_schema_version_pinned=true;summary_output_path_deterministic=true;diagnostics_output_path_deterministic=true;output_paths_distinct=true;stage_report_output_contract_ready=true;core_feature_impl_ready=true;summary_output_path=tests/tooling/fixtures/developer_tooling/artifact_inspector/summary.json;diagnostics_output_path=tests/tooling/fixtures/developer_tooling/artifact_inspector/module.diagnostics.json",
+    "diagnostics_hardening_key": "cli-reporting-output-contract-diagnostics-hardening:v1:edge_case_robustness_ready=true;summary_output_path_contract_consistent=true;diagnostics_output_path_contract_consistent=true;diagnostics_filename_matches_emit_prefix=true;output_paths_no_trailing_space=true;diagnostics_hardening_consistent=true;diagnostics_hardening_ready=false;core_feature_impl_ready=true;summary_output_path=tests/tooling/fixtures/developer_tooling/artifact_inspector/summary.json;diagnostics_output_path=tests/tooling/fixtures/developer_tooling/artifact_inspector/module.diagnostics.json;edge_case_robustness_key=cli-reporting-output-contract-edge-case-robustness:v1:edge_case_consistency_contract_ready=true;summary_output_parent_present=true;diagnostics_output_parent_present=true;output_paths_within_length_budget=true;output_paths_no_trailing_space=true;edge_case_expansion_consistent=true;edge_case_robustness_consistent=true;edge_case_robustness_ready=false;core_feature_impl_ready=true;edge_case_consistency_contract_key=cli-reporting-output-contract-edge-case-consistency:v1:core_feature_expansion_ready=true;summary_output_extension_compatible=true;diagnostics_output_suffix_compatible=true;case_folded_paths_distinct=true;output_paths_control_char_free=true;edge_case_consistency_contract_consistent=true;edge_case_consistency_contract_ready=false;core_feature_impl_ready=true;core_feature_expansion_key=cli-reporting-output-contract-core-feature-expansion:v1:core_feature_surface_ready=true;summary_output_path_contract_consistent=true;diagnostics_output_path_contract_consistent=true;diagnostics_filename_matches_emit_prefix=true;core_feature_expansion_ready=true;core_feature_impl_ready=true;core_feature_key=cli-reporting-output-contract-core-feature:v1:scaffold_ready=true;summary_mode_pinned=true;diagnostics_schema_version_pinned=true;summary_output_path_deterministic=true;diagnostics_output_path_deterministic=true;output_paths_distinct=true;stage_report_output_contract_ready=true;core_feature_impl_ready=true;summary_output_path=tests/tooling/fixtures/developer_tooling/artifact_inspector/summary.json;diagnostics_output_path=tests/tooling/fixtures/developer_tooling/artifact_inspector/module.diagnostics.json",
+    "recovery_determinism_key": "cli-reporting-output-contract-recovery-determinism-hardening:v1:diagnostics_hardening_ready=true;diagnostics_hardening_key_ready=true;edge_case_robustness_ready=true;summary_output_path_contract_consistent=true;diagnostics_output_path_contract_consistent=true;output_paths_no_trailing_space=true;recovery_determinism_consistent=true;recovery_determinism_ready=true;core_feature_impl_ready=true;diagnostics_hardening_key=cli-reporting-output-contract-diagnostics-hardening:v1:edge_case_robustness_ready=true;summary_output_path_contract_consistent=true;diagnostics_output_path_contract_consistent=true;diagnostics_filename_matches_emit_prefix=true;output_paths_no_trailing_space=true;diagnostics_hardening_consistent=true;diagnostics_hardening_ready=false;core_feature_impl_ready=true;summary_output_path=tests/tooling/fixtures/developer_tooling/artifact_inspector/summary.json;diagnostics_output_path=tests/tooling/fixtures/developer_tooling/artifact_inspector/module.diagnostics.json;edge_case_robustness_key=cli-reporting-output-contract-edge-case-robustness:v1:edge_case_consistency_contract_ready=true;summary_output_parent_present=true;diagnostics_output_parent_present=true;output_paths_within_length_budget=true;output_paths_no_trailing_space=true;edge_case_expansion_consistent=true;edge_case_robustness_consistent=true;edge_case_robustness_ready=false;core_feature_impl_ready=true;edge_case_consistency_contract_key=cli-reporting-output-contract-edge-case-consistency:v1:core_feature_expansion_ready=true;summary_output_extension_compatible=true;diagnostics_output_suffix_compatible=true;case_folded_paths_distinct=true;output_paths_control_char_free=true;edge_case_consistency_contract_consistent=true;edge_case_consistency_contract_ready=false;core_feature_impl_ready=true;core_feature_expansion_key=cli-reporting-output-contract-core-feature-expansion:v1:core_feature_surface_ready=true;summary_output_path_contract_consistent=true;diagnostics_output_path_contract_consistent=true;diagnostics_filename_matches_emit_prefix=true;core_feature_expansion_ready=true;core_feature_impl_ready=true;core_feature_key=cli-reporting-output-contract-core-feature:v1:scaffold_ready=true;summary_mode_pinned=true;diagnostics_schema_version_pinned=true;summary_output_path_deterministic=true;diagnostics_output_path_deterministic=true;output_paths_distinct=true;stage_report_output_contract_ready=true;core_feature_impl_ready=true;summary_output_path=tests/tooling/fixtures/developer_tooling/artifact_inspector/summary.json;diagnostics_output_path=tests/tooling/fixtures/developer_tooling/artifact_inspector/module.diagnostics.json;edge_case_robustness_key=cli-reporting-output-contract-edge-case-robustness:v1:edge_case_consistency_contract_ready=true;summary_output_parent_present=true;diagnostics_output_parent_present=true;output_paths_within_length_budget=true;output_paths_no_trailing_space=true;edge_case_expansion_consistent=true;edge_case_robustness_consistent=true;edge_case_robustness_ready=false;core_feature_impl_ready=true;edge_case_consistency_contract_key=cli-reporting-output-contract-edge-case-consistency:v1:core_feature_expansion_ready=true;summary_output_extension_compatible=true;diagnostics_output_suffix_compatible=true;case_folded_paths_distinct=true;output_paths_control_char_free=true;edge_case_consistency_contract_consistent=true;edge_case_consistency_contract_ready=false;core_feature_impl_ready=true;core_feature_expansion_key=cli-reporting-output-contract-core-feature-expansion:v1:core_feature_surface_ready=true;summary_output_path_contract_consistent=true;diagnostics_output_path_contract_consistent=true;diagnostics_filename_matches_emit_prefix=true;core_feature_expansion_ready=true;core_feature_impl_ready=true;core_feature_key=cli-reporting-output-contract-core-feature:v1:scaffold_ready=true;summary_mode_pinned=true;diagnostics_schema_version_pinned=true;summary_output_path_deterministic=true;diagnostics_output_path_deterministic=true;output_paths_distinct=true;stage_report_output_contract_ready=true;core_feature_impl_ready=true;summary_output_path=tests/tooling/fixtures/developer_tooling/artifact_inspector/summary.json;diagnostics_output_path=tests/tooling/fixtures/developer_tooling/artifact_inspector/module.diagnostics.json;summary_output_path=tests/tooling/fixtures/developer_tooling/artifact_inspector/summary.json;diagnostics_output_path=tests/tooling/fixtures/developer_tooling/artifact_inspector/module.diagnostics.json",
+    "conformance_matrix_key": "cli-reporting-output-contract-conformance-matrix-implementation:v1:recovery_determinism_ready=true;recovery_determinism_key_ready=true;summary_output_path_contract_consistent=true;diagnostics_output_path_contract_consistent=true;conformance_matrix_consistent=true;conformance_matrix_ready=true;conformance_matrix_key_ready=false;core_feature_impl_ready=true;recovery_determinism_key=cli-reporting-output-contract-recovery-determinism-hardening:v1:diagnostics_hardening_ready=true;diagnostics_hardening_key_ready=true;edge_case_robustness_ready=true;summary_output_path_contract_consistent=true;diagnostics_output_path_contract_consistent=true;output_paths_no_trailing_space=true;recovery_determinism_consistent=true;recovery_determinism_ready=true;core_feature_impl_ready=true;diagnostics_hardening_key=cli-reporting-output-contract-diagnostics-hardening:v1:edge_case_robustness_ready=true;summary_output_path_contract_consistent=true;diagnostics_output_path_contract_consistent=true;diagnostics_filename_matches_emit_prefix=true;output_paths_no_trailing_space=true;diagnostics_hardening_consistent=true;diagnostics_hardening_ready=false;core_feature_impl_ready=true;summary_output_path=tests/tooling/fixtures/developer_tooling/artifact_inspector/summary.json;diagnostics_output_path=tests/tooling/fixtures/developer_tooling/artifact_inspector/module.diagnostics.json;edge_case_robustness_key=cli-reporting-output-contract-edge-case-robustness:v1:edge_case_consistency_contract_ready=true;summary_output_parent_present=true;diagnostics_output_parent_present=true;output_paths_within_length_budget=true;output_paths_no_trailing_space=true;edge_case_expansion_consistent=true;edge_case_robustness_consistent=true;edge_case_robustness_ready=false;core_feature_impl_ready=true;edge_case_consistency_contract_key=cli-reporting-output-contract-edge-case-consistency:v1:core_feature_expansion_ready=true;summary_output_extension_compatible=true;diagnostics_output_suffix_compatible=true;case_folded_paths_distinct=true;output_paths_control_char_free=true;edge_case_consistency_contract_consistent=true;edge_case_consistency_contract_ready=false;core_feature_impl_ready=true;core_feature_expansion_key=cli-reporting-output-contract-core-feature-expansion:v1:core_feature_surface_ready=true;summary_output_path_contract_consistent=true;diagnostics_output_path_contract_consistent=true;diagnostics_filename_matches_emit_prefix=true;core_feature_expansion_ready=true;core_feature_impl_ready=true;core_feature_key=cli-reporting-output-contract-core-feature:v1:scaffold_ready=true;summary_mode_pinned=true;diagnostics_schema_version_pinned=true;summary_output_path_deterministic=true;diagnostics_output_path_deterministic=true;output_paths_distinct=true;stage_report_output_contract_ready=true;core_feature_impl_ready=true;summary_output_path=tests/tooling/fixtures/developer_tooling/artifact_inspector/summary.json;diagnostics_output_path=tests/tooling/fixtures/developer_tooling/artifact_inspector/module.diagnostics.json;edge_case_robustness_key=cli-reporting-output-contract-edge-case-robustness:v1:edge_case_consistency_contract_ready=true;summary_output_parent_present=true;diagnostics_output_parent_present=true;output_paths_within_length_budget=true;output_paths_no_trailing_space=true;edge_case_expansion_consistent=true;edge_case_robustness_consistent=true;edge_case_robustness_ready=false;core_feature_impl_ready=true;edge_case_consistency_contract_key=cli-reporting-output-contract-edge-case-consistency:v1:core_feature_expansion_ready=true;summary_output_extension_compatible=true;diagnostics_output_suffix_compatible=true;case_folded_paths_distinct=true;output_paths_control_char_free=true;edge_case_consistency_contract_consistent=true;edge_case_consistency_contract_ready=false;core_feature_impl_ready=true;core_feature_expansion_key=cli-reporting-output-contract-core-feature-expansion:v1:core_feature_surface_ready=true;summary_output_path_contract_consistent=true;diagnostics_output_path_contract_consistent=true;diagnostics_filename_matches_emit_prefix=true;core_feature_expansion_ready=true;core_feature_impl_ready=true;core_feature_key=cli-reporting-output-contract-core-feature:v1:scaffold_ready=true;summary_mode_pinned=true;diagnostics_schema_version_pinned=true;summary_output_path_deterministic=true;diagnostics_output_path_deterministic=true;output_paths_distinct=true;stage_report_output_contract_ready=true;core_feature_impl_ready=true;summary_output_path=tests/tooling/fixtures/developer_tooling/artifact_inspector/summary.json;diagnostics_output_path=tests/tooling/fixtures/developer_tooling/artifact_inspector/module.diagnostics.json;summary_output_path=tests/tooling/fixtures/developer_tooling/artifact_inspector/summary.json;diagnostics_output_path=tests/tooling/fixtures/developer_tooling/artifact_inspector/module.diagnostics.json;summary_output_path=tests/tooling/fixtures/developer_tooling/artifact_inspector/summary.json;diagnostics_output_path=tests/tooling/fixtures/developer_tooling/artifact_inspector/module.diagnostics.json",
+    "summary_output_path": "tests/tooling/fixtures/developer_tooling/artifact_inspector/summary.json",
+    "diagnostics_output_path": "tests/tooling/fixtures/developer_tooling/artifact_inspector/module.diagnostics.json",
+    "summary_output_path_contract_consistent": true,
+    "diagnostics_output_path_contract_consistent": true,
+    "diagnostics_filename_matches_emit_prefix": true,
+    "core_feature_expansion_ready": true,
+    "summary_output_extension_compatible": true,
+    "diagnostics_output_suffix_compatible": true,
+    "case_folded_paths_distinct": true,
+    "output_paths_control_char_free": true,
+    "edge_case_consistency_contract_consistent": true,
+    "edge_case_consistency_contract_ready": true,
+    "summary_output_parent_present": true,
+    "diagnostics_output_parent_present": true,
+    "output_paths_within_length_budget": true,
+    "output_paths_no_trailing_space": true,
+    "edge_case_expansion_consistent": true,
+    "edge_case_robustness_consistent": true,
+    "edge_case_robustness_ready": true,
+    "diagnostics_hardening_consistent": true,
+    "diagnostics_hardening_ready": true,
+    "recovery_determinism_consistent": true,
+    "recovery_determinism_ready": true,
+    "conformance_matrix_consistent": true,
+    "conformance_matrix_ready": true,
+    "conformance_matrix_key_ready": true,
+    "conformance_corpus_key": "cli-reporting-output-contract-conformance-corpus-expansion:v1:conformance-matrix-consistent=true;conformance-matrix-ready=true;conformance-corpus-consistent=true;conformance-corpus-ready=true;conformance-corpus-key-ready=false;conformance-corpus-case-count=2;conformance-corpus-accept-case-count=1;conformance-corpus-reject-case-count=1;accept-case-id=objc3c.case.cli.reporting.output.contract.conformance.corpus.accept.v1;reject-case-id=objc3c.case.cli.reporting.output.contract.conformance.corpus.reject.v1;summary_output_path=tests/tooling/fixtures/developer_tooling/artifact_inspector/summary.json;diagnostics_output_path=tests/tooling/fixtures/developer_tooling/artifact_inspector/module.diagnostics.json;conformance_matrix_key=cli-reporting-output-contract-conformance-matrix-implementation:v1:recovery_determinism_ready=true;recovery_determinism_key_ready=true;summary_output_path_contract_consistent=true;diagnostics_output_path_contract_consistent=true;conformance_matrix_consistent=true;conformance_matrix_ready=true;conformance_matrix_key_ready=false;core_feature_impl_ready=true;recovery_determinism_key=cli-reporting-output-contract-recovery-determinism-hardening:v1:diagnostics_hardening_ready=true;diagnostics_hardening_key_ready=true;edge_case_robustness_ready=true;summary_output_path_contract_consistent=true;diagnostics_output_path_contract_consistent=true;output_paths_no_trailing_space=true;recovery_determinism_consistent=true;recovery_determinism_ready=true;core_feature_impl_ready=true;diagnostics_hardening_key=cli-reporting-output-contract-diagnostics-hardening:v1:edge_case_robustness_ready=true;summary_output_path_contract_consistent=true;diagnostics_output_path_contract_consistent=true;diagnostics_filename_matches_emit_prefix=true;output_paths_no_trailing_space=true;diagnostics_hardening_consistent=true;diagnostics_hardening_ready=false;core_feature_impl_ready=true;summary_output_path=tests/tooling/fixtures/developer_tooling/artifact_inspector/summary.json;diagnostics_output_path=tests/tooling/fixtures/developer_tooling/artifact_inspector/module.diagnostics.json;edge_case_robustness_key=cli-reporting-output-contract-edge-case-robustness:v1:edge_case_consistency_contract_ready=true;summary_output_parent_present=true;diagnostics_output_parent_present=true;output_paths_within_length_budget=true;output_paths_no_trailing_space=true;edge_case_expansion_consistent=true;edge_case_robustness_consistent=true;edge_case_robustness_ready=false;core_feature_impl_ready=true;edge_case_consistency_contract_key=cli-reporting-output-contract-edge-case-consistency:v1:core_feature_expansion_ready=true;summary_output_extension_compatible=true;diagnostics_output_suffix_compatible=true;case_folded_paths_distinct=true;output_paths_control_char_free=true;edge_case_consistency_contract_consistent=true;edge_case_consistency_contract_ready=false;core_feature_impl_ready=true;core_feature_expansion_key=cli-reporting-output-contract-core-feature-expansion:v1:core_feature_surface_ready=true;summary_output_path_contract_consistent=true;diagnostics_output_path_contract_consistent=true;diagnostics_filename_matches_emit_prefix=true;core_feature_expansion_ready=true;core_feature_impl_ready=true;core_feature_key=cli-reporting-output-contract-core-feature:v1:scaffold_ready=true;summary_mode_pinned=true;diagnostics_schema_version_pinned=true;summary_output_path_deterministic=true;diagnostics_output_path_deterministic=true;output_paths_distinct=true;stage_report_output_contract_ready=true;core_feature_impl_ready=true;summary_output_path=tests/tooling/fixtures/developer_tooling/artifact_inspector/summary.json;diagnostics_output_path=tests/tooling/fixtures/developer_tooling/artifact_inspector/module.diagnostics.json;edge_case_robustness_key=cli-reporting-output-contract-edge-case-robustness:v1:edge_case_consistency_contract_ready=true;summary_output_parent_present=true;diagnostics_output_parent_present=true;output_paths_within_length_budget=true;output_paths_no_trailing_space=true;edge_case_expansion_consistent=true;edge_case_robustness_consistent=true;edge_case_robustness_ready=false;core_feature_impl_ready=true;edge_case_consistency_contract_key=cli-reporting-output-contract-edge-case-consistency:v1:core_feature_expansion_ready=true;summary_output_extension_compatible=true;diagnostics_output_suffix_compatible=true;case_folded_paths_distinct=true;output_paths_control_char_free=true;edge_case_consistency_contract_consistent=true;edge_case_consistency_contract_ready=false;core_feature_impl_ready=true;core_feature_expansion_key=cli-reporting-output-contract-core-feature-expansion:v1:core_feature_surface_ready=true;summary_output_path_contract_consistent=true;diagnostics_output_path_contract_consistent=true;diagnostics_filename_matches_emit_prefix=true;core_feature_expansion_ready=true;core_feature_impl_ready=true;core_feature_key=cli-reporting-output-contract-core-feature:v1:scaffold_ready=true;summary_mode_pinned=true;diagnostics_schema_version_pinned=true;summary_output_path_deterministic=true;diagnostics_output_path_deterministic=true;output_paths_distinct=true;stage_report_output_contract_ready=true;core_feature_impl_ready=true;summary_output_path=tests/tooling/fixtures/developer_tooling/artifact_inspector/summary.json;diagnostics_output_path=tests/tooling/fixtures/developer_tooling/artifact_inspector/module.diagnostics.json;summary_output_path=tests/tooling/fixtures/developer_tooling/artifact_inspector/summary.json;diagnostics_output_path=tests/tooling/fixtures/developer_tooling/artifact_inspector/module.diagnostics.json;summary_output_path=tests/tooling/fixtures/developer_tooling/artifact_inspector/summary.json;diagnostics_output_path=tests/tooling/fixtures/developer_tooling/artifact_inspector/module.diagnostics.json",
+    "conformance_corpus_case_count": 2,
+    "conformance_corpus_accept_case_count": 1,
+    "conformance_corpus_reject_case_count": 1,
+    "conformance_corpus_consistent": true,
+    "conformance_corpus_ready": true,
+    "conformance_corpus_key_ready": true,
+    "core_feature_impl_ready": true
   }
 }

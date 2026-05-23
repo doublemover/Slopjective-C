@@ -111,6 +111,18 @@ def check_live_dispatch_fast_path_case(clangxx: str, run_dir: Path) -> CaseResul
             "strict_error_second_strict_dispatch_error_count": payload.get(
                 "strict_error_second_state_strict_dispatch_error_count"
             ),
+            "cache_aware_dispatch_path": payload.get(
+                "cache_aware_dispatch_dispatch_path"
+            ),
+            "cache_aware_cache_entry_generation": payload.get(
+                "cache_aware_dispatch_cache_entry_generation"
+            ),
+            "cache_aware_stale_fallback_used": payload.get(
+                "cache_aware_stale_dispatch_fallback_used"
+            ),
+            "cache_aware_malformed_status": payload.get(
+                "cache_aware_malformed_dispatch_status_code"
+            ),
         },
     )
 

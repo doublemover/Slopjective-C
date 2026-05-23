@@ -1,0 +1,25 @@
+{
+  "contract_id": "objc3c.developer.tooling.source.graph.fixture.contract.v1",
+  "source_path": "tests/tooling/fixtures/developer_tooling/source_graph/negative_source.objc3",
+  "manifest_path": "tests/tooling/fixtures/developer_tooling/source_graph/manifest.json",
+  "module_name": "SourceGraphNegativeDemo",
+  "expected_declaration_symbols": [
+    "globalCounter",
+    "main"
+  ],
+  "expected_reference_candidate_symbols": [
+    "globalCounter"
+  ],
+  "expected_fail_closed_diagnostics": [
+    "O3SG_REFERENCE_SEMANTIC_PROOF_MISSING",
+    "O3SG_RENAME_SEMANTIC_PROOF_MISSING",
+    "O3SG_REFERENCE_LEXICAL_CANDIDATE_UNPROVEN",
+    "O3SG_RENAME_PUBLIC_ABI_DISALLOWED"
+  ],
+  "expected_consumer_capabilities": [
+    "references",
+    "rename",
+    "semanticTokens"
+  ],
+  "non_authoritative_boundary": "lexical matches are exported only as reference candidates until native compiler semantic reference closure is emitted"
+}

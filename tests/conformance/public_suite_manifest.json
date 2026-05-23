@@ -692,6 +692,104 @@
         "Release-candidate conformance consumes the same checked runtime concurrency evidence.",
         "The release-candidate command is a profile gate and not a compatibility-mode bypass."
       ]
+    },
+    {
+      "case_id": "public.stdlib.cross-lane-text-collections-e2e",
+      "phase": "stdlib",
+      "feature_id": "stdlib.cross-lane.text-collections-runtime-e2e",
+      "capability_id": "stdlib.text.runtime-builder-interpolation",
+      "support_claim": "objc3c.behavior.stdlib.text.runtime-builder-interpolation",
+      "stable_case_index": 11,
+      "fixture_provenance": {
+        "origin": "checked-in-public-suite",
+        "owner": "objc3-public-conformance",
+        "source_owned": true,
+        "internal_only": false,
+        "generated": false
+      },
+      "expectation": "pass",
+      "profile_ids": [
+        "stdlib-package",
+        "release-candidate"
+      ],
+      "source_manifest": "tests/tooling/fixtures/cross_lane_e2e/manifest.json",
+      "conformance_fixture": "tests/tooling/fixtures/cross_lane_e2e/text_collections_package.expectation.json",
+      "traceability_fixture": "tests/native/e2e/cross_lane/text_collections_package.objc3",
+      "runnable_command": "npm run objc3c -- validate-cross-lane-e2e",
+      "platform_requirements": [
+        "repo-python",
+        "node-npm",
+        "native-toolchain"
+      ],
+      "packaging_class": "public-stable",
+      "release_gate": true,
+      "positive_evidence": [
+        "tests/native/e2e/cross_lane/text_collections_package.objc3",
+        "tests/native/e2e/cross_lane/text_collections_package_provider.objc3",
+        "tests/native/e2e/cross_lane/text_collections_package.meta.json",
+        "tests/tooling/fixtures/cross_lane_e2e/manifest.json",
+        "tests/tooling/fixtures/cross_lane_e2e/text_collections_package.workspace.json",
+        "tests/tooling/fixtures/cross_lane_e2e/text_collections_package.expectation.json"
+      ],
+      "negative_evidence": [
+        "tests/tooling/fixtures/cross_lane_e2e/object_reflection_debugger.expectation.json",
+        "tests/tooling/fixtures/cross_lane_e2e/advanced_runtime_closure.expectation.json",
+        "tests/tooling/fixtures/cross_lane_e2e/distribution_package_lifecycle.expectation.json"
+      ],
+      "source_truth_requirements": [
+        "Cross-lane public conformance references the checked #8200 manifest and executable text/collections fixture.",
+        "The runtime-backed text builder, source collection literals, for-in loops, linked package-provider import surface, bounded source graph, declaration debug anchors, and missing-provider rejection are public-command verified by validate-cross-lane-e2e.",
+        "Direct @import syntax, full source-map publication, statement stepping, advanced runtime closure, and external distribution rows remain blocked or reserved in their own expectation files."
+      ]
+    },
+    {
+      "case_id": "public.ir.cross-lane-optimization-runtime-e2e",
+      "phase": "ir",
+      "feature_id": "compiler.optimization.cross-lane-runtime-equivalence-e2e",
+      "capability_id": "runtime.optimization.cache-aware-dispatch",
+      "support_claim": "objc3c.behavior.runtime.cache-aware-dispatch",
+      "stable_case_index": 12,
+      "fixture_provenance": {
+        "origin": "checked-in-public-suite",
+        "owner": "objc3-public-conformance",
+        "source_owned": true,
+        "internal_only": false,
+        "generated": false
+      },
+      "expectation": "pass",
+      "profile_ids": [
+        "core",
+        "release-candidate"
+      ],
+      "source_manifest": "tests/tooling/fixtures/cross_lane_e2e/manifest.json",
+      "conformance_fixture": "tests/tooling/fixtures/cross_lane_e2e/optimization_runtime_equivalence.expectation.json",
+      "traceability_fixture": "tests/native/e2e/cross_lane/optimization_runtime_equivalence.objc3",
+      "runnable_command": "npm run objc3c -- validate-cross-lane-e2e",
+      "platform_requirements": [
+        "repo-python",
+        "node-npm",
+        "native-toolchain"
+      ],
+      "packaging_class": "public-stable",
+      "release_gate": true,
+      "positive_evidence": [
+        "tests/native/e2e/cross_lane/optimization_runtime_equivalence.objc3",
+        "tests/native/e2e/cross_lane/optimization_runtime_equivalence.meta.json",
+        "tests/tooling/fixtures/cross_lane_e2e/manifest.json",
+        "tests/tooling/fixtures/cross_lane_e2e/optimization_runtime_equivalence.workspace.json",
+        "tests/tooling/fixtures/cross_lane_e2e/optimization_runtime_equivalence.expectation.json"
+      ],
+      "negative_evidence": [
+        "tests/tooling/fixtures/semantic_optimization_pipeline/reserved_method_inlining_skip.json",
+        "tests/tooling/fixtures/cross_lane_e2e/object_reflection_debugger.expectation.json",
+        "tests/tooling/fixtures/cross_lane_e2e/advanced_runtime_closure.expectation.json",
+        "tests/tooling/fixtures/cross_lane_e2e/distribution_package_lifecycle.expectation.json"
+      ],
+      "source_truth_requirements": [
+        "Cross-lane optimization public conformance references the checked #8200 manifest and executable optimization/runtime fixture.",
+        "The public command generates the runtime IR trace from checked sources and writes tmp artifacts only as proof, not source truth.",
+        "Method inlining remains reserved, and object/debugger, advanced runtime, and distribution umbrella rows remain blocked in their own expectation files."
+      ]
     }
   ],
   "strict_rejection_policy": {

@@ -9,6 +9,13 @@
   int string_literal_byte_count = 0;
   int string_literal_unit_count = 0;
   bool string_literal_valid_utf8 = false;
+  std::vector<std::string> string_interpolation_segments;
+  mutable std::vector<bool> string_interpolation_payload_is_text;
+  CollectionLiteralKind collection_literal_kind =
+      CollectionLiteralKind::None;
+  bool collection_literal_mutable = false;
+  std::vector<std::unique_ptr<Expr>> collection_keys;
+  std::vector<std::unique_ptr<Expr>> collection_values;
   bool typed_keypath_root_is_self = false;
   std::string typed_keypath_root_name;
   std::vector<std::string> typed_keypath_components;

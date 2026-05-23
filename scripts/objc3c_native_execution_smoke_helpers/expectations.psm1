@@ -25,7 +25,9 @@ function Get-RuntimeDispatchExpectationFromSpec {
     "objc3_runtime_dispatch_i32",
     "objc3_runtime_dispatch_i32_from_class",
     "objc3_runtime_dispatch_typed_value",
-    "objc3_runtime_dispatch_typed_value_from_class"
+    "objc3_runtime_dispatch_typed_value_from_class",
+    "objc3_runtime_prepare_cache_aware_dispatch_descriptor",
+    "objc3_runtime_cache_aware_dispatch_i32_checked"
   )
   $runtimeDispatchSymbols = @($canonicalRuntimeDispatchSymbol)
 

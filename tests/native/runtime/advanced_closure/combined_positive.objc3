@@ -1,0 +1,112 @@
+module AdvancedRuntimeClosureCombinedPositive;
+
+extern fn ConsumeBorrowed(bytes: borrowed id *) -> void;
+extern fn CFRetain(value: id) -> id
+    __attribute__((objc_family_retain(CoreThing), cf_returns_retained));
+extern fn CFRelease(value: id) -> void
+    __attribute__((objc_family_release(CoreThing), cf_consumed));
+extern fn objc3_runtime_spawn_task_i32(task_kind: i32, executor_tag: i32) -> i32;
+extern fn objc3_runtime_cancel_task_group_i32(executor_tag: i32) -> i32;
+extern fn objc3_runtime_task_is_cancelled_i32(executor_tag: i32) -> i32;
+extern fn objc3_runtime_task_on_cancel_i32(executor_tag: i32) -> i32;
+extern fn objc3_runtime_actor_bind_executor_i32(actor_handle: i32, executor_tag: i32) -> i32;
+extern fn objc3_runtime_actor_mailbox_enqueue_i32(actor_handle: i32, value: i32, executor_tag: i32) -> i32;
+extern fn objc3_runtime_actor_mailbox_drain_next_i32(actor_handle: i32, executor_tag: i32) -> i32;
+extern fn packageReplayEntry(selector: SEL) -> i32
+    __attribute__((objc_foreign,
+                   objc_import_module(named("AdvancedRuntimeClosureKit")),
+                   objc_mixed_image(named("AdvancedRuntimeClosureKitCore")),
+                   objc_package_entry(named("AdvancedRuntimeClosureKit.replay"))));
+
+fn mapAdvancedRuntimeStatus(status: i32) -> NSError {
+  return status + 900;
+}
+
+fn throwingAdvancedRuntime(value: i32) throws -> i32 {
+  if (value == 0) {
+    throw 17;
+  }
+  return value;
+}
+
+fn statusBridgeAdvancedRuntime(value: i32, error: NSError*) -> i32
+    __attribute__((objc_status_code(success: 0,
+                                    error_type: NSError,
+                                    mapping: mapAdvancedRuntimeStatus))) {
+  return value;
+}
+
+pure fn advancedRuntimeMacroTrace() -> i32
+    __attribute__((objc_macro(named("AdvancedRuntimeClosureTrace")),
+                   objc_macro_package(named("std.metaprogramming.advanced-runtime")),
+                   objc_macro_provenance(named("sha256:5883f2e2120170bb3de07348e4f101cd478379337b6c0ce2a0f751b29da70e4f")),
+                   objc_macro_cache_key(named("AdvancedRuntimeClosureTrace:v1")),
+                   objc_macro_sandbox(named("deterministic")))) {
+  return 3;
+}
+
+@protocol AdvancedRuntimeClosureProjection
+@property (readonly, strong, behavior=Projected, getter=currentValue) id currentValue;
+@end
+
+@interface AdvancedRuntimeClosureModel
+@property (strong, behavior=Observed) id value;
+@property (readonly, strong, behavior=Projected, getter=currentValue) id currentValue;
+@end
+
+@implementation AdvancedRuntimeClosureModel
+@property (strong, behavior=Observed) id value;
+@property (readonly, strong, behavior=Projected, getter=currentValue) id currentValue;
+@end
+
+fn ownershipAndBlockLane(owner: id, peer: id, bytes: borrowed id *) -> i32 {
+  let retained = CFRetain(owner);
+  let closure = ^[weak owner, unowned peer, retained] {
+    let strongRef = owner; let retainedRef = retained;
+    let unownedRef = peer;
+    return 1;
+  };
+  ConsumeBorrowed(bytes);
+  CFRelease(retained);
+  return closure();
+}
+
+async fn asyncCancellationLane(seed: i32) -> i32
+    __attribute__((objc_executor(named("advanced.runtime.closure")))) {
+  let spawned = objc3_runtime_spawn_task_i32(1, seed);
+  if (objc3_runtime_task_is_cancelled_i32(seed)) {
+    objc3_runtime_task_on_cancel_i32(seed);
+    return objc3_runtime_cancel_task_group_i32(seed);
+  }
+  return await statusBridgeAdvancedRuntime(spawned, 0);
+}
+
+actor class AdvancedRuntimeClosureActor
+- (i32)run:(i32)seed async __attribute__((objc_executor(main)));
+@end
+
+@implementation AdvancedRuntimeClosureActor
+- (i32)run:(i32)seed async __attribute__((objc_executor(main))) {
+  objc3_runtime_actor_bind_executor_i32(seed, 1);
+  objc3_runtime_actor_mailbox_enqueue_i32(seed, seed + 1, 1);
+  let mailbox = objc3_runtime_actor_mailbox_drain_next_i32(seed, 1);
+  return await asyncCancellationLane(mailbox);
+}
+@end
+
+fn combinedAdvancedRuntimeClosure(owner: id, peer: id, bytes: borrowed id *) throws -> i32 {
+  let ownedBlock = ownershipAndBlockLane(owner, peer, bytes);
+  let bridged = try? statusBridgeAdvancedRuntime(ownedBlock, 0);
+  let forced = try! throwingAdvancedRuntime(bridged);
+  do {
+    return forced + advancedRuntimeMacroTrace() + packageReplayEntry(nil);
+  } catch (NSError* error) {
+    return error;
+  } catch {
+    return 0;
+  }
+}
+
+fn main() -> i32 {
+  return 0;
+}

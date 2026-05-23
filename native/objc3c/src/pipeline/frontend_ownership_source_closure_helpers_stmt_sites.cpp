@@ -30,6 +30,14 @@ void CollectOwnershipSystemExtensionStmtSites(
           stmt->assign_stmt->value.get(), summary);
     }
     return;
+  case Stmt::Kind::CollectionMutation:
+    if (stmt->collection_mutation_stmt != nullptr) {
+      CollectOwnershipSystemExtensionExprSites(
+          stmt->collection_mutation_stmt->key_or_index.get(), summary);
+      CollectOwnershipSystemExtensionExprSites(
+          stmt->collection_mutation_stmt->value.get(), summary);
+    }
+    return;
   case Stmt::Kind::Return:
     if (stmt->return_stmt != nullptr) {
       CollectOwnershipSystemExtensionExprSites(
@@ -66,6 +74,15 @@ void CollectOwnershipSystemExtensionStmtSites(
       CollectOwnershipSystemExtensionExprSites(
           stmt->for_stmt->step.value.get(), summary);
       for (const auto &body_stmt : stmt->for_stmt->body) {
+        CollectOwnershipSystemExtensionStmtSites(body_stmt.get(), summary);
+      }
+    }
+    return;
+  case Stmt::Kind::ForIn:
+    if (stmt->for_in_stmt != nullptr) {
+      CollectOwnershipSystemExtensionExprSites(
+          stmt->for_in_stmt->collection.get(), summary);
+      for (const auto &body_stmt : stmt->for_in_stmt->body) {
         CollectOwnershipSystemExtensionStmtSites(body_stmt.get(), summary);
       }
     }

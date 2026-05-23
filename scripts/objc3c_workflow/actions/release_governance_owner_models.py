@@ -58,6 +58,7 @@ class ReleaseGovernanceActionContract:
     validation_tier: str
     guarantee_owner: str
     evidence_log_allowed: bool = False
+    pass_through_args: bool = False
 
     def to_action_spec(self) -> ActionSpec:
         if self.evidence_log_allowed:
@@ -74,6 +75,7 @@ class ReleaseGovernanceActionContract:
                 f"{owner.source_owner} -> {owner.gate_owner} -> "
                 f"{owner.blocker_owner}: {self.guarantee_owner}"
             ),
+            pass_through_args=self.pass_through_args,
         )
 
 

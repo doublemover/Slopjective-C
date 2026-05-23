@@ -24,18 +24,21 @@ def iter_required_behavior_directories(*, native_root: Path = NATIVE_ROOT) -> It
 
 def load_behavior_fixtures(*, native_root: Path = NATIVE_ROOT) -> list[BehaviorFixture]:
     fixtures: list[BehaviorFixture] = []
-    for meta_path in sorted(native_root.rglob("*.meta.json")):
-        source_path = fixture_path_for_metadata(meta_path)
-        metadata = load_json_object(meta_path)
-        fixture = BehaviorFixture(
-            source_path=source_path,
-            metadata_path=meta_path,
-            metadata=metadata,
-        )
-        if not source_path.is_file():
-            raise RuntimeError(f"missing source fixture for metadata: {fixture.relative_metadata}")
-        validate_behavior_fixture(fixture)
-        fixtures.append(fixture)
+    for phase, families in REQUIRED_TREE.items():
+        for family in families:
+            family_root = native_root / phase / family
+            for meta_path in sorted(family_root.rglob("*.meta.json")):
+                source_path = fixture_path_for_metadata(meta_path)
+                metadata = load_json_object(meta_path)
+                fixture = BehaviorFixture(
+                    source_path=source_path,
+                    metadata_path=meta_path,
+                    metadata=metadata,
+                )
+                if not source_path.is_file():
+                    raise RuntimeError(f"missing source fixture for metadata: {fixture.relative_metadata}")
+                validate_behavior_fixture(fixture)
+                fixtures.append(fixture)
     return fixtures
 
 

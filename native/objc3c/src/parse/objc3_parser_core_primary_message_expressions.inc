@@ -4,6 +4,10 @@
 #include "parse/objc3_parser_core_primary_message_expressions_receiver_metadata_annotations.inc"
 
   std::unique_ptr<Expr> ParsePrimary() {
+    if (At(TokenKind::Hash)) {
+      return ParseCollectionLiteralExpression();
+    }
+
     bool matched_primary = false;
     auto primary = ParsePrimaryLiteralOrIdentifier(matched_primary);
     if (matched_primary) {
@@ -40,6 +44,82 @@
     const Token &token = Peek();
     diagnostics_.push_back(MakeDiag(token.line, token.column, "O3P103", "invalid expression"));
     return nullptr;
+  }
+
+  std::unique_ptr<Expr> ParseCollectionLiteralExpression() {
+    const Token hash = Advance();
+    if (!At(TokenKind::Identifier)) {
+      const Token &token = Peek();
+      diagnostics_.push_back(MakeDiag(
+          token.line, token.column, "O3P214",
+          "collection literal requires '#array', '#map', or '#set'"));
+      return nullptr;
+    }
+    const Token kind_token = Advance();
+    Expr::CollectionLiteralKind kind = Expr::CollectionLiteralKind::None;
+    if (kind_token.text == "array") {
+      kind = Expr::CollectionLiteralKind::Array;
+    } else if (kind_token.text == "map") {
+      kind = Expr::CollectionLiteralKind::Map;
+    } else if (kind_token.text == "set") {
+      kind = Expr::CollectionLiteralKind::Set;
+    } else {
+      diagnostics_.push_back(MakeDiag(
+          kind_token.line, kind_token.column, "O3P214",
+          "unsupported collection literal '#" + kind_token.text +
+              "'; expected '#array', '#map', or '#set'"));
+      return nullptr;
+    }
+    if (!Match(TokenKind::LBracket)) {
+      const Token &token = Peek();
+      diagnostics_.push_back(MakeDiag(
+          token.line, token.column, "O3P214",
+          "missing '[' after collection literal prefix"));
+      return nullptr;
+    }
+
+    std::vector<std::unique_ptr<Expr>> keys;
+    std::vector<std::unique_ptr<Expr>> values;
+    if (!At(TokenKind::RBracket)) {
+      while (true) {
+        auto first = ParseExpression();
+        if (first == nullptr) {
+          return nullptr;
+        }
+        if (kind == Expr::CollectionLiteralKind::Map) {
+          if (!Match(TokenKind::Colon)) {
+            const Token &token = Peek();
+            diagnostics_.push_back(MakeDiag(
+                token.line, token.column, "O3P214",
+                "map literal entries require 'key: value'"));
+            return nullptr;
+          }
+          auto value = ParseExpression();
+          if (value == nullptr) {
+            return nullptr;
+          }
+          keys.push_back(std::move(first));
+          values.push_back(std::move(value));
+        } else {
+          values.push_back(std::move(first));
+        }
+        if (!Match(TokenKind::Comma)) {
+          break;
+        }
+        if (At(TokenKind::RBracket)) {
+          break;
+        }
+      }
+    }
+    if (!Match(TokenKind::RBracket)) {
+      const Token &token = Peek();
+      diagnostics_.push_back(MakeDiag(
+          token.line, token.column, "O3P214",
+          "missing ']' after collection literal"));
+      return nullptr;
+    }
+    return BuildObjc3CollectionLiteralExpr(kind, hash, std::move(keys),
+                                           std::move(values));
   }
 
   std::unique_ptr<Expr> ParseMessageSendExpression() {

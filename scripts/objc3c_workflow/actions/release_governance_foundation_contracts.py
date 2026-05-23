@@ -82,6 +82,7 @@ RELEASE_FOUNDATION_ACTION_CONTRACTS: tuple[ReleaseGovernanceActionContract, ...]
             "release taxonomy, reproducible package assembly, and provenance "
             "publication stay executable on the live runnable package surface"
         ),
+        pass_through_args=True,
     ),
 )
 

@@ -1,0 +1,6 @@
+// #8200 provider module for the cross-lane text + collections + package E2E.
+module CrossLaneFixtureProvider;
+
+fn importedPackageSeed() -> i32 {
+  return 3;
+}

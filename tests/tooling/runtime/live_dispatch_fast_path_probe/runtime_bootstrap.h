@@ -46,6 +46,55 @@ inline MethodCacheEntryObservation CaptureMethodCacheEntry(
   return observation;
 }
 
+inline CacheAwareDispatchObservation CaptureCacheAwareDispatchRecord() {
+  CacheAwareDispatchObservation observation{};
+  observation.status =
+      objc3_runtime_copy_cache_aware_dispatch_record_for_testing(
+          &observation.record);
+  observation.selector = CopyRuntimeString(observation.record.selector);
+  observation.source_path = CopyRuntimeString(observation.record.source_path);
+  observation.dispatch_path =
+      CopyRuntimeString(observation.record.dispatch_path);
+  observation.implementation_kind =
+      CopyRuntimeString(observation.record.implementation_kind);
+  observation.diagnostic_code =
+      CopyRuntimeString(observation.record.diagnostic_code);
+  return observation;
+}
+
+inline objc3_runtime_cache_aware_dispatch_descriptor
+MakeCacheAwareDescriptor(const MethodCacheStateObservation &state,
+                         const MethodCacheEntryObservation &entry) {
+  objc3_runtime_cache_aware_dispatch_descriptor descriptor{};
+  descriptor.abi_version = OBJC3_RUNTIME_CACHE_AWARE_DISPATCH_ABI_VERSION;
+  descriptor.flags =
+      OBJC3_RUNTIME_CACHE_AWARE_DISPATCH_REQUIRE_SELECTOR_STABLE_ID |
+      OBJC3_RUNTIME_CACHE_AWARE_DISPATCH_REQUIRE_GENERATIONS |
+      OBJC3_RUNTIME_CACHE_AWARE_DISPATCH_DEBUG_VISIBLE;
+  descriptor.selector = kDynamicSelector;
+  descriptor.selector_stable_id = entry.entry.selector_stable_id;
+  descriptor.class_graph_generation = state.state.class_graph_generation;
+  descriptor.category_attachment_generation =
+      state.state.category_attachment_generation;
+  descriptor.protocol_declaration_generation =
+      state.state.protocol_declaration_generation;
+  descriptor.storage_surface_generation = state.state.storage_surface_generation;
+  descriptor.method_surface_generation = state.state.method_surface_generation;
+  descriptor.source_path =
+      "tests/tooling/fixtures/native/live_dispatch_fast_path_positive.objc3";
+  descriptor.source_line = 1;
+  descriptor.source_column = 1;
+  return descriptor;
+}
+
+inline int PrepareRuntimeOwnedCacheAwareDescriptor(
+    objc3_runtime_cache_aware_dispatch_descriptor &descriptor) {
+  return objc3_runtime_prepare_cache_aware_dispatch_descriptor(
+      &descriptor, kDynamicSelector,
+      "tests/tooling/fixtures/native/live_dispatch_fast_path_positive.objc3",
+      1, 1);
+}
+
 inline int ExpectedStrictDispatchValue() {
   return ::objc3c::runtime::probe::ExpectedStrictDispatchErrorValue(
       kProbeClassId, kStrictErrorSelector, 4, 5, 6, 7);
@@ -88,6 +137,46 @@ inline ProbeRun CaptureProbeRun() {
 
   run.strict_error_entry =
       CaptureMethodCacheEntry(kProbeClassId, kStrictErrorSelector);
+
+  objc3_runtime_cache_aware_dispatch_descriptor cache_aware_descriptor =
+      MakeCacheAwareDescriptor(run.mixed_second, run.dynamic_entry);
+  run.cache_aware_prepare_status =
+      PrepareRuntimeOwnedCacheAwareDescriptor(cache_aware_descriptor);
+  const objc3_runtime_dispatch_i32_result cache_aware_result =
+      objc3_runtime_cache_aware_dispatch_i32_checked(
+          kProbeClassId, &cache_aware_descriptor, 0, 0, 0, 0);
+  run.cache_aware_value = cache_aware_result.value;
+  run.cache_aware_dispatch = CaptureCacheAwareDispatchRecord();
+
+  objc3_runtime_cache_aware_dispatch_descriptor stale_descriptor =
+      cache_aware_descriptor;
+  stale_descriptor.class_graph_generation = 0;
+  const objc3_runtime_dispatch_i32_result stale_result =
+      objc3_runtime_cache_aware_dispatch_i32_checked(
+          kProbeClassId, &stale_descriptor, 0, 0, 0, 0);
+  run.cache_aware_stale_value = stale_result.value;
+  run.cache_aware_stale_dispatch = CaptureCacheAwareDispatchRecord();
+
+  objc3_runtime_cache_aware_dispatch_descriptor malformed_descriptor =
+      cache_aware_descriptor;
+  malformed_descriptor.abi_version = 0;
+  const objc3_runtime_dispatch_i32_result malformed_result =
+      objc3_runtime_cache_aware_dispatch_i32_checked(
+          kProbeClassId, &malformed_descriptor, 0, 0, 0, 0);
+  run.cache_aware_malformed_status = malformed_result.status_code;
+  run.cache_aware_malformed_dispatch = CaptureCacheAwareDispatchRecord();
+
+  objc3_runtime_cache_aware_dispatch_descriptor missing_validation_descriptor =
+      cache_aware_descriptor;
+  missing_validation_descriptor.flags =
+      OBJC3_RUNTIME_CACHE_AWARE_DISPATCH_DEBUG_VISIBLE;
+  const objc3_runtime_dispatch_i32_result missing_validation_result =
+      objc3_runtime_cache_aware_dispatch_i32_checked(
+          kProbeClassId, &missing_validation_descriptor, 0, 0, 0, 0);
+  run.cache_aware_missing_validation_status =
+      missing_validation_result.status_code;
+  run.cache_aware_missing_validation_dispatch =
+      CaptureCacheAwareDispatchRecord();
 
   return run;
 }

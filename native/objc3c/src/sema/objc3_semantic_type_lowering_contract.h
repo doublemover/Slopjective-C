@@ -4,6 +4,7 @@
 
 #include "lowering/contracts/typed_sema_lowering_handoff.h"
 #include "sema/objc3_sema_contract.h"
+#include "sema/objc3_semantic_generic_collection_type_model.h"
 
 inline bool IsObjc3SemanticCanonicalTypeReadyForLowering(
     const Objc3SemanticCanonicalType &type) {
@@ -17,6 +18,10 @@ inline bool IsObjc3SemanticCanonicalTypeReadyForLowering(
          (!type.is_objc_named_object_pointer ||
           !type.object_pointer_type_name.empty()) &&
          (!type.has_generic_suffix || type.is_objc_object_reference) &&
+         (!IsObjc3GenericCollectionKind(
+              BuildObjc3GenericCollectionTypeModel(type).kind) ||
+          IsReadyObjc3GenericCollectionTypeModel(
+              BuildObjc3GenericCollectionTypeModel(type))) &&
          (!type.has_protocol_composition || type.is_objc_object_reference) &&
          (!type.has_explicit_nullability || type.is_objc_object_reference) &&
          !type.has_invalid_generic_suffix &&

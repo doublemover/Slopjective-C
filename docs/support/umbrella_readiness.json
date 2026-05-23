@@ -1,0 +1,547 @@
+{
+  "schema_version": "objc3c-umbrella-readiness-v1",
+  "readiness_version": "2026-05-21-oc3-next-foundation",
+  "schema_path": "schemas/objc3c-umbrella-readiness-v1.schema.json",
+  "matrix_path": "docs/support/capability_matrix.json",
+  "evidence_map_path": "docs/support/evidence_map.json",
+  "projection_policy": {
+    "authoritative_data": [
+      "docs/support/umbrella_readiness.json",
+      "docs/support/capability_matrix.json",
+      "docs/support/evidence_map.json"
+    ],
+    "human_projection": "docs/support/umbrella_readiness.md",
+    "validator": "scripts/check_objc3c_umbrella_readiness.py",
+    "consumer_rule": "Umbrella readiness may explain why a reserved umbrella row is blocked or ready for promotion; it cannot create support claims unless the capability matrix row itself is implemented with evidence."
+  },
+  "entries": [
+    {
+      "umbrella_capability_id": "runtime.object-model.full-realization",
+      "current_state": "reserved",
+      "target_state": "implemented",
+      "readiness_state": "blocked",
+      "intended_public_meaning": "Objective-C 3.0 object metadata, class/category/protocol realization, property and ivar reflection, registration replay, debugger-grade reflection, source identity, and runtime query behavior are complete as an integrated runtime surface rather than a set of narrow owner rows.",
+      "forbidden_overclaims": [
+        "Full object-model runtime support from class graph source alone.",
+        "Debugger-grade reflection from private snapshots or generated manifests alone.",
+        "Objective-C 2 runtime compatibility.",
+        "Swift or C++ runtime mirroring.",
+        "Issue comments, PR bodies, or tmp reports as support evidence."
+      ],
+      "required_prerequisite_rows": [
+        {
+          "capability_id": "runtime.object-model.interface-method-table",
+          "required_state": "implemented",
+          "reason": "Interface method table behavior is a prerequisite for public object-model realization."
+        },
+        {
+          "capability_id": "runtime.object-model.class-realization",
+          "required_state": "implemented",
+          "reason": "Class and metaclass graph behavior must remain implemented and evidence-backed."
+        },
+        {
+          "capability_id": "runtime.object-model.category-protocol-registration",
+          "required_state": "implemented",
+          "reason": "Category attachment and protocol registration must remain implemented and evidence-backed."
+        },
+        {
+          "capability_id": "runtime.object-model.property-ivar-reflection",
+          "required_state": "implemented",
+          "reason": "Property and ivar reflection must remain implemented and evidence-backed."
+        },
+        {
+          "capability_id": "runtime.object-model.registration-replay",
+          "required_state": "implemented",
+          "reason": "Runtime registration reset and replay must remain implemented and evidence-backed."
+        },
+        {
+          "capability_id": "runtime.object-model.bounded-query-snapshots",
+          "required_state": "implemented",
+          "reason": "Bounded runtime query snapshots must remain implemented and evidence-backed."
+        },
+        {
+          "capability_id": "runtime.public-api.reflection",
+          "required_state": "implemented",
+          "reason": "Public C reflection API behavior is required before the umbrella can be public."
+        }
+      ],
+      "required_source_anchors": [
+        {
+          "id": "class-graph-runtime",
+          "description": "Class and metaclass graph runtime source remains the object-model realization owner.",
+          "status": "satisfied",
+          "path": "native/objc3c/src/runtime/classes/class_graph.cpp"
+        },
+        {
+          "id": "registration-runtime",
+          "description": "Image registration and replay source remains the runtime registration owner.",
+          "status": "satisfied",
+          "path": "native/objc3c/src/runtime/images/registration.cpp"
+        },
+        {
+          "id": "public-reflection-api",
+          "description": "Public runtime reflection API source remains checked in and evidence-linked.",
+          "status": "satisfied",
+          "path": "native/objc3c/src/runtime/public/objc3_runtime_reflection.h"
+        },
+        {
+          "id": "combined-readiness-contract",
+          "description": "Combined object-model readiness contract ties class, metaclass, category, protocol, property, ivar, selector, reflection, and replay evidence to checked source anchors.",
+          "status": "satisfied",
+          "path": "tests/tooling/fixtures/object_model_closure/full_realization_combined_readiness_contract.json"
+        },
+        {
+          "id": "runtime-debug-anchor-identity",
+          "description": "Runtime public reflection exposes bounded debug-anchor identity records for class, category, protocol, property, ivar, and method rows.",
+          "status": "satisfied",
+          "path": "tests/tooling/fixtures/object_model_closure/debug_anchor_identity_replay_contract.json"
+        },
+        {
+          "id": "object-model-debugger-proof-contract",
+          "description": "Checked object-model debugger proof links source-map records, native line-table rows, debug-map runtime anchors, runtime reflection debug anchors, and value-inspection records.",
+          "status": "satisfied",
+          "path": "tests/tooling/fixtures/object_model_closure/debugger_value_inspection_replay_contract.json"
+        },
+        {
+          "id": "production-object-model-artifact-probe",
+          "description": "The object-model debugger proof command now compiles the integrated object-model fixture through the canonical frontend path and validates the emitted manifest, source graph, object artifact, runtime inventory, artifact inspector, fail-closed debug-map boundary, bounded compiler-owned object-model source identity rows, and production source-map/native-line-table publication.",
+          "status": "satisfied",
+          "path": "scripts/check_objc3c_object_model_debugger_proof.py"
+        },
+        {
+          "id": "debugger-source-identity",
+          "description": "Full source-map publication beyond bounded identity rows, emitted native debug info, and debugger stepping integration must still be owned by the production artifact path.",
+          "status": "blocked",
+          "blocker_id": "object-model-debugger-source-identity"
+        }
+      ],
+      "required_public_commands": [
+        {
+          "id": "object-model-conformance",
+          "description": "Runtime object-model conformance remains replayable through the npm bridge.",
+          "status": "satisfied",
+          "command": "npm run objc3c -- validate-object-model-conformance"
+        },
+        {
+          "id": "public-reflection-api",
+          "description": "Public runtime reflection API remains replayable through the npm bridge.",
+          "status": "satisfied",
+          "command": "npm run objc3c -- validate-public-runtime-reflection-api"
+        },
+        {
+          "id": "object-model-debugger-proof",
+          "description": "Object-model debugger source-map, line-table, debug-anchor, value-inspection linkage, production frontend artifact/runtime inventory proof, bounded compiler-owned object-model source identity rows, and source-map/native-line-table publication remain replayable through the npm bridge.",
+          "status": "satisfied",
+          "command": "npm run objc3c -- validate-object-model-debugger-proof"
+        },
+        {
+          "id": "debugger-integration",
+          "description": "Debugger-grade statement stepping over emitted native debug line tables must be completed on the production compiler artifact path.",
+          "status": "blocked",
+          "blocker_id": "object-model-debugger-source-identity"
+        }
+      ],
+      "required_positive_fixtures": [
+        {
+          "id": "class-realization-contract",
+          "description": "Class realization behavior fixture remains checked in.",
+          "status": "satisfied",
+          "path": "tests/native/runtime/object_model/class_realization_contract.objc3"
+        },
+        {
+          "id": "property-ivar-reflection-contract",
+          "description": "Property and ivar reflection behavior fixture remains checked in.",
+          "status": "satisfied",
+          "path": "tests/native/runtime/object_model/property_ivar_reflection_contract.objc3"
+        },
+        {
+          "id": "combined-reflection-replay-contract",
+          "description": "Combined class/metaclass/category/protocol/property/ivar/selector/reflection/replay fixture remains checked in.",
+          "status": "satisfied",
+          "path": "tests/native/runtime/object_model/full_realization_combined_reflection_replay_contract.objc3"
+        },
+        {
+          "id": "debugger-object-inspection-e2e",
+          "description": "Debugger-grade object inspection is covered by an integrated source-map, line-table, debug-anchor, and reflection replay fixture.",
+          "status": "satisfied",
+          "path": "tests/tooling/fixtures/object_model_closure/debugger_value_inspection_replay_contract.json"
+        }
+      ],
+      "required_negative_fixtures": [
+        {
+          "id": "category-attachment-collision",
+          "description": "Invalid category attachment remains rejected by checked negative evidence.",
+          "status": "satisfied",
+          "path": "tests/tooling/fixtures/native/execution/negative/category_attachment_collision.objc3"
+        },
+        {
+          "id": "private-snapshot-public-boundary",
+          "description": "Private testing snapshots remain internal and cannot satisfy public reflection or debugger-grade support.",
+          "status": "satisfied",
+          "path": "tests/tooling/fixtures/object_model_closure/full_realization_combined_readiness_contract.json"
+        },
+        {
+          "id": "malformed-metadata-boundary",
+          "description": "Malformed object-model metadata remains fail-closed and cannot become reflectable support.",
+          "status": "satisfied",
+          "path": "tests/tooling/runtime/protocol_category_invalid_metadata_probe.cpp"
+        },
+        {
+          "id": "stale-generation-boundary",
+          "description": "Stale or blocked reset/replay generation evidence remains lifecycle rejection/provenance rather than umbrella support.",
+          "status": "satisfied",
+          "path": "tests/tooling/runtime/deterministic_reset_replay_probe.cpp"
+        },
+        {
+          "id": "unsupported-foreign-runtime-compatibility",
+          "description": "Foreign runtime compatibility and Objective-C 2 compatibility remain explicit non-goals until implemented by their own rows.",
+          "status": "satisfied",
+          "path": "docs/support/hard_cutover_capability_truth.md"
+        }
+      ],
+      "required_runtime_probes": [
+        {
+          "id": "public-reflection-probe",
+          "description": "Public reflection API probe remains checked in.",
+          "status": "satisfied",
+          "path": "tests/tooling/runtime/public_runtime_reflection_api_probe.cpp"
+        },
+        {
+          "id": "registration-replay-generation-probe",
+          "description": "Registration reset/replay generation probe remains checked in for lifecycle boundary evidence.",
+          "status": "satisfied",
+          "path": "tests/tooling/runtime/multi_image_registration_reset_replay_probe.cpp"
+        },
+        {
+          "id": "debug-anchor-identity-replay-probe",
+          "description": "Runtime-owned debug-anchor replay probe ties reflection rows to source/debug identity and missing/stale anchor boundaries.",
+          "status": "satisfied",
+          "path": "tests/native/runtime/object_model/debug_anchor_identity_replay_probe.cpp"
+        },
+        {
+          "id": "debugger-runtime-value-probe",
+          "description": "Debugger value inspection proves runtime metadata through a checked source-map/debug-anchor replay fixture plus a canonical frontend artifact-inspector, bounded object-model source-identity, and source-map/native-line-table publication probe over the integrated object-model source.",
+          "status": "satisfied",
+          "path": "tests/tooling/fixtures/object_model_closure/debugger_value_inspection_replay_contract.json"
+        }
+      ],
+      "required_abi_governance_rows": [
+        {
+          "id": "public-reflection-abi",
+          "description": "Public reflection ABI is represented by the current public reflection API row.",
+          "status": "satisfied",
+          "capability_id": "runtime.public-api.reflection"
+        },
+        {
+          "id": "debugger-reflection-abi",
+          "description": "Debugger-grade reflection ABI additions are governed through debug-anchor ABI v2, minimum reader ABI v2, caller snapshot-size negotiation, and append-only source/debug artifact fields.",
+          "status": "satisfied",
+          "path": "tests/tooling/fixtures/object_model_closure/debugger_value_inspection_replay_contract.json"
+        }
+      ],
+      "required_docs": [
+        {
+          "id": "hard-cutover-boundary",
+          "description": "Hard-cutover capability truth continues to state the reserved umbrella boundary.",
+          "status": "satisfied",
+          "path": "docs/support/hard_cutover_capability_truth.md"
+        },
+        {
+          "id": "object-model-runbook",
+          "description": "Object-model closure runbook remains checked in.",
+          "status": "satisfied",
+          "path": "docs/runbooks/objc3c_object_model_closure.md"
+        },
+        {
+          "id": "combined-readiness-test",
+          "description": "Combined readiness test remains checked in to enforce lifetime, source-anchor, and negative-boundary evidence.",
+          "status": "satisfied",
+          "path": "tests/tooling/test_runtime_object_model_full_realization_readiness.py"
+        },
+        {
+          "id": "object-model-debugger-proof-test",
+          "description": "Object-model debugger proof checker remains covered by fail-closed tests.",
+          "status": "satisfied",
+          "path": "tests/tooling/test_runtime_object_model_full_realization_readiness.py"
+        }
+      ],
+      "generated_output_boundary": {
+        "source_truth_allowed": false,
+        "unsupported_sources": [
+          "tmp/",
+          "generated markdown projections",
+          "issue comments",
+          "PR bodies",
+          "unlinked replay reports"
+        ],
+        "rule": "Generated outputs may summarize checked source, fixtures, and matrix/evidence rows, but cannot satisfy object-model full-realization readiness by themselves."
+      },
+      "promotion_blockers": [
+        {
+          "blocker_id": "object-model-debugger-source-identity",
+          "summary": "Bounded runtime debug-anchor identity, replayable object-model value inspection, a canonical frontend artifact/runtime inventory probe, compiler-owned source identity rows, and production source-map/native-line-table publication now exist, but full debugger-grade object-model stepping is not yet complete on the production artifact path.",
+          "missing_work": [
+            "Full source-map publication beyond bounded object-model identity rows and emitted native debug info for the integrated object-model program.",
+            "Production debugger statement-stepping integration over emitted native debug info."
+          ],
+          "tracking_issue": "#8198"
+        }
+      ],
+      "final_promotion_criteria": [
+        "The umbrella matrix row changes to implemented in docs/support/capability_matrix.json.",
+        "All required prerequisite rows remain implemented with evidence-map rows.",
+        "All readiness requirements are satisfied.",
+        "No promotion blockers remain.",
+        "Debugger-grade reflection and source identity are covered by public npm-bridge commands without relying on private snapshots or generated reports."
+      ]
+    },
+    {
+      "umbrella_capability_id": "language.advanced-runtime-closure",
+      "current_state": "reserved",
+      "target_state": "implemented",
+      "readiness_state": "blocked",
+      "intended_public_meaning": "Objective-C 3.0 blocks, ownership, ARC cleanup, errors, async/actors, cancellation, property behaviors, metaprogramming host boundaries, and interop runtime replay are complete as a combined runtime-backed language surface rather than isolated narrow rows.",
+      "forbidden_overclaims": [
+        "Advanced runtime closure from any single blocks, async, error, property, or macro row.",
+        "Cross-feature ownership correctness from generated reports alone.",
+        "Foreign runtime compatibility from interop package replay alone.",
+        "Broad runtime closure without integrated positive and negative fixtures.",
+        "Issue comments, PR bodies, or tmp reports as support evidence."
+      ],
+      "required_prerequisite_rows": [
+        {
+          "capability_id": "language.blocks.escape-capture-legality",
+          "required_state": "implemented",
+          "reason": "Block capture legality must remain implemented and evidence-backed."
+        },
+        {
+          "capability_id": "runtime.blocks.copy-dispose-invoke",
+          "required_state": "implemented",
+          "reason": "Block runtime copy, dispose, and invoke helpers must remain implemented and evidence-backed."
+        },
+        {
+          "capability_id": "runtime.blocks.byref-forwarding",
+          "required_state": "implemented",
+          "reason": "Byref forwarding behavior must remain implemented and evidence-backed."
+        },
+        {
+          "capability_id": "language.arc-cleanup.integration",
+          "required_state": "implemented",
+          "reason": "ARC cleanup integration must remain implemented and evidence-backed."
+        },
+        {
+          "capability_id": "runtime.errors.live-bridge-cleanup",
+          "required_state": "implemented",
+          "reason": "Live error bridge cleanup must remain implemented and evidence-backed."
+        },
+        {
+          "capability_id": "runtime.concurrency.async-actors",
+          "required_state": "implemented",
+          "reason": "Async and actor runtime behavior must remain implemented and evidence-backed."
+        },
+        {
+          "capability_id": "runtime.concurrency.actor-mailbox-isolation",
+          "required_state": "implemented",
+          "reason": "Actor mailbox isolation must remain implemented and evidence-backed."
+        },
+        {
+          "capability_id": "language.metaprogramming.property-behavior-semantics",
+          "required_state": "implemented",
+          "reason": "Property behavior semantic materialization must remain implemented and evidence-backed."
+        },
+        {
+          "capability_id": "runtime.metaprogramming.host-cache-boundary",
+          "required_state": "implemented",
+          "reason": "Macro host cache boundary behavior must remain implemented and evidence-backed."
+        },
+        {
+          "capability_id": "runtime.modules.imported-runtime-packaging-replay",
+          "required_state": "implemented",
+          "reason": "Imported runtime packaging replay must remain implemented and evidence-backed."
+        }
+      ],
+      "required_source_anchors": [
+        {
+          "id": "block-runtime-source",
+          "description": "Block runtime copy/dispose/invoke source remains checked in.",
+          "status": "satisfied",
+          "path": "native/objc3c/src/runtime/blocks/block_invocation.cpp"
+        },
+        {
+          "id": "concurrency-runtime-source",
+          "description": "Task and actor runtime sources remain checked in.",
+          "status": "satisfied",
+          "path": "native/objc3c/src/runtime/concurrency/task_runtime_operations.cpp"
+        },
+        {
+          "id": "error-runtime-source",
+          "description": "Error bridge runtime source remains checked in.",
+          "status": "satisfied",
+          "path": "native/objc3c/src/runtime/errors/error_bridge_operations.cpp"
+        },
+        {
+          "id": "combined-runtime-source-graph",
+          "description": "Combined runtime closure is traceable through checked compiler-owned source graph, runtime-state, ABI, and debug-map contract records.",
+          "status": "satisfied",
+          "path": "tests/tooling/fixtures/advanced_runtime_closure/combined_runtime_identity_contract.json"
+        },
+        {
+          "id": "compiler-emitted-source-debug-map",
+          "description": "The #8199 validator checks canonical source/debug-map, native line-table, runtime-state, ABI, and compiler-owned source graph records for the combined runtime fixture.",
+          "status": "satisfied",
+          "path": "tests/tooling/fixtures/advanced_runtime_closure/combined_runtime_source_debug_map.json"
+        }
+      ],
+      "required_public_commands": [
+        {
+          "id": "block-arc-runtime",
+          "description": "Block ARC runtime acceptance remains replayable through the npm bridge.",
+          "status": "satisfied",
+          "command": "npm run objc3c -- test-runtime-acceptance-block-arc"
+        },
+        {
+          "id": "concurrency-conformance",
+          "description": "Concurrency runtime conformance remains replayable through the npm bridge.",
+          "status": "satisfied",
+          "command": "npm run objc3c -- validate-concurrency-conformance"
+        },
+        {
+          "id": "cross-lane-e2e",
+          "description": "Cross-lane runtime closure fixture and negative-matrix checks are replayable through the npm bridge.",
+          "status": "satisfied",
+          "command": "npm run objc3c -- validate-advanced-runtime-closure"
+        }
+      ],
+      "required_positive_fixtures": [
+        {
+          "id": "escaping-block-copy-dispose",
+          "description": "Escaping owned-object block copy/dispose fixture remains checked in.",
+          "status": "satisfied",
+          "path": "tests/tooling/fixtures/native/execution/positive/escaping_owned_object_block_copy_dispose.objc3"
+        },
+        {
+          "id": "live-continuation-runtime",
+          "description": "Live continuation runtime integration fixture remains checked in.",
+          "status": "satisfied",
+          "path": "tests/tooling/fixtures/native/live_continuation_runtime_integration_positive.objc3"
+        },
+        {
+          "id": "combined-runtime-program",
+          "description": "A combined blocks, ownership, errors, async, actor, cancellation, property behavior, macro provenance, and package replay program exists.",
+          "status": "satisfied",
+          "path": "tests/native/runtime/advanced_closure/combined_positive.objc3"
+        }
+      ],
+      "required_negative_fixtures": [
+        {
+          "id": "weak-capture-mutation",
+          "description": "Weak object capture mutation remains rejected by checked negative evidence.",
+          "status": "satisfied",
+          "path": "tests/tooling/fixtures/native/weak_object_capture_mutation_negative.objc3"
+        },
+        {
+          "id": "missing-replay-proof",
+          "description": "Missing runtime replay proof remains rejected by checked negative evidence.",
+          "status": "satisfied",
+          "path": "tests/tooling/fixtures/native/missing_replay_proof_rejected.objc3"
+        },
+        {
+          "id": "combined-runtime-negative-boundaries",
+          "description": "The #8199 negative matrix covers 17 cross-feature rejected or reserved cases, including ownership, blocks, async, actor mailbox payloads, cancellation, error, property/macro conflicts, package replay, and broad scheduler overclaim boundaries.",
+          "status": "satisfied",
+          "path": "tests/native/runtime/advanced_closure/negative_matrix.contract.json"
+        },
+        {
+          "id": "native-artifact-compile-output",
+          "description": "The #8199 native artifact contract checks the combined fixture against the real direct-native compiler path and requires object, LLVM IR, manifest, runtime registration, runtime metadata, and error replay artifacts while preserving the unclaimed native link/run boundary.",
+          "status": "satisfied",
+          "path": "tests/tooling/fixtures/advanced_runtime_closure/native_artifact_contract.json"
+        }
+      ],
+      "required_runtime_probes": [
+        {
+          "id": "combined-runtime-state-contract",
+          "description": "Combined runtime-state records tie blocks, ownership, async cancellation, actor mailbox, error bridge, property behavior, macro host cache, package replay, and source/debug records to checked owners without promoting the native executable umbrella.",
+          "status": "satisfied",
+          "path": "tests/tooling/fixtures/advanced_runtime_closure/combined_runtime_identity_contract.json"
+        },
+        {
+          "id": "native-link-run-umbrella-probe",
+          "description": "Native executable link/run for the full advanced-runtime umbrella fixture remains unclaimed.",
+          "status": "blocked",
+          "blocker_id": "advanced-runtime-native-link-run"
+        }
+      ],
+      "required_abi_governance_rows": [
+        {
+          "id": "blocks-runtime-abi",
+          "description": "Block runtime ABI must remain represented by implemented block runtime rows.",
+          "status": "satisfied",
+          "capability_id": "runtime.blocks.copy-dispose-invoke"
+        },
+        {
+          "id": "combined-runtime-abi",
+          "description": "Combined block, async, error, actor, property, macro, and package replay ABI interactions are represented by the checked #8199 identity contract.",
+          "status": "satisfied",
+          "path": "tests/tooling/fixtures/advanced_runtime_closure/combined_runtime_identity_contract.json"
+        }
+      ],
+      "required_docs": [
+        {
+          "id": "hard-cutover-boundary",
+          "description": "Hard-cutover capability truth continues to state the reserved umbrella boundary.",
+          "status": "satisfied",
+          "path": "docs/support/hard_cutover_capability_truth.md"
+        },
+        {
+          "id": "errors-spec",
+          "description": "Errors and result semantics remain documented as narrower rows.",
+          "status": "satisfied",
+          "path": "spec/PART_6_ERRORS_RESULTS_THROWS.md"
+        },
+        {
+          "id": "concurrency-spec",
+          "description": "Concurrency semantics remain documented as narrower rows.",
+          "status": "satisfied",
+          "path": "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md"
+        },
+        {
+          "id": "advanced-runtime-identity-contract",
+          "description": "The #8199 checker enforces combined runtime-state/source-graph/debug-map/ABI interaction coverage without promoting the umbrella row.",
+          "status": "satisfied",
+          "path": "tests/tooling/fixtures/advanced_runtime_closure/combined_runtime_identity_contract.json"
+        }
+      ],
+      "generated_output_boundary": {
+        "source_truth_allowed": false,
+        "unsupported_sources": [
+          "tmp/",
+          "generated markdown projections",
+          "issue comments",
+          "PR bodies",
+          "unlinked replay reports"
+        ],
+        "rule": "Generated outputs may summarize checked source, fixtures, and matrix/evidence rows, but cannot satisfy advanced-runtime closure readiness by themselves."
+      },
+      "promotion_blockers": [
+        {
+          "blocker_id": "advanced-runtime-native-link-run",
+          "summary": "Checked positive, runtime-state, source-graph, source/debug-map, ABI, native object/IR/manifest artifact, and 17-case negative-matrix proof exists, but native executable link/run for the full advanced-runtime umbrella fixture is not yet a public support claim.",
+          "missing_work": [
+            "Canonical native executable link/run acceptance for the integrated advanced-runtime umbrella fixture.",
+            "Public npm-bridge evidence that the integrated native executable path matches the checked #8199 contracts without promoting unsupported combinations."
+          ],
+          "tracking_issue": "#8199"
+        }
+      ],
+      "final_promotion_criteria": [
+        "The umbrella matrix row changes to implemented in docs/support/capability_matrix.json.",
+        "All required prerequisite rows remain implemented with evidence-map rows.",
+        "All readiness requirements are satisfied.",
+        "No promotion blockers remain.",
+        "Combined runtime positive and negative programs prove cross-feature semantics through public npm-bridge commands.",
+        "Native executable link/run evidence exists for the integrated advanced-runtime umbrella fixture without relying on generated reports as source truth."
+      ]
+    }
+  ]
+}

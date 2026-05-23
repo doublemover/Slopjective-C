@@ -22,6 +22,17 @@ def _dump_action_spec(contract: DeveloperToolingDumpContract) -> ActionSpec:
 
 
 TOOLING_INSPECTION_ACTION_SPECS: dict[str, ActionSpec] = {
+    "inspect-debug-map": ActionSpec(
+        "inspect-debug-map",
+        "inspect Objective-C 3 debug maps, source-map records, capability rows, and native line-table evidence",
+        "python:scripts/check_objc3c_debug_source_maps.py --inspect",
+        validation_tier="repo",
+        guarantee_owner=(
+            "debug-map inspection stays rooted in compiler-owned source maps, source "
+            "graph ids, IR/native anchors, capability rows, and native line-table evidence"
+        ),
+        pass_through_args=True,
+    ),
     "inspect-bonus-tool-integration": ActionSpec(
         "inspect-bonus-tool-integration",
         "emit the live bonus-tool integration surface from the build-owned source-of-truth artifact and checked-in showcase/tutorial contracts",

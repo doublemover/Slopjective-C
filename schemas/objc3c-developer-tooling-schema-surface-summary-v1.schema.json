@@ -53,6 +53,7 @@
         "capabilities_path",
         "navigation_path",
         "workspace_index_path",
+        "source_graph_path",
         "artifact_inspector_path",
         "formatter_path",
         "debug_path"
@@ -65,6 +66,9 @@
           "type": "string"
         },
         "workspace_index_path": {
+          "type": "string"
+        },
+        "source_graph_path": {
           "type": "string"
         },
         "artifact_inspector_path": {
@@ -86,12 +90,13 @@
           "language_server",
           "navigation",
           "workspace_index",
+          "source_graph",
           "artifact_inspector",
           "formatter",
           "debug"
         ]
       },
-      "minItems": 6,
+      "minItems": 7,
       "uniqueItems": true
     },
     "fail_closed_capabilities": {

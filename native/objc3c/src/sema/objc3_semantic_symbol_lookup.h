@@ -8,6 +8,9 @@
 SemanticTypeInfo ScopeLookupType(
     const std::vector<SemanticScope> &scopes,
     const std::string &name);
+const SemanticTypeInfo *ScopeLookupTypeOrNull(
+    const std::vector<SemanticScope> &scopes,
+    const std::string &name);
 OwnershipResourceMoveBindingState *LookupOwnershipResourceMoveBinding(
     std::vector<OwnershipResourceMoveScope> &scopes,
     const std::string &name);

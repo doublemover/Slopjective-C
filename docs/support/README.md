@@ -13,6 +13,8 @@ summarize support, but they must not widen it beyond these files.
 | `capability_matrix.md`               | Human-readable projection of the capability matrix.                                                                    |
 | `evidence_map.json`                  | Machine-readable flattened capability-to-evidence rows.                                                                |
 | `evidence_map.md`                    | Human-readable evidence table.                                                                                         |
+| `umbrella_readiness.json`            | Machine-readable readiness gates for broad reserved umbrella capability rows.                                          |
+| `umbrella_readiness.md`              | Human-readable projection of umbrella promotion blockers and final criteria.                                           |
 | `capability_schema_examples.md`      | Examples and anti-examples for matrix and evidence rows.                                                               |
 | `capability_claim_responsibility.md` | Responsibility split for capability claims, checked-in evidence, issue closeout payloads, and generated-output rows.   |
 | `hard_cutover_capability_truth.md`   | Human-readable hard-cutover support boundary for docs, site, stdlib, and runbook prose.                                |
@@ -33,6 +35,7 @@ registry and native artifact publication records:
 
 - `objc3c-capability-matrix-v1`
 - `objc3c-capability-evidence-map-v1`
+- `objc3c-umbrella-readiness-v1`
 - backing schema files under `schemas/`
 - `schemas/README.md`
 - `scripts/objc3c_shared/schema_registry.py`
@@ -64,6 +67,11 @@ evidence map a flattened projection of
 `scripts/capability_docs_validator/evidence_map.py`. The stable row key is
 `capability_id`, `support_claim`, `evidence_kind`, `path`, and `command`; the
 validator rejects duplicate, missing, or extra evidence-map keys.
+
+`umbrella_readiness.json` carries schema-backed promotion gates for broad
+reserved rows. It can explain missing prerequisites and blockers, but it cannot
+promote an umbrella row or create a public support claim unless the matrix row
+itself changes to `implemented` with evidence.
 
 ## Change Rules
 
@@ -111,7 +119,8 @@ state rules, evidence-map projection keys, docs references, and CLI behavior hav
 separate owners.
 
 `scripts/build_capability_support_docs.py` owns the generated markdown
-projections for `capability_matrix.md` and `evidence_map.md`. The validator
-checks those generated files for drift, so public support prose fails closed if
-it claims a behavior above the support matrix, evidence map, canonical fixture
-manifest, or conformance phase-owner contract.
+projections for `capability_matrix.md`, `evidence_map.md`, and
+`umbrella_readiness.md`. The validator checks those generated files for drift,
+so public support prose fails closed if it claims a behavior above the support
+matrix, evidence map, umbrella readiness gates, canonical fixture manifest, or
+conformance phase-owner contract.

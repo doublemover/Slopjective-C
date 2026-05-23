@@ -168,6 +168,25 @@ static void CollectPureContractEffectStmt(
                                          info);
       scopes.pop_back();
       return;
+    case Stmt::Kind::ForIn:
+      if (stmt->for_in_stmt == nullptr) {
+        return;
+      }
+      CollectPureContractEffectExpr(stmt->for_in_stmt->collection.get(), scopes,
+                                    info);
+      scopes.push_back({});
+      if (!stmt->for_in_stmt->value_name.empty()) {
+        scopes.back().insert(stmt->for_in_stmt->value_name);
+      }
+      if (stmt->for_in_stmt->has_key_binding &&
+          !stmt->for_in_stmt->key_name.empty()) {
+        scopes.back().insert(stmt->for_in_stmt->key_name);
+      }
+      for (const auto &loop_stmt : stmt->for_in_stmt->body) {
+        CollectPureContractEffectStmt(loop_stmt.get(), scopes, globals, info);
+      }
+      scopes.pop_back();
+      return;
     case Stmt::Kind::Switch:
       if (stmt->switch_stmt == nullptr) {
         return;
@@ -207,6 +226,22 @@ static void CollectPureContractEffectStmt(
       }
       scopes.pop_back();
       return;
+    case Stmt::Kind::CollectionMutation:
+      if (stmt->collection_mutation_stmt == nullptr) {
+        return;
+      }
+      if (IsPureContractGlobalWriteTarget(
+              stmt->collection_mutation_stmt->collection_name, scopes,
+              globals)) {
+        RecordPureContractSourceLoc(info.global_write_site,
+                                    stmt->collection_mutation_stmt->line,
+                                    stmt->collection_mutation_stmt->column);
+      }
+      CollectPureContractEffectExpr(
+          stmt->collection_mutation_stmt->key_or_index.get(), scopes, info);
+      CollectPureContractEffectExpr(
+          stmt->collection_mutation_stmt->value.get(), scopes, info);
+      return;
     case Stmt::Kind::Break:
     case Stmt::Kind::Continue:
     case Stmt::Kind::Empty:
@@ -229,6 +264,23 @@ static void CollectPureContractEffectExpr(
     case Expr::Kind::Identifier:
     case Expr::Kind::KeyPathLiteral:
     case Expr::Kind::BlockLiteral:
+      return;
+    case Expr::Kind::StringInterpolation:
+      for (const auto &arg : expr->args) {
+        CollectPureContractEffectExpr(arg.get(), scopes, info);
+      }
+      return;
+    case Expr::Kind::CollectionLiteral:
+      for (const auto &key : expr->collection_keys) {
+        CollectPureContractEffectExpr(key.get(), scopes, info);
+      }
+      for (const auto &value : expr->collection_values) {
+        CollectPureContractEffectExpr(value.get(), scopes, info);
+      }
+      return;
+    case Expr::Kind::IndexAccess:
+      CollectPureContractEffectExpr(expr->left.get(), scopes, info);
+      CollectPureContractEffectExpr(expr->right.get(), scopes, info);
       return;
     case Expr::Kind::Binary:
       CollectPureContractEffectExpr(expr->left.get(), scopes, info);

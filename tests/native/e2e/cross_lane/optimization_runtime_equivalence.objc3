@@ -1,0 +1,54 @@
+// #8200 cross-lane executable: optimization + runtime equivalence.
+// exact devirtualization candidate
+// method inlining candidate fail-closed boundary; this fixture records a
+// candidate call site but requires the integrated proof to keep method inlining
+// unpromoted until production IR carries inlined-body, inline-frame, and
+// invalidation proof.
+// cache-aware dispatch candidate
+// before/after IR
+// runtime equivalence
+module CrossLaneOptimizationRuntimeEquivalence;
+
+__attribute__((objc_direct_members, objc_final, objc_sealed))
+@interface CrossLaneOptimizedCounter
++ (i32)exactValue;
++ (i32)inlineCandidate:(i32)seed __attribute__((objc_direct));
++ (i32)cachedCandidate:(i32)seed __attribute__((objc_dynamic));
++ (i32)mixedCandidate:(i32)seed;
+@end
+
+@implementation CrossLaneOptimizedCounter
++ (i32)exactValue {
+  return 7;
+}
+
++ (i32)inlineCandidate:(i32)seed __attribute__((objc_direct)) {
+  return seed + 5;
+}
+
++ (i32)cachedCandidate:(i32)seed __attribute__((objc_dynamic)) {
+  return seed + 5;
+}
+
++ (i32)mixedCandidate:(i32)seed {
+  let exact = [self exactValue];
+  let inlineable = [self inlineCandidate:seed];
+  let cached = [self cachedCandidate:seed];
+  if (inlineable != cached) {
+    return 31;
+  }
+  return exact + inlineable + cached;
+}
+@end
+
+fn runCandidate(seed: i32) -> i32 {
+  return [CrossLaneOptimizedCounter mixedCandidate:seed];
+}
+
+fn main() -> i32 {
+  let result = runCandidate(3);
+  if (result != 23) {
+    return result;
+  }
+  return 0;
+}

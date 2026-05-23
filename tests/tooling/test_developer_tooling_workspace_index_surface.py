@@ -94,3 +94,172 @@ def test_debug_payload_reserves_stepping_and_full_source_map_rows() -> None:
     assert reserved["statementLevelStepping"]["fail_closed"] is True
     assert reserved["fullSourceMapPublication"]["status"] == "reserved"
     assert reserved["fullSourceMapPublication"]["fail_closed"] is True
+
+
+def test_debug_payload_publishes_object_model_source_identity_from_manifest() -> None:
+    source_path = "tests/native/runtime/object_model/full_realization_combined_reflection_replay_contract.objc3"
+    manifest = {
+        "source": source_path,
+        "interfaces": [{"name": "RuntimeFullWidget", "line": 28, "column": 1}],
+        "categories": [
+            {
+                "class_name": "RuntimeFullWidget",
+                "category_name": "ReplayReflection",
+                "line": 53,
+                "column": 1,
+            }
+        ],
+        "protocols": [{"name": "RuntimeFullTraceable", "line": 6, "column": 1}],
+        "runtime_metadata_source_records": {
+            "properties": [
+                {
+                    "owner_name": "RuntimeFullWidget",
+                    "property_name": "value",
+                    "line": 29,
+                    "column": 1,
+                }
+            ],
+            "ivars": [
+                {
+                    "owner_name": "RuntimeFullWidget",
+                    "ivar_name": "value",
+                    "line": 29,
+                    "column": 1,
+                }
+            ],
+            "methods": [
+                {
+                    "owner_name": "RuntimeFullWidget",
+                    "selector": "setValue:",
+                    "line": 40,
+                    "column": 1,
+                }
+            ],
+        },
+    }
+
+    debug_payload = build_debug_payload(
+        {
+            "runtime_inspector": {
+                "contract_id": "objc3c.runtime.metadata.object.inspection.harness.v1",
+                "dump_commands": {"object_symbols": "llvm-nm module.obj"},
+            }
+        },
+        "tmp/artifacts/module.obj",
+        [{"name": "RuntimeFullWidget", "kind": "interface", "line": 28, "column": 1}],
+        manifest=manifest,
+        source_graph={"source_graph_digest": "a" * 64},
+        source_path=source_path,
+        native_debug_info_evidence={
+            "contract_id": "objc3c.object_model.production.native_debug_info_evidence.v1",
+            "evidence_id": "object-model.native-debug-info.production-object-section-probe",
+            "source_model": "emitted-object-section-inventory-and-ir-debug-metadata-probe",
+            "object_artifact_present": True,
+            "object_path": "tmp/artifacts/module.obj",
+            "object_format": "coff",
+            "object_sha256": "a" * 64,
+            "object_section_inventory_command": "llvm-readobj --sections tmp/artifacts/module.obj",
+            "object_section_names": [
+                ".text",
+                ".rdata",
+                ".debug$S",
+                ".debug_abbrev",
+                ".debug_info",
+                ".debug_str",
+                ".debug_line",
+            ],
+            "native_debug_sections": [
+                ".debug$S",
+                ".debug_abbrev",
+                ".debug_info",
+                ".debug_str",
+                ".debug_line",
+            ],
+            "native_line_table_sections": [".debug$S", ".debug_line"],
+            "native_debug_section_count": 5,
+            "native_line_table_section_count": 2,
+            "ir_path": "tmp/artifacts/module.ll",
+            "ir_debug_metadata_model": "llvm-di-metadata-present",
+            "llvm_debug_metadata_present": True,
+            "llvm_debug_location_count": 12,
+            "emitted_native_debug_info_supported": True,
+            "native_line_table_supported": True,
+            "statement_stepping_supported": False,
+            "fail_closed": True,
+            "fail_closed_reason": "runtime debug trace is not integrated with emitted native debug info",
+            "blocked_by": ["runtime-debug-trace-statement-stepping-integration"],
+        },
+    )
+
+    source_identity = debug_payload["object_model_source_identity"]
+    assert "object-model-production-source-identity" in debug_payload["evidence_roots"]
+    assert "object-model-production-source-map-native-line-table" in debug_payload["evidence_roots"]
+    assert "native-debug-info-artifact-evidence" in debug_payload["evidence_roots"]
+    assert source_identity["contract_id"] == "objc3c.object_model.production.source_identity.v1"
+    assert source_identity["native_debug_info_evidence"]["native_debug_section_count"] == 5
+    assert source_identity["native_debug_info_evidence"]["native_line_table_section_count"] == 2
+    assert source_identity["native_debug_info_fail_closed_reason"] == (
+        "runtime debug trace is not integrated with emitted native debug info"
+    )
+    assert source_identity["source_map_records_supported"] is True
+    assert source_identity["native_line_table_projection_supported"] is True
+    assert source_identity["source_map_publication_supported"] is True
+    assert source_identity["native_line_table_publication_supported"] is True
+    assert debug_payload["source_map_supported"] is False
+    assert debug_payload["statement_level_stepping"] is False
+    assert source_identity["runtime_debug_trace_statement_stepping"] is False
+    assert {
+        candidate["status"]
+        for candidate in source_identity["stepping_candidates"]
+    } == {"native-line-table-ready-stepping-blocked"}
+    assert {
+        tuple(candidate["blocked_by"])
+        for candidate in source_identity["stepping_candidates"]
+    } == {("runtime-debug-trace-statement-stepping-integration",)}
+    publication = source_identity["source_map_native_line_table_publication"]
+    assert publication["contract_id"] == (
+        "objc3c.object_model.production.source_map_native_line_table.v1"
+    )
+    assert publication["publication_model"] == (
+        "canonical-frontend-manifest-source-map-native-line-table"
+    )
+    assert publication["source_map_publication_supported"] is True
+    assert publication["native_line_table_publication_supported"] is True
+    assert publication["emitted_native_debug_info_supported"] is True
+    assert publication["statement_stepping_supported"] is False
+    assert publication["native_debug_info_evidence"]["blocked_by"] == [
+        "runtime-debug-trace-statement-stepping-integration"
+    ]
+    assert set(publication["source_map_record_ids"]) == {
+        record["source_map_record_id"]
+        for record in source_identity["source_map_records"]
+    }
+    assert set(publication["native_line_table_row_ids"]) == {
+        row["row_id"]
+        for row in source_identity["native_line_table_rows"]
+    }
+    assert set(source_identity["required_identity_kinds_present"]) == {
+        "class",
+        "category",
+        "protocol",
+        "property",
+        "ivar",
+        "method",
+    }
+    assert {
+        row["expected_native_symbol"]
+        for row in source_identity["native_line_table_rows"]
+        if row["runtime_identity_kind"] == "method"
+    } == {"objc3_method_RuntimeFullWidget_instance_setValue_"}
+    assert {
+        row["native_debug_info_blocker"]
+        for row in source_identity["native_line_table_rows"]
+    } == {"runtime debug trace is not integrated with emitted native debug info"}
+    assert {
+        row["native_debug_info_emitted"]
+        for row in source_identity["native_line_table_rows"]
+    } == {True}
+    assert {
+        row["native_line_table_emitted"]
+        for row in source_identity["native_line_table_rows"]
+    } == {True}

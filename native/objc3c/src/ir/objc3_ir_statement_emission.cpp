@@ -15,9 +15,110 @@
 
 namespace {
 
+constexpr const char *kObjc3RuntimeCollectionsMutableArrayAppendI32Symbol =
+    "objc3_runtime_stdlib_collections_mutable_array_append_i32";
+constexpr const char *kObjc3RuntimeCollectionsMutableArraySetI32Symbol =
+    "objc3_runtime_stdlib_collections_mutable_array_set_i32";
+constexpr const char *kObjc3RuntimeCollectionsMutableArrayRemoveAtI32Symbol =
+    "objc3_runtime_stdlib_collections_mutable_array_remove_at_i32";
+constexpr const char *kObjc3RuntimeCollectionsMapInsertI32Symbol =
+    "objc3_runtime_stdlib_collections_map_insert_i32";
+constexpr const char *kObjc3RuntimeCollectionsMapDeleteI32Symbol =
+    "objc3_runtime_stdlib_collections_map_delete_i32";
+constexpr const char *kObjc3RuntimeCollectionsSetInsertI32Symbol =
+    "objc3_runtime_stdlib_collections_set_insert_i32";
+constexpr const char *kObjc3RuntimeCollectionsSetDeleteI32Symbol =
+    "objc3_runtime_stdlib_collections_set_delete_i32";
+
 bool IsTerminalReturnAwaitDirectCall(const Expr *expr) {
   return expr != nullptr && expr->kind == Expr::Kind::Call &&
          expr->await_expression_enabled;
+}
+
+void RecordCollectionBinding(const LetStmt &let, const std::string &ptr,
+                             FunctionContext &ctx) {
+  if (let.value == nullptr) {
+    return;
+  }
+  Expr::CollectionLiteralKind kind = Expr::CollectionLiteralKind::None;
+  if (let.value->kind == Expr::Kind::CollectionLiteral) {
+    kind = let.value->collection_literal_kind;
+  } else if (let.value->kind == Expr::Kind::Identifier) {
+    for (auto it = ctx.scopes.rbegin(); it != ctx.scopes.rend(); ++it) {
+      const auto found_ptr = it->find(let.value->ident);
+      if (found_ptr == it->end()) {
+        continue;
+      }
+      const auto found_kind = ctx.collection_kind_by_ptr.find(found_ptr->second);
+      if (found_kind != ctx.collection_kind_by_ptr.end()) {
+        kind = found_kind->second;
+      }
+      break;
+    }
+  }
+  if (kind != Expr::CollectionLiteralKind::None) {
+    ctx.collection_kind_by_ptr[ptr] = kind;
+    if (let.mutable_binding) {
+      ctx.mutable_collection_ptrs.insert(ptr);
+    }
+  }
+}
+
+ValueType InferObjc3IRLocalBindingValueType(const Expr *expr,
+                                            const FunctionContext &ctx) {
+  if (expr == nullptr) {
+    return ValueType::Unknown;
+  }
+  switch (expr->kind) {
+    case Expr::Kind::Number:
+      return ValueType::I32;
+    case Expr::Kind::BoolLiteral:
+      return ValueType::Bool;
+    case Expr::Kind::StringLiteral:
+    case Expr::Kind::StringInterpolation:
+      return ValueType::TextHandle;
+    case Expr::Kind::Identifier:
+      for (auto it = ctx.scopes.rbegin(); it != ctx.scopes.rend(); ++it) {
+        const auto found_ptr = it->find(expr->ident);
+        if (found_ptr == it->end()) {
+          continue;
+        }
+        const auto found_type = ctx.value_type_by_ptr.find(found_ptr->second);
+        if (found_type != ctx.value_type_by_ptr.end()) {
+          return found_type->second;
+        }
+        break;
+      }
+      return ValueType::Unknown;
+    case Expr::Kind::NilLiteral:
+      return ValueType::ObjCId;
+    case Expr::Kind::Conditional:
+      if (expr->right != nullptr && expr->third != nullptr) {
+        const ValueType then_type =
+            InferObjc3IRLocalBindingValueType(expr->right.get(), ctx);
+        const ValueType else_type =
+            InferObjc3IRLocalBindingValueType(expr->third.get(), ctx);
+        if (then_type == else_type) {
+          return then_type;
+        }
+      }
+      return ValueType::Unknown;
+    case Expr::Kind::Binary:
+      if (expr->op == "==" || expr->op == "!=" || expr->op == "<" ||
+          expr->op == "<=" || expr->op == ">" || expr->op == ">=" ||
+          expr->op == "&&" || expr->op == "||") {
+        return ValueType::Bool;
+      }
+      if (expr->op == "+" || expr->op == "-" || expr->op == "*" ||
+          expr->op == "/" || expr->op == "%" || expr->op == "&" ||
+          expr->op == "|" || expr->op == "^" || expr->op == "<<" ||
+          expr->op == ">>") {
+        return ValueType::I32;
+      }
+      return ValueType::Unknown;
+    default:
+      return ValueType::Unknown;
+  }
 }
 
 }  // namespace
@@ -55,6 +156,12 @@ void EmitObjc3IRStatement(
           return;
         }
       }
+      if (let->value != nullptr &&
+          let->value->kind == Expr::Kind::CollectionLiteral &&
+          let->value->collection_literal_kind ==
+              Expr::CollectionLiteralKind::Array) {
+        let->value->collection_literal_mutable = let->mutable_binding;
+      }
       // Evaluate the initializer against the currently visible scope first so
       // shadowing declarations can read the previous binding deterministically.
       const std::string value = callbacks.emit_expr(let->value.get(), ctx);
@@ -71,6 +178,9 @@ void EmitObjc3IRStatement(
           "%" + let->name + ".addr." + std::to_string(ctx.temp_counter++);
       ctx.entry_lines.push_back("  " + ptr + " = alloca i32, align 4");
       ctx.scopes.back()[let->name] = ptr;
+      ctx.value_type_by_ptr[ptr] =
+          InferObjc3IRLocalBindingValueType(let->value.get(), ctx);
+      RecordCollectionBinding(*let, ptr, ctx);
       if (has_let_nil_value) {
         ctx.nil_bound_ptrs.insert(ptr);
       }
@@ -160,8 +270,114 @@ void EmitObjc3IRStatement(
             "reassigning block values is not yet runnable in Objective-C 3 native mode");
         return;
       }
+      const auto collection_kind = ctx.collection_kind_by_ptr.find(ptr);
+      if (collection_kind != ctx.collection_kind_by_ptr.end() &&
+          assign->op == "+=" && assign->value != nullptr) {
+        if (ctx.mutable_collection_ptrs.find(ptr) ==
+            ctx.mutable_collection_ptrs.end()) {
+          (void)callbacks.emit_unsupported_i32_value(
+              "collection mutation requires a 'var' binding");
+          return;
+        }
+        const std::string handle = callbacks.new_temp(ctx);
+        ctx.code_lines.push_back("  " + handle + " = load i32, ptr " + ptr +
+                                 ", align 4");
+        const std::string value = callbacks.emit_expr(assign->value.get(), ctx);
+        const std::string ignored = callbacks.new_temp(ctx);
+        if (collection_kind->second == Expr::CollectionLiteralKind::Array) {
+          ctx.code_lines.push_back("  " + ignored + " = call i32 @" +
+                                   std::string(
+                                       kObjc3RuntimeCollectionsMutableArrayAppendI32Symbol) +
+                                   "(i32 " + handle + ", i32 " + value + ")");
+          return;
+        }
+        if (collection_kind->second == Expr::CollectionLiteralKind::Set) {
+          ctx.code_lines.push_back("  " + ignored + " = call i32 @" +
+                                   std::string(
+                                       kObjc3RuntimeCollectionsSetInsertI32Symbol) +
+                                   "(i32 " + handle + ", i32 " + value + ")");
+          return;
+        }
+      }
       EmitObjc3IRAssignmentStore(ptr, assign->op, assign->value.get(), ctx,
                                  callbacks);
+      return;
+    }
+    case Stmt::Kind::CollectionMutation: {
+      const CollectionMutationStmt *mutation =
+          stmt->collection_mutation_stmt.get();
+      if (mutation == nullptr) {
+        return;
+      }
+      const std::string ptr =
+          callbacks.lookup_var_ptr(ctx, mutation->collection_name);
+      const auto collection_kind = ctx.collection_kind_by_ptr.find(ptr);
+      if (collection_kind == ctx.collection_kind_by_ptr.end()) {
+        (void)callbacks.emit_unsupported_i32_value(
+            "collection mutation requires a parser-visible collection binding");
+        return;
+      }
+      if (ctx.mutable_collection_ptrs.find(ptr) ==
+          ctx.mutable_collection_ptrs.end()) {
+        (void)callbacks.emit_unsupported_i32_value(
+            "collection mutation requires a 'var' binding");
+        return;
+      }
+      const std::string handle = callbacks.new_temp(ctx);
+      ctx.code_lines.push_back("  " + handle + " = load i32, ptr " + ptr +
+                               ", align 4");
+      const std::string key_or_index =
+          callbacks.emit_expr(mutation->key_or_index.get(), ctx);
+      const std::string ignored = callbacks.new_temp(ctx);
+      if (mutation->kind == CollectionMutationStmt::Kind::IndexSet) {
+        if (mutation->value == nullptr) {
+          return;
+        }
+        const std::string value = callbacks.emit_expr(mutation->value.get(), ctx);
+        if (collection_kind->second == Expr::CollectionLiteralKind::Array) {
+          ctx.code_lines.push_back("  " + ignored + " = call i32 @" +
+                                   std::string(
+                                       kObjc3RuntimeCollectionsMutableArraySetI32Symbol) +
+                                   "(i32 " + handle + ", i32 " +
+                                   key_or_index + ", i32 " + value + ")");
+          return;
+        }
+        if (collection_kind->second == Expr::CollectionLiteralKind::Map) {
+          ctx.code_lines.push_back("  " + ignored + " = call i32 @" +
+                                   std::string(
+                                       kObjc3RuntimeCollectionsMapInsertI32Symbol) +
+                                   "(i32 " + handle + ", i32 " +
+                                   key_or_index + ", i32 " + value + ")");
+          return;
+        }
+      } else {
+        if (collection_kind->second == Expr::CollectionLiteralKind::Array) {
+          ctx.code_lines.push_back("  " + ignored + " = call i32 @" +
+                                   std::string(
+                                       kObjc3RuntimeCollectionsMutableArrayRemoveAtI32Symbol) +
+                                   "(i32 " + handle + ", i32 " +
+                                   key_or_index + ")");
+          return;
+        }
+        if (collection_kind->second == Expr::CollectionLiteralKind::Map) {
+          ctx.code_lines.push_back("  " + ignored + " = call i32 @" +
+                                   std::string(
+                                       kObjc3RuntimeCollectionsMapDeleteI32Symbol) +
+                                   "(i32 " + handle + ", i32 " +
+                                   key_or_index + ")");
+          return;
+        }
+        if (collection_kind->second == Expr::CollectionLiteralKind::Set) {
+          ctx.code_lines.push_back("  " + ignored + " = call i32 @" +
+                                   std::string(
+                                       kObjc3RuntimeCollectionsSetDeleteI32Symbol) +
+                                   "(i32 " + handle + ", i32 " +
+                                   key_or_index + ")");
+          return;
+        }
+      }
+      (void)callbacks.emit_unsupported_i32_value(
+          "unsupported collection mutation shape");
       return;
     }
     case Stmt::Kind::Break: {
@@ -250,6 +466,10 @@ void EmitObjc3IRStatement(
     }
     case Stmt::Kind::For: {
       EmitObjc3IRForStatement(stmt->for_stmt.get(), ctx, callbacks);
+      return;
+    }
+    case Stmt::Kind::ForIn: {
+      EmitObjc3IRForInStatement(stmt->for_in_stmt.get(), ctx, callbacks);
       return;
     }
     case Stmt::Kind::Switch: {

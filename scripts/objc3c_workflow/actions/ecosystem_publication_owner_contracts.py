@@ -90,6 +90,16 @@ ECOSYSTEM_PUBLICATION_OWNER_CONTRACTS: dict[str, EcosystemPublicationOwnerContra
         "package-ecosystem-lock-owner",
         "builds deterministic local lock evidence; it does not publish or imply hosted registry support",
     ),
+    "package-sign": _package_contract(
+        "package-sign",
+        "package-ecosystem-trust-owner",
+        "creates deterministic local fixture/replay signature envelopes only; production package signing remains reserved and fail-closed",
+    ),
+    "package-verify": _package_contract(
+        "package-verify",
+        "package-ecosystem-trust-owner",
+        "verifies package signature envelopes, trust roots, revocation, subject identity, language/ABI, and digest binding before any package trust claim",
+    ),
     "validate-package-manager-model": _package_contract(
         "validate-package-manager-model",
         "package-ecosystem-manager-owner",
@@ -105,6 +115,16 @@ ECOSYSTEM_PUBLICATION_OWNER_CONTRACTS: dict[str, EcosystemPublicationOwnerContra
         "package-ecosystem-mirror-owner",
         "proves local offline mirror reproducibility without network-dependent install claims",
     ),
+    "validate-package-registry-model": _package_contract(
+        "validate-package-registry-model",
+        "package-ecosystem-registry-owner",
+        "validates hosted registry fixture metadata, deterministic signatures, revocations, and offline mirror pins without live network resolution",
+    ),
+    "package-registry-resolve": _package_contract(
+        "package-registry-resolve",
+        "package-ecosystem-registry-owner",
+        "resolves hosted package metadata only from checked-in fixture registry and offline mirror inputs; live network fetches fail closed",
+    ),
     "validate-package-ecosystem": _package_contract(
         "validate-package-ecosystem",
         "package-ecosystem-registry-owner",
@@ -114,6 +134,36 @@ ECOSYSTEM_PUBLICATION_OWNER_CONTRACTS: dict[str, EcosystemPublicationOwnerContra
         "validate-package-install-distribution",
         "package-ecosystem-install-owner",
         "proves clean local install credibility across package manifests, locks, mirrors, local registry metadata, restore receipts, and machine-owned install receipts",
+    ),
+    "package-publish": _package_contract(
+        "package-publish",
+        "package-ecosystem-operations-owner",
+        "publishes only deterministic local package metadata and receipts; live network publication remains fail-closed",
+    ),
+    "package-install": _package_contract(
+        "package-install",
+        "package-ecosystem-operations-owner",
+        "installs only locked, signed, registry-backed, offline-cache-pinned packages with ABI/language and dependency checks",
+    ),
+    "package-update": _package_contract(
+        "package-update",
+        "package-ecosystem-operations-owner",
+        "updates only compatible signed packages while preserving deterministic rollback tokens and previous-state pins",
+    ),
+    "package-uninstall": _package_contract(
+        "package-uninstall",
+        "package-ecosystem-operations-owner",
+        "uninstalls only machine-owned package roots after installed-state ownership proof",
+    ),
+    "package-rollback": _package_contract(
+        "package-rollback",
+        "package-ecosystem-operations-owner",
+        "rolls back only to signed cache-pinned previous package state with owned-root proof",
+    ),
+    "validate-package-operations": _package_contract(
+        "validate-package-operations",
+        "package-ecosystem-operations-owner",
+        "validates deterministic publish, install, update, uninstall, and rollback plans and receipts without network-backed fallbacks",
     ),
     "validate-runnable-package-ecosystem": _package_contract(
         "validate-runnable-package-ecosystem",

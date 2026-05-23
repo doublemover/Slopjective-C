@@ -50,3 +50,17 @@ std::unique_ptr<Expr> BuildObjc3StringLiteralExpr(
   literal->column = token.column;
   return literal;
 }
+
+std::unique_ptr<Expr> BuildObjc3StringInterpolationExpr(
+    std::vector<std::string> segments,
+    std::vector<std::unique_ptr<Expr>> payloads,
+    const Objc3LexToken &token) {
+  auto literal = std::make_unique<Expr>();
+  literal->kind = Expr::Kind::StringInterpolation;
+  literal->string_interpolation_segments = std::move(segments);
+  literal->args = std::move(payloads);
+  literal->string_interpolation_payload_is_text.resize(literal->args.size());
+  literal->line = token.line;
+  literal->column = token.column;
+  return literal;
+}

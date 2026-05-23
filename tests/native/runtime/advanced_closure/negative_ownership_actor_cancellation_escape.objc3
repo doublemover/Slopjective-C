@@ -1,0 +1,20 @@
+// Expected advanced-runtime diagnostic: advanced-runtime.ownership-actor-cancellation-escape
+module AdvancedRuntimeClosureNegativeOwnershipActorCancellation;
+
+extern fn ConsumeOwned(value: consumed id) -> void;
+extern fn objc3_runtime_task_on_cancel_i32(executor_tag: i32) -> i32;
+
+actor class OwnershipCancellationActor
+- (i32)invalid:(consumed id)owner seed:(i32)seed async __attribute__((objc_executor(main)));
+@end
+
+@implementation OwnershipCancellationActor
+- (i32)invalid:(consumed id)owner seed:(i32)seed async __attribute__((objc_executor(main))) {
+  let cleanup = ^[consumed owner] {
+    ConsumeOwned(owner);
+    return 1;
+  };
+  objc3_runtime_task_on_cancel_i32(seed);
+  return cleanup();
+}
+@end

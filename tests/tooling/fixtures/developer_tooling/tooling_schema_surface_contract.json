@@ -12,6 +12,7 @@
     "capabilities_path",
     "navigation_path",
     "workspace_index_path",
+    "source_graph_path",
     "artifact_inspector_path",
     "formatter_path",
     "debug_path"
@@ -20,6 +21,7 @@
     "language_server",
     "navigation",
     "workspace_index",
+    "source_graph",
     "artifact_inspector",
     "formatter",
     "debug"

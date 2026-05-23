@@ -14,7 +14,15 @@ static void ValidatePropertyTypeSuffixes(const Objc3PropertyDecl &property,
                                    "type mismatch: generic property type suffix '" + suffix +
                                        "' is unsupported for property '" + property.name + "' in " + owner_kind +
                                        " '" + owner_name + "'"));
-  } else if (property.has_generic_suffix) {
+  } else if (property.has_generic_suffix &&
+             !ValidateGenericCollectionSpecializationSuffix(
+                 property.object_pointer_type_spelling,
+                 property.object_pointer_type_name,
+                 property.generic_suffix_text, property.generic_line,
+                 property.generic_column,
+                 "property '" + property.name + "' in " + owner_kind + " '" +
+                     owner_name + "' type annotation",
+                 diagnostics)) {
     ValidateProtocolCompositionSuffix(property.generic_suffix_text,
                                      property.generic_line,
                                      property.generic_column,

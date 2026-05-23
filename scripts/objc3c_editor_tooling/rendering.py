@@ -25,6 +25,7 @@ def render_editor_surface(
         "language_server": model.language_server,
         "navigation": model.navigation,
         "source_index": model.source_index,
+        "source_graph": model.source_graph,
         "workspace_index": model.workspace_index,
         "artifact_inspector": model.artifact_inspector,
         "formatter": model.formatter,

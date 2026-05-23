@@ -338,6 +338,16 @@ def _validate_semantic_optimization(
             if fixture_payload.get("success_claim") is not False:
                 failures.append(f"semantic optimization reserved fixture claims success: {pass_id}")
 
+    enabled_passes = [str(pass_id) for pass_id in _as_list(section.get("required_enabled_passes"))]
+    for pass_id in enabled_passes:
+        row = pass_rows.get(pass_id, {})
+        if row.get("mode") != "enabled":
+            failures.append(f"semantic optimization enabled pass is not enabled: {pass_id}")
+        if row.get("semantic_preserving") is not True:
+            failures.append(f"semantic optimization enabled pass is not preserving: {pass_id}")
+        if row.get("rewrites_ir") is not True:
+            failures.append(f"semantic optimization enabled pass does not rewrite IR: {pass_id}")
+
     unsupported = _as_dict(pipeline.get("unsupported_policy"))
     for field in (
         "unsafe_flags_allowed",

@@ -1,0 +1,11 @@
+// Expected advanced-runtime diagnostic: advanced-runtime.block-byref-escape
+module AdvancedRuntimeClosureNegativeBlockByref;
+
+fn invalidByrefEscape(owner: id) -> i32 {
+  __block let counter = 1;
+  let closure = ^[counter, strong owner] {
+    counter = counter + 1;
+    return counter;
+  };
+  return closure();
+}

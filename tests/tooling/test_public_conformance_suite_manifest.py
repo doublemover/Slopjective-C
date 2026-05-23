@@ -57,7 +57,7 @@ def test_public_conformance_suite_manifest_passes_and_reports_public_taxonomy() 
 
     assert summary["contract_id"] == "objc3c.public_conformance_suite.summary.v1"
     assert summary["status"] == "PASS"
-    assert summary["case_count"] == 10
+    assert summary["case_count"] == 12
     assert summary["phase_count"] == 8
     assert summary["profile_count"] == 3
     assert summary["packageable"] is True
@@ -67,9 +67,9 @@ def test_public_conformance_suite_manifest_passes_and_reports_public_taxonomy() 
     assert summary["package_manifest_replay_action_count"] == 4
     assert summary["package_manifest_required_file_count"] == 6
     assert summary["package_manifest_source_hash_algorithm"] == "sha256"
-    assert summary["source_owned_case_count"] == 10
+    assert summary["source_owned_case_count"] == 12
     assert summary["fixture_provenance_allowed_origins"] == ["checked-in-public-suite"]
-    assert summary["fixture_provenance_origin_counts"] == {"checked-in-public-suite": 10}
+    assert summary["fixture_provenance_origin_counts"] == {"checked-in-public-suite": 12}
     assert summary["allowed_generated_roots"] == [
         "tmp/reports/conformance",
         "tmp/artifacts/public-conformance/suite",
@@ -84,16 +84,18 @@ def test_public_conformance_suite_manifest_passes_and_reports_public_taxonomy() 
     }
     assert summary["accepted_external_validation_entries"] == 3
     assert summary["rejected_external_validation_entries"] == 3
-    assert summary["release_candidate_public_stable_case_count"] == 10
+    assert summary["release_candidate_public_stable_case_count"] == 12
     assert summary["release_candidate_required_phase_count"] == 8
     assert summary["release_candidate_gate_command"] == "npm run objc3c -- validate-release-candidate-conformance"
     assert summary["phase_case_counts"]["release_candidate"] == 2
     assert summary["phase_case_counts"]["sema"] == 2
     assert "npm run objc3c -- validate-release-candidate-conformance" in summary["public_commands"]
     assert "npm run objc3c -- validate-conformance-corpus" in summary["public_commands"]
+    assert "npm run objc3c -- validate-cross-lane-e2e" in summary["public_commands"]
     assert "objc3c.behavior.parser.canonical-syntax" in summary["support_claims"]
     assert "objc3c.behavior.conformance.public-stable-suite" in summary["support_claims"]
     assert "objc3c.behavior.diagnostics.parser-sema-recovery-fixits" in summary["support_claims"]
+    assert "objc3c.behavior.stdlib.text.runtime-builder-interpolation" in summary["support_claims"]
 
 
 def test_public_conformance_suite_manifest_cites_packaged_outside_repo_replay_evidence() -> None:

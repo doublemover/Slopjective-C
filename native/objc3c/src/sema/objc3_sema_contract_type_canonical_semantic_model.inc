@@ -25,6 +25,12 @@ struct Objc3TypeSystemTypeSemanticModelSummary {
   std::size_t canonical_object_type_entries = 0;
   std::size_t canonical_protocol_qualified_entries = 0;
   std::size_t canonical_generic_argument_entries = 0;
+  std::size_t generic_collection_type_entries = 0;
+  std::size_t generic_collection_descriptor_entries = 0;
+  std::size_t generic_collection_iterator_entries = 0;
+  std::size_t generic_collection_mutable_entries = 0;
+  std::size_t generic_collection_invariant_entries = 0;
+  std::size_t generic_collection_invalid_entries = 0;
   std::size_t canonical_nullable_entries = 0;
   std::size_t canonical_nonnull_entries = 0;
   std::size_t canonical_implicitly_unwrapped_entries = 0;

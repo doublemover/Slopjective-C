@@ -1,0 +1,221 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://objc3c.dev/schemas/objc3c-package-signing-trust-v1.schema.json",
+  "title": "objc3c Package Signing Trust",
+  "type": "object",
+  "required": [
+    "contract_id",
+    "policy_version",
+    "diagnostic_code",
+    "trust_roots",
+    "revocations",
+    "key_rotation_policy",
+    "production_signing_backend",
+    "verification_policy"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "contract_id": { "const": "objc3c.package_ecosystem.signing_trust.v1" },
+    "policy_version": { "type": "integer", "minimum": 1 },
+    "diagnostic_code": { "const": "O3PKG8055" },
+    "trust_roots": {
+      "type": "array",
+      "minItems": 3,
+      "items": { "$ref": "#/$defs/trustRoot" }
+    },
+    "revocations": { "$ref": "#/$defs/revocations" },
+    "key_rotation_policy": {
+      "type": "object",
+      "required": [
+        "rotation_model",
+        "overlap_required",
+        "implicit_key_rollover_allowed"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "rotation_model": { "const": "explicit-new-trust-root-before-old-root-revocation" },
+        "overlap_required": { "const": true },
+        "implicit_key_rollover_allowed": { "const": false }
+      }
+    },
+    "production_signing_backend": {
+      "type": "object",
+      "required": ["state", "required_backend", "diagnostic_code"],
+      "additionalProperties": false,
+      "properties": {
+        "state": { "const": "reserved-fail-closed" },
+        "required_backend": { "const": "ed25519-pinned-reviewed-provider" },
+        "diagnostic_code": { "const": "O3PKG8055" }
+      }
+    },
+    "verification_policy": {
+      "type": "object",
+      "required": [
+        "require_signature",
+        "require_trust_root",
+        "check_revocation",
+        "check_artifact_digest",
+        "check_manifest_digest",
+        "check_subject_identity",
+        "production_backend_reserved_fail_closed"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "require_signature": { "const": true },
+        "require_trust_root": { "const": true },
+        "check_revocation": { "const": true },
+        "check_artifact_digest": { "const": true },
+        "check_manifest_digest": { "const": true },
+        "check_subject_identity": { "const": true },
+        "production_backend_reserved_fail_closed": { "const": true }
+      }
+    }
+  },
+  "$defs": {
+    "sha256": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "signatureEnvelope": {
+      "type": "object",
+      "required": [
+        "contract_id",
+        "signature_id",
+        "signature_format",
+        "signing_backend",
+        "signer_id",
+        "signing_key_id",
+        "trust_root_id",
+        "subject_kind",
+        "subject_package_id",
+        "subject_version",
+        "package_namespace",
+        "artifact_digest",
+        "manifest_digest",
+        "abi_identity",
+        "language_version",
+        "signature",
+        "revocation_state",
+        "verification_policy",
+        "signed_at_utc",
+        "provenance"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "contract_id": { "const": "objc3c.package_ecosystem.signature_envelope.v1" },
+        "signature_id": { "$ref": "#/$defs/sha256" },
+        "signature_format": {
+          "enum": [
+            "objc3c-deterministic-test-sha256-v1",
+            "ed25519-reserved-fail-closed"
+          ]
+        },
+        "signing_backend": {
+          "enum": [
+            "deterministic-test-replay",
+            "production-ed25519-reserved"
+          ]
+        },
+        "signer_id": { "type": "string", "minLength": 1 },
+        "signing_key_id": { "type": "string", "minLength": 1 },
+        "trust_root_id": { "type": "string", "minLength": 1 },
+        "subject_kind": {
+          "enum": [
+            "package-manifest",
+            "package-artifact",
+            "package-lock",
+            "registry-metadata",
+            "install-receipt",
+            "update-receipt"
+          ]
+        },
+        "subject_package_id": { "type": "string", "minLength": 1 },
+        "subject_version": { "type": "string", "minLength": 1 },
+        "package_namespace": { "type": "string", "minLength": 1 },
+        "artifact_digest": { "$ref": "#/$defs/sha256" },
+        "manifest_digest": { "$ref": "#/$defs/sha256" },
+        "lock_digest": { "$ref": "#/$defs/sha256" },
+        "abi_identity": { "type": "string", "minLength": 1 },
+        "language_version": { "type": "string", "minLength": 1 },
+        "signature": { "$ref": "#/$defs/sha256" },
+        "revocation_state": { "enum": ["not-revoked", "revoked"] },
+        "verification_policy": { "const": "fail-closed-local-digest-trust-root-revocation-v1" },
+        "signed_at_utc": { "type": "string", "minLength": 1 },
+        "provenance": { "type": "string", "minLength": 1 }
+      }
+    },
+    "trustRoot": {
+      "type": "object",
+      "required": [
+        "trust_root_id",
+        "root_kind",
+        "signer_id",
+        "signing_key_id",
+        "signature_format",
+        "signing_backend",
+        "key_state",
+        "trust_scope"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "trust_root_id": { "type": "string", "minLength": 1 },
+        "root_kind": {
+          "enum": [
+            "local-development",
+            "release-signing",
+            "registry-signing"
+          ]
+        },
+        "signer_id": { "type": "string", "minLength": 1 },
+        "signing_key_id": { "type": "string", "minLength": 1 },
+        "signature_format": {
+          "enum": [
+            "objc3c-deterministic-test-sha256-v1",
+            "ed25519-reserved-fail-closed"
+          ]
+        },
+        "signing_backend": {
+          "enum": [
+            "deterministic-test-replay",
+            "production-ed25519-reserved"
+          ]
+        },
+        "deterministic_public_material": { "type": "string", "minLength": 1 },
+        "key_state": { "enum": ["active", "reserved", "revoked"] },
+        "trust_scope": { "type": "string", "minLength": 1 }
+      }
+    },
+    "revocations": {
+      "type": "object",
+      "required": [
+        "revoked_trust_root_ids",
+        "revoked_signing_key_ids",
+        "revoked_package_ids",
+        "revoked_signature_ids"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "revoked_trust_root_ids": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "uniqueItems": true
+        },
+        "revoked_signing_key_ids": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "uniqueItems": true
+        },
+        "revoked_package_ids": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "uniqueItems": true
+        },
+        "revoked_signature_ids": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "uniqueItems": true
+        }
+      }
+    }
+  }
+}

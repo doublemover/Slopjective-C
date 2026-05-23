@@ -1,0 +1,16 @@
+// Positive execution fixture: source string interpolation lowers Text and i32 payloads through the text builder.
+module SourceStringInterpolationTextI32;
+
+extern fn objc3_runtime_stdlib_text_byte_count_i32(handle: Text) -> i32;
+extern fn objc3_runtime_stdlib_text_equal_i32(left_handle: Text, right_handle: Text) -> i32;
+
+fn main() -> i32 {
+  let label = "count";
+  let value = 42;
+  let actual = "\(label)=\(value)";
+  let expected = "count=42";
+  if (objc3_runtime_stdlib_text_equal_i32(actual, expected) != 1) {
+    return 70;
+  }
+  return objc3_runtime_stdlib_text_byte_count_i32(actual);
+}

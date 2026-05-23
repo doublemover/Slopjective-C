@@ -1,0 +1,35 @@
+{
+  "schema_version": 1,
+  "fixture": "object_reflection_debugger.objc3",
+  "origin": "hand-authored",
+  "issue": 8200,
+  "owner_phase": "e2e",
+  "behavior_family": "cross_lane_e2e",
+  "fixture_kind": "executable-artifact-proof-with-reserved-debugger-rows",
+  "public_replay_command": "npm run objc3c -- validate-cross-lane-e2e",
+  "boundary": {
+    "canonical_behavior_source": true,
+    "behavior_contract": "cross-lane-executable-artifact-proof",
+    "reserved_support_promoted": false,
+    "runtime_support_claimed": true,
+    "typed_keypath_single_component_object_property_runtime_descriptor_claimed": true,
+    "broad_typed_keypath_shapes_promoted": false,
+    "object_model_full_realization_promoted": false,
+    "full_source_map_publication_promoted": false,
+    "statement_stepping_promoted": false
+  },
+  "expected": {
+    "stage": "compile-run-artifact-proof",
+    "diagnostic_code": "",
+    "required_tokens": [
+      "class",
+      "category",
+      "protocol",
+      "property/ivar",
+      "typed keypath descriptor",
+      "runtime reflection",
+      "debug-map output",
+      "statement stepping reserved"
+    ]
+  }
+}

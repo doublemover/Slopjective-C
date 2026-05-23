@@ -17,8 +17,7 @@
     "stage": "run",
     "diagnostic_code": "O3RT002",
     "required_tokens": [
-      "O3RT002",
-      "runtime dispatch failed: unknown receiver class"
+      "run.exit:nonzero"
     ]
   },
   "execution": {

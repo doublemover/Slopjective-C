@@ -1,0 +1,272 @@
+{
+  "contract_id": "objc3c.advanced-runtime.closure.negative-matrix.v1",
+  "issue_ref": 8199,
+  "scope": "issue-scoped-negative-matrix",
+  "positive_fixture": "tests/native/runtime/advanced_closure/combined_positive.objc3",
+  "forbidden_source_truth_prefixes": [
+    "tmp/",
+    "temp/",
+    "generated/",
+    "build/",
+    "dist/"
+  ],
+  "cases": [
+    {
+      "case_id": "ownership_conflicting_capture",
+      "issue_ref": 8199,
+      "feature": "ownership",
+      "interacts_with": [
+        "blocks"
+      ],
+      "status": "rejected",
+      "fixture": "tests/native/runtime/advanced_closure/negative_ownership_conflicting_capture.objc3",
+      "expected_diagnostic": "advanced-runtime.ownership-conflicting-capture",
+      "required_tokens": [
+        "consumed owner",
+        "weak owner",
+        "ConsumeOwned"
+      ]
+    },
+    {
+      "case_id": "block_byref_escape",
+      "issue_ref": 8199,
+      "feature": "blocks",
+      "status": "rejected",
+      "fixture": "tests/native/runtime/advanced_closure/negative_block_byref_escape.objc3",
+      "expected_diagnostic": "advanced-runtime.block-byref-escape",
+      "required_tokens": [
+        "__block let counter",
+        "^[counter, strong owner]",
+        "counter = counter + 1"
+      ]
+    },
+    {
+      "case_id": "async_sync_entry",
+      "issue_ref": 8199,
+      "feature": "async",
+      "status": "rejected",
+      "fixture": "tests/native/runtime/advanced_closure/negative_async_sync_entry.objc3",
+      "expected_diagnostic": "advanced-runtime.async-sync-entry",
+      "required_tokens": [
+        "async fn fetchAsync",
+        "fn invalidSyncEntry",
+        "return await fetchAsync()"
+      ]
+    },
+    {
+      "case_id": "actor_nonisolated_mailbox",
+      "issue_ref": 8199,
+      "feature": "actor",
+      "status": "rejected",
+      "fixture": "tests/native/runtime/advanced_closure/negative_actor_nonisolated_mailbox.objc3",
+      "expected_diagnostic": "advanced-runtime.actor-nonisolated-mailbox",
+      "required_tokens": [
+        "actor class NegativeAdvancedRuntimeActor",
+        "objc_nonisolated",
+        "objc3_runtime_actor_mailbox_enqueue_i32"
+      ]
+    },
+    {
+      "case_id": "actor_mailbox_unsupported_payload",
+      "issue_ref": 8199,
+      "feature": "actor",
+      "interacts_with": [
+        "async",
+        "ownership"
+      ],
+      "status": "rejected",
+      "fixture": "tests/native/runtime/advanced_closure/negative_actor_mailbox_unsupported_payload.objc3",
+      "expected_diagnostic": "advanced-runtime.actor-mailbox-unsupported-payload",
+      "required_tokens": [
+        "actor class MailboxUnsupportedPayloadActor",
+        "objc3_runtime_actor_mailbox_enqueue_object",
+        "unsupported payload"
+      ]
+    },
+    {
+      "case_id": "cancellation_without_checkpoint",
+      "issue_ref": 8199,
+      "feature": "cancellation",
+      "status": "rejected",
+      "fixture": "tests/native/runtime/advanced_closure/negative_cancellation_without_checkpoint.objc3",
+      "expected_diagnostic": "advanced-runtime.cancellation-without-checkpoint",
+      "required_tokens": [
+        "async fn invalidCancellation",
+        "objc3_runtime_task_on_cancel_i32",
+        "objc_executor(main)"
+      ]
+    },
+    {
+      "case_id": "error_unhandled_async_bridge",
+      "issue_ref": 8199,
+      "feature": "error",
+      "status": "rejected",
+      "fixture": "tests/native/runtime/advanced_closure/negative_error_unhandled_bridge.objc3",
+      "expected_diagnostic": "advanced-runtime.error-unhandled-async-bridge",
+      "required_tokens": [
+        "throws -> i32",
+        "async fn invalidErrorBoundary",
+        "return await riskyAdvancedRuntime(1)"
+      ]
+    },
+    {
+      "case_id": "property_behavior_nonobject",
+      "issue_ref": 8199,
+      "feature": "property",
+      "status": "rejected",
+      "fixture": "tests/native/runtime/advanced_closure/negative_property_behavior_nonobject.objc3",
+      "expected_diagnostic": "advanced-runtime.property-behavior-nonobject",
+      "required_tokens": [
+        "@property (strong, behavior=Observed) i32 counter",
+        "@interface InvalidAdvancedRuntimeProperty",
+        "@implementation InvalidAdvancedRuntimeProperty"
+      ]
+    },
+    {
+      "case_id": "property_behavior_conflict",
+      "issue_ref": 8199,
+      "feature": "property",
+      "interacts_with": [
+        "macro"
+      ],
+      "status": "rejected",
+      "fixture": "tests/native/runtime/advanced_closure/negative_property_behavior_conflict.objc3",
+      "expected_diagnostic": "advanced-runtime.property-behavior-conflict",
+      "required_tokens": [
+        "@property (strong, weak, behavior=Observed) id value",
+        "@property (readonly, behavior=Projected, setter=setValue:) id mirror",
+        "property behavior conflict"
+      ]
+    },
+    {
+      "case_id": "macro_host_io",
+      "issue_ref": 8199,
+      "feature": "macro",
+      "status": "rejected",
+      "fixture": "tests/native/runtime/advanced_closure/negative_macro_host_io.objc3",
+      "expected_diagnostic": "advanced-runtime.macro-host-io",
+      "required_tokens": [
+        "objc_macro_package",
+        "objc_macro_sandbox(named(\"network+filesystem\"))",
+        "objc_macro_cache_key"
+      ]
+    },
+    {
+      "case_id": "package_replay_missing_proof",
+      "issue_ref": 8199,
+      "feature": "package_replay",
+      "status": "rejected",
+      "fixture": "tests/native/runtime/advanced_closure/negative_package_replay_missing_proof.objc3",
+      "expected_diagnostic": "advanced-runtime.package-replay-missing-proof",
+      "required_tokens": [
+        "objc_import_module(named(\"AdvancedRuntimeClosureKit\"))",
+        "objc_mixed_image(named(\"AdvancedRuntimeClosureKitCore\"))",
+        "missingReplayEntry"
+      ]
+    },
+    {
+      "case_id": "block_async_error_escape",
+      "issue_ref": 8199,
+      "feature": "blocks",
+      "interacts_with": [
+        "async",
+        "error"
+      ],
+      "status": "rejected",
+      "fixture": "tests/native/runtime/advanced_closure/negative_block_async_error_escape.objc3",
+      "expected_diagnostic": "advanced-runtime.block-async-error-boundary",
+      "required_tokens": [
+        "async fn throwsThroughBlock",
+        "let handler = ^[strong owner]",
+        "return await throwsThroughBlock(owner)"
+      ]
+    },
+    {
+      "case_id": "actor_property_macro_cross_isolation",
+      "issue_ref": 8199,
+      "feature": "actor",
+      "interacts_with": [
+        "property",
+        "macro"
+      ],
+      "status": "rejected",
+      "fixture": "tests/native/runtime/advanced_closure/negative_actor_property_macro_cross_isolation.objc3",
+      "expected_diagnostic": "advanced-runtime.actor-property-macro-cross-isolation",
+      "required_tokens": [
+        "actor class ActorPropertyMacroBoundary",
+        "@property (strong, behavior=Observed) id value",
+        "objc_macro_cache_key(named(\"AdvancedRuntimeActorPropertyMacro:v1\"))",
+        "objc_nonisolated"
+      ]
+    },
+    {
+      "case_id": "macro_package_replay_untrusted",
+      "issue_ref": 8199,
+      "feature": "macro",
+      "interacts_with": [
+        "package_replay"
+      ],
+      "status": "rejected",
+      "fixture": "tests/native/runtime/advanced_closure/negative_macro_package_replay_untrusted.objc3",
+      "expected_diagnostic": "advanced-runtime.macro-package-replay-untrusted",
+      "required_tokens": [
+        "pure fn packageReplayMacro",
+        "objc_package_entry(named(\"AdvancedRuntimeClosureKit.untrustedReplay\"))",
+        "untrustedReplayEntry(nil)"
+      ]
+    },
+    {
+      "case_id": "ownership_actor_cancellation_escape",
+      "issue_ref": 8199,
+      "feature": "ownership",
+      "interacts_with": [
+        "actor",
+        "cancellation",
+        "async"
+      ],
+      "status": "rejected",
+      "fixture": "tests/native/runtime/advanced_closure/negative_ownership_actor_cancellation_escape.objc3",
+      "expected_diagnostic": "advanced-runtime.ownership-actor-cancellation-escape",
+      "required_tokens": [
+        "actor class OwnershipCancellationActor",
+        "consumed id)owner",
+        "objc3_runtime_task_on_cancel_i32",
+        "let cleanup = ^[consumed owner]"
+      ]
+    },
+    {
+      "case_id": "error_package_async_replay",
+      "issue_ref": 8199,
+      "feature": "error",
+      "interacts_with": [
+        "package_replay",
+        "async"
+      ],
+      "status": "rejected",
+      "fixture": "tests/native/runtime/advanced_closure/negative_error_package_async_replay.objc3",
+      "expected_diagnostic": "advanced-runtime.error-package-async-replay",
+      "required_tokens": [
+        "extern fn replayBridge(selector: SEL) throws -> i32",
+        "objc_package_entry(named(\"AdvancedRuntimeClosureKit.throwingReplay\"))",
+        "return await replayBridge(nil)"
+      ]
+    },
+    {
+      "case_id": "scheduler_guarantee_overclaim",
+      "issue_ref": 8199,
+      "feature": "async",
+      "interacts_with": [
+        "actor",
+        "cancellation"
+      ],
+      "status": "reserved",
+      "fixture": "tests/native/runtime/advanced_closure/negative_scheduler_guarantee_overclaim.objc3",
+      "expected_diagnostic": "advanced-runtime.scheduler-guarantee-overclaim",
+      "required_tokens": [
+        "objc_scheduler_guarantee(fairness)",
+        "broad scheduler guarantee",
+        "objc3_runtime_task_yield_i32"
+      ]
+    }
+  ]
+}

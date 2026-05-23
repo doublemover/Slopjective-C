@@ -1,0 +1,18 @@
+// #8199/#8200 provider module for the cross-lane advanced-runtime closure E2E.
+module CrossLaneAdvancedRuntimeClosureProvider;
+
+fn ConsumeBorrowed(bytes: borrowed id *) -> void {
+  return;
+}
+
+fn CFRetain(value: id) -> id {
+  return value;
+}
+
+fn CFRelease(value: id) -> void {
+  return;
+}
+
+fn packageReplayEntry(selector: SEL) -> i32 {
+  return 0;
+}

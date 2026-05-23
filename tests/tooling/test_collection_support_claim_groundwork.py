@@ -47,6 +47,10 @@ def _assert_repo_path_exists(path: str) -> None:
     assert (ROOT / path).is_file(), path
 
 
+def _expected_claim_ids(contract: dict[str, Any]) -> set[str]:
+    return {str(claim["support_claim"]) for claim in contract["claims"]}
+
+
 def test_runtime_backed_collection_claims_are_dedicated_module_contracts() -> None:
     matrix = _read_json(MATRIX_PATH)
     manifest = _read_json(MANIFEST_PATH)
@@ -122,7 +126,7 @@ def test_runtime_backed_collection_claims_are_dedicated_module_contracts() -> No
 
         requirement_text = " ".join(row["source_truth_requirements"]).lower()
         for reserved in expected["reserved_until_runtime_storage"]:
-            assert reserved in requirement_text
+            assert reserved.lower() in requirement_text
 
         for path in [
             row["conformance_fixture"],
@@ -146,31 +150,26 @@ def test_runtime_backed_collection_claims_are_dedicated_module_contracts() -> No
 
 def test_collection_groundwork_does_not_publish_reserved_collection_claims() -> None:
     catalog = _read_json(CATALOG_PATH)
+    contract = _read_json(CONTRACT_PATH)
     rows = [row for row in catalog["rows"] if isinstance(row, dict)]
     collection_rows = [
-        row for row in rows if ".stdlib.collections." in str(row.get("support_claim", ""))
+        row
+        for row in rows
+        if str(row.get("support_claim", "")) in _expected_claim_ids(contract)
     ]
 
-    assert {row["support_claim"] for row in collection_rows} == {
-        "objc3c.behavior.stdlib.collections.array-aggregate-runtime-shape",
-        "objc3c.behavior.stdlib.collections.array-slice-runtime-shape",
-        "objc3c.behavior.stdlib.collections.map-entry-runtime-shape",
-        "objc3c.behavior.stdlib.collections.set-iteration-runtime-shape",
-    }
+    assert {row["support_claim"] for row in collection_rows} == _expected_claim_ids(
+        contract
+    )
 
     forbidden_fragments = {
-        "literal",
-        "generic",
-        "iteration",
         "foundation",
+        "nsarray",
+        "nsdictionary",
+        "hashing",
+        "interpolation",
     }
-    reserved_rows = [
-        row
-        for row in collection_rows
-        if row["support_claim"]
-        != "objc3c.behavior.stdlib.collections.set-iteration-runtime-shape"
-    ]
-    for row in reserved_rows:
+    for row in collection_rows:
         claim_text = row["support_claim"].lower()
         capability_text = row["capability_id"].lower()
         assert not any(fragment in claim_text for fragment in forbidden_fragments)

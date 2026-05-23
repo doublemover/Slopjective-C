@@ -1,0 +1,82 @@
+// #8200 cross-lane source fixture: source-level collection literals, for-in,
+// text builder calls, package import metadata, provider import-surface runtime
+// execution, source graph package nodes, and declaration debug anchors interact
+// in one Objective-C 3 source fixture.
+// Direct @import lookup is source-truth backed by the module-roundtrip fixtures;
+// this executable fixture keeps package loading on objc_import_module metadata
+// and proves the provider import surface through compile/link/run.
+module CrossLaneTextCollectionsPackage;
+
+extern fn objc3_runtime_stdlib_text_byte_count_i32(handle: i32) -> i32;
+extern fn objc3_runtime_stdlib_text_builder_i32() -> i32;
+extern fn objc3_runtime_stdlib_text_builder_append_text_i32(builder_handle: i32, text_handle: i32) -> i32;
+extern fn objc3_runtime_stdlib_text_builder_append_i32_i32(builder_handle: i32, value: i32) -> i32;
+extern fn objc3_runtime_stdlib_text_builder_build_i32(builder_handle: i32) -> i32;
+extern fn objc3_runtime_stdlib_text_format_i32_i32(value: i32) -> i32;
+
+extern fn importedPackageSeed() -> i32
+    __attribute__((objc_foreign, objc_import_module(named("CrossLaneFixtureProvider"))));
+
+fn summarizeImportedCollections() -> i32 {
+  var labels = #array[2, 3, 5];
+  var weights = #map[2: 4, 5: 8];
+  var required = #set[2, 5, 5];
+
+  var label_total = 0;
+  for (label in labels) {
+    label_total += label;
+  }
+  if (label_total != 10) {
+    return 11;
+  }
+
+  var required_total = 0;
+  for (item in required) {
+    required_total += item;
+  }
+  if (required_total != 7) {
+    return 12;
+  }
+
+  var weight_total = 0;
+  for (key, value in weights) {
+    weight_total += key + value;
+  }
+  if (weight_total != 19) {
+    return 13;
+  }
+
+  if (weights[2] != 4) {
+    return 14;
+  }
+  if (weights[5] != 8) {
+    return 15;
+  }
+
+  return importedPackageSeed() + weights[2] + weights[5];
+}
+
+fn main() -> i32 {
+  let summary = summarizeImportedCollections();
+  if (summary != 15) {
+    return 21;
+  }
+
+  let label_text = objc3_runtime_stdlib_text_format_i32_i32(summary);
+  let builder = objc3_runtime_stdlib_text_builder_i32();
+  if (builder <= 0) {
+    return 22;
+  }
+  if (objc3_runtime_stdlib_text_builder_append_text_i32(builder, label_text) != 2) {
+    return 23;
+  }
+  if (objc3_runtime_stdlib_text_builder_append_i32_i32(builder, summary) != 4) {
+    return 24;
+  }
+
+  let interpolated = objc3_runtime_stdlib_text_builder_build_i32(builder);
+  if (objc3_runtime_stdlib_text_byte_count_i32(interpolated) != 4) {
+    return 25;
+  }
+  return 0;
+}

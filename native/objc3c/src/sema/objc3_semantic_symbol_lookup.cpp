@@ -5,13 +5,23 @@
 SemanticTypeInfo ScopeLookupType(
     const std::vector<SemanticScope> &scopes,
     const std::string &name) {
+  if (const SemanticTypeInfo *found_type =
+          ScopeLookupTypeOrNull(scopes, name)) {
+    return *found_type;
+  }
+  return MakeScalarSemanticType(ValueType::Unknown);
+}
+
+const SemanticTypeInfo *ScopeLookupTypeOrNull(
+    const std::vector<SemanticScope> &scopes,
+    const std::string &name) {
   for (auto it = scopes.rbegin(); it != scopes.rend(); ++it) {
     auto found = it->find(name);
     if (found != it->end()) {
-      return found->second;
+      return &found->second;
     }
   }
-  return MakeScalarSemanticType(ValueType::Unknown);
+  return nullptr;
 }
 
 OwnershipResourceMoveBindingState *LookupOwnershipResourceMoveBinding(

@@ -147,6 +147,45 @@ def _assert_object_model_support_contracts_are_source_derived(
     assert any("public capability truth" in scope for scope in covered_scopes)
 
 
+def _assert_object_model_full_realization_readiness_is_reserved_evidence(
+    contract: dict[str, Any],
+) -> None:
+    readiness_evidence = contract.get("full_realization_readiness_evidence")
+
+    assert isinstance(readiness_evidence, list)
+    assert len(readiness_evidence) == 1
+
+    row = readiness_evidence[0]
+    assert row["issue"] == 8198
+    assert row["capability_id"] == contract["reserved_umbrella"]
+    assert row["public_status"] == "reserved"
+    assert row["support_claim_published"] is False
+    assert "support_claim" not in row
+    assert row["remaining_blockers"] == ("object-model-debugger-source-identity",)
+
+    assert row["covered_axes"] == (
+        "class",
+        "metaclass",
+        "category",
+        "protocol",
+        "property",
+        "ivar",
+        "selector",
+        "public-reflection",
+        "registration-replay",
+    )
+    for path in (
+        row["contract_path"],
+        row["combined_positive_fixture"],
+        row["public_reflection_probe"],
+    ):
+        assert not str(path).startswith("tmp/")
+        assert (ROOT / path).exists(), path
+
+    for command in row["public_commands"]:
+        assert str(command).startswith("npm run objc3c -- ")
+
+
 def _assert_advanced_runtime_support_contracts_are_source_derived(
     contract: dict[str, Any],
 ) -> None:
@@ -313,6 +352,13 @@ def test_object_model_reserved_boundaries_stay_non_claiming() -> None:
 
     assert contract["issue"] == 8154
     _assert_reserved_boundaries_do_not_publish_claims(contract)
+
+
+def test_object_model_full_realization_readiness_is_reserved_evidence() -> None:
+    contract = build_object_model_capability_split_contract()
+
+    assert contract["issue"] == 8154
+    _assert_object_model_full_realization_readiness_is_reserved_evidence(contract)
 
 
 def test_advanced_runtime_public_capability_split_matches_capability_matrix() -> None:

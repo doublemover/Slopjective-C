@@ -4,6 +4,7 @@ static void AccumulateErrorHandlingErrorBridgeLegalityForCallable(
     Objc3ErrorHandlingErrorBridgeLegalitySummary &summary,
     bool allow_source_only_error_runtime_surface,
     std::vector<std::string> &diagnostics) {
+  (void)allow_source_only_error_runtime_surface;
   const bool has_nserror = decl.objc_nserror_declared;
   const bool has_status_code = decl.objc_status_code_declared;
   const bool has_marker = has_nserror || has_status_code;
@@ -47,13 +48,6 @@ static void AccumulateErrorHandlingErrorBridgeLegalityForCallable(
        mapping->params.front().type == decl.return_type &&
        CallableReturnsNSErrorObjectForErrorHandling(*mapping));
 
-  if (!allow_source_only_error_runtime_surface && has_marker) {
-    RecordErrorHandlingSemanticDiagnostic(
-        summary.contract_violation_sites, decl.line, decl.column, "O3S285",
-        "unsupported feature claim: NSError/status bridge legality is not yet runnable in Objective-C 3 native mode",
-        diagnostics);
-    ++summary.unsupported_combination_sites;
-  }
   if (has_nserror && !has_error_out) {
     ++summary.missing_error_out_parameter_sites;
     RecordErrorHandlingSemanticDiagnostic(
@@ -175,10 +169,9 @@ Objc3ErrorHandlingErrorBridgeLegalitySummary BuildErrorHandlingErrorBridgeLegali
       summary.contract_violation_sites <=
           summary.bridge_callable_sites + summary.unsupported_combination_sites;
   summary.native_emit_remains_fail_closed =
-      !allow_source_only_error_runtime_surface;
+      summary.contract_violation_sites != 0;
   summary.ready_for_lowering_and_runtime =
-      allow_source_only_error_runtime_surface && summary.deterministic &&
-      summary.contract_violation_sites == 0;
+      summary.deterministic && summary.contract_violation_sites == 0;
 
   std::ostringstream out;
   out << summary.contract_id

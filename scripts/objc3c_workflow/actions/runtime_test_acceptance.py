@@ -21,6 +21,9 @@ RUNTIME_ARCHITECTURE_INTEGRATION_PY = (
 PUBLIC_RUNTIME_REFLECTION_API_PY = (
     ROOT / "scripts" / "check_objc3c_public_runtime_reflection_api.py"
 )
+ADVANCED_RUNTIME_CLOSURE_PY = (
+    ROOT / "scripts" / "check_objc3c_advanced_runtime_closure.py"
+)
 
 
 def run_python_check(script: Path, *args: str) -> int:
@@ -57,6 +60,10 @@ def action_test_runtime_acceptance_concurrency(_: list[str]) -> int:
     return run_runtime_acceptance_action("test-runtime-acceptance-concurrency")
 
 
+def action_validate_cache_aware_dispatch(_: list[str]) -> int:
+    return run_runtime_acceptance_action("validate-cache-aware-dispatch")
+
+
 def action_proof_runtime_architecture(_: list[str]) -> int:
     return run_python_check(RUNTIME_ARCHITECTURE_PROOF_PACKET_PY)
 
@@ -67,3 +74,7 @@ def action_validate_runtime_architecture(_: list[str]) -> int:
 
 def action_validate_public_runtime_reflection_api(_: list[str]) -> int:
     return run_python_check(PUBLIC_RUNTIME_REFLECTION_API_PY)
+
+
+def action_validate_advanced_runtime_closure(_: list[str]) -> int:
+    return run_python_check(ADVANCED_RUNTIME_CLOSURE_PY)

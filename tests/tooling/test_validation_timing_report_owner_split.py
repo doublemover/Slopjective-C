@@ -124,6 +124,41 @@ def test_validation_timing_budget_contract_is_hard_blocking() -> None:
 
 
 def test_validation_timing_budget_uses_release_composite_thresholds() -> None:
+    smoke_budgets = validation_speed_budgets(
+        None,
+        None,
+        None,
+        total_seconds=140.0,
+        composite_action="test-smoke",
+    )
+    full_budgets = validation_speed_budgets(
+        None,
+        None,
+        None,
+        total_seconds=170.0,
+        composite_action="test-full",
+    )
+    ci_budgets = validation_speed_budgets(
+        None,
+        None,
+        None,
+        total_seconds=3500.0,
+        composite_action="test-ci",
+    )
+    nightly_budgets = validation_speed_budgets(
+        None,
+        None,
+        None,
+        total_seconds=21000.0,
+        composite_action="test-nightly",
+    )
+    nightly_child_budgets = validation_speed_budgets(
+        {"elapsed_seconds": 230.0},
+        {"elapsed_seconds": 140.0},
+        {"elapsed_seconds": 100.0},
+        total_seconds=21000.0,
+        composite_action="test-nightly",
+    )
     performance_governance_budgets = validation_speed_budgets(
         None,
         None,
@@ -220,10 +255,59 @@ def test_validation_timing_budget_uses_release_composite_thresholds() -> None:
         for budget in default_budgets
         if budget["name"] == "composite_elapsed_seconds"
     )
+    smoke_composite = next(
+        budget
+        for budget in smoke_budgets
+        if budget["name"] == "composite_elapsed_seconds"
+    )
+    full_composite = next(
+        budget
+        for budget in full_budgets
+        if budget["name"] == "composite_elapsed_seconds"
+    )
+    ci_composite = next(
+        budget
+        for budget in ci_budgets
+        if budget["name"] == "composite_elapsed_seconds"
+    )
+    nightly_composite = next(
+        budget
+        for budget in nightly_budgets
+        if budget["name"] == "composite_elapsed_seconds"
+    )
+    nightly_runtime_acceptance = next(
+        budget
+        for budget in nightly_child_budgets
+        if budget["name"] == "runtime_acceptance_elapsed_seconds"
+    )
+    nightly_execution_smoke = next(
+        budget
+        for budget in nightly_child_budgets
+        if budget["name"] == "execution_smoke_elapsed_seconds"
+    )
+    nightly_execution_replay = next(
+        budget
+        for budget in nightly_child_budgets
+        if budget["name"] == "execution_replay_elapsed_seconds"
+    )
 
+    assert smoke_composite["threshold_seconds"] == 150.0
+    assert smoke_composite["status"] == "PASS"
+    assert full_composite["threshold_seconds"] == 180.0
+    assert full_composite["status"] == "PASS"
+    assert ci_composite["threshold_seconds"] == 3600.0
+    assert ci_composite["status"] == "PASS"
+    assert nightly_composite["threshold_seconds"] == 21600.0
+    assert nightly_composite["status"] == "PASS"
+    assert nightly_runtime_acceptance["threshold_seconds"] == 240.0
+    assert nightly_runtime_acceptance["status"] == "PASS"
+    assert nightly_execution_smoke["threshold_seconds"] == 150.0
+    assert nightly_execution_smoke["status"] == "PASS"
+    assert nightly_execution_replay["threshold_seconds"] == 120.0
+    assert nightly_execution_replay["status"] == "PASS"
     assert performance_governance_composite["threshold_seconds"] == 1800.0
     assert performance_governance_composite["status"] == "PASS"
-    assert release_foundation_composite["threshold_seconds"] == 3000.0
+    assert release_foundation_composite["threshold_seconds"] == 3600.0
     assert release_foundation_composite["status"] == "PASS"
     assert packaging_channels_composite["threshold_seconds"] == 3300.0
     assert packaging_channels_composite["status"] == "PASS"

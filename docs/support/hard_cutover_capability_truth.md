@@ -9,8 +9,10 @@ Authoritative inputs:
 - `docs/support/capability_matrix.json`
 - `docs/support/capability_matrix.schema.json`
 - `docs/support/evidence_map.json`
+- `docs/support/umbrella_readiness.json`
 - `docs/support/capability_matrix.md`
 - `docs/support/evidence_map.md`
+- `docs/support/umbrella_readiness.md`
 - `docs/support/capability_claim_responsibility.md`
 - `scripts/objc3c_shared/schema_registry.py`
 - `native/objc3c/src/artifacts/json/capability_support_schema_records.cpp`
@@ -19,7 +21,9 @@ Schema ownership is not mirrored under `docs/support`. The support schema
 entrypoint delegates to the canonical matrix schema under `schemas/`; consumers
 validate the matrix and evidence map through registry-owned schema IDs and
 artifact-owned publication records: `objc3c-capability-matrix-v1` and
-`objc3c-capability-evidence-map-v1`.
+`objc3c-capability-evidence-map-v1`. Broad umbrella readiness is checked by
+`objc3c-umbrella-readiness-v1`; it records blockers and final promotion
+criteria, not public behavior support.
 
 Projection rule: markdown files, site pages, and runbooks are projections of
 the JSON matrix and evidence map. They may clarify reader expectations, but they
@@ -53,14 +57,15 @@ state or imply validation, GitHub issue edits, push state, or remote closeout.
 
 ## Current Claim Boundary
 
-| Area                                                                                                                                                  | Capability state                                 | Public wording                                                                     |
-| ----------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------ | ---------------------------------------------------------------------------------- |
-| Parser, typed sema, strict runtime-dispatch lowering, IR module emission, strict dispatch diagnostics, and runnable smoke                             | `implemented` where the matrix has behavior rows | Claim only the named support claim and its linked evidence.                        |
-| Native module decomposition, public C runtime API shape, workflow bridge, and JSON/schema helpers                                                     | `internal`                                       | Treat as owner/evidence surfaces, not language features.                           |
-| Object-model interface method table and private class/category/protocol query evidence                                                                | `implemented` where the matrix has behavior rows | Claim only the narrow matrix row; do not promote it to broader runtime behavior.   |
-| Full object-model runtime realization                                                                                                                 | `reserved` until its own matrix row changes      | Describe as unclaimed; link evidence owners instead of promising runtime behavior. |
-| Blocks, ARC automation, `throws`, async/await, actors, tasks, macros, property behaviors, and broad interop closure                                   | `reserved` unless separately implemented         | Describe as unavailable or reserved spec surface, not runnable support.            |
-| Old modes, retired mode labels, alias adapters, alternate acceptance paths, retired-source lanes, direct helper commands, and evidence-log completion | unsupported/retired wording                      | Mention only as negative evidence, source-hygiene data, or rejection inventory.    |
+| Area                                                                                                                                                  | Capability state                                 | Public wording                                                                                                    |
+| ----------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------- |
+| Parser, typed sema, strict runtime-dispatch lowering, IR module emission, strict dispatch diagnostics, and runnable smoke                             | `implemented` where the matrix has behavior rows | Claim only the named support claim and its linked evidence.                                                       |
+| Native module decomposition, public C runtime API shape, workflow bridge, and JSON/schema helpers                                                     | `internal`                                       | Treat as owner/evidence surfaces, not language features.                                                          |
+| Object-model interface method table and private class/category/protocol query evidence                                                                | `implemented` where the matrix has behavior rows | Claim only the narrow matrix row; do not promote it to broader runtime behavior.                                  |
+| Full object-model runtime realization                                                                                                                 | `reserved` until its own matrix row changes      | Describe as unclaimed; link evidence owners instead of promising runtime behavior.                                |
+| Direct `@import` module syntax, full source-map publication, statement stepping, LLDB plugin integration, and public hosted package registries        | `reserved`                                       | Describe as unavailable even when metadata import, source-graph, local registry, or debug-anchor evidence exists. |
+| Blocks, ARC automation, `throws`, async/await, actors, tasks, macros, property behaviors, and broad interop closure                                   | `reserved` unless separately implemented         | Describe as unavailable or reserved spec surface, not runnable support.                                           |
+| Old modes, retired mode labels, alias adapters, alternate acceptance paths, retired-source lanes, direct helper commands, and evidence-log completion | unsupported/retired wording                      | Mention only as negative evidence, source-hygiene data, or rejection inventory.                                   |
 
 Advanced runtime closure is split into explicit implemented rows and reserved
 boundary rows. Implemented rows may be named only through their support claims in
@@ -73,6 +78,20 @@ non-claiming unless a future matrix row changes state:
 - `runtime.concurrency.broad-async-actor-closure`
 - `runtime.metaprogramming.arbitrary-macro-ecosystem`
 - `runtime.interop.broad-runtime-closure`
+
+The #8200 cross-lane evidence is still row-scoped. Text/package source-graph
+and declaration-debug-anchor proof does not promote direct `@import` syntax,
+full source-map publication, or statement stepping. Optimization runtime
+equivalence keeps method inlining fail-closed until inline-frame, callee-body
+identity, and invalidation proof exist. Distribution lifecycle evidence proves
+local clean install, release-operation rollback safety, and tampered installed
+package rejection without promoting a public hosted registry, network install,
+background updater, or public production release channel. Advanced-runtime
+native artifact evidence is likewise bounded: it proves the combined fixture
+compiles through the real direct-native path and publishes object, LLVM IR,
+manifest, runtime registration, runtime metadata, and error replay artifacts
+from a fresh generated-attempt directory. It does not promote native executable
+link/run support or the broad advanced-runtime umbrella.
 
 ## Documentation Rule
 
@@ -92,7 +111,7 @@ they do not define alternate old-surface support or create evidence-log claims.
 
 Capability matrix and evidence-map schema publication is narrower than the
 general schema registry: `capability_support_schema_records.cpp` owns the
-artifact-facing records for the two support data files and their markdown
+artifact-facing records for the support data files and their markdown
 projections, so docs do not restate those schema identities independently.
 
 When a feature is partially present in parser, metadata, emitted artifacts, or

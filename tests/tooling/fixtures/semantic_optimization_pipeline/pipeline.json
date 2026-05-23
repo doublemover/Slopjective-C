@@ -1,22 +1,38 @@
 {
   "contract_id": "objc3c.optimization.semantic.pipeline.v1",
   "issue_mapping": {
-    "primary_issues": [8159, 8175],
-    "support_claims": ["objc3c.behavior.semantic_optimization_pipeline"],
+    "primary_issues": [
+      8159,
+      8175,
+      8191,
+      8192,
+      8193,
+      8194
+    ],
+    "support_claims": [
+      "objc3c.behavior.semantic_optimization_pipeline",
+      "objc3c.behavior.optimization.method-inlining-safe-subset",
+      "objc3c.behavior.runtime.cache-aware-dispatch"
+    ],
     "capability_rows_required": [
       "objc3c.behavior.semantic_optimization_pipeline",
+      "objc3c.behavior.semantic_optimization.exact_target_devirtualization",
+      "objc3c.behavior.optimization.method-inlining-safe-subset",
       "objc3c.internal.semantic_optimization_pass_registry",
-      "objc3c.reserved.semantic_optimization.devirtualization",
-      "objc3c.reserved.semantic_optimization.method_inlining",
-      "objc3c.reserved.semantic_optimization.cache_aware_dispatch"
+      "runtime.optimization.cache-aware-dispatch",
+      "objc3c.behavior.runtime.cache-aware-dispatch"
     ],
     "evidence_ids_required": [
       "objc3c.evidence.semantic_optimization_pipeline.fixture",
       "objc3c.evidence.semantic_optimization_pipeline.validator",
       "objc3c.evidence.semantic_optimization_pipeline.native_surface",
       "objc3c.evidence.semantic_optimization_pipeline.direct_dispatch_ir",
-      "objc3c.evidence.semantic_optimization_pipeline.reserved_negative",
-      "objc3c.evidence.semantic_optimization_pipeline.performance_governance"
+      "objc3c.evidence.semantic_optimization_pipeline.performance_governance",
+      "objc3c.evidence.semantic_optimization_pipeline.proof_model",
+      "objc3c.evidence.semantic_optimization_pipeline.proof_cases",
+      "objc3c.evidence.semantic_optimization_pipeline.exact_target_devirtualization",
+      "objc3c.evidence.semantic_optimization_pipeline.method_inlining",
+      "objc3c.evidence.semantic_optimization_pipeline.cache_aware_dispatch_ir"
     ]
   },
   "source_truth": {
@@ -61,7 +77,9 @@
         "tokens": [
           "TryResolveObjc3IRDirectDispatch",
           "BuildObjc3IRDirectDispatchCall",
-          "invalidate_global_proof_state"
+          "invalidate_global_proof_state",
+          "Objc3IRMessageSendIsEligibleForCacheAwareDispatch",
+          "BuildObjc3IRCacheAwareDispatchCall"
         ]
       },
       {
@@ -80,6 +98,38 @@
           "IsObjc3IRSemanticOptimizationProofContractFailClosed",
           "REJECT_FAIL_CLOSED",
           "SKIP_FAIL_CLOSED"
+        ]
+      },
+      {
+        "path": "scripts/objc3c_semantic_optimization_pipeline.py",
+        "tokens": [
+          "PROOF_MODEL_CONTRACT_ID",
+          "evaluate_optimization_proof_case",
+          "_validate_proof_model"
+        ]
+      },
+      {
+        "path": "native/objc3c/src/opt/objc3_semantic_optimization_executor.cpp",
+        "tokens": [
+          "exact_target_receiver_static_type_proven",
+          "sealed_final_dispatch_evidence_present",
+          "runtime_cache_version_dependency_pinned",
+          "method_inline_callee_body_identity_present"
+        ]
+      },
+      {
+        "path": "scripts/objc3c_semantic_optimization_pipeline.py",
+        "tokens": [
+          "REQUIRED_DEVIRTUALIZATION_PROOF_IDS",
+          "exact_target_eligibility_verdict",
+          "runtime_cache_version_verdict"
+        ]
+      },
+      {
+        "path": "native/objc3c/src/ir/objc3_ir_runtime_dispatch_calls.cpp",
+        "tokens": [
+          "kObjc3RuntimeCacheAwareDispatchI32CheckedSymbol",
+          "strict checked status envelope"
         ]
       }
     ]
@@ -117,7 +167,9 @@
         "parse-to-lowering readiness is ready"
       ],
       "invalidation": "no IR mutation; gate publishes immutable precondition state",
-      "post_verify": ["precondition verdict is deterministic"],
+      "post_verify": [
+        "precondition verdict is deterministic"
+      ],
       "fail_closed_diagnostics": [
         "semantic optimization precondition gate failed"
       ],
@@ -138,7 +190,9 @@
         "selector and argument lowering are side-effect free for optional nil send"
       ],
       "invalidation": "no runtime or direct dispatch proof is created for folded nil sends",
-      "post_verify": ["non-nil and unknown receivers retain runtime dispatch"],
+      "post_verify": [
+        "non-nil and unknown receivers retain runtime dispatch"
+      ],
       "fail_closed_diagnostics": [
         "nil receiver folding requires compile-time nil receiver proof"
       ],
@@ -191,7 +245,9 @@
         "related-result receiver cleanup is disarmed before transfer"
       ],
       "invalidation": "local ARC cleanup state is rewritten; global proof state is unchanged",
-      "post_verify": ["owned result cleanup remains explicit"],
+      "post_verify": [
+        "owned result cleanup remains explicit"
+      ],
       "fail_closed_diagnostics": [
         "ARC retained-result cleanup requires method-family ownership proof"
       ],
@@ -215,7 +271,9 @@
         "retired routes and compatibility routes remain disabled"
       ],
       "invalidation": "runtime cache state remains runtime-owned behind dispatch entrypoints",
-      "post_verify": ["no selector-table or method-cache helper is materialized in IR"],
+      "post_verify": [
+        "no selector-table or method-cache helper is materialized in IR"
+      ],
       "fail_closed_diagnostics": [
         "runtime dispatch preservation rejected non-canonical dispatch emission"
       ],
@@ -226,73 +284,101 @@
     {
       "pass_id": "devirtualization",
       "ordinal": 60,
-      "stage": "semantic-optimization-reserved",
-      "mode": "reserved",
+      "stage": "semantic-exact-target-message-send-optimization",
+      "mode": "enabled",
       "semantic_preserving": true,
-      "rewrites_ir": false,
-      "invalidates_global_proof_state": false,
-      "input_contract": "closed-world receiver finality proof",
-      "output_contract": "exact direct dispatch call",
+      "rewrites_ir": true,
+      "invalidates_global_proof_state": true,
+      "input_contract": "Objc3ExactTargetMessageSendDevirtualizationCandidate",
+      "output_contract": "Objc3IRDirectDispatchCallRequest",
       "preconditions": [
-        "class finality proof exists",
-        "override set is closed",
-        "ABI stability allows direct target publication"
+        "sealed or final dispatch evidence is present",
+        "static receiver type proof identifies one concrete class target",
+        "exact method target identity resolves selector to one ABI-compatible implementation",
+        "class category and method mutation generation snapshot is pinned",
+        "runtime cache version dependency is pinned before bypassing dispatch lookup",
+        "ownership and ARC transfer safety is preserved",
+        "source-map and line-table debug preservation is proven",
+        "package import ABI identity and runtime ABI compatibility are identical"
       ],
-      "invalidation": "would invalidate receiver, selector, and callee proof state",
-      "post_verify": ["reserved pass emits skip diagnostic without success claim"],
+      "invalidation": "invalidates receiver_static_type, selector_resolution, callee_body_identity, class_generation, category_generation, method_generation, runtime_cache_version, runtime_metadata, and package/import proof state",
+      "post_verify": [
+        "exact target eligibility verdict is ELIGIBLE",
+        "mutation invalidation verdict is COMPLETE",
+        "runtime cache version verdict is PINNED",
+        "source-map debug identity and ownership ARC safety remain preserved"
+      ],
       "fail_closed_diagnostics": [
-        "devirtualization is reserved until closed-world finality proofs exist"
+        "exact-target devirtualization requires sealed or final dispatch, static receiver, mutation invalidation, runtime cache, ownership, source-map, ABI, and package proofs"
       ],
       "fixtures": [
-        "tests/tooling/fixtures/semantic_optimization_pipeline/reserved_devirtualization_skip.json"
+        "tests/tooling/fixtures/semantic_optimization_pipeline/proof_cases.json"
       ]
     },
     {
       "pass_id": "method-inlining",
       "ordinal": 70,
-      "stage": "semantic-optimization-reserved",
-      "mode": "reserved",
+      "stage": "semantic-method-function-inlining-safe-subset",
+      "mode": "enabled",
       "semantic_preserving": true,
-      "rewrites_ir": false,
-      "invalidates_global_proof_state": false,
-      "input_contract": "side-effect and ownership-preserving inline candidate",
+      "rewrites_ir": true,
+      "invalidates_global_proof_state": true,
+      "input_contract": "Objc3OwnershipSafeInlineCandidate",
       "output_contract": "expanded IR body",
       "preconditions": [
-        "callee body is available",
-        "ownership effects are replayable",
-        "debug and diagnostic source mapping are preserved"
+        "callee body identity is present",
+        "function or final method belongs to the scalar inline subset",
+        "ownership and ARC effects are replayable",
+        "side-effect summary is pure and call-free",
+        "source-map inline frame and line-table preservation are proven",
+        "diagnostic source location is preserved",
+        "runtime ABI and package import identity are unchanged",
+        "inlining depth is within limit and recursion is absent",
+        "callee generation snapshot is pinned"
       ],
-      "invalidation": "would invalidate local value, ownership, and diagnostic proof state",
-      "post_verify": ["reserved pass emits skip diagnostic without success claim"],
+      "invalidation": "invalidates callee_body_identity, callee_generation, local_value, ownership_transfer, source_map_inline_frame, diagnostic_location, runtime_metadata_identity, and package_import_abi_identity proof state",
+      "post_verify": [
+        "callee body identity matches the inlined IR digest",
+        "source-map inline frame and diagnostic location are preserved",
+        "ownership, side-effect, ABI/package, depth, recursion, generation, and invalidation proofs are consumed"
+      ],
       "fail_closed_diagnostics": [
-        "method inlining is reserved until ownership and source-map proofs exist"
+        "method inlining requires callee body identity, scalar subset, ownership, side-effect, source-map, diagnostic, ABI/package, depth, recursion, generation, and invalidation proofs"
       ],
       "fixtures": [
-        "tests/tooling/fixtures/semantic_optimization_pipeline/reserved_method_inlining_skip.json"
+        "tests/native/ir/optimization/semantic_pipeline_method_inlining.before.ll",
+        "tests/native/ir/optimization/semantic_pipeline_method_inlining.after.ll",
+        "tests/tooling/fixtures/semantic_optimization_pipeline/proof_cases.json"
       ]
     },
     {
       "pass_id": "cache-aware-dispatch",
       "ordinal": 80,
-      "stage": "runtime-owned-dispatch-optimization-reserved",
-      "mode": "reserved",
+      "stage": "runtime-owned-cache-aware-dispatch-helper-lowering",
+      "mode": "enabled",
       "semantic_preserving": true,
-      "rewrites_ir": false,
-      "invalidates_global_proof_state": false,
-      "input_contract": "runtime cache invalidation contract",
+      "rewrites_ir": true,
+      "invalidates_global_proof_state": true,
+      "input_contract": "Objc3IRRuntimeDispatchCallRequest",
       "output_contract": "runtime-owned cache-aware dispatch helper",
       "preconditions": [
         "runtime cache invalidation semantics are public",
         "ABI-stable helper symbol exists",
-        "semantic replay preserves dispatch miss behavior"
+        "semantic replay preserves dispatch miss behavior",
+        "strict dispatch status envelope is checked",
+        "source-map and line-table debug preservation is proven"
       ],
-      "invalidation": "cache invalidation remains runtime-owned; no IR helper is materialized",
-      "post_verify": ["reserved pass emits skip diagnostic without success claim"],
+      "invalidation": "invalidates runtime_cache_version, selector_resolution, and source_map_debug cache-aware dispatch proof state",
+      "post_verify": [
+        "strict dispatch status envelope aborts non-value results",
+        "source-map and debug-visible cache-aware site anchors are preserved",
+        "runtime fallback and miss behavior remains owned by the checked helper"
+      ],
       "fail_closed_diagnostics": [
-        "cache-aware dispatch is reserved behind the runtime cache contract"
+        "cache-aware dispatch requires runtime cache ABI, strict status handling, semantic replay, and source-map debug preservation"
       ],
       "fixtures": [
-        "tests/tooling/fixtures/semantic_optimization_pipeline/reserved_cache_aware_dispatch_skip.json"
+        "tests/native/ir/optimization/semantic_pipeline_cache_aware_dispatch.ll"
       ]
     },
     {
@@ -311,7 +397,9 @@
         "all unsupported opportunities emitted skip diagnostics"
       ],
       "invalidation": "no mutation; verifier consumes post-pass trace",
-      "post_verify": ["semantic equivalence verdict is present"],
+      "post_verify": [
+        "semantic equivalence verdict is present"
+      ],
       "fail_closed_diagnostics": [
         "post optimization IR cleanup verifier failed semantic equivalence"
       ],
@@ -379,35 +467,49 @@
     {
       "pass_id": "devirtualization",
       "required_proofs": [
-        "class finality proof exists",
-        "override set is closed",
-        "ABI stability allows direct target publication"
+        "sealed or final dispatch evidence is present",
+        "static receiver type proof identifies one concrete class target",
+        "exact method target identity resolves selector to one ABI-compatible implementation",
+        "class category and method mutation generation snapshot is pinned",
+        "runtime cache version dependency is pinned before bypassing dispatch lookup",
+        "ownership and ARC transfer safety is preserved",
+        "source-map and line-table debug preservation is proven",
+        "package import ABI identity and runtime ABI compatibility are identical"
       ],
-      "missing_proof_action": "SKIP_FAIL_CLOSED",
+      "missing_proof_action": "REJECT_FAIL_CLOSED",
       "success_claim_on_skip": false,
-      "semantic_equivalence": "reserved pass emits skip diagnostic without success claim"
+      "semantic_equivalence": "exact-target devirtualization replaces runtime message send with direct dispatch only when sealed/final dispatch, static receiver, mutation invalidation, runtime cache version, ownership, source-map, ABI, package, and semantic equivalence proofs are all present"
     },
     {
       "pass_id": "method-inlining",
       "required_proofs": [
-        "callee body is available",
-        "ownership effects are replayable",
-        "debug and diagnostic source mapping are preserved"
+        "callee body identity is present",
+        "function or final method belongs to the scalar inline subset",
+        "ownership and ARC effects are replayable",
+        "side-effect summary is pure and call-free",
+        "source-map inline frame and line-table preservation are proven",
+        "diagnostic source location is preserved",
+        "runtime ABI and package import identity are unchanged",
+        "inlining depth is within limit and recursion is absent",
+        "callee generation snapshot is pinned",
+        "invalidates callee_body_identity, callee_generation, local_value, ownership_transfer, source_map_inline_frame, diagnostic_location, runtime_metadata_identity, and package_import_abi_identity proof state"
       ],
-      "missing_proof_action": "SKIP_FAIL_CLOSED",
+      "missing_proof_action": "REJECT_FAIL_CLOSED",
       "success_claim_on_skip": false,
-      "semantic_equivalence": "reserved pass emits skip diagnostic without success claim"
+      "semantic_equivalence": "method/function inlining rewrites IR only when callee body identity, scalar subset, ownership, side-effect, source-map, diagnostic, ABI/package, depth, recursion, generation, invalidation, and semantic equivalence proofs are present"
     },
     {
       "pass_id": "cache-aware-dispatch",
       "required_proofs": [
         "runtime cache invalidation semantics are public",
         "ABI-stable helper symbol exists",
-        "semantic replay preserves dispatch miss behavior"
+        "semantic replay preserves dispatch miss behavior",
+        "strict dispatch status envelope is checked",
+        "source-map and line-table debug preservation is proven"
       ],
-      "missing_proof_action": "SKIP_FAIL_CLOSED",
+      "missing_proof_action": "REJECT_FAIL_CLOSED",
       "success_claim_on_skip": false,
-      "semantic_equivalence": "reserved runtime-owned optimization emits skip diagnostic without IR helper materialization"
+      "semantic_equivalence": "cache-aware dispatch rewrites eligible i32 runtime sends only to the runtime-owned checked helper, aborts non-value strict dispatch statuses, and preserves source-map/debug anchors while runtime miss and status behavior remain authoritative"
     },
     {
       "pass_id": "ir-cleanup-verifier",
@@ -421,6 +523,542 @@
       "semantic_equivalence": "post-pass trace carries a semantic equivalence verdict"
     }
   ],
+  "proof_model": {
+    "contract_id": "objc3c.optimization.semantic.proof_model.v1",
+    "issue_ref": "#8191",
+    "required_public_actions": [
+      "validate-semantic-optimization-pipeline",
+      "validate-codegen-optimization-policy",
+      "validate-optimization-proof-model"
+    ],
+    "proof_definitions": [
+      {
+        "proof_id": "source_graph_node_identity",
+        "source": "OC3-NEXT-006 stable source graph node ids and reference provenance",
+        "fail_closed_if_missing": true
+      },
+      {
+        "proof_id": "type_graph_identity",
+        "source": "OC3-NEXT-006 type graph ids",
+        "fail_closed_if_missing": true
+      },
+      {
+        "proof_id": "semantic_type_summary",
+        "source": "typed semantic summaries at the lowering boundary",
+        "fail_closed_if_missing": true
+      },
+      {
+        "proof_id": "runtime_metadata_identity",
+        "source": "runtime metadata ids consumed by dispatch and reflection lowering",
+        "fail_closed_if_missing": true
+      },
+      {
+        "proof_id": "runtime_abi_safety",
+        "source": "runtime ABI surface identity for emitted helper symbols",
+        "fail_closed_if_missing": true
+      },
+      {
+        "proof_id": "package_import_abi_identity",
+        "source": "package and import ABI identity from module/package metadata",
+        "fail_closed_if_missing": true
+      },
+      {
+        "proof_id": "source_map_debug_identity",
+        "source": "OC3-NEXT-008 source-map and debug-map ids",
+        "fail_closed_if_missing": true
+      },
+      {
+        "proof_id": "line_table_debug_status",
+        "source": "line-table preservation status",
+        "fail_closed_if_missing": true
+      },
+      {
+        "proof_id": "ownership_arc_safety",
+        "source": "ownership and ARC transfer summaries",
+        "fail_closed_if_missing": true
+      },
+      {
+        "proof_id": "side_effect_summary",
+        "source": "side-effect summaries for expressions and call candidates",
+        "fail_closed_if_missing": true
+      },
+      {
+        "proof_id": "generation_assumption_validity",
+        "source": "class/category/protocol generation assumptions",
+        "fail_closed_if_missing": true
+      },
+      {
+        "proof_id": "semantic_equivalence",
+        "source": "semantic equivalence verdict for the optimized result",
+        "fail_closed_if_missing": true
+      },
+      {
+        "proof_id": "invalidation_completeness",
+        "source": "declared and consumed proof-state invalidation records",
+        "fail_closed_if_missing": true
+      },
+      {
+        "proof_id": "sealed_final_dispatch_evidence",
+        "source": "sealed/final dispatch evidence that excludes overrides and dynamic dispatch mutation",
+        "fail_closed_if_missing": true
+      },
+      {
+        "proof_id": "static_receiver_type_proof",
+        "source": "static receiver type proof from source and type graph identity",
+        "fail_closed_if_missing": true
+      },
+      {
+        "proof_id": "exact_method_target_identity",
+        "source": "exact method target identity for selector, class, and implementation symbol",
+        "fail_closed_if_missing": true
+      },
+      {
+        "proof_id": "class_category_method_mutation_invalidation",
+        "source": "class/category/method mutation generation snapshot plus invalidated proof-state record",
+        "fail_closed_if_missing": true
+      },
+      {
+        "proof_id": "runtime_cache_version_dependency",
+        "source": "runtime method-cache and dispatch-version dependency pinned before runtime lookup is bypassed",
+        "fail_closed_if_missing": true
+      },
+      {
+        "proof_id": "callee_body_identity",
+        "source": "stable callee body identity and IR digest for the exact inlined body",
+        "fail_closed_if_missing": true
+      },
+      {
+        "proof_id": "scalar_inline_subset",
+        "source": "pure scalar free-function or final-method subset proof",
+        "fail_closed_if_missing": true
+      },
+      {
+        "proof_id": "ownership_arc_effects_replay",
+        "source": "ownership and ARC effects replayed without consumed ambiguity",
+        "fail_closed_if_missing": true
+      },
+      {
+        "proof_id": "source_map_inline_frame_preservation",
+        "source": "source-map inline frame and line-table preservation proof",
+        "fail_closed_if_missing": true
+      },
+      {
+        "proof_id": "diagnostic_location_preservation",
+        "source": "diagnostic location remapping proof for the call site and inlined body",
+        "fail_closed_if_missing": true
+      },
+      {
+        "proof_id": "inlining_depth_recursion_limit",
+        "source": "bounded inlining depth and no-recursion proof",
+        "fail_closed_if_missing": true
+      },
+      {
+        "proof_id": "callee_generation_invalidation",
+        "source": "callee body and generation snapshots plus invalidated proof-state record",
+        "fail_closed_if_missing": true
+      }
+    ],
+    "candidate_input_fields": [
+      "source_graph_node_ids",
+      "type_graph_ids",
+      "semantic_type_summaries",
+      "runtime_metadata_ids",
+      "abi_identity",
+      "package_import_identity",
+      "source_map_ids",
+      "line_table_status",
+      "ownership_summaries",
+      "side_effect_summaries",
+      "class_category_protocol_generation_assumptions",
+      "benchmark_workload_digest",
+      "static_receiver_type_proof",
+      "sealed_final_dispatch_evidence",
+      "exact_target_method_identity",
+      "mutation_generation_snapshot",
+      "runtime_cache_version_dependency",
+      "devirtualized_target_symbol",
+      "callee_body_identity",
+      "callee_body_ir_digest",
+      "inline_candidate_kind",
+      "scalar_signature_proof",
+      "ownership_effects_summary",
+      "source_map_inline_frame_id",
+      "diagnostic_location_id",
+      "inlining_depth",
+      "recursion_state",
+      "callee_generation_snapshot",
+      "inlined_target_symbol"
+    ],
+    "result_payload_fields": [
+      "decision",
+      "reason",
+      "missing_proofs",
+      "failed_proofs",
+      "ir_digest_before",
+      "ir_digest_after",
+      "source_map_impact",
+      "runtime_metadata_impact",
+      "invalidated_proof_state",
+      "debug_safety_verdict",
+      "ownership_safety_verdict",
+      "runtime_abi_safety_verdict",
+      "package_import_abi_identity_verdict",
+      "exact_target_eligibility_verdict",
+      "mutation_invalidation_verdict",
+      "runtime_cache_version_verdict",
+      "devirtualized_target_symbol",
+      "runtime_cache_version_dependency",
+      "inlined_target_symbol",
+      "success_claim",
+      "diagnostic"
+    ],
+    "required_verdict_fields": [
+      "semantic_equivalence_verdict",
+      "runtime_abi_safety_verdict",
+      "source_map_debug_impact_verdict",
+      "ownership_arc_safety_verdict",
+      "package_import_abi_identity_verdict",
+      "exact_target_eligibility_verdict",
+      "mutation_invalidation_verdict",
+      "runtime_cache_version_verdict"
+    ],
+    "verifier_passes": [
+      {
+        "verifier_id": "source-map-preservation-verifier",
+        "verifies": "source-map and line-table preservation verdicts"
+      },
+      {
+        "verifier_id": "ownership-preservation-verifier",
+        "verifies": "ownership and ARC transfer safety verdicts"
+      },
+      {
+        "verifier_id": "dispatch-semantic-preservation-verifier",
+        "verifies": "message dispatch semantic equivalence verdicts"
+      },
+      {
+        "verifier_id": "package-import-abi-safety-verifier",
+        "verifies": "package/import ABI identity verdicts"
+      },
+      {
+        "verifier_id": "runtime-metadata-consistency-verifier",
+        "verifies": "runtime metadata identity and ABI verdicts"
+      },
+      {
+        "verifier_id": "unsupported-skip-claimlessness-verifier",
+        "verifies": "unsupported passes skip fail-closed without success claims"
+      },
+      {
+        "verifier_id": "invalidation-completeness-verifier",
+        "verifies": "mutating passes declare and consume invalidated proof state"
+      },
+      {
+        "verifier_id": "exact-target-devirtualization-verifier",
+        "verifies": "sealed/final dispatch evidence, static receiver type proof, exact method target identity, and ABI-compatible direct target publication"
+      },
+      {
+        "verifier_id": "runtime-cache-version-dependency-verifier",
+        "verifies": "class/category/method mutation invalidation and pinned runtime cache version dependencies"
+      },
+      {
+        "verifier_id": "method-inlining-safe-subset-verifier",
+        "verifies": "callee body identity, scalar subset, ownership, side-effect, source-map, diagnostic, ABI/package, depth, recursion, generation, and invalidation proofs"
+      }
+    ],
+    "pass_proof_contracts": [
+      {
+        "pass_id": "semantic-precondition-gate",
+        "ordinal": 10,
+        "required_proof_ids": [
+          "source_graph_node_identity",
+          "type_graph_identity",
+          "semantic_type_summary",
+          "runtime_metadata_identity",
+          "runtime_abi_safety",
+          "package_import_abi_identity",
+          "source_map_debug_identity",
+          "line_table_debug_status",
+          "ownership_arc_safety",
+          "side_effect_summary",
+          "generation_assumption_validity",
+          "semantic_equivalence",
+          "invalidation_completeness"
+        ],
+        "invalidation_contract": "verifier-only gate publishes immutable precondition state and invalidates nothing",
+        "semantic_equivalence_verdict": "required",
+        "runtime_abi_safety_verdict": "required",
+        "source_map_debug_impact_verdict": "required",
+        "ownership_arc_safety_verdict": "required",
+        "package_import_abi_identity_verdict": "required",
+        "unsupported_skip_behavior": "SKIP_FAIL_CLOSED_NO_SUCCESS_CLAIM",
+        "success_claim_on_skip": false,
+        "fail_closed_diagnostic": "semantic optimization precondition gate failed",
+        "exact_target_eligibility_verdict": "not-applicable",
+        "mutation_invalidation_verdict": "not-applicable",
+        "runtime_cache_version_verdict": "not-applicable"
+      },
+      {
+        "pass_id": "nil-receiver-folding",
+        "ordinal": 20,
+        "required_proof_ids": [
+          "source_graph_node_identity",
+          "type_graph_identity",
+          "semantic_type_summary",
+          "runtime_metadata_identity",
+          "runtime_abi_safety",
+          "package_import_abi_identity",
+          "source_map_debug_identity",
+          "line_table_debug_status",
+          "ownership_arc_safety",
+          "side_effect_summary",
+          "generation_assumption_validity",
+          "semantic_equivalence",
+          "invalidation_completeness"
+        ],
+        "invalidation_contract": "folded nil sends create no runtime or direct dispatch proof and preserve source-map identity",
+        "semantic_equivalence_verdict": "required",
+        "runtime_abi_safety_verdict": "required",
+        "source_map_debug_impact_verdict": "required",
+        "ownership_arc_safety_verdict": "required",
+        "package_import_abi_identity_verdict": "required",
+        "unsupported_skip_behavior": "SKIP_FAIL_CLOSED_NO_SUCCESS_CLAIM",
+        "success_claim_on_skip": false,
+        "fail_closed_diagnostic": "nil receiver folding requires compile-time nil receiver proof",
+        "exact_target_eligibility_verdict": "not-applicable",
+        "mutation_invalidation_verdict": "not-applicable",
+        "runtime_cache_version_verdict": "not-applicable"
+      },
+      {
+        "pass_id": "direct-dispatch-exact-call",
+        "ordinal": 30,
+        "required_proof_ids": [
+          "source_graph_node_identity",
+          "type_graph_identity",
+          "semantic_type_summary",
+          "runtime_metadata_identity",
+          "runtime_abi_safety",
+          "package_import_abi_identity",
+          "source_map_debug_identity",
+          "line_table_debug_status",
+          "ownership_arc_safety",
+          "side_effect_summary",
+          "generation_assumption_validity",
+          "semantic_equivalence",
+          "invalidation_completeness"
+        ],
+        "invalidation_contract": "exact direct call emission invalidates receiver, selector, callee, runtime metadata, and package/import proof state",
+        "semantic_equivalence_verdict": "required",
+        "runtime_abi_safety_verdict": "required",
+        "source_map_debug_impact_verdict": "required",
+        "ownership_arc_safety_verdict": "required",
+        "package_import_abi_identity_verdict": "required",
+        "unsupported_skip_behavior": "SKIP_FAIL_CLOSED_NO_SUCCESS_CLAIM",
+        "success_claim_on_skip": false,
+        "fail_closed_diagnostic": "direct dispatch lowering requires exact symbol, signature, and result ownership",
+        "exact_target_eligibility_verdict": "not-applicable",
+        "mutation_invalidation_verdict": "not-applicable",
+        "runtime_cache_version_verdict": "not-applicable"
+      },
+      {
+        "pass_id": "arc-retained-result-cleanup",
+        "ordinal": 40,
+        "required_proof_ids": [
+          "source_graph_node_identity",
+          "type_graph_identity",
+          "semantic_type_summary",
+          "runtime_metadata_identity",
+          "runtime_abi_safety",
+          "package_import_abi_identity",
+          "source_map_debug_identity",
+          "line_table_debug_status",
+          "ownership_arc_safety",
+          "side_effect_summary",
+          "generation_assumption_validity",
+          "semantic_equivalence",
+          "invalidation_completeness"
+        ],
+        "invalidation_contract": "local ARC cleanup proof state is rewritten while global runtime and package ABI proof state stays identical",
+        "semantic_equivalence_verdict": "required",
+        "runtime_abi_safety_verdict": "required",
+        "source_map_debug_impact_verdict": "required",
+        "ownership_arc_safety_verdict": "required",
+        "package_import_abi_identity_verdict": "required",
+        "unsupported_skip_behavior": "SKIP_FAIL_CLOSED_NO_SUCCESS_CLAIM",
+        "success_claim_on_skip": false,
+        "fail_closed_diagnostic": "ARC retained-result cleanup requires method-family ownership proof",
+        "exact_target_eligibility_verdict": "not-applicable",
+        "mutation_invalidation_verdict": "not-applicable",
+        "runtime_cache_version_verdict": "not-applicable"
+      },
+      {
+        "pass_id": "runtime-dispatch-preservation",
+        "ordinal": 50,
+        "required_proof_ids": [
+          "source_graph_node_identity",
+          "type_graph_identity",
+          "semantic_type_summary",
+          "runtime_metadata_identity",
+          "runtime_abi_safety",
+          "package_import_abi_identity",
+          "source_map_debug_identity",
+          "line_table_debug_status",
+          "ownership_arc_safety",
+          "side_effect_summary",
+          "generation_assumption_validity",
+          "semantic_equivalence",
+          "invalidation_completeness"
+        ],
+        "invalidation_contract": "verifier-only runtime dispatch preservation consumes the proof trace and invalidates nothing",
+        "semantic_equivalence_verdict": "required",
+        "runtime_abi_safety_verdict": "required",
+        "source_map_debug_impact_verdict": "required",
+        "ownership_arc_safety_verdict": "required",
+        "package_import_abi_identity_verdict": "required",
+        "unsupported_skip_behavior": "SKIP_FAIL_CLOSED_NO_SUCCESS_CLAIM",
+        "success_claim_on_skip": false,
+        "fail_closed_diagnostic": "runtime dispatch preservation rejected non-canonical dispatch emission",
+        "exact_target_eligibility_verdict": "not-applicable",
+        "mutation_invalidation_verdict": "not-applicable",
+        "runtime_cache_version_verdict": "not-applicable"
+      },
+      {
+        "pass_id": "devirtualization",
+        "ordinal": 60,
+        "required_proof_ids": [
+          "source_graph_node_identity",
+          "type_graph_identity",
+          "semantic_type_summary",
+          "runtime_metadata_identity",
+          "runtime_abi_safety",
+          "package_import_abi_identity",
+          "source_map_debug_identity",
+          "line_table_debug_status",
+          "ownership_arc_safety",
+          "side_effect_summary",
+          "generation_assumption_validity",
+          "semantic_equivalence",
+          "invalidation_completeness",
+          "sealed_final_dispatch_evidence",
+          "static_receiver_type_proof",
+          "exact_method_target_identity",
+          "class_category_method_mutation_invalidation",
+          "runtime_cache_version_dependency"
+        ],
+        "invalidation_contract": "exact-target devirtualization invalidates receiver_static_type, selector_resolution, callee_body_identity, class_generation, category_generation, method_generation, runtime_cache_version, runtime_metadata, and package/import proof state",
+        "semantic_equivalence_verdict": "required",
+        "runtime_abi_safety_verdict": "required",
+        "source_map_debug_impact_verdict": "required",
+        "ownership_arc_safety_verdict": "required",
+        "package_import_abi_identity_verdict": "required",
+        "unsupported_skip_behavior": "SKIP_FAIL_CLOSED_NO_SUCCESS_CLAIM",
+        "success_claim_on_skip": false,
+        "fail_closed_diagnostic": "exact-target devirtualization requires sealed or final dispatch, static receiver, mutation invalidation, runtime cache, ownership, source-map, ABI, and package proofs",
+        "exact_target_eligibility_verdict": "required",
+        "mutation_invalidation_verdict": "required",
+        "runtime_cache_version_verdict": "required"
+      },
+      {
+        "pass_id": "method-inlining",
+        "ordinal": 70,
+        "required_proof_ids": [
+          "source_graph_node_identity",
+          "type_graph_identity",
+          "semantic_type_summary",
+          "runtime_metadata_identity",
+          "runtime_abi_safety",
+          "package_import_abi_identity",
+          "source_map_debug_identity",
+          "line_table_debug_status",
+          "ownership_arc_safety",
+          "side_effect_summary",
+          "generation_assumption_validity",
+          "semantic_equivalence",
+          "invalidation_completeness",
+          "callee_body_identity",
+          "scalar_inline_subset",
+          "ownership_arc_effects_replay",
+          "source_map_inline_frame_preservation",
+          "diagnostic_location_preservation",
+          "inlining_depth_recursion_limit",
+          "callee_generation_invalidation"
+        ],
+        "invalidation_contract": "method inlining invalidates callee body identity, callee generation, local value, ownership transfer, source-map inline frame, diagnostic location, runtime metadata, ABI, and package proof state",
+        "semantic_equivalence_verdict": "required",
+        "runtime_abi_safety_verdict": "required",
+        "source_map_debug_impact_verdict": "required",
+        "ownership_arc_safety_verdict": "required",
+        "package_import_abi_identity_verdict": "required",
+        "unsupported_skip_behavior": "SKIP_FAIL_CLOSED_NO_SUCCESS_CLAIM",
+        "success_claim_on_skip": false,
+        "fail_closed_diagnostic": "method inlining requires callee body identity, scalar subset, ownership, side-effect, source-map, diagnostic, ABI/package, depth, recursion, generation, and invalidation proofs",
+        "exact_target_eligibility_verdict": "not-applicable",
+        "mutation_invalidation_verdict": "not-applicable",
+        "runtime_cache_version_verdict": "not-applicable"
+      },
+      {
+        "pass_id": "cache-aware-dispatch",
+        "ordinal": 80,
+        "required_proof_ids": [
+          "source_graph_node_identity",
+          "type_graph_identity",
+          "semantic_type_summary",
+          "runtime_metadata_identity",
+          "runtime_abi_safety",
+          "package_import_abi_identity",
+          "source_map_debug_identity",
+          "line_table_debug_status",
+          "ownership_arc_safety",
+          "side_effect_summary",
+          "generation_assumption_validity",
+          "semantic_equivalence",
+          "invalidation_completeness"
+        ],
+        "invalidation_contract": "cache-aware dispatch invalidates runtime cache version, selector resolution, and source-map debug proof state while preserving runtime-owned miss/fallback semantics",
+        "semantic_equivalence_verdict": "required",
+        "runtime_abi_safety_verdict": "required",
+        "source_map_debug_impact_verdict": "required",
+        "ownership_arc_safety_verdict": "required",
+        "package_import_abi_identity_verdict": "required",
+        "unsupported_skip_behavior": "SKIP_FAIL_CLOSED_NO_SUCCESS_CLAIM",
+        "success_claim_on_skip": false,
+        "fail_closed_diagnostic": "cache-aware dispatch requires runtime cache ABI, strict status handling, semantic replay, and source-map debug preservation",
+        "exact_target_eligibility_verdict": "not-applicable",
+        "mutation_invalidation_verdict": "required",
+        "runtime_cache_version_verdict": "required"
+      },
+      {
+        "pass_id": "ir-cleanup-verifier",
+        "ordinal": 90,
+        "required_proof_ids": [
+          "source_graph_node_identity",
+          "type_graph_identity",
+          "semantic_type_summary",
+          "runtime_metadata_identity",
+          "runtime_abi_safety",
+          "package_import_abi_identity",
+          "source_map_debug_identity",
+          "line_table_debug_status",
+          "ownership_arc_safety",
+          "side_effect_summary",
+          "generation_assumption_validity",
+          "semantic_equivalence",
+          "invalidation_completeness"
+        ],
+        "invalidation_contract": "post-pass verifier consumes invalidation records and emits no mutation",
+        "semantic_equivalence_verdict": "required",
+        "runtime_abi_safety_verdict": "required",
+        "source_map_debug_impact_verdict": "required",
+        "ownership_arc_safety_verdict": "required",
+        "package_import_abi_identity_verdict": "required",
+        "unsupported_skip_behavior": "SKIP_FAIL_CLOSED_NO_SUCCESS_CLAIM",
+        "success_claim_on_skip": false,
+        "fail_closed_diagnostic": "post optimization IR cleanup verifier failed semantic equivalence",
+        "exact_target_eligibility_verdict": "not-applicable",
+        "mutation_invalidation_verdict": "not-applicable",
+        "runtime_cache_version_verdict": "not-applicable"
+      }
+    ],
+    "proof_case_fixture_path": "tests/tooling/fixtures/semantic_optimization_pipeline/proof_cases.json"
+  },
   "verification_gates": [
     {
       "gate_id": "deterministic-pass-order",
@@ -456,7 +1094,10 @@
   "performance_governance": {
     "contract_id": "objc3c.optimization.semantic.pipeline.performance.governance.v1",
     "source_truth_policy": "semantic optimization performance claims use checked-in workload manifests, fixture digests, and budget policy; generated reports are evidence outputs, not source truth",
-    "forbidden_input_roots": ["tmp/", "checked_outputs/"],
+    "forbidden_input_roots": [
+      "tmp/",
+      "checked_outputs/"
+    ],
     "budget_model": "tests/tooling/fixtures/performance_governance/budget_model.json",
     "required_public_actions": [
       "benchmark-compiler-throughput",
@@ -495,7 +1136,7 @@
       {
         "trace_id": "direct-dispatch-exact-call-after-ir",
         "source_path": "tests/native/ir/optimization/semantic_pipeline_direct_dispatch.after.ll",
-        "source_sha256": "38bd165e05d088e3fca6e5eb8ea62eb4c74d15fa5e47d09ac938faf15a4c440d",
+        "source_sha256": "7abc9ab02b0d3c9efcd6ca1b1394af35f4e04dd6dabbc25133d1614b32ad3888",
         "claim_boundary": "semantic-preservation trace only; benchmark reports cannot replace this checked IR truth"
       }
     ],

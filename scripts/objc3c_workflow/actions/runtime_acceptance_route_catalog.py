@@ -60,6 +60,17 @@ RUNTIME_ACCEPTANCE_ROUTES: dict[str, RuntimeAcceptanceRoute] = {
         validation_tier="fast",
         guarantee_owner="async/task/actor runtime acceptance surfaces",
     ),
+    "validate-cache-aware-dispatch": RuntimeAcceptanceRoute(
+        action="validate-cache-aware-dispatch",
+        suite="cache-aware-dispatch",
+        title="cache-aware dispatch runtime ABI and fallback validation",
+        validation_tier="fast",
+        guarantee_owner=(
+            "runtime-owned cache-aware dispatch descriptors, stale-generation "
+            "fallback, malformed-descriptor diagnostics, and bounded debug "
+            "visibility stay tied to the live runtime method cache"
+        ),
+    ),
 }
 
 

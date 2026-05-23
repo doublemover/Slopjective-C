@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import json
 import os
+import argparse
 import hashlib
 import shutil
 import subprocess
@@ -176,7 +177,18 @@ def validate_receipt_contracts(manifest: dict[str, Any]) -> dict[str, Any]:
 
 
 
-def main() -> int:
+def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument(
+        "--use-existing-build-report",
+        action="store_true",
+        help="Validate the current package-channel build report instead of rebuilding package channels.",
+    )
+    return parser.parse_args(argv)
+
+
+def main(argv: Sequence[str] | None = None) -> int:
+    args = parse_args(argv)
     run_id = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S_%f")
     work_root = ROOT / "tmp" / "pkg" / "objc3c-package-channels-e2e" / run_id
     portable_extract_root = work_root / "portable-extract"
@@ -186,12 +198,15 @@ def main() -> int:
     offline_install_root = work_root / "offline-install-root"
     if work_root.exists():
         shutil.rmtree(work_root)
-    REPORT_PATH.unlink(missing_ok=True)
     SUMMARY_PATH.unlink(missing_ok=True)
 
-    build_result = run_capture(python_script_command(BUILD_PACKAGE_CHANNELS_PY), cwd=ROOT, capture_output=False)
-    if build_result.returncode != 0:
-        raise RuntimeError("package-channels build failed")
+    if args.use_existing_build_report:
+        expect(REPORT_PATH.is_file(), "existing package-channels build report is missing")
+    else:
+        REPORT_PATH.unlink(missing_ok=True)
+        build_result = run_capture(python_script_command(BUILD_PACKAGE_CHANNELS_PY), cwd=ROOT, capture_output=False)
+        if build_result.returncode != 0:
+            raise RuntimeError("package-channels build failed")
 
     source_surface = load_json(SOURCE_SURFACE)
     owner_policy = source_surface.get("owner_policy")
@@ -202,6 +217,7 @@ def main() -> int:
         raise RuntimeError("packaging-channel source surface missing blocker metadata")
 
     summary = load_json(REPORT_PATH)
+    expect(summary.get("status") == "PASS", "package-channels build report did not pass")
     manifest_path = ROOT / str(summary["manifest_path"]).replace("/", os.sep)
     manifest = load_json(manifest_path)
     package_root = ROOT / str(manifest["package_root"]).replace("/", os.sep)

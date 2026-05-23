@@ -37,14 +37,10 @@ COLLECTIONS_NEGATIVE_FIXTURE = (
 )
 FOUNDATION_NEXT_PROBE = "tests/tooling/runtime/stdlib_foundation_next_runtime_probe.cpp"
 EXPECTED_RESERVED_PUBLIC_SURFACES = {
-    "collection literals",
-    "generic element/key/value typing",
-    "owned arbitrary-length array storage",
-    "array mutation",
-    "syntax-level for-in integration",
-    "map iteration protocol",
+    "non-i32 collection storage",
     "non-i32 hashing",
-    "set deletion",
+    "Foundation collection bridging",
+    "collection display or string interpolation",
 }
 
 
@@ -186,8 +182,12 @@ def test_collection_runtime_abi_is_source_backed_by_live_exports() -> None:
     negative_fixture = _read_repo_text(source_backing["negative_fixture"])
     runtime_header = _read_repo_text(source_backing["runtime_contract_header"])
     runtime_implementation = _read_repo_text(source_backing["runtime_implementation"])
+    runtime_state_implementation = _read_repo_text(
+        source_backing["runtime_state_implementation"]
+    )
     runtime_probe = _read_repo_text(source_backing["runtime_probe"])
     runtime_acceptance = _read_repo_text(source_backing["runtime_acceptance_domain"])
+    runtime_sources = runtime_implementation + runtime_state_implementation
 
     for path in contract["source_truth"]:
         _assert_repo_path_exists(path)
@@ -219,7 +219,7 @@ def test_collection_runtime_abi_is_source_backed_by_live_exports() -> None:
         value = status["value"]
         boundary = status["boundary"]
         assert f"{constant} = {value}" in runtime_header
-        assert constant in runtime_implementation
+        assert constant in runtime_sources
         assert constant in runtime_probe
         assert boundary in " ".join(
             requirement
@@ -240,28 +240,24 @@ def test_collection_runtime_abi_is_source_backed_by_live_exports() -> None:
 def test_collection_groundwork_does_not_publish_reserved_collection_claims() -> None:
     catalog = _read_json(CATALOG_PATH)
     contract = _read_json(CONTRACT_PATH)
-    collection_rows = [
+    runtime_collection_rows = [
         row
         for row in catalog["rows"]
-        if ".stdlib.collections." in str(row.get("support_claim", ""))
+        if str(row.get("support_claim", "")) in _expected_claim_ids(contract)
     ]
 
-    assert {row["support_claim"] for row in collection_rows} == _expected_claim_ids(
+    assert {row["support_claim"] for row in runtime_collection_rows} == _expected_claim_ids(
         contract
     )
 
     forbidden_fragments = {
-        "literal",
-        "generic",
         "foundation",
         "nsarray",
         "nsdictionary",
-        "arbitrary-length",
-        "for-in",
-        "delete",
         "hashing",
+        "interpolation",
     }
-    for row in collection_rows:
+    for row in runtime_collection_rows:
         claim_text = row["support_claim"].lower()
         capability_text = row["capability_id"].lower()
         assert not any(fragment in claim_text for fragment in forbidden_fragments)
@@ -274,6 +270,4 @@ def test_issue_8161_boundary_names_reserved_collection_surfaces() -> None:
 
     for reserved_surface in contract["reserved_public_surfaces"]:
         reserved_text = str(reserved_surface).lower()
-        if reserved_text == "map iteration protocol":
-            reserved_text = "map iteration"
         assert reserved_text in boundary

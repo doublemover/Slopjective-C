@@ -1,0 +1,14 @@
+// Expected advanced-runtime diagnostic: advanced-runtime.actor-nonisolated-mailbox
+module AdvancedRuntimeClosureNegativeActor;
+
+extern fn objc3_runtime_actor_mailbox_enqueue_i32(actor_handle: i32, value: i32, executor_tag: i32) -> i32;
+
+actor class NegativeAdvancedRuntimeActor
+- (i32)token:(i32)seed __attribute__((objc_nonisolated));
+@end
+
+@implementation NegativeAdvancedRuntimeActor
+- (i32)token:(i32)seed __attribute__((objc_nonisolated)) {
+  return objc3_runtime_actor_mailbox_enqueue_i32(seed, seed + 1, 1);
+}
+@end

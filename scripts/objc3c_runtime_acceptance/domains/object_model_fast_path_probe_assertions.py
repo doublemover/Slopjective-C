@@ -100,6 +100,80 @@ def assert_dispatch_fast_path_probe_payload(payload: dict[str, Any]) -> None:
            "expected repeated missingDispatch: call to report cached strict dispatch error")
     expect(payload.get("strict_error_second_dispatch_state_last_implementation_kind") == "strict-dispatch-error",
            "expected repeated missingDispatch: call to report cached strict dispatch error status")
+    expect(payload.get("cache_aware_value") == 4 and payload.get("cache_aware_stale_value") == 4,
+           "expected cache-aware dispatch to preserve strict runtime dispatch result semantics")
+    expect(payload.get("cache_aware_malformed_status") == -4,
+           "expected malformed cache-aware descriptor to fail closed as malformed metadata")
+    expect(payload.get("cache_aware_dispatch_copy_status") == 0,
+           "expected cache-aware dispatch record snapshot to copy")
+    expect(payload.get("cache_aware_dispatch_abi_version") == 1,
+           "expected cache-aware dispatch record ABI version to match")
+    expect(payload.get("cache_aware_dispatch_descriptor_valid") == 1,
+           "expected valid cache-aware dispatch descriptor")
+    expect(payload.get("cache_aware_dispatch_fallback_used") == 0,
+           "did not expect valid cache-aware descriptor to fall back")
+    expect(payload.get("cache_aware_dispatch_used_cache") == 1,
+           "expected cache-aware dispatch to hit the runtime method cache")
+    expect(payload.get("cache_aware_dispatch_used_fast_path") == 1,
+           "expected cache-aware dispatch to use the seeded runtime fast path")
+    expect(payload.get("cache_aware_dispatch_status_code") == 0,
+           "expected cache-aware dispatch to return OK status")
+    expect(payload.get("cache_aware_dispatch_cache_entry_generation") == payload.get("dynamic_entry_cache_entry_generation"),
+           "expected cache-aware dispatch record to cite the real method-cache entry generation")
+    expect(payload.get("cache_aware_dispatch_method_target_identity", 0) != 0,
+           "expected cache-aware dispatch record to publish a bounded target identity")
+    expect(payload.get("cache_aware_dispatch_source_path") == "tests/tooling/fixtures/native/live_dispatch_fast_path_positive.objc3",
+           "expected cache-aware dispatch record to preserve source path")
+    expect(payload.get("cache_aware_dispatch_source_line") == 1 and payload.get("cache_aware_dispatch_source_column") == 1,
+           "expected cache-aware dispatch record to preserve source coordinates")
+    expect(payload.get("cache_aware_dispatch_dispatch_path") == "cache-hit-fast-path",
+           "expected cache-aware dispatch to explain cache-hit fast-path behavior")
+    expect(payload.get("cache_aware_dispatch_implementation_kind") == "emitted-method-body",
+           "expected cache-aware dispatch to execute emitted method body")
+    expect(payload.get("cache_aware_dispatch_diagnostic_code") in ("", None),
+           "expected cache-aware dispatch diagnostic code to stay empty for OK status")
+    expect(payload.get("cache_aware_stale_dispatch_copy_status") == 0,
+           "expected stale cache-aware dispatch record snapshot to copy")
+    expect(payload.get("cache_aware_stale_dispatch_descriptor_valid") == 0,
+           "expected stale cache-aware descriptor to be rejected")
+    expect(payload.get("cache_aware_stale_dispatch_fallback_used") == 1,
+           "expected stale cache-aware descriptor to fall back through runtime dispatch")
+    expect(payload.get("cache_aware_stale_dispatch_invalidation_reason") == 1,
+           "expected stale cache-aware descriptor to publish stale-generation invalidation")
+    expect(payload.get("cache_aware_stale_dispatch_status_code") == 0,
+           "expected stale cache-aware fallback to preserve OK dispatch status")
+    expect(payload.get("cache_aware_stale_dispatch_dispatch_path") == "cache-hit-fast-path",
+           "expected stale cache-aware fallback to reuse the real runtime cache hit")
+    expect(payload.get("cache_aware_malformed_dispatch_copy_status") == 0,
+           "expected malformed cache-aware dispatch record snapshot to copy")
+    expect(payload.get("cache_aware_malformed_dispatch_descriptor_valid") == 0,
+           "expected malformed cache-aware descriptor to be invalid")
+    expect(payload.get("cache_aware_malformed_dispatch_fallback_used") == 0,
+           "did not expect malformed cache-aware descriptor to execute fallback")
+    expect(payload.get("cache_aware_malformed_dispatch_status_code") == -4,
+           "expected malformed cache-aware descriptor record to publish malformed metadata status")
+    expect(payload.get("cache_aware_malformed_dispatch_dispatch_path") == "cache-aware-descriptor-error",
+           "expected malformed cache-aware descriptor to report descriptor-error path")
+    expect(payload.get("cache_aware_malformed_dispatch_diagnostic_code") == "O3RT004",
+           "expected malformed cache-aware descriptor diagnostic code")
+    expect(payload.get("cache_aware_missing_validation_status") == -4,
+           "expected cache-aware descriptor without runtime-owned validation flags to fail closed")
+    expect(payload.get("cache_aware_missing_validation_dispatch_copy_status") == 0,
+           "expected missing-validation cache-aware dispatch record snapshot to copy")
+    expect(payload.get("cache_aware_missing_validation_dispatch_descriptor_flags") == 4,
+           "expected missing-validation cache-aware descriptor to carry only debug-visible flag")
+    expect(payload.get("cache_aware_missing_validation_dispatch_descriptor_valid") == 0,
+           "expected missing-validation cache-aware descriptor to be invalid")
+    expect(payload.get("cache_aware_missing_validation_dispatch_fallback_used") == 0,
+           "did not expect missing-validation cache-aware descriptor to execute fallback")
+    expect(payload.get("cache_aware_missing_validation_dispatch_status_code") == -4,
+           "expected missing-validation cache-aware descriptor record to publish malformed metadata status")
+    expect(payload.get("cache_aware_missing_validation_dispatch_method_target_identity") == 0,
+           "expected missing-validation cache-aware descriptor to publish no target identity")
+    expect(payload.get("cache_aware_missing_validation_dispatch_dispatch_path") == "cache-aware-descriptor-error",
+           "expected missing-validation cache-aware descriptor to report descriptor-error path")
+    expect(payload.get("cache_aware_missing_validation_dispatch_diagnostic_code") == "O3RT004",
+           "expected missing-validation cache-aware descriptor diagnostic code")
 
 
 __all__ = ["assert_dispatch_fast_path_probe_payload"]

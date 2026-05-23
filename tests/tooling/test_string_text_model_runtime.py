@@ -32,8 +32,21 @@ def test_string_text_model_runtime_owns_and_validates_utf8_storage(
     payload = parse_json_output(run_probe(exe_path), "string text model runtime probe")
 
     assert payload["storage_create_call_count"] == 5
-    assert payload["storage_query_call_count"] == 7
-    assert payload["text_record_count"] == 4
-    assert payload["owned_storage_record_count"] == 3
-    assert payload["owned_storage_byte_count"] == 31
+    assert payload["storage_query_call_count"] == 6
+    assert payload["scalar_query_call_count"] == 8
+    assert payload["scalar_iterator_call_count"] == 5
+    assert payload["builder_create_call_count"] == 1
+    assert payload["builder_finalize_call_count"] == 1
+    assert payload["interpolation_call_count"] == 2
+    assert payload["builder_append_call_count"] == 1
+    assert payload["equality_call_count"] == 2
+    assert payload["compare_call_count"] == 4
+    assert payload["format_call_count"] == 1
+    assert payload["text_record_count"] == 8
+    assert payload["owned_storage_record_count"] == 5
+    assert payload["owned_storage_byte_count"] == 40
+    assert payload["literal_record_count"] == 1
+    assert payload["builder_record_count"] == 1
+    assert payload["scalar_iterator_record_count"] == 1
+    assert payload["last_malformed_offset"] == 0
     assert payload["last_status"] == 30646

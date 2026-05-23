@@ -78,6 +78,12 @@ void AccumulateBlockSourceStorageAnnotationFromExpr(
   for (const auto &arg : expr->args) {
     AccumulateBlockSourceStorageAnnotationFromExpr(arg.get(), contract);
   }
+  for (const auto &key : expr->collection_keys) {
+    AccumulateBlockSourceStorageAnnotationFromExpr(key.get(), contract);
+  }
+  for (const auto &value : expr->collection_values) {
+    AccumulateBlockSourceStorageAnnotationFromExpr(value.get(), contract);
+  }
 }
 
 void AccumulateBlockSourceStorageAnnotationFromStmt(
@@ -135,6 +141,14 @@ void AccumulateBlockSourceStorageAnnotationFromStmt(
                                                        contract);
       }
       return;
+    case Stmt::Kind::ForIn:
+      AccumulateBlockSourceStorageAnnotationFromExpr(
+          stmt->for_in_stmt->collection.get(), contract);
+      for (const auto &body_stmt : stmt->for_in_stmt->body) {
+        AccumulateBlockSourceStorageAnnotationFromStmt(body_stmt.get(),
+                                                       contract);
+      }
+      return;
     case Stmt::Kind::Switch:
       AccumulateBlockSourceStorageAnnotationFromExpr(
           stmt->switch_stmt->condition.get(), contract);
@@ -159,6 +173,12 @@ void AccumulateBlockSourceStorageAnnotationFromStmt(
         AccumulateBlockSourceStorageAnnotationFromStmt(body_stmt.get(),
                                                        contract);
       }
+      return;
+    case Stmt::Kind::CollectionMutation:
+      AccumulateBlockSourceStorageAnnotationFromExpr(
+          stmt->collection_mutation_stmt->key_or_index.get(), contract);
+      AccumulateBlockSourceStorageAnnotationFromExpr(
+          stmt->collection_mutation_stmt->value.get(), contract);
       return;
     case Stmt::Kind::Break:
     case Stmt::Kind::Continue:

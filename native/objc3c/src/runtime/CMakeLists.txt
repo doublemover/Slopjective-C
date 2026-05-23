@@ -225,6 +225,7 @@ add_library(${OBJC3_RUNTIME_LIBRARY_TARGET} ${OBJC3_RUNTIME_LIBRARY_KIND}
   public/objc3_runtime_language_semantics.h
   public/objc3_runtime_ownership_contract.h
   public/objc3_runtime_reflection.cpp
+  public/objc3_runtime_reflection_debug_anchor.cpp
   public/objc3_runtime_reflection.h
   public/objc3_runtime_registration.h
   public/objc3_runtime_registration_status.h
@@ -284,8 +285,11 @@ add_library(${OBJC3_RUNTIME_LIBRARY_TARGET} ${OBJC3_RUNTIME_LIBRARY_KIND}
   strings/borrowed_string.h
   stdlib/collections_runtime.cpp
   stdlib/collections_runtime_contract.h
+  stdlib/collections_runtime_state.cpp
+  stdlib/collections_runtime_state.h
   stdlib/core_runtime.cpp
   stdlib/core_runtime_contract.h
+  stdlib/stdlib_runtime_storage.h
   stdlib/text_runtime.cpp
   stdlib/text_runtime_contract.h
 )

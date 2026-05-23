@@ -59,6 +59,8 @@
         "model",
         "full_source_map_status",
         "statement_level_stepping",
+        "native_debug_info_evidence_id",
+        "native_debug_info_fail_closed_reason",
         "declaration_anchor_count",
         "span_evidence_count",
         "span_evidence_ids",
@@ -68,6 +70,8 @@
         "model": {"type": "string"},
         "full_source_map_status": {"type": "string"},
         "statement_level_stepping": {"type": "boolean"},
+        "native_debug_info_evidence_id": {"type": "string"},
+        "native_debug_info_fail_closed_reason": {"type": "string"},
         "declaration_anchor_count": {"type": "integer", "minimum": 0},
         "span_evidence_count": {"type": "integer", "minimum": 0},
         "span_evidence_ids": {"type": "array", "items": {"type": "string"}},
@@ -285,6 +289,8 @@
         "source_map_supported",
         "statement_level_stepping",
         "statement_level_stepping_status",
+        "native_debug_info_evidence",
+        "native_debug_info_fail_closed_reason",
         "debugger_model"
       ],
       "properties": {
@@ -294,6 +300,8 @@
         "source_map_supported": {"type": "boolean"},
         "statement_level_stepping": {"const": false},
         "statement_level_stepping_status": {"type": "string"},
+        "native_debug_info_evidence": {"type": "object"},
+        "native_debug_info_fail_closed_reason": {"type": "string"},
         "debugger_model": {"type": "string"}
       },
       "additionalProperties": false

@@ -14,6 +14,7 @@ from .developer_tooling_paths import (
     CHECK_DEVELOPER_TOOLING_EDITOR_SOURCE_TRUTH_PY,
     EDITOR_TOOLING_SURFACE_PY,
     FORMAT_OBJC3C_SOURCE_PY,
+    LANGUAGE_SERVICE_SURFACE_PY,
     FRONTEND_C_API_RUNNER_EXE,
     REWRITE_OBJC3C_SOURCE_PY,
 )
@@ -81,6 +82,27 @@ def action_inspect_editor_tooling(rest: list[str]) -> int:
     if rc != 0:
         return rc
     return run([sys.executable, str(EDITOR_TOOLING_SURFACE_PY), *rest])
+
+
+def action_inspect_artifact(rest: list[str]) -> int:
+    rc = ensure_frontend_runner_ready()
+    if rc != 0:
+        return rc
+    return run([sys.executable, str(EDITOR_TOOLING_SURFACE_PY), "--artifact-inspector-only", *rest])
+
+
+def action_inspect_source_graph(rest: list[str]) -> int:
+    rc = ensure_frontend_runner_ready()
+    if rc != 0:
+        return rc
+    return run([sys.executable, str(EDITOR_TOOLING_SURFACE_PY), "--source-graph-only", *rest])
+
+
+def action_inspect_language_service(rest: list[str]) -> int:
+    rc = ensure_frontend_runner_ready()
+    if rc != 0:
+        return rc
+    return run([sys.executable, str(LANGUAGE_SERVICE_SURFACE_PY), *rest])
 
 
 def action_format_objc3c(rest: list[str]) -> int:

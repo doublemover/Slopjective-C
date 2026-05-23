@@ -38,13 +38,14 @@ def build_runtime_mixed_image_package_lowering_bridge_emission_surface(
         "compile_artifact_set": [
             "<emit-prefix>.ll",
             "<emit-prefix>.runtime-import-surface.json",
+        ],
+        "deferred_bridge_artifact_paths": [
             "<emit-prefix>.interop-bridge.h",
             "<emit-prefix>.interop-bridge.modulemap",
             "<emit-prefix>.interop-bridge.json",
-            "<emit-prefix>.cross-module-runtime-link-plan.json",
         ],
         "lowering_model": (
-            "provider-lowering-emits-interop-abi-summary-metadata-and-bridge-call-declarations-while-consumer-packaging-preserves-the-emitted-bridge-boundary-as-a-mixed-image-import"
+            "provider-lowering-emits-interop-abi-summary-metadata-and-bridge-call-declarations-while-runtime-import-surfaces-preserve-deferred-bridge-paths-without-claiming-consumer-cross-module-link-plan-readiness"
         ),
         "authoritative_case_ids": authoritative_case_ids,
         "authoritative_code_paths": [
@@ -57,7 +58,8 @@ def build_runtime_mixed_image_package_lowering_bridge_emission_surface(
             INTEROP_HEADER_MODULE_CONSUMER_FIXTURE,
         ],
         "requires_runtime_import_surface_artifact": True,
-        "requires_cross_module_link_plan_artifact": True,
+        "requires_cross_module_link_plan_artifact": False,
+        "requires_fail_closed_consumer_import": True,
         "requires_real_compile_output": True,
     }
 

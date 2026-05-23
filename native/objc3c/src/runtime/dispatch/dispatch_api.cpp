@@ -124,3 +124,32 @@ extern "C" int objc3_runtime_dispatch_typed_value_from_class(
       objc3_runtime_dispatch_typed_from_class_checked(
           receiver, lookup_start_class_name, selector, a0, a1, a2, a3));
 }
+
+extern "C" objc3_runtime_dispatch_i32_result
+objc3_runtime_cache_aware_dispatch_i32_checked(
+    int receiver,
+    const objc3_runtime_cache_aware_dispatch_descriptor *descriptor,
+    int a0,
+    int a1,
+    int a2,
+    int a3) {
+  return objc3c::runtime::ExecuteRuntimeCacheAwareDispatchI32Checked(
+      receiver, descriptor, a0, a1, a2, a3);
+}
+
+extern "C" int objc3_runtime_prepare_cache_aware_dispatch_descriptor(
+    objc3_runtime_cache_aware_dispatch_descriptor *descriptor,
+    const char *selector,
+    const char *source_path,
+    uint32_t source_line,
+    uint32_t source_column) {
+  return objc3c::runtime::PrepareRuntimeCacheAwareDispatchDescriptor(
+      descriptor, selector, source_path, source_line, source_column);
+}
+
+extern "C" void objc3_runtime_abort_dispatch_status_i32(int status_code) {
+  objc3c::runtime::AbortRuntimeDispatchFailure(
+      objc3c::runtime::MakeRuntimeDispatchI32TypedResult(
+          static_cast<objc3_runtime_dispatch_status_code>(status_code), 0,
+          OBJC3_RUNTIME_DISPATCH_RETURN_KIND_I32));
+}

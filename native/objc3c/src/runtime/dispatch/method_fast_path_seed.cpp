@@ -1,6 +1,7 @@
 #include "runtime/dispatch/method_fast_path_seed.h"
 
 #include "runtime/dispatch/dispatch_family.h"
+#include "runtime/dispatch/dispatch_snapshot_contracts.h"
 #include "runtime/dispatch/method_cache.h"
 #include "runtime/dispatch/runtime_method_return.h"
 #include "runtime/dispatch/runtime_resolution_records.h"
@@ -184,6 +185,7 @@ void SeedDispatchIntentFastPathCacheForMethodListUnlocked(
       continue;
     }
     MethodCacheEntry cache_entry;
+    cache_entry.cache_abi_version = OBJC3_RUNTIME_METHOD_CACHE_ABI_VERSION;
     cache_entry.resolved = true;
     cache_entry.dispatch_family_is_class = family == DispatchFamily::Class;
     cache_entry.fast_path_seeded = true;
@@ -200,8 +202,11 @@ void SeedDispatchIntentFastPathCacheForMethodListUnlocked(
     cache_entry.lookup_start_base_identity = node.base_identity;
     cache_entry.normalized_receiver_identity = normalized_receiver_identity;
     cache_entry.selector_stable_id = selector_stable_id;
+    cache_entry.cache_entry_generation =
+        state.next_method_cache_entry_generation++;
     cache_entry.parameter_count = entry.parameter_count;
     cache_entry.return_kind = return_kind;
+    cache_entry.miss_status = OBJC3_RUNTIME_DISPATCH_STATUS_OK;
     cache_entry.cache_registered_image_count = state.registered_image_count;
     cache_entry.cache_last_successful_registration_order_ordinal =
         state.last_successful_registration_order_ordinal;

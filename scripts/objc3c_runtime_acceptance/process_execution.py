@@ -51,6 +51,8 @@ def run_command(
             cwd=str(cwd),
             env=subprocess_env,
             text=True,
+            encoding="utf-8",
+            errors="replace",
             capture_output=True,
             check=False,
         )

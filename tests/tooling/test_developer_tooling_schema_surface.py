@@ -215,6 +215,8 @@ def language_server() -> dict[str, Any]:
         "workspace_index_backed_navigation": True,
         "source_index_backed_hover": True,
         "source_index_digest": "e" * 64,
+        "source_graph_backed_references": False,
+        "source_graph_digest": "f" * 64,
         "diagnostic_transport": {
             "contract_id": "objc3c.developer.tooling.lsp.diagnostic.transport.v1",
             "source_path": "tests/tooling/fixtures/native/hello.objc3",
@@ -340,6 +342,149 @@ def language_server() -> dict[str, Any]:
     }
 
 
+def source_graph() -> dict[str, Any]:
+    source_path = "tests/tooling/fixtures/native/hello.objc3"
+    loc = location(source_path)
+    return {
+        "contract_id": "objc3c.developer.tooling.source.graph.v1",
+        "source_path": source_path,
+        "module_name": "Demo",
+        "available": True,
+        "fail_closed": True,
+        "support_class": "compiler-declaration-graph-with-fail-closed-reference-candidates",
+        "graph_truth_model": "compiler-owned declarations plus checked package provenance; lexical candidates are non-authoritative until native semantic reference closure is emitted",
+        "evidence": {
+            "source_truth_inputs": [
+                "compile-manifest-declaration-coordinates",
+                "workspace-semantic-index-guardrails",
+                "source-index-unverified-reference-candidates",
+            ],
+            "manifest_path": "tmp/artifacts/developer-tooling/editor-surface/hello/module.manifest.json",
+            "compiler_graph_fields": [],
+            "source_index_digest": "e" * 64,
+            "workspace_index_digest": "a" * 64,
+            "compiler_declaration_coordinates": True,
+            "native_compiler_source_graph_present": False,
+            "semantic_reference_closure": False,
+            "lexical_candidates_authoritative": False,
+            "reference_authority": "compiler-owned semantic reference closure required",
+            "package_authority": "workspace-index package guardrails",
+            "unsupported_authoritative_claims": [
+                "regex-only reference truth",
+                "rename without semantic reference closure",
+                "semantic tokens from lexical tokenization alone",
+            ],
+        },
+        "node_count": 2,
+        "edge_count": 2,
+        "declaration_node_count": 1,
+        "reference_candidate_count": 0,
+        "semantic_reference_count": 1,
+        "package_node_count": 0,
+        "package_dependency_edge_count": 0,
+        "semantic_token_count": 1,
+        "nodes": [
+            {
+                "node_id": "sgn:module",
+                "symbol_kind": "module",
+                "display_name": "Demo",
+                "location": loc,
+            },
+            {
+                "node_id": "sgn:main",
+                "symbol_kind": "function",
+                "display_name": "main",
+                "location": loc,
+            },
+        ],
+        "edges": [
+            {"edge_id": "sge:module-main", "edge_kind": "module-declaration"},
+            {"edge_id": "sge:main-self", "edge_kind": "declaration-to-reference"},
+        ],
+        "declarations": [
+            {
+                "node_id": "sgn:main",
+                "symbol": "main",
+                "kind": "function",
+                "definition_target": definition(source_path),
+            }
+        ],
+        "reference_candidates": [],
+        "navigation_consumers": {
+            "definition_targets": [],
+            "implementation_targets": [],
+            "generated_accessor_targets": [],
+            "semantic_token_source": "source_graph.semantic_tokens.tokens",
+        },
+        "references": {
+            "supported": False,
+            "support_class": "source-graph-fail-closed",
+            "evidence_ids": [],
+            "fail_closed": True,
+            "unpublished_reason": "native compiler semantic reference closure is missing",
+            "query_model": "node-id-to-semantic-reference-edges",
+            "candidate_count": 0,
+            "queries": [],
+            "diagnostics": [],
+        },
+        "rename": {
+            "supported": False,
+            "support_class": "source-graph-fail-closed",
+            "evidence_ids": [],
+            "fail_closed": True,
+            "unpublished_reason": "safe rename remains disabled",
+            "edit_model": "workspace-edit-from-semantic-reference-closure",
+            "diagnostics": [],
+            "negative_case_policy": [],
+        },
+        "semantic_tokens": {
+            "supported": False,
+            "support_class": "source-graph-fail-closed",
+            "evidence_ids": [],
+            "fail_closed": True,
+            "unpublished_reason": "full semantic token publication requires compiler-owned reference classification",
+            "legend": {"token_types": ["function"], "token_modifiers": ["declaration"]},
+            "tokens": [],
+        },
+        "package_provenance": {
+            "local_package_id": f"source:{source_path}",
+            "package_count": 2,
+            "workspace_index_digest": "a" * 64,
+            "package_dependencies": [],
+        },
+        "consumer_capabilities": {
+            "references": {
+                "supported": False,
+                "support_class": "source-graph-fail-closed",
+                "evidence_ids": [],
+                "fail_closed": True,
+                "unpublished_reason": "native compiler semantic reference closure is missing",
+            },
+            "rename": {
+                "supported": False,
+                "support_class": "source-graph-fail-closed",
+                "evidence_ids": [],
+                "fail_closed": True,
+                "unpublished_reason": "safe rename remains disabled",
+            },
+            "semanticTokens": {
+                "supported": False,
+                "support_class": "source-graph-fail-closed",
+                "evidence_ids": [],
+                "fail_closed": True,
+                "unpublished_reason": "full semantic token publication requires compiler-owned reference classification",
+            },
+        },
+        "diagnostics": [],
+        "source_graph_digest": "f" * 64,
+        "deterministic_ordering": "node-kind-canonical-name-range-then-edge-kind-source-target-range",
+        "retired_route_reason": "",
+        "remaining_native_compiler_work": [
+            "emit structured declaration-to-reference semantic edges with source spans from sema"
+        ],
+    }
+
+
 def artifact_inspector(contract: dict[str, Any]) -> dict[str, Any]:
     source = source_index()
     records = [
@@ -394,6 +539,26 @@ def artifact_inspector(contract: dict[str, Any]) -> dict[str, Any]:
             "path": "tmp/artifacts/developer-tooling/editor-surface/hello/module.obj",
             "size_bytes": 1,
             "sha256": "c" * 64,
+            "object_format": "coff",
+            "expected_sha256": "c" * 64,
+            "digest_matches": True,
+            "inventory_source_model": "emitted-object-tool-symbol-and-section-inventory",
+            "tool_inventory_available": True,
+            "inventory_available": True,
+            "inventory_digest": "f" * 64,
+            "symbol_count": 2,
+            "symbols": [
+                {"name": "_main", "binding": "exported"},
+                {"name": "objc3_runtime_bootstrap", "binding": "exported"},
+            ],
+            "section_count": 1,
+            "sections": [{"name": ".text"}],
+            "exported_runtime_helper_count": 1,
+            "exported_runtime_helpers": [
+                {"name": "objc3_runtime_bootstrap", "binding": "exported"}
+            ],
+            "imported_runtime_helper_count": 0,
+            "imported_runtime_helpers": [],
             "object_symbol_inventory_command": "llvm-objdump --syms module.obj",
             "object_section_inventory_command": "llvm-readobj --sections module.obj",
             "inspection_ready": True,
@@ -413,6 +578,59 @@ def artifact_inspector(contract: dict[str, Any]) -> dict[str, Any]:
             },
             "retired_route_reason": "",
         },
+        "runtime_inventory": {
+            "available": True,
+            "reflection_abi_version": "objc3-runtime-reflection-v1",
+            "runtime_metadata_link": "tmp/artifacts/developer-tooling/editor-surface/hello/runtime.bin",
+            "inventory_digest": "f" * 64,
+            "class_record_count": 1,
+            "class_records": [{"name": "Demo"}],
+            "selector_record_count": 1,
+            "selector_records": [{"name": "main"}],
+            "method_record_count": 1,
+            "method_records": [{"selector": "main"}],
+            "property_record_count": 0,
+            "property_records": [],
+            "protocol_record_count": 0,
+            "protocol_records": [],
+            "category_record_count": 0,
+            "category_records": [],
+            "stdlib_helper_references": ["objc3_runtime_bootstrap"],
+            "runtime_import_package_records": [],
+            "retired_route_reason": "",
+        },
+        "package_inventory": {
+            "available": True,
+            "module_identity": "Demo",
+            "package_identity": "source:tests/tooling/fixtures/native/hello.objc3",
+            "abi_identity": "objc3-abi-v1",
+            "package_identity_source": "manifest",
+            "abi_identity_source": "manifest",
+            "manifest_package_identity": "source:tests/tooling/fixtures/native/hello.objc3",
+            "registry_package_identity": "source:tests/tooling/fixtures/native/hello.objc3",
+            "receipt_package_identities": ["source:tests/tooling/fixtures/native/hello.objc3"],
+            "identity_mismatch": False,
+            "registry_identity": "local-registry-fixture",
+            "manifest_trust_status": "trusted",
+            "registry_trust_status": "trusted",
+            "package_operation_receipts": [
+                {
+                    "path": "tmp/artifacts/package-ecosystem/install-validation/objc3c-install-receipt.json",
+                    "available": True,
+                    "operation": "install",
+                    "package_id": "source:tests/tooling/fixtures/native/hello.objc3",
+                    "sha256": "d" * 64,
+                    "expected_sha256": "d" * 64,
+                    "digest_matches": True,
+                    "trust_status": "trusted",
+                    "trusted": True,
+                    "retired_route_reason": "",
+                }
+            ],
+            "package_operation_receipt_count": 1,
+            "untrusted_receipt_count": 0,
+            "retired_route_reason": "",
+        },
         "source_graph": {
             "available": True,
             "graph_inputs": [
@@ -428,6 +646,29 @@ def artifact_inspector(contract: dict[str, Any]) -> dict[str, Any]:
             "source_index_digest": "e" * 64,
             "source_graph_digest": "d" * 64,
             "retired_route_reason": "",
+        },
+        "artifact_links": {
+            "manifest_link": "tmp/artifacts/developer-tooling/editor-surface/hello/manifest.json",
+            "ir_link": "tmp/artifacts/developer-tooling/editor-surface/hello/module.ll",
+            "diagnostics_link": "tmp/artifacts/developer-tooling/editor-surface/hello/diagnostics.json",
+            "runtime_metadata_link": "tmp/artifacts/developer-tooling/editor-surface/hello/runtime.bin",
+            "source_graph_link": "tmp/reports/developer-tooling/editor-surface/hello/source-graph.json",
+            "source_graph_digest": "d" * 64,
+            "debug_map_link": "tmp/reports/developer-tooling/editor-surface/hello/debug-map.json",
+            "optimization_trace_link": "tmp/artifacts/developer-tooling/editor-surface/hello/optimization-trace.json",
+        },
+        "provenance": {
+            "available": True,
+            "generated": True,
+            "source_truth_inputs": ["tests/tooling/fixtures/native/hello.objc3"],
+            "generated_artifacts": [],
+            "retired_route_reason": "",
+        },
+        "inventory_validation": {
+            "inventory_ready": True,
+            "fail_closed": False,
+            "fail_closed_reasons": [],
+            "unsupported_inventory_notes": [],
         },
         "source_index": source,
         "inspection_commands": {
@@ -481,6 +722,7 @@ def debug_surface(contract: dict[str, Any]) -> dict[str, Any]:
 def representative_surface(contract: dict[str, Any]) -> dict[str, Any]:
     workspace = workspace_index(contract)
     source = source_index()
+    graph = source_graph()
     document_symbol = symbol_record()
     navigation = {
         "contract_id": "objc3c.developer.tooling.navigation.index.v1",
@@ -521,6 +763,8 @@ def representative_surface(contract: dict[str, Any]) -> dict[str, Any]:
             }
         ],
         "source_index": source,
+        "source_graph_digest": graph["source_graph_digest"],
+        "source_graph_navigation": graph["navigation_consumers"],
         "workspace_index": workspace,
         "retired_route_reason": "",
     }
@@ -534,6 +778,7 @@ def representative_surface(contract: dict[str, Any]) -> dict[str, Any]:
         "language_server": language_server(),
         "navigation": navigation,
         "source_index": source,
+        "source_graph": graph,
         "workspace_index": workspace,
         "artifact_inspector": artifact_inspector(contract),
         "formatter": {
@@ -570,6 +815,7 @@ def test_developer_tooling_editor_schema_validates_representative_payload() -> N
             "capabilities_path": "tmp/reports/developer-tooling/editor-surface/hello/language-server-capabilities.json",
             "navigation_path": "tmp/reports/developer-tooling/editor-surface/hello/navigation-index.json",
             "workspace_index_path": "tmp/reports/developer-tooling/editor-surface/hello/workspace-index.json",
+            "source_graph_path": "tmp/reports/developer-tooling/editor-surface/hello/source-graph.json",
             "artifact_inspector_path": "tmp/reports/developer-tooling/editor-surface/hello/artifact-inspector.json",
             "formatter_path": "tmp/reports/developer-tooling/editor-surface/hello/formatter-output.json",
             "debug_path": "tmp/reports/developer-tooling/editor-surface/hello/debug-map.json",
@@ -599,6 +845,7 @@ def test_developer_tooling_schema_checker_accepts_truthful_boundaries() -> None:
             "language_server": payload["language_server"],
             "navigation": payload["navigation"],
             "workspace_index": payload["navigation"]["workspace_index"],
+            "source_graph": payload["source_graph"],
             "artifact_inspector": payload["artifact_inspector"],
             "formatter": payload["formatter"],
             "debug": payload["debug"],

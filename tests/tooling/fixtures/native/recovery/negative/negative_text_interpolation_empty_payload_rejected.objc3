@@ -1,0 +1,7 @@
+// Expected diagnostic code(s): O3L011.
+module NegativeTextInterpolationEmptyPayload;
+
+fn main() -> i32 {
+  let text = "\()";
+  return 0;
+}

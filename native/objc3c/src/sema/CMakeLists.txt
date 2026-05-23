@@ -10,6 +10,7 @@ target_sources(objc3c_sema_model INTERFACE
   ${CMAKE_CURRENT_LIST_DIR}/model/frontend_concurrency_symbol_graph_summaries.h
   ${CMAKE_CURRENT_LIST_DIR}/model/frontend_linkage_summaries.h
   ${CMAKE_CURRENT_LIST_DIR}/model/frontend_type_source_closure.h
+  ${CMAKE_CURRENT_LIST_DIR}/model/generic_collection_type_model.h
   ${CMAKE_CURRENT_LIST_DIR}/model/semantic_effect.h
   ${CMAKE_CURRENT_LIST_DIR}/model/semantic_ownership.h
   ${CMAKE_CURRENT_LIST_DIR}/model/semantic_program.h
@@ -83,6 +84,7 @@ add_library(objc3c_semantic_type_surface STATIC
   objc3_semantic_feature_claim_rules.cpp
   objc3_semantic_feature_claims.cpp
   objc3_semantic_generic_argument_relations.cpp
+  objc3_semantic_generic_collection_type_model.cpp
   objc3_semantic_match_exhaustiveness.cpp
   objc3_semantic_protocol_composition_parser.cpp
   objc3_semantic_signature_compatibility.cpp

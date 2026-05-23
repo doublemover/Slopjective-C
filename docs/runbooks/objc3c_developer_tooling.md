@@ -30,6 +30,7 @@ Replayable public workflow actions:
 - `npm run objc3c -- check-developer-diagnostic-quality`
 - `npm run objc3c -- trace-runtime-debug`
 - `npm run objc3c -- trace-compile-stages`
+- `npm run objc3c -- validate-debugger-integration`
 - `npm run objc3c -- test-capability-routed-source-parity`
 
 Helper implementations and native tool binaries are registry
@@ -348,16 +349,25 @@ availability rules.
   coordinates
 - object-backed symbol visibility comes from the emitted object artifact and the
   runtime inspector symbol inventory path
-- statement-level stepping and full source-map claims remain fail-closed until
-  the emitted toolchain artifacts prove them directly
+- statement, function, method, and message-send stepping claims are publishable
+  only through the replayable debugger integration contract, where every
+  supported step has source-map, debug-map, native line-table, native symbol,
+  and object/debug line anchors
+- unsupported debug configurations, optimized-away statements, unsupported
+  handles, malformed metadata, unsupported plugin commands, and source-map /
+  object digest mismatches remain fail-closed diagnostics
 
-Until native line-table and full debugger metadata are emitted on the canonical
-toolchain path, the public debug surface must describe itself as
-declaration-breakpoint and artifact-inspection driven rather than as a full
-statement debugger. The runtime debug trace and editor debug map must keep
-statement-level stepping and full source-map publication as reserved rows unless
-their required emitted artifacts exist on disk and are referenced by the
-supported trace handoff.
+The debugger integration surface is replay-driven rather than interactive-only.
+`npm run objc3c -- validate-debugger-integration` validates the deterministic
+LLDB command model, runtime value-inspection rows, and source-map-backed
+stepping records. `npm run objc3c -- validate-debugger-integration -- --plan`
+emits the command script and stepping plan. No stepping record is valid unless
+it resolves back to a compiler-owned source map entry and native line-table row.
+
+The runtime debug trace and editor debug map may continue to describe their own
+trace lanes conservatively; debugger stepping support is owned by the replayable
+debugger integration contract and evidence-map rows, not by private testing-only
+runtime snapshots.
 
 The runtime debug trace schema also publishes `inspection_queries`. Supported
 queries must route through `npm run objc3c -- <action>`, name their evidence
@@ -401,6 +411,7 @@ The current and follow-on public entrypoints for the surface converge on:
 - `npm run objc3c -- rewrite-objc3c-source`
 - `npm run objc3c -- check-developer-diagnostic-quality`
 - `npm run objc3c -- trace-runtime-debug`
+- `npm run objc3c -- validate-debugger-integration`
 - `npm run objc3c -- validate-developer-tooling`
 
 The current formatter/debug/workspace slice is action-catalog-owned. Its script
@@ -425,6 +436,7 @@ The npm entrypoints route to the same action family:
 - `npm run objc3c -- rewrite-objc3c-source <source> -- --rule legacy-literal-aliases --rename-symbol oldName=newName`
 - `npm run objc3c -- check-developer-diagnostic-quality`
 - `npm run objc3c -- trace-runtime-debug`
+- `npm run objc3c -- validate-debugger-integration`
 - `npm run objc3c -- validate-developer-tooling`
 - `npm run objc3c -- validate-runnable-developer-tooling`
 

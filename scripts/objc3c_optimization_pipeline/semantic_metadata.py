@@ -63,27 +63,38 @@ PASS_PLANS: dict[str, dict[str, Any]] = {
     },
     "devirtualization": {
         "ordinal": 60,
-        "mode": "reserved",
-        "rewrites_ir": False,
-        "invalidates_global_proof_state": False,
-        "missing_proof_action": "SKIP_FAIL_CLOSED",
-        "diagnostic": "devirtualization is reserved until closed-world finality proofs exist",
+        "mode": "enabled",
+        "rewrites_ir": True,
+        "invalidates_global_proof_state": True,
+        "missing_proof_action": "REJECT_FAIL_CLOSED",
+        "diagnostic": (
+            "exact-target devirtualization requires sealed or final dispatch, "
+            "static receiver, mutation invalidation, runtime cache, ownership, "
+            "source-map, ABI, and package proofs"
+        ),
     },
     "method-inlining": {
         "ordinal": 70,
-        "mode": "reserved",
-        "rewrites_ir": False,
-        "invalidates_global_proof_state": False,
-        "missing_proof_action": "SKIP_FAIL_CLOSED",
-        "diagnostic": "method inlining is reserved until ownership and source-map proofs exist",
+        "mode": "enabled",
+        "rewrites_ir": True,
+        "invalidates_global_proof_state": True,
+        "missing_proof_action": "REJECT_FAIL_CLOSED",
+        "diagnostic": (
+            "method inlining requires callee body identity, scalar subset, ownership, "
+            "side-effect, source-map, diagnostic, ABI/package, depth, recursion, "
+            "generation, and invalidation proofs"
+        ),
     },
     "cache-aware-dispatch": {
         "ordinal": 80,
-        "mode": "reserved",
-        "rewrites_ir": False,
-        "invalidates_global_proof_state": False,
-        "missing_proof_action": "SKIP_FAIL_CLOSED",
-        "diagnostic": "cache-aware dispatch is reserved behind the runtime cache contract",
+        "mode": "enabled",
+        "rewrites_ir": True,
+        "invalidates_global_proof_state": True,
+        "missing_proof_action": "REJECT_FAIL_CLOSED",
+        "diagnostic": (
+            "cache-aware dispatch requires runtime cache ABI, strict status "
+            "handling, semantic replay, and source-map debug preservation"
+        ),
     },
     "ir-cleanup-verifier": {
         "ordinal": 90,
@@ -97,15 +108,45 @@ PASS_PLANS: dict[str, dict[str, Any]] = {
 
 
 def metadata_key(plan: dict[str, Any], decision: str, candidate: dict[str, Any]) -> str:
-    return (
+    success_claim = "true" if decision == "APPLIED" else "false"
+    key = (
         "objc3-semantic-optimization:v1"
         f";pass={candidate['pass_id']}"
         f";ordinal={plan['ordinal']}"
         f";decision={decision}"
         f";rewrites-ir={str(plan['rewrites_ir']).lower()}"
-        ";success-claim=false"
+        f";invalidates-global-proof-state={str(plan['invalidates_global_proof_state']).lower()}"
+        f";success-claim={success_claim}"
         f";source={candidate.get('source_replay_key', '')}"
     )
+    if candidate.get("pass_id") == "method-inlining":
+        inline_gates = (
+            "method_inline_callee_body_identity_present",
+            "method_inline_scalar_subset",
+            "method_inline_ownership_arc_effects_safe",
+            "method_inline_side_effect_summary_safe",
+            "method_inline_source_map_debug_preserved",
+            "method_inline_diagnostic_location_preserved",
+            "method_inline_runtime_abi_safe",
+            "method_inline_package_abi_identical",
+            "method_inline_depth_within_limit",
+            "method_inline_recursion_absent",
+            "method_inline_callee_generation_pinned",
+            "method_inline_invalidation_complete",
+        )
+        for gate in inline_gates:
+            key += f";{gate}={str(bool(candidate.get(gate))).lower()}"
+    if candidate.get("pass_id") == "cache-aware-dispatch":
+        cache_gates = (
+            "runtime_cache_invalidation_semantics_public",
+            "cache_aware_helper_symbol_present",
+            "cache_aware_semantic_replay_preserves_miss_behavior",
+            "cache_aware_strict_status_envelope_checked",
+            "cache_aware_source_map_debug_preserved",
+        )
+        for gate in cache_gates:
+            key += f";{gate}={str(bool(candidate.get(gate))).lower()}"
+    return key
 
 
 def _missing_proof_decision(plan: dict[str, Any]) -> str:
@@ -136,6 +177,44 @@ def _result(
 
 
 def _missing(candidate: dict[str, Any], plan: dict[str, Any]) -> dict[str, Any]:
+    if candidate.get("pass_id") == "method-inlining":
+        missing_gates = [
+            gate
+            for gate in (
+                "benchmark_governance_ready",
+                "method_inline_callee_body_identity_present",
+                "method_inline_scalar_subset",
+                "method_inline_ownership_arc_effects_safe",
+                "method_inline_side_effect_summary_safe",
+                "method_inline_source_map_debug_preserved",
+                "method_inline_diagnostic_location_preserved",
+                "method_inline_runtime_abi_safe",
+                "method_inline_package_abi_identical",
+                "method_inline_depth_within_limit",
+                "method_inline_recursion_absent",
+                "method_inline_callee_generation_pinned",
+                "method_inline_invalidation_complete",
+            )
+            if not candidate.get(gate)
+        ]
+        if missing_gates:
+            diagnostic = plan["diagnostic"] + "; failed gates: " + ", ".join(missing_gates)
+            return _result(candidate, plan, _missing_proof_decision(plan), diagnostic)
+    if candidate.get("pass_id") == "cache-aware-dispatch":
+        missing_gates = [
+            gate
+            for gate in (
+                "runtime_cache_invalidation_semantics_public",
+                "cache_aware_helper_symbol_present",
+                "cache_aware_semantic_replay_preserves_miss_behavior",
+                "cache_aware_strict_status_envelope_checked",
+                "cache_aware_source_map_debug_preserved",
+            )
+            if not candidate.get(gate)
+        ]
+        if missing_gates:
+            diagnostic = plan["diagnostic"] + "; failed gates: " + ", ".join(missing_gates)
+            return _result(candidate, plan, _missing_proof_decision(plan), diagnostic)
     return _result(candidate, plan, _missing_proof_decision(plan), plan["diagnostic"])
 
 
@@ -207,6 +286,50 @@ def evaluate_candidate(candidate: dict[str, Any]) -> dict[str, Any]:
             and candidate.get("compatibility_routes_disabled")
         ):
             return _result(candidate, plan, "VERIFIED")
+        return _missing(candidate, plan)
+
+    if pass_id == "devirtualization":
+        if (
+            candidate.get("exact_target_receiver_static_type_proven")
+            and candidate.get("sealed_final_dispatch_evidence_present")
+            and candidate.get("exact_method_target_identity_present")
+            and candidate.get("class_category_method_mutation_generation_pinned")
+            and candidate.get("runtime_cache_version_dependency_pinned")
+            and candidate.get("devirtualization_ownership_arc_safe")
+            and candidate.get("devirtualization_source_map_debug_preserved")
+            and candidate.get("devirtualization_runtime_abi_safe")
+            and candidate.get("devirtualization_package_abi_identical")
+        ):
+            return _result(candidate, plan, "APPLIED")
+        return _missing(candidate, plan)
+
+    if pass_id == "method-inlining":
+        if (
+            candidate.get("method_inline_callee_body_identity_present")
+            and candidate.get("method_inline_scalar_subset")
+            and candidate.get("method_inline_ownership_arc_effects_safe")
+            and candidate.get("method_inline_side_effect_summary_safe")
+            and candidate.get("method_inline_source_map_debug_preserved")
+            and candidate.get("method_inline_diagnostic_location_preserved")
+            and candidate.get("method_inline_runtime_abi_safe")
+            and candidate.get("method_inline_package_abi_identical")
+            and candidate.get("method_inline_depth_within_limit")
+            and candidate.get("method_inline_recursion_absent")
+            and candidate.get("method_inline_callee_generation_pinned")
+            and candidate.get("method_inline_invalidation_complete")
+        ):
+            return _result(candidate, plan, "APPLIED")
+        return _missing(candidate, plan)
+
+    if pass_id == "cache-aware-dispatch":
+        if (
+            candidate.get("runtime_cache_invalidation_semantics_public")
+            and candidate.get("cache_aware_helper_symbol_present")
+            and candidate.get("cache_aware_semantic_replay_preserves_miss_behavior")
+            and candidate.get("cache_aware_strict_status_envelope_checked")
+            and candidate.get("cache_aware_source_map_debug_preserved")
+        ):
+            return _result(candidate, plan, "APPLIED")
         return _missing(candidate, plan)
 
     if pass_id == "ir-cleanup-verifier":

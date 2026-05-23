@@ -67,6 +67,17 @@ static void DiagnoseUnsupportedFeatureClaimsInStmt(
           body_stmt.get(), diagnostics, stats, context);
     }
     return;
+  case Stmt::Kind::ForIn:
+    if (stmt->for_in_stmt == nullptr) {
+      return;
+    }
+    DiagnoseUnsupportedFeatureClaimsInExpr(
+        stmt->for_in_stmt->collection.get(), diagnostics, stats, context);
+    for (const auto &body_stmt : stmt->for_in_stmt->body) {
+      DiagnoseUnsupportedFeatureClaimsInStmt(
+          body_stmt.get(), diagnostics, stats, context);
+    }
+    return;
   case Stmt::Kind::Switch:
     if (stmt->switch_stmt == nullptr) {
       return;
@@ -139,6 +150,16 @@ static void DiagnoseUnsupportedFeatureClaimsInStmt(
     if (stmt->expr_stmt != nullptr) {
       DiagnoseUnsupportedFeatureClaimsInExpr(
           stmt->expr_stmt->value.get(), diagnostics, stats, context);
+    }
+    return;
+  case Stmt::Kind::CollectionMutation:
+    if (stmt->collection_mutation_stmt != nullptr) {
+      DiagnoseUnsupportedFeatureClaimsInExpr(
+          stmt->collection_mutation_stmt->key_or_index.get(), diagnostics,
+          stats, context);
+      DiagnoseUnsupportedFeatureClaimsInExpr(
+          stmt->collection_mutation_stmt->value.get(), diagnostics, stats,
+          context);
     }
     return;
   case Stmt::Kind::Break:

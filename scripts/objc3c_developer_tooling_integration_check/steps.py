@@ -33,6 +33,7 @@ def run_developer_tooling_steps() -> list[dict[str, Any]]:
         run_step("inspect-compile-observability", public_workflow_command("inspect-compile-observability")),
         run_step("inspect-runtime-inspector", public_workflow_command("inspect-runtime-inspector")),
         run_step("inspect-editor-tooling", public_workflow_command("inspect-editor-tooling")),
+        run_step("inspect-source-graph", public_workflow_command("inspect-source-graph")),
         run_step("check-formatter-debug-surface", python_script_command(FORMATTER_DEBUG_SURFACE_PY)),
         run_step("check-formatter-rewrite-surface", python_script_command(FORMATTER_REWRITE_SURFACE_PY)),
         run_step("check-diagnostic-quality", python_script_command(DIAGNOSTIC_QUALITY_PY)),

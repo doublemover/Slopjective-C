@@ -1,3 +1,5 @@
+#include "sema/objc3_semantic_generic_collection_type_model.h"
+
 #include "sema/objc3_semantic_passes_type_system_semantic_model_summary_site_collection.inc"
 #include "sema/objc3_semantic_passes_type_system_semantic_model_summary_canonical_types.inc"
 #include "sema/objc3_semantic_passes_type_system_semantic_model_summary_builder.inc"

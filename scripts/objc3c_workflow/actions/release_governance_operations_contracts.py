@@ -54,6 +54,7 @@ RELEASE_OPERATIONS_ACTION_CONTRACTS: tuple[ReleaseGovernanceActionContract, ...]
             "versioning, upgrade warnings, rollback guidance, update metadata, channel manifests, and "
             "public action ownership stay executable on live release surfaces"
         ),
+        pass_through_args=True,
     ),
     ReleaseGovernanceActionContract(
         "validate-release-operations-end-to-end",
@@ -65,6 +66,7 @@ RELEASE_OPERATIONS_ACTION_CONTRACTS: tuple[ReleaseGovernanceActionContract, ...]
             "release-operations metadata stays coherent with live package-channel "
             "artifacts, local provenance, and fail-closed rollback paths"
         ),
+        pass_through_args=True,
     ),
 )
 

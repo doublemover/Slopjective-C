@@ -33,6 +33,23 @@ void WalkObjc3ProfileSymbolsInExpr(
     WalkObjc3ProfileSymbolsInExpr(expr->right.get(), walker);
     WalkObjc3ProfileSymbolsInExpr(expr->third.get(), walker);
     return;
+  case Expr::Kind::CollectionLiteral:
+    for (const auto &key : expr->collection_keys) {
+      WalkObjc3ProfileSymbolsInExpr(key.get(), walker);
+    }
+    for (const auto &value : expr->collection_values) {
+      WalkObjc3ProfileSymbolsInExpr(value.get(), walker);
+    }
+    return;
+  case Expr::Kind::IndexAccess:
+    WalkObjc3ProfileSymbolsInExpr(expr->left.get(), walker);
+    WalkObjc3ProfileSymbolsInExpr(expr->right.get(), walker);
+    return;
+  case Expr::Kind::StringInterpolation:
+    for (const auto &arg : expr->args) {
+      WalkObjc3ProfileSymbolsInExpr(arg.get(), walker);
+    }
+    return;
   case Expr::Kind::BlockLiteral:
   case Expr::Kind::BoolLiteral:
   case Expr::Kind::Identifier:

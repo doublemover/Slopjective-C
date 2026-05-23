@@ -1,0 +1,25 @@
+{
+  "contract_id": "objc3c.cross_lane_e2e.workspace.v1",
+  "schema_version": 1,
+  "issue": 8200,
+  "family_id": "optimization_runtime_equivalence",
+  "workspace_id": "cross-lane:optimization-runtime-equivalence",
+  "public_replay_command": "npm run objc3c -- validate-cross-lane-e2e",
+  "module": {
+    "module_name": "CrossLaneOptimizationRuntimeEquivalence",
+    "source": "tests/native/e2e/cross_lane/optimization_runtime_equivalence.objc3",
+    "package_id": "cross-lane:optimization-runtime-equivalence"
+  },
+  "package_edges": [
+    {
+      "from": "cross-lane:optimization-runtime-equivalence",
+      "to": "compiler:semantic-optimization-pipeline",
+      "relationship": "optimization-trace-and-proof-prerequisite"
+    },
+    {
+      "from": "cross-lane:optimization-runtime-equivalence",
+      "to": "runtime:cache-aware-dispatch",
+      "relationship": "runtime-equivalence-prerequisite"
+    }
+  ]
+}

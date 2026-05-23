@@ -64,6 +64,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         evidence_map=inputs.evidence_map,
         manifest=inputs.manifest,
         phase_owner_contracts=inputs.phase_owner_contracts,
+        umbrella_readiness=inputs.umbrella_readiness,
     )
     if args.check:
         return _check_docs(rendered_docs)

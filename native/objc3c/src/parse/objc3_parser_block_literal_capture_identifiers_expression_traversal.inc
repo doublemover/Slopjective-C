@@ -19,9 +19,26 @@ void CollectBlockLiteralExprIdentifiers(
     CollectBlockLiteralExprIdentifiers(expr->right.get(), used_identifiers);
     CollectBlockLiteralExprIdentifiers(expr->third.get(), used_identifiers);
     return;
+  case Expr::Kind::CollectionLiteral:
+    for (const auto &key : expr->collection_keys) {
+      CollectBlockLiteralExprIdentifiers(key.get(), used_identifiers);
+    }
+    for (const auto &value : expr->collection_values) {
+      CollectBlockLiteralExprIdentifiers(value.get(), used_identifiers);
+    }
+    return;
+  case Expr::Kind::IndexAccess:
+    CollectBlockLiteralExprIdentifiers(expr->left.get(), used_identifiers);
+    CollectBlockLiteralExprIdentifiers(expr->right.get(), used_identifiers);
+    return;
   case Expr::Kind::Call:
   case Expr::Kind::Try:
   case Expr::Kind::Throw:
+    for (const auto &arg : expr->args) {
+      CollectBlockLiteralExprIdentifiers(arg.get(), used_identifiers);
+    }
+    return;
+  case Expr::Kind::StringInterpolation:
     for (const auto &arg : expr->args) {
       CollectBlockLiteralExprIdentifiers(arg.get(), used_identifiers);
     }

@@ -1,0 +1,10 @@
+module CollectionCStyleDescriptorParameterFlow;
+
+i32 first(MutableArray<i32> numbers) {
+  return numbers[1];
+}
+
+fn main() -> i32 {
+  var numbers = #array[11, 12];
+  return first(numbers);
+}

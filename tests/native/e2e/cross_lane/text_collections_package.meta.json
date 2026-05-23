@@ -1,0 +1,49 @@
+{
+  "schema_version": 1,
+  "fixture": "text_collections_package.objc3",
+  "origin": "hand-authored",
+  "issue": 8200,
+  "owner_phase": "e2e",
+  "behavior_family": "cross_lane_e2e",
+  "fixture_kind": "executable-package-runtime-proof-with-reserved-debugger-rows",
+  "public_replay_command": "npm run objc3c -- validate-cross-lane-e2e",
+  "boundary": {
+    "canonical_behavior_source": true,
+    "behavior_contract": "cross-lane-executable-package-runtime-proof",
+    "reserved_support_promoted": false,
+    "runtime_support_claimed": true,
+    "source_collection_literals_claimed": true,
+    "source_for_in_claimed": true,
+    "package_import_metadata_claimed": true,
+    "source_graph_package_nodes_claimed": true,
+    "debug_map_declaration_anchors_claimed": true,
+    "missing_provider_link_rejection_claimed": true,
+    "package_text_identity_claimed": true,
+    "direct_module_import_source_truth_claimed": true,
+    "text_fixture_uses_direct_module_import_syntax": false,
+    "runtime_package_execution_claimed": true,
+    "runtime_package_execution_reserved": false,
+    "semantic_reference_closure_promoted": false,
+    "full_source_map_publication_promoted": false,
+    "statement_stepping_promoted": false,
+    "direct_module_import_syntax_promoted": true
+  },
+  "expected": {
+    "stage": "compile-link-run",
+    "diagnostic_code": "",
+    "required_tokens": [
+      "#array",
+      "#map",
+      "#set",
+      "for (",
+      "objc_import_module",
+      "objc3_runtime_stdlib_text_builder_append_i32_i32",
+      "importedPackageSeed"
+    ]
+  },
+  "execution": {
+    "expected_exit_code": 0,
+    "requires_live_runtime_dispatch": true,
+    "requires_provider_runtime_import_surface": true
+  }
+}

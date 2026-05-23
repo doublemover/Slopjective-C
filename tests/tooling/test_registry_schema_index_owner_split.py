@@ -77,6 +77,7 @@ def test_registry_schema_payload_preserves_capability_truth_ids() -> None:
     assert payload["capability_truth_schema_ids"] == [
         "objc3c-capability-matrix-v1",
         "objc3c-capability-evidence-map-v1",
+        "objc3c-umbrella-readiness-v1",
     ]
     assert payload["owner_surface"] == REGISTRY_SCHEMA_PAYLOAD_OWNER_SURFACE
     assert payload["model_owner_surface"] == REGISTRY_SCHEMA_MODEL_OWNER_SURFACE

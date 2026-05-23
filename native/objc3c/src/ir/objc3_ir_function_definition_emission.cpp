@@ -32,6 +32,27 @@ std::string BuildObjc3IRFunctionDefinitionSignature(
   return signature.str();
 }
 
+Expr::CollectionLiteralKind Objc3IRCollectionKindFromDeclaredType(
+    const FuncParam &param) {
+  if (!param.object_pointer_type_spelling || !param.has_generic_suffix) {
+    return Expr::CollectionLiteralKind::None;
+  }
+  if (param.object_pointer_type_name == "Array" ||
+      param.object_pointer_type_name == "MutableArray" ||
+      param.object_pointer_type_name == "Slice") {
+    return Expr::CollectionLiteralKind::Array;
+  }
+  if (param.object_pointer_type_name == "Map" ||
+      param.object_pointer_type_name == "MutableMap") {
+    return Expr::CollectionLiteralKind::Map;
+  }
+  if (param.object_pointer_type_name == "Set" ||
+      param.object_pointer_type_name == "MutableSet") {
+    return Expr::CollectionLiteralKind::Set;
+  }
+  return Expr::CollectionLiteralKind::None;
+}
+
 void EmitObjc3IRParameterStores(
     const std::vector<FuncParam> &params,
     const Objc3IRFunctionDefinitionEmissionCallbacks &callbacks,
@@ -43,6 +64,17 @@ void EmitObjc3IRParameterStores(
     ctx.entry_lines.push_back("  " + ptr + " = alloca i32, align 4");
     callbacks.emit_typed_param_store(param, i, ptr, ctx);
     ctx.scopes.back()[param.name] = ptr;
+    ctx.value_type_by_ptr[ptr] = param.type;
+    const Expr::CollectionLiteralKind collection_kind =
+        Objc3IRCollectionKindFromDeclaredType(param);
+    if (collection_kind != Expr::CollectionLiteralKind::None) {
+      ctx.collection_kind_by_ptr[ptr] = collection_kind;
+      if (param.object_pointer_type_name == "MutableArray" ||
+          param.object_pointer_type_name == "MutableMap" ||
+          param.object_pointer_type_name == "MutableSet") {
+        ctx.mutable_collection_ptrs.insert(ptr);
+      }
+    }
   }
 }
 

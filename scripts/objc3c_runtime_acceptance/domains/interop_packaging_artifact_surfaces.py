@@ -35,15 +35,14 @@ def build_runtime_packaging_bridge_loader_artifact_surface(
         ],
         "compile_artifact_set": [
             "<emit-prefix>.runtime-import-surface.json",
+        ],
+        "deferred_bridge_artifact_paths": [
             "<emit-prefix>.interop-bridge.h",
             "<emit-prefix>.interop-bridge.modulemap",
             "<emit-prefix>.interop-bridge.json",
-            "<emit-prefix>.cross-module-runtime-link-plan.json",
-            "<emit-prefix>.cross-module-runtime-linker-options.rsp",
-            "<emit-prefix>.runtime-metadata-linker-options.rsp",
         ],
         "artifact_surface_model": (
-            "provider-bridge-artifacts-plus-consumer-link-plan-and-linker-response-sidecars-freeze-one-runtime-package-loader-boundary-for-mixed-image-interop-builds"
+            "provider-runtime-import-surfaces-freeze-deferred-bridge-artifact-paths-and-consumer-imports-fail-closed-until-live-bridge-generation-and-cross-module-link-planning-are-implemented"
         ),
         "authoritative_case_ids": authoritative_case_ids,
         "authoritative_code_paths": [
@@ -56,8 +55,9 @@ def build_runtime_packaging_bridge_loader_artifact_surface(
             INTEROP_BRIDGE_PACKAGING_CONSUMER_FIXTURE,
         ],
         "requires_runtime_import_surface_artifact": True,
-        "requires_cross_module_link_plan_artifact": True,
-        "requires_linker_response_artifact": True,
+        "requires_cross_module_link_plan_artifact": False,
+        "requires_linker_response_artifact": False,
+        "requires_fail_closed_consumer_import": True,
         "requires_real_compile_output": True,
     }
 

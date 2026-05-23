@@ -14,6 +14,7 @@ not canonical schema ownership.
 | ------ | ---- |
 | `objc3c-capability-matrix-v1.schema.json` | Public capability states, support claims, evidence entries, command-surface policy, projection policy, responsibility rules, and hard-cutover rules. |
 | `objc3c-capability-evidence-map-v1.schema.json` | Flattened capability-to-evidence rows, public-command evidence policy, and no-command ownership boundaries used by docs and release evidence maps. |
+| `objc3c-umbrella-readiness-v1.schema.json` | Promotion gates, blockers, source/fixture/doc prerequisites, generated-output boundaries, and final criteria for broad reserved umbrella rows. |
 
 `docs/support/capability_matrix.schema.json` is a support-directory entrypoint
 for docs and editor tooling. It delegates to
@@ -75,6 +76,7 @@ The canonical data files are:
 
 - `docs/support/capability_matrix.json`
 - `docs/support/evidence_map.json`
+- `docs/support/umbrella_readiness.json`
 
 The support-directory schema entrypoint is:
 
@@ -84,6 +86,7 @@ The human-readable projections are:
 
 - `docs/support/capability_matrix.md`
 - `docs/support/evidence_map.md`
+- `docs/support/umbrella_readiness.md`
 - `docs/support/capability_claim_responsibility.md`
 
 Schema files under `schemas/` are the schema owner inputs. Support

@@ -2,6 +2,7 @@
 
 #include <sstream>
 
+#include "ir/objc3_ir_debug_metadata_emission.h"
 #include "ir/objc3_ir_emitter_module_services.h"
 #include "ir/objc3_ir_emitter_runtime_session.h"
 #include "ir/objc3_ir_emitter_service_contexts.h"
@@ -60,6 +61,6 @@ bool EmitObjc3IREmitterPipeline(
   EmitObjc3IRModuleEmissionSurfacePublications(
       module_body_options, session.SyntheticMethodStats(), out);
   out << body.str();
-  ir = out.str();
+  ir = AttachObjc3IRSourceLineDebugMetadata(module_body_options, out.str());
   return true;
 }

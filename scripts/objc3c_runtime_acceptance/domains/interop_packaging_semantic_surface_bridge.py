@@ -33,13 +33,14 @@ def build_runtime_c_cpp_swift_bridge_semantics_surface(
         ],
         "compile_artifact_set": [
             "<emit-prefix>.runtime-import-surface.json",
-            "<emit-prefix>.cross-module-runtime-link-plan.json",
+        ],
+        "deferred_bridge_artifact_paths": [
             "<emit-prefix>.interop-bridge.h",
             "<emit-prefix>.interop-bridge.modulemap",
             "<emit-prefix>.interop-bridge.json",
         ],
         "language_profile_model": (
-            "c-cpp-and-swift-facing-interop-annotations-survive-provider-emission-consumer-import-and-cross-module-link-planning-without-interop-boundary-shape-drift"
+            "c-cpp-and-swift-facing-interop-annotations-survive-provider-emission-and-deferred-runtime-import-surfaces-while-consumer-cross-module-link-planning-fails-closed-until-live-bridge-generation-is-active"
         ),
         "authoritative_case_ids": authoritative_case_ids,
         "authoritative_code_paths": [
@@ -52,7 +53,8 @@ def build_runtime_c_cpp_swift_bridge_semantics_surface(
             INTEROP_HEADER_MODULE_CONSUMER_FIXTURE,
         ],
         "requires_runtime_import_surface_artifact": True,
-        "requires_cross_module_link_plan_artifact": True,
+        "requires_cross_module_link_plan_artifact": False,
+        "requires_fail_closed_consumer_import": True,
         "requires_real_compile_output": True,
     }
 

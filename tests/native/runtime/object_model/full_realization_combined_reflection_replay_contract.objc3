@@ -1,0 +1,70 @@
+// Canonical runtime object-model fixture: one integrated source covers
+// class/metaclass realization, category/protocol registration, property/ivar
+// reflection, selector lookup, public reflection, and registration replay.
+module RuntimeObjectModelFullRealizationCombinedReflectionReplayContract;
+
+@protocol RuntimeFullTraceable
+@required
+- (i32) traceValue;
+@optional
+- (bool) traceReady;
+@end
+
+@interface RuntimeFullRoot
+- (i32) rootValue;
++ (i32) rootTypeValue;
+@end
+
+@implementation RuntimeFullRoot
+- (i32) rootValue {
+  return 37;
+}
+
++ (i32) rootTypeValue {
+  return 41;
+}
+@end
+
+@interface RuntimeFullWidget : RuntimeFullRoot <RuntimeFullTraceable>
+@property (nonatomic, getter=value, setter=setValue:) i32 value;
+@property (readonly, getter=token) id token;
+- (i32)traceValue;
+- (i32)value;
+- (id)token;
+@end
+
+@implementation RuntimeFullWidget
+@property (nonatomic, getter=value, setter=setValue:) i32 value;
+@property (readonly, getter=token) id token;
+
+- (i32)traceValue {
+  return 43;
+}
+
+- (i32)value {
+  return 47;
+}
+
+- (id)token {
+  return 0;
+}
+@end
+
+@interface RuntimeFullWidget (ReplayReflection)
+- (bool) traceReady;
+- (i32) replayValue;
+@end
+
+@implementation RuntimeFullWidget (ReplayReflection)
+- (bool) traceReady {
+  return true;
+}
+
+- (i32) replayValue {
+  return 53;
+}
+@end
+
+fn main() -> i32 {
+  return 0;
+}

@@ -3,8 +3,15 @@
 void PopulateObjc3DriverCrossModuleRuntimeImportedInputInterop(
     Objc3CrossModuleRuntimeLinkPlanImportedInput &imported_input,
     const Objc3ImportedRuntimeModuleSurface &imported_surface) {
+  const bool ffi_preservation_active =
+      imported_surface.interop_ffi_metadata_interface_preservation_present &&
+      (imported_surface.interop_ffi_runtime_import_artifact_ready ||
+       imported_surface.interop_ffi_separate_compilation_preservation_ready ||
+       imported_surface.interop_ffi_local_foreign_callable_count > 0u ||
+       imported_surface.interop_ffi_local_metadata_preservation_sites > 0u ||
+       imported_surface.interop_ffi_local_interface_annotation_sites > 0u);
   imported_input.interop_ffi_metadata_interface_preservation_present =
-      imported_surface.interop_ffi_metadata_interface_preservation_present;
+      ffi_preservation_active;
   imported_input.interop_ffi_runtime_import_artifact_ready =
       imported_surface.interop_ffi_runtime_import_artifact_ready;
   imported_input.interop_ffi_separate_compilation_preservation_ready =

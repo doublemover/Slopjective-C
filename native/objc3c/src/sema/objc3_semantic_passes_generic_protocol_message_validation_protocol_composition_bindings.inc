@@ -5,9 +5,16 @@ static void ValidateProtocolCompositionIdentifierBindings(
     std::vector<std::string> &diagnostics) {
   auto validate_suffix =
       [&](bool has_generic_suffix, bool supports_generic_suffix,
+          bool object_pointer_type_spelling,
+          const std::string &object_pointer_type_name,
           const std::string &suffix_text, unsigned line, unsigned column,
           const std::string &context) {
         if (!has_generic_suffix || !supports_generic_suffix) {
+          return;
+        }
+        if (object_pointer_type_spelling &&
+            IsObjc3GenericCollectionKind(Objc3GenericCollectionKindFromSpelling(
+                object_pointer_type_name))) {
           return;
         }
         const ProtocolCompositionParseResult parsed =
@@ -29,6 +36,8 @@ static void ValidateProtocolCompositionIdentifierBindings(
                                const std::string &context) {
     validate_suffix(property.has_generic_suffix,
                     SupportsGenericPropertyTypeSuffix(property),
+                    property.object_pointer_type_spelling,
+                    property.object_pointer_type_name,
                     property.generic_suffix_text, property.generic_line,
                     property.generic_column, context);
   };
@@ -37,12 +46,16 @@ static void ValidateProtocolCompositionIdentifierBindings(
                              const std::string &context) {
     validate_suffix(method.has_return_generic_suffix,
                     SupportsGenericReturnTypeSuffix(method),
+                    method.return_object_pointer_type_spelling,
+                    method.return_object_pointer_type_name,
                     method.return_generic_suffix_text,
                     method.return_generic_line, method.return_generic_column,
                     context + " return type");
     for (const auto &param : method.params) {
       validate_suffix(param.has_generic_suffix,
                       SupportsGenericParamTypeSuffix(param),
+                      param.object_pointer_type_spelling,
+                      param.object_pointer_type_name,
                       param.generic_suffix_text, param.generic_line,
                       param.generic_column,
                       context + " parameter '" + param.name + "'");
@@ -52,12 +65,16 @@ static void ValidateProtocolCompositionIdentifierBindings(
   for (const auto &fn : ast.functions) {
     validate_suffix(fn.has_return_generic_suffix,
                     SupportsGenericReturnTypeSuffix(fn),
+                    fn.return_object_pointer_type_spelling,
+                    fn.return_object_pointer_type_name,
                     fn.return_generic_suffix_text, fn.return_generic_line,
                     fn.return_generic_column,
                     "function '" + fn.name + "' return type");
     for (const auto &param : fn.params) {
       validate_suffix(param.has_generic_suffix,
                       SupportsGenericParamTypeSuffix(param),
+                      param.object_pointer_type_spelling,
+                      param.object_pointer_type_name,
                       param.generic_suffix_text, param.generic_line,
                       param.generic_column,
                       "function '" + fn.name + "' parameter '" +

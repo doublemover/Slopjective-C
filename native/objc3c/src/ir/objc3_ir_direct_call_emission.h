@@ -39,4 +39,5 @@ std::string EmitObjc3IRDirectFunctionCall(
     const Objc3IRDirectCallEmissionCallbacks &callbacks,
     const std::string &throws_error_slot_ptr,
     bool *bridge_failed_out = nullptr,
-    std::string *bridge_error_value_out = nullptr);
+    std::string *bridge_error_value_out = nullptr,
+    std::string *bridge_failure_condition_out = nullptr);

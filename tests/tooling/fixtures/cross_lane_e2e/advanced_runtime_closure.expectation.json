@@ -1,0 +1,149 @@
+{
+  "contract_id": "objc3c.cross_lane_e2e.family_expectation.v1",
+  "schema_version": 1,
+  "issue": 8200,
+  "family_id": "advanced_runtime_closure",
+  "expectation_state": "expected-pass",
+  "source": "tests/native/e2e/cross_lane/advanced_runtime_closure.objc3",
+  "workspace_manifest": "tests/tooling/fixtures/cross_lane_e2e/advanced_runtime_closure.workspace.json",
+  "public_replay_command": "npm run objc3c -- validate-cross-lane-e2e",
+  "canonical_production_evidence": {
+    "public_replay_command": "npm run objc3c -- validate-advanced-runtime-closure",
+    "positive_fixture": "tests/native/runtime/advanced_closure/combined_positive.objc3",
+    "combined_identity_contract": "tests/tooling/fixtures/advanced_runtime_closure/combined_runtime_identity_contract.json",
+    "canonical_source_debug_map_bundle": "tests/tooling/fixtures/advanced_runtime_closure/combined_runtime_source_debug_map.json",
+    "negative_matrix": "tests/native/runtime/advanced_closure/negative_matrix.contract.json",
+    "umbrella_support_promoted": false,
+    "proof_axes": [
+      "runtime_state",
+      "source_graph",
+      "debug_map",
+      "abi_surface"
+    ]
+  },
+  "responsible_domains": [
+    "runtime status",
+    "source-map/debug diagnostic",
+    "parser/sema diagnostic",
+    "capability/evidence mismatch",
+    "lowering/IR diagnostic"
+  ],
+  "blockers": [],
+  "diagnostics": {
+    "status": "expected-pass",
+    "responsible_domain": "parser/sema diagnostic",
+    "reason": "the public advanced-runtime closure validator checks the combined positive fixture and deterministic unsupported-combination matrix without promoting the umbrella row",
+    "expected_codes": [],
+    "negative_matrix": "tests/native/runtime/advanced_closure/negative_matrix.contract.json",
+    "negative_matrix_case_count": 17,
+    "required_tokens": [
+      "ownership",
+      "blocks",
+      "async",
+      "actor",
+      "cancellation",
+      "error",
+      "property",
+      "macro",
+      "package_replay"
+    ]
+  },
+  "runtime": {
+    "status": "expected-pass",
+    "responsible_domain": "runtime status",
+    "reason": "checked-in runtime-state records tie block ownership, task cancellation, actor mailbox, error bridge, property behavior, macro host cache, package replay, and combined language semantics to production runtime sources",
+    "source_truth": false,
+    "expected_exit_code": 0,
+    "proof_kind": "advanced-runtime-combined-runtime-state",
+    "combined_identity_contract": "tests/tooling/fixtures/advanced_runtime_closure/combined_runtime_identity_contract.json",
+    "runtime_state_record_count": 8,
+    "language_semantics_support_claim": "objc3c.behavior.language.advanced-runtime-closure",
+    "umbrella_support_promoted": false,
+    "linked_provider_module": "CrossLaneAdvancedRuntimeClosureProvider",
+    "required_artifacts": [
+      "module.obj",
+      "module.ll",
+      "module.manifest.json",
+      "module.runtime-registration-manifest.json",
+      "module.exe"
+    ]
+  },
+  "compile_manifest": {
+    "status": "expected-pass",
+    "responsible_domain": "lowering/IR diagnostic",
+    "reason": "the public cross-lane validator compiles the advanced-runtime fixture with a linked source-owned provider module and emits the native compile manifest while keeping umbrella support reserved",
+    "source_truth": false,
+    "expected_path": "tmp/artifacts/cross-lane-e2e/advanced-runtime-closure/compile/module.manifest.json"
+  },
+  "source_graph": {
+    "status": "expected-pass",
+    "responsible_domain": "capability/evidence mismatch",
+    "reason": "the combined identity contract validates compiler-owned source graph records for every advanced-runtime interaction lane",
+    "source_truth": false,
+    "proof_kind": "advanced-runtime-compiler-owned-source-graph",
+    "combined_identity_contract": "tests/tooling/fixtures/advanced_runtime_closure/combined_runtime_identity_contract.json",
+    "source_graph_record_count": 7,
+    "expected_edges": [
+      "source-graph.ownership-block",
+      "source-graph.async-cancellation",
+      "source-graph.actor-mailbox",
+      "source-graph.error-bridge",
+      "source-graph.property-behavior",
+      "source-graph.macro-provenance",
+      "source-graph.package-replay"
+    ]
+  },
+  "debug_source_map": {
+    "status": "expected-pass",
+    "responsible_domain": "source-map/debug diagnostic",
+    "reason": "the canonical source/debug-map bundle validates source-map, debug-map, and native line-table rows for the combined closure without claiming statement stepping",
+    "source_truth": false,
+    "proof_kind": "advanced-runtime-canonical-source-debug-map",
+    "canonical_bundle": "tests/tooling/fixtures/advanced_runtime_closure/combined_runtime_source_debug_map.json",
+    "source_map_record_count": 7,
+    "debug_map_record_count": 7,
+    "native_line_table_record_count": 7,
+    "reserved_debug_capabilities": [
+      "runtime.debug-trace.statement-stepping",
+      "runtime.debug-trace.lldb-plugin"
+    ]
+  },
+  "optimization_trace": {
+    "status": "reserved",
+    "blocker_id": "advanced-runtime-optimization-trace-not-required",
+    "responsible_domain": "optimization proof diagnostic",
+    "reason": "source/debug-map preservation references optimization-safe anchors, but this family does not require a generated optimization trace to claim native compile/link/run",
+    "source_truth": false
+  },
+  "negative_cases": [
+    {
+      "case_id": "advanced-runtime-unsupported-combination-matrix",
+      "status": "expected-pass",
+      "responsible_domain": "parser/sema diagnostic",
+      "reason": "validate-advanced-runtime-closure checks every unsupported combination as rejected or reserved and keeps those combinations fail-closed",
+      "negative_matrix": "tests/native/runtime/advanced_closure/negative_matrix.contract.json",
+      "expected_case_count": 17
+    },
+    {
+      "case_id": "advanced-runtime-native-executable-umbrella",
+      "status": "expected-pass",
+      "responsible_domain": "runtime status",
+      "reason": "the advanced-runtime fixture compiles, links, and runs through the source-owned provider module while umbrella capability promotion remains separately false"
+    }
+  ],
+  "capability_boundary": {
+    "cannot_promote_reserved_rows": true,
+    "referenced_capability_rows": [
+      "language.advanced-runtime-closure",
+      "runtime.blocks.copy-dispose-invoke",
+      "runtime.concurrency.async-actors",
+      "runtime.concurrency.actor-mailbox-isolation",
+      "runtime.errors.nserror-status-bridge",
+      "language.metaprogramming.property-behavior-semantics",
+      "runtime.metaprogramming.host-cache-boundary",
+      "runtime.interop.package-loader-bridge",
+      "runtime.debug-trace.structured-inspection"
+    ],
+    "claim_boundary": "the cross-lane family proves checked-in advanced-runtime runtime-state, compiler-owned source graph, canonical source/debug-map, deterministic negative-matrix evidence, and native compile/link/run through a source-owned provider module; the language.advanced-runtime-closure umbrella, statement stepping, and unsupported combinations remain blocked or reserved"
+  }
+}

@@ -1,0 +1,96 @@
+{
+  "contract_id": "objc3c.cross_lane_e2e.workspace.v1",
+  "schema_version": 1,
+  "issue": 8200,
+  "family_id": "advanced_runtime_closure",
+  "workspace_id": "cross-lane:advanced-runtime-closure",
+  "public_replay_command": "npm run objc3c -- validate-cross-lane-e2e",
+  "module": {
+    "module_name": "CrossLaneAdvancedRuntimeClosure",
+    "source": "tests/native/e2e/cross_lane/advanced_runtime_closure.objc3",
+    "package_id": "cross-lane:advanced-runtime-closure",
+    "source_text_identity": {
+      "source": "tests/native/e2e/cross_lane/advanced_runtime_closure.objc3",
+      "module_name": "CrossLaneAdvancedRuntimeClosure",
+      "module_declaration": "module CrossLaneAdvancedRuntimeClosure;",
+      "source_sha256": "9d5bd8f235be6a314bae1b6819233e7018e2ffbdb193b4513b35c47d994a6e5c",
+      "required_tokens": [
+        "module CrossLaneAdvancedRuntimeClosure;",
+        "objc_macro_provenance(named(\"sha256:5883f2e2120170bb3de07348e4f101cd478379337b6c0ce2a0f751b29da70e4f\"))",
+        "let retainedRef = retained;",
+        "extern fn packageReplayEntry(selector: SEL) -> i32"
+      ]
+    }
+  },
+  "package_modules": [
+    {
+      "module_name": "CrossLaneAdvancedRuntimeClosureProvider",
+      "source": "tests/native/e2e/cross_lane/advanced_runtime_closure_provider.objc3",
+      "package_id": "package:cross-lane-advanced-runtime-provider",
+      "relationship": "linked-provider-runtime-import-surface",
+      "source_text_identity": {
+        "source": "tests/native/e2e/cross_lane/advanced_runtime_closure_provider.objc3",
+        "module_name": "CrossLaneAdvancedRuntimeClosureProvider",
+        "module_declaration": "module CrossLaneAdvancedRuntimeClosureProvider;",
+        "source_sha256": "c2fea24d3aca586e414baec58f8cc183f1481bea41e76e82dfbbd7e159a7907c",
+        "required_tokens": [
+          "fn ConsumeBorrowed(bytes: borrowed id *) -> void",
+          "fn CFRetain(value: id) -> id",
+          "fn CFRelease(value: id) -> void",
+          "fn packageReplayEntry(selector: SEL) -> i32"
+        ]
+      }
+    }
+  ],
+  "canonical_production_evidence": {
+    "public_replay_command": "npm run objc3c -- validate-advanced-runtime-closure",
+    "positive_fixture": "tests/native/runtime/advanced_closure/combined_positive.objc3",
+    "combined_identity_contract": "tests/tooling/fixtures/advanced_runtime_closure/combined_runtime_identity_contract.json",
+    "canonical_source_debug_map_bundle": "tests/tooling/fixtures/advanced_runtime_closure/combined_runtime_source_debug_map.json",
+    "negative_matrix": "tests/native/runtime/advanced_closure/negative_matrix.contract.json",
+    "umbrella_support_promoted": false,
+    "proof_axes": [
+      "runtime_state",
+      "source_graph",
+      "debug_map",
+      "abi_surface"
+    ]
+  },
+  "package_edges": [
+    {
+      "from": "cross-lane:advanced-runtime-closure",
+      "to": "runtime:blocks-arc",
+      "relationship": "ownership-and-block-runtime-prerequisite"
+    },
+    {
+      "from": "cross-lane:advanced-runtime-closure",
+      "to": "runtime:concurrency-actors",
+      "relationship": "async-actor-cancellation-prerequisite"
+    },
+    {
+      "from": "cross-lane:advanced-runtime-closure",
+      "to": "metaprogramming:property-behavior-macro-provenance",
+      "relationship": "property-behavior-and-macro-provenance-prerequisite"
+    },
+    {
+      "from": "cross-lane:advanced-runtime-closure",
+      "to": "runtime:errors-status-bridge",
+      "relationship": "error-bridge-runtime-prerequisite"
+    },
+    {
+      "from": "cross-lane:advanced-runtime-closure",
+      "to": "runtime:package-replay",
+      "relationship": "package-replay-runtime-prerequisite"
+    },
+    {
+      "from": "cross-lane:advanced-runtime-closure",
+      "to": "package:cross-lane-advanced-runtime-provider",
+      "relationship": "linked-provider-runtime-import-surface"
+    },
+    {
+      "from": "cross-lane:advanced-runtime-closure",
+      "to": "language:advanced-runtime-closure",
+      "relationship": "reserved-umbrella-boundary-not-promoted"
+    }
+  ]
+}

@@ -128,6 +128,16 @@ static void WalkErrorHandlingTryDoCatchChildExprs(
                                   diagnostics,
                                   allow_source_only_error_runtime_surface,
                                   context);
+  for (const auto &key : expr.collection_keys) {
+    WalkErrorHandlingTryDoCatchExpr(key.get(), program, summary, diagnostics,
+                                    allow_source_only_error_runtime_surface,
+                                    context);
+  }
+  for (const auto &value : expr.collection_values) {
+    WalkErrorHandlingTryDoCatchExpr(value.get(), program, summary, diagnostics,
+                                    allow_source_only_error_runtime_surface,
+                                    context);
+  }
   for (const auto &arg : expr.args) {
     WalkErrorHandlingTryDoCatchExpr(arg.get(), program, summary, diagnostics,
                                     allow_source_only_error_runtime_surface,

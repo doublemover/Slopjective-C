@@ -64,7 +64,7 @@ def test_release_evidence_gate_contract_pins_pairs_empty_mode_and_attestation() 
 
     generated_index = release_evidence.generated_index_contract(contract)
     assert generated_index["output_name"] == "evidence-index.json"
-    expected_output_path = "/".join(("tmp", "release_evidence", "evidence-index.json"))
+    expected_output_path = "/".join(("tmp", "reports", "release_evidence", "evidence-index.json"))
     assert generated_index["output_path"] == expected_output_path
     assert (
         generated_index["artifact_authenticity"]["provenance_mode"]

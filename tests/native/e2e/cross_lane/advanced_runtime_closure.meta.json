@@ -1,0 +1,46 @@
+{
+  "schema_version": 1,
+  "fixture": "advanced_runtime_closure.objc3",
+  "origin": "hand-authored",
+  "issue": 8200,
+  "owner_phase": "e2e",
+  "behavior_family": "cross_lane_e2e",
+  "fixture_kind": "native-executable-with-contract-backed-production-proof",
+  "public_replay_command": "npm run objc3c -- validate-cross-lane-e2e",
+  "boundary": {
+    "canonical_behavior_source": true,
+    "behavior_contract": "cross-lane-advanced-runtime-executable-proof",
+    "reserved_support_promoted": false,
+    "runtime_support_claimed": true,
+    "runtime_state_evidence_claimed": true,
+    "source_graph_evidence_claimed": true,
+    "source_debug_map_evidence_claimed": true,
+    "native_compile_artifacts_claimed": true,
+    "native_compile_run_claimed": true,
+    "linked_provider_module": "CrossLaneAdvancedRuntimeClosureProvider",
+    "advanced_runtime_umbrella_promoted": false
+  },
+  "expected": {
+    "stage": "native-compile-link-run-plus-contract-backed-runtime-state-source-debug-map",
+    "diagnostic_code": "",
+    "required_tokens": [
+      "ownership",
+      "block",
+      "async",
+      "actor",
+      "cancellation",
+      "error",
+      "property behavior",
+      "macro provenance",
+      "package replay"
+    ]
+  },
+  "production_evidence": {
+    "public_replay_command": "npm run objc3c -- validate-advanced-runtime-closure",
+    "combined_identity_contract": "tests/tooling/fixtures/advanced_runtime_closure/combined_runtime_identity_contract.json",
+    "native_artifact_contract": "tests/tooling/fixtures/advanced_runtime_closure/native_artifact_contract.json",
+    "canonical_source_debug_map_bundle": "tests/tooling/fixtures/advanced_runtime_closure/combined_runtime_source_debug_map.json",
+    "negative_matrix": "tests/native/runtime/advanced_closure/negative_matrix.contract.json",
+    "umbrella_support_promoted": false
+  }
+}

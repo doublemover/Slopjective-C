@@ -35,7 +35,7 @@ def build_runtime_package_loading_interop_implementation_surface(
             RUNTIME_PACKAGING_BRIDGE_LOADER_ARTIFACT_SURFACE_CONTRACT_ID,
         ],
         "implementation_model": (
-            "live-runtime-package-loader-snapshots-agree-with-the-emitted-interop-link-plan-and-bridge-artifacts-for-the-current-mixed-image-packaging-boundary-and-fail-closed-on-runtime-library-import-surface-drift"
+            "live-runtime-package-loader-snapshots-preserve-runtime-archive-and-deferred-bridge-paths-while-consumer-imports-fail-closed-until-live-interop-bridge-generation-and-cross-module-link-planning-are-implemented"
         ),
         "authoritative_case_ids": authoritative_case_ids,
         "authoritative_code_paths": [
@@ -52,9 +52,10 @@ def build_runtime_package_loading_interop_implementation_surface(
             INTEROP_PACKAGE_LOADER_FAIL_CLOSED_ABI_PROBE,
         ],
         "requires_runtime_import_surface_artifact": True,
-        "requires_cross_module_link_plan_artifact": True,
+        "requires_cross_module_link_plan_artifact": False,
         "requires_linked_runtime_probe": True,
         "requires_real_compile_output": True,
+        "requires_fail_closed_consumer_import": True,
         "requires_tampered_runtime_library_rejection": True,
     }
 

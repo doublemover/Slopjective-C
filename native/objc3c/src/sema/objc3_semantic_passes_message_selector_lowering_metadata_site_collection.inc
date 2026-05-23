@@ -26,6 +26,22 @@ static void CollectMessageSendSelectorLoweringSiteMetadataFromExpr(
     return;
   }
 
+  if (expr->kind == Expr::Kind::CollectionLiteral) {
+    for (const auto &key : expr->collection_keys) {
+      CollectMessageSendSelectorLoweringSiteMetadataFromExpr(key.get(), sites);
+    }
+    for (const auto &value : expr->collection_values) {
+      CollectMessageSendSelectorLoweringSiteMetadataFromExpr(value.get(), sites);
+    }
+    return;
+  }
+
+  if (expr->kind == Expr::Kind::IndexAccess) {
+    CollectMessageSendSelectorLoweringSiteMetadataFromExpr(expr->left.get(), sites);
+    CollectMessageSendSelectorLoweringSiteMetadataFromExpr(expr->right.get(), sites);
+    return;
+  }
+
   if (expr->kind == Expr::Kind::Call) {
     for (const auto &arg : expr->args) {
       CollectMessageSendSelectorLoweringSiteMetadataFromExpr(arg.get(), sites);
@@ -74,6 +90,10 @@ static void CollectMessageSendSelectorLoweringSiteMetadataFromStatement(
       CollectMessageSendSelectorLoweringSiteMetadataFromForClause(stmt->for_stmt->step, sites);
       CollectMessageSendSelectorLoweringSiteMetadataFromStatements(stmt->for_stmt->body, sites);
       return;
+    case Stmt::Kind::ForIn:
+      CollectMessageSendSelectorLoweringSiteMetadataFromExpr(stmt->for_in_stmt->collection.get(), sites);
+      CollectMessageSendSelectorLoweringSiteMetadataFromStatements(stmt->for_in_stmt->body, sites);
+      return;
     case Stmt::Kind::Switch:
       CollectMessageSendSelectorLoweringSiteMetadataFromExpr(stmt->switch_stmt->condition.get(), sites);
       for (const auto &switch_case : stmt->switch_stmt->cases) {
@@ -90,6 +110,10 @@ static void CollectMessageSendSelectorLoweringSiteMetadataFromStatement(
       return;
     case Stmt::Kind::Expr:
       CollectMessageSendSelectorLoweringSiteMetadataFromExpr(stmt->expr_stmt->value.get(), sites);
+      return;
+    case Stmt::Kind::CollectionMutation:
+      CollectMessageSendSelectorLoweringSiteMetadataFromExpr(stmt->collection_mutation_stmt->key_or_index.get(), sites);
+      CollectMessageSendSelectorLoweringSiteMetadataFromExpr(stmt->collection_mutation_stmt->value.get(), sites);
       return;
     case Stmt::Kind::Break:
     case Stmt::Kind::Continue:

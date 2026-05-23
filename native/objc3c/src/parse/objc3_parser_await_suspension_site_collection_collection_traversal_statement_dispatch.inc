@@ -23,6 +23,13 @@ void CollectAwaitSuspensionStmtSites(
   case Stmt::Kind::For:
     CollectAwaitSuspensionForStmtSites(stmt->for_stmt.get(), counts);
     return;
+  case Stmt::Kind::ForIn:
+    if (stmt->for_in_stmt != nullptr) {
+      CollectAwaitSuspensionExprSites(stmt->for_in_stmt->collection.get(),
+                                      counts);
+      CollectAwaitSuspensionStmtBodySites(stmt->for_in_stmt->body, counts);
+    }
+    return;
   case Stmt::Kind::Switch:
     CollectAwaitSuspensionSwitchStmtSites(stmt->switch_stmt.get(), counts);
     return;
@@ -35,6 +42,14 @@ void CollectAwaitSuspensionStmtSites(
     return;
   case Stmt::Kind::Expr:
     CollectAwaitSuspensionExprStmtSites(stmt->expr_stmt.get(), counts);
+    return;
+  case Stmt::Kind::CollectionMutation:
+    if (stmt->collection_mutation_stmt != nullptr) {
+      CollectAwaitSuspensionExprSites(
+          stmt->collection_mutation_stmt->key_or_index.get(), counts);
+      CollectAwaitSuspensionExprSites(
+          stmt->collection_mutation_stmt->value.get(), counts);
+    }
     return;
   case Stmt::Kind::Break:
   case Stmt::Kind::Continue:

@@ -141,7 +141,7 @@ def _assert_ir_coupling(ir_text: str) -> dict[str, object]:
     )
 
     cancellation_body_match = re.search(
-        r"define\s+[^@]+@cancellationTrace\([^)]*\)\s*\{\n(.*?)\n\}",
+        r"define\s+[^@]+@cancellationTrace\([^)]*\)[^{]*\{\n(.*?)\n\}",
         ir_text,
         flags=re.DOTALL,
     )

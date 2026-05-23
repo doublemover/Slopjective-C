@@ -14,7 +14,8 @@ Objc3FrontendOptions BuildObjc3FrontendOptions(const Objc3CliOptions &cli_option
   options.emit_ir = true;
   options.emit_object = true;
   options.allow_live_error_runtime_surface =
-      cli_options.allow_live_error_runtime_surface;
+      cli_options.allow_live_error_runtime_surface || options.emit_ir ||
+      options.emit_object;
   options.bootstrap_registration_order_ordinal =
       cli_options.bootstrap_registration_order_ordinal;
   options.metaprogramming_cache_root_relative_path =

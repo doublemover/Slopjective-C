@@ -23,12 +23,14 @@ REQUIRED_STEPS = [
     "validate-runtime-performance",
     "check-performance-governance-surface",
     "check-performance-governance-schema-surface",
+    "validate-performance-governance-runtime-contract-linkage",
     "build-performance-dashboard",
     "publish-performance-report",
 ]
 REQUIRED_CHILD_REPORTS = {
     "tmp/reports/performance-governance/source-surface-summary.json": "objc3c.performance.governance.source.surface.summary.v1",
     "tmp/reports/performance-governance/schema-surface-summary.json": "objc3c.performance.governance.schema.surface.summary.v1",
+    "tmp/reports/performance-governance/runtime-contract-linkage-summary.json": "objc3c.performance.governance.runtime.contract.linkage.summary.v1",
     "tmp/reports/performance-governance/dashboard-summary.json": "objc3c.performance.governance.dashboard.summary.v1",
     "tmp/reports/performance-governance/public-summary.json": "objc3c.performance.governance.public.summary.v1",
 }

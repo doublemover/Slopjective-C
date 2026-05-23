@@ -1,0 +1,826 @@
+{
+  "contract_id": "objc3c.advanced-runtime.closure.combined-runtime-identity.v1",
+  "issue_ref": 8199,
+  "scope": "combined-runtime-state-source-graph-debug-map-proof",
+  "source_truth": "checked-in source files and checked-in contract fixtures only",
+  "umbrella_support_promoted": false,
+  "positive_fixture": "tests/native/runtime/advanced_closure/combined_positive.objc3",
+  "negative_matrix": "tests/native/runtime/advanced_closure/negative_matrix.contract.json",
+  "language_semantics_contract": "tests/tooling/fixtures/objc3c/language_semantics_runtime_api_contract.json",
+  "debug_source_map_validator": "scripts/check_objc3c_debug_source_maps.py",
+  "public_replay_command": "npm run objc3c -- validate-advanced-runtime-closure",
+  "canonical_compiler_emitted_source_debug_map_bundle": "tests/tooling/fixtures/advanced_runtime_closure/combined_runtime_source_debug_map.json",
+  "canonical_source_debug_map_public_command": "npm run objc3c -- validate-advanced-runtime-closure",
+  "native_artifact_contract": "tests/tooling/fixtures/advanced_runtime_closure/native_artifact_contract.json",
+  "native_artifact_ready": true,
+  "native_executable_umbrella_promoted": false,
+  "forbidden_source_truth_prefixes": [
+    "tmp/",
+    "temp/",
+    "generated/",
+    "build/",
+    "dist/"
+  ],
+  "required_proof_axes": [
+    "runtime_state",
+    "source_graph",
+    "debug_map",
+    "abi_surface"
+  ],
+  "unsupported_combination_policy": {
+    "diagnostic": "advanced-runtime.unsupported-combination",
+    "unsupported_statuses": [
+      "rejected",
+      "reserved"
+    ],
+    "reserved_claims": [
+      "swift-abi",
+      "distributed-actors",
+      "broad-scheduler-guarantees",
+      "arbitrary-macro-host-execution"
+    ],
+    "source_debug_policy": "canonical source/debug records prove checked Objective-C 3 runtime surfaces only"
+  },
+  "runtime_state_records": [
+    {
+      "record_id": "runtime-state.blocks-ownership",
+      "features": [
+        "blocks",
+        "ownership"
+      ],
+      "source_path": "tests/tooling/runtime/block_runtime_copy_dispose_invoke_probe.cpp",
+      "required_tokens": [
+        "objc3_runtime_promote_block_i32",
+        "ProbeCopy",
+        "ProbeDispose"
+      ]
+    },
+    {
+      "record_id": "runtime-state.async-cancellation",
+      "features": [
+        "async",
+        "cancellation"
+      ],
+      "source_path": "tests/tooling/runtime/task_runtime_probe_contract.h",
+      "required_tokens": [
+        "objc3_runtime_task_is_cancelled_i32",
+        "objc3_runtime_cancel_task_group_i32"
+      ]
+    },
+    {
+      "record_id": "runtime-state.actor-mailbox",
+      "features": [
+        "actor",
+        "async"
+      ],
+      "source_path": "tests/tooling/runtime/live_actor_mailbox_runtime_probe.cpp",
+      "required_tokens": [
+        "objc3_runtime_actor_mailbox_enqueue_i32",
+        "objc3_runtime_actor_mailbox_drain_next_i32"
+      ]
+    },
+    {
+      "record_id": "runtime-state.error-bridge",
+      "features": [
+        "error"
+      ],
+      "source_path": "tests/tooling/runtime/error_runtime_bridge_helper_probe.cpp",
+      "required_tokens": [
+        "objc3_runtime_copy_error_bridge_state_for_testing",
+        "status_bridge_call_count"
+      ]
+    },
+    {
+      "record_id": "runtime-state.property-behavior",
+      "features": [
+        "property"
+      ],
+      "source_path": "native/objc3c/src/runtime/storage/property_layout_realization.cpp",
+      "required_tokens": [
+        "AttachRealizedPropertyLayoutRecordsUnlocked",
+        "runtime_property_accessors"
+      ]
+    },
+    {
+      "record_id": "runtime-state.macro-host-cache",
+      "features": [
+        "macro"
+      ],
+      "source_path": "tests/tooling/runtime/macro_host_process_cache_integration_probe.cpp",
+      "required_tokens": [
+        "macro_host_execution_ready",
+        "cache_model"
+      ]
+    },
+    {
+      "record_id": "runtime-state.package-replay",
+      "features": [
+        "package_replay"
+      ],
+      "source_path": "scripts/objc3c_runtime_acceptance/domains/interop_packaging_imported_replay_cases.py",
+      "required_tokens": [
+        "check_imported_runtime_packaging_replay_case",
+        "assert_imported_runtime_link_plan_contract"
+      ]
+    },
+    {
+      "record_id": "runtime-state.combined-language-semantics",
+      "features": [
+        "ownership",
+        "blocks",
+        "async",
+        "actor",
+        "cancellation",
+        "error",
+        "property",
+        "macro",
+        "package_replay"
+      ],
+      "source_path": "native/objc3c/src/runtime/public/objc3_runtime_language_semantics.cpp",
+      "required_tokens": [
+        "objc3c.behavior.language.advanced-runtime-closure",
+        "advanced-runtime-combined-source-identity",
+        "combined_runtime_identity_contract"
+      ]
+    }
+  ],
+  "compiler_owned_source_graph_records": [
+    {
+      "record_id": "source-graph.ownership-block",
+      "features": [
+        "ownership",
+        "blocks"
+      ],
+      "source_path": "tests/native/runtime/advanced_closure/combined_positive.objc3",
+      "source_graph_node_id": "advanced-runtime.source.ownership-block",
+      "source_map_record_kind": "ownership-cleanup-edge",
+      "required_tokens": [
+        "fn ownershipAndBlockLane",
+        "let closure = ^[weak owner, unowned peer, retained]",
+        "ConsumeBorrowed(bytes)"
+      ]
+    },
+    {
+      "record_id": "source-graph.async-cancellation",
+      "features": [
+        "async",
+        "cancellation"
+      ],
+      "source_path": "tests/native/runtime/advanced_closure/combined_positive.objc3",
+      "source_graph_node_id": "advanced-runtime.source.async-cancellation",
+      "source_map_record_kind": "async-suspension-point",
+      "required_tokens": [
+        "async fn asyncCancellationLane",
+        "objc3_runtime_task_is_cancelled_i32",
+        "return await statusBridgeAdvancedRuntime"
+      ]
+    },
+    {
+      "record_id": "source-graph.actor-mailbox",
+      "features": [
+        "actor",
+        "async"
+      ],
+      "source_path": "tests/native/runtime/advanced_closure/combined_positive.objc3",
+      "source_graph_node_id": "advanced-runtime.source.actor-mailbox",
+      "source_map_record_kind": "method",
+      "required_tokens": [
+        "actor class AdvancedRuntimeClosureActor",
+        "objc3_runtime_actor_mailbox_enqueue_i32",
+        "return await asyncCancellationLane(mailbox)"
+      ]
+    },
+    {
+      "record_id": "source-graph.error-bridge",
+      "features": [
+        "error",
+        "async"
+      ],
+      "source_path": "tests/native/runtime/advanced_closure/combined_positive.objc3",
+      "source_graph_node_id": "advanced-runtime.source.error-bridge",
+      "source_map_record_kind": "error-bridge-edge",
+      "required_tokens": [
+        "throws -> i32",
+        "try? statusBridgeAdvancedRuntime",
+        "catch (NSError* error)"
+      ]
+    },
+    {
+      "record_id": "source-graph.property-behavior",
+      "features": [
+        "property"
+      ],
+      "source_path": "tests/native/runtime/advanced_closure/combined_positive.objc3",
+      "source_graph_node_id": "advanced-runtime.source.property-behavior",
+      "source_map_record_kind": "property-access",
+      "required_tokens": [
+        "@property (strong, behavior=Observed) id value",
+        "@property (readonly, strong, behavior=Projected, getter=currentValue) id currentValue"
+      ]
+    },
+    {
+      "record_id": "source-graph.macro-provenance",
+      "features": [
+        "macro"
+      ],
+      "source_path": "tests/native/runtime/advanced_closure/combined_positive.objc3",
+      "source_graph_node_id": "advanced-runtime.source.macro-provenance",
+      "source_map_record_kind": "macro-expansion",
+      "required_tokens": [
+        "objc_macro_package(named(\"std.metaprogramming.advanced-runtime\"))",
+        "objc_macro_provenance(named(\"sha256:5883f2e2120170bb3de07348e4f101cd478379337b6c0ce2a0f751b29da70e4f\"))",
+        "objc_macro_sandbox(named(\"deterministic\"))"
+      ]
+    },
+    {
+      "record_id": "source-graph.package-replay",
+      "features": [
+        "package_replay"
+      ],
+      "source_path": "tests/native/runtime/advanced_closure/combined_positive.objc3",
+      "source_graph_node_id": "advanced-runtime.source.package-replay",
+      "source_map_record_kind": "runtime-helper-call",
+      "required_tokens": [
+        "objc_import_module(named(\"AdvancedRuntimeClosureKit\"))",
+        "objc_mixed_image(named(\"AdvancedRuntimeClosureKitCore\"))",
+        "objc_package_entry(named(\"AdvancedRuntimeClosureKit.replay\"))"
+      ]
+    }
+  ],
+  "debug_map_records": [
+    {
+      "record_id": "debug-map.ownership-block",
+      "source_graph_record_id": "source-graph.ownership-block",
+      "source_graph_node_id": "advanced-runtime.source.ownership-block",
+      "source_map_entry_id": "advanced-runtime.smap.ownership-block",
+      "debug_map_entry_id": "advanced-runtime.dmap.ownership-block",
+      "runtime_anchor_ids": [
+        "runtime.anchor.block-copy-dispose",
+        "runtime.anchor.ownership-cleanup"
+      ],
+      "language_anchor_ids": [
+        "hover.advanced-runtime.ownership-block",
+        "definition.advanced-runtime.ownership-block"
+      ]
+    },
+    {
+      "record_id": "debug-map.async-cancellation",
+      "source_graph_record_id": "source-graph.async-cancellation",
+      "source_graph_node_id": "advanced-runtime.source.async-cancellation",
+      "source_map_entry_id": "advanced-runtime.smap.async-cancellation",
+      "debug_map_entry_id": "advanced-runtime.dmap.async-cancellation",
+      "runtime_anchor_ids": [
+        "runtime.anchor.task-cancellation",
+        "runtime.anchor.await-suspension"
+      ],
+      "language_anchor_ids": [
+        "hover.advanced-runtime.async-cancellation",
+        "definition.advanced-runtime.async-cancellation"
+      ]
+    },
+    {
+      "record_id": "debug-map.actor-mailbox",
+      "source_graph_record_id": "source-graph.actor-mailbox",
+      "source_graph_node_id": "advanced-runtime.source.actor-mailbox",
+      "source_map_entry_id": "advanced-runtime.smap.actor-mailbox",
+      "debug_map_entry_id": "advanced-runtime.dmap.actor-mailbox",
+      "runtime_anchor_ids": [
+        "runtime.anchor.actor-mailbox",
+        "runtime.anchor.executor-binding"
+      ],
+      "language_anchor_ids": [
+        "hover.advanced-runtime.actor-mailbox",
+        "definition.advanced-runtime.actor-mailbox"
+      ]
+    },
+    {
+      "record_id": "debug-map.error-bridge",
+      "source_graph_record_id": "source-graph.error-bridge",
+      "source_graph_node_id": "advanced-runtime.source.error-bridge",
+      "source_map_entry_id": "advanced-runtime.smap.error-bridge",
+      "debug_map_entry_id": "advanced-runtime.dmap.error-bridge",
+      "runtime_anchor_ids": [
+        "runtime.anchor.error-status-bridge",
+        "runtime.anchor.error-catch"
+      ],
+      "language_anchor_ids": [
+        "hover.advanced-runtime.error-bridge",
+        "definition.advanced-runtime.error-bridge"
+      ]
+    },
+    {
+      "record_id": "debug-map.property-behavior",
+      "source_graph_record_id": "source-graph.property-behavior",
+      "source_graph_node_id": "advanced-runtime.source.property-behavior",
+      "source_map_entry_id": "advanced-runtime.smap.property-behavior",
+      "debug_map_entry_id": "advanced-runtime.dmap.property-behavior",
+      "runtime_anchor_ids": [
+        "runtime.anchor.property-layout",
+        "runtime.anchor.property-accessor"
+      ],
+      "language_anchor_ids": [
+        "hover.advanced-runtime.property-behavior",
+        "definition.advanced-runtime.property-behavior"
+      ]
+    },
+    {
+      "record_id": "debug-map.macro-provenance",
+      "source_graph_record_id": "source-graph.macro-provenance",
+      "source_graph_node_id": "advanced-runtime.source.macro-provenance",
+      "source_map_entry_id": "advanced-runtime.smap.macro-provenance",
+      "debug_map_entry_id": "advanced-runtime.dmap.macro-provenance",
+      "runtime_anchor_ids": [
+        "runtime.anchor.macro-host-cache",
+        "runtime.anchor.macro-sandbox"
+      ],
+      "language_anchor_ids": [
+        "hover.advanced-runtime.macro-provenance",
+        "definition.advanced-runtime.macro-provenance"
+      ]
+    },
+    {
+      "record_id": "debug-map.package-replay",
+      "source_graph_record_id": "source-graph.package-replay",
+      "source_graph_node_id": "advanced-runtime.source.package-replay",
+      "source_map_entry_id": "advanced-runtime.smap.package-replay",
+      "debug_map_entry_id": "advanced-runtime.dmap.package-replay",
+      "runtime_anchor_ids": [
+        "runtime.anchor.package-import",
+        "runtime.anchor.mixed-image-replay"
+      ],
+      "language_anchor_ids": [
+        "hover.advanced-runtime.package-replay",
+        "definition.advanced-runtime.package-replay"
+      ]
+    }
+  ],
+  "runtime_state_source_debug_links": [
+    {
+      "link_id": "runtime-source-debug.ownership-block",
+      "features": [
+        "ownership",
+        "blocks"
+      ],
+      "runtime_state_record_ids": [
+        "runtime-state.blocks-ownership"
+      ],
+      "source_graph_record_id": "source-graph.ownership-block",
+      "debug_map_record_id": "debug-map.ownership-block",
+      "abi_record_ids": [
+        "abi.blocks-ownership"
+      ],
+      "source_graph_node_id": "advanced-runtime.source.ownership-block",
+      "source_map_entry_id": "advanced-runtime.smap.ownership-block",
+      "debug_map_entry_id": "advanced-runtime.dmap.ownership-block",
+      "native_line_table_row_ids": [
+        "advanced-runtime.lt.ownership-block"
+      ],
+      "runtime_anchor_ids": [
+        "runtime.anchor.block-copy-dispose",
+        "runtime.anchor.ownership-cleanup"
+      ]
+    },
+    {
+      "link_id": "runtime-source-debug.async-cancellation",
+      "features": [
+        "async",
+        "cancellation"
+      ],
+      "runtime_state_record_ids": [
+        "runtime-state.async-cancellation"
+      ],
+      "source_graph_record_id": "source-graph.async-cancellation",
+      "debug_map_record_id": "debug-map.async-cancellation",
+      "abi_record_ids": [
+        "abi.async-actor-cancellation"
+      ],
+      "source_graph_node_id": "advanced-runtime.source.async-cancellation",
+      "source_map_entry_id": "advanced-runtime.smap.async-cancellation",
+      "debug_map_entry_id": "advanced-runtime.dmap.async-cancellation",
+      "native_line_table_row_ids": [
+        "advanced-runtime.lt.async-cancellation"
+      ],
+      "runtime_anchor_ids": [
+        "runtime.anchor.task-cancellation",
+        "runtime.anchor.await-suspension"
+      ]
+    },
+    {
+      "link_id": "runtime-source-debug.actor-mailbox",
+      "features": [
+        "actor",
+        "async"
+      ],
+      "runtime_state_record_ids": [
+        "runtime-state.actor-mailbox"
+      ],
+      "source_graph_record_id": "source-graph.actor-mailbox",
+      "debug_map_record_id": "debug-map.actor-mailbox",
+      "abi_record_ids": [
+        "abi.async-actor-cancellation"
+      ],
+      "source_graph_node_id": "advanced-runtime.source.actor-mailbox",
+      "source_map_entry_id": "advanced-runtime.smap.actor-mailbox",
+      "debug_map_entry_id": "advanced-runtime.dmap.actor-mailbox",
+      "native_line_table_row_ids": [
+        "advanced-runtime.lt.actor-mailbox"
+      ],
+      "runtime_anchor_ids": [
+        "runtime.anchor.actor-mailbox",
+        "runtime.anchor.executor-binding"
+      ]
+    },
+    {
+      "link_id": "runtime-source-debug.error-bridge",
+      "features": [
+        "error",
+        "async"
+      ],
+      "runtime_state_record_ids": [
+        "runtime-state.error-bridge"
+      ],
+      "source_graph_record_id": "source-graph.error-bridge",
+      "debug_map_record_id": "debug-map.error-bridge",
+      "abi_record_ids": [
+        "abi.error-bridge"
+      ],
+      "source_graph_node_id": "advanced-runtime.source.error-bridge",
+      "source_map_entry_id": "advanced-runtime.smap.error-bridge",
+      "debug_map_entry_id": "advanced-runtime.dmap.error-bridge",
+      "native_line_table_row_ids": [
+        "advanced-runtime.lt.error-bridge"
+      ],
+      "runtime_anchor_ids": [
+        "runtime.anchor.error-status-bridge",
+        "runtime.anchor.error-catch"
+      ]
+    },
+    {
+      "link_id": "runtime-source-debug.property-behavior",
+      "features": [
+        "property"
+      ],
+      "runtime_state_record_ids": [
+        "runtime-state.property-behavior"
+      ],
+      "source_graph_record_id": "source-graph.property-behavior",
+      "debug_map_record_id": "debug-map.property-behavior",
+      "abi_record_ids": [
+        "abi.property-behavior"
+      ],
+      "source_graph_node_id": "advanced-runtime.source.property-behavior",
+      "source_map_entry_id": "advanced-runtime.smap.property-behavior",
+      "debug_map_entry_id": "advanced-runtime.dmap.property-behavior",
+      "native_line_table_row_ids": [
+        "advanced-runtime.lt.property-behavior"
+      ],
+      "runtime_anchor_ids": [
+        "runtime.anchor.property-layout",
+        "runtime.anchor.property-accessor"
+      ]
+    },
+    {
+      "link_id": "runtime-source-debug.macro-provenance",
+      "features": [
+        "macro"
+      ],
+      "runtime_state_record_ids": [
+        "runtime-state.macro-host-cache"
+      ],
+      "source_graph_record_id": "source-graph.macro-provenance",
+      "debug_map_record_id": "debug-map.macro-provenance",
+      "abi_record_ids": [
+        "abi.macro-host-cache"
+      ],
+      "source_graph_node_id": "advanced-runtime.source.macro-provenance",
+      "source_map_entry_id": "advanced-runtime.smap.macro-provenance",
+      "debug_map_entry_id": "advanced-runtime.dmap.macro-provenance",
+      "native_line_table_row_ids": [
+        "advanced-runtime.lt.macro-provenance"
+      ],
+      "runtime_anchor_ids": [
+        "runtime.anchor.macro-host-cache",
+        "runtime.anchor.macro-sandbox"
+      ]
+    },
+    {
+      "link_id": "runtime-source-debug.package-replay",
+      "features": [
+        "package_replay"
+      ],
+      "runtime_state_record_ids": [
+        "runtime-state.package-replay"
+      ],
+      "source_graph_record_id": "source-graph.package-replay",
+      "debug_map_record_id": "debug-map.package-replay",
+      "abi_record_ids": [
+        "abi.package-replay"
+      ],
+      "source_graph_node_id": "advanced-runtime.source.package-replay",
+      "source_map_entry_id": "advanced-runtime.smap.package-replay",
+      "debug_map_entry_id": "advanced-runtime.dmap.package-replay",
+      "native_line_table_row_ids": [
+        "advanced-runtime.lt.package-replay"
+      ],
+      "runtime_anchor_ids": [
+        "runtime.anchor.package-import",
+        "runtime.anchor.mixed-image-replay"
+      ]
+    }
+  ],
+  "runtime_state_source_debug_exemptions": [
+    {
+      "runtime_state_record_id": "runtime-state.combined-language-semantics",
+      "reason": "public language-semantics row is the checked aggregate record and is validated through runtime API metadata, not a source-map line-table row"
+    }
+  ],
+  "abi_interaction_records": [
+    {
+      "record_id": "abi.blocks-ownership",
+      "features": [
+        "blocks",
+        "ownership"
+      ],
+      "source_path": "native/objc3c/src/runtime/blocks/block_runtime_api.cpp",
+      "required_tokens": [
+        "extern \"C\" int objc3_runtime_promote_block_i32",
+        "PromoteRuntimeBlockI32"
+      ]
+    },
+    {
+      "record_id": "abi.async-actor-cancellation",
+      "features": [
+        "async",
+        "actor",
+        "cancellation"
+      ],
+      "source_path": "native/objc3c/src/runtime/concurrency/runtime_concurrency_snapshot_contracts.h",
+      "required_tokens": [
+        "objc3_runtime_cancel_task_group_i32",
+        "objc3_runtime_actor_mailbox_enqueue_i32"
+      ]
+    },
+    {
+      "record_id": "abi.error-bridge",
+      "features": [
+        "error"
+      ],
+      "source_path": "native/objc3c/src/runtime/errors/error_bridge_snapshot_contracts.h",
+      "required_tokens": [
+        "objc3_runtime_bridge_status_error_i32",
+        "objc3_runtime_copy_error_bridge_state_for_testing"
+      ]
+    },
+    {
+      "record_id": "abi.property-behavior",
+      "features": [
+        "property"
+      ],
+      "source_path": "native/objc3c/src/runtime/storage/storage_accessor_snapshot.cpp",
+      "required_tokens": [
+        "property_registry_ready",
+        "runtime-registration-realizes-property-accessor-records"
+      ]
+    },
+    {
+      "record_id": "abi.macro-host-cache",
+      "features": [
+        "macro"
+      ],
+      "source_path": "native/objc3c/src/io/objc3_metaprogramming_macro_host_cache_document.cpp",
+      "required_tokens": [
+        "metaprogramming-host-cache-provenance-only",
+        "cache_artifact_contract_checked"
+      ]
+    },
+    {
+      "record_id": "abi.package-replay",
+      "features": [
+        "package_replay"
+      ],
+      "source_path": "native/objc3c/src/runtime/images/registration_api.cpp",
+      "required_tokens": [
+        "objc3_runtime_replay_registered_images_for_testing",
+        "ReplayRegisteredImagesForTesting"
+      ]
+    }
+  ],
+  "interaction_records": [
+    {
+      "interaction_id": "ownership-block",
+      "features": [
+        "ownership",
+        "blocks"
+      ],
+      "positive_required_tokens": [
+        "fn ownershipAndBlockLane",
+        "let closure = ^[weak owner, unowned peer, retained]"
+      ],
+      "negative_case_ids": [
+        "ownership_conflicting_capture"
+      ],
+      "runtime_state_record_ids": [
+        "runtime-state.blocks-ownership"
+      ],
+      "source_graph_record_ids": [
+        "source-graph.ownership-block"
+      ],
+      "debug_map_record_ids": [
+        "debug-map.ownership-block"
+      ],
+      "abi_record_ids": [
+        "abi.blocks-ownership"
+      ],
+      "runtime_source_debug_link_ids": [
+        "runtime-source-debug.ownership-block"
+      ]
+    },
+    {
+      "interaction_id": "block-async-error",
+      "features": [
+        "blocks",
+        "async",
+        "error"
+      ],
+      "positive_required_tokens": [
+        "try? statusBridgeAdvancedRuntime",
+        "return await asyncCancellationLane(mailbox)"
+      ],
+      "negative_case_ids": [
+        "block_async_error_escape"
+      ],
+      "runtime_state_record_ids": [
+        "runtime-state.blocks-ownership",
+        "runtime-state.async-cancellation",
+        "runtime-state.error-bridge"
+      ],
+      "source_graph_record_ids": [
+        "source-graph.ownership-block",
+        "source-graph.async-cancellation",
+        "source-graph.error-bridge"
+      ],
+      "debug_map_record_ids": [
+        "debug-map.ownership-block",
+        "debug-map.async-cancellation",
+        "debug-map.error-bridge"
+      ],
+      "abi_record_ids": [
+        "abi.blocks-ownership",
+        "abi.async-actor-cancellation",
+        "abi.error-bridge"
+      ],
+      "runtime_source_debug_link_ids": [
+        "runtime-source-debug.ownership-block",
+        "runtime-source-debug.async-cancellation",
+        "runtime-source-debug.error-bridge"
+      ]
+    },
+    {
+      "interaction_id": "async-actor-cancellation",
+      "features": [
+        "async",
+        "actor",
+        "cancellation"
+      ],
+      "positive_required_tokens": [
+        "actor class AdvancedRuntimeClosureActor",
+        "objc3_runtime_task_is_cancelled_i32",
+        "objc3_runtime_actor_mailbox_drain_next_i32"
+      ],
+      "negative_case_ids": [
+        "ownership_actor_cancellation_escape",
+        "actor_mailbox_unsupported_payload",
+        "scheduler_guarantee_overclaim"
+      ],
+      "runtime_state_record_ids": [
+        "runtime-state.async-cancellation",
+        "runtime-state.actor-mailbox"
+      ],
+      "source_graph_record_ids": [
+        "source-graph.async-cancellation",
+        "source-graph.actor-mailbox"
+      ],
+      "debug_map_record_ids": [
+        "debug-map.async-cancellation",
+        "debug-map.actor-mailbox"
+      ],
+      "abi_record_ids": [
+        "abi.async-actor-cancellation"
+      ],
+      "runtime_source_debug_link_ids": [
+        "runtime-source-debug.async-cancellation",
+        "runtime-source-debug.actor-mailbox"
+      ]
+    },
+    {
+      "interaction_id": "actor-property-macro",
+      "features": [
+        "actor",
+        "property",
+        "macro"
+      ],
+      "positive_required_tokens": [
+        "actor class AdvancedRuntimeClosureActor",
+        "@property (strong, behavior=Observed) id value",
+        "advancedRuntimeMacroTrace()"
+      ],
+      "negative_case_ids": [
+        "actor_property_macro_cross_isolation",
+        "property_behavior_conflict"
+      ],
+      "runtime_state_record_ids": [
+        "runtime-state.actor-mailbox",
+        "runtime-state.property-behavior",
+        "runtime-state.macro-host-cache"
+      ],
+      "source_graph_record_ids": [
+        "source-graph.actor-mailbox",
+        "source-graph.property-behavior",
+        "source-graph.macro-provenance"
+      ],
+      "debug_map_record_ids": [
+        "debug-map.actor-mailbox",
+        "debug-map.property-behavior",
+        "debug-map.macro-provenance"
+      ],
+      "abi_record_ids": [
+        "abi.async-actor-cancellation",
+        "abi.property-behavior",
+        "abi.macro-host-cache"
+      ],
+      "runtime_source_debug_link_ids": [
+        "runtime-source-debug.actor-mailbox",
+        "runtime-source-debug.property-behavior",
+        "runtime-source-debug.macro-provenance"
+      ]
+    },
+    {
+      "interaction_id": "macro-package-replay",
+      "features": [
+        "macro",
+        "package_replay"
+      ],
+      "positive_required_tokens": [
+        "objc_macro_package(named(\"std.metaprogramming.advanced-runtime\"))",
+        "objc_package_entry(named(\"AdvancedRuntimeClosureKit.replay\"))"
+      ],
+      "negative_case_ids": [
+        "macro_package_replay_untrusted"
+      ],
+      "runtime_state_record_ids": [
+        "runtime-state.macro-host-cache",
+        "runtime-state.package-replay"
+      ],
+      "source_graph_record_ids": [
+        "source-graph.macro-provenance",
+        "source-graph.package-replay"
+      ],
+      "debug_map_record_ids": [
+        "debug-map.macro-provenance",
+        "debug-map.package-replay"
+      ],
+      "abi_record_ids": [
+        "abi.macro-host-cache",
+        "abi.package-replay"
+      ],
+      "runtime_source_debug_link_ids": [
+        "runtime-source-debug.macro-provenance",
+        "runtime-source-debug.package-replay"
+      ]
+    },
+    {
+      "interaction_id": "error-package-replay",
+      "features": [
+        "error",
+        "package_replay"
+      ],
+      "positive_required_tokens": [
+        "try! throwingAdvancedRuntime",
+        "packageReplayEntry(nil)"
+      ],
+      "negative_case_ids": [
+        "error_package_async_replay"
+      ],
+      "runtime_state_record_ids": [
+        "runtime-state.error-bridge",
+        "runtime-state.package-replay"
+      ],
+      "source_graph_record_ids": [
+        "source-graph.error-bridge",
+        "source-graph.package-replay"
+      ],
+      "debug_map_record_ids": [
+        "debug-map.error-bridge",
+        "debug-map.package-replay"
+      ],
+      "abi_record_ids": [
+        "abi.error-bridge",
+        "abi.package-replay"
+      ],
+      "runtime_source_debug_link_ids": [
+        "runtime-source-debug.error-bridge",
+        "runtime-source-debug.package-replay"
+      ]
+    }
+  ]
+}

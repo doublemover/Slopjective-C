@@ -132,6 +132,18 @@ class Objc3IRCanonicalLiteralPoolCollector {
         CollectSelectorExpr(expr->right.get());
         CollectSelectorExpr(expr->third.get());
         return;
+      case Expr::Kind::CollectionLiteral:
+        for (const auto &key : expr->collection_keys) {
+          CollectSelectorExpr(key.get());
+        }
+        for (const auto &value : expr->collection_values) {
+          CollectSelectorExpr(value.get());
+        }
+        return;
+      case Expr::Kind::IndexAccess:
+        CollectSelectorExpr(expr->left.get());
+        CollectSelectorExpr(expr->right.get());
+        return;
       case Expr::Kind::Call:
       case Expr::Kind::Try:
       case Expr::Kind::Throw:
@@ -159,6 +171,13 @@ class Objc3IRCanonicalLiteralPoolCollector {
       case Stmt::Kind::Assign:
         if (stmt->assign_stmt != nullptr) {
           CollectSelectorExpr(stmt->assign_stmt->value.get());
+        }
+        return;
+      case Stmt::Kind::CollectionMutation:
+        if (stmt->collection_mutation_stmt != nullptr) {
+          CollectSelectorExpr(
+              stmt->collection_mutation_stmt->key_or_index.get());
+          CollectSelectorExpr(stmt->collection_mutation_stmt->value.get());
         }
         return;
       case Stmt::Kind::Return:
@@ -200,6 +219,15 @@ class Objc3IRCanonicalLiteralPoolCollector {
         CollectSelectorExpr(stmt->for_stmt->condition.get());
         CollectSelectorExpr(stmt->for_stmt->step.value.get());
         for (const auto &loop_stmt : stmt->for_stmt->body) {
+          CollectSelectorStmt(loop_stmt.get());
+        }
+        return;
+      case Stmt::Kind::ForIn:
+        if (stmt->for_in_stmt == nullptr) {
+          return;
+        }
+        CollectSelectorExpr(stmt->for_in_stmt->collection.get());
+        for (const auto &loop_stmt : stmt->for_in_stmt->body) {
           CollectSelectorStmt(loop_stmt.get());
         }
         return;

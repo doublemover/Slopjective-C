@@ -2,8 +2,10 @@
     case Stmt::Kind::Let:
     case Stmt::Kind::DoWhile:
     case Stmt::Kind::For:
+    case Stmt::Kind::ForIn:
     case Stmt::Kind::Switch:
     case Stmt::Kind::While:
+    case Stmt::Kind::CollectionMutation:
     case Stmt::Kind::Empty:
     case Stmt::Kind::Expr:
       return false;

@@ -37,6 +37,7 @@ PACKAGING_CHANNEL_ACTION_CONTRACTS: tuple[ReleaseGovernanceActionContract, ...] 
         "packaging-channels",
         "nightly",
         "portable archive installer image and offline bundle generation stay executable on the live release surface",
+        pass_through_args=True,
     ),
     ReleaseGovernanceActionContract(
         "validate-packaging-channels-end-to-end",
@@ -45,6 +46,7 @@ PACKAGING_CHANNEL_ACTION_CONTRACTS: tuple[ReleaseGovernanceActionContract, ...] 
         "packaging-channels",
         "full",
         "packaging-channel artifacts stay installable revert-safe and offline-bootstrappable under temp-owned roots",
+        pass_through_args=True,
     ),
     ReleaseGovernanceActionContract(
         "build-platform-support-matrix",

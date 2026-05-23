@@ -163,10 +163,6 @@ def assert_parser_manifest_tracks_strict_rejection_cases(
 
 def assert_unsupported_feature_claim_sidecars_are_compile_rejections() -> None:
     expected_tokens = {
-        "unsupported_feature_claim_throws": (
-            "unsupported feature claim: 'throws' is not yet runnable in "
-            "Objective-C 3 native mode"
-        ),
         "unsupported_feature_claim_arc_parameter_ownership": (
             "unsupported feature claim: ARC ownership qualifiers are not yet runnable "
             "in Objective-C 3 native mode"
@@ -186,6 +182,20 @@ def assert_unsupported_feature_claim_sidecars_are_compile_rejections() -> None:
         assert "O3S221" in tokens
         assert message in tokens
         assert sidecar["execution"]["requires_live_runtime_dispatch"] is False
+
+
+def assert_throwing_call_requires_try_sidecar_is_compile_rejection() -> None:
+    source = NEGATIVE_EXECUTION / "throwing_call_requires_try_negative.objc3"
+    sidecar = read_json(
+        NEGATIVE_EXECUTION / "throwing_call_requires_try_negative.meta.json"
+    )
+    assert_path_exists(source)
+    assert sidecar["fixture"] == source.name
+    assert sidecar["expect_failure"]["stage"] == "compile"
+    tokens = sidecar["expect_failure"]["required_diagnostic_tokens"]
+    assert "O3S341" in tokens
+    assert "throwing function 'risky' must be called with try, try?, or try!" in tokens
+    assert sidecar["execution"]["requires_live_runtime_dispatch"] is False
 
 
 def assert_retired_unsupported_feature_claim_duplicates_are_absent() -> None:

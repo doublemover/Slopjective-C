@@ -19,6 +19,12 @@ static void CollectOwnershipBorrowedEscapeExprSites(
                                       profile);
   CollectOwnershipBorrowedEscapeExprSites(expr->third.get(), callable_contracts,
                                       profile);
+  for (const auto &key : expr->collection_keys) {
+    CollectOwnershipBorrowedEscapeExprSites(key.get(), callable_contracts, profile);
+  }
+  for (const auto &value : expr->collection_values) {
+    CollectOwnershipBorrowedEscapeExprSites(value.get(), callable_contracts, profile);
+  }
   for (const auto &arg : expr->args) {
     CollectOwnershipBorrowedEscapeExprSites(arg.get(), callable_contracts, profile);
   }
@@ -89,6 +95,14 @@ static void CollectOwnershipBorrowedEscapeStmtSites(
         }
       }
       return;
+    case Stmt::Kind::ForIn:
+      if (stmt->for_in_stmt != nullptr) {
+        CollectOwnershipBorrowedEscapeExprSites(stmt->for_in_stmt->collection.get(), callable_contracts, profile);
+        for (const auto &body_stmt : stmt->for_in_stmt->body) {
+          CollectOwnershipBorrowedEscapeStmtSites(body_stmt.get(), callable_contracts, profile);
+        }
+      }
+      return;
     case Stmt::Kind::Switch:
       if (stmt->switch_stmt != nullptr) {
         CollectOwnershipBorrowedEscapeExprSites(stmt->switch_stmt->condition.get(),
@@ -124,6 +138,12 @@ static void CollectOwnershipBorrowedEscapeStmtSites(
       if (stmt->expr_stmt != nullptr) {
         CollectOwnershipBorrowedEscapeExprSites(stmt->expr_stmt->value.get(),
                                             callable_contracts, profile);
+      }
+      return;
+    case Stmt::Kind::CollectionMutation:
+      if (stmt->collection_mutation_stmt != nullptr) {
+        CollectOwnershipBorrowedEscapeExprSites(stmt->collection_mutation_stmt->key_or_index.get(), callable_contracts, profile);
+        CollectOwnershipBorrowedEscapeExprSites(stmt->collection_mutation_stmt->value.get(), callable_contracts, profile);
       }
       return;
     case Stmt::Kind::Break:

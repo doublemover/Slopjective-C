@@ -107,6 +107,7 @@ std::string Objc3Lexer::ConsumeNumber() {
 bool Objc3Lexer::ConsumeStringLiteral(
     std::string &token_text, std::vector<std::string> &diagnostics) {
   token_text.clear();
+  const std::size_t token_begin = index_;
   const unsigned token_line = line_;
   const unsigned token_column = column_;
   Advance();
@@ -114,6 +115,7 @@ bool Objc3Lexer::ConsumeStringLiteral(
   std::string value;
   bool terminated = false;
   bool invalid = false;
+  bool has_interpolation = false;
   while (index_ < source_.size()) {
     const char current = source_[index_];
     if (current == '"') {
@@ -145,6 +147,59 @@ bool Objc3Lexer::ConsumeStringLiteral(
       }
       const char escaped = source_[index_];
       switch (escaped) {
+        case '(':
+          has_interpolation = true;
+          Advance();
+          {
+            int interpolation_depth = 1;
+            bool interpolation_terminated = false;
+            bool expression_has_token = false;
+            while (index_ < source_.size()) {
+              const char interpolation_current = source_[index_];
+              if (interpolation_current == '\n' ||
+                  interpolation_current == '"') {
+                break;
+              }
+              if (interpolation_current == '\\' &&
+                  index_ + 1u < source_.size() &&
+                  source_[index_ + 1u] == '(') {
+                diagnostics.push_back(MakeDiag(
+                    line_, column_, "O3L011",
+                    "nested string interpolation is unsupported"));
+                invalid = true;
+                Advance();
+                continue;
+              }
+              if (interpolation_current == '(') {
+                ++interpolation_depth;
+              } else if (interpolation_current == ')') {
+                --interpolation_depth;
+                if (interpolation_depth == 0) {
+                  Advance();
+                  interpolation_terminated = true;
+                  break;
+                }
+              } else if (!std::isspace(
+                             static_cast<unsigned char>(
+                                 interpolation_current))) {
+                expression_has_token = true;
+              }
+              Advance();
+            }
+            if (!interpolation_terminated) {
+              diagnostics.push_back(MakeDiag(
+                  escape_line, escape_column, "O3L011",
+                  "unterminated string interpolation; expected ')'"));
+              return false;
+            }
+            if (!expression_has_token) {
+              diagnostics.push_back(MakeDiag(
+                  escape_line, escape_column, "O3L011",
+                  "empty string interpolation payload is unsupported"));
+              invalid = true;
+            }
+          }
+          continue;
         case 'n':
           value.push_back('\n');
           break;
@@ -190,7 +245,11 @@ bool Objc3Lexer::ConsumeStringLiteral(
   if (invalid) {
     return false;
   }
-  token_text = EscapeObjc3StringTokenText(value);
+  if (has_interpolation) {
+    token_text = source_.substr(token_begin, index_ - token_begin);
+  } else {
+    token_text = EscapeObjc3StringTokenText(value);
+  }
   return true;
 }
 

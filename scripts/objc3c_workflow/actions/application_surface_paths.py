@@ -21,6 +21,7 @@ CONFORMANCE_MINIMA_PS1 = ROOT / "scripts" / "check_conformance_suite.ps1"
 RUNNABLE_CONFORMANCE_CORPUS_E2E_PY = (
     ROOT / "scripts" / "check_objc3c_runnable_conformance_corpus_end_to_end.py"
 )
+CROSS_LANE_E2E_PY = ROOT / "scripts" / "check_objc3c_cross_lane_e2e.py"
 
 STDLIB_SURFACE_PY = ROOT / "scripts" / "check_stdlib_surface.py"
 MATERIALIZE_STDLIB_PY = ROOT / "scripts" / "materialize_objc3c_stdlib_workspace.py"

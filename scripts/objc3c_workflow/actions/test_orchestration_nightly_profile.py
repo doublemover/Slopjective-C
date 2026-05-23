@@ -68,22 +68,22 @@ TEST_NIGHTLY_PROFILE = TestOrchestrationProfile(
         ),
         workflow_step(
             "validate-release-foundation",
-            workflow_action("validate-release-foundation"),
+            workflow_action("validate-release-foundation", "--reuse-upstream-report"),
             source_owner="test_orchestration_commands",
         ),
         workflow_step(
             "validate-packaging-channels",
-            workflow_action("validate-packaging-channels"),
+            workflow_action("validate-packaging-channels", "--reuse-upstream-report"),
             source_owner="test_orchestration_commands",
         ),
         workflow_step(
             "validate-release-operations",
-            workflow_action("validate-release-operations"),
+            workflow_action("validate-release-operations", "--reuse-upstream-report"),
             source_owner="test_orchestration_commands",
         ),
         workflow_step(
             "validate-distribution-credibility",
-            workflow_action("validate-distribution-credibility"),
+            workflow_action("validate-distribution-credibility", "--reuse-upstream-report"),
             source_owner="test_orchestration_commands",
         ),
         workflow_step(

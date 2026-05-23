@@ -21,6 +21,8 @@ static SemanticTypeInfo ValidateMessageSendExpr(const Expr *expr,
 
 #include "sema/objc3_semantic_passes_generic_function_call_substitution.inc"
 
+#include "sema/objc3_semantic_passes_collection_type_helpers.inc"
+
 static SemanticTypeInfo ValidateExpr(const Expr *expr, const std::vector<SemanticScope> &scopes,
                                      const std::unordered_map<std::string, ValueType> &globals,
                                      const std::unordered_map<std::string, FunctionInfo> &functions,

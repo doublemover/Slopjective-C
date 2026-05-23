@@ -22,8 +22,10 @@ def assert_dispatch_fast_path_compile_surfaces(
     )
     expect("direct_dispatch_call_sites=5" in ll_text,
            "expected mixed dispatch fixture to emit five direct dispatch calls")
-    expect("runtime_dispatch_call_sites=1" in ll_text,
-           "expected mixed dispatch fixture to emit one live runtime dispatch call")
+    expect("runtime_dispatch_call_sites=0" in ll_text,
+           "expected mixed dispatch fixture to route eligible i32 sends through cache-aware dispatch")
+    expect("cache_aware_dispatch_call_sites=1" in ll_text,
+           "expected mixed dispatch fixture to emit one cache-aware runtime dispatch call")
     expect("selector_pool_gep_sites=1" in ll_text,
            "expected mixed dispatch fixture to materialize one selector thunk gep")
     expect("selector_pool_count=4" in ll_text,
@@ -36,8 +38,8 @@ def assert_dispatch_fast_path_compile_surfaces(
            "expected explicit direct calls to lower as exact direct LLVM calls")
     expect("call i32 @objc3_method_PolicyBox_class_callers()" in ll_text,
            "expected runFixture to preserve direct class-method dispatch to callers")
-    expect("call i32 @objc3_runtime_dispatch_i32(" in ll_text,
-           "expected dynamicEscape lowering to retain the live runtime dispatch call")
+    expect("call { i32, i32, i32, i32, i32, ptr, ptr, ptr, ptr, ptr } @objc3_runtime_cache_aware_dispatch_i32_checked(" in ll_text,
+           "expected dynamicEscape lowering to retain the checked live runtime dispatch call")
     expect("@__objc3_sec_selector_pool" in ll_text,
            "expected mixed dispatch fixture to emit the selector pool section root")
     lowering_surface = manifest.get("dispatch_and_synthesized_accessor_lowering_surface", {})

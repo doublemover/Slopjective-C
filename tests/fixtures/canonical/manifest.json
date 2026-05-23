@@ -288,6 +288,24 @@
       "executable_command": "npm run objc3c -- validate-stdlib-foundation"
     },
     {
+      "claim_id": "objc3c.behavior.language.collections.literal-syntax-runtime-backed",
+      "owner_phase": "lowering",
+      "behavior_fixture": "tests/tooling/fixtures/native/execution/positive/collection_literals_mutation_for_in.objc3",
+      "executable_command": "npm run objc3c -- test-execution-smoke"
+    },
+    {
+      "claim_id": "objc3c.behavior.language.collections.mutation-syntax-runtime-backed",
+      "owner_phase": "lowering",
+      "behavior_fixture": "tests/tooling/fixtures/native/execution/positive/collection_literals_mutation_for_in.objc3",
+      "executable_command": "npm run objc3c -- test-execution-smoke"
+    },
+    {
+      "claim_id": "objc3c.behavior.language.collections.for-in-syntax-runtime-backed",
+      "owner_phase": "lowering",
+      "behavior_fixture": "tests/tooling/fixtures/native/execution/positive/collection_literals_mutation_for_in.objc3",
+      "executable_command": "npm run objc3c -- test-execution-smoke"
+    },
+    {
       "claim_id": "objc3c.behavior.stdlib.concurrency-runtime-v1",
       "owner_phase": "runtime",
       "behavior_fixture": "tests/tooling/fixtures/native/execution/positive/stdlib_concurrency_runtime_helpers.objc3",
@@ -330,10 +348,40 @@
       "executable_command": "npm run objc3c -- validate-stdlib-foundation"
     },
     {
+      "claim_id": "objc3c.behavior.stdlib.text.unicode-scalar-iteration",
+      "owner_phase": "runtime",
+      "behavior_fixture": "tests/tooling/fixtures/native/execution/positive/stdlib_foundation_next_text_helpers.objc3",
+      "executable_command": "npm run objc3c -- validate-stdlib-foundation"
+    },
+    {
+      "claim_id": "objc3c.behavior.stdlib.text.basic-formatting",
+      "owner_phase": "runtime",
+      "behavior_fixture": "tests/tooling/fixtures/native/execution/positive/stdlib_foundation_next_text_helpers.objc3",
+      "executable_command": "npm run objc3c -- validate-stdlib-foundation"
+    },
+    {
+      "claim_id": "objc3c.behavior.stdlib.text.equality-comparison",
+      "owner_phase": "runtime",
+      "behavior_fixture": "tests/tooling/fixtures/native/execution/positive/stdlib_foundation_next_text_helpers.objc3",
+      "executable_command": "npm run objc3c -- validate-stdlib-foundation"
+    },
+    {
+      "claim_id": "objc3c.behavior.stdlib.text.runtime-builder-interpolation",
+      "owner_phase": "runtime",
+      "behavior_fixture": "tests/tooling/fixtures/native/execution/positive/stdlib_foundation_next_text_helpers.objc3",
+      "executable_command": "npm run objc3c -- validate-stdlib-foundation"
+    },
+    {
       "claim_id": "objc3c.behavior.language.text.source-string-literal-text-shape-handle",
       "owner_phase": "lowering",
       "behavior_fixture": "tests/tooling/fixtures/native/execution/positive/source_string_literal_text_shape_handle.objc3",
       "executable_command": "npm run objc3c -- compile-objc3c tests/tooling/fixtures/native/execution/positive/source_string_literal_text_shape_handle.objc3"
+    },
+    {
+      "claim_id": "objc3c.behavior.language.text.source-string-interpolation",
+      "owner_phase": "lowering",
+      "behavior_fixture": "tests/tooling/fixtures/native/execution/positive/source_string_interpolation_text_i32.objc3",
+      "executable_command": "npm run objc3c -- test-execution-smoke"
     },
     {
       "claim_id": "objc3c.behavior.stdlib.concurrency.public-task-spawn-api",
@@ -432,6 +480,18 @@
       "executable_command": "npm run objc3c -- validate-semantic-optimization-pipeline"
     },
     {
+      "claim_id": "objc3c.behavior.semantic_optimization.exact_target_devirtualization",
+      "owner_phase": "ir",
+      "behavior_fixture": "tests/tooling/fixtures/semantic_optimization_pipeline/pipeline.json",
+      "executable_command": "npm run objc3c -- validate-semantic-optimization-pipeline"
+    },
+    {
+      "claim_id": "objc3c.behavior.runtime.cache-aware-dispatch",
+      "owner_phase": "ir",
+      "behavior_fixture": "tests/native/ir/optimization/semantic_pipeline_cache_aware_dispatch.ll",
+      "executable_command": "npm run objc3c -- validate-semantic-optimization-pipeline"
+    },
+    {
       "claim_id": "objc3c.behavior.runtime.debug_trace",
       "owner_phase": "e2e",
       "behavior_fixture": "tests/tooling/fixtures/developer_tooling/runtime_debug_trace/contract.json",
@@ -478,6 +538,24 @@
       "owner_phase": "e2e",
       "behavior_fixture": "showcase/applicationFrameworkSamples/apps/asyncRuntimeConsole/main.objc3",
       "executable_command": "npm run objc3c -- validate-application-framework-samples"
+    },
+    {
+      "claim_id": "objc3c.behavior.stdlib.collections.generic-type-model",
+      "owner_phase": "sema",
+      "behavior_fixture": "tests/tooling/fixtures/stdlib_collections/generic_collection_type_model_contract.json",
+      "executable_command": "npm run objc3c -- validate-conformance-corpus"
+    },
+    {
+      "claim_id": "objc3c.behavior.runtime.collections.type-descriptors",
+      "owner_phase": "sema",
+      "behavior_fixture": "tests/tooling/fixtures/stdlib_collections/generic_collection_type_model_contract.json",
+      "executable_command": "npm run objc3c -- validate-conformance-corpus"
+    },
+    {
+      "claim_id": "objc3c.behavior.language.generics.collection-identity",
+      "owner_phase": "sema",
+      "behavior_fixture": "tests/tooling/fixtures/stdlib_collections/generic_collection_type_model_contract.json",
+      "executable_command": "npm run objc3c -- validate-conformance-corpus"
     }
   ],
   "fixtures": [
@@ -1572,6 +1650,14 @@
       "expected_diagnostic_code": ""
     },
     {
+      "path": "tests/native/ir/optimization/semantic_pipeline_cache_aware_dispatch.ll",
+      "origin": "hand-authored",
+      "owner_phase": "ir",
+      "behavior_family": "semantic-optimization",
+      "fixture_kind": "positive",
+      "expected_diagnostic_code": ""
+    },
+    {
       "path": "tests/tooling/fixtures/developer_tooling/runtime_debug_trace/contract.json",
       "origin": "hand-authored",
       "owner_phase": "e2e",
@@ -1660,10 +1746,26 @@
       "expected_diagnostic_code": ""
     },
     {
+      "path": "tests/tooling/fixtures/native/execution/positive/source_string_interpolation_text_i32.objc3",
+      "origin": "hand-authored",
+      "owner_phase": "lowering",
+      "behavior_family": "language-text",
+      "fixture_kind": "positive",
+      "expected_diagnostic_code": ""
+    },
+    {
       "path": "tests/tooling/fixtures/native/execution/positive/stdlib_foundation_next_collections_helpers.objc3",
       "origin": "hand-authored",
       "owner_phase": "runtime",
       "behavior_family": "stdlib",
+      "fixture_kind": "positive",
+      "expected_diagnostic_code": ""
+    },
+    {
+      "path": "tests/tooling/fixtures/native/execution/positive/collection_literals_mutation_for_in.objc3",
+      "origin": "hand-authored",
+      "owner_phase": "lowering",
+      "behavior_family": "language-collections",
       "fixture_kind": "positive",
       "expected_diagnostic_code": ""
     },
@@ -1698,6 +1800,22 @@
       "behavior_family": "stdlib",
       "fixture_kind": "negative",
       "expected_diagnostic_code": "O3S206"
+    },
+    {
+      "path": "tests/tooling/fixtures/native/execution/negative/collection_literal_immutable_mutation.objc3",
+      "origin": "hand-authored",
+      "owner_phase": "lowering",
+      "behavior_family": "language-collections",
+      "fixture_kind": "negative",
+      "expected_diagnostic_code": "O3L300"
+    },
+    {
+      "path": "tests/tooling/fixtures/stdlib_collections/generic_collection_type_model_contract.json",
+      "origin": "hand-authored",
+      "owner_phase": "sema",
+      "behavior_family": "stdlib-collections-generic-type-model",
+      "fixture_kind": "positive",
+      "expected_diagnostic_code": ""
     }
   ]
 }

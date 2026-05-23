@@ -6,8 +6,8 @@
       "case_id": "canonical-governance",
       "governance": "tests/tooling/fixtures/release_foundation/abi_api_governance.json",
       "expected_status": "PASS",
-      "expected_public_api_symbol_count": 103,
-      "expected_runtime_abi_symbol_count": 50,
+      "expected_public_api_symbol_count": 150,
+      "expected_runtime_abi_symbol_count": 76,
       "expected_frontend_c_api_symbol_count": 33,
       "expected_governed_symbol_surface_count": 12,
       "expected_compiler_artifact_schema_count": 6

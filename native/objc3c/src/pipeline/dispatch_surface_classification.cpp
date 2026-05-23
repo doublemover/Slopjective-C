@@ -94,6 +94,16 @@ void NormalizeDispatchSurfaceStatements(
                                        inside_method, is_class_method);
         }
         break;
+      case Stmt::Kind::CollectionMutation:
+        if (stmt->collection_mutation_stmt != nullptr) {
+          NormalizeDispatchSurfaceExpr(
+              stmt->collection_mutation_stmt->key_or_index.get(), class_names,
+              inside_method, is_class_method);
+          NormalizeDispatchSurfaceExpr(
+              stmt->collection_mutation_stmt->value.get(), class_names,
+              inside_method, is_class_method);
+        }
+        break;
       case Stmt::Kind::Return:
         if (stmt->return_stmt != nullptr) {
           NormalizeDispatchSurfaceExpr(stmt->return_stmt->value.get(), class_names,
@@ -128,6 +138,16 @@ void NormalizeDispatchSurfaceStatements(
                                        inside_method, is_class_method);
           NormalizeDispatchSurfaceStatements(stmt->for_stmt->body, class_names,
                                              inside_method, is_class_method);
+        }
+        break;
+      case Stmt::Kind::ForIn:
+        if (stmt->for_in_stmt != nullptr) {
+          NormalizeDispatchSurfaceExpr(
+              stmt->for_in_stmt->collection.get(), class_names, inside_method,
+              is_class_method);
+          NormalizeDispatchSurfaceStatements(stmt->for_in_stmt->body,
+                                             class_names, inside_method,
+                                             is_class_method);
         }
         break;
       case Stmt::Kind::Switch:
@@ -187,6 +207,14 @@ void NormalizeDispatchSurfaceExpr(Expr *expr,
                                is_class_method);
   for (const auto &arg : expr->args) {
     NormalizeDispatchSurfaceExpr(arg.get(), class_names, inside_method,
+                                 is_class_method);
+  }
+  for (const auto &key : expr->collection_keys) {
+    NormalizeDispatchSurfaceExpr(key.get(), class_names, inside_method,
+                                 is_class_method);
+  }
+  for (const auto &value : expr->collection_values) {
+    NormalizeDispatchSurfaceExpr(value.get(), class_names, inside_method,
                                  is_class_method);
   }
 

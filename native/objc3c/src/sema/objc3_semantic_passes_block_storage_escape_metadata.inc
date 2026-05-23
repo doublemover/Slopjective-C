@@ -71,6 +71,12 @@ static void CollectBlockStorageEscapeSiteMetadataFromExpr(
   CollectBlockStorageEscapeSiteMetadataFromExpr(expr->left.get(), sites);
   CollectBlockStorageEscapeSiteMetadataFromExpr(expr->right.get(), sites);
   CollectBlockStorageEscapeSiteMetadataFromExpr(expr->third.get(), sites);
+  for (const auto &key : expr->collection_keys) {
+    CollectBlockStorageEscapeSiteMetadataFromExpr(key.get(), sites);
+  }
+  for (const auto &value : expr->collection_values) {
+    CollectBlockStorageEscapeSiteMetadataFromExpr(value.get(), sites);
+  }
   for (const auto &arg : expr->args) {
     CollectBlockStorageEscapeSiteMetadataFromExpr(arg.get(), sites);
   }
@@ -118,6 +124,10 @@ static void CollectBlockStorageEscapeSiteMetadataFromStatement(
       CollectBlockStorageEscapeSiteMetadataFromForClause(stmt->for_stmt->step, sites);
       CollectBlockStorageEscapeSiteMetadataFromStatements(stmt->for_stmt->body, sites);
       return;
+    case Stmt::Kind::ForIn:
+      CollectBlockStorageEscapeSiteMetadataFromExpr(stmt->for_in_stmt->collection.get(), sites);
+      CollectBlockStorageEscapeSiteMetadataFromStatements(stmt->for_in_stmt->body, sites);
+      return;
     case Stmt::Kind::Switch:
       CollectBlockStorageEscapeSiteMetadataFromExpr(stmt->switch_stmt->condition.get(), sites);
       for (const auto &switch_case : stmt->switch_stmt->cases) {
@@ -134,6 +144,10 @@ static void CollectBlockStorageEscapeSiteMetadataFromStatement(
       return;
     case Stmt::Kind::Expr:
       CollectBlockStorageEscapeSiteMetadataFromExpr(stmt->expr_stmt->value.get(), sites);
+      return;
+    case Stmt::Kind::CollectionMutation:
+      CollectBlockStorageEscapeSiteMetadataFromExpr(stmt->collection_mutation_stmt->key_or_index.get(), sites);
+      CollectBlockStorageEscapeSiteMetadataFromExpr(stmt->collection_mutation_stmt->value.get(), sites);
       return;
     case Stmt::Kind::Break:
     case Stmt::Kind::Continue:

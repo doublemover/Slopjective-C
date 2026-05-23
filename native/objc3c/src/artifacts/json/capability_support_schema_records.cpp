@@ -10,7 +10,7 @@ namespace {
 constexpr std::string_view kCapabilitySupportSchemaOwner =
     "native/objc3c/src/artifacts/json/capability_support_schema_records.cpp";
 
-constexpr std::array<CapabilitySupportSchemaRecord, 2>
+constexpr std::array<CapabilitySupportSchemaRecord, 3>
     kCapabilitySupportSchemaRecords{{
         {{"objc3c-capability-matrix-v1",
           "schema_version",
@@ -32,12 +32,23 @@ constexpr std::array<CapabilitySupportSchemaRecord, 2>
          "docs/support/evidence_map.json",
          "docs/support/evidence_map.md",
          "evidence-map"},
+        {{"objc3c-umbrella-readiness-v1",
+          "schema_version",
+          "objc3c-umbrella-readiness-v1",
+          "https://objc3c.dev/schemas/objc3c-umbrella-readiness-v1.schema.json",
+          "schemas/objc3c-umbrella-readiness-v1.schema.json",
+          kCapabilitySupportSchemaOwner,
+          "capability-support"},
+         "docs/support/umbrella_readiness.json",
+         "docs/support/umbrella_readiness.md",
+         "umbrella-readiness"},
     }};
 
-constexpr std::array<ArtifactSchemaContract, 2>
+constexpr std::array<ArtifactSchemaContract, 3>
     kCapabilitySupportSchemaContracts{{
         kCapabilitySupportSchemaRecords[0].contract,
         kCapabilitySupportSchemaRecords[1].contract,
+        kCapabilitySupportSchemaRecords[2].contract,
     }};
 
 }  // namespace

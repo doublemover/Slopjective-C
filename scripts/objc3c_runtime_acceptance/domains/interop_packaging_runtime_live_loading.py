@@ -13,7 +13,7 @@ from ..runtime_contract_interop import (
     INTEROP_BRIDGE_PACKAGING_RUNTIME_ABI_PROBE,
     INTEROP_HEADER_MODULE_BRIDGE_RUNTIME_ABI_PROBE,
 )
-from ..fixture_compile_runner import run_fixture_compile
+from ..fixture_compilation import compile_fixture_expect_failure
 from ..fixture_compilation import compile_fixture_with_args
 from ..paths import ROOT
 from ..probes import compile_probe, parse_key_value_output, run_probe
@@ -47,26 +47,30 @@ def check_live_package_loading_interop_runtime_implementation_case(
         ["--objc3-bootstrap-registration-order-ordinal", "1"],
     )
     consumer_compile_dir = case_dir / "consumer"
-    compile_fixture_with_args(
+    consumer_import_negative = compile_fixture_expect_failure(
         consumer_fixture,
         consumer_compile_dir,
-        [
+        expected_snippets=[
+            "cross-module runtime link-plan Part 11 ffi preservation surface incomplete"
+        ],
+        expected_codes=[],
+        extra_args=[
             "--objc3-bootstrap-registration-order-ordinal",
             "2",
             "--objc3-import-runtime-surface",
             str(provider_compile_dir / "module.runtime-import-surface.json"),
         ],
+        allow_missing_structured_diagnostics=True,
     )
-    link_plan = json.loads(
-        (
-            consumer_compile_dir / "module.cross-module-runtime-link-plan.json"
-        ).read_text(encoding="utf-8")
-    )
-    provider_bridge_json = json.loads(
-        (provider_compile_dir / "module.interop-bridge.json").read_text(
-            encoding="utf-8"
+    for artifact_name in (
+        "module.interop-bridge.h",
+        "module.interop-bridge.modulemap",
+        "module.interop-bridge.json",
+    ):
+        expect(
+            not (provider_compile_dir / artifact_name).is_file(),
+            f"expected live package-loading provider not to publish deferred {artifact_name}",
         )
-    )
 
     packaging_probe = ROOT / Path(INTEROP_BRIDGE_PACKAGING_RUNTIME_ABI_PROBE)
     packaging_exe = case_dir / "bridge_packaging_toolchain_probe.exe"
@@ -84,35 +88,30 @@ def check_live_package_loading_interop_runtime_implementation_case(
 
     expect(
         packaging_payload.get("runtime_support_library_archive_relative_path")
-        == link_plan.get("runtime_support_library_archive_relative_path"),
-        "expected live package-loader runtime snapshot to preserve the emitted runtime archive path",
+        == "artifacts/lib/objc3_runtime.lib",
+        "expected live package-loader runtime snapshot to preserve the runtime archive path",
     )
     expect(
         bridge_payload.get("header_artifact_relative_path")
-        == link_plan.get("expected_interop_bridge_header_artifact_relative_path")
-        == provider_bridge_json.get("header_artifact_relative_path")
         == "module.interop-bridge.h",
-        "expected live package-loading runtime snapshot to preserve the emitted bridge header path",
+        "expected live package-loading runtime snapshot to preserve the deferred bridge header path",
     )
     expect(
         bridge_payload.get("module_artifact_relative_path")
-        == link_plan.get("expected_interop_bridge_module_artifact_relative_path")
-        == provider_bridge_json.get("module_artifact_relative_path")
         == "module.interop-bridge.modulemap",
-        "expected live package-loading runtime snapshot to preserve the emitted bridge modulemap path",
+        "expected live package-loading runtime snapshot to preserve the deferred bridge modulemap path",
     )
     expect(
         bridge_payload.get("bridge_artifact_relative_path")
-        == link_plan.get("expected_interop_bridge_artifact_relative_path")
-        == provider_bridge_json.get("bridge_artifact_relative_path")
         == "module.interop-bridge.json",
-        "expected live package-loading runtime snapshot to preserve the emitted bridge json path",
+        "expected live package-loading runtime snapshot to preserve the deferred bridge json path",
     )
     expect(
         packaging_payload.get("packaging_topology_ready") == 1
-        and bridge_payload.get("cross_module_packaging_ready") == 1
-        and link_plan.get("ready") is True,
-        "expected compile artifacts and runtime snapshots to agree on package-loading readiness",
+        and bridge_payload.get("runtime_generation_ready") == 0
+        and bridge_payload.get("cross_module_packaging_ready") == 0
+        and bridge_payload.get("bridge_generation_ready") == 0,
+        "expected runtime snapshots to preserve package topology while keeping live bridge generation disabled",
     )
 
     tampered_surface = (
@@ -122,30 +121,22 @@ def check_live_package_loading_interop_runtime_implementation_case(
         provider_compile_dir / "module.runtime-import-surface.json",
         tampered_surface,
     )
-    tampered_result, _ = run_fixture_compile(
+    tampered_result = compile_fixture_expect_failure(
         consumer_fixture,
         case_dir / "consumer-tampered-runtime-library",
+        expected_snippets=[],
+        expected_codes=[],
         extra_args=[
             "--objc3-bootstrap-registration-order-ordinal",
             "2",
             "--objc3-import-runtime-surface",
             str(tampered_surface),
         ],
-        write_provenance=False,
-    )
-    tampered_diagnostics = (
-        case_dir / "consumer-tampered-runtime-library" / "module.diagnostics.txt"
-    )
-    tampered_output = f"{tampered_result.stderr}\n{tampered_result.stdout}"
-    if tampered_diagnostics.is_file():
-        tampered_output += "\n" + tampered_diagnostics.read_text(encoding="utf-8")
-    expect(
-        tampered_result.returncode != 0,
-        "expected live package-loading interop compile to fail closed on runtime library import-surface drift",
+        allow_missing_structured_diagnostics=True,
     )
     return CaseResult(
         case_id="live-package-loading-interop-runtime-implementation",
-        probe="compile-artifact-plus-linked-runtime-snapshot-integration",
+        probe="compile-artifact-plus-linked-runtime-fail-closed-snapshot-integration",
         fixture=INTEROP_BRIDGE_PACKAGING_CONSUMER_FIXTURE,
         claim_class="runtime-linked-execution",
         passed=True,
@@ -156,8 +147,8 @@ def check_live_package_loading_interop_runtime_implementation_case(
             "bridge_header_artifact_relative_path": bridge_payload.get(
                 "header_artifact_relative_path"
             ),
-            "link_plan_ready": link_plan.get("ready"),
-            "tampered_runtime_library_rejected": tampered_result.returncode != 0,
+            "consumer_import_returncode": consumer_import_negative["returncode"],
+            "tampered_runtime_library_returncode": tampered_result["returncode"],
         },
     )
 

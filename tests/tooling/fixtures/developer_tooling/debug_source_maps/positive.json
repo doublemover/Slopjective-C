@@ -1,0 +1,1852 @@
+{
+  "contract_id": "objc3c.debug-source-maps.v1",
+  "source": {
+    "path": "tests/tooling/fixtures/developer_tooling/debug_source_maps/source.objc3",
+    "sha256": "c415f0827bf97aad27e7a538d7ac8a3df6b0f8b43741c013145e4c09cf990f7b"
+  },
+  "debug_policy": {
+    "statement_stepping_requested": false,
+    "statement_stepping_supported": false,
+    "reserved_capabilities": [
+      "runtime.debug-trace.statement-stepping",
+      "runtime.debug-trace.lldb-plugin"
+    ]
+  },
+  "required_record_kinds": [
+    "module",
+    "declaration",
+    "statement",
+    "expression",
+    "function",
+    "method",
+    "message-send",
+    "property-access",
+    "generated-accessor",
+    "macro-expansion",
+    "runtime-helper-call",
+    "stdlib-lowering-call",
+    "async-suspension-point",
+    "error-bridge-edge",
+    "ownership-cleanup-edge",
+    "optimization-transform-edge"
+  ],
+  "capabilities": {
+    "rows": [
+      {
+        "row_id": "compiler.artifacts.source-map",
+        "status": "supported",
+        "evidence": [
+          "source_maps"
+        ]
+      },
+      {
+        "row_id": "compiler.artifacts.native-line-table",
+        "status": "supported",
+        "evidence": [
+          "native_line_tables"
+        ]
+      },
+      {
+        "row_id": "tooling.debug.debug-map",
+        "status": "supported",
+        "evidence": [
+          "debug_maps"
+        ]
+      },
+      {
+        "row_id": "runtime.debug-trace.statement-stepping",
+        "status": "reserved",
+        "evidence": [
+          "debug_policy.reserved_capabilities"
+        ]
+      },
+      {
+        "row_id": "runtime.debug-trace.lldb-plugin",
+        "status": "reserved",
+        "evidence": [
+          "debug_policy.reserved_capabilities"
+        ]
+      }
+    ]
+  },
+  "source_graph": {
+    "graph_id": "debug-source-map.fixture.source-graph",
+    "nodes": [
+      {
+        "id": "src.node.module",
+        "symbol": "DebugMaps.Foundation",
+        "kind": "module",
+        "source_digest": "c415f0827bf97aad27e7a538d7ac8a3df6b0f8b43741c013145e4c09cf990f7b",
+        "package_boundary_id": "pkg.debugmaps.foundation",
+        "range": {
+          "line": 1,
+          "column": 9,
+          "end_line": 1,
+          "end_column": 29
+        }
+      },
+      {
+        "id": "src.node.declaration",
+        "symbol": "Box",
+        "kind": "declaration",
+        "source_digest": "c415f0827bf97aad27e7a538d7ac8a3df6b0f8b43741c013145e4c09cf990f7b",
+        "package_boundary_id": "pkg.debugmaps.foundation",
+        "range": {
+          "line": 5,
+          "column": 7,
+          "end_line": 5,
+          "end_column": 10
+        }
+      },
+      {
+        "id": "src.node.statement",
+        "symbol": "value-binding",
+        "kind": "statement",
+        "source_digest": "c415f0827bf97aad27e7a538d7ac8a3df6b0f8b43741c013145e4c09cf990f7b",
+        "package_boundary_id": "pkg.debugmaps.foundation",
+        "range": {
+          "line": 19,
+          "column": 3,
+          "end_line": 19,
+          "end_column": 42
+        }
+      },
+      {
+        "id": "src.node.expression",
+        "symbol": "value-plus-one",
+        "kind": "expression",
+        "source_digest": "c415f0827bf97aad27e7a538d7ac8a3df6b0f8b43741c013145e4c09cf990f7b",
+        "package_boundary_id": "pkg.debugmaps.foundation",
+        "range": {
+          "line": 14,
+          "column": 10,
+          "end_line": 14,
+          "end_column": 19
+        }
+      },
+      {
+        "id": "src.node.function",
+        "symbol": "helper",
+        "kind": "function",
+        "source_digest": "c415f0827bf97aad27e7a538d7ac8a3df6b0f8b43741c013145e4c09cf990f7b",
+        "package_boundary_id": "pkg.debugmaps.foundation",
+        "range": {
+          "line": 13,
+          "column": 6,
+          "end_line": 13,
+          "end_column": 12
+        }
+      },
+      {
+        "id": "src.node.method",
+        "symbol": "Box.value",
+        "kind": "method",
+        "source_digest": "c415f0827bf97aad27e7a538d7ac8a3df6b0f8b43741c013145e4c09cf990f7b",
+        "package_boundary_id": "pkg.debugmaps.foundation",
+        "range": {
+          "line": 8,
+          "column": 8,
+          "end_line": 8,
+          "end_column": 13
+        }
+      },
+      {
+        "id": "src.node.message_send",
+        "symbol": "box.value",
+        "kind": "message-send",
+        "source_digest": "c415f0827bf97aad27e7a538d7ac8a3df6b0f8b43741c013145e4c09cf990f7b",
+        "package_boundary_id": "pkg.debugmaps.foundation",
+        "range": {
+          "line": 19,
+          "column": 34,
+          "end_line": 19,
+          "end_column": 43
+        }
+      },
+      {
+        "id": "src.node.property_access",
+        "symbol": "count",
+        "kind": "property-access",
+        "source_digest": "c415f0827bf97aad27e7a538d7ac8a3df6b0f8b43741c013145e4c09cf990f7b",
+        "package_boundary_id": "pkg.debugmaps.foundation",
+        "range": {
+          "line": 9,
+          "column": 12,
+          "end_line": 9,
+          "end_column": 17
+        }
+      },
+      {
+        "id": "src.node.generated_accessor",
+        "symbol": "Box.count.get",
+        "kind": "generated-accessor",
+        "source_digest": "c415f0827bf97aad27e7a538d7ac8a3df6b0f8b43741c013145e4c09cf990f7b",
+        "package_boundary_id": "pkg.debugmaps.foundation",
+        "range": {
+          "line": 6,
+          "column": 12,
+          "end_line": 6,
+          "end_column": 17
+        }
+      },
+      {
+        "id": "src.node.macro_expansion",
+        "symbol": "DebugAccessor",
+        "kind": "macro-expansion",
+        "source_digest": "c415f0827bf97aad27e7a538d7ac8a3df6b0f8b43741c013145e4c09cf990f7b",
+        "package_boundary_id": "pkg.debugmaps.foundation",
+        "range": {
+          "line": 3,
+          "column": 7,
+          "end_line": 3,
+          "end_column": 20
+        }
+      },
+      {
+        "id": "src.node.runtime_helper_call",
+        "symbol": "bridge",
+        "kind": "runtime-helper-call",
+        "source_digest": "c415f0827bf97aad27e7a538d7ac8a3df6b0f8b43741c013145e4c09cf990f7b",
+        "package_boundary_id": "pkg.debugmaps.foundation",
+        "range": {
+          "line": 21,
+          "column": 14,
+          "end_line": 21,
+          "end_column": 25
+        }
+      },
+      {
+        "id": "src.node.stdlib_lowering_call",
+        "symbol": "i32.add",
+        "kind": "stdlib-lowering-call",
+        "source_digest": "c415f0827bf97aad27e7a538d7ac8a3df6b0f8b43741c013145e4c09cf990f7b",
+        "package_boundary_id": "pkg.debugmaps.foundation",
+        "range": {
+          "line": 14,
+          "column": 16,
+          "end_line": 14,
+          "end_column": 17
+        }
+      },
+      {
+        "id": "src.node.async_suspension_point",
+        "symbol": "await suspend",
+        "kind": "async-suspension-point",
+        "source_digest": "c415f0827bf97aad27e7a538d7ac8a3df6b0f8b43741c013145e4c09cf990f7b",
+        "package_boundary_id": "pkg.debugmaps.foundation",
+        "range": {
+          "line": 20,
+          "column": 3,
+          "end_line": 20,
+          "end_column": 18
+        }
+      },
+      {
+        "id": "src.node.error_bridge_edge",
+        "symbol": "try bridge",
+        "kind": "error-bridge-edge",
+        "source_digest": "c415f0827bf97aad27e7a538d7ac8a3df6b0f8b43741c013145e4c09cf990f7b",
+        "package_boundary_id": "pkg.debugmaps.foundation",
+        "range": {
+          "line": 21,
+          "column": 10,
+          "end_line": 21,
+          "end_column": 25
+        }
+      },
+      {
+        "id": "src.node.ownership_cleanup_edge",
+        "symbol": "box.cleanup",
+        "kind": "ownership-cleanup-edge",
+        "source_digest": "c415f0827bf97aad27e7a538d7ac8a3df6b0f8b43741c013145e4c09cf990f7b",
+        "package_boundary_id": "pkg.debugmaps.foundation",
+        "range": {
+          "line": 22,
+          "column": 1,
+          "end_line": 22,
+          "end_column": 2
+        }
+      },
+      {
+        "id": "src.node.optimization_transform_edge",
+        "symbol": "helper.direct-dispatch",
+        "kind": "optimization-transform-edge",
+        "source_digest": "c415f0827bf97aad27e7a538d7ac8a3df6b0f8b43741c013145e4c09cf990f7b",
+        "package_boundary_id": "pkg.debugmaps.foundation",
+        "range": {
+          "line": 19,
+          "column": 15,
+          "end_line": 19,
+          "end_column": 41
+        }
+      }
+    ]
+  },
+  "language_service": {
+    "anchors": [
+      {
+        "anchor_id": "hover.module",
+        "kind": "hover",
+        "source_graph_node_id": "src.node.module",
+        "source_digest": "c415f0827bf97aad27e7a538d7ac8a3df6b0f8b43741c013145e4c09cf990f7b",
+        "symbol": "DebugMaps.Foundation"
+      },
+      {
+        "anchor_id": "definition.module",
+        "kind": "definition",
+        "source_graph_node_id": "src.node.module",
+        "source_digest": "c415f0827bf97aad27e7a538d7ac8a3df6b0f8b43741c013145e4c09cf990f7b",
+        "symbol": "DebugMaps.Foundation"
+      },
+      {
+        "anchor_id": "hover.declaration",
+        "kind": "hover",
+        "source_graph_node_id": "src.node.declaration",
+        "source_digest": "c415f0827bf97aad27e7a538d7ac8a3df6b0f8b43741c013145e4c09cf990f7b",
+        "symbol": "Box"
+      },
+      {
+        "anchor_id": "definition.declaration",
+        "kind": "definition",
+        "source_graph_node_id": "src.node.declaration",
+        "source_digest": "c415f0827bf97aad27e7a538d7ac8a3df6b0f8b43741c013145e4c09cf990f7b",
+        "symbol": "Box"
+      },
+      {
+        "anchor_id": "hover.statement",
+        "kind": "hover",
+        "source_graph_node_id": "src.node.statement",
+        "source_digest": "c415f0827bf97aad27e7a538d7ac8a3df6b0f8b43741c013145e4c09cf990f7b",
+        "symbol": "value-binding"
+      },
+      {
+        "anchor_id": "definition.statement",
+        "kind": "definition",
+        "source_graph_node_id": "src.node.statement",
+        "source_digest": "c415f0827bf97aad27e7a538d7ac8a3df6b0f8b43741c013145e4c09cf990f7b",
+        "symbol": "value-binding"
+      },
+      {
+        "anchor_id": "hover.expression",
+        "kind": "hover",
+        "source_graph_node_id": "src.node.expression",
+        "source_digest": "c415f0827bf97aad27e7a538d7ac8a3df6b0f8b43741c013145e4c09cf990f7b",
+        "symbol": "value-plus-one"
+      },
+      {
+        "anchor_id": "definition.expression",
+        "kind": "definition",
+        "source_graph_node_id": "src.node.expression",
+        "source_digest": "c415f0827bf97aad27e7a538d7ac8a3df6b0f8b43741c013145e4c09cf990f7b",
+        "symbol": "value-plus-one"
+      },
+      {
+        "anchor_id": "hover.function",
+        "kind": "hover",
+        "source_graph_node_id": "src.node.function",
+        "source_digest": "c415f0827bf97aad27e7a538d7ac8a3df6b0f8b43741c013145e4c09cf990f7b",
+        "symbol": "helper"
+      },
+      {
+        "anchor_id": "definition.function",
+        "kind": "definition",
+        "source_graph_node_id": "src.node.function",
+        "source_digest": "c415f0827bf97aad27e7a538d7ac8a3df6b0f8b43741c013145e4c09cf990f7b",
+        "symbol": "helper"
+      },
+      {
+        "anchor_id": "hover.method",
+        "kind": "hover",
+        "source_graph_node_id": "src.node.method",
+        "source_digest": "c415f0827bf97aad27e7a538d7ac8a3df6b0f8b43741c013145e4c09cf990f7b",
+        "symbol": "Box.value"
+      },
+      {
+        "anchor_id": "definition.method",
+        "kind": "definition",
+        "source_graph_node_id": "src.node.method",
+        "source_digest": "c415f0827bf97aad27e7a538d7ac8a3df6b0f8b43741c013145e4c09cf990f7b",
+        "symbol": "Box.value"
+      },
+      {
+        "anchor_id": "hover.message_send",
+        "kind": "hover",
+        "source_graph_node_id": "src.node.message_send",
+        "source_digest": "c415f0827bf97aad27e7a538d7ac8a3df6b0f8b43741c013145e4c09cf990f7b",
+        "symbol": "box.value"
+      },
+      {
+        "anchor_id": "definition.message_send",
+        "kind": "definition",
+        "source_graph_node_id": "src.node.message_send",
+        "source_digest": "c415f0827bf97aad27e7a538d7ac8a3df6b0f8b43741c013145e4c09cf990f7b",
+        "symbol": "box.value"
+      },
+      {
+        "anchor_id": "hover.property_access",
+        "kind": "hover",
+        "source_graph_node_id": "src.node.property_access",
+        "source_digest": "c415f0827bf97aad27e7a538d7ac8a3df6b0f8b43741c013145e4c09cf990f7b",
+        "symbol": "count"
+      },
+      {
+        "anchor_id": "definition.property_access",
+        "kind": "definition",
+        "source_graph_node_id": "src.node.property_access",
+        "source_digest": "c415f0827bf97aad27e7a538d7ac8a3df6b0f8b43741c013145e4c09cf990f7b",
+        "symbol": "count"
+      },
+      {
+        "anchor_id": "hover.generated_accessor",
+        "kind": "hover",
+        "source_graph_node_id": "src.node.generated_accessor",
+        "source_digest": "c415f0827bf97aad27e7a538d7ac8a3df6b0f8b43741c013145e4c09cf990f7b",
+        "symbol": "Box.count.get"
+      },
+      {
+        "anchor_id": "definition.generated_accessor",
+        "kind": "definition",
+        "source_graph_node_id": "src.node.generated_accessor",
+        "source_digest": "c415f0827bf97aad27e7a538d7ac8a3df6b0f8b43741c013145e4c09cf990f7b",
+        "symbol": "Box.count.get"
+      },
+      {
+        "anchor_id": "hover.macro_expansion",
+        "kind": "hover",
+        "source_graph_node_id": "src.node.macro_expansion",
+        "source_digest": "c415f0827bf97aad27e7a538d7ac8a3df6b0f8b43741c013145e4c09cf990f7b",
+        "symbol": "DebugAccessor"
+      },
+      {
+        "anchor_id": "definition.macro_expansion",
+        "kind": "definition",
+        "source_graph_node_id": "src.node.macro_expansion",
+        "source_digest": "c415f0827bf97aad27e7a538d7ac8a3df6b0f8b43741c013145e4c09cf990f7b",
+        "symbol": "DebugAccessor"
+      },
+      {
+        "anchor_id": "hover.runtime_helper_call",
+        "kind": "hover",
+        "source_graph_node_id": "src.node.runtime_helper_call",
+        "source_digest": "c415f0827bf97aad27e7a538d7ac8a3df6b0f8b43741c013145e4c09cf990f7b",
+        "symbol": "bridge"
+      },
+      {
+        "anchor_id": "definition.runtime_helper_call",
+        "kind": "definition",
+        "source_graph_node_id": "src.node.runtime_helper_call",
+        "source_digest": "c415f0827bf97aad27e7a538d7ac8a3df6b0f8b43741c013145e4c09cf990f7b",
+        "symbol": "bridge"
+      },
+      {
+        "anchor_id": "hover.stdlib_lowering_call",
+        "kind": "hover",
+        "source_graph_node_id": "src.node.stdlib_lowering_call",
+        "source_digest": "c415f0827bf97aad27e7a538d7ac8a3df6b0f8b43741c013145e4c09cf990f7b",
+        "symbol": "i32.add"
+      },
+      {
+        "anchor_id": "definition.stdlib_lowering_call",
+        "kind": "definition",
+        "source_graph_node_id": "src.node.stdlib_lowering_call",
+        "source_digest": "c415f0827bf97aad27e7a538d7ac8a3df6b0f8b43741c013145e4c09cf990f7b",
+        "symbol": "i32.add"
+      },
+      {
+        "anchor_id": "hover.async_suspension_point",
+        "kind": "hover",
+        "source_graph_node_id": "src.node.async_suspension_point",
+        "source_digest": "c415f0827bf97aad27e7a538d7ac8a3df6b0f8b43741c013145e4c09cf990f7b",
+        "symbol": "await suspend"
+      },
+      {
+        "anchor_id": "definition.async_suspension_point",
+        "kind": "definition",
+        "source_graph_node_id": "src.node.async_suspension_point",
+        "source_digest": "c415f0827bf97aad27e7a538d7ac8a3df6b0f8b43741c013145e4c09cf990f7b",
+        "symbol": "await suspend"
+      },
+      {
+        "anchor_id": "hover.error_bridge_edge",
+        "kind": "hover",
+        "source_graph_node_id": "src.node.error_bridge_edge",
+        "source_digest": "c415f0827bf97aad27e7a538d7ac8a3df6b0f8b43741c013145e4c09cf990f7b",
+        "symbol": "try bridge"
+      },
+      {
+        "anchor_id": "definition.error_bridge_edge",
+        "kind": "definition",
+        "source_graph_node_id": "src.node.error_bridge_edge",
+        "source_digest": "c415f0827bf97aad27e7a538d7ac8a3df6b0f8b43741c013145e4c09cf990f7b",
+        "symbol": "try bridge"
+      },
+      {
+        "anchor_id": "hover.ownership_cleanup_edge",
+        "kind": "hover",
+        "source_graph_node_id": "src.node.ownership_cleanup_edge",
+        "source_digest": "c415f0827bf97aad27e7a538d7ac8a3df6b0f8b43741c013145e4c09cf990f7b",
+        "symbol": "box.cleanup"
+      },
+      {
+        "anchor_id": "definition.ownership_cleanup_edge",
+        "kind": "definition",
+        "source_graph_node_id": "src.node.ownership_cleanup_edge",
+        "source_digest": "c415f0827bf97aad27e7a538d7ac8a3df6b0f8b43741c013145e4c09cf990f7b",
+        "symbol": "box.cleanup"
+      },
+      {
+        "anchor_id": "hover.optimization_transform_edge",
+        "kind": "hover",
+        "source_graph_node_id": "src.node.optimization_transform_edge",
+        "source_digest": "c415f0827bf97aad27e7a538d7ac8a3df6b0f8b43741c013145e4c09cf990f7b",
+        "symbol": "helper.direct-dispatch"
+      },
+      {
+        "anchor_id": "definition.optimization_transform_edge",
+        "kind": "definition",
+        "source_graph_node_id": "src.node.optimization_transform_edge",
+        "source_digest": "c415f0827bf97aad27e7a538d7ac8a3df6b0f8b43741c013145e4c09cf990f7b",
+        "symbol": "helper.direct-dispatch"
+      }
+    ]
+  },
+  "source_maps": [
+    {
+      "entry_id": "smap.module",
+      "record_kind": "module",
+      "source_file": "tests/tooling/fixtures/developer_tooling/debug_source_maps/source.objc3",
+      "source_range": {
+        "line": 1,
+        "column": 9,
+        "end_line": 1,
+        "end_column": 29
+      },
+      "ast_node_id": "ast.module",
+      "source_graph_node_id": "src.node.module",
+      "source_digest": "c415f0827bf97aad27e7a538d7ac8a3df6b0f8b43741c013145e4c09cf990f7b",
+      "lowering_stage_id": "lowering.stage.01",
+      "ir_anchor": "ir.anchor.module",
+      "ir_symbol": "@DebugMaps.Foundation.module",
+      "object_debug_line_anchor": "obj.line.module",
+      "native_symbol": "_objc3_DebugMaps_Foundation_module",
+      "generated_artifact_id": "artifact.module",
+      "generated": false,
+      "classification": "original",
+      "provenance_link_id": "",
+      "capability_rows": [
+        "compiler.artifacts.source-map",
+        "compiler.artifacts.native-line-table",
+        "tooling.debug.debug-map"
+      ],
+      "language_service_anchor_ids": [
+        "hover.module",
+        "definition.module"
+      ],
+      "optimization_claim_ids": [],
+      "runtime_anchor_ids": [
+        "runtime.anchor.module"
+      ],
+      "package_boundary_id": "pkg.debugmaps.foundation",
+      "native_line_table_row_ids": [
+        "lt.module"
+      ]
+    },
+    {
+      "entry_id": "smap.declaration",
+      "record_kind": "declaration",
+      "source_file": "tests/tooling/fixtures/developer_tooling/debug_source_maps/source.objc3",
+      "source_range": {
+        "line": 5,
+        "column": 7,
+        "end_line": 5,
+        "end_column": 10
+      },
+      "ast_node_id": "ast.declaration",
+      "source_graph_node_id": "src.node.declaration",
+      "source_digest": "c415f0827bf97aad27e7a538d7ac8a3df6b0f8b43741c013145e4c09cf990f7b",
+      "lowering_stage_id": "lowering.stage.02",
+      "ir_anchor": "ir.anchor.declaration",
+      "ir_symbol": "@DebugMaps.Foundation.declaration",
+      "object_debug_line_anchor": "obj.line.declaration",
+      "native_symbol": "_objc3_DebugMaps_Foundation_declaration",
+      "generated_artifact_id": "artifact.declaration",
+      "generated": false,
+      "classification": "original",
+      "provenance_link_id": "",
+      "capability_rows": [
+        "compiler.artifacts.source-map",
+        "compiler.artifacts.native-line-table",
+        "tooling.debug.debug-map"
+      ],
+      "language_service_anchor_ids": [
+        "hover.declaration",
+        "definition.declaration"
+      ],
+      "optimization_claim_ids": [],
+      "runtime_anchor_ids": [
+        "runtime.anchor.declaration",
+        "runtime.anchor.object_model.class",
+        "runtime.anchor.object_model.category",
+        "runtime.anchor.object_model.protocol"
+      ],
+      "package_boundary_id": "pkg.debugmaps.foundation",
+      "native_line_table_row_ids": [
+        "lt.declaration"
+      ]
+    },
+    {
+      "entry_id": "smap.statement",
+      "record_kind": "statement",
+      "source_file": "tests/tooling/fixtures/developer_tooling/debug_source_maps/source.objc3",
+      "source_range": {
+        "line": 19,
+        "column": 3,
+        "end_line": 19,
+        "end_column": 42
+      },
+      "ast_node_id": "ast.statement",
+      "source_graph_node_id": "src.node.statement",
+      "source_digest": "c415f0827bf97aad27e7a538d7ac8a3df6b0f8b43741c013145e4c09cf990f7b",
+      "lowering_stage_id": "lowering.stage.03",
+      "ir_anchor": "ir.anchor.statement",
+      "ir_symbol": "@DebugMaps.Foundation.statement",
+      "object_debug_line_anchor": "obj.line.statement",
+      "native_symbol": "_objc3_DebugMaps_Foundation_statement",
+      "generated_artifact_id": "artifact.statement",
+      "generated": false,
+      "classification": "original",
+      "provenance_link_id": "",
+      "capability_rows": [
+        "compiler.artifacts.source-map",
+        "compiler.artifacts.native-line-table",
+        "tooling.debug.debug-map"
+      ],
+      "language_service_anchor_ids": [
+        "hover.statement",
+        "definition.statement"
+      ],
+      "optimization_claim_ids": [
+        "opt.nil_receiver_folding"
+      ],
+      "runtime_anchor_ids": [
+        "runtime.anchor.statement"
+      ],
+      "package_boundary_id": "pkg.debugmaps.foundation",
+      "native_line_table_row_ids": [
+        "lt.statement"
+      ]
+    },
+    {
+      "entry_id": "smap.expression",
+      "record_kind": "expression",
+      "source_file": "tests/tooling/fixtures/developer_tooling/debug_source_maps/source.objc3",
+      "source_range": {
+        "line": 14,
+        "column": 10,
+        "end_line": 14,
+        "end_column": 19
+      },
+      "ast_node_id": "ast.expression",
+      "source_graph_node_id": "src.node.expression",
+      "source_digest": "c415f0827bf97aad27e7a538d7ac8a3df6b0f8b43741c013145e4c09cf990f7b",
+      "lowering_stage_id": "lowering.stage.04",
+      "ir_anchor": "ir.anchor.expression",
+      "ir_symbol": "@DebugMaps.Foundation.expression",
+      "object_debug_line_anchor": "obj.line.expression",
+      "native_symbol": "_objc3_DebugMaps_Foundation_expression",
+      "generated_artifact_id": "artifact.expression",
+      "generated": false,
+      "classification": "original",
+      "provenance_link_id": "",
+      "capability_rows": [
+        "compiler.artifacts.source-map",
+        "compiler.artifacts.native-line-table",
+        "tooling.debug.debug-map"
+      ],
+      "language_service_anchor_ids": [
+        "hover.expression",
+        "definition.expression"
+      ],
+      "optimization_claim_ids": [],
+      "runtime_anchor_ids": [
+        "runtime.anchor.expression"
+      ],
+      "package_boundary_id": "pkg.debugmaps.foundation",
+      "native_line_table_row_ids": [
+        "lt.expression"
+      ]
+    },
+    {
+      "entry_id": "smap.function",
+      "record_kind": "function",
+      "source_file": "tests/tooling/fixtures/developer_tooling/debug_source_maps/source.objc3",
+      "source_range": {
+        "line": 13,
+        "column": 6,
+        "end_line": 13,
+        "end_column": 12
+      },
+      "ast_node_id": "ast.function",
+      "source_graph_node_id": "src.node.function",
+      "source_digest": "c415f0827bf97aad27e7a538d7ac8a3df6b0f8b43741c013145e4c09cf990f7b",
+      "lowering_stage_id": "lowering.stage.05",
+      "ir_anchor": "ir.anchor.function",
+      "ir_symbol": "@DebugMaps.Foundation.function",
+      "object_debug_line_anchor": "obj.line.function",
+      "native_symbol": "_objc3_DebugMaps_Foundation_function",
+      "generated_artifact_id": "artifact.function",
+      "generated": false,
+      "classification": "original",
+      "provenance_link_id": "",
+      "capability_rows": [
+        "compiler.artifacts.source-map",
+        "compiler.artifacts.native-line-table",
+        "tooling.debug.debug-map"
+      ],
+      "language_service_anchor_ids": [
+        "hover.function",
+        "definition.function"
+      ],
+      "optimization_claim_ids": [
+        "opt.method_inlining"
+      ],
+      "runtime_anchor_ids": [
+        "runtime.anchor.function"
+      ],
+      "package_boundary_id": "pkg.debugmaps.foundation",
+      "native_line_table_row_ids": [
+        "lt.function"
+      ]
+    },
+    {
+      "entry_id": "smap.method",
+      "record_kind": "method",
+      "source_file": "tests/tooling/fixtures/developer_tooling/debug_source_maps/source.objc3",
+      "source_range": {
+        "line": 8,
+        "column": 8,
+        "end_line": 8,
+        "end_column": 13
+      },
+      "ast_node_id": "ast.method",
+      "source_graph_node_id": "src.node.method",
+      "source_digest": "c415f0827bf97aad27e7a538d7ac8a3df6b0f8b43741c013145e4c09cf990f7b",
+      "lowering_stage_id": "lowering.stage.06",
+      "ir_anchor": "ir.anchor.method",
+      "ir_symbol": "@DebugMaps.Foundation.method",
+      "object_debug_line_anchor": "obj.line.method",
+      "native_symbol": "_objc3_DebugMaps_Foundation_method",
+      "generated_artifact_id": "artifact.method",
+      "generated": false,
+      "classification": "original",
+      "provenance_link_id": "",
+      "capability_rows": [
+        "compiler.artifacts.source-map",
+        "compiler.artifacts.native-line-table",
+        "tooling.debug.debug-map"
+      ],
+      "language_service_anchor_ids": [
+        "hover.method",
+        "definition.method"
+      ],
+      "optimization_claim_ids": [
+        "opt.devirtualization"
+      ],
+      "runtime_anchor_ids": [
+        "runtime.anchor.method",
+        "runtime.anchor.object_model.method"
+      ],
+      "package_boundary_id": "pkg.debugmaps.foundation",
+      "native_line_table_row_ids": [
+        "lt.method"
+      ]
+    },
+    {
+      "entry_id": "smap.message_send",
+      "record_kind": "message-send",
+      "source_file": "tests/tooling/fixtures/developer_tooling/debug_source_maps/source.objc3",
+      "source_range": {
+        "line": 19,
+        "column": 34,
+        "end_line": 19,
+        "end_column": 43
+      },
+      "ast_node_id": "ast.message_send",
+      "source_graph_node_id": "src.node.message_send",
+      "source_digest": "c415f0827bf97aad27e7a538d7ac8a3df6b0f8b43741c013145e4c09cf990f7b",
+      "lowering_stage_id": "lowering.stage.07",
+      "ir_anchor": "ir.anchor.message_send",
+      "ir_symbol": "@DebugMaps.Foundation.message_send",
+      "object_debug_line_anchor": "obj.line.message_send",
+      "native_symbol": "_objc3_DebugMaps_Foundation_message_send",
+      "generated_artifact_id": "artifact.message_send",
+      "generated": false,
+      "classification": "original",
+      "provenance_link_id": "",
+      "capability_rows": [
+        "compiler.artifacts.source-map",
+        "compiler.artifacts.native-line-table",
+        "tooling.debug.debug-map"
+      ],
+      "language_service_anchor_ids": [
+        "hover.message_send",
+        "definition.message_send"
+      ],
+      "optimization_claim_ids": [
+        "opt.direct_dispatch"
+      ],
+      "runtime_anchor_ids": [
+        "runtime.anchor.message_send"
+      ],
+      "package_boundary_id": "pkg.debugmaps.foundation",
+      "native_line_table_row_ids": [
+        "lt.message_send"
+      ]
+    },
+    {
+      "entry_id": "smap.property_access",
+      "record_kind": "property-access",
+      "source_file": "tests/tooling/fixtures/developer_tooling/debug_source_maps/source.objc3",
+      "source_range": {
+        "line": 9,
+        "column": 12,
+        "end_line": 9,
+        "end_column": 17
+      },
+      "ast_node_id": "ast.property_access",
+      "source_graph_node_id": "src.node.property_access",
+      "source_digest": "c415f0827bf97aad27e7a538d7ac8a3df6b0f8b43741c013145e4c09cf990f7b",
+      "lowering_stage_id": "lowering.stage.08",
+      "ir_anchor": "ir.anchor.property_access",
+      "ir_symbol": "@DebugMaps.Foundation.property_access",
+      "object_debug_line_anchor": "obj.line.property_access",
+      "native_symbol": "_objc3_DebugMaps_Foundation_property_access",
+      "generated_artifact_id": "artifact.property_access",
+      "generated": false,
+      "classification": "original",
+      "provenance_link_id": "",
+      "capability_rows": [
+        "compiler.artifacts.source-map",
+        "compiler.artifacts.native-line-table",
+        "tooling.debug.debug-map"
+      ],
+      "language_service_anchor_ids": [
+        "hover.property_access",
+        "definition.property_access"
+      ],
+      "optimization_claim_ids": [],
+      "runtime_anchor_ids": [
+        "runtime.anchor.property_access",
+        "runtime.anchor.object_model.property"
+      ],
+      "package_boundary_id": "pkg.debugmaps.foundation",
+      "native_line_table_row_ids": [
+        "lt.property_access"
+      ]
+    },
+    {
+      "entry_id": "smap.generated_accessor",
+      "record_kind": "generated-accessor",
+      "source_file": "tests/tooling/fixtures/developer_tooling/debug_source_maps/source.objc3",
+      "source_range": {
+        "line": 6,
+        "column": 12,
+        "end_line": 6,
+        "end_column": 17
+      },
+      "ast_node_id": "ast.generated_accessor",
+      "source_graph_node_id": "src.node.generated_accessor",
+      "source_digest": "c415f0827bf97aad27e7a538d7ac8a3df6b0f8b43741c013145e4c09cf990f7b",
+      "lowering_stage_id": "lowering.stage.09",
+      "ir_anchor": "ir.anchor.generated_accessor",
+      "ir_symbol": "@DebugMaps.Foundation.generated_accessor",
+      "object_debug_line_anchor": "obj.line.generated_accessor",
+      "native_symbol": "_objc3_DebugMaps_Foundation_generated_accessor",
+      "generated_artifact_id": "artifact.generated_accessor",
+      "generated": true,
+      "classification": "generated",
+      "provenance_link_id": "prov.generated_accessor",
+      "capability_rows": [
+        "compiler.artifacts.source-map",
+        "compiler.artifacts.native-line-table",
+        "tooling.debug.debug-map"
+      ],
+      "language_service_anchor_ids": [
+        "hover.generated_accessor",
+        "definition.generated_accessor"
+      ],
+      "optimization_claim_ids": [],
+      "runtime_anchor_ids": [
+        "runtime.anchor.generated_accessor",
+        "runtime.anchor.object_model.ivar"
+      ],
+      "package_boundary_id": "pkg.debugmaps.foundation",
+      "native_line_table_row_ids": [
+        "lt.generated_accessor"
+      ]
+    },
+    {
+      "entry_id": "smap.macro_expansion",
+      "record_kind": "macro-expansion",
+      "source_file": "tests/tooling/fixtures/developer_tooling/debug_source_maps/source.objc3",
+      "source_range": {
+        "line": 3,
+        "column": 7,
+        "end_line": 3,
+        "end_column": 20
+      },
+      "ast_node_id": "ast.macro_expansion",
+      "source_graph_node_id": "src.node.macro_expansion",
+      "source_digest": "c415f0827bf97aad27e7a538d7ac8a3df6b0f8b43741c013145e4c09cf990f7b",
+      "lowering_stage_id": "lowering.stage.10",
+      "ir_anchor": "ir.anchor.macro_expansion",
+      "ir_symbol": "@DebugMaps.Foundation.macro_expansion",
+      "object_debug_line_anchor": "obj.line.macro_expansion",
+      "native_symbol": "_objc3_DebugMaps_Foundation_macro_expansion",
+      "generated_artifact_id": "artifact.macro_expansion",
+      "generated": true,
+      "classification": "generated",
+      "provenance_link_id": "prov.macro_expansion",
+      "capability_rows": [
+        "compiler.artifacts.source-map",
+        "compiler.artifacts.native-line-table",
+        "tooling.debug.debug-map"
+      ],
+      "language_service_anchor_ids": [
+        "hover.macro_expansion",
+        "definition.macro_expansion"
+      ],
+      "optimization_claim_ids": [],
+      "runtime_anchor_ids": [
+        "runtime.anchor.macro_expansion"
+      ],
+      "package_boundary_id": "pkg.debugmaps.foundation",
+      "native_line_table_row_ids": [
+        "lt.macro_expansion"
+      ]
+    },
+    {
+      "entry_id": "smap.runtime_helper_call",
+      "record_kind": "runtime-helper-call",
+      "source_file": "tests/tooling/fixtures/developer_tooling/debug_source_maps/source.objc3",
+      "source_range": {
+        "line": 21,
+        "column": 14,
+        "end_line": 21,
+        "end_column": 25
+      },
+      "ast_node_id": "ast.runtime_helper_call",
+      "source_graph_node_id": "src.node.runtime_helper_call",
+      "source_digest": "c415f0827bf97aad27e7a538d7ac8a3df6b0f8b43741c013145e4c09cf990f7b",
+      "lowering_stage_id": "lowering.stage.11",
+      "ir_anchor": "ir.anchor.runtime_helper_call",
+      "ir_symbol": "@DebugMaps.Foundation.runtime_helper_call",
+      "object_debug_line_anchor": "obj.line.runtime_helper_call",
+      "native_symbol": "_objc3_DebugMaps_Foundation_runtime_helper_call",
+      "generated_artifact_id": "artifact.runtime_helper_call",
+      "generated": true,
+      "classification": "generated",
+      "provenance_link_id": "prov.runtime_helper_call",
+      "capability_rows": [
+        "compiler.artifacts.source-map",
+        "compiler.artifacts.native-line-table",
+        "tooling.debug.debug-map"
+      ],
+      "language_service_anchor_ids": [
+        "hover.runtime_helper_call",
+        "definition.runtime_helper_call"
+      ],
+      "optimization_claim_ids": [],
+      "runtime_anchor_ids": [
+        "runtime.anchor.runtime_helper_call"
+      ],
+      "package_boundary_id": "pkg.debugmaps.foundation",
+      "native_line_table_row_ids": [
+        "lt.runtime_helper_call"
+      ]
+    },
+    {
+      "entry_id": "smap.stdlib_lowering_call",
+      "record_kind": "stdlib-lowering-call",
+      "source_file": "tests/tooling/fixtures/developer_tooling/debug_source_maps/source.objc3",
+      "source_range": {
+        "line": 14,
+        "column": 16,
+        "end_line": 14,
+        "end_column": 17
+      },
+      "ast_node_id": "ast.stdlib_lowering_call",
+      "source_graph_node_id": "src.node.stdlib_lowering_call",
+      "source_digest": "c415f0827bf97aad27e7a538d7ac8a3df6b0f8b43741c013145e4c09cf990f7b",
+      "lowering_stage_id": "lowering.stage.12",
+      "ir_anchor": "ir.anchor.stdlib_lowering_call",
+      "ir_symbol": "@DebugMaps.Foundation.stdlib_lowering_call",
+      "object_debug_line_anchor": "obj.line.stdlib_lowering_call",
+      "native_symbol": "_objc3_DebugMaps_Foundation_stdlib_lowering_call",
+      "generated_artifact_id": "artifact.stdlib_lowering_call",
+      "generated": true,
+      "classification": "generated",
+      "provenance_link_id": "prov.stdlib_lowering_call",
+      "capability_rows": [
+        "compiler.artifacts.source-map",
+        "compiler.artifacts.native-line-table",
+        "tooling.debug.debug-map"
+      ],
+      "language_service_anchor_ids": [
+        "hover.stdlib_lowering_call",
+        "definition.stdlib_lowering_call"
+      ],
+      "optimization_claim_ids": [],
+      "runtime_anchor_ids": [
+        "runtime.anchor.stdlib_lowering_call"
+      ],
+      "package_boundary_id": "pkg.debugmaps.foundation",
+      "native_line_table_row_ids": [
+        "lt.stdlib_lowering_call"
+      ]
+    },
+    {
+      "entry_id": "smap.async_suspension_point",
+      "record_kind": "async-suspension-point",
+      "source_file": "tests/tooling/fixtures/developer_tooling/debug_source_maps/source.objc3",
+      "source_range": {
+        "line": 20,
+        "column": 3,
+        "end_line": 20,
+        "end_column": 18
+      },
+      "ast_node_id": "ast.async_suspension_point",
+      "source_graph_node_id": "src.node.async_suspension_point",
+      "source_digest": "c415f0827bf97aad27e7a538d7ac8a3df6b0f8b43741c013145e4c09cf990f7b",
+      "lowering_stage_id": "lowering.stage.13",
+      "ir_anchor": "ir.anchor.async_suspension_point",
+      "ir_symbol": "@DebugMaps.Foundation.async_suspension_point",
+      "object_debug_line_anchor": "obj.line.async_suspension_point",
+      "native_symbol": "_objc3_DebugMaps_Foundation_async_suspension_point",
+      "generated_artifact_id": "artifact.async_suspension_point",
+      "generated": false,
+      "classification": "original",
+      "provenance_link_id": "",
+      "capability_rows": [
+        "compiler.artifacts.source-map",
+        "compiler.artifacts.native-line-table",
+        "tooling.debug.debug-map"
+      ],
+      "language_service_anchor_ids": [
+        "hover.async_suspension_point",
+        "definition.async_suspension_point"
+      ],
+      "optimization_claim_ids": [],
+      "runtime_anchor_ids": [
+        "runtime.anchor.async_suspension_point"
+      ],
+      "package_boundary_id": "pkg.debugmaps.foundation",
+      "native_line_table_row_ids": [
+        "lt.async_suspension_point"
+      ]
+    },
+    {
+      "entry_id": "smap.error_bridge_edge",
+      "record_kind": "error-bridge-edge",
+      "source_file": "tests/tooling/fixtures/developer_tooling/debug_source_maps/source.objc3",
+      "source_range": {
+        "line": 21,
+        "column": 10,
+        "end_line": 21,
+        "end_column": 25
+      },
+      "ast_node_id": "ast.error_bridge_edge",
+      "source_graph_node_id": "src.node.error_bridge_edge",
+      "source_digest": "c415f0827bf97aad27e7a538d7ac8a3df6b0f8b43741c013145e4c09cf990f7b",
+      "lowering_stage_id": "lowering.stage.14",
+      "ir_anchor": "ir.anchor.error_bridge_edge",
+      "ir_symbol": "@DebugMaps.Foundation.error_bridge_edge",
+      "object_debug_line_anchor": "obj.line.error_bridge_edge",
+      "native_symbol": "_objc3_DebugMaps_Foundation_error_bridge_edge",
+      "generated_artifact_id": "artifact.error_bridge_edge",
+      "generated": false,
+      "classification": "original",
+      "provenance_link_id": "",
+      "capability_rows": [
+        "compiler.artifacts.source-map",
+        "compiler.artifacts.native-line-table",
+        "tooling.debug.debug-map"
+      ],
+      "language_service_anchor_ids": [
+        "hover.error_bridge_edge",
+        "definition.error_bridge_edge"
+      ],
+      "optimization_claim_ids": [],
+      "runtime_anchor_ids": [
+        "runtime.anchor.error_bridge_edge"
+      ],
+      "package_boundary_id": "pkg.debugmaps.foundation",
+      "native_line_table_row_ids": [
+        "lt.error_bridge_edge"
+      ]
+    },
+    {
+      "entry_id": "smap.ownership_cleanup_edge",
+      "record_kind": "ownership-cleanup-edge",
+      "source_file": "tests/tooling/fixtures/developer_tooling/debug_source_maps/source.objc3",
+      "source_range": {
+        "line": 22,
+        "column": 1,
+        "end_line": 22,
+        "end_column": 2
+      },
+      "ast_node_id": "ast.ownership_cleanup_edge",
+      "source_graph_node_id": "src.node.ownership_cleanup_edge",
+      "source_digest": "c415f0827bf97aad27e7a538d7ac8a3df6b0f8b43741c013145e4c09cf990f7b",
+      "lowering_stage_id": "lowering.stage.15",
+      "ir_anchor": "ir.anchor.ownership_cleanup_edge",
+      "ir_symbol": "@DebugMaps.Foundation.ownership_cleanup_edge",
+      "object_debug_line_anchor": "obj.line.ownership_cleanup_edge",
+      "native_symbol": "_objc3_DebugMaps_Foundation_ownership_cleanup_edge",
+      "generated_artifact_id": "artifact.ownership_cleanup_edge",
+      "generated": true,
+      "classification": "generated",
+      "provenance_link_id": "prov.ownership_cleanup_edge",
+      "capability_rows": [
+        "compiler.artifacts.source-map",
+        "compiler.artifacts.native-line-table",
+        "tooling.debug.debug-map"
+      ],
+      "language_service_anchor_ids": [
+        "hover.ownership_cleanup_edge",
+        "definition.ownership_cleanup_edge"
+      ],
+      "optimization_claim_ids": [
+        "opt.retained_result_cleanup"
+      ],
+      "runtime_anchor_ids": [
+        "runtime.anchor.ownership_cleanup_edge"
+      ],
+      "package_boundary_id": "pkg.debugmaps.foundation",
+      "native_line_table_row_ids": [
+        "lt.ownership_cleanup_edge"
+      ]
+    },
+    {
+      "entry_id": "smap.optimization_transform_edge",
+      "record_kind": "optimization-transform-edge",
+      "source_file": "tests/tooling/fixtures/developer_tooling/debug_source_maps/source.objc3",
+      "source_range": {
+        "line": 19,
+        "column": 15,
+        "end_line": 19,
+        "end_column": 41
+      },
+      "ast_node_id": "ast.optimization_transform_edge",
+      "source_graph_node_id": "src.node.optimization_transform_edge",
+      "source_digest": "c415f0827bf97aad27e7a538d7ac8a3df6b0f8b43741c013145e4c09cf990f7b",
+      "lowering_stage_id": "lowering.stage.16",
+      "ir_anchor": "ir.anchor.optimization_transform_edge",
+      "ir_symbol": "@DebugMaps.Foundation.optimization_transform_edge",
+      "object_debug_line_anchor": "obj.line.optimization_transform_edge",
+      "native_symbol": "_objc3_DebugMaps_Foundation_optimization_transform_edge",
+      "generated_artifact_id": "artifact.optimization_transform_edge",
+      "generated": true,
+      "classification": "generated",
+      "provenance_link_id": "prov.optimization_transform_edge",
+      "capability_rows": [
+        "compiler.artifacts.source-map",
+        "compiler.artifacts.native-line-table",
+        "tooling.debug.debug-map"
+      ],
+      "language_service_anchor_ids": [
+        "hover.optimization_transform_edge",
+        "definition.optimization_transform_edge"
+      ],
+      "optimization_claim_ids": [
+        "opt.cache_aware_dispatch"
+      ],
+      "runtime_anchor_ids": [
+        "runtime.anchor.optimization_transform_edge"
+      ],
+      "package_boundary_id": "pkg.debugmaps.foundation",
+      "native_line_table_row_ids": [
+        "lt.optimization_transform_edge"
+      ]
+    }
+  ],
+  "debug_maps": [
+    {
+      "entry_id": "dmap.module",
+      "source_map_entry_id": "smap.module",
+      "source_graph_node_id": "src.node.module",
+      "source_digest": "c415f0827bf97aad27e7a538d7ac8a3df6b0f8b43741c013145e4c09cf990f7b",
+      "ir_symbol": "@DebugMaps.Foundation.module",
+      "native_symbol": "_objc3_DebugMaps_Foundation_module",
+      "object_debug_line_anchor": "obj.line.module",
+      "runtime_anchor_ids": [
+        "runtime.anchor.module"
+      ],
+      "hover_anchor_id": "hover.module",
+      "definition_anchor_id": "definition.module"
+    },
+    {
+      "entry_id": "dmap.declaration",
+      "source_map_entry_id": "smap.declaration",
+      "source_graph_node_id": "src.node.declaration",
+      "source_digest": "c415f0827bf97aad27e7a538d7ac8a3df6b0f8b43741c013145e4c09cf990f7b",
+      "ir_symbol": "@DebugMaps.Foundation.declaration",
+      "native_symbol": "_objc3_DebugMaps_Foundation_declaration",
+      "object_debug_line_anchor": "obj.line.declaration",
+      "runtime_anchor_ids": [
+        "runtime.anchor.declaration",
+        "runtime.anchor.object_model.class",
+        "runtime.anchor.object_model.category",
+        "runtime.anchor.object_model.protocol"
+      ],
+      "hover_anchor_id": "hover.declaration",
+      "definition_anchor_id": "definition.declaration"
+    },
+    {
+      "entry_id": "dmap.statement",
+      "source_map_entry_id": "smap.statement",
+      "source_graph_node_id": "src.node.statement",
+      "source_digest": "c415f0827bf97aad27e7a538d7ac8a3df6b0f8b43741c013145e4c09cf990f7b",
+      "ir_symbol": "@DebugMaps.Foundation.statement",
+      "native_symbol": "_objc3_DebugMaps_Foundation_statement",
+      "object_debug_line_anchor": "obj.line.statement",
+      "runtime_anchor_ids": [
+        "runtime.anchor.statement"
+      ],
+      "hover_anchor_id": "hover.statement",
+      "definition_anchor_id": "definition.statement"
+    },
+    {
+      "entry_id": "dmap.expression",
+      "source_map_entry_id": "smap.expression",
+      "source_graph_node_id": "src.node.expression",
+      "source_digest": "c415f0827bf97aad27e7a538d7ac8a3df6b0f8b43741c013145e4c09cf990f7b",
+      "ir_symbol": "@DebugMaps.Foundation.expression",
+      "native_symbol": "_objc3_DebugMaps_Foundation_expression",
+      "object_debug_line_anchor": "obj.line.expression",
+      "runtime_anchor_ids": [
+        "runtime.anchor.expression"
+      ],
+      "hover_anchor_id": "hover.expression",
+      "definition_anchor_id": "definition.expression"
+    },
+    {
+      "entry_id": "dmap.function",
+      "source_map_entry_id": "smap.function",
+      "source_graph_node_id": "src.node.function",
+      "source_digest": "c415f0827bf97aad27e7a538d7ac8a3df6b0f8b43741c013145e4c09cf990f7b",
+      "ir_symbol": "@DebugMaps.Foundation.function",
+      "native_symbol": "_objc3_DebugMaps_Foundation_function",
+      "object_debug_line_anchor": "obj.line.function",
+      "runtime_anchor_ids": [
+        "runtime.anchor.function"
+      ],
+      "hover_anchor_id": "hover.function",
+      "definition_anchor_id": "definition.function"
+    },
+    {
+      "entry_id": "dmap.method",
+      "source_map_entry_id": "smap.method",
+      "source_graph_node_id": "src.node.method",
+      "source_digest": "c415f0827bf97aad27e7a538d7ac8a3df6b0f8b43741c013145e4c09cf990f7b",
+      "ir_symbol": "@DebugMaps.Foundation.method",
+      "native_symbol": "_objc3_DebugMaps_Foundation_method",
+      "object_debug_line_anchor": "obj.line.method",
+      "runtime_anchor_ids": [
+        "runtime.anchor.method",
+        "runtime.anchor.object_model.method"
+      ],
+      "hover_anchor_id": "hover.method",
+      "definition_anchor_id": "definition.method"
+    },
+    {
+      "entry_id": "dmap.message_send",
+      "source_map_entry_id": "smap.message_send",
+      "source_graph_node_id": "src.node.message_send",
+      "source_digest": "c415f0827bf97aad27e7a538d7ac8a3df6b0f8b43741c013145e4c09cf990f7b",
+      "ir_symbol": "@DebugMaps.Foundation.message_send",
+      "native_symbol": "_objc3_DebugMaps_Foundation_message_send",
+      "object_debug_line_anchor": "obj.line.message_send",
+      "runtime_anchor_ids": [
+        "runtime.anchor.message_send"
+      ],
+      "hover_anchor_id": "hover.message_send",
+      "definition_anchor_id": "definition.message_send"
+    },
+    {
+      "entry_id": "dmap.property_access",
+      "source_map_entry_id": "smap.property_access",
+      "source_graph_node_id": "src.node.property_access",
+      "source_digest": "c415f0827bf97aad27e7a538d7ac8a3df6b0f8b43741c013145e4c09cf990f7b",
+      "ir_symbol": "@DebugMaps.Foundation.property_access",
+      "native_symbol": "_objc3_DebugMaps_Foundation_property_access",
+      "object_debug_line_anchor": "obj.line.property_access",
+      "runtime_anchor_ids": [
+        "runtime.anchor.property_access",
+        "runtime.anchor.object_model.property"
+      ],
+      "hover_anchor_id": "hover.property_access",
+      "definition_anchor_id": "definition.property_access"
+    },
+    {
+      "entry_id": "dmap.generated_accessor",
+      "source_map_entry_id": "smap.generated_accessor",
+      "source_graph_node_id": "src.node.generated_accessor",
+      "source_digest": "c415f0827bf97aad27e7a538d7ac8a3df6b0f8b43741c013145e4c09cf990f7b",
+      "ir_symbol": "@DebugMaps.Foundation.generated_accessor",
+      "native_symbol": "_objc3_DebugMaps_Foundation_generated_accessor",
+      "object_debug_line_anchor": "obj.line.generated_accessor",
+      "runtime_anchor_ids": [
+        "runtime.anchor.generated_accessor",
+        "runtime.anchor.object_model.ivar"
+      ],
+      "hover_anchor_id": "hover.generated_accessor",
+      "definition_anchor_id": "definition.generated_accessor"
+    },
+    {
+      "entry_id": "dmap.macro_expansion",
+      "source_map_entry_id": "smap.macro_expansion",
+      "source_graph_node_id": "src.node.macro_expansion",
+      "source_digest": "c415f0827bf97aad27e7a538d7ac8a3df6b0f8b43741c013145e4c09cf990f7b",
+      "ir_symbol": "@DebugMaps.Foundation.macro_expansion",
+      "native_symbol": "_objc3_DebugMaps_Foundation_macro_expansion",
+      "object_debug_line_anchor": "obj.line.macro_expansion",
+      "runtime_anchor_ids": [
+        "runtime.anchor.macro_expansion"
+      ],
+      "hover_anchor_id": "hover.macro_expansion",
+      "definition_anchor_id": "definition.macro_expansion"
+    },
+    {
+      "entry_id": "dmap.runtime_helper_call",
+      "source_map_entry_id": "smap.runtime_helper_call",
+      "source_graph_node_id": "src.node.runtime_helper_call",
+      "source_digest": "c415f0827bf97aad27e7a538d7ac8a3df6b0f8b43741c013145e4c09cf990f7b",
+      "ir_symbol": "@DebugMaps.Foundation.runtime_helper_call",
+      "native_symbol": "_objc3_DebugMaps_Foundation_runtime_helper_call",
+      "object_debug_line_anchor": "obj.line.runtime_helper_call",
+      "runtime_anchor_ids": [
+        "runtime.anchor.runtime_helper_call"
+      ],
+      "hover_anchor_id": "hover.runtime_helper_call",
+      "definition_anchor_id": "definition.runtime_helper_call"
+    },
+    {
+      "entry_id": "dmap.stdlib_lowering_call",
+      "source_map_entry_id": "smap.stdlib_lowering_call",
+      "source_graph_node_id": "src.node.stdlib_lowering_call",
+      "source_digest": "c415f0827bf97aad27e7a538d7ac8a3df6b0f8b43741c013145e4c09cf990f7b",
+      "ir_symbol": "@DebugMaps.Foundation.stdlib_lowering_call",
+      "native_symbol": "_objc3_DebugMaps_Foundation_stdlib_lowering_call",
+      "object_debug_line_anchor": "obj.line.stdlib_lowering_call",
+      "runtime_anchor_ids": [
+        "runtime.anchor.stdlib_lowering_call"
+      ],
+      "hover_anchor_id": "hover.stdlib_lowering_call",
+      "definition_anchor_id": "definition.stdlib_lowering_call"
+    },
+    {
+      "entry_id": "dmap.async_suspension_point",
+      "source_map_entry_id": "smap.async_suspension_point",
+      "source_graph_node_id": "src.node.async_suspension_point",
+      "source_digest": "c415f0827bf97aad27e7a538d7ac8a3df6b0f8b43741c013145e4c09cf990f7b",
+      "ir_symbol": "@DebugMaps.Foundation.async_suspension_point",
+      "native_symbol": "_objc3_DebugMaps_Foundation_async_suspension_point",
+      "object_debug_line_anchor": "obj.line.async_suspension_point",
+      "runtime_anchor_ids": [
+        "runtime.anchor.async_suspension_point"
+      ],
+      "hover_anchor_id": "hover.async_suspension_point",
+      "definition_anchor_id": "definition.async_suspension_point"
+    },
+    {
+      "entry_id": "dmap.error_bridge_edge",
+      "source_map_entry_id": "smap.error_bridge_edge",
+      "source_graph_node_id": "src.node.error_bridge_edge",
+      "source_digest": "c415f0827bf97aad27e7a538d7ac8a3df6b0f8b43741c013145e4c09cf990f7b",
+      "ir_symbol": "@DebugMaps.Foundation.error_bridge_edge",
+      "native_symbol": "_objc3_DebugMaps_Foundation_error_bridge_edge",
+      "object_debug_line_anchor": "obj.line.error_bridge_edge",
+      "runtime_anchor_ids": [
+        "runtime.anchor.error_bridge_edge"
+      ],
+      "hover_anchor_id": "hover.error_bridge_edge",
+      "definition_anchor_id": "definition.error_bridge_edge"
+    },
+    {
+      "entry_id": "dmap.ownership_cleanup_edge",
+      "source_map_entry_id": "smap.ownership_cleanup_edge",
+      "source_graph_node_id": "src.node.ownership_cleanup_edge",
+      "source_digest": "c415f0827bf97aad27e7a538d7ac8a3df6b0f8b43741c013145e4c09cf990f7b",
+      "ir_symbol": "@DebugMaps.Foundation.ownership_cleanup_edge",
+      "native_symbol": "_objc3_DebugMaps_Foundation_ownership_cleanup_edge",
+      "object_debug_line_anchor": "obj.line.ownership_cleanup_edge",
+      "runtime_anchor_ids": [
+        "runtime.anchor.ownership_cleanup_edge"
+      ],
+      "hover_anchor_id": "hover.ownership_cleanup_edge",
+      "definition_anchor_id": "definition.ownership_cleanup_edge"
+    },
+    {
+      "entry_id": "dmap.optimization_transform_edge",
+      "source_map_entry_id": "smap.optimization_transform_edge",
+      "source_graph_node_id": "src.node.optimization_transform_edge",
+      "source_digest": "c415f0827bf97aad27e7a538d7ac8a3df6b0f8b43741c013145e4c09cf990f7b",
+      "ir_symbol": "@DebugMaps.Foundation.optimization_transform_edge",
+      "native_symbol": "_objc3_DebugMaps_Foundation_optimization_transform_edge",
+      "object_debug_line_anchor": "obj.line.optimization_transform_edge",
+      "runtime_anchor_ids": [
+        "runtime.anchor.optimization_transform_edge"
+      ],
+      "hover_anchor_id": "hover.optimization_transform_edge",
+      "definition_anchor_id": "definition.optimization_transform_edge"
+    }
+  ],
+  "native_line_tables": [
+    {
+      "row_id": "lt.module",
+      "source_map_entry_id": "smap.module",
+      "source_graph_node_id": "src.node.module",
+      "source_file": "tests/tooling/fixtures/developer_tooling/debug_source_maps/source.objc3",
+      "source_digest": "c415f0827bf97aad27e7a538d7ac8a3df6b0f8b43741c013145e4c09cf990f7b",
+      "native_symbol": "_objc3_DebugMaps_Foundation_module",
+      "object_debug_line_anchor": "obj.line.module",
+      "package_boundary_id": "pkg.debugmaps.foundation",
+      "source_range": {
+        "line": 1,
+        "column": 9,
+        "end_line": 1,
+        "end_column": 29
+      },
+      "native_line": 41
+    },
+    {
+      "row_id": "lt.declaration",
+      "source_map_entry_id": "smap.declaration",
+      "source_graph_node_id": "src.node.declaration",
+      "source_file": "tests/tooling/fixtures/developer_tooling/debug_source_maps/source.objc3",
+      "source_digest": "c415f0827bf97aad27e7a538d7ac8a3df6b0f8b43741c013145e4c09cf990f7b",
+      "native_symbol": "_objc3_DebugMaps_Foundation_declaration",
+      "object_debug_line_anchor": "obj.line.declaration",
+      "package_boundary_id": "pkg.debugmaps.foundation",
+      "source_range": {
+        "line": 5,
+        "column": 7,
+        "end_line": 5,
+        "end_column": 10
+      },
+      "native_line": 42
+    },
+    {
+      "row_id": "lt.statement",
+      "source_map_entry_id": "smap.statement",
+      "source_graph_node_id": "src.node.statement",
+      "source_file": "tests/tooling/fixtures/developer_tooling/debug_source_maps/source.objc3",
+      "source_digest": "c415f0827bf97aad27e7a538d7ac8a3df6b0f8b43741c013145e4c09cf990f7b",
+      "native_symbol": "_objc3_DebugMaps_Foundation_statement",
+      "object_debug_line_anchor": "obj.line.statement",
+      "package_boundary_id": "pkg.debugmaps.foundation",
+      "source_range": {
+        "line": 19,
+        "column": 3,
+        "end_line": 19,
+        "end_column": 42
+      },
+      "native_line": 43
+    },
+    {
+      "row_id": "lt.expression",
+      "source_map_entry_id": "smap.expression",
+      "source_graph_node_id": "src.node.expression",
+      "source_file": "tests/tooling/fixtures/developer_tooling/debug_source_maps/source.objc3",
+      "source_digest": "c415f0827bf97aad27e7a538d7ac8a3df6b0f8b43741c013145e4c09cf990f7b",
+      "native_symbol": "_objc3_DebugMaps_Foundation_expression",
+      "object_debug_line_anchor": "obj.line.expression",
+      "package_boundary_id": "pkg.debugmaps.foundation",
+      "source_range": {
+        "line": 14,
+        "column": 10,
+        "end_line": 14,
+        "end_column": 19
+      },
+      "native_line": 44
+    },
+    {
+      "row_id": "lt.function",
+      "source_map_entry_id": "smap.function",
+      "source_graph_node_id": "src.node.function",
+      "source_file": "tests/tooling/fixtures/developer_tooling/debug_source_maps/source.objc3",
+      "source_digest": "c415f0827bf97aad27e7a538d7ac8a3df6b0f8b43741c013145e4c09cf990f7b",
+      "native_symbol": "_objc3_DebugMaps_Foundation_function",
+      "object_debug_line_anchor": "obj.line.function",
+      "package_boundary_id": "pkg.debugmaps.foundation",
+      "source_range": {
+        "line": 13,
+        "column": 6,
+        "end_line": 13,
+        "end_column": 12
+      },
+      "native_line": 45
+    },
+    {
+      "row_id": "lt.method",
+      "source_map_entry_id": "smap.method",
+      "source_graph_node_id": "src.node.method",
+      "source_file": "tests/tooling/fixtures/developer_tooling/debug_source_maps/source.objc3",
+      "source_digest": "c415f0827bf97aad27e7a538d7ac8a3df6b0f8b43741c013145e4c09cf990f7b",
+      "native_symbol": "_objc3_DebugMaps_Foundation_method",
+      "object_debug_line_anchor": "obj.line.method",
+      "package_boundary_id": "pkg.debugmaps.foundation",
+      "source_range": {
+        "line": 8,
+        "column": 8,
+        "end_line": 8,
+        "end_column": 13
+      },
+      "native_line": 46
+    },
+    {
+      "row_id": "lt.message_send",
+      "source_map_entry_id": "smap.message_send",
+      "source_graph_node_id": "src.node.message_send",
+      "source_file": "tests/tooling/fixtures/developer_tooling/debug_source_maps/source.objc3",
+      "source_digest": "c415f0827bf97aad27e7a538d7ac8a3df6b0f8b43741c013145e4c09cf990f7b",
+      "native_symbol": "_objc3_DebugMaps_Foundation_message_send",
+      "object_debug_line_anchor": "obj.line.message_send",
+      "package_boundary_id": "pkg.debugmaps.foundation",
+      "source_range": {
+        "line": 19,
+        "column": 34,
+        "end_line": 19,
+        "end_column": 43
+      },
+      "native_line": 47
+    },
+    {
+      "row_id": "lt.property_access",
+      "source_map_entry_id": "smap.property_access",
+      "source_graph_node_id": "src.node.property_access",
+      "source_file": "tests/tooling/fixtures/developer_tooling/debug_source_maps/source.objc3",
+      "source_digest": "c415f0827bf97aad27e7a538d7ac8a3df6b0f8b43741c013145e4c09cf990f7b",
+      "native_symbol": "_objc3_DebugMaps_Foundation_property_access",
+      "object_debug_line_anchor": "obj.line.property_access",
+      "package_boundary_id": "pkg.debugmaps.foundation",
+      "source_range": {
+        "line": 9,
+        "column": 12,
+        "end_line": 9,
+        "end_column": 17
+      },
+      "native_line": 48
+    },
+    {
+      "row_id": "lt.generated_accessor",
+      "source_map_entry_id": "smap.generated_accessor",
+      "source_graph_node_id": "src.node.generated_accessor",
+      "source_file": "tests/tooling/fixtures/developer_tooling/debug_source_maps/source.objc3",
+      "source_digest": "c415f0827bf97aad27e7a538d7ac8a3df6b0f8b43741c013145e4c09cf990f7b",
+      "native_symbol": "_objc3_DebugMaps_Foundation_generated_accessor",
+      "object_debug_line_anchor": "obj.line.generated_accessor",
+      "package_boundary_id": "pkg.debugmaps.foundation",
+      "source_range": {
+        "line": 6,
+        "column": 12,
+        "end_line": 6,
+        "end_column": 17
+      },
+      "native_line": 49
+    },
+    {
+      "row_id": "lt.macro_expansion",
+      "source_map_entry_id": "smap.macro_expansion",
+      "source_graph_node_id": "src.node.macro_expansion",
+      "source_file": "tests/tooling/fixtures/developer_tooling/debug_source_maps/source.objc3",
+      "source_digest": "c415f0827bf97aad27e7a538d7ac8a3df6b0f8b43741c013145e4c09cf990f7b",
+      "native_symbol": "_objc3_DebugMaps_Foundation_macro_expansion",
+      "object_debug_line_anchor": "obj.line.macro_expansion",
+      "package_boundary_id": "pkg.debugmaps.foundation",
+      "source_range": {
+        "line": 3,
+        "column": 7,
+        "end_line": 3,
+        "end_column": 20
+      },
+      "native_line": 50
+    },
+    {
+      "row_id": "lt.runtime_helper_call",
+      "source_map_entry_id": "smap.runtime_helper_call",
+      "source_graph_node_id": "src.node.runtime_helper_call",
+      "source_file": "tests/tooling/fixtures/developer_tooling/debug_source_maps/source.objc3",
+      "source_digest": "c415f0827bf97aad27e7a538d7ac8a3df6b0f8b43741c013145e4c09cf990f7b",
+      "native_symbol": "_objc3_DebugMaps_Foundation_runtime_helper_call",
+      "object_debug_line_anchor": "obj.line.runtime_helper_call",
+      "package_boundary_id": "pkg.debugmaps.foundation",
+      "source_range": {
+        "line": 21,
+        "column": 14,
+        "end_line": 21,
+        "end_column": 25
+      },
+      "native_line": 51
+    },
+    {
+      "row_id": "lt.stdlib_lowering_call",
+      "source_map_entry_id": "smap.stdlib_lowering_call",
+      "source_graph_node_id": "src.node.stdlib_lowering_call",
+      "source_file": "tests/tooling/fixtures/developer_tooling/debug_source_maps/source.objc3",
+      "source_digest": "c415f0827bf97aad27e7a538d7ac8a3df6b0f8b43741c013145e4c09cf990f7b",
+      "native_symbol": "_objc3_DebugMaps_Foundation_stdlib_lowering_call",
+      "object_debug_line_anchor": "obj.line.stdlib_lowering_call",
+      "package_boundary_id": "pkg.debugmaps.foundation",
+      "source_range": {
+        "line": 14,
+        "column": 16,
+        "end_line": 14,
+        "end_column": 17
+      },
+      "native_line": 52
+    },
+    {
+      "row_id": "lt.async_suspension_point",
+      "source_map_entry_id": "smap.async_suspension_point",
+      "source_graph_node_id": "src.node.async_suspension_point",
+      "source_file": "tests/tooling/fixtures/developer_tooling/debug_source_maps/source.objc3",
+      "source_digest": "c415f0827bf97aad27e7a538d7ac8a3df6b0f8b43741c013145e4c09cf990f7b",
+      "native_symbol": "_objc3_DebugMaps_Foundation_async_suspension_point",
+      "object_debug_line_anchor": "obj.line.async_suspension_point",
+      "package_boundary_id": "pkg.debugmaps.foundation",
+      "source_range": {
+        "line": 20,
+        "column": 3,
+        "end_line": 20,
+        "end_column": 18
+      },
+      "native_line": 53
+    },
+    {
+      "row_id": "lt.error_bridge_edge",
+      "source_map_entry_id": "smap.error_bridge_edge",
+      "source_graph_node_id": "src.node.error_bridge_edge",
+      "source_file": "tests/tooling/fixtures/developer_tooling/debug_source_maps/source.objc3",
+      "source_digest": "c415f0827bf97aad27e7a538d7ac8a3df6b0f8b43741c013145e4c09cf990f7b",
+      "native_symbol": "_objc3_DebugMaps_Foundation_error_bridge_edge",
+      "object_debug_line_anchor": "obj.line.error_bridge_edge",
+      "package_boundary_id": "pkg.debugmaps.foundation",
+      "source_range": {
+        "line": 21,
+        "column": 10,
+        "end_line": 21,
+        "end_column": 25
+      },
+      "native_line": 54
+    },
+    {
+      "row_id": "lt.ownership_cleanup_edge",
+      "source_map_entry_id": "smap.ownership_cleanup_edge",
+      "source_graph_node_id": "src.node.ownership_cleanup_edge",
+      "source_file": "tests/tooling/fixtures/developer_tooling/debug_source_maps/source.objc3",
+      "source_digest": "c415f0827bf97aad27e7a538d7ac8a3df6b0f8b43741c013145e4c09cf990f7b",
+      "native_symbol": "_objc3_DebugMaps_Foundation_ownership_cleanup_edge",
+      "object_debug_line_anchor": "obj.line.ownership_cleanup_edge",
+      "package_boundary_id": "pkg.debugmaps.foundation",
+      "source_range": {
+        "line": 22,
+        "column": 1,
+        "end_line": 22,
+        "end_column": 2
+      },
+      "native_line": 55
+    },
+    {
+      "row_id": "lt.optimization_transform_edge",
+      "source_map_entry_id": "smap.optimization_transform_edge",
+      "source_graph_node_id": "src.node.optimization_transform_edge",
+      "source_file": "tests/tooling/fixtures/developer_tooling/debug_source_maps/source.objc3",
+      "source_digest": "c415f0827bf97aad27e7a538d7ac8a3df6b0f8b43741c013145e4c09cf990f7b",
+      "native_symbol": "_objc3_DebugMaps_Foundation_optimization_transform_edge",
+      "object_debug_line_anchor": "obj.line.optimization_transform_edge",
+      "package_boundary_id": "pkg.debugmaps.foundation",
+      "source_range": {
+        "line": 19,
+        "column": 15,
+        "end_line": 19,
+        "end_column": 41
+      },
+      "native_line": 56
+    }
+  ],
+  "provenance_links": [
+    {
+      "link_id": "prov.generated_accessor",
+      "kind": "source-to-generated-ir",
+      "source_graph_node_id": "src.node.generated_accessor",
+      "source_map_entry_id": "smap.generated_accessor",
+      "generated_artifact_id": "artifact.generated_accessor",
+      "source_digest": "c415f0827bf97aad27e7a538d7ac8a3df6b0f8b43741c013145e4c09cf990f7b"
+    },
+    {
+      "link_id": "prov.macro_expansion",
+      "kind": "source-to-generated-ir",
+      "source_graph_node_id": "src.node.macro_expansion",
+      "source_map_entry_id": "smap.macro_expansion",
+      "generated_artifact_id": "artifact.macro_expansion",
+      "source_digest": "c415f0827bf97aad27e7a538d7ac8a3df6b0f8b43741c013145e4c09cf990f7b"
+    },
+    {
+      "link_id": "prov.runtime_helper_call",
+      "kind": "source-to-generated-ir",
+      "source_graph_node_id": "src.node.runtime_helper_call",
+      "source_map_entry_id": "smap.runtime_helper_call",
+      "generated_artifact_id": "artifact.runtime_helper_call",
+      "source_digest": "c415f0827bf97aad27e7a538d7ac8a3df6b0f8b43741c013145e4c09cf990f7b"
+    },
+    {
+      "link_id": "prov.stdlib_lowering_call",
+      "kind": "source-to-generated-ir",
+      "source_graph_node_id": "src.node.stdlib_lowering_call",
+      "source_map_entry_id": "smap.stdlib_lowering_call",
+      "generated_artifact_id": "artifact.stdlib_lowering_call",
+      "source_digest": "c415f0827bf97aad27e7a538d7ac8a3df6b0f8b43741c013145e4c09cf990f7b"
+    },
+    {
+      "link_id": "prov.ownership_cleanup_edge",
+      "kind": "source-to-generated-ir",
+      "source_graph_node_id": "src.node.ownership_cleanup_edge",
+      "source_map_entry_id": "smap.ownership_cleanup_edge",
+      "generated_artifact_id": "artifact.ownership_cleanup_edge",
+      "source_digest": "c415f0827bf97aad27e7a538d7ac8a3df6b0f8b43741c013145e4c09cf990f7b"
+    },
+    {
+      "link_id": "prov.optimization_transform_edge",
+      "kind": "source-to-generated-ir",
+      "source_graph_node_id": "src.node.optimization_transform_edge",
+      "source_map_entry_id": "smap.optimization_transform_edge",
+      "generated_artifact_id": "artifact.optimization_transform_edge",
+      "source_digest": "c415f0827bf97aad27e7a538d7ac8a3df6b0f8b43741c013145e4c09cf990f7b"
+    }
+  ],
+  "optimization_preservation": {
+    "claims": [
+      {
+        "claim_id": "opt.nil_receiver_folding",
+        "transform_kind": "nil-receiver-folding",
+        "source_map_entry_ids": [
+          "smap.statement"
+        ],
+        "native_line_table_row_ids": [
+          "lt.statement"
+        ],
+        "preserves_source_map": true,
+        "invalidates_source_map": false,
+        "debugger_safe": true,
+        "diagnostic": "source-map and native line-table preservation proven for debugger-safe optimization"
+      },
+      {
+        "claim_id": "opt.direct_dispatch",
+        "transform_kind": "direct-dispatch",
+        "source_map_entry_ids": [
+          "smap.message_send"
+        ],
+        "native_line_table_row_ids": [
+          "lt.message_send"
+        ],
+        "preserves_source_map": true,
+        "invalidates_source_map": false,
+        "debugger_safe": true,
+        "diagnostic": "source-map and native line-table preservation proven for debugger-safe optimization"
+      },
+      {
+        "claim_id": "opt.retained_result_cleanup",
+        "transform_kind": "retained-result-cleanup",
+        "source_map_entry_ids": [
+          "smap.ownership_cleanup_edge"
+        ],
+        "native_line_table_row_ids": [
+          "lt.ownership_cleanup_edge"
+        ],
+        "preserves_source_map": true,
+        "invalidates_source_map": false,
+        "debugger_safe": true,
+        "diagnostic": "source-map and native line-table preservation proven for debugger-safe optimization"
+      },
+      {
+        "claim_id": "opt.devirtualization",
+        "transform_kind": "devirtualization",
+        "source_map_entry_ids": [
+          "smap.method"
+        ],
+        "native_line_table_row_ids": [
+          "lt.method"
+        ],
+        "preserves_source_map": true,
+        "invalidates_source_map": false,
+        "debugger_safe": true,
+        "diagnostic": "source-map and native line-table preservation proven for debugger-safe optimization"
+      },
+      {
+        "claim_id": "opt.method_inlining",
+        "transform_kind": "method-inlining",
+        "source_map_entry_ids": [
+          "smap.function"
+        ],
+        "native_line_table_row_ids": [
+          "lt.function"
+        ],
+        "preserves_source_map": true,
+        "invalidates_source_map": false,
+        "debugger_safe": true,
+        "diagnostic": "source-map and native line-table preservation proven for debugger-safe optimization"
+      },
+      {
+        "claim_id": "opt.cache_aware_dispatch",
+        "transform_kind": "cache-aware-dispatch",
+        "source_map_entry_ids": [
+          "smap.optimization_transform_edge"
+        ],
+        "native_line_table_row_ids": [
+          "lt.optimization_transform_edge"
+        ],
+        "preserves_source_map": true,
+        "invalidates_source_map": false,
+        "debugger_safe": true,
+        "diagnostic": "source-map and native line-table preservation proven for debugger-safe optimization"
+      }
+    ]
+  },
+  "package_boundaries": {
+    "boundaries": [
+      {
+        "boundary_id": "pkg.debugmaps.foundation",
+        "package_id": "debugmaps.foundation",
+        "module_id": "DebugMaps.Foundation",
+        "source_graph_node_ids": [
+          "src.node.module",
+          "src.node.declaration",
+          "src.node.statement",
+          "src.node.expression",
+          "src.node.function",
+          "src.node.method",
+          "src.node.message_send",
+          "src.node.property_access",
+          "src.node.generated_accessor",
+          "src.node.macro_expansion",
+          "src.node.runtime_helper_call",
+          "src.node.stdlib_lowering_call",
+          "src.node.async_suspension_point",
+          "src.node.error_bridge_edge",
+          "src.node.ownership_cleanup_edge",
+          "src.node.optimization_transform_edge"
+        ],
+        "source_digest": "c415f0827bf97aad27e7a538d7ac8a3df6b0f8b43741c013145e4c09cf990f7b"
+      },
+      {
+        "boundary_id": "pkg.debugmaps.external",
+        "package_id": "debugmaps.external",
+        "module_id": "DebugMaps.External",
+        "source_graph_node_ids": [],
+        "source_digest": "c415f0827bf97aad27e7a538d7ac8a3df6b0f8b43741c013145e4c09cf990f7b"
+      }
+    ]
+  }
+}

@@ -1,0 +1,102 @@
+// #8200 cross-lane executable: object model + reflection + debugger artifacts.
+// Runtime reflection is validated through the public reflection API gate
+// (objc3_runtime_copy_reflection_class / objc3_runtime_copy_reflection_property).
+// Debugger artifact identity is validated through the object-model debugger proof.
+// A bounded single-component typed keypath is checked through the native runtime
+// helper path; statement stepping, full source maps, and broader keypath shapes
+// remain fail-closed.
+module CrossLaneObjectReflectionDebugger;
+
+extern fn objc3_runtime_keypath_component_count_for_testing(path: id) -> i32;
+extern fn objc3_runtime_keypath_root_is_self_for_testing(path: id) -> bool;
+
+@protocol DebuggableSubject
+@required
+- (i32) debugIdentifier;
+@property (readonly, getter=debugToken) id token;
+@end
+
+@interface CrossLaneDebugRoot
+- (i32) baseDebugValue;
++ (i32) baseDebugTypeValue;
+@end
+
+@implementation CrossLaneDebugRoot
+- (i32) baseDebugValue {
+  return 17;
+}
+
++ (i32) baseDebugTypeValue {
+  return 17;
+}
+@end
+
+@interface CrossLaneDebugSubject : CrossLaneDebugRoot <DebuggableSubject>
+@property (assign, getter=rawIdentifier, setter=setRawIdentifier:) i32 rawIdentifier;
+@property (readonly, getter=debugToken) id token;
+- (i32) debugIdentifier;
+- (id) debugToken;
++ (i32) debugTypeIdentifier;
++ (i32) reflectedDebugStatus;
+@end
+
+@implementation CrossLaneDebugSubject
+@property (assign, getter=rawIdentifier, setter=setRawIdentifier:) i32 rawIdentifier;
+@property (readonly, getter=debugToken) id token;
+
+- (i32) debugIdentifier {
+  return [self rawIdentifier];
+}
+
+- (id) debugToken {
+  return 0;
+}
+
++ (i32) debugTypeIdentifier {
+  return 11;
+}
+
++ (i32) reflectedDebugStatus {
+  let base = [CrossLaneDebugRoot baseDebugTypeValue];
+  let reflected = [self debugTypeIdentifier];
+  return base + reflected + 19;
+}
+@end
+
+@interface CrossLaneDebugSubject (Inspection) <DebuggableSubject>
+- (i32) reflectedDebugScore;
+@end
+
+@implementation CrossLaneDebugSubject (Inspection)
+- (i32) reflectedDebugScore {
+  let base = [self baseDebugValue];
+  let reflected = [self debugIdentifier];
+  return base + reflected + 19;
+}
+@end
+
+fn validateObjectReflectionKeypath() -> i32 {
+  let path = @keypath(CrossLaneDebugSubject, token);
+  if (path == nil) {
+    return 31;
+  }
+  if (objc3_runtime_keypath_component_count_for_testing(path) != 1) {
+    return 32;
+  }
+  if (objc3_runtime_keypath_root_is_self_for_testing(path)) {
+    return 33;
+  }
+  return 0;
+}
+
+fn main() -> i32 {
+  let keypathStatus = validateObjectReflectionKeypath();
+  if (keypathStatus != 0) {
+    return keypathStatus;
+  }
+  let score = [CrossLaneDebugSubject reflectedDebugStatus];
+  if (score != 47) {
+    return score;
+  }
+  return 0;
+}

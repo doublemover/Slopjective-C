@@ -79,6 +79,19 @@ static bool StmtContainsBlockLiteral(const Stmt *stmt) {
         }
       }
       return false;
+    case Stmt::Kind::ForIn:
+      if (stmt->for_in_stmt == nullptr) {
+        return false;
+      }
+      if (ExprContainsBlockLiteral(stmt->for_in_stmt->collection.get())) {
+        return true;
+      }
+      for (const auto &body_stmt : stmt->for_in_stmt->body) {
+        if (StmtContainsBlockLiteral(body_stmt.get())) {
+          return true;
+        }
+      }
+      return false;
     case Stmt::Kind::Switch:
       if (stmt->switch_stmt == nullptr) {
         return false;
@@ -121,6 +134,12 @@ static bool StmtContainsBlockLiteral(const Stmt *stmt) {
     case Stmt::Kind::Expr:
       return stmt->expr_stmt != nullptr &&
              ExprContainsBlockLiteral(stmt->expr_stmt->value.get());
+    case Stmt::Kind::CollectionMutation:
+      return stmt->collection_mutation_stmt != nullptr &&
+             (ExprContainsBlockLiteral(
+                  stmt->collection_mutation_stmt->key_or_index.get()) ||
+              ExprContainsBlockLiteral(
+                  stmt->collection_mutation_stmt->value.get()));
     case Stmt::Kind::Break:
     case Stmt::Kind::Continue:
     case Stmt::Kind::Empty:
@@ -142,6 +161,16 @@ static bool ExprContainsBlockLiteral(const Expr *expr) {
       ExprContainsBlockLiteral(expr->third.get()) ||
       ExprContainsBlockLiteral(expr->receiver.get())) {
     return true;
+  }
+  for (const auto &key : expr->collection_keys) {
+    if (ExprContainsBlockLiteral(key.get())) {
+      return true;
+    }
+  }
+  for (const auto &value : expr->collection_values) {
+    if (ExprContainsBlockLiteral(value.get())) {
+      return true;
+    }
   }
   for (const auto &arg : expr->args) {
     if (ExprContainsBlockLiteral(arg.get())) {

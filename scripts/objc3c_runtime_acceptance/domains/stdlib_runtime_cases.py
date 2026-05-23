@@ -72,25 +72,75 @@ def check_stdlib_foundation_next_runtime_probe_case(
     payload = parse_json_output(
         run_probe(exe_path), "stdlib foundation-next runtime probe"
     )
-    expect_equal(payload.get("text_total_call_count"), 14, "stdlib text calls drifted")
-    expect_equal(payload.get("text_record_count"), 3, "stdlib text record count drifted")
+    expect_equal(payload.get("text_total_call_count"), 17, "stdlib text calls drifted")
+    expect_equal(payload.get("text_record_count"), 4, "stdlib text record count drifted")
     expect_equal(
         payload.get("collections_total_call_count"),
-        59,
+        114,
         "stdlib collections calls drifted",
     )
-    expect_equal(payload.get("array_record_count"), 2, "stdlib array record count drifted")
-    expect_equal(payload.get("map_record_count"), 1, "stdlib map record count drifted")
+    expect_equal(payload.get("array_record_count"), 4, "stdlib array record count drifted")
+    expect_equal(
+        payload.get("descriptor_record_count"),
+        3,
+        "stdlib collection descriptor record count drifted",
+    )
+    expect_equal(
+        payload.get("descriptor_create_call_count"),
+        4,
+        "stdlib collection descriptor create calls drifted",
+    )
+    expect_equal(
+        payload.get("descriptor_query_call_count"),
+        4,
+        "stdlib collection descriptor query calls drifted",
+    )
+    expect_equal(
+        payload.get("descriptor_mismatch_failure_count"),
+        2,
+        "stdlib collection descriptor mismatch evidence drifted",
+    )
+    expect_equal(
+        payload.get("last_descriptor_status"),
+        30641,
+        "stdlib collection last descriptor status drifted",
+    )
+    expect_equal(
+        payload.get("last_descriptor_actual_kind"),
+        4,
+        "stdlib collection actual descriptor kind drifted",
+    )
+    expect_equal(
+        payload.get("last_descriptor_expected_kind"),
+        1,
+        "stdlib collection expected descriptor kind drifted",
+    )
+    expect_equal(payload.get("map_record_count"), 3, "stdlib map record count drifted")
     expect_equal(
         payload.get("map_mutation_call_count"),
-        3,
+        6,
         "stdlib map mutation calls drifted",
     )
-    expect_equal(payload.get("set_record_count"), 1, "stdlib set record count drifted")
+    expect_equal(
+        payload.get("map_delete_remaining_count"),
+        1,
+        "stdlib map delete result drifted",
+    )
+    expect_equal(payload.get("set_record_count"), 2, "stdlib set record count drifted")
+    expect_equal(
+        payload.get("set_mutation_call_count"),
+        3,
+        "stdlib set mutation calls drifted",
+    )
+    expect_equal(
+        payload.get("set_delete_remaining_count"),
+        1,
+        "stdlib set delete result drifted",
+    )
     expect_equal(payload.get("slice_record_count"), 1, "stdlib slice record count drifted")
     expect_equal(
         payload.get("iterator_record_count"),
-        3,
+        8,
         "stdlib iterator record count drifted",
     )
     expect_equal(
@@ -108,23 +158,137 @@ def check_stdlib_foundation_next_runtime_probe_case(
             "kind": "stdlib-foundation-next-runtime-backed-text-collections-probe",
             "runtime_abi": [
                 "objc3_runtime_stdlib_text_utf8_literal_i32",
+                "objc3_runtime_stdlib_text_utf8_storage_i32",
                 "objc3_runtime_stdlib_text_concat_i32",
+                "objc3_runtime_stdlib_text_builder_i32",
+                "objc3_runtime_stdlib_text_builder_append_utf8_i32",
+                "objc3_runtime_stdlib_text_builder_build_i32",
+                "objc3_runtime_stdlib_text_scalar_iterator_i32",
+                "objc3_runtime_stdlib_text_scalar_iterator_next_or_i32",
                 "objc3_runtime_stdlib_collections_array3_i32",
+                "objc3_runtime_stdlib_collections_array_storage_i32",
+                "objc3_runtime_stdlib_collections_mutable_array_i32",
+                "objc3_runtime_stdlib_collections_mutable_array_append_i32",
                 "objc3_runtime_stdlib_collections_array_get_or_i32",
                 "objc3_runtime_stdlib_collections_array_sum_i32",
                 "objc3_runtime_stdlib_collections_map_lookup_or_i32",
                 "objc3_runtime_stdlib_collections_map_insert_i32",
+                "objc3_runtime_stdlib_collections_map_delete_i32",
+                "objc3_runtime_stdlib_collections_map_key_iterator_i32",
+                "objc3_runtime_stdlib_collections_map_value_iterator_i32",
                 "objc3_runtime_stdlib_collections_set3_i32",
+                "objc3_runtime_stdlib_collections_set_delete_i32",
+                "objc3_runtime_stdlib_collections_set_iterator_i32",
                 "objc3_runtime_stdlib_collections_array_slice_i32",
                 "objc3_runtime_stdlib_collections_iterator_next_or_i32",
             ],
             "text_record_count": payload.get("text_record_count"),
             "array_record_count": payload.get("array_record_count"),
+            "descriptor_record_count": payload.get("descriptor_record_count"),
+            "descriptor_mismatch_failure_count": payload.get(
+                "descriptor_mismatch_failure_count"
+            ),
             "map_record_count": payload.get("map_record_count"),
             "map_mutation_call_count": payload.get("map_mutation_call_count"),
             "set_record_count": payload.get("set_record_count"),
+            "set_mutation_call_count": payload.get("set_mutation_call_count"),
             "slice_record_count": payload.get("slice_record_count"),
             "iterator_record_count": payload.get("iterator_record_count"),
+        },
+    )
+
+
+def check_stdlib_runtime_storage_substrate_probe_case(
+    clangxx: str, run_dir: Path
+) -> CaseResult:
+    case_dir = run_dir / "stdlib-runtime-storage-substrate-probe"
+    probe = ROOT / "tests" / "tooling" / "runtime" / "stdlib_runtime_storage_substrate_probe.cpp"
+    exe_path = case_dir / "stdlib_runtime_storage_substrate_probe.exe"
+    compile_probe(clangxx, probe, exe_path, [])
+    payload = parse_json_output(run_probe(exe_path), "stdlib runtime storage substrate probe")
+    expect_equal(
+        payload.get("text_handle_generation"),
+        3,
+        "stdlib text handle generation drifted after reset",
+    )
+    expect_equal(
+        payload.get("text_cross_kind_failures"),
+        1,
+        "stdlib text cross-kind failures drifted",
+    )
+    expect_equal(
+        payload.get("text_stale_failures"),
+        1,
+        "stdlib text stale-handle failures drifted",
+    )
+    expect_equal(
+        payload.get("text_stale_record_count"),
+        1,
+        "stdlib text stale-record accounting drifted",
+    )
+    expect_equal(
+        payload.get("text_iterator_invalidations"),
+        1,
+        "stdlib text iterator invalidation count drifted",
+    )
+    expect_equal(
+        payload.get("collections_handle_generation"),
+        3,
+        "stdlib collection handle generation drifted after reset",
+    )
+    expect_equal(
+        payload.get("collections_cross_kind_failures"),
+        1,
+        "stdlib collection cross-kind failures drifted",
+    )
+    expect_equal(
+        payload.get("collections_stale_failures"),
+        1,
+        "stdlib collection stale-handle failures drifted",
+    )
+    expect_equal(
+        payload.get("collections_stale_record_count"),
+        1,
+        "stdlib collection stale-record accounting drifted",
+    )
+    expect_equal(
+        payload.get("collections_mutation_generation"),
+        3,
+        "stdlib collection mutation generation drifted",
+    )
+    expect_equal(
+        payload.get("collections_iterator_invalidations"),
+        1,
+        "stdlib collection iterator invalidation count drifted",
+    )
+    return CaseResult(
+        case_id="stdlib-runtime-storage-substrate-probe",
+        probe="tests/tooling/runtime/stdlib_runtime_storage_substrate_probe.cpp",
+        fixture="tests/tooling/fixtures/native/execution/positive/stdlib_runtime_storage_substrate_handles.objc3",
+        claim_class="linked-runtime-probe",
+        passed=True,
+        summary={
+            "kind": "stdlib-shared-runtime-storage-substrate-probe",
+            "runtime_abi": [
+                "objc3_runtime_stdlib_text_utf8_storage_i32",
+                "objc3_runtime_stdlib_text_builder_i32",
+                "objc3_runtime_stdlib_text_builder_append_utf8_i32",
+                "objc3_runtime_stdlib_text_builder_build_i32",
+                "objc3_runtime_stdlib_text_scalar_iterator_i32",
+                "objc3_runtime_stdlib_text_scalar_iterator_next_or_i32",
+                "objc3_runtime_stdlib_collections_array_storage_i32",
+                "objc3_runtime_stdlib_collections_mutable_array_i32",
+                "objc3_runtime_stdlib_collections_mutable_array_append_i32",
+            ],
+            "text_handle_generation": payload.get("text_handle_generation"),
+            "text_stale_record_count": payload.get("text_stale_record_count"),
+            "collections_handle_generation": payload.get("collections_handle_generation"),
+            "collections_mutation_generation": payload.get(
+                "collections_mutation_generation"
+            ),
+            "collections_stale_record_count": payload.get(
+                "collections_stale_record_count"
+            ),
         },
     )
 
@@ -270,5 +434,6 @@ def check_stdlib_concurrency_runtime_probe_case(
 __all__ = [
     "check_stdlib_core_runtime_probe_case",
     "check_stdlib_foundation_next_runtime_probe_case",
+    "check_stdlib_runtime_storage_substrate_probe_case",
     "check_stdlib_concurrency_runtime_probe_case",
 ]

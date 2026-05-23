@@ -23,12 +23,21 @@ def run_external_validation_target(action_name: str) -> int:
 
 
 def run_validate_external_validation() -> int:
-    return run_composite_validation(
+    exit_code = run_composite_validation(
         "validate-external-validation",
         [
             (action_name, external_validation_command(action_name))
             for action_name in VALIDATE_EXTERNAL_VALIDATION_CHILD_ACTIONS
         ],
+    )
+    if exit_code != 0:
+        return exit_code
+    return run(
+        [
+            sys.executable,
+            str(EXTERNAL_VALIDATION_INTEGRATION_PY),
+            "--use-existing-validate-report",
+        ]
     )
 
 

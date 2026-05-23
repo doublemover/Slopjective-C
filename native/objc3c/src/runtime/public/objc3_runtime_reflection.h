@@ -7,6 +7,8 @@ extern "C" {
 #endif
 
 #define OBJC3_RUNTIME_REFLECTION_ABI_VERSION 4u
+#define OBJC3_RUNTIME_REFLECTION_DEBUG_ANCHOR_ABI_VERSION 2u
+#define OBJC3_RUNTIME_REFLECTION_DEBUG_ANCHOR_ABI_MIN_READER_VERSION 2u
 
 typedef enum objc3_runtime_reflection_status_code {
   OBJC3_RUNTIME_REFLECTION_STATUS_OK = 0,
@@ -15,6 +17,7 @@ typedef enum objc3_runtime_reflection_status_code {
   OBJC3_RUNTIME_REFLECTION_STATUS_INVALID_QUERY = -2,
   OBJC3_RUNTIME_REFLECTION_STATUS_UNAVAILABLE = -3,
   OBJC3_RUNTIME_REFLECTION_STATUS_MALFORMED_METADATA = -4,
+  OBJC3_RUNTIME_REFLECTION_STATUS_STALE_ANCHOR = -5,
 } objc3_runtime_reflection_status_code;
 
 typedef enum objc3_runtime_reflection_method_family {
@@ -34,6 +37,16 @@ typedef enum objc3_runtime_reflection_surface_kind {
   OBJC3_RUNTIME_REFLECTION_SURFACE_CATEGORY = 7,
   OBJC3_RUNTIME_REFLECTION_SURFACE_SELECTOR = 8,
 } objc3_runtime_reflection_surface_kind;
+
+typedef enum objc3_runtime_reflection_debug_anchor_kind {
+  OBJC3_RUNTIME_REFLECTION_DEBUG_ANCHOR_INVALID = 0,
+  OBJC3_RUNTIME_REFLECTION_DEBUG_ANCHOR_CLASS = 1,
+  OBJC3_RUNTIME_REFLECTION_DEBUG_ANCHOR_CATEGORY = 2,
+  OBJC3_RUNTIME_REFLECTION_DEBUG_ANCHOR_PROTOCOL = 3,
+  OBJC3_RUNTIME_REFLECTION_DEBUG_ANCHOR_PROPERTY = 4,
+  OBJC3_RUNTIME_REFLECTION_DEBUG_ANCHOR_IVAR = 5,
+  OBJC3_RUNTIME_REFLECTION_DEBUG_ANCHOR_METHOD = 6,
+} objc3_runtime_reflection_debug_anchor_kind;
 
 typedef struct objc3_runtime_reflection_state_snapshot {
   uint32_t abi_version;
@@ -231,8 +244,51 @@ typedef struct objc3_runtime_reflection_surface_snapshot {
   const char *unsupported_policy;
 } objc3_runtime_reflection_surface_snapshot;
 
+typedef struct objc3_runtime_reflection_debug_anchor_snapshot {
+  uint32_t abi_version;
+  uint32_t snapshot_size;
+  int status;
+  int found;
+  int anchor_kind;
+  int method_family;
+  int runtime_owned;
+  int source_identity_backed;
+  int replayable;
+  int missing_anchor;
+  int stale_generation;
+  uint64_t anchor_generation;
+  uint64_t class_graph_generation;
+  uint64_t category_attachment_generation;
+  uint64_t protocol_declaration_generation;
+  uint64_t storage_surface_generation;
+  uint64_t method_surface_generation;
+  uint64_t registration_order_ordinal;
+  const char *anchor_policy;
+  const char *source_identity_model;
+  const char *module_name;
+  const char *translation_unit_identity_key;
+  const char *source_path;
+  const char *runtime_identity_key;
+  const char *class_name;
+  const char *category_name;
+  const char *protocol_name;
+  const char *property_name;
+  const char *ivar_binding_symbol;
+  const char *ivar_layout_replay_key;
+  const char *selector;
+  const char *debug_projection_key;
+  const char *abi_governance_policy;
+  const char *source_anchor_kind;
+  const char *source_map_record_kind;
+  const char *source_map_anchor_policy;
+  const char *artifact_inspector_compatibility;
+} objc3_runtime_reflection_debug_anchor_snapshot;
+
 uint32_t objc3_runtime_reflection_api_abi_version(void);
+uint32_t objc3_runtime_reflection_debug_anchor_abi_version(void);
+uint32_t objc3_runtime_reflection_debug_anchor_min_reader_abi_version(void);
 uint64_t objc3_runtime_reflection_surface_count(void);
+uint64_t objc3_runtime_reflection_debug_anchor_count(void);
 int objc3_runtime_copy_reflection_surface(
     uint64_t index, objc3_runtime_reflection_surface_snapshot *snapshot);
 int objc3_runtime_copy_reflection_surface_by_kind(
@@ -273,6 +329,15 @@ int objc3_runtime_copy_reflection_selector(
     const char *selector, objc3_runtime_reflection_selector_snapshot *snapshot);
 int objc3_runtime_copy_reflection_selector_at(
     uint64_t index, objc3_runtime_reflection_selector_snapshot *snapshot);
+int objc3_runtime_copy_reflection_debug_anchor(
+    int anchor_kind, const char *container_name, const char *member_name,
+    int method_family, objc3_runtime_reflection_debug_anchor_snapshot *snapshot);
+int objc3_runtime_copy_reflection_debug_anchor_with_generation(
+    int anchor_kind, const char *container_name, const char *member_name,
+    int method_family, uint64_t expected_anchor_generation,
+    objc3_runtime_reflection_debug_anchor_snapshot *snapshot);
+int objc3_runtime_copy_reflection_debug_anchor_at(
+    uint64_t index, objc3_runtime_reflection_debug_anchor_snapshot *snapshot);
 
 #ifdef __cplusplus
 }

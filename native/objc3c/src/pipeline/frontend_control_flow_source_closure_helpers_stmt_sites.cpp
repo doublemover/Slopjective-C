@@ -14,6 +14,7 @@ void CollectControlFlowControlFlowSourceClosureStmtSites(
   case Stmt::Kind::Assign:
   case Stmt::Kind::Return:
   case Stmt::Kind::Expr:
+  case Stmt::Kind::CollectionMutation:
     break;
   case Stmt::Kind::If:
     if (stmt->if_stmt != nullptr) {
@@ -47,6 +48,14 @@ void CollectControlFlowControlFlowSourceClosureStmtSites(
   case Stmt::Kind::For:
     if (stmt->for_stmt != nullptr) {
       for (const auto &child : stmt->for_stmt->body) {
+        CollectControlFlowControlFlowSourceClosureStmtSites(
+            child.get(), summary);
+      }
+    }
+    break;
+  case Stmt::Kind::ForIn:
+    if (stmt->for_in_stmt != nullptr) {
+      for (const auto &child : stmt->for_in_stmt->body) {
         CollectControlFlowControlFlowSourceClosureStmtSites(
             child.get(), summary);
       }

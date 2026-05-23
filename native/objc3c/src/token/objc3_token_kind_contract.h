@@ -97,6 +97,7 @@ enum class Objc3LexTokenKind {
   QuestionDot,
   QuestionQuestion,
   Tilde,
+  Hash,
   Plus,
   Minus,
   Star,

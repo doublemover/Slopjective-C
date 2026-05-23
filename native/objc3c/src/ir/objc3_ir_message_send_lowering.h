@@ -17,6 +17,7 @@ struct Objc3IRMessageSendLoweringPlan {
   bool hard_cutover_dispatch_target = false;
   bool emits_direct_dispatch = false;
   bool emits_runtime_dispatch = false;
+  bool emits_cache_aware_dispatch = false;
   bool elides_to_nil_result = false;
   bool emits_nil_checked_dispatch = false;
   bool method_family_retained_result_cleanup_required = false;
@@ -25,6 +26,7 @@ struct Objc3IRMessageSendLoweringPlan {
   bool fail_closed = false;
   bool strict_no_retired_route = true;
   bool strict_no_compatibility = true;
+  bool cache_aware_abi_available = false;
   std::string failure_reason;
 };
 

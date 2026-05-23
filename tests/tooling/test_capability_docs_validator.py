@@ -591,6 +591,37 @@ def test_runtime_object_model_interface_claim_is_narrow_and_evidence_backed() ->
     assert rows["runtime.object-model.full-realization"]["state"] == "reserved"
 
 
+def test_cross_lane_manifest_support_claims_are_matrix_backed() -> None:
+    matrix = json.loads(
+        (ROOT / "docs" / "support" / "capability_matrix.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    manifest = json.loads(
+        (
+            ROOT
+            / "tests"
+            / "tooling"
+            / "fixtures"
+            / "cross_lane_e2e"
+            / "manifest.json"
+        ).read_text(encoding="utf-8")
+    )
+    rows = {row["id"]: row for row in matrix["capabilities"]}
+    implemented_claims = {
+        claim
+        for row in rows.values()
+        if row["state"] == "implemented"
+        for claim in row.get("support_claims", [])
+    }
+
+    for family in manifest["families"]:
+        for capability_id in family["capability_rows"]:
+            assert capability_id in rows, (family["family_id"], capability_id)
+        for claim in family["support_claims"]:
+            assert claim in implemented_claims, (family["family_id"], claim)
+
+
 def test_object_model_implemented_rows_reject_broad_realization_language() -> None:
     validator = _load_validator()
     row = {
@@ -647,3 +678,181 @@ def test_object_model_implemented_rows_allow_storage_reflection_owners() -> None
     }
 
     validator._validate_object_model_scope([row])
+
+
+def _minimal_umbrella_readiness(blocker_id: str = "missing-integrated-proof") -> dict[str, Any]:
+    requirement = {
+        "id": "integrated-proof",
+        "description": "Integrated proof remains blocked in the synthetic readiness row.",
+        "status": "blocked",
+        "blocker_id": blocker_id,
+    }
+    return {
+        "schema_version": "objc3c-umbrella-readiness-v1",
+        "readiness_version": "test",
+        "schema_path": "schemas/objc3c-umbrella-readiness-v1.schema.json",
+        "matrix_path": "docs/support/capability_matrix.json",
+        "evidence_map_path": "docs/support/evidence_map.json",
+        "projection_policy": {
+            "authoritative_data": [
+                "docs/support/umbrella_readiness.json",
+                "docs/support/capability_matrix.json",
+                "docs/support/evidence_map.json",
+            ],
+            "human_projection": "docs/support/umbrella_readiness.md",
+            "validator": "scripts/check_objc3c_umbrella_readiness.py",
+            "consumer_rule": "readiness does not create support claims",
+        },
+        "entries": [
+            {
+                "umbrella_capability_id": "runtime.example.full",
+                "current_state": "reserved",
+                "target_state": "implemented",
+                "readiness_state": "blocked",
+                "intended_public_meaning": "Synthetic umbrella readiness row.",
+                "forbidden_overclaims": ["generated reports as source truth"],
+                "required_prerequisite_rows": [
+                    {
+                        "capability_id": "runtime.example.narrow",
+                        "required_state": "implemented",
+                        "reason": "narrow row must be implemented",
+                    }
+                ],
+                "required_source_anchors": [
+                    {
+                        "id": "source-anchor",
+                        "description": "README exists as synthetic source evidence.",
+                        "status": "satisfied",
+                        "path": "README.md",
+                    }
+                ],
+                "required_public_commands": [],
+                "required_positive_fixtures": [requirement],
+                "required_negative_fixtures": [requirement],
+                "required_runtime_probes": [],
+                "required_abi_governance_rows": [],
+                "required_docs": [
+                    {
+                        "id": "support-doc",
+                        "description": "Support README exists as synthetic doc evidence.",
+                        "status": "satisfied",
+                        "path": "docs/support/README.md",
+                    }
+                ],
+                "generated_output_boundary": {
+                    "source_truth_allowed": False,
+                    "unsupported_sources": [
+                        "tmp/",
+                        "generated markdown projections",
+                        "issue comments",
+                        "PR bodies",
+                    ],
+                    "rule": "generated outputs cannot satisfy readiness",
+                },
+                "promotion_blockers": [
+                    {
+                        "blocker_id": "missing-integrated-proof",
+                        "summary": "Synthetic blocker.",
+                        "missing_work": ["integrated proof"],
+                    }
+                ],
+                "final_promotion_criteria": ["all requirements are satisfied"],
+            }
+        ],
+    }
+
+
+def _minimal_readiness_rows() -> list[dict[str, Any]]:
+    return [
+        {
+            "id": "runtime.example.full",
+            "title": "Synthetic full umbrella",
+            "state": "reserved",
+            "summary": "Synthetic umbrella row.",
+            "evidence": [{"kind": "doc", "path": "docs/support/README.md"}],
+        },
+        {
+            "id": "runtime.example.narrow",
+            "title": "Synthetic narrow row",
+            "state": "implemented",
+            "summary": "Synthetic implemented prerequisite.",
+            "support_claims": ["objc3c.behavior.runtime.example-narrow"],
+            "evidence": [
+                {
+                    "kind": "test",
+                    "path": "README.md",
+                    "command": "npm run objc3c -- test-behavior-matrix",
+                }
+            ],
+        },
+    ]
+
+
+def test_umbrella_readiness_accepts_blocked_rows_with_declared_blockers() -> None:
+    _load_validator()
+    from capability_docs_validator.umbrella_readiness import validate_umbrella_readiness
+
+    validate_umbrella_readiness(
+        _minimal_umbrella_readiness(),
+        rows=_minimal_readiness_rows(),
+        evidence_map={
+            "rows": [
+                {
+                    "capability_id": "runtime.example.narrow",
+                    "support_claim": "objc3c.behavior.runtime.example-narrow",
+                    "evidence_kind": "test",
+                    "path": "README.md",
+                    "command": "npm run objc3c -- test-behavior-matrix",
+                }
+            ]
+        },
+    )
+
+
+def test_umbrella_readiness_rejects_blocked_requirements_without_declared_blocker() -> None:
+    validator = _load_validator()
+    from capability_docs_validator.umbrella_readiness import validate_umbrella_readiness
+
+    readiness = _minimal_umbrella_readiness(blocker_id="undeclared-blocker")
+
+    with pytest.raises(validator.CapabilityDocsError, match="declared promotion blocker"):
+        validate_umbrella_readiness(
+            readiness,
+            rows=_minimal_readiness_rows(),
+            evidence_map={
+                "rows": [
+                    {
+                        "capability_id": "runtime.example.narrow",
+                        "support_claim": "objc3c.behavior.runtime.example-narrow",
+                        "evidence_kind": "test",
+                        "path": "README.md",
+                        "command": "npm run objc3c -- test-behavior-matrix",
+                    }
+                ]
+            },
+        )
+
+
+def test_umbrella_readiness_rejects_generated_output_as_source_truth() -> None:
+    validator = _load_validator()
+    from capability_docs_validator.umbrella_readiness import validate_umbrella_readiness
+
+    readiness = _minimal_umbrella_readiness()
+    readiness["entries"][0]["generated_output_boundary"]["unsupported_sources"].remove("tmp/")
+
+    with pytest.raises(validator.CapabilityDocsError, match="generated output boundary"):
+        validate_umbrella_readiness(
+            readiness,
+            rows=_minimal_readiness_rows(),
+            evidence_map={
+                "rows": [
+                    {
+                        "capability_id": "runtime.example.narrow",
+                        "support_claim": "objc3c.behavior.runtime.example-narrow",
+                        "evidence_kind": "test",
+                        "path": "README.md",
+                        "command": "npm run objc3c -- test-behavior-matrix",
+                    }
+                ]
+            },
+        )

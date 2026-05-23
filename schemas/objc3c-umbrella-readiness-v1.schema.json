@@ -1,0 +1,343 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://objc3c.dev/schemas/objc3c-umbrella-readiness-v1.schema.json",
+  "title": "objc3c Umbrella Capability Readiness",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "readiness_version",
+    "schema_path",
+    "matrix_path",
+    "evidence_map_path",
+    "projection_policy",
+    "entries"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "objc3c-umbrella-readiness-v1"
+    },
+    "readiness_version": {
+      "type": "string",
+      "minLength": 1
+    },
+    "schema_path": {
+      "const": "schemas/objc3c-umbrella-readiness-v1.schema.json"
+    },
+    "matrix_path": {
+      "const": "docs/support/capability_matrix.json"
+    },
+    "evidence_map_path": {
+      "const": "docs/support/evidence_map.json"
+    },
+    "projection_policy": {
+      "type": "object",
+      "required": [
+        "authoritative_data",
+        "human_projection",
+        "validator",
+        "consumer_rule"
+      ],
+      "properties": {
+        "authoritative_data": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/repoPath"
+          },
+          "minItems": 1,
+          "uniqueItems": true
+        },
+        "human_projection": {
+          "$ref": "#/$defs/repoPath"
+        },
+        "validator": {
+          "$ref": "#/$defs/repoPath"
+        },
+        "consumer_rule": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "additionalProperties": false
+    },
+    "entries": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/readinessEntry"
+      },
+      "minItems": 1
+    }
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "capabilityId": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9._-]*$"
+    },
+    "repoPath": {
+      "type": "string",
+      "minLength": 1
+    },
+    "publicCommand": {
+      "type": "string",
+      "pattern": "^npm run objc3c -- [a-z0-9][a-z0-9-]*(?: .*)?$"
+    },
+    "state": {
+      "enum": [
+        "implemented",
+        "rejected",
+        "reserved",
+        "internal"
+      ]
+    },
+    "readinessState": {
+      "enum": [
+        "blocked",
+        "ready"
+      ]
+    },
+    "requirementStatus": {
+      "enum": [
+        "satisfied",
+        "blocked",
+        "reserved",
+        "rejected",
+        "non-goal"
+      ]
+    },
+    "generatedOutputBoundary": {
+      "type": "object",
+      "required": [
+        "source_truth_allowed",
+        "unsupported_sources",
+        "rule"
+      ],
+      "properties": {
+        "source_truth_allowed": {
+          "const": false
+        },
+        "unsupported_sources": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "minItems": 1,
+          "uniqueItems": true
+        },
+        "rule": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "additionalProperties": false
+    },
+    "prerequisiteRow": {
+      "type": "object",
+      "required": [
+        "capability_id",
+        "required_state",
+        "reason"
+      ],
+      "properties": {
+        "capability_id": {
+          "$ref": "#/$defs/capabilityId"
+        },
+        "required_state": {
+          "$ref": "#/$defs/state"
+        },
+        "reason": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "additionalProperties": false
+    },
+    "readinessRequirement": {
+      "type": "object",
+      "required": [
+        "id",
+        "description",
+        "status"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[a-z0-9][a-z0-9._-]*$"
+        },
+        "description": {
+          "type": "string",
+          "minLength": 1
+        },
+        "status": {
+          "$ref": "#/$defs/requirementStatus"
+        },
+        "path": {
+          "$ref": "#/$defs/repoPath"
+        },
+        "capability_id": {
+          "$ref": "#/$defs/capabilityId"
+        },
+        "command": {
+          "$ref": "#/$defs/publicCommand"
+        },
+        "blocker_id": {
+          "type": "string",
+          "pattern": "^[a-z0-9][a-z0-9._-]*$"
+        }
+      },
+      "additionalProperties": false
+    },
+    "promotionBlocker": {
+      "type": "object",
+      "required": [
+        "blocker_id",
+        "summary",
+        "missing_work"
+      ],
+      "properties": {
+        "blocker_id": {
+          "type": "string",
+          "pattern": "^[a-z0-9][a-z0-9._-]*$"
+        },
+        "summary": {
+          "type": "string",
+          "minLength": 1
+        },
+        "missing_work": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "minItems": 1
+        },
+        "tracking_issue": {
+          "type": "string",
+          "pattern": "^#[0-9]+$"
+        }
+      },
+      "additionalProperties": false
+    },
+    "readinessEntry": {
+      "type": "object",
+      "required": [
+        "umbrella_capability_id",
+        "current_state",
+        "target_state",
+        "readiness_state",
+        "intended_public_meaning",
+        "forbidden_overclaims",
+        "required_prerequisite_rows",
+        "required_source_anchors",
+        "required_public_commands",
+        "required_positive_fixtures",
+        "required_negative_fixtures",
+        "required_runtime_probes",
+        "required_abi_governance_rows",
+        "required_docs",
+        "generated_output_boundary",
+        "promotion_blockers",
+        "final_promotion_criteria"
+      ],
+      "properties": {
+        "umbrella_capability_id": {
+          "$ref": "#/$defs/capabilityId"
+        },
+        "current_state": {
+          "$ref": "#/$defs/state"
+        },
+        "target_state": {
+          "$ref": "#/$defs/state"
+        },
+        "readiness_state": {
+          "$ref": "#/$defs/readinessState"
+        },
+        "intended_public_meaning": {
+          "type": "string",
+          "minLength": 1
+        },
+        "forbidden_overclaims": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "minItems": 1,
+          "uniqueItems": true
+        },
+        "required_prerequisite_rows": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/prerequisiteRow"
+          },
+          "minItems": 1
+        },
+        "required_source_anchors": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/readinessRequirement"
+          },
+          "minItems": 1
+        },
+        "required_public_commands": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/readinessRequirement"
+          }
+        },
+        "required_positive_fixtures": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/readinessRequirement"
+          },
+          "minItems": 1
+        },
+        "required_negative_fixtures": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/readinessRequirement"
+          },
+          "minItems": 1
+        },
+        "required_runtime_probes": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/readinessRequirement"
+          }
+        },
+        "required_abi_governance_rows": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/readinessRequirement"
+          }
+        },
+        "required_docs": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/readinessRequirement"
+          },
+          "minItems": 1
+        },
+        "generated_output_boundary": {
+          "$ref": "#/$defs/generatedOutputBoundary"
+        },
+        "promotion_blockers": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/promotionBlocker"
+          }
+        },
+        "final_promotion_criteria": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "minItems": 1,
+          "uniqueItems": true
+        }
+      },
+      "additionalProperties": false
+    }
+  }
+}

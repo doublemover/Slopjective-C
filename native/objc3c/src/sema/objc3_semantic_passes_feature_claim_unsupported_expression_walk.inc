@@ -59,6 +59,25 @@ static void DiagnoseUnsupportedFeatureClaimsInExpr(
     DiagnoseUnsupportedFeatureClaimsInExpr(
         expr->third.get(), diagnostics, stats, context);
     return;
+  case Expr::Kind::CollectionLiteral:
+    for (const auto &key : expr->collection_keys) {
+      DiagnoseUnsupportedFeatureClaimsInExpr(key.get(), diagnostics, stats, context);
+    }
+    for (const auto &value : expr->collection_values) {
+      DiagnoseUnsupportedFeatureClaimsInExpr(value.get(), diagnostics, stats, context);
+    }
+    return;
+  case Expr::Kind::IndexAccess:
+    DiagnoseUnsupportedFeatureClaimsInExpr(
+        expr->left.get(), diagnostics, stats, context);
+    DiagnoseUnsupportedFeatureClaimsInExpr(
+        expr->right.get(), diagnostics, stats, context);
+    return;
+  case Expr::Kind::StringInterpolation:
+    for (const auto &arg : expr->args) {
+      DiagnoseUnsupportedFeatureClaimsInExpr(arg.get(), diagnostics, stats, context);
+    }
+    return;
   case Expr::Kind::BoolLiteral:
   case Expr::Kind::Identifier:
   case Expr::Kind::KeyPathLiteral:

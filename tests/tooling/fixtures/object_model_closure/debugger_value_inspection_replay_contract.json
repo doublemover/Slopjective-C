@@ -1,0 +1,675 @@
+{
+  "contract_id": "objc3c.object_model.debugger_value_inspection_replay.v1",
+  "issue": 8198,
+  "capability_id": "runtime.object-model.full-realization",
+  "public_status": "reserved",
+  "support_claim_published": false,
+  "readiness_role": "checked object-model debugger proof composition for the reserved full-realization umbrella",
+  "public_command": "npm run objc3c -- validate-object-model-debugger-proof",
+  "production_artifact_probe": {
+    "contract_id": "objc3c.object_model.production_artifact_probe.v1",
+    "source_fixture": "tests/native/runtime/object_model/full_realization_combined_reflection_replay_contract.objc3",
+    "public_command": "npm run objc3c -- validate-object-model-debugger-proof",
+    "runs_canonical_frontend": true,
+    "frontend_artifact_surface": "inspect-editor-tooling",
+    "required_artifact_kinds": [
+      "manifest",
+      "ir",
+      "object",
+      "runtime-metadata-binary",
+      "source-graph",
+      "artifact-inspector",
+      "debug-map"
+    ],
+    "runtime_inventory_minimums": {
+      "class_records": 2,
+      "protocol_records": 1,
+      "category_records": 1,
+      "property_records": 4,
+      "ivar_records": 2,
+      "method_records": 8,
+      "source_graph_nodes": 6,
+      "declaration_breakpoint_anchors": 6
+    },
+    "object_model_source_identity_minimums": {
+      "source_map_records": 6,
+      "native_line_table_rows": 6,
+      "stepping_candidates": 4,
+      "required_identity_kinds": [
+        "class",
+        "category",
+        "protocol",
+        "property",
+        "ivar",
+        "method"
+      ]
+    },
+    "source_map_native_line_table_minimums": {
+      "source_map_records": 6,
+      "native_line_table_rows": 6,
+      "required_identity_kinds": [
+        "class",
+        "category",
+        "protocol",
+        "property",
+        "ivar",
+        "method"
+      ]
+    },
+    "debug_map_boundary": {
+      "full_source_map_publication": "fail-closed",
+      "statement_stepping": "fail-closed",
+      "native_debug_info_evidence": "required",
+      "boundary_reason": "the production compiler path must publish object-model source-map records and native line-table rows from the canonical manifest now, and native debug-info failure must be tied to emitted object section and IR debug-metadata evidence before debugger stepping can open"
+    }
+  },
+  "reflection_abi_governance": {
+    "public_header": "native/objc3c/src/runtime/public/objc3_runtime_reflection.h",
+    "public_reflection_abi_version_macro": "OBJC3_RUNTIME_REFLECTION_ABI_VERSION",
+    "expected_public_reflection_abi_version": 4,
+    "debug_anchor_abi_version_macro": "OBJC3_RUNTIME_REFLECTION_DEBUG_ANCHOR_ABI_VERSION",
+    "expected_debug_anchor_abi_version": 2,
+    "debug_anchor_min_reader_abi_version_macro": "OBJC3_RUNTIME_REFLECTION_DEBUG_ANCHOR_ABI_MIN_READER_VERSION",
+    "expected_debug_anchor_min_reader_abi_version": 2,
+    "snapshot_type": "objc3_runtime_reflection_debug_anchor_snapshot",
+    "caller_size_negotiation": "snapshot_size-zero-means-v1-prefix",
+    "v1_prefix_last_field": "debug_projection_key",
+    "snapshot_fields": [
+      "abi_governance_policy",
+      "source_anchor_kind",
+      "source_map_record_kind",
+      "source_map_anchor_policy",
+      "artifact_inspector_compatibility"
+    ],
+    "versioning_policy": "debug-anchor ABI must be bumped when snapshot layout, status semantics, source-anchor mapping, or artifact-inspector compatibility changes"
+  },
+  "artifact_inspector_compatibility": {
+    "contract_id": "objc3c.object_model.debugger_artifact_inspector.compatibility.v1",
+    "required_contract_id": "objc3c.developer.tooling.artifact.inspector.v1",
+    "required_support_class": "compile-artifact-inspector",
+    "required_runtime_inventory_reflection_abi_version": "manifest-derived-runtime-metadata",
+    "requires_runtime_inventory": true,
+    "requires_debug_map_link": true,
+    "object_model_source_map_native_line_table": "required",
+    "full_source_map_publication": "fail-closed"
+  },
+  "statement_step_reservation_contract": {
+    "contract_id": "objc3c.object_model.statement_step_reservation.fail_closed.v1",
+    "status": "reserved",
+    "fail_closed": true,
+    "required_candidate_status": "native-line-table-ready-stepping-blocked",
+    "requires_exact_source_native_line_anchor": true,
+    "requires_source_map_row_identity_alignment": true,
+    "requires_emitted_native_debug_info": true,
+    "blocked_by": [
+      "runtime-debug-trace-statement-stepping-integration"
+    ]
+  },
+  "source_map_bundle": "tests/tooling/fixtures/developer_tooling/debug_source_maps/positive.json",
+  "debugger_replay": "tests/tooling/fixtures/developer_tooling/debugger_integration/replay.json",
+  "debug_anchor_identity_contract": "tests/tooling/fixtures/object_model_closure/debug_anchor_identity_replay_contract.json",
+  "debug_anchor_identity_probe": "tests/native/runtime/object_model/debug_anchor_identity_replay_probe.cpp",
+  "runtime_reflection_contract": "tests/tooling/fixtures/objc3c/public_runtime_reflection_api_contract.json",
+  "source_fixture": "tests/native/runtime/object_model/full_realization_combined_reflection_replay_contract.objc3",
+  "required_runtime_identity_kinds": [
+    "class",
+    "category",
+    "protocol",
+    "property",
+    "ivar",
+    "method"
+  ],
+  "required_source_map_record_kinds": [
+    "declaration",
+    "method",
+    "message-send",
+    "property-access",
+    "generated-accessor"
+  ],
+  "source_backed_debug_anchors": [
+    {
+      "runtime_identity_kind": "class",
+      "anchor_kind": "OBJC3_RUNTIME_REFLECTION_DEBUG_ANCHOR_CLASS",
+      "source_map_entry_id": "smap.declaration",
+      "debug_map_entry_id": "dmap.declaration",
+      "native_line_table_row_id": "lt.declaration",
+      "runtime_anchor_id": "runtime.anchor.object_model.class",
+      "required_source_map_record_kind": "declaration",
+      "reflection_entrypoint": "objc3_runtime_copy_reflection_class"
+    },
+    {
+      "runtime_identity_kind": "category",
+      "anchor_kind": "OBJC3_RUNTIME_REFLECTION_DEBUG_ANCHOR_CATEGORY",
+      "source_map_entry_id": "smap.declaration",
+      "debug_map_entry_id": "dmap.declaration",
+      "native_line_table_row_id": "lt.declaration",
+      "runtime_anchor_id": "runtime.anchor.object_model.category",
+      "required_source_map_record_kind": "declaration",
+      "reflection_entrypoint": "objc3_runtime_copy_reflection_category"
+    },
+    {
+      "runtime_identity_kind": "protocol",
+      "anchor_kind": "OBJC3_RUNTIME_REFLECTION_DEBUG_ANCHOR_PROTOCOL",
+      "source_map_entry_id": "smap.declaration",
+      "debug_map_entry_id": "dmap.declaration",
+      "native_line_table_row_id": "lt.declaration",
+      "runtime_anchor_id": "runtime.anchor.object_model.protocol",
+      "required_source_map_record_kind": "declaration",
+      "reflection_entrypoint": "objc3_runtime_copy_reflection_protocol"
+    },
+    {
+      "runtime_identity_kind": "property",
+      "anchor_kind": "OBJC3_RUNTIME_REFLECTION_DEBUG_ANCHOR_PROPERTY",
+      "source_map_entry_id": "smap.property_access",
+      "debug_map_entry_id": "dmap.property_access",
+      "native_line_table_row_id": "lt.property_access",
+      "runtime_anchor_id": "runtime.anchor.object_model.property",
+      "required_source_map_record_kind": "property-access",
+      "reflection_entrypoint": "objc3_runtime_copy_reflection_property"
+    },
+    {
+      "runtime_identity_kind": "ivar",
+      "anchor_kind": "OBJC3_RUNTIME_REFLECTION_DEBUG_ANCHOR_IVAR",
+      "source_map_entry_id": "smap.generated_accessor",
+      "debug_map_entry_id": "dmap.generated_accessor",
+      "native_line_table_row_id": "lt.generated_accessor",
+      "runtime_anchor_id": "runtime.anchor.object_model.ivar",
+      "required_source_map_record_kind": "generated-accessor",
+      "reflection_entrypoint": "objc3_runtime_copy_reflection_property"
+    },
+    {
+      "runtime_identity_kind": "method",
+      "anchor_kind": "OBJC3_RUNTIME_REFLECTION_DEBUG_ANCHOR_METHOD",
+      "source_map_entry_id": "smap.method",
+      "debug_map_entry_id": "dmap.method",
+      "native_line_table_row_id": "lt.method",
+      "runtime_anchor_id": "runtime.anchor.object_model.method",
+      "required_source_map_record_kind": "method",
+      "reflection_entrypoint": "objc3_runtime_copy_reflection_method"
+    }
+  ],
+  "required_debug_anchor_negative_cases": [
+    {
+      "case_id": "missing-anchor",
+      "expected_status": "OBJC3_RUNTIME_REFLECTION_STATUS_NOT_FOUND",
+      "expected_snapshot_field": "missing_anchor"
+    },
+    {
+      "case_id": "stale-generation",
+      "expected_status": "OBJC3_RUNTIME_REFLECTION_STATUS_STALE_ANCHOR",
+      "expected_snapshot_field": "stale_generation"
+    },
+    {
+      "case_id": "malformed-metadata",
+      "expected_status": "OBJC3_RUNTIME_REFLECTION_STATUS_MALFORMED_METADATA"
+    }
+  ],
+  "required_debugger_replay_value_kinds": [
+    "class-metadata",
+    "selector-metadata",
+    "object-handle"
+  ],
+  "required_supported_step_kinds": [
+    "method",
+    "message-send"
+  ],
+  "object_model_value_inspection_records": [
+    {
+      "record_id": "inspect.class-metadata.debug-anchor",
+      "value_kind": "class-metadata",
+      "lldb_command_id": "inspect-class",
+      "runtime_anchor_id": "runtime.anchor.object_model.class",
+      "replayable": true,
+      "debugger_value_source": "runtime reflection class snapshot plus debug-anchor identity"
+    },
+    {
+      "record_id": "inspect.category-metadata.debug-anchor",
+      "value_kind": "category-metadata",
+      "lldb_command_id": "inspect-class",
+      "runtime_anchor_id": "runtime.anchor.object_model.category",
+      "replayable": true,
+      "debugger_value_source": "runtime reflection category snapshot plus debug-anchor identity"
+    },
+    {
+      "record_id": "inspect.protocol-metadata.debug-anchor",
+      "value_kind": "protocol-metadata",
+      "lldb_command_id": "load-module-metadata",
+      "runtime_anchor_id": "runtime.anchor.object_model.protocol",
+      "replayable": true,
+      "debugger_value_source": "runtime reflection protocol snapshot plus debug-anchor identity"
+    },
+    {
+      "record_id": "inspect.property-metadata.debug-anchor",
+      "value_kind": "property-metadata",
+      "lldb_command_id": "inspect-object",
+      "runtime_anchor_id": "runtime.anchor.object_model.property",
+      "replayable": true,
+      "debugger_value_source": "runtime reflection property snapshot plus debug-anchor identity"
+    },
+    {
+      "record_id": "inspect.ivar-layout.debug-anchor",
+      "value_kind": "ivar-layout",
+      "lldb_command_id": "inspect-object",
+      "runtime_anchor_id": "runtime.anchor.object_model.ivar",
+      "replayable": true,
+      "debugger_value_source": "runtime reflection ivar layout snapshot plus debug-anchor identity"
+    },
+    {
+      "record_id": "inspect.method-metadata.debug-anchor",
+      "value_kind": "method-metadata",
+      "lldb_command_id": "step-method",
+      "runtime_anchor_id": "runtime.anchor.object_model.method",
+      "replayable": true,
+      "debugger_value_source": "runtime reflection method snapshot plus debug-anchor identity"
+    },
+    {
+      "record_id": "inspect.selector-message-send.debug-anchor",
+      "value_kind": "selector-metadata",
+      "lldb_command_id": "step-message-send",
+      "runtime_anchor_id": "runtime.anchor.message_send",
+      "replayable": true,
+      "debugger_value_source": "runtime selector metadata plus source-map-backed message-send stepping"
+    }
+  ],
+  "artifact_runtime_reflection_links": [
+    {
+      "link_id": "object-model.class.source-map-line-table-debug-anchor",
+      "runtime_identity_kind": "class",
+      "source_map_entry_id": "smap.declaration",
+      "debug_map_entry_id": "dmap.declaration",
+      "native_line_table_row_id": "lt.declaration",
+      "runtime_anchor_id": "runtime.anchor.object_model.class",
+      "reflection_entrypoint": "objc3_runtime_copy_reflection_class",
+      "value_record_id": "inspect.class-metadata.debug-anchor"
+    },
+    {
+      "link_id": "object-model.category.source-map-line-table-debug-anchor",
+      "runtime_identity_kind": "category",
+      "source_map_entry_id": "smap.declaration",
+      "debug_map_entry_id": "dmap.declaration",
+      "native_line_table_row_id": "lt.declaration",
+      "runtime_anchor_id": "runtime.anchor.object_model.category",
+      "reflection_entrypoint": "objc3_runtime_copy_reflection_category",
+      "value_record_id": "inspect.category-metadata.debug-anchor"
+    },
+    {
+      "link_id": "object-model.protocol.source-map-line-table-debug-anchor",
+      "runtime_identity_kind": "protocol",
+      "source_map_entry_id": "smap.declaration",
+      "debug_map_entry_id": "dmap.declaration",
+      "native_line_table_row_id": "lt.declaration",
+      "runtime_anchor_id": "runtime.anchor.object_model.protocol",
+      "reflection_entrypoint": "objc3_runtime_copy_reflection_protocol",
+      "value_record_id": "inspect.protocol-metadata.debug-anchor"
+    },
+    {
+      "link_id": "object-model.property.source-map-line-table-debug-anchor",
+      "runtime_identity_kind": "property",
+      "source_map_entry_id": "smap.property_access",
+      "debug_map_entry_id": "dmap.property_access",
+      "native_line_table_row_id": "lt.property_access",
+      "runtime_anchor_id": "runtime.anchor.object_model.property",
+      "reflection_entrypoint": "objc3_runtime_copy_reflection_property",
+      "value_record_id": "inspect.property-metadata.debug-anchor"
+    },
+    {
+      "link_id": "object-model.ivar.source-map-line-table-debug-anchor",
+      "runtime_identity_kind": "ivar",
+      "source_map_entry_id": "smap.generated_accessor",
+      "debug_map_entry_id": "dmap.generated_accessor",
+      "native_line_table_row_id": "lt.generated_accessor",
+      "runtime_anchor_id": "runtime.anchor.object_model.ivar",
+      "reflection_entrypoint": "objc3_runtime_copy_reflection_property",
+      "value_record_id": "inspect.ivar-layout.debug-anchor"
+    },
+    {
+      "link_id": "object-model.method.source-map-line-table-debug-anchor",
+      "runtime_identity_kind": "method",
+      "source_map_entry_id": "smap.method",
+      "debug_map_entry_id": "dmap.method",
+      "native_line_table_row_id": "lt.method",
+      "runtime_anchor_id": "runtime.anchor.object_model.method",
+      "reflection_entrypoint": "objc3_runtime_copy_reflection_method",
+      "value_record_id": "inspect.method-metadata.debug-anchor"
+    },
+    {
+      "link_id": "object-model.message-send.selector.source-map-line-table-debug-anchor",
+      "runtime_identity_kind": "method",
+      "source_map_entry_id": "smap.message_send",
+      "debug_map_entry_id": "dmap.message_send",
+      "native_line_table_row_id": "lt.message_send",
+      "runtime_anchor_id": "runtime.anchor.message_send",
+      "reflection_entrypoint": "objc3_runtime_copy_reflection_method",
+      "value_record_id": "inspect.selector-message-send.debug-anchor"
+    }
+  ],
+  "runtime_proof_axes": [
+    {
+      "axis_id": "class-registration",
+      "status": "bounded-supported",
+      "support_claim_published": false,
+      "evidence": [
+        "tests/native/runtime/object_model/class_realization_contract.objc3",
+        "native/objc3c/src/runtime/classes/class_graph.cpp"
+      ]
+    },
+    {
+      "axis_id": "metaclass-registration",
+      "status": "bounded-supported",
+      "support_claim_published": false,
+      "evidence": [
+        "tests/native/runtime/object_model/class_realization_contract.objc3",
+        "tests/tooling/runtime/metaclass_graph_root_class_probe.cpp",
+        "native/objc3c/src/runtime/classes/metaclass_graph.cpp"
+      ]
+    },
+    {
+      "axis_id": "superclass-root-checks",
+      "status": "bounded-supported",
+      "support_claim_published": false,
+      "evidence": [
+        "tests/native/runtime/object_model/full_realization_combined_reflection_replay_contract.objc3",
+        "tests/tooling/runtime/metaclass_graph_root_class_probe.cpp"
+      ]
+    },
+    {
+      "axis_id": "interface-method-tables",
+      "status": "bounded-supported",
+      "support_claim_published": false,
+      "evidence": [
+        "tests/native/runtime/object_model/interface_method_table_contract.objc3",
+        "tests/native/runtime/object_model/full_realization_combined_reflection_replay_contract.objc3"
+      ]
+    },
+    {
+      "axis_id": "instance-method-lookup",
+      "status": "bounded-supported",
+      "support_claim_published": false,
+      "evidence": [
+        "tests/native/runtime/object_model/interface_method_table_contract.objc3",
+        "tests/native/runtime/object_model/full_realization_combined_reflection_replay_contract.objc3"
+      ]
+    },
+    {
+      "axis_id": "class-method-lookup",
+      "status": "bounded-supported",
+      "support_claim_published": false,
+      "evidence": [
+        "tests/native/runtime/object_model/class_realization_contract.objc3",
+        "tests/native/runtime/object_model/full_realization_combined_reflection_replay_contract.objc3"
+      ]
+    },
+    {
+      "axis_id": "categories",
+      "status": "bounded-supported",
+      "support_claim_published": false,
+      "evidence": [
+        "tests/native/runtime/object_model/category_protocol_registration_contract.objc3",
+        "tests/tooling/runtime/category_attachment_protocol_runtime_probe.cpp",
+        "native/objc3c/src/runtime/classes/category_attachment.cpp"
+      ]
+    },
+    {
+      "axis_id": "protocols",
+      "status": "bounded-supported",
+      "support_claim_published": false,
+      "evidence": [
+        "tests/native/runtime/object_model/category_protocol_registration_contract.objc3",
+        "tests/tooling/runtime/category_attachment_protocol_runtime_probe.cpp"
+      ]
+    },
+    {
+      "axis_id": "protocol-conformance",
+      "status": "bounded-supported",
+      "support_claim_published": false,
+      "evidence": [
+        "tests/native/runtime/object_model/full_realization_combined_reflection_replay_contract.objc3",
+        "native/objc3c/src/runtime/classes/protocol_conformance.cpp"
+      ]
+    },
+    {
+      "axis_id": "properties",
+      "status": "bounded-supported",
+      "support_claim_published": false,
+      "evidence": [
+        "tests/native/runtime/object_model/property_ivar_reflection_contract.objc3",
+        "native/objc3c/src/runtime/storage/property_layout_realization.cpp"
+      ]
+    },
+    {
+      "axis_id": "ivars",
+      "status": "bounded-supported",
+      "support_claim_published": false,
+      "evidence": [
+        "tests/native/runtime/object_model/property_ivar_reflection_contract.objc3",
+        "native/objc3c/src/runtime/storage/property_layout_realization.cpp"
+      ]
+    },
+    {
+      "axis_id": "selector-table",
+      "status": "bounded-supported",
+      "support_claim_published": false,
+      "evidence": [
+        "tests/native/runtime/object_model/bounded_query_snapshot_contract.objc3",
+        "native/objc3c/src/runtime/selectors/selector_table.cpp"
+      ]
+    },
+    {
+      "axis_id": "registration-replay",
+      "status": "bounded-supported",
+      "support_claim_published": false,
+      "evidence": [
+        "tests/native/runtime/object_model/registration_replay_contract.objc3",
+        "native/objc3c/src/runtime/images/registration_snapshots.cpp"
+      ]
+    },
+    {
+      "axis_id": "reset-reload-boundaries",
+      "status": "bounded-supported",
+      "support_claim_published": false,
+      "evidence": [
+        "tests/tooling/runtime/deterministic_reset_replay_probe.cpp",
+        "tests/tooling/runtime/multi_image_registration_reset_replay_probe.cpp",
+        "tests/tooling/runtime/multi_image_registration_reset_replay_probe/reset_replay_assertions.h"
+      ]
+    },
+    {
+      "axis_id": "imported-runtime-packages",
+      "status": "bounded-supported",
+      "support_claim_published": false,
+      "evidence": [
+        "tests/tooling/runtime/import_module_execution_matrix_probe.cpp",
+        "tests/tooling/fixtures/object_model_closure/loader_category_protocol_workload_map.json"
+      ]
+    },
+    {
+      "axis_id": "reflection-result-lifetime",
+      "status": "bounded-supported",
+      "support_claim_published": false,
+      "evidence": [
+        "tests/tooling/fixtures/objc3c/public_runtime_reflection_api_contract.json",
+        "tests/tooling/runtime/public_runtime_reflection_api_probe.cpp",
+        "tests/tooling/fixtures/object_model_closure/full_realization_combined_readiness_contract.json"
+      ]
+    }
+  ],
+  "unsupported_runtime_boundaries": [
+    {
+      "boundary_id": "objective-c2-runtime-compatibility",
+      "fail_closed": true,
+      "public_claim": false,
+      "evidence": [
+        "tests/tooling/fixtures/object_model_closure/behavior_owner_splits/canonical_rejection.json",
+        "tests/tooling/fixtures/object_model_closure/full_realization_combined_readiness_contract.json"
+      ]
+    },
+    {
+      "boundary_id": "foreign-runtime-mirroring",
+      "fail_closed": true,
+      "public_claim": false,
+      "evidence": [
+        "tests/tooling/fixtures/object_model_closure/behavior_owner_splits/canonical_rejection.json"
+      ]
+    },
+    {
+      "boundary_id": "swift-cxx-abi-import",
+      "fail_closed": true,
+      "public_claim": false,
+      "evidence": [
+        "tests/tooling/fixtures/object_model_closure/behavior_owner_splits/canonical_rejection.json"
+      ]
+    },
+    {
+      "boundary_id": "dynamic-forwarding",
+      "fail_closed": true,
+      "public_claim": false,
+      "evidence": [
+        "tests/tooling/fixtures/object_model_closure/behavior_owner_splits/canonical_rejection.json",
+        "tests/tooling/fixtures/object_model_closure/realized_object_graph_reflection_semantic_model.json"
+      ]
+    },
+    {
+      "boundary_id": "private-testing-snapshots-public-api",
+      "fail_closed": true,
+      "public_claim": false,
+      "evidence": [
+        "tests/tooling/fixtures/objc3c/public_runtime_reflection_api_contract.json",
+        "tests/tooling/fixtures/object_model_closure/full_realization_combined_readiness_contract.json"
+      ]
+    },
+    {
+      "boundary_id": "malformed-metadata-acceptance",
+      "fail_closed": true,
+      "public_claim": false,
+      "evidence": [
+        "tests/tooling/fixtures/object_model_closure/debug_anchor_identity_replay_contract.json",
+        "tests/tooling/fixtures/object_model_closure/full_realization_combined_readiness_contract.json"
+      ]
+    }
+  ],
+  "negative_cases": [
+    {
+      "case_id": "source-map-runtime-anchor-drift",
+      "expected_code": "runtime-anchor-missing",
+      "mutation_path": [
+        "artifact_runtime_reflection_links",
+        0,
+        "runtime_anchor_id"
+      ]
+    },
+    {
+      "case_id": "line-table-row-drift",
+      "expected_code": "line-table-row-missing",
+      "mutation_path": [
+        "artifact_runtime_reflection_links",
+        0,
+        "native_line_table_row_id"
+      ]
+    },
+    {
+      "case_id": "debug-anchor-query-drift",
+      "expected_code": "debug-anchor-query-missing",
+      "mutation_path": [
+        "artifact_runtime_reflection_links",
+        0,
+        "reflection_entrypoint"
+      ]
+    },
+    {
+      "case_id": "value-inspection-anchor-drift",
+      "expected_code": "value-inspection-anchor-drift",
+      "mutation_path": [
+        "object_model_value_inspection_records",
+        0,
+        "runtime_anchor_id"
+      ]
+    },
+    {
+      "case_id": "source-backed-anchor-drift",
+      "expected_code": "source-backed-anchor-drift",
+      "mutation_path": [
+        "source_backed_debug_anchors",
+        0,
+        "runtime_anchor_id"
+      ]
+    },
+    {
+      "case_id": "abi-governance-version-drift",
+      "expected_code": "reflection-abi-governance-drift",
+      "mutation_path": [
+        "reflection_abi_governance",
+        "expected_debug_anchor_abi_version"
+      ]
+    },
+    {
+      "case_id": "debug-anchor-negative-boundary-drift",
+      "expected_code": "debug-anchor-boundary-missing",
+      "mutation_path": [
+        "required_debug_anchor_negative_cases",
+        1,
+        "case_id"
+      ]
+    },
+    {
+      "case_id": "artifact-inspector-compatibility-drift",
+      "expected_code": "artifact-inspector-compatibility-contract",
+      "mutation_path": [
+        "artifact_inspector_compatibility",
+        "required_support_class"
+      ]
+    },
+    {
+      "case_id": "runtime-proof-axis-drift",
+      "expected_code": "runtime-proof-axis-missing",
+      "mutation_path": [
+        "runtime_proof_axes",
+        13,
+        "axis_id"
+      ]
+    },
+    {
+      "case_id": "runtime-proof-evidence-drift",
+      "expected_code": "runtime-proof-axis-evidence-missing",
+      "mutation_path": [
+        "runtime_proof_axes",
+        15,
+        "evidence",
+        0
+      ]
+    },
+    {
+      "case_id": "unsupported-runtime-boundary-drift",
+      "expected_code": "unsupported-runtime-boundary-missing",
+      "mutation_path": [
+        "unsupported_runtime_boundaries",
+        1,
+        "boundary_id"
+      ]
+    },
+    {
+      "case_id": "unsupported-runtime-boundary-overclaim",
+      "expected_code": "unsupported-runtime-boundary-overclaimed",
+      "mutation_path": [
+        "unsupported_runtime_boundaries",
+        2,
+        "public_claim"
+      ]
+    },
+    {
+      "case_id": "statement-step-reservation-contract-drift",
+      "expected_code": "statement-step-reservation-contract-drift",
+      "mutation_path": [
+        "statement_step_reservation_contract",
+        "required_candidate_status"
+      ]
+    }
+  ],
+  "boundaries": {
+    "requires_checked_source_map_and_line_table": true,
+    "requires_debug_anchor_replay_contract": true,
+    "requires_replayable_debugger_value_commands": true,
+    "uses_private_testing_snapshots_as_public_truth": false,
+    "promotes_umbrella": false,
+    "creates_objective_c2_compatibility_claim": false
+  }
+}

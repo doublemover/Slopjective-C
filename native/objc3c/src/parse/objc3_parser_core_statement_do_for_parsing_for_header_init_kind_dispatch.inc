@@ -1,5 +1,8 @@
-        if (Match(TokenKind::KwLet)) {
+        if (At(TokenKind::KwLet) || At(TokenKind::KwVar)) {
+          const bool mutable_binding = At(TokenKind::KwVar);
+          Advance();
 #include "parse/objc3_parser_core_statement_do_for_parsing_for_header_init_local_binding.inc"
+          stmt->for_stmt->init.mutable_binding = mutable_binding;
         } else if (AtIdentifierAssignment() || AtIdentifierUpdate()) {
 #include "parse/objc3_parser_core_statement_do_for_parsing_for_header_init_assignment.inc"
         } else if (AtPrefixUpdate()) {

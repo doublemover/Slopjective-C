@@ -26,6 +26,24 @@
       MergeOwnershipResourceMoveState(scopes, loop_scopes);
       return;
     }
+    case Stmt::Kind::ForIn:
+      if (stmt->for_in_stmt != nullptr) {
+        DiagnoseOwnershipResourceMoveExpr(stmt->for_in_stmt->collection.get(),
+                                          scopes, diagnostics);
+        auto loop_scopes = scopes;
+        loop_scopes.push_back({});
+        if (!stmt->for_in_stmt->value_name.empty()) {
+          loop_scopes.back()[stmt->for_in_stmt->value_name] = {};
+        }
+        if (stmt->for_in_stmt->has_key_binding &&
+            !stmt->for_in_stmt->key_name.empty()) {
+          loop_scopes.back()[stmt->for_in_stmt->key_name] = {};
+        }
+        DiagnoseOwnershipResourceMoveStatements(stmt->for_in_stmt->body,
+                                                loop_scopes, diagnostics);
+        MergeOwnershipResourceMoveState(scopes, loop_scopes);
+      }
+      return;
     case Stmt::Kind::Switch: {
       const SwitchStmt *switch_stmt = stmt->switch_stmt.get();
       if (switch_stmt == nullptr) {
@@ -71,6 +89,15 @@
         defer_scopes.push_back({});
         DiagnoseOwnershipResourceMoveStatements(stmt->block_stmt->body, defer_scopes,
                                             diagnostics);
+      }
+      return;
+    case Stmt::Kind::CollectionMutation:
+      if (stmt->collection_mutation_stmt != nullptr) {
+        DiagnoseOwnershipResourceMoveExpr(
+            stmt->collection_mutation_stmt->key_or_index.get(), scopes,
+            diagnostics);
+        DiagnoseOwnershipResourceMoveExpr(
+            stmt->collection_mutation_stmt->value.get(), scopes, diagnostics);
       }
       return;
     case Stmt::Kind::Break:
@@ -166,6 +193,15 @@ static void CollectOwnershipResourceMoveStmtSites(const Stmt *stmt,
         }
       }
       return;
+    case Stmt::Kind::ForIn:
+      if (stmt->for_in_stmt != nullptr) {
+        CollectOwnershipResourceMoveExprSites(
+            stmt->for_in_stmt->collection.get(), profile);
+        for (const auto &body_stmt : stmt->for_in_stmt->body) {
+          CollectOwnershipResourceMoveStmtSites(body_stmt.get(), profile);
+        }
+      }
+      return;
     case Stmt::Kind::Switch:
       if (stmt->switch_stmt != nullptr) {
         CollectOwnershipResourceMoveExprSites(stmt->switch_stmt->condition.get(), profile);
@@ -197,6 +233,14 @@ static void CollectOwnershipResourceMoveStmtSites(const Stmt *stmt,
         CollectOwnershipResourceMoveExprSites(stmt->expr_stmt->value.get(), profile);
       }
       return;
+    case Stmt::Kind::CollectionMutation:
+      if (stmt->collection_mutation_stmt != nullptr) {
+        CollectOwnershipResourceMoveExprSites(
+            stmt->collection_mutation_stmt->key_or_index.get(), profile);
+        CollectOwnershipResourceMoveExprSites(
+            stmt->collection_mutation_stmt->value.get(), profile);
+      }
+      return;
     case Stmt::Kind::Break:
     case Stmt::Kind::Continue:
     case Stmt::Kind::Empty:
@@ -220,6 +264,12 @@ static void CollectOwnershipResourceMoveExprSites(const Expr *expr,
   CollectOwnershipResourceMoveExprSites(expr->left.get(), profile);
   CollectOwnershipResourceMoveExprSites(expr->right.get(), profile);
   CollectOwnershipResourceMoveExprSites(expr->third.get(), profile);
+  for (const auto &key : expr->collection_keys) {
+    CollectOwnershipResourceMoveExprSites(key.get(), profile);
+  }
+  for (const auto &value : expr->collection_values) {
+    CollectOwnershipResourceMoveExprSites(value.get(), profile);
+  }
   for (const auto &arg : expr->args) {
     CollectOwnershipResourceMoveExprSites(arg.get(), profile);
   }

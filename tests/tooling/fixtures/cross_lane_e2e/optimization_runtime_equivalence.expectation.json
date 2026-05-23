@@ -1,0 +1,101 @@
+{
+  "contract_id": "objc3c.cross_lane_e2e.family_expectation.v1",
+  "schema_version": 1,
+  "issue": 8200,
+  "family_id": "optimization_runtime_equivalence",
+  "expectation_state": "expected-pass",
+  "source": "tests/native/e2e/cross_lane/optimization_runtime_equivalence.objc3",
+  "workspace_manifest": "tests/tooling/fixtures/cross_lane_e2e/optimization_runtime_equivalence.workspace.json",
+  "public_replay_command": "npm run objc3c -- validate-cross-lane-e2e",
+  "responsible_domains": [
+    "optimization proof diagnostic",
+    "lowering/IR diagnostic",
+    "runtime status"
+  ],
+  "blockers": [],
+  "diagnostics": {
+    "status": "expected-pass",
+    "responsible_domain": "optimization proof diagnostic",
+    "reason": "the executable optimization/runtime fixture compiles without diagnostics while keeping the method-inlining fail-closed lane explicit",
+    "expected_codes": [],
+    "required_tokens": [
+      "exact devirtualization",
+      "method inlining",
+      "cache-aware dispatch",
+      "runtime equivalence"
+    ]
+  },
+  "runtime": {
+    "status": "expected-pass",
+    "responsible_domain": "runtime status",
+    "reason": "direct exact calls and cache-aware dispatch execute through the native runtime and return the checked equivalence status",
+    "source_truth": false,
+    "expected_exit_code": 0,
+    "required_artifacts": [
+      "module.obj",
+      "module.ll",
+      "module.manifest.json",
+      "module.runtime-registration-manifest.json",
+      "module.exe"
+    ]
+  },
+  "compile_manifest": {
+    "status": "expected-pass",
+    "responsible_domain": "lowering/IR diagnostic",
+    "reason": "public validation must generate the native compile manifest for the executable optimization/runtime slice",
+    "source_truth": false,
+    "expected_path": "tmp/artifacts/cross-lane-e2e/optimization-runtime-equivalence/compile/module.manifest.json"
+  },
+  "source_graph": {
+    "status": "expected-pass",
+    "responsible_domain": "capability/evidence mismatch",
+    "reason": "generated metadata must preserve exact receiver proof and cache-aware dispatch dependency",
+    "source_truth": false,
+    "expected_edges": [
+      "CrossLaneOptimizedCounter -> runtime:cache-aware-dispatch",
+      "CrossLaneOptimizedCounter -> compiler:semantic-optimization-pipeline"
+    ]
+  },
+  "debug_source_map": {
+    "status": "expected-pass",
+    "responsible_domain": "source-map/debug diagnostic",
+    "reason": "the generated IR must include the cache-aware dispatch source-map anchor checked by the optimization trace",
+    "source_truth": false
+  },
+  "optimization_trace": {
+    "status": "expected-pass",
+    "responsible_domain": "optimization proof diagnostic",
+    "reason": "public validation must generate a before/after IR and runtime-equivalence trace, prove the method-inlining candidate remains a direct call on production IR, and avoid using tmp artifacts as source truth",
+    "source_truth": false,
+    "expected_path": "tmp/artifacts/cross-lane-e2e/optimization-runtime-equivalence/optimization-trace.json"
+  },
+  "negative_cases": [
+    {
+      "case_id": "optimization-runtime-method-inlining-fail-closed",
+      "status": "expected-pass",
+      "responsible_domain": "optimization proof diagnostic",
+      "reason": "the integrated proof must show the generated IR retains the method candidate call and lacks method-inlining inline-frame and global invalidation anchors",
+      "required_generated_ir_tokens": [
+        "call i32 @objc3_method_CrossLaneOptimizedCounter_class_inlineCandidate_"
+      ],
+      "forbidden_generated_ir_tokens": [
+        "source-map inline frame preserved",
+        "semantic-optimization.invalidate-global-proof-state: callee_body_identity"
+      ],
+      "reference_artifacts": [
+        "tests/native/ir/optimization/semantic_pipeline_method_inlining.before.ll",
+        "tests/native/ir/optimization/semantic_pipeline_method_inlining.after.ll"
+      ]
+    }
+  ],
+  "capability_boundary": {
+    "cannot_promote_reserved_rows": true,
+    "referenced_capability_rows": [
+      "compiler.optimization.semantic-preserving-pipeline",
+      "compiler.optimization.devirtualization",
+      "compiler.optimization.method-inlining",
+      "runtime.optimization.cache-aware-dispatch"
+    ],
+    "claim_boundary": "this fixture proves direct exact-call evidence, cache-aware dispatch lowering, before/after IR references, and runtime equivalence; method inlining is explicitly fail-closed for the integrated production path"
+  }
+}

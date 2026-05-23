@@ -32,6 +32,8 @@ struct LoweredMessageSend {
   bool uses_from_class_dispatch = false;
   std::string lookup_start_class_name;
   std::string lookup_start_class_ptr;
+  unsigned source_line = 1;
+  unsigned source_column = 1;
   std::string direct_call_symbol;
   ValueType direct_call_return_type = ValueType::I32;
   std::vector<ValueType> direct_call_param_types;
@@ -106,6 +108,10 @@ struct FunctionContext {
   std::unordered_set<std::string> nil_bound_ptrs;
   std::unordered_set<std::string> nonzero_bound_ptrs;
   std::unordered_map<std::string, int> const_value_ptrs;
+  std::unordered_map<std::string, Expr::CollectionLiteralKind>
+      collection_kind_by_ptr;
+  std::unordered_map<std::string, ValueType> value_type_by_ptr;
+  std::unordered_set<std::string> mutable_collection_ptrs;
   std::unordered_map<std::string, int> immediate_identifiers;
   std::vector<std::string> arc_owned_cleanup_ptrs;
   std::unordered_set<std::string> arc_owned_cleanup_ptr_set;

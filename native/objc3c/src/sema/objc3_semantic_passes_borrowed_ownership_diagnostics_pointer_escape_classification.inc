@@ -53,12 +53,16 @@ static bool IsOwnershipBorrowedExpr(
     case Expr::Kind::Throw:
     case Expr::Kind::KeyPathLiteral:
     case Expr::Kind::StringLiteral:
+    case Expr::Kind::StringInterpolation:
       return false;
     case Expr::Kind::Conditional:
       return IsOwnershipBorrowedExpr(expr->right.get(), scopes,
                                      callable_contracts) ||
              IsOwnershipBorrowedExpr(expr->third.get(), scopes,
                                      callable_contracts);
+    case Expr::Kind::CollectionLiteral:
+    case Expr::Kind::IndexAccess:
+      return false;
     default:
       return false;
   }

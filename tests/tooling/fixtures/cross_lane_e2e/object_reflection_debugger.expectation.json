@@ -1,0 +1,172 @@
+{
+  "contract_id": "objc3c.cross_lane_e2e.family_expectation.v1",
+  "schema_version": 1,
+  "issue": 8200,
+  "family_id": "object_reflection_debugger",
+  "expectation_state": "expected-pass",
+  "source": "tests/native/e2e/cross_lane/object_reflection_debugger.objc3",
+  "workspace_manifest": "tests/tooling/fixtures/cross_lane_e2e/object_reflection_debugger.workspace.json",
+  "public_replay_command": "npm run objc3c -- validate-cross-lane-e2e",
+  "responsible_domains": [
+    "runtime status",
+    "source-map/debug diagnostic",
+    "capability/evidence mismatch"
+  ],
+  "blockers": [],
+  "diagnostics": {
+    "status": "expected-pass",
+    "responsible_domain": "source-map/debug diagnostic",
+    "reason": "the executable object/reflection/debugger fixture must compile without diagnostics while keeping unsupported debugger rows explicit",
+    "expected_codes": [],
+    "required_tokens": [
+      "class",
+      "category",
+      "protocol",
+      "property/ivar",
+      "typed keypath descriptor",
+      "runtime reflection",
+      "debug-map output"
+    ]
+  },
+  "runtime": {
+    "status": "expected-pass",
+    "responsible_domain": "runtime status",
+    "reason": "class-method dispatch and a single-component typed keypath descriptor execute through the native runtime and return the checked status while category, protocol, property, and debugger evidence is validated through production artifact surfaces",
+    "source_truth": false,
+    "expected_exit_code": 0,
+    "required_artifacts": [
+      "module.obj",
+      "module.ll",
+      "module.manifest.json",
+      "module.runtime-registration-manifest.json",
+      "module.exe"
+    ]
+  },
+  "compile_manifest": {
+    "status": "expected-pass",
+    "responsible_domain": "lowering/IR diagnostic",
+    "reason": "public validation must generate the native compile manifest for the executable object/reflection/debugger slice",
+    "source_truth": false,
+    "expected_path": "tmp/artifacts/cross-lane-e2e/object-reflection-debugger/compile/module.manifest.json"
+  },
+  "source_graph": {
+    "status": "expected-pass",
+    "responsible_domain": "capability/evidence mismatch",
+    "reason": "the production editor-tooling path must publish a source graph with object-model declarations while keeping unsupported reference consumers fail-closed",
+    "source_truth": false,
+    "expected_path": "tmp/reports/developer-tooling/editor-surface/object-reflection-debugger-1c676f56f741/source-graph.json",
+    "expected_edges": [
+      "CrossLaneDebugSubject -> DebuggableSubject",
+      "CrossLaneDebugSubject(Inspection) -> DebuggableSubject",
+      "CrossLaneDebugSubject -> CrossLaneDebugRoot"
+    ]
+  },
+  "debug_source_map": {
+    "status": "expected-pass",
+    "responsible_domain": "source-map/debug diagnostic",
+    "reason": "the production artifact path must publish declaration breakpoint anchors and object-symbol inspection while keeping full source maps and statement stepping fail-closed",
+    "source_truth": false,
+    "expected_path": "tmp/reports/developer-tooling/editor-surface/object-reflection-debugger-1c676f56f741/debug-map.json",
+    "source_map_supported": false,
+    "statement_level_stepping": false
+  },
+  "optimization_trace": {
+    "status": "reserved",
+    "blocker_id": "cross-lane-object-reflection-not-optimization-owner",
+    "responsible_domain": "optimization proof diagnostic",
+    "reason": "optimization traces are not the owning proof for the object/reflection/debugger family",
+    "source_truth": false
+  },
+  "object_reflection_debugger_proof": {
+    "contract_id": "objc3c.cross_lane_e2e.object_reflection_debugger_proof.v1",
+    "status": "expected-pass",
+    "runs_canonical_frontend": true,
+    "frontend_artifact_surface": "inspect-editor-tooling",
+    "requires_public_runtime_reflection_api": true,
+    "public_runtime_reflection_command": "npm run objc3c -- validate-public-runtime-reflection-api",
+    "requires_object_model_debugger_proof": true,
+    "object_model_debugger_command": "npm run objc3c -- validate-object-model-debugger-proof",
+    "object_model_debugger_contract": "tests/tooling/fixtures/object_model_closure/debugger_value_inspection_replay_contract.json",
+    "required_artifact_kinds": [
+      "summary",
+      "manifest",
+      "ir",
+      "object",
+      "runtime-metadata-binary",
+      "source-graph",
+      "artifact-inspector",
+      "debug-map"
+    ],
+    "runtime_inventory_minimums": {
+      "class_records": 2,
+      "protocol_records": 1,
+      "category_records": 1,
+      "property_records": 4,
+      "method_records": 8,
+      "source_graph_nodes": 6,
+      "declaration_breakpoint_anchors": 6
+    },
+    "typed_keypath_object_reflection": {
+      "status": "expected-pass",
+      "source_literal": "@keypath(CrossLaneDebugSubject, token)",
+      "expected_component_count": 1,
+      "expected_root_is_self": false,
+      "minimums": {
+        "semantic_typed_keypath_literal_sites": 1,
+        "lowering_typed_keypath_literal_sites": 1,
+        "live_typed_keypath_artifact_sites": 1
+      },
+      "required_runtime_helper_symbols": [
+        "objc3_runtime_keypath_component_count_for_testing",
+        "objc3_runtime_keypath_root_is_self_for_testing"
+      ],
+      "required_ir_tokens": [
+        "typed_keypath_artifact_emission",
+        "@__objc3_sec_keypath_descriptors",
+        "@__objc3_keypath_desc_"
+      ],
+      "claim_boundary": "the combined object/reflection fixture proves one class-root, single-component typed keypath descriptor handle on the reflected object property through the native compile/link/run path; nested chains, self-root instance paths, broad keypath evaluation, full source maps, and statement stepping remain unpromoted"
+    },
+    "reserved_rows_not_promoted": [
+      "runtime.object-model.full-realization",
+      "runtime.debug-trace.statement-stepping",
+      "runtime.debug-trace.full-source-map-publication"
+    ],
+    "claim_boundary": "executable class-method runtime behavior, single-component typed keypath descriptor handles, public reflection API evidence, production artifact inspection, source graph, and declaration debug-map anchors are checked; instance allocation dispatch, category dispatch execution, full realization, broad keypath shapes, full source maps, and statement stepping remain reserved"
+  },
+  "negative_cases": [
+    {
+      "case_id": "object-reflection-debugger-statement-stepping-reserved",
+      "status": "reserved",
+      "blocker_id": "cross-lane-object-reflection-full-source-map-stepping-reserved",
+      "responsible_domain": "source-map/debug diagnostic",
+      "reason": "statement-level debugger stepping remains reserved and must fail closed"
+    },
+    {
+      "case_id": "object-reflection-debugger-full-source-map-reserved",
+      "status": "reserved",
+      "blocker_id": "cross-lane-object-reflection-full-source-map-stepping-reserved",
+      "responsible_domain": "source-map/debug diagnostic",
+      "reason": "full source-map publication remains reserved even though declaration debug anchors are emitted"
+    },
+    {
+      "case_id": "object-reflection-debugger-unsupported-typed-keypath-shapes-reserved",
+      "status": "reserved",
+      "blocker_id": "cross-lane-object-reflection-full-source-map-stepping-reserved",
+      "responsible_domain": "lowering/IR diagnostic",
+      "reason": "only the class-root single-component object property keypath is proven here; nested chains, self-root instance paths, and broad keypath evaluation remain reserved"
+    }
+  ],
+  "capability_boundary": {
+    "cannot_promote_reserved_rows": true,
+    "referenced_capability_rows": [
+      "runtime.object-model.class-realization",
+      "runtime.object-model.category-protocol-registration",
+      "runtime.object-model.property-ivar-reflection",
+      "runtime.public-api.reflection",
+      "runtime.debug-trace.structured-inspection",
+      "runtime.debug-trace.statement-stepping"
+    ],
+    "claim_boundary": "class-method runtime execution, class/category/protocol/property artifact evidence, bounded single-component typed keypath descriptor handling, public reflection API proof, source graph, artifact inspector, and declaration debug-map anchors can be cited; instance allocation dispatch, category dispatch execution, runtime.object-model.full-realization, full source-map publication, broad keypath shapes, and statement stepping remain reserved"
+  }
+}

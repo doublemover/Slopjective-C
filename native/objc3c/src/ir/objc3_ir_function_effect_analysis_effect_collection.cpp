@@ -13,6 +13,14 @@ namespace {
 using ScopeStack = std::vector<std::unordered_set<std::string>>;
 constexpr const char *kObjc3RuntimeStdlibTextUtf8LiteralI32 =
     "objc3_runtime_stdlib_text_utf8_literal_i32";
+constexpr const char *kObjc3RuntimeStdlibTextBuilderI32 =
+    "objc3_runtime_stdlib_text_builder_i32";
+constexpr const char *kObjc3RuntimeStdlibTextBuilderAppendTextI32 =
+    "objc3_runtime_stdlib_text_builder_append_text_i32";
+constexpr const char *kObjc3RuntimeStdlibTextBuilderAppendI32I32 =
+    "objc3_runtime_stdlib_text_builder_append_i32_i32";
+constexpr const char *kObjc3RuntimeStdlibTextBuilderBuildI32 =
+    "objc3_runtime_stdlib_text_builder_build_i32";
 
 bool IsNameBoundInScopes(const ScopeStack &scopes, const std::string &name) {
   for (auto it = scopes.rbegin(); it != scopes.rend(); ++it) {
@@ -47,6 +55,27 @@ void CollectFunctionEffectExpr(const Expr *expr, ScopeStack &scopes,
       return;
     case Expr::Kind::StringLiteral:
       info.called_functions.insert(kObjc3RuntimeStdlibTextUtf8LiteralI32);
+      return;
+    case Expr::Kind::StringInterpolation:
+      info.called_functions.insert(kObjc3RuntimeStdlibTextBuilderI32);
+      info.called_functions.insert(kObjc3RuntimeStdlibTextBuilderAppendTextI32);
+      info.called_functions.insert(kObjc3RuntimeStdlibTextBuilderAppendI32I32);
+      info.called_functions.insert(kObjc3RuntimeStdlibTextBuilderBuildI32);
+      for (const auto &arg : expr->args) {
+        CollectFunctionEffectExpr(arg.get(), scopes, info);
+      }
+      return;
+    case Expr::Kind::CollectionLiteral:
+      for (const auto &key : expr->collection_keys) {
+        CollectFunctionEffectExpr(key.get(), scopes, info);
+      }
+      for (const auto &value : expr->collection_values) {
+        CollectFunctionEffectExpr(value.get(), scopes, info);
+      }
+      return;
+    case Expr::Kind::IndexAccess:
+      CollectFunctionEffectExpr(expr->left.get(), scopes, info);
+      CollectFunctionEffectExpr(expr->right.get(), scopes, info);
       return;
     case Expr::Kind::Binary:
       CollectFunctionEffectExpr(expr->left.get(), scopes, info);
@@ -129,6 +158,20 @@ void CollectFunctionEffectStmt(
       }
       CollectFunctionEffectExpr(stmt->assign_stmt->value.get(), scopes, info);
       return;
+    case Stmt::Kind::CollectionMutation:
+      if (stmt->collection_mutation_stmt == nullptr) {
+        return;
+      }
+      if (IsGlobalSymbolWriteTarget(
+              stmt->collection_mutation_stmt->collection_name, scopes,
+              global_symbols)) {
+        info.has_global_write = true;
+      }
+      CollectFunctionEffectExpr(
+          stmt->collection_mutation_stmt->key_or_index.get(), scopes, info);
+      CollectFunctionEffectExpr(
+          stmt->collection_mutation_stmt->value.get(), scopes, info);
+      return;
     case Stmt::Kind::Return:
       if (stmt->return_stmt != nullptr) {
         CollectFunctionEffectExpr(stmt->return_stmt->value.get(), scopes, info);
@@ -187,6 +230,26 @@ void CollectFunctionEffectStmt(
       scopes.pop_back();
       CollectFunctionEffectForClause(
           stmt->for_stmt->step, scopes, info, global_symbols);
+      scopes.pop_back();
+      return;
+    case Stmt::Kind::ForIn:
+      if (stmt->for_in_stmt == nullptr) {
+        return;
+      }
+      CollectFunctionEffectExpr(
+          stmt->for_in_stmt->collection.get(), scopes, info);
+      scopes.push_back({});
+      if (!stmt->for_in_stmt->value_name.empty()) {
+        scopes.back().insert(stmt->for_in_stmt->value_name);
+      }
+      if (stmt->for_in_stmt->has_key_binding &&
+          !stmt->for_in_stmt->key_name.empty()) {
+        scopes.back().insert(stmt->for_in_stmt->key_name);
+      }
+      for (const auto &loop_stmt : stmt->for_in_stmt->body) {
+        CollectFunctionEffectStmt(
+            loop_stmt.get(), scopes, info, global_symbols);
+      }
       scopes.pop_back();
       return;
     case Stmt::Kind::Switch:

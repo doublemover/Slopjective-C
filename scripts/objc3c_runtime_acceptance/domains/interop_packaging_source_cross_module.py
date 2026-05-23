@@ -39,7 +39,6 @@ def check_cross_module_runtime_package_interop_source_surface_case(
     runtime_import_surface = json.loads(
         runtime_import_surface_path.read_text(encoding="utf-8")
     )
-    bridge_json = json.loads(bridge_json_path.read_text(encoding="utf-8"))
     semantic_surface = (
         manifest.get("frontend", {}).get("pipeline", {}).get("semantic_surface", {})
     )
@@ -53,6 +52,9 @@ def check_cross_module_runtime_package_interop_source_surface_case(
         "objc_interop_foreign_surface_interface_and_module_preservation", {}
     )
     bridge_generation_surface = semantic_surface.get(
+        "objc_interop_header_module_and_bridge_generation", {}
+    )
+    runtime_bridge_packet = runtime_import_surface.get(
         "objc_interop_header_module_and_bridge_generation", {}
     )
 
@@ -77,10 +79,6 @@ def check_cross_module_runtime_package_interop_source_surface_case(
         "expected interop provider manifest to publish the header/module/bridge generation packet",
     )
     expect(
-        runtime_import_surface.get("module_name") == bridge_json.get("module_name"),
-        "expected interop provider import surface and bridge artifact to preserve one module identity",
-    )
-    expect(
         registration_manifest.get("translation_unit_registration_order_ordinal") == 1,
         "expected interop provider registration manifest to preserve the explicit registration order ordinal",
     )
@@ -90,8 +88,8 @@ def check_cross_module_runtime_package_interop_source_surface_case(
         (bridge_json_path, "bridge json"),
     ):
         expect(
-            artifact_path.is_file(),
-            f"expected interop provider compile to publish the {label} artifact",
+            not artifact_path.exists(),
+            f"expected source-surface-only interop provider not to publish the deferred {label} artifact",
         )
     expect(
         runtime_import_surface.get(
@@ -101,30 +99,35 @@ def check_cross_module_runtime_package_interop_source_surface_case(
         "expected interop provider runtime import surface to preserve the foreign surface/interface preservation contract",
     )
     expect(
-        runtime_import_surface.get(
-            "objc_interop_header_module_and_bridge_generation", {}
-        ).get("contract_id")
+        runtime_bridge_packet.get("contract_id")
         == "objc3c.interop.header.module.and.bridge.generation.v1",
         "expected interop provider runtime import surface to preserve the header/module/bridge generation contract",
     )
     expect(
-        bridge_json.get("header_artifact_relative_path") == "module.interop-bridge.h"
-        and bridge_json.get("module_artifact_relative_path")
+        bridge_generation_surface.get("header_artifact_relative_path")
+        == runtime_bridge_packet.get("header_artifact_relative_path")
+        == "module.interop-bridge.h"
+        and bridge_generation_surface.get("module_artifact_relative_path")
+        == runtime_bridge_packet.get("module_artifact_relative_path")
         == "module.interop-bridge.modulemap"
-        and bridge_json.get("bridge_artifact_relative_path")
+        and bridge_generation_surface.get("bridge_artifact_relative_path")
+        == runtime_bridge_packet.get("bridge_artifact_relative_path")
         == "module.interop-bridge.json",
-        "expected interop provider bridge artifact to preserve the canonical textual/binary artifact paths",
+        "expected interop provider source and runtime import surfaces to preserve the canonical deferred bridge artifact paths",
     )
     expect(
-        bridge_json.get("runtime_generation_ready") is True
-        and bridge_json.get("cross_module_packaging_ready") is True
-        and bridge_json.get("deterministic") is True,
-        "expected interop provider bridge artifact to report runtime generation and cross-module packaging readiness",
+        bridge_generation_surface.get("runtime_generation_ready") is False
+        and bridge_generation_surface.get("cross_module_packaging_ready") is False
+        and bridge_generation_surface.get("deterministic") is False
+        and runtime_bridge_packet.get("runtime_generation_ready") is False
+        and runtime_bridge_packet.get("cross_module_packaging_ready") is False
+        and runtime_bridge_packet.get("deterministic") is False,
+        "expected source-surface-only interop provider to preserve bridge paths without claiming generated bridge artifacts",
     )
 
     return CaseResult(
         case_id="cross-module-runtime-package-interop-source-surface",
-        probe="compile-manifest-runtime-import-surface-and-bridge-artifacts",
+        probe="compile-manifest-runtime-import-surface-and-deferred-bridge-boundary",
         fixture=INTEROP_BRIDGE_PACKAGING_PROVIDER_FIXTURE,
         claim_class="compile-coupled-inspection",
         passed=True,
@@ -133,14 +136,16 @@ def check_cross_module_runtime_package_interop_source_surface_case(
             "runtime_import_surface_path": str(
                 runtime_import_surface_path.relative_to(ROOT)
             ).replace("\\", "/"),
-            "bridge_header_path": str(bridge_header_path.relative_to(ROOT)).replace(
-                "\\", "/"
+            "bridge_artifact_paths_deferred": [
+                "module.interop-bridge.h",
+                "module.interop-bridge.modulemap",
+                "module.interop-bridge.json",
+            ],
+            "runtime_generation_ready": runtime_bridge_packet.get(
+                "runtime_generation_ready"
             ),
-            "bridge_modulemap_path": str(
-                bridge_modulemap_path.relative_to(ROOT)
-            ).replace("\\", "/"),
-            "bridge_json_path": str(bridge_json_path.relative_to(ROOT)).replace(
-                "\\", "/"
+            "cross_module_packaging_ready": runtime_bridge_packet.get(
+                "cross_module_packaging_ready"
             ),
         },
     )

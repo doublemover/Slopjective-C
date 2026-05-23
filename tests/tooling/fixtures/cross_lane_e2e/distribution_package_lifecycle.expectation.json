@@ -1,0 +1,107 @@
+{
+  "contract_id": "objc3c.cross_lane_e2e.family_expectation.v1",
+  "schema_version": 1,
+  "issue": 8200,
+  "family_id": "distribution_package_lifecycle",
+  "expectation_state": "expected-pass",
+  "source": "tests/native/e2e/cross_lane/distribution_package_lifecycle.objc3",
+  "workspace_manifest": "tests/tooling/fixtures/cross_lane_e2e/distribution_package_lifecycle.workspace.json",
+  "public_replay_command": "npm run objc3c -- validate-cross-lane-e2e",
+  "responsible_domains": [
+    "package trust diagnostic",
+    "runtime status",
+    "capability/evidence mismatch"
+  ],
+  "diagnostics": {
+    "status": "expected-pass",
+    "responsible_domain": "package trust diagnostic",
+    "reason": "distribution lifecycle source now compiles without diagnostics while package trust, release-operation, and tamper-rejection proof remain explicit generated evidence",
+    "expected_codes": [],
+    "required_tokens": [
+      "package signing",
+      "package publish",
+      "install from clean root",
+      "update",
+      "rollback",
+      "release operations end-to-end",
+      "tampered package rejection",
+      "compile/run installed package"
+    ]
+  },
+  "runtime": {
+    "status": "expected-pass",
+    "responsible_domain": "runtime status",
+    "reason": "the linked provider module and distribution lifecycle program compile, link, and run after the package lifecycle proof completes",
+    "source_truth": false,
+    "expected_exit_code": 0,
+    "required_artifacts": [
+      "module.obj",
+      "module.ll",
+      "module.manifest.json",
+      "module.runtime-registration-manifest.json",
+      "module.exe"
+    ]
+  },
+  "compile_manifest": {
+    "status": "expected-pass",
+    "responsible_domain": "lowering/IR diagnostic",
+    "reason": "the public cross-lane validator generates the native compile manifest for the executable lifecycle fixture",
+    "source_truth": false,
+    "expected_path": "tmp/artifacts/cross-lane-e2e/distribution-package-lifecycle/compile/module.manifest.json"
+  },
+  "source_graph": {
+    "status": "expected-pass",
+    "responsible_domain": "capability/evidence mismatch",
+    "reason": "the generated lifecycle trace binds the checked source fixture to package-install, release-operations E2E, update, rollback, tamper rejection, and linked-provider evidence",
+    "source_truth": false,
+    "expected_edges": [
+      "cross-lane:distribution-package-lifecycle -> package:local-distribution-root",
+      "cross-lane:distribution-package-lifecycle -> release:channel-operations",
+      "cross-lane:distribution-package-lifecycle -> package:cross-lane-published-toolchain"
+    ]
+  },
+  "debug_source_map": {
+    "status": "reserved",
+    "blocker_id": "cross-lane-distribution-debug-source-map-not-required",
+    "responsible_domain": "source-map/debug diagnostic",
+    "reason": "debug source-map output is not a package lifecycle support claim",
+    "source_truth": false
+  },
+  "optimization_trace": {
+    "status": "reserved",
+    "blocker_id": "cross-lane-distribution-optimization-not-required",
+    "responsible_domain": "optimization proof diagnostic",
+    "reason": "optimization proof is outside the package lifecycle owner",
+    "source_truth": false
+  },
+  "distribution_lifecycle": {
+    "status": "expected-pass",
+    "responsible_domain": "package trust diagnostic",
+    "reason": "public validation runs the from-nothing package install proof, release-operations end-to-end proof, tampered installed-package rejection, and executable package lifecycle fixture together",
+    "source_truth": false,
+    "expected_path": "tmp/artifacts/cross-lane-e2e/distribution-package-lifecycle/distribution-lifecycle-trace.json"
+  },
+  "negative_cases": [
+    {
+      "case_id": "distribution-package-tampered-signature",
+      "status": "expected-pass",
+      "responsible_domain": "package trust diagnostic",
+      "reason": "the lifecycle trace mutates the generated install verification and records the package-manager diagnostics that reject a drifted installed trust signature"
+    },
+    {
+      "case_id": "distribution-package-hosted-registry-overclaim",
+      "status": "expected-pass",
+      "responsible_domain": "package trust diagnostic",
+      "reason": "hosted registry and network install remain fail-closed in the package install verification"
+    }
+  ],
+  "capability_boundary": {
+    "cannot_promote_reserved_rows": true,
+    "referenced_capability_rows": [
+      "ecosystem.package-install.clean-distribution",
+      "release.operations.channel-lifecycle",
+      "release.abi.stability-governance"
+    ],
+    "claim_boundary": "this fixture proves clean local package install, local publication metadata, deterministic update/uninstall receipts, release-operation end-to-end rollback safety, installer signature evidence, tampered installed-package rejection, and executable compile/run; hosted registry, network install, background updater, and public production release publication remain out of scope"
+  }
+}

@@ -1,11 +1,35 @@
-int globalCounter = 0;
+module runtimeMetadataClassRecords;
 
-@interface ArtifactWidget
+@protocol Base
 @end
 
-@implementation ArtifactWidget
+@protocol Worker<Base>
+@property (readonly, getter=tokenValue) id token;
+- (id) tokenValue;
 @end
 
-int main() {
-  return globalCounter;
+@interface Widget<Worker>
+@property (readonly, getter=tokenValue) id token;
+@property (nonatomic, getter=currentValue, setter=setCurrentValue:, strong) id value;
+- (id) tokenValue;
+- (id) currentValue;
++ (id) shared;
+@end
+
+@implementation Widget
+@property (readonly, getter=tokenValue) id token;
+@property (nonatomic, getter=currentValue, setter=setCurrentValue:, strong) id value;
+- (id) tokenValue {
+  return 0;
+}
+- (id) currentValue {
+  return 1;
+}
++ (id) shared {
+  return 2;
+}
+@end
+
+fn main() -> i32 {
+  return 0;
 }
