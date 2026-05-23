@@ -22,7 +22,8 @@
       "unsupported channel claim reached publication",
       "support tier overclaim bypassed fail-closed policy",
       "native object emission reached package native execution or publication with missing llc",
-      "mixed LLVM roots or mismatched LLVM tool versions reached object package execution or publication"
+      "mixed LLVM roots or mismatched LLVM tool versions reached object package execution or publication",
+      "source-only host identity or hosted-runner tool presence promoted Linux x64 or macOS arm64 without native execution evidence"
     ]
   },
   "hard_fail_classes": [
@@ -205,6 +206,7 @@
     "package install rollback and publication claims stay on the checked-in matrix",
     "tool presence does not widen host support by itself",
     "native object emission requires llc --filetype=obj and has no clang substitute success path",
-    "mixed LLVM roots and mismatched LLVM tool versions fail closed before object package execution or platform support"
+    "mixed LLVM roots and mismatched LLVM tool versions fail closed before object package execution or platform support",
+    "Linux x64 and macOS arm64 promotion requires checked host identity, package root, toolchain probe, and native execution records"
   ]
 }

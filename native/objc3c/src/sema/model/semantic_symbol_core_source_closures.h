@@ -88,9 +88,9 @@ inline constexpr const char *kObjc3ErrorHandlingErrorSourceClosureContractId =
 inline constexpr const char *kObjc3ErrorHandlingErrorSourceClosureSurfacePath =
     "frontend.pipeline.semantic_surface.objc_error_handling_error_source_closure";
 inline constexpr const char *kObjc3ErrorHandlingErrorSourceClosureSourceModel =
-    "bare-throws-declarations-single-payload-typed-throws-result-carrier-profiles-nserror-bridging-profiles-and-canonical-error-bridge-markers-are-live-frontend-owned-source-surfaces-while-typed-throws-abi-lowering-try-throw-and-do-catch-remain-fail-closed";
+    "bare-throws-declarations-single-payload-typed-throws-result-carrier-profiles-nserror-bridging-profiles-and-canonical-error-bridge-markers-are-live-frontend-owned-source-surfaces-with-single-payload-typed-throws-lowered-through-the-private-error-out-abi";
 inline constexpr const char *kObjc3ErrorHandlingErrorSourceClosureFailureModel =
-    "typed-throws-preserves-one-source-payload-through-interface-contracts-but-typed-error-abi-lowering-runtime-execution-try-expressions-throw-statements-and-do-catch-remain-fail-closed-boundaries-until-runnable-error_handling-work";
+    "typed-throws-preserves-one-source-payload-through-interface-contracts-and-private-error-out-abi-lowering-while-malformed-payload-multi-payload-and-silent-erasure-forms-remain-fail-closed";
 
 struct Objc3FrontendErrorHandlingErrorSourceClosureSummary {
   std::string contract_id = kObjc3ErrorHandlingErrorSourceClosureContractId;
@@ -149,7 +149,7 @@ struct Objc3FrontendErrorHandlingErrorSourceClosureSummary {
   bool typed_throws_silent_erasure_allowed = false;
   std::string typed_throws_effect_record_status =
       "typed-and-untyped-effects-preserved-with-exact-callable-compatibility";
-  std::string typed_throws_abi_status = "typed-error-abi-deferred";
+  std::string typed_throws_abi_status = "typed-error-out-abi";
   std::string typed_throws_interface_roundtrip_status =
       "typed-payload-preserved";
   bool try_fail_closed = false;

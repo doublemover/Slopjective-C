@@ -16,7 +16,7 @@ inline constexpr const char *kObjc3TypeSystemTypeSourceClosureSurfacePath =
 inline constexpr const char *kObjc3TypeSystemTypeSourceClosureSourceModel =
     "protocol-optional-partitions-object-pointer-nullability-generic-suffixes-optional-bindings-optional-sends-optional-member-access-nil-coalescing-typed-keypaths-and-Optional-value-optional-type-signatures-are-live-parser-owned-source-surfaces";
 inline constexpr const char *kObjc3TypeSystemTypeSourceClosureFailureModel =
-    "value-optional-executable-construction-unwrap-and-ir-payload-emission-remain-fail-closed-until runtime execution semantics land";
+    "value-optional-unchecked-unwrap-ir-payload-call-abi-and-runtime-constructor-symbols-remain-fail-closed-after-checked-lowering-contract";
 inline constexpr const char *kObjc3TypeSystemTypeSemanticModelContractId =
     "objc3c.type_system.type.semantic.model.v1";
 inline constexpr const char *kObjc3TypeSystemTypeSemanticModelSurfacePath =

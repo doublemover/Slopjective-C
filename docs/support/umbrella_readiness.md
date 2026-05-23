@@ -228,7 +228,7 @@ Consumer rule: Umbrella readiness may explain why a reserved umbrella row is blo
 ### Forbidden Overclaims
 
 - Typed throws runtime behavior, typed error ABI, or parenthesized throws payload erasure from parser diagnostics alone.
-- Value optional executable construction, unchecked unwrap, IR payload emission, runtime lowering, nil-to-scalar conversion, implicit nil absence, nullable pointer conversion, throws/result conversion, or lowercase optional aliases.
+- Value optional runtime constructor symbols, unchecked unwrap, IR payload emission, call ABI lowering, runtime lowering, nil-to-scalar conversion, implicit nil absence, nullable pointer conversion, throws/result conversion, or lowercase optional aliases.
 - Runtime-specialized generic metadata, generic body cloning, module-wide implicit reification, selector-local generic method clauses, C/Objective-C style generic function syntax, overload-by-generic-signature, or variadic generic parameters from the bounded #8235 metadata policy.
 - Type-test patterns, statement fat-arrow arms, Result payload ABI extraction, aliases, or strict-profile promotion from #8236 guarded match and bounded expression-match support.
 - Strict-system profile support from strict-concurrency aliasing, preview modes, source-only concurrency support, or public conformance claims before release/system evidence exists.
@@ -237,7 +237,7 @@ Consumer rule: Umbrella readiness may explain why a reserved umbrella row is blo
 ### Prerequisite Rows
 
 - `language.errors.typed-throws` must be `reserved`: The umbrella cannot be implemented until typed throws moves beyond source/interface/sema effect identity into ABI/lowering and runtime behavior.
-- `language.types.value-optionals` must be `reserved`: The umbrella cannot be implemented until value optionals move beyond semantic type admission, interface roundtrip, and stable layout identity into executable construction, unwrap, lowering, and runtime behavior.
+- `language.types.value-optionals` must be `reserved`: The umbrella cannot be implemented until value optionals move beyond semantic type admission, interface roundtrip, stable layout identity, and checked absent/present lowering contracts into IR payload emission, call ABI lowering, and runtime behavior.
 - `language.generics.generic-callable-reification` must be `implemented`: Generic callable reification now has source-owned bounded metadata policy support for Objective-C 3 generic functions and Objective-C generic methods while runtime specialization remains explicitly outside the support claim.
 - `language.control-flow.statement-guarded-match` must be `implemented`: Statement guarded match is the one source-level #8236 prerequisite currently implemented and must remain evidence-backed.
 - `language.profiles.strict-admission` must be `implemented`: Strict and strict-concurrency profiles are now claimable through native profile validation, strict diagnostics, strict-concurrency enforcement, public conformance publication, and release-candidate replay evidence while strict-system remains fail-closed.
@@ -248,8 +248,8 @@ Consumer rule: Umbrella readiness may explain why a reserved umbrella row is blo
 
 - `satisfied` The #8207 umbrella contract binds typed throws, value optionals, generic callable reification, guarded match, and strict profile rows to checked-in source truth. (path: `tests/tooling/fixtures/native/language_evolution_umbrella_contract.json`)
 - `satisfied` Typed throws parser diagnostics classify invalid parenthesized payload shapes and reject them without erasing to bare throws, while single payloads are preserved for effect metadata. (path: `native/objc3c/src/parse/objc3_parser_core_cstyle_parameters_async_throws_clause_parsing.inc`)
-- `satisfied` Typed throws sema records preserve an exact effect signature key for callable compatibility while keeping ABI/lowering fail-closed. (path: `tests/tooling/fixtures/native/typed_throws_semantic_effect_identity.contract.json`)
-- `satisfied` Typed throws and value optional source-closure plus textual-interface import records keep runtime feature markers fail-closed, preserve value-optional semantic type/layout identity, and deny typed error ABI/lowering, nil/nullability/error conversions, executable Optional<T> construction, unchecked unwrap, IR payload emission, and runtime-lowering claims. (path: `tests/tooling/fixtures/native/language_evolution_typed_throws_value_optionals_contract.json`)
+- `satisfied` Typed throws sema records preserve an exact effect signature key for callable compatibility while direct calls and try propagation lower through the private error-out ABI without erasing payload identity. (path: `tests/tooling/fixtures/native/typed_throws_semantic_effect_identity.contract.json`)
+- `satisfied` Typed throws source-closure plus textual-interface import records now allow single-payload typed error-out ABI lowering while preserving payload identity; value optional records keep runtime feature markers fail-closed, preserve checked absent/present lowering contracts, and deny nil/nullability/error conversions, unchecked unwrap, IR payload emission, call ABI lowering, and runtime-lowering claims. (path: `tests/tooling/fixtures/native/language_evolution_typed_throws_value_optionals_contract.json`)
 - `satisfied` Generic callable metadata records are deterministic for admitted generic functions and Objective-C generic methods, including erased-default and declaration-scoped explicit-reified policy without runtime-specialization claims. (path: `tests/tooling/fixtures/native/generic_callable_reification_contract.json`)
 - `satisfied` Statement-form guarded match records source support for where-guards and fail-closed expression/type-test boundaries. (path: `native/objc3c/src/sema/model/semantic_symbol_core_source_closures.h`)
 - `satisfied` The guarded match fixture contract records statement-only admission and reserves expression-position match, fat-arrow arms, and type-test patterns. (path: `tests/tooling/fixtures/native/match_guarded_pattern_language_evolution_contract.json`)
@@ -280,14 +280,14 @@ Consumer rule: Umbrella readiness may explain why a reserved umbrella row is blo
 #### Runtime Probes
 
 - `blocked` Typed throws ABI, lowering, and runtime execution remain unimplemented. (blocker_id: `typed-throws-abi-lowering-interface`)
-- `blocked` Value optional executable construction, unwrap emission, IR payload lowering, and runtime execution remain unimplemented. (blocker_id: `value-optionals-abi-lowering-interface`)
+- `blocked` Value optional runtime constructor symbol emission, IR payload lowering, call ABI lowering, and runtime execution remain unimplemented. (blocker_id: `value-optionals-abi-lowering-interface`)
 - `satisfied` Runtime-specialized generic metadata and body cloning remain unimplemented; current generic callable reification is a source-owned metadata policy for admitted generic callables. (path: `tests/tooling/fixtures/native/generic_callable_reification_contract.json`)
 - `satisfied` Strict-concurrency actor isolation, sendability, scheduler, task lifecycle, and mailbox evidence are bound to the claimable strict-concurrency profile; strict-system remains target-only release evidence and is not a native frontend language profile. (path: `tests/conformance/profile_strict_boundary/strict_profile_boundary_contract.json`)
 
 #### Abi Governance Rows
 
 - `satisfied` Typed throws metadata slots import none, untyped, or single-payload typed effects only when effect signature and declared payload metadata agree. (path: `tests/tooling/fixtures/native/language_evolution_typed_throws_value_optionals_contract.json`)
-- `blocked` Value optional ABI layout identity and interface roundtrip are now contracted; executable call ABI and runtime payload emission remain blocked. (blocker_id: `value-optionals-abi-lowering-interface`)
+- `blocked` Value optional ABI layout identity, interface roundtrip, explicit absent/present construction, and checked unwrap/binding diagnostics are now contracted; executable call ABI and runtime payload emission remain blocked. (blocker_id: `value-optionals-abi-lowering-interface`)
 - `satisfied` Generic callable signature metadata records erased-default and explicit-reified semantic mangling policies without claiming runtime-specialized metadata. (path: `tests/tooling/fixtures/native/generic_callable_reification_contract.json`)
 
 #### Docs
@@ -296,7 +296,7 @@ Consumer rule: Umbrella readiness may explain why a reserved umbrella row is blo
 - `satisfied` Evidence rows point to checked source, docs, and fixtures rather than temp/generated evidence. (path: `docs/support/evidence_map.json`)
 - `satisfied` Hard-cutover truth keeps language-evolution support bounded to actual rows. (path: `docs/support/hard_cutover_capability_truth.md`)
 - `satisfied` Type, optional, and generic specs describe reserved value optional and generic reification boundaries. (path: `spec/PART_3_TYPES_NULLABILITY_OPTIONALS_GENERICS_KEYPATHS.md`)
-- `satisfied` Error spec describes typed throws source effect slots, exact compatibility, and fail-closed ABI/lowering/runtime behavior. (path: `spec/PART_6_ERRORS_RESULTS_THROWS.md`)
+- `satisfied` Error spec describes typed throws source effect slots, exact compatibility, hidden error-out ABI lowering, and fail-closed malformed/multi-payload or silent-erasure behavior. (path: `spec/PART_6_ERRORS_RESULTS_THROWS.md`)
 - `satisfied` Parser and semantic-analysis docs separate typed throws source/sema effect metadata from reserved ABI/lowering/runtime behavior and from other language-evolution rows. (path: `docs/compiler/parser.md`)
 
 ### Generated Output Boundary
@@ -315,8 +315,8 @@ Consumer rule: Umbrella readiness may explain why a reserved umbrella row is blo
 
 - `typed-throws-abi-lowering-interface`: Typed throws now has parser/source/interface/sema effect identity, but ABI/lowering/runtime execution remains unimplemented.
   - ABI/lowering/runtime behavior for typed error payloads.
-- `value-optionals-abi-lowering-interface`: Value optionals now have semantic type admission, stable presence/payload layout identity, and textual-interface roundtrip; executable construction, unchecked unwrap, IR payload lowering, and runtime behavior remain blocked.
-  - Optional<T> executable construction and checked unwrap lowering.
+- `value-optionals-abi-lowering-interface`: Value optionals now have semantic type admission, stable presence/payload layout identity, textual-interface roundtrip, explicit absent/present construction contracts, and checked unwrap/binding diagnostics; runtime constructor symbols, unchecked unwrap, IR payload lowering, call ABI lowering, and runtime behavior remain blocked.
+  - Optional<T> runtime constructor symbol emission.
   - Optional<T> call ABI payload emission.
   - Property/ivar storage lifetime once executable layout lowering exists.
   - Lowering/runtime behavior without nil/nullability aliases.
@@ -354,8 +354,8 @@ Consumer rule: Umbrella readiness may explain why a reserved umbrella row is blo
 - `platform.linux-x64.unsupported` must be `rejected`: Linux x64 remains fail-closed until build, package, install, and native execution evidence exists.
 - `platform.darwin-arm64.unsupported` must be `rejected`: macOS arm64 remains fail-closed until package install, Mach-O/load-path, and native execution evidence exists.
 - `toolchain.llvm.current-probed-executable` must be `internal`: LLVM and native object emission remain current-probe/internal evidence, not broad LLVM compatibility.
-- `toolchain.sanitizer.address` must be `reserved`: ASan remains reserved until sanitizer package, install, and native execution evidence exists.
-- `toolchain.sanitizer.undefined` must be `reserved`: UBSan remains reserved until sanitizer package, install, and native execution evidence exists.
+- `toolchain.sanitizer.address` must be `reserved`: ASan remains reserved until sanitizer package, install, expected detection records, release-runtime isolation, unsupported-host diagnostics, and native execution evidence exist.
+- `toolchain.sanitizer.undefined` must be `reserved`: UBSan remains reserved until sanitizer package, install, trap-or-recover metadata, expected detection records, release-runtime isolation, unsupported-host diagnostics, and native execution evidence exist.
 
 ### Readiness Requirements
 
@@ -422,9 +422,9 @@ Consumer rule: Umbrella readiness may explain why a reserved umbrella row is blo
   - Mach-O and load-path evidence.
   - macOS arm64 native execution evidence.
 - `sanitizer-runtime-package-evidence`: ASan and UBSan runtime package variants remain reserved.
-  - ASan runtime package, install, and native execution evidence.
-  - UBSan runtime package, install, and native execution evidence.
-  - Fail-closed mixed-runtime and stale-metadata publication proof for sanitizer variants.
+  - ASan runtime package, install, expected detection records, release-runtime isolation, unsupported-host diagnostics, and native execution evidence.
+  - UBSan runtime package, install, trap-or-recover metadata, expected detection records, release-runtime isolation, unsupported-host diagnostics, and native execution evidence.
+  - Fail-closed mixed-runtime, stale-metadata, unsupported-host, and release-runtime isolation proof for sanitizer variants.
 - `native-object-emission-promotion`: Native object emission is fail-closed unless llc --filetype=obj is present and routed without a clang substitute route.
   - Hosted-runner evidence for llc object emission availability or deterministic fail-closed status.
   - No clang substitute success path for object, package, execution, or parity claims.

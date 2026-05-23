@@ -173,6 +173,12 @@ PACKAGE_REGISTRY_PUBLICATION_LAYERS = (
         claim_boundary="local hosted service contract with fixture auth, trust, revocation, moderation, availability, and no-network fail-closed policy",
     ),
     PackageRegistryPublicationLayer(
+        layer_id="public-hosted-registry-live-boundary",
+        source_of_truth="source-owned live service boundary records embedded in the hosted service and registry fixtures",
+        publication_path=PACKAGE_HOSTED_REGISTRY_SERVICE_FIXTURE_PATH,
+        claim_boundary="production auth, moderation, trust-root, availability, and live transport records are explicit reserved-fail-closed boundaries, not live public service support",
+    ),
+    PackageRegistryPublicationLayer(
         layer_id="network-resolution",
         source_of_truth="source-owned hosted registry fixture, fixture lock, offline mirror, and pinned cache metadata",
         publication_path=PACKAGE_NETWORK_RESOLUTION_FIXTURE_PATH,
@@ -230,15 +236,16 @@ PACKAGE_REGISTRY_PUBLIC_ACTIONS = (
         action="validate-package-registry-model",
         summary=(
             "validate source-owned hosted-registry fixture metadata, hermetic "
-            "service contract, endpoint identity, signatures, digests, "
-            "revocations, and offline mirror pins"
+            "service contract, live public boundary records, endpoint identity, "
+            "signatures, digests, revocations, and offline mirror pins"
         ),
         script_path="scripts/check_objc3c_package_registry_model.py",
         validation_tier="repo",
         guarantee_owner=(
             "hosted registry behavior remains hermetic and offline; live "
-            "network fetches fail closed and no live public hosted-registry "
-            "support claim is published without production service evidence"
+            "network fetches, live transport, production auth, production "
+            "moderation, production trust roots, and public availability fail "
+            "closed without publishing a live hosted-registry support claim"
         ),
         schema_contracts=(
             PACKAGE_HOSTED_REGISTRY_INDEX_SCHEMA,
@@ -259,15 +266,16 @@ PACKAGE_REGISTRY_PUBLIC_ACTIONS = (
         action="package-registry-resolve",
         summary=(
             "resolve one source-owned hosted-registry fixture record from "
-            "checked-in metadata, hermetic service policy, and offline mirror pins"
+            "checked-in metadata, hermetic service policy, live public "
+            "fail-closed boundary records, and offline mirror pins"
         ),
         script_path="scripts/check_objc3c_package_registry_model.py",
         validation_tier="repo",
         guarantee_owner=(
             "fixture registry resolution rejects network fetches, missing "
             "metadata, service contract drift, digest/signature drift, "
-            "revocations, and ambiguous candidates without fallback registry "
-            "success"
+            "revocations, unavailable live service modes, live transport "
+            "requests, and ambiguous candidates without fallback registry success"
         ),
         schema_contracts=(
             PACKAGE_HOSTED_REGISTRY_INDEX_SCHEMA,

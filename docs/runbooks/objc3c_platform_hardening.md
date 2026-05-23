@@ -217,7 +217,8 @@ Sanitizer package variants are separate from host support. The ASan (#8230) and
 UBSan (#8231) runtime package rows are reserved, package-addressable metadata
 only; default release runtime packages must not inherit sanitizer behavior, and
 sanitizer rows must fail closed for unsupported hosts, release-channel installs,
-mixed runtime libraries, missing sanitizer runtime libraries, and stale package
+mixed runtime libraries, missing sanitizer runtime libraries, missing expected
+detection records, missing UBSan trap-or-recover metadata, and stale package
 metadata.
 
 Every future platform or sanitizer promotion must preserve the package identity
@@ -228,8 +229,17 @@ requires the Mach-O/DWARF/dSYM `libobjc3-runtime.dylib` layout,
 `@rpath`/`install_name`/codesign loader proof, clean install evidence, and
 native execution evidence. ASan and UBSan promotion requires exact target
 sanitizer runtime discovery, sanitizer package metadata, isolated opt-in
-package channels, and native execution evidence; sanitizer reports alone are
-validation artifacts, not support truth.
+package channels, expected detection records, unsupported-host diagnostics,
+release-runtime isolation, and native execution evidence; sanitizer reports
+alone are validation artifacts, not support truth.
+
+The support evidence fixture now separates host identity, toolchain probe,
+package root, and native execution records. Future Linux x64 and macOS arm64
+promotion must advance those records together: a source-owned host triple or a
+hosted-runner tool summary is not enough. The package-root records may describe
+ELF versus Mach-O, DWARF versus DWARF/dSYM, loader behavior, runtime library
+names, and layout expectations, but they stay fail-closed until a matching
+native execution record cites real host execution evidence.
 
 Package variant rows are required to carry source-owned metadata freshness
 guards. Generated package metadata can be emitted as replay output, but stale or

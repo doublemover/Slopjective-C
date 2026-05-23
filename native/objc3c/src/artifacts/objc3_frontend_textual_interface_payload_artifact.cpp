@@ -300,7 +300,7 @@ std::string TypedThrowsEffectSignatureKey(bool throws_declared,
 std::string TypedThrowsCallableCompatibilityPolicy(bool throws_declared,
                                                    bool typed_throws_declared) {
   if (typed_throws_declared) {
-    return "typed-throws-exact-payload-match-lowering-deferred";
+    return "typed-throws-exact-payload-match-error-out-abi";
   }
   return throws_declared ? "untyped-throws-id-error-carrier"
                          : "nonthrowing-only";
@@ -331,7 +331,7 @@ JsonValue TypedThrowsContract(bool throws_declared,
       SizeValue(typed_throws_declared ? 1u : 0u);
   contract["typed_payload_status"] =
       JsonValue::String(typed_throws_declared
-                            ? "source-preserved-lowering-fail-closed"
+                            ? "source-preserved-error-out-abi-lowered"
                             : "not-declared");
   contract["typed_payload_generic_suffix"] =
       JsonValue::String(payload.generic_suffix_text);
@@ -340,12 +340,16 @@ JsonValue TypedThrowsContract(bool throws_declared,
                       payload.generic_suffix_terminated);
   contract["typed_payload_pointer_depth"] =
       SizeValue(payload.pointer_declarator_depth);
-  contract["typed_payload_lowering_ready"] = JsonValue::Bool(false);
-  contract["runtime_execution_claimed"] = JsonValue::Bool(false);
+  contract["typed_payload_lowering_ready"] =
+      JsonValue::Bool(typed_throws_declared && throws_declared &&
+                      !declared_error_type.empty());
+  contract["runtime_execution_claimed"] =
+      JsonValue::Bool(typed_throws_declared && throws_declared &&
+                      !declared_error_type.empty());
   contract["silent_erasure_allowed"] = JsonValue::Bool(false);
   contract["multi_payload_supported"] = JsonValue::Bool(false);
   contract["abi_status"] = JsonValue::String(
-      typed_throws_declared ? "typed-error-abi-deferred"
+      typed_throws_declared ? "typed-error-out-abi"
                             : (throws_declared ? "untyped-error-out-abi"
                                                : "none"));
   contract["interface_roundtrip_status"] =

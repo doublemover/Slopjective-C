@@ -180,6 +180,7 @@
         "publication_allowed",
         "platform_identity",
         "artifact_contract",
+        "host_evidence_requirements",
         "required_promotion_evidence",
         "required_missing_evidence_classes",
         "required_toolchain_components",
@@ -274,6 +275,47 @@
             },
             "object_emission_alone_supports_platform": {
               "const": false
+            }
+          }
+        },
+        "host_evidence_requirements": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "host_identity_record_id",
+            "toolchain_probe_record_id",
+            "package_root_record_id",
+            "native_execution_record_id",
+            "source_only_probe_promotes_support",
+            "promotion_allowed",
+            "missing_record_classes"
+          ],
+          "properties": {
+            "host_identity_record_id": {
+              "type": "string"
+            },
+            "toolchain_probe_record_id": {
+              "type": "string"
+            },
+            "package_root_record_id": {
+              "type": "string"
+            },
+            "native_execution_record_id": {
+              "type": "string"
+            },
+            "source_only_probe_promotes_support": {
+              "const": false
+            },
+            "promotion_allowed": {
+              "const": false
+            },
+            "missing_record_classes": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/evidenceClass"
+              },
+              "minItems": 4,
+              "uniqueItems": true
             }
           }
         },
@@ -394,6 +436,9 @@
           "type": "string"
         },
         "row_id": {
+          "type": "string"
+        },
+        "package_root_record_id": {
           "type": "string"
         },
         "issue_ref": {
@@ -704,6 +749,10 @@
         "default_release_channel_allowed",
         "report_artifact_support_truth",
         "mixed_release_sanitizer_runtime_behavior",
+        "release_runtime_package_ids",
+        "release_runtime_mixing_allowed",
+        "expected_detection_records",
+        "unsupported_host_diagnostics",
         "required_metadata_fields"
       ],
       "properties": {
@@ -722,6 +771,87 @@
         },
         "mixed_release_sanitizer_runtime_behavior": {
           "const": "fail-closed"
+        },
+        "release_runtime_package_ids": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "minItems": 1,
+          "uniqueItems": true
+        },
+        "release_runtime_mixing_allowed": {
+          "const": false
+        },
+        "expected_detection_records": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "record_id",
+              "record_kind",
+              "required_behavior",
+              "support_truth"
+            ],
+            "properties": {
+              "record_id": {
+                "type": "string",
+                "minLength": 1
+              },
+              "record_kind": {
+                "type": "string",
+                "minLength": 1
+              },
+              "required_behavior": {
+                "const": "record-only-no-support-promotion"
+              },
+              "support_truth": {
+                "const": false
+              }
+            }
+          }
+        },
+        "unsupported_host_diagnostics": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "diagnostic_id",
+              "failure_class",
+              "required_behavior",
+              "blocks"
+            ],
+            "properties": {
+              "diagnostic_id": {
+                "type": "string",
+                "minLength": 1
+              },
+              "failure_class": {
+                "const": "unsupported-sanitizer-platform"
+              },
+              "required_behavior": {
+                "const": "fail-closed-before-capability-promotion"
+              },
+              "blocks": {
+                "type": "array",
+                "items": {
+                  "enum": [
+                    "package",
+                    "install",
+                    "execution",
+                    "publication"
+                  ]
+                },
+                "minItems": 4,
+                "uniqueItems": true
+              }
+            }
+          }
         },
         "required_metadata_fields": {
           "type": "array",

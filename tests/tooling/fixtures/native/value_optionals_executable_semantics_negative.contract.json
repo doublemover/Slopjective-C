@@ -4,15 +4,17 @@
   "issue_ref": 8234,
   "semantic_contract_available": true,
   "stable_layout_contract_available": true,
+  "executable_lowering_contract_available": true,
+  "explicit_absent_present_construction_contract_available": true,
+  "checked_unwrap_diagnostic_available": true,
   "blocked_operations": [
-    "runtime-present-construction",
-    "runtime-absent-construction",
-    "unchecked-unwrap",
+    "constructor-symbol-runtime-emission",
+    "payload-ir-emission",
+    "unchecked-unwrap-without-presence-proof",
     "implicit-nil-absence",
-    "ir-payload-emission",
     "call-abi-lowering"
   ],
   "expected_diagnostic": "O3P159",
   "fail_closed": true,
-  "notes": "The semantic Optional<T> carrier and stable has_value/payload identity must not be widened into executable behavior until construction, checked unwrap, call ABI, and runtime payload emission land together."
+  "notes": "The semantic Optional<T> carrier now has a checked absent/present lowering contract and explicit unwrap/binding diagnostics. It must still not be widened into runtime constructor symbols, unchecked unwrap, implicit nil absence, IR payload emission, or call ABI lowering."
 }

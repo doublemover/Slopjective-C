@@ -2,6 +2,7 @@
 
 #include "ast/objc3_ast_decl_surface.h"
 #include "ast/objc3_ast_type_surface.h"
+#include "sema/objc3_typed_throws_effect_contract.h"
 
 #include <sstream>
 
@@ -31,7 +32,10 @@ Objc3CallableLoweringState Objc3BuildFunctionLoweringState(
   state.throws_declared = function.throws_declared;
   state.typed_throws_declared = function.typed_throws_declared;
   state.throws_error_out_abi_ready =
-      function.throws_declared && !function.typed_throws_declared;
+      Objc3TypedThrowsAbiLoweringReady(
+          function.throws_declared,
+          function.typed_throws_declared,
+          function.typed_throws_payload.canonical_spelling);
   state.typed_throws_error_type_spelling =
       function.typed_throws_payload.canonical_spelling;
   state.parameter_count = function.params.size();
@@ -54,7 +58,10 @@ Objc3CallableLoweringState Objc3BuildMethodLoweringState(
   state.throws_declared = method.throws_declared;
   state.typed_throws_declared = method.typed_throws_declared;
   state.throws_error_out_abi_ready =
-      method.throws_declared && !method.typed_throws_declared;
+      Objc3TypedThrowsAbiLoweringReady(
+          method.throws_declared,
+          method.typed_throws_declared,
+          method.typed_throws_payload.canonical_spelling);
   state.typed_throws_error_type_spelling =
       method.typed_throws_payload.canonical_spelling;
   state.runtime_dispatch_required = Objc3MethodDeclRequiresRuntimeDispatch(method);

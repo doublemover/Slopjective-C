@@ -62,7 +62,7 @@ def test_typed_throws_source_owned_and_value_optionals_contract_boundaries() -> 
     assert contract["umbrella_issue_ref"] == 8207
     assert contract["issues"] == {"typed_throws": 8233, "value_optionals": 8234}
     assert contract["support_state"] == {
-        "typed_throws": "source_owned_interface_preserved_lowering_fail_closed",
+        "typed_throws": "source_owned_interface_preserved_error_out_abi_lowered",
         "value_optionals": "semantic_type_signatures_stable_layout_interface_preserved_runtime_lowering_fail_closed",
     }
     assert contract["typed_throws"]["accepted_payload_arity"] == 1
@@ -73,14 +73,14 @@ def test_typed_throws_source_owned_and_value_optionals_contract_boundaries() -> 
     assert contract["typed_throws"]["interface_roundtrip_status"] == (
         "typed-payload-preserved"
     )
-    assert contract["typed_throws"]["abi_status"] == "typed-error-abi-deferred"
+    assert contract["typed_throws"]["abi_status"] == "typed-error-out-abi"
     assert contract["typed_throws"]["effect_record"]["semantic_identity_status"] == (
         "exact-effect-signature-preserved"
     )
     assert contract["interface_import_contract"][
         "typed_throws_callable_compatibility_policy"
-    ] == "typed-throws-exact-payload-match-lowering-deferred"
-    assert contract["typed_throws"]["runtime_execution_claimed"] is False
+    ] == "typed-throws-exact-payload-match-error-out-abi"
+    assert contract["typed_throws"]["runtime_execution_claimed"] is True
     assert contract["value_optionals"]["lowercase_alias_accepted"] is False
     assert contract["value_optionals"]["canonical_diagnostic_symbol"] == (
         "kObjc3ParserDiagnosticReservedValueOptionalCode"
@@ -102,7 +102,7 @@ def test_typed_throws_source_owned_and_value_optionals_contract_boundaries() -> 
         "umbrella_contract": "tests/tooling/fixtures/native/language_evolution_umbrella_contract.json",
         "profile_widening_allowed": False,
         "objc2_compatibility_path_allowed": False,
-        "runtime_lowering_claim_allowed": False,
+        "runtime_lowering_claim_allowed": True,
     }
     assert contract["diagnostic_code_symbols"] == {
         "typed_throws_invalid_payload_shape": {
@@ -428,10 +428,10 @@ def test_language_evolution_umbrella_keeps_claims_source_owned_and_fail_closed()
         assert row["support_state"]
         assert row["negative_case_ids"]
     assert contracts["typed_throws"]["support_state"] == (
-        "source_owned_interface_preserved_lowering_fail_closed"
+        "source_owned_interface_preserved_error_out_abi_lowered"
     )
     assert "language.errors.typed-throws-runtime-lowering" in contract[
-        "reserved_public_claims"
+        "admitted_public_claims"
     ]
     assert "language.errors.typed-throws" not in contract["reserved_public_claims"]
     assert "language.profiles.strict-system" in contract["reserved_public_claims"]
@@ -465,7 +465,7 @@ def test_language_evolution_umbrella_keeps_claims_source_owned_and_fail_closed()
         "source-owned-generic-callable-policy"
     )
     assert support_rows["language.errors.typed-throws"]["status"] == (
-        "source-owned-interface-preserved-lowering-fail-closed"
+        "source-owned-interface-preserved-error-out-abi-lowered"
     )
     assert support_rows["language.control-flow.statement-guarded-match"]["status"] == (
         "supported-bounded-statement-and-expression"

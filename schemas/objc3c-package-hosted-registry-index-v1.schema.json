@@ -12,6 +12,7 @@
     "provider_model",
     "snapshot",
     "service_boundary",
+    "live_service_boundary",
     "hosted_service",
     "service_availability",
     "endpoint_identity",
@@ -49,6 +50,7 @@
     "provider_model": { "$ref": "#/$defs/providerModel" },
     "snapshot": { "$ref": "#/$defs/snapshot" },
     "service_boundary": { "$ref": "#/$defs/serviceBoundary" },
+    "live_service_boundary": { "$ref": "#/$defs/liveServiceBoundary" },
     "hosted_service": { "$ref": "#/$defs/hostedServiceRef" },
     "service_availability": { "$ref": "#/$defs/serviceAvailability" },
     "endpoint_identity": { "$ref": "#/$defs/endpointIdentity" },
@@ -112,7 +114,13 @@
     },
     "providerModel": {
       "type": "object",
-      "required": ["provider_id", "network_fetch", "resolver", "trust_validator"],
+      "required": [
+        "provider_id",
+        "network_fetch",
+        "transport",
+        "resolver",
+        "trust_validator"
+      ],
       "additionalProperties": false,
       "properties": {
         "provider_id": { "const": "schema-backed-hosted-registry-provider-v1" },
@@ -124,6 +132,32 @@
             "separated_from_resolution": { "const": true },
             "policy": { "const": "forbidden-fail-closed" },
             "live_fetch_enabled": { "const": false }
+          }
+        },
+        "transport": {
+          "type": "object",
+          "required": [
+            "transport_id",
+            "mode",
+            "separated_from_resolver",
+            "live_transport_enabled",
+            "resolver_invocation_allowed",
+            "request_policy",
+            "unsupported_diagnostic",
+            "fallback_registry_success"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "transport_id": {
+              "const": "public-hosted-registry-network-transport-v1"
+            },
+            "mode": { "const": "disabled-live-public-transport" },
+            "separated_from_resolver": { "const": true },
+            "live_transport_enabled": { "const": false },
+            "resolver_invocation_allowed": { "const": false },
+            "request_policy": { "const": "fail-closed-before-resolver" },
+            "unsupported_diagnostic": { "const": "live-transport-disabled" },
+            "fallback_registry_success": { "const": false }
           }
         },
         "resolver": {
@@ -211,6 +245,141 @@
         "fallback_registry_success": { "const": false },
         "package_manager_parity": { "const": "not-claimed" },
         "local_offline_replay_preserved": { "const": true }
+      }
+    },
+    "liveServiceBoundary": {
+      "type": "object",
+      "required": [
+        "contract_id",
+        "capability_id",
+        "claim_state",
+        "activation_state",
+        "unsupported_mode",
+        "fallback_registry_success",
+        "offline_replay_preserved",
+        "network_transport",
+        "production_records",
+        "lock_offline_handoff",
+        "diagnostics"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "contract_id": {
+          "const": "objc3c.package_ecosystem.public_hosted_registry_live_service_contract.v1"
+        },
+        "capability_id": {
+          "const": "ecosystem.package-manager.public-hosted-registry"
+        },
+        "claim_state": { "const": "reserved-fail-closed" },
+        "activation_state": { "const": "inactive-live-service-unavailable" },
+        "unsupported_mode": { "const": "live-public-registry-unsupported" },
+        "fallback_registry_success": { "const": false },
+        "offline_replay_preserved": { "const": true },
+        "network_transport": { "$ref": "#/$defs/liveNetworkTransport" },
+        "production_records": {
+          "type": "object",
+          "required": ["auth", "moderation", "trust_root", "availability"],
+          "additionalProperties": false,
+          "properties": {
+            "auth": { "$ref": "#/$defs/productionBoundaryRecord" },
+            "moderation": { "$ref": "#/$defs/productionBoundaryRecord" },
+            "trust_root": { "$ref": "#/$defs/productionBoundaryRecord" },
+            "availability": { "$ref": "#/$defs/productionBoundaryRecord" }
+          }
+        },
+        "lock_offline_handoff": { "$ref": "#/$defs/liveLockOfflineHandoff" },
+        "diagnostics": {
+          "type": "array",
+          "items": {
+            "enum": [
+              "live-public-service-unavailable",
+              "live-transport-disabled",
+              "production-auth-unavailable",
+              "production-availability-unavailable",
+              "production-moderation-unavailable",
+              "production-trust-root-unavailable",
+              "unsupported-live-service-mode"
+            ]
+          },
+          "minItems": 7,
+          "uniqueItems": true
+        }
+      }
+    },
+    "liveNetworkTransport": {
+      "type": "object",
+      "required": [
+        "transport_id",
+        "mode",
+        "separated_from_resolver",
+        "enabled",
+        "request_policy",
+        "unsupported_diagnostic",
+        "fallback_registry_success"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "transport_id": { "const": "public-hosted-registry-network-transport-v1" },
+        "mode": { "const": "disabled-live-public-transport" },
+        "separated_from_resolver": { "const": true },
+        "enabled": { "const": false },
+        "request_policy": { "const": "fail-closed-before-resolver" },
+        "unsupported_diagnostic": { "const": "live-transport-disabled" },
+        "fallback_registry_success": { "const": false }
+      }
+    },
+    "productionBoundaryRecord": {
+      "type": "object",
+      "required": [
+        "record_id",
+        "state",
+        "active",
+        "unavailable_behavior",
+        "unsupported_diagnostic"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "record_id": {
+          "enum": [
+            "production-auth-reserved-fail-closed-v1",
+            "production-moderation-reserved-fail-closed-v1",
+            "production-trust-root-reserved-fail-closed-v1",
+            "production-availability-reserved-fail-closed-v1"
+          ]
+        },
+        "state": { "const": "reserved-fail-closed" },
+        "active": { "const": false },
+        "unavailable_behavior": { "const": "fail-closed" },
+        "unsupported_diagnostic": {
+          "enum": [
+            "production-auth-unavailable",
+            "production-moderation-unavailable",
+            "production-trust-root-unavailable",
+            "production-availability-unavailable"
+          ]
+        }
+      }
+    },
+    "liveLockOfflineHandoff": {
+      "type": "object",
+      "required": [
+        "policy",
+        "lock_required_before_live_resolution",
+        "offline_mirror_handoff_required",
+        "offline_replay_preserved",
+        "network_required_after_lock",
+        "unsupported_live_resolution_behavior"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "policy": { "const": "lockfile-first-offline-mirror-handoff-v1" },
+        "lock_required_before_live_resolution": { "const": true },
+        "offline_mirror_handoff_required": { "const": true },
+        "offline_replay_preserved": { "const": true },
+        "network_required_after_lock": { "const": false },
+        "unsupported_live_resolution_behavior": {
+          "const": "fail-closed-before-network"
+        }
       }
     },
     "serviceAvailability": {
@@ -343,9 +512,15 @@
         "fallback-registry-success",
         "invalid-semver",
         "live-network-fetch",
+        "live-public-service-unavailable",
+        "live-transport-disabled",
         "missing-package-provenance",
         "missing-service-auth",
         "offline-mirror-handoff-drift",
+        "production-auth-unavailable",
+        "production-availability-unavailable",
+        "production-moderation-unavailable",
+        "production-trust-root-unavailable",
         "registry-trust-mismatch",
         "revoked-subject",
         "rollback-snapshot",
@@ -361,6 +536,7 @@
         "unsigned-hosted-artifact",
         "unknown-trust-root",
         "unknown-service-auth-subject",
+        "unsupported-live-service-mode",
         "unsupported-platform",
         "yanked-version"
       ]

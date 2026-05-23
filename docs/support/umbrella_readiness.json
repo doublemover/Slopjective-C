@@ -535,7 +535,7 @@
       "intended_public_meaning": "Objective-C 3.0 typed throws, value optionals, generic callable reification, statement guarded match, and strict/strict-concurrency profile selection are aligned as one source-owned language-evolution surface with parser, semantic, artifact, fixture, capability, and evidence truth agreeing on what is supported and what remains fail-closed.",
       "forbidden_overclaims": [
         "Typed throws runtime behavior, typed error ABI, or parenthesized throws payload erasure from parser diagnostics alone.",
-        "Value optional executable construction, unchecked unwrap, IR payload emission, runtime lowering, nil-to-scalar conversion, implicit nil absence, nullable pointer conversion, throws/result conversion, or lowercase optional aliases.",
+        "Value optional runtime constructor symbols, unchecked unwrap, IR payload emission, call ABI lowering, runtime lowering, nil-to-scalar conversion, implicit nil absence, nullable pointer conversion, throws/result conversion, or lowercase optional aliases.",
         "Runtime-specialized generic metadata, generic body cloning, module-wide implicit reification, selector-local generic method clauses, C/Objective-C style generic function syntax, overload-by-generic-signature, or variadic generic parameters from the bounded #8235 metadata policy.",
         "Type-test patterns, statement fat-arrow arms, Result payload ABI extraction, aliases, or strict-profile promotion from #8236 guarded match and bounded expression-match support.",
         "Strict-system profile support from strict-concurrency aliasing, preview modes, source-only concurrency support, or public conformance claims before release/system evidence exists.",
@@ -550,7 +550,7 @@
         {
           "capability_id": "language.types.value-optionals",
           "required_state": "reserved",
-          "reason": "The umbrella cannot be implemented until value optionals move beyond semantic type admission, interface roundtrip, and stable layout identity into executable construction, unwrap, lowering, and runtime behavior."
+          "reason": "The umbrella cannot be implemented until value optionals move beyond semantic type admission, interface roundtrip, stable layout identity, and checked absent/present lowering contracts into IR payload emission, call ABI lowering, and runtime behavior."
         },
         {
           "capability_id": "language.generics.generic-callable-reification",
@@ -583,13 +583,13 @@
         },
         {
           "id": "typed-throws-sema-effect-contract",
-          "description": "Typed throws sema records preserve an exact effect signature key for callable compatibility while keeping ABI/lowering fail-closed.",
+          "description": "Typed throws sema records preserve an exact effect signature key for callable compatibility while direct calls and try propagation lower through the private error-out ABI without erasing payload identity.",
           "status": "satisfied",
           "path": "tests/tooling/fixtures/native/typed_throws_semantic_effect_identity.contract.json"
         },
         {
           "id": "value-optionals-type-contract",
-          "description": "Typed throws and value optional source-closure plus textual-interface import records keep runtime feature markers fail-closed, preserve value-optional semantic type/layout identity, and deny typed error ABI/lowering, nil/nullability/error conversions, executable Optional<T> construction, unchecked unwrap, IR payload emission, and runtime-lowering claims.",
+          "description": "Typed throws source-closure plus textual-interface import records now allow single-payload typed error-out ABI lowering while preserving payload identity; value optional records keep runtime feature markers fail-closed, preserve checked absent/present lowering contracts, and deny nil/nullability/error conversions, unchecked unwrap, IR payload emission, call ABI lowering, and runtime-lowering claims.",
           "status": "satisfied",
           "path": "tests/tooling/fixtures/native/language_evolution_typed_throws_value_optionals_contract.json"
         },
@@ -711,7 +711,7 @@
         },
         {
           "id": "value-optionals-runtime",
-          "description": "Value optional executable construction, unwrap emission, IR payload lowering, and runtime execution remain unimplemented.",
+          "description": "Value optional runtime constructor symbol emission, IR payload lowering, call ABI lowering, and runtime execution remain unimplemented.",
           "status": "blocked",
           "blocker_id": "value-optionals-abi-lowering-interface"
         },
@@ -737,7 +737,7 @@
         },
         {
           "id": "value-optional-abi",
-          "description": "Value optional ABI layout identity and interface roundtrip are now contracted; executable call ABI and runtime payload emission remain blocked.",
+          "description": "Value optional ABI layout identity, interface roundtrip, explicit absent/present construction, and checked unwrap/binding diagnostics are now contracted; executable call ABI and runtime payload emission remain blocked.",
           "status": "blocked",
           "blocker_id": "value-optionals-abi-lowering-interface"
         },
@@ -775,7 +775,7 @@
         },
         {
           "id": "errors-spec",
-          "description": "Error spec describes typed throws source effect slots, exact compatibility, and fail-closed ABI/lowering/runtime behavior.",
+          "description": "Error spec describes typed throws source effect slots, exact compatibility, hidden error-out ABI lowering, and fail-closed malformed/multi-payload or silent-erasure behavior.",
           "status": "satisfied",
           "path": "spec/PART_6_ERRORS_RESULTS_THROWS.md"
         },
@@ -809,9 +809,9 @@
         },
         {
           "blocker_id": "value-optionals-abi-lowering-interface",
-          "summary": "Value optionals now have semantic type admission, stable presence/payload layout identity, and textual-interface roundtrip; executable construction, unchecked unwrap, IR payload lowering, and runtime behavior remain blocked.",
+          "summary": "Value optionals now have semantic type admission, stable presence/payload layout identity, textual-interface roundtrip, explicit absent/present construction contracts, and checked unwrap/binding diagnostics; runtime constructor symbols, unchecked unwrap, IR payload lowering, call ABI lowering, and runtime behavior remain blocked.",
           "missing_work": [
-            "Optional<T> executable construction and checked unwrap lowering.",
+            "Optional<T> runtime constructor symbol emission.",
             "Optional<T> call ABI payload emission.",
             "Property/ivar storage lifetime once executable layout lowering exists.",
             "Lowering/runtime behavior without nil/nullability aliases."
@@ -874,12 +874,12 @@
         {
           "capability_id": "toolchain.sanitizer.address",
           "required_state": "reserved",
-          "reason": "ASan remains reserved until sanitizer package, install, and native execution evidence exists."
+          "reason": "ASan remains reserved until sanitizer package, install, expected detection records, release-runtime isolation, unsupported-host diagnostics, and native execution evidence exist."
         },
         {
           "capability_id": "toolchain.sanitizer.undefined",
           "required_state": "reserved",
-          "reason": "UBSan remains reserved until sanitizer package, install, and native execution evidence exists."
+          "reason": "UBSan remains reserved until sanitizer package, install, trap-or-recover metadata, expected detection records, release-runtime isolation, unsupported-host diagnostics, and native execution evidence exist."
         }
       ],
       "required_source_anchors": [
@@ -1047,9 +1047,9 @@
           "blocker_id": "sanitizer-runtime-package-evidence",
           "summary": "ASan and UBSan runtime package variants remain reserved.",
           "missing_work": [
-            "ASan runtime package, install, and native execution evidence.",
-            "UBSan runtime package, install, and native execution evidence.",
-            "Fail-closed mixed-runtime and stale-metadata publication proof for sanitizer variants."
+            "ASan runtime package, install, expected detection records, release-runtime isolation, unsupported-host diagnostics, and native execution evidence.",
+            "UBSan runtime package, install, trap-or-recover metadata, expected detection records, release-runtime isolation, unsupported-host diagnostics, and native execution evidence.",
+            "Fail-closed mixed-runtime, stale-metadata, unsupported-host, and release-runtime isolation proof for sanitizer variants."
           ],
           "tracking_issue": "#8230"
         },

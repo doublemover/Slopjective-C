@@ -17,6 +17,7 @@
     "source_status",
     "semantic_model",
     "abi_layout",
+    "lowering_contract",
     "interface_roundtrip_status",
     "records",
     "fail_closed"
@@ -33,16 +34,26 @@
       "required": [
         "type_admission_supported",
         "explicit_present_absent_construction_modeled",
+        "explicit_absent_construction_supported",
+        "explicit_present_construction_supported",
         "binding_narrowing_supported",
+        "binding_failure_diagnostic_supported",
         "unwrap_requires_presence_check",
+        "unwrap_failure_diagnostic_supported",
+        "nil_bridge_diagnostic_supported",
         "implicit_nil_absence_allowed",
         "optional_id_distinct_from_nullable_object_pointer"
       ],
       "properties": {
         "type_admission_supported": { "const": true },
         "explicit_present_absent_construction_modeled": { "const": true },
+        "explicit_absent_construction_supported": { "const": true },
+        "explicit_present_construction_supported": { "const": true },
         "binding_narrowing_supported": { "const": true },
+        "binding_failure_diagnostic_supported": { "const": true },
         "unwrap_requires_presence_check": { "const": true },
+        "unwrap_failure_diagnostic_supported": { "const": true },
+        "nil_bridge_diagnostic_supported": { "const": true },
         "implicit_nil_absence_allowed": { "const": false },
         "optional_id_distinct_from_nullable_object_pointer": { "const": true }
       },
@@ -59,8 +70,11 @@
         "absence_state",
         "presence_state",
         "stable_layout_contract_supported",
+        "executable_lowering_contract_supported",
         "runtime_execution_supported",
-        "lowering_supported"
+        "lowering_supported",
+        "ir_payload_emission_supported",
+        "call_abi_lowering_supported"
       ],
       "properties": {
         "layout_id": {
@@ -77,11 +91,15 @@
         "absence_state": { "const": "has_value=false" },
         "presence_state": { "const": "has_value=true" },
         "stable_layout_contract_supported": { "const": true },
+        "executable_lowering_contract_supported": { "const": true },
         "runtime_execution_supported": { "const": false },
-        "lowering_supported": { "const": false }
+        "lowering_supported": { "const": false },
+        "ir_payload_emission_supported": { "const": false },
+        "call_abi_lowering_supported": { "const": false }
       },
       "additionalProperties": false
     },
+    "lowering_contract": { "$ref": "#/$defs/loweringContract" },
     "interface_roundtrip_status": {
       "const": "semantic-carrier-roundtrips-runtime-deferred"
     },
@@ -151,6 +169,7 @@
       "required": [
         "value_id",
         "optional_type",
+        "construction_contract",
         "presence_state",
         "payload_storage",
         "absence_state",
@@ -160,6 +179,9 @@
       "properties": {
         "value_id": { "type": "string", "minLength": 1 },
         "optional_type": { "type": "string", "minLength": 1 },
+        "construction_contract": {
+          "const": "explicit-absent-present-constructors-only"
+        },
         "presence_state": { "const": "has_value" },
         "payload_storage": { "const": "payload" },
         "absence_state": { "const": "has_value=false" },
@@ -178,6 +200,7 @@
         "before_type",
         "after_type",
         "cleanup_contract",
+        "binding_failure_diagnostic",
         "presence_test_required"
       ],
       "properties": {
@@ -188,6 +211,9 @@
         "before_type": { "pattern": "^Optional<.+>$" },
         "after_type": { "type": "string", "minLength": 1 },
         "cleanup_contract": { "type": "string", "minLength": 1 },
+        "binding_failure_diagnostic": {
+          "const": "binding-failure-branches-to-absent-path"
+        },
         "presence_test_required": { "const": true }
       },
       "additionalProperties": false
@@ -200,6 +226,66 @@
         "spelling": { "type": "string", "minLength": 1 },
         "conversion_attempt": { "type": "string", "minLength": 1 },
         "diagnostic": { "pattern": "^O3" }
+      },
+      "additionalProperties": false
+    },
+    "loweringContract": {
+      "type": "object",
+      "required": [
+        "contract_id",
+        "status",
+        "executable_lowering_status",
+        "construction_contract",
+        "absent_construction_kind",
+        "present_construction_kind",
+        "absent_construction_forbids_payload",
+        "present_construction_requires_payload",
+        "checked_unwrap_requires_presence_proof",
+        "unchecked_unwrap_supported",
+        "binding_failure_diagnostic",
+        "unwrap_failure_diagnostic",
+        "nil_bridge_diagnostic",
+        "remaining_runtime_boundary",
+        "runtime_construction_supported",
+        "runtime_unwrap_supported",
+        "ir_payload_emission_supported",
+        "call_abi_lowering_supported"
+      ],
+      "properties": {
+        "contract_id": {
+          "const": "objc3c.value_optional.lowering.contract.v1"
+        },
+        "status": {
+          "const": "stable-abi-carrier-contract-runtime-execution-fail-closed"
+        },
+        "executable_lowering_status": {
+          "const": "presence-payload-construction-and-checked-unwrap-contract-ready-runtime-abi-deferred"
+        },
+        "construction_contract": {
+          "const": "explicit-absent-present-constructors-only"
+        },
+        "absent_construction_kind": { "const": "absent-without-payload" },
+        "present_construction_kind": { "const": "present-with-payload" },
+        "absent_construction_forbids_payload": { "const": true },
+        "present_construction_requires_payload": { "const": true },
+        "checked_unwrap_requires_presence_proof": { "const": true },
+        "unchecked_unwrap_supported": { "const": false },
+        "binding_failure_diagnostic": {
+          "const": "binding-failure-branches-to-absent-path"
+        },
+        "unwrap_failure_diagnostic": {
+          "const": "unwrap-requires-proven-has-value"
+        },
+        "nil_bridge_diagnostic": {
+          "const": "nil-bridging-to-optional-is-rejected"
+        },
+        "remaining_runtime_boundary": {
+          "const": "ir-payload-emission-and-call-abi-lowering-deferred"
+        },
+        "runtime_construction_supported": { "const": false },
+        "runtime_unwrap_supported": { "const": false },
+        "ir_payload_emission_supported": { "const": false },
+        "call_abi_lowering_supported": { "const": false }
       },
       "additionalProperties": false
     }

@@ -22,6 +22,24 @@ HOSTED_REGISTRY_SERVICE_ENDPOINT_ID = "objc3c-hosted-registry-fixture-endpoint-v
 HOSTED_REGISTRY_SERVICE_CHANNEL_ID = "stable-fixture"
 HOSTED_REGISTRY_SERVICE_BASE_URL = "https://registry.objc3c.invalid/fixture/v1"
 HOSTED_REGISTRY_SERVICE_PROVIDER_ID = "schema-backed-hosted-registry-provider-v1"
+HOSTED_REGISTRY_PUBLIC_CAPABILITY_ID = (
+    "ecosystem.package-manager.public-hosted-registry"
+)
+HOSTED_REGISTRY_LIVE_SERVICE_CONTRACT_ID = (
+    "objc3c.package_ecosystem.public_hosted_registry_live_service_contract.v1"
+)
+HOSTED_REGISTRY_LIVE_SERVICE_STATE = "reserved-fail-closed"
+HOSTED_REGISTRY_LIVE_SERVICE_UNSUPPORTED_MODE = "live-public-registry-unsupported"
+HOSTED_REGISTRY_LIVE_TRANSPORT_ID = "public-hosted-registry-network-transport-v1"
+HOSTED_REGISTRY_LIVE_SERVICE_REQUIRED_DIAGNOSTICS = {
+    "live-public-service-unavailable",
+    "live-transport-disabled",
+    "production-auth-unavailable",
+    "production-availability-unavailable",
+    "production-moderation-unavailable",
+    "production-trust-root-unavailable",
+    "unsupported-live-service-mode",
+}
 HOSTED_REGISTRY_SERVICE_DEFAULT_SUBJECT_ID = "fixture-developer"
 HOSTED_REGISTRY_SERVICE_DEFAULT_TOKEN_ID = "fixture-developer-token-v1"
 HOSTED_REGISTRY_SERVICE_FIXTURE_PATH = (
@@ -240,6 +258,225 @@ def _collect_auth_failures(service: dict[str, Any]) -> list[str]:
                     f"hosted registry service auth namespace drift for {subject_id}"
                 )
             )
+    return failures
+
+
+def _collect_public_service_boundary_failures(service: dict[str, Any]) -> list[str]:
+    boundary = service.get("public_service_boundary", {})
+    if not isinstance(boundary, dict):
+        return [
+            hosted_registry_service_diagnostic(
+                "missing hosted registry public service boundary"
+            )
+        ]
+
+    failures: list[str] = []
+    expected = {
+        "implemented_capability_id": (
+            "ecosystem.package-manager.hosted-registry-hermetic-service"
+        ),
+        "support_claim": "objc3c.behavior.package.hosted-registry-hermetic-service",
+        "reserved_capability_id": HOSTED_REGISTRY_PUBLIC_CAPABILITY_ID,
+        "live_public_service": HOSTED_REGISTRY_LIVE_SERVICE_STATE,
+        "production_auth_service": HOSTED_REGISTRY_LIVE_SERVICE_STATE,
+        "production_moderation_service": HOSTED_REGISTRY_LIVE_SERVICE_STATE,
+        "production_availability_slo": HOSTED_REGISTRY_LIVE_SERVICE_STATE,
+    }
+    for field_name, expected_value in expected.items():
+        if boundary.get(field_name) != expected_value:
+            failures.append(
+                hosted_registry_service_diagnostic(
+                    f"hosted registry public service boundary {field_name} drifted"
+                )
+            )
+    if boundary.get("local_offline_replay_preserved") is not True:
+        failures.append(
+            hosted_registry_service_diagnostic(
+                "hosted registry public service boundary dropped offline replay"
+            )
+        )
+    return failures
+
+
+def _collect_live_service_record_failures(
+    record: Any,
+    *,
+    field_name: str,
+    record_id: str,
+    unavailable_diagnostic: str,
+) -> list[str]:
+    if not isinstance(record, dict):
+        return [
+            hosted_registry_service_diagnostic(
+                f"missing hosted registry live service {field_name} record"
+            )
+        ]
+
+    failures: list[str] = []
+    expected = {
+        "record_id": record_id,
+        "state": HOSTED_REGISTRY_LIVE_SERVICE_STATE,
+        "unavailable_behavior": "fail-closed",
+        "unsupported_diagnostic": unavailable_diagnostic,
+    }
+    for key, expected_value in expected.items():
+        if record.get(key) != expected_value:
+            failures.append(
+                hosted_registry_service_diagnostic(
+                    f"hosted registry live service {field_name} {key} drifted"
+                )
+            )
+    if record.get("active") is not False:
+        failures.append(
+            hosted_registry_service_diagnostic(
+                f"hosted registry live service {field_name} activated"
+            )
+        )
+    return failures
+
+
+def collect_live_service_contract_failures(service: dict[str, Any]) -> list[str]:
+    contract = service.get("live_service_contract", {})
+    if not isinstance(contract, dict):
+        return [
+            hosted_registry_service_diagnostic(
+                "missing live public hosted registry service contract boundary"
+            )
+        ]
+
+    failures: list[str] = []
+    expected = {
+        "contract_id": HOSTED_REGISTRY_LIVE_SERVICE_CONTRACT_ID,
+        "capability_id": HOSTED_REGISTRY_PUBLIC_CAPABILITY_ID,
+        "claim_state": HOSTED_REGISTRY_LIVE_SERVICE_STATE,
+        "activation_state": "inactive-live-service-unavailable",
+        "unsupported_mode": HOSTED_REGISTRY_LIVE_SERVICE_UNSUPPORTED_MODE,
+        "fallback_registry_success": False,
+    }
+    for field_name, expected_value in expected.items():
+        if contract.get(field_name) != expected_value:
+            failures.append(
+                hosted_registry_service_diagnostic(
+                    f"live public hosted registry service contract {field_name} drifted"
+                )
+            )
+
+    transport = contract.get("network_transport", {})
+    if not isinstance(transport, dict):
+        failures.append(
+            hosted_registry_service_diagnostic(
+                "missing live public hosted registry network transport boundary"
+            )
+        )
+    else:
+        expected_transport = {
+            "transport_id": HOSTED_REGISTRY_LIVE_TRANSPORT_ID,
+            "mode": "disabled-live-public-transport",
+            "request_policy": "fail-closed-before-resolver",
+            "unsupported_diagnostic": "live-transport-disabled",
+            "fallback_registry_success": False,
+        }
+        for field_name, expected_value in expected_transport.items():
+            if transport.get(field_name) != expected_value:
+                failures.append(
+                    hosted_registry_service_diagnostic(
+                        f"live public hosted registry transport {field_name} drifted"
+                    )
+                )
+        if transport.get("separated_from_resolver") is not True:
+            failures.append(
+                hosted_registry_service_diagnostic(
+                    "live public hosted registry transport is not separated from resolver"
+                )
+            )
+        if transport.get("enabled") is not False:
+            failures.append(
+                hosted_registry_service_diagnostic(
+                    "live public hosted registry transport enabled"
+                )
+            )
+
+    failures.extend(
+        _collect_live_service_record_failures(
+            contract.get("production_auth"),
+            field_name="production auth",
+            record_id="production-auth-reserved-fail-closed-v1",
+            unavailable_diagnostic="production-auth-unavailable",
+        )
+    )
+    failures.extend(
+        _collect_live_service_record_failures(
+            contract.get("production_moderation"),
+            field_name="production moderation",
+            record_id="production-moderation-reserved-fail-closed-v1",
+            unavailable_diagnostic="production-moderation-unavailable",
+        )
+    )
+    failures.extend(
+        _collect_live_service_record_failures(
+            contract.get("production_trust_root"),
+            field_name="production trust root",
+            record_id="production-trust-root-reserved-fail-closed-v1",
+            unavailable_diagnostic="production-trust-root-unavailable",
+        )
+    )
+    failures.extend(
+        _collect_live_service_record_failures(
+            contract.get("production_availability"),
+            field_name="production availability",
+            record_id="production-availability-reserved-fail-closed-v1",
+            unavailable_diagnostic="production-availability-unavailable",
+        )
+    )
+
+    handoff = contract.get("lock_offline_handoff", {})
+    if not isinstance(handoff, dict):
+        failures.append(
+            hosted_registry_service_diagnostic(
+                "missing live public hosted registry lock/offline mirror handoff"
+            )
+        )
+    else:
+        expected_handoff = {
+            "policy": "lockfile-first-offline-mirror-handoff-v1",
+            "unsupported_live_resolution_behavior": "fail-closed-before-network",
+        }
+        for field_name, expected_value in expected_handoff.items():
+            if handoff.get(field_name) != expected_value:
+                failures.append(
+                    hosted_registry_service_diagnostic(
+                        f"live public hosted registry handoff {field_name} drifted"
+                    )
+                )
+        for field_name in (
+            "lock_required_before_live_resolution",
+            "offline_mirror_handoff_required",
+            "offline_replay_preserved",
+        ):
+            if handoff.get(field_name) is not True:
+                failures.append(
+                    hosted_registry_service_diagnostic(
+                        f"live public hosted registry handoff disabled {field_name}"
+                    )
+                )
+        if handoff.get("network_required_after_lock") is not False:
+            failures.append(
+                hosted_registry_service_diagnostic(
+                    "live public hosted registry handoff requires network after lock"
+                )
+            )
+
+    diagnostics = _string_values(contract.get("diagnostics"))
+    missing_diagnostics = sorted(
+        HOSTED_REGISTRY_LIVE_SERVICE_REQUIRED_DIAGNOSTICS - diagnostics
+    )
+    if missing_diagnostics:
+        failures.append(
+            hosted_registry_service_diagnostic(
+                "live public hosted registry diagnostics missing: "
+                + ", ".join(missing_diagnostics)
+            )
+        )
     return failures
 
 
@@ -560,6 +797,8 @@ def collect_hosted_registry_service_failures(
             )
         )
 
+    failures.extend(_collect_public_service_boundary_failures(service))
+    failures.extend(collect_live_service_contract_failures(service))
     failures.extend(_collect_provider_failures(service, index=index, root=root))
     failures.extend(_collect_auth_failures(service))
     failures.extend(_collect_trust_failures(service))
@@ -660,6 +899,16 @@ def collect_hosted_registry_service_request_failures(
                 "hosted registry service network request rejected"
             )
         )
+        failures.append(
+            hosted_registry_service_diagnostic(
+                "live public hosted registry service unavailable"
+            )
+        )
+        failures.append(
+            hosted_registry_service_diagnostic(
+                "unsupported live hosted registry service mode"
+            )
+        )
     if request.package_version is None:
         failures.append(
             hosted_registry_service_diagnostic(
@@ -725,9 +974,16 @@ __all__ = [
     "HOSTED_REGISTRY_SERVICE_REQUIRED_FAILURE_MODES",
     "HOSTED_REGISTRY_SERVICE_SCHEMA_KEY",
     "HOSTED_REGISTRY_SERVICE_SCHEMA_PATH",
+    "HOSTED_REGISTRY_LIVE_SERVICE_CONTRACT_ID",
+    "HOSTED_REGISTRY_LIVE_SERVICE_REQUIRED_DIAGNOSTICS",
+    "HOSTED_REGISTRY_LIVE_SERVICE_STATE",
+    "HOSTED_REGISTRY_LIVE_SERVICE_UNSUPPORTED_MODE",
+    "HOSTED_REGISTRY_LIVE_TRANSPORT_ID",
+    "HOSTED_REGISTRY_PUBLIC_CAPABILITY_ID",
     "HostedRegistryServiceDecision",
     "HostedRegistryServiceError",
     "HostedRegistryServiceRequest",
+    "collect_live_service_contract_failures",
     "collect_hosted_registry_service_failures",
     "collect_hosted_registry_service_reference_failures",
     "collect_hosted_registry_service_request_failures",

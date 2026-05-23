@@ -371,26 +371,32 @@ Objective‑C 3.0 v1 admits canonical `Optional<T>` in source type
 signatures as a semantic value-optional carrier. The carrier has a stable ABI
 contract identity, `objc3.value_optional.inline_presence_payload.v1`, with
 explicit `has_value` presence and `payload` storage fields, and semantic
-records model present/absent construction, binding/narrowing, checked unwrap,
-payload lifetime, and interface roundtrip. v1 does not yet provide runnable
-construction, unchecked unwrap, property/ivar storage layout, IR payload
-emission, or call ABI lowering for that carrier.
+records model explicit absent/present construction, binding/narrowing failure
+paths, checked unwrap diagnostics, payload lifetime, and interface roundtrip.
+v1 does not yet provide runtime constructor symbols, unchecked unwrap,
+property/ivar storage layout, IR payload emission, or call ABI lowering for that
+carrier.
 
 The following remain ill-formed in v1 user code unless escaped per
 [§1.3.3](#part-1-3-2):
 
 - `optional<...>` in type positions.
 - `Optional<...>` in executable function or method bodies, property/ivar
-  storage, runtime construction, runtime unwrap, or ABI-lowered call surfaces.
+  storage, runtime constructor symbol emission, unchecked unwrap, or
+  ABI-lowered call surfaces.
 - `.some(...)` and `.none` in optional-constructor/pattern positions.
 
 The current #8234 compiler contract owns the canonical spelling boundary but
-does not claim value-optional execution: canonical `Optional<T>` type
-signatures may be parsed, admitted as semantic types, and round-tripped through
-textual interfaces, while executable use, implicit nil absence, nullable-pointer
-erasure, and runtime lowering claims are rejected with `O3P159`. Textual
-interfaces must preserve the value-optional carrier metadata and must fail
-closed on layout identity drift.
+does not claim full value-optional execution: canonical `Optional<T>` type
+signatures may be parsed, admitted as semantic types, compared by sema, and
+round-tripped through textual interfaces. The lowering contract is explicit:
+absent construction produces `has_value=false` and no live payload, present
+construction requires a payload and produces `has_value=true`, binding failure
+branches through the absent path, and unwrap requires a proven presence check.
+Implicit nil absence, nil-to-zero, object-null erasure, throws/result
+conversion, unchecked unwrap, IR payload emission, and call ABI claims are
+rejected with `O3P159`. Textual interfaces must preserve the value-optional
+carrier metadata and must fail closed on layout identity drift.
 
 #### 3.3.5.1 Future-compat constraints (v1) {#part-3-3-5-1}
 
@@ -398,11 +404,12 @@ To avoid blocking a future value optional design:
 
 - `T?`/`T!` in v1 remain reference-nullability sugar only and shall not imply a value layout contract.
 - v1 parser and interface emitters shall keep lowercase optional aliases,
-  constructors, property/ivar storage, and executable lowering unavailable for
-  unrelated language/library features.
+  property/ivar storage, runtime constructor symbols, unchecked unwrap, IR
+  payload emission, and call ABI lowering unavailable for unrelated
+  language/library features.
 - Module metadata and textual interfaces shall preserve value-optional carrier
-  metadata separately from reference nullability so runtime construction and ABI
-  lowering can be added without redefining existing v1 fields.
+  metadata separately from reference nullability so runtime constructor symbols
+  and ABI lowering can be added without redefining existing v1 fields.
 - Diagnostics for non-reference optional operations should be worded as “not supported in v1” rather than “never supported,” preserving future-extension wording without accepting another source mode.
 - `Optional<id>` remains distinct from nullable object-pointer spelling. A
   producer shall not lower it as `id?`, nullable `id`, or any other object

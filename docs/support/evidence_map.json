@@ -279,6 +279,26 @@
     {
       "capability_id": "language.errors.typed-throws",
       "evidence_kind": "source",
+      "path": "native/objc3c/src/ir/objc3_ir_function_signature_model.cpp"
+    },
+    {
+      "capability_id": "language.errors.typed-throws",
+      "evidence_kind": "source",
+      "path": "native/objc3c/src/ir/objc3_ir_direct_call_emission.cpp"
+    },
+    {
+      "capability_id": "language.errors.typed-throws",
+      "evidence_kind": "source",
+      "path": "native/objc3c/src/ir/objc3_ir_expression_emission_call.cpp"
+    },
+    {
+      "capability_id": "language.errors.typed-throws",
+      "evidence_kind": "source",
+      "path": "native/objc3c/src/ir/objc3_ir_function_definition_emission.cpp"
+    },
+    {
+      "capability_id": "language.errors.typed-throws",
+      "evidence_kind": "source",
       "path": "tests/tooling/fixtures/native/typed_throws_semantic_effect_identity.contract.json"
     },
     {

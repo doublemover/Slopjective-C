@@ -17,6 +17,26 @@ static void AccumulateCanonicalTypeSemanticModelSummary(
       type.generic_arguments_lexicographic.size();
   if (type.is_value_optional) {
     ++summary.canonical_value_optional_entries;
+    if (type.value_optional_executable_lowering_contract_supported &&
+        type.value_optional_explicit_absent_construction_supported &&
+        type.value_optional_explicit_present_construction_supported &&
+        type.value_optional_stable_abi_layout_contract_supported &&
+        !type.value_optional_ir_payload_emission_supported &&
+        !type.value_optional_call_abi_lowering_supported) {
+      ++summary.canonical_value_optional_lowering_contract_entries;
+    }
+    if (!type.value_optional_runtime_execution_supported &&
+        !type.value_optional_lowering_supported) {
+      ++summary.canonical_value_optional_runtime_deferred_entries;
+    }
+    if (type.value_optional_nil_bridge_diagnostic_supported) {
+      ++summary.canonical_value_optional_bridge_rejection_entries;
+    }
+    if (type.value_optional_binding_failure_diagnostic_supported &&
+        type.value_optional_unwrap_requires_presence_check &&
+        type.value_optional_unwrap_failure_diagnostic_supported) {
+      ++summary.canonical_value_optional_diagnostic_contract_entries;
+    }
   }
   const Objc3GenericCollectionTypeModel collection_model =
       BuildObjc3GenericCollectionTypeModel(type);

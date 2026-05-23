@@ -20,6 +20,12 @@ from .hosted_service import (
     HOSTED_REGISTRY_SERVICE_DEFAULT_SUBJECT_ID,
     HOSTED_REGISTRY_SERVICE_DEFAULT_TOKEN_ID,
     HOSTED_REGISTRY_SERVICE_ID,
+    HOSTED_REGISTRY_LIVE_SERVICE_CONTRACT_ID,
+    HOSTED_REGISTRY_LIVE_SERVICE_REQUIRED_DIAGNOSTICS,
+    HOSTED_REGISTRY_LIVE_SERVICE_STATE,
+    HOSTED_REGISTRY_LIVE_SERVICE_UNSUPPORTED_MODE,
+    HOSTED_REGISTRY_LIVE_TRANSPORT_ID,
+    HOSTED_REGISTRY_PUBLIC_CAPABILITY_ID,
     HostedRegistryServiceRequest,
     collect_hosted_registry_service_reference_failures,
     collect_hosted_registry_service_request_failures,
@@ -58,9 +64,15 @@ HOSTED_REGISTRY_FAILURE_MODES = {
     "fallback-registry-success",
     "invalid-semver",
     "live-network-fetch",
+    "live-public-service-unavailable",
+    "live-transport-disabled",
     "missing-package-provenance",
     "missing-service-auth",
     "offline-mirror-handoff-drift",
+    "production-auth-unavailable",
+    "production-availability-unavailable",
+    "production-moderation-unavailable",
+    "production-trust-root-unavailable",
     "registry-trust-mismatch",
     "revoked-subject",
     "rollback-snapshot",
@@ -76,6 +88,7 @@ HOSTED_REGISTRY_FAILURE_MODES = {
     "unsigned-hosted-artifact",
     "unknown-trust-root",
     "unknown-service-auth-subject",
+    "unsupported-live-service-mode",
     "unsupported-platform",
     "yanked-version",
 }
@@ -95,6 +108,15 @@ HOSTED_REGISTRY_SERVICE_BOUNDARY = {
     "fallback_registry_success": False,
     "package_manager_parity": "not-claimed",
     "local_offline_replay_preserved": True,
+}
+HOSTED_REGISTRY_LIVE_SERVICE_BOUNDARY = {
+    "contract_id": HOSTED_REGISTRY_LIVE_SERVICE_CONTRACT_ID,
+    "capability_id": HOSTED_REGISTRY_PUBLIC_CAPABILITY_ID,
+    "claim_state": HOSTED_REGISTRY_LIVE_SERVICE_STATE,
+    "activation_state": "inactive-live-service-unavailable",
+    "unsupported_mode": HOSTED_REGISTRY_LIVE_SERVICE_UNSUPPORTED_MODE,
+    "fallback_registry_success": False,
+    "offline_replay_preserved": True,
 }
 HOSTED_REGISTRY_SCHEMA_PATH = (
     Path(__file__).resolve().parents[2]
@@ -244,6 +266,12 @@ def _as_object_list(value: Any) -> list[dict[str, Any]]:
     return [item for item in value if isinstance(item, dict)]
 
 
+def _string_values(value: Any) -> set[str]:
+    if not isinstance(value, list):
+        return set()
+    return {str(item) for item in value if isinstance(item, str)}
+
+
 def _record_without_integrity_fields(record: dict[str, Any]) -> dict[str, Any]:
     payload = dict(record)
     payload.pop("metadata_digest", None)
@@ -383,6 +411,165 @@ def collect_service_boundary_failures(index: dict[str, Any]) -> list[str]:
     return failures
 
 
+def collect_live_service_boundary_failures(index: dict[str, Any]) -> list[str]:
+    boundary = index.get("live_service_boundary", {})
+    if not isinstance(boundary, dict):
+        return [
+            hosted_registry_diagnostic(
+                "missing live public hosted registry service boundary"
+            )
+        ]
+
+    failures: list[str] = []
+    for field_name, expected_value in HOSTED_REGISTRY_LIVE_SERVICE_BOUNDARY.items():
+        if boundary.get(field_name) != expected_value:
+            failures.append(
+                hosted_registry_diagnostic(
+                    f"live public hosted registry service boundary {field_name} drifted"
+                )
+            )
+
+    transport = boundary.get("network_transport", {})
+    if not isinstance(transport, dict):
+        failures.append(
+            hosted_registry_diagnostic(
+                "missing live public hosted registry transport boundary"
+            )
+        )
+    else:
+        expected_transport = {
+            "transport_id": HOSTED_REGISTRY_LIVE_TRANSPORT_ID,
+            "mode": "disabled-live-public-transport",
+            "request_policy": "fail-closed-before-resolver",
+            "unsupported_diagnostic": "live-transport-disabled",
+            "fallback_registry_success": False,
+        }
+        for field_name, expected_value in expected_transport.items():
+            if transport.get(field_name) != expected_value:
+                failures.append(
+                    hosted_registry_diagnostic(
+                        f"live public hosted registry transport {field_name} drifted"
+                    )
+                )
+        if transport.get("separated_from_resolver") is not True:
+            failures.append(
+                hosted_registry_diagnostic(
+                    "live public hosted registry transport is not separated from resolver"
+                )
+            )
+        if transport.get("enabled") is not False:
+            failures.append(
+                hosted_registry_diagnostic(
+                    "live public hosted registry transport enabled"
+                )
+            )
+
+    production_records = boundary.get("production_records", {})
+    if not isinstance(production_records, dict):
+        failures.append(
+            hosted_registry_diagnostic(
+                "missing live public hosted registry production records"
+            )
+        )
+    else:
+        expected_records = {
+            "auth": (
+                "production-auth-reserved-fail-closed-v1",
+                "production-auth-unavailable",
+            ),
+            "moderation": (
+                "production-moderation-reserved-fail-closed-v1",
+                "production-moderation-unavailable",
+            ),
+            "trust_root": (
+                "production-trust-root-reserved-fail-closed-v1",
+                "production-trust-root-unavailable",
+            ),
+            "availability": (
+                "production-availability-reserved-fail-closed-v1",
+                "production-availability-unavailable",
+            ),
+        }
+        for field_name, (record_id, diagnostic) in expected_records.items():
+            record = production_records.get(field_name, {})
+            if not isinstance(record, dict):
+                failures.append(
+                    hosted_registry_diagnostic(
+                        f"missing live public hosted registry {field_name} record"
+                    )
+                )
+                continue
+            expected = {
+                "record_id": record_id,
+                "state": HOSTED_REGISTRY_LIVE_SERVICE_STATE,
+                "unavailable_behavior": "fail-closed",
+                "unsupported_diagnostic": diagnostic,
+            }
+            for key, expected_value in expected.items():
+                if record.get(key) != expected_value:
+                    failures.append(
+                        hosted_registry_diagnostic(
+                            f"live public hosted registry {field_name} {key} drifted"
+                        )
+                    )
+            if record.get("active") is not False:
+                failures.append(
+                    hosted_registry_diagnostic(
+                        f"live public hosted registry {field_name} activated"
+                    )
+                )
+
+    handoff = boundary.get("lock_offline_handoff", {})
+    if not isinstance(handoff, dict):
+        failures.append(
+            hosted_registry_diagnostic(
+                "missing live public hosted registry lock/offline mirror handoff"
+            )
+        )
+    else:
+        expected_handoff = {
+            "policy": HOSTED_REGISTRY_LOCK_MATERIALIZATION_POLICY,
+            "unsupported_live_resolution_behavior": "fail-closed-before-network",
+        }
+        for field_name, expected_value in expected_handoff.items():
+            if handoff.get(field_name) != expected_value:
+                failures.append(
+                    hosted_registry_diagnostic(
+                        f"live public hosted registry handoff {field_name} drifted"
+                    )
+                )
+        for field_name in (
+            "lock_required_before_live_resolution",
+            "offline_mirror_handoff_required",
+            "offline_replay_preserved",
+        ):
+            if handoff.get(field_name) is not True:
+                failures.append(
+                    hosted_registry_diagnostic(
+                        f"live public hosted registry handoff disabled {field_name}"
+                    )
+                )
+        if handoff.get("network_required_after_lock") is not False:
+            failures.append(
+                hosted_registry_diagnostic(
+                    "live public hosted registry handoff requires network after lock"
+                )
+            )
+
+    diagnostics = _string_values(boundary.get("diagnostics"))
+    missing_diagnostics = sorted(
+        HOSTED_REGISTRY_LIVE_SERVICE_REQUIRED_DIAGNOSTICS - diagnostics
+    )
+    if missing_diagnostics:
+        failures.append(
+            hosted_registry_diagnostic(
+                "live public hosted registry diagnostics missing: "
+                + ", ".join(missing_diagnostics)
+            )
+        )
+    return failures
+
+
 def collect_provider_model_failures(index: dict[str, Any]) -> list[str]:
     provider = index.get("provider_model", {})
     if not isinstance(provider, dict):
@@ -401,6 +588,41 @@ def collect_provider_model_failures(index: dict[str, Any]) -> list[str]:
             failures.append(hosted_registry_diagnostic("hosted registry network fetch policy drifted"))
         if network_fetch.get("live_fetch_enabled") is not False:
             failures.append(hosted_registry_diagnostic("hosted registry live fetch enabled"))
+
+    transport = provider.get("transport", {})
+    if not isinstance(transport, dict):
+        failures.append(hosted_registry_diagnostic("hosted registry transport layer missing"))
+    else:
+        expected_transport = {
+            "transport_id": HOSTED_REGISTRY_LIVE_TRANSPORT_ID,
+            "mode": "disabled-live-public-transport",
+            "request_policy": "fail-closed-before-resolver",
+            "unsupported_diagnostic": "live-transport-disabled",
+            "fallback_registry_success": False,
+        }
+        for field_name, expected_value in expected_transport.items():
+            if transport.get(field_name) != expected_value:
+                failures.append(
+                    hosted_registry_diagnostic(
+                        f"hosted registry transport {field_name} drifted"
+                    )
+                )
+        if transport.get("separated_from_resolver") is not True:
+            failures.append(
+                hosted_registry_diagnostic(
+                    "hosted registry transport is not separated from resolver"
+                )
+            )
+        if transport.get("live_transport_enabled") is not False:
+            failures.append(
+                hosted_registry_diagnostic("hosted registry live transport enabled")
+            )
+        if transport.get("resolver_invocation_allowed") is not False:
+            failures.append(
+                hosted_registry_diagnostic(
+                    "hosted registry transport can invoke resolver"
+                )
+            )
 
     resolver = provider.get("resolver", {})
     if not isinstance(resolver, dict):
@@ -894,6 +1116,7 @@ def collect_hosted_registry_model_failures(
     failures.extend(collect_registry_snapshot_failures(index))
     failures.extend(collect_service_availability_failures(index))
     failures.extend(collect_service_boundary_failures(index))
+    failures.extend(collect_live_service_boundary_failures(index))
     failures.extend(
         collect_hosted_registry_service_reference_failures(index, root=root)
     )
@@ -1022,6 +1245,21 @@ def network_fetch_request_failures(request: HostedRegistryResolutionRequest) -> 
     if request.allow_network or request.registry_url:
         target = request.registry_url or "live registry endpoint"
         failures.append(hosted_registry_diagnostic(f"network fetch request rejected for {target}"))
+        failures.append(
+            hosted_registry_diagnostic(
+                "live public hosted registry service unavailable"
+            )
+        )
+        failures.append(
+            hosted_registry_diagnostic(
+                "live public hosted registry transport disabled"
+            )
+        )
+        failures.append(
+            hosted_registry_diagnostic(
+                "unsupported live hosted registry service mode"
+            )
+        )
     if request.endpoint_id != HOSTED_REGISTRY_ENDPOINT_ID:
         failures.append(hosted_registry_diagnostic(f"hosted registry endpoint mismatch for {request.package_id}"))
     if request.channel_id != HOSTED_REGISTRY_CHANNEL_ID:
@@ -1168,6 +1406,7 @@ __all__ = [
     "HOSTED_REGISTRY_RESOLVER_ID",
     "HOSTED_REGISTRY_SCHEMA_KEY",
     "HOSTED_REGISTRY_SCHEMA_PATH",
+    "HOSTED_REGISTRY_LIVE_SERVICE_BOUNDARY",
     "HOSTED_REGISTRY_SERVICE_BOUNDARY",
     "HOSTED_REGISTRY_TRUST_VALIDATOR_ID",
     "HOSTED_REGISTRY_SERVICE_ID",
@@ -1187,6 +1426,7 @@ __all__ = [
     "collect_hosted_registry_model_failures",
     "collect_hosted_registry_service_reference_failures",
     "collect_hosted_registry_service_request_failures",
+    "collect_live_service_boundary_failures",
     "collect_lock_materialization_failures",
     "collect_offline_mirror_contract_failures",
     "collect_offline_mirror_handoff_failures",

@@ -103,6 +103,14 @@ Objc3TypeSystemTypeSemanticModelSummary BuildTypeSystemTypeSemanticModelSummary(
           summary.canonical_type_entries &&
       summary.canonical_value_optional_entries <=
           summary.canonical_type_entries &&
+      summary.canonical_value_optional_lowering_contract_entries <=
+          summary.canonical_value_optional_entries &&
+      summary.canonical_value_optional_runtime_deferred_entries <=
+          summary.canonical_value_optional_entries &&
+      summary.canonical_value_optional_bridge_rejection_entries <=
+          summary.canonical_value_optional_entries &&
+      summary.canonical_value_optional_diagnostic_contract_entries <=
+          summary.canonical_value_optional_entries &&
       summary.generic_collection_descriptor_entries <=
           summary.generic_collection_type_entries &&
       summary.generic_collection_iterator_entries <=
@@ -122,8 +130,17 @@ Objc3TypeSystemTypeSemanticModelSummary BuildTypeSystemTypeSemanticModelSummary(
       summary.optional_propagation_sites == summary.nil_coalescing_sites &&
       summary.guard_binding_exit_enforcement_sites <=
           summary.guard_binding_sites;
+  const bool value_optional_contract_ready =
+      summary.canonical_value_optional_entries ==
+          summary.canonical_value_optional_lowering_contract_entries &&
+      summary.canonical_value_optional_entries ==
+          summary.canonical_value_optional_runtime_deferred_entries &&
+      summary.canonical_value_optional_entries ==
+          summary.canonical_value_optional_bridge_rejection_entries &&
+      summary.canonical_value_optional_entries ==
+          summary.canonical_value_optional_diagnostic_contract_entries;
   summary.ready_for_lowering_and_runtime =
-      summary.deterministic && summary.canonical_value_optional_entries == 0u;
+      summary.deterministic && value_optional_contract_ready;
   std::ostringstream out;
   out << summary.contract_id << ";bindings=" << summary.optional_binding_sites
       << ";clauses=" << summary.optional_binding_clause_sites
@@ -153,6 +170,14 @@ Objc3TypeSystemTypeSemanticModelSummary BuildTypeSystemTypeSemanticModelSummary(
       << summary.canonical_generic_argument_entries
       << ";canonical-value-optionals="
       << summary.canonical_value_optional_entries
+      << ";canonical-value-optional-lowering-contracts="
+      << summary.canonical_value_optional_lowering_contract_entries
+      << ";canonical-value-optional-runtime-deferred="
+      << summary.canonical_value_optional_runtime_deferred_entries
+      << ";canonical-value-optional-bridge-rejections="
+      << summary.canonical_value_optional_bridge_rejection_entries
+      << ";canonical-value-optional-diagnostics="
+      << summary.canonical_value_optional_diagnostic_contract_entries
       << ";generic-collection-types="
       << summary.generic_collection_type_entries
       << ";generic-collection-descriptors="

@@ -72,6 +72,21 @@ EXPECTED_UMBRELLA_CHILD_ISSUE_CONTRACTS = {
         "required_promotion_evidence": ("toolchain", "native-object-emission"),
     },
 }
+REQUIRED_HOST_PROMOTION_SOURCE_SECTIONS = (
+    "host_identity_records",
+    "toolchain_probe_records",
+    "package_root_evidence_records",
+    "native_execution_evidence_records",
+    "negative_host_toolchain_cases",
+)
+REQUIRED_NEGATIVE_HOST_TOOLCHAIN_CASES = (
+    "objc3c.negative.host.linux-x64.no-native-execution",
+    "objc3c.negative.host.darwin-arm64.no-native-execution",
+    "objc3c.negative.toolchain.missing-llc",
+    "objc3c.negative.toolchain.mixed-root",
+    "objc3c.negative.toolchain.mismatched-version",
+    "objc3c.negative.toolchain.unsupported-version",
+)
 FORBIDDEN_SOURCE_PREFIXES = ("tmp/", "artifacts/")
 FORBIDDEN_RANGE_TERMS = ("all", "best effort", "best-effort", "compat", "fallback")
 
@@ -528,6 +543,103 @@ def _validate_umbrella_readiness(
     }
 
 
+def _records_by_id(rows: Iterable[dict[str, Any]], field_name: str) -> dict[str, dict[str, Any]]:
+    by_id: dict[str, dict[str, Any]] = {}
+    for row in rows:
+        row_id = str(row.get(field_name, ""))
+        expect(row_id, f"host promotion row missing {field_name}")
+        expect(row_id not in by_id, f"duplicate host promotion row {row_id}")
+        by_id[row_id] = row
+    return by_id
+
+
+def _validate_host_promotion_architecture(
+    inputs: ValidationInputs,
+    *,
+    supported_ids: set[str],
+    unsupported_ids: set[str],
+) -> dict[str, Any]:
+    architecture = inputs.source_truth["host_promotion_architecture"]
+    expect(
+        architecture["contract_id"] == "objc3c.platform.support.host-promotion.source-truth.v1",
+        "host promotion architecture contract_id drifted",
+    )
+    expect(
+        architecture["promotion_policy"] == "real-host-execution-required",
+        "host promotion architecture policy drifted",
+    )
+    expect(
+        set(architecture["source_evidence_sections"]) == set(REQUIRED_HOST_PROMOTION_SOURCE_SECTIONS),
+        "host promotion source evidence sections drifted",
+    )
+    expect(
+        set(architecture["supported_platform_ids"]) == supported_ids,
+        "host promotion supported platform ids drifted",
+    )
+    expect(
+        set(architecture["unsupported_platform_ids"]) == unsupported_ids,
+        "host promotion unsupported platform ids drifted",
+    )
+
+    host_identities = _records_by_id(inputs.platform_evidence["host_identity_records"], "record_id")
+    toolchain_probes = _records_by_id(inputs.platform_evidence["toolchain_probe_records"], "record_id")
+    package_roots = _records_by_id(inputs.platform_evidence["package_root_evidence_records"], "record_id")
+    native_execution = _records_by_id(inputs.platform_evidence["native_execution_evidence_records"], "record_id")
+    negative_cases = _records_by_id(inputs.platform_evidence["negative_host_toolchain_cases"], "case_id")
+
+    expect(
+        set(architecture["host_identity_record_ids"]) == set(host_identities),
+        "host identity record ids drifted from upstream evidence",
+    )
+    expect(
+        set(architecture["toolchain_probe_record_ids"]) == set(toolchain_probes),
+        "toolchain probe record ids drifted from upstream evidence",
+    )
+    expect(
+        set(architecture["package_root_record_ids"]) == set(package_roots),
+        "package root record ids drifted from upstream evidence",
+    )
+    expect(
+        set(architecture["native_execution_record_ids"]) == set(native_execution),
+        "native execution record ids drifted from upstream evidence",
+    )
+    expect(
+        set(REQUIRED_NEGATIVE_HOST_TOOLCHAIN_CASES) <= set(architecture["negative_host_toolchain_case_ids"]),
+        "host promotion architecture missing required negative host/toolchain cases",
+    )
+    expect(
+        set(architecture["negative_host_toolchain_case_ids"]) <= set(negative_cases),
+        "host promotion architecture referenced missing negative host/toolchain cases",
+    )
+
+    unsupported_execution = {
+        str(record["platform_id"]): record
+        for record in native_execution.values()
+        if str(record.get("platform_id")) in unsupported_ids
+    }
+    expect(
+        set(unsupported_execution) == unsupported_ids,
+        "unsupported platform native execution records drifted",
+    )
+    for platform_id, record in unsupported_execution.items():
+        expect(
+            record["claim_state"] == "missing-host-execution",
+            f"{platform_id} native execution record must remain missing-host-execution",
+        )
+        expect(record["promotion_allowed"] is False, f"{platform_id} native execution record allowed promotion")
+        expect(not record["execution_evidence_ids"], f"{platform_id} native execution record carried execution evidence")
+
+    return {
+        "contract_id": architecture["contract_id"],
+        "promotion_policy": architecture["promotion_policy"],
+        "host_identity_record_count": len(host_identities),
+        "toolchain_probe_record_count": len(toolchain_probes),
+        "package_root_record_count": len(package_roots),
+        "native_execution_record_count": len(native_execution),
+        "negative_host_toolchain_case_count": len(negative_cases),
+    }
+
+
 def _validate_toolchain_ranges(inputs: ValidationInputs, records_by_id: dict[str, dict[str, Any]], supported_ids: set[str]) -> list[str]:
     components_seen: list[str] = []
     for toolchain_range in inputs.platform_evidence.get("toolchain_ranges", []):
@@ -578,6 +690,11 @@ def validate_platform_support_source_truth(source_truth_path: Path = SOURCE_TRUT
         package_variant_row_ids=set(package_variant_row_ids),
         sanitizer_variant_ids=set(sanitizer_variant_ids),
     )
+    host_promotion_architecture = _validate_host_promotion_architecture(
+        inputs,
+        supported_ids=supported_ids,
+        unsupported_ids=set(unsupported_ids),
+    )
 
     return {
         "contract_id": "objc3c.platform.support.source_truth.validation.summary.v1",
@@ -595,6 +712,7 @@ def validate_platform_support_source_truth(source_truth_path: Path = SOURCE_TRUT
         "package_variant_row_ids": sorted(package_variant_row_ids),
         "sanitizer_variant_ids": sorted(sanitizer_variant_ids),
         "umbrella_readiness": umbrella_readiness,
+        "host_promotion_architecture": host_promotion_architecture,
         "public_action_count": len(ACTION_SPECS),
     }
 

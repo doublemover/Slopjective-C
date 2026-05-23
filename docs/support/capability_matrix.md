@@ -393,12 +393,16 @@ the canonical manifest fixture and public npm command above.
 - Capability ID: `language.errors.typed-throws`
 - State: `reserved`
 - Support claims: None
-- Summary: Typed throws remains reserved as a runtime/ABI/lowering feature under issue #8233, but single-payload throws(E) is now a source-owned effect signature. Parser/source/interface/sema records preserve one payload as throws:typed:<declared_error_type>, protocol and callable compatibility require exact payload identity, malformed/empty/multi/non-type payloads fail closed with O3P182, and textual-interface import rejects erased payloads, runtime execution claims, or ABI-lowering drift.
+- Summary: Typed throws remains reserved as a public support claim under issue #8233 until broader catch/bridge coverage lands, but single-payload throws(E) now has a real hidden error-out ABI path. Parser/source/interface/sema records preserve one payload as throws:typed:<declared_error_type>, protocol and callable compatibility require exact payload identity, direct calls and try propagation lower through the private error runtime helpers without erasing to bare throws, and malformed/empty/multi/non-type payloads fail closed with O3P182.
 - Owner modules:
   - `native/objc3c/src/parse/objc3_parser_core_cstyle_parameters_async_throws_clause_parsing.inc`
   - `native/objc3c/src/parse/objc3_parser_rejection_diagnostics.cpp`
   - `native/objc3c/src/sema/objc3_typed_throws_effect_contract.h`
   - `native/objc3c/src/sema/objc3_semantic_signature_compatibility.cpp`
+  - `native/objc3c/src/ir/objc3_ir_function_signature_model.cpp`
+  - `native/objc3c/src/ir/objc3_ir_direct_call_emission.cpp`
+  - `native/objc3c/src/ir/objc3_ir_expression_emission_call.cpp`
+  - `native/objc3c/src/ir/objc3_ir_function_definition_emission.cpp`
   - `native/objc3c/src/sema/model/semantic_symbol_core_source_closures.h`
   - `native/objc3c/src/artifacts/objc3_frontend_textual_interface_payload_artifact.cpp`
   - `native/objc3c/src/artifacts/objc3_frontend_textual_interface_payload_import.cpp`
@@ -413,6 +417,10 @@ the canonical manifest fixture and public npm command above.
   - schema: `schemas/objc3c-typed-throws-effect-contract-v1.schema.json`
   - source: `native/objc3c/src/sema/objc3_typed_throws_effect_contract.h`
   - source: `native/objc3c/src/sema/objc3_semantic_signature_compatibility.cpp`
+  - source: `native/objc3c/src/ir/objc3_ir_function_signature_model.cpp`
+  - source: `native/objc3c/src/ir/objc3_ir_direct_call_emission.cpp`
+  - source: `native/objc3c/src/ir/objc3_ir_expression_emission_call.cpp`
+  - source: `native/objc3c/src/ir/objc3_ir_function_definition_emission.cpp`
   - source: `tests/tooling/fixtures/native/typed_throws_semantic_effect_identity.contract.json`
   - source: `tests/tooling/fixtures/native/language_evolution_typed_throws_value_optionals_contract.json`
   - source: `native/objc3c/src/artifacts/objc3_frontend_textual_interface_payload_artifact.cpp`
@@ -423,7 +431,7 @@ the canonical manifest fixture and public npm command above.
 - Capability ID: `language.types.value-optionals`
 - State: `reserved`
 - Support claims: None
-- Summary: Value optionals remain reserved as an executable/runtime feature under issue #8234. Canonical Optional<T> is admitted only as a semantic type-signature carrier with stable has_value/payload layout identity and textual-interface roundtrip; lowercase optional<T> is rejected as O3C004 rather than accepted as an alias, and checked parser/source-closure/textual-interface import records explicitly deny executable construction, unchecked unwrap, implicit nil absence, nil-to-scalar, nullable-pointer, throws/result, IR payload emission, and runtime lowering.
+- Summary: Value optionals remain reserved as a public executable/runtime feature under issue #8234. Canonical Optional<T> is admitted as a semantic type-signature carrier with stable has_value/payload layout identity, textual-interface roundtrip, and a checked lowering contract for explicit absent/present construction plus binding/unwrap failure diagnostics. Lowercase optional<T> is rejected as O3C004 rather than accepted as an alias, and checked parser/source-closure/textual-interface import records explicitly deny unchecked unwrap, implicit nil absence, nil-to-scalar, nullable-pointer, throws/result, IR payload emission, call ABI lowering, and runtime constructor symbol support.
 - Owner modules:
   - `native/objc3c/src/ast/objc3_ast_value_optional_type.h`
   - `native/objc3c/src/parse/objc3_parser_declaration_surface.cpp`
@@ -536,7 +544,7 @@ the canonical manifest fixture and public npm command above.
 - Capability ID: `language.evolution.umbrella-alignment`
 - State: `reserved`
 - Support claims: None
-- Summary: Issue #8207 is an umbrella truth row for typed throws, value optionals, generic callable reification, guarded match, bounded match expressions, and strict/strict-concurrency profiles. It remains reserved until the typed-throws and value-optional prerequisite rows are implemented with source-owned evidence or explicitly scoped out; the current state records #8235 generic callable metadata policy support, #8236 guarded-match/match-expression support, #8237 strict/strict-concurrency profile admission, and #8234 value-optional semantic carrier/layout identity without claiming runtime-specialized generics, typed error ABI, value-optional executable/runtime lowering, or strict-system behavior.
+- Summary: Issue #8207 is an umbrella truth row for typed throws, value optionals, generic callable reification, guarded match, bounded match expressions, and strict/strict-concurrency profiles. It remains reserved until the value-optional prerequisite row is implemented with executable evidence or explicitly scoped out; the current state records #8233 single-payload typed throws hidden error-out ABI lowering, #8235 generic callable metadata policy support, #8236 guarded-match/match-expression support, #8237 strict/strict-concurrency profile admission, and #8234 value-optional semantic carrier/layout identity without claiming runtime-specialized generics, value-optional executable/runtime lowering, or strict-system behavior.
 - Owner modules:
   - `docs/support/umbrella_readiness.json`
   - `docs/support/capability_matrix.json`
@@ -2943,7 +2951,7 @@ the canonical manifest fixture and public npm command above.
 - Capability ID: `toolchain.sanitizer.address`
 - State: `reserved`
 - Support claims: None
-- Summary: AddressSanitizer support remains reserved under issue #8230: the source contract now records the ASan runtime package id, compiler/linker flag shape, install guard, and fail-closed mixed-runtime/unsupported-platform blockers, but no package/install/native execution support is claimed.
+- Summary: AddressSanitizer support remains reserved under issue #8230: the source contract records the ASan runtime package id, compiler/linker flag shape, runtime library ids, install guard, expected detection records, unsupported-host diagnostics, and release-runtime isolation, but no package/install/native execution support is claimed.
 - Owner modules:
   - `tests/tooling/fixtures/platform_hardening/platform_toolchain_support_evidence.json`
   - `tests/tooling/fixtures/security_hardening/sanitizer_validation_contract.json`
@@ -2958,7 +2966,7 @@ the canonical manifest fixture and public npm command above.
 - Capability ID: `toolchain.sanitizer.undefined`
 - State: `reserved`
 - Support claims: None
-- Summary: UBSan support remains reserved under issue #8231: the source contract now records the UBSan runtime package id, trap-or-recover policy placeholder, install guard, and fail-closed suppression/mixed-runtime blockers, but no package/install/native execution support is claimed.
+- Summary: UBSan support remains reserved under issue #8231: the source contract records the UBSan runtime package id, trap-or-recover policy, runtime library ids, install guard, expected detection records, unsupported-host diagnostics, and release-runtime isolation, but no package/install/native execution support is claimed.
 - Owner modules:
   - `tests/tooling/fixtures/platform_hardening/platform_toolchain_support_evidence.json`
   - `tests/tooling/fixtures/security_hardening/sanitizer_validation_contract.json`

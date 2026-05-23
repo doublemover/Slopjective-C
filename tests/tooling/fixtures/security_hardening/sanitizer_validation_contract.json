@@ -78,9 +78,22 @@
     {
       "variant_id": "objc3c.toolchain.sanitizer.address",
       "issue_ref": 8230,
+      "sanitizer": "address",
       "package_variant_row_id": "objc3c.package.sanitizer.asan.reserved",
       "package_id": "org.objc3c.runtime:objc3c-runtime-asan",
       "runtime_requirement": "ASan runtime library available for the exact target platform and package variant",
+      "build_contract": {
+        "compiler_flags": [
+          "-fsanitize=address",
+          "-fno-omit-frame-pointer"
+        ],
+        "linker_flags": [
+          "-fsanitize=address"
+        ],
+        "environment_requirements": [
+          "ASAN_OPTIONS captured by sanitizer package metadata before execution claims"
+        ]
+      },
       "runtime_library_contract": {
         "runtime_library_ids": [
           "objc3-runtime",
@@ -108,13 +121,50 @@
         "default_release_channel_allowed": false,
         "report_artifact_support_truth": false,
         "mixed_release_sanitizer_runtime_behavior": "fail-closed",
+        "release_runtime_package_ids": [
+          "org.objc3c.runtime:objc3c-runtime-release",
+          "org.objc3c.runtime:objc3c-runtime-linux-x64-release",
+          "org.objc3c.runtime:objc3c-runtime-darwin-arm64-release"
+        ],
+        "release_runtime_mixing_allowed": false,
+        "expected_detection_records": [
+          {
+            "record_id": "objc3c.sanitizer.address.heap-use-after-free",
+            "record_kind": "asan-diagnostic",
+            "required_behavior": "record-only-no-support-promotion",
+            "support_truth": false
+          },
+          {
+            "record_id": "objc3c.sanitizer.address.container-overflow",
+            "record_kind": "asan-diagnostic",
+            "required_behavior": "record-only-no-support-promotion",
+            "support_truth": false
+          }
+        ],
+        "unsupported_host_diagnostics": [
+          {
+            "diagnostic_id": "objc3c.sanitizer.address.unsupported-host",
+            "failure_class": "unsupported-sanitizer-platform",
+            "required_behavior": "fail-closed-before-capability-promotion",
+            "blocks": [
+              "package",
+              "install",
+              "execution",
+              "publication"
+            ]
+          }
+        ],
         "required_metadata_fields": [
           "target_platform_id",
           "sanitizer",
           "runtime_library_ids",
           "compiler_flags",
           "linker_flags",
-          "environment"
+          "environment",
+          "release_runtime_package_ids",
+          "release_runtime_mixing_allowed",
+          "expected_detection_records",
+          "unsupported_host_diagnostics"
         ]
       },
       "claim_state": "reserved",
@@ -130,9 +180,24 @@
     {
       "variant_id": "objc3c.toolchain.sanitizer.undefined",
       "issue_ref": 8231,
+      "sanitizer": "undefined",
       "package_variant_row_id": "objc3c.package.sanitizer.ubsan.reserved",
       "package_id": "org.objc3c.runtime:objc3c-runtime-ubsan",
       "runtime_requirement": "UBSan runtime library and explicit trap-or-recover mode for the exact target platform and package variant",
+      "build_contract": {
+        "compiler_flags": [
+          "-fsanitize=undefined",
+          "-fno-omit-frame-pointer"
+        ],
+        "linker_flags": [
+          "-fsanitize=undefined"
+        ],
+        "environment_requirements": [
+          "UBSAN_OPTIONS and trap-or-recover policy captured by sanitizer package metadata before execution claims"
+        ],
+        "mode": "explicit-trap-or-recover",
+        "suppression_policy": "no suppression unless a checked sanitizer package row owns it"
+      },
       "runtime_library_contract": {
         "runtime_library_ids": [
           "objc3-runtime",
@@ -160,13 +225,50 @@
         "default_release_channel_allowed": false,
         "report_artifact_support_truth": false,
         "mixed_release_sanitizer_runtime_behavior": "fail-closed",
+        "release_runtime_package_ids": [
+          "org.objc3c.runtime:objc3c-runtime-release",
+          "org.objc3c.runtime:objc3c-runtime-linux-x64-release",
+          "org.objc3c.runtime:objc3c-runtime-darwin-arm64-release"
+        ],
+        "release_runtime_mixing_allowed": false,
+        "expected_detection_records": [
+          {
+            "record_id": "objc3c.sanitizer.undefined.signed-integer-overflow",
+            "record_kind": "ubsan-diagnostic",
+            "required_behavior": "record-only-no-support-promotion",
+            "support_truth": false
+          },
+          {
+            "record_id": "objc3c.sanitizer.undefined.invalid-shift",
+            "record_kind": "ubsan-diagnostic",
+            "required_behavior": "record-only-no-support-promotion",
+            "support_truth": false
+          }
+        ],
+        "unsupported_host_diagnostics": [
+          {
+            "diagnostic_id": "objc3c.sanitizer.undefined.unsupported-host",
+            "failure_class": "unsupported-sanitizer-platform",
+            "required_behavior": "fail-closed-before-capability-promotion",
+            "blocks": [
+              "package",
+              "install",
+              "execution",
+              "publication"
+            ]
+          }
+        ],
         "required_metadata_fields": [
           "target_platform_id",
           "sanitizer",
           "runtime_library_ids",
           "compiler_flags",
           "linker_flags",
-          "trap_or_recover_mode"
+          "trap_or_recover_mode",
+          "release_runtime_package_ids",
+          "release_runtime_mixing_allowed",
+          "expected_detection_records",
+          "unsupported_host_diagnostics"
         ]
       },
       "claim_state": "reserved",

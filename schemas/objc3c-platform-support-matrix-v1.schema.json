@@ -20,6 +20,12 @@
     "support_evidence_contract",
     "platform_support_rows",
     "package_variant_rows",
+    "host_evidence_contract",
+    "host_identity_records",
+    "toolchain_probe_records",
+    "package_root_evidence_records",
+    "native_execution_evidence_records",
+    "negative_host_toolchain_cases",
     "toolchain_support",
     "evidence_records",
     "support_evidence_ids",
@@ -163,13 +169,25 @@
       "type": "object",
       "required": [
         "os",
-        "arch"
+        "arch",
+        "system",
+        "machine",
+        "platform_id"
       ],
       "properties": {
         "os": {
           "type": "string"
         },
         "arch": {
+          "type": "string"
+        },
+        "system": {
+          "type": "string"
+        },
+        "machine": {
+          "type": "string"
+        },
+        "platform_id": {
           "type": "string"
         }
       }
@@ -304,6 +322,104 @@
           "promotion_gate_contract": { "type": "object" },
           "unsupported_behavior": { "const": "fail-closed" }
         },
+        "additionalProperties": true
+      }
+    },
+    "host_evidence_contract": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": [
+        "contract_id",
+        "promotion_policy",
+        "native_execution_required_for_support"
+      ],
+      "properties": {
+        "contract_id": {
+          "const": "objc3c.platform.host-evidence.promotion.v1"
+        },
+        "promotion_policy": {
+          "const": "real-host-execution-required"
+        },
+        "native_execution_required_for_support": {
+          "const": true
+        }
+      }
+    },
+    "host_identity_records": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": [
+          "record_id",
+          "platform_id",
+          "claim_state",
+          "promotion_allowed",
+          "host_triples"
+        ],
+        "additionalProperties": true
+      }
+    },
+    "toolchain_probe_records": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": [
+          "record_id",
+          "platform_id",
+          "claim_state",
+          "promotion_allowed",
+          "required_components",
+          "component_probes"
+        ],
+        "additionalProperties": true
+      }
+    },
+    "package_root_evidence_records": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": [
+          "record_id",
+          "package_variant_row_id",
+          "target_platform_id",
+          "claim_state",
+          "promotion_allowed",
+          "package_root_layout"
+        ],
+        "additionalProperties": true
+      }
+    },
+    "native_execution_evidence_records": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": [
+          "record_id",
+          "platform_id",
+          "claim_state",
+          "promotion_allowed",
+          "native_execution_required",
+          "execution_evidence_ids"
+        ],
+        "additionalProperties": true
+      }
+    },
+    "negative_host_toolchain_cases": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": [
+          "case_id",
+          "failure_class",
+          "required_behavior",
+          "blocks_surfaces",
+          "promotion_allowed"
+        ],
         "additionalProperties": true
       }
     },

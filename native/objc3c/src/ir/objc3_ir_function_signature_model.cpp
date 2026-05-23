@@ -5,6 +5,7 @@
 #include <unordered_set>
 #include <utility>
 
+#include "sema/objc3_typed_throws_effect_contract.h"
 #include "support/objc3_string_predicates.h"
 
 bool IsArcExecutableObjectParam(const FuncParam &param) {
@@ -121,7 +122,10 @@ BuildLoweredFunctionSignatures(const Objc3Program &program) {
     signature.throws_declared = fn.throws_declared;
     signature.typed_throws_declared = fn.typed_throws_declared;
     signature.throws_error_out_abi_ready =
-        fn.throws_declared && !fn.typed_throws_declared;
+        Objc3TypedThrowsAbiLoweringReady(
+            fn.throws_declared,
+            fn.typed_throws_declared,
+            fn.typed_throws_payload.canonical_spelling);
     signature.typed_throws_error_type_spelling =
         fn.typed_throws_payload.canonical_spelling;
     MarkValueOptionalSignature(signature, fn.return_value_optional);

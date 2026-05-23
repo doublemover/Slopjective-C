@@ -37,10 +37,65 @@ CONTRACT_ID = "objc3c.security.hardening.sanitizer.validation.contract.v1"
 SUMMARY_CONTRACT_ID = "objc3c.security.hardening.sanitizer.validation.summary.v1"
 REQUIRED_SANITIZERS = {"ASan", "UBSan"}
 REQUIRED_COVERAGE_SURFACES = {"native_runtime", "native_compiler"}
+RELEASE_RUNTIME_PACKAGE_IDS = [
+    "org.objc3c.runtime:objc3c-runtime-release",
+    "org.objc3c.runtime:objc3c-runtime-linux-x64-release",
+    "org.objc3c.runtime:objc3c-runtime-darwin-arm64-release",
+]
 REQUIRED_PACKAGE_VARIANTS = {
-    "objc3c.toolchain.sanitizer.address": 8230,
-    "objc3c.toolchain.sanitizer.undefined": 8231,
+    "objc3c.toolchain.sanitizer.address": {
+        "issue_ref": 8230,
+        "sanitizer": "address",
+        "package_variant_row_id": "objc3c.package.sanitizer.asan.reserved",
+        "package_id": "org.objc3c.runtime:objc3c-runtime-asan",
+        "compiler_flags": {"-fsanitize=address", "-fno-omit-frame-pointer"},
+        "linker_flags": {"-fsanitize=address"},
+        "runtime_library_ids": ["objc3-runtime", "clang_rt.asan"],
+        "required_metadata_fields": {
+            "target_platform_id",
+            "sanitizer",
+            "runtime_library_ids",
+            "compiler_flags",
+            "linker_flags",
+            "environment",
+            "release_runtime_package_ids",
+            "release_runtime_mixing_allowed",
+            "expected_detection_records",
+            "unsupported_host_diagnostics",
+        },
+        "expected_detection_record_ids": {
+            "objc3c.sanitizer.address.heap-use-after-free",
+            "objc3c.sanitizer.address.container-overflow",
+        },
+    },
+    "objc3c.toolchain.sanitizer.undefined": {
+        "issue_ref": 8231,
+        "sanitizer": "undefined",
+        "package_variant_row_id": "objc3c.package.sanitizer.ubsan.reserved",
+        "package_id": "org.objc3c.runtime:objc3c-runtime-ubsan",
+        "compiler_flags": {"-fsanitize=undefined", "-fno-omit-frame-pointer"},
+        "linker_flags": {"-fsanitize=undefined"},
+        "runtime_library_ids": ["objc3-runtime", "clang_rt.ubsan"],
+        "required_metadata_fields": {
+            "target_platform_id",
+            "sanitizer",
+            "runtime_library_ids",
+            "compiler_flags",
+            "linker_flags",
+            "trap_or_recover_mode",
+            "release_runtime_package_ids",
+            "release_runtime_mixing_allowed",
+            "expected_detection_records",
+            "unsupported_host_diagnostics",
+        },
+        "expected_detection_record_ids": {
+            "objc3c.sanitizer.undefined.signed-integer-overflow",
+            "objc3c.sanitizer.undefined.invalid-shift",
+        },
+    },
 }
+REQUIRED_PACKAGE_EVIDENCE = {"build", "package", "install", "execution"}
+REQUIRED_UNSUPPORTED_DIAGNOSTIC_BLOCKS = {"package", "install", "execution", "publication"}
 
 
 def fail(message: str) -> int:
@@ -83,6 +138,18 @@ def require_action_surfaces(action_name: str) -> None:
         actions = payload.get(list_name) if isinstance(payload, dict) else None
         if not isinstance(actions, list) or action_name not in actions:
             raise RuntimeError(f"{list_name} missing {action_name}")
+
+
+def require_object(value: Any, label: str) -> dict[str, Any]:
+    if not isinstance(value, dict):
+        raise RuntimeError(f"{label} must be an object")
+    return value
+
+
+def require_string_list(value: Any, label: str) -> list[str]:
+    if not isinstance(value, list) or not value:
+        raise RuntimeError(f"{label} must be a non-empty list")
+    return [str(item) for item in value]
 
 
 def validate_sanitizer_config(contract: dict[str, Any]) -> dict[str, object]:
@@ -187,19 +254,69 @@ def validate_runtime_package_variants(contract: dict[str, Any]) -> list[dict[str
         raise RuntimeError(f"runtime_package_variants missing reserved variants: {missing}")
 
     checked: list[dict[str, object]] = []
-    for variant_id, issue_ref in REQUIRED_PACKAGE_VARIANTS.items():
+    for variant_id, expected in REQUIRED_PACKAGE_VARIANTS.items():
         variant = by_id[variant_id]
+        issue_ref = int(expected["issue_ref"])  # type: ignore[arg-type]
+        sanitizer_name = str(expected["sanitizer"])
+        package_variant_row_id = str(expected["package_variant_row_id"])
+        package_id = str(expected["package_id"])
         if variant.get("issue_ref") != issue_ref:
             raise RuntimeError(f"{variant_id} issue_ref drifted")
+        if variant.get("sanitizer") != sanitizer_name:
+            raise RuntimeError(f"{variant_id} sanitizer identity drifted")
+        if variant.get("package_variant_row_id") != package_variant_row_id:
+            raise RuntimeError(f"{variant_id} package variant row identity drifted")
+        if variant.get("package_id") != package_id:
+            raise RuntimeError(f"{variant_id} package id drifted")
         if variant.get("claim_state") != "reserved":
             raise RuntimeError(f"{variant_id} must remain reserved until package execution evidence exists")
         if variant.get("native_package_execution_claimed") is not False:
             raise RuntimeError(f"{variant_id} must not claim native package execution")
         if variant.get("unsupported_behavior") != "fail-closed":
             raise RuntimeError(f"{variant_id} package variant does not fail closed")
-        package_runtime_contract = variant.get("package_runtime_contract")
-        if not isinstance(package_runtime_contract, dict):
-            raise RuntimeError(f"{variant_id} missing package_runtime_contract")
+
+        build_contract = require_object(variant.get("build_contract"), f"{variant_id}.build_contract")
+        compiler_flags = set(require_string_list(build_contract.get("compiler_flags"), f"{variant_id}.build_contract.compiler_flags"))
+        linker_flags = set(require_string_list(build_contract.get("linker_flags"), f"{variant_id}.build_contract.linker_flags"))
+        require_string_list(build_contract.get("environment_requirements"), f"{variant_id}.build_contract.environment_requirements")
+        if not set(expected["compiler_flags"]) <= compiler_flags:  # type: ignore[arg-type]
+            raise RuntimeError(f"{variant_id} compiler flags drifted")
+        if not set(expected["linker_flags"]) <= linker_flags:  # type: ignore[arg-type]
+            raise RuntimeError(f"{variant_id} linker flags drifted")
+        if sanitizer_name == "undefined" and build_contract.get("mode") != "explicit-trap-or-recover":
+            raise RuntimeError(f"{variant_id} UBSan trap-or-recover mode policy drifted")
+
+        runtime_library_contract = require_object(
+            variant.get("runtime_library_contract"),
+            f"{variant_id}.runtime_library_contract",
+        )
+        runtime_library_ids = require_string_list(
+            runtime_library_contract.get("runtime_library_ids"),
+            f"{variant_id}.runtime_library_contract.runtime_library_ids",
+        )
+        if runtime_library_ids != expected["runtime_library_ids"]:
+            raise RuntimeError(f"{variant_id} runtime library ids drifted")
+        if runtime_library_contract.get("missing_runtime_behavior") != "fail-closed-before-package-install":
+            raise RuntimeError(f"{variant_id} missing runtime behavior drifted")
+        if runtime_library_contract.get("mixed_runtime_behavior") != "fail-closed":
+            raise RuntimeError(f"{variant_id} mixed runtime behavior drifted")
+
+        install_guard = require_object(variant.get("install_guard"), f"{variant_id}.install_guard")
+        if "default release runtime" not in str(install_guard.get("release_channel_policy", "")).lower():
+            raise RuntimeError(f"{variant_id} release-channel install guard does not name default release runtime isolation")
+        if install_guard.get("unsupported_platform_behavior") != "fail-closed":
+            raise RuntimeError(f"{variant_id} unsupported platform behavior drifted")
+        if install_guard.get("missing_runtime_behavior") != "fail-closed-before-package-install":
+            raise RuntimeError(f"{variant_id} missing runtime install guard drifted")
+        if install_guard.get("mixed_runtime_behavior") != "fail-closed":
+            raise RuntimeError(f"{variant_id} mixed runtime install guard drifted")
+        if install_guard.get("stale_package_metadata_behavior") != "fail-closed-before-publication":
+            raise RuntimeError(f"{variant_id} stale metadata install guard drifted")
+
+        package_runtime_contract = require_object(
+            variant.get("package_runtime_contract"),
+            f"{variant_id}.package_runtime_contract",
+        )
         if package_runtime_contract.get("runtime_probe_required") is not True:
             raise RuntimeError(f"{variant_id} sanitizer runtime probe is not required")
         if package_runtime_contract.get("default_release_channel_allowed") is not False:
@@ -208,24 +325,75 @@ def validate_runtime_package_variants(contract: dict[str, Any]) -> list[dict[str
             raise RuntimeError(f"{variant_id} sanitizer reports were treated as support truth")
         if package_runtime_contract.get("mixed_release_sanitizer_runtime_behavior") != "fail-closed":
             raise RuntimeError(f"{variant_id} mixed release/sanitizer runtime did not fail closed")
+        release_runtime_package_ids = require_string_list(
+            package_runtime_contract.get("release_runtime_package_ids"),
+            f"{variant_id}.package_runtime_contract.release_runtime_package_ids",
+        )
+        if release_runtime_package_ids != RELEASE_RUNTIME_PACKAGE_IDS:
+            raise RuntimeError(f"{variant_id} release runtime package isolation ids drifted")
+        if package_id in release_runtime_package_ids:
+            raise RuntimeError(f"{variant_id} sanitizer package id matched a release runtime package id")
+        if package_runtime_contract.get("release_runtime_mixing_allowed") is not False:
+            raise RuntimeError(f"{variant_id} allowed sanitizer/release runtime package mixing")
+
+        detection_records = package_runtime_contract.get("expected_detection_records")
+        if not isinstance(detection_records, list) or not detection_records:
+            raise RuntimeError(f"{variant_id} missing expected sanitizer detection records")
+        detection_record_ids: set[str] = set()
+        for record in detection_records:
+            record_object = require_object(record, f"{variant_id}.expected_detection_records[]")
+            record_id = str(record_object.get("record_id", ""))
+            if not record_id:
+                raise RuntimeError(f"{variant_id} expected detection record missing record_id")
+            detection_record_ids.add(record_id)
+            if record_object.get("support_truth") is not False:
+                raise RuntimeError(f"{variant_id} detection record was treated as support truth")
+            if record_object.get("required_behavior") != "record-only-no-support-promotion":
+                raise RuntimeError(f"{variant_id} detection record behavior drifted")
+        if detection_record_ids != expected["expected_detection_record_ids"]:
+            raise RuntimeError(f"{variant_id} expected detection record ids drifted")
+
+        unsupported_host_diagnostics = package_runtime_contract.get("unsupported_host_diagnostics")
+        if not isinstance(unsupported_host_diagnostics, list) or not unsupported_host_diagnostics:
+            raise RuntimeError(f"{variant_id} missing unsupported-host diagnostics")
+        unsupported_diagnostic_ids: list[str] = []
+        for diagnostic in unsupported_host_diagnostics:
+            diagnostic_object = require_object(diagnostic, f"{variant_id}.unsupported_host_diagnostics[]")
+            diagnostic_id = str(diagnostic_object.get("diagnostic_id", ""))
+            if not diagnostic_id:
+                raise RuntimeError(f"{variant_id} unsupported-host diagnostic missing diagnostic_id")
+            unsupported_diagnostic_ids.append(diagnostic_id)
+            if diagnostic_object.get("failure_class") != "unsupported-sanitizer-platform":
+                raise RuntimeError(f"{variant_id} unsupported-host diagnostic failure class drifted")
+            if diagnostic_object.get("required_behavior") != "fail-closed-before-capability-promotion":
+                raise RuntimeError(f"{variant_id} unsupported-host diagnostic behavior drifted")
+            blocks = {str(item) for item in diagnostic_object.get("blocks", [])}
+            if not REQUIRED_UNSUPPORTED_DIAGNOSTIC_BLOCKS <= blocks:
+                raise RuntimeError(f"{variant_id} unsupported-host diagnostic did not block all promotion surfaces")
+
         required_metadata_fields = {
             str(field)
             for field in package_runtime_contract.get("required_metadata_fields", [])
         }
-        if not {"target_platform_id", "sanitizer", "runtime_library_ids"} <= required_metadata_fields:
+        if not set(expected["required_metadata_fields"]) <= required_metadata_fields:  # type: ignore[arg-type]
             raise RuntimeError(f"{variant_id} package runtime metadata requirements drifted")
         required_package_evidence = [str(item) for item in variant.get("required_package_evidence", [])]
-        if set(required_package_evidence) != {"build", "package", "install", "execution"}:
+        if set(required_package_evidence) != REQUIRED_PACKAGE_EVIDENCE:
             raise RuntimeError(f"{variant_id} package variant evidence requirements drifted")
         checked.append(
             {
                 "variant_id": variant_id,
+                "sanitizer": sanitizer_name,
                 "issue_ref": issue_ref,
-                "package_variant_row_id": str(variant["package_variant_row_id"]),
-                "package_id": str(variant["package_id"]),
+                "package_variant_row_id": package_variant_row_id,
+                "package_id": package_id,
                 "claim_state": "reserved",
                 "native_package_execution_claimed": False,
                 "runtime_probe_required": True,
+                "runtime_library_ids": runtime_library_ids,
+                "release_runtime_mixing_allowed": False,
+                "expected_detection_record_ids": sorted(detection_record_ids),
+                "unsupported_host_diagnostic_ids": unsupported_diagnostic_ids,
             }
         )
     return checked

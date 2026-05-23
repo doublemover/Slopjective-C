@@ -24,7 +24,7 @@ std::string BuildThrowsDeclarationProfile(
       (throws_declared && !typed_error_type_spelling.empty() &&
        typed_error_generic_suffix_terminated);
   const bool untyped_error_abi_ready = throws_declared && !typed_throws_declared;
-  const bool typed_error_abi_ready = false;
+  const bool typed_error_abi_ready = typed_throws_declared && typed_payload_ready;
   const bool propagation_ready =
       declaration_shape_valid && method_selector_surface_ready &&
       typed_payload_ready;
@@ -34,7 +34,7 @@ std::string BuildThrowsDeclarationProfile(
           : (throws_declared ? "throws:untyped:id<Error>" : "throws:none");
   const std::string callable_compatibility_policy =
       typed_throws_declared
-          ? "typed-throws-exact-payload-match-lowering-deferred"
+          ? "typed-throws-exact-payload-match-error-out-abi"
           : (throws_declared ? "untyped-throws-id-error-carrier"
                              : "nonthrowing-only");
 

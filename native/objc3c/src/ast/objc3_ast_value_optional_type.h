@@ -24,6 +24,22 @@ inline constexpr const char *kObjc3ValueOptionalPresenceState =
     "has_value=true";
 inline constexpr const char *kObjc3ValueOptionalPayloadCleanupContract =
     "payload-cleanup-after-narrowed-scope";
+inline constexpr const char *kObjc3ValueOptionalExecutableLoweringStatus =
+    "presence-payload-construction-and-checked-unwrap-contract-ready-runtime-abi-deferred";
+inline constexpr const char *kObjc3ValueOptionalConstructionContract =
+    "explicit-absent-present-constructors-only";
+inline constexpr const char *kObjc3ValueOptionalAbsentConstructionKind =
+    "absent-without-payload";
+inline constexpr const char *kObjc3ValueOptionalPresentConstructionKind =
+    "present-with-payload";
+inline constexpr const char *kObjc3ValueOptionalBindingFailureDiagnostic =
+    "binding-failure-branches-to-absent-path";
+inline constexpr const char *kObjc3ValueOptionalUnwrapFailureDiagnostic =
+    "unwrap-requires-proven-has-value";
+inline constexpr const char *kObjc3ValueOptionalNilBridgeDiagnostic =
+    "nil-bridging-to-optional-is-rejected";
+inline constexpr const char *kObjc3ValueOptionalRemainingRuntimeBoundary =
+    "ir-payload-emission-and-call-abi-lowering-deferred";
 
 struct Objc3ValueOptionalTypeDescriptor {
   bool present = false;
@@ -42,17 +58,43 @@ struct Objc3ValueOptionalTypeDescriptor {
       kObjc3ValueOptionalInterfaceRoundtripStatus;
   std::string presence_field = kObjc3ValueOptionalPresenceField;
   std::string payload_storage_field = kObjc3ValueOptionalPayloadStorageField;
+  std::string executable_lowering_status =
+      kObjc3ValueOptionalExecutableLoweringStatus;
+  std::string construction_contract =
+      kObjc3ValueOptionalConstructionContract;
+  std::string absent_construction_kind =
+      kObjc3ValueOptionalAbsentConstructionKind;
+  std::string present_construction_kind =
+      kObjc3ValueOptionalPresentConstructionKind;
+  std::string binding_failure_diagnostic =
+      kObjc3ValueOptionalBindingFailureDiagnostic;
+  std::string unwrap_failure_diagnostic =
+      kObjc3ValueOptionalUnwrapFailureDiagnostic;
+  std::string nil_bridge_diagnostic =
+      kObjc3ValueOptionalNilBridgeDiagnostic;
+  std::string remaining_runtime_boundary =
+      kObjc3ValueOptionalRemainingRuntimeBoundary;
   bool source_type_admitted = false;
   bool semantic_carrier_modeled = false;
   bool semantic_value_model_supported = false;
   bool stable_abi_layout_contract_supported = false;
   bool interface_roundtrip_supported = false;
+  bool executable_lowering_contract_supported = false;
   bool explicit_present_absent_construction_modeled = false;
+  bool explicit_absent_construction_supported = false;
+  bool explicit_present_construction_supported = false;
+  bool absent_construction_forbids_payload = true;
+  bool present_construction_requires_payload = true;
   bool binding_narrowing_supported = false;
+  bool binding_failure_diagnostic_supported = false;
   bool unwrap_requires_presence_check = true;
+  bool unwrap_failure_diagnostic_supported = false;
   bool semantic_present_absent_state_supported = false;
+  bool nil_bridge_diagnostic_supported = false;
   bool runtime_execution_supported = false;
   bool lowering_supported = false;
+  bool ir_payload_emission_supported = false;
+  bool call_abi_lowering_supported = false;
   bool nil_to_scalar_coercion_allowed = false;
   bool implicit_nil_absence_allowed = false;
   bool nullable_pointer_conversion_allowed = false;
@@ -120,10 +162,18 @@ inline Objc3ValueOptionalTypeDescriptor BuildObjc3ValueOptionalDescriptor(
   descriptor.semantic_value_model_supported = true;
   descriptor.stable_abi_layout_contract_supported = true;
   descriptor.interface_roundtrip_supported = true;
+  descriptor.executable_lowering_contract_supported = true;
   descriptor.explicit_present_absent_construction_modeled = true;
+  descriptor.explicit_absent_construction_supported = true;
+  descriptor.explicit_present_construction_supported = true;
+  descriptor.absent_construction_forbids_payload = true;
+  descriptor.present_construction_requires_payload = true;
   descriptor.binding_narrowing_supported = true;
+  descriptor.binding_failure_diagnostic_supported = true;
   descriptor.unwrap_requires_presence_check = true;
+  descriptor.unwrap_failure_diagnostic_supported = true;
   descriptor.semantic_present_absent_state_supported = true;
+  descriptor.nil_bridge_diagnostic_supported = true;
   descriptor.line = line;
   descriptor.column = column;
   descriptor.payload_type_spelling =
@@ -150,4 +200,47 @@ inline Objc3ValueOptionalTypeDescriptor BuildObjc3ValueOptionalDescriptor(
       descriptor.payload_type_spelling.find("<optional<") !=
           std::string::npos;
   return descriptor;
+}
+
+inline bool Objc3ValueOptionalHasExecutableLoweringContract(
+    const Objc3ValueOptionalTypeDescriptor &descriptor) {
+  return descriptor.present && descriptor.source_type_admitted &&
+         descriptor.semantic_value_model_supported &&
+         descriptor.stable_abi_layout_contract_supported &&
+         descriptor.interface_roundtrip_supported &&
+         descriptor.executable_lowering_contract_supported &&
+         descriptor.explicit_present_absent_construction_modeled &&
+         descriptor.explicit_absent_construction_supported &&
+         descriptor.explicit_present_construction_supported &&
+         descriptor.absent_construction_forbids_payload &&
+         descriptor.present_construction_requires_payload &&
+         descriptor.binding_narrowing_supported &&
+         descriptor.binding_failure_diagnostic_supported &&
+         descriptor.unwrap_requires_presence_check &&
+         descriptor.unwrap_failure_diagnostic_supported &&
+         descriptor.semantic_present_absent_state_supported &&
+         descriptor.nil_bridge_diagnostic_supported &&
+         descriptor.cleanup_contract_preserved &&
+         !descriptor.payload_type_spelling.empty() &&
+         !descriptor.nil_to_scalar_coercion_allowed &&
+         !descriptor.implicit_nil_absence_allowed &&
+         !descriptor.nullable_pointer_conversion_allowed &&
+         !descriptor.throws_result_conversion_allowed;
+}
+
+inline bool Objc3ValueOptionalRuntimeAbiDeferred(
+    const Objc3ValueOptionalTypeDescriptor &descriptor) {
+  return descriptor.present && !descriptor.ir_payload_emission_supported &&
+         !descriptor.call_abi_lowering_supported &&
+         !descriptor.runtime_execution_supported &&
+         !descriptor.lowering_supported;
+}
+
+inline bool Objc3ValueOptionalRejectsImplicitBridging(
+    const Objc3ValueOptionalTypeDescriptor &descriptor) {
+  return descriptor.present && descriptor.nil_bridge_diagnostic_supported &&
+         !descriptor.nil_to_scalar_coercion_allowed &&
+         !descriptor.implicit_nil_absence_allowed &&
+         !descriptor.nullable_pointer_conversion_allowed &&
+         !descriptor.throws_result_conversion_allowed;
 }

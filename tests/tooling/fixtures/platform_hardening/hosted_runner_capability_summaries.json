@@ -99,7 +99,7 @@
       ],
       "native_object_emission_status": "native_object_emission_supported",
       "publication_allowed": false,
-      "diagnostic": "ASan package support remains reserved until sanitizer runtime package metadata, install proof, runtime library discovery, and native execution proof exist."
+      "diagnostic": "ASan package support remains reserved until sanitizer runtime package metadata, install proof, runtime library discovery, expected detection records, unsupported-host diagnostics, release-runtime isolation, and native execution proof exist."
     },
     {
       "summary_id": "objc3c.hosted.sanitizer.undefined.reserved",
@@ -120,7 +120,7 @@
       ],
       "native_object_emission_status": "native_object_emission_supported",
       "publication_allowed": false,
-      "diagnostic": "UBSan package support remains reserved until sanitizer runtime package metadata, install proof, trap-or-recover policy, and native execution proof exist."
+      "diagnostic": "UBSan package support remains reserved until sanitizer runtime package metadata, install proof, trap-or-recover policy, expected detection records, unsupported-host diagnostics, release-runtime isolation, and native execution proof exist."
     },
     {
       "summary_id": "objc3c.hosted.toolchain.missing-llc.fail-closed",

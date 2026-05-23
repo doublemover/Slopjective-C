@@ -157,9 +157,25 @@ static std::string CanonicalTypeReplayKey(
       << ":"
       << (type.value_optional_binding_narrowing_supported ? 1 : 0) << ":"
       << (type.value_optional_interface_roundtrip_supported ? 1 : 0) << ":"
+      << (type.value_optional_executable_lowering_contract_supported ? 1 : 0)
+      << ":"
+      << (type.value_optional_explicit_absent_construction_supported ? 1 : 0)
+      << ":"
+      << (type.value_optional_explicit_present_construction_supported ? 1 : 0)
+      << ":"
+      << (type.value_optional_binding_failure_diagnostic_supported ? 1 : 0)
+      << ":"
       << (type.value_optional_unwrap_requires_presence_check ? 1 : 0) << ":"
+      << (type.value_optional_unwrap_failure_diagnostic_supported ? 1 : 0)
+      << ":"
+      << (type.value_optional_nil_bridge_diagnostic_supported ? 1 : 0) << ":"
       << (type.value_optional_runtime_execution_supported ? 1 : 0) << ":"
       << (type.value_optional_lowering_supported ? 1 : 0)
+      << ":"
+      << (type.value_optional_ir_payload_emission_supported ? 1 : 0) << ":"
+      << (type.value_optional_call_abi_lowering_supported ? 1 : 0) << ":"
+      << type.value_optional_executable_lowering_status << ":"
+      << type.value_optional_remaining_runtime_boundary
       << ";invalid=" << (type.has_invalid_type_suffix ? 1 : 0);
   return out.str();
 }
@@ -184,11 +200,31 @@ static void ApplyValueOptionalCanonicalDescriptor(
       descriptor.binding_narrowing_supported;
   type.value_optional_interface_roundtrip_supported =
       descriptor.interface_roundtrip_supported;
+  type.value_optional_executable_lowering_contract_supported =
+      descriptor.executable_lowering_contract_supported;
+  type.value_optional_explicit_absent_construction_supported =
+      descriptor.explicit_absent_construction_supported;
+  type.value_optional_explicit_present_construction_supported =
+      descriptor.explicit_present_construction_supported;
+  type.value_optional_binding_failure_diagnostic_supported =
+      descriptor.binding_failure_diagnostic_supported;
   type.value_optional_unwrap_requires_presence_check =
       descriptor.unwrap_requires_presence_check;
+  type.value_optional_unwrap_failure_diagnostic_supported =
+      descriptor.unwrap_failure_diagnostic_supported;
+  type.value_optional_nil_bridge_diagnostic_supported =
+      descriptor.nil_bridge_diagnostic_supported;
   type.value_optional_runtime_execution_supported =
       descriptor.runtime_execution_supported;
   type.value_optional_lowering_supported = descriptor.lowering_supported;
+  type.value_optional_ir_payload_emission_supported =
+      descriptor.ir_payload_emission_supported;
+  type.value_optional_call_abi_lowering_supported =
+      descriptor.call_abi_lowering_supported;
+  type.value_optional_executable_lowering_status =
+      descriptor.executable_lowering_status;
+  type.value_optional_remaining_runtime_boundary =
+      descriptor.remaining_runtime_boundary;
   type.object_type_facts_authoritative = true;
   type.is_objc_object_reference = false;
   type.is_objc_id_object = false;
@@ -197,6 +233,10 @@ static void ApplyValueOptionalCanonicalDescriptor(
   type.is_objc_protocol_object = false;
   type.is_objc_instancetype_object = false;
   type.is_objc_named_object_pointer = false;
+  type.deterministic =
+      type.deterministic &&
+      Objc3ValueOptionalHasExecutableLoweringContract(descriptor) &&
+      Objc3ValueOptionalRejectsImplicitBridging(descriptor);
   type.canonical_spelling =
       "Optional<" + descriptor.payload_type_spelling + ">";
   type.replay_key = CanonicalTypeReplayKey(type);

@@ -18,6 +18,41 @@
       "expected_failure": "O3PKG8055: network fetch request rejected"
     },
     {
+      "case_id": "live-public-service-unavailable",
+      "failure_mode": "live-public-service-unavailable",
+      "expected_failure": "O3PKG8055: live public hosted registry service unavailable"
+    },
+    {
+      "case_id": "live-transport-disabled",
+      "failure_mode": "live-transport-disabled",
+      "expected_failure": "O3PKG8055: live public hosted registry transport disabled"
+    },
+    {
+      "case_id": "unsupported-live-service-mode",
+      "failure_mode": "unsupported-live-service-mode",
+      "expected_failure": "O3PKG8055: unsupported live hosted registry service mode"
+    },
+    {
+      "case_id": "production-auth-unavailable",
+      "failure_mode": "production-auth-unavailable",
+      "expected_failure": "O3PKG8055: live public hosted registry auth activated"
+    },
+    {
+      "case_id": "production-moderation-unavailable",
+      "failure_mode": "production-moderation-unavailable",
+      "expected_failure": "O3PKG8055: live public hosted registry moderation activated"
+    },
+    {
+      "case_id": "production-trust-root-unavailable",
+      "failure_mode": "production-trust-root-unavailable",
+      "expected_failure": "O3PKG8055: live public hosted registry trust_root activated"
+    },
+    {
+      "case_id": "production-availability-unavailable",
+      "failure_mode": "production-availability-unavailable",
+      "expected_failure": "O3PKG8055: live public hosted registry availability activated"
+    },
+    {
       "case_id": "fallback-registry-success",
       "failure_mode": "fallback-registry-success",
       "expected_failure": "O3PKG8055: fallback registry success path is forbidden"

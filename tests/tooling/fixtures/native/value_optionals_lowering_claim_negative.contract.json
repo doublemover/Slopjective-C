@@ -3,21 +3,25 @@
   "fixture_kind": "negative_contract",
   "issue_ref": 8234,
   "mutated_fields": [
-    "abi_layout.runtime_execution_supported",
-    "abi_layout.lowering_supported",
+    "abi_layout.ir_payload_emission_supported",
+    "abi_layout.call_abi_lowering_supported",
+    "lowering_contract.unchecked_unwrap_supported",
     "semantic_model.implicit_nil_absence_allowed"
   ],
   "expected_values": {
-    "abi_layout.runtime_execution_supported": false,
-    "abi_layout.lowering_supported": false,
+    "abi_layout.executable_lowering_contract_supported": true,
+    "abi_layout.ir_payload_emission_supported": false,
+    "abi_layout.call_abi_lowering_supported": false,
+    "lowering_contract.unchecked_unwrap_supported": false,
     "semantic_model.implicit_nil_absence_allowed": false
   },
   "actual_values": {
-    "abi_layout.runtime_execution_supported": true,
-    "abi_layout.lowering_supported": true,
+    "abi_layout.ir_payload_emission_supported": true,
+    "abi_layout.call_abi_lowering_supported": true,
+    "lowering_contract.unchecked_unwrap_supported": true,
     "semantic_model.implicit_nil_absence_allowed": true
   },
   "expected_diagnostic": "O3P159",
   "fail_closed": true,
-  "notes": "Semantic type-signature support cannot be upgraded into executable construction, unchecked unwrap, implicit nil absence, IR payload emission, or runtime ABI lowering by contract drift."
+  "notes": "The executable lowering contract may describe explicit absent/present construction and checked unwrap diagnostics, but contract drift still cannot claim unchecked unwrap, implicit nil absence, IR payload emission, or call ABI lowering."
 }

@@ -339,7 +339,7 @@
           "enum": [
             "nonthrowing-only",
             "untyped-throws-id-error-carrier",
-            "typed-throws-exact-payload-match-lowering-deferred"
+            "typed-throws-exact-payload-match-error-out-abi"
           ]
         },
         "semantic_identity_status": {
@@ -347,17 +347,17 @@
         },
         "typed_payload_arity": { "enum": [0, 1] },
         "typed_payload_status": {
-          "enum": ["not-declared", "source-preserved-lowering-fail-closed"]
+          "enum": ["not-declared", "source-preserved-error-out-abi-lowered"]
         },
         "typed_payload_generic_suffix": { "type": "string" },
         "typed_payload_generic_suffix_terminated": { "const": true },
         "typed_payload_pointer_depth": { "type": "number" },
-        "typed_payload_lowering_ready": { "const": false },
-        "runtime_execution_claimed": { "const": false },
+        "typed_payload_lowering_ready": { "type": "boolean" },
+        "runtime_execution_claimed": { "type": "boolean" },
         "silent_erasure_allowed": { "const": false },
         "multi_payload_supported": { "const": false },
         "abi_status": {
-          "enum": ["none", "untyped-error-out-abi", "typed-error-abi-deferred"]
+          "enum": ["none", "untyped-error-out-abi", "typed-error-out-abi"]
         },
         "interface_roundtrip_status": {
           "enum": ["not-applicable", "typed-payload-preserved"]

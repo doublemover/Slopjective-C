@@ -13,7 +13,11 @@
           Objc3BuildTypedThrowsCallableCompatibilityPolicy(
               fn.throws_declared,
               fn.typed_throws_declared);
-      info.typed_throws_abi_lowering_ready = false;
+      info.typed_throws_abi_lowering_ready =
+          Objc3TypedThrowsAbiLoweringReady(
+              fn.throws_declared,
+              fn.typed_throws_declared,
+              fn.typed_throws_payload.canonical_spelling);
       const bool has_macro_marker = fn.objc_macro_declared;
       const bool has_macro_package = fn.objc_macro_package_declared;
       const bool has_macro_provenance = fn.objc_macro_provenance_declared;

@@ -25,6 +25,53 @@
     "unsupported_toolchain_result": "fail-closed-no-range-claim",
     "toolchain_range_policy": "current-probed-executable-only"
   },
+  "host_promotion_architecture": {
+    "contract_id": "objc3c.platform.support.host-promotion.source-truth.v1",
+    "promotion_policy": "real-host-execution-required",
+    "source_evidence_sections": [
+      "host_identity_records",
+      "toolchain_probe_records",
+      "package_root_evidence_records",
+      "native_execution_evidence_records",
+      "negative_host_toolchain_cases"
+    ],
+    "supported_platform_ids": [
+      "windows-x64"
+    ],
+    "unsupported_platform_ids": [
+      "linux-x64",
+      "darwin-arm64"
+    ],
+    "host_identity_record_ids": [
+      "objc3c.host.windows-x64.identity.current",
+      "objc3c.host.linux-x64.identity.fail-closed",
+      "objc3c.host.darwin-arm64.identity.fail-closed"
+    ],
+    "toolchain_probe_record_ids": [
+      "objc3c.host.windows-x64.toolchain-probes.current",
+      "objc3c.host.linux-x64.toolchain-probes.fail-closed",
+      "objc3c.host.darwin-arm64.toolchain-probes.fail-closed"
+    ],
+    "package_root_record_ids": [
+      "objc3c.package-root.windows-x64.release.current",
+      "objc3c.package-root.linux-x64.release.fail-closed",
+      "objc3c.package-root.darwin-arm64.release.fail-closed"
+    ],
+    "native_execution_record_ids": [
+      "objc3c.native-execution.windows-x64.release.current",
+      "objc3c.native-execution.linux-x64.release.missing",
+      "objc3c.native-execution.darwin-arm64.release.missing"
+    ],
+    "negative_host_toolchain_case_ids": [
+      "objc3c.negative.host.linux-x64.no-native-execution",
+      "objc3c.negative.host.darwin-arm64.no-native-execution",
+      "objc3c.negative.toolchain.missing-llc",
+      "objc3c.negative.toolchain.mixed-root",
+      "objc3c.negative.toolchain.mismatched-version",
+      "objc3c.negative.toolchain.unsupported-version"
+    ],
+    "diagnostic": "Host promotion is deterministic only when host identity, coherent toolchain probes, package root identity, and native execution records are all checked in for the platform."
+  },
   "required_supported_evidence_classes": [
     "build",
     "package",
@@ -579,13 +626,50 @@
         "default_release_channel_allowed": false,
         "report_artifact_support_truth": false,
         "mixed_release_sanitizer_runtime_behavior": "fail-closed",
+        "release_runtime_package_ids": [
+          "org.objc3c.runtime:objc3c-runtime-release",
+          "org.objc3c.runtime:objc3c-runtime-linux-x64-release",
+          "org.objc3c.runtime:objc3c-runtime-darwin-arm64-release"
+        ],
+        "release_runtime_mixing_allowed": false,
+        "expected_detection_records": [
+          {
+            "record_id": "objc3c.sanitizer.address.heap-use-after-free",
+            "record_kind": "asan-diagnostic",
+            "required_behavior": "record-only-no-support-promotion",
+            "support_truth": false
+          },
+          {
+            "record_id": "objc3c.sanitizer.address.container-overflow",
+            "record_kind": "asan-diagnostic",
+            "required_behavior": "record-only-no-support-promotion",
+            "support_truth": false
+          }
+        ],
+        "unsupported_host_diagnostics": [
+          {
+            "diagnostic_id": "objc3c.sanitizer.address.unsupported-host",
+            "failure_class": "unsupported-sanitizer-platform",
+            "required_behavior": "fail-closed-before-capability-promotion",
+            "blocks": [
+              "package",
+              "install",
+              "execution",
+              "publication"
+            ]
+          }
+        ],
         "required_metadata_fields": [
           "target_platform_id",
           "sanitizer",
           "runtime_library_ids",
           "compiler_flags",
           "linker_flags",
-          "environment"
+          "environment",
+          "release_runtime_package_ids",
+          "release_runtime_mixing_allowed",
+          "expected_detection_records",
+          "unsupported_host_diagnostics"
         ]
       },
       "required_promotion_evidence": [
@@ -598,7 +682,7 @@
         "install",
         "execution"
       ],
-      "diagnostic": "AddressSanitizer support is reserved until package install and native execution evidence exists for the sanitizer build."
+      "diagnostic": "AddressSanitizer support is reserved until sanitizer package install, release-runtime isolation, expected detection records, unsupported-host diagnostics, and native execution evidence exist for the sanitizer build."
     },
     {
       "variant_id": "objc3c.toolchain.sanitizer.undefined",
@@ -628,13 +712,50 @@
         "default_release_channel_allowed": false,
         "report_artifact_support_truth": false,
         "mixed_release_sanitizer_runtime_behavior": "fail-closed",
+        "release_runtime_package_ids": [
+          "org.objc3c.runtime:objc3c-runtime-release",
+          "org.objc3c.runtime:objc3c-runtime-linux-x64-release",
+          "org.objc3c.runtime:objc3c-runtime-darwin-arm64-release"
+        ],
+        "release_runtime_mixing_allowed": false,
+        "expected_detection_records": [
+          {
+            "record_id": "objc3c.sanitizer.undefined.signed-integer-overflow",
+            "record_kind": "ubsan-diagnostic",
+            "required_behavior": "record-only-no-support-promotion",
+            "support_truth": false
+          },
+          {
+            "record_id": "objc3c.sanitizer.undefined.invalid-shift",
+            "record_kind": "ubsan-diagnostic",
+            "required_behavior": "record-only-no-support-promotion",
+            "support_truth": false
+          }
+        ],
+        "unsupported_host_diagnostics": [
+          {
+            "diagnostic_id": "objc3c.sanitizer.undefined.unsupported-host",
+            "failure_class": "unsupported-sanitizer-platform",
+            "required_behavior": "fail-closed-before-capability-promotion",
+            "blocks": [
+              "package",
+              "install",
+              "execution",
+              "publication"
+            ]
+          }
+        ],
         "required_metadata_fields": [
           "target_platform_id",
           "sanitizer",
           "runtime_library_ids",
           "compiler_flags",
           "linker_flags",
-          "trap_or_recover_mode"
+          "trap_or_recover_mode",
+          "release_runtime_package_ids",
+          "release_runtime_mixing_allowed",
+          "expected_detection_records",
+          "unsupported_host_diagnostics"
         ]
       },
       "required_promotion_evidence": [
@@ -647,7 +768,7 @@
         "install",
         "execution"
       ],
-      "diagnostic": "UBSan support is reserved until package install and native execution evidence exists for the sanitizer build."
+      "diagnostic": "UBSan support is reserved until sanitizer package install, trap-or-recover metadata, release-runtime isolation, expected detection records, unsupported-host diagnostics, and native execution evidence exist for the sanitizer build."
     }
   ],
   "umbrella_readiness_contract": {

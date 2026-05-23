@@ -7,7 +7,7 @@
     "value_optionals": 8234
   },
   "support_state": {
-    "typed_throws": "source_owned_interface_preserved_lowering_fail_closed",
+    "typed_throws": "source_owned_interface_preserved_error_out_abi_lowered",
     "value_optionals": "semantic_type_signatures_stable_layout_interface_preserved_runtime_lowering_fail_closed"
   },
   "typed_throws": {
@@ -20,13 +20,13 @@
       "throws_type_arity": 1,
       "declared_error_type": "source canonical payload spelling",
       "effect_signature_key": "throws:typed:<declared_error_type>",
-      "callable_compatibility_policy": "typed-throws-exact-payload-match-lowering-deferred",
+      "callable_compatibility_policy": "typed-throws-exact-payload-match-error-out-abi",
       "semantic_identity_status": "exact-effect-signature-preserved",
       "typed_payload_refs": [
         "NSError",
         "ErrorBox*"
       ],
-      "typed_payload_status": "source-preserved-lowering-fail-closed"
+      "typed_payload_status": "source-preserved-error-out-abi-lowered"
     },
     "diagnostic": "O3P182",
     "diagnostic_symbol": "kObjc3ParserDiagnosticReservedTypedThrowsCode",
@@ -44,8 +44,8 @@
     "silent_erasure_allowed": false,
     "multi_payload_supported": false,
     "interface_roundtrip_status": "typed-payload-preserved",
-    "abi_status": "typed-error-abi-deferred",
-    "runtime_execution_claimed": false
+    "abi_status": "typed-error-out-abi",
+    "runtime_execution_claimed": true
   },
   "value_optionals": {
     "canonical_spelling": "Optional<T>",
@@ -86,11 +86,11 @@
       "typed"
     ],
     "typed_throws_payload_arity": 1,
-    "typed_throws_payload_status": "source-preserved-lowering-fail-closed",
-    "typed_throws_abi_status": "typed-error-abi-deferred",
+    "typed_throws_payload_status": "source-preserved-error-out-abi-lowered",
+    "typed_throws_abi_status": "typed-error-out-abi",
     "typed_throws_effect_signature_required": true,
-    "typed_throws_callable_compatibility_policy": "typed-throws-exact-payload-match-lowering-deferred",
-    "typed_throws_runtime_execution_claimed": false,
+    "typed_throws_callable_compatibility_policy": "typed-throws-exact-payload-match-error-out-abi",
+    "typed_throws_runtime_execution_claimed": true,
     "value_optional_source_status": "semantic-type-signature-admitted-runtime-execution-fail-closed",
     "value_optional_semantic_value_model_supported": true,
     "value_optional_abi_layout_status": "stable-inline-presence-payload-contract-runtime-lowering-deferred",
@@ -104,7 +104,7 @@
     "umbrella_contract": "tests/tooling/fixtures/native/language_evolution_umbrella_contract.json",
     "profile_widening_allowed": false,
     "objc2_compatibility_path_allowed": false,
-    "runtime_lowering_claim_allowed": false
+    "runtime_lowering_claim_allowed": true
   },
   "source_anchors": [
     "native/objc3c/src/ast/objc3_ast_callable_type_nodes.h",
@@ -163,8 +163,12 @@
       "contract_case": "function and method typed throws payloads preserve canonical spelling for textual interface roundtrip"
     },
     {
+      "fixture": "tests/tooling/fixtures/native/typed_throws_error_out_abi_positive.objc3",
+      "contract_case": "single-payload typed throws lowers through hidden error-out ABI for try propagation and try? recovery without erasing payload identity"
+    },
+    {
       "fixture": "tests/tooling/fixtures/module_interfaces/typed_throws_textual_interface_payload.json",
-      "contract_case": "standalone textual interface payload preserves throws_kind=typed and declared_error_type without runtime claim"
+      "contract_case": "standalone textual interface payload preserves throws_kind=typed, declared_error_type, and typed-error-out ABI readiness"
     },
     {
       "fixture": "tests/tooling/fixtures/native/typed_throws_semantic_effect_identity.contract.json",
@@ -206,8 +210,8 @@
     },
     {
       "fixture": "tests/tooling/fixtures/native/typed_throws_abi_lifting_negative.contract.json",
-      "expected_contract": "typed-error-abi-deferred",
-      "contract_case": "typed throws cannot claim runtime lowering or hidden untyped error-out ABI"
+      "expected_contract": "typed-error-out-abi",
+      "contract_case": "typed throws lowers through hidden error-out ABI while preserving payload identity and rejecting silent erasure"
     },
     {
       "fixture": "tests/tooling/fixtures/native/typed_throws_interface_mismatch_negative.contract.json",

@@ -155,7 +155,7 @@ inline bool IsReadyObjc3FrontendErrorHandlingErrorSourceClosureSummary(
          summary.error_bridge_marker_source_supported &&
          summary.try_keyword_reserved && summary.throw_keyword_reserved &&
          summary.catch_keyword_reserved && summary.typed_throws_fail_closed &&
-         summary.typed_throws_abi_lowering_fail_closed &&
+         !summary.typed_throws_abi_lowering_fail_closed &&
          summary.typed_throws_payload_arity_supported == 1u &&
          summary.typed_throws_issue_ref == 8233u &&
          summary.typed_throws_canonical_syntax == "throws(E)" &&
@@ -166,7 +166,7 @@ inline bool IsReadyObjc3FrontendErrorHandlingErrorSourceClosureSummary(
          !summary.typed_throws_silent_erasure_allowed &&
          summary.typed_throws_effect_record_status ==
              "typed-and-untyped-effects-preserved-with-exact-callable-compatibility" &&
-         summary.typed_throws_abi_status == "typed-error-abi-deferred" &&
+         summary.typed_throws_abi_status == "typed-error-out-abi" &&
          summary.typed_throws_interface_roundtrip_status ==
              "typed-payload-preserved" &&
          summary.try_fail_closed &&

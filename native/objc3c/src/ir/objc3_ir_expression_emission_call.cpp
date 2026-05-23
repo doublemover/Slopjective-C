@@ -33,15 +33,6 @@ std::string EmitObjc3IRCallExpression(
       return callbacks.emit_unsupported_i32_value(
           "try lowering requires declared callable signature");
     }
-    if (operand_signature->typed_throws_declared) {
-      const std::string payload =
-          operand_signature->typed_throws_error_type_spelling.empty()
-              ? "unknown"
-              : operand_signature->typed_throws_error_type_spelling;
-      return callbacks.emit_unsupported_i32_value(
-          "try lowering for typed throws payload " + payload +
-          " requires typed error ABI support");
-    }
     if (operand_signature->has_value_optional_type_signature &&
         !operand_signature->value_optional_lowering_supported) {
       const std::string payload =
@@ -137,15 +128,6 @@ std::string EmitObjc3IRCallExpression(
   }
   const LoweredFunctionSignature *signature =
       callbacks.lookup_function_signature(expr->ident);
-  if (signature != nullptr && signature->typed_throws_declared) {
-    const std::string payload =
-        signature->typed_throws_error_type_spelling.empty()
-            ? "unknown"
-            : signature->typed_throws_error_type_spelling;
-    return callbacks.emit_unsupported_i32_value(
-        "typed throws call lowering for payload " + payload +
-        " requires typed error ABI support");
-  }
   if (signature != nullptr && signature->has_value_optional_type_signature &&
       !signature->value_optional_lowering_supported) {
     const std::string payload =

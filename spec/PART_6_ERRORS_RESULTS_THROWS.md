@@ -264,10 +264,11 @@ Recommended patterns for generic and callable APIs:
 
 ### 6.3.7 Source-owned typed-throws payloads {#part-6-3-7}
 
-Typed throws is source-admitted for a single payload in ObjC 3.0 v1, but it is
-not yet a runtime, ABI, or lowering support claim. The #8233 compiler contract
-owns the parser payload shape, AST preservation, textual-interface metadata, and
-fail-closed boundaries that prevent silent erasure into bare `throws`.
+Typed throws is source-admitted for a single payload in ObjC 3.0 v1 and lowers
+through the same private hidden error-out path used by untyped `throws`. The
+#8233 compiler contract owns the parser payload shape, AST preservation,
+textual-interface metadata, exact effect identity, and fail-closed boundaries
+that prevent silent erasure into bare `throws`.
 
 Source syntax:
 
@@ -312,10 +313,12 @@ Metadata slots for module/interface exchange:
 Version and lowering constraints:
 
 - A v1 consumer that imports typed-throws metadata with erased payload spelling,
-  zero typed payload arity, a mismatched `declared_error_type`, or a runtime
-  execution/lowering claim shall emit an incompatibility diagnostic and reject
-  that declaration for v1 conformance.
-- A producer targeting v1 shall mark typed throws ABI/lowering as deferred.
+  zero typed payload arity, a mismatched `declared_error_type`, or a missing
+  typed payload lowering claim shall emit an incompatibility diagnostic and
+  reject that declaration for v1 conformance.
+- A producer targeting v1 shall mark single-payload typed throws as
+  `typed-error-out-abi`; this reuses the private error slot ABI while preserving
+  the typed effect key in semantic/interface metadata.
 - Untyped and typed declarations are effect-signature-distinct across module
   boundaries unless a later version explicitly defines a conversion rule.
 
@@ -334,12 +337,11 @@ throw-statement:
 
 A `throw` statement is permitted only within a `throws` function or within a `catch` block.
 
-In v1, runnable `throws` remains untyped. The thrown expression shall be
-convertible to `id<Error>`.
-
+In v1, bare `throws` propagates through the untyped `id<Error>` carrier.
 Typed throws forms (for example, `throws(E)`) preserve their source payload in
-the frontend/interface contract, but runtime propagation for typed payloads is
-deferred as defined in [§6.3.7](#part-6-3-7).
+the frontend/interface contract and use the same hidden error-out propagation
+ABI; the payload type remains part of the callable effect signature and is not
+erased to bare `throws`.
 
 ### 6.4.3 Dynamic semantics {#part-6-4-3}
 

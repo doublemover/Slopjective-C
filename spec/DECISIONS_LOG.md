@@ -207,8 +207,11 @@ In conforming modes:
   type-signature spelling,
 - textual interfaces shall emit `Optional<T>` when value-optional carriers are
   represented,
-- executable construction, unwrap, property/ivar storage, and ABI lowering
-  remain fail-closed until their runtime contracts are implemented,
+- explicit absent/present construction and checked unwrap/binding diagnostics
+  may be modeled by source and lowering contracts before public runtime support,
+- unchecked unwrap, property/ivar storage, IR payload emission, call ABI
+  lowering, and runtime constructor symbols remain fail-closed until their
+  runtime contracts are implemented,
 - `optional<T>` shall be rejected before type admission; diagnostics may offer a
   canonicalization fix-it to `Optional<T>` but shall not accept the lowercase
   spelling as a compatibility alias.

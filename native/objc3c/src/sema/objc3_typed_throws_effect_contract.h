@@ -39,10 +39,40 @@ inline std::string Objc3BuildTypedThrowsCallableCompatibilityPolicy(
     bool throws_declared,
     bool typed_throws_declared) {
   if (typed_throws_declared) {
-    return "typed-throws-exact-payload-match-lowering-deferred";
+    return "typed-throws-exact-payload-match-error-out-abi";
   }
   return throws_declared ? "untyped-throws-id-error-carrier"
                          : "nonthrowing-only";
+}
+
+inline bool Objc3TypedThrowsAbiLoweringReady(
+    bool throws_declared,
+    bool typed_throws_declared,
+    const std::string &typed_error_type_spelling) {
+  if (!throws_declared) {
+    return false;
+  }
+  if (!typed_throws_declared) {
+    return true;
+  }
+  return !typed_error_type_spelling.empty();
+}
+
+inline std::string Objc3TypedThrowsAbiStatus(
+    bool throws_declared,
+    bool typed_throws_declared,
+    const std::string &typed_error_type_spelling) {
+  if (!throws_declared) {
+    return "none";
+  }
+  if (!typed_throws_declared) {
+    return "untyped-error-out-abi";
+  }
+  return Objc3TypedThrowsAbiLoweringReady(throws_declared,
+                                          typed_throws_declared,
+                                          typed_error_type_spelling)
+             ? "typed-error-out-abi"
+             : "typed-error-abi-unavailable";
 }
 
 inline bool Objc3TypedThrowsCallableEffectsCompatible(

@@ -364,7 +364,7 @@ void ValidateTypedThrowsContract(
       contract,
       "callable_compatibility_policy",
       throws_kind == "typed"
-          ? "typed-throws-exact-payload-match-lowering-deferred"
+          ? "typed-throws-exact-payload-match-error-out-abi"
           : (throws_kind == "untyped" ? "untyped-throws-id-error-carrier"
                                       : "nonthrowing-only"),
       result, json_path + "/typed_throws");
@@ -413,9 +413,9 @@ void ValidateTypedThrowsContract(
     ExpectNumberMember(contract, "typed_payload_arity", 1.0, result,
                        json_path + "/typed_throws");
     ExpectStringMember(contract, "typed_payload_status",
-                       "source-preserved-lowering-fail-closed", result,
+                       "source-preserved-error-out-abi-lowered", result,
                        json_path + "/typed_throws");
-    ExpectStringMember(contract, "abi_status", "typed-error-abi-deferred",
+    ExpectStringMember(contract, "abi_status", "typed-error-out-abi",
                        result, json_path + "/typed_throws");
     ExpectStringMember(contract, "interface_roundtrip_status",
                        "typed-payload-preserved", result,
@@ -439,9 +439,11 @@ void ValidateTypedThrowsContract(
                    result, json_path + "/typed_throws");
   (void)NumberMember(contract, "typed_payload_pointer_depth", result,
                      json_path + "/typed_throws");
-  ExpectBoolMember(contract, "typed_payload_lowering_ready", false, result,
+  ExpectBoolMember(contract, "typed_payload_lowering_ready",
+                   throws_kind == "typed", result,
                    json_path + "/typed_throws");
-  ExpectBoolMember(contract, "runtime_execution_claimed", false, result,
+  ExpectBoolMember(contract, "runtime_execution_claimed",
+                   throws_kind == "typed", result,
                    json_path + "/typed_throws");
   ExpectBoolMember(contract, "silent_erasure_allowed", false, result,
                    json_path + "/typed_throws");

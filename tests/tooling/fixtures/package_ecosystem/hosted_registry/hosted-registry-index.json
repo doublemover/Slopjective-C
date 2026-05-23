@@ -13,6 +13,16 @@
       "policy": "forbidden-fail-closed",
       "live_fetch_enabled": false
     },
+    "transport": {
+      "transport_id": "public-hosted-registry-network-transport-v1",
+      "mode": "disabled-live-public-transport",
+      "separated_from_resolver": true,
+      "live_transport_enabled": false,
+      "resolver_invocation_allowed": false,
+      "request_policy": "fail-closed-before-resolver",
+      "unsupported_diagnostic": "live-transport-disabled",
+      "fallback_registry_success": false
+    },
     "resolver": {
       "resolver_id": "deterministic-hosted-registry-offline-resolver-v1",
       "selection_policy": "exact-pinned-version-only",
@@ -50,6 +60,71 @@
     "fallback_registry_success": false,
     "package_manager_parity": "not-claimed",
     "local_offline_replay_preserved": true
+  },
+  "live_service_boundary": {
+    "contract_id": "objc3c.package_ecosystem.public_hosted_registry_live_service_contract.v1",
+    "capability_id": "ecosystem.package-manager.public-hosted-registry",
+    "claim_state": "reserved-fail-closed",
+    "activation_state": "inactive-live-service-unavailable",
+    "unsupported_mode": "live-public-registry-unsupported",
+    "fallback_registry_success": false,
+    "offline_replay_preserved": true,
+    "network_transport": {
+      "transport_id": "public-hosted-registry-network-transport-v1",
+      "mode": "disabled-live-public-transport",
+      "separated_from_resolver": true,
+      "enabled": false,
+      "request_policy": "fail-closed-before-resolver",
+      "unsupported_diagnostic": "live-transport-disabled",
+      "fallback_registry_success": false
+    },
+    "production_records": {
+      "auth": {
+        "record_id": "production-auth-reserved-fail-closed-v1",
+        "state": "reserved-fail-closed",
+        "active": false,
+        "unavailable_behavior": "fail-closed",
+        "unsupported_diagnostic": "production-auth-unavailable"
+      },
+      "moderation": {
+        "record_id": "production-moderation-reserved-fail-closed-v1",
+        "state": "reserved-fail-closed",
+        "active": false,
+        "unavailable_behavior": "fail-closed",
+        "unsupported_diagnostic": "production-moderation-unavailable"
+      },
+      "trust_root": {
+        "record_id": "production-trust-root-reserved-fail-closed-v1",
+        "state": "reserved-fail-closed",
+        "active": false,
+        "unavailable_behavior": "fail-closed",
+        "unsupported_diagnostic": "production-trust-root-unavailable"
+      },
+      "availability": {
+        "record_id": "production-availability-reserved-fail-closed-v1",
+        "state": "reserved-fail-closed",
+        "active": false,
+        "unavailable_behavior": "fail-closed",
+        "unsupported_diagnostic": "production-availability-unavailable"
+      }
+    },
+    "lock_offline_handoff": {
+      "policy": "lockfile-first-offline-mirror-handoff-v1",
+      "lock_required_before_live_resolution": true,
+      "offline_mirror_handoff_required": true,
+      "offline_replay_preserved": true,
+      "network_required_after_lock": false,
+      "unsupported_live_resolution_behavior": "fail-closed-before-network"
+    },
+    "diagnostics": [
+      "live-public-service-unavailable",
+      "live-transport-disabled",
+      "production-auth-unavailable",
+      "production-availability-unavailable",
+      "production-moderation-unavailable",
+      "production-trust-root-unavailable",
+      "unsupported-live-service-mode"
+    ]
   },
   "hosted_service": {
     "service_contract_id": "objc3c.package_ecosystem.hosted_registry_service.v1",
@@ -110,9 +185,15 @@
     "fallback-registry-success",
     "invalid-semver",
     "live-network-fetch",
+    "live-public-service-unavailable",
+    "live-transport-disabled",
     "missing-package-provenance",
     "missing-service-auth",
     "offline-mirror-handoff-drift",
+    "production-auth-unavailable",
+    "production-availability-unavailable",
+    "production-moderation-unavailable",
+    "production-trust-root-unavailable",
     "registry-trust-mismatch",
     "revoked-subject",
     "rollback-snapshot",
@@ -128,6 +209,7 @@
     "unsigned-hosted-artifact",
     "unknown-trust-root",
     "unknown-service-auth-subject",
+    "unsupported-live-service-mode",
     "unsupported-platform",
     "yanked-version"
   ],

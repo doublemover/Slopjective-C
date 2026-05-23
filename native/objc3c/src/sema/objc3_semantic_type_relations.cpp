@@ -39,12 +39,42 @@ bool IsSameSemanticType(const SemanticTypeInfo &lhs, const SemanticTypeInfo &rhs
                rhs.canonical_type.value_optional_binding_narrowing_supported &&
            lhs.canonical_type.value_optional_interface_roundtrip_supported ==
                rhs.canonical_type.value_optional_interface_roundtrip_supported &&
+           lhs.canonical_type
+                   .value_optional_executable_lowering_contract_supported ==
+               rhs.canonical_type
+                   .value_optional_executable_lowering_contract_supported &&
+           lhs.canonical_type
+                   .value_optional_explicit_absent_construction_supported ==
+               rhs.canonical_type
+                   .value_optional_explicit_absent_construction_supported &&
+           lhs.canonical_type
+                   .value_optional_explicit_present_construction_supported ==
+               rhs.canonical_type
+                   .value_optional_explicit_present_construction_supported &&
+           lhs.canonical_type
+                   .value_optional_binding_failure_diagnostic_supported ==
+               rhs.canonical_type
+                   .value_optional_binding_failure_diagnostic_supported &&
            lhs.canonical_type.value_optional_unwrap_requires_presence_check ==
                rhs.canonical_type.value_optional_unwrap_requires_presence_check &&
+           lhs.canonical_type
+                   .value_optional_unwrap_failure_diagnostic_supported ==
+               rhs.canonical_type
+                   .value_optional_unwrap_failure_diagnostic_supported &&
+           lhs.canonical_type.value_optional_nil_bridge_diagnostic_supported ==
+               rhs.canonical_type.value_optional_nil_bridge_diagnostic_supported &&
            lhs.canonical_type.value_optional_runtime_execution_supported ==
                rhs.canonical_type.value_optional_runtime_execution_supported &&
            lhs.canonical_type.value_optional_lowering_supported ==
-               rhs.canonical_type.value_optional_lowering_supported;
+               rhs.canonical_type.value_optional_lowering_supported &&
+           lhs.canonical_type.value_optional_ir_payload_emission_supported ==
+               rhs.canonical_type.value_optional_ir_payload_emission_supported &&
+           lhs.canonical_type.value_optional_call_abi_lowering_supported ==
+               rhs.canonical_type.value_optional_call_abi_lowering_supported &&
+           lhs.canonical_type.value_optional_executable_lowering_status ==
+               rhs.canonical_type.value_optional_executable_lowering_status &&
+           lhs.canonical_type.value_optional_remaining_runtime_boundary ==
+               rhs.canonical_type.value_optional_remaining_runtime_boundary;
   }
   if (!lhs.is_vector) {
     if (lhs.is_callable) {

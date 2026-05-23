@@ -70,6 +70,10 @@ diagnostic, documentation, or boundary evidence only.
 | `language.errors.typed-throws` |  | `schema` | `schemas/objc3c-typed-throws-effect-contract-v1.schema.json` |  |
 | `language.errors.typed-throws` |  | `source` | `native/objc3c/src/sema/objc3_typed_throws_effect_contract.h` |  |
 | `language.errors.typed-throws` |  | `source` | `native/objc3c/src/sema/objc3_semantic_signature_compatibility.cpp` |  |
+| `language.errors.typed-throws` |  | `source` | `native/objc3c/src/ir/objc3_ir_function_signature_model.cpp` |  |
+| `language.errors.typed-throws` |  | `source` | `native/objc3c/src/ir/objc3_ir_direct_call_emission.cpp` |  |
+| `language.errors.typed-throws` |  | `source` | `native/objc3c/src/ir/objc3_ir_expression_emission_call.cpp` |  |
+| `language.errors.typed-throws` |  | `source` | `native/objc3c/src/ir/objc3_ir_function_definition_emission.cpp` |  |
 | `language.errors.typed-throws` |  | `source` | `tests/tooling/fixtures/native/typed_throws_semantic_effect_identity.contract.json` |  |
 | `language.errors.typed-throws` |  | `source` | `tests/tooling/fixtures/native/language_evolution_typed_throws_value_optionals_contract.json` |  |
 | `language.errors.typed-throws` |  | `source` | `native/objc3c/src/artifacts/objc3_frontend_textual_interface_payload_artifact.cpp` |  |

@@ -89,8 +89,8 @@ Supported in this boundary:
 Not supported in this boundary:
 
 - a live public hosted package registry service
-- production hosted-registry auth, moderation, availability SLOs, or registry
-  trust-root operations
+- active production hosted-registry auth, moderation, availability SLOs, or
+  registry trust-root operations
 - arbitrary live network dependency resolution
 - system package manager publication
 - package manifests that bypass the `npm run objc3c -- <action>` bridge
@@ -130,10 +130,11 @@ appear only through checked-in hosted-registry fixtures, the hermetic
 hosted-service fixture, offline network resolution fixtures, and release-channel
 metadata that are digest-bound to local package artifacts. The hermetic service
 contract covers fixture auth, trust-root operation, revocation, moderation,
-availability, and no-network fail-closed behavior. Live public registry
-availability, production authentication, production moderation, production
-registry trust roots, and remote fetch behavior remain outside this support
-claim.
+availability, and no-network fail-closed behavior. The live public registry
+boundary is now explicit metadata: production auth, moderation, trust-root,
+availability, live transport, and lock/offline mirror handoff records exist only
+as reserved fail-closed records. Live public registry availability, production
+activation, and remote fetch behavior remain outside this support claim.
 
 ## Local Workspace And Offline Mirror Semantics
 
@@ -192,10 +193,12 @@ Registry behavior is layered on top of the local lock and mirror model:
   channel metadata.
 - `hosted-registry-fixture` is supported only as a checked-in offline index with
   deterministic package identity, version, digest, trust, revocation, mirror
-  evidence, an explicit service-boundary record, and a required hermetic service
-  contract that preserves the `ecosystem.package-manager.public-hosted-registry`
-  reservation. It must not be described as a live hosted service,
-  package-manager parity, or fallback registry success.
+  evidence, an explicit service-boundary record, disabled live transport,
+  reserved production auth/moderation/trust-root/availability records, and a
+  required hermetic service contract that preserves the
+  `ecosystem.package-manager.public-hosted-registry` reservation. It must not be
+  described as a live hosted service, package-manager parity, or fallback
+  registry success.
 - `hosted-registry-hermetic-service` is supported only as a local checked-in
   service contract. It owns fixture token auth, local trust-root operation,
   revocation-list checks, moderation checks, availability state, exact-version
@@ -203,7 +206,7 @@ Registry behavior is layered on top of the local lock and mirror model:
   `package-registry-resolve` exposes the service id, auth subject, and auth
   token as explicit request inputs and records the admitted service decision in
   its summary before package metadata resolution is treated as supported.
-  It is not a production auth service, moderation service, registry SLO,
+  It is not a production auth service, moderation service, registry SLO, live
   network transport, registry trust-root service, or public package host.
 - `network-dependency-resolution` is supported only for the offline fixture path
   that resolves trusted registry rows into locks and mirrors before install
@@ -213,9 +216,9 @@ Registry behavior is layered on top of the local lock and mirror model:
   publication metadata and deterministic package-channel records.
 
 Any live public hosted-registry, live network fetch, fallback registry success,
-production registry auth/moderation/availability, or remote publication claim
-before those proofs exist is release-blocking and must be demoted to hermetic
-fixture metadata or reserved fail-closed behavior.
+active production registry auth/moderation/trust-root/availability, or remote
+publication claim before those proofs exist is release-blocking and must be
+demoted to hermetic fixture metadata or reserved fail-closed behavior.
 
 ## Artifact Contract
 

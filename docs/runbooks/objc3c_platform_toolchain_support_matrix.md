@@ -77,6 +77,29 @@ triple, `x86_64-unknown-linux-gnu` as the fail-closed Linux x64 triple, and
 rows also carry a `metadata_freshness_guard`; stale generated package metadata
 blocks publication and cannot be used as source truth.
 
+## Host Evidence Architecture
+
+Platform promotion is host-evidence driven. The source contract now carries
+first-class records for host identity, toolchain probes, package roots, native
+execution evidence, and negative host/toolchain cases. A row can publish
+support only when all of those records are checked in for the same platform and
+the native execution record points at real execution evidence.
+
+Linux x64 and macOS arm64 deliberately have source-owned identity records, but
+their toolchain, package-root, and native-execution records are fail-closed
+promotion blockers. The Linux package root records ELF/DWARF identity,
+`libobjc3-runtime.so`, and package-root loader expectations. The macOS arm64
+package root records Mach-O plus DWARF/dSYM identity, `libobjc3-runtime.dylib`,
+and `@rpath`/`install_name`/codesign loader expectations. Those distinctions
+are not support claims; they define the evidence shape a future real host run
+must satisfy.
+
+Negative cases are also source-owned. Missing `llc --filetype=obj`, mixed LLVM
+roots, mismatched LLVM tool versions, unsupported LLVM versions, and absent
+Linux/macOS native execution all block package, execution, and publication
+surfaces. Hosted-runner tool presence and source-only package metadata remain
+summary information and cannot clear the promotion gate.
+
 Package variant rows also carry source-owned artifact identity and promotion
 gates. These fields are not support claims by themselves; they are the exact
 contract a future host or sanitizer package must satisfy before publication:

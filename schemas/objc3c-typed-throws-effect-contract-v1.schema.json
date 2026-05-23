@@ -28,7 +28,7 @@
     },
     "issue_ref": { "const": 8233 },
     "support_state": {
-      "const": "source_owned_effect_identity_interface_preserved_lowering_fail_closed"
+      "const": "source_owned_effect_identity_interface_preserved_error_out_abi_lowered"
     },
     "public_support_claimed": { "const": false },
     "throws_effect": {
@@ -84,7 +84,7 @@
           "enum": [
             "nonthrowing-only",
             "untyped-throws-id-error-carrier",
-            "typed-throws-exact-payload-match-lowering-deferred"
+            "typed-throws-exact-payload-match-error-out-abi"
           ]
         },
         "source_span": { "type": "string", "minLength": 1 },
@@ -123,10 +123,10 @@
       ],
       "properties": {
         "callsite_id": { "type": "string", "minLength": 1 },
-        "abi_strategy": { "const": "deferred" },
-        "runtime_error_contract": { "const": "typed-error-abi-deferred" },
-        "cleanup_contract": { "const": "fail-closed-before-ir-lowering" },
-        "typed_payload_lowering_ready": { "const": false }
+        "abi_strategy": { "const": "hidden-error-out-i32-with-semantic-payload-identity" },
+        "runtime_error_contract": { "const": "typed-error-out-abi" },
+        "cleanup_contract": { "const": "error-out-propagation-preserves-existing-cleanup-order" },
+        "typed_payload_lowering_ready": { "const": true }
       },
       "additionalProperties": false
     },
@@ -162,8 +162,8 @@
         "single_payload_only": { "const": true },
         "typed_payload_is_signature_identity": { "const": true },
         "bare_throws_not_compatible_with_typed_throws": { "const": true },
-        "typed_error_abi_lowering_ready": { "const": false },
-        "runtime_execution_claimed": { "const": false },
+        "typed_error_abi_lowering_ready": { "const": true },
+        "runtime_execution_claimed": { "const": true },
         "silent_erasure_allowed": { "const": false }
       },
       "additionalProperties": false

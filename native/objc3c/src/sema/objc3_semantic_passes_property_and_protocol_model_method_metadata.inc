@@ -291,6 +291,10 @@ static Objc3MethodInfo BuildMethodInfo(const Objc3MethodDecl &method,
       Objc3BuildTypedThrowsCallableCompatibilityPolicy(
           method.throws_declared,
           method.typed_throws_declared);
-  info.typed_throws_abi_lowering_ready = false;
+  info.typed_throws_abi_lowering_ready =
+      Objc3TypedThrowsAbiLoweringReady(
+          method.throws_declared,
+          method.typed_throws_declared,
+          method.typed_throws_payload.canonical_spelling);
   return info;
 }

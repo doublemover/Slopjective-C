@@ -3,12 +3,13 @@
 Semantic support claims require canonical diagnostics or executable tests.
 Rejected behavior is represented by diagnostics, not alternate acceptance paths.
 
-Typed throws is a source/interface semantic surface in the current slice, while
-typed error ABI/lowering/runtime execution remains unclaimed. Value optionals
-now have semantic type identity for canonical `Optional<T>` type signatures,
-while executable construction, unwrap, IR payload emission, and runtime lowering
-remain unclaimed. Match expressions are bounded to their current evidence-backed
-surface.
+Typed throws is now a source/interface semantic surface with single-payload
+hidden error-out ABI lowering. Value optionals now have semantic type identity
+for canonical `Optional<T>` type signatures,
+plus a sema-owned absent/present lowering contract and checked unwrap/binding
+failure diagnostics. IR payload emission, runtime constructor symbols, unchecked
+unwrap, and call ABI lowering remain unclaimed. Match expressions are bounded to
+their current evidence-backed surface.
 Statement-form guarded match patterns are admitted only as `case pattern where
 bool_condition: { ... }`; the guard is checked after
 pattern binding, must type-check as `bool`, and a guarded catch-all does not make
@@ -17,17 +18,19 @@ expressions fail-closed until result typing, interface preservation, lowering,
 and runtime semantics exist for that feature family.
 For #8233 and #8234 specifically, source-closure and textual-interface import
 records may publish typed throws as `typed` only with one preserved payload,
-`typed-error-abi-deferred`, and `runtime_execution_claimed=false`; erased or
+`typed-error-out-abi`, and `runtime_execution_claimed=true`; erased or
 drifted typed payload metadata fails closed. The semantic handoff now treats the
 typed payload as callable effect identity: protocol conformance and duplicate
 requirement compatibility compare `throws:typed:<payload>` exactly, and bare
 `throws` is not compatible with `throws(E)` unless a later ABI/runtime bridge
 explicitly defines such a conversion. Value optionals are modeled as
 `Optional<T>` semantic carriers with stable `has_value` plus `payload` layout
-identity, checked presence/narrowing records, and textual-interface roundtrip.
-They still cannot be widened into implicit nil absence, nullable-pointer
-conversion, nil-to-scalar coercion, throws/result conversion, executable
-construction, unchecked unwrap, or runtime lowering.
+identity, explicit absent/present construction records, checked
+presence/narrowing records, checked unwrap diagnostics, and textual-interface
+roundtrip. They still cannot be widened into implicit nil absence,
+nullable-pointer conversion, nil-to-scalar coercion, throws/result conversion,
+unchecked unwrap, IR payload emission, call ABI lowering, or runtime constructor
+symbol support.
 
 Generic callable reification is similarly bounded. Semantic records may publish
 deterministic erased-default signature replay keys for admitted
@@ -51,12 +54,13 @@ semantic support.
 The #8207 umbrella contract lives in
 `tests/tooling/fixtures/native/language_evolution_umbrella_contract.json` and
 keeps semantic promotion bounded: typed throws cannot widen past source/interface
-metadata into runtime lowering, and value optionals cannot widen past the
-semantic type/layout carrier into executable/runtime support. Runtime generic
-reification, type-test match patterns, and strict-system profile support cannot
-be widened from source metadata, generated reports, or Objective-C 2
-compatibility paths. Statement-form guarded match and bounded expression-form
-match are the admitted #8236 surfaces.
+metadata plus hidden error-out lowering into multi-payload or erased runtime behavior,
+and value optionals cannot widen past their
+checked lowering contract into ABI/runtime support. Runtime generic reification,
+type-test match patterns, and strict-system profile support cannot be widened
+from source metadata, generated reports, or Objective-C 2 compatibility paths.
+Statement-form guarded match and bounded expression-form match are the admitted
+#8236 surfaces.
 
 The semantic-analysis owner boundary is:
 

@@ -18,6 +18,68 @@
     "production_availability_slo": "reserved-fail-closed",
     "local_offline_replay_preserved": true
   },
+  "live_service_contract": {
+    "contract_id": "objc3c.package_ecosystem.public_hosted_registry_live_service_contract.v1",
+    "capability_id": "ecosystem.package-manager.public-hosted-registry",
+    "claim_state": "reserved-fail-closed",
+    "activation_state": "inactive-live-service-unavailable",
+    "unsupported_mode": "live-public-registry-unsupported",
+    "fallback_registry_success": false,
+    "network_transport": {
+      "transport_id": "public-hosted-registry-network-transport-v1",
+      "mode": "disabled-live-public-transport",
+      "separated_from_resolver": true,
+      "enabled": false,
+      "request_policy": "fail-closed-before-resolver",
+      "unsupported_diagnostic": "live-transport-disabled",
+      "fallback_registry_success": false
+    },
+    "production_auth": {
+      "record_id": "production-auth-reserved-fail-closed-v1",
+      "state": "reserved-fail-closed",
+      "active": false,
+      "unavailable_behavior": "fail-closed",
+      "unsupported_diagnostic": "production-auth-unavailable"
+    },
+    "production_moderation": {
+      "record_id": "production-moderation-reserved-fail-closed-v1",
+      "state": "reserved-fail-closed",
+      "active": false,
+      "unavailable_behavior": "fail-closed",
+      "unsupported_diagnostic": "production-moderation-unavailable"
+    },
+    "production_trust_root": {
+      "record_id": "production-trust-root-reserved-fail-closed-v1",
+      "state": "reserved-fail-closed",
+      "active": false,
+      "unavailable_behavior": "fail-closed",
+      "unsupported_diagnostic": "production-trust-root-unavailable"
+    },
+    "production_availability": {
+      "record_id": "production-availability-reserved-fail-closed-v1",
+      "state": "reserved-fail-closed",
+      "active": false,
+      "unavailable_behavior": "fail-closed",
+      "unsupported_diagnostic": "production-availability-unavailable"
+    },
+    "lock_offline_handoff": {
+      "policy": "lockfile-first-offline-mirror-handoff-v1",
+      "lock_required_before_live_resolution": true,
+      "offline_mirror_handoff_required": true,
+      "offline_replay_preserved": true,
+      "network_required_after_lock": false,
+      "unsupported_live_resolution_behavior": "fail-closed-before-network"
+    },
+    "diagnostics": [
+      "live-public-service-unavailable",
+      "live-transport-disabled",
+      "production-auth-unavailable",
+      "production-availability-unavailable",
+      "production-moderation-unavailable",
+      "production-trust-root-unavailable",
+      "unsupported-live-service-mode"
+    ]
+  },
   "provider": {
     "provider_id": "schema-backed-hosted-registry-provider-v1",
     "service_id": "objc3c-hermetic-hosted-registry-service-v1",

@@ -59,10 +59,40 @@ bool IsCompatibleCanonicalSemanticType(
              rhs.value_optional_payload_type_spelling &&
          lhs.value_optional_payload_value_type ==
              rhs.value_optional_payload_value_type &&
+         lhs.value_optional_semantic_value_model_supported ==
+             rhs.value_optional_semantic_value_model_supported &&
+         lhs.value_optional_stable_abi_layout_contract_supported ==
+             rhs.value_optional_stable_abi_layout_contract_supported &&
+         lhs.value_optional_binding_narrowing_supported ==
+             rhs.value_optional_binding_narrowing_supported &&
+         lhs.value_optional_interface_roundtrip_supported ==
+             rhs.value_optional_interface_roundtrip_supported &&
+         lhs.value_optional_executable_lowering_contract_supported ==
+             rhs.value_optional_executable_lowering_contract_supported &&
+         lhs.value_optional_explicit_absent_construction_supported ==
+             rhs.value_optional_explicit_absent_construction_supported &&
+         lhs.value_optional_explicit_present_construction_supported ==
+             rhs.value_optional_explicit_present_construction_supported &&
+         lhs.value_optional_binding_failure_diagnostic_supported ==
+             rhs.value_optional_binding_failure_diagnostic_supported &&
+         lhs.value_optional_unwrap_requires_presence_check ==
+             rhs.value_optional_unwrap_requires_presence_check &&
+         lhs.value_optional_unwrap_failure_diagnostic_supported ==
+             rhs.value_optional_unwrap_failure_diagnostic_supported &&
+         lhs.value_optional_nil_bridge_diagnostic_supported ==
+             rhs.value_optional_nil_bridge_diagnostic_supported &&
          lhs.value_optional_runtime_execution_supported ==
              rhs.value_optional_runtime_execution_supported &&
          lhs.value_optional_lowering_supported ==
              rhs.value_optional_lowering_supported &&
+         lhs.value_optional_ir_payload_emission_supported ==
+             rhs.value_optional_ir_payload_emission_supported &&
+         lhs.value_optional_call_abi_lowering_supported ==
+             rhs.value_optional_call_abi_lowering_supported &&
+         lhs.value_optional_executable_lowering_status ==
+             rhs.value_optional_executable_lowering_status &&
+         lhs.value_optional_remaining_runtime_boundary ==
+             rhs.value_optional_remaining_runtime_boundary &&
          lhs.has_invalid_type_suffix == rhs.has_invalid_type_suffix &&
          lhs.deterministic == rhs.deterministic &&
          lhs.canonical_spelling == rhs.canonical_spelling &&

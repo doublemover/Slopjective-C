@@ -1456,6 +1456,14 @@
       "expected_diagnostic_code": "O3S206"
     },
     {
+      "path": "tests/tooling/fixtures/native/typed_throws_error_out_abi_positive.objc3",
+      "origin": "hand-authored",
+      "owner_phase": "lowering",
+      "behavior_family": "errors",
+      "fixture_kind": "positive",
+      "expected_diagnostic_code": ""
+    },
+    {
       "path": "tests/tooling/fixtures/native/recovery/negative/negative_typed_throws_reserved.objc3",
       "origin": "hand-authored",
       "owner_phase": "parser",

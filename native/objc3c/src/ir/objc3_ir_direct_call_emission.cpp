@@ -46,15 +46,6 @@ std::string EmitObjc3IRDirectFunctionCall(
     return callbacks.emit_unsupported_i32_value(
         "concurrency task runtime helper lowering requires async objc_executor affinity");
   }
-  if (signature != nullptr && signature->typed_throws_declared) {
-    const std::string payload =
-        signature->typed_throws_error_type_spelling.empty()
-            ? "unknown"
-            : signature->typed_throws_error_type_spelling;
-    return callbacks.emit_unsupported_i32_value(
-        "typed throws lowering is deferred for payload " + payload +
-        "; no untyped error_out ABI erasure is allowed");
-  }
   if (signature != nullptr && signature->has_value_optional_type_signature &&
       !signature->value_optional_lowering_supported) {
     const std::string payload =

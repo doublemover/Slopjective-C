@@ -63,12 +63,75 @@ EXPECTED_SANITIZER_ISSUES: dict[str, int] = {
     "address": 8230,
     "undefined": 8231,
 }
+RELEASE_RUNTIME_PACKAGE_IDS: tuple[str, ...] = (
+    "org.objc3c.runtime:objc3c-runtime-release",
+    "org.objc3c.runtime:objc3c-runtime-linux-x64-release",
+    "org.objc3c.runtime:objc3c-runtime-darwin-arm64-release",
+)
+EXPECTED_SANITIZER_DETECTION_RECORDS: dict[str, set[str]] = {
+    "address": {
+        "objc3c.sanitizer.address.heap-use-after-free",
+        "objc3c.sanitizer.address.container-overflow",
+    },
+    "undefined": {
+        "objc3c.sanitizer.undefined.signed-integer-overflow",
+        "objc3c.sanitizer.undefined.invalid-shift",
+    },
+}
+REQUIRED_SANITIZER_METADATA_FIELDS: dict[str, set[str]] = {
+    "address": {
+        "target_platform_id",
+        "sanitizer",
+        "runtime_library_ids",
+        "compiler_flags",
+        "linker_flags",
+        "environment",
+        "release_runtime_package_ids",
+        "release_runtime_mixing_allowed",
+        "expected_detection_records",
+        "unsupported_host_diagnostics",
+    },
+    "undefined": {
+        "target_platform_id",
+        "sanitizer",
+        "runtime_library_ids",
+        "compiler_flags",
+        "linker_flags",
+        "trap_or_recover_mode",
+        "release_runtime_package_ids",
+        "release_runtime_mixing_allowed",
+        "expected_detection_records",
+        "unsupported_host_diagnostics",
+    },
+}
+REQUIRED_UNSUPPORTED_SANITIZER_DIAGNOSTIC_BLOCKS: set[str] = {
+    "package",
+    "install",
+    "execution",
+    "publication",
+}
 FORBIDDEN_TOOLCHAIN_RANGE_CLAIM_TERMS: tuple[str, ...] = (
     "all",
     "best-effort",
     "best effort",
     "compat",
     "fallback",
+)
+HOST_EVIDENCE_CONTRACT_ID = "objc3c.platform.host-evidence.promotion.v1"
+REQUIRED_HOST_EVIDENCE_SECTIONS: tuple[str, ...] = (
+    "host_identity_records",
+    "toolchain_probe_records",
+    "package_root_evidence_records",
+    "native_execution_evidence_records",
+    "negative_host_toolchain_cases",
+)
+REQUIRED_NEGATIVE_HOST_TOOLCHAIN_CASES: tuple[str, ...] = (
+    "objc3c.negative.host.linux-x64.no-native-execution",
+    "objc3c.negative.host.darwin-arm64.no-native-execution",
+    "objc3c.negative.toolchain.missing-llc",
+    "objc3c.negative.toolchain.mixed-root",
+    "objc3c.negative.toolchain.mismatched-version",
+    "objc3c.negative.toolchain.unsupported-version",
 )
 CLEAN_INSTALL_SUMMARY_PATH = (
     "tmp/reports/package-ecosystem/install-distribution-credibility-summary.json"
@@ -177,6 +240,372 @@ def _negative_contracts_are_fail_closed(owner_id: str, contracts: Any) -> None:
         expect(str(contract.get("source_owner", "")), f"{contract_id} missing source_owner")
 
 
+def _records_by_field(owner_id: str, rows: Any, field_name: str) -> dict[str, dict[str, Any]]:
+    expect(isinstance(rows, list), f"{owner_id} must be a list")
+    by_id: dict[str, dict[str, Any]] = {}
+    for row in rows:
+        expect(isinstance(row, dict), f"{owner_id} entries must be objects")
+        row_id = str(row.get(field_name, ""))
+        expect(row_id, f"{owner_id} entry missing {field_name}")
+        expect(row_id not in by_id, f"duplicate {owner_id} {field_name}: {row_id}")
+        by_id[row_id] = row
+    return by_id
+
+
+def _evidence_ids_are_supporting(
+    evidence_ids: Iterable[Any],
+    *,
+    records_by_id: dict[str, dict[str, Any]],
+    platform_id: str,
+    allowed_classes: set[str],
+    owner_id: str,
+) -> None:
+    for raw_evidence_id in evidence_ids:
+        evidence_id = str(raw_evidence_id)
+        expect(evidence_id in records_by_id, f"{owner_id} missing evidence record {evidence_id}")
+        record = records_by_id[evidence_id]
+        expect(record.get("claim_weight") == "supporting", f"{owner_id} evidence {evidence_id} is not supporting")
+        evidence_class = str(record.get("evidence_class", ""))
+        expect(evidence_class in allowed_classes, f"{owner_id} evidence {evidence_id} has unsupported class {evidence_class}")
+        expect(platform_id in record.get("supports_platform_ids", []), f"{owner_id} evidence {evidence_id} does not support {platform_id}")
+
+
+def _validate_host_identity_records(
+    payload: dict[str, Any],
+    *,
+    records_by_id: dict[str, dict[str, Any]],
+    boundary_supported_platform_ids: set[str],
+) -> dict[str, dict[str, Any]]:
+    support_rows = {
+        str(row.get("platform_id")): row
+        for row in payload.get("support_rows", [])
+        if isinstance(row, dict) and row.get("platform_id")
+    }
+    identities = _records_by_field(
+        "host_identity_records",
+        payload.get("host_identity_records"),
+        "record_id",
+    )
+    identity_platforms = {str(row.get("platform_id", "")) for row in identities.values()}
+    expect(
+        set(support_rows) <= identity_platforms,
+        "host identity records did not cover every platform support row",
+    )
+    for record_id, identity in identities.items():
+        platform_id = str(identity.get("platform_id", ""))
+        row = support_rows.get(platform_id)
+        expect(row is not None, f"{record_id} host identity used unknown platform {platform_id}")
+        expect(identity.get("host_os") == row.get("host_os"), f"{record_id} host_os drifted from support row")
+        expect(identity.get("host_arch") == row.get("host_arch"), f"{record_id} host_arch drifted from support row")
+        expect(identity.get("host_triples") == row.get("host_triples"), f"{record_id} host triples drifted from support row")
+        expect(str(identity.get("host_system", "")), f"{record_id} missing host_system")
+        expect(str(identity.get("host_machine", "")), f"{record_id} missing host_machine")
+        expect(identity.get("support_row_id") == row.get("row_id"), f"{record_id} support_row_id drifted")
+        expect(identity.get("unsupported_behavior") == "fail-closed", f"{record_id} host identity does not fail closed")
+        evidence_ids = [str(evidence_id) for evidence_id in identity.get("evidence_ids", [])]
+        expect(evidence_ids, f"{record_id} missing evidence_ids")
+        if platform_id in boundary_supported_platform_ids:
+            expect(identity.get("claim_state") == "evidence-bound", f"{record_id} supported host identity is not evidence-bound")
+            expect(identity.get("promotion_allowed") is True, f"{record_id} did not allow supported promotion")
+            expect(identity.get("platform_ids") == [platform_id], f"{record_id} supported host identity platform_ids drifted")
+            _evidence_ids_are_supporting(
+                evidence_ids,
+                records_by_id=records_by_id,
+                platform_id=platform_id,
+                allowed_classes={"build", "package", "install", "execution", "toolchain", "hosted_ci", "clean_room"},
+                owner_id=record_id,
+            )
+            continue
+        expect(identity.get("claim_state") == "fail-closed", f"{record_id} unsupported host identity must fail closed")
+        expect(identity.get("promotion_allowed") is False, f"{record_id} unsupported host identity allowed promotion")
+        expect(not identity.get("platform_ids"), f"{record_id} unsupported host identity widened support")
+        for evidence_id in evidence_ids:
+            expect(evidence_id in records_by_id, f"{record_id} missing policy evidence record {evidence_id}")
+            _policy_record_is_fail_closed(records_by_id[evidence_id])
+    return identities
+
+
+def _validate_toolchain_probe_records(
+    payload: dict[str, Any],
+    *,
+    records_by_id: dict[str, dict[str, Any]],
+    boundary_supported_platform_ids: set[str],
+    required_toolchain_components: set[str],
+) -> dict[str, dict[str, Any]]:
+    probes = _records_by_field(
+        "toolchain_probe_records",
+        payload.get("toolchain_probe_records"),
+        "record_id",
+    )
+    support_platform_ids = {
+        str(row.get("platform_id", ""))
+        for row in payload.get("support_rows", [])
+        if isinstance(row, dict) and row.get("platform_id")
+    }
+    seen_platform_ids = {str(record.get("platform_id", "")) for record in probes.values()}
+    expect(
+        support_platform_ids <= seen_platform_ids,
+        "toolchain probe records did not cover every platform support row",
+    )
+    for record_id, probe in probes.items():
+        platform_id = str(probe.get("platform_id", ""))
+        expect(platform_id in support_platform_ids, f"{record_id} toolchain probe used unknown platform")
+        expect(
+            set(str(component) for component in probe.get("required_components", []))
+            == required_toolchain_components,
+            f"{record_id} required toolchain components drifted",
+        )
+        component_probes = probe.get("component_probes", [])
+        expect(isinstance(component_probes, list) and component_probes, f"{record_id} missing component probes")
+        seen_components = {str(component.get("component", "")) for component in component_probes if isinstance(component, dict)}
+        expect(seen_components == required_toolchain_components, f"{record_id} component probes drifted")
+        for component in component_probes:
+            expect(isinstance(component, dict), f"{record_id} component probe must be an object")
+            component_name = str(component.get("component", ""))
+            expect(str(component.get("unsupported_behavior", "")) == "fail-closed-no-range-claim", f"{record_id} {component_name} does not fail closed")
+            expect(component.get("required_probe_fields"), f"{record_id} {component_name} missing required probe fields")
+        evidence_ids = [str(evidence_id) for evidence_id in probe.get("evidence_ids", [])]
+        expect(evidence_ids, f"{record_id} missing evidence_ids")
+        if platform_id in boundary_supported_platform_ids:
+            expect(probe.get("claim_state") == "evidence-bound", f"{record_id} supported toolchain probe is not evidence-bound")
+            expect(probe.get("promotion_allowed") is True, f"{record_id} did not allow supported promotion")
+            expect(probe.get("platform_ids") == [platform_id], f"{record_id} supported toolchain probe platform_ids drifted")
+            expect(not probe.get("required_missing_probe_classes"), f"{record_id} listed missing probe classes")
+            _evidence_ids_are_supporting(
+                evidence_ids,
+                records_by_id=records_by_id,
+                platform_id=platform_id,
+                allowed_classes={"toolchain", "build", "package", "install", "execution", "clean_room"},
+                owner_id=record_id,
+            )
+            continue
+        expect(probe.get("claim_state") == "fail-closed", f"{record_id} unsupported toolchain probe must fail closed")
+        expect(probe.get("promotion_allowed") is False, f"{record_id} unsupported toolchain probe allowed promotion")
+        expect(not probe.get("platform_ids"), f"{record_id} unsupported toolchain probe widened support")
+        expect(probe.get("required_missing_probe_classes"), f"{record_id} missing fail-closed probe blockers")
+        for evidence_id in evidence_ids:
+            expect(evidence_id in records_by_id, f"{record_id} missing policy evidence record {evidence_id}")
+            _policy_record_is_fail_closed(records_by_id[evidence_id])
+    return probes
+
+
+def _validate_package_root_evidence_records(
+    payload: dict[str, Any],
+    *,
+    records_by_id: dict[str, dict[str, Any]],
+    package_variant_rows: dict[str, dict[str, Any]],
+    boundary_supported_platform_ids: set[str],
+) -> dict[str, dict[str, Any]]:
+    roots = _records_by_field(
+        "package_root_evidence_records",
+        payload.get("package_root_evidence_records"),
+        "record_id",
+    )
+    package_rows_with_roots = {
+        row_id
+        for row_id, row in package_variant_rows.items()
+        if str(row.get("variant_kind", "")) == "release-runtime"
+    }
+    seen_package_rows = {str(root.get("package_variant_row_id", "")) for root in roots.values()}
+    expect(
+        package_rows_with_roots <= seen_package_rows,
+        "package root evidence records did not cover release runtime package rows",
+    )
+    for record_id, root in roots.items():
+        package_row_id = str(root.get("package_variant_row_id", ""))
+        package_row = package_variant_rows.get(package_row_id)
+        expect(package_row is not None, f"{record_id} referenced missing package row {package_row_id}")
+        artifact = package_row.get("artifact_identity_contract", {})
+        expect(root.get("target_platform_id") == package_row.get("target_platform_id"), f"{record_id} target platform drifted")
+        expect(root.get("claim_state") == package_row.get("claim_state"), f"{record_id} claim_state drifted from package row")
+        expect(root.get("platform_ids") == package_row.get("platform_ids"), f"{record_id} platform_ids drifted from package row")
+        expect(root.get("object_format") == artifact.get("object_format"), f"{record_id} object format drifted from package row")
+        expect(root.get("debug_format") == artifact.get("debug_format"), f"{record_id} debug format drifted from package row")
+        expect(root.get("runtime_library_names") == artifact.get("runtime_library_names"), f"{record_id} runtime libraries drifted")
+        expect(root.get("package_root_layout") == artifact.get("package_root_layout"), f"{record_id} package root layout drifted")
+        expect(root.get("unsupported_behavior") == "fail-closed", f"{record_id} package root does not fail closed")
+        evidence_ids = [str(evidence_id) for evidence_id in root.get("evidence_ids", [])]
+        expect(evidence_ids, f"{record_id} missing evidence_ids")
+        platform_id = str(root.get("target_platform_id", ""))
+        if platform_id in boundary_supported_platform_ids:
+            expect(root.get("promotion_allowed") is True, f"{record_id} supported package root did not allow promotion")
+            _evidence_ids_are_supporting(
+                evidence_ids,
+                records_by_id=records_by_id,
+                platform_id=platform_id,
+                allowed_classes={"package", "install", "execution"},
+                owner_id=record_id,
+            )
+            continue
+        expect(root.get("promotion_allowed") is False, f"{record_id} unsupported package root allowed promotion")
+        for evidence_id in evidence_ids:
+            expect(evidence_id in records_by_id, f"{record_id} missing policy evidence record {evidence_id}")
+            _policy_record_is_fail_closed(records_by_id[evidence_id])
+    return roots
+
+
+def _validate_native_execution_evidence_records(
+    payload: dict[str, Any],
+    *,
+    records_by_id: dict[str, dict[str, Any]],
+    host_identities: dict[str, dict[str, Any]],
+    package_roots: dict[str, dict[str, Any]],
+    package_variant_rows: dict[str, dict[str, Any]],
+    boundary_supported_platform_ids: set[str],
+) -> dict[str, dict[str, Any]]:
+    execution_records = _records_by_field(
+        "native_execution_evidence_records",
+        payload.get("native_execution_evidence_records"),
+        "record_id",
+    )
+    support_platform_ids = {
+        str(row.get("platform_id", ""))
+        for row in payload.get("support_rows", [])
+        if isinstance(row, dict) and row.get("platform_id")
+    }
+    seen_platform_ids = {str(record.get("platform_id", "")) for record in execution_records.values()}
+    expect(
+        support_platform_ids <= seen_platform_ids,
+        "native execution records did not cover every platform support row",
+    )
+    for record_id, execution in execution_records.items():
+        platform_id = str(execution.get("platform_id", ""))
+        package_row_id = str(execution.get("package_variant_row_id", ""))
+        package_row = package_variant_rows.get(package_row_id)
+        expect(package_row is not None, f"{record_id} referenced missing package row {package_row_id}")
+        host_record_id = str(execution.get("host_identity_record_id", ""))
+        package_root_record_id = str(execution.get("package_root_record_id", ""))
+        expect(host_record_id in host_identities, f"{record_id} missing host identity {host_record_id}")
+        expect(package_root_record_id in package_roots, f"{record_id} missing package root {package_root_record_id}")
+        artifact = package_row.get("artifact_identity_contract", {})
+        required_formats = execution.get("required_artifact_formats", {})
+        expect(required_formats.get("object_format") == artifact.get("object_format"), f"{record_id} object format drifted")
+        expect(required_formats.get("debug_format") == artifact.get("debug_format"), f"{record_id} debug format drifted")
+        expect(execution.get("runtime_library_names") == artifact.get("runtime_library_names"), f"{record_id} runtime library names drifted")
+        expect(execution.get("package_root_layout") == artifact.get("package_root_layout"), f"{record_id} package root layout drifted")
+        expect(execution.get("native_execution_required") is True, f"{record_id} did not require native execution")
+        expect(execution.get("unsupported_behavior") == "fail-closed", f"{record_id} native execution does not fail closed")
+        evidence_ids = [str(evidence_id) for evidence_id in execution.get("execution_evidence_ids", [])]
+        if platform_id in boundary_supported_platform_ids:
+            expect(execution.get("claim_state") == "evidence-bound", f"{record_id} supported native execution is not evidence-bound")
+            expect(execution.get("promotion_allowed") is True, f"{record_id} supported native execution did not allow promotion")
+            expect(execution.get("platform_ids") == [platform_id], f"{record_id} supported native execution platform_ids drifted")
+            expect(evidence_ids, f"{record_id} supported native execution missing evidence ids")
+            _evidence_ids_are_supporting(
+                evidence_ids,
+                records_by_id=records_by_id,
+                platform_id=platform_id,
+                allowed_classes={"execution"},
+                owner_id=record_id,
+            )
+            continue
+        expect(execution.get("claim_state") == "missing-host-execution", f"{record_id} unsupported native execution must be missing-host-execution")
+        expect(execution.get("promotion_allowed") is False, f"{record_id} unsupported native execution allowed promotion")
+        expect(not execution.get("platform_ids"), f"{record_id} unsupported native execution widened support")
+        expect(not evidence_ids, f"{record_id} unsupported native execution carried execution evidence")
+        expect(
+            execution.get("source_only_result") == "fail-closed-before-support-promotion",
+            f"{record_id} source-only native execution did not fail closed",
+        )
+    return execution_records
+
+
+def _validate_negative_host_toolchain_cases(
+    payload: dict[str, Any],
+    *,
+    unsupported_host_policy: dict[str, Any],
+) -> dict[str, dict[str, Any]]:
+    cases = _records_by_field(
+        "negative_host_toolchain_cases",
+        payload.get("negative_host_toolchain_cases"),
+        "case_id",
+    )
+    expect(
+        set(REQUIRED_NEGATIVE_HOST_TOOLCHAIN_CASES) <= set(cases),
+        "negative host/toolchain cases did not cover required fail-closed cases",
+    )
+    failure_ids = _unsupported_failure_ids(unsupported_host_policy) | {
+        str(failure_class.get("failure_id"))
+        for failure_class in unsupported_host_policy.get("hard_fail_classes", [])
+        if isinstance(failure_class, dict) and failure_class.get("failure_id")
+    }
+    for case_id, case in cases.items():
+        failure_class = str(case.get("failure_class", ""))
+        expect(failure_class in failure_ids, f"{case_id} failure_class is not in unsupported host policy")
+        expect(str(case.get("required_behavior", "")).startswith("fail-closed"), f"{case_id} does not fail closed")
+        expect(case.get("promotion_allowed") is False, f"{case_id} allowed promotion")
+        blocked_surfaces = {str(surface) for surface in case.get("blocks_surfaces", [])}
+        expect(
+            {"package", "execution", "publication"} <= blocked_surfaces,
+            f"{case_id} did not block package execution and publication",
+        )
+        expect(str(case.get("source_owner", "")), f"{case_id} missing source_owner")
+    return cases
+
+
+def _validate_host_evidence_architecture(
+    payload: dict[str, Any],
+    *,
+    records_by_id: dict[str, dict[str, Any]],
+    package_variant_rows: dict[str, dict[str, Any]],
+    boundary_supported_platform_ids: set[str],
+    unsupported_host_policy: dict[str, Any],
+    required_toolchain_components: set[str],
+) -> dict[str, dict[str, dict[str, Any]]]:
+    contract = payload.get("host_evidence_contract")
+    expect(isinstance(contract, dict), "platform support evidence missing host_evidence_contract")
+    expect(contract.get("contract_id") == HOST_EVIDENCE_CONTRACT_ID, "host evidence contract_id drifted")
+    expect(contract.get("promotion_policy") == "real-host-execution-required", "host evidence promotion policy drifted")
+    expect(contract.get("source_only_or_hosted_summary_result") == "fail-closed-no-support-promotion", "host evidence source-only behavior drifted")
+    expect(contract.get("native_execution_required_for_support") is True, "host evidence did not require native execution")
+    expect(
+        set(str(platform_id) for platform_id in contract.get("supported_platform_ids", []))
+        == boundary_supported_platform_ids,
+        "host evidence supported platform boundary drifted",
+    )
+    expect(
+        set(REQUIRED_HOST_EVIDENCE_SECTIONS) <= {str(section) for section in contract.get("source_sections", [])},
+        "host evidence contract missing required source sections",
+    )
+
+    host_identities = _validate_host_identity_records(
+        payload,
+        records_by_id=records_by_id,
+        boundary_supported_platform_ids=boundary_supported_platform_ids,
+    )
+    toolchain_probes = _validate_toolchain_probe_records(
+        payload,
+        records_by_id=records_by_id,
+        boundary_supported_platform_ids=boundary_supported_platform_ids,
+        required_toolchain_components=required_toolchain_components,
+    )
+    package_roots = _validate_package_root_evidence_records(
+        payload,
+        records_by_id=records_by_id,
+        package_variant_rows=package_variant_rows,
+        boundary_supported_platform_ids=boundary_supported_platform_ids,
+    )
+    native_execution_records = _validate_native_execution_evidence_records(
+        payload,
+        records_by_id=records_by_id,
+        host_identities=host_identities,
+        package_roots=package_roots,
+        package_variant_rows=package_variant_rows,
+        boundary_supported_platform_ids=boundary_supported_platform_ids,
+    )
+    negative_cases = _validate_negative_host_toolchain_cases(
+        payload,
+        unsupported_host_policy=unsupported_host_policy,
+    )
+    return {
+        "host_identity_records": host_identities,
+        "toolchain_probe_records": toolchain_probes,
+        "package_root_evidence_records": package_roots,
+        "native_execution_evidence_records": native_execution_records,
+        "negative_host_toolchain_cases": negative_cases,
+    }
+
+
 def _package_artifact_identity_is_source_owned(row_id: str, row: dict[str, Any]) -> None:
     artifact = row.get("artifact_identity_contract")
     expect(isinstance(artifact, dict), f"{row_id} missing artifact_identity_contract")
@@ -268,6 +697,9 @@ def _sanitizer_package_runtime_contract_is_fail_closed(
 ) -> None:
     package_runtime = row.get("package_runtime_contract")
     expect(isinstance(package_runtime, dict), f"{variant_id} missing package_runtime_contract")
+    sanitizer_name = str(row.get("sanitizer", ""))
+    expected_detection_records = EXPECTED_SANITIZER_DETECTION_RECORDS.get(sanitizer_name, set())
+    expect(expected_detection_records, f"{variant_id} sanitizer identity has no expected detection records")
     expect(
         package_runtime.get("runtime_probe_required") is True,
         f"{variant_id} sanitizer package runtime did not require runtime probe",
@@ -284,10 +716,89 @@ def _sanitizer_package_runtime_contract_is_fail_closed(
         package_runtime.get("mixed_release_sanitizer_runtime_behavior") == "fail-closed",
         f"{variant_id} mixed release/sanitizer runtime did not fail closed",
     )
+    release_runtime_package_ids = [
+        str(package_id)
+        for package_id in package_runtime.get("release_runtime_package_ids", [])
+    ]
+    expect(
+        release_runtime_package_ids == list(RELEASE_RUNTIME_PACKAGE_IDS),
+        f"{variant_id} release runtime package isolation ids drifted",
+    )
+    expect(
+        str(row.get("package_id", "")) not in release_runtime_package_ids,
+        f"{variant_id} sanitizer package id matched a release runtime package id",
+    )
+    expect(
+        package_runtime.get("release_runtime_mixing_allowed") is False,
+        f"{variant_id} allowed sanitizer/release runtime package mixing",
+    )
+    detection_records = package_runtime.get("expected_detection_records", [])
+    expect(isinstance(detection_records, list) and detection_records, f"{variant_id} missing expected detection records")
+    detection_record_ids: set[str] = set()
+    for record in detection_records:
+        expect(isinstance(record, dict), f"{variant_id} detection record must be an object")
+        record_id = str(record.get("record_id", ""))
+        expect(record_id, f"{variant_id} detection record missing record_id")
+        detection_record_ids.add(record_id)
+        expect(
+            record.get("required_behavior") == "record-only-no-support-promotion",
+            f"{variant_id} detection record behavior drifted",
+        )
+        expect(record.get("support_truth") is False, f"{variant_id} detection record was treated as support truth")
+    expect(
+        detection_record_ids == expected_detection_records,
+        f"{variant_id} expected detection records drifted",
+    )
+    unsupported_host_diagnostics = package_runtime.get("unsupported_host_diagnostics", [])
+    expect(
+        isinstance(unsupported_host_diagnostics, list) and unsupported_host_diagnostics,
+        f"{variant_id} missing unsupported-host diagnostics",
+    )
+    for diagnostic in unsupported_host_diagnostics:
+        expect(isinstance(diagnostic, dict), f"{variant_id} unsupported-host diagnostic must be an object")
+        expect(str(diagnostic.get("diagnostic_id", "")), f"{variant_id} unsupported-host diagnostic missing diagnostic_id")
+        expect(
+            diagnostic.get("failure_class") == "unsupported-sanitizer-platform",
+            f"{variant_id} unsupported-host diagnostic failure class drifted",
+        )
+        expect(
+            diagnostic.get("required_behavior") == "fail-closed-before-capability-promotion",
+            f"{variant_id} unsupported-host diagnostic behavior drifted",
+        )
+        blocks = {str(block) for block in diagnostic.get("blocks", [])}
+        expect(
+            REQUIRED_UNSUPPORTED_SANITIZER_DIAGNOSTIC_BLOCKS <= blocks,
+            f"{variant_id} unsupported-host diagnostic did not block package install execution and publication",
+        )
     metadata_fields = {str(field) for field in package_runtime.get("required_metadata_fields", [])}
     expect(
-        {"target_platform_id", "sanitizer", "runtime_library_ids"} <= metadata_fields,
+        REQUIRED_SANITIZER_METADATA_FIELDS[sanitizer_name] <= metadata_fields,
         f"{variant_id} sanitizer package runtime metadata is incomplete",
+    )
+
+
+def _sanitizer_install_guard_is_fail_closed(variant_id: str, row: dict[str, Any]) -> None:
+    install_guard = row.get("install_guard")
+    expect(isinstance(install_guard, dict), f"{variant_id} missing sanitizer install_guard")
+    expect(
+        "default release runtime" in str(install_guard.get("release_channel_policy", "")).lower(),
+        f"{variant_id} install guard does not name default release runtime isolation",
+    )
+    expect(
+        install_guard.get("unsupported_platform_behavior") == "fail-closed",
+        f"{variant_id} unsupported platform install guard drifted",
+    )
+    expect(
+        install_guard.get("missing_runtime_behavior") == "fail-closed-before-package-install",
+        f"{variant_id} missing sanitizer runtime install guard drifted",
+    )
+    expect(
+        install_guard.get("mixed_runtime_behavior") == "fail-closed",
+        f"{variant_id} mixed runtime install guard drifted",
+    )
+    expect(
+        install_guard.get("stale_package_metadata_behavior") == "fail-closed-before-publication",
+        f"{variant_id} stale metadata install guard drifted",
     )
 
 
@@ -531,6 +1042,26 @@ def _validate_platform_expansion_platform_cases(
     }
     support_negative_contracts = _contracts_by_id(payload.get("support_rows", []))
     package_negative_contracts = _contracts_by_id(package_variant_rows.values())
+    host_identities = _records_by_field(
+        "host_identity_records",
+        payload.get("host_identity_records"),
+        "record_id",
+    )
+    toolchain_probes = _records_by_field(
+        "toolchain_probe_records",
+        payload.get("toolchain_probe_records"),
+        "record_id",
+    )
+    package_roots = _records_by_field(
+        "package_root_evidence_records",
+        payload.get("package_root_evidence_records"),
+        "record_id",
+    )
+    native_execution_records = _records_by_field(
+        "native_execution_evidence_records",
+        payload.get("native_execution_evidence_records"),
+        "record_id",
+    )
     failure_ids = _unsupported_failure_ids(unsupported_host_policy) | {
         str(failure_class.get("failure_id"))
         for failure_class in unsupported_host_policy.get("hard_fail_classes", [])
@@ -586,18 +1117,62 @@ def _validate_platform_expansion_platform_cases(
             f"{case_id} allowed object emission alone to support the platform",
         )
         expect(str(artifact.get("native_object_emission_status", "")), f"{case_id} missing native object status")
+        host_requirements = case.get("host_evidence_requirements")
+        expect(isinstance(host_requirements, dict), f"{case_id} missing host evidence requirements")
+        expect(
+            str(host_requirements.get("host_identity_record_id", "")) in host_identities,
+            f"{case_id} referenced missing host identity record",
+        )
+        expect(
+            str(host_requirements.get("toolchain_probe_record_id", "")) in toolchain_probes,
+            f"{case_id} referenced missing toolchain probe record",
+        )
+        expect(
+            str(host_requirements.get("package_root_record_id", "")) in package_roots,
+            f"{case_id} referenced missing package root record",
+        )
+        expect(
+            str(host_requirements.get("native_execution_record_id", "")) in native_execution_records,
+            f"{case_id} referenced missing native execution record",
+        )
+        expect(
+            host_requirements.get("source_only_probe_promotes_support") is False,
+            f"{case_id} allowed source-only probe promotion",
+        )
+        expect(
+            host_requirements.get("promotion_allowed") is False,
+            f"{case_id} host evidence requirements allowed promotion",
+        )
 
 
 def _validate_platform_expansion_package_identity_cases(
     contract: dict[str, Any],
     *,
+    payload: dict[str, Any],
     package_variant_rows: dict[str, dict[str, Any]],
 ) -> None:
+    package_roots = _records_by_field(
+        "package_root_evidence_records",
+        payload.get("package_root_evidence_records"),
+        "record_id",
+    )
     for case in contract.get("package_variant_identity_cases", []):
         identity_id = str(case.get("identity_id", ""))
         row_id = str(case.get("row_id", ""))
         row = package_variant_rows.get(row_id)
         expect(row is not None, f"{identity_id} missing package variant row {row_id}")
+        package_root_record_id = str(case.get("package_root_record_id", ""))
+        if row.get("variant_kind") == "release-runtime":
+            expect(package_root_record_id, f"{identity_id} missing package_root_record_id")
+        if package_root_record_id:
+            expect(
+                package_root_record_id in package_roots,
+                f"{identity_id} referenced missing package root record {package_root_record_id}",
+            )
+            expect(
+                package_roots[package_root_record_id].get("package_variant_row_id") == row_id,
+                f"{identity_id} package root record drifted from package row",
+            )
         for field_name in (
             "issue_ref",
             "variant_kind",
@@ -667,6 +1242,7 @@ def _validate_platform_expansion_sanitizer_cases(
             "required_missing_evidence_classes",
         ):
             expect(row.get(field_name) == case.get(field_name), f"{variant_id} {field_name} drifted from sanitizer row")
+        _sanitizer_install_guard_is_fail_closed(variant_id, row)
         _sanitizer_package_runtime_contract_is_fail_closed(variant_id, row)
         package_row_id = str(case.get("package_variant_row_id", ""))
         package_row = package_variant_rows.get(package_row_id)
@@ -754,6 +1330,7 @@ def _validate_platform_expansion_claim_contract(
     )
     _validate_platform_expansion_package_identity_cases(
         contract,
+        payload=payload,
         package_variant_rows=package_variant_rows,
     )
     _validate_platform_expansion_sanitizer_cases(
@@ -1114,6 +1691,7 @@ def validate_platform_toolchain_support_evidence(
         set(REQUIRED_ROADMAP_ISSUE_REFS) <= issue_refs,
         "platform support evidence roadmap issue refs drifted",
     )
+    _validate_unsupported_host_policy_contract(unsupported_host_policy)
     required_toolchain_components = _required_toolchain_components(payload)
     toolchain_ranges = _toolchain_ranges_by_component(
         payload,
@@ -1125,6 +1703,14 @@ def validate_platform_toolchain_support_evidence(
         records_by_id=records_by_id,
         boundary_supported_platform_ids=boundary_supported_ids,
     )
+    _validate_host_evidence_architecture(
+        payload,
+        records_by_id=records_by_id,
+        package_variant_rows=package_variant_rows,
+        boundary_supported_platform_ids=boundary_supported_ids,
+        unsupported_host_policy=unsupported_host_policy,
+        required_toolchain_components=required_toolchain_components,
+    )
     _validate_llvm_version_support_matrix(
         payload,
         records_by_id=records_by_id,
@@ -1135,7 +1721,6 @@ def validate_platform_toolchain_support_evidence(
         for platform in supported_platforms.get("supported_platforms", [])
         if platform.get("platform_id")
     }
-    _validate_unsupported_host_policy_contract(unsupported_host_policy)
     _validate_hosted_runner_capability_summaries(
         boundary_supported_platform_ids=boundary_supported_ids,
     )
@@ -1240,6 +1825,7 @@ def validate_platform_toolchain_support_evidence(
         expect(package_row.get("package_id") == sanitizer.get("package_id"), f"{package_row_id} package_id drifted from sanitizer variant")
         expect(str(sanitizer.get("llvm_requirement", "")), f"{sanitizer.get('variant_id', '')} missing llvm_requirement")
         expect(str(sanitizer.get("runtime_requirement", "")), f"{sanitizer.get('variant_id', '')} missing runtime_requirement")
+        _sanitizer_install_guard_is_fail_closed(str(sanitizer.get("variant_id", "")), sanitizer)
         _sanitizer_package_runtime_contract_is_fail_closed(str(sanitizer.get("variant_id", "")), sanitizer)
         expect(
             set(str(item) for item in sanitizer.get("required_promotion_evidence", []))
@@ -1281,6 +1867,12 @@ def build_support_evidence_matrix_sections(payload: dict[str, Any]) -> dict[str,
         },
         "platform_support_rows": payload["support_rows"],
         "package_variant_rows": payload["package_variant_rows"],
+        "host_evidence_contract": payload["host_evidence_contract"],
+        "host_identity_records": payload["host_identity_records"],
+        "toolchain_probe_records": payload["toolchain_probe_records"],
+        "package_root_evidence_records": payload["package_root_evidence_records"],
+        "native_execution_evidence_records": payload["native_execution_evidence_records"],
+        "negative_host_toolchain_cases": payload["negative_host_toolchain_cases"],
         "toolchain_support": {
             "toolchain_evidence_requirements": payload["toolchain_evidence_requirements"],
             "toolchain_ranges": payload["toolchain_ranges"],
@@ -1331,6 +1923,26 @@ def build_support_evidence_summary(payload: dict[str, Any]) -> dict[str, Any]:
         "required_toolchain_components": list(REQUIRED_SUPPORTED_TOOLCHAIN_COMPONENTS),
         "toolchain_range_ids": [str(row["toolchain_id"]) for row in payload["toolchain_ranges"]],
         "package_variant_row_ids": [str(row["row_id"]) for row in payload["package_variant_rows"]],
+        "host_identity_record_ids": [
+            str(row["record_id"])
+            for row in payload["host_identity_records"]
+        ],
+        "toolchain_probe_record_ids": [
+            str(row["record_id"])
+            for row in payload["toolchain_probe_records"]
+        ],
+        "package_root_record_ids": [
+            str(row["record_id"])
+            for row in payload["package_root_evidence_records"]
+        ],
+        "native_execution_record_ids": [
+            str(row["record_id"])
+            for row in payload["native_execution_evidence_records"]
+        ],
+        "negative_host_toolchain_case_ids": [
+            str(row["case_id"])
+            for row in payload["negative_host_toolchain_cases"]
+        ],
         "llvm_matrix_entry_ids": [
             str(row["entry_id"])
             for row in payload["llvm_version_support_matrix"]["matrix_entries"]

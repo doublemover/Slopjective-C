@@ -378,6 +378,21 @@ def collect_package_operation_failures(
     if request.allow_network or request.live_registry_url:
         target = request.live_registry_url or "live registry endpoint"
         failures.append(package_operation_diagnostic(f"live network package {operation} rejected for {target}"))
+        failures.append(
+            package_operation_diagnostic(
+                f"live public hosted registry service unavailable for package {operation}"
+            )
+        )
+        failures.append(
+            package_operation_diagnostic(
+                f"live public hosted registry transport disabled for package {operation}"
+            )
+        )
+        failures.append(
+            package_operation_diagnostic(
+                f"unsupported live hosted registry service mode for package {operation}"
+            )
+        )
     failures.extend(collect_lock_model_failures(lock, root=root))
     failures.extend(collect_registry_index_failures(registry, lock, root=root))
 
@@ -546,6 +561,7 @@ def package_operation_plan(
         "extraction_plan_digest": extraction_plan["plan_digest"],
         "network_policy": PACKAGE_OPERATION_NETWORK_POLICY,
         "hosted_registry_support": PACKAGE_OPERATION_HOSTED_SUPPORT,
+        "hosted_registry_live_boundary": "public-live-service-reserved-fail-closed",
         "live_network_publication": "fail-closed",
         "language_version": LOCAL_PACKAGE_LANGUAGE_VERSION,
         "abi_identity": LOCAL_PACKAGE_ABI_IDENTITY,
