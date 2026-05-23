@@ -12,6 +12,8 @@ from objc3c_tooling.paths import repo_rel, resolve_repo_path
 from .constants import PLATFORM_HARDENING_OWNER_POLICY
 from .contract_predicates import expect
 from .source_surface_catalog import (
+    HOSTED_RUNNER_CAPABILITY_SUMMARIES_PATH,
+    HOSTED_RUNNER_CAPABILITY_SUMMARIES_SCHEMA_PATH,
     PLATFORM_TOOLCHAIN_SUPPORT_EVIDENCE_PATH,
     PLATFORM_TOOLCHAIN_SUPPORT_EVIDENCE_SCHEMA_PATH,
 )
@@ -48,6 +50,8 @@ REQUIRED_UNSUPPORTED_POLICY_HARD_FAIL_CLASSES: tuple[str, ...] = (
     "missing-sanitizer-runtime",
     "stale-package-metadata",
     "native-object-emission-unavailable",
+    "mixed-toolchain-root",
+    "unsupported-toolchain-version",
 )
 EXPECTED_UNSUPPORTED_PLATFORM_ISSUES: dict[str, int] = {
     "linux-x64": 8228,
@@ -85,6 +89,17 @@ def load_platform_toolchain_support_evidence() -> dict[str, Any]:
     schema = load_json_object(PLATFORM_TOOLCHAIN_SUPPORT_EVIDENCE_SCHEMA_PATH)
     payload = load_json_object(PLATFORM_TOOLCHAIN_SUPPORT_EVIDENCE_PATH)
     validate_json_schema(payload, schema, label=repo_rel(PLATFORM_TOOLCHAIN_SUPPORT_EVIDENCE_PATH))
+    return payload
+
+
+def load_hosted_runner_capability_summaries() -> dict[str, Any]:
+    schema = load_json_object(HOSTED_RUNNER_CAPABILITY_SUMMARIES_SCHEMA_PATH)
+    payload = load_json_object(HOSTED_RUNNER_CAPABILITY_SUMMARIES_PATH)
+    validate_json_schema(
+        payload,
+        schema,
+        label=repo_rel(HOSTED_RUNNER_CAPABILITY_SUMMARIES_PATH),
+    )
     return payload
 
 
@@ -220,10 +235,69 @@ def _validate_unsupported_host_policy_contract(unsupported_host_policy: dict[str
         "native object emission requires llc --filetype=obj and has no clang substitute success path" in required_claims,
         "unsupported host policy missing native object emission no-fallback claim",
     )
+    expect(
+        "mixed LLVM roots and mismatched LLVM tool versions fail closed before object package execution or platform support" in required_claims,
+        "unsupported host policy missing coherent LLVM toolchain claim",
+    )
     forbidden_phrases = {str(phrase) for phrase in unsupported_host_policy.get("forbidden_phrases", [])}
     expect(
         "object emission supported via clang substitute" in forbidden_phrases,
         "unsupported host policy missing clang substitute forbidden phrase",
+    )
+    expect(
+        "mixed LLVM roots are supported" in forbidden_phrases,
+        "unsupported host policy missing mixed-root forbidden phrase",
+    )
+    expect(
+        "LLVM tool version mismatch is supported" in forbidden_phrases,
+        "unsupported host policy missing mismatched-version forbidden phrase",
+    )
+
+
+def _validate_hosted_runner_capability_summaries(
+    *,
+    boundary_supported_platform_ids: set[str],
+) -> None:
+    payload = load_hosted_runner_capability_summaries()
+    expect(
+        payload.get("support_claim_policy") == "summary-only-no-support-promotion",
+        "hosted runner capability summaries can only summarize source truth",
+    )
+    summary_ids: set[str] = set()
+    required_summary_ids = {
+        "objc3c.hosted.windows-x64.supported.current",
+        "objc3c.hosted.linux-x64.unsupported",
+        "objc3c.hosted.darwin-arm64.unsupported",
+        "objc3c.hosted.sanitizer.address.reserved",
+        "objc3c.hosted.sanitizer.undefined.reserved",
+        "objc3c.hosted.toolchain.missing-llc.fail-closed",
+        "objc3c.hosted.toolchain.mixed-root.fail-closed",
+        "objc3c.hosted.toolchain.mismatched-version.fail-closed",
+    }
+    for summary in payload.get("summaries", []):
+        summary_id = str(summary.get("summary_id", ""))
+        expect(summary_id, "hosted runner capability summary missing summary_id")
+        expect(summary_id not in summary_ids, f"duplicate hosted runner summary: {summary_id}")
+        summary_ids.add(summary_id)
+        platform_ids = {str(platform_id) for platform_id in summary.get("platform_ids", [])}
+        if bool(summary.get("publication_allowed", False)):
+            expect(
+                summary.get("claim_state") == "evidence-bound",
+                f"{summary_id} allowed publication without evidence-bound state",
+            )
+            expect(
+                platform_ids <= boundary_supported_platform_ids,
+                f"{summary_id} widened hosted-runner support outside the platform boundary",
+            )
+            continue
+        expect(not platform_ids, f"{summary_id} fail-closed/reserved summary listed platform ids")
+        expect(
+            summary.get("claim_state") in {"unsupported", "reserved", "fail-closed"},
+            f"{summary_id} non-publication summary used unsupported claim state",
+        )
+    expect(
+        required_summary_ids <= summary_ids,
+        "hosted runner capability summaries are missing required source-truth cases",
     )
 
 
@@ -425,8 +499,33 @@ def _validate_llvm_version_support_matrix(
         "native object emission filetype status drifted",
     )
     expect(
+        native_object_contract.get("mixed_toolchain_status")
+        == "native_object_emission_mixed_toolchain_root",
+        "native object emission mixed-toolchain status drifted",
+    )
+    expect(
+        native_object_contract.get("mismatched_version_status")
+        == "native_object_emission_mismatched_tool_versions",
+        "native object emission mismatched-version status drifted",
+    )
+    expect(
+        native_object_contract.get("unsupported_version_status")
+        == "native_object_emission_unsupported_tool_version",
+        "native object emission unsupported-version status drifted",
+    )
+    expect(
+        native_object_contract.get("unresolved_version_status")
+        == "native_object_emission_unresolved_tool_version",
+        "native object emission unresolved-version status drifted",
+    )
+    expect(
         native_object_contract.get("fallback_policy") == "no-clang-fallback-success-claim",
         "native object emission fallback policy drifted",
+    )
+    expect(
+        native_object_contract.get("coherent_toolchain_policy")
+        == "no-mixed-root-or-mismatched-version-success-claim",
+        "native object emission coherent-toolchain policy drifted",
     )
     for claim_field in ("minimum_supported_version", "known_good_versions"):
         value = matrix.get(claim_field)
@@ -475,6 +574,8 @@ def _validate_llvm_version_support_matrix(
     rejection_rules = matrix.get("rejection_rules", [])
     expect(isinstance(rejection_rules, list) and rejection_rules, "LLVM matrix missing rejection rules")
     missing_llc_rule: dict[str, Any] | None = None
+    mixed_toolchain_rule: dict[str, Any] | None = None
+    mismatched_version_rule: dict[str, Any] | None = None
     for rule in rejection_rules:
         expect(isinstance(rule, dict), "LLVM matrix rejection rule must be an object")
         expect(str(rule.get("rule_id", "")), "LLVM matrix rejection rule missing rule_id")
@@ -482,6 +583,10 @@ def _validate_llvm_version_support_matrix(
         expect(str(rule.get("diagnostic", "")), f"{rule.get('rule_id', '')} missing rejection diagnostic")
         if rule.get("rule_id") == "objc3c.llvm.reject.missing-llc":
             missing_llc_rule = rule
+        if rule.get("rule_id") == "objc3c.llvm.reject.mixed-toolchain":
+            mixed_toolchain_rule = rule
+        if rule.get("rule_id") == "objc3c.llvm.reject.mismatched-tool-version":
+            mismatched_version_rule = rule
     expect(missing_llc_rule is not None, "LLVM matrix missing missing-llc rejection rule")
     expect(
         missing_llc_rule.get("failure_status") == "native_object_emission_missing_llc",
@@ -500,6 +605,25 @@ def _validate_llvm_version_support_matrix(
     expect(
         missing_llc_rule.get("fallback_policy") == "no-clang-fallback-success-claim",
         "missing-llc fallback policy drifted",
+    )
+    expect(mixed_toolchain_rule is not None, "LLVM matrix missing mixed-toolchain rejection rule")
+    expect(
+        mixed_toolchain_rule.get("failure_status")
+        == "native_object_emission_mixed_toolchain_root",
+        "mixed-toolchain rejection status drifted",
+    )
+    expect(
+        mixed_toolchain_rule.get("fallback_policy") == "no-clang-fallback-success-claim",
+        "mixed-toolchain fallback policy drifted",
+    )
+    expect(
+        mismatched_version_rule is not None,
+        "LLVM matrix missing mismatched-tool-version rejection rule",
+    )
+    expect(
+        mismatched_version_rule.get("failure_status")
+        == "native_object_emission_mismatched_tool_versions",
+        "mismatched-version rejection status drifted",
     )
 
 
@@ -547,6 +671,9 @@ def validate_platform_toolchain_support_evidence(
         if platform.get("platform_id")
     }
     _validate_unsupported_host_policy_contract(unsupported_host_policy)
+    _validate_hosted_runner_capability_summaries(
+        boundary_supported_platform_ids=boundary_supported_ids,
+    )
     tier_supported_ids = _supported_tier_platforms(tier_policy)
     unsupported_failure_ids = _unsupported_failure_ids(unsupported_host_policy)
 
@@ -732,6 +859,7 @@ __all__ = [
     "build_support_evidence_matrix_sections",
     "build_support_evidence_summary",
     "evidence_records_by_id",
+    "load_hosted_runner_capability_summaries",
     "load_platform_toolchain_support_evidence",
     "validate_platform_toolchain_support_evidence",
 ]

@@ -83,6 +83,13 @@ def action_check_hosted_llvm_capabilities(_: list[str]) -> int:
             "and execution support claims are unavailable."
         )
         return 0
+    if not truth.toolchain_identity_claimable:
+        print(
+            "Hosted runner capability summary did not prove coherent LLVM "
+            "toolchain identity; mixed-root, mismatched-version, unsupported-version, "
+            "or unresolved-version native object emission support claims are unavailable."
+        )
+        return 0
     if not truth.clangxx_found:
         print(
             "Hosted runner capability summary recorded no clang++ availability; "

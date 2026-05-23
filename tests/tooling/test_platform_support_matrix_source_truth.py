@@ -72,6 +72,10 @@ def test_platform_support_source_truth_validates_checked_matrix() -> None:
             "native_object_emission_supported",
             "native_object_emission_missing_llc",
             "native_object_emission_filetype_obj_unavailable",
+            "native_object_emission_mixed_toolchain_root",
+            "native_object_emission_mismatched_tool_versions",
+            "native_object_emission_unsupported_tool_version",
+            "native_object_emission_unresolved_tool_version",
         ],
     }
     umbrella = source_truth["umbrella_readiness_contract"]
@@ -94,9 +98,14 @@ def test_platform_support_source_truth_validates_checked_matrix() -> None:
         "success_status": "native_object_emission_supported",
         "missing_llc_status": "native_object_emission_missing_llc",
         "missing_filetype_status": "native_object_emission_filetype_obj_unavailable",
+        "mixed_toolchain_status": "native_object_emission_mixed_toolchain_root",
+        "mismatched_version_status": "native_object_emission_mismatched_tool_versions",
+        "unsupported_version_status": "native_object_emission_unsupported_tool_version",
+        "unresolved_version_status": "native_object_emission_unresolved_tool_version",
         "hosted_runner_behavior": "fail-closed-no-native-object-success-claim",
         "conformance_minima_behavior": "fail-closed-before-cross-lane-runtime-proof",
         "fallback_policy": "no-clang-fallback-success-claim",
+        "coherent_toolchain_policy": "no-mixed-root-or-mismatched-version-success-claim",
     }
     assert {
         row["platform_id"]: row["host_triples"]

@@ -97,8 +97,12 @@ def main(argv: list[str] | None = None) -> int:
             "manifest_digest": resolved.manifest_digest,
             "cache_path": resolved.cache_path,
             "cache_digest": resolved.cache_digest,
+            "snapshot_id": resolved.snapshot_id,
+            "cache_key": resolved.cache_key,
+            "offline_mirror_path": resolved.offline_mirror_path,
             "registry_record_digest": resolved.registry_record_digest,
             "registry_signature_id": resolved.registry_signature_id,
+            "trust_result_id": resolved.trust_result_id,
         }
     except HostedRegistryResolutionError as exc:
         failures.extend(
@@ -117,7 +121,11 @@ def main(argv: list[str] | None = None) -> int:
             "registry_url": args.registry_url,
         },
         "service_boundary": index.get("service_boundary"),
+        "provider_model": index.get("provider_model"),
+        "snapshot": index.get("snapshot"),
+        "service_availability": index.get("service_availability"),
         "endpoint_identity": index.get("endpoint_identity"),
+        "lock_materialization": index.get("lock_materialization"),
         "lock_trust_material": index.get("lock_trust_material"),
         "failure_modes": index.get("failure_modes"),
         "resolution": resolution,

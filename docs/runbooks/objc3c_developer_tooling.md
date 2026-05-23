@@ -366,10 +366,15 @@ availability rules.
   coordinates
 - object-backed symbol visibility comes from the emitted object artifact and the
   runtime inspector symbol inventory path
-- statement, function, method, and message-send stepping claims are publishable
-  only through the replayable debugger integration contract, where every
-  supported step has source-map, debug-map, native line-table, native symbol,
-  and object/debug line anchors
+- statement, function, method, message-send, and property-accessor stepping
+  claims are publishable only through the replayable debugger integration
+  contract, where every supported step has source-map, debug-map, native
+  line-table, native symbol, object/debug line, statement-unit, runtime-context,
+  and emitted native-debug-info anchors
+- step-in, step-over, and step-out are all explicit operations; method calls,
+  property accessors, category methods, protocol method bodies, and reflection
+  probe calls must be represented by public production artifact records rather
+  than private testing snapshots
 - unsupported debug configurations, optimized-away statements, unsupported
   handles, malformed metadata, unsupported plugin commands, and source-map /
   object digest mismatches remain fail-closed diagnostics
@@ -379,7 +384,8 @@ The debugger integration surface is replay-driven rather than interactive-only.
 LLDB command model, runtime value-inspection rows, and source-map-backed
 stepping records. `npm run objc3c -- validate-debugger-integration -- --plan`
 emits the command script and stepping plan. No stepping record is valid unless
-it resolves back to a compiler-owned source map entry and native line-table row.
+it resolves back to a compiler-owned source map entry, native line-table row,
+runtime context, statement unit, and emitted native debug-info evidence link.
 
 The runtime debug trace and editor debug map may continue to describe their own
 trace lanes conservatively; debugger stepping support is owned by the replayable

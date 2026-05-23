@@ -333,9 +333,14 @@
         "success_status",
         "missing_llc_status",
         "missing_filetype_status",
+        "mixed_toolchain_status",
+        "mismatched_version_status",
+        "unsupported_version_status",
+        "unresolved_version_status",
         "hosted_runner_behavior",
         "conformance_minima_behavior",
-        "fallback_policy"
+        "fallback_policy",
+        "coherent_toolchain_policy"
       ],
       "properties": {
         "contract_id": {
@@ -359,6 +364,18 @@
         "missing_filetype_status": {
           "const": "native_object_emission_filetype_obj_unavailable"
         },
+        "mixed_toolchain_status": {
+          "const": "native_object_emission_mixed_toolchain_root"
+        },
+        "mismatched_version_status": {
+          "const": "native_object_emission_mismatched_tool_versions"
+        },
+        "unsupported_version_status": {
+          "const": "native_object_emission_unsupported_tool_version"
+        },
+        "unresolved_version_status": {
+          "const": "native_object_emission_unresolved_tool_version"
+        },
         "hosted_runner_behavior": {
           "const": "fail-closed-no-native-object-success-claim"
         },
@@ -367,6 +384,9 @@
         },
         "fallback_policy": {
           "const": "no-clang-fallback-success-claim"
+        },
+        "coherent_toolchain_policy": {
+          "const": "no-mixed-root-or-mismatched-version-success-claim"
         }
       }
     },

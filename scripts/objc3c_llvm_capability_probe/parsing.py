@@ -21,7 +21,10 @@ def llc_help_mentions_filetype_obj(help_text: str) -> tuple[bool, bool]:
 
 def tool_version_from_text(text: str) -> str:
     match = re.search(r"\b(?:LLVM|clang)\s+version\s+([0-9]+(?:\.[0-9]+){0,3})", text, re.IGNORECASE)
-    return match.group(1) if match else ""
+    if match:
+        return match.group(1)
+    bare_match = re.search(r"^\s*([0-9]+(?:\.[0-9]+){1,3})\s*$", text, re.MULTILINE)
+    return bare_match.group(1) if bare_match else ""
 
 
 def tool_vendor_from_headline(headline: str) -> str:

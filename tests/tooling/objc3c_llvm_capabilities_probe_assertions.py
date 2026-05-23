@@ -32,6 +32,9 @@ def assert_success_payload(payload: dict[str, Any]) -> None:
         ]
         == "llvm-config"
     )
+    assert payload["toolchain_identity"]["contract_id"] == "objc3c.llvm.coherent-toolchain-identity.v1"
+    assert payload["toolchain_identity"]["version_status"] == "coherent"
+    assert payload["toolchain_identity"]["claimable"] is True
     assert llvm_matrix["contract_id"] == "objc3c.llvm.version_support_matrix.v1"
     assert llvm_matrix["issue_ref"] == 8232
     assert llvm_matrix["native_object_emission_contract"] == {
@@ -42,9 +45,14 @@ def assert_success_payload(payload: dict[str, Any]) -> None:
         "status": "native_object_emission_supported",
         "missing_llc_status": "native_object_emission_missing_llc",
         "missing_filetype_status": "native_object_emission_filetype_obj_unavailable",
+        "mixed_toolchain_status": "native_object_emission_mixed_toolchain_root",
+        "mismatched_version_status": "native_object_emission_mismatched_tool_versions",
+        "unsupported_version_status": "native_object_emission_unsupported_tool_version",
+        "unresolved_version_status": "native_object_emission_unresolved_tool_version",
         "hosted_runner_behavior": "fail-closed-no-native-object-success-claim",
         "conformance_minima_behavior": "fail-closed-before-cross-lane-runtime-proof",
         "fallback_policy": "no-clang-fallback-success-claim",
+        "coherent_toolchain_policy": "no-mixed-root-or-mismatched-version-success-claim",
     }
     assert [record["tool_name"] for record in llvm_matrix["llvm_tool_records"]] == [
         "clang",
@@ -61,6 +69,7 @@ def assert_success_payload(payload: dict[str, Any]) -> None:
     assert "llvm-direct-object-emission" in matrix_entry["supported_features"]
     assert "package-archive-tool" in matrix_entry["supported_features"]
     assert "headers-libraries-discovery" in matrix_entry["supported_features"]
+    assert "coherent-llvm-toolchain-identity" in matrix_entry["supported_features"]
     assert sema_parity["deterministic_semantic_diagnostics"] is True
     assert sema_parity["deterministic_type_metadata_handoff"] is True
     assert sema_parity["parity_ready"] is True
@@ -187,6 +196,41 @@ def assert_llvm_config_headers_missing_payload(payload: dict[str, Any]) -> None:
     )
 
 
+def assert_mismatched_llvm_tool_versions_payload(payload: dict[str, Any]) -> None:
+    identity = payload["toolchain_identity"]
+    matrix_entry = payload["llvm_support_matrix"]["toolchain_matrix_entries"][0]
+
+    assert payload["ok"] is False
+    assert identity["version_status"] == "mismatched"
+    assert identity["claimable"] is False
+    assert (
+        payload["llvm_support_matrix"]["native_object_emission_contract"]["status"]
+        == "native_object_emission_mismatched_tool_versions"
+    )
+    assert matrix_entry["object_emission_capability"] == "rejected"
+    assert matrix_entry["package_capability"] == "rejected"
+    assert matrix_entry["native_execution_capability"] == "rejected"
+    assert any(
+        feature["feature"] == "coherent-llvm-toolchain-identity"
+        for feature in matrix_entry["rejected_features"]
+    )
+
+
+def assert_mixed_toolchain_root_payload(payload: dict[str, Any]) -> None:
+    identity = payload["toolchain_identity"]
+    matrix_entry = payload["llvm_support_matrix"]["toolchain_matrix_entries"][0]
+
+    assert payload["ok"] is False
+    assert identity["root_status"] == "mixed"
+    assert identity["claimable"] is False
+    assert (
+        payload["llvm_support_matrix"]["native_object_emission_contract"]["status"]
+        == "native_object_emission_mixed_toolchain_root"
+    )
+    assert matrix_entry["support_status"] == "rejected"
+    assert matrix_entry["object_emission_capability"] == "rejected"
+
+
 def assert_windows_install_root_header_library_payload(payload: dict[str, Any]) -> None:
     matrix_entry = payload["llvm_support_matrix"]["toolchain_matrix_entries"][0]
     resolution = payload["toolchain_resolution"]["llvm-config"]
@@ -195,6 +239,7 @@ def assert_windows_install_root_header_library_payload(payload: dict[str, Any]) 
     assert payload["llvm_config"]["found"] is False
     assert payload["llvm_config_features"]["headers_libraries_discovered"] is True
     assert payload["llvm_config_features"]["discovery_source"] == "install-root"
+    assert payload["toolchain_identity"]["claimable"] is True
     assert resolution["headers_libraries_discovered"] is True
     assert resolution["headers_libraries_discovery_source"] == "install-root"
     assert resolution["includedir"].endswith("LLVM\\include") or resolution[

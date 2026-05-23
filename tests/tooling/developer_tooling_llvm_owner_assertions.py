@@ -68,6 +68,7 @@ def assert_hosted_success_payload(
     assert payload["llvm_ar_found"] is True
     assert payload["llvm_config_found"] is True
     assert payload["headers_libraries_discovered"] is True
+    assert payload["toolchain_identity_claimable"] is True
     assert payload["hosted_native_object_emission_supported"] is True
     assert payload["hosted_package_archive_supported"] is True
     assert payload["hosted_headers_libraries_supported"] is True

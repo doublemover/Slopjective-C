@@ -5431,6 +5431,16 @@
     {
       "capability_id": "toolchain.llvm.current-probed-executable",
       "evidence_kind": "source",
+      "path": "tests/tooling/fixtures/platform_hardening/hosted_runner_capability_summaries.json"
+    },
+    {
+      "capability_id": "toolchain.llvm.current-probed-executable",
+      "evidence_kind": "schema",
+      "path": "schemas/objc3c-platform-hosted-runner-capability-summaries-v1.schema.json"
+    },
+    {
+      "capability_id": "toolchain.llvm.current-probed-executable",
+      "evidence_kind": "source",
       "path": "scripts/probe_objc3c_llvm_capabilities.py"
     },
     {

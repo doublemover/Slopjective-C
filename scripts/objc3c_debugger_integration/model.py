@@ -25,13 +25,25 @@ DEFAULT_FIXTURE_PATH = (
     / "replay.json"
 )
 
-SUPPORTED_STEP_KINDS = frozenset({"statement", "function", "method", "message-send", "property-access"})
+SUPPORTED_STEP_KINDS = frozenset(
+    {"statement", "function", "method", "message-send", "property-access", "runtime-helper-call"}
+)
+SUPPORTED_STEP_OPERATIONS = frozenset({"step-in", "step-over", "step-out"})
+REQUIRED_OBJECT_MODEL_STEP_CONTEXTS = frozenset(
+    {"method-call", "property-accessor", "category-method", "protocol-method-body", "reflection-probe-call"}
+)
+SUPPORTED_RUNTIME_STEP_CONTEXTS = REQUIRED_OBJECT_MODEL_STEP_CONTEXTS | frozenset({"statement", "function-call"})
 STEP_KIND_COMMAND_IDS = {
     "statement": "step-statement",
     "function": "step-function",
     "method": "step-method",
     "message-send": "step-message-send",
     "property-access": "step-property-accessor",
+    "runtime-helper-call": "step-runtime-helper-call",
+}
+STEP_OPERATION_COMMAND_IDS = {
+    "step-in": "step-in",
+    "step-out": "step-out",
 }
 SUPPORTED_COMMANDS = frozenset(
     {
@@ -50,6 +62,9 @@ SUPPORTED_COMMANDS = frozenset(
         "objc3 step method",
         "objc3 step message-send",
         "objc3 step property-accessor",
+        "objc3 step runtime-helper-call",
+        "objc3 step in",
+        "objc3 step out",
         "objc3 explain optimized-frame",
     }
 )
@@ -70,6 +85,9 @@ REQUIRED_COMMAND_IDS = frozenset(
         "step-method",
         "step-message-send",
         "step-property-accessor",
+        "step-runtime-helper-call",
+        "step-in",
+        "step-out",
         "explain-optimized-frame",
     }
 )
@@ -98,6 +116,10 @@ UNSUPPORTED_REASONS = frozenset(
         "missing-inline-frame-chain",
         "unsupported-runtime-metadata",
         "optimized-transform-map-missing",
+        "unsupported-step-operation",
+        "missing-step-operation-coverage",
+        "missing-object-model-step-context",
+        "private-snapshot-only-evidence",
     }
 )
 SUPPORTED_RUNTIME_METADATA_KINDS = frozenset(
@@ -327,6 +349,40 @@ def _validate_protocol_contract(
                 "protocol_contract.requires_step_over_emitted_native_debug_info",
             )
         )
+    required_operations = set(_tuple_str(contract.get("requires_step_operations")))
+    if required_operations != SUPPORTED_STEP_OPERATIONS:
+        diagnostics.append(
+            _diag(
+                "lldb-protocol-step-operation-coverage-missing",
+                "LLDB protocol must require step-in, step-over, and step-out over emitted native debug info",
+                "protocol_contract.requires_step_operations",
+            )
+        )
+    required_contexts = set(_tuple_str(contract.get("requires_object_model_step_contexts")))
+    if required_contexts != REQUIRED_OBJECT_MODEL_STEP_CONTEXTS:
+        diagnostics.append(
+            _diag(
+                "lldb-protocol-object-model-context-missing",
+                "LLDB protocol must require method-call, property-accessor, category-method, protocol-method-body, and reflection-probe stepping contexts",
+                "protocol_contract.requires_object_model_step_contexts",
+            )
+        )
+    if contract.get("rejects_private_snapshot_only_evidence") is not True:
+        diagnostics.append(
+            _diag(
+                "lldb-protocol-private-snapshot-rejection-missing",
+                "LLDB protocol must reject private snapshot-only debugger stepping evidence",
+                "protocol_contract.rejects_private_snapshot_only_evidence",
+            )
+        )
+    if contract.get("requires_native_debug_info_evidence_links") is not True:
+        diagnostics.append(
+            _diag(
+                "lldb-protocol-native-debug-info-evidence-missing",
+                "LLDB protocol must require every supported step to link emitted native debug-info evidence",
+                "protocol_contract.requires_native_debug_info_evidence_links",
+            )
+        )
     inline_chain_ids = {chain.chain_id for chain in source_bundle.inline_debug_chains}
     for chain_id in _tuple_str(contract.get("required_inline_frame_chain_ids")):
         if chain_id not in inline_chain_ids:
@@ -355,6 +411,10 @@ def _validate_protocol_contract(
             )
         )
     return contract
+
+
+def _expected_command_id(step_kind: str, step_operation: str) -> str:
+    return STEP_OPERATION_COMMAND_IDS.get(step_operation, STEP_KIND_COMMAND_IDS.get(step_kind, ""))
 
 
 def _validate_commands(payload: dict[str, Any], diagnostics: list[Diagnostic]) -> dict[str, dict[str, Any]]:
@@ -394,11 +454,15 @@ def _validate_stepping_records(
 ) -> None:
     records = _list(_object(payload.get("stepping_plan")).get("records"))
     supported_seen: set[str] = set()
+    operation_seen: set[str] = set()
+    object_model_context_seen: set[str] = set()
     for index, item in enumerate(records):
         record = _object(item)
         path = f"stepping_plan.records[{index}]"
         status = _safe_str(record.get("status"))
         step_kind = _safe_str(record.get("step_kind"))
+        step_operation = _safe_str(record.get("step_operation"))
+        runtime_context_kind = _safe_str(record.get("runtime_context_kind"))
         entry_id = _safe_str(record.get("source_map_entry_id"))
         entry = source_maps.get(entry_id)
 
@@ -409,8 +473,46 @@ def _validate_stepping_records(
             diagnostics.append(_diag("stepping-status-invalid", "stepping record status must be supported or unsupported", path))
             continue
         supported_seen.add(step_kind)
+        operation_seen.add(step_operation)
+        if runtime_context_kind in REQUIRED_OBJECT_MODEL_STEP_CONTEXTS:
+            object_model_context_seen.add(runtime_context_kind)
         if step_kind not in SUPPORTED_STEP_KINDS:
             diagnostics.append(_diag("stepping-kind-unsupported", f"unsupported stepping kind: {step_kind}", path))
+        if step_operation not in SUPPORTED_STEP_OPERATIONS:
+            diagnostics.append(
+                _diag(
+                    "stepping-operation-unsupported",
+                    f"unsupported stepping operation: {step_operation}",
+                    path,
+                )
+            )
+        if runtime_context_kind not in SUPPORTED_RUNTIME_STEP_CONTEXTS:
+            diagnostics.append(
+                _diag(
+                    "stepping-runtime-context-unsupported",
+                    f"unsupported stepping runtime context: {runtime_context_kind}",
+                    path,
+                )
+            )
+        if not _safe_str(record.get("statement_unit_id")) or not _safe_str(record.get("runtime_context_id")):
+            diagnostics.append(
+                _diag(
+                    "stepping-context-anchor-missing",
+                    "supported stepping records must name a statement unit and runtime context anchor",
+                    path,
+                )
+            )
+        if protocol_contract.get("rejects_private_snapshot_only_evidence") is True and (
+            record.get("private_snapshot_only") is True
+            or _safe_str(record.get("artifact_scope")) != "public-production-artifact"
+        ):
+            diagnostics.append(
+                _diag(
+                    "private-snapshot-only-evidence",
+                    "supported stepping records must be backed by public production artifacts, not private snapshots",
+                    path,
+                )
+            )
         if not debug_config_supported:
             diagnostics.append(
                 _diag(
@@ -433,14 +535,6 @@ def _validate_stepping_records(
         if entry.record_kind != step_kind:
             diagnostics.append(
                 _diag("stepping-source-kind-mismatch", f"stepping kind does not match source-map kind: {entry_id}", path)
-            )
-        if _safe_str(record.get("step_operation")) != "step-over":
-            diagnostics.append(
-                _diag(
-                    "stepping-operation-mismatch",
-                    f"stepping record must step over emitted native debug info: {entry_id}",
-                    path,
-                )
             )
         debug_map = debug_maps_by_source.get(entry_id)
         if debug_map is None:
@@ -488,19 +582,36 @@ def _validate_stepping_records(
                 )
             )
         command_id = _safe_str(record.get("lldb_command_id"))
+        expected_command_id = _expected_command_id(step_kind, step_operation)
         if command_id not in commands:
             diagnostics.append(_diag("lldb-command-missing", f"stepping record references missing LLDB command: {command_id}", path))
-        elif command_id != STEP_KIND_COMMAND_IDS.get(step_kind):
+        elif command_id != expected_command_id:
             diagnostics.append(
                 _diag(
                     "stepping-command-mismatch",
-                    f"stepping record command does not match step kind: {step_kind}",
+                    f"stepping record command does not match step kind and operation: {step_kind}/{step_operation}",
                     path,
                 )
             )
 
     for step_kind in sorted(SUPPORTED_STEP_KINDS - supported_seen):
         diagnostics.append(_diag("stepping-record-missing", f"supported stepping record is missing: {step_kind}", step_kind))
+    for step_operation in sorted(SUPPORTED_STEP_OPERATIONS - operation_seen):
+        diagnostics.append(
+            _diag(
+                "stepping-operation-coverage-missing",
+                f"supported stepping operation is missing: {step_operation}",
+                step_operation,
+            )
+        )
+    for context_kind in sorted(REQUIRED_OBJECT_MODEL_STEP_CONTEXTS - object_model_context_seen):
+        diagnostics.append(
+            _diag(
+                "stepping-object-model-context-missing",
+                f"object-model stepping context is missing: {context_kind}",
+                context_kind,
+            )
+        )
 
 
 def _validate_unsupported_step(
@@ -610,6 +721,10 @@ def _validate_negative_cases(payload: dict[str, Any], diagnostics: list[Diagnost
         "missing-inline-frame-chain",
         "unsupported-runtime-metadata",
         "optimized-transform-map-missing",
+        "unsupported-step-operation",
+        "missing-step-operation-coverage",
+        "missing-object-model-step-context",
+        "private-snapshot-only-evidence",
     }
     case_ids = {_safe_str(_object(item).get("case_id")) for item in cases}
     for case_id in sorted(expected - case_ids):
@@ -665,6 +780,11 @@ def generate_stepping_plan_path(path: Path | str = DEFAULT_FIXTURE_PATH) -> dict
             {
                 "record_id": _safe_str(item.get("record_id")),
                 "step_kind": entry.record_kind,
+                "step_operation": _safe_str(item.get("step_operation")),
+                "statement_unit_id": _safe_str(item.get("statement_unit_id")),
+                "runtime_context_kind": _safe_str(item.get("runtime_context_kind")),
+                "runtime_context_id": _safe_str(item.get("runtime_context_id")),
+                "artifact_scope": _safe_str(item.get("artifact_scope")),
                 "lldb_command": _safe_str(command.get("plugin_command")),
                 "source_file": repo_rel(resolve_repo_path(entry.source_file)),
                 "source_span_id": _safe_str(item.get("source_span_id")),

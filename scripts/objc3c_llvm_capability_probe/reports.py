@@ -4,11 +4,14 @@ from __future__ import annotations
 
 from pathlib import Path
 import platform
+import re
 from typing import Iterable
 
 from objc3c_tooling.paths import display_path
 
 from .constants import MODE
+
+MIN_SUPPORTED_LLVM_VERSION = (19, 1)
 
 
 def missing_contract_payload(
@@ -36,6 +39,7 @@ def collect_failures(
     llvm_config_probe: dict[str, object],
     llc_features: dict[str, object],
     llvm_config_features: dict[str, object],
+    toolchain_identity: dict[str, object],
     sema_type_system_parity: dict[str, object],
     capability_demo_compatibility: dict[str, object],
 ) -> list[str]:
@@ -61,6 +65,16 @@ def collect_failures(
                 "LLVM headers/libs discovery unavailable: llvm-config missing and "
                 "installed LLVM include/lib directories were not discovered"
             )
+    if not bool(toolchain_identity.get("claimable", False)):
+        diagnostics = [
+            str(item)
+            for item in toolchain_identity.get("diagnostics", [])
+            if str(item)
+        ]
+        failures.append(
+            "LLVM toolchain identity rejected: "
+            + ("; ".join(diagnostics) if diagnostics else "coherent root/version proof unavailable")
+        )
     if not bool(sema_type_system_parity["parity_ready"]):
         failures.append(
             "sema/type-system parity capability unavailable: "
@@ -102,6 +116,209 @@ def _capability_probe(
     }
 
 
+def _normalized_root(path: Path) -> str:
+    return path.resolve().as_posix().rstrip("/").lower()
+
+
+def _tool_install_root(record: dict[str, object]) -> str:
+    resolved = str(record.get("resolved_path", ""))
+    if not resolved:
+        return ""
+    path = Path(resolved)
+    if path.parent.name.lower() != "bin":
+        return ""
+    return _normalized_root(path.parent.parent)
+
+
+def _headers_libraries_root(features: dict[str, object]) -> str:
+    if not bool(features.get("headers_libraries_discovered", False)):
+        return ""
+    includedir = str(features.get("includedir", ""))
+    libdir = str(features.get("libdir", ""))
+    if not includedir or not libdir:
+        return ""
+    include_path = Path(includedir)
+    lib_path = Path(libdir)
+    if include_path.name.lower() != "include" or lib_path.name.lower() != "lib":
+        return ""
+    try:
+        if include_path.parent.resolve() != lib_path.parent.resolve():
+            return ""
+    except OSError:
+        return ""
+    return _normalized_root(include_path.parent)
+
+
+def _configured_path_is_absolute(record: dict[str, object]) -> bool:
+    configured = str(record.get("configured_path", record.get("path", "")))
+    return bool(configured) and Path(configured).is_absolute()
+
+
+def _version_family(version: str) -> tuple[int, int] | None:
+    match = re.match(r"^\s*([0-9]+)(?:\.([0-9]+))?", version)
+    if not match:
+        return None
+    return int(match.group(1)), int(match.group(2) or 0)
+
+
+def build_toolchain_identity(
+    *,
+    clang_probe: dict[str, object],
+    clangxx_probe: dict[str, object],
+    llc_probe: dict[str, object],
+    llvm_ar_probe: dict[str, object],
+    llvm_config_probe: dict[str, object],
+    llvm_config_features: dict[str, object],
+) -> dict[str, object]:
+    tool_records = [
+        ("clang", clang_probe),
+        ("clang++", clangxx_probe),
+        ("llc", llc_probe),
+        ("llvm-ar", llvm_ar_probe),
+    ]
+    if bool(llvm_config_probe.get("found")):
+        tool_records.append(("llvm-config", llvm_config_probe))
+
+    root_records: list[dict[str, object]] = []
+    for tool_name, record in tool_records:
+        root = _tool_install_root(record)
+        if root:
+            root_records.append(
+                {
+                    "tool_name": tool_name,
+                    "install_root": root,
+                    "authority": str(record.get("shadowing_status", "unreported")),
+                    "configured_absolute": _configured_path_is_absolute(record),
+                }
+            )
+    headers_root = _headers_libraries_root(llvm_config_features)
+    if headers_root:
+        root_records.append(
+            {
+                "tool_name": "headers-libs",
+                "install_root": headers_root,
+                "authority": str(llvm_config_features.get("discovery_source", "unavailable")),
+                "configured_absolute": _configured_path_is_absolute(llvm_config_probe),
+            }
+        )
+
+    diagnostics: list[str] = []
+    tool_roots = {
+        str(record["install_root"])
+        for record in root_records
+        if record["tool_name"] != "headers-libs"
+    }
+    root_status = "coherent"
+    if len(tool_roots) > 1:
+        root_status = "mixed"
+        diagnostics.append("LLVM executable tools resolved from multiple install roots")
+    elif tool_roots and headers_root and headers_root not in tool_roots:
+        enforce_headers_root = _configured_path_is_absolute(llvm_config_probe) or any(
+            bool(record.get("configured_absolute"))
+            for record in root_records
+            if record["tool_name"] != "headers-libs"
+        )
+        if enforce_headers_root:
+            root_status = "mixed"
+            diagnostics.append("LLVM headers/libs resolved from a different install root")
+        else:
+            root_status = "coherent-with-advisory-header-root"
+    elif not root_records:
+        root_status = "insufficient-root-evidence"
+
+    version_records: list[dict[str, object]] = []
+    missing_versions: list[str] = []
+    version_families: set[tuple[int, int]] = set()
+    unsupported_versions: list[str] = []
+    for tool_name, record in tool_records:
+        if not bool(record.get("found")):
+            continue
+        version = str(record.get("version", ""))
+        family = _version_family(version)
+        version_records.append(
+            {
+                "tool_name": tool_name,
+                "version": version,
+                "version_family": ".".join(str(part) for part in family) if family else "",
+            }
+        )
+        if family is None:
+            missing_versions.append(tool_name)
+            continue
+        version_families.add(family)
+        if family < MIN_SUPPORTED_LLVM_VERSION:
+            unsupported_versions.append(f"{tool_name} {version}")
+
+    if missing_versions:
+        version_status = "unresolved"
+        diagnostics.append(
+            "LLVM required tool versions were unresolved: " + ", ".join(sorted(missing_versions))
+        )
+    elif len(version_families) > 1:
+        version_status = "mismatched"
+        diagnostics.append("LLVM required tool versions resolved to different major/minor families")
+    elif unsupported_versions:
+        version_status = "unsupported"
+        diagnostics.append(
+            "LLVM required tool versions are below the minimum supported family: "
+            + ", ".join(sorted(unsupported_versions))
+        )
+    elif version_records:
+        version_status = "coherent"
+    else:
+        version_status = "unavailable"
+
+    claimable = root_status != "mixed" and version_status == "coherent"
+    return {
+        "contract_id": "objc3c.llvm.coherent-toolchain-identity.v1",
+        "minimum_supported_version_family": ".".join(str(part) for part in MIN_SUPPORTED_LLVM_VERSION),
+        "root_status": root_status,
+        "version_status": version_status,
+        "claimable": claimable,
+        "rejection_policy": "fail-closed-before-object-package-execution-platform-claim",
+        "mixed_root_status": "native_object_emission_mixed_toolchain_root",
+        "mismatched_version_status": "native_object_emission_mismatched_tool_versions",
+        "unsupported_version_status": "native_object_emission_unsupported_tool_version",
+        "unresolved_version_status": "native_object_emission_unresolved_tool_version",
+        "root_records": root_records,
+        "version_records": version_records,
+        "diagnostics": diagnostics,
+    }
+
+
+def _native_object_emission_identity_failure_status(
+    toolchain_identity: dict[str, object],
+) -> str:
+    if str(toolchain_identity.get("root_status")) == "mixed":
+        return str(
+            toolchain_identity.get(
+                "mixed_root_status",
+                "native_object_emission_mixed_toolchain_root",
+            )
+        )
+    version_status = str(toolchain_identity.get("version_status"))
+    if version_status == "mismatched":
+        return str(
+            toolchain_identity.get(
+                "mismatched_version_status",
+                "native_object_emission_mismatched_tool_versions",
+            )
+        )
+    if version_status == "unsupported":
+        return str(
+            toolchain_identity.get(
+                "unsupported_version_status",
+                "native_object_emission_unsupported_tool_version",
+            )
+        )
+    return str(
+        toolchain_identity.get(
+            "unresolved_version_status",
+            "native_object_emission_unresolved_tool_version",
+        )
+    )
+
+
 def build_llvm_support_matrix(
     *,
     clang_probe: dict[str, object],
@@ -111,6 +328,7 @@ def build_llvm_support_matrix(
     llvm_config_probe: dict[str, object],
     llc_features: dict[str, object],
     llvm_config_features: dict[str, object],
+    toolchain_identity: dict[str, object],
     sema_type_system_parity: dict[str, object],
 ) -> dict[str, object]:
     clang_record = _tool_record("clang", clang_probe)
@@ -126,16 +344,26 @@ def build_llvm_support_matrix(
     )
     discovery_source = str(llvm_config_features.get("discovery_source", "unavailable"))
     parity_ready = bool(sema_type_system_parity.get("parity_ready", False))
+    toolchain_claimable = bool(toolchain_identity.get("claimable", False))
     clangxx_ready = bool(clangxx_probe.get("found"))
-    package_capability_ready = parity_ready and llvm_ar_found and headers_libraries_discovered
-    native_execution_ready = parity_ready and clangxx_ready and headers_libraries_discovered
+    object_emission_ready = llc_found and llc_supports_obj and toolchain_claimable
+    package_capability_ready = (
+        parity_ready and llvm_ar_found and headers_libraries_discovered and toolchain_claimable
+    )
+    native_execution_ready = (
+        parity_ready and clangxx_ready and headers_libraries_discovered and toolchain_claimable
+    )
     native_object_emission_status = (
         "native_object_emission_supported"
-        if llc_found and llc_supports_obj
+        if object_emission_ready
         else (
             "native_object_emission_missing_llc"
             if not llc_found
-            else "native_object_emission_filetype_obj_unavailable"
+            else (
+                "native_object_emission_filetype_obj_unavailable"
+                if not llc_supports_obj
+                else _native_object_emission_identity_failure_status(toolchain_identity)
+            )
         )
     )
     supported_features: list[str] = []
@@ -161,7 +389,7 @@ def build_llvm_support_matrix(
             }
         )
 
-    if bool(llc_probe.get("found")) and llc_supports_obj:
+    if object_emission_ready:
         supported_features.append("llvm-direct-object-emission")
     else:
         rejected_features.append(
@@ -170,7 +398,16 @@ def build_llvm_support_matrix(
                 "reason": (
                     str(llc_probe.get("diagnostic", "llc executable missing"))
                     if not bool(llc_probe.get("found"))
-                    else "llc missing --filetype=obj support"
+                    else (
+                        "llc missing --filetype=obj support"
+                        if not llc_supports_obj
+                        else "; ".join(
+                            str(item)
+                            for item in toolchain_identity.get("diagnostics", [])
+                            if str(item)
+                        )
+                        or "coherent LLVM toolchain identity unavailable"
+                    )
                 ),
             }
         )
@@ -199,7 +436,22 @@ def build_llvm_support_matrix(
             }
         )
 
-    if parity_ready:
+    if toolchain_claimable:
+        supported_features.append("coherent-llvm-toolchain-identity")
+    else:
+        rejected_features.append(
+            {
+                "feature": "coherent-llvm-toolchain-identity",
+                "reason": "; ".join(
+                    str(item)
+                    for item in toolchain_identity.get("diagnostics", [])
+                    if str(item)
+                )
+                or "coherent LLVM root/version proof unavailable",
+            }
+        )
+
+    if parity_ready and toolchain_claimable:
         if package_capability_ready:
             supported_features.append("package-capability-probe")
         else:
@@ -226,6 +478,12 @@ def build_llvm_support_matrix(
         blocker_text = ", ".join(
             str(blocker) for blocker in sema_type_system_parity.get("blockers", [])
         )
+        if parity_ready:
+            blocker_text = "; ".join(
+                str(item)
+                for item in toolchain_identity.get("diagnostics", [])
+                if str(item)
+            )
         rejected_features.extend(
             [
                 {
@@ -251,9 +509,14 @@ def build_llvm_support_matrix(
             "status": native_object_emission_status,
             "missing_llc_status": "native_object_emission_missing_llc",
             "missing_filetype_status": "native_object_emission_filetype_obj_unavailable",
+            "mixed_toolchain_status": "native_object_emission_mixed_toolchain_root",
+            "mismatched_version_status": "native_object_emission_mismatched_tool_versions",
+            "unsupported_version_status": "native_object_emission_unsupported_tool_version",
+            "unresolved_version_status": "native_object_emission_unresolved_tool_version",
             "hosted_runner_behavior": "fail-closed-no-native-object-success-claim",
             "conformance_minima_behavior": "fail-closed-before-cross-lane-runtime-proof",
             "fallback_policy": "no-clang-fallback-success-claim",
+            "coherent_toolchain_policy": "no-mixed-root-or-mismatched-version-success-claim",
         },
         "host_platform": {
             "system": platform.system().lower(),
@@ -267,6 +530,7 @@ def build_llvm_support_matrix(
             llvm_ar_record,
             llvm_config_record,
         ],
+        "toolchain_identity": toolchain_identity,
         "llvm_capability_probes": [
             _capability_probe(
                 probe_id="objc3c.llvm.capability.clang.semantic-diagnostics",
@@ -280,15 +544,24 @@ def build_llvm_support_matrix(
                 tool_name="llc",
                 feature="llvm-direct-object-emission",
                 status="supported"
-                if bool(llc_probe.get("found")) and llc_supports_obj
+                if object_emission_ready
                 else "rejected",
                 failure_reason=(
                     ""
-                    if bool(llc_probe.get("found")) and llc_supports_obj
+                    if object_emission_ready
                     else (
                         str(llc_probe.get("diagnostic", "llc executable missing"))
                         if not bool(llc_probe.get("found"))
-                        else "llc missing --filetype=obj support"
+                        else (
+                            "llc missing --filetype=obj support"
+                            if not llc_supports_obj
+                            else "; ".join(
+                                str(item)
+                                for item in toolchain_identity.get("diagnostics", [])
+                                if str(item)
+                            )
+                            or "coherent LLVM toolchain identity unavailable"
+                        )
                     )
                 ),
             ),
@@ -335,7 +608,7 @@ def build_llvm_support_matrix(
                 "support_status": "supported"
                 if parity_ready and package_capability_ready and native_execution_ready
                 else "rejected",
-                "object_emission_capability": "supported" if llc_supports_obj else "rejected",
+                "object_emission_capability": "supported" if object_emission_ready else "rejected",
                 "package_capability": "supported" if package_capability_ready else "rejected",
                 "native_execution_capability": "supported" if native_execution_ready else "rejected",
                 "supported_features": supported_features,
@@ -391,6 +664,7 @@ def build_summary(
     llvm_config_probe: dict[str, object],
     llc_features: dict[str, object],
     llvm_config_features: dict[str, object],
+    toolchain_identity: dict[str, object],
     sema_type_system_parity: dict[str, object],
     capability_demo_compatibility: dict[str, object],
     failures: Iterable[str],
@@ -404,6 +678,7 @@ def build_summary(
         llvm_config_probe=llvm_config_probe,
         llc_features=llc_features,
         llvm_config_features=llvm_config_features,
+        toolchain_identity=toolchain_identity,
         sema_type_system_parity=sema_type_system_parity,
     )
     return {
@@ -415,6 +690,7 @@ def build_summary(
         "llvm_config": llvm_config_probe,
         "llc_features": llc_features,
         "llvm_config_features": llvm_config_features,
+        "toolchain_identity": toolchain_identity,
         "llvm_support_matrix": llvm_support_matrix,
         "toolchain_resolution": llvm_support_matrix["toolchain_resolution"],
         "sema_type_system_parity": sema_type_system_parity,

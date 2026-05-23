@@ -21,7 +21,8 @@
       "unsupported host attempted build package or install flow",
       "unsupported channel claim reached publication",
       "support tier overclaim bypassed fail-closed policy",
-      "native object emission reached package native execution or publication with missing llc"
+      "native object emission reached package native execution or publication with missing llc",
+      "mixed LLVM roots or mismatched LLVM tool versions reached object package execution or publication"
     ]
   },
   "hard_fail_classes": [
@@ -89,6 +90,26 @@
     },
     {
       "failure_id": "native-object-emission-unavailable",
+      "applies_to": [
+        "toolchain",
+        "package",
+        "execution",
+        "publication"
+      ],
+      "required_behavior": "fail-closed"
+    },
+    {
+      "failure_id": "mixed-toolchain-root",
+      "applies_to": [
+        "toolchain",
+        "package",
+        "execution",
+        "publication"
+      ],
+      "required_behavior": "fail-closed"
+    },
+    {
+      "failure_id": "unsupported-toolchain-version",
       "applies_to": [
         "toolchain",
         "package",
@@ -175,12 +196,15 @@
     "best effort supported",
     "probably compatible",
     "supported if LLVM is installed",
-    "object emission supported via clang substitute"
+    "object emission supported via clang substitute",
+    "mixed LLVM roots are supported",
+    "LLVM tool version mismatch is supported"
   ],
   "required_claims": [
     "unsupported hosts fail closed",
     "package install rollback and publication claims stay on the checked-in matrix",
     "tool presence does not widen host support by itself",
-    "native object emission requires llc --filetype=obj and has no clang substitute success path"
+    "native object emission requires llc --filetype=obj and has no clang substitute success path",
+    "mixed LLVM roots and mismatched LLVM tool versions fail closed before object package execution or platform support"
   ]
 }

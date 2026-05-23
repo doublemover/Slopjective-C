@@ -78,14 +78,25 @@ def test_hosted_registry_fixture_resolves_from_offline_metadata() -> None:
     assert index["endpoint_identity"]["endpoint_id"] == "objc3c-hosted-registry-fixture-endpoint-v1"  # type: ignore[index]
     assert index["endpoint_identity"]["channel_id"] == "stable-fixture"  # type: ignore[index]
     assert index["endpoint_identity"]["fallback_registry_success"] is False  # type: ignore[index]
+    assert index["provider_model"]["network_fetch"]["separated_from_resolution"] is True  # type: ignore[index]
+    assert index["provider_model"]["trust_validator"]["allows_local_install_fallback"] is False  # type: ignore[index]
+    assert index["snapshot"]["rollback_policy"] == "monotonic-sequence-required"  # type: ignore[index]
+    assert index["service_availability"]["state"] == "offline-fixture-available"  # type: ignore[index]
+    assert index["lock_materialization"]["offline_replay_sufficient"] is True  # type: ignore[index]
     assert index["lock_trust_material"]["cache_policy"] == "offline-cache-required-digest-pinned"  # type: ignore[index]
     assert resolved.package_id == "fixture:network.core"
     assert resolved.package_version == "1.0.0"
+    assert resolved.snapshot_id == "objc3c-hosted-registry-fixture-v1@1"
+    assert resolved.cache_key == "fixture:network.core@1.0.0"
+    assert resolved.offline_mirror_path == (
+        "tests/tooling/fixtures/package_ecosystem/hosted_registry/offline-mirror-index.json"
+    )
     assert resolved.cache_path == (
         "tests/tooling/fixtures/package_ecosystem/hosted_registry/cache/network-core.json"
     )
     assert resolved.registry_record_digest.startswith("sha256:")
     assert resolved.registry_signature_id.startswith("sha256:")
+    assert resolved.trust_result_id == "fixture-network-core-1.0.0-trust-result"
 
 
 def test_hosted_registry_live_network_fetch_fails_closed() -> None:
@@ -119,6 +130,39 @@ def test_hosted_registry_unpinned_dependency_fails_closed() -> None:
         mirror,
         f"{PACKAGE_MANAGER_TAMPER_CODE}: unpinned hosted dependency for fixture:network.core",
         package_version=None,
+    )
+
+
+def test_hosted_registry_invalid_semver_fails_closed() -> None:
+    index, mirror = hosted_registry_fixture()
+
+    assert_resolution_failure(
+        index,
+        mirror,
+        f"{PACKAGE_MANAGER_TAMPER_CODE}: invalid semver for fixture:network.core@01.0.0",
+        package_version="01.0.0",
+    )
+
+
+def test_hosted_registry_unsupported_platform_fails_closed() -> None:
+    index, mirror = hosted_registry_fixture()
+
+    assert_resolution_failure(
+        index,
+        mirror,
+        f"{PACKAGE_MANAGER_TAMPER_CODE}: unsupported platform linux-x64 for fixture:network.core",
+        host_platform="linux-x64",
+    )
+
+
+def test_hosted_registry_rollback_snapshot_fails_closed() -> None:
+    index, mirror = hosted_registry_fixture()
+
+    assert_resolution_failure(
+        index,
+        mirror,
+        f"{PACKAGE_MANAGER_TAMPER_CODE}: rollback snapshot for fixture:network.core",
+        minimum_snapshot_sequence=2,
     )
 
 
@@ -181,6 +225,30 @@ def test_hosted_registry_registry_trust_mismatch_fails_closed() -> None:
     )
 
 
+def test_hosted_registry_unsigned_artifact_does_not_fall_back_to_local_install() -> None:
+    index, mirror = hosted_registry_fixture()
+    index["trust_results"][0]["status"] = "unverified"  # type: ignore[index]
+    index["trust_results"][0]["allows_local_install_fallback"] = True  # type: ignore[index]
+
+    failures = assert_resolution_failure(
+        index,
+        mirror,
+        f"{PACKAGE_MANAGER_TAMPER_CODE}: unsigned hosted artifact fixture:network.core@1.0.0",
+    )
+    assert f"{PACKAGE_MANAGER_TAMPER_CODE}: unsigned hosted artifact local install fallback is forbidden" in failures
+
+
+def test_hosted_registry_unavailable_service_fails_closed() -> None:
+    index, mirror = hosted_registry_fixture()
+    index["service_availability"]["state"] = "unavailable"  # type: ignore[index]
+
+    assert_resolution_failure(
+        index,
+        mirror,
+        f"{PACKAGE_MANAGER_TAMPER_CODE}: hosted registry unavailable",
+    )
+
+
 def test_hosted_registry_missing_package_provenance_fails_closed() -> None:
     index, mirror = hosted_registry_fixture()
     record = index["packages"][0]  # type: ignore[index]
@@ -218,6 +286,62 @@ def test_hosted_registry_nondeterministic_candidates_fail_closed() -> None:
         index,
         mirror,
         f"{PACKAGE_MANAGER_TAMPER_CODE}: nondeterministic candidates for fixture:network.core@1.0.0",
+    )
+
+
+def test_hosted_registry_duplicate_version_entries_fail_closed() -> None:
+    index, mirror = hosted_registry_fixture()
+    index["package_versions"].append(deepcopy(index["package_versions"][0]))  # type: ignore[index]
+
+    assert_resolution_failure(
+        index,
+        mirror,
+        f"{PACKAGE_MANAGER_TAMPER_CODE}: duplicate package version entry for fixture:network.core@1.0.0",
+    )
+
+
+def test_hosted_registry_ambiguous_version_selection_fails_closed() -> None:
+    index, mirror = hosted_registry_fixture()
+    index["package_versions"].append(deepcopy(index["package_versions"][0]))  # type: ignore[index]
+
+    assert_resolution_failure(
+        index,
+        mirror,
+        f"{PACKAGE_MANAGER_TAMPER_CODE}: ambiguous version selection for fixture:network.core",
+    )
+
+
+def test_hosted_registry_yanked_version_fails_closed() -> None:
+    index, mirror = hosted_registry_fixture()
+    index["package_versions"][0]["yank_state"] = "yanked"  # type: ignore[index]
+    index["yank_state"]["yanked_versions"] = [  # type: ignore[index]
+        {"package_id": "fixture:network.core", "package_version": "1.0.0"}
+    ]
+
+    assert_resolution_failure(
+        index,
+        mirror,
+        f"{PACKAGE_MANAGER_TAMPER_CODE}: yanked hosted registry version fixture:network.core@1.0.0",
+    )
+
+
+def test_hosted_registry_dependency_cycle_fails_closed() -> None:
+    index, mirror = hosted_registry_fixture()
+    index["dependency_records"] = [  # type: ignore[index]
+        {
+            "package_id": "fixture:network.core",
+            "depends_on_package_id": "fixture:network.core",
+            "version_requirement": "1.0.0",
+            "resolved_version": "1.0.0",
+            "source": "hosted-registry-offline-mirror",
+            "resolution_policy": "exact-pinned-version-only",
+        }
+    ]
+
+    assert_resolution_failure(
+        index,
+        mirror,
+        f"{PACKAGE_MANAGER_TAMPER_CODE}: dependency cycle detected at fixture:network.core",
     )
 
 
@@ -260,6 +384,28 @@ def test_hosted_registry_cache_offline_mirror_pin_mismatch_fails_closed() -> Non
     )
 
 
+def test_hosted_registry_cache_identity_drift_fails_closed() -> None:
+    index, mirror = hosted_registry_fixture()
+    index["cache_identities"][0]["cache_digest"] = "sha256:" + ("5" * 64)  # type: ignore[index]
+
+    assert_resolution_failure(
+        index,
+        mirror,
+        f"{PACKAGE_MANAGER_TAMPER_CODE}: cache identity drift for fixture:network.core@1.0.0",
+    )
+
+
+def test_hosted_registry_offline_mirror_handoff_drift_fails_closed() -> None:
+    index, mirror = hosted_registry_fixture()
+    index["offline_mirror_handoffs"][0]["mirror_path"] = "tests/tooling/fixtures/package_ecosystem/other-mirror.json"  # type: ignore[index]
+
+    assert_resolution_failure(
+        index,
+        mirror,
+        f"{PACKAGE_MANAGER_TAMPER_CODE}: offline mirror handoff drift for fixture:network.core@1.0.0",
+    )
+
+
 def test_hosted_registry_negative_cases_are_source_owned() -> None:
     payload = load_json(NEGATIVE_CASES_FIXTURE)
     case_ids = {str(case["case_id"]) for case in payload["cases"]}  # type: ignore[index]
@@ -267,9 +413,16 @@ def test_hosted_registry_negative_cases_are_source_owned() -> None:
     assert payload["diagnostic_code"] == PACKAGE_MANAGER_TAMPER_CODE
     assert {
         "endpoint-channel-drift",
+        "invalid-semver",
         "missing-package-provenance",
+        "offline-mirror-handoff-drift",
         "registry-trust-mismatch",
+        "rollback-snapshot",
+        "unsupported-platform",
+        "unknown-trust-root",
         "unpinned-hosted-dependency",
+        "unsigned-hosted-artifact",
+        "yanked-version",
     } <= case_ids
     assert str(payload["fixture_index"]) == (
         "tests/tooling/fixtures/package_ecosystem/hosted_registry/hosted-registry-index.json"

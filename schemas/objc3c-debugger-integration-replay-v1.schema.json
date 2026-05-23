@@ -32,6 +32,10 @@
         "rejects_generated_only_maps",
         "requires_inline_frame_chains",
         "requires_step_over_emitted_native_debug_info",
+        "requires_step_operations",
+        "requires_object_model_step_contexts",
+        "rejects_private_snapshot_only_evidence",
+        "requires_native_debug_info_evidence_links",
         "requires_supported_runtime_metadata"
       ],
       "properties": {
@@ -45,6 +49,30 @@
           "const": true
         },
         "requires_step_over_emitted_native_debug_info": {
+          "const": true
+        },
+        "requires_step_operations": {
+          "type": "array",
+          "allOf": [
+            { "contains": { "const": "step-in" } },
+            { "contains": { "const": "step-over" } },
+            { "contains": { "const": "step-out" } }
+          ]
+        },
+        "requires_object_model_step_contexts": {
+          "type": "array",
+          "allOf": [
+            { "contains": { "const": "method-call" } },
+            { "contains": { "const": "property-accessor" } },
+            { "contains": { "const": "category-method" } },
+            { "contains": { "const": "protocol-method-body" } },
+            { "contains": { "const": "reflection-probe-call" } }
+          ]
+        },
+        "rejects_private_snapshot_only_evidence": {
+          "const": true
+        },
+        "requires_native_debug_info_evidence_links": {
           "const": true
         },
         "requires_supported_runtime_metadata": {
@@ -142,6 +170,10 @@
         "status",
         "step_kind",
         "step_operation",
+        "statement_unit_id",
+        "runtime_context_kind",
+        "runtime_context_id",
+        "artifact_scope",
         "source_map_entry_id",
         "debug_map_entry_id",
         "source_digest",
@@ -160,11 +192,33 @@
             "function",
             "method",
             "message-send",
-            "property-access"
+            "property-access",
+            "runtime-helper-call"
           ]
         },
         "step_operation": {
-          "const": "step-over"
+          "enum": [
+            "step-in",
+            "step-over",
+            "step-out"
+          ]
+        },
+        "runtime_context_kind": {
+          "enum": [
+            "statement",
+            "function-call",
+            "method-call",
+            "property-accessor",
+            "category-method",
+            "protocol-method-body",
+            "reflection-probe-call"
+          ]
+        },
+        "artifact_scope": {
+          "const": "public-production-artifact"
+        },
+        "private_snapshot_only": {
+          "const": false
         },
         "claims_stepping": {
           "type": "boolean"

@@ -28,6 +28,7 @@ from .constants import (
     SHOWCASE_PORTFOLIO_PATH,
 )
 from .reports import build_summary, collect_failures, missing_contract_payload
+from .reports import build_toolchain_identity
 
 
 def parse_args(argv: Sequence[str]) -> argparse.Namespace:
@@ -92,6 +93,14 @@ def run(argv: Sequence[str]) -> int:
             llvm_ar_probe,
         )
 
+    toolchain_identity = build_toolchain_identity(
+        clang_probe=clang_probe,
+        clangxx_probe=clangxx_probe,
+        llc_probe=llc_probe,
+        llvm_ar_probe=llvm_ar_probe,
+        llvm_config_probe=llvm_config_probe,
+        llvm_config_features=llvm_config_features,
+    )
     sema_type_system_parity = build_sema_type_system_parity_surface(
         clang_probe=clang_probe,
         llc_probe=llc_probe,
@@ -108,6 +117,7 @@ def run(argv: Sequence[str]) -> int:
         llvm_config_probe=llvm_config_probe,
         llc_features=llc_features,
         llvm_config_features=llvm_config_features,
+        toolchain_identity=toolchain_identity,
         sema_type_system_parity=sema_type_system_parity,
         capability_demo_compatibility=capability_demo_compatibility,
     )
@@ -120,6 +130,7 @@ def run(argv: Sequence[str]) -> int:
         llvm_config_probe=llvm_config_probe,
         llc_features=llc_features,
         llvm_config_features=llvm_config_features,
+        toolchain_identity=toolchain_identity,
         sema_type_system_parity=sema_type_system_parity,
         capability_demo_compatibility=capability_demo_compatibility,
         failures=failures,

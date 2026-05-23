@@ -24,7 +24,9 @@ Checked-in source truth:
 - `schemas/objc3c-platform-toolchain-support-evidence-v1.schema.json`
 - `schemas/objc3c-platform-support-matrix-v1.schema.json`
 - `schemas/objc3c-platform-support-source-truth-v1.schema.json`
+- `schemas/objc3c-platform-hosted-runner-capability-summaries-v1.schema.json`
 - `tests/tooling/fixtures/platform_hardening/platform_toolchain_support_evidence.json`
+- `tests/tooling/fixtures/platform_hardening/hosted_runner_capability_summaries.json`
 - `tests/tooling/fixtures/platform_support/source_truth_matrix.json`
 - `tests/tooling/fixtures/platform_hardening/unsupported_host_fail_closed_policy.json`
 - `tests/tooling/fixtures/platform_hardening/boundary_inventory.json`
@@ -116,21 +118,31 @@ llvm-config or an installed LLVM root are required for supported claims. Missing
 discovery rejects package, native execution, and platform support before a claim
 can be published.
 
-Object emission is supported only when `llc` is resolved and the probe verifies
-`--filetype=obj`. Package/archive claims also require `llvm-ar`, and package or
-native execution claims require LLVM header/library discovery from llvm-config or
-an installed LLVM root. Missing `llc`, missing archive/header tools, mixed LLVM tool roots,
-or versions outside known-good evidence fail before package, native execution,
-or platform support claims are published. The source contract records
-`native_object_emission_missing_llc`,
-`native_object_emission_filetype_obj_unavailable`, and
-`native_object_emission_supported` as the native object-emission statuses.
-Capability-routed object emission must select `llvm-direct` only after the
-`llc --filetype=obj` probe succeeds; it must not fall back to clang and then
-publish a native object success claim. Hosted runner and conformance-minima
-lanes may skip or fail closed when the status is unavailable, but they cannot
-publish object, package, execution, or parity success from a missing-`llc`
-summary.
+Object emission is supported only when `llc` is resolved, the probe verifies
+`--filetype=obj`, every required LLVM subtool publishes a coherent version
+family, and required LLVM tools resolve from a coherent install root. Package
+and native execution claims also require `llvm-ar`, clang++, and LLVM
+header/library discovery from llvm-config or an installed LLVM root. Missing
+`llc`, missing archive/header tools, mixed LLVM tool roots, mismatched LLVM
+tool versions, unresolved tool versions, or versions outside the minimum
+supported family fail before object, package, native execution, or platform
+support claims are published. The source contract records
+`native_object_emission_supported`, `native_object_emission_missing_llc`,
+`native_object_emission_filetype_obj_unavailable`,
+`native_object_emission_mixed_toolchain_root`,
+`native_object_emission_mismatched_tool_versions`,
+`native_object_emission_unsupported_tool_version`, and
+`native_object_emission_unresolved_tool_version` as native object-emission
+statuses. Capability-routed object emission must select `llvm-direct` only
+after the coherent `llc --filetype=obj` probe succeeds; it must not fall back
+to clang and then publish a native object success claim.
+
+Hosted runner capability summaries are checked-in source fixtures, not
+generated proof. `hosted_runner_capability_summaries.json` records the supported
+Windows x64 summary, fail-closed Linux/macOS summaries, reserved ASan/UBSan
+summaries, and missing-`llc`/mixed-root/mismatched-version toolchain summaries.
+Those records can explain why a hosted runner failed closed, but only the
+Windows x64 row may publish platform support.
 
 ## Replay Surface
 

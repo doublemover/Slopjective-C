@@ -14,6 +14,7 @@ PLATFORM_REPORT_ROOT = ROOT / "tmp" / "reports" / "platform-hardening"
 BOUNDARY_INVENTORY_PATH = PLATFORM_FIXTURE_ROOT / "boundary_inventory.json"
 SUPPORT_TIER_POLICY_PATH = PLATFORM_FIXTURE_ROOT / "platform_support_tier_policy.json"
 UNSUPPORTED_HOST_POLICY_PATH = PLATFORM_FIXTURE_ROOT / "unsupported_host_fail_closed_policy.json"
+HOSTED_RUNNER_CAPABILITY_SUMMARIES_PATH = PLATFORM_FIXTURE_ROOT / "hosted_runner_capability_summaries.json"
 TOOLCHAIN_ARCHIVE_POLICY_PATH = PLATFORM_FIXTURE_ROOT / "toolchain_archive_claim_policy.json"
 PLATFORM_MATRIX_ARTIFACT_CONTRACT_PATH = PLATFORM_FIXTURE_ROOT / "platform_matrix_artifact_contract.json"
 BUILD_PACKAGE_VALIDATION_CONTRACT_PATH = PLATFORM_FIXTURE_ROOT / "build_package_validation_contract.json"
@@ -27,6 +28,7 @@ PACKAGING_RUNBOOK_PATH = ROOT / "docs" / "runbooks" / "objc3c_packaging_channels
 RELEASE_RUNBOOK_PATH = ROOT / "docs" / "runbooks" / "objc3c_release_operations.md"
 PLATFORM_SUPPORT_MATRIX_SCHEMA_PATH = ROOT / "schemas" / "objc3c-platform-support-matrix-v1.schema.json"
 PLATFORM_TOOLCHAIN_SUPPORT_EVIDENCE_SCHEMA_PATH = ROOT / "schemas" / "objc3c-platform-toolchain-support-evidence-v1.schema.json"
+HOSTED_RUNNER_CAPABILITY_SUMMARIES_SCHEMA_PATH = ROOT / "schemas" / "objc3c-platform-hosted-runner-capability-summaries-v1.schema.json"
 
 SUPPORT_MATRIX_ARTIFACT_PATH = PLATFORM_ARTIFACT_ROOT / "objc3c-platform-matrix.json"
 SUPPORT_MATRIX_SUMMARY_PATH = PLATFORM_REPORT_ROOT / "platform-matrix-summary.json"
@@ -84,6 +86,8 @@ __all__ = [
     "BUILD_PACKAGE_VALIDATION_SUMMARY_PATH",
     "BUILD_PLATFORM_SUPPORT_MATRIX_SCRIPT",
     "CHANNEL_CATALOG_PATH",
+    "HOSTED_RUNNER_CAPABILITY_SUMMARIES_PATH",
+    "HOSTED_RUNNER_CAPABILITY_SUMMARIES_SCHEMA_PATH",
     "INSTALL_MATRIX_INTEGRATION_CONTRACT_PATH",
     "INSTALL_MATRIX_INTEGRATION_SCRIPT",
     "INSTALL_MATRIX_INTEGRATION_SUMMARY_PATH",

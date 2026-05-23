@@ -464,9 +464,14 @@ def _validate_umbrella_readiness(
         "success_status",
         "missing_llc_status",
         "missing_filetype_status",
+        "mixed_toolchain_status",
+        "mismatched_version_status",
+        "unsupported_version_status",
+        "unresolved_version_status",
         "hosted_runner_behavior",
         "conformance_minima_behavior",
         "fallback_policy",
+        "coherent_toolchain_policy",
     ):
         expect(
             native_contract[field_name] == upstream_native_contract[field_name],
@@ -475,6 +480,11 @@ def _validate_umbrella_readiness(
     expect(
         native_contract["fallback_policy"] == "no-clang-fallback-success-claim",
         "platform umbrella allowed a clang substitute object-emission claim",
+    )
+    expect(
+        native_contract["coherent_toolchain_policy"]
+        == "no-mixed-root-or-mismatched-version-success-claim",
+        "platform umbrella allowed mixed LLVM root or mismatched-version support claims",
     )
     forbidden_overclaims = {str(item) for item in contract["forbidden_overclaims"]}
     expect(
@@ -498,6 +508,10 @@ def _validate_umbrella_readiness(
             native_contract["success_status"],
             native_contract["missing_llc_status"],
             native_contract["missing_filetype_status"],
+            native_contract["mixed_toolchain_status"],
+            native_contract["mismatched_version_status"],
+            native_contract["unsupported_version_status"],
+            native_contract["unresolved_version_status"],
         ],
     }
 

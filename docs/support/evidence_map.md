@@ -917,6 +917,8 @@ diagnostic, documentation, or boundary evidence only.
 | `platform.darwin-arm64.unsupported` |  | `diagnostic` | `tests/tooling/fixtures/platform_hardening/unsupported_host_fail_closed_policy.json` |  |
 | `platform.darwin-arm64.unsupported` |  | `source` | `tests/tooling/fixtures/platform_support/source_truth_matrix.json` |  |
 | `toolchain.llvm.current-probed-executable` |  | `source` | `tests/tooling/fixtures/platform_hardening/platform_toolchain_support_evidence.json` |  |
+| `toolchain.llvm.current-probed-executable` |  | `source` | `tests/tooling/fixtures/platform_hardening/hosted_runner_capability_summaries.json` |  |
+| `toolchain.llvm.current-probed-executable` |  | `schema` | `schemas/objc3c-platform-hosted-runner-capability-summaries-v1.schema.json` |  |
 | `toolchain.llvm.current-probed-executable` |  | `source` | `scripts/probe_objc3c_llvm_capabilities.py` |  |
 | `toolchain.llvm.current-probed-executable` |  | `source` | `scripts/objc3c_llvm_capability_probe/reports.py` |  |
 | `toolchain.llvm.current-probed-executable` |  | `source` | `scripts/check_objc3c_cross_lane_e2e.py` |  |

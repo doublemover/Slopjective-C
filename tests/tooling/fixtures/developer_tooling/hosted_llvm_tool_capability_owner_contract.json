@@ -22,13 +22,14 @@
       "action": "check-hosted-llvm-capabilities",
       "owner": "developer-tooling.hosted-llvm.probe",
       "proof_source": "tmp/artifacts/objc3c-native/m144/llvm_capabilities/summary.json",
-      "claim_scope": "hosted LLVM capability truth requires the hosted summary to report clang, clang++, native_object_emission_supported from llc --filetype=obj, llvm-ar archive tooling, and LLVM header/library discovery from llvm-config or an installed LLVM root",
+      "claim_scope": "hosted LLVM capability truth requires the hosted summary to report clang, clang++, native_object_emission_supported from llc --filetype=obj, coherent LLVM toolchain identity, llvm-ar archive tooling, and LLVM header/library discovery from llvm-config or an installed LLVM root",
       "requires_hosted_probe_summary": true,
       "fails_closed_without_live_capability": true,
       "unsupported_claims": [
         "clang-only hosted execution",
         "local-only hosted execution proof",
         "hosted object parity without llc --filetype=obj",
+        "hosted object parity with mixed LLVM roots or mismatched LLVM tool versions",
         "hosted package or execution support without llvm-ar and LLVM headers/libs"
       ]
     },
@@ -61,7 +62,7 @@
   ],
   "global_claim_boundaries": [
     "unpublished language-server capability claims stay blocked until backed by first-class implementation contracts",
-    "hosted execution support is unavailable without a hosted LLVM summary that records native_object_emission_supported plus required clang++, llvm-ar, and LLVM header/library discovery",
+    "hosted execution support is unavailable without a hosted LLVM summary that records native_object_emission_supported plus coherent LLVM toolchain identity, required clang++, llvm-ar, and LLVM header/library discovery",
     "local-only probe summaries are diagnostics and never CI capability truth",
     "workflow actions must publish owner contracts for the capability they expose"
   ]

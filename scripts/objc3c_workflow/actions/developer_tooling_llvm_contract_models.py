@@ -43,6 +43,8 @@ class HostedLLVMCapabilityTruth:
     llvm_ar_found: bool
     llvm_config_found: bool
     headers_libraries_discovered: bool
+    toolchain_identity_claimable: bool
+    summary_native_object_emission_status: str
     failure_reasons: tuple[str, ...]
 
     @property
@@ -61,6 +63,9 @@ class HostedLLVMCapabilityTruth:
             and self.llc_supports_filetype_obj
             and self.llvm_ar_found
             and self.headers_libraries_discovered
+            and self.toolchain_identity_claimable
+            and self.summary_native_object_emission_status
+            == "native_object_emission_supported"
         )
 
     @property
@@ -75,6 +80,9 @@ class HostedLLVMCapabilityTruth:
             and self.clang_found
             and self.llc_found
             and self.llc_supports_filetype_obj
+            and self.toolchain_identity_claimable
+            and self.summary_native_object_emission_status
+            == "native_object_emission_supported"
         )
 
     @property
@@ -97,12 +105,14 @@ class HostedLLVMCapabilityTruth:
     def native_object_emission_status(self) -> str:
         if not self.is_hosted_source:
             return "native_object_emission_diagnostic_only"
-        if self.hosted_native_object_emission_supported:
-            return "native_object_emission_supported"
         if not self.llc_found:
             return "native_object_emission_missing_llc"
         if not self.llc_supports_filetype_obj:
             return "native_object_emission_filetype_obj_unavailable"
+        if self.summary_native_object_emission_status:
+            return self.summary_native_object_emission_status
+        if self.hosted_native_object_emission_supported:
+            return "native_object_emission_supported"
         return "native_object_emission_unavailable"
 
     @property
@@ -129,6 +139,7 @@ class HostedLLVMCapabilityTruth:
             "llvm_ar_found": self.llvm_ar_found,
             "llvm_config_found": self.llvm_config_found,
             "headers_libraries_discovered": self.headers_libraries_discovered,
+            "toolchain_identity_claimable": self.toolchain_identity_claimable,
             "local_probe_diagnostic_only": self.local_probe_diagnostic_only,
             "hosted_native_object_emission_supported": (
                 self.hosted_native_object_emission_supported
@@ -154,6 +165,13 @@ def _summary_section(summary: dict[str, object], key: str) -> dict[str, object]:
     return value if isinstance(value, dict) else {}
 
 
+def _native_object_emission_status_from_summary(summary: dict[str, object]) -> str:
+    support_matrix = _summary_section(summary, "llvm_support_matrix")
+    native_contract = _summary_section(support_matrix, "native_object_emission_contract")
+    status = native_contract.get("status")
+    return str(status) if isinstance(status, str) and status else ""
+
+
 def hosted_llvm_capability_truth_from_summary(
     summary: dict[str, object],
     *,
@@ -166,6 +184,7 @@ def hosted_llvm_capability_truth_from_summary(
     llvm_config = _summary_section(summary, "llvm_config")
     llc_features = _summary_section(summary, "llc_features")
     llvm_config_features = _summary_section(summary, "llvm_config_features")
+    toolchain_identity = _summary_section(summary, "toolchain_identity")
     mode = summary.get("mode")
     ok = summary.get("ok") is True
     clang_found = bool(clang.get("found"))
@@ -176,6 +195,10 @@ def hosted_llvm_capability_truth_from_summary(
     llc_supports_filetype_obj = bool(llc_features.get("supports_filetype_obj"))
     headers_libraries_discovered = bool(
         llvm_config_features.get("headers_libraries_discovered")
+    )
+    toolchain_identity_claimable = bool(toolchain_identity.get("claimable", False))
+    summary_native_object_emission_status = _native_object_emission_status_from_summary(
+        summary
     )
 
     failure_reasons: list[str] = []
@@ -193,6 +216,15 @@ def hosted_llvm_capability_truth_from_summary(
         failure_reasons.append("llc availability missing")
     elif not llc_supports_filetype_obj:
         failure_reasons.append("llc --filetype=obj support missing")
+    if not toolchain_identity_claimable:
+        failure_reasons.append("coherent LLVM toolchain identity missing")
+    if (
+        summary_native_object_emission_status
+        and summary_native_object_emission_status != "native_object_emission_supported"
+    ):
+        failure_reasons.append(
+            f"native object emission status is {summary_native_object_emission_status}"
+        )
     if not llvm_ar_found:
         failure_reasons.append("llvm-ar availability missing")
     if not headers_libraries_discovered:
@@ -212,6 +244,8 @@ def hosted_llvm_capability_truth_from_summary(
         llvm_ar_found=llvm_ar_found,
         llvm_config_found=llvm_config_found,
         headers_libraries_discovered=headers_libraries_discovered,
+        toolchain_identity_claimable=toolchain_identity_claimable,
+        summary_native_object_emission_status=summary_native_object_emission_status,
         failure_reasons=tuple(failure_reasons),
     )
 

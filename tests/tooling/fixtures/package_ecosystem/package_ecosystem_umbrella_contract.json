@@ -130,16 +130,26 @@
       "source_contract": "tests/tooling/fixtures/package_ecosystem/hosted_registry/hosted-registry-index.json",
       "consumer_contract": "tests/tooling/fixtures/package_ecosystem/network_resolution/network-dependency-resolution.json",
       "required_fields": [
+        "provider_model.network_fetch.separated_from_resolution",
+        "snapshot.rollback_policy",
+        "service_availability.state",
         "endpoint_identity.endpoint_id",
         "endpoint_identity.channel_id",
         "lock_trust_material.source_lock_digest",
         "lock_trust_material.trust_root_id",
-        "lock_trust_material.cache_policy"
+        "lock_trust_material.cache_policy",
+        "trust_results.0.status",
+        "cache_identities.0.cache_key",
+        "offline_mirror_handoffs.0.network_required_after_lock"
       ],
       "fail_closed_cases": [
+        "rollback-snapshot",
         "unpinned-hosted-dependency",
+        "unsupported-platform",
         "registry-trust-mismatch",
         "missing-package-provenance",
+        "unsigned-hosted-artifact",
+        "offline-mirror-handoff-drift",
         "hosted-registry-endpoint-mismatch"
       ]
     },
@@ -202,7 +212,7 @@
     "blocker_owner": "package-ecosystem-blockers",
     "blocking_conditions": [
       "direct @import support lacks locked package provenance or stable diagnostics",
-      "hosted registry fixture lacks endpoint, channel, lock, trust, cache, or failure-mode metadata",
+      "hosted registry fixture lacks provider, endpoint, channel, snapshot, lock, trust, cache identity, offline mirror handoff, revocation/yank, or failure-mode metadata",
       "network dependency resolution accepts live fetches or fallback registry success",
       "release-channel publication accepts stale channel, endpoint drift, lock drift, cache tamper, dependency identity drift, or missing provenance",
       "package signing or verification can succeed without source-owned trust policy and reserved release/registry root handling",

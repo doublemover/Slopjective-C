@@ -249,8 +249,8 @@ rejected rows include:
 
 - Full object-model realization as one umbrella support claim. Narrow object
   rows are implemented, and debugger-grade proof has advanced, but full source
-  maps beyond bounded identity rows, emitted native debug info, broader typed
-  keypath lowering, and statement-level debugger stepping are still reserved.
+  maps beyond bounded identity rows and umbrella-wide promotion across every
+  production path are still reserved.
 - Broad advanced-runtime guarantees beyond the integrated Objective-C 3 runtime
   envelope. The combined fixture compiles, links, and runs with checked runtime
   evidence, while broad scheduler fairness, Swift ABI mirroring, distributed

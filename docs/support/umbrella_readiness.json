@@ -917,7 +917,7 @@
         },
         {
           "id": "native-object-emission-reports",
-          "description": "LLVM capability reports publish native_object_emission_supported, native_object_emission_missing_llc, native_object_emission_filetype_obj_unavailable, and no-clang-fallback policy fields.",
+          "description": "LLVM capability reports publish supported, missing-llc, missing-filetype, mixed-root, mismatched-version, unsupported-version, unresolved-version, and no-clang-fallback policy fields.",
           "status": "satisfied",
           "path": "scripts/objc3c_llvm_capability_probe/reports.py"
         }
@@ -965,9 +965,15 @@
         },
         {
           "id": "missing-llc-fail-closed",
-          "description": "Missing llc or missing llc --filetype=obj remains fail-closed and cannot publish object, package, execution, parity, or platform success.",
+          "description": "Missing llc, missing llc --filetype=obj, mixed LLVM roots, mismatched LLVM tool versions, unsupported LLVM versions, or unresolved required tool versions remain fail-closed and cannot publish object, package, execution, parity, or platform success.",
           "status": "satisfied",
           "path": "tests/tooling/fixtures/platform_hardening/platform_toolchain_support_evidence.json"
+        },
+        {
+          "id": "hosted-runner-capability-summaries",
+          "description": "Hosted-runner summaries cover Windows support, Linux/macOS unsupported rows, ASan/UBSan reserved rows, and toolchain fail-closed states without promoting those summaries to support evidence.",
+          "status": "satisfied",
+          "path": "tests/tooling/fixtures/platform_hardening/hosted_runner_capability_summaries.json"
         }
       ],
       "required_runtime_probes": [

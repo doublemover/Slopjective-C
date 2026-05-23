@@ -213,6 +213,55 @@ def fake_llvm_config_headers_missing_run(
     return fake_capabilities_detected_run(command)
 
 
+def fake_mismatched_llvm_tool_versions_run(
+    command: list[str],
+    **_: object,
+) -> subprocess.CompletedProcess[str]:
+    cmd = tuple(command)
+    if cmd == ("clang", "--version"):
+        return fake_completed(command, returncode=0, stdout="clang version 22.1.0\n")
+    if cmd == ("clang++", "--version"):
+        return fake_completed(command, returncode=0, stdout="clang version 22.1.0\n")
+    if cmd == ("llc", "--version"):
+        return fake_completed(command, returncode=0, stdout="LLVM version 21.1.0\n")
+    if cmd == ("llvm-ar", "--version"):
+        return fake_completed(command, returncode=0, stdout="LLVM version 22.1.0\n")
+    if cmd == ("llvm-config", "--version"):
+        return fake_completed(command, returncode=0, stdout="22.1.0\n")
+    if cmd == ("llvm-config", "--includedir"):
+        return fake_completed(command, returncode=0, stdout="/opt/llvm/include\n")
+    if cmd == ("llvm-config", "--libdir"):
+        return fake_completed(command, returncode=0, stdout="/opt/llvm/lib\n")
+    if cmd == ("llc", "--help"):
+        return fake_completed(command, returncode=0, stdout="--filetype=<type> ... obj ...\n")
+    if cmd == ("llc", "--filetype=obj", "--version"):
+        return fake_completed(command, returncode=0, stdout="LLVM version 21.1.0\n")
+    raise AssertionError(f"unexpected command: {command}")
+
+
+def fake_mixed_toolchain_root_run(
+    command: list[str],
+    **_: object,
+) -> subprocess.CompletedProcess[str]:
+    tool_name = Path(command[0]).name.lower()
+    option_tuple = tuple(command[1:])
+    if tool_name in {"clang.exe", "clang++.exe"} and option_tuple == ("--version",):
+        return fake_completed(command, returncode=0, stdout="clang version 22.1.0\n")
+    if tool_name in {"llc.exe", "llvm-ar.exe"} and option_tuple == ("--version",):
+        return fake_completed(command, returncode=0, stdout="LLVM version 22.1.0\n")
+    if tool_name == "llvm-config.exe" and option_tuple == ("--version",):
+        return fake_completed(command, returncode=0, stdout="22.1.0\n")
+    if tool_name == "llvm-config.exe" and option_tuple == ("--includedir",):
+        return fake_completed(command, returncode=0, stdout=str(Path(command[0]).parents[1] / "include") + "\n")
+    if tool_name == "llvm-config.exe" and option_tuple == ("--libdir",):
+        return fake_completed(command, returncode=0, stdout=str(Path(command[0]).parents[1] / "lib") + "\n")
+    if tool_name == "llc.exe" and option_tuple == ("--help",):
+        return fake_completed(command, returncode=0, stdout="--filetype=<type> ... obj ...\n")
+    if tool_name == "llc.exe" and option_tuple == ("--filetype=obj", "--version"):
+        return fake_completed(command, returncode=0, stdout="LLVM version 22.1.0\n")
+    raise AssertionError(f"unexpected command: {command}")
+
+
 def fake_windows_install_root_without_llvm_config_run(
     command: list[str],
     **_: object,

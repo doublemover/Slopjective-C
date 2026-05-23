@@ -18,6 +18,7 @@ if __package__:
         probe_llvm_install_root_paths,
         run_command,
     )
+    from .objc3c_llvm_capability_probe.reports import build_toolchain_identity
     from .objc3c_llvm_capability_probe.constants import (
         MODE,
         PROGRAM_SURFACE_PATH,
@@ -38,6 +39,7 @@ else:
         probe_llvm_install_root_paths,
         run_command,
     )
+    from objc3c_llvm_capability_probe.reports import build_toolchain_identity
     from objc3c_llvm_capability_probe.constants import (
         MODE,
         PROGRAM_SURFACE_PATH,
@@ -53,6 +55,7 @@ __all__ = [
     "SHOWCASE_PORTFOLIO_PATH",
     "build_capability_demo_compatibility_surface",
     "build_sema_type_system_parity_surface",
+    "build_toolchain_identity",
     "first_non_empty_line",
     "main",
     "parse_args",

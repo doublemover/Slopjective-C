@@ -67,10 +67,22 @@ def test_debugger_integration_fixture_validates_lldb_commands_and_source_backed_
         "method",
         "message-send",
         "property-access",
+        "runtime-helper-call",
     }
+    assert {step["step_operation"] for step in plan["steps"]} == {"step-in", "step-over", "step-out"}
+    assert {
+        "method-call",
+        "property-accessor",
+        "category-method",
+        "protocol-method-body",
+        "reflection-probe-call",
+    } <= {step["runtime_context_kind"] for step in plan["steps"]}
     for step in plan["steps"]:
         assert step["source_file"] == "tests/tooling/fixtures/developer_tooling/debug_source_maps/source.objc3"
         assert step["source_span_id"].startswith("span.")
+        assert step["statement_unit_id"].startswith("stmt.unit.")
+        assert step["runtime_context_id"].startswith("runtime.anchor.")
+        assert step["artifact_scope"] == "public-production-artifact"
         assert step["source_line"] > 0
         assert step["source_column"] > 0
         assert step["source_end_line"] >= step["source_line"]
@@ -123,10 +135,40 @@ def test_debugger_integration_rejects_stepping_debug_map_id_drift(tmp_path: Path
     assert "debug-map-entry-missing" in diagnostic_codes(path)
 
 
-def test_debugger_integration_rejects_non_step_over_native_debug_info(tmp_path: Path) -> None:
-    path = mutated_fixture(tmp_path, ["stepping_plan", "records", 0, "step_operation"], "step-into")
+def test_debugger_integration_rejects_unsupported_step_operation(tmp_path: Path) -> None:
+    path = mutated_fixture(tmp_path, ["stepping_plan", "records", 0, "step_operation"], "reverse-step")
 
-    assert "stepping-operation-mismatch" in diagnostic_codes(path)
+    assert "stepping-operation-unsupported" in diagnostic_codes(path)
+
+
+def test_debugger_integration_rejects_missing_step_operation_coverage(tmp_path: Path) -> None:
+    payload = load_json()
+    payload["stepping_plan"]["records"] = [
+        record for record in payload["stepping_plan"]["records"] if record.get("step_operation") != "step-in"
+    ]
+    path = tmp_path / "debugger-replay-no-step-in.json"
+    path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
+
+    assert "stepping-operation-coverage-missing" in diagnostic_codes(path)
+
+
+def test_debugger_integration_rejects_missing_object_model_step_context(tmp_path: Path) -> None:
+    payload = load_json()
+    payload["stepping_plan"]["records"] = [
+        record
+        for record in payload["stepping_plan"]["records"]
+        if record.get("runtime_context_kind") != "reflection-probe-call"
+    ]
+    path = tmp_path / "debugger-replay-no-reflection-step.json"
+    path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
+
+    assert "stepping-object-model-context-missing" in diagnostic_codes(path)
+
+
+def test_debugger_integration_rejects_private_snapshot_only_stepping_evidence(tmp_path: Path) -> None:
+    path = mutated_fixture(tmp_path, ["stepping_plan", "records", 0, "artifact_scope"], "private-testing-snapshot")
+
+    assert "private-snapshot-only-evidence" in diagnostic_codes(path)
 
 
 def test_debugger_integration_rejects_step_command_kind_drift(tmp_path: Path) -> None:
@@ -158,7 +200,7 @@ def test_debugger_integration_rejects_unsupported_lldb_command(tmp_path: Path) -
 
 
 def test_debugger_integration_rejects_unsupported_record_that_claims_stepping(tmp_path: Path) -> None:
-    path = mutated_fixture(tmp_path, ["stepping_plan", "records", 5, "claims_stepping"], True)
+    path = mutated_fixture(tmp_path, ["stepping_plan", "records", 10, "claims_stepping"], True)
 
     assert "stepping-overclaimed" in diagnostic_codes(path)
 
@@ -190,7 +232,7 @@ def test_debugger_integration_rejects_protocol_without_native_debug_step_over(tm
 def test_debugger_integration_rejects_optimized_step_without_transform_map(tmp_path: Path) -> None:
     path = mutated_fixture(
         tmp_path,
-        ["stepping_plan", "records", 5, "optimization_transform_source_map_entry_id"],
+        ["stepping_plan", "records", 10, "optimization_transform_source_map_entry_id"],
         "smap.message_send",
     )
 

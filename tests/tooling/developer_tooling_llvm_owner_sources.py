@@ -36,6 +36,12 @@ def capable_llvm_summary() -> dict[str, object]:
         "llvm_config": {"found": True},
         "llc_features": {"supports_filetype_obj": True},
         "llvm_config_features": {"headers_libraries_discovered": True},
+        "toolchain_identity": {"claimable": True},
+        "llvm_support_matrix": {
+            "native_object_emission_contract": {
+                "status": "native_object_emission_supported"
+            }
+        },
     }
 
 
@@ -55,6 +61,12 @@ def hosted_probe_without_object_emission() -> tuple[int, dict[str, object]]:
             "llvm_config": {"found": True},
             "llc_features": {"supports_filetype_obj": False},
             "llvm_config_features": {"headers_libraries_discovered": True},
+            "toolchain_identity": {"claimable": False},
+            "llvm_support_matrix": {
+                "native_object_emission_contract": {
+                    "status": "native_object_emission_missing_llc"
+                }
+            },
             "failures": [
                 "llc executable not found: llc",
                 "sema/type-system parity capability unavailable: llc executable missing",
@@ -85,6 +97,12 @@ def hosted_probe_with_capability_truth_drift() -> tuple[int, dict[str, object]]:
             "llvm_config": {"found": True},
             "llc_features": {"supports_filetype_obj": True},
             "llvm_config_features": {"headers_libraries_discovered": True},
+            "toolchain_identity": {"claimable": True},
+            "llvm_support_matrix": {
+                "native_object_emission_contract": {
+                    "status": "native_object_emission_supported"
+                }
+            },
             "capability_demo_compatibility": {
                 "failures": ["story capability drift detected for signalMesh"]
             },
@@ -103,6 +121,12 @@ def hosted_summary_without_clang() -> dict[str, object]:
         "llvm_config": {"found": True},
         "llc_features": {"supports_filetype_obj": True},
         "llvm_config_features": {"headers_libraries_discovered": True},
+        "toolchain_identity": {"claimable": True},
+        "llvm_support_matrix": {
+            "native_object_emission_contract": {
+                "status": "native_object_emission_supported"
+            }
+        },
     }
 
 
@@ -117,4 +141,10 @@ def hosted_summary_without_llc() -> dict[str, object]:
         "llvm_config": {"found": True},
         "llc_features": {"supports_filetype_obj": False},
         "llvm_config_features": {"headers_libraries_discovered": True},
+        "toolchain_identity": {"claimable": False},
+        "llvm_support_matrix": {
+            "native_object_emission_contract": {
+                "status": "native_object_emission_missing_llc"
+            }
+        },
     }

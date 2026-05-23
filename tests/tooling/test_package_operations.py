@@ -13,7 +13,16 @@ SCRIPTS_ROOT = ROOT / "scripts"
 if str(SCRIPTS_ROOT) not in sys.path:
     sys.path.insert(0, str(SCRIPTS_ROOT))
 
-from objc3c_package_manager.hosted_registry import sign_hosted_registry_record  # noqa: E402
+from objc3c_package_manager.hosted_registry import (  # noqa: E402
+    HOSTED_REGISTRY_BASE_URL,
+    HOSTED_REGISTRY_CHANNEL_ID,
+    HOSTED_REGISTRY_ENDPOINT_ID,
+    HOSTED_REGISTRY_FAILURE_MODES,
+    HOSTED_REGISTRY_NETWORK_POLICY,
+    HOSTED_REGISTRY_RESOLVER_ID,
+    HOSTED_REGISTRY_SERVICE_BOUNDARY,
+    sign_hosted_registry_record,
+)
 from objc3c_package_manager.operations import (  # noqa: E402
     PACKAGE_OPERATION_HOSTED_SUPPORT,
     PACKAGE_OPERATION_NETWORK_POLICY,
@@ -308,20 +317,170 @@ def test_package_operations_verify_hosted_registry_metadata_when_provided(
             "candidate_rank": 0,
         },
     }
+    signed_record = sign_hosted_registry_record(record)
+    package_version = str(lock_package["package_version"])
+    semver_major, semver_minor, semver_patch = [
+        int(part) for part in package_version.split(".")
+    ]
+    package_key = f"{package_id}@{package_version}"
+    mirror_index_path = "tmp/artifacts/package-ecosystem/mirrors/offline-mirror-index.json"
+    source_lock = str(
+        mirror.get(
+            "source_lock",
+            "tmp/artifacts/package-ecosystem/locks/package-lock.json",
+        )
+    )
+    source_lock_digest = str(lock.get("lock_digest", "sha256:" + ("4" * 64)))
+    registry_signature = signed_record["registry_signature"]
+    package_trust = signed_record["trust"]
     hosted_registry = {
         "contract_id": "objc3c.package_ecosystem.hosted_registry_index.v1",
+        "issue_refs": [8220],
         "registry_id": "objc3c-hosted-registry-local-operation-fixture-v1",
         "registry_version": 1,
         "registry_state": "not-revoked",
-        "network_policy": "offline-fixture-metadata-only",
-        "resolver": "deterministic-hosted-registry-offline-resolver-v1",
+        "provider_model": {
+            "provider_id": "schema-backed-hosted-registry-provider-v1",
+            "network_fetch": {
+                "separated_from_resolution": True,
+                "policy": "forbidden-fail-closed",
+                "live_fetch_enabled": False,
+            },
+            "resolver": {
+                "resolver_id": HOSTED_REGISTRY_RESOLVER_ID,
+                "selection_policy": "exact-pinned-version-only",
+                "allow_unpinned_versions": False,
+                "fallback_registry_success": False,
+            },
+            "trust_validator": {
+                "validator_id": "schema-backed-hosted-registry-trust-validator-v1",
+                "requires_schema": True,
+                "requires_signature": True,
+                "requires_trust_root": True,
+                "requires_revocation_check": True,
+                "requires_cache_identity": True,
+                "requires_offline_mirror_handoff": True,
+                "allows_local_install_fallback": False,
+            },
+        },
+        "snapshot": {
+            "snapshot_id": "objc3c-hosted-registry-local-operation-fixture-v1@1",
+            "registry_id": "objc3c-hosted-registry-local-operation-fixture-v1",
+            "sequence": 1,
+            "previous_snapshot_id": "bootstrap",
+            "source_lock_digest": source_lock_digest,
+            "rollback_policy": "monotonic-sequence-required",
+            "network_fetch_observed": False,
+        },
+        "service_boundary": HOSTED_REGISTRY_SERVICE_BOUNDARY,
+        "service_availability": {
+            "state": "offline-fixture-available",
+            "live_service_available": False,
+            "network_fetch_allowed": False,
+            "failure_policy": "unavailable-fails-closed",
+            "health_source": "checked-in-fixture-only",
+        },
+        "endpoint_identity": {
+            "registry_id": "objc3c-hosted-registry-local-operation-fixture-v1",
+            "endpoint_id": HOSTED_REGISTRY_ENDPOINT_ID,
+            "channel_id": HOSTED_REGISTRY_CHANNEL_ID,
+            "base_url": HOSTED_REGISTRY_BASE_URL,
+            "availability_claim": "fixture-metadata-only",
+            "network_fetch": "forbidden-fail-closed",
+            "fallback_registry_success": False,
+        },
+        "network_policy": HOSTED_REGISTRY_NETWORK_POLICY,
+        "resolver": HOSTED_REGISTRY_RESOLVER_ID,
         "language_version": "3.0",
         "abi_identity": "objc3-abi-2025Q4",
-        "packages": [sign_hosted_registry_record(record)],
+        "lock_materialization": {
+            "policy": "lockfile-first-offline-mirror-handoff-v1",
+            "source_lock": source_lock,
+            "offline_replay_sufficient": True,
+            "network_required_after_lock": False,
+            "unsigned_artifact_local_install_fallback": False,
+        },
+        "lock_trust_material": {
+            "source_lock": source_lock,
+            "source_lock_digest": source_lock_digest,
+            "trust_root_id": "objc3c-local-deterministic-trust-root-v1",
+            "offline_mirror_path": mirror_index_path,
+            "cache_policy": "offline-cache-required-digest-pinned",
+            "provenance_policy": "source-owned-package-manifest-required",
+        },
+        "failure_modes": sorted(HOSTED_REGISTRY_FAILURE_MODES),
+        "package_versions": [
+            {
+                "package_id": package_id,
+                "package_version": package_version,
+                "semver": {
+                    "major": semver_major,
+                    "minor": semver_minor,
+                    "patch": semver_patch,
+                },
+                "version_state": "available",
+                "yank_state": "not-yanked",
+                "supported_platforms": ["windows-x64"],
+                "selection_policy": "exact-pinned-version-only",
+            }
+        ],
+        "dependency_records": [],
+        "trust_results": [
+            {
+                "trust_result_id": f"{package_id.replace(':', '-')}-{package_version}-trust-result",
+                "package_id": package_id,
+                "package_version": package_version,
+                "status": "verified",
+                "trust_root_id": "objc3c-local-deterministic-trust-root-v1",
+                "package_signature_id": package_trust["signature_id"],
+                "registry_signature_id": registry_signature["signature_id"],
+                "revocation_checked": True,
+                "allows_local_install_fallback": False,
+            }
+        ],
+        "revocation_state": {
+            "checked": True,
+            "registry_state": "not-revoked",
+            "revoked_registry_ids": [],
+            "revoked_package_ids": [],
+            "revoked_signature_ids": [],
+            "revoked_trust_root_ids": [],
+        },
+        "yank_state": {
+            "policy": "yanked-versions-fail-closed",
+            "yanked_versions": [],
+        },
+        "cache_identities": [
+            {
+                "cache_key": package_key,
+                "package_id": package_id,
+                "package_version": package_version,
+                "cache_path": mirror_package["cache_path"],
+                "cache_digest": mirror_package["cache_digest"],
+                "source_digest": lock_package["source_digest"],
+                "manifest_digest": lock_package["package_manifest"]["digest"],
+                "cache_origin": "offline-mirror-lock-materialized",
+            }
+        ],
+        "offline_mirror_handoffs": [
+            {
+                "handoff_id": f"{package_id.replace(':', '-')}-{package_version}-handoff",
+                "package_id": package_id,
+                "package_version": package_version,
+                "mirror_path": mirror_index_path,
+                "source_lock": source_lock,
+                "cache_key": package_key,
+                "requires_lock_materialization": True,
+                "network_required_after_lock": False,
+                "local_install_fallback_for_unverified_artifacts": False,
+            }
+        ],
+        "packages": [signed_record],
         "revocations": {
             "revoked_registry_ids": [],
             "revoked_package_ids": [],
             "revoked_signature_ids": [],
+            "revoked_trust_root_ids": [],
         },
         "replay": {
             "commands": [

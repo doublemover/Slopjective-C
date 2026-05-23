@@ -26,6 +26,14 @@ bool ApplyObjc3LLVMCapabilityRouting(Objc3CliOptions &options,
             DescribeObjc3LLVMCapabilityBlockers(summary.blockers);
     return false;
   }
+  if (!summary.toolchain_identity_claimable) {
+    error =
+        "capability routing fail-closed: coherent LLVM toolchain identity "
+        "is required before object, package, execution, or platform success: " +
+        DescribeObjc3LLVMCapabilityBlockers(
+            summary.toolchain_identity_diagnostics);
+    return false;
+  }
 
   if (!options.clang_path_explicit && !summary.clang_path.empty()) {
     options.clang_path = summary.clang_path;
@@ -35,10 +43,13 @@ bool ApplyObjc3LLVMCapabilityRouting(Objc3CliOptions &options,
   }
 
   if (options.route_backend_from_capabilities) {
-    if (!summary.llc_found || !summary.llc_supports_filetype_obj) {
+    if (!summary.llc_found || !summary.llc_supports_filetype_obj ||
+        summary.native_object_emission_status !=
+            "native_object_emission_supported") {
       error =
           "capability routing fail-closed: native object emission requires "
-          "llc --filetype=obj; clang substitute object emission is not permitted";
+          "llc --filetype=obj and a coherent LLVM toolchain identity; clang "
+          "substitute object emission is not permitted";
       return false;
     }
     options.ir_object_backend = Objc3IrObjectBackend::kLLVMDirect;
@@ -49,9 +60,11 @@ bool ApplyObjc3LLVMCapabilityRouting(Objc3CliOptions &options,
     return false;
   }
   if (options.ir_object_backend == Objc3IrObjectBackend::kLLVMDirect &&
-      (!summary.llc_found || !summary.llc_supports_filetype_obj)) {
+      (!summary.llc_found || !summary.llc_supports_filetype_obj ||
+       summary.native_object_emission_status !=
+           "native_object_emission_supported")) {
     error =
-        "capability routing fail-closed: llvm-direct backend selected but llc --filetype=obj capability is unavailable";
+        "capability routing fail-closed: llvm-direct backend selected but llc --filetype=obj and coherent LLVM toolchain identity are unavailable";
     return false;
   }
   return true;

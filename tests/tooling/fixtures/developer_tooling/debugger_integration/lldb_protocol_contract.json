@@ -14,9 +14,20 @@
     "compiler_owned_source_maps": true,
     "emitted_native_debug_info": true,
     "step_over_emitted_native_debug_info": true,
+    "step_in_emitted_native_debug_info": true,
+    "step_out_emitted_native_debug_info": true,
+    "object_model_step_contexts": [
+      "method-call",
+      "property-accessor",
+      "category-method",
+      "protocol-method-body",
+      "reflection-probe-call"
+    ],
     "statement_source_span_identity": true,
     "inline_frame_chains_for_optimized_frames": true,
-    "supported_runtime_metadata_only": true
+    "supported_runtime_metadata_only": true,
+    "rejects_private_snapshot_only_evidence": true,
+    "requires_native_debug_info_evidence_links": true
   },
   "rejects": [
     {
@@ -38,6 +49,10 @@
     {
       "case_id": "unsupported-runtime-metadata",
       "diagnostic_code": "lldb-protocol-unsupported-runtime-metadata"
+    },
+    {
+      "case_id": "private-snapshot-only-evidence",
+      "diagnostic_code": "private-snapshot-only-evidence"
     }
   ],
   "supported_runtime_metadata_kinds": [

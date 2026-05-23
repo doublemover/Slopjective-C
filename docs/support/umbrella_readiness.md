@@ -373,7 +373,7 @@ Consumer rule: Umbrella readiness may explain why a reserved umbrella row is blo
 - `satisfied` The platform source-truth schema requires umbrella readiness, child issue contracts, and the llc native object emission contract. (path: `schemas/objc3c-platform-support-source-truth-v1.schema.json`)
 - `satisfied` The platform toolchain evidence fixture owns supported Windows x64 evidence, unsupported Linux/macOS rows, sanitizer package metadata, and the LLVM native object emission contract. (path: `tests/tooling/fixtures/platform_hardening/platform_toolchain_support_evidence.json`)
 - `satisfied` Unsupported host policy includes native-object-emission-unavailable as a fail-closed hard-fail class. (path: `tests/tooling/fixtures/platform_hardening/unsupported_host_fail_closed_policy.json`)
-- `satisfied` LLVM capability reports publish native_object_emission_supported, native_object_emission_missing_llc, native_object_emission_filetype_obj_unavailable, and no-clang-fallback policy fields. (path: `scripts/objc3c_llvm_capability_probe/reports.py`)
+- `satisfied` LLVM capability reports publish supported, missing-llc, missing-filetype, mixed-root, mismatched-version, unsupported-version, unresolved-version, and no-clang-fallback policy fields. (path: `scripts/objc3c_llvm_capability_probe/reports.py`)
 
 #### Public Commands
 
@@ -389,7 +389,8 @@ Consumer rule: Umbrella readiness may explain why a reserved umbrella row is blo
 - `satisfied` Linux x64 remains an unsupported fail-closed row with no support claim. (capability_id: `platform.linux-x64.unsupported`)
 - `satisfied` macOS arm64 remains an unsupported fail-closed row with no support claim. (capability_id: `platform.darwin-arm64.unsupported`)
 - `satisfied` ASan and UBSan remain reserved package variants with no platform ids. (path: `tests/tooling/fixtures/platform_support/source_truth_matrix.json`)
-- `satisfied` Missing llc or missing llc --filetype=obj remains fail-closed and cannot publish object, package, execution, parity, or platform success. (path: `tests/tooling/fixtures/platform_hardening/platform_toolchain_support_evidence.json`)
+- `satisfied` Missing llc, missing llc --filetype=obj, mixed LLVM roots, mismatched LLVM tool versions, unsupported LLVM versions, or unresolved required tool versions remain fail-closed and cannot publish object, package, execution, parity, or platform success. (path: `tests/tooling/fixtures/platform_hardening/platform_toolchain_support_evidence.json`)
+- `satisfied` Hosted-runner summaries cover Windows support, Linux/macOS unsupported rows, ASan/UBSan reserved rows, and toolchain fail-closed states without promoting those summaries to support evidence. (path: `tests/tooling/fixtures/platform_hardening/hosted_runner_capability_summaries.json`)
 
 #### Runtime Probes
 

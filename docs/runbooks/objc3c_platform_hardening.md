@@ -107,9 +107,11 @@ success claim. It closes only over checked-in source contracts:
   and prove `llc --filetype=obj`; missing `llc` records
   `native_object_emission_missing_llc` and cannot publish object, package,
   execution, or platform success. Package and native execution promotion also
-  requires the hosted LLVM matrix to resolve clang++, llvm-ar, and LLVM
-  header/library discovery from llvm-config or an installed LLVM root; missing
-  subtools fail closed before those broader support claims.
+  requires the hosted LLVM matrix to resolve clang++, llvm-ar, LLVM
+  header/library discovery from llvm-config or an installed LLVM root, coherent
+  LLVM tool roots, and a coherent LLVM tool version family; missing subtools,
+  mixed roots, unresolved versions, or mismatched versions fail closed before
+  those broader support claims.
 
 Do not project the umbrella as Linux, macOS, sanitizer, or cross-lane runtime
 support. The only supported projection remains `windows-x64`.
@@ -239,6 +241,8 @@ Hard-fail classes:
   success
 - missing required LLVM package/execution subtools, including clang++,
   llvm-ar, or LLVM header/library discovery from llvm-config or an installed LLVM root
+- mixed LLVM install roots, mismatched LLVM tool versions, unresolved required
+  tool versions, or unsupported LLVM version families
 - installer or package-channel invocation outside the published host/channel set
 - update or support publication that implies support outside the checked-in
   matrix

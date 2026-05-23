@@ -6,6 +6,39 @@
   "registry_id": "objc3c-hosted-registry-fixture-v1",
   "registry_version": 1,
   "registry_state": "not-revoked",
+  "provider_model": {
+    "provider_id": "schema-backed-hosted-registry-provider-v1",
+    "network_fetch": {
+      "separated_from_resolution": true,
+      "policy": "forbidden-fail-closed",
+      "live_fetch_enabled": false
+    },
+    "resolver": {
+      "resolver_id": "deterministic-hosted-registry-offline-resolver-v1",
+      "selection_policy": "exact-pinned-version-only",
+      "allow_unpinned_versions": false,
+      "fallback_registry_success": false
+    },
+    "trust_validator": {
+      "validator_id": "schema-backed-hosted-registry-trust-validator-v1",
+      "requires_schema": true,
+      "requires_signature": true,
+      "requires_trust_root": true,
+      "requires_revocation_check": true,
+      "requires_cache_identity": true,
+      "requires_offline_mirror_handoff": true,
+      "allows_local_install_fallback": false
+    }
+  },
+  "snapshot": {
+    "snapshot_id": "objc3c-hosted-registry-fixture-v1@1",
+    "registry_id": "objc3c-hosted-registry-fixture-v1",
+    "sequence": 1,
+    "previous_snapshot_id": "bootstrap",
+    "source_lock_digest": "sha256:4444444444444444444444444444444444444444444444444444444444444444",
+    "rollback_policy": "monotonic-sequence-required",
+    "network_fetch_observed": false
+  },
   "service_boundary": {
     "support_state": "fixture-only-offline",
     "supported_capability_id": "ecosystem.package-manager.hosted-registry-fixture",
@@ -17,6 +50,13 @@
     "fallback_registry_success": false,
     "package_manager_parity": "not-claimed",
     "local_offline_replay_preserved": true
+  },
+  "service_availability": {
+    "state": "offline-fixture-available",
+    "live_service_available": false,
+    "network_fetch_allowed": false,
+    "failure_policy": "unavailable-fails-closed",
+    "health_source": "checked-in-fixture-only"
   },
   "endpoint_identity": {
     "registry_id": "objc3c-hosted-registry-fixture-v1",
@@ -31,6 +71,13 @@
   "resolver": "deterministic-hosted-registry-offline-resolver-v1",
   "language_version": "3.0",
   "abi_identity": "objc3-abi-2025Q4",
+  "lock_materialization": {
+    "policy": "lockfile-first-offline-mirror-handoff-v1",
+    "source_lock": "tests/tooling/fixtures/package_ecosystem/hosted_registry/fixture-lock.json",
+    "offline_replay_sufficient": true,
+    "network_required_after_lock": false,
+    "unsigned_artifact_local_install_fallback": false
+  },
   "lock_trust_material": {
     "source_lock": "tests/tooling/fixtures/package_ecosystem/hosted_registry/fixture-lock.json",
     "source_lock_digest": "sha256:4444444444444444444444444444444444444444444444444444444444444444",
@@ -41,13 +88,95 @@
   },
   "failure_modes": [
     "ambiguous-module-identity",
+    "ambiguous-version-selection",
+    "cache-identity-drift",
+    "dependency-cycle",
+    "digest-drift",
+    "duplicate-version-entry",
     "endpoint-channel-drift",
     "fallback-registry-success",
+    "invalid-semver",
     "live-network-fetch",
     "missing-package-provenance",
+    "offline-mirror-handoff-drift",
     "registry-trust-mismatch",
+    "revoked-subject",
+    "rollback-snapshot",
+    "unavailable-registry",
     "unlocked-version-selection",
-    "unpinned-hosted-dependency"
+    "unpinned-hosted-dependency",
+    "unsigned-hosted-artifact",
+    "unknown-trust-root",
+    "unsupported-platform",
+    "yanked-version"
+  ],
+  "package_versions": [
+    {
+      "package_id": "fixture:network.core",
+      "package_version": "1.0.0",
+      "semver": {
+        "major": 1,
+        "minor": 0,
+        "patch": 0
+      },
+      "version_state": "available",
+      "yank_state": "not-yanked",
+      "supported_platforms": [
+        "windows-x64"
+      ],
+      "selection_policy": "exact-pinned-version-only"
+    }
+  ],
+  "dependency_records": [],
+  "trust_results": [
+    {
+      "trust_result_id": "fixture-network-core-1.0.0-trust-result",
+      "package_id": "fixture:network.core",
+      "package_version": "1.0.0",
+      "status": "verified",
+      "trust_root_id": "objc3c-local-deterministic-trust-root-v1",
+      "package_signature_id": "sha256:ebdad2e83df00f75a7bcfb4d4079eeeedc285d191591ef135b5ab35c7ec11c3f",
+      "registry_signature_id": "sha256:2e2ee5f236794ddd4ffa060a252400bed69bfd4f7413795794faeb4e6777279a",
+      "revocation_checked": true,
+      "allows_local_install_fallback": false
+    }
+  ],
+  "revocation_state": {
+    "checked": true,
+    "registry_state": "not-revoked",
+    "revoked_registry_ids": [],
+    "revoked_package_ids": [],
+    "revoked_signature_ids": [],
+    "revoked_trust_root_ids": []
+  },
+  "yank_state": {
+    "policy": "yanked-versions-fail-closed",
+    "yanked_versions": []
+  },
+  "cache_identities": [
+    {
+      "cache_key": "fixture:network.core@1.0.0",
+      "package_id": "fixture:network.core",
+      "package_version": "1.0.0",
+      "cache_path": "tests/tooling/fixtures/package_ecosystem/hosted_registry/cache/network-core.json",
+      "cache_digest": "sha256:3333333333333333333333333333333333333333333333333333333333333333",
+      "source_digest": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
+      "manifest_digest": "sha256:2222222222222222222222222222222222222222222222222222222222222222",
+      "cache_origin": "offline-mirror-lock-materialized"
+    }
+  ],
+  "offline_mirror_handoffs": [
+    {
+      "handoff_id": "fixture-network-core-1.0.0-offline-mirror-handoff",
+      "package_id": "fixture:network.core",
+      "package_version": "1.0.0",
+      "mirror_path": "tests/tooling/fixtures/package_ecosystem/hosted_registry/offline-mirror-index.json",
+      "source_lock": "tests/tooling/fixtures/package_ecosystem/hosted_registry/fixture-lock.json",
+      "cache_key": "fixture:network.core@1.0.0",
+      "requires_lock_materialization": true,
+      "network_required_after_lock": false,
+      "local_install_fallback_for_unverified_artifacts": false
+    }
   ],
   "packages": [
     {
@@ -123,7 +252,8 @@
   "revocations": {
     "revoked_registry_ids": [],
     "revoked_package_ids": [],
-    "revoked_signature_ids": []
+    "revoked_signature_ids": [],
+    "revoked_trust_root_ids": []
   },
   "replay": {
     "commands": [

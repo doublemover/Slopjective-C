@@ -10,6 +10,8 @@ from objc3c_llvm_capabilities_probe_assertions import (
     assert_llc_missing_payload,
     assert_llvm_ar_missing_payload,
     assert_llvm_config_headers_missing_payload,
+    assert_mismatched_llvm_tool_versions_payload,
+    assert_mixed_toolchain_root_payload,
     assert_package_wires_llvm_capability_probe_script,
     assert_success_payload,
     assert_windows_install_root_header_library_payload,
@@ -25,6 +27,8 @@ from objc3c_llvm_capabilities_probe_subprocess import (
     fake_llvm_ar_missing_run,
     fake_llvm_config_headers_missing_run,
     fake_windows_install_root_without_llvm_config_run,
+    fake_mismatched_llvm_tool_versions_run,
+    fake_mixed_toolchain_root_run,
 )
 from objc3c_llvm_capabilities_probe_support import PACKAGE_JSON, probe
 
@@ -117,6 +121,60 @@ def test_probe_fail_closes_when_llvm_config_cannot_publish_headers_and_libs(
 
     assert exit_code == 1
     assert_llvm_config_headers_missing_payload(load_json(summary_out))
+
+
+def test_probe_fail_closes_when_required_llvm_tool_versions_mismatch(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    monkeypatch.setattr(probe.subprocess, "run", fake_mismatched_llvm_tool_versions_run)
+    summary_out = tmp_path / "summary.json"
+    exit_code = probe.run(["--summary-out", str(summary_out)])
+
+    assert exit_code == 1
+    assert_mismatched_llvm_tool_versions_payload(load_json(summary_out))
+
+
+def test_probe_fail_closes_when_required_llvm_tools_resolve_from_mixed_roots(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    clang_root = tmp_path / "LLVM-A"
+    llc_root = tmp_path / "LLVM-B"
+    config_root = tmp_path / "LLVM-C"
+    for root in (clang_root, llc_root, config_root):
+        (root / "bin").mkdir(parents=True)
+        (root / "include").mkdir()
+        (root / "lib").mkdir()
+    clang = clang_root / "bin" / "clang.exe"
+    clangxx = clang_root / "bin" / "clang++.exe"
+    llc = llc_root / "bin" / "llc.exe"
+    llvm_ar = llc_root / "bin" / "llvm-ar.exe"
+    llvm_config = config_root / "bin" / "llvm-config.exe"
+    for path in (clang, clangxx, llc, llvm_ar, llvm_config):
+        path.write_text("", encoding="utf-8")
+
+    monkeypatch.setattr(probe.subprocess, "run", fake_mixed_toolchain_root_run)
+    summary_out = tmp_path / "summary.json"
+    exit_code = probe.run(
+        [
+            "--clang",
+            str(clang),
+            "--clangxx",
+            str(clangxx),
+            "--llc",
+            str(llc),
+            "--llvm-ar",
+            str(llvm_ar),
+            "--llvm-config",
+            str(llvm_config),
+            "--summary-out",
+            str(summary_out),
+        ]
+    )
+
+    assert exit_code == 1
+    assert_mixed_toolchain_root_payload(load_json(summary_out))
 
 
 def test_probe_accepts_official_windows_install_root_when_llvm_config_is_absent(

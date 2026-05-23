@@ -2622,7 +2622,7 @@ the canonical manifest fixture and public npm command above.
 - Capability ID: `runtime.debug-trace.statement-stepping`
 - State: `implemented`
 - Support claims: `objc3c.behavior.runtime.debug-trace.statement-stepping`
-- Summary: Bounded statement, function, method, and message-send stepping are implemented through checked source-map entries, debug-map rows, native line-table rows, emitted native debug-info evidence, and LLDB replay records. Broad stepping over every integrated object-model production artifact remains reserved by the full source-map and object-model umbrella rows.
+- Summary: Bounded statement, function, method, message-send, and property-accessor stepping are implemented through checked source-map entries, debug-map rows, native line-table rows, emitted native debug-info evidence, and LLDB replay records. Step-in, step-over, and step-out must carry statement-unit/runtime-context anchors for method calls, property accessors, category methods, protocol method bodies, and reflection probe calls; private snapshot-only stepping evidence fails closed. Broad stepping over every production path remains reserved by the full source-map and object-model umbrella rows.
 - Owner modules:
   - `scripts/objc3c_runtime_debug_trace/payload.py`
   - `scripts/objc3c_debug_maps/model.py`
@@ -2759,14 +2759,18 @@ the canonical manifest fixture and public npm command above.
 - Capability ID: `toolchain.llvm.current-probed-executable`
 - State: `internal`
 - Support claims: None
-- Summary: LLVM support is evidence-bound to the currently probed executable and does not claim broad LLVM version ranges. Native object emission is claimable only when llc resolves and proves llc --filetype=obj. Package and native execution claims additionally require clang++, llvm-ar, and LLVM header/library discovery from llvm-config or an installed LLVM root; missing required LLVM subtools, mixed tool roots, unsupported versions, and clang substitute object-emission paths fail closed without support, package, execution, or range claims.
+- Summary: LLVM support is evidence-bound to the currently probed executable and does not claim broad LLVM version ranges. Native object emission is claimable only when llc resolves, proves llc --filetype=obj, and the LLVM toolchain identity is coherent. Package and native execution claims additionally require clang++, llvm-ar, LLVM header/library discovery from llvm-config or an installed LLVM root, coherent tool roots, and coherent LLVM tool versions; missing required LLVM subtools, mixed tool roots, mismatched or unsupported versions, unresolved tool identity, and clang substitute object-emission paths fail closed without support, package, execution, or range claims.
 - Owner modules:
   - `tests/tooling/fixtures/platform_hardening/platform_toolchain_support_evidence.json`
+  - `tests/tooling/fixtures/platform_hardening/hosted_runner_capability_summaries.json`
+  - `schemas/objc3c-platform-hosted-runner-capability-summaries-v1.schema.json`
   - `scripts/probe_objc3c_llvm_capabilities.py`
   - `scripts/objc3c_llvm_capability_probe/reports.py`
   - `scripts/check_objc3c_cross_lane_e2e.py`
 - Evidence:
   - source: `tests/tooling/fixtures/platform_hardening/platform_toolchain_support_evidence.json`
+  - source: `tests/tooling/fixtures/platform_hardening/hosted_runner_capability_summaries.json`
+  - schema: `schemas/objc3c-platform-hosted-runner-capability-summaries-v1.schema.json`
   - source: `scripts/probe_objc3c_llvm_capabilities.py`
   - source: `scripts/objc3c_llvm_capability_probe/reports.py`
   - source: `scripts/check_objc3c_cross_lane_e2e.py`
@@ -2792,12 +2796,13 @@ the canonical manifest fixture and public npm command above.
 - Capability ID: `platform.expansion.umbrella-readiness`
 - State: `internal`
 - Support claims: None
-- Summary: #8206 is an internal readiness boundary over #8228 Linux x64, #8229 macOS arm64, #8230 ASan, #8231 UBSan, and #8232 native object emission. It keeps only Windows x64 projected as supported, keeps Linux and macOS rejected, keeps sanitizer variants reserved, and keeps missing-llc native object emission fail-closed with no clang substitute success path.
+- Summary: #8206 is an internal readiness boundary over #8228 Linux x64, #8229 macOS arm64, #8230 ASan, #8231 UBSan, and #8232 native object emission. It keeps only Windows x64 projected as supported, keeps Linux and macOS rejected, keeps sanitizer variants reserved, and keeps missing-llc, mixed-root, mismatched-version, unsupported-version, and unresolved-version native object emission fail-closed with no clang substitute success path.
 - Owner modules:
   - `tests/tooling/fixtures/platform_support/source_truth_matrix.json`
   - `schemas/objc3c-platform-support-source-truth-v1.schema.json`
   - `scripts/check_objc3c_platform_support_matrix.py`
   - `scripts/platform_hardening_contracts/support_evidence.py`
+  - `tests/tooling/fixtures/platform_hardening/hosted_runner_capability_summaries.json`
   - `tests/tooling/fixtures/platform_hardening/unsupported_host_fail_closed_policy.json`
   - `docs/runbooks/objc3c_platform_hardening.md`
 - Evidence:

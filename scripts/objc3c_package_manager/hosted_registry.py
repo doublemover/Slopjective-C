@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from pathlib import Path
+import re
 from typing import Any
 
 from objc3c_shared.json_io import load_json_object, validate_json_schema
@@ -11,6 +12,7 @@ from objc3c_shared.json_io import load_json_object, validate_json_schema
 from .digests import stable_digest
 from .model import (
     LOCAL_PACKAGE_ABI_IDENTITY,
+    LOCAL_PACKAGE_HOST_PLATFORM,
     LOCAL_PACKAGE_LANGUAGE_VERSION,
     PACKAGE_MANAGER_TAMPER_CODE,
 )
@@ -21,12 +23,17 @@ from .trust import (
     sign_subject_with_deterministic_test_key,
     signature_subject_payload,
     trust_diagnostic,
+    trust_roots_by_id,
 )
 
 HOSTED_REGISTRY_CONTRACT_ID = "objc3c.package_ecosystem.hosted_registry_index.v1"
 HOSTED_REGISTRY_SCHEMA_KEY = "objc3c-package-hosted-registry-index-v1"
 HOSTED_REGISTRY_NETWORK_POLICY = "offline-fixture-metadata-only"
 HOSTED_REGISTRY_RESOLVER_ID = "deterministic-hosted-registry-offline-resolver-v1"
+HOSTED_REGISTRY_PROVIDER_ID = "schema-backed-hosted-registry-provider-v1"
+HOSTED_REGISTRY_TRUST_VALIDATOR_ID = "schema-backed-hosted-registry-trust-validator-v1"
+HOSTED_REGISTRY_SNAPSHOT_POLICY = "monotonic-sequence-required"
+HOSTED_REGISTRY_LOCK_MATERIALIZATION_POLICY = "lockfile-first-offline-mirror-handoff-v1"
 HOSTED_REGISTRY_ENDPOINT_ID = "objc3c-hosted-registry-fixture-endpoint-v1"
 HOSTED_REGISTRY_CHANNEL_ID = "stable-fixture"
 HOSTED_REGISTRY_BASE_URL = "https://registry.objc3c.invalid/fixture/v1"
@@ -34,16 +41,33 @@ OFFLINE_MIRROR_CONTRACT_ID = "objc3c.package_ecosystem.offline_mirror.v1"
 OFFLINE_MIRROR_NETWORK_POLICY = "no-network-during-validation"
 HOSTED_REGISTRY_FAILURE_MODES = {
     "ambiguous-module-identity",
+    "ambiguous-version-selection",
+    "cache-identity-drift",
+    "dependency-cycle",
+    "digest-drift",
+    "duplicate-version-entry",
     "endpoint-channel-drift",
     "fallback-registry-success",
+    "invalid-semver",
     "live-network-fetch",
     "missing-package-provenance",
+    "offline-mirror-handoff-drift",
     "registry-trust-mismatch",
+    "revoked-subject",
+    "rollback-snapshot",
+    "unavailable-registry",
     "unlocked-version-selection",
     "unpinned-hosted-dependency",
+    "unsigned-hosted-artifact",
+    "unknown-trust-root",
+    "unsupported-platform",
+    "yanked-version",
 }
 HOSTED_REGISTRY_CACHE_POLICY = "offline-cache-required-digest-pinned"
 HOSTED_REGISTRY_PROVENANCE_POLICY = "source-owned-package-manifest-required"
+HOSTED_REGISTRY_SELECTION_POLICY = "exact-pinned-version-only"
+HOSTED_REGISTRY_FIXTURE_AVAILABILITY_STATE = "offline-fixture-available"
+HOSTED_REGISTRY_CACHE_ORIGIN = "offline-mirror-lock-materialized"
 HOSTED_REGISTRY_SERVICE_BOUNDARY = {
     "support_state": "fixture-only-offline",
     "supported_capability_id": "ecosystem.package-manager.hosted-registry-fixture",
@@ -61,6 +85,7 @@ HOSTED_REGISTRY_SCHEMA_PATH = (
     / "schemas"
     / "objc3c-package-hosted-registry-index-v1.schema.json"
 )
+_SEMVER_RE = re.compile(r"^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$")
 
 
 @dataclass(frozen=True)
@@ -69,10 +94,78 @@ class HostedRegistryResolutionRequest:
     package_version: str | None = None
     language_version: str = LOCAL_PACKAGE_LANGUAGE_VERSION
     abi_identity: str = LOCAL_PACKAGE_ABI_IDENTITY
+    host_platform: str = LOCAL_PACKAGE_HOST_PLATFORM
     endpoint_id: str = HOSTED_REGISTRY_ENDPOINT_ID
     channel_id: str = HOSTED_REGISTRY_CHANNEL_ID
+    minimum_snapshot_sequence: int = 1
     allow_network: bool = False
     registry_url: str | None = None
+
+
+@dataclass(frozen=True)
+class HostedRegistryProviderModel:
+    provider_id: str
+    network_fetch_policy: str
+    resolver_id: str
+    trust_validator_id: str
+    selection_policy: str
+
+
+@dataclass(frozen=True)
+class HostedRegistrySnapshot:
+    snapshot_id: str
+    registry_id: str
+    sequence: int
+    source_lock_digest: str
+    rollback_policy: str
+
+
+@dataclass(frozen=True)
+class HostedRegistryPackageVersion:
+    package_id: str
+    package_version: str
+    version_state: str
+    yank_state: str
+    supported_platforms: tuple[str, ...]
+
+
+@dataclass(frozen=True)
+class HostedRegistryDependencyRecord:
+    package_id: str
+    depends_on_package_id: str
+    version_requirement: str
+    resolution_policy: str
+
+
+@dataclass(frozen=True)
+class HostedRegistryTrustResult:
+    package_id: str
+    package_version: str
+    status: str
+    trust_root_id: str
+    registry_signature_id: str
+    package_signature_id: str
+
+
+@dataclass(frozen=True)
+class HostedRegistryCacheIdentity:
+    cache_key: str
+    package_id: str
+    package_version: str
+    cache_path: str
+    cache_digest: str
+    source_digest: str
+    manifest_digest: str
+
+
+@dataclass(frozen=True)
+class HostedRegistryOfflineMirrorHandoff:
+    handoff_id: str
+    package_id: str
+    package_version: str
+    mirror_path: str
+    cache_key: str
+    network_required_after_lock: bool
 
 
 @dataclass(frozen=True)
@@ -83,8 +176,12 @@ class HostedRegistryResolution:
     manifest_digest: str
     cache_path: str
     cache_digest: str
+    snapshot_id: str
+    cache_key: str
+    offline_mirror_path: str
     registry_record_digest: str
     registry_signature_id: str
+    trust_result_id: str
 
 
 class HostedRegistryResolutionError(RuntimeError):
@@ -97,6 +194,35 @@ class HostedRegistryResolutionError(RuntimeError):
 
 def hosted_registry_diagnostic(message: str) -> str:
     return f"{PACKAGE_MANAGER_TAMPER_CODE}: {message}"
+
+
+def _is_exact_semver(value: str) -> bool:
+    return _SEMVER_RE.fullmatch(value) is not None
+
+
+def _semver_parts(value: str) -> tuple[int, int, int] | None:
+    match = _SEMVER_RE.fullmatch(value)
+    if match is None:
+        return None
+    return (int(match.group(1)), int(match.group(2)), int(match.group(3)))
+
+
+def _package_key(package_id: str, package_version: str) -> str:
+    return f"{package_id}@{package_version}"
+
+
+def _registry_record_key(record: dict[str, Any]) -> tuple[str, str]:
+    return (str(record.get("package_id", "")), str(record.get("package_version", "")))
+
+
+def _version_keys_from_records(records: list[dict[str, Any]]) -> set[tuple[str, str]]:
+    return {_registry_record_key(record) for record in records}
+
+
+def _as_object_list(value: Any) -> list[dict[str, Any]]:
+    if not isinstance(value, list):
+        return []
+    return [item for item in value if isinstance(item, dict)]
 
 
 def _record_without_integrity_fields(record: dict[str, Any]) -> dict[str, Any]:
@@ -238,6 +364,124 @@ def collect_service_boundary_failures(index: dict[str, Any]) -> list[str]:
     return failures
 
 
+def collect_provider_model_failures(index: dict[str, Any]) -> list[str]:
+    provider = index.get("provider_model", {})
+    if not isinstance(provider, dict):
+        return [hosted_registry_diagnostic("missing hosted registry provider model")]
+    failures: list[str] = []
+    if provider.get("provider_id") != HOSTED_REGISTRY_PROVIDER_ID:
+        failures.append(hosted_registry_diagnostic("hosted registry provider id drifted"))
+
+    network_fetch = provider.get("network_fetch", {})
+    if not isinstance(network_fetch, dict):
+        failures.append(hosted_registry_diagnostic("hosted registry network fetch layer missing"))
+    else:
+        if network_fetch.get("separated_from_resolution") is not True:
+            failures.append(hosted_registry_diagnostic("hosted registry network fetch is not separated from resolution"))
+        if network_fetch.get("policy") != "forbidden-fail-closed":
+            failures.append(hosted_registry_diagnostic("hosted registry network fetch policy drifted"))
+        if network_fetch.get("live_fetch_enabled") is not False:
+            failures.append(hosted_registry_diagnostic("hosted registry live fetch enabled"))
+
+    resolver = provider.get("resolver", {})
+    if not isinstance(resolver, dict):
+        failures.append(hosted_registry_diagnostic("hosted registry resolver model missing"))
+    else:
+        if resolver.get("resolver_id") != HOSTED_REGISTRY_RESOLVER_ID:
+            failures.append(hosted_registry_diagnostic("hosted registry provider resolver id drifted"))
+        if resolver.get("selection_policy") != HOSTED_REGISTRY_SELECTION_POLICY:
+            failures.append(hosted_registry_diagnostic("hosted registry selection policy drifted"))
+        if resolver.get("allow_unpinned_versions") is not False:
+            failures.append(hosted_registry_diagnostic("hosted registry resolver allows unpinned versions"))
+        if resolver.get("fallback_registry_success") is not False:
+            failures.append(hosted_registry_diagnostic("fallback registry success path is forbidden"))
+
+    trust_validator = provider.get("trust_validator", {})
+    if not isinstance(trust_validator, dict):
+        failures.append(hosted_registry_diagnostic("hosted registry trust validator missing"))
+    else:
+        if trust_validator.get("validator_id") != HOSTED_REGISTRY_TRUST_VALIDATOR_ID:
+            failures.append(hosted_registry_diagnostic("hosted registry trust validator id drifted"))
+        for field_name in (
+            "requires_schema",
+            "requires_signature",
+            "requires_trust_root",
+            "requires_revocation_check",
+            "requires_cache_identity",
+            "requires_offline_mirror_handoff",
+        ):
+            if trust_validator.get(field_name) is not True:
+                failures.append(hosted_registry_diagnostic(f"hosted registry trust validator disabled {field_name}"))
+        if trust_validator.get("allows_local_install_fallback") is not False:
+            failures.append(hosted_registry_diagnostic("unsigned hosted artifact local install fallback is forbidden"))
+    return failures
+
+
+def collect_registry_snapshot_failures(index: dict[str, Any]) -> list[str]:
+    snapshot = index.get("snapshot", {})
+    if not isinstance(snapshot, dict):
+        return [hosted_registry_diagnostic("missing hosted registry snapshot")]
+    failures: list[str] = []
+    registry_id = str(index.get("registry_id", ""))
+    if snapshot.get("registry_id") != registry_id:
+        failures.append(hosted_registry_diagnostic("hosted registry snapshot registry id drifted"))
+    sequence = snapshot.get("sequence")
+    if not isinstance(sequence, int) or sequence < 1:
+        failures.append(hosted_registry_diagnostic("hosted registry snapshot sequence is invalid"))
+    expected_snapshot_id = f"{registry_id}@{index.get('registry_version')}"
+    if snapshot.get("snapshot_id") != expected_snapshot_id:
+        failures.append(hosted_registry_diagnostic("hosted registry snapshot id drifted"))
+    lock_trust_material = index.get("lock_trust_material", {})
+    expected_source_lock_digest = (
+        str(lock_trust_material.get("source_lock_digest", ""))
+        if isinstance(lock_trust_material, dict)
+        else ""
+    )
+    if snapshot.get("source_lock_digest") != expected_source_lock_digest:
+        failures.append(hosted_registry_diagnostic("hosted registry snapshot source lock digest drifted"))
+    if snapshot.get("rollback_policy") != HOSTED_REGISTRY_SNAPSHOT_POLICY:
+        failures.append(hosted_registry_diagnostic("hosted registry rollback policy drifted"))
+    if snapshot.get("network_fetch_observed") is not False:
+        failures.append(hosted_registry_diagnostic("hosted registry snapshot observed a live network fetch"))
+    return failures
+
+
+def collect_service_availability_failures(index: dict[str, Any]) -> list[str]:
+    availability = index.get("service_availability", {})
+    if not isinstance(availability, dict):
+        return [hosted_registry_diagnostic("missing hosted registry service availability")]
+    failures: list[str] = []
+    if availability.get("state") != HOSTED_REGISTRY_FIXTURE_AVAILABILITY_STATE:
+        failures.append(hosted_registry_diagnostic("hosted registry unavailable"))
+    if availability.get("live_service_available") is not False:
+        failures.append(hosted_registry_diagnostic("hosted registry live service availability is claimed"))
+    if availability.get("network_fetch_allowed") is not False:
+        failures.append(hosted_registry_diagnostic("hosted registry service allows network fetch"))
+    if availability.get("failure_policy") != "unavailable-fails-closed":
+        failures.append(hosted_registry_diagnostic("hosted registry service availability failure policy drifted"))
+    if availability.get("health_source") != "checked-in-fixture-only":
+        failures.append(hosted_registry_diagnostic("hosted registry service availability source drifted"))
+    return failures
+
+
+def collect_lock_materialization_failures(index: dict[str, Any], mirror: dict[str, Any]) -> list[str]:
+    policy = index.get("lock_materialization", {})
+    if not isinstance(policy, dict):
+        return [hosted_registry_diagnostic("missing hosted registry lock materialization policy")]
+    failures: list[str] = []
+    if policy.get("policy") != HOSTED_REGISTRY_LOCK_MATERIALIZATION_POLICY:
+        failures.append(hosted_registry_diagnostic("hosted registry lock materialization policy drifted"))
+    if policy.get("source_lock") != mirror.get("source_lock"):
+        failures.append(hosted_registry_diagnostic("hosted registry lock materialization source lock drifted"))
+    if policy.get("network_required_after_lock") is not False:
+        failures.append(hosted_registry_diagnostic("hosted registry lock replay requires network"))
+    if policy.get("unsigned_artifact_local_install_fallback") is not False:
+        failures.append(hosted_registry_diagnostic("unsigned hosted artifact local install fallback is forbidden"))
+    if policy.get("offline_replay_sufficient") is not True:
+        failures.append(hosted_registry_diagnostic("hosted registry offline replay is not sufficient after lock materialization"))
+    return failures
+
+
 def collect_lock_trust_material_failures(
     index: dict[str, Any],
     mirror: dict[str, Any],
@@ -250,8 +494,8 @@ def collect_lock_trust_material_failures(
     failures: list[str] = []
     if material.get("source_lock") != mirror.get("source_lock"):
         failures.append(hosted_registry_diagnostic("hosted registry source lock drifted"))
-    if material.get("offline_mirror_path") != "tests/tooling/fixtures/package_ecosystem/hosted_registry/offline-mirror-index.json":
-        failures.append(hosted_registry_diagnostic("hosted registry offline mirror path drifted"))
+    if not isinstance(material.get("offline_mirror_path"), str) or not material.get("offline_mirror_path"):
+        failures.append(hosted_registry_diagnostic("hosted registry offline mirror path missing"))
     if material.get("cache_policy") != HOSTED_REGISTRY_CACHE_POLICY:
         failures.append(hosted_registry_diagnostic("hosted registry offline cache policy drifted"))
     if material.get("provenance_policy") != HOSTED_REGISTRY_PROVENANCE_POLICY:
@@ -288,6 +532,292 @@ def collect_failure_mode_failures(index: dict[str, Any]) -> list[str]:
     if missing_modes:
         return [hosted_registry_diagnostic("hosted registry failure mode contract missing: " + ", ".join(missing_modes))]
     return []
+
+
+def collect_package_version_record_failures(index: dict[str, Any]) -> list[str]:
+    packages = _as_object_list(index.get("packages", []))
+    package_keys = _version_keys_from_records(packages)
+    records = index.get("package_versions", [])
+    if not isinstance(records, list):
+        return [hosted_registry_diagnostic("hosted registry package_versions field is not a list")]
+
+    failures: list[str] = []
+    version_records = _as_object_list(records)
+    seen_keys: set[tuple[str, str]] = set()
+    for record in version_records:
+        package_id = str(record.get("package_id", ""))
+        package_version = str(record.get("package_version", ""))
+        key = (package_id, package_version)
+        if key in seen_keys:
+            failures.append(hosted_registry_diagnostic(f"duplicate package version entry for {_package_key(*key)}"))
+        seen_keys.add(key)
+        if key not in package_keys:
+            failures.append(hosted_registry_diagnostic(f"hosted registry version record has no package record for {_package_key(*key)}"))
+        if not _is_exact_semver(package_version):
+            failures.append(hosted_registry_diagnostic(f"invalid semver for {_package_key(package_id, package_version)}"))
+        semver = record.get("semver", {})
+        parts = _semver_parts(package_version)
+        if not isinstance(semver, dict) or parts is None or (
+            semver.get("major"),
+            semver.get("minor"),
+            semver.get("patch"),
+        ) != parts:
+            failures.append(hosted_registry_diagnostic(f"semver record drift for {_package_key(package_id, package_version)}"))
+        if record.get("version_state") != "available":
+            failures.append(hosted_registry_diagnostic(f"hosted registry unavailable version {_package_key(package_id, package_version)}"))
+        if record.get("yank_state") != "not-yanked":
+            failures.append(hosted_registry_diagnostic(f"yanked hosted registry version {_package_key(package_id, package_version)}"))
+        if record.get("selection_policy") != HOSTED_REGISTRY_SELECTION_POLICY:
+            failures.append(hosted_registry_diagnostic(f"unlocked version selection for {_package_key(package_id, package_version)}"))
+        platforms = record.get("supported_platforms", [])
+        if not isinstance(platforms, list) or not all(isinstance(platform, str) and platform for platform in platforms):
+            failures.append(hosted_registry_diagnostic(f"unsupported platform metadata for {_package_key(package_id, package_version)}"))
+        elif LOCAL_PACKAGE_HOST_PLATFORM not in platforms:
+            failures.append(hosted_registry_diagnostic(f"unsupported platform {LOCAL_PACKAGE_HOST_PLATFORM} for {_package_key(package_id, package_version)}"))
+
+    for key in sorted(package_keys - seen_keys):
+        failures.append(hosted_registry_diagnostic(f"missing package version record for {_package_key(*key)}"))
+    return failures
+
+
+def collect_dependency_record_failures(index: dict[str, Any]) -> list[str]:
+    records = index.get("dependency_records", [])
+    if not isinstance(records, list):
+        return [hosted_registry_diagnostic("hosted registry dependency_records field is not a list")]
+    version_keys = {
+        (str(record.get("package_id", "")), str(record.get("package_version", "")))
+        for record in _as_object_list(index.get("package_versions", []))
+    }
+    package_ids = {package_id for package_id, _ in version_keys}
+    failures: list[str] = []
+    graph: dict[str, list[str]] = {}
+    for record in _as_object_list(records):
+        package_id = str(record.get("package_id", ""))
+        depends_on = str(record.get("depends_on_package_id", ""))
+        required_version = str(record.get("version_requirement", ""))
+        resolved_version = str(record.get("resolved_version", ""))
+        graph.setdefault(package_id, []).append(depends_on)
+        if package_id not in package_ids:
+            failures.append(hosted_registry_diagnostic(f"dependency source is not in hosted registry: {package_id}"))
+        if (depends_on, resolved_version) not in version_keys:
+            failures.append(hosted_registry_diagnostic(f"dependency target is not pinned in hosted registry: {_package_key(depends_on, resolved_version)}"))
+        if not _is_exact_semver(required_version):
+            failures.append(hosted_registry_diagnostic(f"invalid semver for dependency {package_id}->{depends_on}"))
+        if required_version != resolved_version:
+            failures.append(hosted_registry_diagnostic(f"unpinned hosted dependency for {depends_on}"))
+        if record.get("resolution_policy") != HOSTED_REGISTRY_SELECTION_POLICY:
+            failures.append(hosted_registry_diagnostic(f"unlocked version selection for {depends_on}"))
+        if record.get("source") != "hosted-registry-offline-mirror":
+            failures.append(hosted_registry_diagnostic(f"hosted dependency source drift for {package_id}->{depends_on}"))
+
+    visiting: set[str] = set()
+    visited: set[str] = set()
+
+    def visit(package_id: str) -> None:
+        if package_id in visited:
+            return
+        if package_id in visiting:
+            failures.append(hosted_registry_diagnostic(f"dependency cycle detected at {package_id}"))
+            return
+        visiting.add(package_id)
+        for target_id in graph.get(package_id, []):
+            visit(target_id)
+        visiting.remove(package_id)
+        visited.add(package_id)
+
+    for package_id in sorted(graph):
+        visit(package_id)
+    return failures
+
+
+def collect_revocation_and_yank_failures(index: dict[str, Any]) -> list[str]:
+    failures: list[str] = []
+    revocation_state = index.get("revocation_state", {})
+    if not isinstance(revocation_state, dict):
+        failures.append(hosted_registry_diagnostic("missing hosted registry revocation state"))
+        revocation_state = {}
+    if revocation_state.get("checked") is not True:
+        failures.append(hosted_registry_diagnostic("hosted registry revocation state was not checked"))
+    if revocation_state.get("registry_state") != index.get("registry_state"):
+        failures.append(hosted_registry_diagnostic("hosted registry revocation state drifted"))
+    revocations = index.get("revocations", {})
+    if not isinstance(revocations, dict):
+        revocations = {}
+    for field_name in (
+        "revoked_registry_ids",
+        "revoked_package_ids",
+        "revoked_signature_ids",
+        "revoked_trust_root_ids",
+    ):
+        expected_values = revocations.get(field_name, [])
+        actual_values = revocation_state.get(field_name, [])
+        if expected_values != actual_values:
+            failures.append(hosted_registry_diagnostic(f"hosted registry revocation {field_name} drifted"))
+
+    yank_state = index.get("yank_state", {})
+    if not isinstance(yank_state, dict):
+        failures.append(hosted_registry_diagnostic("missing hosted registry yank state"))
+        return failures
+    if yank_state.get("policy") != "yanked-versions-fail-closed":
+        failures.append(hosted_registry_diagnostic("hosted registry yank policy drifted"))
+    yanked_versions = yank_state.get("yanked_versions", [])
+    if not isinstance(yanked_versions, list):
+        failures.append(hosted_registry_diagnostic("hosted registry yanked_versions field is not a list"))
+        return failures
+    yanked_keys = {
+        (str(item.get("package_id", "")), str(item.get("package_version", "")))
+        for item in yanked_versions
+        if isinstance(item, dict)
+    }
+    for package_id, package_version in sorted(yanked_keys):
+        failures.append(hosted_registry_diagnostic(f"yanked hosted registry version {_package_key(package_id, package_version)}"))
+    return failures
+
+
+def collect_trust_result_failures(
+    index: dict[str, Any],
+    *,
+    trust_policy: dict[str, Any] | None = None,
+) -> list[str]:
+    records = index.get("trust_results", [])
+    if not isinstance(records, list):
+        return [hosted_registry_diagnostic("hosted registry trust_results field is not a list")]
+    policy = trust_policy if isinstance(trust_policy, dict) else default_trust_policy_payload()
+    known_roots = set(trust_roots_by_id(policy))
+    revoked_roots = _revoked_values(index, "revoked_trust_root_ids") | _revoked_values({"revocations": policy.get("revocations", {})}, "revoked_trust_root_ids")
+    package_records = {
+        _registry_record_key(record): record
+        for record in _as_object_list(index.get("packages", []))
+    }
+    failures: list[str] = []
+    seen_keys: set[tuple[str, str]] = set()
+    for result in _as_object_list(records):
+        package_id = str(result.get("package_id", ""))
+        package_version = str(result.get("package_version", ""))
+        key = (package_id, package_version)
+        seen_keys.add(key)
+        record = package_records.get(key)
+        if record is None:
+            failures.append(hosted_registry_diagnostic(f"trust result has no package record for {_package_key(*key)}"))
+            continue
+        trust_root_id = str(result.get("trust_root_id", ""))
+        if trust_root_id not in known_roots:
+            failures.append(hosted_registry_diagnostic(f"unknown trust root {trust_root_id}"))
+        if trust_root_id in revoked_roots:
+            failures.append(hosted_registry_diagnostic(f"revoked trust root {trust_root_id}"))
+        if result.get("status") != "verified":
+            failures.append(hosted_registry_diagnostic(f"unsigned hosted artifact {_package_key(*key)}"))
+        if result.get("revocation_checked") is not True:
+            failures.append(hosted_registry_diagnostic(f"revocation check missing for {_package_key(*key)}"))
+        if result.get("allows_local_install_fallback") is not False:
+            failures.append(hosted_registry_diagnostic("unsigned hosted artifact local install fallback is forbidden"))
+        package_trust = record.get("trust", {})
+        registry_signature = record.get("registry_signature", {})
+        package_signature_id = (
+            str(package_trust.get("signature_id", ""))
+            if isinstance(package_trust, dict)
+            else ""
+        )
+        registry_signature_id = (
+            str(registry_signature.get("signature_id", ""))
+            if isinstance(registry_signature, dict)
+            else ""
+        )
+        if result.get("package_signature_id") != package_signature_id:
+            failures.append(hosted_registry_diagnostic(f"package trust result signature drift for {_package_key(*key)}"))
+        if result.get("registry_signature_id") != registry_signature_id:
+            failures.append(hosted_registry_diagnostic(f"registry trust result signature drift for {_package_key(*key)}"))
+    for key in sorted(set(package_records) - seen_keys):
+        failures.append(hosted_registry_diagnostic(f"missing trust result for {_package_key(*key)}"))
+    return failures
+
+
+def collect_cache_identity_failures(index: dict[str, Any]) -> list[str]:
+    cache_identities = index.get("cache_identities", [])
+    if not isinstance(cache_identities, list):
+        return [hosted_registry_diagnostic("hosted registry cache_identities field is not a list")]
+    package_records = {
+        _registry_record_key(record): record
+        for record in _as_object_list(index.get("packages", []))
+    }
+    failures: list[str] = []
+    seen_keys: set[tuple[str, str]] = set()
+    for identity in _as_object_list(cache_identities):
+        package_id = str(identity.get("package_id", ""))
+        package_version = str(identity.get("package_version", ""))
+        key = (package_id, package_version)
+        seen_keys.add(key)
+        record = package_records.get(key)
+        if record is None:
+            failures.append(hosted_registry_diagnostic(f"cache identity has no package record for {_package_key(*key)}"))
+            continue
+        offline_mirror = record.get("offline_mirror", {})
+        manifest = record.get("package_manifest", {})
+        if not isinstance(offline_mirror, dict):
+            offline_mirror = {}
+        if not isinstance(manifest, dict):
+            manifest = {}
+        expected_cache_key = _package_key(package_id, package_version)
+        expected = {
+            "cache_key": expected_cache_key,
+            "cache_path": offline_mirror.get("cache_path"),
+            "cache_digest": offline_mirror.get("cache_digest"),
+            "source_digest": record.get("source_digest"),
+            "manifest_digest": manifest.get("digest"),
+            "cache_origin": HOSTED_REGISTRY_CACHE_ORIGIN,
+        }
+        for field_name, expected_value in expected.items():
+            if identity.get(field_name) != expected_value:
+                failures.append(hosted_registry_diagnostic(f"cache identity drift for {_package_key(*key)}"))
+                break
+    for key in sorted(set(package_records) - seen_keys):
+        failures.append(hosted_registry_diagnostic(f"missing cache identity for {_package_key(*key)}"))
+    return failures
+
+
+def collect_offline_mirror_handoff_failures(index: dict[str, Any], mirror: dict[str, Any]) -> list[str]:
+    handoffs = index.get("offline_mirror_handoffs", [])
+    if not isinstance(handoffs, list):
+        return [hosted_registry_diagnostic("hosted registry offline_mirror_handoffs field is not a list")]
+    package_records = {
+        _registry_record_key(record): record
+        for record in _as_object_list(index.get("packages", []))
+    }
+    lock_trust_material = index.get("lock_trust_material", {})
+    mirror_path = (
+        str(lock_trust_material.get("offline_mirror_path", ""))
+        if isinstance(lock_trust_material, dict)
+        else ""
+    )
+    failures: list[str] = []
+    seen_keys: set[tuple[str, str]] = set()
+    for handoff in _as_object_list(handoffs):
+        package_id = str(handoff.get("package_id", ""))
+        package_version = str(handoff.get("package_version", ""))
+        key = (package_id, package_version)
+        seen_keys.add(key)
+        record = package_records.get(key)
+        if record is None:
+            failures.append(hosted_registry_diagnostic(f"offline mirror handoff has no package record for {_package_key(*key)}"))
+            continue
+        offline_mirror = record.get("offline_mirror", {})
+        if not isinstance(offline_mirror, dict):
+            offline_mirror = {}
+        if handoff.get("mirror_path") != mirror_path or offline_mirror.get("index_path") != mirror_path:
+            failures.append(hosted_registry_diagnostic(f"offline mirror handoff drift for {_package_key(*key)}"))
+        if handoff.get("source_lock") != mirror.get("source_lock"):
+            failures.append(hosted_registry_diagnostic(f"offline mirror handoff source lock drift for {_package_key(*key)}"))
+        if handoff.get("cache_key") != _package_key(package_id, package_version):
+            failures.append(hosted_registry_diagnostic(f"offline mirror handoff cache identity drift for {_package_key(*key)}"))
+        if handoff.get("requires_lock_materialization") is not True:
+            failures.append(hosted_registry_diagnostic(f"offline mirror handoff did not require lock materialization for {_package_key(*key)}"))
+        if handoff.get("network_required_after_lock") is not False:
+            failures.append(hosted_registry_diagnostic(f"offline mirror handoff requires network for {_package_key(*key)}"))
+        if handoff.get("local_install_fallback_for_unverified_artifacts") is not False:
+            failures.append(hosted_registry_diagnostic("unsigned hosted artifact local install fallback is forbidden"))
+    for key in sorted(set(package_records) - seen_keys):
+        failures.append(hosted_registry_diagnostic(f"missing offline mirror handoff for {_package_key(*key)}"))
+    return failures
 
 
 def collect_source_path_failures(record: dict[str, Any], *, root: Path | None) -> list[str]:
@@ -341,10 +871,20 @@ def collect_hosted_registry_model_failures(
     if index.get("abi_identity") != LOCAL_PACKAGE_ABI_IDENTITY:
         failures.append(hosted_registry_diagnostic("hosted registry ABI identity drifted"))
     registry_id = str(index.get("registry_id", ""))
+    failures.extend(collect_provider_model_failures(index))
+    failures.extend(collect_registry_snapshot_failures(index))
+    failures.extend(collect_service_availability_failures(index))
     failures.extend(collect_service_boundary_failures(index))
     failures.extend(collect_endpoint_identity_failures(index))
+    failures.extend(collect_lock_materialization_failures(index, mirror))
     failures.extend(collect_lock_trust_material_failures(index, mirror, root=root))
     failures.extend(collect_failure_mode_failures(index))
+    failures.extend(collect_package_version_record_failures(index))
+    failures.extend(collect_dependency_record_failures(index))
+    failures.extend(collect_revocation_and_yank_failures(index))
+    failures.extend(collect_trust_result_failures(index, trust_policy=policy))
+    failures.extend(collect_cache_identity_failures(index))
+    failures.extend(collect_offline_mirror_handoff_failures(index, mirror))
     if index.get("registry_state") != "not-revoked":
         failures.append(hosted_registry_diagnostic(f"revoked registry {registry_id}"))
     if registry_id in _revoked_values(index, "revoked_registry_ids"):
@@ -466,6 +1006,12 @@ def network_fetch_request_failures(request: HostedRegistryResolutionRequest) -> 
         failures.append(hosted_registry_diagnostic(f"hosted registry channel mismatch for {request.package_id}"))
     if request.package_version is None:
         failures.append(hosted_registry_diagnostic(f"unpinned hosted dependency for {request.package_id}"))
+    elif not _is_exact_semver(request.package_version):
+        failures.append(hosted_registry_diagnostic(f"invalid semver for {_package_key(request.package_id, request.package_version)}"))
+    if request.host_platform != LOCAL_PACKAGE_HOST_PLATFORM:
+        failures.append(hosted_registry_diagnostic(f"unsupported platform {request.host_platform} for {request.package_id}"))
+    if request.minimum_snapshot_sequence < 1:
+        failures.append(hosted_registry_diagnostic(f"rollback snapshot request for {request.package_id}"))
     return failures
 
 
@@ -489,6 +1035,14 @@ def resolve_hosted_registry_package(
         failures.append(hosted_registry_diagnostic(f"language mismatch for {request.package_id}"))
     if request.abi_identity != LOCAL_PACKAGE_ABI_IDENTITY:
         failures.append(hosted_registry_diagnostic(f"ABI mismatch for {request.package_id}"))
+    snapshot = index.get("snapshot", {})
+    if isinstance(snapshot, dict):
+        sequence = snapshot.get("sequence")
+        if isinstance(sequence, int) and sequence < request.minimum_snapshot_sequence:
+            failures.append(hosted_registry_diagnostic(f"rollback snapshot for {request.package_id}"))
+    availability = index.get("service_availability", {})
+    if isinstance(availability, dict) and availability.get("state") != HOSTED_REGISTRY_FIXTURE_AVAILABILITY_STATE:
+        failures.append(hosted_registry_diagnostic("hosted registry unavailable"))
 
     packages = index.get("packages", [])
     candidates = [
@@ -506,6 +1060,23 @@ def resolve_hosted_registry_package(
         failures.append(hosted_registry_diagnostic(f"missing hosted registry metadata for {request.package_id}{suffix}"))
     elif len(candidates) != 1:
         failures.append(hosted_registry_diagnostic(f"nondeterministic candidates for {request.package_id}"))
+    else:
+        record = candidates[0]
+        version_records = [
+            version_record
+            for version_record in _as_object_list(index.get("package_versions", []))
+            if str(version_record.get("package_id", "")) == request.package_id
+            and str(version_record.get("package_version", "")) == str(record.get("package_version", ""))
+        ]
+        if len(version_records) != 1:
+            failures.append(hosted_registry_diagnostic(f"ambiguous version selection for {request.package_id}"))
+        else:
+            version_record = version_records[0]
+            platforms = version_record.get("supported_platforms", [])
+            if not isinstance(platforms, list) or request.host_platform not in platforms:
+                failures.append(hosted_registry_diagnostic(f"unsupported platform {request.host_platform} for {request.package_id}"))
+            if version_record.get("yank_state") != "not-yanked":
+                failures.append(hosted_registry_diagnostic(f"yanked hosted registry version {_package_key(request.package_id, str(record.get('package_version', '')))}"))
 
     if failures:
         raise HostedRegistryResolutionError(failures)
@@ -514,6 +1085,25 @@ def resolve_hosted_registry_package(
     package_manifest = record.get("package_manifest", {})
     offline_mirror = record.get("offline_mirror", {})
     registry_signature = record.get("registry_signature", {})
+    snapshot = index.get("snapshot", {})
+    cache_identity = next(
+        (
+            identity
+            for identity in _as_object_list(index.get("cache_identities", []))
+            if str(identity.get("package_id", "")) == str(record["package_id"])
+            and str(identity.get("package_version", "")) == str(record["package_version"])
+        ),
+        {},
+    )
+    trust_result = next(
+        (
+            result
+            for result in _as_object_list(index.get("trust_results", []))
+            if str(result.get("package_id", "")) == str(record["package_id"])
+            and str(result.get("package_version", "")) == str(record["package_version"])
+        ),
+        {},
+    )
     return HostedRegistryResolution(
         package_id=str(record["package_id"]),
         package_version=str(record["package_version"]),
@@ -521,8 +1111,12 @@ def resolve_hosted_registry_package(
         manifest_digest=str(package_manifest["digest"]),
         cache_path=str(offline_mirror["cache_path"]),
         cache_digest=str(offline_mirror["cache_digest"]),
+        snapshot_id=str(snapshot.get("snapshot_id", "")) if isinstance(snapshot, dict) else "",
+        cache_key=str(cache_identity.get("cache_key", "")),
+        offline_mirror_path=str(offline_mirror["index_path"]),
         registry_record_digest=str(record["metadata_digest"]),
         registry_signature_id=str(registry_signature["signature_id"]),
+        trust_result_id=str(trust_result.get("trust_result_id", "")),
     )
 
 
@@ -533,16 +1127,35 @@ __all__ = [
     "HOSTED_REGISTRY_ENDPOINT_ID",
     "HOSTED_REGISTRY_FAILURE_MODES",
     "HOSTED_REGISTRY_NETWORK_POLICY",
+    "HOSTED_REGISTRY_PROVIDER_ID",
     "HOSTED_REGISTRY_RESOLVER_ID",
     "HOSTED_REGISTRY_SCHEMA_KEY",
     "HOSTED_REGISTRY_SCHEMA_PATH",
     "HOSTED_REGISTRY_SERVICE_BOUNDARY",
+    "HOSTED_REGISTRY_TRUST_VALIDATOR_ID",
+    "HostedRegistryCacheIdentity",
+    "HostedRegistryDependencyRecord",
+    "HostedRegistryOfflineMirrorHandoff",
+    "HostedRegistryPackageVersion",
+    "HostedRegistryProviderModel",
     "HostedRegistryResolution",
     "HostedRegistryResolutionError",
     "HostedRegistryResolutionRequest",
+    "HostedRegistrySnapshot",
+    "HostedRegistryTrustResult",
+    "collect_cache_identity_failures",
+    "collect_dependency_record_failures",
     "collect_hosted_registry_model_failures",
+    "collect_lock_materialization_failures",
     "collect_offline_mirror_contract_failures",
+    "collect_offline_mirror_handoff_failures",
+    "collect_package_version_record_failures",
+    "collect_provider_model_failures",
+    "collect_registry_snapshot_failures",
+    "collect_revocation_and_yank_failures",
+    "collect_service_availability_failures",
     "collect_service_boundary_failures",
+    "collect_trust_result_failures",
     "hosted_registry_diagnostic",
     "hosted_registry_record_digest",
     "hosted_registry_record_signature_subject",

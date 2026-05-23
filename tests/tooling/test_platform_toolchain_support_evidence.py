@@ -8,6 +8,7 @@ import pytest
 
 from scripts.platform_hardening_contracts.report_payloads import build_support_matrix_payload
 from scripts.platform_hardening_contracts.support_evidence import (
+    load_hosted_runner_capability_summaries,
     load_platform_toolchain_support_evidence,
     validate_platform_toolchain_support_evidence,
 )
@@ -40,6 +41,7 @@ def validate_evidence(payload: dict) -> None:
 
 def test_platform_toolchain_support_evidence_fixture_validates() -> None:
     evidence = load_platform_toolchain_support_evidence()
+    hosted_summaries = load_hosted_runner_capability_summaries()
     unsupported_host_policy = load_fixture(
         "tests/tooling/fixtures/platform_hardening/unsupported_host_fail_closed_policy.json"
     )
@@ -57,7 +59,29 @@ def test_platform_toolchain_support_evidence_fixture_validates() -> None:
         "unsupported_component_behavior": "fail-closed-no-range-claim",
     }
     assert {8206, 8228, 8229, 8230, 8231, 8232} <= set(evidence["roadmap_issue_refs"])
+    assert hosted_summaries["support_claim_policy"] == "summary-only-no-support-promotion"
+    assert {
+        summary["summary_id"]: summary["publication_allowed"]
+        for summary in hosted_summaries["summaries"]
+    } == {
+        "objc3c.hosted.windows-x64.supported.current": True,
+        "objc3c.hosted.linux-x64.unsupported": False,
+        "objc3c.hosted.darwin-arm64.unsupported": False,
+        "objc3c.hosted.sanitizer.address.reserved": False,
+        "objc3c.hosted.sanitizer.undefined.reserved": False,
+        "objc3c.hosted.toolchain.missing-llc.fail-closed": False,
+        "objc3c.hosted.toolchain.mixed-root.fail-closed": False,
+        "objc3c.hosted.toolchain.mismatched-version.fail-closed": False,
+    }
     assert "native-object-emission-unavailable" in {
+        failure_class["failure_id"]
+        for failure_class in unsupported_host_policy["hard_fail_classes"]
+    }
+    assert "mixed-toolchain-root" in {
+        failure_class["failure_id"]
+        for failure_class in unsupported_host_policy["hard_fail_classes"]
+    }
+    assert "unsupported-toolchain-version" in {
         failure_class["failure_id"]
         for failure_class in unsupported_host_policy["hard_fail_classes"]
     }
@@ -105,9 +129,14 @@ def test_platform_toolchain_support_evidence_fixture_validates() -> None:
         "success_status": "native_object_emission_supported",
         "missing_llc_status": "native_object_emission_missing_llc",
         "missing_filetype_status": "native_object_emission_filetype_obj_unavailable",
+        "mixed_toolchain_status": "native_object_emission_mixed_toolchain_root",
+        "mismatched_version_status": "native_object_emission_mismatched_tool_versions",
+        "unsupported_version_status": "native_object_emission_unsupported_tool_version",
+        "unresolved_version_status": "native_object_emission_unresolved_tool_version",
         "hosted_runner_behavior": "fail-closed-no-native-object-success-claim",
         "conformance_minima_behavior": "fail-closed-before-cross-lane-runtime-proof",
         "fallback_policy": "no-clang-fallback-success-claim",
+        "coherent_toolchain_policy": "no-mixed-root-or-mismatched-version-success-claim",
     }
     assert {tool["tool_name"] for tool in llvm_matrix["required_tools"]} == {
         "clang",
@@ -211,6 +240,8 @@ def test_platform_support_matrix_publishes_issue_owned_evidence_sections() -> No
         "objc3c.llvm.reject.missing-archive-tool",
         "objc3c.llvm.reject.missing-headers-libs",
         "objc3c.llvm.reject.mixed-toolchain",
+        "objc3c.llvm.reject.mismatched-tool-version",
+        "objc3c.llvm.reject.unresolved-tool-version",
         "objc3c.llvm.reject.unsupported-range",
     }
     missing_llc_rule = next(
