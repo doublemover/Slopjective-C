@@ -24,7 +24,7 @@ PIPELINE_PATH = (
 )
 REPORT_PATH = ROOT / "tmp" / "reports" / "semantic-optimization-pipeline.json"
 PROOF_MODEL_REPORT_PATH = ROOT / "tmp" / "reports" / "optimization-proof-model.json"
-REQUIRED_ISSUES = {8175, 8191, 8192, 8193, 8194}
+REQUIRED_ISSUES = {8175, 8191, 8192, 8193, 8194, 8224, 8226}
 REQUIRED_SUPPORT_CLAIM = "objc3c.behavior.semantic_optimization_pipeline"
 REQUIRED_METHOD_INLINING_SUPPORT_CLAIM = (
     "objc3c.behavior.optimization.method-inlining-safe-subset"
@@ -153,6 +153,10 @@ REQUIRED_METHOD_INLINING_CANDIDATE_INPUT_FIELDS = {
     "recursion_state",
     "callee_generation_snapshot",
     "inlined_target_symbol",
+    "source_identity_preservation",
+    "debug_identity_preservation",
+    "runtime_identity_preservation",
+    "runtime_invalidation_replay",
 }
 REQUIRED_PROOF_RESULT_FIELDS = {
     "decision",
@@ -213,6 +217,10 @@ REQUIRED_METHOD_INLINING_PROOF_IDS = {
     "diagnostic_location_preservation",
     "inlining_depth_recursion_limit",
     "callee_generation_invalidation",
+    "source_identity_preservation",
+    "debug_identity_preservation",
+    "runtime_identity_preservation",
+    "runtime_invalidation_replay",
 }
 SAFE_METHOD_INLINING_CANDIDATE_KINDS = {
     "pure-scalar-free-function",
@@ -240,6 +248,26 @@ METHOD_INLINING_REQUIRED_INVALIDATED_PROOFS = {
     "diagnostic_location",
     "runtime_metadata_identity",
     "package_import_abi_identity",
+    "source_identity_preservation",
+    "debug_identity_preservation",
+    "runtime_generation_dependency",
+    "invalidation_replay",
+}
+METHOD_INLINING_SAFE_GUARD_STRATEGIES = {
+    "generation-guard-fail-closed",
+    "runtime-dispatch-fallback",
+}
+METHOD_INLINING_REQUIRED_RUNTIME_GENERATION_PREFIXES = (
+    "class-generation=",
+    "category-generation=",
+    "protocol-generation=",
+    "callee-generation=",
+)
+METHOD_INLINING_REQUIRED_REPLAY_FIELDS = {
+    "mutation_event",
+    "optimized_site_id",
+    "expected_behavior",
+    "observed_behavior",
 }
 REQUIRED_ALL_PROOF_IDS = (
     REQUIRED_PROOF_IDS
@@ -281,6 +309,8 @@ REQUIRED_VERIFIER_PASSES = {
     "exact-target-devirtualization-verifier",
     "runtime-cache-version-dependency-verifier",
     "method-inlining-safe-subset-verifier",
+    "identity-preservation-evidence-verifier",
+    "runtime-invalidation-replay-verifier",
 }
 REQUIRED_PROOF_CASE_IDS = {
     "direct-dispatch-full-proof-record",
@@ -302,6 +332,9 @@ REQUIRED_PROOF_CASE_IDS = {
     "method-inlining-package-abi-drift",
     "method-inlining-recursion-depth-limit",
     "method-inlining-stale-callee-generation",
+    "method-inlining-missing-source-identity-preservation",
+    "method-inlining-missing-debug-identity-preservation",
+    "method-inlining-missing-runtime-invalidation-replay",
 }
 SAFE_PROOF_VERDICTS = {
     "semantic_equivalence_verdict": {
@@ -535,6 +568,109 @@ def _method_inlining_candidate_failed_proofs(
     return failed
 
 
+def _string_set(value: object) -> set[str]:
+    return {str(item) for item in _as_list(value)}
+
+
+def _method_inlining_preservation_evidence_failures(
+    candidate: dict[str, Any],
+) -> tuple[list[str], list[str]]:
+    missing: list[str] = []
+    failed: list[str] = []
+
+    candidate_source_ids = _string_set(candidate.get("source_graph_node_ids"))
+    candidate_source_maps = _string_set(candidate.get("source_map_ids"))
+    candidate_runtime_ids = _string_set(candidate.get("runtime_metadata_ids"))
+
+    source_identity = _as_dict(candidate.get("source_identity_preservation"))
+    if not source_identity:
+        missing.append("source_identity_preservation")
+    else:
+        preserved_source_ids = _string_set(source_identity.get("source_graph_node_ids"))
+        if (
+            not preserved_source_ids
+            or not preserved_source_ids.issubset(candidate_source_ids)
+            or str(source_identity.get("callsite_id", "")) not in candidate_source_ids
+            or str(source_identity.get("callee_body_identity", ""))
+            != str(candidate.get("callee_body_identity", ""))
+        ):
+            failed.append("source_identity_preservation")
+
+    debug_identity = _as_dict(candidate.get("debug_identity_preservation"))
+    if not debug_identity:
+        missing.append("debug_identity_preservation")
+    else:
+        preserved_source_maps = _string_set(debug_identity.get("source_map_ids"))
+        if (
+            not preserved_source_maps
+            or not preserved_source_maps.issubset(candidate_source_maps)
+            or str(debug_identity.get("inline_frame_id", ""))
+            != str(candidate.get("source_map_inline_frame_id", ""))
+            or str(debug_identity.get("diagnostic_location_id", ""))
+            != str(candidate.get("diagnostic_location_id", ""))
+            or str(debug_identity.get("line_table_status", ""))
+            != str(candidate.get("line_table_status", ""))
+        ):
+            failed.append("debug_identity_preservation")
+
+    runtime_identity = _as_dict(candidate.get("runtime_identity_preservation"))
+    runtime_generation_dependencies: set[str] = set()
+    if not runtime_identity:
+        missing.append("runtime_identity_preservation")
+    else:
+        preserved_runtime_ids = _string_set(runtime_identity.get("runtime_metadata_ids"))
+        runtime_generation_dependencies = _string_set(
+            runtime_identity.get("runtime_generation_dependencies")
+        )
+        if (
+            not preserved_runtime_ids
+            or not preserved_runtime_ids.issubset(candidate_runtime_ids)
+            or str(runtime_identity.get("abi_identity", ""))
+            != str(candidate.get("abi_identity", ""))
+            or str(runtime_identity.get("package_import_identity", ""))
+            != str(candidate.get("package_import_identity", ""))
+            or not runtime_generation_dependencies
+            or not all(
+                any(
+                    dependency.startswith(prefix)
+                    for dependency in runtime_generation_dependencies
+                )
+                for prefix in METHOD_INLINING_REQUIRED_RUNTIME_GENERATION_PREFIXES
+            )
+            or str(candidate.get("callee_generation_snapshot", ""))
+            not in runtime_generation_dependencies
+            or str(runtime_identity.get("guard_strategy", ""))
+            not in METHOD_INLINING_SAFE_GUARD_STRATEGIES
+        ):
+            failed.append("runtime_identity_preservation")
+
+    replay_rows = _as_list(candidate.get("runtime_invalidation_replay"))
+    if not replay_rows:
+        missing.append("runtime_invalidation_replay")
+    else:
+        for row in replay_rows:
+            replay = _as_dict(row)
+            if (
+                set(replay).intersection(METHOD_INLINING_REQUIRED_REPLAY_FIELDS)
+                != METHOD_INLINING_REQUIRED_REPLAY_FIELDS
+            ):
+                failed.append("runtime_invalidation_replay")
+                continue
+            if (
+                any(
+                    not str(replay.get(field, ""))
+                    for field in METHOD_INLINING_REQUIRED_REPLAY_FIELDS
+                )
+                or str(replay.get("optimized_site_id", "")) not in candidate_source_ids
+                or str(replay.get("expected_behavior", ""))
+                != str(replay.get("observed_behavior", ""))
+            ):
+                failed.append("runtime_invalidation_replay")
+                continue
+
+    return _unique_ordered(missing), _unique_ordered(failed)
+
+
 def evaluate_optimization_proof_case(
     case: dict[str, Any],
     *,
@@ -603,6 +739,11 @@ def evaluate_optimization_proof_case(
         failed_proofs.extend(
             _method_inlining_candidate_failed_proofs(candidate_fields, invalidation)
         )
+        preservation_missing, preservation_failed = (
+            _method_inlining_preservation_evidence_failures(candidate_fields)
+        )
+        missing_proofs.extend(preservation_missing)
+        failed_proofs.extend(preservation_failed)
 
     missing_proofs = _unique_ordered(missing_proofs)
     failed_proofs = _unique_ordered(failed_proofs)
@@ -1607,7 +1748,7 @@ def validate_pipeline(
     issues = set(int(issue) for issue in _as_list(issue_mapping.get("primary_issues")))
     if not REQUIRED_ISSUES.issubset(issues):
         failures.append(
-            "semantic optimization pipeline must map to issues #8175, #8191, #8192, #8193, and #8194"
+            "semantic optimization pipeline must map to issues #8175, #8191, #8192, #8193, #8194, #8224, and #8226"
         )
     support_claims = {str(claim) for claim in _as_list(issue_mapping.get("support_claims"))}
     if REQUIRED_SUPPORT_CLAIM not in support_claims:

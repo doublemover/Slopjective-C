@@ -83,6 +83,24 @@ Only these checked-in sources may feed the public performance report:
 No spreadsheet-only, screenshot-only, or operator-maintained sidecar performance summary
 is allowed.
 
+## Optimization Proof Safety Boundary
+
+Method-inlining and optimized-method performance claims must stay behind the
+semantic optimization proof model. A benchmark improvement, generated report, or
+synthetic IR-only fixture cannot create a public optimization support claim
+unless the proof case also preserves:
+
+- source identity: callsite source graph ids and callee body provenance
+- debug identity: source-map ids, inline-frame id, diagnostic location, and
+  line-table status
+- runtime identity: runtime metadata ids, runtime ABI, package/import ABI, and
+  runtime generation dependencies
+- invalidation replay: the optimized site records the runtime mutation event and
+  observed fail-closed or fallback behavior
+
+Missing source/debug/runtime preservation evidence or missing invalidation replay
+is a fail-closed optimization rejection with no success claim.
+
 ## Public Claim And Waiver Policy
 
 The authoritative policy is checked in at

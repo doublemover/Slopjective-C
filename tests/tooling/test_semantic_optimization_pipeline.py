@@ -138,6 +138,12 @@ def test_semantic_optimization_pipeline_schema_and_contract_are_stable() -> None
     assert '"const": "objc3c.optimization.semantic.proof_model.v1"' in text
     assert '"contains": { "const": "validate-optimization-proof-model" }' in text
     assert '"source_map_debug_impact_verdict": { "const": "required" }' in text
+    assert '"contains": { "const": 8224 }' in text
+    assert '"contains": { "const": 8226 }' in text
+    assert '"contains": { "const": "source_identity_preservation" }' in text
+    assert '"contains": { "const": "debug_identity_preservation" }' in text
+    assert '"contains": { "const": "runtime_identity_preservation" }' in text
+    assert '"contains": { "const": "runtime_invalidation_replay" }' in text
     for verdict_field in REQUIRED_PROOF_VERDICT_FIELDS:
         assert verdict_field in text
     assert '"pattern": "^[0-9a-f]{64}$"' in text
@@ -292,6 +298,8 @@ def test_optimization_proof_model_accepts_safe_method_inlining() -> None:
     assert result["missing_proofs"] == []
     assert result["failed_proofs"] == []
     assert result["inlined_target_symbol"] == "objc3_inlineable_InlineMath_addOne"
+    assert "runtime_generation_dependency" in result["invalidated_proof_state"]
+    assert "invalidation_replay" in result["invalidated_proof_state"]
 
 
 def test_optimization_proof_model_rechecks_method_inlining_candidate_semantics() -> None:
@@ -321,7 +329,8 @@ def test_optimization_proof_model_rechecks_method_inlining_candidate_semantics()
     stale_generation_result = evaluate_optimization_proof_case(stale_generation_candidate)
     assert stale_generation_result["decision"] == "REJECTED_FAIL_CLOSED"
     assert stale_generation_result["failed_proofs"] == [
-        "callee_generation_invalidation"
+        "callee_generation_invalidation",
+        "runtime_identity_preservation",
     ]
 
 
@@ -362,6 +371,30 @@ def test_optimization_proof_model_rejects_method_inlining_safety_drift() -> None
     assert package_abi["failed_proofs"] == ["package_import_abi_identity"]
     assert recursion["failed_proofs"] == ["inlining_depth_recursion_limit"]
     assert stale_generation["failed_proofs"] == ["callee_generation_invalidation"]
+
+
+def test_optimization_proof_model_rejects_missing_preservation_evidence() -> None:
+    missing_source = evaluate_optimization_proof_case(
+        _proof_case("method-inlining-missing-source-identity-preservation")
+    )
+    missing_debug = evaluate_optimization_proof_case(
+        _proof_case("method-inlining-missing-debug-identity-preservation")
+    )
+    missing_replay = evaluate_optimization_proof_case(
+        _proof_case("method-inlining-missing-runtime-invalidation-replay")
+    )
+
+    assert missing_source["decision"] == "REJECTED_FAIL_CLOSED"
+    assert missing_source["missing_proofs"] == ["source_identity_preservation"]
+    assert missing_source["success_claim"] is False
+
+    assert missing_debug["decision"] == "REJECTED_FAIL_CLOSED"
+    assert missing_debug["missing_proofs"] == ["debug_identity_preservation"]
+    assert missing_debug["success_claim"] is False
+
+    assert missing_replay["decision"] == "REJECTED_FAIL_CLOSED"
+    assert missing_replay["missing_proofs"] == ["runtime_invalidation_replay"]
+    assert missing_replay["success_claim"] is False
 
 
 def test_semantic_optimization_pipeline_order_drift_fails_closed(tmp_path: Path) -> None:
