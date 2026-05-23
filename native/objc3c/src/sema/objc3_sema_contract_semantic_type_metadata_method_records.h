@@ -19,6 +19,7 @@ struct Objc3SemanticMethodTypeMetadata {
   bool selector_has_normalization_flag_mismatch = false;
   bool selector_has_missing_piece_keyword = false;
   std::size_t arity = 0;
+#include "sema/objc3_sema_contract_semantic_type_metadata_generic_callable_fields.inc"
   std::vector<ValueType> param_types;
   std::vector<Objc3SemanticCanonicalType> param_canonical_types;
   std::vector<bool> param_is_vector;

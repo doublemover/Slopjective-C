@@ -219,6 +219,20 @@ bool Objc3IRExprRequiresTextLiteralHelperDeclarations(const Expr *expr) {
                  expr->left.get()) ||
              Objc3IRExprRequiresTextLiteralHelperDeclarations(
                  expr->right.get());
+    case Expr::Kind::MatchExpression:
+      if (Objc3IRExprRequiresTextLiteralHelperDeclarations(
+              expr->match_expression_scrutinee.get())) {
+        return true;
+      }
+      for (const auto &arm : expr->match_expression_arms) {
+        if (Objc3IRExprRequiresTextLiteralHelperDeclarations(
+                arm.guard_condition.get()) ||
+            Objc3IRExprRequiresTextLiteralHelperDeclarations(
+                arm.value.get())) {
+          return true;
+        }
+      }
+      return false;
     case Expr::Kind::Number:
     case Expr::Kind::BoolLiteral:
     case Expr::Kind::NilLiteral:
@@ -273,6 +287,20 @@ bool Objc3IRExprRequiresCollectionHelperDeclarations(const Expr *expr) {
     case Expr::Kind::StringInterpolation:
       for (const auto &arg : expr->args) {
         if (Objc3IRExprRequiresCollectionHelperDeclarations(arg.get())) {
+          return true;
+        }
+      }
+      return false;
+    case Expr::Kind::MatchExpression:
+      if (Objc3IRExprRequiresCollectionHelperDeclarations(
+              expr->match_expression_scrutinee.get())) {
+        return true;
+      }
+      for (const auto &arm : expr->match_expression_arms) {
+        if (Objc3IRExprRequiresCollectionHelperDeclarations(
+                arm.guard_condition.get()) ||
+            Objc3IRExprRequiresCollectionHelperDeclarations(
+                arm.value.get())) {
           return true;
         }
       }

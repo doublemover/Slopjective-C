@@ -55,6 +55,9 @@ std::string BuildControlFlowControlFlowSourceClosureReplayKey(
       << summary.match_binding_pattern_sites << ":"
       << summary.guarded_match_pattern_sites << ":"
       << summary.match_result_case_pattern_sites
+      << ";match_expression_sites=" << summary.match_expression_sites << ":"
+      << summary.match_expression_arm_sites << ":"
+      << summary.match_expression_guard_sites
       << ";guarded_match_issue_ref=" << summary.guarded_match_issue_ref
       << ";guarded_match_admitted_syntax="
       << summary.guarded_match_admitted_syntax

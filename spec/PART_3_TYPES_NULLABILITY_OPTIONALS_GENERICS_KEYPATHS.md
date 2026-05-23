@@ -10,7 +10,8 @@ _Normative baseline references used in this part: [NR-C18](#part-0-2-1), [NR-LLV
 
 - Optional chaining and optional message sends are **reference-only** in v1 (object/block/void only). Scalar/struct optional chaining is ill-formed.
 - Optional message sends are **conditional calls**: argument expressions are evaluated only if the receiver is non-`nil`.
-- Generic methods/functions are **deferred** in v1; generic _types_ remain supported.
+- Generic callable declarations now use the bounded v1 forms in
+  [§3.5.3](#part-3-5-3); generic _types_ remain supported.
 - Canonical nullability default regions use `#pragma objc assume_nonnull begin/end` ([B](#b)).
 
 Objective‑C 3.0 improves type safety without abandoning Objective‑C’s model:
@@ -49,8 +50,9 @@ Implementation note (`M265-C001`):
   component is a readable property on the current concrete owner, every
   intermediate component resolves to non-generic object metadata, and category
   property metadata is deterministic.
-- Generic Objective-C method declarations written as `- <T> ...` remain
-  reserved in v1 and now diagnose explicitly.
+- Generic Objective-C method declarations written as `- <T> ...` are admitted
+  through selector-stable generic callable metadata; selector-local generic
+  forms remain rejected.
 - Multi-component typed key-path member chains are supported only for concrete
   object-property chains; `id` roots, missing properties, ambiguous category
   metadata, and generic component paths fail closed before lowering.
@@ -582,66 +584,73 @@ A `type-constraint` may be:
 
 The constraint grammar is intentionally limited for implementability.
 
-### 3.5.3 Generic method/function declarations (v2 design path; reserved in v1) {#part-3-5-3}
+### 3.5.3 Generic method/function declarations {#part-3-5-3}
 
 #### 3.5.3.1 v1 status {#part-3-5-3-1}
 
-Objective‑C 3.0 v1 reserves Objective-C generic method declarations and
-C/Objective-C style generic free-function declarations. The native `objc3c`
-frontend admits only the Objective-C 3 free-function form where the type
-parameter clause follows the `fn` declaration name:
+Objective-C 3.0 v1 admits two generic callable declaration forms:
+
+- native Objective-C 3 free functions whose type parameter clause follows the
+  `fn` declaration name,
+- Objective-C methods whose type parameter clause immediately follows the
+  method marker and precedes the return type.
+
+C/Objective-C style generic free-function declarations remain reserved. The
+canonical free-function spelling is:
 
 ```objc
 fn genericIdentity<T : id<Persistable>>(value: T) -> T;
 ```
 
-That admitted free-function surface is erased by default and must preserve its
-generic callable signature in semantic metadata. The #8235 compiler contract
-records this as deterministic erased-default metadata, not runtime reification:
-there is no compatibility alias, no declaration-scoped reification marker, and
-no silent promotion from erased source metadata to reified ABI support.
-Toolchains shall reject
-Objective-C method type-parameter clauses and C/Objective-C style generic
-function declarations with stable parser-owned diagnostics until a future mode
-explicitly admits them.
-
-#### 3.5.3.2 Candidate syntax (future revision) {#part-3-5-3-2}
-
-A generic parameter clause appears before the return type for both Objective‑C methods and C/ObjC functions.
-
-```text
-generic-method-declaration:
-    ('-' | '+') generic-parameter-clause method-type-and-selector
-
-generic-function-declaration:
-    generic-parameter-clause declaration-specifiers declarator
-```
-
-Examples:
+The canonical Objective-C method spelling is:
 
 ```objc
-- <T: id<NSCopying>> (T)coerce:(id)value;
-+ <T> (NSArray<T>*)singleton:(T)value;
+- <T : id<Persistable>> (T)echo:(T)value;
++ <T> (T)defaultValue;
+```
 
+The type parameter clause is part of the callable's semantic signature and
+metadata identity, but it is not part of Objective-C selector spelling.
+Declarations that share a selector cannot overload by generic signature; a
+redeclaration or override must match generic arity, source-order parameter
+names, variance markers, normalized constraints, reification policy, mangling
+policy ID, and signature replay key exactly.
+
+#### 3.5.3.2 Reserved alternate syntax {#part-3-5-3-2}
+
+C/Objective-C style generic free-function declarations remain reserved:
+
+```objc
 <T> T OCIdentity(T value);
 <T: NSObject> NSArray<T>* OCCollect(T first, ...);
 ```
 
-The `objc3c` v1 native subset reserves the examples above and uses the accepted
-free-function spelling from [§3.5.3.1](#part-3-5-3-1) instead.
+Selector-local method generic clauses are also reserved because they would
+make the selector/generic boundary ambiguous:
 
-#### 3.5.3.3 Lowering and mangling path (future revision) {#part-3-5-3-3}
+```objc
+- (id)map<T>:(id)value;    // rejected
+```
+
+Generic Objective-C method clauses must appear immediately after `-` or `+`.
+
+#### 3.5.3.3 Lowering and mangling path {#part-3-5-3-3}
 
 The viable path is **erased execution with preserved generic signatures**:
 
 - Type checking uses declared generic parameters/constraints.
-- ABI lowering erases generic parameters to their bounds (or `id` when unconstrained), unless a future explicit reification mode is enabled.
+- ABI lowering erases generic parameters to their bounds, or to `id` when
+  unconstrained, unless the declaration carries explicit reification policy.
 - Objective‑C method dispatch remains selector-based with one runtime IMP per declaration; type arguments do not create selector variants.
-- Generic free functions use one emitted body per declaration and shall satisfy stable mangling invariants that include:
+- Generic free functions use one emitted body per declaration under the erased
+  default policy and shall satisfy stable mangling invariants that include:
   - base function name,
   - generic arity,
   - normalized constraint signature (or digest),
+  - reification policy,
   - and deterministic reproduction for identical declarations under one toolchain/policy.
+- Generic Objective-C methods preserve the same semantic identity record while
+  dispatch remains selector-based.
 
 Per [D-014](DECISIONS_LOG.md#decisions-d-014), v0.11 standardizes semantic invariants and policy
 stability, not one byte-for-byte mangling string across all toolchains:
@@ -652,16 +661,19 @@ stability, not one byte-for-byte mangling string across all toolchains:
 - The native `objc3c` metadata surface publishes `generic_callable_signature_replay_key`,
   `generic_callable_reification_policy`, `generic_callable_mangling_policy_id`,
   and `generic_callable_contract_deterministic` for admitted generic free
-  functions. Redeclarations that drift in generic arity, parameter order,
-  variance markers, normalized constraints, reification policy, or mangling
-  policy are ill-formed.
+  functions and Objective-C generic methods. Redeclarations that drift in
+  generic arity, parameter order, variance markers, normalized constraints,
+  reification policy, or mangling policy are ill-formed.
 
-#### 3.5.3.4 Selector and metadata interaction (future revision) {#part-3-5-3-4}
+#### 3.5.3.4 Selector and metadata interaction {#part-3-5-3-4}
 
 - Selector identity excludes the generic parameter clause.
 - Two methods in the same class/protocol hierarchy shall not differ only by generic parameter names or constraints if selector pieces are identical.
 - Overrides/redeclarations shall match selector, generic arity, and normalized constraints.
-- Module metadata and textual interfaces shall preserve the generic signature for each generic method/function (parameter list plus constraints) so importers can type-check and validate redeclarations consistently.
+- Module metadata and textual interfaces shall preserve the generic signature,
+  reification policy, mangling policy ID, and replay key for each generic
+  method/function so importers can type-check and validate redeclarations
+  consistently.
 - Import/redeclaration mismatches in preserved generic signatures are diagnosed per [§3.7.3](#part-3-7-3).
 
 ### 3.5.4 Type argument application {#part-3-5-4}
@@ -674,22 +686,39 @@ Box<NSString*>* b;
 
 ### 3.5.5 Erasure and runtime behavior {#part-3-5-5}
 
-Per [D-015](DECISIONS_LOG.md#decisions-d-015), future explicit reification mode is declaration-scoped.
-Unless a declaration is explicitly marked `@reify_generics` (future extension), generic arguments are erased at runtime:
+Per [D-015](DECISIONS_LOG.md#decisions-d-015), explicit reification control is
+declaration-scoped. Unless a generic callable declaration is explicitly marked
+`@reify_generics`, generic arguments are erased at runtime:
 
 - they do not affect object layout,
 - they do not affect message dispatch,
 - they exist for type checking and tooling.
 
-Additional constraints for any future reification-capable mode:
+The marker is admitted only immediately before a generic callable declaration:
+
+```objc
+@reify_generics
+fn reifiedIdentity<T>(value: T) -> T;
+
+@interface ReifiedMethodBox
+@reify_generics
+- <T> (T)echo:(T)value;
+@end
+```
+
+Declaration-scoped reification changes preserved policy metadata and mangling
+policy identity; it does not create selector variants and does not imply a
+module-wide mode switch.
+
+Required reification constraints:
 
 - Reification controls shall apply per declaration; enabling a module/profile mode alone shall not implicitly reify unrelated declarations.
 - Module/profile controls may gate whether declaration-scoped reification syntax is accepted, but shall not change meaning of declarations that omit reification markers.
 - Mixed modules that contain both erased and reified declarations shall preserve this distinction in metadata and textual interfaces.
-- In the current native v1 subset, `@reify_generics` is a reserved
-  declaration-scoped marker. It is lexed so the parser can emit a stable
-  fail-closed diagnostic, but no source declaration becomes reified until a
-  reification-capable mode explicitly admits the marker.
+- Applying `@reify_generics` to non-generic callables, properties, containers,
+  modules, or arbitrary scopes is ill-formed.
+- Redeclarations and overrides shall not drift between erased and explicitly
+  reified policy.
 
 ### 3.5.6 Variance {#part-3-5-6}
 
@@ -849,9 +878,11 @@ Required diagnostics:
 
 - constraint violations,
 - unsafe generic downcasts requiring explicit spelling,
-- use of reserved generic method/function declaration syntax in v1,
+- use of reserved generic callable syntax such as C/Objective-C style generic
+  free functions or selector-local method generic clauses,
 - selector collisions where declarations differ only by generic signature,
-- redeclaration/import mismatch in generic arity or constraints.
+- redeclaration/import mismatch in generic arity, constraints, reification
+  policy, mangling policy ID, or replay key.
 
 ### 3.7.4 Key paths {#part-3-7-4}
 
@@ -927,18 +958,24 @@ canonicalization-rejection tests such as:
   delta and no unrelated token changes; this tool remains separate from
   compiler acceptance.
 
-### 3.7.7 Generic method/function conformance ideas (future-feature gate) {#part-3-7-7}
+### 3.7.7 Generic method/function conformance ideas {#part-3-7-7}
 
 Conforming suites should include generic-method path tests such as:
 
-- `GM-01`: In v1 mode, parsing the [§3.5.3.2](#part-3-5-3-2) generic method/function syntax produces a reserved-for-future-extension diagnostic.
-- `GM-02`: In an implementation mode that enables generic methods/functions, same-selector declarations that differ only by generic signature are rejected.
+- `GM-01`: Canonical native `fn name<T>(...)` generic free functions and
+  canonical `- <T> ...` / `+ <T> ...` generic Objective-C methods parse and
+  publish deterministic generic callable metadata.
+- `GM-02`: Same-selector declarations that differ only by generic signature are rejected.
 - `GM-03`: Module/interface round-trip preserves generic method/function signatures (arity and constraints), and mismatch is diagnosed on import.
 - `GM-04`: Generic Objective‑C methods keep selector identity independent of type arguments (single selector string, no type-argument selector variants).
 - `GM-05`: Generic free functions produce deterministic mangling for identical declarations under the same toolchain and mangling policy ID.
 - `GM-06`: Different generic signatures for the same base name produce distinct mangling outcomes and distinct preserved semantic signature records.
 - `GM-07`: Cross-tool conformance compares semantic signatures and declared mangling policy IDs; direct string equality of symbols is not required across different policy IDs.
 - `GM-08`: Enabling a module/profile generic mode without declaration-scoped `@reify_generics` markers does not reify declarations by default.
+- `GM-09`: Applying `@reify_generics` to a non-generic callable, property,
+  container, or arbitrary scope is rejected.
+- `GM-10`: Redeclaration, override, or import drift between erased and
+  explicitly reified policies is rejected.
 
 ---
 

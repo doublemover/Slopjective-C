@@ -46,9 +46,11 @@ unavailable, schema, workflow, owner-boundary, or evidence-boundary rows.
 | `objc3c.behavior.language.collections.for-in-syntax-runtime-backed` | `lowering` | `tests/tooling/fixtures/native/execution/positive/collection_literals_mutation_for_in.objc3` | `npm run objc3c -- test-execution-smoke` | `language.collections.for-in-syntax-runtime-backed` |
 | `objc3c.behavior.language.collections.literal-syntax-runtime-backed` | `lowering` | `tests/tooling/fixtures/native/execution/positive/collection_literals_mutation_for_in.objc3` | `npm run objc3c -- test-execution-smoke` | `language.collections.literal-syntax-runtime-backed` |
 | `objc3c.behavior.language.collections.mutation-syntax-runtime-backed` | `lowering` | `tests/tooling/fixtures/native/execution/positive/collection_literals_mutation_for_in.objc3` | `npm run objc3c -- test-execution-smoke` | `language.collections.mutation-syntax-runtime-backed` |
+| `objc3c.behavior.language.control-flow.match-expression` | `sema` | `tests/tooling/fixtures/native/recovery/positive/match_expression_literal_result.objc3` | `npm run objc3c -- validate-conformance-corpus` | `language.control-flow.match-expression` |
 | `objc3c.behavior.language.control-flow.statement-guarded-match` | `sema` | `tests/tooling/fixtures/native/recovery/positive/match_guarded_pattern_statement.objc3` | `npm run objc3c -- validate-conformance-corpus` | `language.control-flow.statement-guarded-match` |
 | `objc3c.behavior.language.generics.callable-type-parameters` | `sema` | `tests/tooling/fixtures/native/type_semantic_generic_method_substitution_positive.objc3` | `npm run objc3c -- validate-conformance-corpus` | `language.generics.callable-type-parameters` |
 | `objc3c.behavior.language.generics.collection-identity` | `sema` | `tests/tooling/fixtures/stdlib_collections/generic_collection_type_model_contract.json` | `npm run objc3c -- validate-conformance-corpus` | `language.generics.collection-identity` |
+| `objc3c.behavior.language.generics.generic-callable-reification` | `sema` | `tests/tooling/fixtures/native/type_semantic_generic_reified_objc_method_positive.objc3` | `npm run objc3c -- validate-conformance-corpus` | `language.generics.generic-callable-reification` |
 | `objc3c.behavior.language.generics.protocol-qualified-arguments` | `sema` | `tests/tooling/fixtures/native/type_semantic_protocol_generic_positive.objc3` | `npm run objc3c -- validate-conformance-corpus` | `language.generics.protocol-qualified-arguments` |
 | `objc3c.behavior.language.generics.variance-specialization` | `sema` | `tests/tooling/fixtures/native/type_semantic_generic_variance_positive.objc3` | `npm run objc3c -- validate-conformance-corpus` | `language.generics.variance-specialization` |
 | `objc3c.behavior.language.metaprogramming.derive-expansion-inventory` | `sema` | `tests/tooling/fixtures/native/derive_expansion_inventory_positive.objc3` | `npm run objc3c -- validate-metaprogramming-conformance` | `language.metaprogramming.derive-expansion-inventory` |
@@ -433,7 +435,7 @@ the canonical manifest fixture and public npm command above.
 - Capability ID: `language.control-flow.statement-guarded-match`
 - State: `implemented`
 - Support claims: `objc3c.behavior.language.control-flow.statement-guarded-match`
-- Summary: Statement-form guarded match patterns are implemented under issue #8236 for `match (expr) { case pattern where bool_condition: { ... } }`. The guard is a contextual `where` clause checked as bool after pattern binding; expression-position match, `=>` arms, type-test patterns, aliases, and strict-profile promotion remain outside this support claim.
+- Summary: Statement-form guarded match patterns are implemented under issue #8236 for `match (expr) { case pattern where bool_condition: { ... } }`. The guard is a contextual `where` clause checked as bool after pattern binding; statement fat-arrow arms, type-test patterns, aliases, and strict-profile promotion remain outside this support claim. Expression-form match support is tracked by the separate bounded match-expression row.
 - Owner modules:
   - `native/objc3c/src/parse/objc3_parser_core_statement_switch_parsing_match_case_diagnostics.inc`
   - `native/objc3c/src/parse/objc3_parser_rejection_diagnostics.cpp`
@@ -446,9 +448,37 @@ the canonical manifest fixture and public npm command above.
   - test: `tests/tooling/fixtures/native/recovery/positive/match_guarded_pattern_statement.objc3` via `npm run objc3c -- validate-conformance-corpus`
   - test: `tests/tooling/fixtures/native/recovery/negative/negative_guarded_match_pattern_non_bool.objc3`
   - diagnostic: `tests/tooling/fixtures/native/recovery/negative/negative_match_statement_fat_arrow_ambiguous.objc3`
-  - diagnostic: `tests/tooling/fixtures/native/recovery/negative/negative_match_expression_position_reserved.objc3`
   - diagnostic: `tests/tooling/fixtures/native/recovery/negative/negative_guarded_match_pattern_reserved.objc3`
   - source: `native/objc3c/src/parse/objc3_parser_core_statement_switch_parsing_match_case_diagnostics.inc`
+  - source: `native/objc3c/src/sema/objc3_semantic_match_exhaustiveness.cpp`
+  - source: `native/objc3c/src/pipeline/frontend_control_flow_source_closure_helpers.cpp`
+  - source: `tests/tooling/fixtures/native/match_guarded_pattern_language_evolution_contract.json`
+
+### Bounded expression-form match
+
+- Capability ID: `language.control-flow.match-expression`
+- State: `implemented`
+- Support claims: `objc3c.behavior.language.control-flow.match-expression`
+- Summary: Issue #8236 implements expression-form match for `match (expr) { case pattern [where bool_guard] => expression; default => expression; }` with case-local binding scope, bool-only guards, side-effect guard rejection, exhaustiveness classification, result-type convergence, and scalar/object-handle lowering eligibility. Type-test patterns and Result payload ABI extraction remain fail-closed until dedicated lowering/runtime contracts exist.
+- Owner modules:
+  - `native/objc3c/src/parse/objc3_parser_core_primary_message_expressions_match_expression.inc`
+  - `native/objc3c/src/sema/objc3_semantic_passes_expression_statement_validation_match_expression_case.inc`
+  - `native/objc3c/src/sema/objc3_semantic_match_exhaustiveness.cpp`
+  - `native/objc3c/src/lower/contracts/control_flow_lowering_contracts.cpp`
+  - `native/objc3c/src/ir/objc3_ir_expression_emission.cpp`
+  - `tests/tooling/fixtures/native/recovery/positive/match_expression_literal_result.objc3`
+  - `tests/tooling/fixtures/native/match_guarded_pattern_language_evolution_contract.json`
+- Evidence:
+  - test: `tests/tooling/fixtures/native/recovery/positive/match_expression_literal_result.objc3` via `npm run objc3c -- validate-conformance-corpus`
+  - test: `tests/tooling/fixtures/native/recovery/positive/match_expression_guarded_bool.objc3`
+  - test: `tests/tooling/fixtures/native/recovery/positive/match_expression_result_case_semantic.objc3`
+  - diagnostic: `tests/tooling/fixtures/native/recovery/negative/negative_match_expression_non_exhaustive.objc3`
+  - diagnostic: `tests/tooling/fixtures/native/recovery/negative/negative_match_expression_binding_scope_leak.objc3`
+  - diagnostic: `tests/tooling/fixtures/native/recovery/negative/negative_match_expression_result_type_mismatch.objc3`
+  - diagnostic: `tests/tooling/fixtures/native/recovery/negative/negative_match_expression_type_test_reserved.objc3`
+  - diagnostic: `tests/tooling/fixtures/native/recovery/negative/negative_match_expression_guard_side_effect.objc3`
+  - source: `native/objc3c/src/parse/objc3_parser_core_primary_message_expressions_match_expression.inc`
+  - source: `native/objc3c/src/sema/objc3_semantic_passes_expression_statement_validation_match_expression_case.inc`
   - source: `native/objc3c/src/sema/objc3_semantic_match_exhaustiveness.cpp`
   - source: `native/objc3c/src/pipeline/frontend_control_flow_source_closure_helpers.cpp`
   - source: `tests/tooling/fixtures/native/match_guarded_pattern_language_evolution_contract.json`
@@ -473,7 +503,7 @@ the canonical manifest fixture and public npm command above.
 - Capability ID: `language.evolution.umbrella-alignment`
 - State: `reserved`
 - Support claims: None
-- Summary: Issue #8207 is an umbrella truth row for typed throws, value optionals, generic callable reification, statement guarded match, and strict/strict-concurrency profiles. It is reserved until every prerequisite row is either implemented with source-owned evidence or explicitly remains fail-closed; the current state records #8236 source-level support and #8233/#8234/#8235/#8237 reserved boundaries without claiming runtime or profile behavior.
+- Summary: Issue #8207 is an umbrella truth row for typed throws, value optionals, generic callable reification, guarded match, bounded match expressions, and strict/strict-concurrency profiles. It remains reserved until the typed-throws, value-optional, and strict-profile prerequisite rows are implemented with source-owned evidence or explicitly scoped out; the current state records #8235 generic callable metadata policy support and #8236 guarded-match/match-expression support without claiming runtime-specialized generics, typed error ABI, value optional ABI, or strict profile behavior.
 - Owner modules:
   - `docs/support/umbrella_readiness.json`
   - `docs/support/capability_matrix.json`
@@ -832,23 +862,35 @@ the canonical manifest fixture and public npm command above.
 ### Generic callable reification
 
 - Capability ID: `language.generics.generic-callable-reification`
-- State: `reserved`
-- Support claims: None
-- Summary: Generic callable reification remains reserved under issue #8235. The native source records deterministic erased-default generic callable signature metadata for admitted Objective-C 3 generic free functions only when the deterministic flag, erased-default reification policy, semantic mangling policy, and replay key agree; declaration-scoped reification markers, Objective-C method type-parameter clauses, C/Objective-C style generic free-function declarations, overload-by-generic-signature, variadic generic parameters, and runtime reified generic metadata remain fail-closed.
+- State: `implemented`
+- Support claims: `objc3c.behavior.language.generics.generic-callable-reification`
+- Summary: Issue #8235 implements a bounded generic callable reification metadata model for Objective-C 3 generic free functions and Objective-C generic methods. The source model records source-order generic parameters, variance, constraints, selector-stable method identity, erased-default versus declaration-scoped explicit-reified policy, semantic mangling policy IDs, deterministic replay keys, call-site substitution, override/redeclaration drift rejection, and unsupported-scope diagnostics. Runtime-specialized generic metadata, body cloning, module-wide implicit reification, generic overload resolution by signature, variadic generic parameters, selector-local method clauses, and C/Objective-C style generic function syntax remain fail-closed.
 - Owner modules:
   - `native/objc3c/src/sema/objc3_semantic_passes_generic_callable_contracts.inc`
   - `native/objc3c/src/sema/objc3_sema_contract_semantic_type_metadata_function_records.h`
+  - `native/objc3c/src/sema/objc3_sema_contract_semantic_type_metadata_method_records.h`
+  - `native/objc3c/src/sema/objc3_sema_contract_type_handoff_callable_records_generic_callable_fields.inc`
   - `native/objc3c/src/sema/objc3_sema_contract_type_handoff_callable_records_function_fields.inc`
-  - `native/objc3c/src/sema/objc3_semantic_passes_type_metadata_function_builder.inc`
+  - `native/objc3c/src/sema/objc3_semantic_passes_generic_function_call_substitution.inc`
+  - `native/objc3c/src/sema/objc3_semantic_passes_property_and_protocol_model_method_metadata.inc`
   - `tests/tooling/fixtures/native/generic_callable_reification_contract.json`
 - Evidence:
+  - test: `tests/tooling/fixtures/native/type_semantic_generic_reified_objc_method_positive.objc3` via `npm run objc3c -- validate-conformance-corpus`
+  - test: `tests/tooling/fixtures/native/type_semantic_generic_reified_function_positive.objc3`
+  - test: `tests/tooling/fixtures/native/type_semantic_generic_objc_method_positive.objc3`
+  - test: `tests/tooling/fixtures/native/type_semantic_generic_function_positive.objc3`
   - source: `tests/tooling/fixtures/native/generic_callable_reification_contract.json`
-  - diagnostic: `tests/tooling/fixtures/native/recovery/negative/negative_reify_generics_marker_reserved.objc3`
-  - diagnostic: `tests/tooling/fixtures/native/recovery/negative/negative_generic_method_type_parameter_clause_reserved.objc3`
+  - diagnostic: `tests/tooling/fixtures/native/recovery/negative/negative_generic_method_selector_form_ambiguous.objc3`
+  - diagnostic: `tests/tooling/fixtures/native/recovery/negative/negative_reify_generics_unsupported_scope.objc3`
   - diagnostic: `tests/tooling/fixtures/native/recovery/negative/negative_cstyle_generic_function_reserved.objc3`
   - diagnostic: `tests/tooling/fixtures/native/recovery/negative/negative_type_semantic_generic_function_signature_drift.objc3`
+  - diagnostic: `tests/tooling/fixtures/native/recovery/negative/negative_type_semantic_generic_method_override_mismatch.objc3`
+  - diagnostic: `tests/tooling/fixtures/native/recovery/negative/negative_type_semantic_generic_callable_constraint_cycle.objc3`
+  - diagnostic: `tests/tooling/fixtures/native/recovery/negative/negative_type_semantic_erased_to_reified_redeclaration_drift.objc3`
+  - diagnostic: `tests/tooling/fixtures/native/generic_callable_cross_module_mangling_policy_mismatch.json`
   - source: `native/objc3c/src/sema/objc3_semantic_passes_generic_callable_contracts.inc`
   - source: `native/objc3c/src/sema/objc3_sema_contract_semantic_type_metadata_function_records.h`
+  - source: `native/objc3c/src/sema/objc3_sema_contract_semantic_type_metadata_method_records.h`
 
 ### Generic variance and specialization policy
 

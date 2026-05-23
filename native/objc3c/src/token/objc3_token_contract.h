@@ -244,9 +244,9 @@ inline constexpr const char *kObjc3TypeSystemFailClosedConstructValueOptionals =
 
 // control-flow source+semantic surface anchor: the frontend now
 // owns the Part 5 keyword classification boundary directly. Guard bindings,
-// defer statements, statement-form match, and guarded statement-match patterns
-// stay explicit parser-owned surfaces while match-expression / type-test-pattern
-// families remain fail-closed instead of drifting as ordinary identifiers.
+// defer statements, statement-form match, guarded match patterns, and
+// expression-form match stay explicit parser-owned surfaces while type-test
+// pattern families remain fail-closed instead of drifting as ordinary identifiers.
 inline constexpr const char *kObjc3ControlFlowSourceSurfaceGuardBindings =
     "control_flow-source:guard-bindings";
 inline constexpr const char *kObjc3ControlFlowSourceSurfaceGuardConditionLists =
@@ -267,6 +267,8 @@ inline constexpr const char *kObjc3ControlFlowSourceSurfaceGuardedMatchPatterns 
     "control_flow-source:guarded-match-patterns";
 inline constexpr const char *kObjc3ControlFlowSourceSurfaceMatchResultCasePatterns =
     "control_flow-source:match-result-case-patterns";
+inline constexpr const char *kObjc3ControlFlowSourceSurfaceMatchExpression =
+    "control_flow-source:match-expression";
 inline constexpr const char *kObjc3ControlFlowFailClosedConstructMatchExpression =
     "control_flow-fail-closed:match-expression";
 inline constexpr const char *kObjc3ControlFlowFailClosedConstructMatchTypeTestPatterns =

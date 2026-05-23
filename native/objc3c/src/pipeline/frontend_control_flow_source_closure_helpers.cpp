@@ -38,9 +38,12 @@ BuildControlFlowControlFlowSourceClosureSummary(
   summary.match_binding_pattern_source_supported = true;
   summary.guarded_match_pattern_source_supported = true;
   summary.match_result_case_pattern_source_supported = true;
+  summary.match_expression_source_supported = true;
   summary.defer_keyword_reserved = true;
   summary.defer_fail_closed = false;
-  summary.match_expression_fail_closed = true;
+  summary.match_expression_fail_closed = false;
+  summary.match_expression_result_typing_supported = true;
+  summary.match_fat_arrow_arms_supported = true;
   summary.type_test_pattern_fail_closed = true;
   summary.deterministic_handoff =
       summary.guard_binding_clause_sites >= summary.guard_binding_sites &&
@@ -50,7 +53,8 @@ BuildControlFlowControlFlowSourceClosureSummary(
           summary.switch_case_pattern_sites +
               summary.switch_default_pattern_sites &&
       summary.match_default_sites <=
-          summary.match_statement_sites + summary.match_default_sites;
+          summary.match_statement_sites + summary.match_default_sites &&
+      summary.match_expression_guard_sites <= summary.match_expression_arm_sites;
   summary.ready_for_semantic_expansion = summary.deterministic_handoff;
   summary.replay_key =
       BuildControlFlowControlFlowSourceClosureReplayKey(summary);

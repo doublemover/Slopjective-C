@@ -97,13 +97,26 @@
                 receiver_type.object_pointer_type_name + "'"));
         return MakeScalarSemanticType(ValueType::Unknown);
       }
+      std::unordered_map<std::string, SemanticTypeInfo>
+          generic_method_bindings;
       for (std::size_t i = 0; i < expr->args.size(); ++i) {
         const SemanticTypeInfo arg_type = ValidateExpr(
             expr->args[i].get(), scopes, globals, functions, diagnostics,
             max_message_send_args, message_send_context);
-        const SemanticTypeInfo expected = SubstituteGenericReceiverType(
+        const SemanticTypeInfo raw_expected = SubstituteGenericReceiverType(
             MakeSemanticTypeFromMethodInfoParam(method, i),
             receiver_type.canonical_type, *message_send_context.surface);
+        BindGenericMethodParameterFromArgument(
+            method, selector, i, raw_expected, arg_type,
+            message_send_context, expr->args[i]->line,
+            expr->args[i]->column, generic_method_bindings, diagnostics);
+        const SemanticTypeInfo expected =
+            SubstituteGenericMethodTypeParameters(
+                method, raw_expected, generic_method_bindings);
+        if (IsUnknownSemanticType(expected) &&
+            !IsUnknownSemanticType(raw_expected)) {
+          continue;
+        }
         const bool bool_coercion =
             !expected.is_vector && expected.type == ValueType::Bool &&
             !arg_type.is_vector && arg_type.type == ValueType::I32;
@@ -125,9 +138,15 @@
                   "'"));
         }
       }
-      const SemanticTypeInfo return_type = SubstituteGenericReceiverType(
+      const SemanticTypeInfo raw_return_type = SubstituteGenericReceiverType(
           MakeSemanticTypeFromMethodInfoReturn(method),
           receiver_type.canonical_type, *message_send_context.surface);
+      DiagnoseUnresolvedGenericMethodReturn(
+          method, selector, raw_return_type, generic_method_bindings,
+          expr->line, expr->column, diagnostics);
+      const SemanticTypeInfo return_type =
+          SubstituteGenericMethodTypeParameters(
+              method, raw_return_type, generic_method_bindings);
       DiagnoseRetainedMethodFamilyReturnTypeMismatch(
           expr, selector,
           "typed receiver '" + receiver_type.object_pointer_type_name + "'",

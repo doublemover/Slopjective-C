@@ -230,8 +230,8 @@ Consumer rule: Umbrella readiness may explain why a reserved umbrella row is blo
 
 - Typed throws runtime behavior, typed error ABI, or parenthesized throws payload erasure from parser diagnostics alone.
 - Value optional ABI, nil-to-scalar conversion, nullable pointer conversion, throws/result conversion, or lowercase optional aliases.
-- Runtime reified generic metadata, declaration-scoped reification markers, Objective-C method type-parameter clauses, or C/Objective-C style generic function syntax from erased generic free-function metadata.
-- Expression-position match, fat-arrow match arms, type-test patterns, or strict-profile promotion from statement-form guarded match support.
+- Runtime-specialized generic metadata, generic body cloning, module-wide implicit reification, selector-local generic method clauses, C/Objective-C style generic function syntax, overload-by-generic-signature, or variadic generic parameters from the bounded #8235 metadata policy.
+- Type-test patterns, statement fat-arrow arms, Result payload ABI extraction, aliases, or strict-profile promotion from #8236 guarded match and bounded expression-match support.
 - Strict or strict-concurrency profiles as aliases, preview modes, source-only concurrency support, or public conformance claims before release/runtime evidence exists.
 - Issue comments, PR bodies, temp files, generated projections, or validation logs as source of truth.
 
@@ -239,7 +239,7 @@ Consumer rule: Umbrella readiness may explain why a reserved umbrella row is blo
 
 - `language.errors.typed-throws` must be `reserved`: The umbrella cannot be implemented until typed throws has real parser, sema, interface, ABI/lowering, and runtime behavior instead of reserved diagnostics.
 - `language.types.value-optionals` must be `reserved`: The umbrella cannot be implemented until value optionals have semantic type admission, interface roundtrip, ABI layout, lowering, and runtime behavior.
-- `language.generics.generic-callable-reification` must be `reserved`: The umbrella cannot be implemented while generic callable reification remains erased metadata plus reserved syntax boundaries.
+- `language.generics.generic-callable-reification` must be `implemented`: Generic callable reification now has source-owned bounded metadata policy support for Objective-C 3 generic functions and Objective-C generic methods while runtime specialization remains explicitly outside the support claim.
 - `language.control-flow.statement-guarded-match` must be `implemented`: Statement guarded match is the one source-level #8236 prerequisite currently implemented and must remain evidence-backed.
 - `language.profiles.strict-admission` must be `reserved`: The umbrella cannot be implemented until strict and strict-concurrency profiles are claimable without aliases or source-only overclaims.
 
@@ -250,7 +250,7 @@ Consumer rule: Umbrella readiness may explain why a reserved umbrella row is blo
 - `satisfied` The #8207 umbrella contract binds typed throws, value optionals, generic callable reification, guarded match, and strict profile rows to checked-in source truth. (path: `tests/tooling/fixtures/native/language_evolution_umbrella_contract.json`)
 - `satisfied` Typed throws parser diagnostics classify parenthesized payload shapes and reject them without erasing to bare throws. (path: `native/objc3c/src/parse/objc3_parser_core_cstyle_parameters_async_throws_clause_parsing.inc`)
 - `satisfied` Typed throws and value optional source-closure plus textual-interface import records keep reserved feature markers fail-closed and deny typed payload arity, nil/nullability/error conversions, and ABI/layout claims. (path: `tests/tooling/fixtures/native/language_evolution_typed_throws_value_optionals_contract.json`)
-- `satisfied` Generic callable metadata records are deterministic for admitted erased generic free functions while broader reification syntax remains reserved. (path: `tests/tooling/fixtures/native/generic_callable_reification_contract.json`)
+- `satisfied` Generic callable metadata records are deterministic for admitted generic functions and Objective-C generic methods, including erased-default and declaration-scoped explicit-reified policy without runtime-specialization claims. (path: `tests/tooling/fixtures/native/generic_callable_reification_contract.json`)
 - `satisfied` Statement-form guarded match records source support for where-guards and fail-closed expression/type-test boundaries. (path: `native/objc3c/src/sema/model/semantic_symbol_core_source_closures.h`)
 - `satisfied` The guarded match fixture contract records statement-only admission and reserves expression-position match, fat-arrow arms, and type-test patterns. (path: `tests/tooling/fixtures/native/match_guarded_pattern_language_evolution_contract.json`)
 - `satisfied` Strict and strict-concurrency profile selection rejects before compilation until the required release/runtime evidence exists. (path: `native/objc3c/src/config/objc3_language_profile_validation.cpp`)
@@ -263,13 +263,15 @@ Consumer rule: Umbrella readiness may explain why a reserved umbrella row is blo
 
 - `satisfied` Statement guarded match has a hand-authored positive source fixture. (path: `tests/tooling/fixtures/native/recovery/positive/match_guarded_pattern_statement.objc3`)
 - `satisfied` The admitted Objective-C 3 generic free-function spelling remains covered by checked source. (path: `tests/tooling/fixtures/native/type_semantic_generic_function_positive.objc3`)
+- `satisfied` Declaration-scoped explicit-reified Objective-C generic methods are covered by checked source without claiming runtime-specialized metadata. (path: `tests/tooling/fixtures/native/type_semantic_generic_reified_objc_method_positive.objc3`)
+- `satisfied` Bounded expression-form match has hand-authored positive source fixtures for literal, guarded-bool, and Result-case semantic surfaces. (path: `tests/tooling/fixtures/native/recovery/positive/match_expression_literal_result.objc3`)
 - `satisfied` Canonical and core profile rows are distinguished from rejected strict profile selections. (path: `tests/tooling/fixtures/language_profiles/strict_profile_feature_matrix.json`)
 
 #### Negative Fixtures
 
 - `satisfied` Parenthesized typed throws payloads are not silently erased into untyped throws. (path: `tests/tooling/fixtures/native/recovery/negative/negative_typed_throws_erasure_mismatch_reserved.objc3`)
 - `satisfied` Reserved value optionals do not enable nil-to-scalar coercion. (path: `tests/tooling/fixtures/native/recovery/negative/negative_value_optional_nil_scalar_coercion_reserved.objc3`)
-- `satisfied` Declaration-scoped generic reification markers remain parser-owned reserved syntax. (path: `tests/tooling/fixtures/native/recovery/negative/negative_reify_generics_marker_reserved.objc3`)
+- `satisfied` Generic reification markers outside generic callable declarations remain parser-owned reserved syntax. (path: `tests/tooling/fixtures/native/recovery/negative/negative_reify_generics_unsupported_scope.objc3`)
 - `satisfied` Generic free-function redeclaration drift rejects instead of merging erased callable shapes. (path: `tests/tooling/fixtures/native/recovery/negative/negative_type_semantic_generic_function_signature_drift.objc3`)
 - `satisfied` Statement guarded match rejects non-bool guard conditions. (path: `tests/tooling/fixtures/native/recovery/negative/negative_guarded_match_pattern_non_bool.objc3`)
 - `satisfied` Strict, strict-concurrency, and alias selections reject rather than widening support. (path: `tests/tooling/fixtures/language_profiles/strict_profile_feature_matrix.json`)
@@ -278,14 +280,14 @@ Consumer rule: Umbrella readiness may explain why a reserved umbrella row is blo
 
 - `blocked` Typed throws ABI, lowering, and runtime execution remain unimplemented. (blocker_id: `typed-throws-abi-lowering-interface`)
 - `blocked` Value optional layout, lowering, and runtime execution remain unimplemented. (blocker_id: `value-optionals-abi-lowering-interface`)
-- `blocked` Runtime reified generic metadata remains unimplemented; current generic callable metadata is claimable only for deterministic erased-default free-function replay keys. (blocker_id: `generic-callable-reification-runtime`)
+- `satisfied` Runtime-specialized generic metadata and body cloning remain unimplemented; current generic callable reification is a source-owned metadata policy for admitted generic callables. (path: `tests/tooling/fixtures/native/generic_callable_reification_contract.json`)
 - `blocked` Strict-concurrency actor isolation, sendability, scheduler, task lifecycle, and mailbox runtime evidence remain unimplemented as a claimable profile; strict-system remains target-only release evidence and is not a native frontend language profile. (blocker_id: `strict-profiles-release-evidence`)
 
 #### Abi Governance Rows
 
 - `satisfied` Typed throws metadata slots import only none or reserved untyped defaults with zero typed payload arity. (path: `tests/tooling/fixtures/native/language_evolution_typed_throws_value_optionals_contract.json`)
 - `blocked` Value optional ABI layout and interface roundtrip remain blocked. (blocker_id: `value-optionals-abi-lowering-interface`)
-- `satisfied` Generic callable signature metadata records the erased-default mangling policy without claiming runtime reification. (path: `tests/tooling/fixtures/native/generic_callable_reification_contract.json`)
+- `satisfied` Generic callable signature metadata records erased-default and explicit-reified semantic mangling policies without claiming runtime-specialized metadata. (path: `tests/tooling/fixtures/native/generic_callable_reification_contract.json`)
 
 #### Docs
 
@@ -318,24 +320,19 @@ Consumer rule: Umbrella readiness may explain why a reserved umbrella row is blo
   - Optional<T> semantic type admission and conversions policy.
   - Stable ABI layout and textual-interface roundtrip.
   - Lowering/runtime behavior without nil/nullability aliases.
-- `generic-callable-reification-runtime`: Generic callable metadata is deterministic for the erased free-function subset only when the deterministic flag, erased-default reification policy, semantic mangling policy, and replay key agree; runtime reification and broader syntax remain reserved.
-  - Explicit non-erased reification mode and runtime metadata model.
-  - Non-erased callable mangling and ABI governance.
-  - Decision-complete handling for Objective-C method type-parameter clauses and C/Objective-C style generic function declarations.
-  - Source-owned support claim evidence before any declaration-scoped reification syntax is admitted.
 - `strict-profiles-release-evidence`: Strict and strict-concurrency profile selection remains rejected until release/runtime-backed evidence exists; strict-system remains a target-only release-evidence profile and rejects as a native frontend selection.
   - Strict profile release evidence across parser, sema, lowering, textual interface, and package publication.
   - Strict-concurrency actor isolation, sendability, task lifecycle, scheduler, and mailbox runtime evidence.
   - Public conformance publication that claims strict profiles without aliases or compatibility modes.
   - A separate promotion decision before strict-system can become a native frontend language profile.
-- `language-evolution-prerequisites`: The #8207 umbrella is blocked by the reserved #8233/#8234/#8235/#8237 prerequisite rows even though #8236 statement guarded match is source-level implemented.
+- `language-evolution-prerequisites`: The #8207 umbrella is blocked by the reserved #8233/#8234/#8237 prerequisite rows even though #8235 generic callable metadata policy and #8236 guarded match plus bounded expression match are source-level implemented.
   - Promote each reserved prerequisite only after native source contracts and public evidence exist.
   - Keep umbrella readiness blocked until no prerequisite row relies on reserved diagnostics or metadata placeholders.
 
 ### Final Promotion Criteria
 
 - The language.evolution.umbrella-alignment matrix row changes to implemented.
-- Typed throws, value optionals, generic callable reification, statement guarded match, and strict profile admission rows are all implemented or explicitly scoped out by a future umbrella decision.
+- Typed throws, value optionals, generic callable reification, guarded match, bounded expression match, and strict profile admission rows are all implemented or explicitly scoped out by a future umbrella decision.
 - All source, fixture, capability, evidence, README, parser, sema, and spec docs agree on the same support boundary.
 - No prerequisite relies on temp/generated evidence, compatibility aliases, preview labels, or silent erasure.
 - Strict and strict-concurrency profiles are claimable through public release/runtime evidence rather than source-only assertions.

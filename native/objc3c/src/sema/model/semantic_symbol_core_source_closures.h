@@ -13,9 +13,9 @@ inline constexpr const char *kObjc3ControlFlowControlFlowSourceClosureContractId
 inline constexpr const char *kObjc3ControlFlowControlFlowSourceClosureSurfacePath =
     "frontend.pipeline.semantic_surface.objc_control_flow_control_flow_source_closure";
 inline constexpr const char *kObjc3ControlFlowControlFlowSourceClosureSourceModel =
-    "guard-condition-lists-defer-statements-statement-match-patterns-and-guarded-statement-match-patterns-are-live-frontend-owned-control-flow-surfaces-while-match-expression-and-type-test-patterns-remain-fail-closed";
+    "guard-condition-lists-defer-statements-statement-match-patterns-guarded-statement-match-patterns-and-expression-match-arms-are-live-frontend-owned-control-flow-surfaces-while-type-test-patterns-remain-fail-closed";
 inline constexpr const char *kObjc3ControlFlowControlFlowSourceClosureFailureModel =
-    "match-remains-statement-only-and-type-test-patterns-remain-fail-closed-until-later-sema-lowering-and-runtime-work";
+    "type-test-patterns-remain-fail-closed-until-later-sema-lowering-and-runtime-work";
 
 struct Objc3FrontendControlFlowControlFlowSourceClosureSummary {
   std::string contract_id = kObjc3ControlFlowControlFlowSourceClosureContractId;
@@ -34,9 +34,9 @@ struct Objc3FrontendControlFlowControlFlowSourceClosureSummary {
       kObjc3ControlFlowSourceSurfaceMatchBindingPatterns,
       kObjc3ControlFlowSourceSurfaceGuardedMatchPatterns,
       kObjc3ControlFlowSourceSurfaceMatchResultCasePatterns,
+      kObjc3ControlFlowSourceSurfaceMatchExpression,
   };
   std::vector<std::string> fail_closed_construct_ids = {
-      kObjc3ControlFlowFailClosedConstructMatchExpression,
       kObjc3ControlFlowFailClosedConstructMatchTypeTestPatterns,
   };
   std::size_t guard_binding_sites = 0;
@@ -53,6 +53,9 @@ struct Objc3FrontendControlFlowControlFlowSourceClosureSummary {
   std::size_t match_binding_pattern_sites = 0;
   std::size_t guarded_match_pattern_sites = 0;
   std::size_t match_result_case_pattern_sites = 0;
+  std::size_t match_expression_sites = 0;
+  std::size_t match_expression_arm_sites = 0;
+  std::size_t match_expression_guard_sites = 0;
   std::size_t guarded_match_issue_ref = 8236;
   std::string guarded_match_admitted_syntax =
       "case pattern where bool_condition:";
@@ -66,6 +69,7 @@ struct Objc3FrontendControlFlowControlFlowSourceClosureSummary {
   bool match_binding_pattern_source_supported = false;
   bool guarded_match_pattern_source_supported = false;
   bool match_result_case_pattern_source_supported = false;
+  bool match_expression_source_supported = false;
   bool defer_statement_source_supported = false;
   bool defer_keyword_reserved = false;
   bool defer_fail_closed = false;

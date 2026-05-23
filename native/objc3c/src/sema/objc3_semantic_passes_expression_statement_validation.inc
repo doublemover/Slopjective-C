@@ -11,6 +11,7 @@
       }
       return IsSameSemanticType(then_type, else_type) ? then_type : MakeScalarSemanticType(ValueType::Unknown);
     }
+#include "sema/objc3_semantic_passes_expression_statement_validation_match_expression_case.inc"
 #include "sema/objc3_semantic_passes_expression_statement_validation_block_literal_case.inc"
 #include "sema/objc3_semantic_passes_expression_statement_validation_callable_checks.inc"
     case Expr::Kind::CollectionLiteral: {

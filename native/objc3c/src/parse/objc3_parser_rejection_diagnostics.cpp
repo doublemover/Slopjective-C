@@ -85,9 +85,9 @@ std::string BuildObjc3ReservedMatchExpressionDiagnostic(
   return BuildObjc3ParserDiagnosticWithRecovery(
       token,
       kObjc3ParserDiagnosticReservedMatchExpressionCode,
-      "match expressions are reserved; use statement-form match with ':' braced arms until expression result typing and lowering are release-evidenced",
-      "parser-reserved-match-expression-rejection",
-      "expression");
+      "statement-form match uses ':' braced arms; use expression-form match only in expression position with '=>' value arms",
+      "parser-match-statement-fat-arrow-rejection",
+      "match statement arm");
 }
 
 std::string BuildObjc3ReservedMatchTypeTestPatternDiagnostic(

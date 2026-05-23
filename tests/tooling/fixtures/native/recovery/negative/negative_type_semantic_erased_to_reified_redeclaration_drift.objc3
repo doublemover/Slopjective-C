@@ -1,0 +1,9 @@
+// Negative fixture: generic callable redeclarations must preserve
+// erased-vs-reified policy and declared mangling policy.
+// Expected diagnostic code(s): O3S206.
+module NegativeTypeSemanticErasedToReifiedRedeclarationDrift;
+
+fn driftIdentity<T>(value: T) -> T;
+
+@reify_generics
+fn driftIdentity<T>(value: T) -> T;

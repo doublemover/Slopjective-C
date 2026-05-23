@@ -63,7 +63,7 @@ inline bool IsReadyObjc3FrontendControlFlowControlFlowSourceClosureSummary(
          summary.source_model == kObjc3ControlFlowControlFlowSourceClosureSourceModel &&
          summary.failure_model ==
              kObjc3ControlFlowControlFlowSourceClosureFailureModel &&
-         summary.supported_construct_ids.size() == 10 &&
+         summary.supported_construct_ids.size() == 11 &&
          summary.supported_construct_ids[0] ==
              kObjc3ControlFlowSourceSurfaceGuardBindings &&
          summary.supported_construct_ids[1] ==
@@ -84,10 +84,10 @@ inline bool IsReadyObjc3FrontendControlFlowControlFlowSourceClosureSummary(
              kObjc3ControlFlowSourceSurfaceGuardedMatchPatterns &&
          summary.supported_construct_ids[9] ==
              kObjc3ControlFlowSourceSurfaceMatchResultCasePatterns &&
-         summary.fail_closed_construct_ids.size() == 2 &&
+         summary.supported_construct_ids[10] ==
+             kObjc3ControlFlowSourceSurfaceMatchExpression &&
+         summary.fail_closed_construct_ids.size() == 1 &&
          summary.fail_closed_construct_ids[0] ==
-             kObjc3ControlFlowFailClosedConstructMatchExpression &&
-         summary.fail_closed_construct_ids[1] ==
              kObjc3ControlFlowFailClosedConstructMatchTypeTestPatterns &&
          summary.guard_binding_source_supported &&
          summary.guard_condition_list_source_supported &&
@@ -99,14 +99,15 @@ inline bool IsReadyObjc3FrontendControlFlowControlFlowSourceClosureSummary(
          summary.match_binding_pattern_source_supported &&
          summary.guarded_match_pattern_source_supported &&
          summary.match_result_case_pattern_source_supported &&
+         summary.match_expression_source_supported &&
          summary.defer_keyword_reserved && !summary.defer_fail_closed &&
          summary.guarded_match_issue_ref == 8236u &&
          summary.guarded_match_admitted_syntax ==
              "case pattern where bool_condition:" &&
          summary.guarded_match_condition_bool_required &&
-         summary.match_expression_fail_closed &&
-         !summary.match_expression_result_typing_supported &&
-         !summary.match_fat_arrow_arms_supported &&
+         !summary.match_expression_fail_closed &&
+         summary.match_expression_result_typing_supported &&
+         summary.match_fat_arrow_arms_supported &&
          summary.type_test_pattern_fail_closed &&
          summary.deterministic_handoff &&
          summary.ready_for_semantic_expansion &&

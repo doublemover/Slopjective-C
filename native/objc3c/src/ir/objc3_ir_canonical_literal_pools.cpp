@@ -186,6 +186,13 @@ class Objc3IRCanonicalLiteralPoolCollector {
         CollectSelectorExpr(expr->right.get());
         CollectSelectorExpr(expr->third.get());
         return;
+      case Expr::Kind::MatchExpression:
+        CollectSelectorExpr(expr->match_expression_scrutinee.get());
+        for (const auto &arm : expr->match_expression_arms) {
+          CollectSelectorExpr(arm.guard_condition.get());
+          CollectSelectorExpr(arm.value.get());
+        }
+        return;
       case Expr::Kind::CollectionLiteral:
         for (const auto &key : expr->collection_keys) {
           CollectSelectorExpr(key.get());

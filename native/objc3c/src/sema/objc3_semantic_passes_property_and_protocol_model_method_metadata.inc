@@ -16,6 +16,36 @@ static Objc3MethodInfo BuildMethodInfo(const Objc3MethodDecl &method,
   info.selector_has_normalization_flag_mismatch = selector_contract.selector_has_normalization_flag_mismatch;
   info.selector_has_missing_piece_keyword = selector_contract.selector_has_missing_piece_keyword;
   info.arity = method.params.size();
+  info.generic_parameter_names_source_order =
+      CollectGenericParameterNamesSourceOrder(method.generic_params);
+  info.generic_parameter_variance_source_order =
+      CollectGenericParameterVarianceSourceOrder(method.generic_params);
+  info.generic_parameter_constraints_lexicographic =
+      CollectGenericParameterConstraintsLexicographic(method.generic_params);
+  info.generic_callable_reification_policy =
+      Objc3GenericCallableReificationPolicyForMarker(
+          method.generic_callable_reification_marker_declared);
+  info.generic_callable_mangling_policy_id =
+      Objc3GenericCallableManglingPolicyForReificationPolicy(
+          info.generic_callable_reification_policy);
+  info.generic_callable_signature_replay_key =
+      BuildObjc3GenericCallableSignatureReplayKey(
+          method.is_class_method ? "class-method" : "instance-method",
+          method.selector, info.generic_parameter_names_source_order,
+          info.generic_parameter_variance_source_order,
+          info.generic_parameter_constraints_lexicographic,
+          info.generic_callable_reification_policy,
+          info.generic_callable_mangling_policy_id);
+  info.generic_callable_contract_deterministic =
+      info.generic_parameter_names_source_order.size() ==
+          info.generic_parameter_variance_source_order.size() &&
+      info.generic_parameter_names_source_order.size() ==
+          info.generic_parameter_constraints_lexicographic.size() &&
+      !info.generic_callable_signature_replay_key.empty() &&
+      IsObjc3GenericCallableReificationPolicyClaimable(
+          info.generic_callable_reification_policy) &&
+      IsObjc3GenericCallableManglingPolicyClaimable(
+          info.generic_callable_mangling_policy_id);
   info.param_types.reserve(method.params.size());
   info.param_canonical_types.reserve(method.params.size());
   info.param_is_vector.reserve(method.params.size());

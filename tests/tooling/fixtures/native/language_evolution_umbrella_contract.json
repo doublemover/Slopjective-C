@@ -42,24 +42,31 @@
       "feature_id": "generic_callable_reification",
       "issue_ref": 8235,
       "contract": "tests/tooling/fixtures/native/generic_callable_reification_contract.json",
-      "support_state": "erased_generic_free_functions_supported_bounded_reification_reserved",
+      "support_state": "generic_free_functions_and_objc_generic_methods_supported_with_declaration_scoped_reification_metadata",
       "negative_case_ids": [
-        "negative_generic_method_type_parameter_clause_reserved",
-        "negative_reify_generics_marker_reserved",
         "negative_cstyle_generic_function_reserved",
-        "negative_type_semantic_generic_function_signature_drift"
+        "negative_generic_method_selector_form_ambiguous",
+        "negative_reify_generics_unsupported_scope",
+        "negative_type_semantic_generic_function_signature_drift",
+        "negative_type_semantic_generic_method_override_mismatch",
+        "negative_type_semantic_generic_callable_constraint_cycle",
+        "negative_type_semantic_erased_to_reified_redeclaration_drift"
       ]
     },
     {
       "feature_id": "match_guarded_patterns",
       "issue_ref": 8236,
       "contract": "tests/tooling/fixtures/native/match_guarded_pattern_language_evolution_contract.json",
-      "support_state": "statement_guarded_patterns_supported_bounded_match_expressions_reserved",
+      "support_state": "statement_guarded_patterns_and_bounded_match_expressions_supported_type_tests_reserved",
       "negative_case_ids": [
-        "negative_match_expression_position_reserved",
         "negative_match_statement_fat_arrow_ambiguous",
         "negative_guarded_match_pattern_reserved",
-        "negative_guarded_match_pattern_non_bool"
+        "negative_guarded_match_pattern_non_bool",
+        "negative_match_expression_non_exhaustive",
+        "negative_match_expression_binding_scope_leak",
+        "negative_match_expression_result_type_mismatch",
+        "negative_match_expression_type_test_reserved",
+        "negative_match_expression_guard_side_effect"
       ]
     },
     {
@@ -77,21 +84,22 @@
   ],
   "admitted_public_claims": [
     "objc3c.behavior.language.control-flow.statement-guarded-match",
-    "objc3c.behavior.language.generics.callable-type-parameters"
+    "objc3c.behavior.language.control-flow.match-expression",
+    "objc3c.behavior.language.generics.callable-type-parameters",
+    "objc3c.behavior.language.generics.generic-callable-reification"
   ],
   "reserved_public_claims": [
     "language.errors.typed-throws",
     "language.types.value-optionals",
-    "language.generics.generic-callable-reification",
-    "language.control-flow.match-expressions",
+    "language.control-flow.type-test-patterns",
     "language.profiles.strict",
     "language.profiles.strict-concurrency"
   ],
   "hard_fail_closed_requirements": [
     "typed throws payloads are not silently erased into untyped throws",
     "Optional<T> does not alias nullable object pointers or nil-to-scalar coercions",
-    "generic callable metadata remains erased-default unless declaration-scoped reification lands with runtime evidence",
-    "statement guarded match admits only bool where conditions and does not imply expression-position match support",
+    "generic callable metadata preserves erased-default versus declaration-scoped explicit-reified policy without implying module-wide reification",
+    "guarded match admits only bool where conditions; expression-position match is supported only for the bounded typed pattern/result surface and still fails closed for type-test patterns and unsupported result payload lowering",
     "strict and strict-concurrency profile names are not aliases for canonical or core",
     "strict-system remains a targeted release-evidence profile and is not a native frontend language profile"
   ],
@@ -119,14 +127,14 @@
     },
     {
       "row_id": "language.generics.generic-callable-reification",
-      "status": "reserved-runtime-reification",
+      "status": "source-owned-generic-callable-policy",
       "evidence": [
         "tests/tooling/fixtures/native/generic_callable_reification_contract.json"
       ]
     },
     {
       "row_id": "language.control-flow.statement-guarded-match",
-      "status": "supported-bounded-statement-only",
+      "status": "supported-bounded-statement-and-expression",
       "evidence": [
         "tests/tooling/fixtures/native/match_guarded_pattern_language_evolution_contract.json"
       ]

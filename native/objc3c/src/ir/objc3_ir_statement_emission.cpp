@@ -103,6 +103,19 @@ ValueType InferObjc3IRLocalBindingValueType(const Expr *expr,
         }
       }
       return ValueType::Unknown;
+    case Expr::Kind::MatchExpression:
+      if (expr->match_expression_result_type_spelling == "Text") {
+        return ValueType::TextHandle;
+      }
+      if (expr->match_expression_result_type_spelling == "bool") {
+        return ValueType::Bool;
+      }
+      if (expr->match_expression_result_type_spelling == "id") {
+        return ValueType::ObjCId;
+      }
+      return expr->match_expression_result_typing_supported
+                 ? ValueType::I32
+                 : ValueType::Unknown;
     case Expr::Kind::Binary:
       if (expr->op == "==" || expr->op == "!=" || expr->op == "<" ||
           expr->op == "<=" || expr->op == ">" || expr->op == ">=" ||

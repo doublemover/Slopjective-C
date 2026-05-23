@@ -27,7 +27,10 @@
     8176,
     8177,
     8178,
-    8184
+    8184,
+    8207,
+    8235,
+    8236
   ],
   "policy": {
     "source_truth": "checked-in conformance rows, native fixtures, runtime probes, and canonical support manifests",
@@ -135,6 +138,105 @@
         "Generic callable type-parameter support is claimed only for checked-in generic method receiver substitution and bounded generic function identity fixtures",
         "Unsatisfied callable generic constraints and unresolved generic return inference remain fail-closed O3S206 evidence",
         "This row does not claim higher-kinded types, inferred associated types, generic collection ABI, or generic function overloading"
+      ]
+    },
+    {
+      "support_claim": "objc3c.behavior.language.generics.generic-callable-reification",
+      "capability_id": "language.generics.generic-callable-reification",
+      "owner_phase": "sema",
+      "conformance_fixture": "tests/tooling/fixtures/native/generic_callable_reification_contract.json",
+      "traceability_fixture": "tests/tooling/fixtures/native/generic_callable_cross_module_mangling_policy_mismatch.json",
+      "runnable_command": "npm run objc3c -- validate-conformance-corpus",
+      "runtime_acceptance_case": "type-semantic-model-generic-callable-reification-contract",
+      "positive_evidence": [
+        "tests/tooling/fixtures/native/type_semantic_generic_reified_objc_method_positive.objc3",
+        "tests/tooling/fixtures/native/type_semantic_generic_reified_function_positive.objc3",
+        "tests/tooling/fixtures/native/type_semantic_generic_objc_method_positive.objc3",
+        "tests/tooling/fixtures/native/type_semantic_generic_function_positive.objc3",
+        "tests/tooling/fixtures/native/generic_callable_reification_contract.json",
+        "schemas/objc3c-generic-callable-model-v1.schema.json",
+        "native/objc3c/src/sema/objc3_semantic_passes_generic_callable_contracts.inc",
+        "native/objc3c/src/sema/objc3_sema_contract_semantic_type_metadata_method_records.h"
+      ],
+      "negative_evidence": [
+        "tests/tooling/fixtures/native/recovery/negative/negative_generic_method_selector_form_ambiguous.objc3",
+        "tests/tooling/fixtures/native/recovery/negative/negative_reify_generics_unsupported_scope.objc3",
+        "tests/tooling/fixtures/native/recovery/negative/negative_type_semantic_generic_method_override_mismatch.objc3",
+        "tests/tooling/fixtures/native/recovery/negative/negative_type_semantic_generic_callable_constraint_cycle.objc3",
+        "tests/tooling/fixtures/native/recovery/negative/negative_type_semantic_erased_to_reified_redeclaration_drift.objc3",
+        "tests/tooling/fixtures/native/generic_callable_cross_module_mangling_policy_mismatch.json"
+      ],
+      "required_diagnostic_codes": [
+        "O3P114",
+        "O3S206"
+      ],
+      "source_truth_requirements": [
+        "Generic callable reification support is limited to declaration-scoped metadata policy on generic functions and Objective-C generic methods",
+        "Explicit reification records mangling and replay-key metadata without claiming runtime-specialized generic metadata or body cloning",
+        "Selector-local generic method clauses, unsupported reification scopes, override drift, constraint cycles, and cross-module mangling-policy drift remain fail-closed"
+      ]
+    },
+    {
+      "support_claim": "objc3c.behavior.language.control-flow.statement-guarded-match",
+      "capability_id": "language.control-flow.statement-guarded-match",
+      "owner_phase": "sema",
+      "conformance_fixture": "tests/tooling/fixtures/native/match_guarded_pattern_language_evolution_contract.json",
+      "traceability_fixture": "tests/tooling/fixtures/native/recovery/negative/negative_guarded_match_pattern_non_bool.objc3",
+      "runnable_command": "npm run objc3c -- validate-conformance-corpus",
+      "runtime_acceptance_case": "control-flow-statement-guarded-match-contract",
+      "positive_evidence": [
+        "tests/tooling/fixtures/native/recovery/positive/match_guarded_pattern_statement.objc3",
+        "tests/tooling/fixtures/native/match_guarded_pattern_language_evolution_contract.json",
+        "native/objc3c/src/sema/objc3_semantic_match_exhaustiveness.cpp"
+      ],
+      "negative_evidence": [
+        "tests/tooling/fixtures/native/recovery/negative/negative_guarded_match_pattern_non_bool.objc3",
+        "tests/tooling/fixtures/native/recovery/negative/negative_guarded_match_pattern_reserved.objc3",
+        "tests/tooling/fixtures/native/recovery/negative/negative_match_statement_fat_arrow_ambiguous.objc3",
+        "tests/tooling/fixtures/native/match_type_test_pattern_fail_closed_negative.objc3"
+      ],
+      "required_diagnostic_codes": [
+        "O3P156",
+        "O3P157",
+        "O3P158",
+        "O3S206"
+      ],
+      "source_truth_requirements": [
+        "Statement guarded match support is claimed only for contextual where guards inside statement match cases",
+        "Non-bool guards, missing where conditions, statement fat-arrow arms, and type-test patterns remain fail-closed"
+      ]
+    },
+    {
+      "support_claim": "objc3c.behavior.language.control-flow.match-expression",
+      "capability_id": "language.control-flow.match-expression",
+      "owner_phase": "sema",
+      "conformance_fixture": "tests/tooling/fixtures/native/match_guarded_pattern_language_evolution_contract.json",
+      "traceability_fixture": "tests/tooling/fixtures/native/recovery/negative/negative_match_expression_non_exhaustive.objc3",
+      "runnable_command": "npm run objc3c -- validate-conformance-corpus",
+      "runtime_acceptance_case": "control-flow-bounded-match-expression-contract",
+      "positive_evidence": [
+        "tests/tooling/fixtures/native/recovery/positive/match_expression_literal_result.objc3",
+        "tests/tooling/fixtures/native/recovery/positive/match_expression_guarded_bool.objc3",
+        "tests/tooling/fixtures/native/recovery/positive/match_expression_result_case_semantic.objc3",
+        "tests/tooling/fixtures/native/match_guarded_pattern_language_evolution_contract.json",
+        "native/objc3c/src/parse/objc3_parser_core_primary_message_expressions_match_expression.inc",
+        "native/objc3c/src/sema/objc3_semantic_passes_expression_statement_validation_match_expression_case.inc"
+      ],
+      "negative_evidence": [
+        "tests/tooling/fixtures/native/recovery/negative/negative_match_expression_non_exhaustive.objc3",
+        "tests/tooling/fixtures/native/recovery/negative/negative_match_expression_binding_scope_leak.objc3",
+        "tests/tooling/fixtures/native/recovery/negative/negative_match_expression_result_type_mismatch.objc3",
+        "tests/tooling/fixtures/native/recovery/negative/negative_match_expression_type_test_reserved.objc3",
+        "tests/tooling/fixtures/native/recovery/negative/negative_match_expression_guard_side_effect.objc3"
+      ],
+      "required_diagnostic_codes": [
+        "O3P158",
+        "O3S202",
+        "O3S206"
+      ],
+      "source_truth_requirements": [
+        "Expression match support is bounded to expression arms with bool guards, scoped bindings, exhaustiveness checks, and converged result types",
+        "Result payload ABI extraction and type-test patterns remain fail-closed until their dedicated runtime/lowering contracts exist"
       ]
     },
     {

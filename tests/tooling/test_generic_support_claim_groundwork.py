@@ -50,6 +50,33 @@ EXPECTED_GENERIC_ROWS = {
         },
         "required_codes": {"O3S206"},
     },
+    "objc3c.behavior.language.generics.generic-callable-reification": {
+        "capability_id": "language.generics.generic-callable-reification",
+        "owner_phase": "sema",
+        "behavior_fixture": (
+            "tests/tooling/fixtures/native/"
+            "type_semantic_generic_reified_objc_method_positive.objc3"
+        ),
+        "runtime_acceptance_case": "type-semantic-model-generic-callable-reification-contract",
+        "required_positive": {
+            "tests/tooling/fixtures/native/type_semantic_generic_reified_function_positive.objc3",
+            "tests/tooling/fixtures/native/type_semantic_generic_objc_method_positive.objc3",
+            "tests/tooling/fixtures/native/type_semantic_generic_function_positive.objc3",
+            "tests/tooling/fixtures/native/generic_callable_reification_contract.json",
+            "schemas/objc3c-generic-callable-model-v1.schema.json",
+            "native/objc3c/src/sema/objc3_semantic_passes_generic_callable_contracts.inc",
+            "native/objc3c/src/sema/objc3_sema_contract_semantic_type_metadata_method_records.h",
+        },
+        "required_negative": {
+            "tests/tooling/fixtures/native/recovery/negative/negative_generic_method_selector_form_ambiguous.objc3",
+            "tests/tooling/fixtures/native/recovery/negative/negative_reify_generics_unsupported_scope.objc3",
+            "tests/tooling/fixtures/native/recovery/negative/negative_type_semantic_generic_method_override_mismatch.objc3",
+            "tests/tooling/fixtures/native/recovery/negative/negative_type_semantic_generic_callable_constraint_cycle.objc3",
+            "tests/tooling/fixtures/native/recovery/negative/negative_type_semantic_erased_to_reified_redeclaration_drift.objc3",
+            "tests/tooling/fixtures/native/generic_callable_cross_module_mangling_policy_mismatch.json",
+        },
+        "required_codes": {"O3P114", "O3S206"},
+    },
     "objc3c.behavior.language.generics.variance-specialization": {
         "capability_id": "language.generics.variance-specialization",
         "owner_phase": "sema",
@@ -148,6 +175,36 @@ EXPECTED_GENERIC_FIXTURES = {
         "diagnostic_negative",
         "O3S206",
     ),
+    "tests/tooling/fixtures/native/recovery/negative/negative_generic_method_selector_form_ambiguous.objc3": (
+        "parser",
+        "canonical_rejection",
+        "O3P114",
+    ),
+    "tests/tooling/fixtures/native/recovery/negative/negative_reify_generics_unsupported_scope.objc3": (
+        "parser",
+        "canonical_rejection",
+        "O3P114",
+    ),
+    "tests/tooling/fixtures/native/recovery/negative/negative_type_semantic_generic_method_override_mismatch.objc3": (
+        "sema",
+        "diagnostic_negative",
+        "O3S206",
+    ),
+    "tests/tooling/fixtures/native/recovery/negative/negative_type_semantic_generic_callable_constraint_cycle.objc3": (
+        "sema",
+        "diagnostic_negative",
+        "O3S206",
+    ),
+    "tests/tooling/fixtures/native/recovery/negative/negative_type_semantic_erased_to_reified_redeclaration_drift.objc3": (
+        "sema",
+        "diagnostic_negative",
+        "O3S206",
+    ),
+    "tests/tooling/fixtures/native/generic_callable_cross_module_mangling_policy_mismatch.json": (
+        "artifact_manifest",
+        "diagnostic_negative",
+        "O3S206",
+    ),
 }
 
 
@@ -240,39 +297,54 @@ def test_generic_callable_reification_contract_is_source_backed_and_fail_closed(
     assert contract["policy"]["generated_report_source_truth_allowed"] is False
     assert contract["policy"]["validation_required_before_support_expansion"] is True
 
-    accepted = contract["accepted_surfaces"]
-    assert len(accepted) == 1
-    generic_fn = accepted[0]
-    assert generic_fn["surface"] == "generic_free_function"
-    assert generic_fn["reification_policy"] == "erased_default"
-    assert generic_fn["mangling_policy_id"] == "objc3c.generic-callable.semantic-mangling.v1"
-    for path in [
-        generic_fn["parser_owner"],
-        generic_fn["sema_owner"],
-        generic_fn["positive_fixture"],
-    ]:
-        _assert_repo_path_exists(path)
+    accepted = {row["surface"]: row for row in contract["accepted_surfaces"]}
+    assert set(accepted) == {
+        "generic_free_function",
+        "generic_free_function_explicit_reified_metadata_policy",
+        "objective_c_generic_method",
+        "objective_c_generic_method_explicit_reified_metadata_policy",
+    }
+    assert accepted["generic_free_function"]["reification_policy"] == "erased_default"
+    assert accepted["generic_free_function_explicit_reified_metadata_policy"][
+        "reification_policy"
+    ] == "explicit_reified"
+    assert accepted["objective_c_generic_method"]["selector_identity_includes_generic_clause"] is False
+    assert accepted["objective_c_generic_method_explicit_reified_metadata_policy"][
+        "runtime_specialization_claimed"
+    ] is False
+    for surface in accepted.values():
+        for path in [
+            surface["parser_owner"],
+            surface["sema_owner"],
+            surface["positive_fixture"],
+        ]:
+            _assert_repo_path_exists(path)
     assert {
         "generic_callable_signature_replay_key",
         "generic_callable_reification_policy",
         "generic_callable_mangling_policy_id",
-        "generic_callable_contract_deterministic",
-    } <= set(generic_fn["metadata_fields"])
+    } <= set(accepted["objective_c_generic_method"]["metadata_fields"])
 
     reserved = contract["reserved_surfaces"]
     assert {row["diagnostic_code"] for row in reserved} == {"O3P114"}
     assert {
-        "objc_method_type_parameter_clause",
-        "declaration_scoped_reification_marker",
         "c_style_generic_free_function",
+        "selector_local_generic_method_clause",
+        "unsupported_reification_scope",
     } == {row["surface"] for row in reserved}
     for row in reserved:
         _assert_repo_path_exists(row["negative_fixture"])
 
     fail_closed = contract["fail_closed_semantic_contracts"]
-    assert len(fail_closed) == 1
-    drift = fail_closed[0]
-    assert drift["contract"] == "generic_free_function_redeclaration_signature_drift"
+    contracts = {row["contract"]: row for row in fail_closed}
+    assert set(contracts) == {
+        "generic_free_function_redeclaration_signature_drift",
+        "generic_method_override_signature_drift",
+        "generic_callable_constraint_cycle",
+        "erased_to_reified_redeclaration_drift",
+        "cross_module_mangling_policy_mismatch",
+    }
+    drift = contracts["generic_free_function_redeclaration_signature_drift"]
     assert drift["diagnostic_code"] == "O3S206"
     assert {
         "generic arity",
@@ -280,4 +352,5 @@ def test_generic_callable_reification_contract_is_source_backed_and_fail_closed(
         "reification policy",
         "generic callable signature replay key",
     } <= set(drift["required_invariants"])
-    _assert_repo_path_exists(drift["negative_fixture"])
+    for row in fail_closed:
+        _assert_repo_path_exists(row["negative_fixture"])

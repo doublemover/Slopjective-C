@@ -235,7 +235,7 @@ def test_strict_and_strict_concurrency_profiles_reject_without_aliases() -> None
     assert "strict_concurrency" not in profile_source
 
 
-def test_generic_callable_reification_remains_erased_and_bounded() -> None:
+def test_generic_callable_reification_is_source_backed_and_runtime_bounded() -> None:
     contract = _read_json(GENERIC_REIFICATION)
 
     assert contract["contract_id"] == "objc3c.native.generic_callable_reification_contract.v1"
@@ -249,15 +249,25 @@ def test_generic_callable_reification_remains_erased_and_bounded() -> None:
         "module_or_profile_implicit_reification_allowed": False,
     }
     accepted = {row["surface"]: row for row in contract["accepted_surfaces"]}
+    assert set(accepted) == {
+        "generic_free_function",
+        "generic_free_function_explicit_reified_metadata_policy",
+        "objective_c_generic_method",
+        "objective_c_generic_method_explicit_reified_metadata_policy",
+    }
     assert accepted["generic_free_function"]["reification_policy"] == "erased_default"
-    assert accepted["generic_free_function"]["mangling_policy_id"] == (
-        "objc3c.generic-callable.semantic-mangling.v1"
-    )
+    assert accepted["generic_free_function_explicit_reified_metadata_policy"][
+        "reification_policy"
+    ] == "explicit_reified"
+    assert accepted["objective_c_generic_method"]["selector_identity_includes_generic_clause"] is False
+    assert accepted["objective_c_generic_method_explicit_reified_metadata_policy"][
+        "runtime_specialization_claimed"
+    ] is False
     reserved = {row["surface"]: row for row in contract["reserved_surfaces"]}
     assert set(reserved) == {
-        "objc_method_type_parameter_clause",
-        "declaration_scoped_reification_marker",
         "c_style_generic_free_function",
+        "selector_local_generic_method_clause",
+        "unsupported_reification_scope",
     }
     for row in contract["accepted_surfaces"]:
         _assert_repo_file(str(row["positive_fixture"]))
@@ -265,9 +275,12 @@ def test_generic_callable_reification_remains_erased_and_bounded() -> None:
         _assert_repo_file(str(row["negative_fixture"]))
     for row in contract["fail_closed_semantic_contracts"]:
         _assert_repo_file(str(row["negative_fixture"]))
+    assert "runtime-specialized generic metadata or body cloning" in contract[
+        "unsupported_boundaries"
+    ]
 
 
-def test_guarded_match_is_statement_only_and_match_expressions_are_reserved() -> None:
+def test_guarded_match_and_bounded_match_expressions_are_source_backed() -> None:
     contract = _read_json(MATCH_GUARDED)
 
     assert contract["contract_id"] == (
@@ -277,28 +290,31 @@ def test_guarded_match_is_statement_only_and_match_expressions_are_reserved() ->
     assert contract["issue_refs"] == [8236]
     assert contract["support_state"] == {
         "statement_guarded_match_patterns": "supported_bounded",
-        "match_expressions": "reserved_fail_closed",
-        "fat_arrow_arms": "reserved_fail_closed",
+        "match_expressions": "supported_bounded",
+        "fat_arrow_expression_arms": "supported_bounded",
+        "fat_arrow_statement_arms": "reserved_fail_closed",
         "type_test_patterns": "reserved_fail_closed",
     }
     assert contract["admitted_surface"]["guard_condition_type"] == "bool"
     assert contract["admitted_surface"]["guard_condition_checked_after_binding"] is True
+    assert contract["admitted_surface"]["guarded_catch_all_exhaustiveness"] == (
+        "does-not-make-match-exhaustive-by-itself"
+    )
     assert contract["admitted_surface"]["where_keyword_scope"] == (
         "contextual-match-case-only"
     )
     assert contract["public_claim_boundary"]["support_claims"] == [
-        "objc3c.behavior.language.control-flow.statement-guarded-match"
+        "objc3c.behavior.language.control-flow.statement-guarded-match",
+        "objc3c.behavior.language.control-flow.match-expression",
     ]
-    assert contract["public_claim_boundary"]["no_expression_lowering_claim"] is True
-    assert contract["public_claim_boundary"]["no_runtime_result_typing_claim"] is True
-    assert contract["reserved_source_fields"] == [
-        "match_expression_fail_closed",
-        "match_expression_result_typing_supported",
-        "match_fat_arrow_arms_supported",
-        "type_test_pattern_fail_closed",
-    ]
+    assert contract["public_claim_boundary"][
+        "expression_lowering_claim_bounded_to_scalar_non_result_case"
+    ] is True
+    assert contract["public_claim_boundary"]["no_result_payload_abi_lowering_claim"] is True
+    assert contract["reserved_source_fields"] == ["type_test_pattern_fail_closed"]
 
-    _assert_repo_file(str(contract["admitted_surface"]["positive_fixture"]))
+    for fixture in contract["admitted_surface"]["positive_fixtures"]:
+        _assert_repo_file(str(fixture))
     for anchor in contract["source_anchors"]:
         _assert_repo_file(str(anchor))
     control_source = (
@@ -313,8 +329,18 @@ def test_guarded_match_is_statement_only_and_match_expressions_are_reserved() ->
     assert "guarded_match_issue_ref = 8236" in control_source
     assert 'guarded_match_admitted_syntax =\n      "case pattern where bool_condition:"' in control_source
     assert "guarded_match_condition_bool_required = true" in control_source
-    assert "match_expression_result_typing_supported = false" in control_source
-    assert "match_fat_arrow_arms_supported = false" in control_source
+    helper_source = (
+        ROOT
+        / "native"
+        / "objc3c"
+        / "src"
+        / "pipeline"
+        / "frontend_control_flow_source_closure_helpers.cpp"
+    ).read_text(encoding="utf-8")
+    assert "summary.match_expression_source_supported = true" in helper_source
+    assert "summary.match_expression_result_typing_supported = true" in helper_source
+    assert "summary.match_fat_arrow_arms_supported = true" in helper_source
+    assert "summary.type_test_pattern_fail_closed = true" in helper_source
     replay_source = (
         ROOT
         / "native"
@@ -329,8 +355,9 @@ def test_guarded_match_is_statement_only_and_match_expressions_are_reserved() ->
         ROOT / "native" / "objc3c" / "src" / "pipeline" / "results" / "capability_status.h"
     ).read_text(encoding="utf-8")
     assert "summary.guarded_match_issue_ref == 8236u" in capability_source
-    assert "!summary.match_expression_result_typing_supported" in capability_source
-    assert "!summary.match_fat_arrow_arms_supported" in capability_source
+    assert "!summary.match_expression_fail_closed" in capability_source
+    assert "summary.match_expression_result_typing_supported" in capability_source
+    assert "summary.match_fat_arrow_arms_supported" in capability_source
     artifact_source = (
         ROOT
         / "native"
@@ -342,6 +369,10 @@ def test_guarded_match_is_statement_only_and_match_expressions_are_reserved() ->
     assert '\\"guarded_match_issue_ref\\"' in artifact_source
     assert '\\"match_expression_result_typing_supported\\"' in artifact_source
     for row in contract["reserved_surfaces"]:
+        _assert_repo_file(str(row["negative_fixture"]))
+        fixture_text = (ROOT / str(row["negative_fixture"])).read_text(encoding="utf-8")
+        assert str(row["expected_diagnostic"]) in fixture_text
+    for row in contract["semantic_negative_surfaces"]:
         _assert_repo_file(str(row["negative_fixture"]))
         fixture_text = (ROOT / str(row["negative_fixture"])).read_text(encoding="utf-8")
         assert str(row["expected_diagnostic"]) in fixture_text
@@ -373,10 +404,16 @@ def test_language_evolution_umbrella_keeps_claims_source_owned_and_fail_closed()
         assert row["negative_case_ids"]
     assert "language.profiles.strict" in contract["reserved_public_claims"]
     assert "language.profiles.strict-concurrency" in contract["reserved_public_claims"]
-    assert "language.generics.generic-callable-reification" in contract[
+    assert "language.generics.generic-callable-reification" not in contract[
         "reserved_public_claims"
     ]
     assert "objc3c.behavior.language.control-flow.statement-guarded-match" in contract[
+        "admitted_public_claims"
+    ]
+    assert "objc3c.behavior.language.control-flow.match-expression" in contract[
+        "admitted_public_claims"
+    ]
+    assert "objc3c.behavior.language.generics.generic-callable-reification" in contract[
         "admitted_public_claims"
     ]
     support_rows = {row["row_id"]: row for row in contract["lead_support_row_recommendations"]}
@@ -388,8 +425,11 @@ def test_language_evolution_umbrella_keeps_claims_source_owned_and_fail_closed()
         "language.control-flow.statement-guarded-match",
         "language.profiles.strict-admission",
     }
-    assert support_rows["language.evolution.umbrella-alignment"]["status"] == (
-        "reserved-source-owned-fail-closed"
+    assert support_rows["language.generics.generic-callable-reification"]["status"] == (
+        "source-owned-generic-callable-policy"
+    )
+    assert support_rows["language.control-flow.statement-guarded-match"]["status"] == (
+        "supported-bounded-statement-and-expression"
     )
 
 
@@ -400,10 +440,26 @@ def test_language_evolution_support_docs_point_to_source_contracts() -> None:
     guarded = capabilities["language.control-flow.statement-guarded-match"]
     guarded_paths = {row["path"] for row in guarded["evidence"]}
     assert "tests/tooling/fixtures/native/match_guarded_pattern_language_evolution_contract.json" in guarded_paths
-    assert "tests/tooling/fixtures/native/recovery/negative/negative_match_expression_position_reserved.objc3" in guarded_paths
     assert "objc3c.behavior.language.control-flow.statement-guarded-match" in guarded[
         "support_claims"
     ]
+
+    match_expression = capabilities["language.control-flow.match-expression"]
+    match_paths = {row["path"] for row in match_expression["evidence"]}
+    assert "tests/tooling/fixtures/native/recovery/positive/match_expression_literal_result.objc3" in match_paths
+    assert "tests/tooling/fixtures/native/recovery/negative/negative_match_expression_non_exhaustive.objc3" in match_paths
+    assert "objc3c.behavior.language.control-flow.match-expression" in match_expression[
+        "support_claims"
+    ]
+
+    generic_reification = capabilities["language.generics.generic-callable-reification"]
+    assert generic_reification["state"] == "implemented"
+    assert "objc3c.behavior.language.generics.generic-callable-reification" in generic_reification[
+        "support_claims"
+    ]
+    generic_paths = {row["path"] for row in generic_reification["evidence"]}
+    assert "tests/tooling/fixtures/native/type_semantic_generic_reified_objc_method_positive.objc3" in generic_paths
+    assert "tests/tooling/fixtures/native/recovery/negative/negative_reify_generics_unsupported_scope.objc3" in generic_paths
 
     umbrella = capabilities["language.evolution.umbrella-alignment"]
     assert umbrella["state"] == "reserved"
@@ -428,8 +484,12 @@ def test_language_evolution_support_docs_point_to_source_contracts() -> None:
         "tests/tooling/fixtures/native/match_guarded_pattern_language_evolution_contract.json",
     ) in evidence_paths
     assert (
-        "language.control-flow.statement-guarded-match",
-        "tests/tooling/fixtures/native/recovery/negative/negative_match_expression_position_reserved.objc3",
+        "language.control-flow.match-expression",
+        "tests/tooling/fixtures/native/recovery/positive/match_expression_literal_result.objc3",
+    ) in evidence_paths
+    assert (
+        "language.generics.generic-callable-reification",
+        "tests/tooling/fixtures/native/type_semantic_generic_reified_objc_method_positive.objc3",
     ) in evidence_paths
 
     readiness = _read_json(SUPPORT_UMBRELLA_READINESS)
@@ -467,11 +527,29 @@ def test_language_evolution_fixtures_are_canonical_manifest_owned() -> None:
             "positive",
             "",
         ),
-        "tests/tooling/fixtures/native/recovery/negative/negative_match_expression_position_reserved.objc3": (
+        "tests/tooling/fixtures/native/recovery/positive/match_expression_literal_result.objc3": (
+            "sema",
+            "control-flow",
+            "positive",
+            "",
+        ),
+        "tests/tooling/fixtures/native/recovery/positive/match_expression_guarded_bool.objc3": (
+            "sema",
+            "control-flow",
+            "positive",
+            "",
+        ),
+        "tests/tooling/fixtures/native/recovery/negative/negative_match_expression_non_exhaustive.objc3": (
+            "sema",
+            "control-flow",
+            "diagnostic_negative",
+            "O3S206",
+        ),
+        "tests/tooling/fixtures/native/recovery/negative/negative_match_expression_type_test_reserved.objc3": (
             "parser",
             "control-flow",
             "canonical_rejection",
-            "O3P156",
+            "O3P158",
         ),
         "tests/tooling/fixtures/native/recovery/negative/negative_guarded_match_pattern_non_bool.objc3": (
             "sema",

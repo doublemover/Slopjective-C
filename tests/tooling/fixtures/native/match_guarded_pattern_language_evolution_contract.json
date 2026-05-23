@@ -7,37 +7,49 @@
   ],
   "support_state": {
     "statement_guarded_match_patterns": "supported_bounded",
-    "match_expressions": "reserved_fail_closed",
-    "fat_arrow_arms": "reserved_fail_closed",
+    "match_expressions": "supported_bounded",
+    "fat_arrow_expression_arms": "supported_bounded",
+    "fat_arrow_statement_arms": "reserved_fail_closed",
     "type_test_patterns": "reserved_fail_closed"
   },
   "admitted_surface": {
-    "canonical_syntax": "match (expr) { case pattern where bool_condition: { ... } default: { ... } }",
+    "statement_syntax": "match (expr) { case pattern where bool_condition: { ... } default: { ... } }",
+    "expression_syntax": "match (expr) { case pattern where bool_condition => expression; default => expression; }",
     "guard_condition_type": "bool",
     "guard_condition_checked_after_binding": true,
     "guarded_catch_all_exhaustiveness": "does-not-make-match-exhaustive-by-itself",
     "where_keyword_scope": "contextual-match-case-only",
-    "positive_fixture": "tests/tooling/fixtures/native/recovery/positive/match_guarded_pattern_statement.objc3",
+    "positive_fixtures": [
+      "tests/tooling/fixtures/native/recovery/positive/match_guarded_pattern_statement.objc3",
+      "tests/tooling/fixtures/native/recovery/positive/match_expression_literal_result.objc3",
+      "tests/tooling/fixtures/native/recovery/positive/match_expression_guarded_bool.objc3",
+      "tests/tooling/fixtures/native/recovery/positive/match_expression_result_case_semantic.objc3"
+    ],
     "source_fields": [
       "guarded_match_issue_ref",
       "guarded_match_admitted_syntax",
       "guarded_match_condition_bool_required",
-      "guarded_match_pattern_source_supported"
+      "guarded_match_pattern_source_supported",
+      "match_expression_source_supported",
+      "match_expression_result_typing_supported",
+      "match_fat_arrow_arms_supported"
     ]
   },
   "reserved_surfaces": [
     {
-      "surface": "match_expression_position",
-      "expected_diagnostic": "O3P156",
-      "diagnostic_symbol": "kObjc3ParserDiagnosticReservedMatchExpressionCode",
-      "negative_fixture": "tests/tooling/fixtures/native/recovery/negative/negative_match_expression_position_reserved.objc3"
-    },
-    {
-      "surface": "fat_arrow_match_arms",
+      "surface": "fat_arrow_statement_arms",
       "expected_diagnostic": "O3P156",
       "diagnostic_symbol": "kObjc3ParserDiagnosticReservedMatchExpressionCode",
       "negative_fixture": "tests/tooling/fixtures/native/recovery/negative/negative_match_statement_fat_arrow_ambiguous.objc3"
     },
+    {
+      "surface": "type_test_patterns",
+      "expected_diagnostic": "O3P158",
+      "diagnostic_symbol": "kObjc3ParserDiagnosticReservedMatchTypeTestPatternCode",
+      "negative_fixture": "tests/tooling/fixtures/native/match_type_test_pattern_fail_closed_negative.objc3"
+    }
+  ],
+  "semantic_negative_surfaces": [
     {
       "surface": "missing_where_condition",
       "expected_diagnostic": "O3P157",
@@ -50,16 +62,33 @@
       "negative_fixture": "tests/tooling/fixtures/native/recovery/negative/negative_guarded_match_pattern_non_bool.objc3"
     },
     {
-      "surface": "type_test_patterns",
+      "surface": "match_expression_non_exhaustive",
+      "expected_diagnostic": "O3S206",
+      "negative_fixture": "tests/tooling/fixtures/native/recovery/negative/negative_match_expression_non_exhaustive.objc3"
+    },
+    {
+      "surface": "match_expression_binding_scope_leak",
+      "expected_diagnostic": "O3S202",
+      "negative_fixture": "tests/tooling/fixtures/native/recovery/negative/negative_match_expression_binding_scope_leak.objc3"
+    },
+    {
+      "surface": "match_expression_result_type_mismatch",
+      "expected_diagnostic": "O3S206",
+      "negative_fixture": "tests/tooling/fixtures/native/recovery/negative/negative_match_expression_result_type_mismatch.objc3"
+    },
+    {
+      "surface": "match_expression_type_test_patterns",
       "expected_diagnostic": "O3P158",
       "diagnostic_symbol": "kObjc3ParserDiagnosticReservedMatchTypeTestPatternCode",
-      "negative_fixture": "tests/tooling/fixtures/native/match_type_test_pattern_fail_closed_negative.objc3"
+      "negative_fixture": "tests/tooling/fixtures/native/recovery/negative/negative_match_expression_type_test_reserved.objc3"
+    },
+    {
+      "surface": "match_expression_guard_side_effect",
+      "expected_diagnostic": "O3S206",
+      "negative_fixture": "tests/tooling/fixtures/native/recovery/negative/negative_match_expression_guard_side_effect.objc3"
     }
   ],
   "reserved_source_fields": [
-    "match_expression_fail_closed",
-    "match_expression_result_typing_supported",
-    "match_fat_arrow_arms_supported",
     "type_test_pattern_fail_closed"
   ],
   "source_anchors": [
@@ -67,20 +96,22 @@
     "native/objc3c/src/pipeline/frontend_control_flow_source_closure_helpers.cpp",
     "native/objc3c/src/pipeline/source_closure/frontend_source_closure_replay_keys_core.cpp",
     "native/objc3c/src/pipeline/results/capability_status.h",
+    "native/objc3c/src/parse/objc3_parser_core_primary_message_expressions_match_expression.inc",
+    "native/objc3c/src/sema/objc3_semantic_passes_expression_statement_validation_match_expression_case.inc",
     "native/objc3c/src/parse/objc3_parser_core_statement_switch_parsing_match_case_diagnostics.inc",
     "native/objc3c/src/parse/objc3_parser_core_statement_match_patterns_diagnostics_recovery.inc",
     "native/objc3c/src/sema/objc3_semantic_match_exhaustiveness.cpp"
   ],
   "public_claim_boundary": {
     "support_claims": [
-      "objc3c.behavior.language.control-flow.statement-guarded-match"
+      "objc3c.behavior.language.control-flow.statement-guarded-match",
+      "objc3c.behavior.language.control-flow.match-expression"
     ],
     "reserved_rows_required": [
-      "language.control-flow.match-expressions",
       "language.control-flow.type-test-patterns"
     ],
-    "no_expression_lowering_claim": true,
-    "no_runtime_result_typing_claim": true,
+    "expression_lowering_claim_bounded_to_scalar_non_result_case": true,
+    "no_result_payload_abi_lowering_claim": true,
     "no_compatibility_syntax_aliases": true
   }
 }

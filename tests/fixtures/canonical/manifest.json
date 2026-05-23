@@ -72,9 +72,21 @@
       "executable_command": "npm run objc3c -- validate-conformance-corpus"
     },
     {
+      "claim_id": "objc3c.behavior.language.generics.generic-callable-reification",
+      "owner_phase": "sema",
+      "behavior_fixture": "tests/tooling/fixtures/native/type_semantic_generic_reified_objc_method_positive.objc3",
+      "executable_command": "npm run objc3c -- validate-conformance-corpus"
+    },
+    {
       "claim_id": "objc3c.behavior.language.control-flow.statement-guarded-match",
       "owner_phase": "sema",
       "behavior_fixture": "tests/tooling/fixtures/native/recovery/positive/match_guarded_pattern_statement.objc3",
+      "executable_command": "npm run objc3c -- validate-conformance-corpus"
+    },
+    {
+      "claim_id": "objc3c.behavior.language.control-flow.match-expression",
+      "owner_phase": "sema",
+      "behavior_fixture": "tests/tooling/fixtures/native/recovery/positive/match_expression_literal_result.objc3",
       "executable_command": "npm run objc3c -- validate-conformance-corpus"
     },
     {
@@ -1204,6 +1216,30 @@
       "expected_diagnostic_code": ""
     },
     {
+      "path": "tests/tooling/fixtures/native/type_semantic_generic_objc_method_positive.objc3",
+      "origin": "hand-authored",
+      "owner_phase": "sema",
+      "behavior_family": "generics",
+      "fixture_kind": "positive",
+      "expected_diagnostic_code": ""
+    },
+    {
+      "path": "tests/tooling/fixtures/native/type_semantic_generic_reified_function_positive.objc3",
+      "origin": "hand-authored",
+      "owner_phase": "sema",
+      "behavior_family": "generics",
+      "fixture_kind": "positive",
+      "expected_diagnostic_code": ""
+    },
+    {
+      "path": "tests/tooling/fixtures/native/type_semantic_generic_reified_objc_method_positive.objc3",
+      "origin": "hand-authored",
+      "owner_phase": "sema",
+      "behavior_family": "generics",
+      "fixture_kind": "positive",
+      "expected_diagnostic_code": ""
+    },
+    {
       "path": "tests/tooling/fixtures/native/protocol_qualified_existential_value_flow.objc3",
       "origin": "hand-authored",
       "owner_phase": "sema",
@@ -1354,6 +1390,54 @@
       "expected_diagnostic_code": "O3S206"
     },
     {
+      "path": "tests/tooling/fixtures/native/recovery/negative/negative_generic_method_selector_form_ambiguous.objc3",
+      "origin": "hand-authored",
+      "owner_phase": "parser",
+      "behavior_family": "generics",
+      "fixture_kind": "canonical_rejection",
+      "expected_diagnostic_code": "O3P114"
+    },
+    {
+      "path": "tests/tooling/fixtures/native/recovery/negative/negative_reify_generics_unsupported_scope.objc3",
+      "origin": "hand-authored",
+      "owner_phase": "parser",
+      "behavior_family": "generics",
+      "fixture_kind": "canonical_rejection",
+      "expected_diagnostic_code": "O3P114"
+    },
+    {
+      "path": "tests/tooling/fixtures/native/recovery/negative/negative_type_semantic_generic_method_override_mismatch.objc3",
+      "origin": "hand-authored",
+      "owner_phase": "sema",
+      "behavior_family": "generics",
+      "fixture_kind": "diagnostic_negative",
+      "expected_diagnostic_code": "O3S206"
+    },
+    {
+      "path": "tests/tooling/fixtures/native/recovery/negative/negative_type_semantic_generic_callable_constraint_cycle.objc3",
+      "origin": "hand-authored",
+      "owner_phase": "sema",
+      "behavior_family": "generics",
+      "fixture_kind": "diagnostic_negative",
+      "expected_diagnostic_code": "O3S206"
+    },
+    {
+      "path": "tests/tooling/fixtures/native/recovery/negative/negative_type_semantic_erased_to_reified_redeclaration_drift.objc3",
+      "origin": "hand-authored",
+      "owner_phase": "sema",
+      "behavior_family": "generics",
+      "fixture_kind": "diagnostic_negative",
+      "expected_diagnostic_code": "O3S206"
+    },
+    {
+      "path": "tests/tooling/fixtures/native/generic_callable_cross_module_mangling_policy_mismatch.json",
+      "origin": "hand-authored",
+      "owner_phase": "artifact_manifest",
+      "behavior_family": "generics",
+      "fixture_kind": "diagnostic_negative",
+      "expected_diagnostic_code": "O3S206"
+    },
+    {
       "path": "tests/tooling/fixtures/native/recovery/negative/negative_typed_throws_reserved.objc3",
       "origin": "hand-authored",
       "owner_phase": "parser",
@@ -1426,12 +1510,28 @@
       "expected_diagnostic_code": ""
     },
     {
-      "path": "tests/tooling/fixtures/native/recovery/negative/negative_match_expression_position_reserved.objc3",
+      "path": "tests/tooling/fixtures/native/recovery/positive/match_expression_literal_result.objc3",
       "origin": "hand-authored",
-      "owner_phase": "parser",
+      "owner_phase": "sema",
       "behavior_family": "control-flow",
-      "fixture_kind": "canonical_rejection",
-      "expected_diagnostic_code": "O3P156"
+      "fixture_kind": "positive",
+      "expected_diagnostic_code": ""
+    },
+    {
+      "path": "tests/tooling/fixtures/native/recovery/positive/match_expression_guarded_bool.objc3",
+      "origin": "hand-authored",
+      "owner_phase": "sema",
+      "behavior_family": "control-flow",
+      "fixture_kind": "positive",
+      "expected_diagnostic_code": ""
+    },
+    {
+      "path": "tests/tooling/fixtures/native/recovery/positive/match_expression_result_case_semantic.objc3",
+      "origin": "hand-authored",
+      "owner_phase": "sema",
+      "behavior_family": "control-flow",
+      "fixture_kind": "positive",
+      "expected_diagnostic_code": ""
     },
     {
       "path": "tests/tooling/fixtures/native/recovery/negative/negative_match_statement_fat_arrow_ambiguous.objc3",
@@ -1451,6 +1551,46 @@
     },
     {
       "path": "tests/tooling/fixtures/native/recovery/negative/negative_guarded_match_pattern_non_bool.objc3",
+      "origin": "hand-authored",
+      "owner_phase": "sema",
+      "behavior_family": "control-flow",
+      "fixture_kind": "diagnostic_negative",
+      "expected_diagnostic_code": "O3S206"
+    },
+    {
+      "path": "tests/tooling/fixtures/native/recovery/negative/negative_match_expression_non_exhaustive.objc3",
+      "origin": "hand-authored",
+      "owner_phase": "sema",
+      "behavior_family": "control-flow",
+      "fixture_kind": "diagnostic_negative",
+      "expected_diagnostic_code": "O3S206"
+    },
+    {
+      "path": "tests/tooling/fixtures/native/recovery/negative/negative_match_expression_binding_scope_leak.objc3",
+      "origin": "hand-authored",
+      "owner_phase": "sema",
+      "behavior_family": "control-flow",
+      "fixture_kind": "diagnostic_negative",
+      "expected_diagnostic_code": "O3S202"
+    },
+    {
+      "path": "tests/tooling/fixtures/native/recovery/negative/negative_match_expression_result_type_mismatch.objc3",
+      "origin": "hand-authored",
+      "owner_phase": "sema",
+      "behavior_family": "control-flow",
+      "fixture_kind": "diagnostic_negative",
+      "expected_diagnostic_code": "O3S206"
+    },
+    {
+      "path": "tests/tooling/fixtures/native/recovery/negative/negative_match_expression_type_test_reserved.objc3",
+      "origin": "hand-authored",
+      "owner_phase": "parser",
+      "behavior_family": "control-flow",
+      "fixture_kind": "canonical_rejection",
+      "expected_diagnostic_code": "O3P158"
+    },
+    {
+      "path": "tests/tooling/fixtures/native/recovery/negative/negative_match_expression_guard_side_effect.objc3",
       "origin": "hand-authored",
       "owner_phase": "sema",
       "behavior_family": "control-flow",

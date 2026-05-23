@@ -18,6 +18,18 @@ static void FinalizeControlFlowControlFlowSemanticModelReadiness(
       summary.match_statement_semantic_sites ==
       summary.match_exhaustive_statement_sites +
           summary.match_non_exhaustive_diagnostic_sites;
+  const bool match_expression_semantics_landed =
+      summary.match_expression_semantic_sites ==
+      summary.match_expression_exhaustive_sites +
+          summary.match_expression_non_exhaustive_diagnostic_sites &&
+      summary.match_expression_result_type_sites <=
+          summary.match_expression_semantic_sites &&
+      summary.match_expression_lowering_eligible_sites <=
+          summary.match_expression_semantic_sites &&
+      summary.match_expression_guard_effect_fail_closed_sites <=
+          summary.match_expression_semantic_sites &&
+      summary.match_expression_result_type_mismatch_sites <=
+          summary.match_expression_semantic_sites;
   summary.match_exhaustiveness_deferred =
       summary.match_exhaustiveness_deferred_sites != 0;
   summary.defer_cleanup_order_semantics_landed = true;
@@ -52,6 +64,21 @@ static void FinalizeControlFlowControlFlowSemanticModelReadiness(
           summary.match_statement_semantic_sites &&
       summary.match_non_exhaustive_diagnostic_sites <=
           summary.match_statement_semantic_sites &&
+      summary.match_expression_result_type_sites <=
+          summary.match_expression_semantic_sites &&
+      summary.match_expression_guard_condition_sites <=
+          summary.match_expression_semantic_sites &&
+      summary.match_expression_binding_scope_sites <=
+          summary.match_expression_semantic_sites &&
+      summary.match_expression_result_case_scope_sites <=
+          summary.match_expression_semantic_sites &&
+      summary.match_expression_exhaustive_sites <=
+          summary.match_expression_semantic_sites &&
+      summary.match_expression_non_exhaustive_diagnostic_sites <=
+          summary.match_expression_semantic_sites &&
+      summary.match_expression_lowering_eligible_sites <=
+          summary.match_expression_semantic_sites &&
+      match_expression_semantics_landed &&
       summary.match_exhaustiveness_deferred_sites == 0 &&
       summary.match_exhaustiveness_semantics_landed &&
       !summary.match_exhaustiveness_deferred &&

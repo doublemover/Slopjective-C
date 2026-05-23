@@ -147,6 +147,11 @@ static void ValidateParameterTypeSuffixes(
 static void ValidateReturnTypeSuffixes(
     const FunctionDecl &fn, std::vector<std::string> &diagnostics,
     const std::unordered_set<std::string> *generic_interface_names = nullptr) {
+  ValidateGenericCallableParameterList(
+      fn.generic_params, "function '" + fn.name + "'",
+      fn.generic_callable_reification_marker_declared,
+      fn.generic_callable_reification_marker_line,
+      fn.generic_callable_reification_marker_column, diagnostics);
   if (fn.has_return_generic_suffix && !SupportsGenericReturnTypeSuffix(fn)) {
     std::string suffix = fn.return_generic_suffix_text;
     if (suffix.empty()) {

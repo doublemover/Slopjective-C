@@ -25,6 +25,20 @@
       method_metadata.selector_has_normalization_flag_mismatch = source.selector_has_normalization_flag_mismatch;
       method_metadata.selector_has_missing_piece_keyword = source.selector_has_missing_piece_keyword;
       method_metadata.arity = source.arity;
+      method_metadata.generic_parameter_names_source_order =
+          source.generic_parameter_names_source_order;
+      method_metadata.generic_parameter_variance_source_order =
+          source.generic_parameter_variance_source_order;
+      method_metadata.generic_parameter_constraints_lexicographic =
+          source.generic_parameter_constraints_lexicographic;
+      method_metadata.generic_callable_signature_replay_key =
+          source.generic_callable_signature_replay_key;
+      method_metadata.generic_callable_reification_policy =
+          source.generic_callable_reification_policy;
+      method_metadata.generic_callable_mangling_policy_id =
+          source.generic_callable_mangling_policy_id;
+      method_metadata.generic_callable_contract_deterministic =
+          source.generic_callable_contract_deterministic;
       method_metadata.param_types = source.param_types;
       method_metadata.param_canonical_types = source.param_canonical_types;
       method_metadata.param_is_vector = source.param_is_vector;

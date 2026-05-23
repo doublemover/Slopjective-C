@@ -18,9 +18,15 @@
     return false;
   }
 
-  bool ParseObjcActorInterfaceDeclMethodMember(Objc3InterfaceDecl &decl) {
+  bool ParseObjcActorInterfaceDeclMethodMember(
+      Objc3InterfaceDecl &decl,
+      bool reification_marker_declared = false,
+      unsigned reification_marker_line = 1,
+      unsigned reification_marker_column = 1) {
     Objc3MethodDecl method;
-    if (ParseObjcMethodDecl(method, false)) {
+    if (ParseObjcMethodDecl(method, false, reification_marker_declared,
+                            reification_marker_line,
+                            reification_marker_column)) {
       method.scope_owner_symbol = decl.scope_owner_symbol;
       method.scope_path_symbol =
           decl.scope_owner_symbol + "::" +
@@ -42,9 +48,18 @@
   void ParseObjcActorInterfaceDeclMembers(Objc3InterfaceDecl &decl) {
     while (!At(TokenKind::KwAtEnd) && !At(TokenKind::Eof)) {
       if (Match(TokenKind::KwAtReifyGenerics)) {
-        RejectReservedReificationControl(Previous(),
-                                         "an Objective-C actor member");
-        SynchronizeObjcContainer();
+        const Token marker = Previous();
+        if (!(At(TokenKind::Minus) || At(TokenKind::Plus))) {
+          diagnostics_.push_back(MakeDiag(
+              marker.line, marker.column, "O3P114",
+              "declaration-scoped generic reification marker "
+              "'@reify_generics' is only supported on Objective-C actor "
+              "method members"));
+          SynchronizeObjcContainer();
+          continue;
+        }
+        ParseObjcActorInterfaceDeclMethodMember(decl, true, marker.line,
+                                                marker.column);
         continue;
       }
       if (At(TokenKind::KwAtProperty)) {

@@ -106,6 +106,21 @@ bool IsCompatibleMethodSignature(const Objc3MethodInfo &lhs,
   if (lhs.arity != rhs.arity || lhs.return_type != rhs.return_type ||
       lhs.return_is_vector != rhs.return_is_vector ||
       lhs.is_class_method != rhs.is_class_method ||
+      lhs.generic_parameter_names_source_order !=
+          rhs.generic_parameter_names_source_order ||
+      lhs.generic_parameter_variance_source_order !=
+          rhs.generic_parameter_variance_source_order ||
+      lhs.generic_parameter_constraints_lexicographic !=
+          rhs.generic_parameter_constraints_lexicographic ||
+      lhs.generic_callable_signature_replay_key !=
+          rhs.generic_callable_signature_replay_key ||
+      lhs.generic_callable_reification_policy !=
+          rhs.generic_callable_reification_policy ||
+      lhs.generic_callable_mangling_policy_id !=
+          rhs.generic_callable_mangling_policy_id ||
+      lhs.generic_callable_contract_deterministic !=
+          rhs.generic_callable_contract_deterministic ||
+      !lhs.generic_callable_contract_deterministic ||
       !IsCompatibleCanonicalSemanticType(lhs.return_canonical_type,
                                          rhs.return_canonical_type) ||
       lhs.return_has_ownership_qualifier !=

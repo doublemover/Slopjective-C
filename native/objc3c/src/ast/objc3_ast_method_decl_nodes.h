@@ -6,6 +6,7 @@
 #include <vector>
 
 #include "ast/objc3_ast_core.h"
+#include "ast/objc3_ast_generic_param_decl_nodes.h"
 #include "token/objc3_token_contract.h"
 
 enum class Objc3ProtocolRequirementKind {
@@ -26,6 +27,10 @@ struct Objc3MethodDecl {
   std::string selector;
   std::vector<SelectorPiece> selector_pieces;
   bool selector_is_normalized = false;
+  std::vector<Objc3GenericParamDecl> generic_params;
+  bool generic_callable_reification_marker_declared = false;
+  unsigned generic_callable_reification_marker_line = 1;
+  unsigned generic_callable_reification_marker_column = 1;
   std::vector<FuncParam> params;
   ValueType return_type = ValueType::I32;
   bool return_vector_spelling = false;

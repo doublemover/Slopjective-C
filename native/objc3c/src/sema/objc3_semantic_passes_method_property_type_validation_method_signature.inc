@@ -66,6 +66,13 @@ static void ValidateMethodReturnTypeSuffixes(const Objc3MethodDecl &method,
                                              std::vector<std::string> &diagnostics,
                                              const std::unordered_set<std::string> *generic_interface_names = nullptr) {
   const std::string selector = MethodSelectorName(method);
+  ValidateGenericCallableParameterList(
+      method.generic_params,
+      owner_kind + " selector '" + selector + "' in '" + owner_name + "'",
+      method.generic_callable_reification_marker_declared,
+      method.generic_callable_reification_marker_line,
+      method.generic_callable_reification_marker_column,
+      diagnostics);
   if (method.has_return_generic_suffix && !SupportsGenericReturnTypeSuffix(method)) {
     std::string suffix = method.return_generic_suffix_text;
     if (suffix.empty()) {

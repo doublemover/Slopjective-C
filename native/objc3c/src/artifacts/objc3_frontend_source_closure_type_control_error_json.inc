@@ -127,6 +127,12 @@ std::string BuildControlFlowControlFlowSourceClosureSummaryJson(
       << summary.guarded_match_pattern_sites
       << ",\"match_result_case_pattern_sites\":"
       << summary.match_result_case_pattern_sites
+      << ",\"match_expression_sites\":"
+      << summary.match_expression_sites
+      << ",\"match_expression_arm_sites\":"
+      << summary.match_expression_arm_sites
+      << ",\"match_expression_guard_sites\":"
+      << summary.match_expression_guard_sites
       << ",\"guarded_match_issue_ref\":"
       << summary.guarded_match_issue_ref
       << ",\"guarded_match_admitted_syntax\":\""
@@ -154,6 +160,8 @@ std::string BuildControlFlowControlFlowSourceClosureSummaryJson(
       << ",\"match_result_case_pattern_source_supported\":"
       << (summary.match_result_case_pattern_source_supported ? "true"
                                                              : "false")
+      << ",\"match_expression_source_supported\":"
+      << (summary.match_expression_source_supported ? "true" : "false")
       << ",\"defer_keyword_reserved\":"
       << (summary.defer_keyword_reserved ? "true" : "false")
       << ",\"defer_fail_closed\":"

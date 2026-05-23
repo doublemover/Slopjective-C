@@ -5,8 +5,8 @@
 #include <string>
 #include <vector>
 
-#include "ast/objc3_ast_container_decl_nodes.h"
 #include "ast/objc3_ast_core.h"
+#include "ast/objc3_ast_generic_param_decl_nodes.h"
 #include "token/objc3_token_contract.h"
 
 struct FunctionDecl {
@@ -14,6 +14,9 @@ struct FunctionDecl {
   std::string scope_owner_symbol;
   std::vector<std::string> scope_path_lexicographic;
   std::vector<Objc3GenericParamDecl> generic_params;
+  bool generic_callable_reification_marker_declared = false;
+  unsigned generic_callable_reification_marker_line = 1;
+  unsigned generic_callable_reification_marker_column = 1;
   std::vector<FuncParam> params;
   ValueType return_type = ValueType::I32;
   bool return_vector_spelling = false;

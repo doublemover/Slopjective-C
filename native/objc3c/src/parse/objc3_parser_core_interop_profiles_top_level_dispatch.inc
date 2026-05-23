@@ -9,8 +9,17 @@
         ast_builder_.AddGlobalDecl(program, std::move(*decl));
       }
     } else if (Match(TokenKind::KwAtReifyGenerics)) {
-      RejectReservedReificationControl(Previous(), "a top-level declaration");
-      SynchronizeTopLevel();
+      const Token marker = Previous();
+      if (IsObjc3TopLevelFunctionQualifierLead(Peek().kind)) {
+        ParseTopLevelFunctionDecl(program, true, marker.line, marker.column);
+      } else {
+        diagnostics_.push_back(MakeDiag(
+            marker.line, marker.column, "O3P114",
+            "declaration-scoped generic reification marker "
+            "'@reify_generics' is only supported on generic callable "
+            "declarations"));
+        SynchronizeTopLevel();
+      }
     } else if (At(TokenKind::Less)) {
       const Token generic_clause = Advance();
       diagnostics_.push_back(MakeDiag(

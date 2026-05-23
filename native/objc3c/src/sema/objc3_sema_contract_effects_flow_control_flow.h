@@ -15,7 +15,7 @@ inline constexpr const char *kObjc3ControlFlowControlFlowSemanticModelRule =
 inline constexpr const char *kObjc3ControlFlowControlFlowSemanticModelDeferRule =
     "defer-statement-lifo-cleanup-order-and-defer-mediated-nonlocal-exit-legality-are-live-in-sema-while-runtime-cleanup-execution-remains-deferred-to-later-lowering-and-runtime-work";
 inline constexpr const char *kObjc3ControlFlowControlFlowSemanticModelMatchRule =
-    "statement-match-enforces-catch-all-bool-result-case-and-guarded-pattern-exhaustiveness-with-case-local-binding-scopes-while-match-expression-and-result-payload-typing-remain-deferred";
+    "statement-match-and-expression-match-enforce-catch-all-bool-result-case-and-guarded-pattern-exhaustiveness-with-case-local-binding-scopes-and-expression-result-typing-while-type-test-patterns-remain-fail-closed";
 inline constexpr const char *kObjc3ControlFlowControlFlowSemanticModelExitRule =
     "break-and-continue-restrictions-plus-defer-body-nonlocal-exit-legality-are-live-in-sema-while-runtime-cleanup-execution-remains-deferred";
 
@@ -48,6 +48,16 @@ struct Objc3ControlFlowControlFlowSemanticModelSummary {
   std::size_t match_result_case_exhaustive_sites = 0;
   std::size_t match_non_exhaustive_diagnostic_sites = 0;
   std::size_t match_exhaustiveness_deferred_sites = 0;
+  std::size_t match_expression_semantic_sites = 0;
+  std::size_t match_expression_result_type_sites = 0;
+  std::size_t match_expression_guard_condition_sites = 0;
+  std::size_t match_expression_binding_scope_sites = 0;
+  std::size_t match_expression_result_case_scope_sites = 0;
+  std::size_t match_expression_exhaustive_sites = 0;
+  std::size_t match_expression_non_exhaustive_diagnostic_sites = 0;
+  std::size_t match_expression_lowering_eligible_sites = 0;
+  std::size_t match_expression_guard_effect_fail_closed_sites = 0;
+  std::size_t match_expression_result_type_mismatch_sites = 0;
   std::size_t defer_statement_semantic_sites = 0;
   std::size_t defer_scope_cleanup_order_sites = 0;
   std::size_t defer_nonlocal_exit_diagnostic_sites = 0;
@@ -86,6 +96,14 @@ inline bool IsReadyObjc3ControlFlowControlFlowSemanticModelSummary(
          summary.match_binding_scope_semantics_landed &&
          summary.match_result_case_scope_semantics_landed &&
          summary.match_exhaustiveness_semantics_landed &&
+         summary.match_expression_result_type_sites <=
+             summary.match_expression_semantic_sites &&
+         summary.match_expression_lowering_eligible_sites <=
+             summary.match_expression_semantic_sites &&
+         summary.match_expression_guard_effect_fail_closed_sites <=
+             summary.match_expression_semantic_sites &&
+         summary.match_expression_result_type_mismatch_sites <=
+             summary.match_expression_semantic_sites &&
          !summary.match_exhaustiveness_deferred &&
          summary.defer_cleanup_order_semantics_landed &&
          summary.defer_nonlocal_exit_semantics_landed &&

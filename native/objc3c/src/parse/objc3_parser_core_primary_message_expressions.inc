@@ -2,6 +2,7 @@
 #include "parse/objc3_parser_core_primary_message_expressions_message_receiver_selector.inc"
 #include "parse/objc3_parser_core_primary_message_expressions_dispatch_abi_lowering_annotations.inc"
 #include "parse/objc3_parser_core_primary_message_expressions_receiver_metadata_annotations.inc"
+#include "parse/objc3_parser_core_primary_message_expressions_match_expression.inc"
 
   bool AtReservedMatchExpressionRecoveryBoundary(int paren_depth,
                                                  int brace_depth,
@@ -101,11 +102,7 @@
     }
 
     if (At(TokenKind::KwMatch)) {
-      const Token match_token = Advance();
-      diagnostics_.push_back(
-          BuildObjc3ReservedMatchExpressionDiagnostic(match_token));
-      ConsumeReservedMatchExpressionRemainder();
-      return nullptr;
+      return ParseMatchExpression();
     }
 
     if (At(TokenKind::KwPure) || At(TokenKind::KwExtern) || At(TokenKind::KwAsync)) {

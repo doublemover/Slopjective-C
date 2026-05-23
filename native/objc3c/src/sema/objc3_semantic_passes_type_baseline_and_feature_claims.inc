@@ -33,6 +33,7 @@
 #include <optional>
 #include <sstream>
 #include <type_traits>
+#include <unordered_map>
 #include <unordered_set>
 #include <vector>
 

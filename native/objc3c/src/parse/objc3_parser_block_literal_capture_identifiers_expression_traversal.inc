@@ -49,6 +49,15 @@ void CollectBlockLiteralExprIdentifiers(
       CollectBlockLiteralExprIdentifiers(arg.get(), used_identifiers);
     }
     return;
+  case Expr::Kind::MatchExpression:
+    CollectBlockLiteralExprIdentifiers(
+        expr->match_expression_scrutinee.get(), used_identifiers);
+    for (const auto &arm : expr->match_expression_arms) {
+      CollectBlockLiteralExprIdentifiers(arm.guard_condition.get(),
+                                         used_identifiers);
+      CollectBlockLiteralExprIdentifiers(arm.value.get(), used_identifiers);
+    }
+    return;
   case Expr::Kind::BlockLiteral:
   case Expr::Kind::KeyPathLiteral:
   case Expr::Kind::Number:

@@ -54,9 +54,11 @@
             std::move(constraints));
       }
       info.generic_callable_reification_policy =
-          kObjc3GenericCallableReificationPolicyErasedDefault;
+          Objc3GenericCallableReificationPolicyForMarker(
+              fn.generic_callable_reification_marker_declared);
       info.generic_callable_mangling_policy_id =
-          kObjc3GenericCallableManglingPolicyId;
+          Objc3GenericCallableManglingPolicyForReificationPolicy(
+              info.generic_callable_reification_policy);
       info.generic_callable_signature_replay_key =
           BuildObjc3GenericCallableSignatureReplayKey(
               "function", fn.name, info.generic_parameter_names_source_order,

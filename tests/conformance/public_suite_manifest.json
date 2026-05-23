@@ -824,13 +824,11 @@
       "positive_evidence": [
         "schemas/objc3c-standalone-textual-interface-payload-v1.schema.json",
         "tests/tooling/fixtures/module_interfaces/standalone_textual_interface_payload.json",
-        "scripts/check_objc3c_standalone_textual_interface_payload.py",
         "native/objc3c/src/artifacts/objc3_frontend_textual_interface_payload_artifact.cpp",
         "native/objc3c/src/artifacts/objc3_frontend_textual_interface_payload_import.cpp"
       ],
       "negative_evidence": [
-        "tests/tooling/fixtures/module_interfaces/standalone_textual_interface_payload.json",
-        "scripts/check_objc3c_standalone_textual_interface_payload.py"
+        "tests/tooling/fixtures/module_interfaces/standalone_textual_interface_payload.json"
       ],
       "source_truth_requirements": [
         "Standalone textual interface payload support resolves to the checked schema, fixture, importer, and public command before public reporting.",

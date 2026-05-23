@@ -13,35 +13,30 @@
     return true;
   }
 
-  bool RejectReservedObjcMethodGenericClause() {
+  bool ParseObjcMethodGenericParameterClause(Objc3MethodDecl &method) {
     if (!At(TokenKind::Less)) {
       return true;
     }
 
-    const Token generic_clause = Advance();
-    int depth = 1;
-    while (depth > 0 && !At(TokenKind::Eof)) {
-      if (Match(TokenKind::Less)) {
-        ++depth;
-        continue;
-      }
-      if (Match(TokenKind::Greater)) {
-        --depth;
-        continue;
-      }
-      (void)Advance();
+    FunctionDecl synthetic_fn;
+    if (!ParseFunctionGenericParameterClause(synthetic_fn)) {
+      return false;
     }
-
-    diagnostics_.push_back(MakeDiag(
-        generic_clause.line, generic_clause.column, "O3P114",
-        "generic Objective-C method declarations ('- <T> ...' or '+ <T> ...') "
-        "are reserved for a future Objective-C 3 revision; selector identity "
-        "does not admit method type parameters yet"));
-    return false;
+    method.generic_params = std::move(synthetic_fn.generic_params);
+    return true;
   }
 
   bool ParseObjcMethodReturnHeader(Objc3MethodDecl &method) {
-    if (!RejectReservedObjcMethodGenericClause()) {
+    if (!ParseObjcMethodGenericParameterClause(method)) {
+      return false;
+    }
+    if (method.generic_callable_reification_marker_declared &&
+        method.generic_params.empty()) {
+      diagnostics_.push_back(MakeDiag(
+          method.generic_callable_reification_marker_line,
+          method.generic_callable_reification_marker_column, "O3P114",
+          "declaration-scoped generic reification marker '@reify_generics' "
+          "requires a generic Objective-C method declaration"));
       return false;
     }
 
