@@ -2,8 +2,11 @@
 
 from __future__ import annotations
 
+from .sanitizer_contracts import runtime_package_variant_contract
+
 
 def install_script_text(sanitizer_variant: str = "release") -> str:
+    runtime_package_variant_contract(sanitizer_variant)
     return """param(
   [Parameter(Mandatory = $true)][string]$InstallRoot,
   [switch]$Force,
@@ -550,6 +553,7 @@ def offline_bootstrap_script_text(
     sanitizer_variant: str = "release",
     installer_archive_name: str = "objc3c-windows-x64-installer.zip",
 ) -> str:
+    runtime_package_variant_contract(sanitizer_variant)
     return """param(
   [Parameter(Mandatory = $true)][string]$InstallRoot
 )

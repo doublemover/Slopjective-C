@@ -17,14 +17,13 @@ EXPECTED_UNSUPPORTED_FEATURE_CLAIM_IDS = [
     "unsupported:actors",
     "unsupported:blocks",
     "unsupported:arc",
-    "unsupported:typed-throws",
     "unsupported:value-optionals",
     "unsupported:match-expressions",
     "unsupported:guarded-patterns",
 ]
 EXPECTED_OPTIONAL_FEATURE_STATUSES = {
     "throws": "not-claimed",
-    "typed-throws": "not-claimed",
+    "typed-throws": "claimed",
     "async-await": "not-claimed",
     "actors": "not-claimed",
     "blocks": "not-claimed",

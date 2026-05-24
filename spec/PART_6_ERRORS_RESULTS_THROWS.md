@@ -11,7 +11,7 @@ _Normative baseline references used in this part: [NR-C18](#part-0-2-1), [NR-LLV
 - ObjC 3.0 v1 does not add a dedicated `never throws` marker; absence of `throws` is the canonical non-throwing form.
 - Generic non-throwing requirements are expressed using non-throwing function/block types, not a new keyword or attribute.
 - Nil-to-error mapping is explicit and library-defined via canonical `objc3.errors` helpers (`orThrow` and `okOr`), not language sugar.
-- Typed throws is a source/interface metadata surface with a hidden single-payload error-out ABI slice: a single `throws(E)` payload is preserved, exact typed catches and policy-backed `id<Error>` bridge catches are recorded, invalid payload shapes and incompatible/foreign catch carriers remain canonical diagnostics, and broad public typed-error runtime support is not a v1 claim.
+- Typed throws is an implemented bounded single-payload effect surface: a single `throws(E)` payload is preserved in source/interface metadata, lowered through the hidden error-out ABI, executed for the checked direct-call, runtime-dispatch message-send, catch/bridge, and `try?` paths, and invalid payload shapes, incompatible catches, unsupported foreign carriers, async propagation, and silent erasure remain canonical fail-closed diagnostics. A generalized typed-error ABI is not a v1 claim.
 
 ### v0.9 resolved decisions {#part-6-v0-9-resolved-decisions}
 
@@ -30,8 +30,8 @@ _Normative baseline references used in this part: [NR-C18](#part-0-2-1), [NR-LLV
 
 ### v0.4 resolved decisions {#part-6-v0-4-resolved-decisions}
 
-- `throws` is **untyped** in v1: thrown values are `id<Error>`.
-- Typed throws syntax `throws(E)` is admitted as a source/interface effect payload with hidden single-payload error-out ABI lowering; exact typed catches and policy-backed `id<Error>` bridge catches are the only admitted catch compatibility records until a broader public typed-error ABI is specified.
+- Bare `throws` is **untyped** in v1: thrown values are `id<Error>`.
+- Typed throws syntax `throws(E)` is admitted as a bounded single-payload effect with hidden error-out ABI lowering; exact typed catches and policy-backed `id<Error>` bridge catches are the only admitted catch compatibility records until a broader typed-error ABI is specified.
 
 Objective‑C 3.0 standardizes a modern, explicit error model that can be used in new code while interoperating with existing Cocoa and system APIs.
 
@@ -262,13 +262,14 @@ Recommended patterns for generic and callable APIs:
 - If an API should accept both throwing and non-throwing callables, declare the parameter as throwing and rely on the implicit non-throwing to throwing conversion in [§6.3.4](#part-6-3-4).
 - When adapting a throwing callable to a non-throwing callable, use an explicit adapter that handles the error path.
 
-### 6.3.7 Source-owned typed-throws payloads {#part-6-3-7}
+### 6.3.7 Bounded single-payload typed throws {#part-6-3-7}
 
-Typed throws is source-admitted for a single payload in ObjC 3.0 v1 and lowers
+Typed throws is implemented for a single payload in ObjC 3.0 v1 and lowers
 through the same private hidden error-out path used by untyped `throws`. The
 #8233 compiler contract owns the parser payload shape, AST preservation,
-textual-interface metadata, exact effect identity, and fail-closed boundaries
-that prevent silent erasure into bare `throws`.
+textual-interface metadata, exact effect identity, direct-call and
+runtime-dispatch error paths, catch/bridge policy, `try?` optionalization, and
+fail-closed boundaries that prevent silent erasure into bare `throws`.
 
 Source syntax:
 
@@ -598,8 +599,8 @@ Minimum diagnostics:
 
 Typed throws syntax may later restrict throwable error sets more broadly.
 ObjC 3.0 v1 intentionally ships only the hidden single-payload error-out ABI plus
-catch/bridge policy slice; [§6.3.7](#part-6-3-7) defines the source/interface
-typed-throws payload contract and the still-reserved public support boundary.
+catch/bridge policy slice; [§6.3.7](#part-6-3-7) defines the bounded
+typed-throws payload contract and the broader future typed-error ABI boundary.
 
 ## M267 current implementation closeout note
 

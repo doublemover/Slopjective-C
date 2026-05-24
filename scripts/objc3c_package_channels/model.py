@@ -10,6 +10,10 @@ from typing import Any
 
 from objc3c_tooling.paths import repo_rel
 
+from .sanitizer_contracts import (
+    payload_entries_for_variant,
+    sanitizer_variant_metadata,
+)
 from .paths import (
     ARTIFACT_ROOT,
     PLATFORM_SUPPORT_MATRIX_ARTIFACT,
@@ -22,7 +26,6 @@ from .paths import (
 
 
 IMPLEMENTED_CHANNELS = ["portable-archive", "local-installer", "offline-bundle"]
-SANITIZER_VARIANTS = ("release", "address", "undefined")
 MANIFEST_RELATIVE_PATH = "artifacts/package/objc3c-runnable-toolchain-package.json"
 INSTALL_RECEIPT_CONTRACT_ID = "objc3c.packaging.channels.install-receipt.v1"
 INSTALL_RECEIPT_SCHEMA = "schemas/objc3c-package-install-receipt-v1.schema.json"
@@ -51,34 +54,6 @@ REQUIRED_PAYLOAD_ENTRIES = [
     "stdlib/modules/objc3.core/module.json",
     "docs/runbooks/objc3c_packaging_channels.md",
 ]
-SANITIZER_PAYLOAD_ENTRIES = {
-    "address": [
-        "share/objc3c/sanitizer/asan-metadata.json",
-        "share/objc3c/sanitizer/asan-runtime-libraries.json",
-        "artifacts/runtime/sanitizer/address/clang_rt.asan_dynamic-x86_64.dll",
-        "artifacts/runtime/sanitizer/address/clang_rt.asan_dynamic-x86_64.lib",
-        "artifacts/runtime/sanitizer/address/clang_rt.asan_dynamic_runtime_thunk-x86_64.lib",
-    ],
-    "undefined": [
-        "share/objc3c/sanitizer/ubsan-metadata.json",
-        "share/objc3c/sanitizer/ubsan-runtime-libraries.json",
-        "artifacts/runtime/sanitizer/undefined/clang_rt.ubsan_standalone-x86_64.lib",
-        "artifacts/runtime/sanitizer/undefined/clang_rt.ubsan_standalone_cxx-x86_64.lib",
-    ],
-}
-SANITIZER_RUNTIME_LIBRARY_ENTRIES = {
-    "address": [
-        "share/objc3c/sanitizer/asan-runtime-libraries.json",
-        "artifacts/runtime/sanitizer/address/clang_rt.asan_dynamic-x86_64.dll",
-        "artifacts/runtime/sanitizer/address/clang_rt.asan_dynamic-x86_64.lib",
-        "artifacts/runtime/sanitizer/address/clang_rt.asan_dynamic_runtime_thunk-x86_64.lib",
-    ],
-    "undefined": [
-        "share/objc3c/sanitizer/ubsan-runtime-libraries.json",
-        "artifacts/runtime/sanitizer/undefined/clang_rt.ubsan_standalone-x86_64.lib",
-        "artifacts/runtime/sanitizer/undefined/clang_rt.ubsan_standalone_cxx-x86_64.lib",
-    ],
-}
 ARCHIVE_DIGEST_FIELDS = {
     "portable_archive": "portable-archive",
     "installer_archive": "local-installer",
@@ -114,55 +89,6 @@ class PackageChannelPaths:
     offline_bundle_root: Path
     offline_archive: Path
     manifest_path: Path
-
-
-def sanitizer_variant_metadata(sanitizer_variant: str) -> dict[str, Any]:
-    if sanitizer_variant == "release":
-        return {
-            "sanitizer_variant": "release",
-            "package_id": "org.objc3c.runtime:objc3c-runtime-release",
-            "package_channel_id": "windows-x64-release",
-            "archive_suffix": "windows-x64",
-            "runtime_variant": "release",
-            "support_truth": False,
-            "native_execution_claimed": False,
-        }
-    if sanitizer_variant == "address":
-        return {
-            "sanitizer_variant": "address",
-            "package_id": "org.objc3c.runtime:objc3c-runtime-asan",
-            "package_variant_row_id": "objc3c.package.sanitizer.asan.reserved",
-            "package_channel_id": "windows-x64-sanitizer-asan",
-            "archive_suffix": "windows-x64-asan",
-            "runtime_variant": "sanitizer=address",
-            "install_selector": "sanitizer=address",
-            "metadata_manifest_path": "share/objc3c/sanitizer/asan-metadata.json",
-            "runtime_library_manifest_path": "share/objc3c/sanitizer/asan-runtime-libraries.json",
-            "runtime_library_payload_entries": SANITIZER_RUNTIME_LIBRARY_ENTRIES["address"],
-            "runtime_library_ids": ["objc3-runtime", "clang_rt.asan"],
-            "missing_runtime_behavior": "fail-closed-before-package-install",
-            "support_truth": False,
-            "native_execution_claimed": False,
-        }
-    if sanitizer_variant == "undefined":
-        return {
-            "sanitizer_variant": "undefined",
-            "package_id": "org.objc3c.runtime:objc3c-runtime-ubsan",
-            "package_variant_row_id": "objc3c.package.sanitizer.ubsan.reserved",
-            "package_channel_id": "windows-x64-sanitizer-ubsan",
-            "archive_suffix": "windows-x64-ubsan",
-            "runtime_variant": "sanitizer=undefined",
-            "install_selector": "sanitizer=undefined",
-            "metadata_manifest_path": "share/objc3c/sanitizer/ubsan-metadata.json",
-            "runtime_library_manifest_path": "share/objc3c/sanitizer/ubsan-runtime-libraries.json",
-            "runtime_library_payload_entries": SANITIZER_RUNTIME_LIBRARY_ENTRIES["undefined"],
-            "runtime_library_ids": ["objc3-runtime", "clang_rt.ubsan"],
-            "missing_runtime_behavior": "fail-closed-before-package-install",
-            "trap_or_recover_mode": "trap",
-            "support_truth": False,
-            "native_execution_claimed": False,
-        }
-    raise ValueError(f"unsupported sanitizer variant: {sanitizer_variant}")
 
 
 def package_channel_paths(run_id: str, sanitizer_variant: str = "release") -> PackageChannelPaths:
@@ -283,10 +209,7 @@ def package_channels_report_payload(
 
 
 def required_payload_entries(sanitizer_variant: str = "release") -> list[str]:
-    return [
-        *REQUIRED_PAYLOAD_ENTRIES,
-        *SANITIZER_PAYLOAD_ENTRIES.get(sanitizer_variant, []),
-    ]
+    return payload_entries_for_variant(REQUIRED_PAYLOAD_ENTRIES, sanitizer_variant)
 
 
 def sha256_file(path: Path) -> str:

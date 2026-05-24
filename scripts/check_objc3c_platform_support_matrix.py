@@ -100,7 +100,9 @@ HOST_EVIDENCE_RUNNER_LABELS = {
 }
 REQUIRED_NEGATIVE_HOST_TOOLCHAIN_CASES = (
     "objc3c.negative.host.linux-x64.no-native-execution",
+    "objc3c.negative.host.linux-x64.generated-host-evidence-no-promotion",
     "objc3c.negative.host.darwin-arm64.no-native-execution",
+    "objc3c.negative.host.darwin-arm64.generated-host-evidence-no-promotion",
     "objc3c.negative.toolchain.missing-llc",
     "objc3c.negative.toolchain.mixed-root",
     "objc3c.negative.toolchain.mismatched-version",

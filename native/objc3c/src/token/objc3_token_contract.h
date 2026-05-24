@@ -187,6 +187,8 @@ inline constexpr const char *kObjc3RunnableFeatureClaimControlFlow =
     "runnable:control-flow";
 inline constexpr const char *kObjc3RunnableFeatureClaimMessageSend =
     "runnable:message-send-basic";
+inline constexpr const char *kObjc3RunnableFeatureClaimTypedThrows =
+    "runnable:typed-throws";
 
 inline constexpr const char *kObjc3SourceOnlyFeatureClaimProtocols =
     "source-only:protocol-declarations";

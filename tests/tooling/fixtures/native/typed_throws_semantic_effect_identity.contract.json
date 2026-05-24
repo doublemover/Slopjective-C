@@ -1,8 +1,8 @@
 {
   "contract_id": "objc3c.typed_throws.semantic_effect_identity.v1",
   "issue_ref": 8233,
-  "support_state": "source_owned_effect_identity_interface_preserved_error_out_abi_lowered_catch_bridge_policy_recorded",
-  "public_support_claimed": false,
+  "support_state": "implemented_single_payload_effect_identity_interface_preserved_error_out_abi_catch_bridge_runtime",
+  "public_support_claimed": true,
   "throws_effect": [
     {
       "callable_id": "TypedThrowsSourcePositive::function::decode",

@@ -26,16 +26,16 @@ Optional chaining for scalar/struct returns is **not** supported in v1.
 
 ---
 
-## D-002: `throws` runtime propagation is untyped in v1; typed throws is source/interface-only {#decisions-d-002}
+## D-002: `throws` runtime propagation defaults to `id<Error>`; single-payload typed throws is bounded {#decisions-d-002}
 
-**Decision:** The v1 runnable `throws` effect is **untyped**, with thrown values of type `id<Error>`.
+**Decision:** The v1 runnable bare `throws` effect is **untyped**, with thrown values of type `id<Error>`.
 
-Typed throws syntax (for example, `throws(E)`) is admitted as a source/interface effect payload with exactly one preserved error type. Typed error ABI, lowering, and runtime execution remain deferred.
+Typed throws syntax (for example, `throws(E)`) is admitted as a bounded single-payload effect. The compiler preserves exactly one error type in source/interface metadata, lowers it through the private error-out ABI, keeps the typed payload in callable effect identity, supports exact typed catches plus the explicit `id<Error>` bridge catch, and executes the checked direct-call, runtime-dispatch message-send, and `try?` paths. Empty, multi-payload, malformed, non-type, unsupported foreign-carrier, async propagation, and silent-erasure shapes fail closed.
 
 **Rationale:**
 
-- Objective‑C’s runtime dynamism and mixed-language interop (NSError, C return codes) favor a single error supertype.
-- Typed throws adds significant complexity to generics, bridging, and ABI/lowering, so v1 preserves the source payload without claiming typed runtime propagation.
+- Objective‑C’s runtime dynamism and mixed-language interop (NSError, C return codes) still favor a single error supertype for bare `throws`.
+- Typed throws adds significant complexity to generics, bridging, async propagation, and foreign carriers, so v1 claims only the bounded single-payload row instead of a generalized typed-error ABI.
 
 **Spec impact:** [Part 6](#part-6).
 

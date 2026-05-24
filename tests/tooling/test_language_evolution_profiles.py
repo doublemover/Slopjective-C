@@ -62,7 +62,7 @@ def test_typed_throws_source_owned_and_value_optionals_contract_boundaries() -> 
     assert contract["umbrella_issue_ref"] == 8207
     assert contract["issues"] == {"typed_throws": 8233, "value_optionals": 8234}
     assert contract["support_state"] == {
-        "typed_throws": "source_owned_interface_preserved_error_out_abi_lowered_catch_bridge_policy_recorded_direct_method_send_runtime",
+        "typed_throws": "implemented_single_payload_interface_preserved_error_out_abi_catch_bridge_direct_runtime_dispatch_try_optional_runtime",
         "value_optionals": "semantic_type_signatures_packed_i32_bool_id_and_full_i64_runtime_abi",
     }
     assert contract["typed_throws"]["accepted_payload_arity"] == 1
@@ -137,7 +137,9 @@ def test_typed_throws_source_owned_and_value_optionals_contract_boundaries() -> 
     assert contract["value_optionals"]["interface_roundtrip_status"] == (
         "semantic-carrier-roundtrips-bounded-packed-runtime-abi"
     )
-    assert contract["public_claim_boundary"]["support_claims"] == []
+    assert contract["public_claim_boundary"]["support_claims"] == [
+        "objc3c.behavior.language.errors.typed-throws"
+    ]
     assert contract["public_claim_boundary"]["bounded_runtime_claims"] == [
         "bounded-runtime:value-optional-packed-i32-bool-id-abi",
         "bounded-runtime:value-optional-full-width-i64-language-call-return-abi",
@@ -145,7 +147,6 @@ def test_typed_throws_source_owned_and_value_optionals_contract_boundaries() -> 
     ]
     assert contract["public_claim_boundary"]["runtime_claims"] == []
     assert contract["public_claim_boundary"]["reserved_public_runtime_rows_required"] == [
-        "language.errors.typed-throws",
         "language.types.value-optionals",
     ]
     assert contract["public_claim_boundary"]["no_compatibility_aliases"] is True
@@ -506,16 +507,15 @@ def test_language_evolution_umbrella_keeps_claims_source_owned_and_fail_closed()
         assert row["support_state"]
         assert row["negative_case_ids"]
     assert contracts["typed_throws"]["support_state"] == (
-        "source_owned_interface_preserved_error_out_abi_lowered_catch_bridge_policy_recorded_direct_method_send_runtime"
+        "implemented_single_payload_interface_preserved_error_out_abi_catch_bridge_direct_runtime_dispatch_try_optional_runtime"
     )
-    assert "language.errors.typed-throws-runtime-lowering" not in contract[
+    assert "objc3c.behavior.language.errors.typed-throws" in contract[
         "admitted_public_claims"
     ]
-    assert "language.errors.typed-throws" in contract["reserved_public_claims"]
-    assert (
-        "language.errors.typed-throws-runtime-lowering"
-        in contract["reserved_public_claims"]
-    )
+    assert "language.errors.typed-throws" not in contract["reserved_public_claims"]
+    assert "language.errors.typed-throws-runtime-lowering" not in contract[
+        "reserved_public_claims"
+    ]
     assert "language.profiles.strict-system" in contract["reserved_public_claims"]
     assert "language.profiles.strict" not in contract["reserved_public_claims"]
     assert "language.profiles.strict-concurrency" not in contract["reserved_public_claims"]
@@ -547,7 +547,7 @@ def test_language_evolution_umbrella_keeps_claims_source_owned_and_fail_closed()
         "source-owned-generic-callable-policy"
     )
     assert support_rows["language.errors.typed-throws"]["status"] == (
-        "source-owned-interface-preserved-error-out-abi-lowered-catch-bridge-policy-recorded-direct-method-send-runtime-public-row-reserved"
+        "implemented-single-payload-interface-preserved-error-out-abi-catch-bridge-direct-runtime-dispatch-try-optional-runtime"
     )
     assert support_rows["language.control-flow.statement-guarded-match"]["status"] == (
         "supported-bounded-statement-and-expression"

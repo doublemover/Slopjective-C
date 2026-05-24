@@ -39,6 +39,7 @@ std::vector<std::string> BuildRunnableFeatureClaimIds() {
       kObjc3RunnableFeatureClaimScalarCore,
       kObjc3RunnableFeatureClaimControlFlow,
       kObjc3RunnableFeatureClaimMessageSend,
+      kObjc3RunnableFeatureClaimTypedThrows,
   };
 }
 
@@ -60,7 +61,6 @@ std::vector<std::string> BuildUnsupportedFeatureClaimIds() {
       kObjc3UnsupportedFeatureClaimActors,
       kObjc3UnsupportedFeatureClaimBlocks,
       kObjc3UnsupportedFeatureClaimArc,
-      kObjc3UnsupportedFeatureClaimTypedThrows,
       kObjc3UnsupportedFeatureClaimValueOptionals,
       kObjc3UnsupportedFeatureClaimMatchExpressions,
       kObjc3UnsupportedFeatureClaimGuardedPatterns,

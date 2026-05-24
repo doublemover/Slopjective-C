@@ -54,6 +54,7 @@ def build_matrix(
         ],
         "optional_features": [
             {"id": "throws", "status": "not-claimed"},
+            {"id": "typed-throws", "status": "claimed"},
             {"id": "async-await", "status": "not-claimed"},
             {"id": "actors", "status": "not-claimed"},
             {"id": "blocks", "status": "not-claimed"},

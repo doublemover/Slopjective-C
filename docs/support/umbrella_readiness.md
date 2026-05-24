@@ -227,7 +227,7 @@ Consumer rule: Umbrella readiness may explain why a reserved umbrella row is blo
 
 ### Forbidden Overclaims
 
-- Public typed throws support, generalized typed error ABI, unsupported foreign exception carriers, or parenthesized throws payload erasure from parser diagnostics alone.
+- Generalized typed error ABI, unsupported foreign exception carriers, typed async propagation, or parenthesized throws payload erasure from parser diagnostics alone.
 - Value optional runtime behavior outside the bounded packed i32/bool/id-handle payload ABI and wide Optional<i64> direct-function/direct-dispatch ABI, including object-pointer/nullability bridge, nested/generic payload runtime lowering, property or ivar storage, unchecked unwrap, nil-to-scalar conversion, implicit nil absence, throws/result conversion, lowercase optional aliases, or broad dynamic runtime dispatch.
 - Runtime-specialized generic metadata, generic body cloning, module-wide implicit reification, selector-local generic method clauses, C/Objective-C style generic function syntax, overload-by-generic-signature, or variadic generic parameters from the bounded #8235 metadata policy.
 - Type-test patterns, statement fat-arrow arms, Result payload ABI extraction, aliases, or strict-profile promotion from #8236 guarded match and bounded expression-match support.
@@ -236,8 +236,8 @@ Consumer rule: Umbrella readiness may explain why a reserved umbrella row is blo
 
 ### Prerequisite Rows
 
-- `language.errors.typed-throws` must be `reserved`: The umbrella cannot be implemented until typed throws moves from the hidden single-payload error-out ABI plus direct, runtime-dispatch message-send, and try? runtime slices into complete public replayable support evidence; typed async propagation is explicitly fail-closed until cleanup-ordering support lands.
-- `language.types.value-optionals` must be `reserved`: The umbrella cannot be implemented until value optionals promote the checked packed Optional<i32>/Optional<bool>/Optional<id> ABI evidence plus wide Optional<i64> direct ABI into a replay-proven public row or explicitly scope out object-pointer/nested/generic/property/ivar/nullability/nil/unchecked/throws broadening paths and broad dynamic runtime dispatch.
+- `language.errors.typed-throws` must be `implemented`: Single-payload typed throws now has replayed public evidence for source/interface/sema effect identity, hidden error-out ABI lowering, exact catch and id<Error> bridge policy, direct-function runtime catch/bridge behavior, runtime-dispatch message-send error-out ABI coverage, try? optionalization, and fail-closed async propagation.
+- `language.types.value-optionals` must be `reserved`: After #8234 closure, this row still records the non-promoted broad value-optional boundary: umbrella implementation requires either promotion-backed support beyond the bounded Optional<i32>/Optional<bool>/Optional<id> and wide Optional<i64> slice, or an umbrella decision that explicitly scopes out object-pointer/nested/generic/property/ivar/nullability/nil/unchecked/throws broadening paths and broad dynamic runtime dispatch.
 - `language.generics.generic-callable-reification` must be `implemented`: Generic callable reification now has source-owned bounded metadata policy support for Objective-C 3 generic functions and Objective-C generic methods while runtime specialization remains explicitly outside the support claim.
 - `language.control-flow.statement-guarded-match` must be `implemented`: Statement guarded match is the one source-level #8236 prerequisite currently implemented and must remain evidence-backed.
 - `language.profiles.strict-admission` must be `implemented`: Strict and strict-concurrency profiles are now claimable through native profile validation, strict diagnostics, strict-concurrency enforcement, public conformance publication, and release-candidate replay evidence while strict-system remains fail-closed.
@@ -257,7 +257,7 @@ Consumer rule: Umbrella readiness may explain why a reserved umbrella row is blo
 
 #### Public Commands
 
-- `blocked` A public replay command for the full #8207 umbrella remains blocked until all reserved prerequisite rows become implemented. (blocker_id: `language-evolution-prerequisites`)
+- `blocked` A public replay command for the full #8207 umbrella remains blocked until any still-reserved broad prerequisite boundaries are implemented or explicitly scoped out. (blocker_id: `language-evolution-prerequisites`)
 
 #### Positive Fixtures
 
@@ -266,7 +266,7 @@ Consumer rule: Umbrella readiness may explain why a reserved umbrella row is blo
 - `satisfied` Declaration-scoped explicit-reified Objective-C generic methods are covered by checked source without claiming runtime-specialized metadata. (path: `tests/tooling/fixtures/native/type_semantic_generic_reified_objc_method_positive.objc3`)
 - `satisfied` Bounded expression-form match has hand-authored positive source fixtures for literal, guarded-bool, and Result-case semantic surfaces. (path: `tests/tooling/fixtures/native/recovery/positive/match_expression_literal_result.objc3`)
 - `satisfied` Canonical/core, strict, and strict-concurrency profile rows are distinguished from rejected strict-system profile selection. (path: `tests/tooling/fixtures/language_profiles/strict_profile_feature_matrix.json`)
-- `satisfied` Typed throws exact catch and policy-backed id<Error> bridge catch source fixtures are checked in without promoting the public row. (path: `tests/tooling/fixtures/native/typed_throws_catch_bridge_positive.objc3`)
+- `satisfied` Typed throws exact catch and policy-backed id<Error> bridge catch source fixtures back the implemented bounded public row. (path: `tests/tooling/fixtures/native/typed_throws_catch_bridge_positive.objc3`)
 
 #### Negative Fixtures
 
@@ -274,7 +274,7 @@ Consumer rule: Umbrella readiness may explain why a reserved umbrella row is blo
 - `satisfied` Protocol conformance rejects typed throws effect payload erasure or payload drift. (path: `tests/tooling/fixtures/native/recovery/negative/negative_typed_throws_protocol_mismatch.objc3`)
 - `satisfied` Typed throws rejects catch payloads that do not exactly match and are not the policy-backed id<Error> bridge catch. (path: `tests/tooling/fixtures/native/recovery/negative/negative_typed_throws_incompatible_catch.objc3`)
 - `satisfied` Typed throws unsupported foreign catch carriers fail closed. (path: `tests/tooling/fixtures/native/recovery/negative/negative_typed_throws_foreign_carrier_catch.objc3`)
-- `satisfied` Reserved value optionals do not enable nil-to-scalar coercion. (path: `tests/tooling/fixtures/native/recovery/negative/negative_value_optional_nil_scalar_coercion_reserved.objc3`)
+- `satisfied` Value-optional broadening paths do not enable nil-to-scalar coercion. (path: `tests/tooling/fixtures/native/recovery/negative/negative_value_optional_nil_scalar_coercion_reserved.objc3`)
 - `satisfied` Generic reification markers outside generic callable declarations remain parser-owned reserved syntax. (path: `tests/tooling/fixtures/native/recovery/negative/negative_reify_generics_unsupported_scope.objc3`)
 - `satisfied` Generic free-function redeclaration drift rejects instead of merging erased callable shapes. (path: `tests/tooling/fixtures/native/recovery/negative/negative_type_semantic_generic_function_signature_drift.objc3`)
 - `satisfied` Statement guarded match rejects non-bool guard conditions. (path: `tests/tooling/fixtures/native/recovery/negative/negative_guarded_match_pattern_non_bool.objc3`)
@@ -282,15 +282,15 @@ Consumer rule: Umbrella readiness may explain why a reserved umbrella row is blo
 
 #### Runtime Probes
 
-- `blocked` Typed throws hidden single-payload ABI, exact catch policy, id<Error> bridge policy, direct-function runtime catch/bridge smoke, runtime-dispatch message-send error-out ABI coverage, and try? optionalization runtime smoke are recorded; full public row promotion remains blocked on typed async propagation, which now has an explicit fail-closed fixture, and final public replay agreement. (blocker_id: `typed-throws-abi-lowering-interface`)
-- `blocked` Value optional runtime support is limited to the checked packed Optional<i32>, Optional<bool>, and Optional<id> handle payload ABI plus Optional<i64> language call/return ABI through the wide `{has_value,i64}` carrier, direct functions, and direct dispatch path; object-pointer/nullability conversion, nested/generic/property/ivar storage, unchecked unwrap, implicit nil, throws/result conversion, and broad dynamic runtime dispatch remain unimplemented. (blocker_id: `value-optionals-abi-lowering-interface`)
+- `satisfied` Typed throws hidden single-payload ABI, exact catch policy, id<Error> bridge policy, direct-function runtime catch/bridge smoke, runtime-dispatch message-send error-out ABI coverage, try? optionalization runtime smoke, and typed async propagation fail-closed coverage are recorded for the implemented bounded row. (path: `tests/tooling/fixtures/native/execution/positive/typed_throws_runtime_catch_bridge_positive.objc3`)
+- `blocked` After #8234 closure, value optional runtime support is still limited to the checked packed Optional<i32>, Optional<bool>, and Optional<id> handle payload ABI plus Optional<i64> language call/return ABI through the wide `{has_value,i64}` carrier, direct functions, and direct dispatch path; object-pointer/nullability conversion, nested/generic/property/ivar storage, unchecked unwrap, implicit nil, throws/result conversion, and broad dynamic runtime dispatch remain unimplemented. (blocker_id: `value-optionals-abi-lowering-interface`)
 - `satisfied` Runtime-specialized generic metadata and body cloning remain unimplemented; current generic callable reification is a source-owned metadata policy for admitted generic callables. (path: `tests/tooling/fixtures/native/generic_callable_reification_contract.json`)
 - `satisfied` Strict-concurrency actor isolation, sendability, scheduler, task lifecycle, and mailbox evidence are bound to the claimable strict-concurrency profile; strict-system remains target-only release evidence and is not a native frontend language profile. (path: `tests/conformance/profile_strict_boundary/strict_profile_boundary_contract.json`)
 
 #### Abi Governance Rows
 
 - `satisfied` Typed throws metadata slots import none, untyped, or single-payload typed effects only when effect signature, declared payload metadata, catch compatibility, id<Error> bridge policy, and foreign-carrier fail-closed records agree. (path: `tests/tooling/fixtures/native/language_evolution_typed_throws_value_optionals_contract.json`)
-- `blocked` Value optional ABI layout identity, interface roundtrip, explicit absent/present construction, checked unwrap/binding diagnostics, the packed Optional<i32>/Optional<bool>/Optional<id> runtime ABI, and wide Optional<i64> direct ABI are now contracted; object-pointer/nullability, nested/generic/property/ivar/nil/unchecked/throws forms and broad dynamic runtime dispatch remain blocked. (blocker_id: `value-optionals-abi-lowering-interface`)
+- `blocked` The closed #8234 slice contracts value optional ABI layout identity, interface roundtrip, explicit absent/present construction, checked unwrap/binding diagnostics, the packed Optional<i32>/Optional<bool>/Optional<id> runtime ABI, and wide Optional<i64> direct ABI; object-pointer/nullability, nested/generic/property/ivar/nil/unchecked/throws forms and broad dynamic runtime dispatch remain blocked. (blocker_id: `value-optionals-abi-lowering-interface`)
 - `satisfied` Generic callable signature metadata records erased-default and explicit-reified semantic mangling policies without claiming runtime-specialized metadata. (path: `tests/tooling/fixtures/native/generic_callable_reification_contract.json`)
 
 #### Docs
@@ -298,9 +298,9 @@ Consumer rule: Umbrella readiness may explain why a reserved umbrella row is blo
 - `satisfied` Capability rows name #8233 through #8237 and #8207 without unsupported claims. (path: `docs/support/capability_matrix.json`)
 - `satisfied` Evidence rows point to checked source, docs, and fixtures rather than temp/generated evidence. (path: `docs/support/evidence_map.json`)
 - `satisfied` Hard-cutover truth keeps language-evolution support bounded to actual rows. (path: `docs/support/hard_cutover_capability_truth.md`)
-- `satisfied` Type, optional, and generic specs describe reserved value optional and generic reification boundaries. (path: `spec/PART_3_TYPES_NULLABILITY_OPTIONALS_GENERICS_KEYPATHS.md`)
+- `satisfied` Type, optional, and generic specs describe bounded value optional support, reserved value-optional broadening boundaries, and generic reification boundaries. (path: `spec/PART_3_TYPES_NULLABILITY_OPTIONALS_GENERICS_KEYPATHS.md`)
 - `satisfied` Error spec describes typed throws source effect slots, exact compatibility, hidden error-out ABI lowering, catch/bridge policy, and fail-closed malformed/multi-payload, silent-erasure, incompatible-catch, or unsupported foreign-carrier behavior. (path: `spec/PART_6_ERRORS_RESULTS_THROWS.md`)
-- `satisfied` Parser and semantic-analysis docs separate typed throws source/sema effect metadata and the hidden ABI catch/bridge slice from reserved public support and from other language-evolution rows. (path: `docs/compiler/parser.md`)
+- `satisfied` Parser and semantic-analysis docs describe typed throws as an implemented bounded single-payload row with source/sema effect metadata, hidden ABI catch/bridge behavior, runtime-dispatch coverage, try? optionalization, and fail-closed broadening paths separated from other language-evolution rows. (path: `docs/compiler/parser.md`)
 
 ### Generated Output Boundary
 
@@ -316,15 +316,13 @@ Consumer rule: Umbrella readiness may explain why a reserved umbrella row is blo
 
 ### Promotion Blockers
 
-- `typed-throws-abi-lowering-interface`: Typed throws now has parser/source/interface/sema effect identity, hidden single-payload error-out ABI lowering, exact typed catch records, id<Error> bridge policy, incompatible-catch rejection, unsupported foreign-carrier fail-closed records, native execution smoke evidence for direct-function catch/bridge behavior, runtime-dispatch message-send error-out ABI coverage, and try? optionalization runtime smoke. Broader public support remains reserved until typed async propagation and every public replay surface agree.
-  - Keep typed async propagation fail-closed and public replay policy tied to checked fixtures before capability-row promotion.
-  - Promotion of the capability row only after its support claims, fixtures, artifacts, and public replay evidence agree.
-- `value-optionals-abi-lowering-interface`: Value optionals now have semantic type admission for the checked Optional<i32>, Optional<bool>, and Optional<id> runtime ABI, stable packed presence/payload layout identity, textual-interface roundtrip, explicit absent/present construction contracts, checked unwrap/binding diagnostics, native execution smoke evidence for packed i32, bool, and id-handle payload carriers, and Optional<i64> language call/return ABI through the wide `{has_value,i64}` carrier, direct functions, and direct dispatch path; object-pointer/nullability bridges, nested/generic/property/ivar storage, nil-to-scalar, implicit nil, unchecked unwrap, throws/result conversion, and broad dynamic runtime dispatch remain blocked.
-  - Nested Optional<T>, generic payload, property storage, ivar storage lowering, and broad dynamic runtime dispatch.
-  - Nullability bridge, nil-to-scalar, implicit nil, unchecked unwrap, and throws/result conversion rejection coverage tied to the public row.
-  - Promotion of the capability row only after bounded ABI support and all fail-closed broadening paths agree across fixtures and docs.
-- `language-evolution-prerequisites`: The #8207 umbrella is blocked by the reserved #8233/#8234 prerequisite rows even though #8235 generic callable metadata policy, #8236 guarded match plus bounded expression match, and #8237 strict profile admission are implemented.
-  - Promote each reserved prerequisite only after native source contracts and public evidence exist.
+- `value-optionals-abi-lowering-interface`: After #8234 closure, value optionals have semantic type admission for the checked Optional<i32>, Optional<bool>, and Optional<id> runtime ABI, stable packed presence/payload layout identity, textual-interface roundtrip, explicit absent/present construction contracts, checked unwrap/binding diagnostics, native execution smoke evidence for packed i32, bool, and id-handle payload carriers, and Optional<i64> language call/return ABI through the wide `{has_value,i64}` carrier, direct functions, and direct dispatch path; object-pointer/nullability bridges, nested/generic/property/ivar storage, nil-to-scalar, implicit nil, unchecked unwrap, throws/result conversion, and broad dynamic runtime dispatch remain non-promoted broadening paths for #8207 to scope or split before umbrella promotion.
+  - Do not reopen #8234 by prose; either scope these broadening paths out of #8207 or create explicit follow-up rows/issues before promotion.
+  - Keep nullability bridge, nil-to-scalar, implicit nil, unchecked unwrap, and throws/result conversions fail-closed unless separate evidence lands.
+  - Promote the capability row only after any claimed value-optional support, fail-closed broadening paths, fixtures, and docs agree.
+- `language-evolution-prerequisites`: The #8207 umbrella is no longer blocked by #8233; it remains blocked by its own decision about whether the closed #8234 bounded value-optional boundary is promoted, explicitly scoped out, or split into follow-up work. #8235 generic callable metadata policy, #8236 guarded match plus bounded expression match, and #8237 strict profile admission are implemented.
+  - Keep the implemented #8233 row aligned with native source contracts and public evidence.
+  - Treat #8234 as closed bounded value-optional evidence; any extra value-optional broadening must be scoped out or tracked separately before #8207 promotion.
   - Keep umbrella readiness blocked until no prerequisite row relies on reserved diagnostics or metadata placeholders.
 
 ### Final Promotion Criteria

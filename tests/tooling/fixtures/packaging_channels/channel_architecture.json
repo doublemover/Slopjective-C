@@ -24,6 +24,64 @@
   ],
   "derivation_rule": "all channel payloads derive from the runnable toolchain package manifest and release-foundation evidence artifacts",
   "receipt_derivation_rule": "install receipts must bind the install root, channel id, runnable package manifest path, manifest digest, required payload entries, and reserved sanitizer package metadata when a sanitizer selector is used",
+  "runtime_package_variant_contract": {
+    "source_module": "scripts/objc3c_package_channels/sanitizer_contracts.py",
+    "target_platform_boundary": "windows-x64-only",
+    "support_promotion_allowed_by_contract": false,
+    "native_execution_claimed_by_contract": false,
+    "variants": [
+      {
+        "sanitizer_variant": "release",
+        "package_id": "org.objc3c.runtime:objc3c-runtime-release",
+        "package_channel_id": "windows-x64-release",
+        "runtime_variant": "release",
+        "runtime_library_ids": [
+          "objc3-runtime"
+        ],
+        "sanitizer_metadata_allowed": false,
+        "sanitizer_install_selector_allowed": false,
+        "support_truth": false,
+        "native_execution_claimed": false
+      },
+      {
+        "sanitizer_variant": "address",
+        "package_id": "org.objc3c.runtime:objc3c-runtime-asan",
+        "package_variant_row_id": "objc3c.package.sanitizer.asan.reserved",
+        "package_channel_id": "windows-x64-sanitizer-asan",
+        "runtime_variant": "sanitizer=address",
+        "install_selector": "sanitizer=address",
+        "runtime_library_manifest_path": "share/objc3c/sanitizer/asan-runtime-libraries.json",
+        "runtime_library_ids": [
+          "objc3-runtime",
+          "clang_rt.asan"
+        ],
+        "claim_state": "reserved",
+        "platform_ids": [],
+        "missing_runtime_behavior": "fail-closed-before-package-install",
+        "support_truth": false,
+        "native_execution_claimed": false
+      },
+      {
+        "sanitizer_variant": "undefined",
+        "package_id": "org.objc3c.runtime:objc3c-runtime-ubsan",
+        "package_variant_row_id": "objc3c.package.sanitizer.ubsan.reserved",
+        "package_channel_id": "windows-x64-sanitizer-ubsan",
+        "runtime_variant": "sanitizer=undefined",
+        "install_selector": "sanitizer=undefined",
+        "runtime_library_manifest_path": "share/objc3c/sanitizer/ubsan-runtime-libraries.json",
+        "runtime_library_ids": [
+          "objc3-runtime",
+          "clang_rt.ubsan"
+        ],
+        "trap_or_recover_mode": "trap",
+        "claim_state": "reserved",
+        "platform_ids": [],
+        "missing_runtime_behavior": "fail-closed-before-package-install",
+        "support_truth": false,
+        "native_execution_claimed": false
+      }
+    ]
+  },
   "forbidden_shapes": [
     "second compiler payload",
     "hand-curated install tree",

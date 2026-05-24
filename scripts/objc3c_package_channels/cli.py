@@ -22,6 +22,7 @@ from .publication import (
     publish_portable_archive,
     write_package_channel_artifacts,
 )
+from .sanitizer_contracts import SANITIZER_VARIANTS
 from .validation import validate_manifest_required_fields
 
 
@@ -34,7 +35,7 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
     )
     parser.add_argument(
         "--sanitizer-variant",
-        choices=("release", "address", "undefined"),
+        choices=SANITIZER_VARIANTS,
         default="release",
         help="Build package-channel artifacts for the selected runtime sanitizer variant.",
     )

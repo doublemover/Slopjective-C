@@ -391,9 +391,10 @@ the canonical manifest fixture and public npm command above.
 ### Typed throws effect payloads
 
 - Capability ID: `language.errors.typed-throws`
-- State: `reserved`
-- Support claims: None
-- Summary: Typed throws remains reserved as a broad public support claim under issue #8233 until the public validation gate proves the full row, but the hidden single-payload throws(E) ABI now carries catch/bridge policy coverage. Parser/source/interface/sema records preserve one payload as throws:typed:<declared_error_type>, protocol and callable compatibility require exact payload identity, direct calls, message-send operands, and try propagation preserve the typed payload through the private error runtime helpers without erasing to bare throws, do/catch accepts exact typed catches, allows only the policy-backed id<Error> bridge catch, rejects incompatible typed catches with O3S206, and fails closed on unsupported foreign carriers. Malformed/empty/multi/non-type payloads still fail closed with O3P182.
+- State: `implemented`
+- Support claims:
+  - `objc3c.behavior.language.errors.typed-throws`
+- Summary: Single-payload typed throws is implemented as a bounded Objective-C 3.0 effect row. Parser/source/interface/sema records preserve one `throws(E)` payload as `throws:typed:<declared_error_type>`, protocol and callable compatibility require exact payload identity, direct calls, runtime-dispatch message-send operands, and try propagation preserve the typed payload through the private error-out ABI without erasing to bare throws, do/catch accepts exact typed catches, allows only the policy-backed `id<Error>` bridge catch, rejects incompatible typed catches with O3S206, and fails closed on unsupported foreign carriers. Runtime smoke covers direct-function catch/bridge behavior, runtime-dispatch message-send error-out ABI coverage, and try? optionalization. Empty, multi, malformed, non-type, async propagation, and silent-erasure shapes still fail closed with checked diagnostics.
 - Owner modules:
   - `native/objc3c/src/parse/objc3_parser_core_cstyle_parameters_async_throws_clause_parsing.inc`
   - `native/objc3c/src/parse/objc3_parser_rejection_diagnostics.cpp`
@@ -462,7 +463,7 @@ the canonical manifest fixture and public npm command above.
 - Capability ID: `language.types.value-optionals`
 - State: `reserved`
 - Support claims: None
-- Summary: Value optionals remain reserved as a broad public executable/runtime feature under issue #8234. Canonical Optional<T> is admitted as a semantic type-signature carrier with stable packed has_value/payload ABI identity, textual-interface roundtrip, and replayed runtime ABI for the checked Optional<i32>, Optional<bool>, and Optional<id> handle payload forms. Optional<i64> language call/return ABI is now supported through the wide `{has_value,i64}` carrier, direct functions, and direct dispatch path. Lowercase optional<T> is rejected as O3C004 rather than accepted as an alias, and checked parser/source-closure/textual-interface import records explicitly deny object-pointer/nullability bridges, nested optional runtime lowering, generic payload runtime lowering, property or ivar storage, unchecked unwrap, implicit nil absence, nil-to-scalar, and throws/result conversions.
+- Summary: After issue #8234 closure, the bounded value-optional slice is recorded here without promoting broad public executable/runtime support. Canonical Optional<T> is admitted as a semantic type-signature carrier with stable packed has_value/payload ABI identity, textual-interface roundtrip, and replayed runtime ABI for the checked Optional<i32>, Optional<bool>, and Optional<id> handle payload forms. Optional<i64> language call/return ABI is now supported through the wide `{has_value,i64}` carrier, direct functions, and direct dispatch path. Lowercase optional<T> is rejected as O3C004 rather than accepted as an alias, and checked parser/source-closure/textual-interface import records explicitly deny object-pointer/nullability bridges, nested optional runtime lowering, generic payload runtime lowering, property or ivar storage, unchecked unwrap, implicit nil absence, nil-to-scalar, and throws/result conversions.
 - Owner modules:
   - `native/objc3c/src/ast/objc3_ast_value_optional_type.h`
   - `native/objc3c/src/parse/objc3_parser_declaration_surface.cpp`
@@ -589,7 +590,7 @@ the canonical manifest fixture and public npm command above.
 - Capability ID: `language.evolution.umbrella-alignment`
 - State: `reserved`
 - Support claims: None
-- Summary: Issue #8207 is an umbrella truth row for typed throws, value optionals, generic callable reification, guarded match, bounded match expressions, and strict/strict-concurrency profiles. It remains reserved until typed-throws public replay gates and value-optional bounded ABI replay gates prove their full public rows or are explicitly scoped out; the current state records #8233 single-payload typed throws hidden error-out ABI lowering with exact typed catch, policy-backed id<Error> bridge catch, incompatible-catch rejection, and unsupported foreign-carrier fail-closed records, #8235 generic callable metadata policy support, #8236 guarded-match/match-expression support, #8237 strict/strict-concurrency profile admission, and #8234 value-optional semantic carrier plus bounded packed i32/bool/id-handle runtime ABI and Optional<i64> wide `{has_value,i64}` language call/return ABI through direct functions and direct dispatch without claiming runtime-specialized generics, broad value-optional runtime support, object/nullability bridges, nested/generic/property/ivar optional lowering, nil/nullability conversions, unchecked unwrap, throws conversions, or strict-system behavior.
+- Summary: Issue #8207 is an umbrella truth row for typed throws, value optionals, generic callable reification, guarded match, bounded match expressions, and strict/strict-concurrency profiles. It remains reserved after #8234 closure until remaining broad value-optional paths are either promotion-backed or explicitly scoped out by an umbrella decision; the current state records #8233 single-payload typed throws as an implemented bounded error-out ABI row with exact typed catch, policy-backed id<Error> bridge catch, runtime-dispatch message-send coverage, try? optionalization, incompatible-catch rejection, and unsupported foreign-carrier fail-closed records, #8235 generic callable metadata policy support, #8236 guarded-match/match-expression support, #8237 strict/strict-concurrency profile admission, and the closed #8234 value-optional semantic carrier plus bounded packed i32/bool/id-handle runtime ABI and Optional<i64> wide `{has_value,i64}` language call/return ABI through direct functions and direct dispatch without claiming runtime-specialized generics, broad value-optional runtime support, object/nullability bridges, nested/generic/property/ivar optional lowering, nil/nullability conversions, unchecked unwrap, throws conversions, or strict-system behavior.
 - Owner modules:
   - `docs/support/umbrella_readiness.json`
   - `docs/support/capability_matrix.json`
@@ -3002,7 +3003,7 @@ the canonical manifest fixture and public npm command above.
 - Capability ID: `toolchain.sanitizer.address`
 - State: `reserved`
 - Support claims: None
-- Summary: AddressSanitizer support remains reserved under issue #8230: the source contract records the ASan runtime package id, package layout, runtime library probe, explicit opt-in install selector, ASAN_OPTIONS metadata contract, mixed release/sanitizer runtime rejection, expected detection records, unsupported-host diagnostics, and metadata freshness guard, but no package/install/native execution support is claimed.
+- Summary: AddressSanitizer support remains reserved under issue #8230: the source contract records the ASan runtime package id, package layout, runtime library probe, explicit opt-in install selector, ASAN_OPTIONS metadata contract, mixed release/sanitizer runtime rejection, record-only expected-detection fixtures, unsupported-host diagnostics, and metadata freshness guard, but no package/install/native execution support is claimed.
 - Owner modules:
   - `tests/tooling/fixtures/platform_hardening/platform_toolchain_support_evidence.json`
   - `tests/tooling/fixtures/security_hardening/sanitizer_validation_contract.json`
@@ -3050,7 +3051,7 @@ the canonical manifest fixture and public npm command above.
 - Capability ID: `toolchain.sanitizer.undefined`
 - State: `reserved`
 - Support claims: None
-- Summary: UBSan support remains reserved under issue #8231: the source contract records the UBSan runtime package id, package layout, runtime library probe, explicit opt-in install selector, UBSAN_OPTIONS and trap-or-recover metadata contracts, mixed release/sanitizer runtime rejection, expected detection records, unsupported-host diagnostics, and metadata freshness guard, but no package/install/native execution support is claimed.
+- Summary: UBSan support remains reserved under issue #8231: the source contract records the UBSan runtime package id, package layout, runtime library probe, explicit opt-in install selector, UBSAN_OPTIONS and trap-or-recover metadata contracts, mixed release/sanitizer runtime rejection, record-only expected-detection fixtures, unsupported-host diagnostics, and metadata freshness guard, but no package/install/native execution support is claimed.
 - Owner modules:
   - `tests/tooling/fixtures/platform_hardening/platform_toolchain_support_evidence.json`
   - `tests/tooling/fixtures/security_hardening/sanitizer_validation_contract.json`

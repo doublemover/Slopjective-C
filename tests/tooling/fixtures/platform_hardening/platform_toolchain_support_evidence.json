@@ -1019,6 +1019,27 @@
       "diagnostic": "Linux x64 remains unsupported when native Linux host execution evidence is absent."
     },
     {
+      "case_id": "objc3c.negative.host.linux-x64.generated-host-evidence-no-promotion",
+      "issue_refs": [
+        8228
+      ],
+      "case_kind": "unsupported-host",
+      "platform_ids": [
+        "linux-x64"
+      ],
+      "failure_class": "support-tier-overclaim",
+      "required_behavior": "fail-closed-no-support-promotion",
+      "blocks_surfaces": [
+        "package",
+        "install",
+        "execution",
+        "publication"
+      ],
+      "promotion_allowed": false,
+      "source_owner": "platform-hardening-support-source",
+      "diagnostic": "Generated Linux hosted-runner reports and tool-presence summaries are evidence candidates only; they cannot promote Linux x64 without reviewed checked-in host, package, install, and native execution source truth."
+    },
+    {
       "case_id": "objc3c.negative.host.darwin-arm64.no-native-execution",
       "issue_refs": [
         8229
@@ -1039,6 +1060,27 @@
       "promotion_allowed": false,
       "source_owner": "platform-hardening-unsupported-host-fail-closed",
       "diagnostic": "macOS arm64 remains unsupported when native macOS arm64 execution evidence is absent."
+    },
+    {
+      "case_id": "objc3c.negative.host.darwin-arm64.generated-host-evidence-no-promotion",
+      "issue_refs": [
+        8229
+      ],
+      "case_kind": "unsupported-host",
+      "platform_ids": [
+        "darwin-arm64"
+      ],
+      "failure_class": "support-tier-overclaim",
+      "required_behavior": "fail-closed-no-support-promotion",
+      "blocks_surfaces": [
+        "package",
+        "install",
+        "execution",
+        "publication"
+      ],
+      "promotion_allowed": false,
+      "source_owner": "platform-hardening-support-source",
+      "diagnostic": "Generated macOS hosted-runner reports and tool-presence summaries are evidence candidates only; they cannot promote macOS arm64 without reviewed checked-in host, package, install, load-path, and native execution source truth."
     },
     {
       "case_id": "objc3c.negative.toolchain.missing-llc",

@@ -28,9 +28,9 @@
     },
     "issue_ref": { "const": 8233 },
     "support_state": {
-      "const": "source_owned_effect_identity_interface_preserved_error_out_abi_lowered_catch_bridge_policy_recorded"
+      "const": "implemented_single_payload_effect_identity_interface_preserved_error_out_abi_catch_bridge_runtime"
     },
-    "public_support_claimed": { "const": false },
+    "public_support_claimed": { "const": true },
     "throws_effect": {
       "type": "array",
       "minItems": 1,

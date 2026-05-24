@@ -5,16 +5,17 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any
 
+from .constants import PLATFORM_IDENTITY_CONTRACTS
+
 
 def platform_id_for_host(system: str, machine: str) -> str:
     normalized_system = system.lower()
     normalized_machine = machine.lower()
-    if normalized_system == "windows" and normalized_machine in {"amd64", "x86_64"}:
-        return "windows-x64"
-    if normalized_system == "linux" and normalized_machine in {"amd64", "x86_64"}:
-        return "linux-x64"
-    if normalized_system == "darwin" and normalized_machine in {"arm64", "aarch64"}:
-        return "darwin-arm64"
+    for platform_id, identity in PLATFORM_IDENTITY_CONTRACTS.items():
+        host_systems = {str(item) for item in identity["host_systems"]}
+        host_machines = {str(item) for item in identity["host_machines"]}
+        if normalized_system in host_systems and normalized_machine in host_machines:
+            return platform_id
     return "unsupported"
 
 

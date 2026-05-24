@@ -44,8 +44,8 @@ inline constexpr const char *kObjc3CompatibilityStrictnessClaimCanonicalInterfac
 inline constexpr std::size_t kObjc3CompatibilityStrictnessClaimValidLanguageProfileCount = 3u;
 inline constexpr std::size_t kObjc3CompatibilityStrictnessClaimLiveSelectionSurfaceCount = 4u;
 inline constexpr std::size_t kObjc3CompatibilityStrictnessClaimValidSelectionCombinationCount = 3u;
-inline constexpr std::size_t kObjc3CompatibilityStrictnessClaimRunnableFeatureCount = 7u;
+inline constexpr std::size_t kObjc3CompatibilityStrictnessClaimRunnableFeatureCount = 8u;
 inline constexpr std::size_t kObjc3CompatibilityStrictnessClaimSourceOnlyFeatureCount = 6u;
-inline constexpr std::size_t kObjc3CompatibilityStrictnessClaimRejectedFeatureCount = 9u;
+inline constexpr std::size_t kObjc3CompatibilityStrictnessClaimRejectedFeatureCount = 8u;
 inline constexpr std::size_t kObjc3CompatibilityStrictnessClaimRejectedSelectionSurfaceCount = 1u;
 inline constexpr std::size_t kObjc3CompatibilityStrictnessClaimSuppressedMacroClaimCount = 3u;

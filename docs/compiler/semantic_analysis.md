@@ -3,10 +3,11 @@
 Semantic support claims require canonical diagnostics or executable tests.
 Rejected behavior is represented by diagnostics, not alternate acceptance paths.
 
-Typed throws is now a source/interface semantic surface with single-payload
-hidden error-out ABI lowering, exact typed catch records, policy-backed
-`id<Error>` bridge catches, incompatible-catch rejection, and unsupported
-foreign-carrier fail-closed records. Value optionals now have semantic type identity
+Typed throws is now an implemented bounded semantic/runtime surface with
+single-payload hidden error-out ABI lowering, exact typed catch records,
+policy-backed `id<Error>` bridge catches, direct-call and runtime-dispatch
+message-send error paths, `try?` optionalization, incompatible-catch rejection,
+and unsupported foreign-carrier fail-closed records. Value optionals now have semantic type identity
 for canonical `Optional<T>` type signatures,
 plus a sema-owned absent/present lowering contract and checked unwrap/binding
 failure diagnostics plus bounded packed runtime ABI support for `i32`, `bool`,
@@ -66,9 +67,10 @@ semantic support.
 
 The #8207 umbrella contract lives in
 `tests/tooling/fixtures/native/language_evolution_umbrella_contract.json` and
-keeps semantic promotion bounded: typed throws cannot widen past source/interface
-metadata plus hidden error-out lowering and catch/bridge policy into multi-payload,
-unsupported foreign-carrier, or erased public runtime behavior,
+keeps semantic promotion bounded: typed throws cannot widen past its
+single-payload error-out ABI, catch/bridge policy, runtime-dispatch, and `try?`
+evidence into multi-payload, unsupported foreign-carrier, async propagation, or
+erased runtime behavior,
 and value optionals cannot widen past their bounded packed i32/bool/id-handle ABI,
 wide Optional<i64> direct ABI, and checked lowering contract into broad
 nested/generic/property/ivar/nullability/nil or unchecked runtime support.

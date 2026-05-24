@@ -5,6 +5,15 @@ from __future__ import annotations
 import re
 from typing import Any
 
+from .sanitizer_contracts import (
+    PACKAGE_CHANNEL_IDS,
+    PACKAGE_IDS,
+    SANITIZER_RUNTIME_LIBRARY_ENTRIES,
+    SANITIZER_RUNTIME_LIBRARY_MANIFEST_PATHS,
+    SANITIZER_VARIANTS,
+    payload_entries_for_variant,
+)
+
 
 SHA256_HEX = re.compile(r"^[0-9a-f]{64}$")
 ARCHIVE_DIGEST_FIELDS = {
@@ -29,38 +38,6 @@ REQUIRED_PAYLOAD_ENTRIES = [
     "stdlib/modules/objc3.core/module.json",
     "docs/runbooks/objc3c_packaging_channels.md",
 ]
-SANITIZER_PAYLOAD_ENTRIES = {
-    "address": [
-        "share/objc3c/sanitizer/asan-metadata.json",
-        "share/objc3c/sanitizer/asan-runtime-libraries.json",
-        "artifacts/runtime/sanitizer/address/clang_rt.asan_dynamic-x86_64.dll",
-        "artifacts/runtime/sanitizer/address/clang_rt.asan_dynamic-x86_64.lib",
-        "artifacts/runtime/sanitizer/address/clang_rt.asan_dynamic_runtime_thunk-x86_64.lib",
-    ],
-    "undefined": [
-        "share/objc3c/sanitizer/ubsan-metadata.json",
-        "share/objc3c/sanitizer/ubsan-runtime-libraries.json",
-        "artifacts/runtime/sanitizer/undefined/clang_rt.ubsan_standalone-x86_64.lib",
-        "artifacts/runtime/sanitizer/undefined/clang_rt.ubsan_standalone_cxx-x86_64.lib",
-    ],
-}
-SANITIZER_RUNTIME_LIBRARY_ENTRIES = {
-    "address": [
-        "share/objc3c/sanitizer/asan-runtime-libraries.json",
-        "artifacts/runtime/sanitizer/address/clang_rt.asan_dynamic-x86_64.dll",
-        "artifacts/runtime/sanitizer/address/clang_rt.asan_dynamic-x86_64.lib",
-        "artifacts/runtime/sanitizer/address/clang_rt.asan_dynamic_runtime_thunk-x86_64.lib",
-    ],
-    "undefined": [
-        "share/objc3c/sanitizer/ubsan-runtime-libraries.json",
-        "artifacts/runtime/sanitizer/undefined/clang_rt.ubsan_standalone-x86_64.lib",
-        "artifacts/runtime/sanitizer/undefined/clang_rt.ubsan_standalone_cxx-x86_64.lib",
-    ],
-}
-SANITIZER_RUNTIME_LIBRARY_MANIFEST_PATHS = {
-    "address": "share/objc3c/sanitizer/asan-runtime-libraries.json",
-    "undefined": "share/objc3c/sanitizer/ubsan-runtime-libraries.json",
-}
 REQUIRED_RECEIPT_FIELDS = [
     "contract_id",
     "install_root",
@@ -75,23 +52,10 @@ REQUIRED_RECEIPT_FIELDS = [
     "installed_at_utc",
 ]
 SANITIZER_REQUIRED_RECEIPT_FIELDS = [*REQUIRED_RECEIPT_FIELDS, "sanitizer_package_variant"]
-PACKAGE_IDS = {
-    "release": "org.objc3c.runtime:objc3c-runtime-release",
-    "address": "org.objc3c.runtime:objc3c-runtime-asan",
-    "undefined": "org.objc3c.runtime:objc3c-runtime-ubsan",
-}
-PACKAGE_CHANNEL_IDS = {
-    "release": "windows-x64-release",
-    "address": "windows-x64-sanitizer-asan",
-    "undefined": "windows-x64-sanitizer-ubsan",
-}
 
 
 def required_payload_entries(sanitizer_variant: str = "release") -> list[str]:
-    return [
-        *REQUIRED_PAYLOAD_ENTRIES,
-        *SANITIZER_PAYLOAD_ENTRIES.get(sanitizer_variant, []),
-    ]
+    return payload_entries_for_variant(REQUIRED_PAYLOAD_ENTRIES, sanitizer_variant)
 
 
 def validate_manifest_required_fields(
@@ -104,7 +68,8 @@ def validate_manifest_required_fields(
             raise RuntimeError(f"package-channels manifest missing required field {field_name}")
     sanitizer_variant = str(manifest_payload.get("sanitizer_variant", "release"))
     if sanitizer_variant not in PACKAGE_IDS:
-        raise RuntimeError("package-channels sanitizer_variant must be release, address, or undefined")
+        allowed_variants = ", ".join(SANITIZER_VARIANTS)
+        raise RuntimeError(f"package-channels sanitizer_variant must be {allowed_variants}")
     if manifest_payload.get("package_id") != PACKAGE_IDS[sanitizer_variant]:
         raise RuntimeError("package-channels package_id drifted from sanitizer variant")
     if manifest_payload.get("package_channel_id") != PACKAGE_CHANNEL_IDS[sanitizer_variant]:

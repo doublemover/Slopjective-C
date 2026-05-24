@@ -7,7 +7,7 @@
     "value_optionals": 8234
   },
   "support_state": {
-    "typed_throws": "source_owned_interface_preserved_error_out_abi_lowered_catch_bridge_policy_recorded_direct_method_send_runtime",
+    "typed_throws": "implemented_single_payload_interface_preserved_error_out_abi_catch_bridge_direct_runtime_dispatch_try_optional_runtime",
     "value_optionals": "semantic_type_signatures_packed_i32_bool_id_and_full_i64_runtime_abi"
   },
   "typed_throws": {
@@ -213,7 +213,7 @@
   "positive_fixtures": [
     {
       "fixture": "tests/tooling/fixtures/native/typed_throws_source_positive.objc3",
-      "contract_case": "single typed throws payload is admitted as source/interface metadata"
+      "contract_case": "single typed throws payload is implemented as bounded source/interface/runtime effect metadata"
     },
     {
       "fixture": "tests/tooling/fixtures/native/typed_throws_interface_roundtrip_positive.objc3",
@@ -379,9 +379,10 @@
     }
   ],
   "public_claim_boundary": {
-    "support_claims": [],
+    "support_claims": [
+      "objc3c.behavior.language.errors.typed-throws"
+    ],
     "source_only_claims": [
-      "source-only:typed-throws-declarations",
       "source-only:value-optional-type-signatures"
     ],
     "bounded_runtime_claims": [
@@ -391,11 +392,9 @@
     ],
     "runtime_claims": [],
     "reserved_public_runtime_rows_required": [
-      "language.errors.typed-throws",
       "language.types.value-optionals"
     ],
     "reserved_rows_required": [
-      "language.errors.typed-throws",
       "language.types.value-optionals"
     ],
     "no_compatibility_aliases": true,

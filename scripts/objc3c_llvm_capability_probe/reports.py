@@ -8,10 +8,63 @@ import re
 from typing import Iterable
 
 from objc3c_tooling.paths import display_path
+from platform_hardening_contracts import (
+    PLATFORM_IDENTITY_CONTRACTS,
+    UNSUPPORTED_PROMOTION_PLATFORM_IDS,
+)
 
 from .constants import MODE
 
 MIN_SUPPORTED_LLVM_VERSION = (19, 1)
+SUPPORTED_PLATFORM_IDS = tuple(
+    platform_id
+    for platform_id, identity in PLATFORM_IDENTITY_CONTRACTS.items()
+    if identity.get("promotion_state") == "supported-boundary"
+)
+PROMOTION_CANDIDATE_ISSUE_REFS = {
+    "linux-x64": 8228,
+    "darwin-arm64": 8229,
+}
+PROMOTION_CANDIDATE_PLATFORM_IDS = tuple(UNSUPPORTED_PROMOTION_PLATFORM_IDS)
+
+
+def _platform_id_for_host(system: str, machine: str) -> str:
+    normalized_system = system.lower()
+    normalized_machine = machine.lower()
+    for platform_id, identity in PLATFORM_IDENTITY_CONTRACTS.items():
+        host_systems = {str(item) for item in identity["host_systems"]}
+        host_machines = {str(item) for item in identity["host_machines"]}
+        if normalized_system in host_systems and normalized_machine in host_machines:
+            return platform_id
+    return "unsupported"
+
+
+def _host_platform_support_gate(system: str, machine: str) -> dict[str, object]:
+    platform_id = _platform_id_for_host(system, machine)
+    issue_ref = PROMOTION_CANDIDATE_ISSUE_REFS.get(platform_id)
+    blockers = [
+        "checked host identity record",
+        "coherent toolchain probe record",
+        "package root evidence record",
+        "native execution evidence record",
+    ]
+    return {
+        "contract_id": "objc3c.llvm.host-platform-support-gate.v1",
+        "platform_id": platform_id,
+        "candidate_issue_ref": issue_ref,
+        "supported_platform_ids": list(SUPPORTED_PLATFORM_IDS),
+        "promotion_candidate_platform_ids": sorted(PROMOTION_CANDIDATE_PLATFORM_IDS),
+        "toolchain_probe_only": True,
+        "support_promotion_allowed": False,
+        "support_promotion_result": "fail-closed-no-support-promotion",
+        "generated_report_result": "record-only-no-source-truth-promotion",
+        "required_checked_source_records": blockers,
+        "diagnostic": (
+            f"{platform_id} remains fail-closed until checked host, package, install, and native execution evidence exists"
+            if issue_ref is not None
+            else "LLVM capability probing alone is not a platform support promotion path"
+        ),
+    }
 
 
 def missing_contract_payload(
@@ -353,6 +406,9 @@ def build_llvm_support_matrix(
     native_execution_ready = (
         parity_ready and clangxx_ready and headers_libraries_discovered and toolchain_claimable
     )
+    host_system = platform.system().lower()
+    host_machine = platform.machine().lower()
+    host_gate = _host_platform_support_gate(host_system, host_machine)
     native_object_emission_status = (
         "native_object_emission_supported"
         if object_emission_ready
@@ -521,10 +577,13 @@ def build_llvm_support_matrix(
             "coherent_toolchain_policy": "no-mixed-root-or-mismatched-version-success-claim",
         },
         "host_platform": {
-            "system": platform.system().lower(),
-            "machine": platform.machine().lower(),
+            "system": host_system,
+            "machine": host_machine,
             "python": platform.python_version(),
+            "platform_id": host_gate["platform_id"],
+            "support_promotion_allowed": host_gate["support_promotion_allowed"],
         },
+        "host_platform_support_gate": host_gate,
         "llvm_tool_records": [
             clang_record,
             clangxx_record,
@@ -600,7 +659,8 @@ def build_llvm_support_matrix(
         "toolchain_matrix_entries": [
             {
                 "entry_id": "objc3c.llvm.host.current",
-                "host_platform": f"{platform.system().lower()}-{platform.machine().lower()}",
+                "host_platform": f"{host_system}-{host_machine}",
+                "host_platform_id": host_gate["platform_id"],
                 "llvm_version": str(llc_probe.get("version") or clang_probe.get("version") or ""),
                 "clang_version": str(clang_probe.get("version", "")),
                 "clangxx_version": str(clangxx_probe.get("version", "")),
@@ -615,6 +675,9 @@ def build_llvm_support_matrix(
                 "native_execution_capability": "supported" if native_execution_ready else "rejected",
                 "supported_features": supported_features,
                 "rejected_features": rejected_features,
+                "support_scope": "toolchain-capability-only",
+                "platform_support_promotion_allowed": host_gate["support_promotion_allowed"],
+                "platform_support_promotion_result": host_gate["support_promotion_result"],
                 "unsupported_version_behavior": "fail-closed-no-range-claim",
             }
         ],
@@ -694,6 +757,7 @@ def build_summary(
         "llvm_config_features": llvm_config_features,
         "toolchain_identity": toolchain_identity,
         "llvm_support_matrix": llvm_support_matrix,
+        "host_platform_support_gate": llvm_support_matrix["host_platform_support_gate"],
         "toolchain_resolution": llvm_support_matrix["toolchain_resolution"],
         "sema_type_system_parity": sema_type_system_parity,
         "capability_demo_compatibility": capability_demo_compatibility,

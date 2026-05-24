@@ -357,7 +357,26 @@
         "publication"
       ],
       "support_truth": false,
-      "native_execution_claimed": false
+      "native_execution_claimed": false,
+      "fixture_inputs": {
+        "target_platform_id": "windows-x64",
+        "selected_runtime_variant": "sanitizer=address",
+        "package_id": "org.objc3c.runtime:objc3c-runtime-asan",
+        "package_variant_row_id": "objc3c.package.sanitizer.asan.reserved",
+        "runtime_library_ids": [
+          "objc3-runtime",
+          "clang_rt.asan"
+        ],
+        "conflicting_release_runtime_package_id": "org.objc3c.runtime:objc3c-runtime-release",
+        "conflicting_release_runtime_library_ids": [
+          "objc3-runtime"
+        ]
+      },
+      "expected_rejection": {
+        "diagnostic_id": "objc3c.sanitizer.address.reject.mixed-runtime",
+        "support_promotion_allowed": false,
+        "native_execution_claimed": false
+      }
     },
     {
       "case_id": "objc3c.sanitizer.address.package-install.reject.missing-install-receipt-field",
@@ -402,7 +421,24 @@
         "publication"
       ],
       "support_truth": false,
-      "native_execution_claimed": false
+      "native_execution_claimed": false,
+      "fixture_inputs": {
+        "target_platform_id": "windows-x64",
+        "selected_runtime_variant": "sanitizer=address",
+        "package_id": "org.objc3c.runtime:objc3c-runtime-asan",
+        "package_variant_row_id": "objc3c.package.sanitizer.asan.reserved",
+        "runtime_library_manifest_path": "share/objc3c/sanitizer/asan-runtime-libraries.json",
+        "missing_runtime_artifacts": [
+          "artifacts/runtime/sanitizer/address/clang_rt.asan_dynamic-x86_64.dll",
+          "artifacts/runtime/sanitizer/address/clang_rt.asan_dynamic-x86_64.lib",
+          "artifacts/runtime/sanitizer/address/clang_rt.asan_dynamic_runtime_thunk-x86_64.lib"
+        ]
+      },
+      "expected_rejection": {
+        "diagnostic_id": "objc3c.sanitizer.address.reject.missing-runtime",
+        "support_promotion_allowed": false,
+        "native_execution_claimed": false
+      }
     },
     {
       "case_id": "objc3c.sanitizer.address.package-install.reject.stale-package-metadata",
@@ -432,7 +468,23 @@
         "publication"
       ],
       "support_truth": false,
-      "native_execution_claimed": false
+      "native_execution_claimed": false,
+      "fixture_inputs": {
+        "attempted_platform_ids": [
+          "linux-x64",
+          "darwin-arm64"
+        ],
+        "selected_runtime_variant": "sanitizer=address",
+        "package_id": "org.objc3c.runtime:objc3c-runtime-asan",
+        "package_variant_row_id": "objc3c.package.sanitizer.asan.reserved",
+        "supported_platform_ids": [],
+        "source_owned_target_only": true
+      },
+      "expected_rejection": {
+        "diagnostic_id": "objc3c.sanitizer.address.unsupported-host",
+        "support_promotion_allowed": false,
+        "native_execution_claimed": false
+      }
     },
     {
       "case_id": "objc3c.sanitizer.address.package-install.reject.default-release-misuse",
@@ -462,7 +514,27 @@
         "publication"
       ],
       "support_truth": false,
-      "native_execution_claimed": false
+      "native_execution_claimed": false,
+      "fixture_inputs": {
+        "target_platform_id": "windows-x64",
+        "selected_runtime_variant": "sanitizer=undefined",
+        "package_id": "org.objc3c.runtime:objc3c-runtime-ubsan",
+        "package_variant_row_id": "objc3c.package.sanitizer.ubsan.reserved",
+        "runtime_library_ids": [
+          "objc3-runtime",
+          "clang_rt.ubsan"
+        ],
+        "conflicting_release_runtime_package_id": "org.objc3c.runtime:objc3c-runtime-release",
+        "conflicting_release_runtime_library_ids": [
+          "objc3-runtime"
+        ],
+        "trap_or_recover_mode": "trap"
+      },
+      "expected_rejection": {
+        "diagnostic_id": "objc3c.sanitizer.undefined.reject.mixed-runtime",
+        "support_promotion_allowed": false,
+        "native_execution_claimed": false
+      }
     },
     {
       "case_id": "objc3c.sanitizer.undefined.package-install.reject.missing-runtime",
@@ -477,7 +549,24 @@
         "publication"
       ],
       "support_truth": false,
-      "native_execution_claimed": false
+      "native_execution_claimed": false,
+      "fixture_inputs": {
+        "target_platform_id": "windows-x64",
+        "selected_runtime_variant": "sanitizer=undefined",
+        "package_id": "org.objc3c.runtime:objc3c-runtime-ubsan",
+        "package_variant_row_id": "objc3c.package.sanitizer.ubsan.reserved",
+        "runtime_library_manifest_path": "share/objc3c/sanitizer/ubsan-runtime-libraries.json",
+        "missing_runtime_artifacts": [
+          "artifacts/runtime/sanitizer/undefined/clang_rt.ubsan_standalone-x86_64.lib",
+          "artifacts/runtime/sanitizer/undefined/clang_rt.ubsan_standalone_cxx-x86_64.lib"
+        ],
+        "trap_or_recover_mode": "trap"
+      },
+      "expected_rejection": {
+        "diagnostic_id": "objc3c.sanitizer.undefined.reject.missing-runtime",
+        "support_promotion_allowed": false,
+        "native_execution_claimed": false
+      }
     },
     {
       "case_id": "objc3c.sanitizer.undefined.package-install.reject.stale-package-metadata",
@@ -507,7 +596,24 @@
         "publication"
       ],
       "support_truth": false,
-      "native_execution_claimed": false
+      "native_execution_claimed": false,
+      "fixture_inputs": {
+        "attempted_platform_ids": [
+          "linux-x64",
+          "darwin-arm64"
+        ],
+        "selected_runtime_variant": "sanitizer=undefined",
+        "package_id": "org.objc3c.runtime:objc3c-runtime-ubsan",
+        "package_variant_row_id": "objc3c.package.sanitizer.ubsan.reserved",
+        "supported_platform_ids": [],
+        "source_owned_target_only": true,
+        "trap_or_recover_mode": "trap"
+      },
+      "expected_rejection": {
+        "diagnostic_id": "objc3c.sanitizer.undefined.unsupported-host",
+        "support_promotion_allowed": false,
+        "native_execution_claimed": false
+      }
     },
     {
       "case_id": "objc3c.sanitizer.undefined.package-install.reject.default-release-misuse",

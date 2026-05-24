@@ -87,6 +87,7 @@
     "scripts/package_objc3c_runnable_toolchain.ps1",
     "scripts/build_objc3c_release_manifest.py",
     "scripts/publish_objc3c_release_provenance.py",
+    "scripts/objc3c_package_channels/sanitizer_contracts.py",
     "scripts/check_packaging_channels_source_surface.py",
     "scripts/check_packaging_channels_schema_surface.py",
     "scripts/build_objc3c_package_channels.py",

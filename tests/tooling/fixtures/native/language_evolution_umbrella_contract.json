@@ -18,7 +18,7 @@
       "feature_id": "typed_throws",
       "issue_ref": 8233,
       "contract": "tests/tooling/fixtures/native/language_evolution_typed_throws_value_optionals_contract.json",
-      "support_state": "source_owned_interface_preserved_error_out_abi_lowered_catch_bridge_policy_recorded_direct_method_send_runtime",
+      "support_state": "implemented_single_payload_interface_preserved_error_out_abi_catch_bridge_direct_runtime_dispatch_try_optional_runtime",
       "negative_case_ids": [
         "negative_typed_throws_reserved",
         "negative_typed_throws_empty_payload_reserved",
@@ -95,6 +95,7 @@
     }
   ],
   "admitted_public_claims": [
+    "objc3c.behavior.language.errors.typed-throws",
     "objc3c.behavior.language.control-flow.statement-guarded-match",
     "objc3c.behavior.language.control-flow.match-expression",
     "objc3c.behavior.language.generics.callable-type-parameters",
@@ -102,8 +103,6 @@
     "objc3c.behavior.language.profiles.strict-admission"
   ],
   "reserved_public_claims": [
-    "language.errors.typed-throws",
-    "language.errors.typed-throws-runtime-lowering",
     "language.types.value-optionals-runtime-lowering",
     "language.types.value-optionals-nested-runtime-lowering",
     "language.types.value-optionals-generic-runtime-lowering",
@@ -115,7 +114,7 @@
     "language.profiles.strict-system"
   ],
   "hard_fail_closed_requirements": [
-    "single typed throws payloads are source/interface-preserved, semantically exact callable effect signatures, lower through the private error-out ABI, accept exact typed catches, allow only the policy-backed id<Error> bridge catch, reject incompatible catches, fail closed on unsupported foreign carriers, are not silently erased into untyped throws, and keep the public capability row reserved until replay gates prove full support",
+    "single typed throws payloads are source/interface-preserved, semantically exact callable effect signatures, lower through the private error-out ABI, execute direct-function catch/bridge, runtime-dispatch message-send, and try? runtime paths, accept exact typed catches, allow only the policy-backed id<Error> bridge catch, reject incompatible catches, fail closed on unsupported foreign carriers, and are not silently erased into untyped throws",
     "Optional<T> type signatures are semantic value-optional carriers with supported i32, bool, id-handle, and full-width i64 language call/return ABI evidence; nested, generic, property, ivar, nullability, nil-to-scalar, implicit nil, unchecked unwrap, and throws/result conversion paths fail closed",
     "generic callable metadata preserves erased-default versus declaration-scoped explicit-reified policy without implying module-wide reification",
     "guarded match admits only bool where conditions; expression-position match is supported only for the bounded typed pattern/result surface and still fails closed for type-test patterns and unsupported result payload lowering",
@@ -132,7 +131,7 @@
     },
     {
       "row_id": "language.errors.typed-throws",
-      "status": "source-owned-interface-preserved-error-out-abi-lowered-catch-bridge-policy-recorded-direct-method-send-runtime-public-row-reserved",
+      "status": "implemented-single-payload-interface-preserved-error-out-abi-catch-bridge-direct-runtime-dispatch-try-optional-runtime",
       "evidence": [
         "tests/tooling/fixtures/native/language_evolution_typed_throws_value_optionals_contract.json",
         "tests/tooling/fixtures/native/typed_throws_semantic_effect_identity.contract.json"

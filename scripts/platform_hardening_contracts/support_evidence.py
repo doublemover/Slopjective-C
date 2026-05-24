@@ -9,7 +9,11 @@ from typing import Any, Iterable
 from objc3c_shared.json_io import validate_json_schema
 from objc3c_tooling.paths import repo_rel, resolve_repo_path
 
-from .constants import PLATFORM_HARDENING_OWNER_POLICY
+from .constants import (
+    PLATFORM_HARDENING_OWNER_POLICY,
+    PLATFORM_IDENTITY_CONTRACTS,
+    UNSUPPORTED_PROMOTION_PLATFORM_IDS,
+)
 from .contract_predicates import expect
 from .source_surface_catalog import (
     HOSTED_RUNNER_CAPABILITY_SUMMARIES_PATH,
@@ -207,7 +211,9 @@ REQUIRED_HOST_EVIDENCE_SECTIONS: tuple[str, ...] = (
 )
 REQUIRED_NEGATIVE_HOST_TOOLCHAIN_CASES: tuple[str, ...] = (
     "objc3c.negative.host.linux-x64.no-native-execution",
+    "objc3c.negative.host.linux-x64.generated-host-evidence-no-promotion",
     "objc3c.negative.host.darwin-arm64.no-native-execution",
+    "objc3c.negative.host.darwin-arm64.generated-host-evidence-no-promotion",
     "objc3c.negative.toolchain.missing-llc",
     "objc3c.negative.toolchain.mixed-root",
     "objc3c.negative.toolchain.mismatched-version",
@@ -358,6 +364,41 @@ def _records_by_field(owner_id: str, rows: Any, field_name: str) -> dict[str, di
     return by_id
 
 
+def _platform_identity_contract(platform_id: str, owner_id: str) -> dict[str, object]:
+    identity = PLATFORM_IDENTITY_CONTRACTS.get(platform_id)
+    expect(identity is not None, f"{owner_id} used unknown platform identity {platform_id}")
+    return identity
+
+
+def _validate_platform_identity_fields(
+    owner_id: str,
+    row: dict[str, Any],
+    *,
+    platform_id: str,
+    require_host_runtime_aliases: bool = False,
+) -> None:
+    identity = _platform_identity_contract(platform_id, owner_id)
+    expect(row.get("host_os") == identity["host_os"], f"{owner_id} host_os drifted from platform identity")
+    expect(row.get("host_arch") == identity["host_arch"], f"{owner_id} host_arch drifted from platform identity")
+    expect(
+        tuple(str(item) for item in row.get("host_triples", [])) == tuple(identity["host_triples"]),
+        f"{owner_id} host_triples drifted from platform identity",
+    )
+    if not require_host_runtime_aliases:
+        return
+
+    host_systems = {str(item) for item in identity["host_systems"]}
+    host_machines = {str(item) for item in identity["host_machines"]}
+    expect(
+        str(row.get("host_system", "")).lower() in host_systems,
+        f"{owner_id} host_system drifted from platform identity",
+    )
+    expect(
+        str(row.get("host_machine", "")).lower() in host_machines,
+        f"{owner_id} host_machine drifted from platform identity",
+    )
+
+
 def _evidence_ids_are_supporting(
     evidence_ids: Iterable[Any],
     *,
@@ -401,6 +442,12 @@ def _validate_host_identity_records(
         platform_id = str(identity.get("platform_id", ""))
         row = support_rows.get(platform_id)
         expect(row is not None, f"{record_id} host identity used unknown platform {platform_id}")
+        _validate_platform_identity_fields(
+            record_id,
+            identity,
+            platform_id=platform_id,
+            require_host_runtime_aliases=True,
+        )
         expect(identity.get("host_os") == row.get("host_os"), f"{record_id} host_os drifted from support row")
         expect(identity.get("host_arch") == row.get("host_arch"), f"{record_id} host_arch drifted from support row")
         expect(identity.get("host_triples") == row.get("host_triples"), f"{record_id} host triples drifted from support row")
@@ -664,10 +711,25 @@ def _validate_host_evidence_architecture(
     expect(contract.get("promotion_policy") == "real-host-execution-required", "host evidence promotion policy drifted")
     expect(contract.get("source_only_or_hosted_summary_result") == "fail-closed-no-support-promotion", "host evidence source-only behavior drifted")
     expect(contract.get("native_execution_required_for_support") is True, "host evidence did not require native execution")
+    support_row_platform_ids = {
+        str(row.get("platform_id", ""))
+        for row in payload.get("support_rows", [])
+        if isinstance(row, dict) and row.get("platform_id")
+    }
+    unsupported_platform_ids = support_row_platform_ids - boundary_supported_platform_ids
     expect(
         set(str(platform_id) for platform_id in contract.get("supported_platform_ids", []))
         == boundary_supported_platform_ids,
         "host evidence supported platform boundary drifted",
+    )
+    expect(
+        set(str(platform_id) for platform_id in contract.get("unsupported_platform_ids", []))
+        == unsupported_platform_ids,
+        "host evidence unsupported platform boundary drifted",
+    )
+    expect(
+        set(UNSUPPORTED_PROMOTION_PLATFORM_IDS) <= unsupported_platform_ids,
+        "host evidence contract lost Linux/macOS fail-closed promotion candidates",
     )
     expect(
         set(REQUIRED_HOST_EVIDENCE_SECTIONS) <= {str(section) for section in contract.get("source_sections", [])},
@@ -2187,6 +2249,11 @@ def validate_platform_toolchain_support_evidence(
         expect(isinstance(row, dict), "platform support row must be an object")
         platform_id = str(row["platform_id"])
         support_state = str(row["support_state"])
+        _validate_platform_identity_fields(
+            f"{platform_id} support row",
+            row,
+            platform_id=platform_id,
+        )
         if support_state == "supported":
             supported_row_ids.append(platform_id)
             expect(platform_id in boundary_supported_ids, f"{platform_id} support row is outside the boundary inventory")
@@ -2306,6 +2373,97 @@ def validate_platform_toolchain_support_evidence(
     )
 
 
+def _record_id_by_platform(
+    rows: Iterable[dict[str, Any]],
+    *,
+    platform_field: str,
+    record_field: str,
+) -> dict[str, str]:
+    return {
+        str(row.get(platform_field)): str(row.get(record_field))
+        for row in rows
+        if row.get(platform_field) and row.get(record_field)
+    }
+
+
+def _build_host_promotion_readiness(payload: dict[str, Any]) -> dict[str, Any]:
+    contract = payload["host_evidence_contract"]
+    support_rows = payload["support_rows"]
+    host_identity_ids = _record_id_by_platform(
+        payload["host_identity_records"],
+        platform_field="platform_id",
+        record_field="record_id",
+    )
+    toolchain_probe_ids = _record_id_by_platform(
+        payload["toolchain_probe_records"],
+        platform_field="platform_id",
+        record_field="record_id",
+    )
+    package_root_ids = _record_id_by_platform(
+        payload["package_root_evidence_records"],
+        platform_field="target_platform_id",
+        record_field="record_id",
+    )
+    native_execution_ids = _record_id_by_platform(
+        payload["native_execution_evidence_records"],
+        platform_field="platform_id",
+        record_field="record_id",
+    )
+    negative_case_ids_by_platform: dict[str, list[str]] = {}
+    for negative_case in payload["negative_host_toolchain_cases"]:
+        for platform_id in negative_case.get("platform_ids", []):
+            negative_case_ids_by_platform.setdefault(str(platform_id), []).append(str(negative_case["case_id"]))
+
+    candidate_record_ids = [
+        str(record_id)
+        for record_id in contract.get("hosted_evidence_ingestion", {}).get("candidate_evidence_record_ids", [])
+    ]
+    readiness_rows: list[dict[str, Any]] = []
+    for row in support_rows:
+        platform_id = str(row["platform_id"])
+        required_missing = [str(item) for item in row.get("required_missing_evidence_classes", [])]
+        generated_only_candidates = [
+            record_id
+            for record_id in candidate_record_ids
+            if f".{platform_id}." in record_id
+        ]
+        promotion_allowed = (
+            row.get("support_state") == "supported"
+            and row.get("claim_class") == "supported"
+            and not required_missing
+        )
+        readiness_rows.append(
+            {
+                "platform_id": platform_id,
+                "support_state": row["support_state"],
+                "promotion_allowed": promotion_allowed,
+                "source_only_or_hosted_summary_result": contract["source_only_or_hosted_summary_result"],
+                "required_source_records": {
+                    "host_identity_record_id": host_identity_ids.get(platform_id, ""),
+                    "toolchain_probe_record_id": toolchain_probe_ids.get(platform_id, ""),
+                    "package_root_record_id": package_root_ids.get(platform_id, ""),
+                    "native_execution_record_id": native_execution_ids.get(platform_id, ""),
+                },
+                "required_missing_evidence_classes": required_missing,
+                "negative_case_ids": sorted(negative_case_ids_by_platform.get(platform_id, [])),
+                "generated_only_candidate_evidence_ids": generated_only_candidates,
+                "generated_only_result": contract["hosted_evidence_ingestion"]["generated_only_result"],
+                "native_execution_required_for_support": contract["native_execution_required_for_support"],
+            }
+        )
+
+    return {
+        "contract_id": "objc3c.platform.host-promotion.readiness.fail-closed.v1",
+        "promotion_policy": contract["promotion_policy"],
+        "supported_platform_ids": contract["supported_platform_ids"],
+        "unsupported_platform_ids": contract["unsupported_platform_ids"],
+        "support_rows_remain_fail_closed_until_reviewed": contract["hosted_evidence_ingestion"][
+            "support_rows_remain_fail_closed_until_reviewed"
+        ],
+        "platforms": readiness_rows,
+    }
+
+
 def build_support_evidence_matrix_sections(payload: dict[str, Any]) -> dict[str, Any]:
     records = payload["evidence_records"]
     expansion_contract = load_platform_expansion_claim_contract()
@@ -2326,6 +2484,7 @@ def build_support_evidence_matrix_sections(payload: dict[str, Any]) -> dict[str,
         "package_root_evidence_records": payload["package_root_evidence_records"],
         "native_execution_evidence_records": payload["native_execution_evidence_records"],
         "negative_host_toolchain_cases": payload["negative_host_toolchain_cases"],
+        "host_promotion_readiness": _build_host_promotion_readiness(payload),
         "toolchain_support": {
             "toolchain_evidence_requirements": payload["toolchain_evidence_requirements"],
             "toolchain_ranges": payload["toolchain_ranges"],

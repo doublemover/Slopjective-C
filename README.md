@@ -259,17 +259,18 @@ rejected rows include:
   envelope. The combined fixture compiles, links, and runs with checked runtime
   evidence, while broad scheduler fairness, Swift ABI mirroring, distributed
   actor networking, and arbitrary macro-host execution remain reserved.
-- Typed throws and value optionals. `throws(E)` is source-admitted as an exact
-  typed effect signature for parser, sema, textual-interface metadata, and the
-  hidden single-payload error-out ABI slice. Broad public typed-error support is
-  still reserved, and malformed typed-throws payloads reject as `O3P182` with no
-  silent erasure to bare `throws`. `Optional<T>` is parser-owned `O3P159`
-  reserved syntax, lowercase `optional<T>` is rejected as `O3C004` rather than
-  an alias, and value optionals only claim the bounded packed runtime ABI for
-  `Optional<i32>`, `Optional<bool>`, and `Optional<id>` handles plus the
-  runtime helper ABI for full-width `i64` payloads. `Optional<i64>` language
-  call/return lowering, nil-to-scalar, nullable-pointer conversion, generalized
-  ABI/lowering, and broad runtime support remain unclaimed.
+- Typed throws and value optionals. `throws(E)` is implemented as a bounded
+  single-payload effect with exact parser/sema/interface identity, private
+  error-out ABI lowering, exact typed catches, policy-backed `id<Error>` bridge
+  catches, runtime-dispatch message-send coverage, and `try?` optionalization.
+  Multi-payload, malformed, unsupported foreign-carrier, async propagation, and
+  silent-erasure paths fail closed. `Optional<T>` is a semantic value-optional
+  carrier with the bounded packed runtime ABI for `Optional<i32>`,
+  `Optional<bool>`, and `Optional<id>` handles plus `Optional<i64>` language
+  call/return lowering through the wide `{has_value,i64}` carrier. Lowercase
+  `optional<T>` is rejected as `O3C004`; nil-to-scalar, nullable-pointer
+  conversion, generalized nested/generic/property/ivar lowering, and broad
+  runtime support remain unclaimed.
 - Generic callable reification. Current support is the erased generic class
   receiver/free-function subset named by the generic callable row; explicit
   `@reify_generics`, Objective-C method type-parameter clauses, C/Objective-C
