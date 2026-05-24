@@ -5,6 +5,12 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any, Iterable
 
+from objc3c_package_channels.model import (
+    RELEASE_PACKAGE_TARGET_PLATFORM_CHOICES,
+    release_package_artifact_identity_for_platform,
+    release_package_layout_for_platform,
+)
+
 from .constants import PLATFORM_IDENTITY_CONTRACTS, UNSUPPORTED_PROMOTION_PLATFORM_IDS
 from .host_evidence_contract import (
     HOST_EVIDENCE_GENERATED_REPORT_RELATIVE_PATHS,
@@ -39,6 +45,7 @@ HOST_PROMOTION_REVIEWED_SOURCE_DURABLE_FIXTURE_PATHS: tuple[str, ...] = (
     HOST_PROMOTION_REVIEWED_SOURCE_INPUT_RELATIVE_PATH,
     HOST_PROMOTION_EVIDENCE_CONTRACT_RELATIVE_PATH,
     "tests/tooling/fixtures/platform_hardening/platform_toolchain_support_evidence.json",
+    "tests/tooling/fixtures/platform_support/source_truth_matrix.json",
 )
 HOST_PROMOTION_EVIDENCE_ACTION = "check-platform-host-promotion-evidence"
 HOST_PROMOTION_VALIDATE_PLATFORM_HARDENING_ACTION = "validate-platform-hardening"
@@ -90,28 +97,11 @@ HOST_PROMOTION_PACKAGE_CHANNEL_COMMON_PAYLOAD_PATHS: tuple[str, ...] = (
     "docs/runbooks/objc3c_packaging_channels.md",
 )
 HOST_PROMOTION_PACKAGE_CHANNEL_LAYOUT_BY_PLATFORM: dict[str, tuple[str, ...]] = {
-    "windows-x64": (
-        HOST_PROMOTION_PACKAGE_CHANNEL_MANIFEST_PATH,
-        "artifacts/bin/objc3c-native.exe",
-        "artifacts/lib/objc3_runtime.lib",
-        *HOST_PROMOTION_PACKAGE_CHANNEL_COMMON_PAYLOAD_PATHS,
-    ),
-    "linux-x64": (
-        HOST_PROMOTION_PACKAGE_CHANNEL_MANIFEST_PATH,
-        "artifacts/bin/objc3c-native",
-        "artifacts/lib/libobjc3-runtime.so",
-        *HOST_PROMOTION_PACKAGE_CHANNEL_COMMON_PAYLOAD_PATHS,
-    ),
-    "darwin-arm64": (
-        HOST_PROMOTION_PACKAGE_CHANNEL_MANIFEST_PATH,
-        "artifacts/bin/objc3c-native",
-        "artifacts/lib/libobjc3-runtime.dylib",
-        *HOST_PROMOTION_PACKAGE_CHANNEL_COMMON_PAYLOAD_PATHS,
-    ),
+    platform_id: tuple(release_package_layout_for_platform(platform_id))
+    for platform_id in RELEASE_PACKAGE_TARGET_PLATFORM_CHOICES
 }
 HOST_PROMOTION_WINDOWS_PACKAGE_CHANNEL_REQUIRED_PATHS: tuple[str, ...] = (
-    "artifacts/bin/objc3c-native.exe",
-    "artifacts/lib/objc3_runtime.lib",
+    *HOST_PROMOTION_PACKAGE_CHANNEL_LAYOUT_BY_PLATFORM["windows-x64"][1:3],
 )
 HOST_PROMOTION_INSTALL_PREFIX_PACKAGE_ROOT_LAYOUT_PATHS: tuple[str, ...] = (
     "bin/objc3-runtime.dll",
@@ -667,6 +657,22 @@ class HostPromotionPlatformContract:
             "promotion_blockers": list(HOST_PROMOTION_FAIL_CLOSED_BLOCKER_CLASSES),
         }
 
+def release_artifact_identity(platform_id: str, *, arch: str) -> HostPromotionArtifactIdentity:
+    identity = release_package_artifact_identity_for_platform(platform_id)
+    return HostPromotionArtifactIdentity(
+        object_format=identity["object_format"],
+        debug_format=identity["debug_format"],
+        target_triple=identity["target_triple"],
+        arch=arch,
+        runtime_library_names=(identity["runtime_library_name"],),
+        loader_policy=(
+            "@rpath, install_name, codesign, and package-root loader behavior"
+            if platform_id.startswith("darwin-")
+            else "ELF rpath, RUNPATH, or package-root loader resolution"
+        ),
+        linker_flags=("-lobjc3-runtime",),
+    )
+
 
 HOST_PROMOTION_PLATFORM_CONTRACTS: tuple[HostPromotionPlatformContract, ...] = (
     HostPromotionPlatformContract(
@@ -682,15 +688,7 @@ HOST_PROMOTION_PLATFORM_CONTRACTS: tuple[HostPromotionPlatformContract, ...] = (
         package_root_layout=(
             HOST_PROMOTION_PACKAGE_CHANNEL_LAYOUT_BY_PLATFORM["linux-x64"]
         ),
-        artifact_identity=HostPromotionArtifactIdentity(
-            object_format="ELF",
-            debug_format="DWARF",
-            target_triple="x86_64-unknown-linux-gnu",
-            arch="x64",
-            runtime_library_names=("libobjc3-runtime.so",),
-            loader_policy="ELF rpath, RUNPATH, or package-root loader resolution",
-            linker_flags=("-lobjc3-runtime",),
-        ),
+        artifact_identity=release_artifact_identity("linux-x64", arch="x64"),
     ),
     HostPromotionPlatformContract(
         platform_id="darwin-arm64",
@@ -705,15 +703,7 @@ HOST_PROMOTION_PLATFORM_CONTRACTS: tuple[HostPromotionPlatformContract, ...] = (
         package_root_layout=(
             HOST_PROMOTION_PACKAGE_CHANNEL_LAYOUT_BY_PLATFORM["darwin-arm64"]
         ),
-        artifact_identity=HostPromotionArtifactIdentity(
-            object_format="Mach-O",
-            debug_format="DWARF/dSYM",
-            target_triple="aarch64-apple-darwin",
-            arch="arm64",
-            runtime_library_names=("libobjc3-runtime.dylib",),
-            loader_policy="@rpath, install_name, codesign, and package-root loader behavior",
-            linker_flags=("-lobjc3-runtime",),
-        ),
+        artifact_identity=release_artifact_identity("darwin-arm64", arch="arm64"),
     ),
 )
 

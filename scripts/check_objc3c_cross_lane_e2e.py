@@ -20,6 +20,7 @@ from objc3c_editor_tooling.input_loading import load_editor_tooling_inputs, run_
 from objc3c_editor_tooling.model import build_editor_tooling_model
 from objc3c_editor_tooling.paths import paths_for_source, resolve_source
 from objc3c_editor_tooling.publication import publish_editor_tooling_surface
+from objc3c_tooling.artifact_identity import current_host_artifact_identity
 from objc3c_tooling.json_io import load_json_object as load_json, write_json_file
 from objc3c_tooling.llvm_discovery import find_llvm_tool_path
 from objc3c_tooling.paths import repo_rel
@@ -147,6 +148,7 @@ RELEASE_CHANNEL_OPERATIONS_MODEL_PATH = (
 )
 
 MANIFEST_CONTRACT_ID = "objc3c.cross_lane_e2e.manifest.v1"
+ARTIFACT_IDENTITY = current_host_artifact_identity()
 EXPECTATION_CONTRACT_ID = "objc3c.cross_lane_e2e.family_expectation.v1"
 WORKSPACE_CONTRACT_ID = "objc3c.cross_lane_e2e.workspace.v1"
 SUMMARY_CONTRACT_ID = "objc3c.cross_lane_e2e.summary.v1"
@@ -275,12 +277,21 @@ def slug_from_family_id(family_id: str) -> str:
 
 def resolve_native_exe() -> Path:
     configured = os.environ.get("OBJC3C_NATIVE_EXECUTABLE")
-    path = Path(configured) if configured else ROOT / "artifacts" / "bin" / "objc3c-native.exe"
+    path = (
+        Path(configured)
+        if configured
+        else ROOT / ARTIFACT_IDENTITY.native_executable_relative_path
+    )
     if not path.is_absolute():
         path = ROOT / path
     if not path.is_file():
         raise RuntimeError(f"runtime status proof requires native compiler at {repo_rel(path)}")
     return path
+
+
+def host_executable_artifact_name(stem: str) -> str:
+    suffix = ".exe" if ARTIFACT_IDENTITY.native_executable_name.endswith(".exe") else ""
+    return f"{stem}{suffix}"
 
 
 def resolve_clangxx() -> str:
@@ -423,7 +434,7 @@ def compile_native_module(
         domain=f"{family_id}.{domain}",
     )
 
-    obj_path = compile_dir / "module.obj"
+    obj_path = compile_dir / ARTIFACT_IDENTITY.module_object_artifact_name
     ll_path = compile_dir / "module.ll"
     import_surface_path = compile_dir / "module.runtime-import-surface.json"
     require_artifact(obj_path, "native object")
@@ -1661,10 +1672,10 @@ def _validate_missing_provider_link_failure(
     compile_dir = ROOT / normalize_path(
         require_nonempty_string(executable_proof.get("compile_dir"), f"{family_id}.compile_dir")
     )
-    obj_path = compile_dir / "module.obj"
+    obj_path = compile_dir / ARTIFACT_IDENTITY.module_object_artifact_name
     require_artifact(obj_path, "text package missing-provider object")
     runtime_library, driver_flags = load_runtime_launch_inputs(compile_dir)
-    missing_provider_exe = artifact_dir / "missing-provider.exe"
+    missing_provider_exe = artifact_dir / host_executable_artifact_name("missing-provider")
     missing_provider_log = artifact_dir / "missing-provider-link.log"
     result = run_checked(
         [

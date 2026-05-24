@@ -83,6 +83,15 @@ PACKAGING_CHANNEL_ACTION_CONTRACTS: tuple[ReleaseGovernanceActionContract, ...] 
         pass_through_args=True,
     ),
     ReleaseGovernanceActionContract(
+        "review-platform-host-evidence",
+        "stage reviewed Linux/macOS host evidence into explicit checked-source promotion proposals",
+        "python:scripts/review_objc3c_platform_host_evidence.py",
+        "packaging-channels",
+        "repo",
+        "hosted platform evidence can update source truth only through explicit reviewed-source application with durable source matrix and host-promotion fixtures",
+        pass_through_args=True,
+    ),
+    ReleaseGovernanceActionContract(
         "check-platform-host-promotion-evidence",
         "validate the Linux/macOS host-promotion evidence contract without support promotion",
         "python:scripts/check_platform_host_promotion_evidence.py",

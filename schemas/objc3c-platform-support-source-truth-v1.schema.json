@@ -657,11 +657,15 @@
         "dispatch_gateway_workflow_paths",
         "runner_labels",
         "ingestion_action",
+        "review_action",
         "host_promotion_contract_check_action",
         "ingestion_helper",
+        "review_helper",
         "generated_report_contract_id",
         "generated_report_root",
         "review_candidate_source_truth_path",
+        "reviewed_source_proposal_path",
+        "review_staging_summary_path",
         "generated_only_result",
         "review_promotion_policy",
         "candidate_evidence_record_ids",
@@ -710,11 +714,17 @@
         "ingestion_action": {
           "const": "ingest-platform-host-evidence"
         },
+        "review_action": {
+          "const": "review-platform-host-evidence"
+        },
         "host_promotion_contract_check_action": {
           "const": "check-platform-host-promotion-evidence"
         },
         "ingestion_helper": {
           "const": "scripts/ingest_objc3c_platform_host_evidence.py"
+        },
+        "review_helper": {
+          "const": "scripts/review_objc3c_platform_host_evidence.py"
         },
         "generated_report_contract_id": {
           "const": "objc3c.platform.hosted-runner.evidence-report.v1"
@@ -724,6 +734,12 @@
         },
         "review_candidate_source_truth_path": {
           "const": "tmp/reports/platform-host-evidence/<platform>/review-candidate-source-truth.json"
+        },
+        "reviewed_source_proposal_path": {
+          "const": "tmp/reports/platform-host-evidence/<platform>/reviewed-source-inputs.proposed.json"
+        },
+        "review_staging_summary_path": {
+          "const": "tmp/reports/platform-host-evidence/<platform>/reviewed-source-staging-summary.json"
         },
         "generated_only_result": {
           "const": "refuse-source-truth-promotion"

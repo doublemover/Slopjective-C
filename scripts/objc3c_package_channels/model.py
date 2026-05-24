@@ -8,10 +8,13 @@ from datetime import datetime, timezone
 import hashlib
 import json
 import os
-import platform
 from pathlib import Path
 from typing import Any, Sequence
 
+from objc3c_tooling.artifact_identity import (
+    artifact_identity_for_platform,
+    current_host_platform_id,
+)
 from objc3c_tooling.paths import repo_rel
 
 from .sanitizer_contracts import (
@@ -37,14 +40,6 @@ INSTALL_RECEIPT_PATH = "objc3c-install-receipt.json"
 INSTALL_COMMAND = "npm run objc3c -- build-package-channels"
 INSTALL_BOOTSTRAP_ENTRYPOINT = "Bootstrap-objc3cEnvironment.ps1"
 DEFAULT_TARGET_PLATFORM_ID = "windows-x64"
-REQUIRED_PAYLOAD_ENTRIES = [
-    MANIFEST_RELATIVE_PATH,
-    "artifacts/bin/objc3c-native.exe",
-    "artifacts/lib/objc3_runtime.lib",
-    "stdlib/workspace.json",
-    "stdlib/modules/objc3.core/module.json",
-    "docs/runbooks/objc3c_packaging_channels.md",
-]
 ARCHIVE_DIGEST_FIELDS = {
     "portable_archive": "portable-archive",
     "installer_archive": "local-installer",
@@ -87,68 +82,59 @@ REQUIRED_RECEIPT_FIELDS = [
     "installed_at_utc",
 ]
 SANITIZER_REQUIRED_RECEIPT_FIELDS = [*REQUIRED_RECEIPT_FIELDS, "sanitizer_package_variant"]
+RELEASE_PACKAGE_TARGET_PLATFORM_CHOICES = ("windows-x64", "linux-x64", "darwin-arm64")
+
+
+def require_release_package_target_platform(platform_id: str) -> None:
+    if platform_id not in RELEASE_PACKAGE_TARGET_PLATFORM_CHOICES:
+        raise RuntimeError(
+            f"unsupported package-channel target platform: {platform_id}"
+        )
+
+
+def release_package_artifact_identity_payload(platform_id: str) -> dict[str, str]:
+    require_release_package_target_platform(platform_id)
+    identity = artifact_identity_for_platform(platform_id)
+    return {
+        "target_triple": identity.target_triple,
+        "object_format": identity.object_format,
+        "debug_format": identity.debug_format,
+        "runtime_library_kind": identity.runtime_library_kind,
+        "native_executable": identity.native_executable_relative_path,
+        "runtime_library": identity.runtime_library_relative_path,
+        "runtime_library_name": identity.runtime_library_name,
+    }
+
+
+def release_package_layout_for_platform(platform_id: str) -> list[str]:
+    require_release_package_target_platform(platform_id)
+    identity = artifact_identity_for_platform(platform_id)
+    return [
+        MANIFEST_RELATIVE_PATH,
+        identity.native_executable_relative_path,
+        identity.runtime_library_relative_path,
+        "stdlib/workspace.json",
+        "stdlib/modules/objc3.core/module.json",
+        "docs/runbooks/objc3c_packaging_channels.md",
+    ]
+
+
 RELEASE_RUNTIME_LIBRARY_NAMES_BY_PLATFORM = {
-    "windows-x64": ["objc3_runtime.lib"],
-    "linux-x64": ["libobjc3-runtime.so"],
-    "darwin-arm64": ["libobjc3-runtime.dylib"],
+    platform_id: [artifact_identity_for_platform(platform_id).runtime_library_name]
+    for platform_id in RELEASE_PACKAGE_TARGET_PLATFORM_CHOICES
 }
 RELEASE_PACKAGE_ARTIFACT_IDENTITY_BY_PLATFORM = {
-    "windows-x64": {
-        "target_triple": "x86_64-pc-windows-msvc",
-        "object_format": "COFF",
-        "debug_format": "CodeView/PDB",
-        "runtime_library_kind": "static-archive",
-        "native_executable": "artifacts/bin/objc3c-native.exe",
-        "runtime_library": "artifacts/lib/objc3_runtime.lib",
-        "runtime_library_name": "objc3_runtime.lib",
-    },
-    "linux-x64": {
-        "target_triple": "x86_64-unknown-linux-gnu",
-        "object_format": "ELF",
-        "debug_format": "DWARF",
-        "runtime_library_kind": "shared-library",
-        "native_executable": "artifacts/bin/objc3c-native",
-        "runtime_library": "artifacts/lib/libobjc3-runtime.so",
-        "runtime_library_name": "libobjc3-runtime.so",
-    },
-    "darwin-arm64": {
-        "target_triple": "aarch64-apple-darwin",
-        "object_format": "Mach-O",
-        "debug_format": "DWARF/dSYM",
-        "runtime_library_kind": "shared-library",
-        "native_executable": "artifacts/bin/objc3c-native",
-        "runtime_library": "artifacts/lib/libobjc3-runtime.dylib",
-        "runtime_library_name": "libobjc3-runtime.dylib",
-    },
+    platform_id: release_package_artifact_identity_payload(platform_id)
+    for platform_id in RELEASE_PACKAGE_TARGET_PLATFORM_CHOICES
 }
 RELEASE_PACKAGE_LAYOUT_BY_PLATFORM = {
-    "windows-x64": [
-        MANIFEST_RELATIVE_PATH,
-        "artifacts/bin/objc3c-native.exe",
-        "artifacts/lib/objc3_runtime.lib",
-        "stdlib/workspace.json",
-        "stdlib/modules/objc3.core/module.json",
-        "docs/runbooks/objc3c_packaging_channels.md",
-    ],
-    "linux-x64": [
-        MANIFEST_RELATIVE_PATH,
-        "artifacts/bin/objc3c-native",
-        "artifacts/lib/libobjc3-runtime.so",
-        "stdlib/workspace.json",
-        "stdlib/modules/objc3.core/module.json",
-        "docs/runbooks/objc3c_packaging_channels.md",
-    ],
-    "darwin-arm64": [
-        MANIFEST_RELATIVE_PATH,
-        "artifacts/bin/objc3c-native",
-        "artifacts/lib/libobjc3-runtime.dylib",
-        "stdlib/workspace.json",
-        "stdlib/modules/objc3.core/module.json",
-        "docs/runbooks/objc3c_packaging_channels.md",
-    ],
+    platform_id: release_package_layout_for_platform(platform_id)
+    for platform_id in RELEASE_PACKAGE_TARGET_PLATFORM_CHOICES
 }
-RELEASE_PACKAGE_TARGET_PLATFORM_CHOICES = tuple(RELEASE_PACKAGE_LAYOUT_BY_PLATFORM)
 RELEASE_PACKAGE_TARGET_PLATFORM_IDS = frozenset(RELEASE_PACKAGE_TARGET_PLATFORM_CHOICES)
+REQUIRED_PAYLOAD_ENTRIES = list(
+    RELEASE_PACKAGE_LAYOUT_BY_PLATFORM[DEFAULT_TARGET_PLATFORM_ID]
+)
 
 
 @dataclass(frozen=True)
@@ -234,14 +220,9 @@ def detected_host_target_platform_id() -> str:
     )
     if configured in RELEASE_PACKAGE_TARGET_PLATFORM_IDS:
         return configured
-    system = platform.system().lower()
-    machine = platform.machine().lower()
-    if system == "windows" and machine in {"amd64", "x86_64"}:
-        return "windows-x64"
-    if system == "linux" and machine in {"amd64", "x86_64"}:
-        return "linux-x64"
-    if system == "darwin" and machine in {"arm64", "aarch64"}:
-        return "darwin-arm64"
+    host_platform_id = current_host_platform_id()
+    if host_platform_id in RELEASE_PACKAGE_TARGET_PLATFORM_IDS:
+        return host_platform_id
     return DEFAULT_TARGET_PLATFORM_ID
 
 

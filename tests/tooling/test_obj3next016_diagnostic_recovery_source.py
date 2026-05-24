@@ -4,12 +4,15 @@ import json
 import subprocess
 from pathlib import Path
 
+from scripts.objc3c_tooling.artifact_identity import current_host_artifact_identity
+
 
 ROOT = Path(__file__).resolve().parents[2]
+ARTIFACT_IDENTITY = current_host_artifact_identity()
 PARSE = ROOT / "native" / "objc3c" / "src" / "parse"
 SEMA = ROOT / "native" / "objc3c" / "src" / "sema"
 FIXTURES = ROOT / "tests" / "tooling" / "fixtures" / "native" / "recovery"
-NATIVE_EXE = ROOT / "artifacts" / "bin" / "objc3c-native.exe"
+NATIVE_EXE = ROOT / ARTIFACT_IDENTITY.native_executable_relative_path
 
 
 def read(path: Path) -> str:

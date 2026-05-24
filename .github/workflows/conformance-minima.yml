@@ -21,6 +21,7 @@ on:
       - "scripts/check_conformance_suite.ps1"
       - "scripts/check_objc3c_cross_lane_e2e.py"
       - "scripts/install_objc3c_ci_llvm.ps1"
+      - "scripts/install_objc3c_ci_llvm_linux.sh"
       - "scripts/probe_objc3c_llvm_capabilities.py"
       - "scripts/objc3c_llvm_capability_probe/**"
       - "scripts/objc3c_workflow/action_catalog_core_capabilities.py"
@@ -41,6 +42,7 @@ on:
       - "scripts/check_conformance_suite.ps1"
       - "scripts/check_objc3c_cross_lane_e2e.py"
       - "scripts/install_objc3c_ci_llvm.ps1"
+      - "scripts/install_objc3c_ci_llvm_linux.sh"
       - "scripts/probe_objc3c_llvm_capabilities.py"
       - "scripts/objc3c_llvm_capability_probe/**"
       - "scripts/objc3c_workflow/action_catalog_core_capabilities.py"
@@ -137,18 +139,7 @@ jobs:
       - name: Install host toolchain prerequisites
         id: toolchain
         continue-on-error: true
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y clang lld llvm llvm-dev libclang-dev cmake ninja-build
-          llvm_root="$(llvm-config --prefix 2>/dev/null || true)"
-          if [ -n "$llvm_root" ]; then
-            echo "$llvm_root/bin" >> "$GITHUB_PATH"
-            echo "LLVM_ROOT=$llvm_root" >> "$GITHUB_ENV"
-            echo "OBJC3C_LLVM_ROOT=$llvm_root" >> "$GITHUB_ENV"
-            echo "LLVM_DIR=$llvm_root/lib/cmake/llvm" >> "$GITHUB_ENV"
-            echo "OBJC3C_NATIVE_EXECUTION_CLANG_PATH=$llvm_root/bin/clang++" >> "$GITHUB_ENV"
-            echo "OBJC3C_NATIVE_EXECUTION_LLC_PATH=$llvm_root/bin/llc" >> "$GITHUB_ENV"
-          fi
+        run: bash scripts/install_objc3c_ci_llvm_linux.sh
 
       - name: Install workflow dependencies
         id: deps
@@ -215,6 +206,13 @@ jobs:
           --requirements-out "$OBJC3C_PLATFORM_EVIDENCE_ROOT/promotion-readiness-requirements.json"
           --review-candidate-out "$OBJC3C_PLATFORM_EVIDENCE_ROOT/review-candidate-source-truth.json"
           --summary-out "$OBJC3C_PLATFORM_EVIDENCE_ROOT/ingestion-summary.json"
+
+      - name: Stage reviewed-source host evidence proposal
+        if: always()
+        run: >
+          npm run objc3c -- review-platform-host-evidence --
+          --platform-id "$OBJC3C_PLATFORM_ID"
+          --output "$OBJC3C_PLATFORM_EVIDENCE_ROOT/reviewed-source-inputs.proposed.json"
 
       - name: Upload generated host evidence
         if: always()
@@ -329,6 +327,13 @@ jobs:
           --requirements-out "$OBJC3C_PLATFORM_EVIDENCE_ROOT/promotion-readiness-requirements.json"
           --review-candidate-out "$OBJC3C_PLATFORM_EVIDENCE_ROOT/review-candidate-source-truth.json"
           --summary-out "$OBJC3C_PLATFORM_EVIDENCE_ROOT/ingestion-summary.json"
+
+      - name: Stage reviewed-source host evidence proposal
+        if: always()
+        run: >
+          npm run objc3c -- review-platform-host-evidence --
+          --platform-id "$OBJC3C_PLATFORM_ID"
+          --output "$OBJC3C_PLATFORM_EVIDENCE_ROOT/reviewed-source-inputs.proposed.json"
 
       - name: Upload generated host evidence
         if: always()

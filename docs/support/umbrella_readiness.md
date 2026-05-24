@@ -345,7 +345,7 @@ Consumer rule: Umbrella readiness may explain why a reserved umbrella row is blo
 - Current state: `internal`
 - Target state: `implemented`
 - Readiness state: `blocked`
-- Intended public meaning: Objective-C 3.0 platform expansion is complete as a source-owned platform/toolchain/package umbrella only when Linux x64, macOS arm64, and native object emission all have replayable support evidence rather than fail-closed contracts. The ASan and UBSan package variants are already evidence-bound for Windows x64 only through the checked sanitizer runtime promotion gate.
+- Intended public meaning: Objective-C 3.0 platform expansion can become a public platform-support claim only when Linux x64, macOS arm64, and native object emission all have replayable support evidence rather than fail-closed contracts. The current #8206 truth boundary is source-owned and fail-closed: Windows x64 is the only supported projection, Linux/macOS stay rejected, hosted evidence is review-only, and ASan/UBSan package variants are evidence-bound for Windows x64 only through the checked sanitizer runtime promotion gate.
 
 ### Forbidden Overclaims
 
@@ -359,8 +359,8 @@ Consumer rule: Umbrella readiness may explain why a reserved umbrella row is blo
 ### Prerequisite Rows
 
 - `platform.windows-x64.tier1` must be `implemented`: Windows x64 is the only currently supported platform row and must remain evidence-backed.
-- `platform.linux-x64.unsupported` must be `rejected`: Linux x64 remains fail-closed until build, package, install, and native execution evidence exists, and the host-promotion contract refuses generated-only hosted evidence as support truth.
-- `platform.darwin-arm64.unsupported` must be `rejected`: macOS arm64 remains fail-closed until package install, Mach-O/load-path, and native execution evidence exists, and the host-promotion contract refuses generated-only hosted evidence as support truth.
+- `platform.linux-x64.unsupported` must be `rejected`: Linux x64 remains fail-closed until build, package, install, installed-root execution, and native execution evidence exists, and the host-promotion contract refuses generated-only hosted evidence as support truth.
+- `platform.darwin-arm64.unsupported` must be `rejected`: macOS arm64 remains fail-closed until build, package, install, installed-root execution, Mach-O/load-path, and native execution evidence exists, and the host-promotion contract refuses generated-only hosted evidence as support truth.
 - `toolchain.llvm.current-probed-executable` must be `internal`: LLVM and native object emission remain current-probe/internal evidence, not broad LLVM compatibility.
 - `toolchain.sanitizer.address` must be `reserved`: The public capability row remains reserved and claimless, while platform source truth marks ASan package, install, and execution support evidence-bound for Windows x64 through the checked runtime-promotion gate; generated reports remain non-promoting inputs and unsupported hosts remain fail-closed.
 - `toolchain.sanitizer.undefined` must be `reserved`: The public capability row remains reserved and claimless, while platform source truth marks UBSan package, install, trap/recover metadata, expected detection, and execution support evidence-bound for Windows x64 through the checked runtime-promotion gate; generated reports remain non-promoting inputs and unsupported hosts remain fail-closed.
@@ -375,6 +375,9 @@ Consumer rule: Umbrella readiness may explain why a reserved umbrella row is blo
 - `satisfied` Unsupported host policy includes native-object-emission-unavailable as a fail-closed hard-fail class. (path: `tests/tooling/fixtures/platform_hardening/unsupported_host_fail_closed_policy.json`)
 - `satisfied` The Linux/macOS host-promotion contract requires build/package/install/execution gates, records generated hosted evidence as required but support_truth=false, and allows future support only after reviewed source-truth rows clear all blockers. (path: `tests/tooling/fixtures/platform_hardening/platform_host_promotion_evidence_contract.json`)
 - `satisfied` The host-promotion checker owns the deterministic fail-closed model for generated-only evidence, package/install/native-execution gaps, wrong object/debug identity, runtime load failure, and sanitizer leakage across Linux and macOS rows. (path: `scripts/check_platform_host_promotion_evidence.py`)
+- `satisfied` Hosted evidence ingestion materializes generated Linux/macOS build, package, install, execution, capability, and review-candidate reports as non-promoting review inputs, including fail-closed placeholders when required producer artifacts are absent. (path: `scripts/ingest_objc3c_platform_host_evidence.py`)
+- `satisfied` Hosted evidence review stages checked-source proposals and staging summaries from complete generated evidence, but does not promote platform support without an explicit reviewed-source application. (path: `scripts/review_objc3c_platform_host_evidence.py`)
+- `satisfied` Reviewed source input fixtures define the durable Linux/macOS promotion row shape that generated hosted evidence must satisfy before support truth can change. (path: `tests/tooling/fixtures/platform_hardening/host_promotion_reviewed_source_inputs.json`)
 - `satisfied` LLVM capability reports publish supported, missing-llc, missing-filetype, mixed-root, mismatched-version, unsupported-version, unresolved-version, and no-clang-fallback policy fields. (path: `scripts/objc3c_llvm_capability_probe/reports.py`)
 - `satisfied` Evidence-bound ASan and UBSan package staging is anchored in clean-room runnable package staging, explicit sanitizer runtime discovery, copied runtime-library payloads, metadata emission, runtime-library digest manifests, and fail-closed missing-runtime behavior. (path: `scripts/package_objc3c_runnable_toolchain/staging_orchestration.psm1`)
 - `satisfied` Runnable package artifact reporting records sanitizer package ids, channel ids, metadata paths, runtime library manifests, compiler/linker flags, environment metadata, support_truth=false, and native_execution_claimed=false without support promotion. (path: `scripts/package_objc3c_runnable_toolchain/artifact_report_foundation.psm1`)
@@ -397,6 +400,7 @@ Consumer rule: Umbrella readiness may explain why a reserved umbrella row is blo
 
 - `satisfied` Platform support matrix replay remains the public path for projecting the source-owned platform boundary. (command: `npm run objc3c -- build-platform-support-matrix`)
 - `satisfied` Hosted Linux/macOS evidence ingestion is public and non-promoting; generated reports and review-candidate-source-truth.json remain review inputs until checked source truth is promoted. (command: `npm run objc3c -- ingest-platform-host-evidence`)
+- `satisfied` Hosted Linux/macOS evidence review stages reviewed-source proposals and staging summaries from complete generated evidence while preserving the fail-closed boundary until reviewed source truth is explicitly applied. (command: `npm run objc3c -- review-platform-host-evidence`)
 - `satisfied` The direct host-promotion evidence check replays the Linux/macOS fail-closed contract and rejects generated-only support truth. (command: `npm run objc3c -- check-platform-host-promotion-evidence`)
 - `blocked` Full platform hardening validation remains blocked for umbrella promotion until Linux, macOS, and native object emission evidence are promoted. (command: `npm run objc3c -- validate-platform-hardening`; blocker_id: `platform-expansion-prerequisites`)
 - `satisfied` ASan runnable package action exists for package metadata and payload staging; support promotion is checked by the sanitizer runtime promotion gate. (command: `npm run objc3c -- package-runnable-toolchain-asan`)
@@ -446,7 +450,7 @@ Consumer rule: Umbrella readiness may explain why a reserved umbrella row is blo
 ### Generated Output Boundary
 
 - Source truth allowed: `false`
-- Rule: Generated outputs may summarize checked source, fixtures, and support rows, but cannot satisfy #8206 platform expansion readiness or promote unsupported host, sanitizer, or native object emission support by themselves.
+- Rule: Generated outputs may summarize checked source, fixtures, and support rows, but cannot satisfy public platform promotion or promote unsupported host, sanitizer, or native object emission support by themselves.
 - Unsupported sources:
   - temp/
   - tmp/
@@ -459,10 +463,10 @@ Consumer rule: Umbrella readiness may explain why a reserved umbrella row is blo
 
 - `linux-x64-native-evidence`: Linux x64 remains unsupported.
   - Linux x64 build evidence through the public workflow path.
-  - Linux x64 package and install evidence.
+  - Linux x64 package, install, and installed-root execution evidence.
   - Linux x64 native execution evidence with runtime library availability.
 - `darwin-arm64-native-evidence`: macOS arm64 remains unsupported.
-  - macOS arm64 package and install evidence.
+  - macOS arm64 package, install, and installed-root execution evidence.
   - Mach-O and load-path evidence.
   - macOS arm64 native execution evidence.
 - `native-object-emission-promotion`: Native object emission is fail-closed unless llc --filetype=obj emits a non-empty object for the target triple and is routed without a clang substitute route.
@@ -475,8 +479,8 @@ Consumer rule: Umbrella readiness may explain why a reserved umbrella row is blo
 
 ### Final Promotion Criteria
 
-- The platform.expansion.umbrella-readiness matrix row changes to implemented.
-- Linux x64 and macOS arm64 platform rows are implemented with build, package, install, and native execution evidence.
+- The platform.expansion.umbrella-readiness matrix row changes to implemented for a public platform-support claim.
+- Linux x64 and macOS arm64 platform rows are implemented with build, package, install, installed-root execution, and native execution evidence.
 - ASan and UBSan package variants remain Windows x64 evidence-bound with runtime package, install, native execution evidence, expected sanitizer detection, computed digest agreement, fail-closed negative cases, and the source-owned runtime-promotion gate.
 - Native object emission succeeds only through llc --filetype=obj with non-empty target object output and no clang substitute success path exists.
 - All platform source, fixture, capability, evidence, README, and runbook docs agree on the same support boundary.

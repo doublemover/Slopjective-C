@@ -4,9 +4,10 @@ from __future__ import annotations
 
 import json
 import os
-import platform
 from pathlib import Path
 import sys
+
+from objc3c_tooling.artifact_identity import current_host_artifact_identity
 
 from ..commands import pwsh_file, run
 from .hosted_llvm_summary import (
@@ -36,96 +37,45 @@ NATIVE_EXECUTION_SMOKE_ARTIFACT_ROOT = (
 )
 
 
-def native_execution_host_architecture() -> str:
-    machine = platform.machine().lower()
-    if machine in {"amd64", "x86_64", "x64"}:
-        return "x64"
-    if machine in {"arm64", "aarch64"}:
-        return "arm64"
-    return machine or "unknown"
-
-
 def native_execution_platform_model() -> dict[str, object]:
-    system = platform.system().lower()
-    arch = native_execution_host_architecture()
-    if system == "windows":
-        platform_id = f"windows-{arch}"
-        runtime_library_name = "objc3_runtime.lib"
-        object_file_extension = ".obj"
-        native_executable_name = "objc3c-native.exe"
-        runtime_library_kind = "static-archive"
-        object_format = "COFF"
-        debug_format = "CodeView/PDB"
+    artifact_identity = current_host_artifact_identity()
+    platform_id = artifact_identity.platform_id
+    if platform_id.startswith("windows-"):
         loader_path_policy = "PATH-owned loader resolution for supported Windows package roots"
         runtime_load_environment_variable = ""
-    elif system == "darwin":
-        platform_id = f"darwin-{arch}"
-        runtime_library_name = "libobjc3-runtime.dylib"
-        object_file_extension = ".o"
-        native_executable_name = "objc3c-native"
-        runtime_library_kind = "shared-library"
-        object_format = "Mach-O"
-        debug_format = "DWARF/dSYM"
+    elif platform_id.startswith("darwin-"):
         loader_path_policy = (
             "@rpath, install_name, codesign, and package-root loader behavior "
             "must be proven before support"
         )
         runtime_load_environment_variable = "DYLD_LIBRARY_PATH"
-    elif system == "linux":
-        platform_id = f"linux-{arch}"
-        runtime_library_name = "libobjc3-runtime.so"
-        object_file_extension = ".o"
-        native_executable_name = "objc3c-native"
-        runtime_library_kind = "shared-library"
-        object_format = "ELF"
-        debug_format = "DWARF"
+    elif platform_id.startswith("linux-"):
         loader_path_policy = (
             "ELF rpath, RUNPATH, or package-root loader resolution must be "
             "proven before support"
         )
         runtime_load_environment_variable = "LD_LIBRARY_PATH"
     else:
-        platform_id = f"unknown-{arch}"
-        runtime_library_name = "libobjc3-runtime.so"
-        object_file_extension = ".o"
-        native_executable_name = "objc3c-native"
-        runtime_library_kind = "shared-library"
-        object_format = "unknown"
-        debug_format = "unknown"
         loader_path_policy = "unsupported host loader behavior must fail closed"
         runtime_load_environment_variable = ""
 
     supported_platform_ids = ["windows-x64"] if platform_id == "windows-x64" else []
-    host_promotion_state = (
-        "supported-boundary"
-        if platform_id == "windows-x64"
-        else "fail-closed-until-native-host-evidence"
-        if platform_id in {"linux-x64", "darwin-arm64"}
-        else "unsupported-host"
-    )
-    target_triple = {
-        "windows-x64": "x86_64-pc-windows-msvc",
-        "linux-x64": "x86_64-unknown-linux-gnu",
-        "darwin-arm64": "aarch64-apple-darwin",
-        "darwin-x64": "x86_64-apple-darwin",
-    }.get(platform_id, platform_id)
-    shared_runtime = runtime_library_kind == "shared-library"
+    shared_runtime = artifact_identity.runtime_library_kind == "shared-library"
     runtime_load_path = ["artifacts/lib"] if shared_runtime else []
-    runtime_library_relative_path = f"artifacts/lib/{runtime_library_name}"
 
     return {
         "platform_id": platform_id,
         "platform_ids": supported_platform_ids,
-        "host_promotion_state": host_promotion_state,
-        "target_triple": target_triple,
-        "native_executable": f"artifacts/bin/{native_executable_name}",
-        "object_artifact": f"module{object_file_extension}",
-        "object_file_extension": object_file_extension,
-        "object_format": object_format,
-        "debug_format": debug_format,
-        "runtime_library_relative_path": runtime_library_relative_path,
-        "runtime_library_kind": runtime_library_kind,
-        "runtime_library_names": [runtime_library_name],
+        "host_promotion_state": artifact_identity.host_promotion_state,
+        "target_triple": artifact_identity.target_triple,
+        "native_executable": artifact_identity.native_executable_relative_path,
+        "object_artifact": artifact_identity.module_object_artifact_name,
+        "object_file_extension": artifact_identity.object_file_extension,
+        "object_format": artifact_identity.object_format,
+        "debug_format": artifact_identity.debug_format,
+        "runtime_library_relative_path": artifact_identity.runtime_library_relative_path,
+        "runtime_library_kind": artifact_identity.runtime_library_kind,
+        "runtime_library_names": [artifact_identity.runtime_library_name],
         "shared_runtime": shared_runtime,
         "runtime_load_path": runtime_load_path,
         "runtime_load_environment_variable": runtime_load_environment_variable,

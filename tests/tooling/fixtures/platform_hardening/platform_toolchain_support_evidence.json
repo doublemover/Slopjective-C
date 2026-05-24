@@ -65,8 +65,10 @@
         "darwin-arm64": "macos-15"
       },
       "ingestion_action": "ingest-platform-host-evidence",
+      "review_action": "review-platform-host-evidence",
       "host_promotion_contract_check_action": "check-platform-host-promotion-evidence",
       "ingestion_helper": "scripts/ingest_objc3c_platform_host_evidence.py",
+      "review_helper": "scripts/review_objc3c_platform_host_evidence.py",
       "generated_report_contract_id": "objc3c.platform.hosted-runner.evidence-report.v1",
       "generated_report_root": "tmp/reports/platform-host-evidence",
       "generated_only_result": "refuse-source-truth-promotion",
@@ -77,7 +79,9 @@
       ],
       "reviewed_source_truth_required": true,
       "support_rows_remain_fail_closed_until_reviewed": true,
-      "review_candidate_source_truth_path": "tmp/reports/platform-host-evidence/<platform>/review-candidate-source-truth.json"
+      "review_candidate_source_truth_path": "tmp/reports/platform-host-evidence/<platform>/review-candidate-source-truth.json",
+      "reviewed_source_proposal_path": "tmp/reports/platform-host-evidence/<platform>/reviewed-source-inputs.proposed.json",
+      "review_staging_summary_path": "tmp/reports/platform-host-evidence/<platform>/reviewed-source-staging-summary.json"
     },
     "required_promotion_evidence_classes": [
       "build",
@@ -859,10 +863,9 @@
         "windows-x64"
       ],
       "object_format": "COFF",
-      "debug_format": "PDB",
+      "debug_format": "CodeView/PDB",
       "runtime_library_names": [
-        "objc3-runtime.lib",
-        "objc3-runtime.dll"
+        "objc3_runtime.lib"
       ],
       "package_root_layout": [
         "artifacts/package/objc3c-runnable-toolchain-package.json",
@@ -959,11 +962,10 @@
       ],
       "required_artifact_formats": {
         "object_format": "COFF",
-        "debug_format": "PDB"
+        "debug_format": "CodeView/PDB"
       },
       "runtime_library_names": [
-        "objc3-runtime.lib",
-        "objc3-runtime.dll"
+        "objc3_runtime.lib"
       ],
       "package_root_layout": [
         "artifacts/package/objc3c-runnable-toolchain-package.json",
@@ -1794,10 +1796,9 @@
       "artifact_identity_contract": {
         "archive_name_suffix": "windows-x64-release",
         "object_format": "COFF",
-        "debug_format": "PDB",
+        "debug_format": "CodeView/PDB",
         "runtime_library_names": [
-          "objc3-runtime.lib",
-          "objc3-runtime.dll"
+          "objc3_runtime.lib"
         ],
         "loader_path_policy": "package bin directory and PATH-owned loader resolution are captured by install and native execution evidence",
         "package_root_layout": [
@@ -2979,18 +2980,22 @@
         ".github/workflows/platform-host-evidence.yml",
         ".github/workflows/conformance-minima.yml",
         "scripts/ingest_objc3c_platform_host_evidence.py",
+        "scripts/review_objc3c_platform_host_evidence.py",
         "scripts/objc3c_workflow/actions/test_orchestration_native.py",
         "tests/tooling/fixtures/platform_hardening/platform_toolchain_support_evidence.json",
         "tests/tooling/fixtures/platform_support/source_truth_matrix.json"
       ],
       "replay_commands": [
-        "npm run objc3c -- ingest-platform-host-evidence -- --platform-id linux-x64 --runner-label ubuntu-24.04 --report-out tmp/reports/platform-host-evidence/linux-x64/host-evidence-report.json --requirements-out tmp/reports/platform-host-evidence/linux-x64/promotion-readiness-requirements.json --review-candidate-out tmp/reports/platform-host-evidence/linux-x64/review-candidate-source-truth.json --summary-out tmp/reports/platform-host-evidence/linux-x64/ingestion-summary.json"
+        "npm run objc3c -- ingest-platform-host-evidence -- --platform-id linux-x64 --runner-label ubuntu-24.04 --report-out tmp/reports/platform-host-evidence/linux-x64/host-evidence-report.json --requirements-out tmp/reports/platform-host-evidence/linux-x64/promotion-readiness-requirements.json --review-candidate-out tmp/reports/platform-host-evidence/linux-x64/review-candidate-source-truth.json --summary-out tmp/reports/platform-host-evidence/linux-x64/ingestion-summary.json",
+        "npm run objc3c -- review-platform-host-evidence -- --platform-id linux-x64 --output tmp/reports/platform-host-evidence/linux-x64/reviewed-source-inputs.proposed.json"
       ],
       "generated_report_paths": [
         "tmp/reports/platform-host-evidence/linux-x64/host-evidence-report.json",
         "tmp/reports/platform-host-evidence/linux-x64/promotion-readiness-requirements.json",
         "tmp/reports/platform-host-evidence/linux-x64/review-candidate-source-truth.json",
         "tmp/reports/platform-host-evidence/linux-x64/ingestion-summary.json",
+        "tmp/reports/platform-host-evidence/linux-x64/reviewed-source-inputs.proposed.json",
+        "tmp/reports/platform-host-evidence/linux-x64/reviewed-source-staging-summary.json",
         "tmp/reports/platform-host-evidence/linux-x64/llvm-capabilities.json",
         "tmp/reports/platform-host-evidence/linux-x64/build/native_build_summary.json",
         "tmp/reports/platform-host-evidence/linux-x64/build/object-identity.json",
@@ -3021,18 +3026,22 @@
         ".github/workflows/platform-host-evidence.yml",
         ".github/workflows/conformance-minima.yml",
         "scripts/ingest_objc3c_platform_host_evidence.py",
+        "scripts/review_objc3c_platform_host_evidence.py",
         "scripts/objc3c_workflow/actions/test_orchestration_native.py",
         "tests/tooling/fixtures/platform_hardening/platform_toolchain_support_evidence.json",
         "tests/tooling/fixtures/platform_support/source_truth_matrix.json"
       ],
       "replay_commands": [
-        "npm run objc3c -- ingest-platform-host-evidence -- --platform-id darwin-arm64 --runner-label macos-15 --report-out tmp/reports/platform-host-evidence/darwin-arm64/host-evidence-report.json --requirements-out tmp/reports/platform-host-evidence/darwin-arm64/promotion-readiness-requirements.json --review-candidate-out tmp/reports/platform-host-evidence/darwin-arm64/review-candidate-source-truth.json --summary-out tmp/reports/platform-host-evidence/darwin-arm64/ingestion-summary.json"
+        "npm run objc3c -- ingest-platform-host-evidence -- --platform-id darwin-arm64 --runner-label macos-15 --report-out tmp/reports/platform-host-evidence/darwin-arm64/host-evidence-report.json --requirements-out tmp/reports/platform-host-evidence/darwin-arm64/promotion-readiness-requirements.json --review-candidate-out tmp/reports/platform-host-evidence/darwin-arm64/review-candidate-source-truth.json --summary-out tmp/reports/platform-host-evidence/darwin-arm64/ingestion-summary.json",
+        "npm run objc3c -- review-platform-host-evidence -- --platform-id darwin-arm64 --output tmp/reports/platform-host-evidence/darwin-arm64/reviewed-source-inputs.proposed.json"
       ],
       "generated_report_paths": [
         "tmp/reports/platform-host-evidence/darwin-arm64/host-evidence-report.json",
         "tmp/reports/platform-host-evidence/darwin-arm64/promotion-readiness-requirements.json",
         "tmp/reports/platform-host-evidence/darwin-arm64/review-candidate-source-truth.json",
         "tmp/reports/platform-host-evidence/darwin-arm64/ingestion-summary.json",
+        "tmp/reports/platform-host-evidence/darwin-arm64/reviewed-source-inputs.proposed.json",
+        "tmp/reports/platform-host-evidence/darwin-arm64/reviewed-source-staging-summary.json",
         "tmp/reports/platform-host-evidence/darwin-arm64/llvm-capabilities.json",
         "tmp/reports/platform-host-evidence/darwin-arm64/build/native_build_summary.json",
         "tmp/reports/platform-host-evidence/darwin-arm64/build/object-identity.json",

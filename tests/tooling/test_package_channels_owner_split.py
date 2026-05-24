@@ -657,6 +657,48 @@ def test_package_channel_public_action_forwards_release_target_platform_args(
     assert contract.pass_through_args is True
 
 
+def test_platform_host_evidence_review_action_forwards_review_args(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from scripts.objc3c_workflow.actions import (
+        release_governance_packaging_artifacts as packaging_artifacts,
+    )
+    from scripts.objc3c_workflow.actions.release_governance_packaging_contracts import (
+        PACKAGING_CHANNEL_ACTION_CONTRACTS,
+    )
+
+    captured: dict[str, list[str]] = {}
+
+    def fake_run(command: list[str]) -> int:
+        captured["command"] = [str(part) for part in command]
+        return 0
+
+    monkeypatch.setattr(packaging_artifacts, "run", fake_run)
+
+    assert (
+        packaging_artifacts.action_review_platform_host_evidence(
+            ["--", "--platform-id", "linux-x64", "--output", "tmp/review.json"]
+        )
+        == 0
+    )
+
+    assert captured["command"][-4:] == [
+        "--platform-id",
+        "linux-x64",
+        "--output",
+        "tmp/review.json",
+    ]
+    assert "scripts\\review_objc3c_platform_host_evidence.py" in captured["command"][1] or (
+        "scripts/review_objc3c_platform_host_evidence.py" in captured["command"][1]
+    )
+    contract = next(
+        contract
+        for contract in PACKAGING_CHANNEL_ACTION_CONTRACTS
+        if contract.action == "review-platform-host-evidence"
+    )
+    assert contract.pass_through_args is True
+
+
 def test_package_channel_reuse_accepts_checked_release_foundation_artifacts(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,

@@ -41,6 +41,8 @@
   "public_actions": [
     "build-platform-support-matrix",
     "ingest-platform-host-evidence",
+    "review-platform-host-evidence",
+    "check-platform-host-promotion-evidence",
     "validate-platform-hardening",
     "validate-platform-hardening-end-to-end"
   ],

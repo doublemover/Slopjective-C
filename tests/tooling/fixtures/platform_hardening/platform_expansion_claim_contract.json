@@ -313,10 +313,9 @@
       "artifact_identity_contract": {
         "archive_name_suffix": "windows-x64-release",
         "object_format": "COFF",
-        "debug_format": "PDB",
+        "debug_format": "CodeView/PDB",
         "runtime_library_names": [
-          "objc3-runtime.lib",
-          "objc3-runtime.dll"
+          "objc3_runtime.lib"
         ],
         "loader_path_policy": "package bin directory and PATH-owned loader resolution are captured by install and native execution evidence",
         "package_root_layout": [

@@ -1546,12 +1546,13 @@ function Write-Objc3cLinuxInstallReceiptEvidence {
   if ([string]::IsNullOrWhiteSpace($receiptPlatform)) {
     $receiptPlatform = [string](Get-Objc3cEvidenceObjectProperty -InputObject $packageRuntimeModel -Name "target_platform_id" -DefaultValue "")
   }
+  $statusPrefix = if ($darwinEvidenceEnabled) { "DARWIN" } else { "LINUX" }
   $status = if (-not [bool]$digest.exists) {
-    "LINUX_INSTALL_RECEIPT_MISSING"
+    "${statusPrefix}_INSTALL_RECEIPT_MISSING"
   } elseif (-not [string]::IsNullOrWhiteSpace($receiptPlatform) -and $receiptPlatform -ne $PlatformId) {
-    "LINUX_INSTALL_RECEIPT_TARGET_MISMATCH"
+    "${statusPrefix}_INSTALL_RECEIPT_TARGET_MISMATCH"
   } else {
-    "LINUX_INSTALL_RECEIPT_ROUTED"
+    "${statusPrefix}_INSTALL_RECEIPT_ROUTED"
   }
   $sourceSummaryPath = if ([string]::IsNullOrWhiteSpace($SourceSummaryPath)) { "tmp/reports/package-channels/end-to-end-summary.json" } else { $SourceSummaryPath }
   $packageManifestPath = Join-Path $RepoRoot (ConvertTo-Objc3cEvidenceHostPath -RelativePath "artifacts/package/objc3c-runnable-toolchain-package.json")

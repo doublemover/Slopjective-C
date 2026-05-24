@@ -11,14 +11,40 @@ class NativeArtifactIdentity:
     platform_id: str
     host_promotion_state: str
     target_triple: str
+    object_file_extension: str
+    object_format: str
+    debug_format: str
+    runtime_library_kind: str
     native_executable_relative_path: str
     frontend_runner_relative_path: str
     runtime_library_relative_path: str
     runtime_library_name: str
 
     @property
+    def native_executable_name(self) -> str:
+        return self.native_executable_relative_path.rsplit("/", 1)[-1]
+
+    @property
+    def frontend_runner_name(self) -> str:
+        return self.frontend_runner_relative_path.rsplit("/", 1)[-1]
+
+    @property
+    def runtime_library_directory_relative_path(self) -> str:
+        return self.runtime_library_relative_path.rsplit("/", 1)[0]
+
+    @property
     def tampered_runtime_library_relative_path(self) -> str:
-        return f"artifacts/lib/tampered_{self.runtime_library_name}"
+        return (
+            f"{self.runtime_library_directory_relative_path}/"
+            f"tampered_{self.runtime_library_name}"
+        )
+
+    def object_artifact_name(self, stem: str) -> str:
+        return f"{stem}{self.object_file_extension}"
+
+    @property
+    def module_object_artifact_name(self) -> str:
+        return self.object_artifact_name("module")
 
 
 def host_architecture(machine: str | None = None) -> str:
@@ -53,6 +79,10 @@ def artifact_identity_for_platform(platform_id: str) -> NativeArtifactIdentity:
                 else "unsupported-host"
             ),
             target_triple=target_triple,
+            object_file_extension=".obj",
+            object_format="COFF",
+            debug_format="CodeView/PDB",
+            runtime_library_kind="static-archive",
             native_executable_relative_path="artifacts/bin/objc3c-native.exe",
             frontend_runner_relative_path=(
                 "artifacts/bin/objc3c-frontend-c-api-runner.exe"
@@ -75,6 +105,10 @@ def artifact_identity_for_platform(platform_id: str) -> NativeArtifactIdentity:
                 else "unsupported-host"
             ),
             target_triple=target_triple,
+            object_file_extension=".o",
+            object_format="ELF",
+            debug_format="DWARF",
+            runtime_library_kind="shared-library",
             native_executable_relative_path="artifacts/bin/objc3c-native",
             frontend_runner_relative_path="artifacts/bin/objc3c-frontend-c-api-runner",
             runtime_library_relative_path="artifacts/lib/libobjc3-runtime.so",
@@ -95,6 +129,10 @@ def artifact_identity_for_platform(platform_id: str) -> NativeArtifactIdentity:
                 else "unsupported-host"
             ),
             target_triple=target_triple,
+            object_file_extension=".o",
+            object_format="Mach-O",
+            debug_format="DWARF/dSYM",
+            runtime_library_kind="shared-library",
             native_executable_relative_path="artifacts/bin/objc3c-native",
             frontend_runner_relative_path="artifacts/bin/objc3c-frontend-c-api-runner",
             runtime_library_relative_path="artifacts/lib/libobjc3-runtime.dylib",
@@ -105,6 +143,10 @@ def artifact_identity_for_platform(platform_id: str) -> NativeArtifactIdentity:
         platform_id=platform_id,
         host_promotion_state="unsupported-host",
         target_triple=platform_id,
+        object_file_extension=".o",
+        object_format="unknown",
+        debug_format="unknown",
+        runtime_library_kind="shared-library",
         native_executable_relative_path="artifacts/bin/objc3c-native",
         frontend_runner_relative_path="artifacts/bin/objc3c-frontend-c-api-runner",
         runtime_library_relative_path="artifacts/lib/libobjc3-runtime.so",

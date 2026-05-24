@@ -15,6 +15,7 @@ MAINTAINER_PREFIXES: tuple[str, ...] = (
     "ingest-",
     "lint",
     "publish-",
+    "review-",
     "rewrite-",
 )
 

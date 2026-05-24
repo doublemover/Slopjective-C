@@ -4,6 +4,7 @@ from copy import deepcopy
 
 import pytest
 
+import scripts.ingest_objc3c_platform_host_evidence as host_evidence_ingest
 from scripts.check_platform_host_promotion_evidence import (
     REQUIRED_BLOCKER_FAILURE_CLASSES,
     REQUIRED_GATE_CLASSES,
@@ -74,6 +75,7 @@ def _mark_record_as_reviewed_source(
         "tests/tooling/fixtures/platform_hardening/host_promotion_reviewed_source_inputs.json",
         "tests/tooling/fixtures/platform_hardening/platform_host_promotion_evidence_contract.json",
         "tests/tooling/fixtures/platform_hardening/platform_toolchain_support_evidence.json",
+        "tests/tooling/fixtures/platform_support/source_truth_matrix.json",
     ]
     if include_artifacts:
         paths = _platform_artifact_paths(platform_id)
@@ -495,3 +497,72 @@ def test_platform_host_promotion_evidence_rejects_integration_parent_drift() -> 
 
     with pytest.raises(RuntimeError, match="future checker integration parent action drifted"):
         validate_host_promotion_evidence_contract(payload)
+
+
+def test_host_evidence_fail_closed_placeholder_is_not_promotion_ready(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path,
+) -> None:
+    monkeypatch.setattr(host_evidence_ingest, "ROOT", tmp_path)
+    scoped_path = (
+        "tmp/reports/platform-host-evidence/linux-x64/build/native_build_summary.json"
+    )
+
+    artifact = host_evidence_ingest.materialize_generated_artifact(
+        "tmp/build-objc3c-native/native_build_summary.json",
+        scoped_path,
+        platform_id="linux-x64",
+        step_id="build",
+        evidence_class="build",
+        outcome="failure",
+    )
+
+    assert artifact["exists"] is True
+    assert artifact["fail_closed_placeholder"] is True
+    assert artifact["promotion_usable"] is False
+    placeholder = host_evidence_ingest.load_platform_generated_json(
+        "linux-x64",
+        "build/native_build_summary.json",
+    )
+    host_evidence_ingest.require_fail_closed_placeholder(
+        placeholder,
+        platform_id="linux-x64",
+        owner=scoped_path,
+    )
+
+
+def test_host_evidence_review_candidate_rejects_fail_closed_placeholders(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path,
+) -> None:
+    monkeypatch.setattr(host_evidence_ingest, "ROOT", tmp_path)
+    for suffix in (
+        "package/objc3c-runnable-toolchain-package.json",
+        "package/runtime-library-manifest.json",
+    ):
+        host_evidence_ingest.write_fail_closed_placeholder_artifact(
+            platform_id="linux-x64",
+            step_id="package",
+            evidence_class="package",
+            outcome="failure",
+            source_path_text=suffix,
+            scoped_path_text=f"tmp/reports/platform-host-evidence/linux-x64/{suffix}",
+        )
+
+    candidate = host_evidence_ingest.build_review_candidate_source_truth(
+        "linux-x64",
+        workflow_path=".github/workflows/conformance-minima.yml",
+        runner_label="ubuntu-24.04",
+    )
+
+    package_rows = [
+        row
+        for row in candidate["review_candidate_rows"]
+        if row["record_type"] == "package_root"
+    ]
+    assert len(package_rows) == 1
+    assert package_rows[0]["generated_artifacts_complete"] is False
+    assert all(
+        artifact.get("fail_closed_placeholder") is True
+        for artifact in package_rows[0]["generated_artifacts"]
+    )

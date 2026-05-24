@@ -13,7 +13,8 @@
     "required_durable_fixture_paths": [
       "tests/tooling/fixtures/platform_hardening/host_promotion_reviewed_source_inputs.json",
       "tests/tooling/fixtures/platform_hardening/platform_host_promotion_evidence_contract.json",
-      "tests/tooling/fixtures/platform_hardening/platform_toolchain_support_evidence.json"
+      "tests/tooling/fixtures/platform_hardening/platform_toolchain_support_evidence.json",
+      "tests/tooling/fixtures/platform_support/source_truth_matrix.json"
     ],
     "required_hosted_promotion_artifact_suffixes": [
       "host-evidence-report.json",
@@ -80,7 +81,8 @@
       "reviewed_source_paths": [
         "tests/tooling/fixtures/platform_hardening/host_promotion_reviewed_source_inputs.json",
         "tests/tooling/fixtures/platform_hardening/platform_host_promotion_evidence_contract.json",
-        "tests/tooling/fixtures/platform_hardening/platform_toolchain_support_evidence.json"
+        "tests/tooling/fixtures/platform_hardening/platform_toolchain_support_evidence.json",
+        "tests/tooling/fixtures/platform_support/source_truth_matrix.json"
       ],
       "required_record_types_before_promotion_allowed": [
         "host_identity",
@@ -139,7 +141,8 @@
       "reviewed_source_paths": [
         "tests/tooling/fixtures/platform_hardening/host_promotion_reviewed_source_inputs.json",
         "tests/tooling/fixtures/platform_hardening/platform_host_promotion_evidence_contract.json",
-        "tests/tooling/fixtures/platform_hardening/platform_toolchain_support_evidence.json"
+        "tests/tooling/fixtures/platform_hardening/platform_toolchain_support_evidence.json",
+        "tests/tooling/fixtures/platform_support/source_truth_matrix.json"
       ],
       "required_record_types_before_promotion_allowed": [
         "host_identity",

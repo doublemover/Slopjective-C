@@ -107,8 +107,10 @@
         "darwin-arm64": "macos-15"
       },
       "ingestion_action": "ingest-platform-host-evidence",
+      "review_action": "review-platform-host-evidence",
       "host_promotion_contract_check_action": "check-platform-host-promotion-evidence",
       "ingestion_helper": "scripts/ingest_objc3c_platform_host_evidence.py",
+      "review_helper": "scripts/review_objc3c_platform_host_evidence.py",
       "generated_report_contract_id": "objc3c.platform.hosted-runner.evidence-report.v1",
       "generated_report_root": "tmp/reports/platform-host-evidence",
       "generated_only_result": "refuse-source-truth-promotion",
@@ -119,7 +121,9 @@
       ],
       "reviewed_source_truth_required": true,
       "support_rows_remain_fail_closed_until_reviewed": true,
-      "review_candidate_source_truth_path": "tmp/reports/platform-host-evidence/<platform>/review-candidate-source-truth.json"
+      "review_candidate_source_truth_path": "tmp/reports/platform-host-evidence/<platform>/review-candidate-source-truth.json",
+      "reviewed_source_proposal_path": "tmp/reports/platform-host-evidence/<platform>/reviewed-source-inputs.proposed.json",
+      "review_staging_summary_path": "tmp/reports/platform-host-evidence/<platform>/reviewed-source-staging-summary.json"
     },
     "diagnostic": "Host promotion is deterministic only when host identity, coherent toolchain probes, package root identity, object identity, debug identity, package/install identity, runtime load/link proof, and native execution records are all checked in for the platform."
   },
@@ -290,7 +294,8 @@
       },
       "public_replay_commands": [
         "npm run objc3c -- build-platform-support-matrix",
-        "npm run objc3c -- ingest-platform-host-evidence -- --platform-id linux-x64 --runner-label ubuntu-24.04 --report-out tmp/reports/platform-host-evidence/linux-x64/host-evidence-report.json --requirements-out tmp/reports/platform-host-evidence/linux-x64/promotion-readiness-requirements.json --review-candidate-out tmp/reports/platform-host-evidence/linux-x64/review-candidate-source-truth.json --summary-out tmp/reports/platform-host-evidence/linux-x64/ingestion-summary.json"
+        "npm run objc3c -- ingest-platform-host-evidence -- --platform-id linux-x64 --runner-label ubuntu-24.04 --report-out tmp/reports/platform-host-evidence/linux-x64/host-evidence-report.json --requirements-out tmp/reports/platform-host-evidence/linux-x64/promotion-readiness-requirements.json --review-candidate-out tmp/reports/platform-host-evidence/linux-x64/review-candidate-source-truth.json --summary-out tmp/reports/platform-host-evidence/linux-x64/ingestion-summary.json",
+        "npm run objc3c -- review-platform-host-evidence -- --platform-id linux-x64 --output tmp/reports/platform-host-evidence/linux-x64/reviewed-source-inputs.proposed.json"
       ],
       "diagnostic": "Linux x64 remains unsupported; the matrix may inspect it only through fail-closed unsupported-host diagnostics and must not publish support from source-only or tool-presence evidence."
     },
@@ -397,7 +402,8 @@
       },
       "public_replay_commands": [
         "npm run objc3c -- build-platform-support-matrix",
-        "npm run objc3c -- ingest-platform-host-evidence -- --platform-id darwin-arm64 --runner-label macos-15 --report-out tmp/reports/platform-host-evidence/darwin-arm64/host-evidence-report.json --requirements-out tmp/reports/platform-host-evidence/darwin-arm64/promotion-readiness-requirements.json --review-candidate-out tmp/reports/platform-host-evidence/darwin-arm64/review-candidate-source-truth.json --summary-out tmp/reports/platform-host-evidence/darwin-arm64/ingestion-summary.json"
+        "npm run objc3c -- ingest-platform-host-evidence -- --platform-id darwin-arm64 --runner-label macos-15 --report-out tmp/reports/platform-host-evidence/darwin-arm64/host-evidence-report.json --requirements-out tmp/reports/platform-host-evidence/darwin-arm64/promotion-readiness-requirements.json --review-candidate-out tmp/reports/platform-host-evidence/darwin-arm64/review-candidate-source-truth.json --summary-out tmp/reports/platform-host-evidence/darwin-arm64/ingestion-summary.json",
+        "npm run objc3c -- review-platform-host-evidence -- --platform-id darwin-arm64 --output tmp/reports/platform-host-evidence/darwin-arm64/reviewed-source-inputs.proposed.json"
       ],
       "diagnostic": "macOS arm64 remains unsupported; the matrix may inspect it only through fail-closed unsupported-host diagnostics and must not publish support from source-only or tool-presence evidence."
     }
@@ -428,10 +434,9 @@
       "artifact_identity_contract": {
         "archive_name_suffix": "windows-x64-release",
         "object_format": "COFF",
-        "debug_format": "PDB",
+        "debug_format": "CodeView/PDB",
         "runtime_library_names": [
-          "objc3-runtime.lib",
-          "objc3-runtime.dll"
+          "objc3_runtime.lib"
         ],
         "loader_path_policy": "package bin directory and PATH-owned loader resolution are captured by install and native execution evidence",
         "package_root_layout": [

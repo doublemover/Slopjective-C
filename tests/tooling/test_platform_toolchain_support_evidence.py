@@ -6,6 +6,10 @@ from pathlib import Path
 
 import pytest
 
+from scripts.objc3c_package_channels.model import (
+    RELEASE_PACKAGE_TARGET_PLATFORM_CHOICES,
+    release_package_layout_for_platform,
+)
 from scripts.platform_hardening_contracts.report_payloads import build_support_matrix_payload
 from scripts.platform_hardening_contracts.support_evidence import (
     load_hosted_runner_capability_summaries,
@@ -25,30 +29,8 @@ REQUIRED_TOOLCHAIN_COMPONENTS = [
     "pwsh",
 ]
 EXPECTED_RELEASE_PACKAGE_ROOT_LAYOUTS = {
-    "windows-x64": [
-        "artifacts/package/objc3c-runnable-toolchain-package.json",
-        "artifacts/bin/objc3c-native.exe",
-        "artifacts/lib/objc3_runtime.lib",
-        "stdlib/workspace.json",
-        "stdlib/modules/objc3.core/module.json",
-        "docs/runbooks/objc3c_packaging_channels.md",
-    ],
-    "linux-x64": [
-        "artifacts/package/objc3c-runnable-toolchain-package.json",
-        "artifacts/bin/objc3c-native",
-        "artifacts/lib/libobjc3-runtime.so",
-        "stdlib/workspace.json",
-        "stdlib/modules/objc3.core/module.json",
-        "docs/runbooks/objc3c_packaging_channels.md",
-    ],
-    "darwin-arm64": [
-        "artifacts/package/objc3c-runnable-toolchain-package.json",
-        "artifacts/bin/objc3c-native",
-        "artifacts/lib/libobjc3-runtime.dylib",
-        "stdlib/workspace.json",
-        "stdlib/modules/objc3.core/module.json",
-        "docs/runbooks/objc3c_packaging_channels.md",
-    ],
+    platform_id: release_package_layout_for_platform(platform_id)
+    for platform_id in RELEASE_PACKAGE_TARGET_PLATFORM_CHOICES
 }
 INSTALL_PREFIX_PACKAGE_LAYOUT_ROOTS = ("bin/", "lib/", "include/")
 
@@ -106,13 +88,23 @@ def test_platform_toolchain_support_evidence_fixture_validates() -> None:
             "darwin-arm64": "macos-15",
         },
         "ingestion_action": "ingest-platform-host-evidence",
+        "review_action": "review-platform-host-evidence",
         "host_promotion_contract_check_action": "check-platform-host-promotion-evidence",
         "ingestion_helper": "scripts/ingest_objc3c_platform_host_evidence.py",
+        "review_helper": "scripts/review_objc3c_platform_host_evidence.py",
         "generated_report_contract_id": "objc3c.platform.hosted-runner.evidence-report.v1",
         "generated_report_root": "tmp/reports/platform-host-evidence",
         "review_candidate_source_truth_path": (
             "tmp/reports/platform-host-evidence/<platform>/"
             "review-candidate-source-truth.json"
+        ),
+        "reviewed_source_proposal_path": (
+            "tmp/reports/platform-host-evidence/<platform>/"
+            "reviewed-source-inputs.proposed.json"
+        ),
+        "review_staging_summary_path": (
+            "tmp/reports/platform-host-evidence/<platform>/"
+            "reviewed-source-staging-summary.json"
         ),
         "generated_only_result": "refuse-source-truth-promotion",
         "review_promotion_policy": "checked-in-source-truth-required",

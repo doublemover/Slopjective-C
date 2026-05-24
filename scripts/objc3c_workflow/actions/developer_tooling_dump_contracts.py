@@ -5,9 +5,8 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Final
 
-FRONTEND_RUNNER_BACKEND: Final[str] = (
-    "runner-internal + artifacts/bin/objc3c-frontend-c-api-runner.exe"
-)
+from .developer_tooling_llvm_contract_constants import FRONTEND_RUNNER_BACKEND
+
 SUMMARY_OUT_FLAG: Final[str] = "--summary-out"
 DUMP_SUMMARY_JSON_FLAG: Final[str] = "--dump-summary-json"
 OBSERVABILITY_DUMP_FLAG: Final[str] = "--dump-observability-json"

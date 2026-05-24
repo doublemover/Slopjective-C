@@ -904,7 +904,7 @@
       "current_state": "internal",
       "target_state": "implemented",
       "readiness_state": "blocked",
-      "intended_public_meaning": "Objective-C 3.0 platform expansion is complete as a source-owned platform/toolchain/package umbrella only when Linux x64, macOS arm64, and native object emission all have replayable support evidence rather than fail-closed contracts. The ASan and UBSan package variants are already evidence-bound for Windows x64 only through the checked sanitizer runtime promotion gate.",
+      "intended_public_meaning": "Objective-C 3.0 platform expansion can become a public platform-support claim only when Linux x64, macOS arm64, and native object emission all have replayable support evidence rather than fail-closed contracts. The current #8206 truth boundary is source-owned and fail-closed: Windows x64 is the only supported projection, Linux/macOS stay rejected, hosted evidence is review-only, and ASan/UBSan package variants are evidence-bound for Windows x64 only through the checked sanitizer runtime promotion gate.",
       "forbidden_overclaims": [
         "Linux x64 support from source-owned fail-closed rows alone.",
         "macOS arm64 support from source-owned fail-closed rows alone.",
@@ -922,12 +922,12 @@
         {
           "capability_id": "platform.linux-x64.unsupported",
           "required_state": "rejected",
-          "reason": "Linux x64 remains fail-closed until build, package, install, and native execution evidence exists, and the host-promotion contract refuses generated-only hosted evidence as support truth."
+          "reason": "Linux x64 remains fail-closed until build, package, install, installed-root execution, and native execution evidence exists, and the host-promotion contract refuses generated-only hosted evidence as support truth."
         },
         {
           "capability_id": "platform.darwin-arm64.unsupported",
           "required_state": "rejected",
-          "reason": "macOS arm64 remains fail-closed until package install, Mach-O/load-path, and native execution evidence exists, and the host-promotion contract refuses generated-only hosted evidence as support truth."
+          "reason": "macOS arm64 remains fail-closed until build, package, install, installed-root execution, Mach-O/load-path, and native execution evidence exists, and the host-promotion contract refuses generated-only hosted evidence as support truth."
         },
         {
           "capability_id": "toolchain.llvm.current-probed-executable",
@@ -981,6 +981,24 @@
           "description": "The host-promotion checker owns the deterministic fail-closed model for generated-only evidence, package/install/native-execution gaps, wrong object/debug identity, runtime load failure, and sanitizer leakage across Linux and macOS rows.",
           "status": "satisfied",
           "path": "scripts/check_platform_host_promotion_evidence.py"
+        },
+        {
+          "id": "hosted-evidence-ingestion-helper",
+          "description": "Hosted evidence ingestion materializes generated Linux/macOS build, package, install, execution, capability, and review-candidate reports as non-promoting review inputs, including fail-closed placeholders when required producer artifacts are absent.",
+          "status": "satisfied",
+          "path": "scripts/ingest_objc3c_platform_host_evidence.py"
+        },
+        {
+          "id": "hosted-evidence-review-helper",
+          "description": "Hosted evidence review stages checked-source proposals and staging summaries from complete generated evidence, but does not promote platform support without an explicit reviewed-source application.",
+          "status": "satisfied",
+          "path": "scripts/review_objc3c_platform_host_evidence.py"
+        },
+        {
+          "id": "hosted-evidence-reviewed-source-fixture",
+          "description": "Reviewed source input fixtures define the durable Linux/macOS promotion row shape that generated hosted evidence must satisfy before support truth can change.",
+          "status": "satisfied",
+          "path": "tests/tooling/fixtures/platform_hardening/host_promotion_reviewed_source_inputs.json"
         },
         {
           "id": "native-object-emission-reports",
@@ -1097,6 +1115,12 @@
           "description": "Hosted Linux/macOS evidence ingestion is public and non-promoting; generated reports and review-candidate-source-truth.json remain review inputs until checked source truth is promoted.",
           "status": "satisfied",
           "command": "npm run objc3c -- ingest-platform-host-evidence"
+        },
+        {
+          "id": "platform-host-evidence-review",
+          "description": "Hosted Linux/macOS evidence review stages reviewed-source proposals and staging summaries from complete generated evidence while preserving the fail-closed boundary until reviewed source truth is explicitly applied.",
+          "status": "satisfied",
+          "command": "npm run objc3c -- review-platform-host-evidence"
         },
         {
           "id": "platform-host-promotion-evidence-check",
@@ -1302,7 +1326,7 @@
           "PR bodies",
           "unlinked replay reports"
         ],
-        "rule": "Generated outputs may summarize checked source, fixtures, and support rows, but cannot satisfy #8206 platform expansion readiness or promote unsupported host, sanitizer, or native object emission support by themselves."
+        "rule": "Generated outputs may summarize checked source, fixtures, and support rows, but cannot satisfy public platform promotion or promote unsupported host, sanitizer, or native object emission support by themselves."
       },
       "promotion_blockers": [
         {
@@ -1310,7 +1334,7 @@
           "summary": "Linux x64 remains unsupported.",
           "missing_work": [
             "Linux x64 build evidence through the public workflow path.",
-            "Linux x64 package and install evidence.",
+            "Linux x64 package, install, and installed-root execution evidence.",
             "Linux x64 native execution evidence with runtime library availability."
           ],
           "tracking_issue": "#8228"
@@ -1319,7 +1343,7 @@
           "blocker_id": "darwin-arm64-native-evidence",
           "summary": "macOS arm64 remains unsupported.",
           "missing_work": [
-            "macOS arm64 package and install evidence.",
+            "macOS arm64 package, install, and installed-root execution evidence.",
             "Mach-O and load-path evidence.",
             "macOS arm64 native execution evidence."
           ],
@@ -1346,8 +1370,8 @@
         }
       ],
       "final_promotion_criteria": [
-        "The platform.expansion.umbrella-readiness matrix row changes to implemented.",
-        "Linux x64 and macOS arm64 platform rows are implemented with build, package, install, and native execution evidence.",
+        "The platform.expansion.umbrella-readiness matrix row changes to implemented for a public platform-support claim.",
+        "Linux x64 and macOS arm64 platform rows are implemented with build, package, install, installed-root execution, and native execution evidence.",
         "ASan and UBSan package variants remain Windows x64 evidence-bound with runtime package, install, native execution evidence, expected sanitizer detection, computed digest agreement, fail-closed negative cases, and the source-owned runtime-promotion gate.",
         "Native object emission succeeds only through llc --filetype=obj with non-empty target object output and no clang substitute success path exists.",
         "All platform source, fixture, capability, evidence, README, and runbook docs agree on the same support boundary.",

@@ -7,6 +7,11 @@ from pathlib import Path
 from typing import Any, Iterable
 
 from objc3c_shared.json_io import validate_json_schema
+from objc3c_package_channels.model import (
+    RELEASE_PACKAGE_TARGET_PLATFORM_CHOICES,
+    release_package_artifact_identity_for_platform,
+    release_package_layout_for_platform,
+)
 from objc3c_tooling.paths import repo_rel, resolve_repo_path
 
 from .constants import (
@@ -18,6 +23,8 @@ from .contract_predicates import expect
 from .host_evidence_contract import (
     HOST_EVIDENCE_REPORT_ROOT,
     HOST_EVIDENCE_REVIEW_CANDIDATE_SOURCE_TRUTH_PATH_TEMPLATE,
+    HOST_EVIDENCE_REVIEWED_SOURCE_PROPOSAL_PATH_TEMPLATE,
+    HOST_EVIDENCE_REVIEW_STAGING_SUMMARY_PATH_TEMPLATE,
     host_evidence_generated_report_paths_for_platform,
     host_evidence_review_candidate_path_for_platform,
 )
@@ -80,30 +87,8 @@ RELEASE_RUNTIME_PACKAGE_IDS: tuple[str, ...] = (
 )
 INSTALL_PREFIX_PACKAGE_LAYOUT_ROOTS: tuple[str, ...] = ("bin/", "lib/", "include/")
 EXPECTED_RELEASE_PACKAGE_ROOT_LAYOUTS: dict[str, tuple[str, ...]] = {
-    "windows-x64": (
-        "artifacts/package/objc3c-runnable-toolchain-package.json",
-        "artifacts/bin/objc3c-native.exe",
-        "artifacts/lib/objc3_runtime.lib",
-        "stdlib/workspace.json",
-        "stdlib/modules/objc3.core/module.json",
-        "docs/runbooks/objc3c_packaging_channels.md",
-    ),
-    "linux-x64": (
-        "artifacts/package/objc3c-runnable-toolchain-package.json",
-        "artifacts/bin/objc3c-native",
-        "artifacts/lib/libobjc3-runtime.so",
-        "stdlib/workspace.json",
-        "stdlib/modules/objc3.core/module.json",
-        "docs/runbooks/objc3c_packaging_channels.md",
-    ),
-    "darwin-arm64": (
-        "artifacts/package/objc3c-runnable-toolchain-package.json",
-        "artifacts/bin/objc3c-native",
-        "artifacts/lib/libobjc3-runtime.dylib",
-        "stdlib/workspace.json",
-        "stdlib/modules/objc3.core/module.json",
-        "docs/runbooks/objc3c_packaging_channels.md",
-    ),
+    platform_id: tuple(release_package_layout_for_platform(platform_id))
+    for platform_id in RELEASE_PACKAGE_TARGET_PLATFORM_CHOICES
 }
 EXPECTED_SANITIZER_DETECTION_RECORDS: dict[str, set[str]] = {
     "address": {
@@ -198,8 +183,10 @@ HOST_EVIDENCE_ACCEPTED_WORKFLOW_PATHS: tuple[str, ...] = (
     *HOST_EVIDENCE_DISPATCH_GATEWAY_WORKFLOW_PATHS,
 )
 HOST_EVIDENCE_INGESTION_ACTION = "ingest-platform-host-evidence"
+HOST_EVIDENCE_REVIEW_ACTION = "review-platform-host-evidence"
 HOST_EVIDENCE_HOST_PROMOTION_CONTRACT_CHECK_ACTION = "check-platform-host-promotion-evidence"
 HOST_EVIDENCE_INGESTION_HELPER = "scripts/ingest_objc3c_platform_host_evidence.py"
+HOST_EVIDENCE_REVIEW_HELPER = "scripts/review_objc3c_platform_host_evidence.py"
 HOST_EVIDENCE_REPORT_CONTRACT_ID = "objc3c.platform.hosted-runner.evidence-report.v1"
 HOST_EVIDENCE_GENERATED_ONLY_RESULT = "refuse-source-truth-promotion"
 HOST_EVIDENCE_REVIEW_PROMOTION_POLICY = "checked-in-source-truth-required"
@@ -1040,13 +1027,16 @@ def _validate_hosted_evidence_ingestion(
         expect(resolve_repo_path(workflow_path).is_file(), f"host evidence workflow file is missing: {workflow_path}")
     expect(ingestion.get("runner_labels") == HOST_EVIDENCE_RUNNER_LABELS, "host evidence runner labels drifted")
     expect(ingestion.get("ingestion_action") == HOST_EVIDENCE_INGESTION_ACTION, "host evidence ingestion action drifted")
+    expect(ingestion.get("review_action") == HOST_EVIDENCE_REVIEW_ACTION, "host evidence review action drifted")
     expect(
         ingestion.get("host_promotion_contract_check_action")
         == HOST_EVIDENCE_HOST_PROMOTION_CONTRACT_CHECK_ACTION,
         "host evidence promotion contract check action drifted",
     )
     expect(ingestion.get("ingestion_helper") == HOST_EVIDENCE_INGESTION_HELPER, "host evidence ingestion helper drifted")
+    expect(ingestion.get("review_helper") == HOST_EVIDENCE_REVIEW_HELPER, "host evidence review helper drifted")
     expect(resolve_repo_path(HOST_EVIDENCE_INGESTION_HELPER).is_file(), "host evidence ingestion helper is missing")
+    expect(resolve_repo_path(HOST_EVIDENCE_REVIEW_HELPER).is_file(), "host evidence review helper is missing")
     expect(
         ingestion.get("generated_report_contract_id") == HOST_EVIDENCE_REPORT_CONTRACT_ID,
         "host evidence generated report contract drifted",
@@ -1056,6 +1046,16 @@ def _validate_hosted_evidence_ingestion(
         ingestion.get("review_candidate_source_truth_path")
         == HOST_EVIDENCE_REVIEW_CANDIDATE_SOURCE_TRUTH_PATH_TEMPLATE,
         "host evidence review-candidate source truth path drifted",
+    )
+    expect(
+        ingestion.get("reviewed_source_proposal_path")
+        == HOST_EVIDENCE_REVIEWED_SOURCE_PROPOSAL_PATH_TEMPLATE,
+        "host evidence reviewed-source proposal path drifted",
+    )
+    expect(
+        ingestion.get("review_staging_summary_path")
+        == HOST_EVIDENCE_REVIEW_STAGING_SUMMARY_PATH_TEMPLATE,
+        "host evidence review staging summary path drifted",
     )
     expect(
         ingestion.get("generated_only_result") == HOST_EVIDENCE_GENERATED_ONLY_RESULT,
@@ -1112,10 +1112,15 @@ def _validate_hosted_evidence_ingestion(
         for workflow_path in accepted_paths:
             expect(workflow_path in source_paths, f"{record_id} missing workflow source path: {workflow_path}")
         expect(HOST_EVIDENCE_INGESTION_HELPER in source_paths, f"{record_id} missing ingestion helper source path")
+        expect(HOST_EVIDENCE_REVIEW_HELPER in source_paths, f"{record_id} missing review helper source path")
         replay_commands = [str(command) for command in record.get("replay_commands", [])]
         expect(
             any(f"npm run objc3c -- {HOST_EVIDENCE_INGESTION_ACTION}" in command for command in replay_commands),
             f"{record_id} missing public ingestion command",
+        )
+        expect(
+            any(f"npm run objc3c -- {HOST_EVIDENCE_REVIEW_ACTION}" in command for command in replay_commands),
+            f"{record_id} missing public reviewed-source staging command",
         )
         generated_paths = [str(path).replace("\\", "/") for path in record.get("generated_report_paths", [])]
         expect(
@@ -1171,24 +1176,22 @@ def _package_artifact_identity_is_source_owned(row_id: str, row: dict[str, Any])
     )
 
     target_platform_id = str(row.get("target_platform_id", ""))
-    object_format = str(artifact.get("object_format", ""))
-    if target_platform_id == "linux-x64":
-        expect(object_format == "ELF", f"{row_id} Linux package identity must be ELF")
-        expect(
-            "libobjc3-runtime.so" in runtime_names,
-            f"{row_id} Linux package identity missing libobjc3-runtime.so",
+    if target_platform_id in RELEASE_PACKAGE_TARGET_PLATFORM_CHOICES:
+        expected_identity = release_package_artifact_identity_for_platform(
+            target_platform_id
         )
-    elif target_platform_id == "darwin-arm64":
-        expect(object_format == "Mach-O", f"{row_id} macOS package identity must be Mach-O")
+        expected_runtime_names = [expected_identity["runtime_library_name"]]
         expect(
-            "libobjc3-runtime.dylib" in runtime_names,
-            f"{row_id} macOS package identity missing libobjc3-runtime.dylib",
+            str(artifact.get("object_format", "")) == expected_identity["object_format"],
+            f"{row_id} package object format drifted from artifact identity",
         )
-    elif target_platform_id == "windows-x64":
-        expect(object_format == "COFF", f"{row_id} Windows package identity must be COFF")
         expect(
-            {"objc3-runtime.lib", "objc3-runtime.dll"} <= set(runtime_names),
-            f"{row_id} Windows package identity missing import library or DLL",
+            str(artifact.get("debug_format", "")) == expected_identity["debug_format"],
+            f"{row_id} package debug format drifted from artifact identity",
+        )
+        expect(
+            runtime_names == expected_runtime_names,
+            f"{row_id} runtime library names drifted from artifact identity",
         )
 
     if row.get("variant_kind") == "release-runtime":

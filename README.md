@@ -296,7 +296,8 @@ rejected rows include:
   remain outside the claim.
 - Linux x64 and macOS arm64 host support. Windows x64 is the supported Tier 1
   host row; Linux and macOS rows are source-owned fail-closed contracts until
-  package/install/native execution evidence exists.
+  package, install, installed-root execution, and native execution evidence
+  exists.
 - AddressSanitizer and UndefinedBehaviorSanitizer beyond the current Windows
   x64 runtime-package variants. ASan/UBSan package, install, and execution
   support is evidence-bound for Windows x64 through checked source promotion

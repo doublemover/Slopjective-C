@@ -167,6 +167,9 @@ HOSTED_EXECUTION_SMOKE_SUMMARY_PATH = "tmp/reports/hosted-execution-smoke/summar
 NATIVE_EXECUTION_SMOKE_SUMMARY_PATH = (
     "tmp/reports/objc3c-native-execution-smoke/summary.json"
 )
+FAIL_CLOSED_PLACEHOLDER_CONTRACT_ID = (
+    "objc3c.platform.hosted-evidence.fail-closed-placeholder.v1"
+)
 
 STEP_CONTRACTS: tuple[tuple[str, str, tuple[tuple[str, str], ...]], ...] = (
     (
@@ -302,20 +305,92 @@ def generated_artifact(path_text: str) -> dict[str, Any]:
             "path": path_text,
             "exists": False,
         }
-    return {
+    artifact = {
         "path": path_text,
         "exists": True,
         "size_bytes": path.stat().st_size,
         "sha256": sha256_file(path),
     }
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, UnicodeDecodeError, json.JSONDecodeError):
+        return artifact
+    if (
+        isinstance(payload, dict)
+        and payload.get("contract_id") == FAIL_CLOSED_PLACEHOLDER_CONTRACT_ID
+    ):
+        artifact["fail_closed_placeholder"] = True
+        artifact["promotion_usable"] = False
+        artifact["producer_step_id"] = str(payload.get("producer_step_id", ""))
+        artifact["status"] = str(payload.get("status", ""))
+    return artifact
 
 
-def materialize_generated_artifact(source_path_text: str, scoped_path_text: str) -> dict[str, Any]:
+def write_fail_closed_placeholder_artifact(
+    *,
+    platform_id: str,
+    step_id: str,
+    evidence_class: str,
+    outcome: str,
+    source_path_text: str,
+    scoped_path_text: str,
+) -> None:
+    scoped_path = ROOT / scoped_path_text
+    if scoped_path.is_file():
+        return
+    payload = {
+        "contract_id": FAIL_CLOSED_PLACEHOLDER_CONTRACT_ID,
+        "schema_version": 1,
+        "platform_id": platform_id,
+        "issue_ref": int(PLATFORM_CONFIG[platform_id]["issue_ref"]),
+        "generated_report_path": scoped_path_text,
+        "missing_source_path": source_path_text,
+        "producer_step_id": step_id,
+        "evidence_class": evidence_class,
+        "producer_outcome": outcome,
+        "status": "producer-failed-before-success-artifact",
+        "support_truth": False,
+        "promotion_allowed_from_generated_evidence": False,
+        "generated_report_support_truth": False,
+        "reviewed_source_required": True,
+        "review_result": "fail-closed-not-promotion-ready",
+        "failure_class": f"{evidence_class}-producer-failed-before-success-artifact",
+        "required_behavior": "fail-closed-before-support-promotion",
+    }
+    write_json(scoped_path, payload)
+
+
+def materialize_generated_artifact(
+    source_path_text: str,
+    scoped_path_text: str,
+    *,
+    platform_id: str,
+    step_id: str,
+    evidence_class: str,
+    outcome: str,
+) -> dict[str, Any]:
     source_path = ROOT / source_path_text
     scoped_path = ROOT / scoped_path_text
     if source_path.is_file() and source_path.resolve() != scoped_path.resolve():
         scoped_path.parent.mkdir(parents=True, exist_ok=True)
         shutil.copy2(source_path, scoped_path)
+    elif (
+        not source_path.is_file()
+        and not scoped_path.is_file()
+        and outcome not in {"success", "not-recorded"}
+        and scoped_path_text in {
+            platform_scoped_path(platform_id, suffix)
+            for suffix in REQUIRED_DURABLE_PROMOTION_ARTIFACT_SUFFIXES
+        }
+    ):
+        write_fail_closed_placeholder_artifact(
+            platform_id=platform_id,
+            step_id=step_id,
+            evidence_class=evidence_class,
+            outcome=outcome,
+            source_path_text=source_path_text,
+            scoped_path_text=scoped_path_text,
+        )
     artifact = generated_artifact(scoped_path_text)
     artifact["source_path"] = source_path_text
     artifact["scoped_copy"] = source_path_text != scoped_path_text
@@ -568,6 +643,32 @@ def require_status(payload: dict[str, Any], expected_status: str, owner: str) ->
         )
 
 
+def is_fail_closed_placeholder(payload: dict[str, Any]) -> bool:
+    return payload.get("contract_id") == FAIL_CLOSED_PLACEHOLDER_CONTRACT_ID
+
+
+def require_fail_closed_placeholder(payload: dict[str, Any], *, platform_id: str, owner: str) -> None:
+    require(is_fail_closed_placeholder(payload), f"{owner} is not a fail-closed placeholder")
+    require(payload.get("schema_version") == 1, f"{owner} placeholder schema_version drifted")
+    require(payload.get("platform_id") == platform_id, f"{owner} placeholder platform_id drifted")
+    require(payload.get("issue_ref") == int(PLATFORM_CONFIG[platform_id]["issue_ref"]), f"{owner} placeholder issue_ref drifted")
+    require(payload.get("generated_report_path") == owner, f"{owner} placeholder report path drifted")
+    require(payload.get("status") == "producer-failed-before-success-artifact", f"{owner} placeholder status drifted")
+    require(payload.get("support_truth") is False, f"{owner} placeholder attempted support truth")
+    require(
+        payload.get("promotion_allowed_from_generated_evidence") is False,
+        f"{owner} placeholder allowed generated promotion",
+    )
+    require(
+        payload.get("generated_report_support_truth") is False,
+        f"{owner} placeholder became support truth",
+    )
+    require(
+        payload.get("review_result") == "fail-closed-not-promotion-ready",
+        f"{owner} placeholder review result drifted",
+    )
+
+
 def require_platform_identity_fields(
     payload: dict[str, Any],
     *,
@@ -728,6 +829,14 @@ def validate_install_receipt_artifact(platform_id: str) -> None:
         require(receipt_artifact.get("exists") is False, f"{owner} receipt artifact exists flag drifted")
     source_receipt = payload.get("source_install_receipt")
     require(isinstance(source_receipt, dict), f"{owner} source_install_receipt must be an object")
+    if payload.get("status") == "missing-source-generated-fail-closed":
+        source_artifacts = require_source_artifacts(payload, owner)
+        require(
+            artifact_exists_in_payload(source_artifacts, PACKAGE_CHANNELS_END_TO_END_SUMMARY_PATH)
+            is False,
+            f"{owner} missing-source receipt unexpectedly had package-channel summary",
+        )
+        return
     require_installed_root_execution_record(
         payload,
         field_name="installed_root_execution",
@@ -813,6 +922,9 @@ def validate_clean_install_distribution_summary(platform_id: str) -> None:
     payload = load_optional_platform_generated_json(platform_id, path_suffix)
     if payload is None:
         return
+    if is_fail_closed_placeholder(payload):
+        require_fail_closed_placeholder(payload, platform_id=platform_id, owner=owner)
+        return
     require(
         payload.get("contract_id") == "objc3c.package_ecosystem.install_distribution_credibility.summary.v1",
         f"{owner} contract_id drifted",
@@ -853,6 +965,9 @@ def validate_clean_install_distribution_verification(platform_id: str) -> None:
     owner = platform_scoped_path(platform_id, path_suffix)
     payload = load_optional_platform_generated_json(platform_id, path_suffix)
     if payload is None:
+        return
+    if is_fail_closed_placeholder(payload):
+        require_fail_closed_placeholder(payload, platform_id=platform_id, owner=owner)
         return
     require(
         payload.get("contract_id") == "objc3c.package_ecosystem.install_distribution_credibility.v1",
@@ -910,6 +1025,9 @@ def validate_clean_install_distribution_receipt(platform_id: str) -> None:
     owner = platform_scoped_path(platform_id, path_suffix)
     payload = load_optional_platform_generated_json(platform_id, path_suffix)
     if payload is None:
+        return
+    if is_fail_closed_placeholder(payload):
+        require_fail_closed_placeholder(payload, platform_id=platform_id, owner=owner)
         return
     require(
         payload.get("contract_id") == "objc3c.package_ecosystem.from_nothing_install_receipt.v1",
@@ -1592,7 +1710,9 @@ def build_review_candidate_source_truth(
                 "generated_artifact_paths": artifact_paths,
                 "generated_artifacts": artifacts,
                 "generated_artifacts_complete": all(
-                    artifact.get("exists") is True for artifact in artifacts
+                    artifact.get("exists") is True
+                    and artifact.get("fail_closed_placeholder") is not True
+                    for artifact in artifacts
                 ),
                 "review_status": "pending-reviewed-source-truth",
                 "promotion_allowed": False,
@@ -1664,6 +1784,7 @@ def build_report(args: argparse.Namespace) -> dict[str, Any]:
         },
     ]
     for step_id, evidence_class, path_pairs in STEP_CONTRACTS:
+        outcome = env_outcome(step_id)
         generated_paths = [
             scoped_path.format(platform_id=platform_id)
             for _, scoped_path in path_pairs
@@ -1672,12 +1793,16 @@ def build_report(args: argparse.Namespace) -> dict[str, Any]:
             {
                 "step_id": step_id,
                 "evidence_class": evidence_class,
-                "outcome": env_outcome(step_id),
+                "outcome": outcome,
                 "generated_report_paths": generated_paths,
                 "generated_artifacts": [
                     materialize_generated_artifact(
                         source_path.format(platform_id=platform_id),
                         scoped_path.format(platform_id=platform_id),
+                        platform_id=platform_id,
+                        step_id=step_id,
+                        evidence_class=evidence_class,
+                        outcome=outcome,
                     )
                     for source_path, scoped_path in path_pairs
                 ],

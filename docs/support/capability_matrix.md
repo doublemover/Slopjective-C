@@ -2962,7 +2962,7 @@ the canonical manifest fixture and public npm command above.
 - Capability ID: `platform.windows-x64.tier1`
 - State: `implemented`
 - Support claims: `objc3c.behavior.platform.windows-x64-tier1`
-- Summary: Windows x64 is the supported Tier 1 platform because build, package, install, and native execution evidence all replay through public objc3c commands without live network requirements. Non-Windows hosts remain fail-closed until equivalent package/install/native execution evidence exists.
+- Summary: Windows x64 is the supported Tier 1 platform because build, package, install, and native execution evidence all replay through public objc3c commands without live network requirements. Non-Windows hosts remain fail-closed until equivalent package, install, installed-root execution, and native execution evidence exists.
 - Owner modules:
   - `tests/tooling/fixtures/platform_hardening/platform_toolchain_support_evidence.json`
   - `schemas/objc3c-platform-toolchain-support-evidence-v1.schema.json`
@@ -2993,7 +2993,10 @@ the canonical manifest fixture and public npm command above.
   - `scripts/check_platform_host_promotion_evidence.py`
   - `scripts/check_objc3c_packaging_channels_end_to_end.py`
   - `scripts/ingest_objc3c_platform_host_evidence.py`
+  - `scripts/review_objc3c_platform_host_evidence.py`
   - `scripts/objc3c_workflow/actions/release_governance_packaging_contracts.py`
+  - `tests/tooling/test_platform_host_evidence_review.py`
+  - `tests/tooling/fixtures/platform_hardening/host_promotion_reviewed_source_inputs.json`
   - `tests/tooling/fixtures/platform_hardening/install_matrix_integration_contract.json`
   - `scripts/platform_hardening_contracts/support_evidence.py`
 - Evidence:
@@ -3004,9 +3007,12 @@ the canonical manifest fixture and public npm command above.
   - source: `scripts/check_platform_host_promotion_evidence.py`
   - source: `scripts/check_objc3c_packaging_channels_end_to_end.py`
   - source: `scripts/ingest_objc3c_platform_host_evidence.py`
+  - source: `scripts/review_objc3c_platform_host_evidence.py`
   - source: `scripts/platform_hardening_contracts/host_evidence_contract.py`
   - source: `scripts/objc3c_workflow/actions/release_governance_packaging_contracts.py`
   - source: `tests/tooling/fixtures/platform_hardening/install_matrix_integration_contract.json`
+  - test: `tests/tooling/test_platform_host_evidence_review.py`
+  - source: `tests/tooling/fixtures/platform_hardening/host_promotion_reviewed_source_inputs.json`
   - source: `tests/tooling/fixtures/platform_support/source_truth_matrix.json`
 
 ### macOS arm64 platform support
@@ -3014,7 +3020,7 @@ the canonical manifest fixture and public npm command above.
 - Capability ID: `platform.darwin-arm64.unsupported`
 - State: `rejected`
 - Support claims: None
-- Summary: macOS arm64 support remains fail-closed under issue #8229: source-owned platform, host-promotion, package, and installed-root execution rows record the Apple-toolchain, Mach-O/load-path, package-install, and installed-root blockers, and both the canonical hosted-evidence workflow plus the conformance-minima dispatch gateway are generated-only, non-promoting evidence paths until package install, installed-root execution, and native execution evidence is reviewed into checked source truth.
+- Summary: macOS arm64 support remains fail-closed under issue #8229: source-owned platform, host-promotion, package, and installed-root execution rows record the Apple-toolchain, Mach-O/load-path, package-install, and installed-root blockers, and both the canonical hosted-evidence workflow plus the conformance-minima dispatch gateway are generated-only, non-promoting evidence paths until build, package, install, installed-root execution, and native execution evidence is reviewed into checked source truth.
 - Owner modules:
   - `tests/tooling/fixtures/platform_hardening/platform_toolchain_support_evidence.json`
   - `tests/tooling/fixtures/platform_hardening/platform_host_promotion_evidence_contract.json`
@@ -3026,7 +3032,10 @@ the canonical manifest fixture and public npm command above.
   - `scripts/check_platform_host_promotion_evidence.py`
   - `scripts/check_objc3c_packaging_channels_end_to_end.py`
   - `scripts/ingest_objc3c_platform_host_evidence.py`
+  - `scripts/review_objc3c_platform_host_evidence.py`
   - `scripts/objc3c_workflow/actions/release_governance_packaging_contracts.py`
+  - `tests/tooling/test_platform_host_evidence_review.py`
+  - `tests/tooling/fixtures/platform_hardening/host_promotion_reviewed_source_inputs.json`
   - `tests/tooling/fixtures/platform_hardening/install_matrix_integration_contract.json`
   - `scripts/platform_hardening_contracts/support_evidence.py`
 - Evidence:
@@ -3037,9 +3046,12 @@ the canonical manifest fixture and public npm command above.
   - source: `scripts/check_platform_host_promotion_evidence.py`
   - source: `scripts/check_objc3c_packaging_channels_end_to_end.py`
   - source: `scripts/ingest_objc3c_platform_host_evidence.py`
+  - source: `scripts/review_objc3c_platform_host_evidence.py`
   - source: `scripts/platform_hardening_contracts/host_evidence_contract.py`
   - source: `scripts/objc3c_workflow/actions/release_governance_packaging_contracts.py`
   - source: `tests/tooling/fixtures/platform_hardening/install_matrix_integration_contract.json`
+  - test: `tests/tooling/test_platform_host_evidence_review.py`
+  - source: `tests/tooling/fixtures/platform_hardening/host_promotion_reviewed_source_inputs.json`
   - source: `tests/tooling/fixtures/platform_support/source_truth_matrix.json`
 
 ### Current probed LLVM executable evidence
@@ -3084,7 +3096,7 @@ the canonical manifest fixture and public npm command above.
 - Capability ID: `platform.expansion.umbrella-readiness`
 - State: `internal`
 - Support claims: None
-- Summary: #8206 is an internal readiness boundary over #8228 Linux x64, #8229 macOS arm64, #8230 ASan, #8231 UBSan, and #8232 native object emission. It keeps only Windows x64 projected as supported, keeps Linux and macOS rejected through the host-promotion and installed-root execution evidence contracts, and models conformance-minima as a non-promoting dispatch gateway for generated Linux/macOS hosted evidence. ASan/UBSan package, install, and execution support is evidence-bound for windows-x64 through the source-owned sanitizer runtime promotion gate; generated-only sanitizer reports and unsupported hosts remain non-promoting. Task-hygiene hosted gates stay skip-only when llc object emission is unavailable, and conformance-minima stays fail-closed when required native object emission is missing. Missing-llc, mixed-root, mismatched-version, unsupported-version, and unresolved-version native object emission remain fail-closed with no clang substitute success path.
+- Summary: #8206 is an internal source-owned fail-closed readiness boundary over #8228 Linux x64, #8229 macOS arm64, #8230 ASan, #8231 UBSan, and #8232 native object emission. It keeps only Windows x64 projected as supported, keeps Linux and macOS rejected through the host-promotion and installed-root execution evidence contracts, and treats hosted Linux/macOS evidence plus conformance-minima as non-promoting review inputs until checked source truth is promoted. ASan/UBSan package, install, and execution support is evidence-bound for windows-x64 through the source-owned sanitizer runtime promotion gate; generated-only sanitizer reports and unsupported hosts remain non-promoting. Task-hygiene hosted gates stay skip-only when llc object emission is unavailable, and conformance-minima stays fail-closed when required native object emission is missing. Missing-llc, mixed-root, mismatched-version, unsupported-version, and unresolved-version native object emission remain fail-closed with no clang substitute success path.
 - Owner modules:
   - `tests/tooling/fixtures/platform_support/source_truth_matrix.json`
   - `schemas/objc3c-platform-support-source-truth-v1.schema.json`
@@ -3095,7 +3107,10 @@ the canonical manifest fixture and public npm command above.
   - `scripts/check_platform_host_promotion_evidence.py`
   - `scripts/check_objc3c_packaging_channels_end_to_end.py`
   - `scripts/ingest_objc3c_platform_host_evidence.py`
+  - `scripts/review_objc3c_platform_host_evidence.py`
   - `scripts/objc3c_workflow/actions/release_governance_packaging_contracts.py`
+  - `tests/tooling/test_platform_host_evidence_review.py`
+  - `tests/tooling/fixtures/platform_hardening/host_promotion_reviewed_source_inputs.json`
   - `tests/tooling/fixtures/platform_hardening/install_matrix_integration_contract.json`
   - `tests/tooling/fixtures/platform_hardening/platform_host_promotion_evidence_contract.json`
   - `tests/tooling/fixtures/security_hardening/sanitizer_package_install_model_contract.json`
@@ -3117,10 +3132,13 @@ the canonical manifest fixture and public npm command above.
   - source: `scripts/check_platform_host_promotion_evidence.py`
   - source: `scripts/check_objc3c_packaging_channels_end_to_end.py`
   - source: `scripts/ingest_objc3c_platform_host_evidence.py`
+  - source: `scripts/review_objc3c_platform_host_evidence.py`
   - source: `scripts/platform_hardening_contracts/host_evidence_contract.py`
   - source: `scripts/objc3c_workflow/actions/release_governance_packaging_contracts.py`
   - source: `tests/tooling/fixtures/platform_hardening/install_matrix_integration_contract.json`
   - source: `tests/tooling/fixtures/platform_hardening/platform_host_promotion_evidence_contract.json`
+  - test: `tests/tooling/test_platform_host_evidence_review.py`
+  - source: `tests/tooling/fixtures/platform_hardening/host_promotion_reviewed_source_inputs.json`
   - source: `tests/tooling/fixtures/security_hardening/sanitizer_package_install_model_contract.json`
   - source: `tests/tooling/fixtures/security_hardening/sanitizer_execution_evidence_contract.json`
   - schema: `schemas/objc3c-sanitizer-execution-evidence-v1.schema.json`
