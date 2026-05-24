@@ -8,7 +8,7 @@ function Assert-RepoFile {
     [Parameter(Mandatory = $true)][string]$RelativePath
   )
 
-  $fullPath = Join-Path $RepoRoot ($RelativePath.Replace('/', '\\'))
+  $fullPath = Join-PackageRelativePath -RootPath $RepoRoot -RelativePath $RelativePath
   if (!(Test-Path -LiteralPath $fullPath -PathType Leaf)) {
     throw "runnable toolchain package FAIL: missing required file $RelativePath"
   }
@@ -24,7 +24,7 @@ function Copy-RepoRelativeFile {
   )
 
   $sourcePath = Assert-RepoFile -RepoRoot $RepoRoot -RelativePath $RelativePath
-  $destinationPath = Join-Path $PackageRoot ($RelativePath.Replace('/', '\\'))
+  $destinationPath = Join-PackageRelativePath -RootPath $PackageRoot -RelativePath $RelativePath
   $destinationDir = Split-Path -Parent $destinationPath
   New-Item -ItemType Directory -Force -Path $destinationDir | Out-Null
   Copy-Item -LiteralPath $sourcePath -Destination $destinationPath -Force
