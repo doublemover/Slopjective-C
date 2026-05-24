@@ -74,7 +74,7 @@ void WriteObjc3FrontendRuntimeManifestSurfaces(
   WriteStorageAccessorRuntimeAbiSurface(
       manifest, runtime_bootstrap_api, storage_accessor_runtime_abi_fields);
   WriteRuntimeStatePublicationSurface(
-      manifest, runtime_state_publication_emit_prefix,
+      manifest, runtime_state_publication_paths,
       runtime_translation_unit_registration_manifest, runtime_bootstrap_semantics);
   WriteRuntimeBootstrapRegistrationSourceSurface(
       manifest, runtime_state_publication_emit_prefix,
