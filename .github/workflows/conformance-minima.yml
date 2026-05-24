@@ -207,7 +207,7 @@ jobs:
           OBJC3C_PLATFORM_EVIDENCE_CLEAN_INSTALL_OUTCOME: ${{ steps.clean_install.outcome }}
           OBJC3C_PLATFORM_EVIDENCE_EXECUTION_OUTCOME: ${{ steps.execution.outcome }}
         run: >
-          python scripts/ingest_objc3c_platform_host_evidence.py
+          npm run objc3c -- ingest-platform-host-evidence --
           --platform-id "$OBJC3C_PLATFORM_ID"
           --runner-label "$OBJC3C_PLATFORM_RUNNER_LABEL"
           --workflow-path ".github/workflows/conformance-minima.yml"
@@ -321,7 +321,7 @@ jobs:
           OBJC3C_PLATFORM_EVIDENCE_CLEAN_INSTALL_OUTCOME: ${{ steps.clean_install.outcome }}
           OBJC3C_PLATFORM_EVIDENCE_EXECUTION_OUTCOME: ${{ steps.execution.outcome }}
         run: >
-          python scripts/ingest_objc3c_platform_host_evidence.py
+          npm run objc3c -- ingest-platform-host-evidence --
           --platform-id "$OBJC3C_PLATFORM_ID"
           --runner-label "$OBJC3C_PLATFORM_RUNNER_LABEL"
           --workflow-path ".github/workflows/conformance-minima.yml"

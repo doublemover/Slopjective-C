@@ -247,6 +247,9 @@ HOST_EVIDENCE_REQUIRED_PROMOTION_RECORD_FIELDS: dict[str, tuple[str, ...]] = {
         "runtime_library_manifest_path",
         "install_receipt_path",
         "install_receipt_present",
+        "installed_root_execution_summary_path",
+        "installed_root_execution_present",
+        "offline_installed_root_execution_present",
         "generated_report_path",
         "generated_report_support_truth",
     ),
@@ -811,6 +814,33 @@ def _validate_reviewed_source_promotion_records(
                         record_id,
                         platform_id,
                         record.get("package_root_layout", []),
+                    )
+            if section_name == "package_install_identity_records":
+                installed_summary_path = str(
+                    record.get("installed_root_execution_summary_path", "")
+                ).replace("\\", "/")
+                expect(
+                    installed_summary_path
+                    == f"{HOST_EVIDENCE_REPORT_ROOT}/{platform_id}/install/end-to-end-summary.json",
+                    f"{record_id} installed-root execution summary path drifted",
+                )
+                if platform_id in boundary_supported_platform_ids:
+                    expect(
+                        record.get("installed_root_execution_present") is True,
+                        f"{record_id} supported record missed installed-root execution",
+                    )
+                    expect(
+                        record.get("offline_installed_root_execution_present") is True,
+                        f"{record_id} supported record missed offline installed-root execution",
+                    )
+                else:
+                    expect(
+                        record.get("installed_root_execution_present") is False,
+                        f"{record_id} unsupported record claimed installed-root execution",
+                    )
+                    expect(
+                        record.get("offline_installed_root_execution_present") is False,
+                        f"{record_id} unsupported record claimed offline installed-root execution",
                     )
             if section_name == "runtime_load_link_proof_records":
                 native_record_id = str(record.get("native_execution_record_id", ""))

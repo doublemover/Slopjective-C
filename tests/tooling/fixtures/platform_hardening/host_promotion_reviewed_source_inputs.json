@@ -638,6 +638,9 @@
       "runtime_library_manifest_path": "tmp/reports/platform-host-evidence/linux-x64/package/runtime-library-manifest.json",
       "install_receipt_path": "tmp/reports/platform-host-evidence/linux-x64/install/install-receipt.json",
       "install_receipt_present": false,
+      "installed_root_execution_summary_path": "tmp/reports/platform-host-evidence/linux-x64/install/end-to-end-summary.json",
+      "installed_root_execution_present": false,
+      "offline_installed_root_execution_present": false,
       "generated_report_path": "tmp/reports/platform-host-evidence/linux-x64/install/install-receipt.json",
       "generated_report_support_truth": false,
       "source_paths": [
@@ -672,6 +675,9 @@
       "runtime_library_manifest_path": "tmp/reports/platform-host-evidence/darwin-arm64/package/runtime-library-manifest.json",
       "install_receipt_path": "tmp/reports/platform-host-evidence/darwin-arm64/install/install-receipt.json",
       "install_receipt_present": false,
+      "installed_root_execution_summary_path": "tmp/reports/platform-host-evidence/darwin-arm64/install/end-to-end-summary.json",
+      "installed_root_execution_present": false,
+      "offline_installed_root_execution_present": false,
       "generated_report_path": "tmp/reports/platform-host-evidence/darwin-arm64/install/install-receipt.json",
       "generated_report_support_truth": false,
       "source_paths": [

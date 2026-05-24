@@ -396,7 +396,7 @@ Consumer rule: Umbrella readiness may explain why a reserved umbrella row is blo
 #### Public Commands
 
 - `satisfied` Platform support matrix replay remains the public path for projecting the source-owned platform boundary. (command: `npm run objc3c -- build-platform-support-matrix`)
-- `satisfied` Hosted Linux/macOS evidence ingestion is public and non-promoting; generated reports and `review-candidate-source-truth.json` remain review inputs until checked source truth is promoted. (command: `npm run objc3c -- ingest-platform-host-evidence`)
+- `satisfied` Hosted Linux/macOS evidence ingestion is public and non-promoting; generated reports and review-candidate-source-truth.json remain review inputs until checked source truth is promoted. (command: `npm run objc3c -- ingest-platform-host-evidence`)
 - `satisfied` The direct host-promotion evidence check replays the Linux/macOS fail-closed contract and rejects generated-only support truth. (command: `npm run objc3c -- check-platform-host-promotion-evidence`)
 - `blocked` Full platform hardening validation remains blocked for umbrella promotion until Linux, macOS, and native object emission evidence are promoted. (command: `npm run objc3c -- validate-platform-hardening`; blocker_id: `platform-expansion-prerequisites`)
 - `satisfied` ASan runnable package action exists for package metadata and payload staging; support promotion is checked by the sanitizer runtime promotion gate. (command: `npm run objc3c -- package-runnable-toolchain-asan`)

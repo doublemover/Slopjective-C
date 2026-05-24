@@ -862,6 +862,9 @@
         "runtime_library_manifest_path",
         "install_receipt_path",
         "install_receipt_present",
+        "installed_root_execution_summary_path",
+        "installed_root_execution_present",
+        "offline_installed_root_execution_present",
         "generated_report_path",
         "generated_report_support_truth",
         "evidence_ids",
@@ -899,6 +902,12 @@
           "pattern": "^tmp/reports/platform-host-evidence/"
         },
         "install_receipt_present": { "type": "boolean" },
+        "installed_root_execution_summary_path": {
+          "type": "string",
+          "pattern": "^tmp/reports/platform-host-evidence/"
+        },
+        "installed_root_execution_present": { "type": "boolean" },
+        "offline_installed_root_execution_present": { "type": "boolean" },
         "generated_report_path": {
           "type": "string",
           "pattern": "^tmp/reports/platform-host-evidence/"

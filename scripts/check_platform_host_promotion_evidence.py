@@ -157,6 +157,9 @@ REVIEWED_SOURCE_RECORD_REQUIRED_FIELDS_BY_TYPE: dict[str, tuple[str, ...]] = {
         "runtime_library_manifest_path",
         "install_receipt_path",
         "install_receipt_present",
+        "installed_root_execution_summary_path",
+        "installed_root_execution_present",
+        "offline_installed_root_execution_present",
         "generated_report_path",
         "generated_report_support_truth",
     ),
@@ -1041,7 +1044,11 @@ def _reviewed_source_record_is_promotion_ready(
             and bool(record.get("execution_evidence_ids"))
         )
     if record_type == "package_install_identity":
-        return record.get("install_receipt_present") is True
+        return (
+            record.get("install_receipt_present") is True
+            and record.get("installed_root_execution_present") is True
+            and record.get("offline_installed_root_execution_present") is True
+        )
     if record_type == "runtime_load_link_proof":
         return record.get("load_probe_exit_code") == 0 and bool(
             record.get("resolved_runtime_paths")

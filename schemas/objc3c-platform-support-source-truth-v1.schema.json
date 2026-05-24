@@ -360,6 +360,9 @@
             "debug_format",
             "loader_path_proof_required",
             "install_receipt_required",
+            "installed_root_execution_required",
+            "offline_installed_root_execution_required",
+            "installed_root_execution_summary_path",
             "native_execution_evidence_required"
           ],
           "properties": {
@@ -388,6 +391,16 @@
             },
             "install_receipt_required": {
               "const": true
+            },
+            "installed_root_execution_required": {
+              "const": true
+            },
+            "offline_installed_root_execution_required": {
+              "const": true
+            },
+            "installed_root_execution_summary_path": {
+              "type": "string",
+              "pattern": "^tmp/reports/platform-host-evidence/"
             },
             "native_execution_evidence_required": {
               "const": true

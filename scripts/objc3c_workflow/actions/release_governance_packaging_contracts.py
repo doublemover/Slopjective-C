@@ -58,11 +58,11 @@ PACKAGING_CHANNEL_ACTION_CONTRACTS: tuple[ReleaseGovernanceActionContract, ...] 
     ),
     ReleaseGovernanceActionContract(
         "validate-packaging-channels-end-to-end",
-        "validate install bootstrap revert and offline bundle behavior end to end",
+        "validate install bootstrap revert offline bundle and installed-root native execution behavior end to end",
         "python:scripts/check_objc3c_packaging_channels_end_to_end.py",
         "packaging-channels",
         "full",
-        "packaging-channel artifacts stay installable revert-safe and offline-bootstrappable under temp-owned roots",
+        "packaging-channel artifacts stay installable revert-safe offline-bootstrappable and executable from installed local/offline roots",
         pass_through_args=True,
     ),
     ReleaseGovernanceActionContract(
@@ -79,7 +79,7 @@ PACKAGING_CHANNEL_ACTION_CONTRACTS: tuple[ReleaseGovernanceActionContract, ...] 
         "python:scripts/ingest_objc3c_platform_host_evidence.py",
         "packaging-channels",
         "ci",
-        "generated hosted-runner build package install and execution reports stay review-only until checked source truth is promoted",
+        "generated hosted-runner build package install installed-root execution and native execution reports stay review-only until checked source truth is promoted",
         pass_through_args=True,
     ),
     ReleaseGovernanceActionContract(
@@ -88,7 +88,7 @@ PACKAGING_CHANNEL_ACTION_CONTRACTS: tuple[ReleaseGovernanceActionContract, ...] 
         "python:scripts/check_platform_host_promotion_evidence.py",
         "packaging-channels",
         "repo",
-        "Linux/macOS host-promotion evidence stays fail-closed until generated hosted evidence is reviewed into checked source truth with package install and native execution records",
+        "Linux/macOS host-promotion evidence stays fail-closed until generated hosted evidence is reviewed into checked source truth with package install installed-root execution and native execution records",
     ),
     ReleaseGovernanceActionContract(
         "validate-platform-hardening",

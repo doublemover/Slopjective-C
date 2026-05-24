@@ -53,6 +53,9 @@ EXPECTED_UNSUPPORTED_PROMOTION_CLOSURE = {
             "debug_format": "DWARF",
             "loader_path_proof_required": True,
             "install_receipt_required": True,
+            "installed_root_execution_required": True,
+            "offline_installed_root_execution_required": True,
+            "installed_root_execution_summary_path": "tmp/reports/platform-host-evidence/linux-x64/install/end-to-end-summary.json",
             "native_execution_evidence_required": True,
         },
         "host_promotion_constraints": {
@@ -101,6 +104,9 @@ EXPECTED_UNSUPPORTED_PROMOTION_CLOSURE = {
             "debug_format": "DWARF/dSYM",
             "loader_path_proof_required": True,
             "install_receipt_required": True,
+            "installed_root_execution_required": True,
+            "offline_installed_root_execution_required": True,
+            "installed_root_execution_summary_path": "tmp/reports/platform-host-evidence/darwin-arm64/install/end-to-end-summary.json",
             "native_execution_evidence_required": True,
         },
         "host_promotion_constraints": {
