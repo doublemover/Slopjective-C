@@ -172,7 +172,8 @@ platform-scoped root before upload, including `build/object-identity.json`,
 `build/debug-identity.json`, `package/runtime-library-manifest.json`,
 `install/install-receipt.json`,
 `install/install-distribution-credibility-summary.json`,
-`install/install-distribution-verification.json`, and
+`install/install-distribution-verification.json`,
+`install/clean-install-distribution-receipt.json`, and
 `execution/runtime-load-probe.json`. The
 workflow uploads only
 `tmp/reports/platform-host-evidence/<platform>/**` and fails closed if that root

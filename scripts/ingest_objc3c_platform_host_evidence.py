@@ -222,6 +222,10 @@ STEP_CONTRACTS: tuple[tuple[str, str, tuple[tuple[str, str], ...]], ...] = (
                 PACKAGE_INSTALL_DISTRIBUTION_VERIFICATION_PATH,
                 "tmp/reports/platform-host-evidence/{platform_id}/install/install-distribution-verification.json",
             ),
+            (
+                "tmp/reports/platform-host-evidence/{platform_id}/install/clean-install-distribution-receipt.json",
+                "tmp/reports/platform-host-evidence/{platform_id}/install/clean-install-distribution-receipt.json",
+            ),
         ),
     ),
     (
@@ -449,6 +453,451 @@ def runtime_load_probe_status(
     if isinstance(exit_code, int) and exit_code == 0 and normalized_status == "PASS":
         return "generated-host-artifact-present"
     return "runtime-load-failed-generated-fail-closed"
+
+
+def require(condition: bool, message: str) -> None:
+    if not condition:
+        raise RuntimeError(message)
+
+
+def load_platform_generated_json(platform_id: str, path_suffix: str) -> dict[str, Any]:
+    path_text = platform_scoped_path(platform_id, path_suffix)
+    path = ROOT / path_text
+    if not path.is_file():
+        raise RuntimeError(f"host evidence generated artifact missing: {path_text}")
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, UnicodeDecodeError, json.JSONDecodeError) as exc:
+        raise RuntimeError(f"host evidence generated artifact is not valid JSON: {path_text}: {exc}") from exc
+    if not isinstance(payload, dict):
+        raise RuntimeError(f"host evidence generated artifact is not a JSON object: {path_text}")
+    return payload
+
+
+def load_optional_platform_generated_json(
+    platform_id: str,
+    path_suffix: str,
+) -> dict[str, Any] | None:
+    path_text = platform_scoped_path(platform_id, path_suffix)
+    if not (ROOT / path_text).is_file():
+        return None
+    return load_platform_generated_json(platform_id, path_suffix)
+
+
+def require_common_generated_artifact(
+    payload: dict[str, Any],
+    *,
+    platform_id: str,
+    path_suffix: str,
+    contract_id: str,
+    reviewed_record_id: str | None = None,
+    reviewed_source_required: bool = False,
+) -> None:
+    expected = PLATFORM_CONFIG[platform_id]
+    expected_path = platform_scoped_path(platform_id, path_suffix)
+    require(payload.get("contract_id") == contract_id, f"{expected_path} contract_id drifted")
+    require(payload.get("schema_version") == 1, f"{expected_path} schema_version drifted")
+    require(payload.get("platform_id") == platform_id, f"{expected_path} platform_id drifted")
+    require(payload.get("issue_ref") == int(expected["issue_ref"]), f"{expected_path} issue_ref drifted")
+    require(payload.get("generated_report_path") == expected_path, f"{expected_path} report path drifted")
+    require(payload.get("support_truth") is False, f"{expected_path} attempted to become support truth")
+    require(
+        payload.get("promotion_allowed_from_generated_evidence") is False,
+        f"{expected_path} allowed generated-only promotion",
+    )
+    if reviewed_record_id is not None:
+        require(payload.get("record_id") == reviewed_record_id, f"{expected_path} reviewed record_id drifted")
+    if reviewed_source_required:
+        require(payload.get("reviewed_source_required") is True, f"{expected_path} did not require source review")
+
+
+def require_artifact_entry_shape(entry: Any, owner: str) -> dict[str, Any]:
+    require(isinstance(entry, dict), f"{owner} artifact entry must be an object")
+    path_text = entry.get("path")
+    require(isinstance(path_text, str) and path_text, f"{owner} artifact entry missing path")
+    exists = entry.get("exists")
+    require(isinstance(exists, bool), f"{owner} artifact entry missing boolean exists")
+    if exists:
+        require(isinstance(entry.get("size_bytes"), int) and entry["size_bytes"] > 0, f"{owner} existing artifact missing size")
+        digest = entry.get("sha256")
+        require(isinstance(digest, str) and len(digest) == 64, f"{owner} existing artifact missing sha256")
+    return entry
+
+
+def artifact_exists_in_payload(artifacts: list[Any], path_text: str) -> bool:
+    normalized = path_text.replace("\\", "/")
+    for raw_entry in artifacts:
+        entry = require_artifact_entry_shape(raw_entry, normalized)
+        if str(entry.get("path", "")).replace("\\", "/") == normalized:
+            return entry.get("exists") is True
+    return False
+
+
+def require_source_artifacts(payload: dict[str, Any], owner: str) -> list[Any]:
+    artifacts = payload.get("source_artifacts")
+    require(isinstance(artifacts, list), f"{owner} source_artifacts must be a list")
+    for entry in artifacts:
+        require_artifact_entry_shape(entry, owner)
+    return artifacts
+
+
+def require_status(payload: dict[str, Any], expected_status: str, owner: str) -> None:
+    actual_status = payload.get("status")
+    require(isinstance(actual_status, str) and actual_status, f"{owner} missing status")
+    require(actual_status == expected_status, f"{owner} status is not internally consistent")
+    if actual_status == "generated-host-artifact-present":
+        require(payload.get("support_truth") is False, f"{owner} present generated artifact became support truth")
+        require(
+            payload.get("promotion_allowed_from_generated_evidence") is False,
+            f"{owner} present generated artifact allowed source-truth promotion",
+        )
+
+
+def require_platform_identity_fields(
+    payload: dict[str, Any],
+    *,
+    owner: str,
+    identity_field: str,
+    expected_fields: tuple[str, ...],
+) -> dict[str, Any]:
+    expected_identity = expected_platform_identity(str(payload["platform_id"]))
+    identity = payload.get(identity_field)
+    require(isinstance(identity, dict), f"{owner} missing {identity_field}")
+    for field_name in expected_fields:
+        require(
+            identity.get(field_name) == expected_identity.get(field_name),
+            f"{owner} {identity_field}.{field_name} drifted",
+        )
+    return identity
+
+
+def require_platform_root_fields(payload: dict[str, Any], platform_id: str, owner: str) -> None:
+    expected = expected_platform_identity(platform_id)
+    require(payload.get("target_platform_id") == platform_id, f"{owner} target_platform_id drifted")
+    require(payload.get("target_triple") == expected["target_triple"], f"{owner} target_triple drifted")
+    require(
+        payload.get("package_root_layout") == expected["package_root_layout"],
+        f"{owner} package_root_layout drifted",
+    )
+
+
+def validate_object_identity_artifact(platform_id: str) -> None:
+    path_suffix = "build/object-identity.json"
+    owner = platform_scoped_path(platform_id, path_suffix)
+    record_ids = reviewed_source_record_ids(platform_id)
+    payload = load_platform_generated_json(platform_id, path_suffix)
+    require_common_generated_artifact(
+        payload,
+        platform_id=platform_id,
+        path_suffix=path_suffix,
+        contract_id="objc3c.platform.hosted-object-identity.generated.v1",
+        reviewed_record_id=record_ids["object_identity_record_id"],
+        reviewed_source_required=True,
+    )
+    expected_identity = require_platform_identity_fields(
+        payload,
+        owner=owner,
+        identity_field="expected_identity",
+        expected_fields=("target_platform_id", "target_triple", "arch", "object_format"),
+    )
+    actual_identity = payload.get("actual_identity")
+    require(isinstance(actual_identity, dict), f"{owner} missing actual_identity")
+    source_artifacts = require_source_artifacts(payload, owner)
+    require_status(
+        payload,
+        generated_identity_status(
+            source_exists=artifact_exists_in_payload(source_artifacts, NATIVE_BUILD_SUMMARY_PATH),
+            actual=actual_identity,
+            expected=expected_identity,
+            fields=("target_platform_id", "target_triple", "object_format"),
+        ),
+        owner,
+    )
+
+
+def validate_debug_identity_artifact(platform_id: str) -> None:
+    path_suffix = "build/debug-identity.json"
+    owner = platform_scoped_path(platform_id, path_suffix)
+    record_ids = reviewed_source_record_ids(platform_id)
+    payload = load_platform_generated_json(platform_id, path_suffix)
+    require_common_generated_artifact(
+        payload,
+        platform_id=platform_id,
+        path_suffix=path_suffix,
+        contract_id="objc3c.platform.hosted-debug-identity.generated.v1",
+        reviewed_record_id=record_ids["debug_identity_record_id"],
+        reviewed_source_required=True,
+    )
+    expected_identity = require_platform_identity_fields(
+        payload,
+        owner=owner,
+        identity_field="expected_identity",
+        expected_fields=("target_platform_id", "target_triple", "arch", "debug_format"),
+    )
+    actual_identity = payload.get("actual_identity")
+    require(isinstance(actual_identity, dict), f"{owner} missing actual_identity")
+    source_artifacts = require_source_artifacts(payload, owner)
+    require_status(
+        payload,
+        generated_identity_status(
+            source_exists=artifact_exists_in_payload(source_artifacts, NATIVE_BUILD_SUMMARY_PATH),
+            actual=actual_identity,
+            expected=expected_identity,
+            fields=("target_platform_id", "target_triple", "debug_format"),
+        ),
+        owner,
+    )
+
+
+def validate_runtime_library_manifest_artifact(platform_id: str) -> None:
+    path_suffix = "package/runtime-library-manifest.json"
+    owner = platform_scoped_path(platform_id, path_suffix)
+    payload = load_platform_generated_json(platform_id, path_suffix)
+    expected = expected_platform_identity(platform_id)
+    require_common_generated_artifact(
+        payload,
+        platform_id=platform_id,
+        path_suffix=path_suffix,
+        contract_id="objc3c.platform.hosted-runtime-library-manifest.generated.v1",
+    )
+    require(payload.get("native_execution_claimed") is False, f"{owner} claimed native execution")
+    require_platform_root_fields(payload, platform_id, owner)
+    require(payload.get("runtime_library_names") == expected["runtime_library_names"], f"{owner} runtime libraries drifted")
+    require(payload.get("loader_path_policy") == expected["loader_path_policy"], f"{owner} loader policy drifted")
+    package_artifact = require_artifact_entry_shape(payload.get("package_manifest_artifact"), owner)
+    runtime_artifacts = payload.get("runtime_library_artifacts")
+    require(isinstance(runtime_artifacts, list), f"{owner} runtime_library_artifacts must be a list")
+    for entry in runtime_artifacts:
+        artifact = require_artifact_entry_shape(entry, owner)
+        artifact_path = str(artifact.get("path", "")).replace("\\", "/")
+        require(
+            any(artifact_path.endswith(f"/{name}") or artifact_path == f"artifacts/lib/{name}" for name in expected["runtime_library_names"]),
+            f"{owner} runtime artifact path did not match expected runtime library names",
+        )
+    require_source_artifacts(payload, owner)
+    require_status(
+        payload,
+        runtime_manifest_status(
+            source_exists=package_artifact.get("exists") is True,
+            runtime_artifacts=runtime_artifacts,
+            package_target_platform_id=str(payload.get("source_package_target_platform_id", "")),
+            platform_id=platform_id,
+        ),
+        owner,
+    )
+
+
+def validate_install_receipt_artifact(platform_id: str) -> None:
+    path_suffix = "install/install-receipt.json"
+    owner = platform_scoped_path(platform_id, path_suffix)
+    record_ids = reviewed_source_record_ids(platform_id)
+    payload = load_platform_generated_json(platform_id, path_suffix)
+    require_common_generated_artifact(
+        payload,
+        platform_id=platform_id,
+        path_suffix=path_suffix,
+        contract_id="objc3c.platform.hosted-install-receipt.generated.v1",
+        reviewed_record_id=record_ids["package_install_identity_record_id"],
+        reviewed_source_required=True,
+    )
+    require(payload.get("native_execution_claimed") is False, f"{owner} claimed native execution")
+    require_platform_root_fields(payload, platform_id, owner)
+    require(payload.get("package_manifest") == RUNNABLE_PACKAGE_MANIFEST_PATH, f"{owner} package manifest path drifted")
+    require_artifact_entry_shape(payload.get("package_manifest_artifact"), owner)
+    require_artifact_entry_shape(payload.get("package_channels_summary_artifact"), owner)
+    receipt_artifact = payload.get("source_install_receipt_artifact")
+    require(isinstance(receipt_artifact, dict), f"{owner} source_install_receipt_artifact must be an object")
+    if receipt_artifact.get("exists") is True:
+        require_artifact_entry_shape(receipt_artifact, owner)
+    else:
+        require(receipt_artifact.get("exists") is False, f"{owner} receipt artifact exists flag drifted")
+    source_receipt = payload.get("source_install_receipt")
+    require(isinstance(source_receipt, dict), f"{owner} source_install_receipt must be an object")
+    require_status(
+        payload,
+        install_receipt_status(
+            source_receipt_path=str(payload.get("source_install_receipt_path", "")),
+            source_receipt=source_receipt,
+            platform_id=platform_id,
+        ),
+        owner,
+    )
+
+
+def validate_clean_install_distribution_summary(platform_id: str) -> None:
+    path_suffix = "install/install-distribution-credibility-summary.json"
+    owner = platform_scoped_path(platform_id, path_suffix)
+    payload = load_optional_platform_generated_json(platform_id, path_suffix)
+    if payload is None:
+        return
+    require(
+        payload.get("contract_id") == "objc3c.package_ecosystem.install_distribution_credibility.summary.v1",
+        f"{owner} contract_id drifted",
+    )
+    require(payload.get("status") == "PASS", f"{owner} did not record PASS status")
+    require(payload.get("failures") == [], f"{owner} recorded failures")
+    require(payload.get("network_policy") == "no-network-during-validation", f"{owner} network policy drifted")
+    require(
+        payload.get("hosted_registry_support") == "unsupported-fail-closed-if-claimed",
+        f"{owner} hosted registry policy drifted",
+    )
+    probe = payload.get("from_nothing_probe")
+    require(isinstance(probe, dict), f"{owner} missing from_nothing_probe")
+    require(probe.get("requested") is True, f"{owner} did not request from-nothing validation")
+    require(
+        probe.get("generated_from_clean_owned_outputs") is True,
+        f"{owner} did not record clean owned output generation",
+    )
+    owned_after_clean = probe.get("owned_outputs_exist_after_clean")
+    require(isinstance(owned_after_clean, dict), f"{owner} missing owned_outputs_exist_after_clean")
+    require(
+        all(value is False for value in owned_after_clean.values()),
+        f"{owner} found preexisting owned outputs after clean",
+    )
+    require(
+        payload.get("install_receipt") == "tmp/artifacts/package-ecosystem/install-validation/clean-root/objc3c-install-receipt.json",
+        f"{owner} install receipt path drifted",
+    )
+    require(
+        payload.get("install_verification") == PACKAGE_INSTALL_DISTRIBUTION_VERIFICATION_PATH,
+        f"{owner} install verification path drifted",
+    )
+    require(isinstance(payload.get("generated_paths"), list), f"{owner} generated_paths must be a list")
+
+
+def validate_clean_install_distribution_verification(platform_id: str) -> None:
+    path_suffix = "install/install-distribution-verification.json"
+    owner = platform_scoped_path(platform_id, path_suffix)
+    payload = load_optional_platform_generated_json(platform_id, path_suffix)
+    if payload is None:
+        return
+    require(
+        payload.get("contract_id") == "objc3c.package_ecosystem.install_distribution_credibility.v1",
+        f"{owner} contract_id drifted",
+    )
+    require(payload.get("network_resolution_support") == "unsupported", f"{owner} network support drifted")
+    require(
+        payload.get("hosted_registry_support") == "unsupported-fail-closed-if-claimed",
+        f"{owner} hosted registry policy drifted",
+    )
+    clean_start = payload.get("clean_start")
+    require(isinstance(clean_start, dict), f"{owner} missing clean_start")
+    require(clean_start.get("stale_artifacts_allowed") is False, f"{owner} allowed stale artifacts")
+    require(
+        payload.get("install_receipt") == "tmp/artifacts/package-ecosystem/install-validation/clean-root/objc3c-install-receipt.json",
+        f"{owner} install receipt path drifted",
+    )
+    require(payload.get("package_bridge") == "objc3c", f"{owner} package bridge drifted")
+    package_count = payload.get("package_count")
+    manifest_count = payload.get("manifest_count")
+    installed_packages = payload.get("installed_packages")
+    require(isinstance(package_count, int) and package_count > 0, f"{owner} package_count invalid")
+    require(isinstance(manifest_count, int) and manifest_count == package_count, f"{owner} manifest_count invalid")
+    require(isinstance(installed_packages, list), f"{owner} installed_packages must be a list")
+    require(len(installed_packages) == package_count, f"{owner} installed package count drifted")
+    for package in installed_packages:
+        require(isinstance(package, dict), f"{owner} installed package entry must be an object")
+        for field_name in ("package_id", "source_manifest", "installed_manifest", "manifest_digest", "lock_manifest_digest"):
+            require(isinstance(package.get(field_name), str) and package[field_name], f"{owner} installed package missing {field_name}")
+        require(
+            package.get("manifest_digest") == package.get("lock_manifest_digest"),
+            f"{owner} installed package digest drifted",
+        )
+    platform_host_evidence = payload.get("platform_host_evidence")
+    if isinstance(platform_host_evidence, dict):
+        install_receipt = platform_host_evidence.get("install_receipt")
+        if isinstance(install_receipt, dict):
+            require(install_receipt.get("platform_id") == platform_id, f"{owner} platform install receipt platform drifted")
+            require(
+                install_receipt.get("platform_scoped_clean_install_receipt")
+                == platform_scoped_path(platform_id, "install/clean-install-distribution-receipt.json"),
+                f"{owner} platform clean install receipt path drifted",
+            )
+            require(
+                install_receipt.get("host_promotion_receipt_path_reserved")
+                == platform_scoped_path(platform_id, "install/install-receipt.json"),
+                f"{owner} host promotion receipt reservation drifted",
+            )
+            digest = install_receipt.get("source_receipt_sha256")
+            require(isinstance(digest, str) and len(digest) == 64, f"{owner} clean install receipt digest missing")
+
+
+def validate_clean_install_distribution_receipt(platform_id: str) -> None:
+    path_suffix = "install/clean-install-distribution-receipt.json"
+    owner = platform_scoped_path(platform_id, path_suffix)
+    payload = load_optional_platform_generated_json(platform_id, path_suffix)
+    if payload is None:
+        return
+    require(
+        payload.get("contract_id") == "objc3c.package_ecosystem.from_nothing_install_receipt.v1",
+        f"{owner} contract_id drifted",
+    )
+    require(payload.get("package_bridge") == "objc3c", f"{owner} package bridge drifted")
+    require(
+        payload.get("install_command") == "npm run objc3c -- validate-package-install-distribution --from-nothing",
+        f"{owner} install command drifted",
+    )
+    require(payload.get("machine_owned") is True, f"{owner} machine_owned drifted")
+    require(
+        payload.get("install_root") == "tmp/artifacts/package-ecosystem/install-validation/clean-root",
+        f"{owner} install_root drifted",
+    )
+    require(
+        payload.get("install_home") == "tmp/artifacts/package-ecosystem/install-validation/clean-root/objc3c",
+        f"{owner} install_home drifted",
+    )
+
+
+def validate_runtime_load_probe_artifact(platform_id: str) -> None:
+    path_suffix = "execution/runtime-load-probe.json"
+    owner = platform_scoped_path(platform_id, path_suffix)
+    record_ids = reviewed_source_record_ids(platform_id)
+    payload = load_platform_generated_json(platform_id, path_suffix)
+    expected = expected_platform_identity(platform_id)
+    require_common_generated_artifact(
+        payload,
+        platform_id=platform_id,
+        path_suffix=path_suffix,
+        contract_id="objc3c.platform.hosted-runtime-load-probe.generated.v1",
+        reviewed_record_id=record_ids["runtime_load_link_proof_record_id"],
+        reviewed_source_required=True,
+    )
+    require(payload.get("native_execution_claimed") is False, f"{owner} claimed native execution")
+    require(payload.get("target_platform_id") == platform_id, f"{owner} target_platform_id drifted")
+    require(payload.get("target_triple") == expected["target_triple"], f"{owner} target_triple drifted")
+    require(payload.get("runtime_library_names") == expected["runtime_library_names"], f"{owner} runtime libraries drifted")
+    require(payload.get("loader_path_policy") == expected["loader_path_policy"], f"{owner} loader policy drifted")
+    require(isinstance(payload.get("resolved_runtime_paths"), list), f"{owner} resolved_runtime_paths must be a list")
+    require(isinstance(payload.get("driver_linker_flags"), list), f"{owner} driver_linker_flags must be a list")
+    source_artifacts = require_source_artifacts(payload, owner)
+    require_status(
+        payload,
+        runtime_load_probe_status(
+            source_exists=artifact_exists_in_payload(source_artifacts, NATIVE_EXECUTION_SMOKE_SUMMARY_PATH),
+            exit_code=payload.get("load_probe_exit_code", -1),
+            native_status=str(payload.get("native_execution_status", "")),
+            skip_reason=str(payload.get("skip_reason", "")),
+        ),
+        owner,
+    )
+    if payload.get("status") == "generated-host-artifact-present":
+        runtime_library = str(payload.get("runtime_library", ""))
+        require(
+            any(runtime_library.endswith(name) for name in expected["runtime_library_names"]),
+            f"{owner} runtime library did not match expected platform runtime",
+        )
+        require(payload.get("resolved_runtime_paths"), f"{owner} present runtime proof had no resolved runtime paths")
+
+
+def validate_generated_platform_artifact_content(platform_id: str) -> None:
+    validate_object_identity_artifact(platform_id)
+    validate_debug_identity_artifact(platform_id)
+    validate_runtime_library_manifest_artifact(platform_id)
+    validate_install_receipt_artifact(platform_id)
+    validate_clean_install_distribution_summary(platform_id)
+    validate_clean_install_distribution_verification(platform_id)
+    validate_clean_install_distribution_receipt(platform_id)
+    validate_runtime_load_probe_artifact(platform_id)
 
 
 def write_object_identity_artifact(platform_id: str) -> None:
@@ -1277,6 +1726,7 @@ def validate_report(report: dict[str, Any], platform_id: str) -> list[str]:
             "host evidence report missing durable promotion artifact files: "
             + ", ".join(missing_files)
         )
+    validate_generated_platform_artifact_content(platform_id)
     return generated_paths
 
 

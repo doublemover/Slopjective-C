@@ -2,6 +2,12 @@
   "contract_id": "objc3c.packaging.channels.workflow.surface.v1",
   "validate_action": "validate-packaging-channels",
   "end_to_end_action": "validate-packaging-channels-end-to-end",
+  "integrated_required_steps": [
+    "validate-release-foundation",
+    "check-packaging-channels-surface",
+    "check-packaging-channels-schema-surface",
+    "build-package-channels"
+  ],
   "package_bridge": "objc3c",
   "required_actions": [
     "check-packaging-channels-surface",

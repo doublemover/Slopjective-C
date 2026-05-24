@@ -109,6 +109,7 @@ HOST_PROMOTION_GENERATED_REPORT_RELATIVE_PATHS: tuple[str, ...] = (
     "install/end-to-end-summary.json",
     "install/install-distribution-credibility-summary.json",
     "install/install-distribution-verification.json",
+    "install/clean-install-distribution-receipt.json",
     "execution/runtime-load-probe.json",
     "execution/hosted-execution-smoke-summary.json",
     "execution/native-execution-smoke-summary.json",

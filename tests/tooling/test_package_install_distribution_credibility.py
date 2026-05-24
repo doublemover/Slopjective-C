@@ -26,9 +26,11 @@ from objc3c_package_manager.install_distribution import (  # noqa: E402
     PACKAGE_OPERATION_RECEIPT_CONTRACT_ID,
     PACKAGE_UNINSTALL_RECEIPT_REL,
     PACKAGE_UPDATE_RECEIPT_REL,
+    PLATFORM_CLEAN_INSTALL_RECEIPT_NAME,
     collect_install_distribution_failures,
     collect_install_proof_failures,
     collect_package_operation_receipt_failures,
+    publish_platform_install_receipt,
 )
 from objc3c_package_manager.model import PACKAGE_MANAGER_TAMPER_CODE  # noqa: E402
 from objc3c_tooling.json_io import load_json_object as load_json  # noqa: E402
@@ -39,6 +41,7 @@ from scripts.objc3c_workflow.actions.ecosystem_publication_owner_contracts impor
     ecosystem_publication_owner_contract,
 )
 from scripts.objc3c_workflow.actions import ecosystem_publication_package  # noqa: E402
+from objc3c_package_manager import install_distribution as install_distribution_module  # noqa: E402
 from scripts.objc3c_workflow.actions.ecosystem_publication_package_contracts import (  # noqa: E402
     PACKAGE_INSTALL_DISTRIBUTION_PY,
     PACKAGE_PUBLICATION_ACTION_CONTRACTS,
@@ -82,6 +85,45 @@ def generated_payloads() -> tuple[dict[str, Any], dict[str, Any], dict[str, Any]
         load_json(RESTORE_RECEIPT_PATH),
         load_json(VERIFICATION_PATH),
     )
+
+
+def test_platform_install_receipt_keeps_host_promotion_receipt_path_reserved(
+    monkeypatch,
+    tmp_path,
+) -> None:
+    receipt_path = tmp_path / INSTALL_RECEIPT_REL
+    receipt_path.parent.mkdir(parents=True, exist_ok=True)
+    receipt_path.write_text('{"contract_id":"test.receipt"}\n', encoding="utf-8")
+    monkeypatch.setenv("OBJC3C_PLATFORM_ID", "linux-x64")
+    monkeypatch.setenv(
+        "OBJC3C_PLATFORM_EVIDENCE_ROOT",
+        "tmp/reports/platform-host-evidence/linux-x64",
+    )
+    monkeypatch.setattr(
+        install_distribution_module,
+        "repo_rel",
+        lambda path: Path(path).relative_to(tmp_path).as_posix(),
+    )
+
+    result = publish_platform_install_receipt(
+        root=tmp_path,
+        install_receipt_path=receipt_path,
+    )
+
+    assert result is not None
+    expected_clean_receipt = (
+        "tmp/reports/platform-host-evidence/linux-x64/install/"
+        f"{PLATFORM_CLEAN_INSTALL_RECEIPT_NAME}"
+    )
+    assert result["platform_scoped_clean_install_receipt"] == expected_clean_receipt
+    assert (
+        result["host_promotion_receipt_path_reserved"]
+        == "tmp/reports/platform-host-evidence/linux-x64/install/install-receipt.json"
+    )
+    assert (tmp_path / expected_clean_receipt).is_file()
+    assert not (
+        tmp_path / "tmp/reports/platform-host-evidence/linux-x64/install/install-receipt.json"
+    ).exists()
 
 
 def test_install_distribution_check_generates_clean_root_summary(install_summary: dict[str, Any]) -> None:

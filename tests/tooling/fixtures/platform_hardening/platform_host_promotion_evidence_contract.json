@@ -332,6 +332,7 @@
           "tmp/reports/platform-host-evidence/linux-x64/install/end-to-end-summary.json",
           "tmp/reports/platform-host-evidence/linux-x64/install/install-distribution-credibility-summary.json",
           "tmp/reports/platform-host-evidence/linux-x64/install/install-distribution-verification.json",
+          "tmp/reports/platform-host-evidence/linux-x64/install/clean-install-distribution-receipt.json",
           "tmp/reports/platform-host-evidence/linux-x64/execution/runtime-load-probe.json",
           "tmp/reports/platform-host-evidence/linux-x64/execution/hosted-execution-smoke-summary.json",
           "tmp/reports/platform-host-evidence/linux-x64/execution/native-execution-smoke-summary.json"
@@ -514,6 +515,7 @@
           "tmp/reports/platform-host-evidence/darwin-arm64/install/end-to-end-summary.json",
           "tmp/reports/platform-host-evidence/darwin-arm64/install/install-distribution-credibility-summary.json",
           "tmp/reports/platform-host-evidence/darwin-arm64/install/install-distribution-verification.json",
+          "tmp/reports/platform-host-evidence/darwin-arm64/install/clean-install-distribution-receipt.json",
           "tmp/reports/platform-host-evidence/darwin-arm64/execution/runtime-load-probe.json",
           "tmp/reports/platform-host-evidence/darwin-arm64/execution/hosted-execution-smoke-summary.json",
           "tmp/reports/platform-host-evidence/darwin-arm64/execution/native-execution-smoke-summary.json"

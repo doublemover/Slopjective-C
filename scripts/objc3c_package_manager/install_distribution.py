@@ -48,6 +48,7 @@ PACKAGE_UNINSTALL_RECEIPT_REL = (
 INSTALL_VERIFICATION_REL = (
     f"{INSTALL_VALIDATION_ROOT_REL}/objc3c-install-distribution-verification.json"
 )
+PLATFORM_CLEAN_INSTALL_RECEIPT_NAME = "clean-install-distribution-receipt.json"
 INSTALL_LOCAL_ARTIFACT_ROOT_REL = f"{INSTALL_VALIDATION_ROOT_REL}/local-package-artifacts"
 INSTALL_PROOF_MANIFEST_REL = f"{INSTALL_VALIDATION_ROOT_REL}/objc3c-install-proof-manifest.json"
 INSTALL_BOOTSTRAP_ENTRYPOINT = "Bootstrap-objc3cEnvironment.ps1"
@@ -175,14 +176,17 @@ def publish_platform_install_receipt(
     if config is None:
         return None
     platform_id, evidence_root = config
-    target_path = evidence_root / "install" / "install-receipt.json"
+    target_path = evidence_root / "install" / PLATFORM_CLEAN_INSTALL_RECEIPT_NAME
     target_path.parent.mkdir(parents=True, exist_ok=True)
     shutil.copy2(install_receipt_path, target_path)
     return {
         "platform_id": platform_id,
         "source_receipt": repo_rel(install_receipt_path),
-        "platform_scoped_receipt": repo_rel(target_path),
+        "platform_scoped_clean_install_receipt": repo_rel(target_path),
         "source_receipt_sha256": file_digest(install_receipt_path),
+        "host_promotion_receipt_path_reserved": (
+            f"tmp/reports/platform-host-evidence/{platform_id}/install/install-receipt.json"
+        ),
         "support_truth": False,
     }
 
@@ -1083,6 +1087,7 @@ __all__ = [
     "PACKAGE_RECEIPT_ROOT_REL",
     "PACKAGE_UNINSTALL_RECEIPT_REL",
     "PACKAGE_UPDATE_RECEIPT_REL",
+    "PLATFORM_CLEAN_INSTALL_RECEIPT_NAME",
     "collect_install_distribution_failures",
     "collect_install_proof_failures",
     "collect_package_operation_receipt_failures",
@@ -1092,5 +1097,6 @@ __all__ = [
     "package_operation_receipt_payload",
     "package_ids",
     "package_manifest_digest",
+    "publish_platform_install_receipt",
     "reset_clean_install_root",
 ]
