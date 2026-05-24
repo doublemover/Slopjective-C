@@ -42,9 +42,11 @@ def assert_success_payload(payload: dict[str, Any]) -> None:
         "issue_ref": 8232,
         "required_tool": "llc",
         "required_probe": "llc --filetype=obj",
+        "required_target_probe": "llc --filetype=obj --mtriple=<target> emits a non-empty object",
         "status": "native_object_emission_supported",
         "missing_llc_status": "native_object_emission_missing_llc",
         "missing_filetype_status": "native_object_emission_filetype_obj_unavailable",
+        "target_object_status": "native_object_emission_target_object_unavailable",
         "mixed_toolchain_status": "native_object_emission_mixed_toolchain_root",
         "mismatched_version_status": "native_object_emission_mismatched_tool_versions",
         "unsupported_version_status": "native_object_emission_unsupported_tool_version",
@@ -130,6 +132,33 @@ def assert_filetype_unsupported_payload(payload: dict[str, Any]) -> None:
     assert any(
         feature["feature"] == "llvm-direct-object-emission"
         and feature["reason"] == "llc missing --filetype=obj support"
+        for feature in matrix_entry["rejected_features"]
+    )
+
+
+def assert_target_object_unsupported_payload(payload: dict[str, Any]) -> None:
+    sema_parity = payload["sema_type_system_parity"]
+    llvm_matrix = payload["llvm_support_matrix"]
+
+    assert payload["ok"] is False
+    assert payload["llc"]["found"] is True
+    assert payload["llc_features"]["supports_filetype_obj"] is True
+    assert payload["llc_features"]["supports_target_object_emission"] is False
+    assert payload["llc_features"]["target_object_exit_code"] == 1
+    assert (
+        llvm_matrix["native_object_emission_contract"]["status"]
+        == "native_object_emission_target_object_unavailable"
+    )
+    assert sema_parity["deterministic_type_metadata_handoff"] is False
+    assert any(
+        blocker.startswith("llc target object emission failed for ")
+        for blocker in sema_parity["blockers"]
+    )
+    matrix_entry = llvm_matrix["toolchain_matrix_entries"][0]
+    assert matrix_entry["object_emission_capability"] == "rejected"
+    assert any(
+        feature["feature"] == "llvm-direct-object-emission"
+        and feature["reason"].startswith("llc target object emission failed for ")
         for feature in matrix_entry["rejected_features"]
     )
 

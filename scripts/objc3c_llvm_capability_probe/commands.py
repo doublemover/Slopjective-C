@@ -4,6 +4,8 @@ from __future__ import annotations
 
 import subprocess
 import shutil
+import platform
+import tempfile
 from pathlib import Path
 
 from objc3c_tooling.subprocesses import run_timed
@@ -63,7 +65,35 @@ def probe_executable(path: Path, *, role: str) -> dict[str, object]:
     ).as_payload()
 
 
-def probe_llc_filetype_obj(path: Path) -> dict[str, object]:
+def default_object_emission_target_triple() -> str:
+    system = platform.system().lower()
+    machine = platform.machine().lower()
+    if system == "windows" and machine in {"amd64", "x86_64"}:
+        return "x86_64-pc-windows-msvc"
+    if system == "linux" and machine in {"amd64", "x86_64"}:
+        return "x86_64-unknown-linux-gnu"
+    if system == "darwin" and machine in {"arm64", "aarch64"}:
+        return "aarch64-apple-darwin"
+    return f"{machine or 'unknown'}-unknown-{system or 'unknown'}"
+
+
+def _target_object_probe_ir(target_triple: str) -> str:
+    return "\n".join(
+        [
+            '; ModuleID = "objc3c-native-object-emission-capability-probe"',
+            'source_filename = "objc3c-native-object-emission-capability-probe"',
+            f'target triple = "{target_triple}"',
+            "",
+            "define i32 @objc3c_native_object_emission_capability_probe() {",
+            "entry:",
+            "  ret i32 0",
+            "}",
+            "",
+        ]
+    )
+
+
+def probe_llc_filetype_obj(path: Path, *, target_triple: str | None = None) -> dict[str, object]:
     help_cmd = [str(path), "--help"]
     help_result, help_duration_ms = run_command(help_cmd)
     help_text = (help_result.stdout or "") + (help_result.stderr or "")
@@ -78,6 +108,42 @@ def probe_llc_filetype_obj(path: Path) -> dict[str, object]:
     supports_from_command = filetype_version_result.returncode == 0
     supports_filetype_obj = supports_from_help or supports_from_command
 
+    resolved_target_triple = target_triple or default_object_emission_target_triple()
+    target_object_exit_code = 1
+    target_object_duration_ms = 0.0
+    target_object_created = False
+    target_object_size_bytes = 0
+    target_object_diagnostic = ""
+    if supports_filetype_obj:
+        with tempfile.TemporaryDirectory(prefix="objc3c-llc-object-probe-") as temp_dir_text:
+            temp_dir = Path(temp_dir_text)
+            ir_path = temp_dir / "probe.ll"
+            object_path = temp_dir / ("probe.obj" if platform.system().lower() == "windows" else "probe.o")
+            ir_path.write_text(_target_object_probe_ir(resolved_target_triple), encoding="utf-8")
+            target_object_cmd = [
+                str(path),
+                "--filetype=obj",
+                f"--mtriple={resolved_target_triple}",
+                "-o",
+                str(object_path),
+                str(ir_path),
+            ]
+            target_object_result, target_object_duration_ms = run_command(target_object_cmd)
+            target_object_exit_code = target_object_result.returncode
+            target_object_created = object_path.is_file()
+            target_object_size_bytes = object_path.stat().st_size if target_object_created else 0
+            if target_object_exit_code != 0 or not target_object_created or target_object_size_bytes <= 0:
+                target_object_diagnostic = first_non_empty_line(
+                    (target_object_result.stderr or "") + (target_object_result.stdout or "")
+                )
+
+    supports_target_object_emission = (
+        supports_filetype_obj
+        and target_object_exit_code == 0
+        and target_object_created
+        and target_object_size_bytes > 0
+    )
+
     return {
         "help_exit_code": help_result.returncode,
         "help_duration_ms": help_duration_ms,
@@ -86,6 +152,13 @@ def probe_llc_filetype_obj(path: Path) -> dict[str, object]:
         "version_with_filetype_exit_code": filetype_version_result.returncode,
         "version_with_filetype_duration_ms": version_with_filetype_duration_ms,
         "supports_filetype_obj": supports_filetype_obj,
+        "target_triple": resolved_target_triple,
+        "target_object_exit_code": target_object_exit_code,
+        "target_object_duration_ms": target_object_duration_ms,
+        "target_object_created": target_object_created,
+        "target_object_size_bytes": target_object_size_bytes,
+        "supports_target_object_emission": supports_target_object_emission,
+        "target_object_diagnostic": target_object_diagnostic,
     }
 
 

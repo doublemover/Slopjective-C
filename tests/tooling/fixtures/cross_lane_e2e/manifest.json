@@ -201,7 +201,7 @@
         {
           "capability_id": "compiler.optimization.method-inlining",
           "support_claim": "objc3c.behavior.optimization.method-inlining-safe-subset",
-          "status": "bounded-supported",
+          "status": "implemented",
           "claim_boundary": "method inlining is claimable only for exact-callee, before/after-IR-proven scalar candidates with inline-frame source maps, side-effect replay, and runtime invalidation replay; stale or missing proof paths reject fail-closed"
         },
         {

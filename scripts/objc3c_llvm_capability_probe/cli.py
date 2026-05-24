@@ -17,6 +17,7 @@ from .classification import (
     build_sema_type_system_parity_surface,
 )
 from .commands import (
+    default_object_emission_target_triple,
     probe_executable,
     probe_llc_filetype_obj,
     probe_llvm_config_paths,
@@ -43,6 +44,11 @@ def parse_args(argv: Sequence[str]) -> argparse.Namespace:
     parser.add_argument("--llc", type=Path, default=_default_llvm_tool("llc"))
     parser.add_argument("--llvm-ar", type=Path, default=_default_llvm_tool("llvm-ar"))
     parser.add_argument("--llvm-config", type=Path, default=_default_llvm_tool("llvm-config"))
+    parser.add_argument(
+        "--target-triple",
+        default=default_object_emission_target_triple(),
+        help="Target triple llc must prove with an actual --filetype=obj emission.",
+    )
     parser.add_argument("--summary-out", type=Path, default=DEFAULT_SUMMARY_OUT)
     return parser.parse_args(argv)
 
@@ -80,9 +86,14 @@ def run(argv: Sequence[str]) -> int:
 
     llc_features: dict[str, object] = {
         "supports_filetype_obj": False,
+        "target_triple": str(args.target_triple),
+        "supports_target_object_emission": False,
     }
     if bool(llc_probe["found"]):
-        llc_features = probe_llc_filetype_obj(args.llc)
+        llc_features = probe_llc_filetype_obj(
+            args.llc,
+            target_triple=str(args.target_triple),
+        )
 
     llvm_config_features: dict[str, object] = {
         "headers_libraries_discovered": False,

@@ -23,6 +23,7 @@
     "archive_digests",
     "payload_contract",
     "receipt_contracts",
+    "reusable_runnable_package_identity_contract",
     "portable_archive",
     "installer_archive",
     "offline_archive",
@@ -131,6 +132,19 @@
     "required_entries",
     "entry_digests",
     "clean_room_source_policy"
+  ],
+  "required_reusable_runnable_package_identity_fields": [
+    "target_platform_id",
+    "target_triple",
+    "object_format",
+    "debug_format",
+    "runtime_library_kind",
+    "native_executable",
+    "runtime_library",
+    "runtime_library_name",
+    "package_root_layout",
+    "support_truth",
+    "native_execution_claimed"
   ],
   "required_receipt_contract_fields": [
     "contract_id",

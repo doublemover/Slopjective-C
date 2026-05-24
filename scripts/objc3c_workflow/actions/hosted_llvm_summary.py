@@ -57,6 +57,8 @@ def hosted_native_object_emission_status() -> str:
         return "native_object_emission_missing_llc"
     if not bool(llc_features.get("supports_filetype_obj")):
         return "native_object_emission_filetype_obj_unavailable"
+    if not bool(llc_features.get("supports_target_object_emission")):
+        return "native_object_emission_target_object_unavailable"
     contract_status = _native_object_emission_contract_status(summary)
     toolchain_identity = summary_section(summary, "toolchain_identity")
     if contract_status and contract_status != "native_object_emission_supported":

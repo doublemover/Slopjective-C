@@ -105,6 +105,17 @@ def collect_failures(
         failures.append(str(llc_probe.get("diagnostic", "llc executable missing")))
     if bool(llc_probe["found"]) and not bool(llc_features["supports_filetype_obj"]):
         failures.append("llc capability probe failed: --filetype=obj support not detected")
+    if (
+        bool(llc_probe["found"])
+        and bool(llc_features["supports_filetype_obj"])
+        and not bool(llc_features.get("supports_target_object_emission", False))
+    ):
+        target_triple = str(llc_features.get("target_triple", "target"))
+        diagnostic = str(llc_features.get("target_object_diagnostic", ""))
+        failures.append(
+            f"llc capability probe failed: target object emission unavailable for {target_triple}"
+            + (f": {diagnostic}" if diagnostic else "")
+        )
     if not bool(llvm_ar_probe["found"]):
         failures.append(str(llvm_ar_probe.get("diagnostic", "llvm-ar executable missing")))
     headers_libraries_discovered = bool(
@@ -372,6 +383,26 @@ def _native_object_emission_identity_failure_status(
     )
 
 
+def _native_object_emission_rejection_reason(
+    *,
+    llc_probe: dict[str, object],
+    llc_supports_obj: bool,
+    target_object_ready: bool,
+    target_triple: str,
+    toolchain_identity: dict[str, object],
+) -> str:
+    if not bool(llc_probe.get("found")):
+        return str(llc_probe.get("diagnostic", "llc executable missing"))
+    if not llc_supports_obj:
+        return "llc missing --filetype=obj support"
+    if not target_object_ready:
+        return f"llc target object emission failed for {target_triple or 'target'}"
+    return (
+        "; ".join(str(item) for item in toolchain_identity.get("diagnostics", []) if str(item))
+        or "coherent LLVM toolchain identity unavailable"
+    )
+
+
 def build_llvm_support_matrix(
     *,
     clang_probe: dict[str, object],
@@ -391,6 +422,8 @@ def build_llvm_support_matrix(
     llvm_config_record = _tool_record("llvm-config", llvm_config_probe)
     llc_found = bool(llc_probe.get("found"))
     llc_supports_obj = bool(llc_features.get("supports_filetype_obj", False))
+    target_object_ready = bool(llc_features.get("supports_target_object_emission", False))
+    target_triple = str(llc_features.get("target_triple", ""))
     llvm_ar_found = bool(llvm_ar_probe.get("found"))
     headers_libraries_discovered = bool(
         llvm_config_features.get("headers_libraries_discovered", False)
@@ -399,7 +432,12 @@ def build_llvm_support_matrix(
     parity_ready = bool(sema_type_system_parity.get("parity_ready", False))
     toolchain_claimable = bool(toolchain_identity.get("claimable", False))
     clangxx_ready = bool(clangxx_probe.get("found"))
-    object_emission_ready = llc_found and llc_supports_obj and toolchain_claimable
+    object_emission_ready = (
+        llc_found
+        and llc_supports_obj
+        and target_object_ready
+        and toolchain_claimable
+    )
     package_capability_ready = (
         parity_ready and llvm_ar_found and headers_libraries_discovered and toolchain_claimable
     )
@@ -418,7 +456,11 @@ def build_llvm_support_matrix(
             else (
                 "native_object_emission_filetype_obj_unavailable"
                 if not llc_supports_obj
-                else _native_object_emission_identity_failure_status(toolchain_identity)
+                else (
+                    "native_object_emission_target_object_unavailable"
+                    if not target_object_ready
+                    else _native_object_emission_identity_failure_status(toolchain_identity)
+                )
             )
         )
     )
@@ -451,19 +493,12 @@ def build_llvm_support_matrix(
         rejected_features.append(
             {
                 "feature": "llvm-direct-object-emission",
-                "reason": (
-                    str(llc_probe.get("diagnostic", "llc executable missing"))
-                    if not bool(llc_probe.get("found"))
-                    else (
-                        "llc missing --filetype=obj support"
-                        if not llc_supports_obj
-                        else "; ".join(
-                            str(item)
-                            for item in toolchain_identity.get("diagnostics", [])
-                            if str(item)
-                        )
-                        or "coherent LLVM toolchain identity unavailable"
-                    )
+                "reason": _native_object_emission_rejection_reason(
+                    llc_probe=llc_probe,
+                    llc_supports_obj=llc_supports_obj,
+                    target_object_ready=target_object_ready,
+                    target_triple=target_triple,
+                    toolchain_identity=toolchain_identity,
                 ),
             }
         )
@@ -562,9 +597,11 @@ def build_llvm_support_matrix(
             "issue_ref": 8232,
             "required_tool": "llc",
             "required_probe": "llc --filetype=obj",
+            "required_target_probe": "llc --filetype=obj --mtriple=<target> emits a non-empty object",
             "status": native_object_emission_status,
             "missing_llc_status": "native_object_emission_missing_llc",
             "missing_filetype_status": "native_object_emission_filetype_obj_unavailable",
+            "target_object_status": "native_object_emission_target_object_unavailable",
             "mixed_toolchain_status": "native_object_emission_mixed_toolchain_root",
             "mismatched_version_status": "native_object_emission_mismatched_tool_versions",
             "unsupported_version_status": "native_object_emission_unsupported_tool_version",
@@ -610,19 +647,12 @@ def build_llvm_support_matrix(
                 failure_reason=(
                     ""
                     if object_emission_ready
-                    else (
-                        str(llc_probe.get("diagnostic", "llc executable missing"))
-                        if not bool(llc_probe.get("found"))
-                        else (
-                            "llc missing --filetype=obj support"
-                            if not llc_supports_obj
-                            else "; ".join(
-                                str(item)
-                                for item in toolchain_identity.get("diagnostics", [])
-                                if str(item)
-                            )
-                            or "coherent LLVM toolchain identity unavailable"
-                        )
+                    else _native_object_emission_rejection_reason(
+                        llc_probe=llc_probe,
+                        llc_supports_obj=llc_supports_obj,
+                        target_object_ready=target_object_ready,
+                        target_triple=target_triple,
+                        toolchain_identity=toolchain_identity,
                     )
                 ),
             ),
@@ -746,6 +776,7 @@ def build_summary(
         toolchain_identity=toolchain_identity,
         sema_type_system_parity=sema_type_system_parity,
     )
+    native_object_contract = llvm_support_matrix["native_object_emission_contract"]
     return {
         "mode": MODE,
         "clang": clang_probe,
@@ -759,6 +790,12 @@ def build_summary(
         "llvm_support_matrix": llvm_support_matrix,
         "host_platform_support_gate": llvm_support_matrix["host_platform_support_gate"],
         "toolchain_resolution": llvm_support_matrix["toolchain_resolution"],
+        "native_object_emission_status": native_object_contract["status"],
+        "llc_filetype_obj_available": bool(llc_features.get("supports_filetype_obj", False)),
+        "llc_target_object_emission_available": bool(
+            llc_features.get("supports_target_object_emission", False)
+        ),
+        "coherent_toolchain_root": bool(toolchain_identity.get("claimable", False)),
         "sema_type_system_parity": sema_type_system_parity,
         "capability_demo_compatibility": capability_demo_compatibility,
         "failures": failure_list,

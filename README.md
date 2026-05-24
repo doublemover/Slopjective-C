@@ -302,8 +302,9 @@ rejected rows include:
   support is evidence-bound for Windows x64 through checked source promotion
   evidence; generated-only sanitizer reports and unsupported hosts do not
   promote support.
-- Native object emission without `llc --filetype=obj`. Missing `llc` is a
-  fail-closed status, and clang must not be treated as a fallback object
+- Native object emission without `llc --filetype=obj` and a non-empty
+  target-specific object from `llc`. Missing `llc` or target object emission is
+  a fail-closed status, and clang must not be treated as a fallback object
   emitter for support, package, or execution claims.
 - The #8206 platform expansion umbrella. It is an internal readiness/truth row
   over Windows x64 support, fail-closed Linux/macOS rows, Windows x64

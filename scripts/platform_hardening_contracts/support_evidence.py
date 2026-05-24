@@ -1608,7 +1608,7 @@ def _validate_unsupported_host_policy_contract(unsupported_host_policy: dict[str
     )
     required_claims = {str(claim) for claim in unsupported_host_policy.get("required_claims", [])}
     expect(
-        "native object emission requires llc --filetype=obj and has no clang substitute success path" in required_claims,
+        "native object emission requires llc --filetype=obj with target object output and has no clang substitute success path" in required_claims,
         "unsupported host policy missing native object emission no-fallback claim",
     )
     expect(
@@ -1667,6 +1667,7 @@ def _validate_hosted_runner_capability_summaries(
         "objc3c.hosted.sanitizer.address.reserved",
         "objc3c.hosted.sanitizer.undefined.reserved",
         "objc3c.hosted.toolchain.missing-llc.fail-closed",
+        "objc3c.hosted.toolchain.target-object.fail-closed",
         "objc3c.hosted.toolchain.mixed-root.fail-closed",
         "objc3c.hosted.toolchain.mismatched-version.fail-closed",
     }
@@ -1714,6 +1715,7 @@ def _native_object_statuses(native_contract: dict[str, Any]) -> set[str]:
         "success_status",
         "missing_llc_status",
         "missing_filetype_status",
+        "target_object_status",
         "mixed_toolchain_status",
         "mismatched_version_status",
         "unsupported_version_status",
@@ -1736,6 +1738,11 @@ def _validate_platform_expansion_object_emission_cases(
         expect(status in known_statuses, f"{case_id} used unknown native object emission status: {status}")
         expect(case.get("required_tool") == "llc", f"{case_id} did not require llc")
         expect(case.get("required_probe") == "llc --filetype=obj", f"{case_id} did not require llc --filetype=obj")
+        expect(
+            case.get("required_target_probe")
+            == "llc --filetype=obj --mtriple=<target> emits a non-empty object",
+            f"{case_id} did not require target-specific llc object emission",
+        )
         expect(case.get("clang_substitute_allowed") is False, f"{case_id} allowed clang substitute object emission")
         expect(case.get("toolchain_identity_required") is True, f"{case_id} did not require coherent toolchain identity")
         if bool(case.get("positive_case")):
@@ -2313,6 +2320,11 @@ def _validate_llvm_version_support_matrix(
         "native object emission required probe drifted",
     )
     expect(
+        native_object_contract.get("required_target_probe")
+        == "llc --filetype=obj --mtriple=<target> emits a non-empty object",
+        "native object emission required target probe drifted",
+    )
+    expect(
         native_object_contract.get("missing_llc_status") == "native_object_emission_missing_llc",
         "native object emission missing-llc status drifted",
     )
@@ -2320,6 +2332,11 @@ def _validate_llvm_version_support_matrix(
         native_object_contract.get("missing_filetype_status")
         == "native_object_emission_filetype_obj_unavailable",
         "native object emission filetype status drifted",
+    )
+    expect(
+        native_object_contract.get("target_object_status")
+        == "native_object_emission_target_object_unavailable",
+        "native object emission target-object status drifted",
     )
     expect(
         native_object_contract.get("mixed_toolchain_status")
@@ -2412,6 +2429,7 @@ def _validate_llvm_version_support_matrix(
     rejection_rules = matrix.get("rejection_rules", [])
     expect(isinstance(rejection_rules, list) and rejection_rules, "LLVM matrix missing rejection rules")
     missing_llc_rule: dict[str, Any] | None = None
+    target_object_rule: dict[str, Any] | None = None
     mixed_toolchain_rule: dict[str, Any] | None = None
     mismatched_version_rule: dict[str, Any] | None = None
     for rule in rejection_rules:
@@ -2421,6 +2439,8 @@ def _validate_llvm_version_support_matrix(
         expect(str(rule.get("diagnostic", "")), f"{rule.get('rule_id', '')} missing rejection diagnostic")
         if rule.get("rule_id") == "objc3c.llvm.reject.missing-llc":
             missing_llc_rule = rule
+        if rule.get("rule_id") == "objc3c.llvm.reject.target-object-unavailable":
+            target_object_rule = rule
         if rule.get("rule_id") == "objc3c.llvm.reject.mixed-toolchain":
             mixed_toolchain_rule = rule
         if rule.get("rule_id") == "objc3c.llvm.reject.mismatched-tool-version":
@@ -2443,6 +2463,16 @@ def _validate_llvm_version_support_matrix(
     expect(
         missing_llc_rule.get("fallback_policy") == "no-clang-fallback-success-claim",
         "missing-llc fallback policy drifted",
+    )
+    expect(target_object_rule is not None, "LLVM matrix missing target-object rejection rule")
+    expect(
+        target_object_rule.get("failure_status")
+        == "native_object_emission_target_object_unavailable",
+        "target-object rejection status drifted",
+    )
+    expect(
+        target_object_rule.get("fallback_policy") == "no-clang-fallback-success-claim",
+        "target-object fallback policy drifted",
     )
     expect(mixed_toolchain_rule is not None, "LLVM matrix missing mixed-toolchain rejection rule")
     expect(

@@ -31,6 +31,31 @@ def fake_supported_secondary_tool_run(
     return None
 
 
+def fake_llc_target_object_success(command: list[str]) -> subprocess.CompletedProcess[str] | None:
+    if len(command) < 6:
+        return None
+    if Path(command[0]).name.lower() not in {"llc", "llc.exe"}:
+        return None
+    if command[1] != "--filetype=obj" or not command[2].startswith("--mtriple="):
+        return None
+    if command[3] != "-o":
+        return None
+    Path(command[4]).write_bytes(b"OBJ")
+    return fake_completed(command, returncode=0, stdout="")
+
+
+def fake_llc_target_object_failure(command: list[str]) -> subprocess.CompletedProcess[str] | None:
+    if len(command) < 6:
+        return None
+    if Path(command[0]).name.lower() not in {"llc", "llc.exe"}:
+        return None
+    if command[1] != "--filetype=obj" or not command[2].startswith("--mtriple="):
+        return None
+    if command[3] != "-o":
+        return None
+    return fake_completed(command, returncode=1, stderr="target object emission unavailable\n")
+
+
 def fake_capabilities_detected_run(
     command: list[str],
     **_: object,
@@ -59,6 +84,9 @@ def fake_capabilities_detected_run(
             returncode=0,
             stdout="Debian LLVM version 19.1.0\n",
         )
+    target_object = fake_llc_target_object_success(command)
+    if target_object is not None:
+        return target_object
     raise AssertionError(f"unexpected command: {command}")
 
 
@@ -105,6 +133,9 @@ def fake_filetype_command_probe_run(
             returncode=0,
             stdout="Debian LLVM version 19.1.0\n",
         )
+    target_object = fake_llc_target_object_success(command)
+    if target_object is not None:
+        return target_object
     raise AssertionError(f"unexpected command: {command}")
 
 
@@ -167,6 +198,31 @@ def fake_clang_missing_run(
             returncode=0,
             stdout="Debian LLVM version 19.1.0\n",
         )
+    target_object = fake_llc_target_object_success(command)
+    if target_object is not None:
+        return target_object
+    raise AssertionError(f"unexpected command: {command}")
+
+
+def fake_llc_target_object_unsupported_run(
+    command: list[str],
+    **_: object,
+) -> subprocess.CompletedProcess[str]:
+    secondary = fake_supported_secondary_tool_run(command)
+    if secondary is not None:
+        return secondary
+    cmd = tuple(command)
+    if cmd == ("clang", "--version"):
+        return fake_completed(command, returncode=0, stdout="clang version 19.1.0\n")
+    if cmd == ("llc", "--version"):
+        return fake_completed(command, returncode=0, stdout="Debian LLVM version 19.1.0\n")
+    if cmd == ("llc", "--help"):
+        return fake_completed(command, returncode=0, stdout="--filetype=<type> ... obj ...\n")
+    if cmd == ("llc", "--filetype=obj", "--version"):
+        return fake_completed(command, returncode=0, stdout="Debian LLVM version 19.1.0\n")
+    target_object = fake_llc_target_object_failure(command)
+    if target_object is not None:
+        return target_object
     raise AssertionError(f"unexpected command: {command}")
 
 
@@ -236,6 +292,9 @@ def fake_mismatched_llvm_tool_versions_run(
         return fake_completed(command, returncode=0, stdout="--filetype=<type> ... obj ...\n")
     if cmd == ("llc", "--filetype=obj", "--version"):
         return fake_completed(command, returncode=0, stdout="LLVM version 21.1.0\n")
+    target_object = fake_llc_target_object_success(command)
+    if target_object is not None:
+        return target_object
     raise AssertionError(f"unexpected command: {command}")
 
 
@@ -259,6 +318,9 @@ def fake_mixed_toolchain_root_run(
         return fake_completed(command, returncode=0, stdout="--filetype=<type> ... obj ...\n")
     if tool_name == "llc.exe" and option_tuple == ("--filetype=obj", "--version"):
         return fake_completed(command, returncode=0, stdout="LLVM version 22.1.0\n")
+    target_object = fake_llc_target_object_success(command)
+    if target_object is not None:
+        return target_object
     raise AssertionError(f"unexpected command: {command}")
 
 
@@ -282,4 +344,7 @@ def fake_windows_install_root_without_llvm_config_run(
         return fake_completed(command, returncode=0, stdout="--filetype=<type> ... obj ...\n")
     if tool_name == "llc.exe" and option_tuple == ("--filetype=obj", "--version"):
         return fake_completed(command, returncode=0, stdout="LLVM version 22.1.6\n")
+    target_object = fake_llc_target_object_success(command)
+    if target_object is not None:
+        return target_object
     raise AssertionError(f"unexpected command: {command}")

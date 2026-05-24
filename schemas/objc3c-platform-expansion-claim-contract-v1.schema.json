@@ -1216,6 +1216,7 @@
         "positive_case",
         "required_tool",
         "required_probe",
+        "required_target_probe",
         "clang_substitute_allowed",
         "toolchain_identity_required",
         "blocks_surfaces",
@@ -1236,6 +1237,9 @@
         },
         "required_probe": {
           "const": "llc --filetype=obj"
+        },
+        "required_target_probe": {
+          "const": "llc --filetype=obj --mtriple=<target> emits a non-empty object"
         },
         "clang_substitute_allowed": {
           "const": false

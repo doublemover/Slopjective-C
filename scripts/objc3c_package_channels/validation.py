@@ -17,6 +17,9 @@ from .model import (
     DEFAULT_TARGET_PLATFORM_ID,
     RELEASE_PACKAGE_LAYOUT_BY_PLATFORM,
     RELEASE_PACKAGE_TARGET_PLATFORM_IDS,
+    REUSABLE_RUNNABLE_PACKAGE_IDENTITY_FIELDS,
+    MANIFEST_RELATIVE_PATH,
+    release_package_artifact_identity_for_platform,
     release_package_channel_id_for_platform,
     release_package_id_for_platform,
 )
@@ -31,7 +34,6 @@ ARCHIVE_DIGEST_FIELDS = {
 ARCHIVE_DIGEST_VERIFICATION_COMMAND = (
     "npm run objc3c -- validate-packaging-channels-end-to-end"
 )
-MANIFEST_RELATIVE_PATH = "artifacts/package/objc3c-runnable-toolchain-package.json"
 INSTALL_RECEIPT_CONTRACT_ID = "objc3c.packaging.channels.install-receipt.v1"
 INSTALL_RECEIPT_SCHEMA = "schemas/objc3c-package-install-receipt-v1.schema.json"
 INSTALL_RECEIPT_PATH = "objc3c-install-receipt.json"
@@ -185,6 +187,10 @@ def validate_manifest_required_fields(
         metadata_surface=metadata_surface,
         target_platform_id=target_platform_id,
     )
+    validate_reusable_runnable_package_identity_contract(
+        manifest_payload=manifest_payload,
+        metadata_surface=metadata_surface,
+    )
 
 
 def valid_sha256(value: object) -> bool:
@@ -241,6 +247,98 @@ def validate_payload_contract(
             raise RuntimeError(f"package-channels payload_contract {relative_path} sha256 must be lowercase SHA-256")
     if entry_digests[MANIFEST_RELATIVE_PATH]["sha256"] != payload_contract.get("manifest_sha256"):
         raise RuntimeError("package-channels payload_contract manifest digest drifted from entry digest")
+
+
+def validate_reusable_runnable_package_identity_contract(
+    *,
+    manifest_payload: dict[str, Any],
+    metadata_surface: dict[str, Any],
+) -> None:
+    contract = manifest_payload.get("reusable_runnable_package_identity_contract")
+    if not isinstance(contract, dict):
+        raise RuntimeError(
+            "package-channels manifest missing reusable_runnable_package_identity_contract"
+        )
+    if (
+        contract.get("contract_id")
+        != "objc3c.packaging.channels.reusable-runnable-package-identity.v1"
+    ):
+        raise RuntimeError(
+            "package-channels reusable runnable package identity contract drifted"
+        )
+    if contract.get("manifest_relative_path") != MANIFEST_RELATIVE_PATH:
+        raise RuntimeError(
+            "package-channels reusable runnable package manifest path drifted"
+        )
+    expected_required_fields = metadata_surface.get(
+        "required_reusable_runnable_package_identity_fields",
+        REUSABLE_RUNNABLE_PACKAGE_IDENTITY_FIELDS,
+    )
+    if contract.get("required_fields") != expected_required_fields:
+        raise RuntimeError(
+            "package-channels reusable runnable package required identity fields drifted"
+        )
+    if (
+        contract.get("reuse_policy")
+        != "manifest-target-and-artifact-identity-must-match-requested-platform"
+    ):
+        raise RuntimeError(
+            "package-channels reusable runnable package reuse policy drifted"
+        )
+    if (
+        contract.get("generated_evidence_policy")
+        != "generated-host-output-is-review-input-not-source-truth"
+    ):
+        raise RuntimeError(
+            "package-channels reusable runnable package evidence policy drifted"
+        )
+    target_platforms = contract.get("target_platforms")
+    if not isinstance(target_platforms, list):
+        raise RuntimeError(
+            "package-channels reusable runnable package target platform identities missing"
+        )
+    identities_by_platform = {
+        str(identity.get("target_platform_id")): identity
+        for identity in target_platforms
+        if isinstance(identity, dict)
+    }
+    if set(identities_by_platform) != set(RELEASE_PACKAGE_TARGET_PLATFORM_IDS):
+        raise RuntimeError(
+            "package-channels reusable runnable package target platform set drifted"
+        )
+    for platform_id in RELEASE_PACKAGE_TARGET_PLATFORM_IDS:
+        identity = identities_by_platform[platform_id]
+        expected_identity = release_package_artifact_identity_for_platform(platform_id)
+        for field_name, expected_value in expected_identity.items():
+            if identity.get(field_name) != expected_value:
+                raise RuntimeError(
+                    "package-channels reusable runnable package artifact identity "
+                    f"drifted for {platform_id} {field_name}"
+                )
+        if identity.get("package_id") != release_package_id_for_platform(platform_id):
+            raise RuntimeError(
+                f"package-channels reusable runnable package id drifted for {platform_id}"
+            )
+        expected_package_channel_id = release_package_channel_id_for_platform(platform_id)
+        if identity.get("package_channel_id") != expected_package_channel_id:
+            raise RuntimeError(
+                f"package-channels reusable runnable package channel drifted for {platform_id}"
+            )
+        if (
+            identity.get("package_root_layout")
+            != RELEASE_PACKAGE_LAYOUT_BY_PLATFORM[platform_id]
+        ):
+            raise RuntimeError(
+                f"package-channels reusable runnable package layout drifted for {platform_id}"
+            )
+        if identity.get("support_truth") is not False:
+            raise RuntimeError(
+                f"package-channels reusable runnable package promoted support truth for {platform_id}"
+            )
+        if identity.get("native_execution_claimed") is not False:
+            raise RuntimeError(
+                f"package-channels reusable runnable package claimed native execution for {platform_id}"
+            )
 
 
 def validate_receipt_contracts(

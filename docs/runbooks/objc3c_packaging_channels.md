@@ -247,6 +247,23 @@ The target override is rejected for `--sanitizer-variant address` and
 `--sanitizer-variant undefined`; those reserved sanitizer rows have no
 non-Windows escape path or target-platform alias.
 
+Reusable runnable package roots are source inputs only after the package-channel
+builder re-checks their runnable manifest identity. The manifest must publish
+the selected `target_platform_id`, `target_triple`, `object_format`,
+`debug_format`, `runtime_library_kind`, `native_executable`,
+`runtime_library`, `runtime_library_name`, exact `package_root_layout`, and
+non-promoting `support_truth: false` plus `native_execution_claimed: false`.
+Windows x64 identity is `x86_64-pc-windows-msvc`, `COFF`, `CodeView/PDB`,
+`static-archive`, `artifacts/bin/objc3c-native.exe`, and
+`artifacts/lib/objc3_runtime.lib`; Linux x64 identity is
+`x86_64-unknown-linux-gnu`, `ELF`, `DWARF`, `shared-library`,
+`artifacts/bin/objc3c-native`, and `artifacts/lib/libobjc3-runtime.so`; macOS
+arm64 identity is `aarch64-apple-darwin`, `Mach-O`, `DWARF/dSYM`,
+`shared-library`, `artifacts/bin/objc3c-native`, and
+`artifacts/lib/libobjc3-runtime.dylib`. A reused package root whose manifest
+does not match the requested platform or these artifact identities is rejected
+before archive, installer, receipt, or release-foundation reuse.
+
 For ASan and UBSan package-channel variants, `payload_contract` and
 `receipt_contracts` must also keep the sanitizer runtime-library manifests,
 sanitizer package metadata paths, install selector, package-channel id,

@@ -171,6 +171,7 @@
             "native_object_emission_supported",
             "native_object_emission_missing_llc",
             "native_object_emission_filetype_obj_unavailable",
+            "native_object_emission_target_object_unavailable",
             "native_object_emission_mixed_toolchain_root",
             "native_object_emission_mismatched_tool_versions",
             "native_object_emission_unsupported_tool_version",

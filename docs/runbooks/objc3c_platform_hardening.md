@@ -115,9 +115,10 @@ success claim. It closes only over checked-in source contracts:
   contracts; they do not promote host/platform support and hosted sanitizer
   summaries remain non-promoting.
 - #8232 native object emission is a toolchain prerequisite: `llc` must resolve
-  and prove `llc --filetype=obj`; missing `llc` records
-  `native_object_emission_missing_llc` and cannot publish object, package,
-  execution, or platform success. Package and native execution promotion also
+  prove `llc --filetype=obj`, and emit a non-empty object for the target triple;
+  missing `llc` records `native_object_emission_missing_llc`, failed target
+  object output records `native_object_emission_target_object_unavailable`, and
+  neither can publish object, package, execution, or platform success. Package and native execution promotion also
   requires the hosted LLVM matrix to resolve clang++, llvm-ar, LLVM
   header/library discovery from llvm-config or an installed LLVM root, coherent
   LLVM tool roots, and a coherent LLVM tool version family; missing subtools,
@@ -164,6 +165,30 @@ publication disabled until reviewed source-truth records are promotion-ready.
 
 Do not project the umbrella as Linux, macOS, sanitizer, or cross-lane runtime
 support. The only supported projection remains `windows-x64`.
+
+### Issue Closeout Criteria
+
+Closing #8228 as Linux x64 support requires all of the following checked-in
+source truth to agree for `linux-x64`: the capability row is promoted out of
+`platform.linux-x64.unsupported`, the package variant row is no longer
+fail-closed, build/package/install/native-execution evidence classes are all
+present, reviewed source-truth records cover host identity, toolchain probe,
+package root, install receipt, native execution, object identity, debug
+identity, package install identity, and runtime load/link proof, and generated
+hosted reports remain review inputs rather than support truth.
+
+Closing #8229 as macOS arm64 support has the same source-truth requirements for
+`darwin-arm64`, plus the reviewed package/object records must prove Mach-O,
+DWARF/dSYM, `@rpath`/`install_name`/codesign loader behavior, package install,
+and native execution. A generated macOS hosted run, cross-compiled artifact,
+tool presence report, or issue comment is not enough to close the support gap.
+
+Closing #8206 as platform expansion readiness is valid only after the umbrella
+matrix row is promoted from `internal`, #8228 and #8229 are promoted with the
+evidence above, sanitizer package rows remain bounded by their Windows x64
+runtime-promotion gates, and #8232 native object emission is coherent through
+`llc --filetype=obj` with no clang-substitute success path. Until then #8206 is
+a source-owned readiness boundary, not a public Linux/macOS support claim.
 
 ## Host And Toolchain Claim Boundary
 
@@ -379,8 +404,8 @@ Hard-fail classes:
 - missing sanitizer runtime libraries for ASan or UBSan package variants
 - stale package metadata on any release or sanitizer package variant
 - unavailable native object emission, including missing `llc`, missing
-  `llc --filetype=obj`, or any clang substitute published as object-emission
-  success
+  `llc --filetype=obj`, failed target-specific object output from `llc`, or any
+  clang substitute published as object-emission success
 - missing required LLVM package/execution subtools, including clang++,
   llvm-ar, or LLVM header/library discovery from llvm-config or an installed LLVM root
 - mixed LLVM install roots, mismatched LLVM tool versions, unresolved required

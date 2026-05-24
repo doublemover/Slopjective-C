@@ -40,6 +40,7 @@ class HostedLLVMCapabilityTruth:
     clangxx_found: bool
     llc_found: bool
     llc_supports_filetype_obj: bool
+    llc_supports_target_object_emission: bool
     llvm_ar_found: bool
     llvm_config_found: bool
     headers_libraries_discovered: bool
@@ -61,6 +62,7 @@ class HostedLLVMCapabilityTruth:
             and self.clangxx_found
             and self.llc_found
             and self.llc_supports_filetype_obj
+            and self.llc_supports_target_object_emission
             and self.llvm_ar_found
             and self.headers_libraries_discovered
             and self.toolchain_identity_claimable
@@ -80,6 +82,7 @@ class HostedLLVMCapabilityTruth:
             and self.clang_found
             and self.llc_found
             and self.llc_supports_filetype_obj
+            and self.llc_supports_target_object_emission
             and self.toolchain_identity_claimable
             and self.summary_native_object_emission_status
             == "native_object_emission_supported"
@@ -109,6 +112,8 @@ class HostedLLVMCapabilityTruth:
             return "native_object_emission_missing_llc"
         if not self.llc_supports_filetype_obj:
             return "native_object_emission_filetype_obj_unavailable"
+        if not self.llc_supports_target_object_emission:
+            return "native_object_emission_target_object_unavailable"
         if self.summary_native_object_emission_status:
             return self.summary_native_object_emission_status
         if self.hosted_native_object_emission_supported:
@@ -136,6 +141,9 @@ class HostedLLVMCapabilityTruth:
             "clangxx_found": self.clangxx_found,
             "llc_found": self.llc_found,
             "llc_supports_filetype_obj": self.llc_supports_filetype_obj,
+            "llc_supports_target_object_emission": (
+                self.llc_supports_target_object_emission
+            ),
             "llvm_ar_found": self.llvm_ar_found,
             "llvm_config_found": self.llvm_config_found,
             "headers_libraries_discovered": self.headers_libraries_discovered,
@@ -193,6 +201,9 @@ def hosted_llvm_capability_truth_from_summary(
     llvm_ar_found = bool(llvm_ar.get("found"))
     llvm_config_found = bool(llvm_config.get("found"))
     llc_supports_filetype_obj = bool(llc_features.get("supports_filetype_obj"))
+    llc_supports_target_object_emission = bool(
+        llc_features.get("supports_target_object_emission")
+    )
     headers_libraries_discovered = bool(
         llvm_config_features.get("headers_libraries_discovered")
     )
@@ -216,6 +227,8 @@ def hosted_llvm_capability_truth_from_summary(
         failure_reasons.append("llc availability missing")
     elif not llc_supports_filetype_obj:
         failure_reasons.append("llc --filetype=obj support missing")
+    elif not llc_supports_target_object_emission:
+        failure_reasons.append("llc target object emission missing")
     if not toolchain_identity_claimable:
         failure_reasons.append("coherent LLVM toolchain identity missing")
     if (
@@ -241,6 +254,7 @@ def hosted_llvm_capability_truth_from_summary(
         clangxx_found=clangxx_found,
         llc_found=llc_found,
         llc_supports_filetype_obj=llc_supports_filetype_obj,
+        llc_supports_target_object_emission=llc_supports_target_object_emission,
         llvm_ar_found=llvm_ar_found,
         llvm_config_found=llvm_config_found,
         headers_libraries_discovered=headers_libraries_discovered,

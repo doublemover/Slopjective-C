@@ -1,12 +1,14 @@
 from __future__ import annotations
 
 import os
+import platform
 import shutil
 from pathlib import Path
 from typing import Iterable
 
 
 DEFAULT_LLVM_VERSION = "22.1.6"
+CORE_LLVM_TOOLS = ("clang", "clang++", "llc", "llvm-ar")
 
 
 def _tool_executable_name(tool_name: str) -> str:
@@ -25,11 +27,26 @@ def _configured_llvm_roots(explicit_root: str | os.PathLike[str] | None = None) 
             yield Path(configured)
 
     version = os.environ.get("OBJC3C_CI_LLVM_VERSION", DEFAULT_LLVM_VERSION)
+    host_system = platform.system().lower()
     if os.name == "nt":
         user_profile = os.environ.get("USERPROFILE")
         if user_profile:
             yield Path(user_profile) / "Tools" / "LLVM" / f"llvm-{version}-msvc"
         yield Path("C:/Program Files/LLVM")
+    elif host_system == "darwin":
+        yield Path("/opt/homebrew/opt/llvm")
+        yield Path("/usr/local/opt/llvm")
+    else:
+        for root in (
+            "/usr/lib/llvm-22",
+            "/usr/lib/llvm-21",
+            "/usr/lib/llvm-20",
+            "/usr/lib/llvm-19",
+            "/usr/lib/llvm-18",
+            "/usr/lib/llvm",
+            "/usr/local/llvm",
+        ):
+            yield Path(root)
 
 
 def llvm_root_candidates(explicit_root: str | os.PathLike[str] | None = None) -> list[Path]:
@@ -66,7 +83,7 @@ def find_llvm_tool_path(
 def is_complete_llvm_root(root: Path) -> bool:
     return all(
         (root / "bin" / _tool_executable_name(tool)).is_file()
-        for tool in ("clang", "clang++", "llc", "llvm-ar", "llvm-config")
+        for tool in CORE_LLVM_TOOLS
     )
 
 

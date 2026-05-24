@@ -65,6 +65,7 @@ def assert_hosted_success_payload(
     assert payload["source_kind"] == expected_source_kind
     assert payload["local_probe_diagnostic_only"] is False
     assert payload["clangxx_found"] is True
+    assert payload["llc_supports_target_object_emission"] is True
     assert payload["llvm_ar_found"] is True
     assert payload["llvm_config_found"] is True
     assert payload["headers_libraries_discovered"] is True

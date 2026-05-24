@@ -12,6 +12,7 @@ from scripts.objc3c_workflow.command_powershell_policy import powershell_file_co
 
 from .model import (
     MANIFEST_RELATIVE_PATH,
+    release_package_artifact_identity_for_platform,
     required_payload_entries_for_platform,
     target_platform_id_from_manifest,
 )
@@ -330,6 +331,23 @@ def require_existing_runnable_package(
             "package-channels reusable runnable package runtime_variant drifted "
             f"from {sanitizer_variant}"
         )
+    if manifest.get("support_truth") is not False:
+        raise RuntimeError(
+            "package-channels reusable runnable package must not promote support truth"
+        )
+    if manifest.get("native_execution_claimed") is not False:
+        raise RuntimeError(
+            "package-channels reusable runnable package must not claim native execution"
+        )
+    expected_identity = release_package_artifact_identity_for_platform(
+        manifest_target_platform_id
+    )
+    for field_name, expected_value in expected_identity.items():
+        if manifest.get(field_name) != expected_value:
+            raise RuntimeError(
+                "package-channels reusable runnable package target identity drifted "
+                f"for {field_name}: expected {expected_value}, got {manifest.get(field_name)}"
+            )
     expected_entries = required_payload_entries_for_platform(
         sanitizer_variant=sanitizer_variant,
         target_platform_id=manifest_target_platform_id,

@@ -103,6 +103,13 @@ def action_check_hosted_llvm_capabilities(_: list[str]) -> int:
             "and execution support claims are unavailable."
         )
         return 0
+    if not truth.llc_supports_target_object_emission:
+        print(
+            "Hosted runner capability summary recorded no target-specific llc "
+            "object output; native_object_emission_target_object_unavailable; "
+            "hosted source parity and execution support claims are unavailable."
+        )
+        return 0
     if not truth.toolchain_identity_claimable:
         print(
             "Hosted runner capability summary did not prove coherent LLVM "

@@ -118,6 +118,7 @@ jobs:
       OBJC3C_NATIVE_EXECUTION_RUN_ID: platform-host-evidence-linux-x64
       CMAKE_BUILD_PARALLEL_LEVEL: "2"
       OBJC3C_NATIVE_BUILD_PARALLELISM: "2"
+      OBJC3C_CI_LLVM_VERSION: "22.1.6"
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -138,6 +139,15 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y clang lld llvm llvm-dev libclang-dev cmake ninja-build
+          llvm_root="$(llvm-config --prefix 2>/dev/null || true)"
+          if [ -n "$llvm_root" ]; then
+            echo "$llvm_root/bin" >> "$GITHUB_PATH"
+            echo "LLVM_ROOT=$llvm_root" >> "$GITHUB_ENV"
+            echo "OBJC3C_LLVM_ROOT=$llvm_root" >> "$GITHUB_ENV"
+            echo "LLVM_DIR=$llvm_root/lib/cmake/llvm" >> "$GITHUB_ENV"
+            echo "OBJC3C_NATIVE_EXECUTION_CLANG_PATH=$llvm_root/bin/clang++" >> "$GITHUB_ENV"
+            echo "OBJC3C_NATIVE_EXECUTION_LLC_PATH=$llvm_root/bin/llc" >> "$GITHUB_ENV"
+          fi
 
       - name: Install workflow dependencies
         id: deps
@@ -150,9 +160,14 @@ jobs:
         id: probe
         continue-on-error: true
         run: |
+          set +e
           python scripts/probe_objc3c_llvm_capabilities.py --summary-out "$OBJC3C_PLATFORM_EVIDENCE_ROOT/llvm-capabilities.json"
+          probe_exit=$?
           mkdir -p tmp/artifacts/objc3c-native/m144/llvm_capabilities
-          cp "$OBJC3C_PLATFORM_EVIDENCE_ROOT/llvm-capabilities.json" tmp/artifacts/objc3c-native/m144/llvm_capabilities/summary.json
+          if [ -f "$OBJC3C_PLATFORM_EVIDENCE_ROOT/llvm-capabilities.json" ]; then
+            cp "$OBJC3C_PLATFORM_EVIDENCE_ROOT/llvm-capabilities.json" tmp/artifacts/objc3c-native/m144/llvm_capabilities/summary.json
+          fi
+          exit "$probe_exit"
 
       - name: Build native objc3c artifacts
         id: build
@@ -218,6 +233,7 @@ jobs:
       OBJC3C_NATIVE_EXECUTION_RUN_ID: platform-host-evidence-darwin-arm64
       CMAKE_BUILD_PARALLEL_LEVEL: "2"
       OBJC3C_NATIVE_BUILD_PARALLELISM: "2"
+      OBJC3C_CI_LLVM_VERSION: "22.1.6"
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -238,8 +254,13 @@ jobs:
         run: |
           brew update
           brew install llvm cmake ninja
-          echo "$(brew --prefix llvm)/bin" >> "$GITHUB_PATH"
-          echo "LLVM_ROOT=$(brew --prefix llvm)" >> "$GITHUB_ENV"
+          llvm_root="$(brew --prefix llvm)"
+          echo "$llvm_root/bin" >> "$GITHUB_PATH"
+          echo "LLVM_ROOT=$llvm_root" >> "$GITHUB_ENV"
+          echo "OBJC3C_LLVM_ROOT=$llvm_root" >> "$GITHUB_ENV"
+          echo "LLVM_DIR=$llvm_root/lib/cmake/llvm" >> "$GITHUB_ENV"
+          echo "OBJC3C_NATIVE_EXECUTION_CLANG_PATH=$llvm_root/bin/clang++" >> "$GITHUB_ENV"
+          echo "OBJC3C_NATIVE_EXECUTION_LLC_PATH=$llvm_root/bin/llc" >> "$GITHUB_ENV"
 
       - name: Install workflow dependencies
         id: deps
@@ -252,9 +273,14 @@ jobs:
         id: probe
         continue-on-error: true
         run: |
+          set +e
           python scripts/probe_objc3c_llvm_capabilities.py --summary-out "$OBJC3C_PLATFORM_EVIDENCE_ROOT/llvm-capabilities.json"
+          probe_exit=$?
           mkdir -p tmp/artifacts/objc3c-native/m144/llvm_capabilities
-          cp "$OBJC3C_PLATFORM_EVIDENCE_ROOT/llvm-capabilities.json" tmp/artifacts/objc3c-native/m144/llvm_capabilities/summary.json
+          if [ -f "$OBJC3C_PLATFORM_EVIDENCE_ROOT/llvm-capabilities.json" ]; then
+            cp "$OBJC3C_PLATFORM_EVIDENCE_ROOT/llvm-capabilities.json" tmp/artifacts/objc3c-native/m144/llvm_capabilities/summary.json
+          fi
+          exit "$probe_exit"
 
       - name: Build native objc3c artifacts
         id: build

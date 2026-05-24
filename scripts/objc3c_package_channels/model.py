@@ -59,6 +59,19 @@ RECEIPT_PLATFORM_FIELDS = [
     "support_truth",
     "native_execution_claimed",
 ]
+REUSABLE_RUNNABLE_PACKAGE_IDENTITY_FIELDS = [
+    "target_platform_id",
+    "target_triple",
+    "object_format",
+    "debug_format",
+    "runtime_library_kind",
+    "native_executable",
+    "runtime_library",
+    "runtime_library_name",
+    "package_root_layout",
+    "support_truth",
+    "native_execution_claimed",
+]
 REQUIRED_RECEIPT_FIELDS = [
     "contract_id",
     "install_root",
@@ -78,6 +91,35 @@ RELEASE_RUNTIME_LIBRARY_NAMES_BY_PLATFORM = {
     "windows-x64": ["objc3_runtime.lib"],
     "linux-x64": ["libobjc3-runtime.so"],
     "darwin-arm64": ["libobjc3-runtime.dylib"],
+}
+RELEASE_PACKAGE_ARTIFACT_IDENTITY_BY_PLATFORM = {
+    "windows-x64": {
+        "target_triple": "x86_64-pc-windows-msvc",
+        "object_format": "COFF",
+        "debug_format": "CodeView/PDB",
+        "runtime_library_kind": "static-archive",
+        "native_executable": "artifacts/bin/objc3c-native.exe",
+        "runtime_library": "artifacts/lib/objc3_runtime.lib",
+        "runtime_library_name": "objc3_runtime.lib",
+    },
+    "linux-x64": {
+        "target_triple": "x86_64-unknown-linux-gnu",
+        "object_format": "ELF",
+        "debug_format": "DWARF",
+        "runtime_library_kind": "shared-library",
+        "native_executable": "artifacts/bin/objc3c-native",
+        "runtime_library": "artifacts/lib/libobjc3-runtime.so",
+        "runtime_library_name": "libobjc3-runtime.so",
+    },
+    "darwin-arm64": {
+        "target_triple": "aarch64-apple-darwin",
+        "object_format": "Mach-O",
+        "debug_format": "DWARF/dSYM",
+        "runtime_library_kind": "shared-library",
+        "native_executable": "artifacts/bin/objc3c-native",
+        "runtime_library": "artifacts/lib/libobjc3-runtime.dylib",
+        "runtime_library_name": "libobjc3-runtime.dylib",
+    },
 }
 RELEASE_PACKAGE_LAYOUT_BY_PLATFORM = {
     "windows-x64": [
@@ -261,6 +303,42 @@ def target_platform_id_for_paths(paths: PackageChannelPaths) -> str:
     return target_platform_id
 
 
+def release_package_artifact_identity_for_platform(platform_id: str) -> dict[str, str]:
+    try:
+        return deepcopy(RELEASE_PACKAGE_ARTIFACT_IDENTITY_BY_PLATFORM[platform_id])
+    except KeyError as exc:
+        raise RuntimeError(
+            f"unsupported package-channel target platform: {platform_id}"
+        ) from exc
+
+
+def reusable_runnable_package_identity_contract() -> dict[str, Any]:
+    target_platforms: list[dict[str, Any]] = []
+    for platform_id in RELEASE_PACKAGE_TARGET_PLATFORM_CHOICES:
+        identity = release_package_artifact_identity_for_platform(platform_id)
+        target_platforms.append(
+            {
+                "target_platform_id": platform_id,
+                "package_id": release_package_id_for_platform(platform_id),
+                "package_channel_id": release_package_channel_id_for_platform(
+                    platform_id
+                ),
+                **identity,
+                "package_root_layout": RELEASE_PACKAGE_LAYOUT_BY_PLATFORM[platform_id],
+                "support_truth": False,
+                "native_execution_claimed": False,
+            }
+        )
+    return {
+        "contract_id": "objc3c.packaging.channels.reusable-runnable-package-identity.v1",
+        "manifest_relative_path": MANIFEST_RELATIVE_PATH,
+        "required_fields": list(REUSABLE_RUNNABLE_PACKAGE_IDENTITY_FIELDS),
+        "target_platforms": target_platforms,
+        "reuse_policy": "manifest-target-and-artifact-identity-must-match-requested-platform",
+        "generated_evidence_policy": "generated-host-output-is-review-input-not-source-truth",
+    }
+
+
 def package_channels_manifest_payload(
     *,
     inputs: PackageChannelInputs,
@@ -334,6 +412,7 @@ def package_channels_manifest_payload(
         "archive_digests": resolved_archive_digests,
         "payload_contract": resolved_payload_contract,
         "receipt_contracts": resolved_receipt_contracts,
+        "reusable_runnable_package_identity_contract": reusable_runnable_package_identity_contract(),
         "support_truth": False,
         "native_execution_claimed": False,
         "release_foundation_artifacts": {
@@ -375,6 +454,9 @@ def package_channels_report_payload(
         "archive_digests": manifest_payload["archive_digests"],
         "payload_contract": manifest_payload["payload_contract"],
         "receipt_contracts": manifest_payload["receipt_contracts"],
+        "reusable_runnable_package_identity_contract": manifest_payload[
+            "reusable_runnable_package_identity_contract"
+        ],
         "support_truth": manifest_payload["support_truth"],
         "native_execution_claimed": manifest_payload["native_execution_claimed"],
     }

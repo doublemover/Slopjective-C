@@ -44,12 +44,14 @@ bool ApplyObjc3LLVMCapabilityRouting(Objc3CliOptions &options,
 
   if (options.route_backend_from_capabilities) {
     if (!summary.llc_found || !summary.llc_supports_filetype_obj ||
+        !summary.llc_supports_target_object_emission ||
         summary.native_object_emission_status !=
             "native_object_emission_supported") {
       error =
           "capability routing fail-closed: native object emission requires "
-          "llc --filetype=obj and a coherent LLVM toolchain identity; clang "
-          "substitute object emission is not permitted";
+          "llc --filetype=obj, non-empty target object output, and a coherent "
+          "LLVM toolchain identity; clang substitute object emission is not "
+          "permitted";
       return false;
     }
     options.ir_object_backend = Objc3IrObjectBackend::kLLVMDirect;
@@ -61,10 +63,11 @@ bool ApplyObjc3LLVMCapabilityRouting(Objc3CliOptions &options,
   }
   if (options.ir_object_backend == Objc3IrObjectBackend::kLLVMDirect &&
       (!summary.llc_found || !summary.llc_supports_filetype_obj ||
+       !summary.llc_supports_target_object_emission ||
        summary.native_object_emission_status !=
            "native_object_emission_supported")) {
     error =
-        "capability routing fail-closed: llvm-direct backend selected but llc --filetype=obj and coherent LLVM toolchain identity are unavailable";
+        "capability routing fail-closed: llvm-direct backend selected but llc --filetype=obj target object emission and coherent LLVM toolchain identity are unavailable";
     return false;
   }
   return true;

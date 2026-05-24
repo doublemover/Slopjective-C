@@ -61,7 +61,10 @@ def assert_local_llvm_probe_payload_remains_diagnostic_not_capability_truth() ->
 
 def assert_hosted_llvm_truth_payload_requires_object_emission() -> None:
     summary = capable_llvm_summary()
-    summary["llc_features"] = {"supports_filetype_obj": False}
+    summary["llc_features"] = {
+        "supports_filetype_obj": False,
+        "supports_target_object_emission": False,
+    }
 
     truth = hosted_llvm_capability_truth_from_summary(
         summary,

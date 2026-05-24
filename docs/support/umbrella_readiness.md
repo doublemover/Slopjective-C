@@ -352,7 +352,7 @@ Consumer rule: Umbrella readiness may explain why a reserved umbrella row is blo
 - Linux x64 support from source-owned fail-closed rows alone.
 - macOS arm64 support from source-owned fail-closed rows alone.
 - ASan or UBSan package support outside Windows x64, from generated runtime reports alone, or from sanitizer execution evidence that has not cleared the source-owned promotion gate.
-- Native object emission success when llc is missing or lacks llc --filetype=obj.
+- Native object emission success when llc is missing, lacks llc --filetype=obj, or cannot emit a non-empty object for the target triple.
 - Clang fallback published as llvm-direct object emission success.
 - Issue comments, PR bodies, temp files, generated projections, or validation logs as source truth.
 
@@ -417,7 +417,7 @@ Consumer rule: Umbrella readiness may explain why a reserved umbrella row is blo
 - `satisfied` Linux x64 remains an unsupported fail-closed row with no support claim. (capability_id: `platform.linux-x64.unsupported`)
 - `satisfied` macOS arm64 remains an unsupported fail-closed row with no support claim. (capability_id: `platform.darwin-arm64.unsupported`)
 - `satisfied` ASan and UBSan are Windows x64 evidence-bound package variants, with generated-only reports and unsupported hosts still rejected before support promotion. (path: `tests/tooling/fixtures/platform_support/source_truth_matrix.json`)
-- `satisfied` Missing llc, missing llc --filetype=obj, mixed LLVM roots, mismatched LLVM tool versions, unsupported LLVM versions, or unresolved required tool versions remain fail-closed and cannot publish object, package, execution, parity, or platform success. (path: `tests/tooling/fixtures/platform_hardening/platform_toolchain_support_evidence.json`)
+- `satisfied` Missing llc, missing llc --filetype=obj, failed target object emission, mixed LLVM roots, mismatched LLVM tool versions, unsupported LLVM versions, or unresolved required tool versions remain fail-closed and cannot publish object, package, execution, parity, or platform success. (path: `tests/tooling/fixtures/platform_hardening/platform_toolchain_support_evidence.json`)
 - `satisfied` Hosted-runner summaries cover Windows support, Linux/macOS unsupported rows, ASan/UBSan non-promoting hosted summaries, and toolchain fail-closed states without promoting those summaries to support evidence. (path: `tests/tooling/fixtures/platform_hardening/hosted_runner_capability_summaries.json`)
 - `satisfied` Sanitizer package/install model fixtures keep ASan and UBSan package ids, package-channel ids, runtime metadata, install selectors, missing-runtime behavior, stale metadata, mixed runtime rejection, and native-execution falsehood checked in without support promotion. (path: `tests/tooling/fixtures/security_hardening/sanitizer_package_install_model_contract.json`)
 - `satisfied` Sanitizer validation fixtures remain non-promoting compiler/runtime validation contracts; #8230 and #8231 support truth is owned by the platform source-truth rows plus the runtime-promotion gate. (path: `tests/tooling/fixtures/security_hardening/sanitizer_validation_contract.json`)
@@ -465,7 +465,7 @@ Consumer rule: Umbrella readiness may explain why a reserved umbrella row is blo
   - macOS arm64 package and install evidence.
   - Mach-O and load-path evidence.
   - macOS arm64 native execution evidence.
-- `native-object-emission-promotion`: Native object emission is fail-closed unless llc --filetype=obj is present and routed without a clang substitute route.
+- `native-object-emission-promotion`: Native object emission is fail-closed unless llc --filetype=obj emits a non-empty object for the target triple and is routed without a clang substitute route.
   - Hosted-runner evidence for llc object emission availability or deterministic fail-closed status.
   - No clang substitute success path for object, package, execution, or parity claims.
   - Cross-lane/native execution proof consuming the native object emission status.
@@ -478,6 +478,6 @@ Consumer rule: Umbrella readiness may explain why a reserved umbrella row is blo
 - The platform.expansion.umbrella-readiness matrix row changes to implemented.
 - Linux x64 and macOS arm64 platform rows are implemented with build, package, install, and native execution evidence.
 - ASan and UBSan package variants remain Windows x64 evidence-bound with runtime package, install, native execution evidence, expected sanitizer detection, computed digest agreement, fail-closed negative cases, and the source-owned runtime-promotion gate.
-- Native object emission succeeds only through llc --filetype=obj and no clang substitute success path exists.
+- Native object emission succeeds only through llc --filetype=obj with non-empty target object output and no clang substitute success path exists.
 - All platform source, fixture, capability, evidence, README, and runbook docs agree on the same support boundary.
 - No prerequisite relies on temp/generated evidence, source-only package rows, tool presence alone, compatibility bypasses, or prose-only support claims.

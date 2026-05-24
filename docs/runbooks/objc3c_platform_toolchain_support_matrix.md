@@ -82,6 +82,32 @@ execution classes because they are summary-only and cannot publish support.
 Rows that omit the source-owned evidence fields are not eligible for package,
 install, native execution, or capability-matrix promotion.
 
+## Issue Closure Criteria
+
+#8228 can close as Linux x64 support only when `linux-x64` has checked source
+rows showing build, package, install, and native execution evidence, the
+support row is no longer `unsupported`, the package variant row no longer lists
+fail-closed publication blockers, and every host-promotion reviewed-source
+record has been replaced by promotion-ready source truth for host identity,
+toolchain probe, package root, install receipt, native execution, object
+identity, debug identity, package install identity, and runtime load/link proof.
+Generated Ubuntu hosted reports are required review inputs, but their
+`support_truth` remains false until those reviewed source rows land.
+
+#8229 can close as macOS arm64 support only under the same source-review bar for
+`darwin-arm64`, with Mach-O, DWARF/dSYM, `@rpath`/`install_name`/codesign loader
+behavior, package install, and native execution proven by checked source truth.
+Generated macOS hosted evidence, cross-compiled Mach-O artifacts, tool presence,
+or prose status updates do not promote the row.
+
+#8206 can close as a platform expansion umbrella only when the matrix row moves
+from `internal` to an evidence-backed implemented row, #8228 and #8229 are both
+promoted by the criteria above, #8230 and #8231 remain bounded to Windows x64
+through the sanitizer runtime promotion gate, and #8232 proves coherent
+`llc --filetype=obj` native object emission plus non-empty target-specific
+object output with no clang-substitute success path. Until all child gates agree, the only supported platform projection is
+`windows-x64`.
+
 Every platform support row records explicit host triples. The current source
 contract recognizes `x86_64-pc-windows-msvc` as the supported Windows x64
 triple, `x86_64-unknown-linux-gnu` as the fail-closed Linux x64 triple, and
@@ -111,10 +137,10 @@ identity, `libobjc3-runtime.dylib`, and `@rpath`/`install_name`/codesign loader
 expectations. Those distinctions are not support claims; they define the
 evidence shape a future real host run must satisfy.
 
-Negative cases are also source-owned. Missing `llc --filetype=obj`, mixed LLVM
-roots, mismatched LLVM tool versions, unsupported LLVM versions, and absent
-Linux/macOS native execution all block package, execution, and publication
-surfaces. Hosted-runner tool presence, source-only package metadata,
+Negative cases are also source-owned. Missing `llc --filetype=obj`, failed
+target-specific object output from `llc`, mixed LLVM roots, mismatched LLVM tool
+versions, unsupported LLVM versions, and absent Linux/macOS native execution all
+block package, execution, and publication surfaces. Hosted-runner tool presence, source-only package metadata,
 object-emission status, and generated hosted reports remain summary or
 review-input information and cannot clear the promotion gate.
 
@@ -250,10 +276,10 @@ reviewed source-truth records.
 support today. Linux x64 and macOS arm64 capability summaries have empty
 `platform_ids` and `publication_allowed: false`; even a successful generated
 host run stays a review input until checked source rows are promoted. Missing
-`llc`, missing `llc --filetype=obj`, mixed LLVM roots, mismatched or unresolved
-tool versions, unsupported LLVM versions, missing `llvm-ar`, and missing LLVM
-header/library discovery fail closed before native object, package, execution,
-or platform support can be claimed.
+`llc`, missing `llc --filetype=obj`, failed target-specific object output from
+`llc`, mixed LLVM roots, mismatched or unresolved tool versions, unsupported LLVM
+versions, missing `llvm-ar`, and missing LLVM header/library discovery fail
+closed before native object, package, execution, or platform support can be claimed.
 
 ## Required Host Evidence
 
@@ -313,9 +339,11 @@ support claims are published. The source contract records
 `native_object_emission_mismatched_tool_versions`,
 `native_object_emission_unsupported_tool_version`, and
 `native_object_emission_unresolved_tool_version` as native object-emission
-statuses. Capability-routed object emission must select `llvm-direct` only
-after the coherent `llc --filetype=obj` probe succeeds; it must not fall back
-to clang and then publish a native object success claim.
+statuses. It also records `native_object_emission_target_object_unavailable`
+when `llc` accepts `--filetype=obj` but cannot emit a non-empty object for the
+target. Capability-routed object emission must select `llvm-direct` only after
+the coherent `llc --filetype=obj` target-object probe succeeds; it must not fall
+back to clang and then publish a native object success claim.
 
 Hosted runner capability summaries are checked-in source fixtures, not
 generated proof. `hosted_runner_capability_summaries.json` records the supported

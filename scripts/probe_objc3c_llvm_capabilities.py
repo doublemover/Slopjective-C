@@ -4,6 +4,13 @@
 from __future__ import annotations
 
 import subprocess
+import sys
+from pathlib import Path
+
+if not __package__:
+    scripts_root = Path(__file__).resolve().parent
+    if str(scripts_root) not in sys.path:
+        sys.path.insert(0, str(scripts_root))
 
 if __package__:
     from .objc3c_llvm_capability_probe.classification import (
@@ -12,6 +19,7 @@ if __package__:
     )
     from .objc3c_llvm_capability_probe.cli import main, parse_args, run
     from .objc3c_llvm_capability_probe.commands import (
+        default_object_emission_target_triple,
         probe_executable,
         probe_llc_filetype_obj,
         probe_llvm_config_paths,
@@ -33,6 +41,7 @@ else:
     )
     from objc3c_llvm_capability_probe.cli import main, parse_args, run
     from objc3c_llvm_capability_probe.commands import (
+        default_object_emission_target_triple,
         probe_executable,
         probe_llc_filetype_obj,
         probe_llvm_config_paths,
@@ -56,6 +65,7 @@ __all__ = [
     "build_capability_demo_compatibility_surface",
     "build_sema_type_system_parity_surface",
     "build_toolchain_identity",
+    "default_object_emission_target_triple",
     "first_non_empty_line",
     "main",
     "parse_args",

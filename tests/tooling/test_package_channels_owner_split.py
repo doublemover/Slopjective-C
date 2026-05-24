@@ -27,6 +27,7 @@ from scripts.objc3c_package_channels.model import (
     package_channels_manifest_payload,
     package_channels_report_payload,
     receipt_contract_payloads,
+    release_package_artifact_identity_for_platform,
     release_package_channel_id_for_platform,
     release_package_id_for_platform,
     required_payload_entries_for_platform,
@@ -440,7 +441,10 @@ def runnable_package_reuse_fixture(
             "package_root": repo_rel(fixture_root),
             "manifest_artifact": MANIFEST_RELATIVE_PATH,
             "target_platform_id": target_platform_id,
+            **release_package_artifact_identity_for_platform(target_platform_id),
             "package_root_layout": required_entries,
+            "support_truth": False,
+            "native_execution_claimed": False,
         },
     )
     return fixture_root

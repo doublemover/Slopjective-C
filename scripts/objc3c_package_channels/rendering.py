@@ -354,6 +354,37 @@ function Assert-ReceiptSanitizerVariant {
   }
 }
 
+function Assert-ReceiptPlatformIdentity {
+  param([Parameter(Mandatory = $true)]$Receipt)
+
+  $expectedRuntimeModel = Resolve-PackageRuntimeModel
+  if ([string]$Receipt.target_platform_id -ne [string]$expectedRuntimeModel.target_platform_id -or
+      [string]$Receipt.package_id -ne [string]$expectedRuntimeModel.package_id -or
+      [string]$Receipt.package_channel_id -ne [string]$expectedRuntimeModel.package_channel_id -or
+      [string]$Receipt.sanitizer_variant -ne $SanitizerVariant -or
+      $Receipt.support_truth -ne $false -or
+      $Receipt.native_execution_claimed -ne $false) {
+    throw "installer target receipt package identity drifted: $installHome"
+  }
+
+  $receiptRuntimeModel = $Receipt.package_runtime_model
+  if ($null -eq $receiptRuntimeModel -or
+      [string]$receiptRuntimeModel.target_platform_id -ne [string]$expectedRuntimeModel.target_platform_id -or
+      [string]$receiptRuntimeModel.package_id -ne [string]$expectedRuntimeModel.package_id -or
+      [string]$receiptRuntimeModel.package_channel_id -ne [string]$expectedRuntimeModel.package_channel_id -or
+      [string]$receiptRuntimeModel.sanitizer_variant -ne $SanitizerVariant -or
+      [string]$receiptRuntimeModel.runtime_variant -ne [string]$expectedRuntimeModel.runtime_variant -or
+      $receiptRuntimeModel.support_truth -ne $false -or
+      $receiptRuntimeModel.native_execution_claimed -ne $false) {
+    throw "installer target receipt runtime model drifted: $installHome"
+  }
+
+  Assert-PayloadEntriesMatch `
+    -ActualEntries @($receiptRuntimeModel.package_root_layout) `
+    -ExpectedEntries $payloadRequiredEntries `
+    -Context "installer target receipt runtime model"
+}
+
 function Assert-NoReparsePointInExistingPath {
   param([Parameter(Mandatory = $true)][string]$Path)
 
@@ -407,6 +438,7 @@ function Assert-ReceiptOwnsInstallHome {
     -ActualEntries $receiptPayloadEntries `
     -ExpectedEntries $payloadRequiredEntries `
     -Context "installer target receipt"
+  Assert-ReceiptPlatformIdentity -Receipt $receipt
   Assert-ReceiptSanitizerVariant -Receipt $receipt
 }
 
@@ -580,18 +612,27 @@ function Assert-ReceiptOwnsInstallHome {
   $receipt = Get-Content -LiteralPath $receiptPath -Raw | ConvertFrom-Json
   $receiptPayloadEntries = @($receipt.payload_required_entries)
   $expectedPayloadEntries = @($payloadRequiredEntries)
+  $expectedPackageId = "__PACKAGE_ID__"
+  $expectedPackageChannelId = "__PACKAGE_CHANNEL_ID__"
+  $expectedSanitizerVariant = "release"
   $sanitizerPackageVariant = $null
   if ($receipt.PSObject.Properties.Name -contains "sanitizer_package_variant") {
     $sanitizerPackageVariant = $receipt.sanitizer_package_variant
   }
   if ($null -ne $sanitizerPackageVariant) {
     if ([string]$sanitizerPackageVariant.sanitizer -eq "address") {
+      $expectedPackageId = "org.objc3c.runtime:objc3c-runtime-asan"
+      $expectedPackageChannelId = "windows-x64-sanitizer-asan"
+      $expectedSanitizerVariant = "address"
       $expectedPayloadEntries += "share/objc3c/sanitizer/asan-metadata.json"
       $expectedPayloadEntries += "share/objc3c/sanitizer/asan-runtime-libraries.json"
       $expectedPayloadEntries += "artifacts/runtime/sanitizer/address/clang_rt.asan_dynamic-x86_64.dll"
       $expectedPayloadEntries += "artifacts/runtime/sanitizer/address/clang_rt.asan_dynamic-x86_64.lib"
       $expectedPayloadEntries += "artifacts/runtime/sanitizer/address/clang_rt.asan_dynamic_runtime_thunk-x86_64.lib"
     } elseif ([string]$sanitizerPackageVariant.sanitizer -eq "undefined") {
+      $expectedPackageId = "org.objc3c.runtime:objc3c-runtime-ubsan"
+      $expectedPackageChannelId = "windows-x64-sanitizer-ubsan"
+      $expectedSanitizerVariant = "undefined"
       $expectedPayloadEntries += "share/objc3c/sanitizer/ubsan-metadata.json"
       $expectedPayloadEntries += "share/objc3c/sanitizer/ubsan-runtime-libraries.json"
       $expectedPayloadEntries += "artifacts/runtime/sanitizer/undefined/clang_rt.ubsan_standalone-x86_64.lib"
@@ -608,6 +649,11 @@ function Assert-ReceiptOwnsInstallHome {
       [string]$receipt.install_command -ne "npm run objc3c -- build-package-channels" -or
       [string]$receipt.payload_manifest -ne $payloadManifest -or
       [string]$receipt.target_platform_id -ne $targetPlatformId -or
+      [string]$receipt.package_id -ne $expectedPackageId -or
+      [string]$receipt.package_channel_id -ne $expectedPackageChannelId -or
+      [string]$receipt.sanitizer_variant -ne $expectedSanitizerVariant -or
+      $receipt.support_truth -ne $false -or
+      $receipt.native_execution_claimed -ne $false -or
       [string]::IsNullOrWhiteSpace([string]$receipt.payload_manifest_sha256)) {
     throw "uninstaller target receipt does not own install home: $installHome"
   }
@@ -634,6 +680,12 @@ Write-Output ("rollback_root: " + $resolvedInstallRoot)
         "__TARGET_PLATFORM_ID__",
         target_platform_id,
     ).replace(
+        "__PACKAGE_ID__",
+        release_package_id_for_platform(target_platform_id),
+    ).replace(
+        "__PACKAGE_CHANNEL_ID__",
+        release_package_channel_id_for_platform(target_platform_id),
+    ).replace(
         "__PAYLOAD_REQUIRED_ENTRIES__",
         powershell_string_array(payload_required_entries),
     )
@@ -648,14 +700,47 @@ Set-StrictMode -Version Latest
 $installRoot = $PSScriptRoot
 $toolchainHome = Join-Path $installRoot "objc3c"
 $binPath = Join-Path $toolchainHome "artifacts/bin"
+$libPath = Join-Path $toolchainHome "artifacts/lib"
+$receiptPath = Join-Path $installRoot "objc3c-install-receipt.json"
+
+function Add-PathListEntry {
+  param(
+    [Parameter(Mandatory = $true)][string]$VariableName,
+    [Parameter(Mandatory = $true)][string]$Entry
+  )
+
+  $currentValue = [System.Environment]::GetEnvironmentVariable($VariableName, "Process")
+  if ([string]::IsNullOrWhiteSpace($currentValue)) {
+    [System.Environment]::SetEnvironmentVariable($VariableName, $Entry, "Process")
+    return
+  }
+  if ($currentValue -notmatch [regex]::Escape($Entry)) {
+    [System.Environment]::SetEnvironmentVariable(
+      $VariableName,
+      $Entry + [System.IO.Path]::PathSeparator + $currentValue,
+      "Process"
+    )
+  }
+}
 
 $env:OBJC3C_HOME = $toolchainHome
 if ($env:PATH -notmatch [regex]::Escape($binPath)) {
   $env:PATH = $binPath + [System.IO.Path]::PathSeparator + $env:PATH
 }
+$env:OBJC3C_RUNTIME_LIBRARY_PATH = $libPath
+
+if (Test-Path -LiteralPath $receiptPath -PathType Leaf) {
+  $receipt = Get-Content -LiteralPath $receiptPath -Raw | ConvertFrom-Json
+  if ([string]$receipt.target_platform_id -eq "linux-x64") {
+    Add-PathListEntry -VariableName "LD_LIBRARY_PATH" -Entry $libPath
+  } elseif ([string]$receipt.target_platform_id -eq "darwin-arm64") {
+    Add-PathListEntry -VariableName "DYLD_LIBRARY_PATH" -Entry $libPath
+  }
+}
 
 Write-Output ("objc3c_home: " + $env:OBJC3C_HOME)
 Write-Output ("objc3c_bin: " + $binPath)
+Write-Output ("objc3c_runtime_library_path: " + $env:OBJC3C_RUNTIME_LIBRARY_PATH)
 """
 
 

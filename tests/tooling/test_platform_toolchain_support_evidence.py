@@ -131,6 +131,7 @@ def test_platform_toolchain_support_evidence_fixture_validates() -> None:
         "objc3c.hosted.sanitizer.address.reserved": False,
         "objc3c.hosted.sanitizer.undefined.reserved": False,
         "objc3c.hosted.toolchain.missing-llc.fail-closed": False,
+        "objc3c.hosted.toolchain.target-object.fail-closed": False,
         "objc3c.hosted.toolchain.mixed-root.fail-closed": False,
         "objc3c.hosted.toolchain.mismatched-version.fail-closed": False,
     }
@@ -163,6 +164,7 @@ def test_platform_toolchain_support_evidence_fixture_validates() -> None:
         "objc3c.hosted.sanitizer.address.reserved": False,
         "objc3c.hosted.sanitizer.undefined.reserved": False,
         "objc3c.hosted.toolchain.missing-llc.fail-closed": False,
+        "objc3c.hosted.toolchain.target-object.fail-closed": False,
         "objc3c.hosted.toolchain.mixed-root.fail-closed": False,
         "objc3c.hosted.toolchain.mismatched-version.fail-closed": False,
     }
@@ -188,7 +190,7 @@ def test_platform_toolchain_support_evidence_fixture_validates() -> None:
         for failure_class in unsupported_host_policy["hard_fail_classes"]
     }
     assert (
-        "native object emission requires llc --filetype=obj and has no clang substitute success path"
+        "native object emission requires llc --filetype=obj with target object output and has no clang substitute success path"
         in unsupported_host_policy["required_claims"]
     )
     assert [row["row_id"] for row in evidence["support_rows"]] == [
@@ -228,9 +230,11 @@ def test_platform_toolchain_support_evidence_fixture_validates() -> None:
         "issue_ref": 8232,
         "required_tool": "llc",
         "required_probe": "llc --filetype=obj",
+        "required_target_probe": "llc --filetype=obj --mtriple=<target> emits a non-empty object",
         "success_status": "native_object_emission_supported",
         "missing_llc_status": "native_object_emission_missing_llc",
         "missing_filetype_status": "native_object_emission_filetype_obj_unavailable",
+        "target_object_status": "native_object_emission_target_object_unavailable",
         "mixed_toolchain_status": "native_object_emission_mixed_toolchain_root",
         "mismatched_version_status": "native_object_emission_mismatched_tool_versions",
         "unsupported_version_status": "native_object_emission_unsupported_tool_version",
@@ -347,6 +351,8 @@ def test_platform_support_matrix_publishes_issue_owned_evidence_sections() -> No
         for rule in llvm_matrix["rejection_rules"]
     } == {
         "objc3c.llvm.reject.missing-llc",
+        "objc3c.llvm.reject.filetype-obj-unavailable",
+        "objc3c.llvm.reject.target-object-unavailable",
         "objc3c.llvm.reject.missing-archive-tool",
         "objc3c.llvm.reject.missing-headers-libs",
         "objc3c.llvm.reject.mixed-toolchain",

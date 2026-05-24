@@ -80,12 +80,15 @@ bool ParseObjc3LLVMCapabilitySummary(const std::string &text,
 
   const JsonValue *llc_features = root.Find("llc_features");
   if (llc_features == nullptr || !llc_features->IsObject() ||
-      !llc_features->GetBool("supports_filetype_obj")) {
+      !llc_features->GetBool("supports_filetype_obj") ||
+      !llc_features->GetBool("supports_target_object_emission")) {
     error = "llvm capability summary parse failure: invalid llc_features section";
     return false;
   }
   summary.llc_supports_filetype_obj =
       *llc_features->GetBool("supports_filetype_obj");
+  summary.llc_supports_target_object_emission =
+      *llc_features->GetBool("supports_target_object_emission");
 
   const JsonValue *toolchain_identity = root.Find("toolchain_identity");
   if (toolchain_identity == nullptr || !toolchain_identity->IsObject() ||

@@ -909,7 +909,7 @@
         "Linux x64 support from source-owned fail-closed rows alone.",
         "macOS arm64 support from source-owned fail-closed rows alone.",
         "ASan or UBSan package support outside Windows x64, from generated runtime reports alone, or from sanitizer execution evidence that has not cleared the source-owned promotion gate.",
-        "Native object emission success when llc is missing or lacks llc --filetype=obj.",
+        "Native object emission success when llc is missing, lacks llc --filetype=obj, or cannot emit a non-empty object for the target triple.",
         "Clang fallback published as llvm-direct object emission success.",
         "Issue comments, PR bodies, temp files, generated projections, or validation logs as source truth."
       ],
@@ -1189,7 +1189,7 @@
         },
         {
           "id": "missing-llc-fail-closed",
-          "description": "Missing llc, missing llc --filetype=obj, mixed LLVM roots, mismatched LLVM tool versions, unsupported LLVM versions, or unresolved required tool versions remain fail-closed and cannot publish object, package, execution, parity, or platform success.",
+          "description": "Missing llc, missing llc --filetype=obj, failed target object emission, mixed LLVM roots, mismatched LLVM tool versions, unsupported LLVM versions, or unresolved required tool versions remain fail-closed and cannot publish object, package, execution, parity, or platform success.",
           "status": "satisfied",
           "path": "tests/tooling/fixtures/platform_hardening/platform_toolchain_support_evidence.json"
         },
@@ -1327,7 +1327,7 @@
         },
         {
           "blocker_id": "native-object-emission-promotion",
-          "summary": "Native object emission is fail-closed unless llc --filetype=obj is present and routed without a clang substitute route.",
+          "summary": "Native object emission is fail-closed unless llc --filetype=obj emits a non-empty object for the target triple and is routed without a clang substitute route.",
           "missing_work": [
             "Hosted-runner evidence for llc object emission availability or deterministic fail-closed status.",
             "No clang substitute success path for object, package, execution, or parity claims.",
@@ -1349,7 +1349,7 @@
         "The platform.expansion.umbrella-readiness matrix row changes to implemented.",
         "Linux x64 and macOS arm64 platform rows are implemented with build, package, install, and native execution evidence.",
         "ASan and UBSan package variants remain Windows x64 evidence-bound with runtime package, install, native execution evidence, expected sanitizer detection, computed digest agreement, fail-closed negative cases, and the source-owned runtime-promotion gate.",
-        "Native object emission succeeds only through llc --filetype=obj and no clang substitute success path exists.",
+        "Native object emission succeeds only through llc --filetype=obj with non-empty target object output and no clang substitute success path exists.",
         "All platform source, fixture, capability, evidence, README, and runbook docs agree on the same support boundary.",
         "No prerequisite relies on temp/generated evidence, source-only package rows, tool presence alone, compatibility bypasses, or prose-only support claims."
       ]

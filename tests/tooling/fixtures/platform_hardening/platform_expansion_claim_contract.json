@@ -253,6 +253,17 @@
       "projection_rule": "missing llc blocks native object package execution and platform success"
     },
     {
+      "summary_id": "objc3c.hosted.toolchain.target-object.fail-closed",
+      "issue_ref": 8232,
+      "summary_kind": "toolchain",
+      "hosted_runner": "any",
+      "claim_state": "fail-closed",
+      "platform_ids": [],
+      "publication_allowed": false,
+      "native_object_emission_status": "native_object_emission_target_object_unavailable",
+      "projection_rule": "failed target-specific llc object output blocks native object package execution and platform success"
+    },
+    {
       "summary_id": "objc3c.hosted.toolchain.mixed-root.fail-closed",
       "issue_ref": 8232,
       "summary_kind": "toolchain",
@@ -1043,10 +1054,11 @@
       "positive_case": true,
       "required_tool": "llc",
       "required_probe": "llc --filetype=obj",
+      "required_target_probe": "llc --filetype=obj --mtriple=<target> emits a non-empty object",
       "clang_substitute_allowed": false,
       "toolchain_identity_required": true,
       "blocks_surfaces": [],
-      "diagnostic": "native object emission is supportable only when llc --filetype=obj and coherent LLVM identity are both proven"
+      "diagnostic": "native object emission is supportable only when llc --filetype=obj, target-specific object output, and coherent LLVM identity are all proven"
     },
     {
       "case_id": "objc3c.object-emission.reject.missing-llc",
@@ -1054,6 +1066,7 @@
       "positive_case": false,
       "required_tool": "llc",
       "required_probe": "llc --filetype=obj",
+      "required_target_probe": "llc --filetype=obj --mtriple=<target> emits a non-empty object",
       "clang_substitute_allowed": false,
       "toolchain_identity_required": true,
       "blocks_surfaces": [
@@ -1069,6 +1082,7 @@
       "positive_case": false,
       "required_tool": "llc",
       "required_probe": "llc --filetype=obj",
+      "required_target_probe": "llc --filetype=obj --mtriple=<target> emits a non-empty object",
       "clang_substitute_allowed": false,
       "toolchain_identity_required": true,
       "blocks_surfaces": [
@@ -1079,11 +1093,28 @@
       "diagnostic": "llc without --filetype=obj blocks object package execution and support publication"
     },
     {
+      "case_id": "objc3c.object-emission.reject.target-object-unavailable",
+      "status": "native_object_emission_target_object_unavailable",
+      "positive_case": false,
+      "required_tool": "llc",
+      "required_probe": "llc --filetype=obj",
+      "required_target_probe": "llc --filetype=obj --mtriple=<target> emits a non-empty object",
+      "clang_substitute_allowed": false,
+      "toolchain_identity_required": true,
+      "blocks_surfaces": [
+        "package",
+        "execution",
+        "publication"
+      ],
+      "diagnostic": "llc that accepts --filetype=obj but cannot emit a non-empty object for the target blocks object package execution and support publication"
+    },
+    {
       "case_id": "objc3c.object-emission.reject.mixed-toolchain-root",
       "status": "native_object_emission_mixed_toolchain_root",
       "positive_case": false,
       "required_tool": "llc",
       "required_probe": "llc --filetype=obj",
+      "required_target_probe": "llc --filetype=obj --mtriple=<target> emits a non-empty object",
       "clang_substitute_allowed": false,
       "toolchain_identity_required": true,
       "blocks_surfaces": [
@@ -1099,6 +1130,7 @@
       "positive_case": false,
       "required_tool": "llc",
       "required_probe": "llc --filetype=obj",
+      "required_target_probe": "llc --filetype=obj --mtriple=<target> emits a non-empty object",
       "clang_substitute_allowed": false,
       "toolchain_identity_required": true,
       "blocks_surfaces": [
@@ -1114,6 +1146,7 @@
       "positive_case": false,
       "required_tool": "llc",
       "required_probe": "llc --filetype=obj",
+      "required_target_probe": "llc --filetype=obj --mtriple=<target> emits a non-empty object",
       "clang_substitute_allowed": false,
       "toolchain_identity_required": true,
       "blocks_surfaces": [
@@ -1129,6 +1162,7 @@
       "positive_case": false,
       "required_tool": "llc",
       "required_probe": "llc --filetype=obj",
+      "required_target_probe": "llc --filetype=obj --mtriple=<target> emits a non-empty object",
       "clang_substitute_allowed": false,
       "toolchain_identity_required": true,
       "blocks_surfaces": [

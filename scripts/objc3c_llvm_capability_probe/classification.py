@@ -16,9 +16,14 @@ def build_sema_type_system_parity_surface(
     clang_found = bool(clang_probe.get("found"))
     llc_found = bool(llc_probe.get("found"))
     llc_supports_obj = bool(llc_features.get("supports_filetype_obj", False))
+    llc_supports_target_object = bool(
+        llc_features.get("supports_target_object_emission", False)
+    )
 
     deterministic_semantic_diagnostics = clang_found
-    deterministic_type_metadata_handoff = clang_found and llc_found and llc_supports_obj
+    deterministic_type_metadata_handoff = (
+        clang_found and llc_found and llc_supports_obj and llc_supports_target_object
+    )
 
     blockers: list[str] = []
     if not clang_found:
@@ -27,6 +32,9 @@ def build_sema_type_system_parity_surface(
         blockers.append("llc executable missing")
     elif not llc_supports_obj:
         blockers.append("llc missing --filetype=obj support")
+    elif not llc_supports_target_object:
+        target_triple = str(llc_features.get("target_triple", "target"))
+        blockers.append(f"llc target object emission failed for {target_triple}")
 
     parity_ready = deterministic_semantic_diagnostics and deterministic_type_metadata_handoff
     return {

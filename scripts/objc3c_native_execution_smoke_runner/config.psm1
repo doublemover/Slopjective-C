@@ -46,6 +46,24 @@ function Get-Objc3cNativeExecutionSmokeHostPlatformId {
   return "unknown-$architecture"
 }
 
+function Get-Objc3cNativeExecutionSmokeToolExecutableName {
+  param([Parameter(Mandatory = $true)][string]$CommandName)
+
+  if (Test-Objc3cNativeExecutionSmokeHostIsWindows) {
+    return $CommandName + ".exe"
+  }
+  return $CommandName
+}
+
+function Join-Objc3cNativeExecutionSmokeLlvmToolPath {
+  param(
+    [Parameter(Mandatory = $true)][string]$LlvmRoot,
+    [Parameter(Mandatory = $true)][string]$CommandName
+  )
+
+  return Join-Path (Join-Path $LlvmRoot "bin") (Get-Objc3cNativeExecutionSmokeToolExecutableName -CommandName $CommandName)
+}
+
 function Get-Objc3cNativeExecutionSmokeTargetTriple {
   param([Parameter(Mandatory = $true)][string]$PlatformId)
 
@@ -183,7 +201,7 @@ function Resolve-Objc3cNativeExecutionSmokeClangxx {
   }
 
   foreach ($llvmRoot in @(Get-Objc3cNativeExecutionSmokeLlvmRootCandidates)) {
-    $llvmClangxx = Join-Path $llvmRoot "bin\clang++.exe"
+    $llvmClangxx = Join-Objc3cNativeExecutionSmokeLlvmToolPath -LlvmRoot $llvmRoot -CommandName "clang++"
     if (Test-Path -LiteralPath $llvmClangxx -PathType Leaf) {
       return $llvmClangxx
     }
@@ -205,7 +223,7 @@ function Resolve-Objc3cNativeExecutionSmokeLlc {
   }
 
   foreach ($llvmRoot in @(Get-Objc3cNativeExecutionSmokeLlvmRootCandidates)) {
-    $llvmLlc = Join-Path $llvmRoot "bin\llc.exe"
+    $llvmLlc = Join-Objc3cNativeExecutionSmokeLlvmToolPath -LlvmRoot $llvmRoot -CommandName "llc"
     if (Test-Path -LiteralPath $llvmLlc -PathType Leaf) {
       return $llvmLlc
     }
@@ -228,12 +246,30 @@ function Get-Objc3cNativeExecutionSmokeLlvmRootCandidates {
     }
   }
 
-  $version = if ($env:OBJC3C_CI_LLVM_VERSION) { $env:OBJC3C_CI_LLVM_VERSION } else { "22.1.6" }
-  $userProfile = [System.Environment]::GetEnvironmentVariable("USERPROFILE")
-  if (-not [string]::IsNullOrWhiteSpace($userProfile)) {
-    $candidates += (Join-Path $userProfile ("Tools\LLVM\llvm-{0}-msvc" -f $version))
+  if (Test-Objc3cNativeExecutionSmokeHostIsWindows) {
+    $version = if ($env:OBJC3C_CI_LLVM_VERSION) { $env:OBJC3C_CI_LLVM_VERSION } else { "22.1.6" }
+    $userProfile = [System.Environment]::GetEnvironmentVariable("USERPROFILE")
+    if (-not [string]::IsNullOrWhiteSpace($userProfile)) {
+      $candidates += (Join-Path $userProfile ("Tools\LLVM\llvm-{0}-msvc" -f $version))
+    }
+    $candidates += "C:\Program Files\LLVM"
+  } elseif (Test-Objc3cNativeExecutionSmokeHostIsDarwin) {
+    $candidates += "/opt/homebrew/opt/llvm"
+    $candidates += "/usr/local/opt/llvm"
+  } else {
+    $candidates += "/usr/lib/llvm-22"
+    $candidates += "/usr/lib/llvm-21"
+    $candidates += "/usr/lib/llvm-20"
+    $candidates += "/usr/lib/llvm-19"
+    $candidates += "/usr/lib/llvm-18"
+    $candidates += "/usr/lib/llvm"
+    $candidates += "/usr/local/llvm"
   }
-  $candidates += "C:\Program Files\LLVM"
+
+  $resolvedClangxx = Get-Command "clang++" -ErrorAction SilentlyContinue
+  if ($null -ne $resolvedClangxx -and -not [string]::IsNullOrWhiteSpace($resolvedClangxx.Source)) {
+    $candidates += (Split-Path -Parent (Split-Path -Parent $resolvedClangxx.Source))
+  }
 
   $seen = @{}
   $ordered = @()

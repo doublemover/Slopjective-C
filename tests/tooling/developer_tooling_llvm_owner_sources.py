@@ -34,7 +34,10 @@ def capable_llvm_summary() -> dict[str, object]:
         "llc": {"found": True},
         "llvm_ar": {"found": True},
         "llvm_config": {"found": True},
-        "llc_features": {"supports_filetype_obj": True},
+        "llc_features": {
+            "supports_filetype_obj": True,
+            "supports_target_object_emission": True,
+        },
         "llvm_config_features": {"headers_libraries_discovered": True},
         "toolchain_identity": {"claimable": True},
         "llvm_support_matrix": {
@@ -59,7 +62,10 @@ def hosted_probe_without_object_emission() -> tuple[int, dict[str, object]]:
             },
             "llvm_ar": {"found": True},
             "llvm_config": {"found": True},
-            "llc_features": {"supports_filetype_obj": False},
+            "llc_features": {
+                "supports_filetype_obj": False,
+                "supports_target_object_emission": False,
+            },
             "llvm_config_features": {"headers_libraries_discovered": True},
             "toolchain_identity": {"claimable": False},
             "llvm_support_matrix": {
@@ -95,7 +101,10 @@ def hosted_probe_with_capability_truth_drift() -> tuple[int, dict[str, object]]:
             "llc": {"found": True},
             "llvm_ar": {"found": True},
             "llvm_config": {"found": True},
-            "llc_features": {"supports_filetype_obj": True},
+            "llc_features": {
+                "supports_filetype_obj": True,
+                "supports_target_object_emission": True,
+            },
             "llvm_config_features": {"headers_libraries_discovered": True},
             "toolchain_identity": {"claimable": True},
             "llvm_support_matrix": {
@@ -119,7 +128,10 @@ def hosted_summary_without_clang() -> dict[str, object]:
         "llc": {"found": True},
         "llvm_ar": {"found": True},
         "llvm_config": {"found": True},
-        "llc_features": {"supports_filetype_obj": True},
+        "llc_features": {
+            "supports_filetype_obj": True,
+            "supports_target_object_emission": True,
+        },
         "llvm_config_features": {"headers_libraries_discovered": True},
         "toolchain_identity": {"claimable": True},
         "llvm_support_matrix": {
@@ -139,7 +151,10 @@ def hosted_summary_without_llc() -> dict[str, object]:
         "llc": {"found": False},
         "llvm_ar": {"found": True},
         "llvm_config": {"found": True},
-        "llc_features": {"supports_filetype_obj": False},
+        "llc_features": {
+            "supports_filetype_obj": False,
+            "supports_target_object_emission": False,
+        },
         "llvm_config_features": {"headers_libraries_discovered": True},
         "toolchain_identity": {"claimable": False},
         "llvm_support_matrix": {

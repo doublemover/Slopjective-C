@@ -16,6 +16,7 @@ from objc3c_llvm_capabilities_probe_assertions import (
     assert_mixed_toolchain_root_payload,
     assert_package_wires_llvm_capability_probe_script,
     assert_success_payload,
+    assert_target_object_unsupported_payload,
     assert_windows_install_root_header_library_payload,
 )
 from objc3c_llvm_capabilities_probe_json import load_json
@@ -26,6 +27,7 @@ from objc3c_llvm_capabilities_probe_subprocess import (
     fake_llc_filetype_unsupported_run,
     fake_llc_launch_file_not_found_run,
     fake_llc_missing_run,
+    fake_llc_target_object_unsupported_run,
     fake_llvm_ar_missing_run,
     fake_llvm_config_headers_missing_run,
     fake_windows_install_root_without_llvm_config_run,
@@ -33,6 +35,23 @@ from objc3c_llvm_capabilities_probe_subprocess import (
     fake_mixed_toolchain_root_run,
 )
 from objc3c_llvm_capabilities_probe_support import PACKAGE_JSON, probe
+
+
+def default_probe_args(summary_out: Path) -> list[str]:
+    return [
+        "--clang",
+        "clang",
+        "--clangxx",
+        "clang++",
+        "--llc",
+        "llc",
+        "--llvm-ar",
+        "llvm-ar",
+        "--llvm-config",
+        "llvm-config",
+        "--summary-out",
+        str(summary_out),
+    ]
 
 
 @pytest.fixture(autouse=True)
@@ -48,7 +67,7 @@ def test_probe_passes_when_clang_and_llc_capabilities_are_detected(
 ) -> None:
     monkeypatch.setattr(probe.subprocess, "run", fake_capabilities_detected_run)
     summary_out = tmp_path / "summary.json"
-    exit_code = probe.run(["--summary-out", str(summary_out)])
+    exit_code = probe.run(default_probe_args(summary_out))
 
     assert exit_code == 0
     assert_success_payload(load_json(summary_out))
@@ -57,7 +76,7 @@ def test_probe_passes_when_clang_and_llc_capabilities_are_detected(
 def test_probe_fails_when_llc_is_missing(tmp_path: Path, monkeypatch) -> None:
     monkeypatch.setattr(probe.subprocess, "run", fake_llc_missing_run)
     summary_out = tmp_path / "summary.json"
-    exit_code = probe.run(["--summary-out", str(summary_out)])
+    exit_code = probe.run(default_probe_args(summary_out))
 
     assert exit_code == 1
     assert_llc_missing_payload(load_json(summary_out))
@@ -69,7 +88,7 @@ def test_probe_accepts_filetype_support_from_command_probe(
 ) -> None:
     monkeypatch.setattr(probe.subprocess, "run", fake_filetype_command_probe_run)
     summary_out = tmp_path / "summary.json"
-    exit_code = probe.run(["--summary-out", str(summary_out)])
+    exit_code = probe.run(default_probe_args(summary_out))
 
     assert exit_code == 0
     assert_filetype_support_payload(load_json(summary_out))
@@ -81,10 +100,22 @@ def test_probe_fail_closes_when_llc_filetype_obj_is_unsupported(
 ) -> None:
     monkeypatch.setattr(probe.subprocess, "run", fake_llc_filetype_unsupported_run)
     summary_out = tmp_path / "summary.json"
-    exit_code = probe.run(["--summary-out", str(summary_out)])
+    exit_code = probe.run(default_probe_args(summary_out))
 
     assert exit_code == 1
     assert_filetype_unsupported_payload(load_json(summary_out))
+
+
+def test_probe_fail_closes_when_llc_target_object_emission_is_unsupported(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    monkeypatch.setattr(probe.subprocess, "run", fake_llc_target_object_unsupported_run)
+    summary_out = tmp_path / "summary.json"
+    exit_code = probe.run(default_probe_args(summary_out))
+
+    assert exit_code == 1
+    assert_target_object_unsupported_payload(load_json(summary_out))
 
 
 def test_probe_flags_semantic_diagnostics_unavailable_when_clang_is_missing(
@@ -93,7 +124,7 @@ def test_probe_flags_semantic_diagnostics_unavailable_when_clang_is_missing(
 ) -> None:
     monkeypatch.setattr(probe.subprocess, "run", fake_clang_missing_run)
     summary_out = tmp_path / "summary.json"
-    exit_code = probe.run(["--summary-out", str(summary_out)])
+    exit_code = probe.run(default_probe_args(summary_out))
 
     assert exit_code == 1
     assert_clang_missing_payload(load_json(summary_out))
@@ -105,7 +136,7 @@ def test_probe_fail_closes_when_subprocess_launch_raises_file_not_found(
 ) -> None:
     monkeypatch.setattr(probe.subprocess, "run", fake_llc_launch_file_not_found_run)
     summary_out = tmp_path / "summary.json"
-    exit_code = probe.run(["--summary-out", str(summary_out)])
+    exit_code = probe.run(default_probe_args(summary_out))
 
     assert exit_code == 1
     assert_llc_launch_file_not_found_payload(load_json(summary_out))
@@ -114,7 +145,7 @@ def test_probe_fail_closes_when_subprocess_launch_raises_file_not_found(
 def test_probe_fail_closes_when_llvm_ar_is_missing(tmp_path: Path, monkeypatch) -> None:
     monkeypatch.setattr(probe.subprocess, "run", fake_llvm_ar_missing_run)
     summary_out = tmp_path / "summary.json"
-    exit_code = probe.run(["--summary-out", str(summary_out)])
+    exit_code = probe.run(default_probe_args(summary_out))
 
     assert exit_code == 1
     assert_llvm_ar_missing_payload(load_json(summary_out))
@@ -126,7 +157,7 @@ def test_probe_fail_closes_when_llvm_config_cannot_publish_headers_and_libs(
 ) -> None:
     monkeypatch.setattr(probe.subprocess, "run", fake_llvm_config_headers_missing_run)
     summary_out = tmp_path / "summary.json"
-    exit_code = probe.run(["--summary-out", str(summary_out)])
+    exit_code = probe.run(default_probe_args(summary_out))
 
     assert exit_code == 1
     assert_llvm_config_headers_missing_payload(load_json(summary_out))
@@ -138,7 +169,7 @@ def test_probe_fail_closes_when_required_llvm_tool_versions_mismatch(
 ) -> None:
     monkeypatch.setattr(probe.subprocess, "run", fake_mismatched_llvm_tool_versions_run)
     summary_out = tmp_path / "summary.json"
-    exit_code = probe.run(["--summary-out", str(summary_out)])
+    exit_code = probe.run(default_probe_args(summary_out))
 
     assert exit_code == 1
     assert_mismatched_llvm_tool_versions_payload(load_json(summary_out))

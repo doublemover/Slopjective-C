@@ -147,6 +147,24 @@
       "diagnostic": "Missing llc blocks native object, package, execution, and platform success; clang substitute object emission is not a success path."
     },
     {
+      "summary_id": "objc3c.hosted.toolchain.target-object.fail-closed",
+      "summary_kind": "toolchain",
+      "issue_ref": 8232,
+      "claim_state": "fail-closed",
+      "platform_ids": [],
+      "hosted_runner": "any",
+      "required_evidence_classes": [
+        "toolchain",
+        "native-object-emission"
+      ],
+      "required_missing_evidence_classes": [
+        "native-object-emission"
+      ],
+      "native_object_emission_status": "native_object_emission_target_object_unavailable",
+      "publication_allowed": false,
+      "diagnostic": "llc that accepts --filetype=obj but cannot emit a non-empty object for the target triple blocks native object, package, execution, and platform success."
+    },
+    {
       "summary_id": "objc3c.hosted.toolchain.mixed-root.fail-closed",
       "summary_kind": "toolchain",
       "issue_ref": 8232,
@@ -188,6 +206,7 @@
     "macOS arm64 support from hosted-runner tool presence alone",
     "ASan or UBSan package support without package install and native execution evidence",
     "Native object emission success when llc is missing",
+    "Native object emission success when target object emission fails",
     "Native object emission success from mixed LLVM roots",
     "Native object emission success from mismatched LLVM tool versions",
     "Clang substitute object emission published as llvm-direct success"

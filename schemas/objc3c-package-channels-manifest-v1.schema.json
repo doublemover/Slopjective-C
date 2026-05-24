@@ -213,6 +213,7 @@
     "archive_digests",
     "payload_contract",
     "receipt_contracts",
+    "reusable_runnable_package_identity_contract",
     "portable_archive",
     "installer_archive",
     "offline_archive",
@@ -279,6 +280,9 @@
     },
     "receipt_contracts": {
       "$ref": "#/$defs/receiptContracts"
+    },
+    "reusable_runnable_package_identity_contract": {
+      "$ref": "#/$defs/reusableRunnablePackageIdentityContract"
     },
     "portable_archive": { "type": "string" },
     "installer_archive": { "type": "string" },
@@ -679,6 +683,241 @@
           "minProperties": 1
         },
         "clean_room_source_policy": { "const": "fresh-owned-tmp-root-only" }
+      }
+    },
+    "reusableRunnablePackageIdentityContract": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "contract_id",
+        "manifest_relative_path",
+        "required_fields",
+        "target_platforms",
+        "reuse_policy",
+        "generated_evidence_policy"
+      ],
+      "properties": {
+        "contract_id": {
+          "const": "objc3c.packaging.channels.reusable-runnable-package-identity.v1"
+        },
+        "manifest_relative_path": {
+          "const": "artifacts/package/objc3c-runnable-toolchain-package.json"
+        },
+        "required_fields": {
+          "const": [
+            "target_platform_id",
+            "target_triple",
+            "object_format",
+            "debug_format",
+            "runtime_library_kind",
+            "native_executable",
+            "runtime_library",
+            "runtime_library_name",
+            "package_root_layout",
+            "support_truth",
+            "native_execution_claimed"
+          ]
+        },
+        "target_platforms": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/reusableRunnablePackageTargetIdentity" },
+          "minItems": 3,
+          "maxItems": 3,
+          "allOf": [
+            { "contains": { "$ref": "#/$defs/windowsReusableRunnablePackageIdentity" } },
+            { "contains": { "$ref": "#/$defs/linuxReusableRunnablePackageIdentity" } },
+            { "contains": { "$ref": "#/$defs/darwinReusableRunnablePackageIdentity" } }
+          ]
+        },
+        "reuse_policy": {
+          "const": "manifest-target-and-artifact-identity-must-match-requested-platform"
+        },
+        "generated_evidence_policy": {
+          "const": "generated-host-output-is-review-input-not-source-truth"
+        }
+      }
+    },
+    "releasePackageRootLayout": {
+      "oneOf": [
+        {
+          "const": [
+            "artifacts/package/objc3c-runnable-toolchain-package.json",
+            "artifacts/bin/objc3c-native.exe",
+            "artifacts/lib/objc3_runtime.lib",
+            "stdlib/workspace.json",
+            "stdlib/modules/objc3.core/module.json",
+            "docs/runbooks/objc3c_packaging_channels.md"
+          ]
+        },
+        {
+          "const": [
+            "artifacts/package/objc3c-runnable-toolchain-package.json",
+            "artifacts/bin/objc3c-native",
+            "artifacts/lib/libobjc3-runtime.so",
+            "stdlib/workspace.json",
+            "stdlib/modules/objc3.core/module.json",
+            "docs/runbooks/objc3c_packaging_channels.md"
+          ]
+        },
+        {
+          "const": [
+            "artifacts/package/objc3c-runnable-toolchain-package.json",
+            "artifacts/bin/objc3c-native",
+            "artifacts/lib/libobjc3-runtime.dylib",
+            "stdlib/workspace.json",
+            "stdlib/modules/objc3.core/module.json",
+            "docs/runbooks/objc3c_packaging_channels.md"
+          ]
+        }
+      ]
+    },
+    "reusableRunnablePackageTargetIdentity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "target_platform_id",
+        "package_id",
+        "package_channel_id",
+        "target_triple",
+        "object_format",
+        "debug_format",
+        "runtime_library_kind",
+        "native_executable",
+        "runtime_library",
+        "runtime_library_name",
+        "package_root_layout",
+        "support_truth",
+        "native_execution_claimed"
+      ],
+      "properties": {
+        "target_platform_id": {
+          "enum": ["windows-x64", "linux-x64", "darwin-arm64"]
+        },
+        "package_id": {
+          "enum": [
+            "org.objc3c.runtime:objc3c-runtime-release",
+            "org.objc3c.runtime:objc3c-runtime-linux-x64-release",
+            "org.objc3c.runtime:objc3c-runtime-darwin-arm64-release"
+          ]
+        },
+        "package_channel_id": {
+          "enum": [
+            "windows-x64-release",
+            "linux-x64-release",
+            "darwin-arm64-release"
+          ]
+        },
+        "target_triple": {
+          "enum": [
+            "x86_64-pc-windows-msvc",
+            "x86_64-unknown-linux-gnu",
+            "aarch64-apple-darwin"
+          ]
+        },
+        "object_format": { "enum": ["COFF", "ELF", "Mach-O"] },
+        "debug_format": { "enum": ["CodeView/PDB", "DWARF", "DWARF/dSYM"] },
+        "runtime_library_kind": { "enum": ["static-archive", "shared-library"] },
+        "native_executable": {
+          "enum": ["artifacts/bin/objc3c-native.exe", "artifacts/bin/objc3c-native"]
+        },
+        "runtime_library": {
+          "enum": [
+            "artifacts/lib/objc3_runtime.lib",
+            "artifacts/lib/libobjc3-runtime.so",
+            "artifacts/lib/libobjc3-runtime.dylib"
+          ]
+        },
+        "runtime_library_name": {
+          "enum": [
+            "objc3_runtime.lib",
+            "libobjc3-runtime.so",
+            "libobjc3-runtime.dylib"
+          ]
+        },
+        "package_root_layout": { "$ref": "#/$defs/releasePackageRootLayout" },
+        "support_truth": { "const": false },
+        "native_execution_claimed": { "const": false }
+      }
+    },
+    "windowsReusableRunnablePackageIdentity": {
+      "type": "object",
+      "properties": {
+        "target_platform_id": { "const": "windows-x64" },
+        "package_id": { "const": "org.objc3c.runtime:objc3c-runtime-release" },
+        "package_channel_id": { "const": "windows-x64-release" },
+        "target_triple": { "const": "x86_64-pc-windows-msvc" },
+        "object_format": { "const": "COFF" },
+        "debug_format": { "const": "CodeView/PDB" },
+        "runtime_library_kind": { "const": "static-archive" },
+        "native_executable": { "const": "artifacts/bin/objc3c-native.exe" },
+        "runtime_library": { "const": "artifacts/lib/objc3_runtime.lib" },
+        "runtime_library_name": { "const": "objc3_runtime.lib" },
+        "package_root_layout": {
+          "const": [
+            "artifacts/package/objc3c-runnable-toolchain-package.json",
+            "artifacts/bin/objc3c-native.exe",
+            "artifacts/lib/objc3_runtime.lib",
+            "stdlib/workspace.json",
+            "stdlib/modules/objc3.core/module.json",
+            "docs/runbooks/objc3c_packaging_channels.md"
+          ]
+        },
+        "support_truth": { "const": false },
+        "native_execution_claimed": { "const": false }
+      }
+    },
+    "linuxReusableRunnablePackageIdentity": {
+      "type": "object",
+      "properties": {
+        "target_platform_id": { "const": "linux-x64" },
+        "package_id": { "const": "org.objc3c.runtime:objc3c-runtime-linux-x64-release" },
+        "package_channel_id": { "const": "linux-x64-release" },
+        "target_triple": { "const": "x86_64-unknown-linux-gnu" },
+        "object_format": { "const": "ELF" },
+        "debug_format": { "const": "DWARF" },
+        "runtime_library_kind": { "const": "shared-library" },
+        "native_executable": { "const": "artifacts/bin/objc3c-native" },
+        "runtime_library": { "const": "artifacts/lib/libobjc3-runtime.so" },
+        "runtime_library_name": { "const": "libobjc3-runtime.so" },
+        "package_root_layout": {
+          "const": [
+            "artifacts/package/objc3c-runnable-toolchain-package.json",
+            "artifacts/bin/objc3c-native",
+            "artifacts/lib/libobjc3-runtime.so",
+            "stdlib/workspace.json",
+            "stdlib/modules/objc3.core/module.json",
+            "docs/runbooks/objc3c_packaging_channels.md"
+          ]
+        },
+        "support_truth": { "const": false },
+        "native_execution_claimed": { "const": false }
+      }
+    },
+    "darwinReusableRunnablePackageIdentity": {
+      "type": "object",
+      "properties": {
+        "target_platform_id": { "const": "darwin-arm64" },
+        "package_id": { "const": "org.objc3c.runtime:objc3c-runtime-darwin-arm64-release" },
+        "package_channel_id": { "const": "darwin-arm64-release" },
+        "target_triple": { "const": "aarch64-apple-darwin" },
+        "object_format": { "const": "Mach-O" },
+        "debug_format": { "const": "DWARF/dSYM" },
+        "runtime_library_kind": { "const": "shared-library" },
+        "native_executable": { "const": "artifacts/bin/objc3c-native" },
+        "runtime_library": { "const": "artifacts/lib/libobjc3-runtime.dylib" },
+        "runtime_library_name": { "const": "libobjc3-runtime.dylib" },
+        "package_root_layout": {
+          "const": [
+            "artifacts/package/objc3c-runnable-toolchain-package.json",
+            "artifacts/bin/objc3c-native",
+            "artifacts/lib/libobjc3-runtime.dylib",
+            "stdlib/workspace.json",
+            "stdlib/modules/objc3.core/module.json",
+            "docs/runbooks/objc3c_packaging_channels.md"
+          ]
+        },
+        "support_truth": { "const": false },
+        "native_execution_claimed": { "const": false }
       }
     },
     "payloadEntryPath": {
