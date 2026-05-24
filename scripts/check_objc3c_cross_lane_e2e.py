@@ -616,8 +616,8 @@ def validate_optimization_trace_proof(
     method_before_text = OPTIMIZATION_METHOD_INLINING_BEFORE_IR_PATH.read_text(encoding="utf-8")
     method_after_text = OPTIMIZATION_METHOD_INLINING_AFTER_IR_PATH.read_text(encoding="utf-8")
     required_method_reference_tokens = {
-        "method_before_call": "call i32 @objc3_inlineable_Math_addOne",
-        "method_before_body_identity": "callee body identity: body:Math.addOne:v1",
+        "method_before_call": "call i32 @objc3_inlineable_InlineMath_addOne",
+        "method_before_body_identity": "callee body identity: body:InlineMath.addOne:v1",
         "method_after_inline_frame": "source-map inline frame preserved",
         "method_after_invalidation": "semantic-optimization.invalidate-global-proof-state",
     }

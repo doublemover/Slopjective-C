@@ -13,7 +13,7 @@
       "source": "tests/native/e2e/cross_lane/advanced_runtime_closure.objc3",
       "module_name": "CrossLaneAdvancedRuntimeClosure",
       "module_declaration": "module CrossLaneAdvancedRuntimeClosure;",
-      "source_sha256": "9d5bd8f235be6a314bae1b6819233e7018e2ffbdb193b4513b35c47d994a6e5c",
+      "source_sha256": "3c74ce79e34543451fa4b66d6fef47910ebc027826ad35cad4c1a0bb03973042",
       "required_tokens": [
         "module CrossLaneAdvancedRuntimeClosure;",
         "objc_macro_provenance(named(\"sha256:5883f2e2120170bb3de07348e4f101cd478379337b6c0ce2a0f751b29da70e4f\"))",
@@ -32,7 +32,7 @@
         "source": "tests/native/e2e/cross_lane/advanced_runtime_closure_provider.objc3",
         "module_name": "CrossLaneAdvancedRuntimeClosureProvider",
         "module_declaration": "module CrossLaneAdvancedRuntimeClosureProvider;",
-        "source_sha256": "c2fea24d3aca586e414baec58f8cc183f1481bea41e76e82dfbbd7e159a7907c",
+        "source_sha256": "0082fb9bf24fc5d0546485ec982b718efffd1d4d1df3bc4069f2b5f6e4cadfe9",
         "required_tokens": [
           "fn ConsumeBorrowed(bytes: borrowed id *) -> void",
           "fn CFRetain(value: id) -> id",

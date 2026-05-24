@@ -165,6 +165,7 @@ HOST_EVIDENCE_ACCEPTED_WORKFLOW_PATHS: tuple[str, ...] = (
     *HOST_EVIDENCE_DISPATCH_GATEWAY_WORKFLOW_PATHS,
 )
 HOST_EVIDENCE_INGESTION_ACTION = "ingest-platform-host-evidence"
+HOST_EVIDENCE_HOST_PROMOTION_CONTRACT_CHECK_ACTION = "check-platform-host-promotion-evidence"
 HOST_EVIDENCE_INGESTION_HELPER = "scripts/ingest_objc3c_platform_host_evidence.py"
 HOST_EVIDENCE_REPORT_ROOT = "tmp/reports/platform-host-evidence"
 HOST_EVIDENCE_REPORT_CONTRACT_ID = "objc3c.platform.hosted-runner.evidence-report.v1"
@@ -798,6 +799,11 @@ def _validate_hosted_evidence_ingestion(
         expect(resolve_repo_path(workflow_path).is_file(), f"host evidence workflow file is missing: {workflow_path}")
     expect(ingestion.get("runner_labels") == HOST_EVIDENCE_RUNNER_LABELS, "host evidence runner labels drifted")
     expect(ingestion.get("ingestion_action") == HOST_EVIDENCE_INGESTION_ACTION, "host evidence ingestion action drifted")
+    expect(
+        ingestion.get("host_promotion_contract_check_action")
+        == HOST_EVIDENCE_HOST_PROMOTION_CONTRACT_CHECK_ACTION,
+        "host evidence promotion contract check action drifted",
+    )
     expect(ingestion.get("ingestion_helper") == HOST_EVIDENCE_INGESTION_HELPER, "host evidence ingestion helper drifted")
     expect(resolve_repo_path(HOST_EVIDENCE_INGESTION_HELPER).is_file(), "host evidence ingestion helper is missing")
     expect(

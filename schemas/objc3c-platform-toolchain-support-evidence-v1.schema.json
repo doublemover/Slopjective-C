@@ -276,6 +276,7 @@
         "dispatch_gateway_workflow_paths",
         "runner_labels",
         "ingestion_action",
+        "host_promotion_contract_check_action",
         "ingestion_helper",
         "generated_report_contract_id",
         "generated_report_root",
@@ -326,6 +327,9 @@
         },
         "ingestion_action": {
           "const": "ingest-platform-host-evidence"
+        },
+        "host_promotion_contract_check_action": {
+          "const": "check-platform-host-promotion-evidence"
         },
         "ingestion_helper": {
           "const": "scripts/ingest_objc3c_platform_host_evidence.py"

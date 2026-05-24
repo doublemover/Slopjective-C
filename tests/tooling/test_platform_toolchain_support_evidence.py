@@ -74,6 +74,7 @@ def test_platform_toolchain_support_evidence_fixture_validates() -> None:
             "darwin-arm64": "macos-15",
         },
         "ingestion_action": "ingest-platform-host-evidence",
+        "host_promotion_contract_check_action": "check-platform-host-promotion-evidence",
         "ingestion_helper": "scripts/ingest_objc3c_platform_host_evidence.py",
         "generated_report_contract_id": "objc3c.platform.hosted-runner.evidence-report.v1",
         "generated_report_root": "tmp/reports/platform-host-evidence",
