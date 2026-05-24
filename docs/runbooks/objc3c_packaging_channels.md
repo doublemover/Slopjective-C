@@ -47,10 +47,33 @@ claims. An ASan package must identify
 
 Installer receipts and receipt contracts must fail closed when any sanitizer
 selector, package id, package-channel id, metadata path, metadata digest,
-runtime-library list, payload entry list, or native-execution contract drifts.
+runtime-library list, copied runtime-library artifact digest, runtime-library
+manifest path, payload entry list, or native-execution contract drifts.
 Release installs must not carry sanitizer metadata, and sanitizer installs must
 carry `sanitizer_package_variant` with `support_truth: false` and
 `native_execution_claimed: false`.
+
+Sanitizer package staging must discover the exact Windows x64 Clang runtime
+artifact set from the resolved LLVM root, copy those artifacts into the package
+payload, and publish a digest manifest before the sanitizer metadata or package
+receipt can be emitted. Missing ASan or UBSan runtime files fail closed before
+package publication and before installation. The current package payload paths
+are:
+
+- ASan:
+  - `share/objc3c/sanitizer/asan-runtime-libraries.json`
+  - `artifacts/runtime/sanitizer/address/clang_rt.asan_dynamic-x86_64.dll`
+  - `artifacts/runtime/sanitizer/address/clang_rt.asan_dynamic-x86_64.lib`
+  - `artifacts/runtime/sanitizer/address/clang_rt.asan_dynamic_runtime_thunk-x86_64.lib`
+- UBSan:
+  - `share/objc3c/sanitizer/ubsan-runtime-libraries.json`
+  - `artifacts/runtime/sanitizer/undefined/clang_rt.ubsan_standalone-x86_64.lib`
+  - `artifacts/runtime/sanitizer/undefined/clang_rt.ubsan_standalone_cxx-x86_64.lib`
+
+These runtime-library manifests and artifacts prove package/install identity
+only. They do not promote ASan or UBSan support: support remains reserved until
+native execution reports and expected sanitizer detection records are captured
+through the public package workflow.
 
 Packaging-channel commands route through `npm run objc3c -- <action>`; helper
 implementations are action-registry anchors only.

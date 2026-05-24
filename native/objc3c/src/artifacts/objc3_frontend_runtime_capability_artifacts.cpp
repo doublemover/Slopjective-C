@@ -79,7 +79,7 @@ std::string BuildRuntimeCapabilityOptionalFeaturesJson() {
        "ARC remains unsupported in the public conformance claim surface until the full runnable ARC contract closes",
        kObjc3UnsupportedFeatureClaimArc},
       {"value-optionals", "not-claimed",
-       "#8234 admits Optional<T> type signatures and bounded packed runtime ABI lowering for i32, bool, and id handles while keeping nested/generic payloads, property/ivar storage, unchecked unwrap, nil-to-scalar, implicit nil absence, nullable-pointer conversion, and throws/result conversion fail-closed",
+       "#8234 admits Optional<T> type signatures, bounded packed runtime ABI lowering for i32, bool, and id handles, and full-width i64 runtime helpers while keeping Optional<i64> language call/return lowering, nested/generic payloads, property/ivar storage, unchecked unwrap, nil-to-scalar, implicit nil absence, nullable-pointer conversion, and throws/result conversion fail-closed",
        kObjc3UnsupportedFeatureClaimValueOptionals},
       {"match-expressions", "not-claimed",
        "expression-form match remains reserved; only statement match belongs to the current source surface",

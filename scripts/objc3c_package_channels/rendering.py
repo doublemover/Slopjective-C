@@ -35,8 +35,15 @@ $payloadRequiredEntries = @(
 )
 if ($SanitizerVariant -eq "address") {
   $payloadRequiredEntries += "share/objc3c/sanitizer/asan-metadata.json"
+  $payloadRequiredEntries += "share/objc3c/sanitizer/asan-runtime-libraries.json"
+  $payloadRequiredEntries += "artifacts/runtime/sanitizer/address/clang_rt.asan_dynamic-x86_64.dll"
+  $payloadRequiredEntries += "artifacts/runtime/sanitizer/address/clang_rt.asan_dynamic-x86_64.lib"
+  $payloadRequiredEntries += "artifacts/runtime/sanitizer/address/clang_rt.asan_dynamic_runtime_thunk-x86_64.lib"
 } elseif ($SanitizerVariant -eq "undefined") {
   $payloadRequiredEntries += "share/objc3c/sanitizer/ubsan-metadata.json"
+  $payloadRequiredEntries += "share/objc3c/sanitizer/ubsan-runtime-libraries.json"
+  $payloadRequiredEntries += "artifacts/runtime/sanitizer/undefined/clang_rt.ubsan_standalone-x86_64.lib"
+  $payloadRequiredEntries += "artifacts/runtime/sanitizer/undefined/clang_rt.ubsan_standalone_cxx-x86_64.lib"
 }
 $allowedReceiptChannels = @("local-installer", "offline-bundle")
 
@@ -64,6 +71,53 @@ function Resolve-SanitizerPackageVariant {
     return $null
   }
 
+  $runtimeManifestPath = ""
+  $expectedRuntimeEntries = @()
+  if ($SanitizerVariant -eq "address") {
+    $runtimeManifestPath = "share/objc3c/sanitizer/asan-runtime-libraries.json"
+    $expectedRuntimeEntries = @(
+      "artifacts/runtime/sanitizer/address/clang_rt.asan_dynamic-x86_64.dll",
+      "artifacts/runtime/sanitizer/address/clang_rt.asan_dynamic-x86_64.lib",
+      "artifacts/runtime/sanitizer/address/clang_rt.asan_dynamic_runtime_thunk-x86_64.lib"
+    )
+  } else {
+    $runtimeManifestPath = "share/objc3c/sanitizer/ubsan-runtime-libraries.json"
+    $expectedRuntimeEntries = @(
+      "artifacts/runtime/sanitizer/undefined/clang_rt.ubsan_standalone-x86_64.lib",
+      "artifacts/runtime/sanitizer/undefined/clang_rt.ubsan_standalone_cxx-x86_64.lib"
+    )
+  }
+
+  $runtimeManifestInstalledPath = Join-Path $installHome ($runtimeManifestPath -replace '/', [System.IO.Path]::DirectorySeparatorChar)
+  if (!(Test-Path -LiteralPath $runtimeManifestInstalledPath -PathType Leaf)) {
+    throw "sanitizer runtime library manifest missing before receipt emission: $runtimeManifestPath"
+  }
+  $runtimeManifest = Get-Content -LiteralPath $runtimeManifestInstalledPath -Raw | ConvertFrom-Json
+  if ([string]$runtimeManifest.contract_id -ne "objc3c.sanitizer.runtime-library-manifest.v1" -or
+      [string]$runtimeManifest.sanitizer -ne $SanitizerVariant -or
+      [string]$runtimeManifest.missing_runtime_behavior -ne "fail-closed-before-package-install" -or
+      $runtimeManifest.support_truth -ne $false -or
+      $runtimeManifest.native_execution_claimed -ne $false) {
+    throw "sanitizer runtime library manifest identity drifted before receipt emission: $runtimeManifestPath"
+  }
+  $runtimeArtifacts = @($runtimeManifest.runtime_library_artifacts)
+  Assert-PayloadEntriesMatch `
+    -ActualEntries @($runtimeArtifacts | ForEach-Object { [string]$_.artifact }) `
+    -ExpectedEntries $expectedRuntimeEntries `
+    -Context "sanitizer runtime library manifest"
+  foreach ($runtimeArtifact in $runtimeArtifacts) {
+    $artifactRelativePath = [string]$runtimeArtifact.artifact
+    $artifactPath = Join-Path $installHome ($artifactRelativePath -replace '/', [System.IO.Path]::DirectorySeparatorChar)
+    if (!(Test-Path -LiteralPath $artifactPath -PathType Leaf)) {
+      throw "sanitizer runtime library missing before receipt emission: $artifactRelativePath"
+    }
+    $artifactDigest = (Get-FileHash -LiteralPath $artifactPath -Algorithm SHA256).Hash.ToLowerInvariant()
+    if ([string]$runtimeArtifact.sha256 -ne $artifactDigest -or $runtimeArtifact.install_required -ne $true) {
+      throw "sanitizer runtime library digest drifted before receipt emission: $artifactRelativePath"
+    }
+  }
+  $runtimeManifestDigest = "sha256:" + (Get-FileHash -LiteralPath $runtimeManifestInstalledPath -Algorithm SHA256).Hash.ToLowerInvariant()
+
   if ($SanitizerVariant -eq "address") {
     $metadataManifestPath = "share/objc3c/sanitizer/asan-metadata.json"
     $metadataPath = Join-Path $installHome ($metadataManifestPath -replace '/', [System.IO.Path]::DirectorySeparatorChar)
@@ -79,12 +133,16 @@ function Resolve-SanitizerPackageVariant {
       runtime_library_ids = @("objc3-runtime", "clang_rt.asan")
       metadata_manifest_path = $metadataManifestPath
       metadata_digest = "sha256:" + (Get-FileHash -LiteralPath $metadataPath -Algorithm SHA256).Hash.ToLowerInvariant()
+      runtime_library_manifest_path = $runtimeManifestPath
+      runtime_library_manifest_digest = $runtimeManifestDigest
+      runtime_library_artifacts = $runtimeArtifacts
+      missing_runtime_behavior = "fail-closed-before-package-install"
       selected_runtime_variant = "sanitizer=address"
       install_selector = "sanitizer=address"
       native_execution_contract = [ordered]@{
         native_execution_required_before_support = $true
         native_execution_record_required = $true
-        native_execution_record_fields = @("executable_path", "target_platform_id", "sanitizer", "runtime_library_ids", "environment", "exit_code", "diagnostic_records")
+        native_execution_record_fields = @("executable_path", "target_platform_id", "sanitizer", "runtime_library_ids", "runtime_library_artifacts", "environment", "exit_code", "diagnostic_records")
         missing_native_execution_behavior = "fail-closed-before-support-promotion"
         native_execution_claimed = $false
       }
@@ -107,13 +165,17 @@ function Resolve-SanitizerPackageVariant {
     runtime_library_ids = @("objc3-runtime", "clang_rt.ubsan")
     metadata_manifest_path = $metadataManifestPath
     metadata_digest = "sha256:" + (Get-FileHash -LiteralPath $metadataPath -Algorithm SHA256).Hash.ToLowerInvariant()
+    runtime_library_manifest_path = $runtimeManifestPath
+    runtime_library_manifest_digest = $runtimeManifestDigest
+    runtime_library_artifacts = $runtimeArtifacts
+    missing_runtime_behavior = "fail-closed-before-package-install"
     selected_runtime_variant = "sanitizer=undefined"
     install_selector = "sanitizer=undefined"
     trap_or_recover_mode = "trap"
     native_execution_contract = [ordered]@{
       native_execution_required_before_support = $true
       native_execution_record_required = $true
-      native_execution_record_fields = @("executable_path", "target_platform_id", "sanitizer", "runtime_library_ids", "environment", "exit_code", "diagnostic_records", "trap_or_recover_mode")
+      native_execution_record_fields = @("executable_path", "target_platform_id", "sanitizer", "runtime_library_ids", "runtime_library_artifacts", "environment", "exit_code", "diagnostic_records", "trap_or_recover_mode")
       missing_native_execution_behavior = "fail-closed-before-support-promotion"
       native_execution_claimed = $false
     }
@@ -137,6 +199,8 @@ function Assert-ReceiptSanitizerVariant {
   $expectedPackageChannelId = ""
   $expectedRuntimeLibraries = @()
   $expectedMetadataPath = ""
+  $expectedRuntimeManifestPath = ""
+  $expectedRuntimeEntries = @()
   $expectedSelector = "sanitizer=" + $SanitizerVariant
   if ($SanitizerVariant -eq "address") {
     $expectedPackageId = "org.objc3c.runtime:objc3c-runtime-asan"
@@ -144,12 +208,23 @@ function Assert-ReceiptSanitizerVariant {
     $expectedPackageChannelId = "windows-x64-sanitizer-asan"
     $expectedRuntimeLibraries = @("objc3-runtime", "clang_rt.asan")
     $expectedMetadataPath = "share/objc3c/sanitizer/asan-metadata.json"
+    $expectedRuntimeManifestPath = "share/objc3c/sanitizer/asan-runtime-libraries.json"
+    $expectedRuntimeEntries = @(
+      "artifacts/runtime/sanitizer/address/clang_rt.asan_dynamic-x86_64.dll",
+      "artifacts/runtime/sanitizer/address/clang_rt.asan_dynamic-x86_64.lib",
+      "artifacts/runtime/sanitizer/address/clang_rt.asan_dynamic_runtime_thunk-x86_64.lib"
+    )
   } else {
     $expectedPackageId = "org.objc3c.runtime:objc3c-runtime-ubsan"
     $expectedPackageVariantRowId = "objc3c.package.sanitizer.ubsan.reserved"
     $expectedPackageChannelId = "windows-x64-sanitizer-ubsan"
     $expectedRuntimeLibraries = @("objc3-runtime", "clang_rt.ubsan")
     $expectedMetadataPath = "share/objc3c/sanitizer/ubsan-metadata.json"
+    $expectedRuntimeManifestPath = "share/objc3c/sanitizer/ubsan-runtime-libraries.json"
+    $expectedRuntimeEntries = @(
+      "artifacts/runtime/sanitizer/undefined/clang_rt.ubsan_standalone-x86_64.lib",
+      "artifacts/runtime/sanitizer/undefined/clang_rt.ubsan_standalone_cxx-x86_64.lib"
+    )
   }
 
   if ($null -eq $Receipt.sanitizer_package_variant) {
@@ -163,6 +238,8 @@ function Assert-ReceiptSanitizerVariant {
       [string]$Receipt.sanitizer_package_variant.package_channel_id -ne $expectedPackageChannelId -or
       [string]$Receipt.sanitizer_package_variant.target_platform_id -ne "windows-x64" -or
       [string]$Receipt.sanitizer_package_variant.metadata_manifest_path -ne $expectedMetadataPath -or
+      [string]$Receipt.sanitizer_package_variant.runtime_library_manifest_path -ne $expectedRuntimeManifestPath -or
+      [string]$Receipt.sanitizer_package_variant.missing_runtime_behavior -ne "fail-closed-before-package-install" -or
       [string]$Receipt.sanitizer_package_variant.selected_runtime_variant -ne $expectedSelector -or
       [string]$Receipt.sanitizer_package_variant.install_selector -ne $expectedSelector) {
     throw "installer target receipt sanitizer package identity drifted: $installHome"
@@ -173,6 +250,18 @@ function Assert-ReceiptSanitizerVariant {
     -Context "installer target receipt sanitizer runtime libraries"
   if ([string]$Receipt.sanitizer_package_variant.metadata_digest -notmatch '^sha256:[0-9a-f]{64}$') {
     throw "installer target receipt sanitizer metadata digest drifted: $installHome"
+  }
+  if ([string]$Receipt.sanitizer_package_variant.runtime_library_manifest_digest -notmatch '^sha256:[0-9a-f]{64}$') {
+    throw "installer target receipt sanitizer runtime library manifest digest drifted: $installHome"
+  }
+  Assert-PayloadEntriesMatch `
+    -ActualEntries @($Receipt.sanitizer_package_variant.runtime_library_artifacts | ForEach-Object { [string]$_.artifact }) `
+    -ExpectedEntries $expectedRuntimeEntries `
+    -Context "installer target receipt sanitizer runtime library artifacts"
+  foreach ($runtimeArtifact in @($Receipt.sanitizer_package_variant.runtime_library_artifacts)) {
+    if ([string]$runtimeArtifact.sha256 -notmatch '^[0-9a-f]{64}$' -or $runtimeArtifact.install_required -ne $true) {
+      throw "installer target receipt sanitizer runtime library artifact digest drifted: $installHome"
+    }
   }
   if ($SanitizerVariant -eq "undefined" -and [string]$Receipt.sanitizer_package_variant.trap_or_recover_mode -ne "trap") {
     throw "installer target receipt UBSan trap-or-recover mode drifted: $installHome"
@@ -392,8 +481,15 @@ function Assert-ReceiptOwnsInstallHome {
   if ($null -ne $receipt.sanitizer_package_variant) {
     if ([string]$receipt.sanitizer_package_variant.sanitizer -eq "address") {
       $expectedPayloadEntries += "share/objc3c/sanitizer/asan-metadata.json"
+      $expectedPayloadEntries += "share/objc3c/sanitizer/asan-runtime-libraries.json"
+      $expectedPayloadEntries += "artifacts/runtime/sanitizer/address/clang_rt.asan_dynamic-x86_64.dll"
+      $expectedPayloadEntries += "artifacts/runtime/sanitizer/address/clang_rt.asan_dynamic-x86_64.lib"
+      $expectedPayloadEntries += "artifacts/runtime/sanitizer/address/clang_rt.asan_dynamic_runtime_thunk-x86_64.lib"
     } elseif ([string]$receipt.sanitizer_package_variant.sanitizer -eq "undefined") {
       $expectedPayloadEntries += "share/objc3c/sanitizer/ubsan-metadata.json"
+      $expectedPayloadEntries += "share/objc3c/sanitizer/ubsan-runtime-libraries.json"
+      $expectedPayloadEntries += "artifacts/runtime/sanitizer/undefined/clang_rt.ubsan_standalone-x86_64.lib"
+      $expectedPayloadEntries += "artifacts/runtime/sanitizer/undefined/clang_rt.ubsan_standalone_cxx-x86_64.lib"
     } else {
       throw "uninstaller target receipt has unknown sanitizer package variant: $installHome"
     }

@@ -19,6 +19,14 @@
       "bool",
       "id"
     ],
+    "supported_runtime_helper_payload_forms": [
+      "i32",
+      "bool",
+      "id",
+      "i64"
+    ],
+    "full_width_i64_runtime_helper_supported": true,
+    "full_width_i64_language_call_abi_supported": false,
     "implicit_nil_absence_allowed": false,
     "optional_id_distinct_from_nullable_object_pointer": true
   },

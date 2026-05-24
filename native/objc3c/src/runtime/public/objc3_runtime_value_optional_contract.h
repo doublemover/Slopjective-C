@@ -9,13 +9,22 @@ extern "C" {
 
 typedef int64_t objc3_runtime_value_optional_i64;
 
+typedef struct objc3_runtime_value_optional_full_i64 {
+  bool has_value;
+  int64_t payload;
+} objc3_runtime_value_optional_full_i64;
+
 typedef enum objc3_runtime_value_optional_contract_version_i32 {
   OBJC3_RUNTIME_VALUE_OPTIONAL_CONTRACT_V1 = 1,
 } objc3_runtime_value_optional_contract_version_i32;
 
 objc3_runtime_value_optional_i64 objc3_runtime_optional_absent_i64(void);
+objc3_runtime_value_optional_full_i64
+objc3_runtime_optional_absent_full_i64(void);
 objc3_runtime_value_optional_i64 objc3_runtime_optional_absent_bool(void);
 objc3_runtime_value_optional_i64 objc3_runtime_optional_absent_id(void);
+objc3_runtime_value_optional_full_i64 objc3_runtime_optional_present_full_i64(
+    int64_t payload);
 objc3_runtime_value_optional_i64 objc3_runtime_optional_present_i32(
     int payload);
 objc3_runtime_value_optional_i64 objc3_runtime_optional_present_bool(
@@ -24,6 +33,8 @@ objc3_runtime_value_optional_i64 objc3_runtime_optional_present_id(
     int payload);
 int objc3_runtime_optional_has_value_i32(
     objc3_runtime_value_optional_i64 value);
+bool objc3_runtime_optional_has_value_full_i64(
+    objc3_runtime_value_optional_full_i64 value);
 bool objc3_runtime_optional_has_value_bool(
     objc3_runtime_value_optional_i64 value);
 int objc3_runtime_optional_has_value_id(
@@ -31,6 +42,9 @@ int objc3_runtime_optional_has_value_id(
 int objc3_runtime_optional_payload_or_i32(
     objc3_runtime_value_optional_i64 value,
     int fallback);
+int64_t objc3_runtime_optional_payload_or_full_i64(
+    objc3_runtime_value_optional_full_i64 value,
+    int64_t fallback);
 bool objc3_runtime_optional_payload_or_bool(
     objc3_runtime_value_optional_i64 value,
     bool fallback);
@@ -39,6 +53,8 @@ int objc3_runtime_optional_payload_or_id(
     int fallback);
 int objc3_runtime_optional_unwrap_i32(
     objc3_runtime_value_optional_i64 value);
+int64_t objc3_runtime_optional_unwrap_full_i64(
+    objc3_runtime_value_optional_full_i64 value);
 bool objc3_runtime_optional_unwrap_bool(
     objc3_runtime_value_optional_i64 value);
 int objc3_runtime_optional_unwrap_id(

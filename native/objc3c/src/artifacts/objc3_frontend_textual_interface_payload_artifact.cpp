@@ -78,6 +78,12 @@ JsonValue ValueOptionalContract() {
       JsonValue::String(kObjc3ValueOptionalRuntimeAbiPayloadScope);
   contract["supported_runtime_payload_forms"] =
       StringArray({"i32", "bool", "id"});
+  contract["supported_runtime_helper_payload_forms"] =
+      StringArray({"i32", "bool", "id", "i64"});
+  contract["full_width_i64_runtime_helper_supported"] =
+      JsonValue::Bool(true);
+  contract["full_width_i64_language_call_abi_supported"] =
+      JsonValue::Bool(false);
   contract["ir_payload_emission_supported"] = JsonValue::Bool(true);
   contract["call_abi_lowering_supported"] = JsonValue::Bool(true);
   contract["broad_public_runtime_support_claim_allowed"] =
@@ -159,6 +165,8 @@ JsonValue ValueOptionalTypeShape(
   shape["payload_generic"] = JsonValue::Bool(descriptor.payload_generic);
   shape["payload_nested_value_optional"] =
       JsonValue::Bool(descriptor.payload_nested_value_optional);
+  shape["payload_full_width_i64"] =
+      JsonValue::Bool(descriptor.payload_full_width_i64);
   shape["abi_layout_id"] = JsonValue::String(descriptor.abi_layout_id);
   shape["abi_layout_status"] = JsonValue::String(descriptor.abi_layout_status);
   shape["interface_roundtrip_status"] =
@@ -183,6 +191,10 @@ JsonValue ValueOptionalTypeShape(
   shape["runtime_execution_supported"] =
       JsonValue::Bool(descriptor.runtime_execution_supported);
   shape["lowering_supported"] = JsonValue::Bool(descriptor.lowering_supported);
+  shape["full_width_i64_runtime_helper_supported"] =
+      JsonValue::Bool(descriptor.full_width_i64_runtime_helper_supported);
+  shape["full_width_i64_language_call_abi_supported"] =
+      JsonValue::Bool(descriptor.full_width_i64_language_call_abi_supported);
   shape["nil_to_scalar_coercion_allowed"] =
       JsonValue::Bool(descriptor.nil_to_scalar_coercion_allowed);
   shape["implicit_nil_absence_allowed"] =

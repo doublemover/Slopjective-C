@@ -1,0 +1,8 @@
+// Expected diagnostic code(s): O3P159.
+module NegativeValueOptionalI64LanguageAbiReserved;
+
+extern fn maybeWide(value: Optional<i64>) -> Optional<i64>;
+
+fn main() -> i32 {
+  return 0;
+}

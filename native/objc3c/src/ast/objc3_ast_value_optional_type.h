@@ -42,8 +42,22 @@ inline constexpr const char *kObjc3ValueOptionalRemainingRuntimeBoundary =
     "unchecked-unwrap-property-ivar-storage-and-nullable-pointer-bridging-remain-reserved";
 inline constexpr const char *kObjc3ValueOptionalRuntimeAbiPayloadScope =
     "supported-packed-scalar-and-id-handle-payload-forms-only";
+inline constexpr const char *kObjc3ValueOptionalFullWidthI64HelperStatus =
+    "runtime-helper-supported-language-call-abi-reserved";
+inline constexpr const char *kObjc3ValueOptionalFullWidthI64LanguageBoundary =
+    "full-width-i64-language-call-abi-requires-wide-carrier-and-remains-reserved";
 inline constexpr const char *kObjc3RuntimeOptionalAbsentI64Symbol =
     "objc3_runtime_optional_absent_i64";
+inline constexpr const char *kObjc3RuntimeOptionalAbsentFullI64Symbol =
+    "objc3_runtime_optional_absent_full_i64";
+inline constexpr const char *kObjc3RuntimeOptionalPresentFullI64Symbol =
+    "objc3_runtime_optional_present_full_i64";
+inline constexpr const char *kObjc3RuntimeOptionalHasValueFullI64Symbol =
+    "objc3_runtime_optional_has_value_full_i64";
+inline constexpr const char *kObjc3RuntimeOptionalPayloadOrFullI64Symbol =
+    "objc3_runtime_optional_payload_or_full_i64";
+inline constexpr const char *kObjc3RuntimeOptionalUnwrapFullI64Symbol =
+    "objc3_runtime_optional_unwrap_full_i64";
 inline constexpr const char *kObjc3RuntimeOptionalAbsentBoolSymbol =
     "objc3_runtime_optional_absent_bool";
 inline constexpr const char *kObjc3RuntimeOptionalAbsentIdSymbol =
@@ -84,6 +98,7 @@ struct Objc3ValueOptionalTypeDescriptor {
   bool payload_generic = false;
   bool payload_nested_value_optional = false;
   bool payload_lowercase_optional_alias = false;
+  bool payload_full_width_i64 = false;
   std::string abi_layout_id = kObjc3ValueOptionalAbiLayoutId;
   std::string abi_layout_status = kObjc3ValueOptionalAbiLayoutStatus;
   std::string interface_roundtrip_status =
@@ -127,6 +142,8 @@ struct Objc3ValueOptionalTypeDescriptor {
   bool lowering_supported = false;
   bool ir_payload_emission_supported = false;
   bool call_abi_lowering_supported = false;
+  bool full_width_i64_runtime_helper_supported = false;
+  bool full_width_i64_language_call_abi_supported = false;
   bool nil_to_scalar_coercion_allowed = false;
   bool implicit_nil_absence_allowed = false;
   bool nullable_pointer_conversion_allowed = false;
@@ -181,6 +198,14 @@ inline ValueType Objc3ValueOptionalPayloadValueType(
     return ValueType::ObjCObjectPtr;
   }
   return ValueType::Unknown;
+}
+
+inline bool Objc3ValueOptionalPayloadIsFullWidthI64(
+    const std::string &payload_type_spelling) {
+  return payload_type_spelling == "i64" ||
+         payload_type_spelling == "int64_t" ||
+         payload_type_spelling == "NSInteger64" ||
+         payload_type_spelling == "NSUInteger64";
 }
 
 inline bool Objc3ValueOptionalPayloadRuntimeAbiSupported(
@@ -241,6 +266,14 @@ inline Objc3ValueOptionalTypeDescriptor BuildObjc3ValueOptionalDescriptor(
       descriptor.payload_type_spelling.rfind("optional<", 0) == 0 ||
       descriptor.payload_type_spelling.find("<optional<") !=
           std::string::npos;
+  descriptor.payload_full_width_i64 =
+      Objc3ValueOptionalPayloadIsFullWidthI64(
+          descriptor.payload_type_spelling);
+  if (descriptor.payload_full_width_i64) {
+    descriptor.full_width_i64_runtime_helper_supported = true;
+    descriptor.remaining_runtime_boundary =
+        kObjc3ValueOptionalFullWidthI64LanguageBoundary;
+  }
   if (Objc3ValueOptionalPayloadRuntimeAbiSupported(descriptor)) {
     descriptor.runtime_execution_supported = true;
     descriptor.lowering_supported = true;

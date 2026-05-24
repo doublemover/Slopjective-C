@@ -327,6 +327,28 @@ void ValidateValueOptionalContract(
                   json_path +
                       "/value_optional_contract/supported_runtime_payload_forms");
   }
+  const JsonArray &supported_helper_payloads = ArrayMember(
+      contract, "supported_runtime_helper_payload_forms", result,
+      json_path + "/value_optional_contract");
+  if (supported_helper_payloads.size() != 4 ||
+      !supported_helper_payloads[0].IsString() ||
+      supported_helper_payloads[0].AsString() != "i32" ||
+      !supported_helper_payloads[1].IsString() ||
+      supported_helper_payloads[1].AsString() != "bool" ||
+      !supported_helper_payloads[2].IsString() ||
+      supported_helper_payloads[2].AsString() != "id" ||
+      !supported_helper_payloads[3].IsString() ||
+      supported_helper_payloads[3].AsString() != "i64") {
+    AddDiagnostic(
+        result,
+        "value optional helper contract must publish i32/bool/id plus full-width i64 helper payload ABI",
+        json_path +
+            "/value_optional_contract/supported_runtime_helper_payload_forms");
+  }
+  ExpectBoolMember(contract, "full_width_i64_runtime_helper_supported", true,
+                   result, json_path + "/value_optional_contract");
+  ExpectBoolMember(contract, "full_width_i64_language_call_abi_supported",
+                   false, result, json_path + "/value_optional_contract");
   ExpectBoolMember(contract, "ir_payload_emission_supported", true, result,
                    json_path + "/value_optional_contract");
   ExpectBoolMember(contract, "call_abi_lowering_supported", true, result,

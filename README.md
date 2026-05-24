@@ -266,9 +266,10 @@ rejected rows include:
   silent erasure to bare `throws`. `Optional<T>` is parser-owned `O3P159`
   reserved syntax, lowercase `optional<T>` is rejected as `O3C004` rather than
   an alias, and value optionals only claim the bounded packed runtime ABI for
-  `Optional<i32>`, `Optional<bool>`, and `Optional<id>` handles. Nil-to-scalar,
-  nullable-pointer conversion, generalized ABI/lowering, and broad runtime
-  support remain unclaimed.
+  `Optional<i32>`, `Optional<bool>`, and `Optional<id>` handles plus the
+  runtime helper ABI for full-width `i64` payloads. `Optional<i64>` language
+  call/return lowering, nil-to-scalar, nullable-pointer conversion, generalized
+  ABI/lowering, and broad runtime support remain unclaimed.
 - Generic callable reification. Current support is the erased generic class
   receiver/free-function subset named by the generic callable row; explicit
   `@reify_generics`, Objective-C method type-parameter clauses, C/Objective-C

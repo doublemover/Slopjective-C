@@ -3,6 +3,64 @@
 
 #include "sema/objc3_semantic_type_metadata_handoff_determinism_explanation.inc"
 
+bool IsObjc3ReservedFullWidthI64ValueOptionalLanguageAbi(
+    const Objc3ValueOptionalTypeDescriptor &descriptor) {
+  return descriptor.present && descriptor.payload_full_width_i64 &&
+         descriptor.full_width_i64_runtime_helper_supported &&
+         !descriptor.full_width_i64_language_call_abi_supported;
+}
+
+void DiagnoseObjc3ReservedFullWidthI64ValueOptionalLanguageAbi(
+    const Objc3ValueOptionalTypeDescriptor &descriptor,
+    const std::string &site,
+    std::vector<std::string> &diagnostics) {
+  if (!IsObjc3ReservedFullWidthI64ValueOptionalLanguageAbi(descriptor)) {
+    return;
+  }
+  diagnostics.push_back(MakeDiag(
+      descriptor.line, descriptor.column, "O3P159",
+      site +
+          " uses Optional<i64> language call/return ABI before wide-carrier "
+          "lowering is implemented; use the full-width i64 runtime helper ABI "
+          "directly until Optional<i64> callable lowering is supported "
+          "{recovery: strategy=value-optional-i64-language-abi-boundary; "
+          "boundary=callable-signature; deterministic=true; "
+          "recovery-counts-as-success=false}"));
+}
+
+void DiagnoseObjc3FunctionValueOptionalLanguageAbiBoundaries(
+    const FunctionDecl &fn,
+    std::vector<std::string> &diagnostics) {
+  DiagnoseObjc3ReservedFullWidthI64ValueOptionalLanguageAbi(
+      fn.return_value_optional,
+      "function '" + fn.name + "' return type",
+      diagnostics);
+  for (const FuncParam &param : fn.params) {
+    DiagnoseObjc3ReservedFullWidthI64ValueOptionalLanguageAbi(
+        param.value_optional,
+        "function '" + fn.name + "' parameter '" + param.name + "'",
+        diagnostics);
+  }
+}
+
+void DiagnoseObjc3MethodValueOptionalLanguageAbiBoundaries(
+    const Objc3MethodDecl &method,
+    const std::string &owner_context,
+    std::vector<std::string> &diagnostics) {
+  const std::string selector = MethodSelectorName(method);
+  DiagnoseObjc3ReservedFullWidthI64ValueOptionalLanguageAbi(
+      method.return_value_optional,
+      "method '" + selector + "' in " + owner_context + " return type",
+      diagnostics);
+  for (const FuncParam &param : method.params) {
+    DiagnoseObjc3ReservedFullWidthI64ValueOptionalLanguageAbi(
+        param.value_optional,
+        "method '" + selector + "' in " + owner_context + " parameter '" +
+            param.name + "'",
+        diagnostics);
+  }
+}
+
 void ValidateSemanticBodies(const Objc3ParsedProgram &program, const Objc3SemanticIntegrationSurface &surface,
                             const Objc3SemanticValidationOptions &options,
                             Objc3SemaLanguageProfile language_profile,
@@ -64,6 +122,7 @@ void ValidateSemanticBodies(const Objc3ParsedProgram &program, const Objc3Semant
   }
 
   for (const auto &fn : ast.functions) {
+    DiagnoseObjc3FunctionValueOptionalLanguageAbiBoundaries(fn, diagnostics);
     ValidateReturnTypeSuffixes(fn, diagnostics, &generic_interface_names);
     ValidateParameterTypeSuffixes(fn, diagnostics, &generic_interface_names);
     DiagnoseOwnershipRetainableFamilyCallableLegality(
@@ -139,6 +198,8 @@ void ValidateSemanticBodies(const Objc3ParsedProgram &program, const Objc3Semant
 
   for (const auto &protocol_decl : ast.protocols) {
     for (const auto &method : protocol_decl.methods) {
+      DiagnoseObjc3MethodValueOptionalLanguageAbiBoundaries(
+          method, "protocol '" + protocol_decl.name + "'", diagnostics);
       DiagnoseOwnershipRetainableFamilyCallableLegality(
           method,
           "method '" + MethodSelectorName(method) + "' in protocol '" +
@@ -149,6 +210,8 @@ void ValidateSemanticBodies(const Objc3ParsedProgram &program, const Objc3Semant
 
   for (const auto &interface_decl : ast.interfaces) {
     for (const auto &method : interface_decl.methods) {
+      DiagnoseObjc3MethodValueOptionalLanguageAbiBoundaries(
+          method, "interface '" + interface_decl.name + "'", diagnostics);
       DiagnoseOwnershipRetainableFamilyCallableLegality(
           method,
           "method '" + MethodSelectorName(method) + "' in interface '" +
@@ -159,6 +222,9 @@ void ValidateSemanticBodies(const Objc3ParsedProgram &program, const Objc3Semant
 
   for (const auto &implementation_decl : ast.implementations) {
     for (const auto &method : implementation_decl.methods) {
+      DiagnoseObjc3MethodValueOptionalLanguageAbiBoundaries(
+          method, "implementation '" + implementation_decl.name + "'",
+          diagnostics);
       DiagnoseOwnershipRetainableFamilyCallableLegality(
           method,
           "method '" + MethodSelectorName(method) + "' in implementation '" +

@@ -38,13 +38,14 @@
       "feature_id": "value_optionals",
       "issue_ref": 8234,
       "contract": "tests/tooling/fixtures/native/language_evolution_typed_throws_value_optionals_contract.json",
-      "support_state": "semantic_type_signatures_bounded_packed_i32_bool_id_runtime_abi_fail_closed_boundaries",
+      "support_state": "semantic_type_signatures_bounded_packed_i32_bool_id_runtime_abi_full_i64_helper_abi_fail_closed_language_call_abi",
       "negative_case_ids": [
         "negative_value_optional_canonical_reserved",
         "negative_value_optional_nullable_pointer_conversion_reserved",
         "negative_value_optional_nil_scalar_coercion_reserved",
         "negative_value_optional_nested_lowercase_alias_reserved",
         "negative_value_optional_property_layout_unsupported",
+        "negative_value_optional_i64_language_abi_reserved",
         "negative_value_optional_nullable_suffix_mismatch",
         "value_optionals_layout_mismatch_negative",
         "value_optionals_lowering_claim_negative",
@@ -116,7 +117,7 @@
   ],
   "hard_fail_closed_requirements": [
     "single typed throws payloads are source/interface-preserved, semantically exact callable effect signatures, lower through the private error-out ABI, accept exact typed catches, allow only the policy-backed id<Error> bridge catch, reject incompatible catches, fail closed on unsupported foreign carriers, are not silently erased into untyped throws, and keep the public capability row reserved until replay gates prove full support",
-    "Optional<T> type signatures are semantic value-optional carriers with bounded packed runtime ABI only for supported i32, bool, and id-handle payload forms; nested, generic, property, ivar, nullability, nil-to-scalar, implicit nil, unchecked unwrap, and throws/result conversion paths fail closed",
+    "Optional<T> type signatures are semantic value-optional carriers with bounded packed language ABI only for supported i32, bool, and id-handle payload forms; full-width i64 has a runtime helper ABI but language call/return lowering still fails closed until a wide carrier is implemented, and nested, generic, property, ivar, nullability, nil-to-scalar, implicit nil, unchecked unwrap, and throws/result conversion paths fail closed",
     "generic callable metadata preserves erased-default versus declaration-scoped explicit-reified policy without implying module-wide reification",
     "guarded match admits only bool where conditions; expression-position match is supported only for the bounded typed pattern/result surface and still fails closed for type-test patterns and unsupported result payload lowering",
     "strict and strict-concurrency profile names are not aliases for canonical or core",
@@ -140,7 +141,7 @@
     },
     {
       "row_id": "language.types.value-optionals",
-      "status": "bounded-packed-scalar-and-id-handle-runtime-abi-public-row-reserved-broadening-fail-closed",
+      "status": "bounded-packed-scalar-and-id-handle-runtime-abi-plus-full-i64-helper-abi-public-row-reserved-language-call-abi-fail-closed",
       "evidence": [
         "tests/tooling/fixtures/native/language_evolution_typed_throws_value_optionals_contract.json"
       ]

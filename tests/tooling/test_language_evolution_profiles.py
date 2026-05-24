@@ -63,7 +63,7 @@ def test_typed_throws_source_owned_and_value_optionals_contract_boundaries() -> 
     assert contract["issues"] == {"typed_throws": 8233, "value_optionals": 8234}
     assert contract["support_state"] == {
         "typed_throws": "source_owned_interface_preserved_error_out_abi_lowered_catch_bridge_policy_recorded_direct_method_send_runtime",
-        "value_optionals": "semantic_type_signatures_bounded_packed_i32_bool_id_runtime_abi_fail_closed_boundaries",
+        "value_optionals": "semantic_type_signatures_bounded_packed_i32_bool_id_runtime_abi_full_i64_helper_abi_fail_closed_language_call_abi",
     }
     assert contract["typed_throws"]["accepted_payload_arity"] == 1
     assert contract["typed_throws"]["diagnostic_symbol"] == (
@@ -116,7 +116,15 @@ def test_typed_throws_source_owned_and_value_optionals_contract_boundaries() -> 
         "bool",
         "id",
     ]
-    assert "full-width-i64-payload" in contract["value_optionals"][
+    assert contract["value_optionals"]["supported_runtime_helper_payload_forms"] == [
+        "i32",
+        "bool",
+        "id",
+        "i64",
+    ]
+    assert contract["value_optionals"]["full_width_i64_runtime_helper_supported"] is True
+    assert contract["value_optionals"]["full_width_i64_language_call_abi_supported"] is False
+    assert "full-width-i64-language-call-abi" in contract["value_optionals"][
         "rejected_runtime_payload_forms"
     ]
     assert contract["value_optionals"]["broad_public_runtime_support_claim_allowed"] is False
@@ -131,6 +139,7 @@ def test_typed_throws_source_owned_and_value_optionals_contract_boundaries() -> 
     assert contract["public_claim_boundary"]["support_claims"] == []
     assert contract["public_claim_boundary"]["bounded_runtime_claims"] == [
         "bounded-runtime:value-optional-packed-i32-bool-id-abi",
+        "bounded-runtime:value-optional-full-width-i64-helper-abi-language-call-abi-reserved",
         "bounded-runtime:typed-throws-direct-and-runtime-dispatch-error-out-abi",
     ]
     assert contract["public_claim_boundary"]["runtime_claims"] == []
@@ -173,11 +182,13 @@ def test_typed_throws_source_owned_and_value_optionals_contract_boundaries() -> 
         "negative_typed_throws_foreign_carrier_catch.objc3": "O3S206",
         "negative_typed_throws_method_incompatible_catch.objc3": "O3S206",
         "negative_typed_throws_method_foreign_carrier_catch.objc3": "O3S206",
+        "negative_typed_throws_async_propagation_unsupported.objc3": "O3S226",
         "negative_value_optional_canonical_reserved.objc3": "O3P159",
         "negative_value_optional_nullable_pointer_conversion_reserved.objc3": "O3P159",
         "negative_value_optional_nil_scalar_coercion_reserved.objc3": "O3S211",
         "negative_value_optional_nested_lowercase_alias_reserved.objc3": "O3C004",
         "negative_value_optional_property_layout_unsupported.objc3": "O3P159",
+        "negative_value_optional_i64_language_abi_reserved.objc3": "O3P159",
         "negative_value_optional_nullable_suffix_mismatch.objc3": "O3P159",
         "value_optionals_executable_semantics_negative.contract.json": "O3P159",
     }
@@ -205,6 +216,7 @@ def test_typed_throws_source_owned_and_value_optionals_contract_boundaries() -> 
     } == {
         "typed_throws_runtime_catch_bridge_positive.objc3",
         "typed_throws_runtime_message_send_catch_positive.objc3",
+        "typed_throws_runtime_try_optional_positive.objc3",
     }
     message_send_fixture = ROOT / (
         "tests/tooling/fixtures/native/execution/positive/"
@@ -654,6 +666,12 @@ def test_language_evolution_fixtures_are_canonical_manifest_owned() -> None:
             "types",
             "diagnostic_negative",
             "O3S211",
+        ),
+        "tests/tooling/fixtures/native/recovery/negative/negative_value_optional_i64_language_abi_reserved.objc3": (
+            "parser",
+            "types",
+            "canonical_rejection",
+            "O3P159",
         ),
         "tests/tooling/fixtures/native/value_optionals_executable_semantics_negative.contract.json": (
             "sema",

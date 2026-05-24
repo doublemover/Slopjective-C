@@ -502,9 +502,12 @@
         ],
         "loader_path_policy": "exact target ASan runtime discovery must be captured by sanitizer package metadata before install or execution claims",
         "package_root_layout": [
-          "lib/objc3-runtime-sanitized",
-          "lib/clang_rt.asan",
-          "share/objc3c/sanitizer/asan-metadata.json"
+          "artifacts/lib/objc3_runtime.lib",
+          "share/objc3c/sanitizer/asan-metadata.json",
+          "share/objc3c/sanitizer/asan-runtime-libraries.json",
+          "artifacts/runtime/sanitizer/address/clang_rt.asan_dynamic-x86_64.dll",
+          "artifacts/runtime/sanitizer/address/clang_rt.asan_dynamic-x86_64.lib",
+          "artifacts/runtime/sanitizer/address/clang_rt.asan_dynamic_runtime_thunk-x86_64.lib"
         ],
         "symbol_export_policy": "sanitizer runtime symbols are excluded from default release runtime identity"
       },
@@ -579,9 +582,11 @@
         ],
         "loader_path_policy": "exact target UBSan runtime discovery and trap-or-recover policy must be captured by sanitizer package metadata before install or execution claims",
         "package_root_layout": [
-          "lib/objc3-runtime-sanitized",
-          "lib/clang_rt.ubsan",
-          "share/objc3c/sanitizer/ubsan-metadata.json"
+          "artifacts/lib/objc3_runtime.lib",
+          "share/objc3c/sanitizer/ubsan-metadata.json",
+          "share/objc3c/sanitizer/ubsan-runtime-libraries.json",
+          "artifacts/runtime/sanitizer/undefined/clang_rt.ubsan_standalone-x86_64.lib",
+          "artifacts/runtime/sanitizer/undefined/clang_rt.ubsan_standalone_cxx-x86_64.lib"
         ],
         "symbol_export_policy": "sanitizer runtime symbols and UBSan handlers are excluded from default release runtime identity"
       },
@@ -654,17 +659,30 @@
         "runtime_library_resolution": "exact-target clang ASan runtime package lookup recorded in sanitizer package metadata",
         "package_layout_contract": {
           "package_root_layout": [
-            "lib/objc3-runtime-sanitized",
-            "lib/clang_rt.asan",
-            "share/objc3c/sanitizer/asan-metadata.json"
+            "artifacts/lib/objc3_runtime.lib",
+            "share/objc3c/sanitizer/asan-metadata.json",
+            "share/objc3c/sanitizer/asan-runtime-libraries.json",
+            "artifacts/runtime/sanitizer/address/clang_rt.asan_dynamic-x86_64.dll",
+            "artifacts/runtime/sanitizer/address/clang_rt.asan_dynamic-x86_64.lib",
+            "artifacts/runtime/sanitizer/address/clang_rt.asan_dynamic_runtime_thunk-x86_64.lib"
           ],
           "metadata_manifest_path": "share/objc3c/sanitizer/asan-metadata.json",
+          "runtime_library_manifest_path": "share/objc3c/sanitizer/asan-runtime-libraries.json",
+          "runtime_library_required_entries": [
+            "artifacts/runtime/sanitizer/address/clang_rt.asan_dynamic-x86_64.dll",
+            "artifacts/runtime/sanitizer/address/clang_rt.asan_dynamic-x86_64.lib",
+            "artifacts/runtime/sanitizer/address/clang_rt.asan_dynamic_runtime_thunk-x86_64.lib"
+          ],
           "install_receipt_required_fields": [
             "package_id",
             "package_variant_row_id",
             "target_platform_id",
             "runtime_library_ids",
             "metadata_digest",
+            "runtime_library_manifest_path",
+            "runtime_library_manifest_digest",
+            "runtime_library_artifacts",
+            "missing_runtime_behavior",
             "selected_runtime_variant"
           ],
           "layout_support_truth": false
@@ -674,6 +692,8 @@
           "probe_inputs": [
             "target_platform_id",
             "llvm_runtime_root",
+            "runtime_library_manifest_path",
+            "runtime_library_artifacts",
             "package_root_layout",
             "runtime_library_ids"
           ],
@@ -763,6 +783,8 @@
           "target_platform_id",
           "sanitizer",
           "runtime_library_ids",
+          "runtime_library_manifest_path",
+          "runtime_library_artifacts",
           "compiler_flags",
           "linker_flags",
           "environment",
@@ -817,17 +839,28 @@
         "runtime_library_resolution": "exact-target clang UBSan runtime package lookup and trap-or-recover mode recorded in sanitizer package metadata",
         "package_layout_contract": {
           "package_root_layout": [
-            "lib/objc3-runtime-sanitized",
-            "lib/clang_rt.ubsan",
-            "share/objc3c/sanitizer/ubsan-metadata.json"
+            "artifacts/lib/objc3_runtime.lib",
+            "share/objc3c/sanitizer/ubsan-metadata.json",
+            "share/objc3c/sanitizer/ubsan-runtime-libraries.json",
+            "artifacts/runtime/sanitizer/undefined/clang_rt.ubsan_standalone-x86_64.lib",
+            "artifacts/runtime/sanitizer/undefined/clang_rt.ubsan_standalone_cxx-x86_64.lib"
           ],
           "metadata_manifest_path": "share/objc3c/sanitizer/ubsan-metadata.json",
+          "runtime_library_manifest_path": "share/objc3c/sanitizer/ubsan-runtime-libraries.json",
+          "runtime_library_required_entries": [
+            "artifacts/runtime/sanitizer/undefined/clang_rt.ubsan_standalone-x86_64.lib",
+            "artifacts/runtime/sanitizer/undefined/clang_rt.ubsan_standalone_cxx-x86_64.lib"
+          ],
           "install_receipt_required_fields": [
             "package_id",
             "package_variant_row_id",
             "target_platform_id",
             "runtime_library_ids",
             "metadata_digest",
+            "runtime_library_manifest_path",
+            "runtime_library_manifest_digest",
+            "runtime_library_artifacts",
+            "missing_runtime_behavior",
             "selected_runtime_variant",
             "trap_or_recover_mode"
           ],
@@ -838,6 +871,8 @@
           "probe_inputs": [
             "target_platform_id",
             "llvm_runtime_root",
+            "runtime_library_manifest_path",
+            "runtime_library_artifacts",
             "package_root_layout",
             "runtime_library_ids",
             "trap_or_recover_mode"
@@ -937,6 +972,8 @@
           "target_platform_id",
           "sanitizer",
           "runtime_library_ids",
+          "runtime_library_manifest_path",
+          "runtime_library_artifacts",
           "compiler_flags",
           "linker_flags",
           "trap_or_recover_mode",

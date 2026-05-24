@@ -239,6 +239,12 @@ The shared package install receipt schema has a reserved
 `sanitizer_package_variant` field so sanitizer package rows can bind explicit
 install selection to native-execution evidence without promoting generated
 reports into support truth.
+Sanitizer package staging must now copy the resolved Windows x64 Clang runtime
+artifacts into the package payload and publish
+`share/objc3c/sanitizer/*-runtime-libraries.json` before metadata, receipts, or
+archives are emitted. Those runtime-library manifests are package/install
+identity evidence only; native execution and expected detection records are
+still required before #8230 or #8231 can become support claims.
 
 Every future platform or sanitizer promotion must preserve the package identity
 contract checked into the support evidence fixture. Linux promotion requires the
@@ -272,7 +278,14 @@ relevant host identity, toolchain, package-root, object-format/debug, runtime
 link/load, and native execution records into checked-in source truth. The helper
 also writes `promotion-readiness-requirements.json` into the same platform
 evidence root so artifact review has a durable list of required hosted fields
-instead of relying on prose in a workflow log.
+instead of relying on prose in a workflow log. Hosted execution smoke normalizes
+its dynamic run artifact into stable report paths before ingestion:
+`tmp/reports/hosted-execution-smoke/summary.json` and
+`tmp/reports/objc3c-native-execution-smoke/summary.json`. The Linux and macOS
+workflow jobs set deterministic `OBJC3C_NATIVE_EXECUTION_RUN_ID` values so the
+normalized native execution summary remains traceable to the per-platform
+artifact run directory without turning that generated summary into support
+truth.
 
 Package variant rows are required to carry source-owned metadata freshness
 guards. Generated package metadata can be emitted as replay output, but stale or

@@ -374,26 +374,32 @@ explicit `has_value` presence and `payload` storage fields. Semantic records
 model explicit absent/present construction, binding/narrowing failure paths,
 checked unwrap diagnostics, payload lifetime, and interface roundtrip. The
 current runtime ABI is bounded to supported packed payload forms:
-`Optional<i32>`, `Optional<bool>`, and `Optional<id>` object handles. Nested optionals, generic payload runtime lowering,
-property/ivar storage layout, unchecked unwrap, nullability bridges, implicit
-nil absence, nil-to-scalar coercion, and throws/result conversion remain
-reserved and fail closed.
+`Optional<i32>`, `Optional<bool>`, and `Optional<id>` object handles. Full-width
+`i64` has a runtime helper ABI that preserves the payload in an explicit
+presence/payload carrier, but `Optional<i64>` language call/return lowering
+remains reserved until the compiler ABI uses that wide carrier. Nested optionals,
+generic payload runtime lowering, property/ivar storage layout, unchecked
+unwrap, nullability bridges, implicit nil absence, nil-to-scalar coercion, and
+throws/result conversion remain reserved and fail closed.
 
 The following remain ill-formed in v1 user code unless escaped per
 [§1.3.3](#part-1-3-2):
 
 - `optional<...>` in type positions.
 - `Optional<...>` in executable function or method bodies outside the bounded
-  packed i32/bool/id-handle payload ABI, property/ivar storage, unchecked unwrap, nullability
-  bridges, implicit nil, nil-to-scalar, or throws/result conversion positions.
+  packed i32/bool/id-handle payload ABI, including `Optional<i64>` language
+  call/return positions until the wide carrier ABI is implemented, property/ivar
+  storage, unchecked unwrap, nullability bridges, implicit nil, nil-to-scalar,
+  or throws/result conversion positions.
 - `.some(...)` and `.none` in optional-constructor/pattern positions.
 
 The current #8234 compiler contract owns the canonical spelling boundary but
 does not claim broad value-optional execution: canonical `Optional<T>` type
 signatures may be parsed, admitted as semantic types, compared by sema,
 round-tripped through textual interfaces, and lowered only through the bounded
-packed runtime ABI for `i32`, `bool`, and `id` object handles. Full-width
-`i64`, object-pointer/nullability bridges, nested, generic, property, and ivar
+packed runtime ABI for `i32`, `bool`, and `id` object handles; full-width `i64`
+is limited to runtime helper ABI evidence and is not a language call/return ABI
+claim. Object-pointer/nullability bridges, nested, generic, property, and ivar
 storage forms remain reserved until they have their own executable ABI evidence. The lowering
 contract is explicit: absent
 construction produces `has_value=false` and no live payload, present

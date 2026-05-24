@@ -429,8 +429,10 @@ the canonical manifest fixture and public npm command above.
   - diagnostic: `tests/tooling/fixtures/native/recovery/negative/negative_typed_throws_foreign_carrier_catch.objc3`
   - diagnostic: `tests/tooling/fixtures/native/recovery/negative/negative_typed_throws_method_incompatible_catch.objc3`
   - diagnostic: `tests/tooling/fixtures/native/recovery/negative/negative_typed_throws_method_foreign_carrier_catch.objc3`
+  - diagnostic: `tests/tooling/fixtures/native/recovery/negative/negative_typed_throws_async_propagation_unsupported.objc3`
   - test: `tests/tooling/fixtures/native/execution/positive/typed_throws_runtime_catch_bridge_positive.objc3` via `npm run objc3c -- test-execution-smoke`
   - test: `tests/tooling/fixtures/native/execution/positive/typed_throws_runtime_message_send_catch_positive.objc3` via `npm run objc3c -- test-execution-smoke`
+  - test: `tests/tooling/fixtures/native/execution/positive/typed_throws_runtime_try_optional_positive.objc3` via `npm run objc3c -- test-execution-smoke`
   - schema: `schemas/objc3c-typed-throws-effect-contract-v1.schema.json`
   - source: `native/objc3c/src/sema/objc3_typed_throws_effect_contract.h`
   - source: `native/objc3c/src/sema/objc3_semantic_error_handling_try_do_catch_do_scope.inc`
@@ -460,7 +462,7 @@ the canonical manifest fixture and public npm command above.
 - Capability ID: `language.types.value-optionals`
 - State: `reserved`
 - Support claims: None
-- Summary: Value optionals remain reserved as a broad public executable/runtime feature under issue #8234. Canonical Optional<T> is admitted as a semantic type-signature carrier with stable packed has_value/payload ABI identity, textual-interface roundtrip, and replayed runtime ABI for the checked Optional<i32>, Optional<bool>, and Optional<id> handle payload forms. Lowercase optional<T> is rejected as O3C004 rather than accepted as an alias, and checked parser/source-closure/textual-interface import records explicitly deny full-width i64 payloads, object-pointer/nullability bridges, nested optional runtime lowering, generic payload runtime lowering, property or ivar storage, unchecked unwrap, implicit nil absence, nil-to-scalar, and throws/result conversions.
+- Summary: Value optionals remain reserved as a broad public executable/runtime feature under issue #8234. Canonical Optional<T> is admitted as a semantic type-signature carrier with stable packed has_value/payload ABI identity, textual-interface roundtrip, and replayed runtime ABI for the checked Optional<i32>, Optional<bool>, and Optional<id> handle payload forms. Full-width i64 now has a runtime helper ABI, but Optional<i64> language call/return lowering remains reserved until the compiler uses a wide carrier. Lowercase optional<T> is rejected as O3C004 rather than accepted as an alias, and checked parser/source-closure/textual-interface import records explicitly deny object-pointer/nullability bridges, nested optional runtime lowering, generic payload runtime lowering, property or ivar storage, unchecked unwrap, implicit nil absence, nil-to-scalar, and throws/result conversions.
 - Owner modules:
   - `native/objc3c/src/ast/objc3_ast_value_optional_type.h`
   - `native/objc3c/src/parse/objc3_parser_declaration_surface.cpp`
@@ -483,6 +485,7 @@ the canonical manifest fixture and public npm command above.
   - diagnostic: `tests/tooling/fixtures/native/recovery/negative/negative_value_optional_nil_scalar_coercion_reserved.objc3`
   - diagnostic: `tests/tooling/fixtures/native/recovery/negative/negative_value_optional_nested_lowercase_alias_reserved.objc3`
   - diagnostic: `tests/tooling/fixtures/native/recovery/negative/negative_value_optional_property_layout_unsupported.objc3`
+  - diagnostic: `tests/tooling/fixtures/native/recovery/negative/negative_value_optional_i64_language_abi_reserved.objc3`
   - diagnostic: `tests/tooling/fixtures/native/recovery/negative/negative_value_optional_nullable_suffix_mismatch.objc3`
   - diagnostic: `tests/tooling/fixtures/native/value_optionals_layout_mismatch_negative.contract.json`
   - diagnostic: `tests/tooling/fixtures/native/value_optionals_lowering_claim_negative.contract.json`
@@ -585,7 +588,7 @@ the canonical manifest fixture and public npm command above.
 - Capability ID: `language.evolution.umbrella-alignment`
 - State: `reserved`
 - Support claims: None
-- Summary: Issue #8207 is an umbrella truth row for typed throws, value optionals, generic callable reification, guarded match, bounded match expressions, and strict/strict-concurrency profiles. It remains reserved until typed-throws public replay gates and value-optional bounded packed ABI replay gates prove their full public rows or are explicitly scoped out; the current state records #8233 single-payload typed throws hidden error-out ABI lowering with exact typed catch, policy-backed id<Error> bridge catch, incompatible-catch rejection, and unsupported foreign-carrier fail-closed records, #8235 generic callable metadata policy support, #8236 guarded-match/match-expression support, #8237 strict/strict-concurrency profile admission, and #8234 value-optional semantic carrier plus bounded packed i32/bool/id-handle runtime ABI without claiming runtime-specialized generics, broad value-optional runtime support, nested/generic/property/ivar optional lowering, nil/nullability conversions, unchecked unwrap, throws conversions, or strict-system behavior.
+- Summary: Issue #8207 is an umbrella truth row for typed throws, value optionals, generic callable reification, guarded match, bounded match expressions, and strict/strict-concurrency profiles. It remains reserved until typed-throws public replay gates and value-optional bounded packed ABI replay gates prove their full public rows or are explicitly scoped out; the current state records #8233 single-payload typed throws hidden error-out ABI lowering with exact typed catch, policy-backed id<Error> bridge catch, incompatible-catch rejection, and unsupported foreign-carrier fail-closed records, #8235 generic callable metadata policy support, #8236 guarded-match/match-expression support, #8237 strict/strict-concurrency profile admission, and #8234 value-optional semantic carrier plus bounded packed i32/bool/id-handle runtime ABI and full-width i64 helper ABI without claiming Optional<i64> language call/return lowering, runtime-specialized generics, broad value-optional runtime support, nested/generic/property/ivar optional lowering, nil/nullability conversions, unchecked unwrap, throws conversions, or strict-system behavior.
 - Owner modules:
   - `docs/support/umbrella_readiness.json`
   - `docs/support/capability_matrix.json`

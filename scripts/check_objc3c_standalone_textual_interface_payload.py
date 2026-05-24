@@ -183,7 +183,15 @@ def _validate_value_optional_contract(type_signature: dict[str, Any], path: str)
     )
     if supported_payloads != ["i32", "bool", "id"]:
         raise RuntimeError(
-            f"{path}.value_optional_contract.supported_runtime_payload_forms must be ['i32', 'bool', 'id']"
+            f"{path}.value_optional_contract.supported_runtime_payload_forms must preserve bounded packed i32/bool/id-handle runtime ABI plus full-width i64 helper ABI"
+        )
+    supported_helper_payloads = _string_list(
+        contract.get("supported_runtime_helper_payload_forms"),
+        f"{path}.value_optional_contract.supported_runtime_helper_payload_forms",
+    )
+    if supported_helper_payloads != ["i32", "bool", "id", "i64"]:
+        raise RuntimeError(
+            f"{path}.value_optional_contract.supported_runtime_helper_payload_forms must be ['i32', 'bool', 'id', 'i64']"
         )
     expected_true = (
         "semantic_value_model_supported",
@@ -196,6 +204,7 @@ def _validate_value_optional_contract(type_signature: dict[str, Any], path: str)
         "lowering_supported",
         "ir_payload_emission_supported",
         "call_abi_lowering_supported",
+        "full_width_i64_runtime_helper_supported",
     )
     for field in expected_true:
         if contract.get(field) is not True:
@@ -212,6 +221,7 @@ def _validate_value_optional_contract(type_signature: dict[str, Any], path: str)
         "unchecked_unwrap_allowed",
         "nullable_pointer_conversion_allowed",
         "throws_result_conversion_allowed",
+        "full_width_i64_language_call_abi_supported",
     )
     for field in expected_false:
         if contract.get(field) is not False:

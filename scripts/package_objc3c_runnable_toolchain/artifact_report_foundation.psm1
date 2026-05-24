@@ -10,6 +10,7 @@ function New-RunnableToolchainPackageNativeExecutionContract {
     "target_platform_id",
     "sanitizer",
     "runtime_library_ids",
+    "runtime_library_artifacts",
     "environment",
     "exit_code",
     "diagnostic_records"
@@ -40,6 +41,29 @@ function Get-RunnableToolchainPackageSanitizerMetadataDigest {
   return "sha256:" + (Get-FileHash -LiteralPath $metadataPath -Algorithm SHA256).Hash.ToLowerInvariant()
 }
 
+function Get-RunnableToolchainPackageSanitizerRuntimeManifestSection {
+  param(
+    [Parameter(Mandatory = $true)][string]$PackageRoot,
+    [Parameter(Mandatory = $true)][string]$RuntimeLibraryManifestPath
+  )
+
+  $manifestPath = Join-Path $PackageRoot ($RuntimeLibraryManifestPath -replace '/', [System.IO.Path]::DirectorySeparatorChar)
+  if (!(Test-Path -LiteralPath $manifestPath -PathType Leaf)) {
+    throw "runnable toolchain package FAIL: sanitizer runtime library manifest missing before manifest publication: $RuntimeLibraryManifestPath"
+  }
+  $payload = Get-Content -LiteralPath $manifestPath -Raw | ConvertFrom-Json -AsHashtable
+  if ([string]$payload["contract_id"] -ne "objc3c.sanitizer.runtime-library-manifest.v1") {
+    throw "runnable toolchain package FAIL: sanitizer runtime library manifest contract drifted: $RuntimeLibraryManifestPath"
+  }
+
+  return [ordered]@{
+    runtime_library_manifest_path = $RuntimeLibraryManifestPath
+    runtime_library_manifest_digest = "sha256:" + (Get-FileHash -LiteralPath $manifestPath -Algorithm SHA256).Hash.ToLowerInvariant()
+    runtime_library_artifacts = $payload["runtime_library_artifacts"]
+    missing_runtime_behavior = $payload["missing_runtime_behavior"]
+  }
+}
+
 function New-RunnableToolchainPackageFoundationManifestSection {
   param(
     [Parameter(Mandatory = $true)][string]$RepoRoot,
@@ -56,6 +80,10 @@ function New-RunnableToolchainPackageFoundationManifestSection {
   }
   if ($SanitizerVariant -eq "address") {
     $metadataManifestPath = "share/objc3c/sanitizer/asan-metadata.json"
+    $runtimeLibraryManifestPath = "share/objc3c/sanitizer/asan-runtime-libraries.json"
+    $runtimeLibraryManifestSection = Get-RunnableToolchainPackageSanitizerRuntimeManifestSection `
+      -PackageRoot $PackageRoot `
+      -RuntimeLibraryManifestPath $runtimeLibraryManifestPath
     $sanitizerPackageVariant = [ordered]@{
       package_id = "org.objc3c.runtime:objc3c-runtime-asan"
       package_variant_row_id = "objc3c.package.sanitizer.asan.reserved"
@@ -67,6 +95,10 @@ function New-RunnableToolchainPackageFoundationManifestSection {
       metadata_digest = (Get-RunnableToolchainPackageSanitizerMetadataDigest `
         -PackageRoot $PackageRoot `
         -MetadataManifestPath $metadataManifestPath)
+      runtime_library_manifest_path = $runtimeLibraryManifestSection.runtime_library_manifest_path
+      runtime_library_manifest_digest = $runtimeLibraryManifestSection.runtime_library_manifest_digest
+      runtime_library_artifacts = $runtimeLibraryManifestSection.runtime_library_artifacts
+      missing_runtime_behavior = $runtimeLibraryManifestSection.missing_runtime_behavior
       selected_runtime_variant = "sanitizer=address"
       install_selector = "sanitizer=address"
       compiler_flags = @("-fsanitize=address", "-fno-omit-frame-pointer")
@@ -80,6 +112,10 @@ function New-RunnableToolchainPackageFoundationManifestSection {
     }
   } elseif ($SanitizerVariant -eq "undefined") {
     $metadataManifestPath = "share/objc3c/sanitizer/ubsan-metadata.json"
+    $runtimeLibraryManifestPath = "share/objc3c/sanitizer/ubsan-runtime-libraries.json"
+    $runtimeLibraryManifestSection = Get-RunnableToolchainPackageSanitizerRuntimeManifestSection `
+      -PackageRoot $PackageRoot `
+      -RuntimeLibraryManifestPath $runtimeLibraryManifestPath
     $sanitizerPackageVariant = [ordered]@{
       package_id = "org.objc3c.runtime:objc3c-runtime-ubsan"
       package_variant_row_id = "objc3c.package.sanitizer.ubsan.reserved"
@@ -91,6 +127,10 @@ function New-RunnableToolchainPackageFoundationManifestSection {
       metadata_digest = (Get-RunnableToolchainPackageSanitizerMetadataDigest `
         -PackageRoot $PackageRoot `
         -MetadataManifestPath $metadataManifestPath)
+      runtime_library_manifest_path = $runtimeLibraryManifestSection.runtime_library_manifest_path
+      runtime_library_manifest_digest = $runtimeLibraryManifestSection.runtime_library_manifest_digest
+      runtime_library_artifacts = $runtimeLibraryManifestSection.runtime_library_artifacts
+      missing_runtime_behavior = $runtimeLibraryManifestSection.missing_runtime_behavior
       selected_runtime_variant = "sanitizer=undefined"
       install_selector = "sanitizer=undefined"
       compiler_flags = @("-fsanitize=undefined", "-fno-omit-frame-pointer")

@@ -43,6 +43,9 @@
         "nil_bridge_diagnostic_supported",
         "runtime_abi_payload_scope",
         "supported_runtime_payload_forms",
+        "supported_runtime_helper_payload_forms",
+        "full_width_i64_runtime_helper_supported",
+        "full_width_i64_language_call_abi_supported",
         "implicit_nil_absence_allowed",
         "optional_id_distinct_from_nullable_object_pointer"
       ],
@@ -70,6 +73,20 @@
           "minItems": 3,
           "maxItems": 3
         },
+        "supported_runtime_helper_payload_forms": {
+          "type": "array",
+          "prefixItems": [
+            { "const": "i32" },
+            { "const": "bool" },
+            { "const": "id" },
+            { "const": "i64" }
+          ],
+          "items": false,
+          "minItems": 4,
+          "maxItems": 4
+        },
+        "full_width_i64_runtime_helper_supported": { "const": true },
+        "full_width_i64_language_call_abi_supported": { "const": false },
         "implicit_nil_absence_allowed": { "const": false },
         "optional_id_distinct_from_nullable_object_pointer": { "const": true }
       },

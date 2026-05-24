@@ -52,8 +52,32 @@ REQUIRED_PAYLOAD_ENTRIES = [
     "docs/runbooks/objc3c_packaging_channels.md",
 ]
 SANITIZER_PAYLOAD_ENTRIES = {
-    "address": ["share/objc3c/sanitizer/asan-metadata.json"],
-    "undefined": ["share/objc3c/sanitizer/ubsan-metadata.json"],
+    "address": [
+        "share/objc3c/sanitizer/asan-metadata.json",
+        "share/objc3c/sanitizer/asan-runtime-libraries.json",
+        "artifacts/runtime/sanitizer/address/clang_rt.asan_dynamic-x86_64.dll",
+        "artifacts/runtime/sanitizer/address/clang_rt.asan_dynamic-x86_64.lib",
+        "artifacts/runtime/sanitizer/address/clang_rt.asan_dynamic_runtime_thunk-x86_64.lib",
+    ],
+    "undefined": [
+        "share/objc3c/sanitizer/ubsan-metadata.json",
+        "share/objc3c/sanitizer/ubsan-runtime-libraries.json",
+        "artifacts/runtime/sanitizer/undefined/clang_rt.ubsan_standalone-x86_64.lib",
+        "artifacts/runtime/sanitizer/undefined/clang_rt.ubsan_standalone_cxx-x86_64.lib",
+    ],
+}
+SANITIZER_RUNTIME_LIBRARY_ENTRIES = {
+    "address": [
+        "share/objc3c/sanitizer/asan-runtime-libraries.json",
+        "artifacts/runtime/sanitizer/address/clang_rt.asan_dynamic-x86_64.dll",
+        "artifacts/runtime/sanitizer/address/clang_rt.asan_dynamic-x86_64.lib",
+        "artifacts/runtime/sanitizer/address/clang_rt.asan_dynamic_runtime_thunk-x86_64.lib",
+    ],
+    "undefined": [
+        "share/objc3c/sanitizer/ubsan-runtime-libraries.json",
+        "artifacts/runtime/sanitizer/undefined/clang_rt.ubsan_standalone-x86_64.lib",
+        "artifacts/runtime/sanitizer/undefined/clang_rt.ubsan_standalone_cxx-x86_64.lib",
+    ],
 }
 ARCHIVE_DIGEST_FIELDS = {
     "portable_archive": "portable-archive",
@@ -113,7 +137,10 @@ def sanitizer_variant_metadata(sanitizer_variant: str) -> dict[str, Any]:
             "runtime_variant": "sanitizer=address",
             "install_selector": "sanitizer=address",
             "metadata_manifest_path": "share/objc3c/sanitizer/asan-metadata.json",
+            "runtime_library_manifest_path": "share/objc3c/sanitizer/asan-runtime-libraries.json",
+            "runtime_library_payload_entries": SANITIZER_RUNTIME_LIBRARY_ENTRIES["address"],
             "runtime_library_ids": ["objc3-runtime", "clang_rt.asan"],
+            "missing_runtime_behavior": "fail-closed-before-package-install",
             "support_truth": False,
             "native_execution_claimed": False,
         }
@@ -127,7 +154,10 @@ def sanitizer_variant_metadata(sanitizer_variant: str) -> dict[str, Any]:
             "runtime_variant": "sanitizer=undefined",
             "install_selector": "sanitizer=undefined",
             "metadata_manifest_path": "share/objc3c/sanitizer/ubsan-metadata.json",
+            "runtime_library_manifest_path": "share/objc3c/sanitizer/ubsan-runtime-libraries.json",
+            "runtime_library_payload_entries": SANITIZER_RUNTIME_LIBRARY_ENTRIES["undefined"],
             "runtime_library_ids": ["objc3-runtime", "clang_rt.ubsan"],
+            "missing_runtime_behavior": "fail-closed-before-package-install",
             "trap_or_recover_mode": "trap",
             "support_truth": False,
             "native_execution_claimed": False,
@@ -395,6 +425,13 @@ def receipt_contract_payload(
     }
     if sanitizer_variant != "release":
         payload["sanitizer_install_selector"] = metadata["install_selector"]
+        payload["sanitizer_runtime_library_manifest_path"] = metadata[
+            "runtime_library_manifest_path"
+        ]
+        payload["sanitizer_runtime_library_required_entries"] = metadata[
+            "runtime_library_payload_entries"
+        ]
+        payload["missing_runtime_behavior"] = metadata["missing_runtime_behavior"]
     if delegates_to is not None:
         payload["delegates_to"] = delegates_to
     return payload

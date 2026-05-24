@@ -283,6 +283,11 @@
     },
     {
       "capability_id": "language.errors.typed-throws",
+      "evidence_kind": "diagnostic",
+      "path": "tests/tooling/fixtures/native/recovery/negative/negative_typed_throws_async_propagation_unsupported.objc3"
+    },
+    {
+      "capability_id": "language.errors.typed-throws",
       "evidence_kind": "test",
       "path": "tests/tooling/fixtures/native/execution/positive/typed_throws_runtime_catch_bridge_positive.objc3",
       "command": "npm run objc3c -- test-execution-smoke"
@@ -291,6 +296,12 @@
       "capability_id": "language.errors.typed-throws",
       "evidence_kind": "test",
       "path": "tests/tooling/fixtures/native/execution/positive/typed_throws_runtime_message_send_catch_positive.objc3",
+      "command": "npm run objc3c -- test-execution-smoke"
+    },
+    {
+      "capability_id": "language.errors.typed-throws",
+      "evidence_kind": "test",
+      "path": "tests/tooling/fixtures/native/execution/positive/typed_throws_runtime_try_optional_positive.objc3",
       "command": "npm run objc3c -- test-execution-smoke"
     },
     {
@@ -402,6 +413,11 @@
       "capability_id": "language.types.value-optionals",
       "evidence_kind": "diagnostic",
       "path": "tests/tooling/fixtures/native/recovery/negative/negative_value_optional_property_layout_unsupported.objc3"
+    },
+    {
+      "capability_id": "language.types.value-optionals",
+      "evidence_kind": "diagnostic",
+      "path": "tests/tooling/fixtures/native/recovery/negative/negative_value_optional_i64_language_abi_reserved.objc3"
     },
     {
       "capability_id": "language.types.value-optionals",

@@ -50,7 +50,7 @@ tables or examples.
 | `objc3c-package-lock-v1.schema.json` | Package lock provenance with npm-bridge replay commands. |
 | `objc3c-package-offline-mirror-index-v1.schema.json` | Offline package mirror metadata with npm-bridge replay commands. |
 | `objc3c-package-hosted-registry-service-v1.schema.json` | Hermetic hosted-registry service contracts for fixture auth, trust-root operation, revocation, moderation, availability, and no-network fail-closed behavior. |
-| `objc3c-package-install-receipt-v1.schema.json` | Package install receipts with npm-bridge install commands, canonical bootstrap entrypoints, and reserved sanitizer package-variant receipt fields. |
+| `objc3c-package-install-receipt-v1.schema.json` | Package install receipts with npm-bridge install commands, canonical bootstrap entrypoints, and reserved sanitizer package-variant/runtime-library receipt fields. |
 | `objc3c-package-install-distribution-receipt-v1.schema.json` | From-nothing package install distribution receipts with clean owned roots and explicit replay commands. |
 | `objc3c-package-install-distribution-operation-receipt-v1.schema.json` | Package install distribution update/uninstall plan receipts bound to clean local install evidence. |
 | `objc3c-platform-toolchain-support-evidence-v1.schema.json` | Source-owned host/toolchain/package/sanitizer support evidence, fail-closed unsupported rows, and reserved sanitizer package metadata. |

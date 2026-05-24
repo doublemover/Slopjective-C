@@ -155,6 +155,12 @@ Each hosted job attempts the same promotion-relevant path:
 - `npm run objc3c -- test-hosted-execution-smoke`
 - `npm run objc3c -- ingest-platform-host-evidence`
 
+The hosted execution command writes a stable hosted summary at
+`tmp/reports/hosted-execution-smoke/summary.json` and a normalized native
+execution summary at `tmp/reports/objc3c-native-execution-smoke/summary.json`.
+The Linux and macOS evidence jobs set deterministic native execution run IDs so
+the source artifact summary can also be traced back to
+`tmp/artifacts/objc3c-native/execution-smoke/platform-host-evidence-<platform>/summary.json`.
 The ingestion helper writes a generated host evidence report and an ingestion
 summary under `tmp/reports/platform-host-evidence/<platform>/`. It also writes a
 promotion-readiness requirements artifact naming the build, package, install,

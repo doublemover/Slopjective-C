@@ -30,8 +30,36 @@ REQUIRED_PAYLOAD_ENTRIES = [
     "docs/runbooks/objc3c_packaging_channels.md",
 ]
 SANITIZER_PAYLOAD_ENTRIES = {
-    "address": ["share/objc3c/sanitizer/asan-metadata.json"],
-    "undefined": ["share/objc3c/sanitizer/ubsan-metadata.json"],
+    "address": [
+        "share/objc3c/sanitizer/asan-metadata.json",
+        "share/objc3c/sanitizer/asan-runtime-libraries.json",
+        "artifacts/runtime/sanitizer/address/clang_rt.asan_dynamic-x86_64.dll",
+        "artifacts/runtime/sanitizer/address/clang_rt.asan_dynamic-x86_64.lib",
+        "artifacts/runtime/sanitizer/address/clang_rt.asan_dynamic_runtime_thunk-x86_64.lib",
+    ],
+    "undefined": [
+        "share/objc3c/sanitizer/ubsan-metadata.json",
+        "share/objc3c/sanitizer/ubsan-runtime-libraries.json",
+        "artifacts/runtime/sanitizer/undefined/clang_rt.ubsan_standalone-x86_64.lib",
+        "artifacts/runtime/sanitizer/undefined/clang_rt.ubsan_standalone_cxx-x86_64.lib",
+    ],
+}
+SANITIZER_RUNTIME_LIBRARY_ENTRIES = {
+    "address": [
+        "share/objc3c/sanitizer/asan-runtime-libraries.json",
+        "artifacts/runtime/sanitizer/address/clang_rt.asan_dynamic-x86_64.dll",
+        "artifacts/runtime/sanitizer/address/clang_rt.asan_dynamic-x86_64.lib",
+        "artifacts/runtime/sanitizer/address/clang_rt.asan_dynamic_runtime_thunk-x86_64.lib",
+    ],
+    "undefined": [
+        "share/objc3c/sanitizer/ubsan-runtime-libraries.json",
+        "artifacts/runtime/sanitizer/undefined/clang_rt.ubsan_standalone-x86_64.lib",
+        "artifacts/runtime/sanitizer/undefined/clang_rt.ubsan_standalone_cxx-x86_64.lib",
+    ],
+}
+SANITIZER_RUNTIME_LIBRARY_MANIFEST_PATHS = {
+    "address": "share/objc3c/sanitizer/asan-runtime-libraries.json",
+    "undefined": "share/objc3c/sanitizer/ubsan-runtime-libraries.json",
 }
 REQUIRED_RECEIPT_FIELDS = [
     "contract_id",
@@ -222,6 +250,9 @@ def validate_receipt_contracts(
                 [
                     *metadata_surface["required_receipt_contract_fields"],
                     "sanitizer_install_selector",
+                    "sanitizer_runtime_library_manifest_path",
+                    "sanitizer_runtime_library_required_entries",
+                    "missing_runtime_behavior",
                 ],
             )
             if str(manifest_payload.get("sanitizer_variant", "release")) != "release"
@@ -278,8 +309,38 @@ def validate_receipt_contracts(
             expected_selector = f"sanitizer={receipt_sanitizer_variant}"
             if receipt_contract.get("sanitizer_install_selector") != expected_selector:
                 raise RuntimeError(f"package-channels receipt_contracts.{contract_name} sanitizer selector drifted")
+            expected_runtime_manifest = SANITIZER_RUNTIME_LIBRARY_MANIFEST_PATHS[
+                receipt_sanitizer_variant
+            ]
+            if (
+                receipt_contract.get("sanitizer_runtime_library_manifest_path")
+                != expected_runtime_manifest
+            ):
+                raise RuntimeError(
+                    f"package-channels receipt_contracts.{contract_name} sanitizer runtime manifest path drifted"
+                )
+            if (
+                receipt_contract.get("sanitizer_runtime_library_required_entries")
+                != SANITIZER_RUNTIME_LIBRARY_ENTRIES[receipt_sanitizer_variant]
+            ):
+                raise RuntimeError(
+                    f"package-channels receipt_contracts.{contract_name} sanitizer runtime entries drifted"
+                )
+            if (
+                receipt_contract.get("missing_runtime_behavior")
+                != "fail-closed-before-package-install"
+            ):
+                raise RuntimeError(
+                    f"package-channels receipt_contracts.{contract_name} missing runtime behavior drifted"
+                )
         elif "sanitizer_install_selector" in receipt_contract:
             raise RuntimeError(f"package-channels receipt_contracts.{contract_name} release receipt exposed sanitizer selector")
+        elif (
+            "sanitizer_runtime_library_manifest_path" in receipt_contract
+            or "sanitizer_runtime_library_required_entries" in receipt_contract
+            or "missing_runtime_behavior" in receipt_contract
+        ):
+            raise RuntimeError(f"package-channels receipt_contracts.{contract_name} release receipt exposed sanitizer runtime contract")
         for field_name, expected_value in expected.items():
             if receipt_contract.get(field_name) != expected_value:
                 raise RuntimeError(f"package-channels receipt_contracts.{contract_name} {field_name} drifted")

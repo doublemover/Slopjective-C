@@ -1,0 +1,6 @@
+// Expected diagnostic code(s): O3S226.
+module NegativeTypedThrowsAsyncPropagationUnsupported;
+
+async fn decode(value: i32) throws(NSError) -> i32 {
+  return value;
+}

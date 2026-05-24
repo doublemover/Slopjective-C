@@ -115,6 +115,7 @@ jobs:
       OBJC3C_PLATFORM_ID: linux-x64
       OBJC3C_PLATFORM_RUNNER_LABEL: ubuntu-24.04
       OBJC3C_PLATFORM_EVIDENCE_ROOT: tmp/reports/platform-host-evidence/linux-x64
+      OBJC3C_NATIVE_EXECUTION_RUN_ID: platform-host-evidence-linux-x64
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -206,6 +207,7 @@ jobs:
       OBJC3C_PLATFORM_ID: darwin-arm64
       OBJC3C_PLATFORM_RUNNER_LABEL: macos-15
       OBJC3C_PLATFORM_EVIDENCE_ROOT: tmp/reports/platform-host-evidence/darwin-arm64
+      OBJC3C_NATIVE_EXECUTION_RUN_ID: platform-host-evidence-darwin-arm64
     steps:
       - name: Checkout
         uses: actions/checkout@v4

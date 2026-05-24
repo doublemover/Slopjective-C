@@ -71,8 +71,10 @@ diagnostic, documentation, or boundary evidence only.
 | `language.errors.typed-throws` |  | `diagnostic` | `tests/tooling/fixtures/native/recovery/negative/negative_typed_throws_foreign_carrier_catch.objc3` |  |
 | `language.errors.typed-throws` |  | `diagnostic` | `tests/tooling/fixtures/native/recovery/negative/negative_typed_throws_method_incompatible_catch.objc3` |  |
 | `language.errors.typed-throws` |  | `diagnostic` | `tests/tooling/fixtures/native/recovery/negative/negative_typed_throws_method_foreign_carrier_catch.objc3` |  |
+| `language.errors.typed-throws` |  | `diagnostic` | `tests/tooling/fixtures/native/recovery/negative/negative_typed_throws_async_propagation_unsupported.objc3` |  |
 | `language.errors.typed-throws` |  | `test` | `tests/tooling/fixtures/native/execution/positive/typed_throws_runtime_catch_bridge_positive.objc3` | `npm run objc3c -- test-execution-smoke` |
 | `language.errors.typed-throws` |  | `test` | `tests/tooling/fixtures/native/execution/positive/typed_throws_runtime_message_send_catch_positive.objc3` | `npm run objc3c -- test-execution-smoke` |
+| `language.errors.typed-throws` |  | `test` | `tests/tooling/fixtures/native/execution/positive/typed_throws_runtime_try_optional_positive.objc3` | `npm run objc3c -- test-execution-smoke` |
 | `language.errors.typed-throws` |  | `schema` | `schemas/objc3c-typed-throws-effect-contract-v1.schema.json` |  |
 | `language.errors.typed-throws` |  | `source` | `native/objc3c/src/sema/objc3_typed_throws_effect_contract.h` |  |
 | `language.errors.typed-throws` |  | `source` | `native/objc3c/src/sema/objc3_semantic_error_handling_try_do_catch_do_scope.inc` |  |
@@ -95,6 +97,7 @@ diagnostic, documentation, or boundary evidence only.
 | `language.types.value-optionals` |  | `diagnostic` | `tests/tooling/fixtures/native/recovery/negative/negative_value_optional_nil_scalar_coercion_reserved.objc3` |  |
 | `language.types.value-optionals` |  | `diagnostic` | `tests/tooling/fixtures/native/recovery/negative/negative_value_optional_nested_lowercase_alias_reserved.objc3` |  |
 | `language.types.value-optionals` |  | `diagnostic` | `tests/tooling/fixtures/native/recovery/negative/negative_value_optional_property_layout_unsupported.objc3` |  |
+| `language.types.value-optionals` |  | `diagnostic` | `tests/tooling/fixtures/native/recovery/negative/negative_value_optional_i64_language_abi_reserved.objc3` |  |
 | `language.types.value-optionals` |  | `diagnostic` | `tests/tooling/fixtures/native/recovery/negative/negative_value_optional_nullable_suffix_mismatch.objc3` |  |
 | `language.types.value-optionals` |  | `diagnostic` | `tests/tooling/fixtures/native/value_optionals_layout_mismatch_negative.contract.json` |  |
 | `language.types.value-optionals` |  | `diagnostic` | `tests/tooling/fixtures/native/value_optionals_lowering_claim_negative.contract.json` |  |

@@ -779,6 +779,8 @@
           "required": [
             "package_root_layout",
             "metadata_manifest_path",
+            "runtime_library_manifest_path",
+            "runtime_library_required_entries",
             "install_receipt_required_fields",
             "layout_support_truth"
           ],
@@ -795,6 +797,19 @@
             "metadata_manifest_path": {
               "type": "string",
               "pattern": "^share/objc3c/sanitizer/(asan|ubsan)-metadata\\.json$"
+            },
+            "runtime_library_manifest_path": {
+              "type": "string",
+              "pattern": "^share/objc3c/sanitizer/(asan|ubsan)-runtime-libraries\\.json$"
+            },
+            "runtime_library_required_entries": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "minLength": 1
+              },
+              "minItems": 1,
+              "uniqueItems": true
             },
             "install_receipt_required_fields": {
               "type": "array",

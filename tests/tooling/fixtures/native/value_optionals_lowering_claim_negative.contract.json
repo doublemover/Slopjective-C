@@ -29,5 +29,5 @@
   },
   "expected_diagnostic": "O3P159",
   "fail_closed": true,
-  "notes": "The executable lowering contract may claim bounded packed ABI lowering for i32, bool, and id handles, explicit absent/present construction, and checked unwrap diagnostics, but contract drift still cannot claim unchecked unwrap, implicit nil absence, generic payload runtime lowering, property storage, or nullability bridges."
+  "notes": "The executable lowering contract may claim bounded packed language ABI lowering for i32, bool, and id handles, full-width i64 runtime helper ABI truth, explicit absent/present construction, and checked unwrap diagnostics, but contract drift still cannot claim Optional<i64> language call/return lowering, unchecked unwrap, implicit nil absence, generic payload runtime lowering, property storage, or nullability bridges."
 }

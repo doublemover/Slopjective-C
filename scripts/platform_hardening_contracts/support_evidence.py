@@ -832,8 +832,13 @@ def _package_artifact_identity_is_source_owned(row_id: str, row: dict[str, Any])
     package_root_layout = [str(item) for item in artifact.get("package_root_layout", [])]
     expect(runtime_names, f"{row_id} artifact identity missing runtime_library_names")
     expect(package_root_layout, f"{row_id} artifact identity missing package_root_layout")
+    generated_layout_paths = [
+        path
+        for path in package_root_layout
+        if path.startswith(("tmp/", "temp/", "generated/", "build/", "dist/"))
+    ]
     expect(
-        not any(path.startswith(("tmp/", "artifacts/")) for path in package_root_layout),
+        not generated_layout_paths,
         f"{row_id} artifact identity used generated report roots as package layout",
     )
 
@@ -909,6 +914,18 @@ def _expected_sanitizer_metadata_manifest_path(sanitizer_name: str) -> str:
     return ""
 
 
+def _expected_sanitizer_runtime_manifest_path(sanitizer_name: str) -> str:
+    if sanitizer_name == "address":
+        return "share/objc3c/sanitizer/asan-runtime-libraries.json"
+    if sanitizer_name == "undefined":
+        return "share/objc3c/sanitizer/ubsan-runtime-libraries.json"
+    return ""
+
+
+def _runtime_library_id_matches_path(runtime_library_id: str, path: str) -> bool:
+    return runtime_library_id in path or runtime_library_id.replace("-", "_") in path
+
+
 def _sanitizer_package_install_model_is_concrete(
     variant_id: str,
     sanitizer_name: str,
@@ -920,8 +937,13 @@ def _sanitizer_package_install_model_is_concrete(
     expect(isinstance(layout, dict), f"{variant_id} missing sanitizer package layout contract")
     package_root_layout = [str(item) for item in layout.get("package_root_layout", [])]
     expect(package_root_layout, f"{variant_id} package layout contract is empty")
+    generated_layout_paths = [
+        path
+        for path in package_root_layout
+        if path.startswith(("tmp/", "temp/", "generated/", "build/", "dist/"))
+    ]
     expect(
-        not any(path.startswith(("tmp/", "artifacts/")) for path in package_root_layout),
+        not generated_layout_paths,
         f"{variant_id} package layout used generated roots",
     )
     metadata_manifest_path = str(layout.get("metadata_manifest_path", ""))
@@ -930,9 +952,29 @@ def _sanitizer_package_install_model_is_concrete(
         f"{variant_id} sanitizer metadata manifest path drifted",
     )
     expect(metadata_manifest_path in package_root_layout, f"{variant_id} metadata manifest missing from package layout")
+    runtime_manifest_path = str(layout.get("runtime_library_manifest_path", ""))
+    expect(
+        runtime_manifest_path == _expected_sanitizer_runtime_manifest_path(sanitizer_name),
+        f"{variant_id} sanitizer runtime manifest path drifted",
+    )
+    expect(
+        runtime_manifest_path in package_root_layout,
+        f"{variant_id} runtime library manifest missing from package layout",
+    )
+    runtime_required_entries = [
+        str(item) for item in layout.get("runtime_library_required_entries", [])
+    ]
+    expect(runtime_required_entries, f"{variant_id} sanitizer runtime library entries missing")
+    expect(
+        set(runtime_required_entries) <= set(package_root_layout),
+        f"{variant_id} sanitizer runtime library entries missing from package layout",
+    )
     for runtime_library_id in expected_runtime_library_ids:
         expect(
-            any(runtime_library_id in path for path in package_root_layout),
+            any(
+                _runtime_library_id_matches_path(runtime_library_id, path)
+                for path in package_root_layout
+            ),
             f"{variant_id} package layout missing {runtime_library_id}",
         )
     expect(layout.get("layout_support_truth") is False, f"{variant_id} package layout was treated as support truth")

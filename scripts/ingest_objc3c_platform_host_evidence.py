@@ -360,8 +360,11 @@ def build_promotion_readiness_requirements(platform_id: str) -> dict[str, Any]:
                 "command": "npm run objc3c -- test-hosted-execution-smoke",
                 "path": platform_scoped_path(platform_id, "execution/native-execution-smoke-summary.json"),
                 "required_fields": [
+                    "status",
                     "results",
                     "runtime_library",
+                    "native_object_emission",
+                    "skip_reason",
                     "link_command",
                     "load_path",
                 ],

@@ -1528,6 +1528,14 @@
       "expected_diagnostic_code": ""
     },
     {
+      "path": "tests/tooling/fixtures/native/execution/positive/typed_throws_runtime_try_optional_positive.objc3",
+      "origin": "hand-authored",
+      "owner_phase": "runtime",
+      "behavior_family": "errors",
+      "fixture_kind": "positive",
+      "expected_diagnostic_code": ""
+    },
+    {
       "path": "tests/tooling/fixtures/native/recovery/negative/negative_typed_throws_incompatible_catch.objc3",
       "origin": "hand-authored",
       "owner_phase": "sema",
@@ -1558,6 +1566,14 @@
       "behavior_family": "errors",
       "fixture_kind": "diagnostic_negative",
       "expected_diagnostic_code": "O3S206"
+    },
+    {
+      "path": "tests/tooling/fixtures/native/recovery/negative/negative_typed_throws_async_propagation_unsupported.objc3",
+      "origin": "hand-authored",
+      "owner_phase": "sema",
+      "behavior_family": "errors",
+      "fixture_kind": "diagnostic_negative",
+      "expected_diagnostic_code": "O3S226"
     },
     {
       "path": "tests/tooling/fixtures/native/execution/positive/value_optionals_runtime_abi_positive.objc3",
@@ -1601,6 +1617,14 @@
     },
     {
       "path": "tests/tooling/fixtures/native/recovery/negative/negative_value_optional_property_layout_unsupported.objc3",
+      "origin": "hand-authored",
+      "owner_phase": "parser",
+      "behavior_family": "types",
+      "fixture_kind": "canonical_rejection",
+      "expected_diagnostic_code": "O3P159"
+    },
+    {
+      "path": "tests/tooling/fixtures/native/recovery/negative/negative_value_optional_i64_language_abi_reserved.objc3",
       "origin": "hand-authored",
       "owner_phase": "parser",
       "behavior_family": "types",

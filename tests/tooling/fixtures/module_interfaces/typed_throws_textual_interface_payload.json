@@ -72,6 +72,14 @@
             "bool",
             "id"
           ],
+          "supported_runtime_helper_payload_forms": [
+            "i32",
+            "bool",
+            "id",
+            "i64"
+          ],
+          "full_width_i64_runtime_helper_supported": true,
+          "full_width_i64_language_call_abi_supported": false,
           "ir_payload_emission_supported": true,
           "call_abi_lowering_supported": true,
           "broad_public_runtime_support_claim_allowed": false,
@@ -257,7 +265,7 @@
     {
       "case_id": "value-optional-lowering",
       "target": "declarations[0].type_signature.value_optional_contract",
-      "expected_failure": "value optional interfaces cannot widen beyond the bounded packed i32/bool/id-handle runtime ABI or promote unsupported payload/storage forms",
+      "expected_failure": "value optional interfaces cannot widen beyond the bounded packed i32/bool/id-handle runtime ABI plus full-width i64 helper ABI, or promote Optional<i64> language call/return lowering or unsupported payload/storage forms",
       "fail_closed": true,
       "diagnostic": "O3P159"
     },

@@ -117,6 +117,9 @@
     "package_channel_id",
     "sanitizer_variant",
     "sanitizer_install_selector",
+    "sanitizer_runtime_library_manifest_path",
+    "sanitizer_runtime_library_required_entries",
+    "missing_runtime_behavior",
     "support_truth",
     "native_execution_claimed"
   ]

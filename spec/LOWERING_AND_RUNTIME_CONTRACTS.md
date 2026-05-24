@@ -1888,7 +1888,10 @@ checked unwrap/binding diagnostics: absent carries `has_value=false` and no live
 payload, present requires a payload and carries `has_value=true`, binding
 failure branches through the absent path, and unwrap requires a proven presence
 check. Supported `i32`, `bool`, and `id` object-handle payload forms lower
-through the bounded packed runtime ABI; full-width `i64`, nested/generic payload
+through the bounded packed runtime ABI. Full-width `i64` now has a runtime
+helper ABI that preserves all payload bits in an explicit `{ has_value, payload
+}` carrier; `Optional<i64>` language call/return lowering still remains
+fail-closed until the compiler ABI uses a wide carrier. Nested/generic payload
 lowering, property/ivar storage, nullability bridges, implicit nil,
 nil-to-scalar coercion, unchecked unwrap, and throws/result conversion remain
 fail-closed.

@@ -7,9 +7,10 @@ marks the behavior implemented.
 Current v1 parser truth admits single-payload `throws(E)` as a source-owned
 typed-throws effect and admits canonical `Optional<T>` as a semantic
 type-signature carrier with a checked absent/present lowering contract and a
-bounded packed i32/bool/id-handle runtime ABI, while staying fail-closed for
-nested/generic value-optional payload lowering, property/ivar storage, unchecked
-unwrap, nullability bridges, implicit nil, nil-to-scalar coercion,
+bounded packed i32/bool/id-handle runtime ABI plus full-width i64 runtime helper
+ABI, while staying fail-closed for `Optional<i64>` language call/return
+lowering, nested/generic value-optional payload lowering, property/ivar storage,
+unchecked unwrap, nullability bridges, implicit nil, nil-to-scalar coercion,
 throws/result conversion, expression-position `match`, and `=>` match arms. For
 #8233, empty, multi, malformed, and non-type parenthesized `throws(...)` payload
 shapes are parser-owned `O3P182` rejections and are never erased into bare
@@ -19,8 +20,8 @@ reserved until every public replay surface agrees across the capability row.
 For #8234, canonical `Optional<T>` has first-class type identity plus a stable
 `has_value`/`payload` contract in source and textual-interface records. The
 owned contract now distinguishes bounded packed runtime ABI support for i32,
-bool, and id handles from the still-reserved broad value-optional runtime
-surface.
+bool, and id handles plus full-width i64 helper support from the still-reserved
+broad value-optional language call/return surface.
 Lowercase `optional<T>` remains `O3C004` removed spelling rather than an alias,
 and neither spelling enables unchecked unwrap, implicit nil absence,
 nil-to-scalar, throws/result, nullable-pointer conversion, nested/generic payload

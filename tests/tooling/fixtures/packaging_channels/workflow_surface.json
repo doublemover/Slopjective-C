@@ -76,7 +76,7 @@
       "packaging workflow skipped source or schema surface checks",
       "package-channel child action missing from objc3c bridge",
       "package-channel workflow summary emitted evidence-log status",
-      "sanitizer package channel action accepted selector, receipt, or payload metadata drift"
+      "sanitizer package channel action accepted selector, receipt, payload metadata, or copied runtime-library drift"
     ]
   },
   "upstream_validate_actions": [

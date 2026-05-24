@@ -123,11 +123,20 @@
         "runtime_library_resolution": "exact-target clang ASan runtime package lookup recorded in sanitizer package metadata",
         "package_layout_contract": {
           "package_root_layout": [
-            "lib/objc3-runtime-sanitized",
-            "lib/clang_rt.asan",
-            "share/objc3c/sanitizer/asan-metadata.json"
+            "artifacts/lib/objc3_runtime.lib",
+            "share/objc3c/sanitizer/asan-metadata.json",
+            "share/objc3c/sanitizer/asan-runtime-libraries.json",
+            "artifacts/runtime/sanitizer/address/clang_rt.asan_dynamic-x86_64.dll",
+            "artifacts/runtime/sanitizer/address/clang_rt.asan_dynamic-x86_64.lib",
+            "artifacts/runtime/sanitizer/address/clang_rt.asan_dynamic_runtime_thunk-x86_64.lib"
           ],
           "metadata_manifest_path": "share/objc3c/sanitizer/asan-metadata.json",
+          "runtime_library_manifest_path": "share/objc3c/sanitizer/asan-runtime-libraries.json",
+          "runtime_library_required_entries": [
+            "artifacts/runtime/sanitizer/address/clang_rt.asan_dynamic-x86_64.dll",
+            "artifacts/runtime/sanitizer/address/clang_rt.asan_dynamic-x86_64.lib",
+            "artifacts/runtime/sanitizer/address/clang_rt.asan_dynamic_runtime_thunk-x86_64.lib"
+          ],
           "install_receipt_required_fields": [
             "package_id",
             "package_variant_row_id",
@@ -137,6 +146,10 @@
             "runtime_library_ids",
             "metadata_manifest_path",
             "metadata_digest",
+            "runtime_library_manifest_path",
+            "runtime_library_manifest_digest",
+            "runtime_library_artifacts",
+            "missing_runtime_behavior",
             "selected_runtime_variant",
             "install_selector",
             "native_execution_contract",
@@ -151,6 +164,8 @@
           "probe_inputs": [
             "target_platform_id",
             "llvm_runtime_root",
+            "runtime_library_manifest_path",
+            "runtime_library_artifacts",
             "package_root_layout",
             "runtime_library_ids"
           ],
@@ -181,6 +196,10 @@
             "runtime_library_ids",
             "metadata_manifest_path",
             "metadata_digest",
+            "runtime_library_manifest_path",
+            "runtime_library_manifest_digest",
+            "runtime_library_artifacts",
+            "missing_runtime_behavior",
             "selected_runtime_variant",
             "install_selector",
             "native_execution_contract",
@@ -197,6 +216,7 @@
               "target_platform_id",
               "sanitizer",
               "runtime_library_ids",
+              "runtime_library_artifacts",
               "environment",
               "exit_code",
               "diagnostic_records"
@@ -236,6 +256,8 @@
             "package_channel_id",
             "package_id",
             "runtime_library_ids",
+            "runtime_library_manifest_path",
+            "runtime_library_artifacts",
             "compiler_flags",
             "linker_flags",
             "environment"
@@ -354,11 +376,18 @@
         "runtime_library_resolution": "exact-target clang UBSan runtime package lookup and trap-or-recover mode recorded in sanitizer package metadata",
         "package_layout_contract": {
           "package_root_layout": [
-            "lib/objc3-runtime-sanitized",
-            "lib/clang_rt.ubsan",
-            "share/objc3c/sanitizer/ubsan-metadata.json"
+            "artifacts/lib/objc3_runtime.lib",
+            "share/objc3c/sanitizer/ubsan-metadata.json",
+            "share/objc3c/sanitizer/ubsan-runtime-libraries.json",
+            "artifacts/runtime/sanitizer/undefined/clang_rt.ubsan_standalone-x86_64.lib",
+            "artifacts/runtime/sanitizer/undefined/clang_rt.ubsan_standalone_cxx-x86_64.lib"
           ],
           "metadata_manifest_path": "share/objc3c/sanitizer/ubsan-metadata.json",
+          "runtime_library_manifest_path": "share/objc3c/sanitizer/ubsan-runtime-libraries.json",
+          "runtime_library_required_entries": [
+            "artifacts/runtime/sanitizer/undefined/clang_rt.ubsan_standalone-x86_64.lib",
+            "artifacts/runtime/sanitizer/undefined/clang_rt.ubsan_standalone_cxx-x86_64.lib"
+          ],
           "install_receipt_required_fields": [
             "package_id",
             "package_variant_row_id",
@@ -368,6 +397,10 @@
             "runtime_library_ids",
             "metadata_manifest_path",
             "metadata_digest",
+            "runtime_library_manifest_path",
+            "runtime_library_manifest_digest",
+            "runtime_library_artifacts",
+            "missing_runtime_behavior",
             "selected_runtime_variant",
             "install_selector",
             "native_execution_contract",
@@ -383,6 +416,8 @@
           "probe_inputs": [
             "target_platform_id",
             "llvm_runtime_root",
+            "runtime_library_manifest_path",
+            "runtime_library_artifacts",
             "package_root_layout",
             "runtime_library_ids",
             "trap_or_recover_mode"
@@ -414,6 +449,10 @@
             "runtime_library_ids",
             "metadata_manifest_path",
             "metadata_digest",
+            "runtime_library_manifest_path",
+            "runtime_library_manifest_digest",
+            "runtime_library_artifacts",
+            "missing_runtime_behavior",
             "selected_runtime_variant",
             "install_selector",
             "native_execution_contract",
@@ -431,6 +470,7 @@
               "target_platform_id",
               "sanitizer",
               "runtime_library_ids",
+              "runtime_library_artifacts",
               "environment",
               "exit_code",
               "diagnostic_records",
@@ -480,6 +520,8 @@
             "package_channel_id",
             "package_id",
             "runtime_library_ids",
+            "runtime_library_manifest_path",
+            "runtime_library_artifacts",
             "compiler_flags",
             "linker_flags",
             "trap_or_recover_mode"

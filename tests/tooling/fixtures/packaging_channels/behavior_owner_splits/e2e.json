@@ -35,7 +35,7 @@
     "public_action:build-package-channels",
     "public_action:build-package-channels-asan",
     "public_action:build-package-channels-ubsan",
-    "sanitizer_receipt_identity:exact-package-id-channel-selector-metadata-runtime-library-list",
+    "sanitizer_receipt_identity:exact-package-id-channel-selector-metadata-runtime-library-manifest-and-digest-set",
     "sanitizer_receipt_support_truth:false",
     "sanitizer_receipt_native_execution_claimed:false",
     "public_action:build-platform-support-matrix",
