@@ -93,8 +93,16 @@ $binRoot = Join-Path $installRoot "bin"
 $clangxx = Join-Path $binRoot "clang++.exe"
 $llc = Join-Path $binRoot "llc.exe"
 $llvmReadobj = Join-Path $binRoot "llvm-readobj.exe"
+$llvmConfig = Join-Path $binRoot "llvm-config.exe"
+$llvmDir = Join-Path $installRoot "lib/cmake/llvm"
 
 $env:LLVM_ROOT = $installRoot
+$env:OBJC3C_LLVM_ROOT = $installRoot
+$env:LLVM_DIR = $llvmDir
+$env:OBJC3C_NATIVE_EXECUTION_CLANG_PATH = $clangxx
+$env:OBJC3C_NATIVE_EXECUTION_LLC_PATH = $llc
+$env:OBJC3C_NATIVE_EXECUTION_LLVM_READOBJ_PATH = $llvmReadobj
+$env:OBJC3C_NATIVE_EXECUTION_LLVM_CONFIG_PATH = $llvmConfig
 $env:Path = "$binRoot;$env:Path"
 
 if (-not [string]::IsNullOrWhiteSpace($env:GITHUB_PATH)) {
@@ -102,15 +110,20 @@ if (-not [string]::IsNullOrWhiteSpace($env:GITHUB_PATH)) {
 }
 if (-not [string]::IsNullOrWhiteSpace($env:GITHUB_ENV)) {
   Add-Content -Path $env:GITHUB_ENV -Value "LLVM_ROOT=$installRoot"
+  Add-Content -Path $env:GITHUB_ENV -Value "OBJC3C_LLVM_ROOT=$installRoot"
+  Add-Content -Path $env:GITHUB_ENV -Value "LLVM_DIR=$llvmDir"
   Add-Content -Path $env:GITHUB_ENV -Value "OBJC3C_NATIVE_EXECUTION_CLANG_PATH=$clangxx"
   Add-Content -Path $env:GITHUB_ENV -Value "OBJC3C_NATIVE_EXECUTION_LLC_PATH=$llc"
   Add-Content -Path $env:GITHUB_ENV -Value "OBJC3C_NATIVE_EXECUTION_LLVM_READOBJ_PATH=$llvmReadobj"
+  Add-Content -Path $env:GITHUB_ENV -Value "OBJC3C_NATIVE_EXECUTION_LLVM_CONFIG_PATH=$llvmConfig"
 }
 
 "LLVM_ROOT=$installRoot"
+"OBJC3C_LLVM_ROOT=$installRoot"
+"LLVM_DIR=$llvmDir"
 "& `"$clangxx`" --version"
 & $clangxx --version | Select-Object -First 1
 "& `"$llc`" --version"
 & $llc --version | Select-Object -First 1
-"& `"$binRoot\llvm-config.exe`" --version"
-& (Join-Path $binRoot "llvm-config.exe") --version
+"& `"$llvmConfig`" --version"
+& $llvmConfig --version
