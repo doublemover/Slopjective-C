@@ -82,6 +82,14 @@ PACKAGING_CHANNEL_ACTION_CONTRACTS: tuple[ReleaseGovernanceActionContract, ...] 
         pass_through_args=True,
     ),
     ReleaseGovernanceActionContract(
+        "check-platform-host-promotion-evidence",
+        "validate the Linux/macOS host-promotion evidence contract without support promotion",
+        "python:scripts/check_platform_host_promotion_evidence.py",
+        "packaging-channels",
+        "repo",
+        "Linux/macOS host-promotion evidence stays fail-closed until generated hosted evidence is reviewed into checked source truth with package install and native execution records",
+    ),
+    ReleaseGovernanceActionContract(
         "validate-platform-hardening",
         "run the integrated platform-hardening workflow",
         "python:scripts/check_objc3c_platform_hardening_integration.py",

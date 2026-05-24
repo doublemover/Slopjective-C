@@ -1,6 +1,6 @@
 {
   "schema_version": "objc3c-capability-matrix-v1",
-  "matrix_version": "2026-05-09-hard-cutover",
+  "matrix_version": "2026-05-24-language-umbrella-closure",
   "schema_path": "schemas/objc3c-capability-matrix-v1.schema.json",
   "evidence_map_path": "docs/support/evidence_map.json",
   "states": [
@@ -590,8 +590,11 @@
     {
       "id": "language.types.value-optionals",
       "title": "Value optional type constructor",
-      "state": "reserved",
-      "summary": "After issue #8234 closure, the bounded value-optional slice is recorded here without promoting broad public executable/runtime support. Canonical Optional<T> is admitted as a semantic type-signature carrier with stable packed has_value/payload ABI identity, textual-interface roundtrip, and replayed runtime ABI for the checked Optional<i32>, Optional<bool>, and Optional<id> handle payload forms. Optional<i64> language call/return ABI is now supported through the wide `{has_value,i64}` carrier, direct functions, and direct dispatch path. Lowercase optional<T> is rejected as O3C004 rather than accepted as an alias, and checked parser/source-closure/textual-interface import records explicitly deny object-pointer/nullability bridges, nested optional runtime lowering, generic payload runtime lowering, property or ivar storage, unchecked unwrap, implicit nil absence, nil-to-scalar, and throws/result conversions.",
+      "state": "implemented",
+      "summary": "Issue #8234 implements a bounded value-optional type-constructor row. Canonical Optional<T> is admitted as a semantic type-signature carrier with stable packed has_value/payload ABI identity, textual-interface roundtrip, replayed runtime ABI for Optional<i32>, Optional<bool>, and Optional<id> handle payload forms, plus Optional<i64> language call/return ABI through the wide `{has_value,i64}` carrier for direct functions and direct dispatch. Lowercase optional<T> is rejected as O3C004 rather than accepted as an alias. This row does not claim broad value-optional expansion: object-pointer/nullability bridges, nested optional runtime lowering, generic payload runtime lowering, property or ivar storage, unchecked unwrap, implicit nil absence, nil-to-scalar, throws/result conversions, and broad dynamic runtime dispatch remain reserved follow-up work.",
+      "support_claims": [
+        "objc3c.behavior.language.types.value-optionals"
+      ],
       "owner_modules": [
         "native/objc3c/src/ast/objc3_ast_value_optional_type.h",
         "native/objc3c/src/parse/objc3_parser_declaration_surface.cpp",
@@ -899,8 +902,11 @@
     {
       "id": "language.evolution.umbrella-alignment",
       "title": "Language evolution umbrella alignment",
-      "state": "reserved",
-      "summary": "Issue #8207 is an umbrella truth row for typed throws, value optionals, generic callable reification, guarded match, bounded match expressions, and strict/strict-concurrency profiles. It remains reserved after #8234 closure until remaining broad value-optional paths are either promotion-backed or explicitly scoped out by an umbrella decision; the current state records #8233 single-payload typed throws as an implemented bounded error-out ABI row with exact typed catch, policy-backed id<Error> bridge catch, runtime-dispatch message-send coverage, try? optionalization, incompatible-catch rejection, and unsupported foreign-carrier fail-closed records, #8235 generic callable metadata policy support, #8236 guarded-match/match-expression support, #8237 strict/strict-concurrency profile admission, and the closed #8234 value-optional semantic carrier plus bounded packed i32/bool/id-handle runtime ABI and Optional<i64> wide `{has_value,i64}` language call/return ABI through direct functions and direct dispatch without claiming runtime-specialized generics, broad value-optional runtime support, object/nullability bridges, nested/generic/property/ivar optional lowering, nil/nullability conversions, unchecked unwrap, throws conversions, or strict-system behavior.",
+      "state": "implemented",
+      "summary": "Issue #8207 is closed as a bounded language-evolution umbrella truth row over the implemented child slices: #8233 single-payload typed throws with exact effect identity, error-out ABI lowering, catch/bridge policy, runtime-dispatch message-send coverage, try? optionalization, and fail-closed malformed/async/foreign-carrier paths; #8234 bounded value optionals with canonical Optional<T>, packed i32/bool/id-handle runtime ABI, Optional<i64> wide direct call/return ABI, textual-interface roundtrip, and fail-closed broadening paths; #8235 bounded generic callable metadata policy; #8236 statement guarded match plus bounded expression match; and #8237 strict/strict-concurrency profile admission. This umbrella does not claim broad optional runtime expansion, runtime-specialized generics, type-test or Result-payload match expansion, strict-system behavior, compatibility aliases, or temp/generated evidence; those are reserved follow-up rows.",
+      "support_claims": [
+        "objc3c.behavior.language.evolution.umbrella-alignment"
+      ],
       "owner_modules": [
         "docs/support/umbrella_readiness.json",
         "docs/support/capability_matrix.json",
@@ -922,8 +928,9 @@
           "path": "docs/support/hard_cutover_capability_truth.md"
         },
         {
-          "kind": "source",
-          "path": "tests/tooling/fixtures/native/language_evolution_umbrella_contract.json"
+          "kind": "test",
+          "path": "tests/tooling/fixtures/native/language_evolution_umbrella_contract.json",
+          "command": "npm run objc3c -- validate-conformance-corpus"
         },
         {
           "kind": "source",
@@ -944,6 +951,144 @@
         {
           "kind": "source",
           "path": "tests/fixtures/canonical/manifest.json"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/fixtures/native/execution/positive/typed_throws_runtime_catch_bridge_positive.objc3",
+          "command": "npm run objc3c -- test-execution-smoke"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/fixtures/native/execution/positive/value_optionals_runtime_abi_positive.objc3",
+          "command": "npm run objc3c -- test-execution-smoke"
+        }
+      ]
+    },
+    {
+      "id": "language.types.value-optionals.expansion",
+      "title": "Value optional broadening follow-ups",
+      "state": "reserved",
+      "summary": "Follow-up row for value-optional behavior outside the #8234 bounded carrier. Object-pointer/nullability bridges, nested optional runtime lowering, generic payload runtime lowering, property or ivar storage, unchecked unwrap, implicit nil absence, nil-to-scalar conversion, throws/result conversion, and broad dynamic runtime dispatch remain unavailable and cannot be claimed by #8207.",
+      "owner_modules": [
+        "docs/support/umbrella_readiness.json",
+        "spec/PART_3_TYPES_NULLABILITY_OPTIONALS_GENERICS_KEYPATHS.md",
+        "tests/tooling/fixtures/native/language_evolution_typed_throws_value_optionals_contract.json",
+        "tests/tooling/fixtures/native/value_optionals_executable_semantics_negative.contract.json"
+      ],
+      "evidence": [
+        {
+          "kind": "doc",
+          "path": "docs/support/umbrella_readiness.json"
+        },
+        {
+          "kind": "doc",
+          "path": "spec/PART_3_TYPES_NULLABILITY_OPTIONALS_GENERICS_KEYPATHS.md"
+        },
+        {
+          "kind": "source",
+          "path": "tests/tooling/fixtures/native/language_evolution_typed_throws_value_optionals_contract.json"
+        },
+        {
+          "kind": "diagnostic",
+          "path": "tests/tooling/fixtures/native/value_optionals_executable_semantics_negative.contract.json"
+        },
+        {
+          "kind": "diagnostic",
+          "path": "tests/tooling/fixtures/native/recovery/negative/negative_value_optional_nullable_pointer_conversion_reserved.objc3"
+        },
+        {
+          "kind": "diagnostic",
+          "path": "tests/tooling/fixtures/native/recovery/negative/negative_value_optional_nil_scalar_coercion_reserved.objc3"
+        },
+        {
+          "kind": "diagnostic",
+          "path": "tests/tooling/fixtures/native/recovery/negative/negative_value_optional_property_layout_unsupported.objc3"
+        }
+      ]
+    },
+    {
+      "id": "language.generics.runtime-specialization-expansion",
+      "title": "Generic runtime specialization follow-ups",
+      "state": "reserved",
+      "summary": "Follow-up row for generic behavior outside the #8235 bounded callable metadata policy. Runtime-specialized generic metadata, generic body cloning, module-wide implicit reification, generic overload-by-signature, variadic generic parameters, selector-local method clauses, and C/Objective-C style generic function syntax remain unavailable and cannot be claimed by #8207.",
+      "owner_modules": [
+        "docs/support/umbrella_readiness.json",
+        "spec/PART_3_TYPES_NULLABILITY_OPTIONALS_GENERICS_KEYPATHS.md",
+        "tests/tooling/fixtures/native/generic_callable_reification_contract.json"
+      ],
+      "evidence": [
+        {
+          "kind": "doc",
+          "path": "docs/support/umbrella_readiness.json"
+        },
+        {
+          "kind": "doc",
+          "path": "spec/PART_3_TYPES_NULLABILITY_OPTIONALS_GENERICS_KEYPATHS.md"
+        },
+        {
+          "kind": "source",
+          "path": "tests/tooling/fixtures/native/generic_callable_reification_contract.json"
+        },
+        {
+          "kind": "diagnostic",
+          "path": "tests/tooling/fixtures/native/recovery/negative/negative_reify_generics_unsupported_scope.objc3"
+        },
+        {
+          "kind": "diagnostic",
+          "path": "tests/tooling/fixtures/native/recovery/negative/negative_cstyle_generic_function_reserved.objc3"
+        }
+      ]
+    },
+    {
+      "id": "language.control-flow.match-expansion",
+      "title": "Match broadening follow-ups",
+      "state": "reserved",
+      "summary": "Follow-up row for match behavior outside the #8236 statement guarded match and bounded expression-match rows. Type-test patterns, statement fat-arrow arms, Result payload ABI extraction, aliases, and broad lowering/runtime match expansion remain unavailable and cannot be claimed by #8207.",
+      "owner_modules": [
+        "docs/support/umbrella_readiness.json",
+        "tests/tooling/fixtures/native/match_guarded_pattern_language_evolution_contract.json"
+      ],
+      "evidence": [
+        {
+          "kind": "doc",
+          "path": "docs/support/umbrella_readiness.json"
+        },
+        {
+          "kind": "source",
+          "path": "tests/tooling/fixtures/native/match_guarded_pattern_language_evolution_contract.json"
+        },
+        {
+          "kind": "diagnostic",
+          "path": "tests/tooling/fixtures/native/recovery/negative/negative_match_expression_type_test_reserved.objc3"
+        },
+        {
+          "kind": "diagnostic",
+          "path": "tests/tooling/fixtures/native/recovery/negative/negative_match_statement_fat_arrow_ambiguous.objc3"
+        }
+      ]
+    },
+    {
+      "id": "language.profiles.strict-system-expansion",
+      "title": "Strict-system profile follow-ups",
+      "state": "reserved",
+      "summary": "Follow-up row for profile behavior outside #8237 strict and strict-concurrency admission. Strict-system remains target-only release evidence, rejects as a native frontend language profile, and cannot be claimed by #8207 or by strict/strict-concurrency aliases until separate system evidence promotes its own row.",
+      "owner_modules": [
+        "docs/support/umbrella_readiness.json",
+        "tests/tooling/fixtures/language_profiles/strict_profile_feature_matrix.json",
+        "tests/conformance/profile_strict_boundary/strict_system_profile_mismatch_negative.objc3"
+      ],
+      "evidence": [
+        {
+          "kind": "doc",
+          "path": "docs/support/umbrella_readiness.json"
+        },
+        {
+          "kind": "source",
+          "path": "tests/tooling/fixtures/language_profiles/strict_profile_feature_matrix.json"
+        },
+        {
+          "kind": "diagnostic",
+          "path": "tests/conformance/profile_strict_boundary/strict_system_profile_mismatch_negative.objc3"
         }
       ]
     },
@@ -6409,11 +6554,15 @@
       "id": "platform.linux-x64.unsupported",
       "title": "Linux x64 platform support",
       "state": "rejected",
-      "summary": "Linux x64 support remains fail-closed under issue #8228: source-owned platform and package rows record the Linux host/toolchain/package promotion blockers, and both the canonical hosted-evidence workflow plus the conformance-minima dispatch gateway are generated-only, non-promoting evidence paths until build, package, install, and native execution evidence is reviewed into checked source truth.",
+      "summary": "Linux x64 support remains fail-closed under issue #8228: source-owned platform, host-promotion, and package rows record the Linux host/toolchain/package promotion blockers, and both the canonical hosted-evidence workflow plus the conformance-minima dispatch gateway are generated-only, non-promoting evidence paths until build, package, install, and native execution evidence is reviewed into checked source truth.",
       "owner_modules": [
         "tests/tooling/fixtures/platform_hardening/platform_toolchain_support_evidence.json",
+        "tests/tooling/fixtures/platform_hardening/platform_host_promotion_evidence_contract.json",
         "tests/tooling/fixtures/platform_support/source_truth_matrix.json",
         "schemas/objc3c-platform-toolchain-support-evidence-v1.schema.json",
+        "scripts/platform_hardening_contracts/host_promotion.py",
+        "scripts/check_platform_host_promotion_evidence.py",
+        "scripts/objc3c_workflow/actions/release_governance_packaging_contracts.py",
         "scripts/platform_hardening_contracts/support_evidence.py"
       ],
       "evidence": [
@@ -6421,25 +6570,45 @@
           "kind": "diagnostic",
           "path": "tests/tooling/fixtures/platform_hardening/platform_toolchain_support_evidence.json"
         },
-        {
-          "kind": "diagnostic",
-          "path": "tests/tooling/fixtures/platform_hardening/unsupported_host_fail_closed_policy.json"
-        },
-        {
-          "kind": "source",
-          "path": "tests/tooling/fixtures/platform_support/source_truth_matrix.json"
-        }
+      {
+        "kind": "diagnostic",
+        "path": "tests/tooling/fixtures/platform_hardening/unsupported_host_fail_closed_policy.json"
+      },
+      {
+        "kind": "source",
+        "path": "tests/tooling/fixtures/platform_hardening/platform_host_promotion_evidence_contract.json"
+      },
+      {
+        "kind": "source",
+        "path": "scripts/platform_hardening_contracts/host_promotion.py"
+      },
+      {
+        "kind": "source",
+        "path": "scripts/check_platform_host_promotion_evidence.py"
+      },
+      {
+        "kind": "source",
+        "path": "scripts/objc3c_workflow/actions/release_governance_packaging_contracts.py"
+      },
+      {
+        "kind": "source",
+        "path": "tests/tooling/fixtures/platform_support/source_truth_matrix.json"
+      }
       ]
     },
     {
       "id": "platform.darwin-arm64.unsupported",
       "title": "macOS arm64 platform support",
       "state": "rejected",
-      "summary": "macOS arm64 support remains fail-closed under issue #8229: source-owned platform and package rows record the Apple-toolchain, Mach-O/load-path, and package-install blockers, and both the canonical hosted-evidence workflow plus the conformance-minima dispatch gateway are generated-only, non-promoting evidence paths until package install and native execution evidence is reviewed into checked source truth.",
+      "summary": "macOS arm64 support remains fail-closed under issue #8229: source-owned platform, host-promotion, and package rows record the Apple-toolchain, Mach-O/load-path, and package-install blockers, and both the canonical hosted-evidence workflow plus the conformance-minima dispatch gateway are generated-only, non-promoting evidence paths until package install and native execution evidence is reviewed into checked source truth.",
       "owner_modules": [
         "tests/tooling/fixtures/platform_hardening/platform_toolchain_support_evidence.json",
+        "tests/tooling/fixtures/platform_hardening/platform_host_promotion_evidence_contract.json",
         "tests/tooling/fixtures/platform_support/source_truth_matrix.json",
         "schemas/objc3c-platform-toolchain-support-evidence-v1.schema.json",
+        "scripts/platform_hardening_contracts/host_promotion.py",
+        "scripts/check_platform_host_promotion_evidence.py",
+        "scripts/objc3c_workflow/actions/release_governance_packaging_contracts.py",
         "scripts/platform_hardening_contracts/support_evidence.py"
       ],
       "evidence": [
@@ -6447,14 +6616,30 @@
           "kind": "diagnostic",
           "path": "tests/tooling/fixtures/platform_hardening/platform_toolchain_support_evidence.json"
         },
-        {
-          "kind": "diagnostic",
-          "path": "tests/tooling/fixtures/platform_hardening/unsupported_host_fail_closed_policy.json"
-        },
-        {
-          "kind": "source",
-          "path": "tests/tooling/fixtures/platform_support/source_truth_matrix.json"
-        }
+      {
+        "kind": "diagnostic",
+        "path": "tests/tooling/fixtures/platform_hardening/unsupported_host_fail_closed_policy.json"
+      },
+      {
+        "kind": "source",
+        "path": "tests/tooling/fixtures/platform_hardening/platform_host_promotion_evidence_contract.json"
+      },
+      {
+        "kind": "source",
+        "path": "scripts/platform_hardening_contracts/host_promotion.py"
+      },
+      {
+        "kind": "source",
+        "path": "scripts/check_platform_host_promotion_evidence.py"
+      },
+      {
+        "kind": "source",
+        "path": "scripts/objc3c_workflow/actions/release_governance_packaging_contracts.py"
+      },
+      {
+        "kind": "source",
+        "path": "tests/tooling/fixtures/platform_support/source_truth_matrix.json"
+      }
       ]
     },
     {
@@ -6530,13 +6715,23 @@
       "id": "platform.expansion.umbrella-readiness",
       "title": "Platform expansion umbrella readiness",
       "state": "internal",
-      "summary": "#8206 is an internal readiness boundary over #8228 Linux x64, #8229 macOS arm64, #8230 ASan, #8231 UBSan, and #8232 native object emission. It keeps only Windows x64 projected as supported, keeps Linux and macOS rejected, models conformance-minima as a non-promoting dispatch gateway for generated Linux/macOS hosted evidence, keeps sanitizer package/install support reserved until real package/install/native execution evidence exists, keeps task-hygiene hosted gates skip-only when llc object emission is unavailable, and keeps conformance-minima fail-closed when required native object emission is missing. Missing-llc, mixed-root, mismatched-version, unsupported-version, and unresolved-version native object emission remain fail-closed with no clang substitute success path.",
+      "summary": "#8206 is an internal readiness boundary over #8228 Linux x64, #8229 macOS arm64, #8230 ASan, #8231 UBSan, and #8232 native object emission. It keeps only Windows x64 projected as supported, keeps Linux and macOS rejected through the host-promotion evidence contract, models conformance-minima as a non-promoting dispatch gateway for generated Linux/macOS hosted evidence, keeps sanitizer package/install support reserved until real package/install/native execution evidence exists, and treats sanitizer runtime evidence actions as review-only reports with support_truth=false, native_execution_claimed=false, and support_promotion_allowed=false. Task-hygiene hosted gates stay skip-only when llc object emission is unavailable, and conformance-minima stays fail-closed when required native object emission is missing. Missing-llc, mixed-root, mismatched-version, unsupported-version, and unresolved-version native object emission remain fail-closed with no clang substitute success path.",
       "owner_modules": [
         "tests/tooling/fixtures/platform_support/source_truth_matrix.json",
         "schemas/objc3c-platform-support-source-truth-v1.schema.json",
         "scripts/check_objc3c_platform_support_matrix.py",
         "scripts/platform_hardening_contracts/support_evidence.py",
+        "scripts/platform_hardening_contracts/host_promotion.py",
+        "scripts/check_platform_host_promotion_evidence.py",
+        "scripts/objc3c_workflow/actions/release_governance_packaging_contracts.py",
+        "tests/tooling/fixtures/platform_hardening/platform_host_promotion_evidence_contract.json",
         "tests/tooling/fixtures/security_hardening/sanitizer_package_install_model_contract.json",
+        "tests/tooling/fixtures/security_hardening/sanitizer_execution_evidence_contract.json",
+        "schemas/objc3c-sanitizer-execution-evidence-v1.schema.json",
+        "scripts/objc3c_workflow/actions/sanitizer_runtime_evidence.py",
+        "scripts/check_objc3c_sanitizer_runtime_evidence.py",
+        "scripts/probe_objc3c_sanitizer_runtime_evidence.py",
+        "scripts/check_security_sanitizer_execution_evidence.py",
         "tests/tooling/fixtures/platform_hardening/hosted_runner_capability_summaries.json",
         "tests/tooling/fixtures/platform_hardening/unsupported_host_fail_closed_policy.json",
         "docs/runbooks/objc3c_platform_hardening.md"
@@ -6554,18 +6749,58 @@
           "kind": "source",
           "path": "scripts/check_objc3c_platform_support_matrix.py"
         },
-        {
-          "kind": "source",
-          "path": "scripts/platform_hardening_contracts/support_evidence.py"
-        },
-        {
-          "kind": "source",
-          "path": "tests/tooling/fixtures/security_hardening/sanitizer_package_install_model_contract.json"
-        },
-        {
-          "kind": "diagnostic",
-          "path": "tests/tooling/fixtures/platform_hardening/unsupported_host_fail_closed_policy.json"
-        },
+      {
+        "kind": "source",
+        "path": "scripts/platform_hardening_contracts/support_evidence.py"
+      },
+      {
+        "kind": "source",
+        "path": "scripts/platform_hardening_contracts/host_promotion.py"
+      },
+      {
+        "kind": "source",
+        "path": "scripts/check_platform_host_promotion_evidence.py"
+      },
+      {
+        "kind": "source",
+        "path": "scripts/objc3c_workflow/actions/release_governance_packaging_contracts.py"
+      },
+      {
+        "kind": "source",
+        "path": "tests/tooling/fixtures/platform_hardening/platform_host_promotion_evidence_contract.json"
+      },
+      {
+        "kind": "source",
+        "path": "tests/tooling/fixtures/security_hardening/sanitizer_package_install_model_contract.json"
+      },
+      {
+        "kind": "source",
+        "path": "tests/tooling/fixtures/security_hardening/sanitizer_execution_evidence_contract.json"
+      },
+      {
+        "kind": "schema",
+        "path": "schemas/objc3c-sanitizer-execution-evidence-v1.schema.json"
+      },
+      {
+        "kind": "source",
+        "path": "scripts/objc3c_workflow/actions/sanitizer_runtime_evidence.py"
+      },
+      {
+        "kind": "source",
+        "path": "scripts/check_objc3c_sanitizer_runtime_evidence.py"
+      },
+      {
+        "kind": "source",
+        "path": "scripts/probe_objc3c_sanitizer_runtime_evidence.py"
+      },
+      {
+        "kind": "source",
+        "path": "scripts/check_security_sanitizer_execution_evidence.py"
+      },
+      {
+        "kind": "diagnostic",
+        "path": "tests/tooling/fixtures/platform_hardening/unsupported_host_fail_closed_policy.json"
+      },
         {
           "kind": "doc",
           "path": "docs/runbooks/objc3c_platform_hardening.md"
@@ -6576,7 +6811,7 @@
       "id": "toolchain.sanitizer.address",
       "title": "AddressSanitizer platform variant",
       "state": "reserved",
-      "summary": "AddressSanitizer support remains reserved under issue #8230: the source contract records the ASan runtime package id, package layout, runtime library probe, explicit opt-in install selector, ASAN_OPTIONS metadata contract, mixed release/sanitizer runtime rejection, record-only expected-detection fixtures, unsupported-host diagnostics, and metadata freshness guard, but no package/install/native execution support is claimed.",
+      "summary": "AddressSanitizer support remains reserved under issue #8230: the source contracts record the ASan runtime package id, package layout, runtime library probe, explicit opt-in install selector, ASAN_OPTIONS metadata contract, mixed release/sanitizer runtime rejection, non-promoting runtime evidence actions, record-only expected-detection fixtures, unsupported-host diagnostics, and metadata freshness guard. The runtime and execution evidence contracts require support_truth=false, native_execution_claimed=false, and support_promotion_allowed=false, so no package/install/native execution support is claimed.",
       "owner_modules": [
         "tests/tooling/fixtures/platform_hardening/platform_toolchain_support_evidence.json",
         "tests/tooling/fixtures/security_hardening/sanitizer_validation_contract.json",
@@ -6590,14 +6825,20 @@
         "scripts/objc3c_package_channels/validation.py",
         "scripts/check_objc3c_packaging_channels_integration.py",
         "scripts/check_objc3c_packaging_channels_end_to_end.py",
-        "scripts/objc3c_workflow/action_catalog_native_package_toolchain.py",
-        "scripts/objc3c_workflow/actions/release_governance_packaging_contracts.py",
-        "schemas/objc3c-package-channels-manifest-v1.schema.json",
-        "schemas/objc3c-package-install-receipt-v1.schema.json",
-        "schemas/objc3c-sanitizer-runtime-library-manifest-v1.schema.json",
-        "tests/tooling/fixtures/packaging_channels/metadata_surface.json",
-        "tests/tooling/fixtures/packaging_channels/schema_surface.json",
-        "tests/tooling/fixtures/security_hardening/artifact_reporting_contract.json"
+      "scripts/objc3c_workflow/action_catalog_native_package_toolchain.py",
+      "scripts/objc3c_workflow/actions/release_governance_packaging_contracts.py",
+      "scripts/objc3c_workflow/actions/sanitizer_runtime_evidence.py",
+      "scripts/check_objc3c_sanitizer_runtime_evidence.py",
+      "scripts/probe_objc3c_sanitizer_runtime_evidence.py",
+      "scripts/check_security_sanitizer_execution_evidence.py",
+      "schemas/objc3c-package-channels-manifest-v1.schema.json",
+      "schemas/objc3c-package-install-receipt-v1.schema.json",
+      "schemas/objc3c-sanitizer-runtime-library-manifest-v1.schema.json",
+      "schemas/objc3c-sanitizer-execution-evidence-v1.schema.json",
+      "tests/tooling/fixtures/packaging_channels/metadata_surface.json",
+      "tests/tooling/fixtures/packaging_channels/schema_surface.json",
+      "tests/tooling/fixtures/security_hardening/sanitizer_execution_evidence_contract.json",
+      "tests/tooling/fixtures/security_hardening/artifact_reporting_contract.json"
       ],
       "evidence": [
         {
@@ -6648,41 +6889,65 @@
           "kind": "source",
           "path": "scripts/objc3c_workflow/action_catalog_native_package_toolchain.py"
         },
-        {
-          "kind": "source",
-          "path": "scripts/objc3c_workflow/actions/release_governance_packaging_contracts.py"
-        },
-        {
-          "kind": "schema",
-          "path": "schemas/objc3c-package-channels-manifest-v1.schema.json"
+      {
+        "kind": "source",
+        "path": "scripts/objc3c_workflow/actions/release_governance_packaging_contracts.py"
+      },
+      {
+        "kind": "source",
+        "path": "scripts/objc3c_workflow/actions/sanitizer_runtime_evidence.py"
+      },
+      {
+        "kind": "source",
+        "path": "scripts/check_objc3c_sanitizer_runtime_evidence.py"
+      },
+      {
+        "kind": "source",
+        "path": "scripts/probe_objc3c_sanitizer_runtime_evidence.py"
+      },
+      {
+        "kind": "source",
+        "path": "scripts/check_security_sanitizer_execution_evidence.py"
+      },
+      {
+        "kind": "schema",
+        "path": "schemas/objc3c-package-channels-manifest-v1.schema.json"
         },
         {
           "kind": "schema",
           "path": "schemas/objc3c-package-install-receipt-v1.schema.json"
         },
-        {
-          "kind": "schema",
-          "path": "schemas/objc3c-sanitizer-runtime-library-manifest-v1.schema.json"
+      {
+        "kind": "schema",
+        "path": "schemas/objc3c-sanitizer-runtime-library-manifest-v1.schema.json"
+      },
+      {
+        "kind": "schema",
+        "path": "schemas/objc3c-sanitizer-execution-evidence-v1.schema.json"
+      },
+      {
+        "kind": "source",
+        "path": "tests/tooling/fixtures/packaging_channels/metadata_surface.json"
         },
-        {
-          "kind": "source",
-          "path": "tests/tooling/fixtures/packaging_channels/metadata_surface.json"
-        },
-        {
-          "kind": "source",
-          "path": "tests/tooling/fixtures/packaging_channels/schema_surface.json"
-        },
-        {
-          "kind": "source",
-          "path": "tests/tooling/fixtures/security_hardening/artifact_reporting_contract.json"
-        }
+      {
+        "kind": "source",
+        "path": "tests/tooling/fixtures/packaging_channels/schema_surface.json"
+      },
+      {
+        "kind": "source",
+        "path": "tests/tooling/fixtures/security_hardening/sanitizer_execution_evidence_contract.json"
+      },
+      {
+        "kind": "source",
+        "path": "tests/tooling/fixtures/security_hardening/artifact_reporting_contract.json"
+      }
       ]
     },
     {
       "id": "toolchain.sanitizer.undefined",
       "title": "UndefinedBehaviorSanitizer platform variant",
       "state": "reserved",
-      "summary": "UBSan support remains reserved under issue #8231: the source contract records the UBSan runtime package id, package layout, runtime library probe, explicit opt-in install selector, UBSAN_OPTIONS and trap-or-recover metadata contracts, mixed release/sanitizer runtime rejection, record-only expected-detection fixtures, unsupported-host diagnostics, and metadata freshness guard, but no package/install/native execution support is claimed.",
+      "summary": "UBSan support remains reserved under issue #8231: the source contracts record the UBSan runtime package id, package layout, runtime library probe, explicit opt-in install selector, UBSAN_OPTIONS and trap-or-recover metadata contracts, mixed release/sanitizer runtime rejection, non-promoting runtime evidence actions, record-only expected-detection fixtures, unsupported-host diagnostics, and metadata freshness guard. The runtime and execution evidence contracts require support_truth=false, native_execution_claimed=false, and support_promotion_allowed=false, so no package/install/native execution support is claimed.",
       "owner_modules": [
         "tests/tooling/fixtures/platform_hardening/platform_toolchain_support_evidence.json",
         "tests/tooling/fixtures/security_hardening/sanitizer_validation_contract.json",
@@ -6696,14 +6961,20 @@
         "scripts/objc3c_package_channels/validation.py",
         "scripts/check_objc3c_packaging_channels_integration.py",
         "scripts/check_objc3c_packaging_channels_end_to_end.py",
-        "scripts/objc3c_workflow/action_catalog_native_package_toolchain.py",
-        "scripts/objc3c_workflow/actions/release_governance_packaging_contracts.py",
-        "schemas/objc3c-package-channels-manifest-v1.schema.json",
-        "schemas/objc3c-package-install-receipt-v1.schema.json",
-        "schemas/objc3c-sanitizer-runtime-library-manifest-v1.schema.json",
-        "tests/tooling/fixtures/packaging_channels/metadata_surface.json",
-        "tests/tooling/fixtures/packaging_channels/schema_surface.json",
-        "tests/tooling/fixtures/security_hardening/artifact_reporting_contract.json"
+      "scripts/objc3c_workflow/action_catalog_native_package_toolchain.py",
+      "scripts/objc3c_workflow/actions/release_governance_packaging_contracts.py",
+      "scripts/objc3c_workflow/actions/sanitizer_runtime_evidence.py",
+      "scripts/check_objc3c_sanitizer_runtime_evidence.py",
+      "scripts/probe_objc3c_sanitizer_runtime_evidence.py",
+      "scripts/check_security_sanitizer_execution_evidence.py",
+      "schemas/objc3c-package-channels-manifest-v1.schema.json",
+      "schemas/objc3c-package-install-receipt-v1.schema.json",
+      "schemas/objc3c-sanitizer-runtime-library-manifest-v1.schema.json",
+      "schemas/objc3c-sanitizer-execution-evidence-v1.schema.json",
+      "tests/tooling/fixtures/packaging_channels/metadata_surface.json",
+      "tests/tooling/fixtures/packaging_channels/schema_surface.json",
+      "tests/tooling/fixtures/security_hardening/sanitizer_execution_evidence_contract.json",
+      "tests/tooling/fixtures/security_hardening/artifact_reporting_contract.json"
       ],
       "evidence": [
         {
@@ -6754,34 +7025,58 @@
           "kind": "source",
           "path": "scripts/objc3c_workflow/action_catalog_native_package_toolchain.py"
         },
-        {
-          "kind": "source",
-          "path": "scripts/objc3c_workflow/actions/release_governance_packaging_contracts.py"
-        },
-        {
-          "kind": "schema",
-          "path": "schemas/objc3c-package-channels-manifest-v1.schema.json"
+      {
+        "kind": "source",
+        "path": "scripts/objc3c_workflow/actions/release_governance_packaging_contracts.py"
+      },
+      {
+        "kind": "source",
+        "path": "scripts/objc3c_workflow/actions/sanitizer_runtime_evidence.py"
+      },
+      {
+        "kind": "source",
+        "path": "scripts/check_objc3c_sanitizer_runtime_evidence.py"
+      },
+      {
+        "kind": "source",
+        "path": "scripts/probe_objc3c_sanitizer_runtime_evidence.py"
+      },
+      {
+        "kind": "source",
+        "path": "scripts/check_security_sanitizer_execution_evidence.py"
+      },
+      {
+        "kind": "schema",
+        "path": "schemas/objc3c-package-channels-manifest-v1.schema.json"
         },
         {
           "kind": "schema",
           "path": "schemas/objc3c-package-install-receipt-v1.schema.json"
         },
-        {
-          "kind": "schema",
-          "path": "schemas/objc3c-sanitizer-runtime-library-manifest-v1.schema.json"
+      {
+        "kind": "schema",
+        "path": "schemas/objc3c-sanitizer-runtime-library-manifest-v1.schema.json"
+      },
+      {
+        "kind": "schema",
+        "path": "schemas/objc3c-sanitizer-execution-evidence-v1.schema.json"
+      },
+      {
+        "kind": "source",
+        "path": "tests/tooling/fixtures/packaging_channels/metadata_surface.json"
         },
-        {
-          "kind": "source",
-          "path": "tests/tooling/fixtures/packaging_channels/metadata_surface.json"
-        },
-        {
-          "kind": "source",
-          "path": "tests/tooling/fixtures/packaging_channels/schema_surface.json"
-        },
-        {
-          "kind": "source",
-          "path": "tests/tooling/fixtures/security_hardening/artifact_reporting_contract.json"
-        }
+      {
+        "kind": "source",
+        "path": "tests/tooling/fixtures/packaging_channels/schema_surface.json"
+      },
+      {
+        "kind": "source",
+        "path": "tests/tooling/fixtures/security_hardening/sanitizer_execution_evidence_contract.json"
+      },
+      {
+        "kind": "source",
+        "path": "tests/tooling/fixtures/security_hardening/artifact_reporting_contract.json"
+      }
       ]
     },
     {

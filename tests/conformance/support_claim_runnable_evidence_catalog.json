@@ -29,6 +29,8 @@
     8178,
     8184,
     8207,
+    8233,
+    8234,
     8235,
     8236,
     8237
@@ -175,6 +177,128 @@
         "Generic callable reification support is limited to declaration-scoped metadata policy on generic functions and Objective-C generic methods",
         "Explicit reification records mangling and replay-key metadata without claiming runtime-specialized generic metadata or body cloning",
         "Selector-local generic method clauses, unsupported reification scopes, override drift, constraint cycles, and cross-module mangling-policy drift remain fail-closed"
+      ]
+    },
+    {
+      "support_claim": "objc3c.behavior.language.errors.typed-throws",
+      "capability_id": "language.errors.typed-throws",
+      "owner_phase": "runtime",
+      "conformance_fixture": "tests/tooling/fixtures/native/language_evolution_typed_throws_value_optionals_contract.json",
+      "traceability_fixture": "tests/tooling/fixtures/native/recovery/negative/negative_typed_throws_incompatible_catch.objc3",
+      "runnable_command": "npm run objc3c -- test-execution-smoke",
+      "runtime_acceptance_case": "typed-throws-runtime-catch-bridge",
+      "positive_evidence": [
+        "tests/tooling/fixtures/native/execution/positive/typed_throws_runtime_catch_bridge_positive.objc3",
+        "tests/tooling/fixtures/native/execution/positive/typed_throws_runtime_message_send_catch_positive.objc3",
+        "tests/tooling/fixtures/native/execution/positive/typed_throws_runtime_try_optional_positive.objc3",
+        "tests/tooling/fixtures/native/language_evolution_typed_throws_value_optionals_contract.json",
+        "tests/tooling/fixtures/native/typed_throws_semantic_effect_identity.contract.json",
+        "native/objc3c/src/sema/objc3_typed_throws_effect_contract.h",
+        "native/objc3c/src/ir/objc3_ir_runtime_dispatch_calls.cpp",
+        "native/objc3c/src/runtime/errors/catch_filter.cpp"
+      ],
+      "negative_evidence": [
+        "tests/tooling/fixtures/native/recovery/negative/negative_typed_throws_reserved.objc3",
+        "tests/tooling/fixtures/native/recovery/negative/negative_typed_throws_empty_payload_reserved.objc3",
+        "tests/tooling/fixtures/native/recovery/negative/negative_typed_throws_multi_payload_reserved.objc3",
+        "tests/tooling/fixtures/native/recovery/negative/negative_typed_throws_erasure_mismatch_reserved.objc3",
+        "tests/tooling/fixtures/native/recovery/negative/negative_typed_throws_protocol_mismatch.objc3",
+        "tests/tooling/fixtures/native/recovery/negative/negative_typed_throws_incompatible_catch.objc3",
+        "tests/tooling/fixtures/native/recovery/negative/negative_typed_throws_foreign_carrier_catch.objc3",
+        "tests/tooling/fixtures/native/recovery/negative/negative_typed_throws_method_incompatible_catch.objc3",
+        "tests/tooling/fixtures/native/recovery/negative/negative_typed_throws_method_foreign_carrier_catch.objc3",
+        "tests/tooling/fixtures/native/recovery/negative/negative_typed_throws_async_propagation_unsupported.objc3"
+      ],
+      "required_diagnostic_codes": [
+        "O3P182",
+        "O3S206"
+      ],
+      "source_truth_requirements": [
+        "Typed throws support is claimed only for single-payload typed effects with exact effect identity, private error-out ABI lowering, runtime-dispatch message-send evidence, and the checked id<Error> bridge catch policy",
+        "Malformed, empty, multi-payload, erased, protocol-mismatched, incompatible catch, foreign-carrier, method catch, and async propagation shapes remain fail-closed checked-in negative evidence",
+        "Generated runtime reports are replay artifacts only and cannot widen typed throws support beyond checked-in source, schema, fixtures, and smoke cases"
+      ]
+    },
+    {
+      "support_claim": "objc3c.behavior.language.types.value-optionals",
+      "capability_id": "language.types.value-optionals",
+      "owner_phase": "runtime",
+      "conformance_fixture": "tests/tooling/fixtures/native/language_evolution_typed_throws_value_optionals_contract.json",
+      "traceability_fixture": "tests/tooling/fixtures/native/value_optionals_executable_semantics_negative.contract.json",
+      "runnable_command": "npm run objc3c -- test-execution-smoke",
+      "runtime_acceptance_case": "value-optionals-runtime-abi-positive",
+      "positive_evidence": [
+        "tests/tooling/fixtures/native/execution/positive/value_optionals_runtime_abi_positive.objc3",
+        "tests/tooling/fixtures/native/value_optionals_contract_positive.json",
+        "tests/tooling/fixtures/native/language_evolution_typed_throws_value_optionals_contract.json",
+        "native/objc3c/src/ast/objc3_ast_value_optional_type.h",
+        "native/objc3c/src/ir/objc3_ir_value_optional_carrier_model.h",
+        "native/objc3c/src/lower/contracts/value_optional_lowering_contracts.h",
+        "native/objc3c/src/runtime/public/objc3_runtime_value_optional_contract.h",
+        "native/objc3c/src/runtime/values/value_optional.cpp",
+        "schemas/objc3c-value-optionals-contract-v1.schema.json"
+      ],
+      "negative_evidence": [
+        "tests/tooling/fixtures/native/recovery/negative/negative_value_optional_canonical_reserved.objc3",
+        "tests/tooling/fixtures/native/recovery/negative/negative_value_optional_nullable_pointer_conversion_reserved.objc3",
+        "tests/tooling/fixtures/native/recovery/negative/negative_value_optional_nil_scalar_coercion_reserved.objc3",
+        "tests/tooling/fixtures/native/recovery/negative/negative_value_optional_nested_lowercase_alias_reserved.objc3",
+        "tests/tooling/fixtures/native/recovery/negative/negative_value_optional_property_layout_unsupported.objc3",
+        "tests/tooling/fixtures/native/recovery/negative/negative_value_optional_nullable_suffix_mismatch.objc3",
+        "tests/tooling/fixtures/native/value_optionals_layout_mismatch_negative.contract.json",
+        "tests/tooling/fixtures/native/value_optionals_lowering_claim_negative.contract.json",
+        "tests/tooling/fixtures/native/value_optionals_interface_mismatch_negative.contract.json",
+        "tests/tooling/fixtures/native/value_optionals_executable_semantics_negative.contract.json"
+      ],
+      "required_diagnostic_codes": [
+        "O3C004",
+        "O3P159",
+        "O3S206"
+      ],
+      "source_truth_requirements": [
+        "Value optional support is claimed only for canonical Optional<T> semantic carriers with stable packed has_value/payload ABI identity, textual-interface roundtrip, and checked runtime ABI for i32, bool, id-handle, and direct-call i64 payloads",
+        "Lowercase optional aliases, nullable-pointer bridges, nil-to-scalar coercion, nested optional runtime lowering, property or ivar storage, broad dynamic dispatch, and unchecked unwrap broadening remain fail-closed",
+        "Generated reports are replay artifacts only and cannot promote value optionals beyond the checked-in contract, schema, source, and smoke fixtures"
+      ]
+    },
+    {
+      "support_claim": "objc3c.behavior.language.evolution.umbrella-alignment",
+      "capability_id": "language.evolution.umbrella-alignment",
+      "owner_phase": "e2e",
+      "conformance_fixture": "tests/tooling/fixtures/native/language_evolution_umbrella_contract.json",
+      "traceability_fixture": "tests/tooling/fixtures/native/recovery/negative/negative_value_optional_nil_scalar_coercion_reserved.objc3",
+      "runnable_command": "npm run objc3c -- validate-conformance-corpus",
+      "runtime_acceptance_case": "language-evolution-umbrella-alignment-contract",
+      "positive_evidence": [
+        "tests/tooling/fixtures/native/language_evolution_umbrella_contract.json",
+        "tests/tooling/fixtures/native/language_evolution_typed_throws_value_optionals_contract.json",
+        "tests/tooling/fixtures/native/generic_callable_reification_contract.json",
+        "tests/tooling/fixtures/native/match_guarded_pattern_language_evolution_contract.json",
+        "tests/tooling/fixtures/language_profiles/strict_profile_feature_matrix.json",
+        "tests/tooling/fixtures/native/execution/positive/typed_throws_runtime_catch_bridge_positive.objc3",
+        "tests/tooling/fixtures/native/execution/positive/value_optionals_runtime_abi_positive.objc3",
+        "docs/support/umbrella_readiness.json",
+        "docs/support/hard_cutover_capability_truth.md"
+      ],
+      "negative_evidence": [
+        "tests/tooling/fixtures/native/recovery/negative/negative_typed_throws_multi_payload_reserved.objc3",
+        "tests/tooling/fixtures/native/recovery/negative/negative_typed_throws_incompatible_catch.objc3",
+        "tests/tooling/fixtures/native/recovery/negative/negative_value_optional_nullable_pointer_conversion_reserved.objc3",
+        "tests/tooling/fixtures/native/recovery/negative/negative_value_optional_nil_scalar_coercion_reserved.objc3",
+        "tests/tooling/fixtures/native/recovery/negative/negative_match_expression_type_test_reserved.objc3",
+        "tests/conformance/profile_strict_boundary/strict_system_profile_mismatch_negative.objc3",
+        "tests/tooling/fixtures/native/recovery/negative/negative_reify_generics_unsupported_scope.objc3"
+      ],
+      "required_diagnostic_codes": [
+        "O3C004",
+        "O3P159",
+        "O3P182",
+        "O3S206"
+      ],
+      "source_truth_requirements": [
+        "The language evolution umbrella is claimed only as an alignment row over bounded implemented children for typed throws, value optionals, generic callable metadata, guarded match, match expression, and strict profile admission",
+        "Broad value optional runtime expansion, runtime-specialized generics, type-test or Result-payload match expansion, strict-system behavior, and compatibility aliases remain reserved or fail-closed child rows",
+        "Generated docs and reports are derived evidence only and cannot replace checked-in source truth, canonical fixtures, negative cases, public commands, capability rows, and umbrella readiness records"
       ]
     },
     {

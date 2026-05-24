@@ -11,6 +11,7 @@ CANONICAL_ACTION_CATEGORIES: tuple[str, ...] = (
     "check",
     "compile",
     "format",
+    "ingest",
     "inspect",
     "lint",
     "materialize",

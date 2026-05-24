@@ -9,6 +9,7 @@ from .release_governance_packaging_paths import (
     PACKAGE_CHANNELS_BUILD_PY,
     PACKAGING_CHANNELS_SOURCE_SURFACE_PY,
     PLATFORM_HOST_EVIDENCE_INGESTION_PY,
+    PLATFORM_HOST_PROMOTION_EVIDENCE_PY,
     PLATFORM_SUPPORT_MATRIX_PY,
 )
 
@@ -51,3 +52,7 @@ def action_ingest_platform_host_evidence(rest: list[str]) -> int:
     if rest[:1] == ["--"]:
         rest = rest[1:]
     return run([sys.executable, str(PLATFORM_HOST_EVIDENCE_INGESTION_PY), *rest])
+
+
+def action_check_platform_host_promotion_evidence(_: list[str]) -> int:
+    return run([sys.executable, str(PLATFORM_HOST_PROMOTION_EVIDENCE_PY)])

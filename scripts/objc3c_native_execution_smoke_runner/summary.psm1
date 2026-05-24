@@ -33,6 +33,9 @@ function Write-ExecutionSmokeSummary {
     native_exe = if (Test-Path -LiteralPath $Context.native_exe -PathType Leaf) { Get-RepoRelativePath -Path $Context.native_exe -Root $Context.repo_root } else { $Context.native_exe }
     runtime_library = if (Test-Path -LiteralPath $Context.default_runtime_library -PathType Leaf) { Get-RepoRelativePath -Path $Context.default_runtime_library -Root $Context.repo_root } else { "" }
     live_runtime_dispatch_default_symbol = "objc3_runtime_dispatch_i32"
+    sanitizer_variant = $Context.sanitizer_variant
+    sanitizer_runtime_dir = if (-not [string]::IsNullOrWhiteSpace($Context.sanitizer_runtime_dir)) { Get-RepoRelativePath -Path $Context.sanitizer_runtime_dir -Root $Context.repo_root } else { "" }
+    sanitizer_environment = $Context.sanitizer_environment
     clang = $Context.clang_command
     llc = $Context.llc_command
     llc_source = $Context.llc_source_path

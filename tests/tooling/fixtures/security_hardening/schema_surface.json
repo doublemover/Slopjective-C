@@ -2,5 +2,6 @@
   "contract_id": "objc3c.security.hardening.schema.surface.v1",
   "schema_version": 1,
   "posture_schema": "schemas/objc3c-security-posture-v1.schema.json",
-  "advisory_index_schema": "schemas/objc3c-security-advisory-index-v1.schema.json"
+  "advisory_index_schema": "schemas/objc3c-security-advisory-index-v1.schema.json",
+  "sanitizer_execution_evidence_schema": "schemas/objc3c-sanitizer-execution-evidence-v1.schema.json"
 }

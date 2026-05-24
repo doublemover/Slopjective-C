@@ -78,6 +78,24 @@
       "executable_command": "npm run objc3c -- validate-conformance-corpus"
     },
     {
+      "claim_id": "objc3c.behavior.language.errors.typed-throws",
+      "owner_phase": "runtime",
+      "behavior_fixture": "tests/tooling/fixtures/native/execution/positive/typed_throws_runtime_catch_bridge_positive.objc3",
+      "executable_command": "npm run objc3c -- test-execution-smoke"
+    },
+    {
+      "claim_id": "objc3c.behavior.language.types.value-optionals",
+      "owner_phase": "runtime",
+      "behavior_fixture": "tests/tooling/fixtures/native/execution/positive/value_optionals_runtime_abi_positive.objc3",
+      "executable_command": "npm run objc3c -- test-execution-smoke"
+    },
+    {
+      "claim_id": "objc3c.behavior.language.evolution.umbrella-alignment",
+      "owner_phase": "e2e",
+      "behavior_fixture": "tests/tooling/fixtures/native/language_evolution_umbrella_contract.json",
+      "executable_command": "npm run objc3c -- validate-conformance-corpus"
+    },
+    {
       "claim_id": "objc3c.behavior.language.control-flow.statement-guarded-match",
       "owner_phase": "sema",
       "behavior_fixture": "tests/tooling/fixtures/native/recovery/positive/match_guarded_pattern_statement.objc3",
@@ -1580,6 +1598,14 @@
       "origin": "hand-authored",
       "owner_phase": "runtime",
       "behavior_family": "types",
+      "fixture_kind": "positive",
+      "expected_diagnostic_code": ""
+    },
+    {
+      "path": "tests/tooling/fixtures/native/language_evolution_umbrella_contract.json",
+      "origin": "hand-authored",
+      "owner_phase": "e2e",
+      "behavior_family": "language-evolution",
       "fixture_kind": "positive",
       "expected_diagnostic_code": ""
     },

@@ -80,6 +80,8 @@ function Get-Objc3cNativeExecutionSmokeLlvmRootCandidates {
 }
 
 function Get-Objc3cNativeExecutionSmokeLinkDriverArgs {
+  param([string]$SanitizerVariant = "release")
+
   $args = @("-std=c++20")
   if ([System.Environment]::OSVersion.Platform -eq [System.PlatformID]::Win32NT) {
     $args += @(
@@ -91,7 +93,92 @@ function Get-Objc3cNativeExecutionSmokeLinkDriverArgs {
       "/MANIFESTUAC:level='asInvoker' uiAccess='false'"
     )
   }
+  if ($SanitizerVariant -eq "address") {
+    $args += @("-fsanitize=address", "-fno-omit-frame-pointer")
+  } elseif ($SanitizerVariant -eq "undefined") {
+    $args += @("-fsanitize=undefined", "-fno-sanitize-recover=undefined", "-fno-omit-frame-pointer")
+  }
   return $args
+}
+
+function Get-Objc3cNativeExecutionSmokeSanitizerRuntimeLinkArgs {
+  param(
+    [string]$SanitizerVariant = "release",
+    [string]$RuntimeDir = ""
+  )
+
+  if ($SanitizerVariant -eq "release") {
+    return @()
+  }
+  if ([string]::IsNullOrWhiteSpace($RuntimeDir)) {
+    throw "execution smoke FAIL: sanitizer runtime link directory missing for $SanitizerVariant"
+  }
+
+  if ([System.Environment]::OSVersion.Platform -eq [System.PlatformID]::Win32NT) {
+    return @("-Xlinker", "/LIBPATH:$RuntimeDir")
+  }
+  return @("-L", $RuntimeDir)
+}
+
+function Resolve-Objc3cNativeExecutionSmokeSanitizerVariant {
+  $variant = $env:OBJC3C_NATIVE_EXECUTION_SANITIZER_VARIANT
+  if ([string]::IsNullOrWhiteSpace($variant)) {
+    return "release"
+  }
+  if ($variant -notin @("release", "address", "undefined")) {
+    throw "execution smoke FAIL: OBJC3C_NATIVE_EXECUTION_SANITIZER_VARIANT must be release, address, or undefined"
+  }
+  return $variant
+}
+
+function Resolve-Objc3cNativeExecutionSmokeSanitizerRuntimeDir {
+  param(
+    [Parameter(Mandatory = $true)][string]$RepoRoot,
+    [Parameter(Mandatory = $true)][string]$SanitizerVariant
+  )
+
+  if ($SanitizerVariant -eq "release") {
+    return ""
+  }
+  $leaf = if ($SanitizerVariant -eq "address") { "address" } else { "undefined" }
+  $runtimeDir = Join-Path $RepoRoot (Join-Path "artifacts/runtime/sanitizer" $leaf)
+  if (!(Test-Path -LiteralPath $runtimeDir -PathType Container)) {
+    throw "execution smoke FAIL: sanitizer runtime directory missing for ${SanitizerVariant}: $runtimeDir"
+  }
+  return $runtimeDir
+}
+
+function Set-Objc3cNativeExecutionSmokeSanitizerEnvironment {
+  param(
+    [Parameter(Mandatory = $true)][string]$SanitizerVariant,
+    [string]$RuntimeDir = ""
+  )
+
+  if ($SanitizerVariant -eq "release") {
+    return [ordered]@{}
+  }
+  if ([string]::IsNullOrWhiteSpace($RuntimeDir)) {
+    throw "execution smoke FAIL: sanitizer runtime directory missing from environment setup"
+  }
+
+  $env:PATH = $RuntimeDir + [System.IO.Path]::PathSeparator + $env:PATH
+  if ($SanitizerVariant -eq "address") {
+    if ([string]::IsNullOrWhiteSpace($env:ASAN_OPTIONS)) {
+      $env:ASAN_OPTIONS = "detect_leaks=0:halt_on_error=1:symbolize=1"
+    }
+    return [ordered]@{
+      PATH_PREPEND = $RuntimeDir
+      ASAN_OPTIONS = $env:ASAN_OPTIONS
+    }
+  }
+
+  if ([string]::IsNullOrWhiteSpace($env:UBSAN_OPTIONS)) {
+    $env:UBSAN_OPTIONS = "halt_on_error=1:print_stacktrace=1"
+  }
+  return [ordered]@{
+    PATH_PREPEND = $RuntimeDir
+    UBSAN_OPTIONS = $env:UBSAN_OPTIONS
+  }
 }
 
 function Resolve-Objc3cNativeExecutionSmokeConfig {
@@ -112,9 +199,21 @@ function Resolve-Objc3cNativeExecutionSmokeConfig {
   $configuredNativeExe = $env:OBJC3C_NATIVE_EXECUTABLE
   $nativeExe = if ([string]::IsNullOrWhiteSpace($configuredNativeExe)) { $defaultNativeExe } else { $configuredNativeExe }
   $nativeExeExplicit = -not [string]::IsNullOrWhiteSpace($configuredNativeExe)
+  $sanitizerVariant = Resolve-Objc3cNativeExecutionSmokeSanitizerVariant
+  $sanitizerRuntimeDir = Resolve-Objc3cNativeExecutionSmokeSanitizerRuntimeDir `
+    -RepoRoot $repoRoot `
+    -SanitizerVariant $sanitizerVariant
+  $sanitizerEnvironment = Set-Objc3cNativeExecutionSmokeSanitizerEnvironment `
+    -SanitizerVariant $sanitizerVariant `
+    -RuntimeDir $sanitizerRuntimeDir
   $configuredClangPath = $env:OBJC3C_NATIVE_EXECUTION_CLANG_PATH
   $clangCommand = Resolve-Objc3cNativeExecutionSmokeClangxx -ConfiguredClangPath $configuredClangPath
-  $linkDriverArgs = @(Get-Objc3cNativeExecutionSmokeLinkDriverArgs)
+  $linkDriverArgs = @(
+    @(Get-Objc3cNativeExecutionSmokeLinkDriverArgs -SanitizerVariant $sanitizerVariant) +
+    @(Get-Objc3cNativeExecutionSmokeSanitizerRuntimeLinkArgs `
+      -SanitizerVariant $sanitizerVariant `
+      -RuntimeDir $sanitizerRuntimeDir)
+  )
   $configuredLlcPath = $env:OBJC3C_NATIVE_EXECUTION_LLC_PATH
   $llcCommand = Resolve-Objc3cNativeExecutionSmokeLlc -ConfiguredLlcPath $configuredLlcPath
   $llcSourcePath = ""
@@ -139,6 +238,9 @@ function Resolve-Objc3cNativeExecutionSmokeConfig {
     runtime_launch_contract_script = $runtimeLaunchContractScript
     native_exe = $nativeExe
     native_exe_explicit = $nativeExeExplicit
+    sanitizer_variant = $sanitizerVariant
+    sanitizer_runtime_dir = $sanitizerRuntimeDir
+    sanitizer_environment = $sanitizerEnvironment
     clang_command = $clangCommand
     link_driver_args = $linkDriverArgs
     llc_command = $llcCommand
@@ -148,6 +250,8 @@ function Resolve-Objc3cNativeExecutionSmokeConfig {
 
 Export-ModuleMember -Function @(
   "Get-Objc3cNativeExecutionSmokeLinkDriverArgs",
+  "Get-Objc3cNativeExecutionSmokeSanitizerRuntimeLinkArgs",
+  "Resolve-Objc3cNativeExecutionSmokeSanitizerVariant",
   "Resolve-Objc3cNativeExecutionSmokeClangxx",
   "Resolve-Objc3cNativeExecutionSmokeConfig"
 )

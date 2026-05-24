@@ -62,64 +62,64 @@ diagnostic, documentation, or boundary evidence only.
 | `language.errors.try-catch-semantics` | `objc3c.behavior.errors.try-catch-semantics` | `test` | `tests/tooling/fixtures/native/rethrow_requires_throws_or_local_handler_negative.objc3` |  |
 | `language.errors.try-catch-semantics` | `objc3c.behavior.errors.try-catch-semantics` | `test` | `scripts/objc3c_runtime_acceptance/domains/errors_semantic_try_catch_case.py` |  |
 | `language.errors.try-catch-semantics` | `objc3c.behavior.errors.try-catch-semantics` | `source` | `native/objc3c/src/sema/objc3_semantic_error_handling_try_do_catch_summary.cpp` |  |
-| `language.errors.typed-throws` |  | `diagnostic` | `tests/tooling/fixtures/native/recovery/negative/negative_typed_throws_reserved.objc3` |  |
-| `language.errors.typed-throws` |  | `diagnostic` | `tests/tooling/fixtures/native/recovery/negative/negative_typed_throws_empty_payload_reserved.objc3` |  |
-| `language.errors.typed-throws` |  | `diagnostic` | `tests/tooling/fixtures/native/recovery/negative/negative_typed_throws_multi_payload_reserved.objc3` |  |
-| `language.errors.typed-throws` |  | `diagnostic` | `tests/tooling/fixtures/native/recovery/negative/negative_typed_throws_erasure_mismatch_reserved.objc3` |  |
-| `language.errors.typed-throws` |  | `diagnostic` | `tests/tooling/fixtures/native/recovery/negative/negative_typed_throws_protocol_mismatch.objc3` |  |
-| `language.errors.typed-throws` |  | `diagnostic` | `tests/tooling/fixtures/native/recovery/negative/negative_typed_throws_incompatible_catch.objc3` |  |
-| `language.errors.typed-throws` |  | `diagnostic` | `tests/tooling/fixtures/native/recovery/negative/negative_typed_throws_foreign_carrier_catch.objc3` |  |
-| `language.errors.typed-throws` |  | `diagnostic` | `tests/tooling/fixtures/native/recovery/negative/negative_typed_throws_method_incompatible_catch.objc3` |  |
-| `language.errors.typed-throws` |  | `diagnostic` | `tests/tooling/fixtures/native/recovery/negative/negative_typed_throws_method_foreign_carrier_catch.objc3` |  |
-| `language.errors.typed-throws` |  | `diagnostic` | `tests/tooling/fixtures/native/recovery/negative/negative_typed_throws_async_propagation_unsupported.objc3` |  |
-| `language.errors.typed-throws` |  | `test` | `tests/tooling/fixtures/native/execution/positive/typed_throws_runtime_catch_bridge_positive.objc3` | `npm run objc3c -- test-execution-smoke` |
-| `language.errors.typed-throws` |  | `test` | `tests/tooling/fixtures/native/execution/positive/typed_throws_runtime_message_send_catch_positive.objc3` | `npm run objc3c -- test-execution-smoke` |
-| `language.errors.typed-throws` |  | `test` | `tests/tooling/fixtures/native/execution/positive/typed_throws_runtime_try_optional_positive.objc3` | `npm run objc3c -- test-execution-smoke` |
-| `language.errors.typed-throws` |  | `schema` | `schemas/objc3c-typed-throws-effect-contract-v1.schema.json` |  |
-| `language.errors.typed-throws` |  | `source` | `native/objc3c/src/sema/objc3_typed_throws_effect_contract.h` |  |
-| `language.errors.typed-throws` |  | `source` | `native/objc3c/src/sema/objc3_semantic_error_handling_try_do_catch_do_scope.inc` |  |
-| `language.errors.typed-throws` |  | `source` | `native/objc3c/src/sema/objc3_semantic_error_handling_try_do_catch_operand_surface.inc` |  |
-| `language.errors.typed-throws` |  | `source` | `native/objc3c/src/sema/objc3_semantic_signature_compatibility.cpp` |  |
-| `language.errors.typed-throws` |  | `source` | `native/objc3c/src/ir/objc3_ir_function_signature_model.cpp` |  |
-| `language.errors.typed-throws` |  | `source` | `native/objc3c/src/ir/objc3_ir_direct_call_emission.cpp` |  |
-| `language.errors.typed-throws` |  | `source` | `native/objc3c/src/ir/objc3_ir_expression_emission_call.cpp` |  |
-| `language.errors.typed-throws` |  | `source` | `native/objc3c/src/ir/objc3_ir_runtime_dispatch_calls.cpp` |  |
-| `language.errors.typed-throws` |  | `source` | `native/objc3c/src/ir/objc3_ir_runtime_dispatch_declarations.cpp` |  |
-| `language.errors.typed-throws` |  | `source` | `native/objc3c/src/ir/objc3_ir_statement_block_emission.cpp` |  |
-| `language.errors.typed-throws` |  | `source` | `native/objc3c/src/ir/objc3_ir_function_definition_emission.cpp` |  |
-| `language.errors.typed-throws` |  | `source` | `native/objc3c/src/runtime/errors/catch_filter.cpp` |  |
-| `language.errors.typed-throws` |  | `source` | `native/objc3c/src/runtime/errors/error_bridge_kind.cpp` |  |
-| `language.errors.typed-throws` |  | `source` | `native/objc3c/src/runtime/public/objc3_runtime_result_entrypoint_contract.h` |  |
-| `language.errors.typed-throws` |  | `source` | `native/objc3c/src/runtime/public/objc3_runtime_diagnostic_contract.h` |  |
-| `language.errors.typed-throws` |  | `source` | `native/objc3c/src/runtime/dispatch/dispatch_api.cpp` |  |
-| `language.errors.typed-throws` |  | `source` | `native/objc3c/src/runtime/dispatch/strict_dispatch_execution.cpp` |  |
-| `language.errors.typed-throws` |  | `source` | `tests/tooling/fixtures/native/typed_throws_semantic_effect_identity.contract.json` |  |
-| `language.errors.typed-throws` |  | `source` | `tests/tooling/fixtures/native/typed_throws_catch_bridge_positive.objc3` |  |
-| `language.errors.typed-throws` |  | `source` | `tests/tooling/fixtures/native/language_evolution_typed_throws_value_optionals_contract.json` |  |
-| `language.errors.typed-throws` |  | `source` | `native/objc3c/src/artifacts/objc3_frontend_textual_interface_payload_artifact.cpp` |  |
-| `language.errors.typed-throws` |  | `source` | `native/objc3c/src/artifacts/objc3_frontend_textual_interface_payload_import.cpp` |  |
-| `language.types.value-optionals` |  | `diagnostic` | `tests/tooling/fixtures/native/recovery/negative/negative_value_optional_canonical_reserved.objc3` |  |
-| `language.types.value-optionals` |  | `diagnostic` | `tests/tooling/fixtures/native/recovery/negative/negative_value_optional_nullable_pointer_conversion_reserved.objc3` |  |
-| `language.types.value-optionals` |  | `diagnostic` | `tests/tooling/fixtures/native/recovery/negative/negative_value_optional_nil_scalar_coercion_reserved.objc3` |  |
-| `language.types.value-optionals` |  | `diagnostic` | `tests/tooling/fixtures/native/recovery/negative/negative_value_optional_nested_lowercase_alias_reserved.objc3` |  |
-| `language.types.value-optionals` |  | `diagnostic` | `tests/tooling/fixtures/native/recovery/negative/negative_value_optional_property_layout_unsupported.objc3` |  |
-| `language.types.value-optionals` |  | `source` | `native/objc3c/src/ir/objc3_ir_value_optional_carrier_model.h` |  |
-| `language.types.value-optionals` |  | `diagnostic` | `tests/tooling/fixtures/native/recovery/negative/negative_value_optional_nullable_suffix_mismatch.objc3` |  |
-| `language.types.value-optionals` |  | `diagnostic` | `tests/tooling/fixtures/native/value_optionals_layout_mismatch_negative.contract.json` |  |
-| `language.types.value-optionals` |  | `diagnostic` | `tests/tooling/fixtures/native/value_optionals_lowering_claim_negative.contract.json` |  |
-| `language.types.value-optionals` |  | `diagnostic` | `tests/tooling/fixtures/native/value_optionals_interface_mismatch_negative.contract.json` |  |
-| `language.types.value-optionals` |  | `test` | `tests/tooling/fixtures/native/execution/positive/value_optionals_runtime_abi_positive.objc3` | `npm run objc3c -- test-execution-smoke` |
-| `language.types.value-optionals` |  | `source` | `tests/tooling/fixtures/native/language_evolution_typed_throws_value_optionals_contract.json` |  |
-| `language.types.value-optionals` |  | `source` | `tests/tooling/fixtures/native/value_optionals_contract_positive.json` |  |
-| `language.types.value-optionals` |  | `diagnostic` | `tests/tooling/fixtures/native/value_optionals_executable_semantics_negative.contract.json` |  |
-| `language.types.value-optionals` |  | `schema` | `schemas/objc3c-value-optionals-contract-v1.schema.json` |  |
-| `language.types.value-optionals` |  | `source` | `native/objc3c/src/ast/objc3_ast_value_optional_type.h` |  |
-| `language.types.value-optionals` |  | `source` | `native/objc3c/src/ir/objc3_ir_expression_emission_call.cpp` |  |
-| `language.types.value-optionals` |  | `source` | `native/objc3c/src/lower/contracts/value_optional_lowering_contracts.h` |  |
-| `language.types.value-optionals` |  | `source` | `native/objc3c/src/runtime/public/objc3_runtime_value_optional_contract.h` |  |
-| `language.types.value-optionals` |  | `source` | `native/objc3c/src/runtime/values/value_optional.cpp` |  |
-| `language.types.value-optionals` |  | `source` | `native/objc3c/src/artifacts/objc3_frontend_textual_interface_payload_artifact.cpp` |  |
-| `language.types.value-optionals` |  | `source` | `native/objc3c/src/artifacts/objc3_frontend_textual_interface_payload_import.cpp` |  |
+| `language.errors.typed-throws` | `objc3c.behavior.language.errors.typed-throws` | `diagnostic` | `tests/tooling/fixtures/native/recovery/negative/negative_typed_throws_reserved.objc3` |  |
+| `language.errors.typed-throws` | `objc3c.behavior.language.errors.typed-throws` | `diagnostic` | `tests/tooling/fixtures/native/recovery/negative/negative_typed_throws_empty_payload_reserved.objc3` |  |
+| `language.errors.typed-throws` | `objc3c.behavior.language.errors.typed-throws` | `diagnostic` | `tests/tooling/fixtures/native/recovery/negative/negative_typed_throws_multi_payload_reserved.objc3` |  |
+| `language.errors.typed-throws` | `objc3c.behavior.language.errors.typed-throws` | `diagnostic` | `tests/tooling/fixtures/native/recovery/negative/negative_typed_throws_erasure_mismatch_reserved.objc3` |  |
+| `language.errors.typed-throws` | `objc3c.behavior.language.errors.typed-throws` | `diagnostic` | `tests/tooling/fixtures/native/recovery/negative/negative_typed_throws_protocol_mismatch.objc3` |  |
+| `language.errors.typed-throws` | `objc3c.behavior.language.errors.typed-throws` | `diagnostic` | `tests/tooling/fixtures/native/recovery/negative/negative_typed_throws_incompatible_catch.objc3` |  |
+| `language.errors.typed-throws` | `objc3c.behavior.language.errors.typed-throws` | `diagnostic` | `tests/tooling/fixtures/native/recovery/negative/negative_typed_throws_foreign_carrier_catch.objc3` |  |
+| `language.errors.typed-throws` | `objc3c.behavior.language.errors.typed-throws` | `diagnostic` | `tests/tooling/fixtures/native/recovery/negative/negative_typed_throws_method_incompatible_catch.objc3` |  |
+| `language.errors.typed-throws` | `objc3c.behavior.language.errors.typed-throws` | `diagnostic` | `tests/tooling/fixtures/native/recovery/negative/negative_typed_throws_method_foreign_carrier_catch.objc3` |  |
+| `language.errors.typed-throws` | `objc3c.behavior.language.errors.typed-throws` | `diagnostic` | `tests/tooling/fixtures/native/recovery/negative/negative_typed_throws_async_propagation_unsupported.objc3` |  |
+| `language.errors.typed-throws` | `objc3c.behavior.language.errors.typed-throws` | `test` | `tests/tooling/fixtures/native/execution/positive/typed_throws_runtime_catch_bridge_positive.objc3` | `npm run objc3c -- test-execution-smoke` |
+| `language.errors.typed-throws` | `objc3c.behavior.language.errors.typed-throws` | `test` | `tests/tooling/fixtures/native/execution/positive/typed_throws_runtime_message_send_catch_positive.objc3` | `npm run objc3c -- test-execution-smoke` |
+| `language.errors.typed-throws` | `objc3c.behavior.language.errors.typed-throws` | `test` | `tests/tooling/fixtures/native/execution/positive/typed_throws_runtime_try_optional_positive.objc3` | `npm run objc3c -- test-execution-smoke` |
+| `language.errors.typed-throws` | `objc3c.behavior.language.errors.typed-throws` | `schema` | `schemas/objc3c-typed-throws-effect-contract-v1.schema.json` |  |
+| `language.errors.typed-throws` | `objc3c.behavior.language.errors.typed-throws` | `source` | `native/objc3c/src/sema/objc3_typed_throws_effect_contract.h` |  |
+| `language.errors.typed-throws` | `objc3c.behavior.language.errors.typed-throws` | `source` | `native/objc3c/src/sema/objc3_semantic_error_handling_try_do_catch_do_scope.inc` |  |
+| `language.errors.typed-throws` | `objc3c.behavior.language.errors.typed-throws` | `source` | `native/objc3c/src/sema/objc3_semantic_error_handling_try_do_catch_operand_surface.inc` |  |
+| `language.errors.typed-throws` | `objc3c.behavior.language.errors.typed-throws` | `source` | `native/objc3c/src/sema/objc3_semantic_signature_compatibility.cpp` |  |
+| `language.errors.typed-throws` | `objc3c.behavior.language.errors.typed-throws` | `source` | `native/objc3c/src/ir/objc3_ir_function_signature_model.cpp` |  |
+| `language.errors.typed-throws` | `objc3c.behavior.language.errors.typed-throws` | `source` | `native/objc3c/src/ir/objc3_ir_direct_call_emission.cpp` |  |
+| `language.errors.typed-throws` | `objc3c.behavior.language.errors.typed-throws` | `source` | `native/objc3c/src/ir/objc3_ir_expression_emission_call.cpp` |  |
+| `language.errors.typed-throws` | `objc3c.behavior.language.errors.typed-throws` | `source` | `native/objc3c/src/ir/objc3_ir_runtime_dispatch_calls.cpp` |  |
+| `language.errors.typed-throws` | `objc3c.behavior.language.errors.typed-throws` | `source` | `native/objc3c/src/ir/objc3_ir_runtime_dispatch_declarations.cpp` |  |
+| `language.errors.typed-throws` | `objc3c.behavior.language.errors.typed-throws` | `source` | `native/objc3c/src/ir/objc3_ir_statement_block_emission.cpp` |  |
+| `language.errors.typed-throws` | `objc3c.behavior.language.errors.typed-throws` | `source` | `native/objc3c/src/ir/objc3_ir_function_definition_emission.cpp` |  |
+| `language.errors.typed-throws` | `objc3c.behavior.language.errors.typed-throws` | `source` | `native/objc3c/src/runtime/errors/catch_filter.cpp` |  |
+| `language.errors.typed-throws` | `objc3c.behavior.language.errors.typed-throws` | `source` | `native/objc3c/src/runtime/errors/error_bridge_kind.cpp` |  |
+| `language.errors.typed-throws` | `objc3c.behavior.language.errors.typed-throws` | `source` | `native/objc3c/src/runtime/public/objc3_runtime_result_entrypoint_contract.h` |  |
+| `language.errors.typed-throws` | `objc3c.behavior.language.errors.typed-throws` | `source` | `native/objc3c/src/runtime/public/objc3_runtime_diagnostic_contract.h` |  |
+| `language.errors.typed-throws` | `objc3c.behavior.language.errors.typed-throws` | `source` | `native/objc3c/src/runtime/dispatch/dispatch_api.cpp` |  |
+| `language.errors.typed-throws` | `objc3c.behavior.language.errors.typed-throws` | `source` | `native/objc3c/src/runtime/dispatch/strict_dispatch_execution.cpp` |  |
+| `language.errors.typed-throws` | `objc3c.behavior.language.errors.typed-throws` | `source` | `tests/tooling/fixtures/native/typed_throws_semantic_effect_identity.contract.json` |  |
+| `language.errors.typed-throws` | `objc3c.behavior.language.errors.typed-throws` | `source` | `tests/tooling/fixtures/native/typed_throws_catch_bridge_positive.objc3` |  |
+| `language.errors.typed-throws` | `objc3c.behavior.language.errors.typed-throws` | `source` | `tests/tooling/fixtures/native/language_evolution_typed_throws_value_optionals_contract.json` |  |
+| `language.errors.typed-throws` | `objc3c.behavior.language.errors.typed-throws` | `source` | `native/objc3c/src/artifacts/objc3_frontend_textual_interface_payload_artifact.cpp` |  |
+| `language.errors.typed-throws` | `objc3c.behavior.language.errors.typed-throws` | `source` | `native/objc3c/src/artifacts/objc3_frontend_textual_interface_payload_import.cpp` |  |
+| `language.types.value-optionals` | `objc3c.behavior.language.types.value-optionals` | `diagnostic` | `tests/tooling/fixtures/native/recovery/negative/negative_value_optional_canonical_reserved.objc3` |  |
+| `language.types.value-optionals` | `objc3c.behavior.language.types.value-optionals` | `diagnostic` | `tests/tooling/fixtures/native/recovery/negative/negative_value_optional_nullable_pointer_conversion_reserved.objc3` |  |
+| `language.types.value-optionals` | `objc3c.behavior.language.types.value-optionals` | `diagnostic` | `tests/tooling/fixtures/native/recovery/negative/negative_value_optional_nil_scalar_coercion_reserved.objc3` |  |
+| `language.types.value-optionals` | `objc3c.behavior.language.types.value-optionals` | `diagnostic` | `tests/tooling/fixtures/native/recovery/negative/negative_value_optional_nested_lowercase_alias_reserved.objc3` |  |
+| `language.types.value-optionals` | `objc3c.behavior.language.types.value-optionals` | `diagnostic` | `tests/tooling/fixtures/native/recovery/negative/negative_value_optional_property_layout_unsupported.objc3` |  |
+| `language.types.value-optionals` | `objc3c.behavior.language.types.value-optionals` | `source` | `native/objc3c/src/ir/objc3_ir_value_optional_carrier_model.h` |  |
+| `language.types.value-optionals` | `objc3c.behavior.language.types.value-optionals` | `diagnostic` | `tests/tooling/fixtures/native/recovery/negative/negative_value_optional_nullable_suffix_mismatch.objc3` |  |
+| `language.types.value-optionals` | `objc3c.behavior.language.types.value-optionals` | `diagnostic` | `tests/tooling/fixtures/native/value_optionals_layout_mismatch_negative.contract.json` |  |
+| `language.types.value-optionals` | `objc3c.behavior.language.types.value-optionals` | `diagnostic` | `tests/tooling/fixtures/native/value_optionals_lowering_claim_negative.contract.json` |  |
+| `language.types.value-optionals` | `objc3c.behavior.language.types.value-optionals` | `diagnostic` | `tests/tooling/fixtures/native/value_optionals_interface_mismatch_negative.contract.json` |  |
+| `language.types.value-optionals` | `objc3c.behavior.language.types.value-optionals` | `test` | `tests/tooling/fixtures/native/execution/positive/value_optionals_runtime_abi_positive.objc3` | `npm run objc3c -- test-execution-smoke` |
+| `language.types.value-optionals` | `objc3c.behavior.language.types.value-optionals` | `source` | `tests/tooling/fixtures/native/language_evolution_typed_throws_value_optionals_contract.json` |  |
+| `language.types.value-optionals` | `objc3c.behavior.language.types.value-optionals` | `source` | `tests/tooling/fixtures/native/value_optionals_contract_positive.json` |  |
+| `language.types.value-optionals` | `objc3c.behavior.language.types.value-optionals` | `diagnostic` | `tests/tooling/fixtures/native/value_optionals_executable_semantics_negative.contract.json` |  |
+| `language.types.value-optionals` | `objc3c.behavior.language.types.value-optionals` | `schema` | `schemas/objc3c-value-optionals-contract-v1.schema.json` |  |
+| `language.types.value-optionals` | `objc3c.behavior.language.types.value-optionals` | `source` | `native/objc3c/src/ast/objc3_ast_value_optional_type.h` |  |
+| `language.types.value-optionals` | `objc3c.behavior.language.types.value-optionals` | `source` | `native/objc3c/src/ir/objc3_ir_expression_emission_call.cpp` |  |
+| `language.types.value-optionals` | `objc3c.behavior.language.types.value-optionals` | `source` | `native/objc3c/src/lower/contracts/value_optional_lowering_contracts.h` |  |
+| `language.types.value-optionals` | `objc3c.behavior.language.types.value-optionals` | `source` | `native/objc3c/src/runtime/public/objc3_runtime_value_optional_contract.h` |  |
+| `language.types.value-optionals` | `objc3c.behavior.language.types.value-optionals` | `source` | `native/objc3c/src/runtime/values/value_optional.cpp` |  |
+| `language.types.value-optionals` | `objc3c.behavior.language.types.value-optionals` | `source` | `native/objc3c/src/artifacts/objc3_frontend_textual_interface_payload_artifact.cpp` |  |
+| `language.types.value-optionals` | `objc3c.behavior.language.types.value-optionals` | `source` | `native/objc3c/src/artifacts/objc3_frontend_textual_interface_payload_import.cpp` |  |
 | `language.control-flow.statement-guarded-match` | `objc3c.behavior.language.control-flow.statement-guarded-match` | `test` | `tests/tooling/fixtures/native/recovery/positive/match_guarded_pattern_statement.objc3` | `npm run objc3c -- validate-conformance-corpus` |
 | `language.control-flow.statement-guarded-match` | `objc3c.behavior.language.control-flow.statement-guarded-match` | `test` | `tests/tooling/fixtures/native/recovery/negative/negative_guarded_match_pattern_non_bool.objc3` |  |
 | `language.control-flow.statement-guarded-match` | `objc3c.behavior.language.control-flow.statement-guarded-match` | `diagnostic` | `tests/tooling/fixtures/native/recovery/negative/negative_match_statement_fat_arrow_ambiguous.objc3` |  |
@@ -152,14 +152,35 @@ diagnostic, documentation, or boundary evidence only.
 | `language.profiles.strict-admission` | `objc3c.behavior.language.profiles.strict-admission` | `source` | `native/objc3c/src/sema/objc3_semantic_passes_body_validation_entrypoints.inc` |  |
 | `language.profiles.strict-admission` | `objc3c.behavior.language.profiles.strict-admission` | `source` | `native/objc3c/src/io/objc3_conformance_profile_selection.cpp` |  |
 | `language.profiles.strict-admission` | `objc3c.behavior.language.profiles.strict-admission` | `source` | `native/objc3c/src/artifacts/objc3_frontend_artifact_runtime_release_claim_manifest.cpp` |  |
-| `language.evolution.umbrella-alignment` |  | `doc` | `docs/support/umbrella_readiness.json` |  |
-| `language.evolution.umbrella-alignment` |  | `doc` | `docs/support/hard_cutover_capability_truth.md` |  |
-| `language.evolution.umbrella-alignment` |  | `source` | `tests/tooling/fixtures/native/language_evolution_umbrella_contract.json` |  |
-| `language.evolution.umbrella-alignment` |  | `source` | `tests/tooling/fixtures/native/language_evolution_typed_throws_value_optionals_contract.json` |  |
-| `language.evolution.umbrella-alignment` |  | `source` | `tests/tooling/fixtures/native/match_guarded_pattern_language_evolution_contract.json` |  |
-| `language.evolution.umbrella-alignment` |  | `source` | `tests/tooling/fixtures/native/generic_callable_reification_contract.json` |  |
-| `language.evolution.umbrella-alignment` |  | `source` | `tests/tooling/fixtures/language_profiles/strict_profile_feature_matrix.json` |  |
-| `language.evolution.umbrella-alignment` |  | `source` | `tests/fixtures/canonical/manifest.json` |  |
+| `language.evolution.umbrella-alignment` | `objc3c.behavior.language.evolution.umbrella-alignment` | `doc` | `docs/support/umbrella_readiness.json` |  |
+| `language.evolution.umbrella-alignment` | `objc3c.behavior.language.evolution.umbrella-alignment` | `doc` | `docs/support/hard_cutover_capability_truth.md` |  |
+| `language.evolution.umbrella-alignment` | `objc3c.behavior.language.evolution.umbrella-alignment` | `test` | `tests/tooling/fixtures/native/language_evolution_umbrella_contract.json` | `npm run objc3c -- validate-conformance-corpus` |
+| `language.evolution.umbrella-alignment` | `objc3c.behavior.language.evolution.umbrella-alignment` | `source` | `tests/tooling/fixtures/native/language_evolution_typed_throws_value_optionals_contract.json` |  |
+| `language.evolution.umbrella-alignment` | `objc3c.behavior.language.evolution.umbrella-alignment` | `source` | `tests/tooling/fixtures/native/match_guarded_pattern_language_evolution_contract.json` |  |
+| `language.evolution.umbrella-alignment` | `objc3c.behavior.language.evolution.umbrella-alignment` | `source` | `tests/tooling/fixtures/native/generic_callable_reification_contract.json` |  |
+| `language.evolution.umbrella-alignment` | `objc3c.behavior.language.evolution.umbrella-alignment` | `source` | `tests/tooling/fixtures/language_profiles/strict_profile_feature_matrix.json` |  |
+| `language.evolution.umbrella-alignment` | `objc3c.behavior.language.evolution.umbrella-alignment` | `source` | `tests/fixtures/canonical/manifest.json` |  |
+| `language.evolution.umbrella-alignment` | `objc3c.behavior.language.evolution.umbrella-alignment` | `test` | `tests/tooling/fixtures/native/execution/positive/typed_throws_runtime_catch_bridge_positive.objc3` | `npm run objc3c -- test-execution-smoke` |
+| `language.evolution.umbrella-alignment` | `objc3c.behavior.language.evolution.umbrella-alignment` | `test` | `tests/tooling/fixtures/native/execution/positive/value_optionals_runtime_abi_positive.objc3` | `npm run objc3c -- test-execution-smoke` |
+| `language.types.value-optionals.expansion` |  | `doc` | `docs/support/umbrella_readiness.json` |  |
+| `language.types.value-optionals.expansion` |  | `doc` | `spec/PART_3_TYPES_NULLABILITY_OPTIONALS_GENERICS_KEYPATHS.md` |  |
+| `language.types.value-optionals.expansion` |  | `source` | `tests/tooling/fixtures/native/language_evolution_typed_throws_value_optionals_contract.json` |  |
+| `language.types.value-optionals.expansion` |  | `diagnostic` | `tests/tooling/fixtures/native/value_optionals_executable_semantics_negative.contract.json` |  |
+| `language.types.value-optionals.expansion` |  | `diagnostic` | `tests/tooling/fixtures/native/recovery/negative/negative_value_optional_nullable_pointer_conversion_reserved.objc3` |  |
+| `language.types.value-optionals.expansion` |  | `diagnostic` | `tests/tooling/fixtures/native/recovery/negative/negative_value_optional_nil_scalar_coercion_reserved.objc3` |  |
+| `language.types.value-optionals.expansion` |  | `diagnostic` | `tests/tooling/fixtures/native/recovery/negative/negative_value_optional_property_layout_unsupported.objc3` |  |
+| `language.generics.runtime-specialization-expansion` |  | `doc` | `docs/support/umbrella_readiness.json` |  |
+| `language.generics.runtime-specialization-expansion` |  | `doc` | `spec/PART_3_TYPES_NULLABILITY_OPTIONALS_GENERICS_KEYPATHS.md` |  |
+| `language.generics.runtime-specialization-expansion` |  | `source` | `tests/tooling/fixtures/native/generic_callable_reification_contract.json` |  |
+| `language.generics.runtime-specialization-expansion` |  | `diagnostic` | `tests/tooling/fixtures/native/recovery/negative/negative_reify_generics_unsupported_scope.objc3` |  |
+| `language.generics.runtime-specialization-expansion` |  | `diagnostic` | `tests/tooling/fixtures/native/recovery/negative/negative_cstyle_generic_function_reserved.objc3` |  |
+| `language.control-flow.match-expansion` |  | `doc` | `docs/support/umbrella_readiness.json` |  |
+| `language.control-flow.match-expansion` |  | `source` | `tests/tooling/fixtures/native/match_guarded_pattern_language_evolution_contract.json` |  |
+| `language.control-flow.match-expansion` |  | `diagnostic` | `tests/tooling/fixtures/native/recovery/negative/negative_match_expression_type_test_reserved.objc3` |  |
+| `language.control-flow.match-expansion` |  | `diagnostic` | `tests/tooling/fixtures/native/recovery/negative/negative_match_statement_fat_arrow_ambiguous.objc3` |  |
+| `language.profiles.strict-system-expansion` |  | `doc` | `docs/support/umbrella_readiness.json` |  |
+| `language.profiles.strict-system-expansion` |  | `source` | `tests/tooling/fixtures/language_profiles/strict_profile_feature_matrix.json` |  |
+| `language.profiles.strict-system-expansion` |  | `diagnostic` | `tests/conformance/profile_strict_boundary/strict_system_profile_mismatch_negative.objc3` |  |
 | `compiler.lowering.error-unwind-cleanup` | `objc3c.behavior.lowering.error-unwind-cleanup` | `test` | `tests/tooling/fixtures/native/error_arc_cleanup_bridge_positive.objc3` | `npm run objc3c -- test-runtime-acceptance-fast` |
 | `compiler.lowering.error-unwind-cleanup` | `objc3c.behavior.lowering.error-unwind-cleanup` | `test` | `scripts/objc3c_runtime_acceptance/domains/errors_lowering_throw_catch_case.py` |  |
 | `compiler.lowering.error-unwind-cleanup` | `objc3c.behavior.lowering.error-unwind-cleanup` | `source` | `native/objc3c/src/ir/objc3_ir_expression_emission_call.cpp` |  |
@@ -1016,9 +1037,17 @@ diagnostic, documentation, or boundary evidence only.
 | `platform.windows-x64.tier1` | `objc3c.behavior.platform.windows-x64-tier1` | `doc` | `docs/runbooks/objc3c_platform_hardening.md` |  |
 | `platform.linux-x64.unsupported` |  | `diagnostic` | `tests/tooling/fixtures/platform_hardening/platform_toolchain_support_evidence.json` |  |
 | `platform.linux-x64.unsupported` |  | `diagnostic` | `tests/tooling/fixtures/platform_hardening/unsupported_host_fail_closed_policy.json` |  |
+| `platform.linux-x64.unsupported` |  | `source` | `tests/tooling/fixtures/platform_hardening/platform_host_promotion_evidence_contract.json` |  |
+| `platform.linux-x64.unsupported` |  | `source` | `scripts/platform_hardening_contracts/host_promotion.py` |  |
+| `platform.linux-x64.unsupported` |  | `source` | `scripts/check_platform_host_promotion_evidence.py` |  |
+| `platform.linux-x64.unsupported` |  | `source` | `scripts/objc3c_workflow/actions/release_governance_packaging_contracts.py` |  |
 | `platform.linux-x64.unsupported` |  | `source` | `tests/tooling/fixtures/platform_support/source_truth_matrix.json` |  |
 | `platform.darwin-arm64.unsupported` |  | `diagnostic` | `tests/tooling/fixtures/platform_hardening/platform_toolchain_support_evidence.json` |  |
 | `platform.darwin-arm64.unsupported` |  | `diagnostic` | `tests/tooling/fixtures/platform_hardening/unsupported_host_fail_closed_policy.json` |  |
+| `platform.darwin-arm64.unsupported` |  | `source` | `tests/tooling/fixtures/platform_hardening/platform_host_promotion_evidence_contract.json` |  |
+| `platform.darwin-arm64.unsupported` |  | `source` | `scripts/platform_hardening_contracts/host_promotion.py` |  |
+| `platform.darwin-arm64.unsupported` |  | `source` | `scripts/check_platform_host_promotion_evidence.py` |  |
+| `platform.darwin-arm64.unsupported` |  | `source` | `scripts/objc3c_workflow/actions/release_governance_packaging_contracts.py` |  |
 | `platform.darwin-arm64.unsupported` |  | `source` | `tests/tooling/fixtures/platform_support/source_truth_matrix.json` |  |
 | `toolchain.llvm.current-probed-executable` |  | `source` | `tests/tooling/fixtures/platform_hardening/platform_toolchain_support_evidence.json` |  |
 | `toolchain.llvm.current-probed-executable` |  | `source` | `tests/tooling/fixtures/platform_hardening/hosted_runner_capability_summaries.json` |  |
@@ -1034,7 +1063,17 @@ diagnostic, documentation, or boundary evidence only.
 | `platform.expansion.umbrella-readiness` |  | `schema` | `schemas/objc3c-platform-support-source-truth-v1.schema.json` |  |
 | `platform.expansion.umbrella-readiness` |  | `source` | `scripts/check_objc3c_platform_support_matrix.py` |  |
 | `platform.expansion.umbrella-readiness` |  | `source` | `scripts/platform_hardening_contracts/support_evidence.py` |  |
+| `platform.expansion.umbrella-readiness` |  | `source` | `scripts/platform_hardening_contracts/host_promotion.py` |  |
+| `platform.expansion.umbrella-readiness` |  | `source` | `scripts/check_platform_host_promotion_evidence.py` |  |
+| `platform.expansion.umbrella-readiness` |  | `source` | `scripts/objc3c_workflow/actions/release_governance_packaging_contracts.py` |  |
+| `platform.expansion.umbrella-readiness` |  | `source` | `tests/tooling/fixtures/platform_hardening/platform_host_promotion_evidence_contract.json` |  |
 | `platform.expansion.umbrella-readiness` |  | `source` | `tests/tooling/fixtures/security_hardening/sanitizer_package_install_model_contract.json` |  |
+| `platform.expansion.umbrella-readiness` |  | `source` | `tests/tooling/fixtures/security_hardening/sanitizer_execution_evidence_contract.json` |  |
+| `platform.expansion.umbrella-readiness` |  | `schema` | `schemas/objc3c-sanitizer-execution-evidence-v1.schema.json` |  |
+| `platform.expansion.umbrella-readiness` |  | `source` | `scripts/objc3c_workflow/actions/sanitizer_runtime_evidence.py` |  |
+| `platform.expansion.umbrella-readiness` |  | `source` | `scripts/check_objc3c_sanitizer_runtime_evidence.py` |  |
+| `platform.expansion.umbrella-readiness` |  | `source` | `scripts/probe_objc3c_sanitizer_runtime_evidence.py` |  |
+| `platform.expansion.umbrella-readiness` |  | `source` | `scripts/check_security_sanitizer_execution_evidence.py` |  |
 | `platform.expansion.umbrella-readiness` |  | `diagnostic` | `tests/tooling/fixtures/platform_hardening/unsupported_host_fail_closed_policy.json` |  |
 | `platform.expansion.umbrella-readiness` |  | `doc` | `docs/runbooks/objc3c_platform_hardening.md` |  |
 | `toolchain.sanitizer.address` |  | `diagnostic` | `tests/tooling/fixtures/platform_hardening/platform_toolchain_support_evidence.json` |  |
@@ -1050,11 +1089,17 @@ diagnostic, documentation, or boundary evidence only.
 | `toolchain.sanitizer.address` |  | `source` | `scripts/check_objc3c_packaging_channels_end_to_end.py` |  |
 | `toolchain.sanitizer.address` |  | `source` | `scripts/objc3c_workflow/action_catalog_native_package_toolchain.py` |  |
 | `toolchain.sanitizer.address` |  | `source` | `scripts/objc3c_workflow/actions/release_governance_packaging_contracts.py` |  |
+| `toolchain.sanitizer.address` |  | `source` | `scripts/objc3c_workflow/actions/sanitizer_runtime_evidence.py` |  |
+| `toolchain.sanitizer.address` |  | `source` | `scripts/check_objc3c_sanitizer_runtime_evidence.py` |  |
+| `toolchain.sanitizer.address` |  | `source` | `scripts/probe_objc3c_sanitizer_runtime_evidence.py` |  |
+| `toolchain.sanitizer.address` |  | `source` | `scripts/check_security_sanitizer_execution_evidence.py` |  |
 | `toolchain.sanitizer.address` |  | `schema` | `schemas/objc3c-package-channels-manifest-v1.schema.json` |  |
 | `toolchain.sanitizer.address` |  | `schema` | `schemas/objc3c-package-install-receipt-v1.schema.json` |  |
 | `toolchain.sanitizer.address` |  | `schema` | `schemas/objc3c-sanitizer-runtime-library-manifest-v1.schema.json` |  |
+| `toolchain.sanitizer.address` |  | `schema` | `schemas/objc3c-sanitizer-execution-evidence-v1.schema.json` |  |
 | `toolchain.sanitizer.address` |  | `source` | `tests/tooling/fixtures/packaging_channels/metadata_surface.json` |  |
 | `toolchain.sanitizer.address` |  | `source` | `tests/tooling/fixtures/packaging_channels/schema_surface.json` |  |
+| `toolchain.sanitizer.address` |  | `source` | `tests/tooling/fixtures/security_hardening/sanitizer_execution_evidence_contract.json` |  |
 | `toolchain.sanitizer.address` |  | `source` | `tests/tooling/fixtures/security_hardening/artifact_reporting_contract.json` |  |
 | `toolchain.sanitizer.undefined` |  | `diagnostic` | `tests/tooling/fixtures/platform_hardening/platform_toolchain_support_evidence.json` |  |
 | `toolchain.sanitizer.undefined` |  | `source` | `tests/tooling/fixtures/security_hardening/sanitizer_validation_contract.json` |  |
@@ -1069,11 +1114,17 @@ diagnostic, documentation, or boundary evidence only.
 | `toolchain.sanitizer.undefined` |  | `source` | `scripts/check_objc3c_packaging_channels_end_to_end.py` |  |
 | `toolchain.sanitizer.undefined` |  | `source` | `scripts/objc3c_workflow/action_catalog_native_package_toolchain.py` |  |
 | `toolchain.sanitizer.undefined` |  | `source` | `scripts/objc3c_workflow/actions/release_governance_packaging_contracts.py` |  |
+| `toolchain.sanitizer.undefined` |  | `source` | `scripts/objc3c_workflow/actions/sanitizer_runtime_evidence.py` |  |
+| `toolchain.sanitizer.undefined` |  | `source` | `scripts/check_objc3c_sanitizer_runtime_evidence.py` |  |
+| `toolchain.sanitizer.undefined` |  | `source` | `scripts/probe_objc3c_sanitizer_runtime_evidence.py` |  |
+| `toolchain.sanitizer.undefined` |  | `source` | `scripts/check_security_sanitizer_execution_evidence.py` |  |
 | `toolchain.sanitizer.undefined` |  | `schema` | `schemas/objc3c-package-channels-manifest-v1.schema.json` |  |
 | `toolchain.sanitizer.undefined` |  | `schema` | `schemas/objc3c-package-install-receipt-v1.schema.json` |  |
 | `toolchain.sanitizer.undefined` |  | `schema` | `schemas/objc3c-sanitizer-runtime-library-manifest-v1.schema.json` |  |
+| `toolchain.sanitizer.undefined` |  | `schema` | `schemas/objc3c-sanitizer-execution-evidence-v1.schema.json` |  |
 | `toolchain.sanitizer.undefined` |  | `source` | `tests/tooling/fixtures/packaging_channels/metadata_surface.json` |  |
 | `toolchain.sanitizer.undefined` |  | `source` | `tests/tooling/fixtures/packaging_channels/schema_surface.json` |  |
+| `toolchain.sanitizer.undefined` |  | `source` | `tests/tooling/fixtures/security_hardening/sanitizer_execution_evidence_contract.json` |  |
 | `toolchain.sanitizer.undefined` |  | `source` | `tests/tooling/fixtures/security_hardening/artifact_reporting_contract.json` |  |
 | `applications.framework-samples.object-runtime-library` | `objc3c.behavior.application-framework-samples.object-runtime-library` | `test` | `showcase/applicationFrameworkSamples/libraries/routeModelKit/main.objc3` | `npm run objc3c -- validate-application-framework-samples` |
 | `applications.framework-samples.object-runtime-library` | `objc3c.behavior.application-framework-samples.object-runtime-library` | `test` | `tests/tooling/fixtures/application_framework_samples/contract.json` | `npm run objc3c -- validate-application-framework-samples` |

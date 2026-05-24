@@ -1,6 +1,6 @@
 {
   "schema_version": "objc3c-umbrella-readiness-v1",
-  "readiness_version": "2026-05-21-oc3-next-foundation",
+  "readiness_version": "2026-05-24-language-umbrella-closure",
   "schema_path": "schemas/objc3c-umbrella-readiness-v1.schema.json",
   "matrix_path": "docs/support/capability_matrix.json",
   "evidence_map_path": "docs/support/evidence_map.json",
@@ -529,10 +529,10 @@
     },
     {
       "umbrella_capability_id": "language.evolution.umbrella-alignment",
-      "current_state": "reserved",
+      "current_state": "implemented",
       "target_state": "implemented",
-      "readiness_state": "blocked",
-      "intended_public_meaning": "Objective-C 3.0 typed throws, value optionals, generic callable reification, statement guarded match, and strict/strict-concurrency profile selection are aligned as one source-owned language-evolution surface with parser, semantic, artifact, fixture, capability, and evidence truth agreeing on what is supported and what remains fail-closed.",
+      "readiness_state": "ready",
+      "intended_public_meaning": "Objective-C 3.0 typed throws, value optionals, generic callable reification, statement guarded match, bounded expression match, and strict/strict-concurrency profile selection are aligned as one bounded source-owned language-evolution surface. The umbrella closes only over implemented child rows and explicit follow-up rows for broad optional, generic, match, and profile expansion.",
       "forbidden_overclaims": [
         "Generalized typed error ABI, unsupported foreign exception carriers, typed async propagation, or parenthesized throws payload erasure from parser diagnostics alone.",
         "Value optional runtime behavior outside the bounded packed i32/bool/id-handle payload ABI and wide Optional<i64> direct-function/direct-dispatch ABI, including object-pointer/nullability bridge, nested/generic payload runtime lowering, property or ivar storage, unchecked unwrap, nil-to-scalar conversion, implicit nil absence, throws/result conversion, lowercase optional aliases, or broad dynamic runtime dispatch.",
@@ -549,8 +549,8 @@
         },
         {
           "capability_id": "language.types.value-optionals",
-          "required_state": "reserved",
-          "reason": "After #8234 closure, this row still records the non-promoted broad value-optional boundary: umbrella implementation requires either promotion-backed support beyond the bounded Optional<i32>/Optional<bool>/Optional<id> and wide Optional<i64> slice, or an umbrella decision that explicitly scopes out object-pointer/nested/generic/property/ivar/nullability/nil/unchecked/throws broadening paths and broad dynamic runtime dispatch."
+          "required_state": "implemented",
+          "reason": "#8234 is promoted only for the bounded Optional<T> carrier: packed Optional<i32>, Optional<bool>, Optional<id> runtime ABI, Optional<i64> wide direct call/return ABI, textual-interface roundtrip, checked construction/binding/unwrap contracts, and explicit fail-closed broadening paths."
         },
         {
           "capability_id": "language.generics.generic-callable-reification",
@@ -560,12 +560,37 @@
         {
           "capability_id": "language.control-flow.statement-guarded-match",
           "required_state": "implemented",
-          "reason": "Statement guarded match is the one source-level #8236 prerequisite currently implemented and must remain evidence-backed."
+          "reason": "Statement guarded match is the statement-level #8236 child row and must remain evidence-backed without promoting statement fat-arrow arms or type-test patterns."
+        },
+        {
+          "capability_id": "language.control-flow.match-expression",
+          "required_state": "implemented",
+          "reason": "Bounded expression-form match is implemented as a separate #8236 child row and must remain evidence-backed without promoting type-test patterns or Result payload ABI extraction."
         },
         {
           "capability_id": "language.profiles.strict-admission",
           "required_state": "implemented",
           "reason": "Strict and strict-concurrency profiles are now claimable through native profile validation, strict diagnostics, strict-concurrency enforcement, public conformance publication, and release-candidate replay evidence while strict-system remains fail-closed."
+        },
+        {
+          "capability_id": "language.types.value-optionals.expansion",
+          "required_state": "reserved",
+          "reason": "Broad value-optional behavior remains a follow-up row and is not claimed by the #8207 bounded umbrella."
+        },
+        {
+          "capability_id": "language.generics.runtime-specialization-expansion",
+          "required_state": "reserved",
+          "reason": "Runtime-specialized generics, body cloning, module-wide reification, and generic overload expansion remain follow-up work outside the #8235 bounded metadata policy."
+        },
+        {
+          "capability_id": "language.control-flow.match-expansion",
+          "required_state": "reserved",
+          "reason": "Type-test patterns, statement fat-arrow arms, aliases, and Result payload ABI extraction remain follow-up work outside #8236's bounded rows."
+        },
+        {
+          "capability_id": "language.profiles.strict-system-expansion",
+          "required_state": "reserved",
+          "reason": "Strict-system remains target-only release evidence and is not claimed by strict or strict-concurrency profile admission."
         }
       ],
       "required_source_anchors": [
@@ -601,13 +626,13 @@
         },
         {
           "id": "guarded-match-source-contract",
-          "description": "Statement-form guarded match records source support for where-guards and fail-closed expression/type-test boundaries.",
+          "description": "Statement-form guarded match records source support for where-guards while keeping statement fat-arrow arms and type-test patterns outside the claim.",
           "status": "satisfied",
           "path": "native/objc3c/src/sema/model/semantic_symbol_core_source_closures.h"
         },
         {
           "id": "guarded-match-fixture-contract",
-          "description": "The guarded match fixture contract records statement-only admission and reserves expression-position match, fat-arrow arms, and type-test patterns.",
+          "description": "The guarded match fixture contract records statement guarded match and bounded expression-match admission while reserving type-test patterns, Result payload ABI extraction, aliases, and statement fat-arrow arms.",
           "status": "satisfied",
           "path": "tests/tooling/fixtures/native/match_guarded_pattern_language_evolution_contract.json"
         },
@@ -621,9 +646,9 @@
       "required_public_commands": [
         {
           "id": "language-evolution-public-validation",
-          "description": "A public replay command for the full #8207 umbrella remains blocked until any still-reserved broad prerequisite boundaries are implemented or explicitly scoped out.",
-          "status": "blocked",
-          "blocker_id": "language-evolution-prerequisites"
+          "description": "#8207 does not introduce a separate public replay command; public replay remains owned by the implemented child rows, and the umbrella closes as source-owned capability/evidence alignment.",
+          "status": "satisfied",
+          "command": "npm run objc3c -- validate-conformance-corpus"
         }
       ],
       "required_positive_fixtures": [
@@ -729,9 +754,15 @@
         },
         {
           "id": "value-optionals-runtime",
-          "description": "After #8234 closure, value optional runtime support is still limited to the checked packed Optional<i32>, Optional<bool>, and Optional<id> handle payload ABI plus Optional<i64> language call/return ABI through the wide `{has_value,i64}` carrier, direct functions, and direct dispatch path; object-pointer/nullability conversion, nested/generic/property/ivar storage, unchecked unwrap, implicit nil, throws/result conversion, and broad dynamic runtime dispatch remain unimplemented.",
-          "status": "blocked",
-          "blocker_id": "value-optionals-abi-lowering-interface"
+          "description": "#8234 value optional runtime support is limited to the checked packed Optional<i32>, Optional<bool>, and Optional<id> handle payload ABI plus Optional<i64> language call/return ABI through the wide `{has_value,i64}` carrier, direct functions, and direct dispatch path.",
+          "status": "satisfied",
+          "path": "tests/tooling/fixtures/native/execution/positive/value_optionals_runtime_abi_positive.objc3"
+        },
+        {
+          "id": "value-optionals-expansion-runtime",
+          "description": "Object-pointer/nullability conversion, nested/generic/property/ivar storage, unchecked unwrap, implicit nil, throws/result conversion, and broad dynamic runtime dispatch remain reserved under the value-optionals expansion follow-up row.",
+          "status": "satisfied",
+          "capability_id": "language.types.value-optionals.expansion"
         },
         {
           "id": "generic-reified-runtime-metadata",
@@ -740,10 +771,28 @@
           "path": "tests/tooling/fixtures/native/generic_callable_reification_contract.json"
         },
         {
+          "id": "generic-runtime-specialization-expansion",
+          "description": "Runtime-specialized generic metadata, generic body cloning, module-wide reification, and generic overload expansion remain reserved under the generic runtime specialization follow-up row.",
+          "status": "satisfied",
+          "capability_id": "language.generics.runtime-specialization-expansion"
+        },
+        {
+          "id": "match-runtime-expansion",
+          "description": "Type-test patterns, statement fat-arrow arms, Result payload ABI extraction, aliases, and broad match lowering remain reserved under the match expansion follow-up row.",
+          "status": "satisfied",
+          "capability_id": "language.control-flow.match-expansion"
+        },
+        {
           "id": "strict-concurrency-runtime",
           "description": "Strict-concurrency actor isolation, sendability, scheduler, task lifecycle, and mailbox evidence are bound to the claimable strict-concurrency profile; strict-system remains target-only release evidence and is not a native frontend language profile.",
           "status": "satisfied",
           "path": "tests/conformance/profile_strict_boundary/strict_profile_boundary_contract.json"
+        },
+        {
+          "id": "strict-system-expansion-runtime",
+          "description": "Strict-system remains target-only release evidence and is reserved as a follow-up row outside #8207's bounded profile claim.",
+          "status": "satisfied",
+          "capability_id": "language.profiles.strict-system-expansion"
         }
       ],
       "required_abi_governance_rows": [
@@ -755,21 +804,45 @@
         },
         {
           "id": "value-optional-abi",
-          "description": "The closed #8234 slice contracts value optional ABI layout identity, interface roundtrip, explicit absent/present construction, checked unwrap/binding diagnostics, the packed Optional<i32>/Optional<bool>/Optional<id> runtime ABI, and wide Optional<i64> direct ABI; object-pointer/nullability, nested/generic/property/ivar/nil/unchecked/throws forms and broad dynamic runtime dispatch remain blocked.",
-          "status": "blocked",
-          "blocker_id": "value-optionals-abi-lowering-interface"
+          "description": "The closed #8234 slice contracts value optional ABI layout identity, interface roundtrip, explicit absent/present construction, checked unwrap/binding diagnostics, the packed Optional<i32>/Optional<bool>/Optional<id> runtime ABI, and wide Optional<i64> direct ABI.",
+          "status": "satisfied",
+          "path": "tests/tooling/fixtures/native/language_evolution_typed_throws_value_optionals_contract.json"
+        },
+        {
+          "id": "value-optional-expansion-abi",
+          "description": "Object-pointer/nullability, nested/generic/property/ivar/nil/unchecked/throws forms and broad dynamic runtime dispatch remain reserved by the value-optional expansion follow-up row.",
+          "status": "satisfied",
+          "capability_id": "language.types.value-optionals.expansion"
         },
         {
           "id": "generic-callable-mangling-policy",
           "description": "Generic callable signature metadata records erased-default and explicit-reified semantic mangling policies without claiming runtime-specialized metadata.",
           "status": "satisfied",
           "path": "tests/tooling/fixtures/native/generic_callable_reification_contract.json"
+        },
+        {
+          "id": "generic-specialization-expansion-abi",
+          "description": "Runtime-specialized generic metadata and body cloning remain reserved by the generic runtime specialization follow-up row.",
+          "status": "satisfied",
+          "capability_id": "language.generics.runtime-specialization-expansion"
+        },
+        {
+          "id": "match-expansion-abi",
+          "description": "Type-test patterns, Result payload ABI extraction, statement fat-arrow arms, and broad match lowering remain reserved by the match expansion follow-up row.",
+          "status": "satisfied",
+          "capability_id": "language.control-flow.match-expansion"
+        },
+        {
+          "id": "strict-system-expansion-abi",
+          "description": "Strict-system remains target-only release evidence and is reserved by the strict-system profile follow-up row.",
+          "status": "satisfied",
+          "capability_id": "language.profiles.strict-system-expansion"
         }
       ],
       "required_docs": [
         {
           "id": "capability-matrix",
-          "description": "Capability rows name #8233 through #8237 and #8207 without unsupported claims.",
+          "description": "Capability rows name #8233 through #8237, #8207, and reserved follow-up expansion rows without unsupported claims.",
           "status": "satisfied",
           "path": "docs/support/capability_matrix.json"
         },
@@ -816,35 +889,15 @@
         ],
         "rule": "Generated outputs may summarize checked source, fixtures, and support rows, but cannot satisfy #8207 language-evolution umbrella readiness by themselves."
       },
-      "promotion_blockers": [
-        {
-          "blocker_id": "value-optionals-abi-lowering-interface",
-          "summary": "After #8234 closure, value optionals have semantic type admission for the checked Optional<i32>, Optional<bool>, and Optional<id> runtime ABI, stable packed presence/payload layout identity, textual-interface roundtrip, explicit absent/present construction contracts, checked unwrap/binding diagnostics, native execution smoke evidence for packed i32, bool, and id-handle payload carriers, and Optional<i64> language call/return ABI through the wide `{has_value,i64}` carrier, direct functions, and direct dispatch path; object-pointer/nullability bridges, nested/generic/property/ivar storage, nil-to-scalar, implicit nil, unchecked unwrap, throws/result conversion, and broad dynamic runtime dispatch remain non-promoted broadening paths for #8207 to scope or split before umbrella promotion.",
-          "missing_work": [
-            "Do not reopen #8234 by prose; either scope these broadening paths out of #8207 or create explicit follow-up rows/issues before promotion.",
-            "Keep nullability bridge, nil-to-scalar, implicit nil, unchecked unwrap, and throws/result conversions fail-closed unless separate evidence lands.",
-            "Promote the capability row only after any claimed value-optional support, fail-closed broadening paths, fixtures, and docs agree."
-          ],
-          "tracking_issue": "#8207"
-        },
-        {
-          "blocker_id": "language-evolution-prerequisites",
-          "summary": "The #8207 umbrella is no longer blocked by #8233; it remains blocked by its own decision about whether the closed #8234 bounded value-optional boundary is promoted, explicitly scoped out, or split into follow-up work. #8235 generic callable metadata policy, #8236 guarded match plus bounded expression match, and #8237 strict profile admission are implemented.",
-          "missing_work": [
-            "Keep the implemented #8233 row aligned with native source contracts and public evidence.",
-            "Treat #8234 as closed bounded value-optional evidence; any extra value-optional broadening must be scoped out or tracked separately before #8207 promotion.",
-            "Keep umbrella readiness blocked until no prerequisite row relies on reserved diagnostics or metadata placeholders."
-          ],
-          "tracking_issue": "#8207"
-        }
-      ],
-      "final_promotion_criteria": [
-        "The language.evolution.umbrella-alignment matrix row changes to implemented.",
-        "Typed throws, value optionals, generic callable reification, guarded match, bounded expression match, and strict profile admission rows are all implemented or explicitly scoped out by a future umbrella decision.",
-        "All source, fixture, capability, evidence, README, parser, sema, and spec docs agree on the same support boundary.",
-        "No prerequisite relies on temp/generated evidence, compatibility aliases, preview labels, or silent erasure.",
-        "Strict and strict-concurrency profiles remain claimable through public release/runtime evidence rather than source-only assertions, while strict-system remains target-only until separate system evidence exists."
-      ]
+  "promotion_blockers": [],
+  "final_promotion_criteria": [
+    "The language.evolution.umbrella-alignment matrix row is implemented as a bounded umbrella truth row.",
+    "Typed throws, bounded value optionals, generic callable reification, guarded match, bounded expression match, and strict profile admission rows are implemented.",
+    "Broad optional, generic runtime-specialization, match, and strict-system profile expansion rows remain reserved follow-ups with no support claims.",
+    "All source, fixture, capability, evidence, README, parser, sema, and spec docs agree on the same support boundary.",
+    "No prerequisite relies on temp/generated evidence, compatibility aliases, preview labels, or silent erasure.",
+    "Strict and strict-concurrency profiles remain claimable through public release/runtime evidence rather than source-only assertions, while strict-system remains target-only until separate system evidence exists."
+  ]
     },
     {
       "umbrella_capability_id": "platform.expansion.umbrella-readiness",
@@ -869,12 +922,12 @@
         {
           "capability_id": "platform.linux-x64.unsupported",
           "required_state": "rejected",
-          "reason": "Linux x64 remains fail-closed until build, package, install, and native execution evidence exists."
+          "reason": "Linux x64 remains fail-closed until build, package, install, and native execution evidence exists, and the host-promotion contract refuses generated-only hosted evidence as support truth."
         },
         {
           "capability_id": "platform.darwin-arm64.unsupported",
           "required_state": "rejected",
-          "reason": "macOS arm64 remains fail-closed until package install, Mach-O/load-path, and native execution evidence exists."
+          "reason": "macOS arm64 remains fail-closed until package install, Mach-O/load-path, and native execution evidence exists, and the host-promotion contract refuses generated-only hosted evidence as support truth."
         },
         {
           "capability_id": "toolchain.llvm.current-probed-executable",
@@ -884,12 +937,12 @@
         {
           "capability_id": "toolchain.sanitizer.address",
           "required_state": "reserved",
-          "reason": "ASan remains reserved until sanitizer package, install, expected detection records, release-runtime isolation, unsupported-host diagnostics, and native execution evidence exist."
+          "reason": "ASan remains reserved until sanitizer package, install, expected detection records, release-runtime isolation, unsupported-host diagnostics, and native execution evidence are checked into support truth; current runtime evidence actions are non-promoting review inputs."
         },
         {
           "capability_id": "toolchain.sanitizer.undefined",
           "required_state": "reserved",
-          "reason": "UBSan remains reserved until sanitizer package, install, trap-or-recover metadata, expected detection records, release-runtime isolation, unsupported-host diagnostics, and native execution evidence exist."
+          "reason": "UBSan remains reserved until sanitizer package, install, trap-or-recover metadata, expected detection records, release-runtime isolation, unsupported-host diagnostics, and native execution evidence are checked into support truth; current runtime evidence actions are non-promoting review inputs."
         }
       ],
       "required_source_anchors": [
@@ -916,6 +969,18 @@
           "description": "Unsupported host policy includes native-object-emission-unavailable as a fail-closed hard-fail class.",
           "status": "satisfied",
           "path": "tests/tooling/fixtures/platform_hardening/unsupported_host_fail_closed_policy.json"
+        },
+        {
+          "id": "host-promotion-evidence-contract",
+          "description": "The Linux/macOS host-promotion contract requires build/package/install/execution gates, records generated hosted evidence as required but support_truth=false, and allows future support only after reviewed source-truth rows clear all blockers.",
+          "status": "satisfied",
+          "path": "tests/tooling/fixtures/platform_hardening/platform_host_promotion_evidence_contract.json"
+        },
+        {
+          "id": "host-promotion-evidence-checker",
+          "description": "The host-promotion checker owns the deterministic fail-closed model for generated-only evidence, package/install/native-execution gaps, wrong object/debug identity, runtime load failure, and sanitizer leakage across Linux and macOS rows.",
+          "status": "satisfied",
+          "path": "scripts/check_platform_host_promotion_evidence.py"
         },
         {
           "id": "native-object-emission-reports",
@@ -976,6 +1041,30 @@
           "description": "Checked fixtures bind sanitizer package/install metadata, package-channel metadata/schema surfaces, artifact-report boundaries, and reserved validation contracts without claiming native sanitizer execution.",
           "status": "satisfied",
           "path": "tests/tooling/fixtures/security_hardening/sanitizer_package_install_model_contract.json"
+        },
+        {
+          "id": "sanitizer-runtime-evidence-actions",
+          "description": "The ASan and UBSan runtime evidence action contracts expose exact public commands, forbid aliases and variant/platform fallback routing, and require generated runtime evidence to remain review-only with support_truth=false.",
+          "status": "satisfied",
+          "path": "scripts/objc3c_workflow/actions/sanitizer_runtime_evidence.py"
+        },
+        {
+          "id": "sanitizer-runtime-evidence-checker",
+          "description": "The sanitizer runtime evidence checker and probe require package summaries, runtime manifests, install receipts, target platform ids, and probe outputs to keep support_truth=false, native_execution_claimed=false, and support_promotion_allowed=false.",
+          "status": "satisfied",
+          "path": "scripts/check_objc3c_sanitizer_runtime_evidence.py"
+        },
+        {
+          "id": "sanitizer-execution-evidence-contract",
+          "description": "The security sanitizer execution evidence fixture and schema record ASan/UBSan expected-detection command shapes, runtime-library artifacts, generated-only rejection, and fail-closed negative cases without promoting support.",
+          "status": "satisfied",
+          "path": "tests/tooling/fixtures/security_hardening/sanitizer_execution_evidence_contract.json"
+        },
+        {
+          "id": "sanitizer-execution-evidence-schema",
+          "description": "The sanitizer execution evidence schema constrains the non-promoting execution evidence payload so support_truth, native_execution_claimed, and support_promotion_allowed remain false.",
+          "status": "satisfied",
+          "path": "schemas/objc3c-sanitizer-execution-evidence-v1.schema.json"
         }
       ],
       "required_public_commands": [
@@ -986,9 +1075,22 @@
           "command": "npm run objc3c -- build-platform-support-matrix"
         },
         {
+          "id": "platform-host-evidence-ingestion",
+          "description": "Hosted Linux/macOS evidence ingestion is public and non-promoting; generated reports remain review inputs until checked source truth is promoted.",
+          "status": "satisfied",
+          "command": "npm run objc3c -- ingest-platform-host-evidence"
+        },
+        {
+          "id": "platform-host-promotion-evidence-check",
+          "description": "The direct host-promotion evidence check replays the Linux/macOS fail-closed contract and rejects generated-only support truth.",
+          "status": "satisfied",
+          "command": "npm run objc3c -- check-platform-host-promotion-evidence"
+        },
+        {
           "id": "platform-hardening-validation",
           "description": "Full platform hardening validation remains blocked for promotion until Linux, macOS, sanitizer, and native object emission evidence are promoted.",
           "status": "blocked",
+          "command": "npm run objc3c -- validate-platform-hardening",
           "blocker_id": "platform-expansion-prerequisites"
         },
         {
@@ -1014,6 +1116,24 @@
           "description": "Reserved UBSan package-channel action builds package-channel artifacts with support_truth=false and native_execution_claimed=false.",
           "status": "satisfied",
           "command": "npm run objc3c -- build-package-channels-ubsan"
+        },
+        {
+          "id": "check-sanitizer-runtime-evidence-asan",
+          "description": "ASan runtime evidence collection is an explicit review-only action that forbids sanitizer/platform fallback routing and cannot promote ASan support.",
+          "status": "satisfied",
+          "command": "npm run objc3c -- check-sanitizer-runtime-evidence-asan"
+        },
+        {
+          "id": "check-sanitizer-runtime-evidence-ubsan",
+          "description": "UBSan runtime evidence collection is an explicit review-only action that forbids sanitizer/platform fallback routing and cannot promote UBSan support.",
+          "status": "satisfied",
+          "command": "npm run objc3c -- check-sanitizer-runtime-evidence-ubsan"
+        },
+        {
+          "id": "check-security-sanitizer-execution-evidence",
+          "description": "Security sanitizer execution evidence validates the reserved ASan/UBSan execution-evidence contract while requiring support_truth=false, native_execution_claimed=false, and support_promotion_allowed=false.",
+          "status": "satisfied",
+          "command": "npm run objc3c -- check-security-sanitizer-execution-evidence"
         }
       ],
       "required_positive_fixtures": [
@@ -1068,6 +1188,12 @@
           "path": "tests/tooling/fixtures/security_hardening/sanitizer_validation_contract.json"
         },
         {
+          "id": "sanitizer-execution-evidence-fail-closed",
+          "description": "Security sanitizer execution evidence fixtures keep generated-only reports, missing runtime manifests, mixed release/sanitizer runtime, unsupported hosts, and stale manifest digests fail-closed with no support promotion.",
+          "status": "satisfied",
+          "path": "tests/tooling/fixtures/security_hardening/sanitizer_execution_evidence_contract.json"
+        },
+        {
           "id": "packaging-channel-schema-surface",
           "description": "Packaging-channel schema fixtures keep sanitizer package-channel metadata source-owned and fail closed when schema or fixture truth drifts.",
           "status": "satisfied",
@@ -1083,13 +1209,13 @@
         },
         {
           "id": "asan-native-execution-detection",
-          "description": "ASan package metadata remains reserved until native execution and expected AddressSanitizer detection records are checked through public package/install evidence.",
+          "description": "ASan package metadata and runtime evidence actions remain reserved/non-promoting until native execution and expected AddressSanitizer detection records are checked through public package/install evidence and promoted into source truth.",
           "status": "blocked",
           "blocker_id": "asan-runtime-package-evidence"
         },
         {
           "id": "ubsan-native-execution-detection",
-          "description": "UBSan package metadata remains reserved until native execution, trap-or-recover metadata, and expected UndefinedBehaviorSanitizer detection records are checked through public package/install evidence.",
+          "description": "UBSan package metadata and runtime evidence actions remain reserved/non-promoting until native execution, trap-or-recover metadata, and expected UndefinedBehaviorSanitizer detection records are checked through public package/install evidence and promoted into source truth.",
           "status": "blocked",
           "blocker_id": "ubsan-runtime-package-evidence"
         }
@@ -1169,7 +1295,7 @@
         },
         {
           "blocker_id": "asan-runtime-package-evidence",
-          "summary": "ASan runtime package/install support remains reserved under #8230. Current source anchors cover staging, package-channel metadata, artifact reports, public package actions, schemas, and fixtures, but they are non-promoting package identity evidence only.",
+          "summary": "ASan runtime package/install support remains reserved under #8230. Current source anchors cover staging, package-channel metadata, artifact reports, public package actions, runtime evidence actions, schemas, and fixtures, but they are non-promoting package/runtime identity evidence only.",
           "missing_work": [
             "ASan runtime package install evidence through the public package workflow.",
             "ASan native execution evidence for the sanitizer package variant.",
@@ -1180,7 +1306,7 @@
         },
         {
           "blocker_id": "ubsan-runtime-package-evidence",
-          "summary": "UBSan runtime package/install support remains reserved under #8231. Current source anchors cover staging, package-channel metadata, artifact reports, public package actions, schemas, and fixtures, but they are non-promoting package identity evidence only.",
+          "summary": "UBSan runtime package/install support remains reserved under #8231. Current source anchors cover staging, package-channel metadata, artifact reports, public package actions, runtime evidence actions, schemas, and fixtures, but they are non-promoting package/runtime identity evidence only.",
           "missing_work": [
             "UBSan runtime package install evidence through the public package workflow.",
             "UBSan native execution evidence for the sanitizer package variant.",

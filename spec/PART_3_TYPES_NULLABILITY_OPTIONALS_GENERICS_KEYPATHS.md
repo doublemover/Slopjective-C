@@ -70,7 +70,9 @@ In Objective‑C 3.0 mode, the following keywords are reserved by this part:
 - `guard`, `let`, `var`
 - `optional`, `some`, `none` (reserved for future value-optional syntax)
 
-In ObjC 3.0 mode, the type-constructor spelling `Optional<...>` is reserved for a future value-optional ABI.
+In ObjC 3.0 mode, the type-constructor spelling `Optional<...>` is owned by
+the bounded value-optional carrier described in [§3.3.5](#part-3-3-5), not by
+user declarations.
 User declarations shall not occupy unescaped `Optional`/`optional`/`some`/`none` spellings; use the raw-identifier escape in [§1.3.3](#part-1-3-2) when imported source needs these names preserved.
 
 (Additional reserved keywords are specified in [Part 1](#part-1).)
@@ -374,10 +376,9 @@ explicit `has_value` presence and `payload` storage fields. Semantic records
 model explicit absent/present construction, binding/narrowing failure paths,
 checked unwrap diagnostics, payload lifetime, and interface roundtrip. The
 current runtime ABI is bounded to supported packed payload forms:
-`Optional<i32>`, `Optional<bool>`, and `Optional<id>` object handles. Full-width
-`i64` has a runtime helper ABI that preserves the payload in an explicit
-presence/payload carrier, but `Optional<i64>` language call/return lowering
-remains reserved until the compiler ABI uses that wide carrier. Nested optionals,
+`Optional<i32>`, `Optional<bool>`, and `Optional<id>` object handles plus
+`Optional<i64>` language call/return lowering through the wide
+`{has_value,i64}` direct-function and direct-dispatch carrier. Nested optionals,
 generic payload runtime lowering, property/ivar storage layout, unchecked
 unwrap, nullability bridges, implicit nil absence, nil-to-scalar coercion, and
 throws/result conversion remain reserved and fail closed.
@@ -387,10 +388,10 @@ The following remain ill-formed in v1 user code unless escaped per
 
 - `optional<...>` in type positions.
 - `Optional<...>` in executable function or method bodies outside the bounded
-  packed i32/bool/id-handle payload ABI, including `Optional<i64>` language
-  call/return positions until the wide carrier ABI is implemented, property/ivar
-  storage, unchecked unwrap, nullability bridges, implicit nil, nil-to-scalar,
-  or throws/result conversion positions.
+  packed i32/bool/id-handle payload ABI and `Optional<i64>` wide direct
+  call/return ABI, including property/ivar storage, unchecked unwrap,
+  nullability bridges, implicit nil, nil-to-scalar, or throws/result conversion
+  positions.
 - `.some(...)` and `.none` in optional-constructor/pattern positions.
 
 The current #8234 compiler contract owns the canonical spelling boundary but
@@ -398,8 +399,9 @@ does not claim broad value-optional execution: canonical `Optional<T>` type
 signatures may be parsed, admitted as semantic types, compared by sema,
 round-tripped through textual interfaces, and lowered only through the bounded
 packed runtime ABI for `i32`, `bool`, and `id` object handles; full-width `i64`
-is limited to runtime helper ABI evidence and is not a language call/return ABI
-claim. Object-pointer/nullability bridges, nested, generic, property, and ivar
+is supported only through the wide `{has_value,i64}` language call/return ABI
+for direct functions and direct dispatch. Object-pointer/nullability bridges,
+nested, generic, property, and ivar
 storage forms remain reserved until they have their own executable ABI evidence. The lowering
 contract is explicit: absent
 construction produces `has_value=false` and no live payload, present
@@ -410,6 +412,13 @@ conversion, unchecked unwrap, nested/generic payload lowering, and
 property/ivar storage claims are rejected with `O3P159` or a more specific sema
 diagnostic where one exists. Textual interfaces must preserve the
 value-optional carrier metadata and must fail closed on layout identity drift.
+
+For #8207 umbrella closure, this section is the complete v1 value-optional
+language claim. Broad optional behavior is follow-up work and is not implied by
+the bounded carrier: nullable-object bridging, nested or generic payload runtime
+lowering, property/ivar storage, unchecked unwrap, implicit nil, nil-to-scalar
+conversion, throws/result conversion, and broad dynamic dispatch stay
+unimplemented unless a separate support row is promoted with its own evidence.
 
 #### 3.3.5.1 Future-compat constraints (v1) {#part-3-3-5-1}
 
@@ -981,12 +990,12 @@ canonicalization-rejection tests such as:
 
 - `VO-01`: Declaring `typedef int Optional;` in ObjC 3.0 mode is rejected; an escaped raw identifier form is accepted.
 - `VO-02`: Declaring unescaped `some`/`none` identifiers in ObjC 3.0 mode is rejected; escaped raw identifier forms are accepted.
-- `VO-03`: Parsing `Optional<int>` or `optional<int>` in a type position produces a reserved-for-future-extension diagnostic in v1.
+- `VO-03`: Parsing canonical `Optional<int>` in a supported type-signature position admits the bounded value-optional carrier, while parsing lowercase `optional<int>` produces the removed-alias diagnostic.
 - `VO-04`: Module import of APIs that used escaped raw identifiers for reserved spellings preserves identity without enabling unescaped spellings.
-- `VO-05`: Future value-optional-enabled mode parses canonical `Optional<int>` and accepts with no optional-spelling diagnostic.
+- `VO-05`: Unsupported `Optional<...>` broadening positions fail closed without widening the bounded carrier into nested/generic/property/ivar/nullability/nil/unchecked/throws behavior.
 - `VO-06`: Canonical mode rejects `optional<int>` with `O3C004`, plus one-step fix-it to `Optional<int>`.
 - `VO-07`: Canonical mode rejects nested lowercase optional spellings before type admission.
-- `VO-08`: v1 mode parsing `Optional<int>` or `optional<int>` emits `OPT-SPELL-RESERVED-V1` with reserved-for-future wording (severity per [§3.7.2](#part-3-7-2)).
+- `VO-08`: v1 mode parsing lowercase `optional<int>` emits the removed-alias diagnostic with canonicalization guidance (severity per [§3.7.2](#part-3-7-2)).
 - `VO-09`: Interface/module emission is not reached after noncanonical lowercase optional source.
 - `VO-10`: Noncanonical spelling originating in non-rewritable macro expansion emits the owning spelling diagnostic plus `OPT-SPELL-NOFIX-MACRO`, and no invalid edit.
 - `VO-11`: An optional batch canonicalization tool over source files containing

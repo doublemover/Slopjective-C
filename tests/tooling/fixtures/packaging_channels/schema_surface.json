@@ -3,6 +3,7 @@
   "schemas": [
     "schemas/objc3c-package-channels-manifest-v1.schema.json",
     "schemas/objc3c-package-install-receipt-v1.schema.json",
-    "schemas/objc3c-sanitizer-runtime-library-manifest-v1.schema.json"
+    "schemas/objc3c-sanitizer-runtime-library-manifest-v1.schema.json",
+    "schemas/objc3c-sanitizer-execution-evidence-v1.schema.json"
   ]
 }

@@ -32,6 +32,12 @@ EXPECTED_SCHEMAS = (
         "https://objc3c.dev/schemas/objc3c-security-advisory-index-v1.schema.json",
         "objc3c.security.hardening.advisory.index.v1",
     ),
+    (
+        "sanitizer_execution_evidence_schema",
+        "objc3c-sanitizer-execution-evidence-v1",
+        "https://objc3c.dev/schemas/objc3c-sanitizer-execution-evidence-v1.schema.json",
+        "objc3c.security.hardening.sanitizer.execution-evidence.contract.v1",
+    ),
 )
 
 
@@ -85,6 +91,9 @@ def main() -> int:
         "schema_surface": repo_rel(SCHEMA_SURFACE),
         "posture_schema": schema_refs["posture_schema"],
         "advisory_index_schema": schema_refs["advisory_index_schema"],
+        "sanitizer_execution_evidence_schema": schema_refs[
+            "sanitizer_execution_evidence_schema"
+        ],
         "schema_count": len(schema_paths),
         "schemas": schema_paths,
         "schema_ids": schema_ids,

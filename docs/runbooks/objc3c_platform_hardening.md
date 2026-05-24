@@ -16,6 +16,7 @@ Canonical checked-in boundary and contract surfaces:
 
 - `tests/tooling/fixtures/platform_hardening/boundary_inventory.json`
 - `tests/tooling/fixtures/platform_hardening/platform_toolchain_support_evidence.json`
+- `tests/tooling/fixtures/platform_hardening/platform_host_promotion_evidence_contract.json`
 - `tests/tooling/fixtures/packaging_channels/supported_platforms.json`
 - `tests/tooling/fixtures/packaging_channels/installer_policy.json`
 - release operations upgrade-claim policy:
@@ -28,6 +29,7 @@ Replayable public workflow actions:
 
 - `npm run objc3c -- build-platform-support-matrix`
 - `npm run objc3c -- ingest-platform-host-evidence`
+- `npm run objc3c -- check-platform-host-promotion-evidence`
 - `npm run objc3c -- validate-platform-hardening`
 - `npm run objc3c -- validate-platform-hardening-end-to-end`
 - `npm run objc3c -- build-package-channels`
@@ -113,6 +115,23 @@ success claim. It closes only over checked-in source contracts:
   LLVM tool roots, and a coherent LLVM tool version family; missing subtools,
   mixed roots, unresolved versions, or mismatched versions fail closed before
   those broader support claims.
+
+Linux and macOS promotion is governed by
+`tests/tooling/fixtures/platform_hardening/platform_host_promotion_evidence_contract.json`,
+`scripts/platform_hardening_contracts/host_promotion.py`, and
+`scripts/check_platform_host_promotion_evidence.py`. That contract requires
+generated hosted evidence, but records it with `support_truth: false`; future
+promotion is eligible only after reviewed source-truth rows cover host identity,
+toolchain probe, package root, install receipt, and native execution records.
+Generated hosted reports, object emission probes, sanitizer runs, install
+summaries, runtime smoke summaries, and prose issue updates do not promote
+Linux or macOS support.
+
+The direct replay command for that non-promoting contract is
+`npm run objc3c -- check-platform-host-promotion-evidence`. The integrated
+`validate-platform-hardening` action runs the same checker as a child step so
+platform validation cannot pass without reasserting the Linux/macOS fail-closed
+promotion model.
 
 Hosted workflow gates use the same capability truth with different publication
 semantics. Task-hygiene smoke and parity gates may skip when native object
@@ -214,8 +233,9 @@ best-effort language.
 - unsupported host claims stay fail-closed
 - unsupported channel claims stay fail-closed
 - unsupported toolchain-range claims stay fail-closed
-- widening support later must happen by expanding checked-in contracts,
-  generated matrix artifacts, and public workflow validation
+- widening support later must happen by expanding checked-in contracts and
+  public workflow validation; generated artifacts stay review inputs until
+  promoted into source truth
 
 The checked-in source contract may contain fail-closed package rows for future
 hosts. Those rows are not support claims: `linux-x64` (#8228) and
@@ -247,10 +267,18 @@ identity evidence only; native execution and expected detection records are
 still required before #8230 or #8231 can become support claims.
 The durable non-promoting anchors are the runnable package staging source,
 artifact-report sanitizer section, package-channel model/render/validation
-source, public package action registrations, package-channel and install-receipt
-schemas, the dedicated sanitizer runtime-library manifest schema, and the
-checked sanitizer/package-channel fixtures named by
-`docs/support/capability_matrix.json` and `docs/support/evidence_map.json`.
+source, public package action registrations, explicit sanitizer runtime
+evidence actions, package-channel and install-receipt schemas, the dedicated
+sanitizer runtime-library manifest schema, and the checked
+sanitizer/package-channel fixtures named by `docs/support/capability_matrix.json`
+and `docs/support/evidence_map.json`.
+The only public runtime-evidence action names are
+`check-sanitizer-runtime-evidence-asan` for #8230 and
+`check-sanitizer-runtime-evidence-ubsan` for #8231; sanitizer aliases, generic
+variant fallbacks, platform fallback routing, and report/probe rerouting remain
+unsupported. Those actions are fixed-shape: package root, probe path, fixture
+glob, parallelism, and run id are action-pinned rather than operator-provided
+pass-through arguments.
 
 Every future platform or sanitizer promotion must preserve the package identity
 contract checked into the support evidence fixture. Linux promotion requires the

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from types import ModuleType
 from typing import Any
 
 from packaging_channels_schema_surface_sources import relative_schema_path
@@ -10,6 +11,9 @@ def assert_summary_matches_registered_schemas(summary: dict[str, Any]) -> None:
     receipt_schema = relative_schema_path("objc3c-package-install-receipt-v1")
     runtime_manifest_schema = relative_schema_path(
         "objc3c-sanitizer-runtime-library-manifest-v1"
+    )
+    sanitizer_execution_schema = relative_schema_path(
+        "objc3c-sanitizer-execution-evidence-v1"
     )
 
     assert (
@@ -28,16 +32,19 @@ def assert_summary_matches_registered_schemas(summary: dict[str, Any]) -> None:
     assert summary["package_channels_manifest"] == manifest_schema
     assert summary["install_receipt"] == receipt_schema
     assert summary["sanitizer_runtime_library_manifest"] == runtime_manifest_schema
-    assert summary["schema_count"] == 3
+    assert summary["sanitizer_execution_evidence"] == sanitizer_execution_schema
+    assert summary["schema_count"] == 4
     assert summary["schemas"] == [
         manifest_schema,
         receipt_schema,
         runtime_manifest_schema,
+        sanitizer_execution_schema,
     ]
     assert summary["schema_ids"] == [
         "https://objc3c.dev/schemas/objc3c-package-channels-manifest-v1.schema.json",
         "https://objc3c.dev/schemas/objc3c-package-install-receipt-v1.schema.json",
         "https://objc3c.dev/schemas/objc3c-sanitizer-runtime-library-manifest-v1.schema.json",
+        "https://objc3c.dev/schemas/objc3c-sanitizer-execution-evidence-v1.schema.json",
     ]
 
 

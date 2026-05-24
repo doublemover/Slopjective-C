@@ -19,7 +19,7 @@ unavailable, schema, workflow, owner-boundary, or evidence-boundary rows.
 
 ## Support Contract
 
-- Matrix version: `2026-05-09-hard-cutover`
+- Matrix version: `2026-05-24-language-umbrella-closure`
 - Matrix schema: `schemas/objc3c-capability-matrix-v1.schema.json`
 - Evidence map: `docs/support/evidence_map.json`
 - Public command surface: `npm run objc3c -- <action>`
@@ -48,6 +48,8 @@ unavailable, schema, workflow, owner-boundary, or evidence-boundary rows.
 | `objc3c.behavior.language.collections.mutation-syntax-runtime-backed` | `lowering` | `tests/tooling/fixtures/native/execution/positive/collection_literals_mutation_for_in.objc3` | `npm run objc3c -- test-execution-smoke` | `language.collections.mutation-syntax-runtime-backed` |
 | `objc3c.behavior.language.control-flow.match-expression` | `sema` | `tests/tooling/fixtures/native/recovery/positive/match_expression_literal_result.objc3` | `npm run objc3c -- validate-conformance-corpus` | `language.control-flow.match-expression` |
 | `objc3c.behavior.language.control-flow.statement-guarded-match` | `sema` | `tests/tooling/fixtures/native/recovery/positive/match_guarded_pattern_statement.objc3` | `npm run objc3c -- validate-conformance-corpus` | `language.control-flow.statement-guarded-match` |
+| `objc3c.behavior.language.errors.typed-throws` | `runtime` | `tests/tooling/fixtures/native/execution/positive/typed_throws_runtime_catch_bridge_positive.objc3` | `npm run objc3c -- test-execution-smoke` | `language.errors.typed-throws` |
+| `objc3c.behavior.language.evolution.umbrella-alignment` | `e2e` | `tests/tooling/fixtures/native/language_evolution_umbrella_contract.json` | `npm run objc3c -- validate-conformance-corpus` | `language.evolution.umbrella-alignment` |
 | `objc3c.behavior.language.generics.callable-type-parameters` | `sema` | `tests/tooling/fixtures/native/type_semantic_generic_method_substitution_positive.objc3` | `npm run objc3c -- validate-conformance-corpus` | `language.generics.callable-type-parameters` |
 | `objc3c.behavior.language.generics.collection-identity` | `sema` | `tests/tooling/fixtures/stdlib_collections/generic_collection_type_model_contract.json` | `npm run objc3c -- validate-conformance-corpus` | `language.generics.collection-identity` |
 | `objc3c.behavior.language.generics.generic-callable-reification` | `sema` | `tests/tooling/fixtures/native/type_semantic_generic_reified_objc_method_positive.objc3` | `npm run objc3c -- validate-conformance-corpus` | `language.generics.generic-callable-reification` |
@@ -62,6 +64,7 @@ unavailable, schema, workflow, owner-boundary, or evidence-boundary rows.
 | `objc3c.behavior.language.protocols.protocol-qualified-existential-value-flow` | `sema` | `tests/tooling/fixtures/native/protocol_qualified_existential_value_flow.objc3` | `npm run objc3c -- validate-conformance-corpus` | `language.protocols.protocol-qualified-existential-value-flow` |
 | `objc3c.behavior.language.text.source-string-interpolation` | `lowering` | `tests/tooling/fixtures/native/execution/positive/source_string_interpolation_text_i32.objc3` | `npm run objc3c -- test-execution-smoke` | `language.text.source-string-interpolation` |
 | `objc3c.behavior.language.text.source-string-literal-text-shape-handle` | `lowering` | `tests/tooling/fixtures/native/execution/positive/source_string_literal_text_shape_handle.objc3` | `npm run objc3c -- compile-objc3c tests/tooling/fixtures/native/execution/positive/source_string_literal_text_shape_handle.objc3` | `language.text.source-string-literal-text-shape-handle` |
+| `objc3c.behavior.language.types.value-optionals` | `runtime` | `tests/tooling/fixtures/native/execution/positive/value_optionals_runtime_abi_positive.objc3` | `npm run objc3c -- test-execution-smoke` | `language.types.value-optionals` |
 | `objc3c.behavior.lowering.error-unwind-cleanup` | `ir` | `tests/tooling/fixtures/native/error_arc_cleanup_bridge_positive.objc3` | `npm run objc3c -- test-runtime-acceptance-fast` | `compiler.lowering.error-unwind-cleanup` |
 | `objc3c.behavior.lowering.strict-runtime-dispatch` | `lowering` | `tests/native/lowering/errors/runtime_dispatch_requires_link_strict_error.objc3` | `npm run objc3c -- test-behavior-matrix` | `compiler.lowering.strict-runtime-dispatch` |
 | `objc3c.behavior.modules.direct-import-syntax` | `parser` | `tests/tooling/fixtures/package_ecosystem/direct_import_module_syntax_contract.json` | `npm run objc3c -- validate-direct-import-module-syntax` | `modules.direct-import-syntax` |
@@ -392,8 +395,7 @@ the canonical manifest fixture and public npm command above.
 
 - Capability ID: `language.errors.typed-throws`
 - State: `implemented`
-- Support claims:
-  - `objc3c.behavior.language.errors.typed-throws`
+- Support claims: `objc3c.behavior.language.errors.typed-throws`
 - Summary: Single-payload typed throws is implemented as a bounded Objective-C 3.0 effect row. Parser/source/interface/sema records preserve one `throws(E)` payload as `throws:typed:<declared_error_type>`, protocol and callable compatibility require exact payload identity, direct calls, runtime-dispatch message-send operands, and try propagation preserve the typed payload through the private error-out ABI without erasing to bare throws, do/catch accepts exact typed catches, allows only the policy-backed `id<Error>` bridge catch, rejects incompatible typed catches with O3S206, and fails closed on unsupported foreign carriers. Runtime smoke covers direct-function catch/bridge behavior, runtime-dispatch message-send error-out ABI coverage, and try? optionalization. Empty, multi, malformed, non-type, async propagation, and silent-erasure shapes still fail closed with checked diagnostics.
 - Owner modules:
   - `native/objc3c/src/parse/objc3_parser_core_cstyle_parameters_async_throws_clause_parsing.inc`
@@ -461,9 +463,9 @@ the canonical manifest fixture and public npm command above.
 ### Value optional type constructor
 
 - Capability ID: `language.types.value-optionals`
-- State: `reserved`
-- Support claims: None
-- Summary: After issue #8234 closure, the bounded value-optional slice is recorded here without promoting broad public executable/runtime support. Canonical Optional<T> is admitted as a semantic type-signature carrier with stable packed has_value/payload ABI identity, textual-interface roundtrip, and replayed runtime ABI for the checked Optional<i32>, Optional<bool>, and Optional<id> handle payload forms. Optional<i64> language call/return ABI is now supported through the wide `{has_value,i64}` carrier, direct functions, and direct dispatch path. Lowercase optional<T> is rejected as O3C004 rather than accepted as an alias, and checked parser/source-closure/textual-interface import records explicitly deny object-pointer/nullability bridges, nested optional runtime lowering, generic payload runtime lowering, property or ivar storage, unchecked unwrap, implicit nil absence, nil-to-scalar, and throws/result conversions.
+- State: `implemented`
+- Support claims: `objc3c.behavior.language.types.value-optionals`
+- Summary: Issue #8234 implements a bounded value-optional type-constructor row. Canonical Optional<T> is admitted as a semantic type-signature carrier with stable packed has_value/payload ABI identity, textual-interface roundtrip, replayed runtime ABI for Optional<i32>, Optional<bool>, and Optional<id> handle payload forms, plus Optional<i64> language call/return ABI through the wide `{has_value,i64}` carrier for direct functions and direct dispatch. Lowercase optional<T> is rejected as O3C004 rather than accepted as an alias. This row does not claim broad value-optional expansion: object-pointer/nullability bridges, nested optional runtime lowering, generic payload runtime lowering, property or ivar storage, unchecked unwrap, implicit nil absence, nil-to-scalar, throws/result conversions, and broad dynamic runtime dispatch remain reserved follow-up work.
 - Owner modules:
   - `native/objc3c/src/ast/objc3_ast_value_optional_type.h`
   - `native/objc3c/src/parse/objc3_parser_declaration_surface.cpp`
@@ -588,9 +590,9 @@ the canonical manifest fixture and public npm command above.
 ### Language evolution umbrella alignment
 
 - Capability ID: `language.evolution.umbrella-alignment`
-- State: `reserved`
-- Support claims: None
-- Summary: Issue #8207 is an umbrella truth row for typed throws, value optionals, generic callable reification, guarded match, bounded match expressions, and strict/strict-concurrency profiles. It remains reserved after #8234 closure until remaining broad value-optional paths are either promotion-backed or explicitly scoped out by an umbrella decision; the current state records #8233 single-payload typed throws as an implemented bounded error-out ABI row with exact typed catch, policy-backed id<Error> bridge catch, runtime-dispatch message-send coverage, try? optionalization, incompatible-catch rejection, and unsupported foreign-carrier fail-closed records, #8235 generic callable metadata policy support, #8236 guarded-match/match-expression support, #8237 strict/strict-concurrency profile admission, and the closed #8234 value-optional semantic carrier plus bounded packed i32/bool/id-handle runtime ABI and Optional<i64> wide `{has_value,i64}` language call/return ABI through direct functions and direct dispatch without claiming runtime-specialized generics, broad value-optional runtime support, object/nullability bridges, nested/generic/property/ivar optional lowering, nil/nullability conversions, unchecked unwrap, throws conversions, or strict-system behavior.
+- State: `implemented`
+- Support claims: `objc3c.behavior.language.evolution.umbrella-alignment`
+- Summary: Issue #8207 is closed as a bounded language-evolution umbrella truth row over the implemented child slices: #8233 single-payload typed throws with exact effect identity, error-out ABI lowering, catch/bridge policy, runtime-dispatch message-send coverage, try? optionalization, and fail-closed malformed/async/foreign-carrier paths; #8234 bounded value optionals with canonical Optional<T>, packed i32/bool/id-handle runtime ABI, Optional<i64> wide direct call/return ABI, textual-interface roundtrip, and fail-closed broadening paths; #8235 bounded generic callable metadata policy; #8236 statement guarded match plus bounded expression match; and #8237 strict/strict-concurrency profile admission. This umbrella does not claim broad optional runtime expansion, runtime-specialized generics, type-test or Result-payload match expansion, strict-system behavior, compatibility aliases, or temp/generated evidence; those are reserved follow-up rows.
 - Owner modules:
   - `docs/support/umbrella_readiness.json`
   - `docs/support/capability_matrix.json`
@@ -604,12 +606,81 @@ the canonical manifest fixture and public npm command above.
 - Evidence:
   - doc: `docs/support/umbrella_readiness.json`
   - doc: `docs/support/hard_cutover_capability_truth.md`
-  - source: `tests/tooling/fixtures/native/language_evolution_umbrella_contract.json`
+  - test: `tests/tooling/fixtures/native/language_evolution_umbrella_contract.json` via `npm run objc3c -- validate-conformance-corpus`
   - source: `tests/tooling/fixtures/native/language_evolution_typed_throws_value_optionals_contract.json`
   - source: `tests/tooling/fixtures/native/match_guarded_pattern_language_evolution_contract.json`
   - source: `tests/tooling/fixtures/native/generic_callable_reification_contract.json`
   - source: `tests/tooling/fixtures/language_profiles/strict_profile_feature_matrix.json`
   - source: `tests/fixtures/canonical/manifest.json`
+  - test: `tests/tooling/fixtures/native/execution/positive/typed_throws_runtime_catch_bridge_positive.objc3` via `npm run objc3c -- test-execution-smoke`
+  - test: `tests/tooling/fixtures/native/execution/positive/value_optionals_runtime_abi_positive.objc3` via `npm run objc3c -- test-execution-smoke`
+
+### Value optional broadening follow-ups
+
+- Capability ID: `language.types.value-optionals.expansion`
+- State: `reserved`
+- Support claims: None
+- Summary: Follow-up row for value-optional behavior outside the #8234 bounded carrier. Object-pointer/nullability bridges, nested optional runtime lowering, generic payload runtime lowering, property or ivar storage, unchecked unwrap, implicit nil absence, nil-to-scalar conversion, throws/result conversion, and broad dynamic runtime dispatch remain unavailable and cannot be claimed by #8207.
+- Owner modules:
+  - `docs/support/umbrella_readiness.json`
+  - `spec/PART_3_TYPES_NULLABILITY_OPTIONALS_GENERICS_KEYPATHS.md`
+  - `tests/tooling/fixtures/native/language_evolution_typed_throws_value_optionals_contract.json`
+  - `tests/tooling/fixtures/native/value_optionals_executable_semantics_negative.contract.json`
+- Evidence:
+  - doc: `docs/support/umbrella_readiness.json`
+  - doc: `spec/PART_3_TYPES_NULLABILITY_OPTIONALS_GENERICS_KEYPATHS.md`
+  - source: `tests/tooling/fixtures/native/language_evolution_typed_throws_value_optionals_contract.json`
+  - diagnostic: `tests/tooling/fixtures/native/value_optionals_executable_semantics_negative.contract.json`
+  - diagnostic: `tests/tooling/fixtures/native/recovery/negative/negative_value_optional_nullable_pointer_conversion_reserved.objc3`
+  - diagnostic: `tests/tooling/fixtures/native/recovery/negative/negative_value_optional_nil_scalar_coercion_reserved.objc3`
+  - diagnostic: `tests/tooling/fixtures/native/recovery/negative/negative_value_optional_property_layout_unsupported.objc3`
+
+### Generic runtime specialization follow-ups
+
+- Capability ID: `language.generics.runtime-specialization-expansion`
+- State: `reserved`
+- Support claims: None
+- Summary: Follow-up row for generic behavior outside the #8235 bounded callable metadata policy. Runtime-specialized generic metadata, generic body cloning, module-wide implicit reification, generic overload-by-signature, variadic generic parameters, selector-local method clauses, and C/Objective-C style generic function syntax remain unavailable and cannot be claimed by #8207.
+- Owner modules:
+  - `docs/support/umbrella_readiness.json`
+  - `spec/PART_3_TYPES_NULLABILITY_OPTIONALS_GENERICS_KEYPATHS.md`
+  - `tests/tooling/fixtures/native/generic_callable_reification_contract.json`
+- Evidence:
+  - doc: `docs/support/umbrella_readiness.json`
+  - doc: `spec/PART_3_TYPES_NULLABILITY_OPTIONALS_GENERICS_KEYPATHS.md`
+  - source: `tests/tooling/fixtures/native/generic_callable_reification_contract.json`
+  - diagnostic: `tests/tooling/fixtures/native/recovery/negative/negative_reify_generics_unsupported_scope.objc3`
+  - diagnostic: `tests/tooling/fixtures/native/recovery/negative/negative_cstyle_generic_function_reserved.objc3`
+
+### Match broadening follow-ups
+
+- Capability ID: `language.control-flow.match-expansion`
+- State: `reserved`
+- Support claims: None
+- Summary: Follow-up row for match behavior outside the #8236 statement guarded match and bounded expression-match rows. Type-test patterns, statement fat-arrow arms, Result payload ABI extraction, aliases, and broad lowering/runtime match expansion remain unavailable and cannot be claimed by #8207.
+- Owner modules:
+  - `docs/support/umbrella_readiness.json`
+  - `tests/tooling/fixtures/native/match_guarded_pattern_language_evolution_contract.json`
+- Evidence:
+  - doc: `docs/support/umbrella_readiness.json`
+  - source: `tests/tooling/fixtures/native/match_guarded_pattern_language_evolution_contract.json`
+  - diagnostic: `tests/tooling/fixtures/native/recovery/negative/negative_match_expression_type_test_reserved.objc3`
+  - diagnostic: `tests/tooling/fixtures/native/recovery/negative/negative_match_statement_fat_arrow_ambiguous.objc3`
+
+### Strict-system profile follow-ups
+
+- Capability ID: `language.profiles.strict-system-expansion`
+- State: `reserved`
+- Support claims: None
+- Summary: Follow-up row for profile behavior outside #8237 strict and strict-concurrency admission. Strict-system remains target-only release evidence, rejects as a native frontend language profile, and cannot be claimed by #8207 or by strict/strict-concurrency aliases until separate system evidence promotes its own row.
+- Owner modules:
+  - `docs/support/umbrella_readiness.json`
+  - `tests/tooling/fixtures/language_profiles/strict_profile_feature_matrix.json`
+  - `tests/conformance/profile_strict_boundary/strict_system_profile_mismatch_negative.objc3`
+- Evidence:
+  - doc: `docs/support/umbrella_readiness.json`
+  - source: `tests/tooling/fixtures/language_profiles/strict_profile_feature_matrix.json`
+  - diagnostic: `tests/conformance/profile_strict_boundary/strict_system_profile_mismatch_negative.objc3`
 
 ### Error unwind and cleanup lowering
 
@@ -2910,15 +2981,23 @@ the canonical manifest fixture and public npm command above.
 - Capability ID: `platform.linux-x64.unsupported`
 - State: `rejected`
 - Support claims: None
-- Summary: Linux x64 support remains fail-closed under issue #8228: source-owned platform and package rows record the Linux host/toolchain/package promotion blockers, and both the canonical hosted-evidence workflow plus the conformance-minima dispatch gateway are generated-only, non-promoting evidence paths until build, package, install, and native execution evidence is reviewed into checked source truth.
+- Summary: Linux x64 support remains fail-closed under issue #8228: source-owned platform, host-promotion, and package rows record the Linux host/toolchain/package promotion blockers, and both the canonical hosted-evidence workflow plus the conformance-minima dispatch gateway are generated-only, non-promoting evidence paths until build, package, install, and native execution evidence is reviewed into checked source truth.
 - Owner modules:
   - `tests/tooling/fixtures/platform_hardening/platform_toolchain_support_evidence.json`
+  - `tests/tooling/fixtures/platform_hardening/platform_host_promotion_evidence_contract.json`
   - `tests/tooling/fixtures/platform_support/source_truth_matrix.json`
   - `schemas/objc3c-platform-toolchain-support-evidence-v1.schema.json`
+  - `scripts/platform_hardening_contracts/host_promotion.py`
+  - `scripts/check_platform_host_promotion_evidence.py`
+  - `scripts/objc3c_workflow/actions/release_governance_packaging_contracts.py`
   - `scripts/platform_hardening_contracts/support_evidence.py`
 - Evidence:
   - diagnostic: `tests/tooling/fixtures/platform_hardening/platform_toolchain_support_evidence.json`
   - diagnostic: `tests/tooling/fixtures/platform_hardening/unsupported_host_fail_closed_policy.json`
+  - source: `tests/tooling/fixtures/platform_hardening/platform_host_promotion_evidence_contract.json`
+  - source: `scripts/platform_hardening_contracts/host_promotion.py`
+  - source: `scripts/check_platform_host_promotion_evidence.py`
+  - source: `scripts/objc3c_workflow/actions/release_governance_packaging_contracts.py`
   - source: `tests/tooling/fixtures/platform_support/source_truth_matrix.json`
 
 ### macOS arm64 platform support
@@ -2926,15 +3005,23 @@ the canonical manifest fixture and public npm command above.
 - Capability ID: `platform.darwin-arm64.unsupported`
 - State: `rejected`
 - Support claims: None
-- Summary: macOS arm64 support remains fail-closed under issue #8229: source-owned platform and package rows record the Apple-toolchain, Mach-O/load-path, and package-install blockers, and both the canonical hosted-evidence workflow plus the conformance-minima dispatch gateway are generated-only, non-promoting evidence paths until package install and native execution evidence is reviewed into checked source truth.
+- Summary: macOS arm64 support remains fail-closed under issue #8229: source-owned platform, host-promotion, and package rows record the Apple-toolchain, Mach-O/load-path, and package-install blockers, and both the canonical hosted-evidence workflow plus the conformance-minima dispatch gateway are generated-only, non-promoting evidence paths until package install and native execution evidence is reviewed into checked source truth.
 - Owner modules:
   - `tests/tooling/fixtures/platform_hardening/platform_toolchain_support_evidence.json`
+  - `tests/tooling/fixtures/platform_hardening/platform_host_promotion_evidence_contract.json`
   - `tests/tooling/fixtures/platform_support/source_truth_matrix.json`
   - `schemas/objc3c-platform-toolchain-support-evidence-v1.schema.json`
+  - `scripts/platform_hardening_contracts/host_promotion.py`
+  - `scripts/check_platform_host_promotion_evidence.py`
+  - `scripts/objc3c_workflow/actions/release_governance_packaging_contracts.py`
   - `scripts/platform_hardening_contracts/support_evidence.py`
 - Evidence:
   - diagnostic: `tests/tooling/fixtures/platform_hardening/platform_toolchain_support_evidence.json`
   - diagnostic: `tests/tooling/fixtures/platform_hardening/unsupported_host_fail_closed_policy.json`
+  - source: `tests/tooling/fixtures/platform_hardening/platform_host_promotion_evidence_contract.json`
+  - source: `scripts/platform_hardening_contracts/host_promotion.py`
+  - source: `scripts/check_platform_host_promotion_evidence.py`
+  - source: `scripts/objc3c_workflow/actions/release_governance_packaging_contracts.py`
   - source: `tests/tooling/fixtures/platform_support/source_truth_matrix.json`
 
 ### Current probed LLVM executable evidence
@@ -2979,13 +3066,23 @@ the canonical manifest fixture and public npm command above.
 - Capability ID: `platform.expansion.umbrella-readiness`
 - State: `internal`
 - Support claims: None
-- Summary: #8206 is an internal readiness boundary over #8228 Linux x64, #8229 macOS arm64, #8230 ASan, #8231 UBSan, and #8232 native object emission. It keeps only Windows x64 projected as supported, keeps Linux and macOS rejected, models conformance-minima as a non-promoting dispatch gateway for generated Linux/macOS hosted evidence, keeps sanitizer package/install support reserved until real package/install/native execution evidence exists, keeps task-hygiene hosted gates skip-only when llc object emission is unavailable, and keeps conformance-minima fail-closed when required native object emission is missing. Missing-llc, mixed-root, mismatched-version, unsupported-version, and unresolved-version native object emission remain fail-closed with no clang substitute success path.
+- Summary: #8206 is an internal readiness boundary over #8228 Linux x64, #8229 macOS arm64, #8230 ASan, #8231 UBSan, and #8232 native object emission. It keeps only Windows x64 projected as supported, keeps Linux and macOS rejected through the host-promotion evidence contract, models conformance-minima as a non-promoting dispatch gateway for generated Linux/macOS hosted evidence, keeps sanitizer package/install support reserved until real package/install/native execution evidence exists, and treats sanitizer runtime evidence actions as review-only reports with support_truth=false, native_execution_claimed=false, and support_promotion_allowed=false. Task-hygiene hosted gates stay skip-only when llc object emission is unavailable, and conformance-minima stays fail-closed when required native object emission is missing. Missing-llc, mixed-root, mismatched-version, unsupported-version, and unresolved-version native object emission remain fail-closed with no clang substitute success path.
 - Owner modules:
   - `tests/tooling/fixtures/platform_support/source_truth_matrix.json`
   - `schemas/objc3c-platform-support-source-truth-v1.schema.json`
   - `scripts/check_objc3c_platform_support_matrix.py`
   - `scripts/platform_hardening_contracts/support_evidence.py`
+  - `scripts/platform_hardening_contracts/host_promotion.py`
+  - `scripts/check_platform_host_promotion_evidence.py`
+  - `scripts/objc3c_workflow/actions/release_governance_packaging_contracts.py`
+  - `tests/tooling/fixtures/platform_hardening/platform_host_promotion_evidence_contract.json`
   - `tests/tooling/fixtures/security_hardening/sanitizer_package_install_model_contract.json`
+  - `tests/tooling/fixtures/security_hardening/sanitizer_execution_evidence_contract.json`
+  - `schemas/objc3c-sanitizer-execution-evidence-v1.schema.json`
+  - `scripts/objc3c_workflow/actions/sanitizer_runtime_evidence.py`
+  - `scripts/check_objc3c_sanitizer_runtime_evidence.py`
+  - `scripts/probe_objc3c_sanitizer_runtime_evidence.py`
+  - `scripts/check_security_sanitizer_execution_evidence.py`
   - `tests/tooling/fixtures/platform_hardening/hosted_runner_capability_summaries.json`
   - `tests/tooling/fixtures/platform_hardening/unsupported_host_fail_closed_policy.json`
   - `docs/runbooks/objc3c_platform_hardening.md`
@@ -2994,7 +3091,17 @@ the canonical manifest fixture and public npm command above.
   - schema: `schemas/objc3c-platform-support-source-truth-v1.schema.json`
   - source: `scripts/check_objc3c_platform_support_matrix.py`
   - source: `scripts/platform_hardening_contracts/support_evidence.py`
+  - source: `scripts/platform_hardening_contracts/host_promotion.py`
+  - source: `scripts/check_platform_host_promotion_evidence.py`
+  - source: `scripts/objc3c_workflow/actions/release_governance_packaging_contracts.py`
+  - source: `tests/tooling/fixtures/platform_hardening/platform_host_promotion_evidence_contract.json`
   - source: `tests/tooling/fixtures/security_hardening/sanitizer_package_install_model_contract.json`
+  - source: `tests/tooling/fixtures/security_hardening/sanitizer_execution_evidence_contract.json`
+  - schema: `schemas/objc3c-sanitizer-execution-evidence-v1.schema.json`
+  - source: `scripts/objc3c_workflow/actions/sanitizer_runtime_evidence.py`
+  - source: `scripts/check_objc3c_sanitizer_runtime_evidence.py`
+  - source: `scripts/probe_objc3c_sanitizer_runtime_evidence.py`
+  - source: `scripts/check_security_sanitizer_execution_evidence.py`
   - diagnostic: `tests/tooling/fixtures/platform_hardening/unsupported_host_fail_closed_policy.json`
   - doc: `docs/runbooks/objc3c_platform_hardening.md`
 
@@ -3003,7 +3110,7 @@ the canonical manifest fixture and public npm command above.
 - Capability ID: `toolchain.sanitizer.address`
 - State: `reserved`
 - Support claims: None
-- Summary: AddressSanitizer support remains reserved under issue #8230: the source contract records the ASan runtime package id, package layout, runtime library probe, explicit opt-in install selector, ASAN_OPTIONS metadata contract, mixed release/sanitizer runtime rejection, record-only expected-detection fixtures, unsupported-host diagnostics, and metadata freshness guard, but no package/install/native execution support is claimed.
+- Summary: AddressSanitizer support remains reserved under issue #8230: the source contracts record the ASan runtime package id, package layout, runtime library probe, explicit opt-in install selector, ASAN_OPTIONS metadata contract, mixed release/sanitizer runtime rejection, non-promoting runtime evidence actions, record-only expected-detection fixtures, unsupported-host diagnostics, and metadata freshness guard. The runtime and execution evidence contracts require support_truth=false, native_execution_claimed=false, and support_promotion_allowed=false, so no package/install/native execution support is claimed.
 - Owner modules:
   - `tests/tooling/fixtures/platform_hardening/platform_toolchain_support_evidence.json`
   - `tests/tooling/fixtures/security_hardening/sanitizer_validation_contract.json`
@@ -3019,11 +3126,17 @@ the canonical manifest fixture and public npm command above.
   - `scripts/check_objc3c_packaging_channels_end_to_end.py`
   - `scripts/objc3c_workflow/action_catalog_native_package_toolchain.py`
   - `scripts/objc3c_workflow/actions/release_governance_packaging_contracts.py`
+  - `scripts/objc3c_workflow/actions/sanitizer_runtime_evidence.py`
+  - `scripts/check_objc3c_sanitizer_runtime_evidence.py`
+  - `scripts/probe_objc3c_sanitizer_runtime_evidence.py`
+  - `scripts/check_security_sanitizer_execution_evidence.py`
   - `schemas/objc3c-package-channels-manifest-v1.schema.json`
   - `schemas/objc3c-package-install-receipt-v1.schema.json`
   - `schemas/objc3c-sanitizer-runtime-library-manifest-v1.schema.json`
+  - `schemas/objc3c-sanitizer-execution-evidence-v1.schema.json`
   - `tests/tooling/fixtures/packaging_channels/metadata_surface.json`
   - `tests/tooling/fixtures/packaging_channels/schema_surface.json`
+  - `tests/tooling/fixtures/security_hardening/sanitizer_execution_evidence_contract.json`
   - `tests/tooling/fixtures/security_hardening/artifact_reporting_contract.json`
 - Evidence:
   - diagnostic: `tests/tooling/fixtures/platform_hardening/platform_toolchain_support_evidence.json`
@@ -3039,11 +3152,17 @@ the canonical manifest fixture and public npm command above.
   - source: `scripts/check_objc3c_packaging_channels_end_to_end.py`
   - source: `scripts/objc3c_workflow/action_catalog_native_package_toolchain.py`
   - source: `scripts/objc3c_workflow/actions/release_governance_packaging_contracts.py`
+  - source: `scripts/objc3c_workflow/actions/sanitizer_runtime_evidence.py`
+  - source: `scripts/check_objc3c_sanitizer_runtime_evidence.py`
+  - source: `scripts/probe_objc3c_sanitizer_runtime_evidence.py`
+  - source: `scripts/check_security_sanitizer_execution_evidence.py`
   - schema: `schemas/objc3c-package-channels-manifest-v1.schema.json`
   - schema: `schemas/objc3c-package-install-receipt-v1.schema.json`
   - schema: `schemas/objc3c-sanitizer-runtime-library-manifest-v1.schema.json`
+  - schema: `schemas/objc3c-sanitizer-execution-evidence-v1.schema.json`
   - source: `tests/tooling/fixtures/packaging_channels/metadata_surface.json`
   - source: `tests/tooling/fixtures/packaging_channels/schema_surface.json`
+  - source: `tests/tooling/fixtures/security_hardening/sanitizer_execution_evidence_contract.json`
   - source: `tests/tooling/fixtures/security_hardening/artifact_reporting_contract.json`
 
 ### UndefinedBehaviorSanitizer platform variant
@@ -3051,7 +3170,7 @@ the canonical manifest fixture and public npm command above.
 - Capability ID: `toolchain.sanitizer.undefined`
 - State: `reserved`
 - Support claims: None
-- Summary: UBSan support remains reserved under issue #8231: the source contract records the UBSan runtime package id, package layout, runtime library probe, explicit opt-in install selector, UBSAN_OPTIONS and trap-or-recover metadata contracts, mixed release/sanitizer runtime rejection, record-only expected-detection fixtures, unsupported-host diagnostics, and metadata freshness guard, but no package/install/native execution support is claimed.
+- Summary: UBSan support remains reserved under issue #8231: the source contracts record the UBSan runtime package id, package layout, runtime library probe, explicit opt-in install selector, UBSAN_OPTIONS and trap-or-recover metadata contracts, mixed release/sanitizer runtime rejection, non-promoting runtime evidence actions, record-only expected-detection fixtures, unsupported-host diagnostics, and metadata freshness guard. The runtime and execution evidence contracts require support_truth=false, native_execution_claimed=false, and support_promotion_allowed=false, so no package/install/native execution support is claimed.
 - Owner modules:
   - `tests/tooling/fixtures/platform_hardening/platform_toolchain_support_evidence.json`
   - `tests/tooling/fixtures/security_hardening/sanitizer_validation_contract.json`
@@ -3067,11 +3186,17 @@ the canonical manifest fixture and public npm command above.
   - `scripts/check_objc3c_packaging_channels_end_to_end.py`
   - `scripts/objc3c_workflow/action_catalog_native_package_toolchain.py`
   - `scripts/objc3c_workflow/actions/release_governance_packaging_contracts.py`
+  - `scripts/objc3c_workflow/actions/sanitizer_runtime_evidence.py`
+  - `scripts/check_objc3c_sanitizer_runtime_evidence.py`
+  - `scripts/probe_objc3c_sanitizer_runtime_evidence.py`
+  - `scripts/check_security_sanitizer_execution_evidence.py`
   - `schemas/objc3c-package-channels-manifest-v1.schema.json`
   - `schemas/objc3c-package-install-receipt-v1.schema.json`
   - `schemas/objc3c-sanitizer-runtime-library-manifest-v1.schema.json`
+  - `schemas/objc3c-sanitizer-execution-evidence-v1.schema.json`
   - `tests/tooling/fixtures/packaging_channels/metadata_surface.json`
   - `tests/tooling/fixtures/packaging_channels/schema_surface.json`
+  - `tests/tooling/fixtures/security_hardening/sanitizer_execution_evidence_contract.json`
   - `tests/tooling/fixtures/security_hardening/artifact_reporting_contract.json`
 - Evidence:
   - diagnostic: `tests/tooling/fixtures/platform_hardening/platform_toolchain_support_evidence.json`
@@ -3087,11 +3212,17 @@ the canonical manifest fixture and public npm command above.
   - source: `scripts/check_objc3c_packaging_channels_end_to_end.py`
   - source: `scripts/objc3c_workflow/action_catalog_native_package_toolchain.py`
   - source: `scripts/objc3c_workflow/actions/release_governance_packaging_contracts.py`
+  - source: `scripts/objc3c_workflow/actions/sanitizer_runtime_evidence.py`
+  - source: `scripts/check_objc3c_sanitizer_runtime_evidence.py`
+  - source: `scripts/probe_objc3c_sanitizer_runtime_evidence.py`
+  - source: `scripts/check_security_sanitizer_execution_evidence.py`
   - schema: `schemas/objc3c-package-channels-manifest-v1.schema.json`
   - schema: `schemas/objc3c-package-install-receipt-v1.schema.json`
   - schema: `schemas/objc3c-sanitizer-runtime-library-manifest-v1.schema.json`
+  - schema: `schemas/objc3c-sanitizer-execution-evidence-v1.schema.json`
   - source: `tests/tooling/fixtures/packaging_channels/metadata_surface.json`
   - source: `tests/tooling/fixtures/packaging_channels/schema_surface.json`
+  - source: `tests/tooling/fixtures/security_hardening/sanitizer_execution_evidence_contract.json`
   - source: `tests/tooling/fixtures/security_hardening/artifact_reporting_contract.json`
 
 ### Object runtime sample library

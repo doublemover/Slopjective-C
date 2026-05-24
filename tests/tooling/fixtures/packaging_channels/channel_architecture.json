@@ -13,6 +13,18 @@
     "build-package-channels-asan",
     "build-package-channels-ubsan"
   ],
+  "sanitizer_runtime_evidence_actions": [
+    "check-sanitizer-runtime-evidence-asan",
+    "check-sanitizer-runtime-evidence-ubsan"
+  ],
+  "sanitizer_runtime_evidence_action_aliases_allowed": false,
+  "sanitizer_runtime_evidence_fallback_sanitizer_variant_allowed": false,
+  "sanitizer_runtime_evidence_fallback_target_platform_allowed": false,
+  "sanitizer_runtime_evidence_report_or_probe_rerouting_allowed": false,
+  "sanitizer_runtime_evidence_package_root_rerouting_allowed": false,
+  "sanitizer_runtime_evidence_fixture_rerouting_allowed": false,
+  "sanitizer_runtime_evidence_public_pass_through_args_allowed": false,
+  "sanitizer_runtime_evidence_support_promotion_allowed": false,
   "canonical_payload_implementation_anchor": "scripts/package_objc3c_runnable_toolchain.ps1",
   "clean_room_source_policy": "fresh-owned-tmp-root-only",
   "payload_contract_manifest_field": "payload_contract",

@@ -96,13 +96,16 @@
   ],
   "admitted_public_claims": [
     "objc3c.behavior.language.errors.typed-throws",
+    "objc3c.behavior.language.types.value-optionals",
     "objc3c.behavior.language.control-flow.statement-guarded-match",
     "objc3c.behavior.language.control-flow.match-expression",
     "objc3c.behavior.language.generics.callable-type-parameters",
     "objc3c.behavior.language.generics.generic-callable-reification",
-    "objc3c.behavior.language.profiles.strict-admission"
+    "objc3c.behavior.language.profiles.strict-admission",
+    "objc3c.behavior.language.evolution.umbrella-alignment"
   ],
   "reserved_public_claims": [
+    "language.types.value-optionals.expansion",
     "language.types.value-optionals-runtime-lowering",
     "language.types.value-optionals-nested-runtime-lowering",
     "language.types.value-optionals-generic-runtime-lowering",
@@ -110,7 +113,10 @@
     "language.types.value-optionals-nullability-and-nil-conversions",
     "language.types.value-optionals-unchecked-unwrap",
     "language.types.value-optionals-throws-conversions",
+    "language.generics.runtime-specialization-expansion",
+    "language.control-flow.match-expansion",
     "language.control-flow.type-test-patterns",
+    "language.profiles.strict-system-expansion",
     "language.profiles.strict-system"
   ],
   "hard_fail_closed_requirements": [
@@ -124,7 +130,7 @@
   "lead_support_row_recommendations": [
     {
       "row_id": "language.evolution.umbrella-alignment",
-      "status": "source-owned-fail-closed-boundaries",
+      "status": "implemented-bounded-language-evolution-umbrella",
       "evidence": [
         "tests/tooling/fixtures/native/language_evolution_umbrella_contract.json"
       ]
@@ -139,7 +145,7 @@
     },
     {
       "row_id": "language.types.value-optionals",
-      "status": "bounded-packed-scalar-id-handle-and-full-i64-language-abi-public-row-reserved-unsupported-forms-fail-closed",
+      "status": "implemented-bounded-packed-scalar-id-handle-and-full-i64-language-abi-unsupported-forms-fail-closed",
       "evidence": [
         "tests/tooling/fixtures/native/language_evolution_typed_throws_value_optionals_contract.json"
       ]
@@ -161,6 +167,34 @@
     {
       "row_id": "language.profiles.strict-admission",
       "status": "implemented-strict-and-strict-concurrency-claimable",
+      "evidence": [
+        "tests/tooling/fixtures/language_profiles/strict_profile_feature_matrix.json"
+      ]
+    },
+    {
+      "row_id": "language.types.value-optionals.expansion",
+      "status": "reserved-follow-up-no-support-claim",
+      "evidence": [
+        "tests/tooling/fixtures/native/language_evolution_typed_throws_value_optionals_contract.json"
+      ]
+    },
+    {
+      "row_id": "language.generics.runtime-specialization-expansion",
+      "status": "reserved-follow-up-no-support-claim",
+      "evidence": [
+        "tests/tooling/fixtures/native/generic_callable_reification_contract.json"
+      ]
+    },
+    {
+      "row_id": "language.control-flow.match-expansion",
+      "status": "reserved-follow-up-no-support-claim",
+      "evidence": [
+        "tests/tooling/fixtures/native/match_guarded_pattern_language_evolution_contract.json"
+      ]
+    },
+    {
+      "row_id": "language.profiles.strict-system-expansion",
+      "status": "reserved-follow-up-no-support-claim",
       "evidence": [
         "tests/tooling/fixtures/language_profiles/strict_profile_feature_matrix.json"
       ]

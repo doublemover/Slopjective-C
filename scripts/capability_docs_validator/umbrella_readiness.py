@@ -77,7 +77,7 @@ def _require_existing_path(entry_id: str, requirement: dict[str, Any]) -> None:
 
 
 def _public_action_names() -> set[str]:
-    from scripts.objc3c_workflow.action_catalog import ACTION_SPECS
+    from objc3c_workflow.action_catalog import ACTION_SPECS
 
     return set(ACTION_SPECS)
 

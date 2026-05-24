@@ -20,6 +20,9 @@ PLATFORM_SUPPORT_MATRIX_PY = (
 PLATFORM_HOST_EVIDENCE_INGESTION_PY = (
     ROOT / "scripts" / "ingest_objc3c_platform_host_evidence.py"
 )
+PLATFORM_HOST_PROMOTION_EVIDENCE_PY = (
+    ROOT / "scripts" / "check_platform_host_promotion_evidence.py"
+)
 PLATFORM_HARDENING_INTEGRATION_PY = (
     ROOT / "scripts" / "check_objc3c_platform_hardening_integration.py"
 )

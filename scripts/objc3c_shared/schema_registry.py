@@ -82,6 +82,9 @@ SCHEMA_PATHS: dict[str, Path] = {
     "objc3c-sanitizer-runtime-library-manifest-v1": ROOT
     / "schemas"
     / "objc3c-sanitizer-runtime-library-manifest-v1.schema.json",
+    "objc3c-sanitizer-execution-evidence-v1": ROOT
+    / "schemas"
+    / "objc3c-sanitizer-execution-evidence-v1.schema.json",
     "objc3c-package-install-distribution-receipt-v1": ROOT
     / "schemas"
     / "objc3c-package-install-distribution-receipt-v1.schema.json",

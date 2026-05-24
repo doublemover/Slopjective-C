@@ -555,13 +555,13 @@
         "expected_detection_records": [
           {
             "record_id": "objc3c.sanitizer.undefined.signed-integer-overflow",
-            "record_kind": "ubsan-diagnostic",
+            "record_kind": "ubsan-trap",
             "required_behavior": "record-only-no-support-promotion",
             "support_truth": false
           },
           {
             "record_id": "objc3c.sanitizer.undefined.invalid-shift",
-            "record_kind": "ubsan-diagnostic",
+            "record_kind": "ubsan-trap",
             "required_behavior": "record-only-no-support-promotion",
             "support_truth": false
           }

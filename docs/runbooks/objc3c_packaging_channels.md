@@ -28,6 +28,9 @@ Reserved sanitizer package payloads use explicit public actions:
 - `npm run objc3c -- package-runnable-toolchain-ubsan`
 - `npm run objc3c -- build-package-channels-asan`
 - `npm run objc3c -- build-package-channels-ubsan`
+- `npm run objc3c -- check-sanitizer-runtime-evidence-asan`
+- `npm run objc3c -- check-sanitizer-runtime-evidence-ubsan`
+- `npm run objc3c -- check-security-sanitizer-execution-evidence`
 
 Those variants must keep `support_truth: false` and
 `native_execution_claimed: false` until real package install and native
@@ -37,8 +40,18 @@ The durable source anchors for those public actions are
 `scripts/objc3c_workflow/action_catalog_native_package_toolchain.py` for
 `package-runnable-toolchain-asan` and `package-runnable-toolchain-ubsan`, and
 `scripts/objc3c_workflow/actions/release_governance_packaging_contracts.py` for
-`build-package-channels-asan` and `build-package-channels-ubsan`. These action
-registrations are command-surface evidence only.
+`build-package-channels-asan` and `build-package-channels-ubsan`. Runtime
+evidence collection is exposed only through
+`check-sanitizer-runtime-evidence-asan` and
+`check-sanitizer-runtime-evidence-ubsan`, whose action contracts live in
+`scripts/objc3c_workflow/actions/sanitizer_runtime_evidence.py` and route to
+`scripts/check_objc3c_sanitizer_runtime_evidence.py` with the exact
+`address` or `undefined` sanitizer variant. Do not add aliases, generic
+sanitizer fallback commands, target-platform fallback routing, or report/probe
+rerouting for these actions. They are fixed-shape public commands: package
+root, report path, probe path, fixture glob, parallelism, and run id are pinned
+by the action contract rather than accepted from npm pass-through arguments.
+These action registrations are command-surface evidence only.
 
 Sanitizer package variants are deterministic package-channel rows, not support
 claims. An ASan package must identify
@@ -80,7 +93,13 @@ are:
 These runtime-library manifests and artifacts prove package/install identity
 only. They do not promote ASan or UBSan support: support remains reserved until
 native execution reports and expected sanitizer detection records are captured
-through the public package workflow.
+through `npm run objc3c -- check-sanitizer-runtime-evidence-asan` and
+`npm run objc3c -- check-sanitizer-runtime-evidence-ubsan`, then reviewed into
+checked source truth. `check-security-sanitizer-execution-evidence` validates
+the ASan/UBSan execution-evidence contract and keeps
+`support_truth: false`, `native_execution_claimed: false`, and
+`support_promotion_allowed: false`; it is not a package or support promotion
+command.
 
 The checked source anchors for this non-promoting package evidence are
 `scripts/package_objc3c_runnable_toolchain/staging_orchestration.psm1` for
@@ -91,9 +110,11 @@ artifact-report sanitizer metadata, `scripts/objc3c_package_channels/model.py`,
 `scripts/objc3c_package_channels/validation.py` for package-channel
 model/render/validation behavior, `schemas/objc3c-package-channels-manifest-v1.schema.json`
 `schemas/objc3c-package-install-receipt-v1.schema.json`, and
-`schemas/objc3c-sanitizer-runtime-library-manifest-v1.schema.json` for schema truth,
+`schemas/objc3c-sanitizer-runtime-library-manifest-v1.schema.json` plus
+`schemas/objc3c-sanitizer-execution-evidence-v1.schema.json` for schema truth,
 and the checked fixtures under
 `tests/tooling/fixtures/security_hardening/sanitizer_package_install_model_contract.json`,
+`tests/tooling/fixtures/security_hardening/sanitizer_execution_evidence_contract.json`,
 `tests/tooling/fixtures/security_hardening/sanitizer_validation_contract.json`,
 `tests/tooling/fixtures/packaging_channels/metadata_surface.json`, and
 `tests/tooling/fixtures/packaging_channels/schema_surface.json`.

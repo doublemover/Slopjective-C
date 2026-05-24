@@ -3,7 +3,11 @@
 from __future__ import annotations
 
 from scripts.objc3c_workflow.action_spec import ActionHandler
-from scripts.objc3c_workflow.actions import release_governance, schema_surfaces
+from scripts.objc3c_workflow.actions import (
+    release_governance,
+    sanitizer_runtime_evidence,
+    schema_surfaces,
+)
 
 PACKAGING_CHANNEL_ACTION_HANDLERS: dict[str, ActionHandler] = {
     "check-packaging-channels-surface": release_governance.action_check_packaging_channels_surface,
@@ -12,6 +16,15 @@ PACKAGING_CHANNEL_ACTION_HANDLERS: dict[str, ActionHandler] = {
     "build-package-channels-asan": release_governance.action_build_package_channels_asan,
     "build-package-channels-ubsan": release_governance.action_build_package_channels_ubsan,
     "build-platform-support-matrix": release_governance.action_build_platform_support_matrix,
+    "check-sanitizer-runtime-evidence-asan": (
+        sanitizer_runtime_evidence.action_check_sanitizer_runtime_evidence_asan
+    ),
+    "check-sanitizer-runtime-evidence-ubsan": (
+        sanitizer_runtime_evidence.action_check_sanitizer_runtime_evidence_ubsan
+    ),
+    "check-platform-host-promotion-evidence": (
+        release_governance.action_check_platform_host_promotion_evidence
+    ),
     "ingest-platform-host-evidence": release_governance.action_ingest_platform_host_evidence,
     "validate-packaging-channels": release_governance.action_validate_packaging_channels,
     "validate-packaging-channels-end-to-end": release_governance.action_validate_packaging_channels_end_to_end,

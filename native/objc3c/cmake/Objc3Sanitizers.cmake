@@ -39,5 +39,18 @@ function(objc3c_apply_sanitizers target_name)
     target_link_options(${target_name} PUBLIC
       -fsanitize=${objc3c_sanitizer_flags}
     )
+    if (OBJC3C_ENABLE_UBSAN)
+      target_compile_options(${target_name} PUBLIC
+        -fsanitize-trap=undefined
+      )
+      target_link_options(${target_name} PUBLIC
+        -fsanitize-trap=undefined
+      )
+    endif()
+    if (WIN32 AND OBJC3C_ENABLE_UBSAN)
+      target_link_libraries(${target_name} PUBLIC
+        DbgHelp
+      )
+    endif()
   endif()
 endfunction()

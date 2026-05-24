@@ -108,6 +108,7 @@ function(objc3c_apply_build_defaults target_name)
   target_link_libraries(${target_name} PUBLIC
     objc3c_build_defaults
   )
+  objc3c_apply_sanitizers(${target_name})
 endfunction()
 
 function(objc3c_apply_llvm_direct_config target_name)
