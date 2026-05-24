@@ -260,14 +260,19 @@ ELF versus Mach-O, DWARF versus DWARF/dSYM, loader behavior, runtime library
 names, and layout expectations, but they stay fail-closed until a matching
 native execution record cites real host execution evidence.
 
-The public hosted evidence workflow is
-`.github/workflows/platform-host-evidence.yml`. Its Linux x64 and macOS arm64
-jobs collect generated build, package, install, and native execution reports,
-then run `npm run objc3c -- ingest-platform-host-evidence`. That helper refuses
-generated-only promotion and leaves the source rows fail-closed until a
-maintainer reviews the reports and promotes the relevant host identity,
-toolchain, package-root, and native execution records into checked-in source
-truth.
+The canonical public hosted evidence workflow is
+`.github/workflows/platform-host-evidence.yml`; `.github/workflows/conformance-minima.yml`
+is modeled separately as a dispatch gateway for the same Linux x64 and macOS
+arm64 generated host evidence jobs. Both paths feed
+`npm run objc3c -- ingest-platform-host-evidence`, and both are non-promoting:
+generated-only output cannot alter source truth, clear missing evidence classes,
+or publish support. The helper refuses generated-only promotion and leaves the
+source rows fail-closed until a maintainer reviews the reports and promotes the
+relevant host identity, toolchain, package-root, object-format/debug, runtime
+link/load, and native execution records into checked-in source truth. The helper
+also writes `promotion-readiness-requirements.json` into the same platform
+evidence root so artifact review has a durable list of required hosted fields
+instead of relying on prose in a workflow log.
 
 Package variant rows are required to carry source-owned metadata freshness
 guards. Generated package metadata can be emitted as replay output, but stale or

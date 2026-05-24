@@ -44,7 +44,9 @@
           "artifacts/lib/objc3_runtime.lib",
           "stdlib/workspace.json",
           "stdlib/modules/objc3.core/module.json",
-          "docs/runbooks/objc3c_packaging_channels.md"
+          "docs/runbooks/objc3c_packaging_channels.md",
+          "share/objc3c/sanitizer/asan-metadata.json",
+          "share/objc3c/sanitizer/ubsan-metadata.json"
         ]
       },
       "minItems": 1
@@ -55,6 +57,7 @@
       "required": [
         "package_id",
         "package_variant_row_id",
+        "package_channel_id",
         "target_platform_id",
         "sanitizer",
         "runtime_library_ids",
@@ -77,6 +80,12 @@
           "enum": [
             "objc3c.package.sanitizer.asan.reserved",
             "objc3c.package.sanitizer.ubsan.reserved"
+          ]
+        },
+        "package_channel_id": {
+          "enum": [
+            "windows-x64-sanitizer-asan",
+            "windows-x64-sanitizer-ubsan"
           ]
         },
         "target_platform_id": { "type": "string", "minLength": 1 },

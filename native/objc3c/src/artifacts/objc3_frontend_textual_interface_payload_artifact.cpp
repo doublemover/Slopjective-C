@@ -75,8 +75,9 @@ JsonValue ValueOptionalContract() {
   contract["runtime_execution_supported"] = JsonValue::Bool(true);
   contract["lowering_supported"] = JsonValue::Bool(true);
   contract["runtime_abi_payload_scope"] =
-      JsonValue::String("supported-scalar-payload-forms-only");
-  contract["supported_runtime_payload_forms"] = StringArray({"i32", "bool"});
+      JsonValue::String(kObjc3ValueOptionalRuntimeAbiPayloadScope);
+  contract["supported_runtime_payload_forms"] =
+      StringArray({"i32", "bool", "id"});
   contract["ir_payload_emission_supported"] = JsonValue::Bool(true);
   contract["call_abi_lowering_supported"] = JsonValue::Bool(true);
   contract["broad_public_runtime_support_claim_allowed"] =

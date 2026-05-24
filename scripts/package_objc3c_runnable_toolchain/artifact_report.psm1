@@ -22,7 +22,9 @@ function New-RunnableToolchainPackageManifestPayload {
     [Parameter(Mandatory = $true)][string]$RepoRoot,
     [Parameter(Mandatory = $true)][string]$PackageRoot,
     [Parameter(Mandatory = $true)][string]$ManifestPath,
-    [Parameter(Mandatory = $true)][string[]]$StagedRelativePaths
+    [Parameter(Mandatory = $true)][string[]]$StagedRelativePaths,
+    [ValidateSet("release", "address", "undefined")]
+    [string]$SanitizerVariant = "release"
   )
 
   $surfacePayloads = Get-RunnableToolchainPackageSurfacePayloads -PackageRoot $PackageRoot
@@ -33,7 +35,8 @@ function New-RunnableToolchainPackageManifestPayload {
     -SectionPayload (New-RunnableToolchainPackageFoundationManifestSection `
       -RepoRoot $RepoRoot `
       -PackageRoot $PackageRoot `
-      -ManifestPath $ManifestPath)
+      -ManifestPath $ManifestPath `
+      -SanitizerVariant $SanitizerVariant)
   Add-RunnableToolchainPackageManifestSection `
     -ManifestPayload $manifestPayload `
     -SectionPayload (New-RunnableToolchainPackageApplicationManifestSection)
@@ -54,14 +57,17 @@ function Write-RunnableToolchainPackageManifest {
     [Parameter(Mandatory = $true)][string]$RepoRoot,
     [Parameter(Mandatory = $true)][string]$PackageRoot,
     [Parameter(Mandatory = $true)][string]$ManifestPath,
-    [Parameter(Mandatory = $true)][string[]]$StagedRelativePaths
+    [Parameter(Mandatory = $true)][string[]]$StagedRelativePaths,
+    [ValidateSet("release", "address", "undefined")]
+    [string]$SanitizerVariant = "release"
   )
 
   $manifestPayload = New-RunnableToolchainPackageManifestPayload `
     -RepoRoot $RepoRoot `
     -PackageRoot $PackageRoot `
     -ManifestPath $ManifestPath `
-    -StagedRelativePaths $StagedRelativePaths
+    -StagedRelativePaths $StagedRelativePaths `
+    -SanitizerVariant $SanitizerVariant
 
   $manifestDir = Split-Path -Parent $ManifestPath
   New-Item -ItemType Directory -Force -Path $manifestDir | Out-Null

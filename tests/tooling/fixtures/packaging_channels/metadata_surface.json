@@ -6,6 +6,9 @@
     "contract_id",
     "generated_at_utc",
     "platform_id",
+    "package_id",
+    "package_channel_id",
+    "sanitizer_variant",
     "package_root",
     "platform_support_matrix",
     "supported_platform_ids",
@@ -18,7 +21,9 @@
     "receipt_contracts",
     "portable_archive",
     "installer_archive",
-    "offline_archive"
+    "offline_archive",
+    "support_truth",
+    "native_execution_claimed"
   ],
   "required_receipt_fields": [
     "contract_id",
@@ -32,6 +37,20 @@
     "payload_manifest_sha256",
     "payload_required_entries",
     "installed_at_utc"
+  ],
+  "sanitizer_required_receipt_fields": [
+    "contract_id",
+    "install_root",
+    "install_home",
+    "channel_id",
+    "bootstrap_entrypoint",
+    "package_bridge",
+    "install_command",
+    "payload_manifest",
+    "payload_manifest_sha256",
+    "payload_required_entries",
+    "installed_at_utc",
+    "sanitizer_package_variant"
   ],
   "required_installer_signature_fields": [
     "signature_format",
@@ -73,6 +92,11 @@
     "payload_required_entries",
     "required_fields",
     "network_policy",
-    "rollback_required"
+    "rollback_required",
+    "package_id",
+    "package_channel_id",
+    "sanitizer_variant",
+    "support_truth",
+    "native_execution_claimed"
   ]
 }

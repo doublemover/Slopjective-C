@@ -82,6 +82,13 @@ def test_platform_support_source_truth_validates_checked_matrix() -> None:
     host_ingestion = source_truth["host_promotion_architecture"]["hosted_evidence_ingestion"]
     assert host_ingestion == {
         "workflow_path": ".github/workflows/platform-host-evidence.yml",
+        "accepted_workflow_paths": [
+            ".github/workflows/platform-host-evidence.yml",
+            ".github/workflows/conformance-minima.yml",
+        ],
+        "dispatch_gateway_workflow_paths": [
+            ".github/workflows/conformance-minima.yml",
+        ],
         "runner_labels": {
             "linux-x64": "ubuntu-24.04",
             "darwin-arm64": "macos-15",

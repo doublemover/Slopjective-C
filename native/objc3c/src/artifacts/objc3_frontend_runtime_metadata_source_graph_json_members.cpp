@@ -94,6 +94,8 @@ void WriteSourceGraphMemberNodeJsonFields(
         << "\",\"is_class_method\":"
         << (node.is_class_method ? "true" : "false")
         << ",\"has_body\":" << (node.has_body ? "true" : "false")
+        << ",\"throws_error_out_abi_ready\":"
+        << (node.throws_error_out_abi_ready ? "true" : "false")
         << ",\"parameter_count\":" << node.parameter_count
         << ",\"return_type_name\":\""
         << EscapeJsonString(node.return_type_name)

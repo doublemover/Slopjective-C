@@ -8,6 +8,8 @@ param(
   [string]$LibraryOutputDir = "",
   [string]$FrontendArtifactRoot = "",
   [string]$SummaryPath = "",
+  [ValidateSet("release", "address", "undefined")]
+  [string]$SanitizerVariant = "release",
   [int]$Parallelism = 0
 )
 
@@ -276,6 +278,7 @@ function Write-Objc3cNativeBuildSummary {
     [Parameter(Mandatory = $true)][string]$RuntimeOutputDirPath,
     [Parameter(Mandatory = $true)][string]$LibraryOutputDirPath,
     [Parameter(Mandatory = $true)][string]$FrontendArtifactRootPath,
+    [Parameter(Mandatory = $true)][string]$SanitizerVariantValue,
     [Parameter(Mandatory = $true)][string]$SourceDateEpoch,
     [Parameter(Mandatory = $true)][int]$Parallelism,
     [Parameter(Mandatory = $true)][string]$NativeExecutablePath,
@@ -312,6 +315,7 @@ function Write-Objc3cNativeBuildSummary {
     parallelism = $Parallelism
     native_build_lock = if ($null -ne $NativeBuildLockTelemetry) { $NativeBuildLockTelemetry } else { Get-Objc3cNativeBuildLockTelemetry -LockState $null }
     source_date_epoch = $SourceDateEpoch
+    sanitizer_variant = $SanitizerVariantValue
     runtime_archive_timestamps_normalized = $RuntimeArchiveNormalized
     clean_room = [bool]$CleanRoomRootPath
     clean_room_root = $cleanRoomRelativePath
@@ -423,6 +427,7 @@ if ($modeRunsNativeBuild) {
 }
 Write-BuildStep ("native_sources=" + $nativeSourcePaths.Count + "; capi_sources=" + $capiRunnerSourcePaths.Count)
 Write-BuildStep ("execution_mode=" + $ExecutionMode)
+Write-BuildStep ("sanitizer_variant=" + $SanitizerVariant)
 $parallelismLabel = if ($Parallelism -gt 0) { [string]$Parallelism } else { "host-default" }
 Write-BuildStep ("requested_parallelism=" + $parallelismLabel)
 if ($resolvedCleanRoomRoot) {
@@ -462,6 +467,7 @@ if ($modeRunsNativeBuild) {
     -RuntimeOutputDir $outDir `
     -LibraryOutputDir $outLibDir `
     -SourceDir $cmakeSourceDir `
+    -SanitizerVariant $SanitizerVariant `
     -SourceDateEpoch $sourceDateEpoch
 
   Invoke-Objc3cNativeCMakeConfigure `
@@ -477,6 +483,7 @@ if ($modeRunsNativeBuild) {
     -Libclang $libclang `
     -RuntimeOutputDir $outDir `
     -LibraryOutputDir $outLibDir `
+    -SanitizerVariant $SanitizerVariant `
     -FingerprintPath $buildFingerprintPath `
     -Fingerprint $buildFingerprint `
     -ForceReconfigure $ForceReconfigure
@@ -537,6 +544,7 @@ Write-Objc3cNativeBuildSummary `
   -RuntimeOutputDirPath $outDir `
   -LibraryOutputDirPath $outLibDir `
   -FrontendArtifactRootPath $resolvedFrontendArtifactRoot `
+  -SanitizerVariantValue $SanitizerVariant `
   -SourceDateEpoch $sourceDateEpoch `
   -Parallelism $Parallelism `
   -NativeExecutablePath $outExe `

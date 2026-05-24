@@ -16,6 +16,7 @@ struct Objc3IRRuntimeDispatchCallRequest {
   std::string lookup_start_class_ptr;
   std::string selector_ptr;
   std::vector<std::string> args;
+  std::string throws_error_slot_ptr;
   int expected_return_kind = 0;
   bool uses_typed_value_dispatch = false;
   bool uses_from_class_dispatch = false;

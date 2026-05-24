@@ -47,6 +47,7 @@ struct MethodCacheEntry {
   bool effective_direct_dispatch = false;
   bool objc_final_declared = false;
   bool objc_sealed_declared = false;
+  bool throws_error_out_abi_ready = false;
   std::string selector_storage;
   std::string fast_path_reason;
   std::string class_name;
@@ -85,6 +86,7 @@ struct SlowPathResolution {
   bool effective_direct_dispatch = false;
   bool objc_final_declared = false;
   bool objc_sealed_declared = false;
+  bool throws_error_out_abi_ready = false;
   std::string selector_storage;
   std::string fast_path_reason;
   std::string class_name;

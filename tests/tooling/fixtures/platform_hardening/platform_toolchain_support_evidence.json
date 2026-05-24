@@ -49,6 +49,13 @@
     "source_only_or_hosted_summary_result": "fail-closed-no-support-promotion",
     "hosted_evidence_ingestion": {
       "workflow_path": ".github/workflows/platform-host-evidence.yml",
+      "accepted_workflow_paths": [
+        ".github/workflows/platform-host-evidence.yml",
+        ".github/workflows/conformance-minima.yml"
+      ],
+      "dispatch_gateway_workflow_paths": [
+        ".github/workflows/conformance-minima.yml"
+      ],
       "runner_labels": {
         "linux-x64": "ubuntu-24.04",
         "darwin-arm64": "macos-15"
@@ -2548,15 +2555,17 @@
       "claim_weight": "policy",
       "source_paths": [
         ".github/workflows/platform-host-evidence.yml",
+        ".github/workflows/conformance-minima.yml",
         "scripts/ingest_objc3c_platform_host_evidence.py",
         "tests/tooling/fixtures/platform_hardening/platform_toolchain_support_evidence.json",
         "tests/tooling/fixtures/platform_support/source_truth_matrix.json"
       ],
       "replay_commands": [
-        "npm run objc3c -- ingest-platform-host-evidence -- --platform-id linux-x64 --runner-label ubuntu-24.04 --report-out tmp/reports/platform-host-evidence/linux-x64/host-evidence-report.json --summary-out tmp/reports/platform-host-evidence/linux-x64/ingestion-summary.json"
+        "npm run objc3c -- ingest-platform-host-evidence -- --platform-id linux-x64 --runner-label ubuntu-24.04 --report-out tmp/reports/platform-host-evidence/linux-x64/host-evidence-report.json --requirements-out tmp/reports/platform-host-evidence/linux-x64/promotion-readiness-requirements.json --summary-out tmp/reports/platform-host-evidence/linux-x64/ingestion-summary.json"
       ],
       "generated_report_paths": [
         "tmp/reports/platform-host-evidence/linux-x64/host-evidence-report.json",
+        "tmp/reports/platform-host-evidence/linux-x64/promotion-readiness-requirements.json",
         "tmp/reports/platform-host-evidence/linux-x64/ingestion-summary.json",
         "tmp/reports/platform-host-evidence/linux-x64/llvm-capabilities.json",
         "tmp/reports/platform-host-evidence/linux-x64/build/native_build_summary.json",
@@ -2578,15 +2587,17 @@
       "claim_weight": "policy",
       "source_paths": [
         ".github/workflows/platform-host-evidence.yml",
+        ".github/workflows/conformance-minima.yml",
         "scripts/ingest_objc3c_platform_host_evidence.py",
         "tests/tooling/fixtures/platform_hardening/platform_toolchain_support_evidence.json",
         "tests/tooling/fixtures/platform_support/source_truth_matrix.json"
       ],
       "replay_commands": [
-        "npm run objc3c -- ingest-platform-host-evidence -- --platform-id darwin-arm64 --runner-label macos-15 --report-out tmp/reports/platform-host-evidence/darwin-arm64/host-evidence-report.json --summary-out tmp/reports/platform-host-evidence/darwin-arm64/ingestion-summary.json"
+        "npm run objc3c -- ingest-platform-host-evidence -- --platform-id darwin-arm64 --runner-label macos-15 --report-out tmp/reports/platform-host-evidence/darwin-arm64/host-evidence-report.json --requirements-out tmp/reports/platform-host-evidence/darwin-arm64/promotion-readiness-requirements.json --summary-out tmp/reports/platform-host-evidence/darwin-arm64/ingestion-summary.json"
       ],
       "generated_report_paths": [
         "tmp/reports/platform-host-evidence/darwin-arm64/host-evidence-report.json",
+        "tmp/reports/platform-host-evidence/darwin-arm64/promotion-readiness-requirements.json",
         "tmp/reports/platform-host-evidence/darwin-arm64/ingestion-summary.json",
         "tmp/reports/platform-host-evidence/darwin-arm64/llvm-capabilities.json",
         "tmp/reports/platform-host-evidence/darwin-arm64/build/native_build_summary.json",

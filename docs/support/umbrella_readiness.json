@@ -535,7 +535,7 @@
       "intended_public_meaning": "Objective-C 3.0 typed throws, value optionals, generic callable reification, statement guarded match, and strict/strict-concurrency profile selection are aligned as one source-owned language-evolution surface with parser, semantic, artifact, fixture, capability, and evidence truth agreeing on what is supported and what remains fail-closed.",
       "forbidden_overclaims": [
         "Public typed throws support, generalized typed error ABI, unsupported foreign exception carriers, or parenthesized throws payload erasure from parser diagnostics alone.",
-        "Value optional runtime behavior outside the bounded packed scalar payload ABI, including nested/generic payload runtime lowering, property or ivar storage, unchecked unwrap, nil-to-scalar conversion, implicit nil absence, nullable pointer/nullability conversion, throws/result conversion, or lowercase optional aliases.",
+        "Value optional runtime behavior outside the bounded packed i32/bool/id-handle payload ABI, including full-width i64, object-pointer/nullability bridge, nested/generic payload runtime lowering, property or ivar storage, unchecked unwrap, nil-to-scalar conversion, implicit nil absence, throws/result conversion, or lowercase optional aliases.",
         "Runtime-specialized generic metadata, generic body cloning, module-wide implicit reification, selector-local generic method clauses, C/Objective-C style generic function syntax, overload-by-generic-signature, or variadic generic parameters from the bounded #8235 metadata policy.",
         "Type-test patterns, statement fat-arrow arms, Result payload ABI extraction, aliases, or strict-profile promotion from #8236 guarded match and bounded expression-match support.",
         "Strict-system profile support from strict-concurrency aliasing, preview modes, source-only concurrency support, or public conformance claims before release/system evidence exists.",
@@ -545,12 +545,12 @@
         {
           "capability_id": "language.errors.typed-throws",
           "required_state": "reserved",
-          "reason": "The umbrella cannot be implemented until typed throws moves from the hidden single-payload error-out ABI plus direct-function catch/bridge runtime slice into complete public replayable support evidence, including method/message-send policy."
+          "reason": "The umbrella cannot be implemented until typed throws moves from the hidden single-payload error-out ABI plus direct and runtime-dispatch message-send catch/bridge runtime slice into complete public replayable support evidence, including async propagation and final public replay policy."
         },
         {
           "capability_id": "language.types.value-optionals",
           "required_state": "reserved",
-          "reason": "The umbrella cannot be implemented until value optionals move beyond the checked packed Optional<i32>/Optional<bool> ABI evidence into a replay-proven public row or explicitly scope out nested/generic/property/ivar/nullability/nil/unchecked/throws broadening paths."
+          "reason": "The umbrella cannot be implemented until value optionals move beyond the checked packed Optional<i32>/Optional<bool>/Optional<id> ABI evidence into a replay-proven public row or explicitly scope out full-width-i64/object-pointer/nested/generic/property/ivar/nullability/nil/unchecked/throws broadening paths."
         },
         {
           "capability_id": "language.generics.generic-callable-reification",
@@ -723,13 +723,13 @@
       "required_runtime_probes": [
         {
           "id": "typed-throws-runtime",
-          "description": "Typed throws hidden single-payload ABI, exact catch policy, id<Error> bridge policy, and direct-function runtime catch/bridge smoke are recorded; full public row promotion remains blocked on method/message-send replay agreement.",
+          "description": "Typed throws hidden single-payload ABI, exact catch policy, id<Error> bridge policy, direct-function runtime catch/bridge smoke, and runtime-dispatch message-send error-out ABI coverage are recorded; full public row promotion remains blocked on async propagation and final public replay agreement.",
           "status": "blocked",
           "blocker_id": "typed-throws-abi-lowering-interface"
         },
         {
           "id": "value-optionals-runtime",
-          "description": "Value optional runtime support is limited to the checked packed Optional<i32> and Optional<bool> payload ABI; full-width i64, object, nested/generic/property/ivar storage, nil/nullability conversion, unchecked unwrap, implicit nil, and throws/result conversion remain unimplemented.",
+          "description": "Value optional runtime support is limited to the checked packed Optional<i32>, Optional<bool>, and Optional<id> handle payload ABI; full-width i64, object-pointer/nullability conversion, nested/generic/property/ivar storage, unchecked unwrap, implicit nil, and throws/result conversion remain unimplemented.",
           "status": "blocked",
           "blocker_id": "value-optionals-abi-lowering-interface"
         },
@@ -755,7 +755,7 @@
         },
         {
           "id": "value-optional-abi",
-          "description": "Value optional ABI layout identity, interface roundtrip, explicit absent/present construction, checked unwrap/binding diagnostics, and the packed Optional<i32>/Optional<bool> runtime ABI are now contracted; broad executable call ABI for full-width i64, object, nested/generic/property/ivar/nullability/nil/unchecked/throws forms remains blocked.",
+          "description": "Value optional ABI layout identity, interface roundtrip, explicit absent/present construction, checked unwrap/binding diagnostics, and the packed Optional<i32>/Optional<bool>/Optional<id> runtime ABI are now contracted; broad executable call ABI for full-width i64, object-pointer/nullability, nested/generic/property/ivar/nil/unchecked/throws forms remains blocked.",
           "status": "blocked",
           "blocker_id": "value-optionals-abi-lowering-interface"
         },
@@ -819,7 +819,7 @@
       "promotion_blockers": [
         {
           "blocker_id": "typed-throws-abi-lowering-interface",
-          "summary": "Typed throws now has parser/source/interface/sema effect identity, hidden single-payload error-out ABI lowering, exact typed catch records, id<Error> bridge policy, incompatible-catch rejection, unsupported foreign-carrier fail-closed records, and native execution smoke evidence for direct-function catch/bridge behavior. Broader public support remains reserved until every method/message-send and public replay surface agrees.",
+          "summary": "Typed throws now has parser/source/interface/sema effect identity, hidden single-payload error-out ABI lowering, exact typed catch records, id<Error> bridge policy, incompatible-catch rejection, unsupported foreign-carrier fail-closed records, native execution smoke evidence for direct-function catch/bridge behavior, and runtime-dispatch message-send error-out ABI coverage. Broader public support remains reserved until async propagation and every public replay surface agree.",
           "missing_work": [
             "Keep method/message-send catch policy and runtime replay evidence tied to checked fixtures before capability-row promotion.",
             "Promotion of the capability row only after its support claims, fixtures, artifacts, and replay evidence agree."
@@ -828,7 +828,7 @@
         },
         {
           "blocker_id": "value-optionals-abi-lowering-interface",
-          "summary": "Value optionals now have semantic type admission for the checked Optional<i32> and Optional<bool> runtime ABI, stable packed presence/payload layout identity, textual-interface roundtrip, explicit absent/present construction contracts, checked unwrap/binding diagnostics, and native execution smoke evidence for the packed i32 and bool payload carriers; full-width i64, nested/generic/property/ivar storage, nullability bridges, nil-to-scalar, implicit nil, unchecked unwrap, and throws/result conversion remain blocked.",
+          "summary": "Value optionals now have semantic type admission for the checked Optional<i32>, Optional<bool>, and Optional<id> runtime ABI, stable packed presence/payload layout identity, textual-interface roundtrip, explicit absent/present construction contracts, checked unwrap/binding diagnostics, and native execution smoke evidence for packed i32, bool, and id-handle payload carriers; full-width i64, object-pointer/nullability bridges, nested/generic/property/ivar storage, nil-to-scalar, implicit nil, unchecked unwrap, and throws/result conversion remain blocked.",
           "missing_work": [
             "Full-width i64 payloads, nested Optional<T>, generic payload, property storage, and ivar storage lowering.",
             "Nullability bridge, nil-to-scalar, implicit nil, unchecked unwrap, and throws/result conversion rejection coverage tied to the public row.",

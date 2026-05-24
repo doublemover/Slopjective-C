@@ -123,7 +123,7 @@ def assert_runnable_toolchain_package_uses_strictmode_safe_staging_lookup() -> N
     assert_contains_all(
         staging_text,
         [
-            "& $BuildScript | ForEach-Object { Write-Host $_ }",
+            "-SanitizerVariant $SanitizerVariant `",
             "return [pscustomobject]@{",
         ],
     )
@@ -212,16 +212,30 @@ def assert_runnable_toolchain_package_includes_compile_wrapper_dependencies() ->
 def assert_native_package_public_order_and_owner_membership() -> None:
     assert tuple(NATIVE_PACKAGE_ACTION_SPECS) == (
         "package-runnable-toolchain",
+        "package-runnable-toolchain-asan",
+        "package-runnable-toolchain-ubsan",
         "proof-objc3c",
     )
     assert NATIVE_PACKAGE_ACTION_SPECS["package-runnable-toolchain"] is (
         NATIVE_PACKAGE_TOOLCHAIN_ACTION_SPECS["package-runnable-toolchain"]
+    )
+    assert NATIVE_PACKAGE_ACTION_SPECS["package-runnable-toolchain-asan"] is (
+        NATIVE_PACKAGE_TOOLCHAIN_ACTION_SPECS["package-runnable-toolchain-asan"]
+    )
+    assert NATIVE_PACKAGE_ACTION_SPECS["package-runnable-toolchain-ubsan"] is (
+        NATIVE_PACKAGE_TOOLCHAIN_ACTION_SPECS["package-runnable-toolchain-ubsan"]
     )
     assert NATIVE_PACKAGE_ACTION_SPECS["proof-objc3c"] is (
         NATIVE_PACKAGE_PROOF_ACTION_SPECS["proof-objc3c"]
     )
     assert NATIVE_PACKAGE_ACTION_HANDLERS["package-runnable-toolchain"] is (
         NATIVE_PACKAGE_TOOLCHAIN_ACTION_HANDLERS["package-runnable-toolchain"]
+    )
+    assert NATIVE_PACKAGE_ACTION_HANDLERS["package-runnable-toolchain-asan"] is (
+        NATIVE_PACKAGE_TOOLCHAIN_ACTION_HANDLERS["package-runnable-toolchain-asan"]
+    )
+    assert NATIVE_PACKAGE_ACTION_HANDLERS["package-runnable-toolchain-ubsan"] is (
+        NATIVE_PACKAGE_TOOLCHAIN_ACTION_HANDLERS["package-runnable-toolchain-ubsan"]
     )
     assert NATIVE_PACKAGE_ACTION_HANDLERS["proof-objc3c"] is (
         NATIVE_PACKAGE_PROOF_ACTION_HANDLERS["proof-objc3c"]

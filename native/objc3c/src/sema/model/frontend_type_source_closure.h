@@ -14,9 +14,9 @@ inline constexpr const char *kObjc3TypeSystemTypeSourceClosureContractId =
 inline constexpr const char *kObjc3TypeSystemTypeSourceClosureSurfacePath =
     "frontend.pipeline.semantic_surface.objc_type_system_type_source_closure";
 inline constexpr const char *kObjc3TypeSystemTypeSourceClosureSourceModel =
-    "protocol-optional-partitions-object-pointer-nullability-generic-suffixes-optional-bindings-optional-sends-optional-member-access-nil-coalescing-typed-keypaths-and-Optional-value-optional-type-signatures-with-bounded-scalar-packed-runtime-abi-are-live-parser-owned-source-surfaces";
+    "protocol-optional-partitions-object-pointer-nullability-generic-suffixes-optional-bindings-optional-sends-optional-member-access-nil-coalescing-typed-keypaths-and-Optional-value-optional-type-signatures-with-bounded-packed-scalar-and-id-handle-runtime-abi-are-live-parser-owned-source-surfaces";
 inline constexpr const char *kObjc3TypeSystemTypeSourceClosureFailureModel =
-    "value-optional-nested-generic-property-ivar-nullability-nil-to-scalar-implicit-nil-unchecked-unwrap-and-throws-conversion-surfaces-remain-fail-closed-after-bounded-scalar-packed-runtime-abi";
+    "value-optional-nested-generic-property-ivar-nullability-nil-to-scalar-implicit-nil-unchecked-unwrap-and-throws-conversion-surfaces-remain-fail-closed-after-bounded-packed-scalar-and-id-handle-runtime-abi";
 inline constexpr const char *kObjc3TypeSystemTypeSemanticModelContractId =
     "objc3c.type_system.type.semantic.model.v1";
 inline constexpr const char *kObjc3TypeSystemTypeSemanticModelSurfacePath =

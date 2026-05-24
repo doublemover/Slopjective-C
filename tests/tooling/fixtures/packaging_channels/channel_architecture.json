@@ -5,6 +5,14 @@
   "package_bridge": "objc3c",
   "canonical_payload_action": "package-runnable-toolchain",
   "canonical_payload_command": "npm run objc3c -- package-runnable-toolchain",
+  "sanitizer_payload_actions": [
+    "package-runnable-toolchain-asan",
+    "package-runnable-toolchain-ubsan"
+  ],
+  "sanitizer_channel_actions": [
+    "build-package-channels-asan",
+    "build-package-channels-ubsan"
+  ],
   "canonical_payload_implementation_anchor": "scripts/package_objc3c_runnable_toolchain.ps1",
   "clean_room_source_policy": "fresh-owned-tmp-root-only",
   "payload_contract_manifest_field": "payload_contract",
@@ -15,7 +23,7 @@
     "offline-bundle"
   ],
   "derivation_rule": "all channel payloads derive from the runnable toolchain package manifest and release-foundation evidence artifacts",
-  "receipt_derivation_rule": "install receipts must bind the install root, channel id, runnable package manifest path, manifest digest, and required payload entries",
+  "receipt_derivation_rule": "install receipts must bind the install root, channel id, runnable package manifest path, manifest digest, required payload entries, and reserved sanitizer package metadata when a sanitizer selector is used",
   "forbidden_shapes": [
     "second compiler payload",
     "hand-curated install tree",

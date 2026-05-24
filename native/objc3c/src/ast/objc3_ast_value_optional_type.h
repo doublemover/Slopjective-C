@@ -11,11 +11,11 @@ inline constexpr const char *kObjc3ValueOptionalAbiLayoutId =
 inline constexpr const char *kObjc3ValueOptionalCanonicalSpelling =
     "Optional<T>";
 inline constexpr const char *kObjc3ValueOptionalSourceStatus =
-    "semantic-type-signature-admitted-bounded-scalar-runtime-abi";
+    "semantic-type-signature-admitted-bounded-packed-runtime-abi";
 inline constexpr const char *kObjc3ValueOptionalAbiLayoutStatus =
     "stable-packed-presence-payload-runtime-lowered";
 inline constexpr const char *kObjc3ValueOptionalInterfaceRoundtripStatus =
-    "semantic-carrier-roundtrips-bounded-scalar-runtime-abi";
+    "semantic-carrier-roundtrips-bounded-packed-runtime-abi";
 inline constexpr const char *kObjc3ValueOptionalPresenceField = "has_value";
 inline constexpr const char *kObjc3ValueOptionalPayloadStorageField = "payload";
 inline constexpr const char *kObjc3ValueOptionalAbsenceState =
@@ -40,26 +40,38 @@ inline constexpr const char *kObjc3ValueOptionalNilBridgeDiagnostic =
     "nil-bridging-to-optional-is-rejected";
 inline constexpr const char *kObjc3ValueOptionalRemainingRuntimeBoundary =
     "unchecked-unwrap-property-ivar-storage-and-nullable-pointer-bridging-remain-reserved";
+inline constexpr const char *kObjc3ValueOptionalRuntimeAbiPayloadScope =
+    "supported-packed-scalar-and-id-handle-payload-forms-only";
 inline constexpr const char *kObjc3RuntimeOptionalAbsentI64Symbol =
     "objc3_runtime_optional_absent_i64";
 inline constexpr const char *kObjc3RuntimeOptionalAbsentBoolSymbol =
     "objc3_runtime_optional_absent_bool";
+inline constexpr const char *kObjc3RuntimeOptionalAbsentIdSymbol =
+    "objc3_runtime_optional_absent_id";
 inline constexpr const char *kObjc3RuntimeOptionalPresentI32Symbol =
     "objc3_runtime_optional_present_i32";
 inline constexpr const char *kObjc3RuntimeOptionalPresentBoolSymbol =
     "objc3_runtime_optional_present_bool";
+inline constexpr const char *kObjc3RuntimeOptionalPresentIdSymbol =
+    "objc3_runtime_optional_present_id";
 inline constexpr const char *kObjc3RuntimeOptionalHasValueI32Symbol =
     "objc3_runtime_optional_has_value_i32";
 inline constexpr const char *kObjc3RuntimeOptionalHasValueBoolSymbol =
     "objc3_runtime_optional_has_value_bool";
+inline constexpr const char *kObjc3RuntimeOptionalHasValueIdSymbol =
+    "objc3_runtime_optional_has_value_id";
 inline constexpr const char *kObjc3RuntimeOptionalPayloadOrI32Symbol =
     "objc3_runtime_optional_payload_or_i32";
 inline constexpr const char *kObjc3RuntimeOptionalPayloadOrBoolSymbol =
     "objc3_runtime_optional_payload_or_bool";
+inline constexpr const char *kObjc3RuntimeOptionalPayloadOrIdSymbol =
+    "objc3_runtime_optional_payload_or_id";
 inline constexpr const char *kObjc3RuntimeOptionalUnwrapI32Symbol =
     "objc3_runtime_optional_unwrap_i32";
 inline constexpr const char *kObjc3RuntimeOptionalUnwrapBoolSymbol =
     "objc3_runtime_optional_unwrap_bool";
+inline constexpr const char *kObjc3RuntimeOptionalUnwrapIdSymbol =
+    "objc3_runtime_optional_unwrap_id";
 
 struct Objc3ValueOptionalTypeDescriptor {
   bool present = false;
@@ -174,7 +186,8 @@ inline ValueType Objc3ValueOptionalPayloadValueType(
 inline bool Objc3ValueOptionalPayloadRuntimeAbiSupported(
     const Objc3ValueOptionalTypeDescriptor &descriptor) {
   return (descriptor.payload_value_type == ValueType::I32 ||
-          descriptor.payload_value_type == ValueType::Bool) &&
+          descriptor.payload_value_type == ValueType::Bool ||
+          descriptor.payload_value_type == ValueType::ObjCId) &&
          !descriptor.payload_generic &&
          !descriptor.payload_nested_value_optional &&
          !descriptor.payload_lowercase_optional_alias;

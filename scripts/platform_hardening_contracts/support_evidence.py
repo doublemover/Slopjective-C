@@ -153,6 +153,13 @@ FORBIDDEN_TOOLCHAIN_RANGE_CLAIM_TERMS: tuple[str, ...] = (
 )
 HOST_EVIDENCE_CONTRACT_ID = "objc3c.platform.host-evidence.promotion.v1"
 HOST_EVIDENCE_WORKFLOW_PATH = ".github/workflows/platform-host-evidence.yml"
+HOST_EVIDENCE_DISPATCH_GATEWAY_WORKFLOW_PATHS: tuple[str, ...] = (
+    ".github/workflows/conformance-minima.yml",
+)
+HOST_EVIDENCE_ACCEPTED_WORKFLOW_PATHS: tuple[str, ...] = (
+    HOST_EVIDENCE_WORKFLOW_PATH,
+    *HOST_EVIDENCE_DISPATCH_GATEWAY_WORKFLOW_PATHS,
+)
 HOST_EVIDENCE_INGESTION_ACTION = "ingest-platform-host-evidence"
 HOST_EVIDENCE_INGESTION_HELPER = "scripts/ingest_objc3c_platform_host_evidence.py"
 HOST_EVIDENCE_REPORT_ROOT = "tmp/reports/platform-host-evidence"
@@ -170,6 +177,7 @@ HOST_EVIDENCE_RUNNER_LABELS: dict[str, str] = {
 HOST_EVIDENCE_REQUIRED_SCOPED_REPORT_PATHS: dict[str, tuple[str, ...]] = {
     "linux-x64": (
         "tmp/reports/platform-host-evidence/linux-x64/host-evidence-report.json",
+        "tmp/reports/platform-host-evidence/linux-x64/promotion-readiness-requirements.json",
         "tmp/reports/platform-host-evidence/linux-x64/ingestion-summary.json",
         "tmp/reports/platform-host-evidence/linux-x64/llvm-capabilities.json",
         "tmp/reports/platform-host-evidence/linux-x64/build/native_build_summary.json",
@@ -180,6 +188,7 @@ HOST_EVIDENCE_REQUIRED_SCOPED_REPORT_PATHS: dict[str, tuple[str, ...]] = {
     ),
     "darwin-arm64": (
         "tmp/reports/platform-host-evidence/darwin-arm64/host-evidence-report.json",
+        "tmp/reports/platform-host-evidence/darwin-arm64/promotion-readiness-requirements.json",
         "tmp/reports/platform-host-evidence/darwin-arm64/ingestion-summary.json",
         "tmp/reports/platform-host-evidence/darwin-arm64/llvm-capabilities.json",
         "tmp/reports/platform-host-evidence/darwin-arm64/build/native_build_summary.json",
@@ -718,7 +727,13 @@ def _validate_hosted_evidence_ingestion(
     ingestion = contract.get("hosted_evidence_ingestion")
     expect(isinstance(ingestion, dict), "host evidence contract missing hosted_evidence_ingestion")
     expect(ingestion.get("workflow_path") == HOST_EVIDENCE_WORKFLOW_PATH, "host evidence workflow path drifted")
-    expect(resolve_repo_path(HOST_EVIDENCE_WORKFLOW_PATH).is_file(), "host evidence workflow file is missing")
+    accepted_paths = tuple(str(path).replace("\\", "/") for path in ingestion.get("accepted_workflow_paths", []))
+    dispatch_paths = tuple(str(path).replace("\\", "/") for path in ingestion.get("dispatch_gateway_workflow_paths", []))
+    expect(set(accepted_paths) == set(HOST_EVIDENCE_ACCEPTED_WORKFLOW_PATHS), "host evidence accepted workflow paths drifted")
+    expect(set(dispatch_paths) == set(HOST_EVIDENCE_DISPATCH_GATEWAY_WORKFLOW_PATHS), "host evidence dispatch gateway workflow paths drifted")
+    expect(HOST_EVIDENCE_WORKFLOW_PATH in accepted_paths, "host evidence canonical workflow missing from accepted paths")
+    for workflow_path in accepted_paths:
+        expect(resolve_repo_path(workflow_path).is_file(), f"host evidence workflow file is missing: {workflow_path}")
     expect(ingestion.get("runner_labels") == HOST_EVIDENCE_RUNNER_LABELS, "host evidence runner labels drifted")
     expect(ingestion.get("ingestion_action") == HOST_EVIDENCE_INGESTION_ACTION, "host evidence ingestion action drifted")
     expect(ingestion.get("ingestion_helper") == HOST_EVIDENCE_INGESTION_HELPER, "host evidence ingestion helper drifted")
@@ -741,32 +756,38 @@ def _validate_hosted_evidence_ingestion(
         ingestion.get("support_rows_remain_fail_closed_until_reviewed") is True,
         "host evidence fail-closed review boundary drifted",
     )
-    workflow_text = resolve_repo_path(HOST_EVIDENCE_WORKFLOW_PATH).read_text(encoding="utf-8")
+    workflow_texts = {
+        workflow_path: resolve_repo_path(workflow_path).read_text(encoding="utf-8")
+        for workflow_path in accepted_paths
+    }
     candidate_ids = tuple(str(record_id) for record_id in ingestion.get("candidate_evidence_record_ids", []))
     expect(set(candidate_ids) == set(HOST_EVIDENCE_CANDIDATE_RECORD_IDS), "host evidence candidate ids drifted")
-    expect(
-        workflow_text.count("if-no-files-found: error") >= len(candidate_ids),
-        "host evidence workflow uploads do not all fail closed when evidence is absent",
-    )
+    for workflow_path, workflow_text in workflow_texts.items():
+        expect(
+            workflow_text.count("if-no-files-found: error") >= len(candidate_ids),
+            f"host evidence workflow uploads do not all fail closed when evidence is absent: {workflow_path}",
+        )
     for record_id in candidate_ids:
         platform_id = record_id.removeprefix("objc3c.evidence.hosted-ci.").removesuffix(".generated-host-run")
         expected_scoped_paths = set(HOST_EVIDENCE_REQUIRED_SCOPED_REPORT_PATHS.get(platform_id, ()))
         expect(expected_scoped_paths, f"{record_id} used unknown platform for scoped report paths")
-        expect(
-            f"name: objc3c-platform-host-evidence-{platform_id}" in workflow_text,
-            f"{record_id} workflow upload artifact name drifted",
-        )
-        expect(
-            f"path: {HOST_EVIDENCE_REPORT_ROOT}/{platform_id}/**" in workflow_text,
-            f"{record_id} workflow upload path is not platform-scoped",
-        )
+        for workflow_path, workflow_text in workflow_texts.items():
+            expect(
+                f"name: objc3c-platform-host-evidence-{platform_id}" in workflow_text,
+                f"{record_id} workflow upload artifact name drifted in {workflow_path}",
+            )
+            expect(
+                f"path: {HOST_EVIDENCE_REPORT_ROOT}/{platform_id}/**" in workflow_text,
+                f"{record_id} workflow upload path is not platform-scoped in {workflow_path}",
+            )
         expect(record_id in records_by_id, f"host evidence ingestion missing evidence record {record_id}")
         record = records_by_id[record_id]
         expect(record.get("evidence_class") == "hosted_ci", f"{record_id} must remain hosted_ci evidence")
         _policy_record_is_fail_closed(record)
         expect(not record.get("supports_platform_ids"), f"{record_id} generated host evidence widened support")
         source_paths = {str(path).replace("\\", "/") for path in record.get("source_paths", [])}
-        expect(HOST_EVIDENCE_WORKFLOW_PATH in source_paths, f"{record_id} missing workflow source path")
+        for workflow_path in accepted_paths:
+            expect(workflow_path in source_paths, f"{record_id} missing workflow source path: {workflow_path}")
         expect(HOST_EVIDENCE_INGESTION_HELPER in source_paths, f"{record_id} missing ingestion helper source path")
         replay_commands = [str(command) for command in record.get("replay_commands", [])]
         expect(

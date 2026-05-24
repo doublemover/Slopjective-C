@@ -108,6 +108,7 @@ bool Objc3IRMessageSendIsEligibleForCacheAwareDispatch(
     const LoweredMessageSend &lowered,
     const Objc3IRMessageSendLoweringPlan &plan) {
   return plan.emits_cache_aware_dispatch &&
+         !lowered.uses_active_message_send_error_out_slot &&
          !lowered.uses_from_class_dispatch &&
          !Objc3IRValueTypeUsesTypedDispatch(lowered.runtime_return_type) &&
          lowered.dispatch_symbol ==
@@ -410,12 +411,6 @@ std::string EmitObjc3IRRuntimeDispatch(
                                    lowered.direct_call_return_type, ctx);
   }
 
-  if (lowered.uses_active_message_send_error_out_slot &&
-      !ctx.active_message_send_error_out_slot.empty()) {
-    return callbacks.emit_unsupported_i32_value(
-        "try lowering for typed throws message sends requires direct dispatch error-out ABI");
-  }
-
   if (plan.fail_closed) {
     return callbacks.emit_unsupported_i32_value(plan.failure_reason);
   }
@@ -503,14 +498,26 @@ std::string EmitObjc3IRRuntimeDispatch(
     request.result_owner_model = plan.dispatch_result_owner_model;
     const bool uses_typed_dispatch =
         Objc3IRValueTypeUsesTypedDispatch(lowered.runtime_return_type);
+    const bool uses_error_out_dispatch =
+        lowered.uses_active_message_send_error_out_slot &&
+        !ctx.active_message_send_error_out_slot.empty();
     if (uses_typed_dispatch && lowered.uses_from_class_dispatch) {
-      request.dispatch_symbol = kObjc3RuntimeTypedDispatchValueFromClassSymbol;
+      request.dispatch_symbol =
+          uses_error_out_dispatch
+              ? kObjc3RuntimeTypedDispatchValueFromClassErrorOutSymbol
+              : kObjc3RuntimeTypedDispatchValueFromClassSymbol;
     } else if (uses_typed_dispatch) {
-      request.dispatch_symbol = kObjc3RuntimeTypedDispatchValueSymbol;
+      request.dispatch_symbol =
+          uses_error_out_dispatch ? kObjc3RuntimeTypedDispatchValueErrorOutSymbol
+                                  : kObjc3RuntimeTypedDispatchValueSymbol;
     } else if (lowered.uses_from_class_dispatch) {
-      request.dispatch_symbol = kObjc3RuntimeDispatchFromClassSymbol;
+      request.dispatch_symbol =
+          uses_error_out_dispatch ? kObjc3RuntimeDispatchFromClassErrorOutSymbol
+                                  : kObjc3RuntimeDispatchFromClassSymbol;
     } else {
-      request.dispatch_symbol = plan.dispatch_symbol;
+      request.dispatch_symbol =
+          uses_error_out_dispatch ? kObjc3RuntimeDispatchErrorOutSymbol
+                                  : plan.dispatch_symbol;
     }
     request.receiver = lowered.receiver;
     request.lookup_start_class_ptr = lookup_start_class_ptr;
@@ -518,6 +525,9 @@ std::string EmitObjc3IRRuntimeDispatch(
     request.args = lowered.args;
     request.uses_typed_value_dispatch = uses_typed_dispatch;
     request.uses_from_class_dispatch = lowered.uses_from_class_dispatch;
+    if (uses_error_out_dispatch) {
+      request.throws_error_slot_ptr = ctx.active_message_send_error_out_slot;
+    }
     request.expected_return_kind =
         Objc3IRRuntimeDispatchReturnKindForValueType(
             lowered.runtime_return_type);

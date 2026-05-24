@@ -64,7 +64,11 @@ def build_release_foundation_artifacts(*, reuse_existing: bool = False) -> None:
     run(python_script_command(RELEASE_PROVENANCE_PY))
 
 
-def build_runnable_package(package_root: Path, manifest_relative_path: str) -> None:
+def build_runnable_package(
+    package_root: Path,
+    manifest_relative_path: str,
+    sanitizer_variant: str = "release",
+) -> None:
     run(
         powershell_file_command(
             PWSH,
@@ -73,5 +77,7 @@ def build_runnable_package(package_root: Path, manifest_relative_path: str) -> N
             str(package_root),
             "-ManifestRelativePath",
             manifest_relative_path,
+            "-SanitizerVariant",
+            sanitizer_variant,
         )
     )

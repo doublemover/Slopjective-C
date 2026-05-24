@@ -15,6 +15,10 @@ extern "C" {
 int objc3_runtime_dispatch_i32(int receiver, const char *selector, int a0,
                                int a1, int a2, int a3);
 
+int objc3_runtime_dispatch_i32_error_out(
+    int receiver, const char *selector, int a0, int a1, int a2, int a3,
+    int *throws_error_out);
+
 /*
  * Plain i32 dispatch that starts method lookup at an explicit class name.
  * Lowered super sends use this with the statically resolved superclass.
@@ -23,6 +27,10 @@ int objc3_runtime_dispatch_i32_from_class(int receiver,
                                           const char *lookup_start_class_name,
                                           const char *selector, int a0,
                                           int a1, int a2, int a3);
+
+int objc3_runtime_dispatch_i32_from_class_error_out(
+    int receiver, const char *lookup_start_class_name, const char *selector,
+    int a0, int a1, int a2, int a3, int *throws_error_out);
 
 /*
  * Plain typed-value dispatch used by source lowering when semantic analysis
@@ -36,6 +44,11 @@ int objc3_runtime_dispatch_typed_value(
     objc3_runtime_dispatch_return_kind_code expected_return_kind,
     int receiver, const char *selector, int a0, int a1, int a2, int a3);
 
+int objc3_runtime_dispatch_typed_value_error_out(
+    objc3_runtime_dispatch_return_kind_code expected_return_kind,
+    int receiver, const char *selector, int a0, int a1, int a2, int a3,
+    int *throws_error_out);
+
 /*
  * Typed-value dispatch with an explicit class-name lookup start for lowered
  * super-send paths that need a statically resolved superclass.
@@ -44,6 +57,11 @@ int objc3_runtime_dispatch_typed_value_from_class(
     objc3_runtime_dispatch_return_kind_code expected_return_kind, int receiver,
     const char *lookup_start_class_name, const char *selector, int a0, int a1,
     int a2, int a3);
+
+int objc3_runtime_dispatch_typed_value_from_class_error_out(
+    objc3_runtime_dispatch_return_kind_code expected_return_kind, int receiver,
+    const char *lookup_start_class_name, const char *selector, int a0, int a1,
+    int a2, int a3, int *throws_error_out);
 
 #ifdef __cplusplus
 }

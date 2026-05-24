@@ -166,11 +166,11 @@ def _validate_value_optional_contract(type_signature: dict[str, Any], path: str)
         raise RuntimeError(f"{path}.value_optional_contract.issue_ref must be 8234")
     expected_strings = {
         "canonical_spelling": "Optional<T>",
-        "source_status": "semantic-type-signature-admitted-bounded-scalar-runtime-abi",
+        "source_status": "semantic-type-signature-admitted-bounded-packed-runtime-abi",
         "abi_layout_status": "stable-packed-presence-payload-runtime-lowered",
         "abi_layout_id": "objc3.value_optional.inline_presence_payload.v1",
-        "runtime_abi_payload_scope": "supported-scalar-payload-forms-only",
-        "interface_roundtrip_status": "semantic-carrier-roundtrips-bounded-scalar-runtime-abi",
+        "runtime_abi_payload_scope": "supported-packed-scalar-and-id-handle-payload-forms-only",
+        "interface_roundtrip_status": "semantic-carrier-roundtrips-bounded-packed-runtime-abi",
     }
     for field, expected in expected_strings.items():
         if contract.get(field) != expected:
@@ -181,9 +181,9 @@ def _validate_value_optional_contract(type_signature: dict[str, Any], path: str)
         contract.get("supported_runtime_payload_forms"),
         f"{path}.value_optional_contract.supported_runtime_payload_forms",
     )
-    if supported_payloads != ["i32", "bool"]:
+    if supported_payloads != ["i32", "bool", "id"]:
         raise RuntimeError(
-            f"{path}.value_optional_contract.supported_runtime_payload_forms must be ['i32', 'bool']"
+            f"{path}.value_optional_contract.supported_runtime_payload_forms must be ['i32', 'bool', 'id']"
         )
     expected_true = (
         "semantic_value_model_supported",
@@ -490,7 +490,7 @@ def negative_payload_cases(payload: dict[str, Any]) -> dict[str, str]:
     value_optional_lowering = deepcopy(payload)
     value_optional_lowering["declarations"][1]["type_signature"][
         "value_optional_contract"
-    ]["supported_runtime_payload_forms"] = ["i32", "bool", "i64"]
+    ]["supported_runtime_payload_forms"] = ["i32", "bool", "id", "i64"]
     cases["value-optional-lowering"] = _failure(value_optional_lowering)
 
     value_optional_layout_drift = deepcopy(payload)

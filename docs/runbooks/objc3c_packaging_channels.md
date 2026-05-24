@@ -8,6 +8,8 @@ This runbook defines the checked-in packaging-channel surface for objc3c:
 - local installer image generation and environment bootstrap scripts
 - offline air-gapped bundle assembly from machine-owned release artifacts
 - install smoke, rollback smoke, and channel metadata publication
+- explicit reserved ASan/UBSan package selectors that emit package ids,
+  sanitizer channels, and install-receipt metadata without promoting support
 
 This milestone does not add a system package manager, hosted update service, or
 platform notarization claim. Installer trust is represented by the
@@ -19,6 +21,17 @@ The packaging-channel surface layers distribution channels on top of the release
 The canonical payload remains the staged runnable toolchain bundle produced by
 `npm run objc3c -- package-runnable-toolchain` and described by the machine-
 owned release manifest, SBOM, and attestation artifacts.
+
+Reserved sanitizer package payloads use explicit public actions:
+
+- `npm run objc3c -- package-runnable-toolchain-asan`
+- `npm run objc3c -- package-runnable-toolchain-ubsan`
+- `npm run objc3c -- build-package-channels-asan`
+- `npm run objc3c -- build-package-channels-ubsan`
+
+Those variants must keep `support_truth: false` and
+`native_execution_claimed: false` until real package install and native
+execution evidence is checked in.
 
 Packaging-channel commands route through `npm run objc3c -- <action>`; helper
 implementations are action-registry anchors only.

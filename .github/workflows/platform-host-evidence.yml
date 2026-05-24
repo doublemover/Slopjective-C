@@ -101,6 +101,7 @@ jobs:
           --runner-label "$OBJC3C_PLATFORM_RUNNER_LABEL"
           --workflow-path ".github/workflows/platform-host-evidence.yml"
           --report-out "$OBJC3C_PLATFORM_EVIDENCE_ROOT/host-evidence-report.json"
+          --requirements-out "$OBJC3C_PLATFORM_EVIDENCE_ROOT/promotion-readiness-requirements.json"
           --summary-out "$OBJC3C_PLATFORM_EVIDENCE_ROOT/ingestion-summary.json"
 
       - name: Upload generated host evidence
@@ -193,6 +194,7 @@ jobs:
           --runner-label "$OBJC3C_PLATFORM_RUNNER_LABEL"
           --workflow-path ".github/workflows/platform-host-evidence.yml"
           --report-out "$OBJC3C_PLATFORM_EVIDENCE_ROOT/host-evidence-report.json"
+          --requirements-out "$OBJC3C_PLATFORM_EVIDENCE_ROOT/promotion-readiness-requirements.json"
           --summary-out "$OBJC3C_PLATFORM_EVIDENCE_ROOT/ingestion-summary.json"
 
       - name: Upload generated host evidence

@@ -31,6 +31,22 @@ PACKAGING_CHANNEL_ACTION_CONTRACTS: tuple[ReleaseGovernanceActionContract, ...] 
         "package channels stay derived from the live runnable package and release-foundation artifacts",
     ),
     ReleaseGovernanceActionContract(
+        "build-package-channels-asan",
+        "build reserved ASan portable archive, installer image, and offline bundle channels from the live runnable payload",
+        "python:scripts/build_objc3c_package_channels.py --sanitizer-variant address",
+        "packaging-channels",
+        "repo",
+        "ASan package channels stay explicit-opt-in, install-receipt backed, and reserved until native execution evidence exists",
+    ),
+    ReleaseGovernanceActionContract(
+        "build-package-channels-ubsan",
+        "build reserved UBSan portable archive, installer image, and offline bundle channels from the live runnable payload",
+        "python:scripts/build_objc3c_package_channels.py --sanitizer-variant undefined",
+        "packaging-channels",
+        "repo",
+        "UBSan package channels stay explicit-opt-in, install-receipt backed, and reserved until native execution evidence exists",
+    ),
+    ReleaseGovernanceActionContract(
         "validate-packaging-channels",
         "run the integrated packaging-channels workflow",
         "runner-internal packaging-channel child actions",

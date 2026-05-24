@@ -33,8 +33,89 @@ function Get-RunnableToolchainPackageGeneratedArtifactPaths {
     "tmp/artifacts/objc3c-native/frontend_conformance_matrix.json",
     "tmp/artifacts/objc3c-native/frontend_conformance_corpus.json",
     "tmp/artifacts/objc3c-native/frontend_integration_closeout.json",
+    "share/objc3c/sanitizer/asan-metadata.json",
+    "share/objc3c/sanitizer/ubsan-metadata.json",
     "tmp/build-objc3c-native/repo_superclean_source_of_truth.json"
   )
+}
+
+function Get-RunnableToolchainPackageSanitizerVariantMetadata {
+  param(
+    [ValidateSet("release", "address", "undefined")]
+    [string]$SanitizerVariant = "release"
+  )
+
+  if ($SanitizerVariant -eq "release") {
+    return $null
+  }
+
+  if ($SanitizerVariant -eq "address") {
+    return [ordered]@{
+      package_id = "org.objc3c.runtime:objc3c-runtime-asan"
+      package_variant_row_id = "objc3c.package.sanitizer.asan.reserved"
+      package_channel_id = "windows-x64-sanitizer-asan"
+      target_platform_id = "windows-x64"
+      sanitizer = "address"
+      selected_runtime_variant = "sanitizer=address"
+      install_selector = "sanitizer=address"
+      metadata_manifest_path = "share/objc3c/sanitizer/asan-metadata.json"
+      runtime_library_ids = @("objc3-runtime", "clang_rt.asan")
+      compiler_flags = @("-fsanitize=address", "-fno-omit-frame-pointer")
+      linker_flags = @("-fsanitize=address")
+      environment = "ASAN_OPTIONS"
+    }
+  }
+
+  return [ordered]@{
+    package_id = "org.objc3c.runtime:objc3c-runtime-ubsan"
+    package_variant_row_id = "objc3c.package.sanitizer.ubsan.reserved"
+    package_channel_id = "windows-x64-sanitizer-ubsan"
+    target_platform_id = "windows-x64"
+    sanitizer = "undefined"
+    selected_runtime_variant = "sanitizer=undefined"
+    install_selector = "sanitizer=undefined"
+    metadata_manifest_path = "share/objc3c/sanitizer/ubsan-metadata.json"
+    runtime_library_ids = @("objc3-runtime", "clang_rt.ubsan")
+    compiler_flags = @("-fsanitize=undefined", "-fno-omit-frame-pointer")
+    linker_flags = @("-fsanitize=undefined")
+    environment = "UBSAN_OPTIONS"
+    trap_or_recover_mode = "trap"
+  }
+}
+
+function Write-RunnableToolchainPackageSanitizerMetadata {
+  param(
+    [Parameter(Mandatory = $true)][string]$PackageRoot,
+    [ValidateSet("release", "address", "undefined")]
+    [string]$SanitizerVariant = "release"
+  )
+
+  $metadata = Get-RunnableToolchainPackageSanitizerVariantMetadata -SanitizerVariant $SanitizerVariant
+  if ($null -eq $metadata) {
+    return
+  }
+
+  $metadata["contract_id"] = "objc3c.sanitizer.runtime-package-metadata.v1"
+  $metadata["support_truth"] = $false
+  $metadata["native_execution_claimed"] = $false
+  $nativeExecutionContract = [ordered]@{
+    native_execution_required_before_support = $true
+    native_execution_record_required = $true
+    native_execution_record_fields = @("executable_path", "target_platform_id", "sanitizer", "runtime_library_ids", "environment", "exit_code", "diagnostic_records")
+    missing_native_execution_behavior = "fail-closed-before-support-promotion"
+    native_execution_claimed = $false
+  }
+  if ($SanitizerVariant -eq "undefined") {
+    $nativeExecutionContract["native_execution_record_fields"] += "trap_or_recover_mode"
+  }
+  $metadata["native_execution_contract"] = $nativeExecutionContract
+  $metadata["default_release_channel_allowed"] = $false
+  $metadata["release_runtime_mixing_allowed"] = $false
+
+  $metadataPath = Join-Path $PackageRoot ($metadata["metadata_manifest_path"] -replace '/', [System.IO.Path]::DirectorySeparatorChar)
+  $metadataDir = Split-Path -Parent $metadataPath
+  New-Item -ItemType Directory -Force -Path $metadataDir | Out-Null
+  $metadata | ConvertTo-Json -Depth 8 | Set-Content -LiteralPath $metadataPath -Encoding utf8
 }
 
 function Test-RunnableToolchainPackageGeneratedArtifactPath {
@@ -195,6 +276,8 @@ function Invoke-RunnableToolchainPackageBuild {
     [Parameter(Mandatory = $true)][string]$RepoRoot,
     [Parameter(Mandatory = $true)][string]$PackageRoot,
     [Parameter(Mandatory = $true)][string]$BuildScript,
+    [ValidateSet("release", "address", "undefined")]
+    [string]$SanitizerVariant = "release",
     [int]$Parallelism = 0
   )
 
@@ -217,6 +300,7 @@ function Invoke-RunnableToolchainPackageBuild {
     -LibraryOutputDir $libraryOutputDir `
     -FrontendArtifactRoot $frontendArtifactRoot `
     -SummaryPath $summaryPath `
+    -SanitizerVariant $SanitizerVariant `
     -Parallelism $Parallelism |
     ForEach-Object { Write-Host $_ }
   if ($LASTEXITCODE -ne 0) {
@@ -230,6 +314,9 @@ function Invoke-RunnableToolchainPackageBuild {
     -RepoRoot $RepoRoot `
     -PackageRoot $PackageRoot `
     -BuildDir $buildDir
+  Write-RunnableToolchainPackageSanitizerMetadata `
+    -PackageRoot $PackageRoot `
+    -SanitizerVariant $SanitizerVariant
   Remove-RunnableToolchainPackagePrivateBuildRoot `
     -RepoRoot $RepoRoot `
     -PackageRoot $PackageRoot
@@ -432,6 +519,8 @@ function Invoke-RunnableToolchainPackageStaging {
     [Parameter(Mandatory = $true)][string]$PackageRoot,
     [Parameter(Mandatory = $true)][string]$ManifestPath,
     [Parameter(Mandatory = $true)][string]$BuildScript,
+    [ValidateSet("release", "address", "undefined")]
+    [string]$SanitizerVariant = "release",
     [int]$Parallelism = 0
   )
 
@@ -440,6 +529,7 @@ function Invoke-RunnableToolchainPackageStaging {
     -RepoRoot $RepoRoot `
     -PackageRoot $PackageRoot `
     -BuildScript $BuildScript `
+    -SanitizerVariant $SanitizerVariant `
     -Parallelism $Parallelism
   $inputFiles = @(Get-RunnableToolchainPackageInputFiles -RepoRoot $RepoRoot)
   $copiedRelativePaths = @(Copy-RunnableToolchainPackageInputs `

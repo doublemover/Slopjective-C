@@ -58,7 +58,7 @@ inline bool IsReadyObjc3FrontendTypeSystemTypeSourceClosureSummary(
          summary.value_optional_abi_status ==
              "stable-packed-presence-payload-runtime-lowered" &&
          summary.value_optional_interface_roundtrip_status ==
-             "semantic-carrier-roundtrips-bounded-scalar-runtime-abi" &&
+             "semantic-carrier-roundtrips-bounded-packed-runtime-abi" &&
          summary.deterministic_handoff &&
          summary.ready_for_semantic_expansion &&
          !summary.replay_key.empty() && summary.failure_reason.empty();

@@ -15,6 +15,7 @@ function Get-Objc3cNativeBuildFingerprint {
     [Parameter(Mandatory = $true)][string]$RuntimeOutputDir,
     [Parameter(Mandatory = $true)][string]$LibraryOutputDir,
     [Parameter(Mandatory = $true)][string]$SourceDir,
+    [Parameter(Mandatory = $true)][string]$SanitizerVariant,
     [Parameter(Mandatory = $true)][string]$SourceDateEpoch
   )
 
@@ -34,6 +35,7 @@ function Get-Objc3cNativeBuildFingerprint {
     source_dir = $SourceDir
     runtime_output_dir = $RuntimeOutputDir
     library_output_dir = $LibraryOutputDir
+    sanitizer_variant = $SanitizerVariant
     build_type = "Release"
     direct_object_emission = $true
     warning_parity = $true

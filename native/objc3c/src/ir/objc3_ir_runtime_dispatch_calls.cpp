@@ -58,6 +58,9 @@ std::string BuildObjc3IRRuntimeDispatchCall(
   for (const std::string &arg : request.args) {
     call << ", i32 " << arg;
   }
+  if (!request.throws_error_slot_ptr.empty()) {
+    call << ", ptr " << request.throws_error_slot_ptr;
+  }
   call << ")";
   return call.str();
 }

@@ -27,6 +27,7 @@ struct EmittedMethodListEntry {
   std::uint64_t has_body;
   bool effective_direct_dispatch;
   bool objc_final_declared;
+  bool throws_error_out_abi_ready;
 };
 
 struct EmittedKeyPathDescriptor {

@@ -80,7 +80,8 @@ function Test-Objc3cNativeCMakeCacheToolchainMatch {
     [Parameter(Mandatory = $true)][string]$Clangxx,
     [Parameter(Mandatory = $true)][string]$LlvmRoot,
     [Parameter(Mandatory = $true)][string]$IncludeDir,
-    [Parameter(Mandatory = $true)][string]$Libclang
+    [Parameter(Mandatory = $true)][string]$Libclang,
+    [Parameter(Mandatory = $true)][string]$SanitizerVariant
   )
 
   $cachePath = Join-Path $BuildDir "CMakeCache.txt"
@@ -93,10 +94,17 @@ function Test-Objc3cNativeCMakeCacheToolchainMatch {
     OBJC3C_LLVM_ROOT = $LlvmRoot
     OBJC3C_LLVM_INCLUDE_DIR = $IncludeDir
     OBJC3C_LIBCLANG_LIBRARY = $Libclang
+    OBJC3C_SANITIZER_VARIANT = $SanitizerVariant
   }
 
   foreach ($key in $expected.Keys) {
     $actualValue = Get-Objc3cNativeCMakeCacheValue -CachePath $cachePath -Key $key
+    if ($key -eq "OBJC3C_SANITIZER_VARIANT") {
+      if ([string]$actualValue -ne [string]$expected[$key]) {
+        return $false
+      }
+      continue
+    }
     if ((Convert-Objc3cNativeCMakeCachePathForComparisonSafe -Path $actualValue) -ne (Convert-Objc3cNativeCMakeCachePathForComparison -Path $expected[$key])) {
       return $false
     }
@@ -125,7 +133,8 @@ function Reset-Objc3cNativeCMakeCacheIfToolchainDrifted {
     [Parameter(Mandatory = $true)][string]$Clangxx,
     [Parameter(Mandatory = $true)][string]$LlvmRoot,
     [Parameter(Mandatory = $true)][string]$IncludeDir,
-    [Parameter(Mandatory = $true)][string]$Libclang
+    [Parameter(Mandatory = $true)][string]$Libclang,
+    [Parameter(Mandatory = $true)][string]$SanitizerVariant
   )
 
   if (Test-Objc3cNativeCMakeCacheToolchainMatch `
@@ -133,7 +142,8 @@ function Reset-Objc3cNativeCMakeCacheIfToolchainDrifted {
       -Clangxx $Clangxx `
       -LlvmRoot $LlvmRoot `
       -IncludeDir $IncludeDir `
-      -Libclang $Libclang) {
+      -Libclang $Libclang `
+      -SanitizerVariant $SanitizerVariant) {
     return
   }
 
@@ -157,6 +167,7 @@ function Invoke-Objc3cNativeCMakeConfigure {
     [Parameter(Mandatory = $true)][string]$Libclang,
     [Parameter(Mandatory = $true)][string]$RuntimeOutputDir,
     [Parameter(Mandatory = $true)][string]$LibraryOutputDir,
+    [Parameter(Mandatory = $true)][string]$SanitizerVariant,
     [Parameter(Mandatory = $true)][string]$FingerprintPath,
     [Parameter(Mandatory = $true)][System.Collections.IDictionary]$Fingerprint,
     [Parameter(Mandatory = $true)][bool]$ForceReconfigure
@@ -168,7 +179,8 @@ function Invoke-Objc3cNativeCMakeConfigure {
     -Clangxx $Clangxx `
     -LlvmRoot $LlvmRoot `
     -IncludeDir $IncludeDir `
-    -Libclang $Libclang
+    -Libclang $Libclang `
+    -SanitizerVariant $SanitizerVariant
 
   $needsConfigure = Get-Objc3cNativeCMakeConfigureNeeded `
     -BuildDir $BuildDir `
@@ -195,7 +207,8 @@ function Invoke-Objc3cNativeCMakeConfigure {
       "-DOBJC3C_LLVM_INCLUDE_DIR=$IncludeDir" `
       "-DOBJC3C_LIBCLANG_LIBRARY=$Libclang" `
       "-DOBJC3C_RUNTIME_OUTPUT_DIR=$RuntimeOutputDir" `
-      "-DOBJC3C_LIBRARY_OUTPUT_DIR=$LibraryOutputDir"
+      "-DOBJC3C_LIBRARY_OUTPUT_DIR=$LibraryOutputDir" `
+      "-DOBJC3C_SANITIZER_VARIANT=$SanitizerVariant"
     if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
     $Fingerprint | ConvertTo-Json -Depth 8 | Set-Content -LiteralPath $FingerprintPath -Encoding utf8
   } else {

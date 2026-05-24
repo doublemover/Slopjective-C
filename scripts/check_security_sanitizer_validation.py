@@ -56,6 +56,7 @@ REQUIRED_PACKAGE_VARIANTS = {
         "issue_ref": 8230,
         "sanitizer": "address",
         "package_variant_row_id": "objc3c.package.sanitizer.asan.reserved",
+        "package_channel_id": "windows-x64-sanitizer-asan",
         "package_id": "org.objc3c.runtime:objc3c-runtime-asan",
         "compiler_flags": {"-fsanitize=address", "-fno-omit-frame-pointer"},
         "linker_flags": {"-fsanitize=address"},
@@ -87,6 +88,7 @@ REQUIRED_PACKAGE_VARIANTS = {
         "issue_ref": 8231,
         "sanitizer": "undefined",
         "package_variant_row_id": "objc3c.package.sanitizer.ubsan.reserved",
+        "package_channel_id": "windows-x64-sanitizer-ubsan",
         "package_id": "org.objc3c.runtime:objc3c-runtime-ubsan",
         "compiler_flags": {"-fsanitize=undefined", "-fno-omit-frame-pointer"},
         "linker_flags": {"-fsanitize=undefined"},
@@ -132,6 +134,7 @@ SANITIZER_INSTALL_RECEIPT_FIELD = "sanitizer_package_variant"
 REQUIRED_SANITIZER_INSTALL_RECEIPT_FIELDS = {
     "package_id",
     "package_variant_row_id",
+    "package_channel_id",
     "target_platform_id",
     "sanitizer",
     "runtime_library_ids",
@@ -638,6 +641,7 @@ def validate_runtime_package_variants(contract: dict[str, Any]) -> list[dict[str
         issue_ref = int(expected["issue_ref"])  # type: ignore[arg-type]
         sanitizer_name = str(expected["sanitizer"])
         package_variant_row_id = str(expected["package_variant_row_id"])
+        package_channel_id = str(expected["package_channel_id"])
         package_id = str(expected["package_id"])
         if variant.get("issue_ref") != issue_ref:
             raise RuntimeError(f"{variant_id} issue_ref drifted")
@@ -645,6 +649,8 @@ def validate_runtime_package_variants(contract: dict[str, Any]) -> list[dict[str
             raise RuntimeError(f"{variant_id} sanitizer identity drifted")
         if variant.get("package_variant_row_id") != package_variant_row_id:
             raise RuntimeError(f"{variant_id} package variant row identity drifted")
+        if variant.get("package_channel_id") != package_channel_id:
+            raise RuntimeError(f"{variant_id} package channel id drifted")
         if variant.get("package_id") != package_id:
             raise RuntimeError(f"{variant_id} package id drifted")
         if variant.get("claim_state") != "reserved":

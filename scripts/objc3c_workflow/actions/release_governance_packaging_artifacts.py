@@ -21,6 +21,28 @@ def action_build_package_channels(_: list[str]) -> int:
     return run([sys.executable, str(PACKAGE_CHANNELS_BUILD_PY)])
 
 
+def action_build_package_channels_asan(_: list[str]) -> int:
+    return run(
+        [
+            sys.executable,
+            str(PACKAGE_CHANNELS_BUILD_PY),
+            "--sanitizer-variant",
+            "address",
+        ]
+    )
+
+
+def action_build_package_channels_ubsan(_: list[str]) -> int:
+    return run(
+        [
+            sys.executable,
+            str(PACKAGE_CHANNELS_BUILD_PY),
+            "--sanitizer-variant",
+            "undefined",
+        ]
+    )
+
+
 def action_build_platform_support_matrix(_: list[str]) -> int:
     return run([sys.executable, str(PLATFORM_SUPPORT_MATRIX_PY)])
 

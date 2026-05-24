@@ -29,6 +29,30 @@ NATIVE_PACKAGE_TOOLCHAIN_ACTION_SPECS: dict[str, ActionSpec] = {
             "platform-hardening-build-package-validation ownership"
         ),
     ),
+    "package-runnable-toolchain-asan": ActionSpec(
+        "package-runnable-toolchain-asan",
+        "package the runnable native toolchain with the reserved ASan runtime selector",
+        "pwsh:scripts/package_objc3c_runnable_toolchain.ps1 -SanitizerVariant address",
+        validation_tier="repo",
+        guarantee_owner=(
+            "packaging-channels-source -> packaging-channels-gate -> "
+            "packaging-channels-blockers: ASan package output uses an explicit "
+            "sanitizer selector, emits install-receipt metadata, and remains "
+            "reserved until package install and native execution evidence exists"
+        ),
+    ),
+    "package-runnable-toolchain-ubsan": ActionSpec(
+        "package-runnable-toolchain-ubsan",
+        "package the runnable native toolchain with the reserved UBSan runtime selector",
+        "pwsh:scripts/package_objc3c_runnable_toolchain.ps1 -SanitizerVariant undefined",
+        validation_tier="repo",
+        guarantee_owner=(
+            "packaging-channels-source -> packaging-channels-gate -> "
+            "packaging-channels-blockers: UBSan package output uses an explicit "
+            "sanitizer selector, emits install-receipt metadata, and remains "
+            "reserved until package install and native execution evidence exists"
+        ),
+    ),
 }
 
 __all__ = [

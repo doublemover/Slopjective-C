@@ -57,12 +57,20 @@ extern "C" std::int64_t objc3_runtime_optional_absent_bool(void) {
   return PackOptionalBool(false, false);
 }
 
+extern "C" std::int64_t objc3_runtime_optional_absent_id(void) {
+  return PackOptionalI32(false, 0);
+}
+
 extern "C" std::int64_t objc3_runtime_optional_present_i32(int payload) {
   return PackOptionalI32(true, payload);
 }
 
 extern "C" std::int64_t objc3_runtime_optional_present_bool(bool payload) {
   return PackOptionalBool(true, payload);
+}
+
+extern "C" std::int64_t objc3_runtime_optional_present_id(int payload) {
+  return PackOptionalI32(true, payload);
 }
 
 extern "C" int objc3_runtime_optional_has_value_i32(std::int64_t value) {
@@ -73,6 +81,10 @@ extern "C" bool objc3_runtime_optional_has_value_bool(std::int64_t value) {
   return HasValue(value);
 }
 
+extern "C" int objc3_runtime_optional_has_value_id(std::int64_t value) {
+  return HasValue(value) ? 1 : 0;
+}
+
 extern "C" int objc3_runtime_optional_payload_or_i32(std::int64_t value,
                                                      int fallback) {
   return HasValue(value) ? Payload(value) : fallback;
@@ -81,6 +93,11 @@ extern "C" int objc3_runtime_optional_payload_or_i32(std::int64_t value,
 extern "C" bool objc3_runtime_optional_payload_or_bool(std::int64_t value,
                                                        bool fallback) {
   return HasValue(value) ? PayloadBool(value) : fallback;
+}
+
+extern "C" int objc3_runtime_optional_payload_or_id(std::int64_t value,
+                                                    int fallback) {
+  return HasValue(value) ? Payload(value) : fallback;
 }
 
 extern "C" int objc3_runtime_optional_unwrap_i32(std::int64_t value) {
@@ -95,4 +112,11 @@ extern "C" bool objc3_runtime_optional_unwrap_bool(std::int64_t value) {
     std::abort();
   }
   return PayloadBool(value);
+}
+
+extern "C" int objc3_runtime_optional_unwrap_id(std::int64_t value) {
+  if (!HasValue(value)) {
+    std::abort();
+  }
+  return Payload(value);
 }

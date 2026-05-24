@@ -32,6 +32,12 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
         action="store_true",
         help="Use the already validated release-foundation integration outputs instead of rebuilding them.",
     )
+    parser.add_argument(
+        "--sanitizer-variant",
+        choices=("release", "address", "undefined"),
+        default="release",
+        help="Build package-channel artifacts for the selected runtime sanitizer variant.",
+    )
     return parser.parse_args(argv)
 
 
@@ -44,9 +50,16 @@ def main(argv: Sequence[str] | None = None) -> int:
         reuse_existing=bool(args.reuse_release_foundation_artifacts)
     )
 
-    paths = package_channel_paths(package_channel_run_id())
+    paths = package_channel_paths(
+        package_channel_run_id(),
+        sanitizer_variant=str(args.sanitizer_variant),
+    )
     prepare_package_channel_workspace(paths)
-    build_runnable_package(paths.package_root, MANIFEST_RELATIVE_PATH)
+    build_runnable_package(
+        paths.package_root,
+        MANIFEST_RELATIVE_PATH,
+        sanitizer_variant=paths.sanitizer_variant,
+    )
 
     publish_portable_archive(paths)
     publish_installer_archive(paths)

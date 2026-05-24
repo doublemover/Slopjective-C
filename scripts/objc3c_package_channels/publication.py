@@ -91,7 +91,10 @@ def publish_portable_archive(paths: PackageChannelPaths) -> None:
 def publish_installer_archive(paths: PackageChannelPaths) -> None:
     installer_payload_root = paths.installer_image_root / "payload"
     shutil.copytree(paths.package_root, installer_payload_root, dirs_exist_ok=True)
-    write_text(paths.installer_image_root / "Install-objc3c.ps1", install_script_text())
+    write_text(
+        paths.installer_image_root / "Install-objc3c.ps1",
+        install_script_text(paths.sanitizer_variant),
+    )
     write_text(paths.installer_image_root / "Uninstall-objc3c.ps1", uninstall_script_text())
     write_text(paths.installer_image_root / "Bootstrap-objc3cEnvironment.ps1", bootstrap_script_text())
     zip_directory(paths.installer_image_root, paths.installer_archive)
@@ -107,7 +110,13 @@ def publish_offline_bundle(paths: PackageChannelPaths) -> None:
     shutil.copy2(RELEASE_FOUNDATION_MANIFEST, evidence_root / RELEASE_FOUNDATION_MANIFEST.name)
     shutil.copy2(RELEASE_FOUNDATION_SBOM, evidence_root / RELEASE_FOUNDATION_SBOM.name)
     shutil.copy2(RELEASE_FOUNDATION_ATTESTATION, evidence_root / RELEASE_FOUNDATION_ATTESTATION.name)
-    write_text(paths.offline_bundle_root / "OfflineBootstrap-objc3c.ps1", offline_bootstrap_script_text())
+    write_text(
+        paths.offline_bundle_root / "OfflineBootstrap-objc3c.ps1",
+        offline_bootstrap_script_text(
+            paths.sanitizer_variant,
+            paths.installer_archive.name,
+        ),
+    )
     zip_directory(paths.offline_bundle_root, paths.offline_archive)
 
 

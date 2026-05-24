@@ -80,6 +80,13 @@ REQUIRED_HOST_PROMOTION_SOURCE_SECTIONS = (
     "negative_host_toolchain_cases",
 )
 HOST_EVIDENCE_WORKFLOW_PATH = ".github/workflows/platform-host-evidence.yml"
+HOST_EVIDENCE_DISPATCH_GATEWAY_WORKFLOW_PATHS = (
+    ".github/workflows/conformance-minima.yml",
+)
+HOST_EVIDENCE_ACCEPTED_WORKFLOW_PATHS = (
+    HOST_EVIDENCE_WORKFLOW_PATH,
+    *HOST_EVIDENCE_DISPATCH_GATEWAY_WORKFLOW_PATHS,
+)
 HOST_EVIDENCE_INGESTION_ACTION = "ingest-platform-host-evidence"
 HOST_EVIDENCE_INGESTION_HELPER = "scripts/ingest_objc3c_platform_host_evidence.py"
 HOST_EVIDENCE_REPORT_ROOT = "tmp/reports/platform-host-evidence"
@@ -675,7 +682,13 @@ def _validate_hosted_evidence_ingestion(
     expect(isinstance(upstream_ingestion, dict), "upstream host evidence contract missing ingestion rules")
     expect(ingestion == upstream_ingestion, "host promotion ingestion rules drifted from upstream evidence")
     expect(ingestion["workflow_path"] == HOST_EVIDENCE_WORKFLOW_PATH, "host evidence workflow path drifted")
-    expect(resolve_repo_path(HOST_EVIDENCE_WORKFLOW_PATH).is_file(), "host evidence workflow file is missing")
+    accepted_paths = tuple(str(path).replace("\\", "/") for path in ingestion["accepted_workflow_paths"])
+    dispatch_paths = tuple(str(path).replace("\\", "/") for path in ingestion["dispatch_gateway_workflow_paths"])
+    expect(set(accepted_paths) == set(HOST_EVIDENCE_ACCEPTED_WORKFLOW_PATHS), "host evidence accepted workflow paths drifted")
+    expect(set(dispatch_paths) == set(HOST_EVIDENCE_DISPATCH_GATEWAY_WORKFLOW_PATHS), "host evidence dispatch gateway workflow paths drifted")
+    expect(HOST_EVIDENCE_WORKFLOW_PATH in accepted_paths, "host evidence canonical workflow missing from accepted paths")
+    for workflow_path in accepted_paths:
+        expect(resolve_repo_path(workflow_path).is_file(), f"host evidence workflow file is missing: {workflow_path}")
     expect(ingestion["runner_labels"] == HOST_EVIDENCE_RUNNER_LABELS, "host evidence runner labels drifted")
     expect(ingestion["ingestion_action"] == HOST_EVIDENCE_INGESTION_ACTION, "host evidence ingestion action drifted")
     expect(HOST_EVIDENCE_INGESTION_ACTION in ACTION_SPECS, "host evidence ingestion action missing from ACTION_SPECS")
@@ -697,7 +710,8 @@ def _validate_hosted_evidence_ingestion(
         expect(record["evidence_class"] == "hosted_ci", f"{record_id} must remain hosted_ci evidence")
         expect(not record["supports_platform_ids"], f"{record_id} generated host evidence widened support")
         source_paths = {str(path).replace("\\", "/") for path in record["source_paths"]}
-        expect(HOST_EVIDENCE_WORKFLOW_PATH in source_paths, f"{record_id} missing workflow source path")
+        for workflow_path in accepted_paths:
+            expect(workflow_path in source_paths, f"{record_id} missing workflow source path: {workflow_path}")
         expect(HOST_EVIDENCE_INGESTION_HELPER in source_paths, f"{record_id} missing ingestion helper source path")
         generated_paths = [str(path).replace("\\", "/") for path in record["generated_report_paths"]]
         expect(

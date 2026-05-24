@@ -7,6 +7,7 @@
 #include <vector>
 
 #include "pipeline/frontend_metadata_handoff_helpers.h"
+#include "sema/objc3_typed_throws_effect_contract.h"
 
 namespace objc3c::pipeline::orchestration {
 
@@ -37,6 +38,10 @@ void AddExecutableMetadataMethodNodes(
         method.objc_direct_declared ||
         (direct_members_declared && !method.objc_dynamic_declared);
     node.objc_final_declared = method.objc_final_declared;
+    node.throws_error_out_abi_ready =
+        Objc3TypedThrowsAbiLoweringReady(
+            method.throws_declared, method.typed_throws_declared,
+            method.typed_throws_payload.canonical_spelling);
     node.parameter_count = method.params.size();
     node.return_type_name = RuntimeMetadataTypeName(method.return_type);
     node.line = method.line;

@@ -191,7 +191,7 @@ def test_textual_interface_import_negative_cases_fail_closed() -> None:
         in failures["typed-throws-interface-contract-drift"]
     )
     assert (
-        "supported_runtime_payload_forms must be ['i32', 'bool']"
+        "supported_runtime_payload_forms must be ['i32', 'bool', 'id']"
         in failures["value-optional-lowering"]
     )
     assert "abi_layout_id expected" in failures["value-optional-layout-drift"]

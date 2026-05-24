@@ -63,7 +63,7 @@ def test_typed_throws_source_owned_and_value_optionals_contract_boundaries() -> 
     assert contract["issues"] == {"typed_throws": 8233, "value_optionals": 8234}
     assert contract["support_state"] == {
         "typed_throws": "source_owned_interface_preserved_error_out_abi_lowered_catch_bridge_policy_recorded_direct_method_send_runtime",
-        "value_optionals": "semantic_type_signatures_bounded_scalar_packed_runtime_abi_fail_closed_boundaries",
+        "value_optionals": "semantic_type_signatures_bounded_packed_i32_bool_id_runtime_abi_fail_closed_boundaries",
     }
     assert contract["typed_throws"]["accepted_payload_arity"] == 1
     assert contract["typed_throws"]["diagnostic_symbol"] == (
@@ -89,11 +89,11 @@ def test_typed_throws_source_owned_and_value_optionals_contract_boundaries() -> 
     ] == "typed-throws-exact-payload-match-error-out-abi"
     assert contract["typed_throws"]["runtime_execution_claimed"] is True
     assert contract["typed_throws"]["message_send_runtime_execution_scope"] == (
-        "direct-dispatch-method-send-error-out-abi"
+        "direct-and-runtime-dispatch-method-send-error-out-abi"
     )
     assert contract["typed_throws"][
         "runtime_dispatch_message_send_error_out_supported"
-    ] is False
+    ] is True
     assert contract["value_optionals"]["lowercase_alias_accepted"] is False
     assert contract["value_optionals"]["canonical_diagnostic_symbol"] == (
         "kObjc3ParserDiagnosticReservedValueOptionalCode"
@@ -109,11 +109,12 @@ def test_typed_throws_source_owned_and_value_optionals_contract_boundaries() -> 
     assert contract["value_optionals"]["runtime_execution_supported"] is True
     assert contract["value_optionals"]["lowering_supported"] is True
     assert contract["value_optionals"]["runtime_abi_payload_scope"] == (
-        "supported-scalar-payload-forms-only"
+        "supported-packed-scalar-and-id-handle-payload-forms-only"
     )
     assert contract["value_optionals"]["supported_runtime_payload_forms"] == [
         "i32",
         "bool",
+        "id",
     ]
     assert "full-width-i64-payload" in contract["value_optionals"][
         "rejected_runtime_payload_forms"
@@ -125,11 +126,12 @@ def test_typed_throws_source_owned_and_value_optionals_contract_boundaries() -> 
     assert contract["value_optionals"]["ivar_storage_supported"] is False
     assert contract["value_optionals"]["unchecked_unwrap_allowed"] is False
     assert contract["value_optionals"]["interface_roundtrip_status"] == (
-        "semantic-carrier-roundtrips-bounded-scalar-runtime-abi"
+        "semantic-carrier-roundtrips-bounded-packed-runtime-abi"
     )
     assert contract["public_claim_boundary"]["support_claims"] == []
     assert contract["public_claim_boundary"]["bounded_runtime_claims"] == [
-        "bounded-runtime:value-optional-scalar-packed-abi"
+        "bounded-runtime:value-optional-packed-i32-bool-id-abi",
+        "bounded-runtime:typed-throws-direct-and-runtime-dispatch-error-out-abi",
     ]
     assert contract["public_claim_boundary"]["runtime_claims"] == []
     assert contract["public_claim_boundary"]["reserved_public_runtime_rows_required"] == [

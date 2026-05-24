@@ -24,6 +24,8 @@ from .release_governance_operations import (
 )
 from .release_governance_packaging_channels import (
     action_build_package_channels,
+    action_build_package_channels_asan,
+    action_build_package_channels_ubsan,
     action_build_platform_support_matrix,
     action_check_packaging_channels_surface,
     action_ingest_platform_host_evidence,
@@ -51,6 +53,8 @@ from .release_governance_security_hardening import (
 __all__ = [
     "action_build_distribution_credibility_dashboard",
     "action_build_package_channels",
+    "action_build_package_channels_asan",
+    "action_build_package_channels_ubsan",
     "action_build_platform_support_matrix",
     "action_build_public_conformance_scorecard",
     "action_build_release_manifest",

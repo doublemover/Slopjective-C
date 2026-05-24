@@ -18,7 +18,10 @@ from objc3c_tooling.json_io import load_json_object as load_json
 from objc3c_tooling.json_io import validate_json_schema
 from objc3c_tooling.subprocesses import python_script_command, run_capture
 from objc3c_tooling.public_workflow_output import extract_output_value
-from objc3c_package_channels.model import MANIFEST_RELATIVE_PATH, REQUIRED_PAYLOAD_ENTRIES
+from objc3c_package_channels.model import (
+    MANIFEST_RELATIVE_PATH,
+    required_payload_entries,
+)
 
 ROOT = Path(__file__).resolve().parents[1]
 PWSH = shutil.which("pwsh") or "pwsh"
@@ -64,6 +67,7 @@ def load_valid_install_receipt(
     *,
     expected_channel_id: str,
     expected_payload_manifest_sha256: str,
+    expected_payload_entries: list[str],
 ) -> dict[str, Any]:
     receipt = load_json(receipt_path)
     validate_json_schema(receipt, receipt_schema, label=repo_rel(receipt_path))
@@ -78,7 +82,7 @@ def load_valid_install_receipt(
         receipt["payload_manifest_sha256"] == expected_payload_manifest_sha256,
         "install receipt payload manifest digest drifted",
     )
-    expect(receipt["payload_required_entries"] == REQUIRED_PAYLOAD_ENTRIES, "install receipt payload entries drifted")
+    expect(receipt["payload_required_entries"] == expected_payload_entries, "install receipt payload entries drifted")
     installed_manifest = install_root / "objc3c" / MANIFEST_RELATIVE_PATH
     expect(installed_manifest.is_file(), "installed payload manifest missing")
     expect(
@@ -111,7 +115,11 @@ def validate_archive_digest(
     return digest_record
 
 
-def validate_payload_contract(manifest: dict[str, Any], package_root: Path) -> dict[str, Any]:
+def validate_payload_contract(
+    manifest: dict[str, Any],
+    package_root: Path,
+    expected_payload_entries: list[str],
+) -> dict[str, Any]:
     payload_contract = manifest.get("payload_contract")
     expect(isinstance(payload_contract, dict), "payload_contract missing from package channels manifest")
     expect(
@@ -127,7 +135,7 @@ def validate_payload_contract(manifest: dict[str, Any], package_root: Path) -> d
     expect(payload_manifest.is_file(), "package root missing payload manifest")
     expect(payload_contract.get("manifest_artifact") == repo_rel(payload_manifest), "payload contract manifest artifact drifted")
     expect(payload_contract.get("manifest_sha256") == sha256_file(payload_manifest), "payload contract manifest digest drifted")
-    expect(payload_contract.get("required_entries") == REQUIRED_PAYLOAD_ENTRIES, "payload contract required entries drifted")
+    expect(payload_contract.get("required_entries") == expected_payload_entries, "payload contract required entries drifted")
     expect(
         payload_contract.get("clean_room_source_policy") == "fresh-owned-tmp-root-only",
         "payload contract clean-room policy drifted",
@@ -135,7 +143,7 @@ def validate_payload_contract(manifest: dict[str, Any], package_root: Path) -> d
 
     entry_digests = payload_contract.get("entry_digests")
     expect(isinstance(entry_digests, dict), "payload contract entry digests missing")
-    for relative_path in REQUIRED_PAYLOAD_ENTRIES:
+    for relative_path in expected_payload_entries:
         payload_entry = package_root / relative_path
         expect(payload_entry.is_file(), f"package root missing required payload entry {relative_path}")
         digest_record = entry_digests.get(relative_path)
@@ -146,7 +154,10 @@ def validate_payload_contract(manifest: dict[str, Any], package_root: Path) -> d
     return payload_contract
 
 
-def validate_receipt_contracts(manifest: dict[str, Any]) -> dict[str, Any]:
+def validate_receipt_contracts(
+    manifest: dict[str, Any],
+    expected_payload_entries: list[str],
+) -> dict[str, Any]:
     receipt_contracts = manifest.get("receipt_contracts")
     expect(isinstance(receipt_contracts, dict), "receipt_contracts missing from package channels manifest")
     expected = {
@@ -163,7 +174,7 @@ def validate_receipt_contracts(manifest: dict[str, Any]) -> dict[str, Any]:
         expect(receipt_contract.get("channel_id") == channel_id, f"{contract_name} channel id drifted")
         expect(receipt_contract.get("payload_manifest") == MANIFEST_RELATIVE_PATH, f"{contract_name} payload manifest drifted")
         expect(
-            receipt_contract.get("payload_required_entries") == REQUIRED_PAYLOAD_ENTRIES,
+            receipt_contract.get("payload_required_entries") == expected_payload_entries,
             f"{contract_name} payload entries drifted",
         )
         expect(receipt_contract.get("network_policy") == network_policy, f"{contract_name} network policy drifted")
@@ -220,9 +231,12 @@ def main(argv: Sequence[str] | None = None) -> int:
     expect(summary.get("status") == "PASS", "package-channels build report did not pass")
     manifest_path = ROOT / str(summary["manifest_path"]).replace("/", os.sep)
     manifest = load_json(manifest_path)
+    expect(manifest.get("support_truth") is False, "package channels manifest promoted support truth")
+    expect(manifest.get("native_execution_claimed") is False, "package channels manifest claimed native execution")
     package_root = ROOT / str(manifest["package_root"]).replace("/", os.sep)
-    payload_contract = validate_payload_contract(manifest, package_root)
-    receipt_contracts = validate_receipt_contracts(manifest)
+    expected_payload_entries = required_payload_entries(str(manifest.get("sanitizer_variant", "release")))
+    payload_contract = validate_payload_contract(manifest, package_root, expected_payload_entries)
+    receipt_contracts = validate_receipt_contracts(manifest, expected_payload_entries)
 
     portable_archive = ROOT / str(summary["portable_archive"]).replace("/", os.sep)
     installer_archive = ROOT / str(summary["installer_archive"]).replace("/", os.sep)
@@ -287,6 +301,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         install_root,
         expected_channel_id="local-installer",
         expected_payload_manifest_sha256=payload_contract["manifest_sha256"],
+        expected_payload_entries=expected_payload_entries,
     )
 
     bootstrap_result = run_capture(
@@ -323,6 +338,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         offline_install_root,
         expected_channel_id="offline-bundle",
         expected_payload_manifest_sha256=payload_contract["manifest_sha256"],
+        expected_payload_entries=expected_payload_entries,
     )
     expect((offline_install_root / "objc3c" / "artifacts" / "bin" / "objc3c-native.exe").is_file(), "offline bootstrap did not install native executable")
 

@@ -8,6 +8,10 @@ extern fn objc3_runtime_optional_present_bool(payload: bool) -> Optional<bool>;
 extern fn objc3_runtime_optional_absent_bool() -> Optional<bool>;
 extern fn objc3_runtime_optional_has_value_bool(value: Optional<bool>) -> bool;
 extern fn objc3_runtime_optional_payload_or_bool(value: Optional<bool>, fallback: bool) -> bool;
+extern fn objc3_runtime_optional_present_id(payload: id) -> Optional<id>;
+extern fn objc3_runtime_optional_absent_id() -> Optional<id>;
+extern fn objc3_runtime_optional_has_value_id(value: Optional<id>) -> i32;
+extern fn objc3_runtime_optional_payload_or_id(value: Optional<id>, fallback: id) -> id;
 
 fn choose(flag: bool, value: i32) -> Optional<i32> {
   if (flag) {
@@ -23,19 +27,32 @@ fn chooseFlag(flag: bool) -> Optional<bool> {
   return objc3_runtime_optional_absent_bool();
 }
 
+fn chooseObject(flag: bool, value: id) -> Optional<id> {
+  if (flag) {
+    return objc3_runtime_optional_present_id(value);
+  }
+  return objc3_runtime_optional_absent_id();
+}
+
 fn main() -> i32 {
   let present = choose(true, 41);
   let absent = choose(false, 99);
   let flagPresent = chooseFlag(true);
   let flagAbsent = chooseFlag(false);
+  let objectPresent = chooseObject(true, 17);
+  let objectAbsent = chooseObject(false, 33);
   let payload = objc3_runtime_optional_payload_or_i32(present, 0);
   let fallback = objc3_runtime_optional_payload_or_i32(absent, 1);
   let flagPayload = objc3_runtime_optional_payload_or_bool(flagPresent, false);
   let flagFallback = objc3_runtime_optional_payload_or_bool(flagAbsent, true);
+  let objectPayload = objc3_runtime_optional_payload_or_id(objectPresent, 0);
+  let objectFallback = objc3_runtime_optional_payload_or_id(objectAbsent, 2);
   if (objc3_runtime_optional_has_value_i32(present)) {
     if (objc3_runtime_optional_has_value_bool(flagPresent)) {
-      if (flagPayload && flagFallback) {
-        return payload + fallback;
+      if (objc3_runtime_optional_has_value_id(objectPresent)) {
+        if (flagPayload && flagFallback) {
+          return payload + fallback + objectPayload + objectFallback;
+        }
       }
     }
   }

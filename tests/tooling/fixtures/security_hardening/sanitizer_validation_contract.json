@@ -7,6 +7,7 @@
   "sanitizer_config": {
     "path": "native/objc3c/cmake/Objc3Sanitizers.cmake",
     "required_options": [
+      "OBJC3C_SANITIZER_VARIANT",
       "OBJC3C_ENABLE_ASAN",
       "OBJC3C_ENABLE_UBSAN"
     ],
@@ -81,6 +82,7 @@
       "issue_ref": 8230,
       "sanitizer": "address",
       "package_variant_row_id": "objc3c.package.sanitizer.asan.reserved",
+      "package_channel_id": "windows-x64-sanitizer-asan",
       "package_id": "org.objc3c.runtime:objc3c-runtime-asan",
       "runtime_requirement": "ASan runtime library available for the exact target platform and package variant",
       "build_contract": {
@@ -129,6 +131,7 @@
           "install_receipt_required_fields": [
             "package_id",
             "package_variant_row_id",
+            "package_channel_id",
             "target_platform_id",
             "sanitizer",
             "runtime_library_ids",
@@ -172,6 +175,7 @@
           "required_fields": [
             "package_id",
             "package_variant_row_id",
+            "package_channel_id",
             "target_platform_id",
             "sanitizer",
             "runtime_library_ids",
@@ -229,6 +233,7 @@
           "stale_package_metadata_behavior": "fail-closed-before-publication",
           "freshness_inputs": [
             "package_variant_row_id",
+            "package_channel_id",
             "package_id",
             "runtime_library_ids",
             "compiler_flags",
@@ -306,6 +311,7 @@
       "issue_ref": 8231,
       "sanitizer": "undefined",
       "package_variant_row_id": "objc3c.package.sanitizer.ubsan.reserved",
+      "package_channel_id": "windows-x64-sanitizer-ubsan",
       "package_id": "org.objc3c.runtime:objc3c-runtime-ubsan",
       "runtime_requirement": "UBSan runtime library and explicit trap-or-recover mode for the exact target platform and package variant",
       "build_contract": {
@@ -356,6 +362,7 @@
           "install_receipt_required_fields": [
             "package_id",
             "package_variant_row_id",
+            "package_channel_id",
             "target_platform_id",
             "sanitizer",
             "runtime_library_ids",
@@ -401,6 +408,7 @@
           "required_fields": [
             "package_id",
             "package_variant_row_id",
+            "package_channel_id",
             "target_platform_id",
             "sanitizer",
             "runtime_library_ids",
@@ -469,6 +477,7 @@
           "stale_package_metadata_behavior": "fail-closed-before-publication",
           "freshness_inputs": [
             "package_variant_row_id",
+            "package_channel_id",
             "package_id",
             "runtime_library_ids",
             "compiler_flags",

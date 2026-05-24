@@ -51,7 +51,7 @@ RuntimeTypedDispatchResult CompleteStrictInvocationResult(
 RuntimeTypedDispatchResult ExecuteResolvedRuntimeDispatchTargetStrict(
     RuntimeState &state, int receiver,
     const RuntimeDispatchTarget &dispatch_target, int a0, int a1, int a2,
-    int a3) {
+    int a3, int *throws_error_out) {
   if (!dispatch_target.resolved_live_method) {
     RecordPostResolutionStrictDispatchFailure(
         state, OBJC3_RUNTIME_DISPATCH_STATUS_MALFORMED_METADATA,
@@ -63,12 +63,28 @@ RuntimeTypedDispatchResult ExecuteResolvedRuntimeDispatchTargetStrict(
 
   PushRuntimeDispatchFrame(receiver, dispatch_target.receiver_base_identity,
                            dispatch_target.runtime_property_accessor);
+  int ignored_error_out = 0;
+  int *effective_error_out = nullptr;
+  if (dispatch_target.throws_error_out_abi_ready) {
+    effective_error_out =
+        throws_error_out != nullptr ? throws_error_out : &ignored_error_out;
+    *effective_error_out = 0;
+  } else if (throws_error_out != nullptr) {
+    ReleaseDispatchFrameAutoreleaseValues(state);
+    RecordPostResolutionStrictDispatchFailure(
+        state, OBJC3_RUNTIME_DISPATCH_STATUS_UNSUPPORTED_ARGUMENT_LAYOUT,
+        dispatch_target.return_kind, "resolved-method-error-out-abi-mismatch");
+    return RuntimeTypedDispatchFailure(
+        OBJC3_RUNTIME_DISPATCH_STATUS_UNSUPPORTED_ARGUMENT_LAYOUT,
+        dispatch_target.return_kind);
+  }
   if (dispatch_target.implementation != nullptr) {
     return CompleteStrictInvocationResult(
         state,
         InvokeRuntimeMethodImplementation(
             dispatch_target.implementation, dispatch_target.return_kind,
-            dispatch_target.parameter_count, a0, a1, a2, a3),
+            dispatch_target.parameter_count, a0, a1, a2, a3,
+            effective_error_out),
         "resolved-method-invocation-error");
   }
   if (dispatch_target.builtin_kind != RuntimeBuiltinKind::None) {

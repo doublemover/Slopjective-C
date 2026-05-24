@@ -87,8 +87,10 @@ std::string EmitObjc3IRCallExpression(
           ctx.active_message_send_error_out_slot;
       const Expr *previous_error_expr =
           ctx.active_message_send_error_out_expr;
-      ctx.active_message_send_error_out_slot = error_slot;
-      ctx.active_message_send_error_out_expr = operand;
+      if (operand_signature->throws_error_out_abi_ready) {
+        ctx.active_message_send_error_out_slot = error_slot;
+        ctx.active_message_send_error_out_expr = operand;
+      }
       result = callbacks.emit_message_send_expr(operand, ctx);
       ctx.active_message_send_error_out_slot = previous_error_slot;
       ctx.active_message_send_error_out_expr = previous_error_expr;

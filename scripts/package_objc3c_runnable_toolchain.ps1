@@ -1,6 +1,8 @@
 param(
   [string]$PackageRoot = "",
   [string]$ManifestRelativePath = "artifacts/package/objc3c-runnable-toolchain-package.json",
+  [ValidateSet("release", "address", "undefined")]
+  [string]$SanitizerVariant = "release",
   [int]$Parallelism = 0
 )
 
@@ -16,7 +18,8 @@ Import-Module (Join-Path $packageScriptModuleRoot "status_rendering.psm1") -Forc
 
 $request = New-RunnableToolchainPackageRequest `
   -PackageRoot $PackageRoot `
-  -ManifestRelativePath $ManifestRelativePath
+  -ManifestRelativePath $ManifestRelativePath `
+  -SanitizerVariant $SanitizerVariant
 
 $environment = Resolve-RunnableToolchainPackageEnvironment `
   -ScriptRoot $PSScriptRoot `
@@ -28,12 +31,14 @@ $staging = Invoke-RunnableToolchainPackageStaging `
   -PackageRoot $environment.PackageRoot `
   -ManifestPath $environment.ManifestPath `
   -BuildScript $environment.BuildScript `
+  -SanitizerVariant $request.SanitizerVariant `
   -Parallelism $Parallelism
 
 $manifestPayload = Write-RunnableToolchainPackageManifest `
   -RepoRoot $environment.RepoRoot `
   -PackageRoot $environment.PackageRoot `
   -ManifestPath $environment.ManifestPath `
-  -StagedRelativePaths $staging.StagedRelativePaths
+  -StagedRelativePaths $staging.StagedRelativePaths `
+  -SanitizerVariant $request.SanitizerVariant
 
 Write-RunnableToolchainPackageStatus -ManifestPayload $manifestPayload

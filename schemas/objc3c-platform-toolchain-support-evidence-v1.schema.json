@@ -272,6 +272,8 @@
       "additionalProperties": false,
       "required": [
         "workflow_path",
+        "accepted_workflow_paths",
+        "dispatch_gateway_workflow_paths",
         "runner_labels",
         "ingestion_action",
         "ingestion_helper",
@@ -286,6 +288,25 @@
       "properties": {
         "workflow_path": {
           "const": ".github/workflows/platform-host-evidence.yml"
+        },
+        "accepted_workflow_paths": {
+          "type": "array",
+          "items": {
+            "enum": [
+              ".github/workflows/platform-host-evidence.yml",
+              ".github/workflows/conformance-minima.yml"
+            ]
+          },
+          "minItems": 2,
+          "uniqueItems": true
+        },
+        "dispatch_gateway_workflow_paths": {
+          "type": "array",
+          "items": {
+            "const": ".github/workflows/conformance-minima.yml"
+          },
+          "minItems": 1,
+          "uniqueItems": true
         },
         "runner_labels": {
           "type": "object",

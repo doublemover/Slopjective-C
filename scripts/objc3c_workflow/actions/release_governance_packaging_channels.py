@@ -4,6 +4,8 @@ from __future__ import annotations
 
 from .release_governance_packaging_artifacts import (
     action_build_package_channels,
+    action_build_package_channels_asan,
+    action_build_package_channels_ubsan,
     action_build_platform_support_matrix,
     action_check_packaging_channels_surface,
     action_ingest_platform_host_evidence,
@@ -17,6 +19,8 @@ from .release_governance_packaging_validation import (
 
 __all__ = [
     "action_build_package_channels",
+    "action_build_package_channels_asan",
+    "action_build_package_channels_ubsan",
     "action_build_platform_support_matrix",
     "action_check_packaging_channels_surface",
     "action_ingest_platform_host_evidence",

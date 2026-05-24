@@ -18,8 +18,9 @@ hidden error-out ABI lowering. Public support remains reserved until catch/bridg
 records and replay evidence agree across the capability row.
 For #8234, canonical `Optional<T>` has first-class type identity plus a stable
 `has_value`/`payload` contract in source and textual-interface records. The
-owned contract now distinguishes bounded scalar packed runtime ABI support from
-the still-reserved broad value-optional runtime surface.
+owned contract now distinguishes bounded packed runtime ABI support for i32,
+bool, and id handles from the still-reserved broad value-optional runtime
+surface.
 Lowercase `optional<T>` remains `O3C004` removed spelling rather than an alias,
 and neither spelling enables unchecked unwrap, implicit nil absence,
 nil-to-scalar, throws/result, nullable-pointer conversion, nested/generic payload
@@ -39,8 +40,8 @@ typed catches and unsupported foreign carriers fail closed. `Optional<T>`
 metadata imports the
 semantic carrier, stable layout identity, explicit absent/present construction
 contract, checked unwrap/binding diagnostic contract, and fail-closed
-conversion/runtime flags. The checked-in v1 runtime ABI is the packed `i32`
-payload carrier only; layout drift, unchecked unwrap, implicit bridge,
+conversion/runtime flags. The checked-in v1 runtime ABI covers packed `i32`,
+`bool`, and `id` object-handle payload carriers only; layout drift, unchecked unwrap, implicit bridge,
 unsupported payload widening, broad runtime support claims, property/ivar
 storage, and nullable-pointer erasure fail closed.
 Statement-form

@@ -373,8 +373,8 @@ ABI contract identity, `objc3.value_optional.inline_presence_payload.v1`, with
 explicit `has_value` presence and `payload` storage fields. Semantic records
 model explicit absent/present construction, binding/narrowing failure paths,
 checked unwrap diagnostics, payload lifetime, and interface roundtrip. The
-current runtime ABI is bounded to supported scalar payload forms such as
-`Optional<i32>`; nested optionals, generic payload runtime lowering,
+current runtime ABI is bounded to supported packed payload forms:
+`Optional<i32>`, `Optional<bool>`, and `Optional<id>` object handles. Nested optionals, generic payload runtime lowering,
 property/ivar storage layout, unchecked unwrap, nullability bridges, implicit
 nil absence, nil-to-scalar coercion, and throws/result conversion remain
 reserved and fail closed.
@@ -384,7 +384,7 @@ The following remain ill-formed in v1 user code unless escaped per
 
 - `optional<...>` in type positions.
 - `Optional<...>` in executable function or method bodies outside the bounded
-  scalar payload ABI, property/ivar storage, unchecked unwrap, nullability
+  packed i32/bool/id-handle payload ABI, property/ivar storage, unchecked unwrap, nullability
   bridges, implicit nil, nil-to-scalar, or throws/result conversion positions.
 - `.some(...)` and `.none` in optional-constructor/pattern positions.
 
@@ -392,9 +392,9 @@ The current #8234 compiler contract owns the canonical spelling boundary but
 does not claim broad value-optional execution: canonical `Optional<T>` type
 signatures may be parsed, admitted as semantic types, compared by sema,
 round-tripped through textual interfaces, and lowered only through the bounded
-packed scalar runtime ABI. The currently supported runtime payload form is
-`i32`; broader scalar, object, nested, generic, property, and ivar storage forms
-remain reserved until they have their own executable ABI evidence. The lowering
+packed runtime ABI for `i32`, `bool`, and `id` object handles. Full-width
+`i64`, object-pointer/nullability bridges, nested, generic, property, and ivar
+storage forms remain reserved until they have their own executable ABI evidence. The lowering
 contract is explicit: absent
 construction produces `has_value=false` and no live payload, present
 construction requires a payload and produces `has_value=true`, binding failure
@@ -415,7 +415,7 @@ To avoid blocking a future value optional design:
   nullability bridges, implicit nil, nil-to-scalar, and throws/result
   conversions unavailable for unrelated language/library features.
 - Module metadata and textual interfaces shall preserve value-optional carrier
-  metadata separately from reference nullability so the bounded scalar ABI and
+  metadata separately from reference nullability so the bounded packed ABI and
   future broader ABI support can evolve without redefining existing v1 fields.
 - Diagnostics for non-reference optional operations should be worded as “not supported in v1” rather than “never supported,” preserving future-extension wording without accepting another source mode.
 - `Optional<id>` remains distinct from nullable object-pointer spelling. A

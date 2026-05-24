@@ -31,6 +31,7 @@ Checked-in source truth:
 - `tests/tooling/fixtures/platform_hardening/unsupported_host_fail_closed_policy.json`
 - `tests/tooling/fixtures/platform_hardening/boundary_inventory.json`
 - `.github/workflows/platform-host-evidence.yml`
+- `.github/workflows/conformance-minima.yml`
 - `scripts/ingest_objc3c_platform_host_evidence.py`
 - `native/objc3c/src/driver/objc3_llvm_capability_routing.cpp`
 - `scripts/objc3c_llvm_capability_probe/reports.py`
@@ -42,6 +43,7 @@ Generated artifacts are replay outputs only:
 - `tmp/reports/platform-hardening/platform-matrix-summary.json`
 - `tmp/reports/platform-hardening/host-matrix-summary.json`
 - `tmp/reports/platform-host-evidence/<platform>/host-evidence-report.json`
+- `tmp/reports/platform-host-evidence/<platform>/promotion-readiness-requirements.json`
 - `tmp/reports/platform-host-evidence/<platform>/ingestion-summary.json`
 
 ## Current Support State
@@ -129,8 +131,13 @@ remain summary-only and cannot clear a promotion gate.
 
 ## Hosted Runner Evidence Collection
 
-The public evidence workflow is
-`.github/workflows/platform-host-evidence.yml`. It is manual by design and
+The canonical public evidence workflow is
+`.github/workflows/platform-host-evidence.yml`. The default-branch
+`conformance-minima` workflow is also modeled as an explicit dispatch gateway
+for the same generated host evidence jobs, so maintainers can trigger hosted
+Linux/macOS evidence from a registered workflow path without turning that run
+into support truth. Both workflow paths are accepted ingestion origins, and both
+remain non-promoting. The dedicated evidence workflow is manual by design and
 collects generated runner evidence without making pull-request CI depend on
 currently unsupported host rows.
 
@@ -149,9 +156,12 @@ Each hosted job attempts the same promotion-relevant path:
 - `npm run objc3c -- ingest-platform-host-evidence`
 
 The ingestion helper writes a generated host evidence report and an ingestion
-summary under `tmp/reports/platform-host-evidence/<platform>/`. It also mirrors
-build, package, install, hosted-smoke, and native-execution outputs into that
-same platform-scoped root before upload. The workflow uploads only
+summary under `tmp/reports/platform-host-evidence/<platform>/`. It also writes a
+promotion-readiness requirements artifact naming the build, package, install,
+object-format/debug, runtime link/load, and native execution fields that must be
+reviewed before source-truth promotion. The helper mirrors build, package,
+install, hosted-smoke, and native-execution outputs into that same
+platform-scoped root before upload. The workflow uploads only
 `tmp/reports/platform-host-evidence/<platform>/**` and fails closed if that root
 is empty, so Linux x64 and macOS arm64 readback cannot accidentally consume
 shared `tmp/` or `artifacts/` paths from another lane. The summary is

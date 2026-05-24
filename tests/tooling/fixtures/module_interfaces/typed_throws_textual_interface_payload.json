@@ -49,7 +49,7 @@
         "value_optional_contract": {
           "issue_ref": 8234,
           "canonical_spelling": "Optional<T>",
-          "source_status": "semantic-type-signature-admitted-bounded-scalar-runtime-abi",
+          "source_status": "semantic-type-signature-admitted-bounded-packed-runtime-abi",
           "semantic_value_model_supported": true,
           "explicit_present_absent_construction_modeled": true,
           "binding_narrowing_supported": true,
@@ -66,10 +66,11 @@
           "interface_roundtrip_supported": true,
           "runtime_execution_supported": true,
           "lowering_supported": true,
-          "runtime_abi_payload_scope": "supported-scalar-payload-forms-only",
+          "runtime_abi_payload_scope": "supported-packed-scalar-and-id-handle-payload-forms-only",
           "supported_runtime_payload_forms": [
             "i32",
-            "bool"
+            "bool",
+            "id"
           ],
           "ir_payload_emission_supported": true,
           "call_abi_lowering_supported": true,
@@ -83,7 +84,7 @@
           "unchecked_unwrap_allowed": false,
           "nullable_pointer_conversion_allowed": false,
           "throws_result_conversion_allowed": false,
-          "interface_roundtrip_status": "semantic-carrier-roundtrips-bounded-scalar-runtime-abi",
+          "interface_roundtrip_status": "semantic-carrier-roundtrips-bounded-packed-runtime-abi",
           "optional_type": {
             "record_id": "optional_type",
             "type_id": "Optional<T>",
@@ -256,7 +257,7 @@
     {
       "case_id": "value-optional-lowering",
       "target": "declarations[0].type_signature.value_optional_contract",
-      "expected_failure": "value optional interfaces cannot widen beyond the bounded scalar runtime ABI or promote unsupported payload/storage forms",
+      "expected_failure": "value optional interfaces cannot widen beyond the bounded packed i32/bool/id-handle runtime ABI or promote unsupported payload/storage forms",
       "fail_closed": true,
       "diagnostic": "O3P159"
     },

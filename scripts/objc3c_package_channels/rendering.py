@@ -3,11 +3,12 @@
 from __future__ import annotations
 
 
-def install_script_text() -> str:
+def install_script_text(sanitizer_variant: str = "release") -> str:
     return """param(
   [Parameter(Mandatory = $true)][string]$InstallRoot,
   [switch]$Force,
-  [ValidateSet("local-installer", "offline-bundle")][string]$ChannelId = "local-installer"
+  [ValidateSet("local-installer", "offline-bundle")][string]$ChannelId = "local-installer",
+  [ValidateSet("release", "address", "undefined")][string]$SanitizerVariant = "__SANITIZER_VARIANT__"
 )
 
 $ErrorActionPreference = "Stop"
@@ -20,6 +21,10 @@ $receiptPath = Join-Path $resolvedInstallRoot "objc3c-install-receipt.json"
 $bootstrapSource = Join-Path $PSScriptRoot "Bootstrap-objc3cEnvironment.ps1"
 $bootstrapTarget = Join-Path $resolvedInstallRoot "Bootstrap-objc3cEnvironment.ps1"
 $payloadManifest = "artifacts/package/objc3c-runnable-toolchain-package.json"
+$expectedSanitizerVariant = "__SANITIZER_VARIANT__"
+if ($SanitizerVariant -ne $expectedSanitizerVariant) {
+  throw "installer sanitizer selector does not match packaged runtime variant: expected $expectedSanitizerVariant, got $SanitizerVariant"
+}
 $payloadRequiredEntries = @(
   $payloadManifest,
   "artifacts/bin/objc3c-native.exe",
@@ -28,7 +33,97 @@ $payloadRequiredEntries = @(
   "stdlib/modules/objc3.core/module.json",
   "docs/runbooks/objc3c_packaging_channels.md"
 )
+if ($SanitizerVariant -eq "address") {
+  $payloadRequiredEntries += "share/objc3c/sanitizer/asan-metadata.json"
+} elseif ($SanitizerVariant -eq "undefined") {
+  $payloadRequiredEntries += "share/objc3c/sanitizer/ubsan-metadata.json"
+}
 $allowedReceiptChannels = @("local-installer", "offline-bundle")
+
+function Resolve-SanitizerPackageVariant {
+  if ($SanitizerVariant -eq "release") {
+    return $null
+  }
+
+  if ($SanitizerVariant -eq "address") {
+    $metadataManifestPath = "share/objc3c/sanitizer/asan-metadata.json"
+    $metadataPath = Join-Path $installHome ($metadataManifestPath -replace '/', [System.IO.Path]::DirectorySeparatorChar)
+    if (!(Test-Path -LiteralPath $metadataPath -PathType Leaf)) {
+      throw "sanitizer install metadata missing before receipt emission: $metadataManifestPath"
+    }
+    return [ordered]@{
+      package_id = "org.objc3c.runtime:objc3c-runtime-asan"
+      package_variant_row_id = "objc3c.package.sanitizer.asan.reserved"
+      package_channel_id = "windows-x64-sanitizer-asan"
+      target_platform_id = "windows-x64"
+      sanitizer = "address"
+      runtime_library_ids = @("objc3-runtime", "clang_rt.asan")
+      metadata_manifest_path = $metadataManifestPath
+      metadata_digest = "sha256:" + (Get-FileHash -LiteralPath $metadataPath -Algorithm SHA256).Hash.ToLowerInvariant()
+      selected_runtime_variant = "sanitizer=address"
+      install_selector = "sanitizer=address"
+      native_execution_contract = [ordered]@{
+        native_execution_required_before_support = $true
+        native_execution_record_required = $true
+        native_execution_record_fields = @("executable_path", "target_platform_id", "sanitizer", "runtime_library_ids", "environment", "exit_code", "diagnostic_records")
+        missing_native_execution_behavior = "fail-closed-before-support-promotion"
+        native_execution_claimed = $false
+      }
+      support_truth = $false
+      native_execution_claimed = $false
+    }
+  }
+
+  $metadataManifestPath = "share/objc3c/sanitizer/ubsan-metadata.json"
+  $metadataPath = Join-Path $installHome ($metadataManifestPath -replace '/', [System.IO.Path]::DirectorySeparatorChar)
+  if (!(Test-Path -LiteralPath $metadataPath -PathType Leaf)) {
+    throw "sanitizer install metadata missing before receipt emission: $metadataManifestPath"
+  }
+  return [ordered]@{
+    package_id = "org.objc3c.runtime:objc3c-runtime-ubsan"
+    package_variant_row_id = "objc3c.package.sanitizer.ubsan.reserved"
+    package_channel_id = "windows-x64-sanitizer-ubsan"
+    target_platform_id = "windows-x64"
+    sanitizer = "undefined"
+    runtime_library_ids = @("objc3-runtime", "clang_rt.ubsan")
+    metadata_manifest_path = $metadataManifestPath
+    metadata_digest = "sha256:" + (Get-FileHash -LiteralPath $metadataPath -Algorithm SHA256).Hash.ToLowerInvariant()
+    selected_runtime_variant = "sanitizer=undefined"
+    install_selector = "sanitizer=undefined"
+    trap_or_recover_mode = "trap"
+    native_execution_contract = [ordered]@{
+      native_execution_required_before_support = $true
+      native_execution_record_required = $true
+      native_execution_record_fields = @("executable_path", "target_platform_id", "sanitizer", "runtime_library_ids", "environment", "exit_code", "diagnostic_records", "trap_or_recover_mode")
+      missing_native_execution_behavior = "fail-closed-before-support-promotion"
+      native_execution_claimed = $false
+    }
+    support_truth = $false
+    native_execution_claimed = $false
+  }
+}
+
+function Assert-ReceiptSanitizerVariant {
+  param([Parameter(Mandatory = $true)]$Receipt)
+
+  if ($SanitizerVariant -eq "release") {
+    if ($null -ne $Receipt.sanitizer_package_variant) {
+      throw "installer target receipt uses sanitizer runtime for release install: $installHome"
+    }
+    return
+  }
+
+  if ($null -eq $Receipt.sanitizer_package_variant) {
+    throw "installer target receipt missing sanitizer package variant: $installHome"
+  }
+  if ([string]$Receipt.sanitizer_package_variant.sanitizer -ne $SanitizerVariant) {
+    throw "installer target receipt sanitizer variant drifted: $installHome"
+  }
+  if ($Receipt.sanitizer_package_variant.support_truth -ne $false -or
+      $Receipt.sanitizer_package_variant.native_execution_claimed -ne $false) {
+    throw "installer target receipt promoted sanitizer support without native execution: $installHome"
+  }
+}
 
 function Assert-NoReparsePointInExistingPath {
   param([Parameter(Mandatory = $true)][string]$Path)
@@ -80,6 +175,7 @@ function Assert-ReceiptOwnsInstallHome {
       $receiptPayloadEntries.Count -ne $payloadRequiredEntries.Count) {
     throw "installer target receipt does not own install home: $installHome"
   }
+  Assert-ReceiptSanitizerVariant -Receipt $receipt
 }
 
 function Resolve-InstalledPayloadPath {
@@ -117,6 +213,7 @@ New-Item -ItemType Directory -Force -Path $resolvedInstallRoot | Out-Null
 Copy-Item -LiteralPath $sourceRoot -Destination $installHome -Recurse -Force
 Copy-Item -LiteralPath $bootstrapSource -Destination $bootstrapTarget -Force
 $payloadManifestSha256 = Assert-InstalledPayloadContract
+$sanitizerPackageVariant = Resolve-SanitizerPackageVariant
 
 $receipt = [ordered]@{
   contract_id = "objc3c.packaging.channels.install-receipt.v1"
@@ -131,13 +228,16 @@ $receipt = [ordered]@{
   payload_required_entries = $payloadRequiredEntries
   installed_at_utc = [DateTime]::UtcNow.ToString("o")
 }
-$receipt | ConvertTo-Json -Depth 4 | Set-Content -LiteralPath $receiptPath -Encoding utf8
+if ($null -ne $sanitizerPackageVariant) {
+  $receipt["sanitizer_package_variant"] = $sanitizerPackageVariant
+}
+$receipt | ConvertTo-Json -Depth 8 | Set-Content -LiteralPath $receiptPath -Encoding utf8
 
 Write-Output ("install_root: " + $resolvedInstallRoot)
 Write-Output ("install_home: " + $installHome)
 Write-Output ("receipt_path: " + $receiptPath)
 Write-Output ("bootstrap_entrypoint: " + $bootstrapTarget)
-"""
+""".replace("__SANITIZER_VARIANT__", sanitizer_variant)
 
 
 def uninstall_script_text() -> str:
@@ -202,6 +302,16 @@ function Assert-ReceiptOwnsInstallHome {
   }
   $receipt = Get-Content -LiteralPath $receiptPath -Raw | ConvertFrom-Json
   $receiptPayloadEntries = @($receipt.payload_required_entries)
+  $expectedPayloadEntries = @($payloadRequiredEntries)
+  if ($null -ne $receipt.sanitizer_package_variant) {
+    if ([string]$receipt.sanitizer_package_variant.sanitizer -eq "address") {
+      $expectedPayloadEntries += "share/objc3c/sanitizer/asan-metadata.json"
+    } elseif ([string]$receipt.sanitizer_package_variant.sanitizer -eq "undefined") {
+      $expectedPayloadEntries += "share/objc3c/sanitizer/ubsan-metadata.json"
+    } else {
+      throw "uninstaller target receipt has unknown sanitizer package variant: $installHome"
+    }
+  }
   if ($receipt.contract_id -ne "objc3c.packaging.channels.install-receipt.v1" -or
       [System.IO.Path]::GetFullPath([string]$receipt.install_home) -ne $installHome -or
       $allowedReceiptChannels -notcontains [string]$receipt.channel_id -or
@@ -210,7 +320,7 @@ function Assert-ReceiptOwnsInstallHome {
       [string]$receipt.install_command -ne "npm run objc3c -- build-package-channels" -or
       [string]$receipt.payload_manifest -ne $payloadManifest -or
       [string]::IsNullOrWhiteSpace([string]$receipt.payload_manifest_sha256) -or
-      $receiptPayloadEntries.Count -ne $payloadRequiredEntries.Count) {
+      $receiptPayloadEntries.Count -ne $expectedPayloadEntries.Count) {
     throw "uninstaller target receipt does not own install home: $installHome"
   }
 }
@@ -251,7 +361,10 @@ Write-Output ("objc3c_bin: " + $binPath)
 """
 
 
-def offline_bootstrap_script_text() -> str:
+def offline_bootstrap_script_text(
+    sanitizer_variant: str = "release",
+    installer_archive_name: str = "objc3c-windows-x64-installer.zip",
+) -> str:
     return """param(
   [Parameter(Mandatory = $true)][string]$InstallRoot
 )
@@ -261,7 +374,7 @@ Set-StrictMode -Version Latest
 
 $bundleRoot = $PSScriptRoot
 $stagingRoot = Join-Path $bundleRoot "staging"
-$installerArchive = Join-Path $bundleRoot "channels/objc3c-windows-x64-installer.zip"
+$installerArchive = Join-Path $bundleRoot "channels/__INSTALLER_ARCHIVE_NAME__"
 $installerImageRoot = Join-Path $stagingRoot ("installer-image-" + [Guid]::NewGuid().ToString("N"))
 $installerScript = Join-Path $installerImageRoot "Install-objc3c.ps1"
 
@@ -285,7 +398,7 @@ try {
   New-Item -ItemType Directory -Force -Path $stagingRoot | Out-Null
   Expand-Archive -LiteralPath $installerArchive -DestinationPath $installerImageRoot -Force
 
-  & $installerScript -InstallRoot $InstallRoot -Force -ChannelId "offline-bundle"
+  & $installerScript -InstallRoot $InstallRoot -Force -ChannelId "offline-bundle" -SanitizerVariant "__SANITIZER_VARIANT__"
   if (-not $?) {
     exit $LASTEXITCODE
   }
@@ -299,4 +412,7 @@ finally {
 
 Write-Output ("offline_bundle_root: " + $bundleRoot)
 Write-Output ("installer_archive: " + $installerArchive)
-"""
+""".replace("__SANITIZER_VARIANT__", sanitizer_variant).replace(
+        "__INSTALLER_ARCHIVE_NAME__",
+        installer_archive_name,
+    )

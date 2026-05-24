@@ -10,9 +10,10 @@ foreign-carrier fail-closed records. Value optionals now have semantic type iden
 for canonical `Optional<T>` type signatures,
 plus a sema-owned absent/present lowering contract and checked unwrap/binding
 failure diagnostics plus bounded packed runtime ABI support for scalar payload
-forms. Nested/generic payload runtime lowering, property/ivar storage, unchecked
-unwrap, nullability bridges, implicit nil absence, nil-to-scalar coercion, and
-throws/result conversion remain unclaimed. Match expressions are bounded to
+forms and `id` object-handle payloads. Nested/generic payload runtime lowering,
+property/ivar storage, unchecked unwrap, nullability bridges, implicit nil
+absence, nil-to-scalar coercion, and throws/result conversion remain unclaimed.
+Match expressions are bounded to
 their current evidence-backed surface.
 Statement-form guarded match patterns are admitted only as `case pattern where
 bool_condition: { ... }`; the guard is checked after
@@ -37,7 +38,8 @@ roundtrip. They still cannot be widened into implicit nil absence,
 nullable-pointer conversion, nil-to-scalar coercion, throws/result conversion,
 unchecked unwrap, unsupported payload ABI lowering, broad runtime constructor
 support, property/ivar storage, or nullable-pointer erasure. The executable v1
-path is the checked packed `Optional<i32>` runtime ABI.
+path is the checked packed `Optional<i32>`, `Optional<bool>`, and
+`Optional<id>` runtime ABI.
 
 Generic callable reification is similarly bounded. Semantic records may publish
 deterministic erased-default signature replay keys for admitted
@@ -63,7 +65,7 @@ The #8207 umbrella contract lives in
 keeps semantic promotion bounded: typed throws cannot widen past source/interface
 metadata plus hidden error-out lowering and catch/bridge policy into multi-payload,
 unsupported foreign-carrier, or erased public runtime behavior,
-and value optionals cannot widen past their bounded scalar packed ABI plus
+and value optionals cannot widen past their bounded packed scalar/id-handle ABI plus
 checked lowering contract into broad nested/generic/property/ivar/nullability/nil
 or unchecked runtime support. Runtime generic reification, type-test match
 patterns, and strict-system profile support cannot be widened from source

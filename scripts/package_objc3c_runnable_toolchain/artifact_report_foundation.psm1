@@ -6,14 +6,54 @@ function New-RunnableToolchainPackageFoundationManifestSection {
   param(
     [Parameter(Mandatory = $true)][string]$RepoRoot,
     [Parameter(Mandatory = $true)][string]$PackageRoot,
-    [Parameter(Mandatory = $true)][string]$ManifestPath
+    [Parameter(Mandatory = $true)][string]$ManifestPath,
+    [ValidateSet("release", "address", "undefined")]
+    [string]$SanitizerVariant = "release"
   )
+
+  $sanitizerPackageVariant = [ordered]@{
+    selected_runtime_variant = "release"
+    support_truth = $false
+    native_execution_claimed = $false
+  }
+  if ($SanitizerVariant -eq "address") {
+    $sanitizerPackageVariant = [ordered]@{
+      package_id = "org.objc3c.runtime:objc3c-runtime-asan"
+      package_variant_row_id = "objc3c.package.sanitizer.asan.reserved"
+      package_channel_id = "windows-x64-sanitizer-asan"
+      target_platform_id = "windows-x64"
+      sanitizer = "address"
+      runtime_library_ids = @("objc3-runtime", "clang_rt.asan")
+      metadata_manifest_path = "share/objc3c/sanitizer/asan-metadata.json"
+      selected_runtime_variant = "sanitizer=address"
+      install_selector = "sanitizer=address"
+      support_truth = $false
+      native_execution_claimed = $false
+    }
+  } elseif ($SanitizerVariant -eq "undefined") {
+    $sanitizerPackageVariant = [ordered]@{
+      package_id = "org.objc3c.runtime:objc3c-runtime-ubsan"
+      package_variant_row_id = "objc3c.package.sanitizer.ubsan.reserved"
+      package_channel_id = "windows-x64-sanitizer-ubsan"
+      target_platform_id = "windows-x64"
+      sanitizer = "undefined"
+      runtime_library_ids = @("objc3-runtime", "clang_rt.ubsan")
+      metadata_manifest_path = "share/objc3c/sanitizer/ubsan-metadata.json"
+      selected_runtime_variant = "sanitizer=undefined"
+      install_selector = "sanitizer=undefined"
+      trap_or_recover_mode = "trap"
+      support_truth = $false
+      native_execution_claimed = $false
+    }
+  }
 
   return [ordered]@{
     contract_id = "objc3c-runnable-build-install-run-package/runnable_suite-packaged-end-to-end-v1"
     schema_version = 1
     package_model = "staged-runnable-toolchain-bundle-with-repo-relative-layout"
     install_model = "local-package-root-not-system-install"
+    runtime_variant = $sanitizerPackageVariant.selected_runtime_variant
+    sanitizer_package_variant = $sanitizerPackageVariant
     package_root = Get-RepoRelativePathCompat -RootPath $RepoRoot -TargetPath $PackageRoot
     manifest_artifact = Get-RepoRelativePathCompat -RootPath $PackageRoot -TargetPath $ManifestPath
     native_executable = "artifacts/bin/objc3c-native.exe"

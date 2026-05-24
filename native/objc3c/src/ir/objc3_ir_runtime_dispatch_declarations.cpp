@@ -27,6 +27,15 @@ void EmitObjc3IRRuntimeDispatchDeclarations(
       out << "declare " << Objc3IRRuntimeDispatchI32ResultType() << " @"
           << symbol << "(i32, ptr";
       arg_slots = kObjc3RuntimeDispatchDefaultArgs;
+    } else if (symbol ==
+               kObjc3RuntimeTypedDispatchValueFromClassErrorOutSymbol) {
+      out << "declare i32 @" << symbol << "(i32, i32, ptr, ptr";
+    } else if (symbol == kObjc3RuntimeDispatchFromClassErrorOutSymbol) {
+      out << "declare i32 @" << symbol << "(i32, ptr, ptr";
+    } else if (symbol == kObjc3RuntimeTypedDispatchValueErrorOutSymbol) {
+      out << "declare i32 @" << symbol << "(i32, i32, ptr";
+    } else if (symbol == kObjc3RuntimeDispatchErrorOutSymbol) {
+      out << "declare i32 @" << symbol << "(i32, ptr";
     } else if (symbol == kObjc3RuntimeTypedDispatchValueFromClassSymbol) {
       out << "declare i32 @" << symbol << "(i32, i32, ptr, ptr";
     } else if (symbol == kObjc3RuntimeDispatchFromClassSymbol) {
@@ -38,6 +47,12 @@ void EmitObjc3IRRuntimeDispatchDeclarations(
     }
     for (std::size_t i = 0; i < arg_slots; ++i) {
       out << ", i32";
+    }
+    if (symbol == kObjc3RuntimeDispatchErrorOutSymbol ||
+        symbol == kObjc3RuntimeDispatchFromClassErrorOutSymbol ||
+        symbol == kObjc3RuntimeTypedDispatchValueErrorOutSymbol ||
+        symbol == kObjc3RuntimeTypedDispatchValueFromClassErrorOutSymbol) {
+      out << ", ptr";
     }
     out << ")\n";
   }

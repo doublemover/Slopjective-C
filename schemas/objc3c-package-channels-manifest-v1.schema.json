@@ -9,6 +9,9 @@
     "generated_at_utc",
     "status",
     "platform_id",
+    "package_id",
+    "package_channel_id",
+    "sanitizer_variant",
     "package_root",
     "platform_support_matrix",
     "supported_platform_ids",
@@ -21,13 +24,30 @@
     "receipt_contracts",
     "portable_archive",
     "installer_archive",
-    "offline_archive"
+    "offline_archive",
+    "support_truth",
+    "native_execution_claimed"
   ],
   "properties": {
     "contract_id": { "const": "objc3c.packaging.channels.summary.v1" },
     "generated_at_utc": { "type": "string" },
     "status": { "const": "PASS" },
     "platform_id": { "type": "string" },
+    "package_id": {
+      "enum": [
+        "org.objc3c.runtime:objc3c-runtime-release",
+        "org.objc3c.runtime:objc3c-runtime-asan",
+        "org.objc3c.runtime:objc3c-runtime-ubsan"
+      ]
+    },
+    "package_channel_id": {
+      "enum": [
+        "windows-x64-release",
+        "windows-x64-sanitizer-asan",
+        "windows-x64-sanitizer-ubsan"
+      ]
+    },
+    "sanitizer_variant": { "enum": ["release", "address", "undefined"] },
     "package_root": { "type": "string" },
     "platform_support_matrix": { "type": "string" },
     "supported_platform_ids": {
@@ -64,7 +84,10 @@
     },
     "portable_archive": { "type": "string" },
     "installer_archive": { "type": "string" },
-    "offline_archive": { "type": "string" }
+    "offline_archive": { "type": "string" },
+    "support_truth": { "const": false },
+    "native_execution_claimed": { "const": false },
+    "release_foundation_artifacts": { "type": "object" }
   },
   "$defs": {
     "supportTier": {
@@ -208,7 +231,9 @@
         "artifacts/lib/objc3_runtime.lib",
         "stdlib/workspace.json",
         "stdlib/modules/objc3.core/module.json",
-        "docs/runbooks/objc3c_packaging_channels.md"
+        "docs/runbooks/objc3c_packaging_channels.md",
+        "share/objc3c/sanitizer/asan-metadata.json",
+        "share/objc3c/sanitizer/ubsan-metadata.json"
       ]
     },
     "payloadEntryDigest": {
@@ -274,7 +299,12 @@
         "payload_required_entries",
         "required_fields",
         "network_policy",
-        "rollback_required"
+        "rollback_required",
+        "package_id",
+        "package_channel_id",
+        "sanitizer_variant",
+        "support_truth",
+        "native_execution_claimed"
       ],
       "properties": {
         "contract_id": { "const": "objc3c.packaging.channels.install-receipt.v1" },
@@ -309,13 +339,34 @@
               "payload_manifest",
               "payload_manifest_sha256",
               "payload_required_entries",
-              "installed_at_utc"
+              "installed_at_utc",
+              "sanitizer_package_variant"
             ]
           },
           "minItems": 1
         },
         "network_policy": { "enum": ["local-filesystem-only", "no-network"] },
         "rollback_required": { "const": true },
+        "package_id": {
+          "enum": [
+            "org.objc3c.runtime:objc3c-runtime-release",
+            "org.objc3c.runtime:objc3c-runtime-asan",
+            "org.objc3c.runtime:objc3c-runtime-ubsan"
+          ]
+        },
+        "package_channel_id": {
+          "enum": [
+            "windows-x64-release",
+            "windows-x64-sanitizer-asan",
+            "windows-x64-sanitizer-ubsan"
+          ]
+        },
+        "sanitizer_variant": { "enum": ["release", "address", "undefined"] },
+        "sanitizer_install_selector": {
+          "enum": ["sanitizer=address", "sanitizer=undefined"]
+        },
+        "support_truth": { "const": false },
+        "native_execution_claimed": { "const": false },
         "delegates_to": { "const": "local-installer" }
       }
     },

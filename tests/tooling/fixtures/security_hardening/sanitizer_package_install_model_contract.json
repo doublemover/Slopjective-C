@@ -17,6 +17,7 @@
       "claim_state": "reserved",
       "platform_ids": [],
       "package_variant_row_id": "objc3c.package.sanitizer.asan.reserved",
+      "package_channel_id": "windows-x64-sanitizer-asan",
       "package_id": "org.objc3c.runtime:objc3c-runtime-asan",
       "support_truth": false,
       "native_execution_claimed": false,
@@ -34,6 +35,7 @@
         "install_receipt_required_fields": [
           "package_id",
           "package_variant_row_id",
+          "package_channel_id",
           "target_platform_id",
           "sanitizer",
           "runtime_library_ids",
@@ -77,6 +79,7 @@
         "required_fields": [
           "package_id",
           "package_variant_row_id",
+          "package_channel_id",
           "target_platform_id",
           "sanitizer",
           "runtime_library_ids",
@@ -134,6 +137,7 @@
         "stale_package_metadata_behavior": "fail-closed-before-publication",
         "freshness_inputs": [
           "package_variant_row_id",
+          "package_channel_id",
           "package_id",
           "runtime_library_ids",
           "compiler_flags",
@@ -150,6 +154,7 @@
       "claim_state": "reserved",
       "platform_ids": [],
       "package_variant_row_id": "objc3c.package.sanitizer.ubsan.reserved",
+      "package_channel_id": "windows-x64-sanitizer-ubsan",
       "package_id": "org.objc3c.runtime:objc3c-runtime-ubsan",
       "support_truth": false,
       "native_execution_claimed": false,
@@ -167,6 +172,7 @@
         "install_receipt_required_fields": [
           "package_id",
           "package_variant_row_id",
+          "package_channel_id",
           "target_platform_id",
           "sanitizer",
           "runtime_library_ids",
@@ -212,6 +218,7 @@
         "required_fields": [
           "package_id",
           "package_variant_row_id",
+          "package_channel_id",
           "target_platform_id",
           "sanitizer",
           "runtime_library_ids",
@@ -280,6 +287,7 @@
         "stale_package_metadata_behavior": "fail-closed-before-publication",
         "freshness_inputs": [
           "package_variant_row_id",
+          "package_channel_id",
           "package_id",
           "runtime_library_ids",
           "compiler_flags",

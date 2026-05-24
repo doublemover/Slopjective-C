@@ -27,7 +27,7 @@
     "issue_ref": { "const": 8234 },
     "canonical_spelling": { "const": "Optional<T>" },
     "source_status": {
-      "const": "semantic-type-signature-admitted-bounded-scalar-runtime-abi"
+      "const": "semantic-type-signature-admitted-bounded-packed-runtime-abi"
     },
     "semantic_model": {
       "type": "object",
@@ -57,17 +57,18 @@
         "unwrap_failure_diagnostic_supported": { "const": true },
         "nil_bridge_diagnostic_supported": { "const": true },
         "runtime_abi_payload_scope": {
-          "const": "supported-scalar-payload-forms-only"
+          "const": "supported-packed-scalar-and-id-handle-payload-forms-only"
         },
         "supported_runtime_payload_forms": {
           "type": "array",
           "prefixItems": [
             { "const": "i32" },
-            { "const": "bool" }
+            { "const": "bool" },
+            { "const": "id" }
           ],
           "items": false,
-          "minItems": 2,
-          "maxItems": 2
+          "minItems": 3,
+          "maxItems": 3
         },
         "implicit_nil_absence_allowed": { "const": false },
         "optional_id_distinct_from_nullable_object_pointer": { "const": true }
@@ -118,7 +119,7 @@
     },
     "lowering_contract": { "$ref": "#/$defs/loweringContract" },
     "interface_roundtrip_status": {
-      "const": "semantic-carrier-roundtrips-bounded-scalar-runtime-abi"
+      "const": "semantic-carrier-roundtrips-bounded-packed-runtime-abi"
     },
     "records": {
       "type": "object",
@@ -315,7 +316,7 @@
         "ir_payload_emission_supported": { "const": true },
         "call_abi_lowering_supported": { "const": true },
         "runtime_abi_payload_scope": {
-          "const": "supported-scalar-payload-forms-only"
+          "const": "supported-packed-scalar-and-id-handle-payload-forms-only"
         }
       },
       "additionalProperties": false

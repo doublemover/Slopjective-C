@@ -310,18 +310,20 @@ void ValidateValueOptionalContract(
   ExpectBoolMember(contract, "lowering_supported", true, result,
                    json_path + "/value_optional_contract");
   ExpectStringMember(contract, "runtime_abi_payload_scope",
-                     "supported-scalar-payload-forms-only", result,
+                     kObjc3ValueOptionalRuntimeAbiPayloadScope, result,
                      json_path + "/value_optional_contract");
   const JsonArray &supported_payloads = ArrayMember(
       contract, "supported_runtime_payload_forms", result,
       json_path + "/value_optional_contract");
-  if (supported_payloads.size() != 2 ||
+  if (supported_payloads.size() != 3 ||
       !supported_payloads[0].IsString() ||
       supported_payloads[0].AsString() != "i32" ||
       !supported_payloads[1].IsString() ||
-      supported_payloads[1].AsString() != "bool") {
+      supported_payloads[1].AsString() != "bool" ||
+      !supported_payloads[2].IsString() ||
+      supported_payloads[2].AsString() != "id") {
     AddDiagnostic(result,
-                  "value optional contract must publish only supported i32/bool payload ABI",
+                  "value optional contract must publish only supported i32/bool/id payload ABI",
                   json_path +
                       "/value_optional_contract/supported_runtime_payload_forms");
   }

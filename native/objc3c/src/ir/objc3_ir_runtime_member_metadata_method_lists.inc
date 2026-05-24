@@ -81,7 +81,7 @@ static bool BuildObjc3IRRuntimeMemberMetadataMethodEntryInitializers(
     // dispatch-control lowering anchor: method entries preserve
     // effective-direct and objc_final intent bits alongside implementation
     // bindings.
-    entry_initializer << "{ ptr, ptr, ptr, i64, ptr, i64, i1, i1 } { ptr "
+    entry_initializer << "{ ptr, ptr, ptr, i64, ptr, i64, i1, i1, i1 } { ptr "
                       << selector_symbol << ", ptr "
                       << entry_owner_identity_symbol << ", ptr "
                       << return_type_symbol << ", i64 "
@@ -89,7 +89,8 @@ static bool BuildObjc3IRRuntimeMemberMetadataMethodEntryInitializers(
                       << implementation_symbol << ", i64 "
                       << (entry.has_body ? 1 : 0) << ", i1 "
                       << (entry.effective_direct_dispatch ? 1 : 0) << ", i1 "
-                      << (entry.objc_final_declared ? 1 : 0) << " }";
+                      << (entry.objc_final_declared ? 1 : 0) << ", i1 "
+                      << (entry.throws_error_out_abi_ready ? 1 : 0) << " }";
     entry_initializers.push_back(entry_initializer.str());
   }
   return true;
@@ -108,11 +109,11 @@ static void EmitObjc3IRRuntimeMemberMetadataMethodListGlobal(
         << ", ptr " << export_owner_identity_symbol << " }";
   } else {
     out << "{ i64, ptr, ptr, [" << entry_initializers.size()
-        << " x { ptr, ptr, ptr, i64, ptr, i64, i1, i1 }] } { i64 "
+        << " x { ptr, ptr, ptr, i64, ptr, i64, i1, i1, i1 }] } { i64 "
         << entry_initializers.size() << ", ptr " << owner_identity_symbol
         << ", ptr " << export_owner_identity_symbol << ", ["
         << entry_initializers.size()
-        << " x { ptr, ptr, ptr, i64, ptr, i64, i1, i1 }] [";
+        << " x { ptr, ptr, ptr, i64, ptr, i64, i1, i1, i1 }] [";
     for (std::size_t entry_index = 0;
          entry_index < entry_initializers.size(); ++entry_index) {
       if (entry_index != 0) {

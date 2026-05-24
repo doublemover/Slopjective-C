@@ -51,6 +51,9 @@ def sample_inputs() -> PackageChannelInputs:
             "required_manifest_fields": [
                 "contract_id",
                 "platform_id",
+                "package_id",
+                "package_channel_id",
+                "sanitizer_variant",
                 "package_root",
                 "installer_signature",
                 "archive_digests",
@@ -59,6 +62,8 @@ def sample_inputs() -> PackageChannelInputs:
                 "portable_archive",
                 "installer_archive",
                 "offline_archive",
+                "support_truth",
+                "native_execution_claimed",
             ],
             "required_receipt_fields": [
                 "contract_id",
@@ -114,6 +119,11 @@ def sample_inputs() -> PackageChannelInputs:
                 "required_fields",
                 "network_policy",
                 "rollback_required",
+                "package_id",
+                "package_channel_id",
+                "sanitizer_variant",
+                "support_truth",
+                "native_execution_claimed",
             ],
         },
         platform_support_matrix={
@@ -243,6 +253,11 @@ def test_package_channel_manifest_and_report_are_owned_by_model() -> None:
 
     assert manifest["contract_id"] == "objc3c.packaging.channels.summary.v1"
     assert manifest["platform_id"] == "windows-x64"
+    assert manifest["package_id"] == "org.objc3c.runtime:objc3c-runtime-release"
+    assert manifest["package_channel_id"] == "windows-x64-release"
+    assert manifest["sanitizer_variant"] == "release"
+    assert manifest["support_truth"] is False
+    assert manifest["native_execution_claimed"] is False
     assert manifest["implemented_channels"] == IMPLEMENTED_CHANNELS
     assert manifest["interop_loader_metadata"]["support"] == "local-mixed-image-metadata-digest-checked"
     assert manifest["interop_loader_metadata"]["header_import_count"] == 5
@@ -273,6 +288,9 @@ def test_package_channel_archive_digest_payloads_are_owned_by_model(tmp_path: Pa
     build_root = ROOT / "tmp" / "tests" / "package-channel-digests" / tmp_path.name
     paths = PackageChannelPaths(
         run_id="unit-run",
+        sanitizer_variant="release",
+        package_id="org.objc3c.runtime:objc3c-runtime-release",
+        package_channel_id="windows-x64-release",
         package_root=build_root / "runnable",
         build_root=build_root,
         portable_archive=build_root / "portable" / "objc3c-windows-x64-portable.zip",
@@ -453,6 +471,7 @@ def test_package_channel_script_rendering_is_owned_by_rendering_module() -> None
     assert "bootstrap_entrypoint = \"Bootstrap-objc3cEnvironment.ps1\"" in install_text
     assert "package_bridge = \"objc3c\"" in install_text
     assert "install_command = \"npm run objc3c -- build-package-channels\"" in install_text
+    assert "SanitizerVariant = \"release\"" in install_text
     assert "payload_manifest = $payloadManifest" in install_text
     assert "payload_manifest_sha256 = $payloadManifestSha256" in install_text
     assert "Copy-Item -LiteralPath $sourceRoot" in install_text
@@ -460,3 +479,4 @@ def test_package_channel_script_rendering_is_owned_by_rendering_module() -> None
     assert "objc3c-windows-x64-installer.zip" in offline_text
     assert "Expand-Archive -LiteralPath $installerArchive" in offline_text
     assert '-ChannelId "offline-bundle"' in offline_text
+    assert '-SanitizerVariant "release"' in offline_text

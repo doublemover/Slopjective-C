@@ -62,6 +62,13 @@ def test_platform_toolchain_support_evidence_fixture_validates() -> None:
     }
     assert evidence["host_evidence_contract"]["hosted_evidence_ingestion"] == {
         "workflow_path": ".github/workflows/platform-host-evidence.yml",
+        "accepted_workflow_paths": [
+            ".github/workflows/platform-host-evidence.yml",
+            ".github/workflows/conformance-minima.yml",
+        ],
+        "dispatch_gateway_workflow_paths": [
+            ".github/workflows/conformance-minima.yml",
+        ],
         "runner_labels": {
             "linux-x64": "ubuntu-24.04",
             "darwin-arm64": "macos-15",

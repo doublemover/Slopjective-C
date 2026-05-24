@@ -29,6 +29,41 @@ REQUIRED_PAYLOAD_ENTRIES = [
     "stdlib/modules/objc3.core/module.json",
     "docs/runbooks/objc3c_packaging_channels.md",
 ]
+SANITIZER_PAYLOAD_ENTRIES = {
+    "address": ["share/objc3c/sanitizer/asan-metadata.json"],
+    "undefined": ["share/objc3c/sanitizer/ubsan-metadata.json"],
+}
+REQUIRED_RECEIPT_FIELDS = [
+    "contract_id",
+    "install_root",
+    "install_home",
+    "channel_id",
+    "bootstrap_entrypoint",
+    "package_bridge",
+    "install_command",
+    "payload_manifest",
+    "payload_manifest_sha256",
+    "payload_required_entries",
+    "installed_at_utc",
+]
+SANITIZER_REQUIRED_RECEIPT_FIELDS = [*REQUIRED_RECEIPT_FIELDS, "sanitizer_package_variant"]
+PACKAGE_IDS = {
+    "release": "org.objc3c.runtime:objc3c-runtime-release",
+    "address": "org.objc3c.runtime:objc3c-runtime-asan",
+    "undefined": "org.objc3c.runtime:objc3c-runtime-ubsan",
+}
+PACKAGE_CHANNEL_IDS = {
+    "release": "windows-x64-release",
+    "address": "windows-x64-sanitizer-asan",
+    "undefined": "windows-x64-sanitizer-ubsan",
+}
+
+
+def required_payload_entries(sanitizer_variant: str = "release") -> list[str]:
+    return [
+        *REQUIRED_PAYLOAD_ENTRIES,
+        *SANITIZER_PAYLOAD_ENTRIES.get(sanitizer_variant, []),
+    ]
 
 
 def validate_manifest_required_fields(
@@ -39,6 +74,17 @@ def validate_manifest_required_fields(
     for field_name in metadata_surface["required_manifest_fields"]:
         if field_name not in manifest_payload:
             raise RuntimeError(f"package-channels manifest missing required field {field_name}")
+    sanitizer_variant = str(manifest_payload.get("sanitizer_variant", "release"))
+    if sanitizer_variant not in PACKAGE_IDS:
+        raise RuntimeError("package-channels sanitizer_variant must be release, address, or undefined")
+    if manifest_payload.get("package_id") != PACKAGE_IDS[sanitizer_variant]:
+        raise RuntimeError("package-channels package_id drifted from sanitizer variant")
+    if manifest_payload.get("package_channel_id") != PACKAGE_CHANNEL_IDS[sanitizer_variant]:
+        raise RuntimeError("package-channels package_channel_id drifted from sanitizer variant")
+    if manifest_payload.get("support_truth") is not False:
+        raise RuntimeError("package-channels manifest must not promote sanitizer support truth")
+    if manifest_payload.get("native_execution_claimed") is not False:
+        raise RuntimeError("package-channels manifest must not claim sanitizer native execution")
 
     signature = manifest_payload.get("installer_signature")
     if not isinstance(signature, dict):
@@ -87,6 +133,7 @@ def validate_manifest_required_fields(
     validate_payload_contract(
         manifest_payload=manifest_payload,
         metadata_surface=metadata_surface,
+        sanitizer_variant=sanitizer_variant,
     )
     validate_receipt_contracts(
         manifest_payload=manifest_payload,
@@ -102,6 +149,7 @@ def validate_payload_contract(
     *,
     manifest_payload: dict[str, Any],
     metadata_surface: dict[str, Any],
+    sanitizer_variant: str = "release",
 ) -> None:
     payload_contract = manifest_payload.get("payload_contract")
     if not isinstance(payload_contract, dict):
@@ -120,7 +168,8 @@ def validate_payload_contract(
         raise RuntimeError("package-channels payload_contract manifest artifact drifted")
     if not valid_sha256(payload_contract.get("manifest_sha256")):
         raise RuntimeError("package-channels payload_contract manifest_sha256 must be lowercase SHA-256")
-    if payload_contract.get("required_entries") != REQUIRED_PAYLOAD_ENTRIES:
+    expected_payload_entries = required_payload_entries(sanitizer_variant)
+    if payload_contract.get("required_entries") != expected_payload_entries:
         raise RuntimeError("package-channels payload_contract required entries drifted")
     if payload_contract.get("clean_room_source_policy") != "fresh-owned-tmp-root-only":
         raise RuntimeError("package-channels payload_contract clean-room source policy drifted")
@@ -128,7 +177,7 @@ def validate_payload_contract(
     entry_digests = payload_contract.get("entry_digests")
     if not isinstance(entry_digests, dict):
         raise RuntimeError("package-channels payload_contract missing entry_digests")
-    for relative_path in REQUIRED_PAYLOAD_ENTRIES:
+    for relative_path in expected_payload_entries:
         entry_digest = entry_digests.get(relative_path)
         if not isinstance(entry_digest, dict):
             raise RuntimeError(f"package-channels payload_contract entry_digests missing {relative_path}")
@@ -186,12 +235,35 @@ def validate_receipt_contracts(
             raise RuntimeError(f"package-channels receipt_contracts.{contract_name} install command drifted")
         if receipt_contract.get("payload_manifest") != MANIFEST_RELATIVE_PATH:
             raise RuntimeError(f"package-channels receipt_contracts.{contract_name} payload manifest drifted")
-        if receipt_contract.get("payload_required_entries") != REQUIRED_PAYLOAD_ENTRIES:
+        expected_payload_entries = required_payload_entries(str(manifest_payload.get("sanitizer_variant", "release")))
+        if receipt_contract.get("payload_required_entries") != expected_payload_entries:
             raise RuntimeError(f"package-channels receipt_contracts.{contract_name} payload entries drifted")
-        if receipt_contract.get("required_fields") != metadata_surface["required_receipt_fields"]:
+        expected_required_fields = (
+            SANITIZER_REQUIRED_RECEIPT_FIELDS
+            if str(receipt_contract.get("sanitizer_variant", "release")) != "release"
+            else metadata_surface["required_receipt_fields"]
+        )
+        if receipt_contract.get("required_fields") != expected_required_fields:
             raise RuntimeError(f"package-channels receipt_contracts.{contract_name} required fields drifted")
         if receipt_contract.get("rollback_required") is not True:
             raise RuntimeError(f"package-channels receipt_contracts.{contract_name} rollback requirement drifted")
+        receipt_sanitizer_variant = str(receipt_contract.get("sanitizer_variant", "release"))
+        if receipt_sanitizer_variant != str(manifest_payload.get("sanitizer_variant", "release")):
+            raise RuntimeError(f"package-channels receipt_contracts.{contract_name} sanitizer variant drifted from manifest")
+        if receipt_sanitizer_variant not in PACKAGE_IDS:
+            raise RuntimeError(f"package-channels receipt_contracts.{contract_name} sanitizer variant drifted")
+        if receipt_contract.get("package_id") != PACKAGE_IDS[receipt_sanitizer_variant]:
+            raise RuntimeError(f"package-channels receipt_contracts.{contract_name} package id drifted")
+        if receipt_contract.get("package_channel_id") != PACKAGE_CHANNEL_IDS[receipt_sanitizer_variant]:
+            raise RuntimeError(f"package-channels receipt_contracts.{contract_name} package channel id drifted")
+        if receipt_contract.get("support_truth") is not False:
+            raise RuntimeError(f"package-channels receipt_contracts.{contract_name} must not promote support truth")
+        if receipt_contract.get("native_execution_claimed") is not False:
+            raise RuntimeError(f"package-channels receipt_contracts.{contract_name} must not claim native execution")
+        if receipt_sanitizer_variant != "release":
+            expected_selector = f"sanitizer={receipt_sanitizer_variant}"
+            if receipt_contract.get("sanitizer_install_selector") != expected_selector:
+                raise RuntimeError(f"package-channels receipt_contracts.{contract_name} sanitizer selector drifted")
         for field_name, expected_value in expected.items():
             if receipt_contract.get(field_name) != expected_value:
                 raise RuntimeError(f"package-channels receipt_contracts.{contract_name} {field_name} drifted")
