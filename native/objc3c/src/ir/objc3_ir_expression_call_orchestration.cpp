@@ -15,6 +15,10 @@ LoweredFunctionSignature BuildObjc3IRLoweredSignatureFromDirectDispatch(
   LoweredFunctionSignature lowered;
   lowered.return_type = direct_signature.return_type;
   lowered.param_types = direct_signature.param_types;
+  lowered.return_value_optional_carrier =
+      direct_signature.return_value_optional_carrier;
+  lowered.param_value_optional_carriers =
+      direct_signature.param_value_optional_carriers;
   lowered.throws_declared = direct_signature.throws_declared;
   lowered.typed_throws_declared = direct_signature.typed_throws_declared;
   lowered.throws_error_out_abi_ready =
@@ -119,6 +123,7 @@ std::string EmitObjc3IRExpressionCallMessageSendExpr(
           options.direct_dispatch_symbols_by_key,
           options.direct_dispatch_signatures_by_key,
           options.runtime_dispatch_return_types_by_key,
+          options.runtime_dispatch_return_value_optional_carriers_by_key,
           options.runtime_dispatch_superclass_by_name,
           options.runtime_dispatch_arg_slots,
           options.runtime_dispatch_symbol,
@@ -162,6 +167,7 @@ bool TryResolveObjc3IRExpressionCallMessageSendSignature(
               options.direct_dispatch_symbols_by_key,
               options.direct_dispatch_signatures_by_key,
               options.runtime_dispatch_return_types_by_key,
+              options.runtime_dispatch_return_value_optional_carriers_by_key,
               options.runtime_dispatch_superclass_by_name,
               options.runtime_dispatch_arg_slots,
               options.runtime_dispatch_symbol,

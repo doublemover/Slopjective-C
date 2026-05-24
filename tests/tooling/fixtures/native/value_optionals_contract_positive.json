@@ -2,7 +2,7 @@
   "contract_id": "objc3c.value_optional.contract.v1",
   "issue_ref": 8234,
   "canonical_spelling": "Optional<T>",
-  "source_status": "semantic-type-signature-admitted-bounded-packed-runtime-abi",
+  "source_status": "semantic-type-signature-admitted-packed-and-full-i64-runtime-abi",
   "semantic_model": {
     "type_admission_supported": true,
     "explicit_present_absent_construction_modeled": true,
@@ -13,11 +13,12 @@
     "unwrap_requires_presence_check": true,
     "unwrap_failure_diagnostic_supported": true,
     "nil_bridge_diagnostic_supported": true,
-    "runtime_abi_payload_scope": "supported-packed-scalar-and-id-handle-payload-forms-only",
+    "runtime_abi_payload_scope": "supported-packed-scalar-id-handle-and-full-i64-payload-forms",
     "supported_runtime_payload_forms": [
       "i32",
       "bool",
-      "id"
+      "id",
+      "i64"
     ],
     "supported_runtime_helper_payload_forms": [
       "i32",
@@ -26,7 +27,7 @@
       "i64"
     ],
     "full_width_i64_runtime_helper_supported": true,
-    "full_width_i64_language_call_abi_supported": false,
+    "full_width_i64_language_call_abi_supported": true,
     "implicit_nil_absence_allowed": false,
     "optional_id_distinct_from_nullable_object_pointer": true
   },
@@ -65,7 +66,7 @@
     "runtime_unwrap_supported": true,
     "ir_payload_emission_supported": true,
     "call_abi_lowering_supported": true,
-    "runtime_abi_payload_scope": "supported-packed-scalar-and-id-handle-payload-forms-only"
+    "runtime_abi_payload_scope": "supported-packed-scalar-id-handle-and-full-i64-payload-forms"
   },
   "interface_roundtrip_status": "semantic-carrier-roundtrips-bounded-packed-runtime-abi",
   "records": {

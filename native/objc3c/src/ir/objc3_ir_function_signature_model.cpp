@@ -129,6 +129,8 @@ void PopulateMethodLoweredFunctionSignature(
   signature.typed_throws_error_type_spelling =
       method.typed_throws_payload.canonical_spelling;
   MarkValueOptionalSignature(signature, method.return_value_optional);
+  signature.return_value_optional_carrier =
+      BuildObjc3IRValueOptionalCarrierMetadata(method.return_value_optional);
   signature.objc_nserror_declared = method.objc_nserror_declared;
   signature.objc_status_code_declared = method.objc_status_code_declared;
   signature.objc_status_code_mapping_symbol =
@@ -149,6 +151,7 @@ void PopulateMethodLoweredFunctionSignature(
     }
   }
   signature.param_types.reserve(method.params.size());
+  signature.param_value_optional_carriers.reserve(method.params.size());
   signature.param_insert_retain.reserve(method.params.size());
   signature.param_insert_release.reserve(method.params.size());
   signature.param_insert_autorelease.reserve(method.params.size());
@@ -158,6 +161,8 @@ void PopulateMethodLoweredFunctionSignature(
     const auto &param = method.params[param_index];
     MarkValueOptionalSignature(signature, param.value_optional);
     signature.param_types.push_back(param.type);
+    signature.param_value_optional_carriers.push_back(
+        BuildObjc3IRValueOptionalCarrierMetadata(param.value_optional));
     signature.param_insert_retain.push_back(
         EffectiveArcParamInsertRetain(param, false));
     signature.param_insert_release.push_back(
@@ -190,6 +195,8 @@ BuildLoweredFunctionSignatures(const Objc3Program &program) {
     signature.typed_throws_error_type_spelling =
         fn.typed_throws_payload.canonical_spelling;
     MarkValueOptionalSignature(signature, fn.return_value_optional);
+    signature.return_value_optional_carrier =
+        BuildObjc3IRValueOptionalCarrierMetadata(fn.return_value_optional);
     signature.objc_nserror_declared = fn.objc_nserror_declared;
     signature.objc_status_code_declared = fn.objc_status_code_declared;
     signature.objc_status_code_mapping_symbol =
@@ -212,6 +219,7 @@ BuildLoweredFunctionSignatures(const Objc3Program &program) {
       }
     }
     signature.param_types.reserve(fn.params.size());
+    signature.param_value_optional_carriers.reserve(fn.params.size());
     signature.param_insert_retain.reserve(fn.params.size());
     signature.param_insert_release.reserve(fn.params.size());
     signature.param_insert_autorelease.reserve(fn.params.size());
@@ -221,6 +229,8 @@ BuildLoweredFunctionSignatures(const Objc3Program &program) {
       const auto &param = fn.params[param_index];
       MarkValueOptionalSignature(signature, param.value_optional);
       signature.param_types.push_back(param.type);
+      signature.param_value_optional_carriers.push_back(
+          BuildObjc3IRValueOptionalCarrierMetadata(param.value_optional));
       signature.param_insert_retain.push_back(
           EffectiveArcParamInsertRetain(param, false));
       signature.param_insert_release.push_back(

@@ -60,9 +60,15 @@ std::string EmitObjc3IRCallExpression(
       return callbacks.emit_unsupported_i32_value(
           "try expression lowering requires a non-void result");
     }
-    const std::string result_storage_type = LLVMLocalStorageType(result_type);
+    const Objc3IRValueOptionalCarrierKind result_optional_carrier =
+        Objc3IRValueOptionalCarrierKindFor(
+            operand_signature->return_value_optional_carrier);
+    const std::string result_storage_type =
+        LLVMLocalStorageTypeForValueOptionalCarrier(result_type,
+                                                   result_optional_carrier);
     const unsigned result_storage_alignment =
-        LLVMLocalStorageAlignment(result_type);
+        LLVMLocalStorageAlignmentForValueOptionalCarrier(
+            result_type, result_optional_carrier);
     const std::string result_ptr =
         "%try.result.addr." + std::to_string(ctx.temp_counter++);
     const std::string error_slot =
@@ -131,7 +137,10 @@ std::string EmitObjc3IRCallExpression(
     switch (expr->try_operator_kind) {
       case Expr::TryOperatorKind::Optional:
         ctx.code_lines.push_back("  store " + result_storage_type +
-                                 " 0, ptr " + result_ptr + ", align " +
+                                 " " +
+                                 std::string(LLVMZeroValueForValueOptionalCarrier(
+                                     result_type, result_optional_carrier)) +
+                                 ", ptr " + result_ptr + ", align " +
                                  std::to_string(result_storage_alignment));
         ctx.code_lines.push_back("  br label %" + merged_label);
         break;
@@ -162,6 +171,9 @@ std::string EmitObjc3IRCallExpression(
                              result_storage_type + ", ptr " + result_ptr +
                              ", align " +
                              std::to_string(result_storage_alignment));
+    if (result_type == ValueType::Optional) {
+      ctx.value_optional_carrier_by_value[loaded] = result_optional_carrier;
+    }
     return loaded;
   }
   const auto local_block_it = ctx.block_bindings.find(expr->ident);

@@ -23,9 +23,12 @@ Objc3IRMethodDefinitionPlan BuildObjc3IRMethodDefinitionPlan(
   std::unordered_map<std::string, bool> interface_direct_members_by_name;
   const auto record_runtime_dispatch_return_type =
       [&plan](const std::string &owner_name, const std::string &selector,
-              bool is_class_method, ValueType return_type) {
+              bool is_class_method, ValueType return_type,
+              const Objc3ValueOptionalTypeDescriptor &return_value_optional) {
         const std::string key =
             BuildDirectDispatchMethodKey(owner_name, selector, is_class_method);
+        const Objc3IRValueOptionalCarrierMetadata carrier =
+            BuildObjc3IRValueOptionalCarrierMetadata(return_value_optional);
         const auto existing =
             plan.runtime_dispatch_return_types_by_key.find(key);
         if (existing != plan.runtime_dispatch_return_types_by_key.end()) {
@@ -35,9 +38,23 @@ Objc3IRMethodDefinitionPlan BuildObjc3IRMethodDefinitionPlan(
                 owner_name + " " + selector + "'";
             return false;
           }
+          const auto existing_carrier =
+              plan.runtime_dispatch_return_value_optional_carriers_by_key.find(
+                  key);
+          if (existing_carrier !=
+                  plan.runtime_dispatch_return_value_optional_carriers_by_key
+                      .end() &&
+              !(existing_carrier->second == carrier)) {
+            plan.error =
+                "conflicting runtime dispatch return optional carrier for method '" +
+                owner_name + " " + selector + "'";
+            return false;
+          }
           return true;
         }
         plan.runtime_dispatch_return_types_by_key.emplace(key, return_type);
+        plan.runtime_dispatch_return_value_optional_carriers_by_key.emplace(
+            key, carrier);
         return true;
       };
   const auto record_method_return_type =
@@ -45,7 +62,7 @@ Objc3IRMethodDefinitionPlan BuildObjc3IRMethodDefinitionPlan(
                                              const Objc3MethodDecl &method) {
         return record_runtime_dispatch_return_type(
             owner_name, method.selector, method.is_class_method,
-            method.return_type);
+            method.return_type, method.return_value_optional);
       };
   const auto build_method_direct_dispatch_signature =
       [](const Objc3MethodDecl &method) {
@@ -60,6 +77,9 @@ Objc3IRMethodDefinitionPlan BuildObjc3IRMethodDefinitionPlan(
                 method.typed_throws_payload.canonical_spelling);
         signature.typed_throws_error_type_spelling =
             method.typed_throws_payload.canonical_spelling;
+        signature.return_value_optional_carrier =
+            BuildObjc3IRValueOptionalCarrierMetadata(
+                method.return_value_optional);
         const auto mark_value_optional =
             [&signature](const Objc3ValueOptionalTypeDescriptor &descriptor) {
               if (!descriptor.present) {
@@ -79,9 +99,12 @@ Objc3IRMethodDefinitionPlan BuildObjc3IRMethodDefinitionPlan(
             };
         mark_value_optional(method.return_value_optional);
         signature.param_types.reserve(method.params.size());
+        signature.param_value_optional_carriers.reserve(method.params.size());
         for (const FuncParam &param : method.params) {
           mark_value_optional(param.value_optional);
           signature.param_types.push_back(param.type);
+          signature.param_value_optional_carriers.push_back(
+              BuildObjc3IRValueOptionalCarrierMetadata(param.value_optional));
         }
         return signature;
       };
@@ -104,6 +127,10 @@ Objc3IRMethodDefinitionPlan BuildObjc3IRMethodDefinitionPlan(
         if (existing_signature != plan.direct_dispatch_signatures_by_key.end() &&
             (existing_signature->second.return_type != signature.return_type ||
              existing_signature->second.param_types != signature.param_types ||
+             !(existing_signature->second.return_value_optional_carrier ==
+               signature.return_value_optional_carrier) ||
+             existing_signature->second.param_value_optional_carriers !=
+                 signature.param_value_optional_carriers ||
              existing_signature->second.throws_declared !=
                  signature.throws_declared ||
              existing_signature->second.typed_throws_declared !=
@@ -262,7 +289,8 @@ Objc3IRMethodDefinitionPlan BuildObjc3IRMethodDefinitionPlan(
                   bundle.owner_name, selector, false,
                   kind == Objc3IRSyntheticMethodKind::PropertySetter
                       ? ValueType::Void
-                      : property_type)) {
+                      : property_type,
+                  Objc3ValueOptionalTypeDescriptor{})) {
             return;
           }
           ++plan.synthesized_property_accessor_count;

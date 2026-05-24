@@ -64,6 +64,15 @@ def assert_textual_interface_fail_closed(payload: dict[str, Any]) -> None:
     assert failures == []
 
 
+def value_optional_contracts(payload: dict[str, Any]) -> list[dict[str, Any]]:
+    contracts: list[dict[str, Any]] = []
+    for declaration in payload["declarations"]:
+        contract = declaration["type_signature"].get("value_optional_contract")
+        if contract is not None:
+            contracts.append(contract)
+    return contracts
+
+
 def textual_interface_contract_failures(payload: dict[str, Any]) -> list[str]:
     failures: list[str] = []
     roundtrip = payload["interface_roundtrip"]
@@ -106,6 +115,33 @@ def test_standalone_textual_interface_payload_fixture_is_schema_backed() -> None
     assert set(payload["issue_refs"]) == {8238, 8208, 8233, 8234}
     assert payload["source_truth_policy"] == REQUIRED_SOURCE_TRUTH_POLICY
     assert {row["case_id"] for row in payload["negative_cases"]} == REQUIRED_NEGATIVE_CASE_IDS
+    assert value_optional_contracts(payload)
+    for contract in value_optional_contracts(payload):
+        assert contract["source_status"] == (
+            "semantic-type-signature-admitted-packed-and-full-i64-runtime-abi"
+        )
+        assert contract["runtime_abi_payload_scope"] == (
+            "supported-packed-scalar-id-handle-and-full-i64-payload-forms"
+        )
+        assert contract["supported_runtime_payload_forms"] == [
+            "i32",
+            "bool",
+            "id",
+            "i64",
+        ]
+        assert contract["supported_runtime_helper_payload_forms"] == [
+            "i32",
+            "bool",
+            "id",
+            "i64",
+        ]
+        assert contract["full_width_i64_runtime_helper_supported"] is True
+        assert contract["full_width_i64_language_call_abi_supported"] is True
+        assert contract["call_abi_lowering_supported"] is True
+        assert contract["nested_value_optional_runtime_supported"] is False
+        assert contract["generic_payload_runtime_supported"] is False
+        assert contract["property_storage_supported"] is False
+        assert contract["ivar_storage_supported"] is False
     assert_textual_interface_fail_closed(payload)
 
 
@@ -191,7 +227,7 @@ def test_textual_interface_import_negative_cases_fail_closed() -> None:
         in failures["typed-throws-interface-contract-drift"]
     )
     assert (
-        "bounded packed i32/bool/id-handle runtime ABI plus full-width i64 helper ABI"
+        "supported_runtime_payload_forms"
         in failures["value-optional-lowering"]
     )
     assert "abi_layout_id expected" in failures["value-optional-layout-drift"]

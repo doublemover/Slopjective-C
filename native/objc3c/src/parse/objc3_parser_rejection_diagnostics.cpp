@@ -62,7 +62,7 @@ std::string BuildObjc3ReservedValueOptionalTypeDiagnostic(
   return BuildObjc3ParserDiagnosticWithRecovery(
       token,
       kObjc3ParserDiagnosticReservedValueOptionalCode,
-      "Optional<T> value optional type signatures support bounded packed runtime ABI lowering for i32, bool, and id handles plus a full-width i64 runtime helper ABI; i64 language call/return lowering, nested, generic, property, ivar, nullable-pointer, implicit nil, unchecked unwrap, throws conversion, and nil-to-scalar forms remain fail-closed",
+      "Optional<T> value optional type signatures support bounded packed runtime ABI lowering for i32, bool, and id handles plus wide-carrier Optional<i64> direct function/method call/return ABI support; object/nullability bridge, nested, generic, property, ivar, implicit nil, unchecked unwrap, throws/result conversion, nil-to-scalar, lowercase alias, and broad dynamic forms remain fail-closed",
       "parser-reserved-value-optional-type-rejection",
       "type spelling");
 }

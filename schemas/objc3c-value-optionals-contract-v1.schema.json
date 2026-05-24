@@ -27,7 +27,7 @@
     "issue_ref": { "const": 8234 },
     "canonical_spelling": { "const": "Optional<T>" },
     "source_status": {
-      "const": "semantic-type-signature-admitted-bounded-packed-runtime-abi"
+      "const": "semantic-type-signature-admitted-packed-and-full-i64-runtime-abi"
     },
     "semantic_model": {
       "type": "object",
@@ -60,18 +60,19 @@
         "unwrap_failure_diagnostic_supported": { "const": true },
         "nil_bridge_diagnostic_supported": { "const": true },
         "runtime_abi_payload_scope": {
-          "const": "supported-packed-scalar-and-id-handle-payload-forms-only"
+          "const": "supported-packed-scalar-id-handle-and-full-i64-payload-forms"
         },
         "supported_runtime_payload_forms": {
           "type": "array",
           "prefixItems": [
             { "const": "i32" },
             { "const": "bool" },
-            { "const": "id" }
+            { "const": "id" },
+            { "const": "i64" }
           ],
           "items": false,
-          "minItems": 3,
-          "maxItems": 3
+          "minItems": 4,
+          "maxItems": 4
         },
         "supported_runtime_helper_payload_forms": {
           "type": "array",
@@ -86,7 +87,7 @@
           "maxItems": 4
         },
         "full_width_i64_runtime_helper_supported": { "const": true },
-        "full_width_i64_language_call_abi_supported": { "const": false },
+        "full_width_i64_language_call_abi_supported": { "const": true },
         "implicit_nil_absence_allowed": { "const": false },
         "optional_id_distinct_from_nullable_object_pointer": { "const": true }
       },
@@ -333,7 +334,7 @@
         "ir_payload_emission_supported": { "const": true },
         "call_abi_lowering_supported": { "const": true },
         "runtime_abi_payload_scope": {
-          "const": "supported-packed-scalar-and-id-handle-payload-forms-only"
+          "const": "supported-packed-scalar-id-handle-and-full-i64-payload-forms"
         }
       },
       "additionalProperties": false

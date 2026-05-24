@@ -6,11 +6,10 @@
   "stable_layout_contract_available": true,
   "executable_lowering_contract_available": true,
   "bounded_packed_runtime_abi_available": true,
-  "runtime_abi_payload_scope": "supported-packed-scalar-and-id-handle-payload-forms-only",
+  "runtime_abi_payload_scope": "supported-packed-scalar-id-handle-and-full-i64-payload-forms",
   "explicit_absent_present_construction_contract_available": true,
   "checked_unwrap_diagnostic_available": true,
   "blocked_operations": [
-    "optional-i64-language-call-return-lowering-before-wide-carrier",
     "constructor-symbol-runtime-emission-outside-supported-packed-payloads",
     "payload-ir-emission-for-nested-or-generic-payloads",
     "property-or-ivar-storage-lifetime",
@@ -22,5 +21,5 @@
   ],
   "expected_diagnostic": "O3P159",
   "fail_closed": true,
-  "notes": "The semantic Optional<T> carrier now has bounded packed runtime ABI for i32, bool, and id-handle payloads, a full-width i64 runtime helper ABI, checked absent/present lowering, and explicit unwrap/binding diagnostics. It must still not be widened into Optional<i64> language call/return lowering, nested/generic payload runtime lowering, property or ivar storage, unchecked unwrap, implicit nil absence, nil/nullability bridges, or throws conversions."
+  "notes": "The semantic Optional<T> carrier now has runtime ABI for packed i32, bool, and id-handle payloads plus full-width i64 call/return carriers, checked absent/present lowering, and explicit unwrap/binding diagnostics. It must still not be widened into nested/generic payload runtime lowering, property or ivar storage, unchecked unwrap, implicit nil absence, nil/nullability bridges, or throws conversions."
 }

@@ -22,7 +22,11 @@ std::string BuildObjc3IRFunctionDefinitionSignature(
     if (i != 0) {
       signature << ", ";
     }
-    signature << LLVMScalarType(params[i].type) << " %arg" << i;
+    signature << LLVMScalarTypeForValueOptionalCarrier(
+                     params[i].type,
+                     BuildObjc3IRValueOptionalCarrierMetadata(
+                         params[i].value_optional))
+              << " %arg" << i;
   }
   if (throws_error_out_abi_ready) {
     if (!params.empty()) {
@@ -60,8 +64,14 @@ void EmitObjc3IRParameterStores(
     FunctionContext &ctx) {
   for (std::size_t i = 0; i < params.size(); ++i) {
     const auto &param = params[i];
-    const char *llvm_type = LLVMLocalStorageType(param.type);
-    const unsigned alignment = LLVMLocalStorageAlignment(param.type);
+    const Objc3IRValueOptionalCarrierKind optional_carrier =
+        Objc3IRValueOptionalCarrierKindFor(param.value_optional);
+    const char *llvm_type =
+        LLVMLocalStorageTypeForValueOptionalCarrier(param.type,
+                                                   optional_carrier);
+    const unsigned alignment =
+        LLVMLocalStorageAlignmentForValueOptionalCarrier(param.type,
+                                                        optional_carrier);
     const std::string ptr =
         "%" + param.name + ".addr." + std::to_string(ctx.temp_counter++);
     ctx.entry_lines.push_back("  " + ptr + " = alloca " + llvm_type +
@@ -142,7 +152,11 @@ void EmitObjc3IRFunctionDefinition(
     const FunctionDecl &fn, bool arc_mode_enabled,
     const Objc3IRFunctionDefinitionEmissionCallbacks &callbacks,
     std::ostringstream &out) {
-  out << "define " << LLVMScalarType(fn.return_type) << " @" << fn.name << "("
+  out << "define "
+      << LLVMScalarTypeForValueOptionalCarrier(
+             fn.return_type,
+             BuildObjc3IRValueOptionalCarrierMetadata(fn.return_value_optional))
+      << " @" << fn.name << "("
       << BuildObjc3IRFunctionDefinitionSignature(
              fn.params,
              Objc3TypedThrowsAbiLoweringReady(
@@ -154,6 +168,8 @@ void EmitObjc3IRFunctionDefinition(
 
   FunctionContext ctx;
   ctx.return_type = fn.return_type;
+  ctx.return_value_optional_carrier =
+      Objc3IRValueOptionalCarrierKindFor(fn.return_value_optional);
   ctx.async_runtime_helper_enabled =
       fn.async_declared && Objc3IRExecutorAffinityTag(fn) != 0;
   ctx.async_resume_entry_tag = Objc3IRAsyncResumeEntryTag(fn);
@@ -196,8 +212,12 @@ void EmitObjc3IRMethodDefinition(
     return;
   }
   const Objc3MethodDecl &method = *method_def.method;
-  out << "define " << LLVMScalarType(method.return_type) << " @"
-      << method_def.symbol << "("
+  out << "define "
+      << LLVMScalarTypeForValueOptionalCarrier(
+             method.return_type,
+             BuildObjc3IRValueOptionalCarrierMetadata(
+                 method.return_value_optional))
+      << " @" << method_def.symbol << "("
       << BuildObjc3IRFunctionDefinitionSignature(
              method.params,
              Objc3TypedThrowsAbiLoweringReady(
@@ -209,6 +229,8 @@ void EmitObjc3IRMethodDefinition(
 
   FunctionContext ctx;
   ctx.return_type = method.return_type;
+  ctx.return_value_optional_carrier =
+      Objc3IRValueOptionalCarrierKindFor(method.return_value_optional);
   ctx.async_runtime_helper_enabled =
       method.async_declared && Objc3IRExecutorAffinityTag(method) != 0;
   ctx.actor_runtime_helper_enabled =

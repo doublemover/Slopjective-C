@@ -20,9 +20,10 @@ void DiagnoseObjc3ReservedFullWidthI64ValueOptionalLanguageAbi(
   diagnostics.push_back(MakeDiag(
       descriptor.line, descriptor.column, "O3P159",
       site +
-          " uses Optional<i64> language call/return ABI before wide-carrier "
-          "lowering is implemented; use the full-width i64 runtime helper ABI "
-          "directly until Optional<i64> callable lowering is supported "
+          " uses an Optional<i64> form outside the wide-carrier direct "
+          "function/method call/return ABI; unsupported object/nullability "
+          "bridge, nested/generic, storage, unwrap, nil, conversion, and "
+          "dynamic paths remain fail-closed "
           "{recovery: strategy=value-optional-i64-language-abi-boundary; "
           "boundary=callable-signature; deterministic=true; "
           "recovery-counts-as-success=false}"));

@@ -37,6 +37,50 @@ unsigned LLVMLocalStorageAlignment(ValueType type) {
   return 4u;
 }
 
+const char *LLVMScalarTypeForValueOptionalCarrier(
+    ValueType type,
+    const Objc3IRValueOptionalCarrierMetadata &carrier) {
+  if (type == ValueType::Optional) {
+    return Objc3IRValueOptionalCarrierLLVMType(
+        Objc3IRValueOptionalCarrierKindFor(carrier));
+  }
+  return LLVMScalarType(type);
+}
+
+unsigned LLVMScalarAlignmentForValueOptionalCarrier(
+    ValueType type,
+    const Objc3IRValueOptionalCarrierMetadata &carrier) {
+  if (type == ValueType::Optional) {
+    return Objc3IRValueOptionalCarrierLLVMAlignment(
+        Objc3IRValueOptionalCarrierKindFor(carrier));
+  }
+  return LLVMScalarAlignment(type);
+}
+
+const char *LLVMLocalStorageTypeForValueOptionalCarrier(
+    ValueType type, Objc3IRValueOptionalCarrierKind carrier) {
+  if (type == ValueType::Optional) {
+    return Objc3IRValueOptionalCarrierLLVMType(carrier);
+  }
+  return LLVMLocalStorageType(type);
+}
+
+unsigned LLVMLocalStorageAlignmentForValueOptionalCarrier(
+    ValueType type, Objc3IRValueOptionalCarrierKind carrier) {
+  if (type == ValueType::Optional) {
+    return Objc3IRValueOptionalCarrierLLVMAlignment(carrier);
+  }
+  return LLVMLocalStorageAlignment(type);
+}
+
+const char *LLVMZeroValueForValueOptionalCarrier(
+    ValueType type, Objc3IRValueOptionalCarrierKind carrier) {
+  if (type == ValueType::Optional) {
+    return Objc3IRValueOptionalCarrierZeroValue(carrier);
+  }
+  return "0";
+}
+
 ValueType RuntimeMetadataValueType(const std::string &type_name) {
   if (type_name == "i32") {
     return ValueType::I32;

@@ -11,7 +11,7 @@ inline constexpr const char *kObjc3ValueOptionalAbiLayoutId =
 inline constexpr const char *kObjc3ValueOptionalCanonicalSpelling =
     "Optional<T>";
 inline constexpr const char *kObjc3ValueOptionalSourceStatus =
-    "semantic-type-signature-admitted-bounded-packed-runtime-abi";
+    "semantic-type-signature-admitted-packed-and-full-i64-runtime-abi";
 inline constexpr const char *kObjc3ValueOptionalAbiLayoutStatus =
     "stable-packed-presence-payload-runtime-lowered";
 inline constexpr const char *kObjc3ValueOptionalInterfaceRoundtripStatus =
@@ -41,11 +41,11 @@ inline constexpr const char *kObjc3ValueOptionalNilBridgeDiagnostic =
 inline constexpr const char *kObjc3ValueOptionalRemainingRuntimeBoundary =
     "unchecked-unwrap-property-ivar-storage-and-nullable-pointer-bridging-remain-reserved";
 inline constexpr const char *kObjc3ValueOptionalRuntimeAbiPayloadScope =
-    "supported-packed-scalar-and-id-handle-payload-forms-only";
+    "supported-packed-scalar-id-handle-and-full-i64-payload-forms";
 inline constexpr const char *kObjc3ValueOptionalFullWidthI64HelperStatus =
-    "runtime-helper-supported-language-call-abi-reserved";
+    "runtime-helper-supported-language-call-abi-lowered";
 inline constexpr const char *kObjc3ValueOptionalFullWidthI64LanguageBoundary =
-    "full-width-i64-language-call-abi-requires-wide-carrier-and-remains-reserved";
+    "full-width-i64-language-call-return-abi-supported-by-wide-carrier";
 inline constexpr const char *kObjc3RuntimeOptionalAbsentI64Symbol =
     "objc3_runtime_optional_absent_i64";
 inline constexpr const char *kObjc3RuntimeOptionalAbsentFullI64Symbol =
@@ -212,7 +212,8 @@ inline bool Objc3ValueOptionalPayloadRuntimeAbiSupported(
     const Objc3ValueOptionalTypeDescriptor &descriptor) {
   return (descriptor.payload_value_type == ValueType::I32 ||
           descriptor.payload_value_type == ValueType::Bool ||
-          descriptor.payload_value_type == ValueType::ObjCId) &&
+          descriptor.payload_value_type == ValueType::ObjCId ||
+          descriptor.payload_full_width_i64) &&
          !descriptor.payload_generic &&
          !descriptor.payload_nested_value_optional &&
          !descriptor.payload_lowercase_optional_alias;
@@ -271,6 +272,7 @@ inline Objc3ValueOptionalTypeDescriptor BuildObjc3ValueOptionalDescriptor(
           descriptor.payload_type_spelling);
   if (descriptor.payload_full_width_i64) {
     descriptor.full_width_i64_runtime_helper_supported = true;
+    descriptor.full_width_i64_language_call_abi_supported = true;
     descriptor.remaining_runtime_boundary =
         kObjc3ValueOptionalFullWidthI64LanguageBoundary;
   }

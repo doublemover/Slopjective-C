@@ -12,6 +12,9 @@ extern fn objc3_runtime_optional_present_id(payload: id) -> Optional<id>;
 extern fn objc3_runtime_optional_absent_id() -> Optional<id>;
 extern fn objc3_runtime_optional_has_value_id(value: Optional<id>) -> i32;
 extern fn objc3_runtime_optional_payload_or_id(value: Optional<id>, fallback: id) -> id;
+extern fn objc3_runtime_optional_present_full_i64(payload: i32) -> Optional<i64>;
+extern fn objc3_runtime_optional_absent_full_i64() -> Optional<i64>;
+extern fn objc3_runtime_optional_has_value_full_i64(value: Optional<i64>) -> bool;
 
 fn choose(flag: bool, value: i32) -> Optional<i32> {
   if (flag) {
@@ -34,6 +37,13 @@ fn chooseObject(flag: bool, value: id) -> Optional<id> {
   return objc3_runtime_optional_absent_id();
 }
 
+fn chooseWide(flag: bool, value: i32) -> Optional<i64> {
+  if (flag) {
+    return objc3_runtime_optional_present_full_i64(value);
+  }
+  return objc3_runtime_optional_absent_full_i64();
+}
+
 fn main() -> i32 {
   let present = choose(true, 41);
   let absent = choose(false, 99);
@@ -41,6 +51,8 @@ fn main() -> i32 {
   let flagAbsent = chooseFlag(false);
   let objectPresent = chooseObject(true, 17);
   let objectAbsent = chooseObject(false, 33);
+  let widePresent = chooseWide(true, 12345);
+  let wideAbsent = chooseWide(false, 67890);
   let payload = objc3_runtime_optional_payload_or_i32(present, 0);
   let fallback = objc3_runtime_optional_payload_or_i32(absent, 1);
   let flagPayload = objc3_runtime_optional_payload_or_bool(flagPresent, false);
@@ -51,7 +63,11 @@ fn main() -> i32 {
     if (objc3_runtime_optional_has_value_bool(flagPresent)) {
       if (objc3_runtime_optional_has_value_id(objectPresent)) {
         if (flagPayload && flagFallback) {
-          return payload + fallback + objectPayload + objectFallback;
+          if (objc3_runtime_optional_has_value_full_i64(widePresent)) {
+            if (!objc3_runtime_optional_has_value_full_i64(wideAbsent)) {
+              return payload + fallback + objectPayload + objectFallback + 5;
+            }
+          }
         }
       }
     }

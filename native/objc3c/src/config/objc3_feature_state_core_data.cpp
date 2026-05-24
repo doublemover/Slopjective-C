@@ -18,7 +18,7 @@ constexpr std::array<LanguageFeatureState, kReservedFeatureStateDataCount>
         {"reserved-typed-throws", FeatureState::Reserved, "O3P182",
          "throws(E) single payloads are source/interface preserved and lower through the hidden error-out ABI for supported exact-catch and id<Error> bridge paths; empty, multi, malformed, non-type, incompatible, and foreign carrier cases remain fail-closed."},
         {"reserved-value-optionals", FeatureState::Reserved, "O3P159",
-         "Optional<T> value optional type signatures have bounded packed runtime ABI lowering for i32, bool, and id handles plus a full-width i64 runtime helper ABI; i64 language call/return lowering, nested, generic, property, ivar, nullability bridge, implicit nil, unchecked unwrap, throws/result, and nil-to-scalar forms remain unavailable."},
+         "Optional<T> value optional type signatures have bounded packed runtime ABI lowering for i32, bool, and id handles plus wide-carrier Optional<i64> direct function/method call/return ABI support; object/nullability bridge, nested, generic, property, ivar, implicit nil, unchecked unwrap, throws/result, nil-to-scalar, lowercase alias, and broad dynamic forms remain unavailable."},
         {"reserved-match-expressions", FeatureState::Reserved, "O3P156",
          "Expression-form match remains unavailable; the current frontend admits only statement match."},
         {"reserved-guarded-match-patterns", FeatureState::Reserved, "O3P157",

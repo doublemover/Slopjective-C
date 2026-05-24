@@ -14,9 +14,9 @@ inline constexpr const char *kObjc3TypeSystemTypeSourceClosureContractId =
 inline constexpr const char *kObjc3TypeSystemTypeSourceClosureSurfacePath =
     "frontend.pipeline.semantic_surface.objc_type_system_type_source_closure";
 inline constexpr const char *kObjc3TypeSystemTypeSourceClosureSourceModel =
-    "protocol-optional-partitions-object-pointer-nullability-generic-suffixes-optional-bindings-optional-sends-optional-member-access-nil-coalescing-typed-keypaths-and-Optional-value-optional-type-signatures-with-bounded-packed-scalar-and-id-handle-runtime-abi-plus-full-width-i64-helper-abi-are-live-parser-owned-source-surfaces";
+    "protocol-optional-partitions-object-pointer-nullability-generic-suffixes-optional-bindings-optional-sends-optional-member-access-nil-coalescing-typed-keypaths-and-Optional-value-optional-type-signatures-with-bounded-packed-scalar-and-id-handle-runtime-abi-plus-wide-carrier-Optional-i64-direct-function-method-call-return-abi-are-live-parser-owned-source-surfaces";
 inline constexpr const char *kObjc3TypeSystemTypeSourceClosureFailureModel =
-    "value-optional-full-width-i64-language-call-abi-nested-generic-property-ivar-nullability-nil-to-scalar-implicit-nil-unchecked-unwrap-and-throws-conversion-surfaces-remain-fail-closed-after-bounded-packed-scalar-and-id-handle-runtime-abi-plus-full-width-i64-helper-abi";
+    "value-optional-object-nullability-bridge-nested-generic-property-ivar-storage-unchecked-unwrap-implicit-nil-throws-result-conversion-nil-to-scalar-lowercase-alias-and-broad-dynamic-surfaces-remain-fail-closed-after-bounded-packed-scalar-and-id-handle-runtime-abi-plus-wide-carrier-Optional-i64-direct-call-return-abi";
 inline constexpr const char *kObjc3TypeSystemTypeSemanticModelContractId =
     "objc3c.type_system.type.semantic.model.v1";
 inline constexpr const char *kObjc3TypeSystemTypeSemanticModelSurfacePath =

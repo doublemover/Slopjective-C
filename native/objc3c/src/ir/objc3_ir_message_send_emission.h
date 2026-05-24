@@ -22,6 +22,8 @@ struct Objc3IRMessageSendEmissionOptions {
       &direct_dispatch_signatures_by_key;
   const std::unordered_map<std::string, ValueType>
       &runtime_dispatch_return_types_by_key;
+  const std::unordered_map<std::string, Objc3IRValueOptionalCarrierMetadata>
+      &runtime_dispatch_return_value_optional_carriers_by_key;
   const std::unordered_map<std::string, std::string>
       &runtime_dispatch_superclass_by_name;
   std::size_t runtime_dispatch_arg_slots = 0;

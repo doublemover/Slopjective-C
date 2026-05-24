@@ -77,13 +77,13 @@ JsonValue ValueOptionalContract() {
   contract["runtime_abi_payload_scope"] =
       JsonValue::String(kObjc3ValueOptionalRuntimeAbiPayloadScope);
   contract["supported_runtime_payload_forms"] =
-      StringArray({"i32", "bool", "id"});
+      StringArray({"i32", "bool", "id", "i64"});
   contract["supported_runtime_helper_payload_forms"] =
       StringArray({"i32", "bool", "id", "i64"});
   contract["full_width_i64_runtime_helper_supported"] =
       JsonValue::Bool(true);
   contract["full_width_i64_language_call_abi_supported"] =
-      JsonValue::Bool(false);
+      JsonValue::Bool(true);
   contract["ir_payload_emission_supported"] = JsonValue::Bool(true);
   contract["call_abi_lowering_supported"] = JsonValue::Bool(true);
   contract["broad_public_runtime_support_claim_allowed"] =

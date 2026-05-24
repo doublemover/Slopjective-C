@@ -7,6 +7,7 @@
 #include <vector>
 
 #include "ast/objc3_ast.h"
+#include "ir/objc3_ir_value_optional_carrier_model.h"
 
 struct LoweredFunctionSignature {
   ValueType return_type = ValueType::I32;
@@ -22,6 +23,9 @@ struct LoweredFunctionSignature {
   bool has_value_optional_type_signature = false;
   bool value_optional_lowering_supported = false;
   std::string value_optional_payload_type_spelling;
+  Objc3IRValueOptionalCarrierMetadata return_value_optional_carrier;
+  std::vector<Objc3IRValueOptionalCarrierMetadata>
+      param_value_optional_carriers;
   bool objc_nserror_declared = false;
   bool objc_status_code_declared = false;
   bool return_insert_retain = false;

@@ -13,7 +13,7 @@
     "abi_layout.executable_lowering_contract_supported": true,
     "abi_layout.ir_payload_emission_supported": true,
     "abi_layout.call_abi_lowering_supported": true,
-    "lowering_contract.runtime_abi_payload_scope": "supported-packed-scalar-and-id-handle-payload-forms-only",
+    "lowering_contract.runtime_abi_payload_scope": "supported-packed-scalar-id-handle-and-full-i64-payload-forms",
     "lowering_contract.unchecked_unwrap_supported": false,
     "semantic_model.implicit_nil_absence_allowed": false,
     "fail_closed.generic_payload_runtime_supported": false,
@@ -29,5 +29,5 @@
   },
   "expected_diagnostic": "O3P159",
   "fail_closed": true,
-  "notes": "The executable lowering contract may claim bounded packed language ABI lowering for i32, bool, and id handles, full-width i64 runtime helper ABI truth, explicit absent/present construction, and checked unwrap diagnostics, but contract drift still cannot claim Optional<i64> language call/return lowering, unchecked unwrap, implicit nil absence, generic payload runtime lowering, property storage, or nullability bridges."
+  "notes": "The executable lowering contract may claim packed language ABI lowering for i32, bool, and id handles, full-width i64 language call/return ABI truth, explicit absent/present construction, and checked unwrap diagnostics, but contract drift still cannot claim unchecked unwrap, implicit nil absence, generic payload runtime lowering, property storage, or nullability bridges."
 }

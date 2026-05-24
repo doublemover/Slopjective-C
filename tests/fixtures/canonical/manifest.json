@@ -1624,14 +1624,6 @@
       "expected_diagnostic_code": "O3P159"
     },
     {
-      "path": "tests/tooling/fixtures/native/recovery/negative/negative_value_optional_i64_language_abi_reserved.objc3",
-      "origin": "hand-authored",
-      "owner_phase": "parser",
-      "behavior_family": "types",
-      "fixture_kind": "canonical_rejection",
-      "expected_diagnostic_code": "O3P159"
-    },
-    {
       "path": "tests/tooling/fixtures/native/recovery/negative/negative_value_optional_nullable_suffix_mismatch.objc3",
       "origin": "hand-authored",
       "owner_phase": "parser",

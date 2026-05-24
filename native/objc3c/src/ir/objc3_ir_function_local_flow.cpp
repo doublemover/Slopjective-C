@@ -13,6 +13,46 @@ std::string NewFunctionLocalTemp(FunctionContext &ctx) {
   return "%t" + std::to_string(ctx.temp_counter++);
 }
 
+const char *Objc3IROptionalCarrierLLVMType(
+    Objc3IRValueOptionalCarrierKind carrier) {
+  return Objc3IRValueOptionalCarrierLLVMType(carrier);
+}
+
+unsigned Objc3IROptionalCarrierLLVMAlignment(
+    Objc3IRValueOptionalCarrierKind carrier) {
+  return Objc3IRValueOptionalCarrierLLVMAlignment(carrier);
+}
+
+Objc3IRValueOptionalCarrierKind Objc3IROptionalCarrierForDescriptor(
+    const Objc3ValueOptionalTypeDescriptor &descriptor) {
+  return Objc3IRValueOptionalCarrierKindFor(descriptor);
+}
+
+std::string Objc3IROptionalReturnValueForCarrier(
+    const std::string &returned_value,
+    Objc3IRValueOptionalCarrierKind carrier) {
+  if (carrier == Objc3IRValueOptionalCarrierKind::FullI64 &&
+      returned_value == "0") {
+    return Objc3IRValueOptionalCarrierZeroValue(carrier);
+  }
+  return returned_value;
+}
+
+void RewriteObjc3IRParameterAllocaForCarrier(
+    const std::string &ptr, Objc3IRValueOptionalCarrierKind carrier,
+    FunctionContext &ctx) {
+  const std::string prefix = "  " + ptr + " = alloca ";
+  for (auto it = ctx.entry_lines.rbegin(); it != ctx.entry_lines.rend();
+       ++it) {
+    if (it->rfind(prefix, 0) != 0) {
+      continue;
+    }
+    *it = prefix + Objc3IROptionalCarrierLLVMType(carrier) + ", align " +
+          std::to_string(Objc3IROptionalCarrierLLVMAlignment(carrier));
+    return;
+  }
+}
+
 std::string EmitObjc3IRAsyncReturnContinuationHandoff(
     const std::string &returned_value, FunctionContext &ctx) {
   if (!ctx.async_runtime_helper_enabled) {
@@ -157,7 +197,34 @@ void EmitObjc3IRFunctionLocalTypedReturn(
     return;
   }
   if (ctx.return_type == ValueType::Optional) {
-    ctx.code_lines.push_back("  ret i64 " + returned_value);
+    const Objc3IRValueOptionalCarrierKind declared_carrier =
+        ctx.return_value_optional_carrier;
+    const auto actual_carrier =
+        ctx.value_optional_carrier_by_value.find(returned_value);
+    if (actual_carrier != ctx.value_optional_carrier_by_value.end() &&
+        actual_carrier->second != declared_carrier) {
+      ctx.code_lines.push_back(
+          "  ; objc3.value_optional.return-carrier.fail-closed: source "
+          "carrier does not match declared return carrier");
+      ctx.code_lines.push_back("  call void @abort()");
+      ctx.code_lines.push_back("  unreachable");
+      return;
+    }
+    if (actual_carrier == ctx.value_optional_carrier_by_value.end() &&
+        returned_value != "0" &&
+        declared_carrier == Objc3IRValueOptionalCarrierKind::FullI64) {
+      ctx.code_lines.push_back(
+          "  ; objc3.value_optional.return-carrier.fail-closed: missing "
+          "wide carrier metadata for Optional<i64> return");
+      ctx.code_lines.push_back("  call void @abort()");
+      ctx.code_lines.push_back("  unreachable");
+      return;
+    }
+    ctx.code_lines.push_back(
+        "  ret " +
+        std::string(Objc3IROptionalCarrierLLVMType(declared_carrier)) + " " +
+        Objc3IROptionalReturnValueForCarrier(returned_value,
+                                             declared_carrier));
     return;
   }
   returned_value = EmitObjc3IRAsyncReturnContinuationHandoff(returned_value,
@@ -206,8 +273,15 @@ void EmitObjc3IRFunctionLocalTypedParamStore(
 
   std::string stored_value = "%arg" + std::to_string(index);
   if (param.type == ValueType::Optional) {
-    ctx.entry_lines.push_back("  store i64 " + stored_value + ", ptr " + ptr +
-                              ", align 8");
+    const Objc3IRValueOptionalCarrierKind carrier =
+        Objc3IROptionalCarrierForDescriptor(param.value_optional);
+    RewriteObjc3IRParameterAllocaForCarrier(ptr, carrier, ctx);
+    ctx.value_optional_carrier_by_ptr[ptr] = carrier;
+    ctx.value_optional_carrier_by_value[stored_value] = carrier;
+    ctx.entry_lines.push_back(
+        "  store " + std::string(Objc3IROptionalCarrierLLVMType(carrier)) +
+        " " + stored_value + ", ptr " + ptr + ", align " +
+        std::to_string(Objc3IROptionalCarrierLLVMAlignment(carrier)));
     return;
   }
   if (EffectiveArcParamInsertRetain(param, flow_context.arc_mode_enabled)) {

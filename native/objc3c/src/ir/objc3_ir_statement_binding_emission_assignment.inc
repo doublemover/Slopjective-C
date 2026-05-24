@@ -9,6 +9,127 @@ ValueType Objc3IRStorageTypeForPtr(const std::string &ptr,
   return found_type->second;
 }
 
+const char *Objc3IRLocalStorageTypeForCarrier(
+    ValueType value_type, Objc3IRValueOptionalCarrierKind carrier) {
+  return LLVMLocalStorageTypeForValueOptionalCarrier(value_type, carrier);
+}
+
+unsigned Objc3IRLocalStorageAlignmentForCarrier(
+    ValueType value_type, Objc3IRValueOptionalCarrierKind carrier) {
+  return LLVMLocalStorageAlignmentForValueOptionalCarrier(value_type, carrier);
+}
+
+Objc3IRValueOptionalCarrierKind Objc3IRCarrierForPtr(
+    const std::string &ptr, const FunctionContext &ctx) {
+  const auto found_carrier = ctx.value_optional_carrier_by_ptr.find(ptr);
+  if (found_carrier == ctx.value_optional_carrier_by_ptr.end()) {
+    return Objc3IRValueOptionalCarrierKind::PackedI64;
+  }
+  return found_carrier->second;
+}
+
+bool IsObjc3IRPackedOptionalConstructorHelper(const std::string &ident) {
+  return ident == kObjc3RuntimeOptionalAbsentI64Symbol ||
+         ident == kObjc3RuntimeOptionalAbsentBoolSymbol ||
+         ident == kObjc3RuntimeOptionalAbsentIdSymbol ||
+         ident == kObjc3RuntimeOptionalPresentI32Symbol ||
+         ident == kObjc3RuntimeOptionalPresentBoolSymbol ||
+         ident == kObjc3RuntimeOptionalPresentIdSymbol;
+}
+
+bool IsObjc3IRFullI64OptionalConstructorHelper(const std::string &ident) {
+  return ident == kObjc3RuntimeOptionalAbsentFullI64Symbol ||
+         ident == kObjc3RuntimeOptionalPresentFullI64Symbol;
+}
+
+std::string EmitObjc3IRFullI64OptionalConstructor(
+    const Expr *expr, FunctionContext &ctx,
+    const Objc3IRStatementEmissionCallbacks &callbacks) {
+  if (expr == nullptr || expr->kind != Expr::Kind::Call ||
+      !IsObjc3IRFullI64OptionalConstructorHelper(expr->ident)) {
+    return "";
+  }
+  const std::string value = callbacks.new_temp(ctx);
+  if (expr->ident == kObjc3RuntimeOptionalAbsentFullI64Symbol) {
+    ctx.code_lines.push_back("  " + value + " = call { i8, i64 } @" +
+                             std::string(
+                                 kObjc3RuntimeOptionalAbsentFullI64Symbol) +
+                             "()");
+    ctx.value_optional_carrier_by_value[value] =
+        Objc3IRValueOptionalCarrierKind::FullI64;
+    return value;
+  }
+  if (expr->args.size() != 1u) {
+    return callbacks.emit_unsupported_i32_value(
+        "Optional<i64> present helper lowering requires exactly one payload");
+  }
+  std::string payload = callbacks.emit_expr(expr->args.front().get(), ctx);
+  if (ctx.terminated) {
+    return value;
+  }
+  if (expr->args.front()->kind != Expr::Kind::Number) {
+    const std::string widened_payload = callbacks.new_temp(ctx);
+    ctx.code_lines.push_back("  " + widened_payload + " = sext i32 " +
+                             payload + " to i64");
+    payload = widened_payload;
+  }
+  ctx.code_lines.push_back("  " + value + " = call { i8, i64 } @" +
+                           std::string(
+                               kObjc3RuntimeOptionalPresentFullI64Symbol) +
+                           "(i64 " + payload + ")");
+  ctx.value_optional_carrier_by_value[value] =
+      Objc3IRValueOptionalCarrierKind::FullI64;
+  return value;
+}
+
+bool TryInferObjc3IRBindingOptionalCarrier(
+    const Expr *expr, const FunctionContext &ctx,
+    const Objc3IRStatementEmissionCallbacks &callbacks,
+    Objc3IRValueOptionalCarrierKind &carrier_out) {
+  if (expr == nullptr) {
+    return false;
+  }
+  (void)callbacks;
+  switch (expr->kind) {
+    case Expr::Kind::Identifier:
+      for (auto it = ctx.scopes.rbegin(); it != ctx.scopes.rend(); ++it) {
+        const auto found_ptr = it->find(expr->ident);
+        if (found_ptr == it->end()) {
+          continue;
+        }
+        const auto found_carrier =
+            ctx.value_optional_carrier_by_ptr.find(found_ptr->second);
+        if (found_carrier != ctx.value_optional_carrier_by_ptr.end()) {
+          carrier_out = found_carrier->second;
+          return true;
+        }
+        break;
+      }
+      return false;
+    case Expr::Kind::Call:
+      if (IsObjc3IRFullI64OptionalConstructorHelper(expr->ident)) {
+        carrier_out = Objc3IRValueOptionalCarrierKind::FullI64;
+        return true;
+      }
+      if (IsObjc3IRPackedOptionalConstructorHelper(expr->ident)) {
+        carrier_out = Objc3IRValueOptionalCarrierKind::PackedI64;
+        return true;
+      }
+      return false;
+    default:
+      return false;
+  }
+}
+
+Objc3IRValueOptionalCarrierKind InferObjc3IRBindingOptionalCarrierOrPacked(
+    const Expr *expr, const FunctionContext &ctx,
+    const Objc3IRStatementEmissionCallbacks &callbacks) {
+  Objc3IRValueOptionalCarrierKind carrier =
+      Objc3IRValueOptionalCarrierKind::PackedI64;
+  (void)TryInferObjc3IRBindingOptionalCarrier(expr, ctx, callbacks, carrier);
+  return carrier;
+}
+
 ValueType InferObjc3IRBindingStorageType(
     const Expr *expr, const FunctionContext &ctx,
     const Objc3IRStatementEmissionCallbacks &callbacks) {
@@ -33,9 +154,16 @@ ValueType InferObjc3IRBindingStorageType(
       }
       return ValueType::I32;
     case Expr::Kind::Call:
-      if (expr->ident == kObjc3RuntimeOptionalAbsentI64Symbol ||
-          expr->ident == kObjc3RuntimeOptionalPresentI32Symbol) {
+      if (IsObjc3IRPackedOptionalConstructorHelper(expr->ident) ||
+          IsObjc3IRFullI64OptionalConstructorHelper(expr->ident)) {
         return ValueType::Optional;
+      }
+      if (expr->ident == kObjc3RuntimeOptionalPayloadOrIdSymbol ||
+          expr->ident == kObjc3RuntimeOptionalUnwrapIdSymbol) {
+        return ValueType::ObjCId;
+      }
+      if (expr->ident == kObjc3RuntimeOptionalHasValueFullI64Symbol) {
+        return ValueType::Bool;
       }
       if (callbacks.lookup_function_signature) {
         const LoweredFunctionSignature *signature =
@@ -89,6 +217,8 @@ void EmitObjc3IRAssignmentStore(
     return;
   }
   const ValueType storage_type = Objc3IRStorageTypeForPtr(ptr, ctx);
+  const Objc3IRValueOptionalCarrierKind storage_carrier =
+      Objc3IRCarrierForPtr(ptr, ctx);
   int assigned_const_value = 0;
   const bool has_assigned_const_value =
       op == "=" && value_expr != nullptr &&
@@ -124,9 +254,32 @@ void EmitObjc3IRAssignmentStore(
     if (value_expr == nullptr) {
       return;
     }
-    const std::string value = callbacks.emit_expr(value_expr, ctx);
+    std::string value =
+        storage_type == ValueType::Optional
+            ? EmitObjc3IRFullI64OptionalConstructor(value_expr, ctx, callbacks)
+            : "";
+    if (value.empty()) {
+      value = callbacks.emit_expr(value_expr, ctx);
+    }
     if (ctx.terminated) {
       return;
+    }
+    if (storage_type == ValueType::Optional) {
+      Objc3IRValueOptionalCarrierKind source_carrier =
+          Objc3IRValueOptionalCarrierKind::PackedI64;
+      bool has_source_carrier = TryInferObjc3IRBindingOptionalCarrier(
+          value_expr, ctx, callbacks, source_carrier);
+      const auto emitted_carrier = ctx.value_optional_carrier_by_value.find(value);
+      if (emitted_carrier != ctx.value_optional_carrier_by_value.end()) {
+        source_carrier = emitted_carrier->second;
+        has_source_carrier = true;
+      }
+      if (has_source_carrier && source_carrier != storage_carrier) {
+        (void)callbacks.emit_unsupported_i32_value(
+            "assignment between packed and full-width Optional carriers requires explicit optional carrier conversion");
+        return;
+      }
+      ctx.value_optional_carrier_by_value[value] = storage_carrier;
     }
     if (ctx.arc_owned_storage_ptrs.find(ptr) !=
         ctx.arc_owned_storage_ptrs.end()) {
@@ -151,9 +304,14 @@ void EmitObjc3IRAssignmentStore(
       (void)released_value;
     } else {
       ctx.code_lines.push_back(
-          "  store " + std::string(LLVMLocalStorageType(storage_type)) + " " +
+          "  store " +
+          std::string(
+              Objc3IRLocalStorageTypeForCarrier(storage_type, storage_carrier)) +
+          " " +
           value + ", ptr " + ptr + ", align " +
-          std::to_string(LLVMLocalStorageAlignment(storage_type)));
+          std::to_string(
+              Objc3IRLocalStorageAlignmentForCarrier(storage_type,
+                                                     storage_carrier)));
     }
     RecordObjc3IRAssignmentStorageMetadata(
         ptr, has_assigned_nil_value, has_assigned_const_value,
@@ -166,14 +324,27 @@ void EmitObjc3IRAssignmentStore(
   }
   std::string binary_opcode;
   if (!TryGetCompoundAssignmentBinaryOpcode(op, binary_opcode)) {
-    const std::string value = callbacks.emit_expr(value_expr, ctx);
+    std::string value =
+        storage_type == ValueType::Optional
+            ? EmitObjc3IRFullI64OptionalConstructor(value_expr, ctx, callbacks)
+            : "";
+    if (value.empty()) {
+      value = callbacks.emit_expr(value_expr, ctx);
+    }
     if (ctx.terminated) {
       return;
     }
+    if (storage_type == ValueType::Optional) {
+      ctx.value_optional_carrier_by_value[value] = storage_carrier;
+    }
     ctx.code_lines.push_back(
-        "  store " + std::string(LLVMLocalStorageType(storage_type)) + " " + value +
+        "  store " +
+        std::string(
+            Objc3IRLocalStorageTypeForCarrier(storage_type, storage_carrier)) +
+        " " + value +
         ", ptr " + ptr + ", align " +
-        std::to_string(LLVMLocalStorageAlignment(storage_type)));
+        std::to_string(Objc3IRLocalStorageAlignmentForCarrier(storage_type,
+                                                              storage_carrier)));
     return;
   }
 
@@ -228,23 +399,47 @@ void EmitObjc3IRForClause(
               Expr::CollectionLiteralKind::Array) {
         clause.value->collection_literal_mutable = clause.mutable_binding;
       }
-      const std::string value = callbacks.emit_expr(clause.value.get(), ctx);
+      const ValueType storage_type =
+          InferObjc3IRBindingStorageType(clause.value.get(), ctx, callbacks);
+      Objc3IRValueOptionalCarrierKind storage_carrier =
+          InferObjc3IRBindingOptionalCarrierOrPacked(clause.value.get(), ctx,
+                                                     callbacks);
+      std::string value =
+          storage_type == ValueType::Optional
+              ? EmitObjc3IRFullI64OptionalConstructor(clause.value.get(), ctx,
+                                                      callbacks)
+              : "";
+      if (value.empty()) {
+        value = callbacks.emit_expr(clause.value.get(), ctx);
+      }
       if (ctx.terminated) {
         return;
       }
+      if (storage_type == ValueType::Optional) {
+        const auto emitted_carrier =
+            ctx.value_optional_carrier_by_value.find(value);
+        if (emitted_carrier != ctx.value_optional_carrier_by_value.end()) {
+          storage_carrier = emitted_carrier->second;
+        }
+      }
       const std::string ptr =
           "%" + clause.name + ".addr." + std::to_string(ctx.temp_counter++);
-      const ValueType storage_type =
-          InferObjc3IRBindingStorageType(clause.value.get(), ctx, callbacks);
       const Objc3IRLocalI32StorageMetadata metadata =
           CollectObjc3IRLocalI32StorageMetadata(clause.value.get(), ctx,
                                                 callbacks);
       ctx.entry_lines.push_back(
           "  " + ptr + " = alloca " +
-          std::string(LLVMLocalStorageType(storage_type)) + ", align " +
-          std::to_string(LLVMLocalStorageAlignment(storage_type)));
+          std::string(Objc3IRLocalStorageTypeForCarrier(storage_type,
+                                                        storage_carrier)) +
+          ", align " +
+          std::to_string(Objc3IRLocalStorageAlignmentForCarrier(
+              storage_type, storage_carrier)));
       ctx.scopes.back()[clause.name] = ptr;
       ctx.value_type_by_ptr[ptr] = storage_type;
+      if (storage_type == ValueType::Optional) {
+        ctx.value_optional_carrier_by_ptr[ptr] = storage_carrier;
+        ctx.value_optional_carrier_by_value[value] = storage_carrier;
+      }
       if (clause.value->kind == Expr::Kind::CollectionLiteral) {
         ctx.collection_kind_by_ptr[ptr] =
             clause.value->collection_literal_kind;
@@ -254,9 +449,13 @@ void EmitObjc3IRForClause(
       }
       RecordObjc3IRLocalI32StorageMetadata(ptr, metadata, ctx, false);
       ctx.code_lines.push_back(
-          "  store " + std::string(LLVMLocalStorageType(storage_type)) + " " +
+          "  store " +
+          std::string(Objc3IRLocalStorageTypeForCarrier(storage_type,
+                                                        storage_carrier)) +
+          " " +
           value + ", ptr " + ptr + ", align " +
-          std::to_string(LLVMLocalStorageAlignment(storage_type)));
+          std::to_string(Objc3IRLocalStorageAlignmentForCarrier(
+              storage_type, storage_carrier)));
       return;
     }
   }

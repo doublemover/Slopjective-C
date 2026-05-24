@@ -10,9 +10,10 @@ foreign-carrier fail-closed records. Value optionals now have semantic type iden
 for canonical `Optional<T>` type signatures,
 plus a sema-owned absent/present lowering contract and checked unwrap/binding
 failure diagnostics plus bounded packed runtime ABI support for `i32`, `bool`,
-and `id` object-handle payloads plus a full-width `i64` runtime helper ABI.
-`Optional<i64>` language call/return lowering, nested/generic payload runtime
-lowering, property/ivar storage, unchecked unwrap, nullability bridges,
+and `id` object-handle payloads plus Optional<i64> language call/return ABI
+through the wide `{has_value,i64}` carrier, direct functions, and direct
+dispatch path.
+Nested/generic payload runtime lowering, property/ivar storage, unchecked unwrap, nullability bridges,
 implicit nil absence, nil-to-scalar coercion, and throws/result conversion
 remain unclaimed.
 Match expressions are bounded to
@@ -41,8 +42,8 @@ nullable-pointer conversion, nil-to-scalar coercion, throws/result conversion,
 unchecked unwrap, unsupported payload ABI lowering, broad runtime constructor
 support, property/ivar storage, or nullable-pointer erasure. The executable v1
 path is the checked packed `Optional<i32>`, `Optional<bool>`, and
-`Optional<id>` runtime ABI, with full-width `i64` exposed only through the
-runtime helper ABI until a wide language carrier is implemented.
+`Optional<id>` runtime ABI plus Optional<i64> direct-function and direct-dispatch
+language ABI through the wide `{has_value,i64}` carrier.
 
 Generic callable reification is similarly bounded. Semantic records may publish
 deterministic erased-default signature replay keys for admitted
@@ -68,10 +69,10 @@ The #8207 umbrella contract lives in
 keeps semantic promotion bounded: typed throws cannot widen past source/interface
 metadata plus hidden error-out lowering and catch/bridge policy into multi-payload,
 unsupported foreign-carrier, or erased public runtime behavior,
-and value optionals cannot widen past their bounded packed i32/bool/id-handle ABI plus
-full-width i64 helper ABI and checked lowering contract into `Optional<i64>`
-language call/return lowering, broad nested/generic/property/ivar/nullability/nil
-or unchecked runtime support. Runtime generic reification, type-test match
+and value optionals cannot widen past their bounded packed i32/bool/id-handle ABI,
+wide Optional<i64> direct ABI, and checked lowering contract into broad
+nested/generic/property/ivar/nullability/nil or unchecked runtime support.
+Runtime generic reification, type-test match
 patterns, and strict-system profile support cannot be widened from source
 metadata, generated reports, or Objective-C 2 compatibility paths.
 Statement-form guarded match and bounded expression-form match are the admitted

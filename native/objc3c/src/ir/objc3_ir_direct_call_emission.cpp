@@ -16,7 +16,9 @@ namespace {
 
 void AppendObjc3IRLoweredCallArg(
     std::vector<std::string> &args, const std::string &arg_i32,
-    ValueType expected_type, FunctionContext &ctx,
+    ValueType expected_type,
+    const Objc3IRValueOptionalCarrierMetadata *expected_optional_carrier,
+    FunctionContext &ctx,
     const Objc3IRDirectCallEmissionCallbacks &callbacks) {
   if (expected_type == ValueType::Bool) {
     const std::string arg_i1 = callbacks.coerce_i32_to_bool_i1(arg_i32, ctx);
@@ -24,10 +26,141 @@ void AppendObjc3IRLoweredCallArg(
     return;
   }
   if (expected_type == ValueType::Optional) {
-    args.push_back("i64 " + arg_i32);
+    const Objc3IRValueOptionalCarrierMetadata default_carrier;
+    const Objc3IRValueOptionalCarrierMetadata &carrier =
+        expected_optional_carrier != nullptr ? *expected_optional_carrier
+                                             : default_carrier;
+    args.push_back(
+        std::string(LLVMScalarTypeForValueOptionalCarrier(expected_type,
+                                                          carrier)) +
+        " " + arg_i32);
     return;
   }
   args.push_back("i32 " + arg_i32);
+}
+
+const Objc3IRValueOptionalCarrierMetadata *Objc3IRSignatureParamCarrier(
+    const LoweredFunctionSignature *signature, std::size_t index) {
+  if (signature == nullptr ||
+      index >= signature->param_value_optional_carriers.size()) {
+    return nullptr;
+  }
+  return &signature->param_value_optional_carriers[index];
+}
+
+bool Objc3IRValueOptionalArgCarrierMatches(
+    const std::string &arg_value,
+    const Objc3IRValueOptionalCarrierMetadata *expected_optional_carrier,
+    const FunctionContext &ctx) {
+  if (expected_optional_carrier == nullptr ||
+      !expected_optional_carrier->present) {
+    return true;
+  }
+  const auto actual_carrier = ctx.value_optional_carrier_by_value.find(arg_value);
+  return actual_carrier != ctx.value_optional_carrier_by_value.end() &&
+         actual_carrier->second ==
+             Objc3IRValueOptionalCarrierKindFor(*expected_optional_carrier);
+}
+
+bool IsObjc3IRFullI64OptionalRuntimeHelper(const std::string &ident) {
+  return ident == kObjc3RuntimeOptionalAbsentFullI64Symbol ||
+         ident == kObjc3RuntimeOptionalPresentFullI64Symbol ||
+         ident == kObjc3RuntimeOptionalHasValueFullI64Symbol;
+}
+
+std::string NewObjc3IRFullI64CarrierSlot(FunctionContext &ctx) {
+  const std::string slot =
+      "%value_optional.full_i64.addr." + std::to_string(ctx.temp_counter++);
+  ctx.entry_lines.push_back("  " + slot + " = alloca { i8, i64 }, align 8");
+  return slot;
+}
+
+std::string EmitObjc3IRLoadFullI64CarrierFromSlot(
+    const std::string &slot, FunctionContext &ctx,
+    const Objc3IRDirectCallEmissionCallbacks &callbacks) {
+  const std::string value = callbacks.new_temp(ctx);
+  ctx.code_lines.push_back("  " + value +
+                           " = load { i8, i64 }, ptr " + slot +
+                           ", align 8");
+  ctx.value_optional_carrier_by_value[value] =
+      Objc3IRValueOptionalCarrierKind::FullI64;
+  return value;
+}
+
+bool Objc3IRValueUsesFullI64OptionalCarrier(const std::string &value,
+                                            const FunctionContext &ctx) {
+  const auto carrier = ctx.value_optional_carrier_by_value.find(value);
+  return carrier != ctx.value_optional_carrier_by_value.end() &&
+         carrier->second == Objc3IRValueOptionalCarrierKind::FullI64;
+}
+
+std::string EmitObjc3IRFullI64OptionalRuntimeHelperCall(
+    const Expr *expr, FunctionContext &ctx,
+    const Objc3IRDirectCallEmissionCallbacks &callbacks) {
+  if (expr == nullptr || !IsObjc3IRFullI64OptionalRuntimeHelper(expr->ident)) {
+    return "";
+  }
+  if (expr->ident == kObjc3RuntimeOptionalAbsentFullI64Symbol) {
+    const std::string slot = NewObjc3IRFullI64CarrierSlot(ctx);
+    ctx.code_lines.push_back("  call void @" +
+                             std::string(
+                                 kObjc3RuntimeOptionalAbsentFullI64Symbol) +
+                             "(ptr sret({ i8, i64 }) align 8 " + slot +
+                             ")");
+    return EmitObjc3IRLoadFullI64CarrierFromSlot(slot, ctx, callbacks);
+  }
+  if (expr->ident == kObjc3RuntimeOptionalPresentFullI64Symbol &&
+      expr->args.size() != 1u) {
+    return callbacks.emit_unsupported_i32_value(
+        "Optional<i64> present helper lowering requires exactly one payload");
+  }
+  if (expr->ident == kObjc3RuntimeOptionalPresentFullI64Symbol) {
+    const std::string slot = NewObjc3IRFullI64CarrierSlot(ctx);
+    std::string payload = callbacks.emit_expr(expr->args.front().get());
+    if (ctx.terminated) {
+      return "zeroinitializer";
+    }
+    if (expr->args.front()->kind != Expr::Kind::Number) {
+      const std::string widened_payload = callbacks.new_temp(ctx);
+      ctx.code_lines.push_back("  " + widened_payload + " = sext i32 " +
+                               payload + " to i64");
+      payload = widened_payload;
+    }
+    ctx.code_lines.push_back("  call void @" +
+                             std::string(
+                                 kObjc3RuntimeOptionalPresentFullI64Symbol) +
+                             "(ptr sret({ i8, i64 }) align 8 " + slot +
+                             ", i64 " + payload + ")");
+    return EmitObjc3IRLoadFullI64CarrierFromSlot(slot, ctx, callbacks);
+  }
+  if (expr->ident == kObjc3RuntimeOptionalHasValueFullI64Symbol) {
+    if (expr->args.size() != 1u) {
+      return callbacks.emit_unsupported_i32_value(
+          "Optional<i64> has-value helper lowering requires exactly one value");
+    }
+    const std::string value = callbacks.emit_expr(expr->args.front().get());
+    if (ctx.terminated) {
+      return "0";
+    }
+    if (!Objc3IRValueUsesFullI64OptionalCarrier(value, ctx)) {
+      return callbacks.emit_unsupported_i32_value(
+          "Optional<i64> has-value helper requires a full-width carrier value");
+    }
+    const std::string slot = NewObjc3IRFullI64CarrierSlot(ctx);
+    ctx.code_lines.push_back("  store { i8, i64 } " + value + ", ptr " +
+                             slot + ", align 8");
+    const std::string has_value = callbacks.new_temp(ctx);
+    ctx.code_lines.push_back("  " + has_value + " = call i1 @" +
+                             std::string(
+                                 kObjc3RuntimeOptionalHasValueFullI64Symbol) +
+                             "(ptr " + slot + ")");
+    const std::string result = callbacks.new_temp(ctx);
+    ctx.code_lines.push_back("  " + result + " = zext i1 " + has_value +
+                             " to i32");
+    return result;
+  }
+  return callbacks.emit_unsupported_i32_value(
+      "unsupported Optional<i64> runtime helper lowering");
 }
 
 }  // namespace
@@ -39,6 +172,11 @@ std::string EmitObjc3IRDirectFunctionCall(
     const std::string &throws_error_slot_ptr, bool *bridge_failed_out,
     std::string *bridge_error_value_out,
     std::string *bridge_failure_condition_out) {
+  const std::string full_i64_optional_helper =
+      EmitObjc3IRFullI64OptionalRuntimeHelperCall(expr, ctx, callbacks);
+  if (!full_i64_optional_helper.empty()) {
+    return full_i64_optional_helper;
+  }
   if (expr != nullptr && expr->await_expression_enabled &&
       !ctx.async_runtime_helper_enabled) {
     return callbacks.emit_unsupported_i32_value(
@@ -94,7 +232,18 @@ std::string EmitObjc3IRDirectFunctionCall(
         signature != nullptr && i < signature->param_types.size()
             ? signature->param_types[i]
             : ValueType::I32;
-    AppendObjc3IRLoweredCallArg(args, arg_i32, expected_type, ctx, callbacks);
+    const Objc3IRValueOptionalCarrierMetadata *expected_optional_carrier =
+        Objc3IRSignatureParamCarrier(signature, i);
+    if (expected_type == ValueType::Optional &&
+        !Objc3IRValueOptionalArgCarrierMatches(
+            arg_i32, expected_optional_carrier, ctx)) {
+      return callbacks.emit_unsupported_i32_value(
+          "direct call Optional argument carrier does not match declared "
+          "function signature");
+    }
+    AppendObjc3IRLoweredCallArg(
+        args, arg_i32, expected_type, expected_optional_carrier, ctx,
+        callbacks);
   }
   if (signature != nullptr && signature->throws_error_out_abi_ready) {
     args.push_back("ptr " + throws_error_slot_ptr);
@@ -108,7 +257,11 @@ std::string EmitObjc3IRDirectFunctionCall(
   }
   const ValueType return_type =
       signature != nullptr ? signature->return_type : ValueType::I32;
-  const std::string llvm_return_type = LLVMScalarType(return_type);
+  const std::string llvm_return_type =
+      signature != nullptr
+          ? LLVMScalarTypeForValueOptionalCarrier(
+                return_type, signature->return_value_optional_carrier)
+          : LLVMScalarType(return_type);
   const bool call_may_have_global_side_effects =
       callbacks.function_may_have_global_side_effects(expr->ident);
   std::string out = "0";
@@ -128,7 +281,16 @@ std::string EmitObjc3IRDirectFunctionCall(
     const std::string tmp = callbacks.new_temp(ctx);
     ctx.code_lines.push_back("  " + tmp + " = call " + llvm_return_type +
                              " @" + expr->ident + "(" + arglist.str() + ")");
-    out = callbacks.coerce_value_to_i32(tmp, return_type, ctx);
+    if (return_type == ValueType::Optional) {
+      if (signature != nullptr) {
+        ctx.value_optional_carrier_by_value[tmp] =
+            Objc3IRValueOptionalCarrierKindFor(
+                signature->return_value_optional_carrier);
+      }
+      out = tmp;
+    } else {
+      out = callbacks.coerce_value_to_i32(tmp, return_type, ctx);
+    }
   }
   if (call_may_have_global_side_effects) {
     callbacks.invalidate_global_proof_state(ctx);

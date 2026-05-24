@@ -5,6 +5,29 @@
 #include "ast/objc3_ast.h"
 #include "ir/objc3_ir_type_model.h"
 
+namespace {
+
+const char *Objc3IRLocalStorageTypeForCarrier(
+    ValueType value_type, Objc3IRValueOptionalCarrierKind carrier) {
+  return LLVMLocalStorageTypeForValueOptionalCarrier(value_type, carrier);
+}
+
+unsigned Objc3IRLocalStorageAlignmentForCarrier(
+    ValueType value_type, Objc3IRValueOptionalCarrierKind carrier) {
+  return LLVMLocalStorageAlignmentForValueOptionalCarrier(value_type, carrier);
+}
+
+Objc3IRValueOptionalCarrierKind Objc3IRCarrierForPtr(
+    const FunctionContext &ctx, const std::string &ptr) {
+  const auto carrier_it = ctx.value_optional_carrier_by_ptr.find(ptr);
+  if (carrier_it != ctx.value_optional_carrier_by_ptr.end()) {
+    return carrier_it->second;
+  }
+  return Objc3IRValueOptionalCarrierKind::PackedI64;
+}
+
+}  // namespace
+
 std::string LookupObjc3IRVarPtr(
     const FunctionContext &ctx, const std::string &name,
     const Objc3IRValueMaterializationContext &materialization_context) {
@@ -39,11 +62,17 @@ std::string EmitObjc3IRIdentifierValue(
     if (type_it != ctx.value_type_by_ptr.end()) {
       value_type = type_it->second;
     }
-    ctx.code_lines.push_back("  " + tmp + " = load " +
-                             std::string(LLVMLocalStorageType(value_type)) +
-                             ", ptr " + ptr + ", align " +
-                             std::to_string(
-                                 LLVMLocalStorageAlignment(value_type)));
+    const Objc3IRValueOptionalCarrierKind carrier =
+        Objc3IRCarrierForPtr(ctx, ptr);
+    ctx.code_lines.push_back(
+        "  " + tmp + " = load " +
+        std::string(Objc3IRLocalStorageTypeForCarrier(value_type, carrier)) +
+        ", ptr " + ptr + ", align " +
+        std::to_string(
+            Objc3IRLocalStorageAlignmentForCarrier(value_type, carrier)));
+    if (value_type == ValueType::Optional) {
+      ctx.value_optional_carrier_by_value[tmp] = carrier;
+    }
     return tmp;
   }
   if (materialization_context.globals.find(name) !=

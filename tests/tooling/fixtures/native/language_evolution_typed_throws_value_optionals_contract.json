@@ -8,7 +8,7 @@
   },
   "support_state": {
     "typed_throws": "source_owned_interface_preserved_error_out_abi_lowered_catch_bridge_policy_recorded_direct_method_send_runtime",
-    "value_optionals": "semantic_type_signatures_bounded_packed_i32_bool_id_runtime_abi_full_i64_helper_abi_fail_closed_language_call_abi"
+    "value_optionals": "semantic_type_signatures_packed_i32_bool_id_and_full_i64_runtime_abi"
   },
   "typed_throws": {
     "canonical_syntax": "throws(E)",
@@ -54,7 +54,7 @@
   },
   "value_optionals": {
     "canonical_spelling": "Optional<T>",
-    "source_status": "semantic_type_signature_admitted_bounded_packed_runtime_abi",
+    "source_status": "semantic_type_signature_admitted_packed_and_full_i64_runtime_abi",
     "lowercase_alias_spelling": "optional<T>",
     "lowercase_alias_accepted": false,
     "runtime_lowering_diagnostic": "O3P159",
@@ -68,11 +68,12 @@
     "implicit_nil_absence_allowed": false,
     "abi_layout_status": "stable-packed-presence-payload-runtime-lowered",
     "abi_layout_id": "objc3.value_optional.inline_presence_payload.v1",
-    "runtime_abi_payload_scope": "supported-packed-scalar-and-id-handle-payload-forms-only",
+    "runtime_abi_payload_scope": "supported-packed-scalar-id-handle-and-full-i64-payload-forms",
     "supported_runtime_payload_forms": [
       "i32",
       "bool",
-      "id"
+      "id",
+      "i64"
     ],
     "supported_runtime_helper_payload_forms": [
       "i32",
@@ -81,9 +82,8 @@
       "i64"
     ],
     "full_width_i64_runtime_helper_supported": true,
-    "full_width_i64_language_call_abi_supported": false,
+    "full_width_i64_language_call_abi_supported": true,
     "rejected_runtime_payload_forms": [
-      "full-width-i64-language-call-abi",
       "nested-value-optional",
       "generic-payload",
       "property-storage",
@@ -129,11 +129,11 @@
     "typed_throws_effect_signature_required": true,
     "typed_throws_callable_compatibility_policy": "typed-throws-exact-payload-match-error-out-abi",
     "typed_throws_runtime_execution_claimed": true,
-    "value_optional_source_status": "semantic-type-signature-admitted-bounded-packed-runtime-abi",
+    "value_optional_source_status": "semantic-type-signature-admitted-packed-and-full-i64-runtime-abi",
     "value_optional_semantic_value_model_supported": true,
     "value_optional_abi_layout_status": "stable-packed-presence-payload-runtime-lowered",
     "value_optional_abi_layout_id": "objc3.value_optional.inline_presence_payload.v1",
-    "value_optional_runtime_abi_payload_scope": "supported-packed-scalar-and-id-handle-payload-forms-only",
+    "value_optional_runtime_abi_payload_scope": "supported-packed-scalar-id-handle-and-full-i64-payload-forms",
     "value_optional_supported_runtime_helper_payload_forms": [
       "i32",
       "bool",
@@ -141,7 +141,7 @@
       "i64"
     ],
     "value_optional_full_width_i64_runtime_helper_supported": true,
-    "value_optional_full_width_i64_language_call_abi_supported": false,
+    "value_optional_full_width_i64_language_call_abi_supported": true,
     "value_optional_interface_roundtrip_status": "semantic-carrier-roundtrips-bounded-packed-runtime-abi",
     "fail_closed_on_contract_drift": true,
     "source_only_claim_allowed": true,
@@ -251,7 +251,7 @@
     },
     {
       "fixture": "tests/tooling/fixtures/native/value_optionals_type_signatures_positive.objc3",
-      "contract_case": "canonical Optional<i32>, Optional<bool>, and Optional<id> function and method type signatures are admitted as semantic value-optional carriers on the checked v1 runtime ABI, while full-width i64 is represented only by helper ABI truth"
+      "contract_case": "canonical Optional<i32>, Optional<bool>, Optional<id>, and Optional<i64> function and method type signatures are admitted as semantic value-optional carriers on the checked v1 runtime ABI"
     },
     {
       "fixture": "tests/tooling/fixtures/native/value_optionals_generic_interactions_positive.objc3",
@@ -259,11 +259,11 @@
     },
     {
       "fixture": "tests/tooling/fixtures/native/value_optionals_contract_positive.json",
-      "contract_case": "value optional contract records expose optional_type, optional_value, optional_flow, and optional_rejection with bounded packed i32, bool, and id-handle language ABI flags, full-width i64 runtime helper ABI truth, and fail-closed broadening flags"
+      "contract_case": "value optional contract records expose optional_type, optional_value, optional_flow, and optional_rejection with packed i32, bool, id-handle, and full-width i64 language ABI flags plus fail-closed broadening flags"
     },
     {
       "fixture": "tests/tooling/fixtures/native/execution/positive/value_optionals_runtime_abi_positive.objc3",
-      "contract_case": "supported Optional<i32>, Optional<bool>, and Optional<id> values lower through packed i64 runtime ABI helpers for present, absent, has-value, and payload-or execution"
+      "contract_case": "supported Optional<i32>, Optional<bool>, Optional<id>, and Optional<i64> values lower through packed or full-width runtime ABI helpers for present, absent, has-value, and payload-or execution"
     }
   ],
   "negative_fixtures": [
@@ -358,11 +358,6 @@
       "contract_case": "Optional<id> cannot be combined with nullable object-pointer suffixes"
     },
     {
-      "fixture": "tests/tooling/fixtures/native/recovery/negative/negative_value_optional_i64_language_abi_reserved.objc3",
-      "expected_diagnostic": "O3P159",
-      "contract_case": "Optional<i64> recognizes the full-width helper ABI but rejects language call/return lowering until a wide carrier is implemented"
-    },
-    {
       "fixture": "tests/tooling/fixtures/native/value_optionals_layout_mismatch_negative.contract.json",
       "expected_contract": "objc3.value_optional.inline_presence_payload.v1",
       "contract_case": "value optional ABI layout drift fails closed"
@@ -370,7 +365,7 @@
     {
       "fixture": "tests/tooling/fixtures/native/value_optionals_lowering_claim_negative.contract.json",
       "expected_contract": "stable-packed-abi-carrier-runtime-execution-supported",
-      "contract_case": "value optional source signatures cannot claim language call/return lowering outside supported packed i32, bool, and id-handle payload forms"
+      "contract_case": "value optional source signatures cannot claim language call/return lowering outside supported packed i32, bool, id-handle, and full-width i64 payload forms"
     },
     {
       "fixture": "tests/tooling/fixtures/native/value_optionals_interface_mismatch_negative.contract.json",
@@ -380,7 +375,7 @@
     {
       "fixture": "tests/tooling/fixtures/native/value_optionals_executable_semantics_negative.contract.json",
       "expected_diagnostic": "O3P159",
-      "contract_case": "semantic Optional<T> carrier cannot widen beyond bounded packed i32, bool, and id-handle language payload ABI into full-width i64 language call/return lowering, nested/generic/property/ivar storage, unchecked unwrap, implicit nil absence, or throws conversions"
+      "contract_case": "semantic Optional<T> carrier cannot widen beyond packed i32, bool, id-handle, and full-width i64 language payload ABI into nested/generic/property/ivar storage, unchecked unwrap, implicit nil absence, or throws conversions"
     }
   ],
   "public_claim_boundary": {
@@ -391,7 +386,7 @@
     ],
     "bounded_runtime_claims": [
       "bounded-runtime:value-optional-packed-i32-bool-id-abi",
-      "bounded-runtime:value-optional-full-width-i64-helper-abi-language-call-abi-reserved",
+      "bounded-runtime:value-optional-full-width-i64-language-call-return-abi",
       "bounded-runtime:typed-throws-direct-and-runtime-dispatch-error-out-abi"
     ],
     "runtime_claims": [],

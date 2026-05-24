@@ -5,12 +5,43 @@
 #include <unordered_set>
 
 #include "ast/objc3_ast_contracts.h"
+#include "ast/objc3_ast_value_optional_type.h"
 #include "ir/objc3_ir_frontend_metadata.h"
 #include "ir/objc3_ir_prototype_declarations_runtime_helpers.h"
 #include "ir/objc3_ir_type_model.h"
 #include "support/objc3_identifier_spelling.h"
 
 namespace {
+
+bool EmitObjc3IRFullI64RuntimeHelperExternalDeclaration(
+    const std::string &symbol, std::ostringstream &out) {
+  if (symbol == kObjc3RuntimeOptionalAbsentFullI64Symbol) {
+    out << "declare void @" << kObjc3RuntimeOptionalAbsentFullI64Symbol
+        << "(ptr sret({ i8, i64 }) align 8)\n";
+    return true;
+  }
+  if (symbol == kObjc3RuntimeOptionalPresentFullI64Symbol) {
+    out << "declare void @" << kObjc3RuntimeOptionalPresentFullI64Symbol
+        << "(ptr sret({ i8, i64 }) align 8, i64)\n";
+    return true;
+  }
+  if (symbol == kObjc3RuntimeOptionalHasValueFullI64Symbol) {
+    out << "declare i1 @" << kObjc3RuntimeOptionalHasValueFullI64Symbol
+        << "(ptr)\n";
+    return true;
+  }
+  if (symbol == kObjc3RuntimeOptionalPayloadOrFullI64Symbol) {
+    out << "declare i64 @" << kObjc3RuntimeOptionalPayloadOrFullI64Symbol
+        << "(ptr, i64)\n";
+    return true;
+  }
+  if (symbol == kObjc3RuntimeOptionalUnwrapFullI64Symbol) {
+    out << "declare i64 @" << kObjc3RuntimeOptionalUnwrapFullI64Symbol
+        << "(ptr)\n";
+    return true;
+  }
+  return false;
+}
 
 void EmitObjc3IRExternalFunctionDeclarations(
     const Objc3IRPrototypeDeclarationOptions &options,
@@ -27,6 +58,10 @@ void EmitObjc3IRExternalFunctionDeclarations(
     if (!declared_symbols.insert(entry.first).second) {
       continue;
     }
+    if (EmitObjc3IRFullI64RuntimeHelperExternalDeclaration(entry.first, out)) {
+      emitted = true;
+      continue;
+    }
     const LoweredFunctionSignature &signature = entry.second;
     if (signature.has_value_optional_type_signature &&
         !signature.value_optional_lowering_supported) {
@@ -40,7 +75,14 @@ void EmitObjc3IRExternalFunctionDeclarations(
       if (i != 0) {
         params << ", ";
       }
-      params << LLVMScalarType(signature.param_types[i]);
+      const Objc3IRValueOptionalCarrierMetadata *param_carrier =
+          i < signature.param_value_optional_carriers.size()
+              ? &signature.param_value_optional_carriers[i]
+              : nullptr;
+      Objc3IRValueOptionalCarrierMetadata default_carrier;
+      params << LLVMScalarTypeForValueOptionalCarrier(
+          signature.param_types[i],
+          param_carrier != nullptr ? *param_carrier : default_carrier);
     }
     if (signature.throws_error_out_abi_ready) {
       if (!signature.param_types.empty()) {
@@ -48,7 +90,10 @@ void EmitObjc3IRExternalFunctionDeclarations(
       }
       params << "ptr";
     }
-    out << "declare " << LLVMScalarType(signature.return_type) << " @"
+    out << "declare "
+        << LLVMScalarTypeForValueOptionalCarrier(
+               signature.return_type, signature.return_value_optional_carrier)
+        << " @"
         << entry.first << "(" << params.str() << ")\n";
     emitted = true;
   }

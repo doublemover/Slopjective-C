@@ -844,6 +844,32 @@ void EmitObjc3IRRuntimeHelperDeclarations(
       "declare i32 @" + std::string(kObjc3RuntimeAutoreleaseI32Symbol) +
           "(i32)\n");
   EmitObjc3IRDeclarationOnce(
+      declared_symbols, emitted, out, kObjc3RuntimeOptionalAbsentFullI64Symbol,
+      "declare void @" +
+          std::string(kObjc3RuntimeOptionalAbsentFullI64Symbol) +
+          "(ptr sret({ i8, i64 }) align 8)\n");
+  EmitObjc3IRDeclarationOnce(
+      declared_symbols, emitted, out, kObjc3RuntimeOptionalPresentFullI64Symbol,
+      "declare void @" +
+          std::string(kObjc3RuntimeOptionalPresentFullI64Symbol) +
+          "(ptr sret({ i8, i64 }) align 8, i64)\n");
+  EmitObjc3IRDeclarationOnce(
+      declared_symbols, emitted, out, kObjc3RuntimeOptionalHasValueFullI64Symbol,
+      "declare i1 @" +
+          std::string(kObjc3RuntimeOptionalHasValueFullI64Symbol) +
+          "(ptr)\n");
+  EmitObjc3IRDeclarationOnce(
+      declared_symbols, emitted, out,
+      kObjc3RuntimeOptionalPayloadOrFullI64Symbol,
+      "declare i64 @" +
+          std::string(kObjc3RuntimeOptionalPayloadOrFullI64Symbol) +
+          "(ptr, i64)\n");
+  EmitObjc3IRDeclarationOnce(
+      declared_symbols, emitted, out, kObjc3RuntimeOptionalUnwrapFullI64Symbol,
+      "declare i64 @" +
+          std::string(kObjc3RuntimeOptionalUnwrapFullI64Symbol) +
+          "(ptr)\n");
+  EmitObjc3IRDeclarationOnce(
       declared_symbols, emitted, out, kObjc3RuntimePromoteBlockI32Symbol,
       "declare i32 @" + std::string(kObjc3RuntimePromoteBlockI32Symbol) +
           "(ptr, i64, i32)\n");

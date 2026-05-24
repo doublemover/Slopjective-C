@@ -446,8 +446,8 @@
     },
     {
       "capability_id": "language.types.value-optionals",
-      "evidence_kind": "diagnostic",
-      "path": "tests/tooling/fixtures/native/recovery/negative/negative_value_optional_i64_language_abi_reserved.objc3"
+      "evidence_kind": "source",
+      "path": "native/objc3c/src/ir/objc3_ir_value_optional_carrier_model.h"
     },
     {
       "capability_id": "language.types.value-optionals",

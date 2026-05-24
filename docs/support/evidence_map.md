@@ -103,7 +103,7 @@ diagnostic, documentation, or boundary evidence only.
 | `language.types.value-optionals` |  | `diagnostic` | `tests/tooling/fixtures/native/recovery/negative/negative_value_optional_nil_scalar_coercion_reserved.objc3` |  |
 | `language.types.value-optionals` |  | `diagnostic` | `tests/tooling/fixtures/native/recovery/negative/negative_value_optional_nested_lowercase_alias_reserved.objc3` |  |
 | `language.types.value-optionals` |  | `diagnostic` | `tests/tooling/fixtures/native/recovery/negative/negative_value_optional_property_layout_unsupported.objc3` |  |
-| `language.types.value-optionals` |  | `diagnostic` | `tests/tooling/fixtures/native/recovery/negative/negative_value_optional_i64_language_abi_reserved.objc3` |  |
+| `language.types.value-optionals` |  | `source` | `native/objc3c/src/ir/objc3_ir_value_optional_carrier_model.h` |  |
 | `language.types.value-optionals` |  | `diagnostic` | `tests/tooling/fixtures/native/recovery/negative/negative_value_optional_nullable_suffix_mismatch.objc3` |  |
 | `language.types.value-optionals` |  | `diagnostic` | `tests/tooling/fixtures/native/value_optionals_layout_mismatch_negative.contract.json` |  |
 | `language.types.value-optionals` |  | `diagnostic` | `tests/tooling/fixtures/native/value_optionals_lowering_claim_negative.contract.json` |  |
