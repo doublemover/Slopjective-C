@@ -3007,11 +3007,42 @@ the canonical manifest fixture and public npm command above.
   - `tests/tooling/fixtures/security_hardening/sanitizer_validation_contract.json`
   - `tests/tooling/fixtures/security_hardening/sanitizer_package_install_model_contract.json`
   - `tests/tooling/fixtures/platform_support/source_truth_matrix.json`
+  - `scripts/package_objc3c_runnable_toolchain.ps1`
+  - `scripts/package_objc3c_runnable_toolchain/staging_orchestration.psm1`
+  - `scripts/package_objc3c_runnable_toolchain/artifact_report_foundation.psm1`
+  - `scripts/objc3c_package_channels/model.py`
+  - `scripts/objc3c_package_channels/rendering.py`
+  - `scripts/objc3c_package_channels/validation.py`
+  - `scripts/check_objc3c_packaging_channels_integration.py`
+  - `scripts/check_objc3c_packaging_channels_end_to_end.py`
+  - `scripts/objc3c_workflow/action_catalog_native_package_toolchain.py`
+  - `scripts/objc3c_workflow/actions/release_governance_packaging_contracts.py`
+  - `schemas/objc3c-package-channels-manifest-v1.schema.json`
+  - `schemas/objc3c-package-install-receipt-v1.schema.json`
+  - `schemas/objc3c-sanitizer-runtime-library-manifest-v1.schema.json`
+  - `tests/tooling/fixtures/packaging_channels/metadata_surface.json`
+  - `tests/tooling/fixtures/packaging_channels/schema_surface.json`
+  - `tests/tooling/fixtures/security_hardening/artifact_reporting_contract.json`
 - Evidence:
   - diagnostic: `tests/tooling/fixtures/platform_hardening/platform_toolchain_support_evidence.json`
   - source: `tests/tooling/fixtures/security_hardening/sanitizer_validation_contract.json`
   - source: `tests/tooling/fixtures/security_hardening/sanitizer_package_install_model_contract.json`
   - source: `tests/tooling/fixtures/platform_support/source_truth_matrix.json`
+  - source: `scripts/package_objc3c_runnable_toolchain/staging_orchestration.psm1`
+  - source: `scripts/package_objc3c_runnable_toolchain/artifact_report_foundation.psm1`
+  - source: `scripts/objc3c_package_channels/model.py`
+  - source: `scripts/objc3c_package_channels/rendering.py`
+  - source: `scripts/objc3c_package_channels/validation.py`
+  - source: `scripts/check_objc3c_packaging_channels_integration.py`
+  - source: `scripts/check_objc3c_packaging_channels_end_to_end.py`
+  - source: `scripts/objc3c_workflow/action_catalog_native_package_toolchain.py`
+  - source: `scripts/objc3c_workflow/actions/release_governance_packaging_contracts.py`
+  - schema: `schemas/objc3c-package-channels-manifest-v1.schema.json`
+  - schema: `schemas/objc3c-package-install-receipt-v1.schema.json`
+  - schema: `schemas/objc3c-sanitizer-runtime-library-manifest-v1.schema.json`
+  - source: `tests/tooling/fixtures/packaging_channels/metadata_surface.json`
+  - source: `tests/tooling/fixtures/packaging_channels/schema_surface.json`
+  - source: `tests/tooling/fixtures/security_hardening/artifact_reporting_contract.json`
 
 ### UndefinedBehaviorSanitizer platform variant
 
@@ -3024,11 +3055,42 @@ the canonical manifest fixture and public npm command above.
   - `tests/tooling/fixtures/security_hardening/sanitizer_validation_contract.json`
   - `tests/tooling/fixtures/security_hardening/sanitizer_package_install_model_contract.json`
   - `tests/tooling/fixtures/platform_support/source_truth_matrix.json`
+  - `scripts/package_objc3c_runnable_toolchain.ps1`
+  - `scripts/package_objc3c_runnable_toolchain/staging_orchestration.psm1`
+  - `scripts/package_objc3c_runnable_toolchain/artifact_report_foundation.psm1`
+  - `scripts/objc3c_package_channels/model.py`
+  - `scripts/objc3c_package_channels/rendering.py`
+  - `scripts/objc3c_package_channels/validation.py`
+  - `scripts/check_objc3c_packaging_channels_integration.py`
+  - `scripts/check_objc3c_packaging_channels_end_to_end.py`
+  - `scripts/objc3c_workflow/action_catalog_native_package_toolchain.py`
+  - `scripts/objc3c_workflow/actions/release_governance_packaging_contracts.py`
+  - `schemas/objc3c-package-channels-manifest-v1.schema.json`
+  - `schemas/objc3c-package-install-receipt-v1.schema.json`
+  - `schemas/objc3c-sanitizer-runtime-library-manifest-v1.schema.json`
+  - `tests/tooling/fixtures/packaging_channels/metadata_surface.json`
+  - `tests/tooling/fixtures/packaging_channels/schema_surface.json`
+  - `tests/tooling/fixtures/security_hardening/artifact_reporting_contract.json`
 - Evidence:
   - diagnostic: `tests/tooling/fixtures/platform_hardening/platform_toolchain_support_evidence.json`
   - source: `tests/tooling/fixtures/security_hardening/sanitizer_validation_contract.json`
   - source: `tests/tooling/fixtures/security_hardening/sanitizer_package_install_model_contract.json`
   - source: `tests/tooling/fixtures/platform_support/source_truth_matrix.json`
+  - source: `scripts/package_objc3c_runnable_toolchain/staging_orchestration.psm1`
+  - source: `scripts/package_objc3c_runnable_toolchain/artifact_report_foundation.psm1`
+  - source: `scripts/objc3c_package_channels/model.py`
+  - source: `scripts/objc3c_package_channels/rendering.py`
+  - source: `scripts/objc3c_package_channels/validation.py`
+  - source: `scripts/check_objc3c_packaging_channels_integration.py`
+  - source: `scripts/check_objc3c_packaging_channels_end_to_end.py`
+  - source: `scripts/objc3c_workflow/action_catalog_native_package_toolchain.py`
+  - source: `scripts/objc3c_workflow/actions/release_governance_packaging_contracts.py`
+  - schema: `schemas/objc3c-package-channels-manifest-v1.schema.json`
+  - schema: `schemas/objc3c-package-install-receipt-v1.schema.json`
+  - schema: `schemas/objc3c-sanitizer-runtime-library-manifest-v1.schema.json`
+  - source: `tests/tooling/fixtures/packaging_channels/metadata_surface.json`
+  - source: `tests/tooling/fixtures/packaging_channels/schema_surface.json`
+  - source: `tests/tooling/fixtures/security_hardening/artifact_reporting_contract.json`
 
 ### Object runtime sample library
 

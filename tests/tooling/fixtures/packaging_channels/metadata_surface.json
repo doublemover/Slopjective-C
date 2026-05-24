@@ -2,6 +2,7 @@
   "contract_id": "objc3c.packaging.channels.metadata.surface.v1",
   "package_channels_manifest": "schemas/objc3c-package-channels-manifest-v1.schema.json",
   "install_receipt": "schemas/objc3c-package-install-receipt-v1.schema.json",
+  "sanitizer_runtime_library_manifest": "schemas/objc3c-sanitizer-runtime-library-manifest-v1.schema.json",
   "required_manifest_fields": [
     "contract_id",
     "generated_at_utc",
@@ -51,6 +52,17 @@
     "payload_required_entries",
     "installed_at_utc",
     "sanitizer_package_variant"
+  ],
+  "required_runtime_library_manifest_fields": [
+    "contract_id",
+    "target_platform_id",
+    "sanitizer",
+    "runtime_library_ids",
+    "runtime_library_artifacts",
+    "runtime_library_root_kind",
+    "missing_runtime_behavior",
+    "support_truth",
+    "native_execution_claimed"
   ],
   "required_installer_signature_fields": [
     "signature_format",

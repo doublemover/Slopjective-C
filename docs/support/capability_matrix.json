@@ -6577,7 +6577,23 @@
         "tests/tooling/fixtures/platform_hardening/platform_toolchain_support_evidence.json",
         "tests/tooling/fixtures/security_hardening/sanitizer_validation_contract.json",
         "tests/tooling/fixtures/security_hardening/sanitizer_package_install_model_contract.json",
-        "tests/tooling/fixtures/platform_support/source_truth_matrix.json"
+        "tests/tooling/fixtures/platform_support/source_truth_matrix.json",
+        "scripts/package_objc3c_runnable_toolchain.ps1",
+        "scripts/package_objc3c_runnable_toolchain/staging_orchestration.psm1",
+        "scripts/package_objc3c_runnable_toolchain/artifact_report_foundation.psm1",
+        "scripts/objc3c_package_channels/model.py",
+        "scripts/objc3c_package_channels/rendering.py",
+        "scripts/objc3c_package_channels/validation.py",
+        "scripts/check_objc3c_packaging_channels_integration.py",
+        "scripts/check_objc3c_packaging_channels_end_to_end.py",
+        "scripts/objc3c_workflow/action_catalog_native_package_toolchain.py",
+        "scripts/objc3c_workflow/actions/release_governance_packaging_contracts.py",
+        "schemas/objc3c-package-channels-manifest-v1.schema.json",
+        "schemas/objc3c-package-install-receipt-v1.schema.json",
+        "schemas/objc3c-sanitizer-runtime-library-manifest-v1.schema.json",
+        "tests/tooling/fixtures/packaging_channels/metadata_surface.json",
+        "tests/tooling/fixtures/packaging_channels/schema_surface.json",
+        "tests/tooling/fixtures/security_hardening/artifact_reporting_contract.json"
       ],
       "evidence": [
         {
@@ -6595,6 +6611,66 @@
         {
           "kind": "source",
           "path": "tests/tooling/fixtures/platform_support/source_truth_matrix.json"
+        },
+        {
+          "kind": "source",
+          "path": "scripts/package_objc3c_runnable_toolchain/staging_orchestration.psm1"
+        },
+        {
+          "kind": "source",
+          "path": "scripts/package_objc3c_runnable_toolchain/artifact_report_foundation.psm1"
+        },
+        {
+          "kind": "source",
+          "path": "scripts/objc3c_package_channels/model.py"
+        },
+        {
+          "kind": "source",
+          "path": "scripts/objc3c_package_channels/rendering.py"
+        },
+        {
+          "kind": "source",
+          "path": "scripts/objc3c_package_channels/validation.py"
+        },
+        {
+          "kind": "source",
+          "path": "scripts/check_objc3c_packaging_channels_integration.py"
+        },
+        {
+          "kind": "source",
+          "path": "scripts/check_objc3c_packaging_channels_end_to_end.py"
+        },
+        {
+          "kind": "source",
+          "path": "scripts/objc3c_workflow/action_catalog_native_package_toolchain.py"
+        },
+        {
+          "kind": "source",
+          "path": "scripts/objc3c_workflow/actions/release_governance_packaging_contracts.py"
+        },
+        {
+          "kind": "schema",
+          "path": "schemas/objc3c-package-channels-manifest-v1.schema.json"
+        },
+        {
+          "kind": "schema",
+          "path": "schemas/objc3c-package-install-receipt-v1.schema.json"
+        },
+        {
+          "kind": "schema",
+          "path": "schemas/objc3c-sanitizer-runtime-library-manifest-v1.schema.json"
+        },
+        {
+          "kind": "source",
+          "path": "tests/tooling/fixtures/packaging_channels/metadata_surface.json"
+        },
+        {
+          "kind": "source",
+          "path": "tests/tooling/fixtures/packaging_channels/schema_surface.json"
+        },
+        {
+          "kind": "source",
+          "path": "tests/tooling/fixtures/security_hardening/artifact_reporting_contract.json"
         }
       ]
     },
@@ -6607,7 +6683,23 @@
         "tests/tooling/fixtures/platform_hardening/platform_toolchain_support_evidence.json",
         "tests/tooling/fixtures/security_hardening/sanitizer_validation_contract.json",
         "tests/tooling/fixtures/security_hardening/sanitizer_package_install_model_contract.json",
-        "tests/tooling/fixtures/platform_support/source_truth_matrix.json"
+        "tests/tooling/fixtures/platform_support/source_truth_matrix.json",
+        "scripts/package_objc3c_runnable_toolchain.ps1",
+        "scripts/package_objc3c_runnable_toolchain/staging_orchestration.psm1",
+        "scripts/package_objc3c_runnable_toolchain/artifact_report_foundation.psm1",
+        "scripts/objc3c_package_channels/model.py",
+        "scripts/objc3c_package_channels/rendering.py",
+        "scripts/objc3c_package_channels/validation.py",
+        "scripts/check_objc3c_packaging_channels_integration.py",
+        "scripts/check_objc3c_packaging_channels_end_to_end.py",
+        "scripts/objc3c_workflow/action_catalog_native_package_toolchain.py",
+        "scripts/objc3c_workflow/actions/release_governance_packaging_contracts.py",
+        "schemas/objc3c-package-channels-manifest-v1.schema.json",
+        "schemas/objc3c-package-install-receipt-v1.schema.json",
+        "schemas/objc3c-sanitizer-runtime-library-manifest-v1.schema.json",
+        "tests/tooling/fixtures/packaging_channels/metadata_surface.json",
+        "tests/tooling/fixtures/packaging_channels/schema_surface.json",
+        "tests/tooling/fixtures/security_hardening/artifact_reporting_contract.json"
       ],
       "evidence": [
         {
@@ -6625,6 +6717,66 @@
         {
           "kind": "source",
           "path": "tests/tooling/fixtures/platform_support/source_truth_matrix.json"
+        },
+        {
+          "kind": "source",
+          "path": "scripts/package_objc3c_runnable_toolchain/staging_orchestration.psm1"
+        },
+        {
+          "kind": "source",
+          "path": "scripts/package_objc3c_runnable_toolchain/artifact_report_foundation.psm1"
+        },
+        {
+          "kind": "source",
+          "path": "scripts/objc3c_package_channels/model.py"
+        },
+        {
+          "kind": "source",
+          "path": "scripts/objc3c_package_channels/rendering.py"
+        },
+        {
+          "kind": "source",
+          "path": "scripts/objc3c_package_channels/validation.py"
+        },
+        {
+          "kind": "source",
+          "path": "scripts/check_objc3c_packaging_channels_integration.py"
+        },
+        {
+          "kind": "source",
+          "path": "scripts/check_objc3c_packaging_channels_end_to_end.py"
+        },
+        {
+          "kind": "source",
+          "path": "scripts/objc3c_workflow/action_catalog_native_package_toolchain.py"
+        },
+        {
+          "kind": "source",
+          "path": "scripts/objc3c_workflow/actions/release_governance_packaging_contracts.py"
+        },
+        {
+          "kind": "schema",
+          "path": "schemas/objc3c-package-channels-manifest-v1.schema.json"
+        },
+        {
+          "kind": "schema",
+          "path": "schemas/objc3c-package-install-receipt-v1.schema.json"
+        },
+        {
+          "kind": "schema",
+          "path": "schemas/objc3c-sanitizer-runtime-library-manifest-v1.schema.json"
+        },
+        {
+          "kind": "source",
+          "path": "tests/tooling/fixtures/packaging_channels/metadata_surface.json"
+        },
+        {
+          "kind": "source",
+          "path": "tests/tooling/fixtures/packaging_channels/schema_surface.json"
+        },
+        {
+          "kind": "source",
+          "path": "tests/tooling/fixtures/security_hardening/artifact_reporting_contract.json"
         }
       ]
     },

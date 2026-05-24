@@ -84,6 +84,42 @@ def test_sanitizer_validation_contract_pins_asan_ubsan_runtime_and_compiler_surf
         "runtime_library_contract"
     ]["runtime_library_ids"] == ["objc3-runtime", "clang_rt.ubsan"]
 
+    asan_contract = package_variants["objc3c.toolchain.sanitizer.address"][
+        "package_runtime_contract"
+    ]
+    ubsan_contract = package_variants["objc3c.toolchain.sanitizer.undefined"][
+        "package_runtime_contract"
+    ]
+    assert asan_contract["package_layout_contract"]["runtime_library_manifest_path"] == (  # type: ignore[index]
+        "share/objc3c/sanitizer/asan-runtime-libraries.json"
+    )
+    assert ubsan_contract["package_layout_contract"]["runtime_library_manifest_path"] == (  # type: ignore[index]
+        "share/objc3c/sanitizer/ubsan-runtime-libraries.json"
+    )
+    assert set(asan_contract["package_layout_contract"]["runtime_library_required_entries"]) == {  # type: ignore[index]
+        "artifacts/runtime/sanitizer/address/clang_rt.asan_dynamic-x86_64.dll",
+        "artifacts/runtime/sanitizer/address/clang_rt.asan_dynamic-x86_64.lib",
+        "artifacts/runtime/sanitizer/address/clang_rt.asan_dynamic_runtime_thunk-x86_64.lib",
+    }
+    assert set(ubsan_contract["package_layout_contract"]["runtime_library_required_entries"]) == {  # type: ignore[index]
+        "artifacts/runtime/sanitizer/undefined/clang_rt.ubsan_standalone-x86_64.lib",
+        "artifacts/runtime/sanitizer/undefined/clang_rt.ubsan_standalone_cxx-x86_64.lib",
+    }
+    for runtime_contract in (asan_contract, ubsan_contract):
+        receipt = runtime_contract["install_receipt_contract"]  # type: ignore[index]
+        native_execution = receipt["native_execution_contract"]
+        assert {
+            "runtime_library_manifest_path",
+            "runtime_library_manifest_digest",
+            "runtime_library_artifacts",
+            "missing_runtime_behavior",
+        } <= set(receipt["required_fields"])
+        assert "runtime_library_artifacts" in native_execution["native_execution_record_fields"]
+        assert {
+            "runtime_library_manifest_path",
+            "runtime_library_artifacts",
+        } <= set(runtime_contract["runtime_probe_contract"]["probe_inputs"])  # type: ignore[index]
+
 
 def test_language_runtime_threat_model_links_macro_runtime_compiler_evidence() -> None:
     contract = load_fixture("language_runtime_threat_model_backlog.json")

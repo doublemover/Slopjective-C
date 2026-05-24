@@ -245,6 +245,12 @@ artifacts into the package payload and publish
 archives are emitted. Those runtime-library manifests are package/install
 identity evidence only; native execution and expected detection records are
 still required before #8230 or #8231 can become support claims.
+The durable non-promoting anchors are the runnable package staging source,
+artifact-report sanitizer section, package-channel model/render/validation
+source, public package action registrations, package-channel and install-receipt
+schemas, the dedicated sanitizer runtime-library manifest schema, and the
+checked sanitizer/package-channel fixtures named by
+`docs/support/capability_matrix.json` and `docs/support/evidence_map.json`.
 
 Every future platform or sanitizer promotion must preserve the package identity
 contract checked into the support evidence fixture. Linux promotion requires the

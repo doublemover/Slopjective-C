@@ -83,10 +83,16 @@ diagnostic, documentation, or boundary evidence only.
 | `language.errors.typed-throws` |  | `source` | `native/objc3c/src/ir/objc3_ir_function_signature_model.cpp` |  |
 | `language.errors.typed-throws` |  | `source` | `native/objc3c/src/ir/objc3_ir_direct_call_emission.cpp` |  |
 | `language.errors.typed-throws` |  | `source` | `native/objc3c/src/ir/objc3_ir_expression_emission_call.cpp` |  |
+| `language.errors.typed-throws` |  | `source` | `native/objc3c/src/ir/objc3_ir_runtime_dispatch_calls.cpp` |  |
+| `language.errors.typed-throws` |  | `source` | `native/objc3c/src/ir/objc3_ir_runtime_dispatch_declarations.cpp` |  |
 | `language.errors.typed-throws` |  | `source` | `native/objc3c/src/ir/objc3_ir_statement_block_emission.cpp` |  |
 | `language.errors.typed-throws` |  | `source` | `native/objc3c/src/ir/objc3_ir_function_definition_emission.cpp` |  |
 | `language.errors.typed-throws` |  | `source` | `native/objc3c/src/runtime/errors/catch_filter.cpp` |  |
 | `language.errors.typed-throws` |  | `source` | `native/objc3c/src/runtime/errors/error_bridge_kind.cpp` |  |
+| `language.errors.typed-throws` |  | `source` | `native/objc3c/src/runtime/public/objc3_runtime_result_entrypoint_contract.h` |  |
+| `language.errors.typed-throws` |  | `source` | `native/objc3c/src/runtime/public/objc3_runtime_diagnostic_contract.h` |  |
+| `language.errors.typed-throws` |  | `source` | `native/objc3c/src/runtime/dispatch/dispatch_api.cpp` |  |
+| `language.errors.typed-throws` |  | `source` | `native/objc3c/src/runtime/dispatch/strict_dispatch_execution.cpp` |  |
 | `language.errors.typed-throws` |  | `source` | `tests/tooling/fixtures/native/typed_throws_semantic_effect_identity.contract.json` |  |
 | `language.errors.typed-throws` |  | `source` | `tests/tooling/fixtures/native/typed_throws_catch_bridge_positive.objc3` |  |
 | `language.errors.typed-throws` |  | `source` | `tests/tooling/fixtures/native/language_evolution_typed_throws_value_optionals_contract.json` |  |
@@ -1035,10 +1041,40 @@ diagnostic, documentation, or boundary evidence only.
 | `toolchain.sanitizer.address` |  | `source` | `tests/tooling/fixtures/security_hardening/sanitizer_validation_contract.json` |  |
 | `toolchain.sanitizer.address` |  | `source` | `tests/tooling/fixtures/security_hardening/sanitizer_package_install_model_contract.json` |  |
 | `toolchain.sanitizer.address` |  | `source` | `tests/tooling/fixtures/platform_support/source_truth_matrix.json` |  |
+| `toolchain.sanitizer.address` |  | `source` | `scripts/package_objc3c_runnable_toolchain/staging_orchestration.psm1` |  |
+| `toolchain.sanitizer.address` |  | `source` | `scripts/package_objc3c_runnable_toolchain/artifact_report_foundation.psm1` |  |
+| `toolchain.sanitizer.address` |  | `source` | `scripts/objc3c_package_channels/model.py` |  |
+| `toolchain.sanitizer.address` |  | `source` | `scripts/objc3c_package_channels/rendering.py` |  |
+| `toolchain.sanitizer.address` |  | `source` | `scripts/objc3c_package_channels/validation.py` |  |
+| `toolchain.sanitizer.address` |  | `source` | `scripts/check_objc3c_packaging_channels_integration.py` |  |
+| `toolchain.sanitizer.address` |  | `source` | `scripts/check_objc3c_packaging_channels_end_to_end.py` |  |
+| `toolchain.sanitizer.address` |  | `source` | `scripts/objc3c_workflow/action_catalog_native_package_toolchain.py` |  |
+| `toolchain.sanitizer.address` |  | `source` | `scripts/objc3c_workflow/actions/release_governance_packaging_contracts.py` |  |
+| `toolchain.sanitizer.address` |  | `schema` | `schemas/objc3c-package-channels-manifest-v1.schema.json` |  |
+| `toolchain.sanitizer.address` |  | `schema` | `schemas/objc3c-package-install-receipt-v1.schema.json` |  |
+| `toolchain.sanitizer.address` |  | `schema` | `schemas/objc3c-sanitizer-runtime-library-manifest-v1.schema.json` |  |
+| `toolchain.sanitizer.address` |  | `source` | `tests/tooling/fixtures/packaging_channels/metadata_surface.json` |  |
+| `toolchain.sanitizer.address` |  | `source` | `tests/tooling/fixtures/packaging_channels/schema_surface.json` |  |
+| `toolchain.sanitizer.address` |  | `source` | `tests/tooling/fixtures/security_hardening/artifact_reporting_contract.json` |  |
 | `toolchain.sanitizer.undefined` |  | `diagnostic` | `tests/tooling/fixtures/platform_hardening/platform_toolchain_support_evidence.json` |  |
 | `toolchain.sanitizer.undefined` |  | `source` | `tests/tooling/fixtures/security_hardening/sanitizer_validation_contract.json` |  |
 | `toolchain.sanitizer.undefined` |  | `source` | `tests/tooling/fixtures/security_hardening/sanitizer_package_install_model_contract.json` |  |
 | `toolchain.sanitizer.undefined` |  | `source` | `tests/tooling/fixtures/platform_support/source_truth_matrix.json` |  |
+| `toolchain.sanitizer.undefined` |  | `source` | `scripts/package_objc3c_runnable_toolchain/staging_orchestration.psm1` |  |
+| `toolchain.sanitizer.undefined` |  | `source` | `scripts/package_objc3c_runnable_toolchain/artifact_report_foundation.psm1` |  |
+| `toolchain.sanitizer.undefined` |  | `source` | `scripts/objc3c_package_channels/model.py` |  |
+| `toolchain.sanitizer.undefined` |  | `source` | `scripts/objc3c_package_channels/rendering.py` |  |
+| `toolchain.sanitizer.undefined` |  | `source` | `scripts/objc3c_package_channels/validation.py` |  |
+| `toolchain.sanitizer.undefined` |  | `source` | `scripts/check_objc3c_packaging_channels_integration.py` |  |
+| `toolchain.sanitizer.undefined` |  | `source` | `scripts/check_objc3c_packaging_channels_end_to_end.py` |  |
+| `toolchain.sanitizer.undefined` |  | `source` | `scripts/objc3c_workflow/action_catalog_native_package_toolchain.py` |  |
+| `toolchain.sanitizer.undefined` |  | `source` | `scripts/objc3c_workflow/actions/release_governance_packaging_contracts.py` |  |
+| `toolchain.sanitizer.undefined` |  | `schema` | `schemas/objc3c-package-channels-manifest-v1.schema.json` |  |
+| `toolchain.sanitizer.undefined` |  | `schema` | `schemas/objc3c-package-install-receipt-v1.schema.json` |  |
+| `toolchain.sanitizer.undefined` |  | `schema` | `schemas/objc3c-sanitizer-runtime-library-manifest-v1.schema.json` |  |
+| `toolchain.sanitizer.undefined` |  | `source` | `tests/tooling/fixtures/packaging_channels/metadata_surface.json` |  |
+| `toolchain.sanitizer.undefined` |  | `source` | `tests/tooling/fixtures/packaging_channels/schema_surface.json` |  |
+| `toolchain.sanitizer.undefined` |  | `source` | `tests/tooling/fixtures/security_hardening/artifact_reporting_contract.json` |  |
 | `applications.framework-samples.object-runtime-library` | `objc3c.behavior.application-framework-samples.object-runtime-library` | `test` | `showcase/applicationFrameworkSamples/libraries/routeModelKit/main.objc3` | `npm run objc3c -- validate-application-framework-samples` |
 | `applications.framework-samples.object-runtime-library` | `objc3c.behavior.application-framework-samples.object-runtime-library` | `test` | `tests/tooling/fixtures/application_framework_samples/contract.json` | `npm run objc3c -- validate-application-framework-samples` |
 | `applications.framework-samples.object-runtime-library` | `objc3c.behavior.application-framework-samples.object-runtime-library` | `test` | `tests/tooling/test_application_framework_samples.py` | `npm run objc3c -- validate-application-framework-samples` |

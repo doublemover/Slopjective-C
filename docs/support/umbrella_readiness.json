@@ -930,6 +930,60 @@
           "description": "LLVM capability reports publish supported, missing-llc, missing-filetype, mixed-root, mismatched-version, unsupported-version, unresolved-version, and no-clang-fallback policy fields.",
           "status": "satisfied",
           "path": "scripts/objc3c_llvm_capability_probe/reports.py"
+        },
+        {
+          "id": "sanitizer-package-staging",
+          "description": "Reserved ASan and UBSan package staging is anchored in clean-room runnable package staging, explicit sanitizer runtime discovery, copied runtime-library payloads, metadata emission, runtime-library digest manifests, and fail-closed missing-runtime behavior.",
+          "status": "satisfied",
+          "path": "scripts/package_objc3c_runnable_toolchain/staging_orchestration.psm1"
+        },
+        {
+          "id": "sanitizer-package-artifact-report",
+          "description": "Runnable package artifact reporting records sanitizer package ids, channel ids, metadata paths, runtime library manifests, compiler/linker flags, environment metadata, support_truth=false, and native_execution_claimed=false without support promotion.",
+          "status": "satisfied",
+          "path": "scripts/package_objc3c_runnable_toolchain/artifact_report_foundation.psm1"
+        },
+        {
+          "id": "package-channel-model",
+          "description": "Package-channel model source owns ASan and UBSan package ids, channel ids, required payload entries, runtime-library entries, receipt fields, support_truth=false, and native_execution_claimed=false.",
+          "status": "satisfied",
+          "path": "scripts/objc3c_package_channels/model.py"
+        },
+        {
+          "id": "package-channel-rendering",
+          "description": "Package-channel rendering remains the checked source for generated package-channel summaries and does not create support truth outside matrix rows.",
+          "status": "satisfied",
+          "path": "scripts/objc3c_package_channels/rendering.py"
+        },
+        {
+          "id": "package-channel-validation",
+          "description": "Package-channel validation and end-to-end checks require non-promoting support truth, native-execution falsehood, payload contracts, archive digests, receipt contracts, and schema-backed package-channel artifacts before publication.",
+          "status": "satisfied",
+          "path": "scripts/check_objc3c_packaging_channels_end_to_end.py"
+        },
+        {
+          "id": "public-sanitizer-package-actions",
+          "description": "Public package actions expose reserved ASan and UBSan package selectors and package-channel builders through the npm bridge while keeping the rows reserved.",
+          "status": "satisfied",
+          "path": "scripts/objc3c_workflow/action_catalog_native_package_toolchain.py"
+        },
+        {
+          "id": "packaging-channel-public-actions",
+          "description": "Release-governance action contracts register build-package-channels-asan and build-package-channels-ubsan as package-channel actions, not support claims.",
+          "status": "satisfied",
+          "path": "scripts/objc3c_workflow/actions/release_governance_packaging_contracts.py"
+        },
+        {
+          "id": "sanitizer-package-channel-schema",
+          "description": "Package-channel, install-receipt, and sanitizer runtime-library manifest schemas constrain ASan/UBSan package ids, sanitizer variants, exact runtime-library payload entries, install selectors, receipt contracts, support_truth=false, and native_execution_claimed=false.",
+          "status": "satisfied",
+          "path": "schemas/objc3c-sanitizer-runtime-library-manifest-v1.schema.json"
+        },
+        {
+          "id": "sanitizer-package-fixtures",
+          "description": "Checked fixtures bind sanitizer package/install metadata, package-channel metadata/schema surfaces, artifact-report boundaries, and reserved validation contracts without claiming native sanitizer execution.",
+          "status": "satisfied",
+          "path": "tests/tooling/fixtures/security_hardening/sanitizer_package_install_model_contract.json"
         }
       ],
       "required_public_commands": [
@@ -944,6 +998,30 @@
           "description": "Full platform hardening validation remains blocked for promotion until Linux, macOS, sanitizer, and native object emission evidence are promoted.",
           "status": "blocked",
           "blocker_id": "platform-expansion-prerequisites"
+        },
+        {
+          "id": "package-runnable-toolchain-asan",
+          "description": "Reserved ASan runnable package action exists for package metadata and payload staging only; it does not prove install, native execution, or sanitizer detection support.",
+          "status": "satisfied",
+          "command": "npm run objc3c -- package-runnable-toolchain-asan"
+        },
+        {
+          "id": "package-runnable-toolchain-ubsan",
+          "description": "Reserved UBSan runnable package action exists for package metadata and payload staging only; it does not prove install, native execution, or sanitizer detection support.",
+          "status": "satisfied",
+          "command": "npm run objc3c -- package-runnable-toolchain-ubsan"
+        },
+        {
+          "id": "build-package-channels-asan",
+          "description": "Reserved ASan package-channel action builds package-channel artifacts with support_truth=false and native_execution_claimed=false.",
+          "status": "satisfied",
+          "command": "npm run objc3c -- build-package-channels-asan"
+        },
+        {
+          "id": "build-package-channels-ubsan",
+          "description": "Reserved UBSan package-channel action builds package-channel artifacts with support_truth=false and native_execution_claimed=false.",
+          "status": "satisfied",
+          "command": "npm run objc3c -- build-package-channels-ubsan"
         }
       ],
       "required_positive_fixtures": [
@@ -984,6 +1062,24 @@
           "description": "Hosted-runner summaries cover Windows support, Linux/macOS unsupported rows, ASan/UBSan reserved rows, and toolchain fail-closed states without promoting those summaries to support evidence.",
           "status": "satisfied",
           "path": "tests/tooling/fixtures/platform_hardening/hosted_runner_capability_summaries.json"
+        },
+        {
+          "id": "sanitizer-package-install-contract",
+          "description": "Sanitizer package/install model fixtures keep ASan and UBSan package ids, package-channel ids, runtime metadata, install selectors, missing-runtime behavior, stale metadata, mixed runtime rejection, and native-execution falsehood checked in without support promotion.",
+          "status": "satisfied",
+          "path": "tests/tooling/fixtures/security_hardening/sanitizer_package_install_model_contract.json"
+        },
+        {
+          "id": "sanitizer-validation-contract",
+          "description": "Sanitizer validation fixtures are reserved compiler/runtime validation contracts; native sanitizer execution and expected detection evidence are still required before #8230 or #8231 promotion.",
+          "status": "satisfied",
+          "path": "tests/tooling/fixtures/security_hardening/sanitizer_validation_contract.json"
+        },
+        {
+          "id": "packaging-channel-schema-surface",
+          "description": "Packaging-channel schema fixtures keep sanitizer package-channel metadata source-owned and fail closed when schema or fixture truth drifts.",
+          "status": "satisfied",
+          "path": "tests/tooling/fixtures/packaging_channels/schema_surface.json"
         }
       ],
       "required_runtime_probes": [
@@ -992,6 +1088,18 @@
           "description": "Native object emission probe metadata is source-owned and fail-closed, but broad platform promotion remains blocked until required hosts and package variants are executable.",
           "status": "blocked",
           "blocker_id": "native-object-emission-promotion"
+        },
+        {
+          "id": "asan-native-execution-detection",
+          "description": "ASan package metadata remains reserved until native execution and expected AddressSanitizer detection records are checked through public package/install evidence.",
+          "status": "blocked",
+          "blocker_id": "asan-runtime-package-evidence"
+        },
+        {
+          "id": "ubsan-native-execution-detection",
+          "description": "UBSan package metadata remains reserved until native execution, trap-or-recover metadata, and expected UndefinedBehaviorSanitizer detection records are checked through public package/install evidence.",
+          "status": "blocked",
+          "blocker_id": "ubsan-runtime-package-evidence"
         }
       ],
       "required_abi_governance_rows": [
@@ -1026,6 +1134,12 @@
           "description": "Platform hardening runbook states the llc/no-clang-fallback policy and Linux/macOS/sanitizer fail-closed boundaries.",
           "status": "satisfied",
           "path": "docs/runbooks/objc3c_platform_hardening.md"
+        },
+        {
+          "id": "packaging-channels-runbook",
+          "description": "Packaging-channel runbook documents reserved ASan/UBSan package selectors, staging, runtime-library manifests, package-channel actions, and non-promoting artifact/report boundaries.",
+          "status": "satisfied",
+          "path": "docs/runbooks/objc3c_packaging_channels.md"
         }
       ],
       "generated_output_boundary": {
@@ -1062,14 +1176,26 @@
           "tracking_issue": "#8229"
         },
         {
-          "blocker_id": "sanitizer-runtime-package-evidence",
-          "summary": "ASan and UBSan runtime package/install support remains reserved until real package/install/native execution evidence exists.",
+          "blocker_id": "asan-runtime-package-evidence",
+          "summary": "ASan runtime package/install support remains reserved under #8230. Current source anchors cover staging, package-channel metadata, artifact reports, public package actions, schemas, and fixtures, but they are non-promoting package identity evidence only.",
           "missing_work": [
-            "ASan runtime package, install, expected detection records, release-runtime isolation, unsupported-host diagnostics, and native execution evidence.",
-            "UBSan runtime package, install, trap-or-recover metadata, expected detection records, release-runtime isolation, unsupported-host diagnostics, and native execution evidence.",
-            "Fail-closed mixed-runtime, missing-runtime, stale-metadata, unsupported-host, and default-release misuse proof for sanitizer variants."
+            "ASan runtime package install evidence through the public package workflow.",
+            "ASan native execution evidence for the sanitizer package variant.",
+            "Expected AddressSanitizer detection records captured as checked source evidence.",
+            "Release-runtime isolation, unsupported-host diagnostics, stale-metadata rejection, missing-runtime rejection, mixed-runtime rejection, and default-release misuse proof before promotion."
           ],
           "tracking_issue": "#8230"
+        },
+        {
+          "blocker_id": "ubsan-runtime-package-evidence",
+          "summary": "UBSan runtime package/install support remains reserved under #8231. Current source anchors cover staging, package-channel metadata, artifact reports, public package actions, schemas, and fixtures, but they are non-promoting package identity evidence only.",
+          "missing_work": [
+            "UBSan runtime package install evidence through the public package workflow.",
+            "UBSan native execution evidence for the sanitizer package variant.",
+            "Expected UndefinedBehaviorSanitizer detection records and trap-or-recover metadata captured as checked source evidence.",
+            "Release-runtime isolation, unsupported-host diagnostics, stale-metadata rejection, missing-runtime rejection, mixed-runtime rejection, and default-release misuse proof before promotion."
+          ],
+          "tracking_issue": "#8231"
         },
         {
           "blocker_id": "native-object-emission-promotion",

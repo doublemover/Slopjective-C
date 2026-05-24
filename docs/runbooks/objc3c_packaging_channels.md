@@ -33,6 +33,13 @@ Those variants must keep `support_truth: false` and
 `native_execution_claimed: false` until real package install and native
 execution evidence is checked in.
 
+The durable source anchors for those public actions are
+`scripts/objc3c_workflow/action_catalog_native_package_toolchain.py` for
+`package-runnable-toolchain-asan` and `package-runnable-toolchain-ubsan`, and
+`scripts/objc3c_workflow/actions/release_governance_packaging_contracts.py` for
+`build-package-channels-asan` and `build-package-channels-ubsan`. These action
+registrations are command-surface evidence only.
+
 Sanitizer package variants are deterministic package-channel rows, not support
 claims. An ASan package must identify
 `org.objc3c.runtime:objc3c-runtime-asan`,
@@ -74,6 +81,22 @@ These runtime-library manifests and artifacts prove package/install identity
 only. They do not promote ASan or UBSan support: support remains reserved until
 native execution reports and expected sanitizer detection records are captured
 through the public package workflow.
+
+The checked source anchors for this non-promoting package evidence are
+`scripts/package_objc3c_runnable_toolchain/staging_orchestration.psm1` for
+runtime-library staging,
+`scripts/package_objc3c_runnable_toolchain/artifact_report_foundation.psm1` for
+artifact-report sanitizer metadata, `scripts/objc3c_package_channels/model.py`,
+`scripts/objc3c_package_channels/rendering.py`, and
+`scripts/objc3c_package_channels/validation.py` for package-channel
+model/render/validation behavior, `schemas/objc3c-package-channels-manifest-v1.schema.json`
+`schemas/objc3c-package-install-receipt-v1.schema.json`, and
+`schemas/objc3c-sanitizer-runtime-library-manifest-v1.schema.json` for schema truth,
+and the checked fixtures under
+`tests/tooling/fixtures/security_hardening/sanitizer_package_install_model_contract.json`,
+`tests/tooling/fixtures/security_hardening/sanitizer_validation_contract.json`,
+`tests/tooling/fixtures/packaging_channels/metadata_surface.json`, and
+`tests/tooling/fixtures/packaging_channels/schema_surface.json`.
 
 Packaging-channel commands route through `npm run objc3c -- <action>`; helper
 implementations are action-registry anchors only.
@@ -189,6 +212,12 @@ The receipt contracts bind the local-installer and offline-bundle receipts to
 the channel id, bootstrap entrypoint, package bridge, runnable package manifest,
 manifest digest, required payload entries, rollback requirement, and no-network
 offline policy.
+
+For ASan and UBSan package-channel variants, `payload_contract` and
+`receipt_contracts` must also keep the sanitizer runtime-library manifests,
+sanitizer package metadata paths, install selector, package-channel id,
+`sanitizer_package_variant`, `support_truth: false`, and
+`native_execution_claimed: false` synchronized with the schema and fixtures.
 
 Package-channel builders must initialize fresh owner-controlled roots under
 `tmp/pkg/objc3c-package-channels/` and `tmp/artifacts/package-channels/` before

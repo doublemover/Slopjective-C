@@ -347,6 +347,16 @@
     {
       "capability_id": "language.errors.typed-throws",
       "evidence_kind": "source",
+      "path": "native/objc3c/src/ir/objc3_ir_runtime_dispatch_calls.cpp"
+    },
+    {
+      "capability_id": "language.errors.typed-throws",
+      "evidence_kind": "source",
+      "path": "native/objc3c/src/ir/objc3_ir_runtime_dispatch_declarations.cpp"
+    },
+    {
+      "capability_id": "language.errors.typed-throws",
+      "evidence_kind": "source",
       "path": "native/objc3c/src/ir/objc3_ir_statement_block_emission.cpp"
     },
     {
@@ -363,6 +373,26 @@
       "capability_id": "language.errors.typed-throws",
       "evidence_kind": "source",
       "path": "native/objc3c/src/runtime/errors/error_bridge_kind.cpp"
+    },
+    {
+      "capability_id": "language.errors.typed-throws",
+      "evidence_kind": "source",
+      "path": "native/objc3c/src/runtime/public/objc3_runtime_result_entrypoint_contract.h"
+    },
+    {
+      "capability_id": "language.errors.typed-throws",
+      "evidence_kind": "source",
+      "path": "native/objc3c/src/runtime/public/objc3_runtime_diagnostic_contract.h"
+    },
+    {
+      "capability_id": "language.errors.typed-throws",
+      "evidence_kind": "source",
+      "path": "native/objc3c/src/runtime/dispatch/dispatch_api.cpp"
+    },
+    {
+      "capability_id": "language.errors.typed-throws",
+      "evidence_kind": "source",
+      "path": "native/objc3c/src/runtime/dispatch/strict_dispatch_execution.cpp"
     },
     {
       "capability_id": "language.errors.typed-throws",
@@ -6127,6 +6157,81 @@
       "path": "tests/tooling/fixtures/platform_support/source_truth_matrix.json"
     },
     {
+      "capability_id": "toolchain.sanitizer.address",
+      "evidence_kind": "source",
+      "path": "scripts/package_objc3c_runnable_toolchain/staging_orchestration.psm1"
+    },
+    {
+      "capability_id": "toolchain.sanitizer.address",
+      "evidence_kind": "source",
+      "path": "scripts/package_objc3c_runnable_toolchain/artifact_report_foundation.psm1"
+    },
+    {
+      "capability_id": "toolchain.sanitizer.address",
+      "evidence_kind": "source",
+      "path": "scripts/objc3c_package_channels/model.py"
+    },
+    {
+      "capability_id": "toolchain.sanitizer.address",
+      "evidence_kind": "source",
+      "path": "scripts/objc3c_package_channels/rendering.py"
+    },
+    {
+      "capability_id": "toolchain.sanitizer.address",
+      "evidence_kind": "source",
+      "path": "scripts/objc3c_package_channels/validation.py"
+    },
+    {
+      "capability_id": "toolchain.sanitizer.address",
+      "evidence_kind": "source",
+      "path": "scripts/check_objc3c_packaging_channels_integration.py"
+    },
+    {
+      "capability_id": "toolchain.sanitizer.address",
+      "evidence_kind": "source",
+      "path": "scripts/check_objc3c_packaging_channels_end_to_end.py"
+    },
+    {
+      "capability_id": "toolchain.sanitizer.address",
+      "evidence_kind": "source",
+      "path": "scripts/objc3c_workflow/action_catalog_native_package_toolchain.py"
+    },
+    {
+      "capability_id": "toolchain.sanitizer.address",
+      "evidence_kind": "source",
+      "path": "scripts/objc3c_workflow/actions/release_governance_packaging_contracts.py"
+    },
+    {
+      "capability_id": "toolchain.sanitizer.address",
+      "evidence_kind": "schema",
+      "path": "schemas/objc3c-package-channels-manifest-v1.schema.json"
+    },
+    {
+      "capability_id": "toolchain.sanitizer.address",
+      "evidence_kind": "schema",
+      "path": "schemas/objc3c-package-install-receipt-v1.schema.json"
+    },
+    {
+      "capability_id": "toolchain.sanitizer.address",
+      "evidence_kind": "schema",
+      "path": "schemas/objc3c-sanitizer-runtime-library-manifest-v1.schema.json"
+    },
+    {
+      "capability_id": "toolchain.sanitizer.address",
+      "evidence_kind": "source",
+      "path": "tests/tooling/fixtures/packaging_channels/metadata_surface.json"
+    },
+    {
+      "capability_id": "toolchain.sanitizer.address",
+      "evidence_kind": "source",
+      "path": "tests/tooling/fixtures/packaging_channels/schema_surface.json"
+    },
+    {
+      "capability_id": "toolchain.sanitizer.address",
+      "evidence_kind": "source",
+      "path": "tests/tooling/fixtures/security_hardening/artifact_reporting_contract.json"
+    },
+    {
       "capability_id": "toolchain.sanitizer.undefined",
       "evidence_kind": "diagnostic",
       "path": "tests/tooling/fixtures/platform_hardening/platform_toolchain_support_evidence.json"
@@ -6145,6 +6250,81 @@
       "capability_id": "toolchain.sanitizer.undefined",
       "evidence_kind": "source",
       "path": "tests/tooling/fixtures/platform_support/source_truth_matrix.json"
+    },
+    {
+      "capability_id": "toolchain.sanitizer.undefined",
+      "evidence_kind": "source",
+      "path": "scripts/package_objc3c_runnable_toolchain/staging_orchestration.psm1"
+    },
+    {
+      "capability_id": "toolchain.sanitizer.undefined",
+      "evidence_kind": "source",
+      "path": "scripts/package_objc3c_runnable_toolchain/artifact_report_foundation.psm1"
+    },
+    {
+      "capability_id": "toolchain.sanitizer.undefined",
+      "evidence_kind": "source",
+      "path": "scripts/objc3c_package_channels/model.py"
+    },
+    {
+      "capability_id": "toolchain.sanitizer.undefined",
+      "evidence_kind": "source",
+      "path": "scripts/objc3c_package_channels/rendering.py"
+    },
+    {
+      "capability_id": "toolchain.sanitizer.undefined",
+      "evidence_kind": "source",
+      "path": "scripts/objc3c_package_channels/validation.py"
+    },
+    {
+      "capability_id": "toolchain.sanitizer.undefined",
+      "evidence_kind": "source",
+      "path": "scripts/check_objc3c_packaging_channels_integration.py"
+    },
+    {
+      "capability_id": "toolchain.sanitizer.undefined",
+      "evidence_kind": "source",
+      "path": "scripts/check_objc3c_packaging_channels_end_to_end.py"
+    },
+    {
+      "capability_id": "toolchain.sanitizer.undefined",
+      "evidence_kind": "source",
+      "path": "scripts/objc3c_workflow/action_catalog_native_package_toolchain.py"
+    },
+    {
+      "capability_id": "toolchain.sanitizer.undefined",
+      "evidence_kind": "source",
+      "path": "scripts/objc3c_workflow/actions/release_governance_packaging_contracts.py"
+    },
+    {
+      "capability_id": "toolchain.sanitizer.undefined",
+      "evidence_kind": "schema",
+      "path": "schemas/objc3c-package-channels-manifest-v1.schema.json"
+    },
+    {
+      "capability_id": "toolchain.sanitizer.undefined",
+      "evidence_kind": "schema",
+      "path": "schemas/objc3c-package-install-receipt-v1.schema.json"
+    },
+    {
+      "capability_id": "toolchain.sanitizer.undefined",
+      "evidence_kind": "schema",
+      "path": "schemas/objc3c-sanitizer-runtime-library-manifest-v1.schema.json"
+    },
+    {
+      "capability_id": "toolchain.sanitizer.undefined",
+      "evidence_kind": "source",
+      "path": "tests/tooling/fixtures/packaging_channels/metadata_surface.json"
+    },
+    {
+      "capability_id": "toolchain.sanitizer.undefined",
+      "evidence_kind": "source",
+      "path": "tests/tooling/fixtures/packaging_channels/schema_surface.json"
+    },
+    {
+      "capability_id": "toolchain.sanitizer.undefined",
+      "evidence_kind": "source",
+      "path": "tests/tooling/fixtures/security_hardening/artifact_reporting_contract.json"
     },
     {
       "capability_id": "applications.framework-samples.object-runtime-library",

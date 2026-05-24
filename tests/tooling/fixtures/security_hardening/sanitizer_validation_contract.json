@@ -137,6 +137,10 @@
             "artifacts/runtime/sanitizer/address/clang_rt.asan_dynamic-x86_64.lib",
             "artifacts/runtime/sanitizer/address/clang_rt.asan_dynamic_runtime_thunk-x86_64.lib"
           ],
+          "runtime_library_ids": [
+            "objc3-runtime",
+            "clang_rt.asan"
+          ],
           "install_receipt_required_fields": [
             "package_id",
             "package_variant_row_id",
@@ -207,6 +211,8 @@
             "native_execution_claimed",
             "sanitizer_package_variant"
           ],
+          "runtime_library_manifest_path": "share/objc3c/sanitizer/asan-runtime-libraries.json",
+          "missing_runtime_behavior": "fail-closed-before-package-install",
           "selected_runtime_variant": "sanitizer=address",
           "native_execution_contract": {
             "native_execution_required_before_support": true,
@@ -303,6 +309,10 @@
           "target_platform_id",
           "sanitizer",
           "runtime_library_ids",
+          "runtime_library_manifest_path",
+          "runtime_library_manifest_digest",
+          "runtime_library_artifacts",
+          "missing_runtime_behavior",
           "compiler_flags",
           "linker_flags",
           "environment",
@@ -388,6 +398,10 @@
             "artifacts/runtime/sanitizer/undefined/clang_rt.ubsan_standalone-x86_64.lib",
             "artifacts/runtime/sanitizer/undefined/clang_rt.ubsan_standalone_cxx-x86_64.lib"
           ],
+          "runtime_library_ids": [
+            "objc3-runtime",
+            "clang_rt.ubsan"
+          ],
           "install_receipt_required_fields": [
             "package_id",
             "package_variant_row_id",
@@ -461,6 +475,8 @@
             "sanitizer_package_variant",
             "trap_or_recover_mode"
           ],
+          "runtime_library_manifest_path": "share/objc3c/sanitizer/ubsan-runtime-libraries.json",
+          "missing_runtime_behavior": "fail-closed-before-package-install",
           "selected_runtime_variant": "sanitizer=undefined",
           "native_execution_contract": {
             "native_execution_required_before_support": true,
@@ -567,6 +583,10 @@
           "target_platform_id",
           "sanitizer",
           "runtime_library_ids",
+          "runtime_library_manifest_path",
+          "runtime_library_manifest_digest",
+          "runtime_library_artifacts",
+          "missing_runtime_behavior",
           "compiler_flags",
           "linker_flags",
           "trap_or_recover_mode",

@@ -61,10 +61,20 @@ REQUIRED_PACKAGE_VARIANTS = {
         "compiler_flags": {"-fsanitize=address", "-fno-omit-frame-pointer"},
         "linker_flags": {"-fsanitize=address"},
         "runtime_library_ids": ["objc3-runtime", "clang_rt.asan"],
+        "runtime_library_manifest_path": "share/objc3c/sanitizer/asan-runtime-libraries.json",
+        "runtime_library_artifacts": [
+            "artifacts/runtime/sanitizer/address/clang_rt.asan_dynamic-x86_64.dll",
+            "artifacts/runtime/sanitizer/address/clang_rt.asan_dynamic-x86_64.lib",
+            "artifacts/runtime/sanitizer/address/clang_rt.asan_dynamic_runtime_thunk-x86_64.lib",
+        ],
         "required_metadata_fields": {
             "target_platform_id",
             "sanitizer",
             "runtime_library_ids",
+            "runtime_library_manifest_path",
+            "runtime_library_manifest_digest",
+            "runtime_library_artifacts",
+            "missing_runtime_behavior",
             "compiler_flags",
             "linker_flags",
             "environment",
@@ -93,10 +103,19 @@ REQUIRED_PACKAGE_VARIANTS = {
         "compiler_flags": {"-fsanitize=undefined", "-fno-omit-frame-pointer"},
         "linker_flags": {"-fsanitize=undefined"},
         "runtime_library_ids": ["objc3-runtime", "clang_rt.ubsan"],
+        "runtime_library_manifest_path": "share/objc3c/sanitizer/ubsan-runtime-libraries.json",
+        "runtime_library_artifacts": [
+            "artifacts/runtime/sanitizer/undefined/clang_rt.ubsan_standalone-x86_64.lib",
+            "artifacts/runtime/sanitizer/undefined/clang_rt.ubsan_standalone_cxx-x86_64.lib",
+        ],
         "required_metadata_fields": {
             "target_platform_id",
             "sanitizer",
             "runtime_library_ids",
+            "runtime_library_manifest_path",
+            "runtime_library_manifest_digest",
+            "runtime_library_artifacts",
+            "missing_runtime_behavior",
             "compiler_flags",
             "linker_flags",
             "trap_or_recover_mode",
@@ -140,6 +159,10 @@ REQUIRED_SANITIZER_INSTALL_RECEIPT_FIELDS = {
     "runtime_library_ids",
     "metadata_manifest_path",
     "metadata_digest",
+    "runtime_library_manifest_path",
+    "runtime_library_manifest_digest",
+    "runtime_library_artifacts",
+    "missing_runtime_behavior",
     "selected_runtime_variant",
     "install_selector",
     "native_execution_contract",
@@ -152,9 +175,28 @@ REQUIRED_NATIVE_EXECUTION_RECORD_FIELDS = {
     "target_platform_id",
     "sanitizer",
     "runtime_library_ids",
+    "runtime_library_artifacts",
     "environment",
     "exit_code",
     "diagnostic_records",
+}
+REQUIRED_RUNTIME_PROBE_INPUTS = {
+    "target_platform_id",
+    "llvm_runtime_root",
+    "runtime_library_manifest_path",
+    "runtime_library_artifacts",
+    "package_root_layout",
+    "runtime_library_ids",
+}
+REQUIRED_METADATA_FRESHNESS_INPUTS = {
+    "package_variant_row_id",
+    "package_channel_id",
+    "package_id",
+    "runtime_library_ids",
+    "runtime_library_manifest_path",
+    "runtime_library_artifacts",
+    "compiler_flags",
+    "linker_flags",
 }
 
 
@@ -220,11 +262,48 @@ def expected_metadata_manifest_path(sanitizer_name: str) -> str:
     raise RuntimeError(f"unknown sanitizer {sanitizer_name}")
 
 
+def expected_runtime_library_manifest_path(sanitizer_name: str) -> str:
+    if sanitizer_name == "address":
+        return "share/objc3c/sanitizer/asan-runtime-libraries.json"
+    if sanitizer_name == "undefined":
+        return "share/objc3c/sanitizer/ubsan-runtime-libraries.json"
+    raise RuntimeError(f"unknown sanitizer {sanitizer_name}")
+
+
+def expected_runtime_artifact_paths(sanitizer_name: str) -> list[str]:
+    if sanitizer_name == "address":
+        return list(REQUIRED_PACKAGE_VARIANTS["objc3c.toolchain.sanitizer.address"]["runtime_library_artifacts"])  # type: ignore[arg-type]
+    if sanitizer_name == "undefined":
+        return list(REQUIRED_PACKAGE_VARIANTS["objc3c.toolchain.sanitizer.undefined"]["runtime_library_artifacts"])  # type: ignore[arg-type]
+    raise RuntimeError(f"unknown sanitizer {sanitizer_name}")
+
+
 def expected_install_receipt_fields(sanitizer_name: str) -> set[str]:
     fields = set(REQUIRED_SANITIZER_INSTALL_RECEIPT_FIELDS)
     if sanitizer_name == "undefined":
         fields.add("trap_or_recover_mode")
     return fields
+
+
+def normalize_runtime_id(value: str) -> str:
+    return value.replace("-", "").replace("_", "").replace(".", "").lower()
+
+
+def path_matches_runtime_library_id(path: str, runtime_library_id: str) -> bool:
+    return normalize_runtime_id(runtime_library_id) in normalize_runtime_id(Path(path).name)
+
+
+def require_exact_string_set(
+    actual: list[str],
+    expected: list[str],
+    label: str,
+) -> None:
+    actual_set = set(actual)
+    expected_set = set(expected)
+    if actual_set != expected_set:
+        missing = sorted(expected_set - actual_set)
+        unexpected = sorted(actual_set - expected_set)
+        raise RuntimeError(f"{label} drifted; missing={missing}, unexpected={unexpected}")
 
 
 def validate_install_receipt_contract(
@@ -242,7 +321,14 @@ def validate_install_receipt_contract(
     schema_path = require_path(INSTALL_RECEIPT_SCHEMA_PATH)
     require_text_tokens(
         schema_path,
-        [SANITIZER_INSTALL_RECEIPT_FIELD, "native_execution_contract"],
+        [
+            SANITIZER_INSTALL_RECEIPT_FIELD,
+            "native_execution_contract",
+            "runtime_library_manifest_path",
+            "runtime_library_manifest_digest",
+            "runtime_library_artifacts",
+            "missing_runtime_behavior",
+        ],
         f"{variant_id} install receipt schema",
     )
     if install_receipt.get("contract_id") != INSTALL_RECEIPT_CONTRACT_ID:
@@ -257,6 +343,12 @@ def validate_install_receipt_contract(
         raise RuntimeError(f"{variant_id} install receipt claimed native execution")
     if install_receipt.get("selected_runtime_variant") != f"sanitizer={sanitizer_name}":
         raise RuntimeError(f"{variant_id} install receipt runtime variant drifted")
+
+    expected_runtime_manifest_path = expected_runtime_library_manifest_path(sanitizer_name)
+    if install_receipt.get("runtime_library_manifest_path") != expected_runtime_manifest_path:
+        raise RuntimeError(f"{variant_id} install receipt runtime manifest path drifted")
+    if install_receipt.get("missing_runtime_behavior") != "fail-closed-before-package-install":
+        raise RuntimeError(f"{variant_id} install receipt missing-runtime behavior drifted")
 
     required_fields = set(
         require_string_list(
@@ -300,6 +392,7 @@ def validate_install_receipt_contract(
         "schema": INSTALL_RECEIPT_SCHEMA_PATH,
         "receipt_field": SANITIZER_INSTALL_RECEIPT_FIELD,
         "required_fields": sorted(required_fields),
+        "runtime_library_manifest_path": expected_runtime_manifest_path,
         "native_execution_required_before_support": True,
         "native_execution_claimed": False,
     }
@@ -320,15 +413,44 @@ def validate_package_runtime_model_contract(
         package_layout.get("package_root_layout"),
         f"{variant_id}.package_layout_contract.package_root_layout",
     )
-    if any(path.startswith(("tmp/", "artifacts/")) for path in package_root_layout):
+    if any(path.startswith("tmp/") for path in package_root_layout):
         raise RuntimeError(f"{variant_id} package layout cannot use generated roots")
     metadata_manifest_path = str(package_layout.get("metadata_manifest_path", ""))
     if metadata_manifest_path != expected_metadata_manifest_path(sanitizer_name):
         raise RuntimeError(f"{variant_id} metadata manifest path drifted")
     if metadata_manifest_path not in package_root_layout:
         raise RuntimeError(f"{variant_id} metadata manifest path is absent from package layout")
+
+    runtime_library_manifest_path = str(package_layout.get("runtime_library_manifest_path", ""))
+    expected_runtime_manifest_path = expected_runtime_library_manifest_path(sanitizer_name)
+    if runtime_library_manifest_path != expected_runtime_manifest_path:
+        raise RuntimeError(f"{variant_id} runtime library manifest path drifted")
+    if runtime_library_manifest_path not in package_root_layout:
+        raise RuntimeError(f"{variant_id} runtime library manifest path is absent from package layout")
+
+    expected_runtime_artifacts = expected_runtime_artifact_paths(sanitizer_name)
+    runtime_library_required_entries = require_string_list(
+        package_layout.get("runtime_library_required_entries"),
+        f"{variant_id}.package_layout_contract.runtime_library_required_entries",
+    )
+    require_exact_string_set(
+        runtime_library_required_entries,
+        expected_runtime_artifacts,
+        f"{variant_id} runtime library required entries",
+    )
+    require_exact_string_set(
+        [path for path in package_root_layout if path in expected_runtime_artifacts],
+        expected_runtime_artifacts,
+        f"{variant_id} package layout runtime artifact entries",
+    )
+    layout_runtime_library_ids = require_string_list(
+        package_layout.get("runtime_library_ids"),
+        f"{variant_id}.package_layout_contract.runtime_library_ids",
+    )
+    if layout_runtime_library_ids != expected_runtime_library_ids:
+        raise RuntimeError(f"{variant_id} package layout runtime library ids drifted")
     for runtime_library_id in expected_runtime_library_ids:
-        if not any(runtime_library_id in path for path in package_root_layout):
+        if not any(path_matches_runtime_library_id(path, runtime_library_id) for path in package_root_layout):
             raise RuntimeError(f"{variant_id} package layout missing {runtime_library_id}")
     install_receipt_required_fields = set(
         require_string_list(
@@ -355,7 +477,10 @@ def validate_package_runtime_model_contract(
     ):
         raise RuntimeError(f"{variant_id} runtime probe library ids drifted")
     probe_inputs = set(require_string_list(runtime_probe.get("probe_inputs"), f"{variant_id}.runtime_probe_contract.probe_inputs"))
-    if not {"target_platform_id", "llvm_runtime_root", "package_root_layout", "runtime_library_ids"} <= probe_inputs:
+    expected_probe_inputs = set(REQUIRED_RUNTIME_PROBE_INPUTS)
+    if sanitizer_name == "undefined":
+        expected_probe_inputs.add("trap_or_recover_mode")
+    if not expected_probe_inputs <= probe_inputs:
         raise RuntimeError(f"{variant_id} runtime probe inputs drifted")
     if runtime_probe.get("missing_runtime_behavior") != "fail-closed-before-package-install":
         raise RuntimeError(f"{variant_id} runtime probe missing-runtime behavior drifted")
@@ -397,7 +522,12 @@ def validate_package_runtime_model_contract(
     if metadata_freshness.get("stale_package_metadata_behavior") != "fail-closed-before-publication":
         raise RuntimeError(f"{variant_id} stale package metadata behavior drifted")
     freshness_inputs = set(require_string_list(metadata_freshness.get("freshness_inputs"), f"{variant_id}.metadata_freshness_contract.freshness_inputs"))
-    if not {"package_variant_row_id", "package_id", "runtime_library_ids", "compiler_flags", "linker_flags"} <= freshness_inputs:
+    expected_freshness_inputs = set(REQUIRED_METADATA_FRESHNESS_INPUTS)
+    if sanitizer_name == "address":
+        expected_freshness_inputs.add("environment")
+    if sanitizer_name == "undefined":
+        expected_freshness_inputs.add("trap_or_recover_mode")
+    if not expected_freshness_inputs <= freshness_inputs:
         raise RuntimeError(f"{variant_id} metadata freshness inputs drifted")
 
     environment = require_object(
@@ -438,6 +568,8 @@ def validate_package_runtime_model_contract(
     return {
         "package_layout": package_root_layout,
         "metadata_manifest_path": metadata_manifest_path,
+        "runtime_library_manifest_path": runtime_library_manifest_path,
+        "runtime_library_required_entries": runtime_library_required_entries,
         "install_receipt": install_receipt_summary,
         "install_selector": str(install_selection["install_selector"]),
         "environment_variable": str(environment["env_var"]),

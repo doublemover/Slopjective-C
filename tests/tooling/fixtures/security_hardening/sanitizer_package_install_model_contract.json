@@ -111,6 +111,8 @@
           "native_execution_claimed",
           "sanitizer_package_variant"
         ],
+        "runtime_library_manifest_path": "share/objc3c/sanitizer/asan-runtime-libraries.json",
+        "missing_runtime_behavior": "fail-closed-before-package-install",
         "selected_runtime_variant": "sanitizer=address",
         "native_execution_contract": {
           "native_execution_required_before_support": true,
@@ -271,6 +273,8 @@
           "sanitizer_package_variant",
           "trap_or_recover_mode"
         ],
+        "runtime_library_manifest_path": "share/objc3c/sanitizer/ubsan-runtime-libraries.json",
+        "missing_runtime_behavior": "fail-closed-before-package-install",
         "selected_runtime_variant": "sanitizer=undefined",
         "native_execution_contract": {
           "native_execution_required_before_support": true,

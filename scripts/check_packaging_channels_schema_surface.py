@@ -34,6 +34,13 @@ EXPECTED_SCHEMAS = (
         "objc3c.packaging.channels.install-receipt.v1",
         "required_receipt_fields",
     ),
+    (
+        "sanitizer_runtime_library_manifest",
+        "objc3c-sanitizer-runtime-library-manifest-v1",
+        "https://objc3c.dev/schemas/objc3c-sanitizer-runtime-library-manifest-v1.schema.json",
+        "objc3c.sanitizer.runtime-library-manifest.v1",
+        "required_runtime_library_manifest_fields",
+    ),
 )
 
 
@@ -127,6 +134,7 @@ def main() -> int:
         "schema_surface": repo_rel(SCHEMA_SURFACE),
         "package_channels_manifest": schema_refs["package_channels_manifest"],
         "install_receipt": schema_refs["install_receipt"],
+        "sanitizer_runtime_library_manifest": schema_refs["sanitizer_runtime_library_manifest"],
         "schema_count": len(schemas),
         "schemas": expected_paths,
         "schema_ids": schema_ids,
