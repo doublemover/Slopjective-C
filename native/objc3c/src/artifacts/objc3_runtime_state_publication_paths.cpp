@@ -8,7 +8,7 @@
 namespace objc3::artifacts::frontend {
 namespace {
 
-RuntimeStateObjectDebugIdentity BuildUnsupportedHostIdentity(
+[[maybe_unused]] RuntimeStateObjectDebugIdentity BuildUnsupportedHostIdentity(
     std::string platform_id,
     std::string host_os,
     std::string host_arch) {

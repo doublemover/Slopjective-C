@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from copy import deepcopy
 from dataclasses import dataclass
 from datetime import datetime, timezone
 import hashlib
@@ -32,20 +33,7 @@ INSTALL_RECEIPT_SCHEMA = "schemas/objc3c-package-install-receipt-v1.schema.json"
 INSTALL_RECEIPT_PATH = "objc3c-install-receipt.json"
 INSTALL_COMMAND = "npm run objc3c -- build-package-channels"
 INSTALL_BOOTSTRAP_ENTRYPOINT = "Bootstrap-objc3cEnvironment.ps1"
-REQUIRED_RECEIPT_FIELDS = [
-    "contract_id",
-    "install_root",
-    "install_home",
-    "channel_id",
-    "bootstrap_entrypoint",
-    "package_bridge",
-    "install_command",
-    "payload_manifest",
-    "payload_manifest_sha256",
-    "payload_required_entries",
-    "installed_at_utc",
-]
-SANITIZER_REQUIRED_RECEIPT_FIELDS = [*REQUIRED_RECEIPT_FIELDS, "sanitizer_package_variant"]
+DEFAULT_TARGET_PLATFORM_ID = "windows-x64"
 REQUIRED_PAYLOAD_ENTRIES = [
     MANIFEST_RELATIVE_PATH,
     "artifacts/bin/objc3c-native.exe",
@@ -58,6 +46,61 @@ ARCHIVE_DIGEST_FIELDS = {
     "portable_archive": "portable-archive",
     "installer_archive": "local-installer",
     "offline_archive": "offline-bundle",
+}
+RECEIPT_PLATFORM_FIELDS = [
+    "target_platform_id",
+    "package_id",
+    "package_channel_id",
+    "sanitizer_variant",
+    "package_runtime_model",
+    "support_truth",
+    "native_execution_claimed",
+]
+REQUIRED_RECEIPT_FIELDS = [
+    "contract_id",
+    "install_root",
+    "install_home",
+    "channel_id",
+    "bootstrap_entrypoint",
+    "package_bridge",
+    "install_command",
+    "payload_manifest",
+    "payload_manifest_sha256",
+    "payload_required_entries",
+    *RECEIPT_PLATFORM_FIELDS,
+    "installed_at_utc",
+]
+SANITIZER_REQUIRED_RECEIPT_FIELDS = [*REQUIRED_RECEIPT_FIELDS, "sanitizer_package_variant"]
+RELEASE_RUNTIME_LIBRARY_NAMES_BY_PLATFORM = {
+    "windows-x64": ["objc3_runtime.lib"],
+    "linux-x64": ["libobjc3-runtime.so"],
+    "darwin-arm64": ["libobjc3-runtime.dylib"],
+}
+RELEASE_PACKAGE_LAYOUT_BY_PLATFORM = {
+    "windows-x64": [
+        MANIFEST_RELATIVE_PATH,
+        "artifacts/bin/objc3c-native.exe",
+        "artifacts/lib/objc3_runtime.lib",
+        "stdlib/workspace.json",
+        "stdlib/modules/objc3.core/module.json",
+        "docs/runbooks/objc3c_packaging_channels.md",
+    ],
+    "linux-x64": [
+        MANIFEST_RELATIVE_PATH,
+        "artifacts/bin/objc3c-native",
+        "artifacts/lib/libobjc3-runtime.so",
+        "stdlib/workspace.json",
+        "stdlib/modules/objc3.core/module.json",
+        "docs/runbooks/objc3c_packaging_channels.md",
+    ],
+    "darwin-arm64": [
+        MANIFEST_RELATIVE_PATH,
+        "artifacts/bin/objc3c-native",
+        "artifacts/lib/libobjc3-runtime.dylib",
+        "stdlib/workspace.json",
+        "stdlib/modules/objc3.core/module.json",
+        "docs/runbooks/objc3c_packaging_channels.md",
+    ],
 }
 
 
@@ -157,6 +200,7 @@ def package_channels_manifest_payload(
         "platform_support_summary": repo_rel(PLATFORM_SUPPORT_MATRIX_SUMMARY),
         "supported_platform_ids": inputs.platform_support_matrix["claim_boundary"]["supported_platform_ids"],
         "support_tiers": inputs.platform_support_matrix["tiers"],
+        "package_runtime_models": package_runtime_models(inputs.supported_platforms),
         "implemented_channels": IMPLEMENTED_CHANNELS,
         "interop_loader_metadata": inputs.interop_loader_metadata,
         "installer_signature": installer_signature,
@@ -197,6 +241,7 @@ def package_channels_report_payload(
         "platform_support_matrix": repo_rel(PLATFORM_SUPPORT_MATRIX_ARTIFACT),
         "supported_platform_ids": inputs.platform_support_matrix["claim_boundary"]["supported_platform_ids"],
         "support_tiers": inputs.platform_support_matrix["tiers"],
+        "package_runtime_models": manifest_payload["package_runtime_models"],
         "implemented_channels": manifest_payload["implemented_channels"],
         "interop_loader_metadata": manifest_payload["interop_loader_metadata"],
         "installer_signature": manifest_payload["installer_signature"],
@@ -210,6 +255,100 @@ def package_channels_report_payload(
 
 def required_payload_entries(sanitizer_variant: str = "release") -> list[str]:
     return payload_entries_for_variant(REQUIRED_PAYLOAD_ENTRIES, sanitizer_variant)
+
+
+def release_package_id_for_platform(platform_id: str) -> str:
+    if platform_id == DEFAULT_TARGET_PLATFORM_ID:
+        return "org.objc3c.runtime:objc3c-runtime-release"
+    return f"org.objc3c.runtime:objc3c-runtime-{platform_id}-release"
+
+
+def release_package_channel_id_for_platform(platform_id: str) -> str:
+    return f"{platform_id}-release"
+
+
+def fallback_release_package_runtime_model(platform_id: str) -> dict[str, Any]:
+    host_os, _, host_arch = platform_id.partition("-")
+    return {
+        "platform_id": platform_id,
+        "target_platform_id": platform_id,
+        "host_os": host_os,
+        "host_arch": host_arch or "unknown",
+        "support_state": "supported"
+        if platform_id == DEFAULT_TARGET_PLATFORM_ID
+        else "unsupported",
+        "claim_state": "evidence-bound"
+        if platform_id == DEFAULT_TARGET_PLATFORM_ID
+        else "fail-closed",
+        "package_id": release_package_id_for_platform(platform_id),
+        "package_channel_id": release_package_channel_id_for_platform(platform_id),
+        "package_variant_row_id": f"objc3c.package.runtime.{platform_id}.release",
+        "runtime_variant": "release",
+        "runtime_library_ids": ["objc3-runtime"],
+        "runtime_library_names": RELEASE_RUNTIME_LIBRARY_NAMES_BY_PLATFORM.get(
+            platform_id,
+            ["objc3-runtime"],
+        ),
+        "package_root_layout": RELEASE_PACKAGE_LAYOUT_BY_PLATFORM.get(
+            platform_id,
+            RELEASE_PACKAGE_LAYOUT_BY_PLATFORM[DEFAULT_TARGET_PLATFORM_ID],
+        ),
+        "missing_runtime_behavior": "fail-closed-before-native-execution-claim",
+        "unsupported_behavior": "fail-closed",
+        "required_evidence_classes": ["package", "install", "execution"],
+        "required_missing_evidence_classes": []
+        if platform_id == DEFAULT_TARGET_PLATFORM_ID
+        else ["build", "package", "install", "execution"],
+        "support_truth": False,
+        "native_execution_required": True,
+        "native_execution_claimed": False,
+        "promotion_allowed": False,
+    }
+
+
+def package_runtime_models(supported_platforms: dict[str, Any]) -> list[dict[str, Any]]:
+    models = supported_platforms.get("package_runtime_models")
+    if isinstance(models, list) and models:
+        return deepcopy(models)
+    platform_id = str(
+        supported_platforms.get("default_platform_id", DEFAULT_TARGET_PLATFORM_ID)
+    )
+    return [fallback_release_package_runtime_model(platform_id)]
+
+
+def receipt_package_runtime_model(sanitizer_variant: str = "release") -> dict[str, Any]:
+    metadata = sanitizer_variant_metadata(sanitizer_variant)
+    runtime_library_names = [
+        entry.rsplit("/", 1)[-1]
+        for entry in metadata.get("runtime_library_payload_entries", [])
+        if not str(entry).endswith(".json")
+    ]
+    if runtime_library_names:
+        runtime_library_names = [
+            *RELEASE_RUNTIME_LIBRARY_NAMES_BY_PLATFORM[DEFAULT_TARGET_PLATFORM_ID],
+            *runtime_library_names,
+        ]
+    else:
+        runtime_library_names = RELEASE_RUNTIME_LIBRARY_NAMES_BY_PLATFORM[
+            DEFAULT_TARGET_PLATFORM_ID
+        ]
+    return {
+        "target_platform_id": DEFAULT_TARGET_PLATFORM_ID,
+        "package_id": metadata["package_id"],
+        "package_channel_id": metadata["package_channel_id"],
+        "sanitizer_variant": sanitizer_variant,
+        "runtime_variant": metadata["runtime_variant"],
+        "runtime_library_ids": metadata["runtime_library_ids"],
+        "runtime_library_names": runtime_library_names,
+        "package_root_layout": required_payload_entries(sanitizer_variant),
+        "missing_runtime_behavior": metadata.get(
+            "missing_runtime_behavior",
+            "fail-closed-before-native-execution-claim",
+        ),
+        "unsupported_behavior": "fail-closed",
+        "support_truth": False,
+        "native_execution_claimed": False,
+    }
 
 
 def sha256_file(path: Path) -> str:
@@ -343,6 +482,9 @@ def receipt_contract_payload(
         "package_id": metadata["package_id"],
         "package_channel_id": metadata["package_channel_id"],
         "sanitizer_variant": sanitizer_variant,
+        "target_platform_id": DEFAULT_TARGET_PLATFORM_ID,
+        "package_runtime_model": receipt_package_runtime_model(sanitizer_variant),
+        "emitted_platform_fields": list(RECEIPT_PLATFORM_FIELDS),
         "support_truth": False,
         "native_execution_claimed": False,
     }

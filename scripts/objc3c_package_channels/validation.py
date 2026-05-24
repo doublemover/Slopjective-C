@@ -30,6 +30,15 @@ INSTALL_RECEIPT_SCHEMA = "schemas/objc3c-package-install-receipt-v1.schema.json"
 INSTALL_RECEIPT_PATH = "objc3c-install-receipt.json"
 INSTALL_COMMAND = "npm run objc3c -- build-package-channels"
 INSTALL_BOOTSTRAP_ENTRYPOINT = "Bootstrap-objc3cEnvironment.ps1"
+RECEIPT_PLATFORM_FIELDS = [
+    "target_platform_id",
+    "package_id",
+    "package_channel_id",
+    "sanitizer_variant",
+    "package_runtime_model",
+    "support_truth",
+    "native_execution_claimed",
+]
 REQUIRED_PAYLOAD_ENTRIES = [
     MANIFEST_RELATIVE_PATH,
     "artifacts/bin/objc3c-native.exe",
@@ -49,6 +58,7 @@ REQUIRED_RECEIPT_FIELDS = [
     "payload_manifest",
     "payload_manifest_sha256",
     "payload_required_entries",
+    *RECEIPT_PLATFORM_FIELDS,
     "installed_at_utc",
 ]
 SANITIZER_REQUIRED_RECEIPT_FIELDS = [*REQUIRED_RECEIPT_FIELDS, "sanitizer_package_variant"]

@@ -59,6 +59,7 @@ def sample_inputs() -> PackageChannelInputs:
                 "archive_digests",
                 "payload_contract",
                 "receipt_contracts",
+                "package_runtime_models",
                 "portable_archive",
                 "installer_archive",
                 "offline_archive",
@@ -76,6 +77,13 @@ def sample_inputs() -> PackageChannelInputs:
                 "payload_manifest",
                 "payload_manifest_sha256",
                 "payload_required_entries",
+                "target_platform_id",
+                "package_id",
+                "package_channel_id",
+                "sanitizer_variant",
+                "package_runtime_model",
+                "support_truth",
+                "native_execution_claimed",
                 "installed_at_utc",
             ],
             "required_installer_signature_fields": [
@@ -122,6 +130,9 @@ def sample_inputs() -> PackageChannelInputs:
                 "package_id",
                 "package_channel_id",
                 "sanitizer_variant",
+                "target_platform_id",
+                "package_runtime_model",
+                "emitted_platform_fields",
                 "support_truth",
                 "native_execution_claimed",
             ],
@@ -271,7 +282,11 @@ def test_package_channel_manifest_and_report_are_owned_by_model() -> None:
     )
     assert manifest["payload_contract"]["manifest_relative_path"] == MANIFEST_RELATIVE_PATH
     assert manifest["payload_contract"]["required_entries"] == REQUIRED_PAYLOAD_ENTRIES
+    assert manifest["package_runtime_models"][0]["platform_id"] == "windows-x64"
+    assert manifest["package_runtime_models"][0]["support_state"] == "supported"
     assert manifest["receipt_contracts"]["install_receipt"]["channel_id"] == "local-installer"
+    assert "package_runtime_model" in manifest["receipt_contracts"]["install_receipt"]["required_fields"]
+    assert manifest["receipt_contracts"]["install_receipt"]["target_platform_id"] == "windows-x64"
     assert manifest["receipt_contracts"]["offline_install_receipt"]["channel_id"] == "offline-bundle"
     assert manifest["receipt_contracts"]["offline_install_receipt"]["network_policy"] == "no-network"
     assert manifest["portable_archive"].endswith("objc3c-windows-x64-portable.zip")
@@ -282,6 +297,7 @@ def test_package_channel_manifest_and_report_are_owned_by_model() -> None:
     assert report["archive_digests"]["installer_archive"]["digest_format"] == "sha256"
     assert report["payload_contract"]["clean_room_source_policy"] == "fresh-owned-tmp-root-only"
     assert report["receipt_contracts"]["offline_install_receipt"]["delegates_to"] == "local-installer"
+    assert report["package_runtime_models"] == manifest["package_runtime_models"]
 
 
 def test_package_channel_archive_digest_payloads_are_owned_by_model(tmp_path: Path) -> None:

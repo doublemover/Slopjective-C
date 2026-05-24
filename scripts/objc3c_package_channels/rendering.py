@@ -50,6 +50,55 @@ if ($SanitizerVariant -eq "address") {
 }
 $allowedReceiptChannels = @("local-installer", "offline-bundle")
 
+function Resolve-PackageRuntimeModel {
+  $packageId = "org.objc3c.runtime:objc3c-runtime-release"
+  $packageChannelId = "windows-x64-release"
+  $runtimeVariant = "release"
+  $runtimeLibraryIds = @("objc3-runtime")
+  $runtimeLibraryNames = @("objc3_runtime.lib")
+  $missingRuntimeBehavior = "fail-closed-before-native-execution-claim"
+
+  if ($SanitizerVariant -eq "address") {
+    $packageId = "org.objc3c.runtime:objc3c-runtime-asan"
+    $packageChannelId = "windows-x64-sanitizer-asan"
+    $runtimeVariant = "sanitizer=address"
+    $runtimeLibraryIds = @("objc3-runtime", "clang_rt.asan")
+    $runtimeLibraryNames = @(
+      "objc3_runtime.lib",
+      "clang_rt.asan_dynamic-x86_64.dll",
+      "clang_rt.asan_dynamic-x86_64.lib",
+      "clang_rt.asan_dynamic_runtime_thunk-x86_64.lib"
+    )
+    $missingRuntimeBehavior = "fail-closed-before-package-install"
+  } elseif ($SanitizerVariant -eq "undefined") {
+    $packageId = "org.objc3c.runtime:objc3c-runtime-ubsan"
+    $packageChannelId = "windows-x64-sanitizer-ubsan"
+    $runtimeVariant = "sanitizer=undefined"
+    $runtimeLibraryIds = @("objc3-runtime", "clang_rt.ubsan")
+    $runtimeLibraryNames = @(
+      "objc3_runtime.lib",
+      "clang_rt.ubsan_standalone-x86_64.lib",
+      "clang_rt.ubsan_standalone_cxx-x86_64.lib"
+    )
+    $missingRuntimeBehavior = "fail-closed-before-package-install"
+  }
+
+  return [ordered]@{
+    target_platform_id = "windows-x64"
+    package_id = $packageId
+    package_channel_id = $packageChannelId
+    sanitizer_variant = $SanitizerVariant
+    runtime_variant = $runtimeVariant
+    runtime_library_ids = $runtimeLibraryIds
+    runtime_library_names = $runtimeLibraryNames
+    package_root_layout = @($payloadRequiredEntries)
+    missing_runtime_behavior = $missingRuntimeBehavior
+    unsupported_behavior = "fail-closed"
+    support_truth = $false
+    native_execution_claimed = $false
+  }
+}
+
 function Assert-PayloadEntriesMatch {
   param(
     [Parameter(Mandatory = $true)]$ActualEntries,
@@ -372,6 +421,7 @@ New-Item -ItemType Directory -Force -Path $resolvedInstallRoot | Out-Null
 Copy-Item -LiteralPath $sourceRoot -Destination $installHome -Recurse -Force
 Copy-Item -LiteralPath $bootstrapSource -Destination $bootstrapTarget -Force
 $payloadManifestSha256 = Assert-InstalledPayloadContract
+$packageRuntimeModel = Resolve-PackageRuntimeModel
 $sanitizerPackageVariant = Resolve-SanitizerPackageVariant
 
 $receipt = [ordered]@{
@@ -385,6 +435,13 @@ $receipt = [ordered]@{
   payload_manifest = $payloadManifest
   payload_manifest_sha256 = $payloadManifestSha256
   payload_required_entries = $payloadRequiredEntries
+  target_platform_id = [string]$packageRuntimeModel.target_platform_id
+  package_id = [string]$packageRuntimeModel.package_id
+  package_channel_id = [string]$packageRuntimeModel.package_channel_id
+  sanitizer_variant = $SanitizerVariant
+  package_runtime_model = $packageRuntimeModel
+  support_truth = $false
+  native_execution_claimed = $false
   installed_at_utc = [DateTime]::UtcNow.ToString("o")
 }
 if ($null -ne $sanitizerPackageVariant) {
