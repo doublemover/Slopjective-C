@@ -3,6 +3,178 @@ if ($PSVersionTable.PSVersion.Major -ge 7) {
   $PSNativeCommandUseErrorActionPreference = $false
 }
 
+function Test-Objc3cNativeExecutionSmokeHostIsWindows {
+  return [System.Runtime.InteropServices.RuntimeInformation]::IsOSPlatform(
+    [System.Runtime.InteropServices.OSPlatform]::Windows
+  )
+}
+
+function Test-Objc3cNativeExecutionSmokeHostIsDarwin {
+  return [System.Runtime.InteropServices.RuntimeInformation]::IsOSPlatform(
+    [System.Runtime.InteropServices.OSPlatform]::OSX
+  )
+}
+
+function Test-Objc3cNativeExecutionSmokeHostIsLinux {
+  return [System.Runtime.InteropServices.RuntimeInformation]::IsOSPlatform(
+    [System.Runtime.InteropServices.OSPlatform]::Linux
+  )
+}
+
+function Get-Objc3cNativeExecutionSmokeHostArchitecture {
+  $architecture = [System.Runtime.InteropServices.RuntimeInformation]::OSArchitecture.ToString().ToLowerInvariant()
+  if ($architecture -in @("x64", "x86_64", "amd64")) {
+    return "x64"
+  }
+  if ($architecture -in @("arm64", "aarch64")) {
+    return "arm64"
+  }
+  return $architecture
+}
+
+function Get-Objc3cNativeExecutionSmokeHostPlatformId {
+  $architecture = Get-Objc3cNativeExecutionSmokeHostArchitecture
+  if (Test-Objc3cNativeExecutionSmokeHostIsWindows) {
+    return "windows-$architecture"
+  }
+  if (Test-Objc3cNativeExecutionSmokeHostIsDarwin) {
+    return "darwin-$architecture"
+  }
+  if (Test-Objc3cNativeExecutionSmokeHostIsLinux) {
+    return "linux-$architecture"
+  }
+  return "unknown-$architecture"
+}
+
+function Get-Objc3cNativeExecutionSmokeTargetTriple {
+  param([Parameter(Mandatory = $true)][string]$PlatformId)
+
+  if ($PlatformId -eq "windows-x64") {
+    return "x86_64-pc-windows-msvc"
+  }
+  if ($PlatformId -eq "linux-x64") {
+    return "x86_64-unknown-linux-gnu"
+  }
+  if ($PlatformId -eq "darwin-arm64") {
+    return "aarch64-apple-darwin"
+  }
+  if ($PlatformId -eq "darwin-x64") {
+    return "x86_64-apple-darwin"
+  }
+  return $PlatformId
+}
+
+function Get-Objc3cNativeExecutionSmokeHostPromotionState {
+  param([Parameter(Mandatory = $true)][string]$PlatformId)
+
+  if ($PlatformId -eq "windows-x64") {
+    return "supported-boundary"
+  }
+  if ($PlatformId -in @("linux-x64", "darwin-arm64")) {
+    return "fail-closed-until-native-host-evidence"
+  }
+  return "unsupported-host"
+}
+
+function Get-Objc3cNativeExecutionSmokePlatformModel {
+  $platformId = Get-Objc3cNativeExecutionSmokeHostPlatformId
+  $isWindows = Test-Objc3cNativeExecutionSmokeHostIsWindows
+  $isDarwin = Test-Objc3cNativeExecutionSmokeHostIsDarwin
+  $objectFileExtension = if ($isWindows) { ".obj" } else { ".o" }
+  $nativeExecutableName = if ($isWindows) { "objc3c-native.exe" } else { "objc3c-native" }
+  $runtimeLibraryName = if ($isWindows) {
+    "objc3_runtime.lib"
+  } elseif ($isDarwin) {
+    "libobjc3-runtime.dylib"
+  } else {
+    "libobjc3-runtime.so"
+  }
+  $runtimeLibraryKind = if ($isWindows) { "static-archive" } else { "shared-library" }
+  $objectFormat = if ($isWindows) {
+    "COFF"
+  } elseif ($isDarwin) {
+    "Mach-O"
+  } else {
+    "ELF"
+  }
+  $debugFormat = if ($isWindows) {
+    "CodeView/PDB"
+  } elseif ($isDarwin) {
+    "DWARF/dSYM"
+  } else {
+    "DWARF"
+  }
+  $loaderPathPolicy = if ($isWindows) {
+    "PATH-owned loader resolution for supported Windows package roots"
+  } elseif ($isDarwin) {
+    "@rpath, install_name, codesign, and package-root loader behavior must be proven before support"
+  } else {
+    "ELF rpath, RUNPATH, or package-root loader resolution must be proven before support"
+  }
+  $runtimeLoadEnvironmentVariable = if ($isWindows) {
+    ""
+  } elseif ($isDarwin) {
+    "DYLD_LIBRARY_PATH"
+  } else {
+    "LD_LIBRARY_PATH"
+  }
+  $supportedPlatformIds = if ($platformId -eq "windows-x64") { @("windows-x64") } else { @() }
+
+  return [pscustomobject]@{
+    platform_id = $platformId
+    supported_platform_ids = @($supportedPlatformIds)
+    host_promotion_state = Get-Objc3cNativeExecutionSmokeHostPromotionState -PlatformId $platformId
+    support_claim_published = $false
+    target_triple = Get-Objc3cNativeExecutionSmokeTargetTriple -PlatformId $platformId
+    native_executable_relative_path = "artifacts/bin/$nativeExecutableName"
+    object_artifact = "module$objectFileExtension"
+    object_file_extension = $objectFileExtension
+    object_format = $objectFormat
+    debug_format = $debugFormat
+    runtime_library_relative_path = "artifacts/lib/$runtimeLibraryName"
+    runtime_library_name = $runtimeLibraryName
+    runtime_library_names = @($runtimeLibraryName)
+    runtime_library_kind = $runtimeLibraryKind
+    shared_runtime = (-not $isWindows)
+    runtime_load_path_relative = if ($isWindows) { "" } else { "artifacts/lib" }
+    runtime_load_environment_variable = $runtimeLoadEnvironmentVariable
+    loader_path_policy = $loaderPathPolicy
+  }
+}
+
+function Get-Objc3cNativeExecutionSmokeDefaultRuntimeLibraryRelativePath {
+  return (Get-Objc3cNativeExecutionSmokePlatformModel).runtime_library_relative_path
+}
+
+function Set-Objc3cNativeExecutionSmokeRuntimeEnvironment {
+  param(
+    [Parameter(Mandatory = $true)][string]$RepoRoot,
+    [Parameter(Mandatory = $true)][object]$PlatformModel
+  )
+
+  if (-not [bool]$PlatformModel.shared_runtime) {
+    return [ordered]@{}
+  }
+  if ([string]::IsNullOrWhiteSpace($PlatformModel.runtime_load_path_relative) -or [string]::IsNullOrWhiteSpace($PlatformModel.runtime_load_environment_variable)) {
+    return [ordered]@{}
+  }
+
+  $runtimeLoadPath = Join-Path $RepoRoot $PlatformModel.runtime_load_path_relative
+  $environmentVariableName = [string]$PlatformModel.runtime_load_environment_variable
+  $currentValue = [System.Environment]::GetEnvironmentVariable($environmentVariableName)
+  $newValue = if ([string]::IsNullOrWhiteSpace($currentValue)) {
+    $runtimeLoadPath
+  } else {
+    $runtimeLoadPath + [System.IO.Path]::PathSeparator + $currentValue
+  }
+  [System.Environment]::SetEnvironmentVariable($environmentVariableName, $newValue)
+
+  $environment = [ordered]@{}
+  $environment["${environmentVariableName}_PREPEND"] = $runtimeLoadPath
+  $environment[$environmentVariableName] = $newValue
+  return $environment
+}
+
 function Resolve-Objc3cNativeExecutionSmokeClangxx {
   param([string]$ConfiguredClangPath)
 
@@ -185,9 +357,10 @@ function Resolve-Objc3cNativeExecutionSmokeConfig {
   param([Parameter(Mandatory = $true)][string]$ScriptRoot)
 
   $repoRoot = (Resolve-Path (Join-Path $ScriptRoot "..")).Path
+  $platformModel = Get-Objc3cNativeExecutionSmokePlatformModel
   $positiveFixtureDir = Join-Path $repoRoot "tests/tooling/fixtures/native/execution/positive"
   $negativeFixtureDir = Join-Path $repoRoot "tests/tooling/fixtures/native/execution/negative"
-  $defaultRuntimeLibrary = Join-Path $repoRoot "artifacts/lib/objc3_runtime.lib"
+  $defaultRuntimeLibrary = Join-Path $repoRoot $platformModel.runtime_library_relative_path
   $buildScript = Join-Path $repoRoot "scripts/build_objc3c_native.ps1"
   $suiteRoot = Join-Path $repoRoot "tmp/artifacts/objc3c-native/execution-smoke"
   $configuredRunId = $env:OBJC3C_NATIVE_EXECUTION_RUN_ID
@@ -195,10 +368,13 @@ function Resolve-Objc3cNativeExecutionSmokeConfig {
   $runDir = Join-Path $suiteRoot $runId
   $summaryPath = Join-Path $runDir "summary.json"
   $runtimeLaunchContractScript = Join-Path $repoRoot "scripts/objc3c_runtime_launch_contract.ps1"
-  $defaultNativeExe = Join-Path $repoRoot "artifacts/bin/objc3c-native.exe"
+  $defaultNativeExe = Join-Path $repoRoot $platformModel.native_executable_relative_path
   $configuredNativeExe = $env:OBJC3C_NATIVE_EXECUTABLE
   $nativeExe = if ([string]::IsNullOrWhiteSpace($configuredNativeExe)) { $defaultNativeExe } else { $configuredNativeExe }
   $nativeExeExplicit = -not [string]::IsNullOrWhiteSpace($configuredNativeExe)
+  $runtimeEnvironment = Set-Objc3cNativeExecutionSmokeRuntimeEnvironment `
+    -RepoRoot $repoRoot `
+    -PlatformModel $platformModel
   $sanitizerVariant = Resolve-Objc3cNativeExecutionSmokeSanitizerVariant
   $sanitizerRuntimeDir = Resolve-Objc3cNativeExecutionSmokeSanitizerRuntimeDir `
     -RepoRoot $repoRoot `
@@ -227,9 +403,28 @@ function Resolve-Objc3cNativeExecutionSmokeConfig {
 
   return [pscustomobject]@{
     repo_root = $repoRoot
+    platform_model = $platformModel
+    target_platform_id = $platformModel.platform_id
+    supported_platform_ids = @($platformModel.supported_platform_ids)
+    host_promotion_state = $platformModel.host_promotion_state
+    support_claim_published = $false
+    target_triple = $platformModel.target_triple
+    object_artifact = $platformModel.object_artifact
+    object_file_extension = $platformModel.object_file_extension
+    object_format = $platformModel.object_format
+    debug_format = $platformModel.debug_format
+    runtime_library_kind = $platformModel.runtime_library_kind
+    runtime_library_names = @($platformModel.runtime_library_names)
+    runtime_library_relative_path = $platformModel.runtime_library_relative_path
+    shared_runtime = [bool]$platformModel.shared_runtime
+    runtime_load_path_relative = $platformModel.runtime_load_path_relative
+    runtime_load_environment_variable = $platformModel.runtime_load_environment_variable
+    runtime_environment = $runtimeEnvironment
+    loader_path_policy = $platformModel.loader_path_policy
     positive_fixture_dir = $positiveFixtureDir
     negative_fixture_dir = $negativeFixtureDir
     default_runtime_library = $defaultRuntimeLibrary
+    default_runtime_library_relative_path = $platformModel.runtime_library_relative_path
     build_script = $buildScript
     suite_root = $suiteRoot
     run_id = $runId
@@ -249,7 +444,9 @@ function Resolve-Objc3cNativeExecutionSmokeConfig {
 }
 
 Export-ModuleMember -Function @(
+  "Get-Objc3cNativeExecutionSmokeDefaultRuntimeLibraryRelativePath",
   "Get-Objc3cNativeExecutionSmokeLinkDriverArgs",
+  "Get-Objc3cNativeExecutionSmokePlatformModel",
   "Get-Objc3cNativeExecutionSmokeSanitizerRuntimeLinkArgs",
   "Resolve-Objc3cNativeExecutionSmokeSanitizerVariant",
   "Resolve-Objc3cNativeExecutionSmokeClangxx",

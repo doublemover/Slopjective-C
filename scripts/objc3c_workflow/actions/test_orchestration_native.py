@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import os
+import platform
 from pathlib import Path
 import sys
 
@@ -35,6 +36,137 @@ NATIVE_EXECUTION_SMOKE_ARTIFACT_ROOT = (
 )
 
 
+def native_execution_host_architecture() -> str:
+    machine = platform.machine().lower()
+    if machine in {"amd64", "x86_64", "x64"}:
+        return "x64"
+    if machine in {"arm64", "aarch64"}:
+        return "arm64"
+    return machine or "unknown"
+
+
+def native_execution_platform_model() -> dict[str, object]:
+    system = platform.system().lower()
+    arch = native_execution_host_architecture()
+    if system == "windows":
+        platform_id = f"windows-{arch}"
+        runtime_library_name = "objc3_runtime.lib"
+        object_file_extension = ".obj"
+        native_executable_name = "objc3c-native.exe"
+        runtime_library_kind = "static-archive"
+        object_format = "COFF"
+        debug_format = "CodeView/PDB"
+        loader_path_policy = "PATH-owned loader resolution for supported Windows package roots"
+        runtime_load_environment_variable = ""
+    elif system == "darwin":
+        platform_id = f"darwin-{arch}"
+        runtime_library_name = "libobjc3-runtime.dylib"
+        object_file_extension = ".o"
+        native_executable_name = "objc3c-native"
+        runtime_library_kind = "shared-library"
+        object_format = "Mach-O"
+        debug_format = "DWARF/dSYM"
+        loader_path_policy = (
+            "@rpath, install_name, codesign, and package-root loader behavior "
+            "must be proven before support"
+        )
+        runtime_load_environment_variable = "DYLD_LIBRARY_PATH"
+    elif system == "linux":
+        platform_id = f"linux-{arch}"
+        runtime_library_name = "libobjc3-runtime.so"
+        object_file_extension = ".o"
+        native_executable_name = "objc3c-native"
+        runtime_library_kind = "shared-library"
+        object_format = "ELF"
+        debug_format = "DWARF"
+        loader_path_policy = (
+            "ELF rpath, RUNPATH, or package-root loader resolution must be "
+            "proven before support"
+        )
+        runtime_load_environment_variable = "LD_LIBRARY_PATH"
+    else:
+        platform_id = f"unknown-{arch}"
+        runtime_library_name = "libobjc3-runtime.so"
+        object_file_extension = ".o"
+        native_executable_name = "objc3c-native"
+        runtime_library_kind = "shared-library"
+        object_format = "unknown"
+        debug_format = "unknown"
+        loader_path_policy = "unsupported host loader behavior must fail closed"
+        runtime_load_environment_variable = ""
+
+    supported_platform_ids = ["windows-x64"] if platform_id == "windows-x64" else []
+    host_promotion_state = (
+        "supported-boundary"
+        if platform_id == "windows-x64"
+        else "fail-closed-until-native-host-evidence"
+        if platform_id in {"linux-x64", "darwin-arm64"}
+        else "unsupported-host"
+    )
+    target_triple = {
+        "windows-x64": "x86_64-pc-windows-msvc",
+        "linux-x64": "x86_64-unknown-linux-gnu",
+        "darwin-arm64": "aarch64-apple-darwin",
+        "darwin-x64": "x86_64-apple-darwin",
+    }.get(platform_id, platform_id)
+    shared_runtime = runtime_library_kind == "shared-library"
+    runtime_load_path = ["artifacts/lib"] if shared_runtime else []
+    runtime_library_relative_path = f"artifacts/lib/{runtime_library_name}"
+
+    return {
+        "platform_id": platform_id,
+        "platform_ids": supported_platform_ids,
+        "host_promotion_state": host_promotion_state,
+        "target_triple": target_triple,
+        "native_executable": f"artifacts/bin/{native_executable_name}",
+        "object_artifact": f"module{object_file_extension}",
+        "object_file_extension": object_file_extension,
+        "object_format": object_format,
+        "debug_format": debug_format,
+        "runtime_library_relative_path": runtime_library_relative_path,
+        "runtime_library_kind": runtime_library_kind,
+        "runtime_library_names": [runtime_library_name],
+        "shared_runtime": shared_runtime,
+        "runtime_load_path": runtime_load_path,
+        "runtime_load_environment_variable": runtime_load_environment_variable,
+        "loader_path_policy": loader_path_policy,
+    }
+
+
+def native_execution_link_input_model(model: dict[str, object]) -> dict[str, object]:
+    return {
+        "object_artifact": model["object_artifact"],
+        "object_file_extension": model["object_file_extension"],
+        "runtime_library": model["runtime_library_relative_path"],
+        "runtime_library_kind": model["runtime_library_kind"],
+        "runtime_library_names": model["runtime_library_names"],
+        "shared_runtime": model["shared_runtime"],
+        "loader_path_policy": model["loader_path_policy"],
+    }
+
+
+def native_execution_summary_platform_fields(model: dict[str, object]) -> dict[str, object]:
+    return {
+        "target_platform_id": model["platform_id"],
+        "platform_ids": model["platform_ids"],
+        "target_triple": model["target_triple"],
+        "host_promotion_state": model["host_promotion_state"],
+        "support_claim_published": False,
+        "native_executable": model["native_executable"],
+        "object_artifact": model["object_artifact"],
+        "object_file_extension": model["object_file_extension"],
+        "object_format": model["object_format"],
+        "debug_format": model["debug_format"],
+        "runtime_library_relative_path": model["runtime_library_relative_path"],
+        "runtime_library_kind": model["runtime_library_kind"],
+        "runtime_library_names": model["runtime_library_names"],
+        "shared_runtime": model["shared_runtime"],
+        "runtime_load_environment_variable": model["runtime_load_environment_variable"],
+        "loader_path_policy": model["loader_path_policy"],
+        "link_input_model": native_execution_link_input_model(model),
+    }
+
+
 def repo_rel(path: Path) -> str:
     try:
         return path.resolve().relative_to(ROOT.resolve()).as_posix()
@@ -61,6 +193,7 @@ def native_execution_artifact_summary(run_id: str) -> Path:
 
 
 def normalize_native_execution_summary(run_id: str, exit_code: int, status: str) -> dict:
+    model = native_execution_platform_model()
     artifact_summary = native_execution_artifact_summary(run_id)
     if artifact_summary.is_file():
         payload = json.loads(artifact_summary.read_text(encoding="utf-8"))
@@ -88,6 +221,8 @@ def normalize_native_execution_summary(run_id: str, exit_code: int, status: str)
             continue
         linker_flags.update(flag for flag in raw_flags if isinstance(flag, str) and flag)
 
+    for key, value in native_execution_summary_platform_fields(model).items():
+        payload.setdefault(key, value)
     payload.setdefault("contract_id", "objc3c.native_execution_smoke.summary.v1")
     payload["status"] = status if exit_code != 0 else str(payload.get("status") or status)
     payload["hosted_runner_summary"] = True
@@ -99,13 +234,17 @@ def normalize_native_execution_summary(run_id: str, exit_code: int, status: str)
     payload["results"] = results
     payload.setdefault("runtime_library", runtime_libraries[0] if runtime_libraries else "")
     payload.setdefault("link_command", "clang++ plus per-fixture object, runtime library, and driver_linker_flags")
-    payload.setdefault("load_path", runtime_libraries)
+    payload.setdefault(
+        "load_path",
+        model["runtime_load_path"] if model["shared_runtime"] else runtime_libraries,
+    )
     payload.setdefault("driver_linker_flags", sorted(linker_flags))
     payload["exit_code"] = exit_code
     return payload
 
 
 def write_hosted_execution_skip_summary(status: str) -> None:
+    model = native_execution_platform_model()
     native_summary = {
         "contract_id": "objc3c.native_execution_smoke.summary.v1",
         "status": "UNAVAILABLE",
@@ -122,12 +261,16 @@ def write_hosted_execution_skip_summary(status: str) -> None:
         "driver_linker_flags": [],
         "exit_code": 0,
     }
+    native_summary.update(native_execution_summary_platform_fields(model))
     write_json(NATIVE_EXECUTION_SMOKE_REPORT_SUMMARY, native_summary)
     write_json(
         HOSTED_EXECUTION_SMOKE_SUMMARY,
         {
             "contract_id": "objc3c.hosted_execution_smoke.summary.v1",
             "status": "UNAVAILABLE",
+            "target_platform_id": model["platform_id"],
+            "platform_ids": model["platform_ids"],
+            "host_promotion_state": model["host_promotion_state"],
             "native_object_emission": False,
             "native_object_emission_status": status,
             "skip_reason": status,
@@ -147,6 +290,9 @@ def write_hosted_execution_run_summary(run_id: str, exit_code: int) -> None:
         {
             "contract_id": "objc3c.hosted_execution_smoke.summary.v1",
             "status": status,
+            "target_platform_id": native_summary["target_platform_id"],
+            "platform_ids": native_summary["platform_ids"],
+            "host_promotion_state": native_summary["host_promotion_state"],
             "native_object_emission": native_summary["native_object_emission"],
             "native_object_emission_status": "native_object_emission_supported"
             if native_summary["native_object_emission"]

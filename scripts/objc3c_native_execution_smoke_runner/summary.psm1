@@ -32,7 +32,30 @@ function Write-ExecutionSmokeSummary {
     runtime_launch_contract_script = Get-RepoRelativePath -Path $Context.runtime_launch_contract_script -Root $Context.repo_root
     native_exe = if (Test-Path -LiteralPath $Context.native_exe -PathType Leaf) { Get-RepoRelativePath -Path $Context.native_exe -Root $Context.repo_root } else { $Context.native_exe }
     runtime_library = if (Test-Path -LiteralPath $Context.default_runtime_library -PathType Leaf) { Get-RepoRelativePath -Path $Context.default_runtime_library -Root $Context.repo_root } else { "" }
+    runtime_library_relative_path = $Context.default_runtime_library_relative_path
+    runtime_library_kind = $Context.runtime_library_kind
+    runtime_library_names = @($Context.runtime_library_names)
+    shared_runtime = [bool]$Context.shared_runtime
     live_runtime_dispatch_default_symbol = "objc3_runtime_dispatch_i32"
+    target_platform_id = $Context.target_platform_id
+    platform_ids = @($Context.supported_platform_ids)
+    target_triple = $Context.target_triple
+    host_promotion_state = $Context.host_promotion_state
+    support_claim_published = $false
+    object_artifact = $Context.object_artifact
+    object_file_extension = $Context.object_file_extension
+    object_format = $Context.object_format
+    debug_format = $Context.debug_format
+    link_input_model = [ordered]@{
+      object_artifact = $Context.object_artifact
+      object_file_extension = $Context.object_file_extension
+      runtime_library = $Context.default_runtime_library_relative_path
+      runtime_library_kind = $Context.runtime_library_kind
+      runtime_library_names = @($Context.runtime_library_names)
+      shared_runtime = [bool]$Context.shared_runtime
+      loader_path_policy = $Context.loader_path_policy
+    }
+    runtime_load_environment = $Context.runtime_environment
     sanitizer_variant = $Context.sanitizer_variant
     sanitizer_runtime_dir = if (-not [string]::IsNullOrWhiteSpace($Context.sanitizer_runtime_dir)) { Get-RepoRelativePath -Path $Context.sanitizer_runtime_dir -Root $Context.repo_root } else { "" }
     sanitizer_environment = $Context.sanitizer_environment
@@ -59,6 +82,9 @@ function Write-ExecutionSmokeSummary {
       fixture_timings = @($caseTimingItems)
     }
     results = @($resultItems)
+  }
+  if ([bool]$Context.shared_runtime -and -not [string]::IsNullOrWhiteSpace($Context.runtime_load_path_relative)) {
+    $summary["load_path"] = @($Context.runtime_load_path_relative)
   }
   $reportStopwatch.Stop()
   Add-StageDuration -StageKey "output_report_seconds" -DurationSeconds ([math]::Round($reportStopwatch.Elapsed.TotalSeconds, 6))
