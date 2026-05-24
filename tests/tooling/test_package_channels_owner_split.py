@@ -412,6 +412,40 @@ def release_foundation_reuse_fixture(tmp_path: Path) -> dict[str, Path]:
     }
 
 
+def runnable_package_reuse_fixture(
+    tmp_path: Path,
+    *,
+    target_platform_id: str = "windows-x64",
+    sanitizer_variant: str = "release",
+) -> Path:
+    fixture_root = ROOT / "tmp" / "tests" / "package-channel-runnable-reuse" / tmp_path.name
+    if fixture_root.exists():
+        shutil.rmtree(fixture_root)
+
+    required_entries = required_payload_entries_for_platform(
+        sanitizer_variant=sanitizer_variant,
+        target_platform_id=target_platform_id,
+    )
+    for relative_path in required_entries:
+        if relative_path == MANIFEST_RELATIVE_PATH:
+            continue
+        artifact_path = fixture_root / relative_path
+        artifact_path.parent.mkdir(parents=True, exist_ok=True)
+        artifact_path.write_text(f"unit payload for {relative_path}\n", encoding="utf-8")
+    write_json(
+        fixture_root / MANIFEST_RELATIVE_PATH,
+        {
+            "contract_id": "objc3c-runnable-build-install-run-package/runnable_suite-packaged-end-to-end-v1",
+            "runtime_variant": sanitizer_variant,
+            "package_root": repo_rel(fixture_root),
+            "manifest_artifact": MANIFEST_RELATIVE_PATH,
+            "target_platform_id": target_platform_id,
+            "package_root_layout": required_entries,
+        },
+    )
+    return fixture_root
+
+
 def configure_release_foundation_reuse_fixture(
     monkeypatch: pytest.MonkeyPatch,
     fixture: dict[str, Path],
@@ -511,11 +545,13 @@ def test_package_channel_cli_forwards_release_target_platform_id(
     def fake_build_release_foundation_artifacts(
         *,
         reuse_existing: bool = False,
+        reuse_primary_package_root: Path | None = None,
     ) -> None:
         captured["foundation_env_target_platform_id"] = os.environ.get(
             "OBJC3C_TARGET_PLATFORM_ID"
         )
         captured["reuse_existing"] = reuse_existing
+        captured["reuse_primary_package_root"] = reuse_primary_package_root
 
     def fake_build_runnable_package(
         package_root: Path,
@@ -544,7 +580,11 @@ def test_package_channel_cli_forwards_release_target_platform_id(
         "build_release_foundation_artifacts",
         fake_build_release_foundation_artifacts,
     )
-    monkeypatch.setattr(package_cli, "prepare_package_channel_workspace", lambda paths: None)
+    monkeypatch.setattr(
+        package_cli,
+        "prepare_package_channel_workspace",
+        lambda paths, preserve_package_root=False: None,
+    )
     monkeypatch.setattr(package_cli, "build_runnable_package", fake_build_runnable_package)
     monkeypatch.setattr(package_cli, "publish_portable_archive", lambda paths: None)
     monkeypatch.setattr(package_cli, "publish_installer_archive", lambda paths: None)
@@ -574,7 +614,42 @@ def test_package_channel_cli_forwards_release_target_platform_id(
     assert captured["manifest_package_channel_id"] == "darwin-arm64-release"
     assert captured["manifest_relative_path"] == MANIFEST_RELATIVE_PATH
     assert captured["sanitizer_variant"] == "release"
+    assert captured["reuse_primary_package_root"] is None
     assert "OBJC3C_TARGET_PLATFORM_ID" not in os.environ
+
+
+def test_package_channel_public_action_forwards_release_target_platform_args(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from scripts.objc3c_workflow.actions import (
+        release_governance_packaging_artifacts as packaging_artifacts,
+    )
+    from scripts.objc3c_workflow.actions.release_governance_packaging_contracts import (
+        PACKAGING_CHANNEL_ACTION_CONTRACTS,
+    )
+
+    captured: dict[str, list[str]] = {}
+
+    def fake_run(command: list[str]) -> int:
+        captured["command"] = [str(part) for part in command]
+        return 0
+
+    monkeypatch.setattr(packaging_artifacts, "run", fake_run)
+
+    assert (
+        packaging_artifacts.action_build_package_channels(
+            ["--", "--target-platform-id", "linux-x64"]
+        )
+        == 0
+    )
+
+    assert captured["command"][-2:] == ["--target-platform-id", "linux-x64"]
+    contract = next(
+        contract
+        for contract in PACKAGING_CHANNEL_ACTION_CONTRACTS
+        if contract.action == "build-package-channels"
+    )
+    assert contract.pass_through_args is True
 
 
 def test_package_channel_reuse_accepts_checked_release_foundation_artifacts(
@@ -587,6 +662,223 @@ def test_package_channel_reuse_accepts_checked_release_foundation_artifacts(
     assert not fixture["integration_summary"].exists()
 
     package_commands.require_existing_release_foundation_artifacts()
+
+
+def test_package_channel_reuse_accepts_checked_runnable_package(
+    tmp_path: Path,
+) -> None:
+    package_root = runnable_package_reuse_fixture(tmp_path)
+
+    assert package_commands.require_existing_runnable_package(repo_rel(package_root)) == package_root.resolve()
+
+
+def test_package_channel_reuse_rejects_missing_runnable_payload_entry(
+    tmp_path: Path,
+) -> None:
+    package_root = runnable_package_reuse_fixture(tmp_path)
+    (package_root / "artifacts" / "lib" / "objc3_runtime.lib").unlink()
+
+    with pytest.raises(RuntimeError, match="missed required payload entries"):
+        package_commands.require_existing_runnable_package(repo_rel(package_root))
+
+
+def test_package_channel_reuse_forwards_primary_package_root_to_release_manifest(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    package_root = runnable_package_reuse_fixture(tmp_path)
+    commands: list[list[str]] = []
+
+    monkeypatch.setattr(package_commands, "run", lambda command: commands.append(command))
+
+    package_commands.build_release_foundation_artifacts(
+        reuse_primary_package_root=package_root,
+    )
+
+    assert "--reuse-primary-package-root" in commands[0]
+    assert str(package_root) in commands[0]
+    assert commands[1][-1] == str(package_commands.RELEASE_PROVENANCE_PY)
+
+
+def test_package_channel_cli_reuses_validated_runnable_package_without_rebuild(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from scripts.objc3c_package_channels import cli as package_cli
+
+    package_root = runnable_package_reuse_fixture(tmp_path)
+    captured: dict[str, object] = {}
+    inputs = sample_inputs()
+    monkeypatch.setattr(package_cli, "package_channel_run_id", lambda: "unit-reuse-cli")
+    monkeypatch.setattr(package_cli, "load_package_channel_surface_inputs", lambda: {})
+    monkeypatch.setattr(
+        package_cli,
+        "load_package_channel_inputs",
+        lambda surface_inputs: inputs,
+    )
+    monkeypatch.setattr(package_cli, "build_support_matrix", lambda: None)
+
+    def fake_build_release_foundation_artifacts(
+        *,
+        reuse_existing: bool = False,
+        reuse_primary_package_root: Path | None = None,
+    ) -> None:
+        captured["reuse_existing"] = reuse_existing
+        captured["reuse_primary_package_root"] = reuse_primary_package_root
+
+    def fake_prepare_package_channel_workspace(
+        paths: PackageChannelPaths,
+        *,
+        preserve_package_root: bool = False,
+    ) -> None:
+        captured["workspace_package_root"] = paths.package_root
+        captured["preserve_package_root"] = preserve_package_root
+
+    def fail_build_runnable_package(*_: object, **__: object) -> None:
+        raise AssertionError("reused package-channel publication must not rebuild the runnable package")
+
+    def fake_package_channels_manifest_payload(
+        *,
+        inputs: PackageChannelInputs,
+        paths: PackageChannelPaths,
+        installer_signature: dict[str, object],
+    ) -> dict[str, object]:
+        captured["manifest_package_root"] = paths.package_root
+        return {"platform_id": paths.target_platform_id}
+
+    monkeypatch.setattr(
+        package_cli,
+        "build_release_foundation_artifacts",
+        fake_build_release_foundation_artifacts,
+    )
+    monkeypatch.setattr(
+        package_cli,
+        "prepare_package_channel_workspace",
+        fake_prepare_package_channel_workspace,
+    )
+    monkeypatch.setattr(package_cli, "build_runnable_package", fail_build_runnable_package)
+    monkeypatch.setattr(package_cli, "publish_portable_archive", lambda paths: None)
+    monkeypatch.setattr(package_cli, "publish_installer_archive", lambda paths: None)
+    monkeypatch.setattr(package_cli, "publish_offline_bundle", lambda paths: None)
+    monkeypatch.setattr(package_cli, "installer_signature_payload", lambda installer_archive: {})
+    monkeypatch.setattr(
+        package_cli,
+        "package_channels_manifest_payload",
+        fake_package_channels_manifest_payload,
+    )
+    monkeypatch.setattr(
+        package_cli,
+        "validate_manifest_required_fields",
+        lambda *, manifest_payload, metadata_surface: None,
+    )
+    monkeypatch.setattr(
+        package_cli,
+        "write_package_channel_artifacts",
+        lambda *, inputs, paths, manifest_payload: {},
+    )
+    monkeypatch.setattr(package_cli, "print_package_channel_result", lambda paths: None)
+
+    assert package_cli.main(["--reuse-runnable-package-root", repo_rel(package_root)]) == 0
+    assert captured["reuse_existing"] is False
+    assert captured["reuse_primary_package_root"] == package_root.resolve()
+    assert captured["workspace_package_root"] == package_root.resolve()
+    assert captured["manifest_package_root"] == package_root.resolve()
+    assert captured["preserve_package_root"] is True
+
+
+def test_package_channel_cli_can_reuse_release_foundation_and_runnable_package(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from scripts.objc3c_package_channels import cli as package_cli
+
+    package_root = runnable_package_reuse_fixture(tmp_path)
+    captured: dict[str, object] = {}
+    inputs = sample_inputs()
+    monkeypatch.setattr(package_cli, "package_channel_run_id", lambda: "unit-reuse-both-cli")
+    monkeypatch.setattr(package_cli, "load_package_channel_surface_inputs", lambda: {})
+    monkeypatch.setattr(
+        package_cli,
+        "load_package_channel_inputs",
+        lambda surface_inputs: inputs,
+    )
+    monkeypatch.setattr(package_cli, "build_support_matrix", lambda: None)
+
+    def fake_build_release_foundation_artifacts(
+        *,
+        reuse_existing: bool = False,
+        reuse_primary_package_root: Path | None = None,
+    ) -> None:
+        captured["reuse_existing"] = reuse_existing
+        captured["reuse_primary_package_root"] = reuse_primary_package_root
+
+    def fake_prepare_package_channel_workspace(
+        paths: PackageChannelPaths,
+        *,
+        preserve_package_root: bool = False,
+    ) -> None:
+        captured["workspace_package_root"] = paths.package_root
+        captured["preserve_package_root"] = preserve_package_root
+
+    def fail_build_runnable_package(*_: object, **__: object) -> None:
+        raise AssertionError("combined package-channel reuse must not rebuild the runnable package")
+
+    def fake_package_channels_manifest_payload(
+        *,
+        inputs: PackageChannelInputs,
+        paths: PackageChannelPaths,
+        installer_signature: dict[str, object],
+    ) -> dict[str, object]:
+        captured["manifest_package_root"] = paths.package_root
+        return {"platform_id": paths.target_platform_id}
+
+    monkeypatch.setattr(
+        package_cli,
+        "build_release_foundation_artifacts",
+        fake_build_release_foundation_artifacts,
+    )
+    monkeypatch.setattr(
+        package_cli,
+        "prepare_package_channel_workspace",
+        fake_prepare_package_channel_workspace,
+    )
+    monkeypatch.setattr(package_cli, "build_runnable_package", fail_build_runnable_package)
+    monkeypatch.setattr(package_cli, "publish_portable_archive", lambda paths: None)
+    monkeypatch.setattr(package_cli, "publish_installer_archive", lambda paths: None)
+    monkeypatch.setattr(package_cli, "publish_offline_bundle", lambda paths: None)
+    monkeypatch.setattr(package_cli, "installer_signature_payload", lambda installer_archive: {})
+    monkeypatch.setattr(
+        package_cli,
+        "package_channels_manifest_payload",
+        fake_package_channels_manifest_payload,
+    )
+    monkeypatch.setattr(
+        package_cli,
+        "validate_manifest_required_fields",
+        lambda *, manifest_payload, metadata_surface: None,
+    )
+    monkeypatch.setattr(
+        package_cli,
+        "write_package_channel_artifacts",
+        lambda *, inputs, paths, manifest_payload: {},
+    )
+    monkeypatch.setattr(package_cli, "print_package_channel_result", lambda paths: None)
+
+    assert (
+        package_cli.main(
+            [
+                "--reuse-release-foundation-artifacts",
+                "--reuse-runnable-package-root",
+                repo_rel(package_root),
+            ]
+        )
+        == 0
+    )
+    assert captured["reuse_existing"] is True
+    assert captured["reuse_primary_package_root"] is None
+    assert captured["workspace_package_root"] == package_root.resolve()
+    assert captured["manifest_package_root"] == package_root.resolve()
+    assert captured["preserve_package_root"] is True
 
 
 def test_package_channel_reuse_rejects_release_foundation_digest_drift(

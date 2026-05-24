@@ -9,8 +9,60 @@ from scripts.check_platform_host_promotion_evidence import (
     REQUIRED_GATE_CLASSES,
     REQUIRED_PLATFORM_IDS,
     load_host_promotion_evidence_contract,
+    load_host_promotion_reviewed_source_inputs,
     validate_host_promotion_evidence_contract,
+    validate_host_promotion_reviewed_source_inputs,
 )
+from scripts.platform_hardening_contracts.host_promotion import (
+    HOST_PROMOTION_PACKAGE_CHANNEL_LAYOUT_BY_PLATFORM,
+    HOST_PROMOTION_REQUIRED_HOSTED_PROMOTION_ARTIFACT_SUFFIXES,
+)
+
+
+INSTALL_PREFIX_LAYOUT_BY_PLATFORM = {
+    "linux-x64": [
+        "bin/objc3c-native",
+        "lib/libobjc3-runtime.so",
+        "include/objc3/runtime",
+    ],
+    "darwin-arm64": [
+        "bin/objc3c-native",
+        "lib/libobjc3-runtime.dylib",
+        "include/objc3/runtime",
+    ],
+}
+
+
+def _platform_artifact_paths(platform_id: str) -> list[str]:
+    return [
+        f"tmp/reports/platform-host-evidence/{platform_id}/{suffix}"
+        for suffix in HOST_PROMOTION_REQUIRED_HOSTED_PROMOTION_ARTIFACT_SUFFIXES
+    ]
+
+
+def _mark_record_as_reviewed_source(
+    record: dict[str, object],
+    platform_id: str,
+    *,
+    include_artifacts: bool = True,
+) -> None:
+    record["claim_state"] = "reviewed-source"
+    record["promotion_allowed"] = True
+    record["platform_ids"] = [platform_id]
+    record["review_status"] = "reviewed-current-source"
+    record["stale_evidence_allowed"] = False
+    record["prose_only_evidence"] = False
+    record["local_temp_evidence_claim"] = False
+    record["source_paths"] = [
+        "tests/tooling/fixtures/platform_hardening/host_promotion_reviewed_source_inputs.json",
+        "tests/tooling/fixtures/platform_hardening/platform_host_promotion_evidence_contract.json",
+        "tests/tooling/fixtures/platform_hardening/platform_toolchain_support_evidence.json",
+    ]
+    if include_artifacts:
+        paths = _platform_artifact_paths(platform_id)
+        record["hosted_runner_artifact_paths"] = paths
+        record["toolchain_artifact_paths"] = paths
+        record["package_artifact_paths"] = paths
 
 
 def test_platform_host_promotion_evidence_fixture_validates() -> None:
@@ -48,6 +100,16 @@ def test_platform_host_promotion_evidence_fixture_validates() -> None:
 
     platforms = {row["platform_id"]: row for row in payload["platforms"]}
     assert set(platforms) == {"linux-x64", "darwin-arm64"}
+    assert platforms["linux-x64"]["package_install_native_execution_evidence"][
+        "package_root_layout"
+    ] == list(HOST_PROMOTION_PACKAGE_CHANNEL_LAYOUT_BY_PLATFORM["linux-x64"])
+    assert platforms["darwin-arm64"]["package_install_native_execution_evidence"][
+        "package_root_layout"
+    ] == list(HOST_PROMOTION_PACKAGE_CHANNEL_LAYOUT_BY_PLATFORM["darwin-arm64"])
+    assert HOST_PROMOTION_PACKAGE_CHANNEL_LAYOUT_BY_PLATFORM["windows-x64"][1:3] == (
+        "artifacts/bin/objc3c-native.exe",
+        "artifacts/lib/objc3_runtime.lib",
+    )
     assert platforms["linux-x64"]["object_debug_identity"] == {
         "object_format": "ELF",
         "debug_format": "DWARF",
@@ -188,6 +250,75 @@ def test_platform_host_promotion_evidence_rejects_missing_package_root_layout() 
 
     with pytest.raises(RuntimeError, match="package_root_layout must not be empty"):
         validate_host_promotion_evidence_contract(payload)
+
+
+def test_platform_host_promotion_evidence_rejects_install_prefix_package_root_layout() -> None:
+    payload = deepcopy(load_host_promotion_evidence_contract())
+    payload["platforms"][0]["package_install_native_execution_evidence"][
+        "package_root_layout"
+    ] = INSTALL_PREFIX_LAYOUT_BY_PLATFORM["linux-x64"]
+
+    with pytest.raises(RuntimeError, match="package_root_layout used install-prefix paths"):
+        validate_host_promotion_evidence_contract(payload)
+
+
+def test_reviewed_source_inputs_reject_install_prefix_package_root_layout() -> None:
+    payload = deepcopy(load_host_promotion_reviewed_source_inputs())
+    payload["package_root_evidence_records"][0][
+        "package_root_layout"
+    ] = INSTALL_PREFIX_LAYOUT_BY_PLATFORM["linux-x64"]
+
+    with pytest.raises(RuntimeError, match="package_root_layout used install-prefix paths"):
+        validate_host_promotion_reviewed_source_inputs(payload)
+
+
+def test_reviewed_source_inputs_reject_missing_durable_fixture_path() -> None:
+    payload = deepcopy(load_host_promotion_reviewed_source_inputs())
+    payload["platforms"][0]["reviewed_source_paths"] = [
+        "tests/tooling/fixtures/platform_hardening/host_promotion_reviewed_source_inputs.json"
+    ]
+
+    with pytest.raises(RuntimeError, match="missing durable reviewed source fixture paths"):
+        validate_host_promotion_reviewed_source_inputs(payload)
+
+
+def test_reviewed_source_inputs_reject_stale_promotion_record() -> None:
+    payload = deepcopy(load_host_promotion_reviewed_source_inputs())
+    record = payload["host_identity_records"][0]
+    _mark_record_as_reviewed_source(record, "linux-x64")
+    record["stale_evidence_allowed"] = True
+
+    with pytest.raises(RuntimeError, match="allowed stale evidence"):
+        validate_host_promotion_reviewed_source_inputs(payload)
+
+
+def test_reviewed_source_inputs_reject_prose_only_promotion_record() -> None:
+    payload = deepcopy(load_host_promotion_reviewed_source_inputs())
+    record = payload["host_identity_records"][0]
+    _mark_record_as_reviewed_source(record, "linux-x64")
+    record["prose_only_evidence"] = True
+
+    with pytest.raises(RuntimeError, match="used prose-only evidence"):
+        validate_host_promotion_reviewed_source_inputs(payload)
+
+
+def test_reviewed_source_inputs_reject_local_temp_promotion_claim() -> None:
+    payload = deepcopy(load_host_promotion_reviewed_source_inputs())
+    record = payload["host_identity_records"][0]
+    _mark_record_as_reviewed_source(record, "linux-x64")
+    record["local_temp_evidence_claim"] = True
+
+    with pytest.raises(RuntimeError, match="used local temp evidence claim"):
+        validate_host_promotion_reviewed_source_inputs(payload)
+
+
+def test_reviewed_source_inputs_require_hosted_toolchain_package_artifacts() -> None:
+    payload = deepcopy(load_host_promotion_reviewed_source_inputs())
+    record = payload["host_identity_records"][0]
+    _mark_record_as_reviewed_source(record, "linux-x64", include_artifacts=False)
+
+    with pytest.raises(RuntimeError, match="missing list field hosted_runner_artifact_paths"):
+        validate_host_promotion_reviewed_source_inputs(payload)
 
 
 def test_platform_host_promotion_evidence_rejects_missing_install_receipt_requirement() -> None:

@@ -15,7 +15,15 @@ Import-Module (Join-Path $packageScriptModuleRoot "environment_paths.psm1") -For
 Import-Module (Join-Path $packageScriptModuleRoot "staging_orchestration.psm1") -Force -DisableNameChecking
 Import-Module (Join-Path $packageScriptModuleRoot "artifact_report.psm1") -Force -DisableNameChecking
 Import-Module (Join-Path $packageScriptModuleRoot "status_rendering.psm1") -Force -DisableNameChecking
-Import-Module (Join-Path $PSScriptRoot "objc3c_platform_host_evidence_producers.psm1") -Force -DisableNameChecking
+$platformEvidenceModule = Import-Module `
+  (Join-Path $PSScriptRoot "objc3c_platform_host_evidence_producers.psm1") `
+  -Force `
+  -DisableNameChecking `
+  -PassThru
+$writeRuntimeLibraryManifestEvidence = Get-Command `
+  -Module $platformEvidenceModule.Name `
+  -Name "Write-Objc3cDarwinRuntimeLibraryManifestEvidence" `
+  -ErrorAction Stop
 
 $request = New-RunnableToolchainPackageRequest `
   -PackageRoot $PackageRoot `
@@ -42,7 +50,7 @@ $manifestPayload = Write-RunnableToolchainPackageManifest `
   -StagedRelativePaths $staging.StagedRelativePaths `
   -SanitizerVariant $request.SanitizerVariant
 
-Write-Objc3cDarwinRuntimeLibraryManifestEvidence `
+& $writeRuntimeLibraryManifestEvidence `
   -RepoRoot $environment.RepoRoot `
   -PlatformId $manifestPayload.target_platform_id `
   -PackageRoot $environment.PackageRoot `

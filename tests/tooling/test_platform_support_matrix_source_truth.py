@@ -12,6 +12,131 @@ from scripts.check_objc3c_platform_support_matrix import (
 )
 
 ROOT = Path(__file__).resolve().parents[2]
+EXPECTED_RELEASE_PACKAGE_ROOT_LAYOUTS = {
+    "windows-x64": [
+        "artifacts/package/objc3c-runnable-toolchain-package.json",
+        "artifacts/bin/objc3c-native.exe",
+        "artifacts/lib/objc3_runtime.lib",
+        "stdlib/workspace.json",
+        "stdlib/modules/objc3.core/module.json",
+        "docs/runbooks/objc3c_packaging_channels.md",
+    ],
+    "linux-x64": [
+        "artifacts/package/objc3c-runnable-toolchain-package.json",
+        "artifacts/bin/objc3c-native",
+        "artifacts/lib/libobjc3-runtime.so",
+        "stdlib/workspace.json",
+        "stdlib/modules/objc3.core/module.json",
+        "docs/runbooks/objc3c_packaging_channels.md",
+    ],
+    "darwin-arm64": [
+        "artifacts/package/objc3c-runnable-toolchain-package.json",
+        "artifacts/bin/objc3c-native",
+        "artifacts/lib/libobjc3-runtime.dylib",
+        "stdlib/workspace.json",
+        "stdlib/modules/objc3.core/module.json",
+        "docs/runbooks/objc3c_packaging_channels.md",
+    ],
+}
+INSTALL_PREFIX_PACKAGE_LAYOUT_ROOTS = ("bin/", "lib/", "include/")
+EXPECTED_UNSUPPORTED_PROMOTION_CLOSURE = {
+    "linux-x64": {
+        "capability_status": "unsupported",
+        "support_claim_allowed": False,
+        "support_claim_blocked_until": ["build", "package", "install", "execution"],
+        "package_variant_claim_state": "fail-closed",
+        "package_variant_platform_ids": [],
+        "package_artifact_evidence": {
+            "package_root_layout": EXPECTED_RELEASE_PACKAGE_ROOT_LAYOUTS["linux-x64"],
+            "runtime_library_names": ["libobjc3-runtime.so"],
+            "object_format": "ELF",
+            "debug_format": "DWARF",
+            "loader_path_proof_required": True,
+            "install_receipt_required": True,
+            "native_execution_evidence_required": True,
+        },
+        "host_promotion_constraints": {
+            "promotion_policy": "real-host-execution-required",
+            "real_host_execution_required": True,
+            "generated_host_evidence_support_truth": False,
+            "reviewed_source_truth_required": True,
+            "hosted_runner_summary_behavior": "summary-only-no-support-promotion",
+        },
+        "runner_toolchain_requirements": {
+            "runner_label": "ubuntu-24.04",
+            "required_toolchain_components": [
+                "llvm",
+                "clang",
+                "cmake",
+                "ninja",
+                "python",
+                "node",
+                "pwsh",
+            ],
+            "native_object_emission_required": True,
+            "missing_native_execution_behavior": "fail-closed-no-support-promotion",
+            "unsupported_toolchain_result": "fail-closed-no-range-claim",
+        },
+        "fail_closed_requirements": {
+            "unsupported_behavior": "fail-closed",
+            "unsupported_evidence_claim_weight": "policy",
+            "blocked_publication_surfaces": [
+                "package",
+                "install",
+                "execution",
+                "publication",
+            ],
+        },
+    },
+    "darwin-arm64": {
+        "capability_status": "unsupported",
+        "support_claim_allowed": False,
+        "support_claim_blocked_until": ["build", "package", "install", "execution"],
+        "package_variant_claim_state": "fail-closed",
+        "package_variant_platform_ids": [],
+        "package_artifact_evidence": {
+            "package_root_layout": EXPECTED_RELEASE_PACKAGE_ROOT_LAYOUTS["darwin-arm64"],
+            "runtime_library_names": ["libobjc3-runtime.dylib"],
+            "object_format": "Mach-O",
+            "debug_format": "DWARF/dSYM",
+            "loader_path_proof_required": True,
+            "install_receipt_required": True,
+            "native_execution_evidence_required": True,
+        },
+        "host_promotion_constraints": {
+            "promotion_policy": "real-host-execution-required",
+            "real_host_execution_required": True,
+            "generated_host_evidence_support_truth": False,
+            "reviewed_source_truth_required": True,
+            "hosted_runner_summary_behavior": "summary-only-no-support-promotion",
+        },
+        "runner_toolchain_requirements": {
+            "runner_label": "macos-15",
+            "required_toolchain_components": [
+                "llvm",
+                "clang",
+                "cmake",
+                "ninja",
+                "python",
+                "node",
+                "pwsh",
+            ],
+            "native_object_emission_required": True,
+            "missing_native_execution_behavior": "fail-closed-no-support-promotion",
+            "unsupported_toolchain_result": "fail-closed-no-range-claim",
+        },
+        "fail_closed_requirements": {
+            "unsupported_behavior": "fail-closed",
+            "unsupported_evidence_claim_weight": "policy",
+            "blocked_publication_surfaces": [
+                "package",
+                "install",
+                "execution",
+                "publication",
+            ],
+        },
+    },
+}
 
 
 def load_source_truth() -> dict:
@@ -22,6 +147,21 @@ def write_source_truth(tmp_path: Path, payload: dict) -> Path:
     path = tmp_path / "source_truth_matrix.json"
     path.write_text(json.dumps(payload, indent=2, sort_keys=True), encoding="utf-8")
     return path
+
+
+def assert_release_package_root_layout(platform_id: str, layout: list[str]) -> None:
+    assert layout == EXPECTED_RELEASE_PACKAGE_ROOT_LAYOUTS[platform_id]
+    assert not any(path.startswith(INSTALL_PREFIX_PACKAGE_LAYOUT_ROOTS) for path in layout)
+
+
+def assert_unsupported_promotion_closure(row: dict) -> None:
+    platform_id = row["platform_id"]
+    closure = row["promotion_closure_contract"]
+    assert closure == EXPECTED_UNSUPPORTED_PROMOTION_CLOSURE[platform_id]
+    assert closure["support_claim_blocked_until"] == row["required_missing_evidence_classes"]
+    assert closure["runner_toolchain_requirements"]["required_toolchain_components"] == row[
+        "required_toolchain_components"
+    ]
 
 
 def test_platform_support_source_truth_validates_checked_matrix() -> None:
@@ -149,6 +289,8 @@ def test_platform_support_source_truth_validates_checked_matrix() -> None:
         "linux-x64": ["x86_64-unknown-linux-gnu"],
         "darwin-arm64": ["aarch64-apple-darwin"],
     }
+    for row in source_truth["unsupported_rows"]:
+        assert_unsupported_promotion_closure(row)
     assert all(
         row["metadata_freshness_guard"]["generated_metadata_allowed"] is False
         and row["metadata_freshness_guard"]["blocks_publication_on_stale"] is True
@@ -170,6 +312,16 @@ def test_platform_support_source_truth_validates_checked_matrix() -> None:
     assert package_rows["objc3c.package.runtime.darwin-arm64.release.fail-closed"][
         "artifact_identity_contract"
     ]["runtime_library_names"] == ["libobjc3-runtime.dylib"]
+    for row_id in (
+        "objc3c.package.runtime.windows-x64.release",
+        "objc3c.package.runtime.linux-x64.release.fail-closed",
+        "objc3c.package.runtime.darwin-arm64.release.fail-closed",
+    ):
+        row = package_rows[row_id]
+        assert_release_package_root_layout(
+            row["target_platform_id"],
+            row["artifact_identity_contract"]["package_root_layout"],
+        )
     assert set(
         package_rows["objc3c.package.sanitizer.asan.reserved"][
             "promotion_gate_contract"
@@ -209,6 +361,59 @@ def test_platform_support_source_truth_rejects_unsupported_host_widening(tmp_pat
     payload["unsupported_rows"][0]["platform_id"] = "windows-x64"
 
     with pytest.raises(RuntimeError, match="both supported and unsupported"):
+        validate_platform_support_source_truth(write_source_truth(tmp_path, payload))
+
+
+def test_platform_support_source_truth_rejects_unsupported_capability_promotion(tmp_path: Path) -> None:
+    payload = deepcopy(load_source_truth())
+    payload["unsupported_rows"][0]["promotion_closure_contract"]["capability_status"] = "supported"
+
+    with pytest.raises(Exception, match="schema validation|was expected|const"):
+        validate_platform_support_source_truth(write_source_truth(tmp_path, payload))
+
+
+def test_platform_support_source_truth_rejects_unsupported_runner_label_drift(tmp_path: Path) -> None:
+    payload = deepcopy(load_source_truth())
+    payload["unsupported_rows"][0]["promotion_closure_contract"]["runner_toolchain_requirements"][
+        "runner_label"
+    ] = "ubuntu-latest"
+
+    with pytest.raises(Exception, match="schema validation|was expected|const"):
+        validate_platform_support_source_truth(write_source_truth(tmp_path, payload))
+
+
+def test_platform_support_source_truth_rejects_darwin_package_artifact_drift(tmp_path: Path) -> None:
+    payload = deepcopy(load_source_truth())
+    payload["unsupported_rows"][1]["promotion_closure_contract"]["package_artifact_evidence"][
+        "package_root_layout"
+    ] = EXPECTED_RELEASE_PACKAGE_ROOT_LAYOUTS["linux-x64"]
+
+    with pytest.raises(Exception, match="schema validation|was expected|const"):
+        validate_platform_support_source_truth(write_source_truth(tmp_path, payload))
+
+
+def test_platform_support_source_truth_rejects_fail_open_runner_toolchain_policy(tmp_path: Path) -> None:
+    payload = deepcopy(load_source_truth())
+    payload["unsupported_rows"][1]["promotion_closure_contract"]["runner_toolchain_requirements"][
+        "unsupported_toolchain_result"
+    ] = "best-effort"
+
+    with pytest.raises(Exception, match="schema validation|was expected|const"):
+        validate_platform_support_source_truth(write_source_truth(tmp_path, payload))
+
+
+def test_platform_support_source_truth_rejects_release_install_prefix_layout(tmp_path: Path) -> None:
+    payload = deepcopy(load_source_truth())
+    for row in payload["package_variant_rows"]:
+        if row["row_id"] == "objc3c.package.runtime.windows-x64.release":
+            row["artifact_identity_contract"]["package_root_layout"] = [
+                "bin/objc3c-native.exe",
+                "lib/objc3-runtime.lib",
+                "include/objc3/runtime",
+            ]
+            break
+
+    with pytest.raises(RuntimeError, match="package_root_layout"):
         validate_platform_support_source_truth(write_source_truth(tmp_path, payload))
 
 

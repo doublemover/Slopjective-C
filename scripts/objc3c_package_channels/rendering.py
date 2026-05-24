@@ -133,7 +133,7 @@ function Assert-PayloadEntriesMatch {
   }
   for ($index = 0; $index -lt $expected.Count; $index++) {
     if ($actual[$index] -ne $expected[$index]) {
-      throw "$Context payload entry drifted at index $index: expected $($expected[$index]), got $($actual[$index])"
+      throw "$Context payload entry drifted at index ${index}: expected $($expected[$index]), got $($actual[$index])"
     }
   }
 }
@@ -259,8 +259,12 @@ function Resolve-SanitizerPackageVariant {
 function Assert-ReceiptSanitizerVariant {
   param([Parameter(Mandatory = $true)]$Receipt)
 
+  $sanitizerPackageVariant = $null
+  if ($Receipt.PSObject.Properties.Name -contains "sanitizer_package_variant") {
+    $sanitizerPackageVariant = $Receipt.sanitizer_package_variant
+  }
   if ($SanitizerVariant -eq "release") {
-    if ($null -ne $Receipt.sanitizer_package_variant) {
+    if ($null -ne $sanitizerPackageVariant) {
       throw "installer target receipt uses sanitizer runtime for release install: $installHome"
     }
     return
@@ -299,53 +303,53 @@ function Assert-ReceiptSanitizerVariant {
     )
   }
 
-  if ($null -eq $Receipt.sanitizer_package_variant) {
+  if ($null -eq $sanitizerPackageVariant) {
     throw "installer target receipt missing sanitizer package variant: $installHome"
   }
-  if ([string]$Receipt.sanitizer_package_variant.sanitizer -ne $SanitizerVariant) {
+  if ([string]$sanitizerPackageVariant.sanitizer -ne $SanitizerVariant) {
     throw "installer target receipt sanitizer variant drifted: $installHome"
   }
-  if ([string]$Receipt.sanitizer_package_variant.package_id -ne $expectedPackageId -or
-      [string]$Receipt.sanitizer_package_variant.package_variant_row_id -ne $expectedPackageVariantRowId -or
-      [string]$Receipt.sanitizer_package_variant.package_channel_id -ne $expectedPackageChannelId -or
-      [string]$Receipt.sanitizer_package_variant.target_platform_id -ne "windows-x64" -or
-      [string]$Receipt.sanitizer_package_variant.metadata_manifest_path -ne $expectedMetadataPath -or
-      [string]$Receipt.sanitizer_package_variant.runtime_library_manifest_path -ne $expectedRuntimeManifestPath -or
-      [string]$Receipt.sanitizer_package_variant.missing_runtime_behavior -ne "fail-closed-before-package-install" -or
-      [string]$Receipt.sanitizer_package_variant.selected_runtime_variant -ne $expectedSelector -or
-      [string]$Receipt.sanitizer_package_variant.install_selector -ne $expectedSelector) {
+  if ([string]$sanitizerPackageVariant.package_id -ne $expectedPackageId -or
+      [string]$sanitizerPackageVariant.package_variant_row_id -ne $expectedPackageVariantRowId -or
+      [string]$sanitizerPackageVariant.package_channel_id -ne $expectedPackageChannelId -or
+      [string]$sanitizerPackageVariant.target_platform_id -ne "windows-x64" -or
+      [string]$sanitizerPackageVariant.metadata_manifest_path -ne $expectedMetadataPath -or
+      [string]$sanitizerPackageVariant.runtime_library_manifest_path -ne $expectedRuntimeManifestPath -or
+      [string]$sanitizerPackageVariant.missing_runtime_behavior -ne "fail-closed-before-package-install" -or
+      [string]$sanitizerPackageVariant.selected_runtime_variant -ne $expectedSelector -or
+      [string]$sanitizerPackageVariant.install_selector -ne $expectedSelector) {
     throw "installer target receipt sanitizer package identity drifted: $installHome"
   }
   Assert-PayloadEntriesMatch `
-    -ActualEntries @($Receipt.sanitizer_package_variant.runtime_library_ids) `
+    -ActualEntries @($sanitizerPackageVariant.runtime_library_ids) `
     -ExpectedEntries $expectedRuntimeLibraries `
     -Context "installer target receipt sanitizer runtime libraries"
-  if ([string]$Receipt.sanitizer_package_variant.metadata_digest -notmatch '^sha256:[0-9a-f]{64}$') {
+  if ([string]$sanitizerPackageVariant.metadata_digest -notmatch '^sha256:[0-9a-f]{64}$') {
     throw "installer target receipt sanitizer metadata digest drifted: $installHome"
   }
-  if ([string]$Receipt.sanitizer_package_variant.runtime_library_manifest_digest -notmatch '^sha256:[0-9a-f]{64}$') {
+  if ([string]$sanitizerPackageVariant.runtime_library_manifest_digest -notmatch '^sha256:[0-9a-f]{64}$') {
     throw "installer target receipt sanitizer runtime library manifest digest drifted: $installHome"
   }
   Assert-PayloadEntriesMatch `
-    -ActualEntries @($Receipt.sanitizer_package_variant.runtime_library_artifacts | ForEach-Object { [string]$_.artifact }) `
+    -ActualEntries @($sanitizerPackageVariant.runtime_library_artifacts | ForEach-Object { [string]$_.artifact }) `
     -ExpectedEntries $expectedRuntimeEntries `
     -Context "installer target receipt sanitizer runtime library artifacts"
-  foreach ($runtimeArtifact in @($Receipt.sanitizer_package_variant.runtime_library_artifacts)) {
+  foreach ($runtimeArtifact in @($sanitizerPackageVariant.runtime_library_artifacts)) {
     if ([string]$runtimeArtifact.sha256 -notmatch '^[0-9a-f]{64}$' -or $runtimeArtifact.install_required -ne $true) {
       throw "installer target receipt sanitizer runtime library artifact digest drifted: $installHome"
     }
   }
-  if ($SanitizerVariant -eq "undefined" -and [string]$Receipt.sanitizer_package_variant.trap_or_recover_mode -ne "trap") {
+  if ($SanitizerVariant -eq "undefined" -and [string]$sanitizerPackageVariant.trap_or_recover_mode -ne "trap") {
     throw "installer target receipt UBSan trap-or-recover mode drifted: $installHome"
   }
-  if ($Receipt.sanitizer_package_variant.native_execution_contract.native_execution_required_before_support -ne $true -or
-      $Receipt.sanitizer_package_variant.native_execution_contract.native_execution_record_required -ne $true -or
-      [string]$Receipt.sanitizer_package_variant.native_execution_contract.missing_native_execution_behavior -ne "fail-closed-before-support-promotion" -or
-      $Receipt.sanitizer_package_variant.native_execution_contract.native_execution_claimed -ne $false) {
+  if ($sanitizerPackageVariant.native_execution_contract.native_execution_required_before_support -ne $true -or
+      $sanitizerPackageVariant.native_execution_contract.native_execution_record_required -ne $true -or
+      [string]$sanitizerPackageVariant.native_execution_contract.missing_native_execution_behavior -ne "fail-closed-before-support-promotion" -or
+      $sanitizerPackageVariant.native_execution_contract.native_execution_claimed -ne $false) {
     throw "installer target receipt sanitizer native execution contract drifted: $installHome"
   }
-  if ($Receipt.sanitizer_package_variant.support_truth -ne $false -or
-      $Receipt.sanitizer_package_variant.native_execution_claimed -ne $false) {
+  if ($sanitizerPackageVariant.support_truth -ne $false -or
+      $sanitizerPackageVariant.native_execution_claimed -ne $false) {
     throw "installer target receipt promoted sanitizer support without native execution: $installHome"
   }
 }
@@ -531,7 +535,7 @@ function Assert-PayloadEntriesMatch {
   }
   for ($index = 0; $index -lt $expected.Count; $index++) {
     if ($actual[$index] -ne $expected[$index]) {
-      throw "$Context payload entry drifted at index $index: expected $($expected[$index]), got $($actual[$index])"
+      throw "$Context payload entry drifted at index ${index}: expected $($expected[$index]), got $($actual[$index])"
     }
   }
 }
@@ -576,14 +580,18 @@ function Assert-ReceiptOwnsInstallHome {
   $receipt = Get-Content -LiteralPath $receiptPath -Raw | ConvertFrom-Json
   $receiptPayloadEntries = @($receipt.payload_required_entries)
   $expectedPayloadEntries = @($payloadRequiredEntries)
-  if ($null -ne $receipt.sanitizer_package_variant) {
-    if ([string]$receipt.sanitizer_package_variant.sanitizer -eq "address") {
+  $sanitizerPackageVariant = $null
+  if ($receipt.PSObject.Properties.Name -contains "sanitizer_package_variant") {
+    $sanitizerPackageVariant = $receipt.sanitizer_package_variant
+  }
+  if ($null -ne $sanitizerPackageVariant) {
+    if ([string]$sanitizerPackageVariant.sanitizer -eq "address") {
       $expectedPayloadEntries += "share/objc3c/sanitizer/asan-metadata.json"
       $expectedPayloadEntries += "share/objc3c/sanitizer/asan-runtime-libraries.json"
       $expectedPayloadEntries += "artifacts/runtime/sanitizer/address/clang_rt.asan_dynamic-x86_64.dll"
       $expectedPayloadEntries += "artifacts/runtime/sanitizer/address/clang_rt.asan_dynamic-x86_64.lib"
       $expectedPayloadEntries += "artifacts/runtime/sanitizer/address/clang_rt.asan_dynamic_runtime_thunk-x86_64.lib"
-    } elseif ([string]$receipt.sanitizer_package_variant.sanitizer -eq "undefined") {
+    } elseif ([string]$sanitizerPackageVariant.sanitizer -eq "undefined") {
       $expectedPayloadEntries += "share/objc3c/sanitizer/ubsan-metadata.json"
       $expectedPayloadEntries += "share/objc3c/sanitizer/ubsan-runtime-libraries.json"
       $expectedPayloadEntries += "artifacts/runtime/sanitizer/undefined/clang_rt.ubsan_standalone-x86_64.lib"

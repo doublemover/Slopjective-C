@@ -5,9 +5,15 @@ from __future__ import annotations
 import argparse
 from collections.abc import Iterator, Sequence
 from contextlib import contextmanager
+from dataclasses import replace
 import os
 
-from .commands import build_release_foundation_artifacts, build_runnable_package, build_support_matrix
+from .commands import (
+    build_release_foundation_artifacts,
+    build_runnable_package,
+    build_support_matrix,
+    require_existing_runnable_package,
+)
 from .loading import load_package_channel_inputs, load_package_channel_surface_inputs
 from .model import (
     MANIFEST_RELATIVE_PATH,
@@ -35,6 +41,14 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
         "--reuse-release-foundation-artifacts",
         action="store_true",
         help="Use the already validated release-foundation integration outputs instead of rebuilding them.",
+    )
+    parser.add_argument(
+        "--reuse-runnable-package-root",
+        default=None,
+        help=(
+            "Reuse an already built runnable toolchain package root after validating "
+            "its manifest, target platform, sanitizer variant, and required payload layout."
+        ),
     )
     parser.add_argument(
         "--sanitizer-variant",
@@ -88,17 +102,36 @@ def main(argv: Sequence[str] | None = None) -> int:
         sanitizer_variant=str(args.sanitizer_variant),
         target_platform_id=target_platform_id,
     )
+    reusable_package_root = None
+    if args.reuse_runnable_package_root is not None:
+        reusable_package_root = require_existing_runnable_package(
+            args.reuse_runnable_package_root,
+            manifest_relative_path=MANIFEST_RELATIVE_PATH,
+            sanitizer_variant=paths.sanitizer_variant,
+            target_platform_id=paths.target_platform_id,
+        )
+        paths = replace(paths, package_root=reusable_package_root)
+
     with selected_target_platform_environment(target_platform_id):
         build_release_foundation_artifacts(
-            reuse_existing=bool(args.reuse_release_foundation_artifacts)
+            reuse_existing=bool(args.reuse_release_foundation_artifacts),
+            reuse_primary_package_root=None
+            if args.reuse_release_foundation_artifacts
+            else reusable_package_root
+            if paths.sanitizer_variant == "release"
+            else None,
         )
-    prepare_package_channel_workspace(paths)
-    with selected_target_platform_environment(target_platform_id):
-        build_runnable_package(
-            paths.package_root,
-            MANIFEST_RELATIVE_PATH,
-            sanitizer_variant=paths.sanitizer_variant,
-        )
+    prepare_package_channel_workspace(
+        paths,
+        preserve_package_root=reusable_package_root is not None,
+    )
+    if reusable_package_root is None:
+        with selected_target_platform_environment(target_platform_id):
+            build_runnable_package(
+                paths.package_root,
+                MANIFEST_RELATIVE_PATH,
+                sanitizer_variant=paths.sanitizer_variant,
+            )
 
     publish_portable_archive(paths)
     publish_installer_archive(paths)

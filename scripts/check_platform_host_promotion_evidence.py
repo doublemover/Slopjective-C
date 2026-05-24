@@ -27,8 +27,22 @@ from platform_hardening_contracts import (
     load_json_object,
     write_json,
 )
+from platform_hardening_contracts.host_promotion import (
+    HOST_PROMOTION_INSTALL_PREFIX_PACKAGE_ROOT_LAYOUT_PATHS,
+    HOST_PROMOTION_PACKAGE_CHANNEL_LAYOUT_BY_PLATFORM,
+    HOST_PROMOTION_PROMOTION_PREREQUISITE_RECORD_TYPES,
+    HOST_PROMOTION_REQUIRED_HOSTED_PROMOTION_ARTIFACT_SUFFIXES,
+    HOST_PROMOTION_REVIEWED_SOURCE_DURABLE_FIXTURE_PATHS,
+    HOST_PROMOTION_REVIEWED_SOURCE_INPUT_CONTRACT_ID,
+    HOST_PROMOTION_REVIEWED_SOURCE_INPUT_RELATIVE_PATH,
+    HOST_PROMOTION_REVIEWED_SOURCE_RECORD_ID_FIELD_BY_TYPE,
+    HOST_PROMOTION_REVIEWED_SOURCE_RECORD_SECTION_BY_TYPE,
+    HOST_PROMOTION_WINDOWS_PACKAGE_CHANNEL_REQUIRED_PATHS,
+    build_host_promotion_reviewed_source_input_model_payload,
+)
 
 CONTRACT_PATH = ROOT / HOST_PROMOTION_EVIDENCE_CONTRACT_RELATIVE_PATH
+REVIEWED_SOURCE_INPUT_PATH = ROOT / HOST_PROMOTION_REVIEWED_SOURCE_INPUT_RELATIVE_PATH
 SUMMARY_PATH = ROOT / HOST_PROMOTION_EVIDENCE_SUMMARY_RELATIVE_PATH
 
 REQUIRED_PLATFORM_IDS: tuple[str, ...] = host_promotion_platform_ids()
@@ -52,6 +66,113 @@ EXPECTED_REVIEWED_SOURCE_RECORD_TYPES: dict[str, str] = {
     "debug_identity": "debug_identity",
     "package_install_identity": "package_install_identity",
     "runtime_load_link_proof": "runtime_load_link_proof",
+}
+REQUIRED_PROMOTION_PREREQUISITE_RECORD_TYPES: tuple[str, ...] = (
+    HOST_PROMOTION_PROMOTION_PREREQUISITE_RECORD_TYPES
+)
+REQUIRED_REVIEWED_SOURCE_DURABLE_FIXTURE_PATHS: tuple[str, ...] = (
+    HOST_PROMOTION_REVIEWED_SOURCE_DURABLE_FIXTURE_PATHS
+)
+REQUIRED_HOSTED_PROMOTION_ARTIFACT_SUFFIXES: tuple[str, ...] = (
+    HOST_PROMOTION_REQUIRED_HOSTED_PROMOTION_ARTIFACT_SUFFIXES
+)
+REVIEWED_SOURCE_RECORD_SECTION_BY_TYPE: dict[str, str] = (
+    HOST_PROMOTION_REVIEWED_SOURCE_RECORD_SECTION_BY_TYPE
+)
+REVIEWED_SOURCE_RECORD_ID_FIELD_BY_TYPE: dict[str, str] = (
+    HOST_PROMOTION_REVIEWED_SOURCE_RECORD_ID_FIELD_BY_TYPE
+)
+REVIEWED_SOURCE_RECORD_REQUIRED_FIELDS_BY_TYPE: dict[str, tuple[str, ...]] = {
+    "host_identity": (
+        "host_os",
+        "host_arch",
+        "host_system",
+        "host_machine",
+        "host_triples",
+    ),
+    "toolchain_probe": (
+        "required_components",
+        "required_missing_probe_classes",
+        "component_probes",
+    ),
+    "package_root": (
+        "package_variant_row_id",
+        "package_root_layout",
+        "object_format",
+        "debug_format",
+        "runtime_library_names",
+        "loader_path_policy",
+    ),
+    "install_receipt": (
+        "package_variant_row_id",
+        "package_root_record_id",
+        "package_install_identity_record_id",
+        "install_receipt_path",
+        "install_receipt_present",
+        "generated_report_path",
+        "generated_report_support_truth",
+    ),
+    "native_execution": (
+        "package_variant_row_id",
+        "host_identity_record_id",
+        "package_root_record_id",
+        "runtime_library_names",
+        "package_root_layout",
+        "loader_policy",
+        "native_execution_required",
+        "native_execution_passed",
+        "execution_evidence_ids",
+    ),
+    "object_identity": (
+        "package_variant_row_id",
+        "package_root_record_id",
+        "object_format",
+        "debug_format",
+        "target_triple",
+        "arch",
+        "generated_report_path",
+        "generated_report_support_truth",
+    ),
+    "debug_identity": (
+        "package_variant_row_id",
+        "package_root_record_id",
+        "object_format",
+        "debug_format",
+        "target_triple",
+        "arch",
+        "generated_report_path",
+        "generated_report_support_truth",
+    ),
+    "package_install_identity": (
+        "package_variant_row_id",
+        "package_root_record_id",
+        "object_format",
+        "debug_format",
+        "package_root_layout",
+        "package_manifest_path",
+        "runtime_library_manifest_path",
+        "install_receipt_path",
+        "install_receipt_present",
+        "generated_report_path",
+        "generated_report_support_truth",
+    ),
+    "runtime_load_link_proof": (
+        "package_variant_row_id",
+        "package_root_record_id",
+        "native_execution_record_id",
+        "object_format",
+        "debug_format",
+        "package_root_layout",
+        "runtime_library_names",
+        "runtime_library_manifest_path",
+        "linker_flags",
+        "loader_policy",
+        "load_probe_path",
+        "load_probe_exit_code",
+        "resolved_runtime_paths",
+        "generated_report_path",
+        "generated_report_support_truth",
+    ),
 }
 EXPECTED_PLATFORM_CONTRACTS = {
     contract.platform_id: contract
@@ -124,6 +245,203 @@ def _require_tmp_reports_path(path: Any, owner: str) -> str:
     value = str(path)
     expect(value.startswith("tmp/reports/"), f"{owner} must write under tmp/reports")
     return value
+
+
+def _require_bool(payload: dict[str, Any], field_name: str, owner: str) -> bool:
+    value = payload.get(field_name)
+    expect(isinstance(value, bool), f"{owner} field {field_name} must be boolean")
+    return value
+
+
+def _require_checked_source_paths(paths: list[Any], owner: str) -> list[str]:
+    values = [str(path).replace("\\", "/") for path in paths]
+    expect(values, f"{owner} source paths must not be empty")
+    for path in values:
+        expect(path, f"{owner} source path must not be empty")
+        expect(
+            not path.startswith(("tmp/", "artifacts/")),
+            f"{owner} source path must be checked source: {path}",
+        )
+    return values
+
+
+def _platform_report_path(platform_id: str, suffix: str) -> str:
+    return f"{generated_report_root_for_platform(platform_id)}/{suffix}"
+
+
+def _require_durable_reviewed_source_paths(paths: list[str], owner: str) -> None:
+    _require_set_contains(
+        paths,
+        REQUIRED_REVIEWED_SOURCE_DURABLE_FIXTURE_PATHS,
+        owner=owner,
+        description="durable reviewed source fixture paths",
+    )
+
+
+def _require_hosted_promotion_artifact_paths(
+    payload: dict[str, Any],
+    field_name: str,
+    owner: str,
+    *,
+    platform_id: str,
+) -> list[str]:
+    paths = [
+        str(path).replace("\\", "/")
+        for path in _require_nonempty_list(payload, field_name, owner)
+    ]
+    expected_paths = [
+        _platform_report_path(platform_id, suffix)
+        for suffix in REQUIRED_HOSTED_PROMOTION_ARTIFACT_SUFFIXES
+    ]
+    _require_set_contains(
+        paths,
+        expected_paths,
+        owner=owner,
+        description=field_name,
+    )
+    for path in paths:
+        _require_tmp_reports_path(path, owner)
+        expect(
+            path.startswith(f"{generated_report_root_for_platform(platform_id)}/"),
+            f"{owner} {field_name} used non-hosted-runner platform path: {path}",
+        )
+    return paths
+
+
+def _platform_uses_windows_payload_layout(platform_id: str, layout: tuple[str, ...]) -> bool:
+    normalized_platform_id = platform_id.lower()
+    return (
+        normalized_platform_id.startswith(("win", "windows"))
+        or "-windows" in normalized_platform_id
+        or any(
+            path.endswith(("objc3c-native.exe", "objc3_runtime.lib"))
+            for path in layout
+        )
+    )
+
+
+def _validate_package_root_layout(
+    payload: dict[str, Any],
+    owner: str,
+    *,
+    expected_layout: tuple[str, ...],
+    platform_id: str,
+) -> tuple[str, ...]:
+    layout = tuple(
+        str(path).replace("\\", "/")
+        for path in _require_nonempty_list(payload, "package_root_layout", owner)
+    )
+    for path in layout:
+        expect(path, f"{owner} package_root_layout path must not be empty")
+    install_prefix_paths = sorted(
+        set(layout) & set(HOST_PROMOTION_INSTALL_PREFIX_PACKAGE_ROOT_LAYOUT_PATHS)
+    )
+    expect(
+        not install_prefix_paths,
+        (
+            f"{owner} package_root_layout used install-prefix paths: "
+            f"{', '.join(install_prefix_paths)}"
+        ),
+    )
+    if _platform_uses_windows_payload_layout(platform_id, layout):
+        _require_set_contains(
+            layout,
+            HOST_PROMOTION_WINDOWS_PACKAGE_CHANNEL_REQUIRED_PATHS,
+            owner=owner,
+            description="Windows package-channel payload paths",
+        )
+    expect(
+        layout == expected_layout,
+        f"{owner} package root layout drifted from package-channel payload paths",
+    )
+    return layout
+
+
+def _reviewed_source_records_by_type(
+    payload: dict[str, Any],
+) -> dict[str, dict[str, dict[str, Any]]]:
+    records_by_type: dict[str, dict[str, dict[str, Any]]] = {}
+    for record_type, section_name in REVIEWED_SOURCE_RECORD_SECTION_BY_TYPE.items():
+        records_by_type[record_type] = _records_by_field(
+            _require_list(payload, section_name, "reviewed source input contract"),
+            "record_id",
+            f"reviewed source {section_name}",
+        )
+    return records_by_type
+
+
+def _generated_report_path_is_non_truth(record: dict[str, Any], owner: str) -> None:
+    if "generated_report_support_truth" in record:
+        expect(
+            record.get("generated_report_support_truth") is False,
+            f"{owner} generated report became source truth",
+        )
+    if "generated_report_path" in record:
+        _require_tmp_reports_path(record.get("generated_report_path"), owner)
+    for path in record.get("generated_report_paths", []):
+        _require_tmp_reports_path(path, owner)
+
+
+def _validate_reviewed_source_metadata(
+    record: dict[str, Any],
+    owner: str,
+    *,
+    platform_id: str,
+) -> bool:
+    source_paths = _require_checked_source_paths(
+        _require_nonempty_list(record, "source_paths", owner),
+        owner,
+    )
+    if "stale_evidence_allowed" in record:
+        expect(
+            record.get("stale_evidence_allowed") is False,
+            f"{owner} allowed stale evidence",
+        )
+    if "prose_only_evidence" in record:
+        expect(
+            record.get("prose_only_evidence") is False,
+            f"{owner} used prose-only evidence",
+        )
+    if "local_temp_evidence_claim" in record:
+        expect(
+            record.get("local_temp_evidence_claim") is False,
+            f"{owner} used local temp evidence claim",
+        )
+    if record.get("claim_state") in {"evidence-bound", "reviewed-source"}:
+        for field_name in (
+            "stale_evidence_allowed",
+            "prose_only_evidence",
+            "local_temp_evidence_claim",
+        ):
+            expect(
+                record.get(field_name) is False,
+                f"{owner} missing fail-closed {field_name}",
+            )
+        expect(
+            record.get("review_status") == "reviewed-current-source",
+            f"{owner} review status is not current",
+        )
+        _require_durable_reviewed_source_paths(source_paths, owner)
+        _require_hosted_promotion_artifact_paths(
+            record,
+            "hosted_runner_artifact_paths",
+            owner,
+            platform_id=platform_id,
+        )
+        _require_hosted_promotion_artifact_paths(
+            record,
+            "toolchain_artifact_paths",
+            owner,
+            platform_id=platform_id,
+        )
+        _require_hosted_promotion_artifact_paths(
+            record,
+            "package_artifact_paths",
+            owner,
+            platform_id=platform_id,
+        )
+        return True
+    return False
 
 
 def _validate_policy(payload: dict[str, Any]) -> None:
@@ -457,10 +775,11 @@ def _validate_package_install_execution(platform_id: str, platform: dict[str, An
         evidence.get("package_id") == expected_contract.package_id,
         f"{platform_id} package/install package id drifted",
     )
-    _require_nonempty_list(
+    _validate_package_root_layout(
         evidence,
-        "package_root_layout",
         f"{platform_id} package/install/native execution",
+        expected_layout=expected_contract.package_root_layout,
+        platform_id=platform_id,
     )
     for field_name in (
         "package_manifest_path",
@@ -570,12 +889,366 @@ def _validate_runtime_link_load_identity(platform_id: str, platform: dict[str, A
     )
 
 
+def _validate_reviewed_source_record_base(
+    record_type: str,
+    record_id: str,
+    record: dict[str, Any],
+    platform_id: str,
+) -> None:
+    expected_contract = EXPECTED_PLATFORM_CONTRACTS[platform_id]
+    expected_identity = EXPECTED_OBJECT_DEBUG_IDENTITY[platform_id]
+    owner = f"{platform_id} reviewed source {record_type} {record_id}"
+    expect(record.get("record_type") == record_type, f"{owner} record_type drifted")
+    _require_fields(
+        record,
+        REVIEWED_SOURCE_RECORD_REQUIRED_FIELDS_BY_TYPE[record_type],
+        owner,
+    )
+    record_platform_id = str(
+        record.get("platform_id") or record.get("target_platform_id") or ""
+    )
+    expect(record_platform_id == platform_id, f"{owner} platform_id drifted")
+    _require_bool(record, "promotion_allowed", owner)
+    expect(
+        isinstance(record.get("platform_ids"), list),
+        f"{owner} platform_ids must be a list",
+    )
+    is_evidence_bound = _validate_reviewed_source_metadata(
+        record,
+        owner,
+        platform_id=platform_id,
+    )
+    _generated_report_path_is_non_truth(record, owner)
+    expect(
+        record.get("unsupported_behavior") == "fail-closed",
+        f"{owner} did not fail closed",
+    )
+    if record_type == "host_identity":
+        expect(
+            record.get("host_arch") == expected_identity["arch"],
+            f"{owner} host arch drifted",
+        )
+        expect(
+            expected_identity["target_triple"]
+            in [str(triple) for triple in record.get("host_triples", [])],
+            f"{owner} host triple drifted",
+        )
+    if record_type == "toolchain_probe":
+        _require_set_contains(
+            _require_list(record, "required_components", owner),
+            ("llvm", "clang", "cmake", "ninja", "python", "node", "pwsh"),
+            owner=owner,
+            description="required toolchain components",
+        )
+        if is_evidence_bound:
+            expect(
+                record.get("runner_label") == expected_contract.runner_label,
+                f"{owner} runner label drifted",
+            )
+    if "package_variant_row_id" in record:
+        expect(
+            record.get("package_variant_row_id") == expected_contract.package_variant_row_id,
+            f"{owner} package variant row drifted",
+        )
+    for field_name in ("object_format", "debug_format", "target_triple", "arch"):
+        if field_name in record:
+            expect(
+                record.get(field_name) == expected_identity[field_name],
+                f"{owner} {field_name} drifted",
+            )
+    if "runtime_library_names" in record:
+        expect(
+            tuple(str(name) for name in record.get("runtime_library_names", []))
+            == EXPECTED_RUNTIME_LIBRARY_NAMES[platform_id],
+            f"{owner} runtime library names drifted",
+        )
+    if "package_root_layout" in record:
+        _validate_package_root_layout(
+            record,
+            owner,
+            expected_layout=expected_contract.package_root_layout,
+            platform_id=platform_id,
+        )
+
+
+def _reviewed_source_record_is_promotion_ready(
+    record_type: str,
+    record: dict[str, Any],
+    platform_id: str,
+) -> bool:
+    if record.get("claim_state") not in {"evidence-bound", "reviewed-source"}:
+        return False
+    if record.get("promotion_allowed") is not True:
+        return False
+    if record.get("platform_ids") != [platform_id]:
+        return False
+    if record.get("generated_report_support_truth") is True:
+        return False
+    if not record.get("evidence_ids"):
+        return False
+    if record_type == "toolchain_probe":
+        if record.get("required_missing_probe_classes") != []:
+            return False
+        if not record.get("component_probes"):
+            return False
+        required_components = {
+            str(component) for component in record.get("required_components", [])
+        }
+        probed_components = {
+            str(probe.get("component", "")) for probe in record.get("component_probes", [])
+        }
+        if required_components - probed_components:
+            return False
+        for probe in record.get("component_probes", []):
+            if probe.get("exit_code") != 0:
+                return False
+            if probe.get("capability_status") not in {"pass", "present", "supported"}:
+                return False
+        return True
+    if record_type == "install_receipt":
+        return record.get("install_receipt_present") is True
+    if record_type == "native_execution":
+        return (
+            record.get("native_execution_required") is True
+            and record.get("native_execution_passed") is True
+            and bool(record.get("execution_evidence_ids"))
+        )
+    if record_type == "package_install_identity":
+        return record.get("install_receipt_present") is True
+    if record_type == "runtime_load_link_proof":
+        return record.get("load_probe_exit_code") == 0 and bool(
+            record.get("resolved_runtime_paths")
+        )
+    return True
+
+
+def _validate_reviewed_source_inputs_platform(
+    platform_id: str,
+    platform: dict[str, Any],
+    records_by_type: dict[str, dict[str, dict[str, Any]]],
+) -> bool:
+    expected_contract = EXPECTED_PLATFORM_CONTRACTS[platform_id]
+    expect(
+        platform.get("issue_ref") == expected_contract.issue_ref,
+        f"{platform_id} reviewed source input issue ref drifted",
+    )
+    expect(
+        platform.get("support_row_id") == expected_contract.support_row_id,
+        f"{platform_id} reviewed source input support row drifted",
+    )
+    expect(
+        platform.get("package_variant_row_id") == expected_contract.package_variant_row_id,
+        f"{platform_id} reviewed source input package row drifted",
+    )
+    expect(
+        platform.get("generated_input_record_id")
+        == expected_contract.generated_evidence_record_id,
+        f"{platform_id} reviewed source input generated record drifted",
+    )
+    expect(
+        _require_bool(platform, "generated_input_support_truth", platform_id) is False,
+        f"{platform_id} reviewed source input treated generated evidence as truth",
+    )
+    reviewed_source_paths = _require_checked_source_paths(
+        _require_nonempty_list(
+            platform,
+            "reviewed_source_paths",
+            f"{platform_id} reviewed source input",
+        ),
+        f"{platform_id} reviewed source input",
+    )
+    _require_durable_reviewed_source_paths(
+        reviewed_source_paths,
+        f"{platform_id} reviewed source input",
+    )
+    _require_set_contains(
+        _require_list(
+            platform,
+            "required_record_types_before_promotion_allowed",
+            f"{platform_id} reviewed source input",
+        ),
+        REQUIRED_PROMOTION_PREREQUISITE_RECORD_TYPES,
+        owner=platform_id,
+        description="promotion prerequisite record types",
+    )
+    required_record_ids = _require_dict(
+        platform,
+        "required_record_ids",
+        f"{platform_id} reviewed source input",
+    )
+    not_ready_record_types: list[str] = []
+    for record_type in REQUIRED_PROMOTION_PREREQUISITE_RECORD_TYPES:
+        record_id_field = REVIEWED_SOURCE_RECORD_ID_FIELD_BY_TYPE[record_type]
+        record_id = str(required_record_ids.get(record_id_field, ""))
+        expect(record_id, f"{platform_id} missing reviewed source record id {record_id_field}")
+        record = records_by_type[record_type].get(record_id)
+        expect(
+            record is not None,
+            f"{platform_id} missing reviewed source {record_type} record {record_id}",
+        )
+        _validate_reviewed_source_record_base(record_type, record_id, record, platform_id)
+        if not _reviewed_source_record_is_promotion_ready(record_type, record, platform_id):
+            not_ready_record_types.append(record_type)
+    expected_not_ready = sorted(not_ready_record_types)
+    actual_not_ready = sorted(
+        str(record_type)
+        for record_type in _require_list(
+            platform,
+            "not_promotion_ready_record_types",
+            f"{platform_id} reviewed source input",
+        )
+    )
+    expect(
+        actual_not_ready == expected_not_ready,
+        f"{platform_id} reviewed source readiness list drifted",
+    )
+    remaining_blockers = [
+        str(blocker)
+        for blocker in _require_list(
+            platform,
+            "remaining_blockers",
+            f"{platform_id} reviewed source input",
+        )
+    ]
+    unknown_blockers = sorted(set(remaining_blockers) - set(REQUIRED_BLOCKER_FAILURE_CLASSES))
+    expect(
+        not unknown_blockers,
+        f"{platform_id} reviewed source input had unknown blockers: {', '.join(unknown_blockers)}",
+    )
+    review_decision = str(platform.get("review_decision", ""))
+    computed_promotion_allowed = (
+        not not_ready_record_types
+        and not remaining_blockers
+        and review_decision == "approved-for-support-source-truth"
+    )
+    expect(
+        _require_bool(platform, "promotion_allowed", platform_id)
+        is computed_promotion_allowed,
+        f"{platform_id} promotion_allowed did not match reviewed source readiness",
+    )
+    expect(
+        _require_bool(platform, "support_truth", platform_id) is computed_promotion_allowed,
+        f"{platform_id} support_truth did not match reviewed source readiness",
+    )
+    return computed_promotion_allowed
+
+
+def validate_host_promotion_reviewed_source_inputs(
+    payload: dict[str, Any],
+) -> dict[str, Any]:
+    expected_model = build_host_promotion_reviewed_source_input_model_payload()
+    expect(
+        payload.get("contract_id") == HOST_PROMOTION_REVIEWED_SOURCE_INPUT_CONTRACT_ID,
+        "reviewed source input contract_id drifted",
+    )
+    expect(
+        payload.get("source_path") == HOST_PROMOTION_REVIEWED_SOURCE_INPUT_RELATIVE_PATH,
+        "reviewed source input source_path drifted",
+    )
+    expect(
+        payload.get("host_promotion_contract_path")
+        == HOST_PROMOTION_EVIDENCE_CONTRACT_RELATIVE_PATH,
+        "reviewed source input host promotion contract path drifted",
+    )
+    model = _require_dict(payload, "promotion_model", "reviewed source input contract")
+    for field_name in (
+        "generated_reports_are_source_truth",
+        "source_review_required",
+        "default_promotion_allowed",
+        "stale_evidence_allowed",
+        "prose_only_evidence_allowed",
+    ):
+        expect(
+            model.get(field_name) == expected_model[field_name],
+            f"reviewed source promotion model field {field_name} drifted",
+        )
+    _require_set_contains(
+        _require_list(
+            model,
+            "required_durable_fixture_paths",
+            "reviewed source promotion model",
+        ),
+        REQUIRED_REVIEWED_SOURCE_DURABLE_FIXTURE_PATHS,
+        owner="reviewed source promotion model",
+        description="durable fixture paths",
+    )
+    _require_set_contains(
+        _require_list(
+            model,
+            "required_hosted_promotion_artifact_suffixes",
+            "reviewed source promotion model",
+        ),
+        REQUIRED_HOSTED_PROMOTION_ARTIFACT_SUFFIXES,
+        owner="reviewed source promotion model",
+        description="hosted promotion artifact suffixes",
+    )
+    _require_set_contains(
+        _require_list(
+            model,
+            "required_record_types_before_promotion_allowed",
+            "reviewed source promotion model",
+        ),
+        REQUIRED_PROMOTION_PREREQUISITE_RECORD_TYPES,
+        owner="reviewed source promotion model",
+        description="promotion prerequisite record types",
+    )
+    expect(
+        model.get("record_sections") == expected_model["record_sections"],
+        "reviewed source promotion model record sections drifted",
+    )
+    expect(
+        model.get("record_id_fields") == expected_model["record_id_fields"],
+        "reviewed source promotion model record id fields drifted",
+    )
+    records_by_type = _reviewed_source_records_by_type(payload)
+    platforms = _records_by_field(
+        _require_list(payload, "platforms", "reviewed source input contract"),
+        "platform_id",
+        "reviewed source input platforms",
+    )
+    _require_set_contains(
+        platforms,
+        REQUIRED_PLATFORM_IDS,
+        owner="reviewed source input platforms",
+        description="required platform rows",
+    )
+    promotion_allowed_platform_ids: list[str] = []
+    for platform_id in REQUIRED_PLATFORM_IDS:
+        if _validate_reviewed_source_inputs_platform(
+            platform_id,
+            platforms[platform_id],
+            records_by_type,
+        ):
+            promotion_allowed_platform_ids.append(platform_id)
+    return {
+        "contract_id": HOST_PROMOTION_REVIEWED_SOURCE_INPUT_CONTRACT_ID,
+        "status": "PASS",
+        "source_path": HOST_PROMOTION_REVIEWED_SOURCE_INPUT_RELATIVE_PATH,
+        "platform_ids": list(REQUIRED_PLATFORM_IDS),
+        "promotion_allowed_platform_ids": promotion_allowed_platform_ids,
+        "required_record_types_before_promotion_allowed": list(
+            REQUIRED_PROMOTION_PREREQUISITE_RECORD_TYPES
+        ),
+    }
+
+
 def _validate_platform(
     platform_id: str,
     platform: dict[str, Any],
     common_blockers: set[str],
 ) -> None:
     expected_contract = EXPECTED_PLATFORM_CONTRACTS[platform_id]
+    expected_package_layout = HOST_PROMOTION_PACKAGE_CHANNEL_LAYOUT_BY_PLATFORM.get(
+        platform_id
+    )
+    expect(
+        expected_package_layout is not None,
+        f"{platform_id} missing package-channel layout model",
+    )
+    expect(
+        expected_contract.package_root_layout == expected_package_layout,
+        f"{platform_id} package-channel layout model drifted",
+    )
     expect(
         platform.get("issue_ref") == expected_contract.issue_ref,
         f"{platform_id} issue ref drifted",
@@ -685,6 +1358,22 @@ def _validate_future_checker_contract(payload: dict[str, Any]) -> None:
         "future checker stopped rejecting prose-only platform support claims",
     )
     expect(
+        future_contract.get("must_reject_stale_reviewed_source_evidence") is True,
+        "future checker stopped rejecting stale reviewed-source evidence",
+    )
+    expect(
+        future_contract.get("must_reject_prose_only_reviewed_source_evidence") is True,
+        "future checker stopped rejecting prose-only reviewed-source evidence",
+    )
+    expect(
+        future_contract.get("must_reject_local_temp_promotion_claims") is True,
+        "future checker stopped rejecting local temp promotion claims",
+    )
+    expect(
+        future_contract.get("must_require_hosted_toolchain_package_artifacts") is True,
+        "future checker stopped requiring hosted toolchain/package artifacts",
+    )
+    expect(
         future_contract.get("must_write_summary_under")
         == HOST_PROMOTION_EVIDENCE_SUMMARY_RELATIVE_PATH,
         "future checker summary output path drifted",
@@ -731,6 +1420,10 @@ def validate_host_promotion_evidence_contract(payload: dict[str, Any]) -> dict[s
     for platform_id in REQUIRED_PLATFORM_IDS:
         _validate_platform(platform_id, platforms[platform_id], common_blockers)
 
+    validate_host_promotion_reviewed_source_inputs(
+        load_host_promotion_reviewed_source_inputs()
+    )
+
     summary = {
         "contract_id": HOST_PROMOTION_EVIDENCE_SUMMARY_CONTRACT_ID,
         "status": "PASS",
@@ -750,6 +1443,10 @@ def validate_host_promotion_evidence_contract(payload: dict[str, Any]) -> dict[s
 
 def load_host_promotion_evidence_contract() -> dict[str, Any]:
     return load_json_object(CONTRACT_PATH)
+
+
+def load_host_promotion_reviewed_source_inputs() -> dict[str, Any]:
+    return load_json_object(REVIEWED_SOURCE_INPUT_PATH)
 
 
 def main() -> int:

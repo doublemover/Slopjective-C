@@ -28,6 +28,7 @@ NATIVE_PACKAGE_TOOLCHAIN_ACTION_SPECS: dict[str, ActionSpec] = {
             "succeed, and toolchain archive claims require "
             "platform-hardening-build-package-validation ownership"
         ),
+        pass_through_args=True,
     ),
     "package-runnable-toolchain-asan": ActionSpec(
         "package-runnable-toolchain-asan",

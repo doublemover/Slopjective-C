@@ -198,6 +198,12 @@ libraries. Sanitizer install receipts must now carry a machine-owned
 `sanitizer_package_variant` field with the package id, variant row id, target
 platform, sanitizer runtime libraries, metadata digest, explicit install
 selector, and native-execution contract before any future support promotion.
+Sanitizer `package_root_layout` is the Windows x64 sanitizer overlay payload,
+not a full release package layout: it stays scoped to the release import
+library, sanitizer metadata, sanitizer runtime-library manifest, and copied
+Clang sanitizer runtime artifacts. Linux and macOS sanitizer package layouts
+remain unsupported until platform-specific sanitizer runtime evidence is
+promoted through source truth.
 The runtime evidence collection commands are exactly
 `check-sanitizer-runtime-evidence-asan` for #8230 and
 `check-sanitizer-runtime-evidence-ubsan` for #8231. They are explicit

@@ -1337,8 +1337,24 @@ function Write-Objc3cLinuxInstallReceiptEvidence {
     [string]$SourceSummaryPath = ""
   )
 
-  if (!(Test-Objc3cLinuxPlatformEvidenceEnabled -EvidenceRoot $EvidenceRoot -PlatformId $PlatformId)) {
+  $linuxEvidenceEnabled = Test-Objc3cLinuxPlatformEvidenceEnabled -EvidenceRoot $EvidenceRoot -PlatformId $PlatformId
+  $darwinEvidenceEnabled = Test-Objc3cDarwinPlatformEvidenceEnabled -EvidenceRoot $EvidenceRoot -PlatformId $PlatformId
+  if (-not ($linuxEvidenceEnabled -or $darwinEvidenceEnabled)) {
     return
+  }
+
+  $issueRef = if ($darwinEvidenceEnabled) { 8229 } else { 8228 }
+  $targetTriple = if ($darwinEvidenceEnabled) { "aarch64-apple-darwin" } else { "x86_64-unknown-linux-gnu" }
+  $packageRootLayout = if ($darwinEvidenceEnabled) { Get-Objc3cDarwinPackageRootLayout } else { Get-Objc3cLinuxPackageRootLayout }
+  $recordId = if ($darwinEvidenceEnabled) {
+    Get-Objc3cDarwinEvidenceRecordId -Field "package_install_identity"
+  } else {
+    Get-Objc3cLinuxEvidenceRecordId -Field "package_install_identity"
+  }
+  $producerContractId = if ($darwinEvidenceEnabled) {
+    "objc3c.platform.darwin.install-receipt.v1"
+  } else {
+    "objc3c.platform.linux.install-receipt.v1"
   }
 
   $digest = Get-Objc3cEvidenceFileDigest -RootPath $RepoRoot -TargetPath $InstallReceiptPath
@@ -1372,8 +1388,8 @@ function Write-Objc3cLinuxInstallReceiptEvidence {
     contract_id = "objc3c.platform.hosted-install-receipt.generated.v1"
     schema_version = 1
     platform_id = $PlatformId
-    issue_ref = 8228
-    record_id = Get-Objc3cLinuxEvidenceRecordId -Field "package_install_identity"
+    issue_ref = $issueRef
+    record_id = $recordId
     generated_report_path = Get-Objc3cPlatformEvidenceReportPath -PlatformId $PlatformId -Suffix "install/install-receipt.json"
     source_summary_path = "tmp/reports/package-channels/end-to-end-summary.json"
     source_install_receipt_path = Get-Objc3cEvidenceRepoRelativePath -RootPath $RepoRoot -TargetPath $InstallReceiptPath
@@ -1383,20 +1399,26 @@ function Write-Objc3cLinuxInstallReceiptEvidence {
     promotion_allowed_from_generated_evidence = $false
     status = $generatedStatus
     target_platform_id = $PlatformId
-    target_triple = "x86_64-unknown-linux-gnu"
+    target_triple = $targetTriple
     package_root = ""
-    package_root_layout = Get-Objc3cLinuxPackageRootLayout
+    package_root_layout = $packageRootLayout
     package_manifest = "artifacts/package/objc3c-runnable-toolchain-package.json"
     package_manifest_artifact = Get-Objc3cEvidenceFileDigest -RootPath $RepoRoot -TargetPath $packageManifestPath
     package_channels_summary_artifact = Get-Objc3cEvidenceFileDigest -RootPath $RepoRoot -TargetPath $packageChannelsSummaryPath
     source_install_receipt_artifact = $digest
     source_install_receipt = $receiptPayload
     producer_evidence = [ordered]@{
-      contract_id = "objc3c.platform.linux.install-receipt.v1"
+      contract_id = $producerContractId
       status = $status
       target_platform_id = $receiptPlatform
       source_summary = Get-Objc3cEvidenceRepoRelativePath -RootPath $RepoRoot -TargetPath $sourceSummaryPath
     }
+    source_artifacts = New-Objc3cEvidenceSourceArtifacts -RepoRoot $RepoRoot -Paths @(
+      $sourceSummaryPath,
+      $packageManifestPath,
+      $packageChannelsSummaryPath,
+      $InstallReceiptPath
+    )
   }
   $installEvidenceRoot = Join-Path $EvidenceRoot "install"
   New-Item -ItemType Directory -Force -Path $installEvidenceRoot | Out-Null
@@ -1406,6 +1428,18 @@ function Write-Objc3cLinuxInstallReceiptEvidence {
   Write-Objc3cPlatformEvidenceJson `
     -Path (Join-Path $installEvidenceRoot "install-receipt-routing.json") `
     -Payload $payload
+}
+
+function Write-Objc3cDarwinInstallReceiptEvidence {
+  param(
+    [Parameter(Mandatory = $true)][string]$RepoRoot,
+    [string]$EvidenceRoot = $env:OBJC3C_PLATFORM_EVIDENCE_ROOT,
+    [Parameter(Mandatory = $true)][string]$PlatformId,
+    [Parameter(Mandatory = $true)][string]$InstallReceiptPath,
+    [string]$SourceSummaryPath = ""
+  )
+
+  Write-Objc3cLinuxInstallReceiptEvidence @PSBoundParameters
 }
 
 function Write-Objc3cLinuxRuntimeLoadProbeEvidence {
@@ -1589,6 +1623,7 @@ Export-ModuleMember -Function @(
   "Write-Objc3cDarwinObjectDebugIdentityEvidence",
   "Write-Objc3cDarwinRuntimeLibraryManifestEvidence",
   "Write-Objc3cDarwinRuntimeLoadProbeEvidence",
+  "Write-Objc3cDarwinInstallReceiptEvidence",
   "Write-Objc3cLinuxObjectDebugIdentityEvidence",
   "Write-Objc3cLinuxRuntimeLibraryManifestEvidence",
   "Write-Objc3cLinuxInstallReceiptEvidence",

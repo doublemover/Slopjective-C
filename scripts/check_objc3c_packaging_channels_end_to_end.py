@@ -19,7 +19,7 @@ from objc3c_tooling.subprocesses import python_script_command, run_capture
 from objc3c_workflow.commands import workflow_command
 from objc3c_package_channels.model import (
     MANIFEST_RELATIVE_PATH,
-    required_payload_entries,
+    required_payload_entries_for_platform,
 )
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -52,6 +52,132 @@ def sha256_file(path: Path) -> str:
         for chunk in iter(lambda: handle.read(1024 * 1024), b""):
             digest.update(chunk)
     return digest.hexdigest()
+
+
+def file_artifact(path: Path) -> dict[str, Any]:
+    if not path.is_file():
+        return {
+            "path": repo_rel(path),
+            "exists": False,
+        }
+    return {
+        "path": repo_rel(path),
+        "exists": True,
+        "size_bytes": path.stat().st_size,
+        "sha256": sha256_file(path),
+    }
+
+
+def platform_host_evidence_root() -> tuple[str, Path] | None:
+    platform_id = os.environ.get("OBJC3C_PLATFORM_ID", "")
+    evidence_root = os.environ.get("OBJC3C_PLATFORM_EVIDENCE_ROOT", "")
+    if platform_id not in {"linux-x64", "darwin-arm64"} or not evidence_root:
+        return None
+    resolved_root = (ROOT / evidence_root).resolve()
+    expected_root = (ROOT / "tmp" / "reports" / "platform-host-evidence" / platform_id).resolve()
+    if resolved_root != expected_root:
+        raise RuntimeError(
+            "platform package-channel install evidence root must be platform-scoped: "
+            f"{evidence_root}"
+        )
+    return platform_id, resolved_root
+
+
+def platform_install_receipt_status(
+    *,
+    receipt_exists: bool,
+    receipt: dict[str, Any],
+    platform_id: str,
+) -> str:
+    if not receipt_exists:
+        return "missing-source-generated-fail-closed"
+    receipt_target = str(receipt.get("target_platform_id", ""))
+    if not receipt_target:
+        package_runtime_model = receipt.get("package_runtime_model", {})
+        if isinstance(package_runtime_model, dict):
+            receipt_target = str(package_runtime_model.get("target_platform_id", ""))
+    if receipt_target and receipt_target != platform_id:
+        return "install-receipt-target-mismatch-generated-fail-closed"
+    return "generated-host-artifact-present"
+
+
+def publish_platform_host_install_receipt(
+    *,
+    manifest: dict[str, Any],
+    manifest_path: Path,
+    receipt: dict[str, Any],
+    receipt_path: Path,
+    receipt_artifact: dict[str, Any],
+) -> None:
+    config = platform_host_evidence_root()
+    if config is None:
+        return
+    platform_id, evidence_root = config
+    package_runtime_model = receipt.get("package_runtime_model", {})
+    if not isinstance(package_runtime_model, dict):
+        package_runtime_model = {}
+    target_triple_by_platform = {
+        "linux-x64": "x86_64-unknown-linux-gnu",
+        "darwin-arm64": "aarch64-apple-darwin",
+    }
+    issue_ref_by_platform = {
+        "linux-x64": 8228,
+        "darwin-arm64": 8229,
+    }
+    record_id_by_platform = {
+        "linux-x64": "objc3c.package-install-identity.linux-x64.release.missing",
+        "darwin-arm64": "objc3c.package-install-identity.darwin-arm64.release.missing",
+    }
+    producer_contract_id_by_platform = {
+        "linux-x64": "objc3c.platform.linux.install-receipt.v1",
+        "darwin-arm64": "objc3c.platform.darwin.install-receipt.v1",
+    }
+    payload = {
+        "contract_id": "objc3c.platform.hosted-install-receipt.generated.v1",
+        "schema_version": 1,
+        "platform_id": platform_id,
+        "issue_ref": issue_ref_by_platform[platform_id],
+        "record_id": record_id_by_platform[platform_id],
+        "generated_report_path": (
+            f"tmp/reports/platform-host-evidence/{platform_id}/install/install-receipt.json"
+        ),
+        "source_summary_path": repo_rel(SUMMARY_PATH),
+        "source_install_receipt_path": repo_rel(receipt_path),
+        "reviewed_source_required": True,
+        "support_truth": False,
+        "native_execution_claimed": False,
+        "promotion_allowed_from_generated_evidence": False,
+        "status": platform_install_receipt_status(
+            receipt_exists=receipt_artifact.get("exists") is True,
+            receipt=receipt,
+            platform_id=platform_id,
+        ),
+        "target_platform_id": platform_id,
+        "target_triple": target_triple_by_platform[platform_id],
+        "package_root": str(manifest.get("package_root", "")),
+        "package_root_layout": list(package_runtime_model.get("package_root_layout", [])),
+        "package_manifest": MANIFEST_RELATIVE_PATH,
+        "package_manifest_artifact": file_artifact(manifest_path),
+        "package_channels_summary_artifact": file_artifact(SUMMARY_PATH),
+        "source_install_receipt_artifact": receipt_artifact,
+        "source_install_receipt": receipt,
+        "producer_evidence": {
+            "contract_id": producer_contract_id_by_platform[platform_id],
+            "status": "INSTALL_RECEIPT_ROUTED"
+            if receipt_artifact.get("exists") is True
+            else "INSTALL_RECEIPT_MISSING",
+            "target_platform_id": str(package_runtime_model.get("target_platform_id", "")),
+            "source_summary": repo_rel(SUMMARY_PATH),
+        },
+        "source_artifacts": [
+            file_artifact(SUMMARY_PATH),
+            file_artifact(manifest_path),
+            receipt_artifact,
+        ],
+    }
+    target_path = evidence_root / "install" / "install-receipt.json"
+    target_path.parent.mkdir(parents=True, exist_ok=True)
+    target_path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
 
 
 def extract_zip(zip_path: Path, destination: Path) -> None:
@@ -264,8 +390,8 @@ def main(argv: Sequence[str] | None = None) -> int:
     expect(manifest.get("native_execution_claimed") is False, "package channels manifest claimed native execution")
     package_root = ROOT / str(manifest["package_root"]).replace("/", os.sep)
     target_platform_id = str(manifest.get("platform_id", ""))
-    expected_payload_entries = required_payload_entries(
-        str(manifest.get("sanitizer_variant", "release")),
+    expected_payload_entries = required_payload_entries_for_platform(
+        sanitizer_variant=str(manifest.get("sanitizer_variant", "release")),
         target_platform_id=target_platform_id,
     )
     native_executable_entry = next(
@@ -342,7 +468,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     expect(installed_exe.is_file(), "installer did not publish installed native executable")
 
     receipt_schema = load_json(INSTALL_RECEIPT_SCHEMA)
-    load_valid_install_receipt(
+    install_receipt = load_valid_install_receipt(
         receipt_path,
         receipt_schema,
         install_root,
@@ -350,6 +476,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         expected_payload_manifest_sha256=payload_contract["manifest_sha256"],
         expected_payload_entries=expected_payload_entries,
     )
+    install_receipt_artifact = file_artifact(receipt_path)
 
     bootstrap_result = run_capture(
         [PWSH, "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", str(bootstrap_script)],
@@ -409,6 +536,13 @@ def main(argv: Sequence[str] | None = None) -> int:
     }
     SUMMARY_PATH.parent.mkdir(parents=True, exist_ok=True)
     SUMMARY_PATH.write_text(json.dumps(end_to_end_summary, indent=2) + "\n", encoding="utf-8")
+    publish_platform_host_install_receipt(
+        manifest=manifest,
+        manifest_path=manifest_path,
+        receipt=install_receipt,
+        receipt_path=receipt_path,
+        receipt_artifact=install_receipt_artifact,
+    )
     print(f"summary_path: {repo_rel(SUMMARY_PATH)}")
     print("objc3c-packaging-channels-end-to-end: PASS")
     return 0

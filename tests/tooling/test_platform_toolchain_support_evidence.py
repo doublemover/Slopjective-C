@@ -24,10 +24,42 @@ REQUIRED_TOOLCHAIN_COMPONENTS = [
     "node",
     "pwsh",
 ]
+EXPECTED_RELEASE_PACKAGE_ROOT_LAYOUTS = {
+    "windows-x64": [
+        "artifacts/package/objc3c-runnable-toolchain-package.json",
+        "artifacts/bin/objc3c-native.exe",
+        "artifacts/lib/objc3_runtime.lib",
+        "stdlib/workspace.json",
+        "stdlib/modules/objc3.core/module.json",
+        "docs/runbooks/objc3c_packaging_channels.md",
+    ],
+    "linux-x64": [
+        "artifacts/package/objc3c-runnable-toolchain-package.json",
+        "artifacts/bin/objc3c-native",
+        "artifacts/lib/libobjc3-runtime.so",
+        "stdlib/workspace.json",
+        "stdlib/modules/objc3.core/module.json",
+        "docs/runbooks/objc3c_packaging_channels.md",
+    ],
+    "darwin-arm64": [
+        "artifacts/package/objc3c-runnable-toolchain-package.json",
+        "artifacts/bin/objc3c-native",
+        "artifacts/lib/libobjc3-runtime.dylib",
+        "stdlib/workspace.json",
+        "stdlib/modules/objc3.core/module.json",
+        "docs/runbooks/objc3c_packaging_channels.md",
+    ],
+}
+INSTALL_PREFIX_PACKAGE_LAYOUT_ROOTS = ("bin/", "lib/", "include/")
 
 
 def load_fixture(relative_path: str) -> dict:
     return json.loads((ROOT / relative_path).read_text(encoding="utf-8"))
+
+
+def assert_release_package_root_layout(platform_id: str, layout: list[str]) -> None:
+    assert layout == EXPECTED_RELEASE_PACKAGE_ROOT_LAYOUTS[platform_id]
+    assert not any(path.startswith(INSTALL_PREFIX_PACKAGE_LAYOUT_ROOTS) for path in layout)
 
 
 def validate_evidence(payload: dict) -> None:
@@ -423,6 +455,35 @@ def test_platform_support_matrix_publishes_issue_owned_evidence_sections() -> No
     assert package_rows["objc3c.package.runtime.darwin-arm64.release.fail-closed"][
         "artifact_identity_contract"
     ]["runtime_library_names"] == ["libobjc3-runtime.dylib"]
+    for row_id in (
+        "objc3c.package.runtime.windows-x64.release",
+        "objc3c.package.runtime.linux-x64.release.fail-closed",
+        "objc3c.package.runtime.darwin-arm64.release.fail-closed",
+    ):
+        row = package_rows[row_id]
+        assert_release_package_root_layout(
+            row["target_platform_id"],
+            row["artifact_identity_contract"]["package_root_layout"],
+        )
+    for record in payload["package_root_evidence_records"]:
+        assert_release_package_root_layout(
+            record["target_platform_id"],
+            record["package_root_layout"],
+        )
+    for record in payload["native_execution_evidence_records"]:
+        assert_release_package_root_layout(
+            record["platform_id"],
+            record["package_root_layout"],
+        )
+    for section_name in (
+        "package_install_identity_records",
+        "runtime_load_link_proof_records",
+    ):
+        for record in payload[section_name]:
+            assert_release_package_root_layout(
+                record["platform_id"],
+                record["package_root_layout"],
+            )
     assert {
         row["record_id"]
         for row in payload["object_identity_records"]
@@ -657,6 +718,21 @@ def test_platform_toolchain_support_evidence_rejects_package_promotion_gate_drif
             break
 
     with pytest.raises(RuntimeError, match="did not block package install execution and publication"):
+        validate_evidence(evidence)
+
+
+def test_platform_toolchain_support_evidence_rejects_release_install_prefix_layout() -> None:
+    evidence = deepcopy(load_platform_toolchain_support_evidence())
+    for row in evidence["package_variant_rows"]:
+        if row["row_id"] == "objc3c.package.runtime.windows-x64.release":
+            row["artifact_identity_contract"]["package_root_layout"] = [
+                "bin/objc3c-native.exe",
+                "lib/objc3-runtime.lib",
+                "include/objc3/runtime",
+            ]
+            break
+
+    with pytest.raises(RuntimeError, match="install-prefix package layout entries"):
         validate_evidence(evidence)
 
 

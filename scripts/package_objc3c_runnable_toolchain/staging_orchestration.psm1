@@ -63,7 +63,7 @@ function Get-RunnableToolchainPackageSanitizerVariantMetadata {
   }
 
   if ($SanitizerVariant -eq "address") {
-    return [ordered]@{
+    $metadata = [ordered]@{
       package_id = "org.objc3c.runtime:objc3c-runtime-asan"
       package_variant_row_id = "objc3c.package.sanitizer.asan.reserved"
       package_channel_id = "windows-x64-sanitizer-asan"
@@ -84,9 +84,10 @@ function Get-RunnableToolchainPackageSanitizerVariantMetadata {
       environment = "ASAN_OPTIONS"
       missing_runtime_behavior = "fail-closed-before-package-install"
     }
+    return $metadata
   }
 
-  return [ordered]@{
+  $metadata = [ordered]@{
     package_id = "org.objc3c.runtime:objc3c-runtime-ubsan"
     package_variant_row_id = "objc3c.package.sanitizer.ubsan.reserved"
     package_channel_id = "windows-x64-sanitizer-ubsan"
@@ -107,6 +108,7 @@ function Get-RunnableToolchainPackageSanitizerVariantMetadata {
     trap_or_recover_mode = "trap"
     missing_runtime_behavior = "fail-closed-before-package-install"
   }
+  return $metadata
 }
 
 function Get-RunnableToolchainPackageSanitizerRuntimeRoot {

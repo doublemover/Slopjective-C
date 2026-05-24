@@ -17,6 +17,18 @@ HOST_PROMOTION_EVIDENCE_CONTRACT_RELATIVE_PATH = (
     "tests/tooling/fixtures/platform_hardening/"
     "platform_host_promotion_evidence_contract.json"
 )
+HOST_PROMOTION_REVIEWED_SOURCE_INPUT_CONTRACT_ID = (
+    "objc3c.platform.host-promotion.reviewed-source-inputs.v1"
+)
+HOST_PROMOTION_REVIEWED_SOURCE_INPUT_RELATIVE_PATH = (
+    "tests/tooling/fixtures/platform_hardening/"
+    "host_promotion_reviewed_source_inputs.json"
+)
+HOST_PROMOTION_REVIEWED_SOURCE_DURABLE_FIXTURE_PATHS: tuple[str, ...] = (
+    HOST_PROMOTION_REVIEWED_SOURCE_INPUT_RELATIVE_PATH,
+    HOST_PROMOTION_EVIDENCE_CONTRACT_RELATIVE_PATH,
+    "tests/tooling/fixtures/platform_hardening/platform_toolchain_support_evidence.json",
+)
 HOST_PROMOTION_EVIDENCE_ACTION = "check-platform-host-promotion-evidence"
 HOST_PROMOTION_VALIDATE_PLATFORM_HARDENING_ACTION = "validate-platform-hardening"
 HOST_PROMOTION_EVIDENCE_SUMMARY_RELATIVE_PATH = (
@@ -58,6 +70,57 @@ HOST_PROMOTION_POLICY: dict[str, object] = {
     "sanitizer_variants_promote_platform_support": False,
 }
 
+HOST_PROMOTION_PACKAGE_CHANNEL_MANIFEST_PATH = (
+    "artifacts/package/objc3c-runnable-toolchain-package.json"
+)
+HOST_PROMOTION_PACKAGE_CHANNEL_COMMON_PAYLOAD_PATHS: tuple[str, ...] = (
+    "stdlib/workspace.json",
+    "stdlib/modules/objc3.core/module.json",
+    "docs/runbooks/objc3c_packaging_channels.md",
+)
+HOST_PROMOTION_PACKAGE_CHANNEL_LAYOUT_BY_PLATFORM: dict[str, tuple[str, ...]] = {
+    "windows-x64": (
+        HOST_PROMOTION_PACKAGE_CHANNEL_MANIFEST_PATH,
+        "artifacts/bin/objc3c-native.exe",
+        "artifacts/lib/objc3_runtime.lib",
+        *HOST_PROMOTION_PACKAGE_CHANNEL_COMMON_PAYLOAD_PATHS,
+    ),
+    "linux-x64": (
+        HOST_PROMOTION_PACKAGE_CHANNEL_MANIFEST_PATH,
+        "artifacts/bin/objc3c-native",
+        "artifacts/lib/libobjc3-runtime.so",
+        *HOST_PROMOTION_PACKAGE_CHANNEL_COMMON_PAYLOAD_PATHS,
+    ),
+    "darwin-arm64": (
+        HOST_PROMOTION_PACKAGE_CHANNEL_MANIFEST_PATH,
+        "artifacts/bin/objc3c-native",
+        "artifacts/lib/libobjc3-runtime.dylib",
+        *HOST_PROMOTION_PACKAGE_CHANNEL_COMMON_PAYLOAD_PATHS,
+    ),
+}
+HOST_PROMOTION_WINDOWS_PACKAGE_CHANNEL_REQUIRED_PATHS: tuple[str, ...] = (
+    "artifacts/bin/objc3c-native.exe",
+    "artifacts/lib/objc3_runtime.lib",
+)
+HOST_PROMOTION_INSTALL_PREFIX_PACKAGE_ROOT_LAYOUT_PATHS: tuple[str, ...] = (
+    "bin/objc3-runtime.dll",
+    "bin/objc3c-native",
+    "bin/objc3c-native.exe",
+    "lib/libobjc3-runtime.so",
+    "lib/libobjc3-runtime.dylib",
+    "lib/objc3-runtime.lib",
+    "lib/objc3_runtime.lib",
+    "include/objc3/runtime",
+)
+HOST_PROMOTION_REQUIRED_HOSTED_PROMOTION_ARTIFACT_SUFFIXES: tuple[str, ...] = (
+    "host-evidence-report.json",
+    "llvm-capabilities.json",
+    "package/objc3c-runnable-toolchain-package.json",
+    "install/install-receipt.json",
+    "execution/runtime-load-probe.json",
+    "execution/native-execution-smoke-summary.json",
+)
+
 HOST_PROMOTION_REQUIRED_GATE_CLASSES: tuple[str, ...] = (
     "build",
     "package",
@@ -87,6 +150,42 @@ HOST_PROMOTION_REQUIRED_SOURCE_RECORD_TYPES: tuple[str, ...] = (
     "package_install_identity",
     "runtime_load_link_proof",
 )
+
+HOST_PROMOTION_PROMOTION_PREREQUISITE_RECORD_TYPES: tuple[str, ...] = (
+    "host_identity",
+    "toolchain_probe",
+    "package_root",
+    "install_receipt",
+    "native_execution",
+    "object_identity",
+    "debug_identity",
+    "package_install_identity",
+    "runtime_load_link_proof",
+)
+
+HOST_PROMOTION_REVIEWED_SOURCE_RECORD_SECTION_BY_TYPE: dict[str, str] = {
+    "host_identity": "host_identity_records",
+    "toolchain_probe": "toolchain_probe_records",
+    "package_root": "package_root_evidence_records",
+    "install_receipt": "install_receipt_records",
+    "native_execution": "native_execution_evidence_records",
+    "object_identity": "object_identity_records",
+    "debug_identity": "debug_identity_records",
+    "package_install_identity": "package_install_identity_records",
+    "runtime_load_link_proof": "runtime_load_link_proof_records",
+}
+
+HOST_PROMOTION_REVIEWED_SOURCE_RECORD_ID_FIELD_BY_TYPE: dict[str, str] = {
+    "host_identity": "host_identity_record_id",
+    "toolchain_probe": "toolchain_probe_record_id",
+    "package_root": "package_root_record_id",
+    "install_receipt": "install_receipt_record_id",
+    "native_execution": "native_execution_record_id",
+    "object_identity": "object_identity_record_id",
+    "debug_identity": "debug_identity_record_id",
+    "package_install_identity": "package_install_identity_record_id",
+    "runtime_load_link_proof": "runtime_load_link_proof_record_id",
+}
 
 HOST_PROMOTION_REQUIRED_REVIEWED_SOURCE_FIELDS: tuple[str, ...] = (
     "object_identity",
@@ -585,9 +684,7 @@ HOST_PROMOTION_PLATFORM_CONTRACTS: tuple[HostPromotionPlatformContract, ...] = (
         support_row_id="objc3c.platform.linux-x64.unsupported",
         package_id="org.objc3c.runtime:objc3c-runtime-linux-x64-release",
         package_root_layout=(
-            "bin/objc3c-native",
-            "lib/libobjc3-runtime.so",
-            "include/objc3/runtime",
+            HOST_PROMOTION_PACKAGE_CHANNEL_LAYOUT_BY_PLATFORM["linux-x64"]
         ),
         artifact_identity=HostPromotionArtifactIdentity(
             object_format="ELF",
@@ -610,9 +707,7 @@ HOST_PROMOTION_PLATFORM_CONTRACTS: tuple[HostPromotionPlatformContract, ...] = (
         support_row_id="objc3c.platform.darwin-arm64.unsupported",
         package_id="org.objc3c.runtime:objc3c-runtime-darwin-arm64-release",
         package_root_layout=(
-            "bin/objc3c-native",
-            "lib/libobjc3-runtime.dylib",
-            "include/objc3/runtime",
+            HOST_PROMOTION_PACKAGE_CHANNEL_LAYOUT_BY_PLATFORM["darwin-arm64"]
         ),
         artifact_identity=HostPromotionArtifactIdentity(
             object_format="Mach-O",
@@ -678,6 +773,10 @@ def build_host_promotion_contract_payload() -> dict[str, Any]:
             "must_reject_generated_only_support_truth": True,
             "must_reject_empty_blocker_lists": True,
             "must_reject_missing_required_source_record_types": True,
+            "must_reject_stale_reviewed_source_evidence": True,
+            "must_reject_prose_only_reviewed_source_evidence": True,
+            "must_reject_local_temp_promotion_claims": True,
+            "must_require_hosted_toolchain_package_artifacts": True,
             "must_require_reviewed_source_fields": list(
                 HOST_PROMOTION_REQUIRED_REVIEWED_SOURCE_FIELDS
             ),
@@ -693,6 +792,42 @@ def build_host_promotion_contract_payload() -> dict[str, Any]:
     }
 
 
+def build_host_promotion_reviewed_source_input_model_payload() -> dict[str, Any]:
+    platform_ids = host_promotion_platform_ids()
+    return {
+        "contract_id": HOST_PROMOTION_REVIEWED_SOURCE_INPUT_CONTRACT_ID,
+        "schema_version": 1,
+        "source_path": HOST_PROMOTION_REVIEWED_SOURCE_INPUT_RELATIVE_PATH,
+        "host_promotion_contract_path": HOST_PROMOTION_EVIDENCE_CONTRACT_RELATIVE_PATH,
+        "platform_ids": list(platform_ids),
+        "generated_reports_are_source_truth": False,
+        "source_review_required": True,
+        "default_promotion_allowed": False,
+        "stale_evidence_allowed": False,
+        "prose_only_evidence_allowed": False,
+        "promotion_allowed_rule": (
+            "promotion_allowed is true only when every required reviewed-source "
+            "record resolves to a promotion-ready checked-source record, generated "
+            "reports remain non-truth inputs, hosted-runner/toolchain/package "
+            "artifacts are referenced from platform-scoped generated reports, and "
+            "blockers are empty"
+        ),
+        "required_durable_fixture_paths": list(
+            HOST_PROMOTION_REVIEWED_SOURCE_DURABLE_FIXTURE_PATHS
+        ),
+        "required_hosted_promotion_artifact_suffixes": list(
+            HOST_PROMOTION_REQUIRED_HOSTED_PROMOTION_ARTIFACT_SUFFIXES
+        ),
+        "required_record_types_before_promotion_allowed": list(
+            HOST_PROMOTION_PROMOTION_PREREQUISITE_RECORD_TYPES
+        ),
+        "record_sections": dict(HOST_PROMOTION_REVIEWED_SOURCE_RECORD_SECTION_BY_TYPE),
+        "record_id_fields": dict(
+            HOST_PROMOTION_REVIEWED_SOURCE_RECORD_ID_FIELD_BY_TYPE
+        ),
+    }
+
+
 __all__ = [
     "HOST_PROMOTION_COMMON_FAIL_CLOSED_BLOCKERS",
     "HOST_PROMOTION_EVIDENCE_CLASSES",
@@ -704,20 +839,33 @@ __all__ = [
     "HOST_PROMOTION_FAIL_CLOSED_BLOCKER_CLASSES",
     "HOST_PROMOTION_GENERATED_REPORT_RELATIVE_PATHS",
     "HOST_PROMOTION_GENERATED_REPORT_ROOT",
+    "HOST_PROMOTION_INSTALL_PREFIX_PACKAGE_ROOT_LAYOUT_PATHS",
+    "HOST_PROMOTION_PACKAGE_CHANNEL_COMMON_PAYLOAD_PATHS",
+    "HOST_PROMOTION_PACKAGE_CHANNEL_LAYOUT_BY_PLATFORM",
+    "HOST_PROMOTION_PACKAGE_CHANNEL_MANIFEST_PATH",
     "HOST_PROMOTION_POLICY",
     "HOST_PROMOTION_PLATFORM_CONTRACTS",
+    "HOST_PROMOTION_PROMOTION_PREREQUISITE_RECORD_TYPES",
+    "HOST_PROMOTION_REQUIRED_HOSTED_PROMOTION_ARTIFACT_SUFFIXES",
+    "HOST_PROMOTION_REVIEWED_SOURCE_DURABLE_FIXTURE_PATHS",
+    "HOST_PROMOTION_REVIEWED_SOURCE_INPUT_CONTRACT_ID",
+    "HOST_PROMOTION_REVIEWED_SOURCE_INPUT_RELATIVE_PATH",
+    "HOST_PROMOTION_REVIEWED_SOURCE_RECORD_ID_FIELD_BY_TYPE",
+    "HOST_PROMOTION_REVIEWED_SOURCE_RECORD_SECTION_BY_TYPE",
     "HOST_PROMOTION_REQUIRED_REVIEWED_SOURCE_FIELDS",
     "HOST_PROMOTION_REQUIRED_GATE_CLASSES",
     "HOST_PROMOTION_REQUIRED_SOURCE_RECORD_TYPES",
     "HOST_PROMOTION_REVIEWED_SOURCE_FIELDS",
     "HOST_PROMOTION_UPSTREAM_SOURCE_PATHS",
     "HOST_PROMOTION_VALIDATE_PLATFORM_HARDENING_ACTION",
+    "HOST_PROMOTION_WINDOWS_PACKAGE_CHANNEL_REQUIRED_PATHS",
     "HostPromotionArtifactIdentity",
     "HostPromotionEvidenceClass",
     "HostPromotionFailClosedBlocker",
     "HostPromotionPlatformContract",
     "HostPromotionReviewedSourceField",
     "build_host_promotion_contract_payload",
+    "build_host_promotion_reviewed_source_input_model_payload",
     "generated_report_paths_for_platform",
     "generated_report_root_for_platform",
     "host_promotion_platform_ids",

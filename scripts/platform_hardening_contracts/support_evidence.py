@@ -72,6 +72,33 @@ RELEASE_RUNTIME_PACKAGE_IDS: tuple[str, ...] = (
     "org.objc3c.runtime:objc3c-runtime-linux-x64-release",
     "org.objc3c.runtime:objc3c-runtime-darwin-arm64-release",
 )
+INSTALL_PREFIX_PACKAGE_LAYOUT_ROOTS: tuple[str, ...] = ("bin/", "lib/", "include/")
+EXPECTED_RELEASE_PACKAGE_ROOT_LAYOUTS: dict[str, tuple[str, ...]] = {
+    "windows-x64": (
+        "artifacts/package/objc3c-runnable-toolchain-package.json",
+        "artifacts/bin/objc3c-native.exe",
+        "artifacts/lib/objc3_runtime.lib",
+        "stdlib/workspace.json",
+        "stdlib/modules/objc3.core/module.json",
+        "docs/runbooks/objc3c_packaging_channels.md",
+    ),
+    "linux-x64": (
+        "artifacts/package/objc3c-runnable-toolchain-package.json",
+        "artifacts/bin/objc3c-native",
+        "artifacts/lib/libobjc3-runtime.so",
+        "stdlib/workspace.json",
+        "stdlib/modules/objc3.core/module.json",
+        "docs/runbooks/objc3c_packaging_channels.md",
+    ),
+    "darwin-arm64": (
+        "artifacts/package/objc3c-runnable-toolchain-package.json",
+        "artifacts/bin/objc3c-native",
+        "artifacts/lib/libobjc3-runtime.dylib",
+        "stdlib/workspace.json",
+        "stdlib/modules/objc3.core/module.json",
+        "docs/runbooks/objc3c_packaging_channels.md",
+    ),
+}
 EXPECTED_SANITIZER_DETECTION_RECORDS: dict[str, set[str]] = {
     "address": {
         "objc3c.sanitizer.address.heap-use-after-free",
@@ -630,6 +657,12 @@ def _validate_package_root_evidence_records(
         expect(root.get("debug_format") == artifact.get("debug_format"), f"{record_id} debug format drifted from package row")
         expect(root.get("runtime_library_names") == artifact.get("runtime_library_names"), f"{record_id} runtime libraries drifted")
         expect(root.get("package_root_layout") == artifact.get("package_root_layout"), f"{record_id} package root layout drifted")
+        if package_row.get("variant_kind") == "release-runtime":
+            _release_package_root_layout_is_artifact_scoped(
+                record_id,
+                str(root.get("target_platform_id", "")),
+                root.get("package_root_layout", []),
+            )
         expect(root.get("unsupported_behavior") == "fail-closed", f"{record_id} package root does not fail closed")
         evidence_ids = [str(evidence_id) for evidence_id in root.get("evidence_ids", [])]
         expect(evidence_ids, f"{record_id} missing evidence_ids")
@@ -690,6 +723,12 @@ def _validate_native_execution_evidence_records(
         expect(required_formats.get("debug_format") == artifact.get("debug_format"), f"{record_id} debug format drifted")
         expect(execution.get("runtime_library_names") == artifact.get("runtime_library_names"), f"{record_id} runtime library names drifted")
         expect(execution.get("package_root_layout") == artifact.get("package_root_layout"), f"{record_id} package root layout drifted")
+        if package_row.get("variant_kind") == "release-runtime":
+            _release_package_root_layout_is_artifact_scoped(
+                record_id,
+                platform_id,
+                execution.get("package_root_layout", []),
+            )
         expect(execution.get("native_execution_required") is True, f"{record_id} did not require native execution")
         expect(execution.get("unsupported_behavior") == "fail-closed", f"{record_id} native execution does not fail closed")
         evidence_ids = [str(evidence_id) for evidence_id in execution.get("execution_evidence_ids", [])]
@@ -798,6 +837,12 @@ def _validate_reviewed_source_promotion_records(
                     record.get("package_root_layout") == artifact.get("package_root_layout"),
                     f"{record_id} package root layout drifted",
                 )
+                if package_row.get("variant_kind") == "release-runtime":
+                    _release_package_root_layout_is_artifact_scoped(
+                        record_id,
+                        platform_id,
+                        record.get("package_root_layout", []),
+                    )
             if section_name == "runtime_load_link_proof_records":
                 native_record_id = str(record.get("native_execution_record_id", ""))
                 expect(
@@ -1127,6 +1172,36 @@ def _package_artifact_identity_is_source_owned(row_id: str, row: dict[str, Any])
             {"objc3-runtime.lib", "objc3-runtime.dll"} <= set(runtime_names),
             f"{row_id} Windows package identity missing import library or DLL",
         )
+
+    if row.get("variant_kind") == "release-runtime":
+        _release_package_root_layout_is_artifact_scoped(
+            row_id,
+            target_platform_id,
+            package_root_layout,
+        )
+
+
+def _release_package_root_layout_is_artifact_scoped(
+    owner_id: str,
+    target_platform_id: str,
+    package_root_layout: Iterable[str],
+) -> None:
+    layout = tuple(str(path) for path in package_root_layout)
+    install_prefix_entries = [
+        path
+        for path in layout
+        if path.startswith(INSTALL_PREFIX_PACKAGE_LAYOUT_ROOTS)
+    ]
+    expect(
+        not install_prefix_entries,
+        f"{owner_id} used install-prefix package layout entries: {', '.join(install_prefix_entries)}",
+    )
+    expected_layout = EXPECTED_RELEASE_PACKAGE_ROOT_LAYOUTS.get(target_platform_id)
+    expect(expected_layout is not None, f"{owner_id} release package layout has unknown target {target_platform_id}")
+    expect(
+        layout == expected_layout,
+        f"{owner_id} release package layout drifted from artifact-scoped package-channel payload entries",
+    )
 
 
 def _package_promotion_gate_is_fail_closed(row_id: str, row: dict[str, Any]) -> None:

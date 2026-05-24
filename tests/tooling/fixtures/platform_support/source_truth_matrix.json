@@ -222,6 +222,68 @@
       "package_variant_row_ids": [
         "objc3c.package.runtime.linux-x64.release.fail-closed"
       ],
+      "promotion_closure_contract": {
+        "capability_status": "unsupported",
+        "support_claim_allowed": false,
+        "support_claim_blocked_until": [
+          "build",
+          "package",
+          "install",
+          "execution"
+        ],
+        "package_variant_claim_state": "fail-closed",
+        "package_variant_platform_ids": [],
+        "package_artifact_evidence": {
+          "package_root_layout": [
+            "artifacts/package/objc3c-runnable-toolchain-package.json",
+            "artifacts/bin/objc3c-native",
+            "artifacts/lib/libobjc3-runtime.so",
+            "stdlib/workspace.json",
+            "stdlib/modules/objc3.core/module.json",
+            "docs/runbooks/objc3c_packaging_channels.md"
+          ],
+          "runtime_library_names": [
+            "libobjc3-runtime.so"
+          ],
+          "object_format": "ELF",
+          "debug_format": "DWARF",
+          "loader_path_proof_required": true,
+          "install_receipt_required": true,
+          "native_execution_evidence_required": true
+        },
+        "host_promotion_constraints": {
+          "promotion_policy": "real-host-execution-required",
+          "real_host_execution_required": true,
+          "generated_host_evidence_support_truth": false,
+          "reviewed_source_truth_required": true,
+          "hosted_runner_summary_behavior": "summary-only-no-support-promotion"
+        },
+        "runner_toolchain_requirements": {
+          "runner_label": "ubuntu-24.04",
+          "required_toolchain_components": [
+            "llvm",
+            "clang",
+            "cmake",
+            "ninja",
+            "python",
+            "node",
+            "pwsh"
+          ],
+          "native_object_emission_required": true,
+          "missing_native_execution_behavior": "fail-closed-no-support-promotion",
+          "unsupported_toolchain_result": "fail-closed-no-range-claim"
+        },
+        "fail_closed_requirements": {
+          "unsupported_behavior": "fail-closed",
+          "unsupported_evidence_claim_weight": "policy",
+          "blocked_publication_surfaces": [
+            "package",
+            "install",
+            "execution",
+            "publication"
+          ]
+        }
+      },
       "public_replay_commands": [
         "npm run objc3c -- build-platform-support-matrix",
         "npm run objc3c -- ingest-platform-host-evidence -- --platform-id linux-x64 --runner-label ubuntu-24.04 --report-out tmp/reports/platform-host-evidence/linux-x64/host-evidence-report.json --requirements-out tmp/reports/platform-host-evidence/linux-x64/promotion-readiness-requirements.json --summary-out tmp/reports/platform-host-evidence/linux-x64/ingestion-summary.json"
@@ -264,6 +326,68 @@
       "package_variant_row_ids": [
         "objc3c.package.runtime.darwin-arm64.release.fail-closed"
       ],
+      "promotion_closure_contract": {
+        "capability_status": "unsupported",
+        "support_claim_allowed": false,
+        "support_claim_blocked_until": [
+          "build",
+          "package",
+          "install",
+          "execution"
+        ],
+        "package_variant_claim_state": "fail-closed",
+        "package_variant_platform_ids": [],
+        "package_artifact_evidence": {
+          "package_root_layout": [
+            "artifacts/package/objc3c-runnable-toolchain-package.json",
+            "artifacts/bin/objc3c-native",
+            "artifacts/lib/libobjc3-runtime.dylib",
+            "stdlib/workspace.json",
+            "stdlib/modules/objc3.core/module.json",
+            "docs/runbooks/objc3c_packaging_channels.md"
+          ],
+          "runtime_library_names": [
+            "libobjc3-runtime.dylib"
+          ],
+          "object_format": "Mach-O",
+          "debug_format": "DWARF/dSYM",
+          "loader_path_proof_required": true,
+          "install_receipt_required": true,
+          "native_execution_evidence_required": true
+        },
+        "host_promotion_constraints": {
+          "promotion_policy": "real-host-execution-required",
+          "real_host_execution_required": true,
+          "generated_host_evidence_support_truth": false,
+          "reviewed_source_truth_required": true,
+          "hosted_runner_summary_behavior": "summary-only-no-support-promotion"
+        },
+        "runner_toolchain_requirements": {
+          "runner_label": "macos-15",
+          "required_toolchain_components": [
+            "llvm",
+            "clang",
+            "cmake",
+            "ninja",
+            "python",
+            "node",
+            "pwsh"
+          ],
+          "native_object_emission_required": true,
+          "missing_native_execution_behavior": "fail-closed-no-support-promotion",
+          "unsupported_toolchain_result": "fail-closed-no-range-claim"
+        },
+        "fail_closed_requirements": {
+          "unsupported_behavior": "fail-closed",
+          "unsupported_evidence_claim_weight": "policy",
+          "blocked_publication_surfaces": [
+            "package",
+            "install",
+            "execution",
+            "publication"
+          ]
+        }
+      },
       "public_replay_commands": [
         "npm run objc3c -- build-platform-support-matrix",
         "npm run objc3c -- ingest-platform-host-evidence -- --platform-id darwin-arm64 --runner-label macos-15 --report-out tmp/reports/platform-host-evidence/darwin-arm64/host-evidence-report.json --requirements-out tmp/reports/platform-host-evidence/darwin-arm64/promotion-readiness-requirements.json --summary-out tmp/reports/platform-host-evidence/darwin-arm64/ingestion-summary.json"
@@ -304,10 +428,12 @@
         ],
         "loader_path_policy": "package bin directory and PATH-owned loader resolution are captured by install and native execution evidence",
         "package_root_layout": [
-          "bin/objc3c-native.exe",
-          "bin/objc3-runtime.dll",
-          "lib/objc3-runtime.lib",
-          "include/objc3/runtime"
+          "artifacts/package/objc3c-runnable-toolchain-package.json",
+          "artifacts/bin/objc3c-native.exe",
+          "artifacts/lib/objc3_runtime.lib",
+          "stdlib/workspace.json",
+          "stdlib/modules/objc3.core/module.json",
+          "docs/runbooks/objc3c_packaging_channels.md"
         ],
         "symbol_export_policy": "exports are owned by the native runtime package manifest and import library"
       },
@@ -369,9 +495,12 @@
         ],
         "loader_path_policy": "ELF rpath, RUNPATH, or package-root loader resolution must be proven before support",
         "package_root_layout": [
-          "bin/objc3c-native",
-          "lib/libobjc3-runtime.so",
-          "include/objc3/runtime"
+          "artifacts/package/objc3c-runnable-toolchain-package.json",
+          "artifacts/bin/objc3c-native",
+          "artifacts/lib/libobjc3-runtime.so",
+          "stdlib/workspace.json",
+          "stdlib/modules/objc3.core/module.json",
+          "docs/runbooks/objc3c_packaging_channels.md"
         ],
         "symbol_export_policy": "ELF dynamic symbol exports must match the checked runtime package manifest"
       },
@@ -446,9 +575,12 @@
         ],
         "loader_path_policy": "@rpath, install_name, codesign, and package-root loader behavior must be proven before support",
         "package_root_layout": [
-          "bin/objc3c-native",
-          "lib/libobjc3-runtime.dylib",
-          "include/objc3/runtime"
+          "artifacts/package/objc3c-runnable-toolchain-package.json",
+          "artifacts/bin/objc3c-native",
+          "artifacts/lib/libobjc3-runtime.dylib",
+          "stdlib/workspace.json",
+          "stdlib/modules/objc3.core/module.json",
+          "docs/runbooks/objc3c_packaging_channels.md"
         ],
         "symbol_export_policy": "Mach-O exported symbols and install_name must match the checked runtime package manifest"
       },

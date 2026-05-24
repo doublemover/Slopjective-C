@@ -177,6 +177,94 @@
       },
       "uniqueItems": true
     },
+    "packagePayloadEntryPath": {
+      "description": "Package-root-relative runnable package payload entry shared with package-channel payload_contract.required_entries.",
+      "enum": [
+        "artifacts/package/objc3c-runnable-toolchain-package.json",
+        "artifacts/bin/objc3c-native.exe",
+        "artifacts/bin/objc3c-native",
+        "artifacts/lib/objc3_runtime.lib",
+        "artifacts/lib/libobjc3-runtime.so",
+        "artifacts/lib/libobjc3-runtime.dylib",
+        "stdlib/workspace.json",
+        "stdlib/modules/objc3.core/module.json",
+        "docs/runbooks/objc3c_packaging_channels.md",
+        "share/objc3c/sanitizer/asan-metadata.json",
+        "share/objc3c/sanitizer/ubsan-metadata.json",
+        "share/objc3c/sanitizer/asan-runtime-libraries.json",
+        "share/objc3c/sanitizer/ubsan-runtime-libraries.json",
+        "artifacts/runtime/sanitizer/address/clang_rt.asan_dynamic-x86_64.dll",
+        "artifacts/runtime/sanitizer/address/clang_rt.asan_dynamic-x86_64.lib",
+        "artifacts/runtime/sanitizer/address/clang_rt.asan_dynamic_runtime_thunk-x86_64.lib",
+        "artifacts/runtime/sanitizer/undefined/clang_rt.ubsan_standalone-x86_64.lib",
+        "artifacts/runtime/sanitizer/undefined/clang_rt.ubsan_standalone_cxx-x86_64.lib"
+      ]
+    },
+    "releasePackageRootLayout": {
+      "description": "Exact release package_root_layout values mirrored from package-channel payload entries.",
+      "oneOf": [
+        {
+          "const": [
+            "artifacts/package/objc3c-runnable-toolchain-package.json",
+            "artifacts/bin/objc3c-native.exe",
+            "artifacts/lib/objc3_runtime.lib",
+            "stdlib/workspace.json",
+            "stdlib/modules/objc3.core/module.json",
+            "docs/runbooks/objc3c_packaging_channels.md"
+          ]
+        },
+        {
+          "const": [
+            "artifacts/package/objc3c-runnable-toolchain-package.json",
+            "artifacts/bin/objc3c-native",
+            "artifacts/lib/libobjc3-runtime.so",
+            "stdlib/workspace.json",
+            "stdlib/modules/objc3.core/module.json",
+            "docs/runbooks/objc3c_packaging_channels.md"
+          ]
+        },
+        {
+          "const": [
+            "artifacts/package/objc3c-runnable-toolchain-package.json",
+            "artifacts/bin/objc3c-native",
+            "artifacts/lib/libobjc3-runtime.dylib",
+            "stdlib/workspace.json",
+            "stdlib/modules/objc3.core/module.json",
+            "docs/runbooks/objc3c_packaging_channels.md"
+          ]
+        }
+      ]
+    },
+    "sanitizerPackageRootOverlayLayout": {
+      "description": "Sanitizer-only payload overlay entries; not a full release package_root_layout.",
+      "oneOf": [
+        {
+          "const": [
+            "artifacts/lib/objc3_runtime.lib",
+            "share/objc3c/sanitizer/asan-metadata.json",
+            "share/objc3c/sanitizer/asan-runtime-libraries.json",
+            "artifacts/runtime/sanitizer/address/clang_rt.asan_dynamic-x86_64.dll",
+            "artifacts/runtime/sanitizer/address/clang_rt.asan_dynamic-x86_64.lib",
+            "artifacts/runtime/sanitizer/address/clang_rt.asan_dynamic_runtime_thunk-x86_64.lib"
+          ]
+        },
+        {
+          "const": [
+            "artifacts/lib/objc3_runtime.lib",
+            "share/objc3c/sanitizer/ubsan-metadata.json",
+            "share/objc3c/sanitizer/ubsan-runtime-libraries.json",
+            "artifacts/runtime/sanitizer/undefined/clang_rt.ubsan_standalone-x86_64.lib",
+            "artifacts/runtime/sanitizer/undefined/clang_rt.ubsan_standalone_cxx-x86_64.lib"
+          ]
+        }
+      ]
+    },
+    "packageRootLayout": {
+      "oneOf": [
+        { "$ref": "#/$defs/releasePackageRootLayout" },
+        { "$ref": "#/$defs/sanitizerPackageRootOverlayLayout" }
+      ]
+    },
     "platformClaimCase": {
       "type": "object",
       "additionalProperties": false,
@@ -690,15 +778,7 @@
           "type": "string",
           "minLength": 1
         },
-        "package_root_layout": {
-          "type": "array",
-          "items": {
-            "type": "string",
-            "minLength": 1
-          },
-          "minItems": 1,
-          "uniqueItems": true
-        },
+        "package_root_layout": { "$ref": "#/$defs/packageRootLayout" },
         "symbol_export_policy": {
           "type": "string",
           "minLength": 1
@@ -797,15 +877,7 @@
             "layout_support_truth"
           ],
           "properties": {
-            "package_root_layout": {
-              "type": "array",
-              "items": {
-                "type": "string",
-                "minLength": 1
-              },
-              "minItems": 1,
-              "uniqueItems": true
-            },
+            "package_root_layout": { "$ref": "#/$defs/sanitizerPackageRootOverlayLayout" },
             "metadata_manifest_path": {
               "type": "string",
               "pattern": "^share/objc3c/sanitizer/(asan|ubsan)-metadata\\.json$"

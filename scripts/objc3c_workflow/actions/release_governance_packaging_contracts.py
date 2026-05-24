@@ -29,6 +29,7 @@ PACKAGING_CHANNEL_ACTION_CONTRACTS: tuple[ReleaseGovernanceActionContract, ...] 
         "packaging-channels",
         "repo",
         "package channels stay derived from the live runnable package and release-foundation artifacts",
+        pass_through_args=True,
     ),
     ReleaseGovernanceActionContract(
         "build-package-channels-asan",

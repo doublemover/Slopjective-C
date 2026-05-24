@@ -18,8 +18,10 @@ def action_check_packaging_channels_surface(_: list[str]) -> int:
     return run([sys.executable, str(PACKAGING_CHANNELS_SOURCE_SURFACE_PY)])
 
 
-def action_build_package_channels(_: list[str]) -> int:
-    return run([sys.executable, str(PACKAGE_CHANNELS_BUILD_PY)])
+def action_build_package_channels(rest: list[str]) -> int:
+    if rest[:1] == ["--"]:
+        rest = rest[1:]
+    return run([sys.executable, str(PACKAGE_CHANNELS_BUILD_PY), *rest])
 
 
 def action_build_package_channels_asan(_: list[str]) -> int:

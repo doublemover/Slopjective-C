@@ -86,6 +86,7 @@ def assert_runnable_toolchain_package_spec_publishes_platform_owner_contract() -
     }
 
     spec = NATIVE_PACKAGE_TOOLCHAIN_ACTION_SPECS["package-runnable-toolchain"]
+    assert spec.pass_through_args is True
     assert_contains_all(
         spec.guarantee_owner,
         [

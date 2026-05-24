@@ -36,8 +36,13 @@ OWNED_PACKAGE_RUN_ROOT = ROOT / "tmp" / "pkg" / "objc3c-package-channels"
 OWNED_CLEAN_ROOTS = (OWNED_PACKAGE_RUN_ROOT, ARTIFACT_ROOT)
 
 
-def prepare_package_channel_workspace(paths: PackageChannelPaths) -> None:
-    remove_owned_tree(paths.package_root.parent)
+def prepare_package_channel_workspace(
+    paths: PackageChannelPaths,
+    *,
+    preserve_package_root: bool = False,
+) -> None:
+    if not preserve_package_root:
+        remove_owned_tree(paths.package_root.parent)
     remove_owned_tree(paths.build_root)
 
 

@@ -719,6 +719,17 @@ def validate_install_receipt_artifact(platform_id: str) -> None:
         require(receipt_artifact.get("exists") is False, f"{owner} receipt artifact exists flag drifted")
     source_receipt = payload.get("source_install_receipt")
     require(isinstance(source_receipt, dict), f"{owner} source_install_receipt must be an object")
+    source_artifacts = require_source_artifacts(payload, owner)
+    require(
+        artifact_exists_in_payload(source_artifacts, PACKAGE_CHANNELS_END_TO_END_SUMMARY_PATH)
+        or payload.get("status") == "missing-source-generated-fail-closed",
+        f"{owner} source_artifacts missing package-channel summary",
+    )
+    require(
+        artifact_exists_in_payload(source_artifacts, RUNNABLE_PACKAGE_MANIFEST_PATH)
+        or payload.get("status") == "missing-source-generated-fail-closed",
+        f"{owner} source_artifacts missing runnable package manifest",
+    )
     require_status(
         payload,
         install_receipt_status(
@@ -1139,6 +1150,11 @@ def write_install_receipt_artifact(platform_id: str) -> None:
             generated_artifact(source_receipt_path) if source_receipt_path else {"exists": False}
         ),
         "source_install_receipt": source_receipt,
+        "source_artifacts": source_artifacts(
+            PACKAGE_CHANNELS_END_TO_END_SUMMARY_PATH,
+            RUNNABLE_PACKAGE_MANIFEST_PATH,
+            source_receipt_path,
+        ),
     }
     write_json(ROOT / payload["generated_report_path"], payload)
 
@@ -1326,10 +1342,16 @@ def build_promotion_readiness_requirements(platform_id: str) -> dict[str, Any]:
         "source_truth_update_allowed": False,
         "generated_only_result": "refuse-source-truth-promotion",
         "review_promotion_policy": "checked-in-source-truth-required",
+        "stale_evidence_allowed": False,
+        "prose_only_evidence_allowed": False,
+        "local_temp_claims_promote_support": False,
         "required_review_fields": list(PROMOTION_REVIEW_REQUIRED_FIELDS),
         "required_reviewed_source_fields": list(PROMOTION_REVIEWED_SOURCE_FIELDS),
         "reviewed_source_field_requirements": reviewed_source_field_requirements,
         "required_promotion_evidence_classes": list(PROMOTION_BLOCKING_EVIDENCE_CLASSES),
+        "required_durable_promotion_artifact_suffixes": list(
+            REQUIRED_DURABLE_PROMOTION_ARTIFACT_SUFFIXES
+        ),
         "artifact_identity_reference": artifact_identity,
         "support_rows_remain_fail_closed_until_reviewed": True,
         "hosted_artifact_references": [
@@ -1550,6 +1572,9 @@ def build_report(args: argparse.Namespace) -> dict[str, Any]:
             "generated_only_result": "refuse-source-truth-promotion",
             "review_required": True,
             "review_promotion_policy": "checked-in-source-truth-required",
+            "stale_evidence_allowed": False,
+            "prose_only_evidence_allowed": False,
+            "local_temp_claims_promote_support": False,
             "required_reviewed_source_fields": list(PROMOTION_REVIEWED_SOURCE_FIELDS),
             "source_truth_update_allowed": False,
             "support_claim_published": False,
@@ -1614,6 +1639,12 @@ def validate_report(report: dict[str, Any], platform_id: str) -> list[str]:
         raise RuntimeError("host evidence report did not require review")
     if ingestion.get("review_promotion_policy") != "checked-in-source-truth-required":
         raise RuntimeError("host evidence report review policy drifted")
+    if ingestion.get("stale_evidence_allowed") is not False:
+        raise RuntimeError("host evidence report allowed stale evidence")
+    if ingestion.get("prose_only_evidence_allowed") is not False:
+        raise RuntimeError("host evidence report allowed prose-only evidence")
+    if ingestion.get("local_temp_claims_promote_support") is not False:
+        raise RuntimeError("host evidence report allowed local temp promotion claims")
     if ingestion.get("source_truth_update_allowed") is not False:
         raise RuntimeError("generated host evidence attempted to update source truth")
     if ingestion.get("support_claim_published") is not False:
@@ -1647,6 +1678,12 @@ def validate_report(report: dict[str, Any], platform_id: str) -> list[str]:
         raise RuntimeError("host evidence promotion readiness attempted to publish support")
     if promotion_readiness.get("source_truth_update_allowed") is not False:
         raise RuntimeError("host evidence promotion readiness attempted to update source truth")
+    if promotion_readiness.get("stale_evidence_allowed") is not False:
+        raise RuntimeError("host evidence promotion readiness allowed stale evidence")
+    if promotion_readiness.get("prose_only_evidence_allowed") is not False:
+        raise RuntimeError("host evidence promotion readiness allowed prose-only evidence")
+    if promotion_readiness.get("local_temp_claims_promote_support") is not False:
+        raise RuntimeError("host evidence promotion readiness allowed local temp promotion claims")
     if promotion_readiness.get("artifact_identity_reference") != expected_identity:
         raise RuntimeError("host evidence promotion readiness artifact identity drifted")
     if promotion_readiness.get("required_review_fields") != list(PROMOTION_REVIEW_REQUIRED_FIELDS):
@@ -1659,6 +1696,8 @@ def validate_report(report: dict[str, Any], platform_id: str) -> list[str]:
         raise RuntimeError("host evidence promotion readiness did not keep support rows fail-closed")
     if promotion_readiness.get("required_promotion_evidence_classes") != list(PROMOTION_BLOCKING_EVIDENCE_CLASSES):
         raise RuntimeError("host evidence promotion readiness required evidence classes drifted")
+    if promotion_readiness.get("required_durable_promotion_artifact_suffixes") != list(REQUIRED_DURABLE_PROMOTION_ARTIFACT_SUFFIXES):
+        raise RuntimeError("host evidence promotion readiness durable artifact suffixes drifted")
     expected_path_prefix = f"tmp/reports/platform-host-evidence/{platform_id}/"
     for reference in promotion_readiness.get("hosted_artifact_references", []):
         if not isinstance(reference, dict):
@@ -1760,6 +1799,9 @@ def build_summary(
         "generated_only_result": ingestion["generated_only_result"],
         "review_required": ingestion["review_required"],
         "review_promotion_policy": ingestion["review_promotion_policy"],
+        "stale_evidence_allowed": ingestion["stale_evidence_allowed"],
+        "prose_only_evidence_allowed": ingestion["prose_only_evidence_allowed"],
+        "local_temp_claims_promote_support": ingestion["local_temp_claims_promote_support"],
         "source_truth_update_allowed": ingestion["source_truth_update_allowed"],
         "support_claim_published": ingestion["support_claim_published"],
         "support_rows_remain_fail_closed": True,

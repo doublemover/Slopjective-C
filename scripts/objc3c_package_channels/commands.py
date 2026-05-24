@@ -10,6 +10,11 @@ from objc3c_tooling.paths import repo_rel, resolve_repo_path_inside
 from objc3c_tooling.subprocesses import python_script_command, run_completed
 from scripts.objc3c_workflow.command_powershell_policy import powershell_file_command
 
+from .model import (
+    MANIFEST_RELATIVE_PATH,
+    required_payload_entries_for_platform,
+    target_platform_id_from_manifest,
+)
 from .paths import (
     PACKAGE_PS1,
     PLATFORM_SUPPORT_MATRIX_BUILD,
@@ -251,11 +256,27 @@ def require_existing_release_foundation_artifacts() -> None:
     print("package-channels: reused validated release-foundation artifacts")
 
 
-def build_release_foundation_artifacts(*, reuse_existing: bool = False) -> None:
+def build_release_foundation_artifacts(
+    *,
+    reuse_existing: bool = False,
+    reuse_primary_package_root: Path | None = None,
+) -> None:
+    if reuse_existing and reuse_primary_package_root is not None:
+        raise RuntimeError(
+            "release foundation cannot both reuse existing artifacts and reuse a "
+            "new primary runnable package root"
+        )
     if reuse_existing:
         require_existing_release_foundation_artifacts()
         return
-    run(python_script_command(RELEASE_MANIFEST_PY))
+    release_manifest_command = python_script_command(RELEASE_MANIFEST_PY)
+    if reuse_primary_package_root is not None:
+        release_manifest_command = [
+            *release_manifest_command,
+            "--reuse-primary-package-root",
+            str(reuse_primary_package_root),
+        ]
+    run(release_manifest_command)
     run(python_script_command(RELEASE_PROVENANCE_PY))
 
 
@@ -276,3 +297,58 @@ def build_runnable_package(
             sanitizer_variant,
         )
     )
+
+
+def require_existing_runnable_package(
+    package_root: Path | str,
+    *,
+    manifest_relative_path: str = MANIFEST_RELATIVE_PATH,
+    sanitizer_variant: str = "release",
+    target_platform_id: str | None = None,
+) -> Path:
+    resolved_package_root = resolve_repo_path_inside(package_root)
+    manifest_path = resolved_package_root / manifest_relative_path
+    manifest = load_json_object(manifest_path)
+    manifest_target_platform_id = target_platform_id_from_manifest(manifest)
+    if target_platform_id is not None and manifest_target_platform_id != target_platform_id:
+        raise RuntimeError(
+            "package-channels reusable runnable package target platform drifted "
+            f"from requested platform: {target_platform_id} != {manifest_target_platform_id}"
+        )
+    if manifest.get("package_root") != repo_rel(resolved_package_root):
+        raise RuntimeError(
+            "package-channels reusable runnable package manifest package_root drifted "
+            f"from reusable root: {manifest.get('package_root')} != {repo_rel(resolved_package_root)}"
+        )
+    if manifest.get("manifest_artifact") != manifest_relative_path:
+        raise RuntimeError(
+            "package-channels reusable runnable package manifest_artifact drifted "
+            f"from {manifest_relative_path}"
+        )
+    if manifest.get("runtime_variant") != sanitizer_variant:
+        raise RuntimeError(
+            "package-channels reusable runnable package runtime_variant drifted "
+            f"from {sanitizer_variant}"
+        )
+    expected_entries = required_payload_entries_for_platform(
+        sanitizer_variant=sanitizer_variant,
+        target_platform_id=manifest_target_platform_id,
+    )
+    manifest_layout = manifest.get("package_root_layout")
+    if manifest_layout != expected_entries:
+        raise RuntimeError(
+            "package-channels reusable runnable package layout drifted from "
+            f"{manifest_target_platform_id} {sanitizer_variant} layout contract"
+        )
+    missing_entries = [
+        relative_path
+        for relative_path in expected_entries
+        if not (resolved_package_root / relative_path).is_file()
+    ]
+    if missing_entries:
+        formatted = ", ".join(missing_entries)
+        raise RuntimeError(
+            "package-channels reusable runnable package missed required payload "
+            f"entries: {formatted}"
+        )
+    return resolved_package_root

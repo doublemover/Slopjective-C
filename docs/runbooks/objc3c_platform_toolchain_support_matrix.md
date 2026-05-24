@@ -26,6 +26,8 @@ Checked-in source truth:
 - `schemas/objc3c-platform-support-source-truth-v1.schema.json`
 - `schemas/objc3c-platform-hosted-runner-capability-summaries-v1.schema.json`
 - `tests/tooling/fixtures/platform_hardening/platform_toolchain_support_evidence.json`
+- `tests/tooling/fixtures/platform_hardening/platform_host_promotion_evidence_contract.json`
+- `tests/tooling/fixtures/platform_hardening/host_promotion_reviewed_source_inputs.json`
 - `tests/tooling/fixtures/platform_hardening/hosted_runner_capability_summaries.json`
 - `tests/tooling/fixtures/platform_support/source_truth_matrix.json`
 - `tests/tooling/fixtures/platform_hardening/unsupported_host_fail_closed_policy.json`
@@ -59,22 +61,26 @@ and macOS arm64 Mach-O/load-path blockers that must be replaced with real
 build, package, install, and native execution evidence before any capability
 matrix promotion.
 
-AddressSanitizer and UndefinedBehaviorSanitizer variants are reserved. They
-cannot list supported platform ids until sanitizer package, install, and native
-execution evidence exists for a supported host. Their runtime package variant
-metadata is source-owned, but the current rows remain reserved and fail closed
-for unsupported hosts, mixed sanitized/unsanitized runtime libraries, release
-channel publication, missing sanitizer runtime libraries, and stale package
-metadata.
+AddressSanitizer and UndefinedBehaviorSanitizer are Windows x64 sanitizer
+package rows, not platform support rows. Their package rows are still named
+`reserved`, but the current source truth binds them to Windows x64 package,
+install, and execution evidence through the sanitizer runtime promotion gate.
+That evidence does not promote Linux, macOS, or any hosted sanitizer summary.
+The rows still fail closed for unsupported hosts, mixed sanitized/unsanitized
+runtime libraries, default release-channel misuse, missing sanitizer runtime
+libraries, missing expected detection records, stale package metadata, and
+generated-only reports.
 
 Promotion prerequisites are explicit source data, not prose-only policy. An
 unsupported host row must list every missing supported-host evidence class
-(`build`, `package`, `install`, and `execution`). A fail-closed or reserved
-package row must list the missing package/install/native-execution classes that
-block publication. ASan and UBSan sanitizer rows must list `package`,
-`install`, and `execution` as both their promotion prerequisites and their
-current missing evidence classes. Rows that omit those fields are not eligible
-for package, install, native execution, or capability-matrix promotion.
+(`build`, `package`, `install`, and `execution`). A fail-closed release package
+row must list the missing build/package/install/execution classes that block
+publication. ASan and UBSan package rows must stay tied to their checked
+sanitizer package/install/execution evidence ids and fail-closed negative
+contracts; hosted sanitizer summaries still list missing package/install/
+execution classes because they are summary-only and cannot publish support.
+Rows that omit the source-owned evidence fields are not eligible for package,
+install, native execution, or capability-matrix promotion.
 
 Every platform support row records explicit host triples. The current source
 contract recognizes `x86_64-pc-windows-msvc` as the supported Windows x64
@@ -86,33 +92,39 @@ blocks publication and cannot be used as source truth.
 ## Host Evidence Architecture
 
 Platform promotion is host-evidence driven. The source contract now carries
-first-class records for host identity, toolchain probes, package roots, native
-execution evidence, and negative host/toolchain cases. A row can publish
-support only when all of those records are checked in for the same platform and
-the native execution record points at real execution evidence.
+first-class records for host identity, toolchain probes, package roots, install
+receipts, native execution evidence, object identity, debug identity, package
+install identity, runtime link/load proof, and negative host/toolchain cases. A
+row can publish support only when all of those records are checked in for the
+same platform, the review decision is approved for source truth, no blockers
+remain, and the native execution record points at real execution evidence.
 
-Linux x64 and macOS arm64 deliberately have source-owned identity records, but
-their toolchain, package-root, and native-execution records are fail-closed
-promotion blockers. The Linux package root records ELF/DWARF identity,
-`libobjc3-runtime.so`, and package-root loader expectations. The macOS arm64
-package root records Mach-O plus DWARF/dSYM identity, `libobjc3-runtime.dylib`,
-and `@rpath`/`install_name`/codesign loader expectations. Those distinctions
-are not support claims; they define the evidence shape a future real host run
-must satisfy.
+Linux x64 and macOS arm64 deliberately have source-owned identity and package
+root records, but every promotion record in
+`host_promotion_reviewed_source_inputs.json` remains non-ready today:
+toolchain probe, package root, install receipt, native execution, object
+identity, debug identity, package install identity, and runtime link/load proof
+all have `promotion_allowed: false` for both hosts. The Linux package root
+records ELF/DWARF identity, `libobjc3-runtime.so`, and package-root loader
+expectations. The macOS arm64 package root records Mach-O plus DWARF/dSYM
+identity, `libobjc3-runtime.dylib`, and `@rpath`/`install_name`/codesign loader
+expectations. Those distinctions are not support claims; they define the
+evidence shape a future real host run must satisfy.
 
 Negative cases are also source-owned. Missing `llc --filetype=obj`, mixed LLVM
 roots, mismatched LLVM tool versions, unsupported LLVM versions, and absent
 Linux/macOS native execution all block package, execution, and publication
-surfaces. Hosted-runner tool presence and source-only package metadata remain
-summary information and cannot clear the promotion gate.
+surfaces. Hosted-runner tool presence, source-only package metadata,
+object-emission status, and generated hosted reports remain summary or
+review-input information and cannot clear the promotion gate.
 
 Package variant rows also carry source-owned artifact identity and promotion
 gates. These fields are not support claims by themselves; they are the exact
 contract a future host or sanitizer package must satisfy before publication:
 
 - `windows-x64` release packages are COFF/PDB packages with
-  `objc3-runtime.lib`, `objc3-runtime.dll`, and the runnable CLI layout proved
-  by package, install, and execution evidence.
+  `artifacts/bin/objc3c-native.exe`, `artifacts/lib/objc3_runtime.lib`, and
+  the runnable CLI layout proved by package, install, and execution evidence.
 - `linux-x64` release packages are fail-closed ELF/DWARF packages with
   `libobjc3-runtime.so`, package-root loader behavior, and symbol export policy
   blocked until Linux build, package, install, and native execution evidence
@@ -120,10 +132,44 @@ contract a future host or sanitizer package must satisfy before publication:
 - `darwin-arm64` release packages are fail-closed Mach-O/DWARF/dSYM packages
   with `libobjc3-runtime.dylib`, `@rpath`/`install_name`/codesign loader
   behavior, and native execution evidence required before support.
-- ASan and UBSan packages are reserved target-native sanitizer runtime
-  packages. Their metadata must capture exact target platform, sanitizer
-  runtime library identity, compile/link flags, and runtime mode before any
-  install or execution claim can publish.
+- ASan and UBSan packages are Windows x64 sanitizer runtime package rows. Their
+  source-owned metadata must capture exact target platform, sanitizer runtime
+  library identity, compile/link flags, runtime mode, package/install identity,
+  expected detection records, and fail-closed negative cases before any
+  sanitizer package claim can publish; none of that widens platform support.
+
+`package_root_layout` uses package-channel payload vocabulary, not installed
+tree vocabulary. Release rows must match the full artifact-scoped runnable
+package payload entries:
+
+- `windows-x64`: `artifacts/package/objc3c-runnable-toolchain-package.json`,
+  `artifacts/bin/objc3c-native.exe`, `artifacts/lib/objc3_runtime.lib`,
+  `stdlib/workspace.json`, `stdlib/modules/objc3.core/module.json`, and
+  `docs/runbooks/objc3c_packaging_channels.md`
+- `linux-x64`: `artifacts/package/objc3c-runnable-toolchain-package.json`,
+  `artifacts/bin/objc3c-native`, `artifacts/lib/libobjc3-runtime.so`,
+  `stdlib/workspace.json`, `stdlib/modules/objc3.core/module.json`, and
+  `docs/runbooks/objc3c_packaging_channels.md`
+- `darwin-arm64`: `artifacts/package/objc3c-runnable-toolchain-package.json`,
+  `artifacts/bin/objc3c-native`, `artifacts/lib/libobjc3-runtime.dylib`,
+  `stdlib/workspace.json`, `stdlib/modules/objc3.core/module.json`, and
+  `docs/runbooks/objc3c_packaging_channels.md`
+
+The older `bin/`, `lib/`, and `include/` package-root vocabulary is not valid
+for release package-root layout contracts. Linux and macOS rows still remain
+fail-closed until their build, package, install, and native execution evidence
+is reviewed into source truth.
+
+Sanitizer `package_root_layout` is a Windows x64 reserved overlay, not a full
+release layout and not a Linux/macOS sanitizer claim. ASan lists
+`artifacts/lib/objc3_runtime.lib`, `share/objc3c/sanitizer/asan-metadata.json`,
+`share/objc3c/sanitizer/asan-runtime-libraries.json`, and the
+`artifacts/runtime/sanitizer/address/*` runtime artifacts. UBSan lists
+`artifacts/lib/objc3_runtime.lib`, `share/objc3c/sanitizer/ubsan-metadata.json`,
+`share/objc3c/sanitizer/ubsan-runtime-libraries.json`, and the
+`artifacts/runtime/sanitizer/undefined/*` runtime artifacts. Those overlays
+remain fail-closed outside the checked Windows x64 sanitizer runtime package
+evidence and never imply Linux/macOS sanitizer support.
 
 A package row can move from fail-closed or reserved to support only by changing
 checked-in source rows and evidence references together. Hosted-runner summaries
@@ -191,6 +237,23 @@ The checked-in source contract records the candidate evidence rows
 evidence with empty `supports_platform_ids`. Those rows document where real
 host artifacts will appear; they deliberately do not support Linux x64 or macOS
 arm64.
+
+## Capability Truth
+
+Capability truth is source-owned and fail-closed. The public capability summary
+fixture may report that a hosted runner saw native object-emission capability,
+but that is not host support unless the same platform also has checked build,
+package, install, execution, object/debug identity, runtime load/link, and
+reviewed source-truth records.
+
+`windows-x64` is the only row whose hosted capability summary may publish
+support today. Linux x64 and macOS arm64 capability summaries have empty
+`platform_ids` and `publication_allowed: false`; even a successful generated
+host run stays a review input until checked source rows are promoted. Missing
+`llc`, missing `llc --filetype=obj`, mixed LLVM roots, mismatched or unresolved
+tool versions, unsupported LLVM versions, missing `llvm-ar`, and missing LLVM
+header/library discovery fail closed before native object, package, execution,
+or platform support can be claimed.
 
 ## Required Host Evidence
 

@@ -6,8 +6,12 @@ from ..commands import pwsh_file
 from .native_build_paths import PACKAGE_PS1, PROOF_PS1
 
 
-def action_package_runnable_toolchain(_: list[str]) -> int:
-    return pwsh_file(PACKAGE_PS1)
+def _strip_separator(rest: list[str]) -> list[str]:
+    return rest[1:] if rest[:1] == ["--"] else rest
+
+
+def action_package_runnable_toolchain(rest: list[str]) -> int:
+    return pwsh_file(PACKAGE_PS1, *_strip_separator(rest))
 
 
 def action_package_runnable_toolchain_asan(_: list[str]) -> int:

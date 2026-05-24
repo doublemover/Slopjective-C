@@ -861,10 +861,12 @@
         "objc3-runtime.dll"
       ],
       "package_root_layout": [
-        "bin/objc3c-native.exe",
-        "bin/objc3-runtime.dll",
-        "lib/objc3-runtime.lib",
-        "include/objc3/runtime"
+        "artifacts/package/objc3c-runnable-toolchain-package.json",
+        "artifacts/bin/objc3c-native.exe",
+        "artifacts/lib/objc3_runtime.lib",
+        "stdlib/workspace.json",
+        "stdlib/modules/objc3.core/module.json",
+        "docs/runbooks/objc3c_packaging_channels.md"
       ],
       "loader_path_policy": "package bin directory and PATH-owned loader resolution are captured by install and native execution evidence",
       "evidence_ids": [
@@ -891,9 +893,12 @@
         "libobjc3-runtime.so"
       ],
       "package_root_layout": [
-        "bin/objc3c-native",
-        "lib/libobjc3-runtime.so",
-        "include/objc3/runtime"
+        "artifacts/package/objc3c-runnable-toolchain-package.json",
+        "artifacts/bin/objc3c-native",
+        "artifacts/lib/libobjc3-runtime.so",
+        "stdlib/workspace.json",
+        "stdlib/modules/objc3.core/module.json",
+        "docs/runbooks/objc3c_packaging_channels.md"
       ],
       "loader_path_policy": "ELF rpath, RUNPATH, or package-root loader resolution must be proven before support",
       "evidence_ids": [
@@ -918,9 +923,12 @@
         "libobjc3-runtime.dylib"
       ],
       "package_root_layout": [
-        "bin/objc3c-native",
-        "lib/libobjc3-runtime.dylib",
-        "include/objc3/runtime"
+        "artifacts/package/objc3c-runnable-toolchain-package.json",
+        "artifacts/bin/objc3c-native",
+        "artifacts/lib/libobjc3-runtime.dylib",
+        "stdlib/workspace.json",
+        "stdlib/modules/objc3.core/module.json",
+        "docs/runbooks/objc3c_packaging_channels.md"
       ],
       "loader_path_policy": "@rpath, install_name, codesign, and package-root loader behavior must be proven before support",
       "evidence_ids": [
@@ -954,10 +962,12 @@
         "objc3-runtime.dll"
       ],
       "package_root_layout": [
-        "bin/objc3c-native.exe",
-        "bin/objc3-runtime.dll",
-        "lib/objc3-runtime.lib",
-        "include/objc3/runtime"
+        "artifacts/package/objc3c-runnable-toolchain-package.json",
+        "artifacts/bin/objc3c-native.exe",
+        "artifacts/lib/objc3_runtime.lib",
+        "stdlib/workspace.json",
+        "stdlib/modules/objc3.core/module.json",
+        "docs/runbooks/objc3c_packaging_channels.md"
       ],
       "loader_policy": "package bin directory and PATH-owned loader resolution are captured by install and native execution evidence",
       "native_execution_required": true,
@@ -988,9 +998,12 @@
         "libobjc3-runtime.so"
       ],
       "package_root_layout": [
-        "bin/objc3c-native",
-        "lib/libobjc3-runtime.so",
-        "include/objc3/runtime"
+        "artifacts/package/objc3c-runnable-toolchain-package.json",
+        "artifacts/bin/objc3c-native",
+        "artifacts/lib/libobjc3-runtime.so",
+        "stdlib/workspace.json",
+        "stdlib/modules/objc3.core/module.json",
+        "docs/runbooks/objc3c_packaging_channels.md"
       ],
       "loader_policy": "ELF rpath, RUNPATH, or package-root loader resolution must be proven before support",
       "native_execution_required": true,
@@ -1019,9 +1032,12 @@
         "libobjc3-runtime.dylib"
       ],
       "package_root_layout": [
-        "bin/objc3c-native",
-        "lib/libobjc3-runtime.dylib",
-        "include/objc3/runtime"
+        "artifacts/package/objc3c-runnable-toolchain-package.json",
+        "artifacts/bin/objc3c-native",
+        "artifacts/lib/libobjc3-runtime.dylib",
+        "stdlib/workspace.json",
+        "stdlib/modules/objc3.core/module.json",
+        "docs/runbooks/objc3c_packaging_channels.md"
       ],
       "loader_policy": "@rpath, install_name, codesign, and package-root loader behavior must be proven before support",
       "native_execution_required": true,
@@ -1146,9 +1162,12 @@
       "object_format": "ELF",
       "debug_format": "DWARF",
       "package_root_layout": [
-        "bin/objc3c-native",
-        "lib/libobjc3-runtime.so",
-        "include/objc3/runtime"
+        "artifacts/package/objc3c-runnable-toolchain-package.json",
+        "artifacts/bin/objc3c-native",
+        "artifacts/lib/libobjc3-runtime.so",
+        "stdlib/workspace.json",
+        "stdlib/modules/objc3.core/module.json",
+        "docs/runbooks/objc3c_packaging_channels.md"
       ],
       "package_manifest_path": "tmp/reports/platform-host-evidence/linux-x64/package/objc3c-runnable-toolchain-package.json",
       "runtime_library_manifest_path": "tmp/reports/platform-host-evidence/linux-x64/package/runtime-library-manifest.json",
@@ -1177,9 +1196,12 @@
       "object_format": "Mach-O",
       "debug_format": "DWARF/dSYM",
       "package_root_layout": [
-        "bin/objc3c-native",
-        "lib/libobjc3-runtime.dylib",
-        "include/objc3/runtime"
+        "artifacts/package/objc3c-runnable-toolchain-package.json",
+        "artifacts/bin/objc3c-native",
+        "artifacts/lib/libobjc3-runtime.dylib",
+        "stdlib/workspace.json",
+        "stdlib/modules/objc3.core/module.json",
+        "docs/runbooks/objc3c_packaging_channels.md"
       ],
       "package_manifest_path": "tmp/reports/platform-host-evidence/darwin-arm64/package/objc3c-runnable-toolchain-package.json",
       "runtime_library_manifest_path": "tmp/reports/platform-host-evidence/darwin-arm64/package/runtime-library-manifest.json",
@@ -1211,9 +1233,12 @@
       "object_format": "ELF",
       "debug_format": "DWARF",
       "package_root_layout": [
-        "bin/objc3c-native",
-        "lib/libobjc3-runtime.so",
-        "include/objc3/runtime"
+        "artifacts/package/objc3c-runnable-toolchain-package.json",
+        "artifacts/bin/objc3c-native",
+        "artifacts/lib/libobjc3-runtime.so",
+        "stdlib/workspace.json",
+        "stdlib/modules/objc3.core/module.json",
+        "docs/runbooks/objc3c_packaging_channels.md"
       ],
       "runtime_library_names": [
         "libobjc3-runtime.so"
@@ -1250,9 +1275,12 @@
       "object_format": "Mach-O",
       "debug_format": "DWARF/dSYM",
       "package_root_layout": [
-        "bin/objc3c-native",
-        "lib/libobjc3-runtime.dylib",
-        "include/objc3/runtime"
+        "artifacts/package/objc3c-runnable-toolchain-package.json",
+        "artifacts/bin/objc3c-native",
+        "artifacts/lib/libobjc3-runtime.dylib",
+        "stdlib/workspace.json",
+        "stdlib/modules/objc3.core/module.json",
+        "docs/runbooks/objc3c_packaging_channels.md"
       ],
       "runtime_library_names": [
         "libobjc3-runtime.dylib"
@@ -1743,10 +1771,12 @@
         ],
         "loader_path_policy": "package bin directory and PATH-owned loader resolution are captured by install and native execution evidence",
         "package_root_layout": [
-          "bin/objc3c-native.exe",
-          "bin/objc3-runtime.dll",
-          "lib/objc3-runtime.lib",
-          "include/objc3/runtime"
+          "artifacts/package/objc3c-runnable-toolchain-package.json",
+          "artifacts/bin/objc3c-native.exe",
+          "artifacts/lib/objc3_runtime.lib",
+          "stdlib/workspace.json",
+          "stdlib/modules/objc3.core/module.json",
+          "docs/runbooks/objc3c_packaging_channels.md"
         ],
         "symbol_export_policy": "exports are owned by the native runtime package manifest and import library"
       },
@@ -1814,9 +1844,12 @@
         ],
         "loader_path_policy": "ELF rpath, RUNPATH, or package-root loader resolution must be proven before support",
         "package_root_layout": [
-          "bin/objc3c-native",
-          "lib/libobjc3-runtime.so",
-          "include/objc3/runtime"
+          "artifacts/package/objc3c-runnable-toolchain-package.json",
+          "artifacts/bin/objc3c-native",
+          "artifacts/lib/libobjc3-runtime.so",
+          "stdlib/workspace.json",
+          "stdlib/modules/objc3.core/module.json",
+          "docs/runbooks/objc3c_packaging_channels.md"
         ],
         "symbol_export_policy": "ELF dynamic symbol exports must match the checked runtime package manifest"
       },
@@ -1918,9 +1951,12 @@
         ],
         "loader_path_policy": "@rpath, install_name, codesign, and package-root loader behavior must be proven before support",
         "package_root_layout": [
-          "bin/objc3c-native",
-          "lib/libobjc3-runtime.dylib",
-          "include/objc3/runtime"
+          "artifacts/package/objc3c-runnable-toolchain-package.json",
+          "artifacts/bin/objc3c-native",
+          "artifacts/lib/libobjc3-runtime.dylib",
+          "stdlib/workspace.json",
+          "stdlib/modules/objc3.core/module.json",
+          "docs/runbooks/objc3c_packaging_channels.md"
         ],
         "symbol_export_policy": "Mach-O exported symbols and install_name must match the checked runtime package manifest"
       },
