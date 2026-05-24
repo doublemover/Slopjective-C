@@ -21,6 +21,7 @@ from objc3c_editor_tooling.model import build_editor_tooling_model
 from objc3c_editor_tooling.paths import paths_for_source, resolve_source
 from objc3c_editor_tooling.publication import publish_editor_tooling_surface
 from objc3c_tooling.json_io import load_json_object as load_json, write_json_file
+from objc3c_tooling.llvm_discovery import find_llvm_tool_path
 from objc3c_tooling.paths import repo_rel
 from check_objc3c_public_runtime_reflection_api import validate_public_runtime_reflection_api
 from objc3c_object_model_debugger_proof import (
@@ -286,29 +287,17 @@ def resolve_clangxx() -> str:
     configured = os.environ.get("OBJC3C_NATIVE_EXECUTION_CLANG_PATH")
     if configured:
         return configured
-    llvm_root = os.environ.get("LLVM_ROOT")
-    if llvm_root:
-        candidate = Path(llvm_root) / "bin" / "clang++.exe"
-        if candidate.is_file():
-            return str(candidate)
-    return shutil.which("clang++") or "clang++"
+    candidate = find_llvm_tool_path("clang++")
+    return str(candidate) if candidate else "clang++"
 
 
 def resolve_llc() -> str:
     configured = os.environ.get("OBJC3C_NATIVE_EXECUTION_LLC_PATH")
     if configured:
         return configured
-    llvm_root = os.environ.get("LLVM_ROOT")
-    if llvm_root:
-        candidate = Path(llvm_root) / "bin" / "llc.exe"
-        if candidate.is_file():
-            return str(candidate)
-    program_files_candidate = Path("C:/Program Files/LLVM/bin/llc.exe")
-    if program_files_candidate.is_file():
-        return str(program_files_candidate)
-    resolved = shutil.which("llc")
-    if resolved:
-        return resolved
+    candidate = find_llvm_tool_path("llc")
+    if candidate:
+        return str(candidate)
     raise RuntimeError(NATIVE_OBJECT_EMISSION_MISSING_LLC_DIAGNOSTIC)
 
 

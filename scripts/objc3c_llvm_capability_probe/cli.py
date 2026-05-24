@@ -3,11 +3,11 @@
 from __future__ import annotations
 
 import argparse
-import os
 import sys
 from pathlib import Path
 from typing import Sequence
 
+from objc3c_tooling.llvm_discovery import default_llvm_tool_path
 from objc3c_tooling.json_io import load_json_any as load_json
 from objc3c_tooling.json_io import write_json_file as write_json
 from objc3c_tooling.paths import display_path
@@ -33,11 +33,7 @@ from .reports import build_toolchain_identity
 
 
 def _default_llvm_tool(tool_name: str) -> Path:
-    llvm_root = os.environ.get("LLVM_ROOT")
-    if llvm_root:
-        suffix = ".exe" if os.name == "nt" and not tool_name.endswith(".exe") else ""
-        return Path(llvm_root) / "bin" / f"{tool_name}{suffix}"
-    return Path(tool_name)
+    return default_llvm_tool_path(tool_name)
 
 
 def parse_args(argv: Sequence[str]) -> argparse.Namespace:

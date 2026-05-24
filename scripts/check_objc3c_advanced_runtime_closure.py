@@ -33,6 +33,7 @@ from scripts.objc3c_runtime_acceptance.compile_backends import (
     DIRECT_COMPILE_BACKEND,
     compile_command,
 )
+from scripts.objc3c_tooling.llvm_discovery import find_llvm_tool_path
 
 LANGUAGE_SEMANTICS_CONTRACT_PATH = (
     ROOT
@@ -1542,15 +1543,8 @@ def _resolve_clangxx() -> str:
     configured = os.environ.get("OBJC3C_NATIVE_EXECUTION_CLANG_PATH")
     if configured:
         return configured
-    llvm_root = os.environ.get("LLVM_ROOT")
-    if llvm_root:
-        candidate = Path(llvm_root) / "bin" / "clang++.exe"
-        if candidate.is_file():
-            return str(candidate)
-    program_files_candidate = Path("C:/Program Files/LLVM/bin/clang++.exe")
-    if program_files_candidate.is_file():
-        return str(program_files_candidate)
-    return shutil.which("clang++") or "clang++"
+    candidate = find_llvm_tool_path("clang++")
+    return str(candidate) if candidate else "clang++"
 
 
 def _native_link_driver_args() -> list[str]:

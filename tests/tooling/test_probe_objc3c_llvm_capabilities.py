@@ -36,8 +36,10 @@ from objc3c_llvm_capabilities_probe_support import PACKAGE_JSON, probe
 
 
 @pytest.fixture(autouse=True)
-def clear_llvm_root_default(monkeypatch) -> None:
+def clear_llvm_root_default(monkeypatch, tmp_path: Path) -> None:
+    monkeypatch.delenv("OBJC3C_LLVM_ROOT", raising=False)
     monkeypatch.delenv("LLVM_ROOT", raising=False)
+    monkeypatch.setenv("USERPROFILE", str(tmp_path / "user"))
 
 
 def test_probe_passes_when_clang_and_llc_capabilities_are_detected(

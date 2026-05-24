@@ -10,8 +10,7 @@ function Resolve-Objc3cNativeExecutionSmokeClangxx {
     return $ConfiguredClangPath
   }
 
-  $llvmRoot = $env:LLVM_ROOT
-  if (-not [string]::IsNullOrWhiteSpace($llvmRoot)) {
+  foreach ($llvmRoot in @(Get-Objc3cNativeExecutionSmokeLlvmRootCandidates)) {
     $llvmClangxx = Join-Path $llvmRoot "bin\clang++.exe"
     if (Test-Path -LiteralPath $llvmClangxx -PathType Leaf) {
       return $llvmClangxx
@@ -24,6 +23,60 @@ function Resolve-Objc3cNativeExecutionSmokeClangxx {
   }
 
   return "clang++"
+}
+
+function Resolve-Objc3cNativeExecutionSmokeLlc {
+  param([string]$ConfiguredLlcPath)
+
+  if (-not [string]::IsNullOrWhiteSpace($ConfiguredLlcPath)) {
+    return $ConfiguredLlcPath
+  }
+
+  foreach ($llvmRoot in @(Get-Objc3cNativeExecutionSmokeLlvmRootCandidates)) {
+    $llvmLlc = Join-Path $llvmRoot "bin\llc.exe"
+    if (Test-Path -LiteralPath $llvmLlc -PathType Leaf) {
+      return $llvmLlc
+    }
+  }
+
+  $pathLlc = Get-Command "llc" -ErrorAction SilentlyContinue
+  if ($null -ne $pathLlc -and -not [string]::IsNullOrWhiteSpace($pathLlc.Source)) {
+    return $pathLlc.Source
+  }
+
+  return "llc"
+}
+
+function Get-Objc3cNativeExecutionSmokeLlvmRootCandidates {
+  $candidates = @()
+  foreach ($envName in @("OBJC3C_LLVM_ROOT", "LLVM_ROOT")) {
+    $configured = [System.Environment]::GetEnvironmentVariable($envName)
+    if (-not [string]::IsNullOrWhiteSpace($configured)) {
+      $candidates += $configured
+    }
+  }
+
+  $version = if ($env:OBJC3C_CI_LLVM_VERSION) { $env:OBJC3C_CI_LLVM_VERSION } else { "22.1.6" }
+  $userProfile = [System.Environment]::GetEnvironmentVariable("USERPROFILE")
+  if (-not [string]::IsNullOrWhiteSpace($userProfile)) {
+    $candidates += (Join-Path $userProfile ("Tools\LLVM\llvm-{0}-msvc" -f $version))
+  }
+  $candidates += "C:\Program Files\LLVM"
+
+  $seen = @{}
+  $ordered = @()
+  foreach ($candidate in $candidates) {
+    if ([string]::IsNullOrWhiteSpace($candidate)) {
+      continue
+    }
+    $key = $candidate.ToLowerInvariant()
+    if ($seen.ContainsKey($key)) {
+      continue
+    }
+    $seen[$key] = $true
+    $ordered += $candidate
+  }
+  return $ordered
 }
 
 function Get-Objc3cNativeExecutionSmokeLinkDriverArgs {
@@ -63,16 +116,8 @@ function Resolve-Objc3cNativeExecutionSmokeConfig {
   $clangCommand = Resolve-Objc3cNativeExecutionSmokeClangxx -ConfiguredClangPath $configuredClangPath
   $linkDriverArgs = @(Get-Objc3cNativeExecutionSmokeLinkDriverArgs)
   $configuredLlcPath = $env:OBJC3C_NATIVE_EXECUTION_LLC_PATH
-  $llcCommand = $configuredLlcPath
+  $llcCommand = Resolve-Objc3cNativeExecutionSmokeLlc -ConfiguredLlcPath $configuredLlcPath
   $llcSourcePath = ""
-  if ([string]::IsNullOrWhiteSpace($llcCommand)) {
-    $llcCandidate = Get-Command llc -ErrorAction SilentlyContinue
-    if ($null -ne $llcCandidate -and -not [string]::IsNullOrWhiteSpace($llcCandidate.Source)) {
-      $llcCommand = $llcCandidate.Source
-    } else {
-      $llcCommand = "llc"
-    }
-  }
   if (-not [string]::IsNullOrWhiteSpace($llcCommand)) {
     $llcSourcePath = $llcCommand
   }

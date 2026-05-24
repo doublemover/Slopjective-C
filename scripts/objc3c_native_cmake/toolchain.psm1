@@ -14,13 +14,69 @@ function Resolve-Objc3cNativeCommandPath {
   return $null
 }
 
+function Get-Objc3cNativeLlvmRootCandidates {
+  $candidates = @()
+  foreach ($envName in @("OBJC3C_LLVM_ROOT", "LLVM_ROOT")) {
+    $configured = [System.Environment]::GetEnvironmentVariable($envName)
+    if (-not [string]::IsNullOrWhiteSpace($configured)) {
+      $candidates += $configured
+    }
+  }
+
+  $version = if ($env:OBJC3C_CI_LLVM_VERSION) { $env:OBJC3C_CI_LLVM_VERSION } else { "22.1.6" }
+  $userProfile = [System.Environment]::GetEnvironmentVariable("USERPROFILE")
+  if (-not [string]::IsNullOrWhiteSpace($userProfile)) {
+    $candidates += (Join-Path $userProfile ("Tools\LLVM\llvm-{0}-msvc" -f $version))
+  }
+  $candidates += "C:\Program Files\LLVM"
+
+  $seen = @{}
+  $ordered = @()
+  foreach ($candidate in $candidates) {
+    if ([string]::IsNullOrWhiteSpace($candidate)) {
+      continue
+    }
+    $key = $candidate.ToLowerInvariant()
+    if ($seen.ContainsKey($key)) {
+      continue
+    }
+    $seen[$key] = $true
+    $ordered += $candidate
+  }
+  return $ordered
+}
+
+function Resolve-Objc3cNativeLlvmRoot {
+  foreach ($candidate in @(Get-Objc3cNativeLlvmRootCandidates)) {
+    $clangxx = Join-Path $candidate "bin\clang++.exe"
+    $llc = Join-Path $candidate "bin\llc.exe"
+    $llvmConfig = Join-Path $candidate "bin\llvm-config.exe"
+    if (
+      (Test-Path -LiteralPath $clangxx -PathType Leaf) -and
+      (Test-Path -LiteralPath $llc -PathType Leaf) -and
+      (Test-Path -LiteralPath $llvmConfig -PathType Leaf)
+    ) {
+      return $candidate
+    }
+  }
+
+  foreach ($candidate in @(Get-Objc3cNativeLlvmRootCandidates)) {
+    $clangxx = Join-Path $candidate "bin\clang++.exe"
+    if (Test-Path -LiteralPath $clangxx -PathType Leaf) {
+      return $candidate
+    }
+  }
+
+  return "C:\Program Files\LLVM"
+}
+
 function Resolve-Objc3cNativeToolchain {
   param(
     [Parameter(Mandatory = $true)]
     [string]$RepoRoot
   )
 
-  $llvmRoot = if ($env:LLVM_ROOT) { $env:LLVM_ROOT } else { "C:\Program Files\LLVM" }
+  $llvmRoot = Resolve-Objc3cNativeLlvmRoot
   $clangxx = Join-Path $llvmRoot "bin\clang++.exe"
   $llvmArTool = Join-Path $llvmRoot "bin\llvm-ar.exe"
   $llvmRanlibTool = Join-Path $llvmRoot "bin\llvm-ranlib.exe"
@@ -127,6 +183,8 @@ function Assert-Objc3cNativeToolchainPath {
 }
 
 Export-ModuleMember -Function @(
+  "Get-Objc3cNativeLlvmRootCandidates",
+  "Resolve-Objc3cNativeLlvmRoot",
   "Resolve-Objc3cNativeCommandPath",
   "Resolve-Objc3cNativeToolchain",
   "Resolve-Objc3cNativeLibclangPath",
