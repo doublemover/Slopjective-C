@@ -22,6 +22,9 @@ PACKAGING_CHANNEL_ACTION_HANDLERS: dict[str, ActionHandler] = {
     "check-sanitizer-runtime-evidence-ubsan": (
         sanitizer_runtime_evidence.action_check_sanitizer_runtime_evidence_ubsan
     ),
+    "check-security-sanitizer-runtime-promotion-evidence": (
+        sanitizer_runtime_evidence.action_check_security_sanitizer_runtime_promotion_evidence
+    ),
     "check-platform-host-promotion-evidence": (
         release_governance.action_check_platform_host_promotion_evidence
     ),

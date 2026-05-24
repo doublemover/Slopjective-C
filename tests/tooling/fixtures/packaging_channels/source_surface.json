@@ -18,6 +18,7 @@
     "build-package-channels-ubsan",
     "check-sanitizer-runtime-evidence-asan",
     "check-sanitizer-runtime-evidence-ubsan",
+    "check-security-sanitizer-runtime-promotion-evidence",
     "build-platform-support-matrix",
     "ingest-platform-host-evidence",
     "check-platform-host-promotion-evidence",
@@ -39,6 +40,7 @@
       "build-package-channels-ubsan",
       "check-sanitizer-runtime-evidence-asan",
       "check-sanitizer-runtime-evidence-ubsan",
+      "check-security-sanitizer-runtime-promotion-evidence",
       "build-platform-support-matrix",
       "ingest-platform-host-evidence",
       "check-platform-host-promotion-evidence",
@@ -57,6 +59,10 @@
         "check-sanitizer-runtime-evidence-asan",
         "check-sanitizer-runtime-evidence-ubsan"
       ],
+      "sanitizer_runtime_promotion_evidence_action": "check-security-sanitizer-runtime-promotion-evidence",
+      "sanitizer_runtime_promotion_generated_only_allowed": false,
+      "sanitizer_runtime_promotion_source_contract_required": true,
+      "sanitizer_runtime_promotion_negative_cases_required": true,
       "sanitizer_runtime_evidence_action_aliases_allowed": false,
       "sanitizer_runtime_evidence_fallback_sanitizer_variant_allowed": false,
       "sanitizer_runtime_evidence_fallback_target_platform_allowed": false,
@@ -82,6 +88,7 @@
       "build-package-channels-ubsan",
       "check-sanitizer-runtime-evidence-asan",
       "check-sanitizer-runtime-evidence-ubsan",
+      "check-security-sanitizer-runtime-promotion-evidence",
       "build-platform-support-matrix",
       "ingest-platform-host-evidence",
       "check-platform-host-promotion-evidence",
@@ -101,13 +108,15 @@
       "payload manifest digest absent from install receipt",
       "pre-existing tmp package root accepted as source input",
       "sanitizer package selector, metadata path, copied runtime library manifest, runtime library digest set, or receipt variant accepted with drifted identity",
-      "sanitizer runtime evidence action accepted aliases, fallback sanitizer variants, fallback target platforms, report/probe rerouting, or support promotion",
+      "sanitizer runtime evidence action accepted aliases, fallback sanitizer variants, fallback target platforms, report/probe rerouting, or generated-only support promotion",
+      "sanitizer runtime promotion action accepted support promotion without checked source fixture, regenerated ASan/UBSan evidence, package manifests, runtime manifests, packaged smoke, expected detection, and negative cases",
       "host-promotion evidence action accepted generated hosted evidence as support truth or allowed Linux/macOS promotion without checked package install and native execution records"
     ]
   },
   "checked_in_sources": [
     "docs/runbooks/objc3c_packaging_channels.md",
     "docs/runbooks/objc3c_release_foundation.md",
+    "scripts/check_objc3c_sanitizer_runtime_promotion_evidence.py",
     "scripts/objc3c_workflow/actions/sanitizer_runtime_evidence.py"
   ],
   "implementation_anchors": [
@@ -119,6 +128,7 @@
     "scripts/check_packaging_channels_schema_surface.py",
     "scripts/build_objc3c_package_channels.py",
     "scripts/check_objc3c_sanitizer_runtime_evidence.py",
+    "scripts/check_objc3c_sanitizer_runtime_promotion_evidence.py",
     "scripts/probe_objc3c_sanitizer_runtime_evidence.py",
     "scripts/check_platform_host_promotion_evidence.py",
     "scripts/objc3c_workflow/actions/sanitizer_runtime_evidence.py",

@@ -51,16 +51,21 @@ def test_security_hardening_schema_surface_uses_registered_schemas() -> None:
         assert summary["sanitizer_execution_evidence_schema"] == (
             schema_path("objc3c-sanitizer-execution-evidence-v1").relative_to(ROOT).as_posix()
         )
-        assert summary["schema_count"] == 3
+        assert summary["sanitizer_runtime_promotion_evidence_schema"] == (
+            schema_path("objc3c-sanitizer-runtime-promotion-evidence-v1").relative_to(ROOT).as_posix()
+        )
+        assert summary["schema_count"] == 4
         assert summary["schemas"] == [
             schema_path("objc3c-security-posture-v1").relative_to(ROOT).as_posix(),
             schema_path("objc3c-security-advisory-index-v1").relative_to(ROOT).as_posix(),
             schema_path("objc3c-sanitizer-execution-evidence-v1").relative_to(ROOT).as_posix(),
+            schema_path("objc3c-sanitizer-runtime-promotion-evidence-v1").relative_to(ROOT).as_posix(),
         ]
         assert summary["schema_ids"] == [
             "https://objc3c.dev/schemas/objc3c-security-posture-v1.schema.json",
             "https://objc3c.dev/schemas/objc3c-security-advisory-index-v1.schema.json",
             "https://objc3c.dev/schemas/objc3c-sanitizer-execution-evidence-v1.schema.json",
+            "https://objc3c.dev/schemas/objc3c-sanitizer-runtime-promotion-evidence-v1.schema.json",
         ]
     finally:
         checker.SUMMARY_PATH.unlink(missing_ok=True)

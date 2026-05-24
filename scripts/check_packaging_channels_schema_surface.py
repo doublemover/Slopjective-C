@@ -48,6 +48,13 @@ EXPECTED_SCHEMAS = (
         "objc3c.security.hardening.sanitizer.execution-evidence.contract.v1",
         "required_sanitizer_execution_evidence_fields",
     ),
+    (
+        "sanitizer_runtime_promotion_evidence",
+        "objc3c-sanitizer-runtime-promotion-evidence-v1",
+        "https://objc3c.dev/schemas/objc3c-sanitizer-runtime-promotion-evidence-v1.schema.json",
+        "objc3c.security.hardening.sanitizer.runtime-promotion-evidence.contract.v1",
+        "required_sanitizer_runtime_promotion_evidence_fields",
+    ),
 )
 
 
@@ -143,6 +150,9 @@ def main() -> int:
         "install_receipt": schema_refs["install_receipt"],
         "sanitizer_runtime_library_manifest": schema_refs["sanitizer_runtime_library_manifest"],
         "sanitizer_execution_evidence": schema_refs["sanitizer_execution_evidence"],
+        "sanitizer_runtime_promotion_evidence": schema_refs[
+            "sanitizer_runtime_promotion_evidence"
+        ],
         "schema_count": len(schemas),
         "schemas": expected_paths,
         "schema_ids": schema_ids,

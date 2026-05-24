@@ -187,6 +187,7 @@ def test_schema_registry_includes_release_adoption_schemas() -> None:
         "objc3c-package-local-registry-index-v1": "schemas/objc3c-package-local-registry-index-v1.schema.json",
         "objc3c-package-install-receipt-v1": "schemas/objc3c-package-install-receipt-v1.schema.json",
         "objc3c-sanitizer-runtime-library-manifest-v1": "schemas/objc3c-sanitizer-runtime-library-manifest-v1.schema.json",
+        "objc3c-sanitizer-runtime-promotion-evidence-v1": "schemas/objc3c-sanitizer-runtime-promotion-evidence-v1.schema.json",
         "objc3c-package-install-distribution-receipt-v1": "schemas/objc3c-package-install-distribution-receipt-v1.schema.json",
         "objc3c-package-install-distribution-operation-receipt-v1": "schemas/objc3c-package-install-distribution-operation-receipt-v1.schema.json",
         "objc3c-platform-support-matrix-v1": "schemas/objc3c-platform-support-matrix-v1.schema.json",

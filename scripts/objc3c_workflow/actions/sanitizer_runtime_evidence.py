@@ -16,6 +16,9 @@ SANITIZER_RUNTIME_EVIDENCE_CHECKER_PY = (
 SANITIZER_RUNTIME_EVIDENCE_PROBE_PY = (
     ROOT / "scripts" / "probe_objc3c_sanitizer_runtime_evidence.py"
 )
+SANITIZER_RUNTIME_PROMOTION_EVIDENCE_CHECKER_PY = (
+    ROOT / "scripts" / "check_objc3c_sanitizer_runtime_promotion_evidence.py"
+)
 SANITIZER_RUNTIME_EVIDENCE_REPORT_ROOT = (
     "tmp/reports/sanitizer-runtime-evidence"
 )
@@ -35,6 +38,9 @@ ASAN_SANITIZER_RUNTIME_EVIDENCE_ACTION_ID = (
 )
 UBSAN_SANITIZER_RUNTIME_EVIDENCE_ACTION_ID = (
     "check-sanitizer-runtime-evidence-ubsan"
+)
+SANITIZER_RUNTIME_PROMOTION_EVIDENCE_ACTION_ID = (
+    "check-security-sanitizer-runtime-promotion-evidence"
 )
 PINNED_SANITIZER_RUNTIME_EVIDENCE_ARGS = (
     "--sanitizer-variant",
@@ -271,10 +277,57 @@ SANITIZER_RUNTIME_EVIDENCE_ACTION_SPECS = {
     contract.action_id: contract.action_spec()
     for contract in SANITIZER_RUNTIME_EVIDENCE_ACTION_CONTRACTS
 }
+SANITIZER_RUNTIME_PROMOTION_EVIDENCE_ACTION_SPEC = ActionSpec(
+    SANITIZER_RUNTIME_PROMOTION_EVIDENCE_ACTION_ID,
+    (
+        "check source-owned sanitizer runtime promotion evidence from fresh "
+        "ASan and UBSan package/probe outputs"
+    ),
+    (
+        "python:scripts/check_objc3c_sanitizer_runtime_promotion_evidence.py "
+        "after pinned ASan and UBSan runtime evidence regeneration"
+    ),
+    validation_tier="ci",
+    guarantee_owner=(
+        "ASan and UBSan promotion remains source-owned and generated evidence "
+        "cannot promote support by itself; the action regenerates both pinned "
+        "sanitizer runtime evidence reports, then checks the durable promotion "
+        "schema/fixture against package manifests, runtime manifests, packaged "
+        "execution smoke, expected sanitizer detection, and fail-closed "
+        "negative cases"
+    ),
+    pass_through_args=False,
+)
+SANITIZER_RUNTIME_EVIDENCE_ACTION_SPECS[
+    SANITIZER_RUNTIME_PROMOTION_EVIDENCE_ACTION_ID
+] = SANITIZER_RUNTIME_PROMOTION_EVIDENCE_ACTION_SPEC
 SANITIZER_RUNTIME_EVIDENCE_PUBLIC_CONTRACTS = {
     contract.action_id: contract.public_contract_payload()
     for contract in SANITIZER_RUNTIME_EVIDENCE_ACTION_CONTRACTS
 }
+SANITIZER_RUNTIME_PROMOTION_EVIDENCE_PUBLIC_CONTRACT = {
+    "contract_id": "objc3c.workflow.sanitizer-runtime-promotion-evidence.action-contract.v1",
+    "action_id": SANITIZER_RUNTIME_PROMOTION_EVIDENCE_ACTION_ID,
+    "public_command": f"npm run objc3c -- {SANITIZER_RUNTIME_PROMOTION_EVIDENCE_ACTION_ID}",
+    "action_aliases_allowed": False,
+    "public_pass_through_args_allowed": False,
+    "support_claim_policy": "source-owned-promotion-gate-requires-regenerated-evidence",
+    "generated_only_evidence_allowed": False,
+    "source_contract_required": True,
+    "negative_cases_required": True,
+    "evidence_actions": [
+        ASAN_SANITIZER_RUNTIME_EVIDENCE_ACTION_ID,
+        UBSAN_SANITIZER_RUNTIME_EVIDENCE_ACTION_ID,
+    ],
+    "checker_script": "scripts/check_objc3c_sanitizer_runtime_promotion_evidence.py",
+    "source_contract": "tests/tooling/fixtures/security_hardening/sanitizer_runtime_promotion_evidence_contract.json",
+    "schema": "schemas/objc3c-sanitizer-runtime-promotion-evidence-v1.schema.json",
+    "target_platform_ids": ["windows-x64"],
+    "required_evidence_classes": ["package", "install", "execution", "detection"],
+}
+SANITIZER_RUNTIME_EVIDENCE_PUBLIC_CONTRACTS[
+    SANITIZER_RUNTIME_PROMOTION_EVIDENCE_ACTION_ID
+] = SANITIZER_RUNTIME_PROMOTION_EVIDENCE_PUBLIC_CONTRACT
 
 
 def _has_pinned_option_override(
@@ -369,6 +422,44 @@ def action_check_sanitizer_runtime_evidence_ubsan(rest: list[str]) -> int:
     )
 
 
+def action_check_security_sanitizer_runtime_promotion_evidence(rest: list[str]) -> int:
+    if rest[:1] == ["--"]:
+        rest = rest[1:]
+    if rest:
+        print(
+            f"{SANITIZER_RUNTIME_PROMOTION_EVIDENCE_ACTION_ID} does not accept "
+            "passthrough arguments; the promotion gate pins the source fixture, "
+            "schema, ASan evidence action, UBSan evidence action, package roots, "
+            "report roots, and target platform.",
+            file=sys.stderr,
+        )
+        return 1
+    missing_scripts = [
+        script
+        for script in (
+            SANITIZER_RUNTIME_EVIDENCE_CHECKER_PY,
+            SANITIZER_RUNTIME_EVIDENCE_PROBE_PY,
+            SANITIZER_RUNTIME_PROMOTION_EVIDENCE_CHECKER_PY,
+        )
+        if not script.is_file()
+    ]
+    if missing_scripts:
+        print(
+            "sanitizer runtime promotion evidence action is unavailable until "
+            "all checker/probe scripts exist; failing closed without claiming "
+            "support.",
+            file=sys.stderr,
+        )
+        for script in missing_scripts:
+            print(f"missing required script: {script}", file=sys.stderr)
+        return 1
+    for contract in SANITIZER_RUNTIME_EVIDENCE_ACTION_CONTRACTS:
+        result = _run_sanitizer_runtime_evidence_action(contract, [])
+        if result != 0:
+            return result
+    return run([sys.executable, str(SANITIZER_RUNTIME_PROMOTION_EVIDENCE_CHECKER_PY)])
+
+
 __all__ = [
     "ASAN_SANITIZER_RUNTIME_EVIDENCE_ACTION_ID",
     "ASAN_SANITIZER_RUNTIME_EVIDENCE_CONTRACT",
@@ -384,9 +475,14 @@ __all__ = [
     "SANITIZER_RUNTIME_EVIDENCE_PROBE_PY",
     "SANITIZER_RUNTIME_EVIDENCE_PUBLIC_CONTRACTS",
     "SANITIZER_RUNTIME_EVIDENCE_REPORT_ROOT",
+    "SANITIZER_RUNTIME_PROMOTION_EVIDENCE_ACTION_ID",
+    "SANITIZER_RUNTIME_PROMOTION_EVIDENCE_ACTION_SPEC",
+    "SANITIZER_RUNTIME_PROMOTION_EVIDENCE_CHECKER_PY",
+    "SANITIZER_RUNTIME_PROMOTION_EVIDENCE_PUBLIC_CONTRACT",
     "SanitizerRuntimeEvidenceActionContract",
     "UBSAN_SANITIZER_RUNTIME_EVIDENCE_ACTION_ID",
     "UBSAN_SANITIZER_RUNTIME_EVIDENCE_CONTRACT",
+    "action_check_security_sanitizer_runtime_promotion_evidence",
     "action_check_sanitizer_runtime_evidence_asan",
     "action_check_sanitizer_runtime_evidence_ubsan",
 ]

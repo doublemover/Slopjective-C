@@ -38,6 +38,12 @@ EXPECTED_SCHEMAS = (
         "https://objc3c.dev/schemas/objc3c-sanitizer-execution-evidence-v1.schema.json",
         "objc3c.security.hardening.sanitizer.execution-evidence.contract.v1",
     ),
+    (
+        "sanitizer_runtime_promotion_evidence_schema",
+        "objc3c-sanitizer-runtime-promotion-evidence-v1",
+        "https://objc3c.dev/schemas/objc3c-sanitizer-runtime-promotion-evidence-v1.schema.json",
+        "objc3c.security.hardening.sanitizer.runtime-promotion-evidence.contract.v1",
+    ),
 )
 
 
@@ -93,6 +99,9 @@ def main() -> int:
         "advisory_index_schema": schema_refs["advisory_index_schema"],
         "sanitizer_execution_evidence_schema": schema_refs[
             "sanitizer_execution_evidence_schema"
+        ],
+        "sanitizer_runtime_promotion_evidence_schema": schema_refs[
+            "sanitizer_runtime_promotion_evidence_schema"
         ],
         "schema_count": len(schema_paths),
         "schemas": schema_paths,

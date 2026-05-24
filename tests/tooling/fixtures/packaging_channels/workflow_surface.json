@@ -11,6 +11,7 @@
     "build-package-channels-ubsan",
     "check-sanitizer-runtime-evidence-asan",
     "check-sanitizer-runtime-evidence-ubsan",
+    "check-security-sanitizer-runtime-promotion-evidence",
     "build-platform-support-matrix",
     "ingest-platform-host-evidence",
     "check-platform-host-promotion-evidence",
@@ -32,6 +33,7 @@
       "build-package-channels-ubsan",
       "check-sanitizer-runtime-evidence-asan",
       "check-sanitizer-runtime-evidence-ubsan",
+      "check-security-sanitizer-runtime-promotion-evidence",
       "build-platform-support-matrix",
       "ingest-platform-host-evidence",
       "check-platform-host-promotion-evidence",
@@ -49,6 +51,7 @@
       "check-packaging-channels-schema-surface",
       "build-package-channels",
       "build-platform-support-matrix",
+      "check-security-sanitizer-runtime-promotion-evidence",
       "check-platform-host-promotion-evidence"
     ],
     "hard_cutover_guardrails": {
@@ -61,6 +64,10 @@
         "check-sanitizer-runtime-evidence-asan",
         "check-sanitizer-runtime-evidence-ubsan"
       ],
+      "sanitizer_runtime_promotion_evidence_action": "check-security-sanitizer-runtime-promotion-evidence",
+      "sanitizer_runtime_promotion_generated_only_allowed": false,
+      "sanitizer_runtime_promotion_source_contract_required": true,
+      "sanitizer_runtime_promotion_negative_cases_required": true,
       "sanitizer_runtime_evidence_action_aliases_allowed": false,
       "sanitizer_runtime_evidence_fallback_sanitizer_variant_allowed": false,
       "sanitizer_runtime_evidence_fallback_target_platform_allowed": false,
@@ -86,6 +93,7 @@
       "build-package-channels-ubsan",
       "check-sanitizer-runtime-evidence-asan",
       "check-sanitizer-runtime-evidence-ubsan",
+      "check-security-sanitizer-runtime-promotion-evidence",
       "build-platform-support-matrix",
       "ingest-platform-host-evidence",
       "check-platform-host-promotion-evidence",
@@ -102,7 +110,8 @@
       "package-channel child action missing from objc3c bridge",
       "package-channel workflow summary emitted evidence-log status",
       "sanitizer package channel action accepted selector, receipt, payload metadata, or copied runtime-library drift",
-      "sanitizer runtime evidence action accepted aliases, fallback sanitizer variants, fallback target platforms, report/probe rerouting, or support promotion",
+      "sanitizer runtime evidence action accepted aliases, fallback sanitizer variants, fallback target platforms, report/probe rerouting, or generated-only support promotion",
+      "sanitizer runtime promotion action accepted support promotion without checked source fixture, regenerated ASan/UBSan evidence, package manifests, runtime manifests, packaged smoke, expected detection, and negative cases",
       "host-promotion evidence action accepted generated hosted evidence as support truth or allowed Linux/macOS promotion without checked package install and native execution records"
     ]
   },

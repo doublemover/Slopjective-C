@@ -70,6 +70,7 @@ RELEASE_GATE_OWNERS: ReleaseGateOwnerCatalog = validate_release_gate_catalog(
                 "build-package-channels-ubsan",
                 "check-sanitizer-runtime-evidence-asan",
                 "check-sanitizer-runtime-evidence-ubsan",
+                "check-security-sanitizer-runtime-promotion-evidence",
                 "build-platform-support-matrix",
                 "ingest-platform-host-evidence",
                 "check-platform-host-promotion-evidence",
@@ -85,6 +86,7 @@ RELEASE_GATE_OWNERS: ReleaseGateOwnerCatalog = validate_release_gate_catalog(
                 "check-packaging-channels-schema-surface",
                 "build-package-channels",
                 "build-platform-support-matrix",
+                "check-security-sanitizer-runtime-promotion-evidence",
                 "check-platform-host-promotion-evidence",
             ),
             hard_cutover_guardrails=(
@@ -103,6 +105,13 @@ RELEASE_GATE_OWNERS: ReleaseGateOwnerCatalog = validate_release_gate_catalog(
                         "check-sanitizer-runtime-evidence-ubsan",
                     ],
                 ),
+                (
+                    "sanitizer_runtime_promotion_evidence_action",
+                    "check-security-sanitizer-runtime-promotion-evidence",
+                ),
+                ("sanitizer_runtime_promotion_generated_only_allowed", False),
+                ("sanitizer_runtime_promotion_source_contract_required", True),
+                ("sanitizer_runtime_promotion_negative_cases_required", True),
                 ("sanitizer_runtime_evidence_action_aliases_allowed", False),
                 (
                     "sanitizer_runtime_evidence_fallback_sanitizer_variant_allowed",

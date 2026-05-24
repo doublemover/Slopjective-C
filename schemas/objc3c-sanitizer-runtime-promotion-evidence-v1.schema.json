@@ -1,0 +1,711 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://objc3c.dev/schemas/objc3c-sanitizer-runtime-promotion-evidence-v1.schema.json",
+  "title": "objc3c Sanitizer Runtime Promotion Evidence",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "contract_id",
+    "schema_version",
+    "surface_kind",
+    "source_path",
+    "schema_path",
+    "existing_runtime_evidence_policy",
+    "promotion_policy",
+    "pinned_public_actions",
+    "required_evidence_classes",
+    "positive_contract_fixtures",
+    "negative_contract_fixtures"
+  ],
+  "properties": {
+    "contract_id": {
+      "const": "objc3c.security.hardening.sanitizer.runtime-promotion-evidence.contract.v1"
+    },
+    "schema_version": {
+      "const": 1
+    },
+    "surface_kind": {
+      "const": "security-sanitizer-runtime-promotion-evidence-contract"
+    },
+    "source_path": {
+      "const": "tests/tooling/fixtures/security_hardening/sanitizer_runtime_promotion_evidence_contract.json"
+    },
+    "schema_path": {
+      "const": "schemas/objc3c-sanitizer-runtime-promotion-evidence-v1.schema.json"
+    },
+    "existing_runtime_evidence_policy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "existing_runtime_evidence_contract",
+        "generated_runtime_evidence_support_truth",
+        "generated_runtime_evidence_promotion_allowed",
+        "generated_only_evidence_allowed"
+      ],
+      "properties": {
+        "existing_runtime_evidence_contract": {
+          "const": "tests/tooling/fixtures/security_hardening/sanitizer_execution_evidence_contract.json"
+        },
+        "generated_runtime_evidence_support_truth": {
+          "const": false
+        },
+        "generated_runtime_evidence_promotion_allowed": {
+          "const": false
+        },
+        "generated_only_evidence_allowed": {
+          "const": false
+        }
+      }
+    },
+    "promotion_policy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "source_owned_promotion_authority",
+        "generated_evidence_required",
+        "generated_evidence_support_truth",
+        "durable_source_contract_required",
+        "source_generated_agreement_required",
+        "package_install_execution_detection_required",
+        "promotion_result"
+      ],
+      "properties": {
+        "source_owned_promotion_authority": {
+          "const": true
+        },
+        "generated_evidence_required": {
+          "const": true
+        },
+        "generated_evidence_support_truth": {
+          "const": false
+        },
+        "durable_source_contract_required": {
+          "const": true
+        },
+        "source_generated_agreement_required": {
+          "const": true
+        },
+        "package_install_execution_detection_required": {
+          "const": true
+        },
+        "promotion_result": {
+          "const": "eligible-only-when-source-contract-and-generated-evidence-agree"
+        }
+      }
+    },
+    "pinned_public_actions": {
+      "type": "array",
+      "prefixItems": [
+        { "$ref": "#/$defs/addressEvidenceAction" },
+        { "$ref": "#/$defs/undefinedEvidenceAction" },
+        { "$ref": "#/$defs/promotionAction" }
+      ],
+      "items": false,
+      "minItems": 3,
+      "maxItems": 3
+    },
+    "required_evidence_classes": {
+      "type": "array",
+      "prefixItems": [
+        { "$ref": "#/$defs/packageEvidenceClass" },
+        { "$ref": "#/$defs/installEvidenceClass" },
+        { "$ref": "#/$defs/executionEvidenceClass" },
+        { "$ref": "#/$defs/detectionEvidenceClass" }
+      ],
+      "items": false,
+      "minItems": 4,
+      "maxItems": 4
+    },
+    "positive_contract_fixtures": {
+      "type": "array",
+      "prefixItems": [
+        { "$ref": "#/$defs/addressPromotionEvidence" },
+        { "$ref": "#/$defs/undefinedPromotionEvidence" }
+      ],
+      "items": false,
+      "minItems": 2,
+      "maxItems": 2
+    },
+    "negative_contract_fixtures": {
+      "type": "array",
+      "minItems": 9,
+      "items": { "$ref": "#/$defs/negativeCase" },
+      "contains": {
+        "type": "object",
+        "required": ["failure_kind"],
+        "properties": {
+          "failure_kind": { "const": "generated-only-evidence" }
+        }
+      },
+      "allOf": [
+        {
+          "contains": {
+            "type": "object",
+            "required": ["failure_kind"],
+            "properties": {
+              "failure_kind": { "const": "generated-only-evidence" }
+            }
+          }
+        },
+        {
+          "contains": {
+            "type": "object",
+            "required": ["failure_kind"],
+            "properties": {
+              "failure_kind": { "const": "stale-digest" }
+            }
+          }
+        },
+        {
+          "contains": {
+            "type": "object",
+            "required": ["failure_kind"],
+            "properties": {
+              "failure_kind": { "const": "missing-package-manifest" }
+            }
+          }
+        },
+        {
+          "contains": {
+            "type": "object",
+            "required": ["failure_kind"],
+            "properties": {
+              "failure_kind": { "const": "missing-runtime-manifest" }
+            }
+          }
+        },
+        {
+          "contains": {
+            "type": "object",
+            "required": ["failure_kind"],
+            "properties": {
+              "failure_kind": { "const": "wrong-sanitizer-token" }
+            }
+          }
+        },
+        {
+          "contains": {
+            "type": "object",
+            "required": ["failure_kind"],
+            "properties": {
+              "failure_kind": { "const": "release-runtime-mixing" }
+            }
+          }
+        },
+        {
+          "contains": {
+            "type": "object",
+            "required": ["failure_kind"],
+            "properties": {
+              "failure_kind": { "const": "unsupported-host" }
+            }
+          }
+        },
+        {
+          "contains": {
+            "type": "object",
+            "required": ["failure_kind"],
+            "properties": {
+              "failure_kind": { "const": "missing-packaged-smoke" }
+            }
+          }
+        },
+        {
+          "contains": {
+            "type": "object",
+            "required": ["failure_kind"],
+            "properties": {
+              "failure_kind": { "const": "missing-expected-detection" }
+            }
+          }
+        }
+      ]
+    }
+  },
+  "$defs": {
+    "sha256": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "generatedEvidencePath": {
+      "type": "string",
+      "pattern": "^(tmp/reports/sanitizer-runtime-evidence/(address|undefined)/|tmp/sre/pkg/check-sanitizer-runtime-evidence-(asan|ubsan)/(address|undefined)/package/)"
+    },
+    "repoRelativePath": {
+      "type": "string",
+      "minLength": 1,
+      "not": { "pattern": "^(?:tmp|temp|/|[A-Za-z]:)" }
+    },
+    "pinnedAction": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "public_action",
+        "action_role",
+        "target_platform_id",
+        "required",
+        "implementation_state",
+        "action_aliases_allowed"
+      ],
+      "properties": {
+        "public_action": { "type": "string", "minLength": 1 },
+        "action_role": {
+          "enum": [
+            "generated-runtime-evidence",
+            "source-owned-promotion-gate"
+          ]
+        },
+        "sanitizer": { "enum": ["address", "undefined"] },
+        "target_platform_id": { "const": "windows-x64" },
+        "required": { "const": true },
+        "implementation_state": { "const": "wired-public-action" },
+        "action_aliases_allowed": { "const": false }
+      }
+    },
+    "addressEvidenceAction": {
+      "allOf": [
+        { "$ref": "#/$defs/pinnedAction" },
+        {
+          "type": "object",
+          "required": ["sanitizer"],
+          "properties": {
+            "public_action": { "const": "check-sanitizer-runtime-evidence-asan" },
+            "action_role": { "const": "generated-runtime-evidence" },
+            "sanitizer": { "const": "address" }
+          }
+        }
+      ]
+    },
+    "undefinedEvidenceAction": {
+      "allOf": [
+        { "$ref": "#/$defs/pinnedAction" },
+        {
+          "type": "object",
+          "required": ["sanitizer"],
+          "properties": {
+            "public_action": { "const": "check-sanitizer-runtime-evidence-ubsan" },
+            "action_role": { "const": "generated-runtime-evidence" },
+            "sanitizer": { "const": "undefined" }
+          }
+        }
+      ]
+    },
+    "promotionAction": {
+      "allOf": [
+        { "$ref": "#/$defs/pinnedAction" },
+        {
+          "type": "object",
+          "properties": {
+            "public_action": {
+              "const": "check-security-sanitizer-runtime-promotion-evidence"
+            },
+            "action_role": { "const": "source-owned-promotion-gate" }
+          },
+          "not": { "required": ["sanitizer"] }
+        }
+      ]
+    },
+    "evidenceClass": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "class_id",
+        "required",
+        "source_truth",
+        "generated_evidence_required",
+        "promotion_result"
+      ],
+      "properties": {
+        "class_id": {
+          "enum": ["package", "install", "execution", "detection"]
+        },
+        "required": { "const": true },
+        "source_truth": { "enum": [true, false, "only-through-source-promotion-contract"] },
+        "generated_evidence_required": { "const": true },
+        "required_path_fields": {
+          "type": "array",
+          "items": {
+            "enum": [
+              "summary_path",
+              "probe_path",
+              "diagnostics_path",
+              "package_manifest_path",
+              "runtime_manifest_path",
+              "detection_stderr_path",
+              "packaged_smoke_path"
+            ]
+          },
+          "minItems": 1
+        },
+        "promotion_result": {
+          "enum": [
+            "required-for-promotion",
+            "fail-closed-when-missing-or-mismatched"
+          ]
+        }
+      }
+    },
+    "packageEvidenceClass": {
+      "allOf": [
+        { "$ref": "#/$defs/evidenceClass" },
+        {
+          "type": "object",
+          "properties": {
+            "class_id": { "const": "package" },
+            "required_path_fields": {
+              "const": ["package_manifest_path", "runtime_manifest_path"]
+            }
+          }
+        }
+      ]
+    },
+    "installEvidenceClass": {
+      "allOf": [
+        { "$ref": "#/$defs/evidenceClass" },
+        {
+          "type": "object",
+          "properties": {
+            "class_id": { "const": "install" },
+            "required_path_fields": { "const": ["probe_path"] }
+          }
+        }
+      ]
+    },
+    "executionEvidenceClass": {
+      "allOf": [
+        { "$ref": "#/$defs/evidenceClass" },
+        {
+          "type": "object",
+          "properties": {
+            "class_id": { "const": "execution" },
+            "required_path_fields": {
+              "const": ["summary_path", "diagnostics_path", "packaged_smoke_path"]
+            }
+          }
+        }
+      ]
+    },
+    "detectionEvidenceClass": {
+      "allOf": [
+        { "$ref": "#/$defs/evidenceClass" },
+        {
+          "type": "object",
+          "properties": {
+            "class_id": { "const": "detection" },
+            "required_path_fields": {
+              "const": ["detection_stderr_path"]
+            }
+          }
+        }
+      ]
+    },
+    "generatedEvidencePaths": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "summary_path",
+        "probe_path",
+        "diagnostics_path",
+        "package_manifest_path",
+        "runtime_manifest_path",
+        "detection_stderr_path",
+        "packaged_smoke_path"
+      ],
+      "properties": {
+        "summary_path": { "$ref": "#/$defs/generatedEvidencePath" },
+        "probe_path": { "$ref": "#/$defs/generatedEvidencePath" },
+        "diagnostics_path": { "$ref": "#/$defs/generatedEvidencePath" },
+        "package_manifest_path": { "$ref": "#/$defs/generatedEvidencePath" },
+        "runtime_manifest_path": { "$ref": "#/$defs/generatedEvidencePath" },
+        "detection_stderr_path": { "$ref": "#/$defs/generatedEvidencePath" },
+        "packaged_smoke_path": { "$ref": "#/$defs/generatedEvidencePath" }
+      }
+    },
+    "digestRequirements": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "source_contract_digest_computed_at_validation",
+        "summary_digest_computed_at_validation",
+        "probe_digest_computed_at_validation",
+        "diagnostics_digest_computed_at_validation",
+        "package_manifest_digest_matches_summary",
+        "runtime_manifest_digest_matches_probe",
+        "detection_stderr_digest_computed_at_validation",
+        "packaged_smoke_digest_computed_at_validation"
+      ],
+      "properties": {
+        "source_contract_digest_computed_at_validation": { "const": true },
+        "summary_digest_computed_at_validation": { "const": true },
+        "probe_digest_computed_at_validation": { "const": true },
+        "diagnostics_digest_computed_at_validation": { "const": true },
+        "package_manifest_digest_matches_summary": { "const": true },
+        "runtime_manifest_digest_matches_probe": { "const": true },
+        "detection_stderr_digest_computed_at_validation": { "const": true },
+        "packaged_smoke_digest_computed_at_validation": { "const": true }
+      }
+    },
+    "expectedDetection": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "record_id",
+        "record_kind",
+        "required_stderr_token",
+        "expected_exit_code",
+        "missing_detection_behavior"
+      ],
+      "properties": {
+        "record_id": {
+          "type": "string",
+          "pattern": "^objc3c\\.sanitizer\\.(address|undefined)\\."
+        },
+        "record_kind": {
+          "enum": ["asan-diagnostic", "ubsan-diagnostic", "ubsan-trap"]
+        },
+        "required_stderr_token": {
+          "type": "string",
+          "minLength": 1
+        },
+        "expected_exit_code": {
+          "type": "integer"
+        },
+        "missing_detection_behavior": {
+          "const": "fail-closed-before-support-promotion"
+        }
+      }
+    },
+    "commonPromotionEvidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "case_id",
+        "variant_id",
+        "issue_ref",
+        "sanitizer",
+        "target_platform_id",
+        "package_id",
+        "package_channel_id",
+        "source_contract_path",
+        "runtime_library_manifest_path",
+        "required_evidence_classes",
+        "generated_evidence_paths",
+        "digest_requirements",
+        "expected_detection",
+        "agreement_requirements",
+        "support_promotion_allowed",
+        "promotion_result"
+      ],
+      "properties": {
+        "case_id": { "type": "string", "minLength": 1 },
+        "variant_id": {
+          "enum": [
+            "objc3c.toolchain.sanitizer.address",
+            "objc3c.toolchain.sanitizer.undefined"
+          ]
+        },
+        "issue_ref": { "enum": [8230, 8231] },
+        "sanitizer": { "enum": ["address", "undefined"] },
+        "target_platform_id": { "const": "windows-x64" },
+        "package_id": {
+          "enum": [
+            "org.objc3c.runtime:objc3c-runtime-asan",
+            "org.objc3c.runtime:objc3c-runtime-ubsan"
+          ]
+        },
+        "package_channel_id": {
+          "enum": [
+            "windows-x64-sanitizer-asan",
+            "windows-x64-sanitizer-ubsan"
+          ]
+        },
+        "source_contract_path": {
+          "const": "tests/tooling/fixtures/security_hardening/sanitizer_runtime_promotion_evidence_contract.json"
+        },
+        "runtime_library_manifest_path": { "$ref": "#/$defs/repoRelativePath" },
+        "required_evidence_classes": {
+          "const": ["package", "install", "execution", "detection"]
+        },
+        "generated_evidence_paths": { "$ref": "#/$defs/generatedEvidencePaths" },
+        "digest_requirements": { "$ref": "#/$defs/digestRequirements" },
+        "expected_detection": { "$ref": "#/$defs/expectedDetection" },
+        "trap_or_recover_mode": { "enum": ["trap", "recover"] },
+        "agreement_requirements": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "source_contract_digest_matches_generated_summary",
+            "package_manifest_digest_matches_summary",
+            "runtime_manifest_digest_matches_probe",
+            "sanitizer_token_matches_package_channel",
+            "expected_detection_matches_stderr",
+            "release_runtime_mixing_allowed"
+          ],
+          "properties": {
+            "source_contract_digest_matches_generated_summary": { "const": true },
+            "package_manifest_digest_matches_summary": { "const": true },
+            "runtime_manifest_digest_matches_probe": { "const": true },
+            "sanitizer_token_matches_package_channel": { "const": true },
+            "expected_detection_matches_stderr": { "const": true },
+            "release_runtime_mixing_allowed": { "const": false }
+          }
+        },
+        "support_promotion_allowed": { "const": true },
+        "promotion_result": {
+          "const": "eligible-only-when-source-contract-and-generated-evidence-agree"
+        }
+      }
+    },
+    "addressPromotionEvidence": {
+      "allOf": [
+        { "$ref": "#/$defs/commonPromotionEvidence" },
+        {
+          "type": "object",
+          "properties": {
+            "variant_id": { "const": "objc3c.toolchain.sanitizer.address" },
+            "issue_ref": { "const": 8230 },
+            "sanitizer": { "const": "address" },
+            "package_id": { "const": "org.objc3c.runtime:objc3c-runtime-asan" },
+            "package_channel_id": { "const": "windows-x64-sanitizer-asan" },
+            "runtime_library_manifest_path": {
+              "const": "share/objc3c/sanitizer/asan-runtime-libraries.json"
+            },
+            "generated_evidence_paths": {
+              "type": "object",
+              "properties": {
+                "summary_path": {
+                  "const": "tmp/reports/sanitizer-runtime-evidence/address/summary.json"
+                },
+                "probe_path": {
+                  "const": "tmp/reports/sanitizer-runtime-evidence/address/probe.json"
+                },
+                "diagnostics_path": {
+                  "const": "tmp/reports/sanitizer-runtime-evidence/address/diagnostics.json"
+                },
+                "package_manifest_path": {
+                  "const": "tmp/sre/pkg/check-sanitizer-runtime-evidence-asan/address/package/artifacts/package/objc3c-runnable-toolchain-package.json"
+                },
+                "runtime_manifest_path": {
+                  "const": "tmp/sre/pkg/check-sanitizer-runtime-evidence-asan/address/package/share/objc3c/sanitizer/asan-runtime-libraries.json"
+                },
+                "detection_stderr_path": {
+                  "const": "tmp/reports/sanitizer-runtime-evidence/address/probe-work/address_detection.stderr.txt"
+                },
+                "packaged_smoke_path": {
+                  "const": "tmp/sre/pkg/check-sanitizer-runtime-evidence-asan/address/package/tmp/artifacts/objc3c-native/execution-smoke/sre-address-address/summary.json"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "undefinedPromotionEvidence": {
+      "allOf": [
+        { "$ref": "#/$defs/commonPromotionEvidence" },
+        {
+          "type": "object",
+          "required": ["trap_or_recover_mode"],
+          "properties": {
+            "variant_id": { "const": "objc3c.toolchain.sanitizer.undefined" },
+            "issue_ref": { "const": 8231 },
+            "sanitizer": { "const": "undefined" },
+            "package_id": { "const": "org.objc3c.runtime:objc3c-runtime-ubsan" },
+            "package_channel_id": { "const": "windows-x64-sanitizer-ubsan" },
+            "runtime_library_manifest_path": {
+              "const": "share/objc3c/sanitizer/ubsan-runtime-libraries.json"
+            },
+            "trap_or_recover_mode": { "const": "trap" },
+            "generated_evidence_paths": {
+              "type": "object",
+              "properties": {
+                "summary_path": {
+                  "const": "tmp/reports/sanitizer-runtime-evidence/undefined/summary.json"
+                },
+                "probe_path": {
+                  "const": "tmp/reports/sanitizer-runtime-evidence/undefined/probe.json"
+                },
+                "diagnostics_path": {
+                  "const": "tmp/reports/sanitizer-runtime-evidence/undefined/diagnostics.json"
+                },
+                "package_manifest_path": {
+                  "const": "tmp/sre/pkg/check-sanitizer-runtime-evidence-ubsan/undefined/package/artifacts/package/objc3c-runnable-toolchain-package.json"
+                },
+                "runtime_manifest_path": {
+                  "const": "tmp/sre/pkg/check-sanitizer-runtime-evidence-ubsan/undefined/package/share/objc3c/sanitizer/ubsan-runtime-libraries.json"
+                },
+                "detection_stderr_path": {
+                  "const": "tmp/reports/sanitizer-runtime-evidence/undefined/probe-work/undefined_detection.stderr.txt"
+                },
+                "packaged_smoke_path": {
+                  "const": "tmp/sre/pkg/check-sanitizer-runtime-evidence-ubsan/undefined/package/tmp/artifacts/objc3c-native/execution-smoke/sre-undefined-undefined/summary.json"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "negativeCase": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "case_id",
+        "variant_id",
+        "failure_kind",
+        "failure_class",
+        "required_behavior",
+        "blocks",
+        "support_promotion_allowed",
+        "generated_only_evidence_allowed"
+      ],
+      "properties": {
+        "case_id": { "type": "string", "minLength": 1 },
+        "variant_id": {
+          "enum": [
+            "objc3c.toolchain.sanitizer.address",
+            "objc3c.toolchain.sanitizer.undefined"
+          ]
+        },
+        "failure_kind": {
+          "enum": [
+            "generated-only-evidence",
+            "stale-digest",
+            "missing-package-manifest",
+            "missing-runtime-manifest",
+            "wrong-sanitizer-token",
+            "release-runtime-mixing",
+            "unsupported-host",
+            "missing-packaged-smoke",
+            "missing-expected-detection"
+          ]
+        },
+        "failure_class": { "type": "string", "minLength": 1 },
+        "required_behavior": {
+          "enum": [
+            "fail-closed-before-support-promotion",
+            "fail-closed-before-package-install",
+            "fail-closed-before-native-execution-claim",
+            "fail-closed-before-capability-promotion"
+          ]
+        },
+        "blocks": {
+          "type": "array",
+          "contains": { "const": "support-promotion" },
+          "items": {
+            "enum": [
+              "package",
+              "install",
+              "execution",
+              "detection",
+              "support-promotion"
+            ]
+          },
+          "minItems": 2
+        },
+        "support_promotion_allowed": { "const": false },
+        "generated_only_evidence_allowed": { "const": false }
+      }
+    }
+  }
+}

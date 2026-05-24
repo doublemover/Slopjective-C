@@ -254,6 +254,25 @@ def test_sanitizer_runtime_evidence_action_pins_all_contract_rerouting() -> None
         assert payload["support_promotion_allowed"] is False
         assert payload["native_execution_claim_promotion_allowed"] is False
 
+    promotion_spec = (
+        sanitizer_runtime_evidence.SANITIZER_RUNTIME_EVIDENCE_ACTION_SPECS[
+            sanitizer_runtime_evidence.SANITIZER_RUNTIME_PROMOTION_EVIDENCE_ACTION_ID
+        ]
+    )
+    promotion_payload = (
+        sanitizer_runtime_evidence.SANITIZER_RUNTIME_EVIDENCE_PUBLIC_CONTRACTS[
+            sanitizer_runtime_evidence.SANITIZER_RUNTIME_PROMOTION_EVIDENCE_ACTION_ID
+        ]
+    )
+    assert promotion_spec.pass_through_args is False
+    assert promotion_payload["generated_only_evidence_allowed"] is False
+    assert promotion_payload["source_contract_required"] is True
+    assert promotion_payload["negative_cases_required"] is True
+    assert promotion_payload["evidence_actions"] == [
+        "check-sanitizer-runtime-evidence-asan",
+        "check-sanitizer-runtime-evidence-ubsan",
+    ]
+
 
 def test_sanitizer_runtime_evidence_public_actions_reject_any_passthrough(
     monkeypatch: pytest.MonkeyPatch,
@@ -274,6 +293,12 @@ def test_sanitizer_runtime_evidence_public_actions_reject_any_passthrough(
     assert (
         sanitizer_runtime_evidence.action_check_sanitizer_runtime_evidence_ubsan(
             ["--unexpected"]
+        )
+        == 1
+    )
+    assert (
+        sanitizer_runtime_evidence.action_check_security_sanitizer_runtime_promotion_evidence(
+            ["--report", "tmp/elsewhere.json"]
         )
         == 1
     )

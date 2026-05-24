@@ -15,6 +15,9 @@ def assert_summary_matches_registered_schemas(summary: dict[str, Any]) -> None:
     sanitizer_execution_schema = relative_schema_path(
         "objc3c-sanitizer-execution-evidence-v1"
     )
+    sanitizer_promotion_schema = relative_schema_path(
+        "objc3c-sanitizer-runtime-promotion-evidence-v1"
+    )
 
     assert (
         summary["contract_id"]
@@ -33,18 +36,21 @@ def assert_summary_matches_registered_schemas(summary: dict[str, Any]) -> None:
     assert summary["install_receipt"] == receipt_schema
     assert summary["sanitizer_runtime_library_manifest"] == runtime_manifest_schema
     assert summary["sanitizer_execution_evidence"] == sanitizer_execution_schema
-    assert summary["schema_count"] == 4
+    assert summary["sanitizer_runtime_promotion_evidence"] == sanitizer_promotion_schema
+    assert summary["schema_count"] == 5
     assert summary["schemas"] == [
         manifest_schema,
         receipt_schema,
         runtime_manifest_schema,
         sanitizer_execution_schema,
+        sanitizer_promotion_schema,
     ]
     assert summary["schema_ids"] == [
         "https://objc3c.dev/schemas/objc3c-package-channels-manifest-v1.schema.json",
         "https://objc3c.dev/schemas/objc3c-package-install-receipt-v1.schema.json",
         "https://objc3c.dev/schemas/objc3c-sanitizer-runtime-library-manifest-v1.schema.json",
         "https://objc3c.dev/schemas/objc3c-sanitizer-execution-evidence-v1.schema.json",
+        "https://objc3c.dev/schemas/objc3c-sanitizer-runtime-promotion-evidence-v1.schema.json",
     ]
 
 
