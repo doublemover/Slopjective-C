@@ -22,6 +22,7 @@ if (!(Test-Path -LiteralPath $archiveNormalizer -PathType Leaf)) {
 }
 Import-Module (Join-Path $PSScriptRoot "objc3c_native_artifact_io.psm1") -Force -DisableNameChecking -Global
 Import-Module (Join-Path $PSScriptRoot "objc3c_native_cmake.psm1") -Force
+Import-Module (Join-Path $PSScriptRoot "objc3c_platform_host_evidence_producers.psm1") -Force -DisableNameChecking
 $frontendContractModuleRoot = Join-Path $PSScriptRoot "objc3c_native_frontend_contracts"
 $frontendContractExportModule = Join-Path $frontendContractModuleRoot "exports.psm1"
 if (!(Test-Path -LiteralPath $frontendContractExportModule -PathType Leaf)) {
@@ -596,6 +597,17 @@ Write-Objc3cNativeBuildSummary `
   -RepoSupercleanSurfaceFilePath $repoSupercleanSurfacePath `
   -SelectedFrontendPacketDefinitions $selectedFrontendPacketDefinitions `
   -NativeBuildLockTelemetry $nativeBuildLockTelemetry
+
+Write-Objc3cDarwinObjectDebugIdentityEvidence `
+  -RepoRoot $repoRoot `
+  -PlatformId $targetPlatformId `
+  -TargetTriple $targetTriple `
+  -ObjectFormat $objectFormat `
+  -DebugFormat $debugFormat `
+  -NativeExecutablePath $outExe `
+  -CapiRunnerPath $outCapiExe `
+  -RuntimeLibraryPath $outRuntimeLib `
+  -BuildSummaryPath $SummaryPath
 
 if ($modeRunsNativeBuild) {
   if (Test-Path -LiteralPath $outExe -PathType Leaf) {

@@ -67,6 +67,22 @@
       "objc3c.native-execution.linux-x64.release.missing",
       "objc3c.native-execution.darwin-arm64.release.missing"
     ],
+    "object_identity_record_ids": [
+      "objc3c.object-identity.linux-x64.release.missing",
+      "objc3c.object-identity.darwin-arm64.release.missing"
+    ],
+    "debug_identity_record_ids": [
+      "objc3c.debug-identity.linux-x64.release.missing",
+      "objc3c.debug-identity.darwin-arm64.release.missing"
+    ],
+    "package_install_identity_record_ids": [
+      "objc3c.package-install-identity.linux-x64.release.missing",
+      "objc3c.package-install-identity.darwin-arm64.release.missing"
+    ],
+    "runtime_load_link_proof_record_ids": [
+      "objc3c.runtime-load-link.linux-x64.release.missing",
+      "objc3c.runtime-load-link.darwin-arm64.release.missing"
+    ],
     "negative_host_toolchain_case_ids": [
       "objc3c.negative.host.linux-x64.no-native-execution",
       "objc3c.negative.host.linux-x64.generated-host-evidence-no-promotion",

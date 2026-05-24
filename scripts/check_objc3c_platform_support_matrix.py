@@ -620,6 +620,16 @@ def _validate_host_promotion_architecture(
     toolchain_probes = _records_by_id(inputs.platform_evidence["toolchain_probe_records"], "record_id")
     package_roots = _records_by_id(inputs.platform_evidence["package_root_evidence_records"], "record_id")
     native_execution = _records_by_id(inputs.platform_evidence["native_execution_evidence_records"], "record_id")
+    object_identities = _records_by_id(inputs.platform_evidence["object_identity_records"], "record_id")
+    debug_identities = _records_by_id(inputs.platform_evidence["debug_identity_records"], "record_id")
+    package_install_identities = _records_by_id(
+        inputs.platform_evidence["package_install_identity_records"],
+        "record_id",
+    )
+    runtime_load_link_proofs = _records_by_id(
+        inputs.platform_evidence["runtime_load_link_proof_records"],
+        "record_id",
+    )
     negative_cases = _records_by_id(inputs.platform_evidence["negative_host_toolchain_cases"], "case_id")
     evidence_records = _evidence_by_id(inputs.platform_evidence)
 
@@ -638,6 +648,22 @@ def _validate_host_promotion_architecture(
     expect(
         set(architecture["native_execution_record_ids"]) == set(native_execution),
         "native execution record ids drifted from upstream evidence",
+    )
+    expect(
+        set(architecture["object_identity_record_ids"]) == set(object_identities),
+        "object identity record ids drifted from upstream evidence",
+    )
+    expect(
+        set(architecture["debug_identity_record_ids"]) == set(debug_identities),
+        "debug identity record ids drifted from upstream evidence",
+    )
+    expect(
+        set(architecture["package_install_identity_record_ids"]) == set(package_install_identities),
+        "package/install identity record ids drifted from upstream evidence",
+    )
+    expect(
+        set(architecture["runtime_load_link_proof_record_ids"]) == set(runtime_load_link_proofs),
+        "runtime load/link proof record ids drifted from upstream evidence",
     )
     expect(
         set(REQUIRED_NEGATIVE_HOST_TOOLCHAIN_CASES) <= set(architecture["negative_host_toolchain_case_ids"]),
@@ -670,6 +696,40 @@ def _validate_host_promotion_architecture(
         expect(record["promotion_allowed"] is False, f"{platform_id} native execution record allowed promotion")
         expect(not record["execution_evidence_ids"], f"{platform_id} native execution record carried execution evidence")
 
+    reviewed_source_sections = {
+        "object identity": object_identities,
+        "debug identity": debug_identities,
+        "package/install identity": package_install_identities,
+        "runtime load/link proof": runtime_load_link_proofs,
+    }
+    for section_name, records in reviewed_source_sections.items():
+        unsupported_records = {
+            str(record["platform_id"]): record
+            for record in records.values()
+            if str(record.get("platform_id")) in unsupported_ids
+        }
+        expect(
+            set(unsupported_records) == unsupported_ids,
+            f"unsupported platform {section_name} records drifted",
+        )
+        for platform_id, record in unsupported_records.items():
+            expect(
+                record["claim_state"] == "fail-closed",
+                f"{platform_id} {section_name} record must remain fail-closed",
+            )
+            expect(
+                record["promotion_allowed"] is False,
+                f"{platform_id} {section_name} record allowed promotion",
+            )
+            expect(
+                not record["platform_ids"],
+                f"{platform_id} {section_name} record widened support",
+            )
+            expect(
+                record["generated_report_support_truth"] is False,
+                f"{platform_id} {section_name} generated report became source truth",
+            )
+
     return {
         "contract_id": architecture["contract_id"],
         "promotion_policy": architecture["promotion_policy"],
@@ -677,6 +737,10 @@ def _validate_host_promotion_architecture(
         "toolchain_probe_record_count": len(toolchain_probes),
         "package_root_record_count": len(package_roots),
         "native_execution_record_count": len(native_execution),
+        "object_identity_record_count": len(object_identities),
+        "debug_identity_record_count": len(debug_identities),
+        "package_install_identity_record_count": len(package_install_identities),
+        "runtime_load_link_proof_record_count": len(runtime_load_link_proofs),
         "negative_host_toolchain_case_count": len(negative_cases),
         "hosted_evidence_ingestion_action": architecture["hosted_evidence_ingestion"]["ingestion_action"],
         "hosted_evidence_candidate_record_count": len(

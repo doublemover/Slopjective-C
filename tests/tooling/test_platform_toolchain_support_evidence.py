@@ -423,6 +423,34 @@ def test_platform_support_matrix_publishes_issue_owned_evidence_sections() -> No
     assert package_rows["objc3c.package.runtime.darwin-arm64.release.fail-closed"][
         "artifact_identity_contract"
     ]["runtime_library_names"] == ["libobjc3-runtime.dylib"]
+    assert {
+        row["record_id"]
+        for row in payload["object_identity_records"]
+    } >= {
+        "objc3c.object-identity.linux-x64.release.missing",
+        "objc3c.object-identity.darwin-arm64.release.missing",
+    }
+    assert {
+        row["record_id"]
+        for row in payload["debug_identity_records"]
+    } >= {
+        "objc3c.debug-identity.linux-x64.release.missing",
+        "objc3c.debug-identity.darwin-arm64.release.missing",
+    }
+    assert {
+        row["record_id"]
+        for row in payload["package_install_identity_records"]
+    } >= {
+        "objc3c.package-install-identity.linux-x64.release.missing",
+        "objc3c.package-install-identity.darwin-arm64.release.missing",
+    }
+    assert {
+        row["record_id"]
+        for row in payload["runtime_load_link_proof_records"]
+    } >= {
+        "objc3c.runtime-load-link.linux-x64.release.missing",
+        "objc3c.runtime-load-link.darwin-arm64.release.missing",
+    }
     assert set(
         package_rows["objc3c.package.runtime.linux-x64.release.fail-closed"][
             "promotion_gate_contract"

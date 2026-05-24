@@ -82,6 +82,10 @@ HOST_PROMOTION_REQUIRED_SOURCE_RECORD_TYPES: tuple[str, ...] = (
     "package_root",
     "install_receipt",
     "native_execution",
+    "object_identity",
+    "debug_identity",
+    "package_install_identity",
+    "runtime_load_link_proof",
 )
 
 HOST_PROMOTION_REQUIRED_REVIEWED_SOURCE_FIELDS: tuple[str, ...] = (
@@ -267,7 +271,7 @@ HOST_PROMOTION_REVIEWED_SOURCE_FIELDS: tuple[
     HostPromotionReviewedSourceField(
         field_id="package_install_identity",
         required_record_id_field="package_install_identity_record_id",
-        generated_report_path_suffix="install/end-to-end-summary.json",
+        generated_report_path_suffix="install/install-receipt.json",
         failure_class="missing-install-receipt",
         required_behavior="fail-closed-before-native-execution-claim",
     ),

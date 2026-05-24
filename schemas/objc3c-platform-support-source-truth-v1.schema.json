@@ -226,6 +226,10 @@
         "toolchain_probe_record_ids",
         "package_root_record_ids",
         "native_execution_record_ids",
+        "object_identity_record_ids",
+        "debug_identity_record_ids",
+        "package_install_identity_record_ids",
+        "runtime_load_link_proof_record_ids",
         "negative_host_toolchain_case_ids",
         "hosted_evidence_ingestion",
         "diagnostic"
@@ -256,6 +260,18 @@
           "$ref": "#/$defs/stringArray"
         },
         "native_execution_record_ids": {
+          "$ref": "#/$defs/stringArray"
+        },
+        "object_identity_record_ids": {
+          "$ref": "#/$defs/stringArray"
+        },
+        "debug_identity_record_ids": {
+          "$ref": "#/$defs/stringArray"
+        },
+        "package_install_identity_record_ids": {
+          "$ref": "#/$defs/stringArray"
+        },
+        "runtime_load_link_proof_record_ids": {
           "$ref": "#/$defs/stringArray"
         },
         "negative_host_toolchain_case_ids": {

@@ -109,7 +109,7 @@ PROMOTION_REVIEWED_SOURCE_FIELD_CONTRACTS: tuple[dict[str, str], ...] = (
     {
         "field_id": "package_install_identity",
         "required_record_id_field": "package_install_identity_record_id",
-        "generated_report_path_suffix": "install/end-to-end-summary.json",
+        "generated_report_path_suffix": "install/install-receipt.json",
         "failure_class": "missing-install-receipt",
         "required_behavior": "fail-closed-before-native-execution-claim",
     },
@@ -127,6 +127,24 @@ PROMOTION_BLOCKING_EVIDENCE_CLASSES: tuple[str, ...] = (
     "package",
     "install",
     "execution",
+)
+
+REQUIRED_DURABLE_PROMOTION_ARTIFACT_SUFFIXES: tuple[str, ...] = (
+    "build/object-identity.json",
+    "build/debug-identity.json",
+    "package/runtime-library-manifest.json",
+    "install/install-receipt.json",
+    "execution/runtime-load-probe.json",
+)
+
+NATIVE_BUILD_SUMMARY_PATH = "tmp/build-objc3c-native/native_build_summary.json"
+RUNNABLE_PACKAGE_MANIFEST_PATH = "artifacts/package/objc3c-runnable-toolchain-package.json"
+PACKAGE_CHANNELS_END_TO_END_SUMMARY_PATH = (
+    "tmp/reports/package-channels/end-to-end-summary.json"
+)
+HOSTED_EXECUTION_SMOKE_SUMMARY_PATH = "tmp/reports/hosted-execution-smoke/summary.json"
+NATIVE_EXECUTION_SMOKE_SUMMARY_PATH = (
+    "tmp/reports/objc3c-native-execution-smoke/summary.json"
 )
 
 STEP_CONTRACTS: tuple[tuple[str, str, tuple[tuple[str, str], ...]], ...] = (
@@ -262,6 +280,480 @@ def materialize_generated_artifact(source_path_text: str, scoped_path_text: str)
     artifact["source_path"] = source_path_text
     artifact["scoped_copy"] = source_path_text != scoped_path_text
     return artifact
+
+
+def read_json_object(path_text: str) -> dict[str, Any]:
+    path = ROOT / path_text
+    if not path.is_file():
+        return {}
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, UnicodeDecodeError, json.JSONDecodeError) as exc:
+        return {"_json_read_error": str(exc)}
+    if not isinstance(payload, dict):
+        return {"_json_type_error": type(payload).__name__}
+    return payload
+
+
+def dict_field(payload: dict[str, Any], field_name: str) -> dict[str, Any]:
+    value = payload.get(field_name)
+    return value if isinstance(value, dict) else {}
+
+
+def list_field(payload: dict[str, Any], field_name: str) -> list[Any]:
+    value = payload.get(field_name)
+    return value if isinstance(value, list) else []
+
+
+def repo_or_absolute_path(path_text: str) -> Path:
+    path = Path(path_text)
+    if path.is_absolute():
+        return path
+    return ROOT / path_text
+
+
+def prefixed_repo_path(prefix: str, relative_path: str) -> str:
+    if not prefix:
+        return relative_path
+    return f"{prefix.rstrip('/')}/{relative_path.lstrip('/')}"
+
+
+def platform_artifact_path(platform_id: str, path_suffix: str) -> Path:
+    return ROOT / platform_scoped_path(platform_id, path_suffix)
+
+
+def platform_artifact_exists(platform_id: str, path_suffix: str) -> bool:
+    return platform_artifact_path(platform_id, path_suffix).is_file()
+
+
+def source_artifacts(*path_texts: str) -> list[dict[str, Any]]:
+    artifacts: list[dict[str, Any]] = []
+    seen: set[str] = set()
+    for path_text in path_texts:
+        if not path_text:
+            continue
+        normalized = path_text.replace("\\", "/")
+        if normalized in seen:
+            continue
+        seen.add(normalized)
+        artifacts.append(generated_artifact(normalized))
+    return artifacts
+
+
+def expected_platform_identity(platform_id: str) -> dict[str, Any]:
+    config = PLATFORM_CONFIG[platform_id]
+    return {
+        "target_platform_id": platform_id,
+        "target_triple": config["host_triple"],
+        "arch": config["host_arch"],
+        "object_format": config["object_format"],
+        "debug_format": config["debug_format"],
+        "runtime_library_names": config["runtime_library_names"],
+        "loader_path_policy": config["loader_path_policy"],
+        "package_root_layout": config["package_root_layout"],
+    }
+
+
+def native_build_target_identity(build_summary: dict[str, Any]) -> dict[str, Any]:
+    target = dict_field(build_summary, "target")
+    return {
+        "target_platform_id": str(target.get("platform_id", "")),
+        "target_triple": str(target.get("target_triple", "")),
+        "object_format": str(target.get("object_format", "")),
+        "debug_format": str(target.get("debug_format", "")),
+        "runtime_library_kind": str(target.get("runtime_library_kind", "")),
+        "runtime_library_file_name": str(target.get("runtime_library_file_name", "")),
+    }
+
+
+def generated_identity_status(
+    *,
+    source_exists: bool,
+    actual: dict[str, Any],
+    expected: dict[str, Any],
+    fields: tuple[str, ...],
+) -> str:
+    if not source_exists:
+        return "missing-source-generated-fail-closed"
+    for field_name in fields:
+        if actual.get(field_name) != expected.get(field_name):
+            return "identity-mismatch-generated-fail-closed"
+    return "generated-host-artifact-present"
+
+
+def runtime_manifest_status(
+    *,
+    source_exists: bool,
+    runtime_artifacts: list[dict[str, Any]],
+    package_target_platform_id: str,
+    platform_id: str,
+) -> str:
+    if not source_exists or not any(item.get("exists") for item in runtime_artifacts):
+        return "missing-source-generated-fail-closed"
+    if package_target_platform_id and package_target_platform_id != platform_id:
+        return "package-target-mismatch-generated-fail-closed"
+    return "generated-host-artifact-present"
+
+
+def install_receipt_status(
+    *,
+    source_receipt_path: str,
+    source_receipt: dict[str, Any],
+    platform_id: str,
+) -> str:
+    if not source_receipt_path:
+        return "missing-source-generated-fail-closed"
+    receipt_target = str(source_receipt.get("target_platform_id", ""))
+    if not receipt_target:
+        receipt_target = str(
+            dict_field(source_receipt, "package_runtime_model").get("target_platform_id", "")
+        )
+    if receipt_target and receipt_target != platform_id:
+        return "install-receipt-target-mismatch-generated-fail-closed"
+    return "generated-host-artifact-present"
+
+
+def runtime_load_probe_status(
+    *,
+    source_exists: bool,
+    exit_code: Any,
+    native_status: str,
+    skip_reason: str,
+) -> str:
+    if not source_exists:
+        return "missing-source-generated-fail-closed"
+    normalized_status = native_status.upper()
+    if skip_reason or normalized_status in {"UNAVAILABLE", "SKIP", "SKIPPED"}:
+        return "runtime-load-unavailable-generated-fail-closed"
+    if isinstance(exit_code, int) and exit_code == 0 and normalized_status == "PASS":
+        return "generated-host-artifact-present"
+    return "runtime-load-failed-generated-fail-closed"
+
+
+def write_object_identity_artifact(platform_id: str) -> None:
+    path_suffix = "build/object-identity.json"
+    if platform_artifact_exists(platform_id, path_suffix):
+        return
+    build_summary = read_json_object(NATIVE_BUILD_SUMMARY_PATH)
+    llvm_capabilities_path = platform_scoped_path(platform_id, "llvm-capabilities.json")
+    llvm_capabilities = read_json_object(llvm_capabilities_path)
+    native_summary = read_json_object(NATIVE_EXECUTION_SMOKE_SUMMARY_PATH)
+    expected = expected_platform_identity(platform_id)
+    actual = native_build_target_identity(build_summary)
+    build_artifact = generated_artifact(NATIVE_BUILD_SUMMARY_PATH)
+    record_ids = reviewed_source_record_ids(platform_id)
+    build_artifacts = dict_field(build_summary, "artifacts")
+
+    payload = {
+        "contract_id": "objc3c.platform.hosted-object-identity.generated.v1",
+        "schema_version": 1,
+        "platform_id": platform_id,
+        "issue_ref": int(PLATFORM_CONFIG[platform_id]["issue_ref"]),
+        "record_id": record_ids["object_identity_record_id"],
+        "generated_report_path": platform_scoped_path(platform_id, path_suffix),
+        "source_summary_path": NATIVE_BUILD_SUMMARY_PATH,
+        "reviewed_source_required": True,
+        "support_truth": False,
+        "promotion_allowed_from_generated_evidence": False,
+        "status": generated_identity_status(
+            source_exists=bool(build_artifact.get("exists")),
+            actual=actual,
+            expected=expected,
+            fields=("target_platform_id", "target_triple", "object_format"),
+        ),
+        "expected_identity": {
+            "target_platform_id": expected["target_platform_id"],
+            "target_triple": expected["target_triple"],
+            "arch": expected["arch"],
+            "object_format": expected["object_format"],
+        },
+        "actual_identity": actual,
+        "native_object_emission": {
+            "native_object_emission_status": llvm_capabilities.get(
+                "native_object_emission_status",
+                llvm_capabilities.get("hosted_native_object_emission_status", ""),
+            ),
+            "llc_filetype_obj_available": llvm_capabilities.get(
+                "llc_filetype_obj_available",
+                False,
+            ),
+            "coherent_toolchain_root": llvm_capabilities.get(
+                "coherent_toolchain_root",
+                False,
+            ),
+            "native_execution_object_artifact": native_summary.get("object_artifact", ""),
+            "native_execution_object_format": native_summary.get("object_format", ""),
+        },
+        "build_artifacts": {
+            "native_executable": dict_field(build_artifacts, "native_executable"),
+            "compile_commands": dict_field(build_artifacts, "compile_commands"),
+        },
+        "source_artifacts": source_artifacts(
+            NATIVE_BUILD_SUMMARY_PATH,
+            llvm_capabilities_path,
+            NATIVE_EXECUTION_SMOKE_SUMMARY_PATH,
+        ),
+    }
+    write_json(ROOT / payload["generated_report_path"], payload)
+
+
+def write_debug_identity_artifact(platform_id: str) -> None:
+    path_suffix = "build/debug-identity.json"
+    if platform_artifact_exists(platform_id, path_suffix):
+        return
+    build_summary = read_json_object(NATIVE_BUILD_SUMMARY_PATH)
+    native_summary = read_json_object(NATIVE_EXECUTION_SMOKE_SUMMARY_PATH)
+    expected = expected_platform_identity(platform_id)
+    actual = native_build_target_identity(build_summary)
+    build_artifact = generated_artifact(NATIVE_BUILD_SUMMARY_PATH)
+    record_ids = reviewed_source_record_ids(platform_id)
+    build_artifacts = dict_field(build_summary, "artifacts")
+
+    payload = {
+        "contract_id": "objc3c.platform.hosted-debug-identity.generated.v1",
+        "schema_version": 1,
+        "platform_id": platform_id,
+        "issue_ref": int(PLATFORM_CONFIG[platform_id]["issue_ref"]),
+        "record_id": record_ids["debug_identity_record_id"],
+        "generated_report_path": platform_scoped_path(platform_id, path_suffix),
+        "source_summary_path": NATIVE_BUILD_SUMMARY_PATH,
+        "reviewed_source_required": True,
+        "support_truth": False,
+        "promotion_allowed_from_generated_evidence": False,
+        "status": generated_identity_status(
+            source_exists=bool(build_artifact.get("exists")),
+            actual=actual,
+            expected=expected,
+            fields=("target_platform_id", "target_triple", "debug_format"),
+        ),
+        "expected_identity": {
+            "target_platform_id": expected["target_platform_id"],
+            "target_triple": expected["target_triple"],
+            "arch": expected["arch"],
+            "debug_format": expected["debug_format"],
+        },
+        "actual_identity": actual,
+        "debug_artifacts": {
+            "native_executable": dict_field(build_artifacts, "native_executable"),
+            "compile_commands": dict_field(build_artifacts, "compile_commands"),
+            "native_execution_debug_format": native_summary.get("debug_format", ""),
+        },
+        "source_artifacts": source_artifacts(
+            NATIVE_BUILD_SUMMARY_PATH,
+            NATIVE_EXECUTION_SMOKE_SUMMARY_PATH,
+        ),
+    }
+    write_json(ROOT / payload["generated_report_path"], payload)
+
+
+def runtime_library_source_paths(package_manifest: dict[str, Any], platform_id: str) -> list[str]:
+    expected = expected_platform_identity(platform_id)
+    runtime_library = str(
+        package_manifest.get(
+            "runtime_library",
+            f"artifacts/lib/{expected['runtime_library_names'][0]}",
+        )
+    )
+    package_root = str(package_manifest.get("package_root", ""))
+    paths = [runtime_library]
+    if package_root:
+        paths.insert(0, prefixed_repo_path(package_root, runtime_library))
+    return paths
+
+
+def write_runtime_library_manifest_artifact(platform_id: str) -> None:
+    path_suffix = "package/runtime-library-manifest.json"
+    if platform_artifact_exists(platform_id, path_suffix):
+        return
+    package_manifest = read_json_object(RUNNABLE_PACKAGE_MANIFEST_PATH)
+    build_summary = read_json_object(NATIVE_BUILD_SUMMARY_PATH)
+    expected = expected_platform_identity(platform_id)
+    runtime_paths = runtime_library_source_paths(package_manifest, platform_id)
+    runtime_artifacts = source_artifacts(*runtime_paths)
+    package_artifact = generated_artifact(RUNNABLE_PACKAGE_MANIFEST_PATH)
+    package_target_platform_id = str(package_manifest.get("target_platform_id", ""))
+
+    payload = {
+        "contract_id": "objc3c.platform.hosted-runtime-library-manifest.generated.v1",
+        "schema_version": 1,
+        "platform_id": platform_id,
+        "issue_ref": int(PLATFORM_CONFIG[platform_id]["issue_ref"]),
+        "generated_report_path": platform_scoped_path(platform_id, path_suffix),
+        "source_package_manifest_path": RUNNABLE_PACKAGE_MANIFEST_PATH,
+        "support_truth": False,
+        "native_execution_claimed": False,
+        "promotion_allowed_from_generated_evidence": False,
+        "status": runtime_manifest_status(
+            source_exists=bool(package_artifact.get("exists")),
+            runtime_artifacts=runtime_artifacts,
+            package_target_platform_id=package_target_platform_id,
+            platform_id=platform_id,
+        ),
+        "target_platform_id": platform_id,
+        "source_package_target_platform_id": package_target_platform_id,
+        "target_triple": expected["target_triple"],
+        "runtime_library_kind": package_manifest.get(
+            "runtime_library_kind",
+            dict_field(build_summary, "target").get("runtime_library_kind", ""),
+        ),
+        "runtime_library_names": expected["runtime_library_names"],
+        "runtime_library_artifacts": runtime_artifacts,
+        "loader_path_policy": expected["loader_path_policy"],
+        "package_root": package_manifest.get("package_root", ""),
+        "package_root_layout": package_manifest.get(
+            "package_root_layout",
+            expected["package_root_layout"],
+        ),
+        "package_manifest_artifact": package_artifact,
+        "source_artifacts": source_artifacts(
+            RUNNABLE_PACKAGE_MANIFEST_PATH,
+            NATIVE_BUILD_SUMMARY_PATH,
+        ),
+    }
+    write_json(ROOT / payload["generated_report_path"], payload)
+
+
+def find_install_receipt_source(end_to_end_summary: dict[str, Any]) -> str:
+    for root_field in ("offline_install_root", "install_root"):
+        root_text = str(end_to_end_summary.get(root_field, ""))
+        if not root_text:
+            continue
+        receipt_path = repo_or_absolute_path(root_text) / "objc3c-install-receipt.json"
+        if receipt_path.is_file():
+            return repo_rel(receipt_path)
+    return ""
+
+
+def write_install_receipt_artifact(platform_id: str) -> None:
+    path_suffix = "install/install-receipt.json"
+    if platform_artifact_exists(platform_id, path_suffix):
+        return
+    end_to_end_summary = read_json_object(PACKAGE_CHANNELS_END_TO_END_SUMMARY_PATH)
+    package_manifest = read_json_object(RUNNABLE_PACKAGE_MANIFEST_PATH)
+    source_receipt_path = find_install_receipt_source(end_to_end_summary)
+    source_receipt = read_json_object(source_receipt_path) if source_receipt_path else {}
+    record_ids = reviewed_source_record_ids(platform_id)
+    expected = expected_platform_identity(platform_id)
+
+    payload = {
+        "contract_id": "objc3c.platform.hosted-install-receipt.generated.v1",
+        "schema_version": 1,
+        "platform_id": platform_id,
+        "issue_ref": int(PLATFORM_CONFIG[platform_id]["issue_ref"]),
+        "record_id": record_ids["package_install_identity_record_id"],
+        "generated_report_path": platform_scoped_path(platform_id, path_suffix),
+        "source_summary_path": PACKAGE_CHANNELS_END_TO_END_SUMMARY_PATH,
+        "source_install_receipt_path": source_receipt_path,
+        "reviewed_source_required": True,
+        "support_truth": False,
+        "native_execution_claimed": False,
+        "promotion_allowed_from_generated_evidence": False,
+        "status": install_receipt_status(
+            source_receipt_path=source_receipt_path,
+            source_receipt=source_receipt,
+            platform_id=platform_id,
+        ),
+        "target_platform_id": platform_id,
+        "target_triple": expected["target_triple"],
+        "package_root": package_manifest.get("package_root", ""),
+        "package_root_layout": package_manifest.get(
+            "package_root_layout",
+            expected["package_root_layout"],
+        ),
+        "package_manifest": RUNNABLE_PACKAGE_MANIFEST_PATH,
+        "package_manifest_artifact": generated_artifact(RUNNABLE_PACKAGE_MANIFEST_PATH),
+        "package_channels_summary_artifact": generated_artifact(
+            PACKAGE_CHANNELS_END_TO_END_SUMMARY_PATH
+        ),
+        "source_install_receipt_artifact": (
+            generated_artifact(source_receipt_path) if source_receipt_path else {"exists": False}
+        ),
+        "source_install_receipt": source_receipt,
+    }
+    write_json(ROOT / payload["generated_report_path"], payload)
+
+
+def write_runtime_load_probe_artifact(platform_id: str) -> None:
+    path_suffix = "execution/runtime-load-probe.json"
+    if platform_artifact_exists(platform_id, path_suffix):
+        return
+    native_summary = read_json_object(NATIVE_EXECUTION_SMOKE_SUMMARY_PATH)
+    hosted_summary = read_json_object(HOSTED_EXECUTION_SMOKE_SUMMARY_PATH)
+    package_manifest = read_json_object(RUNNABLE_PACKAGE_MANIFEST_PATH)
+    expected = expected_platform_identity(platform_id)
+    record_ids = reviewed_source_record_ids(platform_id)
+    exit_code = native_summary.get("exit_code", -1)
+    native_summary_exists = bool(generated_artifact(NATIVE_EXECUTION_SMOKE_SUMMARY_PATH).get("exists"))
+    native_status = str(native_summary.get("status", ""))
+    skip_reason = str(native_summary.get("skip_reason", hosted_summary.get("skip_reason", "")))
+    load_probe_exit_code = (
+        exit_code
+        if isinstance(exit_code, int)
+        and native_status.upper() not in {"UNAVAILABLE", "SKIP", "SKIPPED"}
+        else -1
+    )
+
+    payload = {
+        "contract_id": "objc3c.platform.hosted-runtime-load-probe.generated.v1",
+        "schema_version": 1,
+        "platform_id": platform_id,
+        "issue_ref": int(PLATFORM_CONFIG[platform_id]["issue_ref"]),
+        "record_id": record_ids["runtime_load_link_proof_record_id"],
+        "generated_report_path": platform_scoped_path(platform_id, path_suffix),
+        "source_summary_path": NATIVE_EXECUTION_SMOKE_SUMMARY_PATH,
+        "reviewed_source_required": True,
+        "support_truth": False,
+        "native_execution_claimed": False,
+        "promotion_allowed_from_generated_evidence": False,
+        "status": runtime_load_probe_status(
+            source_exists=native_summary_exists,
+            exit_code=exit_code,
+            native_status=native_status,
+            skip_reason=skip_reason,
+        ),
+        "target_platform_id": platform_id,
+        "target_triple": expected["target_triple"],
+        "runtime_library_names": expected["runtime_library_names"],
+        "runtime_library": native_summary.get(
+            "runtime_library",
+            package_manifest.get(
+                "runtime_library",
+                f"artifacts/lib/{expected['runtime_library_names'][0]}",
+            ),
+        ),
+        "runtime_library_kind": native_summary.get(
+            "runtime_library_kind",
+            package_manifest.get("runtime_library_kind", ""),
+        ),
+        "runtime_load_environment_variable": native_summary.get(
+            "runtime_load_environment_variable",
+            "",
+        ),
+        "loader_path_policy": native_summary.get(
+            "loader_path_policy",
+            expected["loader_path_policy"],
+        ),
+        "load_probe_exit_code": load_probe_exit_code,
+        "resolved_runtime_paths": list_field(native_summary, "load_path"),
+        "driver_linker_flags": list_field(native_summary, "driver_linker_flags"),
+        "hosted_execution_status": hosted_summary.get("status", ""),
+        "native_execution_status": native_status,
+        "skip_reason": skip_reason,
+        "source_artifacts": source_artifacts(
+            HOSTED_EXECUTION_SMOKE_SUMMARY_PATH,
+            NATIVE_EXECUTION_SMOKE_SUMMARY_PATH,
+            RUNNABLE_PACKAGE_MANIFEST_PATH,
+        ),
+    }
+    write_json(ROOT / payload["generated_report_path"], payload)
+
+
+def ensure_platform_promotion_artifacts(platform_id: str) -> None:
+    write_object_identity_artifact(platform_id)
+    write_debug_identity_artifact(platform_id)
+    write_runtime_library_manifest_artifact(platform_id)
+    write_install_receipt_artifact(platform_id)
+    write_runtime_load_probe_artifact(platform_id)
 
 
 def env_outcome(step_id: str) -> str:
@@ -487,6 +979,7 @@ def build_promotion_readiness_requirements(platform_id: str) -> dict[str, Any]:
 def build_report(args: argparse.Namespace) -> dict[str, Any]:
     platform_id = args.platform_id
     config = PLATFORM_CONFIG[platform_id]
+    ensure_platform_promotion_artifacts(platform_id)
     steps: list[dict[str, Any]] = [
         {
             "step_id": "dependency_install",
@@ -726,6 +1219,26 @@ def validate_report(report: dict[str, Any], platform_id: str) -> list[str]:
             path_text = str(artifact.get("path", "")).replace("\\", "/")
             if path_text and not path_text.startswith(expected_path_prefix):
                 raise RuntimeError(f"host evidence artifact used non-platform-scoped path: {path_text}")
+    required_artifact_paths = {
+        platform_scoped_path(platform_id, suffix)
+        for suffix in REQUIRED_DURABLE_PROMOTION_ARTIFACT_SUFFIXES
+    }
+    missing_report_paths = sorted(required_artifact_paths - set(generated_paths))
+    if missing_report_paths:
+        raise RuntimeError(
+            "host evidence report missing durable promotion artifact paths: "
+            + ", ".join(missing_report_paths)
+        )
+    missing_files = sorted(
+        path_text
+        for path_text in required_artifact_paths
+        if not (ROOT / path_text).is_file()
+    )
+    if missing_files:
+        raise RuntimeError(
+            "host evidence report missing durable promotion artifact files: "
+            + ", ".join(missing_files)
+        )
     return generated_paths
 
 

@@ -19,6 +19,10 @@
     "toolchain_probe_records",
     "package_root_evidence_records",
     "native_execution_evidence_records",
+    "object_identity_records",
+    "debug_identity_records",
+    "package_install_identity_records",
+    "runtime_load_link_proof_records",
     "negative_host_toolchain_cases",
     "toolchain_evidence_requirements",
     "toolchain_ranges",
@@ -119,6 +123,34 @@
       "minItems": 1,
       "items": {
         "$ref": "#/$defs/nativeExecutionEvidenceRecord"
+      }
+    },
+    "object_identity_records": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/objectIdentityRecord"
+      }
+    },
+    "debug_identity_records": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/debugIdentityRecord"
+      }
+    },
+    "package_install_identity_records": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/packageInstallIdentityRecord"
+      }
+    },
+    "runtime_load_link_proof_records": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/runtimeLoadLinkProofRecord"
       }
     },
     "negative_host_toolchain_cases": {
@@ -223,7 +255,11 @@
         "required_host_identity_fields",
         "required_toolchain_probe_fields",
         "required_package_root_fields",
-        "required_native_execution_fields"
+        "required_native_execution_fields",
+        "required_object_identity_fields",
+        "required_debug_identity_fields",
+        "required_package_install_identity_fields",
+        "required_runtime_load_link_proof_fields"
       ],
       "properties": {
         "contract_id": {
@@ -263,6 +299,18 @@
           "$ref": "#/$defs/stringArray"
         },
         "required_native_execution_fields": {
+          "$ref": "#/$defs/stringArray"
+        },
+        "required_object_identity_fields": {
+          "$ref": "#/$defs/stringArray"
+        },
+        "required_debug_identity_fields": {
+          "$ref": "#/$defs/stringArray"
+        },
+        "required_package_install_identity_fields": {
+          "$ref": "#/$defs/stringArray"
+        },
+        "required_runtime_load_link_proof_fields": {
           "$ref": "#/$defs/stringArray"
         }
       }
@@ -580,6 +628,279 @@
         "source_only_result": {
           "enum": [
             "not-applicable",
+            "fail-closed-before-support-promotion"
+          ]
+        },
+        "unsupported_behavior": { "const": "fail-closed" },
+        "diagnostic": { "type": "string" }
+      }
+    },
+    "objectIdentityRecord": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "record_id",
+        "issue_refs",
+        "platform_id",
+        "package_variant_row_id",
+        "package_root_record_id",
+        "claim_state",
+        "promotion_allowed",
+        "platform_ids",
+        "object_format",
+        "debug_format",
+        "target_triple",
+        "arch",
+        "generated_report_path",
+        "generated_report_support_truth",
+        "evidence_ids",
+        "source_only_result",
+        "unsupported_behavior",
+        "diagnostic"
+      ],
+      "properties": {
+        "record_id": { "type": "string" },
+        "issue_refs": { "$ref": "#/$defs/issueRefArray" },
+        "platform_id": { "type": "string" },
+        "package_variant_row_id": { "type": "string" },
+        "package_root_record_id": { "type": "string" },
+        "claim_state": {
+          "enum": [
+            "evidence-bound",
+            "fail-closed"
+          ]
+        },
+        "promotion_allowed": { "type": "boolean" },
+        "platform_ids": { "$ref": "#/$defs/stringArray" },
+        "object_format": { "type": "string" },
+        "debug_format": { "type": "string" },
+        "target_triple": { "type": "string" },
+        "arch": { "type": "string" },
+        "generated_report_path": {
+          "type": "string",
+          "pattern": "^tmp/reports/platform-host-evidence/"
+        },
+        "generated_report_support_truth": { "const": false },
+        "evidence_ids": { "$ref": "#/$defs/stringArray" },
+        "source_only_result": {
+          "enum": [
+            "not-applicable",
+            "fail-closed-before-package-publication",
+            "fail-closed-before-support-promotion"
+          ]
+        },
+        "unsupported_behavior": { "const": "fail-closed" },
+        "diagnostic": { "type": "string" }
+      }
+    },
+    "debugIdentityRecord": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "record_id",
+        "issue_refs",
+        "platform_id",
+        "package_variant_row_id",
+        "package_root_record_id",
+        "claim_state",
+        "promotion_allowed",
+        "platform_ids",
+        "object_format",
+        "debug_format",
+        "target_triple",
+        "arch",
+        "generated_report_path",
+        "generated_report_support_truth",
+        "evidence_ids",
+        "source_only_result",
+        "unsupported_behavior",
+        "diagnostic"
+      ],
+      "properties": {
+        "record_id": { "type": "string" },
+        "issue_refs": { "$ref": "#/$defs/issueRefArray" },
+        "platform_id": { "type": "string" },
+        "package_variant_row_id": { "type": "string" },
+        "package_root_record_id": { "type": "string" },
+        "claim_state": {
+          "enum": [
+            "evidence-bound",
+            "fail-closed"
+          ]
+        },
+        "promotion_allowed": { "type": "boolean" },
+        "platform_ids": { "$ref": "#/$defs/stringArray" },
+        "object_format": { "type": "string" },
+        "debug_format": { "type": "string" },
+        "target_triple": { "type": "string" },
+        "arch": { "type": "string" },
+        "generated_report_path": {
+          "type": "string",
+          "pattern": "^tmp/reports/platform-host-evidence/"
+        },
+        "generated_report_support_truth": { "const": false },
+        "evidence_ids": { "$ref": "#/$defs/stringArray" },
+        "source_only_result": {
+          "enum": [
+            "not-applicable",
+            "fail-closed-before-package-publication",
+            "fail-closed-before-support-promotion"
+          ]
+        },
+        "unsupported_behavior": { "const": "fail-closed" },
+        "diagnostic": { "type": "string" }
+      }
+    },
+    "packageInstallIdentityRecord": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "record_id",
+        "issue_refs",
+        "platform_id",
+        "package_variant_row_id",
+        "package_root_record_id",
+        "claim_state",
+        "promotion_allowed",
+        "platform_ids",
+        "object_format",
+        "debug_format",
+        "package_root_layout",
+        "package_manifest_path",
+        "runtime_library_manifest_path",
+        "install_receipt_path",
+        "install_receipt_present",
+        "generated_report_path",
+        "generated_report_support_truth",
+        "evidence_ids",
+        "source_only_result",
+        "unsupported_behavior",
+        "diagnostic"
+      ],
+      "properties": {
+        "record_id": { "type": "string" },
+        "issue_refs": { "$ref": "#/$defs/issueRefArray" },
+        "platform_id": { "type": "string" },
+        "package_variant_row_id": { "type": "string" },
+        "package_root_record_id": { "type": "string" },
+        "claim_state": {
+          "enum": [
+            "evidence-bound",
+            "fail-closed"
+          ]
+        },
+        "promotion_allowed": { "type": "boolean" },
+        "platform_ids": { "$ref": "#/$defs/stringArray" },
+        "object_format": { "type": "string" },
+        "debug_format": { "type": "string" },
+        "package_root_layout": { "$ref": "#/$defs/stringArray" },
+        "package_manifest_path": {
+          "type": "string",
+          "pattern": "^tmp/reports/platform-host-evidence/"
+        },
+        "runtime_library_manifest_path": {
+          "type": "string",
+          "pattern": "^tmp/reports/platform-host-evidence/"
+        },
+        "install_receipt_path": {
+          "type": "string",
+          "pattern": "^tmp/reports/platform-host-evidence/"
+        },
+        "install_receipt_present": { "type": "boolean" },
+        "generated_report_path": {
+          "type": "string",
+          "pattern": "^tmp/reports/platform-host-evidence/"
+        },
+        "generated_report_support_truth": { "const": false },
+        "evidence_ids": { "$ref": "#/$defs/stringArray" },
+        "source_only_result": {
+          "enum": [
+            "not-applicable",
+            "fail-closed-before-native-execution-claim",
+            "fail-closed-before-support-promotion"
+          ]
+        },
+        "unsupported_behavior": { "const": "fail-closed" },
+        "diagnostic": { "type": "string" }
+      }
+    },
+    "runtimeLoadLinkProofRecord": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "record_id",
+        "issue_refs",
+        "platform_id",
+        "package_variant_row_id",
+        "package_root_record_id",
+        "native_execution_record_id",
+        "claim_state",
+        "promotion_allowed",
+        "platform_ids",
+        "object_format",
+        "debug_format",
+        "package_root_layout",
+        "runtime_library_names",
+        "runtime_library_manifest_path",
+        "linker_flags",
+        "loader_policy",
+        "load_probe_path",
+        "load_probe_exit_code",
+        "resolved_runtime_paths",
+        "generated_report_path",
+        "generated_report_support_truth",
+        "evidence_ids",
+        "source_only_result",
+        "unsupported_behavior",
+        "diagnostic"
+      ],
+      "properties": {
+        "record_id": { "type": "string" },
+        "issue_refs": { "$ref": "#/$defs/issueRefArray" },
+        "platform_id": { "type": "string" },
+        "package_variant_row_id": { "type": "string" },
+        "package_root_record_id": { "type": "string" },
+        "native_execution_record_id": { "type": "string" },
+        "claim_state": {
+          "enum": [
+            "evidence-bound",
+            "fail-closed"
+          ]
+        },
+        "promotion_allowed": { "type": "boolean" },
+        "platform_ids": { "$ref": "#/$defs/stringArray" },
+        "object_format": { "type": "string" },
+        "debug_format": { "type": "string" },
+        "package_root_layout": { "$ref": "#/$defs/stringArray" },
+        "runtime_library_names": { "$ref": "#/$defs/stringArray" },
+        "runtime_library_manifest_path": {
+          "type": "string",
+          "pattern": "^tmp/reports/platform-host-evidence/"
+        },
+        "linker_flags": { "$ref": "#/$defs/stringArray" },
+        "loader_policy": { "type": "string" },
+        "load_probe_path": {
+          "type": "string",
+          "pattern": "^tmp/reports/platform-host-evidence/"
+        },
+        "load_probe_exit_code": { "type": "integer" },
+        "resolved_runtime_paths": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "uniqueItems": true
+        },
+        "generated_report_path": {
+          "type": "string",
+          "pattern": "^tmp/reports/platform-host-evidence/"
+        },
+        "generated_report_support_truth": { "const": false },
+        "evidence_ids": { "$ref": "#/$defs/stringArray" },
+        "source_only_result": {
+          "enum": [
+            "not-applicable",
+            "fail-closed-before-native-execution-claim",
             "fail-closed-before-support-promotion"
           ]
         },

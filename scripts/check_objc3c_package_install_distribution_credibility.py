@@ -263,6 +263,7 @@ def main(argv: list[str] | None = None) -> int:
         "mirror_summary_status": mirror_summary.get("status"),
         "clean_start": verification.get("clean_start", {}),
         "from_nothing_probe": from_nothing_probe,
+        "platform_host_evidence": verification.get("platform_host_evidence", {}),
         "generated_paths": verification.get("generated_paths", []),
         "required_public_actions": required_actions,
         "missing_public_actions": missing_public_actions,

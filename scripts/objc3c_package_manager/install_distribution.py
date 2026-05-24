@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import os
 from pathlib import Path
 import shutil
 from typing import Any
@@ -147,6 +148,42 @@ def install_receipt_payload(root: Path) -> dict[str, Any]:
         "install_command": f"npm run objc3c -- {INSTALL_DISTRIBUTION_ACTION} --from-nothing",
         "machine_owned": True,
         "installed_at_utc": "omitted-for-deterministic-replay",
+    }
+
+
+def platform_host_evidence_root(root: Path) -> tuple[str, Path] | None:
+    platform_id = os.environ.get("OBJC3C_PLATFORM_ID", "")
+    evidence_root = os.environ.get("OBJC3C_PLATFORM_EVIDENCE_ROOT", "")
+    if platform_id not in {"linux-x64", "darwin-arm64"} or not evidence_root:
+        return None
+    resolved_root = (root / evidence_root).resolve()
+    expected_root = (root / "tmp" / "reports" / "platform-host-evidence" / platform_id).resolve()
+    if resolved_root != expected_root:
+        raise RuntimeError(
+            "platform install evidence root must be platform-scoped: "
+            f"{evidence_root}"
+        )
+    return platform_id, resolved_root
+
+
+def publish_platform_install_receipt(
+    *,
+    root: Path,
+    install_receipt_path: Path,
+) -> dict[str, Any] | None:
+    config = platform_host_evidence_root(root)
+    if config is None:
+        return None
+    platform_id, evidence_root = config
+    target_path = evidence_root / "install" / "install-receipt.json"
+    target_path.parent.mkdir(parents=True, exist_ok=True)
+    shutil.copy2(install_receipt_path, target_path)
+    return {
+        "platform_id": platform_id,
+        "source_receipt": repo_rel(install_receipt_path),
+        "platform_scoped_receipt": repo_rel(target_path),
+        "source_receipt_sha256": file_digest(install_receipt_path),
+        "support_truth": False,
     }
 
 
@@ -508,6 +545,10 @@ def materialize_clean_distribution_install(
     )
     write_json_file(bridge_path, bridge_payload(contract))
     write_json_file(install_receipt_path, install_receipt_payload(root))
+    platform_install_receipt = publish_platform_install_receipt(
+        root=root,
+        install_receipt_path=install_receipt_path,
+    )
     write_json_file(
         update_receipt_path,
         package_operation_receipt_payload(
@@ -610,6 +651,9 @@ def materialize_clean_distribution_install(
         "public_actions": bridge_payload(contract)["public_actions"],
         "extraction_plan": extraction_plan,
         "extraction_plan_digest": extraction_plan["plan_digest"],
+        "platform_host_evidence": {
+            "install_receipt": platform_install_receipt,
+        },
         "generated_paths": sorted(generated_paths),
     }
     write_json_file(install_verification_path, verification)

@@ -47,6 +47,12 @@ EXPECTED_REVIEWED_SOURCE_RECORD_FIELDS: dict[str, str] = {
     "package_install_identity": "package_install_identity_record_id",
     "runtime_load_link_proof": "runtime_load_link_proof_record_id",
 }
+EXPECTED_REVIEWED_SOURCE_RECORD_TYPES: dict[str, str] = {
+    "object_identity": "object_identity",
+    "debug_identity": "debug_identity",
+    "package_install_identity": "package_install_identity",
+    "runtime_load_link_proof": "runtime_load_link_proof",
+}
 EXPECTED_PLATFORM_CONTRACTS = {
     contract.platform_id: contract
     for contract in HOST_PROMOTION_PLATFORM_CONTRACTS
@@ -167,11 +173,17 @@ def _validate_policy(payload: dict[str, Any]) -> None:
             policy.get(field_name) == expected_value,
             f"host promotion policy field {field_name} drifted",
         )
-    _require_set_contains(
+    source_record_types = _require_set_contains(
         _require_list(payload, "required_source_record_types", "host promotion evidence contract"),
         REQUIRED_SOURCE_RECORD_TYPES,
         owner="host promotion evidence contract",
         description="required source record types",
+    )
+    _require_set_contains(
+        source_record_types,
+        EXPECTED_REVIEWED_SOURCE_RECORD_TYPES.values(),
+        owner="host promotion evidence contract",
+        description="reviewed source promotion record types",
     )
     _require_set_contains(
         _require_list(payload, "required_gate_classes", "host promotion evidence contract"),

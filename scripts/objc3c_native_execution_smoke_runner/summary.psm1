@@ -2,6 +2,7 @@ Set-StrictMode -Version Latest
 
 $script:ScriptsRoot = Split-Path -Parent $PSScriptRoot
 Import-Module (Join-Path $script:ScriptsRoot "objc3c_native_execution_smoke_helpers.psm1") -Force -DisableNameChecking
+Import-Module (Join-Path $script:ScriptsRoot "objc3c_platform_host_evidence_producers.psm1") -Force -DisableNameChecking
 Import-Module (Join-Path $PSScriptRoot "timings.psm1") -Force -DisableNameChecking
 
 function Write-ExecutionSmokeSummary {
@@ -91,6 +92,14 @@ function Write-ExecutionSmokeSummary {
   $summary.timing.stage_totals = Get-ExecutionSmokeStageTimings
   $summary.timing.elapsed_seconds = [math]::Round($SuiteStopwatch.Elapsed.TotalSeconds, 6)
   $summary | ConvertTo-Json -Depth 8 | Set-Content -LiteralPath $Context.summary_path -Encoding utf8
+  Write-Objc3cDarwinRuntimeLoadProbeEvidence `
+    -RepoRoot $Context.repo_root `
+    -PlatformId $Context.target_platform_id `
+    -TargetTriple $Context.target_triple `
+    -SummaryPath $Context.summary_path `
+    -RuntimeLibraryPath $Context.default_runtime_library `
+    -RuntimeLibraryRelativePath $Context.default_runtime_library_relative_path `
+    -LoaderPathPolicy $Context.loader_path_policy
   Write-Output "summary_path: $(Get-RepoRelativePath -Path $Context.summary_path -Root $Context.repo_root)"
   Write-Output "status: PASS"
   $global:LASTEXITCODE = 0

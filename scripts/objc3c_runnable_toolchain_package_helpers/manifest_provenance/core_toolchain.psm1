@@ -11,6 +11,7 @@ function Get-ManifestProvenanceCoreToolchainFiles {
     $coreArtifacts.RuntimeLibrary,
     "scripts/__init__.py",
     "scripts/build_objc3c_native.ps1",
+    "scripts/objc3c_platform_host_evidence_producers.psm1",
     "scripts/objc3c_native_compile.ps1",
     "scripts/objc3c_shared/__init__.py",
     "scripts/objc3c_shared/json_io.py",

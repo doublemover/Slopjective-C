@@ -218,8 +218,45 @@ REQUIRED_HOST_EVIDENCE_SECTIONS: tuple[str, ...] = (
     "toolchain_probe_records",
     "package_root_evidence_records",
     "native_execution_evidence_records",
+    "object_identity_records",
+    "debug_identity_records",
+    "package_install_identity_records",
+    "runtime_load_link_proof_records",
     "negative_host_toolchain_cases",
 )
+HOST_EVIDENCE_REQUIRED_PROMOTION_RECORD_FIELDS: dict[str, tuple[str, ...]] = {
+    "required_object_identity_fields": (
+        "object_format",
+        "target_triple",
+        "arch",
+        "generated_report_path",
+        "generated_report_support_truth",
+    ),
+    "required_debug_identity_fields": (
+        "debug_format",
+        "target_triple",
+        "arch",
+        "generated_report_path",
+        "generated_report_support_truth",
+    ),
+    "required_package_install_identity_fields": (
+        "package_root_layout",
+        "package_manifest_path",
+        "runtime_library_manifest_path",
+        "install_receipt_path",
+        "install_receipt_present",
+        "generated_report_path",
+        "generated_report_support_truth",
+    ),
+    "required_runtime_load_link_proof_fields": (
+        "runtime_library_names",
+        "runtime_library_manifest_path",
+        "loader_policy",
+        "load_probe_path",
+        "generated_report_path",
+        "generated_report_support_truth",
+    ),
+}
 REQUIRED_NEGATIVE_HOST_TOOLCHAIN_CASES: tuple[str, ...] = (
     "objc3c.negative.host.linux-x64.no-native-execution",
     "objc3c.negative.host.linux-x64.generated-host-evidence-no-promotion",
@@ -674,6 +711,136 @@ def _validate_native_execution_evidence_records(
     return execution_records
 
 
+def _validate_reviewed_source_promotion_records(
+    payload: dict[str, Any],
+    *,
+    records_by_id: dict[str, dict[str, Any]],
+    package_roots: dict[str, dict[str, Any]],
+    native_execution_records: dict[str, dict[str, Any]],
+    package_variant_rows: dict[str, dict[str, Any]],
+    boundary_supported_platform_ids: set[str],
+) -> dict[str, dict[str, dict[str, Any]]]:
+    sections = {
+        "object_identity_records": _records_by_field(
+            "object_identity_records",
+            payload.get("object_identity_records"),
+            "record_id",
+        ),
+        "debug_identity_records": _records_by_field(
+            "debug_identity_records",
+            payload.get("debug_identity_records"),
+            "record_id",
+        ),
+        "package_install_identity_records": _records_by_field(
+            "package_install_identity_records",
+            payload.get("package_install_identity_records"),
+            "record_id",
+        ),
+        "runtime_load_link_proof_records": _records_by_field(
+            "runtime_load_link_proof_records",
+            payload.get("runtime_load_link_proof_records"),
+            "record_id",
+        ),
+    }
+    required_unsupported_record_ids = {
+        "object_identity_records": {
+            f"objc3c.object-identity.{platform_id}.release.missing"
+            for platform_id in UNSUPPORTED_PROMOTION_PLATFORM_IDS
+        },
+        "debug_identity_records": {
+            f"objc3c.debug-identity.{platform_id}.release.missing"
+            for platform_id in UNSUPPORTED_PROMOTION_PLATFORM_IDS
+        },
+        "package_install_identity_records": {
+            f"objc3c.package-install-identity.{platform_id}.release.missing"
+            for platform_id in UNSUPPORTED_PROMOTION_PLATFORM_IDS
+        },
+        "runtime_load_link_proof_records": {
+            f"objc3c.runtime-load-link.{platform_id}.release.missing"
+            for platform_id in UNSUPPORTED_PROMOTION_PLATFORM_IDS
+        },
+    }
+    for section_name, expected_record_ids in required_unsupported_record_ids.items():
+        missing_record_ids = sorted(expected_record_ids - set(sections[section_name]))
+        expect(
+            not missing_record_ids,
+            f"{section_name} missed unsupported promotion records: {', '.join(missing_record_ids)}",
+        )
+
+    for section_name, records in sections.items():
+        for record_id, record in records.items():
+            platform_id = str(record.get("platform_id", ""))
+            package_row_id = str(record.get("package_variant_row_id", ""))
+            package_root_record_id = str(record.get("package_root_record_id", ""))
+            package_row = package_variant_rows.get(package_row_id)
+            package_root = package_roots.get(package_root_record_id)
+            expect(package_row is not None, f"{record_id} referenced missing package row {package_row_id}")
+            expect(package_root is not None, f"{record_id} referenced missing package root {package_root_record_id}")
+            expect(
+                platform_id == package_row.get("target_platform_id"),
+                f"{record_id} platform_id drifted from package row target",
+            )
+            expect(
+                package_root.get("target_platform_id") == platform_id,
+                f"{record_id} package root platform drifted",
+            )
+            artifact = package_row.get("artifact_identity_contract", {})
+            expect(record.get("object_format") == artifact.get("object_format"), f"{record_id} object format drifted")
+            expect(record.get("debug_format") == artifact.get("debug_format"), f"{record_id} debug format drifted")
+            if section_name in {"package_install_identity_records", "runtime_load_link_proof_records"}:
+                expect(
+                    record.get("package_root_layout") == artifact.get("package_root_layout"),
+                    f"{record_id} package root layout drifted",
+                )
+            if section_name == "runtime_load_link_proof_records":
+                native_record_id = str(record.get("native_execution_record_id", ""))
+                expect(
+                    native_record_id in native_execution_records,
+                    f"{record_id} referenced missing native execution record {native_record_id}",
+                )
+                expect(
+                    record.get("runtime_library_names") == artifact.get("runtime_library_names"),
+                    f"{record_id} runtime library names drifted",
+                )
+                expect(
+                    str(record.get("loader_policy", "")),
+                    f"{record_id} missing loader policy",
+                )
+            report_path = str(record.get("generated_report_path", "")).replace("\\", "/")
+            expect(
+                report_path.startswith(f"{HOST_EVIDENCE_REPORT_ROOT}/{platform_id}/"),
+                f"{record_id} generated report path is not platform-scoped",
+            )
+            expect(record.get("generated_report_support_truth") is False, f"{record_id} generated report became support truth")
+            expect(record.get("unsupported_behavior") == "fail-closed", f"{record_id} did not fail closed")
+            evidence_ids = [str(evidence_id) for evidence_id in record.get("evidence_ids", [])]
+            if platform_id in boundary_supported_platform_ids:
+                expect(record.get("claim_state") == "evidence-bound", f"{record_id} supported record is not evidence-bound")
+                expect(record.get("promotion_allowed") is True, f"{record_id} supported record did not allow promotion")
+                expect(record.get("platform_ids") == [platform_id], f"{record_id} supported platform_ids drifted")
+                expect(evidence_ids, f"{record_id} supported record missing evidence ids")
+                _evidence_ids_are_supporting(
+                    evidence_ids,
+                    records_by_id=records_by_id,
+                    platform_id=platform_id,
+                    allowed_classes={"build", "package", "install", "execution"},
+                    owner_id=record_id,
+                )
+                continue
+            expect(record.get("claim_state") == "fail-closed", f"{record_id} unsupported record must fail closed")
+            expect(record.get("promotion_allowed") is False, f"{record_id} unsupported record allowed promotion")
+            expect(not record.get("platform_ids"), f"{record_id} unsupported record widened support")
+            expect(
+                str(record.get("source_only_result", "")).startswith("fail-closed"),
+                f"{record_id} source-only promotion did not fail closed",
+            )
+            expect(evidence_ids, f"{record_id} unsupported record missing policy evidence")
+            for evidence_id in evidence_ids:
+                expect(evidence_id in records_by_id, f"{record_id} missing policy evidence record {evidence_id}")
+                _policy_record_is_fail_closed(records_by_id[evidence_id])
+    return sections
+
+
 def _validate_negative_host_toolchain_cases(
     payload: dict[str, Any],
     *,
@@ -746,6 +913,11 @@ def _validate_host_evidence_architecture(
         set(REQUIRED_HOST_EVIDENCE_SECTIONS) <= {str(section) for section in contract.get("source_sections", [])},
         "host evidence contract missing required source sections",
     )
+    for field_name, expected_fields in HOST_EVIDENCE_REQUIRED_PROMOTION_RECORD_FIELDS.items():
+        expect(
+            set(str(field) for field in contract.get(field_name, [])) == set(expected_fields),
+            f"host evidence contract {field_name} drifted",
+        )
     hosted_evidence_ingestion = _validate_hosted_evidence_ingestion(
         contract,
         records_by_id=records_by_id,
@@ -776,6 +948,14 @@ def _validate_host_evidence_architecture(
         package_variant_rows=package_variant_rows,
         boundary_supported_platform_ids=boundary_supported_platform_ids,
     )
+    reviewed_source_records = _validate_reviewed_source_promotion_records(
+        payload,
+        records_by_id=records_by_id,
+        package_roots=package_roots,
+        native_execution_records=native_execution_records,
+        package_variant_rows=package_variant_rows,
+        boundary_supported_platform_ids=boundary_supported_platform_ids,
+    )
     negative_cases = _validate_negative_host_toolchain_cases(
         payload,
         unsupported_host_policy=unsupported_host_policy,
@@ -785,6 +965,7 @@ def _validate_host_evidence_architecture(
         "toolchain_probe_records": toolchain_probes,
         "package_root_evidence_records": package_roots,
         "native_execution_evidence_records": native_execution_records,
+        **reviewed_source_records,
         "negative_host_toolchain_cases": negative_cases,
         "hosted_evidence_ingestion": {
             "contract": hosted_evidence_ingestion,
@@ -2445,6 +2626,26 @@ def _build_host_promotion_readiness(payload: dict[str, Any]) -> dict[str, Any]:
         platform_field="platform_id",
         record_field="record_id",
     )
+    object_identity_ids = _record_id_by_platform(
+        payload["object_identity_records"],
+        platform_field="platform_id",
+        record_field="record_id",
+    )
+    debug_identity_ids = _record_id_by_platform(
+        payload["debug_identity_records"],
+        platform_field="platform_id",
+        record_field="record_id",
+    )
+    package_install_identity_ids = _record_id_by_platform(
+        payload["package_install_identity_records"],
+        platform_field="platform_id",
+        record_field="record_id",
+    )
+    runtime_load_link_proof_ids = _record_id_by_platform(
+        payload["runtime_load_link_proof_records"],
+        platform_field="platform_id",
+        record_field="record_id",
+    )
     negative_case_ids_by_platform: dict[str, list[str]] = {}
     for negative_case in payload["negative_host_toolchain_cases"]:
         for platform_id in negative_case.get("platform_ids", []):
@@ -2479,6 +2680,10 @@ def _build_host_promotion_readiness(payload: dict[str, Any]) -> dict[str, Any]:
                     "toolchain_probe_record_id": toolchain_probe_ids.get(platform_id, ""),
                     "package_root_record_id": package_root_ids.get(platform_id, ""),
                     "native_execution_record_id": native_execution_ids.get(platform_id, ""),
+                    "object_identity_record_id": object_identity_ids.get(platform_id, ""),
+                    "debug_identity_record_id": debug_identity_ids.get(platform_id, ""),
+                    "package_install_identity_record_id": package_install_identity_ids.get(platform_id, ""),
+                    "runtime_load_link_proof_record_id": runtime_load_link_proof_ids.get(platform_id, ""),
                 },
                 "required_missing_evidence_classes": required_missing,
                 "negative_case_ids": sorted(negative_case_ids_by_platform.get(platform_id, [])),
@@ -2519,6 +2724,10 @@ def build_support_evidence_matrix_sections(payload: dict[str, Any]) -> dict[str,
         "toolchain_probe_records": payload["toolchain_probe_records"],
         "package_root_evidence_records": payload["package_root_evidence_records"],
         "native_execution_evidence_records": payload["native_execution_evidence_records"],
+        "object_identity_records": payload["object_identity_records"],
+        "debug_identity_records": payload["debug_identity_records"],
+        "package_install_identity_records": payload["package_install_identity_records"],
+        "runtime_load_link_proof_records": payload["runtime_load_link_proof_records"],
         "negative_host_toolchain_cases": payload["negative_host_toolchain_cases"],
         "host_promotion_readiness": _build_host_promotion_readiness(payload),
         "toolchain_support": {
@@ -2586,6 +2795,22 @@ def build_support_evidence_summary(payload: dict[str, Any]) -> dict[str, Any]:
         "native_execution_record_ids": [
             str(row["record_id"])
             for row in payload["native_execution_evidence_records"]
+        ],
+        "object_identity_record_ids": [
+            str(row["record_id"])
+            for row in payload["object_identity_records"]
+        ],
+        "debug_identity_record_ids": [
+            str(row["record_id"])
+            for row in payload["debug_identity_records"]
+        ],
+        "package_install_identity_record_ids": [
+            str(row["record_id"])
+            for row in payload["package_install_identity_records"]
+        ],
+        "runtime_load_link_proof_record_ids": [
+            str(row["record_id"])
+            for row in payload["runtime_load_link_proof_records"]
         ],
         "negative_host_toolchain_case_ids": [
             str(row["case_id"])
