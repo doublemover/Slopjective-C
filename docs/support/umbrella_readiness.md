@@ -345,13 +345,13 @@ Consumer rule: Umbrella readiness may explain why a reserved umbrella row is blo
 - Current state: `internal`
 - Target state: `implemented`
 - Readiness state: `blocked`
-- Intended public meaning: Objective-C 3.0 platform expansion is complete as a source-owned platform/toolchain/package umbrella only when Linux x64, macOS arm64, sanitizer package variants, and native object emission all have replayable support evidence rather than fail-closed contracts.
+- Intended public meaning: Objective-C 3.0 platform expansion is complete as a source-owned platform/toolchain/package umbrella only when Linux x64, macOS arm64, and native object emission all have replayable support evidence rather than fail-closed contracts. The ASan and UBSan package variants are already evidence-bound for Windows x64 only through the checked sanitizer runtime promotion gate.
 
 ### Forbidden Overclaims
 
 - Linux x64 support from source-owned fail-closed rows alone.
 - macOS arm64 support from source-owned fail-closed rows alone.
-- ASan or UBSan package support from reserved package metadata alone.
+- ASan or UBSan package support outside Windows x64, from generated runtime reports alone, or from sanitizer execution evidence that has not cleared the source-owned promotion gate.
 - Native object emission success when llc is missing or lacks llc --filetype=obj.
 - Clang fallback published as llvm-direct object emission success.
 - Issue comments, PR bodies, temp files, generated projections, or validation logs as source truth.
@@ -362,8 +362,8 @@ Consumer rule: Umbrella readiness may explain why a reserved umbrella row is blo
 - `platform.linux-x64.unsupported` must be `rejected`: Linux x64 remains fail-closed until build, package, install, and native execution evidence exists, and the host-promotion contract refuses generated-only hosted evidence as support truth.
 - `platform.darwin-arm64.unsupported` must be `rejected`: macOS arm64 remains fail-closed until package install, Mach-O/load-path, and native execution evidence exists, and the host-promotion contract refuses generated-only hosted evidence as support truth.
 - `toolchain.llvm.current-probed-executable` must be `internal`: LLVM and native object emission remain current-probe/internal evidence, not broad LLVM compatibility.
-- `toolchain.sanitizer.address` must be `reserved`: ASan remains reserved until sanitizer package, install, expected detection records, release-runtime isolation, unsupported-host diagnostics, and native execution evidence are checked into support truth; current runtime evidence actions are non-promoting review inputs.
-- `toolchain.sanitizer.undefined` must be `reserved`: UBSan remains reserved until sanitizer package, install, trap-or-recover metadata, expected detection records, release-runtime isolation, unsupported-host diagnostics, and native execution evidence are checked into support truth; current runtime evidence actions are non-promoting review inputs.
+- `toolchain.sanitizer.address` must be `reserved`: The public capability row remains reserved and claimless, while platform source truth marks ASan package, install, and execution support evidence-bound for Windows x64 through the checked runtime-promotion gate; generated reports remain non-promoting inputs and unsupported hosts remain fail-closed.
+- `toolchain.sanitizer.undefined` must be `reserved`: The public capability row remains reserved and claimless, while platform source truth marks UBSan package, install, trap/recover metadata, expected detection, and execution support evidence-bound for Windows x64 through the checked runtime-promotion gate; generated reports remain non-promoting inputs and unsupported hosts remain fail-closed.
 
 ### Readiness Requirements
 
@@ -376,33 +376,37 @@ Consumer rule: Umbrella readiness may explain why a reserved umbrella row is blo
 - `satisfied` The Linux/macOS host-promotion contract requires build/package/install/execution gates, records generated hosted evidence as required but support_truth=false, and allows future support only after reviewed source-truth rows clear all blockers. (path: `tests/tooling/fixtures/platform_hardening/platform_host_promotion_evidence_contract.json`)
 - `satisfied` The host-promotion checker owns the deterministic fail-closed model for generated-only evidence, package/install/native-execution gaps, wrong object/debug identity, runtime load failure, and sanitizer leakage across Linux and macOS rows. (path: `scripts/check_platform_host_promotion_evidence.py`)
 - `satisfied` LLVM capability reports publish supported, missing-llc, missing-filetype, mixed-root, mismatched-version, unsupported-version, unresolved-version, and no-clang-fallback policy fields. (path: `scripts/objc3c_llvm_capability_probe/reports.py`)
-- `satisfied` Reserved ASan and UBSan package staging is anchored in clean-room runnable package staging, explicit sanitizer runtime discovery, copied runtime-library payloads, metadata emission, runtime-library digest manifests, and fail-closed missing-runtime behavior. (path: `scripts/package_objc3c_runnable_toolchain/staging_orchestration.psm1`)
+- `satisfied` Evidence-bound ASan and UBSan package staging is anchored in clean-room runnable package staging, explicit sanitizer runtime discovery, copied runtime-library payloads, metadata emission, runtime-library digest manifests, and fail-closed missing-runtime behavior. (path: `scripts/package_objc3c_runnable_toolchain/staging_orchestration.psm1`)
 - `satisfied` Runnable package artifact reporting records sanitizer package ids, channel ids, metadata paths, runtime library manifests, compiler/linker flags, environment metadata, support_truth=false, and native_execution_claimed=false without support promotion. (path: `scripts/package_objc3c_runnable_toolchain/artifact_report_foundation.psm1`)
 - `satisfied` Package-channel model source owns ASan and UBSan package ids, channel ids, required payload entries, runtime-library entries, receipt fields, support_truth=false, and native_execution_claimed=false. (path: `scripts/objc3c_package_channels/model.py`)
 - `satisfied` Package-channel rendering remains the checked source for generated package-channel summaries and does not create support truth outside matrix rows. (path: `scripts/objc3c_package_channels/rendering.py`)
 - `satisfied` Package-channel validation and end-to-end checks require non-promoting support truth, native-execution falsehood, payload contracts, archive digests, receipt contracts, and schema-backed package-channel artifacts before publication. (path: `scripts/check_objc3c_packaging_channels_end_to_end.py`)
-- `satisfied` Public package actions expose reserved ASan and UBSan package selectors and package-channel builders through the npm bridge while keeping the rows reserved. (path: `scripts/objc3c_workflow/action_catalog_native_package_toolchain.py`)
+- `satisfied` Public package actions expose ASan and UBSan package selectors and package-channel builders through the npm bridge while keeping promotion routed through the source-owned runtime gate. (path: `scripts/objc3c_workflow/action_catalog_native_package_toolchain.py`)
 - `satisfied` Release-governance action contracts register build-package-channels-asan and build-package-channels-ubsan as package-channel actions, not support claims. (path: `scripts/objc3c_workflow/actions/release_governance_packaging_contracts.py`)
 - `satisfied` Package-channel, install-receipt, and sanitizer runtime-library manifest schemas constrain ASan/UBSan package ids, sanitizer variants, exact runtime-library payload entries, install selectors, receipt contracts, support_truth=false, and native_execution_claimed=false. (path: `schemas/objc3c-sanitizer-runtime-library-manifest-v1.schema.json`)
-- `satisfied` Checked fixtures bind sanitizer package/install metadata, package-channel metadata/schema surfaces, artifact-report boundaries, and reserved validation contracts without claiming native sanitizer execution. (path: `tests/tooling/fixtures/security_hardening/sanitizer_package_install_model_contract.json`)
+- `satisfied` Checked fixtures bind sanitizer package/install metadata, package-channel metadata/schema surfaces, artifact-report boundaries, and non-promoting validation contracts without independently claiming sanitizer support. (path: `tests/tooling/fixtures/security_hardening/sanitizer_package_install_model_contract.json`)
 - `satisfied` The ASan and UBSan runtime evidence action contracts expose exact public commands, forbid aliases and variant/platform fallback routing, and require generated runtime evidence to remain review-only with support_truth=false. (path: `scripts/objc3c_workflow/actions/sanitizer_runtime_evidence.py`)
 - `satisfied` The sanitizer runtime evidence checker and probe require package summaries, runtime manifests, install receipts, target platform ids, and probe outputs to keep support_truth=false, native_execution_claimed=false, and support_promotion_allowed=false. (path: `scripts/check_objc3c_sanitizer_runtime_evidence.py`)
 - `satisfied` The security sanitizer execution evidence fixture and schema record ASan/UBSan expected-detection command shapes, runtime-library artifacts, generated-only rejection, and fail-closed negative cases without promoting support. (path: `tests/tooling/fixtures/security_hardening/sanitizer_execution_evidence_contract.json`)
 - `satisfied` The sanitizer execution evidence schema constrains the non-promoting execution evidence payload so support_truth, native_execution_claimed, and support_promotion_allowed remain false. (path: `schemas/objc3c-sanitizer-execution-evidence-v1.schema.json`)
+- `satisfied` The sanitizer runtime promotion fixture is the source-owned ASan/UBSan promotion contract; it requires regenerated runtime evidence, package and runtime manifests, packaged smoke, expected detection, digest agreement, and negative cases before support can become eligible. (path: `tests/tooling/fixtures/security_hardening/sanitizer_runtime_promotion_evidence_contract.json`)
+- `satisfied` The sanitizer runtime promotion schema constrains the promotion contract and keeps generated-only evidence from becoming support truth. (path: `schemas/objc3c-sanitizer-runtime-promotion-evidence-v1.schema.json`)
+- `satisfied` The sanitizer runtime promotion checker reads the durable fixture plus already-generated ASan/UBSan evidence, computes digests, verifies package/runtime manifests and packaged smoke, checks expected AddressSanitizer and UndefinedBehaviorSanitizer detection, and fails closed on generated-only or mismatched evidence. (path: `scripts/check_objc3c_sanitizer_runtime_promotion_evidence.py`)
 
 #### Public Commands
 
 - `satisfied` Platform support matrix replay remains the public path for projecting the source-owned platform boundary. (command: `npm run objc3c -- build-platform-support-matrix`)
 - `satisfied` Hosted Linux/macOS evidence ingestion is public and non-promoting; generated reports remain review inputs until checked source truth is promoted. (command: `npm run objc3c -- ingest-platform-host-evidence`)
 - `satisfied` The direct host-promotion evidence check replays the Linux/macOS fail-closed contract and rejects generated-only support truth. (command: `npm run objc3c -- check-platform-host-promotion-evidence`)
-- `blocked` Full platform hardening validation remains blocked for promotion until Linux, macOS, sanitizer, and native object emission evidence are promoted. (command: `npm run objc3c -- validate-platform-hardening`; blocker_id: `platform-expansion-prerequisites`)
-- `satisfied` Reserved ASan runnable package action exists for package metadata and payload staging only; it does not prove install, native execution, or sanitizer detection support. (command: `npm run objc3c -- package-runnable-toolchain-asan`)
-- `satisfied` Reserved UBSan runnable package action exists for package metadata and payload staging only; it does not prove install, native execution, or sanitizer detection support. (command: `npm run objc3c -- package-runnable-toolchain-ubsan`)
-- `satisfied` Reserved ASan package-channel action builds package-channel artifacts with support_truth=false and native_execution_claimed=false. (command: `npm run objc3c -- build-package-channels-asan`)
-- `satisfied` Reserved UBSan package-channel action builds package-channel artifacts with support_truth=false and native_execution_claimed=false. (command: `npm run objc3c -- build-package-channels-ubsan`)
+- `blocked` Full platform hardening validation remains blocked for umbrella promotion until Linux, macOS, and native object emission evidence are promoted. (command: `npm run objc3c -- validate-platform-hardening`; blocker_id: `platform-expansion-prerequisites`)
+- `satisfied` ASan runnable package action exists for package metadata and payload staging; support promotion is checked by the sanitizer runtime promotion gate. (command: `npm run objc3c -- package-runnable-toolchain-asan`)
+- `satisfied` UBSan runnable package action exists for package metadata and payload staging; support promotion is checked by the sanitizer runtime promotion gate. (command: `npm run objc3c -- package-runnable-toolchain-ubsan`)
+- `satisfied` ASan package-channel action builds package-channel artifacts consumed by the source-owned runtime promotion gate. (command: `npm run objc3c -- build-package-channels-asan`)
+- `satisfied` UBSan package-channel action builds package-channel artifacts consumed by the source-owned runtime promotion gate. (command: `npm run objc3c -- build-package-channels-ubsan`)
 - `satisfied` ASan runtime evidence collection is an explicit review-only action that forbids sanitizer/platform fallback routing and cannot promote ASan support. (command: `npm run objc3c -- check-sanitizer-runtime-evidence-asan`)
 - `satisfied` UBSan runtime evidence collection is an explicit review-only action that forbids sanitizer/platform fallback routing and cannot promote UBSan support. (command: `npm run objc3c -- check-sanitizer-runtime-evidence-ubsan`)
-- `satisfied` Security sanitizer execution evidence validates the reserved ASan/UBSan execution-evidence contract while requiring support_truth=false, native_execution_claimed=false, and support_promotion_allowed=false. (command: `npm run objc3c -- check-security-sanitizer-execution-evidence`)
+- `satisfied` Security sanitizer execution evidence validates the non-promoting ASan/UBSan execution-evidence contract while requiring support_truth=false, native_execution_claimed=false, and support_promotion_allowed=false. (command: `npm run objc3c -- check-security-sanitizer-execution-evidence`)
+- `satisfied` Security sanitizer runtime promotion evidence is the public source-owned promotion gate; it regenerates pinned ASan/UBSan evidence inputs and checks the durable promotion contract before sanitizer support can become eligible. (command: `npm run objc3c -- check-security-sanitizer-runtime-promotion-evidence`)
 
 #### Positive Fixtures
 
@@ -412,19 +416,20 @@ Consumer rule: Umbrella readiness may explain why a reserved umbrella row is blo
 
 - `satisfied` Linux x64 remains an unsupported fail-closed row with no support claim. (capability_id: `platform.linux-x64.unsupported`)
 - `satisfied` macOS arm64 remains an unsupported fail-closed row with no support claim. (capability_id: `platform.darwin-arm64.unsupported`)
-- `satisfied` ASan and UBSan remain reserved package variants with no platform ids. (path: `tests/tooling/fixtures/platform_support/source_truth_matrix.json`)
+- `satisfied` ASan and UBSan are Windows x64 evidence-bound package variants, with generated-only reports and unsupported hosts still rejected before support promotion. (path: `tests/tooling/fixtures/platform_support/source_truth_matrix.json`)
 - `satisfied` Missing llc, missing llc --filetype=obj, mixed LLVM roots, mismatched LLVM tool versions, unsupported LLVM versions, or unresolved required tool versions remain fail-closed and cannot publish object, package, execution, parity, or platform success. (path: `tests/tooling/fixtures/platform_hardening/platform_toolchain_support_evidence.json`)
-- `satisfied` Hosted-runner summaries cover Windows support, Linux/macOS unsupported rows, ASan/UBSan reserved rows, and toolchain fail-closed states without promoting those summaries to support evidence. (path: `tests/tooling/fixtures/platform_hardening/hosted_runner_capability_summaries.json`)
+- `satisfied` Hosted-runner summaries cover Windows support, Linux/macOS unsupported rows, ASan/UBSan non-promoting hosted summaries, and toolchain fail-closed states without promoting those summaries to support evidence. (path: `tests/tooling/fixtures/platform_hardening/hosted_runner_capability_summaries.json`)
 - `satisfied` Sanitizer package/install model fixtures keep ASan and UBSan package ids, package-channel ids, runtime metadata, install selectors, missing-runtime behavior, stale metadata, mixed runtime rejection, and native-execution falsehood checked in without support promotion. (path: `tests/tooling/fixtures/security_hardening/sanitizer_package_install_model_contract.json`)
-- `satisfied` Sanitizer validation fixtures are reserved compiler/runtime validation contracts; native sanitizer execution and expected detection evidence are still required before #8230 or #8231 promotion. (path: `tests/tooling/fixtures/security_hardening/sanitizer_validation_contract.json`)
+- `satisfied` Sanitizer validation fixtures remain non-promoting compiler/runtime validation contracts; #8230 and #8231 support truth is owned by the platform source-truth rows plus the runtime-promotion gate. (path: `tests/tooling/fixtures/security_hardening/sanitizer_validation_contract.json`)
 - `satisfied` Security sanitizer execution evidence fixtures keep generated-only reports, missing runtime manifests, mixed release/sanitizer runtime, unsupported hosts, and stale manifest digests fail-closed with no support promotion. (path: `tests/tooling/fixtures/security_hardening/sanitizer_execution_evidence_contract.json`)
+- `satisfied` Sanitizer runtime promotion fixtures keep generated-only evidence, missing package/runtime manifests, missing packaged smoke, missing expected detection output, stale or mismatched computed digests, mixed release/sanitizer runtime, unsupported hosts, and variant/channel mismatches fail-closed before support promotion. (path: `tests/tooling/fixtures/security_hardening/sanitizer_runtime_promotion_evidence_contract.json`)
 - `satisfied` Packaging-channel schema fixtures keep sanitizer package-channel metadata source-owned and fail closed when schema or fixture truth drifts. (path: `tests/tooling/fixtures/packaging_channels/schema_surface.json`)
 
 #### Runtime Probes
 
 - `blocked` Native object emission probe metadata is source-owned and fail-closed, but broad platform promotion remains blocked until required hosts and package variants are executable. (blocker_id: `native-object-emission-promotion`)
-- `blocked` ASan package metadata and runtime evidence actions remain reserved/non-promoting until native execution and expected AddressSanitizer detection records are checked through public package/install evidence and promoted into source truth. (blocker_id: `asan-runtime-package-evidence`)
-- `blocked` UBSan package metadata and runtime evidence actions remain reserved/non-promoting until native execution, trap-or-recover metadata, and expected UndefinedBehaviorSanitizer detection records are checked through public package/install evidence and promoted into source truth. (blocker_id: `ubsan-runtime-package-evidence`)
+- `satisfied` ASan package metadata and runtime evidence pass the source-owned runtime-promotion gate for Windows x64, while generated-only evidence and unsupported hosts remain non-promoting. (command: `npm run objc3c -- check-security-sanitizer-runtime-promotion-evidence`; blocker_id: `asan-runtime-package-evidence`)
+- `satisfied` UBSan package metadata, trap/recover metadata, and runtime evidence pass the source-owned runtime-promotion gate for Windows x64, while generated-only evidence and unsupported hosts remain non-promoting. (command: `npm run objc3c -- check-security-sanitizer-runtime-promotion-evidence`; blocker_id: `ubsan-runtime-package-evidence`)
 
 #### Abi Governance Rows
 
@@ -432,11 +437,11 @@ Consumer rule: Umbrella readiness may explain why a reserved umbrella row is blo
 
 #### Docs
 
-- `satisfied` Capability matrix keeps #8206 internal, Linux/macOS rejected, sanitizer variants reserved, and Windows x64 as the only supported row. (path: `docs/support/capability_matrix.json`)
+- `satisfied` Capability matrix keeps #8206 internal, Linux/macOS rejected, sanitizer variants Windows x64 evidence-bound, and Windows x64 as the only supported host row. (path: `docs/support/capability_matrix.json`)
 - `satisfied` Evidence rows point to checked source, schemas, diagnostics, and runbooks rather than temp/generated evidence. (path: `docs/support/evidence_map.json`)
 - `satisfied` Hard-cutover truth states the #8206 platform umbrella boundary without broad support claims. (path: `docs/support/hard_cutover_capability_truth.md`)
-- `satisfied` Platform hardening runbook states the llc/no-clang-fallback policy and Linux/macOS/sanitizer fail-closed boundaries. (path: `docs/runbooks/objc3c_platform_hardening.md`)
-- `satisfied` Packaging-channel runbook documents reserved ASan/UBSan package selectors, staging, runtime-library manifests, package-channel actions, and non-promoting artifact/report boundaries. (path: `docs/runbooks/objc3c_packaging_channels.md`)
+- `satisfied` Platform hardening runbook states the llc/no-clang-fallback policy, Linux/macOS fail-closed boundaries, and sanitizer generated-only rejection boundary. (path: `docs/runbooks/objc3c_platform_hardening.md`)
+- `satisfied` Packaging-channel runbook documents ASan/UBSan package selectors, staging, runtime-library manifests, package-channel actions, and promotion-gate boundaries. (path: `docs/runbooks/objc3c_packaging_channels.md`)
 
 ### Generated Output Boundary
 
@@ -460,29 +465,19 @@ Consumer rule: Umbrella readiness may explain why a reserved umbrella row is blo
   - macOS arm64 package and install evidence.
   - Mach-O and load-path evidence.
   - macOS arm64 native execution evidence.
-- `asan-runtime-package-evidence`: ASan runtime package/install support remains reserved under #8230. Current source anchors cover staging, package-channel metadata, artifact reports, public package actions, runtime evidence actions, schemas, and fixtures, but they are non-promoting package/runtime identity evidence only.
-  - ASan runtime package install evidence through the public package workflow.
-  - ASan native execution evidence for the sanitizer package variant.
-  - Expected AddressSanitizer detection records captured as checked source evidence.
-  - Release-runtime isolation, unsupported-host diagnostics, stale-metadata rejection, missing-runtime rejection, mixed-runtime rejection, and default-release misuse proof before promotion.
-- `ubsan-runtime-package-evidence`: UBSan runtime package/install support remains reserved under #8231. Current source anchors cover staging, package-channel metadata, artifact reports, public package actions, runtime evidence actions, schemas, and fixtures, but they are non-promoting package/runtime identity evidence only.
-  - UBSan runtime package install evidence through the public package workflow.
-  - UBSan native execution evidence for the sanitizer package variant.
-  - Expected UndefinedBehaviorSanitizer detection records and trap-or-recover metadata captured as checked source evidence.
-  - Release-runtime isolation, unsupported-host diagnostics, stale-metadata rejection, missing-runtime rejection, mixed-runtime rejection, and default-release misuse proof before promotion.
 - `native-object-emission-promotion`: Native object emission is fail-closed unless llc --filetype=obj is present and routed without a clang substitute route.
   - Hosted-runner evidence for llc object emission availability or deterministic fail-closed status.
   - No clang substitute success path for object, package, execution, or parity claims.
   - Cross-lane/native execution proof consuming the native object emission status.
-- `platform-expansion-prerequisites`: The #8206 umbrella cannot be a public implemented platform claim while any child platform, sanitizer, or native object emission prerequisite remains fail-closed, reserved, or internal.
-  - Promote Linux x64, macOS arm64, sanitizer package variants, and native object emission only from checked source rows and public replay evidence.
+- `platform-expansion-prerequisites`: The #8206 umbrella cannot be a public implemented platform claim while any child platform or native object emission prerequisite remains fail-closed or internal.
+  - Promote Linux x64, macOS arm64, and native object emission only from checked source rows and public replay evidence.
   - Keep Windows x64 as the only supported projection until every promoted child row has matching source and evidence-map truth.
 
 ### Final Promotion Criteria
 
 - The platform.expansion.umbrella-readiness matrix row changes to implemented.
 - Linux x64 and macOS arm64 platform rows are implemented with build, package, install, and native execution evidence.
-- ASan and UBSan package variants are implemented with runtime package, install, and native execution evidence.
+- ASan and UBSan package variants remain Windows x64 evidence-bound with runtime package, install, native execution evidence, expected sanitizer detection, computed digest agreement, fail-closed negative cases, and the source-owned runtime-promotion gate.
 - Native object emission succeeds only through llc --filetype=obj and no clang substitute success path exists.
 - All platform source, fixture, capability, evidence, README, and runbook docs agree on the same support boundary.
 - No prerequisite relies on temp/generated evidence, source-only package rows, tool presence alone, compatibility bypasses, or prose-only support claims.

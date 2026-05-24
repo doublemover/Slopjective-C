@@ -459,6 +459,7 @@
         },
         "claim_state": {
           "enum": [
+            "evidence-bound",
             "unsupported",
             "reserved",
             "toolchain-prerequisite-fail-closed"
@@ -1009,7 +1010,6 @@
               "execution"
             ]
           },
-          "minItems": 3,
           "uniqueItems": true
         },
         "diagnostic": {

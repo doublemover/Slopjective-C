@@ -413,14 +413,14 @@ def test_platform_support_matrix_publishes_issue_owned_evidence_sections() -> No
             "promotion_gate_contract"
         ]["blocked_publication_surfaces"]
     ) == {"package", "install", "execution", "publication"}
-    assert package_rows["objc3c.package.sanitizer.asan.reserved"]["claim_state"] == "reserved"
+    assert package_rows["objc3c.package.sanitizer.asan.reserved"]["claim_state"] == "evidence-bound"
     assert package_rows["objc3c.package.sanitizer.asan.reserved"][
         "required_missing_evidence_classes"
-    ] == ["package", "install", "execution"]
-    assert package_rows["objc3c.package.sanitizer.ubsan.reserved"]["platform_ids"] == []
+    ] == []
+    assert package_rows["objc3c.package.sanitizer.ubsan.reserved"]["platform_ids"] == ["windows-x64"]
     assert package_rows["objc3c.package.sanitizer.ubsan.reserved"][
         "required_missing_evidence_classes"
-    ] == ["package", "install", "execution"]
+    ] == []
     assert all(
         row["metadata_freshness_guard"] == {
             "metadata_source": (
@@ -470,14 +470,14 @@ def test_platform_support_matrix_publishes_issue_owned_evidence_sections() -> No
     }
     assert sanitizer_rows["objc3c.toolchain.sanitizer.address"]["issue_ref"] == 8230
     assert sanitizer_rows["objc3c.toolchain.sanitizer.address"]["sanitizer"] == "address"
-    assert sanitizer_rows["objc3c.toolchain.sanitizer.address"]["claim_state"] == "reserved"
-    assert sanitizer_rows["objc3c.toolchain.sanitizer.address"]["platform_ids"] == []
+    assert sanitizer_rows["objc3c.toolchain.sanitizer.address"]["claim_state"] == "evidence-bound"
+    assert sanitizer_rows["objc3c.toolchain.sanitizer.address"]["platform_ids"] == ["windows-x64"]
     assert sanitizer_rows["objc3c.toolchain.sanitizer.address"][
         "required_promotion_evidence"
     ] == ["package", "install", "execution"]
     assert sanitizer_rows["objc3c.toolchain.sanitizer.address"][
         "required_missing_evidence_classes"
-    ] == ["package", "install", "execution"]
+    ] == []
     assert sanitizer_rows["objc3c.toolchain.sanitizer.address"]["package_variant_row_id"] == "objc3c.package.sanitizer.asan.reserved"
     assert "-fsanitize=address" in sanitizer_rows["objc3c.toolchain.sanitizer.address"]["build_contract"]["compiler_flags"]
     assert sanitizer_rows["objc3c.toolchain.sanitizer.address"]["install_guard"] == {
@@ -495,14 +495,14 @@ def test_platform_support_matrix_publishes_issue_owned_evidence_sections() -> No
     ]["default_release_channel_allowed"] is False
     assert sanitizer_rows["objc3c.toolchain.sanitizer.undefined"]["issue_ref"] == 8231
     assert sanitizer_rows["objc3c.toolchain.sanitizer.undefined"]["sanitizer"] == "undefined"
-    assert sanitizer_rows["objc3c.toolchain.sanitizer.undefined"]["claim_state"] == "reserved"
-    assert sanitizer_rows["objc3c.toolchain.sanitizer.undefined"]["platform_ids"] == []
+    assert sanitizer_rows["objc3c.toolchain.sanitizer.undefined"]["claim_state"] == "evidence-bound"
+    assert sanitizer_rows["objc3c.toolchain.sanitizer.undefined"]["platform_ids"] == ["windows-x64"]
     assert sanitizer_rows["objc3c.toolchain.sanitizer.undefined"][
         "required_promotion_evidence"
     ] == ["package", "install", "execution"]
     assert sanitizer_rows["objc3c.toolchain.sanitizer.undefined"][
         "required_missing_evidence_classes"
-    ] == ["package", "install", "execution"]
+    ] == []
     assert sanitizer_rows["objc3c.toolchain.sanitizer.undefined"]["package_variant_row_id"] == "objc3c.package.sanitizer.ubsan.reserved"
     assert "-fsanitize=undefined" in sanitizer_rows["objc3c.toolchain.sanitizer.undefined"]["build_contract"]["compiler_flags"]
     assert sanitizer_rows["objc3c.toolchain.sanitizer.undefined"]["install_guard"] == {

@@ -162,6 +162,13 @@
         "native-object-emission"
       ]
     },
+    "platformId": {
+      "enum": [
+        "windows-x64",
+        "linux-x64",
+        "darwin-arm64"
+      ]
+    },
     "stringArray": {
       "type": "array",
       "items": {
@@ -558,11 +565,17 @@
           ]
         },
         "claim_state": {
-          "const": "reserved"
+          "enum": [
+            "reserved",
+            "evidence-bound"
+          ]
         },
         "platform_ids": {
           "type": "array",
-          "maxItems": 0
+          "items": {
+            "$ref": "#/$defs/platformId"
+          },
+          "uniqueItems": true
         },
         "package_variant_row_id": {
           "type": "string"
@@ -629,7 +642,6 @@
           "items": {
             "$ref": "#/$defs/evidenceClass"
           },
-          "minItems": 3,
           "uniqueItems": true
         },
         "report_truth_policy": {

@@ -95,6 +95,7 @@ def test_platform_support_source_truth_validates_checked_matrix() -> None:
         },
         "ingestion_action": "ingest-platform-host-evidence",
         "ingestion_helper": "scripts/ingest_objc3c_platform_host_evidence.py",
+        "host_promotion_contract_check_action": "check-platform-host-promotion-evidence",
         "generated_report_contract_id": "objc3c.platform.hosted-runner.evidence-report.v1",
         "generated_report_root": "tmp/reports/platform-host-evidence",
         "generated_only_result": "refuse-source-truth-promotion",
@@ -110,13 +111,13 @@ def test_platform_support_source_truth_validates_checked_matrix() -> None:
     assert {
         row["issue_ref"]: row["claim_state"]
         for row in umbrella["child_issue_contracts"]
-    } == {
-        8228: "unsupported",
-        8229: "unsupported",
-        8230: "reserved",
-        8231: "reserved",
-        8232: "toolchain-prerequisite-fail-closed",
-    }
+        } == {
+            8228: "unsupported",
+            8229: "unsupported",
+            8230: "evidence-bound",
+            8231: "evidence-bound",
+            8232: "toolchain-prerequisite-fail-closed",
+        }
     assert umbrella["native_object_emission_contract"] == {
         "contract_id": "objc3c.llvm.native-object-emission.fail-closed.v1",
         "issue_ref": 8232,

@@ -56,13 +56,13 @@ EXPECTED_UMBRELLA_CHILD_ISSUE_CONTRACTS = {
     8230: {
         "row_id": "objc3c.package.sanitizer.asan.reserved",
         "contract_kind": "sanitizer-runtime-package",
-        "claim_state": "reserved",
+        "claim_state": "evidence-bound",
         "required_promotion_evidence": ("package", "install", "execution"),
     },
     8231: {
         "row_id": "objc3c.package.sanitizer.ubsan.reserved",
         "contract_kind": "sanitizer-runtime-package",
-        "claim_state": "reserved",
+        "claim_state": "evidence-bound",
         "required_promotion_evidence": ("package", "install", "execution"),
     },
     8232: {
@@ -439,9 +439,17 @@ def _validate_sanitizer_variant_rows(inputs: ValidationInputs, records_by_id: di
         ):
             expect(row[field_name] == upstream[field_name], f"{variant_id} {field_name} drifted from upstream sanitizer evidence")
         expect(row["issue_ref"] == EXPECTED_SANITIZER_ISSUES[str(row["sanitizer"])], f"{variant_id} sanitizer issue_ref drifted")
-        expect(row["claim_state"] == "reserved", f"{variant_id} must remain reserved until package/install/native execution evidence exists")
-        expect(not row["platform_ids"], f"{variant_id} reserved sanitizer cannot list supported platform ids")
         expect(row["package_variant_row_id"] in package_row_ids, f"{variant_id} package variant row missing from source truth")
+        platform_ids = {str(platform_id) for platform_id in row.get("platform_ids", [])}
+        if row["claim_state"] == "evidence-bound":
+            expect(platform_ids == {"windows-x64"}, f"{variant_id} evidence-bound sanitizer must be windows-x64-only")
+            expect(not row["required_missing_evidence_classes"], f"{variant_id} evidence-bound sanitizer listed missing evidence")
+            for evidence_id in upstream.get("evidence_ids", []):
+                record = records_by_id[str(evidence_id)]
+                expect(record.get("claim_weight") == "supporting", f"{variant_id} evidence {evidence_id} is not supporting")
+            continue
+        expect(row["claim_state"] == "reserved", f"{variant_id} used unknown sanitizer claim state")
+        expect(not platform_ids, f"{variant_id} reserved sanitizer cannot list supported platform ids")
         for evidence_id in upstream.get("evidence_ids", []):
             _require_policy_record(records_by_id, str(evidence_id))
     expect(sorted(variant_ids) == sorted(upstream_rows), "source-truth sanitizer rows drifted from upstream evidence")
@@ -469,7 +477,7 @@ def _validate_umbrella_readiness(
     expect(unsupported_ids == {"linux-x64", "darwin-arm64"}, "platform umbrella unsupported host set drifted")
     expect(
         {"objc3c.package.sanitizer.asan.reserved", "objc3c.package.sanitizer.ubsan.reserved"} <= package_variant_row_ids,
-        "platform umbrella sanitizer package rows are not reserved in source truth",
+        "platform umbrella sanitizer package rows drifted from source truth",
     )
     expect(
         {"objc3c.toolchain.sanitizer.address", "objc3c.toolchain.sanitizer.undefined"} == sanitizer_variant_ids,

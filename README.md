@@ -297,16 +297,18 @@ rejected rows include:
 - Linux x64 and macOS arm64 host support. Windows x64 is the supported Tier 1
   host row; Linux and macOS rows are source-owned fail-closed contracts until
   package/install/native execution evidence exists.
-- AddressSanitizer and UndefinedBehaviorSanitizer package/install/native
-  execution variants. Their runtime package metadata is source-owned and
-  reserved; no sanitizer package support is claimed yet.
+- AddressSanitizer and UndefinedBehaviorSanitizer beyond the current Windows
+  x64 runtime-package variants. ASan/UBSan package, install, and execution
+  support is evidence-bound for Windows x64 through checked source promotion
+  evidence; generated-only sanitizer reports and unsupported hosts do not
+  promote support.
 - Native object emission without `llc --filetype=obj`. Missing `llc` is a
   fail-closed status, and clang must not be treated as a fallback object
   emitter for support, package, or execution claims.
 - The #8206 platform expansion umbrella. It is an internal readiness/truth row
-  over Windows x64 support, fail-closed Linux/macOS rows, reserved sanitizer
-  package variants, and #8232 native object emission, not a broad platform
-  support claim.
+  over Windows x64 support, fail-closed Linux/macOS rows, Windows x64
+  evidence-bound ASan/UBSan package variants, and #8232 native object emission,
+  not a broad platform support claim.
 
 ## Fresh Setup
 
@@ -317,7 +319,10 @@ Install prerequisites:
 - PowerShell 7 (`pwsh`)
 - Node.js and `npm`
 - Python 3 with `pip`
-- LLVM at `C:\Program Files\LLVM`, or set `LLVM_ROOT`
+- A complete LLVM install with `clang++`, `llc`, `llvm-ar`, `llvm-config`,
+  LLVM headers, and CMake package files. The repo-owned CI installer stages
+  this under `C:\Users\<you>\Tools\LLVM\llvm-<version>-msvc`; alternatively,
+  set `LLVM_ROOT` to an equivalent full LLVM root.
 
 LLVM tools used by the native path:
 

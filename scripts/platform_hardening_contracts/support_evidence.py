@@ -1733,7 +1733,10 @@ def _validate_platform_expansion_sanitizer_cases(
         package_row_id = str(case.get("package_variant_row_id", ""))
         package_row = package_variant_rows.get(package_row_id)
         expect(package_row is not None, f"{variant_id} missing package variant row {package_row_id}")
-        expect(package_row.get("claim_state") == "reserved", f"{variant_id} package row must remain reserved")
+        expect(
+            package_row.get("claim_state") == case.get("claim_state"),
+            f"{variant_id} package row claim_state drifted from sanitizer case",
+        )
         expect(package_row.get("package_id") == case.get("package_id"), f"{variant_id} package_id drifted from package row")
         expect(
             package_row.get("runtime_library_contract", {}).get("runtime_library_ids") == case.get("runtime_library_ids"),
@@ -2360,16 +2363,33 @@ def validate_platform_toolchain_support_evidence(
         )
         expect(
             set(str(item) for item in sanitizer.get("required_missing_evidence_classes", []))
-            == {"package", "install", "execution"},
-            f"{sanitizer.get('variant_id', '')} sanitizer missing evidence must remain package/install/execution",
+            <= {"package", "install", "execution"},
+            f"{sanitizer.get('variant_id', '')} sanitizer missing evidence used unknown classes",
         )
         _negative_contracts_are_fail_closed(str(sanitizer.get("variant_id", "")), sanitizer.get("negative_contracts"))
-        if sanitizer.get("claim_state") == "reserved":
+        if sanitizer.get("claim_state") == "evidence-bound":
+            expect(
+                {str(platform_id) for platform_id in sanitizer.get("platform_ids", [])} == {"windows-x64"},
+                f"{sanitizer['variant_id']} evidence-bound sanitizer must be windows-x64-only",
+            )
+            expect(
+                not sanitizer.get("required_missing_evidence_classes"),
+                f"{sanitizer['variant_id']} evidence-bound sanitizer listed missing evidence",
+            )
+            expect(package_row.get("claim_state") == "evidence-bound", f"{package_row_id} package row must be evidence-bound")
+        elif sanitizer.get("claim_state") == "reserved":
             expect(not sanitizer.get("platform_ids"), f"{sanitizer['variant_id']} reserved sanitizer variant cannot list platforms")
-            expect(package_row.get("claim_state") == "reserved", f"{package_row_id} package row must remain reserved")
+            expect(package_row.get("claim_state") == "reserved", f"{package_row_id} package row must match reserved sanitizer state")
+        else:
+            raise RuntimeError(f"{sanitizer['variant_id']} used unknown sanitizer claim state")
         for evidence_id in sanitizer.get("evidence_ids", []):
             expect(str(evidence_id) in records_by_id, f"{sanitizer['variant_id']} missing sanitizer evidence {evidence_id}")
-            _policy_record_is_fail_closed(records_by_id[str(evidence_id)])
+            record = records_by_id[str(evidence_id)]
+            if sanitizer.get("claim_state") == "evidence-bound":
+                expect(record.get("claim_weight") == "supporting", f"{sanitizer['variant_id']} evidence {evidence_id} is not supporting")
+                expect("windows-x64" in record.get("supports_platform_ids", []), f"{sanitizer['variant_id']} evidence {evidence_id} does not support windows-x64")
+            else:
+                _policy_record_is_fail_closed(record)
 
     _validate_platform_expansion_claim_contract(
         payload,

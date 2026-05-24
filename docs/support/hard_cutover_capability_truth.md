@@ -74,8 +74,24 @@ state or imply validation, GitHub issue edits, push state, or remote closeout.
 | Statement-form guarded match patterns and bounded expression-form `match`                                                                             | source-level only, not a strict profile claim    | Admit statement `case pattern where bool_condition: { ... }` and bounded expression `case pattern where bool_condition => expression;` with scoped bindings, bool guards, exhaustiveness, and result convergence. Do not claim type-test patterns, statement fat-arrow arms, Result payload ABI extraction, aliases, or strict-profile promotion. |
 | Built-in strict, strict-concurrency, and strict-system conformance profiles                                                                           | `strict` / `strict-concurrency` implemented; `strict-system` fail-closed | Claim `core`, `strict`, and `strict-concurrency` only through native profile validation, strict diagnostics, strict-concurrency enforcement, public conformance publication, and release-candidate replay evidence; keep `strict-system` target-only and rejected until separate system evidence exists.                                                                                 |
 | #8207 language-evolution umbrella                                                                                                                     | `implemented` bounded truth row                  | Claim only the bounded alignment over implemented typed throws, value optionals, generic callable metadata, statement guarded match, bounded expression match, and strict/strict-concurrency profile rows. Broad optional runtime expansion, runtime-specialized generics, match type-test/Result-payload expansion, and strict-system profile support stay in reserved follow-up rows with no support claims. |
-| #8206 platform expansion umbrella                                                                                                                     | `internal` readiness/truth row                   | Treat as source-owned closure over Windows x64 support, fail-closed Linux/macOS rows, reserved ASan/UBSan rows with record-only expected-detection fixtures plus release-runtime-isolation requirements, and the #8232 coherent `llc --filetype=obj` native-object boundary; do not claim Linux, macOS, sanitizer package, clang-fallback object emission, mixed LLVM roots, mismatched LLVM versions, unsupported LLVM versions, or unresolved LLVM tool identity as support. |
+| #8206 platform expansion umbrella                                                                                                                     | `internal` readiness/truth row                   | Treat as source-owned closure over Windows x64 support, fail-closed Linux/macOS rows, Windows x64 evidence-bound ASan/UBSan rows with the `check-security-sanitizer-runtime-promotion-evidence` source-owned promotion gate, and the #8232 coherent `llc --filetype=obj` native-object boundary; do not claim Linux, macOS, sanitizer package support beyond Windows x64, clang-fallback object emission, mixed LLVM roots, mismatched LLVM versions, unsupported LLVM versions, unresolved LLVM tool identity, or generated-only sanitizer evidence as support. |
 | Old modes, retired mode labels, alias adapters, alternate acceptance paths, retired-source lanes, direct helper commands, and evidence-log completion | unsupported/retired wording                      | Mention only as negative evidence, source-hygiene data, or rejection inventory.                                                                                                                                                                                                                                       |
+
+Sanitizer package/runtime promotion is now gated by the public command
+`npm run objc3c -- check-security-sanitizer-runtime-promotion-evidence`.
+That gate is still an evidence boundary, not a public ASan or UBSan support
+claim. Public sanitizer support is claimable only after the ASan/UBSan
+capability rows are promoted against the source-owned contract, schema, and
+checker: `tests/tooling/fixtures/security_hardening/sanitizer_runtime_promotion_evidence_contract.json`,
+`schemas/objc3c-sanitizer-runtime-promotion-evidence-v1.schema.json`, and
+`scripts/check_objc3c_sanitizer_runtime_promotion_evidence.py`. The gate
+requires regenerated ASan and UBSan runtime evidence, package manifests,
+runtime-library manifests, packaged execution smoke, expected sanitizer
+detection records, computed digests for the source contract and generated
+artifacts, and negative cases for generated-only evidence, missing or stale
+manifests, mixed release/sanitizer runtimes, unsupported hosts, and mismatched
+detection output. Generated reports may be required inputs to the gate, but
+generated-only evidence cannot promote support.
 
 Advanced runtime closure is split into explicit implemented rows and reserved
 boundary rows. Implemented rows may be named only through their support claims in

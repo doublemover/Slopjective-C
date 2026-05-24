@@ -1719,7 +1719,9 @@
       "issue_ref": 8230,
       "variant_kind": "sanitizer-runtime",
       "target_platform_id": "sanitizer-address",
-      "platform_ids": [],
+      "platform_ids": [
+        "windows-x64"
+      ],
       "package_id": "org.objc3c.runtime:objc3c-runtime-asan",
       "runtime_library_contract": {
         "runtime_library_ids": [
@@ -1762,11 +1764,7 @@
           "install",
           "execution"
         ],
-        "blocked_until_evidence_classes": [
-          "package",
-          "install",
-          "execution"
-        ],
+        "blocked_until_evidence_classes": [],
         "blocked_publication_surfaces": [
           "package",
           "install",
@@ -1776,21 +1774,21 @@
         "source_only_metadata_behavior": "fail-closed-before-publication",
         "hosted_runner_summary_behavior": "summary-only-no-support-promotion"
       },
-      "claim_state": "reserved",
-      "channel_scope": [],
+      "claim_state": "evidence-bound",
+      "channel_scope": [
+        "windows-x64-sanitizer-asan"
+      ],
       "required_evidence_classes": [
         "build",
         "package",
         "install",
         "execution"
       ],
-      "required_missing_evidence_classes": [
-        "package",
-        "install",
-        "execution"
-      ],
+      "required_missing_evidence_classes": [],
       "evidence_ids": [
-        "objc3c.evidence.toolchain.sanitizer.policy.reserved"
+        "objc3c.evidence.sanitizer.address.package",
+        "objc3c.evidence.sanitizer.address.install",
+        "objc3c.evidence.sanitizer.address.execution"
       ],
       "unsupported_behavior": "fail-closed",
       "negative_contracts": [
@@ -1825,14 +1823,16 @@
           "source_owner": "platform-hardening-support-source"
         }
       ],
-      "diagnostic": "ASan runtime packaging is reserved and cannot publish a supported package row without sanitizer-specific package/install/native execution evidence."
+      "diagnostic": "ASan runtime packaging is evidence-bound for windows-x64 through the source-owned sanitizer promotion gate, regenerated package/probe evidence, package and runtime manifests, packaged smoke, expected detection, computed digests, and fail-closed negative cases."
     },
     {
       "row_id": "objc3c.package.sanitizer.ubsan.reserved",
       "issue_ref": 8231,
       "variant_kind": "sanitizer-runtime",
       "target_platform_id": "sanitizer-undefined",
-      "platform_ids": [],
+      "platform_ids": [
+        "windows-x64"
+      ],
       "package_id": "org.objc3c.runtime:objc3c-runtime-ubsan",
       "runtime_library_contract": {
         "runtime_library_ids": [
@@ -1874,11 +1874,7 @@
           "install",
           "execution"
         ],
-        "blocked_until_evidence_classes": [
-          "package",
-          "install",
-          "execution"
-        ],
+        "blocked_until_evidence_classes": [],
         "blocked_publication_surfaces": [
           "package",
           "install",
@@ -1888,21 +1884,21 @@
         "source_only_metadata_behavior": "fail-closed-before-publication",
         "hosted_runner_summary_behavior": "summary-only-no-support-promotion"
       },
-      "claim_state": "reserved",
-      "channel_scope": [],
+      "claim_state": "evidence-bound",
+      "channel_scope": [
+        "windows-x64-sanitizer-ubsan"
+      ],
       "required_evidence_classes": [
         "build",
         "package",
         "install",
         "execution"
       ],
-      "required_missing_evidence_classes": [
-        "package",
-        "install",
-        "execution"
-      ],
+      "required_missing_evidence_classes": [],
       "evidence_ids": [
-        "objc3c.evidence.toolchain.sanitizer.policy.reserved"
+        "objc3c.evidence.sanitizer.undefined.package",
+        "objc3c.evidence.sanitizer.undefined.install",
+        "objc3c.evidence.sanitizer.undefined.execution"
       ],
       "unsupported_behavior": "fail-closed",
       "negative_contracts": [
@@ -1943,7 +1939,7 @@
           "source_owner": "platform-hardening-support-source"
         }
       ],
-      "diagnostic": "UBSan runtime packaging is reserved and cannot publish a supported package row without sanitizer-specific package/install/native execution evidence."
+      "diagnostic": "UBSan runtime packaging is evidence-bound for windows-x64 through the source-owned sanitizer promotion gate, regenerated package/probe evidence, package and runtime manifests, packaged smoke, trap-mode expected detection, computed digests, and fail-closed negative cases."
     }
   ],
   "sanitizer_variants": [
@@ -1951,8 +1947,10 @@
       "variant_id": "objc3c.toolchain.sanitizer.address",
       "issue_ref": 8230,
       "sanitizer": "address",
-      "claim_state": "reserved",
-      "platform_ids": [],
+      "claim_state": "evidence-bound",
+      "platform_ids": [
+        "windows-x64"
+      ],
       "package_variant_row_id": "objc3c.package.sanitizer.asan.reserved",
       "package_id": "org.objc3c.runtime:objc3c-runtime-asan",
       "llvm_requirement": "current-probed-LLVM-with-address-sanitizer-runtime",
@@ -2133,13 +2131,11 @@
         "install",
         "execution"
       ],
-      "required_missing_evidence_classes": [
-        "package",
-        "install",
-        "execution"
-      ],
+      "required_missing_evidence_classes": [],
       "evidence_ids": [
-        "objc3c.evidence.toolchain.sanitizer.policy.reserved"
+        "objc3c.evidence.sanitizer.address.package",
+        "objc3c.evidence.sanitizer.address.install",
+        "objc3c.evidence.sanitizer.address.execution"
       ],
       "negative_contracts": [
         {
@@ -2179,14 +2175,16 @@
           "source_owner": "platform-hardening-support-source"
         }
       ],
-      "diagnostic": "AddressSanitizer support is reserved until sanitizer package install, release-runtime isolation, expected detection records, unsupported-host diagnostics, and native execution evidence exist for the sanitizer build."
+      "diagnostic": "AddressSanitizer support is evidence-bound for windows-x64 through the source-owned sanitizer promotion gate, regenerated ASan package/probe evidence, package and runtime manifests, packaged smoke, expected detection, computed digests, and fail-closed negative cases."
     },
     {
       "variant_id": "objc3c.toolchain.sanitizer.undefined",
       "issue_ref": 8231,
       "sanitizer": "undefined",
-      "claim_state": "reserved",
-      "platform_ids": [],
+      "claim_state": "evidence-bound",
+      "platform_ids": [
+        "windows-x64"
+      ],
       "package_variant_row_id": "objc3c.package.sanitizer.ubsan.reserved",
       "package_id": "org.objc3c.runtime:objc3c-runtime-ubsan",
       "llvm_requirement": "current-probed-LLVM-with-undefined-behavior-sanitizer-runtime",
@@ -2379,13 +2377,11 @@
         "install",
         "execution"
       ],
-      "required_missing_evidence_classes": [
-        "package",
-        "install",
-        "execution"
-      ],
+      "required_missing_evidence_classes": [],
       "evidence_ids": [
-        "objc3c.evidence.toolchain.sanitizer.policy.reserved"
+        "objc3c.evidence.sanitizer.undefined.package",
+        "objc3c.evidence.sanitizer.undefined.install",
+        "objc3c.evidence.sanitizer.undefined.execution"
       ],
       "negative_contracts": [
         {
@@ -2437,7 +2433,7 @@
           "source_owner": "platform-hardening-support-source"
         }
       ],
-      "diagnostic": "UBSan support is reserved until sanitizer package install, trap-or-recover metadata, release-runtime isolation, expected detection records, unsupported-host diagnostics, and native execution evidence exist for the sanitizer build."
+      "diagnostic": "UBSan support is evidence-bound for windows-x64 through the source-owned sanitizer promotion gate, regenerated UBSan package/probe evidence, package and runtime manifests, packaged smoke, trap-mode expected detection, computed digests, and fail-closed negative cases."
     }
   ],
   "evidence_records": [
@@ -2758,6 +2754,166 @@
         "tmp/artifacts/platform-hardening/objc3c-platform-matrix.json"
       ],
       "supports_platform_ids": [],
+      "requires_network": false,
+      "unsupported_host_behavior": "fail-closed"
+    },
+    {
+      "evidence_id": "objc3c.evidence.sanitizer.address.package",
+      "issue_refs": [
+        8206,
+        8230
+      ],
+      "evidence_class": "package",
+      "claim_weight": "supporting",
+      "source_paths": [
+        "schemas/objc3c-sanitizer-runtime-promotion-evidence-v1.schema.json",
+        "tests/tooling/fixtures/security_hardening/sanitizer_runtime_promotion_evidence_contract.json",
+        "scripts/check_objc3c_sanitizer_runtime_promotion_evidence.py"
+      ],
+      "replay_commands": [
+        "npm run objc3c -- check-security-sanitizer-runtime-promotion-evidence"
+      ],
+      "generated_report_paths": [
+        "tmp/reports/sanitizer-runtime-evidence/address/summary.json",
+        "tmp/reports/sanitizer-runtime-evidence/address/probe.json",
+        "tmp/reports/sanitizer-runtime-evidence/address/diagnostics.json",
+        "tmp/sre/pkg/check-sanitizer-runtime-evidence-asan/address/package/artifacts/package/objc3c-runnable-toolchain-package.json",
+        "tmp/sre/pkg/check-sanitizer-runtime-evidence-asan/address/package/share/objc3c/sanitizer/asan-runtime-libraries.json",
+        "tmp/reports/security-hardening/sanitizer-runtime-promotion-evidence-summary.json"
+      ],
+      "supports_platform_ids": [
+        "windows-x64"
+      ],
+      "requires_network": false,
+      "unsupported_host_behavior": "fail-closed"
+    },
+    {
+      "evidence_id": "objc3c.evidence.sanitizer.address.install",
+      "issue_refs": [
+        8206,
+        8230
+      ],
+      "evidence_class": "install",
+      "claim_weight": "supporting",
+      "source_paths": [
+        "scripts/check_objc3c_sanitizer_runtime_promotion_evidence.py",
+        "scripts/probe_objc3c_sanitizer_runtime_evidence.py"
+      ],
+      "replay_commands": [
+        "npm run objc3c -- check-security-sanitizer-runtime-promotion-evidence"
+      ],
+      "generated_report_paths": [
+        "tmp/sre/pkg/check-sanitizer-runtime-evidence-asan/address/package/tmp/artifacts/objc3c-native/execution-smoke/sre-address-address/summary.json",
+        "tmp/reports/sanitizer-runtime-evidence/address/probe.json"
+      ],
+      "supports_platform_ids": [
+        "windows-x64"
+      ],
+      "requires_network": false,
+      "unsupported_host_behavior": "fail-closed"
+    },
+    {
+      "evidence_id": "objc3c.evidence.sanitizer.address.execution",
+      "issue_refs": [
+        8206,
+        8230
+      ],
+      "evidence_class": "execution",
+      "claim_weight": "supporting",
+      "source_paths": [
+        "scripts/check_objc3c_sanitizer_runtime_promotion_evidence.py",
+        "scripts/probe_objc3c_sanitizer_runtime_evidence.py"
+      ],
+      "replay_commands": [
+        "npm run objc3c -- check-security-sanitizer-runtime-promotion-evidence"
+      ],
+      "generated_report_paths": [
+        "tmp/reports/sanitizer-runtime-evidence/address/probe-work/address_detection.stderr.txt",
+        "tmp/reports/security-hardening/sanitizer-runtime-promotion-evidence-summary.json"
+      ],
+      "supports_platform_ids": [
+        "windows-x64"
+      ],
+      "requires_network": false,
+      "unsupported_host_behavior": "fail-closed"
+    },
+    {
+      "evidence_id": "objc3c.evidence.sanitizer.undefined.package",
+      "issue_refs": [
+        8206,
+        8231
+      ],
+      "evidence_class": "package",
+      "claim_weight": "supporting",
+      "source_paths": [
+        "schemas/objc3c-sanitizer-runtime-promotion-evidence-v1.schema.json",
+        "tests/tooling/fixtures/security_hardening/sanitizer_runtime_promotion_evidence_contract.json",
+        "scripts/check_objc3c_sanitizer_runtime_promotion_evidence.py"
+      ],
+      "replay_commands": [
+        "npm run objc3c -- check-security-sanitizer-runtime-promotion-evidence"
+      ],
+      "generated_report_paths": [
+        "tmp/reports/sanitizer-runtime-evidence/undefined/summary.json",
+        "tmp/reports/sanitizer-runtime-evidence/undefined/probe.json",
+        "tmp/reports/sanitizer-runtime-evidence/undefined/diagnostics.json",
+        "tmp/sre/pkg/check-sanitizer-runtime-evidence-ubsan/undefined/package/artifacts/package/objc3c-runnable-toolchain-package.json",
+        "tmp/sre/pkg/check-sanitizer-runtime-evidence-ubsan/undefined/package/share/objc3c/sanitizer/ubsan-runtime-libraries.json",
+        "tmp/reports/security-hardening/sanitizer-runtime-promotion-evidence-summary.json"
+      ],
+      "supports_platform_ids": [
+        "windows-x64"
+      ],
+      "requires_network": false,
+      "unsupported_host_behavior": "fail-closed"
+    },
+    {
+      "evidence_id": "objc3c.evidence.sanitizer.undefined.install",
+      "issue_refs": [
+        8206,
+        8231
+      ],
+      "evidence_class": "install",
+      "claim_weight": "supporting",
+      "source_paths": [
+        "scripts/check_objc3c_sanitizer_runtime_promotion_evidence.py",
+        "scripts/probe_objc3c_sanitizer_runtime_evidence.py"
+      ],
+      "replay_commands": [
+        "npm run objc3c -- check-security-sanitizer-runtime-promotion-evidence"
+      ],
+      "generated_report_paths": [
+        "tmp/sre/pkg/check-sanitizer-runtime-evidence-ubsan/undefined/package/tmp/artifacts/objc3c-native/execution-smoke/sre-undefined-undefined/summary.json",
+        "tmp/reports/sanitizer-runtime-evidence/undefined/probe.json"
+      ],
+      "supports_platform_ids": [
+        "windows-x64"
+      ],
+      "requires_network": false,
+      "unsupported_host_behavior": "fail-closed"
+    },
+    {
+      "evidence_id": "objc3c.evidence.sanitizer.undefined.execution",
+      "issue_refs": [
+        8206,
+        8231
+      ],
+      "evidence_class": "execution",
+      "claim_weight": "supporting",
+      "source_paths": [
+        "scripts/check_objc3c_sanitizer_runtime_promotion_evidence.py",
+        "scripts/probe_objc3c_sanitizer_runtime_evidence.py"
+      ],
+      "replay_commands": [
+        "npm run objc3c -- check-security-sanitizer-runtime-promotion-evidence"
+      ],
+      "generated_report_paths": [
+        "tmp/reports/sanitizer-runtime-evidence/undefined/probe-work/undefined_detection.stderr.txt",
+        "tmp/reports/security-hardening/sanitizer-runtime-promotion-evidence-summary.json"
+      ],
+      "supports_platform_ids": [
+        "windows-x64"
+      ],
       "requires_network": false,
       "unsupported_host_behavior": "fail-closed"
     },

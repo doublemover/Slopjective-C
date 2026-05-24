@@ -1386,7 +1386,6 @@
               "execution"
             ]
           },
-          "minItems": 3,
           "uniqueItems": true
         },
         "diagnostic": {

@@ -228,7 +228,7 @@
       "platform_ids": [],
       "publication_allowed": false,
       "native_object_emission_status": "native_object_emission_supported",
-      "projection_rule": "ASan remains package-reserved until sanitizer runtime package install and native execution proof exists"
+      "projection_rule": "ASan hosted summaries remain non-promoting; checked source promotion evidence owns Windows x64 sanitizer support truth"
     },
     {
       "summary_id": "objc3c.hosted.sanitizer.undefined.reserved",
@@ -239,7 +239,7 @@
       "platform_ids": [],
       "publication_allowed": false,
       "native_object_emission_status": "native_object_emission_supported",
-      "projection_rule": "UBSan remains package-reserved until sanitizer runtime package install and native execution proof exists"
+      "projection_rule": "UBSan hosted summaries remain non-promoting; checked source promotion evidence owns Windows x64 sanitizer support truth"
     },
     {
       "summary_id": "objc3c.hosted.toolchain.missing-llc.fail-closed",
@@ -483,12 +483,16 @@
       "issue_ref": 8230,
       "variant_kind": "sanitizer-runtime",
       "target_platform_id": "sanitizer-address",
-      "platform_ids": [],
-      "claim_state": "reserved",
+      "platform_ids": [
+        "windows-x64"
+      ],
+      "claim_state": "evidence-bound",
       "package_id": "org.objc3c.runtime:objc3c-runtime-asan",
       "package_name_suffix": "asan",
       "default_release_runtime_mutation_allowed": false,
-      "channel_scope": [],
+      "channel_scope": [
+        "windows-x64-sanitizer-asan"
+      ],
       "runtime_library_ids": [
         "objc3-runtime",
         "clang_rt.asan"
@@ -521,11 +525,7 @@
           "install",
           "execution"
         ],
-        "blocked_until_evidence_classes": [
-          "package",
-          "install",
-          "execution"
-        ],
+        "blocked_until_evidence_classes": [],
         "blocked_publication_surfaces": [
           "package",
           "install",
@@ -555,12 +555,16 @@
       "issue_ref": 8231,
       "variant_kind": "sanitizer-runtime",
       "target_platform_id": "sanitizer-undefined",
-      "platform_ids": [],
-      "claim_state": "reserved",
+      "platform_ids": [
+        "windows-x64"
+      ],
+      "claim_state": "evidence-bound",
       "package_id": "org.objc3c.runtime:objc3c-runtime-ubsan",
       "package_name_suffix": "ubsan",
       "default_release_runtime_mutation_allowed": false,
-      "channel_scope": [],
+      "channel_scope": [
+        "windows-x64-sanitizer-ubsan"
+      ],
       "runtime_library_ids": [
         "objc3-runtime",
         "clang_rt.ubsan"
@@ -592,11 +596,7 @@
           "install",
           "execution"
         ],
-        "blocked_until_evidence_classes": [
-          "package",
-          "install",
-          "execution"
-        ],
+        "blocked_until_evidence_classes": [],
         "blocked_publication_surfaces": [
           "package",
           "install",
@@ -628,8 +628,10 @@
       "variant_id": "objc3c.toolchain.sanitizer.address",
       "issue_ref": 8230,
       "sanitizer": "address",
-      "claim_state": "reserved",
-      "platform_ids": [],
+      "claim_state": "evidence-bound",
+      "platform_ids": [
+        "windows-x64"
+      ],
       "package_variant_row_id": "objc3c.package.sanitizer.asan.reserved",
       "package_id": "org.objc3c.runtime:objc3c-runtime-asan",
       "compiler_flags": [
@@ -805,12 +807,8 @@
         "install",
         "execution"
       ],
-      "required_missing_evidence_classes": [
-        "package",
-        "install",
-        "execution"
-      ],
-      "report_truth_policy": "ASan reports are validation artifacts and are not support truth without package install and native execution evidence",
+      "required_missing_evidence_classes": [],
+      "report_truth_policy": "ASan reports are not support truth without the source-owned sanitizer promotion gate, regenerated ASan package/probe evidence, packaged smoke, expected detection, computed digests, and negative cases",
       "negative_contract_ids": [
         "objc3c.sanitizer.address.reject.missing-runtime",
         "objc3c.sanitizer.address.reject.unsupported-platform",
@@ -824,8 +822,10 @@
       "variant_id": "objc3c.toolchain.sanitizer.undefined",
       "issue_ref": 8231,
       "sanitizer": "undefined",
-      "claim_state": "reserved",
-      "platform_ids": [],
+      "claim_state": "evidence-bound",
+      "platform_ids": [
+        "windows-x64"
+      ],
       "package_variant_row_id": "objc3c.package.sanitizer.ubsan.reserved",
       "package_id": "org.objc3c.runtime:objc3c-runtime-ubsan",
       "compiler_flags": [
@@ -1011,12 +1011,8 @@
         "install",
         "execution"
       ],
-      "required_missing_evidence_classes": [
-        "package",
-        "install",
-        "execution"
-      ],
-      "report_truth_policy": "UBSan reports are validation artifacts and are not support truth without package install and native execution evidence",
+      "required_missing_evidence_classes": [],
+      "report_truth_policy": "UBSan reports are not support truth without the source-owned sanitizer promotion gate, regenerated UBSan package/probe evidence, packaged smoke, trap-mode expected detection, computed digests, and negative cases",
       "negative_contract_ids": [
         "objc3c.sanitizer.undefined.reject.missing-runtime",
         "objc3c.sanitizer.undefined.reject.suppression-drift",

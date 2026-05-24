@@ -479,7 +479,9 @@
       "issue_ref": 8230,
       "variant_kind": "sanitizer-runtime",
       "target_platform_id": "sanitizer-address",
-      "platform_ids": [],
+      "platform_ids": [
+        "windows-x64"
+      ],
       "package_id": "org.objc3c.runtime:objc3c-runtime-asan",
       "runtime_library_contract": {
         "runtime_library_ids": [
@@ -522,11 +524,7 @@
           "install",
           "execution"
         ],
-        "blocked_until_evidence_classes": [
-          "package",
-          "install",
-          "execution"
-        ],
+        "blocked_until_evidence_classes": [],
         "blocked_publication_surfaces": [
           "package",
           "install",
@@ -536,30 +534,30 @@
         "source_only_metadata_behavior": "fail-closed-before-publication",
         "hosted_runner_summary_behavior": "summary-only-no-support-promotion"
       },
-      "claim_state": "reserved",
+      "claim_state": "evidence-bound",
       "required_evidence_classes": [
         "build",
         "package",
         "install",
         "execution"
       ],
-      "required_missing_evidence_classes": [
-        "package",
-        "install",
-        "execution"
-      ],
+      "required_missing_evidence_classes": [],
       "evidence_ids": [
-        "objc3c.evidence.toolchain.sanitizer.policy.reserved"
+        "objc3c.evidence.sanitizer.address.package",
+        "objc3c.evidence.sanitizer.address.install",
+        "objc3c.evidence.sanitizer.address.execution"
       ],
       "unsupported_behavior": "fail-closed",
-      "diagnostic": "ASan runtime packaging is reserved and cannot publish a supported package row without sanitizer-specific package/install/native execution evidence."
+      "diagnostic": "ASan runtime packaging is evidence-bound for windows-x64 through the source-owned sanitizer promotion gate, regenerated package/probe evidence, package and runtime manifests, packaged smoke, expected detection, computed digests, and fail-closed negative cases."
     },
     {
       "row_id": "objc3c.package.sanitizer.ubsan.reserved",
       "issue_ref": 8231,
       "variant_kind": "sanitizer-runtime",
       "target_platform_id": "sanitizer-undefined",
-      "platform_ids": [],
+      "platform_ids": [
+        "windows-x64"
+      ],
       "package_id": "org.objc3c.runtime:objc3c-runtime-ubsan",
       "runtime_library_contract": {
         "runtime_library_ids": [
@@ -601,11 +599,7 @@
           "install",
           "execution"
         ],
-        "blocked_until_evidence_classes": [
-          "package",
-          "install",
-          "execution"
-        ],
+        "blocked_until_evidence_classes": [],
         "blocked_publication_surfaces": [
           "package",
           "install",
@@ -615,23 +609,21 @@
         "source_only_metadata_behavior": "fail-closed-before-publication",
         "hosted_runner_summary_behavior": "summary-only-no-support-promotion"
       },
-      "claim_state": "reserved",
+      "claim_state": "evidence-bound",
       "required_evidence_classes": [
         "build",
         "package",
         "install",
         "execution"
       ],
-      "required_missing_evidence_classes": [
-        "package",
-        "install",
-        "execution"
-      ],
+      "required_missing_evidence_classes": [],
       "evidence_ids": [
-        "objc3c.evidence.toolchain.sanitizer.policy.reserved"
+        "objc3c.evidence.sanitizer.undefined.package",
+        "objc3c.evidence.sanitizer.undefined.install",
+        "objc3c.evidence.sanitizer.undefined.execution"
       ],
       "unsupported_behavior": "fail-closed",
-      "diagnostic": "UBSan runtime packaging is reserved and cannot publish a supported package row without sanitizer-specific package/install/native execution evidence."
+      "diagnostic": "UBSan runtime packaging is evidence-bound for windows-x64 through the source-owned sanitizer promotion gate, regenerated package/probe evidence, package and runtime manifests, packaged smoke, trap-mode expected detection, computed digests, and fail-closed negative cases."
     }
   ],
   "sanitizer_variant_rows": [
@@ -639,8 +631,10 @@
       "variant_id": "objc3c.toolchain.sanitizer.address",
       "issue_ref": 8230,
       "sanitizer": "address",
-      "claim_state": "reserved",
-      "platform_ids": [],
+      "claim_state": "evidence-bound",
+      "platform_ids": [
+        "windows-x64"
+      ],
       "package_variant_row_id": "objc3c.package.sanitizer.asan.reserved",
       "package_id": "org.objc3c.runtime:objc3c-runtime-asan",
       "runtime_requirement": "ASan runtime library available for the exact target platform and package variant",
@@ -808,19 +802,17 @@
         "install",
         "execution"
       ],
-      "required_missing_evidence_classes": [
-        "package",
-        "install",
-        "execution"
-      ],
-      "diagnostic": "AddressSanitizer support is reserved until sanitizer package install, release-runtime isolation, expected detection records, unsupported-host diagnostics, and native execution evidence exist for the sanitizer build."
+      "required_missing_evidence_classes": [],
+      "diagnostic": "AddressSanitizer support is evidence-bound for windows-x64 through the source-owned sanitizer promotion gate, regenerated ASan package/probe evidence, package and runtime manifests, packaged smoke, expected detection, computed digests, and fail-closed negative cases."
     },
     {
       "variant_id": "objc3c.toolchain.sanitizer.undefined",
       "issue_ref": 8231,
       "sanitizer": "undefined",
-      "claim_state": "reserved",
-      "platform_ids": [],
+      "claim_state": "evidence-bound",
+      "platform_ids": [
+        "windows-x64"
+      ],
       "package_variant_row_id": "objc3c.package.sanitizer.ubsan.reserved",
       "package_id": "org.objc3c.runtime:objc3c-runtime-ubsan",
       "runtime_requirement": "UBSan runtime library and explicit trap-or-recover mode for the exact target platform and package variant",
@@ -998,12 +990,8 @@
         "install",
         "execution"
       ],
-      "required_missing_evidence_classes": [
-        "package",
-        "install",
-        "execution"
-      ],
-      "diagnostic": "UBSan support is reserved until sanitizer package install, trap-or-recover metadata, release-runtime isolation, expected detection records, unsupported-host diagnostics, and native execution evidence exist for the sanitizer build."
+      "required_missing_evidence_classes": [],
+      "diagnostic": "UBSan support is evidence-bound for windows-x64 through the source-owned sanitizer promotion gate, regenerated UBSan package/probe evidence, package and runtime manifests, packaged smoke, trap-mode expected detection, computed digests, and fail-closed negative cases."
     }
   ],
   "umbrella_readiness_contract": {
@@ -1044,25 +1032,25 @@
         "issue_ref": 8230,
         "row_id": "objc3c.package.sanitizer.asan.reserved",
         "contract_kind": "sanitizer-runtime-package",
-        "claim_state": "reserved",
+        "claim_state": "evidence-bound",
         "required_promotion_evidence": [
           "package",
           "install",
           "execution"
         ],
-        "diagnostic": "ASan package metadata is source-owned but not supported until sanitizer runtime package, install, and native execution evidence exists."
+        "diagnostic": "ASan package support is evidence-bound for windows-x64 through the source-owned sanitizer promotion gate, regenerated package/probe evidence, packaged smoke, expected detection, computed digests, and negative cases."
       },
       {
         "issue_ref": 8231,
         "row_id": "objc3c.package.sanitizer.ubsan.reserved",
         "contract_kind": "sanitizer-runtime-package",
-        "claim_state": "reserved",
+        "claim_state": "evidence-bound",
         "required_promotion_evidence": [
           "package",
           "install",
           "execution"
         ],
-        "diagnostic": "UBSan package metadata is source-owned but not supported until sanitizer runtime package, install, and native execution evidence exists."
+        "diagnostic": "UBSan package support is evidence-bound for windows-x64 through the source-owned sanitizer promotion gate, regenerated package/probe evidence, packaged smoke, trap-mode expected detection, computed digests, and negative cases."
       },
       {
         "issue_ref": 8232,
@@ -1104,7 +1092,7 @@
       "mixed LLVM tool roots published as package or execution support",
       "mismatched LLVM tool versions published as native object emission support"
     ],
-    "lead_projection_rule": "Only the windows-x64 row may be projected as supported; #8228 and #8229 remain unsupported, #8230 and #8231 remain reserved, and #8232 remains an internal fail-closed toolchain prerequisite unless the checked-in source evidence rows are promoted."
+    "lead_projection_rule": "Only the windows-x64 row may be projected as supported; #8228 and #8229 remain unsupported, #8230 and #8231 are windows-x64 evidence-bound sanitizer package rows through checked source promotion evidence, and #8232 remains an internal fail-closed toolchain prerequisite unless coherent llc object-emission evidence is present."
   },
   "report_policy": {
     "summary_path": "tmp/reports/platform-hardening/platform-matrix-summary.json",
