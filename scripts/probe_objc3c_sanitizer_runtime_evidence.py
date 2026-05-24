@@ -415,7 +415,7 @@ def run_detection_probe(
     combined = f"{run_result.stdout or ''}\n{run_result.stderr or ''}"
     expect(run_result.returncode != 0, "sanitizer detection probe unexpectedly exited 0")
     expected_tokens = ["AddressSanitizer"] if sanitizer_variant == "address" else []
-    if contract.trap_or_recover_mode != "trap":
+    if sanitizer_variant == "undefined" and contract.trap_or_recover_mode != "trap":
         expected_tokens = ["UndefinedBehaviorSanitizer", "runtime error"]
     if expected_tokens:
         expect(
