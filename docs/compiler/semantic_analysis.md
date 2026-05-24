@@ -9,8 +9,8 @@ hidden error-out ABI lowering, exact typed catch records, policy-backed
 foreign-carrier fail-closed records. Value optionals now have semantic type identity
 for canonical `Optional<T>` type signatures,
 plus a sema-owned absent/present lowering contract and checked unwrap/binding
-failure diagnostics plus bounded packed runtime ABI support for scalar payload
-forms and `id` object-handle payloads. Nested/generic payload runtime lowering,
+failure diagnostics plus bounded packed runtime ABI support for `i32`, `bool`,
+and `id` object-handle payloads. Nested/generic payload runtime lowering,
 property/ivar storage, unchecked unwrap, nullability bridges, implicit nil
 absence, nil-to-scalar coercion, and throws/result conversion remain unclaimed.
 Match expressions are bounded to
@@ -65,7 +65,7 @@ The #8207 umbrella contract lives in
 keeps semantic promotion bounded: typed throws cannot widen past source/interface
 metadata plus hidden error-out lowering and catch/bridge policy into multi-payload,
 unsupported foreign-carrier, or erased public runtime behavior,
-and value optionals cannot widen past their bounded packed scalar/id-handle ABI plus
+and value optionals cannot widen past their bounded packed i32/bool/id-handle ABI plus
 checked lowering contract into broad nested/generic/property/ivar/nullability/nil
 or unchecked runtime support. Runtime generic reification, type-test match
 patterns, and strict-system profile support cannot be widened from source

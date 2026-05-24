@@ -4,6 +4,98 @@
   "title": "objc3c Package Install Receipt",
   "type": "object",
   "additionalProperties": false,
+  "allOf": [
+    {
+      "if": {
+        "required": ["payload_required_entries"],
+        "properties": {
+          "payload_required_entries": {
+            "contains": { "const": "share/objc3c/sanitizer/asan-metadata.json" }
+          }
+        }
+      },
+      "then": {
+        "required": ["sanitizer_package_variant"],
+        "properties": {
+          "sanitizer_package_variant": {
+            "required": ["package_id", "package_variant_row_id", "package_channel_id", "sanitizer", "metadata_manifest_path", "selected_runtime_variant", "install_selector"],
+            "properties": {
+              "package_id": { "const": "org.objc3c.runtime:objc3c-runtime-asan" },
+              "package_variant_row_id": { "const": "objc3c.package.sanitizer.asan.reserved" },
+              "package_channel_id": { "const": "windows-x64-sanitizer-asan" },
+              "sanitizer": { "const": "address" },
+              "metadata_manifest_path": { "const": "share/objc3c/sanitizer/asan-metadata.json" },
+              "selected_runtime_variant": { "const": "sanitizer=address" },
+              "install_selector": { "const": "sanitizer=address" }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "required": ["payload_required_entries"],
+        "properties": {
+          "payload_required_entries": {
+            "contains": { "const": "share/objc3c/sanitizer/ubsan-metadata.json" }
+          }
+        }
+      },
+      "then": {
+        "required": ["sanitizer_package_variant"],
+        "properties": {
+          "sanitizer_package_variant": {
+            "required": ["package_id", "package_variant_row_id", "package_channel_id", "sanitizer", "metadata_manifest_path", "selected_runtime_variant", "install_selector", "trap_or_recover_mode"],
+            "properties": {
+              "package_id": { "const": "org.objc3c.runtime:objc3c-runtime-ubsan" },
+              "package_variant_row_id": { "const": "objc3c.package.sanitizer.ubsan.reserved" },
+              "package_channel_id": { "const": "windows-x64-sanitizer-ubsan" },
+              "sanitizer": { "const": "undefined" },
+              "metadata_manifest_path": { "const": "share/objc3c/sanitizer/ubsan-metadata.json" },
+              "selected_runtime_variant": { "const": "sanitizer=undefined" },
+              "install_selector": { "const": "sanitizer=undefined" }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "required": ["sanitizer_package_variant"],
+        "properties": {
+          "sanitizer_package_variant": {
+            "required": ["sanitizer"],
+            "properties": { "sanitizer": { "const": "address" } }
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "payload_required_entries": {
+            "contains": { "const": "share/objc3c/sanitizer/asan-metadata.json" }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "required": ["sanitizer_package_variant"],
+        "properties": {
+          "sanitizer_package_variant": {
+            "required": ["sanitizer"],
+            "properties": { "sanitizer": { "const": "undefined" } }
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "payload_required_entries": {
+            "contains": { "const": "share/objc3c/sanitizer/ubsan-metadata.json" }
+          }
+        }
+      }
+    }
+  ],
   "required": [
     "contract_id",
     "install_root",

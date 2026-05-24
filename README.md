@@ -260,15 +260,15 @@ rejected rows include:
   evidence, while broad scheduler fairness, Swift ABI mirroring, distributed
   actor networking, and arbitrary macro-host execution remain reserved.
 - Typed throws and value optionals. `throws(E)` is source-admitted as an exact
-  typed effect signature for parser, sema, and textual-interface metadata, but
-  typed error ABI/lowering/runtime execution remains reserved and fail-closed;
-  malformed typed-throws payloads still reject as `O3P182` with no silent
-erasure to bare `throws`. `Optional<T>` is parser-owned `O3P159` reserved
-syntax, lowercase `optional<T>` is rejected as `O3C004` rather than an alias,
-and value optionals only claim the bounded packed runtime ABI for
-`Optional<i32>`, `Optional<bool>`, and `Optional<id>` handles. Nil-to-scalar,
-nullable-pointer conversion, generalized ABI/lowering, and broad runtime
-support remain unclaimed.
+  typed effect signature for parser, sema, textual-interface metadata, and the
+  hidden single-payload error-out ABI slice. Broad public typed-error support is
+  still reserved, and malformed typed-throws payloads reject as `O3P182` with no
+  silent erasure to bare `throws`. `Optional<T>` is parser-owned `O3P159`
+  reserved syntax, lowercase `optional<T>` is rejected as `O3C004` rather than
+  an alias, and value optionals only claim the bounded packed runtime ABI for
+  `Optional<i32>`, `Optional<bool>`, and `Optional<id>` handles. Nil-to-scalar,
+  nullable-pointer conversion, generalized ABI/lowering, and broad runtime
+  support remain unclaimed.
 - Generic callable reification. Current support is the erased generic class
   receiver/free-function subset named by the generic callable row; explicit
   `@reify_generics`, Objective-C method type-parameter clauses, C/Objective-C

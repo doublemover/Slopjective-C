@@ -2,6 +2,44 @@ Set-StrictMode -Version Latest
 
 Import-Module (Join-Path $PSScriptRoot "..\objc3c_runnable_toolchain_package_helpers.psm1") -Force -DisableNameChecking
 
+function New-RunnableToolchainPackageNativeExecutionContract {
+  param([switch]$IncludesTrapOrRecoverMode)
+
+  $recordFields = @(
+    "executable_path",
+    "target_platform_id",
+    "sanitizer",
+    "runtime_library_ids",
+    "environment",
+    "exit_code",
+    "diagnostic_records"
+  )
+  if ($IncludesTrapOrRecoverMode.IsPresent) {
+    $recordFields += "trap_or_recover_mode"
+  }
+
+  return [ordered]@{
+    native_execution_required_before_support = $true
+    native_execution_record_required = $true
+    native_execution_record_fields = $recordFields
+    missing_native_execution_behavior = "fail-closed-before-support-promotion"
+    native_execution_claimed = $false
+  }
+}
+
+function Get-RunnableToolchainPackageSanitizerMetadataDigest {
+  param(
+    [Parameter(Mandatory = $true)][string]$PackageRoot,
+    [Parameter(Mandatory = $true)][string]$MetadataManifestPath
+  )
+
+  $metadataPath = Join-Path $PackageRoot ($MetadataManifestPath -replace '/', [System.IO.Path]::DirectorySeparatorChar)
+  if (!(Test-Path -LiteralPath $metadataPath -PathType Leaf)) {
+    throw "runnable toolchain package FAIL: sanitizer metadata missing before manifest publication: $MetadataManifestPath"
+  }
+  return "sha256:" + (Get-FileHash -LiteralPath $metadataPath -Algorithm SHA256).Hash.ToLowerInvariant()
+}
+
 function New-RunnableToolchainPackageFoundationManifestSection {
   param(
     [Parameter(Mandatory = $true)][string]$RepoRoot,
@@ -17,6 +55,7 @@ function New-RunnableToolchainPackageFoundationManifestSection {
     native_execution_claimed = $false
   }
   if ($SanitizerVariant -eq "address") {
+    $metadataManifestPath = "share/objc3c/sanitizer/asan-metadata.json"
     $sanitizerPackageVariant = [ordered]@{
       package_id = "org.objc3c.runtime:objc3c-runtime-asan"
       package_variant_row_id = "objc3c.package.sanitizer.asan.reserved"
@@ -24,13 +63,23 @@ function New-RunnableToolchainPackageFoundationManifestSection {
       target_platform_id = "windows-x64"
       sanitizer = "address"
       runtime_library_ids = @("objc3-runtime", "clang_rt.asan")
-      metadata_manifest_path = "share/objc3c/sanitizer/asan-metadata.json"
+      metadata_manifest_path = $metadataManifestPath
+      metadata_digest = Get-RunnableToolchainPackageSanitizerMetadataDigest `
+        -PackageRoot $PackageRoot `
+        -MetadataManifestPath $metadataManifestPath
       selected_runtime_variant = "sanitizer=address"
       install_selector = "sanitizer=address"
+      compiler_flags = @("-fsanitize=address", "-fno-omit-frame-pointer")
+      linker_flags = @("-fsanitize=address")
+      environment = "ASAN_OPTIONS"
+      native_execution_contract = New-RunnableToolchainPackageNativeExecutionContract
+      default_release_channel_allowed = $false
+      release_runtime_mixing_allowed = $false
       support_truth = $false
       native_execution_claimed = $false
     }
   } elseif ($SanitizerVariant -eq "undefined") {
+    $metadataManifestPath = "share/objc3c/sanitizer/ubsan-metadata.json"
     $sanitizerPackageVariant = [ordered]@{
       package_id = "org.objc3c.runtime:objc3c-runtime-ubsan"
       package_variant_row_id = "objc3c.package.sanitizer.ubsan.reserved"
@@ -38,10 +87,19 @@ function New-RunnableToolchainPackageFoundationManifestSection {
       target_platform_id = "windows-x64"
       sanitizer = "undefined"
       runtime_library_ids = @("objc3-runtime", "clang_rt.ubsan")
-      metadata_manifest_path = "share/objc3c/sanitizer/ubsan-metadata.json"
+      metadata_manifest_path = $metadataManifestPath
+      metadata_digest = Get-RunnableToolchainPackageSanitizerMetadataDigest `
+        -PackageRoot $PackageRoot `
+        -MetadataManifestPath $metadataManifestPath
       selected_runtime_variant = "sanitizer=undefined"
       install_selector = "sanitizer=undefined"
+      compiler_flags = @("-fsanitize=undefined", "-fno-omit-frame-pointer")
+      linker_flags = @("-fsanitize=undefined")
+      environment = "UBSAN_OPTIONS"
       trap_or_recover_mode = "trap"
+      native_execution_contract = New-RunnableToolchainPackageNativeExecutionContract -IncludesTrapOrRecoverMode
+      default_release_channel_allowed = $false
+      release_runtime_mixing_allowed = $false
       support_truth = $false
       native_execution_claimed = $false
     }

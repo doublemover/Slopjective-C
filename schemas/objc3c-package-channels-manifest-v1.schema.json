@@ -4,6 +4,84 @@
   "title": "objc3c Package Channels Manifest",
   "type": "object",
   "additionalProperties": false,
+  "allOf": [
+    {
+      "if": {
+        "required": ["sanitizer_variant"],
+        "properties": { "sanitizer_variant": { "const": "release" } }
+      },
+      "then": {
+        "properties": {
+          "package_id": { "const": "org.objc3c.runtime:objc3c-runtime-release" },
+          "package_channel_id": { "const": "windows-x64-release" },
+          "payload_contract": {
+            "properties": {
+              "required_entries": {
+                "not": {
+                  "contains": {
+                    "enum": [
+                      "share/objc3c/sanitizer/asan-metadata.json",
+                      "share/objc3c/sanitizer/ubsan-metadata.json"
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "required": ["sanitizer_variant"],
+        "properties": { "sanitizer_variant": { "const": "address" } }
+      },
+      "then": {
+        "properties": {
+          "package_id": { "const": "org.objc3c.runtime:objc3c-runtime-asan" },
+          "package_channel_id": { "const": "windows-x64-sanitizer-asan" },
+          "payload_contract": {
+            "properties": {
+              "required_entries": {
+                "contains": { "const": "share/objc3c/sanitizer/asan-metadata.json" }
+              }
+            }
+          },
+          "receipt_contracts": {
+            "properties": {
+              "install_receipt": { "$ref": "#/$defs/addressSanitizerReceiptContract" },
+              "offline_install_receipt": { "$ref": "#/$defs/addressSanitizerReceiptContract" }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "required": ["sanitizer_variant"],
+        "properties": { "sanitizer_variant": { "const": "undefined" } }
+      },
+      "then": {
+        "properties": {
+          "package_id": { "const": "org.objc3c.runtime:objc3c-runtime-ubsan" },
+          "package_channel_id": { "const": "windows-x64-sanitizer-ubsan" },
+          "payload_contract": {
+            "properties": {
+              "required_entries": {
+                "contains": { "const": "share/objc3c/sanitizer/ubsan-metadata.json" }
+              }
+            }
+          },
+          "receipt_contracts": {
+            "properties": {
+              "install_receipt": { "$ref": "#/$defs/undefinedSanitizerReceiptContract" },
+              "offline_install_receipt": { "$ref": "#/$defs/undefinedSanitizerReceiptContract" }
+            }
+          }
+        }
+      }
+    }
+  ],
   "required": [
     "contract_id",
     "generated_at_utc",
@@ -368,6 +446,42 @@
         "support_truth": { "const": false },
         "native_execution_claimed": { "const": false },
         "delegates_to": { "const": "local-installer" }
+      }
+    },
+    "addressSanitizerReceiptContract": {
+      "type": "object",
+      "required": ["sanitizer_install_selector"],
+      "properties": {
+        "package_id": { "const": "org.objc3c.runtime:objc3c-runtime-asan" },
+        "package_channel_id": { "const": "windows-x64-sanitizer-asan" },
+        "sanitizer_variant": { "const": "address" },
+        "sanitizer_install_selector": { "const": "sanitizer=address" },
+        "payload_required_entries": {
+          "contains": { "const": "share/objc3c/sanitizer/asan-metadata.json" }
+        },
+        "required_fields": {
+          "contains": { "const": "sanitizer_package_variant" }
+        },
+        "support_truth": { "const": false },
+        "native_execution_claimed": { "const": false }
+      }
+    },
+    "undefinedSanitizerReceiptContract": {
+      "type": "object",
+      "required": ["sanitizer_install_selector"],
+      "properties": {
+        "package_id": { "const": "org.objc3c.runtime:objc3c-runtime-ubsan" },
+        "package_channel_id": { "const": "windows-x64-sanitizer-ubsan" },
+        "sanitizer_variant": { "const": "undefined" },
+        "sanitizer_install_selector": { "const": "sanitizer=undefined" },
+        "payload_required_entries": {
+          "contains": { "const": "share/objc3c/sanitizer/ubsan-metadata.json" }
+        },
+        "required_fields": {
+          "contains": { "const": "sanitizer_package_variant" }
+        },
+        "support_truth": { "const": false },
+        "native_execution_claimed": { "const": false }
       }
     },
     "interopLoaderMetadata": {

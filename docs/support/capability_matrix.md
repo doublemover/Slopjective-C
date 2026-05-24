@@ -404,10 +404,16 @@ the canonical manifest fixture and public npm command above.
   - `native/objc3c/src/ir/objc3_ir_function_signature_model.cpp`
   - `native/objc3c/src/ir/objc3_ir_direct_call_emission.cpp`
   - `native/objc3c/src/ir/objc3_ir_expression_emission_call.cpp`
+  - `native/objc3c/src/ir/objc3_ir_runtime_dispatch_calls.cpp`
+  - `native/objc3c/src/ir/objc3_ir_runtime_dispatch_declarations.cpp`
   - `native/objc3c/src/ir/objc3_ir_statement_block_emission.cpp`
   - `native/objc3c/src/ir/objc3_ir_function_definition_emission.cpp`
   - `native/objc3c/src/runtime/errors/catch_filter.cpp`
   - `native/objc3c/src/runtime/errors/error_bridge_kind.cpp`
+  - `native/objc3c/src/runtime/public/objc3_runtime_result_entrypoint_contract.h`
+  - `native/objc3c/src/runtime/public/objc3_runtime_diagnostic_contract.h`
+  - `native/objc3c/src/runtime/dispatch/dispatch_api.cpp`
+  - `native/objc3c/src/runtime/dispatch/strict_dispatch_execution.cpp`
   - `native/objc3c/src/sema/model/semantic_symbol_core_source_closures.h`
   - `native/objc3c/src/artifacts/objc3_frontend_textual_interface_payload_artifact.cpp`
   - `native/objc3c/src/artifacts/objc3_frontend_textual_interface_payload_import.cpp`
@@ -433,10 +439,16 @@ the canonical manifest fixture and public npm command above.
   - source: `native/objc3c/src/ir/objc3_ir_function_signature_model.cpp`
   - source: `native/objc3c/src/ir/objc3_ir_direct_call_emission.cpp`
   - source: `native/objc3c/src/ir/objc3_ir_expression_emission_call.cpp`
+  - source: `native/objc3c/src/ir/objc3_ir_runtime_dispatch_calls.cpp`
+  - source: `native/objc3c/src/ir/objc3_ir_runtime_dispatch_declarations.cpp`
   - source: `native/objc3c/src/ir/objc3_ir_statement_block_emission.cpp`
   - source: `native/objc3c/src/ir/objc3_ir_function_definition_emission.cpp`
   - source: `native/objc3c/src/runtime/errors/catch_filter.cpp`
   - source: `native/objc3c/src/runtime/errors/error_bridge_kind.cpp`
+  - source: `native/objc3c/src/runtime/public/objc3_runtime_result_entrypoint_contract.h`
+  - source: `native/objc3c/src/runtime/public/objc3_runtime_diagnostic_contract.h`
+  - source: `native/objc3c/src/runtime/dispatch/dispatch_api.cpp`
+  - source: `native/objc3c/src/runtime/dispatch/strict_dispatch_execution.cpp`
   - source: `tests/tooling/fixtures/native/typed_throws_semantic_effect_identity.contract.json`
   - source: `tests/tooling/fixtures/native/typed_throws_catch_bridge_positive.objc3`
   - source: `tests/tooling/fixtures/native/language_evolution_typed_throws_value_optionals_contract.json`
@@ -2893,7 +2905,7 @@ the canonical manifest fixture and public npm command above.
 - Capability ID: `platform.linux-x64.unsupported`
 - State: `rejected`
 - Support claims: None
-- Summary: Linux x64 support remains fail-closed under issue #8228: source-owned platform and package rows now record the Linux host/toolchain/package promotion blockers, but they publish no support claim until build, package, install, and native execution evidence exists on a replayable public path.
+- Summary: Linux x64 support remains fail-closed under issue #8228: source-owned platform and package rows record the Linux host/toolchain/package promotion blockers, and both the canonical hosted-evidence workflow plus the conformance-minima dispatch gateway are generated-only, non-promoting evidence paths until build, package, install, and native execution evidence is reviewed into checked source truth.
 - Owner modules:
   - `tests/tooling/fixtures/platform_hardening/platform_toolchain_support_evidence.json`
   - `tests/tooling/fixtures/platform_support/source_truth_matrix.json`
@@ -2909,7 +2921,7 @@ the canonical manifest fixture and public npm command above.
 - Capability ID: `platform.darwin-arm64.unsupported`
 - State: `rejected`
 - Support claims: None
-- Summary: macOS arm64 support remains fail-closed under issue #8229: source-owned platform and package rows record the Apple-toolchain, Mach-O/load-path, and package-install blockers, but they publish no support claim until package install and native execution evidence exists on a replayable public path.
+- Summary: macOS arm64 support remains fail-closed under issue #8229: source-owned platform and package rows record the Apple-toolchain, Mach-O/load-path, and package-install blockers, and both the canonical hosted-evidence workflow plus the conformance-minima dispatch gateway are generated-only, non-promoting evidence paths until package install and native execution evidence is reviewed into checked source truth.
 - Owner modules:
   - `tests/tooling/fixtures/platform_hardening/platform_toolchain_support_evidence.json`
   - `tests/tooling/fixtures/platform_support/source_truth_matrix.json`
@@ -2962,7 +2974,7 @@ the canonical manifest fixture and public npm command above.
 - Capability ID: `platform.expansion.umbrella-readiness`
 - State: `internal`
 - Support claims: None
-- Summary: #8206 is an internal readiness boundary over #8228 Linux x64, #8229 macOS arm64, #8230 ASan, #8231 UBSan, and #8232 native object emission. It keeps only Windows x64 projected as supported, keeps Linux and macOS rejected, keeps sanitizer package/install support reserved until real package/install/native execution evidence exists, keeps task-hygiene hosted gates skip-only when llc object emission is unavailable, and keeps conformance-minima fail-closed when required native object emission is missing. Missing-llc, mixed-root, mismatched-version, unsupported-version, and unresolved-version native object emission remain fail-closed with no clang substitute success path.
+- Summary: #8206 is an internal readiness boundary over #8228 Linux x64, #8229 macOS arm64, #8230 ASan, #8231 UBSan, and #8232 native object emission. It keeps only Windows x64 projected as supported, keeps Linux and macOS rejected, models conformance-minima as a non-promoting dispatch gateway for generated Linux/macOS hosted evidence, keeps sanitizer package/install support reserved until real package/install/native execution evidence exists, keeps task-hygiene hosted gates skip-only when llc object emission is unavailable, and keeps conformance-minima fail-closed when required native object emission is missing. Missing-llc, mixed-root, mismatched-version, unsupported-version, and unresolved-version native object emission remain fail-closed with no clang substitute success path.
 - Owner modules:
   - `tests/tooling/fixtures/platform_support/source_truth_matrix.json`
   - `schemas/objc3c-platform-support-source-truth-v1.schema.json`

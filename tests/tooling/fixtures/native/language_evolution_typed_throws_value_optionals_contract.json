@@ -169,6 +169,11 @@
     "native/objc3c/src/ir/objc3_ir_message_send_emission.cpp",
     "native/objc3c/src/ir/objc3_ir_method_definition_plan.cpp",
     "native/objc3c/src/ir/objc3_ir_runtime_dispatch_calls.cpp",
+    "native/objc3c/src/ir/objc3_ir_runtime_dispatch_declarations.cpp",
+    "native/objc3c/src/runtime/public/objc3_runtime_result_entrypoint_contract.h",
+    "native/objc3c/src/runtime/public/objc3_runtime_diagnostic_contract.h",
+    "native/objc3c/src/runtime/dispatch/dispatch_api.cpp",
+    "native/objc3c/src/runtime/dispatch/strict_dispatch_execution.cpp",
     "native/objc3c/src/ir/objc3_ir_statement_block_emission.cpp",
     "native/objc3c/src/lower/contracts/error_handling_throws_unwind_contracts.h"
   ],
@@ -221,7 +226,7 @@
     {
       "fixture": "tests/tooling/fixtures/native/execution/positive/typed_throws_runtime_message_send_catch_positive.objc3",
       "exitcode_fixture": "tests/tooling/fixtures/native/execution/positive/typed_throws_runtime_message_send_catch_positive.exitcode.txt",
-      "contract_case": "typed throws direct-dispatch method sends pass the hidden error-out slot into message-send lowering and execute exact typed catch kind 4 plus id<Error> bridge catch kind 2"
+      "contract_case": "typed throws message-send lowering preserves the hidden error-out slot, with direct and runtime-dispatch error-out ABI source anchors and execution coverage for exact typed catch kind 4 plus id<Error> bridge catch kind 2"
     },
     {
       "fixture": "tests/tooling/fixtures/native/value_optionals_type_signatures_positive.objc3",

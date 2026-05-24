@@ -40,6 +40,25 @@ if ($SanitizerVariant -eq "address") {
 }
 $allowedReceiptChannels = @("local-installer", "offline-bundle")
 
+function Assert-PayloadEntriesMatch {
+  param(
+    [Parameter(Mandatory = $true)]$ActualEntries,
+    [Parameter(Mandatory = $true)]$ExpectedEntries,
+    [Parameter(Mandatory = $true)][string]$Context
+  )
+
+  $actual = @($ActualEntries | ForEach-Object { [string]$_ })
+  $expected = @($ExpectedEntries | ForEach-Object { [string]$_ })
+  if ($actual.Count -ne $expected.Count) {
+    throw "$Context payload entry count drifted"
+  }
+  for ($index = 0; $index -lt $expected.Count; $index++) {
+    if ($actual[$index] -ne $expected[$index]) {
+      throw "$Context payload entry drifted at index $index: expected $($expected[$index]), got $($actual[$index])"
+    }
+  }
+}
+
 function Resolve-SanitizerPackageVariant {
   if ($SanitizerVariant -eq "release") {
     return $null
@@ -113,11 +132,56 @@ function Assert-ReceiptSanitizerVariant {
     return
   }
 
+  $expectedPackageId = ""
+  $expectedPackageVariantRowId = ""
+  $expectedPackageChannelId = ""
+  $expectedRuntimeLibraries = @()
+  $expectedMetadataPath = ""
+  $expectedSelector = "sanitizer=" + $SanitizerVariant
+  if ($SanitizerVariant -eq "address") {
+    $expectedPackageId = "org.objc3c.runtime:objc3c-runtime-asan"
+    $expectedPackageVariantRowId = "objc3c.package.sanitizer.asan.reserved"
+    $expectedPackageChannelId = "windows-x64-sanitizer-asan"
+    $expectedRuntimeLibraries = @("objc3-runtime", "clang_rt.asan")
+    $expectedMetadataPath = "share/objc3c/sanitizer/asan-metadata.json"
+  } else {
+    $expectedPackageId = "org.objc3c.runtime:objc3c-runtime-ubsan"
+    $expectedPackageVariantRowId = "objc3c.package.sanitizer.ubsan.reserved"
+    $expectedPackageChannelId = "windows-x64-sanitizer-ubsan"
+    $expectedRuntimeLibraries = @("objc3-runtime", "clang_rt.ubsan")
+    $expectedMetadataPath = "share/objc3c/sanitizer/ubsan-metadata.json"
+  }
+
   if ($null -eq $Receipt.sanitizer_package_variant) {
     throw "installer target receipt missing sanitizer package variant: $installHome"
   }
   if ([string]$Receipt.sanitizer_package_variant.sanitizer -ne $SanitizerVariant) {
     throw "installer target receipt sanitizer variant drifted: $installHome"
+  }
+  if ([string]$Receipt.sanitizer_package_variant.package_id -ne $expectedPackageId -or
+      [string]$Receipt.sanitizer_package_variant.package_variant_row_id -ne $expectedPackageVariantRowId -or
+      [string]$Receipt.sanitizer_package_variant.package_channel_id -ne $expectedPackageChannelId -or
+      [string]$Receipt.sanitizer_package_variant.target_platform_id -ne "windows-x64" -or
+      [string]$Receipt.sanitizer_package_variant.metadata_manifest_path -ne $expectedMetadataPath -or
+      [string]$Receipt.sanitizer_package_variant.selected_runtime_variant -ne $expectedSelector -or
+      [string]$Receipt.sanitizer_package_variant.install_selector -ne $expectedSelector) {
+    throw "installer target receipt sanitizer package identity drifted: $installHome"
+  }
+  Assert-PayloadEntriesMatch `
+    -ActualEntries @($Receipt.sanitizer_package_variant.runtime_library_ids) `
+    -ExpectedEntries $expectedRuntimeLibraries `
+    -Context "installer target receipt sanitizer runtime libraries"
+  if ([string]$Receipt.sanitizer_package_variant.metadata_digest -notmatch '^sha256:[0-9a-f]{64}$') {
+    throw "installer target receipt sanitizer metadata digest drifted: $installHome"
+  }
+  if ($SanitizerVariant -eq "undefined" -and [string]$Receipt.sanitizer_package_variant.trap_or_recover_mode -ne "trap") {
+    throw "installer target receipt UBSan trap-or-recover mode drifted: $installHome"
+  }
+  if ($Receipt.sanitizer_package_variant.native_execution_contract.native_execution_required_before_support -ne $true -or
+      $Receipt.sanitizer_package_variant.native_execution_contract.native_execution_record_required -ne $true -or
+      [string]$Receipt.sanitizer_package_variant.native_execution_contract.missing_native_execution_behavior -ne "fail-closed-before-support-promotion" -or
+      $Receipt.sanitizer_package_variant.native_execution_contract.native_execution_claimed -ne $false) {
+    throw "installer target receipt sanitizer native execution contract drifted: $installHome"
   }
   if ($Receipt.sanitizer_package_variant.support_truth -ne $false -or
       $Receipt.sanitizer_package_variant.native_execution_claimed -ne $false) {
@@ -171,10 +235,13 @@ function Assert-ReceiptOwnsInstallHome {
       [string]$receipt.package_bridge -ne "objc3c" -or
       [string]$receipt.install_command -ne "npm run objc3c -- build-package-channels" -or
       [string]$receipt.payload_manifest -ne $payloadManifest -or
-      [string]::IsNullOrWhiteSpace([string]$receipt.payload_manifest_sha256) -or
-      $receiptPayloadEntries.Count -ne $payloadRequiredEntries.Count) {
+      [string]::IsNullOrWhiteSpace([string]$receipt.payload_manifest_sha256)) {
     throw "installer target receipt does not own install home: $installHome"
   }
+  Assert-PayloadEntriesMatch `
+    -ActualEntries $receiptPayloadEntries `
+    -ExpectedEntries $payloadRequiredEntries `
+    -Context "installer target receipt"
   Assert-ReceiptSanitizerVariant -Receipt $receipt
 }
 
@@ -263,6 +330,25 @@ $payloadRequiredEntries = @(
 )
 $allowedReceiptChannels = @("local-installer", "offline-bundle")
 
+function Assert-PayloadEntriesMatch {
+  param(
+    [Parameter(Mandatory = $true)]$ActualEntries,
+    [Parameter(Mandatory = $true)]$ExpectedEntries,
+    [Parameter(Mandatory = $true)][string]$Context
+  )
+
+  $actual = @($ActualEntries | ForEach-Object { [string]$_ })
+  $expected = @($ExpectedEntries | ForEach-Object { [string]$_ })
+  if ($actual.Count -ne $expected.Count) {
+    throw "$Context payload entry count drifted"
+  }
+  for ($index = 0; $index -lt $expected.Count; $index++) {
+    if ($actual[$index] -ne $expected[$index]) {
+      throw "$Context payload entry drifted at index $index: expected $($expected[$index]), got $($actual[$index])"
+    }
+  }
+}
+
 function Assert-NoReparsePointInExistingPath {
   param([Parameter(Mandatory = $true)][string]$Path)
 
@@ -319,10 +405,13 @@ function Assert-ReceiptOwnsInstallHome {
       [string]$receipt.package_bridge -ne "objc3c" -or
       [string]$receipt.install_command -ne "npm run objc3c -- build-package-channels" -or
       [string]$receipt.payload_manifest -ne $payloadManifest -or
-      [string]::IsNullOrWhiteSpace([string]$receipt.payload_manifest_sha256) -or
-      $receiptPayloadEntries.Count -ne $expectedPayloadEntries.Count) {
+      [string]::IsNullOrWhiteSpace([string]$receipt.payload_manifest_sha256)) {
     throw "uninstaller target receipt does not own install home: $installHome"
   }
+  Assert-PayloadEntriesMatch `
+    -ActualEntries $receiptPayloadEntries `
+    -ExpectedEntries $expectedPayloadEntries `
+    -Context "uninstaller target receipt"
 }
 
 if (Test-Path -LiteralPath $installHome) {
