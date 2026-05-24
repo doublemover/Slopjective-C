@@ -86,8 +86,12 @@ HOST_EVIDENCE_REVIEW_CANDIDATE_ARTIFACTS_BY_RECORD_TYPE: dict[str, tuple[str, ..
         "package/objc3c-runnable-toolchain-package.json",
         "package/runtime-library-manifest.json",
     ),
-    "install_receipt": ("install/install-receipt.json",),
+    "install_receipt": (
+        "install/install-receipt.json",
+        "install/end-to-end-summary.json",
+    ),
     "native_execution": (
+        "install/end-to-end-summary.json",
         "execution/hosted-execution-smoke-summary.json",
         "execution/native-execution-smoke-summary.json",
     ),
@@ -97,6 +101,7 @@ HOST_EVIDENCE_REVIEW_CANDIDATE_ARTIFACTS_BY_RECORD_TYPE: dict[str, tuple[str, ..
         "package/objc3c-runnable-toolchain-package.json",
         "package/runtime-library-manifest.json",
         "install/install-receipt.json",
+        "install/end-to-end-summary.json",
     ),
     "runtime_load_link_proof": (
         "package/runtime-library-manifest.json",

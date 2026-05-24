@@ -775,6 +775,7 @@ def _validate_package_install_execution(platform_id: str, platform: dict[str, An
             "package_root_layout",
             "package_manifest_path",
             "install_receipt_path",
+            "installed_root_execution_summary_path",
             "execution_summary_path",
             "native_smoke_summary_path",
             "runtime_library_names",
@@ -801,6 +802,7 @@ def _validate_package_install_execution(platform_id: str, platform: dict[str, An
     for field_name in (
         "package_manifest_path",
         "install_receipt_path",
+        "installed_root_execution_summary_path",
         "execution_summary_path",
         "native_smoke_summary_path",
     ):
@@ -815,6 +817,14 @@ def _validate_package_install_execution(platform_id: str, platform: dict[str, An
     expect(
         evidence.get("native_execution_required") is True,
         f"{platform_id} native execution is not mandatory",
+    )
+    expect(
+        evidence.get("installed_root_execution_required") is True,
+        f"{platform_id} installed-root execution is not mandatory",
+    )
+    expect(
+        evidence.get("offline_installed_root_execution_required") is True,
+        f"{platform_id} offline installed-root execution is not mandatory",
     )
     expect(
         evidence.get("support_truth") is False,

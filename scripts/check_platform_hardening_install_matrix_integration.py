@@ -39,6 +39,16 @@ def missing_input_paths(paths) -> list[str]:
     return [repo_rel(path) for path in paths if not path.is_file()]
 
 
+def native_executable_entry(packaging_e2e: dict[str, object]) -> str:
+    payload_contract = packaging_e2e.get("payload_contract", {})
+    if not isinstance(payload_contract, dict):
+        raise RuntimeError("package-channels end-to-end summary missing payload_contract")
+    for entry in payload_contract.get("required_entries", []):
+        if entry in {"artifacts/bin/objc3c-native.exe", "artifacts/bin/objc3c-native"}:
+            return str(entry)
+    raise RuntimeError("package-channels end-to-end summary missing native executable payload entry")
+
+
 def ensure_build_package_validation() -> dict[str, object]:
     owned_inputs = (
         SUPPORT_MATRIX_ARTIFACT_PATH,
@@ -96,7 +106,11 @@ def main() -> int:
 
     install_root = ROOT / packaging_e2e["install_root"].replace("/", os.sep)
     offline_install_root = ROOT / packaging_e2e["offline_install_root"].replace("/", os.sep)
-    offline_native = offline_install_root / "objc3c" / "artifacts" / "bin" / "objc3c-native.exe"
+    installed_execution = packaging_e2e.get("installed_root_execution", {})
+    offline_installed_execution = packaging_e2e.get("offline_installed_root_execution", {})
+    if not isinstance(installed_execution, dict) or not isinstance(offline_installed_execution, dict):
+        raise RuntimeError("package-channels end-to-end summary missing installed-root execution proof")
+    offline_native = offline_install_root / "objc3c" / native_executable_entry(packaging_e2e)
 
     checks = {
         "matrix_platform_is_windows_x64": matrix["default_platform_id"] == "windows-x64",
@@ -104,6 +118,8 @@ def main() -> int:
         "toolchain_range_replay_passes": summary_passes(toolchain_replay),
         "primary_install_root_rolled_back": not (install_root / "objc3c").exists(),
         "offline_install_root_kept_native_executable": offline_native.is_file(),
+        "primary_installed_root_execution_passes_before_rollback": installed_execution.get("status") == "PASS",
+        "offline_installed_root_execution_passes": offline_installed_execution.get("status") == "PASS",
     }
 
     summary = {
@@ -115,6 +131,8 @@ def main() -> int:
         "build_package_validation_summary": repo_rel(BUILD_PACKAGE_VALIDATION_SUMMARY_PATH),
         "toolchain_range_replay_summary": repo_rel(TOOLCHAIN_RANGE_REPLAY_SUMMARY_PATH),
         "packaging_end_to_end_summary": repo_rel(PACKAGE_CHANNELS_END_TO_END_SUMMARY_PATH),
+        "installed_root_execution": installed_execution,
+        "offline_installed_root_execution": offline_installed_execution,
         "upstream_steps": upstream_steps,
         "required_checks": contract["required_checks"],
         "checks": checks,

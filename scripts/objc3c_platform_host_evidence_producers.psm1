@@ -1377,6 +1377,14 @@ function Write-Objc3cLinuxInstallReceiptEvidence {
   $sourceSummaryPath = if ([string]::IsNullOrWhiteSpace($SourceSummaryPath)) { "tmp/reports/package-channels/end-to-end-summary.json" } else { $SourceSummaryPath }
   $packageManifestPath = Join-Path $RepoRoot (ConvertTo-Objc3cEvidenceHostPath -RelativePath "artifacts/package/objc3c-runnable-toolchain-package.json")
   $packageChannelsSummaryPath = Join-Path $RepoRoot (ConvertTo-Objc3cEvidenceHostPath -RelativePath "tmp/reports/package-channels/end-to-end-summary.json")
+  $packageChannelsSummaryPayload = @{}
+  if (Test-Path -LiteralPath $packageChannelsSummaryPath -PathType Leaf) {
+    $packageChannelsSummaryPayload = Get-Content -LiteralPath $packageChannelsSummaryPath -Raw | ConvertFrom-Json
+  }
+  $installedRootExecution = Get-Objc3cEvidenceObjectProperty -InputObject $packageChannelsSummaryPayload -Name "installed_root_execution" -DefaultValue ([ordered]@{})
+  $offlineInstalledRootExecution = Get-Objc3cEvidenceObjectProperty -InputObject $packageChannelsSummaryPayload -Name "offline_installed_root_execution" -DefaultValue ([ordered]@{})
+  $installedRootExecutionStatus = [string](Get-Objc3cEvidenceObjectProperty -InputObject $installedRootExecution -Name "status" -DefaultValue "")
+  $offlineInstalledRootExecutionStatus = [string](Get-Objc3cEvidenceObjectProperty -InputObject $offlineInstalledRootExecution -Name "status" -DefaultValue "")
   $generatedStatus = if (-not [bool]$digest.exists) {
     "missing-source-generated-fail-closed"
   } elseif (-not [string]::IsNullOrWhiteSpace($receiptPlatform) -and $receiptPlatform -ne $PlatformId) {
@@ -1407,11 +1415,17 @@ function Write-Objc3cLinuxInstallReceiptEvidence {
     package_channels_summary_artifact = Get-Objc3cEvidenceFileDigest -RootPath $RepoRoot -TargetPath $packageChannelsSummaryPath
     source_install_receipt_artifact = $digest
     source_install_receipt = $receiptPayload
+    installed_root_execution = $installedRootExecution
+    offline_installed_root_execution = $offlineInstalledRootExecution
+    installed_root_execution_status = $installedRootExecutionStatus
+    offline_installed_root_execution_status = $offlineInstalledRootExecutionStatus
     producer_evidence = [ordered]@{
       contract_id = $producerContractId
       status = $status
       target_platform_id = $receiptPlatform
       source_summary = Get-Objc3cEvidenceRepoRelativePath -RootPath $RepoRoot -TargetPath $sourceSummaryPath
+      installed_root_execution_status = $installedRootExecutionStatus
+      offline_installed_root_execution_status = $offlineInstalledRootExecutionStatus
     }
     source_artifacts = New-Objc3cEvidenceSourceArtifacts -RepoRoot $RepoRoot -Paths @(
       $sourceSummaryPath,

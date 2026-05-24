@@ -728,6 +728,20 @@ def validate_install_receipt_artifact(platform_id: str) -> None:
         require(receipt_artifact.get("exists") is False, f"{owner} receipt artifact exists flag drifted")
     source_receipt = payload.get("source_install_receipt")
     require(isinstance(source_receipt, dict), f"{owner} source_install_receipt must be an object")
+    require_installed_root_execution_record(
+        payload,
+        field_name="installed_root_execution",
+        expected_channel_id="local-installer",
+        platform_id=platform_id,
+        owner=owner,
+    )
+    require_installed_root_execution_record(
+        payload,
+        field_name="offline_installed_root_execution",
+        expected_channel_id="offline-bundle",
+        platform_id=platform_id,
+        owner=owner,
+    )
     source_artifacts = require_source_artifacts(payload, owner)
     require(
         artifact_exists_in_payload(source_artifacts, PACKAGE_CHANNELS_END_TO_END_SUMMARY_PATH)
@@ -748,6 +762,49 @@ def validate_install_receipt_artifact(platform_id: str) -> None:
         ),
         owner,
     )
+
+
+def require_installed_root_execution_record(
+    payload: dict[str, Any],
+    *,
+    field_name: str,
+    expected_channel_id: str,
+    platform_id: str,
+    owner: str,
+) -> None:
+    proof = payload.get(field_name)
+    require(isinstance(proof, dict), f"{owner} {field_name} must be an object")
+    require(
+        proof.get("contract_id") == "objc3c.packaging.channels.installed-root-native-execution.v1",
+        f"{owner} {field_name} contract_id drifted",
+    )
+    require(proof.get("status") == "PASS", f"{owner} {field_name} did not pass")
+    require(
+        proof.get("channel_id") == expected_channel_id,
+        f"{owner} {field_name} channel id drifted",
+    )
+    require(
+        proof.get("execution_source") == "installed-root",
+        f"{owner} {field_name} execution source drifted",
+    )
+    require(
+        proof.get("repo_temp_dependency") is False,
+        f"{owner} {field_name} depended on repo temp output",
+    )
+    require(
+        proof.get("preexisting_artifacts_dependency") is False,
+        f"{owner} {field_name} depended on preexisting artifacts",
+    )
+    require(proof.get("returncode") == 2, f"{owner} {field_name} return code drifted")
+    require(
+        proof.get("usage_banner_seen") is True,
+        f"{owner} {field_name} did not reach objc3c-native usage path",
+    )
+    if payload.get("status") == "generated-host-artifact-present":
+        require(
+            proof.get("target_platform_id") == platform_id,
+            f"{owner} {field_name} target platform drifted",
+        )
 
 
 def validate_clean_install_distribution_summary(platform_id: str) -> None:
@@ -1125,6 +1182,11 @@ def write_install_receipt_artifact(platform_id: str) -> None:
     package_manifest = read_json_object(RUNNABLE_PACKAGE_MANIFEST_PATH)
     source_receipt_path = find_install_receipt_source(end_to_end_summary)
     source_receipt = read_json_object(source_receipt_path) if source_receipt_path else {}
+    installed_root_execution = dict_field(end_to_end_summary, "installed_root_execution")
+    offline_installed_root_execution = dict_field(
+        end_to_end_summary,
+        "offline_installed_root_execution",
+    )
     record_ids = reviewed_source_record_ids(platform_id)
     expected = expected_platform_identity(platform_id)
 
@@ -1159,6 +1221,10 @@ def write_install_receipt_artifact(platform_id: str) -> None:
             generated_artifact(source_receipt_path) if source_receipt_path else {"exists": False}
         ),
         "source_install_receipt": source_receipt,
+        "installed_root_execution": installed_root_execution,
+        "offline_installed_root_execution": offline_installed_root_execution,
+        "installed_root_execution_status": installed_root_execution.get("status", ""),
+        "offline_installed_root_execution_status": offline_installed_root_execution.get("status", ""),
         "source_artifacts": source_artifacts(
             PACKAGE_CHANNELS_END_TO_END_SUMMARY_PATH,
             RUNNABLE_PACKAGE_MANIFEST_PATH,
@@ -1407,6 +1473,10 @@ def build_promotion_readiness_requirements(platform_id: str) -> dict[str, Any]:
                     "package",
                     "runtime_library",
                     "loader_path",
+                    "installed_root_execution.status",
+                    "offline_installed_root_execution.status",
+                    "installed_root_execution.execution_source",
+                    "offline_installed_root_execution.execution_source",
                     "reviewed_source_field_requirements.package_install_identity",
                 ],
             },

@@ -15,7 +15,7 @@ from typing import Any, Sequence
 from objc3c_tooling.paths import repo_rel
 from objc3c_tooling.json_io import load_json_object as load_json
 from objc3c_tooling.json_io import validate_json_schema
-from objc3c_tooling.subprocesses import python_script_command, run_capture
+from objc3c_tooling.subprocesses import bounded_text, python_script_command, run_capture
 from objc3c_workflow.commands import workflow_command
 from objc3c_package_channels.model import (
     MANIFEST_RELATIVE_PATH,
@@ -35,6 +35,8 @@ ARCHIVE_DIGEST_FIELDS = {
     "installer_archive": "local-installer",
     "offline_archive": "offline-bundle",
 }
+INSTALLED_NATIVE_USAGE_PREFIX = "usage: objc3c-native"
+INSTALLED_NATIVE_USAGE_EXIT_CODE = 2
 
 
 
@@ -108,6 +110,8 @@ def publish_platform_host_install_receipt(
     receipt: dict[str, Any],
     receipt_path: Path,
     receipt_artifact: dict[str, Any],
+    installed_root_execution: dict[str, Any],
+    offline_installed_root_execution: dict[str, Any],
 ) -> None:
     config = platform_host_evidence_root()
     if config is None:
@@ -161,6 +165,8 @@ def publish_platform_host_install_receipt(
         "package_channels_summary_artifact": file_artifact(SUMMARY_PATH),
         "source_install_receipt_artifact": receipt_artifact,
         "source_install_receipt": receipt,
+        "installed_root_execution": installed_root_execution,
+        "offline_installed_root_execution": offline_installed_root_execution,
         "producer_evidence": {
             "contract_id": producer_contract_id_by_platform[platform_id],
             "status": "INSTALL_RECEIPT_ROUTED"
@@ -168,6 +174,8 @@ def publish_platform_host_install_receipt(
             else "INSTALL_RECEIPT_MISSING",
             "target_platform_id": str(package_runtime_model.get("target_platform_id", "")),
             "source_summary": repo_rel(SUMMARY_PATH),
+            "installed_root_execution_status": installed_root_execution.get("status", ""),
+            "offline_installed_root_execution_status": offline_installed_root_execution.get("status", ""),
         },
         "source_artifacts": [
             file_artifact(SUMMARY_PATH),
@@ -312,6 +320,108 @@ def validate_receipt_contracts(
         "offline receipt contract delegate drifted",
     )
     return receipt_contracts
+
+
+def prepend_env_path(name: str, paths: list[Path]) -> str:
+    entries = [str(path) for path in paths]
+    existing = os.environ.get(name, "")
+    if existing:
+        entries.append(existing)
+    return os.pathsep.join(entries)
+
+
+def installed_runtime_environment(
+    *,
+    install_home: Path,
+    target_platform_id: str,
+) -> dict[str, str]:
+    installed_bin = install_home / "artifacts" / "bin"
+    installed_lib = install_home / "artifacts" / "lib"
+    env = {
+        "OBJC3C_INSTALLED_HOME": str(install_home),
+        "OBJC3C_PACKAGE_EXECUTION_SOURCE": "installed-root",
+        "PATH": prepend_env_path("PATH", [installed_bin, installed_lib]),
+    }
+    if target_platform_id == "linux-x64":
+        env["LD_LIBRARY_PATH"] = prepend_env_path("LD_LIBRARY_PATH", [installed_lib])
+    elif target_platform_id == "darwin-arm64":
+        env["DYLD_LIBRARY_PATH"] = prepend_env_path("DYLD_LIBRARY_PATH", [installed_lib])
+        env["DYLD_FALLBACK_LIBRARY_PATH"] = prepend_env_path(
+            "DYLD_FALLBACK_LIBRARY_PATH",
+            [installed_lib],
+        )
+    return env
+
+
+def runtime_environment_summary(env: dict[str, str], target_platform_id: str) -> dict[str, Any]:
+    loader_fields = ["PATH"]
+    if target_platform_id == "linux-x64":
+        loader_fields.append("LD_LIBRARY_PATH")
+    elif target_platform_id == "darwin-arm64":
+        loader_fields.extend(["DYLD_LIBRARY_PATH", "DYLD_FALLBACK_LIBRARY_PATH"])
+    return {
+        "source": env["OBJC3C_PACKAGE_EXECUTION_SOURCE"],
+        "objc3c_installed_home": env["OBJC3C_INSTALLED_HOME"],
+        "loader_fields": {
+            field: env[field].split(os.pathsep)[:2]
+            for field in loader_fields
+            if field in env
+        },
+    }
+
+
+def run_installed_root_native_execution_probe(
+    *,
+    channel_id: str,
+    install_home: Path,
+    native_executable_entry: str,
+    target_platform_id: str,
+) -> dict[str, Any]:
+    installed_exe = install_home / native_executable_entry
+    expect(installed_exe.is_file(), f"{channel_id} installed native executable missing")
+    execution_env = installed_runtime_environment(
+        install_home=install_home,
+        target_platform_id=target_platform_id,
+    )
+    result = run_capture(
+        [str(installed_exe)],
+        cwd=install_home,
+        env_overlay=execution_env,
+        echo=False,
+    )
+    stdout = result.stdout or ""
+    stderr = result.stderr or ""
+    combined_output = f"{stdout}\n{stderr}"
+    usage_seen = INSTALLED_NATIVE_USAGE_PREFIX in combined_output
+    status = (
+        "PASS"
+        if result.returncode == INSTALLED_NATIVE_USAGE_EXIT_CODE and usage_seen
+        else "FAIL"
+    )
+    proof = {
+        "contract_id": "objc3c.packaging.channels.installed-root-native-execution.v1",
+        "status": status,
+        "channel_id": channel_id,
+        "target_platform_id": target_platform_id,
+        "execution_source": "installed-root",
+        "repo_temp_dependency": False,
+        "preexisting_artifacts_dependency": False,
+        "expected_exit_code": INSTALLED_NATIVE_USAGE_EXIT_CODE,
+        "returncode": result.returncode,
+        "usage_banner_seen": usage_seen,
+        "usage_banner_prefix": INSTALLED_NATIVE_USAGE_PREFIX,
+        "cwd": repo_rel(install_home),
+        "executable": repo_rel(installed_exe),
+        "command": [repo_rel(installed_exe)],
+        "loader_environment": runtime_environment_summary(
+            execution_env,
+            target_platform_id,
+        ),
+        "stdout_snippet": bounded_text(stdout, 1000),
+        "stderr_snippet": bounded_text(stderr, 1000),
+    }
+    expect(status == "PASS", f"{channel_id} installed native executable did not reach objc3c-native usage path")
+    return proof
 
 
 
@@ -485,6 +595,12 @@ def main(argv: Sequence[str] | None = None) -> int:
     if bootstrap_result.returncode != 0:
         raise RuntimeError("installed bootstrap script failed")
     expect("objc3c_home:" in bootstrap_result.stdout, "installed bootstrap script did not publish objc3c_home")
+    installed_root_execution = run_installed_root_native_execution_probe(
+        channel_id="local-installer",
+        install_home=install_root / "objc3c",
+        native_executable_entry=native_executable_entry,
+        target_platform_id=target_platform_id,
+    )
 
     uninstall_result = run_capture(
         [PWSH, "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", str(uninstall_script), "-InstallRoot", str(install_root)],
@@ -515,6 +631,12 @@ def main(argv: Sequence[str] | None = None) -> int:
         expected_payload_entries=expected_payload_entries,
     )
     expect((offline_install_root / "objc3c" / native_executable_entry).is_file(), "offline bootstrap did not install native executable")
+    offline_installed_root_execution = run_installed_root_native_execution_probe(
+        channel_id="offline-bundle",
+        install_home=offline_install_root / "objc3c",
+        native_executable_entry=native_executable_entry,
+        target_platform_id=target_platform_id,
+    )
 
     end_to_end_summary = {
         "contract_id": "objc3c.packaging.channels.end-to-end.summary.v1",
@@ -533,6 +655,8 @@ def main(argv: Sequence[str] | None = None) -> int:
         "receipt_contracts": receipt_contracts,
         "install_root": repo_rel(install_root),
         "offline_install_root": repo_rel(offline_install_root),
+        "installed_root_execution": installed_root_execution,
+        "offline_installed_root_execution": offline_installed_root_execution,
     }
     SUMMARY_PATH.parent.mkdir(parents=True, exist_ok=True)
     SUMMARY_PATH.write_text(json.dumps(end_to_end_summary, indent=2) + "\n", encoding="utf-8")
@@ -542,6 +666,8 @@ def main(argv: Sequence[str] | None = None) -> int:
         receipt=install_receipt,
         receipt_path=receipt_path,
         receipt_artifact=install_receipt_artifact,
+        installed_root_execution=installed_root_execution,
+        offline_installed_root_execution=offline_installed_root_execution,
     )
     print(f"summary_path: {repo_rel(SUMMARY_PATH)}")
     print("objc3c-packaging-channels-end-to-end: PASS")

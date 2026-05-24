@@ -245,6 +245,7 @@ HOST_PROMOTION_EVIDENCE_CLASSES: tuple[HostPromotionEvidenceClass, ...] = (
             "package_root_layout",
             "package_manifest_path",
             "install_receipt_path",
+            "installed_root_execution_summary_path",
             "execution_summary_path",
             "native_smoke_summary_path",
             "runtime_library_names",
@@ -544,6 +545,13 @@ class HostPromotionPlatformContract:
                 "install_receipt_required": True,
                 "install_receipt_present": False,
                 "install_receipt_path": f"{report_root}/install/install-receipt.json",
+                "installed_root_execution_required": True,
+                "installed_root_execution_present": False,
+                "offline_installed_root_execution_required": True,
+                "offline_installed_root_execution_present": False,
+                "installed_root_execution_summary_path": (
+                    f"{report_root}/install/end-to-end-summary.json"
+                ),
                 "native_execution_required": True,
                 "native_execution_present": False,
                 "execution_summary_path": (

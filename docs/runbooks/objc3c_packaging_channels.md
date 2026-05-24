@@ -185,6 +185,10 @@ Installer and bootstrap flows in this packaging-channel surface must follow thes
   network
 - archive and installer channels must preserve the same payload digest set as
   the canonical runnable package
+- the end-to-end validator must launch the installed `objc3c-native` binary
+  from both the local-installer root and the offline-bundle root, with loader
+  paths derived from the installed package root rather than repo-local
+  `artifacts/` or pre-existing `tmp/` outputs
 - the local installer archive must publish an `objc3c-local-sha256-v1`
   signature payload whose artifact path, digest, and public verification command
   are copied into release-update metadata
@@ -195,6 +199,8 @@ Compatibility rules:
 - installer scripts may assume `pwsh` and local filesystem access
 - installer validation must prove install, bootstrap, and rollback under a
   temp-owned root
+- installed-root execution proof is required before rollback; offline bundles
+  must retain and execute their installed native binary after bootstrap
 - archive compatibility claims must remain tied to the same `windows-x64`
   runnable payload family; publishing a package does not imply cross-host reuse
 
@@ -234,6 +240,13 @@ The receipt contracts bind the local-installer and offline-bundle receipts to
 the channel id, bootstrap entrypoint, package bridge, runnable package manifest,
 manifest digest, required payload entries, rollback requirement, and no-network
 offline policy.
+
+The end-to-end summary must also publish `installed_root_execution` and
+`offline_installed_root_execution`. Each record is an installed-root launch
+probe of `objc3c-native` that expects the deterministic usage-path exit code
+and records the package-root loader environment used for that launch. A package
+channel cannot use bootstrap output or executable presence alone as installed
+runtime proof.
 
 Release package channels are target-platform aware. Windows x64 archives carry
 `objc3c-native.exe` and `objc3_runtime.lib`; Linux x64 archives carry

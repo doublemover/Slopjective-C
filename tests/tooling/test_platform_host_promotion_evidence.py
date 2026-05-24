@@ -13,6 +13,9 @@ from scripts.check_platform_host_promotion_evidence import (
     validate_host_promotion_evidence_contract,
     validate_host_promotion_reviewed_source_inputs,
 )
+from scripts.ingest_objc3c_platform_host_evidence import (
+    require_installed_root_execution_record,
+)
 from scripts.platform_hardening_contracts.host_promotion import (
     HOST_PROMOTION_PACKAGE_CHANNEL_LAYOUT_BY_PLATFORM,
     HOST_PROMOTION_REQUIRED_HOSTED_PROMOTION_ARTIFACT_SUFFIXES,
@@ -31,6 +34,20 @@ INSTALL_PREFIX_LAYOUT_BY_PLATFORM = {
         "include/objc3/runtime",
     ],
 }
+
+
+def _installed_root_execution_record(channel_id: str, platform_id: str) -> dict[str, object]:
+    return {
+        "contract_id": "objc3c.packaging.channels.installed-root-native-execution.v1",
+        "status": "PASS",
+        "channel_id": channel_id,
+        "target_platform_id": platform_id,
+        "execution_source": "installed-root",
+        "repo_temp_dependency": False,
+        "preexisting_artifacts_dependency": False,
+        "returncode": 2,
+        "usage_banner_seen": True,
+    }
 
 
 def _platform_artifact_paths(platform_id: str) -> list[str]:
@@ -106,6 +123,12 @@ def test_platform_host_promotion_evidence_fixture_validates() -> None:
     assert platforms["darwin-arm64"]["package_install_native_execution_evidence"][
         "package_root_layout"
     ] == list(HOST_PROMOTION_PACKAGE_CHANNEL_LAYOUT_BY_PLATFORM["darwin-arm64"])
+    assert platforms["linux-x64"]["package_install_native_execution_evidence"][
+        "installed_root_execution_summary_path"
+    ] == "tmp/reports/platform-host-evidence/linux-x64/install/end-to-end-summary.json"
+    assert platforms["darwin-arm64"]["package_install_native_execution_evidence"][
+        "installed_root_execution_summary_path"
+    ] == "tmp/reports/platform-host-evidence/darwin-arm64/install/end-to-end-summary.json"
     assert HOST_PROMOTION_PACKAGE_CHANNEL_LAYOUT_BY_PLATFORM["windows-x64"][1:3] == (
         "artifacts/bin/objc3c-native.exe",
         "artifacts/lib/objc3_runtime.lib",
@@ -329,6 +352,73 @@ def test_platform_host_promotion_evidence_rejects_missing_install_receipt_requir
 
     with pytest.raises(RuntimeError, match="linux-x64 install receipt is not mandatory"):
         validate_host_promotion_evidence_contract(payload)
+
+
+def test_platform_host_promotion_evidence_rejects_missing_installed_root_execution_requirement() -> None:
+    payload = deepcopy(load_host_promotion_evidence_contract())
+    payload["platforms"][0]["package_install_native_execution_evidence"][
+        "installed_root_execution_required"
+    ] = False
+
+    with pytest.raises(RuntimeError, match="linux-x64 installed-root execution is not mandatory"):
+        validate_host_promotion_evidence_contract(payload)
+
+
+def test_platform_host_promotion_evidence_rejects_missing_offline_installed_root_execution_requirement() -> None:
+    payload = deepcopy(load_host_promotion_evidence_contract())
+    payload["platforms"][0]["package_install_native_execution_evidence"][
+        "offline_installed_root_execution_required"
+    ] = False
+
+    with pytest.raises(RuntimeError, match="linux-x64 offline installed-root execution is not mandatory"):
+        validate_host_promotion_evidence_contract(payload)
+
+
+def test_host_evidence_ingestion_accepts_installed_root_execution_record() -> None:
+    payload = {
+        "status": "generated-host-artifact-present",
+        "installed_root_execution": _installed_root_execution_record(
+            "local-installer",
+            "linux-x64",
+        ),
+    }
+
+    require_installed_root_execution_record(
+        payload,
+        field_name="installed_root_execution",
+        expected_channel_id="local-installer",
+        platform_id="linux-x64",
+        owner="test-owner",
+    )
+
+
+def test_host_evidence_ingestion_rejects_missing_installed_root_execution_record() -> None:
+    with pytest.raises(RuntimeError, match="installed_root_execution must be an object"):
+        require_installed_root_execution_record(
+            {"status": "generated-host-artifact-present"},
+            field_name="installed_root_execution",
+            expected_channel_id="local-installer",
+            platform_id="linux-x64",
+            owner="test-owner",
+        )
+
+
+def test_host_evidence_ingestion_rejects_repo_temp_installed_root_execution_dependency() -> None:
+    record = _installed_root_execution_record("offline-bundle", "linux-x64")
+    record["repo_temp_dependency"] = True
+    payload = {
+        "status": "generated-host-artifact-present",
+        "offline_installed_root_execution": record,
+    }
+
+    with pytest.raises(RuntimeError, match="depended on repo temp output"):
+        require_installed_root_execution_record(
+            payload,
+            field_name="offline_installed_root_execution",
+            expected_channel_id="offline-bundle",
+            platform_id="linux-x64",
+            owner="test-owner",
+        )
 
 
 def test_platform_host_promotion_evidence_rejects_missing_blocker_case() -> None:

@@ -58,6 +58,9 @@ actions above, not separate current-facing commands.
   - `npm run objc3c -- validate-packaging-channels`
   - `npm run objc3c -- validate-packaging-channels-end-to-end`
   - `npm run objc3c -- validate-package-install-distribution --from-nothing`
+  - `validate-packaging-channels-end-to-end` must prove both
+    `installed_root_execution` and `offline_installed_root_execution`; install
+    receipt and bootstrap output alone are not package execution evidence
 - release/update support flow:
   - `npm run objc3c -- build-update-manifest`
   - `npm run objc3c -- publish-release-operations`
@@ -479,6 +482,12 @@ public build/package surfaces users run:
 - `npm run objc3c -- validate-packaging-channels`
 - `npm run objc3c -- validate-packaging-channels-end-to-end`
 - `npm run objc3c -- validate-package-install-distribution --from-nothing`
+
+The package-channel end-to-end report must launch the installed native
+executable from the local-installer root before rollback and from the
+offline-bundle install root after bootstrap. Platform promotion may consume the
+resulting installed-root execution records only as generated review inputs
+until checked source truth for the host exists.
 
 The matrix validator for this slice is:
 
