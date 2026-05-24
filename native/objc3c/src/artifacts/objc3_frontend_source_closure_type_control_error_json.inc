@@ -285,7 +285,13 @@ std::string BuildErrorHandlingErrorSourceClosureSummaryJson(
       << EscapeJsonString(summary.typed_throws_abi_status)
       << "\",\"typed_throws_interface_roundtrip_status\":\""
       << EscapeJsonString(summary.typed_throws_interface_roundtrip_status)
-      << "\""
+      << "\",\"typed_throws_catch_compatibility_status\":\""
+      << EscapeJsonString(summary.typed_throws_catch_compatibility_status)
+      << "\",\"typed_throws_bridge_to_id_error_policy\":\""
+      << EscapeJsonString(summary.typed_throws_bridge_to_id_error_policy)
+      << "\",\"typed_throws_foreign_carrier_fail_closed\":"
+      << (summary.typed_throws_foreign_carrier_fail_closed ? "true"
+                                                           : "false")
       << ",\"try_fail_closed\":"
       << (summary.try_fail_closed ? "true" : "false")
       << ",\"throw_fail_closed\":"

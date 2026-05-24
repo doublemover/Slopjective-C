@@ -1,7 +1,7 @@
 {
   "contract_id": "objc3c.typed_throws.semantic_effect_identity.v1",
   "issue_ref": 8233,
-  "support_state": "source_owned_effect_identity_interface_preserved_error_out_abi_lowered",
+  "support_state": "source_owned_effect_identity_interface_preserved_error_out_abi_lowered_catch_bridge_policy_recorded",
   "public_support_claimed": false,
   "throws_effect": [
     {
@@ -27,10 +27,44 @@
   ],
   "catch_compatibility": [
     {
+      "case_id": "typed-catch-exact-nserror",
       "throw_type": "NSError",
       "catch_type": "NSError",
-      "match_status": "deferred-until-do-catch-semantics",
-      "bridge_status": "typed-error-runtime-bridge-deferred"
+      "match_status": "typed-catch-exact-payload-match",
+      "bridge_status": "no-bridge-needed",
+      "runtime_catch_kind": "typed-error",
+      "fail_closed": false,
+      "diagnostic": ""
+    },
+    {
+      "case_id": "untyped-catch-id-error-bridge",
+      "throw_type": "NSError",
+      "catch_type": "id<Error>",
+      "match_status": "untyped-catch-allowed-via-id-error-bridge",
+      "bridge_status": "bridge-to-id<Error>-allowed",
+      "runtime_catch_kind": "id<Error>",
+      "fail_closed": false,
+      "diagnostic": ""
+    },
+    {
+      "case_id": "incompatible-catch-rejected",
+      "throw_type": "NSError",
+      "catch_type": "ErrorBox*",
+      "match_status": "incompatible-catch-rejected",
+      "bridge_status": "bridge-rejected",
+      "runtime_catch_kind": "none",
+      "fail_closed": true,
+      "diagnostic": "O3S206"
+    },
+    {
+      "case_id": "unsupported-foreign-carrier-fail-closed",
+      "throw_type": "NSError",
+      "catch_type": "CxxException*",
+      "match_status": "unsupported-foreign-carrier-fail-closed",
+      "bridge_status": "unsupported-foreign-carrier-rejected",
+      "runtime_catch_kind": "none",
+      "fail_closed": true,
+      "diagnostic": "O3S206"
     }
   ],
   "typed_throws_lowering": [
@@ -60,7 +94,11 @@
   ],
   "source_anchors": [
     "native/objc3c/src/sema/objc3_typed_throws_effect_contract.h",
+    "native/objc3c/src/sema/objc3_semantic_error_handling_try_do_catch_do_scope.inc",
     "native/objc3c/src/sema/objc3_semantic_signature_compatibility.cpp",
+    "native/objc3c/src/ir/objc3_ir_statement_block_emission.cpp",
+    "native/objc3c/src/runtime/errors/catch_filter.cpp",
+    "native/objc3c/src/runtime/errors/error_bridge_kind.cpp",
     "native/objc3c/src/sema/objc3_sema_contract_semantic_type_metadata_function_records.h",
     "native/objc3c/src/sema/objc3_sema_contract_semantic_type_metadata_method_records.h",
     "native/objc3c/src/artifacts/json/semantic_type_manifest_records.cpp",
@@ -72,6 +110,9 @@
     "typed_payload_is_signature_identity": true,
     "bare_throws_not_compatible_with_typed_throws": true,
     "typed_error_abi_lowering_ready": true,
+    "typed_catch_exact_matching": true,
+    "untyped_catch_bridge_allowed": true,
+    "unsupported_foreign_carrier_fail_closed": true,
     "runtime_execution_claimed": true,
     "silent_erasure_allowed": false
   }

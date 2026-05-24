@@ -77,10 +77,10 @@ Supported in this boundary:
   surfaces
 - offline mirror evidence generated from local package artifacts
 - registry metadata as a generated, local, replayable artifact
-- fixture-backed hosted-registry indexes, offline network dependency
-  resolution, hermetic hosted-service contracts, and source-owned
-  release-channel publication metadata when every row is checked in, locked,
-  digest-bound, and replayed without live network access
+- fixture-backed hosted-registry indexes, deterministic snapshot fetch policy,
+  offline network dependency resolution, hermetic hosted-service contracts, and
+  source-owned release-channel publication metadata when every row is checked
+  in, locked, digest-bound, and replayed without live network access
 - from-nothing install distribution receipts under the package-ecosystem
   validation root, validated against package-ecosystem receipt schemas and
   pinned to `npm run objc3c -- validate-package-install-distribution
@@ -128,13 +128,13 @@ Resolution is intentionally local-first:
 The lock model does not claim arbitrary network fetching. Registry names may
 appear only through checked-in hosted-registry fixtures, the hermetic
 hosted-service fixture, offline network resolution fixtures, and release-channel
-metadata that are digest-bound to local package artifacts. The hermetic service
-contract covers fixture auth, trust-root operation, revocation, moderation,
-availability, and no-network fail-closed behavior. The live public registry
-boundary is now explicit metadata: production auth, moderation, trust-root,
-availability, live transport, and lock/offline mirror handoff records exist only
-as reserved fail-closed records. Live public registry availability, production
-activation, and remote fetch behavior remain outside this support claim.
+metadata that are digest-bound to local package artifacts. The hosted-registry
+fixture now has a production-shaped path for deterministic snapshot fetch,
+transport-policy enforcement, trust-root validation, digest/signature/revocation
+checks, lock materialization, and offline mirror replay handoff. That path is
+still source-owned and offline: live public registry availability, production
+activation, and arbitrary remote fetch behavior remain outside this support
+claim and fail before resolver fallback can occur.
 
 ## Local Workspace And Offline Mirror Semantics
 
@@ -191,23 +191,28 @@ Registry behavior is layered on top of the local lock and mirror model:
   exists and digest-matches the mirror index.
 - `publication-metadata` is supported as replayable release/update/package
   channel metadata.
-- `hosted-registry-fixture` is supported only as a checked-in offline index with
-  deterministic package identity, version, digest, trust, revocation, mirror
-  evidence, an explicit service-boundary record, disabled live transport,
-  reserved production auth/moderation/trust-root/availability records, and a
-  required hermetic service contract that preserves the
+- `hosted-registry-fixture` is supported as a checked-in offline index with a
+  deterministic snapshot fetch record, explicit disabled-live transport policy,
+  exact pinned version selection, digest/signature/trust-root/revocation
+  enforcement, lock materialization, and offline mirror replay handoff. It also
+  carries deterministic package identity, mirror evidence, explicit
+  service-boundary records, reserved production
+  auth/moderation/trust-root/availability records, and a required hermetic
+  service contract that preserves the
   `ecosystem.package-manager.public-hosted-registry` reservation. It must not be
-  described as a live hosted service, package-manager parity, or fallback
-  registry success.
+  described as arbitrary live hosted-service availability, package-manager
+  parity, or fallback registry success.
 - `hosted-registry-hermetic-service` is supported only as a local checked-in
   service contract. It owns fixture token auth, local trust-root operation,
   revocation-list checks, moderation checks, availability state, exact-version
-  request policy, and no-network fallback for the hosted-registry fixture path.
+  request policy, deterministic snapshot handoff, materialized-lock policy, and
+  no-network-after-lock behavior for the hosted-registry fixture path.
   `package-registry-resolve` exposes the service id, auth subject, and auth
-  token as explicit request inputs and records the admitted service decision in
-  its summary before package metadata resolution is treated as supported.
-  It is not a production auth service, moderation service, registry SLO, live
-  network transport, registry trust-root service, or public package host.
+  token as explicit request inputs and records the admitted service decision,
+  fetched snapshot, materialized lock, and offline replay handoff in its summary
+  before package metadata resolution is treated as supported. It is not a
+  production auth service, moderation service, registry SLO, live network
+  transport, registry trust-root service, or public package host.
 - `network-dependency-resolution` is supported only for the offline fixture path
   that resolves trusted registry rows into locks and mirrors before install
   validation. Implicit fetches, unpinned dependencies, digest drift, and missing
@@ -215,10 +220,11 @@ Registry behavior is layered on top of the local lock and mirror model:
 - `release-channel-publication` is supported only for source-owned offline
   publication metadata and deterministic package-channel records.
 
-Any live public hosted-registry, live network fetch, fallback registry success,
-active production registry auth/moderation/trust-root/availability, or remote
-publication claim before those proofs exist is release-blocking and must be
-demoted to hermetic fixture metadata or reserved fail-closed behavior.
+Any live public hosted-registry activation, live network fetch, fallback registry
+success, active production registry auth/moderation/trust-root/availability, or
+remote publication claim outside the deterministic snapshot/lock/offline replay
+path is release-blocking and must be demoted to hermetic fixture metadata or
+reserved fail-closed behavior.
 
 ## Artifact Contract
 

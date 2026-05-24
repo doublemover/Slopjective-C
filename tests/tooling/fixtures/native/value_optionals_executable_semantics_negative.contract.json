@@ -5,16 +5,21 @@
   "semantic_contract_available": true,
   "stable_layout_contract_available": true,
   "executable_lowering_contract_available": true,
+  "bounded_scalar_runtime_abi_available": true,
+  "runtime_abi_payload_scope": "supported-scalar-payload-forms-only",
   "explicit_absent_present_construction_contract_available": true,
   "checked_unwrap_diagnostic_available": true,
   "blocked_operations": [
-    "constructor-symbol-runtime-emission",
-    "payload-ir-emission",
+    "constructor-symbol-runtime-emission-outside-supported-scalar-payloads",
+    "payload-ir-emission-for-nested-or-generic-payloads",
+    "property-or-ivar-storage-lifetime",
     "unchecked-unwrap-without-presence-proof",
     "implicit-nil-absence",
-    "call-abi-lowering"
+    "nil-to-scalar-coercion",
+    "nullable-pointer-or-nullability-bridge",
+    "throws-result-conversion"
   ],
   "expected_diagnostic": "O3P159",
   "fail_closed": true,
-  "notes": "The semantic Optional<T> carrier now has a checked absent/present lowering contract and explicit unwrap/binding diagnostics. It must still not be widened into runtime constructor symbols, unchecked unwrap, implicit nil absence, IR payload emission, or call ABI lowering."
+  "notes": "The semantic Optional<T> carrier now has bounded scalar packed runtime ABI, checked absent/present lowering, and explicit unwrap/binding diagnostics. It must still not be widened into nested/generic payload runtime lowering, property or ivar storage, unchecked unwrap, implicit nil absence, nil/nullability bridges, or throws conversions."
 }

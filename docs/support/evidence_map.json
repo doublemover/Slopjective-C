@@ -263,6 +263,16 @@
     },
     {
       "capability_id": "language.errors.typed-throws",
+      "evidence_kind": "diagnostic",
+      "path": "tests/tooling/fixtures/native/recovery/negative/negative_typed_throws_incompatible_catch.objc3"
+    },
+    {
+      "capability_id": "language.errors.typed-throws",
+      "evidence_kind": "diagnostic",
+      "path": "tests/tooling/fixtures/native/recovery/negative/negative_typed_throws_foreign_carrier_catch.objc3"
+    },
+    {
+      "capability_id": "language.errors.typed-throws",
       "evidence_kind": "schema",
       "path": "schemas/objc3c-typed-throws-effect-contract-v1.schema.json"
     },
@@ -270,6 +280,11 @@
       "capability_id": "language.errors.typed-throws",
       "evidence_kind": "source",
       "path": "native/objc3c/src/sema/objc3_typed_throws_effect_contract.h"
+    },
+    {
+      "capability_id": "language.errors.typed-throws",
+      "evidence_kind": "source",
+      "path": "native/objc3c/src/sema/objc3_semantic_error_handling_try_do_catch_do_scope.inc"
     },
     {
       "capability_id": "language.errors.typed-throws",
@@ -294,12 +309,32 @@
     {
       "capability_id": "language.errors.typed-throws",
       "evidence_kind": "source",
+      "path": "native/objc3c/src/ir/objc3_ir_statement_block_emission.cpp"
+    },
+    {
+      "capability_id": "language.errors.typed-throws",
+      "evidence_kind": "source",
       "path": "native/objc3c/src/ir/objc3_ir_function_definition_emission.cpp"
     },
     {
       "capability_id": "language.errors.typed-throws",
       "evidence_kind": "source",
+      "path": "native/objc3c/src/runtime/errors/catch_filter.cpp"
+    },
+    {
+      "capability_id": "language.errors.typed-throws",
+      "evidence_kind": "source",
+      "path": "native/objc3c/src/runtime/errors/error_bridge_kind.cpp"
+    },
+    {
+      "capability_id": "language.errors.typed-throws",
+      "evidence_kind": "source",
       "path": "tests/tooling/fixtures/native/typed_throws_semantic_effect_identity.contract.json"
+    },
+    {
+      "capability_id": "language.errors.typed-throws",
+      "evidence_kind": "source",
+      "path": "tests/tooling/fixtures/native/typed_throws_catch_bridge_positive.objc3"
     },
     {
       "capability_id": "language.errors.typed-throws",
@@ -335,6 +370,31 @@
       "capability_id": "language.types.value-optionals",
       "evidence_kind": "diagnostic",
       "path": "tests/tooling/fixtures/native/recovery/negative/negative_value_optional_nested_lowercase_alias_reserved.objc3"
+    },
+    {
+      "capability_id": "language.types.value-optionals",
+      "evidence_kind": "diagnostic",
+      "path": "tests/tooling/fixtures/native/recovery/negative/negative_value_optional_property_layout_unsupported.objc3"
+    },
+    {
+      "capability_id": "language.types.value-optionals",
+      "evidence_kind": "diagnostic",
+      "path": "tests/tooling/fixtures/native/recovery/negative/negative_value_optional_nullable_suffix_mismatch.objc3"
+    },
+    {
+      "capability_id": "language.types.value-optionals",
+      "evidence_kind": "diagnostic",
+      "path": "tests/tooling/fixtures/native/value_optionals_layout_mismatch_negative.contract.json"
+    },
+    {
+      "capability_id": "language.types.value-optionals",
+      "evidence_kind": "diagnostic",
+      "path": "tests/tooling/fixtures/native/value_optionals_lowering_claim_negative.contract.json"
+    },
+    {
+      "capability_id": "language.types.value-optionals",
+      "evidence_kind": "diagnostic",
+      "path": "tests/tooling/fixtures/native/value_optionals_interface_mismatch_negative.contract.json"
     },
     {
       "capability_id": "language.types.value-optionals",
@@ -4763,6 +4823,13 @@
       "capability_id": "ecosystem.package-manager.hosted-registry-fixture",
       "support_claim": "objc3c.behavior.package.hosted-registry-fixture",
       "evidence_kind": "test",
+      "path": "tests/tooling/fixtures/package_ecosystem/hosted_registry/fixture-lock.json",
+      "command": "npm run objc3c -- validate-package-registry-model"
+    },
+    {
+      "capability_id": "ecosystem.package-manager.hosted-registry-fixture",
+      "support_claim": "objc3c.behavior.package.hosted-registry-fixture",
+      "evidence_kind": "test",
       "path": "tests/tooling/fixtures/package_ecosystem/hosted_registry/negative-registry-cases.json",
       "command": "npm run objc3c -- validate-package-registry-model"
     },
@@ -4818,6 +4885,12 @@
       "path": "scripts/check_objc3c_package_registry_model.py"
     },
     {
+      "capability_id": "ecosystem.package-manager.hosted-registry-fixture",
+      "support_claim": "objc3c.behavior.package.hosted-registry-fixture",
+      "evidence_kind": "doc",
+      "path": "docs/runbooks/objc3c_package_ecosystem.md"
+    },
+    {
       "capability_id": "ecosystem.package-manager.hosted-registry-hermetic-service",
       "support_claim": "objc3c.behavior.package.hosted-registry-hermetic-service",
       "evidence_kind": "test",
@@ -4836,6 +4909,20 @@
       "support_claim": "objc3c.behavior.package.hosted-registry-hermetic-service",
       "evidence_kind": "test",
       "path": "tests/tooling/fixtures/package_ecosystem/hosted_registry/hosted-registry-index.json",
+      "command": "npm run objc3c -- validate-package-registry-model"
+    },
+    {
+      "capability_id": "ecosystem.package-manager.hosted-registry-hermetic-service",
+      "support_claim": "objc3c.behavior.package.hosted-registry-hermetic-service",
+      "evidence_kind": "test",
+      "path": "tests/tooling/fixtures/package_ecosystem/hosted_registry/offline-mirror-index.json",
+      "command": "npm run objc3c -- validate-package-registry-model"
+    },
+    {
+      "capability_id": "ecosystem.package-manager.hosted-registry-hermetic-service",
+      "support_claim": "objc3c.behavior.package.hosted-registry-hermetic-service",
+      "evidence_kind": "test",
+      "path": "tests/tooling/fixtures/package_ecosystem/hosted_registry/fixture-lock.json",
       "command": "npm run objc3c -- validate-package-registry-model"
     },
     {
@@ -5942,6 +6029,11 @@
     },
     {
       "capability_id": "platform.expansion.umbrella-readiness",
+      "evidence_kind": "source",
+      "path": "tests/tooling/fixtures/security_hardening/sanitizer_package_install_model_contract.json"
+    },
+    {
+      "capability_id": "platform.expansion.umbrella-readiness",
       "evidence_kind": "diagnostic",
       "path": "tests/tooling/fixtures/platform_hardening/unsupported_host_fail_closed_policy.json"
     },
@@ -5963,6 +6055,11 @@
     {
       "capability_id": "toolchain.sanitizer.address",
       "evidence_kind": "source",
+      "path": "tests/tooling/fixtures/security_hardening/sanitizer_package_install_model_contract.json"
+    },
+    {
+      "capability_id": "toolchain.sanitizer.address",
+      "evidence_kind": "source",
       "path": "tests/tooling/fixtures/platform_support/source_truth_matrix.json"
     },
     {
@@ -5974,6 +6071,11 @@
       "capability_id": "toolchain.sanitizer.undefined",
       "evidence_kind": "source",
       "path": "tests/tooling/fixtures/security_hardening/sanitizer_validation_contract.json"
+    },
+    {
+      "capability_id": "toolchain.sanitizer.undefined",
+      "evidence_kind": "source",
+      "path": "tests/tooling/fixtures/security_hardening/sanitizer_package_install_model_contract.json"
     },
     {
       "capability_id": "toolchain.sanitizer.undefined",

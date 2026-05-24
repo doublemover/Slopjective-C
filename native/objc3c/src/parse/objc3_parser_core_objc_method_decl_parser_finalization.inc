@@ -29,7 +29,7 @@
     }
 
     method.has_body = true;
-    if (RejectValueOptionalExecutableMethod(method)) {
+    if (RejectUnsupportedValueOptionalExecutableMethod(method)) {
       return false;
     }
     FinalizeObjcMethodProfiles(method);

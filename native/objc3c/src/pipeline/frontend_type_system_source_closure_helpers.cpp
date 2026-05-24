@@ -279,7 +279,7 @@ BuildTypeSystemTypeSourceClosureSummary(
   summary.value_optional_binding_narrowing_contract_supported = true;
   summary.value_optional_interface_roundtrip_supported = true;
   summary.optional_member_access_fail_closed = false;
-  summary.value_optional_runtime_execution_fail_closed = true;
+  summary.value_optional_runtime_execution_fail_closed = false;
   for (const auto &fn : program.functions) {
     CollectValueOptionalFunctionTypeSites(fn, summary);
     for (const auto &stmt : fn.body) {

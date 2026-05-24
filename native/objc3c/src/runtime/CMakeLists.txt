@@ -245,6 +245,7 @@ add_library(${OBJC3_RUNTIME_LIBRARY_TARGET} ${OBJC3_RUNTIME_LIBRARY_KIND}
   public/objc3_runtime_result_ownership.h
   public/objc3_runtime_selector.h
   public/objc3_runtime_string_contract.h
+  public/objc3_runtime_value_optional_contract.h
   selectors/keypath_table.cpp
   selectors/keypath_table.h
   selectors/selector_lookup.cpp
@@ -283,6 +284,8 @@ add_library(${OBJC3_RUNTIME_LIBRARY_TARGET} ${OBJC3_RUNTIME_LIBRARY_KIND}
   state/runtime_thread_records.h
   state/runtime_thread_local_reset.cpp
   state/runtime_thread_local_reset.h
+  values/value_optional.cpp
+  values/value_optional.h
   strings/borrowed_string.cpp
   strings/borrowed_string.h
   stdlib/collections_runtime.cpp

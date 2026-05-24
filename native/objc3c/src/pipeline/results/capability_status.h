@@ -44,7 +44,7 @@ inline bool IsReadyObjc3FrontendTypeSystemTypeSourceClosureSummary(
          summary.value_optional_binding_narrowing_contract_supported &&
          summary.value_optional_interface_roundtrip_supported &&
          !summary.optional_member_access_fail_closed &&
-         summary.value_optional_runtime_execution_fail_closed &&
+         !summary.value_optional_runtime_execution_fail_closed &&
          summary.value_optional_issue_ref == 8234u &&
          summary.value_optional_canonical_spelling == "Optional<T>" &&
          summary.value_optional_reserved_diagnostic_code ==
@@ -56,9 +56,9 @@ inline bool IsReadyObjc3FrontendTypeSystemTypeSourceClosureSummary(
          !summary.value_optional_nullable_pointer_conversion_allowed &&
          !summary.value_optional_throws_conversion_allowed &&
          summary.value_optional_abi_status ==
-             "stable-inline-presence-payload-contract-runtime-lowering-deferred" &&
+             "stable-packed-presence-payload-runtime-lowered" &&
          summary.value_optional_interface_roundtrip_status ==
-             "semantic-carrier-roundtrips-runtime-deferred" &&
+             "semantic-carrier-roundtrips-bounded-scalar-runtime-abi" &&
          summary.deterministic_handoff &&
          summary.ready_for_semantic_expansion &&
          !summary.replay_key.empty() && summary.failure_reason.empty();
@@ -169,6 +169,11 @@ inline bool IsReadyObjc3FrontendErrorHandlingErrorSourceClosureSummary(
          summary.typed_throws_abi_status == "typed-error-out-abi" &&
          summary.typed_throws_interface_roundtrip_status ==
              "typed-payload-preserved" &&
+         summary.typed_throws_catch_compatibility_status ==
+             "typed-catch-exact-untyped-id-error-bridge-incompatible-rejects" &&
+         summary.typed_throws_bridge_to_id_error_policy ==
+             "explicit-bridge-to-id<Error>-only" &&
+         summary.typed_throws_foreign_carrier_fail_closed &&
          summary.try_fail_closed &&
          summary.throw_fail_closed && summary.do_catch_fail_closed &&
          summary.deterministic_handoff &&

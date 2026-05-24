@@ -15,7 +15,7 @@
       SynchronizeTopLevel();
       return nullptr;
     }
-    if (RejectValueOptionalExecutableFunction(*fn)) {
+    if (RejectUnsupportedValueOptionalExecutableFunction(*fn)) {
       return nullptr;
     }
     FinalizeFunctionSemanticProfiles(*fn, has_return_annotation);

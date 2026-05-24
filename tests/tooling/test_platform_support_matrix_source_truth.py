@@ -79,6 +79,26 @@ def test_platform_support_source_truth_validates_checked_matrix() -> None:
         ],
     }
     umbrella = source_truth["umbrella_readiness_contract"]
+    host_ingestion = source_truth["host_promotion_architecture"]["hosted_evidence_ingestion"]
+    assert host_ingestion == {
+        "workflow_path": ".github/workflows/platform-host-evidence.yml",
+        "runner_labels": {
+            "linux-x64": "ubuntu-24.04",
+            "darwin-arm64": "macos-15",
+        },
+        "ingestion_action": "ingest-platform-host-evidence",
+        "ingestion_helper": "scripts/ingest_objc3c_platform_host_evidence.py",
+        "generated_report_contract_id": "objc3c.platform.hosted-runner.evidence-report.v1",
+        "generated_report_root": "tmp/reports/platform-host-evidence",
+        "generated_only_result": "refuse-source-truth-promotion",
+        "review_promotion_policy": "checked-in-source-truth-required",
+        "candidate_evidence_record_ids": [
+            "objc3c.evidence.hosted-ci.linux-x64.generated-host-run",
+            "objc3c.evidence.hosted-ci.darwin-arm64.generated-host-run",
+        ],
+        "reviewed_source_truth_required": True,
+        "support_rows_remain_fail_closed_until_reviewed": True,
+    }
     assert umbrella["supported_platform_row_ids"] == ["objc3c.platform.windows-x64.tier1"]
     assert {
         row["issue_ref"]: row["claim_state"]
@@ -104,6 +124,12 @@ def test_platform_support_source_truth_validates_checked_matrix() -> None:
         "unresolved_version_status": "native_object_emission_unresolved_tool_version",
         "hosted_runner_behavior": "fail-closed-no-native-object-success-claim",
         "conformance_minima_behavior": "fail-closed-before-cross-lane-runtime-proof",
+        "task_hygiene_behavior": (
+            "skip-no-success-claim-when-native-object-emission-unavailable"
+        ),
+        "required_conformance_minima_env": (
+            "OBJC3C_REQUIRE_HOSTED_NATIVE_OBJECT_EMISSION"
+        ),
         "fallback_policy": "no-clang-fallback-success-claim",
         "coherent_toolchain_policy": "no-mixed-root-or-mismatched-version-success-claim",
     }
@@ -211,4 +237,23 @@ def test_platform_support_source_truth_rejects_native_object_clang_fallback(tmp_
     ] = "clang-fallback-success-claim"
 
     with pytest.raises(Exception, match="schema validation|was expected|const"):
+        validate_platform_support_source_truth(write_source_truth(tmp_path, payload))
+
+
+def test_platform_support_source_truth_rejects_generated_host_evidence_widening(tmp_path: Path) -> None:
+    payload = deepcopy(load_source_truth())
+    upstream_path = tmp_path / "platform_toolchain_support_evidence.json"
+    upstream = json.loads(
+        (ROOT / payload["upstream_sources"]["platform_toolchain_support_evidence"]).read_text(
+            encoding="utf-8"
+        )
+    )
+    for record in upstream["evidence_records"]:
+        if record["evidence_id"] == "objc3c.evidence.hosted-ci.darwin-arm64.generated-host-run":
+            record["supports_platform_ids"] = ["darwin-arm64"]
+            break
+    upstream_path.write_text(json.dumps(upstream, indent=2, sort_keys=True), encoding="utf-8")
+    payload["upstream_sources"]["platform_toolchain_support_evidence"] = str(upstream_path)
+
+    with pytest.raises(RuntimeError, match="policy evidence widened support|generated host evidence widened support"):
         validate_platform_support_source_truth(write_source_truth(tmp_path, payload))

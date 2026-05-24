@@ -13,9 +13,222 @@ static void AccumulateDoCatchClauseShape(
   }
 }
 
+static void CollectTypedThrowsPayloadsFromExpr(
+    const Expr *expr,
+    const Objc3Program &program,
+    std::vector<std::string> &typed_payloads,
+    bool &saw_untyped_or_bridge) {
+  if (expr == nullptr) {
+    return;
+  }
+  if (expr->try_expression_enabled) {
+    const Expr *operand =
+        !expr->args.empty() ? expr->args.front().get() : expr->left.get();
+    if (operand != nullptr && operand->kind == Expr::Kind::Call) {
+      const FunctionDecl *fn = FindFunctionDeclByName(program, operand->ident);
+      if (fn != nullptr && fn->typed_throws_declared &&
+          !fn->typed_throws_payload.canonical_spelling.empty()) {
+        typed_payloads.push_back(fn->typed_throws_payload.canonical_spelling);
+      } else if (fn != nullptr &&
+                 (fn->throws_declared ||
+                  CallableHasSemanticallyValidNSErrorStatusBridge(*fn,
+                                                                  program))) {
+        saw_untyped_or_bridge = true;
+      }
+    }
+  }
+  CollectTypedThrowsPayloadsFromExpr(expr->receiver.get(), program,
+                                     typed_payloads, saw_untyped_or_bridge);
+  CollectTypedThrowsPayloadsFromExpr(expr->left.get(), program, typed_payloads,
+                                     saw_untyped_or_bridge);
+  CollectTypedThrowsPayloadsFromExpr(expr->right.get(), program, typed_payloads,
+                                     saw_untyped_or_bridge);
+  CollectTypedThrowsPayloadsFromExpr(expr->third.get(), program, typed_payloads,
+                                     saw_untyped_or_bridge);
+  for (const auto &key : expr->collection_keys) {
+    CollectTypedThrowsPayloadsFromExpr(key.get(), program, typed_payloads,
+                                       saw_untyped_or_bridge);
+  }
+  for (const auto &value : expr->collection_values) {
+    CollectTypedThrowsPayloadsFromExpr(value.get(), program, typed_payloads,
+                                       saw_untyped_or_bridge);
+  }
+  for (const auto &arg : expr->args) {
+    CollectTypedThrowsPayloadsFromExpr(arg.get(), program, typed_payloads,
+                                       saw_untyped_or_bridge);
+  }
+}
+
+static void CollectTypedThrowsPayloadsFromStmt(
+    const Stmt *stmt,
+    const Objc3Program &program,
+    std::vector<std::string> &typed_payloads,
+    bool &saw_untyped_or_bridge) {
+  if (stmt == nullptr) {
+    return;
+  }
+  switch (stmt->kind) {
+  case Stmt::Kind::Let:
+    CollectTypedThrowsPayloadsFromExpr(
+        stmt->let_stmt != nullptr ? stmt->let_stmt->value.get() : nullptr,
+        program, typed_payloads, saw_untyped_or_bridge);
+    return;
+  case Stmt::Kind::Assign:
+    CollectTypedThrowsPayloadsFromExpr(
+        stmt->assign_stmt != nullptr ? stmt->assign_stmt->value.get() : nullptr,
+        program, typed_payloads, saw_untyped_or_bridge);
+    return;
+  case Stmt::Kind::Return:
+    CollectTypedThrowsPayloadsFromExpr(
+        stmt->return_stmt != nullptr ? stmt->return_stmt->value.get()
+                                     : nullptr,
+        program, typed_payloads, saw_untyped_or_bridge);
+    return;
+  case Stmt::Kind::Expr:
+    CollectTypedThrowsPayloadsFromExpr(
+        stmt->expr_stmt != nullptr ? stmt->expr_stmt->value.get() : nullptr,
+        program, typed_payloads, saw_untyped_or_bridge);
+    return;
+  case Stmt::Kind::If:
+    if (stmt->if_stmt != nullptr) {
+      CollectTypedThrowsPayloadsFromExpr(
+          stmt->if_stmt->condition.get(), program, typed_payloads,
+          saw_untyped_or_bridge);
+      for (const auto &nested_stmt : stmt->if_stmt->then_body) {
+        CollectTypedThrowsPayloadsFromStmt(
+            nested_stmt.get(), program, typed_payloads,
+            saw_untyped_or_bridge);
+      }
+      for (const auto &nested_stmt : stmt->if_stmt->else_body) {
+        CollectTypedThrowsPayloadsFromStmt(
+            nested_stmt.get(), program, typed_payloads,
+            saw_untyped_or_bridge);
+      }
+    }
+    return;
+  case Stmt::Kind::DoWhile:
+    if (stmt->do_while_stmt != nullptr) {
+      for (const auto &nested_stmt : stmt->do_while_stmt->body) {
+        CollectTypedThrowsPayloadsFromStmt(
+            nested_stmt.get(), program, typed_payloads,
+            saw_untyped_or_bridge);
+      }
+      CollectTypedThrowsPayloadsFromExpr(
+          stmt->do_while_stmt->condition.get(), program, typed_payloads,
+          saw_untyped_or_bridge);
+    }
+    return;
+  case Stmt::Kind::For:
+    if (stmt->for_stmt != nullptr) {
+      CollectTypedThrowsPayloadsFromExpr(
+          stmt->for_stmt->init.value.get(), program, typed_payloads,
+          saw_untyped_or_bridge);
+      CollectTypedThrowsPayloadsFromExpr(
+          stmt->for_stmt->condition.get(), program, typed_payloads,
+          saw_untyped_or_bridge);
+      CollectTypedThrowsPayloadsFromExpr(
+          stmt->for_stmt->step.value.get(), program, typed_payloads,
+          saw_untyped_or_bridge);
+      for (const auto &nested_stmt : stmt->for_stmt->body) {
+        CollectTypedThrowsPayloadsFromStmt(
+            nested_stmt.get(), program, typed_payloads,
+            saw_untyped_or_bridge);
+      }
+    }
+    return;
+  case Stmt::Kind::ForIn:
+    if (stmt->for_in_stmt != nullptr) {
+      CollectTypedThrowsPayloadsFromExpr(
+          stmt->for_in_stmt->collection.get(), program, typed_payloads,
+          saw_untyped_or_bridge);
+      for (const auto &nested_stmt : stmt->for_in_stmt->body) {
+        CollectTypedThrowsPayloadsFromStmt(
+            nested_stmt.get(), program, typed_payloads,
+            saw_untyped_or_bridge);
+      }
+    }
+    return;
+  case Stmt::Kind::Switch:
+    if (stmt->switch_stmt != nullptr) {
+      CollectTypedThrowsPayloadsFromExpr(
+          stmt->switch_stmt->condition.get(), program, typed_payloads,
+          saw_untyped_or_bridge);
+      for (const auto &switch_case : stmt->switch_stmt->cases) {
+        for (const auto &nested_stmt : switch_case.body) {
+          CollectTypedThrowsPayloadsFromStmt(
+              nested_stmt.get(), program, typed_payloads,
+              saw_untyped_or_bridge);
+        }
+      }
+    }
+    return;
+  case Stmt::Kind::While:
+    if (stmt->while_stmt != nullptr) {
+      CollectTypedThrowsPayloadsFromExpr(
+          stmt->while_stmt->condition.get(), program, typed_payloads,
+          saw_untyped_or_bridge);
+      for (const auto &nested_stmt : stmt->while_stmt->body) {
+        CollectTypedThrowsPayloadsFromStmt(
+            nested_stmt.get(), program, typed_payloads,
+            saw_untyped_or_bridge);
+      }
+    }
+    return;
+  case Stmt::Kind::CollectionMutation:
+    if (stmt->collection_mutation_stmt != nullptr) {
+      CollectTypedThrowsPayloadsFromExpr(
+          stmt->collection_mutation_stmt->key_or_index.get(), program,
+          typed_payloads, saw_untyped_or_bridge);
+      CollectTypedThrowsPayloadsFromExpr(
+          stmt->collection_mutation_stmt->value.get(), program, typed_payloads,
+          saw_untyped_or_bridge);
+    }
+    return;
+  case Stmt::Kind::Block:
+  case Stmt::Kind::Defer:
+    if (stmt->block_stmt != nullptr) {
+      for (const auto &nested_stmt : stmt->block_stmt->body) {
+        CollectTypedThrowsPayloadsFromStmt(
+            nested_stmt.get(), program, typed_payloads,
+            saw_untyped_or_bridge);
+      }
+    }
+    return;
+  case Stmt::Kind::Break:
+  case Stmt::Kind::Continue:
+  case Stmt::Kind::Empty:
+    return;
+  default:
+    return;
+  }
+}
+
+static std::string SingleTypedThrowsPayloadForDoCatchBody(
+    const BlockStmt &block,
+    const Objc3Program &program) {
+  std::vector<std::string> typed_payloads;
+  bool saw_untyped_or_bridge = false;
+  for (const auto &stmt : block.body) {
+    CollectTypedThrowsPayloadsFromStmt(stmt.get(), program, typed_payloads,
+                                       saw_untyped_or_bridge);
+  }
+  if (typed_payloads.empty() || saw_untyped_or_bridge) {
+    return "";
+  }
+  const std::string first_identity =
+      Objc3TypedThrowsPayloadIdentity(typed_payloads.front());
+  for (const std::string &payload : typed_payloads) {
+    if (Objc3TypedThrowsPayloadIdentity(payload) != first_identity) {
+      return "";
+    }
+  }
+  return typed_payloads.front();
+}
+
 static void DiagnoseDoCatchClauseShape(
     const Stmt &stmt,
     const BlockStmt &block,
+    const Objc3Program &program,
     Objc3ErrorHandlingTryDoCatchSemanticSummary &summary,
     std::vector<std::string> &diagnostics,
     bool allow_source_only_error_runtime_surface) {
@@ -29,6 +242,8 @@ static void DiagnoseDoCatchClauseShape(
   }
 
   bool saw_catch_all = false;
+  const std::string typed_throw_payload =
+      SingleTypedThrowsPayloadForDoCatchBody(block, program);
   for (std::size_t index = 0; index < block.catch_clauses.size(); ++index) {
     const auto &clause = block.catch_clauses[index];
     if (saw_catch_all) {
@@ -37,6 +252,17 @@ static void DiagnoseDoCatchClauseShape(
     }
     if (clause.catch_all) {
       saw_catch_all = true;
+      continue;
+    }
+    if (!typed_throw_payload.empty()) {
+      const std::string match_status = Objc3TypedThrowsCatchMatchStatus(
+          typed_throw_payload, clause.binding_type_spelling, true);
+      if (match_status == "incompatible-catch-rejected" ||
+          match_status == "unsupported-foreign-carrier-fail-closed") {
+        RecordTypedThrowsCatchCompatibilityDiagnostic(
+            summary, clause.line, clause.column, typed_throw_payload,
+            clause.binding_type_spelling, match_status, diagnostics);
+      }
     }
   }
 }
@@ -85,7 +311,7 @@ static void WalkDoCatchScope(
     bool allow_source_only_error_runtime_surface,
     const Objc3ErrorHandlingSemanticWalkContext &context) {
   AccumulateDoCatchClauseShape(block, summary);
-  DiagnoseDoCatchClauseShape(stmt, block, summary, diagnostics,
+  DiagnoseDoCatchClauseShape(stmt, block, program, summary, diagnostics,
                              allow_source_only_error_runtime_surface);
   WalkDoCatchProtectedBody(block, program, summary, diagnostics,
                            allow_source_only_error_runtime_surface, context);

@@ -31,6 +31,12 @@ HOSTED_REGISTRY_LIVE_SERVICE_CONTRACT_ID = (
 HOSTED_REGISTRY_LIVE_SERVICE_STATE = "reserved-fail-closed"
 HOSTED_REGISTRY_LIVE_SERVICE_UNSUPPORTED_MODE = "live-public-registry-unsupported"
 HOSTED_REGISTRY_LIVE_TRANSPORT_ID = "public-hosted-registry-network-transport-v1"
+HOSTED_REGISTRY_SNAPSHOT_FETCHER_ID = "deterministic-hosted-registry-snapshot-fetcher-v1"
+HOSTED_REGISTRY_TRANSPORT_POLICY_ID = "explicit-hosted-registry-transport-policy-v1"
+HOSTED_REGISTRY_LOCK_MATERIALIZATION_POLICY = "lockfile-first-offline-mirror-handoff-v1"
+HOSTED_REGISTRY_MATERIALIZED_LOCK_CONTRACT_ID = (
+    "objc3c.package_ecosystem.hosted_registry_materialized_lock.v1"
+)
 HOSTED_REGISTRY_LIVE_SERVICE_REQUIRED_DIAGNOSTICS = {
     "live-public-service-unavailable",
     "live-transport-disabled",
@@ -45,6 +51,9 @@ HOSTED_REGISTRY_SERVICE_DEFAULT_TOKEN_ID = "fixture-developer-token-v1"
 HOSTED_REGISTRY_SERVICE_FIXTURE_PATH = (
     "tests/tooling/fixtures/package_ecosystem/hosted_registry/service/"
     "hosted-registry-service.json"
+)
+HOSTED_REGISTRY_SERVICE_FIXTURE_LOCK_PATH = (
+    "tests/tooling/fixtures/package_ecosystem/hosted_registry/fixture-lock.json"
 )
 HOSTED_REGISTRY_SERVICE_SCHEMA_PATH = (
     Path(__file__).resolve().parents[2]
@@ -87,6 +96,13 @@ class HostedRegistryServiceDecision:
     registry_index_path: str
     offline_mirror_path: str
     auth_subject_id: str
+    snapshot_fetcher_id: str = HOSTED_REGISTRY_SNAPSHOT_FETCHER_ID
+    transport_policy_id: str = HOSTED_REGISTRY_TRANSPORT_POLICY_ID
+    source_lock: str = HOSTED_REGISTRY_SERVICE_FIXTURE_LOCK_PATH
+    source_lock_digest: str = ""
+    lock_materialization_policy: str = HOSTED_REGISTRY_LOCK_MATERIALIZATION_POLICY
+    materialized_lock_contract_id: str = HOSTED_REGISTRY_MATERIALIZED_LOCK_CONTRACT_ID
+    network_required_after_lock: bool = False
 
 
 class HostedRegistryServiceError(RuntimeError):
@@ -722,6 +738,21 @@ def _collect_output_failures(
                 "hosted registry service output requires network after lock"
             )
         )
+    expected_output = {
+        "snapshot_fetcher_id": HOSTED_REGISTRY_SNAPSHOT_FETCHER_ID,
+        "transport_policy_id": HOSTED_REGISTRY_TRANSPORT_POLICY_ID,
+        "source_lock": HOSTED_REGISTRY_SERVICE_FIXTURE_LOCK_PATH,
+        "lock_materialization_policy": HOSTED_REGISTRY_LOCK_MATERIALIZATION_POLICY,
+        "materialized_lock_contract_id": HOSTED_REGISTRY_MATERIALIZED_LOCK_CONTRACT_ID,
+        "fallback_registry_success": False,
+    }
+    for field_name, expected_value in expected_output.items():
+        if output.get(field_name) != expected_value:
+            failures.append(
+                hosted_registry_service_diagnostic(
+                    f"hosted registry service output {field_name} drifted"
+                )
+            )
     provider = service.get("provider", {})
     provider_index_path = (
         str(provider.get("registry_index_path", ""))
@@ -742,6 +773,12 @@ def _collect_output_failures(
             failures.append(
                 hosted_registry_service_diagnostic(
                     "hosted registry service offline mirror path drifted"
+                )
+            )
+        if output.get("source_lock_digest") != material.get("source_lock_digest"):
+            failures.append(
+                hosted_registry_service_diagnostic(
+                    "hosted registry service source lock digest drifted"
                 )
             )
     return failures
@@ -961,6 +998,13 @@ def resolve_hosted_registry_service_request(
         registry_index_path=str(provider["registry_index_path"]),
         offline_mirror_path=str(output["offline_mirror_path"]),
         auth_subject_id=request.auth_subject_id,
+        snapshot_fetcher_id=str(output["snapshot_fetcher_id"]),
+        transport_policy_id=str(output["transport_policy_id"]),
+        source_lock=str(output["source_lock"]),
+        source_lock_digest=str(output["source_lock_digest"]),
+        lock_materialization_policy=str(output["lock_materialization_policy"]),
+        materialized_lock_contract_id=str(output["materialized_lock_contract_id"]),
+        network_required_after_lock=bool(output["network_required_after_lock"]),
     )
 
 
@@ -979,7 +1023,11 @@ __all__ = [
     "HOSTED_REGISTRY_LIVE_SERVICE_STATE",
     "HOSTED_REGISTRY_LIVE_SERVICE_UNSUPPORTED_MODE",
     "HOSTED_REGISTRY_LIVE_TRANSPORT_ID",
+    "HOSTED_REGISTRY_LOCK_MATERIALIZATION_POLICY",
+    "HOSTED_REGISTRY_MATERIALIZED_LOCK_CONTRACT_ID",
     "HOSTED_REGISTRY_PUBLIC_CAPABILITY_ID",
+    "HOSTED_REGISTRY_SNAPSHOT_FETCHER_ID",
+    "HOSTED_REGISTRY_TRANSPORT_POLICY_ID",
     "HostedRegistryServiceDecision",
     "HostedRegistryServiceError",
     "HostedRegistryServiceRequest",

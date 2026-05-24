@@ -1,4 +1,4 @@
-// Expected diagnostic code(s): O3P159.
+// Expected diagnostic code(s): O3S211.
 module NegativeValueOptionalNilScalarCoercionReserved;
 
 fn main(value: Optional<i32>) -> i32 {

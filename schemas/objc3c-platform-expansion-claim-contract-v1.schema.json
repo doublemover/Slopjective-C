@@ -53,7 +53,8 @@
         "platform_toolchain_support_evidence",
         "hosted_runner_capability_summaries",
         "unsupported_host_policy",
-        "sanitizer_validation_contract"
+        "sanitizer_validation_contract",
+        "sanitizer_package_install_model_contract"
       ],
       "properties": {
         "platform_toolchain_support_evidence": {
@@ -67,6 +68,9 @@
         },
         "sanitizer_validation_contract": {
           "const": "tests/tooling/fixtures/security_hardening/sanitizer_validation_contract.json"
+        },
+        "sanitizer_package_install_model_contract": {
+          "const": "tests/tooling/fixtures/security_hardening/sanitizer_package_install_model_contract.json"
         }
       }
     },
@@ -746,6 +750,12 @@
       "required": [
         "runtime_probe_required",
         "runtime_library_resolution",
+        "package_layout_contract",
+        "runtime_probe_contract",
+        "install_selection_contract",
+        "runtime_mixing_rejection_contract",
+        "environment_contract",
+        "metadata_freshness_contract",
         "default_release_channel_allowed",
         "report_artifact_support_truth",
         "mixed_release_sanitizer_runtime_behavior",
@@ -762,6 +772,240 @@
         "runtime_library_resolution": {
           "type": "string",
           "minLength": 1
+        },
+        "package_layout_contract": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "package_root_layout",
+            "metadata_manifest_path",
+            "install_receipt_required_fields",
+            "layout_support_truth"
+          ],
+          "properties": {
+            "package_root_layout": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "minLength": 1
+              },
+              "minItems": 1,
+              "uniqueItems": true
+            },
+            "metadata_manifest_path": {
+              "type": "string",
+              "pattern": "^share/objc3c/sanitizer/(asan|ubsan)-metadata\\.json$"
+            },
+            "install_receipt_required_fields": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "minLength": 1
+              },
+              "minItems": 1,
+              "uniqueItems": true
+            },
+            "layout_support_truth": {
+              "const": false
+            }
+          }
+        },
+        "runtime_probe_contract": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "probe_required",
+            "probe_inputs",
+            "required_runtime_library_ids",
+            "missing_runtime_behavior",
+            "probe_result_support_truth"
+          ],
+          "properties": {
+            "probe_required": {
+              "const": true
+            },
+            "probe_inputs": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "minLength": 1
+              },
+              "minItems": 1,
+              "uniqueItems": true
+            },
+            "required_runtime_library_ids": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "minLength": 1
+              },
+              "minItems": 1,
+              "uniqueItems": true
+            },
+            "missing_runtime_behavior": {
+              "const": "fail-closed-before-package-install"
+            },
+            "probe_result_support_truth": {
+              "const": false
+            }
+          }
+        },
+        "install_selection_contract": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "selection_mode",
+            "install_selector",
+            "default_release_selection_allowed",
+            "default_release_misuse_behavior"
+          ],
+          "properties": {
+            "selection_mode": {
+              "const": "explicit-opt-in"
+            },
+            "install_selector": {
+              "enum": [
+                "sanitizer=address",
+                "sanitizer=undefined"
+              ]
+            },
+            "default_release_selection_allowed": {
+              "const": false
+            },
+            "default_release_misuse_behavior": {
+              "const": "fail-closed-before-install"
+            }
+          }
+        },
+        "runtime_mixing_rejection_contract": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "release_sanitizer_mixing_allowed",
+            "mixed_runtime_behavior",
+            "rejected_release_runtime_package_ids"
+          ],
+          "properties": {
+            "release_sanitizer_mixing_allowed": {
+              "const": false
+            },
+            "mixed_runtime_behavior": {
+              "const": "fail-closed-before-native-execution-claim"
+            },
+            "rejected_release_runtime_package_ids": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "minLength": 1
+              },
+              "minItems": 1,
+              "uniqueItems": true
+            }
+          }
+        },
+        "environment_contract": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "env_var",
+            "required_metadata_field",
+            "required_options",
+            "missing_environment_behavior",
+            "environment_support_truth"
+          ],
+          "properties": {
+            "env_var": {
+              "enum": [
+                "ASAN_OPTIONS",
+                "UBSAN_OPTIONS"
+              ]
+            },
+            "required_metadata_field": {
+              "type": "string",
+              "minLength": 1
+            },
+            "required_options": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "minLength": 1
+              },
+              "minItems": 1,
+              "uniqueItems": true
+            },
+            "missing_environment_behavior": {
+              "const": "fail-closed-before-native-execution-claim"
+            },
+            "environment_support_truth": {
+              "const": false
+            }
+          }
+        },
+        "trap_recover_contract": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "required_mode_field",
+            "allowed_modes",
+            "default_mode_allowed",
+            "missing_mode_behavior",
+            "mode_support_truth"
+          ],
+          "properties": {
+            "required_mode_field": {
+              "const": "trap_or_recover_mode"
+            },
+            "allowed_modes": {
+              "type": "array",
+              "items": {
+                "enum": [
+                  "trap",
+                  "recover"
+                ]
+              },
+              "minItems": 2,
+              "uniqueItems": true
+            },
+            "default_mode_allowed": {
+              "const": false
+            },
+            "missing_mode_behavior": {
+              "const": "fail-closed-before-native-execution-claim"
+            },
+            "mode_support_truth": {
+              "const": false
+            }
+          }
+        },
+        "metadata_freshness_contract": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "source_owned_metadata_required",
+            "generated_metadata_support_truth",
+            "stale_package_metadata_behavior",
+            "freshness_inputs"
+          ],
+          "properties": {
+            "source_owned_metadata_required": {
+              "const": true
+            },
+            "generated_metadata_support_truth": {
+              "const": false
+            },
+            "stale_package_metadata_behavior": {
+              "const": "fail-closed-before-publication"
+            },
+            "freshness_inputs": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "minLength": 1
+              },
+              "minItems": 1,
+              "uniqueItems": true
+            }
+          }
         },
         "default_release_channel_allowed": {
           "const": false

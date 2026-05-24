@@ -1,0 +1,24 @@
+module ValueOptionalsRuntimeAbiPositive;
+
+extern fn objc3_runtime_optional_present_i32(payload: i32) -> Optional<i32>;
+extern fn objc3_runtime_optional_absent_i64() -> Optional<i32>;
+extern fn objc3_runtime_optional_has_value_i32(value: Optional<i32>) -> i32;
+extern fn objc3_runtime_optional_payload_or_i32(value: Optional<i32>, fallback: i32) -> i32;
+
+fn choose(flag: bool, value: i32) -> Optional<i32> {
+  if (flag) {
+    return objc3_runtime_optional_present_i32(value);
+  }
+  return objc3_runtime_optional_absent_i64();
+}
+
+fn main() -> i32 {
+  let present = choose(true, 41);
+  let absent = choose(false, 99);
+  let payload = objc3_runtime_optional_payload_or_i32(present, 0);
+  let fallback = objc3_runtime_optional_payload_or_i32(absent, 1);
+  if (objc3_runtime_optional_has_value_i32(present)) {
+    return payload + fallback;
+  }
+  return 0;
+}

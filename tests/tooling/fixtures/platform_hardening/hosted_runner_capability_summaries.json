@@ -4,6 +4,12 @@
   "schema_path": "schemas/objc3c-platform-hosted-runner-capability-summaries-v1.schema.json",
   "source_path": "tests/tooling/fixtures/platform_hardening/hosted_runner_capability_summaries.json",
   "support_claim_policy": "summary-only-no-support-promotion",
+  "workflow_gate_policy": {
+    "optional_hosted_gate_missing_llc_result": "skip-no-success-claim",
+    "required_conformance_minima_missing_llc_result": "fail-closed-required-native-object-emission",
+    "required_conformance_minima_env": "OBJC3C_REQUIRE_HOSTED_NATIVE_OBJECT_EMISSION",
+    "clang_substitute_success_allowed": false
+  },
   "issue_refs": [
     8206,
     8228,
@@ -40,7 +46,7 @@
       "issue_ref": 8228,
       "claim_state": "unsupported",
       "platform_ids": [],
-      "hosted_runner": "ubuntu-latest",
+      "hosted_runner": "ubuntu-24.04",
       "required_evidence_classes": [
         "build",
         "package",
@@ -55,7 +61,7 @@
       ],
       "native_object_emission_status": "native_object_emission_supported",
       "publication_allowed": false,
-      "diagnostic": "Linux x64 hosted-runner tool presence is not support; package, install, and native execution proof must be checked in before this row can publish support."
+      "diagnostic": "Linux x64 hosted-runner tool presence is not support; generated Ubuntu 24.04 build/package/install/execution reports must be reviewed into checked source truth before this row can publish support."
     },
     {
       "summary_id": "objc3c.hosted.darwin-arm64.unsupported",
@@ -63,7 +69,7 @@
       "issue_ref": 8229,
       "claim_state": "unsupported",
       "platform_ids": [],
-      "hosted_runner": "macos-latest-arm64",
+      "hosted_runner": "macos-15",
       "required_evidence_classes": [
         "build",
         "package",
@@ -78,7 +84,7 @@
       ],
       "native_object_emission_status": "native_object_emission_supported",
       "publication_allowed": false,
-      "diagnostic": "macOS arm64 hosted-runner tool presence is not support; Mach-O/load-path, package, install, and native execution proof must be checked in before this row can publish support."
+      "diagnostic": "macOS arm64 hosted-runner tool presence is not support; generated macOS 15 Mach-O/load-path, package, install, and native execution reports must be reviewed into checked source truth before this row can publish support."
     },
     {
       "summary_id": "objc3c.hosted.sanitizer.address.reserved",

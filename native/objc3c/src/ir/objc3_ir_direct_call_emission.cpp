@@ -23,6 +23,10 @@ void AppendObjc3IRLoweredCallArg(
     args.push_back("i1 " + arg_i1);
     return;
   }
+  if (expected_type == ValueType::Optional) {
+    args.push_back("i64 " + arg_i32);
+    return;
+  }
   args.push_back("i32 " + arg_i32);
 }
 

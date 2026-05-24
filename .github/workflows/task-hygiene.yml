@@ -64,14 +64,14 @@ jobs:
       - name: Refresh binary-derived frontend contract artifacts
         run: npm run objc3c -- build-native-contracts
 
-      - name: Probe hosted-runner LLVM capabilities
+      - name: Probe hosted-runner LLVM capabilities without support promotion
         run: npm run objc3c -- check-hosted-llvm-capabilities
 
       - name: Validate capability discovery and routing code paths
         run: npm run objc3c -- test-llvm-capability-routing
 
-      - name: Verify capability-routed source parity when llc is available
+      - name: Verify capability-routed source parity when llc object emission is available
         run: npm run objc3c -- test-capability-routed-source-parity
 
-      - name: Run hosted native execution smoke when llc is available
+      - name: Run hosted native execution smoke when llc object emission is available
         run: npm run objc3c -- test-hosted-execution-smoke

@@ -79,6 +79,18 @@ REQUIRED_HOST_PROMOTION_SOURCE_SECTIONS = (
     "native_execution_evidence_records",
     "negative_host_toolchain_cases",
 )
+HOST_EVIDENCE_WORKFLOW_PATH = ".github/workflows/platform-host-evidence.yml"
+HOST_EVIDENCE_INGESTION_ACTION = "ingest-platform-host-evidence"
+HOST_EVIDENCE_INGESTION_HELPER = "scripts/ingest_objc3c_platform_host_evidence.py"
+HOST_EVIDENCE_REPORT_ROOT = "tmp/reports/platform-host-evidence"
+HOST_EVIDENCE_CANDIDATE_RECORD_IDS = (
+    "objc3c.evidence.hosted-ci.linux-x64.generated-host-run",
+    "objc3c.evidence.hosted-ci.darwin-arm64.generated-host-run",
+)
+HOST_EVIDENCE_RUNNER_LABELS = {
+    "linux-x64": "ubuntu-24.04",
+    "darwin-arm64": "macos-15",
+}
 REQUIRED_NEGATIVE_HOST_TOOLCHAIN_CASES = (
     "objc3c.negative.host.linux-x64.no-native-execution",
     "objc3c.negative.host.darwin-arm64.no-native-execution",
@@ -496,7 +508,9 @@ def _validate_umbrella_readiness(
         "unsupported_version_status",
         "unresolved_version_status",
         "hosted_runner_behavior",
+        "task_hygiene_behavior",
         "conformance_minima_behavior",
+        "required_conformance_minima_env",
         "fallback_policy",
         "coherent_toolchain_policy",
     ):
@@ -586,6 +600,7 @@ def _validate_host_promotion_architecture(
     package_roots = _records_by_id(inputs.platform_evidence["package_root_evidence_records"], "record_id")
     native_execution = _records_by_id(inputs.platform_evidence["native_execution_evidence_records"], "record_id")
     negative_cases = _records_by_id(inputs.platform_evidence["negative_host_toolchain_cases"], "case_id")
+    evidence_records = _evidence_by_id(inputs.platform_evidence)
 
     expect(
         set(architecture["host_identity_record_ids"]) == set(host_identities),
@@ -610,6 +625,11 @@ def _validate_host_promotion_architecture(
     expect(
         set(architecture["negative_host_toolchain_case_ids"]) <= set(negative_cases),
         "host promotion architecture referenced missing negative host/toolchain cases",
+    )
+    _validate_hosted_evidence_ingestion(
+        architecture,
+        upstream=inputs.platform_evidence["host_evidence_contract"],
+        records_by_id=evidence_records,
     )
 
     unsupported_execution = {
@@ -637,7 +657,53 @@ def _validate_host_promotion_architecture(
         "package_root_record_count": len(package_roots),
         "native_execution_record_count": len(native_execution),
         "negative_host_toolchain_case_count": len(negative_cases),
+        "hosted_evidence_ingestion_action": architecture["hosted_evidence_ingestion"]["ingestion_action"],
+        "hosted_evidence_candidate_record_count": len(
+            architecture["hosted_evidence_ingestion"]["candidate_evidence_record_ids"]
+        ),
     }
+
+
+def _validate_hosted_evidence_ingestion(
+    architecture: dict[str, Any],
+    *,
+    upstream: dict[str, Any],
+    records_by_id: dict[str, dict[str, Any]],
+) -> None:
+    ingestion = architecture["hosted_evidence_ingestion"]
+    upstream_ingestion = upstream.get("hosted_evidence_ingestion")
+    expect(isinstance(upstream_ingestion, dict), "upstream host evidence contract missing ingestion rules")
+    expect(ingestion == upstream_ingestion, "host promotion ingestion rules drifted from upstream evidence")
+    expect(ingestion["workflow_path"] == HOST_EVIDENCE_WORKFLOW_PATH, "host evidence workflow path drifted")
+    expect(resolve_repo_path(HOST_EVIDENCE_WORKFLOW_PATH).is_file(), "host evidence workflow file is missing")
+    expect(ingestion["runner_labels"] == HOST_EVIDENCE_RUNNER_LABELS, "host evidence runner labels drifted")
+    expect(ingestion["ingestion_action"] == HOST_EVIDENCE_INGESTION_ACTION, "host evidence ingestion action drifted")
+    expect(HOST_EVIDENCE_INGESTION_ACTION in ACTION_SPECS, "host evidence ingestion action missing from ACTION_SPECS")
+    expect(HOST_EVIDENCE_INGESTION_ACTION in ACTION_HANDLERS, "host evidence ingestion action missing from ACTION_HANDLERS")
+    expect(ingestion["ingestion_helper"] == HOST_EVIDENCE_INGESTION_HELPER, "host evidence ingestion helper drifted")
+    expect(resolve_repo_path(HOST_EVIDENCE_INGESTION_HELPER).is_file(), "host evidence ingestion helper is missing")
+    expect(ingestion["generated_report_root"] == HOST_EVIDENCE_REPORT_ROOT, "host evidence report root drifted")
+    expect(ingestion["generated_only_result"] == "refuse-source-truth-promotion", "generated-only ingestion result drifted")
+    expect(ingestion["review_promotion_policy"] == "checked-in-source-truth-required", "review promotion policy drifted")
+    expect(ingestion["reviewed_source_truth_required"] is True, "host evidence review requirement drifted")
+    expect(
+        ingestion["support_rows_remain_fail_closed_until_reviewed"] is True,
+        "host evidence fail-closed review boundary drifted",
+    )
+    candidate_ids = tuple(str(record_id) for record_id in ingestion["candidate_evidence_record_ids"])
+    expect(set(candidate_ids) == set(HOST_EVIDENCE_CANDIDATE_RECORD_IDS), "host evidence candidate record ids drifted")
+    for record_id in candidate_ids:
+        record = _require_policy_record(records_by_id, record_id)
+        expect(record["evidence_class"] == "hosted_ci", f"{record_id} must remain hosted_ci evidence")
+        expect(not record["supports_platform_ids"], f"{record_id} generated host evidence widened support")
+        source_paths = {str(path).replace("\\", "/") for path in record["source_paths"]}
+        expect(HOST_EVIDENCE_WORKFLOW_PATH in source_paths, f"{record_id} missing workflow source path")
+        expect(HOST_EVIDENCE_INGESTION_HELPER in source_paths, f"{record_id} missing ingestion helper source path")
+        generated_paths = [str(path).replace("\\", "/") for path in record["generated_report_paths"]]
+        expect(
+            any(path.startswith(f"{HOST_EVIDENCE_REPORT_ROOT}/") for path in generated_paths),
+            f"{record_id} missing platform host evidence report path",
+        )
 
 
 def _validate_toolchain_ranges(inputs: ValidationInputs, records_by_id: dict[str, dict[str, Any]], supported_ids: set[str]) -> list[str]:

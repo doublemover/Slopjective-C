@@ -21,13 +21,13 @@ static void AccumulateCanonicalTypeSemanticModelSummary(
         type.value_optional_explicit_absent_construction_supported &&
         type.value_optional_explicit_present_construction_supported &&
         type.value_optional_stable_abi_layout_contract_supported &&
-        !type.value_optional_ir_payload_emission_supported &&
-        !type.value_optional_call_abi_lowering_supported) {
+        type.value_optional_ir_payload_emission_supported &&
+        type.value_optional_call_abi_lowering_supported) {
       ++summary.canonical_value_optional_lowering_contract_entries;
     }
-    if (!type.value_optional_runtime_execution_supported &&
-        !type.value_optional_lowering_supported) {
-      ++summary.canonical_value_optional_runtime_deferred_entries;
+    if (type.value_optional_runtime_execution_supported &&
+        type.value_optional_lowering_supported) {
+      ++summary.canonical_value_optional_runtime_supported_entries;
     }
     if (type.value_optional_nil_bridge_diagnostic_supported) {
       ++summary.canonical_value_optional_bridge_rejection_entries;

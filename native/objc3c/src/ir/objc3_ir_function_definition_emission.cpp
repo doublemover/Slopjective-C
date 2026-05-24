@@ -60,9 +60,12 @@ void EmitObjc3IRParameterStores(
     FunctionContext &ctx) {
   for (std::size_t i = 0; i < params.size(); ++i) {
     const auto &param = params[i];
+    const char *llvm_type = LLVMLocalStorageType(param.type);
+    const unsigned alignment = LLVMLocalStorageAlignment(param.type);
     const std::string ptr =
         "%" + param.name + ".addr." + std::to_string(ctx.temp_counter++);
-    ctx.entry_lines.push_back("  " + ptr + " = alloca i32, align 4");
+    ctx.entry_lines.push_back("  " + ptr + " = alloca " + llvm_type +
+                              ", align " + std::to_string(alignment));
     callbacks.emit_typed_param_store(param, i, ptr, ctx);
     ctx.scopes.back()[param.name] = ptr;
     ctx.value_type_by_ptr[ptr] = param.type;

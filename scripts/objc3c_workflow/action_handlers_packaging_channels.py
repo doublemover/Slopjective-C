@@ -10,6 +10,7 @@ PACKAGING_CHANNEL_ACTION_HANDLERS: dict[str, ActionHandler] = {
     "check-packaging-channels-schema-surface": schema_surfaces.action_check_packaging_channels_schema_surface,
     "build-package-channels": release_governance.action_build_package_channels,
     "build-platform-support-matrix": release_governance.action_build_platform_support_matrix,
+    "ingest-platform-host-evidence": release_governance.action_ingest_platform_host_evidence,
     "validate-packaging-channels": release_governance.action_validate_packaging_channels,
     "validate-packaging-channels-end-to-end": release_governance.action_validate_packaging_channels_end_to_end,
     "validate-platform-hardening": release_governance.action_validate_platform_hardening,

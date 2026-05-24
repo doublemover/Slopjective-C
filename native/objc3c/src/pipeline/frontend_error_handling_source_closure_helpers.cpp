@@ -129,6 +129,11 @@ BuildErrorHandlingErrorSourceClosureSummary(
       "typed-and-untyped-effects-preserved-with-exact-callable-compatibility";
   summary.typed_throws_abi_status = "typed-error-out-abi";
   summary.typed_throws_interface_roundtrip_status = "typed-payload-preserved";
+  summary.typed_throws_catch_compatibility_status =
+      "typed-catch-exact-untyped-id-error-bridge-incompatible-rejects";
+  summary.typed_throws_bridge_to_id_error_policy =
+      "explicit-bridge-to-id<Error>-only";
+  summary.typed_throws_foreign_carrier_fail_closed = true;
   summary.try_fail_closed = true;
   summary.throw_fail_closed = true;
   summary.do_catch_fail_closed = true;

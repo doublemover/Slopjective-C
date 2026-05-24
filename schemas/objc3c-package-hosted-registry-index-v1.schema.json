@@ -11,6 +11,7 @@
     "registry_state",
     "provider_model",
     "snapshot",
+    "snapshot_fetch",
     "service_boundary",
     "live_service_boundary",
     "hosted_service",
@@ -49,6 +50,7 @@
     "registry_state": { "type": "string", "minLength": 1 },
     "provider_model": { "$ref": "#/$defs/providerModel" },
     "snapshot": { "$ref": "#/$defs/snapshot" },
+    "snapshot_fetch": { "$ref": "#/$defs/snapshotFetch" },
     "service_boundary": { "$ref": "#/$defs/serviceBoundary" },
     "live_service_boundary": { "$ref": "#/$defs/liveServiceBoundary" },
     "hosted_service": { "$ref": "#/$defs/hostedServiceRef" },
@@ -217,6 +219,148 @@
         "source_lock_digest": { "$ref": "#/$defs/sha256" },
         "rollback_policy": { "const": "monotonic-sequence-required" },
         "network_fetch_observed": { "const": false }
+      }
+    },
+    "snapshotFetch": {
+      "type": "object",
+      "required": [
+        "fetcher_id",
+        "transport_policy",
+        "snapshot_source",
+        "trust_enforcement",
+        "lock_materialization"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "fetcher_id": {
+          "const": "deterministic-hosted-registry-snapshot-fetcher-v1"
+        },
+        "transport_policy": { "$ref": "#/$defs/snapshotTransportPolicy" },
+        "snapshot_source": { "$ref": "#/$defs/snapshotSource" },
+        "trust_enforcement": { "$ref": "#/$defs/snapshotTrustEnforcement" },
+        "lock_materialization": { "$ref": "#/$defs/snapshotLockMaterialization" }
+      }
+    },
+    "snapshotTransportPolicy": {
+      "type": "object",
+      "required": [
+        "policy_id",
+        "transport_id",
+        "mode",
+        "allowed_transport",
+        "live_network_allowed",
+        "registry_url_allowed",
+        "resolver_invocation_before_trust",
+        "request_policy",
+        "unsupported_diagnostic",
+        "unavailable_behavior",
+        "fallback_registry_success"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "policy_id": { "const": "explicit-hosted-registry-transport-policy-v1" },
+        "transport_id": { "const": "public-hosted-registry-network-transport-v1" },
+        "mode": { "const": "deterministic-offline-snapshot-replay" },
+        "allowed_transport": { "const": "checked-in-registry-snapshot" },
+        "live_network_allowed": { "const": false },
+        "registry_url_allowed": { "const": false },
+        "resolver_invocation_before_trust": { "const": false },
+        "request_policy": { "const": "fail-closed-before-network" },
+        "unsupported_diagnostic": { "const": "live-transport-disabled" },
+        "unavailable_behavior": { "const": "fail-closed" },
+        "fallback_registry_success": { "const": false }
+      }
+    },
+    "snapshotSource": {
+      "type": "object",
+      "required": [
+        "source_kind",
+        "registry_id",
+        "registry_index_path",
+        "offline_mirror_path",
+        "source_lock",
+        "source_lock_digest",
+        "snapshot_id",
+        "snapshot_sequence"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "source_kind": { "const": "checked-in-hosted-registry-snapshot" },
+        "registry_id": { "type": "string", "minLength": 1 },
+        "registry_index_path": {
+          "const": "tests/tooling/fixtures/package_ecosystem/hosted_registry/hosted-registry-index.json"
+        },
+        "offline_mirror_path": {
+          "const": "tests/tooling/fixtures/package_ecosystem/hosted_registry/offline-mirror-index.json"
+        },
+        "source_lock": {
+          "const": "tests/tooling/fixtures/package_ecosystem/hosted_registry/fixture-lock.json"
+        },
+        "source_lock_digest": { "$ref": "#/$defs/sha256" },
+        "snapshot_id": { "type": "string", "minLength": 1 },
+        "snapshot_sequence": { "type": "integer", "minimum": 1 }
+      }
+    },
+    "snapshotTrustEnforcement": {
+      "type": "object",
+      "required": [
+        "trust_root_id",
+        "signature_required",
+        "trust_root_required",
+        "revocation_required",
+        "cache_identity_required",
+        "offline_mirror_handoff_required",
+        "unknown_trust_root_policy",
+        "revoked_subject_policy",
+        "digest_drift_policy"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "trust_root_id": { "const": "objc3c-local-deterministic-trust-root-v1" },
+        "signature_required": { "const": true },
+        "trust_root_required": { "const": true },
+        "revocation_required": { "const": true },
+        "cache_identity_required": { "const": true },
+        "offline_mirror_handoff_required": { "const": true },
+        "unknown_trust_root_policy": { "const": "fail-closed" },
+        "revoked_subject_policy": { "const": "fail-closed" },
+        "digest_drift_policy": { "const": "fail-closed" }
+      }
+    },
+    "snapshotLockMaterialization": {
+      "type": "object",
+      "required": [
+        "contract_id",
+        "policy",
+        "selection_policy",
+        "lock_source",
+        "offline_mirror_path",
+        "lock_required_before_resolution",
+        "offline_mirror_handoff_required",
+        "offline_replay_sufficient",
+        "network_required_after_lock",
+        "local_install_fallback_for_unverified_artifacts",
+        "fallback_registry_success"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "contract_id": {
+          "const": "objc3c.package_ecosystem.hosted_registry_materialized_lock.v1"
+        },
+        "policy": { "const": "lockfile-first-offline-mirror-handoff-v1" },
+        "selection_policy": { "const": "exact-pinned-version-only" },
+        "lock_source": {
+          "const": "tests/tooling/fixtures/package_ecosystem/hosted_registry/fixture-lock.json"
+        },
+        "offline_mirror_path": {
+          "const": "tests/tooling/fixtures/package_ecosystem/hosted_registry/offline-mirror-index.json"
+        },
+        "lock_required_before_resolution": { "const": true },
+        "offline_mirror_handoff_required": { "const": true },
+        "offline_replay_sufficient": { "const": true },
+        "network_required_after_lock": { "const": false },
+        "local_install_fallback_for_unverified_artifacts": { "const": false },
+        "fallback_registry_success": { "const": false }
       }
     },
     "serviceBoundary": {
@@ -514,6 +658,7 @@
         "live-network-fetch",
         "live-public-service-unavailable",
         "live-transport-disabled",
+        "lock-materialization-drift",
         "missing-package-provenance",
         "missing-service-auth",
         "offline-mirror-handoff-drift",
@@ -530,6 +675,9 @@
         "service-index-drift",
         "service-moderation-blocked",
         "service-revocation-unavailable",
+        "snapshot-fetch-policy-drift",
+        "snapshot-source-digest-drift",
+        "transport-policy-drift",
         "unavailable-registry",
         "unlocked-version-selection",
         "unpinned-hosted-dependency",

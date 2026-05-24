@@ -454,19 +454,43 @@
       "required": [
         "registry_index_path",
         "offline_mirror_path",
+        "snapshot_fetcher_id",
+        "transport_policy_id",
+        "source_lock",
+        "source_lock_digest",
+        "lock_materialization_policy",
+        "materialized_lock_contract_id",
         "lock_materialization_required",
         "offline_mirror_handoff_required",
         "offline_replay_sufficient",
-        "network_required_after_lock"
+        "network_required_after_lock",
+        "fallback_registry_success"
       ],
       "additionalProperties": false,
       "properties": {
         "registry_index_path": { "type": "string", "minLength": 1 },
         "offline_mirror_path": { "type": "string", "minLength": 1 },
+        "snapshot_fetcher_id": {
+          "const": "deterministic-hosted-registry-snapshot-fetcher-v1"
+        },
+        "transport_policy_id": {
+          "const": "explicit-hosted-registry-transport-policy-v1"
+        },
+        "source_lock": {
+          "const": "tests/tooling/fixtures/package_ecosystem/hosted_registry/fixture-lock.json"
+        },
+        "source_lock_digest": { "$ref": "#/$defs/sha256" },
+        "lock_materialization_policy": {
+          "const": "lockfile-first-offline-mirror-handoff-v1"
+        },
+        "materialized_lock_contract_id": {
+          "const": "objc3c.package_ecosystem.hosted_registry_materialized_lock.v1"
+        },
         "lock_materialization_required": { "const": true },
         "offline_mirror_handoff_required": { "const": true },
         "offline_replay_sufficient": { "const": true },
-        "network_required_after_lock": { "const": false }
+        "network_required_after_lock": { "const": false },
+        "fallback_registry_success": { "const": false }
       }
     },
     "negativeCase": {

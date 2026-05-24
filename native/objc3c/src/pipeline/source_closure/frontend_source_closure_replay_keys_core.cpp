@@ -124,6 +124,13 @@ std::string BuildErrorHandlingErrorSourceClosureReplayKey(
       << ";typed_throws_abi_status=" << summary.typed_throws_abi_status
       << ";typed_throws_interface_roundtrip="
       << summary.typed_throws_interface_roundtrip_status
+      << ";typed_throws_catch_compatibility="
+      << summary.typed_throws_catch_compatibility_status
+      << ";typed_throws_bridge_to_id_error="
+      << summary.typed_throws_bridge_to_id_error_policy
+      << ";typed_throws_foreign_carrier_fail_closed="
+      << (summary.typed_throws_foreign_carrier_fail_closed ? "true"
+                                                           : "false")
       << ";deterministic="
       << (summary.deterministic_handoff ? "true" : "false");
   return out.str();

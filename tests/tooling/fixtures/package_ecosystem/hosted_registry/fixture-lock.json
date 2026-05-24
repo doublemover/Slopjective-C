@@ -6,5 +6,32 @@
   "trust_root_id": "objc3c-local-deterministic-trust-root-v1",
   "registry_endpoint_id": "objc3c-hosted-registry-fixture-endpoint-v1",
   "registry_channel_id": "stable-fixture",
-  "network_policy": "offline-fixture-metadata-only"
+  "network_policy": "offline-fixture-metadata-only",
+  "materialization_policy": "lockfile-first-offline-mirror-handoff-v1",
+  "source_lock_digest": "sha256:4444444444444444444444444444444444444444444444444444444444444444",
+  "offline_mirror_path": "tests/tooling/fixtures/package_ecosystem/hosted_registry/offline-mirror-index.json",
+  "network_required_after_lock": false,
+  "fallback_registry_success": false,
+  "packages": [
+    {
+      "package_id": "fixture:network.core",
+      "package_version": "1.0.0",
+      "source_digest": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
+      "manifest_digest": "sha256:2222222222222222222222222222222222222222222222222222222222222222",
+      "registry_record_digest": "sha256:050aacb1afc69d1c336e79df7b721497fd00a47dc3c79e7f19a8ed5716352f50",
+      "package_signature_id": "sha256:ebdad2e83df00f75a7bcfb4d4079eeeedc285d191591ef135b5ab35c7ec11c3f",
+      "registry_signature_id": "sha256:2e2ee5f236794ddd4ffa060a252400bed69bfd4f7413795794faeb4e6777279a",
+      "cache_key": "fixture:network.core@1.0.0",
+      "cache_path": "tests/tooling/fixtures/package_ecosystem/hosted_registry/cache/network-core.json",
+      "cache_digest": "sha256:3333333333333333333333333333333333333333333333333333333333333333"
+    }
+  ],
+  "offline_mirror_handoff": {
+    "handoff_id": "fixture-network-core-1.0.0-offline-mirror-handoff",
+    "mirror_path": "tests/tooling/fixtures/package_ecosystem/hosted_registry/offline-mirror-index.json",
+    "requires_lock_materialization": true,
+    "offline_replay_sufficient": true,
+    "network_required_after_lock": false,
+    "local_install_fallback_for_unverified_artifacts": false
+  }
 }

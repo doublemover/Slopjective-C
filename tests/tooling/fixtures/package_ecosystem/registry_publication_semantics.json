@@ -54,14 +54,14 @@
     {
       "layer_id": "hosted-registry",
       "support_state": "supported-source-fixture-offline-only",
-      "source_of_truth": "checked-in hosted registry index, provider model, snapshot record, service-boundary record, hermetic service reference, service availability record, offline mirror, fixture lock, cache identity, trust result, revocation/yank state, and offline mirror handoff",
+      "source_of_truth": "checked-in hosted registry index, provider model, deterministic snapshot fetch record, explicit disabled-live transport policy, service-boundary record, hermetic service reference, service availability record, trust enforcement, materialized lock policy, offline mirror, fixture lock, cache identity, trust result, revocation/yank state, and offline mirror replay handoff",
       "publication_path": "tests/tooling/fixtures/package_ecosystem/hosted_registry/hosted-registry-index.json",
-      "claim_boundary": "source-owned hosted registry contract metadata only; live network fetch, production auth, production moderation, public service availability, unverified local-install fallback, rollback snapshots, and fallback registry success claims fail closed"
+      "claim_boundary": "source-owned hosted registry snapshot/trust/lock/offline replay contract only; live public network transport, production auth, production moderation, production registry trust-root operations, public service availability SLOs, unverified local-install fallback, rollback snapshots, and fallback registry success claims fail closed"
     },
     {
       "layer_id": "hosted-registry-service",
       "support_state": "supported-source-fixture-hermetic-only",
-      "source_of_truth": "checked-in hosted registry service fixture with fixture auth, trust-root operation, revocation service, moderation policy, availability record, request policy, no-network policy, and negative service cases",
+      "source_of_truth": "checked-in hosted registry service fixture with fixture auth, trust-root operation, revocation service, moderation policy, availability record, request policy, deterministic snapshot handoff, materialized-lock policy, no-network policy, and negative service cases",
       "publication_path": "tests/tooling/fixtures/package_ecosystem/hosted_registry/service/hosted-registry-service.json",
       "claim_boundary": "hermetic local service contract only; live public availability, production auth, production moderation, production registry roots, and fallback registry success remain reserved-fail-closed"
     },
@@ -70,7 +70,7 @@
       "support_state": "supported-source-fixture-offline-only",
       "source_of_truth": "checked-in network dependency resolution fixture bound to hosted registry endpoint, fixture lock, trust root, offline mirror, and cache signature",
       "publication_path": "tests/tooling/fixtures/package_ecosystem/network_resolution/network-dependency-resolution.json",
-      "claim_boundary": "offline fixture-backed network dependency resolution only; live network fetch and fallback registry success fail closed"
+      "claim_boundary": "offline fixture-backed network dependency resolution only; live network fetch and fallback registry success fail closed after deterministic snapshot/lock/offline handoff"
     },
     {
       "layer_id": "release-channel-publication",
@@ -94,8 +94,8 @@
     "local registry indexes must preserve exact locked target versions, dependency source authority digests, dependency source digests, package manifest digests, and replay commands",
     "interop loader metadata must fail closed when the mirror digest differs from the generated lock",
     "offline restore receipts must fail closed when any mirror cache entry is missing, extra, or digest-mismatched",
-    "hosted-registry behavior must fail closed unless it is the checked-in offline fixture contract with provider separation, snapshot rollback protection, service-boundary metadata, hermetic service contract, endpoint identity, channel identity, lock/trust material, cache identity, offline mirror handoff, trust result, revocation/yank state, and explicit failure modes",
-    "hosted-registry service behavior must fail closed unless fixture auth, trust-root operation, revocation, moderation, availability, exact-version request policy, and no-network fallback are all source-owned and schema-valid",
+    "hosted-registry behavior must fail closed unless it is the checked-in offline fixture contract with provider separation, deterministic snapshot fetch, explicit disabled-live transport policy, snapshot rollback protection, service-boundary metadata, hermetic service contract, endpoint identity, channel identity, trust enforcement, lock materialization, cache identity, offline mirror replay handoff, trust result, revocation/yank state, and explicit failure modes",
+    "hosted-registry service behavior must fail closed unless fixture auth, trust-root operation, revocation, moderation, availability, exact-version request policy, deterministic snapshot handoff, materialized-lock policy, offline replay sufficiency, and no-network-after-lock behavior are all source-owned and schema-valid",
     "network dependency resolution must fail closed unless it is the checked-in offline fixture contract with endpoint identity, exact locked version, fixture lock digest, trust root, provenance, cache signature, and no fallback registry success",
     "package release-channel publication must fail closed when channel freshness is stale, lock/trust/provenance drift, cache tamper, dependency identity drift, or hosted registry endpoint mismatch is detected",
     "package registry publication must not activate release or registry trust roots until installer/update keys and extraction path safety are source-backed and reviewed",

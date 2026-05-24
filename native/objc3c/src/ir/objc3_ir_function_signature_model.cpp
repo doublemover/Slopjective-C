@@ -103,9 +103,12 @@ void MarkValueOptionalSignature(
   if (!descriptor.present) {
     return;
   }
+  if (!signature.has_value_optional_type_signature) {
+    signature.value_optional_lowering_supported = true;
+  }
   signature.has_value_optional_type_signature = true;
   signature.value_optional_lowering_supported =
-      signature.value_optional_lowering_supported ||
+      signature.value_optional_lowering_supported &&
       descriptor.lowering_supported;
   if (signature.value_optional_payload_type_spelling.empty()) {
     signature.value_optional_payload_type_spelling =

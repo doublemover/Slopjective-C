@@ -60,6 +60,25 @@ def test_platform_toolchain_support_evidence_fixture_validates() -> None:
         "support_claim_policy": "evidence-bound-current-probes-only",
         "unsupported_component_behavior": "fail-closed-no-range-claim",
     }
+    assert evidence["host_evidence_contract"]["hosted_evidence_ingestion"] == {
+        "workflow_path": ".github/workflows/platform-host-evidence.yml",
+        "runner_labels": {
+            "linux-x64": "ubuntu-24.04",
+            "darwin-arm64": "macos-15",
+        },
+        "ingestion_action": "ingest-platform-host-evidence",
+        "ingestion_helper": "scripts/ingest_objc3c_platform_host_evidence.py",
+        "generated_report_contract_id": "objc3c.platform.hosted-runner.evidence-report.v1",
+        "generated_report_root": "tmp/reports/platform-host-evidence",
+        "generated_only_result": "refuse-source-truth-promotion",
+        "review_promotion_policy": "checked-in-source-truth-required",
+        "candidate_evidence_record_ids": [
+            "objc3c.evidence.hosted-ci.linux-x64.generated-host-run",
+            "objc3c.evidence.hosted-ci.darwin-arm64.generated-host-run",
+        ],
+        "reviewed_source_truth_required": True,
+        "support_rows_remain_fail_closed_until_reviewed": True,
+    }
     assert {8206, 8228, 8229, 8230, 8231, 8232} <= set(evidence["roadmap_issue_refs"])
     assert hosted_summaries["support_claim_policy"] == "summary-only-no-support-promotion"
     assert {
@@ -106,6 +125,15 @@ def test_platform_toolchain_support_evidence_fixture_validates() -> None:
         "objc3c.hosted.toolchain.missing-llc.fail-closed": False,
         "objc3c.hosted.toolchain.mixed-root.fail-closed": False,
         "objc3c.hosted.toolchain.mismatched-version.fail-closed": False,
+    }
+    assert {
+        case["summary_id"]: case["hosted_runner"]
+        for case in expansion_contract["hosted_runner_projection_cases"]
+        if case["summary_kind"] == "platform"
+    } == {
+        "objc3c.hosted.windows-x64.supported.current": "windows-latest",
+        "objc3c.hosted.linux-x64.unsupported": "ubuntu-24.04",
+        "objc3c.hosted.darwin-arm64.unsupported": "macos-15",
     }
     assert "native-object-emission-unavailable" in {
         failure_class["failure_id"]
@@ -169,6 +197,12 @@ def test_platform_toolchain_support_evidence_fixture_validates() -> None:
         "unresolved_version_status": "native_object_emission_unresolved_tool_version",
         "hosted_runner_behavior": "fail-closed-no-native-object-success-claim",
         "conformance_minima_behavior": "fail-closed-before-cross-lane-runtime-proof",
+        "task_hygiene_behavior": (
+            "skip-no-success-claim-when-native-object-emission-unavailable"
+        ),
+        "required_conformance_minima_env": (
+            "OBJC3C_REQUIRE_HOSTED_NATIVE_OBJECT_EMISSION"
+        ),
         "fallback_policy": "no-clang-fallback-success-claim",
         "coherent_toolchain_policy": "no-mixed-root-or-mismatched-version-success-claim",
     }
@@ -314,6 +348,32 @@ def test_platform_support_matrix_publishes_issue_owned_evidence_sections() -> No
         "darwin-arm64": "unsupported-host-darwin-arm64-denied",
     }
     assert "objc3c.evidence.toolchain.llvm.current-probe" in payload["support_evidence_ids"]
+    assert {
+        "objc3c.evidence.hosted-ci.linux-x64.generated-host-run",
+        "objc3c.evidence.hosted-ci.darwin-arm64.generated-host-run",
+    } <= set(payload["support_evidence_ids"])
+    generated_host_records = {
+        record["evidence_id"]: record
+        for record in payload["evidence_records"]
+        if record["evidence_id"].startswith("objc3c.evidence.hosted-ci.")
+        and record["evidence_id"].endswith(".generated-host-run")
+    }
+    assert {
+        record_id: record["claim_weight"]
+        for record_id, record in generated_host_records.items()
+    } == {
+        "objc3c.evidence.hosted-ci.linux-x64.generated-host-run": "policy",
+        "objc3c.evidence.hosted-ci.darwin-arm64.generated-host-run": "policy",
+    }
+    assert all(
+        not record["supports_platform_ids"]
+        and "scripts/ingest_objc3c_platform_host_evidence.py" in record["source_paths"]
+        and any(
+            path.startswith("tmp/reports/platform-host-evidence/")
+            for path in record["generated_report_paths"]
+        )
+        for record in generated_host_records.values()
+    )
     package_rows = {
         row["row_id"]: row
         for row in payload["package_variant_rows"]
@@ -578,3 +638,14 @@ def test_platform_toolchain_support_evidence_rejects_missing_native_object_polic
             tier_policy=load_fixture("tests/tooling/fixtures/platform_hardening/platform_support_tier_policy.json"),
             unsupported_host_policy=unsupported_host_policy,
         )
+
+
+def test_platform_toolchain_support_evidence_rejects_generated_host_run_promotion() -> None:
+    evidence = deepcopy(load_platform_toolchain_support_evidence())
+    for record in evidence["evidence_records"]:
+        if record["evidence_id"] == "objc3c.evidence.hosted-ci.linux-x64.generated-host-run":
+            record["supports_platform_ids"] = ["linux-x64"]
+            break
+
+    with pytest.raises(RuntimeError, match="generated host evidence widened support"):
+        validate_evidence(evidence)

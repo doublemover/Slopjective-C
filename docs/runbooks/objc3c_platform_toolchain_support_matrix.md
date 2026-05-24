@@ -30,6 +30,8 @@ Checked-in source truth:
 - `tests/tooling/fixtures/platform_support/source_truth_matrix.json`
 - `tests/tooling/fixtures/platform_hardening/unsupported_host_fail_closed_policy.json`
 - `tests/tooling/fixtures/platform_hardening/boundary_inventory.json`
+- `.github/workflows/platform-host-evidence.yml`
+- `scripts/ingest_objc3c_platform_host_evidence.py`
 - `native/objc3c/src/driver/objc3_llvm_capability_routing.cpp`
 - `scripts/objc3c_llvm_capability_probe/reports.py`
 - `scripts/check_objc3c_cross_lane_e2e.py`
@@ -39,6 +41,8 @@ Generated artifacts are replay outputs only:
 - `tmp/artifacts/platform-hardening/objc3c-platform-matrix.json`
 - `tmp/reports/platform-hardening/platform-matrix-summary.json`
 - `tmp/reports/platform-hardening/host-matrix-summary.json`
+- `tmp/reports/platform-host-evidence/<platform>/host-evidence-report.json`
+- `tmp/reports/platform-host-evidence/<platform>/ingestion-summary.json`
 
 ## Current Support State
 
@@ -123,6 +127,42 @@ A package row can move from fail-closed or reserved to support only by changing
 checked-in source rows and evidence references together. Hosted-runner summaries
 remain summary-only and cannot clear a promotion gate.
 
+## Hosted Runner Evidence Collection
+
+The public evidence workflow is
+`.github/workflows/platform-host-evidence.yml`. It is manual by design and
+collects generated runner evidence without making pull-request CI depend on
+currently unsupported host rows.
+
+- `linux-x64` runs on `ubuntu-24.04`.
+- `darwin-arm64` runs on `macos-15`.
+
+Each hosted job attempts the same promotion-relevant path:
+
+- install host toolchain prerequisites
+- install workflow dependencies
+- run `scripts/probe_objc3c_llvm_capabilities.py`
+- `npm run objc3c -- build-native-binaries`
+- `npm run objc3c -- package-runnable-toolchain`
+- `npm run objc3c -- validate-packaging-channels-end-to-end`
+- `npm run objc3c -- test-hosted-execution-smoke`
+- `npm run objc3c -- ingest-platform-host-evidence`
+
+The ingestion helper writes a generated host evidence report and an ingestion
+summary under `tmp/reports/platform-host-evidence/<platform>/`. The summary is
+source-consumable but not source truth. Its required result is
+`GENERATED_ONLY_REFUSED_FOR_SOURCE_TRUTH`: generated workflow output may be
+reviewed by a maintainer, but it cannot clear `required_missing_evidence_classes`
+or publish a support row until the reviewed evidence is promoted into checked-in
+source truth.
+
+The checked-in source contract records the candidate evidence rows
+`objc3c.evidence.hosted-ci.linux-x64.generated-host-run` and
+`objc3c.evidence.hosted-ci.darwin-arm64.generated-host-run` as `policy`
+evidence with empty `supports_platform_ids`. Those rows document where real
+host artifacts will appear; they deliberately do not support Linux x64 or macOS
+arm64.
+
 ## Required Host Evidence
 
 Every supported host row must provide all four evidence classes:
@@ -192,6 +232,18 @@ summaries, and missing-`llc`/mixed-root/mismatched-version toolchain summaries.
 Those records can explain why a hosted runner failed closed, but only the
 Windows x64 row may publish platform support.
 
+Task-hygiene hosted smoke and source-parity gates are optional publication
+guards: when `llc --filetype=obj` is absent or the LLVM tool identity is
+incoherent, they skip with no native object, package, execution, or platform
+success claim. `conformance-minima` is stricter. It runs
+`check-hosted-llvm-capabilities` with
+`OBJC3C_REQUIRE_HOSTED_NATIVE_OBJECT_EMISSION=1`, so missing `llc`, missing
+`--filetype=obj`, mixed roots, mismatched versions, unsupported versions, or
+unresolved tool versions fail closed before cross-lane runtime proof. LLVM
+header/library discovery through `llvm-config` or an installed LLVM root remains
+required for package and native execution claims, not for the narrower native
+object-emission prerequisite by itself.
+
 ## Replay Surface
 
 Use the public bridge for replay:
@@ -203,6 +255,8 @@ Use the public bridge for replay:
 - `npm run objc3c -- package-runnable-toolchain`
 - `npm run objc3c -- test-hosted-execution-smoke`
 - `npm run objc3c -- validate-package-install-distribution`
+- `npm run objc3c -- ingest-platform-host-evidence -- --platform-id linux-x64 --runner-label ubuntu-24.04`
+- `npm run objc3c -- ingest-platform-host-evidence -- --platform-id darwin-arm64 --runner-label macos-15`
 
 The matrix can cite generated reports from those commands as evidence outputs,
 but checked-in schemas, fixtures, validators, and runbooks remain the source of

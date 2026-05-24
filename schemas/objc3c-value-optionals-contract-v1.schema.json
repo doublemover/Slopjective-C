@@ -27,7 +27,7 @@
     "issue_ref": { "const": 8234 },
     "canonical_spelling": { "const": "Optional<T>" },
     "source_status": {
-      "const": "semantic-type-signature-admitted-runtime-execution-fail-closed"
+      "const": "semantic-type-signature-admitted-bounded-scalar-runtime-abi"
     },
     "semantic_model": {
       "type": "object",
@@ -41,6 +41,8 @@
         "unwrap_requires_presence_check",
         "unwrap_failure_diagnostic_supported",
         "nil_bridge_diagnostic_supported",
+        "runtime_abi_payload_scope",
+        "supported_runtime_payload_forms",
         "implicit_nil_absence_allowed",
         "optional_id_distinct_from_nullable_object_pointer"
       ],
@@ -54,6 +56,15 @@
         "unwrap_requires_presence_check": { "const": true },
         "unwrap_failure_diagnostic_supported": { "const": true },
         "nil_bridge_diagnostic_supported": { "const": true },
+        "runtime_abi_payload_scope": {
+          "const": "supported-scalar-payload-forms-only"
+        },
+        "supported_runtime_payload_forms": {
+          "type": "array",
+          "contains": { "const": "i32" },
+          "items": { "type": "string", "minLength": 1 },
+          "minItems": 1
+        },
         "implicit_nil_absence_allowed": { "const": false },
         "optional_id_distinct_from_nullable_object_pointer": { "const": true }
       },
@@ -74,14 +85,15 @@
         "runtime_execution_supported",
         "lowering_supported",
         "ir_payload_emission_supported",
-        "call_abi_lowering_supported"
+        "call_abi_lowering_supported",
+        "broad_public_runtime_support_claim_allowed"
       ],
       "properties": {
         "layout_id": {
           "const": "objc3.value_optional.inline_presence_payload.v1"
         },
         "layout_status": {
-          "const": "stable-inline-presence-payload-contract-runtime-lowering-deferred"
+          "const": "stable-packed-presence-payload-runtime-lowered"
         },
         "presence_field": { "const": "has_value" },
         "payload_storage_field": { "const": "payload" },
@@ -92,16 +104,17 @@
         "presence_state": { "const": "has_value=true" },
         "stable_layout_contract_supported": { "const": true },
         "executable_lowering_contract_supported": { "const": true },
-        "runtime_execution_supported": { "const": false },
-        "lowering_supported": { "const": false },
-        "ir_payload_emission_supported": { "const": false },
-        "call_abi_lowering_supported": { "const": false }
+        "runtime_execution_supported": { "const": true },
+        "lowering_supported": { "const": true },
+        "ir_payload_emission_supported": { "const": true },
+        "call_abi_lowering_supported": { "const": true },
+        "broad_public_runtime_support_claim_allowed": { "const": false }
       },
       "additionalProperties": false
     },
     "lowering_contract": { "$ref": "#/$defs/loweringContract" },
     "interface_roundtrip_status": {
-      "const": "semantic-carrier-roundtrips-runtime-deferred"
+      "const": "semantic-carrier-roundtrips-bounded-scalar-runtime-abi"
     },
     "records": {
       "type": "object",
@@ -123,16 +136,26 @@
       "type": "object",
       "required": [
         "lowercase_alias_accepted",
+        "nested_value_optional_runtime_supported",
+        "generic_payload_runtime_supported",
+        "property_storage_supported",
+        "ivar_storage_supported",
         "nil_to_scalar_coercion_allowed",
         "implicit_nil_absence_allowed",
         "nullable_pointer_conversion_allowed",
+        "unchecked_unwrap_allowed",
         "throws_result_conversion_allowed"
       ],
       "properties": {
         "lowercase_alias_accepted": { "const": false },
+        "nested_value_optional_runtime_supported": { "const": false },
+        "generic_payload_runtime_supported": { "const": false },
+        "property_storage_supported": { "const": false },
+        "ivar_storage_supported": { "const": false },
         "nil_to_scalar_coercion_allowed": { "const": false },
         "implicit_nil_absence_allowed": { "const": false },
         "nullable_pointer_conversion_allowed": { "const": false },
+        "unchecked_unwrap_allowed": { "const": false },
         "throws_result_conversion_allowed": { "const": false }
       },
       "additionalProperties": false
@@ -249,17 +272,18 @@
         "runtime_construction_supported",
         "runtime_unwrap_supported",
         "ir_payload_emission_supported",
-        "call_abi_lowering_supported"
+        "call_abi_lowering_supported",
+        "runtime_abi_payload_scope"
       ],
       "properties": {
         "contract_id": {
           "const": "objc3c.value_optional.lowering.contract.v1"
         },
         "status": {
-          "const": "stable-abi-carrier-contract-runtime-execution-fail-closed"
+          "const": "stable-packed-abi-carrier-runtime-execution-supported"
         },
         "executable_lowering_status": {
-          "const": "presence-payload-construction-and-checked-unwrap-contract-ready-runtime-abi-deferred"
+          "const": "packed-presence-payload-runtime-abi-lowered"
         },
         "construction_contract": {
           "const": "explicit-absent-present-constructors-only"
@@ -280,12 +304,15 @@
           "const": "nil-bridging-to-optional-is-rejected"
         },
         "remaining_runtime_boundary": {
-          "const": "ir-payload-emission-and-call-abi-lowering-deferred"
+          "const": "unchecked-unwrap-property-ivar-storage-and-nullable-pointer-bridging-remain-reserved"
         },
-        "runtime_construction_supported": { "const": false },
-        "runtime_unwrap_supported": { "const": false },
-        "ir_payload_emission_supported": { "const": false },
-        "call_abi_lowering_supported": { "const": false }
+        "runtime_construction_supported": { "const": true },
+        "runtime_unwrap_supported": { "const": true },
+        "ir_payload_emission_supported": { "const": true },
+        "call_abi_lowering_supported": { "const": true },
+        "runtime_abi_payload_scope": {
+          "const": "supported-scalar-payload-forms-only"
+        }
       },
       "additionalProperties": false
     }

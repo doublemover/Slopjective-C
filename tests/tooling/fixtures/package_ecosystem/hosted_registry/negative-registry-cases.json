@@ -28,6 +28,26 @@
       "expected_failure": "O3PKG8055: live public hosted registry transport disabled"
     },
     {
+      "case_id": "transport-policy-drift",
+      "failure_mode": "transport-policy-drift",
+      "expected_failure": "O3PKG8055: hosted registry snapshot transport allows live network fetch"
+    },
+    {
+      "case_id": "snapshot-fetch-policy-drift",
+      "failure_mode": "snapshot-fetch-policy-drift",
+      "expected_failure": "O3PKG8055: hosted registry snapshot fetch policy drifted"
+    },
+    {
+      "case_id": "snapshot-source-digest-drift",
+      "failure_mode": "snapshot-source-digest-drift",
+      "expected_failure": "O3PKG8055: hosted registry snapshot source digest drifted"
+    },
+    {
+      "case_id": "lock-materialization-drift",
+      "failure_mode": "lock-materialization-drift",
+      "expected_failure": "O3PKG8055: hosted registry lock materialization policy drifted"
+    },
+    {
       "case_id": "unsupported-live-service-mode",
       "failure_mode": "unsupported-live-service-mode",
       "expected_failure": "O3PKG8055: unsupported live hosted registry service mode"

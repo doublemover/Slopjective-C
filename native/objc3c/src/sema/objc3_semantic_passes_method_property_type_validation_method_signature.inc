@@ -14,7 +14,7 @@ static void ValidateMethodParameterTypeSuffixes(const Objc3MethodDecl &method,
                                      "type mismatch: generic parameter type suffix '" + suffix +
                                          "' is unsupported for selector '" + selector + "' parameter '" + param.name +
                                          "' in " + owner_kind + " '" + owner_name + "'"));
-    } else if (param.has_generic_suffix &&
+    } else if (param.has_generic_suffix && !param.value_optional.present &&
                !ValidateGenericCollectionSpecializationSuffix(
                    param.object_pointer_type_spelling,
                    param.object_pointer_type_name,
@@ -83,6 +83,7 @@ static void ValidateMethodReturnTypeSuffixes(const Objc3MethodDecl &method,
                                        "' for selector '" + selector + "' in " + owner_kind + " '" + owner_name +
                                        "'"));
   } else if (method.has_return_generic_suffix &&
+             !method.return_value_optional.present &&
              !ValidateGenericCollectionSpecializationSuffix(
                  method.return_object_pointer_type_spelling,
                  method.return_object_pointer_type_name,

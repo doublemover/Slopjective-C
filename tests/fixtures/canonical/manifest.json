@@ -1504,6 +1504,38 @@
       "expected_diagnostic_code": "O3S218"
     },
     {
+      "path": "tests/tooling/fixtures/native/typed_throws_catch_bridge_positive.objc3",
+      "origin": "hand-authored",
+      "owner_phase": "sema",
+      "behavior_family": "errors",
+      "fixture_kind": "positive",
+      "expected_diagnostic_code": ""
+    },
+    {
+      "path": "tests/tooling/fixtures/native/recovery/negative/negative_typed_throws_incompatible_catch.objc3",
+      "origin": "hand-authored",
+      "owner_phase": "sema",
+      "behavior_family": "errors",
+      "fixture_kind": "diagnostic_negative",
+      "expected_diagnostic_code": "O3S206"
+    },
+    {
+      "path": "tests/tooling/fixtures/native/recovery/negative/negative_typed_throws_foreign_carrier_catch.objc3",
+      "origin": "hand-authored",
+      "owner_phase": "sema",
+      "behavior_family": "errors",
+      "fixture_kind": "diagnostic_negative",
+      "expected_diagnostic_code": "O3S206"
+    },
+    {
+      "path": "tests/tooling/fixtures/native/execution/positive/value_optionals_runtime_abi_positive.objc3",
+      "origin": "hand-authored",
+      "owner_phase": "runtime",
+      "behavior_family": "types",
+      "fixture_kind": "positive",
+      "expected_diagnostic_code": ""
+    },
+    {
       "path": "tests/tooling/fixtures/native/recovery/negative/negative_value_optional_canonical_reserved.objc3",
       "origin": "hand-authored",
       "owner_phase": "parser",
@@ -1522,10 +1554,10 @@
     {
       "path": "tests/tooling/fixtures/native/recovery/negative/negative_value_optional_nil_scalar_coercion_reserved.objc3",
       "origin": "hand-authored",
-      "owner_phase": "parser",
+      "owner_phase": "sema",
       "behavior_family": "types",
-      "fixture_kind": "canonical_rejection",
-      "expected_diagnostic_code": "O3P159"
+      "fixture_kind": "diagnostic_negative",
+      "expected_diagnostic_code": "O3S211"
     },
     {
       "path": "tests/tooling/fixtures/native/recovery/negative/negative_value_optional_nested_lowercase_alias_reserved.objc3",
@@ -2087,6 +2119,22 @@
     },
     {
       "path": "tests/tooling/fixtures/package_ecosystem/hosted_registry/hosted-registry-index.json",
+      "origin": "hand-authored",
+      "owner_phase": "e2e",
+      "behavior_family": "package-ecosystem",
+      "fixture_kind": "positive",
+      "expected_diagnostic_code": ""
+    },
+    {
+      "path": "tests/tooling/fixtures/package_ecosystem/hosted_registry/offline-mirror-index.json",
+      "origin": "hand-authored",
+      "owner_phase": "e2e",
+      "behavior_family": "package-ecosystem",
+      "fixture_kind": "positive",
+      "expected_diagnostic_code": ""
+    },
+    {
+      "path": "tests/tooling/fixtures/package_ecosystem/hosted_registry/fixture-lock.json",
       "origin": "hand-authored",
       "owner_phase": "e2e",
       "behavior_family": "package-ecosystem",

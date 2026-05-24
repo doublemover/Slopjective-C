@@ -1,4 +1,3 @@
-fn main(value: Optional<i32>) -> i32 {
+fn main(value: Optional<Optional<i32>>) -> i32 {
   return 0;
 }
-

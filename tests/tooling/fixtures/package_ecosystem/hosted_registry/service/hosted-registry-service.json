@@ -168,10 +168,17 @@
   "resolution_output": {
     "registry_index_path": "tests/tooling/fixtures/package_ecosystem/hosted_registry/hosted-registry-index.json",
     "offline_mirror_path": "tests/tooling/fixtures/package_ecosystem/hosted_registry/offline-mirror-index.json",
+    "snapshot_fetcher_id": "deterministic-hosted-registry-snapshot-fetcher-v1",
+    "transport_policy_id": "explicit-hosted-registry-transport-policy-v1",
+    "source_lock": "tests/tooling/fixtures/package_ecosystem/hosted_registry/fixture-lock.json",
+    "source_lock_digest": "sha256:4444444444444444444444444444444444444444444444444444444444444444",
+    "lock_materialization_policy": "lockfile-first-offline-mirror-handoff-v1",
+    "materialized_lock_contract_id": "objc3c.package_ecosystem.hosted_registry_materialized_lock.v1",
     "lock_materialization_required": true,
     "offline_mirror_handoff_required": true,
     "offline_replay_sufficient": true,
-    "network_required_after_lock": false
+    "network_required_after_lock": false,
+    "fallback_registry_success": false
   },
   "negative_cases": [
     {

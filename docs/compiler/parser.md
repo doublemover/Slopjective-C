@@ -6,22 +6,25 @@ marks the behavior implemented.
 
 Current v1 parser truth admits single-payload `throws(E)` as a source-owned
 typed-throws effect and admits canonical `Optional<T>` as a semantic
-type-signature carrier with a checked absent/present lowering contract, while
-staying fail-closed for value-optional runtime constructor symbols, unchecked
-unwrap, IR payload emission, call ABI lowering, expression-position `match`,
-and `=>` match arms. For #8233, empty,
+type-signature carrier with a checked absent/present lowering contract and a
+bounded packed scalar runtime ABI, while staying fail-closed for nested/generic
+value-optional payload lowering, property/ivar storage, unchecked unwrap,
+nullability bridges, implicit nil, nil-to-scalar coercion, throws/result
+conversion, expression-position `match`, and `=>` match arms. For #8233, empty,
 multi, malformed, and non-type parenthesized `throws(...)` payload shapes are
 parser-owned `O3P182` rejections and are never erased into bare untyped
 `throws`; exactly one type payload is preserved through interface contracts and
-hidden error-out ABI lowering.
+hidden error-out ABI lowering. Public support remains reserved until catch/bridge
+records and replay evidence agree across the capability row.
 For #8234, canonical `Optional<T>` has first-class type identity plus a stable
 `has_value`/`payload` contract in source and textual-interface records. The
-owned contract now distinguishes explicit absent/present construction and
-checked unwrap/binding diagnostics from the still-deferred runtime ABI path.
+owned contract now distinguishes bounded scalar packed runtime ABI support from
+the still-reserved broad value-optional runtime surface.
 Lowercase `optional<T>` remains `O3C004` removed spelling rather than an alias,
 and neither spelling enables unchecked unwrap, implicit nil absence,
-nil-to-scalar, throws/result, nullable-pointer conversion, IR payload emission,
-or call ABI lowering. The parser-owned diagnostic symbols are
+nil-to-scalar, throws/result, nullable-pointer conversion, nested/generic payload
+runtime lowering, property/ivar storage, or broad runtime ABI claims. The
+parser-owned diagnostic symbols are
 `kObjc3ParserDiagnosticReservedTypedThrowsCode`,
 `kObjc3ParserDiagnosticReservedValueOptionalCode`, and
 `kObjc3ParserDiagnosticRemovedOptionalAliasCode` in the language-evolution
@@ -30,7 +33,10 @@ those identifiers as fail-closed anchors, not support claims.
 Standalone textual-interface import also treats these rows as hard contracts:
 `throws(E)` metadata may import `typed` only with one preserved payload, a
 typed error-out ABI claim, and no untyped erasure; `none` and bare `untyped`
-records keep zero typed payload arity. `Optional<T>` metadata imports the
+records keep zero typed payload arity. Typed catch compatibility records allow
+only exact payload catches and the explicit `id<Error>` bridge catch; mismatched
+typed catches and unsupported foreign carriers fail closed. `Optional<T>`
+metadata imports the
 semantic carrier, stable layout identity, explicit absent/present construction
 contract, checked unwrap/binding diagnostic contract, and fail-closed
 conversion/runtime flags; layout drift, unchecked unwrap, implicit bridge, IR

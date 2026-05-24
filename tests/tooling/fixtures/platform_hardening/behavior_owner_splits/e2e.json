@@ -21,6 +21,7 @@
     "channel:local-installer",
     "channel:offline-bundle",
     "public_action:build-platform-support-matrix",
+    "public_action:ingest-platform-host-evidence",
     "public_action:validate-platform-hardening",
     "public_action:validate-platform-hardening-end-to-end",
     "public_action:package-runnable-toolchain",

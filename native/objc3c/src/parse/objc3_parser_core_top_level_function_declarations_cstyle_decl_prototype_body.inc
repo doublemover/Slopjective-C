@@ -17,7 +17,7 @@
       block_failed_ = false;
       return false;
     }
-    if (RejectValueOptionalExecutableFunction(fn)) {
+    if (RejectUnsupportedValueOptionalExecutableFunction(fn)) {
       return false;
     }
 

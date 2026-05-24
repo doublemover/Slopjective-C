@@ -46,11 +46,26 @@ HOSTED_REGISTRY_NETWORK_POLICY = "offline-fixture-metadata-only"
 HOSTED_REGISTRY_RESOLVER_ID = "deterministic-hosted-registry-offline-resolver-v1"
 HOSTED_REGISTRY_PROVIDER_ID = "schema-backed-hosted-registry-provider-v1"
 HOSTED_REGISTRY_TRUST_VALIDATOR_ID = "schema-backed-hosted-registry-trust-validator-v1"
+HOSTED_REGISTRY_SNAPSHOT_FETCHER_ID = "deterministic-hosted-registry-snapshot-fetcher-v1"
+HOSTED_REGISTRY_TRANSPORT_POLICY_ID = "explicit-hosted-registry-transport-policy-v1"
+HOSTED_REGISTRY_SNAPSHOT_SOURCE_KIND = "checked-in-hosted-registry-snapshot"
+HOSTED_REGISTRY_MATERIALIZED_LOCK_CONTRACT_ID = (
+    "objc3c.package_ecosystem.hosted_registry_materialized_lock.v1"
+)
 HOSTED_REGISTRY_SNAPSHOT_POLICY = "monotonic-sequence-required"
 HOSTED_REGISTRY_LOCK_MATERIALIZATION_POLICY = "lockfile-first-offline-mirror-handoff-v1"
 HOSTED_REGISTRY_ENDPOINT_ID = "objc3c-hosted-registry-fixture-endpoint-v1"
 HOSTED_REGISTRY_CHANNEL_ID = "stable-fixture"
 HOSTED_REGISTRY_BASE_URL = "https://registry.objc3c.invalid/fixture/v1"
+HOSTED_REGISTRY_FIXTURE_INDEX_PATH = (
+    "tests/tooling/fixtures/package_ecosystem/hosted_registry/hosted-registry-index.json"
+)
+HOSTED_REGISTRY_FIXTURE_MIRROR_PATH = (
+    "tests/tooling/fixtures/package_ecosystem/hosted_registry/offline-mirror-index.json"
+)
+HOSTED_REGISTRY_FIXTURE_LOCK_PATH = (
+    "tests/tooling/fixtures/package_ecosystem/hosted_registry/fixture-lock.json"
+)
 OFFLINE_MIRROR_CONTRACT_ID = "objc3c.package_ecosystem.offline_mirror.v1"
 OFFLINE_MIRROR_NETWORK_POLICY = "no-network-during-validation"
 HOSTED_REGISTRY_FAILURE_MODES = {
@@ -66,6 +81,7 @@ HOSTED_REGISTRY_FAILURE_MODES = {
     "live-network-fetch",
     "live-public-service-unavailable",
     "live-transport-disabled",
+    "lock-materialization-drift",
     "missing-package-provenance",
     "missing-service-auth",
     "offline-mirror-handoff-drift",
@@ -82,6 +98,9 @@ HOSTED_REGISTRY_FAILURE_MODES = {
     "service-index-drift",
     "service-moderation-blocked",
     "service-revocation-unavailable",
+    "snapshot-fetch-policy-drift",
+    "snapshot-source-digest-drift",
+    "transport-policy-drift",
     "unavailable-registry",
     "unlocked-version-selection",
     "unpinned-hosted-dependency",
@@ -141,6 +160,40 @@ class HostedRegistryResolutionRequest:
     service_id: str = HOSTED_REGISTRY_SERVICE_ID
     auth_subject_id: str = HOSTED_REGISTRY_SERVICE_DEFAULT_SUBJECT_ID
     auth_token_id: str = HOSTED_REGISTRY_SERVICE_DEFAULT_TOKEN_ID
+
+
+@dataclass(frozen=True)
+class HostedRegistrySnapshotFetchRequest:
+    registry_index_path: str = HOSTED_REGISTRY_FIXTURE_INDEX_PATH
+    offline_mirror_path: str = HOSTED_REGISTRY_FIXTURE_MIRROR_PATH
+    source_lock: str = HOSTED_REGISTRY_FIXTURE_LOCK_PATH
+    endpoint_id: str = HOSTED_REGISTRY_ENDPOINT_ID
+    channel_id: str = HOSTED_REGISTRY_CHANNEL_ID
+    minimum_snapshot_sequence: int = 1
+    allow_network: bool = False
+    registry_url: str | None = None
+
+
+@dataclass(frozen=True)
+class HostedRegistryTransportPolicy:
+    policy_id: str
+    transport_id: str
+    mode: str
+    live_network_allowed: bool
+    fallback_registry_success: bool
+
+
+@dataclass(frozen=True)
+class HostedRegistryFetchedSnapshot:
+    fetcher_id: str
+    registry_id: str
+    snapshot_id: str
+    sequence: int
+    registry_index_path: str
+    offline_mirror_path: str
+    source_lock: str
+    source_lock_digest: str
+    transport_policy: HostedRegistryTransportPolicy
 
 
 @dataclass(frozen=True)
@@ -225,6 +278,34 @@ class HostedRegistryResolution:
     trust_result_id: str
 
 
+@dataclass(frozen=True)
+class HostedRegistryMaterializedLock:
+    contract_id: str
+    package_id: str
+    package_version: str
+    source_lock: str
+    source_lock_digest: str
+    trust_root_id: str
+    source_digest: str
+    manifest_digest: str
+    registry_record_digest: str
+    package_signature_id: str
+    registry_signature_id: str
+    cache_key: str
+    cache_path: str
+    cache_digest: str
+    offline_mirror_path: str
+    network_required_after_lock: bool
+
+
+@dataclass(frozen=True)
+class HostedRegistryOfflineReplayPlan:
+    fetched_snapshot: HostedRegistryFetchedSnapshot
+    resolution: HostedRegistryResolution
+    materialized_lock: HostedRegistryMaterializedLock
+    replay_commands: tuple[str, ...]
+
+
 class HostedRegistryResolutionError(RuntimeError):
     """Raised when hosted registry resolution must fail closed."""
 
@@ -270,6 +351,31 @@ def _string_values(value: Any) -> set[str]:
     if not isinstance(value, list):
         return set()
     return {str(item) for item in value if isinstance(item, str)}
+
+
+def _path_is_safe_repo_relative(raw_path: str) -> bool:
+    normalized = raw_path.replace("\\", "/")
+    path = Path(normalized)
+    return (
+        bool(normalized)
+        and not path.is_absolute()
+        and not normalized.startswith(("tmp/", "temp/", "~/", "/"))
+        and ".." not in path.parts
+        and not (len(normalized) >= 2 and normalized[1] == ":")
+    )
+
+
+def _repo_path_failures(
+    *,
+    root: Path | None,
+    label: str,
+    relative_path: str,
+) -> list[str]:
+    if not _path_is_safe_repo_relative(relative_path):
+        return [hosted_registry_diagnostic(f"unsafe hosted registry {label} path")]
+    if root is not None and not (root / relative_path.replace("\\", "/")).is_file():
+        return [hosted_registry_diagnostic(f"missing hosted registry {label} file")]
+    return []
 
 
 def _record_without_integrity_fields(record: dict[str, Any]) -> dict[str, Any]:
@@ -687,6 +793,196 @@ def collect_registry_snapshot_failures(index: dict[str, Any]) -> list[str]:
     return failures
 
 
+def collect_snapshot_fetch_failures(
+    index: dict[str, Any],
+    mirror: dict[str, Any],
+    *,
+    root: Path | None = None,
+    trust_policy: dict[str, Any] | None = None,
+) -> list[str]:
+    fetch = index.get("snapshot_fetch", {})
+    if not isinstance(fetch, dict):
+        return [hosted_registry_diagnostic("missing hosted registry snapshot fetch policy")]
+
+    failures: list[str] = []
+    if fetch.get("fetcher_id") != HOSTED_REGISTRY_SNAPSHOT_FETCHER_ID:
+        failures.append(hosted_registry_diagnostic("hosted registry snapshot fetch policy drifted"))
+
+    transport = fetch.get("transport_policy", {})
+    if not isinstance(transport, dict):
+        failures.append(hosted_registry_diagnostic("missing hosted registry transport policy"))
+    else:
+        expected_transport = {
+            "policy_id": HOSTED_REGISTRY_TRANSPORT_POLICY_ID,
+            "transport_id": HOSTED_REGISTRY_LIVE_TRANSPORT_ID,
+            "mode": "deterministic-offline-snapshot-replay",
+            "allowed_transport": "checked-in-registry-snapshot",
+            "request_policy": "fail-closed-before-network",
+            "unsupported_diagnostic": "live-transport-disabled",
+            "unavailable_behavior": "fail-closed",
+        }
+        for field_name, expected_value in expected_transport.items():
+            if transport.get(field_name) != expected_value:
+                failures.append(
+                    hosted_registry_diagnostic(
+                        f"hosted registry transport policy {field_name} drifted"
+                    )
+                )
+        if transport.get("live_network_allowed") is not False:
+            failures.append(
+                hosted_registry_diagnostic(
+                    "hosted registry snapshot transport allows live network fetch"
+                )
+            )
+        if transport.get("registry_url_allowed") is not False:
+            failures.append(
+                hosted_registry_diagnostic(
+                    "hosted registry snapshot transport allows registry URL fetch"
+                )
+            )
+        if transport.get("resolver_invocation_before_trust") is not False:
+            failures.append(
+                hosted_registry_diagnostic(
+                    "hosted registry snapshot transport can invoke resolver before trust"
+                )
+            )
+        if transport.get("fallback_registry_success") is not False:
+            failures.append(hosted_registry_diagnostic("fallback registry success path is forbidden"))
+
+    source = fetch.get("snapshot_source", {})
+    snapshot = index.get("snapshot", {})
+    lock_trust_material = index.get("lock_trust_material", {})
+    if not isinstance(source, dict):
+        failures.append(hosted_registry_diagnostic("missing hosted registry snapshot source"))
+        source = {}
+    if not isinstance(snapshot, dict):
+        snapshot = {}
+    if not isinstance(lock_trust_material, dict):
+        lock_trust_material = {}
+    expected_source = {
+        "source_kind": HOSTED_REGISTRY_SNAPSHOT_SOURCE_KIND,
+        "registry_id": str(index.get("registry_id", "")),
+        "registry_index_path": HOSTED_REGISTRY_FIXTURE_INDEX_PATH,
+        "offline_mirror_path": str(lock_trust_material.get("offline_mirror_path", "")),
+        "source_lock": str(lock_trust_material.get("source_lock", "")),
+        "source_lock_digest": str(lock_trust_material.get("source_lock_digest", "")),
+        "snapshot_id": str(snapshot.get("snapshot_id", "")),
+        "snapshot_sequence": snapshot.get("sequence"),
+    }
+    for field_name, expected_value in expected_source.items():
+        if source.get(field_name) != expected_value:
+            diagnostic = (
+                "hosted registry snapshot source digest drifted"
+                if field_name == "source_lock_digest"
+                else f"hosted registry snapshot source {field_name} drifted"
+            )
+            failures.append(hosted_registry_diagnostic(diagnostic))
+    for label, field_name in (
+        ("snapshot index", "registry_index_path"),
+        ("snapshot offline mirror", "offline_mirror_path"),
+        ("snapshot source lock", "source_lock"),
+    ):
+        value = source.get(field_name)
+        failures.extend(
+            _repo_path_failures(
+                root=root,
+                label=label,
+                relative_path=str(value) if isinstance(value, str) else "",
+            )
+        )
+
+    trust = fetch.get("trust_enforcement", {})
+    if not isinstance(trust, dict):
+        failures.append(hosted_registry_diagnostic("missing hosted registry snapshot trust enforcement"))
+        trust = {}
+    trust_root_id = str(trust.get("trust_root_id", ""))
+    expected_trust_root = str(lock_trust_material.get("trust_root_id", ""))
+    if trust_root_id != expected_trust_root:
+        failures.append(hosted_registry_diagnostic("hosted registry snapshot trust root drifted"))
+    policy = trust_policy if isinstance(trust_policy, dict) else default_trust_policy_payload()
+    known_roots = set(trust_roots_by_id(policy))
+    if trust_root_id not in known_roots:
+        failures.append(hosted_registry_diagnostic(f"unknown trust root {trust_root_id}"))
+    revoked_roots = _revoked_values(index, "revoked_trust_root_ids") | _revoked_values(
+        {"revocations": policy.get("revocations", {})},
+        "revoked_trust_root_ids",
+    )
+    if trust_root_id in revoked_roots:
+        failures.append(hosted_registry_diagnostic(f"revoked trust root {trust_root_id}"))
+    expected_trust = {
+        "unknown_trust_root_policy": "fail-closed",
+        "revoked_subject_policy": "fail-closed",
+        "digest_drift_policy": "fail-closed",
+    }
+    for field_name, expected_value in expected_trust.items():
+        if trust.get(field_name) != expected_value:
+            failures.append(
+                hosted_registry_diagnostic(
+                    f"hosted registry snapshot trust {field_name} drifted"
+                )
+            )
+    for field_name in (
+        "signature_required",
+        "trust_root_required",
+        "revocation_required",
+        "cache_identity_required",
+        "offline_mirror_handoff_required",
+    ):
+        if trust.get(field_name) is not True:
+            failures.append(
+                hosted_registry_diagnostic(
+                    f"hosted registry snapshot trust disabled {field_name}"
+                )
+            )
+
+    lock_materialization = fetch.get("lock_materialization", {})
+    top_level_lock = index.get("lock_materialization", {})
+    if not isinstance(lock_materialization, dict):
+        failures.append(hosted_registry_diagnostic("missing hosted registry snapshot lock materialization"))
+        lock_materialization = {}
+    if not isinstance(top_level_lock, dict):
+        top_level_lock = {}
+    expected_lock = {
+        "contract_id": HOSTED_REGISTRY_MATERIALIZED_LOCK_CONTRACT_ID,
+        "policy": HOSTED_REGISTRY_LOCK_MATERIALIZATION_POLICY,
+        "selection_policy": HOSTED_REGISTRY_SELECTION_POLICY,
+        "lock_source": str(top_level_lock.get("source_lock", "")),
+        "offline_mirror_path": str(lock_trust_material.get("offline_mirror_path", "")),
+    }
+    for field_name, expected_value in expected_lock.items():
+        if lock_materialization.get(field_name) != expected_value:
+            failures.append(
+                hosted_registry_diagnostic(
+                    f"hosted registry lock materialization {field_name} drifted"
+                )
+            )
+    for field_name in (
+        "lock_required_before_resolution",
+        "offline_mirror_handoff_required",
+        "offline_replay_sufficient",
+    ):
+        if lock_materialization.get(field_name) is not True:
+            failures.append(
+                hosted_registry_diagnostic(
+                    f"hosted registry lock materialization disabled {field_name}"
+                )
+            )
+    for field_name in (
+        "network_required_after_lock",
+        "local_install_fallback_for_unverified_artifacts",
+        "fallback_registry_success",
+    ):
+        if lock_materialization.get(field_name) is not False:
+            failures.append(
+                hosted_registry_diagnostic(
+                    f"hosted registry lock materialization allowed {field_name}"
+                )
+            )
+    if lock_materialization.get("lock_source") != mirror.get("source_lock"):
+        failures.append(hosted_registry_diagnostic("hosted registry lock materialization source lock drifted"))
+    return failures
+
+
 def collect_service_availability_failures(index: dict[str, Any]) -> list[str]:
     availability = index.get("service_availability", {})
     if not isinstance(availability, dict):
@@ -728,6 +1024,7 @@ def collect_lock_trust_material_failures(
     mirror: dict[str, Any],
     *,
     root: Path | None = None,
+    trust_policy: dict[str, Any] | None = None,
 ) -> list[str]:
     material = index.get("lock_trust_material", {})
     if not isinstance(material, dict):
@@ -744,6 +1041,16 @@ def collect_lock_trust_material_failures(
     trust_root_id = str(material.get("trust_root_id", ""))
     if not trust_root_id:
         failures.append(hosted_registry_diagnostic("hosted registry trust root missing"))
+    policy = trust_policy if isinstance(trust_policy, dict) else default_trust_policy_payload()
+    known_roots = set(trust_roots_by_id(policy))
+    if trust_root_id and trust_root_id not in known_roots:
+        failures.append(hosted_registry_diagnostic(f"unknown trust root {trust_root_id}"))
+    revoked_roots = _revoked_values(index, "revoked_trust_root_ids") | _revoked_values(
+        {"revocations": policy.get("revocations", {})},
+        "revoked_trust_root_ids",
+    )
+    if trust_root_id in revoked_roots:
+        failures.append(hosted_registry_diagnostic(f"revoked trust root {trust_root_id}"))
     if root is not None:
         for label, relative_path in (
             ("source lock", str(material.get("source_lock", ""))),
@@ -1114,6 +1421,14 @@ def collect_hosted_registry_model_failures(
     registry_id = str(index.get("registry_id", ""))
     failures.extend(collect_provider_model_failures(index))
     failures.extend(collect_registry_snapshot_failures(index))
+    failures.extend(
+        collect_snapshot_fetch_failures(
+            index,
+            mirror,
+            root=root,
+            trust_policy=policy,
+        )
+    )
     failures.extend(collect_service_availability_failures(index))
     failures.extend(collect_service_boundary_failures(index))
     failures.extend(collect_live_service_boundary_failures(index))
@@ -1122,7 +1437,14 @@ def collect_hosted_registry_model_failures(
     )
     failures.extend(collect_endpoint_identity_failures(index))
     failures.extend(collect_lock_materialization_failures(index, mirror))
-    failures.extend(collect_lock_trust_material_failures(index, mirror, root=root))
+    failures.extend(
+        collect_lock_trust_material_failures(
+            index,
+            mirror,
+            root=root,
+            trust_policy=policy,
+        )
+    )
     failures.extend(collect_failure_mode_failures(index))
     failures.extend(collect_package_version_record_failures(index))
     failures.extend(collect_dependency_record_failures(index))
@@ -1275,6 +1597,248 @@ def network_fetch_request_failures(request: HostedRegistryResolutionRequest) -> 
     return failures
 
 
+def fetch_hosted_registry_snapshot(
+    index: dict[str, Any],
+    mirror: dict[str, Any],
+    request: HostedRegistrySnapshotFetchRequest | HostedRegistryResolutionRequest,
+    *,
+    root: Path | None = None,
+    trust_policy: dict[str, Any] | None = None,
+) -> HostedRegistryFetchedSnapshot:
+    package_id = str(getattr(request, "package_id", "hosted registry snapshot"))
+    failures = collect_snapshot_fetch_failures(
+        index,
+        mirror,
+        root=root,
+        trust_policy=trust_policy,
+    )
+    allow_network = bool(getattr(request, "allow_network", False))
+    registry_url = getattr(request, "registry_url", None)
+    if allow_network or registry_url:
+        target = registry_url or "live registry endpoint"
+        failures.append(hosted_registry_diagnostic(f"network fetch request rejected for {target}"))
+        failures.append(hosted_registry_diagnostic("live public hosted registry service unavailable"))
+        failures.append(hosted_registry_diagnostic("live public hosted registry transport disabled"))
+        failures.append(hosted_registry_diagnostic("unsupported live hosted registry service mode"))
+    if getattr(request, "endpoint_id", HOSTED_REGISTRY_ENDPOINT_ID) != HOSTED_REGISTRY_ENDPOINT_ID:
+        failures.append(hosted_registry_diagnostic(f"hosted registry endpoint mismatch for {package_id}"))
+    if getattr(request, "channel_id", HOSTED_REGISTRY_CHANNEL_ID) != HOSTED_REGISTRY_CHANNEL_ID:
+        failures.append(hosted_registry_diagnostic(f"hosted registry channel mismatch for {package_id}"))
+
+    fetch = index.get("snapshot_fetch", {})
+    source = fetch.get("snapshot_source", {}) if isinstance(fetch, dict) else {}
+    if not isinstance(source, dict):
+        source = {}
+    for field_name in ("registry_index_path", "offline_mirror_path", "source_lock"):
+        expected = getattr(request, field_name, None)
+        if expected is not None and str(source.get(field_name, "")) != str(expected):
+            failures.append(
+                hosted_registry_diagnostic(
+                    f"hosted registry snapshot request {field_name} drifted"
+                )
+            )
+
+    snapshot = index.get("snapshot", {})
+    sequence = snapshot.get("sequence") if isinstance(snapshot, dict) else None
+    minimum_sequence = int(getattr(request, "minimum_snapshot_sequence", 1))
+    if minimum_sequence < 1:
+        failures.append(hosted_registry_diagnostic(f"rollback snapshot request for {package_id}"))
+    elif not isinstance(sequence, int) or sequence < minimum_sequence:
+        failures.append(hosted_registry_diagnostic(f"rollback snapshot for {package_id}"))
+
+    availability = index.get("service_availability", {})
+    if isinstance(availability, dict) and availability.get("state") != HOSTED_REGISTRY_FIXTURE_AVAILABILITY_STATE:
+        failures.append(hosted_registry_diagnostic("hosted registry unavailable"))
+
+    if failures:
+        raise HostedRegistryResolutionError(failures)
+
+    assert isinstance(fetch, dict)
+    transport = fetch["transport_policy"]
+    assert isinstance(transport, dict)
+    assert isinstance(snapshot, dict)
+    return HostedRegistryFetchedSnapshot(
+        fetcher_id=str(fetch["fetcher_id"]),
+        registry_id=str(index["registry_id"]),
+        snapshot_id=str(snapshot["snapshot_id"]),
+        sequence=int(snapshot["sequence"]),
+        registry_index_path=str(source["registry_index_path"]),
+        offline_mirror_path=str(source["offline_mirror_path"]),
+        source_lock=str(source["source_lock"]),
+        source_lock_digest=str(source["source_lock_digest"]),
+        transport_policy=HostedRegistryTransportPolicy(
+            policy_id=str(transport["policy_id"]),
+            transport_id=str(transport["transport_id"]),
+            mode=str(transport["mode"]),
+            live_network_allowed=bool(transport["live_network_allowed"]),
+            fallback_registry_success=bool(transport["fallback_registry_success"]),
+        ),
+    )
+
+
+def materialize_hosted_registry_lock(
+    index: dict[str, Any],
+    mirror: dict[str, Any],
+    resolution: HostedRegistryResolution,
+    *,
+    trust_policy: dict[str, Any] | None = None,
+) -> HostedRegistryMaterializedLock:
+    key = (resolution.package_id, resolution.package_version)
+    failures: list[str] = []
+    package_records = [
+        record
+        for record in _as_object_list(index.get("packages", []))
+        if _registry_record_key(record) == key
+    ]
+    if len(package_records) != 1:
+        failures.append(hosted_registry_diagnostic(f"ambiguous version selection for {resolution.package_id}"))
+        raise HostedRegistryResolutionError(failures)
+    record = package_records[0]
+
+    trust_results = [
+        result
+        for result in _as_object_list(index.get("trust_results", []))
+        if (
+            str(result.get("package_id", "")),
+            str(result.get("package_version", "")),
+        )
+        == key
+    ]
+    if len(trust_results) != 1:
+        failures.append(hosted_registry_diagnostic(f"missing trust result for {_package_key(*key)}"))
+        trust_result: dict[str, Any] = {}
+    else:
+        trust_result = trust_results[0]
+
+    handoffs = [
+        handoff
+        for handoff in _as_object_list(index.get("offline_mirror_handoffs", []))
+        if (
+            str(handoff.get("package_id", "")),
+            str(handoff.get("package_version", "")),
+        )
+        == key
+    ]
+    if len(handoffs) != 1:
+        failures.append(hosted_registry_diagnostic(f"missing offline mirror handoff for {_package_key(*key)}"))
+        handoff: dict[str, Any] = {}
+    else:
+        handoff = handoffs[0]
+
+    material = index.get("lock_trust_material", {})
+    if not isinstance(material, dict):
+        material = {}
+        failures.append(hosted_registry_diagnostic("missing hosted registry lock/trust material"))
+
+    package_trust = record.get("trust", {})
+    registry_signature = record.get("registry_signature", {})
+    if not isinstance(package_trust, dict):
+        package_trust = {}
+    if not isinstance(registry_signature, dict):
+        registry_signature = {}
+    package_signature_id = str(package_trust.get("signature_id", ""))
+    registry_signature_id = str(registry_signature.get("signature_id", ""))
+    trust_root_id = str(material.get("trust_root_id", ""))
+
+    policy = trust_policy if isinstance(trust_policy, dict) else default_trust_policy_payload()
+    if trust_root_id not in set(trust_roots_by_id(policy)):
+        failures.append(hosted_registry_diagnostic(f"unknown trust root {trust_root_id}"))
+    revoked_roots = _revoked_values(index, "revoked_trust_root_ids") | _revoked_values(
+        {"revocations": policy.get("revocations", {})},
+        "revoked_trust_root_ids",
+    )
+    if trust_root_id in revoked_roots:
+        failures.append(hosted_registry_diagnostic(f"revoked trust root {trust_root_id}"))
+    if resolution.package_id in _revoked_values(index, "revoked_package_ids"):
+        failures.append(hosted_registry_diagnostic(f"revoked package {resolution.package_id}"))
+    if registry_signature_id in _revoked_values(index, "revoked_signature_ids"):
+        failures.append(hosted_registry_diagnostic(f"revoked signature {registry_signature_id}"))
+
+    if trust_result.get("status") != "verified":
+        failures.append(hosted_registry_diagnostic(f"unsigned hosted artifact {_package_key(*key)}"))
+    if trust_result.get("revocation_checked") is not True:
+        failures.append(hosted_registry_diagnostic(f"revocation check missing for {_package_key(*key)}"))
+    if trust_result.get("allows_local_install_fallback") is not False:
+        failures.append(hosted_registry_diagnostic("unsigned hosted artifact local install fallback is forbidden"))
+    if trust_result.get("package_signature_id") != package_signature_id:
+        failures.append(hosted_registry_diagnostic(f"package trust result signature drift for {_package_key(*key)}"))
+    if trust_result.get("registry_signature_id") != registry_signature_id:
+        failures.append(hosted_registry_diagnostic(f"registry trust result signature drift for {_package_key(*key)}"))
+
+    if handoff.get("cache_key") != resolution.cache_key:
+        failures.append(hosted_registry_diagnostic(f"offline mirror handoff cache identity drift for {_package_key(*key)}"))
+    if handoff.get("mirror_path") != resolution.offline_mirror_path:
+        failures.append(hosted_registry_diagnostic(f"offline mirror handoff drift for {_package_key(*key)}"))
+    if handoff.get("source_lock") != mirror.get("source_lock"):
+        failures.append(hosted_registry_diagnostic(f"offline mirror handoff source lock drift for {_package_key(*key)}"))
+    if handoff.get("requires_lock_materialization") is not True:
+        failures.append(hosted_registry_diagnostic(f"offline mirror handoff did not require lock materialization for {_package_key(*key)}"))
+    if handoff.get("network_required_after_lock") is not False:
+        failures.append(hosted_registry_diagnostic(f"offline mirror handoff requires network for {_package_key(*key)}"))
+    if handoff.get("local_install_fallback_for_unverified_artifacts") is not False:
+        failures.append(hosted_registry_diagnostic("unsigned hosted artifact local install fallback is forbidden"))
+
+    if failures:
+        raise HostedRegistryResolutionError(failures)
+
+    return HostedRegistryMaterializedLock(
+        contract_id=HOSTED_REGISTRY_MATERIALIZED_LOCK_CONTRACT_ID,
+        package_id=resolution.package_id,
+        package_version=resolution.package_version,
+        source_lock=str(material["source_lock"]),
+        source_lock_digest=str(material["source_lock_digest"]),
+        trust_root_id=trust_root_id,
+        source_digest=resolution.source_digest,
+        manifest_digest=resolution.manifest_digest,
+        registry_record_digest=resolution.registry_record_digest,
+        package_signature_id=package_signature_id,
+        registry_signature_id=registry_signature_id,
+        cache_key=resolution.cache_key,
+        cache_path=resolution.cache_path,
+        cache_digest=resolution.cache_digest,
+        offline_mirror_path=resolution.offline_mirror_path,
+        network_required_after_lock=bool(handoff["network_required_after_lock"]),
+    )
+
+
+def resolve_hosted_registry_fetch_trust_lock_handoff(
+    index: dict[str, Any],
+    mirror: dict[str, Any],
+    request: HostedRegistryResolutionRequest,
+    *,
+    root: Path | None = None,
+    trust_policy: dict[str, Any] | None = None,
+) -> HostedRegistryOfflineReplayPlan:
+    fetched = fetch_hosted_registry_snapshot(
+        index,
+        mirror,
+        request,
+        root=root,
+        trust_policy=trust_policy,
+    )
+    resolution = resolve_hosted_registry_package(
+        index,
+        mirror,
+        request,
+        trust_policy=trust_policy,
+    )
+    materialized_lock = materialize_hosted_registry_lock(
+        index,
+        mirror,
+        resolution,
+        trust_policy=trust_policy,
+    )
+    replay = index.get("replay", {})
+    commands = replay.get("commands", []) if isinstance(replay, dict) else []
+    replay_commands = tuple(str(command) for command in commands if isinstance(command, str))
+    return HostedRegistryOfflineReplayPlan(
+        fetched_snapshot=fetched,
+        resolution=resolution,
+        materialized_lock=materialized_lock,
+        replay_commands=replay_commands,
+    )
+
+
 def resolve_hosted_registry_package(
     index: dict[str, Any],
     mirror: dict[str, Any],
@@ -1406,20 +1970,28 @@ __all__ = [
     "HOSTED_REGISTRY_RESOLVER_ID",
     "HOSTED_REGISTRY_SCHEMA_KEY",
     "HOSTED_REGISTRY_SCHEMA_PATH",
+    "HOSTED_REGISTRY_SNAPSHOT_FETCHER_ID",
+    "HOSTED_REGISTRY_TRANSPORT_POLICY_ID",
     "HOSTED_REGISTRY_LIVE_SERVICE_BOUNDARY",
+    "HOSTED_REGISTRY_MATERIALIZED_LOCK_CONTRACT_ID",
     "HOSTED_REGISTRY_SERVICE_BOUNDARY",
     "HOSTED_REGISTRY_TRUST_VALIDATOR_ID",
     "HOSTED_REGISTRY_SERVICE_ID",
     "HostedRegistryCacheIdentity",
     "HostedRegistryDependencyRecord",
+    "HostedRegistryFetchedSnapshot",
+    "HostedRegistryMaterializedLock",
     "HostedRegistryOfflineMirrorHandoff",
+    "HostedRegistryOfflineReplayPlan",
     "HostedRegistryPackageVersion",
     "HostedRegistryProviderModel",
     "HostedRegistryResolution",
     "HostedRegistryResolutionError",
     "HostedRegistryResolutionRequest",
     "HostedRegistryServiceRequest",
+    "HostedRegistrySnapshotFetchRequest",
     "HostedRegistrySnapshot",
+    "HostedRegistryTransportPolicy",
     "HostedRegistryTrustResult",
     "collect_cache_identity_failures",
     "collect_dependency_record_failures",
@@ -1428,6 +2000,7 @@ __all__ = [
     "collect_hosted_registry_service_request_failures",
     "collect_live_service_boundary_failures",
     "collect_lock_materialization_failures",
+    "collect_lock_trust_material_failures",
     "collect_offline_mirror_contract_failures",
     "collect_offline_mirror_handoff_failures",
     "collect_package_version_record_failures",
@@ -1436,11 +2009,15 @@ __all__ = [
     "collect_revocation_and_yank_failures",
     "collect_service_availability_failures",
     "collect_service_boundary_failures",
+    "collect_snapshot_fetch_failures",
     "collect_trust_result_failures",
+    "fetch_hosted_registry_snapshot",
     "hosted_registry_diagnostic",
     "hosted_registry_record_digest",
     "hosted_registry_record_signature_subject",
+    "materialize_hosted_registry_lock",
     "network_fetch_request_failures",
+    "resolve_hosted_registry_fetch_trust_lock_handoff",
     "resolve_hosted_registry_package",
     "sign_hosted_registry_record",
     "trust_diagnostic",

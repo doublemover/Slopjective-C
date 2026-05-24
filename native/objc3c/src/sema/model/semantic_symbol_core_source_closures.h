@@ -152,6 +152,11 @@ struct Objc3FrontendErrorHandlingErrorSourceClosureSummary {
   std::string typed_throws_abi_status = "typed-error-out-abi";
   std::string typed_throws_interface_roundtrip_status =
       "typed-payload-preserved";
+  std::string typed_throws_catch_compatibility_status =
+      "typed-catch-exact-untyped-id-error-bridge-incompatible-rejects";
+  std::string typed_throws_bridge_to_id_error_policy =
+      "explicit-bridge-to-id<Error>-only";
+  bool typed_throws_foreign_carrier_fail_closed = true;
   bool try_fail_closed = false;
   bool throw_fail_closed = false;
   bool do_catch_fail_closed = false;

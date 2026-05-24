@@ -4,11 +4,15 @@ Semantic support claims require canonical diagnostics or executable tests.
 Rejected behavior is represented by diagnostics, not alternate acceptance paths.
 
 Typed throws is now a source/interface semantic surface with single-payload
-hidden error-out ABI lowering. Value optionals now have semantic type identity
+hidden error-out ABI lowering, exact typed catch records, policy-backed
+`id<Error>` bridge catches, incompatible-catch rejection, and unsupported
+foreign-carrier fail-closed records. Value optionals now have semantic type identity
 for canonical `Optional<T>` type signatures,
 plus a sema-owned absent/present lowering contract and checked unwrap/binding
-failure diagnostics. IR payload emission, runtime constructor symbols, unchecked
-unwrap, and call ABI lowering remain unclaimed. Match expressions are bounded to
+failure diagnostics plus bounded packed runtime ABI support for scalar payload
+forms. Nested/generic payload runtime lowering, property/ivar storage, unchecked
+unwrap, nullability bridges, implicit nil absence, nil-to-scalar coercion, and
+throws/result conversion remain unclaimed. Match expressions are bounded to
 their current evidence-backed surface.
 Statement-form guarded match patterns are admitted only as `case pattern where
 bool_condition: { ... }`; the guard is checked after
@@ -22,8 +26,10 @@ records may publish typed throws as `typed` only with one preserved payload,
 drifted typed payload metadata fails closed. The semantic handoff now treats the
 typed payload as callable effect identity: protocol conformance and duplicate
 requirement compatibility compare `throws:typed:<payload>` exactly, and bare
-`throws` is not compatible with `throws(E)` unless a later ABI/runtime bridge
-explicitly defines such a conversion. Value optionals are modeled as
+`throws` is not compatible with `throws(E)`. For do/catch, exact typed payload
+catches are accepted, the explicit `id<Error>` bridge catch is accepted, and
+mismatched typed catches or unsupported foreign carriers fail closed rather than
+being widened into untyped matches. Value optionals are modeled as
 `Optional<T>` semantic carriers with stable `has_value` plus `payload` layout
 identity, explicit absent/present construction records, checked
 presence/narrowing records, checked unwrap diagnostics, and textual-interface
@@ -54,11 +60,13 @@ semantic support.
 The #8207 umbrella contract lives in
 `tests/tooling/fixtures/native/language_evolution_umbrella_contract.json` and
 keeps semantic promotion bounded: typed throws cannot widen past source/interface
-metadata plus hidden error-out lowering into multi-payload or erased runtime behavior,
-and value optionals cannot widen past their
-checked lowering contract into ABI/runtime support. Runtime generic reification,
-type-test match patterns, and strict-system profile support cannot be widened
-from source metadata, generated reports, or Objective-C 2 compatibility paths.
+metadata plus hidden error-out lowering and catch/bridge policy into multi-payload,
+unsupported foreign-carrier, or erased public runtime behavior,
+and value optionals cannot widen past their bounded scalar packed ABI plus
+checked lowering contract into broad nested/generic/property/ivar/nullability/nil
+or unchecked runtime support. Runtime generic reification, type-test match
+patterns, and strict-system profile support cannot be widened from source
+metadata, generated reports, or Objective-C 2 compatibility paths.
 Statement-form guarded match and bounded expression-form match are the admitted
 #8236 surfaces.
 

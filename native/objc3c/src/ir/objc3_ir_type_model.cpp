@@ -8,9 +8,33 @@ const char *LLVMScalarType(ValueType type) {
     return "void";
   }
   if (type == ValueType::Optional) {
-    return "%objc3.value_optional";
+    return "i64";
   }
   return "i32";
+}
+
+unsigned LLVMScalarAlignment(ValueType type) {
+  if (type == ValueType::Optional) {
+    return 8u;
+  }
+  if (type == ValueType::Bool) {
+    return 1u;
+  }
+  return 4u;
+}
+
+const char *LLVMLocalStorageType(ValueType type) {
+  if (type == ValueType::Optional) {
+    return "i64";
+  }
+  return "i32";
+}
+
+unsigned LLVMLocalStorageAlignment(ValueType type) {
+  if (type == ValueType::Optional) {
+    return 8u;
+  }
+  return 4u;
 }
 
 ValueType RuntimeMetadataValueType(const std::string &type_name) {

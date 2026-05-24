@@ -3,10 +3,12 @@
 #include <cctype>
 #include <cstddef>
 #include <string>
+#include <vector>
 
 #include "ast/objc3_ast.h"
 #include "lower/contracts/error_handling_runtime_bridge_contracts.h"
 #include "lower/contracts/ownership_runtime_memory_management_contracts.h"
+#include "sema/objc3_typed_throws_effect_contract.h"
 
 namespace {
 
@@ -28,6 +30,228 @@ int Objc3IRErrorHandlingCatchKindForTypeSpelling(
     return 2;
   }
   return 0;
+}
+
+void CollectObjc3IRTypedThrowsPayloadsFromExpr(
+    const Expr *expr,
+    const Objc3IRStatementEmissionCallbacks &callbacks,
+    std::vector<std::string> &typed_payloads,
+    bool &saw_untyped_or_bridge) {
+  if (expr == nullptr) {
+    return;
+  }
+  if (expr->try_expression_enabled) {
+    const Expr *operand =
+        !expr->args.empty() ? expr->args.front().get() : expr->left.get();
+    if (operand != nullptr && operand->kind == Expr::Kind::Call) {
+      const LoweredFunctionSignature *signature =
+          callbacks.lookup_function_signature
+              ? callbacks.lookup_function_signature(operand->ident)
+              : nullptr;
+      if (signature != nullptr && signature->typed_throws_declared &&
+          !signature->typed_throws_error_type_spelling.empty()) {
+        typed_payloads.push_back(signature->typed_throws_error_type_spelling);
+      } else if (signature != nullptr &&
+                 (signature->throws_declared ||
+                  signature->objc_nserror_declared ||
+                  signature->objc_status_code_declared)) {
+        saw_untyped_or_bridge = true;
+      }
+    }
+  }
+  CollectObjc3IRTypedThrowsPayloadsFromExpr(expr->receiver.get(), callbacks,
+                                            typed_payloads,
+                                            saw_untyped_or_bridge);
+  CollectObjc3IRTypedThrowsPayloadsFromExpr(expr->left.get(), callbacks,
+                                            typed_payloads,
+                                            saw_untyped_or_bridge);
+  CollectObjc3IRTypedThrowsPayloadsFromExpr(expr->right.get(), callbacks,
+                                            typed_payloads,
+                                            saw_untyped_or_bridge);
+  CollectObjc3IRTypedThrowsPayloadsFromExpr(expr->third.get(), callbacks,
+                                            typed_payloads,
+                                            saw_untyped_or_bridge);
+  for (const auto &key : expr->collection_keys) {
+    CollectObjc3IRTypedThrowsPayloadsFromExpr(key.get(), callbacks,
+                                              typed_payloads,
+                                              saw_untyped_or_bridge);
+  }
+  for (const auto &value : expr->collection_values) {
+    CollectObjc3IRTypedThrowsPayloadsFromExpr(value.get(), callbacks,
+                                              typed_payloads,
+                                              saw_untyped_or_bridge);
+  }
+  for (const auto &arg : expr->args) {
+    CollectObjc3IRTypedThrowsPayloadsFromExpr(arg.get(), callbacks,
+                                              typed_payloads,
+                                              saw_untyped_or_bridge);
+  }
+}
+
+void CollectObjc3IRTypedThrowsPayloadsFromStmt(
+    const Stmt *stmt,
+    const Objc3IRStatementEmissionCallbacks &callbacks,
+    std::vector<std::string> &typed_payloads,
+    bool &saw_untyped_or_bridge) {
+  if (stmt == nullptr) {
+    return;
+  }
+  switch (stmt->kind) {
+  case Stmt::Kind::Let:
+    CollectObjc3IRTypedThrowsPayloadsFromExpr(
+        stmt->let_stmt != nullptr ? stmt->let_stmt->value.get() : nullptr,
+        callbacks, typed_payloads, saw_untyped_or_bridge);
+    return;
+  case Stmt::Kind::Assign:
+    CollectObjc3IRTypedThrowsPayloadsFromExpr(
+        stmt->assign_stmt != nullptr ? stmt->assign_stmt->value.get() : nullptr,
+        callbacks, typed_payloads, saw_untyped_or_bridge);
+    return;
+  case Stmt::Kind::Return:
+    CollectObjc3IRTypedThrowsPayloadsFromExpr(
+        stmt->return_stmt != nullptr ? stmt->return_stmt->value.get()
+                                     : nullptr,
+        callbacks, typed_payloads, saw_untyped_or_bridge);
+    return;
+  case Stmt::Kind::Expr:
+    CollectObjc3IRTypedThrowsPayloadsFromExpr(
+        stmt->expr_stmt != nullptr ? stmt->expr_stmt->value.get() : nullptr,
+        callbacks, typed_payloads, saw_untyped_or_bridge);
+    return;
+  case Stmt::Kind::If:
+    if (stmt->if_stmt != nullptr) {
+      CollectObjc3IRTypedThrowsPayloadsFromExpr(
+          stmt->if_stmt->condition.get(), callbacks, typed_payloads,
+          saw_untyped_or_bridge);
+      for (const auto &nested_stmt : stmt->if_stmt->then_body) {
+        CollectObjc3IRTypedThrowsPayloadsFromStmt(
+            nested_stmt.get(), callbacks, typed_payloads,
+            saw_untyped_or_bridge);
+      }
+      for (const auto &nested_stmt : stmt->if_stmt->else_body) {
+        CollectObjc3IRTypedThrowsPayloadsFromStmt(
+            nested_stmt.get(), callbacks, typed_payloads,
+            saw_untyped_or_bridge);
+      }
+    }
+    return;
+  case Stmt::Kind::DoWhile:
+    if (stmt->do_while_stmt != nullptr) {
+      for (const auto &nested_stmt : stmt->do_while_stmt->body) {
+        CollectObjc3IRTypedThrowsPayloadsFromStmt(
+            nested_stmt.get(), callbacks, typed_payloads,
+            saw_untyped_or_bridge);
+      }
+      CollectObjc3IRTypedThrowsPayloadsFromExpr(
+          stmt->do_while_stmt->condition.get(), callbacks, typed_payloads,
+          saw_untyped_or_bridge);
+    }
+    return;
+  case Stmt::Kind::For:
+    if (stmt->for_stmt != nullptr) {
+      CollectObjc3IRTypedThrowsPayloadsFromExpr(
+          stmt->for_stmt->init.value.get(), callbacks, typed_payloads,
+          saw_untyped_or_bridge);
+      CollectObjc3IRTypedThrowsPayloadsFromExpr(
+          stmt->for_stmt->condition.get(), callbacks, typed_payloads,
+          saw_untyped_or_bridge);
+      CollectObjc3IRTypedThrowsPayloadsFromExpr(
+          stmt->for_stmt->step.value.get(), callbacks, typed_payloads,
+          saw_untyped_or_bridge);
+      for (const auto &nested_stmt : stmt->for_stmt->body) {
+        CollectObjc3IRTypedThrowsPayloadsFromStmt(
+            nested_stmt.get(), callbacks, typed_payloads,
+            saw_untyped_or_bridge);
+      }
+    }
+    return;
+  case Stmt::Kind::ForIn:
+    if (stmt->for_in_stmt != nullptr) {
+      CollectObjc3IRTypedThrowsPayloadsFromExpr(
+          stmt->for_in_stmt->collection.get(), callbacks, typed_payloads,
+          saw_untyped_or_bridge);
+      for (const auto &nested_stmt : stmt->for_in_stmt->body) {
+        CollectObjc3IRTypedThrowsPayloadsFromStmt(
+            nested_stmt.get(), callbacks, typed_payloads,
+            saw_untyped_or_bridge);
+      }
+    }
+    return;
+  case Stmt::Kind::Switch:
+    if (stmt->switch_stmt != nullptr) {
+      CollectObjc3IRTypedThrowsPayloadsFromExpr(
+          stmt->switch_stmt->condition.get(), callbacks, typed_payloads,
+          saw_untyped_or_bridge);
+      for (const auto &switch_case : stmt->switch_stmt->cases) {
+        for (const auto &nested_stmt : switch_case.body) {
+          CollectObjc3IRTypedThrowsPayloadsFromStmt(
+              nested_stmt.get(), callbacks, typed_payloads,
+              saw_untyped_or_bridge);
+        }
+      }
+    }
+    return;
+  case Stmt::Kind::While:
+    if (stmt->while_stmt != nullptr) {
+      CollectObjc3IRTypedThrowsPayloadsFromExpr(
+          stmt->while_stmt->condition.get(), callbacks, typed_payloads,
+          saw_untyped_or_bridge);
+      for (const auto &nested_stmt : stmt->while_stmt->body) {
+        CollectObjc3IRTypedThrowsPayloadsFromStmt(
+            nested_stmt.get(), callbacks, typed_payloads,
+            saw_untyped_or_bridge);
+      }
+    }
+    return;
+  case Stmt::Kind::CollectionMutation:
+    if (stmt->collection_mutation_stmt != nullptr) {
+      CollectObjc3IRTypedThrowsPayloadsFromExpr(
+          stmt->collection_mutation_stmt->key_or_index.get(), callbacks,
+          typed_payloads, saw_untyped_or_bridge);
+      CollectObjc3IRTypedThrowsPayloadsFromExpr(
+          stmt->collection_mutation_stmt->value.get(), callbacks,
+          typed_payloads, saw_untyped_or_bridge);
+    }
+    return;
+  case Stmt::Kind::Block:
+  case Stmt::Kind::Defer:
+    if (stmt->block_stmt != nullptr) {
+      for (const auto &nested_stmt : stmt->block_stmt->body) {
+        CollectObjc3IRTypedThrowsPayloadsFromStmt(
+            nested_stmt.get(), callbacks, typed_payloads,
+            saw_untyped_or_bridge);
+      }
+    }
+    return;
+  case Stmt::Kind::Break:
+  case Stmt::Kind::Continue:
+  case Stmt::Kind::Empty:
+    return;
+  default:
+    return;
+  }
+}
+
+std::string SingleObjc3IRTypedThrowsPayloadForDoCatchBody(
+    const BlockStmt &block_stmt,
+    const Objc3IRStatementEmissionCallbacks &callbacks) {
+  std::vector<std::string> typed_payloads;
+  bool saw_untyped_or_bridge = false;
+  for (const auto &stmt : block_stmt.body) {
+    CollectObjc3IRTypedThrowsPayloadsFromStmt(
+        stmt.get(), callbacks, typed_payloads, saw_untyped_or_bridge);
+  }
+  if (typed_payloads.empty() || saw_untyped_or_bridge) {
+    return "";
+  }
+  const std::string first_identity =
+      Objc3TypedThrowsPayloadIdentity(typed_payloads.front());
+  for (const std::string &payload : typed_payloads) {
+    if (Objc3TypedThrowsPayloadIdentity(payload) != first_identity) {
+      return "";
+    }
+  }
+  return typed_payloads.front();
 }
 
 }  // namespace
@@ -75,6 +299,8 @@ void EmitObjc3IRBlockStatement(
     ctx.code_lines.push_back(dispatch_label + ":");
     const std::string loaded_error =
         callbacks.emit_load_thrown_error(error_slot, ctx);
+    const std::string typed_throw_payload =
+        SingleObjc3IRTypedThrowsPayloadForDoCatchBody(*block_stmt, callbacks);
     const std::string no_match_label =
         callbacks.new_label(ctx, "do_catch_no_match_");
     for (std::size_t clause_index = 0;
@@ -89,12 +315,18 @@ void EmitObjc3IRBlockStatement(
               : no_match_label;
       const std::string catches = callbacks.new_temp(ctx);
       const std::string catches_bool = callbacks.new_temp(ctx);
+      int catch_kind =
+          Objc3IRErrorHandlingCatchKindForTypeSpelling(
+              clause.binding_type_spelling);
+      if (!typed_throw_payload.empty() && !clause.catch_all) {
+        catch_kind = Objc3TypedThrowsRuntimeCatchKind(
+            typed_throw_payload, clause.binding_type_spelling, true);
+      }
       ctx.code_lines.push_back(
           "  " + catches + " = call i32 @" +
           std::string(kObjc3RuntimeCatchMatchesErrorI32Symbol) + "(i32 " +
           loaded_error + ", i32 " +
-          std::to_string(Objc3IRErrorHandlingCatchKindForTypeSpelling(
-              clause.binding_type_spelling)) +
+          std::to_string(catch_kind) +
           ", i32 " + (clause.catch_all ? "1" : "0") + ")");
       ctx.code_lines.push_back("  " + catches_bool + " = icmp ne i32 " +
                                catches + ", 0");

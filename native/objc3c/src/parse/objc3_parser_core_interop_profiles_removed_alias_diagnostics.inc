@@ -93,35 +93,39 @@
         fn.has_return_ownership_qualifier);
   }
 
-  const Objc3ValueOptionalTypeDescriptor *FirstValueOptionalType(
+  const Objc3ValueOptionalTypeDescriptor *FirstUnsupportedValueOptionalType(
       const FunctionDecl &fn) const {
-    if (fn.return_value_optional.present) {
+    if (fn.return_value_optional.present &&
+        !Objc3ValueOptionalRuntimeAbiReady(fn.return_value_optional)) {
       return &fn.return_value_optional;
     }
     for (const FuncParam &param : fn.params) {
-      if (param.value_optional.present) {
+      if (param.value_optional.present &&
+          !Objc3ValueOptionalRuntimeAbiReady(param.value_optional)) {
         return &param.value_optional;
       }
     }
     return nullptr;
   }
 
-  const Objc3ValueOptionalTypeDescriptor *FirstValueOptionalType(
+  const Objc3ValueOptionalTypeDescriptor *FirstUnsupportedValueOptionalType(
       const Objc3MethodDecl &method) const {
-    if (method.return_value_optional.present) {
+    if (method.return_value_optional.present &&
+        !Objc3ValueOptionalRuntimeAbiReady(method.return_value_optional)) {
       return &method.return_value_optional;
     }
     for (const FuncParam &param : method.params) {
-      if (param.value_optional.present) {
+      if (param.value_optional.present &&
+          !Objc3ValueOptionalRuntimeAbiReady(param.value_optional)) {
         return &param.value_optional;
       }
     }
     return nullptr;
   }
 
-  bool RejectValueOptionalExecutableFunction(const FunctionDecl &fn) {
+  bool RejectUnsupportedValueOptionalExecutableFunction(const FunctionDecl &fn) {
     const Objc3ValueOptionalTypeDescriptor *descriptor =
-        FirstValueOptionalType(fn);
+        FirstUnsupportedValueOptionalType(fn);
     if (descriptor == nullptr) {
       return false;
     }
@@ -130,9 +134,9 @@
     return true;
   }
 
-  bool RejectValueOptionalExecutableMethod(const Objc3MethodDecl &method) {
+  bool RejectUnsupportedValueOptionalExecutableMethod(const Objc3MethodDecl &method) {
     const Objc3ValueOptionalTypeDescriptor *descriptor =
-        FirstValueOptionalType(method);
+        FirstUnsupportedValueOptionalType(method);
     if (descriptor == nullptr) {
       return false;
     }

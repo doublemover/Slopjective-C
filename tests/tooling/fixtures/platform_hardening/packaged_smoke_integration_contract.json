@@ -40,6 +40,7 @@
   "package_bridge": "objc3c",
   "public_actions": [
     "build-platform-support-matrix",
+    "ingest-platform-host-evidence",
     "validate-platform-hardening",
     "validate-platform-hardening-end-to-end"
   ],

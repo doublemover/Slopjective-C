@@ -29,6 +29,17 @@ def _native_object_emission_contract_status(summary: dict[str, object]) -> str:
     return str(status) if isinstance(status, str) and status else ""
 
 
+def _toolchain_identity_failure_status(toolchain_identity: dict[str, object]) -> str:
+    if str(toolchain_identity.get("root_status")) == "mixed":
+        return "native_object_emission_mixed_toolchain_root"
+    version_status = str(toolchain_identity.get("version_status"))
+    if version_status == "mismatched":
+        return "native_object_emission_mismatched_tool_versions"
+    if version_status == "unsupported":
+        return "native_object_emission_unsupported_tool_version"
+    return "native_object_emission_unresolved_tool_version"
+
+
 def hosted_llc_object_emission_available() -> bool:
     return hosted_native_object_emission_status() == "native_object_emission_supported"
 
@@ -48,12 +59,11 @@ def hosted_native_object_emission_status() -> str:
         return "native_object_emission_filetype_obj_unavailable"
     contract_status = _native_object_emission_contract_status(summary)
     toolchain_identity = summary_section(summary, "toolchain_identity")
+    if contract_status and contract_status != "native_object_emission_supported":
+        return contract_status
+    if not bool(toolchain_identity.get("claimable", False)):
+        return _toolchain_identity_failure_status(toolchain_identity)
     if contract_status:
-        if (
-            contract_status == "native_object_emission_supported"
-            and not bool(toolchain_identity.get("claimable", False))
-        ):
-            return "native_object_emission_unresolved_tool_version"
         return contract_status
     return "native_object_emission_supported"
 

@@ -62,8 +62,8 @@ def test_typed_throws_source_owned_and_value_optionals_contract_boundaries() -> 
     assert contract["umbrella_issue_ref"] == 8207
     assert contract["issues"] == {"typed_throws": 8233, "value_optionals": 8234}
     assert contract["support_state"] == {
-        "typed_throws": "source_owned_interface_preserved_error_out_abi_lowered",
-        "value_optionals": "semantic_type_signatures_stable_layout_interface_preserved_runtime_lowering_fail_closed",
+        "typed_throws": "source_owned_interface_preserved_error_out_abi_lowered_catch_bridge_policy_recorded",
+        "value_optionals": "semantic_type_signatures_bounded_scalar_packed_runtime_abi_fail_closed_boundaries",
     }
     assert contract["typed_throws"]["accepted_payload_arity"] == 1
     assert contract["typed_throws"]["diagnostic_symbol"] == (
@@ -74,6 +74,13 @@ def test_typed_throws_source_owned_and_value_optionals_contract_boundaries() -> 
         "typed-payload-preserved"
     )
     assert contract["typed_throws"]["abi_status"] == "typed-error-out-abi"
+    assert contract["typed_throws"]["catch_compatibility_status"] == (
+        "typed-catch-exact-untyped-id-error-bridge-incompatible-rejects"
+    )
+    assert contract["typed_throws"]["bridge_to_id_error_policy"] == (
+        "explicit-bridge-to-id<Error>-only"
+    )
+    assert contract["typed_throws"]["unsupported_foreign_carrier_fail_closed"] is True
     assert contract["typed_throws"]["effect_record"]["semantic_identity_status"] == (
         "exact-effect-signature-preserved"
     )
@@ -93,10 +100,29 @@ def test_typed_throws_source_owned_and_value_optionals_contract_boundaries() -> 
     assert contract["value_optionals"]["binding_narrowing_supported"] is True
     assert contract["value_optionals"]["implicit_nil_absence_allowed"] is False
     assert contract["value_optionals"]["nullable_pointer_conversion_allowed"] is False
+    assert contract["value_optionals"]["runtime_execution_supported"] is True
+    assert contract["value_optionals"]["lowering_supported"] is True
+    assert contract["value_optionals"]["runtime_abi_payload_scope"] == (
+        "supported-scalar-payload-forms-only"
+    )
+    assert contract["value_optionals"]["broad_public_runtime_support_claim_allowed"] is False
+    assert contract["value_optionals"]["nested_value_optional_runtime_supported"] is False
+    assert contract["value_optionals"]["generic_payload_runtime_supported"] is False
+    assert contract["value_optionals"]["property_storage_supported"] is False
+    assert contract["value_optionals"]["ivar_storage_supported"] is False
+    assert contract["value_optionals"]["unchecked_unwrap_allowed"] is False
     assert contract["value_optionals"]["interface_roundtrip_status"] == (
-        "semantic-carrier-roundtrips-runtime-deferred"
+        "semantic-carrier-roundtrips-bounded-scalar-runtime-abi"
     )
     assert contract["public_claim_boundary"]["support_claims"] == []
+    assert contract["public_claim_boundary"]["bounded_runtime_claims"] == [
+        "bounded-runtime:value-optional-scalar-packed-abi"
+    ]
+    assert contract["public_claim_boundary"]["runtime_claims"] == []
+    assert contract["public_claim_boundary"]["reserved_public_runtime_rows_required"] == [
+        "language.errors.typed-throws",
+        "language.types.value-optionals",
+    ]
     assert contract["public_claim_boundary"]["no_compatibility_aliases"] is True
     assert contract["umbrella_alignment"] == {
         "umbrella_contract": "tests/tooling/fixtures/native/language_evolution_umbrella_contract.json",
@@ -128,9 +154,11 @@ def test_typed_throws_source_owned_and_value_optionals_contract_boundaries() -> 
         "negative_typed_throws_multi_payload_reserved.objc3": "O3P182",
         "negative_typed_throws_erasure_mismatch_reserved.objc3": "O3P182",
         "negative_typed_throws_protocol_mismatch.objc3": "O3S218",
+        "negative_typed_throws_incompatible_catch.objc3": "O3S206",
+        "negative_typed_throws_foreign_carrier_catch.objc3": "O3S206",
         "negative_value_optional_canonical_reserved.objc3": "O3P159",
         "negative_value_optional_nullable_pointer_conversion_reserved.objc3": "O3P159",
-        "negative_value_optional_nil_scalar_coercion_reserved.objc3": "O3P159",
+        "negative_value_optional_nil_scalar_coercion_reserved.objc3": "O3S211",
         "negative_value_optional_nested_lowercase_alias_reserved.objc3": "O3C004",
         "negative_value_optional_property_layout_unsupported.objc3": "O3P159",
         "negative_value_optional_nullable_suffix_mismatch.objc3": "O3P159",
@@ -165,6 +193,7 @@ def test_typed_throws_source_owned_and_value_optionals_contract_boundaries() -> 
     assert "lowercase_optional_alias_rejected = true" in type_source
     assert "value_optional_semantic_type_admission_supported = false" in type_source
     assert "value_optional_stable_layout_contract_supported = false" in type_source
+    assert "value_optional_runtime_execution_fail_closed = false" in type_source
     error_source = (
         ROOT
         / "native"
@@ -178,6 +207,9 @@ def test_typed_throws_source_owned_and_value_optionals_contract_boundaries() -> 
     assert 'typed_throws_canonical_syntax = "throws(E)"' in error_source
     assert "kObjc3ParserDiagnosticReservedTypedThrowsCode" in error_source
     assert "typed_throws_silent_erasure_allowed = false" in error_source
+    assert "typed_throws_catch_compatibility_status" in error_source
+    assert "typed_throws_bridge_to_id_error_policy" in error_source
+    assert "typed_throws_foreign_carrier_fail_closed = true" in error_source
     capability_source = (
         ROOT / "native" / "objc3c" / "src" / "pipeline" / "results" / "capability_status.h"
     ).read_text(encoding="utf-8")
@@ -199,6 +231,8 @@ def test_typed_throws_source_owned_and_value_optionals_contract_boundaries() -> 
     assert '\\"lowercase_optional_alias_diagnostic_code\\"' in artifact_source
     assert '\\"typed_throws_issue_ref\\"' in artifact_source
     assert '\\"typed_throws_reserved_diagnostic_code\\"' in artifact_source
+    assert '\\"typed_throws_catch_compatibility_status\\"' in artifact_source
+    assert '\\"typed_throws_bridge_to_id_error_policy\\"' in artifact_source
     for row in contract["negative_fixtures"]:
         fixture_path = str(row["fixture"])
         _assert_repo_file(fixture_path)
@@ -428,12 +462,16 @@ def test_language_evolution_umbrella_keeps_claims_source_owned_and_fail_closed()
         assert row["support_state"]
         assert row["negative_case_ids"]
     assert contracts["typed_throws"]["support_state"] == (
-        "source_owned_interface_preserved_error_out_abi_lowered"
+        "source_owned_interface_preserved_error_out_abi_lowered_catch_bridge_policy_recorded"
     )
-    assert "language.errors.typed-throws-runtime-lowering" in contract[
+    assert "language.errors.typed-throws-runtime-lowering" not in contract[
         "admitted_public_claims"
     ]
-    assert "language.errors.typed-throws" not in contract["reserved_public_claims"]
+    assert "language.errors.typed-throws" in contract["reserved_public_claims"]
+    assert (
+        "language.errors.typed-throws-runtime-lowering"
+        in contract["reserved_public_claims"]
+    )
     assert "language.profiles.strict-system" in contract["reserved_public_claims"]
     assert "language.profiles.strict" not in contract["reserved_public_claims"]
     assert "language.profiles.strict-concurrency" not in contract["reserved_public_claims"]
@@ -465,7 +503,7 @@ def test_language_evolution_umbrella_keeps_claims_source_owned_and_fail_closed()
         "source-owned-generic-callable-policy"
     )
     assert support_rows["language.errors.typed-throws"]["status"] == (
-        "source-owned-interface-preserved-error-out-abi-lowered"
+        "source-owned-interface-preserved-error-out-abi-lowered-catch-bridge-policy-recorded-public-row-reserved"
     )
     assert support_rows["language.control-flow.statement-guarded-match"]["status"] == (
         "supported-bounded-statement-and-expression"
@@ -580,10 +618,10 @@ def test_language_evolution_fixtures_are_canonical_manifest_owned() -> None:
             "O3S218",
         ),
         "tests/tooling/fixtures/native/recovery/negative/negative_value_optional_nil_scalar_coercion_reserved.objc3": (
-            "parser",
+            "sema",
             "types",
-            "canonical_rejection",
-            "O3P159",
+            "diagnostic_negative",
+            "O3S211",
         ),
         "tests/tooling/fixtures/native/value_optionals_executable_semantics_negative.contract.json": (
             "sema",

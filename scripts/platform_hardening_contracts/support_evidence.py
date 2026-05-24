@@ -78,6 +78,27 @@ EXPECTED_SANITIZER_DETECTION_RECORDS: dict[str, set[str]] = {
         "objc3c.sanitizer.undefined.invalid-shift",
     },
 }
+EXPECTED_SANITIZER_RUNTIME_LIBRARY_IDS: dict[str, list[str]] = {
+    "address": ["objc3-runtime", "clang_rt.asan"],
+    "undefined": ["objc3-runtime", "clang_rt.ubsan"],
+}
+EXPECTED_SANITIZER_PACKAGE_INSTALL_FAILURE_BEHAVIORS: dict[str, dict[str, str]] = {
+    "address": {
+        "sanitized-runtime-in-release-channel": "fail-closed-before-install",
+        "mixed-sanitized-unsanitized-runtime": "fail-closed-before-native-execution-claim",
+        "missing-asan-runtime-library": "fail-closed-before-package-install",
+        "unsupported-sanitizer-platform": "fail-closed-before-capability-promotion",
+        "stale-package-metadata": "fail-closed-before-publication",
+    },
+    "undefined": {
+        "sanitized-runtime-in-release-channel": "fail-closed-before-install",
+        "mixed-sanitized-unsanitized-runtime": "fail-closed-before-native-execution-claim",
+        "missing-ubsan-runtime-library": "fail-closed-before-package-install",
+        "unsupported-sanitizer-platform": "fail-closed-before-capability-promotion",
+        "stale-package-metadata": "fail-closed-before-publication",
+    },
+}
+SANITIZER_PACKAGE_INSTALL_MODEL_PATH = "tests/tooling/fixtures/security_hardening/sanitizer_package_install_model_contract.json"
 REQUIRED_SANITIZER_METADATA_FIELDS: dict[str, set[str]] = {
     "address": {
         "target_platform_id",
@@ -86,6 +107,12 @@ REQUIRED_SANITIZER_METADATA_FIELDS: dict[str, set[str]] = {
         "compiler_flags",
         "linker_flags",
         "environment",
+        "package_layout_contract",
+        "runtime_probe_contract",
+        "install_selection_contract",
+        "runtime_mixing_rejection_contract",
+        "environment_contract",
+        "metadata_freshness_contract",
         "release_runtime_package_ids",
         "release_runtime_mixing_allowed",
         "expected_detection_records",
@@ -98,6 +125,13 @@ REQUIRED_SANITIZER_METADATA_FIELDS: dict[str, set[str]] = {
         "compiler_flags",
         "linker_flags",
         "trap_or_recover_mode",
+        "package_layout_contract",
+        "runtime_probe_contract",
+        "install_selection_contract",
+        "runtime_mixing_rejection_contract",
+        "environment_contract",
+        "trap_recover_contract",
+        "metadata_freshness_contract",
         "release_runtime_package_ids",
         "release_runtime_mixing_allowed",
         "expected_detection_records",
@@ -118,6 +152,21 @@ FORBIDDEN_TOOLCHAIN_RANGE_CLAIM_TERMS: tuple[str, ...] = (
     "fallback",
 )
 HOST_EVIDENCE_CONTRACT_ID = "objc3c.platform.host-evidence.promotion.v1"
+HOST_EVIDENCE_WORKFLOW_PATH = ".github/workflows/platform-host-evidence.yml"
+HOST_EVIDENCE_INGESTION_ACTION = "ingest-platform-host-evidence"
+HOST_EVIDENCE_INGESTION_HELPER = "scripts/ingest_objc3c_platform_host_evidence.py"
+HOST_EVIDENCE_REPORT_ROOT = "tmp/reports/platform-host-evidence"
+HOST_EVIDENCE_REPORT_CONTRACT_ID = "objc3c.platform.hosted-runner.evidence-report.v1"
+HOST_EVIDENCE_GENERATED_ONLY_RESULT = "refuse-source-truth-promotion"
+HOST_EVIDENCE_REVIEW_PROMOTION_POLICY = "checked-in-source-truth-required"
+HOST_EVIDENCE_CANDIDATE_RECORD_IDS: tuple[str, ...] = (
+    "objc3c.evidence.hosted-ci.linux-x64.generated-host-run",
+    "objc3c.evidence.hosted-ci.darwin-arm64.generated-host-run",
+)
+HOST_EVIDENCE_RUNNER_LABELS: dict[str, str] = {
+    "linux-x64": "ubuntu-24.04",
+    "darwin-arm64": "macos-15",
+}
 REQUIRED_HOST_EVIDENCE_SECTIONS: tuple[str, ...] = (
     "host_identity_records",
     "toolchain_probe_records",
@@ -238,6 +287,32 @@ def _negative_contracts_are_fail_closed(owner_id: str, contracts: Any) -> None:
         required_behavior = str(contract.get("required_behavior", ""))
         expect(required_behavior.startswith("fail-closed"), f"{contract_id} does not fail closed")
         expect(str(contract.get("source_owner", "")), f"{contract_id} missing source_owner")
+
+
+def _sanitizer_negative_contracts_cover_package_install_failures(
+    owner_id: str,
+    sanitizer_name: str,
+    contracts: Any,
+) -> None:
+    expect(isinstance(contracts, list), f"{owner_id} missing sanitizer package/install negative contracts")
+    expected_behaviors = EXPECTED_SANITIZER_PACKAGE_INSTALL_FAILURE_BEHAVIORS.get(sanitizer_name, {})
+    expect(expected_behaviors, f"{owner_id} unknown sanitizer negative contract set")
+    contracts_by_failure_class = {
+        str(contract.get("failure_class")): contract
+        for contract in contracts
+        if isinstance(contract, dict) and contract.get("failure_class")
+    }
+    missing = sorted(set(expected_behaviors) - set(contracts_by_failure_class))
+    expect(
+        not missing,
+        f"{owner_id} missing sanitizer package/install negative contracts: {missing}",
+    )
+    for failure_class, required_behavior in expected_behaviors.items():
+        contract = contracts_by_failure_class[failure_class]
+        expect(
+            contract.get("required_behavior") == required_behavior,
+            f"{owner_id} {failure_class} behavior drifted from {required_behavior}",
+        )
 
 
 def _records_by_field(owner_id: str, rows: Any, field_name: str) -> dict[str, dict[str, Any]]:
@@ -567,6 +642,10 @@ def _validate_host_evidence_architecture(
         set(REQUIRED_HOST_EVIDENCE_SECTIONS) <= {str(section) for section in contract.get("source_sections", [])},
         "host evidence contract missing required source sections",
     )
+    hosted_evidence_ingestion = _validate_hosted_evidence_ingestion(
+        contract,
+        records_by_id=records_by_id,
+    )
 
     host_identities = _validate_host_identity_records(
         payload,
@@ -603,7 +682,65 @@ def _validate_host_evidence_architecture(
         "package_root_evidence_records": package_roots,
         "native_execution_evidence_records": native_execution_records,
         "negative_host_toolchain_cases": negative_cases,
+        "hosted_evidence_ingestion": {
+            "contract": hosted_evidence_ingestion,
+        },
     }
+
+
+def _validate_hosted_evidence_ingestion(
+    contract: dict[str, Any],
+    *,
+    records_by_id: dict[str, dict[str, Any]],
+) -> dict[str, Any]:
+    ingestion = contract.get("hosted_evidence_ingestion")
+    expect(isinstance(ingestion, dict), "host evidence contract missing hosted_evidence_ingestion")
+    expect(ingestion.get("workflow_path") == HOST_EVIDENCE_WORKFLOW_PATH, "host evidence workflow path drifted")
+    expect(resolve_repo_path(HOST_EVIDENCE_WORKFLOW_PATH).is_file(), "host evidence workflow file is missing")
+    expect(ingestion.get("runner_labels") == HOST_EVIDENCE_RUNNER_LABELS, "host evidence runner labels drifted")
+    expect(ingestion.get("ingestion_action") == HOST_EVIDENCE_INGESTION_ACTION, "host evidence ingestion action drifted")
+    expect(ingestion.get("ingestion_helper") == HOST_EVIDENCE_INGESTION_HELPER, "host evidence ingestion helper drifted")
+    expect(resolve_repo_path(HOST_EVIDENCE_INGESTION_HELPER).is_file(), "host evidence ingestion helper is missing")
+    expect(
+        ingestion.get("generated_report_contract_id") == HOST_EVIDENCE_REPORT_CONTRACT_ID,
+        "host evidence generated report contract drifted",
+    )
+    expect(ingestion.get("generated_report_root") == HOST_EVIDENCE_REPORT_ROOT, "host evidence report root drifted")
+    expect(
+        ingestion.get("generated_only_result") == HOST_EVIDENCE_GENERATED_ONLY_RESULT,
+        "host evidence generated-only result drifted",
+    )
+    expect(
+        ingestion.get("review_promotion_policy") == HOST_EVIDENCE_REVIEW_PROMOTION_POLICY,
+        "host evidence review promotion policy drifted",
+    )
+    expect(ingestion.get("reviewed_source_truth_required") is True, "host evidence review requirement drifted")
+    expect(
+        ingestion.get("support_rows_remain_fail_closed_until_reviewed") is True,
+        "host evidence fail-closed review boundary drifted",
+    )
+    candidate_ids = tuple(str(record_id) for record_id in ingestion.get("candidate_evidence_record_ids", []))
+    expect(set(candidate_ids) == set(HOST_EVIDENCE_CANDIDATE_RECORD_IDS), "host evidence candidate ids drifted")
+    for record_id in candidate_ids:
+        expect(record_id in records_by_id, f"host evidence ingestion missing evidence record {record_id}")
+        record = records_by_id[record_id]
+        expect(record.get("evidence_class") == "hosted_ci", f"{record_id} must remain hosted_ci evidence")
+        _policy_record_is_fail_closed(record)
+        expect(not record.get("supports_platform_ids"), f"{record_id} generated host evidence widened support")
+        source_paths = {str(path).replace("\\", "/") for path in record.get("source_paths", [])}
+        expect(HOST_EVIDENCE_WORKFLOW_PATH in source_paths, f"{record_id} missing workflow source path")
+        expect(HOST_EVIDENCE_INGESTION_HELPER in source_paths, f"{record_id} missing ingestion helper source path")
+        replay_commands = [str(command) for command in record.get("replay_commands", [])]
+        expect(
+            any(f"npm run objc3c -- {HOST_EVIDENCE_INGESTION_ACTION}" in command for command in replay_commands),
+            f"{record_id} missing public ingestion command",
+        )
+        generated_paths = [str(path).replace("\\", "/") for path in record.get("generated_report_paths", [])]
+        expect(
+            any(path.startswith(f"{HOST_EVIDENCE_REPORT_ROOT}/") for path in generated_paths),
+            f"{record_id} missing platform-host-evidence generated report path",
+        )
+    return ingestion
 
 
 def _package_artifact_identity_is_source_owned(row_id: str, row: dict[str, Any]) -> None:
@@ -691,6 +828,139 @@ def _package_promotion_gate_is_fail_closed(row_id: str, row: dict[str, Any]) -> 
     )
 
 
+def _expected_sanitizer_metadata_manifest_path(sanitizer_name: str) -> str:
+    if sanitizer_name == "address":
+        return "share/objc3c/sanitizer/asan-metadata.json"
+    if sanitizer_name == "undefined":
+        return "share/objc3c/sanitizer/ubsan-metadata.json"
+    return ""
+
+
+def _sanitizer_package_install_model_is_concrete(
+    variant_id: str,
+    sanitizer_name: str,
+    package_runtime: dict[str, Any],
+    *,
+    expected_runtime_library_ids: list[str],
+) -> None:
+    layout = package_runtime.get("package_layout_contract")
+    expect(isinstance(layout, dict), f"{variant_id} missing sanitizer package layout contract")
+    package_root_layout = [str(item) for item in layout.get("package_root_layout", [])]
+    expect(package_root_layout, f"{variant_id} package layout contract is empty")
+    expect(
+        not any(path.startswith(("tmp/", "artifacts/")) for path in package_root_layout),
+        f"{variant_id} package layout used generated roots",
+    )
+    metadata_manifest_path = str(layout.get("metadata_manifest_path", ""))
+    expect(
+        metadata_manifest_path == _expected_sanitizer_metadata_manifest_path(sanitizer_name),
+        f"{variant_id} sanitizer metadata manifest path drifted",
+    )
+    expect(metadata_manifest_path in package_root_layout, f"{variant_id} metadata manifest missing from package layout")
+    for runtime_library_id in expected_runtime_library_ids:
+        expect(
+            any(runtime_library_id in path for path in package_root_layout),
+            f"{variant_id} package layout missing {runtime_library_id}",
+        )
+    expect(layout.get("layout_support_truth") is False, f"{variant_id} package layout was treated as support truth")
+    receipt_fields = {str(item) for item in layout.get("install_receipt_required_fields", [])}
+    expect(
+        {"package_id", "package_variant_row_id", "target_platform_id", "runtime_library_ids", "metadata_digest", "selected_runtime_variant"} <= receipt_fields,
+        f"{variant_id} install receipt required fields drifted",
+    )
+
+    runtime_probe = package_runtime.get("runtime_probe_contract")
+    expect(isinstance(runtime_probe, dict), f"{variant_id} missing runtime probe contract")
+    expect(runtime_probe.get("probe_required") is True, f"{variant_id} sanitizer runtime probe is not required")
+    expect(
+        [str(item) for item in runtime_probe.get("required_runtime_library_ids", [])] == expected_runtime_library_ids,
+        f"{variant_id} runtime probe library ids drifted",
+    )
+    probe_inputs = {str(item) for item in runtime_probe.get("probe_inputs", [])}
+    expect(
+        {"target_platform_id", "llvm_runtime_root", "package_root_layout", "runtime_library_ids"} <= probe_inputs,
+        f"{variant_id} runtime probe inputs drifted",
+    )
+    expect(
+        runtime_probe.get("missing_runtime_behavior") == "fail-closed-before-package-install",
+        f"{variant_id} runtime probe missing-runtime behavior drifted",
+    )
+    expect(runtime_probe.get("probe_result_support_truth") is False, f"{variant_id} runtime probe result was support truth")
+
+    install_selection = package_runtime.get("install_selection_contract")
+    expect(isinstance(install_selection, dict), f"{variant_id} missing install selection contract")
+    expect(install_selection.get("selection_mode") == "explicit-opt-in", f"{variant_id} install selection is not opt-in")
+    expect(
+        install_selection.get("install_selector") == f"sanitizer={sanitizer_name}",
+        f"{variant_id} sanitizer install selector drifted",
+    )
+    expect(
+        install_selection.get("default_release_selection_allowed") is False,
+        f"{variant_id} default release selection was allowed",
+    )
+    expect(
+        install_selection.get("default_release_misuse_behavior") == "fail-closed-before-install",
+        f"{variant_id} default release misuse behavior drifted",
+    )
+
+    runtime_mixing = package_runtime.get("runtime_mixing_rejection_contract")
+    expect(isinstance(runtime_mixing, dict), f"{variant_id} missing runtime mixing rejection contract")
+    expect(
+        runtime_mixing.get("release_sanitizer_mixing_allowed") is False,
+        f"{variant_id} release/sanitizer runtime mixing was allowed",
+    )
+    expect(
+        runtime_mixing.get("mixed_runtime_behavior") == "fail-closed-before-native-execution-claim",
+        f"{variant_id} mixed runtime behavior drifted",
+    )
+    expect(
+        [str(item) for item in runtime_mixing.get("rejected_release_runtime_package_ids", [])]
+        == list(RELEASE_RUNTIME_PACKAGE_IDS),
+        f"{variant_id} rejected release runtime package ids drifted",
+    )
+
+    metadata_freshness = package_runtime.get("metadata_freshness_contract")
+    expect(isinstance(metadata_freshness, dict), f"{variant_id} missing metadata freshness contract")
+    expect(
+        metadata_freshness.get("source_owned_metadata_required") is True,
+        f"{variant_id} metadata freshness did not require source-owned metadata",
+    )
+    expect(
+        metadata_freshness.get("generated_metadata_support_truth") is False,
+        f"{variant_id} generated metadata was treated as support truth",
+    )
+    expect(
+        metadata_freshness.get("stale_package_metadata_behavior") == "fail-closed-before-publication",
+        f"{variant_id} stale metadata behavior drifted",
+    )
+
+    environment = package_runtime.get("environment_contract")
+    expect(isinstance(environment, dict), f"{variant_id} missing sanitizer environment contract")
+    expected_env_var = "ASAN_OPTIONS" if sanitizer_name == "address" else "UBSAN_OPTIONS"
+    expect(environment.get("env_var") == expected_env_var, f"{variant_id} sanitizer environment variable drifted")
+    expect(environment.get("required_options"), f"{variant_id} sanitizer environment options are empty")
+    expect(
+        environment.get("missing_environment_behavior") == "fail-closed-before-native-execution-claim",
+        f"{variant_id} environment missing behavior drifted",
+    )
+    expect(environment.get("environment_support_truth") is False, f"{variant_id} environment was support truth")
+
+    if sanitizer_name == "undefined":
+        trap_recover = package_runtime.get("trap_recover_contract")
+        expect(isinstance(trap_recover, dict), f"{variant_id} missing UBSan trap/recover contract")
+        expect(trap_recover.get("required_mode_field") == "trap_or_recover_mode", f"{variant_id} UBSan mode field drifted")
+        expect(
+            {str(item) for item in trap_recover.get("allowed_modes", [])} == {"trap", "recover"},
+            f"{variant_id} UBSan trap/recover modes drifted",
+        )
+        expect(trap_recover.get("default_mode_allowed") is False, f"{variant_id} allowed default UBSan mode")
+        expect(
+            trap_recover.get("missing_mode_behavior") == "fail-closed-before-native-execution-claim",
+            f"{variant_id} UBSan missing mode behavior drifted",
+        )
+        expect(trap_recover.get("mode_support_truth") is False, f"{variant_id} UBSan mode was support truth")
+
+
 def _sanitizer_package_runtime_contract_is_fail_closed(
     variant_id: str,
     row: dict[str, Any],
@@ -703,6 +973,19 @@ def _sanitizer_package_runtime_contract_is_fail_closed(
     expect(
         package_runtime.get("runtime_probe_required") is True,
         f"{variant_id} sanitizer package runtime did not require runtime probe",
+    )
+    expected_runtime_library_ids = [
+        str(item)
+        for item in row.get("runtime_library_ids")
+        or row.get("runtime_library_contract", {}).get("runtime_library_ids", [])
+        or EXPECTED_SANITIZER_RUNTIME_LIBRARY_IDS.get(sanitizer_name, [])
+    ]
+    expect(expected_runtime_library_ids, f"{variant_id} missing sanitizer runtime library ids")
+    _sanitizer_package_install_model_is_concrete(
+        variant_id,
+        sanitizer_name,
+        package_runtime,
+        expected_runtime_library_ids=expected_runtime_library_ids,
     )
     expect(
         package_runtime.get("default_release_channel_allowed") is False,
@@ -900,6 +1183,26 @@ def _validate_hosted_runner_capability_summaries(
     expect(
         payload.get("support_claim_policy") == "summary-only-no-support-promotion",
         "hosted runner capability summaries can only summarize source truth",
+    )
+    workflow_gate_policy = payload.get("workflow_gate_policy", {})
+    expect(
+        workflow_gate_policy.get("optional_hosted_gate_missing_llc_result")
+        == "skip-no-success-claim",
+        "hosted runner optional gates must skip without success claims when llc is missing",
+    )
+    expect(
+        workflow_gate_policy.get("required_conformance_minima_missing_llc_result")
+        == "fail-closed-required-native-object-emission",
+        "conformance minima must fail closed when required llc object emission is missing",
+    )
+    expect(
+        workflow_gate_policy.get("required_conformance_minima_env")
+        == "OBJC3C_REQUIRE_HOSTED_NATIVE_OBJECT_EMISSION",
+        "conformance minima required native object emission env drifted",
+    )
+    expect(
+        workflow_gate_policy.get("clang_substitute_success_allowed") is False,
+        "hosted runner workflow policy allowed clang substitute success",
     )
     summary_ids: set[str] = set()
     required_summary_ids = {
@@ -1278,10 +1581,16 @@ def _validate_platform_expansion_sanitizer_cases(
             "not support truth" in str(case.get("report_truth_policy", "")),
             f"{variant_id} report truth policy must keep reports out of support truth",
         )
-        available_negative_contracts = set(sanitizer_negative_contracts) | set(package_negative_contracts)
+        available_negative_contracts = {**package_negative_contracts, **sanitizer_negative_contracts}
+        negative_contract_ids = {str(item) for item in case.get("negative_contract_ids", [])}
         expect(
-            {str(item) for item in case.get("negative_contract_ids", [])} <= available_negative_contracts,
+            negative_contract_ids <= set(available_negative_contracts),
             f"{variant_id} referenced a missing sanitizer negative contract",
+        )
+        _sanitizer_negative_contracts_cover_package_install_failures(
+            variant_id,
+            str(case.get("sanitizer", "")),
+            [available_negative_contracts[contract_id] for contract_id in negative_contract_ids],
         )
 
 
@@ -1309,6 +1618,10 @@ def _validate_platform_expansion_claim_contract(
     expect(
         upstream.get("hosted_runner_capability_summaries") == repo_rel(HOSTED_RUNNER_CAPABILITY_SUMMARIES_PATH),
         "platform expansion contract hosted runner source path drifted",
+    )
+    expect(
+        upstream.get("sanitizer_package_install_model_contract") == SANITIZER_PACKAGE_INSTALL_MODEL_PATH,
+        "platform expansion contract sanitizer package/install source path drifted",
     )
     expect(
         "native object emission success from clang substitute output"
@@ -1494,6 +1807,16 @@ def _validate_package_variant_rows(
             expect(evidence_id in records_by_id, f"{row_id} missing policy evidence record {evidence_id}")
             _policy_record_is_fail_closed(records_by_id[evidence_id])
         _negative_contracts_are_fail_closed(row_id, row.get("negative_contracts", []))
+        if row.get("variant_kind") == "sanitizer-runtime":
+            sanitizer_name = {
+                "sanitizer-address": "address",
+                "sanitizer-undefined": "undefined",
+            }.get(str(row.get("target_platform_id", "")), "")
+            _sanitizer_negative_contracts_cover_package_install_failures(
+                row_id,
+                sanitizer_name,
+                row.get("negative_contracts", []),
+            )
 
     return by_id
 
@@ -1559,6 +1882,21 @@ def _validate_llvm_version_support_matrix(
         native_object_contract.get("unresolved_version_status")
         == "native_object_emission_unresolved_tool_version",
         "native object emission unresolved-version status drifted",
+    )
+    expect(
+        native_object_contract.get("task_hygiene_behavior")
+        == "skip-no-success-claim-when-native-object-emission-unavailable",
+        "native object emission task-hygiene behavior drifted",
+    )
+    expect(
+        native_object_contract.get("conformance_minima_behavior")
+        == "fail-closed-before-cross-lane-runtime-proof",
+        "native object emission conformance-minima behavior drifted",
+    )
+    expect(
+        native_object_contract.get("required_conformance_minima_env")
+        == "OBJC3C_REQUIRE_HOSTED_NATIVE_OBJECT_EMISSION",
+        "native object emission conformance-minima env drifted",
     )
     expect(
         native_object_contract.get("fallback_policy") == "no-clang-fallback-success-claim",

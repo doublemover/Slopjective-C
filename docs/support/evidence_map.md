@@ -67,14 +67,21 @@ diagnostic, documentation, or boundary evidence only.
 | `language.errors.typed-throws` |  | `diagnostic` | `tests/tooling/fixtures/native/recovery/negative/negative_typed_throws_multi_payload_reserved.objc3` |  |
 | `language.errors.typed-throws` |  | `diagnostic` | `tests/tooling/fixtures/native/recovery/negative/negative_typed_throws_erasure_mismatch_reserved.objc3` |  |
 | `language.errors.typed-throws` |  | `diagnostic` | `tests/tooling/fixtures/native/recovery/negative/negative_typed_throws_protocol_mismatch.objc3` |  |
+| `language.errors.typed-throws` |  | `diagnostic` | `tests/tooling/fixtures/native/recovery/negative/negative_typed_throws_incompatible_catch.objc3` |  |
+| `language.errors.typed-throws` |  | `diagnostic` | `tests/tooling/fixtures/native/recovery/negative/negative_typed_throws_foreign_carrier_catch.objc3` |  |
 | `language.errors.typed-throws` |  | `schema` | `schemas/objc3c-typed-throws-effect-contract-v1.schema.json` |  |
 | `language.errors.typed-throws` |  | `source` | `native/objc3c/src/sema/objc3_typed_throws_effect_contract.h` |  |
+| `language.errors.typed-throws` |  | `source` | `native/objc3c/src/sema/objc3_semantic_error_handling_try_do_catch_do_scope.inc` |  |
 | `language.errors.typed-throws` |  | `source` | `native/objc3c/src/sema/objc3_semantic_signature_compatibility.cpp` |  |
 | `language.errors.typed-throws` |  | `source` | `native/objc3c/src/ir/objc3_ir_function_signature_model.cpp` |  |
 | `language.errors.typed-throws` |  | `source` | `native/objc3c/src/ir/objc3_ir_direct_call_emission.cpp` |  |
 | `language.errors.typed-throws` |  | `source` | `native/objc3c/src/ir/objc3_ir_expression_emission_call.cpp` |  |
+| `language.errors.typed-throws` |  | `source` | `native/objc3c/src/ir/objc3_ir_statement_block_emission.cpp` |  |
 | `language.errors.typed-throws` |  | `source` | `native/objc3c/src/ir/objc3_ir_function_definition_emission.cpp` |  |
+| `language.errors.typed-throws` |  | `source` | `native/objc3c/src/runtime/errors/catch_filter.cpp` |  |
+| `language.errors.typed-throws` |  | `source` | `native/objc3c/src/runtime/errors/error_bridge_kind.cpp` |  |
 | `language.errors.typed-throws` |  | `source` | `tests/tooling/fixtures/native/typed_throws_semantic_effect_identity.contract.json` |  |
+| `language.errors.typed-throws` |  | `source` | `tests/tooling/fixtures/native/typed_throws_catch_bridge_positive.objc3` |  |
 | `language.errors.typed-throws` |  | `source` | `tests/tooling/fixtures/native/language_evolution_typed_throws_value_optionals_contract.json` |  |
 | `language.errors.typed-throws` |  | `source` | `native/objc3c/src/artifacts/objc3_frontend_textual_interface_payload_artifact.cpp` |  |
 | `language.errors.typed-throws` |  | `source` | `native/objc3c/src/artifacts/objc3_frontend_textual_interface_payload_import.cpp` |  |
@@ -82,6 +89,11 @@ diagnostic, documentation, or boundary evidence only.
 | `language.types.value-optionals` |  | `diagnostic` | `tests/tooling/fixtures/native/recovery/negative/negative_value_optional_nullable_pointer_conversion_reserved.objc3` |  |
 | `language.types.value-optionals` |  | `diagnostic` | `tests/tooling/fixtures/native/recovery/negative/negative_value_optional_nil_scalar_coercion_reserved.objc3` |  |
 | `language.types.value-optionals` |  | `diagnostic` | `tests/tooling/fixtures/native/recovery/negative/negative_value_optional_nested_lowercase_alias_reserved.objc3` |  |
+| `language.types.value-optionals` |  | `diagnostic` | `tests/tooling/fixtures/native/recovery/negative/negative_value_optional_property_layout_unsupported.objc3` |  |
+| `language.types.value-optionals` |  | `diagnostic` | `tests/tooling/fixtures/native/recovery/negative/negative_value_optional_nullable_suffix_mismatch.objc3` |  |
+| `language.types.value-optionals` |  | `diagnostic` | `tests/tooling/fixtures/native/value_optionals_layout_mismatch_negative.contract.json` |  |
+| `language.types.value-optionals` |  | `diagnostic` | `tests/tooling/fixtures/native/value_optionals_lowering_claim_negative.contract.json` |  |
+| `language.types.value-optionals` |  | `diagnostic` | `tests/tooling/fixtures/native/value_optionals_interface_mismatch_negative.contract.json` |  |
 | `language.types.value-optionals` |  | `source` | `tests/tooling/fixtures/native/language_evolution_typed_throws_value_optionals_contract.json` |  |
 | `language.types.value-optionals` |  | `source` | `tests/tooling/fixtures/native/value_optionals_contract_positive.json` |  |
 | `language.types.value-optionals` |  | `diagnostic` | `tests/tooling/fixtures/native/value_optionals_executable_semantics_negative.contract.json` |  |
@@ -810,6 +822,7 @@ diagnostic, documentation, or boundary evidence only.
 | `ecosystem.package-manager.local-registry` | `objc3c.behavior.package.manager-local-registry` | `doc` | `docs/runbooks/objc3c_package_ecosystem.md` |  |
 | `ecosystem.package-manager.hosted-registry-fixture` | `objc3c.behavior.package.hosted-registry-fixture` | `test` | `tests/tooling/fixtures/package_ecosystem/hosted_registry/hosted-registry-index.json` | `npm run objc3c -- validate-package-registry-model` |
 | `ecosystem.package-manager.hosted-registry-fixture` | `objc3c.behavior.package.hosted-registry-fixture` | `test` | `tests/tooling/fixtures/package_ecosystem/hosted_registry/offline-mirror-index.json` | `npm run objc3c -- validate-package-registry-model` |
+| `ecosystem.package-manager.hosted-registry-fixture` | `objc3c.behavior.package.hosted-registry-fixture` | `test` | `tests/tooling/fixtures/package_ecosystem/hosted_registry/fixture-lock.json` | `npm run objc3c -- validate-package-registry-model` |
 | `ecosystem.package-manager.hosted-registry-fixture` | `objc3c.behavior.package.hosted-registry-fixture` | `test` | `tests/tooling/fixtures/package_ecosystem/hosted_registry/negative-registry-cases.json` | `npm run objc3c -- validate-package-registry-model` |
 | `ecosystem.package-manager.hosted-registry-fixture` | `objc3c.behavior.package.hosted-registry-fixture` | `test` | `tests/tooling/fixtures/package_ecosystem/hosted_registry/service/hosted-registry-service.json` | `npm run objc3c -- validate-package-registry-model` |
 | `ecosystem.package-manager.hosted-registry-fixture` | `objc3c.behavior.package.hosted-registry-fixture` | `test` | `tests/tooling/fixtures/package_ecosystem/hosted_registry/service/negative-service-cases.json` | `npm run objc3c -- validate-package-registry-model` |
@@ -819,9 +832,12 @@ diagnostic, documentation, or boundary evidence only.
 | `ecosystem.package-manager.hosted-registry-fixture` | `objc3c.behavior.package.hosted-registry-fixture` | `source` | `scripts/objc3c_package_manager/hosted_registry.py` |  |
 | `ecosystem.package-manager.hosted-registry-fixture` | `objc3c.behavior.package.hosted-registry-fixture` | `source` | `scripts/objc3c_package_manager/hosted_service.py` |  |
 | `ecosystem.package-manager.hosted-registry-fixture` | `objc3c.behavior.package.hosted-registry-fixture` | `source` | `scripts/check_objc3c_package_registry_model.py` |  |
+| `ecosystem.package-manager.hosted-registry-fixture` | `objc3c.behavior.package.hosted-registry-fixture` | `doc` | `docs/runbooks/objc3c_package_ecosystem.md` |  |
 | `ecosystem.package-manager.hosted-registry-hermetic-service` | `objc3c.behavior.package.hosted-registry-hermetic-service` | `test` | `tests/tooling/fixtures/package_ecosystem/hosted_registry/service/hosted-registry-service.json` | `npm run objc3c -- validate-package-registry-model` |
 | `ecosystem.package-manager.hosted-registry-hermetic-service` | `objc3c.behavior.package.hosted-registry-hermetic-service` | `test` | `tests/tooling/fixtures/package_ecosystem/hosted_registry/service/negative-service-cases.json` | `npm run objc3c -- validate-package-registry-model` |
 | `ecosystem.package-manager.hosted-registry-hermetic-service` | `objc3c.behavior.package.hosted-registry-hermetic-service` | `test` | `tests/tooling/fixtures/package_ecosystem/hosted_registry/hosted-registry-index.json` | `npm run objc3c -- validate-package-registry-model` |
+| `ecosystem.package-manager.hosted-registry-hermetic-service` | `objc3c.behavior.package.hosted-registry-hermetic-service` | `test` | `tests/tooling/fixtures/package_ecosystem/hosted_registry/offline-mirror-index.json` | `npm run objc3c -- validate-package-registry-model` |
+| `ecosystem.package-manager.hosted-registry-hermetic-service` | `objc3c.behavior.package.hosted-registry-hermetic-service` | `test` | `tests/tooling/fixtures/package_ecosystem/hosted_registry/fixture-lock.json` | `npm run objc3c -- validate-package-registry-model` |
 | `ecosystem.package-manager.hosted-registry-hermetic-service` | `objc3c.behavior.package.hosted-registry-hermetic-service` | `test` | `tests/tooling/test_package_hosted_registry_resolution.py` | `npm run objc3c -- validate-package-registry-model` |
 | `ecosystem.package-manager.hosted-registry-hermetic-service` | `objc3c.behavior.package.hosted-registry-hermetic-service` | `schema` | `schemas/objc3c-package-hosted-registry-service-v1.schema.json` |  |
 | `ecosystem.package-manager.hosted-registry-hermetic-service` | `objc3c.behavior.package.hosted-registry-hermetic-service` | `source` | `scripts/objc3c_package_manager/hosted_service.py` |  |
@@ -1000,13 +1016,16 @@ diagnostic, documentation, or boundary evidence only.
 | `platform.expansion.umbrella-readiness` |  | `schema` | `schemas/objc3c-platform-support-source-truth-v1.schema.json` |  |
 | `platform.expansion.umbrella-readiness` |  | `source` | `scripts/check_objc3c_platform_support_matrix.py` |  |
 | `platform.expansion.umbrella-readiness` |  | `source` | `scripts/platform_hardening_contracts/support_evidence.py` |  |
+| `platform.expansion.umbrella-readiness` |  | `source` | `tests/tooling/fixtures/security_hardening/sanitizer_package_install_model_contract.json` |  |
 | `platform.expansion.umbrella-readiness` |  | `diagnostic` | `tests/tooling/fixtures/platform_hardening/unsupported_host_fail_closed_policy.json` |  |
 | `platform.expansion.umbrella-readiness` |  | `doc` | `docs/runbooks/objc3c_platform_hardening.md` |  |
 | `toolchain.sanitizer.address` |  | `diagnostic` | `tests/tooling/fixtures/platform_hardening/platform_toolchain_support_evidence.json` |  |
 | `toolchain.sanitizer.address` |  | `source` | `tests/tooling/fixtures/security_hardening/sanitizer_validation_contract.json` |  |
+| `toolchain.sanitizer.address` |  | `source` | `tests/tooling/fixtures/security_hardening/sanitizer_package_install_model_contract.json` |  |
 | `toolchain.sanitizer.address` |  | `source` | `tests/tooling/fixtures/platform_support/source_truth_matrix.json` |  |
 | `toolchain.sanitizer.undefined` |  | `diagnostic` | `tests/tooling/fixtures/platform_hardening/platform_toolchain_support_evidence.json` |  |
 | `toolchain.sanitizer.undefined` |  | `source` | `tests/tooling/fixtures/security_hardening/sanitizer_validation_contract.json` |  |
+| `toolchain.sanitizer.undefined` |  | `source` | `tests/tooling/fixtures/security_hardening/sanitizer_package_install_model_contract.json` |  |
 | `toolchain.sanitizer.undefined` |  | `source` | `tests/tooling/fixtures/platform_support/source_truth_matrix.json` |  |
 | `applications.framework-samples.object-runtime-library` | `objc3c.behavior.application-framework-samples.object-runtime-library` | `test` | `showcase/applicationFrameworkSamples/libraries/routeModelKit/main.objc3` | `npm run objc3c -- validate-application-framework-samples` |
 | `applications.framework-samples.object-runtime-library` | `objc3c.behavior.application-framework-samples.object-runtime-library` | `test` | `tests/tooling/fixtures/application_framework_samples/contract.json` | `npm run objc3c -- validate-application-framework-samples` |

@@ -28,7 +28,7 @@
     },
     "issue_ref": { "const": 8233 },
     "support_state": {
-      "const": "source_owned_effect_identity_interface_preserved_error_out_abi_lowered"
+      "const": "source_owned_effect_identity_interface_preserved_error_out_abi_lowered_catch_bridge_policy_recorded"
     },
     "public_support_claimed": { "const": false },
     "throws_effect": {
@@ -95,20 +95,40 @@
     "catchCompatibility": {
       "type": "object",
       "required": [
+        "case_id",
         "throw_type",
         "catch_type",
         "match_status",
-        "bridge_status"
+        "bridge_status",
+        "runtime_catch_kind",
+        "fail_closed",
+        "diagnostic"
       ],
       "properties": {
+        "case_id": { "type": "string", "minLength": 1 },
         "throw_type": { "type": "string", "minLength": 1 },
         "catch_type": { "type": "string", "minLength": 1 },
         "match_status": {
-          "const": "deferred-until-do-catch-semantics"
+          "enum": [
+            "typed-catch-exact-payload-match",
+            "untyped-catch-allowed-via-id-error-bridge",
+            "incompatible-catch-rejected",
+            "unsupported-foreign-carrier-fail-closed"
+          ]
         },
         "bridge_status": {
-          "const": "typed-error-runtime-bridge-deferred"
-        }
+          "enum": [
+            "no-bridge-needed",
+            "bridge-to-id<Error>-allowed",
+            "bridge-rejected",
+            "unsupported-foreign-carrier-rejected"
+          ]
+        },
+        "runtime_catch_kind": {
+          "enum": ["typed-error", "id<Error>", "none"]
+        },
+        "fail_closed": { "type": "boolean" },
+        "diagnostic": { "type": "string" }
       },
       "additionalProperties": false
     },
@@ -155,6 +175,9 @@
         "typed_payload_is_signature_identity",
         "bare_throws_not_compatible_with_typed_throws",
         "typed_error_abi_lowering_ready",
+        "typed_catch_exact_matching",
+        "untyped_catch_bridge_allowed",
+        "unsupported_foreign_carrier_fail_closed",
         "runtime_execution_claimed",
         "silent_erasure_allowed"
       ],
@@ -163,6 +186,9 @@
         "typed_payload_is_signature_identity": { "const": true },
         "bare_throws_not_compatible_with_typed_throws": { "const": true },
         "typed_error_abi_lowering_ready": { "const": true },
+        "typed_catch_exact_matching": { "const": true },
+        "untyped_catch_bridge_allowed": { "const": true },
+        "unsupported_foreign_carrier_fail_closed": { "const": true },
         "runtime_execution_claimed": { "const": true },
         "silent_erasure_allowed": { "const": false }
       },

@@ -18,6 +18,7 @@
     "scripts/check_objc3c_release_operations_integration.py",
     "scripts/check_objc3c_release_operations_end_to_end.py",
     "scripts/check_platform_hardening_support_evidence.py",
+    "scripts/ingest_objc3c_platform_host_evidence.py",
     "scripts/objc3c_workflow"
   ],
   "policy_contract_paths": [
@@ -59,6 +60,7 @@
   },
   "public_actions": [
     "build-platform-support-matrix",
+    "ingest-platform-host-evidence",
     "validate-platform-hardening",
     "validate-platform-hardening-end-to-end",
     "package-runnable-toolchain",
@@ -87,6 +89,10 @@
     "tmp/reports/platform-hardening/unsupported-host-policy/unsupported_host_policy_summary.json",
     "tmp/reports/platform-hardening/toolchain-archive-policy/toolchain_archive_policy_summary.json",
     "tmp/reports/platform-hardening/host-matrix-summary.json",
+    "tmp/reports/platform-host-evidence/linux-x64/host-evidence-report.json",
+    "tmp/reports/platform-host-evidence/linux-x64/ingestion-summary.json",
+    "tmp/reports/platform-host-evidence/darwin-arm64/host-evidence-report.json",
+    "tmp/reports/platform-host-evidence/darwin-arm64/ingestion-summary.json",
     "tmp/reports/platform-hardening/artifact-contract/artifact_contract_summary.json",
     "tmp/reports/platform-hardening/build-package-validation-summary.json",
     "tmp/reports/platform-hardening/toolchain-range-replay-summary.json",

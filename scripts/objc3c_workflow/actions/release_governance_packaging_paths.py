@@ -17,6 +17,9 @@ PACKAGING_CHANNELS_END_TO_END_PY = (
 PLATFORM_SUPPORT_MATRIX_PY = (
     ROOT / "scripts" / "build_objc3c_platform_support_matrix.py"
 )
+PLATFORM_HOST_EVIDENCE_INGESTION_PY = (
+    ROOT / "scripts" / "ingest_objc3c_platform_host_evidence.py"
+)
 PLATFORM_HARDENING_INTEGRATION_PY = (
     ROOT / "scripts" / "check_objc3c_platform_hardening_integration.py"
 )

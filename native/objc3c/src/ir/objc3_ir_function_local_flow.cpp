@@ -2,6 +2,7 @@
 
 #include "ast/objc3_ast.h"
 #include "ir/objc3_ir_function_signature_model.h"
+#include "ir/objc3_ir_type_model.h"
 #include "lower/contracts/concurrency_continuation_runtime_contracts.h"
 #include "lower/contracts/error_handling_runtime_bridge_contracts.h"
 #include "lower/contracts/ownership_runtime_memory_management_contracts.h"
@@ -155,6 +156,10 @@ void EmitObjc3IRFunctionLocalTypedReturn(
     ctx.code_lines.push_back("  ret i1 " + bool_i1);
     return;
   }
+  if (ctx.return_type == ValueType::Optional) {
+    ctx.code_lines.push_back("  ret i64 " + returned_value);
+    return;
+  }
   returned_value = EmitObjc3IRAsyncReturnContinuationHandoff(returned_value,
                                                             ctx);
   ctx.code_lines.push_back("  ret i32 " + returned_value);
@@ -200,6 +205,11 @@ void EmitObjc3IRFunctionLocalTypedParamStore(
   }
 
   std::string stored_value = "%arg" + std::to_string(index);
+  if (param.type == ValueType::Optional) {
+    ctx.entry_lines.push_back("  store i64 " + stored_value + ", ptr " + ptr +
+                              ", align 8");
+    return;
+  }
   if (EffectiveArcParamInsertRetain(param, flow_context.arc_mode_enabled)) {
     const std::string retained_value = "%arg" + std::to_string(index) +
                                        ".retained." +

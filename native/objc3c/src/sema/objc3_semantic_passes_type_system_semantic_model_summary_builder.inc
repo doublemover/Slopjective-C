@@ -88,7 +88,8 @@ Objc3TypeSystemTypeSemanticModelSummary BuildTypeSystemTypeSemanticModelSummary(
       summary.protocol_composition_semantic_sites <=
           summary.object_pointer_semantic_sites &&
       summary.generic_suffix_semantic_sites <=
-          summary.object_pointer_semantic_sites &&
+          summary.object_pointer_semantic_sites +
+              summary.canonical_value_optional_entries &&
       summary.nullability_suffix_semantic_sites <=
           summary.object_pointer_semantic_sites &&
       summary.invalid_generic_suffix_semantic_sites <=
@@ -105,7 +106,7 @@ Objc3TypeSystemTypeSemanticModelSummary BuildTypeSystemTypeSemanticModelSummary(
           summary.canonical_type_entries &&
       summary.canonical_value_optional_lowering_contract_entries <=
           summary.canonical_value_optional_entries &&
-      summary.canonical_value_optional_runtime_deferred_entries <=
+      summary.canonical_value_optional_runtime_supported_entries <=
           summary.canonical_value_optional_entries &&
       summary.canonical_value_optional_bridge_rejection_entries <=
           summary.canonical_value_optional_entries &&
@@ -134,7 +135,7 @@ Objc3TypeSystemTypeSemanticModelSummary BuildTypeSystemTypeSemanticModelSummary(
       summary.canonical_value_optional_entries ==
           summary.canonical_value_optional_lowering_contract_entries &&
       summary.canonical_value_optional_entries ==
-          summary.canonical_value_optional_runtime_deferred_entries &&
+          summary.canonical_value_optional_runtime_supported_entries &&
       summary.canonical_value_optional_entries ==
           summary.canonical_value_optional_bridge_rejection_entries &&
       summary.canonical_value_optional_entries ==
@@ -172,8 +173,8 @@ Objc3TypeSystemTypeSemanticModelSummary BuildTypeSystemTypeSemanticModelSummary(
       << summary.canonical_value_optional_entries
       << ";canonical-value-optional-lowering-contracts="
       << summary.canonical_value_optional_lowering_contract_entries
-      << ";canonical-value-optional-runtime-deferred="
-      << summary.canonical_value_optional_runtime_deferred_entries
+      << ";canonical-value-optional-runtime-supported="
+      << summary.canonical_value_optional_runtime_supported_entries
       << ";canonical-value-optional-bridge-rejections="
       << summary.canonical_value_optional_bridge_rejection_entries
       << ";canonical-value-optional-diagnostics="

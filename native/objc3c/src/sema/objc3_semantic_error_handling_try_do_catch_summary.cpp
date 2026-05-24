@@ -1,6 +1,7 @@
 #include "sema/objc3_semantic_passes.h"
 
 #include "sema/objc3_semantic_error_handling_bridge_helpers.h"
+#include "sema/objc3_typed_throws_effect_contract.h"
 
 #include <cstddef>
 #include <sstream>

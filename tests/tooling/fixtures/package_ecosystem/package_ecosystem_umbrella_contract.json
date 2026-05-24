@@ -134,10 +134,24 @@
       "consumer_contract": "tests/tooling/fixtures/package_ecosystem/network_resolution/network-dependency-resolution.json",
       "required_fields": [
         "provider_model.network_fetch.separated_from_resolution",
+        "snapshot_fetch.fetcher_id",
+        "snapshot_fetch.transport_policy.live_network_allowed",
+        "snapshot_fetch.transport_policy.fallback_registry_success",
+        "snapshot_fetch.snapshot_source.source_lock_digest",
+        "snapshot_fetch.trust_enforcement.signature_required",
+        "snapshot_fetch.trust_enforcement.revocation_required",
+        "snapshot_fetch.trust_enforcement.unknown_trust_root_policy",
+        "snapshot_fetch.trust_enforcement.revoked_subject_policy",
+        "snapshot_fetch.trust_enforcement.digest_drift_policy",
+        "snapshot_fetch.lock_materialization.policy",
+        "snapshot_fetch.lock_materialization.offline_replay_sufficient",
+        "snapshot_fetch.lock_materialization.network_required_after_lock",
         "snapshot.rollback_policy",
         "service_availability.state",
         "endpoint_identity.endpoint_id",
         "endpoint_identity.channel_id",
+        "lock_materialization.policy",
+        "lock_materialization.offline_replay_sufficient",
         "lock_trust_material.source_lock_digest",
         "lock_trust_material.trust_root_id",
         "lock_trust_material.cache_policy",
@@ -149,16 +163,32 @@
       ],
       "fail_closed_cases": [
         "rollback-snapshot",
+        "live-network-fetch",
+        "live-public-service-unavailable",
+        "transport-policy-drift",
+        "snapshot-fetch-policy-drift",
+        "snapshot-source-digest-drift",
         "unpinned-hosted-dependency",
+        "unlocked-version-selection",
+        "ambiguous-module-identity",
+        "ambiguous-version-selection",
         "unsupported-platform",
         "registry-trust-mismatch",
+        "unknown-trust-root",
+        "revoked-subject",
+        "digest-drift",
+        "unavailable-registry",
+        "yanked-version",
         "missing-package-provenance",
         "missing-service-auth",
         "service-revocation-unavailable",
         "service-moderation-blocked",
         "service-availability-unavailable",
         "unsigned-hosted-artifact",
+        "lock-materialization-drift",
         "offline-mirror-handoff-drift",
+        "dependency-cycle",
+        "fallback-registry-success",
         "hosted-registry-endpoint-mismatch"
       ]
     },
@@ -221,7 +251,7 @@
     "blocker_owner": "package-ecosystem-blockers",
     "blocking_conditions": [
       "direct @import support lacks locked package provenance or stable diagnostics",
-      "hosted registry fixture lacks provider, endpoint, channel, snapshot, hermetic service, lock, trust, cache identity, offline mirror handoff, revocation/yank, or failure-mode metadata",
+      "hosted registry fixture lacks provider, endpoint, channel, deterministic snapshot fetch, explicit transport policy, hermetic service, lock materialization, trust enforcement, cache identity, offline mirror replay handoff, revocation/yank, or failure-mode metadata",
       "network dependency resolution accepts live fetches or fallback registry success",
       "release-channel publication accepts stale channel, endpoint drift, lock drift, cache tamper, dependency identity drift, or missing provenance",
       "package signing or verification can succeed without source-owned trust policy and reserved release/registry root handling",
@@ -230,5 +260,5 @@
       "package ecosystem validation omits any direct import, hosted registry, network publication, signing, install distribution, operations, or runnable ecosystem action"
     ]
   },
-  "claim_boundary": "Objective-C 3.0 package ecosystem closure is source-owned only when direct @import provenance, hosted registry offline metadata, hermetic hosted service contracts, network dependency resolution, package release-channel publication, signing and verification trust policy, install distribution, package operations, and runnable package ecosystem actions all agree through checked-in contracts and fail closed without live network or fallback registry success."
+  "claim_boundary": "Objective-C 3.0 package ecosystem closure is source-owned only when direct @import provenance, hosted registry offline metadata, deterministic snapshot fetch, trust enforcement, lock materialization, offline replay handoff, hermetic hosted service contracts, network dependency resolution, package release-channel publication, signing and verification trust policy, install distribution, package operations, and runnable package ecosystem actions all agree through checked-in contracts and fail closed without live network or fallback registry success."
 }

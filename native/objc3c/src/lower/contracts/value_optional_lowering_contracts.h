@@ -5,7 +5,7 @@
 inline constexpr const char *kObjc3ValueOptionalLoweringContractId =
     "objc3c.value_optional.lowering.contract.v1";
 inline constexpr const char *kObjc3ValueOptionalLoweringStatus =
-    "stable-abi-carrier-contract-runtime-execution-fail-closed";
+    "stable-packed-abi-carrier-runtime-execution-supported";
 
 struct Objc3ValueOptionalLoweringContract {
   const char *contract_id = kObjc3ValueOptionalLoweringContractId;
@@ -47,11 +47,11 @@ struct Objc3ValueOptionalLoweringContract {
   bool unwrap_requires_presence_check = true;
   bool unwrap_failure_diagnostic_supported = true;
   bool nil_bridge_diagnostic_supported = true;
-  bool runtime_construction_supported = false;
-  bool runtime_unwrap_supported = false;
+  bool runtime_construction_supported = true;
+  bool runtime_unwrap_supported = true;
   bool unchecked_unwrap_supported = false;
-  bool ir_payload_emission_supported = false;
-  bool call_abi_lowering_supported = false;
+  bool ir_payload_emission_supported = true;
+  bool call_abi_lowering_supported = true;
   bool nil_to_scalar_coercion_allowed = false;
   bool implicit_nil_absence_allowed = false;
   bool nullable_pointer_conversion_allowed = false;
@@ -123,11 +123,11 @@ inline bool IsReadyObjc3ValueOptionalLoweringContract(
          contract.unwrap_requires_presence_check &&
          contract.unwrap_failure_diagnostic_supported &&
          contract.nil_bridge_diagnostic_supported &&
-         !contract.runtime_construction_supported &&
-         !contract.runtime_unwrap_supported &&
+         contract.runtime_construction_supported &&
+         contract.runtime_unwrap_supported &&
          !contract.unchecked_unwrap_supported &&
-         !contract.ir_payload_emission_supported &&
-         !contract.call_abi_lowering_supported &&
+         contract.ir_payload_emission_supported &&
+         contract.call_abi_lowering_supported &&
          !contract.nil_to_scalar_coercion_allowed &&
          !contract.implicit_nil_absence_allowed &&
          !contract.nullable_pointer_conversion_allowed &&
@@ -138,7 +138,7 @@ inline bool Objc3ValueOptionalDescriptorMatchesLoweringContract(
     const Objc3ValueOptionalTypeDescriptor &descriptor,
     const Objc3ValueOptionalLoweringContract &contract) {
   return Objc3ValueOptionalHasExecutableLoweringContract(descriptor) &&
-         Objc3ValueOptionalRuntimeAbiDeferred(descriptor) &&
+         Objc3ValueOptionalRuntimeAbiReady(descriptor) &&
          IsReadyObjc3ValueOptionalLoweringContract(contract) &&
          descriptor.abi_layout_id == contract.abi_layout_id &&
          descriptor.presence_field == contract.presence_field &&

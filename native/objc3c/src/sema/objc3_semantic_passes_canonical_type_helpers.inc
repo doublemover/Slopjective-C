@@ -233,6 +233,10 @@ static void ApplyValueOptionalCanonicalDescriptor(
   type.is_objc_protocol_object = false;
   type.is_objc_instancetype_object = false;
   type.is_objc_named_object_pointer = false;
+  type.has_protocol_composition = false;
+  type.has_invalid_protocol_composition = false;
+  type.protocol_composition_lexicographic.clear();
+  type.protocol_composition_facts_authoritative = true;
   type.deterministic =
       type.deterministic &&
       Objc3ValueOptionalHasExecutableLoweringContract(descriptor) &&

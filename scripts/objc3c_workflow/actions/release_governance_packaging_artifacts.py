@@ -8,6 +8,7 @@ from ..commands import run
 from .release_governance_packaging_paths import (
     PACKAGE_CHANNELS_BUILD_PY,
     PACKAGING_CHANNELS_SOURCE_SURFACE_PY,
+    PLATFORM_HOST_EVIDENCE_INGESTION_PY,
     PLATFORM_SUPPORT_MATRIX_PY,
 )
 
@@ -22,3 +23,9 @@ def action_build_package_channels(_: list[str]) -> int:
 
 def action_build_platform_support_matrix(_: list[str]) -> int:
     return run([sys.executable, str(PLATFORM_SUPPORT_MATRIX_PY)])
+
+
+def action_ingest_platform_host_evidence(rest: list[str]) -> int:
+    if rest[:1] == ["--"]:
+        rest = rest[1:]
+    return run([sys.executable, str(PLATFORM_HOST_EVIDENCE_INGESTION_PY), *rest])

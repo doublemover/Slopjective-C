@@ -6,6 +6,7 @@
 #include <utility>
 
 #include "ast/objc3_ast.h"
+#include "ast/objc3_ast_value_optional_type.h"
 #include "ir/objc3_ir_literal_parsing.h"
 #include "ir/objc3_ir_statement_block_emission.h"
 #include "ir/objc3_ir_statement_binding_emission.h"
@@ -64,8 +65,9 @@ void RecordCollectionBinding(const LetStmt &let, const std::string &ptr,
   }
 }
 
-ValueType InferObjc3IRLocalBindingValueType(const Expr *expr,
-                                            const FunctionContext &ctx) {
+ValueType InferObjc3IRLocalBindingValueType(
+    const Expr *expr, const FunctionContext &ctx,
+    const Objc3IRStatementEmissionCallbacks &callbacks) {
   if (expr == nullptr) {
     return ValueType::Unknown;
   }
@@ -92,12 +94,27 @@ ValueType InferObjc3IRLocalBindingValueType(const Expr *expr,
       return ValueType::Unknown;
     case Expr::Kind::NilLiteral:
       return ValueType::ObjCId;
+    case Expr::Kind::Call:
+      if (expr->ident == kObjc3RuntimeOptionalAbsentI64Symbol ||
+          expr->ident == kObjc3RuntimeOptionalPresentI32Symbol) {
+        return ValueType::Optional;
+      }
+      if (callbacks.lookup_function_signature) {
+        const LoweredFunctionSignature *signature =
+            callbacks.lookup_function_signature(expr->ident);
+        if (signature != nullptr) {
+          return signature->return_type;
+        }
+      }
+      return ValueType::Unknown;
     case Expr::Kind::Conditional:
       if (expr->right != nullptr && expr->third != nullptr) {
         const ValueType then_type =
-            InferObjc3IRLocalBindingValueType(expr->right.get(), ctx);
+            InferObjc3IRLocalBindingValueType(expr->right.get(), ctx,
+                                              callbacks);
         const ValueType else_type =
-            InferObjc3IRLocalBindingValueType(expr->third.get(), ctx);
+            InferObjc3IRLocalBindingValueType(expr->third.get(), ctx,
+                                              callbacks);
         if (then_type == else_type) {
           return then_type;
         }
@@ -189,10 +206,16 @@ void EmitObjc3IRStatement(
           callbacks.is_compile_time_nil_receiver_expr(let->value.get(), ctx);
       const std::string ptr =
           "%" + let->name + ".addr." + std::to_string(ctx.temp_counter++);
-      ctx.entry_lines.push_back("  " + ptr + " = alloca i32, align 4");
+      const ValueType binding_type =
+          InferObjc3IRLocalBindingValueType(let->value.get(), ctx,
+                                            callbacks);
+      ctx.entry_lines.push_back("  " + ptr + " = alloca " +
+                                std::string(LLVMLocalStorageType(binding_type)) +
+                                ", align " +
+                                std::to_string(LLVMLocalStorageAlignment(
+                                    binding_type)));
       ctx.scopes.back()[let->name] = ptr;
-      ctx.value_type_by_ptr[ptr] =
-          InferObjc3IRLocalBindingValueType(let->value.get(), ctx);
+      ctx.value_type_by_ptr[ptr] = binding_type;
       RecordCollectionBinding(*let, ptr, ctx);
       if (has_let_nil_value) {
         ctx.nil_bound_ptrs.insert(ptr);
@@ -203,8 +226,11 @@ void EmitObjc3IRStatement(
       if (has_let_const_value && let_const_value != 0) {
         ctx.nonzero_bound_ptrs.insert(ptr);
       }
-      ctx.code_lines.push_back("  store i32 " + value + ", ptr " + ptr +
-                               ", align 4");
+      ctx.code_lines.push_back("  store " +
+                               std::string(LLVMLocalStorageType(binding_type)) +
+                               " " + value + ", ptr " + ptr + ", align " +
+                               std::to_string(LLVMLocalStorageAlignment(
+                                   binding_type)));
       if (let->cleanup_attribute_declared || let->cleanup_sugar_declared ||
           let->resource_attribute_declared || let->resource_sugar_declared) {
         PendingOwnershipCleanupCall cleanup_call;

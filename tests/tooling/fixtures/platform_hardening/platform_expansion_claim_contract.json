@@ -14,7 +14,8 @@
     "platform_toolchain_support_evidence": "tests/tooling/fixtures/platform_hardening/platform_toolchain_support_evidence.json",
     "hosted_runner_capability_summaries": "tests/tooling/fixtures/platform_hardening/hosted_runner_capability_summaries.json",
     "unsupported_host_policy": "tests/tooling/fixtures/platform_hardening/unsupported_host_fail_closed_policy.json",
-    "sanitizer_validation_contract": "tests/tooling/fixtures/security_hardening/sanitizer_validation_contract.json"
+    "sanitizer_validation_contract": "tests/tooling/fixtures/security_hardening/sanitizer_validation_contract.json",
+    "sanitizer_package_install_model_contract": "tests/tooling/fixtures/security_hardening/sanitizer_package_install_model_contract.json"
   },
   "source_authority": {
     "support_claims_require_checked_source": true,
@@ -200,23 +201,23 @@
       "summary_id": "objc3c.hosted.linux-x64.unsupported",
       "issue_ref": 8228,
       "summary_kind": "platform",
-      "hosted_runner": "ubuntu-latest",
+      "hosted_runner": "ubuntu-24.04",
       "claim_state": "unsupported",
       "platform_ids": [],
       "publication_allowed": false,
       "native_object_emission_status": "native_object_emission_supported",
-      "projection_rule": "ubuntu hosted tool presence cannot promote Linux x64 without checked package install and native execution evidence"
+      "projection_rule": "ubuntu hosted generated evidence cannot promote Linux x64 without checked package install and native execution source truth"
     },
     {
       "summary_id": "objc3c.hosted.darwin-arm64.unsupported",
       "issue_ref": 8229,
       "summary_kind": "platform",
-      "hosted_runner": "macos-latest-arm64",
+      "hosted_runner": "macos-15",
       "claim_state": "unsupported",
       "platform_ids": [],
       "publication_allowed": false,
       "native_object_emission_status": "native_object_emission_supported",
-      "projection_rule": "macOS arm64 hosted tool presence cannot promote support without Mach-O load-path package install and native execution evidence"
+      "projection_rule": "macOS arm64 hosted generated evidence cannot promote support without checked Mach-O load-path package install and native execution source truth"
     },
     {
       "summary_id": "objc3c.hosted.sanitizer.address.reserved",
@@ -612,6 +613,7 @@
         "missing UBSan trap-or-recover policy",
         "missing sanitizer release-runtime isolation proof",
         "UBSan suppression drift",
+        "mixed sanitized and unsanitized runtime",
         "sanitized runtime in release channel"
       ]
     }
@@ -650,6 +652,77 @@
       "package_runtime_contract": {
         "runtime_probe_required": true,
         "runtime_library_resolution": "exact-target clang ASan runtime package lookup recorded in sanitizer package metadata",
+        "package_layout_contract": {
+          "package_root_layout": [
+            "lib/objc3-runtime-sanitized",
+            "lib/clang_rt.asan",
+            "share/objc3c/sanitizer/asan-metadata.json"
+          ],
+          "metadata_manifest_path": "share/objc3c/sanitizer/asan-metadata.json",
+          "install_receipt_required_fields": [
+            "package_id",
+            "package_variant_row_id",
+            "target_platform_id",
+            "runtime_library_ids",
+            "metadata_digest",
+            "selected_runtime_variant"
+          ],
+          "layout_support_truth": false
+        },
+        "runtime_probe_contract": {
+          "probe_required": true,
+          "probe_inputs": [
+            "target_platform_id",
+            "llvm_runtime_root",
+            "package_root_layout",
+            "runtime_library_ids"
+          ],
+          "required_runtime_library_ids": [
+            "objc3-runtime",
+            "clang_rt.asan"
+          ],
+          "missing_runtime_behavior": "fail-closed-before-package-install",
+          "probe_result_support_truth": false
+        },
+        "install_selection_contract": {
+          "selection_mode": "explicit-opt-in",
+          "install_selector": "sanitizer=address",
+          "default_release_selection_allowed": false,
+          "default_release_misuse_behavior": "fail-closed-before-install"
+        },
+        "runtime_mixing_rejection_contract": {
+          "release_sanitizer_mixing_allowed": false,
+          "mixed_runtime_behavior": "fail-closed-before-native-execution-claim",
+          "rejected_release_runtime_package_ids": [
+            "org.objc3c.runtime:objc3c-runtime-release",
+            "org.objc3c.runtime:objc3c-runtime-linux-x64-release",
+            "org.objc3c.runtime:objc3c-runtime-darwin-arm64-release"
+          ]
+        },
+        "environment_contract": {
+          "env_var": "ASAN_OPTIONS",
+          "required_metadata_field": "environment",
+          "required_options": [
+            "detect_leaks",
+            "halt_on_error",
+            "symbolize"
+          ],
+          "missing_environment_behavior": "fail-closed-before-native-execution-claim",
+          "environment_support_truth": false
+        },
+        "metadata_freshness_contract": {
+          "source_owned_metadata_required": true,
+          "generated_metadata_support_truth": false,
+          "stale_package_metadata_behavior": "fail-closed-before-publication",
+          "freshness_inputs": [
+            "package_variant_row_id",
+            "package_id",
+            "runtime_library_ids",
+            "compiler_flags",
+            "linker_flags",
+            "environment"
+          ]
+        },
         "default_release_channel_allowed": false,
         "report_artifact_support_truth": false,
         "mixed_release_sanitizer_runtime_behavior": "fail-closed",
@@ -693,6 +766,12 @@
           "compiler_flags",
           "linker_flags",
           "environment",
+          "package_layout_contract",
+          "runtime_probe_contract",
+          "install_selection_contract",
+          "runtime_mixing_rejection_contract",
+          "environment_contract",
+          "metadata_freshness_contract",
           "release_runtime_package_ids",
           "release_runtime_mixing_allowed",
           "expected_detection_records",
@@ -752,6 +831,88 @@
       "package_runtime_contract": {
         "runtime_probe_required": true,
         "runtime_library_resolution": "exact-target clang UBSan runtime package lookup and trap-or-recover mode recorded in sanitizer package metadata",
+        "package_layout_contract": {
+          "package_root_layout": [
+            "lib/objc3-runtime-sanitized",
+            "lib/clang_rt.ubsan",
+            "share/objc3c/sanitizer/ubsan-metadata.json"
+          ],
+          "metadata_manifest_path": "share/objc3c/sanitizer/ubsan-metadata.json",
+          "install_receipt_required_fields": [
+            "package_id",
+            "package_variant_row_id",
+            "target_platform_id",
+            "runtime_library_ids",
+            "metadata_digest",
+            "selected_runtime_variant",
+            "trap_or_recover_mode"
+          ],
+          "layout_support_truth": false
+        },
+        "runtime_probe_contract": {
+          "probe_required": true,
+          "probe_inputs": [
+            "target_platform_id",
+            "llvm_runtime_root",
+            "package_root_layout",
+            "runtime_library_ids",
+            "trap_or_recover_mode"
+          ],
+          "required_runtime_library_ids": [
+            "objc3-runtime",
+            "clang_rt.ubsan"
+          ],
+          "missing_runtime_behavior": "fail-closed-before-package-install",
+          "probe_result_support_truth": false
+        },
+        "install_selection_contract": {
+          "selection_mode": "explicit-opt-in",
+          "install_selector": "sanitizer=undefined",
+          "default_release_selection_allowed": false,
+          "default_release_misuse_behavior": "fail-closed-before-install"
+        },
+        "runtime_mixing_rejection_contract": {
+          "release_sanitizer_mixing_allowed": false,
+          "mixed_runtime_behavior": "fail-closed-before-native-execution-claim",
+          "rejected_release_runtime_package_ids": [
+            "org.objc3c.runtime:objc3c-runtime-release",
+            "org.objc3c.runtime:objc3c-runtime-linux-x64-release",
+            "org.objc3c.runtime:objc3c-runtime-darwin-arm64-release"
+          ]
+        },
+        "environment_contract": {
+          "env_var": "UBSAN_OPTIONS",
+          "required_metadata_field": "trap_or_recover_mode",
+          "required_options": [
+            "print_stacktrace",
+            "halt_on_error"
+          ],
+          "missing_environment_behavior": "fail-closed-before-native-execution-claim",
+          "environment_support_truth": false
+        },
+        "trap_recover_contract": {
+          "required_mode_field": "trap_or_recover_mode",
+          "allowed_modes": [
+            "trap",
+            "recover"
+          ],
+          "default_mode_allowed": false,
+          "missing_mode_behavior": "fail-closed-before-native-execution-claim",
+          "mode_support_truth": false
+        },
+        "metadata_freshness_contract": {
+          "source_owned_metadata_required": true,
+          "generated_metadata_support_truth": false,
+          "stale_package_metadata_behavior": "fail-closed-before-publication",
+          "freshness_inputs": [
+            "package_variant_row_id",
+            "package_id",
+            "runtime_library_ids",
+            "compiler_flags",
+            "linker_flags",
+            "trap_or_recover_mode"
+          ]
+        },
         "default_release_channel_allowed": false,
         "report_artifact_support_truth": false,
         "mixed_release_sanitizer_runtime_behavior": "fail-closed",
@@ -795,6 +956,13 @@
           "compiler_flags",
           "linker_flags",
           "trap_or_recover_mode",
+          "package_layout_contract",
+          "runtime_probe_contract",
+          "install_selection_contract",
+          "runtime_mixing_rejection_contract",
+          "environment_contract",
+          "trap_recover_contract",
+          "metadata_freshness_contract",
           "release_runtime_package_ids",
           "release_runtime_mixing_allowed",
           "expected_detection_records",
@@ -815,10 +983,14 @@
       "negative_contract_ids": [
         "objc3c.sanitizer.undefined.reject.missing-runtime",
         "objc3c.sanitizer.undefined.reject.suppression-drift",
+        "objc3c.sanitizer.undefined.reject.unsupported-platform",
+        "objc3c.sanitizer.undefined.reject.mixed-runtime",
+        "objc3c.sanitizer.undefined.reject.default-release-misuse",
         "objc3c.sanitizer.undefined.reject.missing-detection-records",
         "objc3c.sanitizer.undefined.reject.trap-recover-policy",
         "objc3c.sanitizer.undefined.reject.stale-package-metadata",
         "objc3c.package.sanitizer.ubsan.reject.release-channel",
+        "objc3c.package.sanitizer.ubsan.reject-mixed-runtime",
         "objc3c.package.sanitizer.ubsan.reject-suppression-drift"
       ]
     }

@@ -2291,9 +2291,9 @@
         "O3PKG8055"
       ],
       "source_truth_requirements": [
-        "Hosted registry support is bounded to checked-in offline fixture metadata, hermetic hosted service contract, fixture lock, local trust root, and offline mirror pins",
+        "Hosted registry support is bounded to checked-in offline fixture metadata with deterministic snapshot fetch, explicit disabled-live transport policy, trust enforcement, fixture lock, materialized lock, and offline mirror replay handoff",
         "Live network fetches, live public registry availability, production auth, production moderation, package-manager parity, and fallback registry success must fail closed",
-        "Endpoint identity, channel identity, language version, ABI identity, package signatures, cache digest, and trust material must agree before resolution"
+        "Endpoint identity, channel identity, exact version selection, language version, ABI identity, package signatures, cache digest, revocation state, trust material, and lock/offline handoff must agree before resolution"
       ]
     },
     {
@@ -2307,6 +2307,8 @@
       "positive_evidence": [
         "tests/tooling/fixtures/package_ecosystem/hosted_registry/service/hosted-registry-service.json",
         "tests/tooling/fixtures/package_ecosystem/hosted_registry/hosted-registry-index.json",
+        "tests/tooling/fixtures/package_ecosystem/hosted_registry/offline-mirror-index.json",
+        "tests/tooling/fixtures/package_ecosystem/hosted_registry/fixture-lock.json",
         "schemas/objc3c-package-hosted-registry-service-v1.schema.json",
         "scripts/objc3c_package_manager/hosted_service.py",
         "scripts/objc3c_package_manager/hosted_registry.py",
@@ -2322,7 +2324,7 @@
       ],
       "source_truth_requirements": [
         "Hermetic hosted service support is bounded to checked-in service fixtures and cannot imply a live public hosted registry",
-        "Fixture token auth, local trust-root operation, revocation, moderation, availability, exact-version request policy, and no-network fallback must all be present before resolution",
+        "Fixture token auth, local trust-root operation, revocation, moderation, availability, exact-version request policy, deterministic snapshot handoff, materialized-lock policy, offline replay sufficiency, and no-network-after-lock behavior must all be present before resolution",
         "Production auth, moderation, availability SLOs, registry trust roots, live network transport, and fallback registry success remain fail-closed"
       ]
     },

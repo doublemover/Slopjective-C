@@ -49,6 +49,56 @@
     "rollback_policy": "monotonic-sequence-required",
     "network_fetch_observed": false
   },
+  "snapshot_fetch": {
+    "fetcher_id": "deterministic-hosted-registry-snapshot-fetcher-v1",
+    "transport_policy": {
+      "policy_id": "explicit-hosted-registry-transport-policy-v1",
+      "transport_id": "public-hosted-registry-network-transport-v1",
+      "mode": "deterministic-offline-snapshot-replay",
+      "allowed_transport": "checked-in-registry-snapshot",
+      "live_network_allowed": false,
+      "registry_url_allowed": false,
+      "resolver_invocation_before_trust": false,
+      "request_policy": "fail-closed-before-network",
+      "unsupported_diagnostic": "live-transport-disabled",
+      "unavailable_behavior": "fail-closed",
+      "fallback_registry_success": false
+    },
+    "snapshot_source": {
+      "source_kind": "checked-in-hosted-registry-snapshot",
+      "registry_id": "objc3c-hosted-registry-fixture-v1",
+      "registry_index_path": "tests/tooling/fixtures/package_ecosystem/hosted_registry/hosted-registry-index.json",
+      "offline_mirror_path": "tests/tooling/fixtures/package_ecosystem/hosted_registry/offline-mirror-index.json",
+      "source_lock": "tests/tooling/fixtures/package_ecosystem/hosted_registry/fixture-lock.json",
+      "source_lock_digest": "sha256:4444444444444444444444444444444444444444444444444444444444444444",
+      "snapshot_id": "objc3c-hosted-registry-fixture-v1@1",
+      "snapshot_sequence": 1
+    },
+    "trust_enforcement": {
+      "trust_root_id": "objc3c-local-deterministic-trust-root-v1",
+      "signature_required": true,
+      "trust_root_required": true,
+      "revocation_required": true,
+      "cache_identity_required": true,
+      "offline_mirror_handoff_required": true,
+      "unknown_trust_root_policy": "fail-closed",
+      "revoked_subject_policy": "fail-closed",
+      "digest_drift_policy": "fail-closed"
+    },
+    "lock_materialization": {
+      "contract_id": "objc3c.package_ecosystem.hosted_registry_materialized_lock.v1",
+      "policy": "lockfile-first-offline-mirror-handoff-v1",
+      "selection_policy": "exact-pinned-version-only",
+      "lock_source": "tests/tooling/fixtures/package_ecosystem/hosted_registry/fixture-lock.json",
+      "offline_mirror_path": "tests/tooling/fixtures/package_ecosystem/hosted_registry/offline-mirror-index.json",
+      "lock_required_before_resolution": true,
+      "offline_mirror_handoff_required": true,
+      "offline_replay_sufficient": true,
+      "network_required_after_lock": false,
+      "local_install_fallback_for_unverified_artifacts": false,
+      "fallback_registry_success": false
+    }
+  },
   "service_boundary": {
     "support_state": "fixture-only-offline",
     "supported_capability_id": "ecosystem.package-manager.hosted-registry-fixture",
@@ -187,6 +237,7 @@
     "live-network-fetch",
     "live-public-service-unavailable",
     "live-transport-disabled",
+    "lock-materialization-drift",
     "missing-package-provenance",
     "missing-service-auth",
     "offline-mirror-handoff-drift",
@@ -203,6 +254,9 @@
     "service-index-drift",
     "service-moderation-blocked",
     "service-revocation-unavailable",
+    "snapshot-fetch-policy-drift",
+    "snapshot-source-digest-drift",
+    "transport-policy-drift",
     "unavailable-registry",
     "unlocked-version-selection",
     "unpinned-hosted-dependency",

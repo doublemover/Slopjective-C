@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import os
 import sys
 
 from .developer_tooling_llvm_contracts import (
@@ -14,6 +15,13 @@ from .hosted_llvm_summary import HOSTED_LLVM_CAPABILITY_MODE
 _PARITY_NOT_READY_FAILURE = (
     "capability demo compatibility requires sema/type-system parity to stay ready"
 )
+REQUIRE_HOSTED_NATIVE_OBJECT_EMISSION_ENV = (
+    "OBJC3C_REQUIRE_HOSTED_NATIVE_OBJECT_EMISSION"
+)
+
+
+def _env_truthy(name: str) -> bool:
+    return os.environ.get(name, "").strip().lower() in {"1", "true", "yes", "on"}
 
 
 def _capability_truth_failures(summary: dict[str, object]) -> list[str]:
@@ -63,6 +71,18 @@ def action_check_hosted_llvm_capabilities(_: list[str]) -> int:
         for failure in truth_failures:
             print(f"Hosted capability truth failure: {failure}", file=sys.stderr)
         return 1
+    if (
+        _env_truthy(REQUIRE_HOSTED_NATIVE_OBJECT_EMISSION_ENV)
+        and not truth.hosted_native_object_emission_supported
+    ):
+        print(
+            "Hosted runner native object emission is required for this gate; "
+            f"{truth.native_object_emission_status}; llc must be present, "
+            "must support --filetype=obj, and the LLVM tool identity must be "
+            "coherent. No clang substitute success path is allowed.",
+            file=sys.stderr,
+        )
+        return probe_exit or 1
     if not truth.clang_found:
         print(
             "Hosted runner capability summary recorded no clang availability; "

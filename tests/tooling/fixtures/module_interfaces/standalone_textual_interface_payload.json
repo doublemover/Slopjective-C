@@ -57,13 +57,13 @@
               "value_optional_contract": {
                 "issue_ref": 8234,
                 "canonical_spelling": "Optional<T>",
-                "source_status": "semantic-type-signature-admitted-runtime-execution-fail-closed",
+                "source_status": "semantic-type-signature-admitted-bounded-scalar-runtime-abi",
                 "semantic_value_model_supported": true,
                 "explicit_present_absent_construction_modeled": true,
                 "binding_narrowing_supported": true,
                 "unwrap_requires_presence_check": true,
                 "lowercase_alias_accepted": false,
-                "abi_layout_status": "stable-inline-presence-payload-contract-runtime-lowering-deferred",
+                "abi_layout_status": "stable-packed-presence-payload-runtime-lowered",
                 "abi_layout_id": "objc3.value_optional.inline_presence_payload.v1",
                 "presence_field": "has_value",
                 "payload_storage_field": "payload",
@@ -72,13 +72,20 @@
                 "presence_state": "has_value=true",
                 "stable_abi_layout_contract_supported": true,
                 "interface_roundtrip_supported": true,
-                "runtime_execution_supported": false,
-                "lowering_supported": false,
+                "runtime_execution_supported": true,
+                "lowering_supported": true,
+                "runtime_abi_payload_scope": "supported-scalar-payload-forms-only",
+                "broad_public_runtime_support_claim_allowed": false,
+                "nested_value_optional_runtime_supported": false,
+                "generic_payload_runtime_supported": false,
+                "property_storage_supported": false,
+                "ivar_storage_supported": false,
                 "nil_to_scalar_coercion_allowed": false,
                 "implicit_nil_absence_allowed": false,
+                "unchecked_unwrap_allowed": false,
                 "nullable_pointer_conversion_allowed": false,
                 "throws_result_conversion_allowed": false,
-                "interface_roundtrip_status": "semantic-carrier-roundtrips-runtime-deferred",
+                "interface_roundtrip_status": "semantic-carrier-roundtrips-bounded-scalar-runtime-abi",
                 "optional_type": {
                   "record_id": "optional_type",
                   "type_id": "Optional<T>",
@@ -110,7 +117,7 @@
                   "record_id": "optional_rejection",
                   "source_span": "type-signature",
                   "spelling": "optional<T>",
-                  "conversion_attempt": "lowercase-alias-or-runtime-conversion",
+                  "conversion_attempt": "lowercase-alias-or-unsupported-runtime-conversion",
                   "diagnostic": "O3C004/O3P159"
                 }
               }
@@ -207,13 +214,13 @@
         "value_optional_contract": {
           "issue_ref": 8234,
           "canonical_spelling": "Optional<T>",
-          "source_status": "semantic-type-signature-admitted-runtime-execution-fail-closed",
+          "source_status": "semantic-type-signature-admitted-bounded-scalar-runtime-abi",
           "semantic_value_model_supported": true,
           "explicit_present_absent_construction_modeled": true,
           "binding_narrowing_supported": true,
           "unwrap_requires_presence_check": true,
           "lowercase_alias_accepted": false,
-          "abi_layout_status": "stable-inline-presence-payload-contract-runtime-lowering-deferred",
+          "abi_layout_status": "stable-packed-presence-payload-runtime-lowered",
           "abi_layout_id": "objc3.value_optional.inline_presence_payload.v1",
           "presence_field": "has_value",
           "payload_storage_field": "payload",
@@ -222,13 +229,20 @@
           "presence_state": "has_value=true",
           "stable_abi_layout_contract_supported": true,
           "interface_roundtrip_supported": true,
-          "runtime_execution_supported": false,
-          "lowering_supported": false,
+          "runtime_execution_supported": true,
+          "lowering_supported": true,
+          "runtime_abi_payload_scope": "supported-scalar-payload-forms-only",
+          "broad_public_runtime_support_claim_allowed": false,
+          "nested_value_optional_runtime_supported": false,
+          "generic_payload_runtime_supported": false,
+          "property_storage_supported": false,
+          "ivar_storage_supported": false,
           "nil_to_scalar_coercion_allowed": false,
           "implicit_nil_absence_allowed": false,
+          "unchecked_unwrap_allowed": false,
           "nullable_pointer_conversion_allowed": false,
           "throws_result_conversion_allowed": false,
-          "interface_roundtrip_status": "semantic-carrier-roundtrips-runtime-deferred",
+          "interface_roundtrip_status": "semantic-carrier-roundtrips-bounded-scalar-runtime-abi",
           "optional_type": {
             "record_id": "optional_type",
             "type_id": "Optional<T>",
@@ -260,7 +274,7 @@
             "record_id": "optional_rejection",
             "source_span": "type-signature",
             "spelling": "optional<T>",
-            "conversion_attempt": "lowercase-alias-or-runtime-conversion",
+            "conversion_attempt": "lowercase-alias-or-unsupported-runtime-conversion",
             "diagnostic": "O3C004/O3P159"
           }
         }
@@ -402,7 +416,7 @@
     {
       "case_id": "typed-throws-abi-lowering",
       "target": "declarations[*].effects.typed_throws",
-      "expected_failure": "typed throws cannot claim runtime execution or untyped error-out ABI",
+      "expected_failure": "typed throws cannot erase payload identity, widen to foreign carriers, or claim broad public support from interface metadata alone",
       "fail_closed": true
     },
     {
@@ -414,7 +428,7 @@
     {
       "case_id": "value-optional-lowering",
       "target": "declarations[*].type_signature.value_optional_type",
-      "expected_failure": "value optional runtime execution and lowering remain fail-closed",
+      "expected_failure": "value optional interfaces cannot widen beyond the bounded scalar runtime ABI or promote unsupported payload/storage forms",
       "fail_closed": true,
       "diagnostic": "O3P159"
     },

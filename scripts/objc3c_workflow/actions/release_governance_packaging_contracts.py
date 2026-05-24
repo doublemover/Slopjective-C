@@ -57,6 +57,15 @@ PACKAGING_CHANNEL_ACTION_CONTRACTS: tuple[ReleaseGovernanceActionContract, ...] 
         "published host and channel support matrix stays source-owned, narrow, and aligned with live packaging evidence",
     ),
     ReleaseGovernanceActionContract(
+        "ingest-platform-host-evidence",
+        "ingest generated Linux/macOS hosted-runner evidence without source-truth promotion",
+        "python:scripts/ingest_objc3c_platform_host_evidence.py",
+        "packaging-channels",
+        "ci",
+        "generated hosted-runner build package install and execution reports stay review-only until checked source truth is promoted",
+        pass_through_args=True,
+    ),
+    ReleaseGovernanceActionContract(
         "validate-platform-hardening",
         "run the integrated platform-hardening workflow",
         "python:scripts/check_objc3c_platform_hardening_integration.py",

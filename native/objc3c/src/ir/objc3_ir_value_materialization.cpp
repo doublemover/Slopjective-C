@@ -3,6 +3,7 @@
 #include <string>
 
 #include "ast/objc3_ast.h"
+#include "ir/objc3_ir_type_model.h"
 
 std::string LookupObjc3IRVarPtr(
     const FunctionContext &ctx, const std::string &name,
@@ -33,8 +34,16 @@ std::string EmitObjc3IRIdentifierValue(
       LookupObjc3IRVarPtr(ctx, name, materialization_context);
   if (!ptr.empty()) {
     const std::string tmp = materialization_context.new_temp(ctx);
-    ctx.code_lines.push_back("  " + tmp + " = load i32, ptr " + ptr +
-                             ", align 4");
+    ValueType value_type = ValueType::I32;
+    const auto type_it = ctx.value_type_by_ptr.find(ptr);
+    if (type_it != ctx.value_type_by_ptr.end()) {
+      value_type = type_it->second;
+    }
+    ctx.code_lines.push_back("  " + tmp + " = load " +
+                             std::string(LLVMLocalStorageType(value_type)) +
+                             ", ptr " + ptr + ", align " +
+                             std::to_string(
+                                 LLVMLocalStorageAlignment(value_type)));
     return tmp;
   }
   if (materialization_context.globals.find(name) !=

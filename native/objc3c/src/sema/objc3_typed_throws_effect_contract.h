@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cctype>
 #include <string>
 
 inline std::string Objc3TypedThrowsKind(bool throws_declared,
@@ -100,4 +101,94 @@ inline bool Objc3TypedThrowsCallableEffectsCompatible(
                  rhs_typed_throws_declared) &&
          lhs_typed_throws_abi_lowering_ready ==
              rhs_typed_throws_abi_lowering_ready;
+}
+
+inline std::string Objc3TypedThrowsPayloadIdentity(
+    const std::string &type_spelling) {
+  std::string normalized;
+  normalized.reserve(type_spelling.size());
+  for (unsigned char ch : type_spelling) {
+    if (std::isspace(ch) || ch == '*' || ch == '?') {
+      continue;
+    }
+    normalized.push_back(
+        static_cast<char>(std::tolower(static_cast<unsigned char>(ch))));
+  }
+  return normalized;
+}
+
+inline bool Objc3TypedThrowsIsIdErrorCarrier(
+    const std::string &type_spelling) {
+  return Objc3TypedThrowsPayloadIdentity(type_spelling) == "id<error>";
+}
+
+inline bool Objc3TypedThrowsIsUnsupportedForeignCarrier(
+    const std::string &type_spelling) {
+  const std::string identity = Objc3TypedThrowsPayloadIdentity(type_spelling);
+  return identity.find("foreign") != std::string::npos ||
+         identity.find("cxx") != std::string::npos ||
+         identity.find("swift") != std::string::npos ||
+         identity.find("exception") != std::string::npos;
+}
+
+inline bool Objc3TypedThrowsPayloadsExactlyMatch(
+    const std::string &throw_type_spelling,
+    const std::string &catch_type_spelling) {
+  const std::string throw_identity =
+      Objc3TypedThrowsPayloadIdentity(throw_type_spelling);
+  const std::string catch_identity =
+      Objc3TypedThrowsPayloadIdentity(catch_type_spelling);
+  return !throw_identity.empty() && throw_identity == catch_identity;
+}
+
+inline std::string Objc3TypedThrowsCatchMatchStatus(
+    const std::string &throw_type_spelling,
+    const std::string &catch_type_spelling,
+    bool bridge_to_id_error_allowed) {
+  if (Objc3TypedThrowsIsUnsupportedForeignCarrier(throw_type_spelling) ||
+      Objc3TypedThrowsIsUnsupportedForeignCarrier(catch_type_spelling)) {
+    return "unsupported-foreign-carrier-fail-closed";
+  }
+  if (Objc3TypedThrowsPayloadsExactlyMatch(throw_type_spelling,
+                                           catch_type_spelling)) {
+    return "typed-catch-exact-payload-match";
+  }
+  if (bridge_to_id_error_allowed &&
+      Objc3TypedThrowsIsIdErrorCarrier(catch_type_spelling)) {
+    return "untyped-catch-allowed-via-id-error-bridge";
+  }
+  return "incompatible-catch-rejected";
+}
+
+inline std::string Objc3TypedThrowsCatchBridgeStatus(
+    const std::string &throw_type_spelling,
+    const std::string &catch_type_spelling,
+    bool bridge_to_id_error_allowed) {
+  const std::string match_status = Objc3TypedThrowsCatchMatchStatus(
+      throw_type_spelling, catch_type_spelling, bridge_to_id_error_allowed);
+  if (match_status == "typed-catch-exact-payload-match") {
+    return "no-bridge-needed";
+  }
+  if (match_status == "untyped-catch-allowed-via-id-error-bridge") {
+    return "bridge-to-id<Error>-allowed";
+  }
+  if (match_status == "unsupported-foreign-carrier-fail-closed") {
+    return "unsupported-foreign-carrier-rejected";
+  }
+  return "bridge-rejected";
+}
+
+inline int Objc3TypedThrowsRuntimeCatchKind(
+    const std::string &throw_type_spelling,
+    const std::string &catch_type_spelling,
+    bool bridge_to_id_error_allowed) {
+  const std::string match_status = Objc3TypedThrowsCatchMatchStatus(
+      throw_type_spelling, catch_type_spelling, bridge_to_id_error_allowed);
+  if (match_status == "typed-catch-exact-payload-match") {
+    return 4;
+  }
+  if (match_status == "untyped-catch-allowed-via-id-error-bridge") {
+    return 2;
+  }
+  return 0;
 }

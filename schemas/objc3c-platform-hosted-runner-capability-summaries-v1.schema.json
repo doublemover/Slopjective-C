@@ -10,6 +10,7 @@
     "schema_path",
     "source_path",
     "support_claim_policy",
+    "workflow_gate_policy",
     "issue_refs",
     "summaries",
     "forbidden_success_claims"
@@ -29,6 +30,30 @@
     },
     "support_claim_policy": {
       "const": "summary-only-no-support-promotion"
+    },
+    "workflow_gate_policy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "optional_hosted_gate_missing_llc_result",
+        "required_conformance_minima_missing_llc_result",
+        "required_conformance_minima_env",
+        "clang_substitute_success_allowed"
+      ],
+      "properties": {
+        "optional_hosted_gate_missing_llc_result": {
+          "const": "skip-no-success-claim"
+        },
+        "required_conformance_minima_missing_llc_result": {
+          "const": "fail-closed-required-native-object-emission"
+        },
+        "required_conformance_minima_env": {
+          "const": "OBJC3C_REQUIRE_HOSTED_NATIVE_OBJECT_EMISSION"
+        },
+        "clang_substitute_success_allowed": {
+          "const": false
+        }
+      }
     },
     "issue_refs": {
       "type": "array",

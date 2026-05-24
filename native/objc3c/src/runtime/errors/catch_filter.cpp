@@ -7,7 +7,8 @@ bool RuntimeCatchFilterCanMatch(int error_value, int catch_all) {
 }
 
 bool RuntimeCatchKindIsSupported(int catch_kind) {
-  return catch_kind == 1 || catch_kind == 2 || catch_kind == 3;
+  return catch_kind == 1 || catch_kind == 2 || catch_kind == 3 ||
+         catch_kind == 4;
 }
 
 bool RuntimeCatchFilterMatches(int error_value, int catch_kind, int catch_all) {

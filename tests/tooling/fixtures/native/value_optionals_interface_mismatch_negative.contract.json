@@ -3,7 +3,7 @@
   "fixture_kind": "negative_contract",
   "issue_ref": 8234,
   "mutated_field": "value_optional_contract.interface_roundtrip_status",
-  "expected_value": "semantic-carrier-roundtrips-runtime-deferred",
+  "expected_value": "semantic-carrier-roundtrips-bounded-scalar-runtime-abi",
   "actual_value": "nullable-object-pointer-erased",
   "expected_diagnostic": "O3IFC8238",
   "fail_closed": true,

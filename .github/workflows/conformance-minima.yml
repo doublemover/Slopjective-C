@@ -12,6 +12,10 @@ on:
       - "scripts/install_objc3c_ci_llvm.ps1"
       - "scripts/probe_objc3c_llvm_capabilities.py"
       - "scripts/objc3c_llvm_capability_probe/**"
+      - "scripts/objc3c_workflow/action_catalog_core_capabilities.py"
+      - "scripts/objc3c_workflow/action_handlers_core_capabilities.py"
+      - "scripts/objc3c_workflow/actions/developer_tooling_llvm*.py"
+      - "scripts/objc3c_workflow/actions/hosted_llvm_summary.py"
       - "scripts/objc3c_workflow/actions/application_conformance.py"
       - "scripts/objc3c_workflow/action_catalog_conformance.py"
       - "scripts/objc3c_workflow/action_handlers_reporting_conformance_stress.py"
@@ -28,6 +32,10 @@ on:
       - "scripts/install_objc3c_ci_llvm.ps1"
       - "scripts/probe_objc3c_llvm_capabilities.py"
       - "scripts/objc3c_llvm_capability_probe/**"
+      - "scripts/objc3c_workflow/action_catalog_core_capabilities.py"
+      - "scripts/objc3c_workflow/action_handlers_core_capabilities.py"
+      - "scripts/objc3c_workflow/actions/developer_tooling_llvm*.py"
+      - "scripts/objc3c_workflow/actions/hosted_llvm_summary.py"
       - "scripts/objc3c_workflow/actions/application_conformance.py"
       - "scripts/objc3c_workflow/action_catalog_conformance.py"
       - "scripts/objc3c_workflow/action_handlers_reporting_conformance_stress.py"
@@ -73,6 +81,11 @@ jobs:
 
       - name: Install Node dependencies
         run: npm ci
+
+      - name: Require hosted LLVM native object emission
+        env:
+          OBJC3C_REQUIRE_HOSTED_NATIVE_OBJECT_EMISSION: "1"
+        run: npm run objc3c -- check-hosted-llvm-capabilities
 
       - name: Build native objc3c artifacts
         run: npm run objc3c -- build-native-binaries

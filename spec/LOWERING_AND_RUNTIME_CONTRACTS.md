@@ -1882,13 +1882,15 @@ early-exit for carriers whose runtime ABI is implemented:
 - `Result<T,E>` carrier: `if (isErr(x)) return Err(e); else use t;`
 
 In the v1 #8234 slice, `Optional<T>` is a semantic source/interface
-type-signature carrier with stable `has_value` plus `payload` layout identity.
-The lowering contract now fixes explicit absent/present construction and checked
-unwrap/binding diagnostics: absent carries `has_value=false` and no live
+type-signature carrier with stable packed `has_value` plus `payload` layout
+identity. The lowering contract fixes explicit absent/present construction and
+checked unwrap/binding diagnostics: absent carries `has_value=false` and no live
 payload, present requires a payload and carries `has_value=true`, binding
 failure branches through the absent path, and unwrap requires a proven presence
-check. It must still not emit IR payloads or call ABI surfaces through this path
-until runtime constructor symbols and ABI support are implemented.
+check. Supported scalar payload forms lower through the bounded packed runtime
+ABI; nested/generic payload lowering, property/ivar storage, nullability bridges,
+implicit nil, nil-to-scalar coercion, unchecked unwrap, and throws/result
+conversion remain fail-closed.
 
 Implementations should preserve left-to-right evaluation and should not introduce hidden temporaries with observable lifetimes beyond what ARC already requires.
 

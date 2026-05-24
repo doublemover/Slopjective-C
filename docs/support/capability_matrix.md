@@ -393,16 +393,20 @@ the canonical manifest fixture and public npm command above.
 - Capability ID: `language.errors.typed-throws`
 - State: `reserved`
 - Support claims: None
-- Summary: Typed throws remains reserved as a public support claim under issue #8233 until broader catch/bridge coverage lands, but single-payload throws(E) now has a real hidden error-out ABI path. Parser/source/interface/sema records preserve one payload as throws:typed:<declared_error_type>, protocol and callable compatibility require exact payload identity, direct calls and try propagation lower through the private error runtime helpers without erasing to bare throws, and malformed/empty/multi/non-type payloads fail closed with O3P182.
+- Summary: Typed throws remains reserved as a public support claim under issue #8233 until the public validation gate proves the full row, but the hidden single-payload throws(E) ABI now carries catch/bridge policy coverage. Parser/source/interface/sema records preserve one payload as throws:typed:<declared_error_type>, protocol and callable compatibility require exact payload identity, direct calls and try propagation lower through the private error runtime helpers without erasing to bare throws, do/catch accepts exact typed catches, allows only the policy-backed id<Error> bridge catch, rejects incompatible typed catches with O3S206, and fails closed on unsupported foreign carriers. Malformed/empty/multi/non-type payloads still fail closed with O3P182.
 - Owner modules:
   - `native/objc3c/src/parse/objc3_parser_core_cstyle_parameters_async_throws_clause_parsing.inc`
   - `native/objc3c/src/parse/objc3_parser_rejection_diagnostics.cpp`
   - `native/objc3c/src/sema/objc3_typed_throws_effect_contract.h`
+  - `native/objc3c/src/sema/objc3_semantic_error_handling_try_do_catch_do_scope.inc`
   - `native/objc3c/src/sema/objc3_semantic_signature_compatibility.cpp`
   - `native/objc3c/src/ir/objc3_ir_function_signature_model.cpp`
   - `native/objc3c/src/ir/objc3_ir_direct_call_emission.cpp`
   - `native/objc3c/src/ir/objc3_ir_expression_emission_call.cpp`
+  - `native/objc3c/src/ir/objc3_ir_statement_block_emission.cpp`
   - `native/objc3c/src/ir/objc3_ir_function_definition_emission.cpp`
+  - `native/objc3c/src/runtime/errors/catch_filter.cpp`
+  - `native/objc3c/src/runtime/errors/error_bridge_kind.cpp`
   - `native/objc3c/src/sema/model/semantic_symbol_core_source_closures.h`
   - `native/objc3c/src/artifacts/objc3_frontend_textual_interface_payload_artifact.cpp`
   - `native/objc3c/src/artifacts/objc3_frontend_textual_interface_payload_import.cpp`
@@ -414,14 +418,21 @@ the canonical manifest fixture and public npm command above.
   - diagnostic: `tests/tooling/fixtures/native/recovery/negative/negative_typed_throws_multi_payload_reserved.objc3`
   - diagnostic: `tests/tooling/fixtures/native/recovery/negative/negative_typed_throws_erasure_mismatch_reserved.objc3`
   - diagnostic: `tests/tooling/fixtures/native/recovery/negative/negative_typed_throws_protocol_mismatch.objc3`
+  - diagnostic: `tests/tooling/fixtures/native/recovery/negative/negative_typed_throws_incompatible_catch.objc3`
+  - diagnostic: `tests/tooling/fixtures/native/recovery/negative/negative_typed_throws_foreign_carrier_catch.objc3`
   - schema: `schemas/objc3c-typed-throws-effect-contract-v1.schema.json`
   - source: `native/objc3c/src/sema/objc3_typed_throws_effect_contract.h`
+  - source: `native/objc3c/src/sema/objc3_semantic_error_handling_try_do_catch_do_scope.inc`
   - source: `native/objc3c/src/sema/objc3_semantic_signature_compatibility.cpp`
   - source: `native/objc3c/src/ir/objc3_ir_function_signature_model.cpp`
   - source: `native/objc3c/src/ir/objc3_ir_direct_call_emission.cpp`
   - source: `native/objc3c/src/ir/objc3_ir_expression_emission_call.cpp`
+  - source: `native/objc3c/src/ir/objc3_ir_statement_block_emission.cpp`
   - source: `native/objc3c/src/ir/objc3_ir_function_definition_emission.cpp`
+  - source: `native/objc3c/src/runtime/errors/catch_filter.cpp`
+  - source: `native/objc3c/src/runtime/errors/error_bridge_kind.cpp`
   - source: `tests/tooling/fixtures/native/typed_throws_semantic_effect_identity.contract.json`
+  - source: `tests/tooling/fixtures/native/typed_throws_catch_bridge_positive.objc3`
   - source: `tests/tooling/fixtures/native/language_evolution_typed_throws_value_optionals_contract.json`
   - source: `native/objc3c/src/artifacts/objc3_frontend_textual_interface_payload_artifact.cpp`
   - source: `native/objc3c/src/artifacts/objc3_frontend_textual_interface_payload_import.cpp`
@@ -431,7 +442,7 @@ the canonical manifest fixture and public npm command above.
 - Capability ID: `language.types.value-optionals`
 - State: `reserved`
 - Support claims: None
-- Summary: Value optionals remain reserved as a public executable/runtime feature under issue #8234. Canonical Optional<T> is admitted as a semantic type-signature carrier with stable has_value/payload layout identity, textual-interface roundtrip, and a checked lowering contract for explicit absent/present construction plus binding/unwrap failure diagnostics. Lowercase optional<T> is rejected as O3C004 rather than accepted as an alias, and checked parser/source-closure/textual-interface import records explicitly deny unchecked unwrap, implicit nil absence, nil-to-scalar, nullable-pointer, throws/result, IR payload emission, call ABI lowering, and runtime constructor symbol support.
+- Summary: Value optionals remain reserved as a broad public executable/runtime feature under issue #8234. Canonical Optional<T> is admitted as a semantic type-signature carrier with stable packed has_value/payload ABI identity, textual-interface roundtrip, and bounded runtime ABI only for supported scalar payload forms. Lowercase optional<T> is rejected as O3C004 rather than accepted as an alias, and checked parser/source-closure/textual-interface import records explicitly deny nested optional runtime lowering, generic payload runtime lowering, property or ivar storage, unchecked unwrap, implicit nil absence, nil-to-scalar, nullable-pointer/nullability bridges, and throws/result conversions.
 - Owner modules:
   - `native/objc3c/src/ast/objc3_ast_value_optional_type.h`
   - `native/objc3c/src/parse/objc3_parser_declaration_surface.cpp`
@@ -450,6 +461,11 @@ the canonical manifest fixture and public npm command above.
   - diagnostic: `tests/tooling/fixtures/native/recovery/negative/negative_value_optional_nullable_pointer_conversion_reserved.objc3`
   - diagnostic: `tests/tooling/fixtures/native/recovery/negative/negative_value_optional_nil_scalar_coercion_reserved.objc3`
   - diagnostic: `tests/tooling/fixtures/native/recovery/negative/negative_value_optional_nested_lowercase_alias_reserved.objc3`
+  - diagnostic: `tests/tooling/fixtures/native/recovery/negative/negative_value_optional_property_layout_unsupported.objc3`
+  - diagnostic: `tests/tooling/fixtures/native/recovery/negative/negative_value_optional_nullable_suffix_mismatch.objc3`
+  - diagnostic: `tests/tooling/fixtures/native/value_optionals_layout_mismatch_negative.contract.json`
+  - diagnostic: `tests/tooling/fixtures/native/value_optionals_lowering_claim_negative.contract.json`
+  - diagnostic: `tests/tooling/fixtures/native/value_optionals_interface_mismatch_negative.contract.json`
   - source: `tests/tooling/fixtures/native/language_evolution_typed_throws_value_optionals_contract.json`
   - source: `tests/tooling/fixtures/native/value_optionals_contract_positive.json`
   - diagnostic: `tests/tooling/fixtures/native/value_optionals_executable_semantics_negative.contract.json`
@@ -544,7 +560,7 @@ the canonical manifest fixture and public npm command above.
 - Capability ID: `language.evolution.umbrella-alignment`
 - State: `reserved`
 - Support claims: None
-- Summary: Issue #8207 is an umbrella truth row for typed throws, value optionals, generic callable reification, guarded match, bounded match expressions, and strict/strict-concurrency profiles. It remains reserved until the value-optional prerequisite row is implemented with executable evidence or explicitly scoped out; the current state records #8233 single-payload typed throws hidden error-out ABI lowering, #8235 generic callable metadata policy support, #8236 guarded-match/match-expression support, #8237 strict/strict-concurrency profile admission, and #8234 value-optional semantic carrier/layout identity without claiming runtime-specialized generics, value-optional executable/runtime lowering, or strict-system behavior.
+- Summary: Issue #8207 is an umbrella truth row for typed throws, value optionals, generic callable reification, guarded match, bounded match expressions, and strict/strict-concurrency profiles. It remains reserved until typed-throws public replay gates and value-optional bounded scalar ABI replay gates prove their full public rows or are explicitly scoped out; the current state records #8233 single-payload typed throws hidden error-out ABI lowering with exact typed catch, policy-backed id<Error> bridge catch, incompatible-catch rejection, and unsupported foreign-carrier fail-closed records, #8235 generic callable metadata policy support, #8236 guarded-match/match-expression support, #8237 strict/strict-concurrency profile admission, and #8234 value-optional semantic carrier plus bounded packed scalar runtime ABI without claiming runtime-specialized generics, broad value-optional runtime support, nested/generic/property/ivar optional lowering, nil/nullability conversions, unchecked unwrap, throws conversions, or strict-system behavior.
 - Owner modules:
   - `docs/support/umbrella_readiness.json`
   - `docs/support/capability_matrix.json`
@@ -2336,7 +2352,7 @@ the canonical manifest fixture and public npm command above.
 - Capability ID: `ecosystem.package-manager.hosted-registry-fixture`
 - State: `implemented`
 - Support claims: `objc3c.behavior.package.hosted-registry-fixture`
-- Summary: Hosted-registry resolution is implemented only for checked-in offline fixture metadata: service-boundary record, hermetic service reference, endpoint identity, channel identity, fixture lock, local trust root, offline mirror, cache policy, package signatures, and negative cases must all match before a package record resolves. Live public registry availability, network fetches, production auth, production moderation, package-manager parity, and fallback registry success remain outside this claim and are reserved under `ecosystem.package-manager.public-hosted-registry`.
+- Summary: Hosted-registry resolution is implemented only for checked-in offline fixture metadata with deterministic snapshot fetch, explicit disabled-live transport policy, trust-root/signature/revocation enforcement, materialized lock output, and offline mirror replay handoff. Endpoint identity, channel identity, exact version selection, source lock digest, cache policy, package signatures, service decision, and negative cases must all agree before a package record resolves. Live public registry availability, live network fetches, production auth, production moderation, package-manager parity, and fallback registry success remain outside this claim and are reserved under `ecosystem.package-manager.public-hosted-registry`.
 - Owner modules:
   - `scripts/objc3c_package_manager/hosted_registry.py`
   - `scripts/objc3c_package_manager/hosted_service.py`
@@ -2347,6 +2363,7 @@ the canonical manifest fixture and public npm command above.
 - Evidence:
   - test: `tests/tooling/fixtures/package_ecosystem/hosted_registry/hosted-registry-index.json` via `npm run objc3c -- validate-package-registry-model`
   - test: `tests/tooling/fixtures/package_ecosystem/hosted_registry/offline-mirror-index.json` via `npm run objc3c -- validate-package-registry-model`
+  - test: `tests/tooling/fixtures/package_ecosystem/hosted_registry/fixture-lock.json` via `npm run objc3c -- validate-package-registry-model`
   - test: `tests/tooling/fixtures/package_ecosystem/hosted_registry/negative-registry-cases.json` via `npm run objc3c -- validate-package-registry-model`
   - test: `tests/tooling/fixtures/package_ecosystem/hosted_registry/service/hosted-registry-service.json` via `npm run objc3c -- validate-package-registry-model`
   - test: `tests/tooling/fixtures/package_ecosystem/hosted_registry/service/negative-service-cases.json` via `npm run objc3c -- validate-package-registry-model`
@@ -2356,13 +2373,14 @@ the canonical manifest fixture and public npm command above.
   - source: `scripts/objc3c_package_manager/hosted_registry.py`
   - source: `scripts/objc3c_package_manager/hosted_service.py`
   - source: `scripts/check_objc3c_package_registry_model.py`
+  - doc: `docs/runbooks/objc3c_package_ecosystem.md`
 
 ### Hermetic hosted registry service contract
 
 - Capability ID: `ecosystem.package-manager.hosted-registry-hermetic-service`
 - State: `implemented`
 - Support claims: `objc3c.behavior.package.hosted-registry-hermetic-service`
-- Summary: A source-owned hermetic hosted-registry service contract now gates the hosted-registry fixture path. The service fixture validates fixture token auth, local trust-root operation, revocation service state, moderation policy, availability state, exact-version request policy, offline mirror handoff, and no-network fallback before package resolution. This is not a live public registry, production auth service, production moderation service, registry availability SLO, or network transport claim.
+- Summary: A source-owned hermetic hosted-registry service contract gates the hosted-registry fixture path. The service fixture validates fixture token auth, local trust-root operation, revocation service state, moderation policy, availability state, exact-version request policy, deterministic snapshot handoff, materialized-lock policy, offline mirror replay sufficiency, and no-network-after-lock behavior before package resolution. This is not a live public registry, production auth service, production moderation service, registry availability SLO, registry trust-root service, or live network transport claim.
 - Owner modules:
   - `scripts/objc3c_package_manager/hosted_service.py`
   - `scripts/objc3c_package_manager/hosted_registry.py`
@@ -2373,6 +2391,8 @@ the canonical manifest fixture and public npm command above.
   - test: `tests/tooling/fixtures/package_ecosystem/hosted_registry/service/hosted-registry-service.json` via `npm run objc3c -- validate-package-registry-model`
   - test: `tests/tooling/fixtures/package_ecosystem/hosted_registry/service/negative-service-cases.json` via `npm run objc3c -- validate-package-registry-model`
   - test: `tests/tooling/fixtures/package_ecosystem/hosted_registry/hosted-registry-index.json` via `npm run objc3c -- validate-package-registry-model`
+  - test: `tests/tooling/fixtures/package_ecosystem/hosted_registry/offline-mirror-index.json` via `npm run objc3c -- validate-package-registry-model`
+  - test: `tests/tooling/fixtures/package_ecosystem/hosted_registry/fixture-lock.json` via `npm run objc3c -- validate-package-registry-model`
   - test: `tests/tooling/test_package_hosted_registry_resolution.py` via `npm run objc3c -- validate-package-registry-model`
   - schema: `schemas/objc3c-package-hosted-registry-service-v1.schema.json`
   - source: `scripts/objc3c_package_manager/hosted_service.py`
@@ -2449,7 +2469,7 @@ the canonical manifest fixture and public npm command above.
 - Capability ID: `ecosystem.package-manager.public-hosted-registry`
 - State: `reserved`
 - Support claims: None
-- Summary: Public hosted package registry service support remains reserved. Current package-manager evidence includes source-derived local registry metadata, offline mirror records, deterministic lockfiles, local trust envelopes, source-owned hosted-registry fixture resolution, a hermetic local hosted-service contract, and offline fixture-backed network/publication contracts, but no live public service, production auth, production moderation, production availability, production registry trust-root operation, or fallback registry success claim.
+- Summary: Public hosted package registry service support remains reserved. Current package-manager evidence includes source-derived local registry metadata, deterministic lockfiles, local trust envelopes, source-owned hosted-registry fixture resolution, deterministic offline snapshot fetch, trust enforcement, materialized lock output, offline mirror replay handoff, a hermetic local hosted-service contract, and offline fixture-backed network/publication contracts. It does not claim live public network transport, production auth, production moderation, production availability SLOs, production registry trust-root operations, package-manager parity, or fallback registry success.
 - Owner modules:
   - `scripts/objc3c_package_manager/registry.py`
   - `docs/runbooks/objc3c_package_ecosystem.md`
@@ -2892,7 +2912,7 @@ the canonical manifest fixture and public npm command above.
 - Capability ID: `toolchain.llvm.current-probed-executable`
 - State: `internal`
 - Support claims: None
-- Summary: LLVM support is evidence-bound to the currently probed executable and does not claim broad LLVM version ranges. Native object emission is claimable only when llc resolves, proves llc --filetype=obj, and the LLVM toolchain identity is coherent. Package and native execution claims additionally require clang++, llvm-ar, LLVM header/library discovery from llvm-config or an installed LLVM root, coherent tool roots, and coherent LLVM tool versions; missing required LLVM subtools, mixed tool roots, mismatched or unsupported versions, unresolved tool identity, and clang substitute object-emission paths fail closed without support, package, execution, or range claims.
+- Summary: LLVM support is evidence-bound to the currently probed executable and does not claim broad LLVM version ranges. Native object emission is claimable only when llc resolves, proves llc --filetype=obj, and the LLVM toolchain identity is coherent. Package and native execution claims additionally require clang++, llvm-ar, LLVM header/library discovery from llvm-config or an installed LLVM root, coherent tool roots, and coherent LLVM tool versions. Task-hygiene hosted smoke gates may skip without success claims when llc object emission is unavailable; conformance-minima sets OBJC3C_REQUIRE_HOSTED_NATIVE_OBJECT_EMISSION and fails closed before cross-lane proof. Missing required LLVM subtools, mixed tool roots, mismatched or unsupported versions, unresolved tool identity, and clang substitute object-emission paths fail closed without support, package, execution, or range claims.
 - Owner modules:
   - `tests/tooling/fixtures/platform_hardening/platform_toolchain_support_evidence.json`
   - `tests/tooling/fixtures/platform_hardening/hosted_runner_capability_summaries.json`
@@ -2929,12 +2949,13 @@ the canonical manifest fixture and public npm command above.
 - Capability ID: `platform.expansion.umbrella-readiness`
 - State: `internal`
 - Support claims: None
-- Summary: #8206 is an internal readiness boundary over #8228 Linux x64, #8229 macOS arm64, #8230 ASan, #8231 UBSan, and #8232 native object emission. It keeps only Windows x64 projected as supported, keeps Linux and macOS rejected, keeps sanitizer variants reserved, and keeps missing-llc, mixed-root, mismatched-version, unsupported-version, and unresolved-version native object emission fail-closed with no clang substitute success path.
+- Summary: #8206 is an internal readiness boundary over #8228 Linux x64, #8229 macOS arm64, #8230 ASan, #8231 UBSan, and #8232 native object emission. It keeps only Windows x64 projected as supported, keeps Linux and macOS rejected, keeps sanitizer package/install support reserved until real package/install/native execution evidence exists, keeps task-hygiene hosted gates skip-only when llc object emission is unavailable, and keeps conformance-minima fail-closed when required native object emission is missing. Missing-llc, mixed-root, mismatched-version, unsupported-version, and unresolved-version native object emission remain fail-closed with no clang substitute success path.
 - Owner modules:
   - `tests/tooling/fixtures/platform_support/source_truth_matrix.json`
   - `schemas/objc3c-platform-support-source-truth-v1.schema.json`
   - `scripts/check_objc3c_platform_support_matrix.py`
   - `scripts/platform_hardening_contracts/support_evidence.py`
+  - `tests/tooling/fixtures/security_hardening/sanitizer_package_install_model_contract.json`
   - `tests/tooling/fixtures/platform_hardening/hosted_runner_capability_summaries.json`
   - `tests/tooling/fixtures/platform_hardening/unsupported_host_fail_closed_policy.json`
   - `docs/runbooks/objc3c_platform_hardening.md`
@@ -2943,6 +2964,7 @@ the canonical manifest fixture and public npm command above.
   - schema: `schemas/objc3c-platform-support-source-truth-v1.schema.json`
   - source: `scripts/check_objc3c_platform_support_matrix.py`
   - source: `scripts/platform_hardening_contracts/support_evidence.py`
+  - source: `tests/tooling/fixtures/security_hardening/sanitizer_package_install_model_contract.json`
   - diagnostic: `tests/tooling/fixtures/platform_hardening/unsupported_host_fail_closed_policy.json`
   - doc: `docs/runbooks/objc3c_platform_hardening.md`
 
@@ -2951,14 +2973,16 @@ the canonical manifest fixture and public npm command above.
 - Capability ID: `toolchain.sanitizer.address`
 - State: `reserved`
 - Support claims: None
-- Summary: AddressSanitizer support remains reserved under issue #8230: the source contract records the ASan runtime package id, compiler/linker flag shape, runtime library ids, install guard, expected detection records, unsupported-host diagnostics, and release-runtime isolation, but no package/install/native execution support is claimed.
+- Summary: AddressSanitizer support remains reserved under issue #8230: the source contract records the ASan runtime package id, package layout, runtime library probe, explicit opt-in install selector, ASAN_OPTIONS metadata contract, mixed release/sanitizer runtime rejection, expected detection records, unsupported-host diagnostics, and metadata freshness guard, but no package/install/native execution support is claimed.
 - Owner modules:
   - `tests/tooling/fixtures/platform_hardening/platform_toolchain_support_evidence.json`
   - `tests/tooling/fixtures/security_hardening/sanitizer_validation_contract.json`
+  - `tests/tooling/fixtures/security_hardening/sanitizer_package_install_model_contract.json`
   - `tests/tooling/fixtures/platform_support/source_truth_matrix.json`
 - Evidence:
   - diagnostic: `tests/tooling/fixtures/platform_hardening/platform_toolchain_support_evidence.json`
   - source: `tests/tooling/fixtures/security_hardening/sanitizer_validation_contract.json`
+  - source: `tests/tooling/fixtures/security_hardening/sanitizer_package_install_model_contract.json`
   - source: `tests/tooling/fixtures/platform_support/source_truth_matrix.json`
 
 ### UndefinedBehaviorSanitizer platform variant
@@ -2966,14 +2990,16 @@ the canonical manifest fixture and public npm command above.
 - Capability ID: `toolchain.sanitizer.undefined`
 - State: `reserved`
 - Support claims: None
-- Summary: UBSan support remains reserved under issue #8231: the source contract records the UBSan runtime package id, trap-or-recover policy, runtime library ids, install guard, expected detection records, unsupported-host diagnostics, and release-runtime isolation, but no package/install/native execution support is claimed.
+- Summary: UBSan support remains reserved under issue #8231: the source contract records the UBSan runtime package id, package layout, runtime library probe, explicit opt-in install selector, UBSAN_OPTIONS and trap-or-recover metadata contracts, mixed release/sanitizer runtime rejection, expected detection records, unsupported-host diagnostics, and metadata freshness guard, but no package/install/native execution support is claimed.
 - Owner modules:
   - `tests/tooling/fixtures/platform_hardening/platform_toolchain_support_evidence.json`
   - `tests/tooling/fixtures/security_hardening/sanitizer_validation_contract.json`
+  - `tests/tooling/fixtures/security_hardening/sanitizer_package_install_model_contract.json`
   - `tests/tooling/fixtures/platform_support/source_truth_matrix.json`
 - Evidence:
   - diagnostic: `tests/tooling/fixtures/platform_hardening/platform_toolchain_support_evidence.json`
   - source: `tests/tooling/fixtures/security_hardening/sanitizer_validation_contract.json`
+  - source: `tests/tooling/fixtures/security_hardening/sanitizer_package_install_model_contract.json`
   - source: `tests/tooling/fixtures/platform_support/source_truth_matrix.json`
 
 ### Object runtime sample library

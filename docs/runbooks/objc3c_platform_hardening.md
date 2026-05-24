@@ -27,6 +27,7 @@ Canonical checked-in boundary and contract surfaces:
 Replayable public workflow actions:
 
 - `npm run objc3c -- build-platform-support-matrix`
+- `npm run objc3c -- ingest-platform-host-evidence`
 - `npm run objc3c -- validate-platform-hardening`
 - `npm run objc3c -- validate-platform-hardening-end-to-end`
 - `npm run objc3c -- build-package-channels`
@@ -112,6 +113,15 @@ success claim. It closes only over checked-in source contracts:
   LLVM tool roots, and a coherent LLVM tool version family; missing subtools,
   mixed roots, unresolved versions, or mismatched versions fail closed before
   those broader support claims.
+
+Hosted workflow gates use the same capability truth with different publication
+semantics. Task-hygiene smoke and parity gates may skip when native object
+emission is unavailable, but their summaries must keep
+`support_claim_published=false` and cannot report success. Conformance minima is
+a required native-object-emission gate: it sets
+`OBJC3C_REQUIRE_HOSTED_NATIVE_OBJECT_EMISSION=1`, and missing `llc`, missing
+`llc --filetype=obj`, or incoherent LLVM tool identity fails the job before
+cross-lane runtime proof can publish.
 
 Do not project the umbrella as Linux, macOS, sanitizer, or cross-lane runtime
 support. The only supported projection remains `windows-x64`.
@@ -214,12 +224,17 @@ with build, package, install, and native execution evidence from the public
 workflow surface.
 
 Sanitizer package variants are separate from host support. The ASan (#8230) and
-UBSan (#8231) runtime package rows are reserved, package-addressable metadata
-only; default release runtime packages must not inherit sanitizer behavior, and
-sanitizer rows must fail closed for unsupported hosts, release-channel installs,
-mixed runtime libraries, missing sanitizer runtime libraries, missing expected
-detection records, missing UBSan trap-or-recover metadata, and stale package
-metadata.
+UBSan (#8231) runtime package rows now carry concrete package/install contracts:
+package-root layout, metadata manifest path, required install receipt fields,
+runtime library probe inputs, explicit opt-in install selectors, release versus
+sanitizer runtime mixing rejection, ASan environment metadata, UBSan
+trap-or-recover metadata, and package metadata freshness inputs. These rows
+are implemented contract shape, not support promotion, and remain reserved
+source contracts only. Default release runtime packages must not inherit
+sanitizer behavior, and sanitizer rows must fail closed for unsupported hosts,
+default-release misuse, mixed runtime libraries, missing sanitizer runtime
+libraries, missing expected detection records, missing UBSan trap-or-recover
+metadata, and stale package metadata.
 
 Every future platform or sanitizer promotion must preserve the package identity
 contract checked into the support evidence fixture. Linux promotion requires the
@@ -240,6 +255,15 @@ hosted-runner tool summary is not enough. The package-root records may describe
 ELF versus Mach-O, DWARF versus DWARF/dSYM, loader behavior, runtime library
 names, and layout expectations, but they stay fail-closed until a matching
 native execution record cites real host execution evidence.
+
+The public hosted evidence workflow is
+`.github/workflows/platform-host-evidence.yml`. Its Linux x64 and macOS arm64
+jobs collect generated build, package, install, and native execution reports,
+then run `npm run objc3c -- ingest-platform-host-evidence`. That helper refuses
+generated-only promotion and leaves the source rows fail-closed until a
+maintainer reviews the reports and promotes the relevant host identity,
+toolchain, package-root, and native execution records into checked-in source
+truth.
 
 Package variant rows are required to carry source-owned metadata freshness
 guards. Generated package metadata can be emitted as replay output, but stale or

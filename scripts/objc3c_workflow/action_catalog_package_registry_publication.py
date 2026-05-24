@@ -170,7 +170,7 @@ PACKAGE_REGISTRY_PUBLICATION_LAYERS = (
         layer_id="hosted-registry-service",
         source_of_truth="source-owned hermetic hosted registry service fixture plus hosted registry index",
         publication_path=PACKAGE_HOSTED_REGISTRY_SERVICE_FIXTURE_PATH,
-        claim_boundary="local hosted service contract with fixture auth, trust, revocation, moderation, availability, and no-network fail-closed policy",
+        claim_boundary="local hosted service contract with fixture auth, trust, revocation, moderation, availability, deterministic snapshot handoff, materialized-lock policy, and no-network fail-closed policy",
     ),
     PackageRegistryPublicationLayer(
         layer_id="public-hosted-registry-live-boundary",
@@ -182,7 +182,7 @@ PACKAGE_REGISTRY_PUBLICATION_LAYERS = (
         layer_id="network-resolution",
         source_of_truth="source-owned hosted registry fixture, fixture lock, offline mirror, and pinned cache metadata",
         publication_path=PACKAGE_NETWORK_RESOLUTION_FIXTURE_PATH,
-        claim_boundary="offline fixture-backed network dependency resolution only; live network fetches and fallback success fail closed",
+        claim_boundary="offline fixture-backed network dependency resolution only; live network fetches and fallback success fail closed after deterministic snapshot/lock/offline handoff",
     ),
     PackageRegistryPublicationLayer(
         layer_id="release-channel-publication",

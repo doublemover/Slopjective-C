@@ -11,11 +11,11 @@ inline constexpr const char *kObjc3ValueOptionalAbiLayoutId =
 inline constexpr const char *kObjc3ValueOptionalCanonicalSpelling =
     "Optional<T>";
 inline constexpr const char *kObjc3ValueOptionalSourceStatus =
-    "semantic-type-signature-admitted-runtime-execution-fail-closed";
+    "semantic-type-signature-admitted-bounded-scalar-runtime-abi";
 inline constexpr const char *kObjc3ValueOptionalAbiLayoutStatus =
-    "stable-inline-presence-payload-contract-runtime-lowering-deferred";
+    "stable-packed-presence-payload-runtime-lowered";
 inline constexpr const char *kObjc3ValueOptionalInterfaceRoundtripStatus =
-    "semantic-carrier-roundtrips-runtime-deferred";
+    "semantic-carrier-roundtrips-bounded-scalar-runtime-abi";
 inline constexpr const char *kObjc3ValueOptionalPresenceField = "has_value";
 inline constexpr const char *kObjc3ValueOptionalPayloadStorageField = "payload";
 inline constexpr const char *kObjc3ValueOptionalAbsenceState =
@@ -25,7 +25,7 @@ inline constexpr const char *kObjc3ValueOptionalPresenceState =
 inline constexpr const char *kObjc3ValueOptionalPayloadCleanupContract =
     "payload-cleanup-after-narrowed-scope";
 inline constexpr const char *kObjc3ValueOptionalExecutableLoweringStatus =
-    "presence-payload-construction-and-checked-unwrap-contract-ready-runtime-abi-deferred";
+    "packed-presence-payload-runtime-abi-lowered";
 inline constexpr const char *kObjc3ValueOptionalConstructionContract =
     "explicit-absent-present-constructors-only";
 inline constexpr const char *kObjc3ValueOptionalAbsentConstructionKind =
@@ -39,7 +39,17 @@ inline constexpr const char *kObjc3ValueOptionalUnwrapFailureDiagnostic =
 inline constexpr const char *kObjc3ValueOptionalNilBridgeDiagnostic =
     "nil-bridging-to-optional-is-rejected";
 inline constexpr const char *kObjc3ValueOptionalRemainingRuntimeBoundary =
-    "ir-payload-emission-and-call-abi-lowering-deferred";
+    "unchecked-unwrap-property-ivar-storage-and-nullable-pointer-bridging-remain-reserved";
+inline constexpr const char *kObjc3RuntimeOptionalAbsentI64Symbol =
+    "objc3_runtime_optional_absent_i64";
+inline constexpr const char *kObjc3RuntimeOptionalPresentI32Symbol =
+    "objc3_runtime_optional_present_i32";
+inline constexpr const char *kObjc3RuntimeOptionalHasValueI32Symbol =
+    "objc3_runtime_optional_has_value_i32";
+inline constexpr const char *kObjc3RuntimeOptionalPayloadOrI32Symbol =
+    "objc3_runtime_optional_payload_or_i32";
+inline constexpr const char *kObjc3RuntimeOptionalUnwrapI32Symbol =
+    "objc3_runtime_optional_unwrap_i32";
 
 struct Objc3ValueOptionalTypeDescriptor {
   bool present = false;
@@ -151,6 +161,14 @@ inline ValueType Objc3ValueOptionalPayloadValueType(
   return ValueType::Unknown;
 }
 
+inline bool Objc3ValueOptionalPayloadRuntimeAbiSupported(
+    const Objc3ValueOptionalTypeDescriptor &descriptor) {
+  return descriptor.payload_value_type != ValueType::Unknown &&
+         !descriptor.payload_generic &&
+         !descriptor.payload_nested_value_optional &&
+         !descriptor.payload_lowercase_optional_alias;
+}
+
 inline Objc3ValueOptionalTypeDescriptor BuildObjc3ValueOptionalDescriptor(
     const std::string &generic_suffix_text,
     unsigned line,
@@ -199,6 +217,12 @@ inline Objc3ValueOptionalTypeDescriptor BuildObjc3ValueOptionalDescriptor(
       descriptor.payload_type_spelling.rfind("optional<", 0) == 0 ||
       descriptor.payload_type_spelling.find("<optional<") !=
           std::string::npos;
+  if (Objc3ValueOptionalPayloadRuntimeAbiSupported(descriptor)) {
+    descriptor.runtime_execution_supported = true;
+    descriptor.lowering_supported = true;
+    descriptor.ir_payload_emission_supported = true;
+    descriptor.call_abi_lowering_supported = true;
+  }
   return descriptor;
 }
 
@@ -228,12 +252,12 @@ inline bool Objc3ValueOptionalHasExecutableLoweringContract(
          !descriptor.throws_result_conversion_allowed;
 }
 
-inline bool Objc3ValueOptionalRuntimeAbiDeferred(
+inline bool Objc3ValueOptionalRuntimeAbiReady(
     const Objc3ValueOptionalTypeDescriptor &descriptor) {
-  return descriptor.present && !descriptor.ir_payload_emission_supported &&
-         !descriptor.call_abi_lowering_supported &&
-         !descriptor.runtime_execution_supported &&
-         !descriptor.lowering_supported;
+  return descriptor.present && descriptor.ir_payload_emission_supported &&
+         descriptor.call_abi_lowering_supported &&
+         descriptor.runtime_execution_supported &&
+         descriptor.lowering_supported;
 }
 
 inline bool Objc3ValueOptionalRejectsImplicitBridging(

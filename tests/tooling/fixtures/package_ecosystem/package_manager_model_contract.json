@@ -18,6 +18,7 @@
     "tests/tooling/fixtures/package_ecosystem/hosted_registry/service/hosted-registry-service.json",
     "tests/tooling/fixtures/package_ecosystem/hosted_registry/service/negative-service-cases.json",
     "tests/tooling/fixtures/package_ecosystem/hosted_registry/offline-mirror-index.json",
+    "tests/tooling/fixtures/package_ecosystem/hosted_registry/fixture-lock.json",
     "tests/tooling/fixtures/package_ecosystem/hosted_registry/negative-registry-cases.json",
     "tests/tooling/fixtures/package_ecosystem/network_resolution/network-dependency-resolution.json",
     "tests/tooling/fixtures/package_ecosystem/network_resolution/package-release-channel-publication.json",
@@ -79,7 +80,7 @@
     "the lock carries a deterministic dependency-first resolution plan that local registry indexes and clean installs must preserve exactly",
     "package manifests, lock package rows, and local registry entries carry the same module graph source-of-truth record derived from checked-in stdlib module inventory or showcase portfolio inputs",
     "direct @import syntax is admitted only when module graph direct_imports carry locked package provenance, exact source authority, and O3PKG8055 fail-closed diagnostics for missing or ambiguous provenance",
-    "hosted registry fixtures are source-owned offline metadata with a hermetic service contract and must bind registry endpoint identity, channel identity, fixture auth, trust-root operation, revocation, moderation, availability, lock/trust material, offline cache policy, and explicit failure modes before resolution",
+    "hosted registry fixtures are source-owned offline metadata with a hermetic service contract and must bind registry endpoint identity, channel identity, deterministic snapshot fetch policy, explicit disabled-live transport policy, fixture auth, trust-root operation, revocation, moderation, availability, trust enforcement, lock materialization, offline replay handoff, offline cache policy, and explicit failure modes before resolution",
     "network dependency resolution is admitted only through source-owned offline fixtures that bind hosted endpoint identity, exact locked version, fixture lock digest, trust root, package provenance, cache signature, and no fallback registry success",
     "package release-channel publication is admitted only when channel freshness, release-channel id, hosted registry channel id, network resolution proof, cache pin, lock digest, and trust provenance remain current",
     "package security hardening requires repo-relative non-overwriting trust CLI paths, pre-mutation extraction plans, duplicate/case-conflicting path rejection, installer/update-key fail-closed policy hooks, and reserved release/registry trust roots",
@@ -88,5 +89,5 @@
     "dependency version requirements, resolved versions, source authority digests, target source digests, and target manifest digests must match the locked target package",
     "revoked packages, signature drift, digest drift, missing provenance, missing or unsafe module graph metadata, unsafe dependency source authority, dependency cycles, unpinned hosted dependencies, hosted trust drift, stale channels, cache tamper, lock mismatch, dependency identity drift, endpoint mismatch, unsafe extraction paths, active reserved trust roots, missing installer/update key policy, and unsupported network resolution claims fail closed"
   ],
-  "claim_boundary": "local package create-lock-build-install model backed by generated manifests, deterministic locks, offline mirrors, local registry indexes, install/restore receipts, source-owned direct @import provenance, offline hosted-registry fixture metadata, hermetic hosted-service contracts, offline fixture-backed network dependency resolution, and source-owned package release-channel publication contracts; arbitrary live network dependency resolution remains unsupported"
+  "claim_boundary": "local package create-lock-build-install model backed by generated manifests, deterministic locks, offline mirrors, local registry indexes, install/restore receipts, source-owned direct @import provenance, offline hosted-registry fixture metadata with deterministic snapshot fetch, trust enforcement, lock materialization, and offline replay handoff, hermetic hosted-service contracts, offline fixture-backed network dependency resolution, and source-owned package release-channel publication contracts; arbitrary live network dependency resolution, live public registry transport, production auth, production moderation, public availability SLOs, and fallback registry success remain unsupported"
 }

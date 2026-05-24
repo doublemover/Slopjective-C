@@ -2,7 +2,7 @@
   "contract_id": "objc3c.value_optional.contract.v1",
   "issue_ref": 8234,
   "canonical_spelling": "Optional<T>",
-  "source_status": "semantic-type-signature-admitted-runtime-execution-fail-closed",
+  "source_status": "semantic-type-signature-admitted-bounded-scalar-runtime-abi",
   "semantic_model": {
     "type_admission_supported": true,
     "explicit_present_absent_construction_modeled": true,
@@ -13,12 +13,17 @@
     "unwrap_requires_presence_check": true,
     "unwrap_failure_diagnostic_supported": true,
     "nil_bridge_diagnostic_supported": true,
+    "runtime_abi_payload_scope": "supported-scalar-payload-forms-only",
+    "supported_runtime_payload_forms": [
+      "i32",
+      "bool"
+    ],
     "implicit_nil_absence_allowed": false,
     "optional_id_distinct_from_nullable_object_pointer": true
   },
   "abi_layout": {
     "layout_id": "objc3.value_optional.inline_presence_payload.v1",
-    "layout_status": "stable-inline-presence-payload-contract-runtime-lowering-deferred",
+    "layout_status": "stable-packed-presence-payload-runtime-lowered",
     "presence_field": "has_value",
     "payload_storage_field": "payload",
     "payload_cleanup_contract": "payload-cleanup-after-narrowed-scope",
@@ -26,15 +31,16 @@
     "presence_state": "has_value=true",
     "stable_layout_contract_supported": true,
     "executable_lowering_contract_supported": true,
-    "runtime_execution_supported": false,
-    "lowering_supported": false,
-    "ir_payload_emission_supported": false,
-    "call_abi_lowering_supported": false
+    "runtime_execution_supported": true,
+    "lowering_supported": true,
+    "ir_payload_emission_supported": true,
+    "call_abi_lowering_supported": true,
+    "broad_public_runtime_support_claim_allowed": false
   },
   "lowering_contract": {
     "contract_id": "objc3c.value_optional.lowering.contract.v1",
-    "status": "stable-abi-carrier-contract-runtime-execution-fail-closed",
-    "executable_lowering_status": "presence-payload-construction-and-checked-unwrap-contract-ready-runtime-abi-deferred",
+    "status": "stable-packed-abi-carrier-runtime-execution-supported",
+    "executable_lowering_status": "packed-presence-payload-runtime-abi-lowered",
     "construction_contract": "explicit-absent-present-constructors-only",
     "absent_construction_kind": "absent-without-payload",
     "present_construction_kind": "present-with-payload",
@@ -45,13 +51,14 @@
     "binding_failure_diagnostic": "binding-failure-branches-to-absent-path",
     "unwrap_failure_diagnostic": "unwrap-requires-proven-has-value",
     "nil_bridge_diagnostic": "nil-bridging-to-optional-is-rejected",
-    "remaining_runtime_boundary": "ir-payload-emission-and-call-abi-lowering-deferred",
-    "runtime_construction_supported": false,
-    "runtime_unwrap_supported": false,
-    "ir_payload_emission_supported": false,
-    "call_abi_lowering_supported": false
+    "remaining_runtime_boundary": "unchecked-unwrap-property-ivar-storage-and-nullable-pointer-bridging-remain-reserved",
+    "runtime_construction_supported": true,
+    "runtime_unwrap_supported": true,
+    "ir_payload_emission_supported": true,
+    "call_abi_lowering_supported": true,
+    "runtime_abi_payload_scope": "supported-scalar-payload-forms-only"
   },
-  "interface_roundtrip_status": "semantic-carrier-roundtrips-runtime-deferred",
+  "interface_roundtrip_status": "semantic-carrier-roundtrips-bounded-scalar-runtime-abi",
   "records": {
     "optional_type": {
       "type_id": "Optional<i32>",
@@ -88,9 +95,14 @@
   },
   "fail_closed": {
     "lowercase_alias_accepted": false,
+    "nested_value_optional_runtime_supported": false,
+    "generic_payload_runtime_supported": false,
+    "property_storage_supported": false,
+    "ivar_storage_supported": false,
     "nil_to_scalar_coercion_allowed": false,
     "implicit_nil_absence_allowed": false,
     "nullable_pointer_conversion_allowed": false,
+    "unchecked_unwrap_allowed": false,
     "throws_result_conversion_allowed": false
   }
 }

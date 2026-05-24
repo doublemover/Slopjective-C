@@ -64,7 +64,8 @@
     "runtime_hardening_owner": {
       "source_contract": "tests/tooling/fixtures/security_hardening/runtime_hardening_contract.json",
       "supporting_contracts": [
-        "tests/tooling/fixtures/security_hardening/sanitizer_validation_contract.json"
+        "tests/tooling/fixtures/security_hardening/sanitizer_validation_contract.json",
+        "tests/tooling/fixtures/security_hardening/sanitizer_package_install_model_contract.json"
       ],
       "summary_implementation_anchor": "scripts/build_security_hardening_artifact_contract_summary.py",
       "check_implementation_anchors": [

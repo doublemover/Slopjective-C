@@ -74,7 +74,7 @@ tables or examples.
 
 | Schema | Owns |
 | ------ | ---- |
-| `objc3c-typed-throws-effect-contract-v1.schema.json` | Typed throws source effect identity, exact callable compatibility policy, interface anchors, hidden error-out ABI lowering readiness, and negative rejection records. |
+| `objc3c-typed-throws-effect-contract-v1.schema.json` | Typed throws source effect identity, exact callable compatibility policy, catch compatibility records, bridge-to-`id<Error>` policy, unsupported foreign-carrier fail-closed records, interface anchors, hidden error-out ABI lowering readiness, and negative rejection records. |
 | `objc3c-value-optionals-contract-v1.schema.json` | Value optional source/interface semantic contracts, ABI-layout identity, presence/payload records, runtime/lowering fail-closed boundaries, and rejection records. |
 
 ## Workflow Registry Schemas
