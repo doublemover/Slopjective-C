@@ -19,6 +19,7 @@ from objc3c_tooling.subprocesses import bounded_text, python_script_command, run
 from objc3c_workflow.commands import workflow_command
 from objc3c_package_channels.model import (
     MANIFEST_RELATIVE_PATH,
+    native_executable_entry_from_runnable_manifest,
     required_payload_entries_for_platform,
 )
 
@@ -504,17 +505,13 @@ def main(argv: Sequence[str] | None = None) -> int:
         sanitizer_variant=str(manifest.get("sanitizer_variant", "release")),
         target_platform_id=target_platform_id,
     )
-    native_executable_entry = next(
-        (
-            entry
-            for entry in expected_payload_entries
-            if entry == "artifacts/bin/objc3c-native.exe"
-            or entry == "artifacts/bin/objc3c-native"
-        ),
-        "",
-    )
-    expect(native_executable_entry != "", "package payload missing native executable entry")
     payload_contract = validate_payload_contract(manifest, package_root, expected_payload_entries)
+    runnable_manifest = load_json(package_root / MANIFEST_RELATIVE_PATH)
+    native_executable_entry = native_executable_entry_from_runnable_manifest(
+        runnable_manifest,
+        expected_payload_entries=expected_payload_entries,
+        payload_contract=payload_contract,
+    )
     receipt_contracts = validate_receipt_contracts(
         manifest,
         expected_payload_entries,

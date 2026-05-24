@@ -266,6 +266,7 @@ HOST_PROMOTION_EVIDENCE_CLASSES: tuple[HostPromotionEvidenceClass, ...] = (
             "object_identity_report_path",
             "debug_identity_report_path",
             "llvm_toolchain_record_id",
+            "platform_specific_debug_proofs",
         ),
         promotion_result="fail-closed-on-format-or-arch-mismatch",
     ),
@@ -281,6 +282,7 @@ HOST_PROMOTION_EVIDENCE_CLASSES: tuple[HostPromotionEvidenceClass, ...] = (
             "load_probe_path",
             "load_probe_exit_code",
             "resolved_runtime_paths",
+            "platform_specific_runtime_proofs",
         ),
         promotion_result="fail-closed-on-link-or-load-failure",
     ),
@@ -445,6 +447,43 @@ class HostPromotionArtifactIdentity:
             "linker_flags": list(self.linker_flags),
         }
 
+    @property
+    def platform_specific_debug_proofs(self) -> dict[str, Any]:
+        if self.object_format != "Mach-O":
+            return {}
+        return {
+            "dsym_uuid_required": True,
+            "dsym_uuid_arch": self.arch,
+            "dsym_uuid_match_required": True,
+            "required_debug_proofs": [
+                "mach_o_arm64_architecture",
+                "binary_dsym_uuid",
+                "dsym_uuid_arch_arm64",
+                "binary_dsym_uuid_match",
+            ],
+            "debug_proof_failure_behavior": "fail-closed-before-package-publication",
+        }
+
+    @property
+    def platform_specific_runtime_proofs(self) -> dict[str, Any]:
+        if self.object_format != "Mach-O":
+            return {}
+        return {
+            "install_name_required": True,
+            "rpath_required": True,
+            "codesign_required": True,
+            "expected_arch": self.arch,
+            "load_commands_required": [
+                "LC_ID_DYLIB",
+                "LC_RPATH",
+                "LC_LOAD_DYLIB",
+            ],
+            "executable_runtime_reference_required": True,
+            "runtime_proof_failure_behavior": (
+                "fail-closed-before-native-execution-claim"
+            ),
+        }
+
 
 @dataclass(frozen=True)
 class HostPromotionPlatformContract:
@@ -579,6 +618,9 @@ class HostPromotionPlatformContract:
                 ),
                 "wrong_format_behavior": "fail-closed-before-package-publication",
                 "wrong_arch_behavior": "fail-closed-before-install",
+                "platform_specific_debug_proofs": (
+                    self.artifact_identity.platform_specific_debug_proofs
+                ),
                 "support_truth_without_package_install_execution": False,
             },
             "runtime_link_load_identity": {
@@ -597,6 +639,9 @@ class HostPromotionPlatformContract:
                 "runtime_load_probe_present": False,
                 "runtime_load_failure_behavior": (
                     "fail-closed-before-native-execution-claim"
+                ),
+                "platform_specific_runtime_proofs": (
+                    self.artifact_identity.platform_specific_runtime_proofs
                 ),
                 "support_truth": False,
             },

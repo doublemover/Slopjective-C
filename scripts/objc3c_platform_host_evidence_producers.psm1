@@ -239,17 +239,89 @@ function Get-Objc3cDarwinLinkedLibraries {
 function Get-Objc3cDarwinRpaths {
   param([object]$OtoolLoadCommands)
 
+  $commands = @(Get-Objc3cDarwinLoadCommandRecords -OtoolLoadCommands $OtoolLoadCommands)
   if ($null -eq $OtoolLoadCommands -or [int]$OtoolLoadCommands.exit_code -ne 0) {
     return @()
   }
   $rpaths = New-Object System.Collections.Generic.List[string]
-  foreach ($line in @(Split-Objc3cEvidenceLines -Text ([string]$OtoolLoadCommands.stdout))) {
-    $trimmed = $line.Trim()
-    if ($trimmed -match '^path\s+(.+?)\s+\(offset') {
-      $rpaths.Add($Matches[1]) | Out-Null
+  foreach ($command in $commands) {
+    if ([string]$command.cmd -ne "LC_RPATH") {
+      continue
+    }
+    foreach ($line in @($command.lines)) {
+      if ([string]$line -match '^path\s+(.+?)\s+\(offset') {
+        $rpaths.Add($Matches[1]) | Out-Null
+      }
     }
   }
   return @($rpaths | Sort-Object -Unique)
+}
+
+function Get-Objc3cDarwinLoadCommandRecords {
+  param([object]$OtoolLoadCommands)
+
+  if ($null -eq $OtoolLoadCommands -or [int]$OtoolLoadCommands.exit_code -ne 0) {
+    return @()
+  }
+  $records = New-Object System.Collections.Generic.List[object]
+  $current = $null
+  foreach ($line in @(Split-Objc3cEvidenceLines -Text ([string]$OtoolLoadCommands.stdout))) {
+    $trimmed = $line.Trim()
+    if ($trimmed -match '^Load command\s+(\d+)$') {
+      if ($null -ne $current) {
+        $records.Add([pscustomobject]$current) | Out-Null
+      }
+      $current = [ordered]@{
+        index = [int]$Matches[1]
+        cmd = ""
+        lines = @()
+      }
+      continue
+    }
+    if ($null -eq $current) {
+      continue
+    }
+    if ($trimmed -match '^cmd\s+(.+)$') {
+      $current["cmd"] = $Matches[1].Trim()
+    }
+    $current["lines"] = @($current["lines"]) + $trimmed
+  }
+  if ($null -ne $current) {
+    $records.Add([pscustomobject]$current) | Out-Null
+  }
+  return @($records)
+}
+
+function Test-Objc3cDarwinLoadCommandPresent {
+  param(
+    [object[]]$LoadCommands = @(),
+    [Parameter(Mandatory = $true)][string]$CommandName
+  )
+
+  return @($LoadCommands | Where-Object { [string]$_.cmd -eq $CommandName }).Count -gt 0
+}
+
+function Test-Objc3cDarwinCodesignProofPresent {
+  param([object]$Codesign)
+
+  return $null -ne $Codesign -and [bool]$Codesign.available -and [int]$Codesign.exit_code -eq 0
+}
+
+function Test-Objc3cDarwinRuntimeLibraryProofPresent {
+  param([object]$Identity)
+
+  if ($null -eq $Identity) {
+    return $false
+  }
+  $loadCommands = @($Identity.load_commands.commands)
+  return (
+    [bool]$Identity.artifact.exists -and
+    [bool]$Identity.mach_o_present -and
+    [bool]$Identity.expected_arch_present -and
+    -not [string]::IsNullOrWhiteSpace([string]$Identity.install_name) -and
+    (Test-Objc3cDarwinLoadCommandPresent -LoadCommands $loadCommands -CommandName "LC_ID_DYLIB") -and
+    (Test-Objc3cDarwinCodesignProofPresent -Codesign $Identity.codesign)
+  )
 }
 
 function Get-Objc3cDarwinUuidRecords {
@@ -283,6 +355,15 @@ function Test-Objc3cDarwinUuidRecordsMatch {
   $binaryKeys = @($BinaryRecords | ForEach-Object { "$($_.arch):$($_.uuid)" } | Sort-Object -Unique)
   $dsymKeys = @($DsymRecords | ForEach-Object { "$($_.arch):$($_.uuid)" } | Sort-Object -Unique)
   return (($binaryKeys -join "`0") -eq ($dsymKeys -join "`0"))
+}
+
+function Test-Objc3cDarwinUuidRecordsHaveArch {
+  param(
+    [object[]]$Records = @(),
+    [string]$ExpectedArch = "arm64"
+  )
+
+  return @($Records | Where-Object { [string]$_.arch -eq $ExpectedArch }).Count -gt 0
 }
 
 function Get-Objc3cEvidenceObjectProperty {
@@ -561,10 +642,22 @@ function Get-Objc3cDarwinMachOIdentity {
   if (-not [bool]$digest.exists) {
     return [ordered]@{
       artifact = $digest
+      expected_format = "Mach-O"
       expected_arch = $ExpectedArch
       archs = @()
       expected_arch_present = $false
       mach_o_present = $false
+      load_commands = [ordered]@{
+        tool = $null
+        commands = @()
+        command_names = @()
+        rpaths = @()
+      }
+      linked_libraries = @()
+      install_name = ""
+      install_name_tool = $null
+      codesign = $null
+      codesign_proof_present = $false
     }
   }
 
@@ -579,6 +672,7 @@ function Get-Objc3cDarwinMachOIdentity {
     $otoolInstallName = Invoke-Objc3cPlatformEvidenceTool -Tool "otool" -Arguments @("-D", $Path)
   }
 
+  $loadCommands = @(Get-Objc3cDarwinLoadCommandRecords -OtoolLoadCommands $otoolLoadCommands)
   $archs = @()
   if ([bool]$lipo.available -and [int]$lipo.exit_code -eq 0) {
     $archs = @(([string]$lipo.stdout).Trim() -split '\s+' | Where-Object { $_ })
@@ -597,12 +691,15 @@ function Get-Objc3cDarwinMachOIdentity {
     mach_header = $otoolHeader
     load_commands = [ordered]@{
       tool = $otoolLoadCommands
+      commands = @($loadCommands)
+      command_names = @($loadCommands | ForEach-Object { [string]$_.cmd } | Where-Object { $_ } | Sort-Object -Unique)
       rpaths = @(Get-Objc3cDarwinRpaths -OtoolLoadCommands $otoolLoadCommands)
     }
     linked_libraries = @(Get-Objc3cDarwinLinkedLibraries -OtoolL $otoolLibraries)
     install_name = if ($IncludeInstallName.IsPresent) { Get-Objc3cDarwinInstallName -OtoolD $otoolInstallName } else { "" }
     install_name_tool = if ($IncludeInstallName.IsPresent) { $otoolInstallName } else { $null }
     codesign = $codesign
+    codesign_proof_present = Test-Objc3cDarwinCodesignProofPresent -Codesign $codesign
   }
 }
 
@@ -786,6 +883,16 @@ function Write-Objc3cDarwinObjectDebugIdentityEvidence {
   } else {
     "GENERATED_DSYM_UUID_IDENTITY_INCOMPLETE"
   }
+  $debugArchStatus = @(
+    $debugValues |
+      Where-Object {
+        -not (Test-Objc3cDarwinUuidRecordsHaveArch -Records @($_.binary_uuids) -ExpectedArch "arm64") -or
+        -not (Test-Objc3cDarwinUuidRecordsHaveArch -Records @($_.dsym_uuids) -ExpectedArch "arm64")
+      }
+  ).Count -eq 0
+  if (-not $debugArchStatus) {
+    $debugStatus = "GENERATED_DSYM_UUID_IDENTITY_INCOMPLETE"
+  }
   $debugPass = $debugStatus -eq "GENERATED_DSYM_UUID_IDENTITY"
   $debugGeneratedStatus = if (-not $buildSummaryExists) {
     "missing-source-generated-fail-closed"
@@ -813,11 +920,16 @@ function Write-Objc3cDarwinObjectDebugIdentityEvidence {
       target_triple = $TargetTriple
       arch = "arm64"
       debug_format = "DWARF/dSYM"
+      dsym_uuid_required = $true
+      dsym_uuid_arch = "arm64"
+      dsym_uuid_match_required = $true
     }
     actual_identity = [ordered]@{
       target_platform_id = if ($debugPass) { $PlatformId } else { "" }
       target_triple = if ($debugPass) { $TargetTriple } else { "" }
       debug_format = if ($debugPass) { "DWARF/dSYM" } else { "" }
+      dsym_uuid_arch_present = $debugArchStatus
+      dsym_uuid_match = $debugPass
       producer_observed_debug_format = $DebugFormat
     }
     debug_artifacts = [ordered]@{
@@ -832,6 +944,12 @@ function Write-Objc3cDarwinObjectDebugIdentityEvidence {
       expected_debug_format = "DWARF/dSYM"
       observed_debug_format = $DebugFormat
       expected_arch = "arm64"
+      required_debug_proofs = @(
+        "mach_o_arm64_architecture",
+        "binary_dsym_uuid",
+        "dsym_uuid_arch_arm64",
+        "binary_dsym_uuid_match"
+      )
       artifacts = $debugRecords
     }
     source_artifacts = New-Objc3cEvidenceSourceArtifacts -RepoRoot $RepoRoot -Paths @($BuildSummaryPath)
@@ -866,7 +984,8 @@ function Write-Objc3cDarwinRuntimeLibraryManifestEvidence {
 
   $runtimeLibraryPath = Join-Path $PackageRoot (ConvertTo-Objc3cEvidenceHostPath -RelativePath $RuntimeLibraryRelativePath)
   $identity = Get-Objc3cDarwinMachOIdentity -RepoRoot $PackageRoot -Path $runtimeLibraryPath -IncludeInstallName
-  $manifestStatus = if ([bool]$identity.artifact.exists -and [bool]$identity.mach_o_present -and [bool]$identity.expected_arch_present) {
+  $runtimeLibraryProofPresent = Test-Objc3cDarwinRuntimeLibraryProofPresent -Identity $identity
+  $manifestStatus = if ($runtimeLibraryProofPresent) {
     "GENERATED_MACHO_RUNTIME_LIBRARY_MANIFEST"
   } else {
     "GENERATED_MACHO_RUNTIME_LIBRARY_MANIFEST_INCOMPLETE"
@@ -882,7 +1001,7 @@ function Write-Objc3cDarwinRuntimeLibraryManifestEvidence {
     "missing-source-generated-fail-closed"
   } elseif (-not [string]::IsNullOrWhiteSpace($packageTargetPlatformId) -and $packageTargetPlatformId -ne $PlatformId) {
     "package-target-mismatch-generated-fail-closed"
-  } elseif ([bool]$identity.mach_o_present -and [bool]$identity.expected_arch_present) {
+  } elseif ($runtimeLibraryProofPresent) {
     "generated-host-artifact-present"
   } else {
     "missing-source-generated-fail-closed"
@@ -906,6 +1025,14 @@ function Write-Objc3cDarwinRuntimeLibraryManifestEvidence {
     runtime_library_names = @($RuntimeLibraryName)
     runtime_library_artifacts = @($runtimeArtifact)
     loader_path_policy = "@rpath, install_name, codesign, and package-root loader behavior must be proven before support"
+    darwin_runtime_proof_requirements = [ordered]@{
+      expected_arch = "arm64"
+      install_name_required = $true
+      rpath_required = $false
+      codesign_required = $true
+      load_commands_required = @("LC_ID_DYLIB")
+      support_truth_from_generated_evidence = $false
+    }
     package_root = Get-Objc3cEvidenceRepoRelativePath -RootPath $RepoRoot -TargetPath $PackageRoot
     package_root_layout = Get-Objc3cDarwinPackageRootLayout
     package_manifest_artifact = $packageManifestArtifact
@@ -928,7 +1055,9 @@ function Write-Objc3cDarwinRuntimeLibraryManifestEvidence {
       install_name = $identity.install_name
       linked_libraries = @($identity.linked_libraries)
       rpaths = @($identity.load_commands.rpaths)
+      load_command_names = @($identity.load_commands.command_names)
       codesign = $identity.codesign
+      codesign_proof_present = [bool]$identity.codesign_proof_present
       missing_runtime_behavior = "fail-closed-before-package-install"
     }
     source_artifacts = New-Objc3cEvidenceSourceArtifacts -RepoRoot $RepoRoot -Paths @($PackageManifestPath)
@@ -986,6 +1115,7 @@ function Write-Objc3cDarwinRuntimeLoadProbeEvidence {
   }
 
   $runtimeIdentity = Get-Objc3cDarwinMachOIdentity -RepoRoot $RepoRoot -Path $RuntimeLibraryPath -IncludeInstallName
+  $runtimeLibraryProofPresent = Test-Objc3cDarwinRuntimeLibraryProofPresent -Identity $runtimeIdentity
   $results = @($summary.results)
   $executableProbes = New-Object System.Collections.Generic.List[object]
   $resolvedRuntimePaths = New-Object System.Collections.Generic.List[string]
@@ -1001,6 +1131,7 @@ function Write-Objc3cDarwinRuntimeLoadProbeEvidence {
     $objectPath = Join-Path (Split-Path -Parent $exePath) (Join-Path "compile" "module.o")
     $exeIdentity = Get-Objc3cDarwinMachOIdentity -RepoRoot $RepoRoot -Path $exePath
     $objectIdentity = Get-Objc3cDarwinMachOIdentity -RepoRoot $RepoRoot -Path $objectPath
+    $exeLoadCommands = @($exeIdentity.load_commands.commands)
     $runtimeReferences = @(
       @($exeIdentity.linked_libraries) |
         Where-Object {
@@ -1008,6 +1139,13 @@ function Write-Objc3cDarwinRuntimeLoadProbeEvidence {
           $_ -match 'libobjc3-runtime\.dylib' -or
           $_ -match '@rpath/libobjc3-runtime\.dylib'
         }
+    )
+    $executableLoadCommandProofPresent = (
+      [bool]$exeIdentity.artifact.exists -and
+      [bool]$exeIdentity.mach_o_present -and
+      [bool]$exeIdentity.expected_arch_present -and
+      (Test-Objc3cDarwinLoadCommandPresent -LoadCommands $exeLoadCommands -CommandName "LC_RPATH") -and
+      (Test-Objc3cDarwinLoadCommandPresent -LoadCommands $exeLoadCommands -CommandName "LC_LOAD_DYLIB")
     )
     $executableProbes.Add([ordered]@{
         fixture = [string]$result.fixture
@@ -1020,6 +1158,8 @@ function Write-Objc3cDarwinRuntimeLoadProbeEvidence {
         runtime_library = [string]$result.runtime_library
         runtime_references = @($runtimeReferences)
         runtime_reference_present = @($runtimeReferences).Count -gt 0
+        load_command_proof_present = $executableLoadCommandProofPresent
+        codesign_proof_present = [bool]$exeIdentity.codesign_proof_present
         identity = $exeIdentity
       }) | Out-Null
   }
@@ -1031,7 +1171,28 @@ function Write-Objc3cDarwinRuntimeLoadProbeEvidence {
 
   $summaryStatus = [string](Get-Objc3cEvidenceObjectProperty -InputObject $summary -Name "status" -DefaultValue "")
   $skipReason = [string](Get-Objc3cEvidenceObjectProperty -InputObject $summary -Name "skip_reason" -DefaultValue "")
-  $loadProbeExitCode = if ($summaryStatus -eq "PASS" -and @($executableProbes | Where-Object { [bool]$_.runtime_reference_present }).Count -gt 0) {
+  $observedRpaths = @(
+    @($runtimeIdentity.load_commands.rpaths) +
+    @($executableProbes | ForEach-Object { @($_.identity.load_commands.rpaths) })
+  ) | Where-Object { -not [string]::IsNullOrWhiteSpace([string]$_) } | Sort-Object -Unique
+  $probeFailures = @(
+    $executableProbes |
+      Where-Object {
+        -not [bool]$_.identity.artifact.exists -or
+        -not [bool]$_.identity.mach_o_present -or
+        -not [bool]$_.identity.expected_arch_present -or
+        -not [bool]$_.runtime_reference_present -or
+        -not [bool]$_.load_command_proof_present -or
+        -not [bool]$_.codesign_proof_present -or
+        [int]$_.run_exit -ne [int]$_.expected_exit
+      }
+  )
+  $loadProbeExitCode = if (
+    $summaryStatus -eq "PASS" -and
+    $runtimeLibraryProofPresent -and
+    @($executableProbes).Count -gt 0 -and
+    @($probeFailures).Count -eq 0
+  ) {
     0
   } else {
     1
@@ -1067,6 +1228,19 @@ function Write-Objc3cDarwinRuntimeLoadProbeEvidence {
     loader_path_policy = $LoaderPathPolicy
     resolved_runtime_paths = @($resolvedRuntimePaths)
     driver_linker_flags = @($linkerFlags)
+    install_name = $runtimeIdentity.install_name
+    rpaths = @($observedRpaths)
+    load_command_names = @($runtimeIdentity.load_commands.command_names)
+    codesign_proof_present = [bool]$runtimeIdentity.codesign_proof_present
+    darwin_runtime_proof_requirements = [ordered]@{
+      expected_arch = "arm64"
+      install_name_required = $true
+      rpath_required = $true
+      codesign_required = $true
+      load_commands_required = @("LC_ID_DYLIB", "LC_RPATH", "LC_LOAD_DYLIB")
+      executable_runtime_reference_required = $true
+      support_truth_from_generated_evidence = $false
+    }
     hosted_execution_status = ""
     native_execution_status = $summaryStatus
     skip_reason = $skipReason
@@ -1081,6 +1255,11 @@ function Write-Objc3cDarwinRuntimeLoadProbeEvidence {
       loader_policy = $LoaderPathPolicy
       load_path = @(Get-Objc3cEvidenceObjectProperty -InputObject $summary -Name "load_path" -DefaultValue @())
       runtime_load_environment = Get-Objc3cEvidenceObjectProperty -InputObject $summary -Name "runtime_load_environment" -DefaultValue @{}
+      runtime_library_install_name = $runtimeIdentity.install_name
+      runtime_library_rpaths = @($runtimeIdentity.load_commands.rpaths)
+      runtime_library_load_command_names = @($runtimeIdentity.load_commands.command_names)
+      runtime_library_codesign = $runtimeIdentity.codesign
+      runtime_library_codesign_proof_present = [bool]$runtimeIdentity.codesign_proof_present
       executable_probes = @($executableProbes)
     }
     source_artifacts = New-Objc3cEvidenceSourceArtifacts -RepoRoot $RepoRoot -Paths @($SummaryPath)

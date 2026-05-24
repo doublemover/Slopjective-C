@@ -185,6 +185,13 @@ Closing #8229 as macOS arm64 support has the same source-truth requirements for
 DWARF/dSYM, `@rpath`/`install_name`/codesign loader behavior, package install,
 and native execution. A generated macOS hosted run, cross-compiled artifact,
 tool presence report, or issue comment is not enough to close the support gap.
+The checked host-promotion contract requires the macOS runtime load/link proof
+to carry `install_name`, `LC_RPATH`/`LC_ID_DYLIB`/`LC_LOAD_DYLIB` load-command
+coverage, codesign proof, arm64 architecture proof, and runtime-reference proof
+before the generated row can be marked present. The debug proof must
+carry arm64 dSYM UUID records and binary-to-dSYM UUID matching. These generated
+fields remain `support_truth=false` and cannot promote `darwin-arm64` without
+reviewed checked-source rows.
 
 Closing #8206 as platform expansion readiness is valid only after the umbrella
 matrix row is promoted from `internal`, #8228 and #8229 are promoted with the

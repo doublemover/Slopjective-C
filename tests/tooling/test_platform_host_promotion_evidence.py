@@ -147,6 +147,7 @@ def test_platform_host_promotion_evidence_fixture_validates() -> None:
         "llvm_toolchain_record_id": "objc3c.host.linux-x64.toolchain-probes.fail-closed",
         "wrong_format_behavior": "fail-closed-before-package-publication",
         "wrong_arch_behavior": "fail-closed-before-install",
+        "platform_specific_debug_proofs": {},
         "support_truth_without_package_install_execution": False,
     }
     assert platforms["darwin-arm64"]["object_debug_identity"] == {
@@ -165,7 +166,37 @@ def test_platform_host_promotion_evidence_fixture_validates() -> None:
         ),
         "wrong_format_behavior": "fail-closed-before-package-publication",
         "wrong_arch_behavior": "fail-closed-before-install",
+        "platform_specific_debug_proofs": {
+            "dsym_uuid_required": True,
+            "dsym_uuid_arch": "arm64",
+            "dsym_uuid_match_required": True,
+            "required_debug_proofs": [
+                "mach_o_arm64_architecture",
+                "binary_dsym_uuid",
+                "dsym_uuid_arch_arm64",
+                "binary_dsym_uuid_match",
+            ],
+            "debug_proof_failure_behavior": "fail-closed-before-package-publication",
+        },
         "support_truth_without_package_install_execution": False,
+    }
+    assert platforms["linux-x64"]["runtime_link_load_identity"][
+        "platform_specific_runtime_proofs"
+    ] == {}
+    assert platforms["darwin-arm64"]["runtime_link_load_identity"][
+        "platform_specific_runtime_proofs"
+    ] == {
+        "install_name_required": True,
+        "rpath_required": True,
+        "codesign_required": True,
+        "expected_arch": "arm64",
+        "load_commands_required": [
+            "LC_ID_DYLIB",
+            "LC_RPATH",
+            "LC_LOAD_DYLIB",
+        ],
+        "executable_runtime_reference_required": True,
+        "runtime_proof_failure_behavior": "fail-closed-before-native-execution-claim",
     }
 
 

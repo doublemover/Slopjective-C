@@ -10,7 +10,7 @@ import json
 import os
 import platform
 from pathlib import Path
-from typing import Any
+from typing import Any, Sequence
 
 from objc3c_tooling.paths import repo_rel
 
@@ -277,6 +277,61 @@ def load_runnable_package_manifest(paths: PackageChannelPaths) -> dict[str, Any]
     if not isinstance(payload, dict):
         raise RuntimeError("package-channels runnable package manifest must be a JSON object")
     return payload
+
+
+def package_manifest_relative_path_field(manifest: dict[str, Any], field_name: str) -> str:
+    raw_value = manifest.get(field_name)
+    if not isinstance(raw_value, str) or not raw_value:
+        raise RuntimeError(f"package-channels runnable package manifest missing {field_name}")
+    if raw_value != raw_value.strip():
+        raise RuntimeError(
+            f"package-channels runnable package manifest {field_name} has surrounding whitespace"
+        )
+    if "\\" in raw_value or raw_value.startswith("/") or raw_value.endswith("/") or "//" in raw_value:
+        raise RuntimeError(
+            f"package-channels runnable package manifest {field_name} must be a normalized package-relative path"
+        )
+    if ":" in raw_value:
+        raise RuntimeError(
+            f"package-channels runnable package manifest {field_name} must not contain a drive or URI separator"
+        )
+    parts = raw_value.split("/")
+    if any(part in {"", ".", ".."} for part in parts):
+        raise RuntimeError(
+            f"package-channels runnable package manifest {field_name} must not contain traversal segments"
+        )
+    return raw_value
+
+
+def native_executable_entry_from_runnable_manifest(
+    manifest: dict[str, Any],
+    *,
+    expected_payload_entries: Sequence[str] | None = None,
+    payload_contract: dict[str, Any] | None = None,
+) -> str:
+    native_executable = package_manifest_relative_path_field(manifest, "native_executable")
+    if native_executable == MANIFEST_RELATIVE_PATH:
+        raise RuntimeError("package-channels native executable cannot be the runnable manifest")
+    if expected_payload_entries is not None and native_executable not in expected_payload_entries:
+        raise RuntimeError(
+            "package-channels runnable manifest native executable is not part of the expected payload"
+        )
+    if payload_contract is not None:
+        required_entries = payload_contract.get("required_entries")
+        if not isinstance(required_entries, list) or not all(
+            isinstance(entry, str) for entry in required_entries
+        ):
+            raise RuntimeError("package-channels payload_contract required_entries is invalid")
+        if native_executable not in required_entries:
+            raise RuntimeError(
+                "package-channels runnable manifest native executable is not bound to payload_contract"
+            )
+        entry_digests = payload_contract.get("entry_digests")
+        if not isinstance(entry_digests, dict) or native_executable not in entry_digests:
+            raise RuntimeError(
+                "package-channels payload_contract missing native executable digest binding"
+            )
+    return native_executable
 
 
 def target_platform_id_from_manifest(manifest: dict[str, Any]) -> str:

@@ -88,7 +88,8 @@
         "arch",
         "object_identity_report_path",
         "debug_identity_report_path",
-        "llvm_toolchain_record_id"
+        "llvm_toolchain_record_id",
+        "platform_specific_debug_proofs"
       ],
       "promotion_result": "fail-closed-on-format-or-arch-mismatch"
     },
@@ -103,7 +104,8 @@
         "loader_policy",
         "load_probe_path",
         "load_probe_exit_code",
-        "resolved_runtime_paths"
+        "resolved_runtime_paths",
+        "platform_specific_runtime_proofs"
       ],
       "promotion_result": "fail-closed-on-link-or-load-failure"
     },
@@ -426,6 +428,7 @@
         "llvm_toolchain_record_id": "objc3c.host.linux-x64.toolchain-probes.fail-closed",
         "wrong_format_behavior": "fail-closed-before-package-publication",
         "wrong_arch_behavior": "fail-closed-before-install",
+        "platform_specific_debug_proofs": {},
         "support_truth_without_package_install_execution": false
       },
       "runtime_link_load_identity": {
@@ -443,6 +446,7 @@
         "runtime_load_probe_required": true,
         "runtime_load_probe_present": false,
         "runtime_load_failure_behavior": "fail-closed-before-native-execution-claim",
+        "platform_specific_runtime_proofs": {},
         "support_truth": false
       },
       "llvm_version_policy": {
@@ -619,6 +623,18 @@
         "llvm_toolchain_record_id": "objc3c.host.darwin-arm64.toolchain-probes.fail-closed",
         "wrong_format_behavior": "fail-closed-before-package-publication",
         "wrong_arch_behavior": "fail-closed-before-install",
+        "platform_specific_debug_proofs": {
+          "dsym_uuid_required": true,
+          "dsym_uuid_arch": "arm64",
+          "dsym_uuid_match_required": true,
+          "required_debug_proofs": [
+            "mach_o_arm64_architecture",
+            "binary_dsym_uuid",
+            "dsym_uuid_arch_arm64",
+            "binary_dsym_uuid_match"
+          ],
+          "debug_proof_failure_behavior": "fail-closed-before-package-publication"
+        },
         "support_truth_without_package_install_execution": false
       },
       "runtime_link_load_identity": {
@@ -636,6 +652,19 @@
         "runtime_load_probe_required": true,
         "runtime_load_probe_present": false,
         "runtime_load_failure_behavior": "fail-closed-before-native-execution-claim",
+        "platform_specific_runtime_proofs": {
+          "install_name_required": true,
+          "rpath_required": true,
+          "codesign_required": true,
+          "expected_arch": "arm64",
+          "load_commands_required": [
+            "LC_ID_DYLIB",
+            "LC_RPATH",
+            "LC_LOAD_DYLIB"
+          ],
+          "executable_runtime_reference_required": true,
+          "runtime_proof_failure_behavior": "fail-closed-before-native-execution-claim"
+        },
         "support_truth": false
       },
       "llvm_version_policy": {

@@ -198,6 +198,31 @@ EXPECTED_RUNTIME_LIBRARY_NAMES: dict[str, tuple[str, ...]] = {
     contract.platform_id: contract.artifact_identity.runtime_library_names
     for contract in HOST_PROMOTION_PLATFORM_CONTRACTS
 }
+DARWIN_DEBUG_PROOF_REQUIREMENTS: dict[str, Any] = {
+    "dsym_uuid_required": True,
+    "dsym_uuid_arch": "arm64",
+    "dsym_uuid_match_required": True,
+    "required_debug_proofs": [
+        "mach_o_arm64_architecture",
+        "binary_dsym_uuid",
+        "dsym_uuid_arch_arm64",
+        "binary_dsym_uuid_match",
+    ],
+    "debug_proof_failure_behavior": "fail-closed-before-package-publication",
+}
+DARWIN_RUNTIME_PROOF_REQUIREMENTS: dict[str, Any] = {
+    "install_name_required": True,
+    "rpath_required": True,
+    "codesign_required": True,
+    "expected_arch": "arm64",
+    "load_commands_required": [
+        "LC_ID_DYLIB",
+        "LC_RPATH",
+        "LC_LOAD_DYLIB",
+    ],
+    "executable_runtime_reference_required": True,
+    "runtime_proof_failure_behavior": "fail-closed-before-native-execution-claim",
+}
 
 
 def _require_dict(payload: dict[str, Any], field_name: str, owner: str) -> dict[str, Any]:
@@ -852,6 +877,7 @@ def _validate_object_debug_identity(platform_id: str, platform: dict[str, Any]) 
             "object_identity_report_path",
             "debug_identity_report_path",
             "llvm_toolchain_record_id",
+            "platform_specific_debug_proofs",
         ),
         f"{platform_id} object/debug identity",
     )
@@ -873,6 +899,21 @@ def _validate_object_debug_identity(platform_id: str, platform: dict[str, Any]) 
         identity.get("support_truth_without_package_install_execution") is False,
         f"{platform_id} object/debug identity promoted without package install execution",
     )
+    debug_proofs = _require_dict(
+        identity,
+        "platform_specific_debug_proofs",
+        f"{platform_id} object/debug identity",
+    )
+    if platform_id == "darwin-arm64":
+        expect(
+            debug_proofs == DARWIN_DEBUG_PROOF_REQUIREMENTS,
+            f"{platform_id} Darwin dSYM UUID proof requirements drifted",
+        )
+    else:
+        expect(
+            debug_proofs == {},
+            f"{platform_id} unexpected platform-specific debug proof requirements",
+        )
 
 
 def _validate_runtime_link_load_identity(platform_id: str, platform: dict[str, Any]) -> None:
@@ -887,6 +928,7 @@ def _validate_runtime_link_load_identity(platform_id: str, platform: dict[str, A
             "load_probe_path",
             "load_probe_exit_code",
             "resolved_runtime_paths",
+            "platform_specific_runtime_proofs",
         ),
         f"{platform_id} runtime link/load identity",
     )
@@ -917,6 +959,21 @@ def _validate_runtime_link_load_identity(platform_id: str, platform: dict[str, A
         identity.get("support_truth") is False,
         f"{platform_id} runtime link/load identity promoted support",
     )
+    runtime_proofs = _require_dict(
+        identity,
+        "platform_specific_runtime_proofs",
+        f"{platform_id} runtime link/load identity",
+    )
+    if platform_id == "darwin-arm64":
+        expect(
+            runtime_proofs == DARWIN_RUNTIME_PROOF_REQUIREMENTS,
+            f"{platform_id} Darwin runtime load/link proof requirements drifted",
+        )
+    else:
+        expect(
+            runtime_proofs == {},
+            f"{platform_id} unexpected platform-specific runtime proof requirements",
+        )
 
 
 def _validate_reviewed_source_record_base(
@@ -998,6 +1055,18 @@ def _validate_reviewed_source_record_base(
             owner,
             expected_layout=expected_contract.package_root_layout,
             platform_id=platform_id,
+        )
+    if platform_id == "darwin-arm64" and record_type == "debug_identity":
+        debug_proofs = _require_dict(record, "platform_specific_debug_proofs", owner)
+        expect(
+            debug_proofs == DARWIN_DEBUG_PROOF_REQUIREMENTS,
+            f"{owner} Darwin dSYM UUID proof requirements drifted",
+        )
+    if platform_id == "darwin-arm64" and record_type == "runtime_load_link_proof":
+        runtime_proofs = _require_dict(record, "platform_specific_runtime_proofs", owner)
+        expect(
+            runtime_proofs == DARWIN_RUNTIME_PROOF_REQUIREMENTS,
+            f"{owner} Darwin runtime load/link proof requirements drifted",
         )
 
 

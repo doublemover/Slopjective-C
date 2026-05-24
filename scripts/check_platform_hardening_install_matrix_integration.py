@@ -3,6 +3,11 @@ from __future__ import annotations
 
 import os
 
+from objc3c_package_channels.model import (
+    MANIFEST_RELATIVE_PATH,
+    native_executable_entry_from_runnable_manifest,
+)
+from objc3c_tooling.json_io import load_json_object as load_json
 from objc3c_tooling.subprocesses import python_script_command, run_completed
 from objc3c_tooling.paths import repo_rel
 from platform_hardening_contracts import (
@@ -40,13 +45,17 @@ def missing_input_paths(paths) -> list[str]:
 
 
 def native_executable_entry(packaging_e2e: dict[str, object]) -> str:
+    package_root = packaging_e2e.get("package_root")
+    if not isinstance(package_root, str) or not package_root:
+        raise RuntimeError("package-channels end-to-end summary missing package_root")
+    manifest = load_json(ROOT / package_root.replace("/", os.sep) / MANIFEST_RELATIVE_PATH)
     payload_contract = packaging_e2e.get("payload_contract", {})
     if not isinstance(payload_contract, dict):
         raise RuntimeError("package-channels end-to-end summary missing payload_contract")
-    for entry in payload_contract.get("required_entries", []):
-        if entry in {"artifacts/bin/objc3c-native.exe", "artifacts/bin/objc3c-native"}:
-            return str(entry)
-    raise RuntimeError("package-channels end-to-end summary missing native executable payload entry")
+    return native_executable_entry_from_runnable_manifest(
+        manifest,
+        payload_contract=payload_contract,
+    )
 
 
 def ensure_build_package_validation() -> dict[str, object]:

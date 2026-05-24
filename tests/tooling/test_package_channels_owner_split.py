@@ -23,6 +23,7 @@ from scripts.objc3c_package_channels.model import (
     PackageChannelPaths,
     REQUIRED_PAYLOAD_ENTRIES,
     archive_digest_payloads,
+    native_executable_entry_from_runnable_manifest,
     package_channel_paths,
     package_channels_manifest_payload,
     package_channels_report_payload,
@@ -979,6 +980,42 @@ def test_package_channel_release_paths_and_scripts_are_platform_aware() -> None:
     assert "artifacts/bin/objc3c-native" in install_text
     assert "artifacts/lib/libobjc3-runtime.so" in install_text
     assert '$targetPlatformId = "linux-x64"' in uninstall_text
+
+
+def test_package_channel_native_executable_entry_is_manifest_bound() -> None:
+    paths = package_channel_paths("unit-linux", target_platform_id="linux-x64")
+    payload_contract = sample_payload_contract(paths)
+
+    assert (
+        native_executable_entry_from_runnable_manifest(
+            {"native_executable": "artifacts/bin/objc3c-native"},
+            expected_payload_entries=payload_contract["required_entries"],
+            payload_contract=payload_contract,
+        )
+        == "artifacts/bin/objc3c-native"
+    )
+
+
+def test_package_channel_native_executable_entry_rejects_platform_name_drift() -> None:
+    paths = package_channel_paths("unit-linux", target_platform_id="linux-x64")
+    payload_contract = sample_payload_contract(paths)
+
+    with pytest.raises(
+        RuntimeError,
+        match="native executable is not part of the expected payload",
+    ):
+        native_executable_entry_from_runnable_manifest(
+            {"native_executable": "artifacts/bin/objc3c-native.exe"},
+            expected_payload_entries=payload_contract["required_entries"],
+            payload_contract=payload_contract,
+        )
+
+
+def test_package_channel_native_executable_entry_rejects_unsafe_manifest_path() -> None:
+    with pytest.raises(RuntimeError, match="must not contain traversal segments"):
+        native_executable_entry_from_runnable_manifest(
+            {"native_executable": "artifacts/bin/../objc3c-native"},
+        )
 
 
 def test_package_channel_validation_accepts_linux_release_identity() -> None:

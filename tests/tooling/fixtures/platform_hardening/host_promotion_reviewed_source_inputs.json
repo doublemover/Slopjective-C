@@ -604,6 +604,18 @@
       "arch": "arm64",
       "generated_report_path": "tmp/reports/platform-host-evidence/darwin-arm64/build/debug-identity.json",
       "generated_report_support_truth": false,
+      "platform_specific_debug_proofs": {
+        "dsym_uuid_required": true,
+        "dsym_uuid_arch": "arm64",
+        "dsym_uuid_match_required": true,
+        "required_debug_proofs": [
+          "mach_o_arm64_architecture",
+          "binary_dsym_uuid",
+          "dsym_uuid_arch_arm64",
+          "binary_dsym_uuid_match"
+        ],
+        "debug_proof_failure_behavior": "fail-closed-before-package-publication"
+      },
       "source_paths": [
         "tests/tooling/fixtures/platform_hardening/host_promotion_reviewed_source_inputs.json",
         "tests/tooling/fixtures/platform_hardening/platform_toolchain_support_evidence.json"
@@ -764,6 +776,19 @@
       "load_probe_path": "tmp/reports/platform-host-evidence/darwin-arm64/execution/runtime-load-probe.json",
       "load_probe_exit_code": -1,
       "resolved_runtime_paths": [],
+      "platform_specific_runtime_proofs": {
+        "install_name_required": true,
+        "rpath_required": true,
+        "codesign_required": true,
+        "expected_arch": "arm64",
+        "load_commands_required": [
+          "LC_ID_DYLIB",
+          "LC_RPATH",
+          "LC_LOAD_DYLIB"
+        ],
+        "executable_runtime_reference_required": true,
+        "runtime_proof_failure_behavior": "fail-closed-before-native-execution-claim"
+      },
       "generated_report_path": "tmp/reports/platform-host-evidence/darwin-arm64/execution/runtime-load-probe.json",
       "generated_report_support_truth": false,
       "source_paths": [
