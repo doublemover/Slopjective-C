@@ -6,6 +6,17 @@ from dataclasses import dataclass
 from typing import Any, Iterable
 
 from .constants import PLATFORM_IDENTITY_CONTRACTS, UNSUPPORTED_PROMOTION_PLATFORM_IDS
+from .host_evidence_contract import (
+    HOST_EVIDENCE_GENERATED_REPORT_RELATIVE_PATHS,
+    HOST_EVIDENCE_REPORT_ROOT,
+    HOST_EVIDENCE_REQUIRED_REVIEW_INPUT_SUFFIXES,
+    HOST_EVIDENCE_REQUIRED_SOURCE_RECORD_TYPES,
+    HOST_EVIDENCE_REVIEWED_SOURCE_RECORD_ID_FIELD_BY_TYPE,
+    HOST_EVIDENCE_REVIEWED_SOURCE_RECORD_SECTION_BY_TYPE,
+    host_evidence_generated_report_paths_for_platform,
+    host_evidence_review_candidate_path_for_platform,
+    host_evidence_review_record_ids,
+)
 
 HOST_PROMOTION_EVIDENCE_CONTRACT_ID = (
     "objc3c.platform.host-promotion.evidence.contract.v1"
@@ -34,7 +45,7 @@ HOST_PROMOTION_VALIDATE_PLATFORM_HARDENING_ACTION = "validate-platform-hardening
 HOST_PROMOTION_EVIDENCE_SUMMARY_RELATIVE_PATH = (
     "tmp/reports/platform-hardening/host-promotion-evidence-summary.json"
 )
-HOST_PROMOTION_GENERATED_REPORT_ROOT = "tmp/reports/platform-host-evidence"
+HOST_PROMOTION_GENERATED_REPORT_ROOT = HOST_EVIDENCE_REPORT_ROOT
 
 HOST_PROMOTION_UPSTREAM_SOURCE_PATHS: dict[str, str] = {
     "support_evidence": (
@@ -113,12 +124,7 @@ HOST_PROMOTION_INSTALL_PREFIX_PACKAGE_ROOT_LAYOUT_PATHS: tuple[str, ...] = (
     "include/objc3/runtime",
 )
 HOST_PROMOTION_REQUIRED_HOSTED_PROMOTION_ARTIFACT_SUFFIXES: tuple[str, ...] = (
-    "host-evidence-report.json",
-    "llvm-capabilities.json",
-    "package/objc3c-runnable-toolchain-package.json",
-    "install/install-receipt.json",
-    "execution/runtime-load-probe.json",
-    "execution/native-execution-smoke-summary.json",
+    HOST_EVIDENCE_REQUIRED_REVIEW_INPUT_SUFFIXES
 )
 
 HOST_PROMOTION_REQUIRED_GATE_CLASSES: tuple[str, ...] = (
@@ -140,15 +146,7 @@ HOST_PROMOTION_FAIL_CLOSED_BLOCKER_CLASSES: tuple[str, ...] = (
 )
 
 HOST_PROMOTION_REQUIRED_SOURCE_RECORD_TYPES: tuple[str, ...] = (
-    "host_identity",
-    "toolchain_probe",
-    "package_root",
-    "install_receipt",
-    "native_execution",
-    "object_identity",
-    "debug_identity",
-    "package_install_identity",
-    "runtime_load_link_proof",
+    HOST_EVIDENCE_REQUIRED_SOURCE_RECORD_TYPES
 )
 
 HOST_PROMOTION_PROMOTION_PREREQUISITE_RECORD_TYPES: tuple[str, ...] = (
@@ -163,29 +161,13 @@ HOST_PROMOTION_PROMOTION_PREREQUISITE_RECORD_TYPES: tuple[str, ...] = (
     "runtime_load_link_proof",
 )
 
-HOST_PROMOTION_REVIEWED_SOURCE_RECORD_SECTION_BY_TYPE: dict[str, str] = {
-    "host_identity": "host_identity_records",
-    "toolchain_probe": "toolchain_probe_records",
-    "package_root": "package_root_evidence_records",
-    "install_receipt": "install_receipt_records",
-    "native_execution": "native_execution_evidence_records",
-    "object_identity": "object_identity_records",
-    "debug_identity": "debug_identity_records",
-    "package_install_identity": "package_install_identity_records",
-    "runtime_load_link_proof": "runtime_load_link_proof_records",
-}
+HOST_PROMOTION_REVIEWED_SOURCE_RECORD_SECTION_BY_TYPE: dict[str, str] = dict(
+    HOST_EVIDENCE_REVIEWED_SOURCE_RECORD_SECTION_BY_TYPE
+)
 
-HOST_PROMOTION_REVIEWED_SOURCE_RECORD_ID_FIELD_BY_TYPE: dict[str, str] = {
-    "host_identity": "host_identity_record_id",
-    "toolchain_probe": "toolchain_probe_record_id",
-    "package_root": "package_root_record_id",
-    "install_receipt": "install_receipt_record_id",
-    "native_execution": "native_execution_record_id",
-    "object_identity": "object_identity_record_id",
-    "debug_identity": "debug_identity_record_id",
-    "package_install_identity": "package_install_identity_record_id",
-    "runtime_load_link_proof": "runtime_load_link_proof_record_id",
-}
+HOST_PROMOTION_REVIEWED_SOURCE_RECORD_ID_FIELD_BY_TYPE: dict[str, str] = dict(
+    HOST_EVIDENCE_REVIEWED_SOURCE_RECORD_ID_FIELD_BY_TYPE
+)
 
 HOST_PROMOTION_REQUIRED_REVIEWED_SOURCE_FIELDS: tuple[str, ...] = (
     "object_identity",
@@ -195,23 +177,7 @@ HOST_PROMOTION_REQUIRED_REVIEWED_SOURCE_FIELDS: tuple[str, ...] = (
 )
 
 HOST_PROMOTION_GENERATED_REPORT_RELATIVE_PATHS: tuple[str, ...] = (
-    "host-evidence-report.json",
-    "promotion-readiness-requirements.json",
-    "ingestion-summary.json",
-    "llvm-capabilities.json",
-    "build/native_build_summary.json",
-    "build/object-identity.json",
-    "build/debug-identity.json",
-    "package/objc3c-runnable-toolchain-package.json",
-    "package/runtime-library-manifest.json",
-    "install/install-receipt.json",
-    "install/end-to-end-summary.json",
-    "install/install-distribution-credibility-summary.json",
-    "install/install-distribution-verification.json",
-    "install/clean-install-distribution-receipt.json",
-    "execution/runtime-load-probe.json",
-    "execution/hosted-execution-smoke-summary.json",
-    "execution/native-execution-smoke-summary.json",
+    HOST_EVIDENCE_GENERATED_REPORT_RELATIVE_PATHS
 )
 
 
@@ -250,6 +216,7 @@ HOST_PROMOTION_EVIDENCE_CLASSES: tuple[HostPromotionEvidenceClass, ...] = (
             "generated_report_contract_id",
             "generated_report_paths",
             "candidate_evidence_record_id",
+            "review_candidate_source_truth_path",
             "ingestion_summary_path",
         ),
         promotion_result="refuse-source-truth-promotion",
@@ -496,34 +463,7 @@ class HostPromotionPlatformContract:
 
     @property
     def required_record_ids(self) -> dict[str, str]:
-        return {
-            "host_identity_record_id": f"objc3c.host.{self.platform_id}.identity.fail-closed",
-            "toolchain_probe_record_id": (
-                f"objc3c.host.{self.platform_id}.toolchain-probes.fail-closed"
-            ),
-            "package_root_record_id": (
-                f"objc3c.package-root.{self.platform_id}.release.fail-closed"
-            ),
-            "install_receipt_record_id": (
-                f"objc3c.install-receipt.{self.platform_id}.release.missing"
-            ),
-            "native_execution_record_id": (
-                f"objc3c.native-execution.{self.platform_id}.release.missing"
-            ),
-            "object_identity_record_id": (
-                f"objc3c.object-identity.{self.platform_id}.release.missing"
-            ),
-            "debug_identity_record_id": (
-                f"objc3c.debug-identity.{self.platform_id}.release.missing"
-            ),
-            "package_install_identity_record_id": (
-                f"objc3c.package-install-identity."
-                f"{self.platform_id}.release.missing"
-            ),
-            "runtime_load_link_proof_record_id": (
-                f"objc3c.runtime-load-link.{self.platform_id}.release.missing"
-            ),
-        }
+        return host_evidence_review_record_ids(self.platform_id)
 
     def as_json(self) -> dict[str, Any]:
         identity = PLATFORM_IDENTITY_CONTRACTS[self.platform_id]
@@ -566,6 +506,9 @@ class HostPromotionPlatformContract:
                 ),
                 "generated_report_root": report_root,
                 "generated_report_paths": generated_report_paths_for_platform(self.platform_id),
+                "review_candidate_source_truth_path": (
+                    host_evidence_review_candidate_path_for_platform(self.platform_id)
+                ),
                 "ingestion_summary_path": f"{report_root}/ingestion-summary.json",
                 "support_truth": False,
                 "promotion_result": "refuse-source-truth-promotion",
@@ -733,11 +676,7 @@ def generated_report_root_for_platform(platform_id: str) -> str:
 
 
 def generated_report_paths_for_platform(platform_id: str) -> list[str]:
-    report_root = generated_report_root_for_platform(platform_id)
-    return [
-        f"{report_root}/{relative_path}"
-        for relative_path in HOST_PROMOTION_GENERATED_REPORT_RELATIVE_PATHS
-    ]
+    return host_evidence_generated_report_paths_for_platform(platform_id)
 
 
 def build_host_promotion_contract_payload() -> dict[str, Any]:

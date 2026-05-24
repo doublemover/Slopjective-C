@@ -126,6 +126,7 @@ jobs:
           --workflow-path ".github/workflows/platform-host-evidence.yml"
           --report-out "$OBJC3C_PLATFORM_EVIDENCE_ROOT/host-evidence-report.json"
           --requirements-out "$OBJC3C_PLATFORM_EVIDENCE_ROOT/promotion-readiness-requirements.json"
+          --review-candidate-out "$OBJC3C_PLATFORM_EVIDENCE_ROOT/review-candidate-source-truth.json"
           --summary-out "$OBJC3C_PLATFORM_EVIDENCE_ROOT/ingestion-summary.json"
 
       - name: Upload generated host evidence
@@ -239,6 +240,7 @@ jobs:
           --workflow-path ".github/workflows/platform-host-evidence.yml"
           --report-out "$OBJC3C_PLATFORM_EVIDENCE_ROOT/host-evidence-report.json"
           --requirements-out "$OBJC3C_PLATFORM_EVIDENCE_ROOT/promotion-readiness-requirements.json"
+          --review-candidate-out "$OBJC3C_PLATFORM_EVIDENCE_ROOT/review-candidate-source-truth.json"
           --summary-out "$OBJC3C_PLATFORM_EVIDENCE_ROOT/ingestion-summary.json"
 
       - name: Upload generated host evidence

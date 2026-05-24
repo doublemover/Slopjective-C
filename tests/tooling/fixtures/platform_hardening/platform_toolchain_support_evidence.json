@@ -76,7 +76,8 @@
         "objc3c.evidence.hosted-ci.darwin-arm64.generated-host-run"
       ],
       "reviewed_source_truth_required": true,
-      "support_rows_remain_fail_closed_until_reviewed": true
+      "support_rows_remain_fail_closed_until_reviewed": true,
+      "review_candidate_source_truth_path": "tmp/reports/platform-host-evidence/<platform>/review-candidate-source-truth.json"
     },
     "required_promotion_evidence_classes": [
       "build",
@@ -2974,11 +2975,12 @@
         "tests/tooling/fixtures/platform_support/source_truth_matrix.json"
       ],
       "replay_commands": [
-        "npm run objc3c -- ingest-platform-host-evidence -- --platform-id linux-x64 --runner-label ubuntu-24.04 --report-out tmp/reports/platform-host-evidence/linux-x64/host-evidence-report.json --requirements-out tmp/reports/platform-host-evidence/linux-x64/promotion-readiness-requirements.json --summary-out tmp/reports/platform-host-evidence/linux-x64/ingestion-summary.json"
+        "npm run objc3c -- ingest-platform-host-evidence -- --platform-id linux-x64 --runner-label ubuntu-24.04 --report-out tmp/reports/platform-host-evidence/linux-x64/host-evidence-report.json --requirements-out tmp/reports/platform-host-evidence/linux-x64/promotion-readiness-requirements.json --review-candidate-out tmp/reports/platform-host-evidence/linux-x64/review-candidate-source-truth.json --summary-out tmp/reports/platform-host-evidence/linux-x64/ingestion-summary.json"
       ],
       "generated_report_paths": [
         "tmp/reports/platform-host-evidence/linux-x64/host-evidence-report.json",
         "tmp/reports/platform-host-evidence/linux-x64/promotion-readiness-requirements.json",
+        "tmp/reports/platform-host-evidence/linux-x64/review-candidate-source-truth.json",
         "tmp/reports/platform-host-evidence/linux-x64/ingestion-summary.json",
         "tmp/reports/platform-host-evidence/linux-x64/llvm-capabilities.json",
         "tmp/reports/platform-host-evidence/linux-x64/build/native_build_summary.json",
@@ -3015,11 +3017,12 @@
         "tests/tooling/fixtures/platform_support/source_truth_matrix.json"
       ],
       "replay_commands": [
-        "npm run objc3c -- ingest-platform-host-evidence -- --platform-id darwin-arm64 --runner-label macos-15 --report-out tmp/reports/platform-host-evidence/darwin-arm64/host-evidence-report.json --requirements-out tmp/reports/platform-host-evidence/darwin-arm64/promotion-readiness-requirements.json --summary-out tmp/reports/platform-host-evidence/darwin-arm64/ingestion-summary.json"
+        "npm run objc3c -- ingest-platform-host-evidence -- --platform-id darwin-arm64 --runner-label macos-15 --report-out tmp/reports/platform-host-evidence/darwin-arm64/host-evidence-report.json --requirements-out tmp/reports/platform-host-evidence/darwin-arm64/promotion-readiness-requirements.json --review-candidate-out tmp/reports/platform-host-evidence/darwin-arm64/review-candidate-source-truth.json --summary-out tmp/reports/platform-host-evidence/darwin-arm64/ingestion-summary.json"
       ],
       "generated_report_paths": [
         "tmp/reports/platform-host-evidence/darwin-arm64/host-evidence-report.json",
         "tmp/reports/platform-host-evidence/darwin-arm64/promotion-readiness-requirements.json",
+        "tmp/reports/platform-host-evidence/darwin-arm64/review-candidate-source-truth.json",
         "tmp/reports/platform-host-evidence/darwin-arm64/ingestion-summary.json",
         "tmp/reports/platform-host-evidence/darwin-arm64/llvm-capabilities.json",
         "tmp/reports/platform-host-evidence/darwin-arm64/build/native_build_summary.json",

@@ -110,6 +110,10 @@ def test_platform_toolchain_support_evidence_fixture_validates() -> None:
         "ingestion_helper": "scripts/ingest_objc3c_platform_host_evidence.py",
         "generated_report_contract_id": "objc3c.platform.hosted-runner.evidence-report.v1",
         "generated_report_root": "tmp/reports/platform-host-evidence",
+        "review_candidate_source_truth_path": (
+            "tmp/reports/platform-host-evidence/<platform>/"
+            "review-candidate-source-truth.json"
+        ),
         "generated_only_result": "refuse-source-truth-promotion",
         "review_promotion_policy": "checked-in-source-truth-required",
         "candidate_evidence_record_ids": [

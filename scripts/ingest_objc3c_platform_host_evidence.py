@@ -13,6 +13,19 @@ import sys
 from pathlib import Path
 from typing import Any
 
+from platform_hardening_contracts.host_evidence_contract import (
+    HOST_EVIDENCE_REQUIRED_REVIEW_INPUT_SUFFIXES,
+    HOST_EVIDENCE_REQUIRED_SOURCE_RECORD_TYPES,
+    HOST_EVIDENCE_REVIEW_CANDIDATE_CONTRACT_ID,
+    HOST_EVIDENCE_REVIEW_CANDIDATE_SOURCE_TRUTH_SUFFIX,
+    HOST_EVIDENCE_REVIEW_CANDIDATE_SOURCE_TRUTH_PATH_TEMPLATE,
+    host_evidence_generated_report_paths_for_platform,
+    host_evidence_required_review_input_paths_for_platform,
+    host_evidence_review_candidate_path_for_platform,
+    host_evidence_review_candidate_targets,
+    host_evidence_review_record_ids,
+)
+
 ROOT = Path(__file__).resolve().parents[1]
 REPORT_ROOT = ROOT / "tmp" / "reports" / "platform-host-evidence"
 WORKFLOW_PATH = ".github/workflows/platform-host-evidence.yml"
@@ -136,11 +149,7 @@ PROMOTION_BLOCKING_EVIDENCE_CLASSES: tuple[str, ...] = (
 )
 
 REQUIRED_DURABLE_PROMOTION_ARTIFACT_SUFFIXES: tuple[str, ...] = (
-    "build/object-identity.json",
-    "build/debug-identity.json",
-    "package/runtime-library-manifest.json",
-    "install/install-receipt.json",
-    "execution/runtime-load-probe.json",
+    HOST_EVIDENCE_REQUIRED_REVIEW_INPUT_SUFFIXES
 )
 
 NATIVE_BUILD_SUMMARY_PATH = "tmp/build-objc3c-native/native_build_summary.json"
@@ -1294,16 +1303,7 @@ def build_artifact_identity_reference(platform_id: str) -> dict[str, Any]:
 
 
 def reviewed_source_record_ids(platform_id: str) -> dict[str, str]:
-    return {
-        "object_identity_record_id": f"objc3c.object-identity.{platform_id}.release.missing",
-        "debug_identity_record_id": f"objc3c.debug-identity.{platform_id}.release.missing",
-        "package_install_identity_record_id": (
-            f"objc3c.package-install-identity.{platform_id}.release.missing"
-        ),
-        "runtime_load_link_proof_record_id": (
-            f"objc3c.runtime-load-link.{platform_id}.release.missing"
-        ),
-    }
+    return host_evidence_review_record_ids(platform_id)
 
 
 def build_reviewed_source_field_requirements(platform_id: str) -> list[dict[str, Any]]:
@@ -1340,12 +1340,20 @@ def build_promotion_readiness_requirements(platform_id: str) -> dict[str, Any]:
         "dispatch_gateway_workflow_paths": list(DISPATCH_GATEWAY_WORKFLOW_PATHS),
         "support_claim_published": False,
         "source_truth_update_allowed": False,
+        "review_candidate_source_truth_path": (
+            host_evidence_review_candidate_path_for_platform(platform_id)
+        ),
+        "review_candidate_source_truth_path_template": (
+            HOST_EVIDENCE_REVIEW_CANDIDATE_SOURCE_TRUTH_PATH_TEMPLATE
+        ),
+        "review_candidate_contract_id": HOST_EVIDENCE_REVIEW_CANDIDATE_CONTRACT_ID,
         "generated_only_result": "refuse-source-truth-promotion",
         "review_promotion_policy": "checked-in-source-truth-required",
         "stale_evidence_allowed": False,
         "prose_only_evidence_allowed": False,
         "local_temp_claims_promote_support": False,
         "required_review_fields": list(PROMOTION_REVIEW_REQUIRED_FIELDS),
+        "required_source_record_types": list(HOST_EVIDENCE_REQUIRED_SOURCE_RECORD_TYPES),
         "required_reviewed_source_fields": list(PROMOTION_REVIEWED_SOURCE_FIELDS),
         "reviewed_source_field_requirements": reviewed_source_field_requirements,
         "required_promotion_evidence_classes": list(PROMOTION_BLOCKING_EVIDENCE_CLASSES),
@@ -1485,6 +1493,86 @@ def build_promotion_readiness_requirements(platform_id: str) -> dict[str, Any]:
     }
 
 
+def build_review_candidate_source_truth(
+    platform_id: str,
+    *,
+    workflow_path: str,
+    runner_label: str,
+) -> dict[str, Any]:
+    config = PLATFORM_CONFIG[platform_id]
+    required_checked_source_paths = [
+        "tests/tooling/fixtures/platform_hardening/host_promotion_reviewed_source_inputs.json",
+        "tests/tooling/fixtures/platform_hardening/platform_host_promotion_evidence_contract.json",
+        "tests/tooling/fixtures/platform_hardening/platform_toolchain_support_evidence.json",
+        "tests/tooling/fixtures/platform_support/source_truth_matrix.json",
+        "docs/runbooks/objc3c_platform_toolchain_support_matrix.md",
+    ]
+    candidate_rows: list[dict[str, Any]] = []
+    for target in host_evidence_review_candidate_targets(platform_id):
+        artifact_paths = [
+            platform_scoped_path(platform_id, suffix)
+            for suffix in target["artifact_suffixes"]
+        ]
+        artifacts = [generated_artifact(path) for path in artifact_paths]
+        candidate_rows.append(
+            {
+                **target,
+                "platform_id": platform_id,
+                "issue_ref": int(config["issue_ref"]),
+                "generated_artifact_paths": artifact_paths,
+                "generated_artifacts": artifacts,
+                "generated_artifacts_complete": all(
+                    artifact.get("exists") is True for artifact in artifacts
+                ),
+                "review_status": "pending-reviewed-source-truth",
+                "promotion_allowed": False,
+                "support_truth": False,
+                "generated_report_support_truth": False,
+                "source_truth_update_allowed": False,
+                "required_checked_source_paths": required_checked_source_paths,
+            }
+        )
+    return {
+        "contract_id": HOST_EVIDENCE_REVIEW_CANDIDATE_CONTRACT_ID,
+        "schema_version": 1,
+        "platform_id": platform_id,
+        "issue_ref": int(config["issue_ref"]),
+        "workflow_path": workflow_path,
+        "canonical_workflow_path": WORKFLOW_PATH,
+        "accepted_workflow_paths": list(ACCEPTED_WORKFLOW_PATHS),
+        "dispatch_gateway_workflow_paths": list(DISPATCH_GATEWAY_WORKFLOW_PATHS),
+        "runner_label": runner_label,
+        "candidate_path": host_evidence_review_candidate_path_for_platform(platform_id),
+        "candidate_source_truth_path_template": (
+            HOST_EVIDENCE_REVIEW_CANDIDATE_SOURCE_TRUTH_PATH_TEMPLATE
+        ),
+        "generated_report_only": True,
+        "generated_only_result": "refuse-source-truth-promotion",
+        "review_promotion_policy": "checked-in-source-truth-required",
+        "reviewed_source_truth_required": True,
+        "support_rows_remain_fail_closed_until_reviewed": True,
+        "support_claim_published": False,
+        "source_truth_update_allowed": False,
+        "promotion_allowed": False,
+        "support_truth": False,
+        "local_temp_claims_promote_support": False,
+        "prose_only_evidence_allowed": False,
+        "stale_evidence_allowed": False,
+        "required_source_record_types": list(HOST_EVIDENCE_REQUIRED_SOURCE_RECORD_TYPES),
+        "required_hosted_review_input_suffixes": list(
+            HOST_EVIDENCE_REQUIRED_REVIEW_INPUT_SUFFIXES
+        ),
+        "required_hosted_review_input_paths": (
+            host_evidence_required_review_input_paths_for_platform(platform_id)
+        ),
+        "generated_report_paths": (
+            host_evidence_generated_report_paths_for_platform(platform_id)
+        ),
+        "review_candidate_rows": candidate_rows,
+        "required_checked_source_paths": required_checked_source_paths,
+    }
+
+
 def build_report(args: argparse.Namespace) -> dict[str, Any]:
     platform_id = args.platform_id
     config = PLATFORM_CONFIG[platform_id]
@@ -1553,12 +1641,23 @@ def build_report(args: argparse.Namespace) -> dict[str, Any]:
             "execution",
         ],
         "required_review_fields": list(PROMOTION_REVIEW_REQUIRED_FIELDS),
+        "required_source_record_types": list(HOST_EVIDENCE_REQUIRED_SOURCE_RECORD_TYPES),
         "required_reviewed_source_fields": list(PROMOTION_REVIEWED_SOURCE_FIELDS),
         "reviewed_source_field_requirements": promotion_readiness[
             "reviewed_source_field_requirements"
         ],
         "artifact_identity_reference": promotion_readiness["artifact_identity_reference"],
         "promotion_readiness_requirements": promotion_readiness,
+        "generated_report_paths": host_evidence_generated_report_paths_for_platform(
+            platform_id
+        ),
+        "review_candidate_source_truth_path": (
+            host_evidence_review_candidate_path_for_platform(platform_id)
+        ),
+        "review_candidate_source_truth_path_template": (
+            HOST_EVIDENCE_REVIEW_CANDIDATE_SOURCE_TRUTH_PATH_TEMPLATE
+        ),
+        "review_candidate_contract_id": HOST_EVIDENCE_REVIEW_CANDIDATE_CONTRACT_ID,
         "artifact_upload": {
             "artifact_name": f"objc3c-platform-host-evidence-{platform_id}",
             "upload_root": f"tmp/reports/platform-host-evidence/{platform_id}",
@@ -1576,6 +1675,13 @@ def build_report(args: argparse.Namespace) -> dict[str, Any]:
             "prose_only_evidence_allowed": False,
             "local_temp_claims_promote_support": False,
             "required_reviewed_source_fields": list(PROMOTION_REVIEWED_SOURCE_FIELDS),
+            "required_source_record_types": list(
+                HOST_EVIDENCE_REQUIRED_SOURCE_RECORD_TYPES
+            ),
+            "review_candidate_source_truth_path": (
+                host_evidence_review_candidate_path_for_platform(platform_id)
+            ),
+            "review_candidate_contract_id": HOST_EVIDENCE_REVIEW_CANDIDATE_CONTRACT_ID,
             "source_truth_update_allowed": False,
             "support_claim_published": False,
             "fail_closed_evidence_id": config["fail_closed_evidence_id"],
@@ -1653,6 +1759,8 @@ def validate_report(report: dict[str, Any], platform_id: str) -> list[str]:
     required_classes = {"build", "package", "install", "execution"}
     if report.get("required_review_fields") != list(PROMOTION_REVIEW_REQUIRED_FIELDS):
         raise RuntimeError("host evidence report required review fields drifted")
+    if report.get("required_source_record_types") != list(HOST_EVIDENCE_REQUIRED_SOURCE_RECORD_TYPES):
+        raise RuntimeError("host evidence report required source record types drifted")
     if report.get("required_reviewed_source_fields") != list(PROMOTION_REVIEWED_SOURCE_FIELDS):
         raise RuntimeError("host evidence report reviewed source fields drifted")
     if report.get("reviewed_source_field_requirements") != build_reviewed_source_field_requirements(platform_id):
@@ -1694,10 +1802,23 @@ def validate_report(report: dict[str, Any], platform_id: str) -> list[str]:
         raise RuntimeError("host evidence promotion readiness reviewed source requirements drifted")
     if promotion_readiness.get("support_rows_remain_fail_closed_until_reviewed") is not True:
         raise RuntimeError("host evidence promotion readiness did not keep support rows fail-closed")
+    expected_candidate_path = host_evidence_review_candidate_path_for_platform(platform_id)
+    if report.get("review_candidate_source_truth_path") != expected_candidate_path:
+        raise RuntimeError("host evidence report review candidate path drifted")
+    if report.get("review_candidate_contract_id") != HOST_EVIDENCE_REVIEW_CANDIDATE_CONTRACT_ID:
+        raise RuntimeError("host evidence report review candidate contract drifted")
+    if promotion_readiness.get("review_candidate_source_truth_path") != expected_candidate_path:
+        raise RuntimeError("host evidence promotion readiness review candidate path drifted")
+    if promotion_readiness.get("review_candidate_contract_id") != HOST_EVIDENCE_REVIEW_CANDIDATE_CONTRACT_ID:
+        raise RuntimeError("host evidence promotion readiness review candidate contract drifted")
+    if promotion_readiness.get("required_source_record_types") != list(HOST_EVIDENCE_REQUIRED_SOURCE_RECORD_TYPES):
+        raise RuntimeError("host evidence promotion readiness source record types drifted")
     if promotion_readiness.get("required_promotion_evidence_classes") != list(PROMOTION_BLOCKING_EVIDENCE_CLASSES):
         raise RuntimeError("host evidence promotion readiness required evidence classes drifted")
     if promotion_readiness.get("required_durable_promotion_artifact_suffixes") != list(REQUIRED_DURABLE_PROMOTION_ARTIFACT_SUFFIXES):
         raise RuntimeError("host evidence promotion readiness durable artifact suffixes drifted")
+    if report.get("generated_report_paths") != host_evidence_generated_report_paths_for_platform(platform_id):
+        raise RuntimeError("host evidence report generated path inventory drifted")
     expected_path_prefix = f"tmp/reports/platform-host-evidence/{platform_id}/"
     for reference in promotion_readiness.get("hosted_artifact_references", []):
         if not isinstance(reference, dict):
@@ -1749,7 +1870,11 @@ def validate_report(report: dict[str, Any], platform_id: str) -> list[str]:
         platform_scoped_path(platform_id, suffix)
         for suffix in REQUIRED_DURABLE_PROMOTION_ARTIFACT_SUFFIXES
     }
-    missing_report_paths = sorted(required_artifact_paths - set(generated_paths))
+    declared_generated_paths = set(generated_paths)
+    declared_generated_paths.update(
+        str(path).replace("\\", "/") for path in report.get("generated_report_paths", [])
+    )
+    missing_report_paths = sorted(required_artifact_paths - declared_generated_paths)
     if missing_report_paths:
         raise RuntimeError(
             "host evidence report missing durable promotion artifact paths: "
@@ -1769,12 +1894,90 @@ def validate_report(report: dict[str, Any], platform_id: str) -> list[str]:
     return generated_paths
 
 
+def validate_review_candidate_source_truth(
+    candidate: dict[str, Any],
+    platform_id: str,
+) -> None:
+    if candidate.get("contract_id") != HOST_EVIDENCE_REVIEW_CANDIDATE_CONTRACT_ID:
+        raise RuntimeError("host evidence review candidate contract_id drifted")
+    if candidate.get("platform_id") != platform_id:
+        raise RuntimeError("host evidence review candidate platform_id drifted")
+    expected_candidate_path = host_evidence_review_candidate_path_for_platform(platform_id)
+    if candidate.get("candidate_path") != expected_candidate_path:
+        raise RuntimeError("host evidence review candidate path drifted")
+    for field_name in (
+        "generated_report_only",
+        "reviewed_source_truth_required",
+        "support_rows_remain_fail_closed_until_reviewed",
+    ):
+        if candidate.get(field_name) is not True:
+            raise RuntimeError(f"host evidence review candidate {field_name} drifted")
+    for field_name in (
+        "support_claim_published",
+        "source_truth_update_allowed",
+        "promotion_allowed",
+        "support_truth",
+        "local_temp_claims_promote_support",
+        "prose_only_evidence_allowed",
+        "stale_evidence_allowed",
+    ):
+        if candidate.get(field_name) is not False:
+            raise RuntimeError(f"host evidence review candidate {field_name} drifted")
+    if candidate.get("generated_only_result") != "refuse-source-truth-promotion":
+        raise RuntimeError("host evidence review candidate generated-only result drifted")
+    if candidate.get("review_promotion_policy") != "checked-in-source-truth-required":
+        raise RuntimeError("host evidence review candidate promotion policy drifted")
+    if candidate.get("required_source_record_types") != list(HOST_EVIDENCE_REQUIRED_SOURCE_RECORD_TYPES):
+        raise RuntimeError("host evidence review candidate source record types drifted")
+    if candidate.get("required_hosted_review_input_suffixes") != list(HOST_EVIDENCE_REQUIRED_REVIEW_INPUT_SUFFIXES):
+        raise RuntimeError("host evidence review candidate required suffixes drifted")
+    if candidate.get("required_hosted_review_input_paths") != host_evidence_required_review_input_paths_for_platform(platform_id):
+        raise RuntimeError("host evidence review candidate required paths drifted")
+    rows = candidate.get("review_candidate_rows")
+    if not isinstance(rows, list):
+        raise RuntimeError("host evidence review candidate rows must be a list")
+    by_type = {
+        str(row.get("record_type", "")): row
+        for row in rows
+        if isinstance(row, dict)
+    }
+    if set(by_type) != set(HOST_EVIDENCE_REQUIRED_SOURCE_RECORD_TYPES):
+        raise RuntimeError("host evidence review candidate record types drifted")
+    expected_prefix = f"tmp/reports/platform-host-evidence/{platform_id}/"
+    for record_type, row in by_type.items():
+        if row.get("platform_id") != platform_id:
+            raise RuntimeError(f"{record_type} review candidate platform drifted")
+        for field_name in (
+            "promotion_allowed",
+            "support_truth",
+            "generated_report_support_truth",
+            "source_truth_update_allowed",
+        ):
+            if row.get(field_name) is not False:
+                raise RuntimeError(f"{record_type} review candidate promoted support")
+        for path_text in row.get("generated_artifact_paths", []):
+            normalized = str(path_text).replace("\\", "/")
+            if not normalized.startswith(expected_prefix):
+                raise RuntimeError(
+                    f"{record_type} review candidate used non-platform path: {normalized}"
+                )
+        for artifact in row.get("generated_artifacts", []):
+            if not isinstance(artifact, dict):
+                raise RuntimeError(f"{record_type} review candidate artifact must be object")
+            normalized = str(artifact.get("path", "")).replace("\\", "/")
+            if not normalized.startswith(expected_prefix):
+                raise RuntimeError(
+                    f"{record_type} review candidate artifact path drifted: {normalized}"
+                )
+
+
 def build_summary(
     report: dict[str, Any],
     generated_paths: list[str],
     *,
     report_path: Path,
     requirements_path: Path,
+    review_candidate_path: Path,
     summary_path: Path,
 ) -> dict[str, Any]:
     ingestion = report["source_truth_ingestion"]
@@ -1782,6 +1985,7 @@ def build_summary(
         *generated_paths,
         repo_rel(report_path),
         repo_rel(requirements_path),
+        repo_rel(review_candidate_path),
         repo_rel(summary_path),
     }
     return {
@@ -1807,7 +2011,10 @@ def build_summary(
         "support_rows_remain_fail_closed": True,
         "required_checked_source_paths": ingestion["required_checked_source_paths"],
         "required_reviewed_source_fields": report["required_reviewed_source_fields"],
+        "required_source_record_types": report["required_source_record_types"],
         "reviewed_source_field_requirements": report["reviewed_source_field_requirements"],
+        "review_candidate_source_truth_path": repo_rel(review_candidate_path),
+        "review_candidate_contract_id": HOST_EVIDENCE_REVIEW_CANDIDATE_CONTRACT_ID,
         "artifact_upload": report["artifact_upload"],
         "generated_report_paths": sorted(all_generated_paths),
     }
@@ -1823,6 +2030,7 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--report-in", type=Path)
     parser.add_argument("--report-out", type=Path)
     parser.add_argument("--requirements-out", type=Path)
+    parser.add_argument("--review-candidate-out", type=Path)
     parser.add_argument("--summary-out", type=Path)
     return parser.parse_args(argv)
 
@@ -1835,6 +2043,10 @@ def main(argv: list[str] | None = None) -> int:
         args.runner_label = os.environ.get("RUNNER_LABEL", "unknown")
     report_out = args.report_out or platform_report_path(args.platform_id, "host-evidence-report.json")
     requirements_out = args.requirements_out or platform_report_path(args.platform_id, "promotion-readiness-requirements.json")
+    review_candidate_out = args.review_candidate_out or platform_report_path(
+        args.platform_id,
+        HOST_EVIDENCE_REVIEW_CANDIDATE_SOURCE_TRUTH_SUFFIX,
+    )
     summary_out = args.summary_out or platform_report_path(args.platform_id, "ingestion-summary.json")
 
     if args.report_in:
@@ -1845,18 +2057,27 @@ def main(argv: list[str] | None = None) -> int:
         write_json(report_out, report)
         report_path = report_out
 
-    generated_paths = validate_report(report, args.platform_id)
     write_json(requirements_out, report["promotion_readiness_requirements"])
+    review_candidate = build_review_candidate_source_truth(
+        args.platform_id,
+        workflow_path=report["workflow_path"],
+        runner_label=report["runner_label"],
+    )
+    write_json(review_candidate_out, review_candidate)
+    generated_paths = validate_report(report, args.platform_id)
+    validate_review_candidate_source_truth(review_candidate, args.platform_id)
     summary = build_summary(
         report,
         generated_paths,
         report_path=report_path,
         requirements_path=requirements_out,
+        review_candidate_path=review_candidate_out,
         summary_path=summary_out,
     )
     write_json(summary_out, summary)
     print(f"host_evidence_report: {repo_rel(report_out)}")
     print(f"host_evidence_promotion_requirements: {repo_rel(requirements_out)}")
+    print(f"host_evidence_review_candidate: {repo_rel(review_candidate_out)}")
     print(f"host_evidence_ingestion_summary: {repo_rel(summary_out)}")
     print("objc3c-platform-host-evidence: GENERATED_ONLY_REFUSED_FOR_SOURCE_TRUTH")
     return 0

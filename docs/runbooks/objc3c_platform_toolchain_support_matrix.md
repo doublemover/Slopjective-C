@@ -46,6 +46,7 @@ Generated artifacts are replay outputs only:
 - `tmp/reports/platform-hardening/host-matrix-summary.json`
 - `tmp/reports/platform-host-evidence/<platform>/host-evidence-report.json`
 - `tmp/reports/platform-host-evidence/<platform>/promotion-readiness-requirements.json`
+- `tmp/reports/platform-host-evidence/<platform>/review-candidate-source-truth.json`
 - `tmp/reports/platform-host-evidence/<platform>/ingestion-summary.json`
 
 ## Current Support State
@@ -234,12 +235,16 @@ execution summary at `tmp/reports/objc3c-native-execution-smoke/summary.json`.
 The Linux and macOS evidence jobs set deterministic native execution run IDs so
 the source artifact summary can also be traced back to
 `tmp/artifacts/objc3c-native/execution-smoke/platform-host-evidence-<platform>/summary.json`.
-The ingestion helper writes a generated host evidence report and an ingestion
-summary under `tmp/reports/platform-host-evidence/<platform>/`. It also writes a
+The ingestion helper writes a generated host evidence report, a review-candidate
+source-truth artifact, and an ingestion summary under
+`tmp/reports/platform-host-evidence/<platform>/`. It also writes a
 promotion-readiness requirements artifact naming the build, package, install,
 object-format/debug, runtime link/load, and native execution fields that must be
-reviewed before source-truth promotion. The helper mirrors build, package,
-install, hosted-smoke, and native-execution outputs into that same
+reviewed before source-truth promotion. The review candidate is source-consumable
+review material for all nine required host-promotion record classes; it is not a
+reviewed source path, cannot update source truth, and cannot promote Linux or
+macOS support by itself. The helper mirrors build, package, install,
+hosted-smoke, and native-execution outputs into that same
 platform-scoped root before upload, including `build/object-identity.json`,
 `build/debug-identity.json`, `package/runtime-library-manifest.json`,
 `install/install-receipt.json`,
@@ -250,8 +255,9 @@ platform-scoped root before upload, including `build/object-identity.json`,
 workflow uploads only
 `tmp/reports/platform-host-evidence/<platform>/**` and fails closed if that root
 is empty, so Linux x64 and macOS arm64 readback cannot accidentally consume
-shared `tmp/` or `artifacts/` paths from another lane. The summary is
-source-consumable but not source truth. Its required result is
+shared `tmp/` or `artifacts/` paths from another lane. The summary and review
+candidate are source-consumable but not source truth. The required ingestion
+result is
 `GENERATED_ONLY_REFUSED_FOR_SOURCE_TRUTH`: generated workflow output may be
 reviewed by a maintainer, but it cannot clear `required_missing_evidence_classes`
 or publish a support row until the reviewed evidence is promoted into checked-in

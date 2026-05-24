@@ -416,6 +416,7 @@
         "ingestion_helper",
         "generated_report_contract_id",
         "generated_report_root",
+        "review_candidate_source_truth_path",
         "generated_only_result",
         "review_promotion_policy",
         "candidate_evidence_record_ids",
@@ -475,6 +476,9 @@
         },
         "generated_report_root": {
           "const": "tmp/reports/platform-host-evidence"
+        },
+        "review_candidate_source_truth_path": {
+          "const": "tmp/reports/platform-host-evidence/<platform>/review-candidate-source-truth.json"
         },
         "generated_only_result": {
           "const": "refuse-source-truth-promotion"

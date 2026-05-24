@@ -15,6 +15,12 @@ from .constants import (
     UNSUPPORTED_PROMOTION_PLATFORM_IDS,
 )
 from .contract_predicates import expect
+from .host_evidence_contract import (
+    HOST_EVIDENCE_REPORT_ROOT,
+    HOST_EVIDENCE_REVIEW_CANDIDATE_SOURCE_TRUTH_PATH_TEMPLATE,
+    host_evidence_generated_report_paths_for_platform,
+    host_evidence_review_candidate_path_for_platform,
+)
 from .source_surface_catalog import (
     HOSTED_RUNNER_CAPABILITY_SUMMARIES_PATH,
     HOSTED_RUNNER_CAPABILITY_SUMMARIES_SCHEMA_PATH,
@@ -194,7 +200,6 @@ HOST_EVIDENCE_ACCEPTED_WORKFLOW_PATHS: tuple[str, ...] = (
 HOST_EVIDENCE_INGESTION_ACTION = "ingest-platform-host-evidence"
 HOST_EVIDENCE_HOST_PROMOTION_CONTRACT_CHECK_ACTION = "check-platform-host-promotion-evidence"
 HOST_EVIDENCE_INGESTION_HELPER = "scripts/ingest_objc3c_platform_host_evidence.py"
-HOST_EVIDENCE_REPORT_ROOT = "tmp/reports/platform-host-evidence"
 HOST_EVIDENCE_REPORT_CONTRACT_ID = "objc3c.platform.hosted-runner.evidence-report.v1"
 HOST_EVIDENCE_GENERATED_ONLY_RESULT = "refuse-source-truth-promotion"
 HOST_EVIDENCE_REVIEW_PROMOTION_POLICY = "checked-in-source-truth-required"
@@ -207,44 +212,8 @@ HOST_EVIDENCE_RUNNER_LABELS: dict[str, str] = {
     "darwin-arm64": "macos-15",
 }
 HOST_EVIDENCE_REQUIRED_SCOPED_REPORT_PATHS: dict[str, tuple[str, ...]] = {
-    "linux-x64": (
-        "tmp/reports/platform-host-evidence/linux-x64/host-evidence-report.json",
-        "tmp/reports/platform-host-evidence/linux-x64/promotion-readiness-requirements.json",
-        "tmp/reports/platform-host-evidence/linux-x64/ingestion-summary.json",
-        "tmp/reports/platform-host-evidence/linux-x64/llvm-capabilities.json",
-        "tmp/reports/platform-host-evidence/linux-x64/build/native_build_summary.json",
-        "tmp/reports/platform-host-evidence/linux-x64/build/object-identity.json",
-        "tmp/reports/platform-host-evidence/linux-x64/build/debug-identity.json",
-        "tmp/reports/platform-host-evidence/linux-x64/package/objc3c-runnable-toolchain-package.json",
-        "tmp/reports/platform-host-evidence/linux-x64/package/runtime-library-manifest.json",
-        "tmp/reports/platform-host-evidence/linux-x64/install/install-receipt.json",
-        "tmp/reports/platform-host-evidence/linux-x64/install/end-to-end-summary.json",
-        "tmp/reports/platform-host-evidence/linux-x64/install/install-distribution-credibility-summary.json",
-        "tmp/reports/platform-host-evidence/linux-x64/install/install-distribution-verification.json",
-        "tmp/reports/platform-host-evidence/linux-x64/install/clean-install-distribution-receipt.json",
-        "tmp/reports/platform-host-evidence/linux-x64/execution/runtime-load-probe.json",
-        "tmp/reports/platform-host-evidence/linux-x64/execution/hosted-execution-smoke-summary.json",
-        "tmp/reports/platform-host-evidence/linux-x64/execution/native-execution-smoke-summary.json",
-    ),
-    "darwin-arm64": (
-        "tmp/reports/platform-host-evidence/darwin-arm64/host-evidence-report.json",
-        "tmp/reports/platform-host-evidence/darwin-arm64/promotion-readiness-requirements.json",
-        "tmp/reports/platform-host-evidence/darwin-arm64/ingestion-summary.json",
-        "tmp/reports/platform-host-evidence/darwin-arm64/llvm-capabilities.json",
-        "tmp/reports/platform-host-evidence/darwin-arm64/build/native_build_summary.json",
-        "tmp/reports/platform-host-evidence/darwin-arm64/build/object-identity.json",
-        "tmp/reports/platform-host-evidence/darwin-arm64/build/debug-identity.json",
-        "tmp/reports/platform-host-evidence/darwin-arm64/package/objc3c-runnable-toolchain-package.json",
-        "tmp/reports/platform-host-evidence/darwin-arm64/package/runtime-library-manifest.json",
-        "tmp/reports/platform-host-evidence/darwin-arm64/install/install-receipt.json",
-        "tmp/reports/platform-host-evidence/darwin-arm64/install/end-to-end-summary.json",
-        "tmp/reports/platform-host-evidence/darwin-arm64/install/install-distribution-credibility-summary.json",
-        "tmp/reports/platform-host-evidence/darwin-arm64/install/install-distribution-verification.json",
-        "tmp/reports/platform-host-evidence/darwin-arm64/install/clean-install-distribution-receipt.json",
-        "tmp/reports/platform-host-evidence/darwin-arm64/execution/runtime-load-probe.json",
-        "tmp/reports/platform-host-evidence/darwin-arm64/execution/hosted-execution-smoke-summary.json",
-        "tmp/reports/platform-host-evidence/darwin-arm64/execution/native-execution-smoke-summary.json",
-    ),
+    platform_id: tuple(host_evidence_generated_report_paths_for_platform(platform_id))
+    for platform_id in ("linux-x64", "darwin-arm64")
 }
 REQUIRED_HOST_EVIDENCE_SECTIONS: tuple[str, ...] = (
     "host_identity_records",
@@ -1054,6 +1023,11 @@ def _validate_hosted_evidence_ingestion(
     )
     expect(ingestion.get("generated_report_root") == HOST_EVIDENCE_REPORT_ROOT, "host evidence report root drifted")
     expect(
+        ingestion.get("review_candidate_source_truth_path")
+        == HOST_EVIDENCE_REVIEW_CANDIDATE_SOURCE_TRUTH_PATH_TEMPLATE,
+        "host evidence review-candidate source truth path drifted",
+    )
+    expect(
         ingestion.get("generated_only_result") == HOST_EVIDENCE_GENERATED_ONLY_RESULT,
         "host evidence generated-only result drifted",
     )
@@ -1090,6 +1064,15 @@ def _validate_hosted_evidence_ingestion(
                 f"path: {HOST_EVIDENCE_REPORT_ROOT}/{platform_id}/**" in workflow_text,
                 f"{record_id} workflow upload path is not platform-scoped in {workflow_path}",
             )
+            expect(
+                (
+                    "--review-candidate-out "
+                    f"\"$OBJC3C_PLATFORM_EVIDENCE_ROOT/"
+                    "review-candidate-source-truth.json\""
+                )
+                in workflow_text,
+                f"{record_id} workflow ingestion candidate path drifted in {workflow_path}",
+            )
         expect(record_id in records_by_id, f"host evidence ingestion missing evidence record {record_id}")
         record = records_by_id[record_id]
         expect(record.get("evidence_class") == "hosted_ci", f"{record_id} must remain hosted_ci evidence")
@@ -1105,6 +1088,11 @@ def _validate_hosted_evidence_ingestion(
             f"{record_id} missing public ingestion command",
         )
         generated_paths = [str(path).replace("\\", "/") for path in record.get("generated_report_paths", [])]
+        expect(
+            host_evidence_review_candidate_path_for_platform(platform_id)
+            in generated_paths,
+            f"{record_id} missing review-candidate source truth path",
+        )
         expect(
             any(path.startswith(f"{HOST_EVIDENCE_REPORT_ROOT}/") for path in generated_paths),
             f"{record_id} missing platform-host-evidence generated report path",

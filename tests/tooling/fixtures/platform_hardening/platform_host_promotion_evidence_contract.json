@@ -31,7 +31,6 @@
       "class_id": "generated_hosted_evidence",
       "claim_weight": "required-hosted-evidence",
       "support_truth": false,
-      "required": true,
       "required_fields": [
         "runner_label",
         "workflow_path",
@@ -39,9 +38,11 @@
         "generated_report_contract_id",
         "generated_report_paths",
         "candidate_evidence_record_id",
+        "review_candidate_source_truth_path",
         "ingestion_summary_path"
       ],
-      "promotion_result": "refuse-source-truth-promotion"
+      "promotion_result": "refuse-source-truth-promotion",
+      "required": true
     },
     {
       "class_id": "reviewed_source_truth_evidence",
@@ -178,11 +179,6 @@
     "install",
     "execution"
   ],
-  "unsupported_platform_ids": [
-    "linux-x64",
-    "darwin-arm64"
-  ],
-  "unexpected_supported_platform_ids": [],
   "common_fail_closed_blockers": [
     {
       "blocker_id": "objc3c.host-promotion.reject.generated-only-evidence",
@@ -277,6 +273,11 @@
       "source_owner": "platform-hardening-install-validation"
     }
   ],
+  "unsupported_platform_ids": [
+    "linux-x64",
+    "darwin-arm64"
+  ],
+  "unexpected_supported_platform_ids": [],
   "platforms": [
     {
       "platform_id": "linux-x64",
@@ -321,6 +322,7 @@
         "generated_report_paths": [
           "tmp/reports/platform-host-evidence/linux-x64/host-evidence-report.json",
           "tmp/reports/platform-host-evidence/linux-x64/promotion-readiness-requirements.json",
+          "tmp/reports/platform-host-evidence/linux-x64/review-candidate-source-truth.json",
           "tmp/reports/platform-host-evidence/linux-x64/ingestion-summary.json",
           "tmp/reports/platform-host-evidence/linux-x64/llvm-capabilities.json",
           "tmp/reports/platform-host-evidence/linux-x64/build/native_build_summary.json",
@@ -337,6 +339,7 @@
           "tmp/reports/platform-host-evidence/linux-x64/execution/hosted-execution-smoke-summary.json",
           "tmp/reports/platform-host-evidence/linux-x64/execution/native-execution-smoke-summary.json"
         ],
+        "review_candidate_source_truth_path": "tmp/reports/platform-host-evidence/linux-x64/review-candidate-source-truth.json",
         "ingestion_summary_path": "tmp/reports/platform-host-evidence/linux-x64/ingestion-summary.json",
         "support_truth": false,
         "promotion_result": "refuse-source-truth-promotion"
@@ -507,6 +510,7 @@
         "generated_report_paths": [
           "tmp/reports/platform-host-evidence/darwin-arm64/host-evidence-report.json",
           "tmp/reports/platform-host-evidence/darwin-arm64/promotion-readiness-requirements.json",
+          "tmp/reports/platform-host-evidence/darwin-arm64/review-candidate-source-truth.json",
           "tmp/reports/platform-host-evidence/darwin-arm64/ingestion-summary.json",
           "tmp/reports/platform-host-evidence/darwin-arm64/llvm-capabilities.json",
           "tmp/reports/platform-host-evidence/darwin-arm64/build/native_build_summary.json",
@@ -523,6 +527,7 @@
           "tmp/reports/platform-host-evidence/darwin-arm64/execution/hosted-execution-smoke-summary.json",
           "tmp/reports/platform-host-evidence/darwin-arm64/execution/native-execution-smoke-summary.json"
         ],
+        "review_candidate_source_truth_path": "tmp/reports/platform-host-evidence/darwin-arm64/review-candidate-source-truth.json",
         "ingestion_summary_path": "tmp/reports/platform-host-evidence/darwin-arm64/ingestion-summary.json",
         "support_truth": false,
         "promotion_result": "refuse-source-truth-promotion"

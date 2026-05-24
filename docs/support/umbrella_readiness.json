@@ -1094,7 +1094,7 @@
         },
         {
           "id": "platform-host-evidence-ingestion",
-          "description": "Hosted Linux/macOS evidence ingestion is public and non-promoting; generated reports remain review inputs until checked source truth is promoted.",
+          "description": "Hosted Linux/macOS evidence ingestion is public and non-promoting; generated reports and review-candidate-source-truth.json remain review inputs until checked source truth is promoted.",
           "status": "satisfied",
           "command": "npm run objc3c -- ingest-platform-host-evidence"
         },

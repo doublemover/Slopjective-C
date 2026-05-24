@@ -21,6 +21,11 @@ from scripts.objc3c_shared.json_io import (
 from scripts.objc3c_tooling.paths import repo_rel, resolve_repo_path
 from scripts.objc3c_workflow import ACTION_SPECS
 from scripts.objc3c_workflow.action_handlers import ACTION_HANDLERS
+from scripts.platform_hardening_contracts.host_evidence_contract import (
+    HOST_EVIDENCE_REPORT_ROOT,
+    HOST_EVIDENCE_REVIEW_CANDIDATE_SOURCE_TRUTH_PATH_TEMPLATE,
+    host_evidence_review_candidate_path_for_platform,
+)
 
 SOURCE_TRUTH_PATH = ROOT / "tests" / "tooling" / "fixtures" / "platform_support" / "source_truth_matrix.json"
 SCHEMA_PATH = ROOT / "schemas" / "objc3c-platform-support-source-truth-v1.schema.json"
@@ -93,7 +98,6 @@ HOST_EVIDENCE_ACCEPTED_WORKFLOW_PATHS = (
 )
 HOST_EVIDENCE_INGESTION_ACTION = "ingest-platform-host-evidence"
 HOST_EVIDENCE_INGESTION_HELPER = "scripts/ingest_objc3c_platform_host_evidence.py"
-HOST_EVIDENCE_REPORT_ROOT = "tmp/reports/platform-host-evidence"
 HOST_EVIDENCE_CANDIDATE_RECORD_IDS = (
     "objc3c.evidence.hosted-ci.linux-x64.generated-host-run",
     "objc3c.evidence.hosted-ci.darwin-arm64.generated-host-run",
@@ -777,6 +781,11 @@ def _validate_hosted_evidence_ingestion(
     expect(ingestion["ingestion_helper"] == HOST_EVIDENCE_INGESTION_HELPER, "host evidence ingestion helper drifted")
     expect(resolve_repo_path(HOST_EVIDENCE_INGESTION_HELPER).is_file(), "host evidence ingestion helper is missing")
     expect(ingestion["generated_report_root"] == HOST_EVIDENCE_REPORT_ROOT, "host evidence report root drifted")
+    expect(
+        ingestion["review_candidate_source_truth_path"]
+        == HOST_EVIDENCE_REVIEW_CANDIDATE_SOURCE_TRUTH_PATH_TEMPLATE,
+        "host evidence review candidate path drifted",
+    )
     expect(ingestion["generated_only_result"] == "refuse-source-truth-promotion", "generated-only ingestion result drifted")
     expect(ingestion["review_promotion_policy"] == "checked-in-source-truth-required", "review promotion policy drifted")
     expect(ingestion["reviewed_source_truth_required"] is True, "host evidence review requirement drifted")
@@ -795,6 +804,14 @@ def _validate_hosted_evidence_ingestion(
             expect(workflow_path in source_paths, f"{record_id} missing workflow source path: {workflow_path}")
         expect(HOST_EVIDENCE_INGESTION_HELPER in source_paths, f"{record_id} missing ingestion helper source path")
         generated_paths = [str(path).replace("\\", "/") for path in record["generated_report_paths"]]
+        platform_id = record_id.removeprefix(
+            "objc3c.evidence.hosted-ci."
+        ).removesuffix(".generated-host-run")
+        expect(
+            host_evidence_review_candidate_path_for_platform(platform_id)
+            in generated_paths,
+            f"{record_id} missing review candidate generated path",
+        )
         expect(
             any(path.startswith(f"{HOST_EVIDENCE_REPORT_ROOT}/") for path in generated_paths),
             f"{record_id} missing platform host evidence report path",

@@ -40,6 +40,10 @@ from platform_hardening_contracts.host_promotion import (
     HOST_PROMOTION_WINDOWS_PACKAGE_CHANNEL_REQUIRED_PATHS,
     build_host_promotion_reviewed_source_input_model_payload,
 )
+from platform_hardening_contracts.host_evidence_contract import (
+    HOST_EVIDENCE_REVIEW_CANDIDATE_SOURCE_TRUTH_SUFFIX,
+    host_evidence_review_candidate_path_for_platform,
+)
 
 CONTRACT_PATH = ROOT / HOST_PROMOTION_EVIDENCE_CONTRACT_RELATIVE_PATH
 REVIEWED_SOURCE_INPUT_PATH = ROOT / HOST_PROMOTION_REVIEWED_SOURCE_INPUT_RELATIVE_PATH
@@ -618,6 +622,7 @@ def _validate_generated_evidence(platform_id: str, platform: dict[str, Any]) -> 
             "generated_report_contract_id",
             "generated_report_paths",
             "candidate_evidence_record_id",
+            "review_candidate_source_truth_path",
             "ingestion_summary_path",
         ),
         f"{platform_id} generated evidence",
@@ -664,6 +669,18 @@ def _validate_generated_evidence(platform_id: str, platform: dict[str, Any]) -> 
     expect(
         report_paths == generated_report_paths_for_platform(platform_id),
         f"{platform_id} generated report paths drifted",
+    )
+    expect(
+        generated.get("review_candidate_source_truth_path")
+        == host_evidence_review_candidate_path_for_platform(platform_id),
+        f"{platform_id} review candidate source truth path drifted",
+    )
+    expect(
+        any(
+            str(path).endswith(HOST_EVIDENCE_REVIEW_CANDIDATE_SOURCE_TRUTH_SUFFIX)
+            for path in report_paths
+        ),
+        f"{platform_id} generated paths omitted review candidate source truth",
     )
     expect(
         str(generated.get("ingestion_summary_path")) == f"{report_root}/ingestion-summary.json",

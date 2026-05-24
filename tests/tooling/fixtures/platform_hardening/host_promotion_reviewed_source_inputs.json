@@ -17,10 +17,21 @@
     ],
     "required_hosted_promotion_artifact_suffixes": [
       "host-evidence-report.json",
+      "promotion-readiness-requirements.json",
+      "review-candidate-source-truth.json",
       "llvm-capabilities.json",
+      "build/native_build_summary.json",
+      "build/object-identity.json",
+      "build/debug-identity.json",
       "package/objc3c-runnable-toolchain-package.json",
+      "package/runtime-library-manifest.json",
       "install/install-receipt.json",
+      "install/end-to-end-summary.json",
+      "install/install-distribution-credibility-summary.json",
+      "install/install-distribution-verification.json",
+      "install/clean-install-distribution-receipt.json",
       "execution/runtime-load-probe.json",
+      "execution/hosted-execution-smoke-summary.json",
       "execution/native-execution-smoke-summary.json"
     ],
     "required_record_types_before_promotion_allowed": [
