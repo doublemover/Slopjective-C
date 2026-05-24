@@ -305,13 +305,43 @@ void ValidateValueOptionalContract(
                    result, json_path + "/value_optional_contract");
   ExpectBoolMember(contract, "interface_roundtrip_supported", true, result,
                    json_path + "/value_optional_contract");
-  ExpectBoolMember(contract, "runtime_execution_supported", false, result,
+  ExpectBoolMember(contract, "runtime_execution_supported", true, result,
                    json_path + "/value_optional_contract");
-  ExpectBoolMember(contract, "lowering_supported", false, result,
+  ExpectBoolMember(contract, "lowering_supported", true, result,
+                   json_path + "/value_optional_contract");
+  ExpectStringMember(contract, "runtime_abi_payload_scope",
+                     "supported-scalar-payload-forms-only", result,
+                     json_path + "/value_optional_contract");
+  const JsonArray &supported_payloads = ArrayMember(
+      contract, "supported_runtime_payload_forms", result,
+      json_path + "/value_optional_contract");
+  if (supported_payloads.size() != 1 ||
+      !supported_payloads.front().IsString() ||
+      supported_payloads.front().AsString() != "i32") {
+    AddDiagnostic(result,
+                  "value optional contract must publish only supported i32 payload ABI",
+                  json_path +
+                      "/value_optional_contract/supported_runtime_payload_forms");
+  }
+  ExpectBoolMember(contract, "ir_payload_emission_supported", true, result,
+                   json_path + "/value_optional_contract");
+  ExpectBoolMember(contract, "call_abi_lowering_supported", true, result,
+                   json_path + "/value_optional_contract");
+  ExpectBoolMember(contract, "broad_public_runtime_support_claim_allowed",
+                   false, result, json_path + "/value_optional_contract");
+  ExpectBoolMember(contract, "nested_value_optional_runtime_supported", false,
+                   result, json_path + "/value_optional_contract");
+  ExpectBoolMember(contract, "generic_payload_runtime_supported", false,
+                   result, json_path + "/value_optional_contract");
+  ExpectBoolMember(contract, "property_storage_supported", false, result,
+                   json_path + "/value_optional_contract");
+  ExpectBoolMember(contract, "ivar_storage_supported", false, result,
                    json_path + "/value_optional_contract");
   ExpectBoolMember(contract, "nil_to_scalar_coercion_allowed", false, result,
                    json_path + "/value_optional_contract");
   ExpectBoolMember(contract, "implicit_nil_absence_allowed", false, result,
+                   json_path + "/value_optional_contract");
+  ExpectBoolMember(contract, "unchecked_unwrap_allowed", false, result,
                    json_path + "/value_optional_contract");
   ExpectBoolMember(contract, "nullable_pointer_conversion_allowed", false,
                    result, json_path + "/value_optional_contract");

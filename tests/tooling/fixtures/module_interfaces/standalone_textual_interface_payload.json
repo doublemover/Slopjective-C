@@ -75,6 +75,11 @@
                 "runtime_execution_supported": true,
                 "lowering_supported": true,
                 "runtime_abi_payload_scope": "supported-scalar-payload-forms-only",
+                "supported_runtime_payload_forms": [
+                  "i32"
+                ],
+                "ir_payload_emission_supported": true,
+                "call_abi_lowering_supported": true,
                 "broad_public_runtime_support_claim_allowed": false,
                 "nested_value_optional_runtime_supported": false,
                 "generic_payload_runtime_supported": false,
@@ -232,6 +237,11 @@
           "runtime_execution_supported": true,
           "lowering_supported": true,
           "runtime_abi_payload_scope": "supported-scalar-payload-forms-only",
+          "supported_runtime_payload_forms": [
+            "i32"
+          ],
+          "ir_payload_emission_supported": true,
+          "call_abi_lowering_supported": true,
           "broad_public_runtime_support_claim_allowed": false,
           "nested_value_optional_runtime_supported": false,
           "generic_payload_runtime_supported": false,

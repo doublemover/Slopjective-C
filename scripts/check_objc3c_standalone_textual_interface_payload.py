@@ -21,7 +21,7 @@ DIAGNOSTIC = "O3IFC8238"
 PUBLIC_VALIDATE_COMMAND = (
     "npm run objc3c -- validate-standalone-textual-interface-payload"
 )
-REQUIRED_ISSUE_REFS = {8238, 8208}
+REQUIRED_ISSUE_REFS = {8238, 8208, 8233, 8234}
 REQUIRED_SOURCE_TRUTH_POLICY = {
     "source_truth": "native-artifact-schema-fixture-public-command",
     "local_temp_source_truth_allowed": False,
@@ -38,6 +38,10 @@ REQUIRED_NEGATIVE_CASE_IDS = {
     "hidden-declaration",
     "count-drift",
     "reserved-roundtrip",
+    "typed-throws-abi-lowering",
+    "typed-throws-interface-contract-drift",
+    "value-optional-lowering",
+    "value-optional-layout-drift",
 }
 
 
@@ -142,11 +146,165 @@ def _validate_declaration(
     if _require_string(declaration, "visibility", path) not in {"public", "package", "internal"}:
         raise RuntimeError(f"{path}.visibility is not importable")
     _require_string(declaration, "name", path)
-    for object_field in ("type_signature", "effects", "ownership", "runtime_metadata"):
+    type_signature = _as_dict(declaration.get("type_signature"), f"{path}.type_signature")
+    effects = _as_dict(declaration.get("effects"), f"{path}.effects")
+    _validate_value_optional_contract(type_signature, f"{path}.type_signature")
+    _validate_typed_throws_contract(effects, f"{path}.effects")
+    for object_field in ("ownership", "runtime_metadata"):
         _as_dict(declaration.get(object_field), f"{path}.{object_field}")
     _as_list(declaration.get("generics"), f"{path}.generics")
     _validate_source_anchor(declaration, path)
     return kind
+
+
+def _validate_value_optional_contract(type_signature: dict[str, Any], path: str) -> None:
+    contract_value = type_signature.get("value_optional_contract")
+    if contract_value is None:
+        return
+    contract = _as_dict(contract_value, f"{path}.value_optional_contract")
+    if contract.get("issue_ref") != 8234:
+        raise RuntimeError(f"{path}.value_optional_contract.issue_ref must be 8234")
+    expected_strings = {
+        "canonical_spelling": "Optional<T>",
+        "source_status": "semantic-type-signature-admitted-bounded-scalar-runtime-abi",
+        "abi_layout_status": "stable-packed-presence-payload-runtime-lowered",
+        "abi_layout_id": "objc3.value_optional.inline_presence_payload.v1",
+        "runtime_abi_payload_scope": "supported-scalar-payload-forms-only",
+        "interface_roundtrip_status": "semantic-carrier-roundtrips-bounded-scalar-runtime-abi",
+    }
+    for field, expected in expected_strings.items():
+        if contract.get(field) != expected:
+            raise RuntimeError(
+                f"{path}.value_optional_contract.{field} expected {expected!r}, saw {contract.get(field)!r}"
+            )
+    supported_payloads = _string_list(
+        contract.get("supported_runtime_payload_forms"),
+        f"{path}.value_optional_contract.supported_runtime_payload_forms",
+    )
+    if supported_payloads != ["i32"]:
+        raise RuntimeError(
+            f"{path}.value_optional_contract.supported_runtime_payload_forms must be ['i32']"
+        )
+    expected_true = (
+        "semantic_value_model_supported",
+        "explicit_present_absent_construction_modeled",
+        "binding_narrowing_supported",
+        "unwrap_requires_presence_check",
+        "stable_abi_layout_contract_supported",
+        "interface_roundtrip_supported",
+        "runtime_execution_supported",
+        "lowering_supported",
+        "ir_payload_emission_supported",
+        "call_abi_lowering_supported",
+    )
+    for field in expected_true:
+        if contract.get(field) is not True:
+            raise RuntimeError(f"{path}.value_optional_contract.{field} must be true")
+    expected_false = (
+        "lowercase_alias_accepted",
+        "broad_public_runtime_support_claim_allowed",
+        "nested_value_optional_runtime_supported",
+        "generic_payload_runtime_supported",
+        "property_storage_supported",
+        "ivar_storage_supported",
+        "nil_to_scalar_coercion_allowed",
+        "implicit_nil_absence_allowed",
+        "unchecked_unwrap_allowed",
+        "nullable_pointer_conversion_allowed",
+        "throws_result_conversion_allowed",
+    )
+    for field in expected_false:
+        if contract.get(field) is not False:
+            raise RuntimeError(f"{path}.value_optional_contract.{field} must be false")
+
+
+def _validate_typed_throws_contract(effects: dict[str, Any], path: str) -> None:
+    contract_value = effects.get("typed_throws")
+    if contract_value is None:
+        return
+    contract = _as_dict(contract_value, f"{path}.typed_throws")
+    if contract.get("issue_ref") != 8233:
+        raise RuntimeError(f"{path}.typed_throws.issue_ref must be 8233")
+    if contract.get("canonical_syntax") != "throws(E)":
+        raise RuntimeError(f"{path}.typed_throws.canonical_syntax must be throws(E)")
+    throws_kind = _require_string(effects, "throws_kind", path)
+    declared_error_type = str(effects.get("declared_error_type", ""))
+    if contract.get("throws_kind") != throws_kind:
+        raise RuntimeError(f"{path}.typed_throws.throws_kind must match effects.throws_kind")
+    if contract.get("declared_error_type") != declared_error_type:
+        raise RuntimeError(
+            f"{path}.typed_throws.declared_error_type must match effects.declared_error_type"
+        )
+    expected_key = (
+        "throws:none"
+        if throws_kind == "none"
+        else f"throws:{throws_kind}:{declared_error_type}"
+    )
+    if contract.get("effect_signature_key") != expected_key:
+        raise RuntimeError(f"{path}.typed_throws.effect_signature_key drift")
+    if contract.get("silent_erasure_allowed") is not False:
+        raise RuntimeError(f"{path}.typed_throws.silent_erasure_allowed must be false")
+    if contract.get("multi_payload_supported") is not False:
+        raise RuntimeError(f"{path}.typed_throws.multi_payload_supported must be false")
+    if throws_kind == "none":
+        if contract.get("typed_payload_arity") != 0:
+            raise RuntimeError(f"{path}.typed_throws.typed_payload_arity must be 0")
+        if contract.get("runtime_execution_claimed") is not False:
+            raise RuntimeError(
+                f"{path}.typed_throws.runtime_execution_claimed must be false for nonthrowing effects"
+            )
+        if contract.get("abi_status") != "none":
+            raise RuntimeError(f"{path}.typed_throws.abi_status must be none")
+        if contract.get("interface_roundtrip_status") != "not-applicable":
+            raise RuntimeError(
+                f"{path}.typed_throws.interface_roundtrip_status must be not-applicable"
+            )
+        if contract.get("typed_payload_lowering_ready") is not False:
+            raise RuntimeError(f"{path}.typed_throws.typed_payload_lowering_ready must be false")
+    elif throws_kind == "typed":
+        if not effects.get("throws"):
+            raise RuntimeError(f"{path}.throws must be true for typed throws")
+        if not declared_error_type:
+            raise RuntimeError(f"{path}.declared_error_type must preserve typed throws payload")
+        if contract.get("typed_payload_arity") != 1:
+            raise RuntimeError(f"{path}.typed_throws.typed_payload_arity must be 1")
+        if contract.get("typed_payload_status") != "source-preserved-error-out-abi-lowered":
+            raise RuntimeError(
+                f"{path}.typed_throws.typed_payload_status must preserve typed payload ABI"
+            )
+        if contract.get("typed_payload_lowering_ready") is not True:
+            raise RuntimeError(f"{path}.typed_throws.typed_payload_lowering_ready must be true")
+        if contract.get("runtime_execution_claimed") is not True:
+            raise RuntimeError(f"{path}.typed_throws.runtime_execution_claimed must be true")
+        if contract.get("abi_status") != "typed-error-out-abi":
+            raise RuntimeError(f"{path}.typed_throws.abi_status must be typed-error-out-abi")
+        if contract.get("interface_roundtrip_status") != "typed-payload-preserved":
+            raise RuntimeError(
+                f"{path}.typed_throws.interface_roundtrip_status must be typed-payload-preserved"
+            )
+    elif throws_kind == "untyped":
+        if not effects.get("throws"):
+            raise RuntimeError(f"{path}.throws must be true for untyped throws")
+        if declared_error_type != "id<Error>":
+            raise RuntimeError(f"{path}.declared_error_type must be id<Error> for untyped throws")
+        if contract.get("typed_payload_arity") != 0:
+            raise RuntimeError(f"{path}.typed_throws.typed_payload_arity must be 0")
+        if contract.get("runtime_execution_claimed") is not False:
+            raise RuntimeError(
+                f"{path}.typed_throws.runtime_execution_claimed must be false for untyped throws"
+            )
+        if contract.get("abi_status") != "untyped-error-out-abi":
+            raise RuntimeError(
+                f"{path}.typed_throws.abi_status must be untyped-error-out-abi"
+            )
+        if contract.get("interface_roundtrip_status") != "not-applicable":
+            raise RuntimeError(
+                f"{path}.typed_throws.interface_roundtrip_status must be not-applicable"
+            )
+        if contract.get("typed_payload_lowering_ready") is not False:
+            raise RuntimeError(f"{path}.typed_throws.typed_payload_lowering_ready must be false")
+    else:
+        raise RuntimeError(f"{path}.typed_throws.throws_kind must be none, untyped, or typed")
 
 
 def _validate_reserved_metadata(metadata: dict[str, Any], index: int) -> None:
@@ -314,6 +472,33 @@ def negative_payload_cases(payload: dict[str, Any]) -> dict[str, str]:
     reserved_roundtrip = deepcopy(payload)
     reserved_roundtrip["interface_roundtrip"]["parse_status"] = "reserved-importer-not-landed"
     cases["reserved-roundtrip"] = _failure(reserved_roundtrip)
+
+    typed_throws_abi = deepcopy(payload)
+    typed_throws_abi["declarations"][1]["effects"]["typed_throws"][
+        "runtime_execution_claimed"
+    ] = True
+    cases["typed-throws-abi-lowering"] = _failure(typed_throws_abi)
+
+    typed_throws_contract_drift = deepcopy(payload)
+    typed_throws_contract_drift["declarations"][1]["effects"]["typed_throws"][
+        "declared_error_type"
+    ] = "ErasedError"
+    cases["typed-throws-interface-contract-drift"] = _failure(
+        typed_throws_contract_drift
+    )
+
+    value_optional_lowering = deepcopy(payload)
+    value_optional_lowering["declarations"][1]["type_signature"][
+        "value_optional_contract"
+    ]["supported_runtime_payload_forms"] = ["i32", "bool"]
+    cases["value-optional-lowering"] = _failure(value_optional_lowering)
+
+    value_optional_layout_drift = deepcopy(payload)
+    value_optional_layout_drift["declarations"][1]["type_signature"][
+        "value_optional_contract"
+    ]["abi_layout_id"] = "objc3.value_optional.drift"
+    cases["value-optional-layout-drift"] = _failure(value_optional_layout_drift)
+
     declared = _declared_negative_case_ids(payload)
     if set(cases) != declared:
         raise RuntimeError(

@@ -68,8 +68,7 @@
     "abi_layout_id": "objc3.value_optional.inline_presence_payload.v1",
     "runtime_abi_payload_scope": "supported-scalar-payload-forms-only",
     "supported_runtime_payload_forms": [
-      "i32",
-      "bool"
+      "i32"
     ],
     "rejected_runtime_payload_forms": [
       "nested-value-optional",
@@ -208,8 +207,12 @@
       "contract_case": "typed throws do/catch accepts exact typed catches and policy-backed id<Error> bridge catches"
     },
     {
+      "fixture": "tests/tooling/fixtures/native/execution/positive/typed_throws_runtime_catch_bridge_positive.objc3",
+      "contract_case": "typed throws runtime catch filtering executes exact typed catch kind 4 and id<Error> bridge catch kind 2 through the native smoke path"
+    },
+    {
       "fixture": "tests/tooling/fixtures/native/value_optionals_type_signatures_positive.objc3",
-      "contract_case": "canonical Optional<T> function and method type signatures are admitted as semantic value-optional carriers"
+      "contract_case": "canonical Optional<i32> function and method type signatures are admitted as semantic value-optional carriers on the checked v1 runtime ABI"
     },
     {
       "fixture": "tests/tooling/fixtures/native/value_optionals_generic_interactions_positive.objc3",
@@ -269,6 +272,16 @@
       "fixture": "tests/tooling/fixtures/native/recovery/negative/negative_typed_throws_foreign_carrier_catch.objc3",
       "expected_diagnostic": "O3S206",
       "contract_case": "typed throws rejects unsupported foreign catch carriers fail closed"
+    },
+    {
+      "fixture": "tests/tooling/fixtures/native/recovery/negative/negative_typed_throws_method_incompatible_catch.objc3",
+      "expected_diagnostic": "O3S206",
+      "contract_case": "typed throws rejects incompatible catch payloads for message-send operands as well as direct functions"
+    },
+    {
+      "fixture": "tests/tooling/fixtures/native/recovery/negative/negative_typed_throws_method_foreign_carrier_catch.objc3",
+      "expected_diagnostic": "O3S206",
+      "contract_case": "typed throws rejects unsupported foreign catch carriers for message-send operands fail closed"
     },
     {
       "fixture": "tests/tooling/fixtures/native/recovery/negative/negative_value_optional_canonical_reserved.objc3",

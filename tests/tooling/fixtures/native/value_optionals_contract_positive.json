@@ -15,8 +15,7 @@
     "nil_bridge_diagnostic_supported": true,
     "runtime_abi_payload_scope": "supported-scalar-payload-forms-only",
     "supported_runtime_payload_forms": [
-      "i32",
-      "bool"
+      "i32"
     ],
     "implicit_nil_absence_allowed": false,
     "optional_id_distinct_from_nullable_object_pointer": true

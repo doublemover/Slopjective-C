@@ -60,9 +60,10 @@ jobs:
       - name: Probe hosted LLVM capabilities
         id: probe
         continue-on-error: true
-        run: >
-          python scripts/probe_objc3c_llvm_capabilities.py
-          --summary-out "$OBJC3C_PLATFORM_EVIDENCE_ROOT/llvm-capabilities.json"
+        run: |
+          python scripts/probe_objc3c_llvm_capabilities.py --summary-out "$OBJC3C_PLATFORM_EVIDENCE_ROOT/llvm-capabilities.json"
+          mkdir -p tmp/artifacts/objc3c-native/m144/llvm_capabilities
+          cp "$OBJC3C_PLATFORM_EVIDENCE_ROOT/llvm-capabilities.json" tmp/artifacts/objc3c-native/m144/llvm_capabilities/summary.json
 
       - name: Build native objc3c artifacts
         id: build
@@ -157,9 +158,10 @@ jobs:
       - name: Probe hosted LLVM capabilities
         id: probe
         continue-on-error: true
-        run: >
-          python scripts/probe_objc3c_llvm_capabilities.py
-          --summary-out "$OBJC3C_PLATFORM_EVIDENCE_ROOT/llvm-capabilities.json"
+        run: |
+          python scripts/probe_objc3c_llvm_capabilities.py --summary-out "$OBJC3C_PLATFORM_EVIDENCE_ROOT/llvm-capabilities.json"
+          mkdir -p tmp/artifacts/objc3c-native/m144/llvm_capabilities
+          cp "$OBJC3C_PLATFORM_EVIDENCE_ROOT/llvm-capabilities.json" tmp/artifacts/objc3c-native/m144/llvm_capabilities/summary.json
 
       - name: Build native objc3c artifacts
         id: build

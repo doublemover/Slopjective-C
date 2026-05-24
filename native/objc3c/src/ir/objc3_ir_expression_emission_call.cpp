@@ -7,6 +7,7 @@
 #include "ir/objc3_ir_emitter_context.h"
 #include "ir/objc3_ir_expression_emission.h"
 #include "ir/objc3_ir_function_signature_model.h"
+#include "ir/objc3_ir_type_model.h"
 
 std::string EmitObjc3IRCallExpression(
     const Expr *expr, FunctionContext &ctx,
@@ -43,12 +44,21 @@ std::string EmitObjc3IRCallExpression(
           "try lowering for value optional payload " + payload +
           " requires value optional ABI support");
     }
+    const ValueType result_type = operand_signature->return_type;
+    if (result_type == ValueType::Void) {
+      return callbacks.emit_unsupported_i32_value(
+          "try expression lowering requires a non-void result");
+    }
+    const std::string result_storage_type = LLVMLocalStorageType(result_type);
+    const unsigned result_storage_alignment =
+        LLVMLocalStorageAlignment(result_type);
     const std::string result_ptr =
         "%try.result.addr." + std::to_string(ctx.temp_counter++);
     const std::string error_slot =
         callbacks.build_throws_error_slot_alloca(ctx, "try");
-    ctx.entry_lines.push_back("  " + result_ptr +
-                              " = alloca i32, align 4");
+    ctx.entry_lines.push_back("  " + result_ptr + " = alloca " +
+                              result_storage_type + ", align " +
+                              std::to_string(result_storage_alignment));
     const std::string merged_label =
         callbacks.new_label(ctx, "try_merge_");
     const std::string failure_label =
@@ -86,14 +96,17 @@ std::string EmitObjc3IRCallExpression(
     ctx.code_lines.push_back("  br i1 " + failure_cond + ", label %" +
                              failure_label + ", label %" + success_label);
     ctx.code_lines.push_back(success_label + ":");
-    ctx.code_lines.push_back("  store i32 " + actual_result + ", ptr " +
-                             result_ptr + ", align 4");
+    ctx.code_lines.push_back("  store " + result_storage_type + " " +
+                             actual_result + ", ptr " + result_ptr +
+                             ", align " +
+                             std::to_string(result_storage_alignment));
     ctx.code_lines.push_back("  br label %" + merged_label);
     ctx.code_lines.push_back(failure_label + ":");
     switch (expr->try_operator_kind) {
       case Expr::TryOperatorKind::Optional:
-        ctx.code_lines.push_back("  store i32 0, ptr " + result_ptr +
-                                 ", align 4");
+        ctx.code_lines.push_back("  store " + result_storage_type +
+                                 " 0, ptr " + result_ptr + ", align " +
+                                 std::to_string(result_storage_alignment));
         ctx.code_lines.push_back("  br label %" + merged_label);
         break;
       case Expr::TryOperatorKind::Forced:
@@ -104,8 +117,10 @@ std::string EmitObjc3IRCallExpression(
         callbacks.emit_propagate_thrown_error(bridge_error_value, ctx);
         break;
       case Expr::TryOperatorKind::None:
-        ctx.code_lines.push_back("  store i32 " + actual_result +
-                                 ", ptr " + result_ptr + ", align 4");
+        ctx.code_lines.push_back("  store " + result_storage_type + " " +
+                                 actual_result + ", ptr " + result_ptr +
+                                 ", align " +
+                                 std::to_string(result_storage_alignment));
         ctx.code_lines.push_back("  br label %" + merged_label);
         break;
     }
@@ -117,8 +132,10 @@ std::string EmitObjc3IRCallExpression(
     }
     ctx.code_lines.push_back(merged_label + ":");
     const std::string loaded = callbacks.new_temp(ctx);
-    ctx.code_lines.push_back("  " + loaded + " = load i32, ptr " +
-                             result_ptr + ", align 4");
+    ctx.code_lines.push_back("  " + loaded + " = load " +
+                             result_storage_type + ", ptr " + result_ptr +
+                             ", align " +
+                             std::to_string(result_storage_alignment));
     return loaded;
   }
   const auto local_block_it = ctx.block_bindings.find(expr->ident);

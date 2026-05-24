@@ -35,8 +35,9 @@ identity, explicit absent/present construction records, checked
 presence/narrowing records, checked unwrap diagnostics, and textual-interface
 roundtrip. They still cannot be widened into implicit nil absence,
 nullable-pointer conversion, nil-to-scalar coercion, throws/result conversion,
-unchecked unwrap, IR payload emission, call ABI lowering, or runtime constructor
-symbol support.
+unchecked unwrap, unsupported payload ABI lowering, broad runtime constructor
+support, property/ivar storage, or nullable-pointer erasure. The executable v1
+path is the checked packed `Optional<i32>` runtime ABI.
 
 Generic callable reification is similarly bounded. Semantic records may publish
 deterministic erased-default signature replay keys for admitted

@@ -27,6 +27,8 @@
         "negative_typed_throws_protocol_mismatch",
         "negative_typed_throws_incompatible_catch",
         "negative_typed_throws_foreign_carrier_catch",
+        "negative_typed_throws_method_incompatible_catch",
+        "negative_typed_throws_method_foreign_carrier_catch",
         "typed_throws_abi_lifting_negative",
         "typed_throws_interface_mismatch_negative",
         "typed_throws_semantic_effect_identity"

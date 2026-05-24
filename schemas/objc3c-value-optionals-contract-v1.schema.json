@@ -61,9 +61,9 @@
         },
         "supported_runtime_payload_forms": {
           "type": "array",
-          "contains": { "const": "i32" },
-          "items": { "type": "string", "minLength": 1 },
-          "minItems": 1
+          "items": { "const": "i32" },
+          "minItems": 1,
+          "maxItems": 1
         },
         "implicit_nil_absence_allowed": { "const": false },
         "optional_id_distinct_from_nullable_object_pointer": { "const": true }

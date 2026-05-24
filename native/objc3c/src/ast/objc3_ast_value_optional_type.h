@@ -163,7 +163,7 @@ inline ValueType Objc3ValueOptionalPayloadValueType(
 
 inline bool Objc3ValueOptionalPayloadRuntimeAbiSupported(
     const Objc3ValueOptionalTypeDescriptor &descriptor) {
-  return descriptor.payload_value_type != ValueType::Unknown &&
+  return descriptor.payload_value_type == ValueType::I32 &&
          !descriptor.payload_generic &&
          !descriptor.payload_nested_value_optional &&
          !descriptor.payload_lowercase_optional_alias;

@@ -1,0 +1,14 @@
+// Expected diagnostic code(s): O3S206.
+module NegativeTypedThrowsMethodIncompatibleCatch;
+
+@interface TypedThrowingLoader
++ (i32)loadValue throws(NSError);
+@end
+
+fn main() -> i32 {
+  do {
+    return try [TypedThrowingLoader loadValue];
+  } catch (ErrorBox* error) {
+    return 1;
+  }
+}

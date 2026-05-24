@@ -39,8 +39,10 @@ typed catches and unsupported foreign carriers fail closed. `Optional<T>`
 metadata imports the
 semantic carrier, stable layout identity, explicit absent/present construction
 contract, checked unwrap/binding diagnostic contract, and fail-closed
-conversion/runtime flags; layout drift, unchecked unwrap, implicit bridge, IR
-payload emission, or call ABI claims fail closed.
+conversion/runtime flags. The checked-in v1 runtime ABI is the packed `i32`
+payload carrier only; layout drift, unchecked unwrap, implicit bridge,
+unsupported payload widening, broad runtime support claims, property/ivar
+storage, and nullable-pointer erasure fail closed.
 Statement-form
 `match (expr) { case pattern where condition: { ... } default: { ... } }` is
 the only guarded-pattern spelling admitted by the parser; `where` remains

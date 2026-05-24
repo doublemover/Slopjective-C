@@ -316,12 +316,11 @@ Consumer rule: Umbrella readiness may explain why a reserved umbrella row is blo
 
 ### Promotion Blockers
 
-- `typed-throws-abi-lowering-interface`: Typed throws now has parser/source/interface/sema effect identity, hidden single-payload error-out ABI lowering, exact typed catch records, id<Error> bridge policy, incompatible-catch rejection, and unsupported foreign-carrier fail-closed records, but the public support row remains reserved until public replayable evidence proves the full slice.
-  - Public validation evidence for typed throws catch/bridge behavior on the supported compiler/runtime path.
+- `typed-throws-abi-lowering-interface`: Typed throws now has parser/source/interface/sema effect identity, hidden single-payload error-out ABI lowering, exact typed catch records, id<Error> bridge policy, incompatible-catch rejection, unsupported foreign-carrier fail-closed records, and a native execution smoke fixture for direct-function catch/bridge behavior. Broader public support remains reserved until every method/message-send and public replay surface agrees.
+  - Keep method/message-send catch policy and runtime replay evidence tied to checked fixtures before capability-row promotion.
   - Promotion of the capability row only after its support claims, fixtures, artifacts, and replay evidence agree.
-- `value-optionals-abi-lowering-interface`: Value optionals now have semantic type admission, stable packed presence/payload layout identity, textual-interface roundtrip, explicit absent/present construction contracts, checked unwrap/binding diagnostics, and bounded scalar payload runtime ABI; nested/generic/property/ivar storage, nullability bridges, nil-to-scalar, implicit nil, unchecked unwrap, and throws/result conversion remain blocked.
-  - Replayable public evidence for the bounded scalar payload ABI before capability-row promotion.
-  - Nested Optional<T>, generic payload, property storage, and ivar storage lowering.
+- `value-optionals-abi-lowering-interface`: Value optionals now have semantic type admission for the checked `Optional<i32>` runtime ABI, stable packed presence/payload layout identity, textual-interface roundtrip, explicit absent/present construction contracts, checked unwrap/binding diagnostics, and native execution smoke evidence for the packed `i32` payload carrier; nested/generic/property/ivar storage, nullability bridges, nil-to-scalar, implicit nil, unchecked unwrap, and throws/result conversion remain blocked.
+  - Broader scalar payloads, nested Optional<T>, generic payload, property storage, and ivar storage lowering.
   - Nullability bridge, nil-to-scalar, implicit nil, unchecked unwrap, and throws/result conversion rejection coverage tied to the public row.
   - Promotion of the capability row only after scalar ABI support and all fail-closed broadening paths agree across fixtures and docs.
 - `language-evolution-prerequisites`: The #8207 umbrella is blocked by the reserved #8233/#8234 prerequisite rows even though #8235 generic callable metadata policy, #8236 guarded match plus bounded expression match, and #8237 strict profile admission are implemented.

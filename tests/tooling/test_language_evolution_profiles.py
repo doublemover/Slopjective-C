@@ -156,6 +156,8 @@ def test_typed_throws_source_owned_and_value_optionals_contract_boundaries() -> 
         "negative_typed_throws_protocol_mismatch.objc3": "O3S218",
         "negative_typed_throws_incompatible_catch.objc3": "O3S206",
         "negative_typed_throws_foreign_carrier_catch.objc3": "O3S206",
+        "negative_typed_throws_method_incompatible_catch.objc3": "O3S206",
+        "negative_typed_throws_method_foreign_carrier_catch.objc3": "O3S206",
         "negative_value_optional_canonical_reserved.objc3": "O3P159",
         "negative_value_optional_nullable_pointer_conversion_reserved.objc3": "O3P159",
         "negative_value_optional_nil_scalar_coercion_reserved.objc3": "O3S211",

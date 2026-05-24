@@ -103,7 +103,7 @@ def test_standalone_textual_interface_payload_fixture_is_schema_backed() -> None
         "implementations_reserved": 1,
         "functions": 1,
     }
-    assert set(payload["issue_refs"]) == {8238, 8208}
+    assert set(payload["issue_refs"]) == {8238, 8208, 8233, 8234}
     assert payload["source_truth_policy"] == REQUIRED_SOURCE_TRUTH_POLICY
     assert {row["case_id"] for row in payload["negative_cases"]} == REQUIRED_NEGATIVE_CASE_IDS
     assert_textual_interface_fail_closed(payload)
@@ -172,12 +172,29 @@ def test_textual_interface_import_negative_cases_fail_closed() -> None:
         "hidden-declaration",
         "count-drift",
         "reserved-roundtrip",
+        "typed-throws-abi-lowering",
+        "typed-throws-interface-contract-drift",
+        "value-optional-lowering",
+        "value-optional-layout-drift",
     }
     assert "schema validation failed at schema_version" in failures["stale-schema"]
     assert "lock_identity must be package lock/trust identity" in failures["unlocked-import"]
     assert "schema validation failed at declarations.0.kind" in failures["hidden-declaration"]
     assert "source_counts.interfaces expected 1, saw 0" in failures["count-drift"]
     assert "parse_status must be supported" in failures["reserved-roundtrip"]
+    assert (
+        "runtime_execution_claimed must be false for nonthrowing effects"
+        in failures["typed-throws-abi-lowering"]
+    )
+    assert (
+        "typed_throws.declared_error_type must match effects.declared_error_type"
+        in failures["typed-throws-interface-contract-drift"]
+    )
+    assert (
+        "supported_runtime_payload_forms must be ['i32']"
+        in failures["value-optional-lowering"]
+    )
+    assert "abi_layout_id expected" in failures["value-optional-layout-drift"]
 
 
 def test_runtime_executable_contract_fixture_is_schema_backed() -> None:

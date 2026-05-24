@@ -72,10 +72,22 @@ JsonValue ValueOptionalContract() {
       JsonValue::String(kObjc3ValueOptionalPresenceState);
   contract["stable_abi_layout_contract_supported"] = JsonValue::Bool(true);
   contract["interface_roundtrip_supported"] = JsonValue::Bool(true);
-  contract["runtime_execution_supported"] = JsonValue::Bool(false);
-  contract["lowering_supported"] = JsonValue::Bool(false);
+  contract["runtime_execution_supported"] = JsonValue::Bool(true);
+  contract["lowering_supported"] = JsonValue::Bool(true);
+  contract["runtime_abi_payload_scope"] =
+      JsonValue::String("supported-scalar-payload-forms-only");
+  contract["supported_runtime_payload_forms"] = StringArray({"i32"});
+  contract["ir_payload_emission_supported"] = JsonValue::Bool(true);
+  contract["call_abi_lowering_supported"] = JsonValue::Bool(true);
+  contract["broad_public_runtime_support_claim_allowed"] =
+      JsonValue::Bool(false);
+  contract["nested_value_optional_runtime_supported"] = JsonValue::Bool(false);
+  contract["generic_payload_runtime_supported"] = JsonValue::Bool(false);
+  contract["property_storage_supported"] = JsonValue::Bool(false);
+  contract["ivar_storage_supported"] = JsonValue::Bool(false);
   contract["nil_to_scalar_coercion_allowed"] = JsonValue::Bool(false);
   contract["implicit_nil_absence_allowed"] = JsonValue::Bool(false);
+  contract["unchecked_unwrap_allowed"] = JsonValue::Bool(false);
   contract["nullable_pointer_conversion_allowed"] = JsonValue::Bool(false);
   contract["throws_result_conversion_allowed"] = JsonValue::Bool(false);
   contract["interface_roundtrip_status"] =
@@ -120,7 +132,7 @@ JsonValue ValueOptionalContract() {
   optional_rejection["source_span"] = JsonValue::String("type-signature");
   optional_rejection["spelling"] = JsonValue::String("optional<T>");
   optional_rejection["conversion_attempt"] =
-      JsonValue::String("lowercase-alias-or-runtime-conversion");
+      JsonValue::String("lowercase-alias-or-unsupported-runtime-conversion");
   optional_rejection["diagnostic"] = JsonValue::String("O3C004/O3P159");
   contract["optional_rejection"] =
       JsonValue::ObjectValue(std::move(optional_rejection));

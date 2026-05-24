@@ -24,15 +24,12 @@ static void CollectTypedThrowsPayloadsFromExpr(
   if (expr->try_expression_enabled) {
     const Expr *operand =
         !expr->args.empty() ? expr->args.front().get() : expr->left.get();
-    if (operand != nullptr && operand->kind == Expr::Kind::Call) {
-      const FunctionDecl *fn = FindFunctionDeclByName(program, operand->ident);
-      if (fn != nullptr && fn->typed_throws_declared &&
-          !fn->typed_throws_payload.canonical_spelling.empty()) {
-        typed_payloads.push_back(fn->typed_throws_payload.canonical_spelling);
-      } else if (fn != nullptr &&
-                 (fn->throws_declared ||
-                  CallableHasSemanticallyValidNSErrorStatusBridge(*fn,
-                                                                  program))) {
+    if (operand != nullptr) {
+      const Objc3ErrorHandlingTryOperandSurface surface =
+          ResolveTryOperandSurface(operand, program);
+      if (!surface.typed_throws_payload.empty()) {
+        typed_payloads.push_back(surface.typed_throws_payload);
+      } else if (surface.throwing_callable || surface.bridged_callable) {
         saw_untyped_or_bridge = true;
       }
     }

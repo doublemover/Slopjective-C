@@ -43,10 +43,15 @@ void CollectObjc3IRTypedThrowsPayloadsFromExpr(
   if (expr->try_expression_enabled) {
     const Expr *operand =
         !expr->args.empty() ? expr->args.front().get() : expr->left.get();
-    if (operand != nullptr && operand->kind == Expr::Kind::Call) {
+    if (operand != nullptr &&
+        (operand->kind == Expr::Kind::Call ||
+         operand->kind == Expr::Kind::MessageSend)) {
+      const std::string signature_key =
+          operand->kind == Expr::Kind::MessageSend ? operand->selector
+                                                   : operand->ident;
       const LoweredFunctionSignature *signature =
           callbacks.lookup_function_signature
-              ? callbacks.lookup_function_signature(operand->ident)
+              ? callbacks.lookup_function_signature(signature_key)
               : nullptr;
       if (signature != nullptr && signature->typed_throws_declared &&
           !signature->typed_throws_error_type_spelling.empty()) {

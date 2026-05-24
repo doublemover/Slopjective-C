@@ -392,7 +392,10 @@ The current #8234 compiler contract owns the canonical spelling boundary but
 does not claim broad value-optional execution: canonical `Optional<T>` type
 signatures may be parsed, admitted as semantic types, compared by sema,
 round-tripped through textual interfaces, and lowered only through the bounded
-packed scalar runtime ABI. The lowering contract is explicit: absent
+packed scalar runtime ABI. The currently supported runtime payload form is
+`i32`; broader scalar, object, nested, generic, property, and ivar storage forms
+remain reserved until they have their own executable ABI evidence. The lowering
+contract is explicit: absent
 construction produces `has_value=false` and no live payload, present
 construction requires a payload and produces `has_value=true`, binding failure
 branches through the absent path, and unwrap requires a proven presence check.
