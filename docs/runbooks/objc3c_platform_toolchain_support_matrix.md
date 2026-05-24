@@ -167,7 +167,10 @@ promotion-readiness requirements artifact naming the build, package, install,
 object-format/debug, runtime link/load, and native execution fields that must be
 reviewed before source-truth promotion. The helper mirrors build, package,
 install, hosted-smoke, and native-execution outputs into that same
-platform-scoped root before upload. The workflow uploads only
+platform-scoped root before upload, including `build/object-identity.json`,
+`build/debug-identity.json`, `package/runtime-library-manifest.json`,
+`install/install-receipt.json`, and `execution/runtime-load-probe.json`. The
+workflow uploads only
 `tmp/reports/platform-host-evidence/<platform>/**` and fails closed if that root
 is empty, so Linux x64 and macOS arm64 readback cannot accidentally consume
 shared `tmp/` or `artifacts/` paths from another lane. The summary is

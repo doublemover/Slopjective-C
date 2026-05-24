@@ -3,12 +3,11 @@
 
 from __future__ import annotations
 
-import json
-import os
 import argparse
 import hashlib
+import json
+import os
 import shutil
-import subprocess
 import zipfile
 from datetime import datetime, timezone
 from pathlib import Path
@@ -17,7 +16,7 @@ from objc3c_tooling.paths import repo_rel
 from objc3c_tooling.json_io import load_json_object as load_json
 from objc3c_tooling.json_io import validate_json_schema
 from objc3c_tooling.subprocesses import python_script_command, run_capture
-from objc3c_tooling.public_workflow_output import extract_output_value
+from objc3c_workflow.commands import workflow_command
 from objc3c_package_channels.model import (
     MANIFEST_RELATIVE_PATH,
     required_payload_entries,
@@ -26,6 +25,7 @@ from objc3c_package_channels.model import (
 ROOT = Path(__file__).resolve().parents[1]
 PWSH = shutil.which("pwsh") or "pwsh"
 BUILD_PACKAGE_CHANNELS_PY = ROOT / "scripts" / "build_objc3c_package_channels.py"
+RELEASE_FOUNDATION_INTEGRATION_PY = ROOT / "scripts" / "check_objc3c_release_foundation_integration.py"
 SOURCE_SURFACE = ROOT / "tests" / "tooling" / "fixtures" / "packaging_channels" / "source_surface.json"
 REPORT_PATH = ROOT / "tmp" / "reports" / "package-channels" / "package-channels-summary.json"
 INSTALL_RECEIPT_SCHEMA = ROOT / "schemas" / "objc3c-package-install-receipt-v1.schema.json"
@@ -198,6 +198,35 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
     return parser.parse_args(argv)
 
 
+def build_package_channels_from_fresh_release_foundation() -> None:
+    release_foundation_result = run_capture(
+        workflow_command("validate-release-foundation"),
+        cwd=ROOT,
+        capture_output=False,
+    )
+    if release_foundation_result.returncode != 0:
+        raise RuntimeError("release-foundation validation failed")
+
+    release_foundation_integration_result = run_capture(
+        python_script_command(RELEASE_FOUNDATION_INTEGRATION_PY),
+        cwd=ROOT,
+        capture_output=False,
+    )
+    if release_foundation_integration_result.returncode != 0:
+        raise RuntimeError("release-foundation integration check failed")
+
+    build_result = run_capture(
+        python_script_command(
+            BUILD_PACKAGE_CHANNELS_PY,
+            "--reuse-release-foundation-artifacts",
+        ),
+        cwd=ROOT,
+        capture_output=False,
+    )
+    if build_result.returncode != 0:
+        raise RuntimeError("package-channels build failed")
+
+
 def main(argv: Sequence[str] | None = None) -> int:
     args = parse_args(argv)
     run_id = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S_%f")
@@ -215,9 +244,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         expect(REPORT_PATH.is_file(), "existing package-channels build report is missing")
     else:
         REPORT_PATH.unlink(missing_ok=True)
-        build_result = run_capture(python_script_command(BUILD_PACKAGE_CHANNELS_PY), cwd=ROOT, capture_output=False)
-        if build_result.returncode != 0:
-            raise RuntimeError("package-channels build failed")
+        build_package_channels_from_fresh_release_foundation()
 
     source_surface = load_json(SOURCE_SURFACE)
     owner_policy = source_surface.get("owner_policy")

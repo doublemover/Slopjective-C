@@ -312,7 +312,10 @@ relevant host identity, toolchain, package-root, object-format/debug, runtime
 link/load, and native execution records into checked-in source truth. The helper
 also writes `promotion-readiness-requirements.json` into the same platform
 evidence root so artifact review has a durable list of required hosted fields
-instead of relying on prose in a workflow log. Hosted execution smoke normalizes
+instead of relying on prose in a workflow log. The generated host evidence row
+must enumerate the same platform-scoped artifact set, including object identity,
+debug identity, runtime-library manifest, install receipt, and runtime load
+probe outputs. Hosted execution smoke normalizes
 its dynamic run artifact into stable report paths before ingestion:
 `tmp/reports/hosted-execution-smoke/summary.json` and
 `tmp/reports/objc3c-native-execution-smoke/summary.json`. The Linux and macOS

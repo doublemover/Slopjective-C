@@ -1,6 +1,9 @@
 from __future__ import annotations
 
+import hashlib
 import importlib
+import json
+import shutil
 import sys
 from pathlib import Path
 
@@ -11,6 +14,7 @@ SCRIPTS_ROOT = ROOT / "scripts"
 if str(SCRIPTS_ROOT) not in sys.path:
     sys.path.insert(0, str(SCRIPTS_ROOT))
 
+from scripts.objc3c_package_channels import commands as package_commands
 from scripts.objc3c_package_channels.model import (
     IMPLEMENTED_CHANNELS,
     MANIFEST_RELATIVE_PATH,
@@ -234,6 +238,180 @@ def sample_receipt_contracts() -> dict[str, dict[str, object]]:
     return receipt_contract_payloads()
 
 
+def write_json(path: Path, payload: dict[str, object]) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
+
+
+def file_sha256(path: Path) -> str:
+    digest = hashlib.sha256()
+    with path.open("rb") as handle:
+        for chunk in iter(lambda: handle.read(1024 * 1024), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
+
+
+def release_foundation_reuse_fixture(tmp_path: Path) -> dict[str, Path]:
+    fixture_root = ROOT / "tmp" / "tests" / "package-channel-release-reuse" / tmp_path.name
+    if fixture_root.exists():
+        shutil.rmtree(fixture_root)
+
+    primary_package_manifest = (
+        fixture_root
+        / "pkg"
+        / "run-1"
+        / "artifacts"
+        / "package"
+        / "objc3c-runnable-toolchain-package.json"
+    )
+    release_evidence_index = fixture_root / "reports" / "release_evidence" / "evidence-index.json"
+    repo_superclean_surface = (
+        fixture_root / "pkg" / "run-1" / "tmp" / "build-objc3c-native" / "repo_superclean.json"
+    )
+    manifest_path = (
+        fixture_root
+        / "artifacts"
+        / "release-foundation"
+        / "manifest"
+        / "objc3c-release-manifest.json"
+    )
+    sbom_path = (
+        fixture_root
+        / "artifacts"
+        / "release-foundation"
+        / "sbom"
+        / "objc3c-release-sbom.json"
+    )
+    attestation_path = (
+        fixture_root
+        / "artifacts"
+        / "release-foundation"
+        / "attestation"
+        / "objc3c-release-attestation.json"
+    )
+    manifest_summary_path = (
+        fixture_root / "reports" / "release-foundation" / "release-manifest-summary.json"
+    )
+    abi_api_drift_summary_path = (
+        fixture_root / "reports" / "release-foundation" / "abi-api-drift-summary.json"
+    )
+    publication_summary_path = (
+        fixture_root / "reports" / "release-foundation" / "publication-summary.json"
+    )
+
+    write_json(primary_package_manifest, {"contract_id": "objc3c.package.unit"})
+    write_json(release_evidence_index, {"contract_id": "objc3c.release.evidence.unit"})
+    write_json(repo_superclean_surface, {"contract_id": "objc3c.repo.superclean.unit"})
+    write_json(
+        abi_api_drift_summary_path,
+        {
+            "contract_id": "objc3c.release.foundation.abi_api_drift.summary.v1",
+            "status": "PASS",
+        },
+    )
+
+    release_payload_digest = "a" * 64
+    write_json(
+        manifest_path,
+        {
+            "contract_id": "objc3c.release.foundation.manifest.v1",
+            "reproducibility_match": True,
+            "primary_package_manifest_sha256": file_sha256(primary_package_manifest),
+            "release_payload_digest_sha256": release_payload_digest,
+        },
+    )
+    write_json(
+        sbom_path,
+        {
+            "contract_id": "objc3c.release.foundation.sbom.v1",
+            "release_payload_digest_sha256": release_payload_digest,
+        },
+    )
+    write_json(
+        attestation_path,
+        {
+            "contract_id": "objc3c.release.foundation.attestation.v1",
+            "attested_digests": {
+                "release_manifest_sha256": file_sha256(manifest_path),
+                "release_payload_digest_sha256": release_payload_digest,
+                "package_manifest_sha256": file_sha256(primary_package_manifest),
+                "sbom_sha256": file_sha256(sbom_path),
+            },
+        },
+    )
+    write_json(
+        manifest_summary_path,
+        {
+            "contract_id": "objc3c.release.foundation.manifest.summary.v1",
+            "status": "PASS",
+            "release_manifest_path": repo_rel(manifest_path),
+            "reproducibility_match": True,
+            "primary_package_manifest_path": repo_rel(primary_package_manifest),
+            "primary_package_manifest_sha256": file_sha256(primary_package_manifest),
+            "release_evidence_index_path": repo_rel(release_evidence_index),
+            "release_evidence_index_sha256": file_sha256(release_evidence_index),
+            "abi_api_drift_summary_path": repo_rel(abi_api_drift_summary_path),
+            "abi_api_drift_summary_sha256": file_sha256(abi_api_drift_summary_path),
+            "repo_superclean_surface_path": repo_rel(repo_superclean_surface),
+            "repo_superclean_surface_sha256": file_sha256(repo_superclean_surface),
+        },
+    )
+    write_json(
+        publication_summary_path,
+        {
+            "contract_id": "objc3c.release.foundation.publication.summary.v1",
+            "status": "PASS",
+            "release_manifest_path": repo_rel(manifest_path),
+            "release_manifest_sha256": file_sha256(manifest_path),
+            "sbom_path": repo_rel(sbom_path),
+            "sbom_sha256": file_sha256(sbom_path),
+            "attestation_path": repo_rel(attestation_path),
+            "attestation_sha256": file_sha256(attestation_path),
+        },
+    )
+    return {
+        "root": fixture_root,
+        "manifest": manifest_path,
+        "sbom": sbom_path,
+        "attestation": attestation_path,
+        "manifest_summary": manifest_summary_path,
+        "abi_api_drift_summary": abi_api_drift_summary_path,
+        "publication_summary": publication_summary_path,
+        "integration_summary": fixture_root
+        / "reports"
+        / "release-foundation"
+        / "integration-summary.json",
+    }
+
+
+def configure_release_foundation_reuse_fixture(
+    monkeypatch: pytest.MonkeyPatch,
+    fixture: dict[str, Path],
+) -> None:
+    monkeypatch.setattr(
+        package_commands,
+        "RELEASE_FOUNDATION_MANIFEST_SUMMARY",
+        fixture["manifest_summary"],
+    )
+    monkeypatch.setattr(
+        package_commands,
+        "RELEASE_FOUNDATION_ABI_API_DRIFT_SUMMARY",
+        fixture["abi_api_drift_summary"],
+    )
+    monkeypatch.setattr(
+        package_commands,
+        "RELEASE_FOUNDATION_PUBLICATION_SUMMARY",
+        fixture["publication_summary"],
+    )
+    monkeypatch.setattr(package_commands, "RELEASE_FOUNDATION_MANIFEST", fixture["manifest"])
+    monkeypatch.setattr(package_commands, "RELEASE_FOUNDATION_SBOM", fixture["sbom"])
+    monkeypatch.setattr(
+        package_commands,
+        "RELEASE_FOUNDATION_ATTESTATION",
+        fixture["attestation"],
+    )
+
+
 def test_package_channel_owner_modules_are_explicit() -> None:
     for module_name in OWNER_MODULES:
         assert importlib.import_module(module_name)
@@ -246,6 +424,36 @@ def test_package_channel_entrypoint_delegates_to_owner_package() -> None:
     assert "zipfile." not in script_text
     assert "shutil.copytree" not in script_text
     assert "write_json_file" not in script_text
+
+
+def test_package_channel_reuse_accepts_checked_release_foundation_artifacts(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    fixture = release_foundation_reuse_fixture(tmp_path)
+    configure_release_foundation_reuse_fixture(monkeypatch, fixture)
+
+    assert not fixture["integration_summary"].exists()
+
+    package_commands.require_existing_release_foundation_artifacts()
+
+
+def test_package_channel_reuse_rejects_release_foundation_digest_drift(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    fixture = release_foundation_reuse_fixture(tmp_path)
+    configure_release_foundation_reuse_fixture(monkeypatch, fixture)
+    write_json(
+        fixture["attestation"],
+        {
+            "contract_id": "objc3c.release.foundation.attestation.v1",
+            "attested_digests": {},
+        },
+    )
+
+    with pytest.raises(RuntimeError, match="attestation_sha256 drifted"):
+        package_commands.require_existing_release_foundation_artifacts()
 
 
 def test_package_channel_manifest_and_report_are_owned_by_model() -> None:

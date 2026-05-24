@@ -382,6 +382,21 @@ def test_platform_support_matrix_publishes_issue_owned_evidence_sections() -> No
         )
         for record in generated_host_records.values()
     )
+    required_hosted_artifact_suffixes = {
+        "build/object-identity.json",
+        "build/debug-identity.json",
+        "package/runtime-library-manifest.json",
+        "install/install-receipt.json",
+        "execution/runtime-load-probe.json",
+    }
+    for record_id, record in generated_host_records.items():
+        platform_id = record_id.removeprefix(
+            "objc3c.evidence.hosted-ci."
+        ).removesuffix(".generated-host-run")
+        assert {
+            path.removeprefix(f"tmp/reports/platform-host-evidence/{platform_id}/")
+            for path in record["generated_report_paths"]
+        } >= required_hosted_artifact_suffixes
     package_rows = {
         row["row_id"]: row
         for row in payload["package_variant_rows"]
