@@ -52,15 +52,95 @@
     },
     {
       "if": {
+        "required": ["sanitizer_variant", "platform_id"],
+        "properties": {
+          "sanitizer_variant": { "const": "release" },
+          "platform_id": { "const": "windows-x64" }
+        }
+      },
+      "then": {
+        "properties": {
+          "package_id": { "const": "org.objc3c.runtime:objc3c-runtime-release" },
+          "package_channel_id": { "const": "windows-x64-release" },
+          "payload_contract": {
+            "properties": {
+              "target_platform_id": { "const": "windows-x64" }
+            }
+          },
+          "receipt_contracts": {
+            "properties": {
+              "install_receipt": { "$ref": "#/$defs/windowsReleaseReceiptContract" },
+              "offline_install_receipt": { "$ref": "#/$defs/windowsReleaseReceiptContract" }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "required": ["sanitizer_variant", "platform_id"],
+        "properties": {
+          "sanitizer_variant": { "const": "release" },
+          "platform_id": { "const": "linux-x64" }
+        }
+      },
+      "then": {
+        "properties": {
+          "package_id": { "const": "org.objc3c.runtime:objc3c-runtime-linux-x64-release" },
+          "package_channel_id": { "const": "linux-x64-release" },
+          "payload_contract": {
+            "properties": {
+              "target_platform_id": { "const": "linux-x64" }
+            }
+          },
+          "receipt_contracts": {
+            "properties": {
+              "install_receipt": { "$ref": "#/$defs/linuxReleaseReceiptContract" },
+              "offline_install_receipt": { "$ref": "#/$defs/linuxReleaseReceiptContract" }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "required": ["sanitizer_variant", "platform_id"],
+        "properties": {
+          "sanitizer_variant": { "const": "release" },
+          "platform_id": { "const": "darwin-arm64" }
+        }
+      },
+      "then": {
+        "properties": {
+          "package_id": { "const": "org.objc3c.runtime:objc3c-runtime-darwin-arm64-release" },
+          "package_channel_id": { "const": "darwin-arm64-release" },
+          "payload_contract": {
+            "properties": {
+              "target_platform_id": { "const": "darwin-arm64" }
+            }
+          },
+          "receipt_contracts": {
+            "properties": {
+              "install_receipt": { "$ref": "#/$defs/darwinReleaseReceiptContract" },
+              "offline_install_receipt": { "$ref": "#/$defs/darwinReleaseReceiptContract" }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
         "required": ["sanitizer_variant"],
         "properties": { "sanitizer_variant": { "const": "address" } }
       },
       "then": {
         "properties": {
+          "platform_id": { "const": "windows-x64" },
           "package_id": { "const": "org.objc3c.runtime:objc3c-runtime-asan" },
           "package_channel_id": { "const": "windows-x64-sanitizer-asan" },
           "payload_contract": {
             "properties": {
+              "target_platform_id": { "const": "windows-x64" },
               "required_entries": {
                 "allOf": [
                   { "contains": { "const": "share/objc3c/sanitizer/asan-metadata.json" } },
@@ -88,10 +168,12 @@
       },
       "then": {
         "properties": {
+          "platform_id": { "const": "windows-x64" },
           "package_id": { "const": "org.objc3c.runtime:objc3c-runtime-ubsan" },
           "package_channel_id": { "const": "windows-x64-sanitizer-ubsan" },
           "payload_contract": {
             "properties": {
+              "target_platform_id": { "const": "windows-x64" },
               "required_entries": {
                 "allOf": [
                   { "contains": { "const": "share/objc3c/sanitizer/ubsan-metadata.json" } },
@@ -141,7 +223,7 @@
     "contract_id": { "const": "objc3c.packaging.channels.summary.v1" },
     "generated_at_utc": { "type": "string" },
     "status": { "const": "PASS" },
-    "platform_id": { "type": "string" },
+    "platform_id": { "enum": ["windows-x64", "linux-x64", "darwin-arm64"] },
     "package_id": {
       "enum": [
         "org.objc3c.runtime:objc3c-runtime-release",
@@ -801,6 +883,66 @@
         "support_truth": { "const": false },
         "native_execution_claimed": { "const": false },
         "delegates_to": { "const": "local-installer" }
+      }
+    },
+    "windowsReleaseReceiptContract": {
+      "type": "object",
+      "properties": {
+        "package_id": { "const": "org.objc3c.runtime:objc3c-runtime-release" },
+        "package_channel_id": { "const": "windows-x64-release" },
+        "sanitizer_variant": { "const": "release" },
+        "target_platform_id": { "const": "windows-x64" },
+        "package_runtime_model": {
+          "properties": {
+            "target_platform_id": { "const": "windows-x64" },
+            "package_id": { "const": "org.objc3c.runtime:objc3c-runtime-release" },
+            "package_channel_id": { "const": "windows-x64-release" },
+            "sanitizer_variant": { "const": "release" },
+            "runtime_variant": { "const": "release" }
+          }
+        },
+        "support_truth": { "const": false },
+        "native_execution_claimed": { "const": false }
+      }
+    },
+    "linuxReleaseReceiptContract": {
+      "type": "object",
+      "properties": {
+        "package_id": { "const": "org.objc3c.runtime:objc3c-runtime-linux-x64-release" },
+        "package_channel_id": { "const": "linux-x64-release" },
+        "sanitizer_variant": { "const": "release" },
+        "target_platform_id": { "const": "linux-x64" },
+        "package_runtime_model": {
+          "properties": {
+            "target_platform_id": { "const": "linux-x64" },
+            "package_id": { "const": "org.objc3c.runtime:objc3c-runtime-linux-x64-release" },
+            "package_channel_id": { "const": "linux-x64-release" },
+            "sanitizer_variant": { "const": "release" },
+            "runtime_variant": { "const": "release" }
+          }
+        },
+        "support_truth": { "const": false },
+        "native_execution_claimed": { "const": false }
+      }
+    },
+    "darwinReleaseReceiptContract": {
+      "type": "object",
+      "properties": {
+        "package_id": { "const": "org.objc3c.runtime:objc3c-runtime-darwin-arm64-release" },
+        "package_channel_id": { "const": "darwin-arm64-release" },
+        "sanitizer_variant": { "const": "release" },
+        "target_platform_id": { "const": "darwin-arm64" },
+        "package_runtime_model": {
+          "properties": {
+            "target_platform_id": { "const": "darwin-arm64" },
+            "package_id": { "const": "org.objc3c.runtime:objc3c-runtime-darwin-arm64-release" },
+            "package_channel_id": { "const": "darwin-arm64-release" },
+            "sanitizer_variant": { "const": "release" },
+            "runtime_variant": { "const": "release" }
+          }
+        },
+        "support_truth": { "const": false },
+        "native_execution_claimed": { "const": false }
       }
     },
     "addressSanitizerReceiptContract": {

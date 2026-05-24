@@ -3,6 +3,7 @@ from __future__ import annotations
 import hashlib
 import importlib
 import json
+import os
 import shutil
 import sys
 from pathlib import Path
@@ -451,6 +452,129 @@ def test_package_channel_entrypoint_delegates_to_owner_package() -> None:
     assert "zipfile." not in script_text
     assert "shutil.copytree" not in script_text
     assert "write_json_file" not in script_text
+
+
+def test_package_channel_cli_accepts_release_target_platform_id() -> None:
+    from scripts.objc3c_package_channels import cli as package_cli
+
+    args = package_cli.parse_args(["--target-platform-id", "darwin-arm64"])
+
+    assert args.sanitizer_variant == "release"
+    assert args.target_platform_id == "darwin-arm64"
+
+
+@pytest.mark.parametrize("sanitizer_variant", ["address", "undefined"])
+def test_package_channel_cli_rejects_sanitizer_target_platform_override(
+    sanitizer_variant: str,
+) -> None:
+    from scripts.objc3c_package_channels import cli as package_cli
+
+    with pytest.raises(SystemExit) as exc_info:
+        package_cli.parse_args(
+            [
+                "--sanitizer-variant",
+                sanitizer_variant,
+                "--target-platform-id",
+                "windows-x64",
+            ]
+        )
+
+    assert exc_info.value.code == 2
+
+
+def test_package_channel_model_rejects_sanitizer_target_platform_override() -> None:
+    with pytest.raises(RuntimeError, match="target-platform override"):
+        package_channel_paths(
+            "unit-asan",
+            sanitizer_variant="address",
+            target_platform_id="windows-x64",
+        )
+
+
+def test_package_channel_cli_forwards_release_target_platform_id(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from scripts.objc3c_package_channels import cli as package_cli
+
+    captured: dict[str, object] = {}
+    inputs = sample_inputs()
+    monkeypatch.delenv("OBJC3C_TARGET_PLATFORM_ID", raising=False)
+    monkeypatch.setattr(package_cli, "package_channel_run_id", lambda: "unit-cli")
+    monkeypatch.setattr(package_cli, "load_package_channel_surface_inputs", lambda: {})
+    monkeypatch.setattr(
+        package_cli,
+        "load_package_channel_inputs",
+        lambda surface_inputs: inputs,
+    )
+    monkeypatch.setattr(package_cli, "build_support_matrix", lambda: None)
+
+    def fake_build_release_foundation_artifacts(
+        *,
+        reuse_existing: bool = False,
+    ) -> None:
+        captured["foundation_env_target_platform_id"] = os.environ.get(
+            "OBJC3C_TARGET_PLATFORM_ID"
+        )
+        captured["reuse_existing"] = reuse_existing
+
+    def fake_build_runnable_package(
+        package_root: Path,
+        manifest_relative_path: str,
+        sanitizer_variant: str = "release",
+    ) -> None:
+        captured["build_env_target_platform_id"] = os.environ.get(
+            "OBJC3C_TARGET_PLATFORM_ID"
+        )
+        captured["package_root"] = package_root
+        captured["manifest_relative_path"] = manifest_relative_path
+        captured["sanitizer_variant"] = sanitizer_variant
+
+    def fake_package_channels_manifest_payload(
+        *,
+        inputs: PackageChannelInputs,
+        paths: PackageChannelPaths,
+        installer_signature: dict[str, object],
+    ) -> dict[str, object]:
+        captured["manifest_target_platform_id"] = paths.target_platform_id
+        captured["manifest_package_channel_id"] = paths.package_channel_id
+        return {"platform_id": paths.target_platform_id}
+
+    monkeypatch.setattr(
+        package_cli,
+        "build_release_foundation_artifacts",
+        fake_build_release_foundation_artifacts,
+    )
+    monkeypatch.setattr(package_cli, "prepare_package_channel_workspace", lambda paths: None)
+    monkeypatch.setattr(package_cli, "build_runnable_package", fake_build_runnable_package)
+    monkeypatch.setattr(package_cli, "publish_portable_archive", lambda paths: None)
+    monkeypatch.setattr(package_cli, "publish_installer_archive", lambda paths: None)
+    monkeypatch.setattr(package_cli, "publish_offline_bundle", lambda paths: None)
+    monkeypatch.setattr(package_cli, "installer_signature_payload", lambda installer_archive: {})
+    monkeypatch.setattr(
+        package_cli,
+        "package_channels_manifest_payload",
+        fake_package_channels_manifest_payload,
+    )
+    monkeypatch.setattr(
+        package_cli,
+        "validate_manifest_required_fields",
+        lambda *, manifest_payload, metadata_surface: None,
+    )
+    monkeypatch.setattr(
+        package_cli,
+        "write_package_channel_artifacts",
+        lambda *, inputs, paths, manifest_payload: {},
+    )
+    monkeypatch.setattr(package_cli, "print_package_channel_result", lambda paths: None)
+
+    assert package_cli.main(["--target-platform-id", "darwin-arm64"]) == 0
+    assert captured["foundation_env_target_platform_id"] == "darwin-arm64"
+    assert captured["build_env_target_platform_id"] == "darwin-arm64"
+    assert captured["manifest_target_platform_id"] == "darwin-arm64"
+    assert captured["manifest_package_channel_id"] == "darwin-arm64-release"
+    assert captured["manifest_relative_path"] == MANIFEST_RELATIVE_PATH
+    assert captured["sanitizer_variant"] == "release"
+    assert "OBJC3C_TARGET_PLATFORM_ID" not in os.environ
 
 
 def test_package_channel_reuse_accepts_checked_release_foundation_artifacts(

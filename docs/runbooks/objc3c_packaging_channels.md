@@ -240,6 +240,12 @@ Release package channels are target-platform aware. Windows x64 archives carry
 `objc3c-native` and `libobjc3-runtime.so`; macOS arm64 archives carry
 `objc3c-native` and `libobjc3-runtime.dylib`. Sanitizer package channels remain
 Windows x64 only until platform-specific sanitizer runtime evidence exists.
+Release packaging-channel builds may select that release target explicitly with
+`python scripts/build_objc3c_package_channels.py --target-platform-id windows-x64`,
+`--target-platform-id linux-x64`, or `--target-platform-id darwin-arm64`.
+The target override is rejected for `--sanitizer-variant address` and
+`--sanitizer-variant undefined`; those reserved sanitizer rows have no
+non-Windows escape path or target-platform alias.
 
 For ASan and UBSan package-channel variants, `payload_contract` and
 `receipt_contracts` must also keep the sanitizer runtime-library manifests,

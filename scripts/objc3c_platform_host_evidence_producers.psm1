@@ -39,6 +39,18 @@ function Get-Objc3cLinuxEvidenceRecordId {
   }
 }
 
+function Get-Objc3cDarwinEvidenceRecordId {
+  param([Parameter(Mandatory = $true)][string]$Field)
+
+  switch ($Field) {
+    "object_identity" { return "objc3c.object-identity.darwin-arm64.release.missing" }
+    "debug_identity" { return "objc3c.debug-identity.darwin-arm64.release.missing" }
+    "package_install_identity" { return "objc3c.package-install-identity.darwin-arm64.release.missing" }
+    "runtime_load_link_proof" { return "objc3c.runtime-load-link.darwin-arm64.release.missing" }
+    default { throw ("unknown Darwin evidence record field: " + $Field) }
+  }
+}
+
 function New-Objc3cEvidenceSourceArtifacts {
   param(
     [Parameter(Mandatory = $true)][string]$RepoRoot,
@@ -57,9 +69,23 @@ function New-Objc3cEvidenceSourceArtifacts {
 
 function Get-Objc3cLinuxPackageRootLayout {
   return @(
-    "bin/objc3c-native",
-    "lib/libobjc3-runtime.so",
-    "include/objc3/runtime"
+    "artifacts/package/objc3c-runnable-toolchain-package.json",
+    "artifacts/bin/objc3c-native",
+    "artifacts/lib/libobjc3-runtime.so",
+    "stdlib/workspace.json",
+    "stdlib/modules/objc3.core/module.json",
+    "docs/runbooks/objc3c_packaging_channels.md"
+  )
+}
+
+function Get-Objc3cDarwinPackageRootLayout {
+  return @(
+    "artifacts/package/objc3c-runnable-toolchain-package.json",
+    "artifacts/bin/objc3c-native",
+    "artifacts/lib/libobjc3-runtime.dylib",
+    "stdlib/workspace.json",
+    "stdlib/modules/objc3.core/module.json",
+    "docs/runbooks/objc3c_packaging_channels.md"
   )
 }
 
@@ -692,21 +718,58 @@ function Write-Objc3cDarwinObjectDebugIdentityEvidence {
   } else {
     "GENERATED_MACHO_ARM64_IDENTITY_INCOMPLETE"
   }
+  $objectPass = $objectStatus -eq "GENERATED_MACHO_ARM64_IDENTITY"
+  $buildSummaryExists = Test-Path -LiteralPath $BuildSummaryPath -PathType Leaf
+  $objectGeneratedStatus = if (-not $buildSummaryExists) {
+    "missing-source-generated-fail-closed"
+  } elseif ($objectPass) {
+    "generated-host-artifact-present"
+  } else {
+    "identity-mismatch-generated-fail-closed"
+  }
 
   $objectPayload = [ordered]@{
-    contract_id = "objc3c.platform.darwin.object-identity.v1"
+    contract_id = "objc3c.platform.hosted-object-identity.generated.v1"
     schema_version = 1
     platform_id = $PlatformId
     issue_ref = 8229
-    target_triple = $TargetTriple
-    expected_object_format = "Mach-O"
-    observed_object_format = $ObjectFormat
+    record_id = Get-Objc3cDarwinEvidenceRecordId -Field "object_identity"
+    generated_report_path = Get-Objc3cPlatformEvidenceReportPath -PlatformId $PlatformId -Suffix "build/object-identity.json"
+    source_summary_path = "tmp/build-objc3c-native/native_build_summary.json"
+    reviewed_source_required = $true
     expected_arch = "arm64"
     support_truth = $false
     native_execution_claimed = $false
-    build_summary = Get-Objc3cEvidenceRepoRelativePath -RootPath $RepoRoot -TargetPath $BuildSummaryPath
-    status = $objectStatus
-    artifacts = $artifacts
+    promotion_allowed_from_generated_evidence = $false
+    status = $objectGeneratedStatus
+    expected_identity = [ordered]@{
+      target_platform_id = $PlatformId
+      target_triple = $TargetTriple
+      arch = "arm64"
+      object_format = "Mach-O"
+    }
+    actual_identity = [ordered]@{
+      target_platform_id = if ($objectPass) { $PlatformId } else { "" }
+      target_triple = if ($objectPass) { $TargetTriple } else { "" }
+      object_format = if ($objectPass) { "Mach-O" } else { "" }
+      producer_observed_object_format = $ObjectFormat
+    }
+    build_artifacts = [ordered]@{
+      native_executable = $artifacts.native_executable.artifact
+      frontend_c_api_runner = $artifacts.frontend_c_api_runner.artifact
+      runtime_library = $artifacts.runtime_library.artifact
+    }
+    producer_evidence = [ordered]@{
+      contract_id = "objc3c.platform.darwin.object-identity.v1"
+      status = $objectStatus
+      target_triple = $TargetTriple
+      expected_object_format = "Mach-O"
+      observed_object_format = $ObjectFormat
+      expected_arch = "arm64"
+      build_summary = Get-Objc3cEvidenceRepoRelativePath -RootPath $RepoRoot -TargetPath $BuildSummaryPath
+      artifacts = $artifacts
+    }
+    source_artifacts = New-Objc3cEvidenceSourceArtifacts -RepoRoot $RepoRoot -Paths @($BuildSummaryPath)
   }
   Write-Objc3cPlatformEvidenceJson `
     -Path (Join-Path (Join-Path $EvidenceRoot "build") "object-identity.json") `
@@ -723,19 +786,55 @@ function Write-Objc3cDarwinObjectDebugIdentityEvidence {
   } else {
     "GENERATED_DSYM_UUID_IDENTITY_INCOMPLETE"
   }
+  $debugPass = $debugStatus -eq "GENERATED_DSYM_UUID_IDENTITY"
+  $debugGeneratedStatus = if (-not $buildSummaryExists) {
+    "missing-source-generated-fail-closed"
+  } elseif ($debugPass) {
+    "generated-host-artifact-present"
+  } else {
+    "identity-mismatch-generated-fail-closed"
+  }
   $debugPayload = [ordered]@{
-    contract_id = "objc3c.platform.darwin.debug-identity.v1"
+    contract_id = "objc3c.platform.hosted-debug-identity.generated.v1"
     schema_version = 1
     platform_id = $PlatformId
     issue_ref = 8229
-    target_triple = $TargetTriple
-    expected_debug_format = "DWARF/dSYM"
-    observed_debug_format = $DebugFormat
+    record_id = Get-Objc3cDarwinEvidenceRecordId -Field "debug_identity"
+    generated_report_path = Get-Objc3cPlatformEvidenceReportPath -PlatformId $PlatformId -Suffix "build/debug-identity.json"
+    source_summary_path = "tmp/build-objc3c-native/native_build_summary.json"
+    reviewed_source_required = $true
     expected_arch = "arm64"
     support_truth = $false
     native_execution_claimed = $false
-    status = $debugStatus
-    artifacts = $debugRecords
+    promotion_allowed_from_generated_evidence = $false
+    status = $debugGeneratedStatus
+    expected_identity = [ordered]@{
+      target_platform_id = $PlatformId
+      target_triple = $TargetTriple
+      arch = "arm64"
+      debug_format = "DWARF/dSYM"
+    }
+    actual_identity = [ordered]@{
+      target_platform_id = if ($debugPass) { $PlatformId } else { "" }
+      target_triple = if ($debugPass) { $TargetTriple } else { "" }
+      debug_format = if ($debugPass) { "DWARF/dSYM" } else { "" }
+      producer_observed_debug_format = $DebugFormat
+    }
+    debug_artifacts = [ordered]@{
+      native_executable = $debugRecords.native_executable.binary
+      frontend_c_api_runner = $debugRecords.frontend_c_api_runner.binary
+      runtime_library = $debugRecords.runtime_library.binary
+    }
+    producer_evidence = [ordered]@{
+      contract_id = "objc3c.platform.darwin.debug-identity.v1"
+      status = $debugStatus
+      target_triple = $TargetTriple
+      expected_debug_format = "DWARF/dSYM"
+      observed_debug_format = $DebugFormat
+      expected_arch = "arm64"
+      artifacts = $debugRecords
+    }
+    source_artifacts = New-Objc3cEvidenceSourceArtifacts -RepoRoot $RepoRoot -Paths @($BuildSummaryPath)
   }
   Write-Objc3cPlatformEvidenceJson `
     -Path (Join-Path (Join-Path $EvidenceRoot "build") "debug-identity.json") `
@@ -767,35 +866,72 @@ function Write-Objc3cDarwinRuntimeLibraryManifestEvidence {
 
   $runtimeLibraryPath = Join-Path $PackageRoot (ConvertTo-Objc3cEvidenceHostPath -RelativePath $RuntimeLibraryRelativePath)
   $identity = Get-Objc3cDarwinMachOIdentity -RepoRoot $PackageRoot -Path $runtimeLibraryPath -IncludeInstallName
+  $manifestStatus = if ([bool]$identity.artifact.exists -and [bool]$identity.mach_o_present -and [bool]$identity.expected_arch_present) {
+    "GENERATED_MACHO_RUNTIME_LIBRARY_MANIFEST"
+  } else {
+    "GENERATED_MACHO_RUNTIME_LIBRARY_MANIFEST_INCOMPLETE"
+  }
+  $packageManifestPayload = @{}
+  if (Test-Path -LiteralPath $PackageManifestPath -PathType Leaf) {
+    $packageManifestPayload = Get-Content -LiteralPath $PackageManifestPath -Raw | ConvertFrom-Json
+  }
+  $packageTargetPlatformId = [string](Get-Objc3cEvidenceObjectProperty -InputObject $packageManifestPayload -Name "target_platform_id" -DefaultValue "")
+  $runtimeArtifact = Get-Objc3cEvidenceFileDigest -RootPath $PackageRoot -TargetPath $runtimeLibraryPath
+  $packageManifestArtifact = Get-Objc3cEvidenceFileDigest -RootPath $RepoRoot -TargetPath $PackageManifestPath
+  $runtimeGeneratedStatus = if (-not [bool]$packageManifestArtifact.exists -or -not [bool]$runtimeArtifact.exists) {
+    "missing-source-generated-fail-closed"
+  } elseif (-not [string]::IsNullOrWhiteSpace($packageTargetPlatformId) -and $packageTargetPlatformId -ne $PlatformId) {
+    "package-target-mismatch-generated-fail-closed"
+  } elseif ([bool]$identity.mach_o_present -and [bool]$identity.expected_arch_present) {
+    "generated-host-artifact-present"
+  } else {
+    "missing-source-generated-fail-closed"
+  }
   $payload = [ordered]@{
-    contract_id = "objc3c.platform.darwin.runtime-library-manifest.v1"
+    contract_id = "objc3c.platform.hosted-runtime-library-manifest.generated.v1"
     schema_version = 1
     platform_id = $PlatformId
     issue_ref = 8229
-    package_manifest = Get-Objc3cEvidenceRepoRelativePath -RootPath $PackageRoot -TargetPath $PackageManifestPath
-    package_root = Get-Objc3cEvidenceRepoRelativePath -RootPath $RepoRoot -TargetPath $PackageRoot
-    target_triple = $TargetTriple
-    object_format = $ObjectFormat
-    debug_format = $DebugFormat
-    runtime_library_ids = @("objc3-runtime")
-    runtime_library_names = @($RuntimeLibraryName)
-    runtime_library_root_kind = "objc3c-release-darwin-arm64-package-root"
-    runtime_library_artifacts = @(
-      [ordered]@{
-        runtime_library_id = "objc3-runtime"
-        artifact = $RuntimeLibraryRelativePath
-        source_file_name = $RuntimeLibraryName
-        install_required = $true
-        identity = $identity
-      }
-    )
-    install_name = $identity.install_name
-    linked_libraries = @($identity.linked_libraries)
-    rpaths = @($identity.load_commands.rpaths)
-    codesign = $identity.codesign
-    missing_runtime_behavior = "fail-closed-before-package-install"
+    generated_report_path = Get-Objc3cPlatformEvidenceReportPath -PlatformId $PlatformId -Suffix "package/runtime-library-manifest.json"
+    source_package_manifest_path = "artifacts/package/objc3c-runnable-toolchain-package.json"
     support_truth = $false
     native_execution_claimed = $false
+    promotion_allowed_from_generated_evidence = $false
+    status = $runtimeGeneratedStatus
+    target_platform_id = $PlatformId
+    source_package_target_platform_id = $packageTargetPlatformId
+    target_triple = $TargetTriple
+    runtime_library_kind = "shared"
+    runtime_library_ids = @("objc3-runtime")
+    runtime_library_names = @($RuntimeLibraryName)
+    runtime_library_artifacts = @($runtimeArtifact)
+    loader_path_policy = "@rpath, install_name, codesign, and package-root loader behavior must be proven before support"
+    package_root = Get-Objc3cEvidenceRepoRelativePath -RootPath $RepoRoot -TargetPath $PackageRoot
+    package_root_layout = Get-Objc3cDarwinPackageRootLayout
+    package_manifest_artifact = $packageManifestArtifact
+    producer_evidence = [ordered]@{
+      contract_id = "objc3c.platform.darwin.runtime-library-manifest.v1"
+      status = $manifestStatus
+      package_manifest = Get-Objc3cEvidenceRepoRelativePath -RootPath $PackageRoot -TargetPath $PackageManifestPath
+      object_format = $ObjectFormat
+      debug_format = $DebugFormat
+      runtime_library_root_kind = "objc3c-release-darwin-arm64-package-root"
+      runtime_library_artifacts = @(
+        [ordered]@{
+          runtime_library_id = "objc3-runtime"
+          artifact = $RuntimeLibraryRelativePath
+          source_file_name = $RuntimeLibraryName
+          install_required = $true
+          identity = $identity
+        }
+      )
+      install_name = $identity.install_name
+      linked_libraries = @($identity.linked_libraries)
+      rpaths = @($identity.load_commands.rpaths)
+      codesign = $identity.codesign
+      missing_runtime_behavior = "fail-closed-before-package-install"
+    }
+    source_artifacts = New-Objc3cEvidenceSourceArtifacts -RepoRoot $RepoRoot -Paths @($PackageManifestPath)
   }
 
   $packageEvidenceRoot = Join-Path $EvidenceRoot "package"
@@ -893,32 +1029,61 @@ function Write-Objc3cDarwinRuntimeLoadProbeEvidence {
     @($results | ForEach-Object { @($_.driver_linker_flags) })
   ) | Where-Object { -not [string]::IsNullOrWhiteSpace([string]$_) } | Sort-Object -Unique
 
-  $loadProbeExitCode = if ([string]$summary.status -eq "PASS" -and @($executableProbes | Where-Object { [bool]$_.runtime_reference_present }).Count -gt 0) {
+  $summaryStatus = [string](Get-Objc3cEvidenceObjectProperty -InputObject $summary -Name "status" -DefaultValue "")
+  $skipReason = [string](Get-Objc3cEvidenceObjectProperty -InputObject $summary -Name "skip_reason" -DefaultValue "")
+  $loadProbeExitCode = if ($summaryStatus -eq "PASS" -and @($executableProbes | Where-Object { [bool]$_.runtime_reference_present }).Count -gt 0) {
     0
   } else {
     1
   }
+  $nativeGeneratedStatus = if (-not (Test-Path -LiteralPath $SummaryPath -PathType Leaf)) {
+    "missing-source-generated-fail-closed"
+  } elseif (-not [string]::IsNullOrWhiteSpace($skipReason) -or $summaryStatus -in @("UNAVAILABLE", "SKIP", "SKIPPED")) {
+    "runtime-load-unavailable-generated-fail-closed"
+  } elseif ($loadProbeExitCode -eq 0 -and $summaryStatus -eq "PASS") {
+    "generated-host-artifact-present"
+  } else {
+    "runtime-load-failed-generated-fail-closed"
+  }
   $payload = [ordered]@{
-    contract_id = "objc3c.platform.darwin.runtime-load-link-proof.v1"
+    contract_id = "objc3c.platform.hosted-runtime-load-probe.generated.v1"
     schema_version = 1
     platform_id = $PlatformId
     issue_ref = 8229
-    target_triple = $TargetTriple
-    status = if ($loadProbeExitCode -eq 0) { "PASS" } else { "INCOMPLETE" }
-    execution_summary = Get-Objc3cEvidenceRepoRelativePath -RootPath $RepoRoot -TargetPath $SummaryPath
-    runtime_library_names = @("libobjc3-runtime.dylib")
-    runtime_library = $runtimeIdentity
-    runtime_library_manifest_path = "tmp/reports/platform-host-evidence/darwin-arm64/package/runtime-library-manifest.json"
-    link_command = [string]$summary.link_command
-    linker_flags = @($linkerFlags)
-    loader_policy = $LoaderPathPolicy
-    load_path = @($summary.load_path)
-    runtime_load_environment = $summary.runtime_load_environment
-    resolved_runtime_paths = @($resolvedRuntimePaths)
-    load_probe_exit_code = $loadProbeExitCode
-    executable_probes = @($executableProbes)
+    record_id = Get-Objc3cDarwinEvidenceRecordId -Field "runtime_load_link_proof"
+    generated_report_path = Get-Objc3cPlatformEvidenceReportPath -PlatformId $PlatformId -Suffix "execution/runtime-load-probe.json"
+    source_summary_path = "tmp/reports/objc3c-native-execution-smoke/summary.json"
+    reviewed_source_required = $true
     support_truth = $false
     native_execution_claimed = $false
+    promotion_allowed_from_generated_evidence = $false
+    status = $nativeGeneratedStatus
+    target_triple = $TargetTriple
+    target_platform_id = $PlatformId
+    runtime_library_names = @("libobjc3-runtime.dylib")
+    runtime_library = Get-Objc3cEvidenceRepoRelativePath -RootPath $RepoRoot -TargetPath $RuntimeLibraryPath
+    runtime_library_kind = "shared"
+    runtime_load_environment_variable = "DYLD_LIBRARY_PATH"
+    loader_path_policy = $LoaderPathPolicy
+    resolved_runtime_paths = @($resolvedRuntimePaths)
+    driver_linker_flags = @($linkerFlags)
+    hosted_execution_status = ""
+    native_execution_status = $summaryStatus
+    skip_reason = $skipReason
+    load_probe_exit_code = $loadProbeExitCode
+    producer_evidence = [ordered]@{
+      contract_id = "objc3c.platform.darwin.runtime-load-link-proof.v1"
+      status = if ($loadProbeExitCode -eq 0) { "PASS" } else { "INCOMPLETE" }
+      execution_summary = Get-Objc3cEvidenceRepoRelativePath -RootPath $RepoRoot -TargetPath $SummaryPath
+      runtime_library_identity = $runtimeIdentity
+      runtime_library_manifest_path = "tmp/reports/platform-host-evidence/darwin-arm64/package/runtime-library-manifest.json"
+      link_command = [string](Get-Objc3cEvidenceObjectProperty -InputObject $summary -Name "link_command" -DefaultValue "")
+      loader_policy = $LoaderPathPolicy
+      load_path = @(Get-Objc3cEvidenceObjectProperty -InputObject $summary -Name "load_path" -DefaultValue @())
+      runtime_load_environment = Get-Objc3cEvidenceObjectProperty -InputObject $summary -Name "runtime_load_environment" -DefaultValue @{}
+      executable_probes = @($executableProbes)
+    }
+    source_artifacts = New-Objc3cEvidenceSourceArtifacts -RepoRoot $RepoRoot -Paths @($SummaryPath)
   }
 
   Write-Objc3cPlatformEvidenceJson `

@@ -250,10 +250,12 @@ function New-RunnableToolchainPackageFoundationManifestSection {
     runtime_library_kind = $runtimeLibraryKind
     runtime_library_name = $runtimeLibraryName
     package_root_layout = @(
+      "artifacts/package/objc3c-runnable-toolchain-package.json",
       $coreArtifacts.NativeExecutable,
-      $coreArtifacts.CapiRunnerExecutable,
       $coreArtifacts.RuntimeLibrary,
-      "include/objc3/runtime"
+      "stdlib/workspace.json",
+      "stdlib/modules/objc3.core/module.json",
+      "docs/runbooks/objc3c_packaging_channels.md"
     )
     native_executable = $coreArtifacts.NativeExecutable
     frontend_c_api_runner = $coreArtifacts.CapiRunnerExecutable

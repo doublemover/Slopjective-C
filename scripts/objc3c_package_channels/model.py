@@ -105,7 +105,8 @@ RELEASE_PACKAGE_LAYOUT_BY_PLATFORM = {
         "docs/runbooks/objc3c_packaging_channels.md",
     ],
 }
-RELEASE_PACKAGE_TARGET_PLATFORM_IDS = frozenset(RELEASE_PACKAGE_LAYOUT_BY_PLATFORM)
+RELEASE_PACKAGE_TARGET_PLATFORM_CHOICES = tuple(RELEASE_PACKAGE_LAYOUT_BY_PLATFORM)
+RELEASE_PACKAGE_TARGET_PLATFORM_IDS = frozenset(RELEASE_PACKAGE_TARGET_PLATFORM_CHOICES)
 
 
 @dataclass(frozen=True)
@@ -208,8 +209,11 @@ def package_channel_target_platform_id(
     target_platform_id: str | None = None,
 ) -> str:
     if sanitizer_variant != "release":
-        if target_platform_id not in (None, "", DEFAULT_TARGET_PLATFORM_ID):
-            raise RuntimeError("sanitizer package channels are currently windows-x64 only")
+        if target_platform_id not in (None, ""):
+            raise RuntimeError(
+                "target-platform override is only supported for release package channels; "
+                "sanitizer package channels are currently windows-x64 only"
+            )
         return DEFAULT_TARGET_PLATFORM_ID
     if target_platform_id:
         if target_platform_id not in RELEASE_PACKAGE_TARGET_PLATFORM_IDS:

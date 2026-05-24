@@ -41,9 +41,12 @@ PLATFORM_CONFIG: dict[str, dict[str, Any]] = {
         "runtime_library_names": ["libobjc3-runtime.so"],
         "loader_path_policy": "ELF rpath, RUNPATH, or package-root loader resolution must be proven before support",
         "package_root_layout": [
-            "bin/objc3c-native",
-            "lib/libobjc3-runtime.so",
-            "include/objc3/runtime",
+            "artifacts/package/objc3c-runnable-toolchain-package.json",
+            "artifacts/bin/objc3c-native",
+            "artifacts/lib/libobjc3-runtime.so",
+            "stdlib/workspace.json",
+            "stdlib/modules/objc3.core/module.json",
+            "docs/runbooks/objc3c_packaging_channels.md",
         ],
     },
     "darwin-arm64": {
@@ -61,9 +64,12 @@ PLATFORM_CONFIG: dict[str, dict[str, Any]] = {
         "runtime_library_names": ["libobjc3-runtime.dylib"],
         "loader_path_policy": "@rpath, install_name, codesign, and package-root loader behavior must be proven before support",
         "package_root_layout": [
-            "bin/objc3c-native",
-            "lib/libobjc3-runtime.dylib",
-            "include/objc3/runtime",
+            "artifacts/package/objc3c-runnable-toolchain-package.json",
+            "artifacts/bin/objc3c-native",
+            "artifacts/lib/libobjc3-runtime.dylib",
+            "stdlib/workspace.json",
+            "stdlib/modules/objc3.core/module.json",
+            "docs/runbooks/objc3c_packaging_channels.md",
         ],
     },
 }
@@ -1070,10 +1076,7 @@ def write_runtime_library_manifest_artifact(platform_id: str) -> None:
         "runtime_library_artifacts": runtime_artifacts,
         "loader_path_policy": expected["loader_path_policy"],
         "package_root": package_manifest.get("package_root", ""),
-        "package_root_layout": package_manifest.get(
-            "package_root_layout",
-            expected["package_root_layout"],
-        ),
+        "package_root_layout": package_manifest.get("package_root_layout", []),
         "package_manifest_artifact": package_artifact,
         "source_artifacts": source_artifacts(
             RUNNABLE_PACKAGE_MANIFEST_PATH,
@@ -1126,10 +1129,7 @@ def write_install_receipt_artifact(platform_id: str) -> None:
         "target_platform_id": platform_id,
         "target_triple": expected["target_triple"],
         "package_root": package_manifest.get("package_root", ""),
-        "package_root_layout": package_manifest.get(
-            "package_root_layout",
-            expected["package_root_layout"],
-        ),
+        "package_root_layout": package_manifest.get("package_root_layout", []),
         "package_manifest": RUNNABLE_PACKAGE_MANIFEST_PATH,
         "package_manifest_artifact": generated_artifact(RUNNABLE_PACKAGE_MANIFEST_PATH),
         "package_channels_summary_artifact": generated_artifact(
