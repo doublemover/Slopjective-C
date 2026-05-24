@@ -69,9 +69,14 @@ diagnostic, documentation, or boundary evidence only.
 | `language.errors.typed-throws` |  | `diagnostic` | `tests/tooling/fixtures/native/recovery/negative/negative_typed_throws_protocol_mismatch.objc3` |  |
 | `language.errors.typed-throws` |  | `diagnostic` | `tests/tooling/fixtures/native/recovery/negative/negative_typed_throws_incompatible_catch.objc3` |  |
 | `language.errors.typed-throws` |  | `diagnostic` | `tests/tooling/fixtures/native/recovery/negative/negative_typed_throws_foreign_carrier_catch.objc3` |  |
+| `language.errors.typed-throws` |  | `diagnostic` | `tests/tooling/fixtures/native/recovery/negative/negative_typed_throws_method_incompatible_catch.objc3` |  |
+| `language.errors.typed-throws` |  | `diagnostic` | `tests/tooling/fixtures/native/recovery/negative/negative_typed_throws_method_foreign_carrier_catch.objc3` |  |
+| `language.errors.typed-throws` |  | `test` | `tests/tooling/fixtures/native/execution/positive/typed_throws_runtime_catch_bridge_positive.objc3` | `npm run objc3c -- test-execution-smoke` |
+| `language.errors.typed-throws` |  | `test` | `tests/tooling/fixtures/native/execution/positive/typed_throws_runtime_message_send_catch_positive.objc3` | `npm run objc3c -- test-execution-smoke` |
 | `language.errors.typed-throws` |  | `schema` | `schemas/objc3c-typed-throws-effect-contract-v1.schema.json` |  |
 | `language.errors.typed-throws` |  | `source` | `native/objc3c/src/sema/objc3_typed_throws_effect_contract.h` |  |
 | `language.errors.typed-throws` |  | `source` | `native/objc3c/src/sema/objc3_semantic_error_handling_try_do_catch_do_scope.inc` |  |
+| `language.errors.typed-throws` |  | `source` | `native/objc3c/src/sema/objc3_semantic_error_handling_try_do_catch_operand_surface.inc` |  |
 | `language.errors.typed-throws` |  | `source` | `native/objc3c/src/sema/objc3_semantic_signature_compatibility.cpp` |  |
 | `language.errors.typed-throws` |  | `source` | `native/objc3c/src/ir/objc3_ir_function_signature_model.cpp` |  |
 | `language.errors.typed-throws` |  | `source` | `native/objc3c/src/ir/objc3_ir_direct_call_emission.cpp` |  |
@@ -94,12 +99,16 @@ diagnostic, documentation, or boundary evidence only.
 | `language.types.value-optionals` |  | `diagnostic` | `tests/tooling/fixtures/native/value_optionals_layout_mismatch_negative.contract.json` |  |
 | `language.types.value-optionals` |  | `diagnostic` | `tests/tooling/fixtures/native/value_optionals_lowering_claim_negative.contract.json` |  |
 | `language.types.value-optionals` |  | `diagnostic` | `tests/tooling/fixtures/native/value_optionals_interface_mismatch_negative.contract.json` |  |
+| `language.types.value-optionals` |  | `test` | `tests/tooling/fixtures/native/execution/positive/value_optionals_runtime_abi_positive.objc3` | `npm run objc3c -- test-execution-smoke` |
 | `language.types.value-optionals` |  | `source` | `tests/tooling/fixtures/native/language_evolution_typed_throws_value_optionals_contract.json` |  |
 | `language.types.value-optionals` |  | `source` | `tests/tooling/fixtures/native/value_optionals_contract_positive.json` |  |
 | `language.types.value-optionals` |  | `diagnostic` | `tests/tooling/fixtures/native/value_optionals_executable_semantics_negative.contract.json` |  |
 | `language.types.value-optionals` |  | `schema` | `schemas/objc3c-value-optionals-contract-v1.schema.json` |  |
 | `language.types.value-optionals` |  | `source` | `native/objc3c/src/ast/objc3_ast_value_optional_type.h` |  |
+| `language.types.value-optionals` |  | `source` | `native/objc3c/src/ir/objc3_ir_expression_emission_call.cpp` |  |
 | `language.types.value-optionals` |  | `source` | `native/objc3c/src/lower/contracts/value_optional_lowering_contracts.h` |  |
+| `language.types.value-optionals` |  | `source` | `native/objc3c/src/runtime/public/objc3_runtime_value_optional_contract.h` |  |
+| `language.types.value-optionals` |  | `source` | `native/objc3c/src/runtime/values/value_optional.cpp` |  |
 | `language.types.value-optionals` |  | `source` | `native/objc3c/src/artifacts/objc3_frontend_textual_interface_payload_artifact.cpp` |  |
 | `language.types.value-optionals` |  | `source` | `native/objc3c/src/artifacts/objc3_frontend_textual_interface_payload_import.cpp` |  |
 | `language.control-flow.statement-guarded-match` | `objc3c.behavior.language.control-flow.statement-guarded-match` | `test` | `tests/tooling/fixtures/native/recovery/positive/match_guarded_pattern_statement.objc3` | `npm run objc3c -- validate-conformance-corpus` |

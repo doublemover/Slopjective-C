@@ -2,7 +2,9 @@ module ValueOptionalsTypeSignaturesPositive;
 
 extern fn maybeCount(value: Optional<i32>, enabled: Optional<i32>) -> Optional<i32>;
 extern fn maybeFallback(value: Optional<i32>) -> Optional<i32>;
+extern fn maybeFlag(value: Optional<bool>, fallback: Optional<bool>) -> Optional<bool>;
 
 @interface ValueOptionalCarrier
 - (Optional<i32>)nextValue:(Optional<i32>)seed;
+- (Optional<bool>)nextFlag:(Optional<bool>)seed;
 @end

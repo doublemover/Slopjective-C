@@ -188,7 +188,10 @@ fail-closed until package/install/native execution evidence exists for a
 supported host, and sanitized packages cannot be published into the default
 release channel, installed without the matching sanitizer runtime library,
 published from stale package metadata, or mixed with unsanitized runtime
-libraries.
+libraries. Sanitizer install receipts must now carry a machine-owned
+`sanitizer_package_variant` field with the package id, variant row id, target
+platform, sanitizer runtime libraries, metadata digest, explicit install
+selector, and native-execution contract before any future support promotion.
 
 ### Disclosure And Response Boundary
 

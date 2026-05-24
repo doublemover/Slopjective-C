@@ -119,11 +119,39 @@ REQUIRED_PACKAGE_VARIANTS = {
 REQUIRED_PACKAGE_EVIDENCE = {"build", "package", "install", "execution"}
 REQUIRED_UNSUPPORTED_DIAGNOSTIC_BLOCKS = {"package", "install", "execution", "publication"}
 REQUIRED_PACKAGE_INSTALL_NEGATIVE_KINDS = {
+    "missing-install-receipt-field",
     "mixed-runtime",
     "missing-sanitizer-runtime",
     "stale-package-metadata",
     "unsupported-host",
     "default-release-misuse",
+}
+INSTALL_RECEIPT_SCHEMA_PATH = "schemas/objc3c-package-install-receipt-v1.schema.json"
+INSTALL_RECEIPT_CONTRACT_ID = "objc3c.packaging.channels.install-receipt.v1"
+SANITIZER_INSTALL_RECEIPT_FIELD = "sanitizer_package_variant"
+REQUIRED_SANITIZER_INSTALL_RECEIPT_FIELDS = {
+    "package_id",
+    "package_variant_row_id",
+    "target_platform_id",
+    "sanitizer",
+    "runtime_library_ids",
+    "metadata_manifest_path",
+    "metadata_digest",
+    "selected_runtime_variant",
+    "install_selector",
+    "native_execution_contract",
+    "support_truth",
+    "native_execution_claimed",
+    SANITIZER_INSTALL_RECEIPT_FIELD,
+}
+REQUIRED_NATIVE_EXECUTION_RECORD_FIELDS = {
+    "executable_path",
+    "target_platform_id",
+    "sanitizer",
+    "runtime_library_ids",
+    "environment",
+    "exit_code",
+    "diagnostic_records",
 }
 
 
@@ -189,6 +217,91 @@ def expected_metadata_manifest_path(sanitizer_name: str) -> str:
     raise RuntimeError(f"unknown sanitizer {sanitizer_name}")
 
 
+def expected_install_receipt_fields(sanitizer_name: str) -> set[str]:
+    fields = set(REQUIRED_SANITIZER_INSTALL_RECEIPT_FIELDS)
+    if sanitizer_name == "undefined":
+        fields.add("trap_or_recover_mode")
+    return fields
+
+
+def validate_install_receipt_contract(
+    variant_id: str,
+    package_runtime_contract: dict[str, Any],
+    *,
+    sanitizer_name: str,
+) -> dict[str, object]:
+    install_receipt = require_object(
+        package_runtime_contract.get("install_receipt_contract"),
+        f"{variant_id}.package_runtime_contract.install_receipt_contract",
+    )
+    if install_receipt.get("schema") != INSTALL_RECEIPT_SCHEMA_PATH:
+        raise RuntimeError(f"{variant_id} install receipt schema drifted")
+    schema_path = require_path(INSTALL_RECEIPT_SCHEMA_PATH)
+    require_text_tokens(
+        schema_path,
+        [SANITIZER_INSTALL_RECEIPT_FIELD, "native_execution_contract"],
+        f"{variant_id} install receipt schema",
+    )
+    if install_receipt.get("contract_id") != INSTALL_RECEIPT_CONTRACT_ID:
+        raise RuntimeError(f"{variant_id} install receipt contract id drifted")
+    if install_receipt.get("receipt_field") != SANITIZER_INSTALL_RECEIPT_FIELD:
+        raise RuntimeError(f"{variant_id} install receipt sanitizer field drifted")
+    if install_receipt.get("machine_owned") is not True:
+        raise RuntimeError(f"{variant_id} install receipt must be machine-owned")
+    if install_receipt.get("support_truth") is not False:
+        raise RuntimeError(f"{variant_id} install receipt was treated as support truth")
+    if install_receipt.get("native_execution_claimed") is not False:
+        raise RuntimeError(f"{variant_id} install receipt claimed native execution")
+    if install_receipt.get("selected_runtime_variant") != f"sanitizer={sanitizer_name}":
+        raise RuntimeError(f"{variant_id} install receipt runtime variant drifted")
+
+    required_fields = set(
+        require_string_list(
+            install_receipt.get("required_fields"),
+            f"{variant_id}.install_receipt_contract.required_fields",
+        )
+    )
+    expected_fields = expected_install_receipt_fields(sanitizer_name)
+    if not expected_fields <= required_fields:
+        missing_fields = sorted(expected_fields - required_fields)
+        raise RuntimeError(f"{variant_id} install receipt fields missing: {missing_fields}")
+
+    native_execution = require_object(
+        install_receipt.get("native_execution_contract"),
+        f"{variant_id}.install_receipt_contract.native_execution_contract",
+    )
+    if native_execution.get("native_execution_required_before_support") is not True:
+        raise RuntimeError(f"{variant_id} native execution was not required before support")
+    if native_execution.get("native_execution_record_required") is not True:
+        raise RuntimeError(f"{variant_id} native execution record was not required")
+    if native_execution.get("native_execution_claimed") is not False:
+        raise RuntimeError(f"{variant_id} native execution contract claimed execution")
+    if (
+        native_execution.get("missing_native_execution_behavior")
+        != "fail-closed-before-support-promotion"
+    ):
+        raise RuntimeError(f"{variant_id} missing native execution behavior drifted")
+    native_execution_fields = set(
+        require_string_list(
+            native_execution.get("native_execution_record_fields"),
+            f"{variant_id}.native_execution_contract.native_execution_record_fields",
+        )
+    )
+    if not REQUIRED_NATIVE_EXECUTION_RECORD_FIELDS <= native_execution_fields:
+        missing_fields = sorted(REQUIRED_NATIVE_EXECUTION_RECORD_FIELDS - native_execution_fields)
+        raise RuntimeError(f"{variant_id} native execution record fields missing: {missing_fields}")
+    if sanitizer_name == "undefined" and "trap_or_recover_mode" not in native_execution_fields:
+        raise RuntimeError(f"{variant_id} UBSan native execution record missing trap_or_recover_mode")
+
+    return {
+        "schema": INSTALL_RECEIPT_SCHEMA_PATH,
+        "receipt_field": SANITIZER_INSTALL_RECEIPT_FIELD,
+        "required_fields": sorted(required_fields),
+        "native_execution_required_before_support": True,
+        "native_execution_claimed": False,
+    }
+
+
 def validate_package_runtime_model_contract(
     variant_id: str,
     package_runtime_contract: dict[str, Any],
@@ -214,6 +327,16 @@ def validate_package_runtime_model_contract(
     for runtime_library_id in expected_runtime_library_ids:
         if not any(runtime_library_id in path for path in package_root_layout):
             raise RuntimeError(f"{variant_id} package layout missing {runtime_library_id}")
+    install_receipt_required_fields = set(
+        require_string_list(
+            package_layout.get("install_receipt_required_fields"),
+            f"{variant_id}.package_layout_contract.install_receipt_required_fields",
+        )
+    )
+    expected_receipt_fields = expected_install_receipt_fields(sanitizer_name)
+    if not expected_receipt_fields <= install_receipt_required_fields:
+        missing_fields = sorted(expected_receipt_fields - install_receipt_required_fields)
+        raise RuntimeError(f"{variant_id} package layout receipt fields missing: {missing_fields}")
     if package_layout.get("layout_support_truth") is not False:
         raise RuntimeError(f"{variant_id} package layout was treated as support truth")
 
@@ -303,9 +426,16 @@ def validate_package_runtime_model_contract(
         if trap_recover.get("mode_support_truth") is not False:
             raise RuntimeError(f"{variant_id} UBSan mode was treated as support truth")
 
+    install_receipt_summary = validate_install_receipt_contract(
+        variant_id,
+        package_runtime_contract,
+        sanitizer_name=sanitizer_name,
+    )
+
     return {
         "package_layout": package_root_layout,
         "metadata_manifest_path": metadata_manifest_path,
+        "install_receipt": install_receipt_summary,
         "install_selector": str(install_selection["install_selector"]),
         "environment_variable": str(environment["env_var"]),
     }

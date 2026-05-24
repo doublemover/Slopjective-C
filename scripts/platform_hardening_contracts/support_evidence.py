@@ -167,6 +167,28 @@ HOST_EVIDENCE_RUNNER_LABELS: dict[str, str] = {
     "linux-x64": "ubuntu-24.04",
     "darwin-arm64": "macos-15",
 }
+HOST_EVIDENCE_REQUIRED_SCOPED_REPORT_PATHS: dict[str, tuple[str, ...]] = {
+    "linux-x64": (
+        "tmp/reports/platform-host-evidence/linux-x64/host-evidence-report.json",
+        "tmp/reports/platform-host-evidence/linux-x64/ingestion-summary.json",
+        "tmp/reports/platform-host-evidence/linux-x64/llvm-capabilities.json",
+        "tmp/reports/platform-host-evidence/linux-x64/build/native_build_summary.json",
+        "tmp/reports/platform-host-evidence/linux-x64/package/objc3c-runnable-toolchain-package.json",
+        "tmp/reports/platform-host-evidence/linux-x64/install/end-to-end-summary.json",
+        "tmp/reports/platform-host-evidence/linux-x64/execution/hosted-execution-smoke-summary.json",
+        "tmp/reports/platform-host-evidence/linux-x64/execution/native-execution-smoke-summary.json",
+    ),
+    "darwin-arm64": (
+        "tmp/reports/platform-host-evidence/darwin-arm64/host-evidence-report.json",
+        "tmp/reports/platform-host-evidence/darwin-arm64/ingestion-summary.json",
+        "tmp/reports/platform-host-evidence/darwin-arm64/llvm-capabilities.json",
+        "tmp/reports/platform-host-evidence/darwin-arm64/build/native_build_summary.json",
+        "tmp/reports/platform-host-evidence/darwin-arm64/package/objc3c-runnable-toolchain-package.json",
+        "tmp/reports/platform-host-evidence/darwin-arm64/install/end-to-end-summary.json",
+        "tmp/reports/platform-host-evidence/darwin-arm64/execution/hosted-execution-smoke-summary.json",
+        "tmp/reports/platform-host-evidence/darwin-arm64/execution/native-execution-smoke-summary.json",
+    ),
+}
 REQUIRED_HOST_EVIDENCE_SECTIONS: tuple[str, ...] = (
     "host_identity_records",
     "toolchain_probe_records",
@@ -719,9 +741,25 @@ def _validate_hosted_evidence_ingestion(
         ingestion.get("support_rows_remain_fail_closed_until_reviewed") is True,
         "host evidence fail-closed review boundary drifted",
     )
+    workflow_text = resolve_repo_path(HOST_EVIDENCE_WORKFLOW_PATH).read_text(encoding="utf-8")
     candidate_ids = tuple(str(record_id) for record_id in ingestion.get("candidate_evidence_record_ids", []))
     expect(set(candidate_ids) == set(HOST_EVIDENCE_CANDIDATE_RECORD_IDS), "host evidence candidate ids drifted")
+    expect(
+        workflow_text.count("if-no-files-found: error") >= len(candidate_ids),
+        "host evidence workflow uploads do not all fail closed when evidence is absent",
+    )
     for record_id in candidate_ids:
+        platform_id = record_id.removeprefix("objc3c.evidence.hosted-ci.").removesuffix(".generated-host-run")
+        expected_scoped_paths = set(HOST_EVIDENCE_REQUIRED_SCOPED_REPORT_PATHS.get(platform_id, ()))
+        expect(expected_scoped_paths, f"{record_id} used unknown platform for scoped report paths")
+        expect(
+            f"name: objc3c-platform-host-evidence-{platform_id}" in workflow_text,
+            f"{record_id} workflow upload artifact name drifted",
+        )
+        expect(
+            f"path: {HOST_EVIDENCE_REPORT_ROOT}/{platform_id}/**" in workflow_text,
+            f"{record_id} workflow upload path is not platform-scoped",
+        )
         expect(record_id in records_by_id, f"host evidence ingestion missing evidence record {record_id}")
         record = records_by_id[record_id]
         expect(record.get("evidence_class") == "hosted_ci", f"{record_id} must remain hosted_ci evidence")
@@ -739,6 +777,20 @@ def _validate_hosted_evidence_ingestion(
         expect(
             any(path.startswith(f"{HOST_EVIDENCE_REPORT_ROOT}/") for path in generated_paths),
             f"{record_id} missing platform-host-evidence generated report path",
+        )
+        unscoped_paths = [
+            path
+            for path in generated_paths
+            if not path.startswith(f"{HOST_EVIDENCE_REPORT_ROOT}/{platform_id}/")
+        ]
+        expect(
+            not unscoped_paths,
+            f"{record_id} used non-platform-scoped generated paths: {', '.join(unscoped_paths)}",
+        )
+        missing_scoped_paths = sorted(expected_scoped_paths - set(generated_paths))
+        expect(
+            not missing_scoped_paths,
+            f"{record_id} missing scoped hosted evidence paths: {', '.join(missing_scoped_paths)}",
         )
     return ingestion
 

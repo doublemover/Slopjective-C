@@ -273,6 +273,28 @@
     },
     {
       "capability_id": "language.errors.typed-throws",
+      "evidence_kind": "diagnostic",
+      "path": "tests/tooling/fixtures/native/recovery/negative/negative_typed_throws_method_incompatible_catch.objc3"
+    },
+    {
+      "capability_id": "language.errors.typed-throws",
+      "evidence_kind": "diagnostic",
+      "path": "tests/tooling/fixtures/native/recovery/negative/negative_typed_throws_method_foreign_carrier_catch.objc3"
+    },
+    {
+      "capability_id": "language.errors.typed-throws",
+      "evidence_kind": "test",
+      "path": "tests/tooling/fixtures/native/execution/positive/typed_throws_runtime_catch_bridge_positive.objc3",
+      "command": "npm run objc3c -- test-execution-smoke"
+    },
+    {
+      "capability_id": "language.errors.typed-throws",
+      "evidence_kind": "test",
+      "path": "tests/tooling/fixtures/native/execution/positive/typed_throws_runtime_message_send_catch_positive.objc3",
+      "command": "npm run objc3c -- test-execution-smoke"
+    },
+    {
+      "capability_id": "language.errors.typed-throws",
       "evidence_kind": "schema",
       "path": "schemas/objc3c-typed-throws-effect-contract-v1.schema.json"
     },
@@ -285,6 +307,11 @@
       "capability_id": "language.errors.typed-throws",
       "evidence_kind": "source",
       "path": "native/objc3c/src/sema/objc3_semantic_error_handling_try_do_catch_do_scope.inc"
+    },
+    {
+      "capability_id": "language.errors.typed-throws",
+      "evidence_kind": "source",
+      "path": "native/objc3c/src/sema/objc3_semantic_error_handling_try_do_catch_operand_surface.inc"
     },
     {
       "capability_id": "language.errors.typed-throws",
@@ -398,6 +425,12 @@
     },
     {
       "capability_id": "language.types.value-optionals",
+      "evidence_kind": "test",
+      "path": "tests/tooling/fixtures/native/execution/positive/value_optionals_runtime_abi_positive.objc3",
+      "command": "npm run objc3c -- test-execution-smoke"
+    },
+    {
+      "capability_id": "language.types.value-optionals",
       "evidence_kind": "source",
       "path": "tests/tooling/fixtures/native/language_evolution_typed_throws_value_optionals_contract.json"
     },
@@ -424,7 +457,22 @@
     {
       "capability_id": "language.types.value-optionals",
       "evidence_kind": "source",
+      "path": "native/objc3c/src/ir/objc3_ir_expression_emission_call.cpp"
+    },
+    {
+      "capability_id": "language.types.value-optionals",
+      "evidence_kind": "source",
       "path": "native/objc3c/src/lower/contracts/value_optional_lowering_contracts.h"
+    },
+    {
+      "capability_id": "language.types.value-optionals",
+      "evidence_kind": "source",
+      "path": "native/objc3c/src/runtime/public/objc3_runtime_value_optional_contract.h"
+    },
+    {
+      "capability_id": "language.types.value-optionals",
+      "evidence_kind": "source",
+      "path": "native/objc3c/src/runtime/values/value_optional.cpp"
     },
     {
       "capability_id": "language.types.value-optionals",

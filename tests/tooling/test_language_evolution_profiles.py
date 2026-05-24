@@ -62,7 +62,7 @@ def test_typed_throws_source_owned_and_value_optionals_contract_boundaries() -> 
     assert contract["umbrella_issue_ref"] == 8207
     assert contract["issues"] == {"typed_throws": 8233, "value_optionals": 8234}
     assert contract["support_state"] == {
-        "typed_throws": "source_owned_interface_preserved_error_out_abi_lowered_catch_bridge_policy_recorded",
+        "typed_throws": "source_owned_interface_preserved_error_out_abi_lowered_catch_bridge_policy_recorded_direct_method_send_runtime",
         "value_optionals": "semantic_type_signatures_bounded_scalar_packed_runtime_abi_fail_closed_boundaries",
     }
     assert contract["typed_throws"]["accepted_payload_arity"] == 1
@@ -88,6 +88,12 @@ def test_typed_throws_source_owned_and_value_optionals_contract_boundaries() -> 
         "typed_throws_callable_compatibility_policy"
     ] == "typed-throws-exact-payload-match-error-out-abi"
     assert contract["typed_throws"]["runtime_execution_claimed"] is True
+    assert contract["typed_throws"]["message_send_runtime_execution_scope"] == (
+        "direct-dispatch-method-send-error-out-abi"
+    )
+    assert contract["typed_throws"][
+        "runtime_dispatch_message_send_error_out_supported"
+    ] is False
     assert contract["value_optionals"]["lowercase_alias_accepted"] is False
     assert contract["value_optionals"]["canonical_diagnostic_symbol"] == (
         "kObjc3ParserDiagnosticReservedValueOptionalCode"
@@ -105,6 +111,13 @@ def test_typed_throws_source_owned_and_value_optionals_contract_boundaries() -> 
     assert contract["value_optionals"]["runtime_abi_payload_scope"] == (
         "supported-scalar-payload-forms-only"
     )
+    assert contract["value_optionals"]["supported_runtime_payload_forms"] == [
+        "i32",
+        "bool",
+    ]
+    assert "full-width-i64-payload" in contract["value_optionals"][
+        "rejected_runtime_payload_forms"
+    ]
     assert contract["value_optionals"]["broad_public_runtime_support_claim_allowed"] is False
     assert contract["value_optionals"]["nested_value_optional_runtime_supported"] is False
     assert contract["value_optionals"]["generic_payload_runtime_supported"] is False
@@ -183,6 +196,21 @@ def test_typed_throws_source_owned_and_value_optionals_contract_boundaries() -> 
         "typed_throws_abi_lifting_negative.contract.json",
         "typed_throws_interface_mismatch_negative.contract.json",
     }
+    assert {
+        Path(row["fixture"]).name
+        for row in contract["positive_fixtures"]
+        if Path(row["fixture"]).name.startswith("typed_throws_runtime_")
+    } == {
+        "typed_throws_runtime_catch_bridge_positive.objc3",
+        "typed_throws_runtime_message_send_catch_positive.objc3",
+    }
+    message_send_fixture = ROOT / (
+        "tests/tooling/fixtures/native/execution/positive/"
+        "typed_throws_runtime_message_send_catch_positive.objc3"
+    )
+    assert "try [TypedThrowingLoader loadValue:value]" in message_send_fixture.read_text(
+        encoding="utf-8"
+    )
     for anchor in contract["source_anchors"]:
         _assert_repo_file(str(anchor))
     type_source = (
@@ -464,7 +492,7 @@ def test_language_evolution_umbrella_keeps_claims_source_owned_and_fail_closed()
         assert row["support_state"]
         assert row["negative_case_ids"]
     assert contracts["typed_throws"]["support_state"] == (
-        "source_owned_interface_preserved_error_out_abi_lowered_catch_bridge_policy_recorded"
+        "source_owned_interface_preserved_error_out_abi_lowered_catch_bridge_policy_recorded_direct_method_send_runtime"
     )
     assert "language.errors.typed-throws-runtime-lowering" not in contract[
         "admitted_public_claims"
@@ -505,7 +533,7 @@ def test_language_evolution_umbrella_keeps_claims_source_owned_and_fail_closed()
         "source-owned-generic-callable-policy"
     )
     assert support_rows["language.errors.typed-throws"]["status"] == (
-        "source-owned-interface-preserved-error-out-abi-lowered-catch-bridge-policy-recorded-public-row-reserved"
+        "source-owned-interface-preserved-error-out-abi-lowered-catch-bridge-policy-recorded-direct-method-send-runtime-public-row-reserved"
     )
     assert support_rows["language.control-flow.statement-guarded-match"]["status"] == (
         "supported-bounded-statement-and-expression"

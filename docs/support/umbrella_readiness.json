@@ -550,7 +550,7 @@
         {
           "capability_id": "language.types.value-optionals",
           "required_state": "reserved",
-          "reason": "The umbrella cannot be implemented until value optionals move beyond bounded scalar packed ABI evidence into a replay-proven public row or explicitly scope out nested/generic/property/ivar/nullability/nil/unchecked/throws broadening paths."
+          "reason": "The umbrella cannot be implemented until value optionals move beyond the checked packed Optional<i32>/Optional<bool> ABI evidence into a replay-proven public row or explicitly scope out nested/generic/property/ivar/nullability/nil/unchecked/throws broadening paths."
         },
         {
           "capability_id": "language.generics.generic-callable-reification",
@@ -729,7 +729,7 @@
         },
         {
           "id": "value-optionals-runtime",
-          "description": "Value optional runtime support is limited to the checked packed Optional<i32> payload ABI; broader scalar, object, nested/generic/property/ivar storage, nil/nullability conversion, unchecked unwrap, implicit nil, and throws/result conversion remain unimplemented.",
+          "description": "Value optional runtime support is limited to the checked packed Optional<i32> and Optional<bool> payload ABI; full-width i64, object, nested/generic/property/ivar storage, nil/nullability conversion, unchecked unwrap, implicit nil, and throws/result conversion remain unimplemented.",
           "status": "blocked",
           "blocker_id": "value-optionals-abi-lowering-interface"
         },
@@ -755,7 +755,7 @@
         },
         {
           "id": "value-optional-abi",
-          "description": "Value optional ABI layout identity, interface roundtrip, explicit absent/present construction, checked unwrap/binding diagnostics, and the packed Optional<i32> runtime ABI are now contracted; broad executable call ABI for broader scalar/object/nested/generic/property/ivar/nullability/nil/unchecked/throws forms remains blocked.",
+          "description": "Value optional ABI layout identity, interface roundtrip, explicit absent/present construction, checked unwrap/binding diagnostics, and the packed Optional<i32>/Optional<bool> runtime ABI are now contracted; broad executable call ABI for full-width i64, object, nested/generic/property/ivar/nullability/nil/unchecked/throws forms remains blocked.",
           "status": "blocked",
           "blocker_id": "value-optionals-abi-lowering-interface"
         },
@@ -828,9 +828,9 @@
         },
         {
           "blocker_id": "value-optionals-abi-lowering-interface",
-          "summary": "Value optionals now have semantic type admission for the checked Optional<i32> runtime ABI, stable packed presence/payload layout identity, textual-interface roundtrip, explicit absent/present construction contracts, checked unwrap/binding diagnostics, and native execution smoke evidence for the packed i32 payload carrier; nested/generic/property/ivar storage, nullability bridges, nil-to-scalar, implicit nil, unchecked unwrap, and throws/result conversion remain blocked.",
+          "summary": "Value optionals now have semantic type admission for the checked Optional<i32> and Optional<bool> runtime ABI, stable packed presence/payload layout identity, textual-interface roundtrip, explicit absent/present construction contracts, checked unwrap/binding diagnostics, and native execution smoke evidence for the packed i32 and bool payload carriers; full-width i64, nested/generic/property/ivar storage, nullability bridges, nil-to-scalar, implicit nil, unchecked unwrap, and throws/result conversion remain blocked.",
           "missing_work": [
-            "Broader scalar payloads, nested Optional<T>, generic payload, property storage, and ivar storage lowering.",
+            "Full-width i64 payloads, nested Optional<T>, generic payload, property storage, and ivar storage lowering.",
             "Nullability bridge, nil-to-scalar, implicit nil, unchecked unwrap, and throws/result conversion rejection coverage tied to the public row.",
             "Promotion of the capability row only after scalar ABI support and all fail-closed broadening paths agree across fixtures and docs."
           ],

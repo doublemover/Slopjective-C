@@ -46,6 +46,12 @@ struct Objc3IRMessageSendEmissionCallbacks {
   std::function<void(FunctionContext &ctx)> invalidate_global_proof_state;
 };
 
+bool TryResolveObjc3IRDirectDispatchSignature(
+    const Expr *expr, const FunctionContext &ctx,
+    const Objc3IRMessageSendEmissionOptions &options,
+    Objc3IRDirectDispatchSignature *signature_out,
+    std::string *symbol_out = nullptr);
+
 std::string EmitObjc3IRMessageSendExpr(
     const Expr *expr, FunctionContext &ctx,
     const Objc3IRMessageSendEmissionOptions &options,

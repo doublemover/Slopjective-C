@@ -35,9 +35,16 @@
           "package_id",
           "package_variant_row_id",
           "target_platform_id",
+          "sanitizer",
           "runtime_library_ids",
+          "metadata_manifest_path",
           "metadata_digest",
-          "selected_runtime_variant"
+          "selected_runtime_variant",
+          "install_selector",
+          "native_execution_contract",
+          "support_truth",
+          "native_execution_claimed",
+          "sanitizer_package_variant"
         ],
         "layout_support_truth": false
       },
@@ -61,6 +68,45 @@
         "install_selector": "sanitizer=address",
         "default_release_selection_allowed": false,
         "default_release_misuse_behavior": "fail-closed-before-install"
+      },
+      "install_receipt_contract": {
+        "schema": "schemas/objc3c-package-install-receipt-v1.schema.json",
+        "contract_id": "objc3c.packaging.channels.install-receipt.v1",
+        "receipt_field": "sanitizer_package_variant",
+        "machine_owned": true,
+        "required_fields": [
+          "package_id",
+          "package_variant_row_id",
+          "target_platform_id",
+          "sanitizer",
+          "runtime_library_ids",
+          "metadata_manifest_path",
+          "metadata_digest",
+          "selected_runtime_variant",
+          "install_selector",
+          "native_execution_contract",
+          "support_truth",
+          "native_execution_claimed",
+          "sanitizer_package_variant"
+        ],
+        "selected_runtime_variant": "sanitizer=address",
+        "native_execution_contract": {
+          "native_execution_required_before_support": true,
+          "native_execution_record_required": true,
+          "native_execution_record_fields": [
+            "executable_path",
+            "target_platform_id",
+            "sanitizer",
+            "runtime_library_ids",
+            "environment",
+            "exit_code",
+            "diagnostic_records"
+          ],
+          "missing_native_execution_behavior": "fail-closed-before-support-promotion",
+          "native_execution_claimed": false
+        },
+        "support_truth": false,
+        "native_execution_claimed": false
       },
       "runtime_mixing_rejection_contract": {
         "release_sanitizer_mixing_allowed": false,
@@ -122,9 +168,16 @@
           "package_id",
           "package_variant_row_id",
           "target_platform_id",
+          "sanitizer",
           "runtime_library_ids",
+          "metadata_manifest_path",
           "metadata_digest",
           "selected_runtime_variant",
+          "install_selector",
+          "native_execution_contract",
+          "support_truth",
+          "native_execution_claimed",
+          "sanitizer_package_variant",
           "trap_or_recover_mode"
         ],
         "layout_support_truth": false
@@ -150,6 +203,47 @@
         "install_selector": "sanitizer=undefined",
         "default_release_selection_allowed": false,
         "default_release_misuse_behavior": "fail-closed-before-install"
+      },
+      "install_receipt_contract": {
+        "schema": "schemas/objc3c-package-install-receipt-v1.schema.json",
+        "contract_id": "objc3c.packaging.channels.install-receipt.v1",
+        "receipt_field": "sanitizer_package_variant",
+        "machine_owned": true,
+        "required_fields": [
+          "package_id",
+          "package_variant_row_id",
+          "target_platform_id",
+          "sanitizer",
+          "runtime_library_ids",
+          "metadata_manifest_path",
+          "metadata_digest",
+          "selected_runtime_variant",
+          "install_selector",
+          "native_execution_contract",
+          "support_truth",
+          "native_execution_claimed",
+          "sanitizer_package_variant",
+          "trap_or_recover_mode"
+        ],
+        "selected_runtime_variant": "sanitizer=undefined",
+        "native_execution_contract": {
+          "native_execution_required_before_support": true,
+          "native_execution_record_required": true,
+          "native_execution_record_fields": [
+            "executable_path",
+            "target_platform_id",
+            "sanitizer",
+            "runtime_library_ids",
+            "environment",
+            "exit_code",
+            "diagnostic_records",
+            "trap_or_recover_mode"
+          ],
+          "missing_native_execution_behavior": "fail-closed-before-support-promotion",
+          "native_execution_claimed": false
+        },
+        "support_truth": false,
+        "native_execution_claimed": false
       },
       "runtime_mixing_rejection_contract": {
         "release_sanitizer_mixing_allowed": false,
@@ -202,6 +296,36 @@
       "failure_kind": "mixed-runtime",
       "failure_class": "mixed-sanitized-unsanitized-runtime",
       "required_behavior": "fail-closed-before-native-execution-claim",
+      "blocks": [
+        "package",
+        "install",
+        "execution",
+        "publication"
+      ],
+      "support_truth": false,
+      "native_execution_claimed": false
+    },
+    {
+      "case_id": "objc3c.sanitizer.address.package-install.reject.missing-install-receipt-field",
+      "variant_id": "objc3c.toolchain.sanitizer.address",
+      "failure_kind": "missing-install-receipt-field",
+      "failure_class": "sanitizer-install-receipt-missing-required-field",
+      "required_behavior": "fail-closed-before-install",
+      "blocks": [
+        "package",
+        "install",
+        "execution",
+        "publication"
+      ],
+      "support_truth": false,
+      "native_execution_claimed": false
+    },
+    {
+      "case_id": "objc3c.sanitizer.undefined.package-install.reject.missing-install-receipt-field",
+      "variant_id": "objc3c.toolchain.sanitizer.undefined",
+      "failure_kind": "missing-install-receipt-field",
+      "failure_class": "sanitizer-install-receipt-missing-required-field",
+      "required_behavior": "fail-closed-before-install",
       "blocks": [
         "package",
         "install",

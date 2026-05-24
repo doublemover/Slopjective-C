@@ -108,14 +108,8 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: objc3c-platform-host-evidence-linux-x64
-          path: |
-            tmp/reports/platform-host-evidence/linux-x64/**
-            tmp/build-objc3c-native/native_build_summary.json
-            artifacts/package/objc3c-runnable-toolchain-package.json
-            tmp/reports/package-channels/end-to-end-summary.json
-            tmp/reports/hosted-execution-smoke/summary.json
-            tmp/reports/objc3c-native-execution-smoke/summary.json
-          if-no-files-found: warn
+          path: tmp/reports/platform-host-evidence/linux-x64/**
+          if-no-files-found: error
 
   darwin-arm64:
     if: inputs.platform == 'all' || inputs.platform == 'darwin-arm64'
@@ -206,11 +200,5 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: objc3c-platform-host-evidence-darwin-arm64
-          path: |
-            tmp/reports/platform-host-evidence/darwin-arm64/**
-            tmp/build-objc3c-native/native_build_summary.json
-            artifacts/package/objc3c-runnable-toolchain-package.json
-            tmp/reports/package-channels/end-to-end-summary.json
-            tmp/reports/hosted-execution-smoke/summary.json
-            tmp/reports/objc3c-native-execution-smoke/summary.json
-          if-no-files-found: warn
+          path: tmp/reports/platform-host-evidence/darwin-arm64/**
+          if-no-files-found: error

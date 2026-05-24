@@ -149,7 +149,12 @@ Each hosted job attempts the same promotion-relevant path:
 - `npm run objc3c -- ingest-platform-host-evidence`
 
 The ingestion helper writes a generated host evidence report and an ingestion
-summary under `tmp/reports/platform-host-evidence/<platform>/`. The summary is
+summary under `tmp/reports/platform-host-evidence/<platform>/`. It also mirrors
+build, package, install, hosted-smoke, and native-execution outputs into that
+same platform-scoped root before upload. The workflow uploads only
+`tmp/reports/platform-host-evidence/<platform>/**` and fails closed if that root
+is empty, so Linux x64 and macOS arm64 readback cannot accidentally consume
+shared `tmp/` or `artifacts/` paths from another lane. The summary is
 source-consumable but not source truth. Its required result is
 `GENERATED_ONLY_REFUSED_FOR_SOURCE_TRUTH`: generated workflow output may be
 reviewed by a maintainer, but it cannot clear `required_missing_evidence_classes`

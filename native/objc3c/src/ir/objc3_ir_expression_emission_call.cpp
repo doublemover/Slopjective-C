@@ -24,12 +24,23 @@ std::string EmitObjc3IRCallExpression(
   if (expr->kind == Expr::Kind::Try) {
     const Expr *operand =
         !expr->args.empty() ? expr->args.front().get() : expr->left.get();
-    if (operand == nullptr || operand->kind != Expr::Kind::Call) {
+    if (operand == nullptr ||
+        (operand->kind != Expr::Kind::Call &&
+         operand->kind != Expr::Kind::MessageSend)) {
       return callbacks.emit_unsupported_i32_value(
           "try lowering expected callable operand");
     }
-    const LoweredFunctionSignature *operand_signature =
-        callbacks.lookup_function_signature(operand->ident);
+    LoweredFunctionSignature resolved_message_send_signature;
+    const LoweredFunctionSignature *operand_signature = nullptr;
+    if (operand->kind == Expr::Kind::MessageSend) {
+      if (callbacks.resolve_message_send_signature &&
+          callbacks.resolve_message_send_signature(
+              operand, ctx, resolved_message_send_signature)) {
+        operand_signature = &resolved_message_send_signature;
+      }
+    } else {
+      operand_signature = callbacks.lookup_function_signature(operand->ident);
+    }
     if (operand_signature == nullptr) {
       return callbacks.emit_unsupported_i32_value(
           "try lowering requires declared callable signature");
@@ -70,9 +81,22 @@ std::string EmitObjc3IRCallExpression(
     bool bridge_failed = false;
     std::string bridge_error_value = "0";
     std::string bridge_failure_condition;
-    std::string result = callbacks.emit_direct_function_call(
-        operand, operand_signature, ctx, error_slot, &bridge_failed,
-        &bridge_error_value, &bridge_failure_condition);
+    std::string result;
+    if (operand->kind == Expr::Kind::MessageSend) {
+      const std::string previous_error_slot =
+          ctx.active_message_send_error_out_slot;
+      const Expr *previous_error_expr =
+          ctx.active_message_send_error_out_expr;
+      ctx.active_message_send_error_out_slot = error_slot;
+      ctx.active_message_send_error_out_expr = operand;
+      result = callbacks.emit_message_send_expr(operand, ctx);
+      ctx.active_message_send_error_out_slot = previous_error_slot;
+      ctx.active_message_send_error_out_expr = previous_error_expr;
+    } else {
+      result = callbacks.emit_direct_function_call(
+          operand, operand_signature, ctx, error_slot, &bridge_failed,
+          &bridge_error_value, &bridge_failure_condition);
+    }
     std::string actual_result = result;
     std::string failure_cond;
     if (bridge_failed) {

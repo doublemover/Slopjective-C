@@ -2559,11 +2559,11 @@
         "tmp/reports/platform-host-evidence/linux-x64/host-evidence-report.json",
         "tmp/reports/platform-host-evidence/linux-x64/ingestion-summary.json",
         "tmp/reports/platform-host-evidence/linux-x64/llvm-capabilities.json",
-        "tmp/build-objc3c-native/native_build_summary.json",
-        "artifacts/package/objc3c-runnable-toolchain-package.json",
-        "tmp/reports/package-channels/end-to-end-summary.json",
-        "tmp/reports/hosted-execution-smoke/summary.json",
-        "tmp/reports/objc3c-native-execution-smoke/summary.json"
+        "tmp/reports/platform-host-evidence/linux-x64/build/native_build_summary.json",
+        "tmp/reports/platform-host-evidence/linux-x64/package/objc3c-runnable-toolchain-package.json",
+        "tmp/reports/platform-host-evidence/linux-x64/install/end-to-end-summary.json",
+        "tmp/reports/platform-host-evidence/linux-x64/execution/hosted-execution-smoke-summary.json",
+        "tmp/reports/platform-host-evidence/linux-x64/execution/native-execution-smoke-summary.json"
       ],
       "supports_platform_ids": [],
       "requires_network": false,
@@ -2589,11 +2589,11 @@
         "tmp/reports/platform-host-evidence/darwin-arm64/host-evidence-report.json",
         "tmp/reports/platform-host-evidence/darwin-arm64/ingestion-summary.json",
         "tmp/reports/platform-host-evidence/darwin-arm64/llvm-capabilities.json",
-        "tmp/build-objc3c-native/native_build_summary.json",
-        "artifacts/package/objc3c-runnable-toolchain-package.json",
-        "tmp/reports/package-channels/end-to-end-summary.json",
-        "tmp/reports/hosted-execution-smoke/summary.json",
-        "tmp/reports/objc3c-native-execution-smoke/summary.json"
+        "tmp/reports/platform-host-evidence/darwin-arm64/build/native_build_summary.json",
+        "tmp/reports/platform-host-evidence/darwin-arm64/package/objc3c-runnable-toolchain-package.json",
+        "tmp/reports/platform-host-evidence/darwin-arm64/install/end-to-end-summary.json",
+        "tmp/reports/platform-host-evidence/darwin-arm64/execution/hosted-execution-smoke-summary.json",
+        "tmp/reports/platform-host-evidence/darwin-arm64/execution/native-execution-smoke-summary.json"
       ],
       "supports_platform_ids": [],
       "requires_network": false,

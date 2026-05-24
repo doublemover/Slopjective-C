@@ -49,6 +49,90 @@
       },
       "minItems": 1
     },
+    "sanitizer_package_variant": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "package_id",
+        "package_variant_row_id",
+        "target_platform_id",
+        "sanitizer",
+        "runtime_library_ids",
+        "metadata_manifest_path",
+        "metadata_digest",
+        "selected_runtime_variant",
+        "install_selector",
+        "native_execution_contract",
+        "support_truth",
+        "native_execution_claimed"
+      ],
+      "properties": {
+        "package_id": {
+          "enum": [
+            "org.objc3c.runtime:objc3c-runtime-asan",
+            "org.objc3c.runtime:objc3c-runtime-ubsan"
+          ]
+        },
+        "package_variant_row_id": {
+          "enum": [
+            "objc3c.package.sanitizer.asan.reserved",
+            "objc3c.package.sanitizer.ubsan.reserved"
+          ]
+        },
+        "target_platform_id": { "type": "string", "minLength": 1 },
+        "sanitizer": { "enum": ["address", "undefined"] },
+        "runtime_library_ids": {
+          "type": "array",
+          "items": {
+            "enum": ["objc3-runtime", "clang_rt.asan", "clang_rt.ubsan"]
+          },
+          "minItems": 2,
+          "uniqueItems": true
+        },
+        "metadata_manifest_path": {
+          "type": "string",
+          "pattern": "^share/objc3c/sanitizer/(asan|ubsan)-metadata\\.json$"
+        },
+        "metadata_digest": {
+          "type": "string",
+          "pattern": "^sha256:[0-9a-f]{64}$"
+        },
+        "selected_runtime_variant": {
+          "enum": ["sanitizer=address", "sanitizer=undefined"]
+        },
+        "install_selector": {
+          "enum": ["sanitizer=address", "sanitizer=undefined"]
+        },
+        "trap_or_recover_mode": { "enum": ["trap", "recover"] },
+        "native_execution_contract": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "native_execution_required_before_support",
+            "native_execution_record_required",
+            "native_execution_record_fields",
+            "missing_native_execution_behavior",
+            "native_execution_claimed"
+          ],
+          "properties": {
+            "native_execution_required_before_support": { "const": true },
+            "native_execution_record_required": { "const": true },
+            "native_execution_record_fields": {
+              "type": "array",
+              "items": { "type": "string", "minLength": 1 },
+              "minItems": 1,
+              "uniqueItems": true
+            },
+            "missing_native_execution_behavior": {
+              "const": "fail-closed-before-support-promotion"
+            },
+            "native_execution_claimed": { "const": false }
+          }
+        },
+        "support_truth": { "const": false },
+        "native_execution_claimed": { "const": false }
+      }
+    },
     "installed_at_utc": { "type": "string" }
   }
 }

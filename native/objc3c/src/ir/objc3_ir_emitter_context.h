@@ -37,6 +37,8 @@ struct LoweredMessageSend {
   std::string direct_call_symbol;
   ValueType direct_call_return_type = ValueType::I32;
   std::vector<ValueType> direct_call_param_types;
+  bool direct_call_throws_error_out_abi_ready = false;
+  bool uses_active_message_send_error_out_slot = false;
 };
 
 struct ControlLabels {
@@ -143,6 +145,8 @@ struct FunctionContext {
   };
   std::vector<ErrorHandlerFrame> error_handler_stack;
   std::string function_error_out_param;
+  std::string active_message_send_error_out_slot;
+  const Expr *active_message_send_error_out_expr = nullptr;
   ValueType return_type = ValueType::I32;
   bool async_runtime_helper_enabled = false;
   bool actor_runtime_helper_enabled = false;

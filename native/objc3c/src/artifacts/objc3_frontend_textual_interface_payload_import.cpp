@@ -315,11 +315,13 @@ void ValidateValueOptionalContract(
   const JsonArray &supported_payloads = ArrayMember(
       contract, "supported_runtime_payload_forms", result,
       json_path + "/value_optional_contract");
-  if (supported_payloads.size() != 1 ||
-      !supported_payloads.front().IsString() ||
-      supported_payloads.front().AsString() != "i32") {
+  if (supported_payloads.size() != 2 ||
+      !supported_payloads[0].IsString() ||
+      supported_payloads[0].AsString() != "i32" ||
+      !supported_payloads[1].IsString() ||
+      supported_payloads[1].AsString() != "bool") {
     AddDiagnostic(result,
-                  "value optional contract must publish only supported i32 payload ABI",
+                  "value optional contract must publish only supported i32/bool payload ABI",
                   json_path +
                       "/value_optional_contract/supported_runtime_payload_forms");
   }

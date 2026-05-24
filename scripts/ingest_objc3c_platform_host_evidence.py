@@ -8,6 +8,7 @@ import hashlib
 import json
 import os
 import platform
+import shutil
 import sys
 from pathlib import Path
 from typing import Any
@@ -35,33 +36,59 @@ PLATFORM_CONFIG: dict[str, dict[str, str]] = {
     },
 }
 
-STEP_CONTRACTS: tuple[tuple[str, str, tuple[str, ...]], ...] = (
+STEP_CONTRACTS: tuple[tuple[str, str, tuple[tuple[str, str], ...]], ...] = (
     (
         "toolchain_probe",
         "toolchain",
-        ("tmp/reports/platform-host-evidence/{platform_id}/llvm-capabilities.json",),
+        (
+            (
+                "tmp/reports/platform-host-evidence/{platform_id}/llvm-capabilities.json",
+                "tmp/reports/platform-host-evidence/{platform_id}/llvm-capabilities.json",
+            ),
+        ),
     ),
     (
         "build",
         "build",
-        ("tmp/build-objc3c-native/native_build_summary.json",),
+        (
+            (
+                "tmp/build-objc3c-native/native_build_summary.json",
+                "tmp/reports/platform-host-evidence/{platform_id}/build/native_build_summary.json",
+            ),
+        ),
     ),
     (
         "package",
         "package",
-        ("artifacts/package/objc3c-runnable-toolchain-package.json",),
+        (
+            (
+                "artifacts/package/objc3c-runnable-toolchain-package.json",
+                "tmp/reports/platform-host-evidence/{platform_id}/package/objc3c-runnable-toolchain-package.json",
+            ),
+        ),
     ),
     (
         "install",
         "install",
-        ("tmp/reports/package-channels/end-to-end-summary.json",),
+        (
+            (
+                "tmp/reports/package-channels/end-to-end-summary.json",
+                "tmp/reports/platform-host-evidence/{platform_id}/install/end-to-end-summary.json",
+            ),
+        ),
     ),
     (
         "execution",
         "execution",
         (
-            "tmp/reports/hosted-execution-smoke/summary.json",
-            "tmp/reports/objc3c-native-execution-smoke/summary.json",
+            (
+                "tmp/reports/hosted-execution-smoke/summary.json",
+                "tmp/reports/platform-host-evidence/{platform_id}/execution/hosted-execution-smoke-summary.json",
+            ),
+            (
+                "tmp/reports/objc3c-native-execution-smoke/summary.json",
+                "tmp/reports/platform-host-evidence/{platform_id}/execution/native-execution-smoke-summary.json",
+            ),
         ),
     ),
 )
@@ -112,6 +139,18 @@ def generated_artifact(path_text: str) -> dict[str, Any]:
     }
 
 
+def materialize_generated_artifact(source_path_text: str, scoped_path_text: str) -> dict[str, Any]:
+    source_path = ROOT / source_path_text
+    scoped_path = ROOT / scoped_path_text
+    if source_path.is_file() and source_path.resolve() != scoped_path.resolve():
+        scoped_path.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(source_path, scoped_path)
+    artifact = generated_artifact(scoped_path_text)
+    artifact["source_path"] = source_path_text
+    artifact["scoped_copy"] = source_path_text != scoped_path_text
+    return artifact
+
+
 def env_outcome(step_id: str) -> str:
     value = os.environ.get(OUTCOME_ENV.get(step_id, ""), "")
     return value if value else "not-recorded"
@@ -158,8 +197,11 @@ def build_report(args: argparse.Namespace) -> dict[str, Any]:
             "generated_artifacts": [],
         },
     ]
-    for step_id, evidence_class, paths in STEP_CONTRACTS:
-        generated_paths = [path.format(platform_id=platform_id) for path in paths]
+    for step_id, evidence_class, path_pairs in STEP_CONTRACTS:
+        generated_paths = [
+            scoped_path.format(platform_id=platform_id)
+            for _, scoped_path in path_pairs
+        ]
         steps.append(
             {
                 "step_id": step_id,
@@ -167,8 +209,11 @@ def build_report(args: argparse.Namespace) -> dict[str, Any]:
                 "outcome": env_outcome(step_id),
                 "generated_report_paths": generated_paths,
                 "generated_artifacts": [
-                    generated_artifact(generated_path)
-                    for generated_path in generated_paths
+                    materialize_generated_artifact(
+                        source_path.format(platform_id=platform_id),
+                        scoped_path.format(platform_id=platform_id),
+                    )
+                    for source_path, scoped_path in path_pairs
                 ],
             }
         )
@@ -195,6 +240,13 @@ def build_report(args: argparse.Namespace) -> dict[str, Any]:
             "install",
             "execution",
         ],
+        "artifact_upload": {
+            "artifact_name": f"objc3c-platform-host-evidence-{platform_id}",
+            "upload_root": f"tmp/reports/platform-host-evidence/{platform_id}",
+            "path_glob": f"tmp/reports/platform-host-evidence/{platform_id}/**",
+            "if_no_files_found": "error",
+            "readback_scope": "single-platform-host-evidence-root",
+        },
         "steps": steps,
         "source_truth_ingestion": {
             "generated_report_only": True,
@@ -231,6 +283,21 @@ def validate_report(report: dict[str, Any], platform_id: str) -> list[str]:
     if report.get("runner_label") != expected_runner_label:
         raise RuntimeError("host evidence report runner_label drifted")
 
+    upload = report.get("artifact_upload")
+    expected_upload_root = f"tmp/reports/platform-host-evidence/{platform_id}"
+    if not isinstance(upload, dict):
+        raise RuntimeError("host evidence report missing artifact_upload")
+    if upload.get("artifact_name") != f"objc3c-platform-host-evidence-{platform_id}":
+        raise RuntimeError("host evidence report artifact name drifted")
+    if upload.get("upload_root") != expected_upload_root:
+        raise RuntimeError("host evidence report upload root drifted")
+    if upload.get("path_glob") != f"{expected_upload_root}/**":
+        raise RuntimeError("host evidence report upload path glob drifted")
+    if upload.get("if_no_files_found") != "error":
+        raise RuntimeError("host evidence report upload must fail closed when no files are found")
+    if upload.get("readback_scope") != "single-platform-host-evidence-root":
+        raise RuntimeError("host evidence report readback scope drifted")
+
     ingestion = report.get("source_truth_ingestion")
     if not isinstance(ingestion, dict):
         raise RuntimeError("host evidence report missing source_truth_ingestion")
@@ -258,6 +325,7 @@ def validate_report(report: dict[str, Any], platform_id: str) -> list[str]:
         raise RuntimeError(f"host evidence report missing evidence classes: {', '.join(missing)}")
 
     generated_paths: list[str] = []
+    expected_path_prefix = f"tmp/reports/platform-host-evidence/{platform_id}/"
     for step in report.get("steps", []):
         if not isinstance(step, dict):
             continue
@@ -265,8 +333,16 @@ def validate_report(report: dict[str, Any], platform_id: str) -> list[str]:
             path_text = str(raw_path).replace("\\", "/")
             if path_text and not path_text.startswith(("tmp/", "artifacts/")):
                 raise RuntimeError(f"host evidence report used non-generated path: {path_text}")
+            if path_text and not path_text.startswith(expected_path_prefix):
+                raise RuntimeError(f"host evidence report used non-platform-scoped path: {path_text}")
             if path_text:
                 generated_paths.append(path_text)
+        for artifact in step.get("generated_artifacts", []):
+            if not isinstance(artifact, dict):
+                raise RuntimeError("host evidence report generated_artifacts entries must be objects")
+            path_text = str(artifact.get("path", "")).replace("\\", "/")
+            if path_text and not path_text.startswith(expected_path_prefix):
+                raise RuntimeError(f"host evidence artifact used non-platform-scoped path: {path_text}")
     return generated_paths
 
 
@@ -299,6 +375,7 @@ def build_summary(
         "support_claim_published": ingestion["support_claim_published"],
         "support_rows_remain_fail_closed": True,
         "required_checked_source_paths": ingestion["required_checked_source_paths"],
+        "artifact_upload": report["artifact_upload"],
         "generated_report_paths": sorted(all_generated_paths),
     }
 

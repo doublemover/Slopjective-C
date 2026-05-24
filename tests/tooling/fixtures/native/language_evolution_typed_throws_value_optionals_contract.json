@@ -7,7 +7,7 @@
     "value_optionals": 8234
   },
   "support_state": {
-    "typed_throws": "source_owned_interface_preserved_error_out_abi_lowered_catch_bridge_policy_recorded",
+    "typed_throws": "source_owned_interface_preserved_error_out_abi_lowered_catch_bridge_policy_recorded_direct_method_send_runtime",
     "value_optionals": "semantic_type_signatures_bounded_scalar_packed_runtime_abi_fail_closed_boundaries"
   },
   "typed_throws": {
@@ -48,7 +48,9 @@
     "catch_compatibility_status": "typed-catch-exact-untyped-id-error-bridge-incompatible-rejects",
     "bridge_to_id_error_policy": "explicit-bridge-to-id<Error>-only",
     "unsupported_foreign_carrier_fail_closed": true,
-    "runtime_execution_claimed": true
+    "runtime_execution_claimed": true,
+    "message_send_runtime_execution_scope": "direct-dispatch-method-send-error-out-abi",
+    "runtime_dispatch_message_send_error_out_supported": false
   },
   "value_optionals": {
     "canonical_spelling": "Optional<T>",
@@ -68,9 +70,11 @@
     "abi_layout_id": "objc3.value_optional.inline_presence_payload.v1",
     "runtime_abi_payload_scope": "supported-scalar-payload-forms-only",
     "supported_runtime_payload_forms": [
-      "i32"
+      "i32",
+      "bool"
     ],
     "rejected_runtime_payload_forms": [
+      "full-width-i64-payload",
       "nested-value-optional",
       "generic-payload",
       "property-storage",
@@ -161,6 +165,9 @@
     "native/objc3c/src/ir/objc3_ir_prototype_declarations.cpp",
     "native/objc3c/src/ir/objc3_ir_direct_call_emission.cpp",
     "native/objc3c/src/ir/objc3_ir_expression_emission_call.cpp",
+    "native/objc3c/src/ir/objc3_ir_message_send_emission.cpp",
+    "native/objc3c/src/ir/objc3_ir_method_definition_plan.cpp",
+    "native/objc3c/src/ir/objc3_ir_runtime_dispatch_calls.cpp",
     "native/objc3c/src/ir/objc3_ir_statement_block_emission.cpp",
     "native/objc3c/src/lower/contracts/error_handling_throws_unwind_contracts.h"
   ],
@@ -211,8 +218,13 @@
       "contract_case": "typed throws runtime catch filtering executes exact typed catch kind 4 and id<Error> bridge catch kind 2 through the native smoke path"
     },
     {
+      "fixture": "tests/tooling/fixtures/native/execution/positive/typed_throws_runtime_message_send_catch_positive.objc3",
+      "exitcode_fixture": "tests/tooling/fixtures/native/execution/positive/typed_throws_runtime_message_send_catch_positive.exitcode.txt",
+      "contract_case": "typed throws direct-dispatch method sends pass the hidden error-out slot into message-send lowering and execute exact typed catch kind 4 plus id<Error> bridge catch kind 2"
+    },
+    {
       "fixture": "tests/tooling/fixtures/native/value_optionals_type_signatures_positive.objc3",
-      "contract_case": "canonical Optional<i32> function and method type signatures are admitted as semantic value-optional carriers on the checked v1 runtime ABI"
+      "contract_case": "canonical Optional<i32> and Optional<bool> function and method type signatures are admitted as semantic value-optional carriers on the checked v1 runtime ABI"
     },
     {
       "fixture": "tests/tooling/fixtures/native/value_optionals_generic_interactions_positive.objc3",
@@ -224,7 +236,7 @@
     },
     {
       "fixture": "tests/tooling/fixtures/native/execution/positive/value_optionals_runtime_abi_positive.objc3",
-      "contract_case": "supported scalar Optional<i32> values lower through packed i64 runtime ABI helpers for present, absent, has-value, and payload-or execution"
+      "contract_case": "supported scalar Optional<i32> and Optional<bool> values lower through packed i64 runtime ABI helpers for present, absent, has-value, and payload-or execution"
     }
   ],
   "negative_fixtures": [

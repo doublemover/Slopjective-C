@@ -8,6 +8,7 @@
 #include "ir/objc3_ir_frontend_metadata.h"
 #include "ir/objc3_ir_prototype_declarations_runtime_helpers.h"
 #include "ir/objc3_ir_type_model.h"
+#include "support/objc3_identifier_spelling.h"
 
 namespace {
 
@@ -16,6 +17,9 @@ void EmitObjc3IRExternalFunctionDeclarations(
     std::unordered_set<std::string> &declared_symbols, bool &emitted,
     std::ostringstream &out) {
   for (const auto &entry : options.function_signatures) {
+    if (!objc3c::support::IsObjcIdentifierSpelling(entry.first)) {
+      continue;
+    }
     if (options.defined_functions.find(entry.first) !=
         options.defined_functions.end()) {
       continue;

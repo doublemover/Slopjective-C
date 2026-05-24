@@ -10,6 +10,26 @@
 #include "ir/objc3_ir_function_local_flow.h"
 #include "ir/objc3_ir_message_send_emission.h"
 
+LoweredFunctionSignature BuildObjc3IRLoweredSignatureFromDirectDispatch(
+    const Objc3IRDirectDispatchSignature &direct_signature) {
+  LoweredFunctionSignature lowered;
+  lowered.return_type = direct_signature.return_type;
+  lowered.param_types = direct_signature.param_types;
+  lowered.throws_declared = direct_signature.throws_declared;
+  lowered.typed_throws_declared = direct_signature.typed_throws_declared;
+  lowered.throws_error_out_abi_ready =
+      direct_signature.throws_error_out_abi_ready;
+  lowered.typed_throws_error_type_spelling =
+      direct_signature.typed_throws_error_type_spelling;
+  lowered.has_value_optional_type_signature =
+      direct_signature.has_value_optional_type_signature;
+  lowered.value_optional_lowering_supported =
+      direct_signature.value_optional_lowering_supported;
+  lowered.value_optional_payload_type_spelling =
+      direct_signature.value_optional_payload_type_spelling;
+  return lowered;
+}
+
 namespace {
 
 std::string EmitObjc3IRExpressionCallImpl(
@@ -128,6 +148,41 @@ std::string EmitObjc3IRExpressionCallMessageSendExpr(
           options.services.invalidate_global_proof_state});
 }
 
+bool TryResolveObjc3IRExpressionCallMessageSendSignature(
+    const Expr *expr, const FunctionContext &ctx,
+    const Objc3IRExpressionCallEmissionOptions &options,
+    LoweredFunctionSignature &signature_out) {
+  Objc3IRDirectDispatchSignature direct_signature;
+  if (TryResolveObjc3IRDirectDispatchSignature(
+          expr, ctx,
+          Objc3IRMessageSendEmissionOptions{
+              options.selector_pool_globals,
+              options.runtime_string_pool_globals,
+              options.class_receiver_constants,
+              options.direct_dispatch_symbols_by_key,
+              options.direct_dispatch_signatures_by_key,
+              options.runtime_dispatch_return_types_by_key,
+              options.runtime_dispatch_superclass_by_name,
+              options.runtime_dispatch_arg_slots,
+              options.runtime_dispatch_symbol,
+              options.runtime_dispatch_call_state,
+              options.arc_mode_enabled},
+          &direct_signature, nullptr)) {
+    signature_out =
+        BuildObjc3IRLoweredSignatureFromDirectDispatch(direct_signature);
+    return true;
+  }
+  const LoweredFunctionSignature *selector_signature =
+      options.services.lookup_function_signature(expr != nullptr
+                                                     ? expr->selector
+                                                     : std::string{});
+  if (selector_signature == nullptr) {
+    return false;
+  }
+  signature_out = *selector_signature;
+  return true;
+}
+
 std::string EmitObjc3IRExpressionCallImpl(
     const Expr *expr, FunctionContext &ctx,
     const Objc3IRExpressionCallEmissionOptions &options) {
@@ -158,6 +213,12 @@ std::string EmitObjc3IRExpressionCallImpl(
                 options.services.build_block_lowering_context());
           },
           options.services.lookup_function_signature,
+          [&options](const Expr *message_expr,
+                     const FunctionContext &callback_ctx,
+                     LoweredFunctionSignature &signature_out) {
+            return TryResolveObjc3IRExpressionCallMessageSendSignature(
+                message_expr, callback_ctx, options, signature_out);
+          },
           [&options](const Expr *call_expr,
                      const LoweredFunctionSignature *signature,
                      FunctionContext &callback_ctx,

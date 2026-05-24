@@ -18,7 +18,7 @@
       "feature_id": "typed_throws",
       "issue_ref": 8233,
       "contract": "tests/tooling/fixtures/native/language_evolution_typed_throws_value_optionals_contract.json",
-      "support_state": "source_owned_interface_preserved_error_out_abi_lowered_catch_bridge_policy_recorded",
+      "support_state": "source_owned_interface_preserved_error_out_abi_lowered_catch_bridge_policy_recorded_direct_method_send_runtime",
       "negative_case_ids": [
         "negative_typed_throws_reserved",
         "negative_typed_throws_empty_payload_reserved",
@@ -132,7 +132,7 @@
     },
     {
       "row_id": "language.errors.typed-throws",
-      "status": "source-owned-interface-preserved-error-out-abi-lowered-catch-bridge-policy-recorded-public-row-reserved",
+      "status": "source-owned-interface-preserved-error-out-abi-lowered-catch-bridge-policy-recorded-direct-method-send-runtime-public-row-reserved",
       "evidence": [
         "tests/tooling/fixtures/native/language_evolution_typed_throws_value_optionals_contract.json",
         "tests/tooling/fixtures/native/typed_throws_semantic_effect_identity.contract.json"

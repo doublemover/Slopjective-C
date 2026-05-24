@@ -44,6 +44,13 @@ struct Objc3IRMetaprogrammingGlobalArtifact {
 struct Objc3IRDirectDispatchSignature {
   ValueType return_type = ValueType::I32;
   std::vector<ValueType> param_types;
+  bool throws_declared = false;
+  bool typed_throws_declared = false;
+  bool throws_error_out_abi_ready = false;
+  std::string typed_throws_error_type_spelling;
+  bool has_value_optional_type_signature = false;
+  bool value_optional_lowering_supported = false;
+  std::string value_optional_payload_type_spelling;
 };
 
 struct Objc3IRMethodDefinitionPlan {

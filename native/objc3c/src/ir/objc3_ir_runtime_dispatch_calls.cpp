@@ -141,6 +141,12 @@ std::string BuildObjc3IRDirectDispatchCall(
         i < request.arg_types.size() ? request.arg_types[i] : ValueType::I32;
     call << LLVMScalarType(arg_type) << " " << request.args[i];
   }
+  if (!request.throws_error_slot_ptr.empty()) {
+    if (request.explicit_arg_count > 0) {
+      call << ", ";
+    }
+    call << "ptr " << request.throws_error_slot_ptr;
+  }
   call << ")";
   return call.str();
 }

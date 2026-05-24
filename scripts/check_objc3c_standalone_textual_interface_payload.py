@@ -181,9 +181,9 @@ def _validate_value_optional_contract(type_signature: dict[str, Any], path: str)
         contract.get("supported_runtime_payload_forms"),
         f"{path}.value_optional_contract.supported_runtime_payload_forms",
     )
-    if supported_payloads != ["i32"]:
+    if supported_payloads != ["i32", "bool"]:
         raise RuntimeError(
-            f"{path}.value_optional_contract.supported_runtime_payload_forms must be ['i32']"
+            f"{path}.value_optional_contract.supported_runtime_payload_forms must be ['i32', 'bool']"
         )
     expected_true = (
         "semantic_value_model_supported",
@@ -490,7 +490,7 @@ def negative_payload_cases(payload: dict[str, Any]) -> dict[str, str]:
     value_optional_lowering = deepcopy(payload)
     value_optional_lowering["declarations"][1]["type_signature"][
         "value_optional_contract"
-    ]["supported_runtime_payload_forms"] = ["i32", "bool"]
+    ]["supported_runtime_payload_forms"] = ["i32", "bool", "i64"]
     cases["value-optional-lowering"] = _failure(value_optional_lowering)
 
     value_optional_layout_drift = deepcopy(payload)

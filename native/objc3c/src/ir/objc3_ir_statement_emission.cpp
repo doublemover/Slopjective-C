@@ -96,7 +96,9 @@ ValueType InferObjc3IRLocalBindingValueType(
       return ValueType::ObjCId;
     case Expr::Kind::Call:
       if (expr->ident == kObjc3RuntimeOptionalAbsentI64Symbol ||
-          expr->ident == kObjc3RuntimeOptionalPresentI32Symbol) {
+          expr->ident == kObjc3RuntimeOptionalAbsentBoolSymbol ||
+          expr->ident == kObjc3RuntimeOptionalPresentI32Symbol ||
+          expr->ident == kObjc3RuntimeOptionalPresentBoolSymbol) {
         return ValueType::Optional;
       }
       if (callbacks.lookup_function_signature) {

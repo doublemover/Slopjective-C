@@ -393,12 +393,13 @@ the canonical manifest fixture and public npm command above.
 - Capability ID: `language.errors.typed-throws`
 - State: `reserved`
 - Support claims: None
-- Summary: Typed throws remains reserved as a public support claim under issue #8233 until the public validation gate proves the full row, but the hidden single-payload throws(E) ABI now carries catch/bridge policy coverage. Parser/source/interface/sema records preserve one payload as throws:typed:<declared_error_type>, protocol and callable compatibility require exact payload identity, direct calls and try propagation lower through the private error runtime helpers without erasing to bare throws, do/catch accepts exact typed catches, allows only the policy-backed id<Error> bridge catch, rejects incompatible typed catches with O3S206, and fails closed on unsupported foreign carriers. Malformed/empty/multi/non-type payloads still fail closed with O3P182.
+- Summary: Typed throws remains reserved as a broad public support claim under issue #8233 until the public validation gate proves the full row, but the hidden single-payload throws(E) ABI now carries catch/bridge policy coverage. Parser/source/interface/sema records preserve one payload as throws:typed:<declared_error_type>, protocol and callable compatibility require exact payload identity, direct calls, message-send operands, and try propagation preserve the typed payload through the private error runtime helpers without erasing to bare throws, do/catch accepts exact typed catches, allows only the policy-backed id<Error> bridge catch, rejects incompatible typed catches with O3S206, and fails closed on unsupported foreign carriers. Malformed/empty/multi/non-type payloads still fail closed with O3P182.
 - Owner modules:
   - `native/objc3c/src/parse/objc3_parser_core_cstyle_parameters_async_throws_clause_parsing.inc`
   - `native/objc3c/src/parse/objc3_parser_rejection_diagnostics.cpp`
   - `native/objc3c/src/sema/objc3_typed_throws_effect_contract.h`
   - `native/objc3c/src/sema/objc3_semantic_error_handling_try_do_catch_do_scope.inc`
+  - `native/objc3c/src/sema/objc3_semantic_error_handling_try_do_catch_operand_surface.inc`
   - `native/objc3c/src/sema/objc3_semantic_signature_compatibility.cpp`
   - `native/objc3c/src/ir/objc3_ir_function_signature_model.cpp`
   - `native/objc3c/src/ir/objc3_ir_direct_call_emission.cpp`
@@ -420,9 +421,14 @@ the canonical manifest fixture and public npm command above.
   - diagnostic: `tests/tooling/fixtures/native/recovery/negative/negative_typed_throws_protocol_mismatch.objc3`
   - diagnostic: `tests/tooling/fixtures/native/recovery/negative/negative_typed_throws_incompatible_catch.objc3`
   - diagnostic: `tests/tooling/fixtures/native/recovery/negative/negative_typed_throws_foreign_carrier_catch.objc3`
+  - diagnostic: `tests/tooling/fixtures/native/recovery/negative/negative_typed_throws_method_incompatible_catch.objc3`
+  - diagnostic: `tests/tooling/fixtures/native/recovery/negative/negative_typed_throws_method_foreign_carrier_catch.objc3`
+  - test: `tests/tooling/fixtures/native/execution/positive/typed_throws_runtime_catch_bridge_positive.objc3` via `npm run objc3c -- test-execution-smoke`
+  - test: `tests/tooling/fixtures/native/execution/positive/typed_throws_runtime_message_send_catch_positive.objc3` via `npm run objc3c -- test-execution-smoke`
   - schema: `schemas/objc3c-typed-throws-effect-contract-v1.schema.json`
   - source: `native/objc3c/src/sema/objc3_typed_throws_effect_contract.h`
   - source: `native/objc3c/src/sema/objc3_semantic_error_handling_try_do_catch_do_scope.inc`
+  - source: `native/objc3c/src/sema/objc3_semantic_error_handling_try_do_catch_operand_surface.inc`
   - source: `native/objc3c/src/sema/objc3_semantic_signature_compatibility.cpp`
   - source: `native/objc3c/src/ir/objc3_ir_function_signature_model.cpp`
   - source: `native/objc3c/src/ir/objc3_ir_direct_call_emission.cpp`
@@ -442,7 +448,7 @@ the canonical manifest fixture and public npm command above.
 - Capability ID: `language.types.value-optionals`
 - State: `reserved`
 - Support claims: None
-- Summary: Value optionals remain reserved as a broad public executable/runtime feature under issue #8234. Canonical Optional<T> is admitted as a semantic type-signature carrier with stable packed has_value/payload ABI identity, textual-interface roundtrip, and bounded runtime ABI only for supported scalar payload forms. Lowercase optional<T> is rejected as O3C004 rather than accepted as an alias, and checked parser/source-closure/textual-interface import records explicitly deny nested optional runtime lowering, generic payload runtime lowering, property or ivar storage, unchecked unwrap, implicit nil absence, nil-to-scalar, nullable-pointer/nullability bridges, and throws/result conversions.
+- Summary: Value optionals remain reserved as a broad public executable/runtime feature under issue #8234. Canonical Optional<T> is admitted as a semantic type-signature carrier with stable packed has_value/payload ABI identity, textual-interface roundtrip, and replayed runtime ABI for the checked Optional<i32> and Optional<bool> payload forms. Lowercase optional<T> is rejected as O3C004 rather than accepted as an alias, and checked parser/source-closure/textual-interface import records explicitly deny full-width i64 payloads, nested optional runtime lowering, generic payload runtime lowering, property or ivar storage, unchecked unwrap, implicit nil absence, nil-to-scalar, nullable-pointer/nullability bridges, and throws/result conversions.
 - Owner modules:
   - `native/objc3c/src/ast/objc3_ast_value_optional_type.h`
   - `native/objc3c/src/parse/objc3_parser_declaration_surface.cpp`
@@ -450,7 +456,10 @@ the canonical manifest fixture and public npm command above.
   - `native/objc3c/src/parse/objc3_parser_rejection_diagnostics.cpp`
   - `native/objc3c/src/sema/model/frontend_type_source_closure.h`
   - `native/objc3c/src/sema/objc3_semantic_passes_canonical_type_helpers.inc`
+  - `native/objc3c/src/ir/objc3_ir_expression_emission_call.cpp`
   - `native/objc3c/src/lower/contracts/value_optional_lowering_contracts.h`
+  - `native/objc3c/src/runtime/public/objc3_runtime_value_optional_contract.h`
+  - `native/objc3c/src/runtime/values/value_optional.cpp`
   - `native/objc3c/src/artifacts/objc3_frontend_textual_interface_payload_artifact.cpp`
   - `native/objc3c/src/artifacts/objc3_frontend_textual_interface_payload_import.cpp`
   - `schemas/objc3c-value-optionals-contract-v1.schema.json`
@@ -466,12 +475,16 @@ the canonical manifest fixture and public npm command above.
   - diagnostic: `tests/tooling/fixtures/native/value_optionals_layout_mismatch_negative.contract.json`
   - diagnostic: `tests/tooling/fixtures/native/value_optionals_lowering_claim_negative.contract.json`
   - diagnostic: `tests/tooling/fixtures/native/value_optionals_interface_mismatch_negative.contract.json`
+  - test: `tests/tooling/fixtures/native/execution/positive/value_optionals_runtime_abi_positive.objc3` via `npm run objc3c -- test-execution-smoke`
   - source: `tests/tooling/fixtures/native/language_evolution_typed_throws_value_optionals_contract.json`
   - source: `tests/tooling/fixtures/native/value_optionals_contract_positive.json`
   - diagnostic: `tests/tooling/fixtures/native/value_optionals_executable_semantics_negative.contract.json`
   - schema: `schemas/objc3c-value-optionals-contract-v1.schema.json`
   - source: `native/objc3c/src/ast/objc3_ast_value_optional_type.h`
+  - source: `native/objc3c/src/ir/objc3_ir_expression_emission_call.cpp`
   - source: `native/objc3c/src/lower/contracts/value_optional_lowering_contracts.h`
+  - source: `native/objc3c/src/runtime/public/objc3_runtime_value_optional_contract.h`
+  - source: `native/objc3c/src/runtime/values/value_optional.cpp`
   - source: `native/objc3c/src/artifacts/objc3_frontend_textual_interface_payload_artifact.cpp`
   - source: `native/objc3c/src/artifacts/objc3_frontend_textual_interface_payload_import.cpp`
 

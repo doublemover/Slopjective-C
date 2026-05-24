@@ -236,8 +236,8 @@ Consumer rule: Umbrella readiness may explain why a reserved umbrella row is blo
 
 ### Prerequisite Rows
 
-- `language.errors.typed-throws` must be `reserved`: The umbrella cannot be implemented until typed throws moves from the hidden single-payload error-out ABI plus catch/bridge policy slice into public replayable support evidence.
-- `language.types.value-optionals` must be `reserved`: The umbrella cannot be implemented until value optionals move beyond bounded scalar packed ABI evidence into a replay-proven public row or explicitly scope out nested/generic/property/ivar/nullability/nil/unchecked/throws broadening paths.
+- `language.errors.typed-throws` must be `reserved`: The umbrella cannot be implemented until typed throws moves from the hidden single-payload error-out ABI plus direct-function catch/bridge runtime slice into complete public replayable support evidence, including method/message-send policy.
+- `language.types.value-optionals` must be `reserved`: The umbrella cannot be implemented until value optionals move beyond the checked packed Optional<i32>/Optional<bool> ABI evidence into a replay-proven public row or explicitly scope out nested/generic/property/ivar/nullability/nil/unchecked/throws broadening paths.
 - `language.generics.generic-callable-reification` must be `implemented`: Generic callable reification now has source-owned bounded metadata policy support for Objective-C 3 generic functions and Objective-C generic methods while runtime specialization remains explicitly outside the support claim.
 - `language.control-flow.statement-guarded-match` must be `implemented`: Statement guarded match is the one source-level #8236 prerequisite currently implemented and must remain evidence-backed.
 - `language.profiles.strict-admission` must be `implemented`: Strict and strict-concurrency profiles are now claimable through native profile validation, strict diagnostics, strict-concurrency enforcement, public conformance publication, and release-candidate replay evidence while strict-system remains fail-closed.
@@ -282,15 +282,15 @@ Consumer rule: Umbrella readiness may explain why a reserved umbrella row is blo
 
 #### Runtime Probes
 
-- `blocked` Typed throws hidden single-payload ABI and catch/bridge policy are recorded, but public replayable support evidence for the full row remains blocked. (blocker_id: `typed-throws-abi-lowering-interface`)
-- `blocked` Value optional runtime support remains limited to bounded packed scalar payload ABI; nested/generic/property/ivar storage, nil/nullability conversion, unchecked unwrap, implicit nil, and throws/result conversion remain unimplemented. (blocker_id: `value-optionals-abi-lowering-interface`)
+- `blocked` Typed throws hidden single-payload ABI, exact catch policy, id<Error> bridge policy, and direct-function runtime catch/bridge smoke are recorded; full public row promotion remains blocked on method/message-send replay agreement. (blocker_id: `typed-throws-abi-lowering-interface`)
+- `blocked` Value optional runtime support is limited to the checked packed Optional<i32> and Optional<bool> payload ABI; full-width i64, object, nested/generic/property/ivar storage, nil/nullability conversion, unchecked unwrap, implicit nil, and throws/result conversion remain unimplemented. (blocker_id: `value-optionals-abi-lowering-interface`)
 - `satisfied` Runtime-specialized generic metadata and body cloning remain unimplemented; current generic callable reification is a source-owned metadata policy for admitted generic callables. (path: `tests/tooling/fixtures/native/generic_callable_reification_contract.json`)
 - `satisfied` Strict-concurrency actor isolation, sendability, scheduler, task lifecycle, and mailbox evidence are bound to the claimable strict-concurrency profile; strict-system remains target-only release evidence and is not a native frontend language profile. (path: `tests/conformance/profile_strict_boundary/strict_profile_boundary_contract.json`)
 
 #### Abi Governance Rows
 
 - `satisfied` Typed throws metadata slots import none, untyped, or single-payload typed effects only when effect signature, declared payload metadata, catch compatibility, id<Error> bridge policy, and foreign-carrier fail-closed records agree. (path: `tests/tooling/fixtures/native/language_evolution_typed_throws_value_optionals_contract.json`)
-- `blocked` Value optional ABI layout identity, interface roundtrip, explicit absent/present construction, checked unwrap/binding diagnostics, and bounded scalar payload runtime ABI are now contracted; broad executable call ABI for nested/generic/property/ivar/nullability/nil/unchecked/throws forms remains blocked. (blocker_id: `value-optionals-abi-lowering-interface`)
+- `blocked` Value optional ABI layout identity, interface roundtrip, explicit absent/present construction, checked unwrap/binding diagnostics, and the packed Optional<i32>/Optional<bool> runtime ABI are now contracted; broad executable call ABI for full-width i64, object, nested/generic/property/ivar/nullability/nil/unchecked/throws forms remains blocked. (blocker_id: `value-optionals-abi-lowering-interface`)
 - `satisfied` Generic callable signature metadata records erased-default and explicit-reified semantic mangling policies without claiming runtime-specialized metadata. (path: `tests/tooling/fixtures/native/generic_callable_reification_contract.json`)
 
 #### Docs
@@ -316,11 +316,11 @@ Consumer rule: Umbrella readiness may explain why a reserved umbrella row is blo
 
 ### Promotion Blockers
 
-- `typed-throws-abi-lowering-interface`: Typed throws now has parser/source/interface/sema effect identity, hidden single-payload error-out ABI lowering, exact typed catch records, id<Error> bridge policy, incompatible-catch rejection, unsupported foreign-carrier fail-closed records, and a native execution smoke fixture for direct-function catch/bridge behavior. Broader public support remains reserved until every method/message-send and public replay surface agrees.
+- `typed-throws-abi-lowering-interface`: Typed throws now has parser/source/interface/sema effect identity, hidden single-payload error-out ABI lowering, exact typed catch records, id<Error> bridge policy, incompatible-catch rejection, unsupported foreign-carrier fail-closed records, and native execution smoke evidence for direct-function catch/bridge behavior. Broader public support remains reserved until every method/message-send and public replay surface agrees.
   - Keep method/message-send catch policy and runtime replay evidence tied to checked fixtures before capability-row promotion.
   - Promotion of the capability row only after its support claims, fixtures, artifacts, and replay evidence agree.
-- `value-optionals-abi-lowering-interface`: Value optionals now have semantic type admission for the checked `Optional<i32>` runtime ABI, stable packed presence/payload layout identity, textual-interface roundtrip, explicit absent/present construction contracts, checked unwrap/binding diagnostics, and native execution smoke evidence for the packed `i32` payload carrier; nested/generic/property/ivar storage, nullability bridges, nil-to-scalar, implicit nil, unchecked unwrap, and throws/result conversion remain blocked.
-  - Broader scalar payloads, nested Optional<T>, generic payload, property storage, and ivar storage lowering.
+- `value-optionals-abi-lowering-interface`: Value optionals now have semantic type admission for the checked Optional<i32> and Optional<bool> runtime ABI, stable packed presence/payload layout identity, textual-interface roundtrip, explicit absent/present construction contracts, checked unwrap/binding diagnostics, and native execution smoke evidence for the packed i32 and bool payload carriers; full-width i64, nested/generic/property/ivar storage, nullability bridges, nil-to-scalar, implicit nil, unchecked unwrap, and throws/result conversion remain blocked.
+  - Full-width i64 payloads, nested Optional<T>, generic payload, property storage, and ivar storage lowering.
   - Nullability bridge, nil-to-scalar, implicit nil, unchecked unwrap, and throws/result conversion rejection coverage tied to the public row.
   - Promotion of the capability row only after scalar ABI support and all fail-closed broadening paths agree across fixtures and docs.
 - `language-evolution-prerequisites`: The #8207 umbrella is blocked by the reserved #8233/#8234 prerequisite rows even though #8235 generic callable metadata policy, #8236 guarded match plus bounded expression match, and #8237 strict profile admission are implemented.
@@ -357,8 +357,8 @@ Consumer rule: Umbrella readiness may explain why a reserved umbrella row is blo
 - `platform.linux-x64.unsupported` must be `rejected`: Linux x64 remains fail-closed until build, package, install, and native execution evidence exists.
 - `platform.darwin-arm64.unsupported` must be `rejected`: macOS arm64 remains fail-closed until package install, Mach-O/load-path, and native execution evidence exists.
 - `toolchain.llvm.current-probed-executable` must be `internal`: LLVM and native object emission remain current-probe/internal evidence, not broad LLVM compatibility.
-- `toolchain.sanitizer.address` must be `reserved`: ASan now has a concrete package layout, runtime probe, opt-in install selector, ASAN_OPTIONS metadata contract, release-runtime isolation, unsupported-host diagnostics, freshness guard, and expected detection records, but remains reserved until package, install, and native execution evidence exist.
-- `toolchain.sanitizer.undefined` must be `reserved`: UBSan now has a concrete package layout, runtime probe, opt-in install selector, UBSAN_OPTIONS and trap-or-recover metadata contracts, release-runtime isolation, unsupported-host diagnostics, freshness guard, and expected detection records, but remains reserved until package, install, and native execution evidence exist.
+- `toolchain.sanitizer.address` must be `reserved`: ASan remains reserved until sanitizer package, install, expected detection records, release-runtime isolation, unsupported-host diagnostics, and native execution evidence exist.
+- `toolchain.sanitizer.undefined` must be `reserved`: UBSan remains reserved until sanitizer package, install, trap-or-recover metadata, expected detection records, release-runtime isolation, unsupported-host diagnostics, and native execution evidence exist.
 
 ### Readiness Requirements
 

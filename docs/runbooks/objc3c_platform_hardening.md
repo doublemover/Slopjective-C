@@ -234,7 +234,11 @@ source contracts only. Default release runtime packages must not inherit
 sanitizer behavior, and sanitizer rows must fail closed for unsupported hosts,
 default-release misuse, mixed runtime libraries, missing sanitizer runtime
 libraries, missing expected detection records, missing UBSan trap-or-recover
-metadata, and stale package metadata.
+metadata, missing sanitizer install receipt fields, and stale package metadata.
+The shared package install receipt schema has a reserved
+`sanitizer_package_variant` field so sanitizer package rows can bind explicit
+install selection to native-execution evidence without promoting generated
+reports into support truth.
 
 Every future platform or sanitizer promotion must preserve the package identity
 contract checked into the support evidence fixture. Linux promotion requires the

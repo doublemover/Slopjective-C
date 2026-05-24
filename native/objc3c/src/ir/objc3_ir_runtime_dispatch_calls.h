@@ -32,6 +32,7 @@ struct Objc3IRDirectDispatchCallRequest {
   std::vector<ValueType> arg_types;
   ValueType return_type = ValueType::I32;
   std::size_t explicit_arg_count = 0;
+  std::string throws_error_slot_ptr;
   bool strict_no_retired_route = true;
   bool strict_no_compatibility = true;
 };

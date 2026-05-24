@@ -8,6 +8,7 @@
 #include "ir/objc3_ir_frontend_metadata.h"
 #include "ir/objc3_ir_symbol_model.h"
 #include "ir/objc3_ir_type_model.h"
+#include "sema/objc3_typed_throws_effect_contract.h"
 
 bool Objc3IRRuntimeMetadataPropertyBundleIsImplementationOwned(
     const Objc3IRRuntimeMetadataPropertyBundle &bundle) {
@@ -50,8 +51,36 @@ Objc3IRMethodDefinitionPlan BuildObjc3IRMethodDefinitionPlan(
       [](const Objc3MethodDecl &method) {
         Objc3IRDirectDispatchSignature signature;
         signature.return_type = method.return_type;
+        signature.throws_declared = method.throws_declared;
+        signature.typed_throws_declared = method.typed_throws_declared;
+        signature.throws_error_out_abi_ready =
+            Objc3TypedThrowsAbiLoweringReady(
+                method.throws_declared,
+                method.typed_throws_declared,
+                method.typed_throws_payload.canonical_spelling);
+        signature.typed_throws_error_type_spelling =
+            method.typed_throws_payload.canonical_spelling;
+        const auto mark_value_optional =
+            [&signature](const Objc3ValueOptionalTypeDescriptor &descriptor) {
+              if (!descriptor.present) {
+                return;
+              }
+              if (!signature.has_value_optional_type_signature) {
+                signature.value_optional_lowering_supported = true;
+              }
+              signature.has_value_optional_type_signature = true;
+              signature.value_optional_lowering_supported =
+                  signature.value_optional_lowering_supported &&
+                  descriptor.lowering_supported;
+              if (signature.value_optional_payload_type_spelling.empty()) {
+                signature.value_optional_payload_type_spelling =
+                    descriptor.payload_type_spelling;
+              }
+            };
+        mark_value_optional(method.return_value_optional);
         signature.param_types.reserve(method.params.size());
         for (const FuncParam &param : method.params) {
+          mark_value_optional(param.value_optional);
           signature.param_types.push_back(param.type);
         }
         return signature;
@@ -74,7 +103,21 @@ Objc3IRMethodDefinitionPlan BuildObjc3IRMethodDefinitionPlan(
             plan.direct_dispatch_signatures_by_key.find(key);
         if (existing_signature != plan.direct_dispatch_signatures_by_key.end() &&
             (existing_signature->second.return_type != signature.return_type ||
-             existing_signature->second.param_types != signature.param_types)) {
+             existing_signature->second.param_types != signature.param_types ||
+             existing_signature->second.throws_declared !=
+                 signature.throws_declared ||
+             existing_signature->second.typed_throws_declared !=
+                 signature.typed_throws_declared ||
+             existing_signature->second.throws_error_out_abi_ready !=
+                 signature.throws_error_out_abi_ready ||
+             existing_signature->second.typed_throws_error_type_spelling !=
+                 signature.typed_throws_error_type_spelling ||
+             existing_signature->second.has_value_optional_type_signature !=
+                 signature.has_value_optional_type_signature ||
+             existing_signature->second.value_optional_lowering_supported !=
+                 signature.value_optional_lowering_supported ||
+             existing_signature->second.value_optional_payload_type_spelling !=
+                 signature.value_optional_payload_type_spelling)) {
           plan.error = "conflicting direct dispatch signature for method '" +
                        owner_name + " " + selector + "'";
           return false;

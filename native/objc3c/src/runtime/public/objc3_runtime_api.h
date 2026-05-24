@@ -31,8 +31,8 @@
  * - objc3_runtime_result_entrypoint_contract.h owns narrow value dispatch.
  * - objc3_runtime_diagnostic_contract.h owns checked i32 and typed dispatch.
  * - objc3_runtime_string_contract.h owns borrowed selector string lookup.
- * - objc3_runtime_value_optional_contract.h owns packed Optional<i32> helper
- *   ABI.
+ * - objc3_runtime_value_optional_contract.h owns packed Optional<i32/bool>
+ *   helper ABI.
  * - runtime/stdlib contract headers own runtime-backed stdlib helper ABI.
  * - Focused layout/status headers own the caller-visible structs and enums.
  */

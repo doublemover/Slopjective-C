@@ -68,7 +68,8 @@
           "lowering_supported": true,
           "runtime_abi_payload_scope": "supported-scalar-payload-forms-only",
           "supported_runtime_payload_forms": [
-            "i32"
+            "i32",
+            "bool"
           ],
           "ir_payload_emission_supported": true,
           "call_abi_lowering_supported": true,
