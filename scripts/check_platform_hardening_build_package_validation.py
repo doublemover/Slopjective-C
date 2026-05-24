@@ -21,6 +21,13 @@ from platform_hardening_contracts import (
     write_json,
 )
 
+PLATFORM_PACKAGE_VALIDATION_BUILD_ENV = {
+    "CMAKE_BUILD_PARALLEL_LEVEL": "2",
+    "CL_MPCount": "2",
+    "LLVM_PARALLEL_COMPILE_JOBS": "2",
+    "OBJC3C_NATIVE_BUILD_PARALLELISM": "2",
+}
+
 
 def main() -> int:
     run_capture(python_script_command(BUILD_PLATFORM_SUPPORT_MATRIX_SCRIPT))
@@ -62,7 +69,10 @@ def main() -> int:
     }
     for step_name in contract["required_steps"]:
         command = command_map[step_name]
-        result = run_capture(command)
+        result = run_capture(
+            command,
+            env_overlay=PLATFORM_PACKAGE_VALIDATION_BUILD_ENV,
+        )
         steps.append({
             "step": step_name,
             "command": command,
