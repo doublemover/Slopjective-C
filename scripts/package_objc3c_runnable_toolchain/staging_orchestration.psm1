@@ -3,6 +3,10 @@ Set-StrictMode -Version Latest
 Import-Module (Join-Path $PSScriptRoot "..\objc3c_runnable_toolchain_package_helpers.psm1") -Force -DisableNameChecking
 Import-Module (Join-Path $PSScriptRoot "..\objc3c_native_cmake.psm1") -Force -DisableNameChecking
 
+function Get-RunnableToolchainPackageCoreArtifactRelativePaths {
+  return Get-Objc3cNativePackageArtifactRelativePaths
+}
+
 function Get-RunnableToolchainPackagePrivateBuildRoot {
   param(
     [Parameter(Mandatory = $true)][string]$RepoRoot,
@@ -20,10 +24,11 @@ function Get-RunnableToolchainPackagePrivateBuildRoot {
 }
 
 function Get-RunnableToolchainPackageGeneratedArtifactPaths {
+  $coreArtifacts = Get-RunnableToolchainPackageCoreArtifactRelativePaths
   return @(
-    "artifacts/bin/objc3c-native.exe",
-    "artifacts/bin/objc3c-frontend-c-api-runner.exe",
-    "artifacts/lib/objc3_runtime.lib",
+    $coreArtifacts.NativeExecutable,
+    $coreArtifacts.CapiRunnerExecutable,
+    $coreArtifacts.RuntimeLibrary,
     "tmp/artifacts/objc3c-native/frontend_source_graph.json",
     "tmp/artifacts/objc3c-native/frontend_invocation_lock.json",
     "tmp/artifacts/objc3c-native/frontend_core_feature_expansion.json",
@@ -449,9 +454,10 @@ function Copy-RunnableToolchainPackageRepoSupercleanSurface {
   }
 
   $payload = Get-Content -LiteralPath $sourcePath -Raw | ConvertFrom-Json -AsHashtable
-  $payload["native_build_outputs"]["native_executable"] = "artifacts/bin/objc3c-native.exe"
-  $payload["native_build_outputs"]["frontend_c_api_runner"] = "artifacts/bin/objc3c-frontend-c-api-runner.exe"
-  $payload["native_build_outputs"]["runtime_library"] = "artifacts/lib/objc3_runtime.lib"
+  $coreArtifacts = Get-RunnableToolchainPackageCoreArtifactRelativePaths
+  $payload["native_build_outputs"]["native_executable"] = $coreArtifacts.NativeExecutable
+  $payload["native_build_outputs"]["frontend_c_api_runner"] = $coreArtifacts.CapiRunnerExecutable
+  $payload["native_build_outputs"]["runtime_library"] = $coreArtifacts.RuntimeLibrary
   $payload["native_build_outputs"]["compile_commands"] = "tmp/build-objc3c-native/compile_commands.json"
 
   foreach ($entry in @($payload["frontend_contract_artifacts"])) {
@@ -723,9 +729,10 @@ function Get-RunnableToolchainStagedRelativePaths {
 function Set-RunnableToolchainPackagedOutputTimestamps {
   param([Parameter(Mandatory = $true)][string]$PackageRoot)
 
-  $packagedNativeExecutablePath = Join-Path $PackageRoot "artifacts\bin\objc3c-native.exe"
-  $packagedFrontendRunnerPath = Join-Path $PackageRoot "artifacts\bin\objc3c-frontend-c-api-runner.exe"
-  $packagedRuntimeLibraryPath = Join-Path $PackageRoot "artifacts\lib\objc3_runtime.lib"
+  $coreArtifacts = Get-RunnableToolchainPackageCoreArtifactRelativePaths
+  $packagedNativeExecutablePath = Join-Path $PackageRoot ($coreArtifacts.NativeExecutable -replace '/', [System.IO.Path]::DirectorySeparatorChar)
+  $packagedFrontendRunnerPath = Join-Path $PackageRoot ($coreArtifacts.CapiRunnerExecutable -replace '/', [System.IO.Path]::DirectorySeparatorChar)
+  $packagedRuntimeLibraryPath = Join-Path $PackageRoot ($coreArtifacts.RuntimeLibrary -replace '/', [System.IO.Path]::DirectorySeparatorChar)
   $normalizedOutputTimestamp = [datetime]::UtcNow
   foreach ($outputPath in @($packagedNativeExecutablePath, $packagedFrontendRunnerPath, $packagedRuntimeLibraryPath)) {
     if (Test-Path -LiteralPath $outputPath -PathType Leaf) {

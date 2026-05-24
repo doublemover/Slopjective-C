@@ -84,6 +84,12 @@ New-Item -ItemType Directory -Force -Path $outLibDir | Out-Null
 $outExe = $nativeBuildPaths.NativeExecutable
 $outCapiExe = $nativeBuildPaths.CapiRunnerExecutable
 $outRuntimeLib = $nativeBuildPaths.RuntimeLibrary
+$targetPlatformId = $nativeBuildPaths.TargetPlatformId
+$targetTriple = $nativeBuildPaths.TargetTriple
+$runtimeLibraryKind = $nativeBuildPaths.RuntimeLibraryKind
+$runtimeLibraryFileName = $nativeBuildPaths.RuntimeLibraryFileName
+$objectFormat = $nativeBuildPaths.ObjectFormat
+$debugFormat = $nativeBuildPaths.DebugFormat
 $tmpOutDir = $nativeBuildPaths.BuildDir
 New-Item -ItemType Directory -Force -Path $tmpOutDir | Out-Null
 $cmakeSourceDir = $nativeBuildPaths.CmakeSourceDir
@@ -278,6 +284,12 @@ function Write-Objc3cNativeBuildSummary {
     [Parameter(Mandatory = $true)][string]$RuntimeOutputDirPath,
     [Parameter(Mandatory = $true)][string]$LibraryOutputDirPath,
     [Parameter(Mandatory = $true)][string]$FrontendArtifactRootPath,
+    [Parameter(Mandatory = $true)][string]$TargetPlatformId,
+    [Parameter(Mandatory = $true)][string]$TargetTriple,
+    [Parameter(Mandatory = $true)][string]$RuntimeLibraryKind,
+    [Parameter(Mandatory = $true)][string]$RuntimeLibraryFileName,
+    [Parameter(Mandatory = $true)][string]$ObjectFormat,
+    [Parameter(Mandatory = $true)][string]$DebugFormat,
     [Parameter(Mandatory = $true)][string]$SanitizerVariantValue,
     [Parameter(Mandatory = $true)][string]$SourceDateEpoch,
     [Parameter(Mandatory = $true)][int]$Parallelism,
@@ -316,6 +328,14 @@ function Write-Objc3cNativeBuildSummary {
     native_build_lock = if ($null -ne $NativeBuildLockTelemetry) { $NativeBuildLockTelemetry } else { Get-Objc3cNativeBuildLockTelemetry -LockState $null }
     source_date_epoch = $SourceDateEpoch
     sanitizer_variant = $SanitizerVariantValue
+    target = [ordered]@{
+      platform_id = $TargetPlatformId
+      target_triple = $TargetTriple
+      object_format = $ObjectFormat
+      debug_format = $DebugFormat
+      runtime_library_kind = $RuntimeLibraryKind
+      runtime_library_file_name = $RuntimeLibraryFileName
+    }
     runtime_archive_timestamps_normalized = $RuntimeArchiveNormalized
     clean_room = [bool]$CleanRoomRootPath
     clean_room_root = $cleanRoomRelativePath
@@ -421,13 +441,22 @@ if ($modeRunsNativeBuild) {
   Write-BuildStep ("ninja=" + $ninjaTool)
   Write-BuildStep ("llvm_ar=" + $llvmArTool)
   Write-BuildStep ("llvm_ranlib=" + $llvmRanlibTool)
-  Write-BuildStep ("llvm_lib=" + $llvmLibTool)
+  if ($llvmLibTool) {
+    Write-BuildStep ("llvm_lib=" + $llvmLibTool)
+  } else {
+    Write-BuildStep "llvm_lib=not-required-for-host"
+  }
 } else {
   Write-BuildStep "toolchain_resolution=skipped-source-contracts"
 }
 Write-BuildStep ("native_sources=" + $nativeSourcePaths.Count + "; capi_sources=" + $capiRunnerSourcePaths.Count)
 Write-BuildStep ("execution_mode=" + $ExecutionMode)
 Write-BuildStep ("sanitizer_variant=" + $SanitizerVariant)
+Write-BuildStep ("target_platform_id=" + $targetPlatformId)
+Write-BuildStep ("target_triple=" + $targetTriple)
+Write-BuildStep ("object_format=" + $objectFormat)
+Write-BuildStep ("debug_format=" + $debugFormat)
+Write-BuildStep ("runtime_library_kind=" + $runtimeLibraryKind)
 $parallelismLabel = if ($Parallelism -gt 0) { [string]$Parallelism } else { "host-default" }
 Write-BuildStep ("requested_parallelism=" + $parallelismLabel)
 if ($resolvedCleanRoomRoot) {
@@ -498,9 +527,14 @@ if ($modeRunsNativeBuild) {
   if (!(Test-Path -LiteralPath $outRuntimeLib -PathType Leaf)) { throw "runtime library missing after CMake/Ninja build: $outRuntimeLib" }
   if (!(Test-Path -LiteralPath $compileCommandsPath -PathType Leaf)) { throw "compile_commands.json missing after CMake/Ninja configure: $compileCommandsPath" }
 
-  & python $archiveNormalizer $outRuntimeLib
-  if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-  $runtimeArchiveNormalized = $true
+  if ($runtimeLibraryKind -eq "static-archive" -and $objectFormat -eq "COFF") {
+    & python $archiveNormalizer $outRuntimeLib
+    if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+    $runtimeArchiveNormalized = $true
+  } else {
+    $runtimeArchiveNormalized = $false
+    Write-BuildStep "runtime_archive_normalization=not-required-for-host"
+  }
 
   Write-BuildStep ("artifact_ready=objc3c-native -> " + (Get-Objc3cNativeBuildRepoRelativePath -RootPath $repoRoot -TargetPath $outExe))
   Write-BuildStep ("artifact_ready=objc3c-frontend-c-api-runner -> " + (Get-Objc3cNativeBuildRepoRelativePath -RootPath $repoRoot -TargetPath $outCapiExe))
@@ -544,6 +578,12 @@ Write-Objc3cNativeBuildSummary `
   -RuntimeOutputDirPath $outDir `
   -LibraryOutputDirPath $outLibDir `
   -FrontendArtifactRootPath $resolvedFrontendArtifactRoot `
+  -TargetPlatformId $targetPlatformId `
+  -TargetTriple $targetTriple `
+  -RuntimeLibraryKind $runtimeLibraryKind `
+  -RuntimeLibraryFileName $runtimeLibraryFileName `
+  -ObjectFormat $objectFormat `
+  -DebugFormat $debugFormat `
   -SanitizerVariantValue $SanitizerVariant `
   -SourceDateEpoch $sourceDateEpoch `
   -Parallelism $Parallelism `

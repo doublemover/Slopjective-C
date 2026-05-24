@@ -1,11 +1,14 @@
 Set-StrictMode -Version Latest
 
+Import-Module (Join-Path $PSScriptRoot "..\..\objc3c_native_cmake.psm1") -Force -DisableNameChecking
+
 function Get-ManifestProvenanceCoreToolchainFiles {
+  $coreArtifacts = Get-Objc3cNativePackageArtifactRelativePaths
   return @(
     "package.json",
-    "artifacts/bin/objc3c-native.exe",
-    "artifacts/bin/objc3c-frontend-c-api-runner.exe",
-    "artifacts/lib/objc3_runtime.lib",
+    $coreArtifacts.NativeExecutable,
+    $coreArtifacts.CapiRunnerExecutable,
+    $coreArtifacts.RuntimeLibrary,
     "scripts/__init__.py",
     "scripts/build_objc3c_native.ps1",
     "scripts/objc3c_native_compile.ps1",

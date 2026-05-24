@@ -1,6 +1,7 @@
 Set-StrictMode -Version Latest
 
 Import-Module (Join-Path $PSScriptRoot "..\objc3c_runnable_toolchain_package_helpers.psm1") -Force -DisableNameChecking
+Import-Module (Join-Path $PSScriptRoot "..\objc3c_native_cmake.psm1") -Force -DisableNameChecking
 
 function New-RunnableToolchainPackageNativeExecutionContract {
   param([switch]$IncludesTrapOrRecoverMode)
@@ -151,6 +152,14 @@ function New-RunnableToolchainPackageFoundationManifestSection {
     [string]$SanitizerVariant = "release"
   )
 
+  $coreArtifacts = Get-Objc3cNativePackageArtifactRelativePaths
+  $targetPlatformId = Get-Objc3cNativeHostPlatformId
+  $runtimeLibraryKind = Get-Objc3cNativeRuntimeLibraryKind
+  $runtimeLibraryName = Get-Objc3cNativeRuntimeLibraryFileName
+  $objectFormat = Get-Objc3cNativeObjectFormat
+  $debugFormat = Get-Objc3cNativeDebugFormat
+  $targetTriple = Get-Objc3cNativeTargetTriple
+
   $sanitizerPackageVariant = [ordered]@{
     selected_runtime_variant = "release"
     support_truth = $false
@@ -234,9 +243,21 @@ function New-RunnableToolchainPackageFoundationManifestSection {
     sanitizer_package_variant = $sanitizerPackageVariant
     package_root = Get-RepoRelativePathCompat -RootPath $RepoRoot -TargetPath $PackageRoot
     manifest_artifact = Get-RepoRelativePathCompat -RootPath $PackageRoot -TargetPath $ManifestPath
-    native_executable = "artifacts/bin/objc3c-native.exe"
-    frontend_c_api_runner = "artifacts/bin/objc3c-frontend-c-api-runner.exe"
-    runtime_library = "artifacts/lib/objc3_runtime.lib"
+    target_platform_id = $targetPlatformId
+    target_triple = $targetTriple
+    object_format = $objectFormat
+    debug_format = $debugFormat
+    runtime_library_kind = $runtimeLibraryKind
+    runtime_library_name = $runtimeLibraryName
+    package_root_layout = @(
+      $coreArtifacts.NativeExecutable,
+      $coreArtifacts.CapiRunnerExecutable,
+      $coreArtifacts.RuntimeLibrary,
+      "include/objc3/runtime"
+    )
+    native_executable = $coreArtifacts.NativeExecutable
+    frontend_c_api_runner = $coreArtifacts.CapiRunnerExecutable
+    runtime_library = $coreArtifacts.RuntimeLibrary
     compile_action = "compile-objc3c"
     compile_wrapper = "scripts/objc3c_native_compile.ps1"
     runtime_launch_contract_script = "scripts/objc3c_runtime_launch_contract.ps1"

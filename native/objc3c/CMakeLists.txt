@@ -37,7 +37,7 @@ set(OBJC3C_LLVM_ROOT "" CACHE PATH "Authoritative LLVM root propagated from the 
 set(OBJC3C_LLVM_INCLUDE_DIR "" CACHE PATH "LLVM include directory resolved by the PowerShell wrapper.")
 set(OBJC3C_LIBCLANG_LIBRARY "" CACHE FILEPATH "Path to libclang/clang import library resolved by the PowerShell wrapper.")
 set(OBJC3C_RUNTIME_OUTPUT_DIR "" CACHE PATH "Canonical final runtime output directory for objc3c-native executables.")
-set(OBJC3C_LIBRARY_OUTPUT_DIR "" CACHE PATH "Canonical final archive output directory for objc3_runtime.lib.")
+set(OBJC3C_LIBRARY_OUTPUT_DIR "" CACHE PATH "Canonical final native runtime library output directory.")
 set(OBJC3C_MAX_NATIVE_SOURCE_LINES "1500" CACHE STRING "Maximum line count for native source files.")
 set(OBJC3C_MAX_NATIVE_HEADER_LINES "1000" CACHE STRING "Maximum line count for native model and public headers.")
 
@@ -129,6 +129,7 @@ function(objc3c_apply_archive_output target_name)
   if (OBJC3C_LIBRARY_OUTPUT_DIR)
     set_target_properties(${target_name} PROPERTIES
       ARCHIVE_OUTPUT_DIRECTORY "${OBJC3C_LIBRARY_OUTPUT_DIR}"
+      LIBRARY_OUTPUT_DIRECTORY "${OBJC3C_LIBRARY_OUTPUT_DIR}"
     )
   endif()
 endfunction()

@@ -64,10 +64,10 @@ jobs:
     runs-on: windows-latest
     timeout-minutes: 90
     env:
-      CMAKE_BUILD_PARALLEL_LEVEL: "4"
-      CL_MPCount: "4"
-      LLVM_PARALLEL_COMPILE_JOBS: "4"
-      OBJC3C_NATIVE_BUILD_PARALLELISM: "4"
+      CMAKE_BUILD_PARALLEL_LEVEL: "2"
+      CL_MPCount: "2"
+      LLVM_PARALLEL_COMPILE_JOBS: "2"
+      OBJC3C_NATIVE_BUILD_PARALLELISM: "2"
       OBJC3C_CI_LLVM_VERSION: "22.1.6"
     steps:
       - name: Checkout
@@ -116,6 +116,8 @@ jobs:
       OBJC3C_PLATFORM_RUNNER_LABEL: ubuntu-24.04
       OBJC3C_PLATFORM_EVIDENCE_ROOT: tmp/reports/platform-host-evidence/linux-x64
       OBJC3C_NATIVE_EXECUTION_RUN_ID: platform-host-evidence-linux-x64
+      CMAKE_BUILD_PARALLEL_LEVEL: "2"
+      OBJC3C_NATIVE_BUILD_PARALLELISM: "2"
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -135,7 +137,7 @@ jobs:
         continue-on-error: true
         run: |
           sudo apt-get update
-          sudo apt-get install -y clang lld llvm llvm-dev cmake ninja-build
+          sudo apt-get install -y clang lld llvm llvm-dev libclang-dev cmake ninja-build
 
       - name: Install workflow dependencies
         id: deps
@@ -208,6 +210,8 @@ jobs:
       OBJC3C_PLATFORM_RUNNER_LABEL: macos-15
       OBJC3C_PLATFORM_EVIDENCE_ROOT: tmp/reports/platform-host-evidence/darwin-arm64
       OBJC3C_NATIVE_EXECUTION_RUN_ID: platform-host-evidence-darwin-arm64
+      CMAKE_BUILD_PARALLEL_LEVEL: "2"
+      OBJC3C_NATIVE_BUILD_PARALLELISM: "2"
     steps:
       - name: Checkout
         uses: actions/checkout@v4
