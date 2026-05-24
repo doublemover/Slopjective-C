@@ -61,6 +61,7 @@ concurrency:
 
 jobs:
   conformance-minima:
+    if: github.event_name != 'workflow_dispatch' || inputs.platform_host_evidence == 'none'
     runs-on: windows-latest
     timeout-minutes: 90
     env:
