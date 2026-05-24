@@ -228,11 +228,18 @@ path, or public verification command drifts.
 The package-channel manifest must publish `payload_contract` and
 `receipt_contracts` from the checked-in packaging-channel metadata surface. The
 payload contract binds the runnable toolchain manifest path, manifest digest,
-required compiler/runtime/stdlib/docs entries, and per-entry SHA-256 digests.
+target platform id, required compiler/runtime/stdlib/docs entries, and
+per-entry SHA-256 digests.
 The receipt contracts bind the local-installer and offline-bundle receipts to
 the channel id, bootstrap entrypoint, package bridge, runnable package manifest,
 manifest digest, required payload entries, rollback requirement, and no-network
 offline policy.
+
+Release package channels are target-platform aware. Windows x64 archives carry
+`objc3c-native.exe` and `objc3_runtime.lib`; Linux x64 archives carry
+`objc3c-native` and `libobjc3-runtime.so`; macOS arm64 archives carry
+`objc3c-native` and `libobjc3-runtime.dylib`. Sanitizer package channels remain
+Windows x64 only until platform-specific sanitizer runtime evidence exists.
 
 For ASan and UBSan package-channel variants, `payload_contract` and
 `receipt_contracts` must also keep the sanitizer runtime-library manifests,

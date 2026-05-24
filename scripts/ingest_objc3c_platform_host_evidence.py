@@ -142,6 +142,12 @@ RUNNABLE_PACKAGE_MANIFEST_PATH = "artifacts/package/objc3c-runnable-toolchain-pa
 PACKAGE_CHANNELS_END_TO_END_SUMMARY_PATH = (
     "tmp/reports/package-channels/end-to-end-summary.json"
 )
+PACKAGE_INSTALL_DISTRIBUTION_SUMMARY_PATH = (
+    "tmp/reports/package-ecosystem/install-distribution-credibility-summary.json"
+)
+PACKAGE_INSTALL_DISTRIBUTION_VERIFICATION_PATH = (
+    "tmp/artifacts/package-ecosystem/install-validation/objc3c-install-distribution-verification.json"
+)
 HOSTED_EXECUTION_SMOKE_SUMMARY_PATH = "tmp/reports/hosted-execution-smoke/summary.json"
 NATIVE_EXECUTION_SMOKE_SUMMARY_PATH = (
     "tmp/reports/objc3c-native-execution-smoke/summary.json"
@@ -205,6 +211,20 @@ STEP_CONTRACTS: tuple[tuple[str, str, tuple[tuple[str, str], ...]], ...] = (
         ),
     ),
     (
+        "clean_install_distribution",
+        "install",
+        (
+            (
+                PACKAGE_INSTALL_DISTRIBUTION_SUMMARY_PATH,
+                "tmp/reports/platform-host-evidence/{platform_id}/install/install-distribution-credibility-summary.json",
+            ),
+            (
+                PACKAGE_INSTALL_DISTRIBUTION_VERIFICATION_PATH,
+                "tmp/reports/platform-host-evidence/{platform_id}/install/install-distribution-verification.json",
+            ),
+        ),
+    ),
+    (
         "execution",
         "execution",
         (
@@ -231,6 +251,7 @@ OUTCOME_ENV = {
     "build": "OBJC3C_PLATFORM_EVIDENCE_BUILD_OUTCOME",
     "package": "OBJC3C_PLATFORM_EVIDENCE_PACKAGE_OUTCOME",
     "install": "OBJC3C_PLATFORM_EVIDENCE_INSTALL_OUTCOME",
+    "clean_install_distribution": "OBJC3C_PLATFORM_EVIDENCE_CLEAN_INSTALL_OUTCOME",
     "execution": "OBJC3C_PLATFORM_EVIDENCE_EXECUTION_OUTCOME",
 }
 
@@ -908,6 +929,23 @@ def build_promotion_readiness_requirements(platform_id: str) -> dict[str, Any]:
                     "runtime_library",
                     "loader_path",
                     "reviewed_source_field_requirements.package_install_identity",
+                ],
+            },
+            {
+                "reference_id": "clean-package-install-distribution",
+                "evidence_class": "install",
+                "command": "npm run objc3c -- validate-package-install-distribution --from-nothing",
+                "path": platform_scoped_path(
+                    platform_id,
+                    "install/install-distribution-credibility-summary.json",
+                ),
+                "required_fields": [
+                    "install_receipt",
+                    "update_receipt",
+                    "uninstall_receipt",
+                    "install_verification",
+                    "from_nothing_probe.preexisting_outputs_absent",
+                    "platform_host_evidence.install_receipt",
                 ],
             },
             {

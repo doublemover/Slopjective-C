@@ -26,11 +26,15 @@ from scripts.objc3c_package_channels.model import (
     package_channels_manifest_payload,
     package_channels_report_payload,
     receipt_contract_payloads,
+    release_package_channel_id_for_platform,
+    release_package_id_for_platform,
+    required_payload_entries_for_platform,
 )
 from scripts.objc3c_package_channels.publication import prepare_package_channel_workspace
 from scripts.objc3c_package_channels.rendering import (
     install_script_text,
     offline_bootstrap_script_text,
+    uninstall_script_text,
 )
 from scripts.objc3c_package_channels.validation import validate_manifest_required_fields
 from scripts.objc3c_tooling.paths import repo_rel
@@ -113,6 +117,7 @@ def sample_inputs() -> PackageChannelInputs:
                 "manifest_relative_path",
                 "manifest_artifact",
                 "manifest_sha256",
+                "target_platform_id",
                 "required_entries",
                 "entry_digests",
                 "clean_room_source_policy",
@@ -171,24 +176,36 @@ def sample_inputs() -> PackageChannelInputs:
     )
 
 
-def sample_installer_signature() -> dict[str, str]:
+def sample_installer_signature(paths: PackageChannelPaths | None = None) -> dict[str, str]:
+    resolved_paths = (
+        paths
+        if paths is not None
+        else package_channel_paths("unit-run", target_platform_id="windows-x64")
+    )
     return {
         "signature_format": "objc3c-local-sha256-v1",
         "signing_key_id": "objc3c-release-operations-local-installer-key-v1",
         "subject": "local-installer",
-        "artifact": "tmp/artifacts/package-channels/unit-run/windows-x64/installer/objc3c-windows-x64-installer.zip",
+        "artifact": repo_rel(resolved_paths.installer_archive),
         "sha256": "0" * 64,
         "verification_command": "npm run objc3c -- validate-packaging-channels-end-to-end",
         "trust_scope": "checked-in-artifact-digest",
     }
 
 
-def sample_archive_digests() -> dict[str, dict[str, str]]:
+def sample_archive_digests(
+    paths: PackageChannelPaths | None = None,
+) -> dict[str, dict[str, str]]:
+    resolved_paths = (
+        paths
+        if paths is not None
+        else package_channel_paths("unit-run", target_platform_id="windows-x64")
+    )
     return {
         "portable_archive": {
             "digest_format": "sha256",
             "artifact_role": "portable-archive",
-            "artifact": "tmp/artifacts/package-channels/unit-run/windows-x64/portable/objc3c-windows-x64-portable.zip",
+            "artifact": repo_rel(resolved_paths.portable_archive),
             "sha256": "1" * 64,
             "verification_command": "npm run objc3c -- validate-packaging-channels-end-to-end",
             "trust_scope": "checked-in-artifact-digest",
@@ -196,7 +213,7 @@ def sample_archive_digests() -> dict[str, dict[str, str]]:
         "installer_archive": {
             "digest_format": "sha256",
             "artifact_role": "local-installer",
-            "artifact": "tmp/artifacts/package-channels/unit-run/windows-x64/installer/objc3c-windows-x64-installer.zip",
+            "artifact": repo_rel(resolved_paths.installer_archive),
             "sha256": "0" * 64,
             "verification_command": "npm run objc3c -- validate-packaging-channels-end-to-end",
             "trust_scope": "checked-in-artifact-digest",
@@ -204,7 +221,7 @@ def sample_archive_digests() -> dict[str, dict[str, str]]:
         "offline_archive": {
             "digest_format": "sha256",
             "artifact_role": "offline-bundle",
-            "artifact": "tmp/artifacts/package-channels/unit-run/windows-x64/offline/objc3c-windows-x64-offline-bundle.zip",
+            "artifact": repo_rel(resolved_paths.offline_archive),
             "sha256": "2" * 64,
             "verification_command": "npm run objc3c -- validate-packaging-channels-end-to-end",
             "trust_scope": "checked-in-artifact-digest",
@@ -213,14 +230,21 @@ def sample_archive_digests() -> dict[str, dict[str, str]]:
 
 
 def sample_payload_contract(paths: PackageChannelPaths | None = None) -> dict[str, object]:
-    resolved_paths = paths if paths is not None else package_channel_paths("unit-run")
+    resolved_paths = (
+        paths
+        if paths is not None
+        else package_channel_paths("unit-run", target_platform_id="windows-x64")
+    )
+    required_entries = required_payload_entries_for_platform(
+        target_platform_id=resolved_paths.target_platform_id,
+    )
     entry_digests = {
         relative_path: {
             "digest_format": "sha256",
             "artifact": relative_path,
             "sha256": f"{index:x}" * 64,
         }
-        for index, relative_path in enumerate(REQUIRED_PAYLOAD_ENTRIES, start=4)
+        for index, relative_path in enumerate(required_entries, start=4)
     }
     return {
         "contract_id": "objc3c.packaging.channels.payload-contract.v1",
@@ -228,14 +252,17 @@ def sample_payload_contract(paths: PackageChannelPaths | None = None) -> dict[st
         "manifest_relative_path": MANIFEST_RELATIVE_PATH,
         "manifest_artifact": f"{repo_rel(resolved_paths.package_root)}/{MANIFEST_RELATIVE_PATH}",
         "manifest_sha256": entry_digests[MANIFEST_RELATIVE_PATH]["sha256"],
-        "required_entries": REQUIRED_PAYLOAD_ENTRIES,
+        "target_platform_id": resolved_paths.target_platform_id,
+        "required_entries": required_entries,
         "entry_digests": entry_digests,
         "clean_room_source_policy": "fresh-owned-tmp-root-only",
     }
 
 
-def sample_receipt_contracts() -> dict[str, dict[str, object]]:
-    return receipt_contract_payloads()
+def sample_receipt_contracts(
+    target_platform_id: str = "windows-x64",
+) -> dict[str, dict[str, object]]:
+    return receipt_contract_payloads(target_platform_id=target_platform_id)
 
 
 def write_json(path: Path, payload: dict[str, object]) -> None:
@@ -457,7 +484,7 @@ def test_package_channel_reuse_rejects_release_foundation_digest_drift(
 
 
 def test_package_channel_manifest_and_report_are_owned_by_model() -> None:
-    paths = package_channel_paths("unit-run")
+    paths = package_channel_paths("unit-run", target_platform_id="windows-x64")
     inputs = sample_inputs()
     signature = sample_installer_signature()
     manifest = package_channels_manifest_payload(
@@ -489,6 +516,7 @@ def test_package_channel_manifest_and_report_are_owned_by_model() -> None:
         "objc3c-windows-x64-offline-bundle.zip"
     )
     assert manifest["payload_contract"]["manifest_relative_path"] == MANIFEST_RELATIVE_PATH
+    assert manifest["payload_contract"]["target_platform_id"] == "windows-x64"
     assert manifest["payload_contract"]["required_entries"] == REQUIRED_PAYLOAD_ENTRIES
     assert manifest["package_runtime_models"][0]["platform_id"] == "windows-x64"
     assert manifest["package_runtime_models"][0]["support_state"] == "supported"
@@ -506,6 +534,59 @@ def test_package_channel_manifest_and_report_are_owned_by_model() -> None:
     assert report["payload_contract"]["clean_room_source_policy"] == "fresh-owned-tmp-root-only"
     assert report["receipt_contracts"]["offline_install_receipt"]["delegates_to"] == "local-installer"
     assert report["package_runtime_models"] == manifest["package_runtime_models"]
+
+
+def test_package_channel_release_paths_and_scripts_are_platform_aware() -> None:
+    paths = package_channel_paths("unit-linux", target_platform_id="linux-x64")
+    linux_entries = required_payload_entries_for_platform(target_platform_id="linux-x64")
+    install_text = install_script_text(target_platform_id="linux-x64")
+    uninstall_text = uninstall_script_text(target_platform_id="linux-x64")
+
+    assert paths.target_platform_id == "linux-x64"
+    assert paths.package_id == release_package_id_for_platform("linux-x64")
+    assert paths.package_channel_id == release_package_channel_id_for_platform("linux-x64")
+    assert paths.portable_archive.name == "objc3c-linux-x64-portable.zip"
+    assert linux_entries == [
+        MANIFEST_RELATIVE_PATH,
+        "artifacts/bin/objc3c-native",
+        "artifacts/lib/libobjc3-runtime.so",
+        "stdlib/workspace.json",
+        "stdlib/modules/objc3.core/module.json",
+        "docs/runbooks/objc3c_packaging_channels.md",
+    ]
+    assert '$targetPlatformId = "linux-x64"' in install_text
+    assert "org.objc3c.runtime:objc3c-runtime-linux-x64-release" in install_text
+    assert "artifacts/bin/objc3c-native" in install_text
+    assert "artifacts/lib/libobjc3-runtime.so" in install_text
+    assert '$targetPlatformId = "linux-x64"' in uninstall_text
+
+
+def test_package_channel_validation_accepts_linux_release_identity() -> None:
+    paths = package_channel_paths("unit-linux", target_platform_id="linux-x64")
+    inputs = sample_inputs()
+    manifest = package_channels_manifest_payload(
+        inputs=inputs,
+        paths=paths,
+        installer_signature=sample_installer_signature(paths),
+        archive_digests=sample_archive_digests(paths),
+        payload_contract=sample_payload_contract(paths),
+        receipt_contracts=sample_receipt_contracts("linux-x64"),
+    )
+
+    validate_manifest_required_fields(
+        manifest_payload=manifest,
+        metadata_surface=inputs.metadata_surface,
+    )
+
+    assert manifest["platform_id"] == "linux-x64"
+    assert manifest["package_id"] == "org.objc3c.runtime:objc3c-runtime-linux-x64-release"
+    assert manifest["payload_contract"]["required_entries"][1] == "artifacts/bin/objc3c-native"
+    assert (
+        manifest["receipt_contracts"]["install_receipt"]["package_runtime_model"][
+            "package_root_layout"
+        ][2]
+        == "artifacts/lib/libobjc3-runtime.so"
+    )
 
 
 def test_package_channel_archive_digest_payloads_are_owned_by_model(tmp_path: Path) -> None:
@@ -546,7 +627,7 @@ def test_package_channel_validation_fails_closed_on_required_manifest_drift() ->
     inputs = sample_inputs()
     manifest = package_channels_manifest_payload(
         inputs=inputs,
-        paths=package_channel_paths("unit-run"),
+        paths=package_channel_paths("unit-run", target_platform_id="windows-x64"),
         installer_signature=sample_installer_signature(),
         archive_digests=sample_archive_digests(),
         payload_contract=sample_payload_contract(),
@@ -565,7 +646,7 @@ def test_package_channel_validation_fails_closed_on_signature_drift() -> None:
     inputs = sample_inputs()
     manifest = package_channels_manifest_payload(
         inputs=inputs,
-        paths=package_channel_paths("unit-run"),
+        paths=package_channel_paths("unit-run", target_platform_id="windows-x64"),
         installer_signature={
             **sample_installer_signature(),
             "artifact": "tmp/artifacts/package-channels/unit-run/windows-x64/installer/drifted.zip",
@@ -591,7 +672,7 @@ def test_package_channel_validation_fails_closed_on_archive_digest_drift() -> No
     }
     manifest = package_channels_manifest_payload(
         inputs=inputs,
-        paths=package_channel_paths("unit-run"),
+        paths=package_channel_paths("unit-run", target_platform_id="windows-x64"),
         installer_signature=sample_installer_signature(),
         archive_digests=archive_digests,
         payload_contract=sample_payload_contract(),
@@ -614,7 +695,7 @@ def test_package_channel_validation_requires_installer_signature_digest_parity()
     }
     manifest = package_channels_manifest_payload(
         inputs=inputs,
-        paths=package_channel_paths("unit-run"),
+        paths=package_channel_paths("unit-run", target_platform_id="windows-x64"),
         installer_signature=sample_installer_signature(),
         archive_digests=archive_digests,
         payload_contract=sample_payload_contract(),
@@ -634,7 +715,7 @@ def test_package_channel_validation_fails_closed_on_payload_contract_drift() -> 
     payload_contract["manifest_sha256"] = "not-a-sha256"
     manifest = package_channels_manifest_payload(
         inputs=inputs,
-        paths=package_channel_paths("unit-run"),
+        paths=package_channel_paths("unit-run", target_platform_id="windows-x64"),
         installer_signature=sample_installer_signature(),
         archive_digests=sample_archive_digests(),
         payload_contract=payload_contract,
@@ -657,7 +738,7 @@ def test_package_channel_validation_fails_closed_on_receipt_contract_drift() -> 
     }
     manifest = package_channels_manifest_payload(
         inputs=inputs,
-        paths=package_channel_paths("unit-run"),
+        paths=package_channel_paths("unit-run", target_platform_id="windows-x64"),
         installer_signature=sample_installer_signature(),
         archive_digests=sample_archive_digests(),
         payload_contract=sample_payload_contract(),
@@ -672,7 +753,10 @@ def test_package_channel_validation_fails_closed_on_receipt_contract_drift() -> 
 
 
 def test_package_channel_workspace_preparation_removes_owned_stale_roots(tmp_path: Path) -> None:
-    paths = package_channel_paths(f"unit-{tmp_path.name}")
+    paths = package_channel_paths(
+        f"unit-{tmp_path.name}",
+        target_platform_id="windows-x64",
+    )
     stale_package_file = paths.package_root / "stale-package.txt"
     stale_build_file = paths.build_root / "stale-build.txt"
     stale_package_file.parent.mkdir(parents=True, exist_ok=True)

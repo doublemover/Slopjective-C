@@ -152,6 +152,7 @@ Each hosted job attempts the same promotion-relevant path:
 - `npm run objc3c -- build-native-binaries`
 - `npm run objc3c -- package-runnable-toolchain`
 - `npm run objc3c -- validate-packaging-channels-end-to-end`
+- `npm run objc3c -- validate-package-install-distribution --from-nothing`
 - `npm run objc3c -- test-hosted-execution-smoke`
 - `npm run objc3c -- ingest-platform-host-evidence`
 
@@ -169,7 +170,10 @@ reviewed before source-truth promotion. The helper mirrors build, package,
 install, hosted-smoke, and native-execution outputs into that same
 platform-scoped root before upload, including `build/object-identity.json`,
 `build/debug-identity.json`, `package/runtime-library-manifest.json`,
-`install/install-receipt.json`, and `execution/runtime-load-probe.json`. The
+`install/install-receipt.json`,
+`install/install-distribution-credibility-summary.json`,
+`install/install-distribution-verification.json`, and
+`execution/runtime-load-probe.json`. The
 workflow uploads only
 `tmp/reports/platform-host-evidence/<platform>/**` and fails closed if that root
 is empty, so Linux x64 and macOS arm64 readback cannot accidentally consume

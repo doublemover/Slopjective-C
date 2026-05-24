@@ -169,6 +169,11 @@ jobs:
         continue-on-error: true
         run: npm run objc3c -- validate-packaging-channels-end-to-end
 
+      - name: Validate clean package install distribution
+        id: clean_install
+        continue-on-error: true
+        run: npm run objc3c -- validate-package-install-distribution --from-nothing
+
       - name: Run hosted native execution smoke
         id: execution
         continue-on-error: true
@@ -183,6 +188,7 @@ jobs:
           OBJC3C_PLATFORM_EVIDENCE_BUILD_OUTCOME: ${{ steps.build.outcome }}
           OBJC3C_PLATFORM_EVIDENCE_PACKAGE_OUTCOME: ${{ steps.package.outcome }}
           OBJC3C_PLATFORM_EVIDENCE_INSTALL_OUTCOME: ${{ steps.install.outcome }}
+          OBJC3C_PLATFORM_EVIDENCE_CLEAN_INSTALL_OUTCOME: ${{ steps.clean_install.outcome }}
           OBJC3C_PLATFORM_EVIDENCE_EXECUTION_OUTCOME: ${{ steps.execution.outcome }}
         run: >
           python scripts/ingest_objc3c_platform_host_evidence.py
@@ -265,6 +271,11 @@ jobs:
         continue-on-error: true
         run: npm run objc3c -- validate-packaging-channels-end-to-end
 
+      - name: Validate clean package install distribution
+        id: clean_install
+        continue-on-error: true
+        run: npm run objc3c -- validate-package-install-distribution --from-nothing
+
       - name: Run hosted native execution smoke
         id: execution
         continue-on-error: true
@@ -279,6 +290,7 @@ jobs:
           OBJC3C_PLATFORM_EVIDENCE_BUILD_OUTCOME: ${{ steps.build.outcome }}
           OBJC3C_PLATFORM_EVIDENCE_PACKAGE_OUTCOME: ${{ steps.package.outcome }}
           OBJC3C_PLATFORM_EVIDENCE_INSTALL_OUTCOME: ${{ steps.install.outcome }}
+          OBJC3C_PLATFORM_EVIDENCE_CLEAN_INSTALL_OUTCOME: ${{ steps.clean_install.outcome }}
           OBJC3C_PLATFORM_EVIDENCE_EXECUTION_OUTCOME: ${{ steps.execution.outcome }}
         run: >
           python scripts/ingest_objc3c_platform_host_evidence.py

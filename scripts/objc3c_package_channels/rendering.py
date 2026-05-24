@@ -2,11 +2,33 @@
 
 from __future__ import annotations
 
+from .model import (
+    DEFAULT_TARGET_PLATFORM_ID,
+    RELEASE_RUNTIME_LIBRARY_NAMES_BY_PLATFORM,
+    release_package_channel_id_for_platform,
+    release_package_id_for_platform,
+    required_payload_entries_for_platform,
+)
 from .sanitizer_contracts import runtime_package_variant_contract
 
 
-def install_script_text(sanitizer_variant: str = "release") -> str:
+def powershell_string_array(entries: list[str], *, indent: str = "  ") -> str:
+    return "\n".join(f'{indent}"{entry}"' for entry in entries)
+
+
+def install_script_text(
+    sanitizer_variant: str = "release",
+    *,
+    target_platform_id: str = DEFAULT_TARGET_PLATFORM_ID,
+) -> str:
     runtime_package_variant_contract(sanitizer_variant)
+    if sanitizer_variant != "release" and target_platform_id != DEFAULT_TARGET_PLATFORM_ID:
+        raise RuntimeError("sanitizer package channels are currently windows-x64 only")
+    payload_required_entries = required_payload_entries_for_platform(
+        sanitizer_variant="release",
+        target_platform_id=target_platform_id,
+    )
+    runtime_library_names = RELEASE_RUNTIME_LIBRARY_NAMES_BY_PLATFORM[target_platform_id]
     return """param(
   [Parameter(Mandatory = $true)][string]$InstallRoot,
   [switch]$Force,
@@ -25,16 +47,12 @@ $bootstrapSource = Join-Path $PSScriptRoot "Bootstrap-objc3cEnvironment.ps1"
 $bootstrapTarget = Join-Path $resolvedInstallRoot "Bootstrap-objc3cEnvironment.ps1"
 $payloadManifest = "artifacts/package/objc3c-runnable-toolchain-package.json"
 $expectedSanitizerVariant = "__SANITIZER_VARIANT__"
+$targetPlatformId = "__TARGET_PLATFORM_ID__"
 if ($SanitizerVariant -ne $expectedSanitizerVariant) {
   throw "installer sanitizer selector does not match packaged runtime variant: expected $expectedSanitizerVariant, got $SanitizerVariant"
 }
 $payloadRequiredEntries = @(
-  $payloadManifest,
-  "artifacts/bin/objc3c-native.exe",
-  "artifacts/lib/objc3_runtime.lib",
-  "stdlib/workspace.json",
-  "stdlib/modules/objc3.core/module.json",
-  "docs/runbooks/objc3c_packaging_channels.md"
+__PAYLOAD_REQUIRED_ENTRIES__
 )
 if ($SanitizerVariant -eq "address") {
   $payloadRequiredEntries += "share/objc3c/sanitizer/asan-metadata.json"
@@ -51,11 +69,13 @@ if ($SanitizerVariant -eq "address") {
 $allowedReceiptChannels = @("local-installer", "offline-bundle")
 
 function Resolve-PackageRuntimeModel {
-  $packageId = "org.objc3c.runtime:objc3c-runtime-release"
-  $packageChannelId = "windows-x64-release"
+  $packageId = "__PACKAGE_ID__"
+  $packageChannelId = "__PACKAGE_CHANNEL_ID__"
   $runtimeVariant = "release"
   $runtimeLibraryIds = @("objc3-runtime")
-  $runtimeLibraryNames = @("objc3_runtime.lib")
+  $runtimeLibraryNames = @(
+__RUNTIME_LIBRARY_NAMES__
+  )
   $missingRuntimeBehavior = "fail-closed-before-native-execution-claim"
 
   if ($SanitizerVariant -eq "address") {
@@ -84,7 +104,7 @@ function Resolve-PackageRuntimeModel {
   }
 
   return [ordered]@{
-    target_platform_id = "windows-x64"
+    target_platform_id = $targetPlatformId
     package_id = $packageId
     package_channel_id = $packageChannelId
     sanitizer_variant = $SanitizerVariant
@@ -453,10 +473,32 @@ Write-Output ("install_root: " + $resolvedInstallRoot)
 Write-Output ("install_home: " + $installHome)
 Write-Output ("receipt_path: " + $receiptPath)
 Write-Output ("bootstrap_entrypoint: " + $bootstrapTarget)
-""".replace("__SANITIZER_VARIANT__", sanitizer_variant)
+""".replace("__SANITIZER_VARIANT__", sanitizer_variant).replace(
+        "__TARGET_PLATFORM_ID__",
+        target_platform_id,
+    ).replace(
+        "__PACKAGE_ID__",
+        release_package_id_for_platform(target_platform_id),
+    ).replace(
+        "__PACKAGE_CHANNEL_ID__",
+        release_package_channel_id_for_platform(target_platform_id),
+    ).replace(
+        "__PAYLOAD_REQUIRED_ENTRIES__",
+        powershell_string_array(payload_required_entries),
+    ).replace(
+        "__RUNTIME_LIBRARY_NAMES__",
+        powershell_string_array(runtime_library_names, indent="    "),
+    )
 
 
-def uninstall_script_text() -> str:
+def uninstall_script_text(
+    *,
+    target_platform_id: str = DEFAULT_TARGET_PLATFORM_ID,
+) -> str:
+    payload_required_entries = required_payload_entries_for_platform(
+        sanitizer_variant="release",
+        target_platform_id=target_platform_id,
+    )
     return """param(
   [Parameter(Mandatory = $true)][string]$InstallRoot
 )
@@ -469,13 +511,9 @@ $installHome = Join-Path $resolvedInstallRoot "objc3c"
 $receiptPath = Join-Path $resolvedInstallRoot "objc3c-install-receipt.json"
 $bootstrapTarget = Join-Path $resolvedInstallRoot "Bootstrap-objc3cEnvironment.ps1"
 $payloadManifest = "artifacts/package/objc3c-runnable-toolchain-package.json"
+$targetPlatformId = "__TARGET_PLATFORM_ID__"
 $payloadRequiredEntries = @(
-  $payloadManifest,
-  "artifacts/bin/objc3c-native.exe",
-  "artifacts/lib/objc3_runtime.lib",
-  "stdlib/workspace.json",
-  "stdlib/modules/objc3.core/module.json",
-  "docs/runbooks/objc3c_packaging_channels.md"
+__PAYLOAD_REQUIRED_ENTRIES__
 )
 $allowedReceiptChannels = @("local-installer", "offline-bundle")
 
@@ -561,6 +599,7 @@ function Assert-ReceiptOwnsInstallHome {
       [string]$receipt.package_bridge -ne "objc3c" -or
       [string]$receipt.install_command -ne "npm run objc3c -- build-package-channels" -or
       [string]$receipt.payload_manifest -ne $payloadManifest -or
+      [string]$receipt.target_platform_id -ne $targetPlatformId -or
       [string]::IsNullOrWhiteSpace([string]$receipt.payload_manifest_sha256)) {
     throw "uninstaller target receipt does not own install home: $installHome"
   }
@@ -583,7 +622,13 @@ if (Test-Path -LiteralPath $receiptPath) {
 }
 
 Write-Output ("rollback_root: " + $resolvedInstallRoot)
-"""
+""".replace(
+        "__TARGET_PLATFORM_ID__",
+        target_platform_id,
+    ).replace(
+        "__PAYLOAD_REQUIRED_ENTRIES__",
+        powershell_string_array(payload_required_entries),
+    )
 
 
 def bootstrap_script_text() -> str:

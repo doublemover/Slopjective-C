@@ -127,6 +127,7 @@
     "manifest_relative_path",
     "manifest_artifact",
     "manifest_sha256",
+    "target_platform_id",
     "required_entries",
     "entry_digests",
     "clean_room_source_policy"

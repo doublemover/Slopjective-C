@@ -42,9 +42,32 @@
   "receipt_derivation_rule": "install receipts must bind the install root, channel id, runnable package manifest path, manifest digest, required payload entries, and reserved sanitizer package metadata when a sanitizer selector is used",
   "runtime_package_variant_contract": {
     "source_module": "scripts/objc3c_package_channels/sanitizer_contracts.py",
-    "target_platform_boundary": "windows-x64-only",
+    "target_platform_boundary": "release channels are platform-aware; sanitizer channels are windows-x64-only",
     "support_promotion_allowed_by_contract": false,
     "native_execution_claimed_by_contract": false,
+    "release_target_platforms": [
+      {
+        "target_platform_id": "windows-x64",
+        "package_id": "org.objc3c.runtime:objc3c-runtime-release",
+        "package_channel_id": "windows-x64-release",
+        "native_executable": "artifacts/bin/objc3c-native.exe",
+        "runtime_library": "artifacts/lib/objc3_runtime.lib"
+      },
+      {
+        "target_platform_id": "linux-x64",
+        "package_id": "org.objc3c.runtime:objc3c-runtime-linux-x64-release",
+        "package_channel_id": "linux-x64-release",
+        "native_executable": "artifacts/bin/objc3c-native",
+        "runtime_library": "artifacts/lib/libobjc3-runtime.so"
+      },
+      {
+        "target_platform_id": "darwin-arm64",
+        "package_id": "org.objc3c.runtime:objc3c-runtime-darwin-arm64-release",
+        "package_channel_id": "darwin-arm64-release",
+        "native_executable": "artifacts/bin/objc3c-native",
+        "runtime_library": "artifacts/lib/libobjc3-runtime.dylib"
+      }
+    ],
     "variants": [
       {
         "sanitizer_variant": "release",

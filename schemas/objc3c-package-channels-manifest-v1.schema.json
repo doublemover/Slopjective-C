@@ -570,6 +570,7 @@
         "manifest_relative_path",
         "manifest_artifact",
         "manifest_sha256",
+        "target_platform_id",
         "required_entries",
         "entry_digests",
         "clean_room_source_policy"
@@ -582,6 +583,9 @@
         },
         "manifest_artifact": { "type": "string", "minLength": 1 },
         "manifest_sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+        "target_platform_id": {
+          "enum": ["windows-x64", "linux-x64", "darwin-arm64"]
+        },
         "required_entries": {
           "type": "array",
           "items": { "$ref": "#/$defs/payloadEntryPath" },

@@ -35,6 +35,7 @@ Replayable public workflow actions:
 - `npm run objc3c -- build-package-channels`
 - `npm run objc3c -- validate-packaging-channels`
 - `npm run objc3c -- validate-packaging-channels-end-to-end`
+- `npm run objc3c -- validate-package-install-distribution --from-nothing`
 - `npm run objc3c -- build-update-manifest`
 - `npm run objc3c -- publish-release-operations`
 - `npm run objc3c -- validate-release-operations`
@@ -55,6 +56,7 @@ actions above, not separate current-facing commands.
   - `npm run objc3c -- build-package-channels`
   - `npm run objc3c -- validate-packaging-channels`
   - `npm run objc3c -- validate-packaging-channels-end-to-end`
+  - `npm run objc3c -- validate-package-install-distribution --from-nothing`
 - release/update support flow:
   - `npm run objc3c -- build-update-manifest`
   - `npm run objc3c -- publish-release-operations`
@@ -412,6 +414,7 @@ public build/package surfaces users run:
 - `npm run objc3c -- build-package-channels`
 - `npm run objc3c -- validate-packaging-channels`
 - `npm run objc3c -- validate-packaging-channels-end-to-end`
+- `npm run objc3c -- validate-package-install-distribution --from-nothing`
 
 The matrix validator for this slice is:
 

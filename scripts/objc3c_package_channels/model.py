@@ -6,6 +6,9 @@ from copy import deepcopy
 from dataclasses import dataclass
 from datetime import datetime, timezone
 import hashlib
+import json
+import os
+import platform
 from pathlib import Path
 from typing import Any
 
@@ -102,6 +105,7 @@ RELEASE_PACKAGE_LAYOUT_BY_PLATFORM = {
         "docs/runbooks/objc3c_packaging_channels.md",
     ],
 }
+RELEASE_PACKAGE_TARGET_PLATFORM_IDS = frozenset(RELEASE_PACKAGE_LAYOUT_BY_PLATFORM)
 
 
 @dataclass(frozen=True)
@@ -132,14 +136,32 @@ class PackageChannelPaths:
     offline_bundle_root: Path
     offline_archive: Path
     manifest_path: Path
+    target_platform_id: str = DEFAULT_TARGET_PLATFORM_ID
 
 
-def package_channel_paths(run_id: str, sanitizer_variant: str = "release") -> PackageChannelPaths:
+def package_channel_paths(
+    run_id: str,
+    sanitizer_variant: str = "release",
+    *,
+    target_platform_id: str | None = None,
+) -> PackageChannelPaths:
     metadata = sanitizer_variant_metadata(sanitizer_variant)
+    resolved_target_platform_id = package_channel_target_platform_id(
+        sanitizer_variant,
+        target_platform_id=target_platform_id,
+    )
+    package_id = str(metadata["package_id"])
+    package_channel_id = str(metadata["package_channel_id"])
+    archive_suffix = str(metadata["archive_suffix"])
+    if sanitizer_variant == "release":
+        package_id = release_package_id_for_platform(resolved_target_platform_id)
+        package_channel_id = release_package_channel_id_for_platform(
+            resolved_target_platform_id
+        )
+        archive_suffix = resolved_target_platform_id
     package_root_name = "runnable" if sanitizer_variant == "release" else f"runnable-{sanitizer_variant}"
     package_root = ROOT / "tmp" / "pkg" / "objc3c-package-channels" / run_id / package_root_name
-    build_root = ARTIFACT_ROOT / run_id / str(metadata["archive_suffix"])
-    archive_suffix = str(metadata["archive_suffix"])
+    build_root = ARTIFACT_ROOT / run_id / archive_suffix
     portable_archive = build_root / "portable" / f"objc3c-{archive_suffix}-portable.zip"
     installer_image_root = build_root / "installer" / "image"
     installer_archive = build_root / "installer" / f"objc3c-{archive_suffix}-installer.zip"
@@ -149,8 +171,9 @@ def package_channel_paths(run_id: str, sanitizer_variant: str = "release") -> Pa
     return PackageChannelPaths(
         run_id=run_id,
         sanitizer_variant=sanitizer_variant,
-        package_id=str(metadata["package_id"]),
-        package_channel_id=str(metadata["package_channel_id"]),
+        package_id=package_id,
+        package_channel_id=package_channel_id,
+        target_platform_id=resolved_target_platform_id,
         package_root=package_root,
         build_root=build_root,
         portable_archive=portable_archive,
@@ -162,6 +185,78 @@ def package_channel_paths(run_id: str, sanitizer_variant: str = "release") -> Pa
     )
 
 
+def detected_host_target_platform_id() -> str:
+    configured = os.environ.get("OBJC3C_TARGET_PLATFORM_ID", "") or os.environ.get(
+        "OBJC3C_PLATFORM_ID", ""
+    )
+    if configured in RELEASE_PACKAGE_TARGET_PLATFORM_IDS:
+        return configured
+    system = platform.system().lower()
+    machine = platform.machine().lower()
+    if system == "windows" and machine in {"amd64", "x86_64"}:
+        return "windows-x64"
+    if system == "linux" and machine in {"amd64", "x86_64"}:
+        return "linux-x64"
+    if system == "darwin" and machine in {"arm64", "aarch64"}:
+        return "darwin-arm64"
+    return DEFAULT_TARGET_PLATFORM_ID
+
+
+def package_channel_target_platform_id(
+    sanitizer_variant: str = "release",
+    *,
+    target_platform_id: str | None = None,
+) -> str:
+    if sanitizer_variant != "release":
+        if target_platform_id not in (None, "", DEFAULT_TARGET_PLATFORM_ID):
+            raise RuntimeError("sanitizer package channels are currently windows-x64 only")
+        return DEFAULT_TARGET_PLATFORM_ID
+    if target_platform_id:
+        if target_platform_id not in RELEASE_PACKAGE_TARGET_PLATFORM_IDS:
+            raise RuntimeError(
+                f"unsupported package-channel target platform: {target_platform_id}"
+            )
+        return target_platform_id
+    return detected_host_target_platform_id()
+
+
+def load_runnable_package_manifest(paths: PackageChannelPaths) -> dict[str, Any]:
+    manifest_path = paths.package_root / MANIFEST_RELATIVE_PATH
+    try:
+        payload = json.loads(manifest_path.read_text(encoding="utf-8"))
+    except FileNotFoundError as exc:
+        raise RuntimeError(
+            f"package-channels runnable package manifest is missing: {repo_rel(manifest_path)}"
+        ) from exc
+    if not isinstance(payload, dict):
+        raise RuntimeError("package-channels runnable package manifest must be a JSON object")
+    return payload
+
+
+def target_platform_id_from_manifest(manifest: dict[str, Any]) -> str:
+    target_platform_id = str(manifest.get("target_platform_id", ""))
+    if target_platform_id not in RELEASE_PACKAGE_TARGET_PLATFORM_IDS:
+        raise RuntimeError(
+            f"package-channels unsupported runnable package target platform: {target_platform_id}"
+        )
+    return target_platform_id
+
+
+def target_platform_id_for_paths(paths: PackageChannelPaths) -> str:
+    manifest_path = paths.package_root / MANIFEST_RELATIVE_PATH
+    if not manifest_path.is_file():
+        return paths.target_platform_id
+    target_platform_id = target_platform_id_from_manifest(
+        load_runnable_package_manifest(paths)
+    )
+    if target_platform_id != paths.target_platform_id:
+        raise RuntimeError(
+            "package-channels target platform drifted between path model and runnable "
+            f"manifest: {paths.target_platform_id} != {target_platform_id}"
+        )
+    return target_platform_id
+
+
 def package_channels_manifest_payload(
     *,
     inputs: PackageChannelInputs,
@@ -171,14 +266,42 @@ def package_channels_manifest_payload(
     payload_contract: dict[str, Any] | None = None,
     receipt_contracts: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
+    manifest_path = paths.package_root / MANIFEST_RELATIVE_PATH
+    runnable_manifest = (
+        load_runnable_package_manifest(paths) if manifest_path.is_file() else None
+    )
+    target_platform_id = (
+        target_platform_id_from_manifest(runnable_manifest)
+        if runnable_manifest is not None
+        else paths.target_platform_id
+    )
+    if target_platform_id != paths.target_platform_id:
+        raise RuntimeError(
+            "package-channels target platform drifted between path model and runnable "
+            f"manifest: {paths.target_platform_id} != {target_platform_id}"
+        )
+    package_id = paths.package_id
+    package_channel_id = paths.package_channel_id
+    if paths.sanitizer_variant == "release":
+        package_id = release_package_id_for_platform(target_platform_id)
+        package_channel_id = release_package_channel_id_for_platform(target_platform_id)
+    elif target_platform_id != DEFAULT_TARGET_PLATFORM_ID:
+        raise RuntimeError(
+            "package-channels sanitizer variants are currently windows-x64 only"
+        )
     resolved_archive_digests = (
         archive_digest_payloads(paths) if archive_digests is None else archive_digests
     )
     resolved_payload_contract = (
-        package_payload_contract(paths) if payload_contract is None else payload_contract
+        package_payload_contract(paths, runnable_manifest=runnable_manifest)
+        if payload_contract is None
+        else payload_contract
     )
     resolved_receipt_contracts = (
-        receipt_contract_payloads(paths.sanitizer_variant)
+        receipt_contract_payloads(
+            paths.sanitizer_variant,
+            target_platform_id=target_platform_id,
+        )
         if receipt_contracts is None
         else receipt_contracts
     )
@@ -186,9 +309,9 @@ def package_channels_manifest_payload(
         "contract_id": "objc3c.packaging.channels.summary.v1",
         "generated_at_utc": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
         "status": "PASS",
-        "platform_id": inputs.supported_platforms["default_platform_id"],
-        "package_id": paths.package_id,
-        "package_channel_id": paths.package_channel_id,
+        "platform_id": target_platform_id,
+        "package_id": package_id,
+        "package_channel_id": package_channel_id,
         "sanitizer_variant": paths.sanitizer_variant,
         "package_root": repo_rel(paths.package_root),
         "portable_archive": repo_rel(paths.portable_archive),
@@ -227,9 +350,9 @@ def package_channels_report_payload(
         "contract_id": "objc3c.packaging.channels.summary.report.v1",
         "generated_at_utc": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
         "status": "PASS",
-        "platform_id": inputs.supported_platforms["default_platform_id"],
-        "package_id": paths.package_id,
-        "package_channel_id": paths.package_channel_id,
+        "platform_id": manifest_payload["platform_id"],
+        "package_id": manifest_payload["package_id"],
+        "package_channel_id": manifest_payload["package_channel_id"],
         "sanitizer_variant": paths.sanitizer_variant,
         "package_root": repo_rel(paths.package_root),
         "manifest_path": repo_rel(paths.manifest_path),
@@ -254,7 +377,24 @@ def package_channels_report_payload(
 
 
 def required_payload_entries(sanitizer_variant: str = "release") -> list[str]:
-    return payload_entries_for_variant(REQUIRED_PAYLOAD_ENTRIES, sanitizer_variant)
+    return required_payload_entries_for_platform(
+        sanitizer_variant=sanitizer_variant,
+        target_platform_id=package_channel_target_platform_id(sanitizer_variant),
+    )
+
+
+def required_payload_entries_for_platform(
+    *,
+    sanitizer_variant: str = "release",
+    target_platform_id: str = DEFAULT_TARGET_PLATFORM_ID,
+) -> list[str]:
+    base_entries = RELEASE_PACKAGE_LAYOUT_BY_PLATFORM.get(
+        target_platform_id,
+        RELEASE_PACKAGE_LAYOUT_BY_PLATFORM[DEFAULT_TARGET_PLATFORM_ID],
+    )
+    if sanitizer_variant != "release" and target_platform_id != DEFAULT_TARGET_PLATFORM_ID:
+        raise RuntimeError("sanitizer package channels are currently windows-x64 only")
+    return payload_entries_for_variant(base_entries, sanitizer_variant)
 
 
 def release_package_id_for_platform(platform_id: str) -> str:
@@ -316,8 +456,21 @@ def package_runtime_models(supported_platforms: dict[str, Any]) -> list[dict[str
     return [fallback_release_package_runtime_model(platform_id)]
 
 
-def receipt_package_runtime_model(sanitizer_variant: str = "release") -> dict[str, Any]:
+def receipt_package_runtime_model(
+    sanitizer_variant: str = "release",
+    *,
+    target_platform_id: str = DEFAULT_TARGET_PLATFORM_ID,
+) -> dict[str, Any]:
     metadata = sanitizer_variant_metadata(sanitizer_variant)
+    if sanitizer_variant == "release":
+        model = fallback_release_package_runtime_model(target_platform_id)
+        model["package_root_layout"] = required_payload_entries_for_platform(
+            sanitizer_variant=sanitizer_variant,
+            target_platform_id=target_platform_id,
+        )
+        return model
+    if target_platform_id != DEFAULT_TARGET_PLATFORM_ID:
+        raise RuntimeError("sanitizer package channels are currently windows-x64 only")
     runtime_library_names = [
         entry.rsplit("/", 1)[-1]
         for entry in metadata.get("runtime_library_payload_entries", [])
@@ -340,7 +493,10 @@ def receipt_package_runtime_model(sanitizer_variant: str = "release") -> dict[st
         "runtime_variant": metadata["runtime_variant"],
         "runtime_library_ids": metadata["runtime_library_ids"],
         "runtime_library_names": runtime_library_names,
-        "package_root_layout": required_payload_entries(sanitizer_variant),
+        "package_root_layout": required_payload_entries_for_platform(
+            sanitizer_variant=sanitizer_variant,
+            target_platform_id=target_platform_id,
+        ),
         "missing_runtime_behavior": metadata.get(
             "missing_runtime_behavior",
             "fail-closed-before-native-execution-claim",
@@ -397,14 +553,28 @@ def archive_digest_payloads(paths: PackageChannelPaths) -> dict[str, dict[str, s
     }
 
 
-def package_payload_contract(paths: PackageChannelPaths) -> dict[str, Any]:
+def package_payload_contract(
+    paths: PackageChannelPaths,
+    *,
+    runnable_manifest: dict[str, Any] | None = None,
+) -> dict[str, Any]:
     manifest_path = paths.package_root / MANIFEST_RELATIVE_PATH
+    resolved_manifest = (
+        load_runnable_package_manifest(paths)
+        if runnable_manifest is None
+        else runnable_manifest
+    )
+    target_platform_id = target_platform_id_from_manifest(resolved_manifest)
+    expected_entries = required_payload_entries_for_platform(
+        sanitizer_variant=paths.sanitizer_variant,
+        target_platform_id=target_platform_id,
+    )
     entry_digests = {
         relative_path: package_payload_entry_digest(
             paths=paths,
             relative_path=relative_path,
         )
-        for relative_path in required_payload_entries(paths.sanitizer_variant)
+        for relative_path in expected_entries
     }
     return {
         "contract_id": "objc3c.packaging.channels.payload-contract.v1",
@@ -412,7 +582,8 @@ def package_payload_contract(paths: PackageChannelPaths) -> dict[str, Any]:
         "manifest_relative_path": MANIFEST_RELATIVE_PATH,
         "manifest_artifact": repo_rel(manifest_path),
         "manifest_sha256": entry_digests[MANIFEST_RELATIVE_PATH]["sha256"],
-        "required_entries": required_payload_entries(paths.sanitizer_variant),
+        "target_platform_id": target_platform_id,
+        "required_entries": expected_entries,
         "entry_digests": entry_digests,
         "clean_room_source_policy": "fresh-owned-tmp-root-only",
     }
@@ -433,13 +604,18 @@ def package_payload_entry_digest(
     }
 
 
-def receipt_contract_payloads(sanitizer_variant: str = "release") -> dict[str, dict[str, Any]]:
+def receipt_contract_payloads(
+    sanitizer_variant: str = "release",
+    *,
+    target_platform_id: str = DEFAULT_TARGET_PLATFORM_ID,
+) -> dict[str, dict[str, Any]]:
     return {
         "install_receipt": receipt_contract_payload(
             channel_id="local-installer",
             emitted_by="Install-objc3c.ps1",
             network_policy="local-filesystem-only",
             sanitizer_variant=sanitizer_variant,
+            target_platform_id=target_platform_id,
         ),
         "offline_install_receipt": receipt_contract_payload(
             channel_id="offline-bundle",
@@ -447,6 +623,7 @@ def receipt_contract_payloads(sanitizer_variant: str = "release") -> dict[str, d
             network_policy="no-network",
             delegates_to="local-installer",
             sanitizer_variant=sanitizer_variant,
+            target_platform_id=target_platform_id,
         ),
     }
 
@@ -457,9 +634,17 @@ def receipt_contract_payload(
     emitted_by: str,
     network_policy: str,
     sanitizer_variant: str = "release",
+    target_platform_id: str = DEFAULT_TARGET_PLATFORM_ID,
     delegates_to: str | None = None,
 ) -> dict[str, Any]:
     metadata = sanitizer_variant_metadata(sanitizer_variant)
+    package_id = str(metadata["package_id"])
+    package_channel_id = str(metadata["package_channel_id"])
+    if sanitizer_variant == "release":
+        package_id = release_package_id_for_platform(target_platform_id)
+        package_channel_id = release_package_channel_id_for_platform(target_platform_id)
+    elif target_platform_id != DEFAULT_TARGET_PLATFORM_ID:
+        raise RuntimeError("sanitizer package channels are currently windows-x64 only")
     required_fields = (
         SANITIZER_REQUIRED_RECEIPT_FIELDS
         if sanitizer_variant != "release"
@@ -475,15 +660,21 @@ def receipt_contract_payload(
         "package_bridge": "objc3c",
         "install_command": INSTALL_COMMAND,
         "payload_manifest": MANIFEST_RELATIVE_PATH,
-        "payload_required_entries": required_payload_entries(sanitizer_variant),
+        "payload_required_entries": required_payload_entries_for_platform(
+            sanitizer_variant=sanitizer_variant,
+            target_platform_id=target_platform_id,
+        ),
         "required_fields": required_fields,
         "network_policy": network_policy,
         "rollback_required": True,
-        "package_id": metadata["package_id"],
-        "package_channel_id": metadata["package_channel_id"],
+        "package_id": package_id,
+        "package_channel_id": package_channel_id,
         "sanitizer_variant": sanitizer_variant,
-        "target_platform_id": DEFAULT_TARGET_PLATFORM_ID,
-        "package_runtime_model": receipt_package_runtime_model(sanitizer_variant),
+        "target_platform_id": target_platform_id,
+        "package_runtime_model": receipt_package_runtime_model(
+            sanitizer_variant,
+            target_platform_id=target_platform_id,
+        ),
         "emitted_platform_fields": list(RECEIPT_PLATFORM_FIELDS),
         "support_truth": False,
         "native_execution_claimed": False,

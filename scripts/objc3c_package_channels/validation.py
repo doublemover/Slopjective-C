@@ -13,6 +13,13 @@ from .sanitizer_contracts import (
     SANITIZER_VARIANTS,
     payload_entries_for_variant,
 )
+from .model import (
+    DEFAULT_TARGET_PLATFORM_ID,
+    RELEASE_PACKAGE_LAYOUT_BY_PLATFORM,
+    RELEASE_PACKAGE_TARGET_PLATFORM_IDS,
+    release_package_channel_id_for_platform,
+    release_package_id_for_platform,
+)
 
 
 SHA256_HEX = re.compile(r"^[0-9a-f]{64}$")
@@ -39,14 +46,7 @@ RECEIPT_PLATFORM_FIELDS = [
     "support_truth",
     "native_execution_claimed",
 ]
-REQUIRED_PAYLOAD_ENTRIES = [
-    MANIFEST_RELATIVE_PATH,
-    "artifacts/bin/objc3c-native.exe",
-    "artifacts/lib/objc3_runtime.lib",
-    "stdlib/workspace.json",
-    "stdlib/modules/objc3.core/module.json",
-    "docs/runbooks/objc3c_packaging_channels.md",
-]
+REQUIRED_PAYLOAD_ENTRIES = RELEASE_PACKAGE_LAYOUT_BY_PLATFORM[DEFAULT_TARGET_PLATFORM_ID]
 REQUIRED_RECEIPT_FIELDS = [
     "contract_id",
     "install_root",
@@ -64,8 +64,44 @@ REQUIRED_RECEIPT_FIELDS = [
 SANITIZER_REQUIRED_RECEIPT_FIELDS = [*REQUIRED_RECEIPT_FIELDS, "sanitizer_package_variant"]
 
 
-def required_payload_entries(sanitizer_variant: str = "release") -> list[str]:
-    return payload_entries_for_variant(REQUIRED_PAYLOAD_ENTRIES, sanitizer_variant)
+def required_payload_entries(
+    sanitizer_variant: str = "release",
+    *,
+    target_platform_id: str = DEFAULT_TARGET_PLATFORM_ID,
+) -> list[str]:
+    if target_platform_id not in RELEASE_PACKAGE_TARGET_PLATFORM_IDS:
+        raise RuntimeError(
+            f"package-channels unsupported target platform: {target_platform_id}"
+        )
+    if sanitizer_variant != "release" and target_platform_id != DEFAULT_TARGET_PLATFORM_ID:
+        raise RuntimeError("package-channels sanitizer variants are windows-x64 only")
+    return payload_entries_for_variant(
+        RELEASE_PACKAGE_LAYOUT_BY_PLATFORM[target_platform_id],
+        sanitizer_variant,
+    )
+
+
+def target_platform_id_from_manifest(manifest_payload: dict[str, Any]) -> str:
+    target_platform_id = str(manifest_payload.get("platform_id", ""))
+    if target_platform_id not in RELEASE_PACKAGE_TARGET_PLATFORM_IDS:
+        raise RuntimeError(
+            f"package-channels manifest platform_id must be one of {', '.join(sorted(RELEASE_PACKAGE_TARGET_PLATFORM_IDS))}"
+        )
+    return target_platform_id
+
+
+def expected_package_identity(
+    sanitizer_variant: str,
+    target_platform_id: str,
+) -> tuple[str, str]:
+    if sanitizer_variant == "release":
+        return (
+            release_package_id_for_platform(target_platform_id),
+            release_package_channel_id_for_platform(target_platform_id),
+        )
+    if target_platform_id != DEFAULT_TARGET_PLATFORM_ID:
+        raise RuntimeError("package-channels sanitizer variants are windows-x64 only")
+    return PACKAGE_IDS[sanitizer_variant], PACKAGE_CHANNEL_IDS[sanitizer_variant]
 
 
 def validate_manifest_required_fields(
@@ -80,9 +116,14 @@ def validate_manifest_required_fields(
     if sanitizer_variant not in PACKAGE_IDS:
         allowed_variants = ", ".join(SANITIZER_VARIANTS)
         raise RuntimeError(f"package-channels sanitizer_variant must be {allowed_variants}")
-    if manifest_payload.get("package_id") != PACKAGE_IDS[sanitizer_variant]:
+    target_platform_id = target_platform_id_from_manifest(manifest_payload)
+    expected_package_id, expected_package_channel_id = expected_package_identity(
+        sanitizer_variant,
+        target_platform_id,
+    )
+    if manifest_payload.get("package_id") != expected_package_id:
         raise RuntimeError("package-channels package_id drifted from sanitizer variant")
-    if manifest_payload.get("package_channel_id") != PACKAGE_CHANNEL_IDS[sanitizer_variant]:
+    if manifest_payload.get("package_channel_id") != expected_package_channel_id:
         raise RuntimeError("package-channels package_channel_id drifted from sanitizer variant")
     if manifest_payload.get("support_truth") is not False:
         raise RuntimeError("package-channels manifest must not promote sanitizer support truth")
@@ -137,10 +178,12 @@ def validate_manifest_required_fields(
         manifest_payload=manifest_payload,
         metadata_surface=metadata_surface,
         sanitizer_variant=sanitizer_variant,
+        target_platform_id=target_platform_id,
     )
     validate_receipt_contracts(
         manifest_payload=manifest_payload,
         metadata_surface=metadata_surface,
+        target_platform_id=target_platform_id,
     )
 
 
@@ -153,6 +196,7 @@ def validate_payload_contract(
     manifest_payload: dict[str, Any],
     metadata_surface: dict[str, Any],
     sanitizer_variant: str = "release",
+    target_platform_id: str = DEFAULT_TARGET_PLATFORM_ID,
 ) -> None:
     payload_contract = manifest_payload.get("payload_contract")
     if not isinstance(payload_contract, dict):
@@ -171,7 +215,12 @@ def validate_payload_contract(
         raise RuntimeError("package-channels payload_contract manifest artifact drifted")
     if not valid_sha256(payload_contract.get("manifest_sha256")):
         raise RuntimeError("package-channels payload_contract manifest_sha256 must be lowercase SHA-256")
-    expected_payload_entries = required_payload_entries(sanitizer_variant)
+    if payload_contract.get("target_platform_id") != target_platform_id:
+        raise RuntimeError("package-channels payload_contract target platform drifted")
+    expected_payload_entries = required_payload_entries(
+        sanitizer_variant,
+        target_platform_id=target_platform_id,
+    )
     if payload_contract.get("required_entries") != expected_payload_entries:
         raise RuntimeError("package-channels payload_contract required entries drifted")
     if payload_contract.get("clean_room_source_policy") != "fresh-owned-tmp-root-only":
@@ -198,6 +247,7 @@ def validate_receipt_contracts(
     *,
     manifest_payload: dict[str, Any],
     metadata_surface: dict[str, Any],
+    target_platform_id: str = DEFAULT_TARGET_PLATFORM_ID,
 ) -> None:
     receipt_contracts = manifest_payload.get("receipt_contracts")
     if not isinstance(receipt_contracts, dict):
@@ -252,7 +302,10 @@ def validate_receipt_contracts(
             raise RuntimeError(f"package-channels receipt_contracts.{contract_name} install command drifted")
         if receipt_contract.get("payload_manifest") != MANIFEST_RELATIVE_PATH:
             raise RuntimeError(f"package-channels receipt_contracts.{contract_name} payload manifest drifted")
-        expected_payload_entries = required_payload_entries(str(manifest_payload.get("sanitizer_variant", "release")))
+        expected_payload_entries = required_payload_entries(
+            str(manifest_payload.get("sanitizer_variant", "release")),
+            target_platform_id=target_platform_id,
+        )
         if receipt_contract.get("payload_required_entries") != expected_payload_entries:
             raise RuntimeError(f"package-channels receipt_contracts.{contract_name} payload entries drifted")
         expected_required_fields = (
@@ -272,10 +325,27 @@ def validate_receipt_contracts(
             raise RuntimeError(f"package-channels receipt_contracts.{contract_name} sanitizer variant drifted from manifest")
         if receipt_sanitizer_variant not in PACKAGE_IDS:
             raise RuntimeError(f"package-channels receipt_contracts.{contract_name} sanitizer variant drifted")
-        if receipt_contract.get("package_id") != PACKAGE_IDS[receipt_sanitizer_variant]:
+        expected_package_id, expected_package_channel_id = expected_package_identity(
+            receipt_sanitizer_variant,
+            target_platform_id,
+        )
+        if receipt_contract.get("target_platform_id") != target_platform_id:
+            raise RuntimeError(f"package-channels receipt_contracts.{contract_name} target platform drifted")
+        if receipt_contract.get("package_id") != expected_package_id:
             raise RuntimeError(f"package-channels receipt_contracts.{contract_name} package id drifted")
-        if receipt_contract.get("package_channel_id") != PACKAGE_CHANNEL_IDS[receipt_sanitizer_variant]:
+        if receipt_contract.get("package_channel_id") != expected_package_channel_id:
             raise RuntimeError(f"package-channels receipt_contracts.{contract_name} package channel id drifted")
+        runtime_model = receipt_contract.get("package_runtime_model")
+        if not isinstance(runtime_model, dict):
+            raise RuntimeError(f"package-channels receipt_contracts.{contract_name} missing runtime model")
+        if runtime_model.get("target_platform_id") != target_platform_id:
+            raise RuntimeError(f"package-channels receipt_contracts.{contract_name} runtime target platform drifted")
+        if runtime_model.get("package_id") != expected_package_id:
+            raise RuntimeError(f"package-channels receipt_contracts.{contract_name} runtime package id drifted")
+        if runtime_model.get("package_channel_id") != expected_package_channel_id:
+            raise RuntimeError(f"package-channels receipt_contracts.{contract_name} runtime channel drifted")
+        if runtime_model.get("package_root_layout") != expected_payload_entries:
+            raise RuntimeError(f"package-channels receipt_contracts.{contract_name} runtime layout drifted")
         if receipt_contract.get("support_truth") is not False:
             raise RuntimeError(f"package-channels receipt_contracts.{contract_name} must not promote support truth")
         if receipt_contract.get("native_execution_claimed") is not False:

@@ -157,6 +157,7 @@ def validate_payload_contract(
 def validate_receipt_contracts(
     manifest: dict[str, Any],
     expected_payload_entries: list[str],
+    target_platform_id: str,
 ) -> dict[str, Any]:
     receipt_contracts = manifest.get("receipt_contracts")
     expect(isinstance(receipt_contracts, dict), "receipt_contracts missing from package channels manifest")
@@ -172,6 +173,7 @@ def validate_receipt_contracts(
             f"{contract_name} identity drifted",
         )
         expect(receipt_contract.get("channel_id") == channel_id, f"{contract_name} channel id drifted")
+        expect(receipt_contract.get("target_platform_id") == target_platform_id, f"{contract_name} target platform drifted")
         expect(receipt_contract.get("payload_manifest") == MANIFEST_RELATIVE_PATH, f"{contract_name} payload manifest drifted")
         expect(
             receipt_contract.get("payload_required_entries") == expected_payload_entries,
@@ -261,9 +263,27 @@ def main(argv: Sequence[str] | None = None) -> int:
     expect(manifest.get("support_truth") is False, "package channels manifest promoted support truth")
     expect(manifest.get("native_execution_claimed") is False, "package channels manifest claimed native execution")
     package_root = ROOT / str(manifest["package_root"]).replace("/", os.sep)
-    expected_payload_entries = required_payload_entries(str(manifest.get("sanitizer_variant", "release")))
+    target_platform_id = str(manifest.get("platform_id", ""))
+    expected_payload_entries = required_payload_entries(
+        str(manifest.get("sanitizer_variant", "release")),
+        target_platform_id=target_platform_id,
+    )
+    native_executable_entry = next(
+        (
+            entry
+            for entry in expected_payload_entries
+            if entry == "artifacts/bin/objc3c-native.exe"
+            or entry == "artifacts/bin/objc3c-native"
+        ),
+        "",
+    )
+    expect(native_executable_entry != "", "package payload missing native executable entry")
     payload_contract = validate_payload_contract(manifest, package_root, expected_payload_entries)
-    receipt_contracts = validate_receipt_contracts(manifest, expected_payload_entries)
+    receipt_contracts = validate_receipt_contracts(
+        manifest,
+        expected_payload_entries,
+        target_platform_id,
+    )
 
     portable_archive = ROOT / str(summary["portable_archive"]).replace("/", os.sep)
     installer_archive = ROOT / str(summary["installer_archive"]).replace("/", os.sep)
@@ -316,7 +336,7 @@ def main(argv: Sequence[str] | None = None) -> int:
 
     receipt_path = install_root / "objc3c-install-receipt.json"
     bootstrap_script = install_root / "Bootstrap-objc3cEnvironment.ps1"
-    installed_exe = install_root / "objc3c" / "artifacts" / "bin" / "objc3c-native.exe"
+    installed_exe = install_root / "objc3c" / native_executable_entry
     expect(receipt_path.is_file(), "installer did not publish install receipt")
     expect(bootstrap_script.is_file(), "installer did not publish bootstrap script")
     expect(installed_exe.is_file(), "installer did not publish installed native executable")
@@ -367,7 +387,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         expected_payload_manifest_sha256=payload_contract["manifest_sha256"],
         expected_payload_entries=expected_payload_entries,
     )
-    expect((offline_install_root / "objc3c" / "artifacts" / "bin" / "objc3c-native.exe").is_file(), "offline bootstrap did not install native executable")
+    expect((offline_install_root / "objc3c" / native_executable_entry).is_file(), "offline bootstrap did not install native executable")
 
     end_to_end_summary = {
         "contract_id": "objc3c.packaging.channels.end-to-end.summary.v1",
