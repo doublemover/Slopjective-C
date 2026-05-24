@@ -98,5 +98,26 @@
     "sanitizer_variant",
     "support_truth",
     "native_execution_claimed"
+  ],
+  "sanitizer_required_receipt_contract_fields": [
+    "contract_id",
+    "schema",
+    "receipt_path",
+    "channel_id",
+    "emitted_by",
+    "bootstrap_entrypoint",
+    "package_bridge",
+    "install_command",
+    "payload_manifest",
+    "payload_required_entries",
+    "required_fields",
+    "network_policy",
+    "rollback_required",
+    "package_id",
+    "package_channel_id",
+    "sanitizer_variant",
+    "sanitizer_install_selector",
+    "support_truth",
+    "native_execution_claimed"
   ]
 }

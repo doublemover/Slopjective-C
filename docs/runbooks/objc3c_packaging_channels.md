@@ -33,6 +33,25 @@ Those variants must keep `support_truth: false` and
 `native_execution_claimed: false` until real package install and native
 execution evidence is checked in.
 
+Sanitizer package variants are deterministic package-channel rows, not support
+claims. An ASan package must identify
+`org.objc3c.runtime:objc3c-runtime-asan`,
+`objc3c.package.sanitizer.asan.reserved`,
+`windows-x64-sanitizer-asan`, `sanitizer=address`, and
+`share/objc3c/sanitizer/asan-metadata.json`. A UBSan package must identify
+`org.objc3c.runtime:objc3c-runtime-ubsan`,
+`objc3c.package.sanitizer.ubsan.reserved`,
+`windows-x64-sanitizer-ubsan`, `sanitizer=undefined`,
+`share/objc3c/sanitizer/ubsan-metadata.json`, and an explicit
+`trap_or_recover_mode`.
+
+Installer receipts and receipt contracts must fail closed when any sanitizer
+selector, package id, package-channel id, metadata path, metadata digest,
+runtime-library list, payload entry list, or native-execution contract drifts.
+Release installs must not carry sanitizer metadata, and sanitizer installs must
+carry `sanitizer_package_variant` with `support_truth: false` and
+`native_execution_claimed: false`.
+
 Packaging-channel commands route through `npm run objc3c -- <action>`; helper
 implementations are action-registry anchors only.
 

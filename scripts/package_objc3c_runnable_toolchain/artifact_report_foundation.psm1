@@ -64,15 +64,15 @@ function New-RunnableToolchainPackageFoundationManifestSection {
       sanitizer = "address"
       runtime_library_ids = @("objc3-runtime", "clang_rt.asan")
       metadata_manifest_path = $metadataManifestPath
-      metadata_digest = Get-RunnableToolchainPackageSanitizerMetadataDigest `
+      metadata_digest = (Get-RunnableToolchainPackageSanitizerMetadataDigest `
         -PackageRoot $PackageRoot `
-        -MetadataManifestPath $metadataManifestPath
+        -MetadataManifestPath $metadataManifestPath)
       selected_runtime_variant = "sanitizer=address"
       install_selector = "sanitizer=address"
       compiler_flags = @("-fsanitize=address", "-fno-omit-frame-pointer")
       linker_flags = @("-fsanitize=address")
       environment = "ASAN_OPTIONS"
-      native_execution_contract = New-RunnableToolchainPackageNativeExecutionContract
+      native_execution_contract = (New-RunnableToolchainPackageNativeExecutionContract)
       default_release_channel_allowed = $false
       release_runtime_mixing_allowed = $false
       support_truth = $false
@@ -88,16 +88,16 @@ function New-RunnableToolchainPackageFoundationManifestSection {
       sanitizer = "undefined"
       runtime_library_ids = @("objc3-runtime", "clang_rt.ubsan")
       metadata_manifest_path = $metadataManifestPath
-      metadata_digest = Get-RunnableToolchainPackageSanitizerMetadataDigest `
+      metadata_digest = (Get-RunnableToolchainPackageSanitizerMetadataDigest `
         -PackageRoot $PackageRoot `
-        -MetadataManifestPath $metadataManifestPath
+        -MetadataManifestPath $metadataManifestPath)
       selected_runtime_variant = "sanitizer=undefined"
       install_selector = "sanitizer=undefined"
       compiler_flags = @("-fsanitize=undefined", "-fno-omit-frame-pointer")
       linker_flags = @("-fsanitize=undefined")
       environment = "UBSAN_OPTIONS"
       trap_or_recover_mode = "trap"
-      native_execution_contract = New-RunnableToolchainPackageNativeExecutionContract -IncludesTrapOrRecoverMode
+      native_execution_contract = (New-RunnableToolchainPackageNativeExecutionContract -IncludesTrapOrRecoverMode)
       default_release_channel_allowed = $false
       release_runtime_mixing_allowed = $false
       support_truth = $false

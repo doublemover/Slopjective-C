@@ -216,7 +216,18 @@ def validate_receipt_contracts(
         receipt_contract = receipt_contracts.get(contract_name)
         if not isinstance(receipt_contract, dict):
             raise RuntimeError(f"package-channels receipt_contracts missing {contract_name}")
-        for field_name in metadata_surface["required_receipt_contract_fields"]:
+        required_receipt_contract_fields = (
+            metadata_surface.get(
+                "sanitizer_required_receipt_contract_fields",
+                [
+                    *metadata_surface["required_receipt_contract_fields"],
+                    "sanitizer_install_selector",
+                ],
+            )
+            if str(manifest_payload.get("sanitizer_variant", "release")) != "release"
+            else metadata_surface["required_receipt_contract_fields"]
+        )
+        for field_name in required_receipt_contract_fields:
             if field_name not in receipt_contract:
                 raise RuntimeError(
                     f"package-channels receipt_contracts.{contract_name} missing required field {field_name}"
@@ -239,7 +250,10 @@ def validate_receipt_contracts(
         if receipt_contract.get("payload_required_entries") != expected_payload_entries:
             raise RuntimeError(f"package-channels receipt_contracts.{contract_name} payload entries drifted")
         expected_required_fields = (
-            SANITIZER_REQUIRED_RECEIPT_FIELDS
+            metadata_surface.get(
+                "sanitizer_required_receipt_fields",
+                SANITIZER_REQUIRED_RECEIPT_FIELDS,
+            )
             if str(receipt_contract.get("sanitizer_variant", "release")) != "release"
             else metadata_surface["required_receipt_fields"]
         )
@@ -264,6 +278,8 @@ def validate_receipt_contracts(
             expected_selector = f"sanitizer={receipt_sanitizer_variant}"
             if receipt_contract.get("sanitizer_install_selector") != expected_selector:
                 raise RuntimeError(f"package-channels receipt_contracts.{contract_name} sanitizer selector drifted")
+        elif "sanitizer_install_selector" in receipt_contract:
+            raise RuntimeError(f"package-channels receipt_contracts.{contract_name} release receipt exposed sanitizer selector")
         for field_name, expected_value in expected.items():
             if receipt_contract.get(field_name) != expected_value:
                 raise RuntimeError(f"package-channels receipt_contracts.{contract_name} {field_name} drifted")

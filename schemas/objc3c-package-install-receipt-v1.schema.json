@@ -23,7 +23,9 @@
               "package_id": { "const": "org.objc3c.runtime:objc3c-runtime-asan" },
               "package_variant_row_id": { "const": "objc3c.package.sanitizer.asan.reserved" },
               "package_channel_id": { "const": "windows-x64-sanitizer-asan" },
+              "target_platform_id": { "const": "windows-x64" },
               "sanitizer": { "const": "address" },
+              "runtime_library_ids": { "const": ["objc3-runtime", "clang_rt.asan"] },
               "metadata_manifest_path": { "const": "share/objc3c/sanitizer/asan-metadata.json" },
               "selected_runtime_variant": { "const": "sanitizer=address" },
               "install_selector": { "const": "sanitizer=address" }
@@ -50,7 +52,9 @@
               "package_id": { "const": "org.objc3c.runtime:objc3c-runtime-ubsan" },
               "package_variant_row_id": { "const": "objc3c.package.sanitizer.ubsan.reserved" },
               "package_channel_id": { "const": "windows-x64-sanitizer-ubsan" },
+              "target_platform_id": { "const": "windows-x64" },
               "sanitizer": { "const": "undefined" },
+              "runtime_library_ids": { "const": ["objc3-runtime", "clang_rt.ubsan"] },
               "metadata_manifest_path": { "const": "share/objc3c/sanitizer/ubsan-metadata.json" },
               "selected_runtime_variant": { "const": "sanitizer=undefined" },
               "install_selector": { "const": "sanitizer=undefined" }
