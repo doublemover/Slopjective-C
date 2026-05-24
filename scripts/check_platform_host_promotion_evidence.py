@@ -35,6 +35,18 @@ REQUIRED_PLATFORM_IDS: tuple[str, ...] = host_promotion_platform_ids()
 REQUIRED_GATE_CLASSES: tuple[str, ...] = HOST_PROMOTION_REQUIRED_GATE_CLASSES
 REQUIRED_SOURCE_RECORD_TYPES: tuple[str, ...] = HOST_PROMOTION_REQUIRED_SOURCE_RECORD_TYPES
 REQUIRED_BLOCKER_FAILURE_CLASSES: tuple[str, ...] = HOST_PROMOTION_FAIL_CLOSED_BLOCKER_CLASSES
+REQUIRED_REVIEWED_SOURCE_FIELDS: tuple[str, ...] = (
+    "object_identity",
+    "debug_identity",
+    "package_install_identity",
+    "runtime_load_link_proof",
+)
+EXPECTED_REVIEWED_SOURCE_RECORD_FIELDS: dict[str, str] = {
+    "object_identity": "object_identity_record_id",
+    "debug_identity": "debug_identity_record_id",
+    "package_install_identity": "package_install_identity_record_id",
+    "runtime_load_link_proof": "runtime_load_link_proof_record_id",
+}
 EXPECTED_PLATFORM_CONTRACTS = {
     contract.platform_id: contract
     for contract in HOST_PROMOTION_PLATFORM_CONTRACTS
@@ -198,6 +210,51 @@ def _validate_evidence_classes(payload: dict[str, Any]) -> None:
         )
 
 
+def _validate_reviewed_source_fields(payload: dict[str, Any]) -> None:
+    fields = _records_by_field(
+        _require_list(payload, "reviewed_source_fields", "host promotion evidence contract"),
+        "field_id",
+        "host promotion reviewed source fields",
+    )
+    _require_set_contains(
+        fields,
+        REQUIRED_REVIEWED_SOURCE_FIELDS,
+        owner="host promotion reviewed source fields",
+        description="required reviewed source fields",
+    )
+    for field_id in REQUIRED_REVIEWED_SOURCE_FIELDS:
+        field = fields[field_id]
+        expect(
+            field.get("required_record_id_field")
+            == EXPECTED_REVIEWED_SOURCE_RECORD_FIELDS[field_id],
+            f"{field_id} reviewed source record field drifted",
+        )
+        expect(
+            field.get("reviewed_source_required") is True,
+            f"{field_id} did not require reviewed source",
+        )
+        expect(
+            field.get("generated_report_support_truth") is False,
+            f"{field_id} allowed generated reports as support truth",
+        )
+        expect(
+            field.get("promotion_allowed_from_generated_evidence") is False,
+            f"{field_id} allowed generated evidence promotion",
+        )
+        expect(
+            str(field.get("generated_report_path_suffix", "")),
+            f"{field_id} missing generated report path suffix",
+        )
+        expect(
+            field.get("failure_class") in REQUIRED_BLOCKER_FAILURE_CLASSES,
+            f"{field_id} failure class is not a fail-closed blocker",
+        )
+        expect(
+            str(field.get("required_behavior", "")).startswith("fail-closed"),
+            f"{field_id} required behavior does not fail closed",
+        )
+
+
 def _validate_common_blockers(payload: dict[str, Any]) -> set[str]:
     blockers = _records_by_field(
         _require_list(payload, "common_fail_closed_blockers", "host promotion evidence contract"),
@@ -325,8 +382,33 @@ def _validate_reviewed_source_truth(platform_id: str, platform: dict[str, Any]) 
         "package_root_record_id",
         "install_receipt_record_id",
         "native_execution_record_id",
+        *EXPECTED_REVIEWED_SOURCE_RECORD_FIELDS.values(),
     ):
         expect(str(required_record_ids.get(field_name, "")), f"{platform_id} missing {field_name}")
+    _require_set_contains(
+        reviewed.get("required_reviewed_source_fields", []),
+        REQUIRED_REVIEWED_SOURCE_FIELDS,
+        owner=platform_id,
+        description="reviewed source fields",
+    )
+    field_status = _require_dict(
+        reviewed,
+        "reviewed_source_field_status",
+        f"{platform_id} reviewed source truth",
+    )
+    for field_id in REQUIRED_REVIEWED_SOURCE_FIELDS:
+        expect(
+            field_status.get(field_id) == "missing-reviewed-source",
+            f"{platform_id} reviewed source field {field_id} did not remain missing",
+        )
+    expect(
+        reviewed.get("reviewed_source_support_ready") is False,
+        f"{platform_id} reviewed source truth became support-ready",
+    )
+    expect(
+        reviewed.get("generated_evidence_support_truth") is False,
+        f"{platform_id} generated evidence became reviewed source truth",
+    )
     _require_set_contains(
         reviewed.get("missing_record_classes", []),
         REQUIRED_GATE_CLASSES,
@@ -605,6 +687,11 @@ def _validate_future_checker_contract(payload: dict[str, Any]) -> None:
         == HOST_PROMOTION_VALIDATE_PLATFORM_HARDENING_ACTION,
         "future checker integration parent action drifted",
     )
+    expect(
+        future_contract.get("must_require_reviewed_source_fields")
+        == list(REQUIRED_REVIEWED_SOURCE_FIELDS),
+        "future checker reviewed source field requirement drifted",
+    )
     _require_tmp_reports_path(
         future_contract.get("must_write_summary_under"),
         "host promotion future checker summary output path",
@@ -614,6 +701,7 @@ def _validate_future_checker_contract(payload: dict[str, Any]) -> None:
 def validate_host_promotion_evidence_contract(payload: dict[str, Any]) -> dict[str, Any]:
     _validate_policy(payload)
     _validate_evidence_classes(payload)
+    _validate_reviewed_source_fields(payload)
     _validate_future_checker_contract(payload)
     common_blockers = _validate_common_blockers(payload)
     platforms = _records_by_field(

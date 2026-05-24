@@ -84,6 +84,13 @@ HOST_PROMOTION_REQUIRED_SOURCE_RECORD_TYPES: tuple[str, ...] = (
     "native_execution",
 )
 
+HOST_PROMOTION_REQUIRED_REVIEWED_SOURCE_FIELDS: tuple[str, ...] = (
+    "object_identity",
+    "debug_identity",
+    "package_install_identity",
+    "runtime_load_link_proof",
+)
+
 HOST_PROMOTION_GENERATED_REPORT_RELATIVE_PATHS: tuple[str, ...] = (
     "host-evidence-report.json",
     "promotion-readiness-requirements.json",
@@ -151,6 +158,8 @@ HOST_PROMOTION_EVIDENCE_CLASSES: tuple[HostPromotionEvidenceClass, ...] = (
             "support_row_id",
             "package_variant_row_id",
             "required_record_ids",
+            "required_reviewed_source_fields",
+            "reviewed_source_field_status",
             "missing_record_classes",
         ),
         promotion_result="eligible-only-if-all-blockers-empty",
@@ -213,6 +222,61 @@ HOST_PROMOTION_EVIDENCE_CLASSES: tuple[HostPromotionEvidenceClass, ...] = (
             "source_owner",
         ),
         promotion_result="fail-closed",
+    ),
+)
+
+
+@dataclass(frozen=True)
+class HostPromotionReviewedSourceField:
+    field_id: str
+    required_record_id_field: str
+    generated_report_path_suffix: str
+    failure_class: str
+    required_behavior: str
+
+    def as_json(self) -> dict[str, Any]:
+        return {
+            "field_id": self.field_id,
+            "required_record_id_field": self.required_record_id_field,
+            "generated_report_path_suffix": self.generated_report_path_suffix,
+            "reviewed_source_required": True,
+            "generated_report_support_truth": False,
+            "promotion_allowed_from_generated_evidence": False,
+            "failure_class": self.failure_class,
+            "required_behavior": self.required_behavior,
+        }
+
+
+HOST_PROMOTION_REVIEWED_SOURCE_FIELDS: tuple[
+    HostPromotionReviewedSourceField, ...
+] = (
+    HostPromotionReviewedSourceField(
+        field_id="object_identity",
+        required_record_id_field="object_identity_record_id",
+        generated_report_path_suffix="build/object-identity.json",
+        failure_class="wrong-object-debug-format",
+        required_behavior="fail-closed-before-package-publication",
+    ),
+    HostPromotionReviewedSourceField(
+        field_id="debug_identity",
+        required_record_id_field="debug_identity_record_id",
+        generated_report_path_suffix="build/debug-identity.json",
+        failure_class="wrong-object-debug-format",
+        required_behavior="fail-closed-before-package-publication",
+    ),
+    HostPromotionReviewedSourceField(
+        field_id="package_install_identity",
+        required_record_id_field="package_install_identity_record_id",
+        generated_report_path_suffix="install/end-to-end-summary.json",
+        failure_class="missing-install-receipt",
+        required_behavior="fail-closed-before-native-execution-claim",
+    ),
+    HostPromotionReviewedSourceField(
+        field_id="runtime_load_link_proof",
+        required_record_id_field="runtime_load_link_proof_record_id",
+        generated_report_path_suffix="execution/runtime-load-probe.json",
+        failure_class="runtime-load-failure",
+        required_behavior="fail-closed-before-native-execution-claim",
     ),
 )
 
@@ -340,12 +404,26 @@ class HostPromotionPlatformContract:
             "native_execution_record_id": (
                 f"objc3c.native-execution.{self.platform_id}.release.missing"
             ),
+            "object_identity_record_id": (
+                f"objc3c.object-identity.{self.platform_id}.release.missing"
+            ),
+            "debug_identity_record_id": (
+                f"objc3c.debug-identity.{self.platform_id}.release.missing"
+            ),
+            "package_install_identity_record_id": (
+                f"objc3c.package-install-identity."
+                f"{self.platform_id}.release.missing"
+            ),
+            "runtime_load_link_proof_record_id": (
+                f"objc3c.runtime-load-link.{self.platform_id}.release.missing"
+            ),
         }
 
     def as_json(self) -> dict[str, Any]:
         identity = PLATFORM_IDENTITY_CONTRACTS[self.platform_id]
         report_root = self.report_root
         required_record_ids = self.required_record_ids
+        reviewed_source_fields = list(HOST_PROMOTION_REQUIRED_REVIEWED_SOURCE_FIELDS)
         return {
             "platform_id": self.platform_id,
             "issue_ref": self.issue_ref,
@@ -396,7 +474,14 @@ class HostPromotionPlatformContract:
                 "support_row_id": self.support_row_id,
                 "package_variant_row_id": self.package_variant_row_id,
                 "required_record_ids": required_record_ids,
+                "required_reviewed_source_fields": reviewed_source_fields,
+                "reviewed_source_field_status": {
+                    field_id: "missing-reviewed-source"
+                    for field_id in reviewed_source_fields
+                },
                 "missing_record_classes": list(HOST_PROMOTION_REQUIRED_GATE_CLASSES),
+                "reviewed_source_support_ready": False,
+                "generated_evidence_support_truth": False,
                 "support_truth": False,
             },
             "package_install_native_execution_evidence": {
@@ -568,6 +653,10 @@ def build_host_promotion_contract_payload() -> dict[str, Any]:
             for evidence_class in HOST_PROMOTION_EVIDENCE_CLASSES
         ],
         "required_source_record_types": list(HOST_PROMOTION_REQUIRED_SOURCE_RECORD_TYPES),
+        "reviewed_source_fields": [
+            reviewed_source_field.as_json()
+            for reviewed_source_field in HOST_PROMOTION_REVIEWED_SOURCE_FIELDS
+        ],
         "required_gate_classes": list(HOST_PROMOTION_REQUIRED_GATE_CLASSES),
         "common_fail_closed_blockers": [
             blocker.as_json()
@@ -582,6 +671,9 @@ def build_host_promotion_contract_payload() -> dict[str, Any]:
             "must_reject_generated_only_support_truth": True,
             "must_reject_empty_blocker_lists": True,
             "must_reject_missing_required_source_record_types": True,
+            "must_require_reviewed_source_fields": list(
+                HOST_PROMOTION_REQUIRED_REVIEWED_SOURCE_FIELDS
+            ),
             "must_reject_sanitizer_artifacts_in_release_runtime": True,
             "must_reject_prose_only_platform_support_claims": True,
             "must_match_existing_platform_identity_contracts": True,
@@ -607,14 +699,17 @@ __all__ = [
     "HOST_PROMOTION_GENERATED_REPORT_ROOT",
     "HOST_PROMOTION_POLICY",
     "HOST_PROMOTION_PLATFORM_CONTRACTS",
+    "HOST_PROMOTION_REQUIRED_REVIEWED_SOURCE_FIELDS",
     "HOST_PROMOTION_REQUIRED_GATE_CLASSES",
     "HOST_PROMOTION_REQUIRED_SOURCE_RECORD_TYPES",
+    "HOST_PROMOTION_REVIEWED_SOURCE_FIELDS",
     "HOST_PROMOTION_UPSTREAM_SOURCE_PATHS",
     "HOST_PROMOTION_VALIDATE_PLATFORM_HARDENING_ACTION",
     "HostPromotionArtifactIdentity",
     "HostPromotionEvidenceClass",
     "HostPromotionFailClosedBlocker",
     "HostPromotionPlatformContract",
+    "HostPromotionReviewedSourceField",
     "build_host_promotion_contract_payload",
     "generated_report_paths_for_platform",
     "generated_report_root_for_platform",

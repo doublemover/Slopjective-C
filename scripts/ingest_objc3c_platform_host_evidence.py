@@ -74,10 +74,52 @@ PROMOTION_REVIEW_REQUIRED_FIELDS: tuple[str, ...] = (
     "build",
     "package",
     "install",
+    "object_identity",
+    "debug_identity",
+    "package_install_identity",
+    "runtime_load_link_proof",
     "object_format",
     "debug_format",
     "runtime_link_load",
     "native_execution",
+)
+
+PROMOTION_REVIEWED_SOURCE_FIELDS: tuple[str, ...] = (
+    "object_identity",
+    "debug_identity",
+    "package_install_identity",
+    "runtime_load_link_proof",
+)
+
+PROMOTION_REVIEWED_SOURCE_FIELD_CONTRACTS: tuple[dict[str, str], ...] = (
+    {
+        "field_id": "object_identity",
+        "required_record_id_field": "object_identity_record_id",
+        "generated_report_path_suffix": "build/object-identity.json",
+        "failure_class": "wrong-object-debug-format",
+        "required_behavior": "fail-closed-before-package-publication",
+    },
+    {
+        "field_id": "debug_identity",
+        "required_record_id_field": "debug_identity_record_id",
+        "generated_report_path_suffix": "build/debug-identity.json",
+        "failure_class": "wrong-object-debug-format",
+        "required_behavior": "fail-closed-before-package-publication",
+    },
+    {
+        "field_id": "package_install_identity",
+        "required_record_id_field": "package_install_identity_record_id",
+        "generated_report_path_suffix": "install/end-to-end-summary.json",
+        "failure_class": "missing-install-receipt",
+        "required_behavior": "fail-closed-before-native-execution-claim",
+    },
+    {
+        "field_id": "runtime_load_link_proof",
+        "required_record_id_field": "runtime_load_link_proof_record_id",
+        "generated_report_path_suffix": "execution/runtime-load-probe.json",
+        "failure_class": "runtime-load-failure",
+        "required_behavior": "fail-closed-before-native-execution-claim",
+    },
 )
 
 PROMOTION_BLOCKING_EVIDENCE_CLASSES: tuple[str, ...] = (
@@ -106,6 +148,14 @@ STEP_CONTRACTS: tuple[tuple[str, str, tuple[tuple[str, str], ...]], ...] = (
                 "tmp/build-objc3c-native/native_build_summary.json",
                 "tmp/reports/platform-host-evidence/{platform_id}/build/native_build_summary.json",
             ),
+            (
+                "tmp/reports/platform-host-evidence/{platform_id}/build/object-identity.json",
+                "tmp/reports/platform-host-evidence/{platform_id}/build/object-identity.json",
+            ),
+            (
+                "tmp/reports/platform-host-evidence/{platform_id}/build/debug-identity.json",
+                "tmp/reports/platform-host-evidence/{platform_id}/build/debug-identity.json",
+            ),
         ),
     ),
     (
@@ -116,6 +166,10 @@ STEP_CONTRACTS: tuple[tuple[str, str, tuple[tuple[str, str], ...]], ...] = (
                 "artifacts/package/objc3c-runnable-toolchain-package.json",
                 "tmp/reports/platform-host-evidence/{platform_id}/package/objc3c-runnable-toolchain-package.json",
             ),
+            (
+                "tmp/reports/platform-host-evidence/{platform_id}/package/runtime-library-manifest.json",
+                "tmp/reports/platform-host-evidence/{platform_id}/package/runtime-library-manifest.json",
+            ),
         ),
     ),
     (
@@ -125,6 +179,10 @@ STEP_CONTRACTS: tuple[tuple[str, str, tuple[tuple[str, str], ...]], ...] = (
             (
                 "tmp/reports/package-channels/end-to-end-summary.json",
                 "tmp/reports/platform-host-evidence/{platform_id}/install/end-to-end-summary.json",
+            ),
+            (
+                "tmp/reports/platform-host-evidence/{platform_id}/install/install-receipt.json",
+                "tmp/reports/platform-host-evidence/{platform_id}/install/install-receipt.json",
             ),
         ),
     ),
@@ -139,6 +197,10 @@ STEP_CONTRACTS: tuple[tuple[str, str, tuple[tuple[str, str], ...]], ...] = (
             (
                 "tmp/reports/objc3c-native-execution-smoke/summary.json",
                 "tmp/reports/platform-host-evidence/{platform_id}/execution/native-execution-smoke-summary.json",
+            ),
+            (
+                "tmp/reports/platform-host-evidence/{platform_id}/execution/runtime-load-probe.json",
+                "tmp/reports/platform-host-evidence/{platform_id}/execution/runtime-load-probe.json",
             ),
         ),
     ),
@@ -239,6 +301,7 @@ def build_artifact_identity_reference(platform_id: str) -> dict[str, Any]:
         "package_variant_row_id": config["package_variant_row_id"],
         "package_root_record_id": config["package_root_record_id"],
         "native_execution_record_id": config["native_execution_record_id"],
+        "reviewed_source_record_ids": reviewed_source_record_ids(platform_id),
         "object_format": config["object_format"],
         "debug_format": config["debug_format"],
         "runtime_library_names": config["runtime_library_names"],
@@ -252,8 +315,43 @@ def build_artifact_identity_reference(platform_id: str) -> dict[str, Any]:
     }
 
 
+def reviewed_source_record_ids(platform_id: str) -> dict[str, str]:
+    return {
+        "object_identity_record_id": f"objc3c.object-identity.{platform_id}.release.missing",
+        "debug_identity_record_id": f"objc3c.debug-identity.{platform_id}.release.missing",
+        "package_install_identity_record_id": (
+            f"objc3c.package-install-identity.{platform_id}.release.missing"
+        ),
+        "runtime_load_link_proof_record_id": (
+            f"objc3c.runtime-load-link.{platform_id}.release.missing"
+        ),
+    }
+
+
+def build_reviewed_source_field_requirements(platform_id: str) -> list[dict[str, Any]]:
+    record_ids = reviewed_source_record_ids(platform_id)
+    requirements: list[dict[str, Any]] = []
+    for field_contract in PROMOTION_REVIEWED_SOURCE_FIELD_CONTRACTS:
+        required_record_id_field = field_contract["required_record_id_field"]
+        requirements.append(
+            {
+                **field_contract,
+                "required_record_id": record_ids[required_record_id_field],
+                "generated_report_path": platform_scoped_path(
+                    platform_id,
+                    field_contract["generated_report_path_suffix"],
+                ),
+                "reviewed_source_required": True,
+                "generated_report_support_truth": False,
+                "promotion_allowed_from_generated_evidence": False,
+            }
+        )
+    return requirements
+
+
 def build_promotion_readiness_requirements(platform_id: str) -> dict[str, Any]:
     artifact_identity = build_artifact_identity_reference(platform_id)
+    reviewed_source_field_requirements = build_reviewed_source_field_requirements(platform_id)
     return {
         "contract_id": "objc3c.platform.hosted-evidence.promotion-readiness.v1",
         "schema_version": 1,
@@ -267,8 +365,11 @@ def build_promotion_readiness_requirements(platform_id: str) -> dict[str, Any]:
         "generated_only_result": "refuse-source-truth-promotion",
         "review_promotion_policy": "checked-in-source-truth-required",
         "required_review_fields": list(PROMOTION_REVIEW_REQUIRED_FIELDS),
+        "required_reviewed_source_fields": list(PROMOTION_REVIEWED_SOURCE_FIELDS),
+        "reviewed_source_field_requirements": reviewed_source_field_requirements,
         "required_promotion_evidence_classes": list(PROMOTION_BLOCKING_EVIDENCE_CLASSES),
         "artifact_identity_reference": artifact_identity,
+        "support_rows_remain_fail_closed_until_reviewed": True,
         "hosted_artifact_references": [
             {
                 "reference_id": "toolchain-probe",
@@ -314,6 +415,7 @@ def build_promotion_readiness_requirements(platform_id: str) -> dict[str, Any]:
                     "package",
                     "runtime_library",
                     "loader_path",
+                    "reviewed_source_field_requirements.package_install_identity",
                 ],
             },
             {
@@ -323,6 +425,8 @@ def build_promotion_readiness_requirements(platform_id: str) -> dict[str, Any]:
                 "required_fields": [
                     "artifact_identity_reference.object_format",
                     "artifact_identity_reference.debug_format",
+                    "reviewed_source_field_requirements.object_identity",
+                    "reviewed_source_field_requirements.debug_identity",
                 ],
                 "expected_values": {
                     "object_format": artifact_identity["object_format"],
@@ -336,6 +440,7 @@ def build_promotion_readiness_requirements(platform_id: str) -> dict[str, Any]:
                 "required_fields": [
                     "artifact_identity_reference.runtime_library_names",
                     "artifact_identity_reference.loader_path_policy",
+                    "reviewed_source_field_requirements.runtime_load_link_proof",
                     "execution.native_execution_summary",
                 ],
                 "expected_values": {
@@ -446,6 +551,10 @@ def build_report(args: argparse.Namespace) -> dict[str, Any]:
             "execution",
         ],
         "required_review_fields": list(PROMOTION_REVIEW_REQUIRED_FIELDS),
+        "required_reviewed_source_fields": list(PROMOTION_REVIEWED_SOURCE_FIELDS),
+        "reviewed_source_field_requirements": promotion_readiness[
+            "reviewed_source_field_requirements"
+        ],
         "artifact_identity_reference": promotion_readiness["artifact_identity_reference"],
         "promotion_readiness_requirements": promotion_readiness,
         "artifact_upload": {
@@ -461,6 +570,7 @@ def build_report(args: argparse.Namespace) -> dict[str, Any]:
             "generated_only_result": "refuse-source-truth-promotion",
             "review_required": True,
             "review_promotion_policy": "checked-in-source-truth-required",
+            "required_reviewed_source_fields": list(PROMOTION_REVIEWED_SOURCE_FIELDS),
             "source_truth_update_allowed": False,
             "support_claim_published": False,
             "fail_closed_evidence_id": config["fail_closed_evidence_id"],
@@ -532,6 +642,10 @@ def validate_report(report: dict[str, Any], platform_id: str) -> list[str]:
     required_classes = {"build", "package", "install", "execution"}
     if report.get("required_review_fields") != list(PROMOTION_REVIEW_REQUIRED_FIELDS):
         raise RuntimeError("host evidence report required review fields drifted")
+    if report.get("required_reviewed_source_fields") != list(PROMOTION_REVIEWED_SOURCE_FIELDS):
+        raise RuntimeError("host evidence report reviewed source fields drifted")
+    if report.get("reviewed_source_field_requirements") != build_reviewed_source_field_requirements(platform_id):
+        raise RuntimeError("host evidence report reviewed source requirements drifted")
     artifact_identity = report.get("artifact_identity_reference")
     expected_identity = build_artifact_identity_reference(platform_id)
     if artifact_identity != expected_identity:
@@ -557,6 +671,12 @@ def validate_report(report: dict[str, Any], platform_id: str) -> list[str]:
         raise RuntimeError("host evidence promotion readiness artifact identity drifted")
     if promotion_readiness.get("required_review_fields") != list(PROMOTION_REVIEW_REQUIRED_FIELDS):
         raise RuntimeError("host evidence promotion readiness required fields drifted")
+    if promotion_readiness.get("required_reviewed_source_fields") != list(PROMOTION_REVIEWED_SOURCE_FIELDS):
+        raise RuntimeError("host evidence promotion readiness reviewed source fields drifted")
+    if promotion_readiness.get("reviewed_source_field_requirements") != build_reviewed_source_field_requirements(platform_id):
+        raise RuntimeError("host evidence promotion readiness reviewed source requirements drifted")
+    if promotion_readiness.get("support_rows_remain_fail_closed_until_reviewed") is not True:
+        raise RuntimeError("host evidence promotion readiness did not keep support rows fail-closed")
     if promotion_readiness.get("required_promotion_evidence_classes") != list(PROMOTION_BLOCKING_EVIDENCE_CLASSES):
         raise RuntimeError("host evidence promotion readiness required evidence classes drifted")
     expected_path_prefix = f"tmp/reports/platform-host-evidence/{platform_id}/"
@@ -566,6 +686,18 @@ def validate_report(report: dict[str, Any], platform_id: str) -> list[str]:
         path_text = str(reference.get("path", "")).replace("\\", "/")
         if not path_text.startswith(expected_path_prefix):
             raise RuntimeError(f"host evidence promotion readiness used non-platform-scoped path: {path_text}")
+    for requirement in promotion_readiness.get("reviewed_source_field_requirements", []):
+        if not isinstance(requirement, dict):
+            raise RuntimeError("host evidence reviewed source requirements must be objects")
+        if requirement.get("reviewed_source_required") is not True:
+            raise RuntimeError("host evidence reviewed source requirement did not require review")
+        if requirement.get("generated_report_support_truth") is not False:
+            raise RuntimeError("host evidence generated report became reviewed source truth")
+        if requirement.get("promotion_allowed_from_generated_evidence") is not False:
+            raise RuntimeError("host evidence generated report allowed promotion")
+        path_text = str(requirement.get("generated_report_path", "")).replace("\\", "/")
+        if not path_text.startswith(expected_path_prefix):
+            raise RuntimeError(f"host evidence reviewed source path left platform scope: {path_text}")
 
     seen_classes = {
         str(step.get("evidence_class", ""))
@@ -631,6 +763,8 @@ def build_summary(
         "support_claim_published": ingestion["support_claim_published"],
         "support_rows_remain_fail_closed": True,
         "required_checked_source_paths": ingestion["required_checked_source_paths"],
+        "required_reviewed_source_fields": report["required_reviewed_source_fields"],
+        "reviewed_source_field_requirements": report["reviewed_source_field_requirements"],
         "artifact_upload": report["artifact_upload"],
         "generated_report_paths": sorted(all_generated_paths),
     }

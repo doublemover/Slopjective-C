@@ -34,6 +34,10 @@
       "toolchain_probe_records",
       "package_root_evidence_records",
       "native_execution_evidence_records",
+      "object_identity_records",
+      "debug_identity_records",
+      "package_install_identity_records",
+      "runtime_load_link_proof_records",
       "negative_host_toolchain_cases"
     ],
     "supported_platform_ids": [
@@ -100,7 +104,7 @@
       "reviewed_source_truth_required": true,
       "support_rows_remain_fail_closed_until_reviewed": true
     },
-    "diagnostic": "Host promotion is deterministic only when host identity, coherent toolchain probes, package root identity, and native execution records are all checked in for the platform."
+    "diagnostic": "Host promotion is deterministic only when host identity, coherent toolchain probes, package root identity, object identity, debug identity, package/install identity, runtime load/link proof, and native execution records are all checked in for the platform."
   },
   "required_supported_evidence_classes": [
     "build",

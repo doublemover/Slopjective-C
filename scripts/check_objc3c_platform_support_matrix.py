@@ -77,6 +77,10 @@ REQUIRED_HOST_PROMOTION_SOURCE_SECTIONS = (
     "toolchain_probe_records",
     "package_root_evidence_records",
     "native_execution_evidence_records",
+    "object_identity_records",
+    "debug_identity_records",
+    "package_install_identity_records",
+    "runtime_load_link_proof_records",
     "negative_host_toolchain_cases",
 )
 HOST_EVIDENCE_WORKFLOW_PATH = ".github/workflows/platform-host-evidence.yml"

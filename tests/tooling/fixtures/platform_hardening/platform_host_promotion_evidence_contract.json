@@ -53,6 +53,8 @@
         "support_row_id",
         "package_variant_row_id",
         "required_record_ids",
+        "required_reviewed_source_fields",
+        "reviewed_source_field_status",
         "missing_record_classes"
       ],
       "promotion_result": "eligible-only-if-all-blockers-empty"
@@ -123,6 +125,48 @@
     "package_root",
     "install_receipt",
     "native_execution"
+  ],
+  "reviewed_source_fields": [
+    {
+      "field_id": "object_identity",
+      "required_record_id_field": "object_identity_record_id",
+      "generated_report_path_suffix": "build/object-identity.json",
+      "reviewed_source_required": true,
+      "generated_report_support_truth": false,
+      "promotion_allowed_from_generated_evidence": false,
+      "failure_class": "wrong-object-debug-format",
+      "required_behavior": "fail-closed-before-package-publication"
+    },
+    {
+      "field_id": "debug_identity",
+      "required_record_id_field": "debug_identity_record_id",
+      "generated_report_path_suffix": "build/debug-identity.json",
+      "reviewed_source_required": true,
+      "generated_report_support_truth": false,
+      "promotion_allowed_from_generated_evidence": false,
+      "failure_class": "wrong-object-debug-format",
+      "required_behavior": "fail-closed-before-package-publication"
+    },
+    {
+      "field_id": "package_install_identity",
+      "required_record_id_field": "package_install_identity_record_id",
+      "generated_report_path_suffix": "install/end-to-end-summary.json",
+      "reviewed_source_required": true,
+      "generated_report_support_truth": false,
+      "promotion_allowed_from_generated_evidence": false,
+      "failure_class": "missing-install-receipt",
+      "required_behavior": "fail-closed-before-native-execution-claim"
+    },
+    {
+      "field_id": "runtime_load_link_proof",
+      "required_record_id_field": "runtime_load_link_proof_record_id",
+      "generated_report_path_suffix": "execution/runtime-load-probe.json",
+      "reviewed_source_required": true,
+      "generated_report_support_truth": false,
+      "promotion_allowed_from_generated_evidence": false,
+      "failure_class": "runtime-load-failure",
+      "required_behavior": "fail-closed-before-native-execution-claim"
+    }
   ],
   "required_gate_classes": [
     "build",
@@ -301,7 +345,23 @@
           "toolchain_probe_record_id": "objc3c.host.linux-x64.toolchain-probes.fail-closed",
           "package_root_record_id": "objc3c.package-root.linux-x64.release.fail-closed",
           "install_receipt_record_id": "objc3c.install-receipt.linux-x64.release.missing",
-          "native_execution_record_id": "objc3c.native-execution.linux-x64.release.missing"
+          "native_execution_record_id": "objc3c.native-execution.linux-x64.release.missing",
+          "object_identity_record_id": "objc3c.object-identity.linux-x64.release.missing",
+          "debug_identity_record_id": "objc3c.debug-identity.linux-x64.release.missing",
+          "package_install_identity_record_id": "objc3c.package-install-identity.linux-x64.release.missing",
+          "runtime_load_link_proof_record_id": "objc3c.runtime-load-link.linux-x64.release.missing"
+        },
+        "required_reviewed_source_fields": [
+          "object_identity",
+          "debug_identity",
+          "package_install_identity",
+          "runtime_load_link_proof"
+        ],
+        "reviewed_source_field_status": {
+          "object_identity": "missing-reviewed-source",
+          "debug_identity": "missing-reviewed-source",
+          "package_install_identity": "missing-reviewed-source",
+          "runtime_load_link_proof": "missing-reviewed-source"
         },
         "missing_record_classes": [
           "build",
@@ -309,6 +369,8 @@
           "install",
           "execution"
         ],
+        "reviewed_source_support_ready": false,
+        "generated_evidence_support_truth": false,
         "support_truth": false
       },
       "package_install_native_execution_evidence": {
@@ -463,7 +525,23 @@
           "toolchain_probe_record_id": "objc3c.host.darwin-arm64.toolchain-probes.fail-closed",
           "package_root_record_id": "objc3c.package-root.darwin-arm64.release.fail-closed",
           "install_receipt_record_id": "objc3c.install-receipt.darwin-arm64.release.missing",
-          "native_execution_record_id": "objc3c.native-execution.darwin-arm64.release.missing"
+          "native_execution_record_id": "objc3c.native-execution.darwin-arm64.release.missing",
+          "object_identity_record_id": "objc3c.object-identity.darwin-arm64.release.missing",
+          "debug_identity_record_id": "objc3c.debug-identity.darwin-arm64.release.missing",
+          "package_install_identity_record_id": "objc3c.package-install-identity.darwin-arm64.release.missing",
+          "runtime_load_link_proof_record_id": "objc3c.runtime-load-link.darwin-arm64.release.missing"
+        },
+        "required_reviewed_source_fields": [
+          "object_identity",
+          "debug_identity",
+          "package_install_identity",
+          "runtime_load_link_proof"
+        ],
+        "reviewed_source_field_status": {
+          "object_identity": "missing-reviewed-source",
+          "debug_identity": "missing-reviewed-source",
+          "package_install_identity": "missing-reviewed-source",
+          "runtime_load_link_proof": "missing-reviewed-source"
         },
         "missing_record_classes": [
           "build",
@@ -471,6 +549,8 @@
           "install",
           "execution"
         ],
+        "reviewed_source_support_ready": false,
+        "generated_evidence_support_truth": false,
         "support_truth": false
       },
       "package_install_native_execution_evidence": {
@@ -564,6 +644,12 @@
     "must_reject_generated_only_support_truth": true,
     "must_reject_empty_blocker_lists": true,
     "must_reject_missing_required_source_record_types": true,
+    "must_require_reviewed_source_fields": [
+      "object_identity",
+      "debug_identity",
+      "package_install_identity",
+      "runtime_load_link_proof"
+    ],
     "must_reject_sanitizer_artifacts_in_release_runtime": true,
     "must_reject_prose_only_platform_support_claims": true,
     "must_match_existing_platform_identity_contracts": true,
