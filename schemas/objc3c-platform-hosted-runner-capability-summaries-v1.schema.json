@@ -88,6 +88,13 @@
     }
   },
   "$defs": {
+    "platformId": {
+      "enum": [
+        "windows-x64",
+        "linux-x64",
+        "darwin-arm64"
+      ]
+    },
     "summary": {
       "type": "object",
       "additionalProperties": false,
@@ -117,7 +124,14 @@
           ]
         },
         "issue_ref": {
-          "type": "integer"
+          "enum": [
+            8206,
+            8228,
+            8229,
+            8230,
+            8231,
+            8232
+          ]
         },
         "claim_state": {
           "enum": [
@@ -130,7 +144,7 @@
         "platform_ids": {
           "type": "array",
           "items": {
-            "type": "string"
+            "$ref": "#/$defs/platformId"
           },
           "uniqueItems": true
         },
@@ -185,7 +199,57 @@
           "type": "string",
           "minLength": 1
         }
-      }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "claim_state": {
+                "const": "evidence-bound"
+              }
+            },
+            "required": [
+              "claim_state"
+            ]
+          },
+          "then": {
+            "properties": {
+              "publication_allowed": {
+                "const": true
+              },
+              "required_missing_evidence_classes": {
+                "const": []
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "claim_state": {
+                "enum": [
+                  "unsupported",
+                  "reserved",
+                  "fail-closed"
+                ]
+              }
+            },
+            "required": [
+              "claim_state"
+            ]
+          },
+          "then": {
+            "properties": {
+              "platform_ids": {
+                "const": []
+              },
+              "publication_allowed": {
+                "const": false
+              }
+            }
+          }
+        }
+      ]
     }
   }
 }

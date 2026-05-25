@@ -35,9 +35,10 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
         "--reuse-primary-package-root",
         default=None,
         help=(
-            "Use an already built runnable package as the first release-foundation "
-            "assembly after manifest/layout validation, then build a fresh second "
-            "assembly to preserve reproducibility proof."
+            "Use an already built runnable package as the release-foundation "
+            "payload after manifest/layout validation. This binds the exact reused "
+            "payload instead of rebuilding native binaries under a different "
+            "package root."
         ),
     )
     return parser.parse_args(argv)
@@ -72,10 +73,14 @@ def main(argv: Sequence[str] | None = None) -> int:
             manifest_relative_path=PACKAGE_MANIFEST_RELATIVE_PATH,
             required_manifest_fields=required_manifest_fields,
         )
-    second = package_once(
-        run_root / "run-2",
-        PACKAGE_MANIFEST_RELATIVE_PATH,
-        required_manifest_fields,
+    second = (
+        package_once(
+            run_root / "run-2",
+            PACKAGE_MANIFEST_RELATIVE_PATH,
+            required_manifest_fields,
+        )
+        if args.reuse_primary_package_root is None
+        else first
     )
     validation = validate_release_inputs(
         first=first,

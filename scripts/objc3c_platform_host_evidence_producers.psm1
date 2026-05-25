@@ -2042,7 +2042,7 @@ function Write-Objc3cLinuxRuntimeLoadProbeEvidence {
     runtime_library_kind = Get-Objc3cPlatformRuntimeLibraryKind -PlatformId $PlatformId
     runtime_load_environment_variable = "LD_LIBRARY_PATH"
     loader_path_policy = $LoaderPathPolicy
-    resolved_runtime_paths = @($resolvedRuntimePaths | Sort-Object -Unique)
+    resolved_runtime_paths = @($resolvedRuntimePaths.ToArray() | Sort-Object -Unique)
     driver_linker_flags = @($linkerFlags)
     hosted_execution_status = ""
     native_execution_status = $summaryStatus

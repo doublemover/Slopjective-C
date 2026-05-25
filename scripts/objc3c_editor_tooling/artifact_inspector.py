@@ -3,11 +3,11 @@ from __future__ import annotations
 import hashlib
 import json
 import re
-import shutil
 import subprocess
 from pathlib import Path
 from typing import Any
 
+from objc3c_tooling.llvm_discovery import find_llvm_tool_path
 from objc3c_tooling.paths import ROOT, display_path, resolve_repo_path
 
 from objc3c_editor_tooling.input_loading import EditorToolingInputs
@@ -60,10 +60,6 @@ NATIVE_LINE_TABLE_SECTION_NAMES = {
     "__debug_line",
     ".debug$s",
 }
-LLVM_TOOL_FALLBACK_DIRS = (
-    ROOT / "artifacts" / "bin",
-    Path("C:/Program Files/LLVM/bin"),
-)
 DEFAULT_OBJC3_ABI_IDENTITY = "objc3-abi-2025Q4"
 LLVM_DEBUG_LOCATION_ATTACHMENT_PATTERN = re.compile(
     r"(?:^|,\s*)!dbg\s+![0-9]+\b"
@@ -120,14 +116,13 @@ def _powershell_quote(value: str) -> str:
 
 
 def _resolve_tool(name: str) -> Path | None:
-    discovered = shutil.which(name)
+    discovered = find_llvm_tool_path(name)
     if discovered:
-        return Path(discovered)
+        return discovered
     exe_name = f"{name}.exe" if not name.endswith(".exe") else name
-    for directory in LLVM_TOOL_FALLBACK_DIRS:
-        candidate = directory / exe_name
-        if candidate.is_file():
-            return candidate
+    candidate = ROOT / "artifacts" / "bin" / exe_name
+    if candidate.is_file():
+        return candidate
     return None
 
 

@@ -20,6 +20,7 @@ if str(ROOT) not in sys.path:
 
 from objc3c_tooling.json_io import load_json_object as load_json
 from objc3c_tooling.json_io import write_json_file
+from objc3c_tooling.llvm_discovery import find_llvm_tool_path
 from objc3c_tooling.paths import repo_rel
 from objc3c_tooling.subprocesses import command_text, run_completed
 from scripts.objc3c_package_channels.sanitizer_contracts import (
@@ -177,12 +178,8 @@ def clang_command() -> str:
     configured = os.environ.get("OBJC3C_NATIVE_EXECUTION_CLANG_PATH")
     if configured:
         return configured
-    llvm_root = os.environ.get("OBJC3C_LLVM_ROOT") or os.environ.get("LLVM_ROOT")
-    if llvm_root:
-        candidate = Path(llvm_root) / "bin" / "clang++.exe"
-        if candidate.is_file():
-            return str(candidate)
-    return shutil.which("clang++") or "clang++"
+    discovered = find_llvm_tool_path("clang++")
+    return str(discovered) if discovered else "clang++"
 
 
 def runtime_dir(package_root: Path, sanitizer_variant: str) -> Path:

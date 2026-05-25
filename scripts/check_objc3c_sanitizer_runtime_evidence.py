@@ -19,6 +19,7 @@ if str(ROOT) not in sys.path:
 
 from objc3c_tooling.json_io import load_json_object as load_json
 from objc3c_tooling.json_io import write_json_file
+from objc3c_tooling.llvm_discovery import is_complete_llvm_root, llvm_root_candidates
 from objc3c_tooling.paths import repo_rel
 from objc3c_tooling.subprocesses import command_text, python_script_command, run_completed
 from scripts.objc3c_package_channels.sanitizer_contracts import (
@@ -67,10 +68,11 @@ def sanitizer_variants(raw: str) -> list[str]:
 
 def env_with_toolchain() -> dict[str, str]:
     env = os.environ.copy()
-    llvm_root = env.get("OBJC3C_LLVM_ROOT") or env.get("LLVM_ROOT")
-    if llvm_root:
-        llvm_bin = str(Path(llvm_root) / "bin")
-        env["PATH"] = llvm_bin + os.pathsep + env.get("PATH", "")
+    for llvm_root in llvm_root_candidates():
+        if is_complete_llvm_root(llvm_root):
+            llvm_bin = str(llvm_root / "bin")
+            env["PATH"] = llvm_bin + os.pathsep + env.get("PATH", "")
+            break
     env.setdefault("OBJC3C_NATIVE_BUILD_PARALLELISM", "2")
     env.setdefault("CMAKE_BUILD_PARALLEL_LEVEL", "2")
     env.setdefault("CL_MPCount", "2")

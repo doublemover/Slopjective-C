@@ -325,7 +325,7 @@ Install prerequisites:
 - A complete LLVM install with `clang++`, `llc`, `llvm-ar`, `llvm-config`,
   LLVM headers, and CMake package files. The repo-owned CI installer stages
   this under `C:\Users\<you>\Tools\LLVM\llvm-<version>-msvc`; alternatively,
-  set `LLVM_ROOT` to an equivalent full LLVM root.
+  set `OBJC3C_LLVM_ROOT` or `LLVM_ROOT` to an equivalent full LLVM root.
 
 LLVM tools used by the native path:
 
@@ -347,7 +347,9 @@ python -m pip install --upgrade pytest jsonschema
 If LLVM is installed somewhere else:
 
 ```powershell
+$env:OBJC3C_LLVM_ROOT = 'D:\path\to\LLVM'
 $env:LLVM_ROOT = 'D:\path\to\LLVM'
+$env:LLVM_DIR = 'D:\path\to\LLVM\lib\cmake\llvm'
 ```
 
 Build the compiler, C API runner, and runtime archive:
@@ -376,7 +378,7 @@ npm run objc3c -- test-smoke
 Run native execution smoke when `llc.exe` is available:
 
 ```powershell
-$env:OBJC3C_NATIVE_EXECUTION_LLC_PATH = 'C:\Program Files\LLVM\bin\llc.exe'
+$env:OBJC3C_NATIVE_EXECUTION_LLC_PATH = 'C:\Users\<you>\Tools\LLVM\llvm-22.1.6-msvc\bin\llc.exe'
 npm run objc3c -- test-execution-smoke
 ```
 
