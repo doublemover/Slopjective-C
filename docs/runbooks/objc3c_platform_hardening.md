@@ -158,6 +158,15 @@ Linux/macOS generated hosted evidence remains non-promoting until the reviewed
 source-truth rows are applied, checked in, and accepted by the host-promotion
 contract.
 
+For hosted CI evidence, review from the GitHub Actions artifact rather than
+from whatever happens to exist in local `tmp/`:
+`npm run objc3c -- review-platform-host-evidence -- --platform-id linux-x64 --github-run-id <run-id> --expected-head-sha <sha>`.
+The command requires a green completed run, verifies the platform host-evidence
+job, downloads `objc3c-platform-host-evidence-<platform>` under
+`tmp/reports/platform-host-evidence-runs/`, locates the complete evidence root,
+and then runs the same source-owned review path. `--apply-reviewed-source-truth`
+is still required before checked source fixtures are overwritten.
+
 The direct replay command for that non-promoting contract is
 `npm run objc3c -- check-platform-host-promotion-evidence`. The integrated
 `validate-platform-hardening` action runs the same checker as a child step so

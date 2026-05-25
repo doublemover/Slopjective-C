@@ -2,15 +2,18 @@
 """Stage reviewed source-truth inputs from hosted platform evidence.
 
 Generated hosted evidence is never source truth by itself. This helper consumes a
-complete per-platform evidence root, verifies that the generated review candidate
-and required artifacts are present, and writes a reviewed-source proposal. The
-checked fixture is updated only with the explicit apply flag.
+complete per-platform evidence root, or downloads that root from a green GitHub
+Actions run, verifies that the generated review candidate and required artifacts
+are present, and writes a reviewed-source proposal. The checked fixture is
+updated only with the explicit apply flag.
 """
 
 from __future__ import annotations
 
 import argparse
 import json
+import shutil
+import subprocess
 import sys
 from copy import deepcopy
 from pathlib import Path
@@ -44,6 +47,10 @@ from platform_hardening_contracts.host_promotion import (
 
 REVIEWED_SOURCE_INPUT_PATH = ROOT / HOST_PROMOTION_REVIEWED_SOURCE_INPUT_RELATIVE_PATH
 DEFAULT_REVIEWER_ID = "objc3c.platform.host-evidence.review"
+DEFAULT_GITHUB_REPOSITORY = "doublemover/Slopjective-C"
+DEFAULT_GITHUB_ARTIFACT_DOWNLOAD_ROOT = (
+    ROOT / "tmp" / "reports" / "platform-host-evidence-runs"
+)
 SOURCE_OWNED_REVIEW_VALIDATOR = "validate_host_promotion_reviewed_source_inputs"
 REQUIRED_PASS_STEPS: tuple[str, ...] = (
     "build",
@@ -115,6 +122,174 @@ def display_path(path: Path) -> str:
         return repo_rel(path)
     except ValueError:
         return path.as_posix()
+
+
+def run_json_command(command: list[str]) -> dict[str, Any]:
+    completed = subprocess.run(
+        command,
+        check=False,
+        cwd=ROOT,
+        encoding="utf-8",
+        errors="replace",
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+    )
+    if completed.returncode != 0:
+        raise ReviewError(
+            "command failed: "
+            + " ".join(command)
+            + "\n"
+            + completed.stderr.strip()
+        )
+    try:
+        payload = json.loads(completed.stdout)
+    except json.JSONDecodeError as exc:
+        raise ReviewError(
+            "command did not return JSON: " + " ".join(command)
+        ) from exc
+    if not isinstance(payload, dict):
+        raise ReviewError("command JSON was not an object: " + " ".join(command))
+    return payload
+
+
+def run_checked_command(command: list[str]) -> None:
+    completed = subprocess.run(
+        command,
+        check=False,
+        cwd=ROOT,
+        encoding="utf-8",
+        errors="replace",
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+    )
+    if completed.returncode != 0:
+        raise ReviewError(
+            "command failed: "
+            + " ".join(command)
+            + "\n"
+            + completed.stderr.strip()
+        )
+
+
+def require_safe_download_root(path: Path) -> Path:
+    resolved = path.resolve()
+    allowed_root = DEFAULT_GITHUB_ARTIFACT_DOWNLOAD_ROOT.resolve()
+    if resolved == allowed_root or allowed_root in resolved.parents:
+        return resolved
+    raise ReviewError(
+        "GitHub artifact download root must stay under "
+        + repo_rel(DEFAULT_GITHUB_ARTIFACT_DOWNLOAD_ROOT)
+    )
+
+
+def require_green_github_run(
+    *,
+    run_id: str,
+    repository: str,
+    platform_id: str,
+    expected_head_sha: str | None,
+) -> dict[str, Any]:
+    payload = run_json_command(
+        [
+            "gh",
+            "run",
+            "view",
+            run_id,
+            "--repo",
+            repository,
+            "--json",
+            "status,conclusion,headSha,url,jobs",
+        ]
+    )
+    if payload.get("status") != "completed" or payload.get("conclusion") != "success":
+        raise ReviewError(
+            f"GitHub run {run_id} is not a green completed run "
+            f"(status={payload.get('status')!r}, conclusion={payload.get('conclusion')!r})"
+        )
+    if expected_head_sha and payload.get("headSha") != expected_head_sha:
+        raise ReviewError(
+            f"GitHub run {run_id} head SHA drifted: "
+            f"expected {expected_head_sha}, got {payload.get('headSha')}"
+        )
+    expected_job_name = f"platform-host-evidence-{platform_id}"
+    jobs = payload.get("jobs", [])
+    if not isinstance(jobs, list):
+        raise ReviewError(f"GitHub run {run_id} jobs payload drifted")
+    matching_jobs = [
+        job
+        for job in jobs
+        if isinstance(job, dict) and job.get("name") == expected_job_name
+    ]
+    if not matching_jobs:
+        raise ReviewError(f"GitHub run {run_id} missing job {expected_job_name}")
+    job = matching_jobs[0]
+    if job.get("status") != "completed" or job.get("conclusion") != "success":
+        raise ReviewError(
+            f"GitHub run {run_id} job {expected_job_name} is not green "
+            f"(status={job.get('status')!r}, conclusion={job.get('conclusion')!r})"
+        )
+    return payload
+
+
+def locate_downloaded_evidence_root(download_root: Path, platform_id: str) -> Path:
+    candidates: list[Path] = []
+    for report_path in download_root.rglob("host-evidence-report.json"):
+        root = report_path.parent
+        if (root / "review-candidate-source-truth.json").is_file():
+            report = load_json_object(report_path)
+            if report.get("platform_id") == platform_id:
+                candidates.append(root)
+    if not candidates:
+        raise ReviewError(
+            f"downloaded artifact did not contain a complete {platform_id} evidence root"
+        )
+    unique = sorted({candidate.resolve() for candidate in candidates})
+    if len(unique) != 1:
+        joined = ", ".join(display_path(path) for path in unique)
+        raise ReviewError(f"downloaded artifact contained multiple evidence roots: {joined}")
+    return unique[0]
+
+
+def download_github_evidence_artifact(args: argparse.Namespace) -> tuple[Path, dict[str, Any]]:
+    run_id = str(args.github_run_id)
+    repository = str(args.github_repo)
+    platform_id = str(args.platform_id)
+    run_payload = require_green_github_run(
+        run_id=run_id,
+        repository=repository,
+        platform_id=platform_id,
+        expected_head_sha=args.expected_head_sha,
+    )
+    root = require_safe_download_root(args.artifact_download_root)
+    destination = root / f"run-{run_id}" / platform_id
+    if destination.exists():
+        shutil.rmtree(destination)
+    destination.mkdir(parents=True, exist_ok=True)
+    artifact_name = f"objc3c-platform-host-evidence-{platform_id}"
+    run_checked_command(
+        [
+            "gh",
+            "run",
+            "download",
+            run_id,
+            "--repo",
+            repository,
+            "--name",
+            artifact_name,
+            "--dir",
+            str(destination),
+        ]
+    )
+    evidence_root = locate_downloaded_evidence_root(destination, platform_id)
+    return evidence_root, {
+        "run_id": run_id,
+        "repository": repository,
+        "run_url": run_payload.get("url"),
+        "head_sha": run_payload.get("headSha"),
+        "artifact_name": artifact_name,
+        "download_root": display_path(destination),
+        "evidence_root": display_path(evidence_root),
+    }
 
 
 def validate_reviewed_source_payload(
@@ -1158,6 +1333,11 @@ def update_platform_records(
 def build_reviewed_source_payload(args: argparse.Namespace) -> tuple[dict[str, Any], dict[str, Any]]:
     platform_id = args.platform_id
     require_platform(platform_id)
+    github_run: dict[str, Any] | None = None
+    if args.github_run_id:
+        if args.evidence_root is not None:
+            raise ReviewError("--github-run-id and --evidence-root cannot be combined")
+        args.evidence_root, github_run = download_github_evidence_artifact(args)
     root = platform_evidence_root(platform_id, args.evidence_root)
     artifact_paths = require_generated_artifacts(platform_id, root)
     candidate = require_review_candidate(platform_id, root)
@@ -1192,6 +1372,8 @@ def build_reviewed_source_payload(args: argparse.Namespace) -> tuple[dict[str, A
         "generated_reports_are_source_truth": False,
         "source_truth_update_requires_apply_flag": True,
     }
+    if github_run is not None:
+        summary["github_actions_run"] = github_run
     updated.setdefault("review_application", {})
     updated["review_application"][platform_id] = {
         "reviewer_id": args.reviewer_id,
@@ -1218,6 +1400,25 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     )
     parser.add_argument("--platform-id", required=True, choices=host_promotion_platform_ids())
     parser.add_argument("--evidence-root", type=Path)
+    parser.add_argument(
+        "--github-run-id",
+        help="green GitHub Actions run id whose hosted platform evidence artifact should be downloaded and reviewed",
+    )
+    parser.add_argument(
+        "--github-repo",
+        default=DEFAULT_GITHUB_REPOSITORY,
+        help="GitHub repository for --github-run-id",
+    )
+    parser.add_argument(
+        "--expected-head-sha",
+        help="optional head SHA that the green GitHub run must match before review",
+    )
+    parser.add_argument(
+        "--artifact-download-root",
+        type=Path,
+        default=DEFAULT_GITHUB_ARTIFACT_DOWNLOAD_ROOT,
+        help="tmp-only root used for downloaded GitHub Actions artifacts",
+    )
     parser.add_argument(
         "--source-inputs",
         type=Path,

@@ -385,6 +385,8 @@ Use the public bridge for replay:
 - `npm run objc3c -- validate-package-install-distribution --from-nothing`
 - `npm run objc3c -- ingest-platform-host-evidence -- --platform-id linux-x64 --runner-label ubuntu-24.04`
 - `npm run objc3c -- ingest-platform-host-evidence -- --platform-id darwin-arm64 --runner-label macos-15`
+- `npm run objc3c -- review-platform-host-evidence -- --platform-id linux-x64 --github-run-id <run-id> --expected-head-sha <sha>`
+- `npm run objc3c -- review-platform-host-evidence -- --platform-id darwin-arm64 --github-run-id <run-id> --expected-head-sha <sha>`
 
 The matrix can cite generated reports from those commands as evidence outputs,
 but checked-in schemas, fixtures, validators, and runbooks remain the source of
