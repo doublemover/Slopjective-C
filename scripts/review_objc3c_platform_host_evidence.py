@@ -1091,13 +1091,37 @@ def reviewed_artifact_paths(platform_id: str) -> list[str]:
     return host_evidence_required_review_input_paths_for_platform(platform_id)
 
 
+def reviewed_record_id(platform_id: str, record_type: str) -> str:
+    record_ids = {
+        "host_identity": f"objc3c.host.{platform_id}.identity.reviewed-source",
+        "toolchain_probe": f"objc3c.host.{platform_id}.toolchain-probes.reviewed-source",
+        "package_root": f"objc3c.package-root.{platform_id}.release.reviewed-source",
+        "install_receipt": f"objc3c.install-receipt.{platform_id}.release.reviewed-source",
+        "native_execution": f"objc3c.native-execution.{platform_id}.release.reviewed-source",
+        "object_identity": f"objc3c.object-identity.{platform_id}.release.reviewed-source",
+        "debug_identity": f"objc3c.debug-identity.{platform_id}.release.reviewed-source",
+        "package_install_identity": (
+            f"objc3c.package-install-identity.{platform_id}.release.reviewed-source"
+        ),
+        "runtime_load_link_proof": (
+            f"objc3c.runtime-load-link.{platform_id}.release.reviewed-source"
+        ),
+    }
+    try:
+        return record_ids[record_type]
+    except KeyError as exc:
+        raise ReviewError(f"unknown reviewed source record type: {record_type}") from exc
+
+
 def reviewed_metadata(
     record: dict[str, Any],
     platform_id: str,
     *,
+    record_type: str,
     evidence_id: str,
 ) -> dict[str, Any]:
     updated = deepcopy(record)
+    updated["record_id"] = reviewed_record_id(platform_id, record_type)
     updated["claim_state"] = "reviewed-source"
     updated["promotion_allowed"] = True
     updated["platform_ids"] = [platform_id]
@@ -1159,7 +1183,11 @@ def replace_record(
     raise ReviewError(f"reviewed source input missing {record_type} record {record_id}")
 
 
-def promote_platform_row(payload: dict[str, Any], platform_id: str) -> None:
+def promote_platform_row(
+    payload: dict[str, Any],
+    platform_id: str,
+    reviewed_record_ids: dict[str, str],
+) -> None:
     for row in payload.get("platforms", []):
         if isinstance(row, dict) and row.get("platform_id") == platform_id:
             row["review_decision"] = "approved-for-support-source-truth"
@@ -1167,6 +1195,14 @@ def promote_platform_row(payload: dict[str, Any], platform_id: str) -> None:
             row["remaining_blockers"] = []
             row["promotion_allowed"] = True
             row["support_truth"] = True
+            required_record_ids = row.setdefault("required_record_ids", {})
+            if not isinstance(required_record_ids, dict):
+                raise ReviewError(f"{platform_id} platform row has invalid required_record_ids")
+            for record_type, record_id in reviewed_record_ids.items():
+                field_name = HOST_PROMOTION_REVIEWED_SOURCE_RECORD_ID_FIELD_BY_TYPE[
+                    record_type
+                ]
+                required_record_ids[field_name] = record_id
             return
     raise ReviewError(f"reviewed source input missing platform row: {platform_id}")
 
@@ -1222,6 +1258,7 @@ def update_platform_records(
         reviewed = reviewed_metadata(
             source,
             platform_id,
+            record_type=record_type,
             evidence_id=review_evidence_id(platform_id, record_type, report),
         )
         reviewed_records[record_type] = reviewed
@@ -1326,7 +1363,14 @@ def update_platform_records(
             required_ids[id_fields[record_type]],
             reviewed,
         )
-    promote_platform_row(payload, platform_id)
+    promote_platform_row(
+        payload,
+        platform_id,
+        {
+            record_type: str(reviewed["record_id"])
+            for record_type, reviewed in reviewed_records.items()
+        },
+    )
     return payload
 
 
