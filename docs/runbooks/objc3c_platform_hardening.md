@@ -31,6 +31,7 @@ Replayable public workflow actions:
 - `npm run objc3c -- build-platform-support-matrix`
 - `npm run objc3c -- ingest-platform-host-evidence`
 - `npm run objc3c -- review-platform-host-evidence`
+- `npm run objc3c -- review-platform-support-promotion`
 - `npm run objc3c -- check-platform-host-promotion-evidence`
 - `npm run objc3c -- validate-platform-hardening`
 - `npm run objc3c -- validate-platform-hardening-end-to-end`
@@ -57,6 +58,7 @@ actions above, not separate current-facing commands.
 - platform host evidence flow:
   - `npm run objc3c -- ingest-platform-host-evidence`
   - `npm run objc3c -- review-platform-host-evidence`
+  - `npm run objc3c -- review-platform-support-promotion`
   - `npm run objc3c -- check-platform-host-promotion-evidence`
 - package-channel and installer flow:
   - `npm run objc3c -- build-package-channels`
@@ -166,6 +168,12 @@ job, downloads `objc3c-platform-host-evidence-<platform>` under
 `tmp/reports/platform-host-evidence-runs/`, locates the complete evidence root,
 and then runs the same source-owned review path. `--apply-reviewed-source-truth`
 is still required before checked source fixtures are overwritten.
+
+After reviewed-source inputs are applied and show `promotion_allowed=true`,
+`npm run objc3c -- review-platform-support-promotion -- --platform-id <platform> --apply`
+is the only checked-source promotion path for Linux/macOS support rows. It
+rewrites the tiered platform support fixtures from reviewed source records; it
+refuses generated-only reports and does not promote an unreviewed platform.
 
 The direct replay command for that non-promoting contract is
 `npm run objc3c -- check-platform-host-promotion-evidence`. The integrated
@@ -599,6 +607,7 @@ release/update metadata surfaces:
   - `npm run objc3c -- build-platform-support-matrix`
   - `npm run objc3c -- ingest-platform-host-evidence`
   - `npm run objc3c -- review-platform-host-evidence`
+  - `npm run objc3c -- review-platform-support-promotion`
   - `npm run objc3c -- check-platform-host-promotion-evidence`
   - `npm run objc3c -- validate-platform-hardening`
   - `npm run objc3c -- validate-platform-hardening-end-to-end`

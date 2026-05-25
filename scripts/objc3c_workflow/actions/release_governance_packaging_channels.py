@@ -11,6 +11,7 @@ from .release_governance_packaging_artifacts import (
     action_check_platform_host_promotion_evidence,
     action_ingest_platform_host_evidence,
     action_review_platform_host_evidence,
+    action_review_platform_support_promotion,
 )
 from .release_governance_packaging_validation import (
     action_validate_packaging_channels,
@@ -28,6 +29,7 @@ __all__ = [
     "action_check_platform_host_promotion_evidence",
     "action_ingest_platform_host_evidence",
     "action_review_platform_host_evidence",
+    "action_review_platform_support_promotion",
     "action_validate_packaging_channels",
     "action_validate_packaging_channels_end_to_end",
     "action_validate_platform_hardening",

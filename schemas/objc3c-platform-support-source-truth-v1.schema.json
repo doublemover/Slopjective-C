@@ -658,9 +658,11 @@
         "runner_labels",
         "ingestion_action",
         "review_action",
+        "support_promotion_action",
         "host_promotion_contract_check_action",
         "ingestion_helper",
         "review_helper",
+        "support_promotion_helper",
         "generated_report_contract_id",
         "generated_report_root",
         "review_candidate_source_truth_path",
@@ -717,6 +719,9 @@
         "review_action": {
           "const": "review-platform-host-evidence"
         },
+        "support_promotion_action": {
+          "const": "review-platform-support-promotion"
+        },
         "host_promotion_contract_check_action": {
           "const": "check-platform-host-promotion-evidence"
         },
@@ -725,6 +730,9 @@
         },
         "review_helper": {
           "const": "scripts/review_objc3c_platform_host_evidence.py"
+        },
+        "support_promotion_helper": {
+          "const": "scripts/promote_objc3c_platform_support.py"
         },
         "generated_report_contract_id": {
           "const": "objc3c.platform.hosted-runner.evidence-report.v1"

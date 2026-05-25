@@ -23,6 +23,9 @@ PLATFORM_HOST_EVIDENCE_INGESTION_PY = (
 PLATFORM_HOST_EVIDENCE_REVIEW_PY = (
     ROOT / "scripts" / "review_objc3c_platform_host_evidence.py"
 )
+PLATFORM_SUPPORT_PROMOTION_PY = (
+    ROOT / "scripts" / "promote_objc3c_platform_support.py"
+)
 PLATFORM_HOST_PROMOTION_EVIDENCE_PY = (
     ROOT / "scripts" / "check_platform_host_promotion_evidence.py"
 )

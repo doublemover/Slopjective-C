@@ -30,6 +30,7 @@ PACKAGING_CHANNEL_ACTION_HANDLERS: dict[str, ActionHandler] = {
     ),
     "ingest-platform-host-evidence": release_governance.action_ingest_platform_host_evidence,
     "review-platform-host-evidence": release_governance.action_review_platform_host_evidence,
+    "review-platform-support-promotion": release_governance.action_review_platform_support_promotion,
     "validate-packaging-channels": release_governance.action_validate_packaging_channels,
     "validate-packaging-channels-end-to-end": release_governance.action_validate_packaging_channels_end_to_end,
     "validate-platform-hardening": release_governance.action_validate_platform_hardening,

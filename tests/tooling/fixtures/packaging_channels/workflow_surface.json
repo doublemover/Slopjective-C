@@ -21,6 +21,7 @@
     "build-platform-support-matrix",
     "ingest-platform-host-evidence",
     "review-platform-host-evidence",
+    "review-platform-support-promotion",
     "check-platform-host-promotion-evidence",
     "validate-packaging-channels",
     "validate-packaging-channels-end-to-end",
@@ -44,6 +45,7 @@
       "build-platform-support-matrix",
       "ingest-platform-host-evidence",
       "review-platform-host-evidence",
+      "review-platform-support-promotion",
       "check-platform-host-promotion-evidence",
       "validate-packaging-channels",
       "validate-packaging-channels-end-to-end",
@@ -62,6 +64,7 @@
       "check-security-sanitizer-runtime-promotion-evidence",
       "ingest-platform-host-evidence",
       "review-platform-host-evidence",
+      "review-platform-support-promotion",
       "check-platform-host-promotion-evidence"
     ],
     "hard_cutover_guardrails": {
@@ -107,6 +110,7 @@
       "build-platform-support-matrix",
       "ingest-platform-host-evidence",
       "review-platform-host-evidence",
+      "review-platform-support-promotion",
       "check-platform-host-promotion-evidence",
       "validate-packaging-channels",
       "validate-packaging-channels-end-to-end",

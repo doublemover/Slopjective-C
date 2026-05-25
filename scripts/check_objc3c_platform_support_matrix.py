@@ -87,8 +87,10 @@ HOST_EVIDENCE_ACCEPTED_WORKFLOW_PATHS = (
 )
 HOST_EVIDENCE_INGESTION_ACTION = "ingest-platform-host-evidence"
 HOST_EVIDENCE_REVIEW_ACTION = "review-platform-host-evidence"
+HOST_EVIDENCE_SUPPORT_PROMOTION_ACTION = "review-platform-support-promotion"
 HOST_EVIDENCE_INGESTION_HELPER = "scripts/ingest_objc3c_platform_host_evidence.py"
 HOST_EVIDENCE_REVIEW_HELPER = "scripts/review_objc3c_platform_host_evidence.py"
+HOST_EVIDENCE_SUPPORT_PROMOTION_HELPER = "scripts/promote_objc3c_platform_support.py"
 HOST_EVIDENCE_CANDIDATE_RECORD_IDS = (
     "objc3c.evidence.hosted-ci.linux-x64.generated-host-run",
     "objc3c.evidence.hosted-ci.darwin-arm64.generated-host-run",
@@ -848,14 +850,28 @@ def _validate_hosted_evidence_ingestion(
     expect(ingestion["runner_labels"] == HOST_EVIDENCE_RUNNER_LABELS, "host evidence runner labels drifted")
     expect(ingestion["ingestion_action"] == HOST_EVIDENCE_INGESTION_ACTION, "host evidence ingestion action drifted")
     expect(ingestion["review_action"] == HOST_EVIDENCE_REVIEW_ACTION, "host evidence review action drifted")
+    expect(
+        ingestion["support_promotion_action"] == HOST_EVIDENCE_SUPPORT_PROMOTION_ACTION,
+        "host evidence support promotion action drifted",
+    )
     expect(HOST_EVIDENCE_INGESTION_ACTION in ACTION_SPECS, "host evidence ingestion action missing from ACTION_SPECS")
     expect(HOST_EVIDENCE_INGESTION_ACTION in ACTION_HANDLERS, "host evidence ingestion action missing from ACTION_HANDLERS")
     expect(HOST_EVIDENCE_REVIEW_ACTION in ACTION_SPECS, "host evidence review action missing from ACTION_SPECS")
     expect(HOST_EVIDENCE_REVIEW_ACTION in ACTION_HANDLERS, "host evidence review action missing from ACTION_HANDLERS")
+    expect(HOST_EVIDENCE_SUPPORT_PROMOTION_ACTION in ACTION_SPECS, "host evidence support promotion action missing from ACTION_SPECS")
+    expect(HOST_EVIDENCE_SUPPORT_PROMOTION_ACTION in ACTION_HANDLERS, "host evidence support promotion action missing from ACTION_HANDLERS")
     expect(ingestion["ingestion_helper"] == HOST_EVIDENCE_INGESTION_HELPER, "host evidence ingestion helper drifted")
     expect(ingestion["review_helper"] == HOST_EVIDENCE_REVIEW_HELPER, "host evidence review helper drifted")
+    expect(
+        ingestion["support_promotion_helper"] == HOST_EVIDENCE_SUPPORT_PROMOTION_HELPER,
+        "host evidence support promotion helper drifted",
+    )
     expect(resolve_repo_path(HOST_EVIDENCE_INGESTION_HELPER).is_file(), "host evidence ingestion helper is missing")
     expect(resolve_repo_path(HOST_EVIDENCE_REVIEW_HELPER).is_file(), "host evidence review helper is missing")
+    expect(
+        resolve_repo_path(HOST_EVIDENCE_SUPPORT_PROMOTION_HELPER).is_file(),
+        "host evidence support promotion helper is missing",
+    )
     expect(ingestion["generated_report_root"] == HOST_EVIDENCE_REPORT_ROOT, "host evidence report root drifted")
     expect(
         ingestion["review_candidate_source_truth_path"]

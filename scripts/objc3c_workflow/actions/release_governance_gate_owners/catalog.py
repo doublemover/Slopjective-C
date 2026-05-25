@@ -74,6 +74,7 @@ RELEASE_GATE_OWNERS: ReleaseGateOwnerCatalog = validate_release_gate_catalog(
                 "build-platform-support-matrix",
                 "ingest-platform-host-evidence",
                 "review-platform-host-evidence",
+                "review-platform-support-promotion",
                 "check-platform-host-promotion-evidence",
                 "validate-packaging-channels",
                 "validate-packaging-channels-end-to-end",
@@ -90,6 +91,7 @@ RELEASE_GATE_OWNERS: ReleaseGateOwnerCatalog = validate_release_gate_catalog(
                 "check-security-sanitizer-runtime-promotion-evidence",
                 "ingest-platform-host-evidence",
                 "review-platform-host-evidence",
+                "review-platform-support-promotion",
                 "check-platform-host-promotion-evidence",
             ),
             hard_cutover_guardrails=(

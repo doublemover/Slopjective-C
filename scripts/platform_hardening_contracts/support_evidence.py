@@ -184,9 +184,11 @@ HOST_EVIDENCE_ACCEPTED_WORKFLOW_PATHS: tuple[str, ...] = (
 )
 HOST_EVIDENCE_INGESTION_ACTION = "ingest-platform-host-evidence"
 HOST_EVIDENCE_REVIEW_ACTION = "review-platform-host-evidence"
+HOST_EVIDENCE_SUPPORT_PROMOTION_ACTION = "review-platform-support-promotion"
 HOST_EVIDENCE_HOST_PROMOTION_CONTRACT_CHECK_ACTION = "check-platform-host-promotion-evidence"
 HOST_EVIDENCE_INGESTION_HELPER = "scripts/ingest_objc3c_platform_host_evidence.py"
 HOST_EVIDENCE_REVIEW_HELPER = "scripts/review_objc3c_platform_host_evidence.py"
+HOST_EVIDENCE_SUPPORT_PROMOTION_HELPER = "scripts/promote_objc3c_platform_support.py"
 HOST_EVIDENCE_REPORT_CONTRACT_ID = "objc3c.platform.hosted-runner.evidence-report.v1"
 HOST_EVIDENCE_GENERATED_ONLY_RESULT = "refuse-source-truth-promotion"
 HOST_EVIDENCE_REVIEW_PROMOTION_POLICY = "checked-in-source-truth-required"
@@ -1029,14 +1031,26 @@ def _validate_hosted_evidence_ingestion(
     expect(ingestion.get("ingestion_action") == HOST_EVIDENCE_INGESTION_ACTION, "host evidence ingestion action drifted")
     expect(ingestion.get("review_action") == HOST_EVIDENCE_REVIEW_ACTION, "host evidence review action drifted")
     expect(
+        ingestion.get("support_promotion_action") == HOST_EVIDENCE_SUPPORT_PROMOTION_ACTION,
+        "host evidence support promotion action drifted",
+    )
+    expect(
         ingestion.get("host_promotion_contract_check_action")
         == HOST_EVIDENCE_HOST_PROMOTION_CONTRACT_CHECK_ACTION,
         "host evidence promotion contract check action drifted",
     )
     expect(ingestion.get("ingestion_helper") == HOST_EVIDENCE_INGESTION_HELPER, "host evidence ingestion helper drifted")
     expect(ingestion.get("review_helper") == HOST_EVIDENCE_REVIEW_HELPER, "host evidence review helper drifted")
+    expect(
+        ingestion.get("support_promotion_helper") == HOST_EVIDENCE_SUPPORT_PROMOTION_HELPER,
+        "host evidence support promotion helper drifted",
+    )
     expect(resolve_repo_path(HOST_EVIDENCE_INGESTION_HELPER).is_file(), "host evidence ingestion helper is missing")
     expect(resolve_repo_path(HOST_EVIDENCE_REVIEW_HELPER).is_file(), "host evidence review helper is missing")
+    expect(
+        resolve_repo_path(HOST_EVIDENCE_SUPPORT_PROMOTION_HELPER).is_file(),
+        "host evidence support promotion helper is missing",
+    )
     expect(
         ingestion.get("generated_report_contract_id") == HOST_EVIDENCE_REPORT_CONTRACT_ID,
         "host evidence generated report contract drifted",

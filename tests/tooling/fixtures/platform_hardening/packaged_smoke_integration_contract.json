@@ -42,6 +42,7 @@
     "build-platform-support-matrix",
     "ingest-platform-host-evidence",
     "review-platform-host-evidence",
+    "review-platform-support-promotion",
     "check-platform-host-promotion-evidence",
     "validate-platform-hardening",
     "validate-platform-hardening-end-to-end"
