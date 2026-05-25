@@ -99,6 +99,7 @@ function Get-Objc3cNativeExecutionSmokePlatformModel {
   $isWindows = Test-Objc3cNativeExecutionSmokeHostIsWindows
   $isDarwin = Test-Objc3cNativeExecutionSmokeHostIsDarwin
   $objectFileExtension = if ($isWindows) { ".obj" } else { ".o" }
+  $caseExecutableName = if ($isDarwin) { "module" } else { "module.exe" }
   $nativeExecutableName = if ($isWindows) { "objc3c-native.exe" } else { "objc3c-native" }
   $runtimeLibraryName = if ($isWindows) {
     "objc3_runtime.lib"
@@ -145,6 +146,7 @@ function Get-Objc3cNativeExecutionSmokePlatformModel {
     support_claim_published = $false
     target_triple = Get-Objc3cNativeExecutionSmokeTargetTriple -PlatformId $platformId
     native_executable_relative_path = "artifacts/bin/$nativeExecutableName"
+    case_executable_name = $caseExecutableName
     object_artifact = "module$objectFileExtension"
     object_file_extension = $objectFileExtension
     object_format = $objectFormat
@@ -469,6 +471,7 @@ function Resolve-Objc3cNativeExecutionSmokeConfig {
     runtime_launch_contract_script = $runtimeLaunchContractScript
     native_exe = $nativeExe
     native_exe_explicit = $nativeExeExplicit
+    case_executable_name = $platformModel.case_executable_name
     sanitizer_variant = $sanitizerVariant
     sanitizer_runtime_dir = $sanitizerRuntimeDir
     sanitizer_environment = $sanitizerEnvironment

@@ -1258,14 +1258,16 @@ function Write-Objc3cDarwinRuntimeLibraryManifestEvidence {
 function Get-Objc3cRuntimeLoadProbeExecutablePath {
   param(
     [Parameter(Mandatory = $true)][string]$RepoRoot,
-    [Parameter(Mandatory = $true)]$Result
+    [Parameter(Mandatory = $true)]$Result,
+    [string]$PlatformId = ""
   )
 
   $outDir = [string]$Result.out_dir
   if ([string]::IsNullOrWhiteSpace($outDir)) {
     return ""
   }
-  return Join-Path (Join-Path $RepoRoot (ConvertTo-Objc3cEvidenceHostPath -RelativePath $outDir)) "module.exe"
+  $executableName = if ($PlatformId -eq "darwin-arm64") { "module" } else { "module.exe" }
+  return Join-Path (Join-Path $RepoRoot (ConvertTo-Objc3cEvidenceHostPath -RelativePath $outDir)) $executableName
 }
 
 function Write-Objc3cDarwinRuntimeLoadProbeEvidence {
@@ -1304,7 +1306,7 @@ function Write-Objc3cDarwinRuntimeLoadProbeEvidence {
   }
 
   foreach ($result in $results) {
-    $exePath = Get-Objc3cRuntimeLoadProbeExecutablePath -RepoRoot $RepoRoot -Result $result
+    $exePath = Get-Objc3cRuntimeLoadProbeExecutablePath -RepoRoot $RepoRoot -Result $result -PlatformId $PlatformId
     if ([string]::IsNullOrWhiteSpace($exePath)) {
       continue
     }

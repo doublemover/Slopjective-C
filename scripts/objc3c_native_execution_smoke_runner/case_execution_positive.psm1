@@ -73,7 +73,7 @@ function Invoke-PositiveExecutionSmokeFixtureImpl {
     throw "execution smoke FAIL: link failed for $fixtureRel (exit=$linkExit)`n$linkExcerpt"
   }
   if (!(Test-Path -LiteralPath $exePath -PathType Leaf)) {
-    throw "execution smoke FAIL: missing module.exe for $fixtureRel"
+    throw "execution smoke FAIL: missing $($case.exe_name) for $fixtureRel"
   }
 
   $runLog = Join-Path $caseDir "run.log"
