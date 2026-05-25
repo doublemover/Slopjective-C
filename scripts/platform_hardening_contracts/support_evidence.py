@@ -1795,7 +1795,7 @@ def _validate_platform_expansion_object_emission_cases(
         expect(case.get("required_probe") == "llc --filetype=obj", f"{case_id} did not require llc --filetype=obj")
         expect(
             case.get("required_target_probe")
-            == "llc --filetype=obj --mtriple=<target> emits a non-empty object",
+            == "llc --filetype=obj --mtriple=<target> [--relocation-model=pic for PIE/PIC targets] emits a non-empty object",
             f"{case_id} did not require target-specific llc object emission",
         )
         expect(case.get("clang_substitute_allowed") is False, f"{case_id} allowed clang substitute object emission")
@@ -2384,7 +2384,7 @@ def _validate_llvm_version_support_matrix(
     )
     expect(
         native_object_contract.get("required_target_probe")
-        == "llc --filetype=obj --mtriple=<target> emits a non-empty object",
+        == "llc --filetype=obj --mtriple=<target> [--relocation-model=pic for PIE/PIC targets] emits a non-empty object",
         "native object emission required target probe drifted",
     )
     expect(

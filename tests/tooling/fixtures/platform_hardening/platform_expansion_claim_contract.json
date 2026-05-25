@@ -1053,7 +1053,7 @@
       "positive_case": true,
       "required_tool": "llc",
       "required_probe": "llc --filetype=obj",
-      "required_target_probe": "llc --filetype=obj --mtriple=<target> emits a non-empty object",
+      "required_target_probe": "llc --filetype=obj --mtriple=<target> [--relocation-model=pic for PIE/PIC targets] emits a non-empty object",
       "clang_substitute_allowed": false,
       "toolchain_identity_required": true,
       "blocks_surfaces": [],
@@ -1065,7 +1065,7 @@
       "positive_case": false,
       "required_tool": "llc",
       "required_probe": "llc --filetype=obj",
-      "required_target_probe": "llc --filetype=obj --mtriple=<target> emits a non-empty object",
+      "required_target_probe": "llc --filetype=obj --mtriple=<target> [--relocation-model=pic for PIE/PIC targets] emits a non-empty object",
       "clang_substitute_allowed": false,
       "toolchain_identity_required": true,
       "blocks_surfaces": [
@@ -1081,7 +1081,7 @@
       "positive_case": false,
       "required_tool": "llc",
       "required_probe": "llc --filetype=obj",
-      "required_target_probe": "llc --filetype=obj --mtriple=<target> emits a non-empty object",
+      "required_target_probe": "llc --filetype=obj --mtriple=<target> [--relocation-model=pic for PIE/PIC targets] emits a non-empty object",
       "clang_substitute_allowed": false,
       "toolchain_identity_required": true,
       "blocks_surfaces": [
@@ -1097,7 +1097,7 @@
       "positive_case": false,
       "required_tool": "llc",
       "required_probe": "llc --filetype=obj",
-      "required_target_probe": "llc --filetype=obj --mtriple=<target> emits a non-empty object",
+      "required_target_probe": "llc --filetype=obj --mtriple=<target> [--relocation-model=pic for PIE/PIC targets] emits a non-empty object",
       "clang_substitute_allowed": false,
       "toolchain_identity_required": true,
       "blocks_surfaces": [
@@ -1113,7 +1113,7 @@
       "positive_case": false,
       "required_tool": "llc",
       "required_probe": "llc --filetype=obj",
-      "required_target_probe": "llc --filetype=obj --mtriple=<target> emits a non-empty object",
+      "required_target_probe": "llc --filetype=obj --mtriple=<target> [--relocation-model=pic for PIE/PIC targets] emits a non-empty object",
       "clang_substitute_allowed": false,
       "toolchain_identity_required": true,
       "blocks_surfaces": [
@@ -1129,7 +1129,7 @@
       "positive_case": false,
       "required_tool": "llc",
       "required_probe": "llc --filetype=obj",
-      "required_target_probe": "llc --filetype=obj --mtriple=<target> emits a non-empty object",
+      "required_target_probe": "llc --filetype=obj --mtriple=<target> [--relocation-model=pic for PIE/PIC targets] emits a non-empty object",
       "clang_substitute_allowed": false,
       "toolchain_identity_required": true,
       "blocks_surfaces": [
@@ -1145,7 +1145,7 @@
       "positive_case": false,
       "required_tool": "llc",
       "required_probe": "llc --filetype=obj",
-      "required_target_probe": "llc --filetype=obj --mtriple=<target> emits a non-empty object",
+      "required_target_probe": "llc --filetype=obj --mtriple=<target> [--relocation-model=pic for PIE/PIC targets] emits a non-empty object",
       "clang_substitute_allowed": false,
       "toolchain_identity_required": true,
       "blocks_surfaces": [
@@ -1161,7 +1161,7 @@
       "positive_case": false,
       "required_tool": "llc",
       "required_probe": "llc --filetype=obj",
-      "required_target_probe": "llc --filetype=obj --mtriple=<target> emits a non-empty object",
+      "required_target_probe": "llc --filetype=obj --mtriple=<target> [--relocation-model=pic for PIE/PIC targets] emits a non-empty object",
       "clang_substitute_allowed": false,
       "toolchain_identity_required": true,
       "blocks_surfaces": [

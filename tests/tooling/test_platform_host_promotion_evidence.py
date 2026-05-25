@@ -672,6 +672,113 @@ def test_runtime_manifest_incomplete_source_artifacts_cover_runtime_library(
     host_evidence_ingest.validate_runtime_library_manifest_artifact("linux-x64")
 
 
+def test_install_receipt_missing_source_diagnostics_preserve_required_sources(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path,
+) -> None:
+    monkeypatch.setattr(host_evidence_ingest, "ROOT", tmp_path)
+
+    host_evidence_ingest.write_install_receipt_artifact("linux-x64")
+
+    payload = host_evidence_ingest.load_platform_generated_json(
+        "linux-x64",
+        "install/install-receipt.json",
+    )
+    assert payload["status"] == "missing-source-generated-fail-closed"
+    assert payload["source_install_receipt_path"] == ""
+    assert payload["source_install_receipt_artifact"] == {"exists": False}
+    assert payload["source_install_receipt"] == {}
+    assert [
+        entry["path"]
+        for entry in payload["source_artifacts"]
+    ] == [
+        host_evidence_ingest.PACKAGE_CHANNELS_END_TO_END_SUMMARY_PATH,
+        host_evidence_ingest.RUNNABLE_PACKAGE_MANIFEST_PATH,
+    ]
+    assert payload["diagnostics"]["required_source_artifacts"] == [
+        host_evidence_ingest.PACKAGE_CHANNELS_END_TO_END_SUMMARY_PATH,
+        host_evidence_ingest.RUNNABLE_PACKAGE_MANIFEST_PATH,
+    ]
+
+    host_evidence_ingest.validate_install_receipt_artifact("linux-x64")
+
+
+def _object_identity_payload_with_source(source_path: str) -> dict[str, object]:
+    return {
+        "contract_id": "objc3c.platform.hosted-object-identity.generated.v1",
+        "schema_version": 1,
+        "platform_id": "linux-x64",
+        "issue_ref": 8228,
+        "record_id": "objc3c.object-identity.linux-x64.release.missing",
+        "generated_report_path": (
+            "tmp/reports/platform-host-evidence/linux-x64/build/object-identity.json"
+        ),
+        "source_summary_path": "tmp/build-objc3c-native/native_build_summary.json",
+        "reviewed_source_required": True,
+        "support_truth": False,
+        "promotion_allowed_from_generated_evidence": False,
+        "status": "generated-host-artifact-present",
+        "expected_identity": {
+            "target_platform_id": "linux-x64",
+            "target_triple": "x86_64-unknown-linux-gnu",
+            "arch": "x64",
+            "object_format": "ELF",
+        },
+        "actual_identity": {
+            "target_platform_id": "linux-x64",
+            "target_triple": "x86_64-unknown-linux-gnu",
+            "object_format": "ELF",
+        },
+        "source_artifacts": [
+            {
+                "path": source_path,
+                "exists": True,
+                "size_bytes": 1,
+                "sha256": "a" * 64,
+            }
+        ],
+    }
+
+
+def test_object_identity_accepts_package_private_build_summary_source_artifact(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path,
+) -> None:
+    monkeypatch.setattr(host_evidence_ingest, "ROOT", tmp_path)
+    output_path = (
+        tmp_path
+        / "tmp/reports/platform-host-evidence/linux-x64/build/object-identity.json"
+    )
+    output_path.parent.mkdir(parents=True)
+    host_evidence_ingest.write_json(
+        output_path,
+        _object_identity_payload_with_source(
+            "tmp/b/pkg/d3cdb993bc7a/native_build_summary.json"
+        ),
+    )
+
+    host_evidence_ingest.validate_object_identity_artifact("linux-x64")
+
+
+def test_object_identity_rejects_generated_status_without_build_summary_source(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path,
+) -> None:
+    monkeypatch.setattr(host_evidence_ingest, "ROOT", tmp_path)
+    output_path = (
+        tmp_path
+        / "tmp/reports/platform-host-evidence/linux-x64/build/object-identity.json"
+    )
+    output_path.parent.mkdir(parents=True)
+    host_evidence_ingest.write_json(
+        output_path,
+        _object_identity_payload_with_source("tmp/b/pkg/d3cdb993bc7a/not-a-build-summary.json"),
+    )
+
+    with pytest.raises(RuntimeError, match="status is not internally consistent"):
+        host_evidence_ingest.validate_object_identity_artifact("linux-x64")
+
+
 def test_powershell_linux_evidence_source_artifact_lists_are_arrays(tmp_path) -> None:
     pwsh = shutil.which("pwsh") or shutil.which("powershell")
     if pwsh is None:

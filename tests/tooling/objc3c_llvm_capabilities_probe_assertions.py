@@ -18,6 +18,13 @@ def assert_success_payload(payload: dict[str, Any]) -> None:
     assert payload["llc_features"]["help_duration_ms"] >= 0.0
     assert payload["llc_features"]["version_with_filetype_duration_ms"] >= 0.0
     assert payload["llc_features"]["supports_filetype_obj"] is True
+    target_triple = str(payload["llc_features"]["target_triple"]).lower()
+    expected_relocation_model = (
+        ""
+        if any(token in target_triple for token in ("windows", "msvc", "mingw"))
+        else "pic"
+    )
+    assert payload["llc_features"]["target_object_relocation_model"] == expected_relocation_model
     assert payload["llvm_config_features"]["headers_libraries_discovered"] is True
     assert payload["toolchain_resolution"]["clang"]["configured_path"] == "clang"
     assert payload["toolchain_resolution"]["llc"]["configured_path"] == "llc"
@@ -42,7 +49,7 @@ def assert_success_payload(payload: dict[str, Any]) -> None:
         "issue_ref": 8232,
         "required_tool": "llc",
         "required_probe": "llc --filetype=obj",
-        "required_target_probe": "llc --filetype=obj --mtriple=<target> emits a non-empty object",
+        "required_target_probe": "llc --filetype=obj --mtriple=<target> [--relocation-model=pic for PIE/PIC targets] emits a non-empty object",
         "status": "native_object_emission_supported",
         "missing_llc_status": "native_object_emission_missing_llc",
         "missing_filetype_status": "native_object_emission_filetype_obj_unavailable",

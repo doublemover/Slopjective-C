@@ -93,6 +93,11 @@ def _target_object_probe_ir(target_triple: str) -> str:
     )
 
 
+def target_object_probe_requires_pic(target_triple: str) -> bool:
+    normalized = target_triple.lower()
+    return not any(token in normalized for token in ("windows", "msvc", "mingw"))
+
+
 def probe_llc_filetype_obj(path: Path, *, target_triple: str | None = None) -> dict[str, object]:
     help_cmd = [str(path), "--help"]
     help_result, help_duration_ms = run_command(help_cmd)
@@ -114,6 +119,7 @@ def probe_llc_filetype_obj(path: Path, *, target_triple: str | None = None) -> d
     target_object_created = False
     target_object_size_bytes = 0
     target_object_diagnostic = ""
+    target_object_relocation_model = ""
     if supports_filetype_obj:
         with tempfile.TemporaryDirectory(prefix="objc3c-llc-object-probe-") as temp_dir_text:
             temp_dir = Path(temp_dir_text)
@@ -124,10 +130,11 @@ def probe_llc_filetype_obj(path: Path, *, target_triple: str | None = None) -> d
                 str(path),
                 "--filetype=obj",
                 f"--mtriple={resolved_target_triple}",
-                "-o",
-                str(object_path),
-                str(ir_path),
             ]
+            if target_object_probe_requires_pic(resolved_target_triple):
+                target_object_cmd.append("--relocation-model=pic")
+                target_object_relocation_model = "pic"
+            target_object_cmd.extend(["-o", str(object_path), str(ir_path)])
             target_object_result, target_object_duration_ms = run_command(target_object_cmd)
             target_object_exit_code = target_object_result.returncode
             target_object_created = object_path.is_file()
@@ -157,6 +164,7 @@ def probe_llc_filetype_obj(path: Path, *, target_triple: str | None = None) -> d
         "target_object_duration_ms": target_object_duration_ms,
         "target_object_created": target_object_created,
         "target_object_size_bytes": target_object_size_bytes,
+        "target_object_relocation_model": target_object_relocation_model,
         "supports_target_object_emission": supports_target_object_emission,
         "target_object_diagnostic": target_object_diagnostic,
     }

@@ -38,9 +38,12 @@ def fake_llc_target_object_success(command: list[str]) -> subprocess.CompletedPr
         return None
     if command[1] != "--filetype=obj" or not command[2].startswith("--mtriple="):
         return None
-    if command[3] != "-o":
+    if "-o" not in command:
         return None
-    Path(command[4]).write_bytes(b"OBJ")
+    output_index = command.index("-o")
+    if output_index + 1 >= len(command):
+        return None
+    Path(command[output_index + 1]).write_bytes(b"OBJ")
     return fake_completed(command, returncode=0, stdout="")
 
 
@@ -51,7 +54,7 @@ def fake_llc_target_object_failure(command: list[str]) -> subprocess.CompletedPr
         return None
     if command[1] != "--filetype=obj" or not command[2].startswith("--mtriple="):
         return None
-    if command[3] != "-o":
+    if "-o" not in command:
         return None
     return fake_completed(command, returncode=1, stderr="target object emission unavailable\n")
 

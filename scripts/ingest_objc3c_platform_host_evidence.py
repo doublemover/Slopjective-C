@@ -720,6 +720,27 @@ def artifact_exists_in_payload(artifacts: list[Any], path_text: str) -> bool:
     return False
 
 
+def is_native_build_summary_source_path(path_text: str) -> bool:
+    normalized = path_text.replace("\\", "/")
+    if normalized == NATIVE_BUILD_SUMMARY_PATH:
+        return True
+    package_prefix = "tmp/b/pkg/"
+    package_suffix = "/native_build_summary.json"
+    if not normalized.startswith(package_prefix) or not normalized.endswith(package_suffix):
+        return False
+    package_id = normalized[len(package_prefix) : -len(package_suffix)]
+    return bool(package_id) and "/" not in package_id
+
+
+def native_build_summary_source_exists_in_payload(artifacts: list[Any]) -> bool:
+    for raw_entry in artifacts:
+        entry = require_artifact_entry_shape(raw_entry, NATIVE_BUILD_SUMMARY_PATH)
+        path_text = str(entry.get("path", ""))
+        if is_native_build_summary_source_path(path_text) and entry.get("exists") is True:
+            return True
+    return False
+
+
 def require_source_artifacts(payload: dict[str, Any], owner: str) -> list[Any]:
     artifacts = payload.get("source_artifacts")
     require(isinstance(artifacts, list), f"{owner} source_artifacts must be a list")
@@ -908,7 +929,7 @@ def validate_object_identity_artifact(platform_id: str) -> None:
     require_status(
         payload,
         generated_identity_status(
-            source_exists=artifact_exists_in_payload(source_artifacts, NATIVE_BUILD_SUMMARY_PATH),
+            source_exists=native_build_summary_source_exists_in_payload(source_artifacts),
             actual=actual_identity,
             expected=expected_identity,
             fields=("target_platform_id", "target_triple", "object_format"),
@@ -1597,11 +1618,9 @@ def write_install_receipt_artifact(platform_id: str) -> None:
     attach_incomplete_artifact_diagnostics(
         payload,
         source_paths=(
-            *existing_artifact_paths(
-                PACKAGE_CHANNELS_END_TO_END_SUMMARY_PATH,
-                RUNNABLE_PACKAGE_MANIFEST_PATH,
-                source_receipt_path,
-            ),
+            PACKAGE_CHANNELS_END_TO_END_SUMMARY_PATH,
+            RUNNABLE_PACKAGE_MANIFEST_PATH,
+            source_receipt_path,
         ),
     )
     write_json(ROOT / payload["generated_report_path"], payload)

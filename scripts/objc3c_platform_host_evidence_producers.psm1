@@ -1011,7 +1011,7 @@ function Write-Objc3cDarwinObjectDebugIdentityEvidence {
     issue_ref = 8229
     record_id = Get-Objc3cDarwinEvidenceRecordId -Field "object_identity"
     generated_report_path = Get-Objc3cPlatformEvidenceReportPath -PlatformId $PlatformId -Suffix "build/object-identity.json"
-    source_summary_path = "tmp/build-objc3c-native/native_build_summary.json"
+    source_summary_path = Get-Objc3cEvidenceRepoRelativePath -RootPath $RepoRoot -TargetPath $BuildSummaryPath
     reviewed_source_required = $true
     expected_arch = "arm64"
     support_truth = $false
@@ -1496,7 +1496,7 @@ function Write-Objc3cLinuxObjectDebugIdentityEvidence {
     issue_ref = 8228
     record_id = Get-Objc3cLinuxEvidenceRecordId -Field "object_identity"
     generated_report_path = Get-Objc3cPlatformEvidenceReportPath -PlatformId $PlatformId -Suffix "build/object-identity.json"
-    source_summary_path = "tmp/build-objc3c-native/native_build_summary.json"
+    source_summary_path = Get-Objc3cEvidenceRepoRelativePath -RootPath $RepoRoot -TargetPath $BuildSummaryPath
     reviewed_source_required = $true
     support_truth = $false
     promotion_allowed_from_generated_evidence = $false

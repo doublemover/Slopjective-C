@@ -122,6 +122,14 @@ def assert_runnable_toolchain_package_uses_strictmode_safe_staging_lookup() -> N
 
     assert_contains_all(script_text, ["$staging.StagedRelativePaths"])
     assert_contains_all(
+        script_text,
+        [
+            "$Module.ExportedCommands.ContainsKey($commandName)",
+            "imported platform evidence module did not export required command",
+        ],
+    )
+    assert_excludes_all(script_text, ["Get-Command `\n    -Module $Module.Name"])
+    assert_contains_all(
         staging_text,
         [
             "-SanitizerVariant $SanitizerVariant `",

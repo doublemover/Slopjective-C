@@ -37,10 +37,17 @@ function Get-RunnableToolchainPlatformRuntimeManifestEvidenceCommand {
     return $null
   }
 
-  return Get-Command `
-    -Module $Module.Name `
-    -Name $commandName `
-    -ErrorAction Stop
+  if ($null -ne $Module.ExportedCommands -and $Module.ExportedCommands.ContainsKey($commandName)) {
+    return $Module.ExportedCommands[$commandName]
+  }
+
+  $command = Get-Command -Name $commandName -CommandType Function -ErrorAction SilentlyContinue |
+    Where-Object { $_.ModuleName -eq $Module.Name } |
+    Select-Object -First 1
+  if ($null -eq $command) {
+    throw ("imported platform evidence module did not export required command: {0}" -f $commandName)
+  }
+  return $command
 }
 
 $request = New-RunnableToolchainPackageRequest `

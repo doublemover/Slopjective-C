@@ -1239,7 +1239,7 @@
           "const": "llc --filetype=obj"
         },
         "required_target_probe": {
-          "const": "llc --filetype=obj --mtriple=<target> emits a non-empty object"
+          "const": "llc --filetype=obj --mtriple=<target> [--relocation-model=pic for PIE/PIC targets] emits a non-empty object"
         },
         "clang_substitute_allowed": {
           "const": false
