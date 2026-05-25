@@ -61,6 +61,32 @@ REQUIRED_TOOLCHAIN_COMPONENTS: tuple[str, ...] = (
     "node",
     "pwsh",
 )
+REQUIRED_GENERATED_ARTIFACT_STATUS = "generated-host-artifact-present"
+REQUIRED_NATIVE_OBJECT_EMISSION_STATUS = "native_object_emission_supported"
+REQUIRED_INSTALLED_ROOT_EXECUTION_CONTRACT_ID = (
+    "objc3c.packaging.channels.installed-root-native-execution.v1"
+)
+REQUIRED_INSTALLED_ROOT_USAGE_EXIT_CODE = 2
+PLATFORM_ISSUE_REF_BY_ID: dict[str, int] = {
+    "linux-x64": 8228,
+    "darwin-arm64": 8229,
+}
+PLATFORM_TARGET_TRIPLE_BY_ID: dict[str, str] = {
+    "linux-x64": "x86_64-unknown-linux-gnu",
+    "darwin-arm64": "aarch64-apple-darwin",
+}
+NATIVE_BUILD_SUMMARY_PATH = "tmp/build-objc3c-native/native_build_summary.json"
+RUNNABLE_PACKAGE_MANIFEST_PATH = (
+    "artifacts/package/objc3c-runnable-toolchain-package.json"
+)
+PACKAGE_CHANNELS_END_TO_END_SUMMARY_PATH = (
+    "tmp/reports/package-channels/end-to-end-summary.json"
+)
+HOSTED_EXECUTION_SMOKE_SUMMARY_PATH = "tmp/reports/hosted-execution-smoke/summary.json"
+NATIVE_EXECUTION_SMOKE_SUMMARY_PATH = (
+    "tmp/reports/objc3c-native-execution-smoke/summary.json"
+)
+PACKAGE_INSTALL_RECEIPT_CONTRACT_ID = "objc3c.packaging.channels.install-receipt.v1"
 
 
 class ReviewError(RuntimeError):
@@ -141,10 +167,40 @@ def require_platform(platform_id: str) -> None:
         raise ReviewError(f"unsupported platform id {platform_id}; expected one of: {supported}")
 
 
+def expected_issue_ref(platform_id: str) -> int:
+    try:
+        return PLATFORM_ISSUE_REF_BY_ID[platform_id]
+    except KeyError as exc:
+        raise ReviewError(f"unsupported platform issue_ref mapping: {platform_id}") from exc
+
+
+def expected_target_triple(platform_id: str) -> str:
+    try:
+        return PLATFORM_TARGET_TRIPLE_BY_ID[platform_id]
+    except KeyError as exc:
+        raise ReviewError(f"unsupported platform target triple mapping: {platform_id}") from exc
+
+
+def require_schema_and_issue_ref(
+    payload: dict[str, Any],
+    *,
+    platform_id: str,
+    owner: str,
+) -> None:
+    if payload.get("schema_version") != 1:
+        raise ReviewError(f"{owner} schema_version drifted")
+    if payload.get("issue_ref") != expected_issue_ref(platform_id):
+        raise ReviewError(f"{owner} issue_ref drifted")
+
+
 def require_report_path_scope(platform_id: str, root: Path, suffix: str) -> str:
     path = evidence_path(root, suffix)
     if not path.is_file():
         raise ReviewError(f"missing hosted evidence artifact: {repo_rel(path)}")
+    return platform_scoped_report_path(platform_id, suffix)
+
+
+def platform_scoped_report_path(platform_id: str, suffix: str) -> str:
     return f"tmp/reports/platform-host-evidence/{platform_id}/{suffix}"
 
 
@@ -161,6 +217,11 @@ def require_generated_artifacts(platform_id: str, root: Path) -> list[str]:
 
 def require_review_candidate(platform_id: str, root: Path) -> dict[str, Any]:
     candidate = load_json_object(evidence_path(root, "review-candidate-source-truth.json"))
+    require_schema_and_issue_ref(
+        candidate,
+        platform_id=platform_id,
+        owner="review candidate",
+    )
     if candidate.get("contract_id") != HOST_EVIDENCE_REVIEW_CANDIDATE_CONTRACT_ID:
         raise ReviewError("review candidate contract_id drifted")
     if candidate.get("platform_id") != platform_id:
@@ -201,6 +262,8 @@ def require_review_candidate(platform_id: str, root: Path) -> dict[str, Any]:
             + (f"; extra={extra}" if extra else "")
         )
     for record_type, row in by_type.items():
+        if row.get("issue_ref") != expected_issue_ref(platform_id):
+            raise ReviewError(f"{record_type} review candidate issue_ref drifted")
         if row.get("generated_artifacts_complete") is not True:
             raise ReviewError(f"{record_type} review candidate artifacts are incomplete")
         if row.get("source_truth_update_allowed") is not False:
@@ -210,6 +273,11 @@ def require_review_candidate(platform_id: str, root: Path) -> dict[str, Any]:
 
 def require_host_report(platform_id: str, root: Path) -> dict[str, Any]:
     report = load_json_object(evidence_path(root, "host-evidence-report.json"))
+    require_schema_and_issue_ref(
+        report,
+        platform_id=platform_id,
+        owner="host evidence report",
+    )
     if report.get("platform_id") != platform_id:
         raise ReviewError("host evidence report platform_id drifted")
     if report.get("source_truth_ingestion", {}).get("generated_report_only") is not True:
@@ -232,8 +300,604 @@ def require_generated_status(payload: dict[str, Any], owner: str) -> None:
     if payload.get("promotion_allowed_from_generated_evidence") is not False:
         raise ReviewError(f"{owner} generated artifact allowed promotion")
     status = str(payload.get("status", ""))
-    if status not in {"generated-host-artifact-present", "PASS"}:
+    if status != REQUIRED_GENERATED_ARTIFACT_STATUS:
         raise ReviewError(f"{owner} generated artifact is not complete: {status or '<missing>'}")
+
+
+def require_artifact_entry(entry: Any, owner: str) -> dict[str, Any]:
+    if not isinstance(entry, dict):
+        raise ReviewError(f"{owner} artifact entry must be an object")
+    path_text = str(entry.get("path", ""))
+    if not path_text:
+        raise ReviewError(f"{owner} artifact entry missing path")
+    if not isinstance(entry.get("exists"), bool):
+        raise ReviewError(f"{owner} artifact entry missing boolean exists")
+    if entry.get("exists") is True:
+        size_bytes = entry.get("size_bytes")
+        if not isinstance(size_bytes, int) or size_bytes <= 0:
+            raise ReviewError(f"{owner} existing artifact missing size")
+        digest = entry.get("sha256")
+        if not isinstance(digest, str) or len(digest) != 64:
+            raise ReviewError(f"{owner} existing artifact missing sha256")
+    return entry
+
+
+def require_source_artifacts(
+    payload: dict[str, Any],
+    owner: str,
+    *,
+    expected_paths: tuple[str, ...] = (),
+) -> list[dict[str, Any]]:
+    raw_artifacts = require_nonempty_list(payload, "source_artifacts", owner)
+    artifacts = [
+        require_artifact_entry(entry, f"{owner} source_artifacts")
+        for entry in raw_artifacts
+    ]
+    by_path = {
+        str(artifact.get("path", "")).replace("\\", "/"): artifact
+        for artifact in artifacts
+    }
+    present_paths = {
+        path
+        for path, artifact in by_path.items()
+        if artifact.get("exists") is True
+    }
+    if not present_paths:
+        raise ReviewError(f"{owner} source_artifacts must include existing durable source")
+    missing = sorted(
+        path
+        for path in expected_paths
+        if path.replace("\\", "/") not in present_paths
+    )
+    if missing:
+        raise ReviewError(
+            f"{owner} source_artifacts missing durable source: "
+            + ", ".join(missing)
+        )
+    return artifacts
+
+
+def require_artifact_present(
+    payload: dict[str, Any],
+    field_name: str,
+    owner: str,
+    *,
+    expected_path: str | None = None,
+) -> dict[str, Any]:
+    artifact = require_artifact_entry(payload.get(field_name), f"{owner} {field_name}")
+    if artifact.get("exists") is not True:
+        raise ReviewError(f"{owner} {field_name} is not present")
+    if expected_path is not None:
+        actual_path = str(artifact.get("path", "")).replace("\\", "/")
+        if actual_path != expected_path.replace("\\", "/"):
+            raise ReviewError(f"{owner} {field_name} path drifted")
+    return artifact
+
+
+def require_native_execution_claimed_false(payload: dict[str, Any], owner: str) -> None:
+    if payload.get("native_execution_claimed") is not False:
+        raise ReviewError(f"{owner} native_execution_claimed drifted")
+
+
+def install_receipt_status_field(payload: dict[str, Any], field_name: str) -> Any:
+    if field_name in payload:
+        return payload.get(field_name)
+    producer_evidence = payload.get("producer_evidence")
+    if isinstance(producer_evidence, dict):
+        return producer_evidence.get(field_name)
+    return None
+
+
+def require_common_reviewable_generated_payload(
+    payload: dict[str, Any],
+    *,
+    owner: str,
+    platform_id: str,
+    suffix: str,
+    contract_id: str,
+    record_id: str | None = None,
+    reviewed_source_required: bool | None = None,
+) -> None:
+    require_schema_and_issue_ref(payload, platform_id=platform_id, owner=owner)
+    if payload.get("contract_id") != contract_id:
+        raise ReviewError(f"{owner} contract_id drifted")
+    if payload.get("platform_id") != platform_id:
+        raise ReviewError(f"{owner} platform_id drifted")
+    if record_id is not None and payload.get("record_id") != record_id:
+        raise ReviewError(f"{owner} record_id drifted")
+    expected_path = platform_scoped_report_path(platform_id, suffix)
+    if payload.get("generated_report_path") != expected_path:
+        raise ReviewError(f"{owner} generated_report_path drifted")
+    if (
+        reviewed_source_required is not None
+        and payload.get("reviewed_source_required") is not reviewed_source_required
+    ):
+        raise ReviewError(f"{owner} reviewed_source_required drifted")
+    require_generated_status(payload, owner)
+    require_source_artifacts(payload, owner)
+
+
+def require_object(payload: dict[str, Any], field_name: str, owner: str) -> dict[str, Any]:
+    value = payload.get(field_name)
+    if not isinstance(value, dict):
+        raise ReviewError(f"{owner} missing object field {field_name}")
+    return value
+
+
+def require_list(payload: dict[str, Any], field_name: str, owner: str) -> list[Any]:
+    value = payload.get(field_name)
+    if not isinstance(value, list):
+        raise ReviewError(f"{owner} missing list field {field_name}")
+    return value
+
+
+def require_nonempty_list(
+    payload: dict[str, Any],
+    field_name: str,
+    owner: str,
+) -> list[Any]:
+    value = require_list(payload, field_name, owner)
+    if not value:
+        raise ReviewError(f"{owner} field {field_name} must not be empty")
+    return value
+
+
+def require_field_value(
+    payload: dict[str, Any],
+    field_name: str,
+    expected: Any,
+    owner: str,
+) -> None:
+    if payload.get(field_name) != expected:
+        raise ReviewError(f"{owner} {field_name} drifted")
+
+
+def require_record_list_value(
+    payload: dict[str, Any],
+    field_name: str,
+    source_record: dict[str, Any],
+    source_field_name: str,
+    owner: str,
+) -> None:
+    expected = list(source_record.get(source_field_name, []))
+    actual = require_list(payload, field_name, owner)
+    if actual != expected:
+        raise ReviewError(f"{owner} {field_name} drifted")
+
+
+def source_record_identity_value(
+    source_record: dict[str, Any],
+    *,
+    platform_id: str,
+    field_name: str,
+) -> Any:
+    if field_name == "target_platform_id":
+        return platform_id
+    return source_record.get(field_name)
+
+
+def require_identity_fields_match_source(
+    identity: dict[str, Any],
+    source_record: dict[str, Any],
+    *,
+    platform_id: str,
+    owner: str,
+    identity_field: str,
+    field_names: tuple[str, ...],
+) -> None:
+    for field_name in field_names:
+        expected = source_record_identity_value(
+            source_record,
+            platform_id=platform_id,
+            field_name=field_name,
+        )
+        if identity.get(field_name) != expected:
+            raise ReviewError(f"{owner} {identity_field}.{field_name} drifted")
+
+
+def require_identity_payload_matches_record(
+    payload: dict[str, Any],
+    source_record: dict[str, Any],
+    *,
+    platform_id: str,
+    suffix: str,
+    contract_id: str,
+    record_id: str,
+    identity_kind: str,
+    identity_field_names: tuple[str, ...],
+) -> None:
+    owner = f"{identity_kind} identity"
+    require_common_reviewable_generated_payload(
+        payload,
+        owner=owner,
+        platform_id=platform_id,
+        suffix=suffix,
+        contract_id=contract_id,
+        record_id=record_id,
+        reviewed_source_required=True,
+    )
+    require_source_artifacts(
+        payload,
+        owner,
+        expected_paths=(
+            NATIVE_BUILD_SUMMARY_PATH,
+            NATIVE_EXECUTION_SMOKE_SUMMARY_PATH,
+        ),
+    )
+    expected_identity = require_object(payload, "expected_identity", owner)
+    actual_identity = require_object(payload, "actual_identity", owner)
+    require_identity_fields_match_source(
+        expected_identity,
+        source_record,
+        platform_id=platform_id,
+        owner=owner,
+        identity_field="expected_identity",
+        field_names=("target_platform_id", "target_triple", "arch", *identity_field_names),
+    )
+    require_identity_fields_match_source(
+        actual_identity,
+        source_record,
+        platform_id=platform_id,
+        owner=owner,
+        identity_field="actual_identity",
+        field_names=("target_platform_id", "target_triple", *identity_field_names),
+    )
+
+
+def require_runtime_manifest_payload(
+    payload: dict[str, Any],
+    package_root_record: dict[str, Any],
+    *,
+    platform_id: str,
+) -> None:
+    owner = "runtime library manifest"
+    require_common_reviewable_generated_payload(
+        payload,
+        owner=owner,
+        platform_id=platform_id,
+        suffix="package/runtime-library-manifest.json",
+        contract_id="objc3c.platform.hosted-runtime-library-manifest.generated.v1",
+    )
+    require_native_execution_claimed_false(payload, owner)
+    require_source_artifacts(
+        payload,
+        owner,
+        expected_paths=(
+            RUNNABLE_PACKAGE_MANIFEST_PATH,
+            NATIVE_BUILD_SUMMARY_PATH,
+        ),
+    )
+    require_field_value(payload, "target_platform_id", platform_id, owner)
+    require_field_value(payload, "target_triple", expected_target_triple(platform_id), owner)
+    source_target = str(payload.get("source_package_target_platform_id", ""))
+    if source_target and source_target != platform_id:
+        raise ReviewError(f"{owner} source_package_target_platform_id drifted")
+    require_record_list_value(
+        payload,
+        "runtime_library_names",
+        package_root_record,
+        "runtime_library_names",
+        owner,
+    )
+    require_record_list_value(
+        payload,
+        "package_root_layout",
+        package_root_record,
+        "package_root_layout",
+        owner,
+    )
+    require_field_value(
+        payload,
+        "loader_path_policy",
+        package_root_record.get("loader_path_policy"),
+        owner,
+    )
+    package_artifact = require_object(payload, "package_manifest_artifact", owner)
+    if package_artifact.get("exists") is not True:
+        raise ReviewError(f"{owner} package manifest artifact is not present")
+    require_artifact_present(
+        payload,
+        "package_manifest_artifact",
+        owner,
+        expected_path=RUNNABLE_PACKAGE_MANIFEST_PATH,
+    )
+    expected_runtime_names = [
+        str(name) for name in package_root_record.get("runtime_library_names", [])
+    ]
+    runtime_artifacts = require_nonempty_list(payload, "runtime_library_artifacts", owner)
+    if not any(
+        isinstance(artifact, dict)
+        and artifact.get("exists") is True
+        and any(str(artifact.get("path", "")).endswith(name) for name in expected_runtime_names)
+        for artifact in runtime_artifacts
+    ):
+        raise ReviewError(f"{owner} did not prove expected runtime library artifacts")
+
+
+def require_installed_root_execution_proof(
+    payload: dict[str, Any],
+    *,
+    field_name: str,
+    expected_channel_id: str,
+    platform_id: str,
+    owner: str,
+) -> None:
+    proof = require_object(payload, field_name, owner)
+    if proof.get("contract_id") != REQUIRED_INSTALLED_ROOT_EXECUTION_CONTRACT_ID:
+        raise ReviewError(f"{owner} {field_name} contract_id drifted")
+    if proof.get("status") != "PASS":
+        raise ReviewError(f"{owner} {field_name} did not pass")
+    if proof.get("channel_id") != expected_channel_id:
+        raise ReviewError(f"{owner} {field_name} channel_id drifted")
+    if proof.get("execution_source") != "installed-root":
+        raise ReviewError(f"{owner} {field_name} execution_source drifted")
+    if proof.get("repo_temp_dependency") is not False:
+        raise ReviewError(f"{owner} {field_name} depended on repo temp output")
+    if proof.get("preexisting_artifacts_dependency") is not False:
+        raise ReviewError(f"{owner} {field_name} depended on preexisting artifacts")
+    expected_exit_code = proof.get("expected_exit_code")
+    if (
+        expected_exit_code is not None
+        and expected_exit_code != REQUIRED_INSTALLED_ROOT_USAGE_EXIT_CODE
+    ):
+        raise ReviewError(f"{owner} {field_name} expected_exit_code drifted")
+    if proof.get("returncode") != REQUIRED_INSTALLED_ROOT_USAGE_EXIT_CODE:
+        raise ReviewError(f"{owner} {field_name} returncode drifted")
+    if proof.get("usage_banner_seen") is not True:
+        raise ReviewError(f"{owner} {field_name} did not reach usage path")
+    target_platform_id = str(proof.get("target_platform_id", ""))
+    if target_platform_id and target_platform_id != platform_id:
+        raise ReviewError(f"{owner} {field_name} target_platform_id drifted")
+
+
+def require_install_receipt_payload(
+    payload: dict[str, Any],
+    package_install_record: dict[str, Any],
+    *,
+    platform_id: str,
+    record_id: str,
+) -> None:
+    owner = "install receipt"
+    require_common_reviewable_generated_payload(
+        payload,
+        owner=owner,
+        platform_id=platform_id,
+        suffix="install/install-receipt.json",
+        contract_id="objc3c.platform.hosted-install-receipt.generated.v1",
+        record_id=record_id,
+        reviewed_source_required=True,
+    )
+    require_native_execution_claimed_false(payload, owner)
+    source_receipt_path = str(payload.get("source_install_receipt_path", ""))
+    if not source_receipt_path:
+        raise ReviewError(f"{owner} missing source_install_receipt_path")
+    require_source_artifacts(
+        payload,
+        owner,
+        expected_paths=(
+            PACKAGE_CHANNELS_END_TO_END_SUMMARY_PATH,
+            RUNNABLE_PACKAGE_MANIFEST_PATH,
+            source_receipt_path,
+        ),
+    )
+    require_field_value(payload, "target_platform_id", platform_id, owner)
+    require_field_value(payload, "target_triple", expected_target_triple(platform_id), owner)
+    require_record_list_value(
+        payload,
+        "package_root_layout",
+        package_install_record,
+        "package_root_layout",
+        owner,
+    )
+    require_field_value(payload, "package_manifest", RUNNABLE_PACKAGE_MANIFEST_PATH, owner)
+    require_artifact_present(
+        payload,
+        "package_manifest_artifact",
+        owner,
+        expected_path=RUNNABLE_PACKAGE_MANIFEST_PATH,
+    )
+    require_artifact_present(
+        payload,
+        "package_channels_summary_artifact",
+        owner,
+        expected_path=PACKAGE_CHANNELS_END_TO_END_SUMMARY_PATH,
+    )
+    require_artifact_present(
+        payload,
+        "source_install_receipt_artifact",
+        owner,
+        expected_path=source_receipt_path,
+    )
+    source_receipt = require_object(payload, "source_install_receipt", owner)
+    if source_receipt.get("contract_id") != PACKAGE_INSTALL_RECEIPT_CONTRACT_ID:
+        raise ReviewError(f"{owner} source receipt contract_id drifted")
+    receipt_target = str(source_receipt.get("target_platform_id", ""))
+    package_runtime_model = source_receipt.get("package_runtime_model")
+    if not receipt_target and isinstance(package_runtime_model, dict):
+        receipt_target = str(package_runtime_model.get("target_platform_id", ""))
+    if receipt_target and receipt_target != platform_id:
+        raise ReviewError(f"{owner} source receipt target_platform_id drifted")
+    if not isinstance(package_runtime_model, dict):
+        raise ReviewError(f"{owner} source receipt missing package_runtime_model")
+    if package_runtime_model.get("target_platform_id") != platform_id:
+        raise ReviewError(f"{owner} source receipt runtime model target_platform_id drifted")
+    if package_runtime_model.get("package_root_layout") != payload.get("package_root_layout"):
+        raise ReviewError(f"{owner} source receipt runtime model package_root_layout drifted")
+    require_installed_root_execution_proof(
+        payload,
+        field_name="installed_root_execution",
+        expected_channel_id="local-installer",
+        platform_id=platform_id,
+        owner=owner,
+    )
+    require_installed_root_execution_proof(
+        payload,
+        field_name="offline_installed_root_execution",
+        expected_channel_id="offline-bundle",
+        platform_id=platform_id,
+        owner=owner,
+    )
+    if install_receipt_status_field(
+        payload,
+        "installed_root_execution_status",
+    ) != payload.get("installed_root_execution", {}).get("status"):
+        raise ReviewError(f"{owner} installed_root_execution_status drifted")
+    if install_receipt_status_field(
+        payload,
+        "offline_installed_root_execution_status",
+    ) != payload.get("offline_installed_root_execution", {}).get("status"):
+        raise ReviewError(f"{owner} offline_installed_root_execution_status drifted")
+
+
+def require_runtime_load_payload(
+    payload: dict[str, Any],
+    runtime_record: dict[str, Any],
+    object_identity_record: dict[str, Any],
+    *,
+    platform_id: str,
+    record_id: str,
+) -> None:
+    owner = "runtime load probe"
+    require_common_reviewable_generated_payload(
+        payload,
+        owner=owner,
+        platform_id=platform_id,
+        suffix="execution/runtime-load-probe.json",
+        contract_id="objc3c.platform.hosted-runtime-load-probe.generated.v1",
+        record_id=record_id,
+        reviewed_source_required=True,
+    )
+    require_source_artifacts(
+        payload,
+        owner,
+        expected_paths=(
+            HOSTED_EXECUTION_SMOKE_SUMMARY_PATH,
+            NATIVE_EXECUTION_SMOKE_SUMMARY_PATH,
+            RUNNABLE_PACKAGE_MANIFEST_PATH,
+        ),
+    )
+    require_field_value(payload, "target_platform_id", platform_id, owner)
+    require_field_value(
+        payload,
+        "target_triple",
+        object_identity_record.get("target_triple"),
+        owner,
+    )
+    require_record_list_value(
+        payload,
+        "runtime_library_names",
+        runtime_record,
+        "runtime_library_names",
+        owner,
+    )
+    require_field_value(
+        payload,
+        "loader_path_policy",
+        runtime_record.get("loader_policy"),
+        owner,
+    )
+    if payload.get("load_probe_exit_code") != 0:
+        raise ReviewError(f"{owner} load_probe_exit_code did not pass")
+    require_nonempty_list(payload, "resolved_runtime_paths", owner)
+    native_status = str(payload.get("native_execution_status", "")).upper()
+    if native_status != "PASS":
+        raise ReviewError(f"{owner} native_execution_status did not pass")
+    if str(payload.get("skip_reason", "")).strip():
+        raise ReviewError(f"{owner} skip_reason was present")
+    runtime_library = str(payload.get("runtime_library", ""))
+    expected_names = [str(name) for name in runtime_record.get("runtime_library_names", [])]
+    if not any(runtime_library.endswith(name) for name in expected_names):
+        raise ReviewError(f"{owner} runtime_library drifted")
+
+
+def require_toolchain_capabilities_payload(
+    payload: dict[str, Any],
+    *,
+    platform_id: str,
+) -> None:
+    owner = "toolchain capabilities"
+    if payload.get("ok") is not True:
+        raise ReviewError(f"{owner} did not pass")
+    if payload.get("native_object_emission_status") != REQUIRED_NATIVE_OBJECT_EMISSION_STATUS:
+        raise ReviewError(f"{owner} native_object_emission_status did not pass")
+    if payload.get("llc_filetype_obj_available") is not True:
+        raise ReviewError(f"{owner} llc_filetype_obj_available did not pass")
+    if payload.get("llc_target_object_emission_available") is not True:
+        raise ReviewError(f"{owner} llc_target_object_emission_available did not pass")
+    if payload.get("coherent_toolchain_root") is not True:
+        raise ReviewError(f"{owner} coherent_toolchain_root did not pass")
+    host_gate = payload.get("host_platform_support_gate")
+    if isinstance(host_gate, dict) and host_gate.get("platform_id") != platform_id:
+        raise ReviewError(f"{owner} host platform drifted")
+    support_matrix = require_object(payload, "llvm_support_matrix", owner)
+    entries = require_nonempty_list(support_matrix, "toolchain_matrix_entries", owner)
+    matrix_entry = entries[0]
+    if not isinstance(matrix_entry, dict):
+        raise ReviewError(f"{owner} toolchain_matrix_entries entries must be objects")
+    if matrix_entry.get("host_platform_id") != platform_id:
+        raise ReviewError(f"{owner} host_platform_id drifted")
+    for field_name in (
+        "support_status",
+        "object_emission_capability",
+        "package_capability",
+        "native_execution_capability",
+    ):
+        if matrix_entry.get(field_name) != "supported":
+            raise ReviewError(f"{owner} {field_name} did not pass")
+
+
+def normalize_host_system(value: Any) -> str:
+    normalized = str(value or "").strip().lower().replace("_", "-")
+    if normalized.startswith("macos") or normalized in {"mac", "mac-os"}:
+        return "darwin"
+    if normalized.startswith("ubuntu") or normalized.startswith("linux"):
+        return "linux"
+    if normalized.startswith("windows") or normalized in {"win32", "win64"}:
+        return "windows"
+    return normalized
+
+
+def normalize_host_machine(value: Any) -> str:
+    normalized = str(value or "").strip().lower().replace("-", "_")
+    if normalized in {"amd64", "x64", "x86_64"}:
+        return "x86_64"
+    if normalized in {"arm64", "aarch64"}:
+        return "arm64"
+    return normalized
+
+
+def require_host_identity_matches_source(
+    report: dict[str, Any],
+    source_record: dict[str, Any],
+    *,
+    platform_id: str,
+) -> dict[str, str]:
+    owner = "host evidence report identity"
+    host_identity = report.get("host_identity")
+    if not isinstance(host_identity, dict):
+        raise ReviewError("host evidence report missing host_identity")
+    actual_system = normalize_host_system(
+        host_identity.get("platform_system")
+        or host_identity.get("runner_os")
+        or host_identity.get("image_os")
+    )
+    expected_system = normalize_host_system(
+        source_record.get("host_system") or source_record.get("host_os")
+    )
+    if actual_system != expected_system:
+        raise ReviewError(f"{owner} host_system drifted for {platform_id}")
+    actual_machine = normalize_host_machine(
+        host_identity.get("platform_machine") or host_identity.get("runner_arch")
+    )
+    expected_machine = normalize_host_machine(
+        source_record.get("host_machine") or source_record.get("host_arch")
+    )
+    if actual_machine != expected_machine:
+        raise ReviewError(f"{owner} host_machine drifted for {platform_id}")
+    return {
+        "host_system": actual_system,
+        "host_machine": actual_machine,
+    }
 
 
 def load_required_payloads(root: Path) -> dict[str, dict[str, Any]]:
@@ -350,25 +1014,15 @@ def update_platform_records(
     generated_payloads: dict[str, dict[str, Any]],
 ) -> dict[str, Any]:
     required_ids = required_record_ids_for_platform(payload, platform_id)
-    host_identity = report.get("host_identity", {})
-    if not isinstance(host_identity, dict):
-        raise ReviewError("host evidence report missing host_identity")
 
     object_identity = generated_payloads["build/object-identity.json"]
     debug_identity = generated_payloads["build/debug-identity.json"]
+    llvm_capabilities = generated_payloads["llvm-capabilities.json"]
     install_receipt = generated_payloads["install/install-receipt.json"]
     runtime_load = generated_payloads["execution/runtime-load-probe.json"]
     runtime_manifest = generated_payloads["package/runtime-library-manifest.json"]
 
-    for owner, generated in (
-        ("object identity", object_identity),
-        ("debug identity", debug_identity),
-        ("install receipt", install_receipt),
-        ("runtime load", runtime_load),
-        ("runtime library manifest", runtime_manifest),
-    ):
-        require_generated_status(generated, owner)
-
+    source_records: dict[str, dict[str, Any]] = {}
     reviewed_records: dict[str, dict[str, Any]] = {}
     record_sections = HOST_PROMOTION_REVIEWED_SOURCE_RECORD_SECTION_BY_TYPE
     id_fields = HOST_PROMOTION_REVIEWED_SOURCE_RECORD_ID_FIELD_BY_TYPE
@@ -382,10 +1036,14 @@ def update_platform_records(
     }
 
     for record_type in HOST_PROMOTION_REQUIRED_SOURCE_RECORD_TYPES:
-        record_id = required_ids[id_fields[record_type]]
+        record_id_field = id_fields[record_type]
+        record_id = required_ids.get(record_id_field)
+        if not record_id:
+            raise ReviewError(f"{platform_id} platform row missing {record_id_field}")
         source = by_section[record_sections[record_type]].get(record_id)
         if source is None:
             raise ReviewError(f"missing reviewed source {record_type} record {record_id}")
+        source_records[record_type] = source
         reviewed = reviewed_metadata(
             source,
             platform_id,
@@ -393,10 +1051,55 @@ def update_platform_records(
         )
         reviewed_records[record_type] = reviewed
 
+    reviewed_host_identity = require_host_identity_matches_source(
+        report,
+        source_records["host_identity"],
+        platform_id=platform_id,
+    )
+    require_toolchain_capabilities_payload(llvm_capabilities, platform_id=platform_id)
+    require_identity_payload_matches_record(
+        object_identity,
+        source_records["object_identity"],
+        platform_id=platform_id,
+        suffix="build/object-identity.json",
+        contract_id="objc3c.platform.hosted-object-identity.generated.v1",
+        record_id=required_ids[id_fields["object_identity"]],
+        identity_kind="object",
+        identity_field_names=("object_format",),
+    )
+    require_identity_payload_matches_record(
+        debug_identity,
+        source_records["debug_identity"],
+        platform_id=platform_id,
+        suffix="build/debug-identity.json",
+        contract_id="objc3c.platform.hosted-debug-identity.generated.v1",
+        record_id=required_ids[id_fields["debug_identity"]],
+        identity_kind="debug",
+        identity_field_names=("debug_format",),
+    )
+    require_runtime_manifest_payload(
+        runtime_manifest,
+        source_records["package_root"],
+        platform_id=platform_id,
+    )
+    require_install_receipt_payload(
+        install_receipt,
+        source_records["package_install_identity"],
+        platform_id=platform_id,
+        record_id=required_ids[id_fields["package_install_identity"]],
+    )
+    require_runtime_load_payload(
+        runtime_load,
+        source_records["runtime_load_link_proof"],
+        source_records["object_identity"],
+        platform_id=platform_id,
+        record_id=required_ids[id_fields["runtime_load_link_proof"]],
+    )
+
     reviewed_records["host_identity"].update(
         {
-            "host_system": str(host_identity.get("platform_system") or host_identity.get("runner_os") or "").lower(),
-            "host_machine": str(host_identity.get("platform_machine") or ""),
+            "host_system": reviewed_host_identity["host_system"],
+            "host_machine": reviewed_host_identity["host_machine"],
             "runner_label": report.get("runner_label", ""),
             "github": report.get("github", {}),
         }

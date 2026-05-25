@@ -2,6 +2,8 @@
 
 #include <string>
 
+#include "artifacts/identity/artifact_identity.h"
+
 // binary inspection harness expansion anchor: lane-C now freezes one
 // emitted-metadata inspection corpus over llvm-readobj/llvm-objdump so every
 // currently emitted metadata section family can be asserted structurally from
@@ -14,14 +16,15 @@ inline constexpr const char *kObjc3RuntimeBinaryInspectionPositiveCorpusModel =
 inline constexpr const char *kObjc3RuntimeBinaryInspectionNegativeCorpusModel =
     "negative-compile-failure-gating-with-no-object-inspection";
 inline constexpr const char *kObjc3RuntimeBinaryInspectionSectionCommand =
-    "llvm-readobj --sections module.obj";
+    objc3::artifacts::identity::kObjc3NativeDefaultObjectSectionInventoryCommand;
 inline constexpr const char *kObjc3RuntimeBinaryInspectionSymbolCommand =
-    "llvm-objdump --syms module.obj";
+    objc3::artifacts::identity::kObjc3NativeDefaultObjectSymbolInventoryCommand;
 
 // object-packaging/retention freeze anchor: lane-D now freezes the
-// current produced-object boundary around module.obj plus retained aggregate
-// metadata symbols. Later archive/link/startup-registration work must preserve
-// these anchors instead of redefining the object boundary ad hoc.
+// current produced-object boundary around the host default object artifact plus
+// retained aggregate metadata symbols. Later archive/link/startup-registration
+// work must preserve these anchors instead of redefining the object boundary ad
+// hoc.
 inline constexpr const char *kObjc3RuntimeObjectPackagingRetentionContractId =
     "objc3c.runtime.object.packaging.retention.boundary.v1";
 inline constexpr const char *kObjc3RuntimeObjectPackagingRetentionBoundaryModel =
@@ -29,7 +32,7 @@ inline constexpr const char *kObjc3RuntimeObjectPackagingRetentionBoundaryModel 
 inline constexpr const char *kObjc3RuntimeObjectPackagingRetentionAnchorModel =
     "llvm.used-plus-aggregate-section-symbols";
 inline constexpr const char *kObjc3RuntimeObjectPackagingRetentionArtifact =
-    "module.obj";
+    objc3::artifacts::identity::kObjc3NativeDefaultObjectArtifactName;
 inline constexpr const char *kObjc3RuntimeObjectPackagingRetentionSymbolPrefix =
     "__objc3_sec_";
 

@@ -8,28 +8,6 @@
 namespace objc3::artifacts::frontend {
 namespace {
 
-[[maybe_unused]] RuntimeStateObjectDebugIdentity BuildUnsupportedHostIdentity(
-    std::string platform_id,
-    std::string host_os,
-    std::string host_arch) {
-  RuntimeStateObjectDebugIdentity identity;
-  identity.platform_id = std::move(platform_id);
-  identity.host_os = std::move(host_os);
-  identity.host_arch = std::move(host_arch);
-  identity.target_triple.clear();
-  identity.object_format.clear();
-  identity.package_object_format.clear();
-  identity.debug_format.clear();
-  identity.object_file_extension.clear();
-  identity.host_promotion_state = "unsupported-host";
-  identity.unsupported_host_behavior =
-      kObjc3RuntimeStateObjectArtifactPublicationFailureBehavior;
-  identity.platform_identity_known = false;
-  identity.object_artifact_publication_supported = false;
-  identity.object_emission_alone_supports_platform = false;
-  return identity;
-}
-
 std::string BuildEmitPrefix(std::string_view registration_manifest_artifact) {
   constexpr std::string_view suffix =
       kObjc3RuntimeTranslationUnitRegistrationManifestArtifactSuffix;
@@ -40,55 +18,47 @@ std::string BuildEmitPrefix(std::string_view registration_manifest_artifact) {
   return "module";
 }
 
+std::pair<std::string, std::string> SplitPlatformId(std::string_view platform_id) {
+  const std::size_t dash = platform_id.find('-');
+  if (dash == std::string_view::npos) {
+    return {std::string(platform_id), "unknown"};
+  }
+  return {std::string(platform_id.substr(0, dash)),
+          std::string(platform_id.substr(dash + 1))};
+}
+
 }  // namespace
 
 RuntimeStateObjectDebugIdentity BuildRuntimeStateObjectDebugIdentityForHost() {
-#if defined(_WIN32) && \
-    (defined(_M_X64) || defined(_M_AMD64) || defined(__x86_64__))
+  const objc3::artifacts::identity::Objc3NativeArtifactIdentity native_identity =
+      objc3::artifacts::identity::BuildObjc3NativeArtifactIdentityForHost();
+  const auto [host_os, host_arch] = SplitPlatformId(native_identity.platform_id);
+  const bool platform_supported =
+      native_identity.host_promotion_state == "supported-boundary" ||
+      native_identity.host_promotion_state ==
+          "fail-closed-until-native-host-evidence";
+
   RuntimeStateObjectDebugIdentity identity;
+  identity.platform_id = native_identity.platform_id;
+  identity.host_os = host_os;
+  identity.host_arch = host_arch;
+  identity.target_triple = native_identity.target_triple;
+  identity.object_format = native_identity.object_format;
+  identity.package_object_format = native_identity.object_format;
+  identity.debug_format = native_identity.debug_format;
+  identity.object_file_extension = native_identity.object_file_extension;
+  identity.host_promotion_state = native_identity.host_promotion_state;
+  identity.platform_identity_known = platform_supported;
+  identity.object_artifact_publication_supported = platform_supported;
+  if (!platform_supported) {
+    identity.unsupported_host_behavior =
+        kObjc3RuntimeStateObjectArtifactPublicationFailureBehavior;
+  } else if (native_identity.host_promotion_state ==
+             "fail-closed-until-native-host-evidence") {
+    identity.unsupported_host_behavior =
+        "fail-closed-before-package-install-native-execution-and-support-promotion";
+  }
   return identity;
-#elif defined(__linux__) && (defined(__x86_64__) || defined(__amd64__))
-  RuntimeStateObjectDebugIdentity identity;
-  identity.platform_id = "linux-x64";
-  identity.host_os = "linux";
-  identity.host_arch = "x64";
-  identity.target_triple = "x86_64-unknown-linux-gnu";
-  identity.object_format = "elf";
-  identity.package_object_format = "ELF";
-  identity.debug_format = "DWARF";
-  identity.object_file_extension = ".o";
-  identity.host_promotion_state = "fail-closed-until-native-host-evidence";
-  identity.unsupported_host_behavior =
-      "fail-closed-before-package-install-native-execution-and-support-promotion";
-  return identity;
-#elif defined(__APPLE__) && defined(__MACH__) && \
-    (defined(__aarch64__) || defined(__arm64__))
-  RuntimeStateObjectDebugIdentity identity;
-  identity.platform_id = "darwin-arm64";
-  identity.host_os = "darwin";
-  identity.host_arch = "arm64";
-  identity.target_triple = "aarch64-apple-darwin";
-  identity.object_format = "mach-o";
-  identity.package_object_format = "Mach-O";
-  identity.debug_format = "DWARF/dSYM";
-  identity.object_file_extension = ".o";
-  identity.host_promotion_state = "fail-closed-until-native-host-evidence";
-  identity.unsupported_host_behavior =
-      "fail-closed-before-package-install-native-execution-and-support-promotion";
-  return identity;
-#elif defined(_WIN32)
-  return BuildUnsupportedHostIdentity("windows-unsupported-arch", "windows",
-                                      "unsupported");
-#elif defined(__linux__)
-  return BuildUnsupportedHostIdentity("linux-unsupported-arch", "linux",
-                                      "unsupported");
-#elif defined(__APPLE__) && defined(__MACH__)
-  return BuildUnsupportedHostIdentity("darwin-unsupported-arch", "darwin",
-                                      "unsupported");
-#else
-  return BuildUnsupportedHostIdentity("unsupported-host", "unsupported",
-                                      "unsupported");
-#endif
 }
 
 bool IsRuntimeStateObjectDebugIdentityReady(
@@ -135,21 +105,31 @@ bool IsRuntimeStateObjectDebugIdentityReady(
 std::string BuildRuntimeStateObjectArtifactName(
     std::string_view emit_prefix,
     const RuntimeStateObjectDebugIdentity &identity) {
-  if (emit_prefix.empty() || identity.object_file_extension.empty()) {
+  if (identity.object_file_extension.empty()) {
     return {};
   }
-  return std::string(emit_prefix) + identity.object_file_extension;
+  return objc3::artifacts::identity::BuildObjc3NativeArtifactName(
+      emit_prefix, identity.object_file_extension);
 }
 
 RuntimeStatePublicationPaths BuildRuntimeStatePublicationPathsForEmitPrefix(
     std::string_view emit_prefix) {
   RuntimeStatePublicationPaths paths;
-  paths.emit_prefix = emit_prefix.empty() ? "module" : std::string(emit_prefix);
-  paths.compile_manifest_artifact = paths.emit_prefix + ".manifest.json";
+  paths.emit_prefix =
+      emit_prefix.empty()
+          ? objc3::artifacts::identity::kObjc3NativeDefaultArtifactStem
+          : std::string(emit_prefix);
+  paths.compile_manifest_artifact =
+      objc3::artifacts::identity::BuildObjc3NativeArtifactName(
+          paths.emit_prefix,
+          objc3::artifacts::identity::kObjc3NativeManifestArtifactSuffix);
   paths.object_debug_identity = BuildRuntimeStateObjectDebugIdentityForHost();
   paths.object_artifact = BuildRuntimeStateObjectArtifactName(
       paths.emit_prefix, paths.object_debug_identity);
-  paths.backend_artifact = paths.emit_prefix + ".ll";
+  paths.backend_artifact =
+      objc3::artifacts::identity::BuildObjc3NativeArtifactName(
+          paths.emit_prefix,
+          objc3::artifacts::identity::kObjc3NativeIrArtifactSuffix);
   return paths;
 }
 

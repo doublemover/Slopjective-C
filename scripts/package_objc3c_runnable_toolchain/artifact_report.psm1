@@ -132,6 +132,122 @@ function Get-RunnableToolchainPackagePlatformLinkerFlags {
   return @()
 }
 
+function Get-RunnableToolchainPackagePlatformIssueRef {
+  param([Parameter(Mandatory = $true)][string]$TargetPlatformId)
+
+  if ($TargetPlatformId -eq "linux-x64") {
+    return 8228
+  }
+  if ($TargetPlatformId -eq "darwin-arm64") {
+    return 8229
+  }
+  return 0
+}
+
+function Get-RunnableToolchainPackagePlatformExpectedLayout {
+  param(
+    [Parameter(Mandatory = $true)][string]$TargetPlatformId
+  )
+
+  $nativeExecutable = if ($TargetPlatformId -eq "windows-x64") {
+    "artifacts/bin/objc3c-native.exe"
+  } else {
+    "artifacts/bin/objc3c-native"
+  }
+  $runtimeLibrary = if ($TargetPlatformId -eq "darwin-arm64") {
+    "artifacts/lib/libobjc3-runtime.dylib"
+  } elseif ($TargetPlatformId -eq "linux-x64") {
+    "artifacts/lib/libobjc3-runtime.so"
+  } else {
+    "artifacts/lib/objc3_runtime.lib"
+  }
+  return @(
+    "artifacts/package/objc3c-runnable-toolchain-package.json",
+    $nativeExecutable,
+    $runtimeLibrary,
+    "stdlib/workspace.json",
+    "stdlib/modules/objc3.core/module.json",
+    "docs/runbooks/objc3c_packaging_channels.md"
+  )
+}
+
+function Get-RunnableToolchainPackagePlatformRuntimeLibrary {
+  param([Parameter(Mandatory = $true)][string]$TargetPlatformId)
+
+  if ($TargetPlatformId -eq "darwin-arm64") {
+    return "artifacts/lib/libobjc3-runtime.dylib"
+  }
+  if ($TargetPlatformId -eq "linux-x64") {
+    return "artifacts/lib/libobjc3-runtime.so"
+  }
+  return "artifacts/lib/objc3_runtime.lib"
+}
+
+function Get-RunnableToolchainPackagePlatformRuntimeLibraryKind {
+  param([Parameter(Mandatory = $true)][string]$TargetPlatformId)
+
+  if ($TargetPlatformId -eq "windows-x64") {
+    return "static-archive"
+  }
+  return "shared-library"
+}
+
+function Get-RunnableToolchainPackagePlatformTargetTriple {
+  param([Parameter(Mandatory = $true)][string]$TargetPlatformId)
+
+  if ($TargetPlatformId -eq "linux-x64") {
+    return "x86_64-unknown-linux-gnu"
+  }
+  if ($TargetPlatformId -eq "darwin-arm64") {
+    return "aarch64-apple-darwin"
+  }
+  if ($TargetPlatformId -eq "windows-x64") {
+    return "x86_64-pc-windows-msvc"
+  }
+  return $TargetPlatformId
+}
+
+function Get-RunnableToolchainPackagePlatformObjectFormat {
+  param([Parameter(Mandatory = $true)][string]$TargetPlatformId)
+
+  if ($TargetPlatformId -eq "linux-x64") {
+    return "ELF"
+  }
+  if ($TargetPlatformId -eq "darwin-arm64") {
+    return "Mach-O"
+  }
+  return "COFF"
+}
+
+function Get-RunnableToolchainPackagePlatformDebugFormat {
+  param([Parameter(Mandatory = $true)][string]$TargetPlatformId)
+
+  if ($TargetPlatformId -eq "darwin-arm64") {
+    return "DWARF/dSYM"
+  }
+  if ($TargetPlatformId -eq "linux-x64") {
+    return "DWARF"
+  }
+  return "CodeView/PDB"
+}
+
+function Get-RunnableToolchainPackagePlatformManifestStatus {
+  param(
+    [Parameter(Mandatory = $true)][bool]$PackageManifestExists,
+    [Parameter(Mandatory = $true)][bool]$RuntimeLibraryExists,
+    [Parameter(Mandatory = $true)][string]$SourcePackageTargetPlatformId,
+    [Parameter(Mandatory = $true)][string]$TargetPlatformId
+  )
+
+  if (-not $PackageManifestExists -or -not $RuntimeLibraryExists) {
+    return "missing-source-generated-fail-closed"
+  }
+  if (-not [string]::IsNullOrWhiteSpace($SourcePackageTargetPlatformId) -and $SourcePackageTargetPlatformId -ne $TargetPlatformId) {
+    return "package-target-mismatch-generated-fail-closed"
+  }
+  return "generated-host-artifact-present"
+}
+
 function New-RunnableToolchainPackagePlatformRuntimeManifest {
   param(
     [Parameter(Mandatory = $true)][string]$RepoRoot,
@@ -142,43 +258,80 @@ function New-RunnableToolchainPackagePlatformRuntimeManifest {
   )
 
   $targetPlatformId = [string]$ManifestPayload["target_platform_id"]
-  $runtimeLibrary = [string]$ManifestPayload["runtime_library"]
+  $runtimeLibrary = Get-RunnableToolchainPackagePlatformRuntimeLibrary -TargetPlatformId $targetPlatformId
+  $runtimeLibraryName = Split-Path -Leaf $runtimeLibrary
   $runtimeLibraryPath = Join-Path $PackageRoot ($runtimeLibrary -replace '/', [System.IO.Path]::DirectorySeparatorChar)
-  if (!(Test-Path -LiteralPath $runtimeLibraryPath -PathType Leaf)) {
-    throw "runnable toolchain package FAIL: platform runtime library missing before hosted evidence publication: $runtimeLibrary"
+  $runtimeLibraryArtifact = [ordered]@{
+    path = Get-RepoRelativePathCompat -RootPath $PackageRoot -TargetPath $runtimeLibraryPath
+    exists = $false
   }
-  $runtimeLibraryItem = Get-Item -LiteralPath $runtimeLibraryPath
+  if (Test-Path -LiteralPath $runtimeLibraryPath -PathType Leaf) {
+    $runtimeLibraryItem = Get-Item -LiteralPath $runtimeLibraryPath
+    $runtimeLibraryArtifact["exists"] = $true
+    $runtimeLibraryArtifact["size_bytes"] = [int64]$runtimeLibraryItem.Length
+    $runtimeLibraryArtifact["sha256"] = (Get-FileHash -LiteralPath $runtimeLibraryPath -Algorithm SHA256).Hash.ToLowerInvariant()
+  }
+  $packageManifestArtifact = [ordered]@{
+    path = Get-RepoRelativePathCompat -RootPath $RepoRoot -TargetPath $ManifestPath
+    exists = $false
+  }
+  if (Test-Path -LiteralPath $ManifestPath -PathType Leaf) {
+    $manifestItem = Get-Item -LiteralPath $ManifestPath
+    $packageManifestArtifact["exists"] = $true
+    $packageManifestArtifact["size_bytes"] = [int64]$manifestItem.Length
+    $packageManifestArtifact["sha256"] = (Get-FileHash -LiteralPath $ManifestPath -Algorithm SHA256).Hash.ToLowerInvariant()
+  }
+  $expectedLayout = Get-RunnableToolchainPackagePlatformExpectedLayout `
+    -TargetPlatformId $targetPlatformId
 
   return [ordered]@{
-    contract_id = "objc3c.platform.runtime-library-manifest.v1"
+    contract_id = "objc3c.platform.hosted-runtime-library-manifest.generated.v1"
     schema_version = 1
+    platform_id = $targetPlatformId
+    issue_ref = Get-RunnableToolchainPackagePlatformIssueRef -TargetPlatformId $targetPlatformId
+    generated_report_path = Get-RepoRelativePathCompat `
+      -RootPath $RepoRoot `
+      -TargetPath (Join-Path $EvidenceRoot "package/runtime-library-manifest.json")
+    source_package_manifest_path = "artifacts/package/objc3c-runnable-toolchain-package.json"
+    support_truth = $false
+    native_execution_claimed = $false
+    promotion_allowed_from_generated_evidence = $false
+    status = Get-RunnableToolchainPackagePlatformManifestStatus `
+      -PackageManifestExists ([bool]$packageManifestArtifact.exists) `
+      -RuntimeLibraryExists ([bool]$runtimeLibraryArtifact.exists) `
+      -SourcePackageTargetPlatformId $targetPlatformId `
+      -TargetPlatformId $targetPlatformId
     target_platform_id = $targetPlatformId
-    target_triple = [string]$ManifestPayload["target_triple"]
-    object_format = [string]$ManifestPayload["object_format"]
-    debug_format = [string]$ManifestPayload["debug_format"]
+    source_package_target_platform_id = $targetPlatformId
+    target_triple = Get-RunnableToolchainPackagePlatformTargetTriple -TargetPlatformId $targetPlatformId
+    object_format = Get-RunnableToolchainPackagePlatformObjectFormat -TargetPlatformId $targetPlatformId
+    debug_format = Get-RunnableToolchainPackagePlatformDebugFormat -TargetPlatformId $targetPlatformId
     package_root = [string]$ManifestPayload["package_root"]
-    source_package_manifest_path = Get-RepoRelativePathCompat -RootPath $RepoRoot -TargetPath $ManifestPath
     platform_scoped_package_manifest_path = Get-RepoRelativePathCompat -RootPath $RepoRoot -TargetPath (Join-Path $EvidenceRoot "package/objc3c-runnable-toolchain-package.json")
     runtime_library_ids = @("objc3-runtime")
-    runtime_library_names = @([string]$ManifestPayload["runtime_library_name"])
-    runtime_library_kind = [string]$ManifestPayload["runtime_library_kind"]
-    runtime_library_artifacts = @(
-      [ordered]@{
-        runtime_library_id = "objc3-runtime"
-        artifact = $runtimeLibrary
-        source_file_name = [string]$ManifestPayload["runtime_library_name"]
-        size_bytes = [int64]$runtimeLibraryItem.Length
-        sha256 = (Get-FileHash -LiteralPath $runtimeLibraryPath -Algorithm SHA256).Hash.ToLowerInvariant()
-        install_required = $true
-      }
-    )
-    package_root_layout = @($ManifestPayload["package_root_layout"])
+    runtime_library_names = @($runtimeLibraryName)
+    runtime_library_kind = Get-RunnableToolchainPackagePlatformRuntimeLibraryKind -TargetPlatformId $targetPlatformId
+    runtime_library_artifacts = @($runtimeLibraryArtifact)
+    package_root_layout = $expectedLayout
+    package_manifest_artifact = $packageManifestArtifact
     linker_flags = @(Get-RunnableToolchainPackagePlatformLinkerFlags -TargetPlatformId $targetPlatformId)
     loader_policy = Get-RunnableToolchainPackagePlatformLoaderPolicy -TargetPlatformId $targetPlatformId
     runtime_load_probe_required = $true
     runtime_load_failure_behavior = "fail-closed-before-native-execution-claim"
-    support_truth = $false
-    native_execution_claimed = $false
+    producer_evidence = [ordered]@{
+      contract_id = "objc3c.platform.package.runtime-library-manifest.seed.v1"
+      status = if ([bool]$runtimeLibraryArtifact.exists) { "PACKAGE_RUNTIME_LIBRARY_ARTIFACT_PRESENT" } else { "PACKAGE_RUNTIME_LIBRARY_ARTIFACT_MISSING" }
+      runtime_library_artifacts = @(
+        [ordered]@{
+          runtime_library_id = "objc3-runtime"
+          artifact = $runtimeLibrary
+          source_file_name = $runtimeLibraryName
+          install_required = $true
+        }
+      )
+      missing_runtime_behavior = "fail-closed-before-package-install"
+    }
+    source_artifacts = @($packageManifestArtifact)
   }
 }
 

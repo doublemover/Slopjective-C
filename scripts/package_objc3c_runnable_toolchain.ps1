@@ -20,10 +20,28 @@ $platformEvidenceModule = Import-Module `
   -Force `
   -DisableNameChecking `
   -PassThru
-$writeRuntimeLibraryManifestEvidence = Get-Command `
-  -Module $platformEvidenceModule.Name `
-  -Name "Write-Objc3cDarwinRuntimeLibraryManifestEvidence" `
-  -ErrorAction Stop
+function Get-RunnableToolchainPlatformRuntimeManifestEvidenceCommand {
+  param(
+    [Parameter(Mandatory = $true)][object]$Module,
+    [Parameter(Mandatory = $true)][string]$PlatformId
+  )
+
+  $commandName = if ($PlatformId -eq "linux-x64") {
+    "Write-Objc3cLinuxRuntimeLibraryManifestEvidence"
+  } elseif ($PlatformId -eq "darwin-arm64") {
+    "Write-Objc3cDarwinRuntimeLibraryManifestEvidence"
+  } else {
+    ""
+  }
+  if ([string]::IsNullOrWhiteSpace($commandName)) {
+    return $null
+  }
+
+  return Get-Command `
+    -Module $Module.Name `
+    -Name $commandName `
+    -ErrorAction Stop
+}
 
 $request = New-RunnableToolchainPackageRequest `
   -PackageRoot $PackageRoot `
@@ -50,15 +68,20 @@ $manifestPayload = Write-RunnableToolchainPackageManifest `
   -StagedRelativePaths $staging.StagedRelativePaths `
   -SanitizerVariant $request.SanitizerVariant
 
-& $writeRuntimeLibraryManifestEvidence `
-  -RepoRoot $environment.RepoRoot `
-  -PlatformId $manifestPayload.target_platform_id `
-  -PackageRoot $environment.PackageRoot `
-  -PackageManifestPath $environment.ManifestPath `
-  -RuntimeLibraryRelativePath $manifestPayload.runtime_library `
-  -RuntimeLibraryName $manifestPayload.runtime_library_name `
-  -TargetTriple $manifestPayload.target_triple `
-  -ObjectFormat $manifestPayload.object_format `
-  -DebugFormat $manifestPayload.debug_format
+$writeRuntimeLibraryManifestEvidence = Get-RunnableToolchainPlatformRuntimeManifestEvidenceCommand `
+  -Module $platformEvidenceModule `
+  -PlatformId $manifestPayload.target_platform_id
+if ($null -ne $writeRuntimeLibraryManifestEvidence) {
+  & $writeRuntimeLibraryManifestEvidence `
+    -RepoRoot $environment.RepoRoot `
+    -PlatformId $manifestPayload.target_platform_id `
+    -PackageRoot $environment.PackageRoot `
+    -PackageManifestPath $environment.ManifestPath `
+    -RuntimeLibraryRelativePath $manifestPayload.runtime_library `
+    -RuntimeLibraryName $manifestPayload.runtime_library_name `
+    -TargetTriple $manifestPayload.target_triple `
+    -ObjectFormat $manifestPayload.object_format `
+    -DebugFormat $manifestPayload.debug_format
+}
 
 Write-RunnableToolchainPackageStatus -ManifestPayload $manifestPayload

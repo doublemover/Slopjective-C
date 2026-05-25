@@ -14,7 +14,7 @@ inline constexpr const char *kObjc3ManifestObjectIrTruthGateManifestModel =
 inline constexpr const char *kObjc3ManifestObjectIrTruthGateIrModel =
     "module.ll-republishes-the-same-contract-boundaries-and-runtime-registration-roots-as-reviewable-ir-evidence";
 inline constexpr const char *kObjc3ManifestObjectIrTruthGateObjectModel =
-    "module.obj-materializes-the-same-objc3-runtime-sections-symbols-and-registration-roots-observed-in-ir";
+    "host-default-object-artifact-materializes-the-same-objc3-runtime-sections-symbols-and-registration-roots-observed-in-ir";
 inline constexpr const char *kObjc3ManifestObjectIrTruthGateClaimModel =
     "versioned-conformance-and-runtime-capability-sidecars-are-bound-to-the-same-replay-key-and-remain-narrower-than-evidence";
 inline constexpr const char *kObjc3ManifestObjectIrTruthGateFailureModel =

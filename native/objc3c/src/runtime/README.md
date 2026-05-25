@@ -2,7 +2,9 @@
 
 Live runtime surface:
 
-- archive: `artifacts/lib/objc3_runtime.lib`
+- runtime library: host artifact identity resolves `artifacts/lib/objc3_runtime.lib`
+  on Windows, `artifacts/lib/libobjc3-runtime.so` on Linux, and
+  `artifacts/lib/libobjc3-runtime.dylib` on macOS
 - public header: `native/objc3c/src/runtime/public/objc3_runtime_api.h`
 - primary entrypoints:
   - `objc3_runtime_register_image`
@@ -154,7 +156,7 @@ Realization lowering and reflection artifact surface:
   - `<emit-prefix>.manifest.json`
   - `<emit-prefix>.runtime-registration-manifest.json`
   - `<emit-prefix>.runtime-registration-descriptor.json`
-  - `<emit-prefix>.obj`
+  - `<emit-prefix><host object extension>`
   - `<emit-prefix>.ll`
   - `<emit-prefix>.compile-provenance.json`
 - private reflection artifact query boundary:
@@ -180,7 +182,7 @@ Dispatch-table and reflection-record lowering surface:
   - `<emit-prefix>.manifest.json`
   - `<emit-prefix>.runtime-registration-manifest.json`
   - `<emit-prefix>.runtime-registration-descriptor.json`
-  - `<emit-prefix>.obj`
+  - `<emit-prefix><host object extension>`
   - `<emit-prefix>.ll`
   - `<emit-prefix>.compile-provenance.json`
 - authoritative lowering roots:
@@ -207,7 +209,7 @@ Cross-module realized-metadata replay preservation surface:
 - authoritative emitted artifact:
   - `module.cross-module-runtime-link-plan.json`
 - coupled emitted artifacts:
-  - `<emit-prefix>.obj`
+  - `<emit-prefix><host object extension>`
   - `<emit-prefix>.runtime-import-surface.json`
   - `<emit-prefix>.runtime-registration-manifest.json`
   - `<emit-prefix>.cross-module-runtime-link-plan.json`

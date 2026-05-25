@@ -1,5 +1,7 @@
 #pragma once
 
+#include "artifacts/identity/artifact_identity.h"
+
 struct Objc3IRFrontendMetadata;
 struct Objc3Program;
 struct Objc3FrontendOptions;
@@ -159,7 +161,7 @@ inline constexpr const char
         "objc_metaprogramming_macro_host_process_and_cache_runtime_integration";
 inline constexpr const char
     *kObjc3ArtifactMetaprogrammingMacroHostProcessCacheRuntimeIntegrationHostExecutableRelativePath =
-        "artifacts/bin/objc3c-frontend-c-api-runner.exe";
+        objc3::artifacts::identity::kObjc3NativeFrontendRunnerRelativePath;
 inline constexpr const char
     *kObjc3ArtifactMetaprogrammingMacroHostProcessCacheRuntimeIntegrationCacheRootRelativePath =
         "tmp/artifacts/objc3c-native/cache/metaprogramming";

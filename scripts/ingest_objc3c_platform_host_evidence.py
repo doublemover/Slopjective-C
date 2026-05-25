@@ -170,6 +170,18 @@ NATIVE_EXECUTION_SMOKE_SUMMARY_PATH = (
 FAIL_CLOSED_PLACEHOLDER_CONTRACT_ID = (
     "objc3c.platform.hosted-evidence.fail-closed-placeholder.v1"
 )
+INCOMPLETE_GENERATED_ARTIFACT_STATUSES: frozenset[str] = frozenset(
+    {
+        "fail-closed",
+        "missing-source-generated-fail-closed",
+        "package-target-mismatch-generated-fail-closed",
+        "install-receipt-target-mismatch-generated-fail-closed",
+        "identity-mismatch-generated-fail-closed",
+        "runtime-load-unavailable-generated-fail-closed",
+        "runtime-load-failed-generated-fail-closed",
+        "producer-failed-before-success-artifact",
+    }
+)
 
 STEP_CONTRACTS: tuple[tuple[str, str, tuple[tuple[str, str], ...]], ...] = (
     (
@@ -315,15 +327,45 @@ def generated_artifact(path_text: str) -> dict[str, Any]:
         payload = json.loads(path.read_text(encoding="utf-8"))
     except (OSError, UnicodeDecodeError, json.JSONDecodeError):
         return artifact
-    if (
-        isinstance(payload, dict)
-        and payload.get("contract_id") == FAIL_CLOSED_PLACEHOLDER_CONTRACT_ID
-    ):
-        artifact["fail_closed_placeholder"] = True
-        artifact["promotion_usable"] = False
-        artifact["producer_step_id"] = str(payload.get("producer_step_id", ""))
-        artifact["status"] = str(payload.get("status", ""))
+    if isinstance(payload, dict):
+        status = str(payload.get("status", ""))
+        source_paths = source_artifact_paths_from_payload(payload)
+        if payload.get("contract_id") == FAIL_CLOSED_PLACEHOLDER_CONTRACT_ID:
+            artifact["fail_closed_placeholder"] = True
+        elif status in INCOMPLETE_GENERATED_ARTIFACT_STATUSES:
+            artifact["incomplete_generated_artifact"] = True
+        if artifact.get("fail_closed_placeholder") or artifact.get("incomplete_generated_artifact"):
+            artifact["promotion_usable"] = False
+            artifact["producer_step_id"] = str(payload.get("producer_step_id", ""))
+            artifact["status"] = status
+            missing_source_path = str(payload.get("missing_source_path", ""))
+            required_sources = source_paths
+            if missing_source_path and missing_source_path not in required_sources:
+                required_sources = [*required_sources, missing_source_path]
+            if required_sources:
+                artifact["required_source_artifacts"] = required_sources
+            diagnostics = payload.get("diagnostics")
+            if isinstance(diagnostics, dict):
+                artifact["diagnostics"] = diagnostics
+            elif required_sources:
+                artifact["diagnostics"] = incomplete_artifact_diagnostics(
+                    status=status,
+                    source_paths=tuple(required_sources),
+                )
     return artifact
+
+
+def source_artifact_paths_from_payload(payload: dict[str, Any]) -> list[str]:
+    paths: list[str] = []
+    artifacts = payload.get("source_artifacts")
+    if isinstance(artifacts, list):
+        for entry in artifacts:
+            if not isinstance(entry, dict):
+                continue
+            path_text = str(entry.get("path", "")).replace("\\", "/")
+            if path_text and path_text not in paths:
+                paths.append(path_text)
+    return paths
 
 
 def write_fail_closed_placeholder_artifact(
@@ -338,6 +380,7 @@ def write_fail_closed_placeholder_artifact(
     scoped_path = ROOT / scoped_path_text
     if scoped_path.is_file():
         return
+    status = "producer-failed-before-success-artifact"
     payload = {
         "contract_id": FAIL_CLOSED_PLACEHOLDER_CONTRACT_ID,
         "schema_version": 1,
@@ -348,7 +391,7 @@ def write_fail_closed_placeholder_artifact(
         "producer_step_id": step_id,
         "evidence_class": evidence_class,
         "producer_outcome": outcome,
-        "status": "producer-failed-before-success-artifact",
+        "status": status,
         "support_truth": False,
         "promotion_allowed_from_generated_evidence": False,
         "generated_report_support_truth": False,
@@ -356,6 +399,11 @@ def write_fail_closed_placeholder_artifact(
         "review_result": "fail-closed-not-promotion-ready",
         "failure_class": f"{evidence_class}-producer-failed-before-success-artifact",
         "required_behavior": "fail-closed-before-support-promotion",
+        "source_artifacts": source_artifacts(source_path_text),
+        "diagnostics": incomplete_artifact_diagnostics(
+            status=status,
+            source_paths=(source_path_text,),
+        ),
     }
     write_json(scoped_path, payload)
 
@@ -453,6 +501,55 @@ def source_artifacts(*path_texts: str) -> list[dict[str, Any]]:
         seen.add(normalized)
         artifacts.append(generated_artifact(normalized))
     return artifacts
+
+
+def existing_artifact_paths(*path_texts: str) -> list[str]:
+    paths: list[str] = []
+    for path_text in path_texts:
+        if not path_text:
+            continue
+        normalized = path_text.replace("\\", "/")
+        if normalized in paths:
+            continue
+        if (ROOT / normalized).is_file():
+            paths.append(normalized)
+    return paths
+
+
+def incomplete_artifact_diagnostics(
+    *,
+    status: str,
+    source_paths: tuple[str, ...],
+) -> dict[str, Any]:
+    return {
+        "status": status,
+        "classification": "incomplete-review-candidate",
+        "review_result": "fail-closed-not-promotion-ready",
+        "required_source_artifacts": [
+            path_text for path_text in source_paths if path_text
+        ],
+        "message": (
+            "producer did not provide complete generated evidence; keep as "
+            "review candidate only until required source artifacts exist"
+        ),
+    }
+
+
+def attach_incomplete_artifact_diagnostics(
+    payload: dict[str, Any],
+    *,
+    source_paths: tuple[str, ...],
+) -> None:
+    status = str(payload.get("status", ""))
+    if status not in INCOMPLETE_GENERATED_ARTIFACT_STATUSES:
+        return
+    payload["generated_report_support_truth"] = False
+    payload["reviewed_source_required"] = True
+    payload["review_result"] = "fail-closed-not-promotion-ready"
+    payload["diagnostics"] = incomplete_artifact_diagnostics(
+        status=status,
+        source_paths=source_paths,
+    )
 
 
 def expected_platform_identity(platform_id: str) -> dict[str, Any]:
@@ -647,6 +744,10 @@ def is_fail_closed_placeholder(payload: dict[str, Any]) -> bool:
     return payload.get("contract_id") == FAIL_CLOSED_PLACEHOLDER_CONTRACT_ID
 
 
+def is_incomplete_generated_artifact(payload: dict[str, Any]) -> bool:
+    return str(payload.get("status", "")) in INCOMPLETE_GENERATED_ARTIFACT_STATUSES
+
+
 def require_fail_closed_placeholder(payload: dict[str, Any], *, platform_id: str, owner: str) -> None:
     require(is_fail_closed_placeholder(payload), f"{owner} is not a fail-closed placeholder")
     require(payload.get("schema_version") == 1, f"{owner} placeholder schema_version drifted")
@@ -667,6 +768,85 @@ def require_fail_closed_placeholder(payload: dict[str, Any], *, platform_id: str
         payload.get("review_result") == "fail-closed-not-promotion-ready",
         f"{owner} placeholder review result drifted",
     )
+    require_incomplete_generated_artifact(payload, platform_id=platform_id, owner=owner)
+
+
+def require_incomplete_generated_artifact(
+    payload: dict[str, Any],
+    *,
+    platform_id: str,
+    owner: str,
+) -> None:
+    status = str(payload.get("status", ""))
+    require(
+        status in INCOMPLETE_GENERATED_ARTIFACT_STATUSES,
+        f"{owner} incomplete artifact status drifted",
+    )
+    require(payload.get("platform_id") == platform_id, f"{owner} incomplete artifact platform_id drifted")
+    require(payload.get("support_truth") is False, f"{owner} incomplete artifact attempted support truth")
+    require(
+        payload.get("promotion_allowed_from_generated_evidence") is False,
+        f"{owner} incomplete artifact allowed generated promotion",
+    )
+    require(
+        payload.get("generated_report_support_truth") is False,
+        f"{owner} incomplete artifact became support truth",
+    )
+    require(
+        payload.get("reviewed_source_required") is True,
+        f"{owner} incomplete artifact did not require source review",
+    )
+    require(
+        payload.get("review_result") == "fail-closed-not-promotion-ready",
+        f"{owner} incomplete artifact review result drifted",
+    )
+    source_artifact_entries: list[Any] = []
+    source_artifacts_value = payload.get("source_artifacts")
+    if source_artifacts_value is not None:
+        source_artifact_entries = require_source_artifacts(payload, owner)
+    missing_source_path = str(payload.get("missing_source_path", ""))
+    require(
+        source_artifact_entries or missing_source_path,
+        f"{owner} incomplete artifact missing source_artifacts",
+    )
+    diagnostics = payload.get("diagnostics")
+    if diagnostics is None and (missing_source_path or source_artifact_entries):
+        source_paths = source_artifact_paths_from_payload(payload)
+        if missing_source_path and missing_source_path not in source_paths:
+            source_paths.append(missing_source_path)
+        diagnostics = incomplete_artifact_diagnostics(
+            status=status,
+            source_paths=tuple(source_paths),
+        )
+    require(isinstance(diagnostics, dict), f"{owner} incomplete artifact missing diagnostics")
+    require(
+        diagnostics.get("classification") == "incomplete-review-candidate",
+        f"{owner} incomplete artifact diagnostics classification drifted",
+    )
+    require(
+        diagnostics.get("review_result") == "fail-closed-not-promotion-ready",
+        f"{owner} incomplete artifact diagnostics review result drifted",
+    )
+    required_sources = diagnostics.get("required_source_artifacts")
+    require(
+        isinstance(required_sources, list)
+        and all(isinstance(path_text, str) and path_text for path_text in required_sources),
+        f"{owner} incomplete artifact diagnostics missing required source artifacts",
+    )
+    if source_artifact_entries:
+        declared_sources = {
+            str(entry.get("path", "")).replace("\\", "/")
+            for entry in source_artifact_entries
+        }
+        missing_sources = sorted(
+            str(path_text).replace("\\", "/")
+            for path_text in required_sources
+            if str(path_text).replace("\\", "/") not in declared_sources
+        )
+        require(
+            not missing_sources,
+            f"{owner} incomplete artifact source_artifacts missing required sources: {', '.join(missing_sources)}",
+        )
 
 
 def require_platform_identity_fields(
@@ -702,6 +882,9 @@ def validate_object_identity_artifact(platform_id: str) -> None:
     owner = platform_scoped_path(platform_id, path_suffix)
     record_ids = reviewed_source_record_ids(platform_id)
     payload = load_platform_generated_json(platform_id, path_suffix)
+    if is_fail_closed_placeholder(payload):
+        require_fail_closed_placeholder(payload, platform_id=platform_id, owner=owner)
+        return
     require_common_generated_artifact(
         payload,
         platform_id=platform_id,
@@ -716,6 +899,9 @@ def validate_object_identity_artifact(platform_id: str) -> None:
         identity_field="expected_identity",
         expected_fields=("target_platform_id", "target_triple", "arch", "object_format"),
     )
+    if is_incomplete_generated_artifact(payload):
+        require_incomplete_generated_artifact(payload, platform_id=platform_id, owner=owner)
+        return
     actual_identity = payload.get("actual_identity")
     require(isinstance(actual_identity, dict), f"{owner} missing actual_identity")
     source_artifacts = require_source_artifacts(payload, owner)
@@ -736,6 +922,9 @@ def validate_debug_identity_artifact(platform_id: str) -> None:
     owner = platform_scoped_path(platform_id, path_suffix)
     record_ids = reviewed_source_record_ids(platform_id)
     payload = load_platform_generated_json(platform_id, path_suffix)
+    if is_fail_closed_placeholder(payload):
+        require_fail_closed_placeholder(payload, platform_id=platform_id, owner=owner)
+        return
     require_common_generated_artifact(
         payload,
         platform_id=platform_id,
@@ -750,6 +939,9 @@ def validate_debug_identity_artifact(platform_id: str) -> None:
         identity_field="expected_identity",
         expected_fields=("target_platform_id", "target_triple", "arch", "debug_format"),
     )
+    if is_incomplete_generated_artifact(payload):
+        require_incomplete_generated_artifact(payload, platform_id=platform_id, owner=owner)
+        return
     actual_identity = payload.get("actual_identity")
     require(isinstance(actual_identity, dict), f"{owner} missing actual_identity")
     source_artifacts = require_source_artifacts(payload, owner)
@@ -770,6 +962,9 @@ def validate_runtime_library_manifest_artifact(platform_id: str) -> None:
     owner = platform_scoped_path(platform_id, path_suffix)
     payload = load_platform_generated_json(platform_id, path_suffix)
     expected = expected_platform_identity(platform_id)
+    if is_fail_closed_placeholder(payload):
+        require_fail_closed_placeholder(payload, platform_id=platform_id, owner=owner)
+        return
     require_common_generated_artifact(
         payload,
         platform_id=platform_id,
@@ -777,6 +972,9 @@ def validate_runtime_library_manifest_artifact(platform_id: str) -> None:
         contract_id="objc3c.platform.hosted-runtime-library-manifest.generated.v1",
     )
     require(payload.get("native_execution_claimed") is False, f"{owner} claimed native execution")
+    if is_incomplete_generated_artifact(payload):
+        require_incomplete_generated_artifact(payload, platform_id=platform_id, owner=owner)
+        return
     require_platform_root_fields(payload, platform_id, owner)
     require(payload.get("runtime_library_names") == expected["runtime_library_names"], f"{owner} runtime libraries drifted")
     require(payload.get("loader_path_policy") == expected["loader_path_policy"], f"{owner} loader policy drifted")
@@ -808,6 +1006,9 @@ def validate_install_receipt_artifact(platform_id: str) -> None:
     owner = platform_scoped_path(platform_id, path_suffix)
     record_ids = reviewed_source_record_ids(platform_id)
     payload = load_platform_generated_json(platform_id, path_suffix)
+    if is_fail_closed_placeholder(payload):
+        require_fail_closed_placeholder(payload, platform_id=platform_id, owner=owner)
+        return
     require_common_generated_artifact(
         payload,
         platform_id=platform_id,
@@ -817,6 +1018,9 @@ def validate_install_receipt_artifact(platform_id: str) -> None:
         reviewed_source_required=True,
     )
     require(payload.get("native_execution_claimed") is False, f"{owner} claimed native execution")
+    if is_incomplete_generated_artifact(payload):
+        require_incomplete_generated_artifact(payload, platform_id=platform_id, owner=owner)
+        return
     require_platform_root_fields(payload, platform_id, owner)
     require(payload.get("package_manifest") == RUNNABLE_PACKAGE_MANIFEST_PATH, f"{owner} package manifest path drifted")
     require_artifact_entry_shape(payload.get("package_manifest_artifact"), owner)
@@ -1055,6 +1259,9 @@ def validate_runtime_load_probe_artifact(platform_id: str) -> None:
     record_ids = reviewed_source_record_ids(platform_id)
     payload = load_platform_generated_json(platform_id, path_suffix)
     expected = expected_platform_identity(platform_id)
+    if is_fail_closed_placeholder(payload):
+        require_fail_closed_placeholder(payload, platform_id=platform_id, owner=owner)
+        return
     require_common_generated_artifact(
         payload,
         platform_id=platform_id,
@@ -1064,6 +1271,9 @@ def validate_runtime_load_probe_artifact(platform_id: str) -> None:
         reviewed_source_required=True,
     )
     require(payload.get("native_execution_claimed") is False, f"{owner} claimed native execution")
+    if is_incomplete_generated_artifact(payload):
+        require_incomplete_generated_artifact(payload, platform_id=platform_id, owner=owner)
+        return
     require(payload.get("target_platform_id") == platform_id, f"{owner} target_platform_id drifted")
     require(payload.get("target_triple") == expected["target_triple"], f"{owner} target_triple drifted")
     require(payload.get("runtime_library_names") == expected["runtime_library_names"], f"{owner} runtime libraries drifted")
@@ -1114,6 +1324,12 @@ def write_object_identity_artifact(platform_id: str) -> None:
     build_artifact = generated_artifact(NATIVE_BUILD_SUMMARY_PATH)
     record_ids = reviewed_source_record_ids(platform_id)
     build_artifacts = dict_field(build_summary, "artifacts")
+    status = generated_identity_status(
+        source_exists=bool(build_artifact.get("exists")),
+        actual=actual,
+        expected=expected,
+        fields=("target_platform_id", "target_triple", "object_format"),
+    )
 
     payload = {
         "contract_id": "objc3c.platform.hosted-object-identity.generated.v1",
@@ -1125,13 +1341,9 @@ def write_object_identity_artifact(platform_id: str) -> None:
         "source_summary_path": NATIVE_BUILD_SUMMARY_PATH,
         "reviewed_source_required": True,
         "support_truth": False,
+        "generated_report_support_truth": False,
         "promotion_allowed_from_generated_evidence": False,
-        "status": generated_identity_status(
-            source_exists=bool(build_artifact.get("exists")),
-            actual=actual,
-            expected=expected,
-            fields=("target_platform_id", "target_triple", "object_format"),
-        ),
+        "status": status,
         "expected_identity": {
             "target_platform_id": expected["target_platform_id"],
             "target_triple": expected["target_triple"],
@@ -1165,6 +1377,14 @@ def write_object_identity_artifact(platform_id: str) -> None:
             NATIVE_EXECUTION_SMOKE_SUMMARY_PATH,
         ),
     }
+    attach_incomplete_artifact_diagnostics(
+        payload,
+        source_paths=(
+            NATIVE_BUILD_SUMMARY_PATH,
+            llvm_capabilities_path,
+            NATIVE_EXECUTION_SMOKE_SUMMARY_PATH,
+        ),
+    )
     write_json(ROOT / payload["generated_report_path"], payload)
 
 
@@ -1179,6 +1399,12 @@ def write_debug_identity_artifact(platform_id: str) -> None:
     build_artifact = generated_artifact(NATIVE_BUILD_SUMMARY_PATH)
     record_ids = reviewed_source_record_ids(platform_id)
     build_artifacts = dict_field(build_summary, "artifacts")
+    status = generated_identity_status(
+        source_exists=bool(build_artifact.get("exists")),
+        actual=actual,
+        expected=expected,
+        fields=("target_platform_id", "target_triple", "debug_format"),
+    )
 
     payload = {
         "contract_id": "objc3c.platform.hosted-debug-identity.generated.v1",
@@ -1190,13 +1416,9 @@ def write_debug_identity_artifact(platform_id: str) -> None:
         "source_summary_path": NATIVE_BUILD_SUMMARY_PATH,
         "reviewed_source_required": True,
         "support_truth": False,
+        "generated_report_support_truth": False,
         "promotion_allowed_from_generated_evidence": False,
-        "status": generated_identity_status(
-            source_exists=bool(build_artifact.get("exists")),
-            actual=actual,
-            expected=expected,
-            fields=("target_platform_id", "target_triple", "debug_format"),
-        ),
+        "status": status,
         "expected_identity": {
             "target_platform_id": expected["target_platform_id"],
             "target_triple": expected["target_triple"],
@@ -1214,6 +1436,13 @@ def write_debug_identity_artifact(platform_id: str) -> None:
             NATIVE_EXECUTION_SMOKE_SUMMARY_PATH,
         ),
     }
+    attach_incomplete_artifact_diagnostics(
+        payload,
+        source_paths=(
+            NATIVE_BUILD_SUMMARY_PATH,
+            NATIVE_EXECUTION_SMOKE_SUMMARY_PATH,
+        ),
+    )
     write_json(ROOT / payload["generated_report_path"], payload)
 
 
@@ -1243,6 +1472,12 @@ def write_runtime_library_manifest_artifact(platform_id: str) -> None:
     runtime_artifacts = source_artifacts(*runtime_paths)
     package_artifact = generated_artifact(RUNNABLE_PACKAGE_MANIFEST_PATH)
     package_target_platform_id = str(package_manifest.get("target_platform_id", ""))
+    status = runtime_manifest_status(
+        source_exists=bool(package_artifact.get("exists")),
+        runtime_artifacts=runtime_artifacts,
+        package_target_platform_id=package_target_platform_id,
+        platform_id=platform_id,
+    )
 
     payload = {
         "contract_id": "objc3c.platform.hosted-runtime-library-manifest.generated.v1",
@@ -1251,15 +1486,12 @@ def write_runtime_library_manifest_artifact(platform_id: str) -> None:
         "issue_ref": int(PLATFORM_CONFIG[platform_id]["issue_ref"]),
         "generated_report_path": platform_scoped_path(platform_id, path_suffix),
         "source_package_manifest_path": RUNNABLE_PACKAGE_MANIFEST_PATH,
+        "reviewed_source_required": True,
         "support_truth": False,
+        "generated_report_support_truth": False,
         "native_execution_claimed": False,
         "promotion_allowed_from_generated_evidence": False,
-        "status": runtime_manifest_status(
-            source_exists=bool(package_artifact.get("exists")),
-            runtime_artifacts=runtime_artifacts,
-            package_target_platform_id=package_target_platform_id,
-            platform_id=platform_id,
-        ),
+        "status": status,
         "target_platform_id": platform_id,
         "source_package_target_platform_id": package_target_platform_id,
         "target_triple": expected["target_triple"],
@@ -1278,6 +1510,16 @@ def write_runtime_library_manifest_artifact(platform_id: str) -> None:
             NATIVE_BUILD_SUMMARY_PATH,
         ),
     }
+    attach_incomplete_artifact_diagnostics(
+        payload,
+        source_paths=(
+            *existing_artifact_paths(
+                RUNNABLE_PACKAGE_MANIFEST_PATH,
+                NATIVE_BUILD_SUMMARY_PATH,
+                *runtime_paths,
+            ),
+        ),
+    )
     write_json(ROOT / payload["generated_report_path"], payload)
 
 
@@ -1307,6 +1549,11 @@ def write_install_receipt_artifact(platform_id: str) -> None:
     )
     record_ids = reviewed_source_record_ids(platform_id)
     expected = expected_platform_identity(platform_id)
+    status = install_receipt_status(
+        source_receipt_path=source_receipt_path,
+        source_receipt=source_receipt,
+        platform_id=platform_id,
+    )
 
     payload = {
         "contract_id": "objc3c.platform.hosted-install-receipt.generated.v1",
@@ -1319,13 +1566,10 @@ def write_install_receipt_artifact(platform_id: str) -> None:
         "source_install_receipt_path": source_receipt_path,
         "reviewed_source_required": True,
         "support_truth": False,
+        "generated_report_support_truth": False,
         "native_execution_claimed": False,
         "promotion_allowed_from_generated_evidence": False,
-        "status": install_receipt_status(
-            source_receipt_path=source_receipt_path,
-            source_receipt=source_receipt,
-            platform_id=platform_id,
-        ),
+        "status": status,
         "target_platform_id": platform_id,
         "target_triple": expected["target_triple"],
         "package_root": package_manifest.get("package_root", ""),
@@ -1349,6 +1593,16 @@ def write_install_receipt_artifact(platform_id: str) -> None:
             source_receipt_path,
         ),
     }
+    attach_incomplete_artifact_diagnostics(
+        payload,
+        source_paths=(
+            *existing_artifact_paths(
+                PACKAGE_CHANNELS_END_TO_END_SUMMARY_PATH,
+                RUNNABLE_PACKAGE_MANIFEST_PATH,
+                source_receipt_path,
+            ),
+        ),
+    )
     write_json(ROOT / payload["generated_report_path"], payload)
 
 
@@ -1371,6 +1625,12 @@ def write_runtime_load_probe_artifact(platform_id: str) -> None:
         and native_status.upper() not in {"UNAVAILABLE", "SKIP", "SKIPPED"}
         else -1
     )
+    status = runtime_load_probe_status(
+        source_exists=native_summary_exists,
+        exit_code=exit_code,
+        native_status=native_status,
+        skip_reason=skip_reason,
+    )
 
     payload = {
         "contract_id": "objc3c.platform.hosted-runtime-load-probe.generated.v1",
@@ -1382,14 +1642,10 @@ def write_runtime_load_probe_artifact(platform_id: str) -> None:
         "source_summary_path": NATIVE_EXECUTION_SMOKE_SUMMARY_PATH,
         "reviewed_source_required": True,
         "support_truth": False,
+        "generated_report_support_truth": False,
         "native_execution_claimed": False,
         "promotion_allowed_from_generated_evidence": False,
-        "status": runtime_load_probe_status(
-            source_exists=native_summary_exists,
-            exit_code=exit_code,
-            native_status=native_status,
-            skip_reason=skip_reason,
-        ),
+        "status": status,
         "target_platform_id": platform_id,
         "target_triple": expected["target_triple"],
         "runtime_library_names": expected["runtime_library_names"],
@@ -1424,6 +1680,14 @@ def write_runtime_load_probe_artifact(platform_id: str) -> None:
             RUNNABLE_PACKAGE_MANIFEST_PATH,
         ),
     }
+    attach_incomplete_artifact_diagnostics(
+        payload,
+        source_paths=(
+            HOSTED_EXECUTION_SMOKE_SUMMARY_PATH,
+            NATIVE_EXECUTION_SMOKE_SUMMARY_PATH,
+            RUNNABLE_PACKAGE_MANIFEST_PATH,
+        ),
+    )
     write_json(ROOT / payload["generated_report_path"], payload)
 
 
@@ -1702,6 +1966,35 @@ def build_review_candidate_source_truth(
             for suffix in target["artifact_suffixes"]
         ]
         artifacts = [generated_artifact(path) for path in artifact_paths]
+        incomplete_diagnostics = []
+        required_source_artifacts: list[str] = []
+        for artifact in artifacts:
+            if (
+                artifact.get("exists") is True
+                and artifact.get("fail_closed_placeholder") is not True
+                and artifact.get("incomplete_generated_artifact") is not True
+            ):
+                continue
+            artifact_diagnostics = artifact.get("diagnostics")
+            required_sources = artifact.get("required_source_artifacts")
+            if not isinstance(required_sources, list):
+                required_sources = []
+            for source_path in required_sources:
+                normalized_source = str(source_path).replace("\\", "/")
+                if normalized_source and normalized_source not in required_source_artifacts:
+                    required_source_artifacts.append(normalized_source)
+            incomplete_diagnostics.append(
+                {
+                    "path": str(artifact.get("path", "")).replace("\\", "/"),
+                    "exists": artifact.get("exists") is True,
+                    "status": str(artifact.get("status", "missing-generated-artifact")),
+                    "fail_closed_placeholder": artifact.get("fail_closed_placeholder") is True,
+                    "diagnostics": artifact_diagnostics
+                    if isinstance(artifact_diagnostics, dict)
+                    else None,
+                    "required_source_artifacts": required_sources,
+                }
+            )
         candidate_rows.append(
             {
                 **target,
@@ -1712,8 +2005,11 @@ def build_review_candidate_source_truth(
                 "generated_artifacts_complete": all(
                     artifact.get("exists") is True
                     and artifact.get("fail_closed_placeholder") is not True
+                    and artifact.get("incomplete_generated_artifact") is not True
                     for artifact in artifacts
                 ),
+                "incomplete_diagnostics": incomplete_diagnostics,
+                "required_source_artifacts": required_source_artifacts,
                 "review_status": "pending-reviewed-source-truth",
                 "promotion_allowed": False,
                 "support_truth": False,
@@ -2163,6 +2459,27 @@ def validate_review_candidate_source_truth(
             if not normalized.startswith(expected_prefix):
                 raise RuntimeError(
                     f"{record_type} review candidate artifact path drifted: {normalized}"
+                )
+        if row.get("generated_artifacts_complete") is not True:
+            diagnostics = row.get("incomplete_diagnostics")
+            if not isinstance(diagnostics, list) or not diagnostics:
+                raise RuntimeError(
+                    f"{record_type} review candidate missing incomplete diagnostics"
+                )
+            for diagnostic in diagnostics:
+                if not isinstance(diagnostic, dict):
+                    raise RuntimeError(
+                        f"{record_type} review candidate incomplete diagnostic must be object"
+                    )
+                diagnostic_path = str(diagnostic.get("path", "")).replace("\\", "/")
+                if not diagnostic_path.startswith(expected_prefix):
+                    raise RuntimeError(
+                        f"{record_type} review candidate incomplete diagnostic path drifted: {diagnostic_path}"
+                    )
+            required_sources = row.get("required_source_artifacts")
+            if not isinstance(required_sources, list):
+                raise RuntimeError(
+                    f"{record_type} review candidate required source artifacts drifted"
                 )
 
 

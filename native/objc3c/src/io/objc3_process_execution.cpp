@@ -155,9 +155,10 @@ int RunIRCompileLLVMDirect(const std::filesystem::path &llc_path,
   // fail-closed and produce no synthesized object-inspection artifacts.
   // object-packaging/retention freeze anchor: this same produced
   // object boundary is now frozen as the lane-D packaging handoff, rooted in
-  // module.obj, @llvm.used retention, and retained __objc3_sec_* aggregate
-  // symbols. Later archive/link/startup registration work may extend the
-  // pipeline, but it may not replace or silently bypass these current anchors.
+  // the host-default object artifact, @llvm.used retention, and retained
+  // __objc3_sec_* aggregate symbols. Later archive/link/startup registration
+  // work may extend the pipeline, but it may not replace or silently bypass
+  // these current anchors.
   // live-optional-send-and-keypath-runtime-support anchor: the same
   // llvm-direct object path must preserve retained keypath descriptor sections
   // and runtime-link sidecars because the runtime now consumes those

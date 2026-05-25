@@ -3,6 +3,8 @@
 #include <string>
 #include <string_view>
 
+#include "artifacts/identity/artifact_identity.h"
+
 namespace objc3::artifacts::frontend {
 
 inline constexpr const char
@@ -25,7 +27,8 @@ struct RuntimeStateObjectDebugIdentity {
   std::string object_format = "COFF";
   std::string package_object_format = "COFF";
   std::string debug_format = "CodeView/PDB";
-  std::string object_file_extension = ".obj";
+  std::string object_file_extension =
+      objc3::artifacts::identity::kObjc3NativeObjectFileExtension;
   std::string host_promotion_state = "supported-boundary";
   std::string wrong_format_behavior = "fail-closed-before-package-publication";
   std::string wrong_arch_behavior = "fail-closed-before-install";
@@ -38,10 +41,14 @@ struct RuntimeStateObjectDebugIdentity {
 };
 
 struct RuntimeStatePublicationPaths {
-  std::string emit_prefix = "module";
-  std::string compile_manifest_artifact = "module.manifest.json";
-  std::string object_artifact = "module.obj";
-  std::string backend_artifact = "module.ll";
+  std::string emit_prefix =
+      objc3::artifacts::identity::kObjc3NativeDefaultArtifactStem;
+  std::string compile_manifest_artifact =
+      objc3::artifacts::identity::kObjc3NativeDefaultManifestArtifactName;
+  std::string object_artifact =
+      objc3::artifacts::identity::kObjc3NativeDefaultObjectArtifactName;
+  std::string backend_artifact =
+      objc3::artifacts::identity::kObjc3NativeDefaultIrArtifactName;
   RuntimeStateObjectDebugIdentity object_debug_identity;
 };
 

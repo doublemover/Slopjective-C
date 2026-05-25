@@ -137,6 +137,9 @@ def publish_platform_host_install_receipt(
         "linux-x64": "objc3c.platform.linux.install-receipt.v1",
         "darwin-arm64": "objc3c.platform.darwin.install-receipt.v1",
     }
+    expected_package_root_layout = required_payload_entries_for_platform(
+        target_platform_id=platform_id,
+    )
     payload = {
         "contract_id": "objc3c.platform.hosted-install-receipt.generated.v1",
         "schema_version": 1,
@@ -160,7 +163,7 @@ def publish_platform_host_install_receipt(
         "target_platform_id": platform_id,
         "target_triple": target_triple_by_platform[platform_id],
         "package_root": str(manifest.get("package_root", "")),
-        "package_root_layout": list(package_runtime_model.get("package_root_layout", [])),
+        "package_root_layout": expected_package_root_layout,
         "package_manifest": MANIFEST_RELATIVE_PATH,
         "package_manifest_artifact": file_artifact(manifest_path),
         "package_channels_summary_artifact": file_artifact(SUMMARY_PATH),

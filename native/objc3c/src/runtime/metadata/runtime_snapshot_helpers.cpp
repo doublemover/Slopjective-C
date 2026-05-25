@@ -1,3 +1,4 @@
+#include "artifacts/identity/artifact_identity.h"
 #include "runtime/metadata/runtime_capability_contracts.h"
 #include "runtime/objc3_runtime_bootstrap_internal.h"
 
@@ -14,13 +15,13 @@ objc3_runtime_copy_metaprogramming_expansion_host_boundary_snapshot_for_testing(
   snapshot->runtime_package_loader_ready = 0;
   snapshot->deterministic = 1;
   snapshot->runtime_support_library_archive_relative_path =
-      "artifacts/lib/objc3_runtime.lib";
+      objc3::artifacts::identity::kObjc3NativeRuntimeLibraryRelativePath;
   snapshot->property_behavior_runtime_model =
       "supported-property-behavior-lowering-reuses-existing-private-runtime-property-accessor-layout-and-current-property-hooks";
   snapshot->macro_expansion_host_model =
       "macro-host-execution-process-launch-and-runtime-package-loading-remain-disabled-and-fail-closed";
   snapshot->packaging_model =
-      "native-driver-packaging-still-hands-off-metaprogramming-runtime-support-through-artifacts-lib-objc3_runtime-lib-and-runtime-registration-manifests";
+      "native-driver-packaging-still-hands-off-metaprogramming-runtime-support-through-native-artifact-identity-runtime-library-and-runtime-registration-manifests";
   snapshot->fail_closed_model =
       "no-live-macro-expansion-host-or-runtime-package-loader-is-claimed-yet";
   return OBJC3_RUNTIME_REGISTRATION_STATUS_OK;
@@ -40,7 +41,7 @@ objc3_runtime_copy_metaprogramming_macro_host_process_cache_integration_snapshot
   snapshot->runtime_package_loader_ready = 0;
   snapshot->deterministic = 1;
   snapshot->host_executable_relative_path =
-      "artifacts/bin/objc3c-frontend-c-api-runner.exe";
+      objc3::artifacts::identity::kObjc3NativeFrontendRunnerRelativePath;
   snapshot->cache_root_relative_path =
       objc3c::runtime::MetaprogrammingHostCacheRootForTesting();
   snapshot->host_model =
@@ -68,9 +69,9 @@ objc3_runtime_copy_interop_bridge_packaging_toolchain_snapshot_for_testing(
   snapshot->bridge_generation_ready = 0;
   snapshot->deterministic = 1;
   snapshot->runtime_support_library_archive_relative_path =
-      "artifacts/lib/objc3_runtime.lib";
+      objc3::artifacts::identity::kObjc3NativeRuntimeLibraryRelativePath;
   snapshot->registration_manifest_model =
-      "runtime-registration-manifest-publishes-runtime-archive-path-owned-payloads-and-driver-link-wiring";
+      "runtime-registration-manifest-publishes-native-artifact-identity-runtime-library-path-owned-payloads-and-driver-link-wiring";
   snapshot->cross_module_link_plan_model =
       "runtime-import-surfaces-plus-registration-manifest-peer-artifacts-feed-one-fail-closed-cross-module-link-plan-and-linker-response-sidecar";
   snapshot->operator_visible_evidence_model =

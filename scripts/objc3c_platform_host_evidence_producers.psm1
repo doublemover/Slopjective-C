@@ -89,6 +89,89 @@ function Get-Objc3cDarwinPackageRootLayout {
   )
 }
 
+function Get-Objc3cPlatformRuntimeLibraryKind {
+  param([Parameter(Mandatory = $true)][string]$PlatformId)
+
+  if ($PlatformId -eq "windows-x64") {
+    return "static-archive"
+  }
+  return "shared-library"
+}
+
+function Get-Objc3cPlatformRuntimeLibraryName {
+  param([Parameter(Mandatory = $true)][string]$PlatformId)
+
+  if ($PlatformId -eq "darwin-arm64") {
+    return "libobjc3-runtime.dylib"
+  }
+  if ($PlatformId -eq "linux-x64") {
+    return "libobjc3-runtime.so"
+  }
+  return "objc3_runtime.lib"
+}
+
+function Get-Objc3cPlatformRuntimeLibraryRelativePath {
+  param([Parameter(Mandatory = $true)][string]$PlatformId)
+
+  return "artifacts/lib/" + (Get-Objc3cPlatformRuntimeLibraryName -PlatformId $PlatformId)
+}
+
+function Get-Objc3cPlatformTargetTriple {
+  param([Parameter(Mandatory = $true)][string]$PlatformId)
+
+  if ($PlatformId -eq "linux-x64") {
+    return "x86_64-unknown-linux-gnu"
+  }
+  if ($PlatformId -eq "darwin-arm64") {
+    return "aarch64-apple-darwin"
+  }
+  if ($PlatformId -eq "windows-x64") {
+    return "x86_64-pc-windows-msvc"
+  }
+  return $PlatformId
+}
+
+function Get-Objc3cPlatformObjectFormat {
+  param([Parameter(Mandatory = $true)][string]$PlatformId)
+
+  if ($PlatformId -eq "linux-x64") {
+    return "ELF"
+  }
+  if ($PlatformId -eq "darwin-arm64") {
+    return "Mach-O"
+  }
+  return "COFF"
+}
+
+function Get-Objc3cPlatformDebugFormat {
+  param([Parameter(Mandatory = $true)][string]$PlatformId)
+
+  if ($PlatformId -eq "darwin-arm64") {
+    return "DWARF/dSYM"
+  }
+  if ($PlatformId -eq "linux-x64") {
+    return "DWARF"
+  }
+  return "CodeView/PDB"
+}
+
+function Get-Objc3cRuntimeManifestGeneratedStatus {
+  param(
+    [Parameter(Mandatory = $true)]$PackageManifestArtifact,
+    [Parameter(Mandatory = $true)]$RuntimeArtifact,
+    [string]$PackageTargetPlatformId = "",
+    [Parameter(Mandatory = $true)][string]$PlatformId
+  )
+
+  if (-not [bool]$PackageManifestArtifact.exists -or -not [bool]$RuntimeArtifact.exists) {
+    return "missing-source-generated-fail-closed"
+  }
+  if (-not [string]::IsNullOrWhiteSpace($PackageTargetPlatformId) -and $PackageTargetPlatformId -ne $PlatformId) {
+    return "package-target-mismatch-generated-fail-closed"
+  }
+  return "generated-host-artifact-present"
+}
+
 function ConvertTo-Objc3cEvidenceHostPath {
   param([Parameter(Mandatory = $true)][string]$RelativePath)
 
@@ -768,12 +851,108 @@ function New-Objc3cDarwinDsymIdentity {
   }
 }
 
+function Get-Objc3cEvidencePayloadField {
+  param(
+    [Parameter(Mandatory = $true)]$Payload,
+    [Parameter(Mandatory = $true)][string]$Name,
+    [object]$DefaultValue = $null
+  )
+
+  if ($Payload -is [System.Collections.IDictionary]) {
+    if ($Payload.Contains($Name)) {
+      return $Payload[$Name]
+    }
+    return $DefaultValue
+  }
+  return Get-Objc3cEvidenceObjectProperty -InputObject $Payload -Name $Name -DefaultValue $DefaultValue
+}
+
+function Set-Objc3cEvidencePayloadField {
+  param(
+    [Parameter(Mandatory = $true)]$Payload,
+    [Parameter(Mandatory = $true)][string]$Name,
+    [object]$Value = $null
+  )
+
+  if ($Payload -is [System.Collections.IDictionary]) {
+    $Payload[$Name] = $Value
+    return
+  }
+  $Payload | Add-Member -NotePropertyName $Name -NotePropertyValue $Value -Force
+}
+
+function Test-Objc3cGeneratedEvidenceStatusIncomplete {
+  param([string]$Status = "")
+
+  return $Status -in @(
+    "fail-closed",
+    "missing-source-generated-fail-closed",
+    "package-target-mismatch-generated-fail-closed",
+    "install-receipt-target-mismatch-generated-fail-closed",
+    "identity-mismatch-generated-fail-closed",
+    "runtime-load-unavailable-generated-fail-closed",
+    "runtime-load-failed-generated-fail-closed",
+    "producer-failed-before-success-artifact"
+  )
+}
+
+function Get-Objc3cGeneratedEvidenceSourceArtifactPaths {
+  param([Parameter(Mandatory = $true)]$Payload)
+
+  $paths = New-Object System.Collections.Generic.List[string]
+  foreach ($entry in @(Get-Objc3cEvidencePayloadField -Payload $Payload -Name "source_artifacts" -DefaultValue @())) {
+    if ($null -eq $entry) {
+      continue
+    }
+    $pathText = if ($entry -is [System.Collections.IDictionary]) {
+      [string]$entry["path"]
+    } else {
+      [string](Get-Objc3cEvidenceObjectProperty -InputObject $entry -Name "path" -DefaultValue "")
+    }
+    $pathText = $pathText.Replace('\', '/')
+    if (-not [string]::IsNullOrWhiteSpace($pathText) -and -not $paths.Contains($pathText)) {
+      $paths.Add($pathText) | Out-Null
+    }
+  }
+  $missingSourcePath = [string](Get-Objc3cEvidencePayloadField -Payload $Payload -Name "missing_source_path" -DefaultValue "")
+  $missingSourcePath = $missingSourcePath.Replace('\', '/')
+  if (-not [string]::IsNullOrWhiteSpace($missingSourcePath) -and -not $paths.Contains($missingSourcePath)) {
+    $paths.Add($missingSourcePath) | Out-Null
+  }
+  return @($paths)
+}
+
+function Add-Objc3cIncompleteGeneratedEvidenceDiagnostics {
+  param([Parameter(Mandatory = $true)]$Payload)
+
+  $status = [string](Get-Objc3cEvidencePayloadField -Payload $Payload -Name "status" -DefaultValue "")
+  if (!(Test-Objc3cGeneratedEvidenceStatusIncomplete -Status $status)) {
+    return
+  }
+
+  $requiredSourceArtifacts = @(Get-Objc3cGeneratedEvidenceSourceArtifactPaths -Payload $Payload)
+  Set-Objc3cEvidencePayloadField -Payload $Payload -Name "generated_report_support_truth" -Value $false
+  Set-Objc3cEvidencePayloadField -Payload $Payload -Name "reviewed_source_required" -Value $true
+  Set-Objc3cEvidencePayloadField -Payload $Payload -Name "review_result" -Value "fail-closed-not-promotion-ready"
+  Set-Objc3cEvidencePayloadField `
+    -Payload $Payload `
+    -Name "diagnostics" `
+    -Value ([ordered]@{
+      status = $status
+      classification = "incomplete-review-candidate"
+      review_result = "fail-closed-not-promotion-ready"
+      required_source_artifacts = $requiredSourceArtifacts
+      message = "producer did not provide complete generated evidence; keep as review candidate only until required source artifacts exist"
+    })
+}
+
 function Write-Objc3cPlatformEvidenceJson {
   param(
     [Parameter(Mandatory = $true)][string]$Path,
     [Parameter(Mandatory = $true)]$Payload
   )
 
+  Add-Objc3cIncompleteGeneratedEvidenceDiagnostics -Payload $Payload
   $parent = Split-Path -Parent $Path
   if ($parent) {
     New-Item -ItemType Directory -Force -Path $parent | Out-Null
@@ -982,7 +1161,9 @@ function Write-Objc3cDarwinRuntimeLibraryManifestEvidence {
     return
   }
 
-  $runtimeLibraryPath = Join-Path $PackageRoot (ConvertTo-Objc3cEvidenceHostPath -RelativePath $RuntimeLibraryRelativePath)
+  $expectedRuntimeLibraryRelativePath = Get-Objc3cPlatformRuntimeLibraryRelativePath -PlatformId $PlatformId
+  $expectedRuntimeLibraryName = Get-Objc3cPlatformRuntimeLibraryName -PlatformId $PlatformId
+  $runtimeLibraryPath = Join-Path $PackageRoot (ConvertTo-Objc3cEvidenceHostPath -RelativePath $expectedRuntimeLibraryRelativePath)
   $identity = Get-Objc3cDarwinMachOIdentity -RepoRoot $PackageRoot -Path $runtimeLibraryPath -IncludeInstallName
   $runtimeLibraryProofPresent = Test-Objc3cDarwinRuntimeLibraryProofPresent -Identity $identity
   $manifestStatus = if ($runtimeLibraryProofPresent) {
@@ -997,15 +1178,11 @@ function Write-Objc3cDarwinRuntimeLibraryManifestEvidence {
   $packageTargetPlatformId = [string](Get-Objc3cEvidenceObjectProperty -InputObject $packageManifestPayload -Name "target_platform_id" -DefaultValue "")
   $runtimeArtifact = Get-Objc3cEvidenceFileDigest -RootPath $PackageRoot -TargetPath $runtimeLibraryPath
   $packageManifestArtifact = Get-Objc3cEvidenceFileDigest -RootPath $RepoRoot -TargetPath $PackageManifestPath
-  $runtimeGeneratedStatus = if (-not [bool]$packageManifestArtifact.exists -or -not [bool]$runtimeArtifact.exists) {
-    "missing-source-generated-fail-closed"
-  } elseif (-not [string]::IsNullOrWhiteSpace($packageTargetPlatformId) -and $packageTargetPlatformId -ne $PlatformId) {
-    "package-target-mismatch-generated-fail-closed"
-  } elseif ($runtimeLibraryProofPresent) {
-    "generated-host-artifact-present"
-  } else {
-    "missing-source-generated-fail-closed"
-  }
+  $runtimeGeneratedStatus = Get-Objc3cRuntimeManifestGeneratedStatus `
+    -PackageManifestArtifact $packageManifestArtifact `
+    -RuntimeArtifact $runtimeArtifact `
+    -PackageTargetPlatformId $packageTargetPlatformId `
+    -PlatformId $PlatformId
   $payload = [ordered]@{
     contract_id = "objc3c.platform.hosted-runtime-library-manifest.generated.v1"
     schema_version = 1
@@ -1019,10 +1196,10 @@ function Write-Objc3cDarwinRuntimeLibraryManifestEvidence {
     status = $runtimeGeneratedStatus
     target_platform_id = $PlatformId
     source_package_target_platform_id = $packageTargetPlatformId
-    target_triple = $TargetTriple
-    runtime_library_kind = "shared"
+    target_triple = Get-Objc3cPlatformTargetTriple -PlatformId $PlatformId
+    runtime_library_kind = Get-Objc3cPlatformRuntimeLibraryKind -PlatformId $PlatformId
     runtime_library_ids = @("objc3-runtime")
-    runtime_library_names = @($RuntimeLibraryName)
+    runtime_library_names = @($expectedRuntimeLibraryName)
     runtime_library_artifacts = @($runtimeArtifact)
     loader_path_policy = "@rpath, install_name, codesign, and package-root loader behavior must be proven before support"
     darwin_runtime_proof_requirements = [ordered]@{
@@ -1040,14 +1217,14 @@ function Write-Objc3cDarwinRuntimeLibraryManifestEvidence {
       contract_id = "objc3c.platform.darwin.runtime-library-manifest.v1"
       status = $manifestStatus
       package_manifest = Get-Objc3cEvidenceRepoRelativePath -RootPath $PackageRoot -TargetPath $PackageManifestPath
-      object_format = $ObjectFormat
-      debug_format = $DebugFormat
+      object_format = Get-Objc3cPlatformObjectFormat -PlatformId $PlatformId
+      debug_format = Get-Objc3cPlatformDebugFormat -PlatformId $PlatformId
       runtime_library_root_kind = "objc3c-release-darwin-arm64-package-root"
       runtime_library_artifacts = @(
         [ordered]@{
           runtime_library_id = "objc3-runtime"
-          artifact = $RuntimeLibraryRelativePath
-          source_file_name = $RuntimeLibraryName
+          artifact = $expectedRuntimeLibraryRelativePath
+          source_file_name = $expectedRuntimeLibraryName
           install_required = $true
           identity = $identity
         }
@@ -1219,11 +1396,11 @@ function Write-Objc3cDarwinRuntimeLoadProbeEvidence {
     native_execution_claimed = $false
     promotion_allowed_from_generated_evidence = $false
     status = $nativeGeneratedStatus
-    target_triple = $TargetTriple
+    target_triple = Get-Objc3cPlatformTargetTriple -PlatformId $PlatformId
     target_platform_id = $PlatformId
     runtime_library_names = @("libobjc3-runtime.dylib")
     runtime_library = Get-Objc3cEvidenceRepoRelativePath -RootPath $RepoRoot -TargetPath $RuntimeLibraryPath
-    runtime_library_kind = "shared"
+    runtime_library_kind = Get-Objc3cPlatformRuntimeLibraryKind -PlatformId $PlatformId
     runtime_load_environment_variable = "DYLD_LIBRARY_PATH"
     loader_path_policy = $LoaderPathPolicy
     resolved_runtime_paths = @($resolvedRuntimePaths)
@@ -1427,7 +1604,9 @@ function Write-Objc3cLinuxRuntimeLibraryManifestEvidence {
     return
   }
 
-  $runtimeLibraryPath = Join-Path $PackageRoot (ConvertTo-Objc3cEvidenceHostPath -RelativePath $RuntimeLibraryRelativePath)
+  $expectedRuntimeLibraryRelativePath = Get-Objc3cPlatformRuntimeLibraryRelativePath -PlatformId $PlatformId
+  $expectedRuntimeLibraryName = Get-Objc3cPlatformRuntimeLibraryName -PlatformId $PlatformId
+  $runtimeLibraryPath = Join-Path $PackageRoot (ConvertTo-Objc3cEvidenceHostPath -RelativePath $expectedRuntimeLibraryRelativePath)
   $identity = Get-Objc3cLinuxElfIdentity -RepoRoot $PackageRoot -Path $runtimeLibraryPath
   $manifestStatus = if ([bool]$identity.artifact.exists -and [bool]$identity.elf_present -and [bool]$identity.expected_arch_present) {
     "GENERATED_ELF_RUNTIME_LIBRARY_MANIFEST"
@@ -1441,15 +1620,11 @@ function Write-Objc3cLinuxRuntimeLibraryManifestEvidence {
   $packageTargetPlatformId = [string](Get-Objc3cEvidenceObjectProperty -InputObject $packageManifestPayload -Name "target_platform_id" -DefaultValue "")
   $runtimeArtifact = Get-Objc3cEvidenceFileDigest -RootPath $PackageRoot -TargetPath $runtimeLibraryPath
   $packageManifestArtifact = Get-Objc3cEvidenceFileDigest -RootPath $RepoRoot -TargetPath $PackageManifestPath
-  $runtimeGeneratedStatus = if (-not [bool]$packageManifestArtifact.exists -or -not [bool]$runtimeArtifact.exists) {
-    "missing-source-generated-fail-closed"
-  } elseif (-not [string]::IsNullOrWhiteSpace($packageTargetPlatformId) -and $packageTargetPlatformId -ne $PlatformId) {
-    "package-target-mismatch-generated-fail-closed"
-  } elseif ([bool]$identity.elf_present -and [bool]$identity.expected_arch_present) {
-    "generated-host-artifact-present"
-  } else {
-    "missing-source-generated-fail-closed"
-  }
+  $runtimeGeneratedStatus = Get-Objc3cRuntimeManifestGeneratedStatus `
+    -PackageManifestArtifact $packageManifestArtifact `
+    -RuntimeArtifact $runtimeArtifact `
+    -PackageTargetPlatformId $packageTargetPlatformId `
+    -PlatformId $PlatformId
   $payload = [ordered]@{
     contract_id = "objc3c.platform.hosted-runtime-library-manifest.generated.v1"
     schema_version = 1
@@ -1463,9 +1638,9 @@ function Write-Objc3cLinuxRuntimeLibraryManifestEvidence {
     status = $runtimeGeneratedStatus
     target_platform_id = $PlatformId
     source_package_target_platform_id = $packageTargetPlatformId
-    target_triple = $TargetTriple
-    runtime_library_kind = "shared"
-    runtime_library_names = @($RuntimeLibraryName)
+    target_triple = Get-Objc3cPlatformTargetTriple -PlatformId $PlatformId
+    runtime_library_kind = Get-Objc3cPlatformRuntimeLibraryKind -PlatformId $PlatformId
+    runtime_library_names = @($expectedRuntimeLibraryName)
     runtime_library_artifacts = @($runtimeArtifact)
     loader_path_policy = "ELF rpath, RUNPATH, or package-root loader resolution must be proven before support"
     package_root = Get-Objc3cEvidenceRepoRelativePath -RootPath $RepoRoot -TargetPath $PackageRoot
@@ -1474,13 +1649,13 @@ function Write-Objc3cLinuxRuntimeLibraryManifestEvidence {
     producer_evidence = [ordered]@{
       contract_id = "objc3c.platform.linux.runtime-library-manifest.v1"
       status = $manifestStatus
-      object_format = $ObjectFormat
-      debug_format = $DebugFormat
+      object_format = Get-Objc3cPlatformObjectFormat -PlatformId $PlatformId
+      debug_format = Get-Objc3cPlatformDebugFormat -PlatformId $PlatformId
       runtime_library_artifacts = @(
         [ordered]@{
           runtime_library_id = "objc3-runtime"
-          artifact = $RuntimeLibraryRelativePath
-          source_file_name = $RuntimeLibraryName
+          artifact = $expectedRuntimeLibraryRelativePath
+          source_file_name = $expectedRuntimeLibraryName
           install_required = $true
           identity = $identity
         }
@@ -1784,7 +1959,7 @@ function Write-Objc3cLinuxRuntimeLoadProbeEvidence {
     target_triple = $TargetTriple
     runtime_library_names = @("libobjc3-runtime.so")
     runtime_library = Get-Objc3cEvidenceRepoRelativePath -RootPath $RepoRoot -TargetPath $RuntimeLibraryPath
-    runtime_library_kind = "shared"
+    runtime_library_kind = Get-Objc3cPlatformRuntimeLibraryKind -PlatformId $PlatformId
     runtime_load_environment_variable = "LD_LIBRARY_PATH"
     loader_path_policy = $LoaderPathPolicy
     resolved_runtime_paths = @($resolvedRuntimePaths | Sort-Object -Unique)

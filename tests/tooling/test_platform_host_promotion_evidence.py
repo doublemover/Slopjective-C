@@ -520,10 +520,23 @@ def test_host_evidence_fail_closed_placeholder_is_not_promotion_ready(
     assert artifact["exists"] is True
     assert artifact["fail_closed_placeholder"] is True
     assert artifact["promotion_usable"] is False
+    assert artifact["required_source_artifacts"] == [
+        "tmp/build-objc3c-native/native_build_summary.json"
+    ]
+    assert artifact["diagnostics"]["classification"] == "incomplete-review-candidate"
     placeholder = host_evidence_ingest.load_platform_generated_json(
         "linux-x64",
         "build/native_build_summary.json",
     )
+    assert placeholder["source_artifacts"] == [
+        {
+            "path": "tmp/build-objc3c-native/native_build_summary.json",
+            "exists": False,
+        }
+    ]
+    assert placeholder["diagnostics"]["required_source_artifacts"] == [
+        "tmp/build-objc3c-native/native_build_summary.json"
+    ]
     host_evidence_ingest.require_fail_closed_placeholder(
         placeholder,
         platform_id="linux-x64",
@@ -562,7 +575,64 @@ def test_host_evidence_review_candidate_rejects_fail_closed_placeholders(
     ]
     assert len(package_rows) == 1
     assert package_rows[0]["generated_artifacts_complete"] is False
+    assert package_rows[0]["required_source_artifacts"] == [
+        "package/objc3c-runnable-toolchain-package.json",
+        "package/runtime-library-manifest.json",
+    ]
+    assert [
+        diagnostic["status"]
+        for diagnostic in package_rows[0]["incomplete_diagnostics"]
+    ] == [
+        "producer-failed-before-success-artifact",
+        "producer-failed-before-success-artifact",
+    ]
     assert all(
         artifact.get("fail_closed_placeholder") is True
         for artifact in package_rows[0]["generated_artifacts"]
     )
+
+
+def test_host_evidence_incomplete_runtime_manifest_keeps_review_candidate(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path,
+) -> None:
+    monkeypatch.setattr(host_evidence_ingest, "ROOT", tmp_path)
+    payload = {
+        "contract_id": "objc3c.platform.hosted-runtime-library-manifest.generated.v1",
+        "schema_version": 1,
+        "platform_id": "linux-x64",
+        "issue_ref": 8228,
+        "generated_report_path": (
+            "tmp/reports/platform-host-evidence/linux-x64/package/"
+            "runtime-library-manifest.json"
+        ),
+        "reviewed_source_required": True,
+        "support_truth": False,
+        "generated_report_support_truth": False,
+        "native_execution_claimed": False,
+        "promotion_allowed_from_generated_evidence": False,
+        "review_result": "fail-closed-not-promotion-ready",
+        "status": "missing-source-generated-fail-closed",
+        "source_artifacts": [
+            {
+                "path": "artifacts/package/objc3c-runnable-toolchain-package.json",
+                "exists": False,
+            }
+        ],
+        "diagnostics": {
+            "status": "missing-source-generated-fail-closed",
+            "classification": "incomplete-review-candidate",
+            "review_result": "fail-closed-not-promotion-ready",
+            "required_source_artifacts": [
+                "artifacts/package/objc3c-runnable-toolchain-package.json"
+            ],
+        },
+    }
+    output_path = (
+        tmp_path
+        / "tmp/reports/platform-host-evidence/linux-x64/package/runtime-library-manifest.json"
+    )
+    output_path.parent.mkdir(parents=True)
+    host_evidence_ingest.write_json(output_path, payload)
+
+    host_evidence_ingest.validate_runtime_library_manifest_artifact("linux-x64")
