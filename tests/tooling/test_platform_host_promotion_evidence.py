@@ -1,6 +1,9 @@
 from __future__ import annotations
 
+import shutil
+import subprocess
 from copy import deepcopy
+from pathlib import Path
 
 import pytest
 
@@ -636,3 +639,68 @@ def test_host_evidence_incomplete_runtime_manifest_keeps_review_candidate(
     host_evidence_ingest.write_json(output_path, payload)
 
     host_evidence_ingest.validate_runtime_library_manifest_artifact("linux-x64")
+
+
+def test_runtime_manifest_incomplete_source_artifacts_cover_runtime_library(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path,
+) -> None:
+    monkeypatch.setattr(host_evidence_ingest, "ROOT", tmp_path)
+    build_summary_path = tmp_path / "tmp/build-objc3c-native/native_build_summary.json"
+    build_summary_path.parent.mkdir(parents=True)
+    host_evidence_ingest.write_json(build_summary_path, {"target": {}})
+    runtime_path = tmp_path / "artifacts/lib/libobjc3-runtime.so"
+    runtime_path.parent.mkdir(parents=True)
+    runtime_path.write_bytes(b"not a real elf; provenance only")
+
+    host_evidence_ingest.write_runtime_library_manifest_artifact("linux-x64")
+
+    payload = host_evidence_ingest.load_platform_generated_json(
+        "linux-x64",
+        "package/runtime-library-manifest.json",
+    )
+    source_paths = [
+        entry["path"]
+        for entry in payload["source_artifacts"]
+    ]
+    assert "artifacts/lib/libobjc3-runtime.so" in source_paths
+    assert (
+        "artifacts/lib/libobjc3-runtime.so"
+        in payload["diagnostics"]["required_source_artifacts"]
+    )
+    host_evidence_ingest.validate_runtime_library_manifest_artifact("linux-x64")
+
+
+def test_powershell_linux_evidence_source_artifact_lists_are_arrays(tmp_path) -> None:
+    pwsh = shutil.which("pwsh") or shutil.which("powershell")
+    if pwsh is None:
+        pytest.skip("PowerShell is not available")
+    repo_root = Path.cwd()
+    evidence_root = tmp_path / "linux-evidence"
+    script = f"""
+$ErrorActionPreference = 'Stop'
+Import-Module '{repo_root / "scripts" / "objc3c_platform_host_evidence_producers.psm1"}' -Force -DisableNameChecking
+$repoRoot = '{repo_root}'
+$readme = Join-Path $repoRoot 'README.md'
+Write-Objc3cLinuxObjectDebugIdentityEvidence `
+  -RepoRoot $repoRoot `
+  -EvidenceRoot '{evidence_root}' `
+  -PlatformId 'linux-x64' `
+  -TargetTriple 'x86_64-unknown-linux-gnu' `
+  -ObjectFormat 'ELF' `
+  -DebugFormat 'DWARF' `
+  -NativeExecutablePath $readme `
+  -CapiRunnerPath $readme `
+  -RuntimeLibraryPath $readme `
+  -BuildSummaryPath $readme
+"""
+    result = subprocess.run(
+        [pwsh, "-NoLogo", "-NoProfile", "-Command", script],
+        text=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        check=False,
+    )
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert (evidence_root / "build/object-identity.json").is_file()
+    assert (evidence_root / "build/debug-identity.json").is_file()

@@ -1508,6 +1508,7 @@ def write_runtime_library_manifest_artifact(platform_id: str) -> None:
         "source_artifacts": source_artifacts(
             RUNNABLE_PACKAGE_MANIFEST_PATH,
             NATIVE_BUILD_SUMMARY_PATH,
+            *runtime_paths,
         ),
     }
     attach_incomplete_artifact_diagnostics(

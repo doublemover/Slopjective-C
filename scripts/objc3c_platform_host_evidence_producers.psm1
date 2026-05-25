@@ -64,7 +64,7 @@ function New-Objc3cEvidenceSourceArtifacts {
     }
     $artifacts.Add((Get-Objc3cEvidenceFileDigest -RootPath $RepoRoot -TargetPath $path)) | Out-Null
   }
-  return @($artifacts)
+  return @($artifacts.ToArray())
 }
 
 function Get-Objc3cLinuxPackageRootLayout {
@@ -316,7 +316,7 @@ function Get-Objc3cDarwinLinkedLibraries {
       $libraries.Add($library) | Out-Null
     }
   }
-  return @($libraries)
+  return @($libraries.ToArray())
 }
 
 function Get-Objc3cDarwinRpaths {
@@ -372,7 +372,7 @@ function Get-Objc3cDarwinLoadCommandRecords {
   if ($null -ne $current) {
     $records.Add([pscustomobject]$current) | Out-Null
   }
-  return @($records)
+  return @($records.ToArray())
 }
 
 function Test-Objc3cDarwinLoadCommandPresent {
@@ -423,7 +423,7 @@ function Get-Objc3cDarwinUuidRecords {
         }) | Out-Null
     }
   }
-  return @($records)
+  return @($records.ToArray())
 }
 
 function Test-Objc3cDarwinUuidRecordsMatch {
@@ -546,7 +546,7 @@ function Get-Objc3cLinuxElfDynamicEntries {
     soname = $soname
     rpaths = @($rpaths | Sort-Object -Unique)
     runpaths = @($runpaths | Sort-Object -Unique)
-    entries = @($entries)
+    entries = @($entries.ToArray())
   }
 }
 
@@ -612,7 +612,7 @@ function Get-Objc3cLinuxLddLibraries {
         }) | Out-Null
     }
   }
-  return @($libraries)
+  return @($libraries.ToArray())
 }
 
 function Get-Objc3cLinuxElfIdentity {
@@ -919,7 +919,7 @@ function Get-Objc3cGeneratedEvidenceSourceArtifactPaths {
   if (-not [string]::IsNullOrWhiteSpace($missingSourcePath) -and -not $paths.Contains($missingSourcePath)) {
     $paths.Add($missingSourcePath) | Out-Null
   }
-  return @($paths)
+  return @($paths.ToArray())
 }
 
 function Add-Objc3cIncompleteGeneratedEvidenceDiagnostics {
@@ -1237,7 +1237,10 @@ function Write-Objc3cDarwinRuntimeLibraryManifestEvidence {
       codesign_proof_present = [bool]$identity.codesign_proof_present
       missing_runtime_behavior = "fail-closed-before-package-install"
     }
-    source_artifacts = New-Objc3cEvidenceSourceArtifacts -RepoRoot $RepoRoot -Paths @($PackageManifestPath)
+    source_artifacts = New-Objc3cEvidenceSourceArtifacts -RepoRoot $RepoRoot -Paths @(
+      $PackageManifestPath,
+      $runtimeLibraryPath
+    )
   }
 
   $packageEvidenceRoot = Join-Path $EvidenceRoot "package"
@@ -1403,7 +1406,7 @@ function Write-Objc3cDarwinRuntimeLoadProbeEvidence {
     runtime_library_kind = Get-Objc3cPlatformRuntimeLibraryKind -PlatformId $PlatformId
     runtime_load_environment_variable = "DYLD_LIBRARY_PATH"
     loader_path_policy = $LoaderPathPolicy
-    resolved_runtime_paths = @($resolvedRuntimePaths)
+    resolved_runtime_paths = @($resolvedRuntimePaths.ToArray())
     driver_linker_flags = @($linkerFlags)
     install_name = $runtimeIdentity.install_name
     rpaths = @($observedRpaths)
@@ -1437,7 +1440,7 @@ function Write-Objc3cDarwinRuntimeLoadProbeEvidence {
       runtime_library_load_command_names = @($runtimeIdentity.load_commands.command_names)
       runtime_library_codesign = $runtimeIdentity.codesign
       runtime_library_codesign_proof_present = [bool]$runtimeIdentity.codesign_proof_present
-      executable_probes = @($executableProbes)
+      executable_probes = @($executableProbes.ToArray())
     }
     source_artifacts = New-Objc3cEvidenceSourceArtifacts -RepoRoot $RepoRoot -Paths @($SummaryPath)
   }
@@ -1667,7 +1670,10 @@ function Write-Objc3cLinuxRuntimeLibraryManifestEvidence {
       build_ids = @($identity.notes.build_ids)
       missing_runtime_behavior = "fail-closed-before-package-install"
     }
-    source_artifacts = New-Objc3cEvidenceSourceArtifacts -RepoRoot $RepoRoot -Paths @($PackageManifestPath)
+    source_artifacts = New-Objc3cEvidenceSourceArtifacts -RepoRoot $RepoRoot -Paths @(
+      $PackageManifestPath,
+      $runtimeLibraryPath
+    )
   }
 
   $packageEvidenceRoot = Join-Path $EvidenceRoot "package"
@@ -1978,7 +1984,7 @@ function Write-Objc3cLinuxRuntimeLoadProbeEvidence {
       loader_policy = $LoaderPathPolicy
       load_path = @(Get-Objc3cEvidenceObjectProperty -InputObject $summary -Name "load_path" -DefaultValue @())
       runtime_load_environment = Get-Objc3cEvidenceObjectProperty -InputObject $summary -Name "runtime_load_environment" -DefaultValue @{}
-      executable_probes = @($executableProbes)
+      executable_probes = @($executableProbes.ToArray())
     }
     source_artifacts = New-Objc3cEvidenceSourceArtifacts -RepoRoot $RepoRoot -Paths @($SummaryPath)
   }

@@ -187,6 +187,7 @@ jobs:
         run: npm run objc3c -- test-hosted-execution-smoke
 
       - name: Ingest generated host evidence without promotion
+        id: ingest
         if: always()
         env:
           OBJC3C_PLATFORM_EVIDENCE_DEPENDENCY_OUTCOME: ${{ steps.deps.outcome }}
@@ -208,6 +209,7 @@ jobs:
           --summary-out "$OBJC3C_PLATFORM_EVIDENCE_ROOT/ingestion-summary.json"
 
       - name: Stage reviewed-source host evidence proposal
+        id: review
         if: always()
         run: >
           npm run objc3c -- review-platform-host-evidence --
@@ -215,12 +217,41 @@ jobs:
           --output "$OBJC3C_PLATFORM_EVIDENCE_ROOT/reviewed-source-inputs.proposed.json"
 
       - name: Upload generated host evidence
+        id: upload
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: objc3c-platform-host-evidence-linux-x64
           path: tmp/reports/platform-host-evidence/linux-x64/**
           if-no-files-found: error
+
+      - name: Require hosted evidence gate success
+        if: always()
+        env:
+          OBJC3C_PLATFORM_EVIDENCE_GATE_OUTCOMES: >-
+            deps=${{ steps.deps.outcome }}
+            toolchain=${{ steps.toolchain.outcome }}
+            probe=${{ steps.probe.outcome }}
+            build=${{ steps.build.outcome }}
+            package=${{ steps.package.outcome }}
+            install=${{ steps.install.outcome }}
+            clean_install=${{ steps.clean_install.outcome }}
+            execution=${{ steps.execution.outcome }}
+            ingest=${{ steps.ingest.outcome }}
+            review=${{ steps.review.outcome }}
+            upload=${{ steps.upload.outcome }}
+        run: |
+          failed=0
+          for entry in $OBJC3C_PLATFORM_EVIDENCE_GATE_OUTCOMES; do
+            case "$entry" in
+              *=success) ;;
+              *)
+                echo "::error::hosted evidence gate failed: $entry"
+                failed=1
+                ;;
+            esac
+          done
+          exit "$failed"
 
   platform-host-evidence-darwin-arm64:
     if: github.event_name == 'workflow_dispatch' && (inputs.platform_host_evidence == 'all' || inputs.platform_host_evidence == 'darwin-arm64')
@@ -322,6 +353,7 @@ jobs:
         run: npm run objc3c -- test-hosted-execution-smoke
 
       - name: Ingest generated host evidence without promotion
+        id: ingest
         if: always()
         env:
           OBJC3C_PLATFORM_EVIDENCE_DEPENDENCY_OUTCOME: ${{ steps.deps.outcome }}
@@ -343,6 +375,7 @@ jobs:
           --summary-out "$OBJC3C_PLATFORM_EVIDENCE_ROOT/ingestion-summary.json"
 
       - name: Stage reviewed-source host evidence proposal
+        id: review
         if: always()
         run: >
           npm run objc3c -- review-platform-host-evidence --
@@ -350,9 +383,38 @@ jobs:
           --output "$OBJC3C_PLATFORM_EVIDENCE_ROOT/reviewed-source-inputs.proposed.json"
 
       - name: Upload generated host evidence
+        id: upload
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: objc3c-platform-host-evidence-darwin-arm64
           path: tmp/reports/platform-host-evidence/darwin-arm64/**
           if-no-files-found: error
+
+      - name: Require hosted evidence gate success
+        if: always()
+        env:
+          OBJC3C_PLATFORM_EVIDENCE_GATE_OUTCOMES: >-
+            deps=${{ steps.deps.outcome }}
+            toolchain=${{ steps.toolchain.outcome }}
+            probe=${{ steps.probe.outcome }}
+            build=${{ steps.build.outcome }}
+            package=${{ steps.package.outcome }}
+            install=${{ steps.install.outcome }}
+            clean_install=${{ steps.clean_install.outcome }}
+            execution=${{ steps.execution.outcome }}
+            ingest=${{ steps.ingest.outcome }}
+            review=${{ steps.review.outcome }}
+            upload=${{ steps.upload.outcome }}
+        run: |
+          failed=0
+          for entry in $OBJC3C_PLATFORM_EVIDENCE_GATE_OUTCOMES; do
+            case "$entry" in
+              *=success) ;;
+              *)
+                echo "::error::hosted evidence gate failed: $entry"
+                failed=1
+                ;;
+            esac
+          done
+          exit "$failed"
