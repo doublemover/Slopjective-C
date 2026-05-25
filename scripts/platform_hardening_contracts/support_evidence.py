@@ -2593,7 +2593,10 @@ def validate_platform_toolchain_support_evidence(
             expect(platform_id in boundary_supported_ids, f"{platform_id} support row is outside the boundary inventory")
             expect(platform_id in supported_platform_ids, f"{platform_id} support row is absent from supported_platforms.json")
             expect(platform_id in tier_supported_ids, f"{platform_id} support row is absent from supported support tiers")
-            expect(row.get("claim_class") == "supported", f"{platform_id} support row must use supported claim_class")
+            expect(
+                row.get("claim_class") in {"supported", "supported-but-not-default"},
+                f"{platform_id} support row must use a supported claim_class",
+            )
             required_classes = tuple(str(item) for item in row.get("required_evidence_classes", []))
             expect(set(required_classes) == set(REQUIRED_SUPPORTED_EVIDENCE_CLASSES), f"{platform_id} missing required evidence classes")
             expect(
@@ -2800,7 +2803,7 @@ def _build_host_promotion_readiness(payload: dict[str, Any]) -> dict[str, Any]:
         ]
         promotion_allowed = (
             row.get("support_state") == "supported"
-            and row.get("claim_class") == "supported"
+            and row.get("claim_class") in {"supported", "supported-but-not-default"}
             and not required_missing
         )
         readiness_rows.append(
