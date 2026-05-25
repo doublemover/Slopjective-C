@@ -448,6 +448,30 @@ function Resolve-InstalledPayloadPath {
   return Join-Path $installHome ($RelativePath -replace '/', [System.IO.Path]::DirectorySeparatorChar)
 }
 
+function Set-InstalledPosixExecutablePermissions {
+  if ($targetPlatformId -ne "linux-x64" -and $targetPlatformId -ne "darwin-arm64") {
+    return
+  }
+  $chmodCommand = Get-Command chmod -ErrorAction SilentlyContinue
+  if ($null -eq $chmodCommand) {
+    throw "installer cannot normalize POSIX executable permissions because chmod is unavailable"
+  }
+  $chmodExecutable = [string]$chmodCommand.Source
+  if ([string]::IsNullOrWhiteSpace($chmodExecutable) -or [string]$chmodCommand.CommandType -ne "Application") {
+    $chmodExecutable = [string]$chmodCommand.Name
+  }
+  $binRoot = Resolve-InstalledPayloadPath -RelativePath "artifacts/bin"
+  if (!(Test-Path -LiteralPath $binRoot -PathType Container)) {
+    throw "installer payload missing artifacts/bin before POSIX permission normalization"
+  }
+  foreach ($binFile in Get-ChildItem -LiteralPath $binRoot -File) {
+    & $chmodExecutable 755 -- $binFile.FullName
+    if ($LASTEXITCODE -ne 0) {
+      throw "installer failed to mark executable payload entry: $($binFile.FullName)"
+    }
+  }
+}
+
 function Assert-InstalledPayloadContract {
   $manifestPath = Resolve-InstalledPayloadPath -RelativePath $payloadManifest
   if (!(Test-Path -LiteralPath $manifestPath -PathType Leaf)) {
@@ -476,6 +500,7 @@ if (Test-Path -LiteralPath $installHome) {
 New-Item -ItemType Directory -Force -Path $resolvedInstallRoot | Out-Null
 Copy-Item -LiteralPath $sourceRoot -Destination $installHome -Recurse -Force
 Copy-Item -LiteralPath $bootstrapSource -Destination $bootstrapTarget -Force
+Set-InstalledPosixExecutablePermissions
 $payloadManifestSha256 = Assert-InstalledPayloadContract
 $packageRuntimeModel = Resolve-PackageRuntimeModel
 $sanitizerPackageVariant = Resolve-SanitizerPackageVariant

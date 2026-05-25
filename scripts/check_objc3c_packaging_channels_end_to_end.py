@@ -10,7 +10,7 @@ import os
 import shutil
 import zipfile
 from datetime import datetime, timezone
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 from typing import Any, Sequence
 from objc3c_tooling.paths import repo_rel
 from objc3c_tooling.json_io import load_json_object as load_json
@@ -298,8 +298,26 @@ def publish_platform_host_install_receipt(
 
 def extract_zip(zip_path: Path, destination: Path) -> None:
     destination.mkdir(parents=True, exist_ok=True)
+    destination_root = destination.resolve(strict=False)
     with zipfile.ZipFile(zip_path) as archive:
-        archive.extractall(destination)
+        for member in archive.infolist():
+            member_path = PurePosixPath(member.filename)
+            if member_path.is_absolute() or any(part in {"", ".."} for part in member_path.parts):
+                raise RuntimeError(f"zip member escapes extraction root: {member.filename}")
+            output_path = destination.joinpath(*member_path.parts)
+            try:
+                output_path.resolve(strict=False).relative_to(destination_root)
+            except ValueError as exc:
+                raise RuntimeError(f"zip member escapes extraction root: {member.filename}") from exc
+            if member.is_dir():
+                output_path.mkdir(parents=True, exist_ok=True)
+                continue
+            output_path.parent.mkdir(parents=True, exist_ok=True)
+            with archive.open(member) as source, output_path.open("wb") as target:
+                shutil.copyfileobj(source, target)
+            mode = (member.external_attr >> 16) & 0o777
+            if mode:
+                output_path.chmod(mode)
 
 
 def load_valid_install_receipt(
@@ -520,6 +538,7 @@ def run_installed_root_native_execution_probe(
         "usage_banner_prefix": INSTALLED_NATIVE_USAGE_PREFIX,
         "cwd": repo_rel(install_home),
         "executable": repo_rel(installed_exe),
+        "executable_mode_octal": oct(installed_exe.stat().st_mode & 0o777),
         "command": [repo_rel(installed_exe)],
         "loader_environment": runtime_environment_summary(
             execution_env,
@@ -528,7 +547,6 @@ def run_installed_root_native_execution_probe(
         "stdout_snippet": bounded_text(stdout, 1000),
         "stderr_snippet": bounded_text(stderr, 1000),
     }
-    expect(status == "PASS", f"{channel_id} installed native executable did not reach objc3c-native usage path")
     return proof
 
 
@@ -817,6 +835,10 @@ def _run_end_to_end(argv: Sequence[str] | None = None) -> int:
         target_platform_id=target_platform_id,
     )
     update_end_to_end_context(installed_root_execution=installed_root_execution)
+    expect(
+        installed_root_execution["status"] == "PASS",
+        "local-installer installed native executable did not reach objc3c-native usage path",
+    )
 
     update_end_to_end_context(phase="run-local-uninstaller")
     uninstall_result = run_capture(
@@ -857,6 +879,10 @@ def _run_end_to_end(argv: Sequence[str] | None = None) -> int:
         target_platform_id=target_platform_id,
     )
     update_end_to_end_context(offline_installed_root_execution=offline_installed_root_execution)
+    expect(
+        offline_installed_root_execution["status"] == "PASS",
+        "offline-bundle installed native executable did not reach objc3c-native usage path",
+    )
 
     end_to_end_summary = {
         "contract_id": "objc3c.packaging.channels.end-to-end.summary.v1",

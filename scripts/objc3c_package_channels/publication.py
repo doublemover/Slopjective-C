@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import shutil
+import stat
 import zipfile
 from pathlib import Path
 from typing import Any
@@ -91,7 +92,16 @@ def zip_directory(source_dir: Path, destination_zip: Path) -> None:
     destination_zip.parent.mkdir(parents=True, exist_ok=True)
     with zipfile.ZipFile(destination_zip, mode="w", compression=zipfile.ZIP_DEFLATED) as archive:
         for file_path in sorted(path for path in source_dir.rglob("*") if path.is_file()):
-            archive.write(file_path, arcname=str(file_path.relative_to(source_dir)).replace("\\", "/"))
+            arcname = str(file_path.relative_to(source_dir)).replace("\\", "/")
+            zip_info = zipfile.ZipInfo.from_file(file_path, arcname=arcname)
+            zip_info.compress_type = zipfile.ZIP_DEFLATED
+            mode = stat.S_IMODE(file_path.stat().st_mode) or 0o644
+            if "/artifacts/bin/" in f"/{arcname}":
+                mode = (mode | stat.S_IRUSR | stat.S_IRGRP | stat.S_IROTH | stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH) & 0o777
+            zip_info.external_attr = (stat.S_IFREG | mode) << 16
+            with file_path.open("rb") as source:
+                with archive.open(zip_info, "w") as target:
+                    shutil.copyfileobj(source, target)
 
 
 def publish_portable_archive(paths: PackageChannelPaths) -> None:

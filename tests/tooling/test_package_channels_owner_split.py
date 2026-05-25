@@ -6,6 +6,7 @@ import json
 import os
 import shutil
 import sys
+import zipfile
 from pathlib import Path
 from types import SimpleNamespace
 
@@ -34,7 +35,7 @@ from scripts.objc3c_package_channels.model import (
     release_package_id_for_platform,
     required_payload_entries_for_platform,
 )
-from scripts.objc3c_package_channels.publication import prepare_package_channel_workspace
+from scripts.objc3c_package_channels.publication import prepare_package_channel_workspace, zip_directory
 from scripts.objc3c_package_channels.rendering import (
     install_script_text,
     offline_bootstrap_script_text,
@@ -1094,7 +1095,31 @@ def test_package_channel_release_paths_and_scripts_are_platform_aware() -> None:
     assert "org.objc3c.runtime:objc3c-runtime-linux-x64-release" in install_text
     assert "artifacts/bin/objc3c-native" in install_text
     assert "artifacts/lib/libobjc3-runtime.so" in install_text
+    assert "function Set-InstalledPosixExecutablePermissions" in install_text
+    assert 'Get-Command chmod -ErrorAction SilentlyContinue' in install_text
+    assert 'Resolve-InstalledPayloadPath -RelativePath "artifacts/bin"' in install_text
+    assert '& $chmodExecutable 755 -- $binFile.FullName' in install_text
+    assert "Set-InstalledPosixExecutablePermissions" in install_text
     assert '$targetPlatformId = "linux-x64"' in uninstall_text
+
+
+def test_package_channel_zip_marks_artifacts_bin_entries_executable(tmp_path: Path) -> None:
+    source_root = tmp_path / "source"
+    executable = source_root / "payload" / "artifacts" / "bin" / "objc3c-native"
+    documentation = source_root / "payload" / "docs" / "runbooks" / "readme.txt"
+    executable.parent.mkdir(parents=True)
+    documentation.parent.mkdir(parents=True)
+    executable.write_text("binary placeholder", encoding="utf-8")
+    documentation.write_text("docs placeholder", encoding="utf-8")
+    archive_path = tmp_path / "package.zip"
+
+    zip_directory(source_root, archive_path)
+
+    with zipfile.ZipFile(archive_path) as archive:
+        executable_mode = (archive.getinfo("payload/artifacts/bin/objc3c-native").external_attr >> 16) & 0o777
+        documentation_mode = (archive.getinfo("payload/docs/runbooks/readme.txt").external_attr >> 16) & 0o777
+    assert executable_mode & 0o111 == 0o111
+    assert documentation_mode & 0o111 == 0
 
 
 def test_package_channel_native_executable_entry_is_manifest_bound() -> None:
