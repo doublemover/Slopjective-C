@@ -642,7 +642,7 @@
       "row_id": "objc3c.package.sanitizer.asan.reserved",
       "issue_ref": 8230,
       "variant_kind": "sanitizer-runtime",
-      "target_platform_id": "sanitizer-address",
+      "target_platform_id": "windows-x64",
       "platform_ids": [
         "windows-x64"
       ],
@@ -718,7 +718,7 @@
       "row_id": "objc3c.package.sanitizer.ubsan.reserved",
       "issue_ref": 8231,
       "variant_kind": "sanitizer-runtime",
-      "target_platform_id": "sanitizer-undefined",
+      "target_platform_id": "windows-x64",
       "platform_ids": [
         "windows-x64"
       ],

@@ -2294,10 +2294,12 @@ def _validate_package_variant_rows(
             _policy_record_is_fail_closed(records_by_id[evidence_id])
         _negative_contracts_are_fail_closed(row_id, row.get("negative_contracts", []))
         if row.get("variant_kind") == "sanitizer-runtime":
-            sanitizer_name = {
-                "sanitizer-address": "address",
-                "sanitizer-undefined": "undefined",
-            }.get(str(row.get("target_platform_id", "")), "")
+            sanitizer_name = str(row.get("sanitizer", ""))
+            if not sanitizer_name:
+                sanitizer_name = {
+                    "objc3c.package.sanitizer.asan.reserved": "address",
+                    "objc3c.package.sanitizer.ubsan.reserved": "undefined",
+                }.get(row_id, "")
             _sanitizer_negative_contracts_cover_package_install_failures(
                 row_id,
                 sanitizer_name,
