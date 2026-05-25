@@ -988,6 +988,19 @@ def test_hosted_packaging_end_to_end_derives_release_foundation_from_runnable_pa
     )
 
 
+def test_runnable_package_manifest_declares_no_top_level_support_truth_claim() -> None:
+    script_text = (
+        ROOT / "scripts/package_objc3c_runnable_toolchain/artifact_report_foundation.psm1"
+    ).read_text(encoding="utf-8")
+    return_section = script_text.split('return [ordered]@{', 1)[1].split(
+        'target_platform_id = $targetPlatformId',
+        1,
+    )[0]
+
+    assert 'support_truth = $false' in return_section
+    assert 'native_execution_claimed = $false' in return_section
+
+
 def test_package_channel_reuse_rejects_release_foundation_digest_drift(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,

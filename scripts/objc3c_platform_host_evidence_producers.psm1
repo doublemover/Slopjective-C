@@ -310,14 +310,17 @@ function Invoke-Objc3cPlatformEvidenceTool {
   foreach ($argument in @($Arguments)) {
     [void]$processInfo.ArgumentList.Add([string]$argument)
   }
-  foreach ($key in @($Environment.Keys)) {
-    if ([string]::IsNullOrWhiteSpace([string]$key)) {
-      continue
-    }
-    $processInfo.Environment[[string]$key] = [string]$Environment[$key]
-  }
 
   try {
+    foreach ($key in @($Environment.Keys)) {
+      $keyText = [string]$key
+      if ([string]::IsNullOrWhiteSpace($keyText)) {
+        continue
+      }
+      $valueText = [string]$Environment[$key]
+      [void]$processInfo.Environment.Remove($keyText)
+      $processInfo.Environment.Add($keyText, $valueText)
+    }
     $process = [System.Diagnostics.Process]::Start($processInfo)
     $stdout = $process.StandardOutput.ReadToEnd()
     $stderr = $process.StandardError.ReadToEnd()

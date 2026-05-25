@@ -243,6 +243,8 @@ function New-RunnableToolchainPackageFoundationManifestSection {
     sanitizer_package_variant = $sanitizerPackageVariant
     package_root = Get-RepoRelativePathCompat -RootPath $RepoRoot -TargetPath $PackageRoot
     manifest_artifact = Get-RepoRelativePathCompat -RootPath $PackageRoot -TargetPath $ManifestPath
+    support_truth = $false
+    native_execution_claimed = $false
     target_platform_id = $targetPlatformId
     target_triple = $targetTriple
     object_format = $objectFormat
