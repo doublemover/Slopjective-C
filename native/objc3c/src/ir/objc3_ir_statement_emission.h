@@ -5,6 +5,7 @@
 #include <string>
 
 #include "ir/objc3_ir_emitter_context.h"
+#include "ir/objc3_ir_function_signature_model.h"
 
 struct Expr;
 struct Stmt;
@@ -23,6 +24,8 @@ struct Objc3IRStatementEmissionCallbacks {
       try_get_compile_time_i32_expr;
   std::function<bool(const Expr *expr, const FunctionContext &ctx)>
       is_compile_time_nil_receiver_expr;
+  std::function<const LoweredFunctionSignature *(const std::string &name)>
+      lookup_function_signature;
   std::function<std::string(const std::string &reason)>
       emit_unsupported_i32_value;
   std::function<void(FunctionContext &ctx)> push_scope;

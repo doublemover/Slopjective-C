@@ -14,7 +14,9 @@ void NormalizeObjc3DiagnosticGrammarHooksEdgeCaseConsistencySurface(
   surface.parser_snapshot_diagnostic_count = parser_snapshot_diagnostic_count;
   surface.parser_token_count = parser_token_count;
   surface.language_profile_supported =
-      options.language_profile == Objc3FrontendLanguageProfile::kCanonical;
+      options.language_profile == Objc3FrontendLanguageProfile::kCanonical ||
+      options.language_profile == Objc3FrontendLanguageProfile::kStrict ||
+      options.language_profile == Objc3FrontendLanguageProfile::kStrictConcurrency;
   surface.core_feature_expansion_ready =
       IsObjc3DiagnosticGrammarHooksCoreFeatureExpansionReady(
           core_feature_expansion_surface);

@@ -1,5 +1,6 @@
 #include "driver/objc3_driver_conformance_publication_sidecar.h"
 
+#include "driver/objc3_cli_conformance_profile.h"
 #include "driver/objc3_driver_conformance_surface.h"
 #include "driver/objc3_driver_diagnostic_output.h"
 #include "driver/objc3_driver_public_workflow_commands.h"
@@ -23,7 +24,9 @@ int PublishObjc3DriverConformancePublicationSidecar(
                conformance_profiles.selected_profile_supported,
            .supported_profile_ids = conformance_profiles.supported_profile_ids,
            .rejected_profile_ids = conformance_profiles.rejected_profile_ids,
-           .effective_language_profile = "canonical",
+           .effective_language_profile =
+               ConformanceProfileLanguageProfileName(
+                   cli_options.conformance_profile),
            .canonical_literal_rejection_diagnostics_enabled = false,
            .publication_model =
                "driver-publishes-lowered-conformance-sidecar-and-runtime-capability-sidecar-next-to-manifest",

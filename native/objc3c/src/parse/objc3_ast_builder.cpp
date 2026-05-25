@@ -8,6 +8,12 @@ void Objc3AstBuilder::SetModuleName(Objc3ParsedProgram &program, std::string mod
   MutableObjc3ParsedProgramAst(program).module_name = std::move(module_name);
 }
 
+void Objc3AstBuilder::AddModuleImport(
+    Objc3ParsedProgram &program,
+    Objc3ParsedModuleImportDecl decl) const {
+  MutableObjc3ParsedProgramAst(program).module_imports.push_back(std::move(decl));
+}
+
 void Objc3AstBuilder::AddGlobalDecl(Objc3ParsedProgram &program, Objc3ParsedGlobalDecl decl) const {
   MutableObjc3ParsedProgramAst(program).globals.push_back(std::move(decl));
 }

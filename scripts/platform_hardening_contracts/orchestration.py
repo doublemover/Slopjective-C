@@ -11,6 +11,7 @@ import sys
 from typing import Any, Sequence
 
 from objc3c_tooling.json_io import write_json_file
+from objc3c_tooling.llvm_discovery import find_llvm_tool_path
 from objc3c_tooling.paths import repo_rel
 
 from .models import HostSnapshot, ToolProbe
@@ -51,7 +52,8 @@ def missing_tool_probe(tool_name: str, command_name: str | None = None) -> ToolP
 
 def required_tool_probes() -> dict[str, dict[str, Any]]:
     pwsh_path = shutil.which("pwsh")
-    clang_path = shutil.which("clang++") or shutil.which("clang")
+    clang_tool = find_llvm_tool_path("clang++") or find_llvm_tool_path("clang")
+    clang_path = str(clang_tool) if clang_tool else None
     cmake_path = shutil.which("cmake")
     ninja_path = shutil.which("ninja")
     node_path = shutil.which("node")

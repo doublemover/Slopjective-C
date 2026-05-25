@@ -18,6 +18,7 @@ class LLVMCapabilitySummary:
     llc_path: str
     llc_found: bool
     llc_supports_filetype_obj: bool
+    llc_supports_target_object_emission: bool
     parity_ready: bool
     blockers: tuple[str, ...]
 
@@ -88,6 +89,9 @@ def read_capability_summary(path: Path) -> LLVMCapabilitySummary:
         llc_path=require_str(llc, "path"),
         llc_found=require_bool(llc, "found"),
         llc_supports_filetype_obj=require_bool(llc_features, "supports_filetype_obj"),
+        llc_supports_target_object_emission=require_bool(
+            llc_features, "supports_target_object_emission"
+        ),
         parity_ready=require_bool(sema_type_system_parity, "parity_ready"),
         blockers=tuple(blockers_raw),
     )

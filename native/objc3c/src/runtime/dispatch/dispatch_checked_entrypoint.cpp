@@ -19,12 +19,13 @@ namespace {
 
 objc3_runtime_dispatch_typed_result ExecuteRuntimeDispatchTargetChecked(
     int receiver, const RuntimeDispatchTarget &dispatch_target, int a0, int a1,
-    int a2, int a3) {
+    int a2, int a3, int *throws_error_out) {
   RuntimeState &state = ProcessRuntimeState();
   if (dispatch_target.resolved_live_method) {
     const RuntimeTypedDispatchResult result =
         ExecuteResolvedRuntimeDispatchTargetStrict(
-            state, receiver, dispatch_target, a0, a1, a2, a3);
+            state, receiver, dispatch_target, a0, a1, a2, a3,
+            throws_error_out);
     return MakeRuntimeDispatchTypedResult(
         result.status_code, result.value,
         RuntimeMethodReturnKindDispatchAbiCode(result.return_kind));
@@ -163,8 +164,24 @@ objc3_runtime_dispatch_i32_result ExecuteRuntimeDispatchI32Checked(
       ExecuteRuntimeDispatchTypedChecked(receiver, selector, a0, a1, a2, a3));
 }
 
+objc3_runtime_dispatch_i32_result ExecuteRuntimeDispatchI32CheckedWithErrorOut(
+    int receiver, const char *selector, int a0, int a1, int a2, int a3,
+    int *throws_error_out) {
+  return MakeRuntimeDispatchI32ResultFromTypedResult(
+      ExecuteRuntimeDispatchTypedCheckedWithErrorOut(
+          receiver, selector, a0, a1, a2, a3, throws_error_out));
+}
+
 objc3_runtime_dispatch_typed_result ExecuteRuntimeDispatchTypedChecked(
     int receiver, const char *selector, int a0, int a1, int a2, int a3) {
+  return ExecuteRuntimeDispatchTypedCheckedWithErrorOut(
+      receiver, selector, a0, a1, a2, a3, nullptr);
+}
+
+objc3_runtime_dispatch_typed_result
+ExecuteRuntimeDispatchTypedCheckedWithErrorOut(
+    int receiver, const char *selector, int a0, int a1, int a2, int a3,
+    int *throws_error_out) {
   RuntimeState &state = ProcessRuntimeState();
   RuntimeDispatchTarget dispatch_target;
   {
@@ -173,7 +190,7 @@ objc3_runtime_dispatch_typed_result ExecuteRuntimeDispatchTypedChecked(
         ResolveRuntimeDispatchTargetUnlocked(state, receiver, selector);
   }
   return ExecuteRuntimeDispatchTargetChecked(
-      receiver, dispatch_target, a0, a1, a2, a3);
+      receiver, dispatch_target, a0, a1, a2, a3, throws_error_out);
 }
 
 objc3_runtime_dispatch_i32_result ExecuteRuntimeDispatchI32FromClassChecked(
@@ -184,10 +201,28 @@ objc3_runtime_dispatch_i32_result ExecuteRuntimeDispatchI32FromClassChecked(
           receiver, lookup_start_class_name, selector, a0, a1, a2, a3));
 }
 
+objc3_runtime_dispatch_i32_result
+ExecuteRuntimeDispatchI32FromClassCheckedWithErrorOut(
+    int receiver, const char *lookup_start_class_name, const char *selector,
+    int a0, int a1, int a2, int a3, int *throws_error_out) {
+  return MakeRuntimeDispatchI32ResultFromTypedResult(
+      ExecuteRuntimeDispatchTypedFromClassCheckedWithErrorOut(
+          receiver, lookup_start_class_name, selector, a0, a1, a2, a3,
+          throws_error_out));
+}
+
 objc3_runtime_dispatch_typed_result
 ExecuteRuntimeDispatchTypedFromClassChecked(
     int receiver, const char *lookup_start_class_name, const char *selector,
     int a0, int a1, int a2, int a3) {
+  return ExecuteRuntimeDispatchTypedFromClassCheckedWithErrorOut(
+      receiver, lookup_start_class_name, selector, a0, a1, a2, a3, nullptr);
+}
+
+objc3_runtime_dispatch_typed_result
+ExecuteRuntimeDispatchTypedFromClassCheckedWithErrorOut(
+    int receiver, const char *lookup_start_class_name, const char *selector,
+    int a0, int a1, int a2, int a3, int *throws_error_out) {
   RuntimeState &state = ProcessRuntimeState();
   RuntimeDispatchTarget dispatch_target;
   {
@@ -196,7 +231,7 @@ ExecuteRuntimeDispatchTypedFromClassChecked(
         state, receiver, lookup_start_class_name, selector);
   }
   return ExecuteRuntimeDispatchTargetChecked(
-      receiver, dispatch_target, a0, a1, a2, a3);
+      receiver, dispatch_target, a0, a1, a2, a3, throws_error_out);
 }
 
 int PrepareRuntimeCacheAwareDispatchDescriptor(

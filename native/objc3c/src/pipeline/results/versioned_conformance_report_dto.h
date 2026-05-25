@@ -46,8 +46,8 @@ struct Objc3VersionedConformanceReportLoweringSummary {
   bool semantic_boundary_ready = false;
   bool known_unsupported_surface_published = false;
   bool compatibility_selection_truthful = false;
-  bool strictness_selection_fail_closed = false;
-  bool strict_concurrency_selection_fail_closed = false;
+  bool strictness_selection_supported = false;
+  bool strict_concurrency_selection_supported = false;
   bool canonical_interface_truthful = false;
   bool feature_macro_truthful = false;
   bool ready_for_runtime_conformance_publication = false;
@@ -68,7 +68,9 @@ struct Objc3VersionedConformanceReportLoweringSummary {
 inline bool IsReadyObjc3VersionedConformanceReportLoweringSummary(
     const Objc3VersionedConformanceReportLoweringSummary &summary) {
   const bool language_profile_valid =
-      summary.effective_language_profile == "canonical";
+      summary.effective_language_profile == "canonical" ||
+      summary.effective_language_profile == "strict" ||
+      summary.effective_language_profile == "strict-concurrency";
   return !summary.contract_id.empty() &&
          !summary.semantic_contract_id.empty() &&
          !summary.runnable_feature_claim_inventory_contract_id.empty() &&
@@ -98,8 +100,8 @@ inline bool IsReadyObjc3VersionedConformanceReportLoweringSummary(
          summary.semantic_boundary_ready &&
          summary.known_unsupported_surface_published &&
          summary.compatibility_selection_truthful &&
-         summary.strictness_selection_fail_closed &&
-         summary.strict_concurrency_selection_fail_closed &&
+         summary.strictness_selection_supported &&
+         summary.strict_concurrency_selection_supported &&
          summary.canonical_interface_truthful &&
          summary.feature_macro_truthful &&
          summary.ready_for_runtime_conformance_publication &&

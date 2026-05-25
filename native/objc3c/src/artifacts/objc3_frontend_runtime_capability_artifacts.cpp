@@ -25,16 +25,31 @@ std::string BuildRuntimeCapabilityProfilesJson() {
          "{\"id\":\"core\",\"status\":\"claimed\"},"
          "{\"id\":\"strict\",\"status\":\"claimed\"},"
          "{\"id\":\"strict-concurrency\",\"status\":\"claimed\"},"
-         "{\"id\":\"strict-system\",\"status\":\"claimed\"}"
+         "{\"id\":\"strict-system\",\"status\":\"not-claimed\"}"
          "]";
 }
 
 std::vector<std::string> BuildClaimedConformanceProfileIds() {
-  return {"core", "strict", "strict-concurrency", "strict-system"};
+  return {"core", "strict", "strict-concurrency"};
 }
 
 std::vector<std::string> BuildNotClaimedConformanceProfileIds() {
-  return {};
+  return {"strict-system"};
+}
+
+const char *StrictnessModeForLanguageProfile(
+    const std::string &effective_language_profile) {
+  return effective_language_profile == "strict" ||
+                 effective_language_profile == "strict-concurrency"
+             ? "strict"
+             : kArtifactRuntimeCapabilityStrictnessMode;
+}
+
+const char *ConcurrencyModeForLanguageProfile(
+    const std::string &effective_language_profile) {
+  return effective_language_profile == "strict-concurrency"
+             ? "strict"
+             : kArtifactRuntimeCapabilityConcurrencyMode;
 }
 
 std::string BuildRuntimeCapabilityOptionalFeaturesJson() {
@@ -47,7 +62,10 @@ std::string BuildRuntimeCapabilityOptionalFeaturesJson() {
   constexpr OptionalFeatureEntry kEntries[] = {
       {"throws", "not-claimed",
        "runtime-backed throws/error propagation is not part of the runnable native surface yet",
-       kObjc3UnsupportedFeatureClaimThrows},
+      kObjc3UnsupportedFeatureClaimThrows},
+      {"typed-throws", "claimed",
+       "#8233 implements bounded single-payload throws(E) with source/interface metadata, hidden error-out ABI lowering, direct-call and runtime-dispatch message-send execution, exact typed catches, explicit id<Error> bridge policy, and try? optionalization while broader typed-error ABI paths stay fail-closed",
+       kObjc3RunnableFeatureClaimTypedThrows},
       {"async-await", "not-claimed",
        "async/await lowering and runtime scheduling are not part of the runnable native surface yet",
        kObjc3UnsupportedFeatureClaimAsyncAwait},
@@ -60,6 +78,15 @@ std::string BuildRuntimeCapabilityOptionalFeaturesJson() {
       {"arc", "not-claimed",
        "ARC remains unsupported in the public conformance claim surface until the full runnable ARC contract closes",
        kObjc3UnsupportedFeatureClaimArc},
+      {"value-optionals", "not-claimed",
+       "#8234 admits Optional<T> type signatures, bounded packed runtime ABI lowering for i32, bool, and id handles, and wide-carrier Optional<i64> direct function/method call/return ABI support while keeping object/nullability bridge, nested/generic payloads, property/ivar storage, unchecked unwrap, nil-to-scalar, implicit nil absence, lowercase aliases, broad dynamic paths, and throws/result conversion fail-closed",
+       kObjc3UnsupportedFeatureClaimValueOptionals},
+      {"match-expressions", "not-claimed",
+       "expression-form match remains reserved; only statement match belongs to the current source surface",
+       kObjc3UnsupportedFeatureClaimMatchExpressions},
+      {"guarded-patterns", "not-claimed",
+       "guarded match patterns remain reserved until semantic and lowering support land",
+       kObjc3UnsupportedFeatureClaimGuardedPatterns},
   };
   constexpr std::size_t kEntryCount = sizeof(kEntries) / sizeof(kEntries[0]);
   std::ostringstream out;
@@ -96,7 +123,7 @@ std::string BuildPublicConformanceProfilesJson() {
       {"core", "claimed"},
       {"strict", "claimed"},
       {"strict-concurrency", "claimed"},
-      {"strict-system", "claimed"},
+      {"strict-system", "not-claimed"},
   };
   constexpr std::size_t kProfileCount = sizeof(kProfiles) / sizeof(kProfiles[0]);
   std::ostringstream out;
@@ -140,9 +167,11 @@ std::string BuildRuntimeCapabilityReportJson(
       << "\",\"version_model\":\""
       << EscapeJsonString(kArtifactRuntimeCapabilityReportingVersionModel)
       << "\",\"strictness_mode\":\""
-      << EscapeJsonString(kArtifactRuntimeCapabilityStrictnessMode)
+      << EscapeJsonString(
+             StrictnessModeForLanguageProfile(summary.effective_language_profile))
       << "\",\"concurrency_mode\":\""
-      << EscapeJsonString(kArtifactRuntimeCapabilityConcurrencyMode)
+      << EscapeJsonString(
+             ConcurrencyModeForLanguageProfile(summary.effective_language_profile))
       << "\",\"claimed_profile_ids\":"
       << BuildStringArrayJson(claimed_profile_ids)
       << ",\"not_claimed_profile_ids\":"
@@ -193,9 +222,11 @@ std::string BuildPublicConformanceReportJson(
       << "\",\"spec_revision\":\""
       << EscapeJsonString(kArtifactRuntimeCapabilitySpecRevision)
       << "\"},\"mode\":{\"strictness\":\""
-      << EscapeJsonString(kArtifactRuntimeCapabilityStrictnessMode)
+      << EscapeJsonString(
+             StrictnessModeForLanguageProfile(summary.effective_language_profile))
       << "\",\"concurrency\":\""
-      << EscapeJsonString(kArtifactRuntimeCapabilityConcurrencyMode)
+      << EscapeJsonString(
+             ConcurrencyModeForLanguageProfile(summary.effective_language_profile))
       << "\",\"compatibility\":\""
       << EscapeJsonString(summary.effective_language_profile)
       << "\",\"canonical_literal_rejection_diagnostics\":"

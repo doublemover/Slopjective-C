@@ -1,0 +1,9 @@
+// Expected diagnostic code(s): O3S206.
+module NegativeMatchExpressionNonExhaustive;
+
+fn main(flag: bool) -> i32 {
+  let result = match (flag) {
+    case true => 1;
+  };
+  return result;
+}

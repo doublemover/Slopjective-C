@@ -1,0 +1,264 @@
+{
+  "contract_id": "objc3c.package_ecosystem.umbrella_closure.v1",
+  "surface_kind": "package-ecosystem-umbrella-closure",
+  "issue_refs": [8204],
+  "integrated_issue_refs": [8219, 8220, 8221, 8222, 8223],
+  "runbook": "docs/runbooks/objc3c_package_ecosystem.md",
+  "source_contracts": [
+    "tests/tooling/fixtures/package_ecosystem/artifact_contract.json",
+    "tests/tooling/fixtures/package_ecosystem/boundary_inventory.json",
+    "tests/tooling/fixtures/package_ecosystem/dependency_lock_policy.json",
+    "tests/tooling/fixtures/package_ecosystem/direct_import_module_syntax_contract.json",
+    "tests/tooling/fixtures/package_ecosystem/hosted_registry/fixture-lock.json",
+    "tests/tooling/fixtures/package_ecosystem/hosted_registry/hosted-registry-index.json",
+    "tests/tooling/fixtures/package_ecosystem/hosted_registry/service/hosted-registry-service.json",
+    "tests/tooling/fixtures/package_ecosystem/hosted_registry/service/negative-service-cases.json",
+    "tests/tooling/fixtures/package_ecosystem/hosted_registry/negative-registry-cases.json",
+    "tests/tooling/fixtures/package_ecosystem/hosted_registry/offline-mirror-index.json",
+    "tests/tooling/fixtures/package_ecosystem/from_nothing_install_proof_contract.json",
+    "tests/tooling/fixtures/package_ecosystem/install_distribution_credibility_contract.json",
+    "tests/tooling/fixtures/package_ecosystem/local_workspace_mirror_semantics.json",
+    "tests/tooling/fixtures/package_ecosystem/network_resolution/negative-network-publication-cases.json",
+    "tests/tooling/fixtures/package_ecosystem/network_resolution/network-dependency-resolution.json",
+    "tests/tooling/fixtures/package_ecosystem/network_resolution/package-release-channel-publication.json",
+    "tests/tooling/fixtures/package_ecosystem/negative_package_metadata_contracts.json",
+    "tests/tooling/fixtures/package_ecosystem/package_authoring_workflow_contract.json",
+    "tests/tooling/fixtures/package_ecosystem/package_manager_model_contract.json",
+    "tests/tooling/fixtures/package_ecosystem/package_security_hardening_contract.json",
+    "tests/tooling/fixtures/package_ecosystem/registry_mirror_reproducibility_contract.json",
+    "tests/tooling/fixtures/package_ecosystem/registry_publication_semantics.json"
+  ],
+  "schema_contracts": [
+    "schemas/objc3c-package-manifest-v1.schema.json",
+    "schemas/objc3c-package-lock-v1.schema.json",
+    "schemas/objc3c-package-signing-trust-v1.schema.json",
+    "schemas/objc3c-package-offline-mirror-index-v1.schema.json",
+    "schemas/objc3c-package-local-registry-index-v1.schema.json",
+    "schemas/objc3c-package-hosted-registry-index-v1.schema.json",
+    "schemas/objc3c-package-hosted-registry-service-v1.schema.json",
+    "schemas/objc3c-package-network-resolution-v1.schema.json",
+    "schemas/objc3c-package-release-channel-publication-v1.schema.json",
+    "schemas/objc3c-package-install-receipt-v1.schema.json",
+    "schemas/objc3c-package-install-distribution-receipt-v1.schema.json",
+    "schemas/objc3c-package-install-distribution-operation-receipt-v1.schema.json",
+    "schemas/objc3c-package-operation-receipt-v1.schema.json"
+  ],
+  "generated_artifact_roots": [
+    "tmp/artifacts/package-ecosystem/locks",
+    "tmp/artifacts/package-ecosystem/manifests",
+    "tmp/artifacts/package-ecosystem/mirrors",
+    "tmp/artifacts/package-ecosystem/registry",
+    "tmp/artifacts/package-ecosystem/offline-install",
+    "tmp/artifacts/package-ecosystem/install-validation",
+    "tmp/artifacts/package-ecosystem/operations"
+  ],
+  "required_public_actions": [
+    "build-package-lock",
+    "package-sign",
+    "package-verify",
+    "validate-package-security-hardening",
+    "validate-direct-import-module-syntax",
+    "validate-package-authoring",
+    "validate-package-manager-model",
+    "validate-package-mirror",
+    "validate-package-registry-model",
+    "package-registry-resolve",
+    "validate-package-network-publication",
+    "validate-package-install-distribution",
+    "package-publish",
+    "package-install",
+    "package-update",
+    "package-uninstall",
+    "package-rollback",
+    "validate-package-operations",
+    "validate-package-ecosystem",
+    "validate-runnable-package-ecosystem"
+  ],
+  "public_action_invocations": {
+    "validate-package-install-distribution": {
+      "required_command": "npm run objc3c -- validate-package-install-distribution --from-nothing",
+      "default_behavior": "public action injects --from-nothing when no pass-through arguments are supplied",
+      "source_owner": "scripts/objc3c_workflow/actions/ecosystem_publication_package.py",
+      "source_contract": "tests/tooling/fixtures/package_ecosystem/from_nothing_install_proof_contract.json"
+    }
+  },
+  "required_action_groups": {
+    "direct_import": [
+      "validate-direct-import-module-syntax"
+    ],
+    "hosted_registry_and_model": [
+      "validate-package-manager-model",
+      "validate-package-registry-model",
+      "package-registry-resolve"
+    ],
+    "network_publication": [
+      "validate-package-network-publication"
+    ],
+    "signing_and_verification": [
+      "package-sign",
+      "package-verify",
+      "validate-package-security-hardening"
+    ],
+    "package_operations_and_install_distribution": [
+      "validate-package-install-distribution",
+      "package-publish",
+      "package-install",
+      "package-update",
+      "package-uninstall",
+      "package-rollback",
+      "validate-package-operations"
+    ],
+    "runnable_package_ecosystem": [
+      "validate-package-ecosystem",
+      "validate-runnable-package-ecosystem"
+    ]
+  },
+  "cross_contract_bindings": [
+    {
+      "binding_id": "direct-import-provenance-to-package-lock",
+      "source_contract": "tests/tooling/fixtures/package_ecosystem/direct_import_module_syntax_contract.json",
+      "consumer_contract": "tests/tooling/fixtures/package_ecosystem/package_manager_model_contract.json",
+      "required_fields": [
+        "module_graph.direct_imports",
+        "package_provenance",
+        "missing_provenance_diagnostic"
+      ],
+      "fail_closed_cases": [
+        "missing-package-provenance",
+        "ambiguous-module-identity"
+      ]
+    },
+    {
+      "binding_id": "hosted-registry-to-network-resolution",
+      "source_contract": "tests/tooling/fixtures/package_ecosystem/hosted_registry/hosted-registry-index.json",
+      "consumer_contract": "tests/tooling/fixtures/package_ecosystem/network_resolution/network-dependency-resolution.json",
+      "required_fields": [
+        "provider_model.network_fetch.separated_from_resolution",
+        "snapshot_fetch.fetcher_id",
+        "snapshot_fetch.transport_policy.live_network_allowed",
+        "snapshot_fetch.transport_policy.fallback_registry_success",
+        "snapshot_fetch.snapshot_source.source_lock_digest",
+        "snapshot_fetch.trust_enforcement.signature_required",
+        "snapshot_fetch.trust_enforcement.revocation_required",
+        "snapshot_fetch.trust_enforcement.unknown_trust_root_policy",
+        "snapshot_fetch.trust_enforcement.revoked_subject_policy",
+        "snapshot_fetch.trust_enforcement.digest_drift_policy",
+        "snapshot_fetch.lock_materialization.policy",
+        "snapshot_fetch.lock_materialization.offline_replay_sufficient",
+        "snapshot_fetch.lock_materialization.network_required_after_lock",
+        "snapshot.rollback_policy",
+        "service_availability.state",
+        "endpoint_identity.endpoint_id",
+        "endpoint_identity.channel_id",
+        "lock_materialization.policy",
+        "lock_materialization.offline_replay_sufficient",
+        "lock_trust_material.source_lock_digest",
+        "lock_trust_material.trust_root_id",
+        "lock_trust_material.cache_policy",
+        "hosted_service.service_contract_id",
+        "hosted_service.no_network_fallback",
+        "trust_results.0.status",
+        "cache_identities.0.cache_key",
+        "offline_mirror_handoffs.0.network_required_after_lock"
+      ],
+      "fail_closed_cases": [
+        "rollback-snapshot",
+        "live-network-fetch",
+        "live-public-service-unavailable",
+        "transport-policy-drift",
+        "snapshot-fetch-policy-drift",
+        "snapshot-source-digest-drift",
+        "unpinned-hosted-dependency",
+        "unlocked-version-selection",
+        "ambiguous-module-identity",
+        "ambiguous-version-selection",
+        "unsupported-platform",
+        "registry-trust-mismatch",
+        "unknown-trust-root",
+        "revoked-subject",
+        "digest-drift",
+        "unavailable-registry",
+        "yanked-version",
+        "missing-package-provenance",
+        "missing-service-auth",
+        "service-revocation-unavailable",
+        "service-moderation-blocked",
+        "service-availability-unavailable",
+        "unsigned-hosted-artifact",
+        "lock-materialization-drift",
+        "offline-mirror-handoff-drift",
+        "dependency-cycle",
+        "fallback-registry-success",
+        "hosted-registry-endpoint-mismatch"
+      ]
+    },
+    {
+      "binding_id": "network-resolution-to-release-channel-publication",
+      "source_contract": "tests/tooling/fixtures/package_ecosystem/network_resolution/network-dependency-resolution.json",
+      "consumer_contract": "tests/tooling/fixtures/package_ecosystem/network_resolution/package-release-channel-publication.json",
+      "required_fields": [
+        "source_resolution",
+        "publication_policy.release_channel_id",
+        "registry_endpoint.endpoint_id",
+        "packages.0.lock_digest",
+        "packages.0.cache_digest",
+        "packages.0.registry_signature_id"
+      ],
+      "fail_closed_cases": [
+        "stale-channel",
+        "unsigned-tampered-cache",
+        "lock-mismatch",
+        "dependency-identity-drift"
+      ]
+    },
+    {
+      "binding_id": "package-security-to-install-and-operations",
+      "source_contract": "tests/tooling/fixtures/package_ecosystem/package_security_hardening_contract.json",
+      "consumer_contracts": [
+        "tests/tooling/fixtures/package_ecosystem/install_distribution_credibility_contract.json",
+        "tests/tooling/fixtures/package_ecosystem/registry_publication_semantics.json"
+      ],
+      "required_fields": [
+        "path_safety_contract.before_filesystem_mutation_required",
+        "installer_update_key_policy.installer_key_state",
+        "release_registry_trust_root_policy.registry_root_required_state"
+      ],
+      "fail_closed_cases": [
+        "absolute-extraction-path",
+        "parent-traversal-extraction-path",
+        "symlink-extraction-entry",
+        "overwrite-existing-install-path",
+        "duplicate-extraction-path",
+        "case-conflicting-extraction-path",
+        "installer-key-active-overclaim",
+        "release-trust-root-active",
+        "registry-trust-root-active"
+      ]
+    }
+  ],
+  "hard_cutover_policy": {
+    "live_network_fetch_allowed": false,
+    "fallback_registry_success_allowed": false,
+    "generated_artifact_as_source_authority_allowed": false,
+    "temp_source_truth_allowed": false,
+    "install_distribution_from_nothing_required": true,
+    "wrapper_only_publication_allowed": false,
+    "evidence_log_only_claim_allowed": false,
+    "source_contract_required_for_public_action": true,
+    "owner_contract_required_for_public_action": true
+  },
+  "blocker_metadata": {
+    "blocker_owner": "package-ecosystem-blockers",
+    "blocking_conditions": [
+      "direct @import support lacks locked package provenance or stable diagnostics",
+      "hosted registry fixture lacks provider, endpoint, channel, deterministic snapshot fetch, explicit transport policy, hermetic service, lock materialization, trust enforcement, cache identity, offline mirror replay handoff, revocation/yank, or failure-mode metadata",
+      "network dependency resolution accepts live fetches or fallback registry success",
+      "release-channel publication accepts stale channel, endpoint drift, lock drift, cache tamper, dependency identity drift, or missing provenance",
+      "package signing or verification can succeed without source-owned trust policy and reserved release/registry root handling",
+      "package install or operation can mutate filesystem before extraction path safety proof",
+      "public package action has no owner contract or checked-in source contract",
+      "package ecosystem validation omits any direct import, hosted registry, network publication, signing, install distribution, operations, or runnable ecosystem action"
+    ]
+  },
+  "claim_boundary": "Objective-C 3.0 package ecosystem closure is source-owned only when direct @import provenance, hosted registry offline metadata, deterministic snapshot fetch, trust enforcement, lock materialization, offline replay handoff, hermetic hosted service contracts, network dependency resolution, package release-channel publication, signing and verification trust policy, install distribution, package operations, and runnable package ecosystem actions all agree through checked-in contracts and fail closed without live network or fallback registry success."
+}

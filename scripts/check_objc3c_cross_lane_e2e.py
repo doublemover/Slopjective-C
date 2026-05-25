@@ -20,7 +20,9 @@ from objc3c_editor_tooling.input_loading import load_editor_tooling_inputs, run_
 from objc3c_editor_tooling.model import build_editor_tooling_model
 from objc3c_editor_tooling.paths import paths_for_source, resolve_source
 from objc3c_editor_tooling.publication import publish_editor_tooling_surface
+from objc3c_tooling.artifact_identity import current_host_artifact_identity
 from objc3c_tooling.json_io import load_json_object as load_json, write_json_file
+from objc3c_tooling.llvm_discovery import find_llvm_tool_path
 from objc3c_tooling.paths import repo_rel
 from check_objc3c_public_runtime_reflection_api import validate_public_runtime_reflection_api
 from objc3c_object_model_debugger_proof import (
@@ -146,6 +148,7 @@ RELEASE_CHANNEL_OPERATIONS_MODEL_PATH = (
 )
 
 MANIFEST_CONTRACT_ID = "objc3c.cross_lane_e2e.manifest.v1"
+ARTIFACT_IDENTITY = current_host_artifact_identity()
 EXPECTATION_CONTRACT_ID = "objc3c.cross_lane_e2e.family_expectation.v1"
 WORKSPACE_CONTRACT_ID = "objc3c.cross_lane_e2e.workspace.v1"
 SUMMARY_CONTRACT_ID = "objc3c.cross_lane_e2e.summary.v1"
@@ -169,13 +172,21 @@ CANONICAL_MANIFEST_PATH = ROOT / "tests" / "fixtures" / "canonical" / "manifest.
 SUPPORT_CLAIM_EVIDENCE_CATALOG_PATH = (
     ROOT / "tests" / "conformance" / "support_claim_runnable_evidence_catalog.json"
 )
-DIRECT_IMPORT_CAPABILITY_ID = "modules.public-import-lookup"
-DIRECT_IMPORT_SUPPORT_CLAIM = "objc3c.behavior.modules.public-import-lookup"
-DIRECT_IMPORT_PUBLIC_COMMAND = "npm run objc3c -- validate-conformance-corpus"
+DIRECT_IMPORT_CAPABILITY_ID = "modules.direct-import-syntax"
+DIRECT_IMPORT_SUPPORT_CLAIM = "objc3c.behavior.modules.direct-import-syntax"
+DIRECT_IMPORT_OWNER_PHASE = "parser"
+DIRECT_IMPORT_PUBLIC_COMMAND = "npm run objc3c -- validate-direct-import-module-syntax"
 TEXT_PACKAGE_RUNTIME_FFI_BLOCKER_ID = "cross-lane-text-package-runtime-import-ffi-preservation-reserved"
 TEXT_PACKAGE_RUNTIME_FFI_BLOCKER_TEXT = (
     "cross-module runtime link-plan Part 11 ffi preservation surface incomplete "
     "for CrossLaneFixtureProvider"
+)
+NATIVE_OBJECT_EMISSION_MISSING_LLC_STATUS = "native_object_emission_missing_llc"
+NATIVE_OBJECT_EMISSION_MISSING_LLC_DIAGNOSTIC = (
+    f"{NATIVE_OBJECT_EMISSION_MISSING_LLC_STATUS}: native object emission "
+    "fail-closed; llc executable not found; set "
+    "OBJC3C_NATIVE_EXECUTION_LLC_PATH or install LLVM with llc on PATH; no "
+    "native object, package, or execution success claim is published"
 )
 
 REQUIRED_FAMILY_IDS = (
@@ -266,7 +277,11 @@ def slug_from_family_id(family_id: str) -> str:
 
 def resolve_native_exe() -> Path:
     configured = os.environ.get("OBJC3C_NATIVE_EXECUTABLE")
-    path = Path(configured) if configured else ROOT / "artifacts" / "bin" / "objc3c-native.exe"
+    path = (
+        Path(configured)
+        if configured
+        else ROOT / ARTIFACT_IDENTITY.native_executable_relative_path
+    )
     if not path.is_absolute():
         path = ROOT / path
     if not path.is_file():
@@ -274,23 +289,27 @@ def resolve_native_exe() -> Path:
     return path
 
 
+def host_executable_artifact_name(stem: str) -> str:
+    suffix = ".exe" if ARTIFACT_IDENTITY.native_executable_name.endswith(".exe") else ""
+    return f"{stem}{suffix}"
+
+
 def resolve_clangxx() -> str:
     configured = os.environ.get("OBJC3C_NATIVE_EXECUTION_CLANG_PATH")
     if configured:
         return configured
-    llvm_root = os.environ.get("LLVM_ROOT")
-    if llvm_root:
-        candidate = Path(llvm_root) / "bin" / "clang++.exe"
-        if candidate.is_file():
-            return str(candidate)
-    return shutil.which("clang++") or "clang++"
+    candidate = find_llvm_tool_path("clang++")
+    return str(candidate) if candidate else "clang++"
 
 
 def resolve_llc() -> str:
     configured = os.environ.get("OBJC3C_NATIVE_EXECUTION_LLC_PATH")
     if configured:
         return configured
-    return shutil.which("llc") or "llc"
+    candidate = find_llvm_tool_path("llc")
+    if candidate:
+        return str(candidate)
+    raise RuntimeError(NATIVE_OBJECT_EMISSION_MISSING_LLC_DIAGNOSTIC)
 
 
 def link_driver_args() -> list[str]:
@@ -415,7 +434,7 @@ def compile_native_module(
         domain=f"{family_id}.{domain}",
     )
 
-    obj_path = compile_dir / "module.obj"
+    obj_path = compile_dir / ARTIFACT_IDENTITY.module_object_artifact_name
     ll_path = compile_dir / "module.ll"
     import_surface_path = compile_dir / "module.runtime-import-surface.json"
     require_artifact(obj_path, "native object")
@@ -608,8 +627,8 @@ def validate_optimization_trace_proof(
     method_before_text = OPTIMIZATION_METHOD_INLINING_BEFORE_IR_PATH.read_text(encoding="utf-8")
     method_after_text = OPTIMIZATION_METHOD_INLINING_AFTER_IR_PATH.read_text(encoding="utf-8")
     required_method_reference_tokens = {
-        "method_before_call": "call i32 @objc3_inlineable_Math_addOne",
-        "method_before_body_identity": "callee body identity: body:Math.addOne:v1",
+        "method_before_call": "call i32 @objc3_inlineable_InlineMath_addOne",
+        "method_before_body_identity": "callee body identity: body:InlineMath.addOne:v1",
         "method_after_inline_frame": "source-map inline frame preserved",
         "method_after_invalidation": "semantic-optimization.invalidate-global-proof-state",
     }
@@ -835,8 +854,39 @@ def validate_object_typed_keypath_reflection_proof(
         minimum_key="live_typed_keypath_artifact_sites",
         domain="typed keypath lowering contract",
     )
+    typed_keypath_descriptor_publication_sites = validate_minimum_count(
+        family_id=family_id,
+        actual=lowering_contract.get("typed_keypath_descriptor_publication_sites"),
+        minimums=minimums,
+        minimum_key="typed_keypath_descriptor_publication_sites",
+        domain="typed keypath lowering contract",
+    )
+    typed_keypath_source_map_evidence_sites = validate_minimum_count(
+        family_id=family_id,
+        actual=lowering_contract.get("typed_keypath_source_map_evidence_sites"),
+        minimums=minimums,
+        minimum_key="typed_keypath_source_map_evidence_sites",
+        domain="typed keypath lowering contract",
+    )
+    typed_keypath_runtime_handle_evidence_sites = validate_minimum_count(
+        family_id=family_id,
+        actual=lowering_contract.get("typed_keypath_runtime_handle_evidence_sites"),
+        minimums=minimums,
+        minimum_key="typed_keypath_runtime_handle_evidence_sites",
+        domain="typed keypath lowering contract",
+    )
+    if (
+        typed_keypath_descriptor_publication_sites != live_typed_keypath_artifact_sites
+        or typed_keypath_source_map_evidence_sites != live_typed_keypath_artifact_sites
+        or typed_keypath_runtime_handle_evidence_sites != live_typed_keypath_artifact_sites
+    ):
+        raise RuntimeError(f"{family_id}.typed keypath evidence counters drifted from live artifacts")
     if runtime_helper_contract.get("typed_keypath_descriptor_handles_ready") is not True:
         raise RuntimeError(f"{family_id}.typed keypath descriptor handles must be runtime-ready")
+    if runtime_helper_contract.get("typed_keypath_source_map_evidence_ready") is not True:
+        raise RuntimeError(f"{family_id}.typed keypath source-map evidence must be runtime-ready")
+    if runtime_helper_contract.get("typed_keypath_runtime_handle_evidence_ready") is not True:
+        raise RuntimeError(f"{family_id}.typed keypath runtime-handle evidence must be runtime-ready")
     if runtime_helper_contract.get("typed_keypath_runtime_execution_helper_landed") is not True:
         raise RuntimeError(f"{family_id}.typed keypath runtime helper must be landed")
 
@@ -867,7 +917,12 @@ def validate_object_typed_keypath_reflection_proof(
         "semantic_typed_keypath_literal_sites": semantic_typed_keypath_literal_sites,
         "lowering_typed_keypath_literal_sites": lowering_typed_keypath_literal_sites,
         "live_typed_keypath_artifact_sites": live_typed_keypath_artifact_sites,
+        "typed_keypath_descriptor_publication_sites": typed_keypath_descriptor_publication_sites,
+        "typed_keypath_source_map_evidence_sites": typed_keypath_source_map_evidence_sites,
+        "typed_keypath_runtime_handle_evidence_sites": typed_keypath_runtime_handle_evidence_sites,
         "descriptor_handles_ready": True,
+        "source_map_evidence_ready": True,
+        "runtime_handle_evidence_ready": True,
         "runtime_execution_helper_landed": True,
         "required_ir_tokens": required_ir_tokens,
     }
@@ -1028,10 +1083,10 @@ def validate_object_reflection_debugger_proof(
     debug_map = require_object(model.debug, f"{family_id}.debug_source_map")
     if debug_map.get("supported") is not True or debug_map.get("object_artifact_present") is not True:
         raise RuntimeError(f"{family_id}.debug map must be tied to the emitted object artifact")
-    if debug_map.get("source_map_supported") is not False:
-        raise RuntimeError(f"{family_id}.debug map must keep full source maps fail-closed")
-    if debug_map.get("statement_level_stepping") is not False:
-        raise RuntimeError(f"{family_id}.debug map must keep statement stepping fail-closed")
+    if debug_map.get("source_map_supported") is not True:
+        raise RuntimeError(f"{family_id}.debug map must publish object-model source maps")
+    if debug_map.get("statement_level_stepping") is not True:
+        raise RuntimeError(f"{family_id}.debug map must publish object-model statement stepping")
     declaration_breakpoint_anchors = validate_minimum_count(
         family_id=family_id,
         actual=debug_map.get("declaration_breakpoint_anchor_count"),
@@ -1070,13 +1125,15 @@ def validate_object_reflection_debugger_proof(
         proof.get("reserved_rows_not_promoted"),
         f"{family_id}.object_reflection_debugger_proof.reserved_rows_not_promoted",
     )
-    for required_row in (
-        "runtime.object-model.full-realization",
-        "runtime.debug-trace.statement-stepping",
-        "runtime.debug-trace.full-source-map-publication",
-    ):
+    for required_row in ("runtime.debug-trace.full-source-map-publication",):
         if required_row not in reserved_rows:
             raise RuntimeError(f"{family_id}.object reflection proof must keep {required_row} reserved")
+    for promoted_row in (
+        "runtime.object-model.full-realization",
+        "runtime.debug-trace.statement-stepping",
+    ):
+        if promoted_row in reserved_rows:
+            raise RuntimeError(f"{family_id}.object reflection proof must not reserve promoted row {promoted_row}")
 
     return {
         "status": "PASS",
@@ -1365,8 +1422,11 @@ def _validate_direct_import_source_truth(
         raise RuntimeError(f"{family_id}.direct_import_source_truth.capability_id drifted")
     if direct_import.get("support_claim") != DIRECT_IMPORT_SUPPORT_CLAIM:
         raise RuntimeError(f"{family_id}.direct_import_source_truth.support_claim drifted")
-    if direct_import.get("owner_phase") != "sema":
-        raise RuntimeError(f"{family_id}.direct_import_source_truth.owner_phase must stay sema-owned")
+    if direct_import.get("owner_phase") != DIRECT_IMPORT_OWNER_PHASE:
+        raise RuntimeError(
+            f"{family_id}.direct_import_source_truth.owner_phase must stay "
+            f"{DIRECT_IMPORT_OWNER_PHASE}-owned"
+        )
     if direct_import.get("public_replay_command") != DIRECT_IMPORT_PUBLIC_COMMAND:
         raise RuntimeError(f"{family_id}.direct_import_source_truth.public command drifted")
 
@@ -1418,7 +1478,7 @@ def _validate_direct_import_source_truth(
     )
     if support_claim.get("owner_phase") != direct_import.get("owner_phase"):
         raise RuntimeError(f"{family_id}.direct_import_source_truth owner phase drifted from canonical manifest")
-    if normalize_path(str(support_claim.get("behavior_fixture", ""))) != repo_rel(consumer_fixture):
+    if normalize_path(str(support_claim.get("behavior_fixture", ""))) != repo_rel(conformance_fixture):
         raise RuntimeError(f"{family_id}.direct_import_source_truth behavior fixture drifted from canonical manifest")
     if support_claim.get("executable_command") != DIRECT_IMPORT_PUBLIC_COMMAND:
         raise RuntimeError(f"{family_id}.direct_import_source_truth executable command drifted from canonical manifest")
@@ -1612,10 +1672,10 @@ def _validate_missing_provider_link_failure(
     compile_dir = ROOT / normalize_path(
         require_nonempty_string(executable_proof.get("compile_dir"), f"{family_id}.compile_dir")
     )
-    obj_path = compile_dir / "module.obj"
+    obj_path = compile_dir / ARTIFACT_IDENTITY.module_object_artifact_name
     require_artifact(obj_path, "text package missing-provider object")
     runtime_library, driver_flags = load_runtime_launch_inputs(compile_dir)
-    missing_provider_exe = artifact_dir / "missing-provider.exe"
+    missing_provider_exe = artifact_dir / host_executable_artifact_name("missing-provider")
     missing_provider_log = artifact_dir / "missing-provider-link.log"
     result = run_checked(
         [
@@ -2827,8 +2887,8 @@ def validate_advanced_runtime_contract_backed_proof(
     )
     if evidence.get("public_replay_command") != ADVANCED_RUNTIME_PUBLIC_COMMAND:
         raise RuntimeError(f"{family_id}.workspace canonical evidence command drifted")
-    if evidence.get("umbrella_support_promoted") is not False:
-        raise RuntimeError(f"{family_id}.workspace must not promote advanced-runtime umbrella support")
+    if evidence.get("umbrella_support_promoted") is not True:
+        raise RuntimeError(f"{family_id}.workspace must promote advanced-runtime umbrella support")
     require_path_field(evidence, "positive_fixture", ADVANCED_RUNTIME_POSITIVE_FIXTURE)
     require_path_field(
         evidence,
@@ -2879,8 +2939,8 @@ def validate_advanced_runtime_contract_backed_proof(
         raise RuntimeError(f"{family_id}.source_graph.proof_kind drifted")
     if debug_source_map.get("proof_kind") != "advanced-runtime-canonical-source-debug-map":
         raise RuntimeError(f"{family_id}.debug_source_map.proof_kind drifted")
-    if runtime.get("umbrella_support_promoted") is not False:
-        raise RuntimeError(f"{family_id}.runtime must not promote advanced-runtime umbrella support")
+    if runtime.get("umbrella_support_promoted") is not True:
+        raise RuntimeError(f"{family_id}.runtime must promote advanced-runtime umbrella support")
     if source_graph.get("source_truth") is True or debug_source_map.get("source_truth") is True:
         raise RuntimeError(f"{family_id} generated evidence must not be marked source truth")
 
@@ -2963,7 +3023,7 @@ def validate_advanced_runtime_contract_backed_proof(
         "negative_matrix_case_count": payload["advanced_runtime_negative_matrix_case_count"],
         "compile_manifest_status": compile_manifest["status"],
         "optimization_trace_status": optimization_trace["status"],
-        "umbrella_support_promoted": False,
+        "umbrella_support_promoted": True,
     }
 
 
@@ -3194,7 +3254,8 @@ def validate_expectation(
             raise RuntimeError(f"{family_id}.{section_name} must not mark generated artifacts as source truth")
 
     boundary = require_object(expectation.get("capability_boundary"), f"{family_id}.capability_boundary")
-    if boundary.get("cannot_promote_reserved_rows") is not True:
+    expected_no_reserved_promotion = family_id != "object_reflection_debugger"
+    if boundary.get("cannot_promote_reserved_rows") is not expected_no_reserved_promotion:
         raise RuntimeError(f"{family_id}.capability_boundary must forbid reserved-row promotion")
     require_list(boundary.get("referenced_capability_rows"), f"{family_id}.capability_boundary.rows")
     return expectation

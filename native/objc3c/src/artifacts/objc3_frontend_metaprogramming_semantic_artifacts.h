@@ -5,6 +5,7 @@
 #include <vector>
 
 #include "artifacts/objc3_frontend_artifact_metadata_dtos.h"
+#include "lower/contracts/metaprogramming_runtime_cache_contracts.h"
 
 struct Objc3Program;
 
@@ -72,8 +73,20 @@ struct Objc3MetaprogrammingMacroHostProcessCacheRuntimeIntegrationSurfaceSummary
       kObjc3ArtifactMetaprogrammingMacroHostProcessCacheRuntimeIntegrationDiagnosticsModel;
   std::string fail_closed_model =
       kObjc3ArtifactMetaprogrammingMacroHostProcessCacheRuntimeIntegrationFailClosedModel;
+  std::string macro_package_identity =
+      kObjc3MetaprogrammingMacroHostProcessCacheRuntimeIntegrationPackageIdentity;
+  std::string macro_package_lock_identity =
+      kObjc3MetaprogrammingMacroHostProcessCacheRuntimeIntegrationPackageLockIdentity;
+  std::string macro_package_trust_identity =
+      kObjc3MetaprogrammingMacroHostProcessCacheRuntimeIntegrationPackageTrustIdentity;
+  std::string macro_input_content_identity;
+  std::string macro_output_content_identity;
+  std::string macro_host_identity;
+  std::string cache_validation_status;
+  std::string runtime_consumption_artifact_identity;
   std::string replay_key;
   std::string metaprogramming_replay_key;
+  std::size_t package_replay_generation = 0;
   std::size_t local_macro_artifact_count = 0;
   std::size_t local_property_behavior_artifact_count = 0;
   std::size_t imported_module_count = 0;

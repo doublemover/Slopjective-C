@@ -21,6 +21,7 @@ from objc3c_package_manager.install_distribution import (
     INSTALL_LOCAL_ARTIFACT_ROOT_REL,
     INSTALL_PROOF_MANIFEST_REL,
     INSTALL_RECEIPT_REL,
+    INSTALL_VALIDATION_ROOT_REL,
     INSTALL_VERIFICATION_REL,
     PACKAGE_UNINSTALL_RECEIPT_REL,
     PACKAGE_UPDATE_RECEIPT_REL,
@@ -67,8 +68,13 @@ SUMMARY_PATH = (
     / "install-distribution-credibility-summary.json"
 )
 FROM_NOTHING_ROOTS = (
-    ROOT / "tmp" / "artifacts" / "package-ecosystem",
-    ROOT / "tmp" / "reports" / "package-ecosystem",
+    LOCK_PATH,
+    MIRROR_PATH.parent,
+    REGISTRY_PATH.parent,
+    RESTORE_RECEIPT_PATH.parent,
+    ROOT / INSTALL_VALIDATION_ROOT_REL,
+    MIRROR_SUMMARY_PATH,
+    SUMMARY_PATH,
 )
 
 
@@ -257,6 +263,7 @@ def main(argv: list[str] | None = None) -> int:
         "mirror_summary_status": mirror_summary.get("status"),
         "clean_start": verification.get("clean_start", {}),
         "from_nothing_probe": from_nothing_probe,
+        "platform_host_evidence": verification.get("platform_host_evidence", {}),
         "generated_paths": verification.get("generated_paths", []),
         "required_public_actions": required_actions,
         "missing_public_actions": missing_public_actions,

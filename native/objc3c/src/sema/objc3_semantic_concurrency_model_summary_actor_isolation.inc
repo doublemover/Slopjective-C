@@ -44,7 +44,7 @@ BuildConcurrencyActorIsolationSendableSemanticModelSummary(
           summary.actor_isolation_sendability_sites &&
       summary.gate_blocked_sites <= summary.non_sendable_crossing_sites &&
       summary.contract_violation_sites == 0u;
-  summary.strict_concurrency_selection_fail_closed = true;
+  summary.strict_concurrency_selection_supported = true;
   summary.actor_runtime_deferred = true;
   summary.executor_runtime_deferred = true;
   summary.cross_actor_enforcement_deferred = true;

@@ -7,6 +7,30 @@
     Objc3ProtocolRequirementKind requirement_kind =
         Objc3ProtocolRequirementKind::Required;
     while (!At(TokenKind::KwAtEnd) && !At(TokenKind::Eof)) {
+      if (Match(TokenKind::KwAtReifyGenerics)) {
+        const Token marker = Previous();
+        if (!(At(TokenKind::Minus) || At(TokenKind::Plus))) {
+          diagnostics_.push_back(MakeDiag(
+              marker.line, marker.column, "O3P114",
+              "declaration-scoped generic reification marker "
+              "'@reify_generics' is only supported on Objective-C protocol "
+              "method requirements"));
+          SynchronizeObjcContainer();
+          continue;
+        }
+        Objc3MethodDecl method;
+        if (ParseObjcMethodDecl(method, false, true, marker.line,
+                                marker.column)) {
+          method.protocol_requirement_kind = requirement_kind;
+          method.scope_owner_symbol = decl.scope_owner_symbol;
+          method.scope_path_symbol = decl.scope_owner_symbol + "::" + BuildObjcMethodScopePathSymbol(method);
+          AssignObjcMethodLookupOverrideConflictSymbols(method, decl.semantic_link_symbol, decl.semantic_link_symbol);
+          decl.methods.push_back(std::move(method));
+          continue;
+        }
+        SynchronizeObjcContainer();
+        continue;
+      }
       if (Match(TokenKind::KwAtRequired)) {
         requirement_kind = Objc3ProtocolRequirementKind::Required;
         continue;

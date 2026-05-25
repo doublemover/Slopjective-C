@@ -295,12 +295,13 @@ def test_artifact_inspector_promotes_emitted_native_debug_sections_only_with_ir_
     assert evidence["native_line_table_section_count"] == 2
     assert evidence["llvm_debug_metadata_present"] is True
     assert evidence["llvm_debug_location_count"] == 8
-    assert evidence["blocked_by"] == [
-        "runtime-debug-trace-statement-stepping-integration"
-    ]
-    assert evidence["fail_closed_reason"] == (
-        "runtime debug trace is not integrated with emitted native debug info"
+    assert evidence["statement_stepping_supported"] is True
+    assert evidence["statement_stepping_evidence_id"] == (
+        "object-model.statement-stepping.production-source-line-table"
     )
+    assert evidence["blocked_by"] == []
+    assert evidence["fail_closed"] is False
+    assert evidence["fail_closed_reason"] == ""
 
 
 def test_artifact_inspector_keeps_native_debug_reserved_without_ir_di() -> None:

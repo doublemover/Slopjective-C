@@ -1,0 +1,198 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://objc3c.dev/schemas/objc3c-typed-throws-effect-contract-v1.schema.json",
+  "title": "Objective-C 3 Typed Throws Effect Contract v1",
+  "x-objc3c-artifact-contract": {
+    "schema_id": "objc3c-typed-throws-effect-contract-v1",
+    "payload_id_field": "contract_id",
+    "payload_id_value": "objc3c.typed_throws.semantic_effect_identity.v1",
+    "registry_owner": "native/objc3c/src/artifacts/json/artifact_schema_contract_table.cpp",
+    "artifact_family": "language-errors"
+  },
+  "type": "object",
+  "required": [
+    "contract_id",
+    "issue_ref",
+    "support_state",
+    "public_support_claimed",
+    "throws_effect",
+    "catch_compatibility",
+    "typed_throws_lowering",
+    "typed_throws_rejection",
+    "source_anchors",
+    "invariants"
+  ],
+  "properties": {
+    "contract_id": {
+      "const": "objc3c.typed_throws.semantic_effect_identity.v1"
+    },
+    "issue_ref": { "const": 8233 },
+    "support_state": {
+      "const": "implemented_single_payload_effect_identity_interface_preserved_error_out_abi_catch_bridge_runtime"
+    },
+    "public_support_claimed": { "const": true },
+    "throws_effect": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/throwsEffect" }
+    },
+    "catch_compatibility": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/catchCompatibility" }
+    },
+    "typed_throws_lowering": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/typedThrowsLowering" }
+    },
+    "typed_throws_rejection": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/typedThrowsRejection" }
+    },
+    "source_anchors": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 },
+      "uniqueItems": true
+    },
+    "invariants": { "$ref": "#/$defs/invariants" }
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "throwsEffect": {
+      "type": "object",
+      "required": [
+        "callable_id",
+        "throws_kind",
+        "error_type",
+        "typed_payload_arity",
+        "effect_signature_key",
+        "callable_compatibility_policy",
+        "source_span",
+        "interface_anchor"
+      ],
+      "properties": {
+        "callable_id": { "type": "string", "minLength": 1 },
+        "throws_kind": { "enum": ["none", "untyped", "typed"] },
+        "error_type": { "type": "string" },
+        "typed_payload_arity": { "enum": [0, 1] },
+        "effect_signature_key": {
+          "type": "string",
+          "pattern": "^throws:(?:none|untyped:id<Error>|typed:.+)$"
+        },
+        "callable_compatibility_policy": {
+          "enum": [
+            "nonthrowing-only",
+            "untyped-throws-id-error-carrier",
+            "typed-throws-exact-payload-match-error-out-abi"
+          ]
+        },
+        "source_span": { "type": "string", "minLength": 1 },
+        "interface_anchor": { "type": "string", "minLength": 1 }
+      },
+      "additionalProperties": false
+    },
+    "catchCompatibility": {
+      "type": "object",
+      "required": [
+        "case_id",
+        "throw_type",
+        "catch_type",
+        "match_status",
+        "bridge_status",
+        "runtime_catch_kind",
+        "fail_closed",
+        "diagnostic"
+      ],
+      "properties": {
+        "case_id": { "type": "string", "minLength": 1 },
+        "throw_type": { "type": "string", "minLength": 1 },
+        "catch_type": { "type": "string", "minLength": 1 },
+        "match_status": {
+          "enum": [
+            "typed-catch-exact-payload-match",
+            "untyped-catch-allowed-via-id-error-bridge",
+            "incompatible-catch-rejected",
+            "unsupported-foreign-carrier-fail-closed"
+          ]
+        },
+        "bridge_status": {
+          "enum": [
+            "no-bridge-needed",
+            "bridge-to-id<Error>-allowed",
+            "bridge-rejected",
+            "unsupported-foreign-carrier-rejected"
+          ]
+        },
+        "runtime_catch_kind": {
+          "enum": ["typed-error", "id<Error>", "none"]
+        },
+        "fail_closed": { "type": "boolean" },
+        "diagnostic": { "type": "string" }
+      },
+      "additionalProperties": false
+    },
+    "typedThrowsLowering": {
+      "type": "object",
+      "required": [
+        "callsite_id",
+        "abi_strategy",
+        "runtime_error_contract",
+        "cleanup_contract",
+        "typed_payload_lowering_ready"
+      ],
+      "properties": {
+        "callsite_id": { "type": "string", "minLength": 1 },
+        "abi_strategy": { "const": "hidden-error-out-i32-with-semantic-payload-identity" },
+        "runtime_error_contract": { "const": "typed-error-out-abi" },
+        "cleanup_contract": { "const": "error-out-propagation-preserves-existing-cleanup-order" },
+        "typed_payload_lowering_ready": { "const": true }
+      },
+      "additionalProperties": false
+    },
+    "typedThrowsRejection": {
+      "type": "object",
+      "required": [
+        "source_span",
+        "reason",
+        "expected_type",
+        "actual_type",
+        "diagnostic"
+      ],
+      "properties": {
+        "source_span": { "type": "string", "minLength": 1 },
+        "reason": { "type": "string", "minLength": 1 },
+        "expected_type": { "type": "string", "minLength": 1 },
+        "actual_type": { "type": "string", "minLength": 1 },
+        "diagnostic": { "type": "string", "pattern": "^O3" }
+      },
+      "additionalProperties": false
+    },
+    "invariants": {
+      "type": "object",
+      "required": [
+        "single_payload_only",
+        "typed_payload_is_signature_identity",
+        "bare_throws_not_compatible_with_typed_throws",
+        "typed_error_abi_lowering_ready",
+        "typed_catch_exact_matching",
+        "untyped_catch_bridge_allowed",
+        "unsupported_foreign_carrier_fail_closed",
+        "runtime_execution_claimed",
+        "silent_erasure_allowed"
+      ],
+      "properties": {
+        "single_payload_only": { "const": true },
+        "typed_payload_is_signature_identity": { "const": true },
+        "bare_throws_not_compatible_with_typed_throws": { "const": true },
+        "typed_error_abi_lowering_ready": { "const": true },
+        "typed_catch_exact_matching": { "const": true },
+        "untyped_catch_bridge_allowed": { "const": true },
+        "unsupported_foreign_carrier_fail_closed": { "const": true },
+        "runtime_execution_claimed": { "const": true },
+        "silent_erasure_allowed": { "const": false }
+      },
+      "additionalProperties": false
+    }
+  }
+}

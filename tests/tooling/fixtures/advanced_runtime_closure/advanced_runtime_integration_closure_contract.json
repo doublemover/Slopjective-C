@@ -1,0 +1,81 @@
+{
+  "contract_id": "objc3c.advanced-runtime.integration-runtime-closure.v1",
+  "umbrella_issue_ref": 8203,
+  "promotion_issue_ref": 8218,
+  "issue_refs": [
+    8214,
+    8215,
+    8216,
+    8217,
+    8218
+  ],
+  "source_truth": "checked-in source files and checked-in contract fixtures only",
+  "runtime_envelope": {
+    "support_status": "supported-bounded",
+    "supported_boundary": "integrated Objective-C 3 executable runtime envelope only",
+    "executable_contract_fixture": "tests/tooling/fixtures/advanced_runtime_closure/executable_runtime_contract_surfaces.json",
+    "combined_identity_contract": "tests/tooling/fixtures/advanced_runtime_closure/combined_runtime_identity_contract.json",
+    "native_artifact_contract": "tests/tooling/fixtures/advanced_runtime_closure/native_artifact_contract.json",
+    "required_surface_kinds": [
+      "scheduler-task-runtime-contract",
+      "foreign-abi-runtime-contract",
+      "actor-mailbox-runtime-expansion-contract",
+      "macro-package-replay-runtime-contract"
+    ],
+    "compatibility_modes_allowed": false,
+    "local_temp_evidence_allowed": false
+  },
+  "runtime_import_surface_fixtures": [
+    "tests/tooling/fixtures/advanced_runtime_closure/scheduler_task_runtime_guarantees_contract.json",
+    "tests/tooling/fixtures/advanced_runtime_closure/foreign_abi_runtime_closure_contract.json",
+    "tests/tooling/fixtures/advanced_runtime_closure/actor_mailbox_runtime_expansion_contract.json",
+    "tests/tooling/fixtures/advanced_runtime_closure/macro_package_replay_runtime_closure_contract.json"
+  ],
+  "reserved_fail_closed_claims": [
+    {
+      "claim_id": "broad-scheduler-guarantees",
+      "issue_ref": 8214,
+      "negative_case_id": "scheduler_priority_fairness_overclaim",
+      "expected_diagnostic": "advanced-runtime.scheduler-unsupported-policy",
+      "boundary": "task lifecycle and executor-hop evidence does not prove priority fairness, work stealing, distributed scheduling, or external executor fairness"
+    },
+    {
+      "claim_id": "swift-cpp-abi-mirroring",
+      "issue_ref": 8215,
+      "negative_case_id": "foreign_abi_unsafe_mixed_image",
+      "expected_diagnostic": "advanced-runtime.foreign-abi-unsafe-mixed-image",
+      "boundary": "Swift/C++ metadata may be preserved for replay, but runtime ABI mirroring and unsafe mixed images remain rejected"
+    },
+    {
+      "claim_id": "distributed-actor-networking",
+      "issue_ref": 8216,
+      "negative_case_id": "distributed_actor_transport_overclaim",
+      "expected_diagnostic": "advanced-runtime.distributed-actor-transport-overclaim",
+      "boundary": "local mailbox identity, FIFO, drain, cancel, error, and shutdown evidence does not prove network transport, remote identity, serialization, or remote failure semantics"
+    },
+    {
+      "claim_id": "arbitrary-macro-host-execution",
+      "issue_ref": 8217,
+      "negative_case_id": "macro_host_arbitrary_execution",
+      "expected_diagnostic": "advanced-runtime.macro-host-arbitrary-execution",
+      "boundary": "checked package replay consumes deterministic macro host cache identity only; arbitrary host execution, sandbox widening, unsigned replay, stale replay, and tampered metadata remain rejected"
+    }
+  ],
+  "negative_matrix_alignment": {
+    "matrix_fixture": "tests/native/runtime/advanced_closure/negative_matrix.contract.json",
+    "required_case_ids": [
+      "scheduler_priority_fairness_overclaim",
+      "distributed_actor_transport_overclaim",
+      "macro_host_arbitrary_execution",
+      "macro_package_replay_stale_cache",
+      "foreign_abi_unsafe_mixed_image"
+    ],
+    "required_expected_diagnostics": [
+      "advanced-runtime.scheduler-unsupported-policy",
+      "advanced-runtime.distributed-actor-transport-overclaim",
+      "advanced-runtime.macro-host-arbitrary-execution",
+      "advanced-runtime.macro-package-replay-stale-cache",
+      "advanced-runtime.foreign-abi-unsafe-mixed-image"
+    ]
+  }
+}

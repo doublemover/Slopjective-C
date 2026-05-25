@@ -7,6 +7,7 @@ import sys
 from pathlib import Path
 from typing import Sequence
 
+from objc3c_tooling.llvm_discovery import default_llvm_tool_path
 from objc3c_tooling.json_io import load_json_any as load_json
 from objc3c_tooling.json_io import write_json_file as write_json
 from objc3c_tooling.paths import display_path
@@ -15,7 +16,13 @@ from .classification import (
     build_capability_demo_compatibility_surface,
     build_sema_type_system_parity_surface,
 )
-from .commands import probe_executable, probe_llc_filetype_obj
+from .commands import (
+    default_object_emission_target_triple,
+    probe_executable,
+    probe_llc_filetype_obj,
+    probe_llvm_config_paths,
+    probe_llvm_install_root_paths,
+)
 from .constants import (
     DEFAULT_SUMMARY_OUT,
     DESCRIPTION,
@@ -23,12 +30,25 @@ from .constants import (
     SHOWCASE_PORTFOLIO_PATH,
 )
 from .reports import build_summary, collect_failures, missing_contract_payload
+from .reports import build_toolchain_identity
+
+
+def _default_llvm_tool(tool_name: str) -> Path:
+    return default_llvm_tool_path(tool_name)
 
 
 def parse_args(argv: Sequence[str]) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=DESCRIPTION)
-    parser.add_argument("--clang", type=Path, default=Path("clang"))
-    parser.add_argument("--llc", type=Path, default=Path("llc"))
+    parser.add_argument("--clang", type=Path, default=_default_llvm_tool("clang"))
+    parser.add_argument("--clangxx", type=Path, default=_default_llvm_tool("clang++"))
+    parser.add_argument("--llc", type=Path, default=_default_llvm_tool("llc"))
+    parser.add_argument("--llvm-ar", type=Path, default=_default_llvm_tool("llvm-ar"))
+    parser.add_argument("--llvm-config", type=Path, default=_default_llvm_tool("llvm-config"))
+    parser.add_argument(
+        "--target-triple",
+        default=default_object_emission_target_triple(),
+        help="Target triple llc must prove with an actual --filetype=obj emission.",
+    )
     parser.add_argument("--summary-out", type=Path, default=DEFAULT_SUMMARY_OUT)
     return parser.parse_args(argv)
 
@@ -59,14 +79,44 @@ def build_capability_demo_compatibility(
 def run(argv: Sequence[str]) -> int:
     args = parse_args(argv)
     clang_probe = probe_executable(args.clang, role="clang")
+    clangxx_probe = probe_executable(args.clangxx, role="clang++")
     llc_probe = probe_executable(args.llc, role="llc")
+    llvm_ar_probe = probe_executable(args.llvm_ar, role="llvm-ar")
+    llvm_config_probe = probe_executable(args.llvm_config, role="llvm-config")
 
     llc_features: dict[str, object] = {
         "supports_filetype_obj": False,
+        "target_triple": str(args.target_triple),
+        "supports_target_object_emission": False,
     }
     if bool(llc_probe["found"]):
-        llc_features = probe_llc_filetype_obj(args.llc)
+        llc_features = probe_llc_filetype_obj(
+            args.llc,
+            target_triple=str(args.target_triple),
+        )
 
+    llvm_config_features: dict[str, object] = {
+        "headers_libraries_discovered": False,
+        "discovery_source": "unavailable",
+    }
+    if bool(llvm_config_probe["found"]):
+        llvm_config_features = probe_llvm_config_paths(args.llvm_config)
+    else:
+        llvm_config_features = probe_llvm_install_root_paths(
+            clangxx_probe,
+            clang_probe,
+            llc_probe,
+            llvm_ar_probe,
+        )
+
+    toolchain_identity = build_toolchain_identity(
+        clang_probe=clang_probe,
+        clangxx_probe=clangxx_probe,
+        llc_probe=llc_probe,
+        llvm_ar_probe=llvm_ar_probe,
+        llvm_config_probe=llvm_config_probe,
+        llvm_config_features=llvm_config_features,
+    )
     sema_type_system_parity = build_sema_type_system_parity_surface(
         clang_probe=clang_probe,
         llc_probe=llc_probe,
@@ -77,16 +127,26 @@ def run(argv: Sequence[str]) -> int:
     )
     failures = collect_failures(
         clang_probe=clang_probe,
+        clangxx_probe=clangxx_probe,
         llc_probe=llc_probe,
+        llvm_ar_probe=llvm_ar_probe,
+        llvm_config_probe=llvm_config_probe,
         llc_features=llc_features,
+        llvm_config_features=llvm_config_features,
+        toolchain_identity=toolchain_identity,
         sema_type_system_parity=sema_type_system_parity,
         capability_demo_compatibility=capability_demo_compatibility,
     )
 
     summary = build_summary(
         clang_probe=clang_probe,
+        clangxx_probe=clangxx_probe,
         llc_probe=llc_probe,
+        llvm_ar_probe=llvm_ar_probe,
+        llvm_config_probe=llvm_config_probe,
         llc_features=llc_features,
+        llvm_config_features=llvm_config_features,
+        toolchain_identity=toolchain_identity,
         sema_type_system_parity=sema_type_system_parity,
         capability_demo_compatibility=capability_demo_compatibility,
         failures=failures,

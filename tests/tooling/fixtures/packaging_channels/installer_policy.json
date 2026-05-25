@@ -9,12 +9,19 @@
   "requires_offline_bootstrap_without_network": true,
   "requires_payload_digest_parity_with_runnable_package": true,
   "requires_receipt_payload_manifest_digest": true,
+  "requires_sanitizer_receipt_metadata_for_sanitizer_variants": true,
   "requires_fresh_owned_tmp_roots": true,
   "installer_runtime_requirements": [
     "pwsh",
     "filesystem access",
     "machine-generated install receipt"
   ],
+  "sanitizer_variant_policy": {
+    "selectors": ["address", "undefined"],
+    "support_truth": false,
+    "native_execution_claimed": false,
+    "default_release_selection_allowed": false
+  },
   "forbidden_claims": [
     "system-wide install",
     "package-manager publication",

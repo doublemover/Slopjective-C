@@ -60,6 +60,8 @@ function New-RunnableToolchainPackageOperationsManifestSection {
     platform_packaged_smoke_contract = "tests/tooling/fixtures/platform_hardening/packaged_smoke_integration_contract.json"
     platform_hardening_scripts = [ordered]@{
       support_matrix = "scripts/build_objc3c_platform_support_matrix.py"
+      host_evidence_ingestion = "scripts/ingest_objc3c_platform_host_evidence.py"
+      host_evidence_review = "scripts/review_objc3c_platform_host_evidence.py"
       boundary_inventory_summary = "scripts/build_platform_hardening_boundary_inventory_summary.py"
       support_tier_policy_summary = "scripts/build_platform_hardening_support_tier_policy_summary.py"
       unsupported_host_policy_summary = "scripts/build_platform_hardening_unsupported_host_policy_summary.py"
@@ -74,6 +76,9 @@ function New-RunnableToolchainPackageOperationsManifestSection {
     }
     platform_hardening_public_actions = @(
       "build-platform-support-matrix",
+      "ingest-platform-host-evidence",
+      "review-platform-host-evidence",
+      "check-platform-host-promotion-evidence",
       "validate-platform-hardening",
       "validate-platform-hardening-end-to-end"
     )

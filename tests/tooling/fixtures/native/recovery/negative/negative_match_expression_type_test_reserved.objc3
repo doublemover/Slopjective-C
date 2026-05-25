@@ -1,0 +1,10 @@
+// Expected diagnostic code(s): O3P158.
+module NegativeMatchExpressionTypeTestReserved;
+
+fn main(value: id) -> i32 {
+  let result = match (value) {
+    case is ReadyType => 1;
+    default => 0;
+  };
+  return result;
+}

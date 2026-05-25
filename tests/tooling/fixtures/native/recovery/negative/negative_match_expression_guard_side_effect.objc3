@@ -1,0 +1,14 @@
+// Expected diagnostic code(s): O3S206.
+module NegativeMatchExpressionGuardSideEffect;
+
+fn predicate(value: i32) -> bool {
+  return value > 0;
+}
+
+fn main(value: i32) -> i32 {
+  let result = match (value) {
+    case let candidate where predicate(candidate) => candidate;
+    default => 0;
+  };
+  return result;
+}

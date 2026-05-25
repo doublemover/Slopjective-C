@@ -9,10 +9,16 @@ target_sources(objc3c_runtime_metadata INTERFACE
 set(OBJC3_RUNTIME_LIBRARY_TARGET objc3_runtime)
 set(OBJC3_RUNTIME_LIBRARY_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR})
 set(OBJC3_RUNTIME_LIBRARY_PUBLIC_HEADER ${OBJC3_RUNTIME_LIBRARY_SOURCE_DIR}/public/objc3_runtime_api.h)
-set(OBJC3_RUNTIME_LIBRARY_KIND STATIC)
-set(OBJC3_RUNTIME_LIBRARY_ARCHIVE_BASENAME objc3_runtime)
+if (WIN32)
+  set(OBJC3_RUNTIME_LIBRARY_KIND STATIC)
+  set(OBJC3_RUNTIME_LIBRARY_OUTPUT_BASENAME objc3_runtime)
+else()
+  set(OBJC3_RUNTIME_LIBRARY_KIND SHARED)
+  set(OBJC3_RUNTIME_LIBRARY_OUTPUT_BASENAME objc3-runtime)
+endif()
 # Native runtime library surface: keep the canonical in-tree target, public
-# header, source-root, and archive basename stable for build and package owners.
+# header, source-root, and platform-native runtime library basename stable for
+# build and package owners.
 
 add_library(${OBJC3_RUNTIME_LIBRARY_TARGET} ${OBJC3_RUNTIME_LIBRARY_KIND}
   blocks/block_capture_storage.cpp
@@ -221,6 +227,8 @@ add_library(${OBJC3_RUNTIME_LIBRARY_TARGET} ${OBJC3_RUNTIME_LIBRARY_KIND}
   public/objc3_runtime_dispatch_diagnostics.h
   public/objc3_runtime_dispatch_result.h
   public/objc3_runtime_dispatch_status.h
+  public/objc3_runtime_executable_contract.cpp
+  public/objc3_runtime_executable_contract.h
   public/objc3_runtime_language_semantics.cpp
   public/objc3_runtime_language_semantics.h
   public/objc3_runtime_ownership_contract.h
@@ -243,6 +251,7 @@ add_library(${OBJC3_RUNTIME_LIBRARY_TARGET} ${OBJC3_RUNTIME_LIBRARY_KIND}
   public/objc3_runtime_result_ownership.h
   public/objc3_runtime_selector.h
   public/objc3_runtime_string_contract.h
+  public/objc3_runtime_value_optional_contract.h
   selectors/keypath_table.cpp
   selectors/keypath_table.h
   selectors/selector_lookup.cpp
@@ -281,6 +290,8 @@ add_library(${OBJC3_RUNTIME_LIBRARY_TARGET} ${OBJC3_RUNTIME_LIBRARY_KIND}
   state/runtime_thread_records.h
   state/runtime_thread_local_reset.cpp
   state/runtime_thread_local_reset.h
+  values/value_optional.cpp
+  values/value_optional.h
   strings/borrowed_string.cpp
   strings/borrowed_string.h
   stdlib/collections_runtime.cpp
@@ -302,7 +313,20 @@ target_link_libraries(${OBJC3_RUNTIME_LIBRARY_TARGET} PUBLIC
   objc3c_runtime_metadata
 )
 set_target_properties(${OBJC3_RUNTIME_LIBRARY_TARGET} PROPERTIES
-  OUTPUT_NAME ${OBJC3_RUNTIME_LIBRARY_ARCHIVE_BASENAME}
+  OUTPUT_NAME ${OBJC3_RUNTIME_LIBRARY_OUTPUT_BASENAME}
+  POSITION_INDEPENDENT_CODE ON
 )
+if (APPLE)
+  set_target_properties(${OBJC3_RUNTIME_LIBRARY_TARGET} PROPERTIES
+    BUILD_WITH_INSTALL_RPATH ON
+    INSTALL_NAME_DIR "@rpath"
+    INSTALL_RPATH "@loader_path/../lib"
+  )
+elseif(UNIX)
+  set_target_properties(${OBJC3_RUNTIME_LIBRARY_TARGET} PROPERTIES
+    BUILD_WITH_INSTALL_RPATH ON
+    INSTALL_RPATH "$ORIGIN/../lib"
+  )
+endif()
 objc3c_apply_archive_output(${OBJC3_RUNTIME_LIBRARY_TARGET})
 add_library(objc3c::runtime ALIAS ${OBJC3_RUNTIME_LIBRARY_TARGET})

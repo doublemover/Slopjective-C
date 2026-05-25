@@ -2,13 +2,16 @@ from __future__ import annotations
 
 from pathlib import Path
 
+from objc3c_tooling.artifact_identity import current_host_artifact_identity
+
 ROOT = Path(__file__).resolve().parents[2]
+ARTIFACT_IDENTITY = current_host_artifact_identity()
 REPORT_DIR = ROOT / "tmp" / "reports" / "claimability" / "effects-ownership-semantic-model"
 JSON_OUT = REPORT_DIR / "effects_ownership_semantic_model_summary.json"
 MD_OUT = REPORT_DIR / "effects_ownership_semantic_model_summary.md"
 TMP_ROOT = ROOT / "tmp" / "artifacts" / "objc3c-native" / "effects-ownership-semantic-model"
 
-COMPILER = ROOT / "artifacts" / "bin" / "objc3c-native.exe"
+COMPILER = ROOT / ARTIFACT_IDENTITY.native_executable_relative_path
 POSITIVE_FIXTURE = ROOT / "tests" / "tooling" / "fixtures" / "native" / "effects_ownership_semantic_model_positive.objc3"
 MISSING_REQUIRED_SLICES_FIXTURE = (
     ROOT

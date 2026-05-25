@@ -82,14 +82,16 @@ Current implementation status (`M265-C001`):
 - `guard let` / `guard var` `else` blocks now fail closed unless they exit the
   current scope
 - typed key-path literals such as `@keypath(...)` are admitted as parser-owned
-  source forms and the validated single-component subset now lowers on the
-  native path into retained descriptor handles
-- the current runtime/helper contract for that subset keeps optional sends on
-  the public lookup/dispatch path, feeds validated single-component key-path
-  handles into a private runtime registry/helper surface, and keeps unsupported
-  key-path shapes compile-time fail-closed until later runtime work lands
-- class-root key paths such as `@keypath(Person, name)` now fail closed unless
-  the named component is a readable property on the root type
+  source forms and concrete class-root/self-root object-property chains now
+  lower on the native path into retained descriptor handles
+- the current runtime/helper contract keeps optional sends on the public
+  lookup/dispatch path, feeds validated key-path handles plus component
+  owner/member/type identity paths into a private runtime registry/helper
+  surface, and keeps unsupported key-path shapes compile-time fail-closed until
+  later runtime evaluation work lands
+- class-root key paths such as `@keypath(Person, name)` and concrete nested
+  chains such as `@keypath(Person, address.street.name)` fail closed unless each
+  component is readable through deterministic property metadata
 - generic Objective-C method declarations written as `- <T> ...` remain
   reserved for a future revision and now diagnose explicitly
 - optional-member access `?.` now lowers natively through the optional-send

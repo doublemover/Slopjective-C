@@ -3,11 +3,11 @@ from __future__ import annotations
 import hashlib
 import json
 import re
-import shutil
 import subprocess
 from pathlib import Path
 from typing import Any
 
+from objc3c_tooling.llvm_discovery import find_llvm_tool_path
 from objc3c_tooling.paths import ROOT, display_path, resolve_repo_path
 
 from objc3c_editor_tooling.input_loading import EditorToolingInputs
@@ -60,10 +60,6 @@ NATIVE_LINE_TABLE_SECTION_NAMES = {
     "__debug_line",
     ".debug$s",
 }
-LLVM_TOOL_FALLBACK_DIRS = (
-    ROOT / "artifacts" / "bin",
-    Path("C:/Program Files/LLVM/bin"),
-)
 DEFAULT_OBJC3_ABI_IDENTITY = "objc3-abi-2025Q4"
 LLVM_DEBUG_LOCATION_ATTACHMENT_PATTERN = re.compile(
     r"(?:^|,\s*)!dbg\s+![0-9]+\b"
@@ -120,14 +116,13 @@ def _powershell_quote(value: str) -> str:
 
 
 def _resolve_tool(name: str) -> Path | None:
-    discovered = shutil.which(name)
+    discovered = find_llvm_tool_path(name)
     if discovered:
-        return Path(discovered)
+        return discovered
     exe_name = f"{name}.exe" if not name.endswith(".exe") else name
-    for directory in LLVM_TOOL_FALLBACK_DIRS:
-        candidate = directory / exe_name
-        if candidate.is_file():
-            return candidate
+    candidate = ROOT / "artifacts" / "bin" / exe_name
+    if candidate.is_file():
+        return candidate
     return None
 
 
@@ -788,9 +783,15 @@ def _native_debug_info_evidence_payload(
         blocked_by.append("native-object-lacks-debug-line-section")
     if not llvm_debug_metadata_present:
         blocked_by.append("compiler-ir-lacks-llvm-di-locations")
-    blocked_by.append("runtime-debug-trace-statement-stepping-integration")
+    statement_stepping_supported = (
+        emitted_native_debug_info_supported and native_line_table_supported
+    )
+    if not statement_stepping_supported:
+        blocked_by.append("runtime-debug-trace-statement-stepping-integration")
     fail_closed_reason = (
-        "native object lacks debug info and debug line-table sections"
+        ""
+        if statement_stepping_supported
+        else "native object lacks debug info and debug line-table sections"
         if not native_debug_sections and not native_line_table_sections
         else "native object lacks debug line-table sections"
         if not native_line_table_sections
@@ -821,8 +822,13 @@ def _native_debug_info_evidence_payload(
         "llvm_debug_location_count": llvm_debug_location_count,
         "emitted_native_debug_info_supported": emitted_native_debug_info_supported,
         "native_line_table_supported": native_line_table_supported,
-        "statement_stepping_supported": False,
-        "fail_closed": True,
+        "statement_stepping_supported": statement_stepping_supported,
+        "statement_stepping_evidence_id": (
+            "object-model.statement-stepping.production-source-line-table"
+            if statement_stepping_supported
+            else ""
+        ),
+        "fail_closed": not statement_stepping_supported,
         "fail_closed_reason": fail_closed_reason,
         "blocked_by": blocked_by,
     }

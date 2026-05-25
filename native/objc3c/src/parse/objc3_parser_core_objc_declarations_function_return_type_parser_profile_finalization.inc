@@ -5,6 +5,10 @@
       return false;
     }
 
+    if (!FinalizeFunctionReturnValueOptionalType(fn)) {
+      return false;
+    }
+
     FinalizeFunctionReturnTypeProfiles(fn);
 
     return true;

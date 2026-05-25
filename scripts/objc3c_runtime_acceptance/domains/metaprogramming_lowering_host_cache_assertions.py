@@ -5,6 +5,7 @@ from __future__ import annotations
 from typing import Any
 
 from objc3c_runtime_acceptance.expectation_matching import expect
+from objc3c_runtime_acceptance.paths import FRONTEND_RUNNER_RELATIVE_PATH
 
 
 def expect_expansion_lowering_surface(surface: dict[str, Any]) -> None:
@@ -126,11 +127,11 @@ def expect_host_cache_surfaces(
     )
     expect(
         host_cache_surface.get("host_executable_relative_path")
-        == "artifacts/bin/objc3c-frontend-c-api-runner.exe"
+        == FRONTEND_RUNNER_RELATIVE_PATH
         and host_cache_surface.get("cache_root_relative_path")
         == "tmp/artifacts/objc3c-native/cache/metaprogramming"
         and host_cache_import_surface.get("host_executable_relative_path")
-        == "artifacts/bin/objc3c-frontend-c-api-runner.exe"
+        == FRONTEND_RUNNER_RELATIVE_PATH
         and host_cache_import_surface.get("cache_root_relative_path")
         == "tmp/artifacts/objc3c-native/cache/metaprogramming",
         "expected host-cache artifact and runtime import surface to preserve compatibility paths",

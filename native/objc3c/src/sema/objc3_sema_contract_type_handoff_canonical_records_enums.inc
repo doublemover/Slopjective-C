@@ -11,6 +11,7 @@ enum class Objc3SemanticCanonicalTypeKind : std::uint8_t {
   ObjectPointer = 9,
   ForeignObject = 10,
   Vector = 11,
+  ValueOptional = 12,
 };
 
 enum class Objc3SemanticCanonicalNullability : std::uint8_t {

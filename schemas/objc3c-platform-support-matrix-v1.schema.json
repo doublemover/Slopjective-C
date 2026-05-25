@@ -19,6 +19,13 @@
     "claim_boundary",
     "support_evidence_contract",
     "platform_support_rows",
+    "package_variant_rows",
+    "host_evidence_contract",
+    "host_identity_records",
+    "toolchain_probe_records",
+    "package_root_evidence_records",
+    "native_execution_evidence_records",
+    "negative_host_toolchain_cases",
     "toolchain_support",
     "evidence_records",
     "support_evidence_ids",
@@ -162,13 +169,25 @@
       "type": "object",
       "required": [
         "os",
-        "arch"
+        "arch",
+        "system",
+        "machine",
+        "platform_id"
       ],
       "properties": {
         "os": {
           "type": "string"
         },
         "arch": {
+          "type": "string"
+        },
+        "system": {
+          "type": "string"
+        },
+        "machine": {
+          "type": "string"
+        },
+        "platform_id": {
           "type": "string"
         }
       }
@@ -266,8 +285,159 @@
           },
           "evidence": {
             "type": "object"
+          },
+          "promotion_closure_contract": {
+            "$ref": "#/$defs/unsupportedPromotionClosureContract"
           }
         },
+        "additionalProperties": true
+      }
+    },
+    "package_variant_rows": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": [
+          "row_id",
+          "claim_state",
+          "platform_ids",
+          "package_id",
+          "artifact_identity_contract",
+          "promotion_gate_contract",
+          "unsupported_behavior"
+        ],
+        "properties": {
+          "row_id": { "type": "string" },
+          "claim_state": {
+            "enum": [
+              "evidence-bound",
+              "fail-closed",
+              "reserved"
+            ]
+          },
+          "platform_ids": {
+            "type": "array",
+            "items": { "type": "string" }
+          },
+          "package_id": { "type": "string" },
+          "artifact_identity_contract": {
+            "type": "object",
+            "required": [
+              "package_root_layout"
+            ],
+            "properties": {
+              "package_root_layout": { "$ref": "#/$defs/packageRootLayout" }
+            },
+            "additionalProperties": true
+          },
+          "promotion_gate_contract": { "type": "object" },
+          "unsupported_behavior": { "const": "fail-closed" }
+        },
+        "additionalProperties": true
+      }
+    },
+    "host_evidence_contract": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": [
+        "contract_id",
+        "promotion_policy",
+        "native_execution_required_for_support"
+      ],
+      "properties": {
+        "contract_id": {
+          "const": "objc3c.platform.host-evidence.promotion.v1"
+        },
+        "promotion_policy": {
+          "const": "real-host-execution-required"
+        },
+        "native_execution_required_for_support": {
+          "const": true
+        }
+      }
+    },
+    "host_identity_records": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": [
+          "record_id",
+          "platform_id",
+          "claim_state",
+          "promotion_allowed",
+          "host_triples"
+        ],
+        "additionalProperties": true
+      }
+    },
+    "toolchain_probe_records": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": [
+          "record_id",
+          "platform_id",
+          "claim_state",
+          "promotion_allowed",
+          "required_components",
+          "component_probes"
+        ],
+        "additionalProperties": true
+      }
+    },
+    "package_root_evidence_records": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": [
+          "record_id",
+          "package_variant_row_id",
+          "target_platform_id",
+          "claim_state",
+          "promotion_allowed",
+          "package_root_layout"
+        ],
+        "properties": {
+          "package_root_layout": { "$ref": "#/$defs/releasePackageRootLayout" }
+        },
+        "additionalProperties": true
+      }
+    },
+    "native_execution_evidence_records": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": [
+          "record_id",
+          "platform_id",
+          "claim_state",
+          "promotion_allowed",
+          "native_execution_required",
+          "execution_evidence_ids"
+        ],
+        "properties": {
+          "package_root_layout": { "$ref": "#/$defs/releasePackageRootLayout" }
+        },
+        "additionalProperties": true
+      }
+    },
+    "negative_host_toolchain_cases": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": [
+          "case_id",
+          "failure_class",
+          "required_behavior",
+          "blocks_surfaces",
+          "promotion_allowed"
+        ],
         "additionalProperties": true
       }
     },
@@ -277,6 +447,7 @@
       "required": [
         "toolchain_evidence_requirements",
         "toolchain_ranges",
+        "llvm_version_support_matrix",
         "sanitizer_variants"
       ],
       "properties": {
@@ -285,6 +456,9 @@
         },
         "toolchain_ranges": {
           "type": "array"
+        },
+        "llvm_version_support_matrix": {
+          "type": "object"
         },
         "sanitizer_variants": {
           "type": "array"
@@ -389,6 +563,241 @@
     }
   },
   "$defs": {
+    "packagePayloadEntryPath": {
+      "description": "Package-root-relative runnable package payload entry shared with package-channel payload_contract.required_entries.",
+      "enum": [
+        "artifacts/package/objc3c-runnable-toolchain-package.json",
+        "artifacts/bin/objc3c-native.exe",
+        "artifacts/bin/objc3c-native",
+        "artifacts/lib/objc3_runtime.lib",
+        "artifacts/lib/libobjc3-runtime.so",
+        "artifacts/lib/libobjc3-runtime.dylib",
+        "stdlib/workspace.json",
+        "stdlib/modules/objc3.core/module.json",
+        "docs/runbooks/objc3c_packaging_channels.md",
+        "share/objc3c/sanitizer/asan-metadata.json",
+        "share/objc3c/sanitizer/ubsan-metadata.json",
+        "share/objc3c/sanitizer/asan-runtime-libraries.json",
+        "share/objc3c/sanitizer/ubsan-runtime-libraries.json",
+        "artifacts/runtime/sanitizer/address/clang_rt.asan_dynamic-x86_64.dll",
+        "artifacts/runtime/sanitizer/address/clang_rt.asan_dynamic-x86_64.lib",
+        "artifacts/runtime/sanitizer/address/clang_rt.asan_dynamic_runtime_thunk-x86_64.lib",
+        "artifacts/runtime/sanitizer/undefined/clang_rt.ubsan_standalone-x86_64.lib",
+        "artifacts/runtime/sanitizer/undefined/clang_rt.ubsan_standalone_cxx-x86_64.lib"
+      ]
+    },
+    "releasePackageRootLayout": {
+      "description": "Exact release package_root_layout values mirrored from package-channel payload entries.",
+      "oneOf": [
+        {
+          "const": [
+            "artifacts/package/objc3c-runnable-toolchain-package.json",
+            "artifacts/bin/objc3c-native.exe",
+            "artifacts/lib/objc3_runtime.lib",
+            "stdlib/workspace.json",
+            "stdlib/modules/objc3.core/module.json",
+            "docs/runbooks/objc3c_packaging_channels.md"
+          ]
+        },
+        {
+          "const": [
+            "artifacts/package/objc3c-runnable-toolchain-package.json",
+            "artifacts/bin/objc3c-native",
+            "artifacts/lib/libobjc3-runtime.so",
+            "stdlib/workspace.json",
+            "stdlib/modules/objc3.core/module.json",
+            "docs/runbooks/objc3c_packaging_channels.md"
+          ]
+        },
+        {
+          "const": [
+            "artifacts/package/objc3c-runnable-toolchain-package.json",
+            "artifacts/bin/objc3c-native",
+            "artifacts/lib/libobjc3-runtime.dylib",
+            "stdlib/workspace.json",
+            "stdlib/modules/objc3.core/module.json",
+            "docs/runbooks/objc3c_packaging_channels.md"
+          ]
+        }
+      ]
+    },
+    "sanitizerPackageRootOverlayLayout": {
+      "description": "Sanitizer-only payload overlay entries; not a full release package_root_layout.",
+      "oneOf": [
+        {
+          "const": [
+            "artifacts/lib/objc3_runtime.lib",
+            "share/objc3c/sanitizer/asan-metadata.json",
+            "share/objc3c/sanitizer/asan-runtime-libraries.json",
+            "artifacts/runtime/sanitizer/address/clang_rt.asan_dynamic-x86_64.dll",
+            "artifacts/runtime/sanitizer/address/clang_rt.asan_dynamic-x86_64.lib",
+            "artifacts/runtime/sanitizer/address/clang_rt.asan_dynamic_runtime_thunk-x86_64.lib"
+          ]
+        },
+        {
+          "const": [
+            "artifacts/lib/objc3_runtime.lib",
+            "share/objc3c/sanitizer/ubsan-metadata.json",
+            "share/objc3c/sanitizer/ubsan-runtime-libraries.json",
+            "artifacts/runtime/sanitizer/undefined/clang_rt.ubsan_standalone-x86_64.lib",
+            "artifacts/runtime/sanitizer/undefined/clang_rt.ubsan_standalone_cxx-x86_64.lib"
+          ]
+        }
+      ]
+    },
+    "packageRootLayout": {
+      "oneOf": [
+        { "$ref": "#/$defs/releasePackageRootLayout" },
+        { "$ref": "#/$defs/sanitizerPackageRootOverlayLayout" }
+      ]
+    },
+    "platformSupportEvidenceClasses": {
+      "const": [
+        "build",
+        "package",
+        "install",
+        "execution"
+      ]
+    },
+    "toolchainComponents": {
+      "const": [
+        "llvm",
+        "clang",
+        "cmake",
+        "ninja",
+        "python",
+        "node",
+        "pwsh"
+      ]
+    },
+    "unsupportedPromotionClosureContract": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "capability_status",
+        "support_claim_allowed",
+        "support_claim_blocked_until",
+        "package_variant_claim_state",
+        "package_variant_platform_ids",
+        "package_artifact_evidence",
+        "host_promotion_constraints",
+        "runner_toolchain_requirements",
+        "fail_closed_requirements"
+      ],
+      "properties": {
+        "capability_status": { "const": "unsupported" },
+        "support_claim_allowed": { "const": false },
+        "support_claim_blocked_until": {
+          "$ref": "#/$defs/platformSupportEvidenceClasses"
+        },
+        "package_variant_claim_state": { "const": "fail-closed" },
+        "package_variant_platform_ids": { "const": [] },
+        "package_artifact_evidence": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "package_root_layout",
+            "runtime_library_names",
+            "object_format",
+            "debug_format",
+            "loader_path_proof_required",
+            "install_receipt_required",
+            "installed_root_execution_required",
+            "offline_installed_root_execution_required",
+            "installed_root_execution_summary_path",
+            "native_execution_evidence_required"
+          ],
+          "properties": {
+            "package_root_layout": { "$ref": "#/$defs/releasePackageRootLayout" },
+            "runtime_library_names": {
+              "type": "array",
+              "items": { "type": "string" },
+              "minItems": 1,
+              "uniqueItems": true
+            },
+            "object_format": { "type": "string" },
+            "debug_format": { "type": "string" },
+            "loader_path_proof_required": { "const": true },
+            "install_receipt_required": { "const": true },
+            "installed_root_execution_required": { "const": true },
+            "offline_installed_root_execution_required": { "const": true },
+            "installed_root_execution_summary_path": {
+              "type": "string",
+              "pattern": "^tmp/reports/platform-host-evidence/"
+            },
+            "native_execution_evidence_required": { "const": true }
+          }
+        },
+        "host_promotion_constraints": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "promotion_policy",
+            "real_host_execution_required",
+            "generated_host_evidence_support_truth",
+            "reviewed_source_truth_required",
+            "hosted_runner_summary_behavior"
+          ],
+          "properties": {
+            "promotion_policy": { "const": "real-host-execution-required" },
+            "real_host_execution_required": { "const": true },
+            "generated_host_evidence_support_truth": { "const": false },
+            "reviewed_source_truth_required": { "const": true },
+            "hosted_runner_summary_behavior": {
+              "const": "summary-only-no-support-promotion"
+            }
+          }
+        },
+        "runner_toolchain_requirements": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "runner_label",
+            "required_toolchain_components",
+            "native_object_emission_required",
+            "missing_native_execution_behavior",
+            "unsupported_toolchain_result"
+          ],
+          "properties": {
+            "runner_label": {
+              "enum": [
+                "ubuntu-24.04",
+                "macos-15"
+              ]
+            },
+            "required_toolchain_components": { "$ref": "#/$defs/toolchainComponents" },
+            "native_object_emission_required": { "const": true },
+            "missing_native_execution_behavior": {
+              "const": "fail-closed-no-support-promotion"
+            },
+            "unsupported_toolchain_result": {
+              "const": "fail-closed-no-range-claim"
+            }
+          }
+        },
+        "fail_closed_requirements": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "unsupported_behavior",
+            "unsupported_evidence_claim_weight",
+            "blocked_publication_surfaces"
+          ],
+          "properties": {
+            "unsupported_behavior": { "const": "fail-closed" },
+            "unsupported_evidence_claim_weight": { "const": "policy" },
+            "blocked_publication_surfaces": {
+              "const": [
+                "package",
+                "install",
+                "execution",
+                "publication"
+              ]
+            }
+          }
+        }
+      }
+    },
     "publicCommand": {
       "type": "string",
       "pattern": "^[a-z0-9][a-z0-9-]*$"

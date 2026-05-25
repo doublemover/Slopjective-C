@@ -25,6 +25,7 @@ bool IsObjc3TopLevelRecoveryBoundaryToken(Objc3LexTokenKind kind) {
   case Objc3LexTokenKind::KwAtInterface:
   case Objc3LexTokenKind::KwAtImplementation:
   case Objc3LexTokenKind::KwAtProtocol:
+  case Objc3LexTokenKind::KwAtImport:
   case Objc3LexTokenKind::KwAtProperty:
   case Objc3LexTokenKind::KwAtEnd:
     return true;

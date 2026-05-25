@@ -291,6 +291,19 @@ static void CollectPureContractEffectExpr(
       CollectPureContractEffectExpr(expr->right.get(), scopes, info);
       CollectPureContractEffectExpr(expr->third.get(), scopes, info);
       return;
+    case Expr::Kind::MatchExpression:
+      CollectPureContractEffectExpr(
+          expr->match_expression_scrutinee.get(), scopes, info);
+      for (const auto &arm : expr->match_expression_arms) {
+        scopes.push_back({});
+        if (!arm.binding_name.empty()) {
+          scopes.back().insert(arm.binding_name);
+        }
+        CollectPureContractEffectExpr(arm.guard_condition.get(), scopes, info);
+        CollectPureContractEffectExpr(arm.value.get(), scopes, info);
+        scopes.pop_back();
+      }
+      return;
     case Expr::Kind::Call:
       RecordPureContractSourceLoc(info.called_functions[expr->ident],
                                   expr->line, expr->column);

@@ -1,0 +1,286 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://objc3c.dev/schemas/objc3c-optimization-runtime-debug-safety-v1.schema.json",
+  "title": "objc3c optimization runtime and debug safety governance",
+  "type": "object",
+  "required": [
+    "contract_id",
+    "issue_refs",
+    "schema_path",
+    "source_truth_policy",
+    "benchmark_contract_records",
+    "runtime_debug_safety_boundaries",
+    "fail_closed_negative_cases",
+    "capability_evidence_alignment",
+    "optimization_safety_umbrella_readiness"
+  ],
+  "properties": {
+    "contract_id": {
+      "const": "objc3c.optimization.runtime_debug_safety.v1"
+    },
+    "issue_refs": {
+      "type": "array",
+      "items": { "type": "integer" },
+      "allOf": [
+        { "contains": { "const": 8205 } },
+        { "contains": { "const": 8224 } },
+        { "contains": { "const": 8226 } },
+        { "contains": { "const": 8227 } }
+      ]
+    },
+    "schema_path": {
+      "const": "schemas/objc3c-optimization-runtime-debug-safety-v1.schema.json"
+    },
+    "source_truth_policy": {
+      "type": "string",
+      "minLength": 1
+    },
+    "benchmark_contract_records": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "record_id",
+          "budget_family",
+          "metric_id",
+          "workload_id",
+          "manifest_path",
+          "source_path",
+          "proof_fixture",
+          "claim_requires",
+          "forbidden_speedup_claims"
+        ],
+        "properties": {
+          "record_id": { "type": "string", "minLength": 1 },
+          "budget_family": { "type": "string", "minLength": 1 },
+          "metric_id": { "type": "string", "minLength": 1 },
+          "workload_id": { "type": "string", "minLength": 1 },
+          "manifest_path": { "type": "string", "minLength": 1 },
+          "source_path": { "type": "string", "minLength": 1 },
+          "proof_fixture": { "type": "string", "minLength": 1 },
+          "claim_requires": {
+            "type": "array",
+            "items": { "type": "string" },
+            "allOf": [
+              { "contains": { "const": "checked-in-budget-metric" } },
+              { "contains": { "const": "semantic-optimization-proof-case" } },
+              { "contains": { "const": "debug-source-map-preservation" } },
+              { "contains": { "const": "runtime-invalidation-replay" } }
+            ]
+          },
+          "forbidden_speedup_claims": {
+            "type": "array",
+            "items": { "type": "string" },
+            "minItems": 1
+          }
+        }
+      },
+      "minItems": 1
+    },
+    "runtime_debug_safety_boundaries": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "boundary_id",
+          "pass_id",
+          "optimized_surface",
+          "deoptimization_boundary",
+          "invalidation_boundary",
+          "side_effect_replay_boundary",
+          "debug_source_map_preservation",
+          "required_proof_ids",
+          "fail_closed_if_missing"
+        ],
+        "properties": {
+          "boundary_id": { "type": "string", "minLength": 1 },
+          "pass_id": { "type": "string", "minLength": 1 },
+          "optimized_surface": { "type": "string", "minLength": 1 },
+          "deoptimization_boundary": { "type": "string", "minLength": 1 },
+          "invalidation_boundary": { "type": "string", "minLength": 1 },
+          "side_effect_replay_boundary": { "type": "string", "minLength": 1 },
+          "debug_source_map_preservation": { "type": "string", "minLength": 1 },
+          "required_proof_ids": {
+            "type": "array",
+            "items": { "type": "string" },
+            "minItems": 1
+          },
+          "fail_closed_if_missing": { "const": true }
+        }
+      },
+      "minItems": 1
+    },
+    "fail_closed_negative_cases": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "case_id",
+          "classification",
+          "mutated_surface",
+          "source_fixture",
+          "expected_decision",
+          "success_claim",
+          "expected_diagnostic"
+        ],
+        "properties": {
+          "case_id": { "type": "string", "minLength": 1 },
+          "classification": { "type": "string", "minLength": 1 },
+          "mutated_surface": { "type": "string", "minLength": 1 },
+          "source_fixture": { "type": "string", "minLength": 1 },
+          "proof_case_id": { "type": "string" },
+          "expected_decision": {
+            "enum": ["REJECTED_FAIL_CLOSED", "SKIPPED_FAIL_CLOSED", "BLOCK_PUBLICATION"]
+          },
+          "success_claim": { "const": false },
+          "expected_diagnostic": { "type": "string", "minLength": 1 }
+        }
+      },
+      "minItems": 1
+    },
+    "capability_evidence_alignment": {
+      "type": "object",
+      "required": [
+        "capability_rows",
+        "evidence_paths",
+        "support_claim_policy"
+      ],
+      "properties": {
+        "capability_rows": {
+          "type": "array",
+          "items": { "type": "string" },
+          "minItems": 1
+        },
+        "evidence_paths": {
+          "type": "array",
+          "items": { "type": "string" },
+          "minItems": 1
+        },
+        "support_claim_policy": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "optimization_safety_umbrella_readiness": {
+      "type": "object",
+      "required": [
+        "contract_id",
+        "issue_refs",
+        "status",
+        "reserved_full_claims",
+        "source_owned_contracts",
+        "negative_fixture_contracts",
+        "required_public_workflow_actions",
+        "optimizer_success_path_fail_closed_policy",
+        "capability_row_recommendations",
+        "support_docs_deferred_for_central_integration"
+      ],
+      "properties": {
+        "contract_id": {
+          "const": "objc3c.optimization.runtime_debug_safety.umbrella_readiness.v1"
+        },
+        "issue_refs": {
+          "type": "array",
+          "items": { "type": "integer" },
+          "allOf": [
+            { "contains": { "const": 8205 } },
+            { "contains": { "const": 8224 } },
+            { "contains": { "const": 8226 } },
+            { "contains": { "const": 8227 } }
+          ]
+        },
+        "status": {
+          "const": "bounded-source-owned-ready"
+        },
+        "reserved_full_claims": {
+          "type": "array",
+          "items": { "type": "string" },
+          "contains": { "const": "runtime.object-model.full-realization" }
+        },
+        "source_owned_contracts": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["path", "guards"],
+            "properties": {
+              "path": { "type": "string", "minLength": 1 },
+              "guards": {
+                "type": "array",
+                "items": { "type": "string", "minLength": 1 },
+                "minItems": 1
+              }
+            }
+          },
+          "minItems": 1
+        },
+        "negative_fixture_contracts": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "minItems": 1
+        },
+        "required_public_workflow_actions": {
+          "type": "array",
+          "items": { "type": "string" },
+          "allOf": [
+            { "contains": { "const": "benchmark-compiler-throughput" } },
+            { "contains": { "const": "benchmark-runtime-performance" } },
+            { "contains": { "const": "test-execution-replay" } },
+            { "contains": { "const": "test-lowering-runtime-stress" } },
+            { "contains": { "const": "validate-semantic-optimization-pipeline" } },
+            { "contains": { "const": "validate-performance-governance" } },
+            { "contains": { "const": "validate-performance-governance-runtime-contract-linkage" } }
+          ]
+        },
+        "optimizer_success_path_fail_closed_policy": {
+          "type": "object",
+          "required": [
+            "rejects_if_any_missing",
+            "success_requires",
+            "forbidden_success_paths"
+          ],
+          "properties": {
+            "rejects_if_any_missing": { "const": true },
+            "success_requires": {
+              "type": "array",
+              "items": { "type": "string", "minLength": 1 },
+              "minItems": 1
+            },
+            "forbidden_success_paths": {
+              "type": "array",
+              "items": { "type": "string", "minLength": 1 },
+              "minItems": 1
+            }
+          }
+        },
+        "capability_row_recommendations": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "capability_id",
+              "support_level",
+              "evidence_paths"
+            ],
+            "properties": {
+              "capability_id": { "type": "string", "minLength": 1 },
+              "support_level": {
+                "enum": ["bounded-supported", "reserved"]
+              },
+              "evidence_paths": {
+                "type": "array",
+                "items": { "type": "string" }
+              }
+            }
+          },
+          "minItems": 1
+        },
+        "support_docs_deferred_for_central_integration": {
+          "type": "array",
+          "items": { "type": "string" },
+          "minItems": 1
+        }
+      }
+    }
+  }
+}

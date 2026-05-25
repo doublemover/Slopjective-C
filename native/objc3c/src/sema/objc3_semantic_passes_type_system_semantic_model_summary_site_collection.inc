@@ -43,13 +43,21 @@ static void CollectTypeSystemTypeSemanticExprSites(
     if (!root_is_legal) {
       ++summary.typed_keypath_root_legality_violation_sites;
       ++summary.typed_keypath_contract_violation_sites;
-    } else if (is_class_root &&
-               (expr->typed_keypath_components.size() != 1u ||
-                FindTypedKeyPathPropertyOnOwner(
-                    *message_send_context.surface, validated_owner_name,
-                    expr->typed_keypath_components.front()) == nullptr)) {
+    } else if (validated_owner_name.empty() ||
+               message_send_context.surface == nullptr) {
+      ++summary.typed_keypath_root_legality_violation_sites;
+      ++summary.typed_keypath_contract_violation_sites;
+    } else {
+      std::string failure_component;
+      std::string failure_reason;
+      const bool member_chain_is_legal = ResolveTypedKeyPathPropertyChain(
+          *message_send_context.surface, validated_owner_name,
+          expr->typed_keypath_components, failure_component, failure_reason,
+          nullptr, nullptr, nullptr);
+      if (!member_chain_is_legal) {
       ++summary.typed_keypath_member_path_contract_violation_sites;
       ++summary.typed_keypath_contract_violation_sites;
+      }
     }
   }
 

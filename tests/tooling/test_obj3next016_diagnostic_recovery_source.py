@@ -4,12 +4,15 @@ import json
 import subprocess
 from pathlib import Path
 
+from scripts.objc3c_tooling.artifact_identity import current_host_artifact_identity
+
 
 ROOT = Path(__file__).resolve().parents[2]
+ARTIFACT_IDENTITY = current_host_artifact_identity()
 PARSE = ROOT / "native" / "objc3c" / "src" / "parse"
 SEMA = ROOT / "native" / "objc3c" / "src" / "sema"
 FIXTURES = ROOT / "tests" / "tooling" / "fixtures" / "native" / "recovery"
-NATIVE_EXE = ROOT / "artifacts" / "bin" / "objc3c-native.exe"
+NATIVE_EXE = ROOT / ARTIFACT_IDENTITY.native_executable_relative_path
 
 
 def read(path: Path) -> str:
@@ -209,3 +212,29 @@ def test_native_diagnostics_json_promotes_recovery_metadata_out_of_message(
         "recovery_counts_as_success": False,
         "strategy": "skip-unsupported-top-level-fragment",
     }
+
+
+def test_language_evolution_reserved_surfaces_fail_closed_with_specific_codes(
+    tmp_path: Path,
+) -> None:
+    cases = {
+        "negative_value_optional_canonical_reserved.objc3": "O3P159",
+        "negative_typed_throws_reserved.objc3": "O3P182",
+        "negative_match_expression_position_reserved.objc3": "O3P156",
+        "negative_guarded_match_pattern_reserved.objc3": "O3P157",
+        "negative_reify_generics_marker_reserved.objc3": "O3P114",
+        "negative_generic_method_type_parameter_clause_reserved.objc3": "O3P114",
+        "negative_cstyle_generic_function_reserved.objc3": "O3P114",
+    }
+
+    for fixture_name, expected_code in cases.items():
+        diagnostics = compile_negative_fixture(
+            FIXTURES / "negative" / fixture_name,
+            tmp_path,
+        )
+        observed_codes = {
+            diagnostic.get("code")
+            for diagnostic in diagnostics
+            if isinstance(diagnostic.get("code"), str)
+        }
+        assert expected_code in observed_codes

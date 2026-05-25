@@ -1,0 +1,207 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://objc3c.dev/schemas/objc3c-package-release-channel-publication-v1.schema.json",
+  "title": "objc3c Package Release Channel Publication Contract",
+  "type": "object",
+  "required": [
+    "contract_id",
+    "issue_refs",
+    "umbrella_issue_refs",
+    "source_resolution",
+    "publication_policy",
+    "channel_freshness",
+    "registry_endpoint",
+    "packages",
+    "failure_modes",
+    "replay"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "contract_id": { "const": "objc3c.package_ecosystem.package_release_channel_publication.v1" },
+    "issue_refs": {
+      "type": "array",
+      "items": { "type": "integer" },
+      "contains": { "const": 8222 },
+      "minItems": 1,
+      "uniqueItems": true
+    },
+    "umbrella_issue_refs": {
+      "type": "array",
+      "items": { "type": "integer" },
+      "contains": { "const": 8204 },
+      "minItems": 1,
+      "uniqueItems": true
+    },
+    "source_resolution": { "type": "string", "minLength": 1 },
+    "publication_policy": { "$ref": "#/$defs/publicationPolicy" },
+    "channel_freshness": { "$ref": "#/$defs/channelFreshness" },
+    "registry_endpoint": { "$ref": "#/$defs/endpointIdentity" },
+    "packages": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/publishedPackage" },
+      "minItems": 1
+    },
+    "failure_modes": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/failureMode" },
+      "minItems": 8,
+      "uniqueItems": true
+    },
+    "replay": { "$ref": "#/$defs/replay" }
+  },
+  "$defs": {
+    "sha256": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "semver": {
+      "type": "string",
+      "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+(?:-[A-Za-z0-9_.-]+)?$"
+    },
+    "packageId": {
+      "type": "string",
+      "pattern": "^[a-z0-9_.-]+:[A-Za-z0-9_.-]+$"
+    },
+    "endpointIdentity": {
+      "type": "object",
+      "required": [
+        "registry_id",
+        "endpoint_id",
+        "channel_id",
+        "base_url",
+        "availability_claim",
+        "network_fetch",
+        "fallback_registry_success"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "registry_id": { "type": "string", "minLength": 1 },
+        "endpoint_id": { "const": "objc3c-hosted-registry-fixture-endpoint-v1" },
+        "channel_id": { "const": "stable-fixture" },
+        "base_url": { "const": "https://registry.objc3c.invalid/fixture/v1" },
+        "availability_claim": { "const": "fixture-metadata-only" },
+        "network_fetch": { "const": "forbidden-fail-closed" },
+        "fallback_registry_success": { "const": false }
+      }
+    },
+    "publicationPolicy": {
+      "type": "object",
+      "required": [
+        "publication_mode",
+        "release_channel_id",
+        "package_registry_channel_id",
+        "channel_state",
+        "stale_behavior",
+        "fallback_publication_success",
+        "live_network_publication",
+        "lock_required",
+        "trust_required",
+        "provenance_required",
+        "cache_policy",
+        "cache_signature_required",
+        "provenance_policy"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "publication_mode": { "const": "source-owned-offline-fixture-channel" },
+        "release_channel_id": { "const": "stable" },
+        "package_registry_channel_id": { "const": "stable-fixture" },
+        "channel_state": { "const": "current" },
+        "stale_behavior": { "const": "fail-closed" },
+        "fallback_publication_success": { "const": false },
+        "live_network_publication": { "const": "forbidden-fail-closed" },
+        "lock_required": { "const": true },
+        "trust_required": { "const": true },
+        "provenance_required": { "const": true },
+        "cache_policy": { "const": "offline-cache-required-digest-pinned" },
+        "cache_signature_required": { "const": true },
+        "provenance_policy": { "const": "source-owned-package-manifest-required" }
+      }
+    },
+    "channelFreshness": {
+      "type": "object",
+      "required": [
+        "channel_id",
+        "generated_at_utc",
+        "status",
+        "max_age_hours",
+        "stale_behavior",
+        "blocks_publication_on_stale"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "channel_id": { "const": "stable" },
+        "generated_at_utc": { "type": "string", "minLength": 1 },
+        "status": { "const": "current" },
+        "max_age_hours": { "type": "integer", "minimum": 1 },
+        "stale_behavior": { "const": "fail-closed" },
+        "blocks_publication_on_stale": { "const": true }
+      }
+    },
+    "publishedPackage": {
+      "type": "object",
+      "required": [
+        "package_id",
+        "package_version",
+        "release_channel_id",
+        "registry_channel_id",
+        "channel_status",
+        "source_lock",
+        "lock_digest",
+        "manifest_digest",
+        "cache_path",
+        "cache_digest",
+        "registry_record_digest",
+        "package_manifest_signature_id",
+        "registry_signature_id",
+        "trust_root_id",
+        "provenance"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "package_id": { "$ref": "#/$defs/packageId" },
+        "package_version": { "$ref": "#/$defs/semver" },
+        "release_channel_id": { "const": "stable" },
+        "registry_channel_id": { "const": "stable-fixture" },
+        "channel_status": { "const": "current" },
+        "source_lock": { "type": "string", "minLength": 1 },
+        "lock_digest": { "$ref": "#/$defs/sha256" },
+        "manifest_digest": { "$ref": "#/$defs/sha256" },
+        "cache_path": { "type": "string", "minLength": 1 },
+        "cache_digest": { "$ref": "#/$defs/sha256" },
+        "registry_record_digest": { "$ref": "#/$defs/sha256" },
+        "package_manifest_signature_id": { "$ref": "#/$defs/sha256" },
+        "registry_signature_id": { "$ref": "#/$defs/sha256" },
+        "trust_root_id": { "const": "objc3c-local-deterministic-trust-root-v1" },
+        "provenance": { "const": "deterministic-local-fixture-replay-only" }
+      }
+    },
+    "failureMode": {
+      "enum": [
+        "dependency-identity-drift",
+        "fallback-registry-success",
+        "hosted-registry-endpoint-mismatch",
+        "live-network-fetch",
+        "lock-mismatch",
+        "stale-release-channel",
+        "unsigned-or-tampered-cache",
+        "unpinned-hosted-dependency"
+      ]
+    },
+    "replay": {
+      "type": "object",
+      "required": ["commands"],
+      "additionalProperties": false,
+      "properties": {
+        "commands": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^npm run objc3c -- [a-z0-9][a-z0-9-]*(?: .*)?$"
+          },
+          "minItems": 1
+        }
+      }
+    }
+  }
+}

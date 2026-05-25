@@ -24,12 +24,12 @@ def _dump_action_spec(contract: DeveloperToolingDumpContract) -> ActionSpec:
 TOOLING_INSPECTION_ACTION_SPECS: dict[str, ActionSpec] = {
     "inspect-debug-map": ActionSpec(
         "inspect-debug-map",
-        "inspect Objective-C 3 debug maps, source-map records, capability rows, and native line-table evidence",
+        "inspect Objective-C 3 debug maps, source-map records, capability rows, native line-table evidence, and inline frames",
         "python:scripts/check_objc3c_debug_source_maps.py --inspect",
         validation_tier="repo",
         guarantee_owner=(
             "debug-map inspection stays rooted in compiler-owned source maps, source "
-            "graph ids, IR/native anchors, capability rows, and native line-table evidence"
+            "graph ids, IR/native anchors, capability rows, native line-table evidence, and inline-frame records"
         ),
         pass_through_args=True,
     ),

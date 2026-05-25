@@ -1,4 +1,7 @@
 static bool SupportsGenericParamTypeSuffix(const FuncParam &param) {
+  if (param.value_optional.present) {
+    return true;
+  }
   return objc3c::support::SupportsObjCParamTypeSuffix(param);
 }
 
@@ -15,10 +18,16 @@ static bool SupportsPointerParamTypeDeclarator(const FuncParam &param) {
 }
 
 static bool SupportsGenericReturnTypeSuffix(const FunctionDecl &fn) {
+  if (fn.return_value_optional.present) {
+    return true;
+  }
   return objc3c::support::SupportsObjCReturnTypeSuffix(fn);
 }
 
 static bool SupportsGenericReturnTypeSuffix(const Objc3MethodDecl &method) {
+  if (method.return_value_optional.present) {
+    return true;
+  }
   return objc3c::support::SupportsObjCReturnTypeSuffix(method);
 }
 

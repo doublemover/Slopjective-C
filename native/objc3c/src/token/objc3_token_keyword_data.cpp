@@ -52,6 +52,8 @@ constexpr Objc3KeywordTokenEntry kAtDirectiveKeywords[] = {
     {"optional", Objc3LexTokenKind::KwAtOptional},
     {"property", Objc3LexTokenKind::KwAtProperty},
     {"keypath", Objc3LexTokenKind::KwAtKeypath},
+    {"import", Objc3LexTokenKind::KwAtImport},
+    {"reify_generics", Objc3LexTokenKind::KwAtReifyGenerics},
     {"cleanup", Objc3LexTokenKind::KwAtCleanup},
     {"resource", Objc3LexTokenKind::KwAtResource},
     {"end", Objc3LexTokenKind::KwAtEnd},

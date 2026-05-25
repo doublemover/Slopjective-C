@@ -196,6 +196,11 @@ BuildMetaprogrammingMacroHostProcessCacheRuntimeIntegrationSummary(
         options.metaprogramming_cache_root_relative_path;
   }
   summary.metaprogramming_replay_key = module_interface_summary.replay_key;
+  summary.macro_input_content_identity = module_interface_summary.replay_key;
+  summary.macro_host_identity =
+      summary.host_executable_relative_path + "|" + summary.host_model;
+  summary.runtime_consumption_artifact_identity =
+      summary.surface_path + "|" + summary.import_artifact_member_name;
   summary.local_macro_artifact_count =
       module_interface_summary.local_macro_artifact_count;
   summary.local_property_behavior_artifact_count =
@@ -217,9 +222,36 @@ BuildMetaprogrammingMacroHostProcessCacheRuntimeIntegrationSummary(
   summary.separate_compilation_ready =
       summary.runtime_import_artifact_ready &&
       module_interface_summary.separate_compilation_preservation_ready;
+  summary.package_replay_generation =
+      summary.runtime_import_artifact_ready && summary.separate_compilation_ready
+          ? 1u
+          : 0u;
+  summary.cache_validation_status =
+      summary.package_replay_generation != 0u && summary.deterministic
+          ? kObjc3MetaprogrammingMacroHostProcessCacheRuntimeIntegrationValidStatus
+          : "unavailable";
+  summary.macro_output_content_identity =
+      summary.runtime_consumption_artifact_identity + "|" +
+      summary.cache_validation_status;
   std::ostringstream replay_key;
   replay_key << Objc3MetaprogrammingMacroHostProcessCacheRuntimeIntegrationSummary()
              << ";metaprogramming_replay_key=" << module_interface_summary.replay_key
+             << ";macro_package_identity=" << summary.macro_package_identity
+             << ";macro_package_lock_identity="
+             << summary.macro_package_lock_identity
+             << ";macro_package_trust_identity="
+             << summary.macro_package_trust_identity
+             << ";macro_input_content_identity="
+             << summary.macro_input_content_identity
+             << ";macro_output_content_identity="
+             << summary.macro_output_content_identity
+             << ";macro_host_identity=" << summary.macro_host_identity
+             << ";package_replay_generation="
+             << summary.package_replay_generation
+             << ";cache_validation_status="
+             << summary.cache_validation_status
+             << ";runtime_consumption_artifact_identity="
+             << summary.runtime_consumption_artifact_identity
              << ";local_macro_artifact_count="
              << summary.local_macro_artifact_count
              << ";local_property_behavior_artifact_count="
@@ -265,9 +297,27 @@ std::string BuildMetaprogrammingMacroHostProcessCacheRuntimeIntegrationSummaryJs
       << EscapeJsonString(summary.diagnostics_model)
       << "\",\"fail_closed_model\":\""
       << EscapeJsonString(summary.fail_closed_model)
+      << "\",\"macro_package_identity\":\""
+      << EscapeJsonString(summary.macro_package_identity)
+      << "\",\"macro_package_lock_identity\":\""
+      << EscapeJsonString(summary.macro_package_lock_identity)
+      << "\",\"macro_package_trust_identity\":\""
+      << EscapeJsonString(summary.macro_package_trust_identity)
+      << "\",\"macro_input_content_identity\":\""
+      << EscapeJsonString(summary.macro_input_content_identity)
+      << "\",\"macro_output_content_identity\":\""
+      << EscapeJsonString(summary.macro_output_content_identity)
+      << "\",\"macro_host_identity\":\""
+      << EscapeJsonString(summary.macro_host_identity)
+      << "\",\"cache_validation_status\":\""
+      << EscapeJsonString(summary.cache_validation_status)
+      << "\",\"runtime_consumption_artifact_identity\":\""
+      << EscapeJsonString(summary.runtime_consumption_artifact_identity)
       << "\",\"metaprogramming_replay_key\":\""
       << EscapeJsonString(summary.metaprogramming_replay_key)
-      << "\",\"local_macro_artifact_count\":"
+      << "\",\"package_replay_generation\":"
+      << summary.package_replay_generation
+      << ",\"local_macro_artifact_count\":"
       << summary.local_macro_artifact_count
       << ",\"local_property_behavior_artifact_count\":"
       << summary.local_property_behavior_artifact_count

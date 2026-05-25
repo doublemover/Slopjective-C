@@ -55,6 +55,8 @@ That means the package-ecosystem owner surface must build local package semantic
 - deterministic dependency resolution and lock behavior
 - generated package manifests with Objective-C 3.0 language, ABI, digest, and
   trust metadata
+- generated package manifests, lock package rows, and local registry rows with
+  the same checked-in module graph source-of-truth record
 - schema-backed local registry indexes with exact locked version selection,
   dependency digest evidence, and replay commands
 - local workspace and package-authoring workflow
@@ -75,11 +77,21 @@ Supported in this boundary:
   surfaces
 - offline mirror evidence generated from local package artifacts
 - registry metadata as a generated, local, replayable artifact
+- fixture-backed hosted-registry indexes, deterministic snapshot fetch policy,
+  offline network dependency resolution, hermetic hosted-service contracts, and
+  source-owned release-channel publication metadata when every row is checked
+  in, locked, digest-bound, and replayed without live network access
+- from-nothing install distribution receipts under the package-ecosystem
+  validation root, validated against package-ecosystem receipt schemas and
+  pinned to `npm run objc3c -- validate-package-install-distribution
+--from-nothing`
 
 Not supported in this boundary:
 
-- a hosted package registry service
-- network-backed dependency resolution
+- a live public hosted package registry service
+- active production hosted-registry auth, moderation, availability SLOs, or
+  registry trust-root operations
+- arbitrary live network dependency resolution
 - system package manager publication
 - package manifests that bypass the `npm run objc3c -- <action>` bridge
 - a second compiler payload, package layout, or install workflow
@@ -97,20 +109,32 @@ Resolution is intentionally local-first:
 - package identities are canonical module ids plus source paths, not hosted
   registry slugs
 - generated package manifests capture package version, source digest,
-  Objective-C 3.0 language mode, `objc3-abi-2025Q4`, dependency requirements,
-  trust signature, and revocation state
+  Objective-C 3.0 language mode, `objc3-abi-2025Q4`, module graph source
+  authority, dependency requirements, trust signature, and revocation state
 - locks capture provenance, manifest digests, source digests, selected
-  version/source identity, and replay command intent
+  version/source identity, module graph identity, and replay command intent
 - local registry indexes capture exact locked target versions, dependency source
-  digests, package manifest digests, trust signatures, and replay commands for
-  every indexed package
+  digests, package manifest digests, module graph records, trust signatures, and
+  replay commands for every indexed package
+- package trust roots are explicit policy records: each root binds issuer,
+  signer, key id, signature format/algorithm, validity window, namespace scope,
+  compatibility scope, rotation policy, and revocation lists before any package
+  operation can treat a signature as valid
 - dependency resolution fails closed when a dependency is missing, ambiguous,
-  unpinned, provenance-free, ABI-incompatible, language-incompatible, revoked,
-  or outside the allowed local/mirror roots
+  unpinned, provenance-free, missing module graph metadata, backed by unsafe
+  package metadata, ABI-incompatible, language-incompatible, revoked, or outside
+  the allowed local/mirror roots
 
-The initial lock model does not claim network fetching. Registry names may appear
-only as generated metadata layered over local package artifacts until later
-evidence proves hosted behavior.
+The lock model does not claim arbitrary network fetching. Registry names may
+appear only through checked-in hosted-registry fixtures, the hermetic
+hosted-service fixture, offline network resolution fixtures, and release-channel
+metadata that are digest-bound to local package artifacts. The hosted-registry
+fixture now has a production-shaped path for deterministic snapshot fetch,
+transport-policy enforcement, trust-root validation, digest/signature/revocation
+checks, lock materialization, and offline mirror replay handoff. That path is
+still source-owned and offline: live public registry availability, production
+activation, and arbitrary remote fetch behavior remain outside this support
+claim and fail before resolver fallback can occur.
 
 ## Local Workspace And Offline Mirror Semantics
 
@@ -167,12 +191,40 @@ Registry behavior is layered on top of the local lock and mirror model:
   exists and digest-matches the mirror index.
 - `publication-metadata` is supported as replayable release/update/package
   channel metadata.
-- `hosted-registry` is explicitly deferred until a later milestone proves
-  network service behavior, authentication, moderation, revocation, and
-  availability semantics.
+- `hosted-registry-fixture` is supported as a checked-in offline index with a
+  deterministic snapshot fetch record, explicit disabled-live transport policy,
+  exact pinned version selection, digest/signature/trust-root/revocation
+  enforcement, lock materialization, and offline mirror replay handoff. It also
+  carries deterministic package identity, mirror evidence, explicit
+  service-boundary records, reserved production
+  auth/moderation/trust-root/availability records, and a required hermetic
+  service contract that preserves the
+  `ecosystem.package-manager.public-hosted-registry` reservation. It must not be
+  described as arbitrary live hosted-service availability, package-manager
+  parity, or fallback registry success.
+- `hosted-registry-hermetic-service` is supported only as a local checked-in
+  service contract. It owns fixture token auth, local trust-root operation,
+  revocation-list checks, moderation checks, availability state, exact-version
+  request policy, deterministic snapshot handoff, materialized-lock policy, and
+  no-network-after-lock behavior for the hosted-registry fixture path.
+  `package-registry-resolve` exposes the service id, auth subject, and auth
+  token as explicit request inputs and records the admitted service decision,
+  fetched snapshot, materialized lock, and offline replay handoff in its summary
+  before package metadata resolution is treated as supported. It is not a
+  production auth service, moderation service, registry SLO, live network
+  transport, registry trust-root service, or public package host.
+- `network-dependency-resolution` is supported only for the offline fixture path
+  that resolves trusted registry rows into locks and mirrors before install
+  validation. Implicit fetches, unpinned dependencies, digest drift, and missing
+  mirrors fail closed.
+- `release-channel-publication` is supported only for source-owned offline
+  publication metadata and deterministic package-channel records.
 
-Any hosted-registry claim before those proofs exist is release-blocking and must
-be demoted to generated local metadata.
+Any live public hosted-registry activation, live network fetch, fallback registry
+success, active production registry auth/moderation/trust-root/availability, or
+remote publication claim outside the deterministic snapshot/lock/offline replay
+path is release-blocking and must be demoted to hermetic fixture metadata or
+reserved fail-closed behavior.
 
 ## Artifact Contract
 
@@ -186,6 +238,14 @@ Schema surfaces:
 - `schemas/objc3c-package-lock-v1.schema.json`
 - `schemas/objc3c-package-offline-mirror-index-v1.schema.json`
 - `schemas/objc3c-package-local-registry-index-v1.schema.json`
+- `schemas/objc3c-package-hosted-registry-index-v1.schema.json`
+- `schemas/objc3c-package-hosted-registry-service-v1.schema.json`
+- `schemas/objc3c-package-network-resolution-v1.schema.json`
+- `schemas/objc3c-package-release-channel-publication-v1.schema.json`
+- `schemas/objc3c-package-install-receipt-v1.schema.json`
+- `schemas/objc3c-package-install-distribution-receipt-v1.schema.json`
+- `schemas/objc3c-package-install-distribution-operation-receipt-v1.schema.json`
+- `schemas/objc3c-package-operation-receipt-v1.schema.json`
 - registry owner: `scripts/objc3c_shared/schema_registry.py`
 
 Machine-owned generated outputs stay in package-ecosystem artifact and report

@@ -1,0 +1,6 @@
+// Expected diagnostic code(s): O3S211.
+module NegativeValueOptionalNilScalarCoercionReserved;
+
+fn main(value: Optional<i32>) -> i32 {
+  return value;
+}

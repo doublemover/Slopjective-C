@@ -1,10 +1,29 @@
 #pragma once
 
+#include <cstddef>
 #include <string>
 #include <vector>
 
 #include "ast/objc3_ast_value_type.h"
 #include "token/objc3_token_contract.h"
+
+struct Objc3TypedThrowsPayload {
+  bool declared = false;
+  ValueType type = ValueType::Unknown;
+  bool id_spelling = false;
+  bool class_spelling = false;
+  bool instancetype_spelling = false;
+  bool object_pointer_type_spelling = false;
+  std::string object_pointer_type_name;
+  bool has_generic_suffix = false;
+  bool generic_suffix_terminated = true;
+  std::string generic_suffix_text;
+  bool has_pointer_declarator = false;
+  unsigned pointer_declarator_depth = 0;
+  std::string canonical_spelling;
+  unsigned line = 1;
+  unsigned column = 1;
+};
 
 struct FuncParam {
   std::string name;
@@ -18,6 +37,7 @@ struct FuncParam {
   bool instancetype_spelling = false;
   bool object_pointer_type_spelling = false;
   std::string object_pointer_type_name;
+  Objc3ValueOptionalTypeDescriptor value_optional;
   std::string typecheck_family_symbol;
   bool has_generic_suffix = false;
   bool generic_suffix_terminated = true;

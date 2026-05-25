@@ -86,15 +86,16 @@ Compile either fixture from a fresh checkout after setup:
 ```powershell
 npm run objc3c -- compile-objc3c tests/tooling/fixtures/native/execution/positive/collection_literals_mutation_for_in.objc3 --out-dir tmp/readme-collections --emit-prefix module
 npm run objc3c -- compile-objc3c tests/tooling/fixtures/native/execution/positive/source_string_interpolation_text_i32.objc3 --out-dir tmp/readme-text --emit-prefix module
+npm run objc3c -- compile-objc3c showcase/signalMesh/main.objc3 --out-dir tmp/readme-signalMesh --emit-prefix module
 ```
 
 ## Current Support Snapshot
 
-The checked capability matrix currently contains 110 rows:
+The checked capability matrix currently contains 123 rows:
 
-- 86 implemented rows
-- 11 internal implementation or workflow-owner rows
-- 10 reserved rows
+- 93 implemented rows
+- 14 internal implementation or workflow-owner rows
+- 13 reserved rows
 - 3 rejected rows
 
 Authoritative support data lives in:
@@ -122,6 +123,9 @@ generated reports.
   the language surface defines them.
 - Typed flow for current scalar, function, expression, statement, control-flow,
   protocol, generic, ownership, and effect surfaces.
+- Statement-form guarded match patterns using
+  `case pattern where bool_condition: { ... }`; expression match, `=>` arms,
+  type-test patterns, and strict-profile promotion remain outside that row.
 - Protocol-qualified existentials, witness-model evidence, generic
   protocol-qualified arguments, callable type parameters, variance and
   specialization evidence, and collection generic identity semantics.
@@ -149,8 +153,9 @@ generated reports.
   and storage metadata.
 - Runtime debug trace payloads for structured inspection, async task lanes, and
   error-unwind lanes.
-- Runtime debug-anchor identity and value-inspection evidence for bounded
-  object-model/source identity rows.
+- Runtime debug-anchor identity, value-inspection evidence, native debug-info
+  evidence, and statement stepping for the integrated object-model production
+  artifact path.
 - Block copy/dispose/invoke helpers, byref forwarding, ownership transfer
   hooks, error bridge cleanup, task continuation lifecycle, async actors, actor
   mailbox isolation, and property behavior materialization.
@@ -179,6 +184,9 @@ Checked modules live under [`stdlib/modules/`](stdlib/modules/).
 ### Packages, Modules, And Interop
 
 - Public import lookup and visibility/reexport/rebuild contracts.
+- Direct `@import` syntax with parser-owned module identity, locked package
+  provenance, and fail-closed malformed, missing-provenance, and ambiguous
+  module identity diagnostics.
 - Dependency graph diagnostics, stale cache rejection, missing module
   diagnostics, import cycle diagnostics, duplicate export diagnostics, hidden
   declaration diagnostics, and ABI mismatch diagnostics.
@@ -186,6 +194,11 @@ Checked modules live under [`stdlib/modules/`](stdlib/modules/).
   mirror records, local trust envelopes, install/update/uninstall/rollback
   receipts, package signing, package verification, and clean distribution
   checks.
+- Source-owned hosted-registry fixture resolution with a hermetic local service
+  contract for fixture auth, trust, revocation, moderation, availability, and
+  no-network fail-closed behavior; offline fixture-backed network dependency
+  resolution, source-owned release-channel publication metadata, and package
+  security hardening with pre-mutation extraction path checks.
 - Runnable toolchain package channels, release manifests, SBOM/provenance
   publication, release operation policy, release channel lifecycle, ABI/API
   drift checks, and platform/toolchain support matrix checks.
@@ -221,13 +234,15 @@ also carries integrated programs that force systems to interact:
   17-case negative matrix.
 - Object reflection and debugger artifacts: class/metaclass/category/protocol/
   property/ivar/selector/reflection/replay evidence, runtime debug anchors,
-  value-inspection records, source graph links, object inventories, and bounded
-  source identity.
+  value-inspection records, source graph links, object inventories, source-map
+  and native line-table rows, emitted native debug-info evidence, and
+  statement stepping on the integrated object-model artifact path.
 - Text, collections, and packages: runtime text builders, collection literals,
   `for-in`, package import metadata, provider import surfaces, source graph
   package nodes, and declaration debug anchors.
-- Optimization/runtime equivalence: cache-aware dispatch and exact-target
-  devirtualization proof while method inlining remains fail-closed.
+- Optimization/runtime equivalence: cache-aware dispatch, exact-target
+  devirtualization, and the bounded method-inlining safe subset with
+  inline-frame/source-map, side-effect, and invalidation proof gates.
 - Distribution package lifecycle: package manager behavior, package channels,
   release evidence, and tamper/fail-closed distribution checks.
 
@@ -236,28 +251,67 @@ also carries integrated programs that force systems to interact:
 The matrix is intentionally explicit about boundaries. Important reserved or
 rejected rows include:
 
-- Full object-model realization as one umbrella support claim. Narrow object
-  rows are implemented, and debugger-grade proof has advanced, but full source
-  maps beyond bounded identity rows, emitted native debug info, broader typed
-  keypath lowering, and statement-level debugger stepping are still reserved.
-- Full advanced-runtime closure as one umbrella support claim. Narrow block,
-  ARC, error, async, actor, property, macro, and package/replay rows are
-  implemented, but native executable link/run for the full umbrella fixture and
-  broad scheduler/Swift ABI/distributed actor/arbitrary macro-host guarantees
-  remain reserved.
-- Direct `@import` module syntax. Current package/import evidence uses checked
-  metadata import surfaces, public cross-module lookup, and package workspace
-  edges.
-- Public hosted package registry and live network dependency resolution.
-  Current package evidence is local/offline/deterministic.
-- Method inlining. Exact-target devirtualization is implemented; method
-  inlining remains reserved until ownership, inline-frame source-map,
-  callee-body identity, and side-effect/invalidation replay proofs exist.
-- Full source-map publication, statement stepping, and LLDB plugin integration.
+- Objective-C 2 runtime compatibility, Swift/C++ runtime mirroring, dynamic
+  forwarding, and broad full-source-map publication for every production
+  artifact path. Objective-C 3 object-model realization itself is implemented
+  by the checked runtime/debugger identity graph.
+- Broad advanced-runtime guarantees beyond the integrated Objective-C 3 runtime
+  envelope. The combined fixture compiles, links, and runs with checked runtime
+  evidence, while broad scheduler fairness, Swift ABI mirroring, distributed
+  actor networking, and arbitrary macro-host execution remain reserved.
+- Typed throws and value optionals. `throws(E)` is implemented as a bounded
+  single-payload effect with exact parser/sema/interface identity, private
+  error-out ABI lowering, exact typed catches, policy-backed `id<Error>` bridge
+  catches, runtime-dispatch message-send coverage, and `try?` optionalization.
+  Multi-payload, malformed, unsupported foreign-carrier, async propagation, and
+  silent-erasure paths fail closed. `Optional<T>` is a semantic value-optional
+  carrier with the bounded packed runtime ABI for `Optional<i32>`,
+  `Optional<bool>`, and `Optional<id>` handles plus `Optional<i64>` language
+  call/return lowering through the wide `{has_value,i64}` carrier. Lowercase
+  `optional<T>` is rejected as `O3C004`; nil-to-scalar, nullable-pointer
+  conversion, generalized nested/generic/property/ivar lowering, and broad
+  runtime support remain unclaimed.
+- Generic callable reification. Current support is the erased generic class
+  receiver/free-function subset named by the generic callable row; explicit
+  `@reify_generics`, Objective-C method type-parameter clauses, C/Objective-C
+  style generic functions, and runtime reified metadata remain reserved.
+- Strict-system language profile selection. `strict` and `strict-concurrency`
+  are current claimable conformance selections with native profile validation,
+  strict diagnostics, and strict-concurrency actor/sendability/task/scheduler
+  checks. `strict-system` remains target-only release evidence and rejects
+  fail-closed rather than aliasing strict-concurrency.
+- The #8207 language-evolution umbrella. It is a readiness/truth row over
+  typed throws, value optionals, generic callable reification, guarded match,
+  and strict profiles, not a separate behavior claim.
+- Live public hosted package registry services and arbitrary live network
+  dependency resolution. Current package evidence is local/offline,
+  fixture-backed, deterministic, and fail-closed.
+- Broad heuristic method inlining and arbitrary dynamic-dispatch inlining.
+  The bounded scalar safe subset is implemented only when every ownership,
+  inline-frame source-map, callee-body identity, side-effect, and invalidation
+  replay proof is present; missing proof paths still fail closed.
+- Broad full source-map publication for every production artifact path.
+  Bounded statement stepping and LLDB replay are implemented by narrower
+  debugger rows; arbitrary host debugger sessions and every optimized binary
+  remain outside the claim.
 - Linux x64 and macOS arm64 host support. Windows x64 is the supported Tier 1
-  host row.
-- AddressSanitizer and UndefinedBehaviorSanitizer package/install/native
-  execution variants.
+  host row; Linux and macOS rows are source-owned fail-closed contracts until
+  build, package, install, installed-root execution, native execution, and
+  reviewed checked-source promotion evidence exist. macOS promotion also
+  requires Mach-O, dSYM, and runtime load-path proof.
+- AddressSanitizer and UndefinedBehaviorSanitizer beyond the current Windows
+  x64 runtime-package variants. ASan/UBSan package, install, and execution
+  support is evidence-bound for Windows x64 through checked source promotion
+  evidence; generated-only sanitizer reports and unsupported hosts do not
+  promote support.
+- Native object emission without `llc --filetype=obj` and a non-empty
+  target-specific object from `llc`. Missing `llc` or target object emission is
+  a fail-closed status, and clang must not be treated as a fallback object
+  emitter for support, package, or execution claims.
+- The #8206 platform expansion umbrella. It is an internal readiness/truth row
+  over Windows x64 support, fail-closed Linux/macOS rows, Windows x64
+  evidence-bound ASan/UBSan package variants, and #8232 native object emission,
+  not a broad platform support claim.
 
 ## Fresh Setup
 
@@ -268,7 +322,10 @@ Install prerequisites:
 - PowerShell 7 (`pwsh`)
 - Node.js and `npm`
 - Python 3 with `pip`
-- LLVM at `C:\Program Files\LLVM`, or set `LLVM_ROOT`
+- A complete LLVM install with `clang++`, `llc`, `llvm-ar`, `llvm-config`,
+  LLVM headers, and CMake package files. The repo-owned CI installer stages
+  this under `C:\Users\<you>\Tools\LLVM\llvm-<version>-msvc`; alternatively,
+  set `OBJC3C_LLVM_ROOT` or `LLVM_ROOT` to an equivalent full LLVM root.
 
 LLVM tools used by the native path:
 
@@ -290,7 +347,9 @@ python -m pip install --upgrade pytest jsonschema
 If LLVM is installed somewhere else:
 
 ```powershell
+$env:OBJC3C_LLVM_ROOT = 'D:\path\to\LLVM'
 $env:LLVM_ROOT = 'D:\path\to\LLVM'
+$env:LLVM_DIR = 'D:\path\to\LLVM\lib\cmake\llvm'
 ```
 
 Build the compiler, C API runner, and runtime archive:
@@ -319,7 +378,7 @@ npm run objc3c -- test-smoke
 Run native execution smoke when `llc.exe` is available:
 
 ```powershell
-$env:OBJC3C_NATIVE_EXECUTION_LLC_PATH = 'C:\Program Files\LLVM\bin\llc.exe'
+$env:OBJC3C_NATIVE_EXECUTION_LLC_PATH = 'C:\Users\<you>\Tools\LLVM\llvm-22.1.6-msvc\bin\llc.exe'
 npm run objc3c -- test-execution-smoke
 ```
 
@@ -399,10 +458,12 @@ Common actions:
   `validate-advanced-runtime-closure`
 - Standard library: `validate-stdlib-foundation`
 - Modules/interop: `validate-module-interop-contracts`,
-  `validate-interop-conformance`, `validate-runnable-interop`
-- Packages: `validate-package-manager-model`, `validate-package-mirror`,
-  `validate-package-install-distribution`, `package-install`,
-  `package-verify`, `package-sign`
+  `validate-direct-import-module-syntax`, `validate-interop-conformance`,
+  `validate-runnable-interop`
+- Packages: `validate-package-manager-model`, `validate-package-registry-model`,
+  `validate-package-network-publication`, `validate-package-security-hardening`,
+  `validate-package-mirror`, `validate-package-install-distribution`,
+  `package-install`, `package-verify`, `package-sign`
 - Release: `validate-abi-governance`, `validate-release-foundation`,
   `validate-packaging-channels`, `validate-release-operations`,
   `validate-distribution-credibility`

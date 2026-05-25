@@ -9,9 +9,10 @@
 std::string Objc3RuntimeMetadataObjectPackagingRetentionSummary() {
   std::ostringstream out;
   // object-packaging/retention freeze anchor: lane-D now freezes the
-  // current produced-object handoff as module.obj plus retained aggregate
-  // symbols. Later archive/link/startup-registration work must preserve this
-  // boundary and may not silently replace llvm.used or aggregate symbol roots.
+  // current produced-object handoff as the host-default object artifact plus
+  // retained aggregate symbols. Later archive/link/startup-registration work
+  // must preserve this boundary and may not silently replace llvm.used or
+  // aggregate symbol roots.
   out << "contract=" << kObjc3RuntimeObjectPackagingRetentionContractId
       << ";boundary_model="
       << kObjc3RuntimeObjectPackagingRetentionBoundaryModel

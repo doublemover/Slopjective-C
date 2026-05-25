@@ -1,0 +1,453 @@
+{
+  "contract_id": "objc3c.advanced-runtime.executable-contract-surfaces.v1",
+  "schema_id": "objc3c-advanced-runtime-executable-contract-v1",
+  "schema_version": 1,
+  "schema_path": "schemas/objc3c-advanced-runtime-executable-contract-v1.schema.json",
+  "dependency_issue_ref": 8213,
+  "public_command": "npm run objc3c -- validate-advanced-runtime-closure",
+  "runtime_public_contract": {
+    "header": "native/objc3c/src/runtime/public/objc3_runtime_executable_contract.h",
+    "implementation": "native/objc3c/src/runtime/public/objc3_runtime_executable_contract.cpp",
+    "abi_version_macro": "OBJC3_RUNTIME_EXECUTABLE_CONTRACT_ABI_VERSION",
+    "snapshot_type": "objc3_runtime_executable_contract_surface_snapshot",
+    "copy_symbols": [
+      "objc3_runtime_copy_executable_contract_surface",
+      "objc3_runtime_copy_executable_contract_surface_by_kind",
+      "objc3_runtime_executable_contract_support_status_for_surface"
+    ],
+    "strict_invalid_query_status": "OBJC3_RUNTIME_EXECUTABLE_CONTRACT_SUPPORT_REJECTED"
+  },
+  "support_boundary": {
+    "typed_dispatch_required": true,
+    "native_registration_required": true,
+    "executable_runtime_required": true,
+    "compatibility_shims": false,
+    "unsupported_surface_policy": "Unrecognized executable-contract surface kinds return rejected support status and never downgrade to compatibility, metadata-only, or generated-report support."
+  },
+  "integration_contract": {
+    "contract_fixture": "tests/tooling/fixtures/advanced_runtime_closure/advanced_runtime_integration_closure_contract.json",
+    "umbrella_issue_ref": 8203,
+    "promotion_issue_ref": 8218,
+    "runtime_envelope": "integrated-objective-c-3-runtime",
+    "required_surface_kinds": [
+      "scheduler-task-runtime-contract",
+      "foreign-abi-runtime-contract",
+      "actor-mailbox-runtime-expansion-contract",
+      "macro-package-replay-runtime-contract"
+    ],
+    "required_reserved_claims": [
+      "broad-scheduler-guarantees",
+      "swift-cpp-abi-mirroring",
+      "distributed-actor-networking",
+      "arbitrary-macro-host-execution"
+    ],
+    "required_negative_case_ids": [
+      "scheduler_priority_fairness_overclaim",
+      "distributed_actor_transport_overclaim",
+      "macro_host_arbitrary_execution",
+      "macro_package_replay_stale_cache",
+      "foreign_abi_unsafe_mixed_image"
+    ]
+  },
+  "surfaces": [
+    {
+      "surface_name": "scheduler-task-runtime-contract",
+      "surface_kind": "scheduler-task-runtime-contract",
+      "issue_ref": 8214,
+      "dependency_issue_ref": 8213,
+      "support_status": "supported",
+      "support_claim": "objc3c.behavior.runtime.advanced.scheduler-task-contract",
+      "typed_dispatch_required": true,
+      "native_registration_required": true,
+      "executable_runtime_required": true,
+      "fail_closed_required": true,
+      "compatibility_shim_allowed": false,
+      "supported_boundary": "Single-process deterministic task creation, start, completion, cooperative cancellation checkpoints, continuation lifecycle, executor-hop ordering, per-actor FIFO mailbox enqueue/dequeue, and bounded runtime snapshots.",
+      "reserved_boundary": "Fairness, priority inheritance, work stealing, distributed scheduling, cross-process actor transport, and external executor integration remain reserved or rejected.",
+      "strict_failure_diagnostic": "advanced-runtime.scheduler-unsupported-policy",
+      "primary_fixture": "tests/native/runtime/advanced_closure/combined_positive.objc3",
+      "negative_fixture": "tests/native/runtime/advanced_closure/negative_scheduler_priority_fairness_overclaim.objc3",
+      "runtime_contract": "objc3_runtime_task_runtime_state_snapshot+objc3_runtime_actor_runtime_state_snapshot",
+      "source_anchors": [
+        "native/objc3c/src/runtime/public/objc3_runtime_executable_contract.h",
+        "native/objc3c/src/runtime/public/objc3_runtime_executable_contract.cpp",
+        "native/objc3c/src/runtime/concurrency/task_runtime_operations.cpp",
+        "native/objc3c/src/runtime/concurrency/task_cancellation_state.cpp",
+        "native/objc3c/src/runtime/concurrency/actor_mailbox_operations.cpp",
+        "native/objc3c/src/pipeline/objc3_runtime_import_surface.h",
+        "native/objc3c/src/pipeline/runtime_import_preservation_evidence_runtime_language.cpp",
+        "native/objc3c/src/io/objc3_cross_module_runtime_link_plan_sections_validation_replay.cpp",
+        "tests/tooling/fixtures/advanced_runtime_closure/scheduler_task_runtime_guarantees_contract.json"
+      ],
+      "replay_key": "advanced-runtime:#8214:scheduler-task-runtime-contract:v1",
+      "scheduler_task_runtime_guarantees": {
+        "contract_fixture": "tests/tooling/fixtures/advanced_runtime_closure/scheduler_task_runtime_guarantees_contract.json",
+        "required_snapshot_fields": [
+          "task_record_required",
+          "continuation_record_required",
+          "executor_hop_record_required",
+          "actor_mailbox_event_required",
+          "scheduler_queue_state_required",
+          "task_lifecycle_state_required",
+          "cancellation_checkpoint_required",
+          "task_error_cleanup_required",
+          "shutdown_drain_required",
+          "imported_runtime_replay_required"
+        ],
+        "required_import_surface_fields": [
+          "contract_id",
+          "source_contract_id",
+          "task_runtime_ready",
+          "deterministic",
+          "shutdown_drain_ready",
+          "cancellation_error_cleanup_ready",
+          "replay_key",
+          "task_lifecycle_replay_key",
+          "task_cancellation_replay_key",
+          "shutdown_replay_key",
+          "task_record_sites",
+          "continuation_record_sites",
+          "executor_hop_record_sites",
+          "queue_lifecycle_record_sites",
+          "cancellation_checkpoint_sites",
+          "error_cleanup_sites",
+          "shutdown_drain_sites",
+          "unsupported_policy_sites"
+        ],
+        "required_negative_case_ids": [
+          "scheduler_priority_fairness_overclaim",
+          "scheduler_task_lifecycle_missing_replay",
+          "scheduler_shutdown_drain_missing_evidence",
+          "scheduler_cancellation_error_cleanup_missing_evidence"
+        ]
+      }
+    },
+    {
+      "surface_name": "foreign-abi-runtime-contract",
+      "surface_kind": "foreign-abi-runtime-contract",
+      "issue_ref": 8215,
+      "dependency_issue_ref": 8213,
+      "support_status": "supported",
+      "support_claim": "objc3c.behavior.runtime.advanced.foreign-abi-contract",
+      "typed_dispatch_required": true,
+      "native_registration_required": true,
+      "executable_runtime_required": true,
+      "fail_closed_required": true,
+      "compatibility_shim_allowed": false,
+      "supported_boundary": "Narrow C ABI package/replay boundary with stable ownership, nullability, error, and async metadata normalized before lowering.",
+      "reserved_boundary": "Swift runtime ABI, C++ exception propagation, template/object-layout mirroring, actor-owned Swift callables, async foreign callbacks, and arbitrary foreign runtime mirroring remain rejected.",
+      "strict_failure_diagnostic": "advanced-runtime.foreign-abi-unsupported-runtime",
+      "primary_fixture": "tests/native/runtime/advanced_closure/combined_positive.objc3",
+      "negative_fixture": "tests/native/runtime/advanced_closure/negative_foreign_abi_runtime_mirroring.objc3",
+      "runtime_contract": "objc3_runtime_dispatch_typed_result+Objc3CrossModuleRuntimeLinkPlanImportedInput",
+      "source_anchors": [
+        "native/objc3c/src/runtime/public/objc3_runtime_executable_contract.h",
+        "native/objc3c/src/runtime/public/objc3_runtime_executable_contract.cpp",
+        "native/objc3c/src/runtime/dispatch/typed_dispatch_result.cpp",
+        "native/objc3c/src/driver/objc3_driver_cross_module_imported_input_interop.cpp",
+        "native/objc3c/src/artifacts/objc3_frontend_artifact_interop_metadata.cpp",
+        "native/objc3c/src/pipeline/objc3_runtime_import_surface.h",
+        "native/objc3c/src/pipeline/runtime_import_preservation_evidence_interop.cpp",
+        "native/objc3c/src/io/objc3_cross_module_runtime_link_plan_sections_validation_replay.cpp",
+        "tests/tooling/fixtures/advanced_runtime_closure/foreign_abi_runtime_closure_contract.json"
+      ],
+      "replay_key": "advanced-runtime:#8215:foreign-abi-runtime-contract:v1",
+      "foreign_abi_runtime_closure": {
+        "contract_fixture": "tests/tooling/fixtures/advanced_runtime_closure/foreign_abi_runtime_closure_contract.json",
+        "supported_runtime_boundary": "C ABI callable boundary with typed dispatch, package/runtime identity, ownership/error/async metadata, and no public Swift/C++ runtime mirroring.",
+        "preserved_metadata_boundaries": [
+          "C ABI ownership/error/async metadata",
+          "Swift-facing metadata preserved but not runnable",
+          "C++-facing metadata preserved with exception/runtime fallback rejected"
+        ],
+        "required_import_surface_fields": [
+          "contract_id",
+          "source_contract_id",
+          "package_identity",
+          "runtime_identity",
+          "runtime_closure_ready",
+          "deterministic",
+          "typed_dispatch_ready",
+          "package_runtime_identity_ready",
+          "bridge_ownership_ready",
+          "replay_key",
+          "classification_replay_key",
+          "bridge_metadata_replay_key",
+          "foreign_surface_count",
+          "supported_c_abi_surface_count",
+          "preserved_swift_metadata_surface_count",
+          "preserved_cpp_metadata_surface_count",
+          "rejected_surface_count",
+          "abi_mismatch_negative_case_count",
+          "missing_bridge_ownership_negative_case_count",
+          "unsafe_mixed_image_negative_case_count",
+          "stale_import_negative_case_count",
+          "unsupported_runtime_fallback_negative_case_count"
+        ],
+        "required_negative_case_ids": [
+          "foreign_abi_mismatch",
+          "foreign_abi_missing_bridge_ownership",
+          "foreign_abi_unsafe_mixed_image",
+          "foreign_abi_stale_import",
+          "foreign_abi_unsupported_runtime_fallback"
+        ]
+      }
+    },
+    {
+      "surface_name": "actor-mailbox-runtime-expansion-contract",
+      "surface_kind": "actor-mailbox-runtime-expansion-contract",
+      "issue_ref": 8216,
+      "dependency_issue_ref": 8213,
+      "support_status": "supported",
+      "support_claim": "objc3c.behavior.runtime.advanced.actor-mailbox-expansion",
+      "typed_dispatch_required": true,
+      "native_registration_required": true,
+      "executable_runtime_required": true,
+      "fail_closed_required": true,
+      "compatibility_shim_allowed": false,
+      "supported_boundary": "Local actor mailbox helpers now carry stable logical message identity, FIFO enqueue/dequeue/completion order, cancellation, deterministic actor method error recording, and shutdown/drain state through the private actor runtime snapshot.",
+      "reserved_boundary": "Distributed actor syntax, cross-process transport, remote serialization, network failure semantics, and Swift actor ABI compatibility remain reserved or rejected unless their own transport/runtime rows land.",
+      "strict_failure_diagnostic": "advanced-runtime.distributed-actor-missing-transport",
+      "primary_fixture": "tests/native/runtime/advanced_closure/combined_positive.objc3",
+      "negative_fixture": "tests/native/runtime/advanced_closure/negative_distributed_actor_missing_transport.objc3",
+      "runtime_contract": "objc3_runtime_actor_runtime_state_snapshot+objc3_runtime_actor_mailbox_enqueue_i32+objc3_runtime_actor_mailbox_drain_next_i32+objc3_runtime_actor_mailbox_cancel_i32+objc3_runtime_actor_mailbox_record_error_i32+objc3_runtime_actor_mailbox_shutdown_i32",
+      "source_anchors": [
+        "native/objc3c/src/runtime/public/objc3_runtime_executable_contract.h",
+        "native/objc3c/src/runtime/public/objc3_runtime_executable_contract.cpp",
+        "native/objc3c/src/runtime/concurrency/runtime_concurrency_snapshot_contracts.h",
+        "native/objc3c/src/runtime/concurrency/actor_mailbox_operations.cpp",
+        "native/objc3c/src/runtime/concurrency/actor_state_store.h",
+        "native/objc3c/src/artifacts/objc3_frontend_runtime_import_actor_mailbox_artifacts.cpp",
+        "native/objc3c/src/pipeline/objc3_runtime_import_surface.h",
+        "native/objc3c/src/pipeline/runtime_import_preservation_evidence_runtime_language.cpp",
+        "native/objc3c/src/io/objc3_cross_module_runtime_link_plan_sections_validation_replay.cpp",
+        "tests/tooling/fixtures/advanced_runtime_closure/actor_mailbox_runtime_expansion_contract.json"
+      ],
+      "replay_key": "advanced-runtime:#8216:actor-mailbox-runtime-expansion-contract:v1",
+      "actor_mailbox_runtime_expansion": {
+        "contract_fixture": "tests/tooling/fixtures/advanced_runtime_closure/actor_mailbox_runtime_expansion_contract.json",
+        "required_snapshot_fields": [
+          "mailbox_message_sequence",
+          "last_mailbox_message_id",
+          "last_mailbox_enqueue_sequence",
+          "last_mailbox_dequeue_sequence",
+          "last_mailbox_completion_sequence",
+          "mailbox_cancel_call_count",
+          "mailbox_error_call_count",
+          "mailbox_shutdown_call_count",
+          "mailbox_identity_guard_passed",
+          "mailbox_ordering_guard_passed",
+          "mailbox_shutdown_guard_passed"
+        ],
+        "required_import_surface_fields": [
+          "actor_mailbox_runtime_ready",
+          "deterministic",
+          "replay_key",
+          "actor_lowering_replay_key",
+          "actor_isolation_lowering_replay_key",
+          "actor_mailbox_message_identity_field_count",
+          "actor_mailbox_fifo_ordering_field_count",
+          "actor_mailbox_drain_operation_field_count",
+          "actor_mailbox_cancel_operation_field_count",
+          "actor_mailbox_error_operation_field_count",
+          "actor_mailbox_shutdown_operation_field_count",
+          "distributed_actor_transport_evidence_sites"
+        ],
+        "required_negative_case_ids": [
+          "distributed_actor_missing_transport",
+          "distributed_actor_transport_overclaim",
+          "actor_mailbox_stale_identity",
+          "actor_mailbox_cancelled_queue",
+          "actor_mailbox_error_without_replay"
+        ]
+      }
+    },
+    {
+      "surface_name": "macro-package-replay-runtime-contract",
+      "surface_kind": "macro-package-replay-runtime-contract",
+      "issue_ref": 8217,
+      "dependency_issue_ref": 8213,
+      "support_status": "supported",
+      "support_claim": "objc3c.behavior.runtime.advanced.macro-package-replay",
+      "typed_dispatch_required": true,
+      "native_registration_required": true,
+      "executable_runtime_required": true,
+      "fail_closed_required": true,
+      "compatibility_shim_allowed": false,
+      "supported_boundary": "Macro host cache runtime-import packets now include package identity, lock identity, trust identity, host identity, input/output content identity, replay generation, cache validation status, and runtime consumption identity before a cross-module link plan may consume the row.",
+      "reserved_boundary": "Arbitrary macro host execution, impure macro callables, unsigned package replay, stale cache reuse, mismatched host identity, and tampered runtime metadata remain rejected.",
+      "strict_failure_diagnostic": "advanced-runtime.macro-package-replay-stale-cache",
+      "primary_fixture": "tests/native/runtime/advanced_closure/combined_positive.objc3",
+      "negative_fixture": "tests/native/runtime/advanced_closure/negative_macro_package_replay_stale_cache.objc3",
+      "runtime_contract": "objc_metaprogramming_macro_host_process_and_cache_runtime_integration",
+      "source_anchors": [
+        "native/objc3c/src/runtime/public/objc3_runtime_executable_contract.h",
+        "native/objc3c/src/runtime/public/objc3_runtime_executable_contract.cpp",
+        "native/objc3c/src/artifacts/objc3_frontend_metaprogramming_replay_preservation.cpp",
+        "native/objc3c/src/pipeline/runtime_import_preservation_evidence_metaprogramming.cpp",
+        "native/objc3c/src/pipeline/objc3_runtime_import_surface.h",
+        "native/objc3c/src/io/objc3_cross_module_runtime_link_plan_sections_validation_replay.cpp",
+        "tests/tooling/fixtures/advanced_runtime_closure/macro_package_replay_runtime_closure_contract.json"
+      ],
+      "replay_key": "advanced-runtime:#8217:macro-package-replay-runtime-contract:v1",
+      "macro_package_replay_runtime_closure": {
+        "contract_fixture": "tests/tooling/fixtures/advanced_runtime_closure/macro_package_replay_runtime_closure_contract.json",
+        "required_import_surface_fields": [
+          "runtime_import_artifact_ready",
+          "separate_compilation_ready",
+          "deterministic",
+          "replay_key",
+          "host_executable_relative_path",
+          "cache_root_relative_path",
+          "macro_package_identity",
+          "macro_package_lock_identity",
+          "macro_package_trust_identity",
+          "macro_input_content_identity",
+          "macro_output_content_identity",
+          "macro_host_identity",
+          "cache_validation_status",
+          "runtime_consumption_artifact_identity",
+          "package_replay_generation"
+        ],
+        "required_identity_fields": [
+          "macro_package_identity",
+          "macro_package_lock_identity",
+          "macro_package_trust_identity",
+          "macro_host_identity",
+          "macro_input_content_identity",
+          "macro_output_content_identity",
+          "runtime_consumption_artifact_identity"
+        ],
+        "required_negative_case_ids": [
+          "macro_host_arbitrary_execution",
+          "macro_package_replay_stale_cache",
+          "macro_package_replay_host_mismatch",
+          "macro_package_replay_tampered_metadata",
+          "macro_package_replay_missing_metadata"
+        ]
+      }
+    }
+  ],
+  "negative_fixtures": [
+    {
+      "fixture": "tests/native/runtime/advanced_closure/negative_scheduler_priority_fairness_overclaim.objc3",
+      "issue_ref": 8214,
+      "expected_diagnostic": "advanced-runtime.scheduler-unsupported-policy",
+      "unsupported_boundary": "priority and fairness policy cannot be inferred from executor-hop or mailbox helper traffic"
+    },
+    {
+      "fixture": "tests/native/runtime/advanced_closure/negative_scheduler_task_lifecycle_missing_replay.objc3",
+      "issue_ref": 8214,
+      "expected_diagnostic": "advanced-runtime.scheduler-task-lifecycle-missing-replay",
+      "unsupported_boundary": "task lifecycle state cannot be imported without deterministic task record, queue, cancellation, and replay-key fields"
+    },
+    {
+      "fixture": "tests/native/runtime/advanced_closure/negative_scheduler_shutdown_drain_missing_evidence.objc3",
+      "issue_ref": 8214,
+      "expected_diagnostic": "advanced-runtime.scheduler-shutdown-drain-missing-evidence",
+      "unsupported_boundary": "shutdown/drain claims require explicit runtime state and imported replay fields"
+    },
+    {
+      "fixture": "tests/native/runtime/advanced_closure/negative_scheduler_cancellation_error_cleanup_missing_evidence.objc3",
+      "issue_ref": 8214,
+      "expected_diagnostic": "advanced-runtime.scheduler-cancellation-error-cleanup-missing-evidence",
+      "unsupported_boundary": "cancellation/error cleanup interaction cannot be inferred from task helper presence alone"
+    },
+    {
+      "fixture": "tests/native/runtime/advanced_closure/negative_foreign_abi_runtime_mirroring.objc3",
+      "issue_ref": 8215,
+      "expected_diagnostic": "advanced-runtime.foreign-abi-unsupported-runtime",
+      "unsupported_boundary": "Swift runtime mirroring and C++ exception propagation remain rejected unless a runtime ABI bridge exists"
+    },
+    {
+      "fixture": "tests/native/runtime/advanced_closure/negative_foreign_abi_mismatch.objc3",
+      "issue_ref": 8215,
+      "expected_diagnostic": "advanced-runtime.foreign-abi-mismatch",
+      "unsupported_boundary": "ABI version or language-kind drift cannot be satisfied by preserved metadata or package identity"
+    },
+    {
+      "fixture": "tests/native/runtime/advanced_closure/negative_foreign_abi_missing_bridge_ownership.objc3",
+      "issue_ref": 8215,
+      "expected_diagnostic": "advanced-runtime.foreign-abi-missing-bridge-ownership",
+      "unsupported_boundary": "bridge ownership must be explicit before typed dispatch can consume a foreign callable"
+    },
+    {
+      "fixture": "tests/native/runtime/advanced_closure/negative_foreign_abi_unsafe_mixed_image.objc3",
+      "issue_ref": 8215,
+      "expected_diagnostic": "advanced-runtime.foreign-abi-unsafe-mixed-image",
+      "unsupported_boundary": "mixed-image paths and runtime identities must be canonical and package-owned"
+    },
+    {
+      "fixture": "tests/native/runtime/advanced_closure/negative_foreign_abi_stale_import.objc3",
+      "issue_ref": 8215,
+      "expected_diagnostic": "advanced-runtime.foreign-abi-stale-import",
+      "unsupported_boundary": "stale import surface replay keys cannot satisfy foreign ABI runtime closure"
+    },
+    {
+      "fixture": "tests/native/runtime/advanced_closure/negative_foreign_abi_unsupported_runtime_fallback.objc3",
+      "issue_ref": 8215,
+      "expected_diagnostic": "advanced-runtime.foreign-abi-unsupported-runtime-fallback",
+      "unsupported_boundary": "unsupported Swift/C++ runtime fallback cannot replace the narrow C ABI executable contract"
+    },
+    {
+      "fixture": "tests/native/runtime/advanced_closure/negative_distributed_actor_missing_transport.objc3",
+      "issue_ref": 8216,
+      "expected_diagnostic": "advanced-runtime.distributed-actor-missing-transport",
+      "unsupported_boundary": "Local mailbox helper traffic cannot satisfy distributed actor transport, serialization, identity, or remote failure semantics"
+    },
+    {
+      "fixture": "tests/native/runtime/advanced_closure/negative_distributed_actor_transport_overclaim.objc3",
+      "issue_ref": 8216,
+      "expected_diagnostic": "advanced-runtime.distributed-actor-transport-overclaim",
+      "unsupported_boundary": "Local mailbox identity, FIFO, drain, cancel, error, and shutdown evidence cannot be widened into distributed actor network transport evidence"
+    },
+    {
+      "fixture": "tests/native/runtime/advanced_closure/negative_actor_mailbox_stale_identity.objc3",
+      "issue_ref": 8216,
+      "expected_diagnostic": "advanced-runtime.actor-mailbox-stale-identity",
+      "unsupported_boundary": "Actor handles cannot be reused after mailbox shutdown as if they were fresh distributed identities"
+    },
+    {
+      "fixture": "tests/native/runtime/advanced_closure/negative_actor_mailbox_cancelled_queue.objc3",
+      "issue_ref": 8216,
+      "expected_diagnostic": "advanced-runtime.actor-mailbox-cancelled-queue",
+      "unsupported_boundary": "Cancelled queued actor messages cannot be drained as delivered work"
+    },
+    {
+      "fixture": "tests/native/runtime/advanced_closure/negative_actor_mailbox_error_without_replay.objc3",
+      "issue_ref": 8216,
+      "expected_diagnostic": "advanced-runtime.actor-mailbox-error-without-replay",
+      "unsupported_boundary": "Actor mailbox error evidence cannot be promoted without explicit replay identity and error-operation runtime fields"
+    },
+    {
+      "fixture": "tests/native/runtime/advanced_closure/negative_macro_package_replay_stale_cache.objc3",
+      "issue_ref": 8217,
+      "expected_diagnostic": "advanced-runtime.macro-package-replay-stale-cache",
+      "unsupported_boundary": "A stale macro cache key or stale package replay entry cannot satisfy runtime closure"
+    },
+    {
+      "fixture": "tests/native/runtime/advanced_closure/negative_macro_host_arbitrary_execution.objc3",
+      "issue_ref": 8217,
+      "expected_diagnostic": "advanced-runtime.macro-host-arbitrary-execution",
+      "unsupported_boundary": "Arbitrary macro-host execution or sandbox widening cannot replace checked package lock/trust/host/cache/input-output runtime replay metadata"
+    },
+    {
+      "fixture": "tests/native/runtime/advanced_closure/negative_macro_package_replay_host_mismatch.objc3",
+      "issue_ref": 8217,
+      "expected_diagnostic": "advanced-runtime.macro-package-replay-host-mismatch",
+      "unsupported_boundary": "Macro replay produced by a different host identity cannot satisfy the checked runtime cache contract"
+    },
+    {
+      "fixture": "tests/native/runtime/advanced_closure/negative_macro_package_replay_tampered_metadata.objc3",
+      "issue_ref": 8217,
+      "expected_diagnostic": "advanced-runtime.macro-package-replay-tampered-metadata",
+      "unsupported_boundary": "Runtime metadata whose package replay identity does not match the trusted lock/provenance row remains rejected"
+    },
+    {
+      "fixture": "tests/native/runtime/advanced_closure/negative_macro_package_replay_missing_metadata.objc3",
+      "issue_ref": 8217,
+      "expected_diagnostic": "advanced-runtime.macro-package-replay-missing-metadata",
+      "unsupported_boundary": "Missing macro provenance, package lock/trust identity, or runtime consumption metadata cannot satisfy package replay closure"
+    }
+  ]
+}

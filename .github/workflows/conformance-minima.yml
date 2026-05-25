@@ -2,6 +2,17 @@ name: conformance-minima
 
 on:
   workflow_dispatch:
+    inputs:
+      platform_host_evidence:
+        description: Optional hosted platform evidence gateway to run from this registered workflow
+        required: true
+        default: none
+        type: choice
+        options:
+          - none
+          - all
+          - linux-x64
+          - darwin-arm64
   pull_request:
     paths:
       - "tests/conformance/**"
@@ -9,6 +20,15 @@ on:
       - "tests/tooling/fixtures/cross_lane_e2e/**"
       - "scripts/check_conformance_suite.ps1"
       - "scripts/check_objc3c_cross_lane_e2e.py"
+      - "scripts/install_objc3c_ci_llvm.ps1"
+      - "scripts/install_objc3c_ci_llvm_darwin.sh"
+      - "scripts/install_objc3c_ci_llvm_linux.sh"
+      - "scripts/probe_objc3c_llvm_capabilities.py"
+      - "scripts/objc3c_llvm_capability_probe/**"
+      - "scripts/objc3c_workflow/action_catalog_core_capabilities.py"
+      - "scripts/objc3c_workflow/action_handlers_core_capabilities.py"
+      - "scripts/objc3c_workflow/actions/developer_tooling_llvm*.py"
+      - "scripts/objc3c_workflow/actions/hosted_llvm_summary.py"
       - "scripts/objc3c_workflow/actions/application_conformance.py"
       - "scripts/objc3c_workflow/action_catalog_conformance.py"
       - "scripts/objc3c_workflow/action_handlers_reporting_conformance_stress.py"
@@ -22,6 +42,15 @@ on:
       - "tests/tooling/fixtures/cross_lane_e2e/**"
       - "scripts/check_conformance_suite.ps1"
       - "scripts/check_objc3c_cross_lane_e2e.py"
+      - "scripts/install_objc3c_ci_llvm.ps1"
+      - "scripts/install_objc3c_ci_llvm_darwin.sh"
+      - "scripts/install_objc3c_ci_llvm_linux.sh"
+      - "scripts/probe_objc3c_llvm_capabilities.py"
+      - "scripts/objc3c_llvm_capability_probe/**"
+      - "scripts/objc3c_workflow/action_catalog_core_capabilities.py"
+      - "scripts/objc3c_workflow/action_handlers_core_capabilities.py"
+      - "scripts/objc3c_workflow/actions/developer_tooling_llvm*.py"
+      - "scripts/objc3c_workflow/actions/hosted_llvm_summary.py"
       - "scripts/objc3c_workflow/actions/application_conformance.py"
       - "scripts/objc3c_workflow/action_catalog_conformance.py"
       - "scripts/objc3c_workflow/action_handlers_reporting_conformance_stress.py"
@@ -36,13 +65,15 @@ concurrency:
 
 jobs:
   conformance-minima:
+    if: github.event_name != 'workflow_dispatch' || inputs.platform_host_evidence == 'none'
     runs-on: windows-latest
     timeout-minutes: 90
     env:
-      CMAKE_BUILD_PARALLEL_LEVEL: "4"
-      CL_MPCount: "4"
-      LLVM_PARALLEL_COMPILE_JOBS: "4"
-      OBJC3C_NATIVE_BUILD_PARALLELISM: "4"
+      CMAKE_BUILD_PARALLEL_LEVEL: "2"
+      CL_MPCount: "2"
+      LLVM_PARALLEL_COMPILE_JOBS: "2"
+      OBJC3C_NATIVE_BUILD_PARALLELISM: "2"
+      OBJC3C_CI_LLVM_VERSION: "22.1.6"
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -60,8 +91,17 @@ jobs:
       - name: Install Python workflow dependencies
         run: python -m pip install --upgrade jsonschema
 
+      - name: Install coherent LLVM toolchain
+        shell: pwsh
+        run: ./scripts/install_objc3c_ci_llvm.ps1
+
       - name: Install Node dependencies
         run: npm ci
+
+      - name: Require hosted LLVM native object emission
+        env:
+          OBJC3C_REQUIRE_HOSTED_NATIVE_OBJECT_EMISSION: "1"
+        run: npm run objc3c -- check-hosted-llvm-capabilities
 
       - name: Build native objc3c artifacts
         run: npm run objc3c -- build-native-binaries
@@ -71,3 +111,289 @@ jobs:
 
       - name: Verify conformance suite minima and required families
         run: npm run objc3c -- check-conformance-minima
+
+  platform-host-evidence-linux-x64:
+    if: github.event_name == 'workflow_dispatch' && (inputs.platform_host_evidence == 'all' || inputs.platform_host_evidence == 'linux-x64')
+    runs-on: ubuntu-24.04
+    timeout-minutes: 120
+    env:
+      OBJC3C_PLATFORM_ID: linux-x64
+      OBJC3C_PLATFORM_RUNNER_LABEL: ubuntu-24.04
+      OBJC3C_PLATFORM_EVIDENCE_ROOT: tmp/reports/platform-host-evidence/linux-x64
+      OBJC3C_NATIVE_EXECUTION_RUN_ID: platform-host-evidence-linux-x64
+      CMAKE_BUILD_PARALLEL_LEVEL: "2"
+      OBJC3C_NATIVE_BUILD_PARALLELISM: "2"
+      OBJC3C_CI_LLVM_VERSION: "22.1.6"
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install host toolchain prerequisites
+        id: toolchain
+        continue-on-error: true
+        run: bash scripts/install_objc3c_ci_llvm_linux.sh
+
+      - name: Install workflow dependencies
+        id: deps
+        continue-on-error: true
+        run: |
+          python -m pip install --upgrade jsonschema
+          npm ci
+
+      - name: Probe hosted LLVM capabilities
+        id: probe
+        continue-on-error: true
+        run: |
+          set +e
+          python scripts/probe_objc3c_llvm_capabilities.py --summary-out "$OBJC3C_PLATFORM_EVIDENCE_ROOT/llvm-capabilities.json"
+          probe_exit=$?
+          mkdir -p tmp/artifacts/objc3c-native/m144/llvm_capabilities
+          if [ -f "$OBJC3C_PLATFORM_EVIDENCE_ROOT/llvm-capabilities.json" ]; then
+            cp "$OBJC3C_PLATFORM_EVIDENCE_ROOT/llvm-capabilities.json" tmp/artifacts/objc3c-native/m144/llvm_capabilities/summary.json
+          fi
+          exit "$probe_exit"
+
+      - name: Build native objc3c artifacts
+        id: build
+        continue-on-error: true
+        run: npm run objc3c -- build-native-binaries
+
+      - name: Package runnable toolchain
+        id: package
+        continue-on-error: true
+        run: npm run objc3c -- package-runnable-toolchain
+
+      - name: Validate package install path
+        id: install
+        continue-on-error: true
+        run: npm run objc3c -- validate-packaging-channels-end-to-end
+
+      - name: Validate clean package install distribution
+        id: clean_install
+        continue-on-error: true
+        run: npm run objc3c -- validate-package-install-distribution --from-nothing
+
+      - name: Run hosted native execution smoke
+        id: execution
+        continue-on-error: true
+        run: npm run objc3c -- test-hosted-execution-smoke
+
+      - name: Ingest generated host evidence without promotion
+        id: ingest
+        if: always()
+        env:
+          OBJC3C_PLATFORM_EVIDENCE_DEPENDENCY_OUTCOME: ${{ steps.deps.outcome }}
+          OBJC3C_PLATFORM_EVIDENCE_TOOLCHAIN_SETUP_OUTCOME: ${{ steps.toolchain.outcome }}
+          OBJC3C_PLATFORM_EVIDENCE_TOOLCHAIN_PROBE_OUTCOME: ${{ steps.probe.outcome }}
+          OBJC3C_PLATFORM_EVIDENCE_BUILD_OUTCOME: ${{ steps.build.outcome }}
+          OBJC3C_PLATFORM_EVIDENCE_PACKAGE_OUTCOME: ${{ steps.package.outcome }}
+          OBJC3C_PLATFORM_EVIDENCE_INSTALL_OUTCOME: ${{ steps.install.outcome }}
+          OBJC3C_PLATFORM_EVIDENCE_CLEAN_INSTALL_OUTCOME: ${{ steps.clean_install.outcome }}
+          OBJC3C_PLATFORM_EVIDENCE_EXECUTION_OUTCOME: ${{ steps.execution.outcome }}
+        run: >
+          npm run objc3c -- ingest-platform-host-evidence --
+          --platform-id "$OBJC3C_PLATFORM_ID"
+          --runner-label "$OBJC3C_PLATFORM_RUNNER_LABEL"
+          --workflow-path ".github/workflows/conformance-minima.yml"
+          --report-out "$OBJC3C_PLATFORM_EVIDENCE_ROOT/host-evidence-report.json"
+          --requirements-out "$OBJC3C_PLATFORM_EVIDENCE_ROOT/promotion-readiness-requirements.json"
+          --review-candidate-out "$OBJC3C_PLATFORM_EVIDENCE_ROOT/review-candidate-source-truth.json"
+          --summary-out "$OBJC3C_PLATFORM_EVIDENCE_ROOT/ingestion-summary.json"
+
+      - name: Stage reviewed-source host evidence proposal
+        id: review
+        if: always()
+        run: >
+          npm run objc3c -- review-platform-host-evidence --
+          --platform-id "$OBJC3C_PLATFORM_ID"
+          --output "$OBJC3C_PLATFORM_EVIDENCE_ROOT/reviewed-source-inputs.proposed.json"
+
+      - name: Upload generated host evidence
+        id: upload
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: objc3c-platform-host-evidence-linux-x64
+          path: tmp/reports/platform-host-evidence/linux-x64/**
+          if-no-files-found: error
+
+      - name: Require hosted evidence gate success
+        if: always()
+        env:
+          OBJC3C_PLATFORM_EVIDENCE_GATE_OUTCOMES: >-
+            deps=${{ steps.deps.outcome }}
+            toolchain=${{ steps.toolchain.outcome }}
+            probe=${{ steps.probe.outcome }}
+            build=${{ steps.build.outcome }}
+            package=${{ steps.package.outcome }}
+            install=${{ steps.install.outcome }}
+            clean_install=${{ steps.clean_install.outcome }}
+            execution=${{ steps.execution.outcome }}
+            ingest=${{ steps.ingest.outcome }}
+            review=${{ steps.review.outcome }}
+            upload=${{ steps.upload.outcome }}
+        run: |
+          failed=0
+          for entry in $OBJC3C_PLATFORM_EVIDENCE_GATE_OUTCOMES; do
+            case "$entry" in
+              *=success) ;;
+              *)
+                echo "::error::hosted evidence gate failed: $entry"
+                failed=1
+                ;;
+            esac
+          done
+          exit "$failed"
+
+  platform-host-evidence-darwin-arm64:
+    if: github.event_name == 'workflow_dispatch' && (inputs.platform_host_evidence == 'all' || inputs.platform_host_evidence == 'darwin-arm64')
+    runs-on: macos-15
+    timeout-minutes: 120
+    env:
+      OBJC3C_PLATFORM_ID: darwin-arm64
+      OBJC3C_PLATFORM_RUNNER_LABEL: macos-15
+      OBJC3C_PLATFORM_EVIDENCE_ROOT: tmp/reports/platform-host-evidence/darwin-arm64
+      OBJC3C_NATIVE_EXECUTION_RUN_ID: platform-host-evidence-darwin-arm64
+      CMAKE_BUILD_PARALLEL_LEVEL: "2"
+      OBJC3C_NATIVE_BUILD_PARALLELISM: "2"
+      OBJC3C_CI_LLVM_VERSION: "22.1.6"
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install host toolchain prerequisites
+        id: toolchain
+        continue-on-error: true
+        run: bash scripts/install_objc3c_ci_llvm_darwin.sh
+
+      - name: Install workflow dependencies
+        id: deps
+        continue-on-error: true
+        run: |
+          python -m pip install --upgrade jsonschema
+          npm ci
+
+      - name: Probe hosted LLVM capabilities
+        id: probe
+        continue-on-error: true
+        run: |
+          set +e
+          python scripts/probe_objc3c_llvm_capabilities.py --summary-out "$OBJC3C_PLATFORM_EVIDENCE_ROOT/llvm-capabilities.json"
+          probe_exit=$?
+          mkdir -p tmp/artifacts/objc3c-native/m144/llvm_capabilities
+          if [ -f "$OBJC3C_PLATFORM_EVIDENCE_ROOT/llvm-capabilities.json" ]; then
+            cp "$OBJC3C_PLATFORM_EVIDENCE_ROOT/llvm-capabilities.json" tmp/artifacts/objc3c-native/m144/llvm_capabilities/summary.json
+          fi
+          exit "$probe_exit"
+
+      - name: Build native objc3c artifacts
+        id: build
+        continue-on-error: true
+        run: npm run objc3c -- build-native-binaries
+
+      - name: Package runnable toolchain
+        id: package
+        continue-on-error: true
+        run: npm run objc3c -- package-runnable-toolchain
+
+      - name: Validate package install path
+        id: install
+        continue-on-error: true
+        run: npm run objc3c -- validate-packaging-channels-end-to-end
+
+      - name: Validate clean package install distribution
+        id: clean_install
+        continue-on-error: true
+        run: npm run objc3c -- validate-package-install-distribution --from-nothing
+
+      - name: Run hosted native execution smoke
+        id: execution
+        continue-on-error: true
+        run: npm run objc3c -- test-hosted-execution-smoke
+
+      - name: Ingest generated host evidence without promotion
+        id: ingest
+        if: always()
+        env:
+          OBJC3C_PLATFORM_EVIDENCE_DEPENDENCY_OUTCOME: ${{ steps.deps.outcome }}
+          OBJC3C_PLATFORM_EVIDENCE_TOOLCHAIN_SETUP_OUTCOME: ${{ steps.toolchain.outcome }}
+          OBJC3C_PLATFORM_EVIDENCE_TOOLCHAIN_PROBE_OUTCOME: ${{ steps.probe.outcome }}
+          OBJC3C_PLATFORM_EVIDENCE_BUILD_OUTCOME: ${{ steps.build.outcome }}
+          OBJC3C_PLATFORM_EVIDENCE_PACKAGE_OUTCOME: ${{ steps.package.outcome }}
+          OBJC3C_PLATFORM_EVIDENCE_INSTALL_OUTCOME: ${{ steps.install.outcome }}
+          OBJC3C_PLATFORM_EVIDENCE_CLEAN_INSTALL_OUTCOME: ${{ steps.clean_install.outcome }}
+          OBJC3C_PLATFORM_EVIDENCE_EXECUTION_OUTCOME: ${{ steps.execution.outcome }}
+        run: >
+          npm run objc3c -- ingest-platform-host-evidence --
+          --platform-id "$OBJC3C_PLATFORM_ID"
+          --runner-label "$OBJC3C_PLATFORM_RUNNER_LABEL"
+          --workflow-path ".github/workflows/conformance-minima.yml"
+          --report-out "$OBJC3C_PLATFORM_EVIDENCE_ROOT/host-evidence-report.json"
+          --requirements-out "$OBJC3C_PLATFORM_EVIDENCE_ROOT/promotion-readiness-requirements.json"
+          --review-candidate-out "$OBJC3C_PLATFORM_EVIDENCE_ROOT/review-candidate-source-truth.json"
+          --summary-out "$OBJC3C_PLATFORM_EVIDENCE_ROOT/ingestion-summary.json"
+
+      - name: Stage reviewed-source host evidence proposal
+        id: review
+        if: always()
+        run: >
+          npm run objc3c -- review-platform-host-evidence --
+          --platform-id "$OBJC3C_PLATFORM_ID"
+          --output "$OBJC3C_PLATFORM_EVIDENCE_ROOT/reviewed-source-inputs.proposed.json"
+
+      - name: Upload generated host evidence
+        id: upload
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: objc3c-platform-host-evidence-darwin-arm64
+          path: tmp/reports/platform-host-evidence/darwin-arm64/**
+          if-no-files-found: error
+
+      - name: Require hosted evidence gate success
+        if: always()
+        env:
+          OBJC3C_PLATFORM_EVIDENCE_GATE_OUTCOMES: >-
+            deps=${{ steps.deps.outcome }}
+            toolchain=${{ steps.toolchain.outcome }}
+            probe=${{ steps.probe.outcome }}
+            build=${{ steps.build.outcome }}
+            package=${{ steps.package.outcome }}
+            install=${{ steps.install.outcome }}
+            clean_install=${{ steps.clean_install.outcome }}
+            execution=${{ steps.execution.outcome }}
+            ingest=${{ steps.ingest.outcome }}
+            review=${{ steps.review.outcome }}
+            upload=${{ steps.upload.outcome }}
+        run: |
+          failed=0
+          for entry in $OBJC3C_PLATFORM_EVIDENCE_GATE_OUTCOMES; do
+            case "$entry" in
+              *=success) ;;
+              *)
+                echo "::error::hosted evidence gate failed: $entry"
+                failed=1
+                ;;
+            esac
+          done
+          exit "$failed"

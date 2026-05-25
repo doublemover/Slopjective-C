@@ -1,0 +1,29 @@
+// Expected advanced-runtime diagnostic: advanced-runtime.foreign-abi-unsupported-runtime
+module AdvancedRuntimeClosureNegativeForeignAbiRuntimeMirroring;
+
+extern fn objc3_runtime_dispatch_typed_value(expected_return_kind: i32,
+                                             receiver: i32,
+                                             selector: SEL,
+                                             a0: i32,
+                                             a1: i32,
+                                             a2: i32,
+                                             a3: i32) -> i32;
+
+extern fn swiftActorOwnedCallback() -> i32
+    __attribute__((objc_foreign,
+                   objc_swift_name(named("ForeignRuntime.Actor.callback()")),
+                   objc_swift_actor_isolated,
+                   objc_package_entry(named("ForeignRuntime.actorCallback"))));
+
+extern fn cxxThrowsAcrossBoundary() -> i32
+    __attribute__((objc_foreign,
+                   objc_cxx_name(named("ForeignRuntime::throwsAcrossBoundary")),
+                   objc_cxx_throws,
+                   objc_package_entry(named("ForeignRuntime.cxxThrows"))));
+
+fn requiresForeignRuntimeMirror(selector: SEL) -> i32 {
+  // Unsupported foreign runtime mirroring must not be satisfied by typed
+  // dispatch projection, preserved Swift/C++ metadata, or package replay alone.
+  let projected = objc3_runtime_dispatch_typed_value(1, 1, selector, 0, 0, 0, 0);
+  return projected + swiftActorOwnedCallback() + cxxThrowsAcrossBoundary();
+}

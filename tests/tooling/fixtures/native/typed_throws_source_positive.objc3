@@ -1,0 +1,12 @@
+module TypedThrowsSourcePositive;
+
+extern fn decode(value: i32) throws(NSError) -> i32;
+extern fn classify(value: i32) throws(ErrorBox*) -> i32;
+
+fn usesBareThrows(value: i32) throws -> i32 {
+  return value;
+}
+
+fn main() -> i32 {
+  return 0;
+}

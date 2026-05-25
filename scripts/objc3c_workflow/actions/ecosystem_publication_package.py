@@ -4,11 +4,14 @@ from __future__ import annotations
 
 from .ecosystem_publication_package_contracts import (
     PACKAGE_AUTHORING_WORKFLOW_PY,
+    DIRECT_IMPORT_MODULE_SYNTAX_PY,
     PACKAGE_ECOSYSTEM_INTEGRATION_PY,
     PACKAGE_LOCK_PY,
     PACKAGE_MANAGER_MODEL_PY,
     PACKAGE_MIRROR_REPRODUCIBILITY_PY,
+    PACKAGE_NETWORK_PUBLICATION_PY,
     PACKAGE_REGISTRY_MODEL_PY,
+    PACKAGE_SECURITY_HARDENING_PY,
     PACKAGE_SIGN_PY,
     PACKAGE_INSTALL_DISTRIBUTION_PY,
     PACKAGE_OPERATIONS_PY,
@@ -30,8 +33,16 @@ def action_verify_package(rest: list[str]) -> int:
     return run_package_publication_action("package-verify", rest)
 
 
+def action_validate_package_security_hardening(_: list[str]) -> int:
+    return run_package_publication_action("validate-package-security-hardening")
+
+
 def action_validate_package_manager_model(_: list[str]) -> int:
     return run_package_publication_action("validate-package-manager-model")
+
+
+def action_validate_direct_import_module_syntax(_: list[str]) -> int:
+    return run_package_publication_action("validate-direct-import-module-syntax")
 
 
 def action_validate_package_authoring(_: list[str]) -> int:
@@ -48,6 +59,10 @@ def action_validate_package_registry_model(_: list[str]) -> int:
 
 def action_package_registry_resolve(rest: list[str]) -> int:
     return run_package_publication_action("package-registry-resolve", rest)
+
+
+def action_validate_package_network_publication(_: list[str]) -> int:
+    return run_package_publication_action("validate-package-network-publication")
 
 
 def action_validate_package_ecosystem(_: list[str]) -> int:
@@ -91,11 +106,14 @@ def action_validate_runnable_package_ecosystem(_: list[str]) -> int:
 
 __all__ = [
     "PACKAGE_AUTHORING_WORKFLOW_PY",
+    "DIRECT_IMPORT_MODULE_SYNTAX_PY",
     "PACKAGE_ECOSYSTEM_INTEGRATION_PY",
     "PACKAGE_LOCK_PY",
     "PACKAGE_MANAGER_MODEL_PY",
     "PACKAGE_MIRROR_REPRODUCIBILITY_PY",
+    "PACKAGE_NETWORK_PUBLICATION_PY",
     "PACKAGE_REGISTRY_MODEL_PY",
+    "PACKAGE_SECURITY_HARDENING_PY",
     "PACKAGE_SIGN_PY",
     "PACKAGE_INSTALL_DISTRIBUTION_PY",
     "PACKAGE_OPERATIONS_PY",
@@ -104,6 +122,7 @@ __all__ = [
     "action_build_package_lock",
     "action_sign_package",
     "action_verify_package",
+    "action_validate_package_security_hardening",
     "action_validate_package_manager_model",
     "action_package_registry_resolve",
     "action_package_install",
@@ -111,10 +130,12 @@ __all__ = [
     "action_package_rollback",
     "action_package_uninstall",
     "action_package_update",
+    "action_validate_direct_import_module_syntax",
     "action_validate_package_authoring",
     "action_validate_package_ecosystem",
     "action_validate_package_install_distribution",
     "action_validate_package_mirror",
+    "action_validate_package_network_publication",
     "action_validate_package_operations",
     "action_validate_package_registry_model",
     "action_validate_runnable_package_ecosystem",

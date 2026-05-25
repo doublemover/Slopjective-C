@@ -30,6 +30,8 @@ Replayable public workflow actions:
 - `npm run objc3c -- check-developer-diagnostic-quality`
 - `npm run objc3c -- trace-runtime-debug`
 - `npm run objc3c -- trace-compile-stages`
+- `npm run objc3c -- validate-debug-source-maps`
+- `npm run objc3c -- inspect-debug-map`
 - `npm run objc3c -- validate-debugger-integration`
 - `npm run objc3c -- test-capability-routed-source-parity`
 
@@ -152,6 +154,12 @@ Downstream issues must extend these exact surfaces before inventing new ones.
   - `npm run objc3c -- trace-compile-stages`
 - compose the deterministic runtime debug trace through the public command surface:
   - `npm run objc3c -- trace-runtime-debug`
+- validate bounded source-map, native line-table, native debug-info, statement-stepping, and inline-frame preservation evidence:
+  - `npm run objc3c -- validate-debug-source-maps`
+- inspect the bounded debug-map evidence envelope:
+  - `npm run objc3c -- inspect-debug-map`
+- validate bounded LLDB replay commands, source-backed stepping plans, and value-inspection records:
+  - `npm run objc3c -- validate-debugger-integration`
 - inspect the combined editor tooling surface:
   - `npm run objc3c -- inspect-editor-tooling`
 - format one supported objc3c source through the canonical Objective-C 3 formatter subset:
@@ -333,12 +341,21 @@ contracts, not by local executable discovery text.
 - local `check-llvm-capabilities` probe output is diagnostic-only, even when it
   finds clang and llc on the current machine
 - hosted execution support requires a hosted LLVM summary with canonical mode,
-  `ok=true`, clang availability, llc availability, and llc `--filetype=obj`
-  support
+  `ok=true`, clang and clang++ availability, llc availability,
+  llc `--filetype=obj` support, llvm-ar archive tooling, and llvm-config
+  header/library discovery
 - capability-routed source parity is publishable only when the same hosted
   object-emission truth is available
 - fail-closed payload fields must include source kind, local-diagnostic status,
-  hosted execution support, hosted source parity support, and failure reasons
+  hosted native object-emission support, hosted package/archive support, hosted
+  header/library support, hosted execution support, hosted source parity
+  support, and failure reasons
+- hosted runner payloads also publish native object-emission status. Missing
+  hosted `llc` records `native_object_emission_missing_llc`, unavailable
+  `--filetype=obj` records `native_object_emission_filetype_obj_unavailable`,
+  and neither status can publish parity, package, object, or execution success.
+  Missing hosted llvm-ar or llvm-config discovery blocks package and native
+  execution support without reclassifying native object emission itself.
 
 ## Debugger, Source-Map, And Stepping Semantics
 
@@ -349,10 +366,15 @@ availability rules.
   coordinates
 - object-backed symbol visibility comes from the emitted object artifact and the
   runtime inspector symbol inventory path
-- statement, function, method, and message-send stepping claims are publishable
-  only through the replayable debugger integration contract, where every
-  supported step has source-map, debug-map, native line-table, native symbol,
-  and object/debug line anchors
+- statement, function, method, message-send, and property-accessor stepping
+  claims are publishable only through the replayable debugger integration
+  contract, where every supported step has source-map, debug-map, native
+  line-table, native symbol, object/debug line, statement-unit, runtime-context,
+  and emitted native-debug-info anchors
+- step-in, step-over, and step-out are all explicit operations; method calls,
+  property accessors, category methods, protocol method bodies, and reflection
+  probe calls must be represented by public production artifact records rather
+  than private testing snapshots
 - unsupported debug configurations, optimized-away statements, unsupported
   handles, malformed metadata, unsupported plugin commands, and source-map /
   object digest mismatches remain fail-closed diagnostics
@@ -362,7 +384,8 @@ The debugger integration surface is replay-driven rather than interactive-only.
 LLDB command model, runtime value-inspection rows, and source-map-backed
 stepping records. `npm run objc3c -- validate-debugger-integration -- --plan`
 emits the command script and stepping plan. No stepping record is valid unless
-it resolves back to a compiler-owned source map entry and native line-table row.
+it resolves back to a compiler-owned source map entry, native line-table row,
+runtime context, statement unit, and emitted native debug-info evidence link.
 
 The runtime debug trace and editor debug map may continue to describe their own
 trace lanes conservatively; debugger stepping support is owned by the replayable

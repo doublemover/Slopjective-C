@@ -1,0 +1,25 @@
+// Expected advanced-runtime diagnostic: advanced-runtime.macro-host-arbitrary-execution
+module AdvancedRuntimeClosureNegativeMacroHostArbitraryExecution;
+
+pure fn arbitraryHostReplayMacro() -> i32
+    __attribute__((objc_macro(named("AdvancedRuntimeArbitraryHostReplayMacro")),
+                   objc_macro_package(named("std.metaprogramming.advanced-runtime")),
+                   objc_macro_provenance(named("sha256:advanced-runtime-arbitrary-host")),
+                   objc_macro_cache_key(named("AdvancedRuntimeArbitraryHostReplayMacro:v1")),
+                   objc_macro_host_identity(named("objc3c-host:unchecked-process")),
+                   objc_macro_sandbox(named("arbitrary-process+network+filesystem")))) {
+  return 7;
+}
+
+extern fn arbitraryHostReplayEntry(selector: SEL) -> i32
+    __attribute__((objc_foreign,
+                   objc_import_module(named("AdvancedRuntimeClosureKit")),
+                   objc_mixed_image(named("AdvancedRuntimeClosureKitCore")),
+                   objc_package_entry(named("AdvancedRuntimeClosureKit.arbitraryHostReplay"))));
+
+fn invalidArbitraryHostReplay() -> i32 {
+  // Arbitrary macro host execution is not package replay proof. The runtime
+  // contract must consume checked macro_host_identity, cache_validation_status,
+  // package lock/trust identity, and runtime_consumption_artifact_identity.
+  return arbitraryHostReplayMacro() + arbitraryHostReplayEntry(nil);
+}

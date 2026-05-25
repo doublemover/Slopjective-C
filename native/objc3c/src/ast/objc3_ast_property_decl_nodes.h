@@ -28,6 +28,7 @@ struct Objc3PropertyDecl {
   bool instancetype_spelling = false;
   bool object_pointer_type_spelling = false;
   std::string object_pointer_type_name;
+  Objc3ValueOptionalTypeDescriptor value_optional;
   std::string typecheck_family_symbol;
   bool has_generic_suffix = false;
   bool generic_suffix_terminated = true;

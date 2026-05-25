@@ -1,0 +1,80 @@
+{
+  "$schema": "https://objc3c.dev/schemas/objc3c-typed-keypath-debugger-lowering-v1.schema.json",
+  "contract_id": "objc3c.typed-keypath.debugger-lowering-metadata.v1",
+  "issue_refs": [
+    8211,
+    8212,
+    8202
+  ],
+  "source_truth": {
+    "artifact_struct": "native/objc3c/src/ir/objc3_ir_emitter_context.h",
+    "artifact_collection": "native/objc3c/src/ir/objc3_ir_canonical_literal_pools.cpp",
+    "artifact_emission": "native/objc3c/src/ir/objc3_ir_runtime_artifact_emission.cpp",
+    "artifact_materialization": "native/objc3c/src/ir/objc3_ir_value_materialization.cpp",
+    "semantic_chain_validation": "native/objc3c/src/sema/objc3_semantic_passes_typed_keypath_dispatch_helpers.inc",
+    "runtime_descriptor_shape": "native/objc3c/src/runtime/metadata/runtime_emitted_records.h",
+    "runtime_slot_match": "native/objc3c/src/runtime/selectors/keypath_descriptor.h",
+    "lowering_contract": "native/objc3c/src/lower/contracts/optional_keypath_lowering_contracts.h",
+    "positive_fixture": "tests/tooling/fixtures/native/typed_keypath_artifact_positive.objc3",
+    "expanded_positive_fixture": "tests/tooling/fixtures/native/typed_keypath_nested_chain_positive.objc3",
+    "fail_closed_fixture": "tests/tooling/fixtures/native/typed_keypath_nested_chain_fail_closed.objc3"
+  },
+  "required_descriptor_fields": [
+    "ordinal",
+    "root_name",
+    "component_path",
+    "profile",
+    "generic_metadata_replay_key",
+    "component_owner_identity_path",
+    "component_member_identity_path",
+    "component_type_identity_path",
+    "source_span_id",
+    "root_type_identity",
+    "value_type_identity",
+    "object_model_owner_identity",
+    "object_model_member_identity",
+    "debug_source_map_key",
+    "diagnostic_anchor_key",
+    "source_line",
+    "source_column",
+    "root_is_self",
+    "fallback_interpretation_allowed"
+  ],
+  "fail_closed_invariants": [
+    "descriptor emission fails when debugger metadata strings are not in the runtime string pool",
+    "descriptor emission fails when type/source/object-model/debug metadata is incomplete",
+    "semantic lowering fails when a nested component lacks concrete object metadata",
+    "semantic lowering fails when category-merged property metadata is ambiguous",
+    "semantic lowering fails when any typed keypath component carries unsupported generic metadata",
+    "IR materialization fails when a typed keypath artifact is fallback-enabled",
+    "IR materialization fails when a typed keypath artifact lacks source-map or diagnostic anchors",
+    "runtime consumers must use descriptor component owner/member/type metadata instead of reparsing keypath text"
+  ],
+  "debugger_evidence_policy": {
+    "fallback_interpretation_allowed": false,
+    "source_span_required": true,
+    "type_identity_required": true,
+    "component_owner_member_type_identity_required": true,
+    "object_model_owner_member_required": true,
+    "source_map_key_required": true,
+    "diagnostic_anchor_required": true
+  },
+  "supported_keypath_shapes": [
+    "class-root single-component object properties",
+    "class-root nested object-property chains whose intermediate components resolve to concrete non-generic object metadata",
+    "self-root property chains inside concrete implementation methods"
+  ],
+  "reserved_keypath_shapes": [
+    "id-root chains without concrete owner metadata",
+    "missing properties",
+    "ambiguous category-merged property metadata",
+    "generic component paths",
+    "runtime evaluation beyond descriptor handle materialization"
+  ],
+  "deferred_umbrella_rows": [
+    "capability_matrix: #8211 typed keypath lowering carries debugger-grade nested component type/source/object-model metadata",
+    "evidence_map: #8211 links IR typed-keypath descriptor emission to source-map, diagnostic, and component metadata",
+    "umbrella_readiness: #8212/#8202 remains reserved until lead validation compiles native IR and runs typed-keypath fixtures"
+  ],
+  "integration_notes": []
+}

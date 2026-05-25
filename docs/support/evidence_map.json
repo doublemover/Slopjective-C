@@ -237,6 +237,714 @@
       "path": "native/objc3c/src/sema/objc3_semantic_error_handling_try_do_catch_summary.cpp"
     },
     {
+      "capability_id": "language.errors.typed-throws",
+      "support_claim": "objc3c.behavior.language.errors.typed-throws",
+      "evidence_kind": "diagnostic",
+      "path": "tests/tooling/fixtures/native/recovery/negative/negative_typed_throws_reserved.objc3"
+    },
+    {
+      "capability_id": "language.errors.typed-throws",
+      "support_claim": "objc3c.behavior.language.errors.typed-throws",
+      "evidence_kind": "diagnostic",
+      "path": "tests/tooling/fixtures/native/recovery/negative/negative_typed_throws_empty_payload_reserved.objc3"
+    },
+    {
+      "capability_id": "language.errors.typed-throws",
+      "support_claim": "objc3c.behavior.language.errors.typed-throws",
+      "evidence_kind": "diagnostic",
+      "path": "tests/tooling/fixtures/native/recovery/negative/negative_typed_throws_multi_payload_reserved.objc3"
+    },
+    {
+      "capability_id": "language.errors.typed-throws",
+      "support_claim": "objc3c.behavior.language.errors.typed-throws",
+      "evidence_kind": "diagnostic",
+      "path": "tests/tooling/fixtures/native/recovery/negative/negative_typed_throws_erasure_mismatch_reserved.objc3"
+    },
+    {
+      "capability_id": "language.errors.typed-throws",
+      "support_claim": "objc3c.behavior.language.errors.typed-throws",
+      "evidence_kind": "diagnostic",
+      "path": "tests/tooling/fixtures/native/recovery/negative/negative_typed_throws_protocol_mismatch.objc3"
+    },
+    {
+      "capability_id": "language.errors.typed-throws",
+      "support_claim": "objc3c.behavior.language.errors.typed-throws",
+      "evidence_kind": "diagnostic",
+      "path": "tests/tooling/fixtures/native/recovery/negative/negative_typed_throws_incompatible_catch.objc3"
+    },
+    {
+      "capability_id": "language.errors.typed-throws",
+      "support_claim": "objc3c.behavior.language.errors.typed-throws",
+      "evidence_kind": "diagnostic",
+      "path": "tests/tooling/fixtures/native/recovery/negative/negative_typed_throws_foreign_carrier_catch.objc3"
+    },
+    {
+      "capability_id": "language.errors.typed-throws",
+      "support_claim": "objc3c.behavior.language.errors.typed-throws",
+      "evidence_kind": "diagnostic",
+      "path": "tests/tooling/fixtures/native/recovery/negative/negative_typed_throws_method_incompatible_catch.objc3"
+    },
+    {
+      "capability_id": "language.errors.typed-throws",
+      "support_claim": "objc3c.behavior.language.errors.typed-throws",
+      "evidence_kind": "diagnostic",
+      "path": "tests/tooling/fixtures/native/recovery/negative/negative_typed_throws_method_foreign_carrier_catch.objc3"
+    },
+    {
+      "capability_id": "language.errors.typed-throws",
+      "support_claim": "objc3c.behavior.language.errors.typed-throws",
+      "evidence_kind": "diagnostic",
+      "path": "tests/tooling/fixtures/native/recovery/negative/negative_typed_throws_async_propagation_unsupported.objc3"
+    },
+    {
+      "capability_id": "language.errors.typed-throws",
+      "support_claim": "objc3c.behavior.language.errors.typed-throws",
+      "evidence_kind": "test",
+      "path": "tests/tooling/fixtures/native/execution/positive/typed_throws_runtime_catch_bridge_positive.objc3",
+      "command": "npm run objc3c -- test-execution-smoke"
+    },
+    {
+      "capability_id": "language.errors.typed-throws",
+      "support_claim": "objc3c.behavior.language.errors.typed-throws",
+      "evidence_kind": "test",
+      "path": "tests/tooling/fixtures/native/execution/positive/typed_throws_runtime_message_send_catch_positive.objc3",
+      "command": "npm run objc3c -- test-execution-smoke"
+    },
+    {
+      "capability_id": "language.errors.typed-throws",
+      "support_claim": "objc3c.behavior.language.errors.typed-throws",
+      "evidence_kind": "test",
+      "path": "tests/tooling/fixtures/native/execution/positive/typed_throws_runtime_try_optional_positive.objc3",
+      "command": "npm run objc3c -- test-execution-smoke"
+    },
+    {
+      "capability_id": "language.errors.typed-throws",
+      "support_claim": "objc3c.behavior.language.errors.typed-throws",
+      "evidence_kind": "schema",
+      "path": "schemas/objc3c-typed-throws-effect-contract-v1.schema.json"
+    },
+    {
+      "capability_id": "language.errors.typed-throws",
+      "support_claim": "objc3c.behavior.language.errors.typed-throws",
+      "evidence_kind": "source",
+      "path": "native/objc3c/src/sema/objc3_typed_throws_effect_contract.h"
+    },
+    {
+      "capability_id": "language.errors.typed-throws",
+      "support_claim": "objc3c.behavior.language.errors.typed-throws",
+      "evidence_kind": "source",
+      "path": "native/objc3c/src/sema/objc3_semantic_error_handling_try_do_catch_do_scope.inc"
+    },
+    {
+      "capability_id": "language.errors.typed-throws",
+      "support_claim": "objc3c.behavior.language.errors.typed-throws",
+      "evidence_kind": "source",
+      "path": "native/objc3c/src/sema/objc3_semantic_error_handling_try_do_catch_operand_surface.inc"
+    },
+    {
+      "capability_id": "language.errors.typed-throws",
+      "support_claim": "objc3c.behavior.language.errors.typed-throws",
+      "evidence_kind": "source",
+      "path": "native/objc3c/src/sema/objc3_semantic_signature_compatibility.cpp"
+    },
+    {
+      "capability_id": "language.errors.typed-throws",
+      "support_claim": "objc3c.behavior.language.errors.typed-throws",
+      "evidence_kind": "source",
+      "path": "native/objc3c/src/ir/objc3_ir_function_signature_model.cpp"
+    },
+    {
+      "capability_id": "language.errors.typed-throws",
+      "support_claim": "objc3c.behavior.language.errors.typed-throws",
+      "evidence_kind": "source",
+      "path": "native/objc3c/src/ir/objc3_ir_direct_call_emission.cpp"
+    },
+    {
+      "capability_id": "language.errors.typed-throws",
+      "support_claim": "objc3c.behavior.language.errors.typed-throws",
+      "evidence_kind": "source",
+      "path": "native/objc3c/src/ir/objc3_ir_expression_emission_call.cpp"
+    },
+    {
+      "capability_id": "language.errors.typed-throws",
+      "support_claim": "objc3c.behavior.language.errors.typed-throws",
+      "evidence_kind": "source",
+      "path": "native/objc3c/src/ir/objc3_ir_runtime_dispatch_calls.cpp"
+    },
+    {
+      "capability_id": "language.errors.typed-throws",
+      "support_claim": "objc3c.behavior.language.errors.typed-throws",
+      "evidence_kind": "source",
+      "path": "native/objc3c/src/ir/objc3_ir_runtime_dispatch_declarations.cpp"
+    },
+    {
+      "capability_id": "language.errors.typed-throws",
+      "support_claim": "objc3c.behavior.language.errors.typed-throws",
+      "evidence_kind": "source",
+      "path": "native/objc3c/src/ir/objc3_ir_statement_block_emission.cpp"
+    },
+    {
+      "capability_id": "language.errors.typed-throws",
+      "support_claim": "objc3c.behavior.language.errors.typed-throws",
+      "evidence_kind": "source",
+      "path": "native/objc3c/src/ir/objc3_ir_function_definition_emission.cpp"
+    },
+    {
+      "capability_id": "language.errors.typed-throws",
+      "support_claim": "objc3c.behavior.language.errors.typed-throws",
+      "evidence_kind": "source",
+      "path": "native/objc3c/src/runtime/errors/catch_filter.cpp"
+    },
+    {
+      "capability_id": "language.errors.typed-throws",
+      "support_claim": "objc3c.behavior.language.errors.typed-throws",
+      "evidence_kind": "source",
+      "path": "native/objc3c/src/runtime/errors/error_bridge_kind.cpp"
+    },
+    {
+      "capability_id": "language.errors.typed-throws",
+      "support_claim": "objc3c.behavior.language.errors.typed-throws",
+      "evidence_kind": "source",
+      "path": "native/objc3c/src/runtime/public/objc3_runtime_result_entrypoint_contract.h"
+    },
+    {
+      "capability_id": "language.errors.typed-throws",
+      "support_claim": "objc3c.behavior.language.errors.typed-throws",
+      "evidence_kind": "source",
+      "path": "native/objc3c/src/runtime/public/objc3_runtime_diagnostic_contract.h"
+    },
+    {
+      "capability_id": "language.errors.typed-throws",
+      "support_claim": "objc3c.behavior.language.errors.typed-throws",
+      "evidence_kind": "source",
+      "path": "native/objc3c/src/runtime/dispatch/dispatch_api.cpp"
+    },
+    {
+      "capability_id": "language.errors.typed-throws",
+      "support_claim": "objc3c.behavior.language.errors.typed-throws",
+      "evidence_kind": "source",
+      "path": "native/objc3c/src/runtime/dispatch/strict_dispatch_execution.cpp"
+    },
+    {
+      "capability_id": "language.errors.typed-throws",
+      "support_claim": "objc3c.behavior.language.errors.typed-throws",
+      "evidence_kind": "source",
+      "path": "tests/tooling/fixtures/native/typed_throws_semantic_effect_identity.contract.json"
+    },
+    {
+      "capability_id": "language.errors.typed-throws",
+      "support_claim": "objc3c.behavior.language.errors.typed-throws",
+      "evidence_kind": "source",
+      "path": "tests/tooling/fixtures/native/typed_throws_catch_bridge_positive.objc3"
+    },
+    {
+      "capability_id": "language.errors.typed-throws",
+      "support_claim": "objc3c.behavior.language.errors.typed-throws",
+      "evidence_kind": "source",
+      "path": "tests/tooling/fixtures/native/language_evolution_typed_throws_value_optionals_contract.json"
+    },
+    {
+      "capability_id": "language.errors.typed-throws",
+      "support_claim": "objc3c.behavior.language.errors.typed-throws",
+      "evidence_kind": "source",
+      "path": "native/objc3c/src/artifacts/objc3_frontend_textual_interface_payload_artifact.cpp"
+    },
+    {
+      "capability_id": "language.errors.typed-throws",
+      "support_claim": "objc3c.behavior.language.errors.typed-throws",
+      "evidence_kind": "source",
+      "path": "native/objc3c/src/artifacts/objc3_frontend_textual_interface_payload_import.cpp"
+    },
+    {
+      "capability_id": "language.types.value-optionals",
+      "support_claim": "objc3c.behavior.language.types.value-optionals",
+      "evidence_kind": "diagnostic",
+      "path": "tests/tooling/fixtures/native/recovery/negative/negative_value_optional_canonical_reserved.objc3"
+    },
+    {
+      "capability_id": "language.types.value-optionals",
+      "support_claim": "objc3c.behavior.language.types.value-optionals",
+      "evidence_kind": "diagnostic",
+      "path": "tests/tooling/fixtures/native/recovery/negative/negative_value_optional_nullable_pointer_conversion_reserved.objc3"
+    },
+    {
+      "capability_id": "language.types.value-optionals",
+      "support_claim": "objc3c.behavior.language.types.value-optionals",
+      "evidence_kind": "diagnostic",
+      "path": "tests/tooling/fixtures/native/recovery/negative/negative_value_optional_nil_scalar_coercion_reserved.objc3"
+    },
+    {
+      "capability_id": "language.types.value-optionals",
+      "support_claim": "objc3c.behavior.language.types.value-optionals",
+      "evidence_kind": "diagnostic",
+      "path": "tests/tooling/fixtures/native/recovery/negative/negative_value_optional_nested_lowercase_alias_reserved.objc3"
+    },
+    {
+      "capability_id": "language.types.value-optionals",
+      "support_claim": "objc3c.behavior.language.types.value-optionals",
+      "evidence_kind": "diagnostic",
+      "path": "tests/tooling/fixtures/native/recovery/negative/negative_value_optional_property_layout_unsupported.objc3"
+    },
+    {
+      "capability_id": "language.types.value-optionals",
+      "support_claim": "objc3c.behavior.language.types.value-optionals",
+      "evidence_kind": "source",
+      "path": "native/objc3c/src/ir/objc3_ir_value_optional_carrier_model.h"
+    },
+    {
+      "capability_id": "language.types.value-optionals",
+      "support_claim": "objc3c.behavior.language.types.value-optionals",
+      "evidence_kind": "diagnostic",
+      "path": "tests/tooling/fixtures/native/recovery/negative/negative_value_optional_nullable_suffix_mismatch.objc3"
+    },
+    {
+      "capability_id": "language.types.value-optionals",
+      "support_claim": "objc3c.behavior.language.types.value-optionals",
+      "evidence_kind": "diagnostic",
+      "path": "tests/tooling/fixtures/native/value_optionals_layout_mismatch_negative.contract.json"
+    },
+    {
+      "capability_id": "language.types.value-optionals",
+      "support_claim": "objc3c.behavior.language.types.value-optionals",
+      "evidence_kind": "diagnostic",
+      "path": "tests/tooling/fixtures/native/value_optionals_lowering_claim_negative.contract.json"
+    },
+    {
+      "capability_id": "language.types.value-optionals",
+      "support_claim": "objc3c.behavior.language.types.value-optionals",
+      "evidence_kind": "diagnostic",
+      "path": "tests/tooling/fixtures/native/value_optionals_interface_mismatch_negative.contract.json"
+    },
+    {
+      "capability_id": "language.types.value-optionals",
+      "support_claim": "objc3c.behavior.language.types.value-optionals",
+      "evidence_kind": "test",
+      "path": "tests/tooling/fixtures/native/execution/positive/value_optionals_runtime_abi_positive.objc3",
+      "command": "npm run objc3c -- test-execution-smoke"
+    },
+    {
+      "capability_id": "language.types.value-optionals",
+      "support_claim": "objc3c.behavior.language.types.value-optionals",
+      "evidence_kind": "source",
+      "path": "tests/tooling/fixtures/native/language_evolution_typed_throws_value_optionals_contract.json"
+    },
+    {
+      "capability_id": "language.types.value-optionals",
+      "support_claim": "objc3c.behavior.language.types.value-optionals",
+      "evidence_kind": "source",
+      "path": "tests/tooling/fixtures/native/value_optionals_contract_positive.json"
+    },
+    {
+      "capability_id": "language.types.value-optionals",
+      "support_claim": "objc3c.behavior.language.types.value-optionals",
+      "evidence_kind": "diagnostic",
+      "path": "tests/tooling/fixtures/native/value_optionals_executable_semantics_negative.contract.json"
+    },
+    {
+      "capability_id": "language.types.value-optionals",
+      "support_claim": "objc3c.behavior.language.types.value-optionals",
+      "evidence_kind": "schema",
+      "path": "schemas/objc3c-value-optionals-contract-v1.schema.json"
+    },
+    {
+      "capability_id": "language.types.value-optionals",
+      "support_claim": "objc3c.behavior.language.types.value-optionals",
+      "evidence_kind": "source",
+      "path": "native/objc3c/src/ast/objc3_ast_value_optional_type.h"
+    },
+    {
+      "capability_id": "language.types.value-optionals",
+      "support_claim": "objc3c.behavior.language.types.value-optionals",
+      "evidence_kind": "source",
+      "path": "native/objc3c/src/ir/objc3_ir_expression_emission_call.cpp"
+    },
+    {
+      "capability_id": "language.types.value-optionals",
+      "support_claim": "objc3c.behavior.language.types.value-optionals",
+      "evidence_kind": "source",
+      "path": "native/objc3c/src/lower/contracts/value_optional_lowering_contracts.h"
+    },
+    {
+      "capability_id": "language.types.value-optionals",
+      "support_claim": "objc3c.behavior.language.types.value-optionals",
+      "evidence_kind": "source",
+      "path": "native/objc3c/src/runtime/public/objc3_runtime_value_optional_contract.h"
+    },
+    {
+      "capability_id": "language.types.value-optionals",
+      "support_claim": "objc3c.behavior.language.types.value-optionals",
+      "evidence_kind": "source",
+      "path": "native/objc3c/src/runtime/values/value_optional.cpp"
+    },
+    {
+      "capability_id": "language.types.value-optionals",
+      "support_claim": "objc3c.behavior.language.types.value-optionals",
+      "evidence_kind": "source",
+      "path": "native/objc3c/src/artifacts/objc3_frontend_textual_interface_payload_artifact.cpp"
+    },
+    {
+      "capability_id": "language.types.value-optionals",
+      "support_claim": "objc3c.behavior.language.types.value-optionals",
+      "evidence_kind": "source",
+      "path": "native/objc3c/src/artifacts/objc3_frontend_textual_interface_payload_import.cpp"
+    },
+    {
+      "capability_id": "language.control-flow.statement-guarded-match",
+      "support_claim": "objc3c.behavior.language.control-flow.statement-guarded-match",
+      "evidence_kind": "test",
+      "path": "tests/tooling/fixtures/native/recovery/positive/match_guarded_pattern_statement.objc3",
+      "command": "npm run objc3c -- validate-conformance-corpus"
+    },
+    {
+      "capability_id": "language.control-flow.statement-guarded-match",
+      "support_claim": "objc3c.behavior.language.control-flow.statement-guarded-match",
+      "evidence_kind": "test",
+      "path": "tests/tooling/fixtures/native/recovery/negative/negative_guarded_match_pattern_non_bool.objc3"
+    },
+    {
+      "capability_id": "language.control-flow.statement-guarded-match",
+      "support_claim": "objc3c.behavior.language.control-flow.statement-guarded-match",
+      "evidence_kind": "diagnostic",
+      "path": "tests/tooling/fixtures/native/recovery/negative/negative_match_statement_fat_arrow_ambiguous.objc3"
+    },
+    {
+      "capability_id": "language.control-flow.statement-guarded-match",
+      "support_claim": "objc3c.behavior.language.control-flow.statement-guarded-match",
+      "evidence_kind": "diagnostic",
+      "path": "tests/tooling/fixtures/native/recovery/negative/negative_guarded_match_pattern_reserved.objc3"
+    },
+    {
+      "capability_id": "language.control-flow.statement-guarded-match",
+      "support_claim": "objc3c.behavior.language.control-flow.statement-guarded-match",
+      "evidence_kind": "source",
+      "path": "native/objc3c/src/parse/objc3_parser_core_statement_switch_parsing_match_case_diagnostics.inc"
+    },
+    {
+      "capability_id": "language.control-flow.statement-guarded-match",
+      "support_claim": "objc3c.behavior.language.control-flow.statement-guarded-match",
+      "evidence_kind": "source",
+      "path": "native/objc3c/src/sema/objc3_semantic_match_exhaustiveness.cpp"
+    },
+    {
+      "capability_id": "language.control-flow.statement-guarded-match",
+      "support_claim": "objc3c.behavior.language.control-flow.statement-guarded-match",
+      "evidence_kind": "source",
+      "path": "native/objc3c/src/pipeline/frontend_control_flow_source_closure_helpers.cpp"
+    },
+    {
+      "capability_id": "language.control-flow.statement-guarded-match",
+      "support_claim": "objc3c.behavior.language.control-flow.statement-guarded-match",
+      "evidence_kind": "source",
+      "path": "tests/tooling/fixtures/native/match_guarded_pattern_language_evolution_contract.json"
+    },
+    {
+      "capability_id": "language.control-flow.match-expression",
+      "support_claim": "objc3c.behavior.language.control-flow.match-expression",
+      "evidence_kind": "test",
+      "path": "tests/tooling/fixtures/native/recovery/positive/match_expression_literal_result.objc3",
+      "command": "npm run objc3c -- validate-conformance-corpus"
+    },
+    {
+      "capability_id": "language.control-flow.match-expression",
+      "support_claim": "objc3c.behavior.language.control-flow.match-expression",
+      "evidence_kind": "test",
+      "path": "tests/tooling/fixtures/native/recovery/positive/match_expression_guarded_bool.objc3"
+    },
+    {
+      "capability_id": "language.control-flow.match-expression",
+      "support_claim": "objc3c.behavior.language.control-flow.match-expression",
+      "evidence_kind": "test",
+      "path": "tests/tooling/fixtures/native/recovery/positive/match_expression_result_case_semantic.objc3"
+    },
+    {
+      "capability_id": "language.control-flow.match-expression",
+      "support_claim": "objc3c.behavior.language.control-flow.match-expression",
+      "evidence_kind": "diagnostic",
+      "path": "tests/tooling/fixtures/native/recovery/negative/negative_match_expression_non_exhaustive.objc3"
+    },
+    {
+      "capability_id": "language.control-flow.match-expression",
+      "support_claim": "objc3c.behavior.language.control-flow.match-expression",
+      "evidence_kind": "diagnostic",
+      "path": "tests/tooling/fixtures/native/recovery/negative/negative_match_expression_binding_scope_leak.objc3"
+    },
+    {
+      "capability_id": "language.control-flow.match-expression",
+      "support_claim": "objc3c.behavior.language.control-flow.match-expression",
+      "evidence_kind": "diagnostic",
+      "path": "tests/tooling/fixtures/native/recovery/negative/negative_match_expression_result_type_mismatch.objc3"
+    },
+    {
+      "capability_id": "language.control-flow.match-expression",
+      "support_claim": "objc3c.behavior.language.control-flow.match-expression",
+      "evidence_kind": "diagnostic",
+      "path": "tests/tooling/fixtures/native/recovery/negative/negative_match_expression_type_test_reserved.objc3"
+    },
+    {
+      "capability_id": "language.control-flow.match-expression",
+      "support_claim": "objc3c.behavior.language.control-flow.match-expression",
+      "evidence_kind": "diagnostic",
+      "path": "tests/tooling/fixtures/native/recovery/negative/negative_match_expression_guard_side_effect.objc3"
+    },
+    {
+      "capability_id": "language.control-flow.match-expression",
+      "support_claim": "objc3c.behavior.language.control-flow.match-expression",
+      "evidence_kind": "source",
+      "path": "native/objc3c/src/parse/objc3_parser_core_primary_message_expressions_match_expression.inc"
+    },
+    {
+      "capability_id": "language.control-flow.match-expression",
+      "support_claim": "objc3c.behavior.language.control-flow.match-expression",
+      "evidence_kind": "source",
+      "path": "native/objc3c/src/sema/objc3_semantic_passes_expression_statement_validation_match_expression_case.inc"
+    },
+    {
+      "capability_id": "language.control-flow.match-expression",
+      "support_claim": "objc3c.behavior.language.control-flow.match-expression",
+      "evidence_kind": "source",
+      "path": "native/objc3c/src/sema/objc3_semantic_match_exhaustiveness.cpp"
+    },
+    {
+      "capability_id": "language.control-flow.match-expression",
+      "support_claim": "objc3c.behavior.language.control-flow.match-expression",
+      "evidence_kind": "source",
+      "path": "native/objc3c/src/pipeline/frontend_control_flow_source_closure_helpers.cpp"
+    },
+    {
+      "capability_id": "language.control-flow.match-expression",
+      "support_claim": "objc3c.behavior.language.control-flow.match-expression",
+      "evidence_kind": "source",
+      "path": "tests/tooling/fixtures/native/match_guarded_pattern_language_evolution_contract.json"
+    },
+    {
+      "capability_id": "language.profiles.strict-admission",
+      "support_claim": "objc3c.behavior.language.profiles.strict-admission",
+      "evidence_kind": "test",
+      "path": "tests/conformance/profile_strict_boundary/strict_profile_boundary_contract.json",
+      "command": "npm run objc3c -- validate-release-candidate-conformance"
+    },
+    {
+      "capability_id": "language.profiles.strict-admission",
+      "support_claim": "objc3c.behavior.language.profiles.strict-admission",
+      "evidence_kind": "test",
+      "path": "tests/conformance/profile_strict_boundary/strict_profile_value_flow.objc3",
+      "command": "npm run objc3c -- validate-release-candidate-conformance"
+    },
+    {
+      "capability_id": "language.profiles.strict-admission",
+      "support_claim": "objc3c.behavior.language.profiles.strict-admission",
+      "evidence_kind": "test",
+      "path": "tests/conformance/profile_strict_boundary/strict_concurrency_actor_executor_value_flow.objc3",
+      "command": "npm run objc3c -- validate-release-candidate-conformance"
+    },
+    {
+      "capability_id": "language.profiles.strict-admission",
+      "support_claim": "objc3c.behavior.language.profiles.strict-admission",
+      "evidence_kind": "test",
+      "path": "tests/conformance/profile_strict_boundary/strict_system_profile_mismatch_negative.objc3",
+      "command": "npm run objc3c -- validate-release-candidate-conformance"
+    },
+    {
+      "capability_id": "language.profiles.strict-admission",
+      "support_claim": "objc3c.behavior.language.profiles.strict-admission",
+      "evidence_kind": "schema",
+      "path": "schemas/objc3c-strict-profile-boundary-v1.schema.json"
+    },
+    {
+      "capability_id": "language.profiles.strict-admission",
+      "support_claim": "objc3c.behavior.language.profiles.strict-admission",
+      "evidence_kind": "source",
+      "path": "tests/tooling/fixtures/language_profiles/strict_profile_feature_matrix.json"
+    },
+    {
+      "capability_id": "language.profiles.strict-admission",
+      "support_claim": "objc3c.behavior.language.profiles.strict-admission",
+      "evidence_kind": "source",
+      "path": "native/objc3c/src/config/objc3_language_profile_validation.cpp"
+    },
+    {
+      "capability_id": "language.profiles.strict-admission",
+      "support_claim": "objc3c.behavior.language.profiles.strict-admission",
+      "evidence_kind": "source",
+      "path": "native/objc3c/src/driver/objc3_frontend_options.cpp"
+    },
+    {
+      "capability_id": "language.profiles.strict-admission",
+      "support_claim": "objc3c.behavior.language.profiles.strict-admission",
+      "evidence_kind": "source",
+      "path": "native/objc3c/src/sema/objc3_semantic_passes_body_validation_entrypoints.inc"
+    },
+    {
+      "capability_id": "language.profiles.strict-admission",
+      "support_claim": "objc3c.behavior.language.profiles.strict-admission",
+      "evidence_kind": "source",
+      "path": "native/objc3c/src/io/objc3_conformance_profile_selection.cpp"
+    },
+    {
+      "capability_id": "language.profiles.strict-admission",
+      "support_claim": "objc3c.behavior.language.profiles.strict-admission",
+      "evidence_kind": "source",
+      "path": "native/objc3c/src/artifacts/objc3_frontend_artifact_runtime_release_claim_manifest.cpp"
+    },
+    {
+      "capability_id": "language.evolution.umbrella-alignment",
+      "support_claim": "objc3c.behavior.language.evolution.umbrella-alignment",
+      "evidence_kind": "doc",
+      "path": "docs/support/umbrella_readiness.json"
+    },
+    {
+      "capability_id": "language.evolution.umbrella-alignment",
+      "support_claim": "objc3c.behavior.language.evolution.umbrella-alignment",
+      "evidence_kind": "doc",
+      "path": "docs/support/hard_cutover_capability_truth.md"
+    },
+    {
+      "capability_id": "language.evolution.umbrella-alignment",
+      "support_claim": "objc3c.behavior.language.evolution.umbrella-alignment",
+      "evidence_kind": "test",
+      "path": "tests/tooling/fixtures/native/language_evolution_umbrella_contract.json",
+      "command": "npm run objc3c -- validate-conformance-corpus"
+    },
+    {
+      "capability_id": "language.evolution.umbrella-alignment",
+      "support_claim": "objc3c.behavior.language.evolution.umbrella-alignment",
+      "evidence_kind": "source",
+      "path": "tests/tooling/fixtures/native/language_evolution_typed_throws_value_optionals_contract.json"
+    },
+    {
+      "capability_id": "language.evolution.umbrella-alignment",
+      "support_claim": "objc3c.behavior.language.evolution.umbrella-alignment",
+      "evidence_kind": "source",
+      "path": "tests/tooling/fixtures/native/match_guarded_pattern_language_evolution_contract.json"
+    },
+    {
+      "capability_id": "language.evolution.umbrella-alignment",
+      "support_claim": "objc3c.behavior.language.evolution.umbrella-alignment",
+      "evidence_kind": "source",
+      "path": "tests/tooling/fixtures/native/generic_callable_reification_contract.json"
+    },
+    {
+      "capability_id": "language.evolution.umbrella-alignment",
+      "support_claim": "objc3c.behavior.language.evolution.umbrella-alignment",
+      "evidence_kind": "source",
+      "path": "tests/tooling/fixtures/language_profiles/strict_profile_feature_matrix.json"
+    },
+    {
+      "capability_id": "language.evolution.umbrella-alignment",
+      "support_claim": "objc3c.behavior.language.evolution.umbrella-alignment",
+      "evidence_kind": "source",
+      "path": "tests/fixtures/canonical/manifest.json"
+    },
+    {
+      "capability_id": "language.evolution.umbrella-alignment",
+      "support_claim": "objc3c.behavior.language.evolution.umbrella-alignment",
+      "evidence_kind": "test",
+      "path": "tests/tooling/fixtures/native/execution/positive/typed_throws_runtime_catch_bridge_positive.objc3",
+      "command": "npm run objc3c -- test-execution-smoke"
+    },
+    {
+      "capability_id": "language.evolution.umbrella-alignment",
+      "support_claim": "objc3c.behavior.language.evolution.umbrella-alignment",
+      "evidence_kind": "test",
+      "path": "tests/tooling/fixtures/native/execution/positive/value_optionals_runtime_abi_positive.objc3",
+      "command": "npm run objc3c -- test-execution-smoke"
+    },
+    {
+      "capability_id": "language.types.value-optionals.expansion",
+      "evidence_kind": "doc",
+      "path": "docs/support/umbrella_readiness.json"
+    },
+    {
+      "capability_id": "language.types.value-optionals.expansion",
+      "evidence_kind": "doc",
+      "path": "spec/PART_3_TYPES_NULLABILITY_OPTIONALS_GENERICS_KEYPATHS.md"
+    },
+    {
+      "capability_id": "language.types.value-optionals.expansion",
+      "evidence_kind": "source",
+      "path": "tests/tooling/fixtures/native/language_evolution_typed_throws_value_optionals_contract.json"
+    },
+    {
+      "capability_id": "language.types.value-optionals.expansion",
+      "evidence_kind": "diagnostic",
+      "path": "tests/tooling/fixtures/native/value_optionals_executable_semantics_negative.contract.json"
+    },
+    {
+      "capability_id": "language.types.value-optionals.expansion",
+      "evidence_kind": "diagnostic",
+      "path": "tests/tooling/fixtures/native/recovery/negative/negative_value_optional_nullable_pointer_conversion_reserved.objc3"
+    },
+    {
+      "capability_id": "language.types.value-optionals.expansion",
+      "evidence_kind": "diagnostic",
+      "path": "tests/tooling/fixtures/native/recovery/negative/negative_value_optional_nil_scalar_coercion_reserved.objc3"
+    },
+    {
+      "capability_id": "language.types.value-optionals.expansion",
+      "evidence_kind": "diagnostic",
+      "path": "tests/tooling/fixtures/native/recovery/negative/negative_value_optional_property_layout_unsupported.objc3"
+    },
+    {
+      "capability_id": "language.generics.runtime-specialization-expansion",
+      "evidence_kind": "doc",
+      "path": "docs/support/umbrella_readiness.json"
+    },
+    {
+      "capability_id": "language.generics.runtime-specialization-expansion",
+      "evidence_kind": "doc",
+      "path": "spec/PART_3_TYPES_NULLABILITY_OPTIONALS_GENERICS_KEYPATHS.md"
+    },
+    {
+      "capability_id": "language.generics.runtime-specialization-expansion",
+      "evidence_kind": "source",
+      "path": "tests/tooling/fixtures/native/generic_callable_reification_contract.json"
+    },
+    {
+      "capability_id": "language.generics.runtime-specialization-expansion",
+      "evidence_kind": "diagnostic",
+      "path": "tests/tooling/fixtures/native/recovery/negative/negative_reify_generics_unsupported_scope.objc3"
+    },
+    {
+      "capability_id": "language.generics.runtime-specialization-expansion",
+      "evidence_kind": "diagnostic",
+      "path": "tests/tooling/fixtures/native/recovery/negative/negative_cstyle_generic_function_reserved.objc3"
+    },
+    {
+      "capability_id": "language.control-flow.match-expansion",
+      "evidence_kind": "doc",
+      "path": "docs/support/umbrella_readiness.json"
+    },
+    {
+      "capability_id": "language.control-flow.match-expansion",
+      "evidence_kind": "source",
+      "path": "tests/tooling/fixtures/native/match_guarded_pattern_language_evolution_contract.json"
+    },
+    {
+      "capability_id": "language.control-flow.match-expansion",
+      "evidence_kind": "diagnostic",
+      "path": "tests/tooling/fixtures/native/recovery/negative/negative_match_expression_type_test_reserved.objc3"
+    },
+    {
+      "capability_id": "language.control-flow.match-expansion",
+      "evidence_kind": "diagnostic",
+      "path": "tests/tooling/fixtures/native/recovery/negative/negative_match_statement_fat_arrow_ambiguous.objc3"
+    },
+    {
+      "capability_id": "language.profiles.strict-system-expansion",
+      "evidence_kind": "doc",
+      "path": "docs/support/umbrella_readiness.json"
+    },
+    {
+      "capability_id": "language.profiles.strict-system-expansion",
+      "evidence_kind": "source",
+      "path": "tests/tooling/fixtures/language_profiles/strict_profile_feature_matrix.json"
+    },
+    {
+      "capability_id": "language.profiles.strict-system-expansion",
+      "evidence_kind": "diagnostic",
+      "path": "tests/conformance/profile_strict_boundary/strict_system_profile_mismatch_negative.objc3"
+    },
+    {
       "capability_id": "compiler.lowering.error-unwind-cleanup",
       "support_claim": "objc3c.behavior.lowering.error-unwind-cleanup",
       "evidence_kind": "test",
@@ -686,91 +1394,151 @@
     },
     {
       "capability_id": "runtime.object-model.full-realization",
+      "support_claim": "objc3c.behavior.runtime.object-model.full-realization",
       "evidence_kind": "doc",
       "path": "docs/support/hard_cutover_capability_truth.md"
     },
     {
       "capability_id": "runtime.object-model.full-realization",
-      "evidence_kind": "doc",
-      "path": "spec/MODULE_METADATA_AND_ABI_TABLES.md"
-    },
-    {
-      "capability_id": "runtime.object-model.full-realization",
+      "support_claim": "objc3c.behavior.runtime.object-model.full-realization",
       "evidence_kind": "doc",
       "path": "docs/runbooks/objc3c_object_model_closure.md"
     },
     {
       "capability_id": "runtime.object-model.full-realization",
+      "support_claim": "objc3c.behavior.runtime.object-model.full-realization",
       "evidence_kind": "source",
-      "path": "scripts/objc3c_runtime_acceptance/domains/object_model_capability_split.py"
+      "path": "native/objc3c/src/runtime/classes/class_graph.cpp"
     },
     {
       "capability_id": "runtime.object-model.full-realization",
+      "support_claim": "objc3c.behavior.runtime.object-model.full-realization",
+      "evidence_kind": "source",
+      "path": "native/objc3c/src/runtime/images/registration.cpp"
+    },
+    {
+      "capability_id": "runtime.object-model.full-realization",
+      "support_claim": "objc3c.behavior.runtime.object-model.full-realization",
+      "evidence_kind": "source",
+      "path": "native/objc3c/src/runtime/storage/property_layout_realization.cpp"
+    },
+    {
+      "capability_id": "runtime.object-model.full-realization",
+      "support_claim": "objc3c.behavior.runtime.object-model.full-realization",
+      "evidence_kind": "source",
+      "path": "native/objc3c/src/runtime/public/objc3_runtime_reflection.h"
+    },
+    {
+      "capability_id": "runtime.object-model.full-realization",
+      "support_claim": "objc3c.behavior.runtime.object-model.full-realization",
+      "evidence_kind": "source",
+      "path": "native/objc3c/src/runtime/public/objc3_runtime_reflection.cpp"
+    },
+    {
+      "capability_id": "runtime.object-model.full-realization",
+      "support_claim": "objc3c.behavior.runtime.object-model.full-realization",
+      "evidence_kind": "source",
+      "path": "native/objc3c/src/runtime/public/objc3_runtime_reflection_debug_anchor.cpp"
+    },
+    {
+      "capability_id": "runtime.object-model.full-realization",
+      "support_claim": "objc3c.behavior.runtime.object-model.full-realization",
+      "evidence_kind": "source",
+      "path": "scripts/objc3c_editor_tooling/artifact_inspector.py"
+    },
+    {
+      "capability_id": "runtime.object-model.full-realization",
+      "support_claim": "objc3c.behavior.runtime.object-model.full-realization",
+      "evidence_kind": "source",
+      "path": "scripts/objc3c_editor_tooling/model.py"
+    },
+    {
+      "capability_id": "runtime.object-model.full-realization",
+      "support_claim": "objc3c.behavior.runtime.object-model.full-realization",
+      "evidence_kind": "source",
+      "path": "scripts/objc3c_object_model_debugger_proof/model.py"
+    },
+    {
+      "capability_id": "runtime.object-model.full-realization",
+      "support_claim": "objc3c.behavior.runtime.object-model.full-realization",
+      "evidence_kind": "schema",
+      "path": "schemas/objc3c-debug-source-maps-v1.schema.json"
+    },
+    {
+      "capability_id": "runtime.object-model.full-realization",
+      "support_claim": "objc3c.behavior.runtime.object-model.full-realization",
+      "evidence_kind": "schema",
+      "path": "schemas/objc3c-debugger-integration-replay-v1.schema.json"
+    },
+    {
+      "capability_id": "runtime.object-model.full-realization",
+      "support_claim": "objc3c.behavior.runtime.object-model.full-realization",
+      "evidence_kind": "schema",
+      "path": "schemas/objc3c-typed-keypath-debugger-lowering-v1.schema.json"
+    },
+    {
+      "capability_id": "runtime.object-model.full-realization",
+      "support_claim": "objc3c.behavior.runtime.object-model.full-realization",
+      "evidence_kind": "schema",
+      "path": "schemas/objc3c-runtime-debug-trace-v1.schema.json"
+    },
+    {
+      "capability_id": "runtime.object-model.full-realization",
+      "support_claim": "objc3c.behavior.runtime.object-model.full-realization",
       "evidence_kind": "test",
-      "path": "tests/tooling/fixtures/object_model_closure/full_realization_combined_readiness_contract.json"
+      "path": "tests/tooling/fixtures/object_model_closure/full_realization_combined_readiness_contract.json",
+      "command": "npm run objc3c -- validate-object-model-debugger-proof"
     },
     {
       "capability_id": "runtime.object-model.full-realization",
+      "support_claim": "objc3c.behavior.runtime.object-model.full-realization",
       "evidence_kind": "test",
       "path": "tests/tooling/fixtures/object_model_closure/debugger_value_inspection_replay_contract.json",
       "command": "npm run objc3c -- validate-object-model-debugger-proof"
     },
     {
       "capability_id": "runtime.object-model.full-realization",
+      "support_claim": "objc3c.behavior.runtime.object-model.full-realization",
+      "evidence_kind": "test",
+      "path": "tests/tooling/fixtures/object_model_closure/debug_anchor_identity_replay_contract.json"
+    },
+    {
+      "capability_id": "runtime.object-model.full-realization",
+      "support_claim": "objc3c.behavior.runtime.object-model.full-realization",
+      "evidence_kind": "test",
+      "path": "tests/native/runtime/object_model/full_realization_combined_reflection_replay_contract.objc3",
+      "command": "npm run objc3c -- validate-object-model-conformance"
+    },
+    {
+      "capability_id": "runtime.object-model.full-realization",
+      "support_claim": "objc3c.behavior.runtime.object-model.full-realization",
+      "evidence_kind": "test",
+      "path": "tests/native/runtime/object_model/debug_anchor_identity_replay_probe.cpp"
+    },
+    {
+      "capability_id": "runtime.object-model.full-realization",
+      "support_claim": "objc3c.behavior.runtime.object-model.full-realization",
       "evidence_kind": "test",
       "path": "tests/tooling/fixtures/cross_lane_e2e/object_reflection_debugger.expectation.json",
       "command": "npm run objc3c -- validate-cross-lane-e2e"
     },
     {
       "capability_id": "runtime.object-model.full-realization",
-      "evidence_kind": "source",
-      "path": "native/objc3c/src/runtime/public/objc3_runtime_reflection.h"
-    },
-    {
-      "capability_id": "runtime.object-model.full-realization",
-      "evidence_kind": "source",
-      "path": "native/objc3c/src/runtime/public/objc3_runtime_reflection.cpp"
-    },
-    {
-      "capability_id": "runtime.object-model.full-realization",
-      "evidence_kind": "source",
-      "path": "native/objc3c/src/runtime/public/objc3_runtime_reflection_debug_anchor.cpp"
-    },
-    {
-      "capability_id": "runtime.object-model.full-realization",
-      "evidence_kind": "test",
-      "path": "tests/tooling/fixtures/object_model_closure/debug_anchor_identity_replay_contract.json"
-    },
-    {
-      "capability_id": "runtime.object-model.full-realization",
-      "evidence_kind": "test",
-      "path": "tests/native/runtime/object_model/debug_anchor_identity_replay_probe.cpp"
-    },
-    {
-      "capability_id": "runtime.object-model.full-realization",
-      "evidence_kind": "test",
-      "path": "tests/native/runtime/object_model/full_realization_combined_reflection_replay_contract.objc3"
-    },
-    {
-      "capability_id": "runtime.object-model.full-realization",
-      "evidence_kind": "source",
-      "path": "scripts/objc3c_object_model_debugger_proof/model.py"
-    },
-    {
-      "capability_id": "runtime.object-model.full-realization",
-      "evidence_kind": "test",
-      "path": "scripts/check_objc3c_object_model_debugger_proof.py",
-      "command": "npm run objc3c -- validate-object-model-debugger-proof"
-    },
-    {
-      "capability_id": "runtime.object-model.full-realization",
+      "support_claim": "objc3c.behavior.runtime.object-model.full-realization",
       "evidence_kind": "test",
       "path": "tests/tooling/test_runtime_object_model_full_realization_readiness.py"
     },
     {
       "capability_id": "runtime.object-model.full-realization",
+      "support_claim": "objc3c.behavior.runtime.object-model.full-realization",
       "evidence_kind": "test",
       "path": "tests/tooling/test_runtime_capability_public_split.py"
+    },
+    {
+      "capability_id": "runtime.object-model.full-realization",
+      "support_claim": "objc3c.behavior.runtime.object-model.full-realization",
+      "evidence_kind": "source",
+      "path": "scripts/objc3c_runtime_acceptance/domains/object_model_capability_split.py"
     },
     {
       "capability_id": "language.protocols.protocol-qualified-existential-value-flow",
@@ -1047,6 +1815,103 @@
       "path": "native/objc3c/src/sema/objc3_semantic_generic_argument_relations.cpp"
     },
     {
+      "capability_id": "language.generics.generic-callable-reification",
+      "support_claim": "objc3c.behavior.language.generics.generic-callable-reification",
+      "evidence_kind": "test",
+      "path": "tests/tooling/fixtures/native/type_semantic_generic_reified_objc_method_positive.objc3",
+      "command": "npm run objc3c -- validate-conformance-corpus"
+    },
+    {
+      "capability_id": "language.generics.generic-callable-reification",
+      "support_claim": "objc3c.behavior.language.generics.generic-callable-reification",
+      "evidence_kind": "test",
+      "path": "tests/tooling/fixtures/native/type_semantic_generic_reified_function_positive.objc3"
+    },
+    {
+      "capability_id": "language.generics.generic-callable-reification",
+      "support_claim": "objc3c.behavior.language.generics.generic-callable-reification",
+      "evidence_kind": "test",
+      "path": "tests/tooling/fixtures/native/type_semantic_generic_objc_method_positive.objc3"
+    },
+    {
+      "capability_id": "language.generics.generic-callable-reification",
+      "support_claim": "objc3c.behavior.language.generics.generic-callable-reification",
+      "evidence_kind": "test",
+      "path": "tests/tooling/fixtures/native/type_semantic_generic_function_positive.objc3"
+    },
+    {
+      "capability_id": "language.generics.generic-callable-reification",
+      "support_claim": "objc3c.behavior.language.generics.generic-callable-reification",
+      "evidence_kind": "source",
+      "path": "tests/tooling/fixtures/native/generic_callable_reification_contract.json"
+    },
+    {
+      "capability_id": "language.generics.generic-callable-reification",
+      "support_claim": "objc3c.behavior.language.generics.generic-callable-reification",
+      "evidence_kind": "diagnostic",
+      "path": "tests/tooling/fixtures/native/recovery/negative/negative_generic_method_selector_form_ambiguous.objc3"
+    },
+    {
+      "capability_id": "language.generics.generic-callable-reification",
+      "support_claim": "objc3c.behavior.language.generics.generic-callable-reification",
+      "evidence_kind": "diagnostic",
+      "path": "tests/tooling/fixtures/native/recovery/negative/negative_reify_generics_unsupported_scope.objc3"
+    },
+    {
+      "capability_id": "language.generics.generic-callable-reification",
+      "support_claim": "objc3c.behavior.language.generics.generic-callable-reification",
+      "evidence_kind": "diagnostic",
+      "path": "tests/tooling/fixtures/native/recovery/negative/negative_cstyle_generic_function_reserved.objc3"
+    },
+    {
+      "capability_id": "language.generics.generic-callable-reification",
+      "support_claim": "objc3c.behavior.language.generics.generic-callable-reification",
+      "evidence_kind": "diagnostic",
+      "path": "tests/tooling/fixtures/native/recovery/negative/negative_type_semantic_generic_function_signature_drift.objc3"
+    },
+    {
+      "capability_id": "language.generics.generic-callable-reification",
+      "support_claim": "objc3c.behavior.language.generics.generic-callable-reification",
+      "evidence_kind": "diagnostic",
+      "path": "tests/tooling/fixtures/native/recovery/negative/negative_type_semantic_generic_method_override_mismatch.objc3"
+    },
+    {
+      "capability_id": "language.generics.generic-callable-reification",
+      "support_claim": "objc3c.behavior.language.generics.generic-callable-reification",
+      "evidence_kind": "diagnostic",
+      "path": "tests/tooling/fixtures/native/recovery/negative/negative_type_semantic_generic_callable_constraint_cycle.objc3"
+    },
+    {
+      "capability_id": "language.generics.generic-callable-reification",
+      "support_claim": "objc3c.behavior.language.generics.generic-callable-reification",
+      "evidence_kind": "diagnostic",
+      "path": "tests/tooling/fixtures/native/recovery/negative/negative_type_semantic_erased_to_reified_redeclaration_drift.objc3"
+    },
+    {
+      "capability_id": "language.generics.generic-callable-reification",
+      "support_claim": "objc3c.behavior.language.generics.generic-callable-reification",
+      "evidence_kind": "diagnostic",
+      "path": "tests/tooling/fixtures/native/generic_callable_cross_module_mangling_policy_mismatch.json"
+    },
+    {
+      "capability_id": "language.generics.generic-callable-reification",
+      "support_claim": "objc3c.behavior.language.generics.generic-callable-reification",
+      "evidence_kind": "source",
+      "path": "native/objc3c/src/sema/objc3_semantic_passes_generic_callable_contracts.inc"
+    },
+    {
+      "capability_id": "language.generics.generic-callable-reification",
+      "support_claim": "objc3c.behavior.language.generics.generic-callable-reification",
+      "evidence_kind": "source",
+      "path": "native/objc3c/src/sema/objc3_sema_contract_semantic_type_metadata_function_records.h"
+    },
+    {
+      "capability_id": "language.generics.generic-callable-reification",
+      "support_claim": "objc3c.behavior.language.generics.generic-callable-reification",
+      "evidence_kind": "source",
+      "path": "native/objc3c/src/sema/objc3_sema_contract_semantic_type_metadata_method_records.h"
+    },
+    {
       "capability_id": "language.generics.variance-specialization",
       "support_claim": "objc3c.behavior.language.generics.variance-specialization",
       "evidence_kind": "test",
@@ -1128,12 +1993,67 @@
     },
     {
       "capability_id": "modules.direct-import-syntax",
-      "evidence_kind": "diagnostic",
-      "path": "tests/tooling/fixtures/cross_lane_e2e/text_collections_package.expectation.json",
-      "command": "npm run objc3c -- validate-cross-lane-e2e"
+      "support_claim": "objc3c.behavior.modules.direct-import-syntax",
+      "evidence_kind": "test",
+      "path": "tests/tooling/fixtures/package_ecosystem/direct_import_module_syntax_contract.json",
+      "command": "npm run objc3c -- validate-direct-import-module-syntax"
     },
     {
       "capability_id": "modules.direct-import-syntax",
+      "support_claim": "objc3c.behavior.modules.direct-import-syntax",
+      "evidence_kind": "test",
+      "path": "tests/tooling/test_direct_import_module_syntax_contract.py",
+      "command": "npm run objc3c -- validate-direct-import-module-syntax"
+    },
+    {
+      "capability_id": "modules.direct-import-syntax",
+      "support_claim": "objc3c.behavior.modules.direct-import-syntax",
+      "evidence_kind": "test",
+      "path": "tests/tooling/fixtures/native/direct_import_syntax_consumer.objc3",
+      "command": "npm run objc3c -- validate-direct-import-module-syntax"
+    },
+    {
+      "capability_id": "modules.direct-import-syntax",
+      "support_claim": "objc3c.behavior.modules.direct-import-syntax",
+      "evidence_kind": "test",
+      "path": "tests/tooling/fixtures/native/recovery/negative/negative_direct_import_malformed_module_identity.objc3",
+      "command": "npm run objc3c -- validate-direct-import-module-syntax"
+    },
+    {
+      "capability_id": "modules.direct-import-syntax",
+      "support_claim": "objc3c.behavior.modules.direct-import-syntax",
+      "evidence_kind": "test",
+      "path": "tests/tooling/fixtures/native/recovery/negative/negative_direct_import_without_package_provenance.objc3",
+      "command": "npm run objc3c -- validate-direct-import-module-syntax"
+    },
+    {
+      "capability_id": "modules.direct-import-syntax",
+      "support_claim": "objc3c.behavior.modules.direct-import-syntax",
+      "evidence_kind": "test",
+      "path": "tests/tooling/fixtures/native/recovery/negative/negative_direct_import_ambiguous_module_identity.objc3",
+      "command": "npm run objc3c -- validate-direct-import-module-syntax"
+    },
+    {
+      "capability_id": "modules.direct-import-syntax",
+      "support_claim": "objc3c.behavior.modules.direct-import-syntax",
+      "evidence_kind": "source",
+      "path": "scripts/objc3c_package_manager/model.py"
+    },
+    {
+      "capability_id": "modules.direct-import-syntax",
+      "support_claim": "objc3c.behavior.modules.direct-import-syntax",
+      "evidence_kind": "source",
+      "path": "scripts/check_objc3c_direct_import_module_syntax.py"
+    },
+    {
+      "capability_id": "modules.direct-import-syntax",
+      "support_claim": "objc3c.behavior.modules.direct-import-syntax",
+      "evidence_kind": "source",
+      "path": "native/objc3c/src/parse/objc3_parser_core_cstyle_parameters_module_global_parsing.inc"
+    },
+    {
+      "capability_id": "modules.direct-import-syntax",
+      "support_claim": "objc3c.behavior.modules.direct-import-syntax",
       "evidence_kind": "doc",
       "path": "docs/support/hard_cutover_capability_truth.md"
     },
@@ -3062,66 +3982,104 @@
     },
     {
       "capability_id": "language.advanced-runtime-closure",
+      "support_claim": "objc3c.behavior.language.advanced-runtime-closure",
       "evidence_kind": "doc",
       "path": "docs/support/hard_cutover_capability_truth.md"
     },
     {
       "capability_id": "language.advanced-runtime-closure",
+      "support_claim": "objc3c.behavior.language.advanced-runtime-closure",
       "evidence_kind": "doc",
       "path": "spec/PART_6_ERRORS_RESULTS_THROWS.md"
     },
     {
       "capability_id": "language.advanced-runtime-closure",
+      "support_claim": "objc3c.behavior.language.advanced-runtime-closure",
       "evidence_kind": "doc",
       "path": "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md"
     },
     {
       "capability_id": "language.advanced-runtime-closure",
+      "support_claim": "objc3c.behavior.language.advanced-runtime-closure",
       "evidence_kind": "doc",
       "path": "spec/PART_10_METAPROGRAMMING_DERIVES_MACROS_PROPERTY_BEHAVIORS.md"
     },
     {
       "capability_id": "language.advanced-runtime-closure",
+      "support_claim": "objc3c.behavior.language.advanced-runtime-closure",
       "evidence_kind": "source",
       "path": "scripts/objc3c_runtime_acceptance/domains/advanced_runtime_capability_split.py"
     },
     {
       "capability_id": "language.advanced-runtime-closure",
+      "support_claim": "objc3c.behavior.language.advanced-runtime-closure",
       "evidence_kind": "test",
       "path": "tests/tooling/test_runtime_capability_public_split.py"
     },
     {
       "capability_id": "language.advanced-runtime-closure",
+      "support_claim": "objc3c.behavior.language.advanced-runtime-closure",
       "evidence_kind": "source",
       "path": "scripts/check_objc3c_advanced_runtime_closure.py"
     },
     {
       "capability_id": "language.advanced-runtime-closure",
-      "evidence_kind": "test",
-      "path": "tests/native/runtime/advanced_closure/combined_positive.objc3"
+      "support_claim": "objc3c.behavior.language.advanced-runtime-closure",
+      "evidence_kind": "source",
+      "path": "native/objc3c/src/pipeline/runtime_import_preservation_evidence_metaprogramming.cpp"
     },
     {
       "capability_id": "language.advanced-runtime-closure",
+      "support_claim": "objc3c.behavior.language.advanced-runtime-closure",
+      "evidence_kind": "source",
+      "path": "native/objc3c/src/runtime/concurrency/actor_mailbox_operations.cpp"
+    },
+    {
+      "capability_id": "language.advanced-runtime-closure",
+      "support_claim": "objc3c.behavior.language.advanced-runtime-closure",
+      "evidence_kind": "test",
+      "path": "tests/native/runtime/advanced_closure/combined_positive.objc3",
+      "command": "npm run objc3c -- validate-advanced-runtime-closure"
+    },
+    {
+      "capability_id": "language.advanced-runtime-closure",
+      "support_claim": "objc3c.behavior.language.advanced-runtime-closure",
+      "evidence_kind": "test",
+      "path": "tests/native/runtime/advanced_closure/combined_provider.objc3"
+    },
+    {
+      "capability_id": "language.advanced-runtime-closure",
+      "support_claim": "objc3c.behavior.language.advanced-runtime-closure",
       "evidence_kind": "test",
       "path": "tests/native/runtime/advanced_closure/negative_matrix.contract.json"
     },
     {
       "capability_id": "language.advanced-runtime-closure",
+      "support_claim": "objc3c.behavior.language.advanced-runtime-closure",
       "evidence_kind": "test",
       "path": "tests/tooling/fixtures/advanced_runtime_closure/combined_runtime_identity_contract.json"
     },
     {
       "capability_id": "language.advanced-runtime-closure",
+      "support_claim": "objc3c.behavior.language.advanced-runtime-closure",
       "evidence_kind": "test",
       "path": "tests/tooling/fixtures/advanced_runtime_closure/combined_runtime_source_debug_map.json"
     },
     {
       "capability_id": "language.advanced-runtime-closure",
+      "support_claim": "objc3c.behavior.language.advanced-runtime-closure",
+      "evidence_kind": "test",
+      "path": "tests/tooling/fixtures/advanced_runtime_closure/executable_runtime_contract_surfaces.json"
+    },
+    {
+      "capability_id": "language.advanced-runtime-closure",
+      "support_claim": "objc3c.behavior.language.advanced-runtime-closure",
       "evidence_kind": "test",
       "path": "tests/tooling/fixtures/advanced_runtime_closure/native_artifact_contract.json"
     },
     {
       "capability_id": "language.advanced-runtime-closure",
+      "support_claim": "objc3c.behavior.language.advanced-runtime-closure",
       "evidence_kind": "test",
       "path": "tests/tooling/fixtures/cross_lane_e2e/advanced_runtime_closure.expectation.json",
       "command": "npm run objc3c -- validate-cross-lane-e2e"
@@ -3424,12 +4382,27 @@
     {
       "capability_id": "tooling.json.schema-registry",
       "evidence_kind": "schema",
+      "path": "schemas/objc3c-platform-toolchain-support-evidence-v1.schema.json"
+    },
+    {
+      "capability_id": "tooling.json.schema-registry",
+      "evidence_kind": "schema",
+      "path": "schemas/objc3c-platform-support-source-truth-v1.schema.json"
+    },
+    {
+      "capability_id": "tooling.json.schema-registry",
+      "evidence_kind": "schema",
       "path": "schemas/objc3c-compiler-throughput-summary-v1.schema.json"
     },
     {
       "capability_id": "tooling.json.schema-registry",
       "evidence_kind": "schema",
       "path": "schemas/objc3c-performance-telemetry-v1.schema.json"
+    },
+    {
+      "capability_id": "tooling.json.schema-registry",
+      "evidence_kind": "schema",
+      "path": "schemas/objc3c-optimization-runtime-debug-safety-v1.schema.json"
     },
     {
       "capability_id": "tooling.json.schema-registry",
@@ -3565,11 +4538,6 @@
       "capability_id": "tooling.json.schema-registry",
       "evidence_kind": "schema",
       "path": "schemas/objc3c-semantic-optimization-pipeline-v1.schema.json"
-    },
-    {
-      "capability_id": "tooling.json.schema-registry",
-      "evidence_kind": "schema",
-      "path": "schemas/objc3c-platform-toolchain-support-evidence-v1.schema.json"
     },
     {
       "capability_id": "support.hard-cutover-capability-truth",
@@ -4043,6 +5011,13 @@
       "capability_id": "ecosystem.package-manager.local-registry",
       "support_claim": "objc3c.behavior.package.manager-local-registry",
       "evidence_kind": "test",
+      "path": "tests/tooling/fixtures/package_ecosystem/negative_package_metadata_contracts.json",
+      "command": "npm run objc3c -- validate-package-manager-model"
+    },
+    {
+      "capability_id": "ecosystem.package-manager.local-registry",
+      "support_claim": "objc3c.behavior.package.manager-local-registry",
+      "evidence_kind": "test",
       "path": "tests/tooling/test_package_manager_model.py",
       "command": "npm run objc3c -- validate-package-manager-model"
     },
@@ -4051,6 +5026,12 @@
       "support_claim": "objc3c.behavior.package.manager-local-registry",
       "evidence_kind": "schema",
       "path": "schemas/objc3c-package-manifest-v1.schema.json"
+    },
+    {
+      "capability_id": "ecosystem.package-manager.local-registry",
+      "support_claim": "objc3c.behavior.package.manager-local-registry",
+      "evidence_kind": "schema",
+      "path": "schemas/objc3c-package-signing-trust-v1.schema.json"
     },
     {
       "capability_id": "ecosystem.package-manager.local-registry",
@@ -4080,6 +5061,12 @@
       "capability_id": "ecosystem.package-manager.local-registry",
       "support_claim": "objc3c.behavior.package.manager-local-registry",
       "evidence_kind": "source",
+      "path": "scripts/objc3c_package_manager/trust.py"
+    },
+    {
+      "capability_id": "ecosystem.package-manager.local-registry",
+      "support_claim": "objc3c.behavior.package.manager-local-registry",
+      "evidence_kind": "source",
       "path": "scripts/check_objc3c_package_manager_model.py"
     },
     {
@@ -4087,6 +5074,303 @@
       "support_claim": "objc3c.behavior.package.manager-local-registry",
       "evidence_kind": "doc",
       "path": "docs/runbooks/objc3c_package_ecosystem.md"
+    },
+    {
+      "capability_id": "ecosystem.package-manager.hosted-registry-fixture",
+      "support_claim": "objc3c.behavior.package.hosted-registry-fixture",
+      "evidence_kind": "test",
+      "path": "tests/tooling/fixtures/package_ecosystem/hosted_registry/hosted-registry-index.json",
+      "command": "npm run objc3c -- validate-package-registry-model"
+    },
+    {
+      "capability_id": "ecosystem.package-manager.hosted-registry-fixture",
+      "support_claim": "objc3c.behavior.package.hosted-registry-fixture",
+      "evidence_kind": "test",
+      "path": "tests/tooling/fixtures/package_ecosystem/hosted_registry/offline-mirror-index.json",
+      "command": "npm run objc3c -- validate-package-registry-model"
+    },
+    {
+      "capability_id": "ecosystem.package-manager.hosted-registry-fixture",
+      "support_claim": "objc3c.behavior.package.hosted-registry-fixture",
+      "evidence_kind": "test",
+      "path": "tests/tooling/fixtures/package_ecosystem/hosted_registry/fixture-lock.json",
+      "command": "npm run objc3c -- validate-package-registry-model"
+    },
+    {
+      "capability_id": "ecosystem.package-manager.hosted-registry-fixture",
+      "support_claim": "objc3c.behavior.package.hosted-registry-fixture",
+      "evidence_kind": "test",
+      "path": "tests/tooling/fixtures/package_ecosystem/hosted_registry/negative-registry-cases.json",
+      "command": "npm run objc3c -- validate-package-registry-model"
+    },
+    {
+      "capability_id": "ecosystem.package-manager.hosted-registry-fixture",
+      "support_claim": "objc3c.behavior.package.hosted-registry-fixture",
+      "evidence_kind": "test",
+      "path": "tests/tooling/fixtures/package_ecosystem/hosted_registry/service/hosted-registry-service.json",
+      "command": "npm run objc3c -- validate-package-registry-model"
+    },
+    {
+      "capability_id": "ecosystem.package-manager.hosted-registry-fixture",
+      "support_claim": "objc3c.behavior.package.hosted-registry-fixture",
+      "evidence_kind": "test",
+      "path": "tests/tooling/fixtures/package_ecosystem/hosted_registry/service/negative-service-cases.json",
+      "command": "npm run objc3c -- validate-package-registry-model"
+    },
+    {
+      "capability_id": "ecosystem.package-manager.hosted-registry-fixture",
+      "support_claim": "objc3c.behavior.package.hosted-registry-fixture",
+      "evidence_kind": "test",
+      "path": "tests/tooling/test_package_hosted_registry_resolution.py",
+      "command": "npm run objc3c -- validate-package-registry-model"
+    },
+    {
+      "capability_id": "ecosystem.package-manager.hosted-registry-fixture",
+      "support_claim": "objc3c.behavior.package.hosted-registry-fixture",
+      "evidence_kind": "schema",
+      "path": "schemas/objc3c-package-hosted-registry-index-v1.schema.json"
+    },
+    {
+      "capability_id": "ecosystem.package-manager.hosted-registry-fixture",
+      "support_claim": "objc3c.behavior.package.hosted-registry-fixture",
+      "evidence_kind": "schema",
+      "path": "schemas/objc3c-package-hosted-registry-service-v1.schema.json"
+    },
+    {
+      "capability_id": "ecosystem.package-manager.hosted-registry-fixture",
+      "support_claim": "objc3c.behavior.package.hosted-registry-fixture",
+      "evidence_kind": "source",
+      "path": "scripts/objc3c_package_manager/hosted_registry.py"
+    },
+    {
+      "capability_id": "ecosystem.package-manager.hosted-registry-fixture",
+      "support_claim": "objc3c.behavior.package.hosted-registry-fixture",
+      "evidence_kind": "source",
+      "path": "scripts/objc3c_package_manager/hosted_service.py"
+    },
+    {
+      "capability_id": "ecosystem.package-manager.hosted-registry-fixture",
+      "support_claim": "objc3c.behavior.package.hosted-registry-fixture",
+      "evidence_kind": "source",
+      "path": "scripts/check_objc3c_package_registry_model.py"
+    },
+    {
+      "capability_id": "ecosystem.package-manager.hosted-registry-fixture",
+      "support_claim": "objc3c.behavior.package.hosted-registry-fixture",
+      "evidence_kind": "doc",
+      "path": "docs/runbooks/objc3c_package_ecosystem.md"
+    },
+    {
+      "capability_id": "ecosystem.package-manager.hosted-registry-hermetic-service",
+      "support_claim": "objc3c.behavior.package.hosted-registry-hermetic-service",
+      "evidence_kind": "test",
+      "path": "tests/tooling/fixtures/package_ecosystem/hosted_registry/service/hosted-registry-service.json",
+      "command": "npm run objc3c -- validate-package-registry-model"
+    },
+    {
+      "capability_id": "ecosystem.package-manager.hosted-registry-hermetic-service",
+      "support_claim": "objc3c.behavior.package.hosted-registry-hermetic-service",
+      "evidence_kind": "test",
+      "path": "tests/tooling/fixtures/package_ecosystem/hosted_registry/service/negative-service-cases.json",
+      "command": "npm run objc3c -- validate-package-registry-model"
+    },
+    {
+      "capability_id": "ecosystem.package-manager.hosted-registry-hermetic-service",
+      "support_claim": "objc3c.behavior.package.hosted-registry-hermetic-service",
+      "evidence_kind": "test",
+      "path": "tests/tooling/fixtures/package_ecosystem/hosted_registry/hosted-registry-index.json",
+      "command": "npm run objc3c -- validate-package-registry-model"
+    },
+    {
+      "capability_id": "ecosystem.package-manager.hosted-registry-hermetic-service",
+      "support_claim": "objc3c.behavior.package.hosted-registry-hermetic-service",
+      "evidence_kind": "test",
+      "path": "tests/tooling/fixtures/package_ecosystem/hosted_registry/offline-mirror-index.json",
+      "command": "npm run objc3c -- validate-package-registry-model"
+    },
+    {
+      "capability_id": "ecosystem.package-manager.hosted-registry-hermetic-service",
+      "support_claim": "objc3c.behavior.package.hosted-registry-hermetic-service",
+      "evidence_kind": "test",
+      "path": "tests/tooling/fixtures/package_ecosystem/hosted_registry/fixture-lock.json",
+      "command": "npm run objc3c -- validate-package-registry-model"
+    },
+    {
+      "capability_id": "ecosystem.package-manager.hosted-registry-hermetic-service",
+      "support_claim": "objc3c.behavior.package.hosted-registry-hermetic-service",
+      "evidence_kind": "test",
+      "path": "tests/tooling/test_package_hosted_registry_resolution.py",
+      "command": "npm run objc3c -- validate-package-registry-model"
+    },
+    {
+      "capability_id": "ecosystem.package-manager.hosted-registry-hermetic-service",
+      "support_claim": "objc3c.behavior.package.hosted-registry-hermetic-service",
+      "evidence_kind": "schema",
+      "path": "schemas/objc3c-package-hosted-registry-service-v1.schema.json"
+    },
+    {
+      "capability_id": "ecosystem.package-manager.hosted-registry-hermetic-service",
+      "support_claim": "objc3c.behavior.package.hosted-registry-hermetic-service",
+      "evidence_kind": "source",
+      "path": "scripts/objc3c_package_manager/hosted_service.py"
+    },
+    {
+      "capability_id": "ecosystem.package-manager.hosted-registry-hermetic-service",
+      "support_claim": "objc3c.behavior.package.hosted-registry-hermetic-service",
+      "evidence_kind": "source",
+      "path": "scripts/objc3c_package_manager/hosted_registry.py"
+    },
+    {
+      "capability_id": "ecosystem.package-manager.hosted-registry-hermetic-service",
+      "support_claim": "objc3c.behavior.package.hosted-registry-hermetic-service",
+      "evidence_kind": "source",
+      "path": "scripts/check_objc3c_package_registry_model.py"
+    },
+    {
+      "capability_id": "ecosystem.package-manager.hosted-registry-hermetic-service",
+      "support_claim": "objc3c.behavior.package.hosted-registry-hermetic-service",
+      "evidence_kind": "doc",
+      "path": "docs/runbooks/objc3c_package_ecosystem.md"
+    },
+    {
+      "capability_id": "ecosystem.package-manager.network-dependency-resolution",
+      "support_claim": "objc3c.behavior.package.network-dependency-resolution",
+      "evidence_kind": "test",
+      "path": "tests/tooling/fixtures/package_ecosystem/network_resolution/network-dependency-resolution.json",
+      "command": "npm run objc3c -- validate-package-network-publication"
+    },
+    {
+      "capability_id": "ecosystem.package-manager.network-dependency-resolution",
+      "support_claim": "objc3c.behavior.package.network-dependency-resolution",
+      "evidence_kind": "test",
+      "path": "tests/tooling/fixtures/package_ecosystem/network_resolution/negative-network-publication-cases.json",
+      "command": "npm run objc3c -- validate-package-network-publication"
+    },
+    {
+      "capability_id": "ecosystem.package-manager.network-dependency-resolution",
+      "support_claim": "objc3c.behavior.package.network-dependency-resolution",
+      "evidence_kind": "test",
+      "path": "tests/tooling/test_package_network_publication_contract.py",
+      "command": "npm run objc3c -- validate-package-network-publication"
+    },
+    {
+      "capability_id": "ecosystem.package-manager.network-dependency-resolution",
+      "support_claim": "objc3c.behavior.package.network-dependency-resolution",
+      "evidence_kind": "schema",
+      "path": "schemas/objc3c-package-network-resolution-v1.schema.json"
+    },
+    {
+      "capability_id": "ecosystem.package-manager.network-dependency-resolution",
+      "support_claim": "objc3c.behavior.package.network-dependency-resolution",
+      "evidence_kind": "source",
+      "path": "scripts/objc3c_package_manager/network_publication.py"
+    },
+    {
+      "capability_id": "ecosystem.package-manager.network-dependency-resolution",
+      "support_claim": "objc3c.behavior.package.network-dependency-resolution",
+      "evidence_kind": "source",
+      "path": "scripts/check_objc3c_package_network_publication.py"
+    },
+    {
+      "capability_id": "ecosystem.package-manager.release-channel-publication",
+      "support_claim": "objc3c.behavior.package.release-channel-publication",
+      "evidence_kind": "test",
+      "path": "tests/tooling/fixtures/package_ecosystem/network_resolution/package-release-channel-publication.json",
+      "command": "npm run objc3c -- validate-package-network-publication"
+    },
+    {
+      "capability_id": "ecosystem.package-manager.release-channel-publication",
+      "support_claim": "objc3c.behavior.package.release-channel-publication",
+      "evidence_kind": "test",
+      "path": "tests/tooling/fixtures/package_ecosystem/network_resolution/negative-network-publication-cases.json",
+      "command": "npm run objc3c -- validate-package-network-publication"
+    },
+    {
+      "capability_id": "ecosystem.package-manager.release-channel-publication",
+      "support_claim": "objc3c.behavior.package.release-channel-publication",
+      "evidence_kind": "test",
+      "path": "tests/tooling/test_package_network_publication_contract.py",
+      "command": "npm run objc3c -- validate-package-network-publication"
+    },
+    {
+      "capability_id": "ecosystem.package-manager.release-channel-publication",
+      "support_claim": "objc3c.behavior.package.release-channel-publication",
+      "evidence_kind": "schema",
+      "path": "schemas/objc3c-package-release-channel-publication-v1.schema.json"
+    },
+    {
+      "capability_id": "ecosystem.package-manager.release-channel-publication",
+      "support_claim": "objc3c.behavior.package.release-channel-publication",
+      "evidence_kind": "source",
+      "path": "scripts/objc3c_package_manager/network_publication.py"
+    },
+    {
+      "capability_id": "ecosystem.package-manager.release-channel-publication",
+      "support_claim": "objc3c.behavior.package.release-channel-publication",
+      "evidence_kind": "source",
+      "path": "scripts/check_objc3c_package_network_publication.py"
+    },
+    {
+      "capability_id": "ecosystem.package-manager.security-hardening",
+      "support_claim": "objc3c.behavior.package.security-hardening",
+      "evidence_kind": "test",
+      "path": "tests/tooling/fixtures/package_ecosystem/package_security_hardening_contract.json",
+      "command": "npm run objc3c -- validate-package-security-hardening"
+    },
+    {
+      "capability_id": "ecosystem.package-manager.security-hardening",
+      "support_claim": "objc3c.behavior.package.security-hardening",
+      "evidence_kind": "test",
+      "path": "tests/tooling/test_package_signing_trust.py",
+      "command": "npm run objc3c -- validate-package-security-hardening"
+    },
+    {
+      "capability_id": "ecosystem.package-manager.security-hardening",
+      "support_claim": "objc3c.behavior.package.security-hardening",
+      "evidence_kind": "schema",
+      "path": "schemas/objc3c-package-signing-trust-v1.schema.json"
+    },
+    {
+      "capability_id": "ecosystem.package-manager.security-hardening",
+      "support_claim": "objc3c.behavior.package.security-hardening",
+      "evidence_kind": "schema",
+      "path": "schemas/objc3c-package-lock-v1.schema.json"
+    },
+    {
+      "capability_id": "ecosystem.package-manager.security-hardening",
+      "support_claim": "objc3c.behavior.package.security-hardening",
+      "evidence_kind": "source",
+      "path": "scripts/objc3c_package_manager/trust.py"
+    },
+    {
+      "capability_id": "ecosystem.package-manager.security-hardening",
+      "support_claim": "objc3c.behavior.package.security-hardening",
+      "evidence_kind": "source",
+      "path": "scripts/sign_objc3c_package.py"
+    },
+    {
+      "capability_id": "ecosystem.package-manager.security-hardening",
+      "support_claim": "objc3c.behavior.package.security-hardening",
+      "evidence_kind": "source",
+      "path": "scripts/verify_objc3c_package.py"
+    },
+    {
+      "capability_id": "ecosystem.package-manager.security-hardening",
+      "support_claim": "objc3c.behavior.package.security-hardening",
+      "evidence_kind": "source",
+      "path": "scripts/objc3c_package_manager/operations.py"
+    },
+    {
+      "capability_id": "ecosystem.package-manager.security-hardening",
+      "support_claim": "objc3c.behavior.package.security-hardening",
+      "evidence_kind": "source",
+      "path": "scripts/objc3c_package_manager/install_distribution.py"
+    },
+    {
+      "capability_id": "ecosystem.package-manager.security-hardening",
+      "support_claim": "objc3c.behavior.package.security-hardening",
+      "evidence_kind": "source",
+      "path": "scripts/check_objc3c_package_security_hardening.py"
     },
     {
       "capability_id": "ecosystem.package-manager.public-hosted-registry",
@@ -4104,14 +5388,14 @@
       "support_claim": "objc3c.behavior.package.install-clean-distribution",
       "evidence_kind": "test",
       "path": "tests/tooling/fixtures/package_ecosystem/install_distribution_credibility_contract.json",
-      "command": "npm run objc3c -- validate-package-install-distribution"
+      "command": "npm run objc3c -- validate-package-install-distribution --from-nothing"
     },
     {
       "capability_id": "ecosystem.package-install.clean-distribution",
       "support_claim": "objc3c.behavior.package.install-clean-distribution",
       "evidence_kind": "test",
       "path": "tests/tooling/test_package_install_distribution_credibility.py",
-      "command": "npm run objc3c -- validate-package-install-distribution"
+      "command": "npm run objc3c -- validate-package-install-distribution --from-nothing"
     },
     {
       "capability_id": "ecosystem.package-install.clean-distribution",
@@ -4119,6 +5403,12 @@
       "evidence_kind": "test",
       "path": "tests/tooling/fixtures/cross_lane_e2e/distribution_package_lifecycle.expectation.json",
       "command": "npm run objc3c -- validate-cross-lane-e2e"
+    },
+    {
+      "capability_id": "ecosystem.package-install.clean-distribution",
+      "support_claim": "objc3c.behavior.package.install-clean-distribution",
+      "evidence_kind": "source",
+      "path": "tests/tooling/fixtures/package_ecosystem/from_nothing_install_proof_contract.json"
     },
     {
       "capability_id": "ecosystem.package-install.clean-distribution",
@@ -4356,8 +5646,20 @@
     {
       "capability_id": "compiler.optimization.semantic-preserving-pipeline",
       "support_claim": "objc3c.behavior.semantic_optimization_pipeline",
+      "evidence_kind": "source",
+      "path": "tests/tooling/fixtures/performance_governance/optimization_runtime_debug_safety_contract.json"
+    },
+    {
+      "capability_id": "compiler.optimization.semantic-preserving-pipeline",
+      "support_claim": "objc3c.behavior.semantic_optimization_pipeline",
       "evidence_kind": "schema",
       "path": "schemas/objc3c-semantic-optimization-pipeline-v1.schema.json"
+    },
+    {
+      "capability_id": "compiler.optimization.semantic-preserving-pipeline",
+      "support_claim": "objc3c.behavior.semantic_optimization_pipeline",
+      "evidence_kind": "schema",
+      "path": "schemas/objc3c-optimization-runtime-debug-safety-v1.schema.json"
     },
     {
       "capability_id": "compiler.optimization.semantic-preserving-pipeline",
@@ -4370,6 +5672,38 @@
       "support_claim": "objc3c.behavior.semantic_optimization_pipeline",
       "evidence_kind": "source",
       "path": "scripts/objc3c_semantic_optimization_pipeline.py"
+    },
+    {
+      "capability_id": "compiler.optimization.runtime-debug-safety",
+      "evidence_kind": "schema",
+      "path": "schemas/objc3c-optimization-runtime-debug-safety-v1.schema.json"
+    },
+    {
+      "capability_id": "compiler.optimization.runtime-debug-safety",
+      "evidence_kind": "source",
+      "path": "tests/tooling/fixtures/performance_governance/optimization_runtime_debug_safety_contract.json"
+    },
+    {
+      "capability_id": "compiler.optimization.runtime-debug-safety",
+      "evidence_kind": "source",
+      "path": "tests/tooling/fixtures/performance_governance/budget_model.json"
+    },
+    {
+      "capability_id": "compiler.optimization.runtime-debug-safety",
+      "evidence_kind": "test",
+      "path": "tests/tooling/fixtures/semantic_optimization_pipeline/proof_cases.json",
+      "command": "npm run objc3c -- validate-semantic-optimization-pipeline"
+    },
+    {
+      "capability_id": "compiler.optimization.runtime-debug-safety",
+      "evidence_kind": "test",
+      "path": "tests/tooling/test_semantic_optimization_pipeline.py",
+      "command": "npm run objc3c -- validate-semantic-optimization-pipeline"
+    },
+    {
+      "capability_id": "compiler.optimization.runtime-debug-safety",
+      "evidence_kind": "doc",
+      "path": "docs/runbooks/objc3c_performance_governance.md"
     },
     {
       "capability_id": "compiler.optimization.semantic-pass-registry",
@@ -4427,29 +5761,101 @@
     },
     {
       "capability_id": "compiler.optimization.method-inlining",
-      "evidence_kind": "diagnostic",
-      "path": "tests/tooling/fixtures/semantic_optimization_pipeline/reserved_method_inlining_skip.json"
+      "support_claim": "objc3c.behavior.optimization.method-inlining-safe-subset",
+      "evidence_kind": "source",
+      "path": "native/objc3c/src/opt/objc3_semantic_optimization_executor.cpp"
     },
     {
       "capability_id": "compiler.optimization.method-inlining",
-      "evidence_kind": "doc",
-      "path": "tests/tooling/fixtures/semantic_optimization_pipeline/pipeline.json"
+      "support_claim": "objc3c.behavior.optimization.method-inlining-safe-subset",
+      "evidence_kind": "source",
+      "path": "native/objc3c/src/opt/objc3_semantic_optimization_executor.h"
     },
     {
       "capability_id": "compiler.optimization.method-inlining",
+      "support_claim": "objc3c.behavior.optimization.method-inlining-safe-subset",
+      "evidence_kind": "source",
+      "path": "native/objc3c/src/pipeline/objc3_semantic_optimization_pipeline.cpp"
+    },
+    {
+      "capability_id": "compiler.optimization.method-inlining",
+      "support_claim": "objc3c.behavior.optimization.method-inlining-safe-subset",
+      "evidence_kind": "source",
+      "path": "native/objc3c/src/ir/objc3_ir_semantic_optimization_policy.cpp"
+    },
+    {
+      "capability_id": "compiler.optimization.method-inlining",
+      "support_claim": "objc3c.behavior.optimization.method-inlining-safe-subset",
+      "evidence_kind": "source",
+      "path": "scripts/objc3c_semantic_optimization_pipeline.py"
+    },
+    {
+      "capability_id": "compiler.optimization.method-inlining",
+      "support_claim": "objc3c.behavior.optimization.method-inlining-safe-subset",
+      "evidence_kind": "schema",
+      "path": "schemas/objc3c-semantic-optimization-pipeline-v1.schema.json"
+    },
+    {
+      "capability_id": "compiler.optimization.method-inlining",
+      "support_claim": "objc3c.behavior.optimization.method-inlining-safe-subset",
+      "evidence_kind": "schema",
+      "path": "schemas/objc3c-optimization-runtime-debug-safety-v1.schema.json"
+    },
+    {
+      "capability_id": "compiler.optimization.method-inlining",
+      "support_claim": "objc3c.behavior.optimization.method-inlining-safe-subset",
       "evidence_kind": "test",
-      "path": "tests/tooling/fixtures/cross_lane_e2e/optimization_runtime_equivalence.expectation.json",
-      "command": "npm run objc3c -- validate-cross-lane-e2e"
+      "path": "tests/tooling/fixtures/semantic_optimization_pipeline/proof_cases.json",
+      "command": "npm run objc3c -- validate-semantic-optimization-pipeline"
     },
     {
       "capability_id": "compiler.optimization.method-inlining",
-      "evidence_kind": "diagnostic",
-      "path": "tests/native/ir/optimization/semantic_pipeline_method_inlining.before.ll"
+      "support_claim": "objc3c.behavior.optimization.method-inlining-safe-subset",
+      "evidence_kind": "test",
+      "path": "tests/tooling/fixtures/semantic_optimization_pipeline/method_inlining_replay_contract.json",
+      "command": "npm run objc3c -- validate-semantic-optimization-pipeline"
     },
     {
       "capability_id": "compiler.optimization.method-inlining",
-      "evidence_kind": "diagnostic",
-      "path": "tests/native/ir/optimization/semantic_pipeline_method_inlining.after.ll"
+      "support_claim": "objc3c.behavior.optimization.method-inlining-safe-subset",
+      "evidence_kind": "test",
+      "path": "tests/tooling/fixtures/semantic_optimization_pipeline/negative_method_inlining_missing_inline_proof.json",
+      "command": "npm run objc3c -- validate-semantic-optimization-pipeline"
+    },
+    {
+      "capability_id": "compiler.optimization.method-inlining",
+      "support_claim": "objc3c.behavior.optimization.method-inlining-safe-subset",
+      "evidence_kind": "test",
+      "path": "tests/tooling/fixtures/semantic_optimization_pipeline/negative_method_inlining_stale_dispatch_invalidation.json",
+      "command": "npm run objc3c -- validate-semantic-optimization-pipeline"
+    },
+    {
+      "capability_id": "compiler.optimization.method-inlining",
+      "support_claim": "objc3c.behavior.optimization.method-inlining-safe-subset",
+      "evidence_kind": "test",
+      "path": "tests/tooling/fixtures/semantic_optimization_pipeline/negative_method_inlining_side_effecting_method_as_pure.json",
+      "command": "npm run objc3c -- validate-semantic-optimization-pipeline"
+    },
+    {
+      "capability_id": "compiler.optimization.method-inlining",
+      "support_claim": "objc3c.behavior.optimization.method-inlining-safe-subset",
+      "evidence_kind": "test",
+      "path": "tests/tooling/fixtures/semantic_optimization_pipeline/negative_method_inlining_source_map_step_drift.json",
+      "command": "npm run objc3c -- validate-semantic-optimization-pipeline"
+    },
+    {
+      "capability_id": "compiler.optimization.method-inlining",
+      "support_claim": "objc3c.behavior.optimization.method-inlining-safe-subset",
+      "evidence_kind": "test",
+      "path": "tests/native/ir/optimization/semantic_pipeline_method_inlining.before.ll",
+      "command": "npm run objc3c -- validate-semantic-optimization-pipeline"
+    },
+    {
+      "capability_id": "compiler.optimization.method-inlining",
+      "support_claim": "objc3c.behavior.optimization.method-inlining-safe-subset",
+      "evidence_kind": "test",
+      "path": "tests/native/ir/optimization/semantic_pipeline_method_inlining.after.ll",
+      "command": "npm run objc3c -- validate-semantic-optimization-pipeline"
     },
     {
       "capability_id": "runtime.optimization.cache-aware-dispatch",
@@ -4572,6 +5978,12 @@
     },
     {
       "capability_id": "runtime.debug-trace.full-source-map-publication",
+      "evidence_kind": "test",
+      "path": "tests/tooling/fixtures/developer_tooling/debug_source_maps/positive.json",
+      "command": "npm run objc3c -- validate-debug-source-maps"
+    },
+    {
+      "capability_id": "runtime.debug-trace.full-source-map-publication",
       "evidence_kind": "diagnostic",
       "path": "tests/tooling/fixtures/cross_lane_e2e/text_collections_package.expectation.json",
       "command": "npm run objc3c -- validate-cross-lane-e2e"
@@ -4583,23 +5995,99 @@
     },
     {
       "capability_id": "runtime.debug-trace.lldb-plugin",
-      "evidence_kind": "diagnostic",
-      "path": "tests/tooling/fixtures/developer_tooling/runtime_debug_trace/contract.json"
+      "support_claim": "objc3c.behavior.runtime.debug-trace.lldb-plugin",
+      "evidence_kind": "test",
+      "path": "tests/tooling/fixtures/developer_tooling/debugger_integration/replay.json",
+      "command": "npm run objc3c -- validate-debugger-integration"
     },
     {
       "capability_id": "runtime.debug-trace.lldb-plugin",
+      "support_claim": "objc3c.behavior.runtime.debug-trace.lldb-plugin",
+      "evidence_kind": "test",
+      "path": "tests/tooling/fixtures/developer_tooling/debugger_integration/lldb_protocol_contract.json",
+      "command": "npm run objc3c -- validate-debugger-integration"
+    },
+    {
+      "capability_id": "runtime.debug-trace.lldb-plugin",
+      "support_claim": "objc3c.behavior.runtime.debug-trace.lldb-plugin",
       "evidence_kind": "doc",
       "path": "docs/runbooks/objc3c_developer_tooling.md"
     },
     {
       "capability_id": "runtime.debug-trace.statement-stepping",
-      "evidence_kind": "diagnostic",
-      "path": "tests/tooling/fixtures/developer_tooling/runtime_debug_trace/debug-map.json"
+      "support_claim": "objc3c.behavior.runtime.debug-trace.statement-stepping",
+      "evidence_kind": "test",
+      "path": "tests/tooling/fixtures/developer_tooling/debug_source_maps/positive.json",
+      "command": "npm run objc3c -- validate-debug-source-maps"
     },
     {
       "capability_id": "runtime.debug-trace.statement-stepping",
+      "support_claim": "objc3c.behavior.runtime.debug-trace.statement-stepping",
+      "evidence_kind": "test",
+      "path": "tests/tooling/fixtures/developer_tooling/debugger_integration/replay.json",
+      "command": "npm run objc3c -- validate-debugger-integration"
+    },
+    {
+      "capability_id": "runtime.debug-trace.statement-stepping",
+      "support_claim": "objc3c.behavior.runtime.debug-trace.statement-stepping",
+      "evidence_kind": "test",
+      "path": "tests/tooling/fixtures/developer_tooling/debug_source_maps/negative_cases.json",
+      "command": "npm run objc3c -- validate-debug-source-maps"
+    },
+    {
+      "capability_id": "runtime.debug-trace.statement-stepping",
+      "support_claim": "objc3c.behavior.runtime.debug-trace.statement-stepping",
       "evidence_kind": "doc",
       "path": "docs/runbooks/objc3c_developer_tooling.md"
+    },
+    {
+      "capability_id": "runtime.debug-trace.inline-frame-source-map",
+      "support_claim": "objc3c.behavior.runtime.debug-trace.inline-frame-source-map",
+      "evidence_kind": "test",
+      "path": "tests/tooling/fixtures/developer_tooling/debug_source_maps/inline_frame_source_map_contract.json",
+      "command": "npm run objc3c -- validate-debug-source-maps"
+    },
+    {
+      "capability_id": "runtime.debug-trace.inline-frame-source-map",
+      "support_claim": "objc3c.behavior.runtime.debug-trace.inline-frame-source-map",
+      "evidence_kind": "test",
+      "path": "tests/tooling/fixtures/developer_tooling/debug_source_maps/positive.json",
+      "command": "npm run objc3c -- validate-debug-source-maps"
+    },
+    {
+      "capability_id": "runtime.debug-trace.inline-frame-source-map",
+      "support_claim": "objc3c.behavior.runtime.debug-trace.inline-frame-source-map",
+      "evidence_kind": "test",
+      "path": "tests/tooling/fixtures/developer_tooling/debug_source_maps/negative_cases.json",
+      "command": "npm run objc3c -- validate-debug-source-maps"
+    },
+    {
+      "capability_id": "runtime.typed-keypath.debugger-lowering",
+      "support_claim": "objc3c.behavior.runtime.typed-keypath.debugger-lowering",
+      "evidence_kind": "test",
+      "path": "tests/tooling/fixtures/native/typed_keypath_debugger_lowering_contract.json",
+      "command": "npm run objc3c -- validate-object-model-debugger-proof"
+    },
+    {
+      "capability_id": "runtime.typed-keypath.debugger-lowering",
+      "support_claim": "objc3c.behavior.runtime.typed-keypath.debugger-lowering",
+      "evidence_kind": "test",
+      "path": "tests/tooling/fixtures/native/typed_keypath_artifact_positive.objc3",
+      "command": "npm run objc3c -- validate-object-model-debugger-proof"
+    },
+    {
+      "capability_id": "runtime.typed-keypath.debugger-lowering",
+      "support_claim": "objc3c.behavior.runtime.typed-keypath.debugger-lowering",
+      "evidence_kind": "test",
+      "path": "tests/tooling/fixtures/native/typed_keypath_nested_chain_positive.objc3",
+      "command": "npm run objc3c -- validate-object-model-debugger-proof"
+    },
+    {
+      "capability_id": "runtime.typed-keypath.debugger-lowering",
+      "support_claim": "objc3c.behavior.runtime.typed-keypath.debugger-lowering",
+      "evidence_kind": "test",
+      "path": "tests/tooling/fixtures/native/typed_keypath_runtime_positive.objc3",
+      "command": "npm run objc3c -- validate-object-model-debugger-proof"
     },
     {
       "capability_id": "runtime.debug-trace.async-tasks",
@@ -4720,6 +6208,71 @@
       "path": "tests/tooling/fixtures/platform_hardening/unsupported_host_fail_closed_policy.json"
     },
     {
+      "capability_id": "platform.linux-x64.unsupported",
+      "evidence_kind": "source",
+      "path": "tests/tooling/fixtures/platform_hardening/platform_host_promotion_evidence_contract.json"
+    },
+    {
+      "capability_id": "platform.linux-x64.unsupported",
+      "evidence_kind": "source",
+      "path": "scripts/platform_hardening_contracts/host_promotion.py"
+    },
+    {
+      "capability_id": "platform.linux-x64.unsupported",
+      "evidence_kind": "source",
+      "path": "scripts/check_platform_host_promotion_evidence.py"
+    },
+    {
+      "capability_id": "platform.linux-x64.unsupported",
+      "evidence_kind": "source",
+      "path": "scripts/check_objc3c_packaging_channels_end_to_end.py"
+    },
+    {
+      "capability_id": "platform.linux-x64.unsupported",
+      "evidence_kind": "source",
+      "path": "scripts/ingest_objc3c_platform_host_evidence.py"
+    },
+    {
+      "capability_id": "platform.linux-x64.unsupported",
+      "evidence_kind": "source",
+      "path": "scripts/review_objc3c_platform_host_evidence.py"
+    },
+    {
+      "capability_id": "platform.linux-x64.unsupported",
+      "evidence_kind": "source",
+      "path": "scripts/promote_objc3c_platform_support.py"
+    },
+    {
+      "capability_id": "platform.linux-x64.unsupported",
+      "evidence_kind": "source",
+      "path": "scripts/platform_hardening_contracts/host_evidence_contract.py"
+    },
+    {
+      "capability_id": "platform.linux-x64.unsupported",
+      "evidence_kind": "source",
+      "path": "scripts/objc3c_workflow/actions/release_governance_packaging_contracts.py"
+    },
+    {
+      "capability_id": "platform.linux-x64.unsupported",
+      "evidence_kind": "source",
+      "path": "tests/tooling/fixtures/platform_hardening/install_matrix_integration_contract.json"
+    },
+    {
+      "capability_id": "platform.linux-x64.unsupported",
+      "evidence_kind": "test",
+      "path": "tests/tooling/test_platform_host_evidence_review.py"
+    },
+    {
+      "capability_id": "platform.linux-x64.unsupported",
+      "evidence_kind": "source",
+      "path": "tests/tooling/fixtures/platform_hardening/host_promotion_reviewed_source_inputs.json"
+    },
+    {
+      "capability_id": "platform.linux-x64.unsupported",
+      "evidence_kind": "source",
+      "path": "tests/tooling/fixtures/platform_support/source_truth_matrix.json"
+    },
+    {
       "capability_id": "platform.darwin-arm64.unsupported",
       "evidence_kind": "diagnostic",
       "path": "tests/tooling/fixtures/platform_hardening/platform_toolchain_support_evidence.json"
@@ -4730,6 +6283,71 @@
       "path": "tests/tooling/fixtures/platform_hardening/unsupported_host_fail_closed_policy.json"
     },
     {
+      "capability_id": "platform.darwin-arm64.unsupported",
+      "evidence_kind": "source",
+      "path": "tests/tooling/fixtures/platform_hardening/platform_host_promotion_evidence_contract.json"
+    },
+    {
+      "capability_id": "platform.darwin-arm64.unsupported",
+      "evidence_kind": "source",
+      "path": "scripts/platform_hardening_contracts/host_promotion.py"
+    },
+    {
+      "capability_id": "platform.darwin-arm64.unsupported",
+      "evidence_kind": "source",
+      "path": "scripts/check_platform_host_promotion_evidence.py"
+    },
+    {
+      "capability_id": "platform.darwin-arm64.unsupported",
+      "evidence_kind": "source",
+      "path": "scripts/check_objc3c_packaging_channels_end_to_end.py"
+    },
+    {
+      "capability_id": "platform.darwin-arm64.unsupported",
+      "evidence_kind": "source",
+      "path": "scripts/ingest_objc3c_platform_host_evidence.py"
+    },
+    {
+      "capability_id": "platform.darwin-arm64.unsupported",
+      "evidence_kind": "source",
+      "path": "scripts/review_objc3c_platform_host_evidence.py"
+    },
+    {
+      "capability_id": "platform.darwin-arm64.unsupported",
+      "evidence_kind": "source",
+      "path": "scripts/promote_objc3c_platform_support.py"
+    },
+    {
+      "capability_id": "platform.darwin-arm64.unsupported",
+      "evidence_kind": "source",
+      "path": "scripts/platform_hardening_contracts/host_evidence_contract.py"
+    },
+    {
+      "capability_id": "platform.darwin-arm64.unsupported",
+      "evidence_kind": "source",
+      "path": "scripts/objc3c_workflow/actions/release_governance_packaging_contracts.py"
+    },
+    {
+      "capability_id": "platform.darwin-arm64.unsupported",
+      "evidence_kind": "source",
+      "path": "tests/tooling/fixtures/platform_hardening/install_matrix_integration_contract.json"
+    },
+    {
+      "capability_id": "platform.darwin-arm64.unsupported",
+      "evidence_kind": "test",
+      "path": "tests/tooling/test_platform_host_evidence_review.py"
+    },
+    {
+      "capability_id": "platform.darwin-arm64.unsupported",
+      "evidence_kind": "source",
+      "path": "tests/tooling/fixtures/platform_hardening/host_promotion_reviewed_source_inputs.json"
+    },
+    {
+      "capability_id": "platform.darwin-arm64.unsupported",
+      "evidence_kind": "source",
+      "path": "tests/tooling/fixtures/platform_support/source_truth_matrix.json"
+    },
+    {
       "capability_id": "toolchain.llvm.current-probed-executable",
       "evidence_kind": "source",
       "path": "tests/tooling/fixtures/platform_hardening/platform_toolchain_support_evidence.json"
@@ -4737,7 +6355,27 @@
     {
       "capability_id": "toolchain.llvm.current-probed-executable",
       "evidence_kind": "source",
+      "path": "tests/tooling/fixtures/platform_hardening/hosted_runner_capability_summaries.json"
+    },
+    {
+      "capability_id": "toolchain.llvm.current-probed-executable",
+      "evidence_kind": "schema",
+      "path": "schemas/objc3c-platform-hosted-runner-capability-summaries-v1.schema.json"
+    },
+    {
+      "capability_id": "toolchain.llvm.current-probed-executable",
+      "evidence_kind": "source",
       "path": "scripts/probe_objc3c_llvm_capabilities.py"
+    },
+    {
+      "capability_id": "toolchain.llvm.current-probed-executable",
+      "evidence_kind": "source",
+      "path": "scripts/objc3c_llvm_capability_probe/reports.py"
+    },
+    {
+      "capability_id": "toolchain.llvm.current-probed-executable",
+      "evidence_kind": "source",
+      "path": "scripts/check_objc3c_cross_lane_e2e.py"
     },
     {
       "capability_id": "toolchain.llvm.current-probed-executable",
@@ -4760,14 +6398,254 @@
       "path": "tests/tooling/fixtures/platform_hardening/platform_toolchain_support_evidence.json"
     },
     {
+      "capability_id": "platform.expansion.umbrella-readiness",
+      "evidence_kind": "source",
+      "path": "tests/tooling/fixtures/platform_support/source_truth_matrix.json"
+    },
+    {
+      "capability_id": "platform.expansion.umbrella-readiness",
+      "evidence_kind": "schema",
+      "path": "schemas/objc3c-platform-support-source-truth-v1.schema.json"
+    },
+    {
+      "capability_id": "platform.expansion.umbrella-readiness",
+      "evidence_kind": "source",
+      "path": "scripts/check_objc3c_platform_support_matrix.py"
+    },
+    {
+      "capability_id": "platform.expansion.umbrella-readiness",
+      "evidence_kind": "source",
+      "path": "scripts/platform_hardening_contracts/support_evidence.py"
+    },
+    {
+      "capability_id": "platform.expansion.umbrella-readiness",
+      "evidence_kind": "source",
+      "path": "scripts/platform_hardening_contracts/host_promotion.py"
+    },
+    {
+      "capability_id": "platform.expansion.umbrella-readiness",
+      "evidence_kind": "source",
+      "path": "scripts/check_platform_host_promotion_evidence.py"
+    },
+    {
+      "capability_id": "platform.expansion.umbrella-readiness",
+      "evidence_kind": "source",
+      "path": "scripts/check_objc3c_packaging_channels_end_to_end.py"
+    },
+    {
+      "capability_id": "platform.expansion.umbrella-readiness",
+      "evidence_kind": "source",
+      "path": "scripts/ingest_objc3c_platform_host_evidence.py"
+    },
+    {
+      "capability_id": "platform.expansion.umbrella-readiness",
+      "evidence_kind": "source",
+      "path": "scripts/review_objc3c_platform_host_evidence.py"
+    },
+    {
+      "capability_id": "platform.expansion.umbrella-readiness",
+      "evidence_kind": "source",
+      "path": "scripts/promote_objc3c_platform_support.py"
+    },
+    {
+      "capability_id": "platform.expansion.umbrella-readiness",
+      "evidence_kind": "source",
+      "path": "scripts/platform_hardening_contracts/host_evidence_contract.py"
+    },
+    {
+      "capability_id": "platform.expansion.umbrella-readiness",
+      "evidence_kind": "source",
+      "path": "scripts/objc3c_workflow/actions/release_governance_packaging_contracts.py"
+    },
+    {
+      "capability_id": "platform.expansion.umbrella-readiness",
+      "evidence_kind": "source",
+      "path": "tests/tooling/fixtures/platform_hardening/install_matrix_integration_contract.json"
+    },
+    {
+      "capability_id": "platform.expansion.umbrella-readiness",
+      "evidence_kind": "source",
+      "path": "tests/tooling/fixtures/platform_hardening/platform_host_promotion_evidence_contract.json"
+    },
+    {
+      "capability_id": "platform.expansion.umbrella-readiness",
+      "evidence_kind": "test",
+      "path": "tests/tooling/test_platform_host_evidence_review.py"
+    },
+    {
+      "capability_id": "platform.expansion.umbrella-readiness",
+      "evidence_kind": "source",
+      "path": "tests/tooling/fixtures/platform_hardening/host_promotion_reviewed_source_inputs.json"
+    },
+    {
+      "capability_id": "platform.expansion.umbrella-readiness",
+      "evidence_kind": "source",
+      "path": "tests/tooling/fixtures/security_hardening/sanitizer_package_install_model_contract.json"
+    },
+    {
+      "capability_id": "platform.expansion.umbrella-readiness",
+      "evidence_kind": "source",
+      "path": "tests/tooling/fixtures/security_hardening/sanitizer_execution_evidence_contract.json"
+    },
+    {
+      "capability_id": "platform.expansion.umbrella-readiness",
+      "evidence_kind": "schema",
+      "path": "schemas/objc3c-sanitizer-execution-evidence-v1.schema.json"
+    },
+    {
+      "capability_id": "platform.expansion.umbrella-readiness",
+      "evidence_kind": "source",
+      "path": "scripts/objc3c_workflow/actions/sanitizer_runtime_evidence.py"
+    },
+    {
+      "capability_id": "platform.expansion.umbrella-readiness",
+      "evidence_kind": "source",
+      "path": "scripts/check_objc3c_sanitizer_runtime_evidence.py"
+    },
+    {
+      "capability_id": "platform.expansion.umbrella-readiness",
+      "evidence_kind": "source",
+      "path": "scripts/probe_objc3c_sanitizer_runtime_evidence.py"
+    },
+    {
+      "capability_id": "platform.expansion.umbrella-readiness",
+      "evidence_kind": "source",
+      "path": "scripts/check_security_sanitizer_execution_evidence.py"
+    },
+    {
+      "capability_id": "platform.expansion.umbrella-readiness",
+      "evidence_kind": "diagnostic",
+      "path": "tests/tooling/fixtures/platform_hardening/unsupported_host_fail_closed_policy.json"
+    },
+    {
+      "capability_id": "platform.expansion.umbrella-readiness",
+      "evidence_kind": "doc",
+      "path": "docs/runbooks/objc3c_platform_hardening.md"
+    },
+    {
       "capability_id": "toolchain.sanitizer.address",
       "evidence_kind": "diagnostic",
       "path": "tests/tooling/fixtures/platform_hardening/platform_toolchain_support_evidence.json"
     },
     {
       "capability_id": "toolchain.sanitizer.address",
-      "evidence_kind": "doc",
+      "evidence_kind": "source",
       "path": "tests/tooling/fixtures/security_hardening/sanitizer_validation_contract.json"
+    },
+    {
+      "capability_id": "toolchain.sanitizer.address",
+      "evidence_kind": "source",
+      "path": "tests/tooling/fixtures/security_hardening/sanitizer_package_install_model_contract.json"
+    },
+    {
+      "capability_id": "toolchain.sanitizer.address",
+      "evidence_kind": "source",
+      "path": "tests/tooling/fixtures/platform_support/source_truth_matrix.json"
+    },
+    {
+      "capability_id": "toolchain.sanitizer.address",
+      "evidence_kind": "source",
+      "path": "scripts/package_objc3c_runnable_toolchain/staging_orchestration.psm1"
+    },
+    {
+      "capability_id": "toolchain.sanitizer.address",
+      "evidence_kind": "source",
+      "path": "scripts/package_objc3c_runnable_toolchain/artifact_report_foundation.psm1"
+    },
+    {
+      "capability_id": "toolchain.sanitizer.address",
+      "evidence_kind": "source",
+      "path": "scripts/objc3c_package_channels/model.py"
+    },
+    {
+      "capability_id": "toolchain.sanitizer.address",
+      "evidence_kind": "source",
+      "path": "scripts/objc3c_package_channels/rendering.py"
+    },
+    {
+      "capability_id": "toolchain.sanitizer.address",
+      "evidence_kind": "source",
+      "path": "scripts/objc3c_package_channels/validation.py"
+    },
+    {
+      "capability_id": "toolchain.sanitizer.address",
+      "evidence_kind": "source",
+      "path": "scripts/check_objc3c_packaging_channels_integration.py"
+    },
+    {
+      "capability_id": "toolchain.sanitizer.address",
+      "evidence_kind": "source",
+      "path": "scripts/check_objc3c_packaging_channels_end_to_end.py"
+    },
+    {
+      "capability_id": "toolchain.sanitizer.address",
+      "evidence_kind": "source",
+      "path": "scripts/objc3c_workflow/action_catalog_native_package_toolchain.py"
+    },
+    {
+      "capability_id": "toolchain.sanitizer.address",
+      "evidence_kind": "source",
+      "path": "scripts/objc3c_workflow/actions/release_governance_packaging_contracts.py"
+    },
+    {
+      "capability_id": "toolchain.sanitizer.address",
+      "evidence_kind": "source",
+      "path": "scripts/objc3c_workflow/actions/sanitizer_runtime_evidence.py"
+    },
+    {
+      "capability_id": "toolchain.sanitizer.address",
+      "evidence_kind": "source",
+      "path": "scripts/check_objc3c_sanitizer_runtime_evidence.py"
+    },
+    {
+      "capability_id": "toolchain.sanitizer.address",
+      "evidence_kind": "source",
+      "path": "scripts/probe_objc3c_sanitizer_runtime_evidence.py"
+    },
+    {
+      "capability_id": "toolchain.sanitizer.address",
+      "evidence_kind": "source",
+      "path": "scripts/check_security_sanitizer_execution_evidence.py"
+    },
+    {
+      "capability_id": "toolchain.sanitizer.address",
+      "evidence_kind": "schema",
+      "path": "schemas/objc3c-package-channels-manifest-v1.schema.json"
+    },
+    {
+      "capability_id": "toolchain.sanitizer.address",
+      "evidence_kind": "schema",
+      "path": "schemas/objc3c-package-install-receipt-v1.schema.json"
+    },
+    {
+      "capability_id": "toolchain.sanitizer.address",
+      "evidence_kind": "schema",
+      "path": "schemas/objc3c-sanitizer-runtime-library-manifest-v1.schema.json"
+    },
+    {
+      "capability_id": "toolchain.sanitizer.address",
+      "evidence_kind": "schema",
+      "path": "schemas/objc3c-sanitizer-execution-evidence-v1.schema.json"
+    },
+    {
+      "capability_id": "toolchain.sanitizer.address",
+      "evidence_kind": "source",
+      "path": "tests/tooling/fixtures/packaging_channels/metadata_surface.json"
+    },
+    {
+      "capability_id": "toolchain.sanitizer.address",
+      "evidence_kind": "source",
+      "path": "tests/tooling/fixtures/packaging_channels/schema_surface.json"
+    },
+    {
+      "capability_id": "toolchain.sanitizer.address",
+      "evidence_kind": "source",
+      "path": "tests/tooling/fixtures/security_hardening/sanitizer_execution_evidence_contract.json"
+    },
+    {
+      "capability_id": "toolchain.sanitizer.address",
+      "evidence_kind": "source",
+      "path": "tests/tooling/fixtures/security_hardening/artifact_reporting_contract.json"
     },
     {
       "capability_id": "toolchain.sanitizer.undefined",
@@ -4776,8 +6654,123 @@
     },
     {
       "capability_id": "toolchain.sanitizer.undefined",
-      "evidence_kind": "doc",
+      "evidence_kind": "source",
       "path": "tests/tooling/fixtures/security_hardening/sanitizer_validation_contract.json"
+    },
+    {
+      "capability_id": "toolchain.sanitizer.undefined",
+      "evidence_kind": "source",
+      "path": "tests/tooling/fixtures/security_hardening/sanitizer_package_install_model_contract.json"
+    },
+    {
+      "capability_id": "toolchain.sanitizer.undefined",
+      "evidence_kind": "source",
+      "path": "tests/tooling/fixtures/platform_support/source_truth_matrix.json"
+    },
+    {
+      "capability_id": "toolchain.sanitizer.undefined",
+      "evidence_kind": "source",
+      "path": "scripts/package_objc3c_runnable_toolchain/staging_orchestration.psm1"
+    },
+    {
+      "capability_id": "toolchain.sanitizer.undefined",
+      "evidence_kind": "source",
+      "path": "scripts/package_objc3c_runnable_toolchain/artifact_report_foundation.psm1"
+    },
+    {
+      "capability_id": "toolchain.sanitizer.undefined",
+      "evidence_kind": "source",
+      "path": "scripts/objc3c_package_channels/model.py"
+    },
+    {
+      "capability_id": "toolchain.sanitizer.undefined",
+      "evidence_kind": "source",
+      "path": "scripts/objc3c_package_channels/rendering.py"
+    },
+    {
+      "capability_id": "toolchain.sanitizer.undefined",
+      "evidence_kind": "source",
+      "path": "scripts/objc3c_package_channels/validation.py"
+    },
+    {
+      "capability_id": "toolchain.sanitizer.undefined",
+      "evidence_kind": "source",
+      "path": "scripts/check_objc3c_packaging_channels_integration.py"
+    },
+    {
+      "capability_id": "toolchain.sanitizer.undefined",
+      "evidence_kind": "source",
+      "path": "scripts/check_objc3c_packaging_channels_end_to_end.py"
+    },
+    {
+      "capability_id": "toolchain.sanitizer.undefined",
+      "evidence_kind": "source",
+      "path": "scripts/objc3c_workflow/action_catalog_native_package_toolchain.py"
+    },
+    {
+      "capability_id": "toolchain.sanitizer.undefined",
+      "evidence_kind": "source",
+      "path": "scripts/objc3c_workflow/actions/release_governance_packaging_contracts.py"
+    },
+    {
+      "capability_id": "toolchain.sanitizer.undefined",
+      "evidence_kind": "source",
+      "path": "scripts/objc3c_workflow/actions/sanitizer_runtime_evidence.py"
+    },
+    {
+      "capability_id": "toolchain.sanitizer.undefined",
+      "evidence_kind": "source",
+      "path": "scripts/check_objc3c_sanitizer_runtime_evidence.py"
+    },
+    {
+      "capability_id": "toolchain.sanitizer.undefined",
+      "evidence_kind": "source",
+      "path": "scripts/probe_objc3c_sanitizer_runtime_evidence.py"
+    },
+    {
+      "capability_id": "toolchain.sanitizer.undefined",
+      "evidence_kind": "source",
+      "path": "scripts/check_security_sanitizer_execution_evidence.py"
+    },
+    {
+      "capability_id": "toolchain.sanitizer.undefined",
+      "evidence_kind": "schema",
+      "path": "schemas/objc3c-package-channels-manifest-v1.schema.json"
+    },
+    {
+      "capability_id": "toolchain.sanitizer.undefined",
+      "evidence_kind": "schema",
+      "path": "schemas/objc3c-package-install-receipt-v1.schema.json"
+    },
+    {
+      "capability_id": "toolchain.sanitizer.undefined",
+      "evidence_kind": "schema",
+      "path": "schemas/objc3c-sanitizer-runtime-library-manifest-v1.schema.json"
+    },
+    {
+      "capability_id": "toolchain.sanitizer.undefined",
+      "evidence_kind": "schema",
+      "path": "schemas/objc3c-sanitizer-execution-evidence-v1.schema.json"
+    },
+    {
+      "capability_id": "toolchain.sanitizer.undefined",
+      "evidence_kind": "source",
+      "path": "tests/tooling/fixtures/packaging_channels/metadata_surface.json"
+    },
+    {
+      "capability_id": "toolchain.sanitizer.undefined",
+      "evidence_kind": "source",
+      "path": "tests/tooling/fixtures/packaging_channels/schema_surface.json"
+    },
+    {
+      "capability_id": "toolchain.sanitizer.undefined",
+      "evidence_kind": "source",
+      "path": "tests/tooling/fixtures/security_hardening/sanitizer_execution_evidence_contract.json"
+    },
+    {
+      "capability_id": "toolchain.sanitizer.undefined",
+      "evidence_kind": "source",
+      "path": "tests/tooling/fixtures/security_hardening/artifact_reporting_contract.json"
     },
     {
       "capability_id": "applications.framework-samples.object-runtime-library",
@@ -5082,6 +7075,50 @@
       "support_claim": "objc3c.behavior.language.generics.collection-identity",
       "evidence_kind": "source",
       "path": "native/objc3c/src/sema/objc3_semantic_type_factory.cpp"
+    },
+    {
+      "capability_id": "modules.standalone-textual-interface-payload",
+      "support_claim": "objc3c.behavior.modules.standalone-textual-interface-payload",
+      "evidence_kind": "schema",
+      "path": "schemas/objc3c-standalone-textual-interface-payload-v1.schema.json"
+    },
+    {
+      "capability_id": "modules.standalone-textual-interface-payload",
+      "support_claim": "objc3c.behavior.modules.standalone-textual-interface-payload",
+      "evidence_kind": "source",
+      "path": "native/objc3c/src/artifacts/objc3_frontend_textual_interface_payload_artifact.cpp"
+    },
+    {
+      "capability_id": "modules.standalone-textual-interface-payload",
+      "support_claim": "objc3c.behavior.modules.standalone-textual-interface-payload",
+      "evidence_kind": "source",
+      "path": "native/objc3c/src/artifacts/objc3_frontend_textual_interface_payload_import.cpp"
+    },
+    {
+      "capability_id": "modules.standalone-textual-interface-payload",
+      "support_claim": "objc3c.behavior.modules.standalone-textual-interface-payload",
+      "evidence_kind": "test",
+      "path": "tests/tooling/fixtures/module_interfaces/standalone_textual_interface_payload.json",
+      "command": "npm run objc3c -- validate-standalone-textual-interface-payload"
+    },
+    {
+      "capability_id": "modules.standalone-textual-interface-payload",
+      "support_claim": "objc3c.behavior.modules.standalone-textual-interface-payload",
+      "evidence_kind": "test",
+      "path": "tests/tooling/test_native_interface_and_runtime_contracts.py",
+      "command": "npm run objc3c -- validate-standalone-textual-interface-payload"
+    },
+    {
+      "capability_id": "modules.standalone-textual-interface-payload",
+      "support_claim": "objc3c.behavior.modules.standalone-textual-interface-payload",
+      "evidence_kind": "source",
+      "path": "native/objc3c/src/driver/objc3_driver_frontend_interface_payload_artifact_publication.cpp"
+    },
+    {
+      "capability_id": "modules.standalone-textual-interface-payload",
+      "support_claim": "objc3c.behavior.modules.standalone-textual-interface-payload",
+      "evidence_kind": "source",
+      "path": "native/objc3c/src/artifacts/json/artifact_schema_contract_table.cpp"
     }
   ]
 }

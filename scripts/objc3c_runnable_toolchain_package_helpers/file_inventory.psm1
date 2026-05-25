@@ -8,7 +8,7 @@ function Assert-RepoFile {
     [Parameter(Mandatory = $true)][string]$RelativePath
   )
 
-  $fullPath = Join-Path $RepoRoot ($RelativePath.Replace('/', '\\'))
+  $fullPath = Join-PackageRelativePath -RootPath $RepoRoot -RelativePath $RelativePath
   if (!(Test-Path -LiteralPath $fullPath -PathType Leaf)) {
     throw "runnable toolchain package FAIL: missing required file $RelativePath"
   }
@@ -24,7 +24,7 @@ function Copy-RepoRelativeFile {
   )
 
   $sourcePath = Assert-RepoFile -RepoRoot $RepoRoot -RelativePath $RelativePath
-  $destinationPath = Join-Path $PackageRoot ($RelativePath.Replace('/', '\\'))
+  $destinationPath = Join-PackageRelativePath -RootPath $PackageRoot -RelativePath $RelativePath
   $destinationDir = Split-Path -Parent $destinationPath
   New-Item -ItemType Directory -Force -Path $destinationDir | Out-Null
   Copy-Item -LiteralPath $sourcePath -Destination $destinationPath -Force
@@ -219,6 +219,12 @@ function Get-RepoRelativeNativeCompileSupportFiles {
   param([Parameter(Mandatory = $true)][string]$RepoRoot)
 
   $supportRoots = @(
+    "scripts/objc3c_native_cmake",
+    "scripts/objc3c_native_frontend_contracts",
+    "scripts/objc3c_native_frontend_artifacts",
+    "scripts/objc3c_native_frontend_closeout_edge_artifacts",
+    "scripts/objc3c_native_frontend_closeout_conformance_artifacts",
+    "scripts/objc3c_native_superclean_surface_catalog",
     "scripts/objc3c_native_compile_arguments",
     "scripts/objc3c_native_compile_io",
     "scripts/objc3c_native_compile_toolchain",
@@ -232,6 +238,16 @@ function Get-RepoRelativeNativeCompileSupportFiles {
   )
 
   return @(
+    "scripts/normalize_coff_archive_timestamps.py",
+    "scripts/objc3c_native_artifact_io.psm1",
+    "scripts/objc3c_native_cmake.psm1",
+    "scripts/objc3c_native_frontend_contracts.psm1",
+    "scripts/objc3c_native_frontend_artifacts.psm1",
+    "scripts/objc3c_native_frontend_closeout_artifacts.psm1",
+    "scripts/objc3c_native_frontend_closeout_edge_artifacts.psm1",
+    "scripts/objc3c_native_frontend_closeout_conformance_artifacts.psm1",
+    "scripts/objc3c_native_superclean_surface.psm1",
+    "scripts/objc3c_native_superclean_surface_catalog.psm1"
     foreach ($supportRoot in $supportRoots) {
       $absoluteRoot = Join-Path $RepoRoot $supportRoot
       Get-RepoRelativeFilesUnderRoot `

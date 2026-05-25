@@ -1,0 +1,173 @@
+{
+  "contract_id": "objc3c.package_ecosystem.package_security_hardening.v1",
+  "surface_kind": "package-ecosystem-security-hardening",
+  "issue_refs": ["#8223", "#8204"],
+  "diagnostic_code": "O3PKG8055",
+  "schema": "schemas/objc3c-package-signing-trust-v1.schema.json",
+  "umbrella_contract": "tests/tooling/fixtures/package_ecosystem/package_ecosystem_umbrella_contract.json",
+  "source_contracts": [
+    "scripts/objc3c_package_manager/trust.py",
+    "scripts/sign_objc3c_package.py",
+    "scripts/verify_objc3c_package.py",
+    "scripts/check_objc3c_package_security_hardening.py",
+    "scripts/objc3c_package_manager/operations.py",
+    "scripts/objc3c_package_manager/install_distribution.py",
+    "scripts/objc3c_workflow/action_catalog_package_lock_contracts.py",
+    "scripts/objc3c_workflow/action_catalog_package_integration_claims.py",
+    "scripts/objc3c_workflow/actions/ecosystem_publication_owner_contracts.py",
+    "schemas/objc3c-package-signing-trust-v1.schema.json",
+    "schemas/objc3c-package-lock-v1.schema.json",
+    "tests/tooling/fixtures/package_ecosystem/package_ecosystem_umbrella_contract.json",
+    "tests/tooling/test_package_signing_trust.py"
+  ],
+  "path_safety_contract": {
+    "contract_id": "objc3c.package_ecosystem.extraction_path_policy.v1",
+    "plan_contract_id": "objc3c.package_ecosystem.extraction_plan.v1",
+    "before_filesystem_mutation_required": true,
+    "reject_absolute_paths": true,
+    "reject_parent_traversal": true,
+    "reject_symlink_entries": true,
+    "reject_overwrite_existing_paths": true,
+    "reject_duplicate_paths": true,
+    "reject_case_conflicting_paths": true,
+    "fallback_extraction_success_allowed": false
+  },
+  "installer_update_key_policy": {
+    "contract_id": "objc3c.package_ecosystem.installer_update_key_policy.v1",
+    "installer_key_required": true,
+    "update_key_required": true,
+    "installer_key_state": "reserved-fail-closed",
+    "update_key_state": "reserved-fail-closed",
+    "implicit_installer_key_rollover_allowed": false,
+    "implicit_update_key_rollover_allowed": false
+  },
+  "release_registry_trust_root_policy": {
+    "contract_id": "objc3c.package_ecosystem.release_registry_trust_root_policy.v1",
+    "release_root_required_state": "reserved",
+    "registry_root_required_state": "reserved",
+    "local_fixture_root_only_active": true,
+    "fallback_trust_root_allowed": false
+  },
+  "workflow_wiring": [
+    {
+      "action": "package-sign",
+      "source_guard": "repo-relative manifest/trust-policy inputs and non-overwriting signature output",
+      "fallback_success_allowed": false
+    },
+    {
+      "action": "package-verify",
+      "source_guard": "repo-relative manifest/envelope/trust-policy inputs before trust verification",
+      "fallback_success_allowed": false
+    },
+    {
+      "action": "package-install",
+      "source_guard": "operation plans carry extraction-plan digest and installer/update-key policy hooks",
+      "fallback_success_allowed": false
+    },
+    {
+      "action": "package-update",
+      "source_guard": "update plans preserve rollback tokens and carry extraction-plan digest plus installer/update-key policy hooks",
+      "fallback_success_allowed": false
+    },
+    {
+      "action": "package-uninstall",
+      "source_guard": "uninstall plans require owned-root proof and cannot remove paths outside package-owned install roots",
+      "fallback_success_allowed": false
+    },
+    {
+      "action": "package-rollback",
+      "source_guard": "rollback plans restore only signed cache-pinned previous package state with owned-root proof",
+      "fallback_success_allowed": false
+    },
+    {
+      "action": "validate-package-install-distribution",
+      "source_guard": "clean install materialization checks extraction plan before package filesystem writes",
+      "fallback_success_allowed": false
+    },
+    {
+      "action": "validate-package-operations",
+      "source_guard": "operation receipts must bind lock, cache, trust, extraction plan, and owned-root evidence before success",
+      "fallback_success_allowed": false
+    },
+    {
+      "action": "validate-package-network-publication",
+      "source_guard": "release and registry trust roots remain reserved unless network publication fixtures bind trust, provenance, cache, lock, and channel evidence",
+      "fallback_success_allowed": false
+    }
+  ],
+  "negative_cases": [
+    {
+      "case_id": "absolute-extraction-path",
+      "target": "extraction-plan",
+      "mutation": { "path": "/absolute/package.json" },
+      "expected_failure": "O3PKG8055: absolute package extraction path rejected"
+    },
+    {
+      "case_id": "parent-traversal-extraction-path",
+      "target": "extraction-plan",
+      "mutation": { "path": "../escape/package.json" },
+      "expected_failure": "O3PKG8055: parent traversal package extraction path rejected"
+    },
+    {
+      "case_id": "symlink-extraction-entry",
+      "target": "extraction-plan",
+      "mutation": { "entry_type": "symlink" },
+      "expected_failure": "O3PKG8055: symlink package extraction path rejected"
+    },
+    {
+      "case_id": "overwrite-existing-install-path",
+      "target": "extraction-plan",
+      "mutation": { "existing_path": "tmp/artifacts/package-ecosystem/install-validation/local-package-artifacts/fixture/trust_root.json" },
+      "expected_failure": "O3PKG8055: overwrite package extraction path rejected"
+    },
+    {
+      "case_id": "duplicate-extraction-path",
+      "target": "extraction-plan",
+      "mutation": { "duplicate_path": "objc3c/packages/foo/package.json" },
+      "expected_failure": "O3PKG8055: duplicate package extraction path rejected"
+    },
+    {
+      "case_id": "case-conflicting-extraction-path",
+      "target": "extraction-plan",
+      "mutation": { "paths": ["objc3c/packages/Foo/package.json", "objc3c/packages/foo/package.json"] },
+      "expected_failure": "O3PKG8055: case-conflicting package extraction path rejected"
+    },
+    {
+      "case_id": "installer-key-active-overclaim",
+      "target": "installer-update-key-policy",
+      "mutation": { "installer_key_state": "active" },
+      "expected_failure": "O3PKG8055: installer/update key policy installer_key_state is not reserved-fail-closed"
+    },
+    {
+      "case_id": "update-key-missing",
+      "target": "installer-update-key-policy",
+      "mutation": { "remove": "update_key_required" },
+      "expected_failure": "O3PKG8055: installer/update key policy disabled update_key_required"
+    },
+    {
+      "case_id": "release-trust-root-active",
+      "target": "trust-root",
+      "mutation": { "root_kind": "release-signing", "key_state": "active" },
+      "expected_failure": "O3PKG8055: release trust root objc3c-release-signing-root-v1 is not reserved-fail-closed"
+    },
+    {
+      "case_id": "registry-trust-root-active",
+      "target": "trust-root",
+      "mutation": { "root_kind": "registry-signing", "key_state": "active" },
+      "expected_failure": "O3PKG8055: registry trust root objc3c-registry-signing-root-v1 is not reserved-fail-closed"
+    },
+    {
+      "case_id": "absolute-sign-cli-input",
+      "target": "package-sign-cli",
+      "mutation": { "manifest": "C:/outside/package-manifest.json" },
+      "expected_failure": "O3PKG8055: absolute package manifest input path rejected"
+    },
+    {
+      "case_id": "overwrite-signature-output",
+      "target": "package-sign-cli",
+      "mutation": { "out": "tests/tooling/fixtures/package_ecosystem/package_manager_model_contract.json" },
+      "expected_failure": "O3PKG8055: overwrite package signature envelope output path rejected"
+    }
+  ],
+  "claim_boundary": "package security support is limited to deterministic local fixture signing, repo-relative non-overwriting trust inputs/outputs, pre-mutation extraction path safety records, reserved installer/update keys, and reserved release/registry trust roots; live production signing, fallback trust roots, and unsafe extraction success remain fail-closed"
+}

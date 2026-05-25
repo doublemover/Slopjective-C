@@ -94,6 +94,8 @@ bool TryResolveMethodFromMethodListRefUnlocked(
         (resolution.implementation != entry.implementation ||
          resolution.parameter_count != entry.parameter_count ||
          resolution.return_kind != entry_return_kind ||
+         resolution.throws_error_out_abi_ready !=
+             entry.throws_error_out_abi_ready ||
          resolution.owner_identity != entry.owner_identity ||
          resolution.class_name !=
              (resolved_class_name != nullptr ? resolved_class_name : ""))) {
@@ -114,6 +116,8 @@ bool TryResolveMethodFromMethodListRefUnlocked(
     resolution.implementation = entry.implementation;
     resolution.effective_direct_dispatch = entry.effective_direct_dispatch;
     resolution.objc_final_declared = entry.objc_final_declared;
+    resolution.throws_error_out_abi_ready =
+        entry.throws_error_out_abi_ready;
   }
   return true;
 }

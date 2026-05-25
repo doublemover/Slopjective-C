@@ -24,7 +24,18 @@ OBJECT_MODEL_SOURCE_MAP_PUBLICATION_CONTRACT_ID = (
 OBJECT_MODEL_NATIVE_DEBUG_INFO_EVIDENCE_CONTRACT_ID = (
     "objc3c.object_model.production.native_debug_info_evidence.v1"
 )
-OBJECT_MODEL_SOURCE_IDENTITY_KINDS = ("class", "category", "protocol", "property", "ivar", "method")
+OBJECT_MODEL_SOURCE_IDENTITY_KINDS = (
+    "class",
+    "metaclass",
+    "category",
+    "protocol",
+    "property",
+    "ivar",
+    "selector",
+    "method",
+    "reflection",
+    "replay",
+)
 
 
 @dataclass(frozen=True)
@@ -368,11 +379,24 @@ def _normalize_native_debug_info_evidence(value: Any) -> dict[str, Any]:
         evidence["contract_id"] = OBJECT_MODEL_NATIVE_DEBUG_INFO_EVIDENCE_CONTRACT_ID
     if not _safe_text(evidence.get("evidence_id")):
         evidence["evidence_id"] = "object-model.native-debug-info.unavailable"
-    blocked_by = _as_list(evidence.get("blocked_by"))
-    if not blocked_by:
+    if "blocked_by" not in evidence:
+        statement_stepping_supported = (
+            evidence.get("emitted_native_debug_info_supported") is True
+            and evidence.get("native_line_table_supported") is True
+            and evidence.get("statement_stepping_supported") is True
+            and evidence.get("fail_closed") is False
+        )
+        if statement_stepping_supported:
+            evidence["blocked_by"] = []
+        else:
+            evidence["blocked_by"] = [
+                "native-object-debug-info-evidence-missing",
+                "runtime-debug-trace-statement-stepping-integration",
+            ]
+    else:
         evidence["blocked_by"] = [
-            "native-object-debug-info-evidence-missing",
-            "runtime-debug-trace-statement-stepping-integration",
+            text for item in _as_list(evidence.get("blocked_by"))
+            if (text := _safe_text(item))
         ]
     return evidence
 
@@ -417,11 +441,17 @@ def _method_native_symbol(record: dict[str, Any]) -> str:
 
 
 def _runtime_identity_display_name(kind: str, record: dict[str, Any]) -> str:
+    if kind == "metaclass":
+        class_name = _first_text(record, "class_name", "owner_name", "name")
+        return f"{class_name}.metaclass" if class_name else ""
     if kind == "category":
         class_name = _first_text(record, "class_name", "owner_name")
         category_name = _first_text(record, "category_name", "name")
         if class_name or category_name:
             return f"{class_name}({category_name})"
+    if kind == "selector":
+        selector = _first_text(record, "selector", "method_name", "name")
+        return f"selector:{selector}" if selector else ""
     if kind == "property":
         owner_name = _first_text(record, "owner_name", "class_name")
         property_name = _first_text(record, "property_name", "name")
@@ -435,12 +465,20 @@ def _runtime_identity_display_name(kind: str, record: dict[str, Any]) -> str:
         selector = _first_text(record, "selector", "method_name", "name")
         prefix = "+" if record.get("is_class_method") is True else "-"
         return f"{prefix}[{owner_name} {selector}]" if owner_name and selector else selector
+    if kind == "reflection":
+        subject = _first_text(record, "reflection_subject", "owner_name", "class_name", "name")
+        return f"reflection:{subject}" if subject else ""
+    if kind == "replay":
+        subject = _first_text(record, "replay_subject", "owner_name", "class_name", "name")
+        return f"registration-replay:{subject}" if subject else ""
     return _first_text(record, "name", "class_name", "owner_name")
 
 
 def _source_map_record_kind(identity_kind: str) -> str:
-    if identity_kind in {"class", "category", "protocol"}:
+    if identity_kind in {"class", "metaclass", "category", "protocol", "reflection", "replay"}:
         return "declaration"
+    if identity_kind == "selector":
+        return "message-send"
     if identity_kind == "property":
         return "property-access"
     if identity_kind == "ivar":
@@ -478,7 +516,11 @@ def _append_source_identity_record(
     native_debug_info_emitted = native_debug_info_evidence.get("emitted_native_debug_info_supported") is True
     native_line_table_supported = native_debug_info_evidence.get("native_line_table_supported") is True
     native_debug_info_blocker = _safe_text(native_debug_info_evidence.get("fail_closed_reason"))
-    selector = _first_text(record, "selector", "method_name", "name") if identity_kind == "method" else ""
+    selector = (
+        _first_text(record, "selector", "method_name", "name")
+        if identity_kind in {"method", "selector"}
+        else ""
+    )
     source_map_record = {
         "source_map_record_id": source_map_record_id,
         "runtime_identity_kind": identity_kind,
@@ -518,12 +560,187 @@ def _append_source_identity_record(
     )
 
 
+def _with_identity_fields(record: dict[str, Any], **updates: Any) -> dict[str, Any]:
+    derived = dict(record)
+    for key, value in updates.items():
+        if value is not None:
+            derived[key] = value
+    return derived
+
+
+def _iter_metaclass_identity_records(
+    interfaces: list[Any],
+) -> list[tuple[str, str, int, dict[str, Any]]]:
+    entries: list[tuple[str, str, int, dict[str, Any]]] = []
+    for index, item in enumerate(interfaces):
+        if not isinstance(item, dict):
+            continue
+        class_name = _first_text(item, "name", "class_name")
+        if not class_name:
+            continue
+        entries.append(
+            (
+                "metaclass",
+                "interfaces.metaclass",
+                index,
+                _with_identity_fields(
+                    item,
+                    name=f"{class_name}.metaclass",
+                    class_name=class_name,
+                    owner_name=class_name,
+                ),
+            )
+        )
+    return entries
+
+
+def _append_selector_identity_record(
+    entries: list[tuple[str, str, int, dict[str, Any]]],
+    seen: set[str],
+    *,
+    section: str,
+    index: int,
+    record: dict[str, Any],
+    selector: str,
+    owner_name: str,
+) -> None:
+    if not selector or selector in seen:
+        return
+    seen.add(selector)
+    entries.append(
+        (
+            "selector",
+            section,
+            index,
+            _with_identity_fields(
+                record,
+                name=selector,
+                selector=selector,
+                owner_name=owner_name,
+            ),
+        )
+    )
+
+
+def _iter_selector_identity_records(
+    runtime_records: dict[str, Any],
+) -> list[tuple[str, str, int, dict[str, Any]]]:
+    entries: list[tuple[str, str, int, dict[str, Any]]] = []
+    seen: set[str] = set()
+    for index, item in enumerate(_as_list(runtime_records.get("methods"))):
+        if not isinstance(item, dict):
+            continue
+        _append_selector_identity_record(
+            entries,
+            seen,
+            section="runtime_metadata_source_records.methods.selector",
+            index=index,
+            record=item,
+            selector=_first_text(item, "selector", "method_name", "name"),
+            owner_name=_first_text(item, "owner_name", "class_name"),
+        )
+    for index, item in enumerate(_as_list(runtime_records.get("properties"))):
+        if not isinstance(item, dict):
+            continue
+        owner_name = _first_text(item, "owner_name", "class_name")
+        for selector_key in (
+            "effective_getter_selector",
+            "getter_selector",
+            "effective_setter_selector",
+            "setter_selector",
+        ):
+            _append_selector_identity_record(
+                entries,
+                seen,
+                section=f"runtime_metadata_source_records.properties.{selector_key}",
+                index=index,
+                record=item,
+                selector=_first_text(item, selector_key),
+                owner_name=owner_name,
+            )
+    return entries
+
+
+def _iter_reflection_identity_records(
+    manifest: dict[str, Any],
+    runtime_records: dict[str, Any],
+) -> list[tuple[str, str, int, dict[str, Any]]]:
+    sources: tuple[tuple[str, str, list[Any]], ...] = (
+        ("interfaces.reflection", "class", _as_list(manifest.get("interfaces"))),
+        ("categories.reflection", "category", _as_list(manifest.get("categories"))),
+        ("protocols.reflection", "protocol", _as_list(manifest.get("protocols"))),
+        ("runtime_metadata_source_records.properties.reflection", "property", _as_list(runtime_records.get("properties"))),
+        ("runtime_metadata_source_records.ivars.reflection", "ivar", _as_list(runtime_records.get("ivars"))),
+        ("runtime_metadata_source_records.methods.reflection", "method", _as_list(runtime_records.get("methods"))),
+    )
+    entries: list[tuple[str, str, int, dict[str, Any]]] = []
+    for section, source_kind, items in sources:
+        for index, item in enumerate(items):
+            if not isinstance(item, dict):
+                continue
+            subject = _runtime_identity_display_name(source_kind, item)
+            if not subject:
+                continue
+            entries.append(
+                (
+                    "reflection",
+                    section,
+                    index,
+                    _with_identity_fields(
+                        item,
+                        name=f"reflection:{subject}",
+                        reflection_subject=subject,
+                        owner_name=_first_text(item, "owner_name", "class_name", "name"),
+                    ),
+                )
+            )
+    return entries
+
+
+def _iter_replay_identity_records(
+    manifest: dict[str, Any],
+) -> list[tuple[str, str, int, dict[str, Any]]]:
+    entries: list[tuple[str, str, int, dict[str, Any]]] = []
+    replay_sources = _as_list(manifest.get("categories"))
+    if not replay_sources:
+        replay_sources = _as_list(manifest.get("implementations"))
+    for index, item in enumerate(replay_sources):
+        if not isinstance(item, dict):
+            continue
+        class_name = _first_text(item, "class_name", "owner_name", "name")
+        category_name = _first_text(item, "category_name")
+        subject = (
+            f"{class_name}({category_name})"
+            if category_name
+            else class_name
+        )
+        if not subject:
+            continue
+        entries.append(
+            (
+                "replay",
+                "runtime_registration.replay",
+                index,
+                _with_identity_fields(
+                    item,
+                    name=f"registration-replay:{subject}",
+                    replay_subject=subject,
+                    owner_name=_first_text(item, "class_name", "owner_name", "name"),
+                ),
+            )
+        )
+    return entries
+
+
 def _iter_manifest_identity_records(manifest: dict[str, Any]) -> list[tuple[str, str, int, dict[str, Any]]]:
     runtime_records = _as_dict(manifest.get("runtime_metadata_source_records"))
+    interfaces = _as_list(manifest.get("interfaces"))
+    categories = _as_list(manifest.get("categories"))
+    protocols = _as_list(manifest.get("protocols"))
     groups: tuple[tuple[str, str, list[Any]], ...] = (
-        ("class", "interfaces", _as_list(manifest.get("interfaces"))),
-        ("category", "categories", _as_list(manifest.get("categories"))),
-        ("protocol", "protocols", _as_list(manifest.get("protocols"))),
+        ("class", "interfaces", interfaces),
+        ("category", "categories", categories),
+        ("protocol", "protocols", protocols),
         ("property", "runtime_metadata_source_records.properties", _as_list(runtime_records.get("properties"))),
         ("ivar", "runtime_metadata_source_records.ivars", _as_list(runtime_records.get("ivars"))),
         ("method", "runtime_metadata_source_records.methods", _as_list(runtime_records.get("methods"))),
@@ -533,6 +750,10 @@ def _iter_manifest_identity_records(manifest: dict[str, Any]) -> list[tuple[str,
         for index, record in enumerate(records):
             if isinstance(record, dict):
                 entries.append((identity_kind, section, index, record))
+    entries.extend(_iter_metaclass_identity_records(interfaces))
+    entries.extend(_iter_selector_identity_records(runtime_records))
+    entries.extend(_iter_reflection_identity_records(manifest, runtime_records))
+    entries.extend(_iter_replay_identity_records(manifest))
     return entries
 
 
@@ -559,6 +780,12 @@ def _build_object_model_source_map_publication(
     emitted_native_debug_info_supported = (
         native_debug_info_evidence.get("emitted_native_debug_info_supported") is True
     )
+    statement_stepping_supported = (
+        supported
+        and emitted_native_debug_info_supported
+        and native_debug_info_evidence.get("native_line_table_supported") is True
+        and native_debug_info_evidence.get("statement_stepping_supported") is True
+    )
     native_debug_info_fail_closed_reason = _safe_text(
         native_debug_info_evidence.get("fail_closed_reason")
     )
@@ -583,7 +810,15 @@ def _build_object_model_source_map_publication(
         "source_map_publication_supported": supported,
         "native_line_table_publication_supported": supported,
         "emitted_native_debug_info_supported": emitted_native_debug_info_supported,
-        "statement_stepping_supported": False,
+        "statement_stepping_supported": statement_stepping_supported,
+        "statement_stepping_evidence_id": _safe_text(
+            native_debug_info_evidence.get("statement_stepping_evidence_id")
+        ),
+        "statement_stepping_model": (
+            "runtime-debug-trace-statement-stepping-backed-by-emitted-native-debug-info"
+            if statement_stepping_supported
+            else "statement-stepping-fail-closed-until-runtime-debug-trace-native-debug-info-integration"
+        ),
         "native_debug_info_evidence": native_debug_info_evidence,
         "source_map_record_count": len(records),
         "native_line_table_row_count": len(rows),
@@ -597,9 +832,11 @@ def _build_object_model_source_map_publication(
             emitted_native_debug_boundary,
             {
                 "capability_id": "statementLevelStepping",
-                "status": "reserved",
-                "fail_closed": True,
-                "unpublished_reason": (
+                "status": "supported" if statement_stepping_supported else "reserved",
+                "fail_closed": not statement_stepping_supported,
+                "unpublished_reason": ""
+                if statement_stepping_supported
+                else (
                     "runtime-debug trace statement stepping is not integrated "
                     "with emitted native debug info"
                 ),
@@ -637,13 +874,20 @@ def build_object_model_source_identity_payload(
     native_debug_info_emitted = native_debug_info_evidence.get("emitted_native_debug_info_supported") is True
     native_line_table_emitted = native_debug_info_evidence.get("native_line_table_supported") is True
     native_debug_info_blocker = _safe_text(native_debug_info_evidence.get("fail_closed_reason"))
-    stepping_blockers = [
-        _safe_text(item)
-        for item in _as_list(native_debug_info_evidence.get("blocked_by"))
-        if _safe_text(item)
-    ]
+    statement_stepping_supported = native_debug_info_evidence.get("statement_stepping_supported") is True
+    stepping_blockers = (
+        []
+        if statement_stepping_supported
+        else [
+            _safe_text(item)
+            for item in _as_list(native_debug_info_evidence.get("blocked_by"))
+            if _safe_text(item)
+        ]
+    )
     stepping_status = (
-        "native-line-table-ready-stepping-blocked"
+        "runtime-debug-trace-statement-stepping-supported"
+        if statement_stepping_supported
+        else "native-line-table-ready-stepping-blocked"
         if native_debug_info_emitted and native_line_table_emitted
         else "source-identity-ready-stepping-blocked"
     )
@@ -692,7 +936,7 @@ def build_object_model_source_identity_payload(
         ],
         "method_stepping_candidates_supported": bool(stepping_candidates),
         "full_source_map_publication": False,
-        "runtime_debug_trace_statement_stepping": False,
+        "runtime_debug_trace_statement_stepping": statement_stepping_supported,
         "native_debug_info_emitted": native_debug_info_emitted,
         "native_debug_info_evidence_id": native_debug_info_evidence_id,
         "native_debug_info_evidence": native_debug_info_evidence,
@@ -718,9 +962,11 @@ def build_object_model_source_identity_payload(
             },
             {
                 "capability_id": "statementLevelStepping",
-                "status": "reserved",
-                "fail_closed": True,
-                "unpublished_reason": (
+                "status": "supported" if statement_stepping_supported else "reserved",
+                "fail_closed": not statement_stepping_supported,
+                "unpublished_reason": ""
+                if statement_stepping_supported
+                else (
                     "runtime-debug trace statement stepping is not integrated "
                     "with emitted native debug info"
                 ),
@@ -772,20 +1018,34 @@ def build_debug_payload(
     )
     if source_map_publication.get("supported") is True:
         evidence_roots.append("object-model-production-source-map-native-line-table")
+    statement_stepping_supported = (
+        source_map_publication.get("statement_stepping_supported") is True
+    )
+    if statement_stepping_supported:
+        evidence_roots.append("object-model-production-statement-stepping")
     native_debug_info_blocker = _safe_text(native_debug_info_evidence.get("fail_closed_reason"))
     return {
         "contract_id": "objc3c.developer.tooling.debug.map.surface.v1",
         "supported": supported,
         "support_class": "declaration-breakpoint-preview" if supported else "fail-closed",
         "debugger_model": "declaration-breakpoint-and-object-symbol-inspection",
-        "source_map_supported": False,
-        "source_map_model": "declaration-coordinate-only",
-        "statement_level_stepping": False,
+        "source_map_supported": bool(
+            statement_stepping_supported
+            and object_model_source_identity.get("source_map_publication_supported") is True
+        ),
+        "source_map_model": (
+            "object-model-source-map-native-line-table"
+            if statement_stepping_supported
+            else "declaration-coordinate-only"
+        ),
+        "statement_level_stepping": statement_stepping_supported,
         "stepping_retired_route_reason": (
-            "statement-level stepping remains fail-closed: "
+            ""
+            if statement_stepping_supported
+            else "statement-level stepping remains fail-closed: "
             f"{native_debug_info_blocker}"
         )
-        if native_debug_info_blocker
+        if native_debug_info_blocker or statement_stepping_supported
         else "statement-level stepping remains fail-closed until emitted line-table evidence exists on the canonical toolchain path",
         "object_artifact_present": bool(object_path_text),
         "object_path": object_path_text,
@@ -805,9 +1065,11 @@ def build_debug_payload(
         "reserved_capability_rows": [
             {
                 "capability_id": "statementLevelStepping",
-                "status": "reserved",
-                "fail_closed": True,
-                "unpublished_reason": native_debug_info_blocker
+                "status": "supported" if statement_stepping_supported else "reserved",
+                "fail_closed": not statement_stepping_supported,
+                "unpublished_reason": ""
+                if statement_stepping_supported
+                else native_debug_info_blocker
                 or "line-table evidence is not emitted on the canonical toolchain path",
             },
             {

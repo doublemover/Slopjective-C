@@ -4,6 +4,7 @@
 #include <sstream>
 #include <string>
 
+#include "artifacts/objc3_runtime_state_publication_paths.h"
 #include "ir/objc3_ir_frontend_metadata.h"
 #include "ir/objc3_ir_module_identity.h"
 #include "ir/objc3_ir_runtime_bootstrap_global_emission.h"
@@ -151,6 +152,9 @@ void EmitRuntimeMetadataPackagingCommentSurfaces(
     const Objc3IRRuntimeMetadataScaffoldEmissionOptions &options,
     std::ostringstream &out) {
   const Objc3IRFrontendMetadata &frontend_metadata = options.frontend_metadata;
+  const auto default_runtime_state_publication_paths =
+      objc3::artifacts::frontend::BuildRuntimeStatePublicationPathsForEmitPrefix(
+          "module");
   if (!options.selector_pool_globals.empty() ||
       !options.runtime_string_pool_globals.empty()) {
     out << "; runtime_metadata_selector_string_pool_emission = "
@@ -173,6 +177,9 @@ void EmitRuntimeMetadataPackagingCommentSurfaces(
         << Objc3RuntimeMetadataHostSectionForLogicalName(
                kObjc3RuntimeKeypathDescriptorLogicalSection)
         << ";aggregate_symbol=@__objc3_sec_keypath_descriptors"
+        << ";debugger_metadata=source-span,type-identity,object-model-owner,"
+           "object-model-member,source-map-key,diagnostic-anchor"
+        << ";fallback_interpretation_allowed=false"
         << ";generic_metadata_abi_replay_key="
         << (frontend_metadata.lowering_generic_metadata_abi_replay_key.empty()
                 ? "none"
@@ -247,9 +254,12 @@ void EmitRuntimeMetadataPackagingCommentSurfaces(
       << "\n";
   out << "; manifest_object_ir_truth_gate = "
       << Objc3ManifestObjectIrTruthGateSummary()
-      << ";manifest_artifact=module.manifest.json"
-      << ";ir_artifact=module.ll"
-      << ";object_artifact=module.obj"
+      << ";manifest_artifact="
+      << default_runtime_state_publication_paths.compile_manifest_artifact
+      << ";ir_artifact="
+      << default_runtime_state_publication_paths.backend_artifact
+      << ";object_artifact="
+      << default_runtime_state_publication_paths.object_artifact
       << ";registration_descriptor_artifact=module.runtime-registration-descriptor.json"
       << ";registration_manifest_artifact=module.runtime-registration-manifest.json"
       << ";conformance_report_artifact=module.objc3-conformance-report.json"

@@ -18,6 +18,8 @@ from scripts.check_objc3c_advanced_runtime_closure import (  # noqa: E402
     REQUIRED_NATIVE_ARTIFACTS,
     REQUIRED_INTERACTION_FEATURE_SETS,
     REQUIRED_LITERAL_NEGATIVE_CASE_IDS,
+    REQUIRED_RUNTIME_EXECUTION_ENTRYPOINT,
+    REQUIRED_RUNTIME_EXECUTION_OBSERVATIONS,
     REQUIRED_RUNTIME_SOURCE_DEBUG_EXEMPTIONS,
     REQUIRED_RUNTIME_SOURCE_DEBUG_LINKS,
     REQUIRED_UNSUPPORTED_RESERVED_CLAIMS,
@@ -51,6 +53,13 @@ def test_advanced_runtime_closure_enforces_combined_identity_contract() -> None:
         payload["advanced_runtime_combined_identity_contract"]
         == ADVANCED_CLOSURE_COMBINED_IDENTITY_CONTRACT
     )
+    assert (
+        payload["advanced_runtime_runtime_execution_entrypoint"]
+        == REQUIRED_RUNTIME_EXECUTION_ENTRYPOINT
+    )
+    assert set(payload["advanced_runtime_runtime_execution_observations"]) == (
+        REQUIRED_RUNTIME_EXECUTION_OBSERVATIONS
+    )
     assert payload["advanced_runtime_combined_identity_runtime_state_record_count"] >= 8
     assert payload["advanced_runtime_combined_identity_source_graph_record_count"] >= 7
     assert payload["advanced_runtime_combined_identity_debug_map_record_count"] >= 7
@@ -77,11 +86,23 @@ def test_advanced_runtime_closure_enforces_combined_identity_contract() -> None:
         payload["advanced_runtime_native_artifact_contract"]
         == ADVANCED_CLOSURE_NATIVE_ARTIFACT_CONTRACT
     )
-    assert payload["advanced_runtime_native_compile_attempt_status"] == "native_artifact_ready"
+    assert payload["advanced_runtime_native_compile_attempt_status"] == "native_link_run_ready"
     assert payload["advanced_runtime_native_compile_attempt_exit_code"] == 0
     assert payload["advanced_runtime_native_compile_attempt_diagnostic_count"] == 0
+    assert (
+        payload["advanced_runtime_native_phase_status_contract"]
+        == "objc3c.advanced-runtime.closure.typed-failure-reporting.v1"
+    )
+    assert payload["advanced_runtime_native_phase_statuses"] == {
+        "compile": "native_compile_succeeded",
+        "link": "native_link_succeeded",
+        "runtime_registration": "runtime_registration_artifact_present",
+        "runtime_metadata": "runtime_metadata_artifact_present",
+        "error_replay": "error_replay_artifact_present",
+        "execution_status": "native_execution_succeeded",
+    }
     assert payload["advanced_runtime_native_artifact_ready"] is True
-    assert payload["advanced_runtime_native_executable_umbrella_promoted"] is False
+    assert payload["advanced_runtime_native_executable_umbrella_promoted"] is True
 
 
 def test_combined_identity_contract_links_source_graph_debug_map_and_negatives() -> None:
@@ -89,8 +110,8 @@ def test_combined_identity_contract_links_source_graph_debug_map_and_negatives()
     negative_matrix = _read_json(ADVANCED_CLOSURE_NEGATIVE_MATRIX)
 
     assert contract["issue_ref"] == 8199
-    assert contract["umbrella_support_promoted"] is False
-    assert contract["native_executable_umbrella_promoted"] is False
+    assert contract["umbrella_support_promoted"] is True
+    assert contract["native_executable_umbrella_promoted"] is True
     _assert_checked_path(str(contract["positive_fixture"]))
     _assert_checked_path(str(contract["negative_matrix"]))
     _assert_checked_path(str(contract["language_semantics_contract"]))
@@ -138,26 +159,72 @@ def test_combined_identity_contract_links_source_graph_debug_map_and_negatives()
         assert set(record["runtime_source_debug_link_ids"]) <= runtime_source_debug_link_ids
 
 
-def test_native_artifact_contract_claims_compile_artifacts_only() -> None:
+def test_native_artifact_contract_claims_executable_runtime_lane_observations() -> None:
     contract = _read_json(ADVANCED_CLOSURE_NATIVE_ARTIFACT_CONTRACT)
 
     assert contract["issue_ref"] == 8199
-    assert contract["status"] == "native_artifact_ready"
+    assert contract["followup_issue_ref"] == 8213
+    assert contract["status"] == "native_link_run_ready"
+    assert contract["provider_fixture"] == "tests/native/runtime/advanced_closure/combined_provider.objc3"
     assert contract["native_compile_claimed"] is True
     assert contract["native_object_artifact_claimed"] is True
     assert contract["native_ir_artifact_claimed"] is True
     assert contract["native_manifest_artifact_claimed"] is True
-    assert contract["native_link_claimed"] is False
-    assert contract["native_run_claimed"] is False
-    assert contract["native_executable_umbrella_promoted"] is False
-    assert contract["umbrella_support_promoted"] is False
+    assert contract["native_link_claimed"] is True
+    assert contract["native_run_claimed"] is True
+    assert contract["native_executable_umbrella_promoted"] is True
+    assert contract["umbrella_support_promoted"] is True
     assert contract["positive_fixture"] == "tests/native/runtime/advanced_closure/combined_positive.objc3"
+    assert contract["runtime_execution_entrypoint"] == REQUIRED_RUNTIME_EXECUTION_ENTRYPOINT
+    assert set(contract["runtime_execution_observations"]) == REQUIRED_RUNTIME_EXECUTION_OBSERVATIONS
+
+    positive_fixture = (
+        ROOT / "tests" / "native" / "runtime" / "advanced_closure" / "combined_positive.objc3"
+    ).read_text(encoding="utf-8")
+    assert "return advancedRuntimeExecutableEntry()" in positive_fixture
+    assert "combinedAdvancedRuntimeClosure(11, 11, nil)" in positive_fixture
+    assert "asyncCancellationLane(6)" in positive_fixture
+    assert "schedulerAndActorRuntimeExecutionLane(4, 41)" in positive_fixture
 
     assert contract["expected_diagnostics"] == []
     assert contract["absent_diagnostic_codes"] == []
     assert tuple(contract["required_success_artifacts"]) == REQUIRED_NATIVE_ARTIFACTS
     assert tuple(contract["forbidden_success_artifacts"]) == FORBIDDEN_NATIVE_SUCCESS_ARTIFACTS
     assert tuple(contract["forbidden_llvm_operand_markers"]) == FORBIDDEN_NATIVE_LLVM_OPERAND_MARKERS
+    toolchain_gate = contract["native_object_emission_toolchain_gate"]
+    assert toolchain_gate == {
+        "issue_ref": 8232,
+        "required_tool": "llc",
+        "required_probe": "llc --filetype=obj",
+        "success_status": "native_object_emission_supported",
+        "missing_tool_status": "native_object_emission_missing_llc",
+        "missing_probe_status": "native_object_emission_filetype_obj_unavailable",
+        "hosted_runner_behavior": "fail-closed-no-native-object-success-claim",
+        "conformance_minima_behavior": "fail-closed-before-cross-lane-runtime-proof",
+        "fallback_policy": "no-clang-fallback-success-claim",
+        "diagnostic": "native object emission fail-closed: llc executable not found",
+    }
+    cross_lane_source = (ROOT / "scripts" / "check_objc3c_cross_lane_e2e.py").read_text(
+        encoding="utf-8"
+    )
+    assert toolchain_gate["missing_tool_status"] in cross_lane_source
+    assert "native object, package, or execution success claim is published" in cross_lane_source
+    typed_reporting = contract["typed_failure_reporting"]
+    assert typed_reporting["contract_id"] == "objc3c.advanced-runtime.closure.typed-failure-reporting.v1"
+    assert typed_reporting["issue_ref"] == 8213
+    assert typed_reporting["phase_order"] == [
+        "compile",
+        "link",
+        "runtime_registration",
+        "runtime_metadata",
+        "error_replay",
+        "execution_status",
+    ]
+    assert {
+        "native_object_emission_missing_llc",
+        "native_object_emission_filetype_obj_unavailable",
+        "native_object_emission_backend_unavailable",
+    } <= set(typed_reporting["phase_statuses"]["compile"]["values"])
 
 
 def test_canonical_source_debug_map_links_every_combined_identity_record() -> None:

@@ -1,0 +1,76 @@
+module ValueOptionalsRuntimeAbiPositive;
+
+extern fn objc3_runtime_optional_present_i32(payload: i32) -> Optional<i32>;
+extern fn objc3_runtime_optional_absent_i64() -> Optional<i32>;
+extern fn objc3_runtime_optional_has_value_i32(value: Optional<i32>) -> i32;
+extern fn objc3_runtime_optional_payload_or_i32(value: Optional<i32>, fallback: i32) -> i32;
+extern fn objc3_runtime_optional_present_bool(payload: bool) -> Optional<bool>;
+extern fn objc3_runtime_optional_absent_bool() -> Optional<bool>;
+extern fn objc3_runtime_optional_has_value_bool(value: Optional<bool>) -> bool;
+extern fn objc3_runtime_optional_payload_or_bool(value: Optional<bool>, fallback: bool) -> bool;
+extern fn objc3_runtime_optional_present_id(payload: id) -> Optional<id>;
+extern fn objc3_runtime_optional_absent_id() -> Optional<id>;
+extern fn objc3_runtime_optional_has_value_id(value: Optional<id>) -> i32;
+extern fn objc3_runtime_optional_payload_or_id(value: Optional<id>, fallback: id) -> id;
+extern fn objc3_runtime_optional_present_full_i64(payload: i32) -> Optional<i64>;
+extern fn objc3_runtime_optional_absent_full_i64() -> Optional<i64>;
+extern fn objc3_runtime_optional_has_value_full_i64(value: Optional<i64>) -> bool;
+
+fn choose(flag: bool, value: i32) -> Optional<i32> {
+  if (flag) {
+    return objc3_runtime_optional_present_i32(value);
+  }
+  return objc3_runtime_optional_absent_i64();
+}
+
+fn chooseFlag(flag: bool) -> Optional<bool> {
+  if (flag) {
+    return objc3_runtime_optional_present_bool(true);
+  }
+  return objc3_runtime_optional_absent_bool();
+}
+
+fn chooseObject(flag: bool, value: id) -> Optional<id> {
+  if (flag) {
+    return objc3_runtime_optional_present_id(value);
+  }
+  return objc3_runtime_optional_absent_id();
+}
+
+fn chooseWide(flag: bool, value: i32) -> Optional<i64> {
+  if (flag) {
+    return objc3_runtime_optional_present_full_i64(value);
+  }
+  return objc3_runtime_optional_absent_full_i64();
+}
+
+fn main() -> i32 {
+  let present = choose(true, 41);
+  let absent = choose(false, 99);
+  let flagPresent = chooseFlag(true);
+  let flagAbsent = chooseFlag(false);
+  let objectPresent = chooseObject(true, 17);
+  let objectAbsent = chooseObject(false, 33);
+  let widePresent = chooseWide(true, 12345);
+  let wideAbsent = chooseWide(false, 67890);
+  let payload = objc3_runtime_optional_payload_or_i32(present, 0);
+  let fallback = objc3_runtime_optional_payload_or_i32(absent, 1);
+  let flagPayload = objc3_runtime_optional_payload_or_bool(flagPresent, false);
+  let flagFallback = objc3_runtime_optional_payload_or_bool(flagAbsent, true);
+  let objectPayload = objc3_runtime_optional_payload_or_id(objectPresent, 0);
+  let objectFallback = objc3_runtime_optional_payload_or_id(objectAbsent, 2);
+  if (objc3_runtime_optional_has_value_i32(present)) {
+    if (objc3_runtime_optional_has_value_bool(flagPresent)) {
+      if (objc3_runtime_optional_has_value_id(objectPresent)) {
+        if (flagPayload && flagFallback) {
+          if (objc3_runtime_optional_has_value_full_i64(widePresent)) {
+            if (!objc3_runtime_optional_has_value_full_i64(wideAbsent)) {
+              return payload + fallback + objectPayload + objectFallback + 5;
+            }
+          }
+        }
+      }
+    }
+  }
+  return 0;
+}

@@ -1,7 +1,8 @@
 from __future__ import annotations
 
-from contextlib import redirect_stderr, redirect_stdout
+from contextlib import contextmanager, redirect_stderr, redirect_stdout
 from io import StringIO
+import os
 import subprocess
 import sys
 import time
@@ -70,6 +71,7 @@ def _completed_from_public_workflow_action(
     *,
     cwd: Path | str | None,
     capture_output: bool,
+    env_overlay: Mapping[str, str] | None = None,
 ) -> subprocess.CompletedProcess[str] | None:
     if cwd is not None:
         try:
@@ -101,8 +103,27 @@ def _completed_from_public_workflow_action(
 
     action = command_list[action_offset]
     rest = command_list[action_offset + 1 :]
+
+    @contextmanager
+    def patched_environment() -> object:
+        overlay = dict(env_overlay or {})
+        previous: dict[str, str | None] = {
+            key: os.environ.get(key)
+            for key in overlay
+        }
+        try:
+            os.environ.update(overlay)
+            yield
+        finally:
+            for key, value in previous.items():
+                if value is None:
+                    os.environ.pop(key, None)
+                else:
+                    os.environ[key] = value
+
     if not capture_output:
-        returncode = execute_nested_action(action, rest)
+        with patched_environment():
+            returncode = execute_nested_action(action, rest)
         return subprocess.CompletedProcess(
             command_list,
             returncode,
@@ -112,7 +133,7 @@ def _completed_from_public_workflow_action(
 
     stdout = StringIO()
     stderr = StringIO()
-    with redirect_stdout(stdout), redirect_stderr(stderr):
+    with patched_environment(), redirect_stdout(stdout), redirect_stderr(stderr):
         returncode = execute_nested_action(action, rest)
     return subprocess.CompletedProcess(
         command_list,
@@ -147,6 +168,7 @@ def run_completed(
             command_list,
             cwd=cwd,
             capture_output=capture_output,
+            env_overlay=merged_overlay,
         )
         if result is None:
             command_list = _portable_public_workflow_command(command_list, cwd=cwd)

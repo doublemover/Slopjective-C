@@ -116,8 +116,10 @@ BuildFrontendCompatibilityStrictnessClaimSemanticsSummary(
         semantic_boundary.unsupported_feature_claim_rejection_semantics_landed;
     summary.live_unsupported_feature_source_rejection_landed =
         semantic_boundary.live_unsupported_feature_source_rejection_landed;
-    summary.strictness_selection_rejection_semantics_landed =
-        semantic_boundary.strictness_selection_rejection_semantics_landed;
+    summary.strictness_selection_semantics_landed =
+        semantic_boundary.strictness_selection_semantics_landed;
+    summary.strict_concurrency_selection_semantics_landed =
+        semantic_boundary.strict_concurrency_selection_semantics_landed;
     summary.feature_macro_claim_suppression_semantics_landed =
         semantic_boundary.feature_macro_claim_suppression_semantics_landed;
     summary.canonical_interface_truth_semantics_landed =
@@ -216,9 +218,11 @@ std::string BuildFrontendCompatibilityStrictnessClaimSemanticsSummaryJson(
       << ",\"live_unsupported_feature_source_rejection_landed\":"
       << (summary.live_unsupported_feature_source_rejection_landed ? "true"
                                                                    : "false")
-      << ",\"strictness_selection_rejection_semantics_landed\":"
-      << (summary.strictness_selection_rejection_semantics_landed ? "true"
-                                                                  : "false")
+      << ",\"strictness_selection_semantics_landed\":"
+      << (summary.strictness_selection_semantics_landed ? "true" : "false")
+      << ",\"strict_concurrency_selection_semantics_landed\":"
+      << (summary.strict_concurrency_selection_semantics_landed ? "true"
+                                                                : "false")
       << ",\"feature_macro_claim_suppression_semantics_landed\":"
       << (summary.feature_macro_claim_suppression_semantics_landed ? "true"
                                                                    : "false")

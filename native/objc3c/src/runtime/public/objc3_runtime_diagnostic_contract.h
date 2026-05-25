@@ -19,6 +19,16 @@ objc3_runtime_dispatch_i32_result objc3_runtime_dispatch_i32_checked(
     int a2,
     int a3);
 
+objc3_runtime_dispatch_i32_result
+objc3_runtime_dispatch_i32_checked_error_out(
+    int receiver,
+    const char *selector,
+    int a0,
+    int a1,
+    int a2,
+    int a3,
+    int *throws_error_out);
+
 /*
  * Strict checked i32 dispatch with an explicit class-name lookup start. Lowered
  * super sends use this after semantic analysis resolves the enclosing
@@ -33,6 +43,17 @@ objc3_runtime_dispatch_i32_result objc3_runtime_dispatch_i32_from_class_checked(
     int a2,
     int a3);
 
+objc3_runtime_dispatch_i32_result
+objc3_runtime_dispatch_i32_from_class_checked_error_out(
+    int receiver,
+    const char *lookup_start_class_name,
+    const char *selector,
+    int a0,
+    int a1,
+    int a2,
+    int a3,
+    int *throws_error_out);
+
 /*
  * Strict checked typed dispatch. OK results carry exactly one typed value field
  * according to return_kind, except void which is represented by return_kind
@@ -46,6 +67,16 @@ objc3_runtime_dispatch_typed_result objc3_runtime_dispatch_typed_checked(
     int a2,
     int a3);
 
+objc3_runtime_dispatch_typed_result
+objc3_runtime_dispatch_typed_checked_error_out(
+    int receiver,
+    const char *selector,
+    int a0,
+    int a1,
+    int a2,
+    int a3,
+    int *throws_error_out);
+
 /*
  * Strict checked typed dispatch with an explicit class-name lookup start.
  */
@@ -58,6 +89,17 @@ objc3_runtime_dispatch_typed_from_class_checked(
     int a1,
     int a2,
     int a3);
+
+objc3_runtime_dispatch_typed_result
+objc3_runtime_dispatch_typed_from_class_checked_error_out(
+    int receiver,
+    const char *lookup_start_class_name,
+    const char *selector,
+    int a0,
+    int a1,
+    int a2,
+    int a3,
+    int *throws_error_out);
 
 /*
  * Abort the current process with the canonical strict-dispatch diagnostic for

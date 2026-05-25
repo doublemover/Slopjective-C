@@ -1,0 +1,82 @@
+{
+  "contract_id": "objc3c.advanced-runtime.macro-package-replay-runtime-closure.v1",
+  "issue_ref": 8217,
+  "umbrella_issue_ref": 8203,
+  "dependency_issue_ref": 8213,
+  "surface_kind": "macro-package-replay-runtime-contract",
+  "support_status": "supported-bounded",
+  "source_owner": "metaprogramming macro host process/cache runtime integration import surface",
+  "import_surface_contract": {
+    "member_name": "objc_metaprogramming_macro_host_process_and_cache_runtime_integration",
+    "contract_id": "objc3c.metaprogramming.macro.host.process.cache.runtime.integration.v1",
+    "source_contract_id": "objc3c.metaprogramming.expansion.host.runtime.boundary.v1",
+    "fail_closed_policy": "macro package replay packets must carry package, lock, trust, host, cache root, input/output, validation, generation, and runtime-consumption identity before cross-module runtime consumption",
+    "required_fields": [
+      "runtime_import_artifact_ready",
+      "separate_compilation_ready",
+      "deterministic",
+      "replay_key",
+      "host_executable_relative_path",
+      "cache_root_relative_path",
+      "macro_package_identity",
+      "macro_package_lock_identity",
+      "macro_package_trust_identity",
+      "macro_input_content_identity",
+      "macro_output_content_identity",
+      "macro_host_identity",
+      "cache_validation_status",
+      "runtime_consumption_artifact_identity",
+      "package_replay_generation"
+    ]
+  },
+  "required_identity_values": {
+    "macro_package_identity": "std.metaprogramming.advanced-runtime",
+    "macro_package_lock_identity": "objc3c.metaprogramming.advanced-runtime.lock.v1",
+    "macro_package_trust_identity": "deterministic-sandbox+checked-package-replay",
+    "cache_validation_status": "valid"
+  },
+  "supported_boundary": [
+    "deterministic macro host process cache replay",
+    "package lock and trust identity preservation",
+    "host executable identity preservation",
+    "input/output content identity preservation",
+    "runtime consumption artifact identity preservation",
+    "cross-module duplicate replay-key rejection"
+  ],
+  "reserved_or_rejected_boundary": [
+    "arbitrary macro host execution",
+    "network or filesystem macro sandbox widening",
+    "unsigned package replay",
+    "stale cache reuse",
+    "host identity mismatch",
+    "tampered runtime metadata",
+    "missing replay metadata"
+  ],
+  "negative_cases": [
+    {
+      "case_id": "macro_host_arbitrary_execution",
+      "fixture": "tests/native/runtime/advanced_closure/negative_macro_host_arbitrary_execution.objc3",
+      "expected_diagnostic": "advanced-runtime.macro-host-arbitrary-execution"
+    },
+    {
+      "case_id": "macro_package_replay_stale_cache",
+      "fixture": "tests/native/runtime/advanced_closure/negative_macro_package_replay_stale_cache.objc3",
+      "expected_diagnostic": "advanced-runtime.macro-package-replay-stale-cache"
+    },
+    {
+      "case_id": "macro_package_replay_host_mismatch",
+      "fixture": "tests/native/runtime/advanced_closure/negative_macro_package_replay_host_mismatch.objc3",
+      "expected_diagnostic": "advanced-runtime.macro-package-replay-host-mismatch"
+    },
+    {
+      "case_id": "macro_package_replay_tampered_metadata",
+      "fixture": "tests/native/runtime/advanced_closure/negative_macro_package_replay_tampered_metadata.objc3",
+      "expected_diagnostic": "advanced-runtime.macro-package-replay-tampered-metadata"
+    },
+    {
+      "case_id": "macro_package_replay_missing_metadata",
+      "fixture": "tests/native/runtime/advanced_closure/negative_macro_package_replay_missing_metadata.objc3",
+      "expected_diagnostic": "advanced-runtime.macro-package-replay-missing-metadata"
+    }
+  ]
+}

@@ -12,6 +12,8 @@
   "response_drill_contract": "tests/tooling/fixtures/security_hardening/response_drill_contract.json",
   "runtime_hardening_contract": "tests/tooling/fixtures/security_hardening/runtime_hardening_contract.json",
   "sanitizer_validation_contract": "tests/tooling/fixtures/security_hardening/sanitizer_validation_contract.json",
+  "sanitizer_package_install_model_contract": "tests/tooling/fixtures/security_hardening/sanitizer_package_install_model_contract.json",
+  "sanitizer_execution_evidence_contract": "tests/tooling/fixtures/security_hardening/sanitizer_execution_evidence_contract.json",
   "language_runtime_threat_model_backlog": "tests/tooling/fixtures/security_hardening/language_runtime_threat_model_backlog.json",
   "owner_contracts": "tests/tooling/fixtures/security_hardening/owner_contracts.json",
   "schema_surface": "tests/tooling/fixtures/security_hardening/schema_surface.json",
@@ -21,6 +23,7 @@
     "check-security-hardening-surface",
     "check-security-hardening-schema-surface",
     "check-security-sanitizer-validation",
+    "check-security-sanitizer-execution-evidence",
     "check-security-language-runtime-threat-model",
     "build-security-posture",
     "publish-security-advisories",
@@ -36,12 +39,63 @@
       "check-security-hardening-surface",
       "check-security-hardening-schema-surface",
       "check-security-sanitizer-validation",
+      "check-security-sanitizer-execution-evidence",
       "check-security-language-runtime-threat-model",
       "build-security-posture",
       "publish-security-advisories",
       "validate-security-hardening",
       "validate-security-hardening-end-to-end"
-    ]
+    ],
+    "sanitizer_execution_evidence_contract": {
+      "public_action": "check-security-sanitizer-execution-evidence",
+      "source_contract": "tests/tooling/fixtures/security_hardening/sanitizer_execution_evidence_contract.json",
+      "schema": "schemas/objc3c-sanitizer-execution-evidence-v1.schema.json",
+      "checker": "scripts/check_security_sanitizer_execution_evidence.py",
+      "support_truth": false,
+      "native_execution_claimed": false,
+      "support_promotion_allowed": false
+    },
+    "sanitizer_runtime_evidence_actions": {
+      "support_claim_authority": false,
+      "generated_report_capability_truth_allowed": false,
+      "native_execution_claim_promotion_allowed": false,
+      "action_aliases_allowed": false,
+      "fallback_sanitizer_variant_allowed": false,
+      "fallback_target_platform_allowed": false,
+      "report_or_probe_rerouting_allowed": false,
+      "package_root_rerouting_allowed": false,
+      "fixture_rerouting_allowed": false,
+      "public_pass_through_args_allowed": false,
+      "blocker_owner": "security-hardening-blockers",
+      "actions": {
+        "check-sanitizer-runtime-evidence-asan": {
+          "issue_ref": 8230,
+          "sanitizer_variant_id": "address",
+          "target_platform_ids": [
+            "windows-x64"
+          ],
+          "report_paths": [
+            "tmp/reports/sanitizer-runtime-evidence/address/summary.json",
+            "tmp/reports/sanitizer-runtime-evidence/address/probe.json",
+            "tmp/reports/sanitizer-runtime-evidence/address/diagnostics.json"
+          ],
+          "blocker_policy": "review-only-evidence; no sanitizer support promotion"
+        },
+        "check-sanitizer-runtime-evidence-ubsan": {
+          "issue_ref": 8231,
+          "sanitizer_variant_id": "undefined",
+          "target_platform_ids": [
+            "windows-x64"
+          ],
+          "report_paths": [
+            "tmp/reports/sanitizer-runtime-evidence/undefined/summary.json",
+            "tmp/reports/sanitizer-runtime-evidence/undefined/probe.json",
+            "tmp/reports/sanitizer-runtime-evidence/undefined/diagnostics.json"
+          ],
+          "blocker_policy": "review-only-evidence; no sanitizer support promotion"
+        }
+      }
+    }
   },
   "hard_cutover_security_guardrails": {
     "owner_contracts": "tests/tooling/fixtures/security_hardening/owner_contracts.json",
@@ -58,6 +112,8 @@
     "docs/runbooks/objc3c_security_hardening.md",
     "schemas/objc3c-security-posture-v1.schema.json",
     "schemas/objc3c-security-advisory-index-v1.schema.json",
+    "schemas/objc3c-sanitizer-execution-evidence-v1.schema.json",
+    "schemas/objc3c-sanitizer-runtime-promotion-evidence-v1.schema.json",
     "scripts/check_security_hardening_source_surface.py",
     "scripts/check_security_hardening_schema_surface.py",
     "scripts/build_security_hardening_macro_trust_policy_summary.py",
@@ -66,6 +122,9 @@
     "scripts/check_security_hardening_response_drill.py",
     "scripts/check_security_hardening_runtime_hardening.py",
     "scripts/check_security_sanitizer_validation.py",
+    "scripts/check_security_sanitizer_execution_evidence.py",
+    "scripts/check_objc3c_sanitizer_runtime_promotion_evidence.py",
+    "scripts/objc3c_workflow/actions/sanitizer_runtime_evidence.py",
     "scripts/check_security_language_runtime_threat_model.py",
     "scripts/check_objc3c_security_hardening_integration.py",
     "scripts/check_objc3c_security_hardening_end_to_end.py",
@@ -73,6 +132,9 @@
     "tests/tooling/fixtures/security_hardening/macro_package_provenance_trust_policy.json",
     "tests/tooling/fixtures/security_hardening/macro_supply_chain_trust_registry.json",
     "tests/tooling/fixtures/security_hardening/sanitizer_validation_contract.json",
+    "tests/tooling/fixtures/security_hardening/sanitizer_package_install_model_contract.json",
+    "tests/tooling/fixtures/security_hardening/sanitizer_execution_evidence_contract.json",
+    "tests/tooling/fixtures/security_hardening/sanitizer_runtime_promotion_evidence_contract.json",
     "tests/tooling/fixtures/security_hardening/sanitizer_validation_fixture.objc3",
     "tests/tooling/fixtures/security_hardening/language_runtime_threat_model_backlog.json",
     "docs/runbooks/objc3c_language_runtime_threat_model.md",
@@ -88,6 +150,9 @@
     "scripts/check_security_hardening_response_drill.py",
     "scripts/check_security_hardening_runtime_hardening.py",
     "scripts/check_security_sanitizer_validation.py",
+    "scripts/check_security_sanitizer_execution_evidence.py",
+    "scripts/check_objc3c_sanitizer_runtime_promotion_evidence.py",
+    "scripts/objc3c_workflow/actions/sanitizer_runtime_evidence.py",
     "scripts/check_security_language_runtime_threat_model.py",
     "scripts/check_objc3c_security_hardening_integration.py",
     "scripts/check_objc3c_security_hardening_end_to_end.py"

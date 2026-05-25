@@ -38,8 +38,16 @@ void AddImportedLinkPlanInputToSections(
     sections.imported_concurrency_actor_module_names_lexicographic.push_back(
         imported_input.module_name);
   }
+  if (imported_input.concurrency_scheduler_task_runtime_import_present) {
+    sections.imported_scheduler_task_module_names_lexicographic.push_back(
+        imported_input.module_name);
+  }
   if (imported_input.interop_ffi_metadata_interface_preservation_present) {
     sections.imported_interop_ffi_module_names_lexicographic.push_back(
+        imported_input.module_name);
+  }
+  if (imported_input.interop_foreign_abi_runtime_closure_present) {
+    sections.imported_foreign_abi_module_names_lexicographic.push_back(
         imported_input.module_name);
   }
   if (imported_input.interop_header_module_bridge_generation_present) {
@@ -117,8 +125,12 @@ void SortLexicographicModuleSections(
   std::sort(
       sections.imported_concurrency_actor_module_names_lexicographic.begin(),
       sections.imported_concurrency_actor_module_names_lexicographic.end());
+  std::sort(sections.imported_scheduler_task_module_names_lexicographic.begin(),
+            sections.imported_scheduler_task_module_names_lexicographic.end());
   std::sort(sections.imported_interop_ffi_module_names_lexicographic.begin(),
             sections.imported_interop_ffi_module_names_lexicographic.end());
+  std::sort(sections.imported_foreign_abi_module_names_lexicographic.begin(),
+            sections.imported_foreign_abi_module_names_lexicographic.end());
   std::sort(
       sections
           .imported_interop_header_module_bridge_module_names_lexicographic
@@ -148,7 +160,9 @@ bool BuildObjc3CrossModuleRuntimeLinkPlanSections(
   std::unordered_set<std::string> seen_direct_import_surface_paths;
   std::unordered_set<std::string> seen_error_handling_replay_keys;
   std::unordered_set<std::string> seen_concurrency_actor_replay_keys;
+  std::unordered_set<std::string> seen_scheduler_task_replay_keys;
   std::unordered_set<std::string> seen_interop_ffi_replay_keys;
+  std::unordered_set<std::string> seen_foreign_abi_replay_keys;
   std::unordered_set<std::string> seen_interop_header_module_bridge_replay_keys;
   std::unordered_set<std::string> seen_metaprogramming_host_cache_replay_keys;
 
@@ -197,7 +211,9 @@ bool BuildObjc3CrossModuleRuntimeLinkPlanSections(
             seen_registration_ordinals,
             seen_error_handling_replay_keys,
             seen_concurrency_actor_replay_keys,
+            seen_scheduler_task_replay_keys,
             seen_interop_ffi_replay_keys,
+            seen_foreign_abi_replay_keys,
             seen_interop_header_module_bridge_replay_keys,
             seen_metaprogramming_host_cache_replay_keys,
             error)) {

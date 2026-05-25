@@ -3,6 +3,11 @@ from __future__ import annotations
 
 import os
 
+from objc3c_package_channels.model import (
+    MANIFEST_RELATIVE_PATH,
+    native_executable_entry_from_runnable_manifest,
+)
+from objc3c_tooling.json_io import load_json_object as load_json
 from objc3c_tooling.subprocesses import python_script_command, run_completed
 from objc3c_tooling.paths import repo_rel
 from platform_hardening_contracts import (
@@ -37,6 +42,20 @@ def summary_is_pass(path) -> bool:
 
 def missing_input_paths(paths) -> list[str]:
     return [repo_rel(path) for path in paths if not path.is_file()]
+
+
+def native_executable_entry(packaging_e2e: dict[str, object]) -> str:
+    package_root = packaging_e2e.get("package_root")
+    if not isinstance(package_root, str) or not package_root:
+        raise RuntimeError("package-channels end-to-end summary missing package_root")
+    manifest = load_json(ROOT / package_root.replace("/", os.sep) / MANIFEST_RELATIVE_PATH)
+    payload_contract = packaging_e2e.get("payload_contract", {})
+    if not isinstance(payload_contract, dict):
+        raise RuntimeError("package-channels end-to-end summary missing payload_contract")
+    return native_executable_entry_from_runnable_manifest(
+        manifest,
+        payload_contract=payload_contract,
+    )
 
 
 def ensure_build_package_validation() -> dict[str, object]:
@@ -96,7 +115,11 @@ def main() -> int:
 
     install_root = ROOT / packaging_e2e["install_root"].replace("/", os.sep)
     offline_install_root = ROOT / packaging_e2e["offline_install_root"].replace("/", os.sep)
-    offline_native = offline_install_root / "objc3c" / "artifacts" / "bin" / "objc3c-native.exe"
+    installed_execution = packaging_e2e.get("installed_root_execution", {})
+    offline_installed_execution = packaging_e2e.get("offline_installed_root_execution", {})
+    if not isinstance(installed_execution, dict) or not isinstance(offline_installed_execution, dict):
+        raise RuntimeError("package-channels end-to-end summary missing installed-root execution proof")
+    offline_native = offline_install_root / "objc3c" / native_executable_entry(packaging_e2e)
 
     checks = {
         "matrix_platform_is_windows_x64": matrix["default_platform_id"] == "windows-x64",
@@ -104,6 +127,8 @@ def main() -> int:
         "toolchain_range_replay_passes": summary_passes(toolchain_replay),
         "primary_install_root_rolled_back": not (install_root / "objc3c").exists(),
         "offline_install_root_kept_native_executable": offline_native.is_file(),
+        "primary_installed_root_execution_passes_before_rollback": installed_execution.get("status") == "PASS",
+        "offline_installed_root_execution_passes": offline_installed_execution.get("status") == "PASS",
     }
 
     summary = {
@@ -115,6 +140,8 @@ def main() -> int:
         "build_package_validation_summary": repo_rel(BUILD_PACKAGE_VALIDATION_SUMMARY_PATH),
         "toolchain_range_replay_summary": repo_rel(TOOLCHAIN_RANGE_REPLAY_SUMMARY_PATH),
         "packaging_end_to_end_summary": repo_rel(PACKAGE_CHANNELS_END_TO_END_SUMMARY_PATH),
+        "installed_root_execution": installed_execution,
+        "offline_installed_root_execution": offline_installed_execution,
         "upstream_steps": upstream_steps,
         "required_checks": contract["required_checks"],
         "checks": checks,

@@ -62,7 +62,7 @@ PUBLIC_TEST_NATIVE_ACTION_SPECS: dict[str, ActionSpec] = {
         validation_tier="ci",
         guarantee_owner=(
             "GitHub Actions execution smoke routing stays inside the public workflow bridge "
-            "and skips only when hosted llc object emission is unavailable"
+            "and skips without success claims when hosted llc object emission is unavailable"
         ),
     ),
     "test-execution-replay": ActionSpec(

@@ -1,0 +1,405 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://objc3c.dev/schemas/objc3c-standalone-textual-interface-payload-v1.schema.json",
+  "title": "Objective-C 3 Standalone Textual Interface Payload v1",
+  "x-objc3c-artifact-contract": {
+    "schema_id": "objc3c-standalone-textual-interface-payload-v1",
+    "payload_id_field": "payload_kind",
+    "payload_id_value": "objc3c.standalone_textual_interface_payload.v1",
+    "registry_owner": "native/objc3c/src/artifacts/json/artifact_schema_contract_table.cpp",
+    "artifact_family": "module-interface"
+  },
+  "type": "object",
+  "required": [
+    "payload_kind",
+    "schema_version",
+    "producer_version",
+    "module_id",
+    "package_id",
+    "interface_payload_id",
+    "source_anchor",
+    "target_constraints",
+    "imports",
+    "declarations",
+    "reserved_metadata",
+    "interface_roundtrip",
+    "source_counts",
+    "issue_refs",
+    "source_truth_policy",
+    "negative_cases",
+    "capability_requirements",
+    "public_commands"
+  ],
+  "properties": {
+    "payload_kind": {
+      "const": "objc3c.standalone_textual_interface_payload.v1"
+    },
+    "schema_version": {
+      "const": "objc3c-standalone-textual-interface-payload-v1"
+    },
+    "producer_version": { "type": "string", "minLength": 1 },
+    "module_id": { "type": "string", "minLength": 1 },
+    "package_id": { "type": "string", "minLength": 1 },
+    "interface_payload_id": { "type": "string", "minLength": 1 },
+    "source_anchor": { "$ref": "#/$defs/sourceAnchor" },
+    "target_constraints": {
+      "type": "object",
+      "required": [
+        "language_version",
+        "language_profile",
+        "arc_mode",
+        "lowering_contract"
+      ],
+      "properties": {
+        "language_version": { "type": "number" },
+        "language_profile": { "const": "canonical" },
+        "arc_mode": { "enum": ["enabled", "disabled"] },
+        "lowering_contract": { "type": "string", "minLength": 1 }
+      },
+      "additionalProperties": false
+    },
+    "imports": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/interfaceImport" }
+    },
+    "declarations": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/interfaceDeclaration" }
+    },
+    "reserved_metadata": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/reservedMetadata" }
+    },
+    "interface_roundtrip": { "$ref": "#/$defs/interfaceRoundtrip" },
+    "source_counts": {
+      "type": "object",
+      "required": [
+        "globals",
+        "protocols",
+        "interfaces",
+        "implementations_reserved",
+        "functions"
+      ],
+      "properties": {
+        "globals": { "type": "number" },
+        "protocols": { "type": "number" },
+        "interfaces": { "type": "number" },
+        "implementations_reserved": { "type": "number" },
+        "functions": { "type": "number" }
+      },
+      "additionalProperties": false
+    },
+    "capability_requirements": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 },
+      "uniqueItems": true
+    },
+    "issue_refs": {
+      "type": "array",
+      "items": {
+        "type": "integer",
+        "enum": [8208, 8233, 8234, 8238]
+      },
+      "minItems": 4,
+      "uniqueItems": true
+    },
+    "source_truth_policy": {
+      "$ref": "#/$defs/sourceTruthPolicy"
+    },
+    "negative_cases": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/negativeCase" },
+      "minItems": 7,
+      "uniqueItems": true
+    },
+    "public_commands": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/publicCommand" },
+      "minItems": 1
+    },
+    "diagnostic_count": { "type": "number" }
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "sourceAnchor": {
+      "type": "object",
+      "required": ["path", "line", "column"],
+      "properties": {
+        "path": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "^(?![A-Za-z]:)(?![/\\\\])(?!(?:tmp|temp|generated|build|dist)(?:/|\\\\))(?!.*(?:^|[/\\\\])\\.\\.(?:[/\\\\]|$)).+"
+        },
+        "line": { "type": "number" },
+        "column": { "type": "number" }
+      },
+      "additionalProperties": false
+    },
+    "publicCommand": {
+      "type": "string",
+      "pattern": "^npm run objc3c -- [a-z0-9][a-z0-9-]*(?: .*)?$"
+    },
+    "sourceTruthPolicy": {
+      "type": "object",
+      "required": [
+        "source_truth",
+        "local_temp_source_truth_allowed",
+        "generated_output_source_truth_allowed",
+        "fallback_success_allowed",
+        "schema_registry_required",
+        "public_command_evidence_required",
+        "capability_truth_row",
+        "umbrella_readiness_issue_ref"
+      ],
+      "properties": {
+        "source_truth": {
+          "const": "native-artifact-schema-fixture-public-command"
+        },
+        "local_temp_source_truth_allowed": {
+          "const": false
+        },
+        "generated_output_source_truth_allowed": {
+          "const": false
+        },
+        "fallback_success_allowed": {
+          "const": false
+        },
+        "schema_registry_required": {
+          "const": true
+        },
+        "public_command_evidence_required": {
+          "const": true
+        },
+        "capability_truth_row": {
+          "const": "modules.standalone-textual-interface-payload"
+        },
+        "umbrella_readiness_issue_ref": {
+          "const": 8208
+        }
+      },
+      "additionalProperties": false
+    },
+    "negativeCase": {
+      "type": "object",
+      "required": [
+        "case_id",
+        "target",
+        "expected_failure",
+        "fail_closed"
+      ],
+      "properties": {
+        "case_id": {
+          "type": "string",
+          "pattern": "^[a-z0-9][a-z0-9._-]*$"
+        },
+        "target": {
+          "type": "string",
+          "minLength": 1
+        },
+        "expected_failure": {
+          "type": "string",
+          "minLength": 1
+        },
+        "fail_closed": {
+          "const": true
+        },
+        "diagnostic": {
+          "type": "string",
+          "pattern": "^O3"
+        }
+      },
+      "additionalProperties": false
+    },
+    "interfaceImport": {
+      "type": "object",
+      "required": [
+        "from_module",
+        "to_module",
+        "interface_payload_id",
+        "lock_identity",
+        "capability_requirements"
+      ],
+      "properties": {
+        "from_module": { "type": "string", "minLength": 1 },
+        "to_module": { "type": "string", "minLength": 1 },
+        "interface_payload_id": { "type": "string", "minLength": 1 },
+        "lock_identity": { "type": "string", "minLength": 1 },
+        "capability_requirements": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "uniqueItems": true
+        }
+      },
+      "additionalProperties": false
+    },
+    "interfaceDeclaration": {
+      "type": "object",
+      "required": [
+        "declaration_id",
+        "kind",
+        "name",
+        "visibility",
+        "type_signature",
+        "effects",
+        "generics",
+        "ownership",
+        "runtime_metadata",
+        "source_anchor"
+      ],
+      "properties": {
+        "declaration_id": { "type": "string", "minLength": 1 },
+        "kind": {
+          "enum": [
+            "actor_interface",
+            "function",
+            "global",
+            "interface",
+            "method",
+            "property",
+            "protocol"
+          ]
+        },
+        "name": { "type": "string", "minLength": 1 },
+        "visibility": { "enum": ["public", "package", "internal"] },
+        "type_signature": { "type": "object" },
+        "effects": {
+          "oneOf": [
+            {
+              "type": "object",
+              "maxProperties": 0
+            },
+            {
+              "$ref": "#/$defs/declarationEffects"
+            }
+          ]
+        },
+        "generics": { "type": "array" },
+        "ownership": { "type": "object" },
+        "runtime_metadata": { "type": "object" },
+        "source_anchor": { "$ref": "#/$defs/sourceAnchor" }
+      },
+      "additionalProperties": false
+    },
+    "declarationEffects": {
+      "type": "object",
+      "required": [
+        "async",
+        "throws",
+        "throws_kind",
+        "declared_error_type",
+        "typed_throws"
+      ],
+      "properties": {
+        "async": { "type": "boolean" },
+        "throws": { "type": "boolean" },
+        "throws_kind": { "enum": ["none", "untyped", "typed"] },
+        "declared_error_type": { "type": "string" },
+        "typed_throws": { "$ref": "#/$defs/typedThrowsContract" },
+        "throws_profile": { "type": "string" },
+        "actor_nonisolated": { "type": "boolean" },
+        "actor_isolation_profile": { "type": "string" },
+        "executor_affinity_declared": { "type": "boolean" },
+        "executor_affinity_kind": { "type": "string" },
+        "executor_affinity_name": { "type": "string" }
+      },
+      "additionalProperties": true
+    },
+    "typedThrowsContract": {
+      "type": "object",
+      "required": [
+        "issue_ref",
+        "canonical_syntax",
+        "throws_kind",
+        "declared_error_type",
+        "effect_signature_key",
+        "callable_compatibility_policy",
+        "semantic_identity_status",
+        "typed_payload_arity",
+        "typed_payload_status",
+        "typed_payload_generic_suffix",
+        "typed_payload_generic_suffix_terminated",
+        "typed_payload_pointer_depth",
+        "typed_payload_lowering_ready",
+        "runtime_execution_claimed",
+        "silent_erasure_allowed",
+        "multi_payload_supported",
+        "abi_status",
+        "interface_roundtrip_status"
+      ],
+      "properties": {
+        "issue_ref": { "const": 8233 },
+        "canonical_syntax": { "const": "throws(E)" },
+        "throws_kind": { "enum": ["none", "untyped", "typed"] },
+        "declared_error_type": { "type": "string" },
+        "effect_signature_key": {
+          "type": "string",
+          "pattern": "^throws:(?:none|untyped:id<Error>|typed:.+)$"
+        },
+        "callable_compatibility_policy": {
+          "enum": [
+            "nonthrowing-only",
+            "untyped-throws-id-error-carrier",
+            "typed-throws-exact-payload-match-error-out-abi"
+          ]
+        },
+        "semantic_identity_status": {
+          "const": "exact-effect-signature-preserved"
+        },
+        "typed_payload_arity": { "enum": [0, 1] },
+        "typed_payload_status": {
+          "enum": ["not-declared", "source-preserved-error-out-abi-lowered"]
+        },
+        "typed_payload_generic_suffix": { "type": "string" },
+        "typed_payload_generic_suffix_terminated": { "const": true },
+        "typed_payload_pointer_depth": { "type": "number" },
+        "typed_payload_lowering_ready": { "type": "boolean" },
+        "runtime_execution_claimed": { "type": "boolean" },
+        "silent_erasure_allowed": { "const": false },
+        "multi_payload_supported": { "const": false },
+        "abi_status": {
+          "enum": ["none", "untyped-error-out-abi", "typed-error-out-abi"]
+        },
+        "interface_roundtrip_status": {
+          "enum": ["not-applicable", "typed-payload-preserved"]
+        }
+      },
+      "additionalProperties": false
+    },
+    "reservedMetadata": {
+      "type": "object",
+      "required": [
+        "surface",
+        "name",
+        "status",
+        "diagnostic",
+        "fail_closed",
+        "source_anchor"
+      ],
+      "properties": {
+        "surface": { "type": "string", "minLength": 1 },
+        "name": { "type": "string", "minLength": 1 },
+        "status": { "type": "string", "minLength": 1 },
+        "diagnostic": { "type": "string", "pattern": "^O3" },
+        "fail_closed": { "const": true },
+        "source_anchor": { "$ref": "#/$defs/sourceAnchor" }
+      },
+      "additionalProperties": false
+    },
+    "interfaceRoundtrip": {
+      "type": "object",
+      "required": [
+        "payload_id",
+        "parse_status",
+        "semantic_equivalence_status",
+        "drift_diagnostic"
+      ],
+      "properties": {
+        "payload_id": { "type": "string", "minLength": 1 },
+        "parse_status": { "type": "string", "minLength": 1 },
+        "semantic_equivalence_status": { "type": "string", "minLength": 1 },
+        "drift_diagnostic": { "type": "string", "pattern": "^O3" }
+      },
+      "additionalProperties": false
+    }
+  }
+}

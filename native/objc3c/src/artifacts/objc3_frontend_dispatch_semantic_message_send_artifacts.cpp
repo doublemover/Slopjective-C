@@ -61,6 +61,14 @@ void WalkMessageSendLoweringExpr(const Expr *expr, Visitor &visitor) {
       WalkMessageSendLoweringExpr(expr->left.get(), visitor);
       WalkMessageSendLoweringExpr(expr->right.get(), visitor);
       return;
+    case Expr::Kind::MatchExpression:
+      WalkMessageSendLoweringExpr(expr->match_expression_scrutinee.get(),
+                                  visitor);
+      for (const auto &arm : expr->match_expression_arms) {
+        WalkMessageSendLoweringExpr(arm.guard_condition.get(), visitor);
+        WalkMessageSendLoweringExpr(arm.value.get(), visitor);
+      }
+      return;
     default:
       return;
   }

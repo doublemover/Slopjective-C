@@ -102,6 +102,9 @@ def test_runtime_debug_trace_lanes_do_not_overpublish_debugger_support() -> None
         "native object lacks debug info and debug line-table sections"
     )
     assert payload["source_mapping"]["full_source_map_status"] == "reserved"
+    assert payload["source_mapping"]["inline_frame_status"] == "reserved"
+    assert payload["source_mapping"]["inline_frame_count"] == 0
+    assert payload["source_mapping"]["inline_frame_fail_closed_reason"]
     assert payload["source_mapping"]["native_debug_info_evidence_id"] == (
         "runtime-debug-trace.native-debug-info.fixture-object-section-probe"
     )

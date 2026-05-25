@@ -1,0 +1,20 @@
+// Expected advanced-runtime diagnostic: advanced-runtime.actor-mailbox-stale-identity
+module AdvancedRuntimeClosureNegativeActorMailboxStaleIdentity;
+
+extern fn objc3_runtime_actor_bind_executor_i32(actor_handle: i32, executor_tag: i32) -> i32;
+extern fn objc3_runtime_actor_mailbox_enqueue_i32(actor_handle: i32, value: i32, executor_tag: i32) -> i32;
+extern fn objc3_runtime_actor_mailbox_shutdown_i32(actor_handle: i32, executor_tag: i32) -> i32;
+
+actor class StaleMailboxIdentityActor
+- (i32)reuseAfterShutdown:(i32)seed;
+@end
+
+@implementation StaleMailboxIdentityActor
+- (i32)reuseAfterShutdown:(i32)seed {
+  objc3_runtime_actor_bind_executor_i32(seed, 1);
+  objc3_runtime_actor_mailbox_enqueue_i32(seed, seed + 1, 1);
+  objc3_runtime_actor_mailbox_shutdown_i32(seed, 1);
+  // Stale actor identity reuse after shutdown remains fail-closed.
+  return objc3_runtime_actor_bind_executor_i32(seed, 1);
+}
+@end

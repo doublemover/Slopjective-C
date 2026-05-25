@@ -23,7 +23,8 @@
     "blocking_conditions": [
       "required package validation step failed",
       "current host fell outside checked-in supported platform matrix",
-      "required tool probe failed"
+      "required tool probe failed",
+      "host identity, package root, or native execution evidence was missing for a promoted platform"
     ]
   },
   "required_steps": [
@@ -44,6 +45,12 @@
     "required_tool_probes",
     "support_evidence_contract",
     "platform_support_rows",
+    "host_evidence_contract",
+    "host_identity_records",
+    "toolchain_probe_records",
+    "package_root_evidence_records",
+    "native_execution_evidence_records",
+    "negative_host_toolchain_cases",
     "toolchain_support",
     "evidence_records",
     "publication_surface"

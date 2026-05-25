@@ -2,6 +2,7 @@
 
 #include <ostream>
 
+#include "artifacts/objc3_runtime_state_publication_paths.h"
 #include "ast/objc3_ast_contracts_runtime_bootstrap_support_bootstrap_api.h"
 #include "ast/objc3_ast_contracts_runtime_bootstrap_support_registrar_reset.h"
 #include "ast/objc3_ast_contracts_runtime_bootstrap_support_source_surfaces.h"
@@ -26,19 +27,22 @@ void WriteRuntimeBootstrapRegistrationSourceSurface(
     const Objc3RuntimeBootstrapLoweringSummary &runtime_bootstrap_lowering,
     const Objc3RuntimeBootstrapLegalitySemanticsSummary
         &runtime_bootstrap_legality_semantics) {
+  const auto runtime_state_publication_paths =
+      BuildRuntimeStatePublicationPathsForEmitPrefix(
+          runtime_state_publication_emit_prefix);
   manifest << "  \"runtime_bootstrap_registration_source_surface\":{\"contract_id\":\""
            << kObjc3RuntimeBootstrapRegistrationSourceSurfaceContractId
            << "\",\"compile_manifest_artifact\":\""
-           << runtime_state_publication_emit_prefix << ".manifest.json"
+           << runtime_state_publication_paths.compile_manifest_artifact
            << "\",\"registration_manifest_artifact\":\""
            << runtime_translation_unit_registration_manifest
                   .manifest_artifact_relative_path
            << "\",\"registration_descriptor_artifact\":\""
            << runtime_registration_descriptor_frontend_closure.artifact_relative_path
            << "\",\"object_artifact\":\""
-           << runtime_state_publication_emit_prefix << ".obj"
+           << runtime_state_publication_paths.object_artifact
            << "\",\"backend_artifact\":\""
-           << runtime_state_publication_emit_prefix << ".ll"
+           << runtime_state_publication_paths.backend_artifact
            << "\",\"source_surface_contract_id\":\""
            << runtime_registration_descriptor_image_root_source_surface.contract_id
            << "\",\"frontend_closure_contract_id\":\""
@@ -81,19 +85,22 @@ void WriteRuntimeBootstrapLoweringRegistrationArtifactSurface(
         &runtime_registration_descriptor_frontend_closure,
     const Objc3RuntimeBootstrapLoweringSummary &runtime_bootstrap_lowering,
     const Objc3RuntimeBootstrapSemanticsSummary &runtime_bootstrap_semantics) {
+  const auto runtime_state_publication_paths =
+      BuildRuntimeStatePublicationPathsForEmitPrefix(
+          runtime_state_publication_emit_prefix);
   manifest << "  \"runtime_bootstrap_lowering_registration_artifact_surface\":{\"contract_id\":\""
            << kObjc3RuntimeBootstrapLoweringRegistrationArtifactSurfaceContractId
            << "\",\"compile_manifest_artifact\":\""
-           << runtime_state_publication_emit_prefix << ".manifest.json"
+           << runtime_state_publication_paths.compile_manifest_artifact
            << "\",\"registration_manifest_artifact\":\""
            << runtime_translation_unit_registration_manifest
                   .manifest_artifact_relative_path
            << "\",\"registration_descriptor_artifact\":\""
            << runtime_registration_descriptor_frontend_closure.artifact_relative_path
            << "\",\"object_artifact\":\""
-           << runtime_state_publication_emit_prefix << ".obj"
+           << runtime_state_publication_paths.object_artifact
            << "\",\"backend_artifact\":\""
-           << runtime_state_publication_emit_prefix << ".ll"
+           << runtime_state_publication_paths.backend_artifact
            << "\",\"bootstrap_lowering_contract_id\":\""
            << runtime_bootstrap_lowering.contract_id
            << "\",\"registration_manifest_contract_id\":\""

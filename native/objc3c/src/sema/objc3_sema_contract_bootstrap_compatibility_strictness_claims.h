@@ -52,7 +52,8 @@ struct Objc3CompatibilityStrictnessClaimSemanticsSummary {
   bool source_only_claim_downgrade_semantics_landed = false;
   bool unsupported_feature_claim_rejection_semantics_landed = false;
   bool live_unsupported_feature_source_rejection_landed = false;
-  bool strictness_selection_rejection_semantics_landed = false;
+  bool strictness_selection_semantics_landed = false;
+  bool strict_concurrency_selection_semantics_landed = false;
   bool feature_macro_claim_suppression_semantics_landed = false;
   bool canonical_interface_truth_semantics_landed = false;
   bool separate_compilation_macro_truth_semantics_landed = false;
@@ -67,7 +68,9 @@ struct Objc3CompatibilityStrictnessClaimSemanticsSummary {
 inline bool IsReadyObjc3CompatibilityStrictnessClaimSemanticsSummary(
     const Objc3CompatibilityStrictnessClaimSemanticsSummary &summary) {
   const bool language_profile_valid =
-      summary.effective_language_profile == "canonical";
+      summary.effective_language_profile == "canonical" ||
+      summary.effective_language_profile == "strict" ||
+      summary.effective_language_profile == "strict-concurrency";
   return !summary.contract_id.empty() &&
          !summary.runnable_feature_claim_inventory_contract_id.empty() &&
          !summary.feature_claim_truth_surface_contract_id.empty() &&
@@ -121,7 +124,8 @@ inline bool IsReadyObjc3CompatibilityStrictnessClaimSemanticsSummary(
          summary.source_only_claim_downgrade_semantics_landed &&
          summary.unsupported_feature_claim_rejection_semantics_landed &&
          summary.live_unsupported_feature_source_rejection_landed &&
-         summary.strictness_selection_rejection_semantics_landed &&
+         summary.strictness_selection_semantics_landed &&
+         summary.strict_concurrency_selection_semantics_landed &&
          summary.feature_macro_claim_suppression_semantics_landed &&
          summary.canonical_interface_truth_semantics_landed &&
          summary.separate_compilation_macro_truth_semantics_landed &&

@@ -34,3 +34,18 @@ std::string ConformanceProfileName(Objc3ConformanceProfile profile) {
   }
   return "invalid-conformance-profile";
 }
+
+std::string ConformanceProfileLanguageProfileName(
+    Objc3ConformanceProfile profile) {
+  switch (profile) {
+    case Objc3ConformanceProfile::kCore:
+      return "canonical";
+    case Objc3ConformanceProfile::kStrict:
+      return "strict";
+    case Objc3ConformanceProfile::kStrictConcurrency:
+      return "strict-concurrency";
+    case Objc3ConformanceProfile::kStrictSystem:
+      return "strict-system";
+  }
+  return "invalid-language-profile";
+}

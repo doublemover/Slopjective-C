@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import os
 from pathlib import Path
 import shutil
 from typing import Any
@@ -16,6 +17,12 @@ from objc3c_package_manager.model import (
     file_digest,
     stable_digest,
 )
+from objc3c_package_manager.trust import (
+    collect_extraction_plan_failures,
+    collect_filesystem_extraction_plan_failures,
+    package_extraction_plan_payload,
+)
+from objc3c_shared.schema_registry import validate_registered_schema
 from objc3c_tooling.json_io import load_json_object as load_json, write_json_file
 from objc3c_tooling.paths import repo_rel
 
@@ -41,13 +48,26 @@ PACKAGE_UNINSTALL_RECEIPT_REL = (
 INSTALL_VERIFICATION_REL = (
     f"{INSTALL_VALIDATION_ROOT_REL}/objc3c-install-distribution-verification.json"
 )
+PLATFORM_CLEAN_INSTALL_RECEIPT_NAME = "clean-install-distribution-receipt.json"
 INSTALL_LOCAL_ARTIFACT_ROOT_REL = f"{INSTALL_VALIDATION_ROOT_REL}/local-package-artifacts"
 INSTALL_PROOF_MANIFEST_REL = f"{INSTALL_VALIDATION_ROOT_REL}/objc3c-install-proof-manifest.json"
 INSTALL_BOOTSTRAP_ENTRYPOINT = "Bootstrap-objc3cEnvironment.ps1"
 INSTALL_PACKAGE_BRIDGE = "objc3c"
-INSTALL_RECEIPT_CONTRACT_ID = "objc3c.packaging.channels.install-receipt.v1"
+INSTALL_RECEIPT_CONTRACT_ID = (
+    "objc3c.package_ecosystem.from_nothing_install_receipt.v1"
+)
+INSTALL_RECEIPT_SCHEMA = (
+    "schemas/objc3c-package-install-distribution-receipt-v1.schema.json"
+)
+INSTALL_RECEIPT_SCHEMA_ID = "objc3c-package-install-distribution-receipt-v1"
 PACKAGE_OPERATION_RECEIPT_CONTRACT_ID = (
-    "objc3c.package_ecosystem.operation_receipt.v1"
+    "objc3c.package_ecosystem.install_distribution_operation_receipt.v1"
+)
+PACKAGE_OPERATION_RECEIPT_SCHEMA = (
+    "schemas/objc3c-package-install-distribution-operation-receipt-v1.schema.json"
+)
+PACKAGE_OPERATION_RECEIPT_SCHEMA_ID = (
+    "objc3c-package-install-distribution-operation-receipt-v1"
 )
 INSTALL_PROOF_CONTRACT_ID = "objc3c.package_ecosystem.from_nothing_install_proof.v1"
 NO_NETWORK_POLICY = "no-network-during-validation"
@@ -118,15 +138,56 @@ def _copy_json_payload(source: Path, target: Path) -> dict[str, Any]:
     return payload
 
 
-def install_receipt_payload(root: Path) -> dict[str, str]:
+def install_receipt_payload(root: Path) -> dict[str, Any]:
     return {
         "contract_id": INSTALL_RECEIPT_CONTRACT_ID,
+        "schema": INSTALL_RECEIPT_SCHEMA,
         "install_root": repo_rel(root / INSTALL_ROOT_REL),
         "install_home": repo_rel(root / INSTALL_HOME_REL),
         "bootstrap_entrypoint": INSTALL_BOOTSTRAP_ENTRYPOINT,
         "package_bridge": INSTALL_PACKAGE_BRIDGE,
-        "install_command": f"npm run objc3c -- {INSTALL_DISTRIBUTION_ACTION}",
+        "install_command": f"npm run objc3c -- {INSTALL_DISTRIBUTION_ACTION} --from-nothing",
+        "machine_owned": True,
         "installed_at_utc": "omitted-for-deterministic-replay",
+    }
+
+
+def platform_host_evidence_root(root: Path) -> tuple[str, Path] | None:
+    platform_id = os.environ.get("OBJC3C_PLATFORM_ID", "")
+    evidence_root = os.environ.get("OBJC3C_PLATFORM_EVIDENCE_ROOT", "")
+    if platform_id not in {"linux-x64", "darwin-arm64"} or not evidence_root:
+        return None
+    resolved_root = (root / evidence_root).resolve()
+    expected_root = (root / "tmp" / "reports" / "platform-host-evidence" / platform_id).resolve()
+    if resolved_root != expected_root:
+        raise RuntimeError(
+            "platform install evidence root must be platform-scoped: "
+            f"{evidence_root}"
+        )
+    return platform_id, resolved_root
+
+
+def publish_platform_install_receipt(
+    *,
+    root: Path,
+    install_receipt_path: Path,
+) -> dict[str, Any] | None:
+    config = platform_host_evidence_root(root)
+    if config is None:
+        return None
+    platform_id, evidence_root = config
+    target_path = evidence_root / "install" / PLATFORM_CLEAN_INSTALL_RECEIPT_NAME
+    target_path.parent.mkdir(parents=True, exist_ok=True)
+    shutil.copy2(install_receipt_path, target_path)
+    return {
+        "platform_id": platform_id,
+        "source_receipt": repo_rel(install_receipt_path),
+        "platform_scoped_clean_install_receipt": repo_rel(target_path),
+        "source_receipt_sha256": file_digest(install_receipt_path),
+        "host_promotion_receipt_path_reserved": (
+            f"tmp/reports/platform-host-evidence/{platform_id}/install/install-receipt.json"
+        ),
+        "support_truth": False,
     }
 
 
@@ -167,6 +228,7 @@ def package_operation_receipt_payload(
     action = "validate-package-install-distribution --from-nothing"
     return {
         "contract_id": PACKAGE_OPERATION_RECEIPT_CONTRACT_ID,
+        "schema": PACKAGE_OPERATION_RECEIPT_SCHEMA,
         "operation": operation,
         "operation_mode": operation_mode,
         "install_root": repo_rel(root / INSTALL_ROOT_REL),
@@ -292,6 +354,74 @@ def _artifact_digest(payload: dict[str, Any]) -> str:
     return stable_digest(normalized)
 
 
+def install_extraction_plan_payload(
+    *,
+    root: Path,
+    install_order: list[str],
+    registry_copy: Path,
+    publication_copy: Path,
+    mirror_copy: Path,
+    restore_copy: Path,
+    bootstrap_path: Path,
+    bridge_path: Path,
+    install_receipt_path: Path,
+    update_receipt_path: Path,
+    uninstall_receipt_path: Path,
+    install_proof_path: Path,
+    install_verification_path: Path,
+) -> dict[str, Any]:
+    entries: list[dict[str, str | int]] = []
+    for index, package_id in enumerate(install_order):
+        entries.extend(
+            [
+                {
+                    "path": repo_rel(package_manifest_install_path(root, package_id)),
+                    "entry_type": "file",
+                    "mutation": "copy",
+                    "package_id": package_id,
+                    "order": index,
+                },
+                {
+                    "path": repo_rel(local_package_artifact_path(root, package_id)),
+                    "entry_type": "file",
+                    "mutation": "write",
+                    "package_id": package_id,
+                    "order": index,
+                },
+            ]
+        )
+    for order, path in enumerate(
+        (
+            registry_copy,
+            publication_copy,
+            mirror_copy,
+            restore_copy,
+            bootstrap_path,
+            bridge_path,
+            install_receipt_path,
+            update_receipt_path,
+            uninstall_receipt_path,
+            install_proof_path,
+            install_verification_path,
+        ),
+        start=len(entries),
+    ):
+        entries.append(
+            {
+                "path": repo_rel(path),
+                "entry_type": "file",
+                "mutation": "write",
+                "package_id": "installer/update-policy",
+                "order": order,
+            }
+        )
+    return package_extraction_plan_payload(
+        plan_id=f"install-distribution-{stable_digest(install_order)}",
+        entries=entries,
+        provenance="install-distribution-before-filesystem-mutation",
+    )
+
+
 def materialize_clean_distribution_install(
     *,
     root: Path,
@@ -314,11 +444,7 @@ def materialize_clean_distribution_install(
     receipt_dir = install_home / "receipts"
     bin_dir = install_home / "bin"
     artifact_root = root / INSTALL_LOCAL_ARTIFACT_ROOT_REL
-    for directory in (packages_dir, registry_dir, mirror_dir, receipt_dir, bin_dir, artifact_root):
-        directory.mkdir(parents=True, exist_ok=True)
 
-    installed_packages: list[dict[str, Any]] = []
-    local_artifacts: list[dict[str, str]] = []
     packages_by_id = {
         str(entry.get("package_id")): entry
         for entry in lock.get("packages", [])
@@ -332,6 +458,45 @@ def materialize_clean_distribution_install(
     ] if isinstance(raw_install_order, list) else []
     if not install_order:
         install_order = sorted(packages_by_id)
+
+    registry_copy = registry_dir / "local-package-index.json"
+    publication_copy = registry_dir / "publication-metadata.json"
+    mirror_copy = mirror_dir / "offline-mirror-index.json"
+    restore_copy = receipt_dir / "objc3c-offline-mirror-restore-receipt.json"
+    bootstrap_path = install_home / INSTALL_BOOTSTRAP_ENTRYPOINT
+    bridge_path = bin_dir / "objc3c-package-bridge.json"
+    install_receipt_path = root / INSTALL_RECEIPT_REL
+    update_receipt_path = root / PACKAGE_UPDATE_RECEIPT_REL
+    uninstall_receipt_path = root / PACKAGE_UNINSTALL_RECEIPT_REL
+    install_proof_path = root / INSTALL_PROOF_MANIFEST_REL
+    install_verification_path = root / INSTALL_VERIFICATION_REL
+    extraction_plan = install_extraction_plan_payload(
+        root=root,
+        install_order=install_order,
+        registry_copy=registry_copy,
+        publication_copy=publication_copy,
+        mirror_copy=mirror_copy,
+        restore_copy=restore_copy,
+        bootstrap_path=bootstrap_path,
+        bridge_path=bridge_path,
+        install_receipt_path=install_receipt_path,
+        update_receipt_path=update_receipt_path,
+        uninstall_receipt_path=uninstall_receipt_path,
+        install_proof_path=install_proof_path,
+        install_verification_path=install_verification_path,
+    )
+    extraction_failures = collect_filesystem_extraction_plan_failures(
+        root=root,
+        extraction_plan=extraction_plan,
+    )
+    if extraction_failures:
+        raise RuntimeError("\n".join(extraction_failures))
+
+    for directory in (packages_dir, registry_dir, mirror_dir, receipt_dir, bin_dir, artifact_root):
+        directory.mkdir(parents=True, exist_ok=True)
+
+    installed_packages: list[dict[str, Any]] = []
+    local_artifacts: list[dict[str, str]] = []
     for package in [packages_by_id[package_id] for package_id in install_order]:
         package_id = str(package.get("package_id"))
         manifest_ref = package.get("package_manifest", {})
@@ -366,16 +531,11 @@ def materialize_clean_distribution_install(
             }
         )
 
-    registry_copy = registry_dir / "local-package-index.json"
-    publication_copy = registry_dir / "publication-metadata.json"
-    mirror_copy = mirror_dir / "offline-mirror-index.json"
-    restore_copy = receipt_dir / "objc3c-offline-mirror-restore-receipt.json"
     _copy_json_payload(registry_path, registry_copy)
     _copy_json_payload(publication_path, publication_copy)
     _copy_json_payload(mirror_path, mirror_copy)
     _copy_json_payload(restore_receipt_path, restore_copy)
 
-    bootstrap_path = install_home / INSTALL_BOOTSTRAP_ENTRYPOINT
     bootstrap_path.write_text(
         "\n".join(
             [
@@ -387,12 +547,12 @@ def materialize_clean_distribution_install(
         ),
         encoding="utf-8",
     )
-    bridge_path = bin_dir / "objc3c-package-bridge.json"
     write_json_file(bridge_path, bridge_payload(contract))
-    install_receipt_path = root / INSTALL_RECEIPT_REL
     write_json_file(install_receipt_path, install_receipt_payload(root))
-    update_receipt_path = root / PACKAGE_UPDATE_RECEIPT_REL
-    uninstall_receipt_path = root / PACKAGE_UNINSTALL_RECEIPT_REL
+    platform_install_receipt = publish_platform_install_receipt(
+        root=root,
+        install_receipt_path=install_receipt_path,
+    )
     write_json_file(
         update_receipt_path,
         package_operation_receipt_payload(
@@ -411,7 +571,6 @@ def materialize_clean_distribution_install(
             package_order=list(reversed(install_order)),
         ),
     )
-    install_proof_path = root / INSTALL_PROOF_MANIFEST_REL
     install_proof = install_proof_payload(
         root=root,
         contract=contract,
@@ -431,6 +590,7 @@ def materialize_clean_distribution_install(
         repo_rel(update_receipt_path),
         repo_rel(uninstall_receipt_path),
         repo_rel(install_proof_path),
+        repo_rel(install_verification_path),
         repo_rel(artifact_root),
         repo_rel(bootstrap_path),
         repo_rel(bridge_path),
@@ -493,10 +653,27 @@ def materialize_clean_distribution_install(
         "installed_packages": installed_packages,
         "release_manifest_validation": install_proof["release_manifest_validation"],
         "public_actions": bridge_payload(contract)["public_actions"],
+        "extraction_plan": extraction_plan,
+        "extraction_plan_digest": extraction_plan["plan_digest"],
+        "platform_host_evidence": {
+            "install_receipt": platform_install_receipt,
+        },
         "generated_paths": sorted(generated_paths),
     }
-    write_json_file(root / INSTALL_VERIFICATION_REL, verification)
+    write_json_file(install_verification_path, verification)
     return verification
+
+
+def collect_registered_schema_failures(
+    payload: dict[str, Any],
+    schema_id: str,
+    label: str,
+) -> list[str]:
+    try:
+        validate_registered_schema(payload, schema_id, label=label)
+    except Exception as exc:  # schema failures must become package diagnostics
+        return [f"{PACKAGE_MANAGER_TAMPER_CODE}: {label} schema validation failed: {exc}"]
+    return []
 
 
 def collect_install_distribution_failures(
@@ -515,6 +692,14 @@ def collect_install_distribution_failures(
         failures.append(f"{PACKAGE_MANAGER_TAMPER_CODE}: install distribution contract drifted")
     if verification.get("package_bridge") != INSTALL_PACKAGE_BRIDGE:
         failures.append(f"{PACKAGE_MANAGER_TAMPER_CODE}: install package bridge drifted")
+    extraction_plan = verification.get("extraction_plan")
+    extraction_failures = collect_extraction_plan_failures(extraction_plan)
+    failures.extend(extraction_failures)
+    if (
+        isinstance(extraction_plan, dict)
+        and verification.get("extraction_plan_digest") != extraction_plan.get("plan_digest")
+    ):
+        failures.append(f"{PACKAGE_MANAGER_TAMPER_CODE}: install extraction plan digest drifted")
     if verification.get("network_policy") != NO_NETWORK_POLICY:
         failures.append(f"{PACKAGE_MANAGER_TAMPER_CODE}: install network policy drifted")
     if verification.get("network_resolution_support") != NETWORK_RESOLUTION_UNSUPPORTED:
@@ -638,6 +823,13 @@ def collect_install_distribution_failures(
         failures.append(f"{PACKAGE_MANAGER_TAMPER_CODE}: missing install receipt")
     else:
         receipt = load_json(receipt_path)
+        failures.extend(
+            collect_registered_schema_failures(
+                receipt,
+                INSTALL_RECEIPT_SCHEMA_ID,
+                "package install distribution receipt",
+            )
+        )
         expected_receipt = install_receipt_payload(root)
         for field_name in contract.get("required_install_receipt_fields", []):
             if field_name not in receipt:
@@ -724,6 +916,13 @@ def collect_package_operation_receipt_failures(
         return failures
 
     receipt = load_json(receipt_path)
+    failures.extend(
+        collect_registered_schema_failures(
+            receipt,
+            PACKAGE_OPERATION_RECEIPT_SCHEMA_ID,
+            f"package install distribution {operation} receipt",
+        )
+    )
     expected_receipt = package_operation_receipt_payload(
         root=root,
         lock=lock,
@@ -888,13 +1087,16 @@ __all__ = [
     "PACKAGE_RECEIPT_ROOT_REL",
     "PACKAGE_UNINSTALL_RECEIPT_REL",
     "PACKAGE_UPDATE_RECEIPT_REL",
+    "PLATFORM_CLEAN_INSTALL_RECEIPT_NAME",
     "collect_install_distribution_failures",
     "collect_install_proof_failures",
     "collect_package_operation_receipt_failures",
+    "install_extraction_plan_payload",
     "install_receipt_payload",
     "materialize_clean_distribution_install",
     "package_operation_receipt_payload",
     "package_ids",
     "package_manifest_digest",
+    "publish_platform_install_receipt",
     "reset_clean_install_root",
 ]

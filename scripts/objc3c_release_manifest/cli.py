@@ -2,15 +2,17 @@
 
 from __future__ import annotations
 
+import argparse
+from collections.abc import Sequence
 from datetime import datetime, timezone
 
 from objc3c_tooling.json_io import load_json_object as load_json
-from objc3c_tooling.paths import repo_rel
+from objc3c_tooling.paths import repo_rel, resolve_repo_path_inside
 from objc3c_tooling.subprocesses import python_script_command
 
 from .commands import git_output, run
 from .model import build_release_manifest_payload
-from .package import package_once
+from .package import load_package_assembly, package_once
 from .paths import (
     ABI_API_DRIFT_PY,
     ABI_API_DRIFT_SUMMARY_PATH,
@@ -27,7 +29,23 @@ from .render import write_release_manifest_artifacts
 from .validate import validate_release_inputs
 
 
-def main() -> int:
+def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument(
+        "--reuse-primary-package-root",
+        default=None,
+        help=(
+            "Use an already built runnable package as the release-foundation "
+            "payload after manifest/layout validation. This binds the exact reused "
+            "payload instead of rebuilding native binaries under a different "
+            "package root."
+        ),
+    )
+    return parser.parse_args(argv)
+
+
+def main(argv: Sequence[str] | None = None) -> int:
+    args = parse_args(argv)
     load_json(SOURCE_SURFACE)
     payload_policy = load_json(PAYLOAD_POLICY)
     reproducibility_policy = load_json(REPRO_POLICY)
@@ -43,15 +61,26 @@ def main() -> int:
         / datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S_%f")
     )
     required_manifest_fields = tuple(payload_policy["required_manifest_fields"])
-    first = package_once(
-        run_root / "run-1",
-        PACKAGE_MANIFEST_RELATIVE_PATH,
-        required_manifest_fields,
-    )
-    second = package_once(
-        run_root / "run-2",
-        PACKAGE_MANIFEST_RELATIVE_PATH,
-        required_manifest_fields,
+    if args.reuse_primary_package_root is None:
+        first = package_once(
+            run_root / "run-1",
+            PACKAGE_MANIFEST_RELATIVE_PATH,
+            required_manifest_fields,
+        )
+    else:
+        first = load_package_assembly(
+            package_root=resolve_repo_path_inside(args.reuse_primary_package_root),
+            manifest_relative_path=PACKAGE_MANIFEST_RELATIVE_PATH,
+            required_manifest_fields=required_manifest_fields,
+        )
+    second = (
+        package_once(
+            run_root / "run-2",
+            PACKAGE_MANIFEST_RELATIVE_PATH,
+            required_manifest_fields,
+        )
+        if args.reuse_primary_package_root is None
+        else first
     )
     validation = validate_release_inputs(
         first=first,

@@ -1,0 +1,28 @@
+module TypedThrowsRuntimeCatchBridgePositive;
+
+fn decode(value: i32) throws(NSError) -> i32 {
+  if (value == 0) {
+    throw 77;
+  }
+  return value;
+}
+
+fn typedCatch(value: i32) -> i32 {
+  do {
+    return try decode(value);
+  } catch (NSError* error) {
+    return 1;
+  }
+}
+
+fn bridgeCatch(value: i32) -> i32 {
+  do {
+    return try decode(value);
+  } catch (id<Error> error) {
+    return 2;
+  }
+}
+
+fn main() -> i32 {
+  return typedCatch(0) + bridgeCatch(0);
+}

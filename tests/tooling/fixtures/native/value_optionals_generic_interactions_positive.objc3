@@ -1,0 +1,7 @@
+module ValueOptionalsGenericInteractionsPositive;
+
+@interface Box<__covariant T>
+@end
+
+extern fn carry<T>(value: Optional<T>) -> Optional<T>;
+extern fn carryBox<T>(value: Optional<Box<T>>) -> Optional<Box<T>>;

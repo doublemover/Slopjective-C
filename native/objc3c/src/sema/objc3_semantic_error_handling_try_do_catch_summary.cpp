@@ -1,18 +1,25 @@
 #include "sema/objc3_semantic_passes.h"
 
 #include "sema/objc3_semantic_error_handling_bridge_helpers.h"
+#include "sema/objc3_typed_throws_effect_contract.h"
 
 #include <cstddef>
 #include <sstream>
 #include <string>
+#include <unordered_map>
+#include <unordered_set>
 #include <vector>
 
 namespace {
 
 struct Objc3ErrorHandlingSemanticWalkContext {
+  const Objc3SemanticIntegrationSurface *surface = nullptr;
+  std::string current_implementation_name;
   bool in_throws_callable = false;
   bool local_handler_active = false;
   bool in_catch_body = false;
+  bool inside_method = false;
+  bool is_class_method = false;
 };
 
 static void WalkErrorHandlingTryDoCatchExpr(
@@ -46,11 +53,10 @@ BuildErrorHandlingTryDoCatchSemanticSummary(
     const Objc3SemanticIntegrationSurface &surface,
     bool allow_source_only_error_runtime_surface,
     std::vector<std::string> &diagnostics) {
-  (void)surface;
-
   Objc3ErrorHandlingTryDoCatchSemanticSummary summary;
   for (const auto &fn : program.functions) {
     Objc3ErrorHandlingSemanticWalkContext context;
+    context.surface = &surface;
     context.in_throws_callable = fn.throws_declared;
     for (const auto &stmt : fn.body) {
       WalkErrorHandlingTryDoCatchStmt(stmt.get(), program, summary, diagnostics,
@@ -62,7 +68,11 @@ BuildErrorHandlingTryDoCatchSemanticSummary(
   for (const auto &implementation : program.implementations) {
     for (const auto &method : implementation.methods) {
       Objc3ErrorHandlingSemanticWalkContext context;
+      context.surface = &surface;
+      context.current_implementation_name = implementation.name;
       context.in_throws_callable = method.throws_declared;
+      context.inside_method = true;
+      context.is_class_method = method.is_class_method;
       for (const auto &stmt : method.body) {
         WalkErrorHandlingTryDoCatchStmt(stmt.get(), program, summary,
                                         diagnostics,

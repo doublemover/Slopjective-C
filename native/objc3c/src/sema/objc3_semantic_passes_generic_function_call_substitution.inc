@@ -186,3 +186,141 @@ static void DiagnoseUnresolvedGenericFunctionReturn(
   }
 }
 
+static bool IsMethodGenericParameterName(const Objc3MethodInfo &method,
+                                         const std::string &name,
+                                         std::size_t *index = nullptr) {
+  for (std::size_t i = 0;
+       i < method.generic_parameter_names_source_order.size(); ++i) {
+    if (method.generic_parameter_names_source_order[i] == name) {
+      if (index != nullptr) {
+        *index = i;
+      }
+      return true;
+    }
+  }
+  return false;
+}
+
+static bool IsDirectMethodGenericTypeParameter(
+    const Objc3MethodInfo &method,
+    const SemanticTypeInfo &type,
+    std::size_t *index = nullptr) {
+  const std::string &name = type.canonical_type.object_pointer_type_name.empty()
+                                ? type.object_pointer_type_name
+                                : type.canonical_type.object_pointer_type_name;
+  return !name.empty() && !type.canonical_type.has_generic_suffix &&
+         IsMethodGenericParameterName(method, name, index);
+}
+
+static void ValidateGenericMethodBindingConstraints(
+    const Objc3MethodInfo &method,
+    const std::string &selector,
+    std::size_t generic_index,
+    const SemanticTypeInfo &binding,
+    const Objc3MessageSendResolutionContext &message_send_context,
+    unsigned line,
+    unsigned column,
+    std::vector<std::string> &diagnostics) {
+  if (generic_index >= method.generic_parameter_names_source_order.size() ||
+      generic_index >=
+          method.generic_parameter_constraints_lexicographic.size()) {
+    return;
+  }
+  const std::string &parameter_name =
+      method.generic_parameter_names_source_order[generic_index];
+  for (const auto &required_protocol :
+       method.generic_parameter_constraints_lexicographic[generic_index]) {
+    if (!GenericFunctionArgumentSatisfiesProtocolConstraint(
+            message_send_context.surface,
+            message_send_context.protocol_definitions, binding,
+            required_protocol)) {
+      diagnostics.push_back(MakeDiag(
+          line, column, "O3S206",
+          "type mismatch: generic argument for method parameter '" +
+              parameter_name + "' of selector '" + selector +
+              "' does not satisfy protocol constraint '" +
+              required_protocol + "'"));
+    }
+  }
+}
+
+static SemanticTypeInfo SubstituteGenericMethodTypeParameters(
+    const Objc3MethodInfo &method,
+    const SemanticTypeInfo &type,
+    const std::unordered_map<std::string, SemanticTypeInfo> &bindings) {
+  std::size_t generic_index = 0;
+  if (!IsDirectMethodGenericTypeParameter(method, type, &generic_index) ||
+      generic_index >= method.generic_parameter_names_source_order.size()) {
+    return type;
+  }
+  const auto binding_it =
+      bindings.find(method.generic_parameter_names_source_order[generic_index]);
+  if (binding_it == bindings.end()) {
+    return MakeScalarSemanticType(ValueType::Unknown);
+  }
+  return binding_it->second;
+}
+
+static void BindGenericMethodParameterFromArgument(
+    const Objc3MethodInfo &method,
+    const std::string &selector,
+    std::size_t param_index,
+    const SemanticTypeInfo &expected,
+    const SemanticTypeInfo &argument,
+    const Objc3MessageSendResolutionContext &message_send_context,
+    unsigned line,
+    unsigned column,
+    std::unordered_map<std::string, SemanticTypeInfo> &bindings,
+    std::vector<std::string> &diagnostics) {
+  std::size_t generic_index = 0;
+  if (!IsDirectMethodGenericTypeParameter(method, expected, &generic_index) ||
+      generic_index >= method.generic_parameter_names_source_order.size()) {
+    return;
+  }
+  const std::string &generic_name =
+      method.generic_parameter_names_source_order[generic_index];
+  const auto binding_it = bindings.find(generic_name);
+  if (binding_it == bindings.end()) {
+    bindings.emplace(generic_name, argument);
+    ValidateGenericMethodBindingConstraints(
+        method, selector, generic_index, argument, message_send_context, line,
+        column, diagnostics);
+    return;
+  }
+  if (!AreGenericFunctionBoundTypesEquivalent(binding_it->second, argument)) {
+    diagnostics.push_back(MakeDiag(
+        line, column, "O3S206",
+        "type mismatch: generic parameter '" + generic_name +
+            "' of selector '" + selector +
+            "' was already inferred as '" +
+            SemanticTypeName(binding_it->second) + "' before parameter " +
+            std::to_string(param_index) + ", got '" +
+            SemanticTypeName(argument) + "'"));
+  }
+}
+
+static void DiagnoseUnresolvedGenericMethodReturn(
+    const Objc3MethodInfo &method,
+    const std::string &selector,
+    const SemanticTypeInfo &return_type,
+    const std::unordered_map<std::string, SemanticTypeInfo> &bindings,
+    unsigned line,
+    unsigned column,
+    std::vector<std::string> &diagnostics) {
+  std::size_t generic_index = 0;
+  if (!IsDirectMethodGenericTypeParameter(method, return_type,
+                                         &generic_index) ||
+      generic_index >= method.generic_parameter_names_source_order.size()) {
+    return;
+  }
+  const std::string &generic_name =
+      method.generic_parameter_names_source_order[generic_index];
+  if (bindings.find(generic_name) == bindings.end()) {
+    diagnostics.push_back(MakeDiag(
+        line, column, "O3S206",
+        "type mismatch: generic return parameter '" + generic_name +
+            "' of selector '" + selector +
+            "' cannot be inferred from message arguments"));
+  }
+}
+

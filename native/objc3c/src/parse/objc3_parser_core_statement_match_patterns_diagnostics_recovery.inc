@@ -2,7 +2,7 @@
     if (At(TokenKind::Identifier) && Peek().text == "is") {
       const Token token = Advance();
       diagnostics_.push_back(
-          MakeDiag(token.line, token.column, "O3P158", "unsupported type-test match pattern"));
+          BuildObjc3ReservedMatchTypeTestPatternDiagnostic(token));
       return true;
     }
     return false;

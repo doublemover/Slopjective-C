@@ -12,6 +12,12 @@ NATIVE_PACKAGE_ACTION_SPECS: dict[str, ActionSpec] = {
     "package-runnable-toolchain": NATIVE_PACKAGE_TOOLCHAIN_ACTION_SPECS[
         "package-runnable-toolchain"
     ],
+    "package-runnable-toolchain-asan": NATIVE_PACKAGE_TOOLCHAIN_ACTION_SPECS[
+        "package-runnable-toolchain-asan"
+    ],
+    "package-runnable-toolchain-ubsan": NATIVE_PACKAGE_TOOLCHAIN_ACTION_SPECS[
+        "package-runnable-toolchain-ubsan"
+    ],
     "proof-objc3c": NATIVE_PACKAGE_PROOF_ACTION_SPECS["proof-objc3c"],
 }
 

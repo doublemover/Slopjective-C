@@ -69,6 +69,7 @@ void EmitObjc3IRStatementOrchestration(
                 expr, callback_ctx,
                 options.services.build_compile_time_proof_analysis_context());
           },
+          options.services.lookup_function_signature,
           options.services.emit_unsupported_i32_value,
           PushObjc3IRScope,
           [&options](FunctionContext &callback_ctx, bool emit_cleanup) {

@@ -13,8 +13,15 @@ namespace {
 using objc3::io::EscapeJsonString;
 
 const char *LanguageProfileName(Objc3FrontendLanguageProfile mode) {
-  (void)mode;
-  return "canonical";
+  switch (mode) {
+    case Objc3FrontendLanguageProfile::kCanonical:
+      return "canonical";
+    case Objc3FrontendLanguageProfile::kStrict:
+      return "strict";
+    case Objc3FrontendLanguageProfile::kStrictConcurrency:
+      return "strict-concurrency";
+  }
+  return "unknown";
 }
 
 std::string BuildStringArrayJson(const std::vector<std::string> &values) {
@@ -32,6 +39,7 @@ std::vector<std::string> BuildRunnableFeatureClaimIds() {
       kObjc3RunnableFeatureClaimScalarCore,
       kObjc3RunnableFeatureClaimControlFlow,
       kObjc3RunnableFeatureClaimMessageSend,
+      kObjc3RunnableFeatureClaimTypedThrows,
   };
 }
 
@@ -48,13 +56,14 @@ std::vector<std::string> BuildSourceOnlyFeatureClaimIds() {
 
 std::vector<std::string> BuildUnsupportedFeatureClaimIds() {
   return {
-      kObjc3UnsupportedFeatureClaimStrictness,
-      kObjc3UnsupportedFeatureClaimStrictConcurrency,
       kObjc3UnsupportedFeatureClaimThrows,
       kObjc3UnsupportedFeatureClaimAsyncAwait,
       kObjc3UnsupportedFeatureClaimActors,
       kObjc3UnsupportedFeatureClaimBlocks,
       kObjc3UnsupportedFeatureClaimArc,
+      kObjc3UnsupportedFeatureClaimValueOptionals,
+      kObjc3UnsupportedFeatureClaimMatchExpressions,
+      kObjc3UnsupportedFeatureClaimGuardedPatterns,
   };
 }
 
@@ -62,13 +71,13 @@ std::vector<std::string> BuildSupportedSelectionSurfaceIds() {
   return {
       kObjc3SupportedSelectionSurfaceLanguageVersion,
       kObjc3SupportedSelectionSurfaceLanguageProfile,
+      kObjc3UnsupportedSelectionSurfaceStrictness,
+      kObjc3UnsupportedSelectionSurfaceStrictConcurrency,
   };
 }
 
 std::vector<std::string> BuildUnsupportedSelectionSurfaceIds() {
   return {
-      kObjc3UnsupportedSelectionSurfaceStrictness,
-      kObjc3UnsupportedSelectionSurfaceStrictConcurrency,
       kObjc3RejectedSelectionSurfaceCanonicalRejectionDiagnostics,
   };
 }
@@ -128,8 +137,8 @@ std::string BuildRunnableFeatureClaimInventoryJson(
       << LanguageProfileName(options.language_profile)
       << "\",\"canonical_literal_rejection_diagnostics_enabled\":"
       << "true"
-      << ",\"strictness_selection_supported\":false"
-      << ",\"strict_concurrency_mode_supported\":false"
+      << ",\"strictness_selection_supported\":true"
+      << ",\"strict_concurrency_mode_supported\":true"
       << ",\"mode_truth_fail_closed\":true"
       << ",\"truth_model\":\"" << kObjc3RunnableFeatureClaimTruthModel << "\""
       << ",\"runnable_feature_claim_count\":" << runnable_claim_ids.size()

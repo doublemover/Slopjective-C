@@ -15,6 +15,50 @@
 #include "ir/objc3_ir_symbol_model.h"
 #include "lower/contracts/runtime_dispatch_boundary_contracts.h"
 
+bool TryResolveObjc3IRDirectDispatchSignature(
+    const Expr *expr, const FunctionContext &ctx,
+    const Objc3IRMessageSendEmissionOptions &options,
+    Objc3IRDirectDispatchSignature *signature_out, std::string *symbol_out) {
+  if (expr == nullptr || expr->receiver == nullptr || expr->selector.empty()) {
+    return false;
+  }
+
+  std::string owner_name;
+  bool is_class_method = false;
+  if (expr->receiver->kind == Expr::Kind::Identifier &&
+      expr->receiver->ident == "self" &&
+      !ctx.current_implementation_name.empty()) {
+    owner_name = ctx.current_implementation_name;
+    is_class_method = ctx.current_method_is_class_method;
+  } else if (expr->receiver->kind == Expr::Kind::Identifier &&
+             options.class_receiver_constants.find(expr->receiver->ident) !=
+                 options.class_receiver_constants.end()) {
+    owner_name = expr->receiver->ident;
+    is_class_method = true;
+  } else {
+    return false;
+  }
+
+  const std::string key =
+      BuildDirectDispatchMethodKey(owner_name, expr->selector,
+                                   is_class_method);
+  const auto symbol_it = options.direct_dispatch_symbols_by_key.find(key);
+  if (symbol_it == options.direct_dispatch_symbols_by_key.end()) {
+    return false;
+  }
+  const auto signature_it = options.direct_dispatch_signatures_by_key.find(key);
+  if (signature_it == options.direct_dispatch_signatures_by_key.end()) {
+    return false;
+  }
+  if (signature_out != nullptr) {
+    *signature_out = signature_it->second;
+  }
+  if (symbol_out != nullptr) {
+    *symbol_out = symbol_it->second;
+  }
+  return true;
+}
+
 namespace {
 
 LoweredMessageSend LowerObjc3IRMessageSendHeader(
@@ -39,51 +83,6 @@ std::string ApplyObjc3IRMethodFamilyArcResultCleanup(
 void DisarmObjc3IRRelatedResultReceiverCleanup(
     const LoweredMessageSend &lowered, FunctionContext &ctx);
 
-struct Objc3IRResolvedDirectDispatch {
-  std::string symbol;
-  Objc3IRDirectDispatchSignature signature;
-};
-
-Objc3IRResolvedDirectDispatch TryResolveObjc3IRDirectDispatch(
-    const Expr *expr, const FunctionContext &ctx,
-    const Objc3IRMessageSendEmissionOptions &options) {
-  Objc3IRResolvedDirectDispatch resolved;
-  if (expr == nullptr || expr->receiver == nullptr || expr->selector.empty()) {
-    return resolved;
-  }
-
-  std::string owner_name;
-  bool is_class_method = false;
-  if (expr->receiver->kind == Expr::Kind::Identifier &&
-      expr->receiver->ident == "self" &&
-      !ctx.current_implementation_name.empty()) {
-    owner_name = ctx.current_implementation_name;
-    is_class_method = ctx.current_method_is_class_method;
-  } else if (expr->receiver->kind == Expr::Kind::Identifier &&
-             options.class_receiver_constants.find(expr->receiver->ident) !=
-                 options.class_receiver_constants.end()) {
-    owner_name = expr->receiver->ident;
-    is_class_method = true;
-  } else {
-    return resolved;
-  }
-
-  const std::string key =
-      BuildDirectDispatchMethodKey(owner_name, expr->selector,
-                                   is_class_method);
-  const auto symbol_it = options.direct_dispatch_symbols_by_key.find(key);
-  if (symbol_it == options.direct_dispatch_symbols_by_key.end()) {
-    return resolved;
-  }
-  const auto signature_it = options.direct_dispatch_signatures_by_key.find(key);
-  if (signature_it == options.direct_dispatch_signatures_by_key.end()) {
-    return resolved;
-  }
-  resolved.symbol = symbol_it->second;
-  resolved.signature = signature_it->second;
-  return resolved;
-}
-
 bool Objc3IRValueTypeUsesTypedDispatch(ValueType type) {
   switch (type) {
     case ValueType::Bool:
@@ -98,16 +97,31 @@ bool Objc3IRValueTypeUsesTypedDispatch(ValueType type) {
     case ValueType::Unknown:
     case ValueType::I32:
     case ValueType::Function:
+    case ValueType::Optional:
     case ValueType::TextHandle:
       return false;
   }
   return false;
 }
 
+bool Objc3IRValueOptionalArgCarrierMatches(
+    const std::string &arg_value,
+    const Objc3IRValueOptionalCarrierMetadata &expected_optional_carrier,
+    const FunctionContext &ctx) {
+  if (!expected_optional_carrier.present) {
+    return true;
+  }
+  const auto actual_carrier = ctx.value_optional_carrier_by_value.find(arg_value);
+  return actual_carrier != ctx.value_optional_carrier_by_value.end() &&
+         actual_carrier->second ==
+             Objc3IRValueOptionalCarrierKindFor(expected_optional_carrier);
+}
+
 bool Objc3IRMessageSendIsEligibleForCacheAwareDispatch(
     const LoweredMessageSend &lowered,
     const Objc3IRMessageSendLoweringPlan &plan) {
   return plan.emits_cache_aware_dispatch &&
+         !lowered.uses_active_message_send_error_out_slot &&
          !lowered.uses_from_class_dispatch &&
          !Objc3IRValueTypeUsesTypedDispatch(lowered.runtime_return_type) &&
          lowered.dispatch_symbol ==
@@ -136,6 +150,7 @@ int Objc3IRRuntimeDispatchReturnKindForValueType(ValueType type) {
     case ValueType::I32:
     case ValueType::Unknown:
     case ValueType::Function:
+    case ValueType::Optional:
     case ValueType::TextHandle:
       break;
   }
@@ -222,6 +237,41 @@ bool TryResolveObjc3IRRuntimeDispatchReturnTypeBySelector(
   return true;
 }
 
+bool TryResolveObjc3IRRuntimeDispatchReturnCarrierBySelector(
+    const std::string &selector,
+    const Objc3IRMessageSendEmissionOptions &options,
+    Objc3IRValueOptionalCarrierMetadata &resolved_carrier) {
+  if (selector.empty()) {
+    return false;
+  }
+  const std::string instance_selector_suffix = "|instance|" + selector;
+  bool found = false;
+  Objc3IRValueOptionalCarrierMetadata candidate;
+  for (const auto &entry :
+       options.runtime_dispatch_return_value_optional_carriers_by_key) {
+    const std::string &key = entry.first;
+    if (key.size() < instance_selector_suffix.size() ||
+        key.compare(key.size() - instance_selector_suffix.size(),
+                    instance_selector_suffix.size(),
+                    instance_selector_suffix) != 0) {
+      continue;
+    }
+    if (!found) {
+      found = true;
+      candidate = entry.second;
+      continue;
+    }
+    if (!(candidate == entry.second)) {
+      return false;
+    }
+  }
+  if (!found) {
+    return false;
+  }
+  resolved_carrier = candidate;
+  return true;
+}
+
 ValueType ResolveObjc3IRRuntimeDispatchReturnType(
     const Expr *expr, const FunctionContext &ctx,
     const Objc3IRMessageSendEmissionOptions &options) {
@@ -253,6 +303,38 @@ ValueType ResolveObjc3IRRuntimeDispatchReturnType(
     return ValueType::ObjCId;
   }
   return ValueType::I32;
+}
+
+Objc3IRValueOptionalCarrierMetadata
+ResolveObjc3IRRuntimeDispatchReturnValueOptionalCarrier(
+    const Expr *expr, const FunctionContext &ctx,
+    const Objc3IRMessageSendEmissionOptions &options) {
+  bool is_class_method = false;
+  std::string owner_name =
+      ResolveObjc3IRMessageSendOwnerName(expr, ctx, options, is_class_method);
+  std::unordered_set<std::string> visited;
+  while (!owner_name.empty() && visited.insert(owner_name).second) {
+    const auto carrier_it =
+        options.runtime_dispatch_return_value_optional_carriers_by_key.find(
+            BuildDirectDispatchMethodKey(
+                owner_name, expr != nullptr ? expr->selector : "",
+                is_class_method));
+    if (carrier_it !=
+        options.runtime_dispatch_return_value_optional_carriers_by_key.end()) {
+      return carrier_it->second;
+    }
+    const auto superclass_it =
+        options.runtime_dispatch_superclass_by_name.find(owner_name);
+    owner_name = superclass_it == options.runtime_dispatch_superclass_by_name.end()
+                     ? std::string{}
+                     : superclass_it->second;
+  }
+  Objc3IRValueOptionalCarrierMetadata selector_carrier;
+  if (TryResolveObjc3IRRuntimeDispatchReturnCarrierBySelector(
+          expr != nullptr ? expr->selector : "", options, selector_carrier)) {
+    return selector_carrier;
+  }
+  return {};
 }
 
 LoweredMessageSend LowerObjc3IRMessageSendHeader(
@@ -301,11 +383,26 @@ LoweredMessageSend LowerObjc3IRMessageSendHeader(
                 lowered.dispatch_surface_family);
   lowered.runtime_return_type =
       ResolveObjc3IRRuntimeDispatchReturnType(expr, ctx, options);
-  const Objc3IRResolvedDirectDispatch direct_dispatch =
-      TryResolveObjc3IRDirectDispatch(expr, ctx, options);
-  lowered.direct_call_symbol = direct_dispatch.symbol;
-  lowered.direct_call_return_type = direct_dispatch.signature.return_type;
-  lowered.direct_call_param_types = direct_dispatch.signature.param_types;
+  lowered.runtime_return_value_optional_carrier =
+      ResolveObjc3IRRuntimeDispatchReturnValueOptionalCarrier(expr, ctx,
+                                                              options);
+  Objc3IRDirectDispatchSignature direct_dispatch_signature;
+  std::string direct_dispatch_symbol;
+  if (TryResolveObjc3IRDirectDispatchSignature(
+          expr, ctx, options, &direct_dispatch_signature,
+          &direct_dispatch_symbol)) {
+    lowered.direct_call_symbol = direct_dispatch_symbol;
+    lowered.direct_call_return_type = direct_dispatch_signature.return_type;
+    lowered.direct_call_param_types = direct_dispatch_signature.param_types;
+    lowered.direct_call_return_value_optional_carrier =
+        direct_dispatch_signature.return_value_optional_carrier;
+    lowered.direct_call_param_value_optional_carriers =
+        direct_dispatch_signature.param_value_optional_carriers;
+    lowered.direct_call_throws_error_out_abi_ready =
+        direct_dispatch_signature.throws_error_out_abi_ready;
+  }
+  lowered.uses_active_message_send_error_out_slot =
+      expr != nullptr && ctx.active_message_send_error_out_expr == expr;
   return lowered;
 }
 
@@ -360,17 +457,46 @@ std::string EmitObjc3IRRuntimeDispatch(
     request.result_value = direct_value;
     request.callee_symbol = plan.direct_call_symbol;
     request.return_type = lowered.direct_call_return_type;
+    request.return_value_optional_carrier =
+        lowered.direct_call_return_value_optional_carrier;
     request.explicit_arg_count = lowered.explicit_arg_count;
+    if (lowered.direct_call_throws_error_out_abi_ready) {
+      if (lowered.uses_active_message_send_error_out_slot &&
+          !ctx.active_message_send_error_out_slot.empty()) {
+        request.throws_error_slot_ptr = ctx.active_message_send_error_out_slot;
+      } else {
+        request.throws_error_slot_ptr =
+            "%objc3.direct_dispatch.error.addr." +
+            std::to_string(ctx.temp_counter++);
+        ctx.entry_lines.push_back("  " + request.throws_error_slot_ptr +
+                                  " = alloca i32, align 4");
+        ctx.code_lines.push_back("  store i32 0, ptr " +
+                                 request.throws_error_slot_ptr +
+                                 ", align 4");
+      }
+    }
     request.args.reserve(lowered.explicit_arg_count);
     request.arg_types.reserve(lowered.explicit_arg_count);
+    request.arg_value_optional_carriers.reserve(lowered.explicit_arg_count);
     for (std::size_t i = 0; i < lowered.explicit_arg_count; ++i) {
       ValueType arg_type = lowered.direct_call_param_types[i];
       std::string arg_value = i < lowered.args.size() ? lowered.args[i] : "0";
       if (arg_type == ValueType::Bool) {
         arg_value = CoerceObjc3IRI32ToBoolI1(arg_value, ctx);
       }
+      const Objc3IRValueOptionalCarrierMetadata arg_carrier =
+          i < lowered.direct_call_param_value_optional_carriers.size()
+              ? lowered.direct_call_param_value_optional_carriers[i]
+              : Objc3IRValueOptionalCarrierMetadata{};
+      if (arg_type == ValueType::Optional &&
+          !Objc3IRValueOptionalArgCarrierMatches(arg_value, arg_carrier, ctx)) {
+        return callbacks.emit_unsupported_i32_value(
+            "direct dispatch Optional argument carrier does not match "
+            "declared method signature");
+      }
       request.args.push_back(arg_value);
       request.arg_types.push_back(arg_type);
+      request.arg_value_optional_carriers.push_back(arg_carrier);
     }
     if (!Objc3IRDirectDispatchCallRequestOwnsResult(request)) {
       return callbacks.emit_unsupported_i32_value(
@@ -382,6 +508,12 @@ std::string EmitObjc3IRRuntimeDispatch(
     if (direct_returns_void) {
       return "0";
     }
+    if (lowered.direct_call_return_type == ValueType::Optional) {
+      ctx.value_optional_carrier_by_value[direct_value] =
+          Objc3IRValueOptionalCarrierKindFor(
+              lowered.direct_call_return_value_optional_carrier);
+      return direct_value;
+    }
     return CoerceObjc3IRValueToI32(direct_value,
                                    lowered.direct_call_return_type, ctx);
   }
@@ -392,6 +524,25 @@ std::string EmitObjc3IRRuntimeDispatch(
 
   if (plan.elides_to_nil_result) {
     return "0";
+  }
+
+  if (lowered.runtime_return_type == ValueType::Optional &&
+      lowered.runtime_return_value_optional_carrier.present) {
+    return callbacks.emit_unsupported_i32_value(
+        "runtime dispatch remains fixed-slot i32 for value optional returns; "
+        "Optional<T> message sends require direct dispatch carrier lowering");
+  }
+
+  for (std::size_t i = 0; i < lowered.explicit_arg_count &&
+                          i < lowered.args.size();
+       ++i) {
+    if (ctx.value_optional_carrier_by_value.find(lowered.args[i]) !=
+        ctx.value_optional_carrier_by_value.end()) {
+      return callbacks.emit_unsupported_i32_value(
+          "runtime dispatch remains fixed-slot i32 for value optional "
+          "arguments; Optional<T> message sends require direct dispatch "
+          "carrier lowering");
+    }
   }
 
   auto selector_it = options.selector_pool_globals.find(lowered.selector);
@@ -473,21 +624,38 @@ std::string EmitObjc3IRRuntimeDispatch(
     request.result_owner_model = plan.dispatch_result_owner_model;
     const bool uses_typed_dispatch =
         Objc3IRValueTypeUsesTypedDispatch(lowered.runtime_return_type);
+    const bool uses_error_out_dispatch =
+        lowered.uses_active_message_send_error_out_slot &&
+        !ctx.active_message_send_error_out_slot.empty();
     if (uses_typed_dispatch && lowered.uses_from_class_dispatch) {
-      request.dispatch_symbol = kObjc3RuntimeTypedDispatchValueFromClassSymbol;
+      request.dispatch_symbol =
+          uses_error_out_dispatch
+              ? kObjc3RuntimeTypedDispatchValueFromClassErrorOutSymbol
+              : kObjc3RuntimeTypedDispatchValueFromClassSymbol;
     } else if (uses_typed_dispatch) {
-      request.dispatch_symbol = kObjc3RuntimeTypedDispatchValueSymbol;
+      request.dispatch_symbol =
+          uses_error_out_dispatch ? kObjc3RuntimeTypedDispatchValueErrorOutSymbol
+                                  : kObjc3RuntimeTypedDispatchValueSymbol;
     } else if (lowered.uses_from_class_dispatch) {
-      request.dispatch_symbol = kObjc3RuntimeDispatchFromClassSymbol;
+      request.dispatch_symbol =
+          uses_error_out_dispatch ? kObjc3RuntimeDispatchFromClassErrorOutSymbol
+                                  : kObjc3RuntimeDispatchFromClassSymbol;
     } else {
-      request.dispatch_symbol = plan.dispatch_symbol;
+      request.dispatch_symbol =
+          uses_error_out_dispatch ? kObjc3RuntimeDispatchErrorOutSymbol
+                                  : plan.dispatch_symbol;
     }
     request.receiver = lowered.receiver;
     request.lookup_start_class_ptr = lookup_start_class_ptr;
     request.selector_ptr = selector_ptr;
     request.args = lowered.args;
+    request.return_value_optional_carrier =
+        lowered.runtime_return_value_optional_carrier;
     request.uses_typed_value_dispatch = uses_typed_dispatch;
     request.uses_from_class_dispatch = lowered.uses_from_class_dispatch;
+    if (uses_error_out_dispatch) {
+      request.throws_error_slot_ptr = ctx.active_message_send_error_out_slot;
+    }
     request.expected_return_kind =
         Objc3IRRuntimeDispatchReturnKindForValueType(
             lowered.runtime_return_type);

@@ -1,0 +1,6 @@
+// Expected diagnostic code(s): O3P182.
+module NegativeTypedThrowsReserved;
+
+fn risky() throws(42) -> i32 {
+  return 1;
+}

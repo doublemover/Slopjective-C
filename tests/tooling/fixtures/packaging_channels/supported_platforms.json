@@ -3,10 +3,13 @@
   "default_platform_id": "windows-x64",
   "matrix_dimensions": {
     "host_os": [
-      "windows"
+      "windows",
+      "linux",
+      "darwin"
     ],
     "host_arch": [
-      "x64"
+      "x64",
+      "arm64"
     ],
     "package_channels": [
       "portable-archive",
@@ -39,6 +42,180 @@
         "installer_signature"
       ],
       "rollback_required": true
+    }
+  ],
+  "unsupported_platforms": [
+    {
+      "platform_id": "linux-x64",
+      "host_os": "linux",
+      "host_arch": "x64",
+      "support_state": "unsupported",
+      "claim_class": "fail-closed",
+      "package_variant_row_id": "objc3c.package.runtime.linux-x64.release.fail-closed",
+      "package_id": "org.objc3c.runtime:objc3c-runtime-linux-x64-release",
+      "package_channel_id": "linux-x64-release",
+      "runtime_library_names": [
+        "libobjc3-runtime.so"
+      ],
+      "required_missing_evidence_classes": [
+        "build",
+        "package",
+        "install",
+        "execution"
+      ],
+      "unsupported_behavior": "fail-closed-before-native-execution-claim",
+      "support_truth": false,
+      "native_execution_claimed": false
+    },
+    {
+      "platform_id": "darwin-arm64",
+      "host_os": "darwin",
+      "host_arch": "arm64",
+      "support_state": "unsupported",
+      "claim_class": "fail-closed",
+      "package_variant_row_id": "objc3c.package.runtime.darwin-arm64.release.fail-closed",
+      "package_id": "org.objc3c.runtime:objc3c-runtime-darwin-arm64-release",
+      "package_channel_id": "darwin-arm64-release",
+      "runtime_library_names": [
+        "libobjc3-runtime.dylib"
+      ],
+      "required_missing_evidence_classes": [
+        "build",
+        "package",
+        "install",
+        "execution"
+      ],
+      "unsupported_behavior": "fail-closed-before-native-execution-claim",
+      "support_truth": false,
+      "native_execution_claimed": false
+    }
+  ],
+  "package_runtime_models": [
+    {
+      "platform_id": "windows-x64",
+      "target_platform_id": "windows-x64",
+      "host_os": "windows",
+      "host_arch": "x64",
+      "support_state": "supported",
+      "claim_state": "evidence-bound",
+      "package_id": "org.objc3c.runtime:objc3c-runtime-release",
+      "package_channel_id": "windows-x64-release",
+      "package_variant_row_id": "objc3c.package.runtime.windows-x64.release",
+      "runtime_variant": "release",
+      "runtime_library_ids": [
+        "objc3-runtime"
+      ],
+      "runtime_library_names": [
+        "objc3_runtime.lib"
+      ],
+      "package_root_layout": [
+        "artifacts/package/objc3c-runnable-toolchain-package.json",
+        "artifacts/bin/objc3c-native.exe",
+        "artifacts/lib/objc3_runtime.lib",
+        "stdlib/workspace.json",
+        "stdlib/modules/objc3.core/module.json",
+        "docs/runbooks/objc3c_packaging_channels.md"
+      ],
+      "missing_runtime_behavior": "fail-closed-before-native-execution-claim",
+      "unsupported_behavior": "fail-closed",
+      "required_evidence_classes": [
+        "package",
+        "install",
+        "execution"
+      ],
+      "required_missing_evidence_classes": [],
+      "support_truth": false,
+      "native_execution_required": true,
+      "native_execution_claimed": false,
+      "promotion_allowed": false
+    },
+    {
+      "platform_id": "linux-x64",
+      "target_platform_id": "linux-x64",
+      "host_os": "linux",
+      "host_arch": "x64",
+      "support_state": "unsupported",
+      "claim_state": "fail-closed",
+      "package_id": "org.objc3c.runtime:objc3c-runtime-linux-x64-release",
+      "package_channel_id": "linux-x64-release",
+      "package_variant_row_id": "objc3c.package.runtime.linux-x64.release.fail-closed",
+      "runtime_variant": "release",
+      "runtime_library_ids": [
+        "objc3-runtime"
+      ],
+      "runtime_library_names": [
+        "libobjc3-runtime.so"
+      ],
+      "package_root_layout": [
+        "artifacts/package/objc3c-runnable-toolchain-package.json",
+        "artifacts/bin/objc3c-native",
+        "artifacts/lib/libobjc3-runtime.so",
+        "stdlib/workspace.json",
+        "stdlib/modules/objc3.core/module.json",
+        "docs/runbooks/objc3c_packaging_channels.md"
+      ],
+      "missing_runtime_behavior": "fail-closed-before-native-execution-claim",
+      "unsupported_behavior": "fail-closed",
+      "required_evidence_classes": [
+        "build",
+        "package",
+        "install",
+        "execution"
+      ],
+      "required_missing_evidence_classes": [
+        "build",
+        "package",
+        "install",
+        "execution"
+      ],
+      "support_truth": false,
+      "native_execution_required": true,
+      "native_execution_claimed": false,
+      "promotion_allowed": false
+    },
+    {
+      "platform_id": "darwin-arm64",
+      "target_platform_id": "darwin-arm64",
+      "host_os": "darwin",
+      "host_arch": "arm64",
+      "support_state": "unsupported",
+      "claim_state": "fail-closed",
+      "package_id": "org.objc3c.runtime:objc3c-runtime-darwin-arm64-release",
+      "package_channel_id": "darwin-arm64-release",
+      "package_variant_row_id": "objc3c.package.runtime.darwin-arm64.release.fail-closed",
+      "runtime_variant": "release",
+      "runtime_library_ids": [
+        "objc3-runtime"
+      ],
+      "runtime_library_names": [
+        "libobjc3-runtime.dylib"
+      ],
+      "package_root_layout": [
+        "artifacts/package/objc3c-runnable-toolchain-package.json",
+        "artifacts/bin/objc3c-native",
+        "artifacts/lib/libobjc3-runtime.dylib",
+        "stdlib/workspace.json",
+        "stdlib/modules/objc3.core/module.json",
+        "docs/runbooks/objc3c_packaging_channels.md"
+      ],
+      "missing_runtime_behavior": "fail-closed-before-native-execution-claim",
+      "unsupported_behavior": "fail-closed",
+      "required_evidence_classes": [
+        "build",
+        "package",
+        "install",
+        "execution"
+      ],
+      "required_missing_evidence_classes": [
+        "build",
+        "package",
+        "install",
+        "execution"
+      ],
+      "support_truth": false,
+      "native_execution_required": true,
+      "native_execution_claimed": false,
+      "promotion_allowed": false
     }
   ],
   "supported_platforms": [

@@ -1,0 +1,117 @@
+{
+  "contract_id": "objc3c.package_ecosystem.negative_package_metadata_contracts.v1",
+  "surface_kind": "package-ecosystem-negative-package-metadata",
+  "runbook": "docs/runbooks/objc3c_package_ecosystem.md",
+  "diagnostic_code": "O3PKG8055",
+  "claim_boundary": "negative fixture contract for local package manifest, direct @import module graph, local registry metadata, source-owned hosted registry fixture boundaries, and hermetic hosted-service boundaries; live network install support remains fail-closed",
+  "cases": [
+    {
+      "case_id": "missing-module-graph",
+      "target": "lock-package",
+      "mutation": {
+        "remove": "module_graph"
+      },
+      "expected_failure": "O3PKG8055: missing module graph metadata"
+    },
+    {
+      "case_id": "unsafe-module-graph-source-authority",
+      "target": "lock-package",
+      "mutation": {
+        "set": "module_graph.source_authority",
+        "value": "tmp/unsafe-package-metadata.json"
+      },
+      "expected_failure": "O3PKG8055: unsafe module graph source authority"
+    },
+    {
+      "case_id": "direct-import-syntax-contract-drift",
+      "target": "lock-package",
+      "mutation": {
+        "set": "module_graph.direct_import_syntax",
+        "value": "reserved-fail-closed"
+      },
+      "expected_failure": "O3PKG8055: direct @import syntax contract drift"
+    },
+    {
+      "case_id": "missing-direct-import-package-provenance",
+      "target": "lock-package",
+      "mutation": {
+        "set": "module_graph.direct_imports",
+        "value": [
+          {
+            "syntax": "@import",
+            "source_module": "negativeDirectImportWithoutPackageProvenance",
+            "imported_module": "moduleImportLookupProvider",
+            "to_package_id": "",
+            "package_provenance": "missing",
+            "source_authority": "showcase/portfolio.json",
+            "source_authority_digest": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+            "resolution": "locked-local-registry",
+            "required_version": "1.0.0",
+            "missing_provenance_diagnostic": "O3PKG8055"
+          }
+        ]
+      },
+      "expected_failure": "O3PKG8055: missing direct @import package provenance"
+    },
+    {
+      "case_id": "ambiguous-direct-import-module-identity",
+      "target": "lock-package",
+      "mutation": {
+        "set": "module_graph.direct_imports",
+        "value": [
+          {
+            "syntax": "@import",
+            "source_module": "negativeDirectImportAmbiguous",
+            "imported_module": "Foundation",
+            "to_package_id": "stdlib:Foundation",
+            "package_provenance": "locked-package",
+            "source_authority": "showcase/portfolio.json",
+            "source_authority_digest": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+            "resolution": "locked-local-registry",
+            "required_version": "1.0.0",
+            "missing_provenance_diagnostic": "O3PKG8055"
+          },
+          {
+            "syntax": "@import",
+            "source_module": "negativeDirectImportAmbiguous",
+            "imported_module": "foundation",
+            "to_package_id": "stdlib:foundation",
+            "package_provenance": "locked-package",
+            "source_authority": "showcase/portfolio.json",
+            "source_authority_digest": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+            "resolution": "locked-local-registry",
+            "required_version": "1.0.0",
+            "missing_provenance_diagnostic": "O3PKG8055"
+          }
+        ]
+      },
+      "expected_failure": "O3PKG8055: ambiguous direct @import module identity"
+    },
+    {
+      "case_id": "missing-package-manifest-envelope",
+      "target": "lock-package",
+      "mutation": {
+        "remove": "package_manifest"
+      },
+      "expected_failure": "O3PKG8055: missing package manifest envelope"
+    },
+    {
+      "case_id": "tmp-dependency-source-authority",
+      "target": "lock-dependency",
+      "mutation": {
+        "set": "source_authority",
+        "value": "tmp/package-network-edge.json"
+      },
+      "expected_failure": "O3PKG8055: unsafe dependency source authority"
+    },
+    {
+      "case_id": "local-registry-module-graph-drift",
+      "target": "local-registry-package",
+      "mutation": {
+        "set": "module_graph.resolver",
+        "value": "hosted-registry"
+      },
+      "expected_failure": "O3PKG8055: local registry module graph drift"
+    }
+  ]
+}

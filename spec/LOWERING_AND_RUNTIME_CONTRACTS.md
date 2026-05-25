@@ -1875,10 +1875,26 @@ Implementations should avoid duplicating retains/releases when `a` is an object 
 
 ### C.3.3 Postfix propagation `?` (recommended) {#c-3-3}
 
-The postfix propagation operator in Parts 3 and 6 should lower to a structured early-exit:
+The postfix propagation operator in Parts 3 and 6 should lower to a structured
+early-exit for carriers whose runtime ABI is implemented:
 
-- `Optional<T>` carrier: `if (!x) return nil; else use *x;`
+- future runtime-complete `Optional<T>` carrier: `if (!x.has_value) return absent; else use x.payload;`
 - `Result<T,E>` carrier: `if (isErr(x)) return Err(e); else use t;`
+
+In the v1 #8234 slice, `Optional<T>` is a semantic source/interface
+type-signature carrier with stable packed `has_value` plus `payload` layout
+identity. The lowering contract fixes explicit absent/present construction and
+checked unwrap/binding diagnostics: absent carries `has_value=false` and no live
+payload, present requires a payload and carries `has_value=true`, binding
+failure branches through the absent path, and unwrap requires a proven presence
+check. Supported `i32`, `bool`, and `id` object-handle payload forms lower
+through the bounded packed runtime ABI. Full-width `i64` now has a runtime
+helper ABI that preserves all payload bits in an explicit `{ has_value, payload
+}` carrier; `Optional<i64>` language call/return lowering still remains
+fail-closed until the compiler ABI uses a wide carrier. Nested/generic payload
+lowering, property/ivar storage, nullability bridges, implicit nil,
+nil-to-scalar coercion, unchecked unwrap, and throws/result conversion remain
+fail-closed.
 
 Implementations should preserve left-to-right evaluation and should not introduce hidden temporaries with observable lifetimes beyond what ARC already requires.
 

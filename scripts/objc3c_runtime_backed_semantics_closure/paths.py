@@ -2,14 +2,17 @@ from __future__ import annotations
 
 from pathlib import Path
 
+from objc3c_tooling.artifact_identity import current_host_artifact_identity
+
 ROOT = Path(__file__).resolve().parents[2]
+ARTIFACT_IDENTITY = current_host_artifact_identity()
 REPORT_DIR = ROOT / "tmp" / "reports" / "claimability" / "runtime-backed-semantics-closure"
 JSON_OUT = REPORT_DIR / "runtime_backed_semantics_closure_summary.json"
 MD_OUT = REPORT_DIR / "runtime_backed_semantics_closure_summary.md"
 
 CONTRACT_ID = "objc3c.runtime.backed.semantics.closure.v1"
 ISSUE = "#8017"
-COMPILER = ROOT / "artifacts" / "bin" / "objc3c-native.exe"
+COMPILER = ROOT / ARTIFACT_IDENTITY.native_executable_relative_path
 SCRATCH = ROOT / "tmp" / "artifacts" / "objc3c-native" / "runtime-backed-semantics-closure"
 
 LOWERING_CONTRACT_H = ROOT / "native" / "objc3c" / "src" / "lower" / "objc3_lowering_contract.h"

@@ -2,8 +2,11 @@
 
 from __future__ import annotations
 
+from objc3c_tooling.artifact_identity import current_host_artifact_identity
+
 from .model import SurfaceField
 
+_ARTIFACT_IDENTITY = current_host_artifact_identity()
 
 CORE_SURFACE_FIELDS = (
     SurfaceField(
@@ -120,9 +123,9 @@ CORE_SURFACE_FIELDS = (
     SurfaceField(
         "native_build_outputs",
         {
-            "native_executable": "artifacts/bin/objc3c-native.exe",
-            "frontend_c_api_runner": "artifacts/bin/objc3c-frontend-c-api-runner.exe",
-            "runtime_library": "artifacts/lib/objc3_runtime.lib",
+            "native_executable": _ARTIFACT_IDENTITY.native_executable_relative_path,
+            "frontend_c_api_runner": _ARTIFACT_IDENTITY.frontend_runner_relative_path,
+            "runtime_library": _ARTIFACT_IDENTITY.runtime_library_relative_path,
             "compile_commands": "tmp/build-objc3c-native/compile_commands.json",
         },
         "native_build_outputs drifted",

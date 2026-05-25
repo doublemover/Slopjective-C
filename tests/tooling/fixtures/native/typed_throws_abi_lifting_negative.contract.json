@@ -1,0 +1,20 @@
+{
+  "schema_version": 1,
+  "contract_id": "objc3c.typed_throws.abi_lifting_negative.v1",
+  "issue_ref": 8233,
+  "fixture_role": "negative_contract",
+  "source_surface": "throws(E)",
+  "unsupported_claim": "silent-untyped-erasure-or-multi-payload-abi-lifting",
+  "expected_failure": {
+    "typed_payload_lowering_ready": true,
+    "runtime_execution_claimed": true,
+    "abi_status": "typed-error-out-abi",
+    "silent_untyped_error_out_erasure_allowed": false
+  },
+  "owned_boundaries": [
+    "native/objc3c/src/ir/objc3_ir_function_signature_model.h",
+    "native/objc3c/src/ir/objc3_ir_direct_call_emission.cpp",
+    "native/objc3c/src/ir/objc3_ir_function_definition_emission.cpp",
+    "native/objc3c/src/lower/contracts/error_handling_throws_unwind_contracts.h"
+  ]
+}

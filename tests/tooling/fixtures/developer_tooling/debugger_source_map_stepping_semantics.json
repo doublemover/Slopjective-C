@@ -21,11 +21,11 @@
     "emitted object artifact symbol inventory is authoritative for object-backed debug symbol visibility"
   ],
   "fail_closed_claims": [
-    "statement-level stepping remains fail-closed until native line-table evidence is emitted on the canonical toolchain path",
+    "statement-level stepping is supported only when emitted native debug-info evidence preserves stable statement source spans and native line-table rows",
     "full source-map claims remain fail-closed until emitted debug metadata proves them directly"
   ],
   "claim_narrowing_constraints": [
-    "the public debug surface must describe itself as declaration-breakpoint and artifact-inspection driven until richer metadata is emitted",
+    "the public debug surface must reject statement stepping when source-map rows, debug-map rows, native line-table rows, or emitted native debug-info evidence drift",
     "debugger claims must stay rooted in emitted artifacts and runtime inspection facts"
   ]
 }

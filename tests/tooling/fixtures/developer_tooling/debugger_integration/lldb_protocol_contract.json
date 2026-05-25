@@ -1,0 +1,76 @@
+{
+  "contract_id": "objc3c.lldb-plugin.protocol.v1",
+  "issue_refs": [
+    8210,
+    8209,
+    8225,
+    8212,
+    8202
+  ],
+  "compiler_identity_id": "objc3c.compiler.objc3c-3.0.debug-info.v1",
+  "replay_fixture": "tests/tooling/fixtures/developer_tooling/debugger_integration/replay.json",
+  "source_map_bundle": "tests/tooling/fixtures/developer_tooling/debug_source_maps/positive.json",
+  "requires": {
+    "compiler_owned_source_maps": true,
+    "emitted_native_debug_info": true,
+    "step_over_emitted_native_debug_info": true,
+    "step_in_emitted_native_debug_info": true,
+    "step_out_emitted_native_debug_info": true,
+    "object_model_step_contexts": [
+      "method-call",
+      "property-accessor",
+      "category-method",
+      "protocol-method-body",
+      "reflection-probe-call"
+    ],
+    "statement_source_span_identity": true,
+    "inline_frame_chains_for_optimized_frames": true,
+    "supported_runtime_metadata_only": true,
+    "rejects_private_snapshot_only_evidence": true,
+    "requires_native_debug_info_evidence_links": true
+  },
+  "rejects": [
+    {
+      "case_id": "generated-only-source-map",
+      "diagnostic_code": "lldb-protocol-generated-only-map"
+    },
+    {
+      "case_id": "stale-compiler-id",
+      "diagnostic_code": "lldb-protocol-stale-compiler-id"
+    },
+    {
+      "case_id": "missing-inline-frame-chain",
+      "diagnostic_code": "lldb-protocol-inline-frame-chain-missing"
+    },
+    {
+      "case_id": "optimized-transform-map-missing",
+      "diagnostic_code": "optimized-transform-map-missing"
+    },
+    {
+      "case_id": "unsupported-runtime-metadata",
+      "diagnostic_code": "lldb-protocol-unsupported-runtime-metadata"
+    },
+    {
+      "case_id": "private-snapshot-only-evidence",
+      "diagnostic_code": "private-snapshot-only-evidence"
+    }
+  ],
+  "supported_runtime_metadata_kinds": [
+    "class",
+    "selector",
+    "object",
+    "stdlib-text",
+    "stdlib-collection",
+    "async-actor-lanes",
+    "error-bridge",
+    "runtime-debug-trace"
+  ],
+  "required_inline_frame_chain_ids": [
+    "inline.chain.main_helper"
+  ],
+  "deferred_umbrella_rows": [
+    "capability_matrix: #8210 LLDB protocol is bounded-supported for replayable checked commands only",
+    "evidence_map: #8210 links replay fixture, protocol contract, source-map bundle, and debugger integration model",
+    "umbrella_readiness: #8212/#8202 should stay gated until lead validation runs debugger integration and object-model debugger proof"
+  ]
+}

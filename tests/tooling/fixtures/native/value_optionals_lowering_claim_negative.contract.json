@@ -1,0 +1,33 @@
+{
+  "contract_id": "objc3c.value_optional.lowering_claim.negative.v1",
+  "fixture_kind": "negative_contract",
+  "issue_ref": 8234,
+  "mutated_fields": [
+    "lowering_contract.unchecked_unwrap_supported",
+    "semantic_model.implicit_nil_absence_allowed",
+    "fail_closed.generic_payload_runtime_supported",
+    "fail_closed.property_storage_supported",
+    "fail_closed.nullable_pointer_conversion_allowed"
+  ],
+  "expected_values": {
+    "abi_layout.executable_lowering_contract_supported": true,
+    "abi_layout.ir_payload_emission_supported": true,
+    "abi_layout.call_abi_lowering_supported": true,
+    "lowering_contract.runtime_abi_payload_scope": "supported-packed-scalar-id-handle-and-full-i64-payload-forms",
+    "lowering_contract.unchecked_unwrap_supported": false,
+    "semantic_model.implicit_nil_absence_allowed": false,
+    "fail_closed.generic_payload_runtime_supported": false,
+    "fail_closed.property_storage_supported": false,
+    "fail_closed.nullable_pointer_conversion_allowed": false
+  },
+  "actual_values": {
+    "lowering_contract.unchecked_unwrap_supported": true,
+    "semantic_model.implicit_nil_absence_allowed": true,
+    "fail_closed.generic_payload_runtime_supported": true,
+    "fail_closed.property_storage_supported": true,
+    "fail_closed.nullable_pointer_conversion_allowed": true
+  },
+  "expected_diagnostic": "O3P159",
+  "fail_closed": true,
+  "notes": "The executable lowering contract may claim packed language ABI lowering for i32, bool, and id handles, full-width i64 language call/return ABI truth, explicit absent/present construction, and checked unwrap diagnostics, but contract drift still cannot claim unchecked unwrap, implicit nil absence, generic payload runtime lowering, property storage, or nullability bridges."
+}

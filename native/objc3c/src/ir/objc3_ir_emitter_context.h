@@ -7,7 +7,9 @@
 #include <vector>
 
 #include "ast/objc3_ast.h"
+#include "ir/objc3_ir_method_definition_plan.h"
 #include "ir/objc3_ir_receiver_dispatch_policy.h"
+#include "ir/objc3_ir_value_optional_carrier_model.h"
 #include "lower/contracts/runtime_dispatch_lowering_contracts.h"
 
 struct FunctionEffectInfo {
@@ -29,6 +31,7 @@ struct LoweredMessageSend {
   std::string dispatch_surface_entrypoint_family;
   std::string dispatch_symbol = kObjc3RuntimeDispatchSymbol;
   ValueType runtime_return_type = ValueType::I32;
+  Objc3IRValueOptionalCarrierMetadata runtime_return_value_optional_carrier;
   bool uses_from_class_dispatch = false;
   std::string lookup_start_class_name;
   std::string lookup_start_class_ptr;
@@ -37,6 +40,11 @@ struct LoweredMessageSend {
   std::string direct_call_symbol;
   ValueType direct_call_return_type = ValueType::I32;
   std::vector<ValueType> direct_call_param_types;
+  Objc3IRValueOptionalCarrierMetadata direct_call_return_value_optional_carrier;
+  std::vector<Objc3IRValueOptionalCarrierMetadata>
+      direct_call_param_value_optional_carriers;
+  bool direct_call_throws_error_out_abi_ready = false;
+  bool uses_active_message_send_error_out_slot = false;
 };
 
 struct ControlLabels {
@@ -62,7 +70,20 @@ struct TypedKeyPathArtifact {
   std::string root_name;
   std::string component_path;
   std::string profile;
+  std::string component_owner_identity_path;
+  std::string component_member_identity_path;
+  std::string component_type_identity_path;
   std::string descriptor_symbol;
+  unsigned source_line = 1;
+  unsigned source_column = 1;
+  std::string source_span_id;
+  std::string root_type_identity;
+  std::string value_type_identity;
+  std::string object_model_owner_identity;
+  std::string object_model_member_identity;
+  std::string debug_source_map_key;
+  std::string diagnostic_anchor_key;
+  bool fallback_interpretation_allowed = false;
 };
 
 struct PendingBlockDisposeCall {
@@ -111,6 +132,10 @@ struct FunctionContext {
   std::unordered_map<std::string, Expr::CollectionLiteralKind>
       collection_kind_by_ptr;
   std::unordered_map<std::string, ValueType> value_type_by_ptr;
+  std::unordered_map<std::string, Objc3IRValueOptionalCarrierKind>
+      value_optional_carrier_by_ptr;
+  std::unordered_map<std::string, Objc3IRValueOptionalCarrierKind>
+      value_optional_carrier_by_value;
   std::unordered_set<std::string> mutable_collection_ptrs;
   std::unordered_map<std::string, int> immediate_identifiers;
   std::vector<std::string> arc_owned_cleanup_ptrs;
@@ -130,7 +155,11 @@ struct FunctionContext {
   };
   std::vector<ErrorHandlerFrame> error_handler_stack;
   std::string function_error_out_param;
+  std::string active_message_send_error_out_slot;
+  const Expr *active_message_send_error_out_expr = nullptr;
   ValueType return_type = ValueType::I32;
+  Objc3IRValueOptionalCarrierKind return_value_optional_carrier =
+      Objc3IRValueOptionalCarrierKind::PackedI64;
   bool async_runtime_helper_enabled = false;
   bool actor_runtime_helper_enabled = false;
   bool actor_nonisolated_entry_enabled = false;

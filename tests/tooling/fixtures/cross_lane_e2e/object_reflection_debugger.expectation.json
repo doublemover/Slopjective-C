@@ -64,11 +64,11 @@
   "debug_source_map": {
     "status": "expected-pass",
     "responsible_domain": "source-map/debug diagnostic",
-    "reason": "the production artifact path must publish declaration breakpoint anchors and object-symbol inspection while keeping full source maps and statement stepping fail-closed",
+    "reason": "the production artifact path must publish object-model source-map records, native line-table rows, emitted native debug-info evidence, and statement stepping for the integrated object-model fixture",
     "source_truth": false,
     "expected_path": "tmp/reports/developer-tooling/editor-surface/object-reflection-debugger-1c676f56f741/debug-map.json",
-    "source_map_supported": false,
-    "statement_level_stepping": false
+    "source_map_supported": true,
+    "statement_level_stepping": true
   },
   "optimization_trace": {
     "status": "reserved",
@@ -114,7 +114,10 @@
       "minimums": {
         "semantic_typed_keypath_literal_sites": 1,
         "lowering_typed_keypath_literal_sites": 1,
-        "live_typed_keypath_artifact_sites": 1
+        "live_typed_keypath_artifact_sites": 1,
+        "typed_keypath_descriptor_publication_sites": 1,
+        "typed_keypath_source_map_evidence_sites": 1,
+        "typed_keypath_runtime_handle_evidence_sites": 1
       },
       "required_runtime_helper_symbols": [
         "objc3_runtime_keypath_component_count_for_testing",
@@ -125,22 +128,20 @@
         "@__objc3_sec_keypath_descriptors",
         "@__objc3_keypath_desc_"
       ],
-      "claim_boundary": "the combined object/reflection fixture proves one class-root, single-component typed keypath descriptor handle on the reflected object property through the native compile/link/run path; nested chains, self-root instance paths, broad keypath evaluation, full source maps, and statement stepping remain unpromoted"
+      "claim_boundary": "the combined object/reflection fixture proves one class-root, single-component typed keypath descriptor handle on the reflected object property through the native compile/link/run path; nested chains, self-root instance paths, and broad keypath evaluation remain unpromoted"
     },
     "reserved_rows_not_promoted": [
-      "runtime.object-model.full-realization",
-      "runtime.debug-trace.statement-stepping",
       "runtime.debug-trace.full-source-map-publication"
     ],
-    "claim_boundary": "executable class-method runtime behavior, single-component typed keypath descriptor handles, public reflection API evidence, production artifact inspection, source graph, and declaration debug-map anchors are checked; instance allocation dispatch, category dispatch execution, full realization, broad keypath shapes, full source maps, and statement stepping remain reserved"
+    "claim_boundary": "executable class-method runtime behavior, single-component typed keypath descriptor handles, public reflection API evidence, production artifact inspection, source graph, object-model source maps, native line-table rows, emitted native debug-info evidence, and statement stepping are checked; Objective-C 2 compatibility, foreign runtime mirroring, dynamic forwarding, category dispatch execution, and broad keypath shapes remain outside this claim"
   },
   "negative_cases": [
     {
-      "case_id": "object-reflection-debugger-statement-stepping-reserved",
-      "status": "reserved",
-      "blocker_id": "cross-lane-object-reflection-full-source-map-stepping-reserved",
+      "case_id": "object-reflection-debugger-statement-stepping-source-drift-fail-closed",
+      "status": "expected-pass",
+      "blocker_id": "cross-lane-object-reflection-statement-stepping-source-drift",
       "responsible_domain": "source-map/debug diagnostic",
-      "reason": "statement-level debugger stepping remains reserved and must fail closed"
+      "reason": "statement-level debugger stepping is supported only when source-map records, native line-table rows, emitted native debug-info evidence, and runtime debug-trace step ids agree"
     },
     {
       "case_id": "object-reflection-debugger-full-source-map-reserved",
@@ -158,15 +159,16 @@
     }
   ],
   "capability_boundary": {
-    "cannot_promote_reserved_rows": true,
+    "cannot_promote_reserved_rows": false,
     "referenced_capability_rows": [
-      "runtime.object-model.class-realization",
-      "runtime.object-model.category-protocol-registration",
-      "runtime.object-model.property-ivar-reflection",
-      "runtime.public-api.reflection",
+      "runtime.debug-trace.statement-stepping",
       "runtime.debug-trace.structured-inspection",
-      "runtime.debug-trace.statement-stepping"
+      "runtime.object-model.category-protocol-registration",
+      "runtime.object-model.class-realization",
+      "runtime.object-model.full-realization",
+      "runtime.object-model.property-ivar-reflection",
+      "runtime.public-api.reflection"
     ],
-    "claim_boundary": "class-method runtime execution, class/category/protocol/property artifact evidence, bounded single-component typed keypath descriptor handling, public reflection API proof, source graph, artifact inspector, and declaration debug-map anchors can be cited; instance allocation dispatch, category dispatch execution, runtime.object-model.full-realization, full source-map publication, broad keypath shapes, and statement stepping remain reserved"
+    "claim_boundary": "class-method runtime execution, class/category/protocol/property artifact evidence, bounded single-component typed keypath descriptor handling, public reflection API proof, source graph, artifact inspector, object-model source-map/native-line-table publication, emitted native debug-info evidence, and statement stepping are claimable; Objective-C 2 compatibility, foreign runtime mirroring, dynamic forwarding, broad keypath shapes, and full source-map publication remain reserved"
   }
 }

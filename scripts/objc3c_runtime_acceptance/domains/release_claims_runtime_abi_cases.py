@@ -68,9 +68,9 @@ def check_release_candidate_runtime_claim_abi_case(
     )
     expect(
         runtime_claim_abi_surface.get("claimed_profile_ids")
-        == ["core", "strict", "strict-concurrency", "strict-system"]
+        == ["core", "strict", "strict-concurrency"]
         and runtime_claim_abi_surface.get("targeted_profile_ids")
-        == ["strict", "strict-concurrency", "strict-system"],
+        == ["strict-system"],
         "expected release-candidate claim ABI surface to publish the claimed and targeted profile sets",
     )
     expect(
@@ -94,9 +94,8 @@ def check_release_candidate_runtime_claim_abi_case(
     expect(
         payload.get("selected_profile") == "core"
         and payload.get("claimed_profile_ids_csv")
-        == "core,strict,strict-concurrency,strict-system"
-        and payload.get("targeted_profile_ids_csv")
-        == "strict,strict-concurrency,strict-system",
+        == "core,strict,strict-concurrency"
+        and payload.get("targeted_profile_ids_csv") == "strict-system",
         "expected release-candidate runtime claim ABI probe to publish the live selected, claimed, and targeted profile sets",
     )
     expect(

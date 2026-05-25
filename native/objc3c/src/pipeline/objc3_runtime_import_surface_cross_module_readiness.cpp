@@ -8,5 +8,10 @@ bool IsReadyObjc3ImportedRuntimeModuleSurfaceCrossModuleContract(
          surface.frontend_closure_summary.ready_for_frontend_module_consumption &&
          surface.frontend_closure_summary.runtime_metadata_source_records_ready &&
          IsReadyObjc3ImportedConcurrencyActorMailboxRuntimeImportSurface(
+             surface) &&
+         IsReadyObjc3ImportedConcurrencySchedulerTaskRuntimeImportSurface(
+             surface) &&
+         IsReadyObjc3ImportedForeignAbiRuntimeClosureSurface(surface) &&
+         IsReadyObjc3ImportedMetaprogrammingMacroHostProcessCacheRuntimeImportSurface(
              surface);
 }

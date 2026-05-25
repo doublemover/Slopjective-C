@@ -29,6 +29,7 @@ Replayable public workflow actions:
 - `npm run objc3c -- check-security-hardening-surface`
 - `npm run objc3c -- check-security-hardening-schema-surface`
 - `npm run objc3c -- check-security-sanitizer-validation`
+- `npm run objc3c -- check-security-sanitizer-execution-evidence`
 - `npm run objc3c -- check-security-language-runtime-threat-model`
 - `npm run objc3c -- build-security-posture`
 - `npm run objc3c -- publish-security-advisories`
@@ -170,10 +171,15 @@ Runtime hardening currently terminates in:
 - `npm run objc3c -- validate-runnable-release-candidate`
 - `npm run objc3c -- validate-release-candidate-conformance`
 - `npm run objc3c -- check-security-sanitizer-validation`
+- `npm run objc3c -- check-security-sanitizer-execution-evidence`
+- `npm run objc3c -- check-sanitizer-runtime-evidence-asan`
+- `npm run objc3c -- check-sanitizer-runtime-evidence-ubsan`
 - `npm run objc3c -- check-security-language-runtime-threat-model`
 - existing runtime/object-model/block-ARC/error/concurrency/metaprogramming validation
 - `native/objc3c/cmake/Objc3Sanitizers.cmake` ASan/UBSan target application
 - `tests/tooling/fixtures/security_hardening/sanitizer_validation_contract.json`
+- `tests/tooling/fixtures/security_hardening/sanitizer_execution_evidence_contract.json`
+- `schemas/objc3c-sanitizer-execution-evidence-v1.schema.json`
 - `tests/tooling/fixtures/security_hardening/language_runtime_threat_model_backlog.json`
 
 That surface is sufficient for checked-in executable regression evidence, but it
@@ -181,6 +187,38 @@ is not a general-purpose memory-safety certification claim. Sanitizer execution
 remains platform/toolchain gated; the checked-in gate fails closed unless ASan
 and UBSan config, native runtime/compiler target application, workflow action,
 fixture, and report surfaces stay coherent.
+
+ASan (#8230) and UBSan (#8231) are modeled as reserved runtime package variants,
+not hidden flags on the default release runtime. The package rows remain
+fail-closed until package/install/native execution evidence exists for a
+supported host, and sanitized packages cannot be published into the default
+release channel, installed without the matching sanitizer runtime library,
+published from stale package metadata, or mixed with unsanitized runtime
+libraries. Sanitizer install receipts must now carry a machine-owned
+`sanitizer_package_variant` field with the package id, variant row id, target
+platform, sanitizer runtime libraries, metadata digest, explicit install
+selector, and native-execution contract before any future support promotion.
+Sanitizer `package_root_layout` is the Windows x64 sanitizer overlay payload,
+not a full release package layout: it stays scoped to the release import
+library, sanitizer metadata, sanitizer runtime-library manifest, and copied
+Clang sanitizer runtime artifacts. Linux and macOS sanitizer package layouts
+remain unsupported until platform-specific sanitizer runtime evidence is
+promoted through source truth.
+The runtime evidence collection commands are exactly
+`check-sanitizer-runtime-evidence-asan` for #8230 and
+`check-sanitizer-runtime-evidence-ubsan` for #8231. They are explicit
+review-only public actions, not aliases for sanitizer package builds, not
+fallback routes across sanitizer variants or target platforms, not report/probe
+rerouting hooks, not npm pass-through surfaces, and not support-promotion
+commands. Their action contracts pin the package root, report path, probe path,
+fixture glob, parallelism, and run id.
+The shared execution evidence surface is
+`check-security-sanitizer-execution-evidence`; it validates the ASan/UBSan
+execution-evidence fixture and schema while requiring `support_truth: false`,
+`native_execution_claimed: false`, and `support_promotion_allowed: false`.
+Generated reports, expected-detection records, and native-output paths are
+review inputs only until a future checked source-truth promotion explicitly
+claims package/install/native execution support.
 
 ### Disclosure And Response Boundary
 

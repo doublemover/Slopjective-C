@@ -2,9 +2,12 @@ import json
 import subprocess
 from pathlib import Path
 
+from scripts.objc3c_tooling.artifact_identity import current_host_artifact_identity
+
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
-NATIVE_EXE = REPO_ROOT / "artifacts" / "bin" / "objc3c-native.exe"
+ARTIFACT_IDENTITY = current_host_artifact_identity()
+NATIVE_EXE = REPO_ROOT / ARTIFACT_IDENTITY.native_executable_relative_path
 CONFORMANCE_FIXTURE = REPO_ROOT / "tests" / "conformance" / "parser" / "TUV-01.json"
 
 

@@ -97,7 +97,40 @@ enum class Objc3SemaPassId {
 
 enum class Objc3SemaLanguageProfile : std::uint8_t {
   Canonical = 0,
+  Strict = 1,
+  StrictConcurrency = 2,
 };
+
+inline const char *Objc3SemaLanguageProfileName(
+    Objc3SemaLanguageProfile profile) {
+  switch (profile) {
+    case Objc3SemaLanguageProfile::Canonical:
+      return "canonical";
+    case Objc3SemaLanguageProfile::Strict:
+      return "strict";
+    case Objc3SemaLanguageProfile::StrictConcurrency:
+      return "strict-concurrency";
+  }
+  return "unknown";
+}
+
+inline bool IsSupportedObjc3SemaLanguageProfile(
+    Objc3SemaLanguageProfile profile) {
+  return profile == Objc3SemaLanguageProfile::Canonical ||
+         profile == Objc3SemaLanguageProfile::Strict ||
+         profile == Objc3SemaLanguageProfile::StrictConcurrency;
+}
+
+inline bool Objc3SemaLanguageProfileUsesStrictDiagnostics(
+    Objc3SemaLanguageProfile profile) {
+  return profile == Objc3SemaLanguageProfile::Strict ||
+         profile == Objc3SemaLanguageProfile::StrictConcurrency;
+}
+
+inline bool Objc3SemaLanguageProfileUsesStrictConcurrency(
+    Objc3SemaLanguageProfile profile) {
+  return profile == Objc3SemaLanguageProfile::StrictConcurrency;
+}
 
 inline constexpr std::array<Objc3SemaPassId, 3> kObjc3SemaPassOrder = {
     Objc3SemaPassId::BuildIntegrationSurface,

@@ -93,6 +93,10 @@ def run_live_steps() -> list[dict[str, Any]]:
             run_step(f"summary-builder:{repo_rel(builder)}", python_script_command(builder))
             for builder in PLATFORM_HARDENING_SUMMARY_BUILDERS
         ),
+        run_step(
+            "check-platform-host-promotion-evidence",
+            public_workflow_command("check-platform-host-promotion-evidence"),
+        ),
         run_summary_step(
             "check-platform-hardening-build-package-validation",
             python_script_command(BUILD_PACKAGE_VALIDATION_SCRIPT),

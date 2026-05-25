@@ -2,6 +2,8 @@
 
 #include <string>
 
+#include "artifacts/identity/artifact_identity.h"
+
 // Metaprogramming runtime/cache contracts own the disabled host-runtime
 // boundary, private property-runtime handoff, and the macro host process cache
 // integration surface that materializes deterministic expansion cache entries.
@@ -15,9 +17,12 @@ inline constexpr const char *kObjc3MetaprogrammingExpansionHostRuntimeBoundaryHo
 inline constexpr const char
     *kObjc3MetaprogrammingExpansionHostRuntimeBoundaryPropertyRuntimeModel =
         "supported-property-behavior-lowering-reuses-existing-private-runtime-property-accessor-layout-and-current-property-hooks";
-inline constexpr const char
-    *kObjc3MetaprogrammingExpansionHostRuntimeBoundaryPackagingModel =
-        "native-driver-packaging-still-hands-off-metaprogramming-runtime-support-through-artifacts-lib-objc3_runtime-lib-and-runtime-registration-manifests";
+inline const std::string
+    kObjc3MetaprogrammingExpansionHostRuntimeBoundaryPackagingModel =
+        std::string("native-driver-packaging-still-hands-off-"
+                    "metaprogramming-runtime-support-through-") +
+        objc3::artifacts::identity::kObjc3NativeRuntimeLibraryRelativePath +
+        "-and-runtime-registration-manifests";
 inline constexpr const char
     *kObjc3MetaprogrammingExpansionHostRuntimeBoundaryFailClosedModel =
         "no-live-macro-expansion-host-or-runtime-package-loader-is-claimed-yet";
@@ -37,7 +42,7 @@ inline constexpr const char
         "objc_metaprogramming_macro_host_process_and_cache_runtime_integration";
 inline constexpr const char
     *kObjc3MetaprogrammingMacroHostProcessCacheRuntimeIntegrationHostExecutableRelativePath =
-        "artifacts/bin/objc3c-frontend-c-api-runner.exe";
+        objc3::artifacts::identity::kObjc3NativeFrontendRunnerRelativePath;
 inline constexpr const char
     *kObjc3MetaprogrammingMacroHostProcessCacheRuntimeIntegrationCacheRootRelativePath =
         "tmp/artifacts/objc3c-native/cache/metaprogramming";
@@ -62,6 +67,18 @@ inline constexpr const char
 inline constexpr const char
     *kObjc3MetaprogrammingMacroHostProcessCacheRuntimeIntegrationFailClosedModel =
         "missing-runner-corrupt-cache-or-import-surface-drift-disables-metaprogramming-host-process-cache-claims";
+inline constexpr const char
+    *kObjc3MetaprogrammingMacroHostProcessCacheRuntimeIntegrationPackageIdentity =
+        "std.metaprogramming.advanced-runtime";
+inline constexpr const char
+    *kObjc3MetaprogrammingMacroHostProcessCacheRuntimeIntegrationPackageLockIdentity =
+        "objc3c.metaprogramming.advanced-runtime.lock.v1";
+inline constexpr const char
+    *kObjc3MetaprogrammingMacroHostProcessCacheRuntimeIntegrationPackageTrustIdentity =
+        "deterministic-sandbox+checked-package-replay";
+inline constexpr const char
+    *kObjc3MetaprogrammingMacroHostProcessCacheRuntimeIntegrationValidStatus =
+        "valid";
 
 std::string Objc3MetaprogrammingExpansionHostRuntimeBoundarySummary();
 std::string Objc3MetaprogrammingMacroHostProcessCacheRuntimeIntegrationSummary();

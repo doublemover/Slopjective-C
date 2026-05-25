@@ -1,3 +1,4 @@
+// Expected diagnostic code(s): O3P158.
 module m266MatchTypeTestPatternFailClosedNegative;
 
 fn classify(value: id) -> i32 {

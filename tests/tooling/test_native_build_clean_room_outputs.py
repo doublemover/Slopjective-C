@@ -104,16 +104,28 @@ def test_cmake_reproducible_build_policy_is_fingerprinted() -> None:
     assert "/Brepro" in cmake_lists
     assert "-ffile-prefix-map=${CMAKE_SOURCE_DIR}=." in cmake_lists
     assert "-fdebug-prefix-map=${CMAKE_SOURCE_DIR}=." in cmake_lists
-    assert '"bin\\llvm-ar.exe"' in toolchain_module
-    assert '"bin\\llvm-ranlib.exe"' in toolchain_module
+    assert "function Get-Objc3cNativeToolExecutableName" in toolchain_module
+    assert 'return $CommandName + ".exe"' in toolchain_module
+    assert 'Join-Path (Join-Path $LlvmRoot "bin")' in toolchain_module
+    assert (
+        'Join-Objc3cNativeLlvmToolPath -LlvmRoot $llvmRoot -CommandName "llvm-ar"'
+        in toolchain_module
+    )
+    assert (
+        'Join-Objc3cNativeLlvmToolPath -LlvmRoot $llvmRoot -CommandName "llvm-ranlib"'
+        in toolchain_module
+    )
     assert "LlvmArTool = $llvmArTool" in toolchain_module
     assert "LlvmRanlibTool = $llvmRanlibTool" in toolchain_module
     assert "-DCMAKE_AR=$LlvmArTool" in configure_module
     assert "-DCMAKE_RANLIB=$LlvmRanlibTool" in configure_module
+    assert "-DCMAKE_BUILD_TYPE=RelWithDebInfo" in configure_module
+    assert "set(CMAKE_BUILD_TYPE RelWithDebInfo" in cmake_lists
     assert "-DOBJC3C_ENABLE_REPRODUCIBLE_BUILD=ON" in configure_module
     assert "llvm_ar = $LlvmArTool" in fingerprint_module
     assert "llvm_ranlib = $LlvmRanlibTool" in fingerprint_module
     assert "llvm_lib = $LlvmLibTool" in fingerprint_module
+    assert 'build_type = "RelWithDebInfo"' in fingerprint_module
     assert "reproducible_build = $true" in fingerprint_module
     assert "source_date_epoch = $SourceDateEpoch" in fingerprint_module
     assert "cmake_build_parallelism=" in (
@@ -122,6 +134,35 @@ def test_cmake_reproducible_build_policy_is_fingerprinted() -> None:
     assert "--parallel --target" not in (
         ROOT / "scripts" / "objc3c_native_cmake" / "build.psm1"
     ).read_text(encoding="utf-8")
+
+
+def test_runnable_package_includes_native_cmake_support_modules() -> None:
+    inventory = (
+        ROOT
+        / "scripts"
+        / "objc3c_runnable_toolchain_package_helpers"
+        / "file_inventory.psm1"
+    ).read_text(encoding="utf-8")
+
+    assert '"scripts/objc3c_native_cmake.psm1"' in inventory
+    assert '"scripts/objc3c_native_cmake"' in inventory
+    assert '"scripts/normalize_coff_archive_timestamps.py"' in inventory
+    assert '"scripts/objc3c_native_artifact_io.psm1"' in inventory
+    assert '"scripts/objc3c_native_frontend_contracts.psm1"' in inventory
+    assert '"scripts/objc3c_native_frontend_contracts"' in inventory
+    assert '"scripts/objc3c_native_frontend_artifacts.psm1"' in inventory
+    assert '"scripts/objc3c_native_frontend_artifacts"' in inventory
+    assert '"scripts/objc3c_native_frontend_closeout_artifacts.psm1"' in inventory
+    assert '"scripts/objc3c_native_frontend_closeout_edge_artifacts.psm1"' in inventory
+    assert '"scripts/objc3c_native_frontend_closeout_edge_artifacts"' in inventory
+    assert (
+        '"scripts/objc3c_native_frontend_closeout_conformance_artifacts.psm1"'
+        in inventory
+    )
+    assert '"scripts/objc3c_native_frontend_closeout_conformance_artifacts"' in inventory
+    assert '"scripts/objc3c_native_superclean_surface.psm1"' in inventory
+    assert '"scripts/objc3c_native_superclean_surface_catalog.psm1"' in inventory
+    assert '"scripts/objc3c_native_superclean_surface_catalog"' in inventory
 
 
 def test_binary_output_lines_are_gated_to_native_build_modes() -> None:

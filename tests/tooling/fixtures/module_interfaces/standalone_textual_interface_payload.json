@@ -1,0 +1,484 @@
+{
+  "payload_kind": "objc3c.standalone_textual_interface_payload.v1",
+  "schema_version": "objc3c-standalone-textual-interface-payload-v1",
+  "producer_version": "objc3c-native",
+  "module_id": "InterfacePayloadFixture",
+  "package_id": "unpackaged:InterfacePayloadFixture",
+  "interface_payload_id": "InterfacePayloadFixture:standalone-textual-interface:v1",
+  "source_anchor": {
+    "path": "tests/native/runtime/advanced_closure/combined_positive.objc3",
+    "line": 1,
+    "column": 1
+  },
+  "target_constraints": {
+    "language_version": 3,
+    "language_profile": "canonical",
+    "arc_mode": "enabled",
+    "lowering_contract": "objc3-lowering-contract-active"
+  },
+  "imports": [
+    {
+      "from_module": "InterfacePayloadFixture",
+      "to_module": "runtime-surface:tests/tooling/fixtures/module_interfaces/runtime-surface.json",
+      "interface_payload_id": "runtime-surface:tests/tooling/fixtures/module_interfaces/runtime-surface.json:standalone-textual-interface:v1",
+      "lock_identity": "package-lock:runtime-surface:tests/tooling/fixtures/module_interfaces/runtime-surface.json:trust:v1",
+      "capability_requirements": [
+        "modules.public-import-lookup"
+      ]
+    }
+  ],
+  "declarations": [
+    {
+      "declaration_id": "InterfacePayloadFixture::interface::Box",
+      "kind": "interface",
+      "name": "Box",
+      "visibility": "public",
+      "type_signature": {
+        "super_name": "NSObject",
+        "category_name": "",
+        "is_actor": false,
+        "adopted_protocols": [
+          "NSCopying"
+        ],
+        "members": [
+          {
+            "declaration_id": "InterfacePayloadFixture::interface::Box::method::value",
+            "kind": "method",
+            "name": "value",
+            "visibility": "public",
+            "type_signature": {
+              "selector": "value",
+              "is_class_method": false,
+              "result_type": "i32",
+              "result_object_pointer_type_name": "",
+              "result_generic_suffix": "",
+              "result_pointer_depth": 0,
+              "parameters": [],
+              "value_optional_contract": {
+                "issue_ref": 8234,
+                "canonical_spelling": "Optional<T>",
+                "source_status": "semantic-type-signature-admitted-packed-and-full-i64-runtime-abi",
+                "semantic_value_model_supported": true,
+                "explicit_present_absent_construction_modeled": true,
+                "binding_narrowing_supported": true,
+                "unwrap_requires_presence_check": true,
+                "lowercase_alias_accepted": false,
+                "abi_layout_status": "stable-packed-presence-payload-runtime-lowered",
+                "abi_layout_id": "objc3.value_optional.inline_presence_payload.v1",
+                "presence_field": "has_value",
+                "payload_storage_field": "payload",
+                "payload_cleanup_contract": "payload-cleanup-after-narrowed-scope",
+                "absence_state": "has_value=false",
+                "presence_state": "has_value=true",
+                "stable_abi_layout_contract_supported": true,
+                "interface_roundtrip_supported": true,
+                "runtime_execution_supported": true,
+                "lowering_supported": true,
+                "runtime_abi_payload_scope": "supported-packed-scalar-id-handle-and-full-i64-payload-forms",
+                "supported_runtime_payload_forms": [
+                  "i32",
+                  "bool",
+                  "id",
+                  "i64"
+                ],
+                "supported_runtime_helper_payload_forms": [
+                  "i32",
+                  "bool",
+                  "id",
+                  "i64"
+                ],
+                "full_width_i64_runtime_helper_supported": true,
+                "full_width_i64_language_call_abi_supported": true,
+                "ir_payload_emission_supported": true,
+                "call_abi_lowering_supported": true,
+                "broad_public_runtime_support_claim_allowed": false,
+                "nested_value_optional_runtime_supported": false,
+                "generic_payload_runtime_supported": false,
+                "property_storage_supported": false,
+                "ivar_storage_supported": false,
+                "nil_to_scalar_coercion_allowed": false,
+                "implicit_nil_absence_allowed": false,
+                "unchecked_unwrap_allowed": false,
+                "nullable_pointer_conversion_allowed": false,
+                "throws_result_conversion_allowed": false,
+                "interface_roundtrip_status": "semantic-carrier-roundtrips-bounded-packed-runtime-abi",
+                "optional_type": {
+                  "record_id": "optional_type",
+                  "type_id": "Optional<T>",
+                  "payload_type": "T",
+                  "abi_layout": "objc3.value_optional.inline_presence_payload.v1",
+                  "semantic_model": "first-class-value-optional-type-constructor",
+                  "canonical_spelling": "Optional<T>"
+                },
+                "optional_value": {
+                  "record_id": "optional_value",
+                  "value_id": "optional-value-carrier",
+                  "optional_type": "Optional<T>",
+                  "presence_state": "has_value",
+                  "payload_storage": "payload",
+                  "absence_state": "has_value=false",
+                  "present_state": "has_value=true",
+                  "payload_lifetime": "payload-live-only-when-has_value-true"
+                },
+                "optional_flow": {
+                  "record_id": "optional_flow",
+                  "source_span": "type-signature",
+                  "narrowing_kind": "binding-or-guard-binding",
+                  "before_type": "Optional<T>",
+                  "after_type": "T",
+                  "cleanup_contract": "payload-cleanup-after-narrowed-scope",
+                  "presence_test_required": true
+                },
+                "optional_rejection": {
+                  "record_id": "optional_rejection",
+                  "source_span": "type-signature",
+                  "spelling": "optional<T>",
+                  "conversion_attempt": "lowercase-alias-or-unsupported-runtime-conversion",
+                  "diagnostic": "O3C004/O3P159"
+                }
+              }
+            },
+            "effects": {
+              "async": false,
+              "throws": false,
+              "throws_kind": "none",
+              "declared_error_type": "",
+              "typed_throws": {
+                "issue_ref": 8233,
+                "canonical_syntax": "throws(E)",
+                "throws_kind": "none",
+                "declared_error_type": "",
+                "effect_signature_key": "throws:none",
+                "callable_compatibility_policy": "nonthrowing-only",
+                "semantic_identity_status": "exact-effect-signature-preserved",
+                "typed_payload_arity": 0,
+                "typed_payload_status": "not-declared",
+                "typed_payload_generic_suffix": "",
+                "typed_payload_generic_suffix_terminated": true,
+                "typed_payload_pointer_depth": 0,
+                "typed_payload_lowering_ready": false,
+                "runtime_execution_claimed": false,
+                "silent_erasure_allowed": false,
+                "multi_payload_supported": false,
+                "abi_status": "none",
+                "interface_roundtrip_status": "not-applicable"
+              },
+              "throws_profile": "",
+              "actor_nonisolated": false,
+              "actor_isolation_profile": "",
+              "executor_affinity_declared": false,
+              "executor_affinity_kind": "",
+              "executor_affinity_name": ""
+            },
+            "generics": [],
+            "ownership": {
+              "qualifier": "",
+              "symbol": "",
+              "operation_profile": "",
+              "lifetime_profile": "",
+              "weak_reference": false,
+              "unowned_reference": false,
+              "unowned_safe_reference": false
+            },
+            "runtime_metadata": {
+              "semantic_link_symbol": "InterfacePayloadFixture::Box::value",
+              "scope_owner_symbol": "InterfacePayloadFixture::Box",
+              "scope_path": [],
+              "lookup_symbols": [
+                "InterfacePayloadFixture::Box::value"
+              ]
+            },
+            "source_anchor": {
+              "path": "tests/native/runtime/advanced_closure/combined_positive.objc3",
+              "line": 12,
+              "column": 1
+            }
+          }
+        ]
+      },
+      "effects": {},
+      "generics": [],
+      "ownership": {},
+      "runtime_metadata": {
+        "semantic_link_symbol": "InterfacePayloadFixture::Box",
+        "scope_owner_symbol": "InterfacePayloadFixture",
+        "scope_path": [
+          "InterfacePayloadFixture",
+          "Box"
+        ],
+        "lookup_symbols": [
+          "InterfacePayloadFixture::Box::value"
+        ]
+      },
+      "source_anchor": {
+        "path": "tests/native/runtime/advanced_closure/combined_positive.objc3",
+        "line": 10,
+        "column": 1
+      }
+    },
+    {
+      "declaration_id": "InterfacePayloadFixture::function::makeBox",
+      "kind": "function",
+      "name": "makeBox",
+      "visibility": "public",
+      "type_signature": {
+        "result_type": "object",
+        "result_object_pointer_type_name": "Box",
+        "result_generic_suffix": "",
+        "result_pointer_depth": 1,
+        "parameters": [],
+        "value_optional_contract": {
+          "issue_ref": 8234,
+          "canonical_spelling": "Optional<T>",
+          "source_status": "semantic-type-signature-admitted-packed-and-full-i64-runtime-abi",
+          "semantic_value_model_supported": true,
+          "explicit_present_absent_construction_modeled": true,
+          "binding_narrowing_supported": true,
+          "unwrap_requires_presence_check": true,
+          "lowercase_alias_accepted": false,
+          "abi_layout_status": "stable-packed-presence-payload-runtime-lowered",
+          "abi_layout_id": "objc3.value_optional.inline_presence_payload.v1",
+          "presence_field": "has_value",
+          "payload_storage_field": "payload",
+          "payload_cleanup_contract": "payload-cleanup-after-narrowed-scope",
+          "absence_state": "has_value=false",
+          "presence_state": "has_value=true",
+          "stable_abi_layout_contract_supported": true,
+          "interface_roundtrip_supported": true,
+          "runtime_execution_supported": true,
+          "lowering_supported": true,
+          "runtime_abi_payload_scope": "supported-packed-scalar-id-handle-and-full-i64-payload-forms",
+          "supported_runtime_payload_forms": [
+            "i32",
+            "bool",
+            "id",
+            "i64"
+          ],
+          "supported_runtime_helper_payload_forms": [
+            "i32",
+            "bool",
+            "id",
+            "i64"
+          ],
+          "full_width_i64_runtime_helper_supported": true,
+          "full_width_i64_language_call_abi_supported": true,
+          "ir_payload_emission_supported": true,
+          "call_abi_lowering_supported": true,
+          "broad_public_runtime_support_claim_allowed": false,
+          "nested_value_optional_runtime_supported": false,
+          "generic_payload_runtime_supported": false,
+          "property_storage_supported": false,
+          "ivar_storage_supported": false,
+          "nil_to_scalar_coercion_allowed": false,
+          "implicit_nil_absence_allowed": false,
+          "unchecked_unwrap_allowed": false,
+          "nullable_pointer_conversion_allowed": false,
+          "throws_result_conversion_allowed": false,
+          "interface_roundtrip_status": "semantic-carrier-roundtrips-bounded-packed-runtime-abi",
+          "optional_type": {
+            "record_id": "optional_type",
+            "type_id": "Optional<T>",
+            "payload_type": "T",
+            "abi_layout": "objc3.value_optional.inline_presence_payload.v1",
+            "semantic_model": "first-class-value-optional-type-constructor",
+            "canonical_spelling": "Optional<T>"
+          },
+          "optional_value": {
+            "record_id": "optional_value",
+            "value_id": "optional-value-carrier",
+            "optional_type": "Optional<T>",
+            "presence_state": "has_value",
+            "payload_storage": "payload",
+            "absence_state": "has_value=false",
+            "present_state": "has_value=true",
+            "payload_lifetime": "payload-live-only-when-has_value-true"
+          },
+          "optional_flow": {
+            "record_id": "optional_flow",
+            "source_span": "type-signature",
+            "narrowing_kind": "binding-or-guard-binding",
+            "before_type": "Optional<T>",
+            "after_type": "T",
+            "cleanup_contract": "payload-cleanup-after-narrowed-scope",
+            "presence_test_required": true
+          },
+          "optional_rejection": {
+            "record_id": "optional_rejection",
+            "source_span": "type-signature",
+            "spelling": "optional<T>",
+            "conversion_attempt": "lowercase-alias-or-unsupported-runtime-conversion",
+            "diagnostic": "O3C004/O3P159"
+          }
+        }
+      },
+      "effects": {
+        "async": false,
+        "throws": false,
+        "throws_kind": "none",
+        "declared_error_type": "",
+        "typed_throws": {
+          "issue_ref": 8233,
+          "canonical_syntax": "throws(E)",
+          "throws_kind": "none",
+          "declared_error_type": "",
+          "effect_signature_key": "throws:none",
+          "callable_compatibility_policy": "nonthrowing-only",
+          "semantic_identity_status": "exact-effect-signature-preserved",
+          "typed_payload_arity": 0,
+          "typed_payload_status": "not-declared",
+          "typed_payload_generic_suffix": "",
+          "typed_payload_generic_suffix_terminated": true,
+          "typed_payload_pointer_depth": 0,
+          "typed_payload_lowering_ready": false,
+          "runtime_execution_claimed": false,
+          "silent_erasure_allowed": false,
+          "multi_payload_supported": false,
+          "abi_status": "none",
+          "interface_roundtrip_status": "not-applicable"
+        },
+        "throws_profile": "",
+        "actor_nonisolated": false,
+        "actor_isolation_profile": "",
+        "executor_affinity_declared": false,
+        "executor_affinity_kind": "",
+        "executor_affinity_name": ""
+      },
+      "generics": [],
+      "ownership": {
+        "qualifier": "__strong",
+        "symbol": "objc3.ownership.strong",
+        "operation_profile": "owned-return",
+        "lifetime_profile": "caller-owned",
+        "weak_reference": false,
+        "unowned_reference": false,
+        "unowned_safe_reference": false
+      },
+      "runtime_metadata": {
+        "semantic_link_symbol": "",
+        "scope_owner_symbol": "InterfacePayloadFixture",
+        "scope_path": [
+          "InterfacePayloadFixture",
+          "makeBox"
+        ],
+        "lookup_symbols": []
+      },
+      "source_anchor": {
+        "path": "tests/native/runtime/advanced_closure/combined_positive.objc3",
+        "line": 20,
+        "column": 1
+      }
+    }
+  ],
+  "reserved_metadata": [
+    {
+      "surface": "implementation_declaration",
+      "name": "Box",
+      "status": "reserved-not-exported",
+      "diagnostic": "O3IFC8238",
+      "fail_closed": true,
+      "source_anchor": {
+        "path": "tests/native/runtime/advanced_closure/combined_positive.objc3",
+        "line": 30,
+        "column": 1
+      }
+    }
+  ],
+  "interface_roundtrip": {
+    "payload_id": "InterfacePayloadFixture:standalone-textual-interface:v1",
+    "parse_status": "supported",
+    "semantic_equivalence_status": "supported",
+    "drift_diagnostic": "O3IFC8238"
+  },
+  "source_counts": {
+    "globals": 0,
+    "protocols": 0,
+    "interfaces": 1,
+    "implementations_reserved": 1,
+    "functions": 1
+  },
+  "issue_refs": [
+    8238,
+    8208,
+    8233,
+    8234
+  ],
+  "source_truth_policy": {
+    "source_truth": "native-artifact-schema-fixture-public-command",
+    "local_temp_source_truth_allowed": false,
+    "generated_output_source_truth_allowed": false,
+    "fallback_success_allowed": false,
+    "schema_registry_required": true,
+    "public_command_evidence_required": true,
+    "capability_truth_row": "modules.standalone-textual-interface-payload",
+    "umbrella_readiness_issue_ref": 8208
+  },
+  "negative_cases": [
+    {
+      "case_id": "stale-schema",
+      "target": "schema_version",
+      "expected_failure": "schema validation failed before import",
+      "fail_closed": true
+    },
+    {
+      "case_id": "unlocked-import",
+      "target": "imports[0].lock_identity",
+      "expected_failure": "package lock/trust identity required",
+      "fail_closed": true
+    },
+    {
+      "case_id": "hidden-declaration",
+      "target": "declarations[0].kind",
+      "expected_failure": "implementation declarations remain reserved metadata",
+      "fail_closed": true,
+      "diagnostic": "O3IFC8238"
+    },
+    {
+      "case_id": "count-drift",
+      "target": "source_counts.interfaces",
+      "expected_failure": "source_counts drift rejected",
+      "fail_closed": true
+    },
+    {
+      "case_id": "reserved-roundtrip",
+      "target": "interface_roundtrip.parse_status",
+      "expected_failure": "reserved importer status cannot satisfy support",
+      "fail_closed": true,
+      "diagnostic": "O3IFC8238"
+    },
+    {
+      "case_id": "typed-throws-abi-lowering",
+      "target": "declarations[*].effects.typed_throws",
+      "expected_failure": "typed throws cannot erase payload identity, widen to foreign carriers, or claim broad public support from interface metadata alone",
+      "fail_closed": true
+    },
+    {
+      "case_id": "typed-throws-interface-contract-drift",
+      "target": "declarations[*].effects.typed_throws.declared_error_type",
+      "expected_failure": "typed throws payload spelling must round-trip without erasure",
+      "fail_closed": true
+    },
+    {
+      "case_id": "value-optional-lowering",
+      "target": "declarations[*].type_signature.value_optional_type",
+      "expected_failure": "value optional interfaces must keep packed runtime payload forms bounded while rejecting unsupported payload/storage forms; Optional<i64> call/return and full-width helper evidence remain supported",
+      "fail_closed": true,
+      "diagnostic": "O3P159"
+    },
+    {
+      "case_id": "value-optional-layout-drift",
+      "target": "declarations[*].type_signature.value_optional_contract.abi_layout_id",
+      "expected_failure": "value optional ABI layout identity drift rejected",
+      "fail_closed": true,
+      "diagnostic": "O3IFC8238"
+    }
+  ],
+  "capability_requirements": [
+    "modules.public-import-lookup",
+    "modules.standalone-textual-interface-payload"
+  ],
+  "public_commands": [
+    "npm run objc3c -- compile-objc3c <input.objc3>",
+    "npm run objc3c -- validate-standalone-textual-interface-payload"
+  ],
+  "diagnostic_count": 0
+}

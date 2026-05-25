@@ -39,6 +39,8 @@ struct Objc3IREmitterStateInitialization {
   std::unordered_map<std::string, Objc3IRDirectDispatchSignature>
       direct_dispatch_signatures_by_key;
   std::unordered_map<std::string, ValueType> runtime_dispatch_return_types_by_key;
+  std::unordered_map<std::string, Objc3IRValueOptionalCarrierMetadata>
+      runtime_dispatch_return_value_optional_carriers_by_key;
   std::unordered_map<std::string, std::string> runtime_dispatch_superclass_by_name;
   std::map<std::string, std::string> selector_pool_globals;
   std::map<std::string, std::string> runtime_string_pool_globals;

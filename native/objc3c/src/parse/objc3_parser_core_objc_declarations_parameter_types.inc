@@ -6,6 +6,9 @@
     param.typecheck_family_symbol = BuildObjcTypecheckParamFamilySymbol(param);
 
     ParseParameterTypeSuffix(param);
+    if (!FinalizeParameterValueOptionalType(param)) {
+      return false;
+    }
     if (!param.generic_suffix_terminated) {
       return false;
     }

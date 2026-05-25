@@ -7,27 +7,28 @@ why broad capability rows remain reserved or when they are ready for
 promotion. It does not create public Objective-C 3.0 behavior claims.
 
 Authoritative inputs:
-
 - `docs/support/umbrella_readiness.json`
 - `docs/support/capability_matrix.json`
 - `docs/support/evidence_map.json`
+- `tests/tooling/fixtures/foundations_umbrella_readiness/source_truth_contract.json`
+- `tests/tooling/fixtures/platform_support/source_truth_matrix.json`
 - `schemas/objc3c-umbrella-readiness-v1.schema.json`
 
 Consumer rule: Umbrella readiness may explain why a reserved umbrella row is blocked or ready for promotion; it cannot create support claims unless the capability matrix row itself is implemented with evidence.
 
 ## runtime.object-model.full-realization
 
-- Current state: `reserved`
+- Current state: `implemented`
 - Target state: `implemented`
-- Readiness state: `blocked`
-- Intended public meaning: Objective-C 3.0 object metadata, class/category/protocol realization, property and ivar reflection, registration replay, debugger-grade reflection, source identity, and runtime query behavior are complete as an integrated runtime surface rather than a set of narrow owner rows.
+- Readiness state: `ready`
+- Intended public meaning: Objective-C 3.0 object metadata, class/category/protocol realization, property and ivar reflection, registration replay, debugger-grade reflection, source identity, runtime query behavior, and integrated object-model statement stepping are complete as one Objective-C 3 runtime surface.
 
 ### Forbidden Overclaims
 
-- Full object-model runtime support from class graph source alone.
-- Debugger-grade reflection from private snapshots or generated manifests alone.
 - Objective-C 2 runtime compatibility.
 - Swift or C++ runtime mirroring.
+- Dynamic forwarding or arbitrary foreign runtime dispatch.
+- Broad full-source-map publication for every production artifact path.
 - Issue comments, PR bodies, or tmp reports as support evidence.
 
 ### Prerequisite Rows
@@ -50,15 +51,15 @@ Consumer rule: Umbrella readiness may explain why a reserved umbrella row is blo
 - `satisfied` Combined object-model readiness contract ties class, metaclass, category, protocol, property, ivar, selector, reflection, and replay evidence to checked source anchors. (path: `tests/tooling/fixtures/object_model_closure/full_realization_combined_readiness_contract.json`)
 - `satisfied` Runtime public reflection exposes bounded debug-anchor identity records for class, category, protocol, property, ivar, and method rows. (path: `tests/tooling/fixtures/object_model_closure/debug_anchor_identity_replay_contract.json`)
 - `satisfied` Checked object-model debugger proof links source-map records, native line-table rows, debug-map runtime anchors, runtime reflection debug anchors, and value-inspection records. (path: `tests/tooling/fixtures/object_model_closure/debugger_value_inspection_replay_contract.json`)
-- `satisfied` The object-model debugger proof command now compiles the integrated object-model fixture through the canonical frontend path and validates the emitted manifest, source graph, object artifact, runtime inventory, artifact inspector, fail-closed debug-map boundary, bounded compiler-owned object-model source identity rows, and production source-map/native-line-table publication. (path: `scripts/check_objc3c_object_model_debugger_proof.py`)
-- `blocked` Full source-map publication beyond bounded identity rows, emitted native debug info, and debugger stepping integration must still be owned by the production artifact path. (blocker_id: `object-model-debugger-source-identity`)
+- `satisfied` The object-model debugger proof command now compiles the integrated object-model fixture through the canonical frontend path and validates the emitted manifest, source graph, object artifact, runtime inventory, artifact inspector, fail-closed debug-map boundary, emitted native debug-info evidence, and compiler-owned object-model source-map/native-line-table publication for class, metaclass, category, protocol, property, ivar, selector, method, reflection, and replay rows. (path: `scripts/check_objc3c_object_model_debugger_proof.py`)
+- `satisfied` Production source identity, native debug-info evidence, runtime debug-trace step ids, and statement stepping cover the integrated object-model identity set. (path: `scripts/objc3c_editor_tooling/model.py`)
 
 #### Public Commands
 
 - `satisfied` Runtime object-model conformance remains replayable through the npm bridge. (command: `npm run objc3c -- validate-object-model-conformance`)
 - `satisfied` Public runtime reflection API remains replayable through the npm bridge. (command: `npm run objc3c -- validate-public-runtime-reflection-api`)
-- `satisfied` Object-model debugger source-map, line-table, debug-anchor, value-inspection linkage, production frontend artifact/runtime inventory proof, bounded compiler-owned object-model source identity rows, and source-map/native-line-table publication remain replayable through the npm bridge. (command: `npm run objc3c -- validate-object-model-debugger-proof`)
-- `blocked` Debugger-grade statement stepping over emitted native debug line tables must be completed on the production compiler artifact path. (blocker_id: `object-model-debugger-source-identity`)
+- `satisfied` Object-model debugger source-map, line-table, debug-anchor, value-inspection linkage, production frontend artifact/runtime inventory proof, compiler-owned object-model source identity rows for the full integrated identity set, emitted native debug-info evidence, and source-map/native-line-table publication remain replayable through the npm bridge. (command: `npm run objc3c -- validate-object-model-debugger-proof`)
+- `satisfied` Bounded statement stepping is implemented by runtime.debug-trace.statement-stepping and is now integrated with the object-model production artifact path. (command: `npm run objc3c -- validate-object-model-debugger-proof`)
 
 #### Positive Fixtures
 
@@ -89,7 +90,7 @@ Consumer rule: Umbrella readiness may explain why a reserved umbrella row is blo
 
 #### Docs
 
-- `satisfied` Hard-cutover capability truth continues to state the reserved umbrella boundary. (path: `docs/support/hard_cutover_capability_truth.md`)
+- `satisfied` Hard-cutover capability truth states the promoted object-model envelope and the still-reserved compatibility/full-source-map boundaries. (path: `docs/support/hard_cutover_capability_truth.md`)
 - `satisfied` Object-model closure runbook remains checked in. (path: `docs/runbooks/objc3c_object_model_closure.md`)
 - `satisfied` Combined readiness test remains checked in to enforce lifetime, source-anchor, and negative-boundary evidence. (path: `tests/tooling/test_runtime_object_model_full_realization_readiness.py`)
 - `satisfied` Object-model debugger proof checker remains covered by fail-closed tests. (path: `tests/tooling/test_runtime_object_model_full_realization_readiness.py`)
@@ -99,6 +100,7 @@ Consumer rule: Umbrella readiness may explain why a reserved umbrella row is blo
 - Source truth allowed: `false`
 - Rule: Generated outputs may summarize checked source, fixtures, and matrix/evidence rows, but cannot satisfy object-model full-realization readiness by themselves.
 - Unsupported sources:
+  - temp/
   - tmp/
   - generated markdown projections
   - issue comments
@@ -107,23 +109,21 @@ Consumer rule: Umbrella readiness may explain why a reserved umbrella row is blo
 
 ### Promotion Blockers
 
-- `object-model-debugger-source-identity`: Bounded runtime debug-anchor identity, replayable object-model value inspection, a canonical frontend artifact/runtime inventory probe, compiler-owned source identity rows, and production source-map/native-line-table publication now exist, but full debugger-grade object-model stepping is not yet complete on the production artifact path.
-  - Full source-map publication beyond bounded object-model identity rows and emitted native debug info for the integrated object-model program.
-  - Production debugger statement-stepping integration over emitted native debug info.
+- None
 
 ### Final Promotion Criteria
 
-- The umbrella matrix row changes to implemented in docs/support/capability_matrix.json.
+- The umbrella matrix row is implemented in docs/support/capability_matrix.json.
 - All required prerequisite rows remain implemented with evidence-map rows.
 - All readiness requirements are satisfied.
 - No promotion blockers remain.
-- Debugger-grade reflection and source identity are covered by public npm-bridge commands without relying on private snapshots or generated reports.
+- Debugger-grade reflection, source identity, and statement stepping are covered by public npm-bridge commands without relying on private snapshots or generated reports.
 
 ## language.advanced-runtime-closure
 
-- Current state: `reserved`
+- Current state: `implemented`
 - Target state: `implemented`
-- Readiness state: `blocked`
+- Readiness state: `ready`
 - Intended public meaning: Objective-C 3.0 blocks, ownership, ARC cleanup, errors, async/actors, cancellation, property behaviors, metaprogramming host boundaries, and interop runtime replay are complete as a combined runtime-backed language surface rather than isolated narrow rows.
 
 ### Forbidden Overclaims
@@ -173,13 +173,13 @@ Consumer rule: Umbrella readiness may explain why a reserved umbrella row is blo
 
 - `satisfied` Weak object capture mutation remains rejected by checked negative evidence. (path: `tests/tooling/fixtures/native/weak_object_capture_mutation_negative.objc3`)
 - `satisfied` Missing runtime replay proof remains rejected by checked negative evidence. (path: `tests/tooling/fixtures/native/missing_replay_proof_rejected.objc3`)
-- `satisfied` The #8199 negative matrix covers 17 cross-feature rejected or reserved cases, including ownership, blocks, async, actor mailbox payloads, cancellation, error, property/macro conflicts, package replay, and broad scheduler overclaim boundaries. (path: `tests/native/runtime/advanced_closure/negative_matrix.contract.json`)
-- `satisfied` The #8199 native artifact contract checks the combined fixture against the real direct-native compiler path and requires object, LLVM IR, manifest, runtime registration, runtime metadata, and error replay artifacts while preserving the unclaimed native link/run boundary. (path: `tests/tooling/fixtures/advanced_runtime_closure/native_artifact_contract.json`)
+- `satisfied` The #8199/#8216/#8217 negative matrix covers 23 cross-feature rejected or reserved cases, including ownership, blocks, async, actor mailbox payloads, cancellation, stale local actor identity, missing distributed actor transport, error, property/macro conflicts, package replay, macro host/package replay trust drift, and broad scheduler overclaim boundaries. (path: `tests/native/runtime/advanced_closure/negative_matrix.contract.json`)
+- `satisfied` The #8213 native artifact contract checks the combined fixture against the real direct-native compiler path and requires object, LLVM IR, manifest, runtime registration, runtime metadata, error replay artifacts, a source-owned provider object, executable link, and executable run evidence. (path: `tests/tooling/fixtures/advanced_runtime_closure/native_artifact_contract.json`)
 
 #### Runtime Probes
 
-- `satisfied` Combined runtime-state records tie blocks, ownership, async cancellation, actor mailbox, error bridge, property behavior, macro host cache, package replay, and source/debug records to checked owners without promoting the native executable umbrella. (path: `tests/tooling/fixtures/advanced_runtime_closure/combined_runtime_identity_contract.json`)
-- `blocked` Native executable link/run for the full advanced-runtime umbrella fixture remains unclaimed. (blocker_id: `advanced-runtime-native-link-run`)
+- `satisfied` Combined runtime-state records tie blocks, ownership, async cancellation, actor mailbox, error bridge, property behavior, macro host cache, package replay, and source/debug records to checked owners for the promoted native executable umbrella. (path: `tests/tooling/fixtures/advanced_runtime_closure/combined_runtime_identity_contract.json`)
+- `satisfied` Native executable link/run for the full advanced-runtime umbrella fixture is checked by the public advanced-runtime closure validator. (path: `tests/tooling/fixtures/advanced_runtime_closure/native_artifact_contract.json`)
 
 #### Abi Governance Rows
 
@@ -188,16 +188,17 @@ Consumer rule: Umbrella readiness may explain why a reserved umbrella row is blo
 
 #### Docs
 
-- `satisfied` Hard-cutover capability truth continues to state the reserved umbrella boundary. (path: `docs/support/hard_cutover_capability_truth.md`)
+- `satisfied` Hard-cutover capability truth states the promoted advanced-runtime envelope and the still-reserved broad runtime boundaries. (path: `docs/support/hard_cutover_capability_truth.md`)
 - `satisfied` Errors and result semantics remain documented as narrower rows. (path: `spec/PART_6_ERRORS_RESULTS_THROWS.md`)
 - `satisfied` Concurrency semantics remain documented as narrower rows. (path: `spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md`)
-- `satisfied` The #8199 checker enforces combined runtime-state/source-graph/debug-map/ABI interaction coverage without promoting the umbrella row. (path: `tests/tooling/fixtures/advanced_runtime_closure/combined_runtime_identity_contract.json`)
+- `satisfied` The #8199/#8213 checker enforces combined runtime-state/source-graph/debug-map/ABI/native-link-run interaction coverage for the promoted umbrella row. (path: `tests/tooling/fixtures/advanced_runtime_closure/combined_runtime_identity_contract.json`)
 
 ### Generated Output Boundary
 
 - Source truth allowed: `false`
 - Rule: Generated outputs may summarize checked source, fixtures, and matrix/evidence rows, but cannot satisfy advanced-runtime closure readiness by themselves.
 - Unsupported sources:
+  - temp/
   - tmp/
   - generated markdown projections
   - issue comments
@@ -206,9 +207,7 @@ Consumer rule: Umbrella readiness may explain why a reserved umbrella row is blo
 
 ### Promotion Blockers
 
-- `advanced-runtime-native-link-run`: Checked positive, runtime-state, source-graph, source/debug-map, ABI, native object/IR/manifest artifact, and 17-case negative-matrix proof exists, but native executable link/run for the full advanced-runtime umbrella fixture is not yet a public support claim.
-  - Canonical native executable link/run acceptance for the integrated advanced-runtime umbrella fixture.
-  - Public npm-bridge evidence that the integrated native executable path matches the checked #8199 contracts without promoting unsupported combinations.
+- None
 
 ### Final Promotion Criteria
 
@@ -218,3 +217,270 @@ Consumer rule: Umbrella readiness may explain why a reserved umbrella row is blo
 - No promotion blockers remain.
 - Combined runtime positive and negative programs prove cross-feature semantics through public npm-bridge commands.
 - Native executable link/run evidence exists for the integrated advanced-runtime umbrella fixture without relying on generated reports as source truth.
+
+## language.evolution.umbrella-alignment
+
+- Current state: `implemented`
+- Target state: `implemented`
+- Readiness state: `ready`
+- Intended public meaning: Objective-C 3.0 typed throws, value optionals, generic callable reification, statement guarded match, bounded expression match, and strict/strict-concurrency profile selection are aligned as one bounded source-owned language-evolution surface. The umbrella closes only over implemented child rows and explicit follow-up rows for broad optional, generic, match, and profile expansion.
+
+### Forbidden Overclaims
+
+- Generalized typed error ABI, unsupported foreign exception carriers, typed async propagation, or parenthesized throws payload erasure from parser diagnostics alone.
+- Value optional runtime behavior outside the bounded packed i32/bool/id-handle payload ABI and wide Optional<i64> direct-function/direct-dispatch ABI, including object-pointer/nullability bridge, nested/generic payload runtime lowering, property or ivar storage, unchecked unwrap, nil-to-scalar conversion, implicit nil absence, throws/result conversion, lowercase optional aliases, or broad dynamic runtime dispatch.
+- Runtime-specialized generic metadata, generic body cloning, module-wide implicit reification, selector-local generic method clauses, C/Objective-C style generic function syntax, overload-by-generic-signature, or variadic generic parameters from the bounded #8235 metadata policy.
+- Type-test patterns, statement fat-arrow arms, Result payload ABI extraction, aliases, or strict-profile promotion from #8236 guarded match and bounded expression-match support.
+- Strict-system profile support from strict-concurrency aliasing, preview modes, source-only concurrency support, or public conformance claims before release/system evidence exists.
+- Issue comments, PR bodies, temp files, generated projections, or validation logs as source of truth.
+
+### Prerequisite Rows
+
+- `language.errors.typed-throws` must be `implemented`: Single-payload typed throws now has replayed public evidence for source/interface/sema effect identity, hidden error-out ABI lowering, exact catch and id<Error> bridge policy, direct-function runtime catch/bridge behavior, runtime-dispatch message-send error-out ABI coverage, try? optionalization, and fail-closed async propagation.
+- `language.types.value-optionals` must be `implemented`: #8234 is promoted only for the bounded Optional<T> carrier: packed Optional<i32>, Optional<bool>, Optional<id> runtime ABI, Optional<i64> wide direct call/return ABI, textual-interface roundtrip, checked construction/binding/unwrap contracts, and explicit fail-closed broadening paths.
+- `language.generics.generic-callable-reification` must be `implemented`: Generic callable reification now has source-owned bounded metadata policy support for Objective-C 3 generic functions and Objective-C generic methods while runtime specialization remains explicitly outside the support claim.
+- `language.control-flow.statement-guarded-match` must be `implemented`: Statement guarded match is the statement-level #8236 child row and must remain evidence-backed without promoting statement fat-arrow arms or type-test patterns.
+- `language.control-flow.match-expression` must be `implemented`: Bounded expression-form match is implemented as a separate #8236 child row and must remain evidence-backed without promoting type-test patterns or Result payload ABI extraction.
+- `language.profiles.strict-admission` must be `implemented`: Strict and strict-concurrency profiles are now claimable through native profile validation, strict diagnostics, strict-concurrency enforcement, public conformance publication, and release-candidate replay evidence while strict-system remains fail-closed.
+- `language.types.value-optionals.expansion` must be `reserved`: Broad value-optional behavior remains a follow-up row and is not claimed by the #8207 bounded umbrella.
+- `language.generics.runtime-specialization-expansion` must be `reserved`: Runtime-specialized generics, body cloning, module-wide reification, and generic overload expansion remain follow-up work outside the #8235 bounded metadata policy.
+- `language.control-flow.match-expansion` must be `reserved`: Type-test patterns, statement fat-arrow arms, aliases, and Result payload ABI extraction remain follow-up work outside #8236's bounded rows.
+- `language.profiles.strict-system-expansion` must be `reserved`: Strict-system remains target-only release evidence and is not claimed by strict or strict-concurrency profile admission.
+
+### Readiness Requirements
+
+#### Source Anchors
+
+- `satisfied` The #8207 umbrella contract binds typed throws, value optionals, generic callable reification, guarded match, and strict profile rows to checked-in source truth. (path: `tests/tooling/fixtures/native/language_evolution_umbrella_contract.json`)
+- `satisfied` Typed throws parser diagnostics classify invalid parenthesized payload shapes and reject them without erasing to bare throws, while single payloads are preserved for effect metadata. (path: `native/objc3c/src/parse/objc3_parser_core_cstyle_parameters_async_throws_clause_parsing.inc`)
+- `satisfied` Typed throws sema records preserve an exact effect signature key for callable compatibility while direct calls, try propagation, exact typed catches, and policy-backed id<Error> bridge catches lower through the private error-out ABI without erasing payload identity. (path: `tests/tooling/fixtures/native/typed_throws_semantic_effect_identity.contract.json`)
+- `satisfied` Typed throws source-closure plus textual-interface import records now allow single-payload typed error-out ABI lowering, exact typed catch records, policy-backed id<Error> bridge records, incompatible-catch rejection, and unsupported foreign-carrier fail-closed records while preserving payload identity; value optional records preserve bounded packed i32/bool/id-handle runtime ABI contracts plus wide Optional<i64> direct ABI truth, and deny nested/generic/property/ivar storage, nil/nullability/error conversions, unchecked unwrap, broad runtime-lowering claims, and broad dynamic runtime dispatch. (path: `tests/tooling/fixtures/native/language_evolution_typed_throws_value_optionals_contract.json`)
+- `satisfied` Generic callable metadata records are deterministic for admitted generic functions and Objective-C generic methods, including erased-default and declaration-scoped explicit-reified policy without runtime-specialization claims. (path: `tests/tooling/fixtures/native/generic_callable_reification_contract.json`)
+- `satisfied` Statement-form guarded match records source support for where-guards while keeping statement fat-arrow arms and type-test patterns outside the claim. (path: `native/objc3c/src/sema/model/semantic_symbol_core_source_closures.h`)
+- `satisfied` The guarded match fixture contract records statement guarded match and bounded expression-match admission while reserving type-test patterns, Result payload ABI extraction, aliases, and statement fat-arrow arms. (path: `tests/tooling/fixtures/native/match_guarded_pattern_language_evolution_contract.json`)
+- `satisfied` Strict and strict-concurrency profile selection is accepted through native frontend profile validation, while strict-system rejects before compilation as target-only release evidence. (path: `native/objc3c/src/config/objc3_language_profile_validation.cpp`)
+
+#### Public Commands
+
+- `satisfied` #8207 does not introduce a separate public replay command; public replay remains owned by the implemented child rows, and the umbrella closes as source-owned capability/evidence alignment. (command: `npm run objc3c -- validate-conformance-corpus`)
+
+#### Positive Fixtures
+
+- `satisfied` Statement guarded match has a hand-authored positive source fixture. (path: `tests/tooling/fixtures/native/recovery/positive/match_guarded_pattern_statement.objc3`)
+- `satisfied` The admitted Objective-C 3 generic free-function spelling remains covered by checked source. (path: `tests/tooling/fixtures/native/type_semantic_generic_function_positive.objc3`)
+- `satisfied` Declaration-scoped explicit-reified Objective-C generic methods are covered by checked source without claiming runtime-specialized metadata. (path: `tests/tooling/fixtures/native/type_semantic_generic_reified_objc_method_positive.objc3`)
+- `satisfied` Bounded expression-form match has hand-authored positive source fixtures for literal, guarded-bool, and Result-case semantic surfaces. (path: `tests/tooling/fixtures/native/recovery/positive/match_expression_literal_result.objc3`)
+- `satisfied` Canonical/core, strict, and strict-concurrency profile rows are distinguished from rejected strict-system profile selection. (path: `tests/tooling/fixtures/language_profiles/strict_profile_feature_matrix.json`)
+- `satisfied` Typed throws exact catch and policy-backed id<Error> bridge catch source fixtures back the implemented bounded public row. (path: `tests/tooling/fixtures/native/typed_throws_catch_bridge_positive.objc3`)
+
+#### Negative Fixtures
+
+- `satisfied` Parenthesized typed throws payloads are not silently erased into untyped throws. (path: `tests/tooling/fixtures/native/recovery/negative/negative_typed_throws_erasure_mismatch_reserved.objc3`)
+- `satisfied` Protocol conformance rejects typed throws effect payload erasure or payload drift. (path: `tests/tooling/fixtures/native/recovery/negative/negative_typed_throws_protocol_mismatch.objc3`)
+- `satisfied` Typed throws rejects catch payloads that do not exactly match and are not the policy-backed id<Error> bridge catch. (path: `tests/tooling/fixtures/native/recovery/negative/negative_typed_throws_incompatible_catch.objc3`)
+- `satisfied` Typed throws unsupported foreign catch carriers fail closed. (path: `tests/tooling/fixtures/native/recovery/negative/negative_typed_throws_foreign_carrier_catch.objc3`)
+- `satisfied` Value-optional broadening paths do not enable nil-to-scalar coercion. (path: `tests/tooling/fixtures/native/recovery/negative/negative_value_optional_nil_scalar_coercion_reserved.objc3`)
+- `satisfied` Generic reification markers outside generic callable declarations remain parser-owned reserved syntax. (path: `tests/tooling/fixtures/native/recovery/negative/negative_reify_generics_unsupported_scope.objc3`)
+- `satisfied` Generic free-function redeclaration drift rejects instead of merging erased callable shapes. (path: `tests/tooling/fixtures/native/recovery/negative/negative_type_semantic_generic_function_signature_drift.objc3`)
+- `satisfied` Statement guarded match rejects non-bool guard conditions. (path: `tests/tooling/fixtures/native/recovery/negative/negative_guarded_match_pattern_non_bool.objc3`)
+- `satisfied` Strict-system and underscore alias selections reject rather than widening support. (path: `tests/tooling/fixtures/language_profiles/strict_profile_feature_matrix.json`)
+
+#### Runtime Probes
+
+- `satisfied` Typed throws hidden single-payload ABI, exact catch policy, id<Error> bridge policy, direct-function runtime catch/bridge smoke, runtime-dispatch message-send error-out ABI coverage, try? optionalization runtime smoke, and typed async propagation fail-closed coverage are recorded for the implemented bounded row. (path: `tests/tooling/fixtures/native/execution/positive/typed_throws_runtime_catch_bridge_positive.objc3`)
+- `satisfied` #8234 value optional runtime support is limited to the checked packed Optional<i32>, Optional<bool>, and Optional<id> handle payload ABI plus Optional<i64> language call/return ABI through the wide `{has_value,i64}` carrier, direct functions, and direct dispatch path. (path: `tests/tooling/fixtures/native/execution/positive/value_optionals_runtime_abi_positive.objc3`)
+- `satisfied` Object-pointer/nullability conversion, nested/generic/property/ivar storage, unchecked unwrap, implicit nil, throws/result conversion, and broad dynamic runtime dispatch remain reserved under the value-optionals expansion follow-up row. (capability_id: `language.types.value-optionals.expansion`)
+- `satisfied` Runtime-specialized generic metadata and body cloning remain unimplemented; current generic callable reification is a source-owned metadata policy for admitted generic callables. (path: `tests/tooling/fixtures/native/generic_callable_reification_contract.json`)
+- `satisfied` Runtime-specialized generic metadata, generic body cloning, module-wide reification, and generic overload expansion remain reserved under the generic runtime specialization follow-up row. (capability_id: `language.generics.runtime-specialization-expansion`)
+- `satisfied` Type-test patterns, statement fat-arrow arms, Result payload ABI extraction, aliases, and broad match lowering remain reserved under the match expansion follow-up row. (capability_id: `language.control-flow.match-expansion`)
+- `satisfied` Strict-concurrency actor isolation, sendability, scheduler, task lifecycle, and mailbox evidence are bound to the claimable strict-concurrency profile; strict-system remains target-only release evidence and is not a native frontend language profile. (path: `tests/conformance/profile_strict_boundary/strict_profile_boundary_contract.json`)
+- `satisfied` Strict-system remains target-only release evidence and is reserved as a follow-up row outside #8207's bounded profile claim. (capability_id: `language.profiles.strict-system-expansion`)
+
+#### Abi Governance Rows
+
+- `satisfied` Typed throws metadata slots import none, untyped, or single-payload typed effects only when effect signature, declared payload metadata, catch compatibility, id<Error> bridge policy, and foreign-carrier fail-closed records agree. (path: `tests/tooling/fixtures/native/language_evolution_typed_throws_value_optionals_contract.json`)
+- `satisfied` The closed #8234 slice contracts value optional ABI layout identity, interface roundtrip, explicit absent/present construction, checked unwrap/binding diagnostics, the packed Optional<i32>/Optional<bool>/Optional<id> runtime ABI, and wide Optional<i64> direct ABI. (path: `tests/tooling/fixtures/native/language_evolution_typed_throws_value_optionals_contract.json`)
+- `satisfied` Object-pointer/nullability, nested/generic/property/ivar/nil/unchecked/throws forms and broad dynamic runtime dispatch remain reserved by the value-optional expansion follow-up row. (capability_id: `language.types.value-optionals.expansion`)
+- `satisfied` Generic callable signature metadata records erased-default and explicit-reified semantic mangling policies without claiming runtime-specialized metadata. (path: `tests/tooling/fixtures/native/generic_callable_reification_contract.json`)
+- `satisfied` Runtime-specialized generic metadata and body cloning remain reserved by the generic runtime specialization follow-up row. (capability_id: `language.generics.runtime-specialization-expansion`)
+- `satisfied` Type-test patterns, Result payload ABI extraction, statement fat-arrow arms, and broad match lowering remain reserved by the match expansion follow-up row. (capability_id: `language.control-flow.match-expansion`)
+- `satisfied` Strict-system remains target-only release evidence and is reserved by the strict-system profile follow-up row. (capability_id: `language.profiles.strict-system-expansion`)
+
+#### Docs
+
+- `satisfied` Capability rows name #8233 through #8237, #8207, and reserved follow-up expansion rows without unsupported claims. (path: `docs/support/capability_matrix.json`)
+- `satisfied` Evidence rows point to checked source, docs, and fixtures rather than temp/generated evidence. (path: `docs/support/evidence_map.json`)
+- `satisfied` Hard-cutover truth keeps language-evolution support bounded to actual rows. (path: `docs/support/hard_cutover_capability_truth.md`)
+- `satisfied` Type, optional, and generic specs describe bounded value optional support, reserved value-optional broadening boundaries, and generic reification boundaries. (path: `spec/PART_3_TYPES_NULLABILITY_OPTIONALS_GENERICS_KEYPATHS.md`)
+- `satisfied` Error spec describes typed throws source effect slots, exact compatibility, hidden error-out ABI lowering, catch/bridge policy, and fail-closed malformed/multi-payload, silent-erasure, incompatible-catch, or unsupported foreign-carrier behavior. (path: `spec/PART_6_ERRORS_RESULTS_THROWS.md`)
+- `satisfied` Parser and semantic-analysis docs describe typed throws as an implemented bounded single-payload row with source/sema effect metadata, hidden ABI catch/bridge behavior, runtime-dispatch coverage, try? optionalization, and fail-closed broadening paths separated from other language-evolution rows. (path: `docs/compiler/parser.md`)
+
+### Generated Output Boundary
+
+- Source truth allowed: `false`
+- Rule: Generated outputs may summarize checked source, fixtures, and support rows, but cannot satisfy #8207 language-evolution umbrella readiness by themselves.
+- Unsupported sources:
+  - temp/
+  - tmp/
+  - generated markdown projections
+  - issue comments
+  - PR bodies
+  - unlinked replay reports
+
+### Promotion Blockers
+
+- None
+
+### Final Promotion Criteria
+
+- The language.evolution.umbrella-alignment matrix row is implemented as a bounded umbrella truth row.
+- Typed throws, bounded value optionals, generic callable reification, guarded match, bounded expression match, and strict profile admission rows are implemented.
+- Broad optional, generic runtime-specialization, match, and strict-system profile expansion rows remain reserved follow-ups with no support claims.
+- All source, fixture, capability, evidence, README, parser, sema, and spec docs agree on the same support boundary.
+- No prerequisite relies on temp/generated evidence, compatibility aliases, preview labels, or silent erasure.
+- Strict and strict-concurrency profiles remain claimable through public release/runtime evidence rather than source-only assertions, while strict-system remains target-only until separate system evidence exists.
+
+## platform.expansion.umbrella-readiness
+
+- Current state: `internal`
+- Target state: `implemented`
+- Readiness state: `blocked`
+- Intended public meaning: Objective-C 3.0 platform expansion can become a public platform-support claim only when Linux x64, macOS arm64, and native object emission all have replayable support evidence rather than fail-closed contracts. The current #8206 truth boundary is source-owned and fail-closed: Windows x64 is the only supported projection, Linux/macOS stay rejected, hosted evidence is review-only, and ASan/UBSan package variants are evidence-bound for Windows x64 only through the checked sanitizer runtime promotion gate.
+
+### Forbidden Overclaims
+
+- Linux x64 support from source-owned fail-closed rows alone.
+- macOS arm64 support from source-owned fail-closed rows alone.
+- ASan or UBSan package support outside Windows x64, from generated runtime reports alone, or from sanitizer execution evidence that has not cleared the source-owned promotion gate.
+- Native object emission success when llc is missing, lacks llc --filetype=obj, or cannot emit a non-empty object for the target triple.
+- Clang fallback published as llvm-direct object emission success.
+- Issue comments, PR bodies, temp files, generated projections, or validation logs as source truth.
+
+### Prerequisite Rows
+
+- `platform.windows-x64.tier1` must be `implemented`: Windows x64 is the only currently supported platform row and must remain evidence-backed.
+- `platform.linux-x64.unsupported` must be `rejected`: Linux x64 remains fail-closed until build, package, install, installed-root execution, and native execution evidence exists, and the host-promotion contract refuses generated-only hosted evidence as support truth.
+- `platform.darwin-arm64.unsupported` must be `rejected`: macOS arm64 remains fail-closed until build, package, install, installed-root execution, Mach-O/load-path, and native execution evidence exists, and the host-promotion contract refuses generated-only hosted evidence as support truth.
+- `toolchain.llvm.current-probed-executable` must be `internal`: LLVM and native object emission remain current-probe/internal evidence, not broad LLVM compatibility.
+- `toolchain.sanitizer.address` must be `reserved`: The public capability row remains reserved and claimless, while platform source truth marks ASan package, install, and execution support evidence-bound for Windows x64 through the checked runtime-promotion gate; generated reports remain non-promoting inputs and unsupported hosts remain fail-closed.
+- `toolchain.sanitizer.undefined` must be `reserved`: The public capability row remains reserved and claimless, while platform source truth marks UBSan package, install, trap/recover metadata, expected detection, and execution support evidence-bound for Windows x64 through the checked runtime-promotion gate; generated reports remain non-promoting inputs and unsupported hosts remain fail-closed.
+
+### Readiness Requirements
+
+#### Source Anchors
+
+- `satisfied` The #8206 source-truth matrix owns the umbrella boundary, child issue rows, package variants, sanitizer variants, and native object emission contract. (path: `tests/tooling/fixtures/platform_support/source_truth_matrix.json`)
+- `satisfied` The platform source-truth schema requires umbrella readiness, child issue contracts, and the llc native object emission contract. (path: `schemas/objc3c-platform-support-source-truth-v1.schema.json`)
+- `satisfied` The platform toolchain evidence fixture owns supported Windows x64 evidence, unsupported Linux/macOS rows, sanitizer package metadata, and the LLVM native object emission contract. (path: `tests/tooling/fixtures/platform_hardening/platform_toolchain_support_evidence.json`)
+- `satisfied` Unsupported host policy includes native-object-emission-unavailable as a fail-closed hard-fail class. (path: `tests/tooling/fixtures/platform_hardening/unsupported_host_fail_closed_policy.json`)
+- `satisfied` The Linux/macOS host-promotion contract requires build/package/install/execution gates, records generated hosted evidence as required but support_truth=false, and allows future support only after reviewed source-truth rows clear all blockers. (path: `tests/tooling/fixtures/platform_hardening/platform_host_promotion_evidence_contract.json`)
+- `satisfied` The host-promotion checker owns the deterministic fail-closed model for generated-only evidence, package/install/native-execution gaps, wrong object/debug identity, runtime load failure, and sanitizer leakage across Linux and macOS rows. (path: `scripts/check_platform_host_promotion_evidence.py`)
+- `satisfied` Hosted evidence ingestion materializes generated Linux/macOS build, package, install, execution, capability, and review-candidate reports as non-promoting review inputs, including fail-closed placeholders when required producer artifacts are absent. (path: `scripts/ingest_objc3c_platform_host_evidence.py`)
+- `satisfied` Hosted evidence review stages checked-source proposals and staging summaries from complete generated evidence, but does not promote platform support without an explicit reviewed-source application. (path: `scripts/review_objc3c_platform_host_evidence.py`)
+- `satisfied` Platform support promotion is the checked-source application path that rewrites Linux/macOS support rows only after reviewed-source inputs are promotion-ready; generated reports remain non-authoritative inputs. (path: `scripts/promote_objc3c_platform_support.py`)
+- `satisfied` Reviewed source input fixtures define the durable Linux/macOS promotion row shape and bind the support-promotion helper/command that must apply checked support truth after generated hosted evidence is reviewed. (path: `tests/tooling/fixtures/platform_hardening/host_promotion_reviewed_source_inputs.json`)
+- `satisfied` LLVM capability reports publish supported, missing-llc, missing-filetype, mixed-root, mismatched-version, unsupported-version, unresolved-version, and no-clang-fallback policy fields. (path: `scripts/objc3c_llvm_capability_probe/reports.py`)
+- `satisfied` Evidence-bound ASan and UBSan package staging is anchored in clean-room runnable package staging, explicit sanitizer runtime discovery, copied runtime-library payloads, metadata emission, runtime-library digest manifests, and fail-closed missing-runtime behavior. (path: `scripts/package_objc3c_runnable_toolchain/staging_orchestration.psm1`)
+- `satisfied` Runnable package artifact reporting records sanitizer package ids, channel ids, metadata paths, runtime library manifests, compiler/linker flags, environment metadata, support_truth=false, and native_execution_claimed=false without support promotion. (path: `scripts/package_objc3c_runnable_toolchain/artifact_report_foundation.psm1`)
+- `satisfied` Package-channel model source owns ASan and UBSan package ids, channel ids, required payload entries, runtime-library entries, receipt fields, support_truth=false, and native_execution_claimed=false. (path: `scripts/objc3c_package_channels/model.py`)
+- `satisfied` Package-channel rendering remains the checked source for generated package-channel summaries and does not create support truth outside matrix rows. (path: `scripts/objc3c_package_channels/rendering.py`)
+- `satisfied` Package-channel validation and end-to-end checks require non-promoting support truth, native-execution falsehood, payload contracts, archive digests, receipt contracts, and schema-backed package-channel artifacts before publication. (path: `scripts/check_objc3c_packaging_channels_end_to_end.py`)
+- `satisfied` Public package actions expose ASan and UBSan package selectors and package-channel builders through the npm bridge while keeping promotion routed through the source-owned runtime gate. (path: `scripts/objc3c_workflow/action_catalog_native_package_toolchain.py`)
+- `satisfied` Release-governance action contracts register build-package-channels-asan and build-package-channels-ubsan as package-channel actions, not support claims. (path: `scripts/objc3c_workflow/actions/release_governance_packaging_contracts.py`)
+- `satisfied` Package-channel, install-receipt, and sanitizer runtime-library manifest schemas constrain ASan/UBSan package ids, sanitizer variants, exact runtime-library payload entries, install selectors, receipt contracts, support_truth=false, and native_execution_claimed=false. (path: `schemas/objc3c-sanitizer-runtime-library-manifest-v1.schema.json`)
+- `satisfied` Checked fixtures bind sanitizer package/install metadata, package-channel metadata/schema surfaces, artifact-report boundaries, and non-promoting validation contracts without independently claiming sanitizer support. (path: `tests/tooling/fixtures/security_hardening/sanitizer_package_install_model_contract.json`)
+- `satisfied` The ASan and UBSan runtime evidence action contracts expose exact public commands, forbid aliases and variant/platform fallback routing, and require generated runtime evidence to remain review-only with support_truth=false. (path: `scripts/objc3c_workflow/actions/sanitizer_runtime_evidence.py`)
+- `satisfied` The sanitizer runtime evidence checker and probe require package summaries, runtime manifests, install receipts, target platform ids, and probe outputs to keep support_truth=false, native_execution_claimed=false, and support_promotion_allowed=false. (path: `scripts/check_objc3c_sanitizer_runtime_evidence.py`)
+- `satisfied` The security sanitizer execution evidence fixture and schema record ASan/UBSan expected-detection command shapes, runtime-library artifacts, generated-only rejection, and fail-closed negative cases without promoting support. (path: `tests/tooling/fixtures/security_hardening/sanitizer_execution_evidence_contract.json`)
+- `satisfied` The sanitizer execution evidence schema constrains the non-promoting execution evidence payload so support_truth, native_execution_claimed, and support_promotion_allowed remain false. (path: `schemas/objc3c-sanitizer-execution-evidence-v1.schema.json`)
+- `satisfied` The sanitizer runtime promotion fixture is the source-owned ASan/UBSan promotion contract; it requires regenerated runtime evidence, package and runtime manifests, packaged smoke, expected detection, digest agreement, and negative cases before support can become eligible. (path: `tests/tooling/fixtures/security_hardening/sanitizer_runtime_promotion_evidence_contract.json`)
+- `satisfied` The sanitizer runtime promotion schema constrains the promotion contract and keeps generated-only evidence from becoming support truth. (path: `schemas/objc3c-sanitizer-runtime-promotion-evidence-v1.schema.json`)
+- `satisfied` The sanitizer runtime promotion checker reads the durable fixture plus already-generated ASan/UBSan evidence, computes digests, verifies package/runtime manifests and packaged smoke, checks expected AddressSanitizer and UndefinedBehaviorSanitizer detection, and fails closed on generated-only or mismatched evidence. (path: `scripts/check_objc3c_sanitizer_runtime_promotion_evidence.py`)
+
+#### Public Commands
+
+- `satisfied` Platform support matrix replay remains the public path for projecting the source-owned platform boundary. (command: `npm run objc3c -- build-platform-support-matrix`)
+- `satisfied` Hosted Linux/macOS evidence ingestion is public and non-promoting; generated reports and review-candidate-source-truth.json remain review inputs until checked source truth is promoted. (command: `npm run objc3c -- ingest-platform-host-evidence`)
+- `satisfied` Hosted Linux/macOS evidence review stages reviewed-source proposals and staging summaries from complete generated evidence while preserving the fail-closed boundary until reviewed source truth is explicitly applied. (command: `npm run objc3c -- review-platform-host-evidence`)
+- `satisfied` Reviewed Linux/macOS support promotion applies checked source truth only from promotion-ready reviewed-source rows and refuses generated-only reports. (command: `npm run objc3c -- review-platform-support-promotion`)
+- `satisfied` The direct host-promotion evidence check replays the Linux/macOS fail-closed contract and rejects generated-only support truth. (command: `npm run objc3c -- check-platform-host-promotion-evidence`)
+- `blocked` Full platform hardening validation remains blocked for umbrella promotion until Linux, macOS, and native object emission evidence are promoted. (command: `npm run objc3c -- validate-platform-hardening`; blocker_id: `platform-expansion-prerequisites`)
+- `satisfied` ASan runnable package action exists for package metadata and payload staging; support promotion is checked by the sanitizer runtime promotion gate. (command: `npm run objc3c -- package-runnable-toolchain-asan`)
+- `satisfied` UBSan runnable package action exists for package metadata and payload staging; support promotion is checked by the sanitizer runtime promotion gate. (command: `npm run objc3c -- package-runnable-toolchain-ubsan`)
+- `satisfied` ASan package-channel action builds package-channel artifacts consumed by the source-owned runtime promotion gate. (command: `npm run objc3c -- build-package-channels-asan`)
+- `satisfied` UBSan package-channel action builds package-channel artifacts consumed by the source-owned runtime promotion gate. (command: `npm run objc3c -- build-package-channels-ubsan`)
+- `satisfied` ASan runtime evidence collection is an explicit review-only action that forbids sanitizer/platform fallback routing and cannot promote ASan support. (command: `npm run objc3c -- check-sanitizer-runtime-evidence-asan`)
+- `satisfied` UBSan runtime evidence collection is an explicit review-only action that forbids sanitizer/platform fallback routing and cannot promote UBSan support. (command: `npm run objc3c -- check-sanitizer-runtime-evidence-ubsan`)
+- `satisfied` Security sanitizer execution evidence validates the non-promoting ASan/UBSan execution-evidence contract while requiring support_truth=false, native_execution_claimed=false, and support_promotion_allowed=false. (command: `npm run objc3c -- check-security-sanitizer-execution-evidence`)
+- `satisfied` Security sanitizer runtime promotion evidence is the public source-owned promotion gate; it regenerates pinned ASan/UBSan evidence inputs and checks the durable promotion contract before sanitizer support can become eligible. (command: `npm run objc3c -- check-security-sanitizer-runtime-promotion-evidence`)
+
+#### Positive Fixtures
+
+- `satisfied` The only positive platform support row remains Windows x64 Tier 1. (capability_id: `platform.windows-x64.tier1`)
+
+#### Negative Fixtures
+
+- `satisfied` Linux x64 remains an unsupported fail-closed row with no support claim. (capability_id: `platform.linux-x64.unsupported`)
+- `satisfied` macOS arm64 remains an unsupported fail-closed row with no support claim. (capability_id: `platform.darwin-arm64.unsupported`)
+- `satisfied` ASan and UBSan are Windows x64 evidence-bound package variants, with generated-only reports and unsupported hosts still rejected before support promotion. (path: `tests/tooling/fixtures/platform_support/source_truth_matrix.json`)
+- `satisfied` Missing llc, missing llc --filetype=obj, failed target object emission, mixed LLVM roots, mismatched LLVM tool versions, unsupported LLVM versions, or unresolved required tool versions remain fail-closed and cannot publish object, package, execution, parity, or platform success. (path: `tests/tooling/fixtures/platform_hardening/platform_toolchain_support_evidence.json`)
+- `satisfied` Hosted-runner summaries cover Windows support, Linux/macOS unsupported rows, ASan/UBSan non-promoting hosted summaries, and toolchain fail-closed states without promoting those summaries to support evidence. (path: `tests/tooling/fixtures/platform_hardening/hosted_runner_capability_summaries.json`)
+- `satisfied` Sanitizer package/install model fixtures keep ASan and UBSan package ids, package-channel ids, runtime metadata, install selectors, missing-runtime behavior, stale metadata, mixed runtime rejection, and native-execution falsehood checked in without support promotion. (path: `tests/tooling/fixtures/security_hardening/sanitizer_package_install_model_contract.json`)
+- `satisfied` Sanitizer validation fixtures remain non-promoting compiler/runtime validation contracts; #8230 and #8231 support truth is owned by the platform source-truth rows plus the runtime-promotion gate. (path: `tests/tooling/fixtures/security_hardening/sanitizer_validation_contract.json`)
+- `satisfied` Security sanitizer execution evidence fixtures keep generated-only reports, missing runtime manifests, mixed release/sanitizer runtime, unsupported hosts, and stale manifest digests fail-closed with no support promotion. (path: `tests/tooling/fixtures/security_hardening/sanitizer_execution_evidence_contract.json`)
+- `satisfied` Sanitizer runtime promotion fixtures keep generated-only evidence, missing package/runtime manifests, missing packaged smoke, missing expected detection output, stale or mismatched computed digests, mixed release/sanitizer runtime, unsupported hosts, and variant/channel mismatches fail-closed before support promotion. (path: `tests/tooling/fixtures/security_hardening/sanitizer_runtime_promotion_evidence_contract.json`)
+- `satisfied` Packaging-channel schema fixtures keep sanitizer package-channel metadata source-owned and fail closed when schema or fixture truth drifts. (path: `tests/tooling/fixtures/packaging_channels/schema_surface.json`)
+
+#### Runtime Probes
+
+- `satisfied` Native object emission probe metadata is source-owned, fail-closed, and complete as a guardrail; remaining promotion work is platform-specific Linux/macOS host evidence. (path: `tests/tooling/fixtures/platform_support/source_truth_matrix.json`)
+- `satisfied` ASan package metadata and runtime evidence pass the source-owned runtime-promotion gate for Windows x64, while generated-only evidence and unsupported hosts remain non-promoting. (command: `npm run objc3c -- check-security-sanitizer-runtime-promotion-evidence`; blocker_id: `asan-runtime-package-evidence`)
+- `satisfied` UBSan package metadata, trap/recover metadata, and runtime evidence pass the source-owned runtime-promotion gate for Windows x64, while generated-only evidence and unsupported hosts remain non-promoting. (command: `npm run objc3c -- check-security-sanitizer-runtime-promotion-evidence`; blocker_id: `ubsan-runtime-package-evidence`)
+
+#### Abi Governance Rows
+
+- `satisfied` Release and sanitizer package variant metadata freshness guards block stale or generated package metadata from becoming source truth. (path: `tests/tooling/fixtures/platform_support/source_truth_matrix.json`)
+
+#### Docs
+
+- `satisfied` Capability matrix keeps #8206 internal, Linux/macOS rejected, sanitizer variants Windows x64 evidence-bound, and Windows x64 as the only supported host row. (path: `docs/support/capability_matrix.json`)
+- `satisfied` Evidence rows point to checked source, schemas, diagnostics, and runbooks rather than temp/generated evidence. (path: `docs/support/evidence_map.json`)
+- `satisfied` Hard-cutover truth states the #8206 platform umbrella boundary without broad support claims. (path: `docs/support/hard_cutover_capability_truth.md`)
+- `satisfied` Platform hardening runbook states the llc/no-clang-fallback policy, Linux/macOS fail-closed boundaries, and sanitizer generated-only rejection boundary. (path: `docs/runbooks/objc3c_platform_hardening.md`)
+- `satisfied` Packaging-channel runbook documents ASan/UBSan package selectors, staging, runtime-library manifests, package-channel actions, and promotion-gate boundaries. (path: `docs/runbooks/objc3c_packaging_channels.md`)
+
+### Generated Output Boundary
+
+- Source truth allowed: `false`
+- Rule: Generated outputs may summarize checked source, fixtures, and support rows, but cannot satisfy public platform promotion or promote unsupported host, sanitizer, or native object emission support by themselves.
+- Unsupported sources:
+  - temp/
+  - tmp/
+  - generated markdown projections
+  - issue comments
+  - PR bodies
+  - unlinked replay reports
+
+### Promotion Blockers
+
+- `linux-x64-native-evidence`: Linux x64 remains unsupported.
+  - Linux x64 build evidence through the public workflow path.
+  - Linux x64 package, install, and installed-root execution evidence.
+  - Linux x64 native execution evidence with runtime library availability.
+- `darwin-arm64-native-evidence`: macOS arm64 remains unsupported.
+  - macOS arm64 package, install, and installed-root execution evidence.
+  - Mach-O and load-path evidence.
+  - macOS arm64 native execution evidence.
+- `platform-expansion-prerequisites`: The #8206 umbrella cannot be a public implemented platform claim while any child platform remains fail-closed or internal.
+  - Promote Linux x64 and macOS arm64 only from checked source rows and public replay evidence.
+  - Keep coherent llc object emission as a fail-closed no-clang-substitute guardrail inside platform promotion.
+  - Keep Windows x64 as the only supported projection until every promoted child row has matching source and evidence-map truth.
+
+### Final Promotion Criteria
+
+- The platform.expansion.umbrella-readiness matrix row changes to implemented for a public platform-support claim.
+- Linux x64 and macOS arm64 platform rows are implemented with build, package, install, installed-root execution, and native execution evidence.
+- ASan and UBSan package variants remain Windows x64 evidence-bound with runtime package, install, native execution evidence, expected sanitizer detection, computed digest agreement, fail-closed negative cases, and the source-owned runtime-promotion gate.
+- Native object emission succeeds only through llc --filetype=obj with non-empty target object output and no clang substitute success path exists.
+- All platform source, fixture, capability, evidence, README, and runbook docs agree on the same support boundary.
+- No prerequisite relies on temp/generated evidence, source-only package rows, tool presence alone, compatibility bypasses, or prose-only support claims.

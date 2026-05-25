@@ -4,6 +4,7 @@
 #include <string>
 #include <vector>
 
+#include "contracts/objc3_language_evolution_reserved_diagnostic_codes.h"
 #include "sema/model/frontend_linkage_summaries.h"
 #include "sema/model/frontend_type_source_closure.h"
 
@@ -12,9 +13,9 @@ inline constexpr const char *kObjc3ControlFlowControlFlowSourceClosureContractId
 inline constexpr const char *kObjc3ControlFlowControlFlowSourceClosureSurfacePath =
     "frontend.pipeline.semantic_surface.objc_control_flow_control_flow_source_closure";
 inline constexpr const char *kObjc3ControlFlowControlFlowSourceClosureSourceModel =
-    "guard-condition-lists-defer-statements-and-statement-match-patterns-are-live-frontend-owned-control-flow-surfaces-while-match-expression-guarded-patterns-and-type-test-patterns-remain-fail-closed";
+    "guard-condition-lists-defer-statements-statement-match-patterns-guarded-statement-match-patterns-and-expression-match-arms-are-live-frontend-owned-control-flow-surfaces-while-type-test-patterns-remain-fail-closed";
 inline constexpr const char *kObjc3ControlFlowControlFlowSourceClosureFailureModel =
-    "match-remains-statement-only-and-guarded-or-type-test-patterns-remain-fail-closed-until-later-sema-lowering-and-runtime-work";
+    "type-test-patterns-remain-fail-closed-until-later-sema-lowering-and-runtime-work";
 
 struct Objc3FrontendControlFlowControlFlowSourceClosureSummary {
   std::string contract_id = kObjc3ControlFlowControlFlowSourceClosureContractId;
@@ -31,11 +32,11 @@ struct Objc3FrontendControlFlowControlFlowSourceClosureSummary {
       kObjc3ControlFlowSourceSurfaceMatchWildcardPatterns,
       kObjc3ControlFlowSourceSurfaceMatchLiteralPatterns,
       kObjc3ControlFlowSourceSurfaceMatchBindingPatterns,
+      kObjc3ControlFlowSourceSurfaceGuardedMatchPatterns,
       kObjc3ControlFlowSourceSurfaceMatchResultCasePatterns,
+      kObjc3ControlFlowSourceSurfaceMatchExpression,
   };
   std::vector<std::string> fail_closed_construct_ids = {
-      kObjc3ControlFlowFailClosedConstructMatchExpression,
-      kObjc3ControlFlowFailClosedConstructGuardedPatterns,
       kObjc3ControlFlowFailClosedConstructMatchTypeTestPatterns,
   };
   std::size_t guard_binding_sites = 0;
@@ -50,7 +51,15 @@ struct Objc3FrontendControlFlowControlFlowSourceClosureSummary {
   std::size_t match_wildcard_pattern_sites = 0;
   std::size_t match_literal_pattern_sites = 0;
   std::size_t match_binding_pattern_sites = 0;
+  std::size_t guarded_match_pattern_sites = 0;
   std::size_t match_result_case_pattern_sites = 0;
+  std::size_t match_expression_sites = 0;
+  std::size_t match_expression_arm_sites = 0;
+  std::size_t match_expression_guard_sites = 0;
+  std::size_t guarded_match_issue_ref = 8236;
+  std::string guarded_match_admitted_syntax =
+      "case pattern where bool_condition:";
+  bool guarded_match_condition_bool_required = true;
   bool guard_binding_source_supported = false;
   bool guard_condition_list_source_supported = false;
   bool switch_case_pattern_source_supported = false;
@@ -58,12 +67,15 @@ struct Objc3FrontendControlFlowControlFlowSourceClosureSummary {
   bool match_wildcard_pattern_source_supported = false;
   bool match_literal_pattern_source_supported = false;
   bool match_binding_pattern_source_supported = false;
+  bool guarded_match_pattern_source_supported = false;
   bool match_result_case_pattern_source_supported = false;
+  bool match_expression_source_supported = false;
   bool defer_statement_source_supported = false;
   bool defer_keyword_reserved = false;
   bool defer_fail_closed = false;
   bool match_expression_fail_closed = false;
-  bool guarded_pattern_fail_closed = false;
+  bool match_expression_result_typing_supported = false;
+  bool match_fat_arrow_arms_supported = false;
   bool type_test_pattern_fail_closed = false;
   bool deterministic_handoff = false;
   bool ready_for_semantic_expansion = false;
@@ -76,9 +88,9 @@ inline constexpr const char *kObjc3ErrorHandlingErrorSourceClosureContractId =
 inline constexpr const char *kObjc3ErrorHandlingErrorSourceClosureSurfacePath =
     "frontend.pipeline.semantic_surface.objc_error_handling_error_source_closure";
 inline constexpr const char *kObjc3ErrorHandlingErrorSourceClosureSourceModel =
-    "throws-declarations-result-carrier-profiles-nserror-bridging-profiles-and-canonical-error-bridge-markers-are-live-frontend-owned-source-surfaces-while-try-throw-and-do-catch-remain-reserved-fail-closed";
+    "bare-throws-declarations-single-payload-typed-throws-result-carrier-profiles-nserror-bridging-profiles-and-canonical-error-bridge-markers-are-live-frontend-owned-source-surfaces-with-single-payload-typed-throws-lowered-through-the-private-error-out-abi";
 inline constexpr const char *kObjc3ErrorHandlingErrorSourceClosureFailureModel =
-    "try-expressions-throw-statements-and-do-catch-remain-parse-owned-fail-closed-boundaries-until-runnable-error_handling-sema-lowering-and-runtime-work";
+    "typed-throws-preserves-one-source-payload-through-interface-contracts-and-private-error-out-abi-lowering-while-malformed-payload-multi-payload-and-silent-erasure-forms-remain-fail-closed";
 
 struct Objc3FrontendErrorHandlingErrorSourceClosureSummary {
   std::string contract_id = kObjc3ErrorHandlingErrorSourceClosureContractId;
@@ -87,10 +99,12 @@ struct Objc3FrontendErrorHandlingErrorSourceClosureSummary {
   std::string failure_model = kObjc3ErrorHandlingErrorSourceClosureFailureModel;
   std::vector<std::string> source_only_claim_ids = {
       kObjc3SourceOnlyFeatureClaimThrowsDeclarations,
+      kObjc3SourceOnlyFeatureClaimTypedThrowsDeclarations,
       kObjc3SourceOnlyFeatureClaimResultCarrierProfiles,
       kObjc3SourceOnlyFeatureClaimNSErrorBridgingProfiles,
   };
   std::vector<std::string> fail_closed_construct_ids = {
+      kObjc3ErrorHandlingFailClosedConstructTypedThrowsAbiLowering,
       kObjc3ErrorHandlingFailClosedConstructTryExpressions,
       kObjc3ErrorHandlingFailClosedConstructThrowStatements,
       kObjc3ErrorHandlingFailClosedConstructDoCatchStatements,
@@ -113,13 +127,36 @@ struct Objc3FrontendErrorHandlingErrorSourceClosureSummary {
   std::size_t try_keyword_sites = 0;
   std::size_t throw_keyword_sites = 0;
   std::size_t catch_keyword_sites = 0;
+  std::size_t typed_throws_declaration_sites = 0;
+  std::size_t typed_throws_payload_arity_supported = 1;
   bool throws_declaration_source_supported = false;
+  bool typed_throws_source_supported = false;
   bool result_carrier_source_supported = false;
   bool ns_error_bridging_source_supported = false;
   bool error_bridge_marker_source_supported = false;
   bool try_keyword_reserved = false;
   bool throw_keyword_reserved = false;
   bool catch_keyword_reserved = false;
+  bool typed_throws_fail_closed = false;
+  bool typed_throws_abi_lowering_fail_closed = false;
+  std::size_t typed_throws_issue_ref = 8233;
+  std::string typed_throws_canonical_syntax = "throws(E)";
+  std::string typed_throws_reserved_diagnostic_code =
+      kObjc3ParserDiagnosticReservedTypedThrowsCode;
+  bool typed_throws_single_payload_reserved = false;
+  bool typed_throws_empty_payload_rejected = true;
+  bool typed_throws_multi_payload_rejected = true;
+  bool typed_throws_silent_erasure_allowed = false;
+  std::string typed_throws_effect_record_status =
+      "typed-and-untyped-effects-preserved-with-exact-callable-compatibility";
+  std::string typed_throws_abi_status = "typed-error-out-abi";
+  std::string typed_throws_interface_roundtrip_status =
+      "typed-payload-preserved";
+  std::string typed_throws_catch_compatibility_status =
+      "typed-catch-exact-untyped-id-error-bridge-incompatible-rejects";
+  std::string typed_throws_bridge_to_id_error_policy =
+      "explicit-bridge-to-id<Error>-only";
+  bool typed_throws_foreign_carrier_fail_closed = true;
   bool try_fail_closed = false;
   bool throw_fail_closed = false;
   bool do_catch_fail_closed = false;

@@ -29,6 +29,9 @@
     }
 
     method.has_body = true;
+    if (RejectUnsupportedValueOptionalExecutableMethod(method)) {
+      return false;
+    }
     FinalizeObjcMethodProfiles(method);
     return true;
   }

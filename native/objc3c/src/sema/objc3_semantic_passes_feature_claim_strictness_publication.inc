@@ -57,10 +57,12 @@ static std::string BuildCompatibilityStrictnessClaimSemanticsReplayKey(
 static Objc3CompatibilityStrictnessClaimSemanticsSummary
 BuildCompatibilityStrictnessClaimSemanticsSummaryFromIntegrationSurface(
     const Objc3SemanticIntegrationSurface &surface,
+    Objc3SemaLanguageProfile language_profile,
     const Objc3UnsupportedFeatureClaimEnforcementStats
         &unsupported_feature_enforcement) {
   Objc3CompatibilityStrictnessClaimSemanticsSummary summary;
-  summary.effective_language_profile = "canonical";
+  summary.effective_language_profile =
+      Objc3SemaLanguageProfileName(language_profile);
   summary.valid_language_profile_count =
       kObjc3CompatibilityStrictnessClaimValidLanguageProfileCount;
   summary.live_selection_surface_count =
@@ -100,7 +102,8 @@ BuildCompatibilityStrictnessClaimSemanticsSummaryFromIntegrationSurface(
   summary.source_only_claim_downgrade_semantics_landed = true;
   summary.unsupported_feature_claim_rejection_semantics_landed = true;
   summary.live_unsupported_feature_source_rejection_landed = true;
-  summary.strictness_selection_rejection_semantics_landed = true;
+  summary.strictness_selection_semantics_landed = true;
+  summary.strict_concurrency_selection_semantics_landed = true;
   summary.feature_macro_claim_suppression_semantics_landed = true;
   summary.canonical_interface_truth_semantics_landed = true;
   summary.separate_compilation_macro_truth_semantics_landed = true;
@@ -122,7 +125,7 @@ BuildCompatibilityStrictnessClaimSemanticsSummaryFromIntegrationSurface(
   }
   if (!IsReadyObjc3CompatibilityStrictnessClaimSemanticsSummary(summary)) {
     summary.failure_reason =
-        "canonical selection claim semantics summary is incomplete";
+        "strict profile selection claim semantics summary is incomplete";
   }
   return summary;
 }

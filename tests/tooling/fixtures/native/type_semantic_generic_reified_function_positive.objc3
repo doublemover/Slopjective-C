@@ -1,0 +1,22 @@
+module TypeSemanticGenericReifiedFunctionPositive;
+
+@protocol Persistable
+@end
+
+@interface SemanticBox <Persistable>
+@property (readonly) id title;
+@end
+
+@implementation SemanticBox
+@end
+
+@reify_generics
+fn reifiedIdentity<T : id<Persistable>>(value: T) -> T {
+  return value;
+}
+
+fn consumeReifiedGenericFunction(box: SemanticBox *?) -> i32 {
+  let record = reifiedIdentity(box);
+  let title = [record? title];
+  return 0;
+}

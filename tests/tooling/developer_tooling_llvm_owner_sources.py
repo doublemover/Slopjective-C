@@ -30,8 +30,21 @@ def capable_llvm_summary() -> dict[str, object]:
         "mode": "objc3c-llvm-capabilities-v2",
         "ok": True,
         "clang": {"found": True},
+        "clangxx": {"found": True},
         "llc": {"found": True},
-        "llc_features": {"supports_filetype_obj": True},
+        "llvm_ar": {"found": True},
+        "llvm_config": {"found": True},
+        "llc_features": {
+            "supports_filetype_obj": True,
+            "supports_target_object_emission": True,
+        },
+        "llvm_config_features": {"headers_libraries_discovered": True},
+        "toolchain_identity": {"claimable": True},
+        "llvm_support_matrix": {
+            "native_object_emission_contract": {
+                "status": "native_object_emission_supported"
+            }
+        },
     }
 
 
@@ -42,11 +55,24 @@ def hosted_probe_without_object_emission() -> tuple[int, dict[str, object]]:
             "mode": "objc3c-llvm-capabilities-v2",
             "ok": False,
             "clang": {"found": True},
+            "clangxx": {"found": True},
             "llc": {
                 "found": False,
                 "diagnostic": "llc executable not found: llc",
             },
-            "llc_features": {"supports_filetype_obj": False},
+            "llvm_ar": {"found": True},
+            "llvm_config": {"found": True},
+            "llc_features": {
+                "supports_filetype_obj": False,
+                "supports_target_object_emission": False,
+            },
+            "llvm_config_features": {"headers_libraries_discovered": True},
+            "toolchain_identity": {"claimable": False},
+            "llvm_support_matrix": {
+                "native_object_emission_contract": {
+                    "status": "native_object_emission_missing_llc"
+                }
+            },
             "failures": [
                 "llc executable not found: llc",
                 "sema/type-system parity capability unavailable: llc executable missing",
@@ -71,8 +97,21 @@ def hosted_probe_with_capability_truth_drift() -> tuple[int, dict[str, object]]:
             "mode": "objc3c-llvm-capabilities-v2",
             "ok": False,
             "clang": {"found": True},
+            "clangxx": {"found": True},
             "llc": {"found": True},
-            "llc_features": {"supports_filetype_obj": True},
+            "llvm_ar": {"found": True},
+            "llvm_config": {"found": True},
+            "llc_features": {
+                "supports_filetype_obj": True,
+                "supports_target_object_emission": True,
+            },
+            "llvm_config_features": {"headers_libraries_discovered": True},
+            "toolchain_identity": {"claimable": True},
+            "llvm_support_matrix": {
+                "native_object_emission_contract": {
+                    "status": "native_object_emission_supported"
+                }
+            },
             "capability_demo_compatibility": {
                 "failures": ["story capability drift detected for signalMesh"]
             },
@@ -85,6 +124,42 @@ def hosted_summary_without_clang() -> dict[str, object]:
         "mode": "objc3c-llvm-capabilities-v2",
         "ok": True,
         "clang": {"found": False},
+        "clangxx": {"found": True},
         "llc": {"found": True},
-        "llc_features": {"supports_filetype_obj": True},
+        "llvm_ar": {"found": True},
+        "llvm_config": {"found": True},
+        "llc_features": {
+            "supports_filetype_obj": True,
+            "supports_target_object_emission": True,
+        },
+        "llvm_config_features": {"headers_libraries_discovered": True},
+        "toolchain_identity": {"claimable": True},
+        "llvm_support_matrix": {
+            "native_object_emission_contract": {
+                "status": "native_object_emission_supported"
+            }
+        },
+    }
+
+
+def hosted_summary_without_llc() -> dict[str, object]:
+    return {
+        "mode": "objc3c-llvm-capabilities-v2",
+        "ok": False,
+        "clang": {"found": True},
+        "clangxx": {"found": True},
+        "llc": {"found": False},
+        "llvm_ar": {"found": True},
+        "llvm_config": {"found": True},
+        "llc_features": {
+            "supports_filetype_obj": False,
+            "supports_target_object_emission": False,
+        },
+        "llvm_config_features": {"headers_libraries_discovered": True},
+        "toolchain_identity": {"claimable": False},
+        "llvm_support_matrix": {
+            "native_object_emission_contract": {
+                "status": "native_object_emission_missing_llc"
+            }
+        },
     }

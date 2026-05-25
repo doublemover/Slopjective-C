@@ -47,7 +47,7 @@ void FinalizeObjc3SemaPassFlowSummary(
   summary.diagnostics_emission_totals_consistent = diagnostics_emitted_total == summary.diagnostics_total;
   summary.transition_edge_count = summary.executed_pass_count > 0u ? summary.executed_pass_count - 1u : 0u;
   summary.compatibility_handoff_consistent =
-      summary.language_profile == Objc3SemaLanguageProfile::Canonical;
+      IsSupportedObjc3SemaLanguageProfile(summary.language_profile);
   summary.missing_pass_execution_count = 0;
   for (const bool pass_executed : summary.pass_executed) {
     if (!pass_executed) {
@@ -118,7 +118,7 @@ void FinalizeObjc3SemaPassFlowSummary(
   std::ostringstream handoff_key;
   handoff_key << "sema-pass-flow:v1:"
               << summary.executed_pass_count << "/" << summary.configured_pass_count
-              << ":compat=canonical"
+              << ":compat=" << Objc3SemaLanguageProfileName(summary.language_profile)
               << ":diag=" << summary.diagnostics_total
               << ":fp=" << summary.pass_execution_fingerprint
               << ":stage_input_owner=" << summary.stage_input_owner

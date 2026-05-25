@@ -5,6 +5,9 @@ from __future__ import annotations
 CHECK_SECURITY_HARDENING_SURFACE = "check-security-hardening-surface"
 CHECK_SECURITY_HARDENING_SCHEMA_SURFACE = "check-security-hardening-schema-surface"
 CHECK_SECURITY_SANITIZER_VALIDATION = "check-security-sanitizer-validation"
+CHECK_SECURITY_SANITIZER_EXECUTION_EVIDENCE = (
+    "check-security-sanitizer-execution-evidence"
+)
 CHECK_SECURITY_LANGUAGE_RUNTIME_THREAT_MODEL = "check-security-language-runtime-threat-model"
 CHECK_SECURITY_RESPONSE_DRILL = "check-security-response-drill"
 CHECK_SECURITY_RUNTIME_HARDENING = "check-security-runtime-hardening"
@@ -31,6 +34,7 @@ __all__ = [
     "CHECK_SECURITY_LANGUAGE_RUNTIME_THREAT_MODEL",
     "CHECK_SECURITY_RESPONSE_DRILL",
     "CHECK_SECURITY_RUNTIME_HARDENING",
+    "CHECK_SECURITY_SANITIZER_EXECUTION_EVIDENCE",
     "CHECK_SECURITY_SANITIZER_VALIDATION",
     "PUBLISH_SECURITY_ADVISORIES",
     "SECURITY_HARDENING_HARD_CUTOVER_GUARDRAILS",
