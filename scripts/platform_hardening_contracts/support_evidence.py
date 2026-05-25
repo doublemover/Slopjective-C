@@ -2214,11 +2214,17 @@ def _toolchain_ranges_by_component(
             expect(platform_ids, f"{component} evidence-bound toolchain range missing platform ids")
             for platform_id in platform_ids:
                 expect(platform_id in boundary_supported_platform_ids, f"{component} toolchain range widened support to {platform_id}")
-            for evidence_id in evidence_ids:
-                expect(evidence_id in records_by_id, f"{component} toolchain range missing evidence record {evidence_id}")
-                record = records_by_id[evidence_id]
-                for platform_id in platform_ids:
-                    _supporting_record_is_claimable(record, platform_id, "toolchain")
+                platform_evidence_ids: list[str] = []
+                for evidence_id in evidence_ids:
+                    expect(evidence_id in records_by_id, f"{component} toolchain range missing evidence record {evidence_id}")
+                    record = records_by_id[evidence_id]
+                    if platform_id in record.get("supports_platform_ids", []):
+                        _supporting_record_is_claimable(record, platform_id, "toolchain")
+                        platform_evidence_ids.append(evidence_id)
+                expect(
+                    platform_evidence_ids,
+                    f"{component} toolchain range missing claimable evidence for {platform_id}",
+                )
             continue
 
         expect(claim_state == "reserved", f"{component} toolchain range used unknown claim_state {claim_state}")
@@ -2625,14 +2631,15 @@ def validate_platform_toolchain_support_evidence(
                 toolchain_range = toolchain_ranges[component]
                 expect(toolchain_range.get("claim_state") == "evidence-bound", f"{platform_id} {component} toolchain range is not evidence-bound")
                 expect(platform_id in toolchain_range.get("platform_ids", []), f"{platform_id} {component} toolchain range does not include the supported platform")
-                missing_range_evidence = [
+                claimable_range_evidence = [
                     str(evidence_id)
                     for evidence_id in toolchain_range.get("evidence_ids", [])
-                    if str(evidence_id) not in row_toolchain_evidence_ids
+                    if str(evidence_id) in row_toolchain_evidence_ids
+                    and platform_id in records_by_id[str(evidence_id)].get("supports_platform_ids", [])
                 ]
                 expect(
-                    not missing_range_evidence,
-                    f"{platform_id} {component} toolchain evidence missing from support row: {', '.join(missing_range_evidence)}",
+                    claimable_range_evidence,
+                    f"{platform_id} {component} toolchain evidence missing from support row",
                 )
             for evidence_id in (
                 *row.get("toolchain_evidence_ids", []),
