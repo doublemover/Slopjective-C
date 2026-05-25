@@ -995,8 +995,14 @@
           "path": "scripts/review_objc3c_platform_host_evidence.py"
         },
         {
+          "id": "platform-support-promotion-helper",
+          "description": "Platform support promotion is the checked-source application path that rewrites Linux/macOS support rows only after reviewed-source inputs are promotion-ready; generated reports remain non-authoritative inputs.",
+          "status": "satisfied",
+          "path": "scripts/promote_objc3c_platform_support.py"
+        },
+        {
           "id": "hosted-evidence-reviewed-source-fixture",
-          "description": "Reviewed source input fixtures define the durable Linux/macOS promotion row shape that generated hosted evidence must satisfy before support truth can change.",
+          "description": "Reviewed source input fixtures define the durable Linux/macOS promotion row shape and bind the support-promotion helper/command that must apply checked support truth after generated hosted evidence is reviewed.",
           "status": "satisfied",
           "path": "tests/tooling/fixtures/platform_hardening/host_promotion_reviewed_source_inputs.json"
         },
@@ -1121,6 +1127,12 @@
           "description": "Hosted Linux/macOS evidence review stages reviewed-source proposals and staging summaries from complete generated evidence while preserving the fail-closed boundary until reviewed source truth is explicitly applied.",
           "status": "satisfied",
           "command": "npm run objc3c -- review-platform-host-evidence"
+        },
+        {
+          "id": "platform-support-promotion-review",
+          "description": "Reviewed Linux/macOS support promotion applies checked source truth only from promotion-ready reviewed-source rows and refuses generated-only reports.",
+          "status": "satisfied",
+          "command": "npm run objc3c -- review-platform-support-promotion"
         },
         {
           "id": "platform-host-promotion-evidence-check",

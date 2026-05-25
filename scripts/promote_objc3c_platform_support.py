@@ -319,6 +319,7 @@ def toolchain_evidence_record(
 
 def promotion_source_paths() -> list[str]:
     return [
+        "scripts/promote_objc3c_platform_support.py",
         "tests/tooling/fixtures/platform_hardening/host_promotion_reviewed_source_inputs.json",
         "tests/tooling/fixtures/platform_hardening/platform_host_promotion_evidence_contract.json",
         "tests/tooling/fixtures/platform_hardening/platform_toolchain_support_evidence.json",
@@ -503,6 +504,7 @@ def source_truth_support_row(
         "npm run objc3c -- validate-package-install-distribution --from-nothing",
         "npm run objc3c -- build-platform-support-matrix",
         f"npm run objc3c -- review-platform-host-evidence -- --platform-id {platform_id}",
+        f"npm run objc3c -- review-platform-support-promotion -- --platform-id {platform_id} --apply",
     ]
     row["host_promotion_constraints"] = {
         "promotion_policy": "reviewed-source-host-execution-required",

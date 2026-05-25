@@ -6567,6 +6567,7 @@
         "scripts/check_objc3c_packaging_channels_end_to_end.py",
         "scripts/ingest_objc3c_platform_host_evidence.py",
         "scripts/review_objc3c_platform_host_evidence.py",
+        "scripts/promote_objc3c_platform_support.py",
         "scripts/objc3c_workflow/actions/release_governance_packaging_contracts.py",
         "tests/tooling/test_platform_host_evidence_review.py",
         "tests/tooling/fixtures/platform_hardening/host_promotion_reviewed_source_inputs.json",
@@ -6605,6 +6606,10 @@
       {
         "kind": "source",
         "path": "scripts/review_objc3c_platform_host_evidence.py"
+      },
+      {
+        "kind": "source",
+        "path": "scripts/promote_objc3c_platform_support.py"
       },
       {
         "kind": "source",
@@ -6649,6 +6654,7 @@
         "scripts/check_objc3c_packaging_channels_end_to_end.py",
         "scripts/ingest_objc3c_platform_host_evidence.py",
         "scripts/review_objc3c_platform_host_evidence.py",
+        "scripts/promote_objc3c_platform_support.py",
         "scripts/objc3c_workflow/actions/release_governance_packaging_contracts.py",
         "tests/tooling/test_platform_host_evidence_review.py",
         "tests/tooling/fixtures/platform_hardening/host_promotion_reviewed_source_inputs.json",
@@ -6687,6 +6693,10 @@
       {
         "kind": "source",
         "path": "scripts/review_objc3c_platform_host_evidence.py"
+      },
+      {
+        "kind": "source",
+        "path": "scripts/promote_objc3c_platform_support.py"
       },
       {
         "kind": "source",
@@ -6799,6 +6809,7 @@
         "scripts/check_objc3c_packaging_channels_end_to_end.py",
         "scripts/ingest_objc3c_platform_host_evidence.py",
         "scripts/review_objc3c_platform_host_evidence.py",
+        "scripts/promote_objc3c_platform_support.py",
         "scripts/objc3c_workflow/actions/release_governance_packaging_contracts.py",
         "tests/tooling/test_platform_host_evidence_review.py",
         "tests/tooling/fixtures/platform_hardening/host_promotion_reviewed_source_inputs.json",
@@ -6851,6 +6862,10 @@
       {
         "kind": "source",
         "path": "scripts/review_objc3c_platform_host_evidence.py"
+      },
+      {
+        "kind": "source",
+        "path": "scripts/promote_objc3c_platform_support.py"
       },
       {
         "kind": "source",

@@ -37,6 +37,8 @@ from platform_hardening_contracts.host_promotion import (
     HOST_PROMOTION_REVIEWED_SOURCE_INPUT_RELATIVE_PATH,
     HOST_PROMOTION_REVIEWED_SOURCE_RECORD_ID_FIELD_BY_TYPE,
     HOST_PROMOTION_REVIEWED_SOURCE_RECORD_SECTION_BY_TYPE,
+    HOST_PROMOTION_SUPPORT_APPLICATION_ACTION,
+    HOST_PROMOTION_SUPPORT_APPLICATION_HELPER,
     HOST_PROMOTION_WINDOWS_PACKAGE_CHANNEL_REQUIRED_PATHS,
     build_host_promotion_reviewed_source_input_model_payload,
 )
@@ -1274,6 +1276,29 @@ def validate_host_promotion_reviewed_source_inputs(
         REQUIRED_REVIEWED_SOURCE_DURABLE_FIXTURE_PATHS,
         owner="reviewed source promotion model",
         description="durable fixture paths",
+    )
+    expect(
+        model.get("support_promotion_action") == HOST_PROMOTION_SUPPORT_APPLICATION_ACTION,
+        "reviewed source promotion model support action drifted",
+    )
+    expect(
+        model.get("support_promotion_helper") == HOST_PROMOTION_SUPPORT_APPLICATION_HELPER,
+        "reviewed source promotion model support helper drifted",
+    )
+    expect(
+        model.get("support_promotion_apply_command_template")
+        == expected_model["support_promotion_apply_command_template"],
+        "reviewed source promotion model support apply command drifted",
+    )
+    _require_set_contains(
+        _require_list(
+            model,
+            "required_durable_application_paths",
+            "reviewed source promotion model",
+        ),
+        expected_model["required_durable_application_paths"],
+        owner="reviewed source promotion model",
+        description="durable application paths",
     )
     _require_set_contains(
         _require_list(

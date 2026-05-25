@@ -2994,6 +2994,7 @@ the canonical manifest fixture and public npm command above.
   - `scripts/check_objc3c_packaging_channels_end_to_end.py`
   - `scripts/ingest_objc3c_platform_host_evidence.py`
   - `scripts/review_objc3c_platform_host_evidence.py`
+  - `scripts/promote_objc3c_platform_support.py`
   - `scripts/objc3c_workflow/actions/release_governance_packaging_contracts.py`
   - `tests/tooling/test_platform_host_evidence_review.py`
   - `tests/tooling/fixtures/platform_hardening/host_promotion_reviewed_source_inputs.json`
@@ -3008,6 +3009,7 @@ the canonical manifest fixture and public npm command above.
   - source: `scripts/check_objc3c_packaging_channels_end_to_end.py`
   - source: `scripts/ingest_objc3c_platform_host_evidence.py`
   - source: `scripts/review_objc3c_platform_host_evidence.py`
+  - source: `scripts/promote_objc3c_platform_support.py`
   - source: `scripts/platform_hardening_contracts/host_evidence_contract.py`
   - source: `scripts/objc3c_workflow/actions/release_governance_packaging_contracts.py`
   - source: `tests/tooling/fixtures/platform_hardening/install_matrix_integration_contract.json`
@@ -3033,6 +3035,7 @@ the canonical manifest fixture and public npm command above.
   - `scripts/check_objc3c_packaging_channels_end_to_end.py`
   - `scripts/ingest_objc3c_platform_host_evidence.py`
   - `scripts/review_objc3c_platform_host_evidence.py`
+  - `scripts/promote_objc3c_platform_support.py`
   - `scripts/objc3c_workflow/actions/release_governance_packaging_contracts.py`
   - `tests/tooling/test_platform_host_evidence_review.py`
   - `tests/tooling/fixtures/platform_hardening/host_promotion_reviewed_source_inputs.json`
@@ -3047,6 +3050,7 @@ the canonical manifest fixture and public npm command above.
   - source: `scripts/check_objc3c_packaging_channels_end_to_end.py`
   - source: `scripts/ingest_objc3c_platform_host_evidence.py`
   - source: `scripts/review_objc3c_platform_host_evidence.py`
+  - source: `scripts/promote_objc3c_platform_support.py`
   - source: `scripts/platform_hardening_contracts/host_evidence_contract.py`
   - source: `scripts/objc3c_workflow/actions/release_governance_packaging_contracts.py`
   - source: `tests/tooling/fixtures/platform_hardening/install_matrix_integration_contract.json`
@@ -3108,6 +3112,7 @@ the canonical manifest fixture and public npm command above.
   - `scripts/check_objc3c_packaging_channels_end_to_end.py`
   - `scripts/ingest_objc3c_platform_host_evidence.py`
   - `scripts/review_objc3c_platform_host_evidence.py`
+  - `scripts/promote_objc3c_platform_support.py`
   - `scripts/objc3c_workflow/actions/release_governance_packaging_contracts.py`
   - `tests/tooling/test_platform_host_evidence_review.py`
   - `tests/tooling/fixtures/platform_hardening/host_promotion_reviewed_source_inputs.json`
@@ -3133,6 +3138,7 @@ the canonical manifest fixture and public npm command above.
   - source: `scripts/check_objc3c_packaging_channels_end_to_end.py`
   - source: `scripts/ingest_objc3c_platform_host_evidence.py`
   - source: `scripts/review_objc3c_platform_host_evidence.py`
+  - source: `scripts/promote_objc3c_platform_support.py`
   - source: `scripts/platform_hardening_contracts/host_evidence_contract.py`
   - source: `scripts/objc3c_workflow/actions/release_governance_packaging_contracts.py`
   - source: `tests/tooling/fixtures/platform_hardening/install_matrix_integration_contract.json`

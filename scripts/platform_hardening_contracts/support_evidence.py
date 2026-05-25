@@ -1190,7 +1190,8 @@ def _package_artifact_identity_is_source_owned(row_id: str, row: dict[str, Any])
     )
 
     target_platform_id = str(row.get("target_platform_id", ""))
-    if target_platform_id in RELEASE_PACKAGE_TARGET_PLATFORM_CHOICES:
+    variant_kind = str(row.get("variant_kind", ""))
+    if variant_kind == "release-runtime" and target_platform_id in RELEASE_PACKAGE_TARGET_PLATFORM_CHOICES:
         expected_identity = release_package_artifact_identity_for_platform(
             target_platform_id
         )
@@ -1207,8 +1208,27 @@ def _package_artifact_identity_is_source_owned(row_id: str, row: dict[str, Any])
             runtime_names == expected_runtime_names,
             f"{row_id} runtime library names drifted from artifact identity",
         )
+    elif variant_kind == "sanitizer-runtime":
+        expect(
+            target_platform_id in RELEASE_PACKAGE_TARGET_PLATFORM_CHOICES,
+            f"{row_id} sanitizer target platform is not a release package target",
+        )
+        expect(
+            str(artifact.get("object_format", "")) == "target-platform-native",
+            f"{row_id} sanitizer object format must remain target-platform-native",
+        )
+        expect(
+            str(artifact.get("debug_format", ""))
+            == "target-platform-native-debug-info-plus-sanitizer-symbolization",
+            f"{row_id} sanitizer debug format drifted",
+        )
+        expect(
+            "objc3-runtime" in runtime_names
+            and any(name.startswith("clang_rt.") for name in runtime_names),
+            f"{row_id} sanitizer runtime library names must include objc3 and clang_rt runtimes",
+        )
 
-    if row.get("variant_kind") == "release-runtime":
+    if variant_kind == "release-runtime":
         _release_package_root_layout_is_artifact_scoped(
             row_id,
             target_platform_id,

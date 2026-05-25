@@ -6240,6 +6240,11 @@
     {
       "capability_id": "platform.linux-x64.unsupported",
       "evidence_kind": "source",
+      "path": "scripts/promote_objc3c_platform_support.py"
+    },
+    {
+      "capability_id": "platform.linux-x64.unsupported",
+      "evidence_kind": "source",
       "path": "scripts/platform_hardening_contracts/host_evidence_contract.py"
     },
     {
@@ -6306,6 +6311,11 @@
       "capability_id": "platform.darwin-arm64.unsupported",
       "evidence_kind": "source",
       "path": "scripts/review_objc3c_platform_host_evidence.py"
+    },
+    {
+      "capability_id": "platform.darwin-arm64.unsupported",
+      "evidence_kind": "source",
+      "path": "scripts/promote_objc3c_platform_support.py"
     },
     {
       "capability_id": "platform.darwin-arm64.unsupported",
@@ -6431,6 +6441,11 @@
       "capability_id": "platform.expansion.umbrella-readiness",
       "evidence_kind": "source",
       "path": "scripts/review_objc3c_platform_host_evidence.py"
+    },
+    {
+      "capability_id": "platform.expansion.umbrella-readiness",
+      "evidence_kind": "source",
+      "path": "scripts/promote_objc3c_platform_support.py"
     },
     {
       "capability_id": "platform.expansion.umbrella-readiness",

@@ -48,6 +48,8 @@ HOST_PROMOTION_REVIEWED_SOURCE_DURABLE_FIXTURE_PATHS: tuple[str, ...] = (
     "tests/tooling/fixtures/platform_support/source_truth_matrix.json",
 )
 HOST_PROMOTION_EVIDENCE_ACTION = "check-platform-host-promotion-evidence"
+HOST_PROMOTION_SUPPORT_APPLICATION_ACTION = "review-platform-support-promotion"
+HOST_PROMOTION_SUPPORT_APPLICATION_HELPER = "scripts/promote_objc3c_platform_support.py"
 HOST_PROMOTION_VALIDATE_PLATFORM_HARDENING_ACTION = "validate-platform-hardening"
 HOST_PROMOTION_EVIDENCE_SUMMARY_RELATIVE_PATH = (
     "tmp/reports/platform-hardening/host-promotion-evidence-summary.json"
@@ -797,6 +799,16 @@ def build_host_promotion_reviewed_source_input_model_payload() -> dict[str, Any]
         "required_durable_fixture_paths": list(
             HOST_PROMOTION_REVIEWED_SOURCE_DURABLE_FIXTURE_PATHS
         ),
+        "support_promotion_action": HOST_PROMOTION_SUPPORT_APPLICATION_ACTION,
+        "support_promotion_helper": HOST_PROMOTION_SUPPORT_APPLICATION_HELPER,
+        "support_promotion_apply_command_template": (
+            "npm run objc3c -- review-platform-support-promotion -- "
+            "--platform-id <platform> --apply"
+        ),
+        "required_durable_application_paths": [
+            HOST_PROMOTION_SUPPORT_APPLICATION_HELPER,
+            *HOST_PROMOTION_REVIEWED_SOURCE_DURABLE_FIXTURE_PATHS,
+        ],
         "required_hosted_promotion_artifact_suffixes": list(
             HOST_PROMOTION_REQUIRED_HOSTED_PROMOTION_ARTIFACT_SUFFIXES
         ),
@@ -838,6 +850,8 @@ __all__ = [
     "HOST_PROMOTION_REQUIRED_GATE_CLASSES",
     "HOST_PROMOTION_REQUIRED_SOURCE_RECORD_TYPES",
     "HOST_PROMOTION_REVIEWED_SOURCE_FIELDS",
+    "HOST_PROMOTION_SUPPORT_APPLICATION_ACTION",
+    "HOST_PROMOTION_SUPPORT_APPLICATION_HELPER",
     "HOST_PROMOTION_UPSTREAM_SOURCE_PATHS",
     "HOST_PROMOTION_VALIDATE_PLATFORM_HARDENING_ACTION",
     "HOST_PROMOTION_WINDOWS_PACKAGE_CHANNEL_REQUIRED_PATHS",

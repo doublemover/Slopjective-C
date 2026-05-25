@@ -89,9 +89,11 @@ def test_platform_toolchain_support_evidence_fixture_validates() -> None:
         },
         "ingestion_action": "ingest-platform-host-evidence",
         "review_action": "review-platform-host-evidence",
+        "support_promotion_action": "review-platform-support-promotion",
         "host_promotion_contract_check_action": "check-platform-host-promotion-evidence",
         "ingestion_helper": "scripts/ingest_objc3c_platform_host_evidence.py",
         "review_helper": "scripts/review_objc3c_platform_host_evidence.py",
+        "support_promotion_helper": "scripts/promote_objc3c_platform_support.py",
         "generated_report_contract_id": "objc3c.platform.hosted-runner.evidence-report.v1",
         "generated_report_root": "tmp/reports/platform-host-evidence",
         "review_candidate_source_truth_path": (
@@ -709,6 +711,17 @@ def test_platform_toolchain_support_evidence_rejects_expansion_package_identity_
             break
 
     with pytest.raises(RuntimeError, match="package_id drifted"):
+        validate_evidence(evidence)
+
+
+def test_platform_toolchain_support_evidence_rejects_sanitizer_artifact_identity_drift() -> None:
+    evidence = deepcopy(load_platform_toolchain_support_evidence())
+    for row in evidence["package_variant_rows"]:
+        if row["row_id"] == "objc3c.package.sanitizer.asan.reserved":
+            row["artifact_identity_contract"]["object_format"] = "COFF"
+            break
+
+    with pytest.raises(RuntimeError, match="sanitizer object format"):
         validate_evidence(evidence)
 
 

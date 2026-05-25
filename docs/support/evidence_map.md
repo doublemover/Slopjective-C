@@ -1043,6 +1043,7 @@ diagnostic, documentation, or boundary evidence only.
 | `platform.linux-x64.unsupported` |  | `source` | `scripts/check_objc3c_packaging_channels_end_to_end.py` |  |
 | `platform.linux-x64.unsupported` |  | `source` | `scripts/ingest_objc3c_platform_host_evidence.py` |  |
 | `platform.linux-x64.unsupported` |  | `source` | `scripts/review_objc3c_platform_host_evidence.py` |  |
+| `platform.linux-x64.unsupported` |  | `source` | `scripts/promote_objc3c_platform_support.py` |  |
 | `platform.linux-x64.unsupported` |  | `source` | `scripts/platform_hardening_contracts/host_evidence_contract.py` |  |
 | `platform.linux-x64.unsupported` |  | `source` | `scripts/objc3c_workflow/actions/release_governance_packaging_contracts.py` |  |
 | `platform.linux-x64.unsupported` |  | `source` | `tests/tooling/fixtures/platform_hardening/install_matrix_integration_contract.json` |  |
@@ -1057,6 +1058,7 @@ diagnostic, documentation, or boundary evidence only.
 | `platform.darwin-arm64.unsupported` |  | `source` | `scripts/check_objc3c_packaging_channels_end_to_end.py` |  |
 | `platform.darwin-arm64.unsupported` |  | `source` | `scripts/ingest_objc3c_platform_host_evidence.py` |  |
 | `platform.darwin-arm64.unsupported` |  | `source` | `scripts/review_objc3c_platform_host_evidence.py` |  |
+| `platform.darwin-arm64.unsupported` |  | `source` | `scripts/promote_objc3c_platform_support.py` |  |
 | `platform.darwin-arm64.unsupported` |  | `source` | `scripts/platform_hardening_contracts/host_evidence_contract.py` |  |
 | `platform.darwin-arm64.unsupported` |  | `source` | `scripts/objc3c_workflow/actions/release_governance_packaging_contracts.py` |  |
 | `platform.darwin-arm64.unsupported` |  | `source` | `tests/tooling/fixtures/platform_hardening/install_matrix_integration_contract.json` |  |
@@ -1082,6 +1084,7 @@ diagnostic, documentation, or boundary evidence only.
 | `platform.expansion.umbrella-readiness` |  | `source` | `scripts/check_objc3c_packaging_channels_end_to_end.py` |  |
 | `platform.expansion.umbrella-readiness` |  | `source` | `scripts/ingest_objc3c_platform_host_evidence.py` |  |
 | `platform.expansion.umbrella-readiness` |  | `source` | `scripts/review_objc3c_platform_host_evidence.py` |  |
+| `platform.expansion.umbrella-readiness` |  | `source` | `scripts/promote_objc3c_platform_support.py` |  |
 | `platform.expansion.umbrella-readiness` |  | `source` | `scripts/platform_hardening_contracts/host_evidence_contract.py` |  |
 | `platform.expansion.umbrella-readiness` |  | `source` | `scripts/objc3c_workflow/actions/release_governance_packaging_contracts.py` |  |
 | `platform.expansion.umbrella-readiness` |  | `source` | `tests/tooling/fixtures/platform_hardening/install_matrix_integration_contract.json` |  |

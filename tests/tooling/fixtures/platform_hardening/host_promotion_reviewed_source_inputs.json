@@ -16,6 +16,16 @@
       "tests/tooling/fixtures/platform_hardening/platform_toolchain_support_evidence.json",
       "tests/tooling/fixtures/platform_support/source_truth_matrix.json"
     ],
+    "support_promotion_action": "review-platform-support-promotion",
+    "support_promotion_helper": "scripts/promote_objc3c_platform_support.py",
+    "support_promotion_apply_command_template": "npm run objc3c -- review-platform-support-promotion -- --platform-id <platform> --apply",
+    "required_durable_application_paths": [
+      "scripts/promote_objc3c_platform_support.py",
+      "tests/tooling/fixtures/platform_hardening/host_promotion_reviewed_source_inputs.json",
+      "tests/tooling/fixtures/platform_hardening/platform_host_promotion_evidence_contract.json",
+      "tests/tooling/fixtures/platform_hardening/platform_toolchain_support_evidence.json",
+      "tests/tooling/fixtures/platform_support/source_truth_matrix.json"
+    ],
     "required_hosted_promotion_artifact_suffixes": [
       "host-evidence-report.json",
       "promotion-readiness-requirements.json",
