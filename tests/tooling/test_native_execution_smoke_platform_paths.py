@@ -75,3 +75,22 @@ $case = New-ExecutionSmokeCaseContext -Fixture $fixture -Context $context -Kind 
     payload = _run_powershell(script)
 
     assert payload == {"exe_name": "module.exe", "exe_leaf": "module.exe"}
+
+
+def test_execution_smoke_platform_models_use_host_native_executable_names() -> None:
+    config = (
+        ROOT / "scripts" / "objc3c_native_execution_smoke_runner" / "config.psm1"
+    ).read_text(encoding="utf-8")
+    evidence_producers = (
+        ROOT / "scripts" / "objc3c_platform_host_evidence_producers.psm1"
+    ).read_text(encoding="utf-8")
+
+    assert '$caseExecutableName = if ($isWindows) { "module.exe" } else { "module" }' in config
+    assert (
+        '$executableName = if ($PlatformId -in @("darwin-arm64", "linux-x64")) '
+        '{ "module" } else { "module.exe" }'
+    ) in evidence_producers
+    assert (
+        "Get-Objc3cRuntimeLoadProbeExecutablePath -RepoRoot $RepoRoot "
+        "-Result $result -PlatformId $PlatformId"
+    ) in evidence_producers

@@ -1266,7 +1266,7 @@ function Get-Objc3cRuntimeLoadProbeExecutablePath {
   if ([string]::IsNullOrWhiteSpace($outDir)) {
     return ""
   }
-  $executableName = if ($PlatformId -eq "darwin-arm64") { "module" } else { "module.exe" }
+  $executableName = if ($PlatformId -in @("darwin-arm64", "linux-x64")) { "module" } else { "module.exe" }
   return Join-Path (Join-Path $RepoRoot (ConvertTo-Objc3cEvidenceHostPath -RelativePath $outDir)) $executableName
 }
 
@@ -1851,7 +1851,7 @@ function Write-Objc3cLinuxRuntimeLoadProbeEvidence {
   }
 
   foreach ($result in $results) {
-    $exePath = Get-Objc3cRuntimeLoadProbeExecutablePath -RepoRoot $RepoRoot -Result $result
+    $exePath = Get-Objc3cRuntimeLoadProbeExecutablePath -RepoRoot $RepoRoot -Result $result -PlatformId $PlatformId
     if ([string]::IsNullOrWhiteSpace($exePath)) {
       continue
     }

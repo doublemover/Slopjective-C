@@ -99,7 +99,7 @@ function Get-Objc3cNativeExecutionSmokePlatformModel {
   $isWindows = Test-Objc3cNativeExecutionSmokeHostIsWindows
   $isDarwin = Test-Objc3cNativeExecutionSmokeHostIsDarwin
   $objectFileExtension = if ($isWindows) { ".obj" } else { ".o" }
-  $caseExecutableName = if ($isDarwin) { "module" } else { "module.exe" }
+  $caseExecutableName = if ($isWindows) { "module.exe" } else { "module" }
   $nativeExecutableName = if ($isWindows) { "objc3c-native.exe" } else { "objc3c-native" }
   $runtimeLibraryName = if ($isWindows) {
     "objc3_runtime.lib"
