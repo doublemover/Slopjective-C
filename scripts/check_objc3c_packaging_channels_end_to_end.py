@@ -12,7 +12,7 @@ import zipfile
 from datetime import datetime, timezone
 from pathlib import Path, PurePosixPath
 from typing import Any, Sequence
-from objc3c_tooling.paths import repo_rel
+from objc3c_tooling.paths import display_path, repo_rel
 from objc3c_tooling.json_io import load_json_object as load_json
 from objc3c_tooling.json_io import validate_json_schema
 from objc3c_tooling.subprocesses import bounded_text, python_script_command, run_capture
@@ -503,25 +503,44 @@ def run_installed_root_native_execution_probe(
     native_executable_entry: str,
     target_platform_id: str,
 ) -> dict[str, Any]:
-    installed_exe = install_home / native_executable_entry
-    expect(installed_exe.is_file(), f"{channel_id} installed native executable missing")
+    installed_exe = (install_home / native_executable_entry).resolve(strict=False)
+    executable_exists = installed_exe.exists()
+    executable_is_file = installed_exe.is_file()
+    executable_mode = installed_exe.stat().st_mode & 0o777 if executable_exists else 0
     execution_env = installed_runtime_environment(
         install_home=install_home,
         target_platform_id=target_platform_id,
     )
-    result = run_capture(
-        [str(installed_exe)],
-        cwd=install_home,
-        env_overlay=execution_env,
-        echo=False,
-    )
-    stdout = result.stdout or ""
-    stderr = result.stderr or ""
+    launch_error: dict[str, str] | None = None
+    result_returncode: int | None = None
+    stdout = ""
+    stderr = ""
+    if executable_is_file:
+        try:
+            result = run_capture(
+                [str(installed_exe)],
+                cwd=install_home,
+                env_overlay=execution_env,
+                echo=False,
+            )
+            result_returncode = result.returncode
+            stdout = result.stdout or ""
+            stderr = result.stderr or ""
+        except Exception as exc:
+            launch_error = {
+                "type": type(exc).__name__,
+                "message": bounded_text(str(exc), 1000),
+            }
+    else:
+        launch_error = {
+            "type": "MissingInstalledExecutable",
+            "message": f"{channel_id} installed native executable missing",
+        }
     combined_output = f"{stdout}\n{stderr}"
     usage_seen = INSTALLED_NATIVE_USAGE_PREFIX in combined_output
     status = (
         "PASS"
-        if result.returncode == INSTALLED_NATIVE_USAGE_EXIT_CODE and usage_seen
+        if result_returncode == INSTALLED_NATIVE_USAGE_EXIT_CODE and usage_seen
         else "FAIL"
     )
     proof = {
@@ -533,13 +552,17 @@ def run_installed_root_native_execution_probe(
         "repo_temp_dependency": False,
         "preexisting_artifacts_dependency": False,
         "expected_exit_code": INSTALLED_NATIVE_USAGE_EXIT_CODE,
-        "returncode": result.returncode,
+        "returncode": result_returncode,
         "usage_banner_seen": usage_seen,
         "usage_banner_prefix": INSTALLED_NATIVE_USAGE_PREFIX,
-        "cwd": repo_rel(install_home),
-        "executable": repo_rel(installed_exe),
-        "executable_mode_octal": oct(installed_exe.stat().st_mode & 0o777),
-        "command": [repo_rel(installed_exe)],
+        "cwd": display_path(install_home),
+        "executable": display_path(installed_exe),
+        "executable_absolute_path": str(installed_exe),
+        "executable_exists": executable_exists,
+        "executable_is_file": executable_is_file,
+        "executable_mode_octal": oct(executable_mode),
+        "executable_has_owner_execute": bool(executable_mode & 0o100),
+        "command": [display_path(installed_exe)],
         "loader_environment": runtime_environment_summary(
             execution_env,
             target_platform_id,
@@ -547,6 +570,8 @@ def run_installed_root_native_execution_probe(
         "stdout_snippet": bounded_text(stdout, 1000),
         "stderr_snippet": bounded_text(stderr, 1000),
     }
+    if launch_error is not None:
+        proof["launch_error"] = launch_error
     return proof
 
 

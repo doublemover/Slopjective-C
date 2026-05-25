@@ -17,6 +17,7 @@ SCRIPTS_ROOT = ROOT / "scripts"
 if str(SCRIPTS_ROOT) not in sys.path:
     sys.path.insert(0, str(SCRIPTS_ROOT))
 
+from scripts import check_objc3c_packaging_channels_end_to_end as package_e2e
 from scripts.objc3c_package_channels import commands as package_commands
 from scripts.objc3c_package_channels.model import (
     IMPLEMENTED_CHANNELS,
@@ -1120,6 +1121,57 @@ def test_package_channel_zip_marks_artifacts_bin_entries_executable(tmp_path: Pa
         documentation_mode = (archive.getinfo("payload/docs/runbooks/readme.txt").external_attr >> 16) & 0o777
     assert executable_mode & 0o111 == 0o111
     assert documentation_mode & 0o111 == 0
+
+
+def test_installed_root_execution_probe_records_concrete_launch_proof(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    install_home = tmp_path / "install" / "objc3c"
+    installed_executable = install_home / "artifacts" / "bin" / "objc3c-native"
+    installed_executable.parent.mkdir(parents=True)
+    installed_executable.write_text("binary placeholder", encoding="utf-8")
+    installed_executable.chmod(0o755)
+    captured: dict[str, object] = {}
+
+    def fake_run_capture(command: list[str], **kwargs: object) -> SimpleNamespace:
+        captured["command"] = command
+        captured["cwd"] = kwargs.get("cwd")
+        return SimpleNamespace(returncode=2, stdout="usage: objc3c-native\n", stderr="")
+
+    monkeypatch.setattr(package_e2e, "run_capture", fake_run_capture)
+
+    proof = package_e2e.run_installed_root_native_execution_probe(
+        channel_id="local-installer",
+        install_home=install_home,
+        native_executable_entry="artifacts/bin/objc3c-native",
+        target_platform_id="linux-x64",
+    )
+
+    assert proof["status"] == "PASS"
+    assert proof["returncode"] == 2
+    assert proof["usage_banner_seen"] is True
+    assert proof["executable_exists"] is True
+    assert proof["executable_is_file"] is True
+    assert proof["executable_absolute_path"] == str(installed_executable.resolve(strict=False))
+    assert proof["executable_mode_octal"].startswith("0o")
+    assert captured["command"] == [str(installed_executable.resolve(strict=False))]
+    assert captured["cwd"] == install_home
+
+
+def test_installed_root_execution_probe_returns_fail_proof_for_missing_executable(tmp_path: Path) -> None:
+    proof = package_e2e.run_installed_root_native_execution_probe(
+        channel_id="local-installer",
+        install_home=tmp_path / "missing-install",
+        native_executable_entry="artifacts/bin/objc3c-native",
+        target_platform_id="linux-x64",
+    )
+
+    assert proof["status"] == "FAIL"
+    assert proof["returncode"] is None
+    assert proof["executable_exists"] is False
+    assert proof["executable_is_file"] is False
+    assert proof["launch_error"]["type"] == "MissingInstalledExecutable"
 
 
 def test_package_channel_native_executable_entry_is_manifest_bound() -> None:
