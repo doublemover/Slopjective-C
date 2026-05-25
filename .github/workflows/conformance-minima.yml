@@ -21,6 +21,7 @@ on:
       - "scripts/check_conformance_suite.ps1"
       - "scripts/check_objc3c_cross_lane_e2e.py"
       - "scripts/install_objc3c_ci_llvm.ps1"
+      - "scripts/install_objc3c_ci_llvm_darwin.sh"
       - "scripts/install_objc3c_ci_llvm_linux.sh"
       - "scripts/probe_objc3c_llvm_capabilities.py"
       - "scripts/objc3c_llvm_capability_probe/**"
@@ -42,6 +43,7 @@ on:
       - "scripts/check_conformance_suite.ps1"
       - "scripts/check_objc3c_cross_lane_e2e.py"
       - "scripts/install_objc3c_ci_llvm.ps1"
+      - "scripts/install_objc3c_ci_llvm_darwin.sh"
       - "scripts/install_objc3c_ci_llvm_linux.sh"
       - "scripts/probe_objc3c_llvm_capabilities.py"
       - "scripts/objc3c_llvm_capability_probe/**"
@@ -282,30 +284,7 @@ jobs:
       - name: Install host toolchain prerequisites
         id: toolchain
         continue-on-error: true
-        run: |
-          brew update
-          brew install llvm cmake ninja
-          llvm_root="$(brew --prefix llvm)"
-          required_tools=(
-            clang++
-            llc
-            llvm-readobj
-            llvm-config
-          )
-          for tool in "${required_tools[@]}"; do
-            if [ ! -x "$llvm_root/bin/$tool" ]; then
-              echo "LLVM install is missing required tool: $llvm_root/bin/$tool" >&2
-              exit 1
-            fi
-          done
-          echo "$llvm_root/bin" >> "$GITHUB_PATH"
-          echo "LLVM_ROOT=$llvm_root" >> "$GITHUB_ENV"
-          echo "OBJC3C_LLVM_ROOT=$llvm_root" >> "$GITHUB_ENV"
-          echo "LLVM_DIR=$llvm_root/lib/cmake/llvm" >> "$GITHUB_ENV"
-          echo "OBJC3C_NATIVE_EXECUTION_CLANG_PATH=$llvm_root/bin/clang++" >> "$GITHUB_ENV"
-          echo "OBJC3C_NATIVE_EXECUTION_LLC_PATH=$llvm_root/bin/llc" >> "$GITHUB_ENV"
-          echo "OBJC3C_NATIVE_EXECUTION_LLVM_READOBJ_PATH=$llvm_root/bin/llvm-readobj" >> "$GITHUB_ENV"
-          echo "OBJC3C_NATIVE_EXECUTION_LLVM_CONFIG_PATH=$llvm_root/bin/llvm-config" >> "$GITHUB_ENV"
+        run: bash scripts/install_objc3c_ci_llvm_darwin.sh
 
       - name: Install workflow dependencies
         id: deps
