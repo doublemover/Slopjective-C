@@ -119,10 +119,13 @@ def test_cmake_reproducible_build_policy_is_fingerprinted() -> None:
     assert "LlvmRanlibTool = $llvmRanlibTool" in toolchain_module
     assert "-DCMAKE_AR=$LlvmArTool" in configure_module
     assert "-DCMAKE_RANLIB=$LlvmRanlibTool" in configure_module
+    assert "-DCMAKE_BUILD_TYPE=RelWithDebInfo" in configure_module
+    assert "set(CMAKE_BUILD_TYPE RelWithDebInfo" in cmake_lists
     assert "-DOBJC3C_ENABLE_REPRODUCIBLE_BUILD=ON" in configure_module
     assert "llvm_ar = $LlvmArTool" in fingerprint_module
     assert "llvm_ranlib = $LlvmRanlibTool" in fingerprint_module
     assert "llvm_lib = $LlvmLibTool" in fingerprint_module
+    assert 'build_type = "RelWithDebInfo"' in fingerprint_module
     assert "reproducible_build = $true" in fingerprint_module
     assert "source_date_epoch = $SourceDateEpoch" in fingerprint_module
     assert "cmake_build_parallelism=" in (
@@ -143,6 +146,23 @@ def test_runnable_package_includes_native_cmake_support_modules() -> None:
 
     assert '"scripts/objc3c_native_cmake.psm1"' in inventory
     assert '"scripts/objc3c_native_cmake"' in inventory
+    assert '"scripts/normalize_coff_archive_timestamps.py"' in inventory
+    assert '"scripts/objc3c_native_artifact_io.psm1"' in inventory
+    assert '"scripts/objc3c_native_frontend_contracts.psm1"' in inventory
+    assert '"scripts/objc3c_native_frontend_contracts"' in inventory
+    assert '"scripts/objc3c_native_frontend_artifacts.psm1"' in inventory
+    assert '"scripts/objc3c_native_frontend_artifacts"' in inventory
+    assert '"scripts/objc3c_native_frontend_closeout_artifacts.psm1"' in inventory
+    assert '"scripts/objc3c_native_frontend_closeout_edge_artifacts.psm1"' in inventory
+    assert '"scripts/objc3c_native_frontend_closeout_edge_artifacts"' in inventory
+    assert (
+        '"scripts/objc3c_native_frontend_closeout_conformance_artifacts.psm1"'
+        in inventory
+    )
+    assert '"scripts/objc3c_native_frontend_closeout_conformance_artifacts"' in inventory
+    assert '"scripts/objc3c_native_superclean_surface.psm1"' in inventory
+    assert '"scripts/objc3c_native_superclean_surface_catalog.psm1"' in inventory
+    assert '"scripts/objc3c_native_superclean_surface_catalog"' in inventory
 
 
 def test_binary_output_lines_are_gated_to_native_build_modes() -> None:

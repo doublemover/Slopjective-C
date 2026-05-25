@@ -142,15 +142,29 @@ def native_execution_artifact_summary(run_id: str) -> Path:
     return NATIVE_EXECUTION_SMOKE_ARTIFACT_ROOT / run_id / "summary.json"
 
 
+def read_native_execution_artifact_summary(run_id: str) -> tuple[Path, bool, dict]:
+    artifact_summary = native_execution_artifact_summary(run_id)
+    if not artifact_summary.is_file():
+        return artifact_summary, False, {}
+    payload = json.loads(artifact_summary.read_text(encoding="utf-8"))
+    if not isinstance(payload, dict):
+        payload = {}
+    return artifact_summary, True, payload
+
+
+def native_execution_object_emission_status(native_summary: dict[str, object]) -> str:
+    if native_summary.get("native_object_emission") is True:
+        return "native_object_emission_supported"
+    if native_summary.get("source_summary_present") is True:
+        return "native_execution_summary_failed"
+    return "native_execution_summary_missing"
+
+
 def normalize_native_execution_summary(run_id: str, exit_code: int, status: str) -> dict:
     model = native_execution_platform_model()
-    artifact_summary = native_execution_artifact_summary(run_id)
-    if artifact_summary.is_file():
-        payload = json.loads(artifact_summary.read_text(encoding="utf-8"))
-        if not isinstance(payload, dict):
-            payload = {}
-    else:
-        payload = {}
+    artifact_summary, artifact_summary_present, payload = (
+        read_native_execution_artifact_summary(run_id)
+    )
 
     results = payload.get("results", [])
     if not isinstance(results, list):
@@ -174,10 +188,23 @@ def normalize_native_execution_summary(run_id: str, exit_code: int, status: str)
     for key, value in native_execution_summary_platform_fields(model).items():
         payload.setdefault(key, value)
     payload.setdefault("contract_id", "objc3c.native_execution_smoke.summary.v1")
-    payload["status"] = status if exit_code != 0 else str(payload.get("status") or status)
+    source_status = str(payload.get("status") or status)
+    payload["status"] = status if exit_code != 0 else source_status
     payload["hosted_runner_summary"] = True
-    payload["native_object_emission"] = exit_code == 0 and artifact_summary.is_file()
-    payload["skip_reason"] = "" if artifact_summary.is_file() else "native-execution-smoke-summary-missing"
+    payload["source_summary_present"] = artifact_summary_present
+    payload["source_summary_status"] = source_status if artifact_summary_present else "missing"
+    native_summary_failed = artifact_summary_present and (
+        exit_code != 0 or source_status.upper() != "PASS"
+    )
+    payload["native_object_emission"] = (
+        exit_code == 0 and artifact_summary_present and not native_summary_failed
+    )
+    if not artifact_summary_present:
+        payload["skip_reason"] = "native-execution-smoke-summary-missing"
+    elif native_summary_failed:
+        payload["skip_reason"] = "native-execution-smoke-summary-failed"
+    else:
+        payload["skip_reason"] = ""
     payload["support_claim_published"] = False
     payload["fallback_success_path"] = False
     payload["source_summary_path"] = repo_rel(artifact_summary)
@@ -244,9 +271,9 @@ def write_hosted_execution_run_summary(run_id: str, exit_code: int) -> None:
             "platform_ids": native_summary["platform_ids"],
             "host_promotion_state": native_summary["host_promotion_state"],
             "native_object_emission": native_summary["native_object_emission"],
-            "native_object_emission_status": "native_object_emission_supported"
-            if native_summary["native_object_emission"]
-            else "native_execution_summary_missing",
+            "native_object_emission_status": native_execution_object_emission_status(
+                native_summary
+            ),
             "skip_reason": native_summary["skip_reason"],
             "native_execution_summary": repo_rel(NATIVE_EXECUTION_SMOKE_REPORT_SUMMARY),
             "source_summary_path": native_summary["source_summary_path"],
@@ -260,7 +287,8 @@ def write_hosted_execution_run_summary(run_id: str, exit_code: int) -> None:
 def hosted_execution_effective_exit_code(run_id: str, smoke_exit_code: int) -> int:
     if smoke_exit_code != 0:
         return smoke_exit_code
-    if native_execution_artifact_summary(run_id).is_file():
+    _, artifact_summary_present, payload = read_native_execution_artifact_summary(run_id)
+    if artifact_summary_present and str(payload.get("status") or "").upper() == "PASS":
         return 0
     return 1
 

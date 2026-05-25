@@ -36,7 +36,7 @@ function Get-Objc3cNativeBuildFingerprint {
     runtime_output_dir = $RuntimeOutputDir
     library_output_dir = $LibraryOutputDir
     sanitizer_variant = $SanitizerVariant
-    build_type = "Release"
+    build_type = "RelWithDebInfo"
     direct_object_emission = $true
     warning_parity = $true
     reproducible_build = $true

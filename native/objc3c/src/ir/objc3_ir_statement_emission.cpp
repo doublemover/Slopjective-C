@@ -129,6 +129,7 @@ std::string EmitObjc3IRFullI64OptionalConstructor(
     return "";
   }
   if (expr->ident == kObjc3RuntimeOptionalAbsentFullI64Symbol) {
+#if defined(_WIN32)
     const std::string slot = NewObjc3IRFullI64CarrierSlot(ctx);
     ctx.code_lines.push_back("  call void @" +
                              std::string(
@@ -136,12 +137,24 @@ std::string EmitObjc3IRFullI64OptionalConstructor(
                              "(ptr sret({ i8, i64 }) align 8 " + slot +
                              ")");
     return EmitObjc3IRLoadFullI64CarrierFromSlot(slot, ctx, callbacks);
+#else
+    const std::string value = callbacks.new_temp(ctx);
+    ctx.code_lines.push_back("  " + value + " = call { i8, i64 } @" +
+                             std::string(
+                                 kObjc3RuntimeOptionalAbsentFullI64Symbol) +
+                             "()");
+    ctx.value_optional_carrier_by_value[value] =
+        Objc3IRValueOptionalCarrierKind::FullI64;
+    return value;
+#endif
   }
   if (expr->args.size() != 1u) {
     return callbacks.emit_unsupported_i32_value(
         "Optional<i64> present helper lowering requires exactly one payload");
   }
+#if defined(_WIN32)
   const std::string slot = NewObjc3IRFullI64CarrierSlot(ctx);
+#endif
   std::string payload = callbacks.emit_expr(expr->args.front().get(), ctx);
   if (ctx.terminated) {
     return "zeroinitializer";
@@ -152,12 +165,23 @@ std::string EmitObjc3IRFullI64OptionalConstructor(
                              payload + " to i64");
     payload = widened_payload;
   }
+#if defined(_WIN32)
   ctx.code_lines.push_back("  call void @" +
                            std::string(
                                kObjc3RuntimeOptionalPresentFullI64Symbol) +
                            "(ptr sret({ i8, i64 }) align 8 " + slot +
                            ", i64 " + payload + ")");
   return EmitObjc3IRLoadFullI64CarrierFromSlot(slot, ctx, callbacks);
+#else
+  const std::string value = callbacks.new_temp(ctx);
+  ctx.code_lines.push_back("  " + value + " = call { i8, i64 } @" +
+                           std::string(
+                               kObjc3RuntimeOptionalPresentFullI64Symbol) +
+                           "(i64 " + payload + ")");
+  ctx.value_optional_carrier_by_value[value] =
+      Objc3IRValueOptionalCarrierKind::FullI64;
+  return value;
+#endif
 }
 
 bool TryInferObjc3IROptionalCarrier(

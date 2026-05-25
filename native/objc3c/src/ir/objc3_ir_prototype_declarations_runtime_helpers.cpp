@@ -845,30 +845,58 @@ void EmitObjc3IRRuntimeHelperDeclarations(
           "(i32)\n");
   EmitObjc3IRDeclarationOnce(
       declared_symbols, emitted, out, kObjc3RuntimeOptionalAbsentFullI64Symbol,
-      "declare void @" +
-          std::string(kObjc3RuntimeOptionalAbsentFullI64Symbol) +
-          "(ptr sret({ i8, i64 }) align 8)\n");
+#if defined(_WIN32)
+      "declare void @" + std::string(kObjc3RuntimeOptionalAbsentFullI64Symbol) +
+          "(ptr sret({ i8, i64 }) align 8)\n"
+#else
+      "declare { i8, i64 } @" +
+          std::string(kObjc3RuntimeOptionalAbsentFullI64Symbol) + "()\n"
+#endif
+  );
   EmitObjc3IRDeclarationOnce(
       declared_symbols, emitted, out, kObjc3RuntimeOptionalPresentFullI64Symbol,
-      "declare void @" +
-          std::string(kObjc3RuntimeOptionalPresentFullI64Symbol) +
-          "(ptr sret({ i8, i64 }) align 8, i64)\n");
+#if defined(_WIN32)
+      "declare void @" + std::string(kObjc3RuntimeOptionalPresentFullI64Symbol) +
+          "(ptr sret({ i8, i64 }) align 8, i64)\n"
+#else
+      "declare { i8, i64 } @" +
+          std::string(kObjc3RuntimeOptionalPresentFullI64Symbol) + "(i64)\n"
+#endif
+  );
   EmitObjc3IRDeclarationOnce(
       declared_symbols, emitted, out, kObjc3RuntimeOptionalHasValueFullI64Symbol,
       "declare i1 @" +
           std::string(kObjc3RuntimeOptionalHasValueFullI64Symbol) +
-          "(ptr)\n");
+          "("
+#if defined(_WIN32)
+          "ptr"
+#else
+          "{ i8, i64 }"
+#endif
+          ")\n");
   EmitObjc3IRDeclarationOnce(
       declared_symbols, emitted, out,
       kObjc3RuntimeOptionalPayloadOrFullI64Symbol,
       "declare i64 @" +
           std::string(kObjc3RuntimeOptionalPayloadOrFullI64Symbol) +
-          "(ptr, i64)\n");
+          "("
+#if defined(_WIN32)
+          "ptr"
+#else
+          "{ i8, i64 }"
+#endif
+          ", i64)\n");
   EmitObjc3IRDeclarationOnce(
       declared_symbols, emitted, out, kObjc3RuntimeOptionalUnwrapFullI64Symbol,
       "declare i64 @" +
           std::string(kObjc3RuntimeOptionalUnwrapFullI64Symbol) +
-          "(ptr)\n");
+          "("
+#if defined(_WIN32)
+          "ptr"
+#else
+          "{ i8, i64 }"
+#endif
+          ")\n");
   EmitObjc3IRDeclarationOnce(
       declared_symbols, emitted, out, kObjc3RuntimePromoteBlockI32Symbol,
       "declare i32 @" + std::string(kObjc3RuntimePromoteBlockI32Symbol) +

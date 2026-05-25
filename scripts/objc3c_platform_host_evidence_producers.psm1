@@ -116,6 +116,10 @@ function Get-Objc3cPlatformRuntimeLibraryRelativePath {
   return "artifacts/lib/" + (Get-Objc3cPlatformRuntimeLibraryName -PlatformId $PlatformId)
 }
 
+function Get-Objc3cRunnablePackageManifestRelativePath {
+  return "artifacts/package/objc3c-runnable-toolchain-package.json"
+}
+
 function Get-Objc3cPlatformTargetTriple {
   param([Parameter(Mandatory = $true)][string]$PlatformId)
 
@@ -176,6 +180,43 @@ function ConvertTo-Objc3cEvidenceHostPath {
   param([Parameter(Mandatory = $true)][string]$RelativePath)
 
   return $RelativePath.Replace('/', [System.IO.Path]::DirectorySeparatorChar)
+}
+
+function Resolve-Objc3cEvidenceInputPath {
+  param(
+    [Parameter(Mandatory = $true)][string]$RootPath,
+    [Parameter(Mandatory = $true)][string]$TargetPath
+  )
+
+  if ([System.IO.Path]::IsPathRooted($TargetPath)) {
+    return [System.IO.Path]::GetFullPath($TargetPath)
+  }
+
+  return [System.IO.Path]::GetFullPath(
+    (Join-Path $RootPath (ConvertTo-Objc3cEvidenceHostPath -RelativePath $TargetPath))
+  )
+}
+
+function Get-Objc3cRunnablePackageManifestPath {
+  param([Parameter(Mandatory = $true)][string]$RepoRoot)
+
+  return Resolve-Objc3cEvidenceInputPath `
+    -RootPath $RepoRoot `
+    -TargetPath (Get-Objc3cRunnablePackageManifestRelativePath)
+}
+
+function Resolve-Objc3cRuntimeManifestPackageManifestPath {
+  param(
+    [Parameter(Mandatory = $true)][string]$RepoRoot,
+    [Parameter(Mandatory = $true)][string]$PackageManifestPath
+  )
+
+  $canonicalPackageManifestPath = Get-Objc3cRunnablePackageManifestPath -RepoRoot $RepoRoot
+  if (Test-Path -LiteralPath $canonicalPackageManifestPath -PathType Leaf) {
+    return $canonicalPackageManifestPath
+  }
+
+  return Resolve-Objc3cEvidenceInputPath -RootPath $RepoRoot -TargetPath $PackageManifestPath
 }
 
 function Get-Objc3cEvidenceRepoRelativePath {
@@ -1171,13 +1212,19 @@ function Write-Objc3cDarwinRuntimeLibraryManifestEvidence {
   } else {
     "GENERATED_MACHO_RUNTIME_LIBRARY_MANIFEST_INCOMPLETE"
   }
+  $sourcePackageManifestPath = Resolve-Objc3cRuntimeManifestPackageManifestPath `
+    -RepoRoot $RepoRoot `
+    -PackageManifestPath $PackageManifestPath
+  $sourcePackageManifestRelativePath = Get-Objc3cEvidenceRepoRelativePath `
+    -RootPath $RepoRoot `
+    -TargetPath $sourcePackageManifestPath
   $packageManifestPayload = @{}
-  if (Test-Path -LiteralPath $PackageManifestPath -PathType Leaf) {
-    $packageManifestPayload = Get-Content -LiteralPath $PackageManifestPath -Raw | ConvertFrom-Json
+  if (Test-Path -LiteralPath $sourcePackageManifestPath -PathType Leaf) {
+    $packageManifestPayload = Get-Content -LiteralPath $sourcePackageManifestPath -Raw | ConvertFrom-Json
   }
   $packageTargetPlatformId = [string](Get-Objc3cEvidenceObjectProperty -InputObject $packageManifestPayload -Name "target_platform_id" -DefaultValue "")
   $runtimeArtifact = Get-Objc3cEvidenceFileDigest -RootPath $PackageRoot -TargetPath $runtimeLibraryPath
-  $packageManifestArtifact = Get-Objc3cEvidenceFileDigest -RootPath $RepoRoot -TargetPath $PackageManifestPath
+  $packageManifestArtifact = Get-Objc3cEvidenceFileDigest -RootPath $RepoRoot -TargetPath $sourcePackageManifestPath
   $runtimeGeneratedStatus = Get-Objc3cRuntimeManifestGeneratedStatus `
     -PackageManifestArtifact $packageManifestArtifact `
     -RuntimeArtifact $runtimeArtifact `
@@ -1189,7 +1236,7 @@ function Write-Objc3cDarwinRuntimeLibraryManifestEvidence {
     platform_id = $PlatformId
     issue_ref = 8229
     generated_report_path = Get-Objc3cPlatformEvidenceReportPath -PlatformId $PlatformId -Suffix "package/runtime-library-manifest.json"
-    source_package_manifest_path = "artifacts/package/objc3c-runnable-toolchain-package.json"
+    source_package_manifest_path = $sourcePackageManifestRelativePath
     support_truth = $false
     native_execution_claimed = $false
     promotion_allowed_from_generated_evidence = $false
@@ -1216,7 +1263,7 @@ function Write-Objc3cDarwinRuntimeLibraryManifestEvidence {
     producer_evidence = [ordered]@{
       contract_id = "objc3c.platform.darwin.runtime-library-manifest.v1"
       status = $manifestStatus
-      package_manifest = Get-Objc3cEvidenceRepoRelativePath -RootPath $PackageRoot -TargetPath $PackageManifestPath
+      package_manifest = $sourcePackageManifestRelativePath
       object_format = Get-Objc3cPlatformObjectFormat -PlatformId $PlatformId
       debug_format = Get-Objc3cPlatformDebugFormat -PlatformId $PlatformId
       runtime_library_root_kind = "objc3c-release-darwin-arm64-package-root"
@@ -1238,7 +1285,7 @@ function Write-Objc3cDarwinRuntimeLibraryManifestEvidence {
       missing_runtime_behavior = "fail-closed-before-package-install"
     }
     source_artifacts = New-Objc3cEvidenceSourceArtifacts -RepoRoot $RepoRoot -Paths @(
-      $PackageManifestPath,
+      $sourcePackageManifestPath,
       $runtimeLibraryPath
     )
   }
@@ -1247,9 +1294,9 @@ function Write-Objc3cDarwinRuntimeLibraryManifestEvidence {
   Write-Objc3cPlatformEvidenceJson `
     -Path (Join-Path $packageEvidenceRoot "runtime-library-manifest.json") `
     -Payload $payload
-  if (Test-Path -LiteralPath $PackageManifestPath -PathType Leaf) {
+  if (Test-Path -LiteralPath $sourcePackageManifestPath -PathType Leaf) {
     Copy-Item `
-      -LiteralPath $PackageManifestPath `
+      -LiteralPath $sourcePackageManifestPath `
       -Destination (Join-Path $packageEvidenceRoot "objc3c-runnable-toolchain-package.json") `
       -Force
   }
@@ -1618,13 +1665,19 @@ function Write-Objc3cLinuxRuntimeLibraryManifestEvidence {
   } else {
     "GENERATED_ELF_RUNTIME_LIBRARY_MANIFEST_INCOMPLETE"
   }
+  $sourcePackageManifestPath = Resolve-Objc3cRuntimeManifestPackageManifestPath `
+    -RepoRoot $RepoRoot `
+    -PackageManifestPath $PackageManifestPath
+  $sourcePackageManifestRelativePath = Get-Objc3cEvidenceRepoRelativePath `
+    -RootPath $RepoRoot `
+    -TargetPath $sourcePackageManifestPath
   $packageManifestPayload = @{}
-  if (Test-Path -LiteralPath $PackageManifestPath -PathType Leaf) {
-    $packageManifestPayload = Get-Content -LiteralPath $PackageManifestPath -Raw | ConvertFrom-Json
+  if (Test-Path -LiteralPath $sourcePackageManifestPath -PathType Leaf) {
+    $packageManifestPayload = Get-Content -LiteralPath $sourcePackageManifestPath -Raw | ConvertFrom-Json
   }
   $packageTargetPlatformId = [string](Get-Objc3cEvidenceObjectProperty -InputObject $packageManifestPayload -Name "target_platform_id" -DefaultValue "")
   $runtimeArtifact = Get-Objc3cEvidenceFileDigest -RootPath $PackageRoot -TargetPath $runtimeLibraryPath
-  $packageManifestArtifact = Get-Objc3cEvidenceFileDigest -RootPath $RepoRoot -TargetPath $PackageManifestPath
+  $packageManifestArtifact = Get-Objc3cEvidenceFileDigest -RootPath $RepoRoot -TargetPath $sourcePackageManifestPath
   $runtimeGeneratedStatus = Get-Objc3cRuntimeManifestGeneratedStatus `
     -PackageManifestArtifact $packageManifestArtifact `
     -RuntimeArtifact $runtimeArtifact `
@@ -1636,7 +1689,7 @@ function Write-Objc3cLinuxRuntimeLibraryManifestEvidence {
     platform_id = $PlatformId
     issue_ref = 8228
     generated_report_path = Get-Objc3cPlatformEvidenceReportPath -PlatformId $PlatformId -Suffix "package/runtime-library-manifest.json"
-    source_package_manifest_path = "artifacts/package/objc3c-runnable-toolchain-package.json"
+    source_package_manifest_path = $sourcePackageManifestRelativePath
     support_truth = $false
     native_execution_claimed = $false
     promotion_allowed_from_generated_evidence = $false
@@ -1673,7 +1726,7 @@ function Write-Objc3cLinuxRuntimeLibraryManifestEvidence {
       missing_runtime_behavior = "fail-closed-before-package-install"
     }
     source_artifacts = New-Objc3cEvidenceSourceArtifacts -RepoRoot $RepoRoot -Paths @(
-      $PackageManifestPath,
+      $sourcePackageManifestPath,
       $runtimeLibraryPath
     )
   }
@@ -1682,9 +1735,9 @@ function Write-Objc3cLinuxRuntimeLibraryManifestEvidence {
   Write-Objc3cPlatformEvidenceJson `
     -Path (Join-Path $packageEvidenceRoot "runtime-library-manifest.json") `
     -Payload $payload
-  if (Test-Path -LiteralPath $PackageManifestPath -PathType Leaf) {
+  if (Test-Path -LiteralPath $sourcePackageManifestPath -PathType Leaf) {
     Copy-Item `
-      -LiteralPath $PackageManifestPath `
+      -LiteralPath $sourcePackageManifestPath `
       -Destination (Join-Path $packageEvidenceRoot "objc3c-runnable-toolchain-package.json") `
       -Force
   }
@@ -1738,8 +1791,9 @@ function Write-Objc3cLinuxInstallReceiptEvidence {
     "${statusPrefix}_INSTALL_RECEIPT_ROUTED"
   }
   $sourceSummaryPath = if ([string]::IsNullOrWhiteSpace($SourceSummaryPath)) { "tmp/reports/package-channels/end-to-end-summary.json" } else { $SourceSummaryPath }
-  $packageManifestPath = Join-Path $RepoRoot (ConvertTo-Objc3cEvidenceHostPath -RelativePath "artifacts/package/objc3c-runnable-toolchain-package.json")
-  $packageChannelsSummaryPath = Join-Path $RepoRoot (ConvertTo-Objc3cEvidenceHostPath -RelativePath "tmp/reports/package-channels/end-to-end-summary.json")
+  $packageManifestPath = Get-Objc3cRunnablePackageManifestPath -RepoRoot $RepoRoot
+  $packageChannelsSummaryPath = Resolve-Objc3cEvidenceInputPath -RootPath $RepoRoot -TargetPath $sourceSummaryPath
+  $packageChannelsSummaryRelativePath = Get-Objc3cEvidenceRepoRelativePath -RootPath $RepoRoot -TargetPath $packageChannelsSummaryPath
   $packageChannelsSummaryPayload = @{}
   if (Test-Path -LiteralPath $packageChannelsSummaryPath -PathType Leaf) {
     $packageChannelsSummaryPayload = Get-Content -LiteralPath $packageChannelsSummaryPath -Raw | ConvertFrom-Json
@@ -1762,7 +1816,7 @@ function Write-Objc3cLinuxInstallReceiptEvidence {
     issue_ref = $issueRef
     record_id = $recordId
     generated_report_path = Get-Objc3cPlatformEvidenceReportPath -PlatformId $PlatformId -Suffix "install/install-receipt.json"
-    source_summary_path = "tmp/reports/package-channels/end-to-end-summary.json"
+    source_summary_path = $packageChannelsSummaryRelativePath
     source_install_receipt_path = Get-Objc3cEvidenceRepoRelativePath -RootPath $RepoRoot -TargetPath $InstallReceiptPath
     reviewed_source_required = $true
     support_truth = $false
@@ -1786,12 +1840,11 @@ function Write-Objc3cLinuxInstallReceiptEvidence {
       contract_id = $producerContractId
       status = $status
       target_platform_id = $receiptPlatform
-      source_summary = Get-Objc3cEvidenceRepoRelativePath -RootPath $RepoRoot -TargetPath $sourceSummaryPath
+      source_summary = $packageChannelsSummaryRelativePath
       installed_root_execution_status = $installedRootExecutionStatus
       offline_installed_root_execution_status = $offlineInstalledRootExecutionStatus
     }
     source_artifacts = New-Objc3cEvidenceSourceArtifacts -RepoRoot $RepoRoot -Paths @(
-      $sourceSummaryPath,
       $packageManifestPath,
       $packageChannelsSummaryPath,
       $InstallReceiptPath

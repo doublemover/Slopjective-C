@@ -96,6 +96,28 @@ NATIVE_EXECUTION_SMOKE_SUMMARY_PATH = (
 PACKAGE_INSTALL_RECEIPT_CONTRACT_ID = "objc3c.packaging.channels.install-receipt.v1"
 
 
+def is_native_build_summary_source_path(path_text: str) -> bool:
+    normalized = path_text.replace("\\", "/")
+    if normalized == NATIVE_BUILD_SUMMARY_PATH:
+        return True
+    package_prefix = "tmp/b/pkg/"
+    package_suffix = "/native_build_summary.json"
+    if not normalized.startswith(package_prefix) or not normalized.endswith(
+        package_suffix
+    ):
+        return False
+    package_id = normalized[len(package_prefix) : -len(package_suffix)]
+    return bool(package_id) and "/" not in package_id
+
+
+def source_artifact_path_matches_expected(path_text: str, expected_path: str) -> bool:
+    normalized = path_text.replace("\\", "/")
+    normalized_expected = expected_path.replace("\\", "/")
+    if normalized_expected == NATIVE_BUILD_SUMMARY_PATH:
+        return is_native_build_summary_source_path(normalized)
+    return normalized == normalized_expected
+
+
 class ReviewError(RuntimeError):
     """Raised when generated evidence cannot become reviewed source input."""
 
@@ -522,7 +544,10 @@ def require_source_artifacts(
     missing = sorted(
         path
         for path in expected_paths
-        if path.replace("\\", "/") not in present_paths
+        if not any(
+            source_artifact_path_matches_expected(present_path, path)
+            for present_path in present_paths
+        )
     )
     if missing:
         raise ReviewError(

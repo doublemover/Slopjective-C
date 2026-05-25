@@ -198,7 +198,7 @@ function Invoke-Objc3cNativeCMakeConfigure {
       "-DCMAKE_CXX_COMPILER=$Clangxx" `
       "-DCMAKE_AR=$LlvmArTool" `
       "-DCMAKE_RANLIB=$LlvmRanlibTool" `
-      "-DCMAKE_BUILD_TYPE=Release" `
+      "-DCMAKE_BUILD_TYPE=RelWithDebInfo" `
       "-DCMAKE_EXPORT_COMPILE_COMMANDS=ON" `
       "-DOBJC3C_ENABLE_LLVM_DIRECT_OBJECT_EMISSION=ON" `
       "-DOBJC3C_ENABLE_WARNING_PARITY=ON" `

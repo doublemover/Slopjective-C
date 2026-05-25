@@ -374,6 +374,46 @@ def test_review_accepts_object_identity_producer_timing_source_artifacts() -> No
     )
 
 
+def test_review_accepts_package_private_build_summary_source_artifacts() -> None:
+    payload = _object_identity_payload()
+    payload["source_artifacts"] = [
+        _artifact("tmp/b/pkg/e3bea759fb7a/native_build_summary.json")
+    ]
+
+    review.require_identity_payload_matches_record(
+        payload,
+        _object_identity_record(),
+        platform_id="linux-x64",
+        suffix="build/object-identity.json",
+        contract_id="objc3c.platform.hosted-object-identity.generated.v1",
+        record_id="objc3c.object-identity.linux-x64.release.missing",
+        identity_kind="object",
+        identity_field_names=("object_format",),
+    )
+
+
+def test_review_rejects_malformed_package_private_build_summary_source() -> None:
+    payload = _object_identity_payload()
+    payload["source_artifacts"] = [
+        _artifact("tmp/b/pkg/e3bea759fb7a/not-native-build-summary.json")
+    ]
+
+    with pytest.raises(
+        review.ReviewError,
+        match="object identity source_artifacts missing durable source",
+    ):
+        review.require_identity_payload_matches_record(
+            payload,
+            _object_identity_record(),
+            platform_id="linux-x64",
+            suffix="build/object-identity.json",
+            contract_id="objc3c.platform.hosted-object-identity.generated.v1",
+            record_id="objc3c.object-identity.linux-x64.release.missing",
+            identity_kind="object",
+            identity_field_names=("object_format",),
+        )
+
+
 def test_review_accepts_runtime_manifest_producer_timing_source_artifacts() -> None:
     payload = _runtime_manifest_payload()
     payload["source_artifacts"] = [

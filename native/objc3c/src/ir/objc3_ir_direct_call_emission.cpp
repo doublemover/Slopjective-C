@@ -101,6 +101,7 @@ std::string EmitObjc3IRFullI64OptionalRuntimeHelperCall(
     return "";
   }
   if (expr->ident == kObjc3RuntimeOptionalAbsentFullI64Symbol) {
+#if defined(_WIN32)
     const std::string slot = NewObjc3IRFullI64CarrierSlot(ctx);
     ctx.code_lines.push_back("  call void @" +
                              std::string(
@@ -108,6 +109,16 @@ std::string EmitObjc3IRFullI64OptionalRuntimeHelperCall(
                              "(ptr sret({ i8, i64 }) align 8 " + slot +
                              ")");
     return EmitObjc3IRLoadFullI64CarrierFromSlot(slot, ctx, callbacks);
+#else
+    const std::string value = callbacks.new_temp(ctx);
+    ctx.code_lines.push_back("  " + value + " = call { i8, i64 } @" +
+                             std::string(
+                                 kObjc3RuntimeOptionalAbsentFullI64Symbol) +
+                             "()");
+    ctx.value_optional_carrier_by_value[value] =
+        Objc3IRValueOptionalCarrierKind::FullI64;
+    return value;
+#endif
   }
   if (expr->ident == kObjc3RuntimeOptionalPresentFullI64Symbol &&
       expr->args.size() != 1u) {
@@ -115,7 +126,9 @@ std::string EmitObjc3IRFullI64OptionalRuntimeHelperCall(
         "Optional<i64> present helper lowering requires exactly one payload");
   }
   if (expr->ident == kObjc3RuntimeOptionalPresentFullI64Symbol) {
+#if defined(_WIN32)
     const std::string slot = NewObjc3IRFullI64CarrierSlot(ctx);
+#endif
     std::string payload = callbacks.emit_expr(expr->args.front().get());
     if (ctx.terminated) {
       return "zeroinitializer";
@@ -126,12 +139,23 @@ std::string EmitObjc3IRFullI64OptionalRuntimeHelperCall(
                                payload + " to i64");
       payload = widened_payload;
     }
+#if defined(_WIN32)
     ctx.code_lines.push_back("  call void @" +
                              std::string(
                                  kObjc3RuntimeOptionalPresentFullI64Symbol) +
                              "(ptr sret({ i8, i64 }) align 8 " + slot +
                              ", i64 " + payload + ")");
     return EmitObjc3IRLoadFullI64CarrierFromSlot(slot, ctx, callbacks);
+#else
+    const std::string value = callbacks.new_temp(ctx);
+    ctx.code_lines.push_back("  " + value + " = call { i8, i64 } @" +
+                             std::string(
+                                 kObjc3RuntimeOptionalPresentFullI64Symbol) +
+                             "(i64 " + payload + ")");
+    ctx.value_optional_carrier_by_value[value] =
+        Objc3IRValueOptionalCarrierKind::FullI64;
+    return value;
+#endif
   }
   if (expr->ident == kObjc3RuntimeOptionalHasValueFullI64Symbol) {
     if (expr->args.size() != 1u) {
@@ -146,6 +170,7 @@ std::string EmitObjc3IRFullI64OptionalRuntimeHelperCall(
       return callbacks.emit_unsupported_i32_value(
           "Optional<i64> has-value helper requires a full-width carrier value");
     }
+#if defined(_WIN32)
     const std::string slot = NewObjc3IRFullI64CarrierSlot(ctx);
     ctx.code_lines.push_back("  store { i8, i64 } " + value + ", ptr " +
                              slot + ", align 8");
@@ -154,6 +179,13 @@ std::string EmitObjc3IRFullI64OptionalRuntimeHelperCall(
                              std::string(
                                  kObjc3RuntimeOptionalHasValueFullI64Symbol) +
                              "(ptr " + slot + ")");
+#else
+    const std::string has_value = callbacks.new_temp(ctx);
+    ctx.code_lines.push_back("  " + has_value + " = call i1 @" +
+                             std::string(
+                                 kObjc3RuntimeOptionalHasValueFullI64Symbol) +
+                             "({ i8, i64 } " + value + ")");
+#endif
     const std::string result = callbacks.new_temp(ctx);
     ctx.code_lines.push_back("  " + result + " = zext i1 " + has_value +
                              " to i32");

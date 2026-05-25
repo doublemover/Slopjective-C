@@ -17,14 +17,26 @@ function Write-ExecutionSmokeSummary {
     [Parameter(Mandatory = $true)][int]$ShardCount,
     [Parameter(Mandatory = $true)][int]$Limit,
     [Parameter(Mandatory = $true)][int]$SelectedPositiveCount,
-    [Parameter(Mandatory = $true)][int]$SelectedNegativeCount
+    [Parameter(Mandatory = $true)][int]$SelectedNegativeCount,
+    [AllowNull()][object]$FailureResult = $null,
+    [string]$StatusOverride = ""
   )
 
   $resultItems = @($Results.ToArray())
+  if ($null -ne $FailureResult) {
+    $resultItems = @($resultItems) + @($FailureResult)
+  }
   $caseTimingItems = @($CaseTimings.ToArray())
   $total = $resultItems.Count
   $passedCount = @($resultItems | Where-Object { $_.passed }).Count
   $failedCount = $total - $passedCount
+  $status = if (-not [string]::IsNullOrWhiteSpace($StatusOverride)) {
+    $StatusOverride
+  } elseif ($failedCount -eq 0) {
+    "PASS"
+  } else {
+    "FAIL"
+  }
   $reportStopwatch = [System.Diagnostics.Stopwatch]::StartNew()
   $slowestFixtures = @($caseTimingItems | Sort-Object -Property duration_seconds -Descending | Select-Object -First 10)
   $summary = [ordered]@{
@@ -75,7 +87,7 @@ function Write-ExecutionSmokeSummary {
     total = $total
     passed = $passedCount
     failed = $failedCount
-    status = if ($failedCount -eq 0) { "PASS" } else { "FAIL" }
+    status = $status
     timing = [ordered]@{
       elapsed_seconds = [math]::Round($SuiteStopwatch.Elapsed.TotalSeconds, 6)
       stage_totals = Get-ExecutionSmokeStageTimings
@@ -86,6 +98,16 @@ function Write-ExecutionSmokeSummary {
   }
   if ([bool]$Context.shared_runtime -and -not [string]::IsNullOrWhiteSpace($Context.runtime_load_path_relative)) {
     $summary["load_path"] = @($Context.runtime_load_path_relative)
+  }
+  if ($null -ne $FailureResult) {
+    $summary["failed_fixture"] = [ordered]@{
+      kind = $FailureResult.kind
+      fixture = $FailureResult.fixture
+      fixture_index = $FailureResult.fixture_index
+      total_selected_fixtures = $FailureResult.total_selected_fixtures
+      last_completed_fixture = $FailureResult.last_completed_fixture
+    }
+    $summary["failure"] = $FailureResult.failure
   }
   $reportStopwatch.Stop()
   Add-StageDuration -StageKey "output_report_seconds" -DurationSeconds ([math]::Round($reportStopwatch.Elapsed.TotalSeconds, 6))
@@ -101,10 +123,92 @@ function Write-ExecutionSmokeSummary {
     -RuntimeLibraryRelativePath $Context.default_runtime_library_relative_path `
     -LoaderPathPolicy $Context.loader_path_policy
   Write-Output "summary_path: $(Get-RepoRelativePath -Path $Context.summary_path -Root $Context.repo_root)"
-  Write-Output "status: PASS"
-  $global:LASTEXITCODE = 0
+  Write-Output "status: $status"
+  $global:LASTEXITCODE = if ($status -eq "PASS") { 0 } else { 1 }
+}
+
+function New-ExecutionSmokeFailureResult {
+  param(
+    [Parameter(Mandatory = $true)][string]$FixtureKind,
+    [Parameter(Mandatory = $true)][string]$FixtureRel,
+    [Parameter(Mandatory = $true)][int]$FixtureIndex,
+    [Parameter(Mandatory = $true)][int]$TotalSelectedFixtures,
+    [Parameter(Mandatory = $true)][string]$LastCompletedFixture,
+    [Parameter(Mandatory = $true)][System.Management.Automation.ErrorRecord]$ErrorRecord
+  )
+
+  $message = $ErrorRecord.Exception.Message
+  if ([string]::IsNullOrWhiteSpace($message)) {
+    $message = [string]$ErrorRecord
+  }
+  $failure = [ordered]@{
+    message = $message
+    fully_qualified_error_id = [string]$ErrorRecord.FullyQualifiedErrorId
+    category = [string]$ErrorRecord.CategoryInfo.Category
+    script_stack_trace = [string]$ErrorRecord.ScriptStackTrace
+  }
+
+  return [pscustomobject][ordered]@{
+    kind = $FixtureKind
+    fixture = $FixtureRel
+    fixture_index = $FixtureIndex
+    total_selected_fixtures = $TotalSelectedFixtures
+    last_completed_fixture = $LastCompletedFixture
+    passed = $false
+    failure = $failure
+    timing = [ordered]@{
+      compile_seconds = 0.0
+      link_seconds = 0.0
+      run_seconds = 0.0
+    }
+  }
+}
+
+function Write-FailedExecutionSmokeSummary {
+  param(
+    [Parameter(Mandatory = $true)][object]$Context,
+    [Parameter(Mandatory = $true)][System.Diagnostics.Stopwatch]$SuiteStopwatch,
+    [Parameter(Mandatory = $true)][AllowEmptyCollection()][System.Collections.Generic.List[object]]$Results,
+    [Parameter(Mandatory = $true)][AllowEmptyCollection()][System.Collections.Generic.List[object]]$CaseTimings,
+    [string]$FixtureList,
+    [string]$FixtureGlob,
+    [Parameter(Mandatory = $true)][int]$ShardIndex,
+    [Parameter(Mandatory = $true)][int]$ShardCount,
+    [Parameter(Mandatory = $true)][int]$Limit,
+    [Parameter(Mandatory = $true)][int]$SelectedPositiveCount,
+    [Parameter(Mandatory = $true)][int]$SelectedNegativeCount,
+    [Parameter(Mandatory = $true)][string]$FailedFixtureKind,
+    [Parameter(Mandatory = $true)][string]$FailedFixtureRel,
+    [Parameter(Mandatory = $true)][int]$FailedFixtureIndex,
+    [Parameter(Mandatory = $true)][int]$TotalSelectedFixtures,
+    [Parameter(Mandatory = $true)][string]$LastCompletedFixture,
+    [Parameter(Mandatory = $true)][System.Management.Automation.ErrorRecord]$ErrorRecord
+  )
+
+  $failureResult = New-ExecutionSmokeFailureResult `
+    -FixtureKind $FailedFixtureKind `
+    -FixtureRel $FailedFixtureRel `
+    -FixtureIndex $FailedFixtureIndex `
+    -TotalSelectedFixtures $TotalSelectedFixtures `
+    -LastCompletedFixture $LastCompletedFixture `
+    -ErrorRecord $ErrorRecord
+  Write-ExecutionSmokeSummary `
+    -Context $Context `
+    -SuiteStopwatch $SuiteStopwatch `
+    -Results $Results `
+    -CaseTimings $CaseTimings `
+    -FixtureList $FixtureList `
+    -FixtureGlob $FixtureGlob `
+    -ShardIndex $ShardIndex `
+    -ShardCount $ShardCount `
+    -Limit $Limit `
+    -SelectedPositiveCount $SelectedPositiveCount `
+    -SelectedNegativeCount $SelectedNegativeCount `
+    -FailureResult $failureResult `
+    -StatusOverride "FAIL"
 }
 
 Export-ModuleMember -Function @(
+  "Write-FailedExecutionSmokeSummary",
   "Write-ExecutionSmokeSummary"
 )

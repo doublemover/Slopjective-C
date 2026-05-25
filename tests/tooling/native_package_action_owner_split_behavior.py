@@ -149,6 +149,26 @@ def assert_runnable_toolchain_package_includes_compile_wrapper_dependencies() ->
     assert_contains_all(
         core_toolchain_text,
         [
+            "scripts/normalize_coff_archive_timestamps.py",
+            "scripts/objc3c_native_artifact_io.psm1",
+            "scripts/objc3c_native_cmake.psm1",
+            "scripts/objc3c_native_cmake/build.psm1",
+            "scripts/objc3c_native_frontend_contracts/exports.psm1",
+            "scripts/objc3c_native_frontend_contracts/shared_sources.psm1",
+            (
+                "scripts/objc3c_native_frontend_artifacts/orchestration/"
+                "packet_generation.psm1"
+            ),
+            (
+                "scripts/objc3c_native_frontend_closeout_edge_artifacts/"
+                "orchestration.psm1"
+            ),
+            (
+                "scripts/objc3c_native_frontend_closeout_conformance_artifacts/"
+                "orchestration.psm1"
+            ),
+            "scripts/objc3c_native_superclean_surface.psm1",
+            "scripts/objc3c_native_superclean_surface_catalog/program_surfaces.psm1",
             "scripts/objc3c_native_compile_arguments.ps1",
             "scripts/objc3c_shared/json_io.py",
             "scripts/objc3c_shared/schema_registry.py",
@@ -186,6 +206,16 @@ def assert_runnable_toolchain_package_includes_compile_wrapper_dependencies() ->
             "function Get-RepoRelativePythonSharedFiles",
             "function Get-RepoRelativeRuntimeProbeFiles",
             "function Get-RepoRelativeWorkflowPythonFiles",
+            "scripts/normalize_coff_archive_timestamps.py",
+            "scripts/objc3c_native_artifact_io.psm1",
+            "scripts/objc3c_native_cmake",
+            "scripts/objc3c_native_frontend_contracts",
+            "scripts/objc3c_native_frontend_artifacts",
+            "scripts/objc3c_native_frontend_closeout_artifacts.psm1",
+            "scripts/objc3c_native_frontend_closeout_edge_artifacts",
+            "scripts/objc3c_native_frontend_closeout_conformance_artifacts",
+            "scripts/objc3c_native_superclean_surface.psm1",
+            "scripts/objc3c_native_superclean_surface_catalog",
             "scripts/objc3c_native_execution_smoke_helpers",
             "scripts/objc3c_native_execution_smoke_runner",
             "scripts/objc3c_execution_replay_proof_helpers",
