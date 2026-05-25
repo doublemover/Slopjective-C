@@ -240,6 +240,74 @@ def test_parse_args_keeps_reviewed_source_apply_explicit(tmp_path: Path) -> None
     assert applied_args.apply_reviewed_source_truth is True
 
 
+def test_github_run_review_defaults_output_to_downloaded_evidence_root(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    downloaded_root = tmp_path / "downloaded" / "linux-x64"
+    captured: dict[str, Any] = {}
+
+    def fake_download(args: Any) -> tuple[Path, dict[str, Any]]:
+        return downloaded_root, {"run_id": "1234"}
+
+    def fake_required_artifacts(platform_id: str, root: Path) -> list[str]:
+        captured["artifact_platform_id"] = platform_id
+        captured["artifact_root"] = root
+        return []
+
+    def fake_candidate(platform_id: str, root: Path) -> dict[str, Any]:
+        return {"issue_ref": 8228}
+
+    def fake_report(platform_id: str, root: Path) -> dict[str, Any]:
+        return {}
+
+    def fake_payloads(root: Path) -> dict[str, Any]:
+        return {}
+
+    def fake_update(
+        source_payload: dict[str, Any],
+        *,
+        platform_id: str,
+        report: dict[str, Any],
+        generated_payloads: dict[str, Any],
+    ) -> dict[str, Any]:
+        return source_payload
+
+    monkeypatch.setattr(review, "download_github_evidence_artifact", fake_download)
+    monkeypatch.setattr(review, "require_generated_artifacts", fake_required_artifacts)
+    monkeypatch.setattr(review, "require_review_candidate", fake_candidate)
+    monkeypatch.setattr(review, "require_host_report", fake_report)
+    monkeypatch.setattr(review, "load_required_payloads", fake_payloads)
+    monkeypatch.setattr(review, "load_json_object", lambda path: {})
+    monkeypatch.setattr(review, "update_platform_records", fake_update)
+    monkeypatch.setattr(
+        review,
+        "HOST_PROMOTION_REQUIRED_HOSTED_PROMOTION_ARTIFACT_SUFFIXES",
+        (),
+    )
+
+    args = review.parse_args(
+        [
+            "--platform-id",
+            "linux-x64",
+            "--github-run-id",
+            "1234",
+            "--source-inputs",
+            str(tmp_path / "source.json"),
+        ]
+    )
+    _, summary = review.build_reviewed_source_payload(args)
+
+    assert captured == {
+        "artifact_platform_id": "linux-x64",
+        "artifact_root": downloaded_root,
+    }
+    assert args.output == downloaded_root / "reviewed-source-inputs.proposed.json"
+    assert summary["proposed_reviewed_source_output"].endswith(
+        "downloaded/linux-x64/reviewed-source-inputs.proposed.json"
+    )
+
+
 def test_configured_evidence_root_still_returns_canonical_source_paths(
     tmp_path: Path,
 ) -> None:

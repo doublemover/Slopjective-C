@@ -1398,6 +1398,8 @@ def build_reviewed_source_payload(args: argparse.Namespace) -> tuple[dict[str, A
             raise ReviewError("--github-run-id and --evidence-root cannot be combined")
         args.evidence_root, github_run = download_github_evidence_artifact(args)
     root = platform_evidence_root(platform_id, args.evidence_root)
+    if args.output is None:
+        args.output = root / "reviewed-source-inputs.proposed.json"
     artifact_paths = require_generated_artifacts(platform_id, root)
     candidate = require_review_candidate(platform_id, root)
     report = require_host_report(platform_id, root)
@@ -1500,9 +1502,6 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
 
 def main(argv: list[str] | None = None) -> int:
     args = parse_args(argv)
-    root = platform_evidence_root(args.platform_id, args.evidence_root)
-    if args.output is None:
-        args.output = root / "reviewed-source-inputs.proposed.json"
     payload, summary = build_reviewed_source_payload(args)
     proposed_validation = validate_reviewed_source_payload(
         payload,
@@ -1524,7 +1523,10 @@ def main(argv: list[str] | None = None) -> int:
             applied_validation,
             result_prefix="applied",
         )
-    summary_path = root / "reviewed-source-staging-summary.json"
+    summary_path = platform_evidence_root(
+        args.platform_id,
+        args.evidence_root,
+    ) / "reviewed-source-staging-summary.json"
     write_json(summary_path, summary)
     print(f"proposed_reviewed_source_output: {display_path(args.output)}")
     print(f"summary_path: {display_path(summary_path)}")
