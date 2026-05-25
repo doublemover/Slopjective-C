@@ -219,6 +219,7 @@ function Get-RepoRelativeNativeCompileSupportFiles {
   param([Parameter(Mandatory = $true)][string]$RepoRoot)
 
   $supportRoots = @(
+    "scripts/objc3c_native_cmake",
     "scripts/objc3c_native_compile_arguments",
     "scripts/objc3c_native_compile_io",
     "scripts/objc3c_native_compile_toolchain",
@@ -232,6 +233,7 @@ function Get-RepoRelativeNativeCompileSupportFiles {
   )
 
   return @(
+    "scripts/objc3c_native_cmake.psm1"
     foreach ($supportRoot in $supportRoots) {
       $absoluteRoot = Join-Path $RepoRoot $supportRoot
       Get-RepoRelativeFilesUnderRoot `

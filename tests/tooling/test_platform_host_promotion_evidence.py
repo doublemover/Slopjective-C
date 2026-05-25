@@ -703,6 +703,14 @@ def test_install_receipt_missing_source_diagnostics_preserve_required_sources(
     host_evidence_ingest.validate_install_receipt_artifact("linux-x64")
 
 
+def test_host_evidence_ingest_accepts_prefixed_install_receipt_digest() -> None:
+    assert host_evidence_ingest.is_sha256_digest(
+        "sha256:" + ("a" * 64)
+    )
+    assert host_evidence_ingest.is_sha256_digest("b" * 64)
+    assert not host_evidence_ingest.is_sha256_digest("sha256:" + ("g" * 64))
+
+
 def _object_identity_payload_with_source(source_path: str) -> dict[str, object]:
     return {
         "contract_id": "objc3c.platform.hosted-object-identity.generated.v1",

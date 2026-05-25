@@ -104,8 +104,17 @@ def test_cmake_reproducible_build_policy_is_fingerprinted() -> None:
     assert "/Brepro" in cmake_lists
     assert "-ffile-prefix-map=${CMAKE_SOURCE_DIR}=." in cmake_lists
     assert "-fdebug-prefix-map=${CMAKE_SOURCE_DIR}=." in cmake_lists
-    assert '"bin\\llvm-ar.exe"' in toolchain_module
-    assert '"bin\\llvm-ranlib.exe"' in toolchain_module
+    assert "function Get-Objc3cNativeToolExecutableName" in toolchain_module
+    assert 'return $CommandName + ".exe"' in toolchain_module
+    assert 'Join-Path (Join-Path $LlvmRoot "bin")' in toolchain_module
+    assert (
+        'Join-Objc3cNativeLlvmToolPath -LlvmRoot $llvmRoot -CommandName "llvm-ar"'
+        in toolchain_module
+    )
+    assert (
+        'Join-Objc3cNativeLlvmToolPath -LlvmRoot $llvmRoot -CommandName "llvm-ranlib"'
+        in toolchain_module
+    )
     assert "LlvmArTool = $llvmArTool" in toolchain_module
     assert "LlvmRanlibTool = $llvmRanlibTool" in toolchain_module
     assert "-DCMAKE_AR=$LlvmArTool" in configure_module
@@ -122,6 +131,18 @@ def test_cmake_reproducible_build_policy_is_fingerprinted() -> None:
     assert "--parallel --target" not in (
         ROOT / "scripts" / "objc3c_native_cmake" / "build.psm1"
     ).read_text(encoding="utf-8")
+
+
+def test_runnable_package_includes_native_cmake_support_modules() -> None:
+    inventory = (
+        ROOT
+        / "scripts"
+        / "objc3c_runnable_toolchain_package_helpers"
+        / "file_inventory.psm1"
+    ).read_text(encoding="utf-8")
+
+    assert '"scripts/objc3c_native_cmake.psm1"' in inventory
+    assert '"scripts/objc3c_native_cmake"' in inventory
 
 
 def test_binary_output_lines_are_gated_to_native_build_modes() -> None:

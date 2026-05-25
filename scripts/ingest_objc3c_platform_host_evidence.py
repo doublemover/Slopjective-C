@@ -310,6 +310,13 @@ def sha256_file(path: Path) -> str:
     return digest.hexdigest()
 
 
+def is_sha256_digest(value: Any) -> bool:
+    if not isinstance(value, str):
+        return False
+    digest = value.removeprefix("sha256:")
+    return len(digest) == 64 and all(char in "0123456789abcdef" for char in digest)
+
+
 def generated_artifact(path_text: str) -> dict[str, Any]:
     path = ROOT / path_text
     if not path.is_file():
@@ -1242,7 +1249,7 @@ def validate_clean_install_distribution_verification(platform_id: str) -> None:
                 f"{owner} host promotion receipt reservation drifted",
             )
             digest = install_receipt.get("source_receipt_sha256")
-            require(isinstance(digest, str) and len(digest) == 64, f"{owner} clean install receipt digest missing")
+            require(is_sha256_digest(digest), f"{owner} clean install receipt digest missing")
 
 
 def validate_clean_install_distribution_receipt(platform_id: str) -> None:
