@@ -7,6 +7,7 @@ import os
 import shutil
 import sys
 from pathlib import Path
+from types import SimpleNamespace
 
 import pytest
 
@@ -926,6 +927,65 @@ def test_package_channel_cli_can_reuse_release_foundation_and_runnable_package(
     assert captured["workspace_package_root"] == package_root.resolve()
     assert captured["manifest_package_root"] == package_root.resolve()
     assert captured["preserve_package_root"] is True
+
+
+def test_hosted_packaging_end_to_end_derives_release_foundation_from_runnable_package(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    import scripts.check_objc3c_packaging_channels_end_to_end as packaging_e2e
+
+    evidence_root = tmp_path / "tmp/reports/platform-host-evidence/linux-x64"
+    manifest_path = evidence_root / "package/objc3c-runnable-toolchain-package.json"
+    manifest_path.parent.mkdir(parents=True)
+    manifest_path.write_text(
+        json.dumps({"package_root": "tmp/pkg/reusable-linux-package"}) + "\n",
+        encoding="utf-8",
+    )
+    monkeypatch.setattr(packaging_e2e, "ROOT", tmp_path)
+    monkeypatch.setattr(
+        packaging_e2e,
+        "repo_rel",
+        lambda path, **_: Path(path).resolve().relative_to(tmp_path.resolve()).as_posix(),
+    )
+    monkeypatch.setenv("OBJC3C_PLATFORM_ID", "linux-x64")
+    monkeypatch.setenv(
+        "OBJC3C_PLATFORM_EVIDENCE_ROOT",
+        "tmp/reports/platform-host-evidence/linux-x64",
+    )
+    captured: dict[str, object] = {}
+
+    def fake_run_capture(
+        command: list[str],
+        *,
+        cwd: Path,
+        capture_output: bool = True,
+        **_: object,
+    ) -> SimpleNamespace:
+        captured["command"] = command
+        captured["cwd"] = cwd
+        captured["capture_output"] = capture_output
+        return SimpleNamespace(returncode=0)
+
+    packaging_e2e.CURRENT_END_TO_END_CONTEXT.clear()
+    monkeypatch.setattr(packaging_e2e, "run_capture", fake_run_capture)
+
+    packaging_e2e.build_package_channels_from_fresh_release_foundation()
+
+    command_value = captured["command"]
+    assert isinstance(command_value, list)
+    command = [str(part) for part in command_value]
+    assert "--reuse-runnable-package-root" in command
+    assert "tmp/pkg/reusable-linux-package" in command
+    assert "--reuse-release-foundation-artifacts" not in command
+    assert "--target-platform-id" in command
+    assert "linux-x64" in command
+    assert captured["cwd"] == tmp_path
+    assert captured["capture_output"] is False
+    assert (
+        packaging_e2e.CURRENT_END_TO_END_CONTEXT["hosted_runnable_package_manifest"]
+        == "tmp/reports/platform-host-evidence/linux-x64/package/objc3c-runnable-toolchain-package.json"
+    )
 
 
 def test_package_channel_reuse_rejects_release_foundation_digest_drift(

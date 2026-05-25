@@ -976,7 +976,7 @@ def validate_debug_identity_artifact(platform_id: str) -> None:
     require_status(
         payload,
         generated_identity_status(
-            source_exists=artifact_exists_in_payload(source_artifacts, NATIVE_BUILD_SUMMARY_PATH),
+            source_exists=native_build_summary_source_exists_in_payload(source_artifacts),
             actual=actual_identity,
             expected=expected_identity,
             fields=("target_platform_id", "target_triple", "debug_format"),

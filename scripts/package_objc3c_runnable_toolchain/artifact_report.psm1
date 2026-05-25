@@ -249,6 +249,25 @@ function Get-RunnableToolchainPackagePlatformManifestStatus {
   return "generated-host-artifact-present"
 }
 
+function New-RunnableToolchainPackageLogicalFileArtifact {
+  param(
+    [Parameter(Mandatory = $true)][string]$Path,
+    [Parameter(Mandatory = $true)][string]$LogicalPath
+  )
+
+  $artifact = [ordered]@{
+    path = $LogicalPath
+    exists = $false
+  }
+  if (Test-Path -LiteralPath $Path -PathType Leaf) {
+    $item = Get-Item -LiteralPath $Path
+    $artifact["exists"] = $true
+    $artifact["size_bytes"] = [int64]$item.Length
+    $artifact["sha256"] = (Get-FileHash -LiteralPath $Path -Algorithm SHA256).Hash.ToLowerInvariant()
+  }
+  return $artifact
+}
+
 function New-RunnableToolchainPackagePlatformRuntimeManifest {
   param(
     [Parameter(Mandatory = $true)][string]$RepoRoot,
@@ -272,16 +291,9 @@ function New-RunnableToolchainPackagePlatformRuntimeManifest {
     $runtimeLibraryArtifact["size_bytes"] = [int64]$runtimeLibraryItem.Length
     $runtimeLibraryArtifact["sha256"] = (Get-FileHash -LiteralPath $runtimeLibraryPath -Algorithm SHA256).Hash.ToLowerInvariant()
   }
-  $packageManifestArtifact = [ordered]@{
-    path = Get-RepoRelativePathCompat -RootPath $RepoRoot -TargetPath $ManifestPath
-    exists = $false
-  }
-  if (Test-Path -LiteralPath $ManifestPath -PathType Leaf) {
-    $manifestItem = Get-Item -LiteralPath $ManifestPath
-    $packageManifestArtifact["exists"] = $true
-    $packageManifestArtifact["size_bytes"] = [int64]$manifestItem.Length
-    $packageManifestArtifact["sha256"] = (Get-FileHash -LiteralPath $ManifestPath -Algorithm SHA256).Hash.ToLowerInvariant()
-  }
+  $packageManifestArtifact = New-RunnableToolchainPackageLogicalFileArtifact `
+    -Path $ManifestPath `
+    -LogicalPath "artifacts/package/objc3c-runnable-toolchain-package.json"
   $expectedLayout = Get-RunnableToolchainPackagePlatformExpectedLayout `
     -TargetPlatformId $targetPlatformId
 

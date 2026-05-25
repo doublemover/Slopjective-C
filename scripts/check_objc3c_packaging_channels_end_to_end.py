@@ -31,6 +31,7 @@ SOURCE_SURFACE = ROOT / "tests" / "tooling" / "fixtures" / "packaging_channels" 
 REPORT_PATH = ROOT / "tmp" / "reports" / "package-channels" / "package-channels-summary.json"
 INSTALL_RECEIPT_SCHEMA = ROOT / "schemas" / "objc3c-package-install-receipt-v1.schema.json"
 SUMMARY_PATH = ROOT / "tmp" / "reports" / "package-channels" / "end-to-end-summary.json"
+RUNNABLE_PACKAGE_MANIFEST_REPO_PATH = ROOT / MANIFEST_RELATIVE_PATH
 ARCHIVE_DIGEST_FIELDS = {
     "portable_archive": "portable-archive",
     "installer_archive": "local-installer",
@@ -58,14 +59,15 @@ def sha256_file(path: Path) -> str:
     return digest.hexdigest()
 
 
-def file_artifact(path: Path) -> dict[str, Any]:
+def file_artifact(path: Path, *, logical_path: str | None = None) -> dict[str, Any]:
+    artifact_path = logical_path or repo_rel(path)
     if not path.is_file():
         return {
-            "path": repo_rel(path),
+            "path": artifact_path,
             "exists": False,
         }
     return {
-        "path": repo_rel(path),
+        "path": artifact_path,
         "exists": True,
         "size_bytes": path.stat().st_size,
         "sha256": sha256_file(path),
@@ -116,6 +118,67 @@ def platform_host_evidence_root() -> tuple[str, Path] | None:
     return platform_id, resolved_root
 
 
+def resolve_repo_or_absolute_path(path_text: str) -> Path:
+    path = Path(path_text)
+    if path.is_absolute():
+        return path
+    return ROOT / path_text.replace("/", os.sep)
+
+
+def runnable_package_manifest_for_package_root(package_root_text: str) -> Path | None:
+    if not package_root_text:
+        return None
+    return resolve_repo_or_absolute_path(package_root_text) / MANIFEST_RELATIVE_PATH
+
+
+def hosted_evidence_runnable_package_manifest(evidence_root: Path) -> Path:
+    return evidence_root / "package" / "objc3c-runnable-toolchain-package.json"
+
+
+def hosted_runnable_package_manifest_candidates(
+    *,
+    evidence_root: Path,
+    package_root_text: str = "",
+) -> list[Path]:
+    candidates: list[Path] = []
+    package_root_manifest = runnable_package_manifest_for_package_root(package_root_text)
+    if package_root_manifest is not None:
+        candidates.append(package_root_manifest)
+    candidates.extend(
+        [
+            hosted_evidence_runnable_package_manifest(evidence_root),
+            RUNNABLE_PACKAGE_MANIFEST_REPO_PATH,
+        ]
+    )
+    unique_candidates: list[Path] = []
+    seen: set[Path] = set()
+    for candidate in candidates:
+        resolved = candidate.resolve()
+        if resolved not in seen:
+            unique_candidates.append(candidate)
+            seen.add(resolved)
+    return unique_candidates
+
+
+def require_hosted_runnable_package_manifest(
+    *,
+    evidence_root: Path,
+    package_root_text: str = "",
+) -> tuple[Path, dict[str, Any]]:
+    candidates = hosted_runnable_package_manifest_candidates(
+        evidence_root=evidence_root,
+        package_root_text=package_root_text,
+    )
+    for candidate in candidates:
+        if candidate.is_file():
+            return candidate, load_json(candidate)
+    formatted = ", ".join(repo_rel(candidate) for candidate in candidates)
+    raise RuntimeError(
+        "hosted package-channel install evidence missing runnable package manifest; "
+        f"checked: {formatted}"
+    )
+
+
 def platform_install_receipt_status(
     *,
     receipt_exists: bool,
@@ -148,6 +211,15 @@ def publish_platform_host_install_receipt(
     if config is None:
         return
     platform_id, evidence_root = config
+    package_root_text = str(manifest.get("package_root", ""))
+    runnable_manifest_path, runnable_manifest = require_hosted_runnable_package_manifest(
+        evidence_root=evidence_root,
+        package_root_text=package_root_text,
+    )
+    package_manifest_artifact = file_artifact(
+        runnable_manifest_path,
+        logical_path=MANIFEST_RELATIVE_PATH,
+    )
     package_runtime_model = receipt.get("package_runtime_model", {})
     if not isinstance(package_runtime_model, dict):
         package_runtime_model = {}
@@ -192,10 +264,11 @@ def publish_platform_host_install_receipt(
         ),
         "target_platform_id": platform_id,
         "target_triple": target_triple_by_platform[platform_id],
-        "package_root": str(manifest.get("package_root", "")),
+        "package_root": str(runnable_manifest.get("package_root", package_root_text)),
         "package_root_layout": expected_package_root_layout,
         "package_manifest": MANIFEST_RELATIVE_PATH,
-        "package_manifest_artifact": file_artifact(manifest_path),
+        "package_manifest_artifact": package_manifest_artifact,
+        "package_channels_manifest_artifact": file_artifact(manifest_path),
         "package_channels_summary_artifact": file_artifact(SUMMARY_PATH),
         "source_install_receipt_artifact": receipt_artifact,
         "source_install_receipt": receipt,
@@ -213,6 +286,7 @@ def publish_platform_host_install_receipt(
         },
         "source_artifacts": [
             file_artifact(SUMMARY_PATH),
+            package_manifest_artifact,
             file_artifact(manifest_path),
             receipt_artifact,
         ],
@@ -471,6 +545,35 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
 
 
 def build_package_channels_from_fresh_release_foundation() -> None:
+    platform_config = platform_host_evidence_root()
+    if platform_config is not None:
+        platform_id, evidence_root = platform_config
+        runnable_manifest_path, runnable_manifest = require_hosted_runnable_package_manifest(
+            evidence_root=evidence_root,
+        )
+        package_root_text = str(runnable_manifest.get("package_root", ""))
+        if not package_root_text:
+            raise RuntimeError("hosted runnable package manifest missing package_root")
+        update_end_to_end_context(
+            package_channels_source="hosted-runnable-package-reuse",
+            hosted_runnable_package_manifest=repo_rel(runnable_manifest_path),
+            hosted_runnable_package_root=package_root_text,
+        )
+        build_result = run_capture(
+            python_script_command(
+                BUILD_PACKAGE_CHANNELS_PY,
+                "--reuse-runnable-package-root",
+                package_root_text,
+                "--target-platform-id",
+                platform_id,
+            ),
+            cwd=ROOT,
+            capture_output=False,
+        )
+        if build_result.returncode != 0:
+            raise RuntimeError("package-channels build failed from hosted runnable package")
+        return
+
     release_foundation_result = run_capture(
         workflow_command("validate-release-foundation"),
         cwd=ROOT,

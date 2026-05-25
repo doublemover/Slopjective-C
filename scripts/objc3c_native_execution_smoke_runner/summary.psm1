@@ -5,6 +5,36 @@ Import-Module (Join-Path $script:ScriptsRoot "objc3c_native_execution_smoke_help
 Import-Module (Join-Path $script:ScriptsRoot "objc3c_platform_host_evidence_producers.psm1") -Force -DisableNameChecking
 Import-Module (Join-Path $PSScriptRoot "timings.psm1") -Force -DisableNameChecking
 
+function Write-ExecutionSmokeRuntimeLoadProbeEvidence {
+  param(
+    [Parameter(Mandatory = $true)][object]$Context
+  )
+
+  $probeParameters = @{
+    RepoRoot = [string]$Context.repo_root
+    PlatformId = [string]$Context.target_platform_id
+    TargetTriple = [string]$Context.target_triple
+    SummaryPath = [string]$Context.summary_path
+    RuntimeLibraryPath = [string]$Context.default_runtime_library
+    RuntimeLibraryRelativePath = [string]$Context.default_runtime_library_relative_path
+    LoaderPathPolicy = [string]$Context.loader_path_policy
+  }
+
+  try {
+    if ([string]$Context.target_platform_id -eq "linux-x64") {
+      Write-Objc3cLinuxRuntimeLoadProbeEvidence @probeParameters
+      return
+    }
+    Write-Objc3cDarwinRuntimeLoadProbeEvidence @probeParameters
+  } catch {
+    Write-Warning (
+      "runtime load probe evidence generation failed after native execution smoke summary was written; " +
+      "preserving execution smoke result and leaving runtime-load evidence fail-closed: " +
+      $_.Exception.Message
+    )
+  }
+}
+
 function Write-ExecutionSmokeSummary {
   param(
     [Parameter(Mandatory = $true)][object]$Context,
@@ -114,14 +144,7 @@ function Write-ExecutionSmokeSummary {
   $summary.timing.stage_totals = Get-ExecutionSmokeStageTimings
   $summary.timing.elapsed_seconds = [math]::Round($SuiteStopwatch.Elapsed.TotalSeconds, 6)
   $summary | ConvertTo-Json -Depth 8 | Set-Content -LiteralPath $Context.summary_path -Encoding utf8
-  Write-Objc3cDarwinRuntimeLoadProbeEvidence `
-    -RepoRoot $Context.repo_root `
-    -PlatformId $Context.target_platform_id `
-    -TargetTriple $Context.target_triple `
-    -SummaryPath $Context.summary_path `
-    -RuntimeLibraryPath $Context.default_runtime_library `
-    -RuntimeLibraryRelativePath $Context.default_runtime_library_relative_path `
-    -LoaderPathPolicy $Context.loader_path_policy
+  Write-ExecutionSmokeRuntimeLoadProbeEvidence -Context $Context
   Write-Output "summary_path: $(Get-RepoRelativePath -Path $Context.summary_path -Root $Context.repo_root)"
   Write-Output "status: $status"
   $global:LASTEXITCODE = if ($status -eq "PASS") { 0 } else { 1 }
