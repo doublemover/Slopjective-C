@@ -9,6 +9,13 @@
   "generated_attempt_dir": "tmp/artifacts/advanced-runtime-closure/native-executable-umbrella/compile",
   "expected_compile_backend": "direct-native",
   "expected_exit_code": 0,
+  "runtime_execution_entrypoint": "advancedRuntimeExecutableEntry",
+  "runtime_execution_observations": [
+    "ownership_blocks_errors_macro_package",
+    "async_task_group_cancellation",
+    "scheduler_executor_hop",
+    "actor_mailbox_enqueue_drain"
+  ],
   "native_compile_claimed": true,
   "native_object_artifact_claimed": true,
   "native_ir_artifact_claimed": true,
@@ -18,7 +25,7 @@
   "native_executable_umbrella_promoted": true,
   "umbrella_support_promoted": true,
   "public_replay_command": "npm run objc3c -- validate-advanced-runtime-closure",
-  "boundary": "The combined positive fixture is checked against the real direct-native compiler path, imports a source-owned provider runtime surface, links the emitted objects with the runtime support library, and runs the resulting executable from a fresh generated-attempt directory. This contract claims the integrated Objective-C 3 advanced-runtime executable closure only; arbitrary scheduler fairness, Swift/C++ ABI closure, distributed actor networking, and arbitrary macro-host execution remain outside the claim.",
+  "boundary": "The combined positive fixture is checked against the real direct-native compiler path, imports a source-owned provider runtime surface, links the emitted objects with the runtime support library, and runs the resulting executable from a fresh generated-attempt directory. The executable entrypoint must call the combined ownership/block/error/macro/package lane, the async task-group cancellation lane, the scheduler executor-hop lane, and the actor mailbox enqueue/drain lane before returning success. This contract claims the integrated Objective-C 3 advanced-runtime executable closure only; arbitrary scheduler fairness, Swift/C++ ABI closure, distributed actor networking, and arbitrary macro-host execution remain outside the claim.",
   "expected_diagnostics": [],
   "absent_diagnostic_codes": [],
   "required_success_artifacts": [

@@ -2,7 +2,7 @@
   "contract_id": "objc3c.debug-source-maps.v1",
   "source": {
     "path": "tests/native/runtime/advanced_closure/combined_positive.objc3",
-    "sha256": "28f1c7b417f58c08193dc71de186c9323d00746c70aa49ceee4bab865f91d1e1"
+    "sha256": "72445258d9c174aa11a611cf38d8039612df702b2a169e1a0a4772934e694e80"
   },
   "debug_policy": {
     "statement_stepping_requested": false,
@@ -107,12 +107,12 @@
         "id": "advanced-runtime.source.ownership-block",
         "symbol": "ownershipAndBlockLane",
         "kind": "ownership-cleanup-edge",
-        "source_digest": "28f1c7b417f58c08193dc71de186c9323d00746c70aa49ceee4bab865f91d1e1",
+        "source_digest": "72445258d9c174aa11a611cf38d8039612df702b2a169e1a0a4772934e694e80",
         "package_boundary_id": "pkg.advanced-runtime-closure",
         "range": {
-          "line": 62,
+          "line": 66,
           "column": 1,
-          "end_line": 72,
+          "end_line": 76,
           "end_column": 2
         }
       },
@@ -120,12 +120,12 @@
         "id": "advanced-runtime.source.async-cancellation",
         "symbol": "asyncCancellationLane",
         "kind": "async-suspension-point",
-        "source_digest": "28f1c7b417f58c08193dc71de186c9323d00746c70aa49ceee4bab865f91d1e1",
+        "source_digest": "72445258d9c174aa11a611cf38d8039612df702b2a169e1a0a4772934e694e80",
         "package_boundary_id": "pkg.advanced-runtime-closure",
         "range": {
-          "line": 74,
+          "line": 78,
           "column": 1,
-          "end_line": 82,
+          "end_line": 89,
           "end_column": 2
         }
       },
@@ -133,12 +133,12 @@
         "id": "advanced-runtime.source.actor-mailbox",
         "symbol": "AdvancedRuntimeClosureActor.run",
         "kind": "method",
-        "source_digest": "28f1c7b417f58c08193dc71de186c9323d00746c70aa49ceee4bab865f91d1e1",
+        "source_digest": "72445258d9c174aa11a611cf38d8039612df702b2a169e1a0a4772934e694e80",
         "package_boundary_id": "pkg.advanced-runtime-closure",
         "range": {
-          "line": 89,
+          "line": 96,
           "column": 1,
-          "end_line": 94,
+          "end_line": 101,
           "end_column": 2
         }
       },
@@ -146,12 +146,12 @@
         "id": "advanced-runtime.source.error-bridge",
         "symbol": "statusBridgeAdvancedRuntime",
         "kind": "error-bridge-edge",
-        "source_digest": "28f1c7b417f58c08193dc71de186c9323d00746c70aa49ceee4bab865f91d1e1",
+        "source_digest": "72445258d9c174aa11a611cf38d8039612df702b2a169e1a0a4772934e694e80",
         "package_boundary_id": "pkg.advanced-runtime-closure",
         "range": {
-          "line": 32,
+          "line": 36,
           "column": 1,
-          "end_line": 37,
+          "end_line": 41,
           "end_column": 2
         }
       },
@@ -159,12 +159,12 @@
         "id": "advanced-runtime.source.property-behavior",
         "symbol": "AdvancedRuntimeClosureModel.value",
         "kind": "property-access",
-        "source_digest": "28f1c7b417f58c08193dc71de186c9323d00746c70aa49ceee4bab865f91d1e1",
+        "source_digest": "72445258d9c174aa11a611cf38d8039612df702b2a169e1a0a4772934e694e80",
         "package_boundary_id": "pkg.advanced-runtime-closure",
         "range": {
           "line": 52,
           "column": 1,
-          "end_line": 60,
+          "end_line": 64,
           "end_column": 5
         }
       },
@@ -172,12 +172,12 @@
         "id": "advanced-runtime.source.macro-provenance",
         "symbol": "AdvancedRuntimeClosureTrace",
         "kind": "macro-expansion",
-        "source_digest": "28f1c7b417f58c08193dc71de186c9323d00746c70aa49ceee4bab865f91d1e1",
+        "source_digest": "72445258d9c174aa11a611cf38d8039612df702b2a169e1a0a4772934e694e80",
         "package_boundary_id": "pkg.advanced-runtime-closure",
         "range": {
-          "line": 39,
+          "line": 43,
           "column": 1,
-          "end_line": 46,
+          "end_line": 50,
           "end_column": 2
         }
       },
@@ -185,13 +185,13 @@
         "id": "advanced-runtime.source.package-replay",
         "symbol": "AdvancedRuntimeClosureKit.replay",
         "kind": "runtime-helper-call",
-        "source_digest": "28f1c7b417f58c08193dc71de186c9323d00746c70aa49ceee4bab865f91d1e1",
+        "source_digest": "72445258d9c174aa11a611cf38d8039612df702b2a169e1a0a4772934e694e80",
         "package_boundary_id": "pkg.advanced-runtime-closure",
         "range": {
-          "line": 15,
+          "line": 19,
           "column": 1,
-          "end_line": 19,
-          "end_column": 73
+          "end_line": 23,
+          "end_column": 84
         }
       }
     ]
@@ -202,98 +202,98 @@
         "anchor_id": "hover.advanced-runtime.ownership-block",
         "kind": "hover",
         "source_graph_node_id": "advanced-runtime.source.ownership-block",
-        "source_digest": "28f1c7b417f58c08193dc71de186c9323d00746c70aa49ceee4bab865f91d1e1",
+        "source_digest": "72445258d9c174aa11a611cf38d8039612df702b2a169e1a0a4772934e694e80",
         "symbol": "ownershipAndBlockLane"
       },
       {
         "anchor_id": "definition.advanced-runtime.ownership-block",
         "kind": "definition",
         "source_graph_node_id": "advanced-runtime.source.ownership-block",
-        "source_digest": "28f1c7b417f58c08193dc71de186c9323d00746c70aa49ceee4bab865f91d1e1",
+        "source_digest": "72445258d9c174aa11a611cf38d8039612df702b2a169e1a0a4772934e694e80",
         "symbol": "ownershipAndBlockLane"
       },
       {
         "anchor_id": "hover.advanced-runtime.async-cancellation",
         "kind": "hover",
         "source_graph_node_id": "advanced-runtime.source.async-cancellation",
-        "source_digest": "28f1c7b417f58c08193dc71de186c9323d00746c70aa49ceee4bab865f91d1e1",
+        "source_digest": "72445258d9c174aa11a611cf38d8039612df702b2a169e1a0a4772934e694e80",
         "symbol": "asyncCancellationLane"
       },
       {
         "anchor_id": "definition.advanced-runtime.async-cancellation",
         "kind": "definition",
         "source_graph_node_id": "advanced-runtime.source.async-cancellation",
-        "source_digest": "28f1c7b417f58c08193dc71de186c9323d00746c70aa49ceee4bab865f91d1e1",
+        "source_digest": "72445258d9c174aa11a611cf38d8039612df702b2a169e1a0a4772934e694e80",
         "symbol": "asyncCancellationLane"
       },
       {
         "anchor_id": "hover.advanced-runtime.actor-mailbox",
         "kind": "hover",
         "source_graph_node_id": "advanced-runtime.source.actor-mailbox",
-        "source_digest": "28f1c7b417f58c08193dc71de186c9323d00746c70aa49ceee4bab865f91d1e1",
+        "source_digest": "72445258d9c174aa11a611cf38d8039612df702b2a169e1a0a4772934e694e80",
         "symbol": "AdvancedRuntimeClosureActor.run"
       },
       {
         "anchor_id": "definition.advanced-runtime.actor-mailbox",
         "kind": "definition",
         "source_graph_node_id": "advanced-runtime.source.actor-mailbox",
-        "source_digest": "28f1c7b417f58c08193dc71de186c9323d00746c70aa49ceee4bab865f91d1e1",
+        "source_digest": "72445258d9c174aa11a611cf38d8039612df702b2a169e1a0a4772934e694e80",
         "symbol": "AdvancedRuntimeClosureActor.run"
       },
       {
         "anchor_id": "hover.advanced-runtime.error-bridge",
         "kind": "hover",
         "source_graph_node_id": "advanced-runtime.source.error-bridge",
-        "source_digest": "28f1c7b417f58c08193dc71de186c9323d00746c70aa49ceee4bab865f91d1e1",
+        "source_digest": "72445258d9c174aa11a611cf38d8039612df702b2a169e1a0a4772934e694e80",
         "symbol": "statusBridgeAdvancedRuntime"
       },
       {
         "anchor_id": "definition.advanced-runtime.error-bridge",
         "kind": "definition",
         "source_graph_node_id": "advanced-runtime.source.error-bridge",
-        "source_digest": "28f1c7b417f58c08193dc71de186c9323d00746c70aa49ceee4bab865f91d1e1",
+        "source_digest": "72445258d9c174aa11a611cf38d8039612df702b2a169e1a0a4772934e694e80",
         "symbol": "statusBridgeAdvancedRuntime"
       },
       {
         "anchor_id": "hover.advanced-runtime.property-behavior",
         "kind": "hover",
         "source_graph_node_id": "advanced-runtime.source.property-behavior",
-        "source_digest": "28f1c7b417f58c08193dc71de186c9323d00746c70aa49ceee4bab865f91d1e1",
+        "source_digest": "72445258d9c174aa11a611cf38d8039612df702b2a169e1a0a4772934e694e80",
         "symbol": "AdvancedRuntimeClosureModel.value"
       },
       {
         "anchor_id": "definition.advanced-runtime.property-behavior",
         "kind": "definition",
         "source_graph_node_id": "advanced-runtime.source.property-behavior",
-        "source_digest": "28f1c7b417f58c08193dc71de186c9323d00746c70aa49ceee4bab865f91d1e1",
+        "source_digest": "72445258d9c174aa11a611cf38d8039612df702b2a169e1a0a4772934e694e80",
         "symbol": "AdvancedRuntimeClosureModel.value"
       },
       {
         "anchor_id": "hover.advanced-runtime.macro-provenance",
         "kind": "hover",
         "source_graph_node_id": "advanced-runtime.source.macro-provenance",
-        "source_digest": "28f1c7b417f58c08193dc71de186c9323d00746c70aa49ceee4bab865f91d1e1",
+        "source_digest": "72445258d9c174aa11a611cf38d8039612df702b2a169e1a0a4772934e694e80",
         "symbol": "AdvancedRuntimeClosureTrace"
       },
       {
         "anchor_id": "definition.advanced-runtime.macro-provenance",
         "kind": "definition",
         "source_graph_node_id": "advanced-runtime.source.macro-provenance",
-        "source_digest": "28f1c7b417f58c08193dc71de186c9323d00746c70aa49ceee4bab865f91d1e1",
+        "source_digest": "72445258d9c174aa11a611cf38d8039612df702b2a169e1a0a4772934e694e80",
         "symbol": "AdvancedRuntimeClosureTrace"
       },
       {
         "anchor_id": "hover.advanced-runtime.package-replay",
         "kind": "hover",
         "source_graph_node_id": "advanced-runtime.source.package-replay",
-        "source_digest": "28f1c7b417f58c08193dc71de186c9323d00746c70aa49ceee4bab865f91d1e1",
+        "source_digest": "72445258d9c174aa11a611cf38d8039612df702b2a169e1a0a4772934e694e80",
         "symbol": "AdvancedRuntimeClosureKit.replay"
       },
       {
         "anchor_id": "definition.advanced-runtime.package-replay",
         "kind": "definition",
         "source_graph_node_id": "advanced-runtime.source.package-replay",
-        "source_digest": "28f1c7b417f58c08193dc71de186c9323d00746c70aa49ceee4bab865f91d1e1",
+        "source_digest": "72445258d9c174aa11a611cf38d8039612df702b2a169e1a0a4772934e694e80",
         "symbol": "AdvancedRuntimeClosureKit.replay"
       }
     ]
@@ -532,14 +532,14 @@
       "record_kind": "ownership-cleanup-edge",
       "source_file": "tests/native/runtime/advanced_closure/combined_positive.objc3",
       "source_range": {
-        "line": 62,
+        "line": 66,
         "column": 1,
-        "end_line": 72,
+        "end_line": 76,
         "end_column": 2
       },
       "ast_node_id": "ast.advanced-runtime.ownership-block",
       "source_graph_node_id": "advanced-runtime.source.ownership-block",
-      "source_digest": "28f1c7b417f58c08193dc71de186c9323d00746c70aa49ceee4bab865f91d1e1",
+      "source_digest": "72445258d9c174aa11a611cf38d8039612df702b2a169e1a0a4772934e694e80",
       "lowering_stage_id": "lowering.advanced-runtime-closure.combined",
       "ir_anchor": "ir.advanced-runtime.ownership-block",
       "ir_symbol": "_objc3_AdvancedRuntimeClosure_ownership_block",
@@ -575,14 +575,14 @@
       "record_kind": "async-suspension-point",
       "source_file": "tests/native/runtime/advanced_closure/combined_positive.objc3",
       "source_range": {
-        "line": 74,
+        "line": 78,
         "column": 1,
-        "end_line": 82,
+        "end_line": 89,
         "end_column": 2
       },
       "ast_node_id": "ast.advanced-runtime.async-cancellation",
       "source_graph_node_id": "advanced-runtime.source.async-cancellation",
-      "source_digest": "28f1c7b417f58c08193dc71de186c9323d00746c70aa49ceee4bab865f91d1e1",
+      "source_digest": "72445258d9c174aa11a611cf38d8039612df702b2a169e1a0a4772934e694e80",
       "lowering_stage_id": "lowering.advanced-runtime-closure.combined",
       "ir_anchor": "ir.advanced-runtime.async-cancellation",
       "ir_symbol": "_objc3_AdvancedRuntimeClosure_async_cancellation",
@@ -618,14 +618,14 @@
       "record_kind": "method",
       "source_file": "tests/native/runtime/advanced_closure/combined_positive.objc3",
       "source_range": {
-        "line": 89,
+        "line": 96,
         "column": 1,
-        "end_line": 94,
+        "end_line": 101,
         "end_column": 2
       },
       "ast_node_id": "ast.advanced-runtime.actor-mailbox",
       "source_graph_node_id": "advanced-runtime.source.actor-mailbox",
-      "source_digest": "28f1c7b417f58c08193dc71de186c9323d00746c70aa49ceee4bab865f91d1e1",
+      "source_digest": "72445258d9c174aa11a611cf38d8039612df702b2a169e1a0a4772934e694e80",
       "lowering_stage_id": "lowering.advanced-runtime-closure.combined",
       "ir_anchor": "ir.advanced-runtime.actor-mailbox",
       "ir_symbol": "_objc3_AdvancedRuntimeClosure_actor_mailbox",
@@ -661,14 +661,14 @@
       "record_kind": "error-bridge-edge",
       "source_file": "tests/native/runtime/advanced_closure/combined_positive.objc3",
       "source_range": {
-        "line": 32,
+        "line": 36,
         "column": 1,
-        "end_line": 37,
+        "end_line": 41,
         "end_column": 2
       },
       "ast_node_id": "ast.advanced-runtime.error-bridge",
       "source_graph_node_id": "advanced-runtime.source.error-bridge",
-      "source_digest": "28f1c7b417f58c08193dc71de186c9323d00746c70aa49ceee4bab865f91d1e1",
+      "source_digest": "72445258d9c174aa11a611cf38d8039612df702b2a169e1a0a4772934e694e80",
       "lowering_stage_id": "lowering.advanced-runtime-closure.combined",
       "ir_anchor": "ir.advanced-runtime.error-bridge",
       "ir_symbol": "_objc3_AdvancedRuntimeClosure_error_bridge",
@@ -706,12 +706,12 @@
       "source_range": {
         "line": 52,
         "column": 1,
-        "end_line": 60,
+        "end_line": 64,
         "end_column": 5
       },
       "ast_node_id": "ast.advanced-runtime.property-behavior",
       "source_graph_node_id": "advanced-runtime.source.property-behavior",
-      "source_digest": "28f1c7b417f58c08193dc71de186c9323d00746c70aa49ceee4bab865f91d1e1",
+      "source_digest": "72445258d9c174aa11a611cf38d8039612df702b2a169e1a0a4772934e694e80",
       "lowering_stage_id": "lowering.advanced-runtime-closure.combined",
       "ir_anchor": "ir.advanced-runtime.property-behavior",
       "ir_symbol": "_objc3_AdvancedRuntimeClosure_property_behavior",
@@ -747,14 +747,14 @@
       "record_kind": "macro-expansion",
       "source_file": "tests/native/runtime/advanced_closure/combined_positive.objc3",
       "source_range": {
-        "line": 39,
+        "line": 43,
         "column": 1,
-        "end_line": 46,
+        "end_line": 50,
         "end_column": 2
       },
       "ast_node_id": "ast.advanced-runtime.macro-provenance",
       "source_graph_node_id": "advanced-runtime.source.macro-provenance",
-      "source_digest": "28f1c7b417f58c08193dc71de186c9323d00746c70aa49ceee4bab865f91d1e1",
+      "source_digest": "72445258d9c174aa11a611cf38d8039612df702b2a169e1a0a4772934e694e80",
       "lowering_stage_id": "lowering.advanced-runtime-closure.combined",
       "ir_anchor": "ir.advanced-runtime.macro-provenance",
       "ir_symbol": "_objc3_AdvancedRuntimeClosure_macro_provenance",
@@ -790,14 +790,14 @@
       "record_kind": "runtime-helper-call",
       "source_file": "tests/native/runtime/advanced_closure/combined_positive.objc3",
       "source_range": {
-        "line": 15,
+        "line": 19,
         "column": 1,
-        "end_line": 19,
-        "end_column": 73
+        "end_line": 23,
+        "end_column": 84
       },
       "ast_node_id": "ast.advanced-runtime.package-replay",
       "source_graph_node_id": "advanced-runtime.source.package-replay",
-      "source_digest": "28f1c7b417f58c08193dc71de186c9323d00746c70aa49ceee4bab865f91d1e1",
+      "source_digest": "72445258d9c174aa11a611cf38d8039612df702b2a169e1a0a4772934e694e80",
       "lowering_stage_id": "lowering.advanced-runtime-closure.combined",
       "ir_anchor": "ir.advanced-runtime.package-replay",
       "ir_symbol": "_objc3_AdvancedRuntimeClosure_package_replay",
@@ -832,7 +832,7 @@
       "entry_id": "advanced-runtime.dmap.ownership-block",
       "source_map_entry_id": "advanced-runtime.smap.ownership-block",
       "source_graph_node_id": "advanced-runtime.source.ownership-block",
-      "source_digest": "28f1c7b417f58c08193dc71de186c9323d00746c70aa49ceee4bab865f91d1e1",
+      "source_digest": "72445258d9c174aa11a611cf38d8039612df702b2a169e1a0a4772934e694e80",
       "ir_symbol": "_objc3_AdvancedRuntimeClosure_ownership_block",
       "native_symbol": "_objc3_advanced_runtime_ownership_block",
       "object_debug_line_anchor": "obj.line.advanced-runtime.ownership-block",
@@ -847,7 +847,7 @@
       "entry_id": "advanced-runtime.dmap.async-cancellation",
       "source_map_entry_id": "advanced-runtime.smap.async-cancellation",
       "source_graph_node_id": "advanced-runtime.source.async-cancellation",
-      "source_digest": "28f1c7b417f58c08193dc71de186c9323d00746c70aa49ceee4bab865f91d1e1",
+      "source_digest": "72445258d9c174aa11a611cf38d8039612df702b2a169e1a0a4772934e694e80",
       "ir_symbol": "_objc3_AdvancedRuntimeClosure_async_cancellation",
       "native_symbol": "_objc3_advanced_runtime_async_cancellation",
       "object_debug_line_anchor": "obj.line.advanced-runtime.async-cancellation",
@@ -862,7 +862,7 @@
       "entry_id": "advanced-runtime.dmap.actor-mailbox",
       "source_map_entry_id": "advanced-runtime.smap.actor-mailbox",
       "source_graph_node_id": "advanced-runtime.source.actor-mailbox",
-      "source_digest": "28f1c7b417f58c08193dc71de186c9323d00746c70aa49ceee4bab865f91d1e1",
+      "source_digest": "72445258d9c174aa11a611cf38d8039612df702b2a169e1a0a4772934e694e80",
       "ir_symbol": "_objc3_AdvancedRuntimeClosure_actor_mailbox",
       "native_symbol": "_objc3_advanced_runtime_actor_mailbox",
       "object_debug_line_anchor": "obj.line.advanced-runtime.actor-mailbox",
@@ -877,7 +877,7 @@
       "entry_id": "advanced-runtime.dmap.error-bridge",
       "source_map_entry_id": "advanced-runtime.smap.error-bridge",
       "source_graph_node_id": "advanced-runtime.source.error-bridge",
-      "source_digest": "28f1c7b417f58c08193dc71de186c9323d00746c70aa49ceee4bab865f91d1e1",
+      "source_digest": "72445258d9c174aa11a611cf38d8039612df702b2a169e1a0a4772934e694e80",
       "ir_symbol": "_objc3_AdvancedRuntimeClosure_error_bridge",
       "native_symbol": "_objc3_advanced_runtime_error_bridge",
       "object_debug_line_anchor": "obj.line.advanced-runtime.error-bridge",
@@ -892,7 +892,7 @@
       "entry_id": "advanced-runtime.dmap.property-behavior",
       "source_map_entry_id": "advanced-runtime.smap.property-behavior",
       "source_graph_node_id": "advanced-runtime.source.property-behavior",
-      "source_digest": "28f1c7b417f58c08193dc71de186c9323d00746c70aa49ceee4bab865f91d1e1",
+      "source_digest": "72445258d9c174aa11a611cf38d8039612df702b2a169e1a0a4772934e694e80",
       "ir_symbol": "_objc3_AdvancedRuntimeClosure_property_behavior",
       "native_symbol": "_objc3_advanced_runtime_property_behavior",
       "object_debug_line_anchor": "obj.line.advanced-runtime.property-behavior",
@@ -907,7 +907,7 @@
       "entry_id": "advanced-runtime.dmap.macro-provenance",
       "source_map_entry_id": "advanced-runtime.smap.macro-provenance",
       "source_graph_node_id": "advanced-runtime.source.macro-provenance",
-      "source_digest": "28f1c7b417f58c08193dc71de186c9323d00746c70aa49ceee4bab865f91d1e1",
+      "source_digest": "72445258d9c174aa11a611cf38d8039612df702b2a169e1a0a4772934e694e80",
       "ir_symbol": "_objc3_AdvancedRuntimeClosure_macro_provenance",
       "native_symbol": "_objc3_advanced_runtime_macro_provenance",
       "object_debug_line_anchor": "obj.line.advanced-runtime.macro-provenance",
@@ -922,7 +922,7 @@
       "entry_id": "advanced-runtime.dmap.package-replay",
       "source_map_entry_id": "advanced-runtime.smap.package-replay",
       "source_graph_node_id": "advanced-runtime.source.package-replay",
-      "source_digest": "28f1c7b417f58c08193dc71de186c9323d00746c70aa49ceee4bab865f91d1e1",
+      "source_digest": "72445258d9c174aa11a611cf38d8039612df702b2a169e1a0a4772934e694e80",
       "ir_symbol": "_objc3_AdvancedRuntimeClosure_package_replay",
       "native_symbol": "_objc3_advanced_runtime_package_replay",
       "object_debug_line_anchor": "obj.line.advanced-runtime.package-replay",
@@ -940,14 +940,14 @@
       "source_map_entry_id": "advanced-runtime.smap.ownership-block",
       "source_graph_node_id": "advanced-runtime.source.ownership-block",
       "source_file": "tests/native/runtime/advanced_closure/combined_positive.objc3",
-      "source_digest": "28f1c7b417f58c08193dc71de186c9323d00746c70aa49ceee4bab865f91d1e1",
+      "source_digest": "72445258d9c174aa11a611cf38d8039612df702b2a169e1a0a4772934e694e80",
       "native_symbol": "_objc3_advanced_runtime_ownership_block",
       "object_debug_line_anchor": "obj.line.advanced-runtime.ownership-block",
       "package_boundary_id": "pkg.advanced-runtime-closure",
       "source_range": {
-        "line": 62,
+        "line": 66,
         "column": 1,
-        "end_line": 72,
+        "end_line": 76,
         "end_column": 2
       },
       "native_line": 410
@@ -957,14 +957,14 @@
       "source_map_entry_id": "advanced-runtime.smap.async-cancellation",
       "source_graph_node_id": "advanced-runtime.source.async-cancellation",
       "source_file": "tests/native/runtime/advanced_closure/combined_positive.objc3",
-      "source_digest": "28f1c7b417f58c08193dc71de186c9323d00746c70aa49ceee4bab865f91d1e1",
+      "source_digest": "72445258d9c174aa11a611cf38d8039612df702b2a169e1a0a4772934e694e80",
       "native_symbol": "_objc3_advanced_runtime_async_cancellation",
       "object_debug_line_anchor": "obj.line.advanced-runtime.async-cancellation",
       "package_boundary_id": "pkg.advanced-runtime-closure",
       "source_range": {
-        "line": 74,
+        "line": 78,
         "column": 1,
-        "end_line": 82,
+        "end_line": 89,
         "end_column": 2
       },
       "native_line": 411
@@ -974,14 +974,14 @@
       "source_map_entry_id": "advanced-runtime.smap.actor-mailbox",
       "source_graph_node_id": "advanced-runtime.source.actor-mailbox",
       "source_file": "tests/native/runtime/advanced_closure/combined_positive.objc3",
-      "source_digest": "28f1c7b417f58c08193dc71de186c9323d00746c70aa49ceee4bab865f91d1e1",
+      "source_digest": "72445258d9c174aa11a611cf38d8039612df702b2a169e1a0a4772934e694e80",
       "native_symbol": "_objc3_advanced_runtime_actor_mailbox",
       "object_debug_line_anchor": "obj.line.advanced-runtime.actor-mailbox",
       "package_boundary_id": "pkg.advanced-runtime-closure",
       "source_range": {
-        "line": 89,
+        "line": 96,
         "column": 1,
-        "end_line": 94,
+        "end_line": 101,
         "end_column": 2
       },
       "native_line": 412
@@ -991,14 +991,14 @@
       "source_map_entry_id": "advanced-runtime.smap.error-bridge",
       "source_graph_node_id": "advanced-runtime.source.error-bridge",
       "source_file": "tests/native/runtime/advanced_closure/combined_positive.objc3",
-      "source_digest": "28f1c7b417f58c08193dc71de186c9323d00746c70aa49ceee4bab865f91d1e1",
+      "source_digest": "72445258d9c174aa11a611cf38d8039612df702b2a169e1a0a4772934e694e80",
       "native_symbol": "_objc3_advanced_runtime_error_bridge",
       "object_debug_line_anchor": "obj.line.advanced-runtime.error-bridge",
       "package_boundary_id": "pkg.advanced-runtime-closure",
       "source_range": {
-        "line": 32,
+        "line": 36,
         "column": 1,
-        "end_line": 37,
+        "end_line": 41,
         "end_column": 2
       },
       "native_line": 413
@@ -1008,14 +1008,14 @@
       "source_map_entry_id": "advanced-runtime.smap.property-behavior",
       "source_graph_node_id": "advanced-runtime.source.property-behavior",
       "source_file": "tests/native/runtime/advanced_closure/combined_positive.objc3",
-      "source_digest": "28f1c7b417f58c08193dc71de186c9323d00746c70aa49ceee4bab865f91d1e1",
+      "source_digest": "72445258d9c174aa11a611cf38d8039612df702b2a169e1a0a4772934e694e80",
       "native_symbol": "_objc3_advanced_runtime_property_behavior",
       "object_debug_line_anchor": "obj.line.advanced-runtime.property-behavior",
       "package_boundary_id": "pkg.advanced-runtime-closure",
       "source_range": {
         "line": 52,
         "column": 1,
-        "end_line": 60,
+        "end_line": 64,
         "end_column": 5
       },
       "native_line": 414
@@ -1025,14 +1025,14 @@
       "source_map_entry_id": "advanced-runtime.smap.macro-provenance",
       "source_graph_node_id": "advanced-runtime.source.macro-provenance",
       "source_file": "tests/native/runtime/advanced_closure/combined_positive.objc3",
-      "source_digest": "28f1c7b417f58c08193dc71de186c9323d00746c70aa49ceee4bab865f91d1e1",
+      "source_digest": "72445258d9c174aa11a611cf38d8039612df702b2a169e1a0a4772934e694e80",
       "native_symbol": "_objc3_advanced_runtime_macro_provenance",
       "object_debug_line_anchor": "obj.line.advanced-runtime.macro-provenance",
       "package_boundary_id": "pkg.advanced-runtime-closure",
       "source_range": {
-        "line": 39,
+        "line": 43,
         "column": 1,
-        "end_line": 46,
+        "end_line": 50,
         "end_column": 2
       },
       "native_line": 415
@@ -1042,15 +1042,15 @@
       "source_map_entry_id": "advanced-runtime.smap.package-replay",
       "source_graph_node_id": "advanced-runtime.source.package-replay",
       "source_file": "tests/native/runtime/advanced_closure/combined_positive.objc3",
-      "source_digest": "28f1c7b417f58c08193dc71de186c9323d00746c70aa49ceee4bab865f91d1e1",
+      "source_digest": "72445258d9c174aa11a611cf38d8039612df702b2a169e1a0a4772934e694e80",
       "native_symbol": "_objc3_advanced_runtime_package_replay",
       "object_debug_line_anchor": "obj.line.advanced-runtime.package-replay",
       "package_boundary_id": "pkg.advanced-runtime-closure",
       "source_range": {
-        "line": 15,
+        "line": 19,
         "column": 1,
-        "end_line": 19,
-        "end_column": 73
+        "end_line": 23,
+        "end_column": 84
       },
       "native_line": 416
     }
@@ -1165,7 +1165,7 @@
           "advanced-runtime.source.macro-provenance",
           "advanced-runtime.source.package-replay"
         ],
-        "source_digest": "28f1c7b417f58c08193dc71de186c9323d00746c70aa49ceee4bab865f91d1e1"
+        "source_digest": "72445258d9c174aa11a611cf38d8039612df702b2a169e1a0a4772934e694e80"
       }
     ]
   }

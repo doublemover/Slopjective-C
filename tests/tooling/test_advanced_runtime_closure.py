@@ -18,6 +18,8 @@ from scripts.check_objc3c_advanced_runtime_closure import (  # noqa: E402
     REQUIRED_NATIVE_ARTIFACTS,
     REQUIRED_INTERACTION_FEATURE_SETS,
     REQUIRED_LITERAL_NEGATIVE_CASE_IDS,
+    REQUIRED_RUNTIME_EXECUTION_ENTRYPOINT,
+    REQUIRED_RUNTIME_EXECUTION_OBSERVATIONS,
     REQUIRED_RUNTIME_SOURCE_DEBUG_EXEMPTIONS,
     REQUIRED_RUNTIME_SOURCE_DEBUG_LINKS,
     REQUIRED_UNSUPPORTED_RESERVED_CLAIMS,
@@ -50,6 +52,13 @@ def test_advanced_runtime_closure_enforces_combined_identity_contract() -> None:
     assert (
         payload["advanced_runtime_combined_identity_contract"]
         == ADVANCED_CLOSURE_COMBINED_IDENTITY_CONTRACT
+    )
+    assert (
+        payload["advanced_runtime_runtime_execution_entrypoint"]
+        == REQUIRED_RUNTIME_EXECUTION_ENTRYPOINT
+    )
+    assert set(payload["advanced_runtime_runtime_execution_observations"]) == (
+        REQUIRED_RUNTIME_EXECUTION_OBSERVATIONS
     )
     assert payload["advanced_runtime_combined_identity_runtime_state_record_count"] >= 8
     assert payload["advanced_runtime_combined_identity_source_graph_record_count"] >= 7
@@ -150,7 +159,7 @@ def test_combined_identity_contract_links_source_graph_debug_map_and_negatives()
         assert set(record["runtime_source_debug_link_ids"]) <= runtime_source_debug_link_ids
 
 
-def test_native_artifact_contract_claims_compile_artifacts_only() -> None:
+def test_native_artifact_contract_claims_executable_runtime_lane_observations() -> None:
     contract = _read_json(ADVANCED_CLOSURE_NATIVE_ARTIFACT_CONTRACT)
 
     assert contract["issue_ref"] == 8199
@@ -166,6 +175,16 @@ def test_native_artifact_contract_claims_compile_artifacts_only() -> None:
     assert contract["native_executable_umbrella_promoted"] is True
     assert contract["umbrella_support_promoted"] is True
     assert contract["positive_fixture"] == "tests/native/runtime/advanced_closure/combined_positive.objc3"
+    assert contract["runtime_execution_entrypoint"] == REQUIRED_RUNTIME_EXECUTION_ENTRYPOINT
+    assert set(contract["runtime_execution_observations"]) == REQUIRED_RUNTIME_EXECUTION_OBSERVATIONS
+
+    positive_fixture = (
+        ROOT / "tests" / "native" / "runtime" / "advanced_closure" / "combined_positive.objc3"
+    ).read_text(encoding="utf-8")
+    assert "return advancedRuntimeExecutableEntry()" in positive_fixture
+    assert "combinedAdvancedRuntimeClosure(11, 11, nil)" in positive_fixture
+    assert "asyncCancellationLane(6)" in positive_fixture
+    assert "schedulerAndActorRuntimeExecutionLane(4, 41)" in positive_fixture
 
     assert contract["expected_diagnostics"] == []
     assert contract["absent_diagnostic_codes"] == []

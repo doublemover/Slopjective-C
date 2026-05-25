@@ -340,6 +340,20 @@ REQUIRED_POSITIVE_FEATURE_TOKENS = {
         "objc_package_entry(named(\"AdvancedRuntimeClosureKit.replay\"))",
     ),
 }
+REQUIRED_RUNTIME_EXECUTION_ENTRYPOINT = "advancedRuntimeExecutableEntry"
+REQUIRED_RUNTIME_EXECUTION_ENTRYPOINT_TOKENS = (
+    "fn advancedRuntimeExecutableEntry() -> i32",
+    "combinedAdvancedRuntimeClosure(11, 11, nil)",
+    "asyncCancellationLane(6)",
+    "schedulerAndActorRuntimeExecutionLane(4, 41)",
+    "return advancedRuntimeExecutableEntry()",
+)
+REQUIRED_RUNTIME_EXECUTION_OBSERVATIONS = {
+    "ownership_blocks_errors_macro_package",
+    "async_task_group_cancellation",
+    "scheduler_executor_hop",
+    "actor_mailbox_enqueue_drain",
+}
 ALLOWED_NEGATIVE_STATUSES = {"rejected", "reserved"}
 DOCS_SUPPORT_CAPABILITY_MATRIX = ROOT / "docs" / "support" / "capability_matrix.json"
 DOCS_SUPPORT_EVIDENCE_MAP = ROOT / "docs" / "support" / "evidence_map.json"
@@ -935,9 +949,19 @@ def _validate_combined_positive_fixture(failures: list[str]) -> dict[str, Any]:
             failures,
             label=f"advanced_runtime_closure.positive_fixture.{feature}",
         )
+    _validate_required_tokens(
+        ADVANCED_CLOSURE_POSITIVE_FIXTURE,
+        list(REQUIRED_RUNTIME_EXECUTION_ENTRYPOINT_TOKENS),
+        failures,
+        label="advanced_runtime_closure.positive_fixture.runtime_execution_entrypoint",
+    )
     return {
         "path": ADVANCED_CLOSURE_POSITIVE_FIXTURE,
         "features": sorted(REQUIRED_CLOSURE_FEATURES),
+        "runtime_execution_entrypoint": REQUIRED_RUNTIME_EXECUTION_ENTRYPOINT,
+        "runtime_execution_observations": sorted(
+            REQUIRED_RUNTIME_EXECUTION_OBSERVATIONS
+        ),
     }
 
 
@@ -1761,6 +1785,13 @@ def _validate_native_artifact_contract(
     expected_exit_code = int(contract.get("expected_exit_code", -1))
     if expected_exit_code != 0:
         failures.append(f"{label}: expected_exit_code must remain 0")
+    if contract.get("runtime_execution_entrypoint") != REQUIRED_RUNTIME_EXECUTION_ENTRYPOINT:
+        failures.append(f"{label}: runtime_execution_entrypoint drifted")
+    runtime_observations = {
+        str(item) for item in _as_list(contract.get("runtime_execution_observations"))
+    }
+    if runtime_observations != REQUIRED_RUNTIME_EXECUTION_OBSERVATIONS:
+        failures.append(f"{label}: runtime_execution_observations drifted")
     true_claim_fields = (
         "native_compile_claimed",
         "native_object_artifact_claimed",
@@ -2573,6 +2604,12 @@ def validate_advanced_runtime_closure() -> dict[str, Any]:
         "advanced_runtime_combined_positive_fixture": positive_fixture.get("path"),
         "advanced_runtime_combined_feature_count": len(
             positive_fixture.get("features", [])
+        ),
+        "advanced_runtime_runtime_execution_entrypoint": positive_fixture.get(
+            "runtime_execution_entrypoint"
+        ),
+        "advanced_runtime_runtime_execution_observations": positive_fixture.get(
+            "runtime_execution_observations"
         ),
         "advanced_runtime_negative_matrix": negative_matrix.get("path"),
         "advanced_runtime_negative_matrix_case_count": negative_matrix.get(
