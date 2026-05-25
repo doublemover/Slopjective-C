@@ -47,7 +47,8 @@ function Invoke-PositiveExecutionSmokeFixtureImpl {
   $compileStep = Invoke-TimedLoggedCommand -StageKey "positive_compile_seconds" -Command $Context.native_exe -Arguments $nativeArgs -LogPath $compileLog
   $compileExit = [int]$compileStep.exit_code
   if ($compileExit -ne 0) {
-    throw "execution smoke FAIL: compile failed for $fixtureRel (exit=$compileExit)"
+    $compileExcerpt = Get-ExecutionSmokeLogExcerpt -Path $compileLog
+    throw "execution smoke FAIL: compile failed for $fixtureRel (exit=$compileExit)`n$compileExcerpt"
   }
 
   if ($expectation.requires_live_runtime_dispatch_explicit) {
@@ -68,7 +69,8 @@ function Invoke-PositiveExecutionSmokeFixtureImpl {
   $linkStep = Invoke-TimedLoggedCommand -StageKey "positive_link_seconds" -Command $Context.clang_command -Arguments $linkArgs -LogPath $linkLog
   $linkExit = [int]$linkStep.exit_code
   if ($linkExit -ne 0) {
-    throw "execution smoke FAIL: link failed for $fixtureRel (exit=$linkExit)"
+    $linkExcerpt = Get-ExecutionSmokeLogExcerpt -Path $linkLog
+    throw "execution smoke FAIL: link failed for $fixtureRel (exit=$linkExit)`n$linkExcerpt"
   }
   if (!(Test-Path -LiteralPath $exePath -PathType Leaf)) {
     throw "execution smoke FAIL: missing module.exe for $fixtureRel"
@@ -80,7 +82,8 @@ function Invoke-PositiveExecutionSmokeFixtureImpl {
   $expectedExit = [int]$expectation.expected_exit
   $passed = ($runExit -eq $expectedExit)
   if (-not $passed) {
-    throw "execution smoke FAIL: unexpected run exit for $fixtureRel (expected=$expectedExit actual=$runExit)"
+    $runExcerpt = Get-ExecutionSmokeLogExcerpt -Path $runLog
+    throw "execution smoke FAIL: unexpected run exit for $fixtureRel (expected=$expectedExit actual=$runExit)`n$runExcerpt"
   }
 
   $Results.Add((New-PositiveExecutionSmokeResult `

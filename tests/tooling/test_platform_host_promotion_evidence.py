@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import shutil
 import subprocess
 from copy import deepcopy
@@ -704,3 +705,50 @@ Write-Objc3cLinuxObjectDebugIdentityEvidence `
     assert result.returncode == 0, result.stdout + result.stderr
     assert (evidence_root / "build/object-identity.json").is_file()
     assert (evidence_root / "build/debug-identity.json").is_file()
+    object_identity = json.loads((evidence_root / "build/object-identity.json").read_text())
+    debug_identity = json.loads((evidence_root / "build/debug-identity.json").read_text())
+    assert isinstance(object_identity["source_artifacts"], list)
+    assert isinstance(debug_identity["source_artifacts"], list)
+
+
+def test_package_runtime_manifest_imports_path_helper(tmp_path: Path) -> None:
+    pwsh = shutil.which("pwsh")
+    if pwsh is None:
+        pytest.skip("pwsh is not available")
+    repo_root = Path(__file__).resolve().parents[2]
+    package_root = tmp_path / "package-root"
+    manifest_path = package_root / "artifacts/package/objc3c-runnable-toolchain-package.json"
+    runtime_path = package_root / "artifacts/lib/libobjc3-runtime.so"
+    evidence_root = tmp_path / "evidence"
+    manifest_path.parent.mkdir(parents=True)
+    runtime_path.parent.mkdir(parents=True)
+    manifest_path.write_text("{}", encoding="utf-8")
+    runtime_path.write_text("runtime", encoding="utf-8")
+
+    script = f"""
+$ErrorActionPreference = 'Stop'
+$module = Import-Module '{repo_root / "scripts" / "package_objc3c_runnable_toolchain" / "artifact_report.psm1"}' -Force -DisableNameChecking -PassThru
+$payload = [ordered]@{{
+  target_platform_id = 'linux-x64'
+  package_root = 'package-root'
+}}
+$result = & $module {{
+  New-RunnableToolchainPackagePlatformRuntimeManifest `
+    -RepoRoot '{repo_root}' `
+    -PackageRoot '{package_root}' `
+    -ManifestPath '{manifest_path}' `
+    -EvidenceRoot '{evidence_root}' `
+    -ManifestPayload $payload
+}}
+$result | ConvertTo-Json -Depth 12
+"""
+    result = subprocess.run(
+        [pwsh, "-NoLogo", "-NoProfile", "-Command", script],
+        text=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        check=False,
+    )
+    assert result.returncode == 0, result.stdout + result.stderr
+    payload = json.loads(result.stdout)
+    assert payload["runtime_library_artifacts"][0]["path"] == "artifacts/lib/libobjc3-runtime.so"

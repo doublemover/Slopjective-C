@@ -1,5 +1,6 @@
 Set-StrictMode -Version Latest
 
+Import-Module (Join-Path $PSScriptRoot "..\objc3c_runnable_toolchain_package_helpers.psm1") -Force -DisableNameChecking
 Import-Module (Join-Path $PSScriptRoot "artifact_report_io.psm1") -Force -DisableNameChecking
 Import-Module (Join-Path $PSScriptRoot "artifact_report_foundation.psm1") -Force -DisableNameChecking
 Import-Module (Join-Path $PSScriptRoot "artifact_report_application.psm1") -Force -DisableNameChecking

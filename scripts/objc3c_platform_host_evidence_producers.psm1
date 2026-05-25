@@ -64,7 +64,7 @@ function New-Objc3cEvidenceSourceArtifacts {
     }
     $artifacts.Add((Get-Objc3cEvidenceFileDigest -RootPath $RepoRoot -TargetPath $path)) | Out-Null
   }
-  return @($artifacts.ToArray())
+  return ,@($artifacts.ToArray())
 }
 
 function Get-Objc3cLinuxPackageRootLayout {
