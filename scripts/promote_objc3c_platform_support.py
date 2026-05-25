@@ -693,7 +693,9 @@ def update_source_truth(
     umbrella["lead_projection_rule"] = (
         "Supported platform projection is source-owned for "
         + ", ".join(sorted(supported_ids))
-        + "; generated Linux/macOS hosted reports remain non-promoting unless reviewed source truth is checked in."
+        + "; Linux/macOS hosted reports remain non-promoting unless reviewed source truth is checked in; "
+        "coherent llc object emission remains a fail-closed platform-promotion guardrail, "
+        "not an open #8232 child blocker."
     )
 
 

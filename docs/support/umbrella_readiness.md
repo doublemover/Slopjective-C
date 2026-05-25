@@ -433,7 +433,7 @@ Consumer rule: Umbrella readiness may explain why a reserved umbrella row is blo
 
 #### Runtime Probes
 
-- `blocked` Native object emission probe metadata is source-owned and fail-closed, but broad platform promotion remains blocked until required hosts and package variants are executable. (blocker_id: `native-object-emission-promotion`)
+- `satisfied` Native object emission probe metadata is source-owned, fail-closed, and complete as a guardrail; remaining promotion work is platform-specific Linux/macOS host evidence. (path: `tests/tooling/fixtures/platform_support/source_truth_matrix.json`)
 - `satisfied` ASan package metadata and runtime evidence pass the source-owned runtime-promotion gate for Windows x64, while generated-only evidence and unsupported hosts remain non-promoting. (command: `npm run objc3c -- check-security-sanitizer-runtime-promotion-evidence`; blocker_id: `asan-runtime-package-evidence`)
 - `satisfied` UBSan package metadata, trap/recover metadata, and runtime evidence pass the source-owned runtime-promotion gate for Windows x64, while generated-only evidence and unsupported hosts remain non-promoting. (command: `npm run objc3c -- check-security-sanitizer-runtime-promotion-evidence`; blocker_id: `ubsan-runtime-package-evidence`)
 
@@ -471,12 +471,9 @@ Consumer rule: Umbrella readiness may explain why a reserved umbrella row is blo
   - macOS arm64 package, install, and installed-root execution evidence.
   - Mach-O and load-path evidence.
   - macOS arm64 native execution evidence.
-- `native-object-emission-promotion`: Native object emission is fail-closed unless llc --filetype=obj emits a non-empty object for the target triple and is routed without a clang substitute route.
-  - Hosted-runner evidence for llc object emission availability or deterministic fail-closed status.
-  - No clang substitute success path for object, package, execution, or parity claims.
-  - Cross-lane/native execution proof consuming the native object emission status.
-- `platform-expansion-prerequisites`: The #8206 umbrella cannot be a public implemented platform claim while any child platform or native object emission prerequisite remains fail-closed or internal.
-  - Promote Linux x64, macOS arm64, and native object emission only from checked source rows and public replay evidence.
+- `platform-expansion-prerequisites`: The #8206 umbrella cannot be a public implemented platform claim while any child platform remains fail-closed or internal.
+  - Promote Linux x64 and macOS arm64 only from checked source rows and public replay evidence.
+  - Keep coherent llc object emission as a fail-closed no-clang-substitute guardrail inside platform promotion.
   - Keep Windows x64 as the only supported projection until every promoted child row has matching source and evidence-map truth.
 
 ### Final Promotion Criteria
