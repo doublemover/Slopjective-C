@@ -45,19 +45,8 @@ EXPECTED_SANITIZER_ISSUES = {
     "address": 8230,
     "undefined": 8231,
 }
-EXPECTED_UMBRELLA_CHILD_ISSUE_CONTRACTS = {
-    8228: {
-        "row_id": "objc3c.platform.linux-x64.unsupported",
-        "contract_kind": "platform-host",
-        "claim_state": "unsupported",
-        "required_promotion_evidence": ("build", "package", "install", "execution"),
-    },
-    8229: {
-        "row_id": "objc3c.platform.darwin-arm64.unsupported",
-        "contract_kind": "platform-host",
-        "claim_state": "unsupported",
-        "required_promotion_evidence": ("build", "package", "install", "execution"),
-    },
+PLATFORM_HOST_ISSUE_REFS = (8228, 8229)
+EXPECTED_FIXED_UMBRELLA_CHILD_ISSUE_CONTRACTS = {
     8230: {
         "row_id": "objc3c.package.sanitizer.asan.reserved",
         "contract_kind": "sanitizer-runtime-package",
@@ -477,14 +466,16 @@ def _validate_umbrella_readiness(
     contract = inputs.source_truth["umbrella_readiness_contract"]
     expect(contract["umbrella_issue_ref"] == 8206, "platform umbrella issue_ref drifted")
     expect(contract["closure_state"] == "source-owned-fail-closed-ready", "platform umbrella closure state drifted")
-    expect(contract["support_claim_boundary"] == "windows-x64-only", "platform umbrella widened support boundary")
+    _validate_support_claim_boundary(
+        str(contract["support_claim_boundary"]),
+        supported_ids=supported_ids,
+        unsupported_ids=unsupported_ids,
+    )
     expect(
         contract["supported_platform_row_ids"]
         == [row["row_id"] for row in inputs.source_truth["supported_rows"]],
         "platform umbrella supported row ids drifted from source truth",
     )
-    expect(supported_ids == {"windows-x64"}, "platform umbrella support boundary is not windows-x64-only")
-    expect(unsupported_ids == {"linux-x64", "darwin-arm64"}, "platform umbrella unsupported host set drifted")
     expect(
         {"objc3c.package.sanitizer.asan.reserved", "objc3c.package.sanitizer.ubsan.reserved"} <= package_variant_row_ids,
         "platform umbrella sanitizer package rows drifted from source truth",
@@ -507,11 +498,15 @@ def _validate_umbrella_readiness(
         int(row["issue_ref"]): row
         for row in contract["child_issue_contracts"]
     }
+    expected_child_contracts = {
+        **_expected_platform_child_issue_contracts(inputs),
+        **EXPECTED_FIXED_UMBRELLA_CHILD_ISSUE_CONTRACTS,
+    }
     expect(
-        set(child_contracts) == set(EXPECTED_UMBRELLA_CHILD_ISSUE_CONTRACTS),
+        set(child_contracts) == set(expected_child_contracts),
         "platform umbrella child issue contracts drifted",
     )
-    for issue_ref, expected in EXPECTED_UMBRELLA_CHILD_ISSUE_CONTRACTS.items():
+    for issue_ref, expected in expected_child_contracts.items():
         row = child_contracts[issue_ref]
         for field_name in ("row_id", "contract_kind", "claim_state"):
             expect(row[field_name] == expected[field_name], f"platform umbrella child {issue_ref} {field_name} drifted")
@@ -565,9 +560,10 @@ def _validate_umbrella_readiness(
         "clang substitute published as llvm-direct object emission success" in forbidden_overclaims,
         "platform umbrella missing no-clang-substitute overclaim guard",
     )
-    expect(
-        "Only the windows-x64 row may be projected as supported" in contract["lead_projection_rule"],
-        "platform umbrella projection rule does not pin windows-x64-only support",
+    _validate_lead_projection_rule(
+        str(contract["lead_projection_rule"]),
+        supported_ids=supported_ids,
+        unsupported_ids=unsupported_ids,
     )
     return {
         "umbrella_issue_ref": contract["umbrella_issue_ref"],
@@ -585,6 +581,79 @@ def _validate_umbrella_readiness(
             native_contract["unresolved_version_status"],
         ],
     }
+
+
+def _validate_support_claim_boundary(
+    boundary: str,
+    *,
+    supported_ids: set[str],
+    unsupported_ids: set[str],
+) -> None:
+    if boundary == "windows-x64-only":
+        expect(supported_ids == {"windows-x64"}, "windows-x64-only boundary drifted from supported rows")
+        expect(
+            unsupported_ids == set(EXPECTED_UNSUPPORTED_PLATFORM_ISSUES),
+            "windows-x64-only boundary drifted from unsupported platform rows",
+        )
+        return
+    prefix = "source-owned:"
+    expect(boundary.startswith(prefix), "platform umbrella support boundary used an unknown format")
+    boundary_ids = {
+        item.strip()
+        for item in boundary[len(prefix) :].split(",")
+        if item.strip()
+    }
+    expect(boundary_ids == supported_ids, "platform umbrella support boundary drifted from supported rows")
+    expect(
+        not boundary_ids.intersection(unsupported_ids),
+        "platform umbrella support boundary includes unsupported rows",
+    )
+
+
+def _expected_platform_child_issue_contracts(inputs: ValidationInputs) -> dict[int, dict[str, Any]]:
+    expected: dict[int, dict[str, Any]] = {}
+    for row in inputs.source_truth["supported_rows"]:
+        issue_ref = int(row["issue_ref"])
+        if issue_ref not in PLATFORM_HOST_ISSUE_REFS:
+            continue
+        expected[issue_ref] = {
+            "row_id": row["row_id"],
+            "contract_kind": "platform-host",
+            "claim_state": "evidence-bound",
+            "required_promotion_evidence": tuple(REQUIRED_SUPPORTED_EVIDENCE_CLASSES),
+        }
+    for row in inputs.source_truth["unsupported_rows"]:
+        issue_ref = int(row["issue_ref"])
+        if issue_ref not in PLATFORM_HOST_ISSUE_REFS:
+            continue
+        expected[issue_ref] = {
+            "row_id": row["row_id"],
+            "contract_kind": "platform-host",
+            "claim_state": "unsupported",
+            "required_promotion_evidence": tuple(REQUIRED_SUPPORTED_EVIDENCE_CLASSES),
+        }
+    expect(
+        set(expected) == set(PLATFORM_HOST_ISSUE_REFS),
+        "platform umbrella host child issue contracts no longer cover Linux and macOS",
+    )
+    return expected
+
+
+def _validate_lead_projection_rule(
+    rule: str,
+    *,
+    supported_ids: set[str],
+    unsupported_ids: set[str],
+) -> None:
+    for platform_id in supported_ids:
+        expect(platform_id in rule, f"platform umbrella projection rule omits supported platform {platform_id}")
+    for platform_id in unsupported_ids:
+        expect(platform_id in rule, f"platform umbrella projection rule omits unsupported platform {platform_id}")
+    if supported_ids == {"windows-x64"}:
+        expect(
+            "Only the windows-x64 row may be projected as supported" in rule,
+            "platform umbrella projection rule does not pin windows-x64-only support",
+        )
 
 
 def _records_by_id(rows: Iterable[dict[str, Any]], field_name: str) -> dict[str, dict[str, Any]]:

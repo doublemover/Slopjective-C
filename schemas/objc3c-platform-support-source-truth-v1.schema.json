@@ -787,7 +787,15 @@
           "const": "source-owned-fail-closed-ready"
         },
         "support_claim_boundary": {
-          "const": "windows-x64-only"
+          "oneOf": [
+            {
+              "const": "windows-x64-only"
+            },
+            {
+              "type": "string",
+              "pattern": "^source-owned:[a-z0-9-]+(,[a-z0-9-]+)*$"
+            }
+          ]
         },
         "supported_platform_row_ids": {
           "type": "array",

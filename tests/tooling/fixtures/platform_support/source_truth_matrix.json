@@ -1258,7 +1258,7 @@
       "mixed LLVM tool roots published as package or execution support",
       "mismatched LLVM tool versions published as native object emission support"
     ],
-    "lead_projection_rule": "Only the windows-x64 row may be projected as supported; #8228 and #8229 remain unsupported, #8230 and #8231 are windows-x64 evidence-bound sanitizer package rows through checked source promotion evidence, and #8232 remains an internal fail-closed toolchain prerequisite unless coherent llc object-emission evidence is present."
+    "lead_projection_rule": "Only the windows-x64 row may be projected as supported; linux-x64 (#8228) and darwin-arm64 (#8229) remain unsupported, #8230 and #8231 are windows-x64 evidence-bound sanitizer package rows through checked source promotion evidence, and #8232 remains an internal fail-closed toolchain prerequisite unless coherent llc object-emission evidence is present."
   },
   "report_policy": {
     "summary_path": "tmp/reports/platform-hardening/platform-matrix-summary.json",
