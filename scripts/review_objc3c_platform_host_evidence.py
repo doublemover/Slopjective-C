@@ -694,10 +694,7 @@ def require_identity_payload_matches_record(
     require_source_artifacts(
         payload,
         owner,
-        expected_paths=(
-            NATIVE_BUILD_SUMMARY_PATH,
-            NATIVE_EXECUTION_SMOKE_SUMMARY_PATH,
-        ),
+        expected_paths=(NATIVE_BUILD_SUMMARY_PATH,),
     )
     expected_identity = require_object(payload, "expected_identity", owner)
     actual_identity = require_object(payload, "actual_identity", owner)
@@ -737,10 +734,7 @@ def require_runtime_manifest_payload(
     require_source_artifacts(
         payload,
         owner,
-        expected_paths=(
-            RUNNABLE_PACKAGE_MANIFEST_PATH,
-            NATIVE_BUILD_SUMMARY_PATH,
-        ),
+        expected_paths=(RUNNABLE_PACKAGE_MANIFEST_PATH,),
     )
     require_field_value(payload, "target_platform_id", platform_id, owner)
     require_field_value(payload, "target_triple", expected_target_triple(platform_id), owner)
@@ -945,11 +939,7 @@ def require_runtime_load_payload(
     require_source_artifacts(
         payload,
         owner,
-        expected_paths=(
-            HOSTED_EXECUTION_SMOKE_SUMMARY_PATH,
-            NATIVE_EXECUTION_SMOKE_SUMMARY_PATH,
-            RUNNABLE_PACKAGE_MANIFEST_PATH,
-        ),
+        expected_paths=(NATIVE_EXECUTION_SMOKE_SUMMARY_PATH,),
     )
     require_field_value(payload, "target_platform_id", platform_id, owner)
     require_field_value(

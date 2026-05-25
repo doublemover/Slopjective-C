@@ -358,6 +358,55 @@ def test_review_rejects_generated_payload_without_source_artifacts() -> None:
         )
 
 
+def test_review_accepts_object_identity_producer_timing_source_artifacts() -> None:
+    payload = _object_identity_payload()
+    payload["source_artifacts"] = [_artifact(review.NATIVE_BUILD_SUMMARY_PATH)]
+
+    review.require_identity_payload_matches_record(
+        payload,
+        _object_identity_record(),
+        platform_id="linux-x64",
+        suffix="build/object-identity.json",
+        contract_id="objc3c.platform.hosted-object-identity.generated.v1",
+        record_id="objc3c.object-identity.linux-x64.release.missing",
+        identity_kind="object",
+        identity_field_names=("object_format",),
+    )
+
+
+def test_review_accepts_runtime_manifest_producer_timing_source_artifacts() -> None:
+    payload = _runtime_manifest_payload()
+    payload["source_artifacts"] = [
+        _artifact(review.RUNNABLE_PACKAGE_MANIFEST_PATH),
+        _artifact("artifacts/lib/libobjc3-runtime.so"),
+    ]
+
+    review.require_runtime_manifest_payload(
+        payload,
+        {
+            "runtime_library_names": ["libobjc3-runtime.so"],
+            "package_root_layout": _package_install_record()["package_root_layout"],
+            "loader_path_policy": (
+                "ELF rpath, RUNPATH, or package-root loader resolution"
+            ),
+        },
+        platform_id="linux-x64",
+    )
+
+
+def test_review_accepts_runtime_load_producer_timing_source_artifacts() -> None:
+    payload = _runtime_load_payload()
+    payload["source_artifacts"] = [_artifact(review.NATIVE_EXECUTION_SMOKE_SUMMARY_PATH)]
+
+    review.require_runtime_load_payload(
+        payload,
+        _runtime_record(),
+        _object_identity_record(),
+        platform_id="linux-x64",
+        record_id="objc3c.runtime-load-link.linux-x64.release.missing",
+    )
+
+
 def test_review_rejects_runtime_manifest_native_execution_claim() -> None:
     payload = _runtime_manifest_payload()
     payload["native_execution_claimed"] = True
