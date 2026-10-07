@@ -4,7 +4,7 @@
   "suites": [
     {
       "id": "closeout",
-      "workflow": "maintenance-closeout.yml",
+      "workflow": "adaptive-closeout.yml",
       "monthlyDay": 7,
       "cron": "47 7 * * 6",
       "paths": [

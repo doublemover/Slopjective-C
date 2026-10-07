@@ -33,7 +33,7 @@ jobs:
     name: run-closeout
     needs: decide
     if: needs.decide.outputs.run_closeout == 'true'
-    uses: ./.github/workflows/maintenance-closeout.yml
+    uses: ./.github/workflows/adaptive-closeout.yml
     with:
       source_sha: ${{ needs.decide.outputs.source_sha }}
 'on':
