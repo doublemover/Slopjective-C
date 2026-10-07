@@ -1,0 +1,49 @@
+name: Adaptive maintenance
+run-name: Adaptive maintenance / ${{ inputs.suite || (github.event.schedule == '47 7 * * 6' && 'closeout') || 'unrecognized'
+  }}
+permissions:
+  contents: read
+  actions: read
+  pull-requests: read
+concurrency:
+  group: adaptive-maintenance-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  decide:
+    name: Evaluate cadence
+    runs-on: ubuntu-24.04
+    timeout-minutes: 3
+    outputs:
+      run_closeout: ${{ steps.cadence.outputs.run_closeout }}
+      source_sha: ${{ steps.cadence.outputs.source_sha }}
+      source_ref: ${{ steps.cadence.outputs.source_ref }}
+    steps:
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      with:
+        persist-credentials: false
+    - id: cadence
+      uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd
+      with:
+        script: 'const { run } = await import(process.env.GITHUB_WORKSPACE + ''/.github/ci/adaptive-ci.mjs'');
+
+          await run({ github, context, core });
+
+          '
+  run-closeout:
+    name: run-closeout
+    needs: decide
+    if: needs.decide.outputs.run_closeout == 'true'
+    uses: ./.github/workflows/maintenance-closeout.yml
+    with:
+      source_sha: ${{ needs.decide.outputs.source_sha }}
+'on':
+  schedule:
+  - cron: 47 7 * * 6
+  workflow_dispatch:
+    inputs:
+      suite:
+        type: choice
+        required: true
+        description: Suite to evaluate; this does not bypass cadence or private pause
+        options:
+        - closeout
