@@ -23,6 +23,7 @@
     "language_version",
     "abi_identity",
     "plan_digest",
+    "extraction_plan_digest",
     "machine_owned",
     "receipt_digest"
   ],
@@ -60,6 +61,7 @@
     "language_version": { "const": "3.0" },
     "abi_identity": { "const": "objc3-abi-2025Q4" },
     "plan_digest": { "type": "string", "pattern": "^sha256:[0-9a-f]{64}$" },
+    "extraction_plan_digest": { "type": "string", "pattern": "^sha256:[0-9a-f]{64}$" },
     "receipt_timestamp": { "type": "string" },
     "machine_owned": { "const": true },
     "diagnostics": {

@@ -28,6 +28,7 @@ struct Objc3MethodInfo {
 #include "sema/objc3_sema_contract_type_handoff_callable_records_return_interop_fields.inc"
 #include "sema/objc3_sema_contract_type_handoff_callable_records_concurrency_fields.inc"
 #include "sema/objc3_sema_contract_type_handoff_callable_records_error_interop_fields.inc"
+#include "sema/objc3_sema_contract_type_handoff_callable_records_generic_callable_fields.inc"
 #include "sema/objc3_sema_contract_type_handoff_callable_records_method_dispatch_fields.inc"
 };
 

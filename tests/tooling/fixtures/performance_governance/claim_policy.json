@@ -46,7 +46,10 @@
     "evidence-log-performance-evidence",
     "unsupported-benchmark-claim",
     "compatibility-retired-route-performance-claim",
-    "wrapper-only-action-surface"
+    "wrapper-only-action-surface",
+    "optimization-speedup-without-safety-proof",
+    "generated-report-optimization-source-truth",
+    "optimization-runtime-miss-success-path"
   ],
   "required_public_claim_inputs": [
     "checked_in_benchmark_source",

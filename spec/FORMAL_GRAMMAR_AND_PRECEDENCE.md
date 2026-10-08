@@ -128,15 +128,14 @@ defer-statement = "defer" compound-statement ;
 match-statement =
     "match" "(" expression ")" "{" match-case { match-case } [ match-default ] "}" ;
 match-case = "case" pattern ":" compound-statement ;
-match-case-guarded-reserved = "case" pattern "where" expression ":" compound-statement ;
-(* reserved for future guarded patterns; rejected in ObjC 3.0 v1 *)
+match-case-guarded = "case" pattern "where" expression ":" compound-statement ;
 match-default = "default" ":" compound-statement ;
 
-match-expression-reserved =
+match-expression =
     "match" "(" expression ")" "{" match-expression-case { match-expression-case } [ match-expression-default ] "}" ;
 match-expression-case = "case" pattern "=>" expression ";" ;
+match-expression-case-guarded = "case" pattern "where" expression "=>" expression ";" ;
 match-expression-default = "default" "=>" expression ";" ;
-(* reserved for ObjC >= 3.1; ObjC 3.0 v1 parsers shall reject with a targeted diagnostic *)
 
 pattern =
       "_"
@@ -351,18 +350,18 @@ For the ambiguous/token-overlap forms below, diagnostics and fix-its are require
 | `a??b:c`                                                                  | Explain maximal-munch tokenization to `a ?? b : c`.                                                                                 | `a ? b : c`.                                                                                                         |
 | `await try f()`                                                           | Explain non-canonical effect ordering, while parse remains valid.                                                                   | Reorder to `try await f()` when no comments/macros would be reordered unsafely.                                      |
 | `[cond ? a : b ? sel]`                                                    | Explain optional-send/conditional-receiver ambiguity and required receiver parenthesization.                                        | `[(cond ? a : b) ? sel]`.                                                                                            |
-| `match (...) { case pat => expr; ... }` in ObjC 3.0 v1 mode               | Explain that `=>` arms are reserved for future `match`-expression syntax and are not enabled in v1.                                 | Rewrite to statement form `case pat: { ... }` or rewrite as `if`/`switch`.                                           |
-| `x = match (...) { case pat: { ... } ... };` in ObjC 3.0 v1 mode          | Explain that `match` is statement-only in v1 and cannot appear in expression position.                                              | Hoist into a statement `match` that assigns to a temporary, or rewrite as `if`/`switch`.                             |
+| `match (...) { case pat => expr; ... }` in statement position             | Explain that `=>` arms belong to expression-form `match` and are not statement arms.                                                | Rewrite to statement form `case pat: { ... }` or use expression-form `match` in an expression position.              |
+| `x = match (...) { case pat: { ... } ... };`                              | Explain that expression-form `match` requires `=>` arms that yield expressions.                                                     | Rewrite each arm as `case pat => expr;`, or hoist to statement-form `match` that assigns a temporary.                |
 | `case is Type ...` when `__OBJC3_FEATURE_MATCH_TYPE_TEST_PATTERNS__ == 0` | Explain that type-test patterns are optional and disabled in the current mode.                                                      | Guard with `#if __OBJC3_FEATURE_MATCH_TYPE_TEST_PATTERNS__` or rewrite to `default` + explicit `if`/cast chain.      |
-| `case pattern where condition: ...` in ObjC 3.0 v1 mode                   | Explain that guarded patterns are deferred and this grammar slot is reserved for a future revision.                                 | Drop the guard and perform the condition inside the case body, or rewrite as nested `if`.                            |
+| `case pattern where:`                                                     | Explain that guarded patterns require a bool condition after `where`.                                                              | Insert the condition or remove the guard.                                                                            |
 
-### F.5.8 `match` Statement vs Reserved Expression Form {#f-5-8}
+### F.5.8 `match` Statement vs Expression Form {#f-5-8}
 
-In ObjC 3.0 v1:
+In ObjC 3.0:
 
 - `match-statement` is accepted with `case ... : compound-statement`,
-- `match-expression-reserved` is never accepted (even if parsed as a candidate),
-- encountering `=>` after `case pattern` inside `match` shall produce a targeted “reserved for future expression form” diagnostic.
+- `match-expression` is accepted with `case ... => expression;`,
+- encountering `=>` after `case pattern` inside statement-form `match` shall produce a targeted diagnostic.
 
 Parsers shall not silently reinterpret `case ... => ...` as statement syntax.
 
@@ -376,15 +375,15 @@ The token `is` is a contextual keyword in pattern position only.
 
 If an imported metadata payload declares required capability `objc3.pattern.type_test.v1` and the importer does not support that capability, import shall fail as a hard error per [D.2.3](#d-2-3).
 
-### F.5.10 Guarded Pattern Reservation (`where`) {#f-5-10}
+### F.5.10 Guarded Patterns (`where`) {#f-5-10}
 
-In ObjC 3.0 v1, guarded patterns are not part of accepted `match` syntax.
+In ObjC 3.0, guarded patterns are part of accepted statement and expression `match` syntax.
 
-- `match-case` remains `case pattern : compound-statement`.
-- `match-case-guarded-reserved` is a reserved future slot and shall be rejected in v1.
+- `match-case-guarded` is `case pattern where expression : compound-statement`.
+- `match-expression-case-guarded` is `case pattern where expression => expression ;`.
 - `where` is contextual: it is only treated specially after a complete `case pattern` candidate.
 
-Parsers shall emit a targeted deferred-feature diagnostic for `case pattern where condition:`.
+Parsers shall emit a targeted diagnostic for `case pattern where` with no condition. Semantic analysis shall require the guard expression to be `bool`.
 
 ## F.6 Parser Conformance Test Matrix (Ambiguity and Edge Cases) {#f-6}
 
@@ -423,13 +422,13 @@ Each row is required for parser conformance. Diagnostics and fix-its are require
 | P-29 | `a ? ? b : c`                                                                                                                            | Tokenization is two `?` tokens (not `??`); parse fails.                                                            | Diagnostic: `??` must be contiguous; fix-it: remove intervening whitespace.                                                                            |
 | P-30 | `[cond ? a : b ? sel]`                                                                                                                   | Parse as optional send with conditional receiver candidate; receiver parenthesization required by [F.5.6](#f-5-6). | Fix-it: `[(cond ? a : b) ? sel]`.                                                                                                                      |
 | P-31 | `match (r) { case .Ok(let v): { use(v); } default: { useDefault(); } }`                                                                  | Parse as `match-statement` (statement position).                                                                   | No parse diagnostic.                                                                                                                                   |
-| P-32 | `x = match (r) { case .Ok(let v): { use(v); } default: { useDefault(); } };`                                                             | Reject in ObjC 3.0 v1: `match` in expression position.                                                             | Error: `match` is statement-only in v1; suggest statement rewrite with temporary assignment.                                                           |
-| P-33 | `x = match (r) { case .Ok(let v) => v; default => 0; };`                                                                                 | Recognize reserved expression-form candidate and reject in ObjC 3.0 v1.                                            | Error: `=>` arm syntax reserved for future `match` expression form; suggest statement-form rewrite.                                                    |
+| P-32 | `x = match (r) { case .Ok(let v): { use(v); } default: { useDefault(); } };`                                                             | Reject as expression-form `match` with statement-form arms.                                                        | Error: expression-form `match` requires `=>` expression arms; suggest `case pat => expr;` or statement rewrite with temporary assignment.              |
+| P-33 | `x = match (r) { case .Ok(let v) => v; default => 0; };`                                                                                 | Parse as expression-form `match`.                                                                                  | No parse diagnostic; semantic analysis owns result typing, exhaustiveness, and unsupported lowering diagnostics.                                       |
 | P-34 | `match (obj) { case is MyType let t: { use(t); } default: { handleDefault(); } }` with `__OBJC3_FEATURE_MATCH_TYPE_TEST_PATTERNS__ == 1` | Parse with `type-test-pattern` + binding.                                                                          | No parse diagnostic.                                                                                                                                   |
 | P-35 | `match (obj) { case is MyType let t: { use(t); } default: { handleDefault(); } }` with `__OBJC3_FEATURE_MATCH_TYPE_TEST_PATTERNS__ == 0` | Reject in parser/semantic gate check.                                                                              | Error: type-test patterns disabled; suggest feature guard or explicit `if`/cast chain.                                                                 |
 | P-36 | `int is = 1;`                                                                                                                            | Parse `is` as ordinary identifier outside pattern position.                                                        | No parse diagnostic.                                                                                                                                   |
-| P-37 | `match (x) { case let v where v > 0: { use(v); } default: { handleDefault(); } }`                                                        | Reject in ObjC 3.0 v1 (reserved guarded pattern).                                                                  | Error: guarded patterns are deferred in v1; suggest moving condition into case body.                                                                   |
-| P-38 | `match (x) { case .Ok(let v) where v > 0: { use(v); } default: { handleDefault(); } }`                                                   | Reject in ObjC 3.0 v1 (reserved guarded pattern), including after composite pattern.                               | Error: reserved `where` guard slot not enabled in v1; suggest nested `if` rewrite.                                                                     |
+| P-37 | `match (x) { case let v where v > 0: { use(v); } default: { handleDefault(); } }`                                                        | Parse as guarded statement-form `match` with binding visible to the guard and body.                                | No parse diagnostic; semantic analysis requires a bool guard.                                                                                         |
+| P-38 | `match (x) { case .Ok(let v) where v > 0: { use(v); } default: { handleDefault(); } }`                                                   | Parse as guarded result-case statement-form `match`.                                                               | No parse diagnostic; semantic analysis requires a bool guard and enforces exhaustiveness where applicable.                                            |
 | P-39 | `match (x) { case let where: { use(where); } default: { handleDefault(); } }`                                                            | Parse as binding pattern where identifier is `where`.                                                              | No parse diagnostic (contextual keyword does not reserve identifier slot).                                                                             |
 
 ### F.6.1 Minimum diagnostic quality for matrix failures {#f-6-1}

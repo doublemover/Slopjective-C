@@ -63,6 +63,13 @@ void CollectConcurrencyTaskGroupCancellationExprSites(
   for (const auto &value : expr->collection_values) {
     CollectConcurrencyTaskGroupCancellationExprSites(value.get(), summary);
   }
+  CollectConcurrencyTaskGroupCancellationExprSites(
+      expr->match_expression_scrutinee.get(), summary);
+  for (const auto &arm : expr->match_expression_arms) {
+    CollectConcurrencyTaskGroupCancellationExprSites(
+        arm.guard_condition.get(), summary);
+    CollectConcurrencyTaskGroupCancellationExprSites(arm.value.get(), summary);
+  }
 }
 
 void CollectConcurrencyTaskGroupCancellationStmtSites(

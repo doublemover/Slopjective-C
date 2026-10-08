@@ -71,6 +71,15 @@ bool ParseObjc3CStyleTypeSpelling(
   }
 
   const Objc3LexToken object_name = AdvanceToken(tokens, index);
+  if (object_name.text == "Optional") {
+    result.type = ValueType::Optional;
+    result.value_optional.present = true;
+    result.value_optional.source_type_admitted = true;
+    result.value_optional.semantic_carrier_modeled = true;
+    result.value_optional.line = object_name.line;
+    result.value_optional.column = object_name.column;
+    return ParseObjc3CStyleGenericSuffix(tokens, index, result, diagnostics);
+  }
   result.type = ValueType::ObjCObjectPtr;
   result.object_pointer_spelling = true;
   result.object_pointer_name = object_name.text;

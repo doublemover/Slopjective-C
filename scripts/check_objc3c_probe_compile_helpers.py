@@ -8,6 +8,7 @@ import tempfile
 from pathlib import Path
 from typing import Sequence
 
+from objc3c_tooling.artifact_identity import current_host_artifact_identity
 from objc3c_tooling.probe_compile import (
     find_clangxx,
     normal_user_manifest_link_args,
@@ -25,29 +26,36 @@ def main(argv: Sequence[str] | None = None) -> int:
     old_llvm_root = os.environ.get("LLVM_ROOT")
     old_path = os.environ.get("PATH", "")
     try:
+        artifact_identity = current_host_artifact_identity()
         with tempfile.TemporaryDirectory() as raw_tmp:
             tmp = Path(raw_tmp)
             llvm_bin = tmp / "llvm" / "bin"
             llvm_bin.mkdir(parents=True)
-            fake_clang = llvm_bin / "clang++.exe"
+            clangxx_name = "clang++.exe" if os.name == "nt" else "clang++"
+            fake_clang = llvm_bin / clangxx_name
             fake_clang.write_text("", encoding="utf-8")
             os.environ["LLVM_ROOT"] = str(tmp / "llvm")
-            expect(find_clangxx() == str(fake_clang), "LLVM_ROOT clang++.exe should win discovery")
+            expect(find_clangxx() == str(fake_clang), "LLVM_ROOT clang++ should win discovery")
 
             os.environ.pop("LLVM_ROOT", None)
             path_bin = tmp / "path-bin"
             path_bin.mkdir()
-            path_clang = path_bin / "clang++.exe"
+            path_clang = path_bin / clangxx_name
             path_clang.write_text("", encoding="utf-8")
             os.environ["PATH"] = str(path_bin)
-            expect(Path(find_clangxx()).name.lower() == "clang++.exe", "PATH clang++ should be discovered")
+            expect(Path(find_clangxx()).name.lower() == clangxx_name.lower(), "PATH clang++ should be discovered")
 
+        probe_executable_name = (
+            "probe.exe"
+            if artifact_identity.native_executable_name.endswith(".exe")
+            else "probe"
+        )
         command = probe_compile_command(
             "clang++",
             Path("tests/tooling/runtime/probe.cpp"),
-            Path("tmp/probe.exe"),
-            runtime_library=Path("artifacts/lib/objc3_runtime.lib"),
-            object_inputs=(Path("tmp/module.obj"),),
+            Path("tmp") / probe_executable_name,
+            runtime_library=Path(artifact_identity.runtime_library_relative_path),
+            object_inputs=(Path("tmp") / artifact_identity.module_object_artifact_name,),
             extra_args=("-DTEST=1",),
         )
         joined = " ".join(command)
@@ -66,7 +74,11 @@ def main(argv: Sequence[str] | None = None) -> int:
         expect("native\\objc3c\\src" in joined or "native/objc3c/src" in joined, "compile command should include native source root")
         expect("tests\\tooling\\runtime" in joined or "tests/tooling/runtime" in joined, "compile command should include runtime support root")
         expect("-DTEST=1" in command, "compile command should preserve extra args")
-        expect("tmp/module.obj" in joined or "tmp\\module.obj" in joined, "compile command should include extra objects")
+        expected_object = f"tmp/{artifact_identity.module_object_artifact_name}"
+        expect(
+            expected_object in joined or expected_object.replace("/", "\\") in joined,
+            "compile command should include extra objects",
+        )
     finally:
         if old_llvm_root is None:
             os.environ.pop("LLVM_ROOT", None)

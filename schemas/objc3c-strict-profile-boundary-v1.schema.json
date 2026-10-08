@@ -1,0 +1,184 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://objc3c.dev/schemas/objc3c-strict-profile-boundary-v1.schema.json",
+  "title": "objc3c Strict Profile Boundary",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "contract_id",
+    "issue_ref",
+    "profile_policy",
+    "positive_fixtures",
+    "negative_fixtures"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "objc3c-strict-profile-boundary-v1"
+    },
+    "contract_id": {
+      "const": "objc3c.strict_profile.boundary.v1"
+    },
+    "issue_ref": {
+      "const": 8237
+    },
+    "profile_policy": {
+      "type": "object",
+      "required": [
+        "claimed_conformance_profiles",
+        "native_language_profiles",
+        "rejected_conformance_profiles",
+        "strict_system_native_frontend_profile_allowed"
+      ],
+      "properties": {
+        "claimed_conformance_profiles": {
+          "$ref": "#/$defs/profile_id_array"
+        },
+        "native_language_profiles": {
+          "$ref": "#/$defs/language_profile_array"
+        },
+        "rejected_conformance_profiles": {
+          "$ref": "#/$defs/profile_id_array"
+        },
+        "strict_system_native_frontend_profile_allowed": {
+          "const": false
+        }
+      },
+      "additionalProperties": false
+    },
+    "positive_fixtures": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/positive_fixture"
+      },
+      "minItems": 1,
+      "uniqueItems": true
+    },
+    "negative_fixtures": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/negative_fixture"
+      },
+      "minItems": 1,
+      "uniqueItems": true
+    }
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "profile_id": {
+      "enum": [
+        "core",
+        "strict",
+        "strict-concurrency",
+        "strict-system"
+      ]
+    },
+    "language_profile": {
+      "enum": [
+        "canonical",
+        "strict",
+        "strict-concurrency"
+      ]
+    },
+    "profile_id_array": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/profile_id"
+      },
+      "minItems": 1,
+      "uniqueItems": true
+    },
+    "language_profile_array": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/language_profile"
+      },
+      "minItems": 1,
+      "uniqueItems": true
+    },
+    "fixture_common": {
+      "type": "object",
+      "required": [
+        "case_id",
+        "source_path",
+        "conformance_profile",
+        "expected_stage",
+        "expected_compile_status"
+      ],
+      "properties": {
+        "case_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "source_path": {
+          "type": "string",
+          "pattern": "^tests/conformance/profile_strict_boundary/.+\\.objc3$"
+        },
+        "conformance_profile": {
+          "$ref": "#/$defs/profile_id"
+        },
+        "expected_stage": {
+          "const": "compile"
+        },
+        "expected_compile_status": {
+          "enum": [
+            "accepted",
+            "rejected"
+          ]
+        }
+      },
+      "additionalProperties": true
+    },
+    "positive_fixture": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/fixture_common"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "expected_compile_status": {
+              "const": "accepted"
+            },
+            "expected_diagnostic_code": {
+              "const": ""
+            }
+          },
+          "required": [
+            "expected_diagnostic_code"
+          ]
+        }
+      ]
+    },
+    "negative_fixture": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/fixture_common"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "expected_compile_status": {
+              "const": "rejected"
+            },
+            "expected_diagnostic_code": {
+              "pattern": "^(O3[A-Z][0-9]{3}|OBJC3-E-[A-Z0-9_-]+)$"
+            },
+            "required_tokens": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "minLength": 1
+              },
+              "minItems": 1,
+              "uniqueItems": true
+            }
+          },
+          "required": [
+            "expected_diagnostic_code",
+            "required_tokens"
+          ]
+        }
+      ]
+    }
+  }
+}

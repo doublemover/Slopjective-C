@@ -61,18 +61,54 @@ SCHEMA_PATHS: dict[str, Path] = {
     "objc3c-package-offline-mirror-index-v1": ROOT
     / "schemas"
     / "objc3c-package-offline-mirror-index-v1.schema.json",
+    "objc3c-package-hosted-registry-index-v1": ROOT
+    / "schemas"
+    / "objc3c-package-hosted-registry-index-v1.schema.json",
+    "objc3c-package-hosted-registry-service-v1": ROOT
+    / "schemas"
+    / "objc3c-package-hosted-registry-service-v1.schema.json",
+    "objc3c-package-network-resolution-v1": ROOT
+    / "schemas"
+    / "objc3c-package-network-resolution-v1.schema.json",
+    "objc3c-package-release-channel-publication-v1": ROOT
+    / "schemas"
+    / "objc3c-package-release-channel-publication-v1.schema.json",
     "objc3c-package-local-registry-index-v1": ROOT
     / "schemas"
     / "objc3c-package-local-registry-index-v1.schema.json",
     "objc3c-package-install-receipt-v1": ROOT
     / "schemas"
     / "objc3c-package-install-receipt-v1.schema.json",
+    "objc3c-sanitizer-runtime-library-manifest-v1": ROOT
+    / "schemas"
+    / "objc3c-sanitizer-runtime-library-manifest-v1.schema.json",
+    "objc3c-sanitizer-execution-evidence-v1": ROOT
+    / "schemas"
+    / "objc3c-sanitizer-execution-evidence-v1.schema.json",
+    "objc3c-sanitizer-runtime-promotion-evidence-v1": ROOT
+    / "schemas"
+    / "objc3c-sanitizer-runtime-promotion-evidence-v1.schema.json",
+    "objc3c-package-install-distribution-receipt-v1": ROOT
+    / "schemas"
+    / "objc3c-package-install-distribution-receipt-v1.schema.json",
+    "objc3c-package-install-distribution-operation-receipt-v1": ROOT
+    / "schemas"
+    / "objc3c-package-install-distribution-operation-receipt-v1.schema.json",
     "objc3c-package-operation-receipt-v1": ROOT
     / "schemas"
     / "objc3c-package-operation-receipt-v1.schema.json",
     "objc3c-platform-support-matrix-v1": ROOT
     / "schemas"
     / "objc3c-platform-support-matrix-v1.schema.json",
+    "objc3c-platform-toolchain-support-evidence-v1": ROOT
+    / "schemas"
+    / "objc3c-platform-toolchain-support-evidence-v1.schema.json",
+    "objc3c-platform-expansion-claim-contract-v1": ROOT
+    / "schemas"
+    / "objc3c-platform-expansion-claim-contract-v1.schema.json",
+    "objc3c-platform-support-source-truth-v1": ROOT
+    / "schemas"
+    / "objc3c-platform-support-source-truth-v1.schema.json",
     "objc3c-compiler-throughput-summary-v1": ROOT
     / "schemas"
     / "objc3c-compiler-throughput-summary-v1.schema.json",
@@ -85,9 +121,24 @@ SCHEMA_PATHS: dict[str, Path] = {
     "objc3c-runtime-debug-trace-v1": ROOT
     / "schemas"
     / "objc3c-runtime-debug-trace-v1.schema.json",
+    "objc3c-advanced-runtime-executable-contract-v1": ROOT
+    / "schemas"
+    / "objc3c-advanced-runtime-executable-contract-v1.schema.json",
+    "objc3c-standalone-textual-interface-payload-v1": ROOT
+    / "schemas"
+    / "objc3c-standalone-textual-interface-payload-v1.schema.json",
+    "objc3c-typed-throws-effect-contract-v1": ROOT
+    / "schemas"
+    / "objc3c-typed-throws-effect-contract-v1.schema.json",
+    "objc3c-foundations-umbrella-source-truth-v1": ROOT
+    / "schemas"
+    / "objc3c-foundations-umbrella-source-truth-v1.schema.json",
     "objc3c-performance-telemetry-v1": ROOT
     / "schemas"
     / "objc3c-performance-telemetry-v1.schema.json",
+    "objc3c-optimization-runtime-debug-safety-v1": ROOT
+    / "schemas"
+    / "objc3c-optimization-runtime-debug-safety-v1.schema.json",
     "objc3c-performance-dashboard-summary-v1": ROOT
     / "schemas"
     / "objc3c-performance-dashboard-summary-v1.schema.json",

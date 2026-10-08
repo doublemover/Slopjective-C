@@ -19,7 +19,9 @@ void AppendExecutableMetadataTypedMemberReplayRecords(
         << node.owner_identity << "|" << node.declaration_owner_identity << "|"
         << node.export_owner_identity << "|" << node.selector << "|"
         << (node.is_class_method ? "true" : "false") << "|"
-        << (node.has_body ? "true" : "false") << "|" << node.parameter_count
+        << (node.has_body ? "true" : "false") << "|"
+        << (node.throws_error_out_abi_ready ? "true" : "false") << "|"
+        << node.parameter_count
         << "|" << node.return_type_name << "|" << node.line << "|"
         << node.column;
   }

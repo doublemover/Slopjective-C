@@ -15,12 +15,30 @@
     Objc3SemanticFunctionTypeMetadata metadata;
     metadata.name = name;
     metadata.arity = source.arity;
+    metadata.throws_declared = source.throws_declared;
+    metadata.typed_throws_declared = source.typed_throws_declared;
+    metadata.typed_throws_error_type_spelling =
+        source.typed_throws_error_type_spelling;
+    metadata.typed_throws_effect_signature_key =
+        source.typed_throws_effect_signature_key;
+    metadata.typed_throws_callable_compatibility_policy =
+        source.typed_throws_callable_compatibility_policy;
+    metadata.typed_throws_abi_lowering_ready =
+        source.typed_throws_abi_lowering_ready;
     metadata.generic_parameter_names_source_order =
         source.generic_parameter_names_source_order;
     metadata.generic_parameter_variance_source_order =
         source.generic_parameter_variance_source_order;
     metadata.generic_parameter_constraints_lexicographic =
         source.generic_parameter_constraints_lexicographic;
+    metadata.generic_callable_signature_replay_key =
+        source.generic_callable_signature_replay_key;
+    metadata.generic_callable_reification_policy =
+        source.generic_callable_reification_policy;
+    metadata.generic_callable_mangling_policy_id =
+        source.generic_callable_mangling_policy_id;
+    metadata.generic_callable_contract_deterministic =
+        source.generic_callable_contract_deterministic;
     metadata.param_types = source.param_types;
     metadata.param_canonical_types = source.param_canonical_types;
     metadata.param_is_vector = source.param_is_vector;

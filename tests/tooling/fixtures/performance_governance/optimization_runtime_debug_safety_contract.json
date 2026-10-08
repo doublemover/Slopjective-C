@@ -1,0 +1,412 @@
+{
+  "contract_id": "objc3c.optimization.runtime_debug_safety.v1",
+  "issue_refs": [
+    8205,
+    8224,
+    8226,
+    8227
+  ],
+  "schema_path": "schemas/objc3c-optimization-runtime-debug-safety-v1.schema.json",
+  "source_truth_policy": "Optimization speedup claims require checked-in budget records, semantic proof cases, runtime/deoptimization safety, side-effect replay, invalidation replay, and debug source-map preservation. Generated reports are evidence outputs, not source truth, and no optimizer success path may drop runtime semantics, debugger stepping, inline-frame maps, or source correlation.",
+  "benchmark_contract_records": [
+    {
+      "record_id": "semantic-optimization-compile-cold-wrapper",
+      "budget_family": "compile-throughput",
+      "metric_id": "cold_compile_wall_clock_ms",
+      "workload_id": "compile-cold-wrapper",
+      "manifest_path": "tests/tooling/fixtures/compiler_throughput/workload_manifest.json",
+      "source_path": "tests/tooling/fixtures/native/hello.objc3",
+      "proof_fixture": "tests/tooling/fixtures/semantic_optimization_pipeline/proof_cases.json",
+      "claim_requires": [
+        "checked-in-budget-metric",
+        "checked-in-workload-manifest",
+        "semantic-optimization-proof-case",
+        "debug-source-map-preservation",
+        "runtime-invalidation-replay"
+      ],
+      "forbidden_speedup_claims": [
+        "timing-only-speedup-without-proof",
+        "runtime-miss-path-as-speedup",
+        "generated-report-as-source-truth",
+        "unsupported-optimization-pass-success"
+      ]
+    },
+    {
+      "record_id": "semantic-optimization-dispatch-cache",
+      "budget_family": "runtime-hot-path",
+      "metric_id": "dispatch_wall_clock_ms",
+      "workload_id": "dispatch-cache",
+      "manifest_path": "tests/tooling/fixtures/runtime_performance/workload_manifest.json",
+      "source_path": "tests/tooling/fixtures/native/live_dispatch_fast_path_positive.objc3",
+      "proof_fixture": "tests/tooling/fixtures/semantic_optimization_pipeline/proof_cases.json",
+      "claim_requires": [
+        "checked-in-budget-metric",
+        "checked-in-workload-manifest",
+        "semantic-optimization-proof-case",
+        "debug-source-map-preservation",
+        "runtime-invalidation-replay"
+      ],
+      "forbidden_speedup_claims": [
+        "timing-only-speedup-without-proof",
+        "runtime-miss-path-as-speedup",
+        "cache-hit-only-without-runtime-generation-proof",
+        "debug-map-omitted-optimized-site"
+      ]
+    }
+  ],
+  "runtime_debug_safety_boundaries": [
+    {
+      "boundary_id": "exact-target-devirtualization-runtime-safety",
+      "pass_id": "devirtualization",
+      "optimized_surface": "exact-target message-send direct dispatch",
+      "deoptimization_boundary": "class, category, method, or runtime-cache generation drift invalidates the optimized site before direct dispatch can claim success",
+      "invalidation_boundary": "receiver_static_type, selector_resolution, callee_body_identity, class_generation, category_generation, method_generation, runtime_cache_version, runtime_metadata, and package/import proof state are invalidated",
+      "side_effect_replay_boundary": "the direct dispatch candidate must preserve ownership and side-effect summaries from the original message send",
+      "debug_source_map_preservation": "source_map_debug_identity and line_table_debug_status must remain PRESERVED for the optimized callsite",
+      "required_proof_ids": [
+        "sealed_final_dispatch_evidence",
+        "static_receiver_type_proof",
+        "exact_method_target_identity",
+        "class_category_method_mutation_invalidation",
+        "runtime_cache_version_dependency",
+        "source_map_debug_identity",
+        "line_table_debug_status",
+        "side_effect_summary",
+        "invalidation_completeness"
+      ],
+      "fail_closed_if_missing": true
+    },
+    {
+      "boundary_id": "method-inlining-runtime-debug-safety",
+      "pass_id": "method-inlining",
+      "optimized_surface": "safe scalar method/function inlining subset",
+      "deoptimization_boundary": "callee generation, class/category/protocol generation, ABI, package/import, or runtime metadata drift rejects the inline candidate before speedup publication",
+      "invalidation_boundary": "callee body identity, callee generation, local value, ownership transfer, source-map inline frame, diagnostic location, runtime metadata, source/debug/runtime identity, runtime generation dependency, and invalidation replay are invalidated",
+      "side_effect_replay_boundary": "only pure, no-call, no-runtime-helper, no-allocation, no-ownership-transfer candidates can inline; side-effecting candidates reject fail-closed",
+      "debug_source_map_preservation": "debug_identity_preservation must bind source-map ids, inline-frame id, diagnostic location id, and preserved line-table status",
+      "required_proof_ids": [
+        "callee_body_identity",
+        "scalar_inline_subset",
+        "ownership_arc_effects_replay",
+        "source_map_inline_frame_preservation",
+        "diagnostic_location_preservation",
+        "source_identity_preservation",
+        "debug_identity_preservation",
+        "runtime_identity_preservation",
+        "runtime_invalidation_replay",
+        "side_effect_summary"
+      ],
+      "fail_closed_if_missing": true
+    },
+    {
+      "boundary_id": "cache-aware-dispatch-runtime-debug-safety",
+      "pass_id": "cache-aware-dispatch",
+      "optimized_surface": "runtime-owned checked cache-aware dispatch helper",
+      "deoptimization_boundary": "strict status-envelope failure aborts instead of silently claiming a cached value",
+      "invalidation_boundary": "runtime_cache_version, selector_resolution, and source_map_debug cache-aware dispatch proof state are invalidated",
+      "side_effect_replay_boundary": "dispatch miss behavior and side-effect replay remain runtime-owned by the checked helper and cannot be reimplemented by compiler-local cache speculation",
+      "debug_source_map_preservation": "source-map and debug-visible cache-aware site anchors are preserved for optimized dispatch sites",
+      "required_proof_ids": [
+        "runtime_cache_version_dependency",
+        "source_map_debug_identity",
+        "line_table_debug_status",
+        "semantic_equivalence",
+        "invalidation_completeness"
+      ],
+      "fail_closed_if_missing": true
+    }
+  ],
+  "fail_closed_negative_cases": [
+    {
+      "case_id": "speedup-overclaim-without-budget-record",
+      "classification": "speedup-overclaim",
+      "mutated_surface": "public speedup claim cites timing delta without benchmark_contract_records entry",
+      "source_fixture": "tests/tooling/fixtures/performance_governance/optimization_runtime_debug_safety_contract.json",
+      "expected_decision": "BLOCK_PUBLICATION",
+      "success_claim": false,
+      "expected_diagnostic": "optimization safety claim missing benchmark contract record"
+    },
+    {
+      "case_id": "generated-report-source-truth-overclaim",
+      "classification": "source-truth-overclaim",
+      "mutated_surface": "generated performance report promoted as optimization source authority",
+      "source_fixture": "tests/tooling/fixtures/performance_governance/optimization_runtime_debug_safety_contract.json",
+      "expected_decision": "BLOCK_PUBLICATION",
+      "success_claim": false,
+      "expected_diagnostic": "generated reports are not source truth"
+    },
+    {
+      "case_id": "runtime-miss-speedup-overclaim",
+      "classification": "runtime-miss-overclaim",
+      "mutated_surface": "runtime miss behavior counted as optimized-method speedup",
+      "source_fixture": "tests/tooling/fixtures/performance_governance/optimization_runtime_debug_safety_contract.json",
+      "expected_decision": "BLOCK_PUBLICATION",
+      "success_claim": false,
+      "expected_diagnostic": "runtime miss behavior is not an optimization success path"
+    },
+    {
+      "case_id": "optimization-public-workflow-evidence-missing",
+      "classification": "public-workflow-evidence-boundary",
+      "mutated_surface": "optimizer speedup or safety claim omits the required public workflow action evidence",
+      "source_fixture": "tests/tooling/fixtures/performance_governance/source_surface.json",
+      "expected_decision": "BLOCK_PUBLICATION",
+      "success_claim": false,
+      "expected_diagnostic": "optimization safety claim missing public workflow evidence"
+    },
+    {
+      "case_id": "method-inlining-missing-debug-source-map-preservation",
+      "classification": "missing-debug-proof",
+      "mutated_surface": "optimized inline method drops debug_identity_preservation",
+      "source_fixture": "tests/tooling/fixtures/semantic_optimization_pipeline/proof_cases.json",
+      "proof_case_id": "method-inlining-missing-debug-identity-preservation",
+      "expected_decision": "REJECTED_FAIL_CLOSED",
+      "success_claim": false,
+      "expected_diagnostic": "debug_identity_preservation"
+    },
+    {
+      "case_id": "method-inlining-missing-inline-proof",
+      "classification": "missing-inline-proof",
+      "mutated_surface": "scalar-looking inline candidate lacks callee identity and linked original/callee source spans",
+      "source_fixture": "tests/tooling/fixtures/semantic_optimization_pipeline/negative_method_inlining_missing_inline_proof.json",
+      "expected_decision": "REJECTED_FAIL_CLOSED",
+      "success_claim": false,
+      "expected_diagnostic": "method_inline_callee_body_identity_present"
+    },
+    {
+      "case_id": "method-inlining-missing-runtime-invalidation-replay",
+      "classification": "missing-runtime-proof",
+      "mutated_surface": "optimized inline method lacks runtime_invalidation_replay",
+      "source_fixture": "tests/tooling/fixtures/semantic_optimization_pipeline/proof_cases.json",
+      "proof_case_id": "method-inlining-missing-runtime-invalidation-replay",
+      "expected_decision": "REJECTED_FAIL_CLOSED",
+      "success_claim": false,
+      "expected_diagnostic": "runtime_invalidation_replay"
+    },
+    {
+      "case_id": "method-inlining-side-effecting-callee",
+      "classification": "side-effect-replay-boundary",
+      "mutated_surface": "inline candidate writes global state and cannot replay side effects",
+      "source_fixture": "tests/tooling/fixtures/semantic_optimization_pipeline/proof_cases.json",
+      "proof_case_id": "method-inlining-side-effecting-callee",
+      "expected_decision": "REJECTED_FAIL_CLOSED",
+      "success_claim": false,
+      "expected_diagnostic": "side_effect_summary"
+    },
+    {
+      "case_id": "method-inlining-side-effecting-method-as-pure",
+      "classification": "side-effect-replay-boundary",
+      "mutated_surface": "method with writes, calls, allocation, runtime helper use, ownership transfer, or error edges is modeled as pure",
+      "source_fixture": "tests/tooling/fixtures/semantic_optimization_pipeline/negative_method_inlining_side_effecting_method_as_pure.json",
+      "expected_decision": "REJECTED_FAIL_CLOSED",
+      "success_claim": false,
+      "expected_diagnostic": "method_inline_side_effect_replay_complete"
+    },
+    {
+      "case_id": "method-inlining-source-map-step-through-drift",
+      "classification": "debug-step-through-boundary",
+      "mutated_surface": "optimized inline method drifts source-map inline frames, diagnostic locations, or debugger step-through evidence",
+      "source_fixture": "tests/tooling/fixtures/semantic_optimization_pipeline/negative_method_inlining_source_map_step_drift.json",
+      "expected_decision": "REJECTED_FAIL_CLOSED",
+      "success_claim": false,
+      "expected_diagnostic": "method_inline_debug_stepping_evidence_present"
+    },
+    {
+      "case_id": "method-inlining-stale-dispatch-invalidation",
+      "classification": "runtime-cache-invalidation-boundary",
+      "mutated_surface": "inline candidate carries stale receiver/dispatch or runtime cache assumptions without replay",
+      "source_fixture": "tests/tooling/fixtures/semantic_optimization_pipeline/negative_method_inlining_stale_dispatch_invalidation.json",
+      "expected_decision": "REJECTED_FAIL_CLOSED",
+      "success_claim": false,
+      "expected_diagnostic": "method_inline_runtime_cache_assumptions_fresh"
+    },
+    {
+      "case_id": "devirtualization-runtime-cache-version-drift",
+      "classification": "runtime-cache-invalidation-boundary",
+      "mutated_surface": "devirtualized callsite observes stale runtime cache version",
+      "source_fixture": "tests/tooling/fixtures/semantic_optimization_pipeline/proof_cases.json",
+      "proof_case_id": "devirtualization-runtime-cache-version-drift",
+      "expected_decision": "REJECTED_FAIL_CLOSED",
+      "success_claim": false,
+      "expected_diagnostic": "runtime_cache_version_dependency"
+    }
+  ],
+  "capability_evidence_alignment": {
+    "capability_rows": [
+      "compiler.optimization.semantic-preserving-pipeline",
+      "compiler.optimization.devirtualization",
+      "compiler.optimization.method-inlining",
+      "runtime.optimization.cache-aware-dispatch",
+      "compiler.optimization.runtime-debug-safety"
+    ],
+    "evidence_paths": [
+      "schemas/objc3c-optimization-runtime-debug-safety-v1.schema.json",
+      "tests/tooling/fixtures/performance_governance/optimization_runtime_debug_safety_contract.json",
+      "tests/tooling/fixtures/performance_governance/budget_model.json",
+      "tests/tooling/fixtures/semantic_optimization_pipeline/pipeline.json",
+      "tests/tooling/fixtures/semantic_optimization_pipeline/proof_cases.json",
+      "tests/tooling/fixtures/semantic_optimization_pipeline/method_inlining_replay_contract.json",
+      "tests/tooling/fixtures/semantic_optimization_pipeline/negative_method_inlining_missing_inline_proof.json",
+      "tests/tooling/fixtures/semantic_optimization_pipeline/negative_method_inlining_stale_dispatch_invalidation.json",
+      "tests/tooling/fixtures/semantic_optimization_pipeline/negative_method_inlining_side_effecting_method_as_pure.json",
+      "tests/tooling/fixtures/semantic_optimization_pipeline/negative_method_inlining_source_map_step_drift.json",
+      "tests/tooling/fixtures/optimization_pipeline/candidates.json",
+      "tests/tooling/test_optimization_pipeline_executor.py",
+      "tests/tooling/test_semantic_optimization_pipeline.py"
+    ],
+    "support_claim_policy": "No optimization speedup, runtime safety, or debug preservation support claim may be published from benchmark timing alone, and runtime miss behavior is not an optimization success path; the evidence map must include the checked safety contract, schema, proof cases, and validation test surface."
+  },
+  "optimization_safety_umbrella_readiness": {
+    "contract_id": "objc3c.optimization.runtime_debug_safety.umbrella_readiness.v1",
+    "issue_refs": [
+      8205,
+      8224,
+      8226,
+      8227
+    ],
+    "status": "bounded-source-owned-ready",
+    "reserved_full_claims": [
+      "runtime.object-model.full-realization",
+      "whole-program-optimizer-success",
+      "timing-only-performance-release"
+    ],
+    "source_owned_contracts": [
+      {
+        "path": "schemas/objc3c-optimization-runtime-debug-safety-v1.schema.json",
+        "guards": [
+          "schema binds #8205 #8224 #8226 #8227 and fails closed when umbrella readiness fields disappear"
+        ]
+      },
+      {
+        "path": "tests/tooling/fixtures/performance_governance/optimization_runtime_debug_safety_contract.json",
+        "guards": [
+          "contract rejects generated reports, fallback success paths, missing public workflow evidence, and optimizer success without runtime/debug safety proof as fail closed"
+        ]
+      },
+      {
+        "path": "tests/tooling/fixtures/semantic_optimization_pipeline/pipeline.json",
+        "guards": [
+          "semantic optimization pipeline keeps pass order, proof model, runtime equivalence, and performance governance fail closed"
+        ]
+      },
+      {
+        "path": "tests/tooling/fixtures/semantic_optimization_pipeline/proof_cases.json",
+        "guards": [
+          "proof cases reject missing source identity, debug identity, runtime invalidation replay, source-map drift, stale generation, and side effects as fail closed"
+        ]
+      },
+      {
+        "path": "tests/tooling/fixtures/semantic_optimization_pipeline/method_inlining_replay_contract.json",
+        "guards": [
+          "method inlining requires call/callee source spans, inline-frame ids, stepping policy, side-effect replay, and runtime invalidation replay before success; missing evidence is fail closed"
+        ]
+      },
+      {
+        "path": "tests/tooling/fixtures/optimization_pipeline/candidates.json",
+        "guards": [
+          "lightweight optimizer candidates include concrete inline-frame, stepping, side-effect, runtime cache, and invalidation replay gates and fail closed when any are missing"
+        ]
+      },
+      {
+        "path": "tests/tooling/fixtures/performance_governance/budget_model.json",
+        "guards": [
+          "performance claims remain budget-backed and fail closed without checked metric families"
+        ]
+      },
+      {
+        "path": "tests/tooling/fixtures/performance_governance/source_surface.json",
+        "guards": [
+          "public workflow evidence and checked-in source surfaces stay source owned; tmp reports fail closed as generated-only truth"
+        ]
+      }
+    ],
+    "negative_fixture_contracts": [
+      "tests/tooling/fixtures/semantic_optimization_pipeline/negative_method_inlining_missing_inline_proof.json",
+      "tests/tooling/fixtures/semantic_optimization_pipeline/negative_method_inlining_stale_dispatch_invalidation.json",
+      "tests/tooling/fixtures/semantic_optimization_pipeline/negative_method_inlining_side_effecting_method_as_pure.json",
+      "tests/tooling/fixtures/semantic_optimization_pipeline/negative_method_inlining_source_map_step_drift.json"
+    ],
+    "required_public_workflow_actions": [
+      "benchmark-compiler-throughput",
+      "benchmark-runtime-performance",
+      "test-execution-replay",
+      "test-lowering-runtime-stress",
+      "validate-semantic-optimization-pipeline",
+      "validate-performance-governance",
+      "validate-performance-governance-runtime-contract-linkage"
+    ],
+    "optimizer_success_path_fail_closed_policy": {
+      "rejects_if_any_missing": true,
+      "success_requires": [
+        "semantic equivalence proof",
+        "runtime ABI and package identity proof",
+        "source-map and inline-frame debug preservation proof",
+        "line-table and debugger stepping evidence",
+        "side-effect replay proof",
+        "runtime cache generation freshness",
+        "runtime invalidation replay",
+        "checked performance budget and source-owned workload manifest"
+      ],
+      "forbidden_success_paths": [
+        "generated-only source map",
+        "stale native debug line table",
+        "stale dispatch or runtime cache assumption",
+        "side-effecting method modeled as pure",
+        "missing public workflow evidence",
+        "runtime miss counted as optimized success"
+      ]
+    },
+    "capability_row_recommendations": [
+      {
+        "capability_id": "compiler.optimization.semantic-preserving-pipeline",
+        "support_level": "bounded-supported",
+        "evidence_paths": [
+          "tests/tooling/fixtures/semantic_optimization_pipeline/pipeline.json",
+          "scripts/objc3c_semantic_optimization_pipeline.py"
+        ]
+      },
+      {
+        "capability_id": "compiler.optimization.devirtualization",
+        "support_level": "bounded-supported",
+        "evidence_paths": [
+          "tests/tooling/fixtures/semantic_optimization_pipeline/proof_cases.json",
+          "tests/tooling/fixtures/performance_governance/optimization_runtime_debug_safety_contract.json"
+        ]
+      },
+      {
+        "capability_id": "compiler.optimization.method-inlining",
+        "support_level": "bounded-supported",
+        "evidence_paths": [
+          "tests/tooling/fixtures/semantic_optimization_pipeline/method_inlining_replay_contract.json",
+          "tests/tooling/fixtures/optimization_pipeline/candidates.json"
+        ]
+      },
+      {
+        "capability_id": "runtime.optimization.cache-aware-dispatch",
+        "support_level": "bounded-supported",
+        "evidence_paths": [
+          "tests/tooling/fixtures/semantic_optimization_pipeline/pipeline.json",
+          "tests/tooling/fixtures/performance_governance/optimization_runtime_debug_safety_contract.json"
+        ]
+      },
+      {
+        "capability_id": "compiler.optimization.runtime-debug-safety",
+        "support_level": "bounded-supported",
+        "evidence_paths": [
+          "schemas/objc3c-optimization-runtime-debug-safety-v1.schema.json",
+          "tests/tooling/fixtures/performance_governance/optimization_runtime_debug_safety_contract.json",
+          "tests/tooling/test_semantic_optimization_pipeline.py"
+        ]
+      },
+      {
+        "capability_id": "runtime.object-model.full-realization",
+        "support_level": "reserved",
+        "evidence_paths": []
+      }
+    ],
+    "support_docs_deferred_for_central_integration": [
+      "docs/support/capability_matrix.*",
+      "docs/support/evidence_map.*",
+      "docs/support/umbrella_readiness.*"
+    ]
+  }
+}

@@ -1591,7 +1591,45 @@
         "callee_generation_snapshot": "callee-generation=G12",
         "inlined_target_symbol": "objc3_inlineable_InlineMath_addOne",
         "ir_digest_before": "sha256:before-method-inline-full-proof",
-        "ir_digest_after": "sha256:after-method-inline-full-proof"
+        "ir_digest_after": "sha256:after-method-inline-full-proof",
+        "source_identity_preservation": {
+          "callsite_id": "sg:Inline.compute:call",
+          "source_graph_node_ids": [
+            "sg:Inline.compute:call"
+          ],
+          "callee_body_identity": "body:InlineMath.addOne:v1"
+        },
+        "debug_identity_preservation": {
+          "source_map_ids": [
+            "sm:inline:caller:line:21",
+            "sm:inline:callee:line:7"
+          ],
+          "inline_frame_id": "sm-inline-frame:caller21-callee7",
+          "diagnostic_location_id": "diag:inline:caller:21:13",
+          "line_table_status": "PRESERVED"
+        },
+        "runtime_identity_preservation": {
+          "runtime_metadata_ids": [
+            "rtm:class:InlineMath"
+          ],
+          "abi_identity": "objc3-runtime-abi:2025Q4",
+          "package_import_identity": "pkg:inline-math@1#abi=objc3-abi-2025Q4",
+          "runtime_generation_dependencies": [
+            "class-generation=G88",
+            "category-generation=G0",
+            "protocol-generation=G0",
+            "callee-generation=G12"
+          ],
+          "guard_strategy": "generation-guard-fail-closed"
+        },
+        "runtime_invalidation_replay": [
+          {
+            "mutation_event": "category-method-replacement:InlineMath.addOne",
+            "optimized_site_id": "sg:Inline.compute:call",
+            "expected_behavior": "guard-fail-closed-to-runtime-dispatch",
+            "observed_behavior": "guard-fail-closed-to-runtime-dispatch"
+          }
+        ]
       },
       "proof_records": [
         {
@@ -1693,6 +1731,26 @@
           "proof_id": "callee_generation_invalidation",
           "status": "PRESENT",
           "stable_identity": "callee-generation=G12;invalidated"
+        },
+        {
+          "proof_id": "source_identity_preservation",
+          "status": "PRESENT",
+          "stable_identity": "source-preservation:sg:Inline.compute:call:body:InlineMath.addOne:v1"
+        },
+        {
+          "proof_id": "debug_identity_preservation",
+          "status": "PRESENT",
+          "stable_identity": "debug-preservation:sm-inline-frame:caller21-callee7:diag:inline:caller:21:13"
+        },
+        {
+          "proof_id": "runtime_identity_preservation",
+          "status": "PRESENT",
+          "stable_identity": "runtime-preservation:rtm:class:InlineMath:objc3-runtime-abi:2025Q4:pkg:inline-math@1#abi=objc3-abi-2025Q4"
+        },
+        {
+          "proof_id": "runtime_invalidation_replay",
+          "status": "PRESENT",
+          "stable_identity": "runtime-replay:sg:Inline.compute:call:category-method-replacement"
         }
       ],
       "verdicts": {
@@ -1715,7 +1773,11 @@
           "source_map_inline_frame",
           "diagnostic_location",
           "runtime_metadata_identity",
-          "package_import_abi_identity"
+          "package_import_abi_identity",
+          "source_identity_preservation",
+          "debug_identity_preservation",
+          "runtime_generation_dependency",
+          "invalidation_replay"
         ],
         "consumed_stale_proofs": []
       },
@@ -1793,7 +1855,45 @@
         "callee_generation_snapshot": "callee-generation=G12",
         "inlined_target_symbol": "objc3_inlineable_InlineMath_addTwo",
         "ir_digest_before": "sha256:before-final-method-inline-full-proof",
-        "ir_digest_after": "sha256:after-final-method-inline-full-proof"
+        "ir_digest_after": "sha256:after-final-method-inline-full-proof",
+        "source_identity_preservation": {
+          "callsite_id": "sg:InlineMath.addTwo:call",
+          "source_graph_node_ids": [
+            "sg:InlineMath.addTwo:call"
+          ],
+          "callee_body_identity": "body:InlineMath.addTwo:v1"
+        },
+        "debug_identity_preservation": {
+          "source_map_ids": [
+            "sm:inline:caller:line:21",
+            "sm:inline:callee:line:7"
+          ],
+          "inline_frame_id": "sm-inline-frame:caller21-callee7",
+          "diagnostic_location_id": "diag:inline:caller:21:13",
+          "line_table_status": "PRESERVED"
+        },
+        "runtime_identity_preservation": {
+          "runtime_metadata_ids": [
+            "rtm:class:InlineMath"
+          ],
+          "abi_identity": "objc3-runtime-abi:2025Q4",
+          "package_import_identity": "pkg:inline-math@1#abi=objc3-abi-2025Q4",
+          "runtime_generation_dependencies": [
+            "class-generation=G88",
+            "category-generation=G0",
+            "protocol-generation=G0",
+            "callee-generation=G12"
+          ],
+          "guard_strategy": "generation-guard-fail-closed"
+        },
+        "runtime_invalidation_replay": [
+          {
+            "mutation_event": "category-method-replacement:InlineMath.addOne",
+            "optimized_site_id": "sg:InlineMath.addTwo:call",
+            "expected_behavior": "guard-fail-closed-to-runtime-dispatch",
+            "observed_behavior": "guard-fail-closed-to-runtime-dispatch"
+          }
+        ]
       },
       "proof_records": [
         {
@@ -1895,6 +1995,26 @@
           "proof_id": "callee_generation_invalidation",
           "status": "PRESENT",
           "stable_identity": "callee-generation=G12;invalidated"
+        },
+        {
+          "proof_id": "source_identity_preservation",
+          "status": "PRESENT",
+          "stable_identity": "source-preservation:sg:InlineMath.addTwo:call:body:InlineMath.addTwo:v1"
+        },
+        {
+          "proof_id": "debug_identity_preservation",
+          "status": "PRESENT",
+          "stable_identity": "debug-preservation:sm-inline-frame:caller21-callee7:diag:inline:caller:21:13"
+        },
+        {
+          "proof_id": "runtime_identity_preservation",
+          "status": "PRESENT",
+          "stable_identity": "runtime-preservation:rtm:class:InlineMath:objc3-runtime-abi:2025Q4:pkg:inline-math@1#abi=objc3-abi-2025Q4"
+        },
+        {
+          "proof_id": "runtime_invalidation_replay",
+          "status": "PRESENT",
+          "stable_identity": "runtime-replay:sg:InlineMath.addTwo:call:category-method-replacement"
         }
       ],
       "verdicts": {
@@ -1917,7 +2037,11 @@
           "source_map_inline_frame",
           "diagnostic_location",
           "runtime_metadata_identity",
-          "package_import_abi_identity"
+          "package_import_abi_identity",
+          "source_identity_preservation",
+          "debug_identity_preservation",
+          "runtime_generation_dependency",
+          "invalidation_replay"
         ],
         "consumed_stale_proofs": []
       },
@@ -1995,7 +2119,45 @@
         "callee_generation_snapshot": "callee-generation=G12",
         "inlined_target_symbol": "objc3_inlineable_InlineMath_addOne",
         "ir_digest_before": "sha256:before-method-inline-full-proof",
-        "ir_digest_after": "sha256:after-method-inline-full-proof"
+        "ir_digest_after": "sha256:after-method-inline-full-proof",
+        "source_identity_preservation": {
+          "callsite_id": "sg:Inline.compute:call",
+          "source_graph_node_ids": [
+            "sg:Inline.compute:call"
+          ],
+          "callee_body_identity": "body:InlineMath.addOne:v1"
+        },
+        "debug_identity_preservation": {
+          "source_map_ids": [
+            "sm:inline:caller:line:21",
+            "sm:inline:callee:line:7"
+          ],
+          "inline_frame_id": "sm-inline-frame:caller21-callee7",
+          "diagnostic_location_id": "diag:inline:caller:21:13",
+          "line_table_status": "PRESERVED"
+        },
+        "runtime_identity_preservation": {
+          "runtime_metadata_ids": [
+            "rtm:class:InlineMath"
+          ],
+          "abi_identity": "objc3-runtime-abi:2025Q4",
+          "package_import_identity": "pkg:inline-math@1#abi=objc3-abi-2025Q4",
+          "runtime_generation_dependencies": [
+            "class-generation=G88",
+            "category-generation=G0",
+            "protocol-generation=G0",
+            "callee-generation=G12"
+          ],
+          "guard_strategy": "generation-guard-fail-closed"
+        },
+        "runtime_invalidation_replay": [
+          {
+            "mutation_event": "category-method-replacement:InlineMath.addOne",
+            "optimized_site_id": "sg:Inline.compute:call",
+            "expected_behavior": "guard-fail-closed-to-runtime-dispatch",
+            "observed_behavior": "guard-fail-closed-to-runtime-dispatch"
+          }
+        ]
       },
       "proof_records": [
         {
@@ -2092,6 +2254,26 @@
           "proof_id": "callee_generation_invalidation",
           "status": "PRESENT",
           "stable_identity": "callee-generation=G12;invalidated"
+        },
+        {
+          "proof_id": "source_identity_preservation",
+          "status": "PRESENT",
+          "stable_identity": "source-preservation:sg:Inline.compute:call:body:InlineMath.addOne:v1"
+        },
+        {
+          "proof_id": "debug_identity_preservation",
+          "status": "PRESENT",
+          "stable_identity": "debug-preservation:sm-inline-frame:caller21-callee7:diag:inline:caller:21:13"
+        },
+        {
+          "proof_id": "runtime_identity_preservation",
+          "status": "PRESENT",
+          "stable_identity": "runtime-preservation:rtm:class:InlineMath:objc3-runtime-abi:2025Q4:pkg:inline-math@1#abi=objc3-abi-2025Q4"
+        },
+        {
+          "proof_id": "runtime_invalidation_replay",
+          "status": "PRESENT",
+          "stable_identity": "runtime-replay:sg:Inline.compute:call:category-method-replacement"
         }
       ],
       "verdicts": {
@@ -2114,7 +2296,11 @@
           "source_map_inline_frame",
           "diagnostic_location",
           "runtime_metadata_identity",
-          "package_import_abi_identity"
+          "package_import_abi_identity",
+          "source_identity_preservation",
+          "debug_identity_preservation",
+          "runtime_generation_dependency",
+          "invalidation_replay"
         ],
         "consumed_stale_proofs": []
       },
@@ -2194,7 +2380,45 @@
         "callee_generation_snapshot": "callee-generation=G12",
         "inlined_target_symbol": "objc3_inlineable_InlineMath_addOne",
         "ir_digest_before": "sha256:before-method-inline-full-proof",
-        "ir_digest_after": "sha256:after-method-inline-full-proof"
+        "ir_digest_after": "sha256:after-method-inline-full-proof",
+        "source_identity_preservation": {
+          "callsite_id": "sg:Inline.compute:call",
+          "source_graph_node_ids": [
+            "sg:Inline.compute:call"
+          ],
+          "callee_body_identity": "body:InlineMath.addOne:v1"
+        },
+        "debug_identity_preservation": {
+          "source_map_ids": [
+            "sm:inline:caller:line:21",
+            "sm:inline:callee:line:7"
+          ],
+          "inline_frame_id": "sm-inline-frame:caller21-callee7",
+          "diagnostic_location_id": "diag:inline:caller:21:13",
+          "line_table_status": "PRESERVED"
+        },
+        "runtime_identity_preservation": {
+          "runtime_metadata_ids": [
+            "rtm:class:InlineMath"
+          ],
+          "abi_identity": "objc3-runtime-abi:2025Q4",
+          "package_import_identity": "pkg:inline-math@1#abi=objc3-abi-2025Q4",
+          "runtime_generation_dependencies": [
+            "class-generation=G88",
+            "category-generation=G0",
+            "protocol-generation=G0",
+            "callee-generation=G12"
+          ],
+          "guard_strategy": "generation-guard-fail-closed"
+        },
+        "runtime_invalidation_replay": [
+          {
+            "mutation_event": "category-method-replacement:InlineMath.addOne",
+            "optimized_site_id": "sg:Inline.compute:call",
+            "expected_behavior": "guard-fail-closed-to-runtime-dispatch",
+            "observed_behavior": "guard-fail-closed-to-runtime-dispatch"
+          }
+        ]
       },
       "proof_records": [
         {
@@ -2296,6 +2520,26 @@
           "proof_id": "callee_generation_invalidation",
           "status": "PRESENT",
           "stable_identity": "callee-generation=G12;invalidated"
+        },
+        {
+          "proof_id": "source_identity_preservation",
+          "status": "PRESENT",
+          "stable_identity": "source-preservation:sg:Inline.compute:call:body:InlineMath.addOne:v1"
+        },
+        {
+          "proof_id": "debug_identity_preservation",
+          "status": "PRESENT",
+          "stable_identity": "debug-preservation:sm-inline-frame:caller21-callee7:diag:inline:caller:21:13"
+        },
+        {
+          "proof_id": "runtime_identity_preservation",
+          "status": "PRESENT",
+          "stable_identity": "runtime-preservation:rtm:class:InlineMath:objc3-runtime-abi:2025Q4:pkg:inline-math@1#abi=objc3-abi-2025Q4"
+        },
+        {
+          "proof_id": "runtime_invalidation_replay",
+          "status": "PRESENT",
+          "stable_identity": "runtime-replay:sg:Inline.compute:call:category-method-replacement"
         }
       ],
       "verdicts": {
@@ -2318,7 +2562,11 @@
           "source_map_inline_frame",
           "diagnostic_location",
           "runtime_metadata_identity",
-          "package_import_abi_identity"
+          "package_import_abi_identity",
+          "source_identity_preservation",
+          "debug_identity_preservation",
+          "runtime_generation_dependency",
+          "invalidation_replay"
         ],
         "consumed_stale_proofs": []
       },
@@ -2392,7 +2640,45 @@
         "callee_generation_snapshot": "callee-generation=G12",
         "inlined_target_symbol": "objc3_inlineable_InlineMath_addOne",
         "ir_digest_before": "sha256:before-method-inline-full-proof",
-        "ir_digest_after": "sha256:after-method-inline-full-proof"
+        "ir_digest_after": "sha256:after-method-inline-full-proof",
+        "source_identity_preservation": {
+          "callsite_id": "sg:Inline.compute:call",
+          "source_graph_node_ids": [
+            "sg:Inline.compute:call"
+          ],
+          "callee_body_identity": "body:InlineMath.addOne:v1"
+        },
+        "debug_identity_preservation": {
+          "source_map_ids": [
+            "sm:inline:caller:line:21",
+            "sm:inline:callee:line:7"
+          ],
+          "inline_frame_id": "sm-inline-frame:caller21-callee7",
+          "diagnostic_location_id": "diag:inline:caller:21:13",
+          "line_table_status": "PRESERVED"
+        },
+        "runtime_identity_preservation": {
+          "runtime_metadata_ids": [
+            "rtm:class:InlineMath"
+          ],
+          "abi_identity": "objc3-runtime-abi:2025Q4",
+          "package_import_identity": "pkg:inline-math@1#abi=objc3-abi-2025Q4",
+          "runtime_generation_dependencies": [
+            "class-generation=G88",
+            "category-generation=G0",
+            "protocol-generation=G0",
+            "callee-generation=G12"
+          ],
+          "guard_strategy": "generation-guard-fail-closed"
+        },
+        "runtime_invalidation_replay": [
+          {
+            "mutation_event": "category-method-replacement:InlineMath.addOne",
+            "optimized_site_id": "sg:Inline.compute:call",
+            "expected_behavior": "guard-fail-closed-to-runtime-dispatch",
+            "observed_behavior": "guard-fail-closed-to-runtime-dispatch"
+          }
+        ]
       },
       "proof_records": [
         {
@@ -2494,6 +2780,26 @@
           "proof_id": "callee_generation_invalidation",
           "status": "PRESENT",
           "stable_identity": "callee-generation=G12;invalidated"
+        },
+        {
+          "proof_id": "source_identity_preservation",
+          "status": "PRESENT",
+          "stable_identity": "source-preservation:sg:Inline.compute:call:body:InlineMath.addOne:v1"
+        },
+        {
+          "proof_id": "debug_identity_preservation",
+          "status": "PRESENT",
+          "stable_identity": "debug-preservation:sm-inline-frame:caller21-callee7:diag:inline:caller:21:13"
+        },
+        {
+          "proof_id": "runtime_identity_preservation",
+          "status": "PRESENT",
+          "stable_identity": "runtime-preservation:rtm:class:InlineMath:objc3-runtime-abi:2025Q4:pkg:inline-math@1#abi=objc3-abi-2025Q4"
+        },
+        {
+          "proof_id": "runtime_invalidation_replay",
+          "status": "PRESENT",
+          "stable_identity": "runtime-replay:sg:Inline.compute:call:category-method-replacement"
         }
       ],
       "verdicts": {
@@ -2516,7 +2822,11 @@
           "source_map_inline_frame",
           "diagnostic_location",
           "runtime_metadata_identity",
-          "package_import_abi_identity"
+          "package_import_abi_identity",
+          "source_identity_preservation",
+          "debug_identity_preservation",
+          "runtime_generation_dependency",
+          "invalidation_replay"
         ],
         "consumed_stale_proofs": []
       },
@@ -2596,7 +2906,45 @@
         "callee_generation_snapshot": "callee-generation=G12",
         "inlined_target_symbol": "objc3_inlineable_InlineMath_addOne",
         "ir_digest_before": "sha256:before-method-inline-full-proof",
-        "ir_digest_after": "sha256:after-method-inline-full-proof"
+        "ir_digest_after": "sha256:after-method-inline-full-proof",
+        "source_identity_preservation": {
+          "callsite_id": "sg:Inline.compute:call",
+          "source_graph_node_ids": [
+            "sg:Inline.compute:call"
+          ],
+          "callee_body_identity": "body:InlineMath.addOne:v1"
+        },
+        "debug_identity_preservation": {
+          "source_map_ids": [
+            "sm:inline:caller:line:21",
+            "sm:inline:callee:line:7"
+          ],
+          "inline_frame_id": "sm-inline-frame:caller21-callee7",
+          "diagnostic_location_id": "diag:inline:caller:21:13",
+          "line_table_status": "PRESERVED"
+        },
+        "runtime_identity_preservation": {
+          "runtime_metadata_ids": [
+            "rtm:class:InlineMath"
+          ],
+          "abi_identity": "objc3-runtime-abi:2025Q4",
+          "package_import_identity": "pkg:inline-math@1#abi=objc3-abi-2025Q4",
+          "runtime_generation_dependencies": [
+            "class-generation=G88",
+            "category-generation=G0",
+            "protocol-generation=G0",
+            "callee-generation=G12"
+          ],
+          "guard_strategy": "generation-guard-fail-closed"
+        },
+        "runtime_invalidation_replay": [
+          {
+            "mutation_event": "category-method-replacement:InlineMath.addOne",
+            "optimized_site_id": "sg:Inline.compute:call",
+            "expected_behavior": "guard-fail-closed-to-runtime-dispatch",
+            "observed_behavior": "guard-fail-closed-to-runtime-dispatch"
+          }
+        ]
       },
       "proof_records": [
         {
@@ -2698,6 +3046,26 @@
           "proof_id": "callee_generation_invalidation",
           "status": "PRESENT",
           "stable_identity": "callee-generation=G12;invalidated"
+        },
+        {
+          "proof_id": "source_identity_preservation",
+          "status": "PRESENT",
+          "stable_identity": "source-preservation:sg:Inline.compute:call:body:InlineMath.addOne:v1"
+        },
+        {
+          "proof_id": "debug_identity_preservation",
+          "status": "PRESENT",
+          "stable_identity": "debug-preservation:sm-inline-frame:caller21-callee7:diag:inline:caller:21:13"
+        },
+        {
+          "proof_id": "runtime_identity_preservation",
+          "status": "PRESENT",
+          "stable_identity": "runtime-preservation:rtm:class:InlineMath:objc3-runtime-abi:2025Q4:pkg:inline-math@1#abi=objc3-abi-2025Q4"
+        },
+        {
+          "proof_id": "runtime_invalidation_replay",
+          "status": "PRESENT",
+          "stable_identity": "runtime-replay:sg:Inline.compute:call:category-method-replacement"
         }
       ],
       "verdicts": {
@@ -2720,7 +3088,11 @@
           "source_map_inline_frame",
           "diagnostic_location",
           "runtime_metadata_identity",
-          "package_import_abi_identity"
+          "package_import_abi_identity",
+          "source_identity_preservation",
+          "debug_identity_preservation",
+          "runtime_generation_dependency",
+          "invalidation_replay"
         ],
         "consumed_stale_proofs": []
       },
@@ -2801,7 +3173,45 @@
         "callee_generation_snapshot": "callee-generation=G12",
         "inlined_target_symbol": "objc3_inlineable_InlineMath_addOne",
         "ir_digest_before": "sha256:before-method-inline-full-proof",
-        "ir_digest_after": "sha256:after-method-inline-full-proof"
+        "ir_digest_after": "sha256:after-method-inline-full-proof",
+        "source_identity_preservation": {
+          "callsite_id": "sg:Inline.compute:call",
+          "source_graph_node_ids": [
+            "sg:Inline.compute:call"
+          ],
+          "callee_body_identity": "body:InlineMath.addOne:v1"
+        },
+        "debug_identity_preservation": {
+          "source_map_ids": [
+            "sm:inline:caller:line:21",
+            "sm:inline:callee:line:7"
+          ],
+          "inline_frame_id": "sm-inline-frame:caller21-callee7",
+          "diagnostic_location_id": "diag:inline:caller:21:13",
+          "line_table_status": "PRESERVED"
+        },
+        "runtime_identity_preservation": {
+          "runtime_metadata_ids": [
+            "rtm:class:InlineMath"
+          ],
+          "abi_identity": "objc3-runtime-abi:2025Q4",
+          "package_import_identity": "pkg:inline-math@2#abi=objc3-abi-2026Q1",
+          "runtime_generation_dependencies": [
+            "class-generation=G88",
+            "category-generation=G0",
+            "protocol-generation=G0",
+            "callee-generation=G12"
+          ],
+          "guard_strategy": "generation-guard-fail-closed"
+        },
+        "runtime_invalidation_replay": [
+          {
+            "mutation_event": "category-method-replacement:InlineMath.addOne",
+            "optimized_site_id": "sg:Inline.compute:call",
+            "expected_behavior": "guard-fail-closed-to-runtime-dispatch",
+            "observed_behavior": "guard-fail-closed-to-runtime-dispatch"
+          }
+        ]
       },
       "proof_records": [
         {
@@ -2903,6 +3313,26 @@
           "proof_id": "callee_generation_invalidation",
           "status": "PRESENT",
           "stable_identity": "callee-generation=G12;invalidated"
+        },
+        {
+          "proof_id": "source_identity_preservation",
+          "status": "PRESENT",
+          "stable_identity": "source-preservation:sg:Inline.compute:call:body:InlineMath.addOne:v1"
+        },
+        {
+          "proof_id": "debug_identity_preservation",
+          "status": "PRESENT",
+          "stable_identity": "debug-preservation:sm-inline-frame:caller21-callee7:diag:inline:caller:21:13"
+        },
+        {
+          "proof_id": "runtime_identity_preservation",
+          "status": "PRESENT",
+          "stable_identity": "runtime-preservation:rtm:class:InlineMath:objc3-runtime-abi:2025Q4:pkg:inline-math@2#abi=objc3-abi-2026Q1"
+        },
+        {
+          "proof_id": "runtime_invalidation_replay",
+          "status": "PRESENT",
+          "stable_identity": "runtime-replay:sg:Inline.compute:call:category-method-replacement"
         }
       ],
       "verdicts": {
@@ -2925,7 +3355,11 @@
           "source_map_inline_frame",
           "diagnostic_location",
           "runtime_metadata_identity",
-          "package_import_abi_identity"
+          "package_import_abi_identity",
+          "source_identity_preservation",
+          "debug_identity_preservation",
+          "runtime_generation_dependency",
+          "invalidation_replay"
         ],
         "consumed_stale_proofs": []
       },
@@ -3005,7 +3439,45 @@
         "callee_generation_snapshot": "callee-generation=G12",
         "inlined_target_symbol": "objc3_inlineable_InlineMath_addOne",
         "ir_digest_before": "sha256:before-method-inline-full-proof",
-        "ir_digest_after": "sha256:after-method-inline-full-proof"
+        "ir_digest_after": "sha256:after-method-inline-full-proof",
+        "source_identity_preservation": {
+          "callsite_id": "sg:Inline.compute:call",
+          "source_graph_node_ids": [
+            "sg:Inline.compute:call"
+          ],
+          "callee_body_identity": "body:InlineMath.addOne:v1"
+        },
+        "debug_identity_preservation": {
+          "source_map_ids": [
+            "sm:inline:caller:line:21",
+            "sm:inline:callee:line:7"
+          ],
+          "inline_frame_id": "sm-inline-frame:caller21-callee7",
+          "diagnostic_location_id": "diag:inline:caller:21:13",
+          "line_table_status": "PRESERVED"
+        },
+        "runtime_identity_preservation": {
+          "runtime_metadata_ids": [
+            "rtm:class:InlineMath"
+          ],
+          "abi_identity": "objc3-runtime-abi:2025Q4",
+          "package_import_identity": "pkg:inline-math@1#abi=objc3-abi-2025Q4",
+          "runtime_generation_dependencies": [
+            "class-generation=G88",
+            "category-generation=G0",
+            "protocol-generation=G0",
+            "callee-generation=G12"
+          ],
+          "guard_strategy": "generation-guard-fail-closed"
+        },
+        "runtime_invalidation_replay": [
+          {
+            "mutation_event": "category-method-replacement:InlineMath.addOne",
+            "optimized_site_id": "sg:Inline.compute:call",
+            "expected_behavior": "guard-fail-closed-to-runtime-dispatch",
+            "observed_behavior": "guard-fail-closed-to-runtime-dispatch"
+          }
+        ]
       },
       "proof_records": [
         {
@@ -3107,6 +3579,26 @@
           "proof_id": "callee_generation_invalidation",
           "status": "PRESENT",
           "stable_identity": "callee-generation=G12;invalidated"
+        },
+        {
+          "proof_id": "source_identity_preservation",
+          "status": "PRESENT",
+          "stable_identity": "source-preservation:sg:Inline.compute:call:body:InlineMath.addOne:v1"
+        },
+        {
+          "proof_id": "debug_identity_preservation",
+          "status": "PRESENT",
+          "stable_identity": "debug-preservation:sm-inline-frame:caller21-callee7:diag:inline:caller:21:13"
+        },
+        {
+          "proof_id": "runtime_identity_preservation",
+          "status": "PRESENT",
+          "stable_identity": "runtime-preservation:rtm:class:InlineMath:objc3-runtime-abi:2025Q4:pkg:inline-math@1#abi=objc3-abi-2025Q4"
+        },
+        {
+          "proof_id": "runtime_invalidation_replay",
+          "status": "PRESENT",
+          "stable_identity": "runtime-replay:sg:Inline.compute:call:category-method-replacement"
         }
       ],
       "verdicts": {
@@ -3129,7 +3621,11 @@
           "source_map_inline_frame",
           "diagnostic_location",
           "runtime_metadata_identity",
-          "package_import_abi_identity"
+          "package_import_abi_identity",
+          "source_identity_preservation",
+          "debug_identity_preservation",
+          "runtime_generation_dependency",
+          "invalidation_replay"
         ],
         "consumed_stale_proofs": []
       },
@@ -3209,7 +3705,46 @@
         "callee_generation_snapshot": "callee-generation=G11",
         "inlined_target_symbol": "objc3_inlineable_InlineMath_addOne",
         "ir_digest_before": "sha256:before-method-inline-full-proof",
-        "ir_digest_after": "sha256:after-method-inline-full-proof"
+        "ir_digest_after": "sha256:after-method-inline-full-proof",
+        "source_identity_preservation": {
+          "callsite_id": "sg:Inline.compute:call",
+          "source_graph_node_ids": [
+            "sg:Inline.compute:call"
+          ],
+          "callee_body_identity": "body:InlineMath.addOne:v1"
+        },
+        "debug_identity_preservation": {
+          "source_map_ids": [
+            "sm:inline:caller:line:21",
+            "sm:inline:callee:line:7"
+          ],
+          "inline_frame_id": "sm-inline-frame:caller21-callee7",
+          "diagnostic_location_id": "diag:inline:caller:21:13",
+          "line_table_status": "PRESERVED"
+        },
+        "runtime_identity_preservation": {
+          "runtime_metadata_ids": [
+            "rtm:class:InlineMath"
+          ],
+          "abi_identity": "objc3-runtime-abi:2025Q4",
+          "package_import_identity": "pkg:inline-math@1#abi=objc3-abi-2025Q4",
+          "runtime_generation_dependencies": [
+            "class-generation=G88",
+            "category-generation=G0",
+            "protocol-generation=G0",
+            "callee-generation=G12",
+            "callee-generation=G11"
+          ],
+          "guard_strategy": "generation-guard-fail-closed"
+        },
+        "runtime_invalidation_replay": [
+          {
+            "mutation_event": "category-method-replacement:InlineMath.addOne",
+            "optimized_site_id": "sg:Inline.compute:call",
+            "expected_behavior": "guard-fail-closed-to-runtime-dispatch",
+            "observed_behavior": "guard-fail-closed-to-runtime-dispatch"
+          }
+        ]
       },
       "proof_records": [
         {
@@ -3311,6 +3846,26 @@
           "proof_id": "callee_generation_invalidation",
           "status": "FAILED",
           "stable_identity": "callee-generation=G12;invalidated"
+        },
+        {
+          "proof_id": "source_identity_preservation",
+          "status": "PRESENT",
+          "stable_identity": "source-preservation:sg:Inline.compute:call:body:InlineMath.addOne:v1"
+        },
+        {
+          "proof_id": "debug_identity_preservation",
+          "status": "PRESENT",
+          "stable_identity": "debug-preservation:sm-inline-frame:caller21-callee7:diag:inline:caller:21:13"
+        },
+        {
+          "proof_id": "runtime_identity_preservation",
+          "status": "PRESENT",
+          "stable_identity": "runtime-preservation:rtm:class:InlineMath:objc3-runtime-abi:2025Q4:pkg:inline-math@1#abi=objc3-abi-2025Q4"
+        },
+        {
+          "proof_id": "runtime_invalidation_replay",
+          "status": "PRESENT",
+          "stable_identity": "runtime-replay:sg:Inline.compute:call:category-method-replacement"
         }
       ],
       "verdicts": {
@@ -3332,7 +3887,11 @@
           "source_map_inline_frame",
           "diagnostic_location",
           "runtime_metadata_identity",
-          "package_import_abi_identity"
+          "package_import_abi_identity",
+          "source_identity_preservation",
+          "debug_identity_preservation",
+          "runtime_generation_dependency",
+          "invalidation_replay"
         ],
         "consumed_stale_proofs": []
       },
@@ -3344,6 +3903,804 @@
           "callee_generation_invalidation"
         ],
         "diagnostic_contains": "callee_generation_invalidation"
+      }
+    },
+    {
+      "case_id": "method-inlining-missing-source-identity-preservation",
+      "pass_id": "method-inlining",
+      "candidate": {
+        "source_graph_node_ids": [
+          "sg:Inline.compute:call"
+        ],
+        "type_graph_ids": [
+          "tg:Inline#compute:i32"
+        ],
+        "semantic_type_summaries": [
+          {
+            "summary_id": "sem:Inline.compute",
+            "result_type": "Int"
+          }
+        ],
+        "runtime_metadata_ids": [
+          "rtm:class:InlineMath"
+        ],
+        "abi_identity": "objc3-runtime-abi:2025Q4",
+        "package_import_identity": "pkg:inline-math@1#abi=objc3-abi-2025Q4",
+        "source_map_ids": [
+          "sm:inline:caller:line:21",
+          "sm:inline:callee:line:7"
+        ],
+        "line_table_status": "PRESERVED",
+        "ownership_summaries": [
+          "scalar-arguments-borrowed",
+          "scalar-result-owned-by-caller"
+        ],
+        "side_effect_summaries": [
+          "pure",
+          "reads:none",
+          "writes:none",
+          "calls:none",
+          "runtime_helpers:none",
+          "dispatch:none",
+          "allocation:none",
+          "ownership_transfer:none",
+          "error_behavior:none"
+        ],
+        "class_category_protocol_generation_assumptions": [
+          "class-generation=G88",
+          "category-generation=G0",
+          "protocol-generation=G0",
+          "callee-generation=G12"
+        ],
+        "benchmark_workload_digest": "sha256:methodinliningmissingsourceidentitypreservation0",
+        "static_receiver_type_proof": "static-final:InlineMath",
+        "sealed_final_dispatch_evidence": "final-class:InlineMath",
+        "exact_target_method_identity": "method:InlineMath.addOne:i32->i32",
+        "mutation_generation_snapshot": "class=G88;category=G0;method=G12",
+        "runtime_cache_version_dependency": "runtime-cache-version:not-used-by-inline",
+        "devirtualized_target_symbol": "",
+        "callee_body_identity": "body:InlineMath.addOne:v1",
+        "callee_body_ir_digest": "sha256:callee-body-add-one-000000000000000000000000000000000000",
+        "inline_candidate_kind": "pure-scalar-free-function",
+        "scalar_signature_proof": "i32(i32)",
+        "ownership_effects_summary": "borrowed-scalar-args;caller-owned-scalar-result;no-consumed-values",
+        "source_map_inline_frame_id": "sm-inline-frame:caller21-callee7",
+        "diagnostic_location_id": "diag:inline:caller:21:13",
+        "inlining_depth": 1,
+        "recursion_state": "ABSENT",
+        "callee_generation_snapshot": "callee-generation=G12",
+        "inlined_target_symbol": "objc3_inlineable_InlineMath_addOne",
+        "ir_digest_before": "sha256:before-method-inline-full-proof",
+        "ir_digest_after": "sha256:after-method-inline-full-proof",
+        "debug_identity_preservation": {
+          "source_map_ids": [
+            "sm:inline:caller:line:21",
+            "sm:inline:callee:line:7"
+          ],
+          "inline_frame_id": "sm-inline-frame:caller21-callee7",
+          "diagnostic_location_id": "diag:inline:caller:21:13",
+          "line_table_status": "PRESERVED"
+        },
+        "runtime_identity_preservation": {
+          "runtime_metadata_ids": [
+            "rtm:class:InlineMath"
+          ],
+          "abi_identity": "objc3-runtime-abi:2025Q4",
+          "package_import_identity": "pkg:inline-math@1#abi=objc3-abi-2025Q4",
+          "runtime_generation_dependencies": [
+            "class-generation=G88",
+            "category-generation=G0",
+            "protocol-generation=G0",
+            "callee-generation=G12"
+          ],
+          "guard_strategy": "generation-guard-fail-closed"
+        },
+        "runtime_invalidation_replay": [
+          {
+            "mutation_event": "category-method-replacement:InlineMath.addOne",
+            "optimized_site_id": "sg:Inline.compute:call",
+            "expected_behavior": "guard-fail-closed-to-runtime-dispatch",
+            "observed_behavior": "guard-fail-closed-to-runtime-dispatch"
+          }
+        ],
+        "source_identity_preservation": {
+          "callsite_id": "sg:Inline.compute:call",
+          "source_graph_node_ids": [
+            "sg:Inline.compute:call"
+          ],
+          "callee_body_identity": "body:InlineMath.addOne:v1"
+        }
+      },
+      "proof_records": [
+        {
+          "proof_id": "source_graph_node_identity",
+          "status": "PRESENT",
+          "stable_identity": "sg:Inline.compute:call"
+        },
+        {
+          "proof_id": "type_graph_identity",
+          "status": "PRESENT",
+          "stable_identity": "tg:Inline#compute:i32"
+        },
+        {
+          "proof_id": "semantic_type_summary",
+          "status": "PRESENT",
+          "stable_identity": "sem:Inline.compute"
+        },
+        {
+          "proof_id": "runtime_metadata_identity",
+          "status": "PRESENT",
+          "stable_identity": "rtm:class:InlineMath"
+        },
+        {
+          "proof_id": "runtime_abi_safety",
+          "status": "PRESENT",
+          "stable_identity": "objc3-runtime-abi:2025Q4"
+        },
+        {
+          "proof_id": "package_import_abi_identity",
+          "status": "PRESENT",
+          "stable_identity": "pkg:inline-math@1#abi=objc3-abi-2025Q4"
+        },
+        {
+          "proof_id": "source_map_debug_identity",
+          "status": "PRESENT",
+          "stable_identity": "sm-inline-frame:caller21-callee7"
+        },
+        {
+          "proof_id": "line_table_debug_status",
+          "status": "PRESENT",
+          "stable_identity": "line-table:preserved-with-inline-frame"
+        },
+        {
+          "proof_id": "ownership_arc_safety",
+          "status": "PRESENT",
+          "stable_identity": "arc:inline-borrowed-scalars-safe"
+        },
+        {
+          "proof_id": "side_effect_summary",
+          "status": "PRESENT",
+          "stable_identity": "effects:pure-no-calls-no-runtime-helpers"
+        },
+        {
+          "proof_id": "generation_assumption_validity",
+          "status": "PRESENT",
+          "stable_identity": "generations:classG88:categoryG0:protocolG0:calleeG12"
+        },
+        {
+          "proof_id": "semantic_equivalence",
+          "status": "PRESENT",
+          "stable_identity": "equiv:inline-scalar-add-one"
+        },
+        {
+          "proof_id": "invalidation_completeness",
+          "status": "PRESENT",
+          "stable_identity": "invalidate:inline-callee-local-debug-abi"
+        },
+        {
+          "proof_id": "callee_body_identity",
+          "status": "PRESENT",
+          "stable_identity": "body:InlineMath.addOne:v1"
+        },
+        {
+          "proof_id": "scalar_inline_subset",
+          "status": "PRESENT",
+          "stable_identity": "subset:pure-scalar-function-or-final-method"
+        },
+        {
+          "proof_id": "ownership_arc_effects_replay",
+          "status": "PRESENT",
+          "stable_identity": "arc-effects:borrowed-scalars-replayed"
+        },
+        {
+          "proof_id": "source_map_inline_frame_preservation",
+          "status": "PRESENT",
+          "stable_identity": "inline-frame:caller21-callee7-preserved"
+        },
+        {
+          "proof_id": "diagnostic_location_preservation",
+          "status": "PRESENT",
+          "stable_identity": "diag:inline:caller:21:13-preserved"
+        },
+        {
+          "proof_id": "inlining_depth_recursion_limit",
+          "status": "PRESENT",
+          "stable_identity": "depth=1;recursion=absent;limit=3"
+        },
+        {
+          "proof_id": "callee_generation_invalidation",
+          "status": "PRESENT",
+          "stable_identity": "callee-generation=G12;invalidated"
+        },
+        {
+          "proof_id": "source_identity_preservation",
+          "status": "MISSING",
+          "stable_identity": ""
+        },
+        {
+          "proof_id": "debug_identity_preservation",
+          "status": "PRESENT",
+          "stable_identity": "debug-preservation:sm-inline-frame:caller21-callee7:diag:inline:caller:21:13"
+        },
+        {
+          "proof_id": "runtime_identity_preservation",
+          "status": "PRESENT",
+          "stable_identity": "runtime-preservation:rtm:class:InlineMath:objc3-runtime-abi:2025Q4:pkg:inline-math@1#abi=objc3-abi-2025Q4"
+        },
+        {
+          "proof_id": "runtime_invalidation_replay",
+          "status": "PRESENT",
+          "stable_identity": "runtime-replay:sg:Inline.compute:call:category-method-replacement"
+        }
+      ],
+      "verdicts": {
+        "semantic_equivalence_verdict": "PRESERVED",
+        "runtime_abi_safety_verdict": "NO_RUNTIME_ABI_IMPACT",
+        "source_map_debug_impact_verdict": "PRESERVED",
+        "ownership_arc_safety_verdict": "SAFE",
+        "package_import_abi_identity_verdict": "IDENTICAL"
+      },
+      "runtime_metadata_impact": {
+        "verdict": "UNCHANGED"
+      },
+      "invalidation": {
+        "declares_invalidated_proof_state": true,
+        "invalidated_proofs": [
+          "callee_body_identity",
+          "callee_generation",
+          "local_value",
+          "ownership_transfer",
+          "source_map_inline_frame",
+          "diagnostic_location",
+          "runtime_metadata_identity",
+          "package_import_abi_identity",
+          "source_identity_preservation",
+          "debug_identity_preservation",
+          "runtime_generation_dependency",
+          "invalidation_replay"
+        ],
+        "consumed_stale_proofs": []
+      },
+      "expected_result": {
+        "decision": "REJECTED_FAIL_CLOSED",
+        "success_claim": false,
+        "missing_proofs": [
+          "source_identity_preservation"
+        ],
+        "failed_proofs": [],
+        "diagnostic_contains": "source_identity_preservation"
+      }
+    },
+    {
+      "case_id": "method-inlining-missing-debug-identity-preservation",
+      "pass_id": "method-inlining",
+      "candidate": {
+        "source_graph_node_ids": [
+          "sg:Inline.compute:call"
+        ],
+        "type_graph_ids": [
+          "tg:Inline#compute:i32"
+        ],
+        "semantic_type_summaries": [
+          {
+            "summary_id": "sem:Inline.compute",
+            "result_type": "Int"
+          }
+        ],
+        "runtime_metadata_ids": [
+          "rtm:class:InlineMath"
+        ],
+        "abi_identity": "objc3-runtime-abi:2025Q4",
+        "package_import_identity": "pkg:inline-math@1#abi=objc3-abi-2025Q4",
+        "source_map_ids": [
+          "sm:inline:caller:line:21",
+          "sm:inline:callee:line:7"
+        ],
+        "line_table_status": "PRESERVED",
+        "ownership_summaries": [
+          "scalar-arguments-borrowed",
+          "scalar-result-owned-by-caller"
+        ],
+        "side_effect_summaries": [
+          "pure",
+          "reads:none",
+          "writes:none",
+          "calls:none",
+          "runtime_helpers:none",
+          "dispatch:none",
+          "allocation:none",
+          "ownership_transfer:none",
+          "error_behavior:none"
+        ],
+        "class_category_protocol_generation_assumptions": [
+          "class-generation=G88",
+          "category-generation=G0",
+          "protocol-generation=G0",
+          "callee-generation=G12"
+        ],
+        "benchmark_workload_digest": "sha256:methodinliningmissingdebugidentitypreservation00",
+        "static_receiver_type_proof": "static-final:InlineMath",
+        "sealed_final_dispatch_evidence": "final-class:InlineMath",
+        "exact_target_method_identity": "method:InlineMath.addOne:i32->i32",
+        "mutation_generation_snapshot": "class=G88;category=G0;method=G12",
+        "runtime_cache_version_dependency": "runtime-cache-version:not-used-by-inline",
+        "devirtualized_target_symbol": "",
+        "callee_body_identity": "body:InlineMath.addOne:v1",
+        "callee_body_ir_digest": "sha256:callee-body-add-one-000000000000000000000000000000000000",
+        "inline_candidate_kind": "pure-scalar-free-function",
+        "scalar_signature_proof": "i32(i32)",
+        "ownership_effects_summary": "borrowed-scalar-args;caller-owned-scalar-result;no-consumed-values",
+        "source_map_inline_frame_id": "sm-inline-frame:caller21-callee7",
+        "diagnostic_location_id": "diag:inline:caller:21:13",
+        "inlining_depth": 1,
+        "recursion_state": "ABSENT",
+        "callee_generation_snapshot": "callee-generation=G12",
+        "inlined_target_symbol": "objc3_inlineable_InlineMath_addOne",
+        "ir_digest_before": "sha256:before-method-inline-full-proof",
+        "ir_digest_after": "sha256:after-method-inline-full-proof",
+        "source_identity_preservation": {
+          "callsite_id": "sg:Inline.compute:call",
+          "source_graph_node_ids": [
+            "sg:Inline.compute:call"
+          ],
+          "callee_body_identity": "body:InlineMath.addOne:v1"
+        },
+        "runtime_identity_preservation": {
+          "runtime_metadata_ids": [
+            "rtm:class:InlineMath"
+          ],
+          "abi_identity": "objc3-runtime-abi:2025Q4",
+          "package_import_identity": "pkg:inline-math@1#abi=objc3-abi-2025Q4",
+          "runtime_generation_dependencies": [
+            "class-generation=G88",
+            "category-generation=G0",
+            "protocol-generation=G0",
+            "callee-generation=G12"
+          ],
+          "guard_strategy": "generation-guard-fail-closed"
+        },
+        "runtime_invalidation_replay": [
+          {
+            "mutation_event": "category-method-replacement:InlineMath.addOne",
+            "optimized_site_id": "sg:Inline.compute:call",
+            "expected_behavior": "guard-fail-closed-to-runtime-dispatch",
+            "observed_behavior": "guard-fail-closed-to-runtime-dispatch"
+          }
+        ],
+        "debug_identity_preservation": {
+          "source_map_ids": [
+            "sm:inline:caller:line:21",
+            "sm:inline:callee:line:7"
+          ],
+          "inline_frame_id": "sm-inline-frame:caller21-callee7",
+          "diagnostic_location_id": "diag:inline:caller:21:13",
+          "line_table_status": "PRESERVED"
+        }
+      },
+      "proof_records": [
+        {
+          "proof_id": "source_graph_node_identity",
+          "status": "PRESENT",
+          "stable_identity": "sg:Inline.compute:call"
+        },
+        {
+          "proof_id": "type_graph_identity",
+          "status": "PRESENT",
+          "stable_identity": "tg:Inline#compute:i32"
+        },
+        {
+          "proof_id": "semantic_type_summary",
+          "status": "PRESENT",
+          "stable_identity": "sem:Inline.compute"
+        },
+        {
+          "proof_id": "runtime_metadata_identity",
+          "status": "PRESENT",
+          "stable_identity": "rtm:class:InlineMath"
+        },
+        {
+          "proof_id": "runtime_abi_safety",
+          "status": "PRESENT",
+          "stable_identity": "objc3-runtime-abi:2025Q4"
+        },
+        {
+          "proof_id": "package_import_abi_identity",
+          "status": "PRESENT",
+          "stable_identity": "pkg:inline-math@1#abi=objc3-abi-2025Q4"
+        },
+        {
+          "proof_id": "source_map_debug_identity",
+          "status": "PRESENT",
+          "stable_identity": "sm-inline-frame:caller21-callee7"
+        },
+        {
+          "proof_id": "line_table_debug_status",
+          "status": "PRESENT",
+          "stable_identity": "line-table:preserved-with-inline-frame"
+        },
+        {
+          "proof_id": "ownership_arc_safety",
+          "status": "PRESENT",
+          "stable_identity": "arc:inline-borrowed-scalars-safe"
+        },
+        {
+          "proof_id": "side_effect_summary",
+          "status": "PRESENT",
+          "stable_identity": "effects:pure-no-calls-no-runtime-helpers"
+        },
+        {
+          "proof_id": "generation_assumption_validity",
+          "status": "PRESENT",
+          "stable_identity": "generations:classG88:categoryG0:protocolG0:calleeG12"
+        },
+        {
+          "proof_id": "semantic_equivalence",
+          "status": "PRESENT",
+          "stable_identity": "equiv:inline-scalar-add-one"
+        },
+        {
+          "proof_id": "invalidation_completeness",
+          "status": "PRESENT",
+          "stable_identity": "invalidate:inline-callee-local-debug-abi"
+        },
+        {
+          "proof_id": "callee_body_identity",
+          "status": "PRESENT",
+          "stable_identity": "body:InlineMath.addOne:v1"
+        },
+        {
+          "proof_id": "scalar_inline_subset",
+          "status": "PRESENT",
+          "stable_identity": "subset:pure-scalar-function-or-final-method"
+        },
+        {
+          "proof_id": "ownership_arc_effects_replay",
+          "status": "PRESENT",
+          "stable_identity": "arc-effects:borrowed-scalars-replayed"
+        },
+        {
+          "proof_id": "source_map_inline_frame_preservation",
+          "status": "PRESENT",
+          "stable_identity": "inline-frame:caller21-callee7-preserved"
+        },
+        {
+          "proof_id": "diagnostic_location_preservation",
+          "status": "PRESENT",
+          "stable_identity": "diag:inline:caller:21:13-preserved"
+        },
+        {
+          "proof_id": "inlining_depth_recursion_limit",
+          "status": "PRESENT",
+          "stable_identity": "depth=1;recursion=absent;limit=3"
+        },
+        {
+          "proof_id": "callee_generation_invalidation",
+          "status": "PRESENT",
+          "stable_identity": "callee-generation=G12;invalidated"
+        },
+        {
+          "proof_id": "source_identity_preservation",
+          "status": "PRESENT",
+          "stable_identity": "source-preservation:sg:Inline.compute:call:body:InlineMath.addOne:v1"
+        },
+        {
+          "proof_id": "debug_identity_preservation",
+          "status": "MISSING",
+          "stable_identity": ""
+        },
+        {
+          "proof_id": "runtime_identity_preservation",
+          "status": "PRESENT",
+          "stable_identity": "runtime-preservation:rtm:class:InlineMath:objc3-runtime-abi:2025Q4:pkg:inline-math@1#abi=objc3-abi-2025Q4"
+        },
+        {
+          "proof_id": "runtime_invalidation_replay",
+          "status": "PRESENT",
+          "stable_identity": "runtime-replay:sg:Inline.compute:call:category-method-replacement"
+        }
+      ],
+      "verdicts": {
+        "semantic_equivalence_verdict": "PRESERVED",
+        "runtime_abi_safety_verdict": "NO_RUNTIME_ABI_IMPACT",
+        "source_map_debug_impact_verdict": "PRESERVED",
+        "ownership_arc_safety_verdict": "SAFE",
+        "package_import_abi_identity_verdict": "IDENTICAL"
+      },
+      "runtime_metadata_impact": {
+        "verdict": "UNCHANGED"
+      },
+      "invalidation": {
+        "declares_invalidated_proof_state": true,
+        "invalidated_proofs": [
+          "callee_body_identity",
+          "callee_generation",
+          "local_value",
+          "ownership_transfer",
+          "source_map_inline_frame",
+          "diagnostic_location",
+          "runtime_metadata_identity",
+          "package_import_abi_identity",
+          "source_identity_preservation",
+          "debug_identity_preservation",
+          "runtime_generation_dependency",
+          "invalidation_replay"
+        ],
+        "consumed_stale_proofs": []
+      },
+      "expected_result": {
+        "decision": "REJECTED_FAIL_CLOSED",
+        "success_claim": false,
+        "missing_proofs": [
+          "debug_identity_preservation"
+        ],
+        "failed_proofs": [],
+        "diagnostic_contains": "debug_identity_preservation"
+      }
+    },
+    {
+      "case_id": "method-inlining-missing-runtime-invalidation-replay",
+      "pass_id": "method-inlining",
+      "candidate": {
+        "source_graph_node_ids": [
+          "sg:Inline.compute:call"
+        ],
+        "type_graph_ids": [
+          "tg:Inline#compute:i32"
+        ],
+        "semantic_type_summaries": [
+          {
+            "summary_id": "sem:Inline.compute",
+            "result_type": "Int"
+          }
+        ],
+        "runtime_metadata_ids": [
+          "rtm:class:InlineMath"
+        ],
+        "abi_identity": "objc3-runtime-abi:2025Q4",
+        "package_import_identity": "pkg:inline-math@1#abi=objc3-abi-2025Q4",
+        "source_map_ids": [
+          "sm:inline:caller:line:21",
+          "sm:inline:callee:line:7"
+        ],
+        "line_table_status": "PRESERVED",
+        "ownership_summaries": [
+          "scalar-arguments-borrowed",
+          "scalar-result-owned-by-caller"
+        ],
+        "side_effect_summaries": [
+          "pure",
+          "reads:none",
+          "writes:none",
+          "calls:none",
+          "runtime_helpers:none",
+          "dispatch:none",
+          "allocation:none",
+          "ownership_transfer:none",
+          "error_behavior:none"
+        ],
+        "class_category_protocol_generation_assumptions": [
+          "class-generation=G88",
+          "category-generation=G0",
+          "protocol-generation=G0",
+          "callee-generation=G12"
+        ],
+        "benchmark_workload_digest": "sha256:methodinliningmissingruntimeinvalidationreplay00",
+        "static_receiver_type_proof": "static-final:InlineMath",
+        "sealed_final_dispatch_evidence": "final-class:InlineMath",
+        "exact_target_method_identity": "method:InlineMath.addOne:i32->i32",
+        "mutation_generation_snapshot": "class=G88;category=G0;method=G12",
+        "runtime_cache_version_dependency": "runtime-cache-version:not-used-by-inline",
+        "devirtualized_target_symbol": "",
+        "callee_body_identity": "body:InlineMath.addOne:v1",
+        "callee_body_ir_digest": "sha256:callee-body-add-one-000000000000000000000000000000000000",
+        "inline_candidate_kind": "pure-scalar-free-function",
+        "scalar_signature_proof": "i32(i32)",
+        "ownership_effects_summary": "borrowed-scalar-args;caller-owned-scalar-result;no-consumed-values",
+        "source_map_inline_frame_id": "sm-inline-frame:caller21-callee7",
+        "diagnostic_location_id": "diag:inline:caller:21:13",
+        "inlining_depth": 1,
+        "recursion_state": "ABSENT",
+        "callee_generation_snapshot": "callee-generation=G12",
+        "inlined_target_symbol": "objc3_inlineable_InlineMath_addOne",
+        "ir_digest_before": "sha256:before-method-inline-full-proof",
+        "ir_digest_after": "sha256:after-method-inline-full-proof",
+        "source_identity_preservation": {
+          "callsite_id": "sg:Inline.compute:call",
+          "source_graph_node_ids": [
+            "sg:Inline.compute:call"
+          ],
+          "callee_body_identity": "body:InlineMath.addOne:v1"
+        },
+        "debug_identity_preservation": {
+          "source_map_ids": [
+            "sm:inline:caller:line:21",
+            "sm:inline:callee:line:7"
+          ],
+          "inline_frame_id": "sm-inline-frame:caller21-callee7",
+          "diagnostic_location_id": "diag:inline:caller:21:13",
+          "line_table_status": "PRESERVED"
+        },
+        "runtime_identity_preservation": {
+          "runtime_metadata_ids": [
+            "rtm:class:InlineMath"
+          ],
+          "abi_identity": "objc3-runtime-abi:2025Q4",
+          "package_import_identity": "pkg:inline-math@1#abi=objc3-abi-2025Q4",
+          "runtime_generation_dependencies": [
+            "class-generation=G88",
+            "category-generation=G0",
+            "protocol-generation=G0",
+            "callee-generation=G12"
+          ],
+          "guard_strategy": "generation-guard-fail-closed"
+        },
+        "runtime_invalidation_replay": [
+          {
+            "mutation_event": "category-method-replacement:InlineMath.addOne",
+            "optimized_site_id": "sg:Inline.compute:call",
+            "expected_behavior": "guard-fail-closed-to-runtime-dispatch",
+            "observed_behavior": "guard-fail-closed-to-runtime-dispatch"
+          }
+        ]
+      },
+      "proof_records": [
+        {
+          "proof_id": "source_graph_node_identity",
+          "status": "PRESENT",
+          "stable_identity": "sg:Inline.compute:call"
+        },
+        {
+          "proof_id": "type_graph_identity",
+          "status": "PRESENT",
+          "stable_identity": "tg:Inline#compute:i32"
+        },
+        {
+          "proof_id": "semantic_type_summary",
+          "status": "PRESENT",
+          "stable_identity": "sem:Inline.compute"
+        },
+        {
+          "proof_id": "runtime_metadata_identity",
+          "status": "PRESENT",
+          "stable_identity": "rtm:class:InlineMath"
+        },
+        {
+          "proof_id": "runtime_abi_safety",
+          "status": "PRESENT",
+          "stable_identity": "objc3-runtime-abi:2025Q4"
+        },
+        {
+          "proof_id": "package_import_abi_identity",
+          "status": "PRESENT",
+          "stable_identity": "pkg:inline-math@1#abi=objc3-abi-2025Q4"
+        },
+        {
+          "proof_id": "source_map_debug_identity",
+          "status": "PRESENT",
+          "stable_identity": "sm-inline-frame:caller21-callee7"
+        },
+        {
+          "proof_id": "line_table_debug_status",
+          "status": "PRESENT",
+          "stable_identity": "line-table:preserved-with-inline-frame"
+        },
+        {
+          "proof_id": "ownership_arc_safety",
+          "status": "PRESENT",
+          "stable_identity": "arc:inline-borrowed-scalars-safe"
+        },
+        {
+          "proof_id": "side_effect_summary",
+          "status": "PRESENT",
+          "stable_identity": "effects:pure-no-calls-no-runtime-helpers"
+        },
+        {
+          "proof_id": "generation_assumption_validity",
+          "status": "PRESENT",
+          "stable_identity": "generations:classG88:categoryG0:protocolG0:calleeG12"
+        },
+        {
+          "proof_id": "semantic_equivalence",
+          "status": "PRESENT",
+          "stable_identity": "equiv:inline-scalar-add-one"
+        },
+        {
+          "proof_id": "invalidation_completeness",
+          "status": "PRESENT",
+          "stable_identity": "invalidate:inline-callee-local-debug-abi"
+        },
+        {
+          "proof_id": "callee_body_identity",
+          "status": "PRESENT",
+          "stable_identity": "body:InlineMath.addOne:v1"
+        },
+        {
+          "proof_id": "scalar_inline_subset",
+          "status": "PRESENT",
+          "stable_identity": "subset:pure-scalar-function-or-final-method"
+        },
+        {
+          "proof_id": "ownership_arc_effects_replay",
+          "status": "PRESENT",
+          "stable_identity": "arc-effects:borrowed-scalars-replayed"
+        },
+        {
+          "proof_id": "source_map_inline_frame_preservation",
+          "status": "PRESENT",
+          "stable_identity": "inline-frame:caller21-callee7-preserved"
+        },
+        {
+          "proof_id": "diagnostic_location_preservation",
+          "status": "PRESENT",
+          "stable_identity": "diag:inline:caller:21:13-preserved"
+        },
+        {
+          "proof_id": "inlining_depth_recursion_limit",
+          "status": "PRESENT",
+          "stable_identity": "depth=1;recursion=absent;limit=3"
+        },
+        {
+          "proof_id": "callee_generation_invalidation",
+          "status": "PRESENT",
+          "stable_identity": "callee-generation=G12;invalidated"
+        },
+        {
+          "proof_id": "source_identity_preservation",
+          "status": "PRESENT",
+          "stable_identity": "source-preservation:sg:Inline.compute:call:body:InlineMath.addOne:v1"
+        },
+        {
+          "proof_id": "debug_identity_preservation",
+          "status": "PRESENT",
+          "stable_identity": "debug-preservation:sm-inline-frame:caller21-callee7:diag:inline:caller:21:13"
+        },
+        {
+          "proof_id": "runtime_identity_preservation",
+          "status": "PRESENT",
+          "stable_identity": "runtime-preservation:rtm:class:InlineMath:objc3-runtime-abi:2025Q4:pkg:inline-math@1#abi=objc3-abi-2025Q4"
+        },
+        {
+          "proof_id": "runtime_invalidation_replay",
+          "status": "MISSING",
+          "stable_identity": ""
+        }
+      ],
+      "verdicts": {
+        "semantic_equivalence_verdict": "PRESERVED",
+        "runtime_abi_safety_verdict": "NO_RUNTIME_ABI_IMPACT",
+        "source_map_debug_impact_verdict": "PRESERVED",
+        "ownership_arc_safety_verdict": "SAFE",
+        "package_import_abi_identity_verdict": "IDENTICAL"
+      },
+      "runtime_metadata_impact": {
+        "verdict": "UNCHANGED"
+      },
+      "invalidation": {
+        "declares_invalidated_proof_state": true,
+        "invalidated_proofs": [
+          "callee_body_identity",
+          "callee_generation",
+          "local_value",
+          "ownership_transfer",
+          "source_map_inline_frame",
+          "diagnostic_location",
+          "runtime_metadata_identity",
+          "package_import_abi_identity",
+          "source_identity_preservation",
+          "debug_identity_preservation",
+          "runtime_generation_dependency",
+          "invalidation_replay"
+        ],
+        "consumed_stale_proofs": []
+      },
+      "expected_result": {
+        "decision": "REJECTED_FAIL_CLOSED",
+        "success_claim": false,
+        "missing_proofs": [
+          "runtime_invalidation_replay"
+        ],
+        "failed_proofs": [],
+        "diagnostic_contains": "runtime_invalidation_replay"
       }
     }
   ]

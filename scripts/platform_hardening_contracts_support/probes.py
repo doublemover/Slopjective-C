@@ -8,6 +8,8 @@ import subprocess
 import sys
 from typing import Any, Sequence
 
+from objc3c_tooling.llvm_discovery import find_llvm_tool_path
+
 from .constants import ROOT, SUPPORTED_HOST_ARCH_ALIASES
 from .models import HostSnapshot, ToolProbe
 
@@ -42,7 +44,8 @@ def missing_tool_probe(tool_name: str, command_name: str | None = None) -> ToolP
 
 def required_tool_probes() -> dict[str, dict[str, Any]]:
     pwsh_path = shutil.which("pwsh")
-    clang_path = shutil.which("clang++") or shutil.which("clang")
+    clang_tool = find_llvm_tool_path("clang++") or find_llvm_tool_path("clang")
+    clang_path = str(clang_tool) if clang_tool else None
     probes = {
         "python": ToolProbe((sys.executable, "--version"), True, 0, sys.version.splitlines()[0]),
         "pwsh": run_probe((pwsh_path, "--version")) if pwsh_path else missing_tool_probe("pwsh"),

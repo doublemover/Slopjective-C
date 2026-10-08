@@ -35,7 +35,12 @@
             { "contains": { "const": 8175 } },
             { "contains": { "const": 8191 } },
             { "contains": { "const": 8192 } },
-            { "contains": { "const": 8193 } }
+            { "contains": { "const": 8193 } },
+            { "contains": { "const": 8194 } },
+            { "contains": { "const": 8205 } },
+            { "contains": { "const": 8224 } },
+            { "contains": { "const": 8226 } },
+            { "contains": { "const": 8227 } }
           ]
         },
         "support_claims": {
@@ -43,7 +48,8 @@
           "items": { "type": "string" },
           "allOf": [
             { "contains": { "const": "objc3c.behavior.semantic_optimization_pipeline" } },
-            { "contains": { "const": "objc3c.behavior.optimization.method-inlining-safe-subset" } }
+            { "contains": { "const": "objc3c.behavior.optimization.method-inlining-safe-subset" } },
+            { "contains": { "const": "objc3c.behavior.runtime.cache-aware-dispatch" } }
           ]
         },
         "capability_rows_required": {
@@ -224,9 +230,17 @@
             { "contains": { "const": "source_graph_node_ids" } },
             { "contains": { "const": "static_receiver_type_proof" } },
             { "contains": { "const": "runtime_cache_version_dependency" } },
+            { "contains": { "const": "exact_target_method_identity" } },
             { "contains": { "const": "callee_body_identity" } },
+            { "contains": { "const": "callee_body_ir_digest" } },
             { "contains": { "const": "inlining_depth" } },
-            { "contains": { "const": "callee_generation_snapshot" } }
+            { "contains": { "const": "callee_generation_snapshot" } },
+            { "contains": { "const": "source_identity_preservation" } },
+            { "contains": { "const": "debug_identity_preservation" } },
+            { "contains": { "const": "runtime_identity_preservation" } },
+            { "contains": { "const": "runtime_invalidation_replay" } },
+            { "contains": { "const": "ir_digest_before" } },
+            { "contains": { "const": "ir_digest_after" } }
           ]
         },
         "result_payload_fields": {
@@ -338,6 +352,7 @@
         "budget_model",
         "required_public_actions",
         "required_checked_in_paths",
+        "optimization_runtime_debug_safety_contract",
         "workload_evidence",
         "semantic_trace_evidence",
         "runtime_equivalence_validation"
@@ -363,7 +378,15 @@
         "required_checked_in_paths": {
           "type": "array",
           "items": { "type": "string" },
+          "allOf": [
+            { "contains": { "const": "schemas/objc3c-optimization-runtime-debug-safety-v1.schema.json" } },
+            { "contains": { "const": "tests/tooling/fixtures/performance_governance/optimization_runtime_debug_safety_contract.json" } },
+            { "contains": { "const": "tests/tooling/fixtures/semantic_optimization_pipeline/proof_cases.json" } }
+          ],
           "minItems": 1
+        },
+        "optimization_runtime_debug_safety_contract": {
+          "const": "tests/tooling/fixtures/performance_governance/optimization_runtime_debug_safety_contract.json"
         },
         "workload_evidence": {
           "type": "array",

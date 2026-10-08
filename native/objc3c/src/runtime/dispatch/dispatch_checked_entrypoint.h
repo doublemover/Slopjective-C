@@ -9,8 +9,15 @@ namespace objc3c::runtime {
 
 objc3_runtime_dispatch_i32_result ExecuteRuntimeDispatchI32Checked(
     int receiver, const char *selector, int a0, int a1, int a2, int a3);
+objc3_runtime_dispatch_i32_result ExecuteRuntimeDispatchI32CheckedWithErrorOut(
+    int receiver, const char *selector, int a0, int a1, int a2, int a3,
+    int *throws_error_out);
 objc3_runtime_dispatch_typed_result ExecuteRuntimeDispatchTypedChecked(
     int receiver, const char *selector, int a0, int a1, int a2, int a3);
+objc3_runtime_dispatch_typed_result
+ExecuteRuntimeDispatchTypedCheckedWithErrorOut(
+    int receiver, const char *selector, int a0, int a1, int a2, int a3,
+    int *throws_error_out);
 objc3_runtime_dispatch_i32_result ExecuteRuntimeDispatchI32FromClassChecked(
     int receiver,
     const char *lookup_start_class_name,
@@ -19,6 +26,16 @@ objc3_runtime_dispatch_i32_result ExecuteRuntimeDispatchI32FromClassChecked(
     int a1,
     int a2,
     int a3);
+objc3_runtime_dispatch_i32_result
+ExecuteRuntimeDispatchI32FromClassCheckedWithErrorOut(
+    int receiver,
+    const char *lookup_start_class_name,
+    const char *selector,
+    int a0,
+    int a1,
+    int a2,
+    int a3,
+    int *throws_error_out);
 objc3_runtime_dispatch_typed_result
 ExecuteRuntimeDispatchTypedFromClassChecked(
     int receiver,
@@ -28,6 +45,16 @@ ExecuteRuntimeDispatchTypedFromClassChecked(
     int a1,
     int a2,
     int a3);
+objc3_runtime_dispatch_typed_result
+ExecuteRuntimeDispatchTypedFromClassCheckedWithErrorOut(
+    int receiver,
+    const char *lookup_start_class_name,
+    const char *selector,
+    int a0,
+    int a1,
+    int a2,
+    int a3,
+    int *throws_error_out);
 objc3_runtime_dispatch_i32_result ExecuteRuntimeCacheAwareDispatchI32Checked(
     int receiver,
     const objc3_runtime_cache_aware_dispatch_descriptor *descriptor,

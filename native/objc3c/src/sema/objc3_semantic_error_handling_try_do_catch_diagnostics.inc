@@ -29,6 +29,22 @@ static void RecordDoCatchUnreachableCatchDiagnostic(
       "catch clauses after a catch-all are unreachable", diagnostics);
 }
 
+static void RecordTypedThrowsCatchCompatibilityDiagnostic(
+    Objc3ErrorHandlingTryDoCatchSemanticSummary &summary,
+    unsigned line,
+    unsigned column,
+    const std::string &throw_type,
+    const std::string &catch_type,
+    const std::string &match_status,
+    std::vector<std::string> &diagnostics) {
+  RecordErrorHandlingSemanticDiagnostic(
+      summary.contract_violation_sites, line, column, "O3S206",
+      "type mismatch: typed throws payload '" + throw_type +
+          "' is not compatible with catch type '" + catch_type +
+          "'; catch-compatibility=" + match_status,
+      diagnostics);
+}
+
 static void RecordTryUnsupportedRuntimeDiagnostic(
     Objc3ErrorHandlingTryDoCatchSemanticSummary &summary,
     unsigned line,

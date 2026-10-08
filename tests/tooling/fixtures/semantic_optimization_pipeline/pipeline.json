@@ -7,7 +7,11 @@
       8191,
       8192,
       8193,
-      8194
+      8194,
+      8205,
+      8224,
+      8226,
+      8227
     ],
     "support_claims": [
       "objc3c.behavior.semantic_optimization_pipeline",
@@ -32,7 +36,10 @@
       "objc3c.evidence.semantic_optimization_pipeline.proof_cases",
       "objc3c.evidence.semantic_optimization_pipeline.exact_target_devirtualization",
       "objc3c.evidence.semantic_optimization_pipeline.method_inlining",
-      "objc3c.evidence.semantic_optimization_pipeline.cache_aware_dispatch_ir"
+      "objc3c.evidence.semantic_optimization_pipeline.cache_aware_dispatch_ir",
+      "objc3c.evidence.semantic_optimization_pipeline.runtime_debug_safety_contract",
+      "objc3c.evidence.semantic_optimization_pipeline.runtime_debug_safety_schema",
+      "objc3c.evidence.semantic_optimization_pipeline.speedup_overclaim_negative_cases"
     ]
   },
   "source_truth": {
@@ -105,7 +112,9 @@
         "tokens": [
           "PROOF_MODEL_CONTRACT_ID",
           "evaluate_optimization_proof_case",
-          "_validate_proof_model"
+          "_validate_proof_model",
+          "OPTIMIZATION_RUNTIME_DEBUG_SAFETY_CONTRACT_ID",
+          "_validate_optimization_runtime_debug_safety_contract"
         ]
       },
       {
@@ -327,6 +336,7 @@
       "output_contract": "expanded IR body",
       "preconditions": [
         "callee body identity is present",
+        "exact callee identity, target symbol, and before/after IR proof fixtures match",
         "function or final method belongs to the scalar inline subset",
         "ownership and ARC effects are replayable",
         "side-effect summary is pure and call-free",
@@ -334,16 +344,19 @@
         "diagnostic source location is preserved",
         "runtime ABI and package import identity are unchanged",
         "inlining depth is within limit and recursion is absent",
-        "callee generation snapshot is pinned"
+        "callee generation snapshot is pinned",
+        "source, debug, and runtime identity preservation evidence is present",
+        "runtime generation dependencies and invalidation replay prove stale optimized sites fail closed without counting runtime dispatch as inline success"
       ],
-      "invalidation": "invalidates callee_body_identity, callee_generation, local_value, ownership_transfer, source_map_inline_frame, diagnostic_location, runtime_metadata_identity, and package_import_abi_identity proof state",
+      "invalidation": "invalidates callee body identity, callee generation, local value, ownership transfer, source-map inline frame, diagnostic location, source/debug/runtime identity, runtime generation dependency, invalidation replay, runtime metadata, ABI, and package proof state",
       "post_verify": [
         "callee body identity matches the inlined IR digest",
         "source-map inline frame and diagnostic location are preserved",
-        "ownership, side-effect, ABI/package, depth, recursion, generation, and invalidation proofs are consumed"
+        "ownership, side-effect, ABI/package, depth, recursion, generation, and invalidation proofs are consumed",
+        "source, debug, runtime identity, runtime generation dependency, and invalidation replay proofs are consumed"
       ],
       "fail_closed_diagnostics": [
-        "method inlining requires callee body identity, scalar subset, ownership, side-effect, source-map, diagnostic, ABI/package, depth, recursion, generation, and invalidation proofs"
+        "method inlining requires exact callee identity, callee body identity, before/after IR proof, scalar subset, ownership, side-effect, source/debug/runtime identity preservation, runtime invalidation replay, ABI/package, depth, recursion, generation, and invalidation proofs"
       ],
       "fixtures": [
         "tests/native/ir/optimization/semantic_pipeline_method_inlining.before.ll",
@@ -372,7 +385,7 @@
       "post_verify": [
         "strict dispatch status envelope aborts non-value results",
         "source-map and debug-visible cache-aware site anchors are preserved",
-        "runtime fallback and miss behavior remains owned by the checked helper"
+        "runtime miss behavior remains owned by the checked helper and is not an optimization success path"
       ],
       "fail_closed_diagnostics": [
         "cache-aware dispatch requires runtime cache ABI, strict status handling, semantic replay, and source-map debug preservation"
@@ -484,6 +497,7 @@
       "pass_id": "method-inlining",
       "required_proofs": [
         "callee body identity is present",
+        "exact callee identity, target symbol, and before/after IR proof fixtures match",
         "function or final method belongs to the scalar inline subset",
         "ownership and ARC effects are replayable",
         "side-effect summary is pure and call-free",
@@ -492,11 +506,13 @@
         "runtime ABI and package import identity are unchanged",
         "inlining depth is within limit and recursion is absent",
         "callee generation snapshot is pinned",
-        "invalidates callee_body_identity, callee_generation, local_value, ownership_transfer, source_map_inline_frame, diagnostic_location, runtime_metadata_identity, and package_import_abi_identity proof state"
+        "invalidates callee body identity, callee generation, local value, ownership transfer, source-map inline frame, diagnostic location, source/debug/runtime identity, runtime generation dependency, invalidation replay, runtime metadata, ABI, and package proof state",
+        "source, debug, and runtime identity preservation evidence is present",
+        "runtime generation dependencies and invalidation replay prove stale optimized sites fail closed without counting runtime dispatch as inline success"
       ],
       "missing_proof_action": "REJECT_FAIL_CLOSED",
       "success_claim_on_skip": false,
-      "semantic_equivalence": "method/function inlining rewrites IR only when callee body identity, scalar subset, ownership, side-effect, source-map, diagnostic, ABI/package, depth, recursion, generation, invalidation, and semantic equivalence proofs are present"
+      "semantic_equivalence": "method inlining is semantic-preserving only when exact callee identity, before/after IR proof, source, debug, runtime, ownership, side-effect, ABI/package, generation, and invalidation replay evidence remains attached to the optimized site"
     },
     {
       "pass_id": "cache-aware-dispatch",
@@ -656,6 +672,26 @@
         "proof_id": "callee_generation_invalidation",
         "source": "callee body and generation snapshots plus invalidated proof-state record",
         "fail_closed_if_missing": true
+      },
+      {
+        "proof_id": "source_identity_preservation",
+        "source": "method inlining callsite source identity and callee body provenance preservation evidence",
+        "fail_closed_if_missing": true
+      },
+      {
+        "proof_id": "debug_identity_preservation",
+        "source": "method inlining source-map, inline-frame, diagnostic location, and line-table preservation evidence",
+        "fail_closed_if_missing": true
+      },
+      {
+        "proof_id": "runtime_identity_preservation",
+        "source": "method inlining runtime metadata, ABI, package identity, generation dependency, and guard preservation evidence",
+        "fail_closed_if_missing": true
+      },
+      {
+        "proof_id": "runtime_invalidation_replay",
+        "source": "runtime mutation replay proving optimized inlined sites fail closed after invalidation without counting runtime dispatch as inline success",
+        "fail_closed_if_missing": true
       }
     ],
     "candidate_input_fields": [
@@ -687,7 +723,13 @@
       "inlining_depth",
       "recursion_state",
       "callee_generation_snapshot",
-      "inlined_target_symbol"
+      "inlined_target_symbol",
+      "source_identity_preservation",
+      "debug_identity_preservation",
+      "runtime_identity_preservation",
+      "runtime_invalidation_replay",
+      "ir_digest_before",
+      "ir_digest_after"
     ],
     "result_payload_fields": [
       "decision",
@@ -762,6 +804,14 @@
       {
         "verifier_id": "method-inlining-safe-subset-verifier",
         "verifies": "callee body identity, scalar subset, ownership, side-effect, source-map, diagnostic, ABI/package, depth, recursion, generation, and invalidation proofs"
+      },
+      {
+        "verifier_id": "identity-preservation-evidence-verifier",
+        "verifies": "source, debug, runtime, ABI, package, and callee-body identity evidence remains linked to the optimized site"
+      },
+      {
+        "verifier_id": "runtime-invalidation-replay-verifier",
+        "verifies": "runtime generation dependencies and mutation replay prove stale optimized sites fail closed without counting runtime dispatch as inline success"
       }
     ],
     "pass_proof_contracts": [
@@ -979,9 +1029,13 @@
           "source_map_inline_frame_preservation",
           "diagnostic_location_preservation",
           "inlining_depth_recursion_limit",
-          "callee_generation_invalidation"
+          "callee_generation_invalidation",
+          "source_identity_preservation",
+          "debug_identity_preservation",
+          "runtime_identity_preservation",
+          "runtime_invalidation_replay"
         ],
-        "invalidation_contract": "method inlining invalidates callee body identity, callee generation, local value, ownership transfer, source-map inline frame, diagnostic location, runtime metadata, ABI, and package proof state",
+        "invalidation_contract": "method inlining invalidates callee body identity, callee generation, local value, ownership transfer, source-map inline frame, diagnostic location, source/debug/runtime identity, runtime generation dependency, invalidation replay, runtime metadata, ABI, and package proof state",
         "semantic_equivalence_verdict": "required",
         "runtime_abi_safety_verdict": "required",
         "source_map_debug_impact_verdict": "required",
@@ -989,7 +1043,7 @@
         "package_import_abi_identity_verdict": "required",
         "unsupported_skip_behavior": "SKIP_FAIL_CLOSED_NO_SUCCESS_CLAIM",
         "success_claim_on_skip": false,
-        "fail_closed_diagnostic": "method inlining requires callee body identity, scalar subset, ownership, side-effect, source-map, diagnostic, ABI/package, depth, recursion, generation, and invalidation proofs",
+        "fail_closed_diagnostic": "method inlining requires exact callee identity, callee body identity, before/after IR proof, scalar subset, ownership, side-effect, source/debug/runtime identity preservation, runtime invalidation replay, ABI/package, depth, recursion, generation, and invalidation proofs",
         "exact_target_eligibility_verdict": "not-applicable",
         "mutation_invalidation_verdict": "not-applicable",
         "runtime_cache_version_verdict": "not-applicable"
@@ -1012,7 +1066,7 @@
           "semantic_equivalence",
           "invalidation_completeness"
         ],
-        "invalidation_contract": "cache-aware dispatch invalidates runtime cache version, selector resolution, and source-map debug proof state while preserving runtime-owned miss/fallback semantics",
+        "invalidation_contract": "cache-aware dispatch invalidates runtime cache version, selector resolution, and source-map debug proof state while preserving runtime-owned miss semantics without a fallback success path",
         "semantic_equivalence_verdict": "required",
         "runtime_abi_safety_verdict": "required",
         "source_map_debug_impact_verdict": "required",
@@ -1110,8 +1164,12 @@
     "required_checked_in_paths": [
       "tests/tooling/fixtures/compiler_throughput/workload_manifest.json",
       "tests/tooling/fixtures/runtime_performance/workload_manifest.json",
-      "tests/tooling/fixtures/performance_governance/budget_model.json"
+      "tests/tooling/fixtures/performance_governance/budget_model.json",
+      "schemas/objc3c-optimization-runtime-debug-safety-v1.schema.json",
+      "tests/tooling/fixtures/performance_governance/optimization_runtime_debug_safety_contract.json",
+      "tests/tooling/fixtures/semantic_optimization_pipeline/proof_cases.json"
     ],
+    "optimization_runtime_debug_safety_contract": "tests/tooling/fixtures/performance_governance/optimization_runtime_debug_safety_contract.json",
     "workload_evidence": [
       {
         "workload_id": "compile-cold-wrapper",

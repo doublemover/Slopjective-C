@@ -29,8 +29,14 @@ void EmitObjc3CrossModuleRuntimeLinkPlanHeaderModuleSections(
       << "  \"concurrency_actor_imported_module_count\": "
       << sections.imported_concurrency_actor_module_names_lexicographic.size()
       << ",\n"
+      << "  \"scheduler_task_imported_module_count\": "
+      << sections.imported_scheduler_task_module_names_lexicographic.size()
+      << ",\n"
       << "  \"interop_ffi_imported_module_count\": "
       << sections.imported_interop_ffi_module_names_lexicographic.size()
+      << ",\n"
+      << "  \"foreign_abi_imported_module_count\": "
+      << sections.imported_foreign_abi_module_names_lexicographic.size()
       << ",\n"
       << "  \"interop_header_module_bridge_imported_module_count\": "
       << sections
@@ -55,9 +61,18 @@ void EmitObjc3CrossModuleRuntimeLinkPlanHeaderModuleSections(
              sections.imported_concurrency_actor_module_names_lexicographic,
              "    ")
       << ",\n"
+      << "  \"scheduler_task_imported_module_names_lexicographic\": "
+      << BuildIndentedStringArrayJson(
+             sections.imported_scheduler_task_module_names_lexicographic,
+             "    ")
+      << ",\n"
       << "  \"interop_ffi_imported_module_names_lexicographic\": "
       << BuildIndentedStringArrayJson(
              sections.imported_interop_ffi_module_names_lexicographic, "    ")
+      << ",\n"
+      << "  \"foreign_abi_imported_module_names_lexicographic\": "
+      << BuildIndentedStringArrayJson(
+             sections.imported_foreign_abi_module_names_lexicographic, "    ")
       << ",\n"
       << "  \"interop_header_module_bridge_imported_module_names_lexicographic\": "
       << BuildIndentedStringArrayJson(
@@ -80,9 +95,21 @@ void EmitObjc3CrossModuleRuntimeLinkPlanHeaderModuleSections(
       out,
       "concurrency_actor_cross_module_isolation_ready",
       !sections.imported_concurrency_actor_module_names_lexicographic.empty());
+  EmitReadyField(
+      out,
+      "actor_mailbox_cross_module_runtime_expansion_ready",
+      !sections.imported_concurrency_actor_module_names_lexicographic.empty());
+  EmitReadyField(
+      out,
+      "scheduler_task_cross_module_runtime_replay_ready",
+      !sections.imported_scheduler_task_module_names_lexicographic.empty());
   EmitReadyField(out,
                  "interop_ffi_cross_module_packaging_ready",
                  !sections.imported_interop_ffi_module_names_lexicographic
+                      .empty());
+  EmitReadyField(out,
+                 "foreign_abi_cross_module_runtime_closure_ready",
+                 !sections.imported_foreign_abi_module_names_lexicographic
                       .empty());
   EmitReadyField(
       out,
@@ -92,6 +119,11 @@ void EmitObjc3CrossModuleRuntimeLinkPlanHeaderModuleSections(
   EmitReadyField(
       out,
       "metaprogramming_host_cache_cross_module_preservation_ready",
+      !sections.imported_metaprogramming_host_cache_module_names_lexicographic
+           .empty());
+  EmitReadyField(
+      out,
+      "macro_package_replay_cross_module_runtime_closure_ready",
       !sections.imported_metaprogramming_host_cache_module_names_lexicographic
            .empty());
 }

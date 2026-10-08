@@ -1,4 +1,4 @@
-"""Release-claims policy and profile implementation case exports."""
+"""Release-claims policy and strict-profile fail-closed case exports."""
 
 from __future__ import annotations
 

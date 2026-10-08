@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://objc3c.dev/schemas/language/objc3-language-profile-v1.schema.json",
-  "title": "objc3 Canonical Language Profile",
+  "title": "objc3 Language Profiles",
   "type": "object",
   "required": [
     "schema_version",
@@ -17,7 +17,11 @@
       "const": "objc3-language-profile-v1"
     },
     "profile": {
-      "const": "canonical"
+      "enum": [
+        "canonical",
+        "strict",
+        "strict-concurrency"
+      ]
     },
     "language_version": {
       "const": 3
@@ -25,10 +29,15 @@
     "accepted_profiles": {
       "type": "array",
       "items": {
-        "const": "canonical"
+        "enum": [
+          "canonical",
+          "strict",
+          "strict-concurrency"
+        ]
       },
       "minItems": 1,
-      "maxItems": 1
+      "maxItems": 3,
+      "uniqueItems": true
     },
     "feature_states": {
       "type": "array",

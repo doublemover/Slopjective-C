@@ -1,0 +1,5 @@
+module HostedRegistryNetworkCore;
+
+fn hosted_registry_network_seed() -> i32 {
+  return 30;
+}

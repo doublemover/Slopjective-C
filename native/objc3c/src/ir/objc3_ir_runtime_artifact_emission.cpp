@@ -78,19 +78,74 @@ bool EmitObjc3IRTypedKeypathArtifacts(
         options.runtime_string_pool_globals.find(artifact.component_path);
     const auto profile_it =
         options.runtime_string_pool_globals.find(artifact.profile);
+    const auto component_owner_it = options.runtime_string_pool_globals.find(
+        artifact.component_owner_identity_path);
+    const auto component_member_it = options.runtime_string_pool_globals.find(
+        artifact.component_member_identity_path);
+    const auto component_type_it = options.runtime_string_pool_globals.find(
+        artifact.component_type_identity_path);
+    const auto source_span_it =
+        options.runtime_string_pool_globals.find(artifact.source_span_id);
+    const auto root_type_it =
+        options.runtime_string_pool_globals.find(artifact.root_type_identity);
+    const auto value_type_it =
+        options.runtime_string_pool_globals.find(artifact.value_type_identity);
+    const auto owner_it = options.runtime_string_pool_globals.find(
+        artifact.object_model_owner_identity);
+    const auto member_it = options.runtime_string_pool_globals.find(
+        artifact.object_model_member_identity);
+    const auto debug_source_map_it =
+        options.runtime_string_pool_globals.find(artifact.debug_source_map_key);
+    const auto diagnostic_anchor_it = options.runtime_string_pool_globals.find(
+        artifact.diagnostic_anchor_key);
     if (root_it == options.runtime_string_pool_globals.end() ||
         component_it == options.runtime_string_pool_globals.end() ||
-        profile_it == options.runtime_string_pool_globals.end()) {
-      error = "typed key-path artifact string-pool registration failed";
+        profile_it == options.runtime_string_pool_globals.end() ||
+        component_owner_it == options.runtime_string_pool_globals.end() ||
+        component_member_it == options.runtime_string_pool_globals.end() ||
+        component_type_it == options.runtime_string_pool_globals.end() ||
+        source_span_it == options.runtime_string_pool_globals.end() ||
+        root_type_it == options.runtime_string_pool_globals.end() ||
+        value_type_it == options.runtime_string_pool_globals.end() ||
+        owner_it == options.runtime_string_pool_globals.end() ||
+        member_it == options.runtime_string_pool_globals.end() ||
+        debug_source_map_it == options.runtime_string_pool_globals.end() ||
+        diagnostic_anchor_it == options.runtime_string_pool_globals.end()) {
+      error =
+          "typed key-path artifact debugger metadata string-pool registration failed";
+      return false;
+    }
+    if (artifact.fallback_interpretation_allowed ||
+        artifact.component_owner_identity_path.empty() ||
+        artifact.component_member_identity_path.empty() ||
+        artifact.component_type_identity_path.empty() ||
+        artifact.source_span_id.empty() || artifact.root_type_identity.empty() ||
+        artifact.value_type_identity.empty() ||
+        artifact.object_model_owner_identity.empty() ||
+        artifact.object_model_member_identity.empty() ||
+        artifact.debug_source_map_key.empty() ||
+        artifact.diagnostic_anchor_key.empty()) {
+      error =
+          "typed key-path artifact debugger metadata is incomplete or fallback-enabled";
       return false;
     }
     descriptor_symbols.push_back(artifact.descriptor_symbol);
     out << artifact.descriptor_symbol
-        << " = private global { i64, ptr, ptr, ptr, ptr, i1 } { i64 "
+        << " = private global { i64, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, i32, i32, i1, i1 } { i64 "
         << static_cast<unsigned long long>(artifact.ordinal + 1u) << ", ptr "
         << root_it->second << ", ptr " << component_it->second << ", ptr "
         << profile_it->second << ", ptr " << generic_metadata_replay_key_symbol
-        << ", i1 " << (artifact.root_is_self ? 1 : 0) << " }, section \""
+        << ", ptr " << component_owner_it->second << ", ptr "
+        << component_member_it->second << ", ptr " << component_type_it->second
+        << ", ptr " << source_span_it->second << ", ptr " << root_type_it->second
+        << ", ptr " << value_type_it->second << ", ptr " << owner_it->second
+        << ", ptr " << member_it->second << ", ptr "
+        << debug_source_map_it->second << ", ptr "
+        << diagnostic_anchor_it->second << ", i32 " << artifact.source_line
+        << ", i32 " << artifact.source_column << ", i1 "
+        << (artifact.root_is_self ? 1 : 0) << ", i1 "
+        << (artifact.fallback_interpretation_allowed ? 1 : 0)
+        << " }, section \""
         << emitted_section_name << "\", align 8\n";
   }
   out << "@__objc3_sec_keypath_descriptors = internal global { i64, ["

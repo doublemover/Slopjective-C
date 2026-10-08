@@ -58,6 +58,7 @@ Objc3SemaPassDiagnosticsRun RunObjc3SemaDiagnosticsPasses(
       result.integration_surface =
           BuildSemanticIntegrationSurface(
               *input.program,
+              input.language_profile,
               input.validation_options.allow_source_only_block_literals,
               input.validation_options.allow_source_only_defer_statements,
               input.validation_options.allow_source_only_error_runtime_surface,
@@ -68,6 +69,7 @@ Objc3SemaPassDiagnosticsRun RunObjc3SemaDiagnosticsPasses(
           *input.program,
           result.integration_surface,
           input.validation_options,
+          input.language_profile,
           pass_diagnostics);
       RefreshSemanticIntegrationSurfaceAfterBodyValidation(
           *input.program,

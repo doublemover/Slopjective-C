@@ -1,0 +1,13 @@
+{
+  "contract_id": "objc3c.value_optional.layout_mismatch.negative.v1",
+  "fixture_kind": "negative_contract",
+  "issue_ref": 8234,
+  "mutated_field": "abi_layout.layout_id",
+  "expected_value": "objc3.value_optional.inline_presence_payload.v1",
+  "actual_value": "objc3.value_optional.nullable_pointer_alias.v1",
+  "expected_diagnostic": "O3IFC8238",
+  "fail_closed": true,
+  "runtime_claim_allowed": false,
+  "notes": "Value optional layout drift must not import as nullable object-pointer ABI or any other carrier."
+}
+

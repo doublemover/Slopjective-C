@@ -1,0 +1,15 @@
+// Expected advanced-runtime diagnostic: advanced-runtime.scheduler-task-lifecycle-missing-replay
+module AdvancedRuntimeClosureNegativeSchedulerTaskLifecycleMissingReplay;
+
+extern fn objc3_runtime_spawn_task_i32(task_kind: i32, executor_tag: i32) -> i32;
+extern fn objc3_runtime_wait_task_group_next_i32(executor_tag: i32) -> i32;
+extern fn objc3_runtime_executor_hop_i32(value: i32, executor_tag: i32) -> i32;
+
+async fn importedTaskLifecycleWithoutReplay(seed: i32) -> i32
+    __attribute__((objc_scheduler_guarantee(task_lifecycle))) {
+  // A task lifecycle claim is rejected unless the import surface carries
+  // task_record_sites, queue_lifecycle_record_sites, and replay keys.
+  let task = objc3_runtime_spawn_task_i32(1, 2);
+  let drained = objc3_runtime_wait_task_group_next_i32(2);
+  return objc3_runtime_executor_hop_i32(task + drained + seed, 2);
+}

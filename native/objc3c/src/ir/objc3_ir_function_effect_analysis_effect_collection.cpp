@@ -86,6 +86,19 @@ void CollectFunctionEffectExpr(const Expr *expr, ScopeStack &scopes,
       CollectFunctionEffectExpr(expr->right.get(), scopes, info);
       CollectFunctionEffectExpr(expr->third.get(), scopes, info);
       return;
+    case Expr::Kind::MatchExpression:
+      CollectFunctionEffectExpr(
+          expr->match_expression_scrutinee.get(), scopes, info);
+      for (const auto &arm : expr->match_expression_arms) {
+        scopes.push_back({});
+        if (!arm.binding_name.empty()) {
+          scopes.back().insert(arm.binding_name);
+        }
+        CollectFunctionEffectExpr(arm.guard_condition.get(), scopes, info);
+        CollectFunctionEffectExpr(arm.value.get(), scopes, info);
+        scopes.pop_back();
+      }
+      return;
     case Expr::Kind::Call:
       info.called_functions.insert(expr->ident);
       for (const auto &arg : expr->args) {

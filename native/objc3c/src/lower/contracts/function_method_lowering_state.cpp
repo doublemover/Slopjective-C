@@ -2,6 +2,7 @@
 
 #include "ast/objc3_ast_decl_surface.h"
 #include "ast/objc3_ast_type_surface.h"
+#include "sema/objc3_typed_throws_effect_contract.h"
 
 #include <sstream>
 
@@ -29,6 +30,14 @@ Objc3CallableLoweringState Objc3BuildFunctionLoweringState(
   state.has_body = !function.body.empty();
   state.async_declared = function.async_declared;
   state.throws_declared = function.throws_declared;
+  state.typed_throws_declared = function.typed_throws_declared;
+  state.throws_error_out_abi_ready =
+      Objc3TypedThrowsAbiLoweringReady(
+          function.throws_declared,
+          function.typed_throws_declared,
+          function.typed_throws_payload.canonical_spelling);
+  state.typed_throws_error_type_spelling =
+      function.typed_throws_payload.canonical_spelling;
   state.parameter_count = function.params.size();
   state.arc_sensitive = ParamsAreArcSensitive(function.params) ||
                         Objc3ValueTypeIsObjectReference(function.return_type);
@@ -47,6 +56,14 @@ Objc3CallableLoweringState Objc3BuildMethodLoweringState(
   state.has_body = Objc3MethodDeclHasRuntimeBody(method);
   state.async_declared = method.async_declared;
   state.throws_declared = method.throws_declared;
+  state.typed_throws_declared = method.typed_throws_declared;
+  state.throws_error_out_abi_ready =
+      Objc3TypedThrowsAbiLoweringReady(
+          method.throws_declared,
+          method.typed_throws_declared,
+          method.typed_throws_payload.canonical_spelling);
+  state.typed_throws_error_type_spelling =
+      method.typed_throws_payload.canonical_spelling;
   state.runtime_dispatch_required = Objc3MethodDeclRequiresRuntimeDispatch(method);
   state.parameter_count = method.params.size();
   state.arc_sensitive = ParamsAreArcSensitive(method.params) ||
@@ -58,7 +75,7 @@ Objc3CallableLoweringState Objc3BuildMethodLoweringState(
 bool Objc3CallableLoweringStateRequiresRuntimeHelpers(
     const Objc3CallableLoweringState &state) {
   return state.runtime_dispatch_required || state.arc_sensitive ||
-         state.async_declared || state.throws_declared;
+         state.async_declared || state.throws_error_out_abi_ready;
 }
 
 std::string Objc3CallableLoweringStateReplayKey(
@@ -70,6 +87,11 @@ std::string Objc3CallableLoweringStateReplayKey(
       << ";body=" << (state.has_body ? "true" : "false")
       << ";async=" << (state.async_declared ? "true" : "false")
       << ";throws=" << (state.throws_declared ? "true" : "false")
+      << ";typed_throws="
+      << (state.typed_throws_declared ? "true" : "false")
+      << ";throws_error_out_abi_ready="
+      << (state.throws_error_out_abi_ready ? "true" : "false")
+      << ";typed_throws_payload=" << state.typed_throws_error_type_spelling
       << ";runtime_dispatch="
       << (state.runtime_dispatch_required ? "true" : "false")
       << ";arc_sensitive=" << (state.arc_sensitive ? "true" : "false")

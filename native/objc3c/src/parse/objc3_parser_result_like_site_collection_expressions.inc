@@ -46,6 +46,17 @@ void CollectResultLikeExprProfile(const Expr *expr,
       CollectResultLikeExprProfile(arg.get(), profile);
     }
     return;
+  case Expr::Kind::MatchExpression:
+    profile.result_like_sites += 1u;
+    profile.result_branch_sites += expr->match_expression_arms.size();
+    profile.branch_merge_sites += 1u;
+    CollectResultLikeExprProfile(expr->match_expression_scrutinee.get(),
+                                 profile);
+    for (const auto &arm : expr->match_expression_arms) {
+      CollectResultLikeExprProfile(arm.guard_condition.get(), profile);
+      CollectResultLikeExprProfile(arm.value.get(), profile);
+    }
+    return;
   case Expr::Kind::BlockLiteral:
   case Expr::Kind::Identifier:
   case Expr::Kind::KeyPathLiteral:

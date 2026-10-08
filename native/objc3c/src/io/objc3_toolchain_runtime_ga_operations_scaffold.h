@@ -36,6 +36,12 @@ inline std::string BuildObjc3ToolchainRuntimeGaOperationsScaffoldKey(
   return key.str();
 }
 
+inline bool Objc3RuntimeObjectArtifactPathReady(
+    const std::filesystem::path &object_out) {
+  return object_out.has_filename() &&
+         (object_out.extension() == ".obj" || object_out.extension() == ".o");
+}
+
 inline Objc3ToolchainRuntimeGaOperationsScaffold BuildObjc3ToolchainRuntimeGaOperationsScaffold(
     bool clang_backend_selected,
     bool llvm_direct_backend_selected,
@@ -51,7 +57,8 @@ inline Objc3ToolchainRuntimeGaOperationsScaffold BuildObjc3ToolchainRuntimeGaOpe
   scaffold.llc_path_configured = llc_path.has_filename();
   scaffold.llvm_direct_backend_enabled = llvm_direct_backend_enabled;
   scaffold.ir_artifact_ready = ir_path.has_filename() && ir_path.extension() == ".ll";
-  scaffold.object_artifact_ready = object_out.has_filename() && object_out.extension() == ".obj";
+  scaffold.object_artifact_ready =
+      Objc3RuntimeObjectArtifactPathReady(object_out);
 
   if (scaffold.clang_backend_selected) {
     scaffold.backend_route_key = "clang";
@@ -92,7 +99,8 @@ inline Objc3ToolchainRuntimeGaOperationsScaffold BuildObjc3ToolchainRuntimeGaOpe
   } else if (!scaffold.ir_artifact_ready) {
     scaffold.failure_reason = "llvm ir artifact path is not ready";
   } else if (!scaffold.object_artifact_ready) {
-    scaffold.failure_reason = "object artifact path is not ready";
+    scaffold.failure_reason =
+        "platform-native object artifact path is not ready";
   } else if (!scaffold.compile_route_ready) {
     scaffold.failure_reason = "toolchain/runtime compile route is not ready";
   } else {

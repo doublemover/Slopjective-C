@@ -20,13 +20,18 @@ def expect_dashboard_schema_surface(
         and dashboard.get("schema_version") == 1
         and dashboard.get("dashboard_version") == "0.11.0"
         and dashboard.get("release_label") == "v0.11"
-        and dashboard.get("status") == "pass",
-        "expected dashboard artifact to preserve the live schema identity and release status surface",
+        and dashboard.get("status") == "blocked",
+        "expected dashboard artifact to preserve the live schema identity and strict-system blocker surface",
     )
     expect(
         [entry.get("profile_id") for entry in dashboard.get("profiles", [])]
         == ["core", "strict", "strict-concurrency", "strict-system"],
-        "expected dashboard artifact to publish one schema-shaped profile row for each claimed profile",
+        "expected dashboard artifact to publish one schema-shaped profile row for each tracked profile",
+    )
+    expect(
+        [entry.get("status") for entry in dashboard.get("profiles", [])]
+        == ["pass", "pass", "pass", "blocked"],
+        "expected dashboard artifact to mark core, strict, and strict-concurrency as passable with strict-system blocked",
     )
     expect(
         [entry.get("dependency_id") for entry in dashboard.get("dependencies", [])]
@@ -54,7 +59,7 @@ def expect_dashboard_schema_surface(
     )
     expect(
         dashboard.get("summary", {}).get("profile_counts")
-        == {"pass": 4, "fail": 0, "blocked": 0, "incomplete": 0}
+        == {"pass": 3, "fail": 0, "blocked": 1, "incomplete": 0}
         and dashboard.get("summary", {}).get("dependency_counts")
         == {"pass": 4, "fail": 0, "blocked": 0, "stale": 0, "missing": 0},
         "expected dashboard artifact to publish deterministic schema-shaped summary counts",
@@ -62,8 +67,14 @@ def expect_dashboard_schema_surface(
     expect(
         dashboard.get("refresh", {}).get("trigger") == "manual-replay"
         and dashboard.get("refresh", {}).get("stale_dependency_ids") == []
-        and dashboard.get("refresh", {}).get("escalation_state") == "none",
+        and dashboard.get("refresh", {}).get("escalation_state") == "high",
         "expected dashboard artifact to publish deterministic refresh telemetry",
+    )
+    expect(
+        len(dashboard.get("blockers", [])) == 1
+        and dashboard["blockers"][0].get("blocker_id") == "BLK-STRICT-PROFILES"
+        and dashboard["blockers"][0].get("state") == "open",
+        "expected dashboard artifact to publish the strict-system blocker",
     )
     expect(
         len(dashboard.get("change_history", [])) == 1

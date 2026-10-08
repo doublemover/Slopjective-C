@@ -20,6 +20,11 @@ std::unique_ptr<Expr> BuildObjc3ConditionalExpr(
     std::unique_ptr<Expr> when_true,
     std::unique_ptr<Expr> when_false);
 
+std::unique_ptr<Expr> BuildObjc3MatchExpression(
+    const Objc3LexToken &match_token,
+    std::unique_ptr<Expr> scrutinee,
+    std::vector<Expr::MatchExpressionArm> arms);
+
 std::unique_ptr<Expr> BuildObjc3NumericLiteralExpr(
     int value,
     const Objc3LexToken &token);

@@ -1,7 +1,6 @@
 #include "artifacts/objc3_frontend_artifact_runtime_object_realization_reflection_manifest.h"
-
+#include "artifacts/identity/artifact_identity.h"
 #include <ostream>
-
 #include "artifacts/objc3_frontend_artifact_runtime_object_manifest_contracts.h"
 #include "artifacts/objc3_frontend_runtime_metadata_section_artifacts.h"
 #include "ast/objc3_ast_contracts.h"
@@ -9,6 +8,7 @@
 #include "runtime/metadata/selector_metadata_registration_descriptor_surfaces.h"
 #include "runtime/metadata/selector_metadata_registration_manifest.h"
 #include "runtime/metadata/selector_metadata.h"
+
 
 namespace objc3::artifacts::frontend {
 
@@ -29,7 +29,7 @@ void WriteRuntimeRealizationLoweringReflectionArtifactSurface(
            << "\",\"registration_descriptor_artifact\":\""
            << runtime_registration_descriptor_frontend_closure.artifact_relative_path
            << "\",\"object_artifact\":\""
-           << runtime_state_publication_emit_prefix << ".obj"
+           << objc3::artifacts::identity::BuildObjc3NativeObjectArtifactName(runtime_state_publication_emit_prefix)
            << "\",\"backend_artifact\":\""
            << runtime_state_publication_emit_prefix << ".ll"
            << "\",\"runtime_object_model_realization_source_surface_contract_id\":\""
@@ -83,7 +83,7 @@ void WriteRuntimeDispatchTableReflectionRecordLoweringSurface(
            << "\",\"registration_descriptor_artifact\":\""
            << runtime_registration_descriptor_frontend_closure.artifact_relative_path
            << "\",\"object_artifact\":\""
-           << runtime_state_publication_emit_prefix << ".obj"
+           << objc3::artifacts::identity::BuildObjc3NativeObjectArtifactName(runtime_state_publication_emit_prefix)
            << "\",\"backend_artifact\":\""
            << runtime_state_publication_emit_prefix << ".ll"
            << "\",\"runtime_object_model_realization_source_surface_contract_id\":\""

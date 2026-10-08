@@ -1,0 +1,11 @@
+// Expected diagnostic code(s): O3P156.
+module NegativeMatchStatementFatArrowAmbiguous;
+
+fn main(value: i32) -> i32 {
+  match (value) {
+    case 0 => 1;
+    default: {
+      return 0;
+    }
+  }
+}

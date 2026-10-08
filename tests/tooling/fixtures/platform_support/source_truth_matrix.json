@@ -4,10 +4,19 @@
   "issue": "OBJ3-NEXT-024",
   "schema_path": "schemas/objc3c-platform-support-source-truth-v1.schema.json",
   "source_path": "tests/tooling/fixtures/platform_support/source_truth_matrix.json",
+  "roadmap_issue_refs": [
+    8206,
+    8228,
+    8229,
+    8230,
+    8231,
+    8232
+  ],
   "upstream_sources": {
     "supported_platforms": "tests/tooling/fixtures/packaging_channels/supported_platforms.json",
     "platform_toolchain_support_evidence": "tests/tooling/fixtures/platform_hardening/platform_toolchain_support_evidence.json",
-    "unsupported_host_policy": "tests/tooling/fixtures/platform_hardening/unsupported_host_fail_closed_policy.json"
+    "unsupported_host_policy": "tests/tooling/fixtures/platform_hardening/unsupported_host_fail_closed_policy.json",
+    "sanitizer_package_install_model_contract": "tests/tooling/fixtures/security_hardening/sanitizer_package_install_model_contract.json"
   },
   "claim_policy": {
     "supported_rows_require_checked_source": true,
@@ -16,6 +25,109 @@
     "unsupported_host_result": "fail-closed",
     "unsupported_toolchain_result": "fail-closed-no-range-claim",
     "toolchain_range_policy": "current-probed-executable-only"
+  },
+  "host_promotion_architecture": {
+    "contract_id": "objc3c.platform.support.host-promotion.source-truth.v1",
+    "promotion_policy": "real-host-execution-required",
+    "source_evidence_sections": [
+      "host_identity_records",
+      "toolchain_probe_records",
+      "package_root_evidence_records",
+      "native_execution_evidence_records",
+      "object_identity_records",
+      "debug_identity_records",
+      "package_install_identity_records",
+      "runtime_load_link_proof_records",
+      "negative_host_toolchain_cases"
+    ],
+    "supported_platform_ids": [
+      "windows-x64"
+    ],
+    "unsupported_platform_ids": [
+      "linux-x64",
+      "darwin-arm64"
+    ],
+    "host_identity_record_ids": [
+      "objc3c.host.windows-x64.identity.current",
+      "objc3c.host.linux-x64.identity.fail-closed",
+      "objc3c.host.darwin-arm64.identity.fail-closed"
+    ],
+    "toolchain_probe_record_ids": [
+      "objc3c.host.windows-x64.toolchain-probes.current",
+      "objc3c.host.linux-x64.toolchain-probes.fail-closed",
+      "objc3c.host.darwin-arm64.toolchain-probes.fail-closed"
+    ],
+    "package_root_record_ids": [
+      "objc3c.package-root.windows-x64.release.current",
+      "objc3c.package-root.linux-x64.release.fail-closed",
+      "objc3c.package-root.darwin-arm64.release.fail-closed"
+    ],
+    "native_execution_record_ids": [
+      "objc3c.native-execution.windows-x64.release.current",
+      "objc3c.native-execution.linux-x64.release.missing",
+      "objc3c.native-execution.darwin-arm64.release.missing"
+    ],
+    "object_identity_record_ids": [
+      "objc3c.object-identity.linux-x64.release.missing",
+      "objc3c.object-identity.darwin-arm64.release.missing"
+    ],
+    "debug_identity_record_ids": [
+      "objc3c.debug-identity.linux-x64.release.missing",
+      "objc3c.debug-identity.darwin-arm64.release.missing"
+    ],
+    "package_install_identity_record_ids": [
+      "objc3c.package-install-identity.linux-x64.release.missing",
+      "objc3c.package-install-identity.darwin-arm64.release.missing"
+    ],
+    "runtime_load_link_proof_record_ids": [
+      "objc3c.runtime-load-link.linux-x64.release.missing",
+      "objc3c.runtime-load-link.darwin-arm64.release.missing"
+    ],
+    "negative_host_toolchain_case_ids": [
+      "objc3c.negative.host.linux-x64.no-native-execution",
+      "objc3c.negative.host.linux-x64.generated-host-evidence-no-promotion",
+      "objc3c.negative.host.darwin-arm64.no-native-execution",
+      "objc3c.negative.host.darwin-arm64.generated-host-evidence-no-promotion",
+      "objc3c.negative.toolchain.missing-llc",
+      "objc3c.negative.toolchain.mixed-root",
+      "objc3c.negative.toolchain.mismatched-version",
+      "objc3c.negative.toolchain.unsupported-version"
+    ],
+    "hosted_evidence_ingestion": {
+      "workflow_path": ".github/workflows/platform-host-evidence.yml",
+      "accepted_workflow_paths": [
+        ".github/workflows/platform-host-evidence.yml",
+        ".github/workflows/conformance-minima.yml"
+      ],
+      "dispatch_gateway_workflow_paths": [
+        ".github/workflows/conformance-minima.yml"
+      ],
+      "runner_labels": {
+        "linux-x64": "ubuntu-24.04",
+        "darwin-arm64": "macos-15"
+      },
+      "ingestion_action": "ingest-platform-host-evidence",
+      "review_action": "review-platform-host-evidence",
+      "support_promotion_action": "review-platform-support-promotion",
+      "host_promotion_contract_check_action": "check-platform-host-promotion-evidence",
+      "ingestion_helper": "scripts/ingest_objc3c_platform_host_evidence.py",
+      "review_helper": "scripts/review_objc3c_platform_host_evidence.py",
+      "support_promotion_helper": "scripts/promote_objc3c_platform_support.py",
+      "generated_report_contract_id": "objc3c.platform.hosted-runner.evidence-report.v1",
+      "generated_report_root": "tmp/reports/platform-host-evidence",
+      "generated_only_result": "refuse-source-truth-promotion",
+      "review_promotion_policy": "checked-in-source-truth-required",
+      "candidate_evidence_record_ids": [
+        "objc3c.evidence.hosted-ci.linux-x64.generated-host-run",
+        "objc3c.evidence.hosted-ci.darwin-arm64.generated-host-run"
+      ],
+      "reviewed_source_truth_required": true,
+      "support_rows_remain_fail_closed_until_reviewed": true,
+      "review_candidate_source_truth_path": "tmp/reports/platform-host-evidence/<platform>/review-candidate-source-truth.json",
+      "reviewed_source_proposal_path": "tmp/reports/platform-host-evidence/<platform>/reviewed-source-inputs.proposed.json",
+      "review_staging_summary_path": "tmp/reports/platform-host-evidence/<platform>/reviewed-source-staging-summary.json"
+    },
+    "diagnostic": "Host promotion is deterministic only when host identity, coherent toolchain probes, package root identity, object identity, debug identity, package/install identity, runtime load/link proof, and native execution records are all checked in for the platform."
   },
   "required_supported_evidence_classes": [
     "build",
@@ -43,13 +155,20 @@
       "platform_id": "windows-x64",
       "host_os": "windows",
       "host_arch": "x64",
+      "host_triples": [
+        "x86_64-pc-windows-msvc"
+      ],
       "support_state": "supported",
+      "issue_ref": 8206,
       "required_evidence": {
         "build": "objc3c.evidence.platform.windows-x64.build.native-binaries",
         "package": "objc3c.evidence.platform.windows-x64.package.runnable-toolchain",
         "install": "objc3c.evidence.platform.windows-x64.install.packaging-e2e",
         "execution": "objc3c.evidence.platform.windows-x64.execution.native-smoke"
       },
+      "package_variant_row_ids": [
+        "objc3c.package.runtime.windows-x64.release"
+      ],
       "toolchain_evidence_ids": [
         "objc3c.evidence.toolchain.llvm.current-probe",
         "objc3c.evidence.toolchain.clang-cmake-ninja.native-build-resolution",
@@ -79,11 +198,106 @@
       "platform_id": "linux-x64",
       "host_os": "linux",
       "host_arch": "x64",
+      "host_triples": [
+        "x86_64-unknown-linux-gnu"
+      ],
       "support_state": "unsupported",
+      "issue_ref": 8228,
+      "required_evidence_classes": [
+        "build",
+        "package",
+        "install",
+        "execution"
+      ],
+      "required_missing_evidence_classes": [
+        "build",
+        "package",
+        "install",
+        "execution"
+      ],
+      "required_toolchain_components": [
+        "llvm",
+        "clang",
+        "cmake",
+        "ninja",
+        "python",
+        "node",
+        "pwsh"
+      ],
       "failure_id": "unsupported-host-linux-x64-denied",
       "fail_closed_evidence_id": "objc3c.evidence.unsupported.linux-x64.fail-closed",
+      "package_variant_row_ids": [
+        "objc3c.package.runtime.linux-x64.release.fail-closed"
+      ],
+      "promotion_closure_contract": {
+        "capability_status": "unsupported",
+        "support_claim_allowed": false,
+        "support_claim_blocked_until": [
+          "build",
+          "package",
+          "install",
+          "execution"
+        ],
+        "package_variant_claim_state": "fail-closed",
+        "package_variant_platform_ids": [],
+        "package_artifact_evidence": {
+          "package_root_layout": [
+            "artifacts/package/objc3c-runnable-toolchain-package.json",
+            "artifacts/bin/objc3c-native",
+            "artifacts/lib/libobjc3-runtime.so",
+            "stdlib/workspace.json",
+            "stdlib/modules/objc3.core/module.json",
+            "docs/runbooks/objc3c_packaging_channels.md"
+          ],
+          "runtime_library_names": [
+            "libobjc3-runtime.so"
+          ],
+          "object_format": "ELF",
+          "debug_format": "DWARF",
+          "loader_path_proof_required": true,
+          "install_receipt_required": true,
+          "installed_root_execution_required": true,
+          "offline_installed_root_execution_required": true,
+          "installed_root_execution_summary_path": "tmp/reports/platform-host-evidence/linux-x64/install/end-to-end-summary.json",
+          "native_execution_evidence_required": true
+        },
+        "host_promotion_constraints": {
+          "promotion_policy": "real-host-execution-required",
+          "real_host_execution_required": true,
+          "generated_host_evidence_support_truth": false,
+          "reviewed_source_truth_required": true,
+          "hosted_runner_summary_behavior": "summary-only-no-support-promotion"
+        },
+        "runner_toolchain_requirements": {
+          "runner_label": "ubuntu-24.04",
+          "required_toolchain_components": [
+            "llvm",
+            "clang",
+            "cmake",
+            "ninja",
+            "python",
+            "node",
+            "pwsh"
+          ],
+          "native_object_emission_required": true,
+          "missing_native_execution_behavior": "fail-closed-no-support-promotion",
+          "unsupported_toolchain_result": "fail-closed-no-range-claim"
+        },
+        "fail_closed_requirements": {
+          "unsupported_behavior": "fail-closed",
+          "unsupported_evidence_claim_weight": "policy",
+          "blocked_publication_surfaces": [
+            "package",
+            "install",
+            "execution",
+            "publication"
+          ]
+        }
+      },
       "public_replay_commands": [
-        "npm run objc3c -- build-platform-support-matrix"
+        "npm run objc3c -- build-platform-support-matrix",
+        "npm run objc3c -- ingest-platform-host-evidence -- --platform-id linux-x64 --runner-label ubuntu-24.04 --report-out tmp/reports/platform-host-evidence/linux-x64/host-evidence-report.json --requirements-out tmp/reports/platform-host-evidence/linux-x64/promotion-readiness-requirements.json --review-candidate-out tmp/reports/platform-host-evidence/linux-x64/review-candidate-source-truth.json --summary-out tmp/reports/platform-host-evidence/linux-x64/ingestion-summary.json",
+        "npm run objc3c -- review-platform-host-evidence -- --platform-id linux-x64 --output tmp/reports/platform-host-evidence/linux-x64/reviewed-source-inputs.proposed.json"
       ],
       "diagnostic": "Linux x64 remains unsupported; the matrix may inspect it only through fail-closed unsupported-host diagnostics and must not publish support from source-only or tool-presence evidence."
     },
@@ -92,17 +306,964 @@
       "platform_id": "darwin-arm64",
       "host_os": "darwin",
       "host_arch": "arm64",
+      "host_triples": [
+        "aarch64-apple-darwin"
+      ],
       "support_state": "unsupported",
+      "issue_ref": 8229,
+      "required_evidence_classes": [
+        "build",
+        "package",
+        "install",
+        "execution"
+      ],
+      "required_missing_evidence_classes": [
+        "build",
+        "package",
+        "install",
+        "execution"
+      ],
+      "required_toolchain_components": [
+        "llvm",
+        "clang",
+        "cmake",
+        "ninja",
+        "python",
+        "node",
+        "pwsh"
+      ],
       "failure_id": "unsupported-host-darwin-arm64-denied",
       "fail_closed_evidence_id": "objc3c.evidence.unsupported.darwin-arm64.fail-closed",
+      "package_variant_row_ids": [
+        "objc3c.package.runtime.darwin-arm64.release.fail-closed"
+      ],
+      "promotion_closure_contract": {
+        "capability_status": "unsupported",
+        "support_claim_allowed": false,
+        "support_claim_blocked_until": [
+          "build",
+          "package",
+          "install",
+          "execution"
+        ],
+        "package_variant_claim_state": "fail-closed",
+        "package_variant_platform_ids": [],
+        "package_artifact_evidence": {
+          "package_root_layout": [
+            "artifacts/package/objc3c-runnable-toolchain-package.json",
+            "artifacts/bin/objc3c-native",
+            "artifacts/lib/libobjc3-runtime.dylib",
+            "stdlib/workspace.json",
+            "stdlib/modules/objc3.core/module.json",
+            "docs/runbooks/objc3c_packaging_channels.md"
+          ],
+          "runtime_library_names": [
+            "libobjc3-runtime.dylib"
+          ],
+          "object_format": "Mach-O",
+          "debug_format": "DWARF/dSYM",
+          "loader_path_proof_required": true,
+          "install_receipt_required": true,
+          "installed_root_execution_required": true,
+          "offline_installed_root_execution_required": true,
+          "installed_root_execution_summary_path": "tmp/reports/platform-host-evidence/darwin-arm64/install/end-to-end-summary.json",
+          "native_execution_evidence_required": true
+        },
+        "host_promotion_constraints": {
+          "promotion_policy": "real-host-execution-required",
+          "real_host_execution_required": true,
+          "generated_host_evidence_support_truth": false,
+          "reviewed_source_truth_required": true,
+          "hosted_runner_summary_behavior": "summary-only-no-support-promotion"
+        },
+        "runner_toolchain_requirements": {
+          "runner_label": "macos-15",
+          "required_toolchain_components": [
+            "llvm",
+            "clang",
+            "cmake",
+            "ninja",
+            "python",
+            "node",
+            "pwsh"
+          ],
+          "native_object_emission_required": true,
+          "missing_native_execution_behavior": "fail-closed-no-support-promotion",
+          "unsupported_toolchain_result": "fail-closed-no-range-claim"
+        },
+        "fail_closed_requirements": {
+          "unsupported_behavior": "fail-closed",
+          "unsupported_evidence_claim_weight": "policy",
+          "blocked_publication_surfaces": [
+            "package",
+            "install",
+            "execution",
+            "publication"
+          ]
+        }
+      },
       "public_replay_commands": [
-        "npm run objc3c -- build-platform-support-matrix"
+        "npm run objc3c -- build-platform-support-matrix",
+        "npm run objc3c -- ingest-platform-host-evidence -- --platform-id darwin-arm64 --runner-label macos-15 --report-out tmp/reports/platform-host-evidence/darwin-arm64/host-evidence-report.json --requirements-out tmp/reports/platform-host-evidence/darwin-arm64/promotion-readiness-requirements.json --review-candidate-out tmp/reports/platform-host-evidence/darwin-arm64/review-candidate-source-truth.json --summary-out tmp/reports/platform-host-evidence/darwin-arm64/ingestion-summary.json",
+        "npm run objc3c -- review-platform-host-evidence -- --platform-id darwin-arm64 --output tmp/reports/platform-host-evidence/darwin-arm64/reviewed-source-inputs.proposed.json"
       ],
       "diagnostic": "macOS arm64 remains unsupported; the matrix may inspect it only through fail-closed unsupported-host diagnostics and must not publish support from source-only or tool-presence evidence."
     }
   ],
+  "package_variant_rows": [
+    {
+      "row_id": "objc3c.package.runtime.windows-x64.release",
+      "issue_ref": 8206,
+      "variant_kind": "release-runtime",
+      "target_platform_id": "windows-x64",
+      "platform_ids": [
+        "windows-x64"
+      ],
+      "package_id": "org.objc3c.runtime:objc3c-runtime-release",
+      "runtime_library_contract": {
+        "runtime_library_ids": [
+          "objc3-runtime"
+        ],
+        "missing_runtime_behavior": "fail-closed-before-native-execution-claim",
+        "mixed_runtime_behavior": "fail-closed"
+      },
+      "metadata_freshness_guard": {
+        "metadata_source": "tests/tooling/fixtures/platform_hardening/platform_toolchain_support_evidence.json#objc3c.package.runtime.windows-x64.release",
+        "generated_metadata_allowed": false,
+        "stale_package_metadata_behavior": "fail-closed-before-publication",
+        "blocks_publication_on_stale": true
+      },
+      "artifact_identity_contract": {
+        "archive_name_suffix": "windows-x64-release",
+        "object_format": "COFF",
+        "debug_format": "CodeView/PDB",
+        "runtime_library_names": [
+          "objc3_runtime.lib"
+        ],
+        "loader_path_policy": "package bin directory and PATH-owned loader resolution are captured by install and native execution evidence",
+        "package_root_layout": [
+          "artifacts/package/objc3c-runnable-toolchain-package.json",
+          "artifacts/bin/objc3c-native.exe",
+          "artifacts/lib/objc3_runtime.lib",
+          "stdlib/workspace.json",
+          "stdlib/modules/objc3.core/module.json",
+          "docs/runbooks/objc3c_packaging_channels.md"
+        ],
+        "symbol_export_policy": "exports are owned by the native runtime package manifest and import library"
+      },
+      "promotion_gate_contract": {
+        "promotion_source": "checked-in-package-variant-row",
+        "required_positive_evidence_classes": [
+          "package",
+          "install",
+          "execution"
+        ],
+        "blocked_until_evidence_classes": [],
+        "blocked_publication_surfaces": [
+          "publication"
+        ],
+        "source_only_metadata_behavior": "fail-closed-before-publication",
+        "hosted_runner_summary_behavior": "summary-only-no-support-promotion"
+      },
+      "claim_state": "evidence-bound",
+      "required_evidence_classes": [
+        "package",
+        "install",
+        "execution"
+      ],
+      "required_missing_evidence_classes": [],
+      "evidence_ids": [
+        "objc3c.evidence.platform.windows-x64.package.runnable-toolchain",
+        "objc3c.evidence.platform.windows-x64.install.packaging-e2e",
+        "objc3c.evidence.platform.windows-x64.execution.native-smoke"
+      ],
+      "unsupported_behavior": "fail-closed",
+      "diagnostic": "Default release runtime packaging is evidence-bound only for Windows x64 and does not imply another host package lane."
+    },
+    {
+      "row_id": "objc3c.package.runtime.linux-x64.release.fail-closed",
+      "issue_ref": 8228,
+      "variant_kind": "release-runtime",
+      "target_platform_id": "linux-x64",
+      "platform_ids": [],
+      "package_id": "org.objc3c.runtime:objc3c-runtime-linux-x64-release",
+      "runtime_library_contract": {
+        "runtime_library_ids": [
+          "objc3-runtime"
+        ],
+        "missing_runtime_behavior": "fail-closed-before-native-execution-claim",
+        "mixed_runtime_behavior": "fail-closed"
+      },
+      "metadata_freshness_guard": {
+        "metadata_source": "tests/tooling/fixtures/platform_hardening/platform_toolchain_support_evidence.json#objc3c.package.runtime.linux-x64.release.fail-closed",
+        "generated_metadata_allowed": false,
+        "stale_package_metadata_behavior": "fail-closed-before-publication",
+        "blocks_publication_on_stale": true
+      },
+      "artifact_identity_contract": {
+        "archive_name_suffix": "linux-x64-release",
+        "object_format": "ELF",
+        "debug_format": "DWARF",
+        "runtime_library_names": [
+          "libobjc3-runtime.so"
+        ],
+        "loader_path_policy": "ELF rpath, RUNPATH, or package-root loader resolution must be proven before support",
+        "package_root_layout": [
+          "artifacts/package/objc3c-runnable-toolchain-package.json",
+          "artifacts/bin/objc3c-native",
+          "artifacts/lib/libobjc3-runtime.so",
+          "stdlib/workspace.json",
+          "stdlib/modules/objc3.core/module.json",
+          "docs/runbooks/objc3c_packaging_channels.md"
+        ],
+        "symbol_export_policy": "ELF dynamic symbol exports must match the checked runtime package manifest"
+      },
+      "promotion_gate_contract": {
+        "promotion_source": "checked-in-package-variant-row",
+        "required_positive_evidence_classes": [
+          "build",
+          "package",
+          "install",
+          "execution"
+        ],
+        "blocked_until_evidence_classes": [
+          "build",
+          "package",
+          "install",
+          "execution"
+        ],
+        "blocked_publication_surfaces": [
+          "package",
+          "install",
+          "execution",
+          "publication"
+        ],
+        "source_only_metadata_behavior": "fail-closed-before-publication",
+        "hosted_runner_summary_behavior": "summary-only-no-support-promotion"
+      },
+      "claim_state": "fail-closed",
+      "required_evidence_classes": [
+        "build",
+        "package",
+        "install",
+        "execution"
+      ],
+      "required_missing_evidence_classes": [
+        "build",
+        "package",
+        "install",
+        "execution"
+      ],
+      "evidence_ids": [
+        "objc3c.evidence.unsupported.linux-x64.fail-closed"
+      ],
+      "unsupported_behavior": "fail-closed",
+      "diagnostic": "Linux x64 release runtime packages are blocked until Linux build, package, install, and native execution evidence is checked in."
+    },
+    {
+      "row_id": "objc3c.package.runtime.darwin-arm64.release.fail-closed",
+      "issue_ref": 8229,
+      "variant_kind": "release-runtime",
+      "target_platform_id": "darwin-arm64",
+      "platform_ids": [],
+      "package_id": "org.objc3c.runtime:objc3c-runtime-darwin-arm64-release",
+      "runtime_library_contract": {
+        "runtime_library_ids": [
+          "objc3-runtime"
+        ],
+        "missing_runtime_behavior": "fail-closed-before-native-execution-claim",
+        "mixed_runtime_behavior": "fail-closed"
+      },
+      "metadata_freshness_guard": {
+        "metadata_source": "tests/tooling/fixtures/platform_hardening/platform_toolchain_support_evidence.json#objc3c.package.runtime.darwin-arm64.release.fail-closed",
+        "generated_metadata_allowed": false,
+        "stale_package_metadata_behavior": "fail-closed-before-publication",
+        "blocks_publication_on_stale": true
+      },
+      "artifact_identity_contract": {
+        "archive_name_suffix": "darwin-arm64-release",
+        "object_format": "Mach-O",
+        "debug_format": "DWARF/dSYM",
+        "runtime_library_names": [
+          "libobjc3-runtime.dylib"
+        ],
+        "loader_path_policy": "@rpath, install_name, codesign, and package-root loader behavior must be proven before support",
+        "package_root_layout": [
+          "artifacts/package/objc3c-runnable-toolchain-package.json",
+          "artifacts/bin/objc3c-native",
+          "artifacts/lib/libobjc3-runtime.dylib",
+          "stdlib/workspace.json",
+          "stdlib/modules/objc3.core/module.json",
+          "docs/runbooks/objc3c_packaging_channels.md"
+        ],
+        "symbol_export_policy": "Mach-O exported symbols and install_name must match the checked runtime package manifest"
+      },
+      "promotion_gate_contract": {
+        "promotion_source": "checked-in-package-variant-row",
+        "required_positive_evidence_classes": [
+          "build",
+          "package",
+          "install",
+          "execution"
+        ],
+        "blocked_until_evidence_classes": [
+          "build",
+          "package",
+          "install",
+          "execution"
+        ],
+        "blocked_publication_surfaces": [
+          "package",
+          "install",
+          "execution",
+          "publication"
+        ],
+        "source_only_metadata_behavior": "fail-closed-before-publication",
+        "hosted_runner_summary_behavior": "summary-only-no-support-promotion"
+      },
+      "claim_state": "fail-closed",
+      "required_evidence_classes": [
+        "build",
+        "package",
+        "install",
+        "execution"
+      ],
+      "required_missing_evidence_classes": [
+        "build",
+        "package",
+        "install",
+        "execution"
+      ],
+      "evidence_ids": [
+        "objc3c.evidence.unsupported.darwin-arm64.fail-closed"
+      ],
+      "unsupported_behavior": "fail-closed",
+      "diagnostic": "macOS arm64 release runtime packages are blocked until Mach-O, package install, load-path, and native execution evidence is checked in."
+    },
+    {
+      "row_id": "objc3c.package.sanitizer.asan.reserved",
+      "issue_ref": 8230,
+      "variant_kind": "sanitizer-runtime",
+      "target_platform_id": "windows-x64",
+      "platform_ids": [
+        "windows-x64"
+      ],
+      "package_id": "org.objc3c.runtime:objc3c-runtime-asan",
+      "runtime_library_contract": {
+        "runtime_library_ids": [
+          "objc3-runtime",
+          "clang_rt.asan"
+        ],
+        "missing_runtime_behavior": "fail-closed-before-package-install",
+        "mixed_runtime_behavior": "fail-closed"
+      },
+      "metadata_freshness_guard": {
+        "metadata_source": "tests/tooling/fixtures/platform_hardening/platform_toolchain_support_evidence.json#objc3c.package.sanitizer.asan.reserved",
+        "generated_metadata_allowed": false,
+        "stale_package_metadata_behavior": "fail-closed-before-publication",
+        "blocks_publication_on_stale": true
+      },
+      "artifact_identity_contract": {
+        "archive_name_suffix": "asan",
+        "object_format": "target-platform-native",
+        "debug_format": "target-platform-native-debug-info-plus-sanitizer-symbolization",
+        "runtime_library_names": [
+          "objc3-runtime",
+          "clang_rt.asan"
+        ],
+        "loader_path_policy": "exact target ASan runtime discovery must be captured by sanitizer package metadata before install or execution claims",
+        "package_root_layout": [
+          "artifacts/lib/objc3_runtime.lib",
+          "share/objc3c/sanitizer/asan-metadata.json",
+          "share/objc3c/sanitizer/asan-runtime-libraries.json",
+          "artifacts/runtime/sanitizer/address/clang_rt.asan_dynamic-x86_64.dll",
+          "artifacts/runtime/sanitizer/address/clang_rt.asan_dynamic-x86_64.lib",
+          "artifacts/runtime/sanitizer/address/clang_rt.asan_dynamic_runtime_thunk-x86_64.lib"
+        ],
+        "symbol_export_policy": "sanitizer runtime symbols are excluded from default release runtime identity"
+      },
+      "promotion_gate_contract": {
+        "promotion_source": "checked-in-package-variant-row",
+        "required_positive_evidence_classes": [
+          "build",
+          "package",
+          "install",
+          "execution"
+        ],
+        "blocked_until_evidence_classes": [],
+        "blocked_publication_surfaces": [
+          "package",
+          "install",
+          "execution",
+          "publication"
+        ],
+        "source_only_metadata_behavior": "fail-closed-before-publication",
+        "hosted_runner_summary_behavior": "summary-only-no-support-promotion"
+      },
+      "claim_state": "evidence-bound",
+      "required_evidence_classes": [
+        "build",
+        "package",
+        "install",
+        "execution"
+      ],
+      "required_missing_evidence_classes": [],
+      "evidence_ids": [
+        "objc3c.evidence.sanitizer.address.package",
+        "objc3c.evidence.sanitizer.address.install",
+        "objc3c.evidence.sanitizer.address.execution"
+      ],
+      "unsupported_behavior": "fail-closed",
+      "diagnostic": "ASan runtime packaging is evidence-bound for windows-x64 through the source-owned sanitizer promotion gate, regenerated package/probe evidence, package and runtime manifests, packaged smoke, expected detection, computed digests, and fail-closed negative cases."
+    },
+    {
+      "row_id": "objc3c.package.sanitizer.ubsan.reserved",
+      "issue_ref": 8231,
+      "variant_kind": "sanitizer-runtime",
+      "target_platform_id": "windows-x64",
+      "platform_ids": [
+        "windows-x64"
+      ],
+      "package_id": "org.objc3c.runtime:objc3c-runtime-ubsan",
+      "runtime_library_contract": {
+        "runtime_library_ids": [
+          "objc3-runtime",
+          "clang_rt.ubsan"
+        ],
+        "missing_runtime_behavior": "fail-closed-before-package-install",
+        "mixed_runtime_behavior": "fail-closed"
+      },
+      "metadata_freshness_guard": {
+        "metadata_source": "tests/tooling/fixtures/platform_hardening/platform_toolchain_support_evidence.json#objc3c.package.sanitizer.ubsan.reserved",
+        "generated_metadata_allowed": false,
+        "stale_package_metadata_behavior": "fail-closed-before-publication",
+        "blocks_publication_on_stale": true
+      },
+      "artifact_identity_contract": {
+        "archive_name_suffix": "ubsan",
+        "object_format": "target-platform-native",
+        "debug_format": "target-platform-native-debug-info-plus-sanitizer-symbolization",
+        "runtime_library_names": [
+          "objc3-runtime",
+          "clang_rt.ubsan"
+        ],
+        "loader_path_policy": "exact target UBSan runtime discovery and trap-or-recover policy must be captured by sanitizer package metadata before install or execution claims",
+        "package_root_layout": [
+          "artifacts/lib/objc3_runtime.lib",
+          "share/objc3c/sanitizer/ubsan-metadata.json",
+          "share/objc3c/sanitizer/ubsan-runtime-libraries.json",
+          "artifacts/runtime/sanitizer/undefined/clang_rt.ubsan_standalone-x86_64.lib",
+          "artifacts/runtime/sanitizer/undefined/clang_rt.ubsan_standalone_cxx-x86_64.lib"
+        ],
+        "symbol_export_policy": "sanitizer runtime symbols and UBSan handlers are excluded from default release runtime identity"
+      },
+      "promotion_gate_contract": {
+        "promotion_source": "checked-in-package-variant-row",
+        "required_positive_evidence_classes": [
+          "build",
+          "package",
+          "install",
+          "execution"
+        ],
+        "blocked_until_evidence_classes": [],
+        "blocked_publication_surfaces": [
+          "package",
+          "install",
+          "execution",
+          "publication"
+        ],
+        "source_only_metadata_behavior": "fail-closed-before-publication",
+        "hosted_runner_summary_behavior": "summary-only-no-support-promotion"
+      },
+      "claim_state": "evidence-bound",
+      "required_evidence_classes": [
+        "build",
+        "package",
+        "install",
+        "execution"
+      ],
+      "required_missing_evidence_classes": [],
+      "evidence_ids": [
+        "objc3c.evidence.sanitizer.undefined.package",
+        "objc3c.evidence.sanitizer.undefined.install",
+        "objc3c.evidence.sanitizer.undefined.execution"
+      ],
+      "unsupported_behavior": "fail-closed",
+      "diagnostic": "UBSan runtime packaging is evidence-bound for windows-x64 through the source-owned sanitizer promotion gate, regenerated package/probe evidence, package and runtime manifests, packaged smoke, trap-mode expected detection, computed digests, and fail-closed negative cases."
+    }
+  ],
+  "sanitizer_variant_rows": [
+    {
+      "variant_id": "objc3c.toolchain.sanitizer.address",
+      "issue_ref": 8230,
+      "sanitizer": "address",
+      "claim_state": "evidence-bound",
+      "platform_ids": [
+        "windows-x64"
+      ],
+      "package_variant_row_id": "objc3c.package.sanitizer.asan.reserved",
+      "package_id": "org.objc3c.runtime:objc3c-runtime-asan",
+      "runtime_requirement": "ASan runtime library available for the exact target platform and package variant",
+      "metadata_freshness_guard": {
+        "metadata_source": "tests/tooling/fixtures/platform_hardening/platform_toolchain_support_evidence.json#objc3c.toolchain.sanitizer.address",
+        "generated_metadata_allowed": false,
+        "stale_package_metadata_behavior": "fail-closed-before-publication",
+        "blocks_publication_on_stale": true
+      },
+      "install_guard": {
+        "release_channel_policy": "asan packages are opt-in and blocked from default release runtime installs",
+        "unsupported_platform_behavior": "fail-closed",
+        "missing_runtime_behavior": "fail-closed-before-package-install",
+        "mixed_runtime_behavior": "fail-closed",
+        "stale_package_metadata_behavior": "fail-closed-before-publication"
+      },
+      "package_runtime_contract": {
+        "runtime_probe_required": true,
+        "runtime_library_resolution": "exact-target clang ASan runtime package lookup recorded in sanitizer package metadata",
+        "package_layout_contract": {
+          "package_root_layout": [
+            "artifacts/lib/objc3_runtime.lib",
+            "share/objc3c/sanitizer/asan-metadata.json",
+            "share/objc3c/sanitizer/asan-runtime-libraries.json",
+            "artifacts/runtime/sanitizer/address/clang_rt.asan_dynamic-x86_64.dll",
+            "artifacts/runtime/sanitizer/address/clang_rt.asan_dynamic-x86_64.lib",
+            "artifacts/runtime/sanitizer/address/clang_rt.asan_dynamic_runtime_thunk-x86_64.lib"
+          ],
+          "metadata_manifest_path": "share/objc3c/sanitizer/asan-metadata.json",
+          "runtime_library_manifest_path": "share/objc3c/sanitizer/asan-runtime-libraries.json",
+          "runtime_library_required_entries": [
+            "artifacts/runtime/sanitizer/address/clang_rt.asan_dynamic-x86_64.dll",
+            "artifacts/runtime/sanitizer/address/clang_rt.asan_dynamic-x86_64.lib",
+            "artifacts/runtime/sanitizer/address/clang_rt.asan_dynamic_runtime_thunk-x86_64.lib"
+          ],
+          "install_receipt_required_fields": [
+            "package_id",
+            "package_variant_row_id",
+            "target_platform_id",
+            "runtime_library_ids",
+            "metadata_digest",
+            "runtime_library_manifest_path",
+            "runtime_library_manifest_digest",
+            "runtime_library_artifacts",
+            "missing_runtime_behavior",
+            "selected_runtime_variant"
+          ],
+          "layout_support_truth": false
+        },
+        "runtime_probe_contract": {
+          "probe_required": true,
+          "probe_inputs": [
+            "target_platform_id",
+            "llvm_runtime_root",
+            "runtime_library_manifest_path",
+            "runtime_library_artifacts",
+            "package_root_layout",
+            "runtime_library_ids"
+          ],
+          "required_runtime_library_ids": [
+            "objc3-runtime",
+            "clang_rt.asan"
+          ],
+          "missing_runtime_behavior": "fail-closed-before-package-install",
+          "probe_result_support_truth": false
+        },
+        "install_selection_contract": {
+          "selection_mode": "explicit-opt-in",
+          "install_selector": "sanitizer=address",
+          "default_release_selection_allowed": false,
+          "default_release_misuse_behavior": "fail-closed-before-install"
+        },
+        "runtime_mixing_rejection_contract": {
+          "release_sanitizer_mixing_allowed": false,
+          "mixed_runtime_behavior": "fail-closed-before-native-execution-claim",
+          "rejected_release_runtime_package_ids": [
+            "org.objc3c.runtime:objc3c-runtime-release",
+            "org.objc3c.runtime:objc3c-runtime-linux-x64-release",
+            "org.objc3c.runtime:objc3c-runtime-darwin-arm64-release"
+          ]
+        },
+        "environment_contract": {
+          "env_var": "ASAN_OPTIONS",
+          "required_metadata_field": "environment",
+          "required_options": [
+            "detect_leaks",
+            "halt_on_error",
+            "symbolize"
+          ],
+          "missing_environment_behavior": "fail-closed-before-native-execution-claim",
+          "environment_support_truth": false
+        },
+        "metadata_freshness_contract": {
+          "source_owned_metadata_required": true,
+          "generated_metadata_support_truth": false,
+          "stale_package_metadata_behavior": "fail-closed-before-publication",
+          "freshness_inputs": [
+            "package_variant_row_id",
+            "package_id",
+            "runtime_library_ids",
+            "compiler_flags",
+            "linker_flags",
+            "environment"
+          ]
+        },
+        "default_release_channel_allowed": false,
+        "report_artifact_support_truth": false,
+        "mixed_release_sanitizer_runtime_behavior": "fail-closed",
+        "release_runtime_package_ids": [
+          "org.objc3c.runtime:objc3c-runtime-release",
+          "org.objc3c.runtime:objc3c-runtime-linux-x64-release",
+          "org.objc3c.runtime:objc3c-runtime-darwin-arm64-release"
+        ],
+        "release_runtime_mixing_allowed": false,
+        "expected_detection_records": [
+          {
+            "record_id": "objc3c.sanitizer.address.heap-use-after-free",
+            "record_kind": "asan-diagnostic",
+            "required_behavior": "record-only-no-support-promotion",
+            "support_truth": false
+          },
+          {
+            "record_id": "objc3c.sanitizer.address.container-overflow",
+            "record_kind": "asan-diagnostic",
+            "required_behavior": "record-only-no-support-promotion",
+            "support_truth": false
+          }
+        ],
+        "unsupported_host_diagnostics": [
+          {
+            "diagnostic_id": "objc3c.sanitizer.address.unsupported-host",
+            "failure_class": "unsupported-sanitizer-platform",
+            "required_behavior": "fail-closed-before-capability-promotion",
+            "blocks": [
+              "package",
+              "install",
+              "execution",
+              "publication"
+            ]
+          }
+        ],
+        "required_metadata_fields": [
+          "target_platform_id",
+          "sanitizer",
+          "runtime_library_ids",
+          "runtime_library_manifest_path",
+          "runtime_library_artifacts",
+          "compiler_flags",
+          "linker_flags",
+          "environment",
+          "package_layout_contract",
+          "runtime_probe_contract",
+          "install_selection_contract",
+          "runtime_mixing_rejection_contract",
+          "environment_contract",
+          "metadata_freshness_contract",
+          "release_runtime_package_ids",
+          "release_runtime_mixing_allowed",
+          "expected_detection_records",
+          "unsupported_host_diagnostics"
+        ]
+      },
+      "required_promotion_evidence": [
+        "package",
+        "install",
+        "execution"
+      ],
+      "required_missing_evidence_classes": [],
+      "diagnostic": "AddressSanitizer support is evidence-bound for windows-x64 through the source-owned sanitizer promotion gate, regenerated ASan package/probe evidence, package and runtime manifests, packaged smoke, expected detection, computed digests, and fail-closed negative cases."
+    },
+    {
+      "variant_id": "objc3c.toolchain.sanitizer.undefined",
+      "issue_ref": 8231,
+      "sanitizer": "undefined",
+      "claim_state": "evidence-bound",
+      "platform_ids": [
+        "windows-x64"
+      ],
+      "package_variant_row_id": "objc3c.package.sanitizer.ubsan.reserved",
+      "package_id": "org.objc3c.runtime:objc3c-runtime-ubsan",
+      "runtime_requirement": "UBSan runtime library and explicit trap-or-recover mode for the exact target platform and package variant",
+      "metadata_freshness_guard": {
+        "metadata_source": "tests/tooling/fixtures/platform_hardening/platform_toolchain_support_evidence.json#objc3c.toolchain.sanitizer.undefined",
+        "generated_metadata_allowed": false,
+        "stale_package_metadata_behavior": "fail-closed-before-publication",
+        "blocks_publication_on_stale": true
+      },
+      "install_guard": {
+        "release_channel_policy": "ubsan packages are opt-in and blocked from default release runtime installs",
+        "unsupported_platform_behavior": "fail-closed",
+        "missing_runtime_behavior": "fail-closed-before-package-install",
+        "mixed_runtime_behavior": "fail-closed",
+        "stale_package_metadata_behavior": "fail-closed-before-publication"
+      },
+      "package_runtime_contract": {
+        "runtime_probe_required": true,
+        "runtime_library_resolution": "exact-target clang UBSan runtime package lookup and trap-or-recover mode recorded in sanitizer package metadata",
+        "package_layout_contract": {
+          "package_root_layout": [
+            "artifacts/lib/objc3_runtime.lib",
+            "share/objc3c/sanitizer/ubsan-metadata.json",
+            "share/objc3c/sanitizer/ubsan-runtime-libraries.json",
+            "artifacts/runtime/sanitizer/undefined/clang_rt.ubsan_standalone-x86_64.lib",
+            "artifacts/runtime/sanitizer/undefined/clang_rt.ubsan_standalone_cxx-x86_64.lib"
+          ],
+          "metadata_manifest_path": "share/objc3c/sanitizer/ubsan-metadata.json",
+          "runtime_library_manifest_path": "share/objc3c/sanitizer/ubsan-runtime-libraries.json",
+          "runtime_library_required_entries": [
+            "artifacts/runtime/sanitizer/undefined/clang_rt.ubsan_standalone-x86_64.lib",
+            "artifacts/runtime/sanitizer/undefined/clang_rt.ubsan_standalone_cxx-x86_64.lib"
+          ],
+          "install_receipt_required_fields": [
+            "package_id",
+            "package_variant_row_id",
+            "target_platform_id",
+            "runtime_library_ids",
+            "metadata_digest",
+            "runtime_library_manifest_path",
+            "runtime_library_manifest_digest",
+            "runtime_library_artifacts",
+            "missing_runtime_behavior",
+            "selected_runtime_variant",
+            "trap_or_recover_mode"
+          ],
+          "layout_support_truth": false
+        },
+        "runtime_probe_contract": {
+          "probe_required": true,
+          "probe_inputs": [
+            "target_platform_id",
+            "llvm_runtime_root",
+            "runtime_library_manifest_path",
+            "runtime_library_artifacts",
+            "package_root_layout",
+            "runtime_library_ids",
+            "trap_or_recover_mode"
+          ],
+          "required_runtime_library_ids": [
+            "objc3-runtime",
+            "clang_rt.ubsan"
+          ],
+          "missing_runtime_behavior": "fail-closed-before-package-install",
+          "probe_result_support_truth": false
+        },
+        "install_selection_contract": {
+          "selection_mode": "explicit-opt-in",
+          "install_selector": "sanitizer=undefined",
+          "default_release_selection_allowed": false,
+          "default_release_misuse_behavior": "fail-closed-before-install"
+        },
+        "runtime_mixing_rejection_contract": {
+          "release_sanitizer_mixing_allowed": false,
+          "mixed_runtime_behavior": "fail-closed-before-native-execution-claim",
+          "rejected_release_runtime_package_ids": [
+            "org.objc3c.runtime:objc3c-runtime-release",
+            "org.objc3c.runtime:objc3c-runtime-linux-x64-release",
+            "org.objc3c.runtime:objc3c-runtime-darwin-arm64-release"
+          ]
+        },
+        "environment_contract": {
+          "env_var": "UBSAN_OPTIONS",
+          "required_metadata_field": "trap_or_recover_mode",
+          "required_options": [
+            "print_stacktrace",
+            "halt_on_error"
+          ],
+          "missing_environment_behavior": "fail-closed-before-native-execution-claim",
+          "environment_support_truth": false
+        },
+        "trap_recover_contract": {
+          "required_mode_field": "trap_or_recover_mode",
+          "allowed_modes": [
+            "trap",
+            "recover"
+          ],
+          "default_mode_allowed": false,
+          "missing_mode_behavior": "fail-closed-before-native-execution-claim",
+          "mode_support_truth": false
+        },
+        "metadata_freshness_contract": {
+          "source_owned_metadata_required": true,
+          "generated_metadata_support_truth": false,
+          "stale_package_metadata_behavior": "fail-closed-before-publication",
+          "freshness_inputs": [
+            "package_variant_row_id",
+            "package_id",
+            "runtime_library_ids",
+            "compiler_flags",
+            "linker_flags",
+            "trap_or_recover_mode"
+          ]
+        },
+        "default_release_channel_allowed": false,
+        "report_artifact_support_truth": false,
+        "mixed_release_sanitizer_runtime_behavior": "fail-closed",
+        "release_runtime_package_ids": [
+          "org.objc3c.runtime:objc3c-runtime-release",
+          "org.objc3c.runtime:objc3c-runtime-linux-x64-release",
+          "org.objc3c.runtime:objc3c-runtime-darwin-arm64-release"
+        ],
+        "release_runtime_mixing_allowed": false,
+        "expected_detection_records": [
+          {
+            "record_id": "objc3c.sanitizer.undefined.signed-integer-overflow",
+            "record_kind": "ubsan-trap",
+            "required_behavior": "record-only-no-support-promotion",
+            "support_truth": false
+          },
+          {
+            "record_id": "objc3c.sanitizer.undefined.invalid-shift",
+            "record_kind": "ubsan-trap",
+            "required_behavior": "record-only-no-support-promotion",
+            "support_truth": false
+          }
+        ],
+        "unsupported_host_diagnostics": [
+          {
+            "diagnostic_id": "objc3c.sanitizer.undefined.unsupported-host",
+            "failure_class": "unsupported-sanitizer-platform",
+            "required_behavior": "fail-closed-before-capability-promotion",
+            "blocks": [
+              "package",
+              "install",
+              "execution",
+              "publication"
+            ]
+          }
+        ],
+        "required_metadata_fields": [
+          "target_platform_id",
+          "sanitizer",
+          "runtime_library_ids",
+          "runtime_library_manifest_path",
+          "runtime_library_artifacts",
+          "compiler_flags",
+          "linker_flags",
+          "trap_or_recover_mode",
+          "package_layout_contract",
+          "runtime_probe_contract",
+          "install_selection_contract",
+          "runtime_mixing_rejection_contract",
+          "environment_contract",
+          "trap_recover_contract",
+          "metadata_freshness_contract",
+          "release_runtime_package_ids",
+          "release_runtime_mixing_allowed",
+          "expected_detection_records",
+          "unsupported_host_diagnostics"
+        ]
+      },
+      "required_promotion_evidence": [
+        "package",
+        "install",
+        "execution"
+      ],
+      "required_missing_evidence_classes": [],
+      "diagnostic": "UBSan support is evidence-bound for windows-x64 through the source-owned sanitizer promotion gate, regenerated UBSan package/probe evidence, package and runtime manifests, packaged smoke, trap-mode expected detection, computed digests, and fail-closed negative cases."
+    }
+  ],
+  "umbrella_readiness_contract": {
+    "umbrella_issue_ref": 8206,
+    "closure_state": "source-owned-fail-closed-ready",
+    "support_claim_boundary": "windows-x64-only",
+    "supported_platform_row_ids": [
+      "objc3c.platform.windows-x64.tier1"
+    ],
+    "child_issue_contracts": [
+      {
+        "issue_ref": 8228,
+        "row_id": "objc3c.platform.linux-x64.unsupported",
+        "contract_kind": "platform-host",
+        "claim_state": "unsupported",
+        "required_promotion_evidence": [
+          "build",
+          "package",
+          "install",
+          "execution"
+        ],
+        "diagnostic": "Linux x64 may be projected only as a fail-closed unsupported row until build, package, install, and native execution evidence is checked in."
+      },
+      {
+        "issue_ref": 8229,
+        "row_id": "objc3c.platform.darwin-arm64.unsupported",
+        "contract_kind": "platform-host",
+        "claim_state": "unsupported",
+        "required_promotion_evidence": [
+          "build",
+          "package",
+          "install",
+          "execution"
+        ],
+        "diagnostic": "macOS arm64 may be projected only as a fail-closed unsupported row until package, install, load-path, and native execution evidence is checked in."
+      },
+      {
+        "issue_ref": 8230,
+        "row_id": "objc3c.package.sanitizer.asan.reserved",
+        "contract_kind": "sanitizer-runtime-package",
+        "claim_state": "evidence-bound",
+        "required_promotion_evidence": [
+          "package",
+          "install",
+          "execution"
+        ],
+        "diagnostic": "ASan package support is evidence-bound for windows-x64 through the source-owned sanitizer promotion gate, regenerated package/probe evidence, packaged smoke, expected detection, computed digests, and negative cases."
+      },
+      {
+        "issue_ref": 8231,
+        "row_id": "objc3c.package.sanitizer.ubsan.reserved",
+        "contract_kind": "sanitizer-runtime-package",
+        "claim_state": "evidence-bound",
+        "required_promotion_evidence": [
+          "package",
+          "install",
+          "execution"
+        ],
+        "diagnostic": "UBSan package support is evidence-bound for windows-x64 through the source-owned sanitizer promotion gate, regenerated package/probe evidence, packaged smoke, trap-mode expected detection, computed digests, and negative cases."
+      },
+      {
+        "issue_ref": 8232,
+        "row_id": "objc3c.llvm.native-object-emission.fail-closed.v1",
+        "contract_kind": "native-object-emission",
+        "claim_state": "toolchain-prerequisite-fail-closed",
+        "required_promotion_evidence": [
+          "toolchain",
+          "native-object-emission"
+        ],
+        "diagnostic": "Native object emission requires llc --filetype=obj plus target-specific non-empty object output. Package and native execution claims additionally require clang++, llvm-ar, and LLVM header/library discovery from llvm-config or an installed LLVM root; missing required LLVM subtools fail closed before package, execution, or platform success."
+      }
+    ],
+    "native_object_emission_contract": {
+      "contract_id": "objc3c.llvm.native-object-emission.fail-closed.v1",
+      "issue_ref": 8232,
+      "required_tool": "llc",
+      "required_probe": "llc --filetype=obj",
+      "required_target_probe": "llc --filetype=obj --mtriple=<target> [--relocation-model=pic for PIE/PIC targets] emits a non-empty object",
+      "success_status": "native_object_emission_supported",
+      "missing_llc_status": "native_object_emission_missing_llc",
+      "missing_filetype_status": "native_object_emission_filetype_obj_unavailable",
+      "target_object_status": "native_object_emission_target_object_unavailable",
+      "mixed_toolchain_status": "native_object_emission_mixed_toolchain_root",
+      "mismatched_version_status": "native_object_emission_mismatched_tool_versions",
+      "unsupported_version_status": "native_object_emission_unsupported_tool_version",
+      "unresolved_version_status": "native_object_emission_unresolved_tool_version",
+      "hosted_runner_behavior": "fail-closed-no-native-object-success-claim",
+      "task_hygiene_behavior": "skip-no-success-claim-when-native-object-emission-unavailable",
+      "conformance_minima_behavior": "fail-closed-before-cross-lane-runtime-proof",
+      "required_conformance_minima_env": "OBJC3C_REQUIRE_HOSTED_NATIVE_OBJECT_EMISSION",
+      "fallback_policy": "no-clang-fallback-success-claim",
+      "coherent_toolchain_policy": "no-mixed-root-or-mismatched-version-success-claim"
+    },
+    "forbidden_overclaims": [
+      "linux-x64 support from source-owned fail-closed rows alone",
+      "darwin-arm64 support from source-owned fail-closed rows alone",
+      "sanitizer package support without sanitizer runtime package install and native execution evidence",
+      "native object emission success when llc is missing",
+      "clang substitute published as llvm-direct object emission success",
+      "mixed LLVM tool roots published as package or execution support",
+      "mismatched LLVM tool versions published as native object emission support"
+    ],
+    "lead_projection_rule": "Only the windows-x64 row may be projected as supported; linux-x64 (#8228) and darwin-arm64 (#8229) remain unsupported until reviewed host evidence is applied and promoted, #8230 and #8231 are windows-x64 evidence-bound sanitizer package rows through checked source promotion evidence, and coherent llc object emission is a fail-closed platform-promotion guardrail rather than an open #8232 child blocker."
+  },
   "report_policy": {
-    "summary_path": "tmp/reports/platform-matrix/matrix-validation-summary.json",
+    "summary_path": "tmp/reports/platform-hardening/platform-matrix-summary.json",
     "generated_reports_must_not_be_source": true
   }
 }

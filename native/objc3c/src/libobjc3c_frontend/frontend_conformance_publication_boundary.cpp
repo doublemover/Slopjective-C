@@ -7,7 +7,9 @@ namespace objc3c::frontend {
 bool IsFrontendConformanceReportLoweringSummaryReady(
     const Objc3VersionedConformanceReportLoweringSummary &summary) {
   const bool language_profile_valid =
-      summary.effective_language_profile == "canonical";
+      summary.effective_language_profile == "canonical" ||
+      summary.effective_language_profile == "strict" ||
+      summary.effective_language_profile == "strict-concurrency";
   return !summary.contract_id.empty() &&
          !summary.semantic_contract_id.empty() &&
          !summary.runnable_feature_claim_inventory_contract_id.empty() &&
@@ -37,8 +39,8 @@ bool IsFrontendConformanceReportLoweringSummaryReady(
          summary.semantic_boundary_ready &&
          summary.known_unsupported_surface_published &&
          summary.compatibility_selection_truthful &&
-         summary.strictness_selection_fail_closed &&
-         summary.strict_concurrency_selection_fail_closed &&
+         summary.strictness_selection_supported &&
+         summary.strict_concurrency_selection_supported &&
          summary.canonical_interface_truthful &&
          summary.feature_macro_truthful &&
          summary.ready_for_runtime_conformance_publication &&

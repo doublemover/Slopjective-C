@@ -13,9 +13,11 @@ SemanticTypeInfo MakeScalarSemanticType(ValueType type) {
   info.type = type;
   info.canonical_type.value_type = type;
   info.canonical_type.kind =
-      objc3c::support::IsObjCReferenceAliasValueType(type)
-          ? Objc3SemanticCanonicalTypeKind::Object
-          : Objc3SemanticCanonicalTypeKind::Scalar;
+      type == ValueType::Optional
+          ? Objc3SemanticCanonicalTypeKind::ValueOptional
+          : (objc3c::support::IsObjCReferenceAliasValueType(type)
+                 ? Objc3SemanticCanonicalTypeKind::Object
+                 : Objc3SemanticCanonicalTypeKind::Scalar);
   info.canonical_type.canonical_spelling = objc3c::support::ValueTypeName(type);
   if (objc3c::support::IsObjCReferenceAliasValueType(type)) {
     info.ownership_kind = SemanticOwnershipKind::Retained;
@@ -104,6 +106,11 @@ SemanticTypeInfo MakeSemanticTypeFromCanonicalType(
     return MakeVectorSemanticType(canonical_type.value_type,
                                   canonical_type.vector_base_spelling,
                                   canonical_type.vector_lane_count);
+  }
+  if (canonical_type.is_value_optional) {
+    SemanticTypeInfo info = MakeScalarSemanticType(ValueType::Optional);
+    info.canonical_type = canonical_type;
+    return info;
   }
   SemanticTypeInfo info = MakeScalarSemanticType(canonical_type.value_type);
   info.canonical_type = canonical_type;

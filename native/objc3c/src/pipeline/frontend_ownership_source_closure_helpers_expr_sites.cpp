@@ -62,6 +62,15 @@ void CollectOwnershipSystemExtensionExprSites(
     CollectOwnershipSystemExtensionExprSites(expr->right.get(), summary);
     CollectOwnershipSystemExtensionExprSites(expr->third.get(), summary);
     return;
+  case Expr::Kind::MatchExpression:
+    CollectOwnershipSystemExtensionExprSites(
+        expr->match_expression_scrutinee.get(), summary);
+    for (const auto &arm : expr->match_expression_arms) {
+      CollectOwnershipSystemExtensionExprSites(
+          arm.guard_condition.get(), summary);
+      CollectOwnershipSystemExtensionExprSites(arm.value.get(), summary);
+    }
+    return;
   default:
     return;
   }

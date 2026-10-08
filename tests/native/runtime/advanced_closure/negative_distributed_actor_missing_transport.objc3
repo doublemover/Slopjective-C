@@ -1,0 +1,21 @@
+// Expected advanced-runtime diagnostic: advanced-runtime.distributed-actor-missing-transport
+module AdvancedRuntimeClosureNegativeDistributedActorTransport;
+
+extern fn objc3_runtime_actor_mailbox_enqueue_i32(actor_handle: i32, value: i32, executor_tag: i32) -> i32;
+
+actor class DistributedActorTransportBoundary
+- (i32)remoteSend:(i32)seed
+    __attribute__((objc_distributed_actor,
+                   objc_distributed_transport(named("missing"))));
+@end
+
+@implementation DistributedActorTransportBoundary
+- (i32)remoteSend:(i32)seed
+    __attribute__((objc_distributed_actor,
+                   objc_distributed_transport(named("missing")))) {
+  // Local mailbox traffic is not distributed actor transport proof, and
+  // distributed_actor_transport_evidence_sites must remain absent for the
+  // bounded Objective-C 3 local mailbox runtime envelope.
+  return objc3_runtime_actor_mailbox_enqueue_i32(seed, seed + 1, 1);
+}
+@end

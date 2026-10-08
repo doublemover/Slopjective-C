@@ -57,6 +57,8 @@ std::string BuildTypeSystemTypeSemanticModelSummaryJson(
       << summary.canonical_protocol_qualified_entries
       << ",\"canonical_generic_argument_entries\":"
       << summary.canonical_generic_argument_entries
+      << ",\"canonical_value_optional_entries\":"
+      << summary.canonical_value_optional_entries
       << ",\"canonical_nullable_entries\":"
       << summary.canonical_nullable_entries
       << ",\"canonical_nonnull_entries\":"

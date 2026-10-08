@@ -6,9 +6,12 @@ from pathlib import Path
 from typing import Any
 
 from objc3c_package_manager.model import (
+    LOCAL_DEPENDENCY_RESOLUTION,
+    LOCAL_DEPENDENCY_SOURCE,
     LOCAL_PACKAGE_ABI_IDENTITY,
     LOCAL_PACKAGE_LANGUAGE_VERSION,
     PACKAGE_MANAGER_TAMPER_CODE,
+    collect_dependency_source_authority_failures,
     public_workflow_command,
 )
 
@@ -86,6 +89,8 @@ def dependency_edge_payload(
         "from": from_id,
         "to": to_id,
         "source": str(dependency.get("source")),
+        "source_authority": str(dependency.get("source_authority")),
+        "source_authority_digest": str(dependency.get("source_authority_digest")),
         "language_requirement": str(dependency.get("language_requirement")),
         "abi_requirement": str(dependency.get("abi_requirement")),
         "resolution": str(dependency.get("resolution")),
@@ -117,6 +122,7 @@ def package_registry_payload(
         "language_version": str(package["language_version"]),
         "abi_identity": str(package["abi_identity"]),
         "package_manifest": manifest,
+        "module_graph": package.get("module_graph", {}),
         "provenance_id": str(package["provenance_id"]),
         "trust": trust,
         "version": {
@@ -335,6 +341,13 @@ def collect_registry_index_failures(
         elif registry_manifest != locked_manifest:
             failures.append(f"{PACKAGE_MANAGER_TAMPER_CODE}: local registry manifest drift for {package_id}")
 
+        locked_module_graph = locked.get("module_graph", {})
+        registry_module_graph = raw_package.get("module_graph", {})
+        if not isinstance(locked_module_graph, dict) or not isinstance(registry_module_graph, dict):
+            failures.append(f"{PACKAGE_MANAGER_TAMPER_CODE}: local registry module graph metadata drift for {package_id}")
+        elif registry_module_graph != locked_module_graph:
+            failures.append(f"{PACKAGE_MANAGER_TAMPER_CODE}: local registry module graph drift for {package_id}")
+
         locked_trust = locked.get("trust", {})
         registry_trust = raw_package.get("trust", {})
         if not isinstance(registry_trust, dict) or registry_trust != locked_trust:
@@ -393,10 +406,16 @@ def collect_registry_index_failures(
         from_id = str(edge.get("from"))
         to_id = str(edge.get("to"))
         target = lock_packages_by_id.get(to_id, {})
-        if edge.get("resolution") != "locked-local-registry":
+        if edge.get("resolution") != LOCAL_DEPENDENCY_RESOLUTION:
             failures.append(f"{PACKAGE_MANAGER_TAMPER_CODE}: local registry dependency resolution drift for {from_id}->{to_id}")
-        if edge.get("source") != "checked-in-local-workspace":
+        if edge.get("source") != LOCAL_DEPENDENCY_SOURCE:
             failures.append(f"{PACKAGE_MANAGER_TAMPER_CODE}: local registry dependency source drift for {from_id}->{to_id}")
+        failures.extend(
+            collect_dependency_source_authority_failures(
+                edge,
+                root=root,
+            )
+        )
         if edge.get("language_requirement") != target.get("language_version"):
             failures.append(f"{PACKAGE_MANAGER_TAMPER_CODE}: local registry dependency language mismatch for {from_id}->{to_id}")
         if edge.get("abi_requirement") != target.get("abi_identity"):

@@ -17,6 +17,7 @@
 // published graph rather than a reconstructed sema view.
 Objc3SemanticIntegrationSurface BuildSemanticIntegrationSurface(
     const Objc3ParsedProgram &program,
+    Objc3SemaLanguageProfile language_profile,
     bool allow_source_only_block_literals,
     bool allow_source_only_defer_statements,
     bool allow_source_only_error_runtime_surface,

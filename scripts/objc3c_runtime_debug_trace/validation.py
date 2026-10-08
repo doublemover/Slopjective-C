@@ -368,6 +368,22 @@ def validate_runtime_debug_trace_payload(payload: dict[str, Any]) -> list[str]:
             "full source-map publication must stay reserved",
             failures,
         )
+        _expect(
+            source_mapping.get("inline_frame_status") in {"supported", "reserved", "rejected"},
+            "inline-frame status is invalid",
+            failures,
+        )
+        if source_mapping.get("inline_frame_status") != "supported":
+            _expect(
+                int(source_mapping.get("inline_frame_count", -1)) == 0,
+                "inline frames must stay empty while inline-frame support is not published",
+                failures,
+            )
+            _expect(
+                bool(source_mapping.get("inline_frame_fail_closed_reason")),
+                "inline-frame reserved state must carry a fail-closed reason",
+                failures,
+            )
     trace_lanes = payload.get("trace_lanes", {})
     if isinstance(trace_lanes, dict):
         _expect(

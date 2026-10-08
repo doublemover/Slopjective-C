@@ -15,8 +15,15 @@ namespace {
 using objc3::io::EscapeJsonString;
 
 const char *LanguageProfileName(Objc3FrontendLanguageProfile mode) {
-  (void)mode;
-  return "canonical";
+  switch (mode) {
+    case Objc3FrontendLanguageProfile::kCanonical:
+      return "canonical";
+    case Objc3FrontendLanguageProfile::kStrict:
+      return "strict";
+    case Objc3FrontendLanguageProfile::kStrictConcurrency:
+      return "strict-concurrency";
+  }
+  return "unknown";
 }
 
 std::string BuildStringArrayJson(const std::vector<std::string> &values) {
@@ -33,8 +40,10 @@ std::string BuildFeatureClaimStrictnessTruthSurfaceReplayKey(
       << ";language_mode=" << kObjc3RunnableFeatureClaimModeName
       << ";language_version=" << static_cast<unsigned>(options.language_version)
       << ";language_profile=" << LanguageProfileName(options.language_profile)
-      << ";supported_selection_surfaces=2"
-      << ";unsupported_selection_surfaces=3"
+      << ";supported_selection_surfaces="
+      << BuildSupportedSelectionSurfaceIds().size()
+      << ";unsupported_selection_surfaces="
+      << BuildUnsupportedSelectionSurfaceIds().size()
       << ";suppressed_macro_claims=3"
       << ";parser_declared_protocols="
       << pipeline_result.program.ast.protocols.size()
@@ -56,6 +65,8 @@ std::string BuildFeatureClaimStrictnessTruthSurfaceJson(
       BuildSuppressedMacroClaimIds();
   const std::vector<std::string> supported_language_profiles = {
       "canonical",
+      "strict",
+      "strict-concurrency",
   };
   std::ostringstream out;
   out << "{"
@@ -77,8 +88,8 @@ std::string BuildFeatureClaimStrictnessTruthSurfaceJson(
       << ",\"language_profile_selection_supported\":true"
       << ",\"canonical_rejection_diagnostics_selection_supported\":false"
       << ",\"canonical_literal_rejection_diagnostics_hard_error\":true"
-      << ",\"strictness_selection_supported\":false"
-      << ",\"strict_concurrency_selection_supported\":false"
+      << ",\"strictness_selection_supported\":true"
+      << ",\"strict_concurrency_selection_supported\":true"
       << ",\"feature_macro_surface_supported\":false"
       << ",\"claim_truth_fail_closed\":true"
       << ",\"supported_language_profiles\":"

@@ -10,18 +10,30 @@ RUNNABLE_INTEROP_ROUTE = "interop"
 VALIDATE_INTEROP_CONFORMANCE_ACTION = f"validate-{RUNNABLE_INTEROP_ROUTE}-conformance"
 VALIDATE_RUNNABLE_INTEROP_ACTION = f"validate-runnable-{RUNNABLE_INTEROP_ROUTE}"
 VALIDATE_MODULE_INTEROP_CONTRACTS_ACTION = "validate-module-interop-contracts"
+VALIDATE_STANDALONE_TEXTUAL_INTERFACE_PAYLOAD_ACTION = (
+    "validate-standalone-textual-interface-payload"
+)
 
 RUNNABLE_INTEROP_CONFORMANCE_SCRIPT = (
     "scripts/check_objc3c_runnable_interop_conformance.py"
 )
 RUNNABLE_INTEROP_E2E_SCRIPT = "scripts/check_objc3c_runnable_interop_end_to_end.py"
 MODULE_INTEROP_CONTRACTS_SCRIPT = "scripts/check_objc3c_module_interop_contracts.py"
+STANDALONE_TEXTUAL_INTERFACE_PAYLOAD_SCRIPT = (
+    "scripts/check_objc3c_standalone_textual_interface_payload.py"
+)
 RUNNABLE_INTEROP_CONFORMANCE_BACKEND = f"python:{RUNNABLE_INTEROP_CONFORMANCE_SCRIPT}"
 RUNNABLE_INTEROP_E2E_BACKEND = f"python:{RUNNABLE_INTEROP_E2E_SCRIPT}"
 MODULE_INTEROP_CONTRACTS_BACKEND = f"python:{MODULE_INTEROP_CONTRACTS_SCRIPT}"
+STANDALONE_TEXTUAL_INTERFACE_PAYLOAD_BACKEND = (
+    f"python:{STANDALONE_TEXTUAL_INTERFACE_PAYLOAD_SCRIPT}"
+)
 RUNNABLE_INTEROP_CONFORMANCE_PY = ROOT / RUNNABLE_INTEROP_CONFORMANCE_SCRIPT
 RUNNABLE_INTEROP_E2E_PY = ROOT / RUNNABLE_INTEROP_E2E_SCRIPT
 MODULE_INTEROP_CONTRACTS_PY = ROOT / MODULE_INTEROP_CONTRACTS_SCRIPT
+STANDALONE_TEXTUAL_INTERFACE_PAYLOAD_PY = (
+    ROOT / STANDALONE_TEXTUAL_INTERFACE_PAYLOAD_SCRIPT
+)
 
 
 def action_validate_interop_conformance(_: list[str]) -> int:
@@ -34,6 +46,10 @@ def action_validate_runnable_interop(_: list[str]) -> int:
 
 def action_validate_module_interop_contracts(_: list[str]) -> int:
     return run_python_check(MODULE_INTEROP_CONTRACTS_PY)
+
+
+def action_validate_standalone_textual_interface_payload(_: list[str]) -> int:
+    return run_python_check(STANDALONE_TEXTUAL_INTERFACE_PAYLOAD_PY)
 
 
 RUNNABLE_INTEROP_CONFORMANCE_ACTION = RuntimeRunnableActionGroup(
@@ -63,6 +79,20 @@ MODULE_INTEROP_CONTRACTS_ACTION = RuntimeRunnableActionGroup(
     ),
     validation_tier="targeted",
 )
+STANDALONE_TEXTUAL_INTERFACE_PAYLOAD_ACTION = RuntimeRunnableActionGroup(
+    action=VALIDATE_STANDALONE_TEXTUAL_INTERFACE_PAYLOAD_ACTION,
+    summary=(
+        "validate standalone textual interface payload import, roundtrip, "
+        "package lock identity, and fail-closed drift contracts"
+    ),
+    backend=STANDALONE_TEXTUAL_INTERFACE_PAYLOAD_BACKEND,
+    handler=action_validate_standalone_textual_interface_payload,
+    guarantee_owner=(
+        "checked-in standalone textual interface payload importer and schema "
+        "contract for separate-compilation module boundaries"
+    ),
+    validation_tier="targeted",
+)
 RUNNABLE_INTEROP_E2E_ACTION = RuntimeRunnableActionGroup(
     action=VALIDATE_RUNNABLE_INTEROP_ACTION,
     summary=(
@@ -83,6 +113,10 @@ __all__ = [
     "MODULE_INTEROP_CONTRACTS_BACKEND",
     "MODULE_INTEROP_CONTRACTS_PY",
     "MODULE_INTEROP_CONTRACTS_SCRIPT",
+    "STANDALONE_TEXTUAL_INTERFACE_PAYLOAD_ACTION",
+    "STANDALONE_TEXTUAL_INTERFACE_PAYLOAD_BACKEND",
+    "STANDALONE_TEXTUAL_INTERFACE_PAYLOAD_PY",
+    "STANDALONE_TEXTUAL_INTERFACE_PAYLOAD_SCRIPT",
     "RUNNABLE_INTEROP_CONFORMANCE_ACTION",
     "RUNNABLE_INTEROP_CONFORMANCE_BACKEND",
     "RUNNABLE_INTEROP_CONFORMANCE_PY",
@@ -95,7 +129,9 @@ __all__ = [
     "VALIDATE_INTEROP_CONFORMANCE_ACTION",
     "VALIDATE_MODULE_INTEROP_CONTRACTS_ACTION",
     "VALIDATE_RUNNABLE_INTEROP_ACTION",
+    "VALIDATE_STANDALONE_TEXTUAL_INTERFACE_PAYLOAD_ACTION",
     "action_validate_module_interop_contracts",
+    "action_validate_standalone_textual_interface_payload",
     "action_validate_interop_conformance",
     "action_validate_runnable_interop",
 ]

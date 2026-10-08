@@ -3,7 +3,9 @@ Set-StrictMode -Version Latest
 function Get-RunnableToolchainPackageHelperExportedFunctionNames {
   return @(
     "Assert-RequiredPackageSurfaceKeys",
+    "Convert-PackageRelativePathSegments",
     "Copy-RepoRelativeFile",
+    "Get-PackageManifestRelativePath",
     "Get-RepoRelativeConformanceFiles",
     "Get-RepoRelativeConformanceSurfacePythonFiles",
     "Get-RepoRelativeExecutionFixtureFiles",
@@ -23,8 +25,12 @@ function Get-RunnableToolchainPackageHelperExportedFunctionNames {
     "Get-RequiredRunnableToolchainPackageFiles",
     "Get-RepoRelativeStdlibFiles",
     "Get-RepoRelativeWorkflowPythonFiles",
+    "Join-PackageRelativePath",
+    "Normalize-PackageManifestRelativePath",
+    "Resolve-PackageRelativeHostPath",
     "Resolve-PackageRoot",
-    "Resolve-PackageManifestPath"
+    "Resolve-PackageManifestPath",
+    "Test-PathUnderHostRoot"
   )
 }
 

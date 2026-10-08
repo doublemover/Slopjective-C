@@ -1,6 +1,7 @@
 #include "ir/objc3_ir_canonical_literal_pools.h"
 
 #include <cstddef>
+#include <string>
 #include <utility>
 
 #include "ast/objc3_ast.h"
@@ -86,11 +87,64 @@ class Objc3IRCanonicalLiteralPoolCollector {
     artifact.component_path =
         JoinStringParts(expr.typed_keypath_components, ".");
     artifact.profile = profile;
+    artifact.component_owner_identity_path =
+        JoinStringParts(expr.typed_keypath_component_owner_identities, "|");
+    artifact.component_member_identity_path =
+        JoinStringParts(expr.typed_keypath_component_member_identities, "|");
+    artifact.component_type_identity_path =
+        JoinStringParts(expr.typed_keypath_component_type_identities, "|");
+    artifact.source_line = expr.line;
+    artifact.source_column = expr.column;
+    artifact.source_span_id =
+        "typed-keypath:span:" + std::to_string(expr.line) + ":" +
+        std::to_string(expr.column) + ":" + profile;
+    artifact.root_type_identity =
+        expr.typed_keypath_root_is_self
+            ? std::string("self")
+            : std::string("objc-class:") + expr.typed_keypath_root_name;
+    artifact.value_type_identity = "objc-id:typed-keypath-descriptor";
+    artifact.object_model_owner_identity =
+        expr.typed_keypath_root_is_self
+            ? std::string("self")
+            : std::string("class:") + expr.typed_keypath_root_name;
+    artifact.object_model_member_identity =
+        artifact.object_model_owner_identity + "." + artifact.component_path;
+    artifact.debug_source_map_key = "source-map:typed-keypath:" + profile;
+    artifact.diagnostic_anchor_key =
+        "diagnostic:typed-keypath:" + std::to_string(expr.line) + ":" +
+        std::to_string(expr.column);
+    artifact.fallback_interpretation_allowed = false;
+    if (!expr.typed_keypath_metadata_expanded ||
+        artifact.component_owner_identity_path.empty() ||
+        artifact.component_member_identity_path.empty() ||
+        artifact.component_type_identity_path.empty()) {
+      artifact.fallback_interpretation_allowed = true;
+    }
     pools_.typed_keypath_artifacts.emplace(profile, std::move(artifact));
     RegisterRuntimeStringLiteral(expr.typed_keypath_root_name);
     RegisterRuntimeStringLiteral(
         JoinStringParts(expr.typed_keypath_components, "."));
+    RegisterRuntimeStringLiteral(pools_.typed_keypath_artifacts.at(profile)
+                                     .component_owner_identity_path);
+    RegisterRuntimeStringLiteral(pools_.typed_keypath_artifacts.at(profile)
+                                     .component_member_identity_path);
+    RegisterRuntimeStringLiteral(pools_.typed_keypath_artifacts.at(profile)
+                                     .component_type_identity_path);
     RegisterRuntimeStringLiteral(profile);
+    RegisterRuntimeStringLiteral(pools_.typed_keypath_artifacts.at(profile)
+                                     .source_span_id);
+    RegisterRuntimeStringLiteral(pools_.typed_keypath_artifacts.at(profile)
+                                     .root_type_identity);
+    RegisterRuntimeStringLiteral(pools_.typed_keypath_artifacts.at(profile)
+                                     .value_type_identity);
+    RegisterRuntimeStringLiteral(pools_.typed_keypath_artifacts.at(profile)
+                                     .object_model_owner_identity);
+    RegisterRuntimeStringLiteral(pools_.typed_keypath_artifacts.at(profile)
+                                     .object_model_member_identity);
+    RegisterRuntimeStringLiteral(pools_.typed_keypath_artifacts.at(profile)
+                                     .debug_source_map_key);
+    RegisterRuntimeStringLiteral(pools_.typed_keypath_artifacts.at(profile)
+                                     .diagnostic_anchor_key);
     if (!frontend_metadata_.lowering_generic_metadata_abi_replay_key.empty()) {
       RegisterRuntimeStringLiteral(
           frontend_metadata_.lowering_generic_metadata_abi_replay_key);
@@ -131,6 +185,13 @@ class Objc3IRCanonicalLiteralPoolCollector {
         CollectSelectorExpr(expr->left.get());
         CollectSelectorExpr(expr->right.get());
         CollectSelectorExpr(expr->third.get());
+        return;
+      case Expr::Kind::MatchExpression:
+        CollectSelectorExpr(expr->match_expression_scrutinee.get());
+        for (const auto &arm : expr->match_expression_arms) {
+          CollectSelectorExpr(arm.guard_condition.get());
+          CollectSelectorExpr(arm.value.get());
+        }
         return;
       case Expr::Kind::CollectionLiteral:
         for (const auto &key : expr->collection_keys) {

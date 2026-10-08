@@ -40,14 +40,14 @@
         "language.collections.literal-syntax-runtime-backed",
         "language.collections.for-in-syntax-runtime-backed",
         "runtime.interop.package-loader-bridge",
-        "modules.public-import-lookup"
+        "modules.direct-import-syntax"
       ],
       "support_claims": [
         "objc3c.behavior.stdlib.text.runtime-builder-interpolation",
         "objc3c.behavior.language.collections.literal-syntax-runtime-backed",
         "objc3c.behavior.language.collections.for-in-syntax-runtime-backed",
         "objc3c.behavior.runtime.interop.package-loader-bridge",
-        "objc3c.behavior.modules.public-import-lookup"
+        "objc3c.behavior.modules.direct-import-syntax"
       ],
       "evidence_map_refs": [
         {
@@ -75,10 +75,10 @@
           "claim_boundary": "objc_import_module metadata, provider import-surface preservation, package runtime execution, and missing-provider link rejection are checked through the source-owned provider module"
         },
         {
-          "capability_id": "modules.public-import-lookup",
-          "support_claim": "objc3c.behavior.modules.public-import-lookup",
+          "capability_id": "modules.direct-import-syntax",
+          "support_claim": "objc3c.behavior.modules.direct-import-syntax",
           "status": "implemented",
-          "claim_boundary": "direct @import module lookup is backed by checked-in provider/consumer fixtures and module-roundtrip manifests; this text fixture keeps runtime package intent on objc_import_module metadata while package execution is proven separately"
+          "claim_boundary": "direct @import syntax is parser-admitted only as deterministic module identity; package provenance, malformed identities, and ambiguous module identities fail closed through the package ecosystem validator"
         }
       ],
       "blockers": []
@@ -200,9 +200,9 @@
         },
         {
           "capability_id": "compiler.optimization.method-inlining",
-          "support_claim": "",
-          "status": "reserved",
-          "claim_boundary": "production IR still retains the method-inlining candidate call and lacks inlined-body, inline-frame, and invalidation proof, so this cross-lane family records a fail-closed blocker instead of a support claim"
+          "support_claim": "objc3c.behavior.optimization.method-inlining-safe-subset",
+          "status": "implemented",
+          "claim_boundary": "method inlining is claimable only for exact-callee, before/after-IR-proven scalar candidates with inline-frame source maps, side-effect replay, and runtime invalidation replay; stale or missing proof paths reject fail-closed"
         },
         {
           "capability_id": "runtime.optimization.cache-aware-dispatch",
@@ -246,6 +246,7 @@
         "runtime.debug-trace.structured-inspection"
       ],
       "support_claims": [
+        "objc3c.behavior.language.advanced-runtime-closure",
         "objc3c.behavior.runtime.blocks.copy-dispose-invoke",
         "objc3c.behavior.runtime.concurrency-async-actors",
         "objc3c.behavior.runtime.concurrency-actor-mailbox-isolation",
@@ -257,9 +258,9 @@
       "evidence_map_refs": [
         {
           "capability_id": "language.advanced-runtime-closure",
-          "support_claim": "",
-          "status": "reserved",
-          "claim_boundary": "umbrella advanced runtime support remains reserved even though cross-lane runtime-state, source graph, source/debug-map, and negative-matrix evidence are validated"
+          "support_claim": "objc3c.behavior.language.advanced-runtime-closure",
+          "status": "implemented",
+          "claim_boundary": "umbrella advanced runtime support is implemented only by the integrated cross-lane runtime-state, source graph, source/debug-map, native link/run, and negative-matrix evidence"
         },
         {
           "capability_id": "runtime.blocks.copy-dispose-invoke",

@@ -2,6 +2,7 @@
 
 #include "driver/objc3_driver_diagnostic_output.h"
 #include "driver/objc3_driver_status_codes.h"
+#include "artifacts/objc3_runtime_state_publication_paths.h"
 #include "io/objc3_file_io.h"
 #include "io/objc3_process.h"
 
@@ -11,10 +12,28 @@ Objc3DriverObjectBackendResult EmitObjc3DriverObjectBackend(
     const Objc3CliOptions &cli_options,
     const std::string &ir_text) {
   Objc3DriverObjectBackendResult result;
-  result.ir_out = cli_options.out_dir / (cli_options.emit_prefix + ".ll");
-  result.object_out = cli_options.out_dir / (cli_options.emit_prefix + ".obj");
+  const auto publication_paths =
+      objc3::artifacts::frontend::BuildRuntimeStatePublicationPathsForEmitPrefix(
+          cli_options.emit_prefix);
+  std::string object_debug_identity_reason;
+  if (!objc3::artifacts::frontend::IsRuntimeStateObjectDebugIdentityReady(
+          publication_paths.object_debug_identity,
+          object_debug_identity_reason)) {
+    EmitObjc3DriverError(
+        "object artifact platform identity fail-closed: " +
+        object_debug_identity_reason);
+    result.status_code = Objc3DriverStatusValue(
+        Objc3DriverStatusCode::kNativeToolchainFailure);
+    result.compile_status = Objc3DriverStatusValue(
+        Objc3DriverStatusCode::kNativeToolchainFailure);
+    return result;
+  }
+
+  result.ir_out = cli_options.out_dir / publication_paths.backend_artifact;
+  result.object_out = cli_options.out_dir / publication_paths.object_artifact;
   result.backend_out =
-      cli_options.out_dir / (cli_options.emit_prefix + ".object-backend.txt");
+      cli_options.out_dir /
+      (publication_paths.emit_prefix + ".object-backend.txt");
 
   WriteText(result.ir_out, ir_text);
   const bool clang_backend_selected =

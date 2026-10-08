@@ -150,12 +150,6 @@ OBJECT_MODEL_IMPLEMENTED_SUPPORT_CONTRACTS: tuple[dict[str, object], ...] = (
 
 OBJECT_MODEL_RESERVED_BOUNDARIES: tuple[dict[str, str], ...] = (
     {
-        "boundary_id": "runtime.object-model.full-realization-umbrella",
-        "public_status": "reserved",
-        "matrix_owner": OBJECT_MODEL_RESERVED_UMBRELLA_ID,
-        "reason": "Only the explicit implemented rows in this split are public; the full-realization umbrella remains non-claiming.",
-    },
-    {
         "boundary_id": "runtime.object-model.generic-class-abi",
         "public_status": "reserved",
         "matrix_owner": OBJECT_MODEL_RESERVED_UMBRELLA_ID,
@@ -174,14 +168,15 @@ OBJECT_MODEL_FULL_REALIZATION_READINESS_EVIDENCE: tuple[dict[str, object], ...] 
         "contract_id": "objc3c.object-model.full-realization.combined-readiness.v1",
         "capability_id": OBJECT_MODEL_RESERVED_UMBRELLA_ID,
         "issue": 8198,
-        "public_status": "reserved",
-        "support_claim_published": False,
+        "public_status": "implemented",
+        "support_claim_published": True,
         "contract_path": OBJECT_MODEL_FULL_REALIZATION_READINESS_CONTRACT,
         "combined_positive_fixture": "tests/native/runtime/object_model/full_realization_combined_reflection_replay_contract.objc3",
         "public_reflection_probe": "tests/tooling/runtime/public_runtime_reflection_api_probe.cpp",
         "public_commands": (
             "npm run objc3c -- validate-object-model-conformance",
             "npm run objc3c -- validate-public-runtime-reflection-api",
+            "npm run objc3c -- validate-object-model-debugger-proof",
         ),
         "covered_axes": (
             "class",
@@ -194,7 +189,7 @@ OBJECT_MODEL_FULL_REALIZATION_READINESS_EVIDENCE: tuple[dict[str, object], ...] 
             "public-reflection",
             "registration-replay",
         ),
-        "remaining_blockers": ("object-model-debugger-source-identity",),
+        "remaining_blockers": (),
     },
 )
 

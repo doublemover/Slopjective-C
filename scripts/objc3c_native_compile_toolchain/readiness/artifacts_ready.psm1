@@ -28,7 +28,7 @@ function Test-NativeCompilerBuildArtifactsReady {
   )
 
   $exe = Resolve-NativeCompilerExecutablePath -RepoRoot $CompilerRepoRoot
-  $runtimeLibrary = Join-Path $CompilerRepoRoot "artifacts/lib/objc3_runtime.lib"
+  $runtimeLibrary = Resolve-NativeCompilerRuntimeLibraryPath -RepoRoot $CompilerRepoRoot
   if (!(Test-Path -LiteralPath $exe -PathType Leaf)) {
     return $false
   }

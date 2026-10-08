@@ -3,12 +3,74 @@
 
 #include "sema/objc3_semantic_type_metadata_handoff_determinism_explanation.inc"
 
+bool IsObjc3ReservedFullWidthI64ValueOptionalLanguageAbi(
+    const Objc3ValueOptionalTypeDescriptor &descriptor) {
+  return descriptor.present && descriptor.payload_full_width_i64 &&
+         descriptor.full_width_i64_runtime_helper_supported &&
+         !descriptor.full_width_i64_language_call_abi_supported;
+}
+
+void DiagnoseObjc3ReservedFullWidthI64ValueOptionalLanguageAbi(
+    const Objc3ValueOptionalTypeDescriptor &descriptor,
+    const std::string &site,
+    std::vector<std::string> &diagnostics) {
+  if (!IsObjc3ReservedFullWidthI64ValueOptionalLanguageAbi(descriptor)) {
+    return;
+  }
+  diagnostics.push_back(MakeDiag(
+      descriptor.line, descriptor.column, "O3P159",
+      site +
+          " uses an Optional<i64> form outside the wide-carrier direct "
+          "function/method call/return ABI; unsupported object/nullability "
+          "bridge, nested/generic, storage, unwrap, nil, conversion, and "
+          "dynamic paths remain fail-closed "
+          "{recovery: strategy=value-optional-i64-language-abi-boundary; "
+          "boundary=callable-signature; deterministic=true; "
+          "recovery-counts-as-success=false}"));
+}
+
+void DiagnoseObjc3FunctionValueOptionalLanguageAbiBoundaries(
+    const FunctionDecl &fn,
+    std::vector<std::string> &diagnostics) {
+  DiagnoseObjc3ReservedFullWidthI64ValueOptionalLanguageAbi(
+      fn.return_value_optional,
+      "function '" + fn.name + "' return type",
+      diagnostics);
+  for (const FuncParam &param : fn.params) {
+    DiagnoseObjc3ReservedFullWidthI64ValueOptionalLanguageAbi(
+        param.value_optional,
+        "function '" + fn.name + "' parameter '" + param.name + "'",
+        diagnostics);
+  }
+}
+
+void DiagnoseObjc3MethodValueOptionalLanguageAbiBoundaries(
+    const Objc3MethodDecl &method,
+    const std::string &owner_context,
+    std::vector<std::string> &diagnostics) {
+  const std::string selector = MethodSelectorName(method);
+  DiagnoseObjc3ReservedFullWidthI64ValueOptionalLanguageAbi(
+      method.return_value_optional,
+      "method '" + selector + "' in " + owner_context + " return type",
+      diagnostics);
+  for (const FuncParam &param : method.params) {
+    DiagnoseObjc3ReservedFullWidthI64ValueOptionalLanguageAbi(
+        param.value_optional,
+        "method '" + selector + "' in " + owner_context + " parameter '" +
+            param.name + "'",
+        diagnostics);
+  }
+}
+
 void ValidateSemanticBodies(const Objc3ParsedProgram &program, const Objc3SemanticIntegrationSurface &surface,
                             const Objc3SemanticValidationOptions &options,
+                            Objc3SemaLanguageProfile language_profile,
                             std::vector<std::string> &diagnostics) {
   const Objc3SemanticBodyValidationContext context =
       BuildObjc3SemanticBodyValidationContext(program, surface, options, diagnostics);
   const Objc3Program &ast = *context.ast;
+  const bool strict_concurrency =
+      Objc3SemaLanguageProfileUsesStrictConcurrency(language_profile);
   std::vector<std::string> protocol_definition_diagnostics;
   const std::unordered_map<std::string, Objc3ProtocolSemanticDefinition>
       protocol_definitions = BuildProtocolSemanticDefinitions(
@@ -61,6 +123,7 @@ void ValidateSemanticBodies(const Objc3ParsedProgram &program, const Objc3Semant
   }
 
   for (const auto &fn : ast.functions) {
+    DiagnoseObjc3FunctionValueOptionalLanguageAbiBoundaries(fn, diagnostics);
     ValidateReturnTypeSuffixes(fn, diagnostics, &generic_interface_names);
     ValidateParameterTypeSuffixes(fn, diagnostics, &generic_interface_names);
     DiagnoseOwnershipRetainableFamilyCallableLegality(
@@ -96,11 +159,14 @@ void ValidateSemanticBodies(const Objc3ParsedProgram &program, const Objc3Semant
     if (!fn.is_prototype) {
       const Objc3ConcurrencyTaskCallableLegalityProfile task_legality_profile =
           BuildConcurrencyTaskCallableLegalityProfile(fn.body);
-      DiagnoseConcurrencyTaskCallableLegality(fn.body, fn.async_declared, diagnostics);
-      DiagnoseConcurrencyExecutorAffinityCompletion(
-          task_legality_profile, fn.async_declared,
-          fn.executor_affinity_declared, fn.executor_affinity_kind, fn.line,
-          fn.column, diagnostics);
+      if (strict_concurrency) {
+        DiagnoseConcurrencyTaskCallableLegality(fn.body, fn.async_declared,
+                                                diagnostics);
+        DiagnoseConcurrencyExecutorAffinityCompletion(
+            task_legality_profile, fn.async_declared,
+            fn.executor_affinity_declared, fn.executor_affinity_kind, fn.line,
+            fn.column, diagnostics);
+      }
       DiagnoseOwnershipResourceMoveSemantics(fn.body, scopes, diagnostics);
       std::unordered_set<std::string> borrowed_parameter_names;
       for (const auto &param : fn.params) {
@@ -133,6 +199,8 @@ void ValidateSemanticBodies(const Objc3ParsedProgram &program, const Objc3Semant
 
   for (const auto &protocol_decl : ast.protocols) {
     for (const auto &method : protocol_decl.methods) {
+      DiagnoseObjc3MethodValueOptionalLanguageAbiBoundaries(
+          method, "protocol '" + protocol_decl.name + "'", diagnostics);
       DiagnoseOwnershipRetainableFamilyCallableLegality(
           method,
           "method '" + MethodSelectorName(method) + "' in protocol '" +
@@ -143,6 +211,8 @@ void ValidateSemanticBodies(const Objc3ParsedProgram &program, const Objc3Semant
 
   for (const auto &interface_decl : ast.interfaces) {
     for (const auto &method : interface_decl.methods) {
+      DiagnoseObjc3MethodValueOptionalLanguageAbiBoundaries(
+          method, "interface '" + interface_decl.name + "'", diagnostics);
       DiagnoseOwnershipRetainableFamilyCallableLegality(
           method,
           "method '" + MethodSelectorName(method) + "' in interface '" +
@@ -153,17 +223,22 @@ void ValidateSemanticBodies(const Objc3ParsedProgram &program, const Objc3Semant
 
   for (const auto &implementation_decl : ast.implementations) {
     for (const auto &method : implementation_decl.methods) {
+      DiagnoseObjc3MethodValueOptionalLanguageAbiBoundaries(
+          method, "implementation '" + implementation_decl.name + "'",
+          diagnostics);
       DiagnoseOwnershipRetainableFamilyCallableLegality(
           method,
           "method '" + MethodSelectorName(method) + "' in implementation '" +
               implementation_decl.name + "'",
           diagnostics);
-      DiagnoseConcurrencyActorMethodIsolationRules(
-          method, IsActorInterfaceOwner(actor_interfaces, implementation_decl.name),
-          method.line, method.column, diagnostics);
-      DiagnoseConcurrencyActorRaceHazardRules(
-          method, IsActorInterfaceOwner(actor_interfaces, implementation_decl.name),
-          method.line, method.column, diagnostics);
+      if (strict_concurrency) {
+        DiagnoseConcurrencyActorMethodIsolationRules(
+            method, IsActorInterfaceOwner(actor_interfaces, implementation_decl.name),
+            method.line, method.column, diagnostics);
+        DiagnoseConcurrencyActorRaceHazardRules(
+            method, IsActorInterfaceOwner(actor_interfaces, implementation_decl.name),
+            method.line, method.column, diagnostics);
+      }
       if (method.executor_affinity_declared && !method.async_declared) {
         diagnostics.push_back(MakeDiag(
             method.line, method.column, "O3S224",
@@ -200,12 +275,14 @@ void ValidateSemanticBodies(const Objc3ParsedProgram &program, const Objc3Semant
 
       const Objc3ConcurrencyTaskCallableLegalityProfile task_legality_profile =
           BuildConcurrencyTaskCallableLegalityProfile(method.body);
-      DiagnoseConcurrencyTaskCallableLegality(method.body, method.async_declared,
-                                        diagnostics);
-      DiagnoseConcurrencyExecutorAffinityCompletion(
-          task_legality_profile, method.async_declared,
-          method.executor_affinity_declared, method.executor_affinity_kind,
-          method.line, method.column, diagnostics);
+      if (strict_concurrency) {
+        DiagnoseConcurrencyTaskCallableLegality(method.body, method.async_declared,
+                                          diagnostics);
+        DiagnoseConcurrencyExecutorAffinityCompletion(
+            task_legality_profile, method.async_declared,
+            method.executor_affinity_declared, method.executor_affinity_kind,
+            method.line, method.column, diagnostics);
+      }
       DiagnoseOwnershipResourceMoveSemantics(method.body, scopes, diagnostics);
       std::unordered_set<std::string> borrowed_parameter_names;
       for (const auto &param : method.params) {
@@ -245,9 +322,11 @@ void ValidateSemanticBodies(const Objc3ParsedProgram &program, const Objc3Semant
 
   for (const auto &interface_decl : ast.interfaces) {
     for (const auto &method : interface_decl.methods) {
-      DiagnoseConcurrencyActorMethodIsolationRules(method, interface_decl.is_actor,
-                                             method.line, method.column,
-                                             diagnostics);
+      if (strict_concurrency) {
+        DiagnoseConcurrencyActorMethodIsolationRules(method, interface_decl.is_actor,
+                                               method.line, method.column,
+                                               diagnostics);
+      }
     }
   }
 }

@@ -147,6 +147,9 @@ def validate_release_source_boundaries(
             raise RuntimeError(f"{channel_id} channel release notes policy must be source-derived")
         if policy.get("source_mode") != "source-derived":
             raise RuntimeError(f"{channel_id} channel release notes policy must be source-derived")
+        required = policy.get("required_sources")
+        if not isinstance(required, list) or not required:
+            raise RuntimeError(f"{channel_id} channel must define required release-note sources")
         forbidden = policy.get("forbidden_sources")
         if not isinstance(forbidden, list) or not forbidden:
             raise RuntimeError(f"{channel_id} channel must define forbidden release-note sources")

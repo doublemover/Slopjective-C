@@ -55,6 +55,7 @@
     "package_manifest_contract_id": "objc3c.package_ecosystem.package_manifest.v1",
     "ordering": "stable-by-package-id-then-source-path",
     "identity_model": "canonical-module-id-plus-source-package-surface",
+    "module_graph_model": "checked-in-module-inventory-or-showcase-portfolio-record-shared-by-manifest-lock-and-local-registry",
     "digest_model": "source-path-and-generator-command-digest-inputs",
     "replay_model": "objc3c-package-bridge-action-list"
   },
@@ -70,7 +71,7 @@
     "workspace roots must come from checked-in package/workspace surfaces",
     "workspace materialization must be replayable from npm run objc3c actions with script paths recorded only as implementation anchors",
     "lockfiles and mirrors are generated artifacts under tmp and never source authority",
-    "package manifests are generated from checked-in workspace surfaces and carry language, ABI, digest, and trust metadata",
+    "package manifests are generated from checked-in workspace surfaces and carry language, ABI, digest, module graph, and trust metadata",
     "offline mirrors are valid only when derived from the current lock graph",
     "offline restores must publish a machine-owned restore receipt tied to cache digests and the public package bridge",
     "canonical applications and stdlib programs must pressure the same package semantics"

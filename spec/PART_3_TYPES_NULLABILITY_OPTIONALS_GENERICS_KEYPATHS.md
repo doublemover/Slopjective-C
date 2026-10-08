@@ -10,7 +10,8 @@ _Normative baseline references used in this part: [NR-C18](#part-0-2-1), [NR-LLV
 
 - Optional chaining and optional message sends are **reference-only** in v1 (object/block/void only). Scalar/struct optional chaining is ill-formed.
 - Optional message sends are **conditional calls**: argument expressions are evaluated only if the receiver is non-`nil`.
-- Generic methods/functions are **deferred** in v1; generic _types_ remain supported.
+- Generic callable declarations now use the bounded v1 forms in
+  [§3.5.3](#part-3-5-3); generic _types_ remain supported.
 - Canonical nullability default regions use `#pragma objc assume_nonnull begin/end` ([B](#b)).
 
 Objective‑C 3.0 improves type safety without abandoning Objective‑C’s model:
@@ -39,17 +40,22 @@ Implementation note (`M265-C001`):
 - `?.` optional-member access now lowers natively by desugaring into the same
   optional-send/nil-short-circuit machinery already used for bracketed
   optional sends.
-- Typed key-path roots currently fail closed unless they resolve to `self`, a
-  known class type, or an ObjC-reference-compatible identifier.
-- Typed key-path literals now lower on the native path for the validated
-  single-component subset by emitting retained descriptor handles; full
-  key-path application/runtime behavior remains later work.
-- Single-component class-root key paths now fail closed unless the named
-  component is a readable property on the root type.
-- Generic Objective-C method declarations written as `- <T> ...` remain
-  reserved in v1 and now diagnose explicitly.
-- Multi-component typed key-path member chains still fail closed until later
-  executable key-path lowering work.
+- Typed key-path roots currently fail closed unless they resolve to `self` in a
+  concrete implementation or a known class/object metadata owner.
+- Typed key-path literals now lower on the native path for concrete class-root
+  and self-root object-property chains by emitting retained descriptor handles
+  with component owner/member/type identity metadata; full key-path application
+  runtime behavior remains later work.
+- Class-root and self-root key paths now fail closed unless every named
+  component is a readable property on the current concrete owner, every
+  intermediate component resolves to non-generic object metadata, and category
+  property metadata is deterministic.
+- Generic Objective-C method declarations written as `- <T> ...` are admitted
+  through selector-stable generic callable metadata; selector-local generic
+  forms remain rejected.
+- Multi-component typed key-path member chains are supported only for concrete
+  object-property chains; `id` roots, missing properties, ambiguous category
+  metadata, and generic component paths fail closed before lowering.
 - `?.` optional-member access now lowers natively through the same
   single-evaluation nil-short-circuit path used by bracketed optional sends.
 
@@ -64,7 +70,9 @@ In Objective‑C 3.0 mode, the following keywords are reserved by this part:
 - `guard`, `let`, `var`
 - `optional`, `some`, `none` (reserved for future value-optional syntax)
 
-In ObjC 3.0 mode, the type-constructor spelling `Optional<...>` is reserved for a future value-optional ABI.
+In ObjC 3.0 mode, the type-constructor spelling `Optional<...>` is owned by
+the bounded value-optional carrier described in [§3.3.5](#part-3-3-5), not by
+user declarations.
 User declarations shall not occupy unescaped `Optional`/`optional`/`some`/`none` spellings; use the raw-identifier escape in [§1.3.3](#part-1-3-2) when imported source needs these names preserved.
 
 (Additional reserved keywords are specified in [Part 1](#part-1).)
@@ -359,35 +367,94 @@ More generally:
 
 In strict mode, `b` must be type-compatible with the unwrapped type of `a`; otherwise error.
 
-### 3.3.5 Future value-optional ABI reservation (v1 guardrails) {#part-3-3-5}
+### 3.3.5 Value-optional type-signature carrier and ABI guardrails {#part-3-3-5}
 
-Objective‑C 3.0 v1 does not define a first-class value optional ABI (`Optional<T>` layout/tagged payload semantics).
+Objective‑C 3.0 v1 admits canonical `Optional<T>` in source type
+signatures as a semantic value-optional carrier. The carrier has a stable packed
+ABI contract identity, `objc3.value_optional.inline_presence_payload.v1`, with
+explicit `has_value` presence and `payload` storage fields. Semantic records
+model explicit absent/present construction, binding/narrowing failure paths,
+checked unwrap diagnostics, payload lifetime, and interface roundtrip. The
+current runtime ABI is bounded to supported packed payload forms:
+`Optional<i32>`, `Optional<bool>`, and `Optional<id>` object handles plus
+`Optional<i64>` language call/return lowering through the wide
+`{has_value,i64}` direct-function and direct-dispatch carrier. Nested optionals,
+generic payload runtime lowering, property/ivar storage layout, unchecked
+unwrap, nullability bridges, implicit nil absence, nil-to-scalar coercion, and
+throws/result conversion remain reserved and fail closed.
 
-The following spellings are reserved for a future revision and are ill-formed in v1 user code unless escaped per [§1.3.3](#part-1-3-2):
+The following remain ill-formed in v1 user code unless escaped per
+[§1.3.3](#part-1-3-2):
 
 - `optional<...>` in type positions.
-- `Optional<...>` in type positions.
+- `Optional<...>` in executable function or method bodies outside the bounded
+  packed i32/bool/id-handle payload ABI and `Optional<i64>` wide direct
+  call/return ABI, including property/ivar storage, unchecked unwrap,
+  nullability bridges, implicit nil, nil-to-scalar, or throws/result conversion
+  positions.
 - `.some(...)` and `.none` in optional-constructor/pattern positions.
+
+The current #8234 compiler contract owns the canonical spelling boundary but
+does not claim broad value-optional execution: canonical `Optional<T>` type
+signatures may be parsed, admitted as semantic types, compared by sema,
+round-tripped through textual interfaces, and lowered only through the bounded
+packed runtime ABI for `i32`, `bool`, and `id` object handles; full-width `i64`
+is supported only through the wide `{has_value,i64}` language call/return ABI
+for direct functions and direct dispatch. Object-pointer/nullability bridges,
+nested, generic, property, and ivar
+storage forms remain reserved until they have their own executable ABI evidence. The lowering
+contract is explicit: absent
+construction produces `has_value=false` and no live payload, present
+construction requires a payload and produces `has_value=true`, binding failure
+branches through the absent path, and unwrap requires a proven presence check.
+Implicit nil absence, nil-to-zero, object-null erasure, throws/result
+conversion, unchecked unwrap, nested/generic payload lowering, and
+property/ivar storage claims are rejected with `O3P159` or a more specific sema
+diagnostic where one exists. Textual interfaces must preserve the
+value-optional carrier metadata and must fail closed on layout identity drift.
+
+For #8207 umbrella closure, this section is the complete v1 value-optional
+language claim. Broad optional behavior is follow-up work and is not implied by
+the bounded carrier: nullable-object bridging, nested or generic payload runtime
+lowering, property/ivar storage, unchecked unwrap, implicit nil, nil-to-scalar
+conversion, throws/result conversion, and broad dynamic dispatch stay
+unimplemented unless a separate support row is promoted with its own evidence.
 
 #### 3.3.5.1 Future-compat constraints (v1) {#part-3-3-5-1}
 
 To avoid blocking a future value optional design:
 
 - `T?`/`T!` in v1 remain reference-nullability sugar only and shall not imply a value layout contract.
-- v1 parser and interface emitters shall keep the reserved spellings above unavailable for unrelated language/library features.
-- Module metadata and textual interfaces shall preserve optional/nullability semantics via extensible encoding so a future value-optional kind can be added without redefining existing v1 fields.
+- v1 parser and interface emitters shall keep lowercase optional aliases,
+  property/ivar storage, unchecked unwrap, nested/generic payload lowering,
+  nullability bridges, implicit nil, nil-to-scalar, and throws/result
+  conversions unavailable for unrelated language/library features.
+- Module metadata and textual interfaces shall preserve value-optional carrier
+  metadata separately from reference nullability so the bounded packed ABI and
+  future broader ABI support can evolve without redefining existing v1 fields.
 - Diagnostics for non-reference optional operations should be worded as “not supported in v1” rather than “never supported,” preserving future-extension wording without accepting another source mode.
+- `Optional<id>` remains distinct from nullable object-pointer spelling. A
+  producer shall not lower it as `id?`, nullable `id`, or any other object
+  pointer nullability profile.
+- `nil` shall not implicitly convert to scalar zero, `false`, an empty
+  aggregate/string/collection value, `throws`, or `Result` through
+  value-optional syntax. All optional-to-error or optional-to-result conversion
+  remains explicit.
 
 #### 3.3.5.2 Canonical future spelling policy (v0.11 decision) {#part-3-3-5-2}
 
-Per [D-013](DECISIONS_LOG.md#decisions-d-013), any future value-optional feature shall use
-`Optional<T>` as the canonical source spelling.
+Per [D-013](DECISIONS_LOG.md#decisions-d-013), the value-optional
+type-signature carrier uses `Optional<T>` as the canonical source spelling, and
+any future runtime-complete value-optional feature shall keep that spelling.
 
 - `optional<T>` is not canonical and shall not be treated as an alias.
 - Canonical mode rejects `optional<T>` with `O3C004` and may provide a
   canonicalization fix-it to `Optional<T>`; the fix-it does not make
   `optional<T>` an accepted compatibility spelling.
-- Canonical textual interface emission for future value-optionals shall use `Optional<T>`.
+- Canonical textual interface emission for value-optionals shall use `Optional<T>`.
+- Nested lowercase spellings such as `optional<Optional<T>>` and
+  `Optional<optional<T>>` are rejected before type admission. Lowercase spelling
+  is not a compatibility shim for the canonical carrier.
 
 ---
 
@@ -562,47 +629,73 @@ A `type-constraint` may be:
 
 The constraint grammar is intentionally limited for implementability.
 
-### 3.5.3 Generic method/function declarations (v2 design path; reserved in v1) {#part-3-5-3}
+### 3.5.3 Generic method/function declarations {#part-3-5-3}
 
 #### 3.5.3.1 v1 status {#part-3-5-3-1}
 
-Objective‑C 3.0 v1 defers generic methods/functions.
-Toolchains shall reserve the syntax in [§3.5.3.2](#part-3-5-3-2), but in v1 source that uses it is ill‑formed.
+Objective-C 3.0 v1 admits two generic callable declaration forms:
 
-#### 3.5.3.2 Candidate syntax (future revision) {#part-3-5-3-2}
+- native Objective-C 3 free functions whose type parameter clause follows the
+  `fn` declaration name,
+- Objective-C methods whose type parameter clause immediately follows the
+  method marker and precedes the return type.
 
-A generic parameter clause appears before the return type for both Objective‑C methods and C/ObjC functions.
-
-```text
-generic-method-declaration:
-    ('-' | '+') generic-parameter-clause method-type-and-selector
-
-generic-function-declaration:
-    generic-parameter-clause declaration-specifiers declarator
-```
-
-Examples:
+C/Objective-C style generic free-function declarations remain reserved. The
+canonical free-function spelling is:
 
 ```objc
-- <T: id<NSCopying>> (T)coerce:(id)value;
-+ <T> (NSArray<T>*)singleton:(T)value;
+fn genericIdentity<T : id<Persistable>>(value: T) -> T;
+```
 
+The canonical Objective-C method spelling is:
+
+```objc
+- <T : id<Persistable>> (T)echo:(T)value;
++ <T> (T)defaultValue;
+```
+
+The type parameter clause is part of the callable's semantic signature and
+metadata identity, but it is not part of Objective-C selector spelling.
+Declarations that share a selector cannot overload by generic signature; a
+redeclaration or override must match generic arity, source-order parameter
+names, variance markers, normalized constraints, reification policy, mangling
+policy ID, and signature replay key exactly.
+
+#### 3.5.3.2 Reserved alternate syntax {#part-3-5-3-2}
+
+C/Objective-C style generic free-function declarations remain reserved:
+
+```objc
 <T> T OCIdentity(T value);
 <T: NSObject> NSArray<T>* OCCollect(T first, ...);
 ```
 
-#### 3.5.3.3 Lowering and mangling path (future revision) {#part-3-5-3-3}
+Selector-local method generic clauses are also reserved because they would
+make the selector/generic boundary ambiguous:
+
+```objc
+- (id)map<T>:(id)value;    // rejected
+```
+
+Generic Objective-C method clauses must appear immediately after `-` or `+`.
+
+#### 3.5.3.3 Lowering and mangling path {#part-3-5-3-3}
 
 The viable path is **erased execution with preserved generic signatures**:
 
 - Type checking uses declared generic parameters/constraints.
-- ABI lowering erases generic parameters to their bounds (or `id` when unconstrained), unless a future explicit reification mode is enabled.
+- ABI lowering erases generic parameters to their bounds, or to `id` when
+  unconstrained, unless the declaration carries explicit reification policy.
 - Objective‑C method dispatch remains selector-based with one runtime IMP per declaration; type arguments do not create selector variants.
-- Generic free functions use one emitted body per declaration and shall satisfy stable mangling invariants that include:
+- Generic free functions use one emitted body per declaration under the erased
+  default policy and shall satisfy stable mangling invariants that include:
   - base function name,
   - generic arity,
   - normalized constraint signature (or digest),
+  - reification policy,
   - and deterministic reproduction for identical declarations under one toolchain/policy.
+- Generic Objective-C methods preserve the same semantic identity record while
+  dispatch remains selector-based.
 
 Per [D-014](DECISIONS_LOG.md#decisions-d-014), v0.11 standardizes semantic invariants and policy
 stability, not one byte-for-byte mangling string across all toolchains:
@@ -610,13 +703,22 @@ stability, not one byte-for-byte mangling string across all toolchains:
 - Conforming toolchains shall publish a stable mangling policy identifier for enabled generic free-function support.
 - Module metadata and textual interfaces shall preserve the semantic generic signature required for cross-tool conformance assertions.
 - Conformance assertions shall validate semantic equivalence and policy-id stability; literal symbol-byte equality is only required within a single declared policy.
+- The native `objc3c` metadata surface publishes `generic_callable_signature_replay_key`,
+  `generic_callable_reification_policy`, `generic_callable_mangling_policy_id`,
+  and `generic_callable_contract_deterministic` for admitted generic free
+  functions and Objective-C generic methods. Redeclarations that drift in
+  generic arity, parameter order, variance markers, normalized constraints,
+  reification policy, or mangling policy are ill-formed.
 
-#### 3.5.3.4 Selector and metadata interaction (future revision) {#part-3-5-3-4}
+#### 3.5.3.4 Selector and metadata interaction {#part-3-5-3-4}
 
 - Selector identity excludes the generic parameter clause.
 - Two methods in the same class/protocol hierarchy shall not differ only by generic parameter names or constraints if selector pieces are identical.
 - Overrides/redeclarations shall match selector, generic arity, and normalized constraints.
-- Module metadata and textual interfaces shall preserve the generic signature for each generic method/function (parameter list plus constraints) so importers can type-check and validate redeclarations consistently.
+- Module metadata and textual interfaces shall preserve the generic signature,
+  reification policy, mangling policy ID, and replay key for each generic
+  method/function so importers can type-check and validate redeclarations
+  consistently.
 - Import/redeclaration mismatches in preserved generic signatures are diagnosed per [§3.7.3](#part-3-7-3).
 
 ### 3.5.4 Type argument application {#part-3-5-4}
@@ -629,18 +731,39 @@ Box<NSString*>* b;
 
 ### 3.5.5 Erasure and runtime behavior {#part-3-5-5}
 
-Per [D-015](DECISIONS_LOG.md#decisions-d-015), future explicit reification mode is declaration-scoped.
-Unless a declaration is explicitly marked `@reify_generics` (future extension), generic arguments are erased at runtime:
+Per [D-015](DECISIONS_LOG.md#decisions-d-015), explicit reification control is
+declaration-scoped. Unless a generic callable declaration is explicitly marked
+`@reify_generics`, generic arguments are erased at runtime:
 
 - they do not affect object layout,
 - they do not affect message dispatch,
 - they exist for type checking and tooling.
 
-Additional constraints for any future reification-capable mode:
+The marker is admitted only immediately before a generic callable declaration:
+
+```objc
+@reify_generics
+fn reifiedIdentity<T>(value: T) -> T;
+
+@interface ReifiedMethodBox
+@reify_generics
+- <T> (T)echo:(T)value;
+@end
+```
+
+Declaration-scoped reification changes preserved policy metadata and mangling
+policy identity; it does not create selector variants and does not imply a
+module-wide mode switch.
+
+Required reification constraints:
 
 - Reification controls shall apply per declaration; enabling a module/profile mode alone shall not implicitly reify unrelated declarations.
 - Module/profile controls may gate whether declaration-scoped reification syntax is accepted, but shall not change meaning of declarations that omit reification markers.
 - Mixed modules that contain both erased and reified declarations shall preserve this distinction in metadata and textual interfaces.
+- Applying `@reify_generics` to non-generic callables, properties, containers,
+  modules, or arbitrary scopes is ill-formed.
+- Redeclarations and overrides shall not drift between erased and explicitly
+  reified policy.
 
 ### 3.5.6 Variance {#part-3-5-6}
 
@@ -800,9 +923,11 @@ Required diagnostics:
 
 - constraint violations,
 - unsafe generic downcasts requiring explicit spelling,
-- use of reserved generic method/function declaration syntax in v1,
+- use of reserved generic callable syntax such as C/Objective-C style generic
+  free functions or selector-local method generic clauses,
 - selector collisions where declarations differ only by generic signature,
-- redeclaration/import mismatch in generic arity or constraints.
+- redeclaration/import mismatch in generic arity, constraints, reification
+  policy, mangling policy ID, or replay key.
 
 ### 3.7.4 Key paths {#part-3-7-4}
 
@@ -865,12 +990,12 @@ canonicalization-rejection tests such as:
 
 - `VO-01`: Declaring `typedef int Optional;` in ObjC 3.0 mode is rejected; an escaped raw identifier form is accepted.
 - `VO-02`: Declaring unescaped `some`/`none` identifiers in ObjC 3.0 mode is rejected; escaped raw identifier forms are accepted.
-- `VO-03`: Parsing `Optional<int>` or `optional<int>` in a type position produces a reserved-for-future-extension diagnostic in v1.
+- `VO-03`: Parsing canonical `Optional<int>` in a supported type-signature position admits the bounded value-optional carrier, while parsing lowercase `optional<int>` produces the removed-alias diagnostic.
 - `VO-04`: Module import of APIs that used escaped raw identifiers for reserved spellings preserves identity without enabling unescaped spellings.
-- `VO-05`: Future value-optional-enabled mode parses canonical `Optional<int>` and accepts with no optional-spelling diagnostic.
+- `VO-05`: Unsupported `Optional<...>` broadening positions fail closed without widening the bounded carrier into nested/generic/property/ivar/nullability/nil/unchecked/throws behavior.
 - `VO-06`: Canonical mode rejects `optional<int>` with `O3C004`, plus one-step fix-it to `Optional<int>`.
 - `VO-07`: Canonical mode rejects nested lowercase optional spellings before type admission.
-- `VO-08`: v1 mode parsing `Optional<int>` or `optional<int>` emits `OPT-SPELL-RESERVED-V1` with reserved-for-future wording (severity per [§3.7.2](#part-3-7-2)).
+- `VO-08`: v1 mode parsing lowercase `optional<int>` emits the removed-alias diagnostic with canonicalization guidance (severity per [§3.7.2](#part-3-7-2)).
 - `VO-09`: Interface/module emission is not reached after noncanonical lowercase optional source.
 - `VO-10`: Noncanonical spelling originating in non-rewritable macro expansion emits the owning spelling diagnostic plus `OPT-SPELL-NOFIX-MACRO`, and no invalid edit.
 - `VO-11`: An optional batch canonicalization tool over source files containing
@@ -878,18 +1003,24 @@ canonicalization-rejection tests such as:
   delta and no unrelated token changes; this tool remains separate from
   compiler acceptance.
 
-### 3.7.7 Generic method/function conformance ideas (future-feature gate) {#part-3-7-7}
+### 3.7.7 Generic method/function conformance ideas {#part-3-7-7}
 
 Conforming suites should include generic-method path tests such as:
 
-- `GM-01`: In v1 mode, parsing the [§3.5.3.2](#part-3-5-3-2) generic method/function syntax produces a reserved-for-future-extension diagnostic.
-- `GM-02`: In an implementation mode that enables generic methods/functions, same-selector declarations that differ only by generic signature are rejected.
+- `GM-01`: Canonical native `fn name<T>(...)` generic free functions and
+  canonical `- <T> ...` / `+ <T> ...` generic Objective-C methods parse and
+  publish deterministic generic callable metadata.
+- `GM-02`: Same-selector declarations that differ only by generic signature are rejected.
 - `GM-03`: Module/interface round-trip preserves generic method/function signatures (arity and constraints), and mismatch is diagnosed on import.
 - `GM-04`: Generic Objective‑C methods keep selector identity independent of type arguments (single selector string, no type-argument selector variants).
 - `GM-05`: Generic free functions produce deterministic mangling for identical declarations under the same toolchain and mangling policy ID.
 - `GM-06`: Different generic signatures for the same base name produce distinct mangling outcomes and distinct preserved semantic signature records.
 - `GM-07`: Cross-tool conformance compares semantic signatures and declared mangling policy IDs; direct string equality of symbols is not required across different policy IDs.
 - `GM-08`: Enabling a module/profile generic mode without declaration-scoped `@reify_generics` markers does not reify declarations by default.
+- `GM-09`: Applying `@reify_generics` to a non-generic callable, property,
+  container, or arbitrary scope is rejected.
+- `GM-10`: Redeclaration, override, or import drift between erased and
+  explicitly reified policies is rejected.
 
 ---
 

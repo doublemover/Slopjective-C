@@ -65,7 +65,25 @@ def test_optimization_pipeline_applies_only_proven_mutating_passes() -> None:
     assert inline["rewrites_ir"] is True
     assert inline["invalidates_global_proof_state"] is True
     assert "invalidates-global-proof-state=true" in str(inline["metadata_key"])
+    assert "method_inline_exact_callee_identity_key=method:InlineMath.addOne:i32->i32" in str(
+        inline["metadata_key"]
+    )
+    assert "semantic_pipeline_method_inlining.before.ll" in str(inline["metadata_key"])
+    assert "semantic_pipeline_method_inlining.after.ll" in str(inline["metadata_key"])
+    assert "method_inline_inline_frame_id_present=true" in str(inline["metadata_key"])
+    assert "method_inline_generated_only_source_map=false" in str(
+        inline["metadata_key"]
+    )
+    assert "method_inline_debug_stepping_evidence_present=true" in str(
+        inline["metadata_key"]
+    )
     assert "method_inline_source_map_debug_preserved=true" in str(inline["metadata_key"])
+    assert "method_inline_runtime_cache_assumptions_fresh=true" in str(
+        inline["metadata_key"]
+    )
+    assert "method_inline_runtime_invalidation_replay_present=true" in str(
+        inline["metadata_key"]
+    )
     assert "method_inline_runtime_abi_safe=true" in str(inline["metadata_key"])
 
     cache_aware = results[
@@ -111,6 +129,20 @@ def test_optimization_pipeline_rejects_or_skips_missing_proofs_fail_closed() -> 
     assert "method_inline_callee_body_identity_present" in str(
         missing_inline["diagnostic"]
     )
+    assert "method_inline_exact_callee_identity_key" in str(
+        missing_inline["diagnostic"]
+    )
+    assert "method_inline_before_ir_proof_key" in str(missing_inline["diagnostic"])
+    assert "method_inline_after_ir_proof_key" in str(missing_inline["diagnostic"])
+    assert "method_inline_original_call_source_span_key" in str(
+        missing_inline["diagnostic"]
+    )
+    assert "method_inline_callee_source_span_key" in str(
+        missing_inline["diagnostic"]
+    )
+    assert "method_inline_original_call_source_span_present" in str(
+        missing_inline["diagnostic"]
+    )
     assert "method_inline_callee_body_identity_present=false" in str(
         missing_inline["metadata_key"]
     )
@@ -122,15 +154,33 @@ def test_optimization_pipeline_rejects_or_skips_missing_proofs_fail_closed() -> 
     assert "method_inline_side_effect_summary_safe" in str(
         side_effecting_inline["diagnostic"]
     )
+    assert "method_inline_side_effect_replay_complete" in str(
+        side_effecting_inline["diagnostic"]
+    )
 
     missing_source_map = results[
         "method-inlining:fixture:method-inlining:missing-source-map"
     ]
     assert missing_source_map["decision"] == "REJECTED_FAIL_CLOSED"
+    assert "method_inline_inline_frame_id_key" in str(
+        missing_source_map["diagnostic"]
+    )
+    assert "method_inline_emitted_debug_map_inline_frame_present" in str(
+        missing_source_map["diagnostic"]
+    )
+    assert "method_inline_stepping_policy_unambiguous" in str(
+        missing_source_map["diagnostic"]
+    )
+    assert "method_inline_generated_only_source_map" in str(
+        missing_source_map["diagnostic"]
+    )
     assert "method_inline_source_map_debug_preserved" in str(
         missing_source_map["diagnostic"]
     )
     assert "method_inline_diagnostic_location_preserved" in str(
+        missing_source_map["diagnostic"]
+    )
+    assert "method_inline_debug_stepping_evidence_present" in str(
         missing_source_map["diagnostic"]
     )
 
@@ -138,6 +188,21 @@ def test_optimization_pipeline_rejects_or_skips_missing_proofs_fail_closed() -> 
         "method-inlining:fixture:method-inlining:missing-invalidation"
     ]
     assert missing_invalidation["decision"] == "REJECTED_FAIL_CLOSED"
+    assert "method_inline_receiver_dispatch_assumption_key" in str(
+        missing_invalidation["diagnostic"]
+    )
+    assert "method_inline_receiver_dispatch_assumptions_pinned" in str(
+        missing_invalidation["diagnostic"]
+    )
+    assert "method_inline_runtime_cache_assumptions_fresh" in str(
+        missing_invalidation["diagnostic"]
+    )
+    assert "method_inline_runtime_invalidation_replay_key" in str(
+        missing_invalidation["diagnostic"]
+    )
+    assert "method_inline_runtime_invalidation_replay_present" in str(
+        missing_invalidation["diagnostic"]
+    )
     assert "method_inline_invalidation_complete" in str(
         missing_invalidation["diagnostic"]
     )
@@ -179,7 +244,10 @@ def test_optimization_pipeline_metadata_is_deterministic_and_source_backed() -> 
     assert "REJECTED_FAIL_CLOSED" in cpp_text
     assert "success_claim = false" in cpp_text
     assert "method_inline_callee_body_identity_present" in cpp_text
-    assert "method inlining requires callee body identity" in cpp_text
+    assert "method_inline_exact_callee_identity_key" in cpp_text
+    assert "method_inline_debug_stepping_evidence_present" in cpp_text
+    assert "method_inline_runtime_invalidation_replay_present" in cpp_text
+    assert "method inlining requires exact callee identity, callee body identity" in cpp_text
 
     pipeline_text = PIPELINE_SOURCE.read_text(encoding="utf-8")
     assert "RunObjc3SemanticOptimizationPipelineTrace" in pipeline_text

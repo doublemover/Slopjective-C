@@ -26,16 +26,16 @@ Optional chaining for scalar/struct returns is **not** supported in v1.
 
 ---
 
-## D-002: `throws` is untyped in v1; typed throws deferred {#decisions-d-002}
+## D-002: `throws` runtime propagation defaults to `id<Error>`; single-payload typed throws is bounded {#decisions-d-002}
 
-**Decision:** The v1 `throws` effect is always **untyped**, with thrown values of type `id<Error>`.
+**Decision:** The v1 runnable bare `throws` effect is **untyped**, with thrown values of type `id<Error>`.
 
-Typed throws syntax (e.g., `throws(E)`) is reserved for future extension but is not part of v1 grammar/semantics.
+Typed throws syntax (for example, `throws(E)`) is admitted as a bounded single-payload effect. The compiler preserves exactly one error type in source/interface metadata, lowers it through the private error-out ABI, keeps the typed payload in callable effect identity, supports exact typed catches plus the explicit `id<Error>` bridge catch, and executes the checked direct-call, runtime-dispatch message-send, and `try?` paths. Empty, multi-payload, malformed, non-type, unsupported foreign-carrier, async propagation, and silent-erasure shapes fail closed.
 
 **Rationale:**
 
-- Objective‑C’s runtime dynamism and mixed-language interop (NSError, C return codes) favor a single error supertype.
-- Typed throws adds significant complexity to generics, bridging, and ABI/lowering.
+- Objective‑C’s runtime dynamism and mixed-language interop (NSError, C return codes) still favor a single error supertype for bare `throws`.
+- Typed throws adds significant complexity to generics, bridging, async propagation, and foreign carriers, so v1 claims only the bounded single-payload row instead of a generalized typed-error ABI.
 
 **Spec impact:** [Part 6](#part-6).
 
@@ -112,16 +112,32 @@ Sugar spellings (macros, `@`-directives, alternate attribute syntaxes) may exist
 
 ---
 
-## D-008: Generic methods are deferred in v1 {#decisions-d-008}
+## D-008: Generic callable declarations use selector-stable identity {#decisions-d-008}
 
-**Decision:** v1 includes **generic types** (pragmatic, erased generics) but defers **generic methods/functions**.
+**Decision:** v1 includes **generic types** (pragmatic, erased generics) and
+the bounded native `fn name<T>(...)` generic free-function surface. Objective-C
+generic methods are admitted with a method-marker-owned type parameter clause:
+`- <T> (T)identity:(T)value;` and `+ <T> ...`. The generic parameter clause is
+part of the callable signature and metadata identity, but never part of the
+Objective-C selector spelling. C/Objective-C style generic free-function
+declarations remain reserved; admitted generic free functions use the native
+`fn name<T>(...)` grammar.
 
 **Rationale:**
 
-- Generic methods create difficult interactions with Objective‑C selector syntax, method redeclaration/overload rules, and module interface printing.
-- The majority of practical value on Apple platforms comes from generic container types and constrained protocols.
+- Selector identity must stay stable: declarations that differ only by generic
+  signature are same-selector redeclarations and must match exactly or fail
+  closed.
+- Generic callable metadata preserves arity, source-order parameter names,
+  source-order variance markers, lexicographic constraints, reification policy,
+  mangling policy ID, and a deterministic replay key.
+- Keeping C/Objective-C style generic free functions reserved avoids a second
+  grammar for the same semantic feature.
 
-**Spec impact:** [Part 3](#part-3) [§3.5](#part-3-5) (generic methods moved to future extensions).
+**Spec impact:** [Part 3](#part-3) [§3.5](#part-3-5) (Objective-C generic
+methods admitted through selector-stable metadata; C/Objective-C style generic
+functions remain reserved; native `fn name<T>` generic free functions remain
+the canonical free-function form).
 
 ---
 
@@ -180,13 +196,22 @@ It is required for **any operation that may suspend**, including:
 
 ## D-013: Future value-optionals use canonical `Optional<T>` spelling {#decisions-d-013}
 
-**Decision:** If a future value-optional feature is standardized, its canonical source spelling is `Optional<T>`.
+**Decision:** The value-optional type-signature carrier uses canonical
+`Optional<T>` source spelling. If a future runtime-complete value-optional
+feature is standardized, it keeps that spelling.
 `optional<T>` is not canonical and remains a reserved rejected spelling.
 
 In conforming modes:
 
-- parsers and interface emitters shall treat `Optional<T>` as the canonical spelling,
-- textual interfaces shall emit `Optional<T>` when value-optionals are represented,
+- parsers and interface emitters shall treat `Optional<T>` as the canonical
+  type-signature spelling,
+- textual interfaces shall emit `Optional<T>` when value-optional carriers are
+  represented,
+- explicit absent/present construction and checked unwrap/binding diagnostics
+  may be modeled by source and lowering contracts before public runtime support,
+- unchecked unwrap, property/ivar storage, IR payload emission, call ABI
+  lowering, and runtime constructor symbols remain fail-closed until their
+  runtime contracts are implemented,
 - `optional<T>` shall be rejected before type admission; diagnostics may offer a
   canonicalization fix-it to `Optional<T>` but shall not accept the lowercase
   spelling as a compatibility alias.
@@ -199,12 +224,12 @@ evidence, not a second source surface.
 
 ---
 
-## D-014: Generic free-function mangling standardizes invariants, not one universal symbol string {#decisions-d-014}
+## D-014: Generic callable mangling standardizes invariants, not one universal symbol string {#decisions-d-014}
 
-**Decision:** v0.11 does not require one byte-for-byte generic free-function mangling string across all toolchains.
+**Decision:** v0.11 does not require one byte-for-byte generic callable mangling string across all toolchains.
 Instead, conformance standardizes:
 
-- semantic mangling invariants (base name, generic arity, normalized constraints),
+- semantic mangling invariants (callable kind, base name or selector, generic arity, normalized constraints, reification policy),
 - deterministic reproduction within a toolchain/policy,
 - stable publication of a mangling policy identifier,
 - preserved semantic signature data in metadata/interfaces for cross-tool verification.
@@ -217,10 +242,19 @@ Direct symbol-string equality is only required within the same declared mangling
 
 ---
 
-## D-015: Future generic reification control is declaration-scoped {#decisions-d-015}
+## D-015: Generic reification control is declaration-scoped {#decisions-d-015}
 
-**Decision:** Any future explicit generic reification mode applies per declaration via `@reify_generics` (or equivalent canonical declaration-level form).
-Module/profile switches may gate whether declaration-level syntax is allowed, but shall not implicitly reify declarations that omit explicit markers.
+**Decision:** Explicit generic reification applies per declaration via
+`@reify_generics`. Module/profile switches may gate whether declaration-level
+syntax is allowed, but shall not implicitly reify declarations that omit
+explicit markers.
+
+Current native frontend behavior admits `@reify_generics` only immediately
+before generic callable declarations. Unmarked generic callables publish
+`erased_default` policy metadata. Marked generic callables publish
+`explicit_reified` policy metadata and the corresponding declared mangling
+policy ID. Applying the marker to non-generic declarations, properties,
+containers, modules, or arbitrary scopes is rejected.
 
 Conforming metadata/interface behavior shall preserve whether a declaration is erased or explicitly reified.
 

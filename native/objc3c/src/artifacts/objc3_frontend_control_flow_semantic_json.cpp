@@ -61,6 +61,26 @@ std::string BuildControlFlowControlFlowSemanticModelSummaryJson(
       << summary.match_non_exhaustive_diagnostic_sites
       << ",\"match_exhaustiveness_deferred_sites\":"
       << summary.match_exhaustiveness_deferred_sites
+      << ",\"match_expression_semantic_sites\":"
+      << summary.match_expression_semantic_sites
+      << ",\"match_expression_result_type_sites\":"
+      << summary.match_expression_result_type_sites
+      << ",\"match_expression_guard_condition_sites\":"
+      << summary.match_expression_guard_condition_sites
+      << ",\"match_expression_binding_scope_sites\":"
+      << summary.match_expression_binding_scope_sites
+      << ",\"match_expression_result_case_scope_sites\":"
+      << summary.match_expression_result_case_scope_sites
+      << ",\"match_expression_exhaustive_sites\":"
+      << summary.match_expression_exhaustive_sites
+      << ",\"match_expression_non_exhaustive_diagnostic_sites\":"
+      << summary.match_expression_non_exhaustive_diagnostic_sites
+      << ",\"match_expression_lowering_eligible_sites\":"
+      << summary.match_expression_lowering_eligible_sites
+      << ",\"match_expression_guard_effect_fail_closed_sites\":"
+      << summary.match_expression_guard_effect_fail_closed_sites
+      << ",\"match_expression_result_type_mismatch_sites\":"
+      << summary.match_expression_result_type_mismatch_sites
       << ",\"defer_statement_semantic_sites\":"
       << summary.defer_statement_semantic_sites
       << ",\"defer_scope_cleanup_order_sites\":"
@@ -140,17 +160,22 @@ std::string BuildControlFlowControlFlowSafetyLoweringContractJson(
       << contract.guard_statement_sites
       << ",\"guard_clause_sites\":" << contract.guard_clause_sites
       << ",\"match_statement_sites\":" << contract.match_statement_sites
+      << ",\"match_expression_sites\":" << contract.match_expression_sites
       << ",\"defer_statement_sites\":" << contract.defer_statement_sites
       << ",\"live_guard_short_circuit_sites\":"
       << contract.live_guard_short_circuit_sites
       << ",\"live_match_dispatch_sites\":"
       << contract.live_match_dispatch_sites
+      << ",\"live_match_expression_dispatch_sites\":"
+      << contract.live_match_expression_dispatch_sites
       << ",\"live_defer_cleanup_sites\":"
       << contract.live_defer_cleanup_sites
       << ",\"fail_closed_guard_short_circuit_sites\":"
       << contract.fail_closed_guard_short_circuit_sites
       << ",\"fail_closed_match_dispatch_sites\":"
       << contract.fail_closed_match_dispatch_sites
+      << ",\"fail_closed_match_expression_dispatch_sites\":"
+      << contract.fail_closed_match_expression_dispatch_sites
       << ",\"fail_closed_defer_cleanup_sites\":"
       << contract.fail_closed_defer_cleanup_sites
       << ",\"deterministic_fail_closed_sites\":"
@@ -165,7 +190,10 @@ std::string BuildControlFlowControlFlowSafetyLoweringContractJson(
       << (source_semantic_model_ready ? "true" : "false")
       << ",\"ready_for_native_guard_lowering\":true"
       << ",\"ready_for_native_match_lowering\":"
-      << (contract.fail_closed_match_dispatch_sites == 0u ? "true" : "false")
+      << (contract.fail_closed_match_dispatch_sites == 0u &&
+                  contract.fail_closed_match_expression_dispatch_sites == 0u
+              ? "true"
+              : "false")
       << ",\"ready_for_native_defer_lowering\":true"
       << ",\"semantic_summary_replay_key\":\""
       << EscapeJsonString(semantic_summary_replay_key)

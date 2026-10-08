@@ -1,6 +1,8 @@
 #include "sema/objc3_semantic_dispatch_intent_helpers.h"
 #include "sema/objc3_semantic_error_handling_bridge_helpers.h"
 #include "sema/objc3_sema_diagnostic_contract.h"
+#include "sema/objc3_sema_pass_flow_core_contract.h"
+#include "sema/objc3_typed_throws_effect_contract.h"
 
 #include "sema/objc3_semantic_passes_type_baseline_and_feature_claims.inc"
 #include "sema/objc3_semantic_passes_concurrency_and_ownership_diagnostics.inc"

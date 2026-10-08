@@ -76,6 +76,7 @@ def write_capability_summary(
     clang_found: bool = True,
     llc_found: bool = True,
     llc_supports_filetype_obj: bool = True,
+    llc_supports_target_object_emission: bool = True,
     parity_ready: bool = True,
     blockers: list[str] | None = None,
 ) -> None:
@@ -91,6 +92,7 @@ def write_capability_summary(
         },
         "llc_features": {
             "supports_filetype_obj": llc_supports_filetype_obj,
+            "supports_target_object_emission": llc_supports_target_object_emission,
         },
         "sema_type_system_parity": {
             "parity_ready": parity_ready,

@@ -1,15 +1,99 @@
 {
+  "$schema": "https://objc3c.dev/schemas/objc3c-debug-source-maps-v1.schema.json",
   "contract_id": "objc3c.debug-source-maps.v1",
   "source": {
     "path": "tests/tooling/fixtures/developer_tooling/debug_source_maps/source.objc3",
     "sha256": "c415f0827bf97aad27e7a538d7ac8a3df6b0f8b43741c013145e4c09cf990f7b"
   },
+  "compiler_identity": {
+    "compiler_id": "objc3c.compiler.objc3c-3.0.debug-info.v1",
+    "frontend_artifact_id": "artifact.debugmaps.foundation.frontend",
+    "source_map_schema_version": "objc3c.debug-source-maps.v1",
+    "native_debug_info_evidence_id": "debugmaps.foundation.native-debug-info"
+  },
   "debug_policy": {
-    "statement_stepping_requested": false,
-    "statement_stepping_supported": false,
-    "reserved_capabilities": [
-      "runtime.debug-trace.statement-stepping",
-      "runtime.debug-trace.lldb-plugin"
+    "statement_stepping_requested": true,
+    "statement_stepping_supported": true,
+    "reserved_capabilities": []
+  },
+  "native_debug_info": {
+    "contract_id": "objc3c.debug-source-maps.native-debug-info.v1",
+    "evidence_id": "debugmaps.foundation.native-debug-info",
+    "object_artifact_id": "artifact.debugmaps.foundation.object",
+    "emitted_native_debug_info": true,
+    "native_line_table_emitted": true,
+    "ir_debug_metadata_present": true,
+    "llvm_debug_location_count": 17,
+    "native_debug_sections": [
+      ".debug$S",
+      ".debug_abbrev",
+      ".debug_info",
+      ".debug_str",
+      ".debug_line"
+    ],
+    "native_line_table_sections": [
+      ".debug$S",
+      ".debug_line"
+    ],
+    "source_map_entry_ids": [
+      "smap.module",
+      "smap.declaration",
+      "smap.statement",
+      "smap.expression",
+      "smap.function",
+      "smap.method",
+      "smap.message_send",
+      "smap.property_access",
+      "smap.generated_accessor",
+      "smap.macro_expansion",
+      "smap.runtime_helper_call",
+      "smap.reflection_probe_call",
+      "smap.stdlib_lowering_call",
+      "smap.async_suspension_point",
+      "smap.error_bridge_edge",
+      "smap.ownership_cleanup_edge",
+      "smap.optimization_transform_edge"
+    ],
+    "native_line_table_row_ids": [
+      "lt.module",
+      "lt.declaration",
+      "lt.statement",
+      "lt.expression",
+      "lt.function",
+      "lt.method",
+      "lt.message_send",
+      "lt.property_access",
+      "lt.generated_accessor",
+      "lt.macro_expansion",
+      "lt.runtime_helper_call",
+      "lt.reflection_probe_call",
+      "lt.stdlib_lowering_call",
+      "lt.async_suspension_point",
+      "lt.error_bridge_edge",
+      "lt.ownership_cleanup_edge",
+      "lt.optimization_transform_edge"
+    ],
+    "statement_stepping_integrated": true,
+    "fail_closed_without_stepping_integration": false,
+    "statement_stepping_evidence": [
+      {
+        "evidence_id": "stmt.step.debugmaps.foundation.statement",
+        "source_map_entry_id": "smap.statement",
+        "debug_map_entry_id": "dmap.statement",
+        "native_line_table_row_id": "lt.statement",
+        "source_span_id": "span.statement.value-binding",
+        "source_range": {
+          "line": 19,
+          "column": 3,
+          "end_line": 19,
+          "end_column": 42
+        },
+        "source_digest": "c415f0827bf97aad27e7a538d7ac8a3df6b0f8b43741c013145e4c09cf990f7b",
+        "object_debug_line_anchor": "obj.line.statement",
+        "native_symbol": "_objc3_DebugMaps_Foundation_statement",
+        "native_debug_info_evidence_id": "debugmaps.foundation.native-debug-info",
+        "stepping_policy": "step-over-emitted-native-debug-info"
+      }
     ]
   },
   "required_record_kinds": [
@@ -55,16 +139,16 @@
       },
       {
         "row_id": "runtime.debug-trace.statement-stepping",
-        "status": "reserved",
+        "status": "supported",
         "evidence": [
-          "debug_policy.reserved_capabilities"
+          "native_debug_info.statement_stepping_evidence"
         ]
       },
       {
         "row_id": "runtime.debug-trace.lldb-plugin",
-        "status": "reserved",
+        "status": "supported",
         "evidence": [
-          "debug_policy.reserved_capabilities"
+          "tests/tooling/fixtures/developer_tooling/debugger_integration/replay.json"
         ]
       }
     ]
@@ -205,6 +289,19 @@
       {
         "id": "src.node.runtime_helper_call",
         "symbol": "bridge",
+        "kind": "runtime-helper-call",
+        "source_digest": "c415f0827bf97aad27e7a538d7ac8a3df6b0f8b43741c013145e4c09cf990f7b",
+        "package_boundary_id": "pkg.debugmaps.foundation",
+        "range": {
+          "line": 21,
+          "column": 14,
+          "end_line": 21,
+          "end_column": 25
+        }
+      },
+      {
+        "id": "src.node.reflection_probe_call",
+        "symbol": "bridge.reflectionProbe",
         "kind": "runtime-helper-call",
         "source_digest": "c415f0827bf97aad27e7a538d7ac8a3df6b0f8b43741c013145e4c09cf990f7b",
         "package_boundary_id": "pkg.debugmaps.foundation",
@@ -437,6 +534,20 @@
         "source_graph_node_id": "src.node.runtime_helper_call",
         "source_digest": "c415f0827bf97aad27e7a538d7ac8a3df6b0f8b43741c013145e4c09cf990f7b",
         "symbol": "bridge"
+      },
+      {
+        "anchor_id": "hover.reflection_probe_call",
+        "kind": "hover",
+        "source_graph_node_id": "src.node.reflection_probe_call",
+        "source_digest": "c415f0827bf97aad27e7a538d7ac8a3df6b0f8b43741c013145e4c09cf990f7b",
+        "symbol": "bridge.reflectionProbe"
+      },
+      {
+        "anchor_id": "definition.reflection_probe_call",
+        "kind": "definition",
+        "source_graph_node_id": "src.node.reflection_probe_call",
+        "source_digest": "c415f0827bf97aad27e7a538d7ac8a3df6b0f8b43741c013145e4c09cf990f7b",
+        "symbol": "bridge.reflectionProbe"
       },
       {
         "anchor_id": "hover.stdlib_lowering_call",
@@ -966,6 +1077,46 @@
       ]
     },
     {
+      "entry_id": "smap.reflection_probe_call",
+      "record_kind": "runtime-helper-call",
+      "source_file": "tests/tooling/fixtures/developer_tooling/debug_source_maps/source.objc3",
+      "source_range": {
+        "line": 21,
+        "column": 14,
+        "end_line": 21,
+        "end_column": 25
+      },
+      "ast_node_id": "ast.reflection_probe_call",
+      "source_graph_node_id": "src.node.reflection_probe_call",
+      "source_digest": "c415f0827bf97aad27e7a538d7ac8a3df6b0f8b43741c013145e4c09cf990f7b",
+      "lowering_stage_id": "lowering.stage.11.reflection-probe",
+      "ir_anchor": "ir.anchor.reflection_probe_call",
+      "ir_symbol": "@DebugMaps.Foundation.reflection_probe_call",
+      "object_debug_line_anchor": "obj.line.reflection_probe_call",
+      "native_symbol": "_objc3_DebugMaps_Foundation_reflection_probe_call",
+      "generated_artifact_id": "artifact.reflection_probe_call",
+      "generated": false,
+      "classification": "original",
+      "provenance_link_id": "",
+      "capability_rows": [
+        "compiler.artifacts.source-map",
+        "compiler.artifacts.native-line-table",
+        "tooling.debug.debug-map"
+      ],
+      "language_service_anchor_ids": [
+        "hover.reflection_probe_call",
+        "definition.reflection_probe_call"
+      ],
+      "optimization_claim_ids": [],
+      "runtime_anchor_ids": [
+        "runtime.anchor.reflection_probe_call"
+      ],
+      "package_boundary_id": "pkg.debugmaps.foundation",
+      "native_line_table_row_ids": [
+        "lt.reflection_probe_call"
+      ]
+    },
+    {
       "entry_id": "smap.stdlib_lowering_call",
       "record_kind": "stdlib-lowering-call",
       "source_file": "tests/tooling/fixtures/developer_tooling/debug_source_maps/source.objc3",
@@ -1332,6 +1483,20 @@
       "definition_anchor_id": "definition.runtime_helper_call"
     },
     {
+      "entry_id": "dmap.reflection_probe_call",
+      "source_map_entry_id": "smap.reflection_probe_call",
+      "source_graph_node_id": "src.node.reflection_probe_call",
+      "source_digest": "c415f0827bf97aad27e7a538d7ac8a3df6b0f8b43741c013145e4c09cf990f7b",
+      "ir_symbol": "@DebugMaps.Foundation.reflection_probe_call",
+      "native_symbol": "_objc3_DebugMaps_Foundation_reflection_probe_call",
+      "object_debug_line_anchor": "obj.line.reflection_probe_call",
+      "runtime_anchor_ids": [
+        "runtime.anchor.reflection_probe_call"
+      ],
+      "hover_anchor_id": "hover.reflection_probe_call",
+      "definition_anchor_id": "definition.reflection_probe_call"
+    },
+    {
       "entry_id": "dmap.stdlib_lowering_call",
       "source_map_entry_id": "smap.stdlib_lowering_call",
       "source_graph_node_id": "src.node.stdlib_lowering_call",
@@ -1591,6 +1756,23 @@
       "native_line": 51
     },
     {
+      "row_id": "lt.reflection_probe_call",
+      "source_map_entry_id": "smap.reflection_probe_call",
+      "source_graph_node_id": "src.node.reflection_probe_call",
+      "source_file": "tests/tooling/fixtures/developer_tooling/debug_source_maps/source.objc3",
+      "source_digest": "c415f0827bf97aad27e7a538d7ac8a3df6b0f8b43741c013145e4c09cf990f7b",
+      "native_symbol": "_objc3_DebugMaps_Foundation_reflection_probe_call",
+      "object_debug_line_anchor": "obj.line.reflection_probe_call",
+      "package_boundary_id": "pkg.debugmaps.foundation",
+      "source_range": {
+        "line": 21,
+        "column": 14,
+        "end_line": 21,
+        "end_column": 25
+      },
+      "native_line": 57
+    },
+    {
       "row_id": "lt.stdlib_lowering_call",
       "source_map_entry_id": "smap.stdlib_lowering_call",
       "source_graph_node_id": "src.node.stdlib_lowering_call",
@@ -1676,6 +1858,72 @@
       "native_line": 56
     }
   ],
+  "inline_frames": {
+    "frames": [
+      {
+        "frame_id": "inline.frame.main_helper",
+        "caller_source_map_entry_id": "smap.optimization_transform_edge",
+        "callee_source_map_entry_id": "smap.function",
+        "original_caller_span": {
+          "line": 19,
+          "column": 3,
+          "end_line": 19,
+          "end_column": 43
+        },
+        "callsite_span": {
+          "line": 19,
+          "column": 15,
+          "end_line": 19,
+          "end_column": 41
+        },
+        "inlined_callsite_span": {
+          "line": 19,
+          "column": 15,
+          "end_line": 19,
+          "end_column": 41
+        },
+        "callee_body_span": {
+          "line": 14,
+          "column": 3,
+          "end_line": 14,
+          "end_column": 19
+        },
+        "stepping_policy": "step-into-callee-step-out-caller",
+        "imported_debug_map_entry_id": "dmap.optimization_transform_edge",
+        "emitted_debug_map_entry_id": "dmap.optimization_transform_edge",
+        "optimized_ir_source_correlation_id": "inline.correlation.main_helper",
+        "optimized_ir_anchor": "ir.anchor.optimization_transform_edge",
+        "optimized_source_map_entry_id": "smap.optimization_transform_edge",
+        "caller_runtime_anchor_id": "runtime.anchor.optimization_transform_edge",
+        "callee_runtime_anchor_id": "runtime.anchor.function",
+        "optimization_proof_id": "opt.method_inlining",
+        "emitted_ir_anchor": "ir.anchor.optimization_transform_edge",
+        "emitted_native_symbol": "_objc3_DebugMaps_Foundation_optimization_transform_edge"
+      }
+    ],
+    "native_ranges": [
+      {
+        "range_id": "inline.range.main_helper",
+        "frame_id": "inline.frame.main_helper",
+        "artifact_symbol_id": "_objc3_DebugMaps_Foundation_optimization_transform_edge",
+        "native_range": {
+          "start_offset": 48,
+          "end_offset": 76
+        },
+        "nesting_depth": 1
+      }
+    ],
+    "chains": [
+      {
+        "chain_id": "inline.chain.main_helper",
+        "outer_frame_id": "inline.frame.main_helper",
+        "inner_frame_id": "inline.frame.main_helper",
+        "optimization_proof_id": "opt.method_inlining",
+        "ordering_index": 0
+      }
+    ],
+    "failures": []
+  },
   "provenance_links": [
     {
       "link_id": "prov.generated_accessor",
@@ -1832,6 +2080,7 @@
           "src.node.generated_accessor",
           "src.node.macro_expansion",
           "src.node.runtime_helper_call",
+          "src.node.reflection_probe_call",
           "src.node.stdlib_lowering_call",
           "src.node.async_suspension_point",
           "src.node.error_bridge_edge",

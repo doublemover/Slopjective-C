@@ -13,6 +13,8 @@ namespace objc3c::config {
 
 enum class LanguageProfileId : std::uint8_t {
   kCanonical,
+  kStrict,
+  kStrictConcurrency,
 };
 
 struct LanguageProfileContract {
@@ -21,11 +23,15 @@ struct LanguageProfileContract {
   std::uint8_t language_version = kCanonicalLanguageVersion;
   const char *contract_id =
       objc3c::contracts::kObjc3CanonicalLanguageProfileContractId;
+  bool strict_diagnostics = false;
+  bool strict_concurrency = false;
 };
 
 const LanguageProfileContract &CanonicalLanguageProfile();
 const LanguageProfileContract *FindLanguageProfile(std::string_view name);
 bool IsCanonicalLanguageProfile(std::string_view name);
+bool IsSupportedLanguageProfile(std::string_view name);
+const char *LanguageProfileName(LanguageProfileId id);
 ConfigValidationResult ValidateLanguageProfileName(std::string_view name);
 
 }  // namespace objc3c::config

@@ -11,7 +11,7 @@
     "tests/tooling/fixtures/platform_hardening/install_matrix_integration_contract.json",
     "tests/tooling/fixtures/platform_hardening/packaged_smoke_integration_contract.json"
   ],
-  "support_boundary": "e2e/tooling ownership covers only canonical strict platform hardening behavior: checked-in windows-x64 tier-1 support, checked-in portable-archive/local-installer/offline-bundle channels, validate-platform-hardening and validate-platform-hardening-end-to-end public actions, package-runnable-toolchain/build-package-channels/release-operations linkage, package validation steps, install matrix replay with rollback evidence, toolchain range replay narrower than discovery, and packaged command/publication surface fields. Generated artifacts and reports are required evidence labels, not source truth.",
+  "support_boundary": "e2e/tooling ownership covers only canonical strict platform hardening behavior: checked-in windows-x64 tier-1 support, checked-in portable-archive/local-installer/offline-bundle channels, ingest-platform-host-evidence/review-platform-host-evidence/review-platform-support-promotion/check-platform-host-promotion-evidence generated host-evidence review steps, validate-platform-hardening and validate-platform-hardening-end-to-end public actions, package-runnable-toolchain/build-package-channels/release-operations linkage, package validation steps, install matrix replay with rollback evidence, toolchain range replay narrower than discovery, and packaged command/publication surface fields. Generated Linux/macOS hosted evidence and reviewed-source proposals remain non-promoting until reviewed source truth is checked in.",
   "phase_support_claim_authority": true,
   "selectors": [
     "platform_id:windows-x64",
@@ -21,6 +21,10 @@
     "channel:local-installer",
     "channel:offline-bundle",
     "public_action:build-platform-support-matrix",
+    "public_action:ingest-platform-host-evidence",
+    "public_action:review-platform-host-evidence",
+    "public_action:review-platform-support-promotion",
+    "public_action:check-platform-host-promotion-evidence",
     "public_action:validate-platform-hardening",
     "public_action:validate-platform-hardening-end-to-end",
     "public_action:package-runnable-toolchain",

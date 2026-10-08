@@ -55,6 +55,30 @@
       "path": "reject_duplicate_throws_modifier.objc3",
       "expect": "reject",
       "diagnostic_code": "O3P181"
+    },
+    {
+      "id": "A010-C010",
+      "path": "reject_value_optional_type.objc3",
+      "expect": "reject",
+      "diagnostic_code": "O3P159"
+    },
+    {
+      "id": "A010-C011",
+      "path": "reject_typed_throws_payload.objc3",
+      "expect": "reject",
+      "diagnostic_code": "O3P182"
+    },
+    {
+      "id": "A010-C012",
+      "path": "reject_match_expression_position.objc3",
+      "expect": "reject",
+      "diagnostic_code": "O3P156"
+    },
+    {
+      "id": "A010-C013",
+      "path": "reject_guarded_match_pattern.objc3",
+      "expect": "reject",
+      "diagnostic_code": "O3P157"
     }
   ]
 }

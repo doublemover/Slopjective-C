@@ -230,24 +230,6 @@ std::string EmitObjc3IRBlockInvokeCall(
     return out;
   }
 
-  const std::string storage_type = BuildBlockStorageType(*binding.literal);
-  const std::string descriptor_ptr_slot = NewObjc3IRBlockTemp(ctx);
-  const std::string descriptor_ptr = NewObjc3IRBlockTemp(ctx);
-  const std::string invoke_ptr_slot = NewObjc3IRBlockTemp(ctx);
-  const std::string invoke_ptr = NewObjc3IRBlockTemp(ctx);
-  ctx.code_lines.push_back("  " + descriptor_ptr_slot +
-                           " = getelementptr inbounds " + storage_type +
-                           ", ptr " + binding.storage_ptr +
-                           ", i32 0, i32 0");
-  ctx.code_lines.push_back("  " + descriptor_ptr + " = load ptr, ptr " +
-                           descriptor_ptr_slot + ", align 8");
-  ctx.code_lines.push_back("  " + invoke_ptr_slot +
-                           " = getelementptr inbounds " +
-                           BuildBlockDescriptorType() + ", ptr " +
-                           descriptor_ptr + ", i32 0, i32 5");
-  ctx.code_lines.push_back("  " + invoke_ptr + " = load ptr, ptr " +
-                           invoke_ptr_slot + ", align 8");
-
   std::array<std::string, 4> args{"0", "0", "0", "0"};
   for (std::size_t i = 0; i < call_expr->args.size() && i < args.size();
        ++i) {
@@ -256,7 +238,8 @@ std::string EmitObjc3IRBlockInvokeCall(
   }
 
   const std::string out = NewObjc3IRBlockTemp(ctx);
-  ctx.code_lines.push_back("  " + out + " = call i32 " + invoke_ptr +
+  ctx.code_lines.push_back("  " + out + " = call i32 @" +
+                           BuildBlockInvokeSymbol(*binding.literal) +
                            "(ptr " + binding.storage_ptr + ", i32 " +
                            args[0] + ", i32 " + args[1] + ", i32 " +
                            args[2] + ", i32 " + args[3] + ")");

@@ -33,7 +33,9 @@
     "matrix platform matches supported host tier",
     "build package validation passes",
     "toolchain range replay passes",
+    "local installer native executable reaches objc3c-native usage path from installed root before rollback",
     "offline install root retains installed native executable",
+    "offline bundle native executable reaches objc3c-native usage path from installed root",
     "temp-root installer path rolls back the primary install root"
   ]
 }

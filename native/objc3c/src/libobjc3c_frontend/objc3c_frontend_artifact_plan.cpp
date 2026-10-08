@@ -1,5 +1,6 @@
 #include "libobjc3c_frontend/objc3c_frontend_artifact_plan.h"
 
+#include "artifacts/identity/artifact_identity.h"
 #include "libobjc3c_frontend/objc3c_frontend_compile_contract.h"
 
 namespace objc3c::frontend {
@@ -34,7 +35,9 @@ std::filesystem::path BuildFrontendIrOutputPath(
 
 std::filesystem::path BuildFrontendObjectOutputPath(
     const Objc3FrontendArtifactOutputPlan &plan) {
-  return plan.out_dir / (plan.emit_prefix + ".obj");
+  return plan.out_dir /
+         objc3::artifacts::identity::BuildObjc3NativeObjectArtifactName(
+             plan.emit_prefix);
 }
 
 std::filesystem::path BuildFrontendObjectBackendOutputPath(

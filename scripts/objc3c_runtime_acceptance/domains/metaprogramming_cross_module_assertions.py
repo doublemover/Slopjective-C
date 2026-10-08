@@ -5,6 +5,7 @@ from __future__ import annotations
 from typing import Any
 
 from objc3c_runtime_acceptance.expectation_matching import expect
+from objc3c_runtime_acceptance.paths import FRONTEND_RUNNER_RELATIVE_PATH
 
 
 def expect_provider_replay_surface(surface: dict[str, Any]) -> None:
@@ -91,7 +92,7 @@ def expect_cross_module_link_plan(
         ),
         (
             "expected_metaprogramming_host_cache_executable_relative_path",
-            "artifacts/bin/objc3c-frontend-c-api-runner.exe",
+            FRONTEND_RUNNER_RELATIVE_PATH,
         ),
         (
             "expected_metaprogramming_host_cache_root_relative_path",
@@ -138,7 +139,7 @@ def expect_imported_metaprogramming_module(
         ),
         (
             "metaprogramming_macro_host_process_cache_host_executable_relative_path",
-            "artifacts/bin/objc3c-frontend-c-api-runner.exe",
+            FRONTEND_RUNNER_RELATIVE_PATH,
         ),
         (
             "metaprogramming_macro_host_process_cache_root_relative_path",

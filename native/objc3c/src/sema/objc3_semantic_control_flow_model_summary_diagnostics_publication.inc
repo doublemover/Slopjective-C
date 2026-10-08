@@ -18,6 +18,7 @@ static void PublishControlFlowControlFlowSemanticModelReplayKey(
       << ";match-bindings=" << summary.match_binding_scope_sites
       << ";match-result-bindings="
       << summary.match_result_case_scope_sites
+      << ";match-guards=" << summary.match_guard_condition_sites
       << ";match-exhaustive=" << summary.match_exhaustive_statement_sites
       << ";match-bool-exhaustive=" << summary.match_bool_exhaustive_sites
       << ";match-result-exhaustive="
@@ -26,6 +27,26 @@ static void PublishControlFlowControlFlowSemanticModelReplayKey(
       << summary.match_non_exhaustive_diagnostic_sites
       << ";match-exhaustiveness-deferred="
       << summary.match_exhaustiveness_deferred_sites
+      << ";match-expression-sites="
+      << summary.match_expression_semantic_sites
+      << ";match-expression-result-types="
+      << summary.match_expression_result_type_sites
+      << ";match-expression-guards="
+      << summary.match_expression_guard_condition_sites
+      << ";match-expression-bindings="
+      << summary.match_expression_binding_scope_sites
+      << ";match-expression-result-bindings="
+      << summary.match_expression_result_case_scope_sites
+      << ";match-expression-exhaustive="
+      << summary.match_expression_exhaustive_sites
+      << ";match-expression-nonexhaustive-diagnostics="
+      << summary.match_expression_non_exhaustive_diagnostic_sites
+      << ";match-expression-lowering-eligible="
+      << summary.match_expression_lowering_eligible_sites
+      << ";match-expression-guard-effect-fail-closed="
+      << summary.match_expression_guard_effect_fail_closed_sites
+      << ";match-expression-result-type-mismatch="
+      << summary.match_expression_result_type_mismatch_sites
       << ";defer-sites=" << summary.defer_statement_semantic_sites
       << ";defer-cleanup-order-sites="
       << summary.defer_scope_cleanup_order_sites

@@ -1,5 +1,7 @@
 #include "lower/contracts/lowering_artifact_publication.h"
 
+#include "artifacts/identity/artifact_identity.h"
+
 #include <sstream>
 
 namespace {
@@ -24,7 +26,8 @@ Objc3LoweringArtifactPlan Objc3BuildLoweringArtifactPlan(
   plan.emit_runtime_metadata = emit_runtime_metadata;
   plan.ir_relative_path = BuildRelativeArtifactPath(plan.emit_prefix, ".ll");
   plan.object_relative_path =
-      BuildRelativeArtifactPath(plan.emit_prefix, ".obj");
+      objc3::artifacts::identity::BuildObjc3NativeObjectArtifactName(
+          plan.emit_prefix);
   plan.manifest_relative_path =
       BuildRelativeArtifactPath(plan.emit_prefix, ".manifest.json");
   plan.runtime_metadata_relative_path =

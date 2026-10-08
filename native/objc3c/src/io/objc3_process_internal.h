@@ -128,7 +128,7 @@ inline constexpr const char *kObjc3DeterministicReplayTimestamp =
     "1970-01-01T00:00:00Z";
 inline constexpr const char *kObjc3DeterministicSourceRevision = "0000000";
 inline constexpr const char *kObjc3ConformanceProfileClaimPolicyModel =
-    "core-profile-claimed-strict-profiles-targeted-for-release-evidence-and-fail-closed-until-runtime-backed";
+    "core-strict-and-strict-concurrency-profiles-claimed-with-strict-system-rejected-until-system-evidence";
 inline constexpr const char *kObjc3ConformanceFormatClaimPolicyModel =
     "json-only-conformance-artifacts-remain-claimable-until-other-formats-gain-validation-and-publication-support";
 inline constexpr const char *kObjc3ConformancePublicationFailClosedDiagnosticModel =

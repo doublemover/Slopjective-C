@@ -1,0 +1,10 @@
+// Negative fixture: erased callable type shapes are not enough to merge
+// generic free-function redeclarations when the generic signature drifts.
+// Expected diagnostic code(s): O3S206.
+module NegativeTypeSemanticGenericFunctionSignatureDrift;
+
+@protocol Persistable
+@end
+
+fn genericIdentity<T>(value: T) -> T;
+fn genericIdentity<T : id<Persistable>>(value: T) -> T;

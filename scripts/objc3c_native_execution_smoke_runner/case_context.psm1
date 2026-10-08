@@ -19,12 +19,21 @@ function New-ExecutionSmokeCaseContext {
   $caseDir = Join-Path $Context.run_dir $caseDirName
   $compileDir = Join-Path $caseDir "compile"
   New-Item -ItemType Directory -Force -Path $compileDir | Out-Null
+  $caseExecutableName = ""
+  $caseExecutableProperty = $Context.PSObject.Properties["case_executable_name"]
+  if ($null -ne $caseExecutableProperty) {
+    $caseExecutableName = [string]$caseExecutableProperty.Value
+  }
+  if ([string]::IsNullOrWhiteSpace($caseExecutableName)) {
+    $caseExecutableName = "module.exe"
+  }
 
   return [pscustomobject]@{
     fixture_rel = $fixtureRel
     case_dir = $caseDir
     compile_dir = $compileDir
-    exe_path = Join-Path $caseDir "module.exe"
+    exe_path = Join-Path $caseDir $caseExecutableName
+    exe_name = $caseExecutableName
     compile_log = Join-Path $caseDir "compile.log"
     link_log = Join-Path $caseDir "link.log"
     run_log = Join-Path $caseDir "run.log"
@@ -72,6 +81,22 @@ function Get-ExecutionSmokeCompileText {
   return ""
 }
 
+function Get-ExecutionSmokeLogExcerpt {
+  param(
+    [Parameter(Mandatory = $true)][string]$Path,
+    [int]$TailLines = 120
+  )
+
+  if (!(Test-Path -LiteralPath $Path -PathType Leaf)) {
+    return "log missing: $Path"
+  }
+  $lines = @(Get-Content -LiteralPath $Path -Tail $TailLines)
+  if ($lines.Count -eq 0) {
+    return "log empty: $Path"
+  }
+  return "log tail: $Path`n" + ($lines -join "`n")
+}
+
 function Write-ExecutionSmokeProgressStart {
   param(
     [Parameter(Mandatory = $true)][int]$FixtureIndex,
@@ -100,6 +125,7 @@ function Write-ExecutionSmokeProgressDone {
 
 Export-ModuleMember -Function @(
   "Get-ExecutionSmokeCompileText",
+  "Get-ExecutionSmokeLogExcerpt",
   "Get-ExecutionSmokeNativeArgs",
   "Get-ExecutionSmokeRuntimeLibrary",
   "New-ExecutionSmokeCaseContext",

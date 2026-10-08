@@ -43,6 +43,26 @@ void WriteSemanticCanonicalTypeManifestRecord(
                           type.generic_arguments_source_order);
   object.StringArrayField("generic_arguments_lexicographic",
                           type.generic_arguments_lexicographic);
+  object.BoolField("is_value_optional", type.is_value_optional);
+  object.StringField("value_optional_payload_type_spelling",
+                     type.value_optional_payload_type_spelling);
+  object.StringField(
+      "value_optional_payload_value_type",
+      objc3c::support::ValueTypeName(type.value_optional_payload_value_type));
+  object.BoolField("value_optional_semantic_value_model_supported",
+                   type.value_optional_semantic_value_model_supported);
+  object.BoolField("value_optional_stable_abi_layout_contract_supported",
+                   type.value_optional_stable_abi_layout_contract_supported);
+  object.BoolField("value_optional_binding_narrowing_supported",
+                   type.value_optional_binding_narrowing_supported);
+  object.BoolField("value_optional_interface_roundtrip_supported",
+                   type.value_optional_interface_roundtrip_supported);
+  object.BoolField("value_optional_unwrap_requires_presence_check",
+                   type.value_optional_unwrap_requires_presence_check);
+  object.BoolField("value_optional_runtime_execution_supported",
+                   type.value_optional_runtime_execution_supported);
+  object.BoolField("value_optional_lowering_supported",
+                   type.value_optional_lowering_supported);
   object.StringField("replay_key", type.replay_key);
   object.BoolField("deterministic", type.deterministic);
   object.End();
@@ -54,6 +74,16 @@ void WriteSemanticMethodTypeManifestRecord(
   JsonObjectWriter object(out);
   object.StringField("selector", metadata.selector_normalized);
   object.BoolField("is_class_method", metadata.is_class_method);
+  object.BoolField("throws_declared", metadata.throws_declared);
+  object.BoolField("typed_throws_declared", metadata.typed_throws_declared);
+  object.StringField("typed_throws_error_type_spelling",
+                     metadata.typed_throws_error_type_spelling);
+  object.StringField("typed_throws_effect_signature_key",
+                     metadata.typed_throws_effect_signature_key);
+  object.StringField("typed_throws_callable_compatibility_policy",
+                     metadata.typed_throws_callable_compatibility_policy);
+  object.BoolField("typed_throws_abi_lowering_ready",
+                   metadata.typed_throws_abi_lowering_ready);
   object.RawJsonField("return_canonical_type",
                       RenderSemanticCanonicalType(
                           metadata.return_canonical_type));
@@ -81,10 +111,28 @@ void WriteSemanticFunctionTypeManifestRecord(
     const Objc3SemanticFunctionTypeMetadata &metadata) {
   JsonObjectWriter object(out);
   object.StringField("name", metadata.name);
+  object.StringField("generic_callable_signature_replay_key",
+                     metadata.generic_callable_signature_replay_key);
+  object.StringField("generic_callable_reification_policy",
+                     metadata.generic_callable_reification_policy);
+  object.StringField("generic_callable_mangling_policy_id",
+                     metadata.generic_callable_mangling_policy_id);
+  object.BoolField("generic_callable_contract_deterministic",
+                   metadata.generic_callable_contract_deterministic);
   object.StringArrayField("generic_parameter_names_source_order",
                           metadata.generic_parameter_names_source_order);
   object.StringArrayField("generic_parameter_variance_source_order",
                           metadata.generic_parameter_variance_source_order);
+  object.BoolField("throws_declared", metadata.throws_declared);
+  object.BoolField("typed_throws_declared", metadata.typed_throws_declared);
+  object.StringField("typed_throws_error_type_spelling",
+                     metadata.typed_throws_error_type_spelling);
+  object.StringField("typed_throws_effect_signature_key",
+                     metadata.typed_throws_effect_signature_key);
+  object.StringField("typed_throws_callable_compatibility_policy",
+                     metadata.typed_throws_callable_compatibility_policy);
+  object.BoolField("typed_throws_abi_lowering_ready",
+                   metadata.typed_throws_abi_lowering_ready);
   object.RawJsonField(
       "generic_parameter_constraints_lexicographic",
       RenderArtifactRecordArray(

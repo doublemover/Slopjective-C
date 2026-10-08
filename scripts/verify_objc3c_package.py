@@ -16,6 +16,7 @@ from objc3c_package_manager.model import package_manifest_digest  # noqa: E402
 from objc3c_package_manager.trust import (  # noqa: E402
     collect_manifest_trust_failures,
     load_trust_policy,
+    resolve_package_trust_cli_path,
 )
 from objc3c_tooling.json_io import load_json_object as load_json  # noqa: E402
 
@@ -34,19 +35,36 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
     return parser.parse_args(argv)
 
 
-def _path(raw_path: str) -> Path:
-    path = Path(raw_path)
-    return path if path.is_absolute() else ROOT / path
-
-
 def main(argv: list[str] | None = None) -> int:
     args = parse_args(list(argv or sys.argv[1:]))
     try:
-        manifest = load_json(_path(args.manifest))
+        manifest = load_json(
+            resolve_package_trust_cli_path(
+                args.manifest,
+                root=ROOT,
+                purpose="package manifest input",
+            )
+        )
         if args.envelope:
             manifest = dict(manifest)
-            manifest["trust"] = load_json(_path(args.envelope))
-        trust_policy = load_trust_policy(args.trust_policy) if args.trust_policy else None
+            manifest["trust"] = load_json(
+                resolve_package_trust_cli_path(
+                    args.envelope,
+                    root=ROOT,
+                    purpose="package signature envelope input",
+                )
+            )
+        trust_policy = (
+            load_trust_policy(
+                resolve_package_trust_cli_path(
+                    args.trust_policy,
+                    root=ROOT,
+                    purpose="package trust policy input",
+                )
+            )
+            if args.trust_policy
+            else None
+        )
         recorded_digest = str(manifest.get("manifest_digest", ""))
         computed_digest = package_manifest_digest(manifest)
         failures: list[str] = []

@@ -1,0 +1,203 @@
+{
+  "contract_id": "objc3c.language_evolution.umbrella.fail_closed_contract.v1",
+  "schema_version": 1,
+  "umbrella_issue_ref": 8207,
+  "issue_refs": [
+    8233,
+    8234,
+    8235,
+    8236,
+    8237
+  ],
+  "source_truth": "checked-in native source, checked-in fixtures, and source-authored docs only",
+  "generated_or_temp_evidence_allowed": false,
+  "objc2_compatibility_paths_allowed": false,
+  "compatibility_aliases_allowed": false,
+  "feature_contracts": [
+    {
+      "feature_id": "typed_throws",
+      "issue_ref": 8233,
+      "contract": "tests/tooling/fixtures/native/language_evolution_typed_throws_value_optionals_contract.json",
+      "support_state": "implemented_single_payload_interface_preserved_error_out_abi_catch_bridge_direct_runtime_dispatch_try_optional_runtime",
+      "negative_case_ids": [
+        "negative_typed_throws_reserved",
+        "negative_typed_throws_empty_payload_reserved",
+        "negative_typed_throws_multi_payload_reserved",
+        "negative_typed_throws_erasure_mismatch_reserved",
+        "negative_typed_throws_protocol_mismatch",
+        "negative_typed_throws_incompatible_catch",
+        "negative_typed_throws_foreign_carrier_catch",
+        "negative_typed_throws_method_incompatible_catch",
+        "negative_typed_throws_method_foreign_carrier_catch",
+        "typed_throws_abi_lifting_negative",
+        "typed_throws_interface_mismatch_negative",
+        "typed_throws_semantic_effect_identity"
+      ]
+    },
+    {
+      "feature_id": "value_optionals",
+      "issue_ref": 8234,
+      "contract": "tests/tooling/fixtures/native/language_evolution_typed_throws_value_optionals_contract.json",
+      "support_state": "semantic_type_signatures_packed_i32_bool_id_and_full_i64_runtime_abi",
+      "negative_case_ids": [
+        "negative_value_optional_canonical_reserved",
+        "negative_value_optional_nullable_pointer_conversion_reserved",
+        "negative_value_optional_nil_scalar_coercion_reserved",
+        "negative_value_optional_nested_lowercase_alias_reserved",
+        "negative_value_optional_property_layout_unsupported",
+        "negative_value_optional_nullable_suffix_mismatch",
+        "value_optionals_layout_mismatch_negative",
+        "value_optionals_lowering_claim_negative",
+        "value_optionals_interface_mismatch_negative",
+        "value_optionals_executable_semantics_negative"
+      ]
+    },
+    {
+      "feature_id": "generic_callable_reification",
+      "issue_ref": 8235,
+      "contract": "tests/tooling/fixtures/native/generic_callable_reification_contract.json",
+      "support_state": "generic_free_functions_and_objc_generic_methods_supported_with_declaration_scoped_reification_metadata",
+      "negative_case_ids": [
+        "negative_cstyle_generic_function_reserved",
+        "negative_generic_method_selector_form_ambiguous",
+        "negative_reify_generics_unsupported_scope",
+        "negative_type_semantic_generic_function_signature_drift",
+        "negative_type_semantic_generic_method_override_mismatch",
+        "negative_type_semantic_generic_callable_constraint_cycle",
+        "negative_type_semantic_erased_to_reified_redeclaration_drift"
+      ]
+    },
+    {
+      "feature_id": "match_guarded_patterns",
+      "issue_ref": 8236,
+      "contract": "tests/tooling/fixtures/native/match_guarded_pattern_language_evolution_contract.json",
+      "support_state": "statement_guarded_patterns_and_bounded_match_expressions_supported_type_tests_reserved",
+      "negative_case_ids": [
+        "negative_match_statement_fat_arrow_ambiguous",
+        "negative_guarded_match_pattern_reserved",
+        "negative_guarded_match_pattern_non_bool",
+        "negative_match_expression_non_exhaustive",
+        "negative_match_expression_binding_scope_leak",
+        "negative_match_expression_result_type_mismatch",
+        "negative_match_expression_type_test_reserved",
+        "negative_match_expression_guard_side_effect"
+      ]
+    },
+    {
+      "feature_id": "strict_profiles",
+      "issue_ref": 8237,
+      "contract": "tests/tooling/fixtures/language_profiles/strict_profile_feature_matrix.json",
+      "support_state": "strict_and_strict_concurrency_claimed_strict_system_rejected",
+      "negative_case_ids": [
+        "strict_concurrency_alias_rejected",
+        "strict_system_target_profile_rejected"
+      ]
+    }
+  ],
+  "admitted_public_claims": [
+    "objc3c.behavior.language.errors.typed-throws",
+    "objc3c.behavior.language.types.value-optionals",
+    "objc3c.behavior.language.control-flow.statement-guarded-match",
+    "objc3c.behavior.language.control-flow.match-expression",
+    "objc3c.behavior.language.generics.callable-type-parameters",
+    "objc3c.behavior.language.generics.generic-callable-reification",
+    "objc3c.behavior.language.profiles.strict-admission",
+    "objc3c.behavior.language.evolution.umbrella-alignment"
+  ],
+  "reserved_public_claims": [
+    "language.types.value-optionals.expansion",
+    "language.types.value-optionals-runtime-lowering",
+    "language.types.value-optionals-nested-runtime-lowering",
+    "language.types.value-optionals-generic-runtime-lowering",
+    "language.types.value-optionals-property-ivar-storage",
+    "language.types.value-optionals-nullability-and-nil-conversions",
+    "language.types.value-optionals-unchecked-unwrap",
+    "language.types.value-optionals-throws-conversions",
+    "language.generics.runtime-specialization-expansion",
+    "language.control-flow.match-expansion",
+    "language.control-flow.type-test-patterns",
+    "language.profiles.strict-system-expansion",
+    "language.profiles.strict-system"
+  ],
+  "hard_fail_closed_requirements": [
+    "single typed throws payloads are source/interface-preserved, semantically exact callable effect signatures, lower through the private error-out ABI, execute direct-function catch/bridge, runtime-dispatch message-send, and try? runtime paths, accept exact typed catches, allow only the policy-backed id<Error> bridge catch, reject incompatible catches, fail closed on unsupported foreign carriers, and are not silently erased into untyped throws",
+    "Optional<T> type signatures are semantic value-optional carriers with supported i32, bool, id-handle, and full-width i64 language call/return ABI evidence; nested, generic, property, ivar, nullability, nil-to-scalar, implicit nil, unchecked unwrap, and throws/result conversion paths fail closed",
+    "generic callable metadata preserves erased-default versus declaration-scoped explicit-reified policy without implying module-wide reification",
+    "guarded match admits only bool where conditions; expression-position match is supported only for the bounded typed pattern/result surface and still fails closed for type-test patterns and unsupported result payload lowering",
+    "strict and strict-concurrency profile names are not aliases for canonical or core",
+    "strict-system remains a targeted release-evidence profile and is not a native frontend language profile"
+  ],
+  "lead_support_row_recommendations": [
+    {
+      "row_id": "language.evolution.umbrella-alignment",
+      "status": "implemented-bounded-language-evolution-umbrella",
+      "evidence": [
+        "tests/tooling/fixtures/native/language_evolution_umbrella_contract.json"
+      ]
+    },
+    {
+      "row_id": "language.errors.typed-throws",
+      "status": "implemented-single-payload-interface-preserved-error-out-abi-catch-bridge-direct-runtime-dispatch-try-optional-runtime",
+      "evidence": [
+        "tests/tooling/fixtures/native/language_evolution_typed_throws_value_optionals_contract.json",
+        "tests/tooling/fixtures/native/typed_throws_semantic_effect_identity.contract.json"
+      ]
+    },
+    {
+      "row_id": "language.types.value-optionals",
+      "status": "implemented-bounded-packed-scalar-id-handle-and-full-i64-language-abi-unsupported-forms-fail-closed",
+      "evidence": [
+        "tests/tooling/fixtures/native/language_evolution_typed_throws_value_optionals_contract.json"
+      ]
+    },
+    {
+      "row_id": "language.generics.generic-callable-reification",
+      "status": "source-owned-generic-callable-policy",
+      "evidence": [
+        "tests/tooling/fixtures/native/generic_callable_reification_contract.json"
+      ]
+    },
+    {
+      "row_id": "language.control-flow.statement-guarded-match",
+      "status": "supported-bounded-statement-and-expression",
+      "evidence": [
+        "tests/tooling/fixtures/native/match_guarded_pattern_language_evolution_contract.json"
+      ]
+    },
+    {
+      "row_id": "language.profiles.strict-admission",
+      "status": "implemented-strict-and-strict-concurrency-claimable",
+      "evidence": [
+        "tests/tooling/fixtures/language_profiles/strict_profile_feature_matrix.json"
+      ]
+    },
+    {
+      "row_id": "language.types.value-optionals.expansion",
+      "status": "reserved-follow-up-no-support-claim",
+      "evidence": [
+        "tests/tooling/fixtures/native/language_evolution_typed_throws_value_optionals_contract.json"
+      ]
+    },
+    {
+      "row_id": "language.generics.runtime-specialization-expansion",
+      "status": "reserved-follow-up-no-support-claim",
+      "evidence": [
+        "tests/tooling/fixtures/native/generic_callable_reification_contract.json"
+      ]
+    },
+    {
+      "row_id": "language.control-flow.match-expansion",
+      "status": "reserved-follow-up-no-support-claim",
+      "evidence": [
+        "tests/tooling/fixtures/native/match_guarded_pattern_language_evolution_contract.json"
+      ]
+    },
+    {
+      "row_id": "language.profiles.strict-system-expansion",
+      "status": "reserved-follow-up-no-support-claim",
+      "evidence": [
+        "tests/tooling/fixtures/language_profiles/strict_profile_feature_matrix.json"
+      ]
+    }
+  ]
+}

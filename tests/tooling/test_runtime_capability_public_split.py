@@ -60,16 +60,29 @@ def _assert_split_contract_matches_source_truth(contract: dict[str, Any]) -> Non
     evidence_rows = _evidence_rows()
     umbrella = rows[contract["reserved_umbrella"]]
 
-    assert umbrella["state"] == "reserved"
-    assert "support_claims" not in umbrella
-    assert {
-        (contract["reserved_umbrella"], None, contract["source"]),
-        (
-            contract["reserved_umbrella"],
-            None,
-            "tests/tooling/test_runtime_capability_public_split.py",
-        ),
-    } <= evidence_rows
+    if umbrella["state"] == "reserved":
+        assert "support_claims" not in umbrella
+        assert {
+            (contract["reserved_umbrella"], None, contract["source"]),
+            (
+                contract["reserved_umbrella"],
+                None,
+                "tests/tooling/test_runtime_capability_public_split.py",
+            ),
+        } <= evidence_rows
+    else:
+        assert umbrella["state"] == "implemented"
+        expected_umbrella_claims = {
+            "runtime.object-model.full-realization": [
+                "objc3c.behavior.runtime.object-model.full-realization"
+            ],
+            "language.advanced-runtime-closure": [
+                "objc3c.behavior.language.advanced-runtime-closure"
+            ],
+        }
+        assert umbrella["support_claims"] == expected_umbrella_claims[
+            contract["reserved_umbrella"]
+        ]
 
     implemented_rows = contract["implemented_rows"]
     assert implemented_rows
@@ -100,8 +113,8 @@ def _assert_reserved_boundaries_do_not_publish_claims(contract: dict[str, Any]) 
         assert "reason" in boundary
 
         owner_row = rows[boundary["matrix_owner"]]
-        assert owner_row["state"] == "reserved"
-        assert "support_claims" not in owner_row
+        assert owner_row["state"] in {"reserved", "implemented"}
+        assert "support_claim" not in boundary
 
 
 def _assert_object_model_support_contracts_are_source_derived(
@@ -147,7 +160,7 @@ def _assert_object_model_support_contracts_are_source_derived(
     assert any("public capability truth" in scope for scope in covered_scopes)
 
 
-def _assert_object_model_full_realization_readiness_is_reserved_evidence(
+def _assert_object_model_full_realization_readiness_is_promoted_evidence(
     contract: dict[str, Any],
 ) -> None:
     readiness_evidence = contract.get("full_realization_readiness_evidence")
@@ -158,10 +171,9 @@ def _assert_object_model_full_realization_readiness_is_reserved_evidence(
     row = readiness_evidence[0]
     assert row["issue"] == 8198
     assert row["capability_id"] == contract["reserved_umbrella"]
-    assert row["public_status"] == "reserved"
-    assert row["support_claim_published"] is False
-    assert "support_claim" not in row
-    assert row["remaining_blockers"] == ("object-model-debugger-source-identity",)
+    assert row["public_status"] == "implemented"
+    assert row["support_claim_published"] is True
+    assert row["remaining_blockers"] == ()
 
     assert row["covered_axes"] == (
         "class",
@@ -354,11 +366,11 @@ def test_object_model_reserved_boundaries_stay_non_claiming() -> None:
     _assert_reserved_boundaries_do_not_publish_claims(contract)
 
 
-def test_object_model_full_realization_readiness_is_reserved_evidence() -> None:
+def test_object_model_full_realization_readiness_is_promoted_evidence() -> None:
     contract = build_object_model_capability_split_contract()
 
     assert contract["issue"] == 8154
-    _assert_object_model_full_realization_readiness_is_reserved_evidence(contract)
+    _assert_object_model_full_realization_readiness_is_promoted_evidence(contract)
 
 
 def test_advanced_runtime_public_capability_split_matches_capability_matrix() -> None:

@@ -1,0 +1,263 @@
+{
+  "contract_id": "objc3c.security.hardening.sanitizer.execution-evidence.contract.v1",
+  "schema_version": 1,
+  "surface_kind": "security-sanitizer-execution-evidence-contract",
+  "public_action": "check-security-sanitizer-execution-evidence",
+  "support_truth": false,
+  "native_execution_claimed": false,
+  "support_promotion_allowed": false,
+  "source_truth_policy": {
+    "checked_fixture_is_source_truth": true,
+    "generated_reports_are_source_truth": false,
+    "generated_only_evidence_allowed": false,
+    "promotion_boundary": "reserved-until-real-native-sanitizer-execution"
+  },
+  "positive_contract_fixtures": [
+    {
+      "case_id": "objc3c.sanitizer.address.execution-evidence.reserved-contract",
+      "variant_id": "objc3c.toolchain.sanitizer.address",
+      "issue_ref": 8230,
+      "sanitizer": "address",
+      "package_id": "org.objc3c.runtime:objc3c-runtime-asan",
+      "package_channel_id": "windows-x64-sanitizer-asan",
+      "target_platform_id": "windows-x64",
+      "runtime_library_manifest_path": "share/objc3c/sanitizer/asan-runtime-libraries.json",
+      "runtime_library_manifest_digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "runtime_library_artifacts": [
+        {
+          "runtime_library_id": "clang_rt.asan",
+          "artifact": "artifacts/runtime/sanitizer/address/clang_rt.asan_dynamic-x86_64.dll",
+          "source_file_name": "clang_rt.asan_dynamic-x86_64.dll",
+          "sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+        },
+        {
+          "runtime_library_id": "clang_rt.asan",
+          "artifact": "artifacts/runtime/sanitizer/address/clang_rt.asan_dynamic-x86_64.lib",
+          "source_file_name": "clang_rt.asan_dynamic-x86_64.lib",
+          "sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+        },
+        {
+          "runtime_library_id": "clang_rt.asan",
+          "artifact": "artifacts/runtime/sanitizer/address/clang_rt.asan_dynamic_runtime_thunk-x86_64.lib",
+          "source_file_name": "clang_rt.asan_dynamic_runtime_thunk-x86_64.lib",
+          "sha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
+        }
+      ],
+      "native_execution_command": {
+        "command": [
+          "objc3c-native-sanitizer-execution",
+          "--profile",
+          "asan-native-detection",
+          "--package-channel",
+          "windows-x64-sanitizer-asan"
+        ],
+        "profile": "asan-native-detection",
+        "working_directory": ".",
+        "environment": {
+          "ASAN_OPTIONS": "detect_leaks=0:halt_on_error=1:symbolize=1"
+        },
+        "expected_exit_code": 1,
+        "real_native_run_required": true,
+        "generated_only_evidence_allowed": false
+      },
+      "expected_detection_record": {
+        "record_id": "objc3c.sanitizer.address.heap-use-after-free",
+        "record_kind": "asan-diagnostic",
+        "required_behavior": "record-only-no-support-promotion",
+        "support_truth": false
+      },
+      "report_refs": [
+        "tmp/reports/security-hardening/sanitizer-execution/address-summary.json"
+      ],
+      "output_refs": [
+        "tmp/reports/security-hardening/sanitizer-execution/address-native-output.txt"
+      ],
+      "support_truth": false,
+      "native_execution_claimed": false,
+      "support_promotion_allowed": false,
+      "generated_only_evidence_allowed": false
+    },
+    {
+      "case_id": "objc3c.sanitizer.undefined.execution-evidence.reserved-contract",
+      "variant_id": "objc3c.toolchain.sanitizer.undefined",
+      "issue_ref": 8231,
+      "sanitizer": "undefined",
+      "package_id": "org.objc3c.runtime:objc3c-runtime-ubsan",
+      "package_channel_id": "windows-x64-sanitizer-ubsan",
+      "target_platform_id": "windows-x64",
+      "runtime_library_manifest_path": "share/objc3c/sanitizer/ubsan-runtime-libraries.json",
+      "runtime_library_manifest_digest": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+      "runtime_library_artifacts": [
+        {
+          "runtime_library_id": "clang_rt.ubsan",
+          "artifact": "artifacts/runtime/sanitizer/undefined/clang_rt.ubsan_standalone-x86_64.lib",
+          "source_file_name": "clang_rt.ubsan_standalone-x86_64.lib",
+          "sha256": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
+        },
+        {
+          "runtime_library_id": "clang_rt.ubsan",
+          "artifact": "artifacts/runtime/sanitizer/undefined/clang_rt.ubsan_standalone_cxx-x86_64.lib",
+          "source_file_name": "clang_rt.ubsan_standalone_cxx-x86_64.lib",
+          "sha256": "1111111111111111111111111111111111111111111111111111111111111111"
+        }
+      ],
+      "native_execution_command": {
+        "command": [
+          "objc3c-native-sanitizer-execution",
+          "--profile",
+          "ubsan-native-detection",
+          "--package-channel",
+          "windows-x64-sanitizer-ubsan",
+          "--trap-or-recover",
+          "trap"
+        ],
+        "profile": "ubsan-native-detection",
+        "working_directory": ".",
+        "environment": {
+          "UBSAN_OPTIONS": "halt_on_error=1:print_stacktrace=1"
+        },
+        "expected_exit_code": 1,
+        "real_native_run_required": true,
+        "generated_only_evidence_allowed": false
+      },
+      "trap_or_recover_mode": "trap",
+      "expected_detection_record": {
+        "record_id": "objc3c.sanitizer.undefined.signed-integer-overflow",
+        "record_kind": "ubsan-trap",
+        "required_behavior": "record-only-no-support-promotion",
+        "support_truth": false
+      },
+      "report_refs": [
+        "tmp/reports/security-hardening/sanitizer-execution/undefined-summary.json"
+      ],
+      "output_refs": [
+        "tmp/reports/security-hardening/sanitizer-execution/undefined-native-output.txt"
+      ],
+      "support_truth": false,
+      "native_execution_claimed": false,
+      "support_promotion_allowed": false,
+      "generated_only_evidence_allowed": false
+    }
+  ],
+  "negative_contract_fixtures": [
+    {
+      "case_id": "objc3c.sanitizer.address.execution.reject.missing-runtime-manifest",
+      "variant_id": "objc3c.toolchain.sanitizer.address",
+      "failure_kind": "missing-runtime-manifest",
+      "failure_class": "sanitizer-runtime-library-manifest-missing",
+      "required_behavior": "fail-closed-before-native-execution-claim",
+      "blocks": ["package", "install", "execution", "publication", "support-promotion"],
+      "support_truth": false,
+      "native_execution_claimed": false,
+      "support_promotion_allowed": false
+    },
+    {
+      "case_id": "objc3c.sanitizer.address.execution.reject.mixed-release-sanitizer-runtime",
+      "variant_id": "objc3c.toolchain.sanitizer.address",
+      "failure_kind": "mixed-release-sanitizer-runtime",
+      "failure_class": "mixed-release-sanitizer-runtime",
+      "required_behavior": "fail-closed-before-native-execution-claim",
+      "blocks": ["package", "install", "execution", "publication", "support-promotion"],
+      "support_truth": false,
+      "native_execution_claimed": false,
+      "support_promotion_allowed": false
+    },
+    {
+      "case_id": "objc3c.sanitizer.address.execution.reject.unsupported-host",
+      "variant_id": "objc3c.toolchain.sanitizer.address",
+      "failure_kind": "unsupported-host",
+      "failure_class": "unsupported-sanitizer-platform",
+      "required_behavior": "fail-closed-before-capability-promotion",
+      "blocks": ["package", "install", "execution", "publication", "support-promotion"],
+      "support_truth": false,
+      "native_execution_claimed": false,
+      "support_promotion_allowed": false
+    },
+    {
+      "case_id": "objc3c.sanitizer.address.execution.reject.stale-runtime-manifest-digest",
+      "variant_id": "objc3c.toolchain.sanitizer.address",
+      "failure_kind": "stale-runtime-manifest-digest",
+      "failure_class": "stale-runtime-manifest-digest",
+      "required_behavior": "fail-closed-before-support-promotion",
+      "blocks": ["package", "install", "execution", "publication", "support-promotion"],
+      "support_truth": false,
+      "native_execution_claimed": false,
+      "support_promotion_allowed": false
+    },
+    {
+      "case_id": "objc3c.sanitizer.address.execution.reject.generated-only-evidence",
+      "variant_id": "objc3c.toolchain.sanitizer.address",
+      "failure_kind": "generated-only-evidence",
+      "failure_class": "generated-report-without-native-run",
+      "required_behavior": "fail-closed-before-support-promotion",
+      "blocks": ["package", "install", "execution", "publication", "support-promotion"],
+      "support_truth": false,
+      "native_execution_claimed": false,
+      "support_promotion_allowed": false
+    },
+    {
+      "case_id": "objc3c.sanitizer.undefined.execution.reject.missing-runtime-manifest",
+      "variant_id": "objc3c.toolchain.sanitizer.undefined",
+      "failure_kind": "missing-runtime-manifest",
+      "failure_class": "sanitizer-runtime-library-manifest-missing",
+      "required_behavior": "fail-closed-before-native-execution-claim",
+      "blocks": ["package", "install", "execution", "publication", "support-promotion"],
+      "support_truth": false,
+      "native_execution_claimed": false,
+      "support_promotion_allowed": false
+    },
+    {
+      "case_id": "objc3c.sanitizer.undefined.execution.reject.mixed-release-sanitizer-runtime",
+      "variant_id": "objc3c.toolchain.sanitizer.undefined",
+      "failure_kind": "mixed-release-sanitizer-runtime",
+      "failure_class": "mixed-release-sanitizer-runtime",
+      "required_behavior": "fail-closed-before-native-execution-claim",
+      "blocks": ["package", "install", "execution", "publication", "support-promotion"],
+      "support_truth": false,
+      "native_execution_claimed": false,
+      "support_promotion_allowed": false
+    },
+    {
+      "case_id": "objc3c.sanitizer.undefined.execution.reject.unsupported-host",
+      "variant_id": "objc3c.toolchain.sanitizer.undefined",
+      "failure_kind": "unsupported-host",
+      "failure_class": "unsupported-sanitizer-platform",
+      "required_behavior": "fail-closed-before-capability-promotion",
+      "blocks": ["package", "install", "execution", "publication", "support-promotion"],
+      "support_truth": false,
+      "native_execution_claimed": false,
+      "support_promotion_allowed": false
+    },
+    {
+      "case_id": "objc3c.sanitizer.undefined.execution.reject.stale-runtime-manifest-digest",
+      "variant_id": "objc3c.toolchain.sanitizer.undefined",
+      "failure_kind": "stale-runtime-manifest-digest",
+      "failure_class": "stale-runtime-manifest-digest",
+      "required_behavior": "fail-closed-before-support-promotion",
+      "blocks": ["package", "install", "execution", "publication", "support-promotion"],
+      "support_truth": false,
+      "native_execution_claimed": false,
+      "support_promotion_allowed": false
+    },
+    {
+      "case_id": "objc3c.sanitizer.undefined.execution.reject.generated-only-evidence",
+      "variant_id": "objc3c.toolchain.sanitizer.undefined",
+      "failure_kind": "generated-only-evidence",
+      "failure_class": "generated-report-without-native-run",
+      "required_behavior": "fail-closed-before-support-promotion",
+      "blocks": ["package", "install", "execution", "publication", "support-promotion"],
+      "support_truth": false,
+      "native_execution_claimed": false,
+      "support_promotion_allowed": false
+    }
+  ],
+  "report_contract": {
+    "required_report_root": "tmp/reports/security-hardening",
+    "required_output_refs": [
+      "tmp/reports/security-hardening/sanitizer-execution/address-native-output.txt",
+      "tmp/reports/security-hardening/sanitizer-execution/undefined-native-output.txt"
+    ],
+    "native_sanitizer_execution_claimed": false,
+    "support_truth": false
+  }
+}

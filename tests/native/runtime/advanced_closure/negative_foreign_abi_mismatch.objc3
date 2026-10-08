@@ -1,0 +1,14 @@
+// Expected advanced-runtime diagnostic: advanced-runtime.foreign-abi-mismatch
+module AdvancedRuntimeClosureNegativeForeignAbiMismatch;
+
+extern fn mismatchedAbiSurface() -> i32
+    __attribute__((objc_foreign,
+                   objc_foreign_type(named("swift-actor-runtime")),
+                   objc_abi_align(bytes: 16),
+                   objc_swift_name(named("ForeignRuntime.mismatchedABI()")),
+                   objc_package_entry(named("ForeignRuntime.mismatch"))));
+
+fn consumeMismatchedAbiSurface() -> i32 {
+  // ABI language-kind drift is rejected even when package metadata exists.
+  return mismatchedAbiSurface();
+}

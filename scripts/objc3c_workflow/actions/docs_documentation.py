@@ -15,11 +15,17 @@ from .docs_paths import (
 BUILD_NATIVE_DOCS_ACTION = "build-native-docs"
 CHECK_NATIVE_DOCS_ACTION = "check-native-docs"
 VALIDATE_UMBRELLA_READINESS_ACTION = "validate-umbrella-readiness"
+VALIDATE_FOUNDATIONS_UMBRELLA_SOURCE_TRUTH_ACTION = (
+    "validate-foundations-umbrella-source-truth"
+)
 
 BUILD_NATIVE_DOCS_SUMMARY = "build the generated native implementation docs"
 CHECK_NATIVE_DOCS_SUMMARY = "check generated native implementation docs for drift"
 VALIDATE_UMBRELLA_READINESS_SUMMARY = (
     "validate schema-backed umbrella capability readiness gates"
+)
+VALIDATE_FOUNDATIONS_UMBRELLA_SOURCE_TRUTH_SUMMARY = (
+    "validate foundations umbrella source-truth contracts"
 )
 
 BUILD_NATIVE_DOCS_BACKEND = f"python:{NATIVE_DOCS_SCRIPT}"
@@ -27,9 +33,13 @@ CHECK_NATIVE_DOCS_BACKEND = f"{BUILD_NATIVE_DOCS_BACKEND} --check"
 VALIDATE_UMBRELLA_READINESS_BACKEND = (
     "python:scripts/check_objc3c_umbrella_readiness.py --check"
 )
+VALIDATE_FOUNDATIONS_UMBRELLA_SOURCE_TRUTH_BACKEND = (
+    "python:scripts/check_objc3c_foundations_umbrella_source_truth.py"
+)
 
 NATIVE_DOCS_VALIDATION_TIER = "docs"
 UMBRELLA_READINESS_VALIDATION_TIER = "docs"
+FOUNDATIONS_UMBRELLA_SOURCE_TRUTH_VALIDATION_TIER = "docs"
 
 NATIVE_DOCS_GUARANTEE_OWNER = (
     "generated native implementation documentation stays in sync with "
@@ -40,6 +50,11 @@ UMBRELLA_READINESS_GUARANTEE_OWNER = (
     "readiness prerequisites, evidence, fixtures, docs, and negative "
     "boundaries are satisfied"
 )
+FOUNDATIONS_UMBRELLA_SOURCE_TRUTH_GUARANTEE_OWNER = (
+    "foundation umbrella source truth remains tied to checked schemas, "
+    "canonical fixtures, capability/evidence rows, and registered public "
+    "workflow actions"
+)
 
 BUILD_SITE_COMMAND = (sys.executable, SITE_PY)
 CHECK_SITE_COMMAND = (sys.executable, SITE_PY, "--check")
@@ -49,6 +64,10 @@ VALIDATE_UMBRELLA_READINESS_COMMAND = (
     sys.executable,
     "scripts/check_objc3c_umbrella_readiness.py",
     "--check",
+)
+VALIDATE_FOUNDATIONS_UMBRELLA_SOURCE_TRUTH_COMMAND = (
+    sys.executable,
+    "scripts/check_objc3c_foundations_umbrella_source_truth.py",
 )
 
 
@@ -85,3 +104,7 @@ def action_lint_markdown(_: list[str]) -> int:
 
 def action_validate_umbrella_readiness(_: list[str]) -> int:
     return run([str(part) for part in VALIDATE_UMBRELLA_READINESS_COMMAND])
+
+
+def action_validate_foundations_umbrella_source_truth(_: list[str]) -> int:
+    return run([str(part) for part in VALIDATE_FOUNDATIONS_UMBRELLA_SOURCE_TRUTH_COMMAND])

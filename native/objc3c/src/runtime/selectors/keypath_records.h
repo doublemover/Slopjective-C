@@ -50,7 +50,26 @@ inline bool InsertImageBackedRuntimeKeyPathSlotUnlocked(
   slot.profile_storage = descriptor.profile;
   slot.generic_metadata_replay_key_storage =
       RuntimeKeyPathGenericMetadataReplayKey(descriptor);
+  slot.component_owner_identity_path_storage =
+      descriptor.component_owner_identity_path;
+  slot.component_member_identity_path_storage =
+      descriptor.component_member_identity_path;
+  slot.component_type_identity_path_storage =
+      descriptor.component_type_identity_path;
+  slot.source_span_id_storage = descriptor.source_span_id;
+  slot.root_type_identity_storage = descriptor.root_type_identity;
+  slot.value_type_identity_storage = descriptor.value_type_identity;
+  slot.object_model_owner_identity_storage =
+      descriptor.object_model_owner_identity;
+  slot.object_model_member_identity_storage =
+      descriptor.object_model_member_identity;
+  slot.debug_source_map_key_storage = descriptor.debug_source_map_key;
+  slot.diagnostic_anchor_key_storage = descriptor.diagnostic_anchor_key;
+  slot.source_line = descriptor.source_line;
+  slot.source_column = descriptor.source_column;
   slot.root_is_self = descriptor.root_is_self;
+  slot.fallback_interpretation_allowed =
+      descriptor.fallback_interpretation_allowed;
   slot.component_count =
       CountRuntimeKeyPathComponents(descriptor.component_path);
   slot.metadata_provider_count = 1;

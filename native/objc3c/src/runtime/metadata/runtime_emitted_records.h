@@ -27,6 +27,7 @@ struct EmittedMethodListEntry {
   std::uint64_t has_body;
   bool effective_direct_dispatch;
   bool objc_final_declared;
+  bool throws_error_out_abi_ready;
 };
 
 struct EmittedKeyPathDescriptor {
@@ -35,7 +36,20 @@ struct EmittedKeyPathDescriptor {
   const char *component_path;
   const char *profile;
   const char *generic_metadata_replay_key;
+  const char *component_owner_identity_path;
+  const char *component_member_identity_path;
+  const char *component_type_identity_path;
+  const char *source_span_id;
+  const char *root_type_identity;
+  const char *value_type_identity;
+  const char *object_model_owner_identity;
+  const char *object_model_member_identity;
+  const char *debug_source_map_key;
+  const char *diagnostic_anchor_key;
+  std::uint32_t source_line;
+  std::uint32_t source_column;
   bool root_is_self;
+  bool fallback_interpretation_allowed;
 };
 
 struct EmittedClassRecord {

@@ -1,0 +1,24 @@
+// Expected advanced-runtime diagnostic: advanced-runtime.macro-package-replay-stale-cache
+module AdvancedRuntimeClosureNegativeMacroPackageReplayStaleCache;
+
+pure fn staleReplayMacro() -> i32
+    __attribute__((objc_macro(named("AdvancedRuntimeStaleReplayMacro")),
+                   objc_macro_package(named("std.metaprogramming.advanced-runtime")),
+                   objc_macro_provenance(named("sha256:advanced-runtime-stale-replay-old")),
+                   objc_macro_cache_key(named("AdvancedRuntimeStaleReplayMacro:old")),
+                   objc_macro_sandbox(named("deterministic")))) {
+  return 7;
+}
+
+extern fn staleReplayEntry(selector: SEL) -> i32
+    __attribute__((objc_foreign,
+                   objc_import_module(named("AdvancedRuntimeClosureKit")),
+                   objc_mixed_image(named("AdvancedRuntimeClosureKitCore")),
+                   objc_package_entry(named("AdvancedRuntimeClosureKit.staleReplay"))));
+
+fn invalidStaleReplay() -> i32 {
+  // Stale cache/package replay identities must fail closed: cache_validation_status
+  // cannot be valid, package_replay_generation cannot advance, and
+  // runtime_consumption_artifact_identity cannot be consumed from an old key.
+  return staleReplayMacro() + staleReplayEntry(nil);
+}

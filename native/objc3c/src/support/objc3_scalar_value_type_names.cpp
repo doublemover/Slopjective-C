@@ -12,6 +12,8 @@ const char *ScalarValueTypeName(ValueType type) {
       return "void";
     case ValueType::Function:
       return "function";
+    case ValueType::Optional:
+      return "optional";
     case ValueType::TextHandle:
       return "Text";
     default:

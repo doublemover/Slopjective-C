@@ -28,6 +28,13 @@ struct Objc3ConcurrencyActorMailboxRuntimeImportSummary {
   std::size_t replay_proof_dependency_sites = 0;
   std::size_t race_guard_dependency_sites = 0;
   std::size_t task_handoff_sites = 0;
+  std::size_t actor_mailbox_message_identity_field_count = 0;
+  std::size_t actor_mailbox_fifo_ordering_field_count = 0;
+  std::size_t actor_mailbox_drain_operation_field_count = 0;
+  std::size_t actor_mailbox_cancel_operation_field_count = 0;
+  std::size_t actor_mailbox_error_operation_field_count = 0;
+  std::size_t actor_mailbox_shutdown_operation_field_count = 0;
+  std::size_t distributed_actor_transport_evidence_sites = 0;
   std::size_t guard_blocked_sites = 0;
   std::size_t contract_violation_sites = 0;
   bool actor_mailbox_runtime_ready = false;

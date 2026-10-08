@@ -252,6 +252,315 @@
       ]
     },
     {
+      "case_id": "distributed_actor_missing_transport",
+      "issue_ref": 8216,
+      "feature": "actor",
+      "interacts_with": [
+        "async",
+        "package_replay"
+      ],
+      "status": "reserved",
+      "fixture": "tests/native/runtime/advanced_closure/negative_distributed_actor_missing_transport.objc3",
+      "expected_diagnostic": "advanced-runtime.distributed-actor-missing-transport",
+      "required_tokens": [
+        "objc_distributed_actor",
+        "objc_distributed_transport(named(\"missing\"))",
+        "Local mailbox traffic is not distributed actor transport proof"
+      ]
+    },
+    {
+      "case_id": "distributed_actor_transport_overclaim",
+      "issue_ref": 8216,
+      "feature": "actor",
+      "interacts_with": [
+        "async",
+        "package_replay"
+      ],
+      "status": "reserved",
+      "fixture": "tests/native/runtime/advanced_closure/negative_distributed_actor_transport_overclaim.objc3",
+      "expected_diagnostic": "advanced-runtime.distributed-actor-transport-overclaim",
+      "required_tokens": [
+        "objc_distributed_transport(named(\"local-mailbox-as-network\"))",
+        "distributed_actor_transport_evidence_sites",
+        "not network transport proof"
+      ]
+    },
+    {
+      "case_id": "actor_mailbox_stale_identity",
+      "issue_ref": 8216,
+      "feature": "actor",
+      "interacts_with": [
+        "cancellation"
+      ],
+      "status": "rejected",
+      "fixture": "tests/native/runtime/advanced_closure/negative_actor_mailbox_stale_identity.objc3",
+      "expected_diagnostic": "advanced-runtime.actor-mailbox-stale-identity",
+      "required_tokens": [
+        "objc3_runtime_actor_mailbox_shutdown_i32",
+        "Stale actor identity reuse after shutdown remains fail-closed",
+        "objc3_runtime_actor_bind_executor_i32(seed, 1)"
+      ]
+    },
+    {
+      "case_id": "actor_mailbox_cancelled_queue",
+      "issue_ref": 8216,
+      "feature": "actor",
+      "interacts_with": [
+        "cancellation",
+        "async"
+      ],
+      "status": "rejected",
+      "fixture": "tests/native/runtime/advanced_closure/negative_actor_mailbox_cancelled_queue.objc3",
+      "expected_diagnostic": "advanced-runtime.actor-mailbox-cancelled-queue",
+      "required_tokens": [
+        "objc3_runtime_actor_mailbox_cancel_i32",
+        "Cancelled queued messages must not be treated as delivered work",
+        "objc3_runtime_actor_mailbox_drain_next_i32"
+      ]
+    },
+    {
+      "case_id": "actor_mailbox_error_without_replay",
+      "issue_ref": 8216,
+      "feature": "actor",
+      "interacts_with": [
+        "error"
+      ],
+      "status": "rejected",
+      "fixture": "tests/native/runtime/advanced_closure/negative_actor_mailbox_error_without_replay.objc3",
+      "expected_diagnostic": "advanced-runtime.actor-mailbox-error-without-replay",
+      "required_tokens": [
+        "objc3_runtime_actor_mailbox_record_error_i32",
+        "actor_mailbox_error_operation_field_count",
+        "Actor mailbox error evidence requires explicit replay identity"
+      ]
+    },
+    {
+      "case_id": "macro_package_replay_stale_cache",
+      "issue_ref": 8217,
+      "feature": "macro",
+      "interacts_with": [
+        "package_replay"
+      ],
+      "status": "rejected",
+      "fixture": "tests/native/runtime/advanced_closure/negative_macro_package_replay_stale_cache.objc3",
+      "expected_diagnostic": "advanced-runtime.macro-package-replay-stale-cache",
+      "required_tokens": [
+        "objc_macro_cache_key(named(\"AdvancedRuntimeStaleReplayMacro:old\"))",
+        "objc_package_entry(named(\"AdvancedRuntimeClosureKit.staleReplay\"))",
+        "Stale cache/package replay identities must fail closed"
+      ]
+    },
+    {
+      "case_id": "macro_host_arbitrary_execution",
+      "issue_ref": 8217,
+      "feature": "macro",
+      "interacts_with": [
+        "package_replay"
+      ],
+      "status": "reserved",
+      "fixture": "tests/native/runtime/advanced_closure/negative_macro_host_arbitrary_execution.objc3",
+      "expected_diagnostic": "advanced-runtime.macro-host-arbitrary-execution",
+      "required_tokens": [
+        "objc_macro_sandbox(named(\"arbitrary-process+network+filesystem\"))",
+        "macro_host_identity",
+        "runtime_consumption_artifact_identity"
+      ]
+    },
+    {
+      "case_id": "macro_package_replay_host_mismatch",
+      "issue_ref": 8217,
+      "feature": "macro",
+      "interacts_with": [
+        "package_replay"
+      ],
+      "status": "rejected",
+      "fixture": "tests/native/runtime/advanced_closure/negative_macro_package_replay_host_mismatch.objc3",
+      "expected_diagnostic": "advanced-runtime.macro-package-replay-host-mismatch",
+      "required_tokens": [
+        "objc_macro_host_identity(named(\"objc3c-frontend-c-api-runner:wrong\"))",
+        "objc_package_entry(named(\"AdvancedRuntimeClosureKit.hostMismatchReplay\"))",
+        "different host identity is not replay proof"
+      ]
+    },
+    {
+      "case_id": "macro_package_replay_tampered_metadata",
+      "issue_ref": 8217,
+      "feature": "macro",
+      "interacts_with": [
+        "package_replay"
+      ],
+      "status": "rejected",
+      "fixture": "tests/native/runtime/advanced_closure/negative_macro_package_replay_tampered_metadata.objc3",
+      "expected_diagnostic": "advanced-runtime.macro-package-replay-tampered-metadata",
+      "required_tokens": [
+        "objc_macro_provenance(named(\"sha256:advanced-runtime-tampered-metadata\"))",
+        "objc_package_entry(named(\"AdvancedRuntimeClosureKit.tamperedReplay\"))",
+        "Runtime metadata that does not match package replay identity is rejected"
+      ]
+    },
+    {
+      "case_id": "macro_package_replay_missing_metadata",
+      "issue_ref": 8217,
+      "feature": "macro",
+      "interacts_with": [
+        "package_replay"
+      ],
+      "status": "rejected",
+      "fixture": "tests/native/runtime/advanced_closure/negative_macro_package_replay_missing_metadata.objc3",
+      "expected_diagnostic": "advanced-runtime.macro-package-replay-missing-metadata",
+      "required_tokens": [
+        "AdvancedRuntimeMissingMetadataMacro:v1",
+        "runtime_consumption_artifact_identity",
+        "Missing macro provenance, package lock identity, trust identity"
+      ]
+    },
+    {
+      "case_id": "scheduler_task_lifecycle_missing_replay",
+      "issue_ref": 8214,
+      "feature": "async",
+      "interacts_with": [
+        "cancellation"
+      ],
+      "status": "rejected",
+      "fixture": "tests/native/runtime/advanced_closure/negative_scheduler_task_lifecycle_missing_replay.objc3",
+      "expected_diagnostic": "advanced-runtime.scheduler-task-lifecycle-missing-replay",
+      "required_tokens": [
+        "objc_scheduler_guarantee(task_lifecycle)",
+        "task_record_sites",
+        "queue_lifecycle_record_sites"
+      ]
+    },
+    {
+      "case_id": "scheduler_priority_fairness_overclaim",
+      "issue_ref": 8214,
+      "feature": "async",
+      "interacts_with": [
+        "actor"
+      ],
+      "status": "reserved",
+      "fixture": "tests/native/runtime/advanced_closure/negative_scheduler_priority_fairness_overclaim.objc3",
+      "expected_diagnostic": "advanced-runtime.scheduler-unsupported-policy",
+      "required_tokens": [
+        "objc_scheduler_guarantee(priority)",
+        "unsupported_policy_sites",
+        "distributed_scheduler_supported"
+      ]
+    },
+    {
+      "case_id": "scheduler_shutdown_drain_missing_evidence",
+      "issue_ref": 8214,
+      "feature": "async",
+      "interacts_with": [
+        "cancellation"
+      ],
+      "status": "rejected",
+      "fixture": "tests/native/runtime/advanced_closure/negative_scheduler_shutdown_drain_missing_evidence.objc3",
+      "expected_diagnostic": "advanced-runtime.scheduler-shutdown-drain-missing-evidence",
+      "required_tokens": [
+        "objc_scheduler_guarantee(shutdown_drain)",
+        "shutdown_drain_ready",
+        "shutdown_replay_key"
+      ]
+    },
+    {
+      "case_id": "scheduler_cancellation_error_cleanup_missing_evidence",
+      "issue_ref": 8214,
+      "feature": "cancellation",
+      "interacts_with": [
+        "error",
+        "async"
+      ],
+      "status": "rejected",
+      "fixture": "tests/native/runtime/advanced_closure/negative_scheduler_cancellation_error_cleanup_missing_evidence.objc3",
+      "expected_diagnostic": "advanced-runtime.scheduler-cancellation-error-cleanup-missing-evidence",
+      "required_tokens": [
+        "objc_scheduler_guarantee(cancellation_error_cleanup)",
+        "cancellation_error_cleanup_ready",
+        "throw 8214"
+      ]
+    },
+    {
+      "case_id": "foreign_abi_mismatch",
+      "issue_ref": 8215,
+      "feature": "interop",
+      "interacts_with": [
+        "package_replay"
+      ],
+      "status": "rejected",
+      "fixture": "tests/native/runtime/advanced_closure/negative_foreign_abi_mismatch.objc3",
+      "expected_diagnostic": "advanced-runtime.foreign-abi-mismatch",
+      "required_tokens": [
+        "objc_foreign_type(named(\"swift-actor-runtime\"))",
+        "objc_abi_align(bytes: 16)",
+        "ForeignRuntime.mismatch"
+      ]
+    },
+    {
+      "case_id": "foreign_abi_missing_bridge_ownership",
+      "issue_ref": 8215,
+      "feature": "interop",
+      "interacts_with": [
+        "ownership"
+      ],
+      "status": "rejected",
+      "fixture": "tests/native/runtime/advanced_closure/negative_foreign_abi_missing_bridge_ownership.objc3",
+      "expected_diagnostic": "advanced-runtime.foreign-abi-missing-bridge-ownership",
+      "required_tokens": [
+        "missingBridgeOwnership",
+        "bridge_ownership_ready",
+        "ForeignRuntime.missingOwnership"
+      ]
+    },
+    {
+      "case_id": "foreign_abi_unsafe_mixed_image",
+      "issue_ref": 8215,
+      "feature": "interop",
+      "interacts_with": [
+        "package_replay"
+      ],
+      "status": "rejected",
+      "fixture": "tests/native/runtime/advanced_closure/negative_foreign_abi_unsafe_mixed_image.objc3",
+      "expected_diagnostic": "advanced-runtime.foreign-abi-unsafe-mixed-image",
+      "required_tokens": [
+        "objc_mixed_image(named(\"../UnsafeImage\"))",
+        "ForeignRuntime.unsafeMixedImage",
+        "path traversal"
+      ]
+    },
+    {
+      "case_id": "foreign_abi_stale_import",
+      "issue_ref": 8215,
+      "feature": "interop",
+      "interacts_with": [
+        "package_replay"
+      ],
+      "status": "rejected",
+      "fixture": "tests/native/runtime/advanced_closure/negative_foreign_abi_stale_import.objc3",
+      "expected_diagnostic": "advanced-runtime.foreign-abi-stale-import",
+      "required_tokens": [
+        "ForeignRuntime.staleImport",
+        "Stale import surface replay keys",
+        "c-abi"
+      ]
+    },
+    {
+      "case_id": "foreign_abi_unsupported_runtime_fallback",
+      "issue_ref": 8215,
+      "feature": "interop",
+      "interacts_with": [
+        "async",
+        "error"
+      ],
+      "status": "rejected",
+      "fixture": "tests/native/runtime/advanced_closure/negative_foreign_abi_unsupported_runtime_fallback.objc3",
+      "expected_diagnostic": "advanced-runtime.foreign-abi-unsupported-runtime-fallback",
+      "required_tokens": [
+        "ForeignRuntime::fallback",
+        "ForeignRuntime.fallback()",
+        "Unsupported Swift/C++ runtime fallback"
+      ]
+    },
+    {
       "case_id": "scheduler_guarantee_overclaim",
       "issue_ref": 8199,
       "feature": "async",

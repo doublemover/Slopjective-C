@@ -184,38 +184,38 @@ def test_debug_payload_publishes_object_model_source_identity_from_manifest() ->
             "llvm_debug_location_count": 12,
             "emitted_native_debug_info_supported": True,
             "native_line_table_supported": True,
-            "statement_stepping_supported": False,
-            "fail_closed": True,
-            "fail_closed_reason": "runtime debug trace is not integrated with emitted native debug info",
-            "blocked_by": ["runtime-debug-trace-statement-stepping-integration"],
+            "statement_stepping_supported": True,
+            "statement_stepping_evidence_id": "object-model.statement-stepping.production-source-line-table",
+            "fail_closed": False,
+            "fail_closed_reason": "",
+            "blocked_by": [],
         },
     )
 
     source_identity = debug_payload["object_model_source_identity"]
     assert "object-model-production-source-identity" in debug_payload["evidence_roots"]
     assert "object-model-production-source-map-native-line-table" in debug_payload["evidence_roots"]
+    assert "object-model-production-statement-stepping" in debug_payload["evidence_roots"]
     assert "native-debug-info-artifact-evidence" in debug_payload["evidence_roots"]
     assert source_identity["contract_id"] == "objc3c.object_model.production.source_identity.v1"
     assert source_identity["native_debug_info_evidence"]["native_debug_section_count"] == 5
     assert source_identity["native_debug_info_evidence"]["native_line_table_section_count"] == 2
-    assert source_identity["native_debug_info_fail_closed_reason"] == (
-        "runtime debug trace is not integrated with emitted native debug info"
-    )
+    assert source_identity["native_debug_info_fail_closed_reason"] == ""
     assert source_identity["source_map_records_supported"] is True
     assert source_identity["native_line_table_projection_supported"] is True
     assert source_identity["source_map_publication_supported"] is True
     assert source_identity["native_line_table_publication_supported"] is True
-    assert debug_payload["source_map_supported"] is False
-    assert debug_payload["statement_level_stepping"] is False
-    assert source_identity["runtime_debug_trace_statement_stepping"] is False
+    assert debug_payload["source_map_supported"] is True
+    assert debug_payload["statement_level_stepping"] is True
+    assert source_identity["runtime_debug_trace_statement_stepping"] is True
     assert {
         candidate["status"]
         for candidate in source_identity["stepping_candidates"]
-    } == {"native-line-table-ready-stepping-blocked"}
+    } == {"runtime-debug-trace-statement-stepping-supported"}
     assert {
         tuple(candidate["blocked_by"])
         for candidate in source_identity["stepping_candidates"]
-    } == {("runtime-debug-trace-statement-stepping-integration",)}
+    } == {()}
     publication = source_identity["source_map_native_line_table_publication"]
     assert publication["contract_id"] == (
         "objc3c.object_model.production.source_map_native_line_table.v1"
@@ -226,10 +226,11 @@ def test_debug_payload_publishes_object_model_source_identity_from_manifest() ->
     assert publication["source_map_publication_supported"] is True
     assert publication["native_line_table_publication_supported"] is True
     assert publication["emitted_native_debug_info_supported"] is True
-    assert publication["statement_stepping_supported"] is False
-    assert publication["native_debug_info_evidence"]["blocked_by"] == [
-        "runtime-debug-trace-statement-stepping-integration"
-    ]
+    assert publication["statement_stepping_supported"] is True
+    assert publication["statement_stepping_evidence_id"] == (
+        "object-model.statement-stepping.production-source-line-table"
+    )
+    assert publication["native_debug_info_evidence"]["blocked_by"] == []
     assert set(publication["source_map_record_ids"]) == {
         record["source_map_record_id"]
         for record in source_identity["source_map_records"]
@@ -240,12 +241,26 @@ def test_debug_payload_publishes_object_model_source_identity_from_manifest() ->
     }
     assert set(source_identity["required_identity_kinds_present"]) == {
         "class",
+        "metaclass",
         "category",
         "protocol",
         "property",
         "ivar",
+        "selector",
         "method",
+        "reflection",
+        "replay",
     }
+    records_by_kind = {
+        record["runtime_identity_kind"]: record
+        for record in source_identity["source_map_records"]
+    }
+    assert records_by_kind["metaclass"]["display_name"] == "RuntimeFullWidget.metaclass"
+    assert records_by_kind["selector"]["source_map_record_kind"] == "message-send"
+    assert records_by_kind["reflection"]["display_name"].startswith("reflection:")
+    assert records_by_kind["replay"]["display_name"] == (
+        "registration-replay:RuntimeFullWidget(ReplayReflection)"
+    )
     assert {
         row["expected_native_symbol"]
         for row in source_identity["native_line_table_rows"]
@@ -254,7 +269,7 @@ def test_debug_payload_publishes_object_model_source_identity_from_manifest() ->
     assert {
         row["native_debug_info_blocker"]
         for row in source_identity["native_line_table_rows"]
-    } == {"runtime debug trace is not integrated with emitted native debug info"}
+    } == {""}
     assert {
         row["native_debug_info_emitted"]
         for row in source_identity["native_line_table_rows"]

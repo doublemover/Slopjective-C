@@ -1,0 +1,9 @@
+// Negative fixture: Objective-C method type-parameter clauses are canonical
+// only immediately after the method marker. Selector-local clauses remain
+// reserved because they would make selector identity ambiguous.
+// Expected diagnostic code(s): O3P114.
+module NegativeGenericMethodTypeParameterClauseReserved;
+
+@interface GenericProbe
+- (id)identity<T>:(id)value;
+@end

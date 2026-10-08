@@ -5,11 +5,13 @@ static void ValidateProtocolCompositionIdentifierBindings(
     std::vector<std::string> &diagnostics) {
   auto validate_suffix =
       [&](bool has_generic_suffix, bool supports_generic_suffix,
+          bool has_value_optional_suffix,
           bool object_pointer_type_spelling,
           const std::string &object_pointer_type_name,
           const std::string &suffix_text, unsigned line, unsigned column,
           const std::string &context) {
-        if (!has_generic_suffix || !supports_generic_suffix) {
+        if (!has_generic_suffix || !supports_generic_suffix ||
+            has_value_optional_suffix) {
           return;
         }
         if (object_pointer_type_spelling &&
@@ -36,6 +38,7 @@ static void ValidateProtocolCompositionIdentifierBindings(
                                const std::string &context) {
     validate_suffix(property.has_generic_suffix,
                     SupportsGenericPropertyTypeSuffix(property),
+                    property.value_optional.present,
                     property.object_pointer_type_spelling,
                     property.object_pointer_type_name,
                     property.generic_suffix_text, property.generic_line,
@@ -46,6 +49,7 @@ static void ValidateProtocolCompositionIdentifierBindings(
                              const std::string &context) {
     validate_suffix(method.has_return_generic_suffix,
                     SupportsGenericReturnTypeSuffix(method),
+                    method.return_value_optional.present,
                     method.return_object_pointer_type_spelling,
                     method.return_object_pointer_type_name,
                     method.return_generic_suffix_text,
@@ -54,6 +58,7 @@ static void ValidateProtocolCompositionIdentifierBindings(
     for (const auto &param : method.params) {
       validate_suffix(param.has_generic_suffix,
                       SupportsGenericParamTypeSuffix(param),
+                      param.value_optional.present,
                       param.object_pointer_type_spelling,
                       param.object_pointer_type_name,
                       param.generic_suffix_text, param.generic_line,
@@ -65,6 +70,7 @@ static void ValidateProtocolCompositionIdentifierBindings(
   for (const auto &fn : ast.functions) {
     validate_suffix(fn.has_return_generic_suffix,
                     SupportsGenericReturnTypeSuffix(fn),
+                    fn.return_value_optional.present,
                     fn.return_object_pointer_type_spelling,
                     fn.return_object_pointer_type_name,
                     fn.return_generic_suffix_text, fn.return_generic_line,
@@ -73,6 +79,7 @@ static void ValidateProtocolCompositionIdentifierBindings(
     for (const auto &param : fn.params) {
       validate_suffix(param.has_generic_suffix,
                       SupportsGenericParamTypeSuffix(param),
+                      param.value_optional.present,
                       param.object_pointer_type_spelling,
                       param.object_pointer_type_name,
                       param.generic_suffix_text, param.generic_line,

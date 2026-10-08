@@ -8,12 +8,30 @@
 #include "parse/objc3_diagnostics_bus.h"
 #include "pipeline/frontend_pipeline_pragma_contracts.h"
 
+namespace {
+
+Objc3LexerLanguageProfile Objc3LexerLanguageProfileFromFrontendProfile(
+    Objc3FrontendLanguageProfile profile) {
+  switch (profile) {
+    case Objc3FrontendLanguageProfile::kCanonical:
+      return Objc3LexerLanguageProfile::kCanonical;
+    case Objc3FrontendLanguageProfile::kStrict:
+      return Objc3LexerLanguageProfile::kStrict;
+    case Objc3FrontendLanguageProfile::kStrictConcurrency:
+      return Objc3LexerLanguageProfile::kStrictConcurrency;
+  }
+  return Objc3LexerLanguageProfile::kCanonical;
+}
+
+}  // namespace
+
 std::vector<Objc3LexToken> RunObjc3FrontendLexStage(
     const std::string &source, const Objc3FrontendOptions &options,
     Objc3FrontendPipelineResult &result) {
   Objc3LexerOptions lexer_options;
   lexer_options.language_version = options.language_version;
-  lexer_options.language_profile = Objc3LexerLanguageProfile::kCanonical;
+  lexer_options.language_profile =
+      Objc3LexerLanguageProfileFromFrontendProfile(options.language_profile);
   Objc3Lexer lexer(source, lexer_options);
   std::vector<Objc3LexToken> tokens =
       lexer.Run(result.stage_diagnostics.lexer);

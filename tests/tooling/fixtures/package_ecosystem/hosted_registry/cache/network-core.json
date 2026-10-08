@@ -1,0 +1,9 @@
+{
+  "contract_id": "objc3c.package_ecosystem.hosted_registry_cache_entry.v1",
+  "package_id": "fixture:network.core",
+  "package_version": "1.0.0",
+  "source": "tests/tooling/fixtures/package_ecosystem/hosted_registry/network-core.objc3",
+  "source_digest": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
+  "cache_digest": "sha256:3333333333333333333333333333333333333333333333333333333333333333",
+  "cache_policy": "offline-cache-required-digest-pinned"
+}

@@ -7,6 +7,7 @@
 #include "sema/objc3_semantic_integration_surface.h"
 #include "sema/objc3_semantic_type_metadata_handoff.h"
 #include "sema/objc3_sema_contract.h"
+#include "sema/objc3_sema_pass_flow_core_contract.h"
 
 struct Objc3FrontendErrorHandlingErrorSourceClosureSummary;
 struct Objc3FrontendConcurrencyAsyncSourceClosureSummary;
@@ -23,6 +24,7 @@ struct Objc3FrontendInteropForeignImportSourceClosureSummary;
 struct Objc3FrontendInteropCppSwiftInteropAnnotationSourceCompletionSummary;
 
 Objc3SemanticIntegrationSurface BuildSemanticIntegrationSurface(const Objc3ParsedProgram &program,
+                                                                Objc3SemaLanguageProfile language_profile,
                                                                 bool allow_source_only_block_literals,
                                                                 bool allow_source_only_defer_statements,
                                                                 bool allow_source_only_error_runtime_surface,
@@ -202,6 +204,7 @@ void ValidatePureContractSemanticDiagnostics(const Objc3ParsedProgram &program,
                                              std::vector<std::string> &diagnostics);
 void ValidateSemanticBodies(const Objc3ParsedProgram &program, const Objc3SemanticIntegrationSurface &surface,
                             const Objc3SemanticValidationOptions &options,
+                            Objc3SemaLanguageProfile language_profile,
                             std::vector<std::string> &diagnostics);
 void RefreshSemanticIntegrationSurfaceAfterBodyValidation(const Objc3ParsedProgram &program,
                                                           Objc3SemanticIntegrationSurface &surface);

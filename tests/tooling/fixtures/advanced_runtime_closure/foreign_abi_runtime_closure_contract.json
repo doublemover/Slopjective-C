@@ -1,0 +1,97 @@
+{
+  "contract_id": "objc3c.advanced-runtime.foreign-abi-runtime-closure.v1",
+  "issue_ref": 8215,
+  "dependency_issue_ref": 8213,
+  "surface_kind": "foreign-abi-runtime-contract",
+  "support_status": "supported-bounded",
+  "source_owner": "runtime import interop preservation plus typed dispatch executable contract",
+  "import_surface_contract": {
+    "member_name": "objc_interop_foreign_abi_runtime_closure",
+    "contract_id": "objc3c.interop.foreign.abi.runtime.closure.v1",
+    "source_contract_id": "objc3c.interop.ffi.metadata.interface.preservation.v1",
+    "fail_closed_policy": "foreign ABI closure packets must carry package/runtime identity, typed-dispatch readiness, bridge ownership, classification replay, bridge metadata replay, and all negative-case counters before cross-module link planning can consume them",
+    "required_fields": [
+      "package_identity",
+      "runtime_identity",
+      "runtime_closure_ready",
+      "deterministic",
+      "typed_dispatch_ready",
+      "package_runtime_identity_ready",
+      "bridge_ownership_ready",
+      "replay_key",
+      "classification_replay_key",
+      "bridge_metadata_replay_key",
+      "foreign_surface_count",
+      "supported_c_abi_surface_count",
+      "preserved_swift_metadata_surface_count",
+      "preserved_cpp_metadata_surface_count",
+      "rejected_surface_count",
+      "abi_mismatch_negative_case_count",
+      "missing_bridge_ownership_negative_case_count",
+      "unsafe_mixed_image_negative_case_count",
+      "stale_import_negative_case_count",
+      "unsupported_runtime_fallback_negative_case_count"
+    ]
+  },
+  "foreign_surface_classifications": [
+    {
+      "classification": "supported-c-abi",
+      "runtime_behavior": "typed dispatch may consume the callable only when ownership, nullability, error, async, package identity, and runtime identity are present"
+    },
+    {
+      "classification": "preserved-swift-metadata",
+      "runtime_behavior": "Swift-facing metadata is preserved for replay and diagnostics but does not claim Swift runtime ABI execution"
+    },
+    {
+      "classification": "preserved-cpp-metadata",
+      "runtime_behavior": "C++-facing metadata is preserved for replay and diagnostics; exception propagation and object-layout mirroring remain rejected"
+    },
+    {
+      "classification": "rejected-foreign-runtime",
+      "runtime_behavior": "runtime fallback, stale import, unsafe mixed image, missing bridge ownership, or ABI mismatch fails closed"
+    }
+  ],
+  "supported_boundary": [
+    "narrow C ABI callable boundary",
+    "typed dispatch expectation preservation",
+    "ownership/error/async metadata preservation",
+    "package/runtime identity preservation",
+    "Swift and C++ annotation metadata replay without runtime mirroring"
+  ],
+  "reserved_or_rejected_boundary": [
+    "Swift actor isolation runtime execution",
+    "Swift runtime ABI mirroring",
+    "C++ exception propagation",
+    "C++ object-layout mirroring",
+    "template/generic runtime erasure fallback",
+    "unsafe mixed image path traversal",
+    "unsupported foreign runtime fallback"
+  ],
+  "negative_cases": [
+    {
+      "case_id": "foreign_abi_mismatch",
+      "fixture": "tests/native/runtime/advanced_closure/negative_foreign_abi_mismatch.objc3",
+      "expected_diagnostic": "advanced-runtime.foreign-abi-mismatch"
+    },
+    {
+      "case_id": "foreign_abi_missing_bridge_ownership",
+      "fixture": "tests/native/runtime/advanced_closure/negative_foreign_abi_missing_bridge_ownership.objc3",
+      "expected_diagnostic": "advanced-runtime.foreign-abi-missing-bridge-ownership"
+    },
+    {
+      "case_id": "foreign_abi_unsafe_mixed_image",
+      "fixture": "tests/native/runtime/advanced_closure/negative_foreign_abi_unsafe_mixed_image.objc3",
+      "expected_diagnostic": "advanced-runtime.foreign-abi-unsafe-mixed-image"
+    },
+    {
+      "case_id": "foreign_abi_stale_import",
+      "fixture": "tests/native/runtime/advanced_closure/negative_foreign_abi_stale_import.objc3",
+      "expected_diagnostic": "advanced-runtime.foreign-abi-stale-import"
+    },
+    {
+      "case_id": "foreign_abi_unsupported_runtime_fallback",
+      "fixture": "tests/native/runtime/advanced_closure/negative_foreign_abi_unsupported_runtime_fallback.objc3",
+      "expected_diagnostic": "advanced-runtime.foreign-abi-unsupported-runtime-fallback"
+    }
+  ]
+}

@@ -4,11 +4,14 @@ from __future__ import annotations
 
 from typing import Final
 
+from objc3c_tooling.artifact_identity import current_host_artifact_identity
+
+ARTIFACT_IDENTITY = current_host_artifact_identity()
 LLVM_CAPABILITY_PROBE_BACKEND: Final[str] = (
     "python:scripts/probe_objc3c_llvm_capabilities.py"
 )
 FRONTEND_RUNNER_BACKEND: Final[str] = (
-    "runner-internal + artifacts/bin/objc3c-frontend-c-api-runner.exe"
+    f"runner-internal + {ARTIFACT_IDENTITY.frontend_runner_relative_path}"
 )
 CAPABILITY_EXPLORER_ACTION: Final[str] = "inspect-capability-explorer"
 CAPABILITY_EXPLORER_DUMP_FILENAME: Final[str] = "capability-explorer.json"
@@ -20,8 +23,8 @@ HOSTED_LLVM_CAPABILITY_TRUTH_SOURCE: Final[str] = "hosted-llvm-summary"
 LOCAL_LLVM_DIAGNOSTIC_SOURCE: Final[str] = "local-llvm-probe-summary"
 
 PARITY_SOURCE: Final[str] = "tests/tooling/fixtures/native/hello.objc3"
-PARITY_CLI_BIN: Final[str] = "artifacts/bin/objc3c-native.exe"
-PARITY_C_API_BIN: Final[str] = "artifacts/bin/objc3c-frontend-c-api-runner.exe"
+PARITY_CLI_BIN: Final[str] = ARTIFACT_IDENTITY.native_executable_relative_path
+PARITY_C_API_BIN: Final[str] = ARTIFACT_IDENTITY.frontend_runner_relative_path
 PARITY_WORK_DIR: Final[str] = (
     "tmp/artifacts/compilation/objc3c-native/m144/library-cli-parity/work"
 )

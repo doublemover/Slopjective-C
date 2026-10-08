@@ -20,6 +20,6 @@ function Write-Objc3cNativeCompileSuccessArtifacts {
     -EmitPrefix $ParsedArgs.emit_prefix `
     -InputPath $InputPath `
     -CompilerBinaryPath $CompilerBinaryPath `
-    -RuntimeLibraryPath (Join-Path $RepoRoot "artifacts/lib/objc3_runtime.lib") `
+    -RuntimeLibraryPath (Resolve-NativeCompilerRuntimeLibraryPath -RepoRoot $RepoRoot) `
     -WrapperScriptPath $WrapperScriptPath
 }

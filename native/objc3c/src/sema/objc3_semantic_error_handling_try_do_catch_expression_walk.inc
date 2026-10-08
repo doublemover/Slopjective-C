@@ -21,11 +21,12 @@ static void AccumulateTryOperandSurface(
     const Expr &expr,
     const Objc3Program &program,
     Objc3ErrorHandlingTryDoCatchSemanticSummary &summary,
-    std::vector<std::string> &diagnostics) {
+    std::vector<std::string> &diagnostics,
+    const Objc3ErrorHandlingSemanticWalkContext &context) {
   const Expr *operand =
       !expr.args.empty() ? expr.args.front().get() : expr.left.get();
   const Objc3ErrorHandlingTryOperandSurface surface =
-      ResolveTryOperandSurface(operand, program);
+      ResolveTryOperandSurface(operand, program, context);
 
   if (surface.throwing_callable) {
     ++summary.throwing_callable_try_sites;
@@ -72,7 +73,7 @@ static void AccumulateTryExpressionSemantics(
     RecordTryUnsupportedRuntimeDiagnostic(summary, expr.line, expr.column,
                                           diagnostics);
   }
-  AccumulateTryOperandSurface(expr, program, summary, diagnostics);
+  AccumulateTryOperandSurface(expr, program, summary, diagnostics, context);
   AccumulateTryPropagationLegality(expr, summary, diagnostics, context);
 }
 

@@ -13,7 +13,7 @@
     "combined_identity_contract": "tests/tooling/fixtures/advanced_runtime_closure/combined_runtime_identity_contract.json",
     "canonical_source_debug_map_bundle": "tests/tooling/fixtures/advanced_runtime_closure/combined_runtime_source_debug_map.json",
     "negative_matrix": "tests/native/runtime/advanced_closure/negative_matrix.contract.json",
-    "umbrella_support_promoted": false,
+    "umbrella_support_promoted": true,
     "proof_axes": [
       "runtime_state",
       "source_graph",
@@ -32,7 +32,7 @@
   "diagnostics": {
     "status": "expected-pass",
     "responsible_domain": "parser/sema diagnostic",
-    "reason": "the public advanced-runtime closure validator checks the combined positive fixture and deterministic unsupported-combination matrix without promoting the umbrella row",
+    "reason": "the public advanced-runtime closure validator checks the combined positive fixture, native link/run, and deterministic unsupported-combination matrix before promoting the umbrella row",
     "expected_codes": [],
     "negative_matrix": "tests/native/runtime/advanced_closure/negative_matrix.contract.json",
     "negative_matrix_case_count": 17,
@@ -58,7 +58,7 @@
     "combined_identity_contract": "tests/tooling/fixtures/advanced_runtime_closure/combined_runtime_identity_contract.json",
     "runtime_state_record_count": 8,
     "language_semantics_support_claim": "objc3c.behavior.language.advanced-runtime-closure",
-    "umbrella_support_promoted": false,
+    "umbrella_support_promoted": true,
     "linked_provider_module": "CrossLaneAdvancedRuntimeClosureProvider",
     "required_artifacts": [
       "module.obj",
@@ -71,7 +71,7 @@
   "compile_manifest": {
     "status": "expected-pass",
     "responsible_domain": "lowering/IR diagnostic",
-    "reason": "the public cross-lane validator compiles the advanced-runtime fixture with a linked source-owned provider module and emits the native compile manifest while keeping umbrella support reserved",
+    "reason": "the public cross-lane validator compiles the advanced-runtime fixture with a linked source-owned provider module and emits the native compile manifest while the advanced-runtime umbrella is source-promoted through #8213",
     "source_truth": false,
     "expected_path": "tmp/artifacts/cross-lane-e2e/advanced-runtime-closure/compile/module.manifest.json"
   },
@@ -128,7 +128,7 @@
       "case_id": "advanced-runtime-native-executable-umbrella",
       "status": "expected-pass",
       "responsible_domain": "runtime status",
-      "reason": "the advanced-runtime fixture compiles, links, and runs through the source-owned provider module while umbrella capability promotion remains separately false"
+      "reason": "the advanced-runtime fixture compiles, links, and runs through the source-owned provider module while umbrella capability promotion is tied to the same checked evidence"
     }
   ],
   "capability_boundary": {
@@ -144,6 +144,6 @@
       "runtime.interop.package-loader-bridge",
       "runtime.debug-trace.structured-inspection"
     ],
-    "claim_boundary": "the cross-lane family proves checked-in advanced-runtime runtime-state, compiler-owned source graph, canonical source/debug-map, deterministic negative-matrix evidence, and native compile/link/run through a source-owned provider module; the language.advanced-runtime-closure umbrella, statement stepping, and unsupported combinations remain blocked or reserved"
+    "claim_boundary": "the cross-lane family proves checked-in advanced-runtime runtime-state, compiler-owned source graph, canonical source/debug-map, deterministic negative-matrix evidence, and native compile/link/run through a source-owned provider module; language.advanced-runtime-closure is implemented from that integrated evidence while statement stepping and unsupported combinations remain blocked or reserved"
   }
 }

@@ -3,6 +3,7 @@ inline std::uint64_t BuildObjc3ParsedProgramAstShapeFingerprint(const Objc3Parse
   const Objc3Program &ast = Objc3ParsedProgramAst(program);
   std::uint64_t fingerprint = kInitialFingerprint;
   fingerprint = MixObjc3ParserContractFingerprintString(fingerprint, ast.module_name);
+  fingerprint = MixObjc3ParserContractFingerprint(fingerprint, static_cast<std::uint64_t>(ast.module_imports.size()));
   fingerprint = MixObjc3ParserContractFingerprint(fingerprint, static_cast<std::uint64_t>(ast.globals.size()));
   fingerprint = MixObjc3ParserContractFingerprint(fingerprint, static_cast<std::uint64_t>(ast.protocols.size()));
   fingerprint = MixObjc3ParserContractFingerprint(fingerprint, static_cast<std::uint64_t>(ast.interfaces.size()));
@@ -18,6 +19,13 @@ inline std::uint64_t BuildObjc3ParsedProgramAstShapeFingerprint(const Objc3Parse
       fingerprint,
       ast.draft_syntax_surface_summary.replay_key);
 
+  for (const auto &module_import : ast.module_imports) {
+    fingerprint = MixObjc3ParserContractFingerprintString(fingerprint, module_import.module_name);
+    fingerprint = MixObjc3ParserContractFingerprintString(fingerprint, module_import.module_identity_key);
+    fingerprint = MixObjc3ParserContractFingerprintString(fingerprint, module_import.package_resolution);
+    fingerprint = MixObjc3ParserContractFingerprint(fingerprint, static_cast<std::uint64_t>(module_import.line));
+    fingerprint = MixObjc3ParserContractFingerprint(fingerprint, static_cast<std::uint64_t>(module_import.column));
+  }
   for (const auto &global : ast.globals) {
     fingerprint = MixObjc3ParserContractFingerprintString(fingerprint, global.name);
     fingerprint = MixObjc3ParserContractFingerprint(fingerprint, static_cast<std::uint64_t>(global.line));

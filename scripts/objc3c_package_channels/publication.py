@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import shutil
+import stat
 import zipfile
 from pathlib import Path
 from typing import Any
@@ -10,7 +11,12 @@ from typing import Any
 from objc3c_tooling.json_io import write_json_file, write_text_file as write_text
 from objc3c_tooling.paths import repo_rel
 
-from .model import PackageChannelInputs, PackageChannelPaths, package_channels_report_payload
+from .model import (
+    PackageChannelInputs,
+    PackageChannelPaths,
+    package_channels_report_payload,
+    target_platform_id_for_paths,
+)
 from .paths import (
     ARTIFACT_ROOT,
     RELEASE_FOUNDATION_ATTESTATION,
@@ -31,8 +37,13 @@ OWNED_PACKAGE_RUN_ROOT = ROOT / "tmp" / "pkg" / "objc3c-package-channels"
 OWNED_CLEAN_ROOTS = (OWNED_PACKAGE_RUN_ROOT, ARTIFACT_ROOT)
 
 
-def prepare_package_channel_workspace(paths: PackageChannelPaths) -> None:
-    remove_owned_tree(paths.package_root.parent)
+def prepare_package_channel_workspace(
+    paths: PackageChannelPaths,
+    *,
+    preserve_package_root: bool = False,
+) -> None:
+    if not preserve_package_root:
+        remove_owned_tree(paths.package_root.parent)
     remove_owned_tree(paths.build_root)
 
 
@@ -81,7 +92,16 @@ def zip_directory(source_dir: Path, destination_zip: Path) -> None:
     destination_zip.parent.mkdir(parents=True, exist_ok=True)
     with zipfile.ZipFile(destination_zip, mode="w", compression=zipfile.ZIP_DEFLATED) as archive:
         for file_path in sorted(path for path in source_dir.rglob("*") if path.is_file()):
-            archive.write(file_path, arcname=str(file_path.relative_to(source_dir)).replace("\\", "/"))
+            arcname = str(file_path.relative_to(source_dir)).replace("\\", "/")
+            zip_info = zipfile.ZipInfo.from_file(file_path, arcname=arcname)
+            zip_info.compress_type = zipfile.ZIP_DEFLATED
+            mode = stat.S_IMODE(file_path.stat().st_mode) or 0o644
+            if "/artifacts/bin/" in f"/{arcname}":
+                mode = (mode | stat.S_IRUSR | stat.S_IRGRP | stat.S_IROTH | stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH) & 0o777
+            zip_info.external_attr = (stat.S_IFREG | mode) << 16
+            with file_path.open("rb") as source:
+                with archive.open(zip_info, "w") as target:
+                    shutil.copyfileobj(source, target)
 
 
 def publish_portable_archive(paths: PackageChannelPaths) -> None:
@@ -89,10 +109,20 @@ def publish_portable_archive(paths: PackageChannelPaths) -> None:
 
 
 def publish_installer_archive(paths: PackageChannelPaths) -> None:
+    target_platform_id = target_platform_id_for_paths(paths)
     installer_payload_root = paths.installer_image_root / "payload"
     shutil.copytree(paths.package_root, installer_payload_root, dirs_exist_ok=True)
-    write_text(paths.installer_image_root / "Install-objc3c.ps1", install_script_text())
-    write_text(paths.installer_image_root / "Uninstall-objc3c.ps1", uninstall_script_text())
+    write_text(
+        paths.installer_image_root / "Install-objc3c.ps1",
+        install_script_text(
+            paths.sanitizer_variant,
+            target_platform_id=target_platform_id,
+        ),
+    )
+    write_text(
+        paths.installer_image_root / "Uninstall-objc3c.ps1",
+        uninstall_script_text(target_platform_id=target_platform_id),
+    )
     write_text(paths.installer_image_root / "Bootstrap-objc3cEnvironment.ps1", bootstrap_script_text())
     zip_directory(paths.installer_image_root, paths.installer_archive)
 
@@ -107,7 +137,13 @@ def publish_offline_bundle(paths: PackageChannelPaths) -> None:
     shutil.copy2(RELEASE_FOUNDATION_MANIFEST, evidence_root / RELEASE_FOUNDATION_MANIFEST.name)
     shutil.copy2(RELEASE_FOUNDATION_SBOM, evidence_root / RELEASE_FOUNDATION_SBOM.name)
     shutil.copy2(RELEASE_FOUNDATION_ATTESTATION, evidence_root / RELEASE_FOUNDATION_ATTESTATION.name)
-    write_text(paths.offline_bundle_root / "OfflineBootstrap-objc3c.ps1", offline_bootstrap_script_text())
+    write_text(
+        paths.offline_bundle_root / "OfflineBootstrap-objc3c.ps1",
+        offline_bootstrap_script_text(
+            paths.sanitizer_variant,
+            paths.installer_archive.name,
+        ),
+    )
     zip_directory(paths.offline_bundle_root, paths.offline_archive)
 
 

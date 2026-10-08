@@ -151,6 +151,81 @@ def test_parity_source_mode_fail_closes_when_capability_routing_is_requested_wit
     )
 
 
+def test_parity_source_mode_rejects_llvm_direct_without_target_object_emission(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    source, cli_bin, c_api_bin = write_source_and_bins(tmp_path)
+    summary_path = tmp_path / "capabilities.json"
+    write_capability_summary(
+        summary_path,
+        llc_supports_target_object_emission=False,
+    )
+
+    monkeypatch.setattr(parity.subprocess, "run", never_run_on_fail_closed)
+
+    summary_out = tmp_path / "summary.json"
+    exit_code = parity.run(
+        [
+            "--source",
+            str(source),
+            "--cli-bin",
+            str(cli_bin),
+            "--c-api-bin",
+            str(c_api_bin),
+            "--llvm-capabilities-summary",
+            str(summary_path),
+            "--cli-ir-object-backend",
+            "llvm-direct",
+            "--summary-out",
+            str(summary_out),
+        ]
+    )
+
+    assert exit_code == 1
+    assert_failure_contains(
+        load_summary(summary_out),
+        "llvm-direct backend selected but llc --filetype=obj target object emission is unavailable",
+    )
+
+
+def test_parity_source_mode_route_from_capabilities_requires_target_object_emission(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    source, cli_bin, c_api_bin = write_source_and_bins(tmp_path)
+    summary_path = tmp_path / "capabilities.json"
+    write_capability_summary(
+        summary_path,
+        llc_supports_target_object_emission=False,
+    )
+
+    monkeypatch.setattr(parity.subprocess, "run", never_run_on_fail_closed)
+
+    summary_out = tmp_path / "summary.json"
+    exit_code = parity.run(
+        [
+            "--source",
+            str(source),
+            "--cli-bin",
+            str(cli_bin),
+            "--c-api-bin",
+            str(c_api_bin),
+            "--llvm-capabilities-summary",
+            str(summary_path),
+            "--route-cli-backend-from-capabilities",
+            "--summary-out",
+            str(summary_out),
+        ]
+    )
+
+    assert exit_code == 1
+    assert_failure_contains(
+        load_summary(summary_out),
+        "routed llvm-direct backend requires llc --filetype=obj target object emission",
+    )
+
+
 def test_parity_source_mode_requires_binaries(tmp_path: Path) -> None:
     source = tmp_path / "sample.objc3"
     source.write_text("fn main() -> i32 { return 0; }\n", encoding="utf-8")

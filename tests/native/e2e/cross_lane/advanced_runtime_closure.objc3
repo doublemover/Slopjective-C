@@ -1,8 +1,8 @@
 // #8200 cross-lane contract-backed proof: advanced runtime closure.
-// This source is the cross-lane index fixture. The executable umbrella remains
-// blocked; production-path evidence is validated through the checked-in #8199
-// combined runtime identity contract, source graph, source/debug-map bundle,
-// runtime-state records, and unsupported-combination negative matrix.
+// This source is the cross-lane index fixture. The executable umbrella is
+// promoted only through checked-in #8199/#8213 production-path evidence:
+// combined runtime identity, source graph, source/debug-map bundle,
+// runtime-state records, native link/run, and unsupported-combination negatives.
 module CrossLaneAdvancedRuntimeClosure;
 
 extern fn ConsumeBorrowed(bytes: borrowed id *) -> void;

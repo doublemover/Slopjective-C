@@ -110,6 +110,9 @@ static void AccumulateCanonicalTypeForLightweightGenericConstraintSummary(
   if (type.is_objc_object_reference) {
     ++summary.object_pointer_type_sites;
   }
+  if (type.is_value_optional) {
+    return;
+  }
   if (!type.has_generic_suffix) {
     return;
   }

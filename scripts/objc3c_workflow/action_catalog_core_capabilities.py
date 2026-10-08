@@ -16,12 +16,13 @@ CORE_CAPABILITY_ACTION_SPECS: dict[str, ActionSpec] = {
     ),
     "check-hosted-llvm-capabilities": ActionSpec(
         "check-hosted-llvm-capabilities",
-        "probe hosted-runner llvm capability availability and publish unsupported truth without object emission",
+        "probe hosted-runner llvm capability availability and fail required gates without llc object emission",
         "python:scripts/probe_objc3c_llvm_capabilities.py --summary-out tmp/artifacts/objc3c-native/m144/llvm_capabilities/summary.json",
         validation_tier="ci",
         guarantee_owner=(
-            "hosted Windows CI publishes capability truth only from clang plus llc "
-            "object-emission probe evidence"
+            "hosted CI publishes capability truth only from coherent llc "
+            "--filetype=obj evidence; optional gates skip without success "
+            "claims, and required conformance gates fail closed"
         ),
     ),
 }

@@ -1,13 +1,13 @@
 #include "artifacts/objc3_frontend_artifact_storage_accessor_reflection_manifest.h"
-
+#include "artifacts/identity/artifact_identity.h"
 #include <ostream>
-
 #include "artifacts/objc3_frontend_artifact_storage_accessor_manifest_contracts.h"
 #include "ast/objc3_ast_contracts_runtime_bootstrap_support_registrar_reset.h"
 #include "ast/objc3_ast_contracts_source_property_metadata.h"
 #include "runtime/metadata/runtime_metadata_bootstrap.h"
 #include "runtime/metadata/selector_metadata_registration_descriptor_surfaces.h"
 #include "runtime/metadata/selector_metadata_registration_manifest.h"
+
 
 namespace objc3::artifacts::frontend {
 
@@ -29,7 +29,7 @@ void WriteRuntimePropertyIvarAccessorReflectionImplementationSurface(
            << "\",\"registration_descriptor_artifact\":\""
            << runtime_registration_descriptor_frontend_closure.artifact_relative_path
            << "\",\"object_artifact\":\""
-           << runtime_state_publication_emit_prefix << ".obj"
+           << objc3::artifacts::identity::BuildObjc3NativeObjectArtifactName(runtime_state_publication_emit_prefix)
            << "\",\"backend_artifact\":\""
            << runtime_state_publication_emit_prefix << ".ll"
            << "\",\"runtime_property_ivar_storage_accessor_source_surface_contract_id\":\""

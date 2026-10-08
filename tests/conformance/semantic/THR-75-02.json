@@ -1,7 +1,7 @@
 {
   "id": "THR-75-02",
-  "title": "Reject typed throws payloads, missing try calls, and override effect mismatches",
-  "feature": "untyped throws v1 model",
+  "title": "Preserve typed throws payload metadata while rejecting missing try calls and override effect mismatches",
+  "feature": "throws effect identity model",
   "bucket": "semantic",
   "profile": "core",
   "references": [
@@ -12,19 +12,10 @@
     "docs/reference/legacy_spec_anchor_index.md#part-6-3-7",
     "docs/reference/legacy_spec_anchor_index.md#part-6-11"
   ],
-  "source": "id typedDecl(void) throws(int);\nid mayFail(void) throws;\n\nid badCall(void) {\n    return mayFail();\n}\n\n@interface ThrowBase : NSObject\n- (id)load throws;\n@end\n\n@interface ThrowMismatch : ThrowBase\n- (id)load;\n@end\n",
+  "source": "id typedDecl(void) throws(NSError);\nid mayFail(void) throws;\n\nid badCall(void) {\n    return mayFail();\n}\n\n@interface ThrowBase : NSObject\n- (id)load throws;\n@end\n\n@interface ThrowMismatch : ThrowBase\n- (id)load;\n@end\n",
   "expect": {
     "parse": "accept",
     "diagnostics": [
-      {
-        "code": "OBJC3-E-THROWS-TYPED-DEFERRED",
-        "severity": "error",
-        "span": {
-          "start": { "line": 1, "column": 21 },
-          "end": { "line": 1, "column": 31 }
-        },
-        "message": "typed throws is deferred in Objective-C 3.0 v1; use bare 'throws'"
-      },
       {
         "code": "OBJC3-D-THROWS-MISSING-TRY",
         "severity": "error",

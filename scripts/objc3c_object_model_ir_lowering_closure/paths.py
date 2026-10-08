@@ -2,14 +2,17 @@ from __future__ import annotations
 
 from pathlib import Path
 
+from objc3c_tooling.artifact_identity import current_host_artifact_identity
+
 ROOT = Path(__file__).resolve().parents[2]
+ARTIFACT_IDENTITY = current_host_artifact_identity()
 REPORT_DIR = ROOT / "reports" / "claimability" / "object-model-ir-lowering"
 JSON_OUT = REPORT_DIR / "object_model_ir_lowering_summary.json"
 MD_OUT = REPORT_DIR / "object_model_ir_lowering_summary.md"
 
 CONTRACT_ID = "objc3c.object-model-ir-lowering-closure.v1"
 ISSUE = "#8016"
-COMPILER = ROOT / "artifacts" / "bin" / "objc3c-native.exe"
+COMPILER = ROOT / ARTIFACT_IDENTITY.native_executable_relative_path
 SCRATCH = ROOT / "tmp" / "artifacts" / "objc3c-native" / "object-model-ir-lowering-closure"
 POSITIVE_FIXTURE = ROOT / "tests" / "tooling" / "fixtures" / "native" / "recovery" / "dispatch" / "parser_container_inherited_ivar_layout.objc3"
 NEGATIVE_FIXTURE = ROOT / "tests" / "tooling" / "fixtures" / "native" / "recovery" / "negative" / "negative_parser_container_ivar_layout_cycle.objc3"

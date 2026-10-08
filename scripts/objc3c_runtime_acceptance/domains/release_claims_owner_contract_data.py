@@ -101,7 +101,7 @@ RELEASE_POLICY_OWNER_CONTRACT = ReleaseClaimsOwnerContract(
     ),
     owned_decisions=(
         "release profile format policy",
-        "strict profile validation support",
+        "strict profile fail-closed selection policy",
         "single native CLI policy source of truth",
     ),
 )

@@ -3,7 +3,8 @@ param(
   [string]$FixtureGlob = "",
   [int]$ShardIndex = -1,
   [int]$ShardCount = 0,
-  [int]$Limit = 0
+  [int]$Limit = 0,
+  [int]$BuildParallelism = 0
 )
 
 $ErrorActionPreference = "Stop"
@@ -24,7 +25,7 @@ $pwsh = if (Get-Command pwsh -ErrorAction SilentlyContinue) { "pwsh" } elseif (G
 # suites may consume its summary, but they must not recompile the same recovery
 # negative corpus just to restate pass/fail.
 
-& $buildScript -ExecutionMode binaries-only
+& $buildScript -ExecutionMode binaries-only -Parallelism $BuildParallelism
 if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
 Invoke-Objc3cNativeRecoveryContract `

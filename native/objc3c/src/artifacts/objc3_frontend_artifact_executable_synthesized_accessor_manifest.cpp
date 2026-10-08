@@ -1,12 +1,12 @@
 #include "artifacts/objc3_frontend_artifact_executable_synthesized_accessor_manifest.h"
-
+#include "artifacts/identity/artifact_identity.h"
 #include <ostream>
-
 #include "artifacts/objc3_frontend_artifact_executable_accessor_layout_manifest_contracts.h"
 #include "artifacts/objc3_frontend_runtime_metadata_section_artifacts.h"
 #include "ast/objc3_ast_contracts.h"
 #include "runtime/metadata/runtime_metadata_bootstrap.h"
 #include "runtime/metadata/selector_metadata_registration_manifest.h"
+
 
 namespace objc3::artifacts::frontend {
 
@@ -27,7 +27,7 @@ void WriteExecutableSynthesizedAccessorPropertyLoweringSurface(
            << runtime_translation_unit_registration_manifest
                   .manifest_artifact_relative_path
            << "\",\"object_artifact\":\""
-           << runtime_state_publication_emit_prefix << ".obj"
+           << objc3::artifacts::identity::BuildObjc3NativeObjectArtifactName(runtime_state_publication_emit_prefix)
            << "\",\"backend_artifact\":\""
            << runtime_state_publication_emit_prefix << ".ll"
            << "\",\"executable_property_accessor_layout_lowering_surface_contract_id\":\""

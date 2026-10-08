@@ -58,12 +58,18 @@ LLVM_TOOL_CAPABILITY_OWNER_CONTRACTS: Final[
         proof_source=HOSTED_LLVM_CAPABILITIES_SUMMARY_OUT,
         claim_scope=(
             "hosted LLVM capability truth requires the hosted summary to report "
-            "clang plus llc object-emission support"
+            "clang, clang++, native_object_emission_supported from "
+            "llc --filetype=obj plus target-object output, coherent LLVM "
+            "toolchain identity, llvm-ar archive tooling, and LLVM "
+            "header/library discovery from llvm-config or an installed LLVM root"
         ),
         unsupported_claims=(
             "clang-only hosted execution",
             "local-only hosted execution proof",
             "hosted object parity without llc --filetype=obj",
+            "hosted object parity without target-specific llc object output",
+            "hosted object parity with mixed LLVM roots or mismatched LLVM tool versions",
+            "hosted package or execution support without llvm-ar and LLVM headers/libs",
         ),
         requires_hosted_probe_summary=True,
         fails_closed_without_live_capability=True,

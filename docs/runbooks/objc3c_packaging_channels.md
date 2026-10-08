@@ -8,6 +8,8 @@ This runbook defines the checked-in packaging-channel surface for objc3c:
 - local installer image generation and environment bootstrap scripts
 - offline air-gapped bundle assembly from machine-owned release artifacts
 - install smoke, rollback smoke, and channel metadata publication
+- explicit reserved ASan/UBSan package selectors that emit package ids,
+  sanitizer channels, and install-receipt metadata without promoting support
 
 This milestone does not add a system package manager, hosted update service, or
 platform notarization claim. Installer trust is represented by the
@@ -19,6 +21,103 @@ The packaging-channel surface layers distribution channels on top of the release
 The canonical payload remains the staged runnable toolchain bundle produced by
 `npm run objc3c -- package-runnable-toolchain` and described by the machine-
 owned release manifest, SBOM, and attestation artifacts.
+
+Reserved sanitizer package payloads use explicit public actions:
+
+- `npm run objc3c -- package-runnable-toolchain-asan`
+- `npm run objc3c -- package-runnable-toolchain-ubsan`
+- `npm run objc3c -- build-package-channels-asan`
+- `npm run objc3c -- build-package-channels-ubsan`
+- `npm run objc3c -- check-sanitizer-runtime-evidence-asan`
+- `npm run objc3c -- check-sanitizer-runtime-evidence-ubsan`
+- `npm run objc3c -- check-security-sanitizer-execution-evidence`
+
+Those variants must keep `support_truth: false` and
+`native_execution_claimed: false` until real package install and native
+execution evidence is checked in.
+
+The durable source anchors for those public actions are
+`scripts/objc3c_workflow/action_catalog_native_package_toolchain.py` for
+`package-runnable-toolchain-asan` and `package-runnable-toolchain-ubsan`, and
+`scripts/objc3c_workflow/actions/release_governance_packaging_contracts.py` for
+`build-package-channels-asan` and `build-package-channels-ubsan`. Runtime
+evidence collection is exposed only through
+`check-sanitizer-runtime-evidence-asan` and
+`check-sanitizer-runtime-evidence-ubsan`, whose action contracts live in
+`scripts/objc3c_workflow/actions/sanitizer_runtime_evidence.py` and route to
+`scripts/check_objc3c_sanitizer_runtime_evidence.py` with the exact
+`address` or `undefined` sanitizer variant. Do not add aliases, generic
+sanitizer fallback commands, target-platform fallback routing, or report/probe
+rerouting for these actions. They are fixed-shape public commands: package
+root, report path, probe path, fixture glob, parallelism, and run id are pinned
+by the action contract rather than accepted from npm pass-through arguments.
+These action registrations are command-surface evidence only.
+
+Sanitizer package variants are deterministic package-channel rows, not support
+claims. An ASan package must identify
+`org.objc3c.runtime:objc3c-runtime-asan`,
+`objc3c.package.sanitizer.asan.reserved`,
+`windows-x64-sanitizer-asan`, `sanitizer=address`, and
+`share/objc3c/sanitizer/asan-metadata.json`. A UBSan package must identify
+`org.objc3c.runtime:objc3c-runtime-ubsan`,
+`objc3c.package.sanitizer.ubsan.reserved`,
+`windows-x64-sanitizer-ubsan`, `sanitizer=undefined`,
+`share/objc3c/sanitizer/ubsan-metadata.json`, and an explicit
+`trap_or_recover_mode`.
+
+Installer receipts and receipt contracts must fail closed when any sanitizer
+selector, package id, package-channel id, metadata path, metadata digest,
+runtime-library list, copied runtime-library artifact digest, runtime-library
+manifest path, payload entry list, or native-execution contract drifts.
+Release installs must not carry sanitizer metadata, and sanitizer installs must
+carry `sanitizer_package_variant` with `support_truth: false` and
+`native_execution_claimed: false`.
+
+Sanitizer package staging must discover the exact Windows x64 Clang runtime
+artifact set from the resolved LLVM root, copy those artifacts into the package
+payload, and publish a digest manifest before the sanitizer metadata or package
+receipt can be emitted. Missing ASan or UBSan runtime files fail closed before
+package publication and before installation. The current package payload paths
+are:
+
+- ASan:
+  - `share/objc3c/sanitizer/asan-runtime-libraries.json`
+  - `artifacts/runtime/sanitizer/address/clang_rt.asan_dynamic-x86_64.dll`
+  - `artifacts/runtime/sanitizer/address/clang_rt.asan_dynamic-x86_64.lib`
+  - `artifacts/runtime/sanitizer/address/clang_rt.asan_dynamic_runtime_thunk-x86_64.lib`
+- UBSan:
+  - `share/objc3c/sanitizer/ubsan-runtime-libraries.json`
+  - `artifacts/runtime/sanitizer/undefined/clang_rt.ubsan_standalone-x86_64.lib`
+  - `artifacts/runtime/sanitizer/undefined/clang_rt.ubsan_standalone_cxx-x86_64.lib`
+
+These runtime-library manifests and artifacts prove package/install identity
+only. They do not promote ASan or UBSan support: support remains reserved until
+native execution reports and expected sanitizer detection records are captured
+through `npm run objc3c -- check-sanitizer-runtime-evidence-asan` and
+`npm run objc3c -- check-sanitizer-runtime-evidence-ubsan`, then reviewed into
+checked source truth. `check-security-sanitizer-execution-evidence` validates
+the ASan/UBSan execution-evidence contract and keeps
+`support_truth: false`, `native_execution_claimed: false`, and
+`support_promotion_allowed: false`; it is not a package or support promotion
+command.
+
+The checked source anchors for this non-promoting package evidence are
+`scripts/package_objc3c_runnable_toolchain/staging_orchestration.psm1` for
+runtime-library staging,
+`scripts/package_objc3c_runnable_toolchain/artifact_report_foundation.psm1` for
+artifact-report sanitizer metadata, `scripts/objc3c_package_channels/model.py`,
+`scripts/objc3c_package_channels/rendering.py`, and
+`scripts/objc3c_package_channels/validation.py` for package-channel
+model/render/validation behavior, `schemas/objc3c-package-channels-manifest-v1.schema.json`
+`schemas/objc3c-package-install-receipt-v1.schema.json`, and
+`schemas/objc3c-sanitizer-runtime-library-manifest-v1.schema.json` plus
+`schemas/objc3c-sanitizer-execution-evidence-v1.schema.json` for schema truth,
+and the checked fixtures under
+`tests/tooling/fixtures/security_hardening/sanitizer_package_install_model_contract.json`,
+`tests/tooling/fixtures/security_hardening/sanitizer_execution_evidence_contract.json`,
+`tests/tooling/fixtures/security_hardening/sanitizer_validation_contract.json`,
+`tests/tooling/fixtures/packaging_channels/metadata_surface.json`, and
+`tests/tooling/fixtures/packaging_channels/schema_surface.json`.
 
 Packaging-channel commands route through `npm run objc3c -- <action>`; helper
 implementations are action-registry anchors only.
@@ -86,6 +185,10 @@ Installer and bootstrap flows in this packaging-channel surface must follow thes
   network
 - archive and installer channels must preserve the same payload digest set as
   the canonical runnable package
+- the end-to-end validator must launch the installed `objc3c-native` binary
+  from both the local-installer root and the offline-bundle root, with loader
+  paths derived from the installed package root rather than repo-local
+  `artifacts/` or pre-existing `tmp/` outputs
 - the local installer archive must publish an `objc3c-local-sha256-v1`
   signature payload whose artifact path, digest, and public verification command
   are copied into release-update metadata
@@ -96,6 +199,8 @@ Compatibility rules:
 - installer scripts may assume `pwsh` and local filesystem access
 - installer validation must prove install, bootstrap, and rollback under a
   temp-owned root
+- installed-root execution proof is required before rollback; offline bundles
+  must retain and execute their installed native binary after bootstrap
 - archive compatibility claims must remain tied to the same `windows-x64`
   runnable payload family; publishing a package does not imply cross-host reuse
 
@@ -129,11 +234,58 @@ path, or public verification command drifts.
 The package-channel manifest must publish `payload_contract` and
 `receipt_contracts` from the checked-in packaging-channel metadata surface. The
 payload contract binds the runnable toolchain manifest path, manifest digest,
-required compiler/runtime/stdlib/docs entries, and per-entry SHA-256 digests.
+target platform id, required compiler/runtime/stdlib/docs entries, and
+per-entry SHA-256 digests.
 The receipt contracts bind the local-installer and offline-bundle receipts to
 the channel id, bootstrap entrypoint, package bridge, runnable package manifest,
 manifest digest, required payload entries, rollback requirement, and no-network
 offline policy.
+
+The end-to-end summary must also publish `installed_root_execution` and
+`offline_installed_root_execution`. Each record is an installed-root launch
+probe of `objc3c-native` that expects the deterministic usage-path exit code
+and records the package-root loader environment used for that launch. A package
+channel cannot use bootstrap output or executable presence alone as installed
+runtime proof.
+
+Release package channels are target-platform aware. Windows x64 archives carry
+`objc3c-native.exe` and `objc3_runtime.lib`; Linux x64 archives carry
+`objc3c-native` and `libobjc3-runtime.so`; macOS arm64 archives carry
+`objc3c-native` and `libobjc3-runtime.dylib`. Sanitizer package channels remain
+Windows x64 only until platform-specific sanitizer runtime evidence exists.
+The Linux x64 and macOS arm64 archive layouts are package-shape contracts only:
+they are not support claims until host evidence is reviewed into checked source
+truth, the platform support rows are promoted, and package/install/installed-root
+execution plus native execution evidence all agree.
+Release packaging-channel builds may select that release target explicitly with
+`python scripts/build_objc3c_package_channels.py --target-platform-id windows-x64`,
+`--target-platform-id linux-x64`, or `--target-platform-id darwin-arm64`.
+The target override is rejected for `--sanitizer-variant address` and
+`--sanitizer-variant undefined`; those reserved sanitizer rows have no
+non-Windows escape path or target-platform alias.
+
+Reusable runnable package roots are source inputs only after the package-channel
+builder re-checks their runnable manifest identity. The manifest must publish
+the selected `target_platform_id`, `target_triple`, `object_format`,
+`debug_format`, `runtime_library_kind`, `native_executable`,
+`runtime_library`, `runtime_library_name`, exact `package_root_layout`, and
+non-promoting `support_truth: false` plus `native_execution_claimed: false`.
+Windows x64 identity is `x86_64-pc-windows-msvc`, `COFF`, `CodeView/PDB`,
+`static-archive`, `artifacts/bin/objc3c-native.exe`, and
+`artifacts/lib/objc3_runtime.lib`; Linux x64 identity is
+`x86_64-unknown-linux-gnu`, `ELF`, `DWARF`, `shared-library`,
+`artifacts/bin/objc3c-native`, and `artifacts/lib/libobjc3-runtime.so`; macOS
+arm64 identity is `aarch64-apple-darwin`, `Mach-O`, `DWARF/dSYM`,
+`shared-library`, `artifacts/bin/objc3c-native`, and
+`artifacts/lib/libobjc3-runtime.dylib`. A reused package root whose manifest
+does not match the requested platform or these artifact identities is rejected
+before archive, installer, receipt, or release-foundation reuse.
+
+For ASan and UBSan package-channel variants, `payload_contract` and
+`receipt_contracts` must also keep the sanitizer runtime-library manifests,
+sanitizer package metadata paths, install selector, package-channel id,
+`sanitizer_package_variant`, `support_truth: false`, and
+`native_execution_claimed: false` synchronized with the schema and fixtures.
 
 Package-channel builders must initialize fresh owner-controlled roots under
 `tmp/pkg/objc3c-package-channels/` and `tmp/artifacts/package-channels/` before

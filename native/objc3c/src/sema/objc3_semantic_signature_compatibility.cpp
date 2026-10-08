@@ -1,5 +1,7 @@
 #include "sema/objc3_semantic_signature_compatibility.h"
 
+#include "sema/objc3_typed_throws_effect_contract.h"
+
 bool AreEquivalentProtocolCompositions(
     bool lhs_has_composition, const std::vector<std::string> &lhs_names,
     bool rhs_has_composition, const std::vector<std::string> &rhs_names) {
@@ -52,6 +54,45 @@ bool IsCompatibleCanonicalSemanticType(
              rhs.nullability_facts_authoritative &&
          lhs.has_invalid_nullability_suffix ==
              rhs.has_invalid_nullability_suffix &&
+         lhs.is_value_optional == rhs.is_value_optional &&
+         lhs.value_optional_payload_type_spelling ==
+             rhs.value_optional_payload_type_spelling &&
+         lhs.value_optional_payload_value_type ==
+             rhs.value_optional_payload_value_type &&
+         lhs.value_optional_semantic_value_model_supported ==
+             rhs.value_optional_semantic_value_model_supported &&
+         lhs.value_optional_stable_abi_layout_contract_supported ==
+             rhs.value_optional_stable_abi_layout_contract_supported &&
+         lhs.value_optional_binding_narrowing_supported ==
+             rhs.value_optional_binding_narrowing_supported &&
+         lhs.value_optional_interface_roundtrip_supported ==
+             rhs.value_optional_interface_roundtrip_supported &&
+         lhs.value_optional_executable_lowering_contract_supported ==
+             rhs.value_optional_executable_lowering_contract_supported &&
+         lhs.value_optional_explicit_absent_construction_supported ==
+             rhs.value_optional_explicit_absent_construction_supported &&
+         lhs.value_optional_explicit_present_construction_supported ==
+             rhs.value_optional_explicit_present_construction_supported &&
+         lhs.value_optional_binding_failure_diagnostic_supported ==
+             rhs.value_optional_binding_failure_diagnostic_supported &&
+         lhs.value_optional_unwrap_requires_presence_check ==
+             rhs.value_optional_unwrap_requires_presence_check &&
+         lhs.value_optional_unwrap_failure_diagnostic_supported ==
+             rhs.value_optional_unwrap_failure_diagnostic_supported &&
+         lhs.value_optional_nil_bridge_diagnostic_supported ==
+             rhs.value_optional_nil_bridge_diagnostic_supported &&
+         lhs.value_optional_runtime_execution_supported ==
+             rhs.value_optional_runtime_execution_supported &&
+         lhs.value_optional_lowering_supported ==
+             rhs.value_optional_lowering_supported &&
+         lhs.value_optional_ir_payload_emission_supported ==
+             rhs.value_optional_ir_payload_emission_supported &&
+         lhs.value_optional_call_abi_lowering_supported ==
+             rhs.value_optional_call_abi_lowering_supported &&
+         lhs.value_optional_executable_lowering_status ==
+             rhs.value_optional_executable_lowering_status &&
+         lhs.value_optional_remaining_runtime_boundary ==
+             rhs.value_optional_remaining_runtime_boundary &&
          lhs.has_invalid_type_suffix == rhs.has_invalid_type_suffix &&
          lhs.deterministic == rhs.deterministic &&
          lhs.canonical_spelling == rhs.canonical_spelling &&
@@ -106,6 +147,34 @@ bool IsCompatibleMethodSignature(const Objc3MethodInfo &lhs,
   if (lhs.arity != rhs.arity || lhs.return_type != rhs.return_type ||
       lhs.return_is_vector != rhs.return_is_vector ||
       lhs.is_class_method != rhs.is_class_method ||
+      !Objc3TypedThrowsCallableEffectsCompatible(
+          lhs.throws_declared,
+          lhs.typed_throws_declared,
+          lhs.typed_throws_error_type_spelling,
+          lhs.typed_throws_abi_lowering_ready,
+          rhs.throws_declared,
+          rhs.typed_throws_declared,
+          rhs.typed_throws_error_type_spelling,
+          rhs.typed_throws_abi_lowering_ready) ||
+      lhs.typed_throws_effect_signature_key !=
+          rhs.typed_throws_effect_signature_key ||
+      lhs.typed_throws_callable_compatibility_policy !=
+          rhs.typed_throws_callable_compatibility_policy ||
+      lhs.generic_parameter_names_source_order !=
+          rhs.generic_parameter_names_source_order ||
+      lhs.generic_parameter_variance_source_order !=
+          rhs.generic_parameter_variance_source_order ||
+      lhs.generic_parameter_constraints_lexicographic !=
+          rhs.generic_parameter_constraints_lexicographic ||
+      lhs.generic_callable_signature_replay_key !=
+          rhs.generic_callable_signature_replay_key ||
+      lhs.generic_callable_reification_policy !=
+          rhs.generic_callable_reification_policy ||
+      lhs.generic_callable_mangling_policy_id !=
+          rhs.generic_callable_mangling_policy_id ||
+      lhs.generic_callable_contract_deterministic !=
+          rhs.generic_callable_contract_deterministic ||
+      !lhs.generic_callable_contract_deterministic ||
       !IsCompatibleCanonicalSemanticType(lhs.return_canonical_type,
                                          rhs.return_canonical_type) ||
       lhs.return_has_ownership_qualifier !=

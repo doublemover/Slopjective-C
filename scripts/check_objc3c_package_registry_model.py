@@ -17,7 +17,15 @@ from objc3c_package_manager.hosted_registry import (  # noqa: E402
     HostedRegistryResolutionError,
     HostedRegistryResolutionRequest,
     collect_hosted_registry_model_failures,
-    resolve_hosted_registry_package,
+    resolve_hosted_registry_fetch_trust_lock_handoff,
+)
+from objc3c_package_manager.hosted_service import (  # noqa: E402
+    HOSTED_REGISTRY_SERVICE_DEFAULT_SUBJECT_ID,
+    HOSTED_REGISTRY_SERVICE_DEFAULT_TOKEN_ID,
+    HOSTED_REGISTRY_SERVICE_ID,
+    HostedRegistryServiceError,
+    HostedRegistryServiceRequest,
+    resolve_hosted_registry_service_request,
 )
 from objc3c_package_manager.model import PACKAGE_MANAGER_TAMPER_CODE  # noqa: E402
 from objc3c_tooling.json_io import load_json_object as load_json, write_json_file  # noqa: E402
@@ -58,6 +66,15 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
     parser.add_argument("--package-version", default="1.0.0")
     parser.add_argument("--language-version", default="3.0")
     parser.add_argument("--abi-identity", default="objc3-abi-2025Q4")
+    parser.add_argument("--service-id", default=HOSTED_REGISTRY_SERVICE_ID)
+    parser.add_argument(
+        "--auth-subject-id",
+        default=HOSTED_REGISTRY_SERVICE_DEFAULT_SUBJECT_ID,
+    )
+    parser.add_argument(
+        "--auth-token-id",
+        default=HOSTED_REGISTRY_SERVICE_DEFAULT_TOKEN_ID,
+    )
     parser.add_argument("--registry-url")
     parser.add_argument("--allow-network", action="store_true")
     parser.add_argument("positional", nargs="*")
@@ -78,18 +95,96 @@ def main(argv: list[str] | None = None) -> int:
     index = load_json(registry_path)
     mirror = load_json(mirror_path)
 
-    failures = collect_hosted_registry_model_failures(index, mirror)
+    failures = collect_hosted_registry_model_failures(index, mirror, root=ROOT)
     resolution: dict[str, Any] | None = None
+    fetched_snapshot: dict[str, Any] | None = None
+    materialized_lock: dict[str, Any] | None = None
+    offline_replay: dict[str, Any] | None = None
+    service_decision: dict[str, Any] | None = None
     request = HostedRegistryResolutionRequest(
         package_id=str(args.package_id),
         package_version=str(args.package_version),
         language_version=str(args.language_version),
         abi_identity=str(args.abi_identity),
+        service_id=str(args.service_id),
+        auth_subject_id=str(args.auth_subject_id),
+        auth_token_id=str(args.auth_token_id),
         allow_network=bool(args.allow_network),
         registry_url=args.registry_url,
     )
+    service_request = HostedRegistryServiceRequest(
+        package_id=request.package_id,
+        package_version=request.package_version,
+        service_id=request.service_id,
+        endpoint_id=request.endpoint_id,
+        channel_id=request.channel_id,
+        auth_subject_id=request.auth_subject_id,
+        auth_token_id=request.auth_token_id,
+        allow_network=request.allow_network or request.registry_url is not None,
+    )
+    service_ref = index.get("hosted_service")
+    if isinstance(service_ref, dict):
+        service_fixture_path = service_ref.get("service_fixture_path")
+        if isinstance(service_fixture_path, str):
+            try:
+                service = load_json(ROOT / service_fixture_path)
+                decision = resolve_hosted_registry_service_request(
+                    service,
+                    service_request,
+                    index=index,
+                    root=ROOT,
+                )
+                service_decision = {
+                    "service_id": decision.service_id,
+                    "package_id": decision.package_id,
+                    "package_version": decision.package_version,
+                    "operation": decision.operation,
+                    "registry_index_path": decision.registry_index_path,
+                    "offline_mirror_path": decision.offline_mirror_path,
+                    "auth_subject_id": decision.auth_subject_id,
+                    "snapshot_fetcher_id": decision.snapshot_fetcher_id,
+                    "transport_policy_id": decision.transport_policy_id,
+                    "source_lock": decision.source_lock,
+                    "source_lock_digest": decision.source_lock_digest,
+                    "lock_materialization_policy": decision.lock_materialization_policy,
+                    "materialized_lock_contract_id": decision.materialized_lock_contract_id,
+                    "network_required_after_lock": decision.network_required_after_lock,
+                }
+            except HostedRegistryServiceError as exc:
+                failures.extend(
+                    failure for failure in exc.failures if failure not in failures
+                )
+            except RuntimeError as exc:
+                failure = f"{PACKAGE_MANAGER_TAMPER_CODE}: hosted registry service fixture load failed: {exc}"
+                if failure not in failures:
+                    failures.append(failure)
     try:
-        resolved = resolve_hosted_registry_package(index, mirror, request)
+        plan = resolve_hosted_registry_fetch_trust_lock_handoff(
+            index,
+            mirror,
+            request,
+            root=ROOT,
+        )
+        fetched = plan.fetched_snapshot
+        resolved = plan.resolution
+        lock = plan.materialized_lock
+        fetched_snapshot = {
+            "fetcher_id": fetched.fetcher_id,
+            "registry_id": fetched.registry_id,
+            "snapshot_id": fetched.snapshot_id,
+            "sequence": fetched.sequence,
+            "registry_index_path": fetched.registry_index_path,
+            "offline_mirror_path": fetched.offline_mirror_path,
+            "source_lock": fetched.source_lock,
+            "source_lock_digest": fetched.source_lock_digest,
+            "transport_policy": {
+                "policy_id": fetched.transport_policy.policy_id,
+                "transport_id": fetched.transport_policy.transport_id,
+                "mode": fetched.transport_policy.mode,
+                "live_network_allowed": fetched.transport_policy.live_network_allowed,
+                "fallback_registry_success": fetched.transport_policy.fallback_registry_success,
+            },
+        }
         resolution = {
             "package_id": resolved.package_id,
             "package_version": resolved.package_version,
@@ -97,8 +192,35 @@ def main(argv: list[str] | None = None) -> int:
             "manifest_digest": resolved.manifest_digest,
             "cache_path": resolved.cache_path,
             "cache_digest": resolved.cache_digest,
+            "snapshot_id": resolved.snapshot_id,
+            "cache_key": resolved.cache_key,
+            "offline_mirror_path": resolved.offline_mirror_path,
             "registry_record_digest": resolved.registry_record_digest,
             "registry_signature_id": resolved.registry_signature_id,
+            "trust_result_id": resolved.trust_result_id,
+        }
+        materialized_lock = {
+            "contract_id": lock.contract_id,
+            "package_id": lock.package_id,
+            "package_version": lock.package_version,
+            "source_lock": lock.source_lock,
+            "source_lock_digest": lock.source_lock_digest,
+            "trust_root_id": lock.trust_root_id,
+            "source_digest": lock.source_digest,
+            "manifest_digest": lock.manifest_digest,
+            "registry_record_digest": lock.registry_record_digest,
+            "package_signature_id": lock.package_signature_id,
+            "registry_signature_id": lock.registry_signature_id,
+            "cache_key": lock.cache_key,
+            "cache_path": lock.cache_path,
+            "cache_digest": lock.cache_digest,
+            "offline_mirror_path": lock.offline_mirror_path,
+            "network_required_after_lock": lock.network_required_after_lock,
+        }
+        offline_replay = {
+            "commands": list(plan.replay_commands),
+            "offline_mirror_path": lock.offline_mirror_path,
+            "network_required_after_lock": lock.network_required_after_lock,
         }
     except HostedRegistryResolutionError as exc:
         failures.extend(
@@ -116,6 +238,26 @@ def main(argv: list[str] | None = None) -> int:
             "allow_network": bool(args.allow_network),
             "registry_url": args.registry_url,
         },
+        "service_request": {
+            "service_id": args.service_id,
+            "auth_subject_id": args.auth_subject_id,
+            "auth_token_id": args.auth_token_id,
+            "operation": service_request.operation,
+        },
+        "service_decision": service_decision,
+        "service_boundary": index.get("service_boundary"),
+        "hosted_service": index.get("hosted_service"),
+        "provider_model": index.get("provider_model"),
+        "snapshot": index.get("snapshot"),
+        "service_availability": index.get("service_availability"),
+        "endpoint_identity": index.get("endpoint_identity"),
+        "snapshot_fetch": index.get("snapshot_fetch"),
+        "fetched_snapshot": fetched_snapshot,
+        "lock_materialization": index.get("lock_materialization"),
+        "lock_trust_material": index.get("lock_trust_material"),
+        "materialized_lock": materialized_lock,
+        "offline_replay": offline_replay,
+        "failure_modes": index.get("failure_modes"),
         "resolution": resolution,
         "tamper_diagnostic": PACKAGE_MANAGER_TAMPER_CODE,
         "failures": failures,

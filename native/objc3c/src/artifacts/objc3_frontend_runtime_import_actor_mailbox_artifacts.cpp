@@ -61,6 +61,14 @@ BuildConcurrencyActorMailboxRuntimeImportSummary(
       !actor_lowering_replay_key.empty() &&
       !actor_isolation_lowering_replay_key.empty();
   summary.deterministic = actor_contract.deterministic;
+  if (summary.actor_mailbox_runtime_ready) {
+    summary.actor_mailbox_message_identity_field_count = 2u;
+    summary.actor_mailbox_fifo_ordering_field_count = 3u;
+    summary.actor_mailbox_drain_operation_field_count = 2u;
+    summary.actor_mailbox_cancel_operation_field_count = 2u;
+    summary.actor_mailbox_error_operation_field_count = 2u;
+    summary.actor_mailbox_shutdown_operation_field_count = 2u;
+  }
   std::ostringstream replay_key;
   replay_key << summary.contract_id
              << ";source_contract_id=" << summary.source_contract_id
@@ -79,6 +87,20 @@ BuildConcurrencyActorMailboxRuntimeImportSummary(
              << ";race_guard_dependency_sites="
              << summary.race_guard_dependency_sites
              << ";task_handoff_sites=" << summary.task_handoff_sites
+             << ";actor_mailbox_message_identity_field_count="
+             << summary.actor_mailbox_message_identity_field_count
+             << ";actor_mailbox_fifo_ordering_field_count="
+             << summary.actor_mailbox_fifo_ordering_field_count
+             << ";actor_mailbox_drain_operation_field_count="
+             << summary.actor_mailbox_drain_operation_field_count
+             << ";actor_mailbox_cancel_operation_field_count="
+             << summary.actor_mailbox_cancel_operation_field_count
+             << ";actor_mailbox_error_operation_field_count="
+             << summary.actor_mailbox_error_operation_field_count
+             << ";actor_mailbox_shutdown_operation_field_count="
+             << summary.actor_mailbox_shutdown_operation_field_count
+             << ";distributed_actor_transport_evidence_sites="
+             << summary.distributed_actor_transport_evidence_sites
              << ";guard_blocked_sites=" << summary.guard_blocked_sites
              << ";contract_violation_sites="
              << summary.contract_violation_sites
@@ -117,6 +139,20 @@ std::string BuildConcurrencyActorMailboxRuntimeImportSummaryJson(
       << ",\"race_guard_dependency_sites\":"
       << summary.race_guard_dependency_sites
       << ",\"task_handoff_sites\":" << summary.task_handoff_sites
+      << ",\"actor_mailbox_message_identity_field_count\":"
+      << summary.actor_mailbox_message_identity_field_count
+      << ",\"actor_mailbox_fifo_ordering_field_count\":"
+      << summary.actor_mailbox_fifo_ordering_field_count
+      << ",\"actor_mailbox_drain_operation_field_count\":"
+      << summary.actor_mailbox_drain_operation_field_count
+      << ",\"actor_mailbox_cancel_operation_field_count\":"
+      << summary.actor_mailbox_cancel_operation_field_count
+      << ",\"actor_mailbox_error_operation_field_count\":"
+      << summary.actor_mailbox_error_operation_field_count
+      << ",\"actor_mailbox_shutdown_operation_field_count\":"
+      << summary.actor_mailbox_shutdown_operation_field_count
+      << ",\"distributed_actor_transport_evidence_sites\":"
+      << summary.distributed_actor_transport_evidence_sites
       << ",\"guard_blocked_sites\":" << summary.guard_blocked_sites
       << ",\"contract_violation_sites\":"
       << summary.contract_violation_sites

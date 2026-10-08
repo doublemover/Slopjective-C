@@ -1,0 +1,8 @@
+// Negative fixture: generic Objective-C method clauses must immediately follow
+// the method marker. Selector-local generic clauses remain reserved.
+// Expected diagnostic code(s): O3P114.
+module NegativeGenericMethodSelectorFormAmbiguous;
+
+@interface AmbiguousSelectorGeneric
+- (id)map<T>:(id)value;
+@end

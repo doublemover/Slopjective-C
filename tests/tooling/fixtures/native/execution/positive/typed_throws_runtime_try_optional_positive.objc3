@@ -1,0 +1,15 @@
+module TypedThrowsRuntimeTryOptionalPositive;
+
+fn decode(value: i32) throws(NSError) -> i32 {
+  if (value == 0) {
+    return 9;
+  }
+  throw value;
+  return 0;
+}
+
+fn main() -> i32 {
+  let present = try? decode(0);
+  let absent = try? decode(1);
+  return present + absent;
+}

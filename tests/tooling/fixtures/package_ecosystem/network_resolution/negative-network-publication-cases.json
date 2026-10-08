@@ -1,0 +1,62 @@
+{
+  "contract_id": "objc3c.package_ecosystem.network_publication_negative_cases.v1",
+  "issue_refs": [
+    8221,
+    8222
+  ],
+  "umbrella_issue_refs": [
+    8204
+  ],
+  "diagnostic_code": "O3PKG8055",
+  "network_resolution": "tests/tooling/fixtures/package_ecosystem/network_resolution/network-dependency-resolution.json",
+  "release_channel_publication": "tests/tooling/fixtures/package_ecosystem/network_resolution/package-release-channel-publication.json",
+  "hosted_registry_index": "tests/tooling/fixtures/package_ecosystem/hosted_registry/hosted-registry-index.json",
+  "offline_mirror": "tests/tooling/fixtures/package_ecosystem/hosted_registry/offline-mirror-index.json",
+  "cases": [
+    {
+      "case_id": "stale-channel",
+      "target": "release-channel-publication",
+      "mutation": {
+        "set": "channel_freshness.status",
+        "value": "stale"
+      },
+      "expected_failure": "O3PKG8055: stale release channel stable blocks package publication"
+    },
+    {
+      "case_id": "unsigned-tampered-cache",
+      "target": "network-resolution",
+      "mutation": {
+        "set": "dependencies.0.cache.registry_signature_id",
+        "value": "sha256:0000000000000000000000000000000000000000000000000000000000000000"
+      },
+      "expected_failure": "O3PKG8055: unsigned or tampered cache for fixture:network.core"
+    },
+    {
+      "case_id": "lock-mismatch",
+      "target": "network-resolution",
+      "mutation": {
+        "set": "lock_trust_material.source_lock_digest",
+        "value": "sha256:9999999999999999999999999999999999999999999999999999999999999999"
+      },
+      "expected_failure": "O3PKG8055: network resolution lock/trust material mismatch"
+    },
+    {
+      "case_id": "dependency-identity-drift",
+      "target": "network-resolution",
+      "mutation": {
+        "set": "dependencies.0.dependency_identity.package_id",
+        "value": "fixture:network.drift"
+      },
+      "expected_failure": "O3PKG8055: dependency identity drift for fixture:network.core"
+    },
+    {
+      "case_id": "hosted-registry-endpoint-mismatch",
+      "target": "network-resolution",
+      "mutation": {
+        "set": "hosted_registry_endpoint.endpoint_id",
+        "value": "objc3c-hosted-registry-drifted-endpoint-v1"
+      },
+      "expected_failure": "O3PKG8055: hosted registry endpoint mismatch"
+    }
+  ]
+}

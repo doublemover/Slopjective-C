@@ -35,6 +35,7 @@
 #include "lower/contracts/runtime_object_support_contracts.h"
 #include "lower/contracts/type_system_generic_lowering_contracts.h"
 #include "lower/contracts/unsafe_intrinsic_governance_contracts.h"
+#include "lower/contracts/value_optional_lowering_contracts.h"
 
 #include <cstddef>
 #include <string>

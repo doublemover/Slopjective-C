@@ -1,0 +1,9 @@
+// Expected diagnostic code(s): O3S202.
+module NegativeMatchExpressionBindingScopeLeak;
+
+fn main(value: i32) -> i32 {
+  let result = match (value) {
+    case let candidate => candidate;
+  };
+  return candidate;
+}

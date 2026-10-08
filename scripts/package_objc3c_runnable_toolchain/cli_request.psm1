@@ -7,12 +7,15 @@ function Get-DefaultRunnableToolchainManifestRelativePath {
 function New-RunnableToolchainPackageRequest {
   param(
     [string]$PackageRoot = "",
-    [string]$ManifestRelativePath = (Get-DefaultRunnableToolchainManifestRelativePath)
+    [string]$ManifestRelativePath = (Get-DefaultRunnableToolchainManifestRelativePath),
+    [ValidateSet("release", "address", "undefined")]
+    [string]$SanitizerVariant = "release"
   )
 
   return [ordered]@{
     PackageRoot = $PackageRoot
     ManifestRelativePath = $ManifestRelativePath
+    SanitizerVariant = $SanitizerVariant
   }
 }
 

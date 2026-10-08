@@ -22,6 +22,8 @@ struct Objc3IRMessageSendEmissionOptions {
       &direct_dispatch_signatures_by_key;
   const std::unordered_map<std::string, ValueType>
       &runtime_dispatch_return_types_by_key;
+  const std::unordered_map<std::string, Objc3IRValueOptionalCarrierMetadata>
+      &runtime_dispatch_return_value_optional_carriers_by_key;
   const std::unordered_map<std::string, std::string>
       &runtime_dispatch_superclass_by_name;
   std::size_t runtime_dispatch_arg_slots = 0;
@@ -45,6 +47,12 @@ struct Objc3IRMessageSendEmissionCallbacks {
       emit_unsupported_i32_value;
   std::function<void(FunctionContext &ctx)> invalidate_global_proof_state;
 };
+
+bool TryResolveObjc3IRDirectDispatchSignature(
+    const Expr *expr, const FunctionContext &ctx,
+    const Objc3IRMessageSendEmissionOptions &options,
+    Objc3IRDirectDispatchSignature *signature_out,
+    std::string *symbol_out = nullptr);
 
 std::string EmitObjc3IRMessageSendExpr(
     const Expr *expr, FunctionContext &ctx,

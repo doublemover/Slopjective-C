@@ -1,0 +1,102 @@
+{
+  "schema_version": "objc3c-strict-profile-boundary-v1",
+  "contract_id": "objc3c.strict_profile.boundary.v1",
+  "issue_ref": 8237,
+  "profile_policy": {
+    "claimed_conformance_profiles": [
+      "core",
+      "strict",
+      "strict-concurrency"
+    ],
+    "native_language_profiles": [
+      "canonical",
+      "strict",
+      "strict-concurrency"
+    ],
+    "rejected_conformance_profiles": [
+      "strict-system"
+    ],
+    "strict_system_native_frontend_profile_allowed": false
+  },
+  "positive_fixtures": [
+    {
+      "case_id": "strict-profile-value-flow-accepted",
+      "source_path": "tests/conformance/profile_strict_boundary/strict_profile_value_flow.objc3",
+      "conformance_profile": "strict",
+      "expected_stage": "compile",
+      "expected_compile_status": "accepted",
+      "expected_diagnostic_code": ""
+    },
+    {
+      "case_id": "strict-concurrency-actor-executor-value-flow-accepted",
+      "source_path": "tests/conformance/profile_strict_boundary/strict_concurrency_actor_executor_value_flow.objc3",
+      "conformance_profile": "strict-concurrency",
+      "expected_stage": "compile",
+      "expected_compile_status": "accepted",
+      "expected_diagnostic_code": ""
+    }
+  ],
+  "negative_fixtures": [
+    {
+      "case_id": "strict-concurrency-actor-isolation-rejected",
+      "source_path": "tests/conformance/profile_strict_boundary/strict_concurrency_actor_isolation_negative.objc3",
+      "conformance_profile": "strict-concurrency",
+      "expected_stage": "compile",
+      "expected_compile_status": "rejected",
+      "expected_diagnostic_code": "O3S286",
+      "required_tokens": [
+        "O3S286",
+        "objc_nonisolated is only valid on actor methods"
+      ]
+    },
+    {
+      "case_id": "strict-concurrency-sendability-rejected",
+      "source_path": "tests/conformance/profile_strict_boundary/strict_concurrency_sendability_negative.objc3",
+      "conformance_profile": "strict-concurrency",
+      "expected_stage": "compile",
+      "expected_compile_status": "rejected",
+      "expected_diagnostic_code": "O3S343",
+      "required_tokens": [
+        "O3S343",
+        "non-sendable cross-actor crossings require an actor isolation context"
+      ]
+    },
+    {
+      "case_id": "strict-concurrency-scheduler-rejected",
+      "source_path": "tests/conformance/profile_strict_boundary/strict_concurrency_scheduler_negative.objc3",
+      "conformance_profile": "strict-concurrency",
+      "expected_stage": "compile",
+      "expected_compile_status": "rejected",
+      "expected_diagnostic_code": "O3S232",
+      "required_tokens": [
+        "O3S232",
+        "detached task creation cannot use the main executor affinity"
+      ]
+    },
+    {
+      "case_id": "strict-concurrency-task-lifecycle-rejected",
+      "source_path": "tests/conformance/profile_strict_boundary/strict_concurrency_task_lifecycle_negative.objc3",
+      "conformance_profile": "strict-concurrency",
+      "expected_stage": "compile",
+      "expected_compile_status": "rejected",
+      "expected_diagnostic_code": "O3S228",
+      "required_tokens": [
+        "O3S228",
+        "task-group add, wait-next, and cancel-all calls require a task-group scope"
+      ]
+    },
+    {
+      "case_id": "strict-system-profile-mismatch-rejected",
+      "source_path": "tests/conformance/profile_strict_boundary/strict_system_profile_mismatch_negative.objc3",
+      "conformance_profile": "strict-system",
+      "expected_stage": "compile",
+      "expected_compile_status": "rejected",
+      "expected_diagnostic_code": "O3C038",
+      "required_tokens": [
+        "unsupported --objc3-conformance-profile selection: strict-system",
+        "claimed profiles: core, strict, strict-concurrency",
+        "rejected built-in profiles: strict-system"
+      ]
+    }
+  ]
+}

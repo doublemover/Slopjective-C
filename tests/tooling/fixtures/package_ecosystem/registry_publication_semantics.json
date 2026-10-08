@@ -5,14 +5,21 @@
   "boundary_inventory": "tests/tooling/fixtures/package_ecosystem/boundary_inventory.json",
   "dependency_lock_policy": "tests/tooling/fixtures/package_ecosystem/dependency_lock_policy.json",
   "local_workspace_mirror_semantics": "tests/tooling/fixtures/package_ecosystem/local_workspace_mirror_semantics.json",
+  "package_security_hardening": "tests/tooling/fixtures/package_ecosystem/package_security_hardening_contract.json",
+  "package_ecosystem_umbrella": "tests/tooling/fixtures/package_ecosystem/package_ecosystem_umbrella_contract.json",
   "mixed_image_interop_loader_metadata": "tests/tooling/fixtures/package_ecosystem/mixed_image_interop_loader_metadata.json",
   "publication_inputs": [
     "schemas/objc3c-release-manifest-v1.schema.json",
     "schemas/objc3c-update-manifest-v1.schema.json",
     "schemas/objc3c-package-channels-manifest-v1.schema.json",
+    "schemas/objc3c-package-hosted-registry-service-v1.schema.json",
+    "schemas/objc3c-package-network-resolution-v1.schema.json",
+    "schemas/objc3c-package-release-channel-publication-v1.schema.json",
     "scripts/build_objc3c_release_manifest.py",
     "scripts/build_objc3c_update_manifest.py",
     "scripts/build_objc3c_package_channels.py",
+    "scripts/objc3c_package_manager/hosted_service.py",
+    "scripts/check_objc3c_package_network_publication.py",
     "scripts/publish_objc3c_release_operations_metadata.py"
   ],
   "registry_layers": [
@@ -46,20 +53,52 @@
     },
     {
       "layer_id": "hosted-registry",
-      "support_state": "unsupported-fail-closed-if-claimed",
-      "source_of_truth": "no checked-in source authority",
-      "publication_path": "",
-      "claim_boundary": "hosted registry, network fetch, auth, moderation, and availability claims fail closed"
+      "support_state": "supported-source-fixture-offline-only",
+      "source_of_truth": "checked-in hosted registry index, provider model, deterministic snapshot fetch record, explicit disabled-live transport policy, service-boundary record, hermetic service reference, service availability record, trust enforcement, materialized lock policy, offline mirror, fixture lock, cache identity, trust result, revocation/yank state, and offline mirror replay handoff",
+      "publication_path": "tests/tooling/fixtures/package_ecosystem/hosted_registry/hosted-registry-index.json",
+      "claim_boundary": "source-owned hosted registry snapshot/trust/lock/offline replay contract only; live public network transport, production auth, production moderation, production registry trust-root operations, public service availability SLOs, unverified local-install fallback, rollback snapshots, and fallback registry success claims fail closed"
+    },
+    {
+      "layer_id": "hosted-registry-service",
+      "support_state": "supported-source-fixture-hermetic-only",
+      "source_of_truth": "checked-in hosted registry service fixture with fixture auth, trust-root operation, revocation service, moderation policy, availability record, request policy, deterministic snapshot handoff, materialized-lock policy, no-network policy, and negative service cases",
+      "publication_path": "tests/tooling/fixtures/package_ecosystem/hosted_registry/service/hosted-registry-service.json",
+      "claim_boundary": "hermetic local service contract only; live public availability, production auth, production moderation, production registry roots, and fallback registry success remain reserved-fail-closed"
+    },
+    {
+      "layer_id": "network-resolution",
+      "support_state": "supported-source-fixture-offline-only",
+      "source_of_truth": "checked-in network dependency resolution fixture bound to hosted registry endpoint, fixture lock, trust root, offline mirror, and cache signature",
+      "publication_path": "tests/tooling/fixtures/package_ecosystem/network_resolution/network-dependency-resolution.json",
+      "claim_boundary": "offline fixture-backed network dependency resolution only; live network fetch and fallback registry success fail closed after deterministic snapshot/lock/offline handoff"
+    },
+    {
+      "layer_id": "release-channel-publication",
+      "support_state": "supported-source-fixture-offline-only",
+      "source_of_truth": "checked-in package release-channel publication contract bound to network resolution proof, stable channel freshness, lock, trust, provenance, and cache pins",
+      "publication_path": "tests/tooling/fixtures/package_ecosystem/network_resolution/package-release-channel-publication.json",
+      "claim_boundary": "package release-channel metadata publication only; stale channel, lock drift, endpoint drift, cache tamper, and dependency identity drift fail closed"
+    },
+    {
+      "layer_id": "package-security-hardening",
+      "support_state": "supported-source-contract",
+      "source_of_truth": "checked-in package security hardening contract and signing trust schema",
+      "publication_path": "tests/tooling/fixtures/package_ecosystem/package_security_hardening_contract.json",
+      "claim_boundary": "package security claims require pre-mutation extraction path safety, installer/update-key policy hooks, and reserved release/registry trust roots"
     }
   ],
   "publication_rules": [
     "registry metadata must be generated from the lock and mirror evidence",
     "publication metadata may not introduce package identities absent from the lock graph",
     "registry metadata must preserve package manifest digests, language version, ABI identity, and trust signatures from the lock",
-    "local registry indexes must preserve exact locked target versions, dependency source digests, package manifest digests, and replay commands",
+    "local registry indexes must preserve exact locked target versions, dependency source authority digests, dependency source digests, package manifest digests, and replay commands",
     "interop loader metadata must fail closed when the mirror digest differs from the generated lock",
     "offline restore receipts must fail closed when any mirror cache entry is missing, extra, or digest-mismatched",
-    "hosted-registry behavior must fail closed when claimed without checked-in source authority",
+    "hosted-registry behavior must fail closed unless it is the checked-in offline fixture contract with provider separation, deterministic snapshot fetch, explicit disabled-live transport policy, snapshot rollback protection, service-boundary metadata, hermetic service contract, endpoint identity, channel identity, trust enforcement, lock materialization, cache identity, offline mirror replay handoff, trust result, revocation/yank state, and explicit failure modes",
+    "hosted-registry service behavior must fail closed unless fixture auth, trust-root operation, revocation, moderation, availability, exact-version request policy, deterministic snapshot handoff, materialized-lock policy, offline replay sufficiency, and no-network-after-lock behavior are all source-owned and schema-valid",
+    "network dependency resolution must fail closed unless it is the checked-in offline fixture contract with endpoint identity, exact locked version, fixture lock digest, trust root, provenance, cache signature, and no fallback registry success",
+    "package release-channel publication must fail closed when channel freshness is stale, lock/trust/provenance drift, cache tamper, dependency identity drift, or hosted registry endpoint mismatch is detected",
+    "package registry publication must not activate release or registry trust roots until installer/update keys and extraction path safety are source-backed and reviewed",
     "release and update metadata may reference package ecosystem artifacts only as generated local evidence",
     "offline mirror publication must remain usable without network access"
   ],
@@ -78,7 +117,19 @@
       "role": "package-ecosystem-registry-owner",
       "source_contract": "tests/tooling/fixtures/package_ecosystem/registry_publication_semantics.json",
       "required_actions": [
+        "package-sign",
+        "package-verify",
+        "validate-package-security-hardening",
         "validate-package-mirror",
+        "validate-package-registry-model",
+        "package-registry-resolve",
+        "validate-package-network-publication",
+        "package-publish",
+        "package-install",
+        "package-update",
+        "package-uninstall",
+        "package-rollback",
+        "validate-package-operations",
         "validate-package-ecosystem",
         "validate-runnable-package-ecosystem"
       ],
@@ -86,22 +137,39 @@
         "objc3c.package_ecosystem.registry_publication_semantics.v1",
         "objc3c.package_ecosystem.artifact_contract.v1"
       ],
-      "claim_boundary": "local generated registry metadata only; hosted registry availability and package-manager parity are release-blocking overclaims"
+      "claim_boundary": "local generated registry metadata and hermetic hosted-service contracts only; live public hosted registry availability and package-manager parity are release-blocking overclaims"
     }
   },
   "claim_truth_policy": {
     "retired_source_acceptance_claims_allowed": false,
     "retired_surface_acceptance_claims_allowed": false,
-    "hosted_registry_claim_allowed": false,
+    "live_public_hosted_registry_claim_allowed": false,
+    "hosted_registry_fixture_claim_allowed": true,
+    "hosted_registry_hermetic_service_claim_allowed": true,
+    "network_resolution_fixture_claim_allowed": true,
+    "live_network_resolution_claim_allowed": false,
+    "package_release_channel_publication_fixture_claim_allowed": true,
+    "fallback_registry_success_allowed": false,
     "evidence_log_allowed": false,
     "wrapper_only_allowed": false
   },
   "blocker_metadata": {
     "blocker_owner": "package-ecosystem-blockers",
     "blocking_conditions": [
-      "hosted registry claimed as supported",
+      "live public hosted registry claimed as supported",
+      "hosted registry fixture missing source-owned endpoint/channel/provider/snapshot/service/lock/trust/cache/handoff contract",
+      "hosted registry service missing auth, trust-root operation, revocation, moderation, availability, no-network, or negative-case contract",
+      "network dependency resolution fixture missing endpoint/channel/lock/trust/cache/provenance contract",
+      "package release-channel publication fixture missing current channel freshness or network resolution proof",
       "publication metadata contains an unlocked package identity",
-      "registry index dependency version drift did not fail closed",
+      "network resolution accepted fallback registry success",
+      "network resolution accepted hosted registry endpoint mismatch",
+      "network resolution accepted unsigned or tampered cache",
+      "network resolution accepted lock mismatch",
+      "network resolution accepted dependency identity drift",
+      "package release-channel publication accepted stale channel",
+      "package registry publication activated release or registry trust roots without source-backed installer/update-key and extraction safety policy",
+      "registry index dependency version or source-authority drift did not fail closed",
       "offline mirror metadata digest mismatch did not fail closed",
       "offline mirror cache payload mismatch did not fail closed",
       "offline mirror validation requires network access",
@@ -112,7 +180,19 @@
     ]
   },
   "required_actions": [
+    "package-sign",
+    "package-verify",
+    "validate-package-security-hardening",
+    "validate-package-registry-model",
+    "package-registry-resolve",
     "build-package-channels",
+    "validate-package-network-publication",
+    "package-publish",
+    "package-install",
+    "package-update",
+    "package-uninstall",
+    "package-rollback",
+    "validate-package-operations",
     "build-release-manifest",
     "build-update-manifest",
     "publish-release-operations",
@@ -120,9 +200,14 @@
     "validate-release-operations-end-to-end"
   ],
   "release_blocking_conditions": [
-    "hosted registry claimed as supported",
+    "live public hosted registry claimed as supported",
+    "live network dependency resolution claimed as supported",
+    "live public hosted registry service claimed as supported from hermetic fixture evidence",
+    "fallback registry success path accepted",
+    "package release-channel publication accepted stale channel evidence",
+    "release or registry trust root accepted as active without package security hardening evidence",
     "publication metadata contains an unlocked package identity",
-    "registry index dependency version drift did not fail closed",
+    "registry index dependency version or source-authority drift did not fail closed",
     "publication metadata drops package manifest or trust metadata",
     "offline mirror metadata digest mismatch did not fail closed",
     "offline mirror cache payload mismatch did not fail closed",

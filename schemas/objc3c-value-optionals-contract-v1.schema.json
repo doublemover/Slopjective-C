@@ -1,0 +1,343 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://objc3c.dev/schemas/objc3c-value-optionals-contract-v1.schema.json",
+  "title": "Objective-C 3 Value Optional Contract v1",
+  "x-objc3c-artifact-contract": {
+    "schema_id": "objc3c-value-optionals-contract-v1",
+    "payload_id_field": "contract_id",
+    "payload_id_value": "objc3c.value_optional.contract.v1",
+    "registry_owner": "native/objc3c/src/artifacts/json/artifact_schema_contract_table.cpp",
+    "artifact_family": "language-types"
+  },
+  "type": "object",
+  "required": [
+    "contract_id",
+    "issue_ref",
+    "canonical_spelling",
+    "source_status",
+    "semantic_model",
+    "abi_layout",
+    "lowering_contract",
+    "interface_roundtrip_status",
+    "records",
+    "fail_closed"
+  ],
+  "properties": {
+    "contract_id": { "const": "objc3c.value_optional.contract.v1" },
+    "issue_ref": { "const": 8234 },
+    "canonical_spelling": { "const": "Optional<T>" },
+    "source_status": {
+      "const": "semantic-type-signature-admitted-packed-and-full-i64-runtime-abi"
+    },
+    "semantic_model": {
+      "type": "object",
+      "required": [
+        "type_admission_supported",
+        "explicit_present_absent_construction_modeled",
+        "explicit_absent_construction_supported",
+        "explicit_present_construction_supported",
+        "binding_narrowing_supported",
+        "binding_failure_diagnostic_supported",
+        "unwrap_requires_presence_check",
+        "unwrap_failure_diagnostic_supported",
+        "nil_bridge_diagnostic_supported",
+        "runtime_abi_payload_scope",
+        "supported_runtime_payload_forms",
+        "supported_runtime_helper_payload_forms",
+        "full_width_i64_runtime_helper_supported",
+        "full_width_i64_language_call_abi_supported",
+        "implicit_nil_absence_allowed",
+        "optional_id_distinct_from_nullable_object_pointer"
+      ],
+      "properties": {
+        "type_admission_supported": { "const": true },
+        "explicit_present_absent_construction_modeled": { "const": true },
+        "explicit_absent_construction_supported": { "const": true },
+        "explicit_present_construction_supported": { "const": true },
+        "binding_narrowing_supported": { "const": true },
+        "binding_failure_diagnostic_supported": { "const": true },
+        "unwrap_requires_presence_check": { "const": true },
+        "unwrap_failure_diagnostic_supported": { "const": true },
+        "nil_bridge_diagnostic_supported": { "const": true },
+        "runtime_abi_payload_scope": {
+          "const": "supported-packed-scalar-id-handle-and-full-i64-payload-forms"
+        },
+        "supported_runtime_payload_forms": {
+          "type": "array",
+          "prefixItems": [
+            { "const": "i32" },
+            { "const": "bool" },
+            { "const": "id" },
+            { "const": "i64" }
+          ],
+          "items": false,
+          "minItems": 4,
+          "maxItems": 4
+        },
+        "supported_runtime_helper_payload_forms": {
+          "type": "array",
+          "prefixItems": [
+            { "const": "i32" },
+            { "const": "bool" },
+            { "const": "id" },
+            { "const": "i64" }
+          ],
+          "items": false,
+          "minItems": 4,
+          "maxItems": 4
+        },
+        "full_width_i64_runtime_helper_supported": { "const": true },
+        "full_width_i64_language_call_abi_supported": { "const": true },
+        "implicit_nil_absence_allowed": { "const": false },
+        "optional_id_distinct_from_nullable_object_pointer": { "const": true }
+      },
+      "additionalProperties": false
+    },
+    "abi_layout": {
+      "type": "object",
+      "required": [
+        "layout_id",
+        "layout_status",
+        "presence_field",
+        "payload_storage_field",
+        "payload_cleanup_contract",
+        "absence_state",
+        "presence_state",
+        "stable_layout_contract_supported",
+        "executable_lowering_contract_supported",
+        "runtime_execution_supported",
+        "lowering_supported",
+        "ir_payload_emission_supported",
+        "call_abi_lowering_supported",
+        "broad_public_runtime_support_claim_allowed"
+      ],
+      "properties": {
+        "layout_id": {
+          "const": "objc3.value_optional.inline_presence_payload.v1"
+        },
+        "layout_status": {
+          "const": "stable-packed-presence-payload-runtime-lowered"
+        },
+        "presence_field": { "const": "has_value" },
+        "payload_storage_field": { "const": "payload" },
+        "payload_cleanup_contract": {
+          "const": "payload-cleanup-after-narrowed-scope"
+        },
+        "absence_state": { "const": "has_value=false" },
+        "presence_state": { "const": "has_value=true" },
+        "stable_layout_contract_supported": { "const": true },
+        "executable_lowering_contract_supported": { "const": true },
+        "runtime_execution_supported": { "const": true },
+        "lowering_supported": { "const": true },
+        "ir_payload_emission_supported": { "const": true },
+        "call_abi_lowering_supported": { "const": true },
+        "broad_public_runtime_support_claim_allowed": { "const": false }
+      },
+      "additionalProperties": false
+    },
+    "lowering_contract": { "$ref": "#/$defs/loweringContract" },
+    "interface_roundtrip_status": {
+      "const": "semantic-carrier-roundtrips-bounded-packed-runtime-abi"
+    },
+    "records": {
+      "type": "object",
+      "required": [
+        "optional_type",
+        "optional_value",
+        "optional_flow",
+        "optional_rejection"
+      ],
+      "properties": {
+        "optional_type": { "$ref": "#/$defs/optionalType" },
+        "optional_value": { "$ref": "#/$defs/optionalValue" },
+        "optional_flow": { "$ref": "#/$defs/optionalFlow" },
+        "optional_rejection": { "$ref": "#/$defs/optionalRejection" }
+      },
+      "additionalProperties": false
+    },
+    "fail_closed": {
+      "type": "object",
+      "required": [
+        "lowercase_alias_accepted",
+        "nested_value_optional_runtime_supported",
+        "generic_payload_runtime_supported",
+        "property_storage_supported",
+        "ivar_storage_supported",
+        "nil_to_scalar_coercion_allowed",
+        "implicit_nil_absence_allowed",
+        "nullable_pointer_conversion_allowed",
+        "unchecked_unwrap_allowed",
+        "throws_result_conversion_allowed"
+      ],
+      "properties": {
+        "lowercase_alias_accepted": { "const": false },
+        "nested_value_optional_runtime_supported": { "const": false },
+        "generic_payload_runtime_supported": { "const": false },
+        "property_storage_supported": { "const": false },
+        "ivar_storage_supported": { "const": false },
+        "nil_to_scalar_coercion_allowed": { "const": false },
+        "implicit_nil_absence_allowed": { "const": false },
+        "nullable_pointer_conversion_allowed": { "const": false },
+        "unchecked_unwrap_allowed": { "const": false },
+        "throws_result_conversion_allowed": { "const": false }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "optionalType": {
+      "type": "object",
+      "required": [
+        "type_id",
+        "payload_type",
+        "abi_layout",
+        "semantic_model",
+        "canonical_spelling"
+      ],
+      "properties": {
+        "type_id": { "type": "string", "minLength": 1 },
+        "payload_type": { "type": "string", "minLength": 1 },
+        "abi_layout": {
+          "const": "objc3.value_optional.inline_presence_payload.v1"
+        },
+        "semantic_model": {
+          "const": "first-class-value-optional-type-constructor"
+        },
+        "canonical_spelling": {
+          "pattern": "^Optional<.+>$"
+        }
+      },
+      "additionalProperties": false
+    },
+    "optionalValue": {
+      "type": "object",
+      "required": [
+        "value_id",
+        "optional_type",
+        "construction_contract",
+        "presence_state",
+        "payload_storage",
+        "absence_state",
+        "present_state",
+        "payload_lifetime"
+      ],
+      "properties": {
+        "value_id": { "type": "string", "minLength": 1 },
+        "optional_type": { "type": "string", "minLength": 1 },
+        "construction_contract": {
+          "const": "explicit-absent-present-constructors-only"
+        },
+        "presence_state": { "const": "has_value" },
+        "payload_storage": { "const": "payload" },
+        "absence_state": { "const": "has_value=false" },
+        "present_state": { "const": "has_value=true" },
+        "payload_lifetime": {
+          "const": "payload-live-only-when-has_value-true"
+        }
+      },
+      "additionalProperties": false
+    },
+    "optionalFlow": {
+      "type": "object",
+      "required": [
+        "source_span",
+        "narrowing_kind",
+        "before_type",
+        "after_type",
+        "cleanup_contract",
+        "binding_failure_diagnostic",
+        "presence_test_required"
+      ],
+      "properties": {
+        "source_span": { "type": "string", "minLength": 1 },
+        "narrowing_kind": {
+          "enum": ["if-let", "guard-let", "binding-or-guard-binding"]
+        },
+        "before_type": { "pattern": "^Optional<.+>$" },
+        "after_type": { "type": "string", "minLength": 1 },
+        "cleanup_contract": { "type": "string", "minLength": 1 },
+        "binding_failure_diagnostic": {
+          "const": "binding-failure-branches-to-absent-path"
+        },
+        "presence_test_required": { "const": true }
+      },
+      "additionalProperties": false
+    },
+    "optionalRejection": {
+      "type": "object",
+      "required": ["source_span", "spelling", "conversion_attempt", "diagnostic"],
+      "properties": {
+        "source_span": { "type": "string", "minLength": 1 },
+        "spelling": { "type": "string", "minLength": 1 },
+        "conversion_attempt": { "type": "string", "minLength": 1 },
+        "diagnostic": { "pattern": "^O3" }
+      },
+      "additionalProperties": false
+    },
+    "loweringContract": {
+      "type": "object",
+      "required": [
+        "contract_id",
+        "status",
+        "executable_lowering_status",
+        "construction_contract",
+        "absent_construction_kind",
+        "present_construction_kind",
+        "absent_construction_forbids_payload",
+        "present_construction_requires_payload",
+        "checked_unwrap_requires_presence_proof",
+        "unchecked_unwrap_supported",
+        "binding_failure_diagnostic",
+        "unwrap_failure_diagnostic",
+        "nil_bridge_diagnostic",
+        "remaining_runtime_boundary",
+        "runtime_construction_supported",
+        "runtime_unwrap_supported",
+        "ir_payload_emission_supported",
+        "call_abi_lowering_supported",
+        "runtime_abi_payload_scope"
+      ],
+      "properties": {
+        "contract_id": {
+          "const": "objc3c.value_optional.lowering.contract.v1"
+        },
+        "status": {
+          "const": "stable-packed-abi-carrier-runtime-execution-supported"
+        },
+        "executable_lowering_status": {
+          "const": "packed-presence-payload-runtime-abi-lowered"
+        },
+        "construction_contract": {
+          "const": "explicit-absent-present-constructors-only"
+        },
+        "absent_construction_kind": { "const": "absent-without-payload" },
+        "present_construction_kind": { "const": "present-with-payload" },
+        "absent_construction_forbids_payload": { "const": true },
+        "present_construction_requires_payload": { "const": true },
+        "checked_unwrap_requires_presence_proof": { "const": true },
+        "unchecked_unwrap_supported": { "const": false },
+        "binding_failure_diagnostic": {
+          "const": "binding-failure-branches-to-absent-path"
+        },
+        "unwrap_failure_diagnostic": {
+          "const": "unwrap-requires-proven-has-value"
+        },
+        "nil_bridge_diagnostic": {
+          "const": "nil-bridging-to-optional-is-rejected"
+        },
+        "remaining_runtime_boundary": {
+          "const": "unchecked-unwrap-property-ivar-storage-and-nullable-pointer-bridging-remain-reserved"
+        },
+        "runtime_construction_supported": { "const": true },
+        "runtime_unwrap_supported": { "const": true },
+        "ir_payload_emission_supported": { "const": true },
+        "call_abi_lowering_supported": { "const": true },
+        "runtime_abi_payload_scope": {
+          "const": "supported-packed-scalar-id-handle-and-full-i64-payload-forms"
+        }
+      },
+      "additionalProperties": false
+    }
+  }
+}

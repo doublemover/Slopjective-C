@@ -1,0 +1,7 @@
+// Negative fixture: generic callable constraints must be acyclic.
+// Expected diagnostic code(s): O3S206.
+module NegativeTypeSemanticGenericCallableConstraintCycle;
+
+fn cyclicGenericCallable<T : U, U : T>(value: T) -> T {
+  return value;
+}

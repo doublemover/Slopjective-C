@@ -79,6 +79,27 @@ void EmitObjc3CrossModuleImportedModuleRecordRuntimePreludeJson(
       << imported_input.concurrency_actor_race_guard_dependency_sites << ",\n"
       << "      \"concurrency_actor_task_handoff_sites\": "
       << imported_input.concurrency_actor_task_handoff_sites << ",\n"
+      << "      \"concurrency_actor_mailbox_message_identity_field_count\": "
+      << imported_input.concurrency_actor_mailbox_message_identity_field_count
+      << ",\n"
+      << "      \"concurrency_actor_mailbox_fifo_ordering_field_count\": "
+      << imported_input.concurrency_actor_mailbox_fifo_ordering_field_count
+      << ",\n"
+      << "      \"concurrency_actor_mailbox_drain_operation_field_count\": "
+      << imported_input.concurrency_actor_mailbox_drain_operation_field_count
+      << ",\n"
+      << "      \"concurrency_actor_mailbox_cancel_operation_field_count\": "
+      << imported_input.concurrency_actor_mailbox_cancel_operation_field_count
+      << ",\n"
+      << "      \"concurrency_actor_mailbox_error_operation_field_count\": "
+      << imported_input.concurrency_actor_mailbox_error_operation_field_count
+      << ",\n"
+      << "      \"concurrency_actor_mailbox_shutdown_operation_field_count\": "
+      << imported_input.concurrency_actor_mailbox_shutdown_operation_field_count
+      << ",\n"
+      << "      \"concurrency_actor_distributed_transport_evidence_sites\": "
+      << imported_input.concurrency_actor_distributed_transport_evidence_sites
+      << ",\n"
       << "      \"concurrency_actor_guard_blocked_sites\": "
       << imported_input.concurrency_actor_guard_blocked_sites << ",\n"
       << "      \"concurrency_actor_contract_violation_sites\": "
@@ -108,7 +129,76 @@ void EmitObjc3CrossModuleImportedModuleRecordRuntimePreludeJson(
       << "      \"concurrency_actor_isolation_lowering_replay_key\": \""
       << EscapeJsonString(
              imported_input.concurrency_actor_isolation_lowering_replay_key)
-      << "\",\n";
+      << "\",\n"
+      << "      \"concurrency_scheduler_task_runtime_import_present\": "
+      << (imported_input.concurrency_scheduler_task_runtime_import_present
+              ? "true"
+              : "false")
+      << ",\n"
+      << "      \"concurrency_scheduler_task_runtime_ready\": "
+      << (imported_input.concurrency_scheduler_task_runtime_ready ? "true"
+                                                                  : "false")
+      << ",\n"
+      << "      \"concurrency_scheduler_task_runtime_deterministic\": "
+      << (imported_input.concurrency_scheduler_task_runtime_deterministic
+              ? "true"
+              : "false")
+      << ",\n"
+      << "      \"concurrency_scheduler_shutdown_drain_ready\": "
+      << (imported_input.concurrency_scheduler_shutdown_drain_ready ? "true"
+                                                                    : "false")
+      << ",\n"
+      << "      \"concurrency_scheduler_cancellation_error_cleanup_ready\": "
+      << (imported_input
+                  .concurrency_scheduler_cancellation_error_cleanup_ready
+              ? "true"
+              : "false")
+      << ",\n"
+      << "      \"concurrency_scheduler_task_runtime_contract_id\": \""
+      << EscapeJsonString(
+             imported_input.concurrency_scheduler_task_runtime_contract_id)
+      << "\",\n"
+      << "      \"concurrency_scheduler_task_runtime_source_contract_id\": \""
+      << EscapeJsonString(
+             imported_input.concurrency_scheduler_task_runtime_source_contract_id)
+      << "\",\n"
+      << "      \"concurrency_scheduler_task_runtime_replay_key\": \""
+      << EscapeJsonString(
+             imported_input.concurrency_scheduler_task_runtime_replay_key)
+      << "\",\n"
+      << "      \"concurrency_scheduler_task_lifecycle_replay_key\": \""
+      << EscapeJsonString(
+             imported_input.concurrency_scheduler_task_lifecycle_replay_key)
+      << "\",\n"
+      << "      \"concurrency_scheduler_task_cancellation_replay_key\": \""
+      << EscapeJsonString(
+             imported_input.concurrency_scheduler_task_cancellation_replay_key)
+      << "\",\n"
+      << "      \"concurrency_scheduler_task_shutdown_replay_key\": \""
+      << EscapeJsonString(
+             imported_input.concurrency_scheduler_task_shutdown_replay_key)
+      << "\",\n"
+      << "      \"concurrency_scheduler_task_record_sites\": "
+      << imported_input.concurrency_scheduler_task_record_sites << ",\n"
+      << "      \"concurrency_scheduler_continuation_record_sites\": "
+      << imported_input.concurrency_scheduler_continuation_record_sites
+      << ",\n"
+      << "      \"concurrency_scheduler_executor_hop_record_sites\": "
+      << imported_input.concurrency_scheduler_executor_hop_record_sites
+      << ",\n"
+      << "      \"concurrency_scheduler_queue_lifecycle_record_sites\": "
+      << imported_input.concurrency_scheduler_queue_lifecycle_record_sites
+      << ",\n"
+      << "      \"concurrency_scheduler_cancellation_checkpoint_sites\": "
+      << imported_input.concurrency_scheduler_cancellation_checkpoint_sites
+      << ",\n"
+      << "      \"concurrency_scheduler_error_cleanup_sites\": "
+      << imported_input.concurrency_scheduler_error_cleanup_sites << ",\n"
+      << "      \"concurrency_scheduler_shutdown_drain_sites\": "
+      << imported_input.concurrency_scheduler_shutdown_drain_sites << ",\n"
+      << "      \"concurrency_scheduler_unsupported_policy_sites\": "
+      << imported_input.concurrency_scheduler_unsupported_policy_sites
+      << ",\n";
 }
 
 void EmitObjc3CrossModuleImportedModuleRecordMetaprogrammingSectionJson(
@@ -158,5 +248,49 @@ void EmitObjc3CrossModuleImportedModuleRecordMetaprogrammingSectionJson(
       << EscapeJsonString(
              imported_input
                  .metaprogramming_macro_host_process_cache_root_relative_path)
-      << "\",\n";
+      << "\",\n"
+      << "      \"metaprogramming_macro_host_process_cache_package_identity\": \""
+      << EscapeJsonString(
+             imported_input
+                 .metaprogramming_macro_host_process_cache_package_identity)
+      << "\",\n"
+      << "      \"metaprogramming_macro_host_process_cache_package_lock_identity\": \""
+      << EscapeJsonString(
+             imported_input
+                 .metaprogramming_macro_host_process_cache_package_lock_identity)
+      << "\",\n"
+      << "      \"metaprogramming_macro_host_process_cache_package_trust_identity\": \""
+      << EscapeJsonString(
+             imported_input
+                 .metaprogramming_macro_host_process_cache_package_trust_identity)
+      << "\",\n"
+      << "      \"metaprogramming_macro_host_process_cache_input_content_identity\": \""
+      << EscapeJsonString(
+             imported_input
+                 .metaprogramming_macro_host_process_cache_input_content_identity)
+      << "\",\n"
+      << "      \"metaprogramming_macro_host_process_cache_output_content_identity\": \""
+      << EscapeJsonString(
+             imported_input
+                 .metaprogramming_macro_host_process_cache_output_content_identity)
+      << "\",\n"
+      << "      \"metaprogramming_macro_host_process_cache_host_identity\": \""
+      << EscapeJsonString(
+             imported_input
+                 .metaprogramming_macro_host_process_cache_host_identity)
+      << "\",\n"
+      << "      \"metaprogramming_macro_host_process_cache_validation_status\": \""
+      << EscapeJsonString(
+             imported_input
+                 .metaprogramming_macro_host_process_cache_validation_status)
+      << "\",\n"
+      << "      \"metaprogramming_macro_host_process_cache_runtime_consumption_artifact_identity\": \""
+      << EscapeJsonString(
+             imported_input
+                 .metaprogramming_macro_host_process_cache_runtime_consumption_artifact_identity)
+      << "\",\n"
+      << "      \"metaprogramming_macro_host_process_cache_package_replay_generation\": "
+      << imported_input
+             .metaprogramming_macro_host_process_cache_package_replay_generation
+      << ",\n";
 }

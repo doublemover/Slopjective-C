@@ -1,0 +1,18 @@
+// Strict-concurrency negative fixture: non-sendable crossing outside actor isolation.
+module StrictConcurrencySendabilityNegative;
+
+extern fn objc3_cross_actor_non_sendable_transfer_i32(seed: i32) -> i32;
+
+@interface NonActorTransfer
+- (i32)transfer:(i32)seed;
+@end
+
+@implementation NonActorTransfer
+- (i32)transfer:(i32)seed {
+  return objc3_cross_actor_non_sendable_transfer_i32(seed);
+}
+@end
+
+fn main() -> i32 {
+  return 0;
+}

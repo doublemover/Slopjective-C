@@ -2,10 +2,13 @@
 
 from __future__ import annotations
 
+from objc3c_tooling.artifact_identity import current_host_artifact_identity
+
 from scripts.repo_superclean_surface.paths import REPO_SUPERCLEAN_SOURCE_OF_TRUTH
 
 from ..environment import ROOT
 
+ARTIFACT_IDENTITY = current_host_artifact_identity()
 DEVELOPER_TOOLING_INTEGRATION_PY = (
     ROOT / "scripts" / "check_objc3c_developer_tooling_integration.py"
 )
@@ -38,9 +41,7 @@ LIBRARY_CLI_PARITY_PY = ROOT / "scripts" / "check_objc3c_library_cli_parity.py"
 RUNNABLE_BONUS_EXPERIENCE_E2E_PY = (
     ROOT / "scripts" / "check_objc3c_runnable_bonus_experience_end_to_end.py"
 )
-FRONTEND_C_API_RUNNER_EXE = (
-    ROOT / "artifacts" / "bin" / "objc3c-frontend-c-api-runner.exe"
-)
+FRONTEND_C_API_RUNNER_EXE = ROOT / ARTIFACT_IDENTITY.frontend_runner_relative_path
 DEFAULT_DEVELOPER_TOOLING_SOURCE = (
     ROOT / "tests" / "tooling" / "fixtures" / "native" / "hello.objc3"
 )

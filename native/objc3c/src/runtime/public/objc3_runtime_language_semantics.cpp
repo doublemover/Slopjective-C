@@ -235,15 +235,15 @@ constexpr RuntimeLanguageSemanticsSurfaceRecord
          true,
          true,
          true,
-         false,
          true,
          true,
-         false,
-         8u,
+         true,
+         true,
+         10u,
          7u,
          7u,
          7u,
-         6u,
+         9u,
          "objc3c.behavior.language.advanced-runtime-closure",
          "advanced-runtime-combined-closure",
          "advanced-runtime-combined-source-identity",
@@ -257,8 +257,9 @@ constexpr RuntimeLanguageSemanticsSurfaceRecord
          "",
          "advanced-runtime.unsupported-combination",
          "combined runtime closure is bounded to checked ownership, blocks, "
-         "errors, concurrency, property behavior, metaprogramming provenance, "
-         "and package replay evidence; Swift ABI, distributed actors, broad "
+         "errors, concurrency, foreign ABI replay, property behavior, "
+         "metaprogramming provenance, and package replay evidence; Swift ABI, "
+         "distributed actors, broad "
          "scheduler guarantees, and arbitrary macro host execution remain "
          "reserved or rejected",
          "tests/native/runtime/advanced_closure/combined_positive.objc3",

@@ -52,6 +52,8 @@ enum class Objc3LexTokenKind {
   KwAtOptional,
   KwAtProperty,
   KwAtKeypath,
+  KwAtImport,
+  KwAtReifyGenerics,
   KwAtCleanup,
   KwAtResource,
   KwAtEnd,

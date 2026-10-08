@@ -23,6 +23,7 @@ from developer_tooling_llvm_owner_sources import (
     hosted_llvm_summary,
     hosted_probe_without_object_emission,
     hosted_summary_without_clang,
+    hosted_summary_without_llc,
 )
 
 
@@ -60,7 +61,10 @@ def assert_local_llvm_probe_payload_remains_diagnostic_not_capability_truth() ->
 
 def assert_hosted_llvm_truth_payload_requires_object_emission() -> None:
     summary = capable_llvm_summary()
-    summary["llc_features"] = {"supports_filetype_obj": False}
+    summary["llc_features"] = {
+        "supports_filetype_obj": False,
+        "supports_target_object_emission": False,
+    }
 
     truth = hosted_llvm_capability_truth_from_summary(
         summary,
@@ -113,6 +117,11 @@ def assert_capability_routed_parity_skips_when_hosted_route_is_missing(
         "hosted_llc_object_emission_available",
         lambda: False,
     )
+    monkeypatch.setattr(
+        developer_tooling_llvm_parity,
+        "hosted_native_object_emission_status",
+        lambda: "native_object_emission_missing_llc",
+    )
 
     assert (
         developer_tooling_llvm_parity.action_test_capability_routed_source_parity([])
@@ -130,3 +139,15 @@ def assert_hosted_summary_truth_requires_mode_ok_clang_and_object_emission(
     )
 
     assert hosted_llvm_summary.hosted_llc_object_emission_available() is False
+    assert hosted_llvm_summary.hosted_full_toolchain_matrix_available() is False
+    assert hosted_llvm_summary.hosted_native_object_emission_status() == "native_object_emission_unavailable"
+
+    monkeypatch.setattr(
+        hosted_llvm_summary,
+        "hosted_llvm_summary",
+        hosted_summary_without_llc,
+    )
+
+    assert hosted_llvm_summary.hosted_llc_object_emission_available() is False
+    assert hosted_llvm_summary.hosted_full_toolchain_matrix_available() is False
+    assert hosted_llvm_summary.hosted_native_object_emission_status() == "native_object_emission_missing_llc"

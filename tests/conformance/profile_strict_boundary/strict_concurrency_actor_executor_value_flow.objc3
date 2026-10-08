@@ -1,0 +1,16 @@
+// Strict-concurrency positive fixture: actor executor metadata is accepted.
+module StrictConcurrencyActorExecutorValueFlow;
+
+actor class StrictConcurrencyMailbox
+- (i32)run:(i32)seed async __attribute__((objc_executor(main)));
+@end
+
+@implementation StrictConcurrencyMailbox
+- (i32)run:(i32)seed async __attribute__((objc_executor(main))) {
+  return seed;
+}
+@end
+
+fn main() -> i32 {
+  return 0;
+}

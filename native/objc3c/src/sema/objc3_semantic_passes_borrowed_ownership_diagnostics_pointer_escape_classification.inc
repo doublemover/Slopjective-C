@@ -60,6 +60,14 @@ static bool IsOwnershipBorrowedExpr(
                                      callable_contracts) ||
              IsOwnershipBorrowedExpr(expr->third.get(), scopes,
                                      callable_contracts);
+    case Expr::Kind::MatchExpression:
+      for (const auto &arm : expr->match_expression_arms) {
+        if (IsOwnershipBorrowedExpr(arm.value.get(), scopes,
+                                    callable_contracts)) {
+          return true;
+        }
+      }
+      return false;
     case Expr::Kind::CollectionLiteral:
     case Expr::Kind::IndexAccess:
       return false;

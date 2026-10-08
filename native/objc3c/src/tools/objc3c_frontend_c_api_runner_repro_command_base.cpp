@@ -1,5 +1,6 @@
 #include "tools/objc3c_frontend_c_api_runner_repro_command_segments.h"
 
+#include "artifacts/identity/artifact_identity.h"
 #include "tools/objc3c_frontend_c_api_runner_shell_quote.h"
 
 void AppendFrontendCApiRunnerReproBaseInvocationAndPathArgs(
@@ -7,9 +8,8 @@ void AppendFrontendCApiRunnerReproBaseInvocationAndPathArgs(
     const FrontendCApiRunnerOptions &options) {
   command << "& "
           << QuoteFrontendCApiRunnerPowerShellArg(
-                 (std::filesystem::path("artifacts") / "bin" /
-                  "objc3c-frontend-c-api-runner.exe")
-                     .generic_string());
+                 objc3::artifacts::identity::
+                     kObjc3NativeFrontendRunnerRelativePath);
   command << " "
           << QuoteFrontendCApiRunnerPowerShellArg(
                  options.input_path.generic_string());

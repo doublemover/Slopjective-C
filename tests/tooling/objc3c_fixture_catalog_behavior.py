@@ -152,6 +152,10 @@ def assert_parser_manifest_tracks_strict_rejection_cases(
         "A010-C007": ("reject_duplicate_pure_qualifier.objc3", "O3P100"),
         "A010-C008": ("reject_misplaced_pure_after_fn.objc3", "O3P100"),
         "A010-C009": ("reject_duplicate_throws_modifier.objc3", "O3P181"),
+        "A010-C010": ("reject_value_optional_type.objc3", "O3P159"),
+        "A010-C011": ("reject_typed_throws_payload.objc3", "O3P182"),
+        "A010-C012": ("reject_match_expression_position.objc3", "O3P156"),
+        "A010-C013": ("reject_guarded_match_pattern.objc3", "O3P157"),
     }
     for case_id, (fixture, diagnostic_code) in expected_rejections.items():
         case = cases[case_id]

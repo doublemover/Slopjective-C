@@ -91,6 +91,7 @@ def _publication_payloads():
                 },
                 "release_notes_policy": {
                     "source_mode": "source-derived",
+                    "required_sources": ["release_manifest", "update_manifest"],
                     "forbidden_sources": ["manual changelog row"],
                 },
             },
@@ -111,6 +112,7 @@ def _publication_payloads():
                 },
                 "release_notes_policy": {
                     "source_mode": "source-derived",
+                    "required_sources": ["release_manifest", "update_manifest"],
                     "forbidden_sources": ["stable support claim"],
                 },
             },

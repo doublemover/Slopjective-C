@@ -18,6 +18,7 @@ struct Objc3CStyleFunctionTypeParseResult {
   bool instancetype_spelling = false;
   bool object_pointer_spelling = false;
   std::string object_pointer_name;
+  Objc3ValueOptionalTypeDescriptor value_optional;
   bool has_generic_suffix = false;
   bool generic_suffix_terminated = true;
   std::string generic_suffix_text;

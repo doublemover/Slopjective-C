@@ -1,0 +1,6 @@
+// Expected diagnostic code(s): O3P182.
+module NegativeTypedThrowsMultiPayloadReserved;
+
+fn risky() throws(Error, OtherError) -> i32 {
+  return 1;
+}

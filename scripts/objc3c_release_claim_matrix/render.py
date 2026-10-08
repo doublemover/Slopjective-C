@@ -12,11 +12,11 @@ def render_markdown(probes: MatrixProbeArtifacts) -> str:
 
 | Surface | Current state |
 | --- | --- |
-| Claimed profile | `core` |
-| Language profile | canonical only |
+| Claimed profiles | `core`, `strict`, `strict-concurrency` |
+| Language profiles | `canonical`, `strict`, `strict-concurrency` |
 | Removed mode options | rejected with canonical diagnostics |
-| Strict / strict-concurrency / strict-system | fail-closed and not claimed |
-| Feature-macro publication | suppressed |
+| Strict-system | fail-closed and not claimed |
+| Feature-macro publication | truthful and fail-closed; no source-only macro promotion |
 | Emit/validate format | `json` only |
 | Native CLI sidecars | report + publication + validation |
 | Frontend C API sidecars | report + publication |
@@ -30,6 +30,6 @@ def render_markdown(probes: MatrixProbeArtifacts) -> str:
 - Native CLI validation: `{display_path(probes.validation_path)}`
 - Frontend C API report: `{display_path(probes.runner_report_path)}`
 - Frontend C API publication: `{display_path(probes.runner_publication_path)}`
-- Strict profile reject rc: `{probes.strict_reject.returncode}`
+- Strict-system reject rc: `{probes.strict_reject.returncode}`
 - YAML emit reject rc: `{probes.yaml_reject.returncode}`
 """

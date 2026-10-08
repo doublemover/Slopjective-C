@@ -16,6 +16,11 @@
     if (!ParseParameterType(property_type)) {
       return false;
     }
+    if (property_type.value_optional.present) {
+      diagnostics_.push_back(BuildObjc3ReservedValueOptionalTypeDiagnostic(
+          ValueOptionalDiagnosticToken(property_type.value_optional)));
+      return false;
+    }
     CopyPropertyTypeFromParam(property_type, property);
 
     const Token &name_token = Peek();

@@ -77,6 +77,36 @@ target_sources(objc3c_sema_contracts INTERFACE
   ${CMAKE_CURRENT_LIST_DIR}/objc3_semantic_type_metadata_handoff.h
 )
 
+add_library(objc3c_sema_diagnostic_contract_core STATIC
+  objc3_sema_diagnostic_contract.cpp
+)
+objc3c_apply_build_defaults(objc3c_sema_diagnostic_contract_core)
+objc3c_apply_llvm_direct_config(objc3c_sema_diagnostic_contract_core)
+target_link_libraries(objc3c_sema_diagnostic_contract_core PUBLIC
+  ${OBJC3C_SEMA_PUBLIC_DEPS}
+  objc3c_sema_contracts
+)
+
+add_library(objc3c_type_form_scaffold_surface STATIC
+  objc3_type_form_scaffold.cpp
+)
+objc3c_apply_build_defaults(objc3c_type_form_scaffold_surface)
+objc3c_apply_llvm_direct_config(objc3c_type_form_scaffold_surface)
+target_link_libraries(objc3c_type_form_scaffold_surface PUBLIC
+  ${OBJC3C_SEMA_PUBLIC_DEPS}
+  objc3c_sema_contracts
+)
+
+add_library(objc3c_sema_return_analysis STATIC
+  objc3_static_analysis.cpp
+)
+objc3c_apply_build_defaults(objc3c_sema_return_analysis)
+objc3c_apply_llvm_direct_config(objc3c_sema_return_analysis)
+target_link_libraries(objc3c_sema_return_analysis PUBLIC
+  ${OBJC3C_SEMA_PUBLIC_DEPS}
+  objc3c_sema_contracts
+)
+
 add_library(objc3c_semantic_type_surface STATIC
   objc3_semantic_collection_helpers.cpp
   objc3_semantic_context.cpp
@@ -98,6 +128,7 @@ objc3c_apply_llvm_direct_config(objc3c_semantic_type_surface)
 target_link_libraries(objc3c_semantic_type_surface PUBLIC
   ${OBJC3C_SEMA_PUBLIC_DEPS}
   objc3c_sema_contracts
+  objc3c_type_form_scaffold_surface
 )
 
 add_library(objc3c_sema_equivalence STATIC
@@ -116,7 +147,6 @@ target_link_libraries(objc3c_sema_equivalence PUBLIC
 )
 
 add_library(objc3c_sema_diagnostics_surface STATIC
-  objc3_sema_diagnostic_contract.cpp
   objc3_sema_diagnostic_publication.cpp
   objc3_sema_diagnostics_bus.cpp
   objc3_sema_parser_handoff_publication.cpp
@@ -129,6 +159,7 @@ objc3c_apply_llvm_direct_config(objc3c_sema_diagnostics_surface)
 target_link_libraries(objc3c_sema_diagnostics_surface PUBLIC
   ${OBJC3C_SEMA_PUBLIC_DEPS}
   objc3c_sema_contracts
+  objc3c_sema_diagnostic_contract_core
   objc3c_sema_equivalence
   objc3c_semantic_type_surface
 )
@@ -161,8 +192,11 @@ objc3c_apply_llvm_direct_config(objc3c_semantic_passes_core)
 target_link_libraries(objc3c_semantic_passes_core PUBLIC
   ${OBJC3C_SEMA_PUBLIC_DEPS}
   objc3c_sema_contracts
+  objc3c_sema_diagnostic_contract_core
+  objc3c_sema_return_analysis
   objc3c_sema_static_scalar_analysis
   objc3c_semantic_type_surface
+  objc3c_type_form_scaffold_surface
 )
 
 target_link_libraries(objc3c_sema_diagnostics_surface PUBLIC
@@ -171,19 +205,20 @@ target_link_libraries(objc3c_sema_diagnostics_surface PUBLIC
 
 add_library(objc3c_sema STATIC
   objc3_sema_pass_manager.cpp
-  objc3_type_form_scaffold.cpp
-  objc3_static_analysis.cpp
 )
 objc3c_apply_build_defaults(objc3c_sema)
 objc3c_apply_llvm_direct_config(objc3c_sema)
 target_link_libraries(objc3c_sema PUBLIC
   ${OBJC3C_SEMA_PUBLIC_DEPS}
   objc3c_sema_contracts
+  objc3c_sema_diagnostic_contract_core
   objc3c_sema_diagnostics_surface
   objc3c_sema_equivalence
+  objc3c_sema_return_analysis
   objc3c_sema_static_scalar_analysis
   objc3c_semantic_passes_core
   objc3c_semantic_type_surface
+  objc3c_type_form_scaffold_surface
 )
 # Sema/type-system surface target for downstream topology hardening.
 add_library(objc3c_sema_type_system INTERFACE)

@@ -5,6 +5,19 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any
 
+from .constants import PLATFORM_IDENTITY_CONTRACTS
+
+
+def platform_id_for_host(system: str, machine: str) -> str:
+    normalized_system = system.lower()
+    normalized_machine = machine.lower()
+    for platform_id, identity in PLATFORM_IDENTITY_CONTRACTS.items():
+        host_systems = {str(item) for item in identity["host_systems"]}
+        host_machines = {str(item) for item in identity["host_machines"]}
+        if normalized_system in host_systems and normalized_machine in host_machines:
+            return platform_id
+    return "unsupported"
+
 
 @dataclass(frozen=True)
 class ToolProbe:
@@ -30,10 +43,17 @@ class HostSnapshot:
     machine: str
 
     def as_json(self) -> dict[str, str]:
-        return {"os": self.os, "arch": self.arch}
+        return {
+            "os": self.os,
+            "arch": self.arch,
+            "system": self.system,
+            "machine": self.machine,
+            "platform_id": platform_id_for_host(self.system, self.machine),
+        }
 
 
 __all__ = [
     "HostSnapshot",
     "ToolProbe",
+    "platform_id_for_host",
 ]

@@ -5,6 +5,7 @@
 #include <string>
 
 #include "ast/objc3_ast.h"
+#include "ir/objc3_ir_type_model.h"
 #include "lower/contracts/ownership_runtime_memory_management_contracts.h"
 #include "lower/core/lowering_primitive_ops.h"
 

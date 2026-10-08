@@ -16,6 +16,14 @@
   bool ParseObjcMethodSelectorParameterTail(
       Objc3MethodDecl &method, Objc3MethodDecl::SelectorPiece &head_piece) {
     if (!Match(TokenKind::Colon)) {
+      if (At(TokenKind::Less)) {
+        const Token &token = Peek();
+        diagnostics_.push_back(MakeDiag(
+            token.line, token.column, "O3P114",
+            "Objective-C method generic parameter clauses must immediately "
+            "follow the method marker before the return type"));
+        return false;
+      }
       method.selector_pieces.push_back(std::move(head_piece));
       return true;
     }

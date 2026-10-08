@@ -6,10 +6,12 @@ import argparse
 from datetime import datetime, timezone
 from pathlib import Path
 
+from objc3c_tooling.artifact_identity import current_host_artifact_identity
 from objc3c_tooling.paths import display_path
 
 ROOT = Path(__file__).resolve().parents[2]
-DEFAULT_COMPILER = ROOT / "artifacts" / "bin" / "objc3c-native.exe"
+ARTIFACT_IDENTITY = current_host_artifact_identity()
+DEFAULT_COMPILER = ROOT / ARTIFACT_IDENTITY.native_executable_relative_path
 DEFAULT_OUT_ROOT = ROOT / "tmp" / "artifacts" / "objc3c-native" / "fuzz-safety"
 DEFAULT_MANIFEST = ROOT / "tests" / "tooling" / "fixtures" / "stress" / "parser_sema_fuzz_manifest.json"
 MODE = "objc3c-fuzz-safety-v1"

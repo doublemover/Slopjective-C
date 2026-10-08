@@ -10,6 +10,7 @@ from .actions.developer_tooling_dump_contracts import (
 from .actions.developer_tooling_llvm_contracts import (
     CAPABILITY_EXPLORER_CONTRACT,
 )
+from .actions.developer_tooling_llvm_contract_constants import FRONTEND_RUNNER_BACKEND
 
 from .action_spec import ActionSpec
 
@@ -39,7 +40,7 @@ def _capability_explorer_spec() -> ActionSpec:
 
 DEVELOPER_INSPECTION_ACTION_SPECS: dict[str, ActionSpec] = {
     "inspect-capability-explorer": _capability_explorer_spec(),
-    "inspect-playground-repro": ActionSpec("inspect-playground-repro", "compile one source through the frontend C API runner and dump the playground and repro object", "runner-internal + artifacts/bin/objc3c-frontend-c-api-runner.exe", validation_tier="repo", guarantee_owner="playground and repro payloads stay tied to the real frontend runner summary, emitted artifacts, and executable replay command", pass_through_args=True),
+    "inspect-playground-repro": ActionSpec("inspect-playground-repro", "compile one source through the frontend C API runner and dump the playground and repro object", FRONTEND_RUNNER_BACKEND, validation_tier="repo", guarantee_owner="playground and repro payloads stay tied to the real frontend runner summary, emitted artifacts, and executable replay command", pass_through_args=True),
     "inspect-compile-observability": _dump_action_spec(COMPILE_OBSERVABILITY_DUMP),
     "inspect-runtime-inspector": _dump_action_spec(RUNTIME_INSPECTOR_DUMP),
     "inspect-artifact": ActionSpec("inspect-artifact", "compile one source through the real frontend runner and dump the fail-closed object and runtime artifact inventory", "python:scripts/build_objc3c_editor_tooling_surface.py --artifact-inspector-only", validation_tier="repo", guarantee_owner="object file digests, symbol tables, runtime metadata, package identities, receipts, trust rows, and source/debug artifact links stay tied to real emitted artifacts", pass_through_args=True),

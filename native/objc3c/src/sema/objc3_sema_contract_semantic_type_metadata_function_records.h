@@ -9,10 +9,13 @@
 struct Objc3SemanticFunctionTypeMetadata {
   std::string name;
   std::size_t arity = 0;
-  std::vector<std::string> generic_parameter_names_source_order;
-  std::vector<std::string> generic_parameter_variance_source_order;
-  std::vector<std::vector<std::string>>
-      generic_parameter_constraints_lexicographic;
+  bool throws_declared = false;
+  bool typed_throws_declared = false;
+  std::string typed_throws_error_type_spelling;
+  std::string typed_throws_effect_signature_key;
+  std::string typed_throws_callable_compatibility_policy;
+  bool typed_throws_abi_lowering_ready = false;
+#include "sema/objc3_sema_contract_semantic_type_metadata_generic_callable_fields.inc"
   std::vector<ValueType> param_types;
   std::vector<Objc3SemanticCanonicalType> param_canonical_types;
   std::vector<bool> param_is_vector;

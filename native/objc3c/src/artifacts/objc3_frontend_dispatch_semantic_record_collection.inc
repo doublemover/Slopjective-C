@@ -193,6 +193,15 @@ void AccumulateDispatchSurfaceClassificationExpr(
         AccumulateDispatchSurfaceClassificationExpr(arg.get(), contract);
       }
       return;
+    case Expr::Kind::MatchExpression:
+      AccumulateDispatchSurfaceClassificationExpr(
+          expr->match_expression_scrutinee.get(), contract);
+      for (const auto &arm : expr->match_expression_arms) {
+        AccumulateDispatchSurfaceClassificationExpr(
+            arm.guard_condition.get(), contract);
+        AccumulateDispatchSurfaceClassificationExpr(arm.value.get(), contract);
+      }
+      return;
     case Expr::Kind::BlockLiteral:
       return;
     case Expr::Kind::Number:

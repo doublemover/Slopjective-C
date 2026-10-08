@@ -1,0 +1,5 @@
+// Expected diagnostic code(s): O3P159.
+module NegativeValueOptionalNullableSuffixMismatch;
+
+extern fn maybeObject(value: Optional<id>?) -> i32;
+

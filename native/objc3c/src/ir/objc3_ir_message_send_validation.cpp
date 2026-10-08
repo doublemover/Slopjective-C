@@ -53,6 +53,22 @@ bool ValidateObjc3IRMessageSendArityExpr(const Expr *expr,
                  expr->right.get(), runtime_dispatch_arg_slots, error) &&
              ValidateObjc3IRMessageSendArityExpr(
                  expr->third.get(), runtime_dispatch_arg_slots, error);
+    case Expr::Kind::MatchExpression:
+      if (!ValidateObjc3IRMessageSendArityExpr(
+              expr->match_expression_scrutinee.get(),
+              runtime_dispatch_arg_slots, error)) {
+        return false;
+      }
+      for (const auto &arm : expr->match_expression_arms) {
+        if (!ValidateObjc3IRMessageSendArityExpr(
+                arm.guard_condition.get(), runtime_dispatch_arg_slots,
+                error) ||
+            !ValidateObjc3IRMessageSendArityExpr(
+                arm.value.get(), runtime_dispatch_arg_slots, error)) {
+          return false;
+        }
+      }
+      return true;
     case Expr::Kind::Call:
     case Expr::Kind::Try:
     case Expr::Kind::Throw:

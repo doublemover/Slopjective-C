@@ -18,15 +18,31 @@ ROOT = Path(__file__).resolve().parents[1]
 AUTHORING_SUMMARY = ROOT / "tmp" / "reports" / "package-ecosystem" / "package-authoring-workflow-summary.json"
 LOCK_SUMMARY = ROOT / "tmp" / "reports" / "package-ecosystem" / "package-lock-summary.json"
 PACKAGE_MANAGER_SUMMARY = ROOT / "tmp" / "reports" / "package-ecosystem" / "package-manager-model-summary.json"
+DIRECT_IMPORT_SUMMARY = ROOT / "tmp" / "reports" / "package-ecosystem" / "direct-import-module-syntax-summary.json"
+PACKAGE_SECURITY_SUMMARY = ROOT / "tmp" / "reports" / "package-ecosystem" / "package-security-hardening-summary.json"
+HOSTED_REGISTRY_SUMMARY = ROOT / "tmp" / "reports" / "package-ecosystem" / "hosted-registry-resolution-summary.json"
+NETWORK_PUBLICATION_SUMMARY = ROOT / "tmp" / "reports" / "package-ecosystem" / "network-publication-summary.json"
 INSTALL_DISTRIBUTION_SUMMARY = ROOT / "tmp" / "reports" / "package-ecosystem" / "install-distribution-credibility-summary.json"
+PACKAGE_OPERATIONS_SUMMARY = ROOT / "tmp" / "reports" / "package-ecosystem" / "package-operations-summary.json"
 APP_ARCH_SUMMARY = ROOT / "tmp" / "reports" / "application-architecture-testing" / "runnable-template-canonical-app-summary.json"
 STDLIB_PROGRAM_SUMMARY = ROOT / "tmp" / "reports" / "stdlib" / "program-integration-summary.json"
 SUMMARY_PATH = ROOT / "tmp" / "reports" / "package-ecosystem" / "integration-summary.json"
 
 STEPS = [
+    ("direct-import-module-syntax", python_script_command("scripts/check_objc3c_direct_import_module_syntax.py")),
+    ("package-security-hardening", python_script_command("scripts/check_objc3c_package_security_hardening.py")),
     ("package-manager-model", python_script_command("scripts/check_objc3c_package_manager_model.py")),
     ("package-authoring-workflow", python_script_command("scripts/check_objc3c_package_authoring_workflow.py")),
-    ("package-install-distribution", python_script_command("scripts/check_objc3c_package_install_distribution_credibility.py")),
+    ("package-registry-model", python_script_command("scripts/check_objc3c_package_registry_model.py")),
+    ("package-network-publication", python_script_command("scripts/check_objc3c_package_network_publication.py")),
+    (
+        "package-install-distribution",
+        [
+            *python_script_command("scripts/check_objc3c_package_install_distribution_credibility.py"),
+            "--from-nothing",
+        ],
+    ),
+    ("package-operations", python_script_command("scripts/check_objc3c_package_operations.py")),
     ("application-architecture-integration", python_script_command("scripts/check_objc3c_application_architecture_integration.py")),
     ("stdlib-program-integration", python_script_command("scripts/check_objc3c_stdlib_program_integration.py")),
 ]
@@ -65,20 +81,42 @@ def main() -> int:
         if step["exit_code"] != 0:
             break
 
-    for path in (AUTHORING_SUMMARY, LOCK_SUMMARY, PACKAGE_MANAGER_SUMMARY, INSTALL_DISTRIBUTION_SUMMARY, APP_ARCH_SUMMARY, STDLIB_PROGRAM_SUMMARY):
+    for path in (
+        AUTHORING_SUMMARY,
+        LOCK_SUMMARY,
+        PACKAGE_MANAGER_SUMMARY,
+        DIRECT_IMPORT_SUMMARY,
+        PACKAGE_SECURITY_SUMMARY,
+        HOSTED_REGISTRY_SUMMARY,
+        NETWORK_PUBLICATION_SUMMARY,
+        INSTALL_DISTRIBUTION_SUMMARY,
+        PACKAGE_OPERATIONS_SUMMARY,
+        APP_ARCH_SUMMARY,
+        STDLIB_PROGRAM_SUMMARY,
+    ):
         expect(path.is_file(), f"missing expected package ecosystem integration child report {repo_rel(path)}", failures)
 
     authoring_summary = load_json(AUTHORING_SUMMARY) if AUTHORING_SUMMARY.is_file() else {}
     lock_summary = load_json(LOCK_SUMMARY) if LOCK_SUMMARY.is_file() else {}
     package_manager_summary = load_json(PACKAGE_MANAGER_SUMMARY) if PACKAGE_MANAGER_SUMMARY.is_file() else {}
+    direct_import_summary = load_json(DIRECT_IMPORT_SUMMARY) if DIRECT_IMPORT_SUMMARY.is_file() else {}
+    package_security_summary = load_json(PACKAGE_SECURITY_SUMMARY) if PACKAGE_SECURITY_SUMMARY.is_file() else {}
+    hosted_registry_summary = load_json(HOSTED_REGISTRY_SUMMARY) if HOSTED_REGISTRY_SUMMARY.is_file() else {}
+    network_publication_summary = load_json(NETWORK_PUBLICATION_SUMMARY) if NETWORK_PUBLICATION_SUMMARY.is_file() else {}
     install_distribution_summary = load_json(INSTALL_DISTRIBUTION_SUMMARY) if INSTALL_DISTRIBUTION_SUMMARY.is_file() else {}
+    package_operations_summary = load_json(PACKAGE_OPERATIONS_SUMMARY) if PACKAGE_OPERATIONS_SUMMARY.is_file() else {}
     app_arch_summary = load_json(APP_ARCH_SUMMARY) if APP_ARCH_SUMMARY.is_file() else {}
     stdlib_program_summary = load_json(STDLIB_PROGRAM_SUMMARY) if STDLIB_PROGRAM_SUMMARY.is_file() else {}
 
     expect(summary_passes(authoring_summary), "package authoring workflow summary did not report PASS", failures)
     expect(summary_passes(lock_summary), "package lock summary did not report PASS", failures)
     expect(summary_passes(package_manager_summary), "package manager summary did not report PASS", failures)
+    expect(summary_passes(direct_import_summary), "direct import module syntax summary did not report PASS", failures)
+    expect(summary_passes(package_security_summary), "package security hardening summary did not report PASS", failures)
+    expect(summary_passes(hosted_registry_summary), "hosted registry resolution summary did not report PASS", failures)
+    expect(summary_passes(network_publication_summary), "package network publication summary did not report PASS", failures)
     expect(summary_passes(install_distribution_summary), "package install distribution summary did not report PASS", failures)
+    expect(summary_passes(package_operations_summary), "package operations summary did not report PASS", failures)
     expect(summary_passes(app_arch_summary), "application architecture integration summary did not report PASS", failures)
     expect(summary_passes(stdlib_program_summary), "stdlib program integration summary did not report PASS", failures)
     expect(lock_summary.get("package_count", 0) >= 8, "package lock did not include stdlib and showcase packages", failures)
@@ -101,17 +139,35 @@ def main() -> int:
             "blocker_owner": "package-ecosystem-blockers",
             "blocking_conditions": [
                 "child package ecosystem workflow failed",
+                "direct @import syntax failed locked package provenance checks",
+                "package security hardening failed trust, extraction safety, or reserved-root policy checks",
                 "package lock summary failed source-owned replay checks",
+                "hosted registry fixture failed offline endpoint, trust, cache, or provenance checks",
+                "network dependency resolution or package release-channel publication failed offline fixture checks",
                 "package install distribution failed clean-root metadata agreement checks",
+                "package operation receipts failed deterministic lock, cache, trust, extraction, or owned-root checks",
                 "application architecture package surface drifted",
                 "stdlib package program surface drifted",
             ],
         },
         "workflow_actions": [
             "build-package-lock",
+            "package-sign",
+            "package-verify",
+            "validate-package-security-hardening",
+            "validate-direct-import-module-syntax",
             "validate-package-manager-model",
             "validate-package-authoring",
+            "validate-package-registry-model",
+            "package-registry-resolve",
+            "validate-package-network-publication",
             "validate-package-install-distribution",
+            "package-publish",
+            "package-install",
+            "package-update",
+            "package-uninstall",
+            "package-rollback",
+            "validate-package-operations",
             "validate-application-architecture",
             "validate-stdlib-program",
             "validate-package-ecosystem",
@@ -120,7 +176,12 @@ def main() -> int:
             repo_rel(AUTHORING_SUMMARY),
             repo_rel(LOCK_SUMMARY),
             repo_rel(PACKAGE_MANAGER_SUMMARY),
+            repo_rel(DIRECT_IMPORT_SUMMARY),
+            repo_rel(PACKAGE_SECURITY_SUMMARY),
+            repo_rel(HOSTED_REGISTRY_SUMMARY),
+            repo_rel(NETWORK_PUBLICATION_SUMMARY),
             repo_rel(INSTALL_DISTRIBUTION_SUMMARY),
+            repo_rel(PACKAGE_OPERATIONS_SUMMARY),
             repo_rel(APP_ARCH_SUMMARY),
             repo_rel(STDLIB_PROGRAM_SUMMARY),
         ],

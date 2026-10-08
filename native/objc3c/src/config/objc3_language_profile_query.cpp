@@ -18,7 +18,24 @@ const LanguageProfileContract *FindLanguageProfile(std::string_view name) {
 }
 
 bool IsCanonicalLanguageProfile(std::string_view name) {
+  const std::string normalized = NormalizeLanguageProfileName(name);
+  return normalized == kCanonicalLanguageProfileName;
+}
+
+bool IsSupportedLanguageProfile(std::string_view name) {
   return FindLanguageProfile(name) != nullptr;
+}
+
+const char *LanguageProfileName(LanguageProfileId id) {
+  switch (id) {
+    case LanguageProfileId::kCanonical:
+      return kCanonicalLanguageProfileName;
+    case LanguageProfileId::kStrict:
+      return kStrictLanguageProfileName;
+    case LanguageProfileId::kStrictConcurrency:
+      return kStrictConcurrencyLanguageProfileName;
+  }
+  return "unknown";
 }
 
 }  // namespace objc3c::config

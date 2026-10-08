@@ -80,9 +80,12 @@ PASS_PLANS: dict[str, dict[str, Any]] = {
         "invalidates_global_proof_state": True,
         "missing_proof_action": "REJECT_FAIL_CLOSED",
         "diagnostic": (
-            "method inlining requires callee body identity, scalar subset, ownership, "
-            "side-effect, source-map, diagnostic, ABI/package, depth, recursion, "
-            "generation, and invalidation proofs"
+            "method inlining requires exact callee identity, callee body identity, "
+            "original call/source spans, before/after IR proof, inline-frame "
+            "source-map identity, receiver/dispatch "
+            "assumptions, scalar subset, ownership, side-effect replay, source-map, "
+            "debug stepping, diagnostic, ABI/package, depth, recursion, generation, "
+            "runtime cache freshness, and invalidation replay proofs"
         ),
     },
     "cache-aware-dispatch": {
@@ -106,6 +109,53 @@ PASS_PLANS: dict[str, dict[str, Any]] = {
     },
 }
 
+METHOD_INLINING_TEXT_GATES = (
+    "method_inline_exact_callee_identity_key",
+    "method_inline_original_call_source_span_key",
+    "method_inline_callee_source_span_key",
+    "method_inline_before_ir_proof_key",
+    "method_inline_after_ir_proof_key",
+    "method_inline_inline_frame_id_key",
+    "method_inline_inlined_callsite_source_span_key",
+    "method_inline_stepping_policy_key",
+    "method_inline_optimized_ir_source_correlation_key",
+    "method_inline_receiver_dispatch_assumption_key",
+    "method_inline_debug_stepping_evidence_key",
+    "method_inline_side_effect_replay_key",
+    "method_inline_runtime_invalidation_replay_key",
+)
+
+METHOD_INLINING_TRUE_GATES = (
+    "method_inline_callee_body_identity_present",
+    "method_inline_original_call_source_span_present",
+    "method_inline_inline_frame_id_present",
+    "method_inline_inlined_callsite_source_span_present",
+    "method_inline_imported_debug_map_inline_frame_present",
+    "method_inline_emitted_debug_map_inline_frame_present",
+    "method_inline_stepping_policy_unambiguous",
+    "method_inline_optimized_ir_source_correlation_present",
+    "method_inline_scalar_subset",
+    "method_inline_receiver_dispatch_assumptions_pinned",
+    "method_inline_ownership_arc_effects_safe",
+    "method_inline_side_effect_summary_safe",
+    "method_inline_side_effect_replay_complete",
+    "method_inline_source_map_debug_preserved",
+    "method_inline_diagnostic_location_preserved",
+    "method_inline_debug_stepping_evidence_present",
+    "method_inline_runtime_abi_safe",
+    "method_inline_package_abi_identical",
+    "method_inline_depth_within_limit",
+    "method_inline_recursion_absent",
+    "method_inline_callee_generation_pinned",
+    "method_inline_runtime_cache_assumptions_fresh",
+    "method_inline_runtime_invalidation_replay_present",
+    "method_inline_invalidation_complete",
+)
+
+METHOD_INLINING_FALSE_GATES = (
+    "method_inline_generated_only_source_map",
+)
+
 
 def metadata_key(plan: dict[str, Any], decision: str, candidate: dict[str, Any]) -> str:
     success_claim = "true" if decision == "APPLIED" else "false"
@@ -120,21 +170,9 @@ def metadata_key(plan: dict[str, Any], decision: str, candidate: dict[str, Any])
         f";source={candidate.get('source_replay_key', '')}"
     )
     if candidate.get("pass_id") == "method-inlining":
-        inline_gates = (
-            "method_inline_callee_body_identity_present",
-            "method_inline_scalar_subset",
-            "method_inline_ownership_arc_effects_safe",
-            "method_inline_side_effect_summary_safe",
-            "method_inline_source_map_debug_preserved",
-            "method_inline_diagnostic_location_preserved",
-            "method_inline_runtime_abi_safe",
-            "method_inline_package_abi_identical",
-            "method_inline_depth_within_limit",
-            "method_inline_recursion_absent",
-            "method_inline_callee_generation_pinned",
-            "method_inline_invalidation_complete",
-        )
-        for gate in inline_gates:
+        for gate in METHOD_INLINING_TEXT_GATES:
+            key += f";{gate}={candidate.get(gate, '')}"
+        for gate in METHOD_INLINING_TRUE_GATES + METHOD_INLINING_FALSE_GATES:
             key += f";{gate}={str(bool(candidate.get(gate))).lower()}"
     if candidate.get("pass_id") == "cache-aware-dispatch":
         cache_gates = (
@@ -178,25 +216,18 @@ def _result(
 
 def _missing(candidate: dict[str, Any], plan: dict[str, Any]) -> dict[str, Any]:
     if candidate.get("pass_id") == "method-inlining":
-        missing_gates = [
-            gate
-            for gate in (
-                "benchmark_governance_ready",
-                "method_inline_callee_body_identity_present",
-                "method_inline_scalar_subset",
-                "method_inline_ownership_arc_effects_safe",
-                "method_inline_side_effect_summary_safe",
-                "method_inline_source_map_debug_preserved",
-                "method_inline_diagnostic_location_preserved",
-                "method_inline_runtime_abi_safe",
-                "method_inline_package_abi_identical",
-                "method_inline_depth_within_limit",
-                "method_inline_recursion_absent",
-                "method_inline_callee_generation_pinned",
-                "method_inline_invalidation_complete",
-            )
-            if not candidate.get(gate)
-        ]
+        missing_gates = []
+        if not candidate.get("benchmark_governance_ready"):
+            missing_gates.append("benchmark_governance_ready")
+        missing_gates.extend(
+            gate for gate in METHOD_INLINING_TEXT_GATES if not candidate.get(gate)
+        )
+        missing_gates.extend(
+            gate for gate in METHOD_INLINING_TRUE_GATES if not candidate.get(gate)
+        )
+        missing_gates.extend(
+            gate for gate in METHOD_INLINING_FALSE_GATES if candidate.get(gate)
+        )
         if missing_gates:
             diagnostic = plan["diagnostic"] + "; failed gates: " + ", ".join(missing_gates)
             return _result(candidate, plan, _missing_proof_decision(plan), diagnostic)
@@ -305,18 +336,9 @@ def evaluate_candidate(candidate: dict[str, Any]) -> dict[str, Any]:
 
     if pass_id == "method-inlining":
         if (
-            candidate.get("method_inline_callee_body_identity_present")
-            and candidate.get("method_inline_scalar_subset")
-            and candidate.get("method_inline_ownership_arc_effects_safe")
-            and candidate.get("method_inline_side_effect_summary_safe")
-            and candidate.get("method_inline_source_map_debug_preserved")
-            and candidate.get("method_inline_diagnostic_location_preserved")
-            and candidate.get("method_inline_runtime_abi_safe")
-            and candidate.get("method_inline_package_abi_identical")
-            and candidate.get("method_inline_depth_within_limit")
-            and candidate.get("method_inline_recursion_absent")
-            and candidate.get("method_inline_callee_generation_pinned")
-            and candidate.get("method_inline_invalidation_complete")
+            all(candidate.get(gate) for gate in METHOD_INLINING_TEXT_GATES)
+            and all(candidate.get(gate) for gate in METHOD_INLINING_TRUE_GATES)
+            and not any(candidate.get(gate) for gate in METHOD_INLINING_FALSE_GATES)
         ):
             return _result(candidate, plan, "APPLIED")
         return _missing(candidate, plan)

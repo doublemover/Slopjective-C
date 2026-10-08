@@ -177,6 +177,7 @@
           "selectors": [
             "typed_*.objc3",
             "*bool*_*.objc3",
+            "match_expression_*.objc3",
             "*_alias_signature.objc3",
             "assignment_*.objc3",
             "compound_assignment_*.objc3",
@@ -191,7 +192,10 @@
             "message_send_*_elision.objc3",
             "message_send_*_short_circuit.objc3",
             "main_bool_entrypoint.objc3",
-            "unary_plus_*.objc3"
+            "match_expression_literal_result.objc3",
+            "match_expression_guarded_bool.objc3",
+            "unary_plus_*.objc3",
+            "typed_keypath_nested_chain_positive.objc3"
           ],
           "disposition": "canonical lowering or ABI handoff evidence only; no runtime retired route acceptance"
         },
@@ -200,7 +204,8 @@
           "selectors": [
             "*-ir.expect.txt",
             "synthesized_ast_ir_*.objc3",
-            "typed_keypath_artifact_positive.objc3"
+            "typed_keypath_artifact_positive.objc3",
+            "typed_keypath_nested_chain_positive.objc3"
           ],
           "disposition": "IR expectation provenance for accepted canonical source forms"
         },
@@ -267,6 +272,7 @@
           "owner": "sema",
           "selectors": [
             "expect_failure.stage=compile + O3S*",
+            "negative_match_expression_*.objc3",
             "category_*",
             "protocol_*",
             "duplicate_protocol_runtime_export.objc3"
@@ -311,6 +317,7 @@
           "selectors": [
             "type_*",
             "*semantic*",
+            "match_expression_*.objc3",
             "*source_closure_positive.objc3"
           ],
           "disposition": "source and semantic model evidence only"
@@ -356,6 +363,7 @@
           "selectors": [
             "*_rejected.objc3",
             "*_negative.objc3",
+            "negative_match_expression_*.objc3",
             "*compatibility_negative.objc3",
             "*fail_closed*.objc3"
           ],

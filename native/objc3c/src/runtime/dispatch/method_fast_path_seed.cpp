@@ -206,6 +206,8 @@ void SeedDispatchIntentFastPathCacheForMethodListUnlocked(
         state.next_method_cache_entry_generation++;
     cache_entry.parameter_count = entry.parameter_count;
     cache_entry.return_kind = return_kind;
+    cache_entry.throws_error_out_abi_ready =
+        entry.throws_error_out_abi_ready;
     cache_entry.miss_status = OBJC3_RUNTIME_DISPATCH_STATUS_OK;
     cache_entry.cache_registered_image_count = state.registered_image_count;
     cache_entry.cache_last_successful_registration_order_ordinal =

@@ -28,6 +28,9 @@ struct Objc3IRExpressionEmissionCallbacks {
       emit_block_invoke_call;
   std::function<const LoweredFunctionSignature *(const std::string &name)>
       lookup_function_signature;
+  std::function<bool(const Expr *expr, const FunctionContext &ctx,
+                     LoweredFunctionSignature &signature_out)>
+      resolve_message_send_signature;
   std::function<std::string(const Expr *expr,
                             const LoweredFunctionSignature *signature,
                             FunctionContext &ctx,

@@ -170,6 +170,10 @@ struct SwitchCase {
   bool match_binding_mutable = false;
   std::string match_binding_name;
   std::string match_result_case_name;
+  bool has_match_guard = false;
+  std::unique_ptr<Expr> match_guard_condition;
+  unsigned match_guard_line = 1;
+  unsigned match_guard_column = 1;
   std::vector<std::unique_ptr<Stmt>> body;
   unsigned line = 1;
   unsigned column = 1;

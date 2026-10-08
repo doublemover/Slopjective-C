@@ -49,15 +49,35 @@ tables or examples.
 | `objc3c-update-manifest-v1.schema.json` | Release-channel update metadata linked to the upgrade support report. |
 | `objc3c-package-lock-v1.schema.json` | Package lock provenance with npm-bridge replay commands. |
 | `objc3c-package-offline-mirror-index-v1.schema.json` | Offline package mirror metadata with npm-bridge replay commands. |
-| `objc3c-package-install-receipt-v1.schema.json` | Package install receipts with npm-bridge install commands and canonical bootstrap entrypoints. |
+| `objc3c-package-hosted-registry-service-v1.schema.json` | Hermetic hosted-registry service contracts for fixture auth, trust-root operation, revocation, moderation, availability, and no-network fail-closed behavior. |
+| `objc3c-package-install-receipt-v1.schema.json` | Package install receipts with npm-bridge install commands, canonical bootstrap entrypoints, and reserved sanitizer package-variant/runtime-library receipt fields. |
+| `objc3c-sanitizer-runtime-library-manifest-v1.schema.json` | Dedicated ASan/UBSan runtime-library manifests with exact Windows x64 runtime artifact sets, required digests, missing-runtime fail-closed behavior, and no support/native-execution promotion. |
+| `objc3c-sanitizer-runtime-promotion-evidence-v1.schema.json` | Source-owned ASan/UBSan promotion contracts that require durable fixture rows, regenerated package/probe evidence, packaged execution smoke, expected sanitizer detection, digest checks, and fail-closed negative cases before any sanitizer support promotion. |
+| `objc3c-package-install-distribution-receipt-v1.schema.json` | From-nothing package install distribution receipts with clean owned roots and explicit replay commands. |
+| `objc3c-package-install-distribution-operation-receipt-v1.schema.json` | Package install distribution update/uninstall plan receipts bound to clean local install evidence. |
+| `objc3c-platform-toolchain-support-evidence-v1.schema.json` | Source-owned host/toolchain/package/sanitizer support evidence, fail-closed unsupported rows, and reserved sanitizer package metadata. |
+| `objc3c-platform-hosted-runner-capability-summaries-v1.schema.json` | Checked hosted-runner platform summaries that explain Windows support, Linux/macOS rejection, sanitizer reservation, and LLVM fail-closed states without promoting summary-only evidence. |
+| `objc3c-platform-support-source-truth-v1.schema.json` | Checked source-truth projection that keeps platform rows, package variants, and sanitizer variants aligned with platform-hardening evidence. |
 | `objc3c-platform-support-matrix-v1.schema.json` | Platform publication surfaces constrained to npm-bridge commands. |
 | `objc3c-compiler-throughput-summary-v1.schema.json` | Compiler throughput summaries keyed to the objc3c bridge. |
 | `objc3c-performance-telemetry-v1.schema.json` | Performance telemetry samples with npm-bridge command strings. |
+| `objc3c-optimization-runtime-debug-safety-v1.schema.json` | Optimization runtime/debug safety governance for checked budget records, deoptimization/invalidation boundaries, debug source-map preservation, and fail-closed overclaim cases. |
+| `objc3c-debug-source-maps-v1.schema.json` | Debug source-map bundles with compiler-owned source spans, debug maps, native line-table rows, native debug-info evidence, and inline-frame preservation records. |
+| `objc3c-debugger-integration-replay-v1.schema.json` | Replayable LLDB protocol fixtures, checked stepping plans, value-inspection records, supported runtime metadata, and fail-closed debugger negative cases. |
+| `objc3c-typed-keypath-debugger-lowering-v1.schema.json` | Typed keypath descriptor debugger metadata, nested component owner/member/type identity paths, source-map and diagnostic anchors, and no-fallback lowering policy. |
+| `objc3c-generic-callable-model-v1.schema.json` | Generic free-function and Objective-C generic-method metadata identity, reification policy, mangling policy, selector interaction, and fail-closed negative case records. |
 | `objc3c-full-envelope-dashboard-summary-v1.schema.json` | Full-envelope claimability dashboard summaries over support, conformance, release, performance, and trust evidence. |
 | `objc3c-developer-tooling-editor-surface-v1.schema.json` | Combined editor tooling surface summaries for diagnostics, navigation, formatting, debug, and unpublished capability metadata. |
 | `objc3c-application-architecture-evidence-summary-v1.schema.json` | Application architecture and testing evidence summaries for canonical workspace/template artifacts. |
 | `objc3c-artifact-authenticity-v1.schema.json` | Artifact authenticity envelopes that classify generated outputs, fixtures, and archive references without support-claim inflation. |
 | `source-hygiene-hard-cutover-report-v1.schema.json` | Source-hygiene hard-cutover reports for retired-surface residue, tracked generated-output rows, and active rejection findings. |
+
+## Language Feature Contract Schemas
+
+| Schema | Owns |
+| ------ | ---- |
+| `objc3c-typed-throws-effect-contract-v1.schema.json` | Typed throws source effect identity, exact callable compatibility policy, catch compatibility records, bridge-to-`id<Error>` policy, unsupported foreign-carrier fail-closed records, interface anchors, hidden error-out ABI lowering readiness, and negative rejection records. |
+| `objc3c-value-optionals-contract-v1.schema.json` | Value optional source/interface semantic contracts, ABI-layout identity, presence/payload records, runtime/lowering fail-closed boundaries, and rejection records. |
 
 ## Workflow Registry Schemas
 

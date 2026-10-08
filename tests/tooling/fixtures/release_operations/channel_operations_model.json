@@ -65,6 +65,13 @@
       "trigger": "stable channel gate omits release candidate conformance",
       "required_action": "block stable publication until validate-release-candidate-conformance is part of the stable gate",
       "blocks_publication": true
+    },
+    {
+      "rule_id": "publication-contract-source-drift",
+      "diagnostic_id": "release-publication-contract-source-drift",
+      "trigger": "release notes, changelog, rollback safety, clean install, or package freshness policy drifts from checked-in channel operations source",
+      "required_action": "block release-operations publication before emitting release notes or public changelog payloads",
+      "blocks_publication": true
     }
   ],
   "channels": [

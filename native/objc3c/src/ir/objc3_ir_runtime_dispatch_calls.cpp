@@ -6,11 +6,39 @@
 #include "ir/objc3_ir_type_model.h"
 #include "lower/contracts/runtime_dispatch_strict_abi_entrypoint_contracts.h"
 
+namespace {
+
+bool Objc3IRRuntimeDispatchUsesUnsupportedValueOptionalCarrier(
+    const Objc3IRRuntimeDispatchCallRequest &request) {
+  if (Objc3IRValueOptionalCarrierRequiresWideLanguageAbi(
+          request.return_value_optional_carrier)) {
+    return true;
+  }
+  for (const Objc3IRValueOptionalCarrierMetadata &carrier :
+       request.arg_value_optional_carriers) {
+    if (Objc3IRValueOptionalCarrierRequiresWideLanguageAbi(carrier)) {
+      return true;
+    }
+  }
+  return false;
+}
+
+std::string LLVMScalarTypeForCarrierAwareSlot(
+    ValueType type, const Objc3IRValueOptionalCarrierMetadata *carrier) {
+  if (carrier != nullptr && carrier->present) {
+    return LLVMScalarTypeForValueOptionalCarrier(type, *carrier);
+  }
+  return LLVMScalarType(type);
+}
+
+}  // namespace
+
 bool Objc3IRRuntimeDispatchCallRequestOwnsResult(
     const Objc3IRRuntimeDispatchCallRequest &request) {
   return Objc3LoweringStrictOwnerModelIsReady(
       request.result_owner, request.result_owner_model,
-      request.strict_no_retired_route, request.strict_no_compatibility);
+      request.strict_no_retired_route, request.strict_no_compatibility) &&
+         !Objc3IRRuntimeDispatchUsesUnsupportedValueOptionalCarrier(request);
 }
 
 bool Objc3IRDirectDispatchCallRequestOwnsResult(
@@ -44,6 +72,11 @@ const char *Objc3IRCacheAwareDispatchDescriptorType() {
 
 std::string BuildObjc3IRRuntimeDispatchCall(
     const Objc3IRRuntimeDispatchCallRequest &request) {
+  if (Objc3IRRuntimeDispatchUsesUnsupportedValueOptionalCarrier(request)) {
+    return "  ; objc3.value_optional.stale-wide-carrier-metadata.fail-closed: "
+           "runtime dispatch refused unsupported Optional<i64> carrier "
+           "metadata";
+  }
   std::ostringstream call;
   call << "  " << request.result_value << " = call i32 @"
        << request.dispatch_symbol << "(";
@@ -57,6 +90,9 @@ std::string BuildObjc3IRRuntimeDispatchCall(
   call << ", ptr " << request.selector_ptr;
   for (const std::string &arg : request.args) {
     call << ", i32 " << arg;
+  }
+  if (!request.throws_error_slot_ptr.empty()) {
+    call << ", ptr " << request.throws_error_slot_ptr;
   }
   call << ")";
   return call.str();
@@ -130,8 +166,10 @@ std::string BuildObjc3IRDirectDispatchCall(
   if (request.return_type != ValueType::Void) {
     call << request.result_value << " = ";
   }
-  call << "call " << LLVMScalarType(request.return_type) << " "
-       << request.callee_symbol << "(";
+  call << "call "
+       << LLVMScalarTypeForCarrierAwareSlot(
+              request.return_type, &request.return_value_optional_carrier)
+       << " " << request.callee_symbol << "(";
   for (std::size_t i = 0;
        i < request.explicit_arg_count && i < request.args.size(); ++i) {
     if (i != 0) {
@@ -139,7 +177,18 @@ std::string BuildObjc3IRDirectDispatchCall(
     }
     const ValueType arg_type =
         i < request.arg_types.size() ? request.arg_types[i] : ValueType::I32;
-    call << LLVMScalarType(arg_type) << " " << request.args[i];
+    const Objc3IRValueOptionalCarrierMetadata *arg_carrier =
+        i < request.arg_value_optional_carriers.size()
+            ? &request.arg_value_optional_carriers[i]
+            : nullptr;
+    call << LLVMScalarTypeForCarrierAwareSlot(arg_type, arg_carrier) << " "
+         << request.args[i];
+  }
+  if (!request.throws_error_slot_ptr.empty()) {
+    if (request.explicit_arg_count > 0) {
+      call << ", ";
+    }
+    call << "ptr " << request.throws_error_slot_ptr;
   }
   call << ")";
   return call.str();

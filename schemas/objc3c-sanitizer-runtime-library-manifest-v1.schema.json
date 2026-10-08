@@ -1,0 +1,335 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://objc3c.dev/schemas/objc3c-sanitizer-runtime-library-manifest-v1.schema.json",
+  "title": "objc3c Sanitizer Runtime Library Manifest",
+  "type": "object",
+  "required": [
+    "contract_id",
+    "target_platform_id",
+    "sanitizer",
+    "runtime_library_ids",
+    "runtime_library_artifacts",
+    "runtime_library_root_kind",
+    "missing_runtime_behavior",
+    "support_truth",
+    "native_execution_claimed"
+  ],
+  "properties": {
+    "contract_id": {
+      "const": "objc3c.sanitizer.runtime-library-manifest.v1"
+    },
+    "target_platform_id": {
+      "const": "windows-x64"
+    },
+    "sanitizer": {
+      "enum": ["address", "undefined"]
+    },
+    "runtime_library_ids": {
+      "type": "array",
+      "items": {
+        "enum": ["objc3-runtime", "clang_rt.asan", "clang_rt.ubsan"]
+      },
+      "minItems": 2,
+      "maxItems": 2
+    },
+    "runtime_library_artifacts": {
+      "type": "array",
+      "minItems": 1
+    },
+    "runtime_library_root_kind": {
+      "const": "llvm-clang-runtime-windows-x64"
+    },
+    "missing_runtime_behavior": {
+      "const": "fail-closed-before-package-install"
+    },
+    "support_truth": {
+      "const": false
+    },
+    "native_execution_claimed": {
+      "const": false
+    }
+  },
+  "oneOf": [
+    { "$ref": "#/$defs/addressSanitizerRuntimeLibraryManifest" },
+    { "$ref": "#/$defs/undefinedSanitizerRuntimeLibraryManifest" }
+  ],
+  "$defs": {
+    "sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "artifactSize": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "addressSanitizerRuntimeLibraryManifest": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "contract_id",
+        "target_platform_id",
+        "sanitizer",
+        "runtime_library_ids",
+        "runtime_library_artifacts",
+        "runtime_library_root_kind",
+        "missing_runtime_behavior",
+        "support_truth",
+        "native_execution_claimed"
+      ],
+      "properties": {
+        "contract_id": {
+          "const": "objc3c.sanitizer.runtime-library-manifest.v1"
+        },
+        "target_platform_id": {
+          "const": "windows-x64"
+        },
+        "sanitizer": {
+          "const": "address"
+        },
+        "runtime_library_ids": {
+          "const": [
+            "objc3-runtime",
+            "clang_rt.asan"
+          ]
+        },
+        "runtime_library_artifacts": {
+          "type": "array",
+          "prefixItems": [
+            { "$ref": "#/$defs/addressDynamicDllArtifact" },
+            { "$ref": "#/$defs/addressDynamicLibArtifact" },
+            { "$ref": "#/$defs/addressDynamicRuntimeThunkLibArtifact" }
+          ],
+          "items": false,
+          "minItems": 3,
+          "maxItems": 3
+        },
+        "runtime_library_root_kind": {
+          "const": "llvm-clang-runtime-windows-x64"
+        },
+        "missing_runtime_behavior": {
+          "const": "fail-closed-before-package-install"
+        },
+        "support_truth": {
+          "const": false
+        },
+        "native_execution_claimed": {
+          "const": false
+        }
+      }
+    },
+    "undefinedSanitizerRuntimeLibraryManifest": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "contract_id",
+        "target_platform_id",
+        "sanitizer",
+        "runtime_library_ids",
+        "runtime_library_artifacts",
+        "runtime_library_root_kind",
+        "missing_runtime_behavior",
+        "support_truth",
+        "native_execution_claimed"
+      ],
+      "properties": {
+        "contract_id": {
+          "const": "objc3c.sanitizer.runtime-library-manifest.v1"
+        },
+        "target_platform_id": {
+          "const": "windows-x64"
+        },
+        "sanitizer": {
+          "const": "undefined"
+        },
+        "runtime_library_ids": {
+          "const": [
+            "objc3-runtime",
+            "clang_rt.ubsan"
+          ]
+        },
+        "runtime_library_artifacts": {
+          "type": "array",
+          "prefixItems": [
+            { "$ref": "#/$defs/undefinedStandaloneLibArtifact" },
+            { "$ref": "#/$defs/undefinedStandaloneCxxLibArtifact" }
+          ],
+          "items": false,
+          "minItems": 2,
+          "maxItems": 2
+        },
+        "runtime_library_root_kind": {
+          "const": "llvm-clang-runtime-windows-x64"
+        },
+        "missing_runtime_behavior": {
+          "const": "fail-closed-before-package-install"
+        },
+        "support_truth": {
+          "const": false
+        },
+        "native_execution_claimed": {
+          "const": false
+        }
+      }
+    },
+    "addressDynamicDllArtifact": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "runtime_library_id",
+        "artifact",
+        "source_file_name",
+        "size_bytes",
+        "sha256",
+        "install_required"
+      ],
+      "properties": {
+        "runtime_library_id": {
+          "const": "clang_rt.asan"
+        },
+        "artifact": {
+          "const": "artifacts/runtime/sanitizer/address/clang_rt.asan_dynamic-x86_64.dll"
+        },
+        "source_file_name": {
+          "const": "clang_rt.asan_dynamic-x86_64.dll"
+        },
+        "size_bytes": {
+          "$ref": "#/$defs/artifactSize"
+        },
+        "sha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "install_required": {
+          "const": true
+        }
+      }
+    },
+    "addressDynamicLibArtifact": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "runtime_library_id",
+        "artifact",
+        "source_file_name",
+        "size_bytes",
+        "sha256",
+        "install_required"
+      ],
+      "properties": {
+        "runtime_library_id": {
+          "const": "clang_rt.asan"
+        },
+        "artifact": {
+          "const": "artifacts/runtime/sanitizer/address/clang_rt.asan_dynamic-x86_64.lib"
+        },
+        "source_file_name": {
+          "const": "clang_rt.asan_dynamic-x86_64.lib"
+        },
+        "size_bytes": {
+          "$ref": "#/$defs/artifactSize"
+        },
+        "sha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "install_required": {
+          "const": true
+        }
+      }
+    },
+    "addressDynamicRuntimeThunkLibArtifact": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "runtime_library_id",
+        "artifact",
+        "source_file_name",
+        "size_bytes",
+        "sha256",
+        "install_required"
+      ],
+      "properties": {
+        "runtime_library_id": {
+          "const": "clang_rt.asan"
+        },
+        "artifact": {
+          "const": "artifacts/runtime/sanitizer/address/clang_rt.asan_dynamic_runtime_thunk-x86_64.lib"
+        },
+        "source_file_name": {
+          "const": "clang_rt.asan_dynamic_runtime_thunk-x86_64.lib"
+        },
+        "size_bytes": {
+          "$ref": "#/$defs/artifactSize"
+        },
+        "sha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "install_required": {
+          "const": true
+        }
+      }
+    },
+    "undefinedStandaloneLibArtifact": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "runtime_library_id",
+        "artifact",
+        "source_file_name",
+        "size_bytes",
+        "sha256",
+        "install_required"
+      ],
+      "properties": {
+        "runtime_library_id": {
+          "const": "clang_rt.ubsan"
+        },
+        "artifact": {
+          "const": "artifacts/runtime/sanitizer/undefined/clang_rt.ubsan_standalone-x86_64.lib"
+        },
+        "source_file_name": {
+          "const": "clang_rt.ubsan_standalone-x86_64.lib"
+        },
+        "size_bytes": {
+          "$ref": "#/$defs/artifactSize"
+        },
+        "sha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "install_required": {
+          "const": true
+        }
+      }
+    },
+    "undefinedStandaloneCxxLibArtifact": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "runtime_library_id",
+        "artifact",
+        "source_file_name",
+        "size_bytes",
+        "sha256",
+        "install_required"
+      ],
+      "properties": {
+        "runtime_library_id": {
+          "const": "clang_rt.ubsan"
+        },
+        "artifact": {
+          "const": "artifacts/runtime/sanitizer/undefined/clang_rt.ubsan_standalone_cxx-x86_64.lib"
+        },
+        "source_file_name": {
+          "const": "clang_rt.ubsan_standalone_cxx-x86_64.lib"
+        },
+        "size_bytes": {
+          "$ref": "#/$defs/artifactSize"
+        },
+        "sha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "install_required": {
+          "const": true
+        }
+      }
+    }
+  }
+}

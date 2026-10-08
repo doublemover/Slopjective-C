@@ -1,0 +1,10 @@
+module MatchExpressionLiteralResult;
+
+fn main(value: i32) -> i32 {
+  let result = match (value) {
+    case 0 => 10;
+    case let candidate where candidate > 0 => candidate;
+    default => 1;
+  };
+  return result;
+}

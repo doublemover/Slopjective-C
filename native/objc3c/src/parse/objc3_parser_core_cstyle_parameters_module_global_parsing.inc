@@ -28,6 +28,53 @@
     ast_builder_.SetModuleName(program, module_name);
   }
 
+  void ParseDirectModuleImport(Objc3ParsedProgram &program) {
+    const Token &import_token = Previous();
+    std::vector<std::string> segments;
+    if (!At(TokenKind::Identifier)) {
+      const Token &token = Peek();
+      diagnostics_.push_back(MakeDiag(
+          token.line, token.column, "O3MOD8219",
+          "malformed @import module identity; expected a dotted module identifier"));
+      SynchronizeTopLevel();
+      return;
+    }
+    segments.push_back(Advance().text);
+    while (Match(TokenKind::Dot)) {
+      if (!At(TokenKind::Identifier)) {
+        const Token &token = Peek();
+        diagnostics_.push_back(MakeDiag(
+            token.line, token.column, "O3MOD8219",
+            "malformed @import module identity; expected a dotted module identifier"));
+        SynchronizeTopLevel();
+        return;
+      }
+      segments.push_back(Advance().text);
+    }
+    if (!Match(TokenKind::Semicolon)) {
+      const Token &token = Peek();
+      diagnostics_.push_back(MakeDiag(
+          token.line, token.column, "O3MOD8219",
+          "missing ';' after @import module declaration"));
+      SynchronizeTopLevel();
+      return;
+    }
+
+    std::ostringstream module_name;
+    for (std::size_t index = 0; index < segments.size(); ++index) {
+      if (index != 0u) {
+        module_name << ".";
+      }
+      module_name << segments[index];
+    }
+    Objc3ParsedModuleImportDecl decl;
+    decl.module_name = module_name.str();
+    decl.module_identity_key = "objc3.module-import:" + decl.module_name;
+    decl.line = import_token.line;
+    decl.column = import_token.column;
+    ast_builder_.AddModuleImport(program, std::move(decl));
+  }
+
   std::unique_ptr<GlobalDecl> ParseGlobalLet() {
     const Token &name_token = Peek();
     if (!Match(TokenKind::Identifier)) {

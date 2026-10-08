@@ -29,7 +29,17 @@ std::string Objc3FuncParamTypeReplayKey(const FuncParam &param) {
       << ";object_ptr_name=" << param.object_pointer_type_name
       << ";pointer_depth=" << param.pointer_declarator_depth
       << ";ownership=" << param.ownership_qualifier_spelling
-      << ";borrowed=" << (param.borrowed_pointer_qualified ? "true" : "false");
+      << ";borrowed=" << (param.borrowed_pointer_qualified ? "true" : "false")
+      << ";value_optional="
+      << (param.value_optional.present ? "true" : "false")
+      << ";value_optional_payload="
+      << param.value_optional.payload_type_spelling
+      << ";value_optional_abi="
+      << param.value_optional.abi_layout_id
+      << ";value_optional_runtime="
+      << (param.value_optional.runtime_execution_supported ? "true" : "false")
+      << ";value_optional_lowering="
+      << (param.value_optional.lowering_supported ? "true" : "false");
   return out.str();
 }
 

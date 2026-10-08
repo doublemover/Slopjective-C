@@ -24,6 +24,7 @@
       param.instancetype_spelling = parsed_type.instancetype_spelling;
       param.object_pointer_type_spelling = parsed_type.object_pointer_spelling;
       param.object_pointer_type_name = parsed_type.object_pointer_name;
+      param.value_optional = parsed_type.value_optional;
       param.has_generic_suffix = parsed_type.has_generic_suffix;
       param.generic_suffix_terminated = parsed_type.generic_suffix_terminated;
       param.generic_suffix_text = parsed_type.generic_suffix_text;

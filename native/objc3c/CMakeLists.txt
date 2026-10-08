@@ -13,7 +13,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 if (NOT CMAKE_CONFIGURATION_TYPES AND NOT CMAKE_BUILD_TYPE)
-  set(CMAKE_BUILD_TYPE Release CACHE STRING "Build type" FORCE)
+  set(CMAKE_BUILD_TYPE RelWithDebInfo CACHE STRING "Build type" FORCE)
 endif()
 
 option(OBJC3C_ENABLE_LLVM_DIRECT_OBJECT_EMISSION
@@ -37,7 +37,7 @@ set(OBJC3C_LLVM_ROOT "" CACHE PATH "Authoritative LLVM root propagated from the 
 set(OBJC3C_LLVM_INCLUDE_DIR "" CACHE PATH "LLVM include directory resolved by the PowerShell wrapper.")
 set(OBJC3C_LIBCLANG_LIBRARY "" CACHE FILEPATH "Path to libclang/clang import library resolved by the PowerShell wrapper.")
 set(OBJC3C_RUNTIME_OUTPUT_DIR "" CACHE PATH "Canonical final runtime output directory for objc3c-native executables.")
-set(OBJC3C_LIBRARY_OUTPUT_DIR "" CACHE PATH "Canonical final archive output directory for objc3_runtime.lib.")
+set(OBJC3C_LIBRARY_OUTPUT_DIR "" CACHE PATH "Canonical final native runtime library output directory.")
 set(OBJC3C_MAX_NATIVE_SOURCE_LINES "1500" CACHE STRING "Maximum line count for native source files.")
 set(OBJC3C_MAX_NATIVE_HEADER_LINES "1000" CACHE STRING "Maximum line count for native model and public headers.")
 
@@ -108,6 +108,7 @@ function(objc3c_apply_build_defaults target_name)
   target_link_libraries(${target_name} PUBLIC
     objc3c_build_defaults
   )
+  objc3c_apply_sanitizers(${target_name})
 endfunction()
 
 function(objc3c_apply_llvm_direct_config target_name)
@@ -128,6 +129,7 @@ function(objc3c_apply_archive_output target_name)
   if (OBJC3C_LIBRARY_OUTPUT_DIR)
     set_target_properties(${target_name} PROPERTIES
       ARCHIVE_OUTPUT_DIRECTORY "${OBJC3C_LIBRARY_OUTPUT_DIR}"
+      LIBRARY_OUTPUT_DIRECTORY "${OBJC3C_LIBRARY_OUTPUT_DIR}"
     )
   endif()
 endfunction()

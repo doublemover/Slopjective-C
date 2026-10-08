@@ -5,6 +5,7 @@ from __future__ import annotations
 from typing import Any
 
 from objc3c_runtime_acceptance.expectation_matching import expect
+from objc3c_runtime_acceptance.paths import FRONTEND_RUNNER_RELATIVE_PATH
 
 
 def expect_macro_safety_surface(surface: dict[str, Any]) -> None:
@@ -62,7 +63,7 @@ def expect_macro_host_cache_surface(surface: dict[str, Any]) -> None:
     )
     expect(
         surface.get("host_executable_relative_path")
-        == "artifacts/bin/objc3c-frontend-c-api-runner.exe"
+        == FRONTEND_RUNNER_RELATIVE_PATH
         and surface.get("cache_root_relative_path")
         == "tmp/artifacts/objc3c-native/cache/metaprogramming",
         "expected macro host process provider fixture to preserve host executable and cache root compatibility paths",

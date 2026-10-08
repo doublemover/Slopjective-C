@@ -2,14 +2,17 @@ from __future__ import annotations
 
 from pathlib import Path
 
+from objc3c_tooling.artifact_identity import current_host_artifact_identity
+
 ROOT = Path(__file__).resolve().parents[2]
+ARTIFACT_IDENTITY = current_host_artifact_identity()
 REPORT_DIR = ROOT / "reports" / "claimability" / "manifest-object-ir-truth-gate"
 JSON_OUT = REPORT_DIR / "manifest_object_ir_truth_gate_summary.json"
 MD_OUT = REPORT_DIR / "manifest_object_ir_truth_gate_summary.md"
 
 ISSUE = "#8018"
 CONTRACT_ID = "objc3c.manifest.object.ir.truth.gate.v1"
-COMPILER = ROOT / "artifacts" / "bin" / "objc3c-native.exe"
+COMPILER = ROOT / ARTIFACT_IDENTITY.native_executable_relative_path
 SCRATCH = ROOT / "tmp" / "artifacts" / "objc3c-native" / "manifest-object-ir-truth-gate"
 POSITIVE_FIXTURE = ROOT / "tests" / "tooling" / "fixtures" / "native" / "recovery" / "dispatch" / "parser_container_inherited_ivar_layout.objc3"
 NEGATIVE_FIXTURE = ROOT / "tests" / "tooling" / "fixtures" / "native" / "recovery" / "negative" / "negative_parser_container_ivar_layout_cycle.objc3"

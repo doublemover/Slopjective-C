@@ -20,6 +20,13 @@ SCHEMA_SUMMARY = ROOT / "tmp" / "reports" / "security-hardening" / "schema-surfa
 RESPONSE_DRILL_SUMMARY = ROOT / "tmp" / "reports" / "security-hardening" / "response-drill-summary.json"
 RUNTIME_HARDENING_SUMMARY = ROOT / "tmp" / "reports" / "security-hardening" / "runtime-hardening-summary.json"
 SANITIZER_VALIDATION_SUMMARY = ROOT / "tmp" / "reports" / "security-hardening" / "sanitizer-validation-summary.json"
+SANITIZER_EXECUTION_EVIDENCE_SUMMARY = (
+    ROOT
+    / "tmp"
+    / "reports"
+    / "security-hardening"
+    / "sanitizer-execution-evidence-summary.json"
+)
 LANGUAGE_RUNTIME_THREAT_MODEL_SUMMARY = ROOT / "tmp" / "reports" / "security-hardening" / "language-runtime-threat-model-summary.json"
 INTEGRATION_SUMMARY = ROOT / "tmp" / "reports" / "security-hardening" / "integration-summary.json"
 POSTURE_SUMMARY = ROOT / "tmp" / "reports" / "security-hardening" / "security-posture-summary.json"
@@ -33,6 +40,7 @@ REQUIRED_STEPS = [
     "check-security-hardening-schema-surface",
     "check-security-runtime-hardening",
     "check-security-sanitizer-validation",
+    "check-security-sanitizer-execution-evidence",
     "check-security-language-runtime-threat-model",
     "build-security-posture",
     "check-security-response-drill",
@@ -68,6 +76,7 @@ def main() -> int:
         RESPONSE_DRILL_SUMMARY,
         RUNTIME_HARDENING_SUMMARY,
         SANITIZER_VALIDATION_SUMMARY,
+        SANITIZER_EXECUTION_EVIDENCE_SUMMARY,
         LANGUAGE_RUNTIME_THREAT_MODEL_SUMMARY,
         POSTURE_SUMMARY,
         PUBLICATION_SUMMARY,
@@ -107,6 +116,7 @@ def main() -> int:
             repo_rel(RESPONSE_DRILL_SUMMARY),
             repo_rel(RUNTIME_HARDENING_SUMMARY),
             repo_rel(SANITIZER_VALIDATION_SUMMARY),
+            repo_rel(SANITIZER_EXECUTION_EVIDENCE_SUMMARY),
             repo_rel(LANGUAGE_RUNTIME_THREAT_MODEL_SUMMARY),
             repo_rel(INTEGRATION_SUMMARY),
             repo_rel(POSTURE_SUMMARY),

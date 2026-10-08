@@ -1,0 +1,61 @@
+{
+  "contract_id": "objc3c.package_ecosystem.hosted_registry_service_negative_cases.v1",
+  "issue_refs": [
+    8220
+  ],
+  "diagnostic_code": "O3PKG8055",
+  "service_fixture": "tests/tooling/fixtures/package_ecosystem/hosted_registry/service/hosted-registry-service.json",
+  "registry_index": "tests/tooling/fixtures/package_ecosystem/hosted_registry/hosted-registry-index.json",
+  "cases": [
+    {
+      "case_id": "missing-service-auth",
+      "failure_mode": "missing-service-auth",
+      "expected_failure": "O3PKG8055: missing hosted registry service auth policy"
+    },
+    {
+      "case_id": "unknown-service-auth-subject",
+      "failure_mode": "unknown-service-auth-subject",
+      "expected_failure": "O3PKG8055: unknown hosted registry service auth subject fixture:unknown"
+    },
+    {
+      "case_id": "service-auth-token-drift",
+      "failure_mode": "service-auth-token-drift",
+      "expected_failure": "O3PKG8055: hosted registry service auth token drift for fixture-developer"
+    },
+    {
+      "case_id": "service-contract-drift",
+      "failure_mode": "service-contract-drift",
+      "expected_failure": "O3PKG8055: hosted registry service contract id drifted"
+    },
+    {
+      "case_id": "service-index-drift",
+      "failure_mode": "service-index-drift",
+      "expected_failure": "O3PKG8055: hosted registry service index path drifted"
+    },
+    {
+      "case_id": "service-revocation-unavailable",
+      "failure_mode": "service-revocation-unavailable",
+      "expected_failure": "O3PKG8055: hosted registry service revocation unavailable"
+    },
+    {
+      "case_id": "service-moderation-blocked",
+      "failure_mode": "service-moderation-blocked",
+      "expected_failure": "O3PKG8055: hosted registry service moderation blocked package"
+    },
+    {
+      "case_id": "service-availability-unavailable",
+      "failure_mode": "service-availability-unavailable",
+      "expected_failure": "O3PKG8055: hosted registry service availability state drifted"
+    },
+    {
+      "case_id": "live-network-fetch",
+      "failure_mode": "live-network-fetch",
+      "expected_failure": "O3PKG8055: hosted registry service network request rejected"
+    },
+    {
+      "case_id": "fallback-registry-success",
+      "failure_mode": "fallback-registry-success",
+      "expected_failure": "O3PKG8055: hosted registry service fallback registry success allowed"
+    }
+  ]
+}

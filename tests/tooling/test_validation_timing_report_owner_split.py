@@ -305,7 +305,7 @@ def test_validation_timing_budget_uses_release_composite_thresholds() -> None:
     assert nightly_execution_smoke["status"] == "PASS"
     assert nightly_execution_replay["threshold_seconds"] == 120.0
     assert nightly_execution_replay["status"] == "PASS"
-    assert performance_governance_composite["threshold_seconds"] == 1800.0
+    assert performance_governance_composite["threshold_seconds"] == 3600.0
     assert performance_governance_composite["status"] == "PASS"
     assert release_foundation_composite["threshold_seconds"] == 3600.0
     assert release_foundation_composite["status"] == "PASS"

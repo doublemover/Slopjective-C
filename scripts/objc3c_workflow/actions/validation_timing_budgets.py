@@ -21,7 +21,7 @@ COMPOSITE_ELAPSED_THRESHOLD_SECONDS_BY_ACTION = {
     # Release composites include nested native performance, package, and
     # publication gates. Keep these hard-blocking, but budget the cold Windows
     # release lane instead of warmed developer-cache expectations.
-    "validate-performance-governance": 1800.0,
+    "validate-performance-governance": 3600.0,
     "validate-release-foundation": 3600.0,
     "validate-packaging-channels": 3300.0,
     "validate-release-operations": 3600.0,

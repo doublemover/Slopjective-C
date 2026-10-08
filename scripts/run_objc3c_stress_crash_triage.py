@@ -11,11 +11,13 @@ from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Sequence
+from objc3c_tooling.artifact_identity import current_host_artifact_identity
 from objc3c_tooling.paths import repo_rel
 from objc3c_tooling.json_io import load_json_object as load_json
 
 
 ROOT = Path(__file__).resolve().parents[1]
+ARTIFACT_IDENTITY = current_host_artifact_identity()
 ARTIFACT_SURFACE_PATH = ROOT / "tests" / "tooling" / "fixtures" / "stress" / "artifact_surface.json"
 FIXTURE_MANIFEST_PATH = ROOT / "tests" / "tooling" / "fixtures" / "stress" / "crash_triage_fixture_manifest.json"
 MINIMIZATION_SUMMARY_PATH = ROOT / "tmp" / "reports" / "stress" / "minimization-summary.json"
@@ -437,7 +439,7 @@ def main(argv: Sequence[str] | None = None) -> int:
                 f"{repo_rel(case.minimized_dir / 'candidate.objc3')}"
             ),
             "recommended_command": [
-                "artifacts/bin/objc3c-native.exe",
+                ARTIFACT_IDENTITY.native_executable_relative_path,
                 repo_rel(case.failure_dir / "source.objc3"),
                 "--out-dir",
                 repo_rel(replay_dir / "out"),

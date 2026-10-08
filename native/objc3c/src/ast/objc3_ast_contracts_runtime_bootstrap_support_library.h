@@ -1,16 +1,19 @@
 #pragma once
 
+#include "artifacts/identity/artifact_identity.h"
+
 inline constexpr const char *kObjc3RuntimeSupportLibraryTargetName =
     "objc3_runtime";
 inline constexpr const char *kObjc3RuntimeSupportLibrarySourceRoot =
     "native/objc3c/src/runtime";
 inline constexpr const char *kObjc3RuntimeSupportLibraryPublicHeaderPath =
     "native/objc3c/src/runtime/public/objc3_runtime_api.h";
-inline constexpr const char *kObjc3RuntimeSupportLibraryKind = "static";
+inline constexpr const char *kObjc3RuntimeSupportLibraryKind =
+    objc3::artifacts::identity::kObjc3NativeRuntimeLibraryKind;
 inline constexpr const char *kObjc3RuntimeSupportLibraryArchiveBasename =
-    "objc3_runtime";
+    objc3::artifacts::identity::kObjc3NativeRuntimeLibraryBasename;
 inline constexpr const char *kObjc3RuntimeSupportLibraryArchiveRelativePath =
-    "artifacts/lib/objc3_runtime.lib";
+    objc3::artifacts::identity::kObjc3NativeRuntimeLibraryRelativePath;
 inline constexpr const char *kObjc3RuntimeSupportLibraryImplementationSourcePath =
     "native/objc3c/src/runtime/objc3_runtime.cpp";
 inline constexpr const char *kObjc3RuntimeSupportLibraryProbeSourcePath =
@@ -31,7 +34,7 @@ inline constexpr const char
     *kObjc3RuntimeSupportLibraryExecutionSmokeScriptPath =
         "scripts/check_objc3c_native_execution_smoke.ps1";
 inline constexpr const char *kObjc3RuntimeSupportLibraryLinkWiringMode =
-    "emitted-object-links-against-objc3_runtime-lib";
+    "emitted-object-links-against-runtime-support-library";
 inline constexpr const char
     *kObjc3RuntimeSupportLibraryCompilerOwnershipBoundary =
         "compiler-emits-metadata-runtime-does-not-own-source-records";

@@ -27,6 +27,7 @@ struct Objc3FrontendArtifactBundle {
   std::vector<std::string> diagnostics;
   std::string manifest_json;
   std::string runtime_metadata_binary;
+  std::string standalone_textual_interface_payload_json;
   std::string runtime_aware_import_module_artifact_json;
   std::string interop_bridge_header_artifact_text;
   std::string interop_bridge_module_artifact_text;

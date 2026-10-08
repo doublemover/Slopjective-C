@@ -10,9 +10,12 @@ inline std::uint64_t BuildObjc3ParsedProgramTopLevelLayoutFingerprint(const Objc
 
   const Objc3Program &ast = Objc3ParsedProgramAst(program);
   std::vector<Objc3TopLevelLayoutEntry> entries;
-  entries.reserve(ast.globals.size() + ast.protocols.size() + ast.interfaces.size() + ast.implementations.size() +
-                  ast.functions.size());
+  entries.reserve(ast.module_imports.size() + ast.globals.size() + ast.protocols.size() +
+                  ast.interfaces.size() + ast.implementations.size() + ast.functions.size());
 
+  for (const auto &module_import : ast.module_imports) {
+    entries.push_back(Objc3TopLevelLayoutEntry{6ull, module_import.module_name, module_import.line, module_import.column});
+  }
   for (const auto &global : ast.globals) {
     entries.push_back(Objc3TopLevelLayoutEntry{1ull, global.name, global.line, global.column});
   }

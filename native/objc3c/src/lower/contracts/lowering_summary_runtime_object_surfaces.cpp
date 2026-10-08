@@ -1,5 +1,6 @@
 #include "lower/objc3_lowering_contract.h"
 
+#include "artifacts/identity/artifact_identity.h"
 #include "lower/metadata/lowering_metadata_helpers.h"
 
 #include <sstream>
@@ -186,7 +187,24 @@ std::string Objc3ManifestObjectIrTruthGateSummary() {
       << kObjc3VersionedConformanceReportLoweringContractId
       << ";runtime_capability_contract="
       << kObjc3RuntimeCapabilityReportingContractId
-      << ";required_artifacts=module.manifest.json,module.ll,module.obj,module.runtime-registration-descriptor.json,module.runtime-registration-manifest.json,module.runtime-metadata.bin,module.runtime-metadata-discovery.json,module.runtime-metadata-linker-options.rsp,module.objc3-conformance-report.json,module.objc3-conformance-publication.json,module.objc3-advanced-feature-gate.json,module.objc3-release-candidate-matrix.json"
+      << ";required_artifacts="
+      << objc3::artifacts::identity::kObjc3NativeDefaultManifestArtifactName
+      << "," << objc3::artifacts::identity::kObjc3NativeDefaultIrArtifactName
+      << ","
+      << objc3::artifacts::identity::kObjc3NativeDefaultObjectArtifactName
+      << ",module.runtime-registration-descriptor.json,"
+      << objc3::artifacts::identity::
+             kObjc3NativeDefaultRuntimeRegistrationManifestArtifactName
+      << ","
+      << objc3::artifacts::identity::
+             kObjc3NativeDefaultRuntimeMetadataBinaryArtifactName
+      << ","
+      << objc3::artifacts::identity::
+             kObjc3NativeDefaultRuntimeMetadataDiscoveryArtifactName
+      << ","
+      << objc3::artifacts::identity::
+             kObjc3NativeDefaultRuntimeMetadataLinkerOptionsArtifactName
+      << ",module.objc3-conformance-report.json,module.objc3-conformance-publication.json,module.objc3-advanced-feature-gate.json,module.objc3-release-candidate-matrix.json"
       << ";failure_model=" << kObjc3ManifestObjectIrTruthGateFailureModel
       << ";follow_on_surface=objc3c.manifest.object.ir.truthgate.closeout.v1";
   return out.str();

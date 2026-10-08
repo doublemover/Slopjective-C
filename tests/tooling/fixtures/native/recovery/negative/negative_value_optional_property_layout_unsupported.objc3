@@ -1,0 +1,7 @@
+// Expected diagnostic code(s): O3P159.
+module NegativeValueOptionalPropertyLayoutUnsupported;
+
+@interface ValueOptionalStorage
+@property (assign) Optional<i32> maybeCount;
+@end
+

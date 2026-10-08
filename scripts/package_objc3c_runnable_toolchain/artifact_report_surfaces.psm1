@@ -117,7 +117,11 @@ function New-RunnableToolchainPackageSurfaceManifestSection {
     command_surfaces = [ordered]@{
       build = "npm run objc3c -- build-native-binaries"
       package = "npm run objc3c -- package-runnable-toolchain"
+      package_asan = "npm run objc3c -- package-runnable-toolchain-asan"
+      package_ubsan = "npm run objc3c -- package-runnable-toolchain-ubsan"
       package_channels = "npm run objc3c -- build-package-channels"
+      package_channels_asan = "npm run objc3c -- build-package-channels-asan"
+      package_channels_ubsan = "npm run objc3c -- build-package-channels-ubsan"
       compile = "npm run objc3c -- compile-objc3c <input.objc3> --out-dir <out_dir> --emit-prefix module"
       build_playground = "npm run objc3c -- materialize-playground-workspace"
       build_application_workspace = "npm run objc3c -- materialize-canonical-application-workspace"

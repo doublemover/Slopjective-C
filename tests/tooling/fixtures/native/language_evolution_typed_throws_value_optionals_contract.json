@@ -1,0 +1,403 @@
+{
+  "schema_version": 1,
+  "contract_id": "objc3c.language_evolution.typed_throws_value_optionals.source_owned.v1",
+  "umbrella_issue_ref": 8207,
+  "issues": {
+    "typed_throws": 8233,
+    "value_optionals": 8234
+  },
+  "support_state": {
+    "typed_throws": "implemented_single_payload_interface_preserved_error_out_abi_catch_bridge_direct_runtime_dispatch_try_optional_runtime",
+    "value_optionals": "semantic_type_signatures_packed_i32_bool_id_and_full_i64_runtime_abi"
+  },
+  "typed_throws": {
+    "canonical_syntax": "throws(E)",
+    "bare_throws_status": "supported_untyped_effect",
+    "parenthesized_payload_status": "single_payload_source_supported_invalid_shapes_fail_closed",
+    "accepted_payload_arity": 1,
+    "effect_record": {
+      "throws_kind": "typed",
+      "throws_type_arity": 1,
+      "declared_error_type": "source canonical payload spelling",
+      "effect_signature_key": "throws:typed:<declared_error_type>",
+      "callable_compatibility_policy": "typed-throws-exact-payload-match-error-out-abi",
+      "semantic_identity_status": "exact-effect-signature-preserved",
+      "typed_payload_refs": [
+        "NSError",
+        "ErrorBox*"
+      ],
+      "typed_payload_status": "source-preserved-error-out-abi-lowered"
+    },
+    "diagnostic": "O3P182",
+    "diagnostic_symbol": "kObjc3ParserDiagnosticReservedTypedThrowsCode",
+    "payload_shapes": {
+      "supported": [
+        "single-payload"
+      ],
+      "rejected": [
+        "empty-payload",
+        "multi-payload",
+        "malformed-unclosed-payload",
+        "non-type-payload"
+      ]
+    },
+    "silent_erasure_allowed": false,
+    "multi_payload_supported": false,
+    "interface_roundtrip_status": "typed-payload-preserved",
+    "abi_status": "typed-error-out-abi",
+    "catch_compatibility_status": "typed-catch-exact-untyped-id-error-bridge-incompatible-rejects",
+    "bridge_to_id_error_policy": "explicit-bridge-to-id<Error>-only",
+    "unsupported_foreign_carrier_fail_closed": true,
+    "runtime_execution_claimed": true,
+    "message_send_runtime_execution_scope": "direct-and-runtime-dispatch-method-send-error-out-abi",
+    "runtime_dispatch_message_send_error_out_supported": true
+  },
+  "value_optionals": {
+    "canonical_spelling": "Optional<T>",
+    "source_status": "semantic_type_signature_admitted_packed_and_full_i64_runtime_abi",
+    "lowercase_alias_spelling": "optional<T>",
+    "lowercase_alias_accepted": false,
+    "runtime_lowering_diagnostic": "O3P159",
+    "canonical_diagnostic_symbol": "kObjc3ParserDiagnosticReservedValueOptionalCode",
+    "lowercase_alias_diagnostic": "O3C004",
+    "lowercase_alias_diagnostic_symbol": "kObjc3ParserDiagnosticRemovedOptionalAliasCode",
+    "semantic_value_model_supported": true,
+    "explicit_present_absent_construction_modeled": true,
+    "binding_narrowing_supported": true,
+    "unwrap_requires_presence_check": true,
+    "implicit_nil_absence_allowed": false,
+    "abi_layout_status": "stable-packed-presence-payload-runtime-lowered",
+    "abi_layout_id": "objc3.value_optional.inline_presence_payload.v1",
+    "runtime_abi_payload_scope": "supported-packed-scalar-id-handle-and-full-i64-payload-forms",
+    "supported_runtime_payload_forms": [
+      "i32",
+      "bool",
+      "id",
+      "i64"
+    ],
+    "supported_runtime_helper_payload_forms": [
+      "i32",
+      "bool",
+      "id",
+      "i64"
+    ],
+    "full_width_i64_runtime_helper_supported": true,
+    "full_width_i64_language_call_abi_supported": true,
+    "rejected_runtime_payload_forms": [
+      "nested-value-optional",
+      "generic-payload",
+      "property-storage",
+      "ivar-storage",
+      "nullable-object-pointer-bridge",
+      "nil-to-scalar",
+      "implicit-nil",
+      "unchecked-unwrap",
+      "throws-result-conversion"
+    ],
+    "presence_field": "has_value",
+    "payload_storage_field": "payload",
+    "runtime_execution_supported": true,
+    "lowering_supported": true,
+    "broad_public_runtime_support_claim_allowed": false,
+    "nested_value_optional_runtime_supported": false,
+    "generic_payload_runtime_supported": false,
+    "property_storage_supported": false,
+    "ivar_storage_supported": false,
+    "nullability_bridge_allowed": false,
+    "nil_to_scalar_coercion_allowed": false,
+    "nullable_pointer_conversion_allowed": false,
+    "unchecked_unwrap_allowed": false,
+    "throws_result_conversion_allowed": false,
+    "optional_id_distinct_from_nullable_object_pointer": true,
+    "interface_roundtrip_supported": true,
+    "interface_roundtrip_status": "semantic-carrier-roundtrips-bounded-packed-runtime-abi"
+  },
+  "interface_import_contract": {
+    "artifact": "native/objc3c/src/artifacts/objc3_frontend_textual_interface_payload_artifact.cpp",
+    "importer": "native/objc3c/src/artifacts/objc3_frontend_textual_interface_payload_import.cpp",
+    "schema": "schemas/objc3c-standalone-textual-interface-payload-v1.schema.json",
+    "typed_throws_contract_required": true,
+    "value_optional_contract_required": true,
+    "typed_throws_supported_import_values": [
+      "none",
+      "untyped",
+      "typed"
+    ],
+    "typed_throws_payload_arity": 1,
+    "typed_throws_payload_status": "source-preserved-error-out-abi-lowered",
+    "typed_throws_abi_status": "typed-error-out-abi",
+    "typed_throws_effect_signature_required": true,
+    "typed_throws_callable_compatibility_policy": "typed-throws-exact-payload-match-error-out-abi",
+    "typed_throws_runtime_execution_claimed": true,
+    "value_optional_source_status": "semantic-type-signature-admitted-packed-and-full-i64-runtime-abi",
+    "value_optional_semantic_value_model_supported": true,
+    "value_optional_abi_layout_status": "stable-packed-presence-payload-runtime-lowered",
+    "value_optional_abi_layout_id": "objc3.value_optional.inline_presence_payload.v1",
+    "value_optional_runtime_abi_payload_scope": "supported-packed-scalar-id-handle-and-full-i64-payload-forms",
+    "value_optional_supported_runtime_helper_payload_forms": [
+      "i32",
+      "bool",
+      "id",
+      "i64"
+    ],
+    "value_optional_full_width_i64_runtime_helper_supported": true,
+    "value_optional_full_width_i64_language_call_abi_supported": true,
+    "value_optional_interface_roundtrip_status": "semantic-carrier-roundtrips-bounded-packed-runtime-abi",
+    "fail_closed_on_contract_drift": true,
+    "source_only_claim_allowed": true,
+    "public_runtime_support_claim_allowed": false
+  },
+  "umbrella_alignment": {
+    "umbrella_contract": "tests/tooling/fixtures/native/language_evolution_umbrella_contract.json",
+    "profile_widening_allowed": false,
+    "objc2_compatibility_path_allowed": false,
+    "runtime_lowering_claim_allowed": true
+  },
+  "source_anchors": [
+    "native/objc3c/src/ast/objc3_ast_callable_type_nodes.h",
+    "native/objc3c/src/ast/objc3_ast_value_optional_type.h",
+    "native/objc3c/src/parse/objc3_parser_core_cstyle_parameters_async_throws_clause_parsing.inc",
+    "native/objc3c/src/parse/objc3_parser_diagnostics.h",
+    "native/objc3c/src/parse/objc3_parser_rejection_diagnostics.cpp",
+    "schemas/objc3c-typed-throws-effect-contract-v1.schema.json",
+    "native/objc3c/src/sema/model/semantic_symbol_core_source_closures.h",
+    "native/objc3c/src/sema/objc3_typed_throws_effect_contract.h",
+    "native/objc3c/src/sema/objc3_semantic_error_handling_try_do_catch_do_scope.inc",
+    "native/objc3c/src/sema/objc3_semantic_signature_compatibility.cpp",
+    "native/objc3c/src/sema/objc3_sema_contract_type_handoff_callable_records_function_fields.inc",
+    "native/objc3c/src/sema/objc3_sema_contract_type_handoff_callable_records_method_dispatch_fields.inc",
+    "native/objc3c/src/sema/objc3_sema_contract_semantic_type_metadata_function_records.h",
+    "native/objc3c/src/sema/objc3_sema_contract_semantic_type_metadata_method_records.h",
+    "native/objc3c/src/sema/objc3_sema_contract_type_handoff_canonical_records_type.inc",
+    "native/objc3c/src/sema/objc3_semantic_passes_canonical_type_helpers.inc",
+    "native/objc3c/src/artifacts/json/semantic_type_manifest_records.cpp",
+    "native/objc3c/src/pipeline/frontend_type_system_source_closure_helpers.cpp",
+    "native/objc3c/src/lower/contracts/value_optional_lowering_contracts.h",
+    "native/objc3c/src/artifacts/objc3_frontend_textual_interface_payload_artifact.cpp",
+    "native/objc3c/src/artifacts/objc3_frontend_textual_interface_payload_import.cpp",
+    "schemas/objc3c-value-optionals-contract-v1.schema.json",
+    "native/objc3c/src/artifacts/objc3_frontend_runtime_capability_artifacts.cpp",
+    "native/objc3c/src/ir/objc3_ir_function_signature_model.h",
+    "native/objc3c/src/ir/objc3_ir_function_signature_model.cpp",
+    "native/objc3c/src/ir/objc3_ir_prototype_declarations.cpp",
+    "native/objc3c/src/ir/objc3_ir_direct_call_emission.cpp",
+    "native/objc3c/src/ir/objc3_ir_expression_emission_call.cpp",
+    "native/objc3c/src/ir/objc3_ir_message_send_emission.cpp",
+    "native/objc3c/src/ir/objc3_ir_method_definition_plan.cpp",
+    "native/objc3c/src/ir/objc3_ir_runtime_dispatch_calls.cpp",
+    "native/objc3c/src/ir/objc3_ir_runtime_dispatch_declarations.cpp",
+    "native/objc3c/src/runtime/public/objc3_runtime_result_entrypoint_contract.h",
+    "native/objc3c/src/runtime/public/objc3_runtime_diagnostic_contract.h",
+    "native/objc3c/src/runtime/dispatch/dispatch_api.cpp",
+    "native/objc3c/src/runtime/dispatch/strict_dispatch_execution.cpp",
+    "native/objc3c/src/ir/objc3_ir_statement_block_emission.cpp",
+    "native/objc3c/src/lower/contracts/error_handling_throws_unwind_contracts.h"
+  ],
+  "diagnostic_code_symbols": {
+    "typed_throws_invalid_payload_shape": {
+      "symbol": "kObjc3ParserDiagnosticReservedTypedThrowsCode",
+      "code": "O3P182",
+      "owner": "parser"
+    },
+    "value_optional_reserved": {
+      "symbol": "kObjc3ParserDiagnosticReservedValueOptionalCode",
+      "code": "O3P159",
+      "owner": "parser"
+    },
+    "lowercase_optional_alias_removed": {
+      "symbol": "kObjc3ParserDiagnosticRemovedOptionalAliasCode",
+      "code": "O3C004",
+      "owner": "parser"
+    }
+  },
+  "positive_fixtures": [
+    {
+      "fixture": "tests/tooling/fixtures/native/typed_throws_source_positive.objc3",
+      "contract_case": "single typed throws payload is implemented as bounded source/interface/runtime effect metadata"
+    },
+    {
+      "fixture": "tests/tooling/fixtures/native/typed_throws_interface_roundtrip_positive.objc3",
+      "contract_case": "function and method typed throws payloads preserve canonical spelling for textual interface roundtrip"
+    },
+    {
+      "fixture": "tests/tooling/fixtures/native/typed_throws_error_out_abi_positive.objc3",
+      "contract_case": "single-payload typed throws lowers through hidden error-out ABI for try propagation and try? recovery without erasing payload identity"
+    },
+    {
+      "fixture": "tests/tooling/fixtures/module_interfaces/typed_throws_textual_interface_payload.json",
+      "contract_case": "standalone textual interface payload preserves throws_kind=typed, declared_error_type, and typed-error-out ABI readiness"
+    },
+    {
+      "fixture": "tests/tooling/fixtures/native/typed_throws_semantic_effect_identity.contract.json",
+      "contract_case": "semantic handoff records typed throws as an exact callable effect signature and protocol compatibility key"
+    },
+    {
+      "fixture": "tests/tooling/fixtures/native/typed_throws_catch_bridge_positive.objc3",
+      "contract_case": "typed throws do/catch accepts exact typed catches and policy-backed id<Error> bridge catches"
+    },
+    {
+      "fixture": "tests/tooling/fixtures/native/execution/positive/typed_throws_runtime_catch_bridge_positive.objc3",
+      "contract_case": "typed throws runtime catch filtering executes exact typed catch kind 4 and id<Error> bridge catch kind 2 through the native smoke path"
+    },
+    {
+      "fixture": "tests/tooling/fixtures/native/execution/positive/typed_throws_runtime_message_send_catch_positive.objc3",
+      "exitcode_fixture": "tests/tooling/fixtures/native/execution/positive/typed_throws_runtime_message_send_catch_positive.exitcode.txt",
+      "contract_case": "typed throws message-send lowering preserves the hidden error-out slot, with direct and runtime-dispatch error-out ABI source anchors and execution coverage for exact typed catch kind 4 plus id<Error> bridge catch kind 2"
+    },
+    {
+      "fixture": "tests/tooling/fixtures/native/execution/positive/typed_throws_runtime_try_optional_positive.objc3",
+      "exitcode_fixture": "tests/tooling/fixtures/native/execution/positive/typed_throws_runtime_try_optional_positive.exitcode.txt",
+      "contract_case": "typed throws try? optionalizes the hidden error-out ABI path by preserving successful payloads and converting thrown typed errors into the scalar empty value without erasing the typed payload source contract"
+    },
+    {
+      "fixture": "tests/tooling/fixtures/native/value_optionals_type_signatures_positive.objc3",
+      "contract_case": "canonical Optional<i32>, Optional<bool>, Optional<id>, and Optional<i64> function and method type signatures are admitted as semantic value-optional carriers on the checked v1 runtime ABI"
+    },
+    {
+      "fixture": "tests/tooling/fixtures/native/value_optionals_generic_interactions_positive.objc3",
+      "contract_case": "Optional<T> preserves generic payload spelling with stable presence/payload semantics while generic payload runtime lowering remains fail-closed"
+    },
+    {
+      "fixture": "tests/tooling/fixtures/native/value_optionals_contract_positive.json",
+      "contract_case": "value optional contract records expose optional_type, optional_value, optional_flow, and optional_rejection with packed i32, bool, id-handle, and full-width i64 language ABI flags plus fail-closed broadening flags"
+    },
+    {
+      "fixture": "tests/tooling/fixtures/native/execution/positive/value_optionals_runtime_abi_positive.objc3",
+      "contract_case": "supported Optional<i32>, Optional<bool>, Optional<id>, and Optional<i64> values lower through packed or full-width runtime ABI helpers for present, absent, has-value, and payload-or execution"
+    }
+  ],
+  "negative_fixtures": [
+    {
+      "fixture": "tests/tooling/fixtures/native/recovery/negative/negative_typed_throws_reserved.objc3",
+      "expected_diagnostic": "O3P182",
+      "contract_case": "non-type typed throws payload fails closed"
+    },
+    {
+      "fixture": "tests/tooling/fixtures/native/recovery/negative/negative_typed_throws_empty_payload_reserved.objc3",
+      "expected_diagnostic": "O3P182",
+      "contract_case": "empty typed throws payload fails closed"
+    },
+    {
+      "fixture": "tests/tooling/fixtures/native/recovery/negative/negative_typed_throws_multi_payload_reserved.objc3",
+      "expected_diagnostic": "O3P182",
+      "contract_case": "multi typed throws payload fails closed"
+    },
+    {
+      "fixture": "tests/tooling/fixtures/native/recovery/negative/negative_typed_throws_erasure_mismatch_reserved.objc3",
+      "expected_diagnostic": "O3P182",
+      "contract_case": "invalid typed throws payload cannot be erased to bare throws"
+    },
+    {
+      "fixture": "tests/tooling/fixtures/native/typed_throws_abi_lifting_negative.contract.json",
+      "expected_contract": "typed-error-out-abi",
+      "contract_case": "typed throws lowers through hidden error-out ABI while preserving payload identity and rejecting silent erasure"
+    },
+    {
+      "fixture": "tests/tooling/fixtures/native/typed_throws_interface_mismatch_negative.contract.json",
+      "expected_contract": "typed-payload-preserved",
+      "contract_case": "typed throws interface records reject erased or drifted payload metadata"
+    },
+    {
+      "fixture": "tests/tooling/fixtures/native/recovery/negative/negative_typed_throws_protocol_mismatch.objc3",
+      "expected_diagnostic": "O3S218",
+      "contract_case": "protocol conformance rejects selectors whose typed throws effect payload is erased or changed"
+    },
+    {
+      "fixture": "tests/tooling/fixtures/native/recovery/negative/negative_typed_throws_incompatible_catch.objc3",
+      "expected_diagnostic": "O3S206",
+      "contract_case": "typed throws rejects catch payloads that do not exactly match and are not id<Error> bridge catches"
+    },
+    {
+      "fixture": "tests/tooling/fixtures/native/recovery/negative/negative_typed_throws_foreign_carrier_catch.objc3",
+      "expected_diagnostic": "O3S206",
+      "contract_case": "typed throws rejects unsupported foreign catch carriers fail closed"
+    },
+    {
+      "fixture": "tests/tooling/fixtures/native/recovery/negative/negative_typed_throws_method_incompatible_catch.objc3",
+      "expected_diagnostic": "O3S206",
+      "contract_case": "typed throws rejects incompatible catch payloads for message-send operands as well as direct functions"
+    },
+    {
+      "fixture": "tests/tooling/fixtures/native/recovery/negative/negative_typed_throws_method_foreign_carrier_catch.objc3",
+      "expected_diagnostic": "O3S206",
+      "contract_case": "typed throws rejects unsupported foreign catch carriers for message-send operands fail closed"
+    },
+    {
+      "fixture": "tests/tooling/fixtures/native/recovery/negative/negative_typed_throws_async_propagation_unsupported.objc3",
+      "expected_diagnostic": "O3S226",
+      "contract_case": "typed async throws propagation remains fail-closed until async error propagation and cleanup ordering have durable runtime support"
+    },
+    {
+      "fixture": "tests/tooling/fixtures/native/recovery/negative/negative_value_optional_canonical_reserved.objc3",
+      "expected_diagnostic": "O3P159",
+      "contract_case": "nested canonical Optional<T> payloads remain outside the bounded packed runtime ABI"
+    },
+    {
+      "fixture": "tests/tooling/fixtures/native/recovery/negative/negative_value_optional_nullable_pointer_conversion_reserved.objc3",
+      "expected_diagnostic": "O3P159",
+      "contract_case": "Optional<id> remains distinct from nullable object pointers"
+    },
+    {
+      "fixture": "tests/tooling/fixtures/native/recovery/negative/negative_value_optional_nil_scalar_coercion_reserved.objc3",
+      "expected_diagnostic": "O3S211",
+      "contract_case": "value optionals do not enable nil-to-scalar coercion"
+    },
+    {
+      "fixture": "tests/tooling/fixtures/native/recovery/negative/negative_value_optional_nested_lowercase_alias_reserved.objc3",
+      "expected_diagnostic": "O3C004",
+      "contract_case": "lowercase optional<T> is rejected as a non-alias inside canonical Optional<T> payload spelling"
+    },
+    {
+      "fixture": "tests/tooling/fixtures/native/recovery/negative/negative_value_optional_property_layout_unsupported.objc3",
+      "expected_diagnostic": "O3P159",
+      "contract_case": "value optional property storage is rejected until layout/lifetime lowering is implemented"
+    },
+    {
+      "fixture": "tests/tooling/fixtures/native/recovery/negative/negative_value_optional_nullable_suffix_mismatch.objc3",
+      "expected_diagnostic": "O3P159",
+      "contract_case": "Optional<id> cannot be combined with nullable object-pointer suffixes"
+    },
+    {
+      "fixture": "tests/tooling/fixtures/native/value_optionals_layout_mismatch_negative.contract.json",
+      "expected_contract": "objc3.value_optional.inline_presence_payload.v1",
+      "contract_case": "value optional ABI layout drift fails closed"
+    },
+    {
+      "fixture": "tests/tooling/fixtures/native/value_optionals_lowering_claim_negative.contract.json",
+      "expected_contract": "stable-packed-abi-carrier-runtime-execution-supported",
+      "contract_case": "value optional source signatures cannot claim language call/return lowering outside supported packed i32, bool, id-handle, and full-width i64 payload forms"
+    },
+    {
+      "fixture": "tests/tooling/fixtures/native/value_optionals_interface_mismatch_negative.contract.json",
+      "expected_contract": "semantic-carrier-roundtrips-bounded-packed-runtime-abi",
+      "contract_case": "value optional interface metadata cannot erase into nullable object-pointer or Result carriers"
+    },
+    {
+      "fixture": "tests/tooling/fixtures/native/value_optionals_executable_semantics_negative.contract.json",
+      "expected_diagnostic": "O3P159",
+      "contract_case": "semantic Optional<T> carrier cannot widen beyond packed i32, bool, id-handle, and full-width i64 language payload ABI into nested/generic/property/ivar storage, unchecked unwrap, implicit nil absence, or throws conversions"
+    }
+  ],
+  "public_claim_boundary": {
+    "support_claims": [
+      "objc3c.behavior.language.errors.typed-throws"
+    ],
+    "source_only_claims": [
+      "source-only:value-optional-type-signatures"
+    ],
+    "bounded_runtime_claims": [
+      "bounded-runtime:value-optional-packed-i32-bool-id-abi",
+      "bounded-runtime:value-optional-full-width-i64-language-call-return-abi",
+      "bounded-runtime:typed-throws-direct-and-runtime-dispatch-error-out-abi"
+    ],
+    "runtime_claims": [],
+    "reserved_public_runtime_rows_required": [
+      "language.types.value-optionals"
+    ],
+    "reserved_rows_required": [
+      "language.types.value-optionals"
+    ],
+    "no_compatibility_aliases": true,
+    "no_temp_generated_evidence_as_source_of_truth": true
+  }
+}

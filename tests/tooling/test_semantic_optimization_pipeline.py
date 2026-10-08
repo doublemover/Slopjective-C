@@ -7,6 +7,9 @@ from pathlib import Path
 
 from scripts.objc3c_semantic_optimization_pipeline import (
     CONTRACT_ID,
+    OPTIMIZATION_RUNTIME_DEBUG_SAFETY_CONTRACT_ID,
+    OPTIMIZATION_RUNTIME_DEBUG_SAFETY_CONTRACT_PATH,
+    OPTIMIZATION_RUNTIME_DEBUG_SAFETY_UMBRELLA_CONTRACT_ID,
     PERFORMANCE_GOVERNANCE_CONTRACT_ID,
     PIPELINE_PATH,
     PROOF_MODEL_CONTRACT_ID,
@@ -91,6 +94,20 @@ def test_semantic_optimization_pipeline_fixture_validates_source_truth() -> None
     assert result.payload["performance_workload_count"] == 2
     assert result.payload["performance_trace_count"] == 1
     assert result.payload["performance_digest_count"] == 3
+    assert result.payload["optimization_safety_contract"] == (
+        OPTIMIZATION_RUNTIME_DEBUG_SAFETY_CONTRACT_PATH
+    )
+    assert result.payload["optimization_safety_benchmark_contract_count"] == 2
+    assert result.payload["optimization_safety_boundary_count"] == 3
+    assert result.payload["optimization_safety_negative_case_count"] == 12
+    assert result.payload["optimization_safety_evidence_path_count"] == 13
+    assert result.payload["optimization_safety_umbrella_status"] == (
+        "bounded-source-owned-ready"
+    )
+    assert result.payload["optimization_safety_umbrella_source_contract_count"] == 8
+    assert result.payload["optimization_safety_umbrella_negative_fixture_count"] == 4
+    assert result.payload["optimization_safety_umbrella_public_action_count"] == 7
+    assert result.payload["optimization_safety_umbrella_capability_row_count"] == 6
     assert set(result.payload["capability_rows_required"]) >= REQUIRED_CAPABILITY_ROWS
     assert set(result.payload["evidence_ids_required"]) >= REQUIRED_EVIDENCE_IDS
 
@@ -138,10 +155,35 @@ def test_semantic_optimization_pipeline_schema_and_contract_are_stable() -> None
     assert '"const": "objc3c.optimization.semantic.proof_model.v1"' in text
     assert '"contains": { "const": "validate-optimization-proof-model" }' in text
     assert '"source_map_debug_impact_verdict": { "const": "required" }' in text
+    assert '"contains": { "const": 8224 }' in text
+    assert '"contains": { "const": 8226 }' in text
+    assert '"contains": { "const": 8205 }' in text
+    assert '"contains": { "const": 8227 }' in text
+    assert '"contains": { "const": "source_identity_preservation" }' in text
+    assert '"contains": { "const": "debug_identity_preservation" }' in text
+    assert '"contains": { "const": "runtime_identity_preservation" }' in text
+    assert '"contains": { "const": "runtime_invalidation_replay" }' in text
+    assert '"contains": { "const": "exact_target_method_identity" }' in text
+    assert '"contains": { "const": "ir_digest_before" }' in text
+    assert '"contains": { "const": "ir_digest_after" }' in text
     for verdict_field in REQUIRED_PROOF_VERDICT_FIELDS:
         assert verdict_field in text
     assert '"pattern": "^[0-9a-f]{64}$"' in text
     assert '"workflow_action": { "const": "validate-semantic-optimization-pipeline" }' in text
+    safety_schema = (
+        ROOT / "schemas" / "objc3c-optimization-runtime-debug-safety-v1.schema.json"
+    ).read_text(encoding="utf-8")
+    assert OPTIMIZATION_RUNTIME_DEBUG_SAFETY_CONTRACT_ID in safety_schema
+    assert '"contains": { "const": 8205 }' in safety_schema
+    assert '"contains": { "const": 8224 }' in safety_schema
+    assert '"contains": { "const": 8226 }' in safety_schema
+    assert '"contains": { "const": 8227 }' in safety_schema
+    assert OPTIMIZATION_RUNTIME_DEBUG_SAFETY_UMBRELLA_CONTRACT_ID in safety_schema
+    assert '"status": {' in safety_schema
+    assert '"const": "bounded-source-owned-ready"' in safety_schema
+    assert '"rejects_if_any_missing": { "const": true }' in safety_schema
+    assert '"debug-source-map-preservation"' in safety_schema
+    assert '"runtime-invalidation-replay"' in safety_schema
 
 
 def test_semantic_optimization_pipeline_direct_dispatch_trace_is_semantic() -> None:
@@ -165,12 +207,14 @@ def test_semantic_optimization_pipeline_method_inlining_trace_is_proof_backed() 
     after = ROOT / "tests/native/ir/optimization/semantic_pipeline_method_inlining.after.ll"
 
     before_text = before.read_text(encoding="utf-8")
-    assert "call i32 @objc3_inlineable_Math_addOne" in before_text
-    assert "callee body identity: body:Math.addOne:v1" in before_text
+    assert "call i32 @objc3_inlineable_InlineMath_addOne" in before_text
+    assert "callee body identity: body:InlineMath.addOne:v1" in before_text
+    assert "exact callee identity: method:InlineMath.addOne:i32->i32" in before_text
 
     after_text = after.read_text(encoding="utf-8")
-    assert "call i32 @objc3_inlineable_Math_addOne" not in after_text
+    assert "call i32 @objc3_inlineable_InlineMath_addOne" not in after_text
     assert "add nsw i32 %value, 1" in after_text
+    assert "exact callee identity preserved: method:InlineMath.addOne:i32->i32" in after_text
     assert "source-map inline frame preserved" in after_text
     assert "diagnostic location preserved" in after_text
     assert "semantic-optimization.invalidate-global-proof-state" in after_text
@@ -283,15 +327,19 @@ def test_optimization_proof_model_rejects_stale_package_identity() -> None:
 
 
 def test_optimization_proof_model_accepts_safe_method_inlining() -> None:
-    result = evaluate_optimization_proof_case(
-        _proof_case("method-inlining-safe-scalar-function-full-proof-record")
-    )
+    proof_case = _proof_case("method-inlining-safe-scalar-function-full-proof-record")
+    result = evaluate_optimization_proof_case(proof_case)
 
     assert result["decision"] == "APPLIED"
     assert result["success_claim"] is True
     assert result["missing_proofs"] == []
     assert result["failed_proofs"] == []
     assert result["inlined_target_symbol"] == "objc3_inlineable_InlineMath_addOne"
+    assert "runtime_generation_dependency" in result["invalidated_proof_state"]
+    assert "invalidation_replay" in result["invalidated_proof_state"]
+    replay = proof_case["candidate"]["runtime_invalidation_replay"][0]
+    assert replay["expected_behavior"] == "guard-fail-closed-to-runtime-dispatch"
+    assert "fallback" not in replay["expected_behavior"]
 
 
 def test_optimization_proof_model_rechecks_method_inlining_candidate_semantics() -> None:
@@ -321,7 +369,8 @@ def test_optimization_proof_model_rechecks_method_inlining_candidate_semantics()
     stale_generation_result = evaluate_optimization_proof_case(stale_generation_candidate)
     assert stale_generation_result["decision"] == "REJECTED_FAIL_CLOSED"
     assert stale_generation_result["failed_proofs"] == [
-        "callee_generation_invalidation"
+        "callee_generation_invalidation",
+        "runtime_identity_preservation",
     ]
 
 
@@ -362,6 +411,30 @@ def test_optimization_proof_model_rejects_method_inlining_safety_drift() -> None
     assert package_abi["failed_proofs"] == ["package_import_abi_identity"]
     assert recursion["failed_proofs"] == ["inlining_depth_recursion_limit"]
     assert stale_generation["failed_proofs"] == ["callee_generation_invalidation"]
+
+
+def test_optimization_proof_model_rejects_missing_preservation_evidence() -> None:
+    missing_source = evaluate_optimization_proof_case(
+        _proof_case("method-inlining-missing-source-identity-preservation")
+    )
+    missing_debug = evaluate_optimization_proof_case(
+        _proof_case("method-inlining-missing-debug-identity-preservation")
+    )
+    missing_replay = evaluate_optimization_proof_case(
+        _proof_case("method-inlining-missing-runtime-invalidation-replay")
+    )
+
+    assert missing_source["decision"] == "REJECTED_FAIL_CLOSED"
+    assert missing_source["missing_proofs"] == ["source_identity_preservation"]
+    assert missing_source["success_claim"] is False
+
+    assert missing_debug["decision"] == "REJECTED_FAIL_CLOSED"
+    assert missing_debug["missing_proofs"] == ["debug_identity_preservation"]
+    assert missing_debug["success_claim"] is False
+
+    assert missing_replay["decision"] == "REJECTED_FAIL_CLOSED"
+    assert missing_replay["missing_proofs"] == ["runtime_invalidation_replay"]
+    assert missing_replay["success_claim"] is False
 
 
 def test_semantic_optimization_pipeline_order_drift_fails_closed(tmp_path: Path) -> None:
@@ -477,6 +550,122 @@ def test_semantic_optimization_pipeline_requires_manifest_backed_budget_metric(
     assert not result.passed
     assert any(
         "workload budget metric missing: dispatch-cache" in failure
+        for failure in result.failures
+    )
+
+
+def test_semantic_optimization_pipeline_rejects_optimization_safety_drift(
+    tmp_path: Path,
+) -> None:
+    payload = json.loads(PIPELINE_PATH.read_text(encoding="utf-8"))
+    safety_contract = payload["performance_governance"][
+        "optimization_runtime_debug_safety_contract"
+    ]
+    safety = json.loads((ROOT / safety_contract).read_text(encoding="utf-8"))
+    safety["runtime_debug_safety_boundaries"][1]["required_proof_ids"].remove(
+        "debug_identity_preservation"
+    )
+    safety_path = tmp_path / "optimization_runtime_debug_safety_contract.json"
+    safety_path.write_text(json.dumps(safety, indent=2), encoding="utf-8")
+    payload["performance_governance"]["optimization_runtime_debug_safety_contract"] = (
+        safety_path.as_posix()
+    )
+
+    result = validate_pipeline(_write_pipeline_variant(tmp_path, payload))
+
+    assert not result.passed
+    assert any(
+        "optimization runtime/debug safety contract path drifted" in failure
+        for failure in result.failures
+    )
+    assert any(
+        "method-inlining safety boundary missing debug/runtime/side-effect proofs"
+        in failure
+        for failure in result.failures
+    )
+
+
+def test_semantic_optimization_pipeline_rejects_optimization_umbrella_overclaim(
+    tmp_path: Path,
+) -> None:
+    payload = json.loads(PIPELINE_PATH.read_text(encoding="utf-8"))
+    safety_contract = payload["performance_governance"][
+        "optimization_runtime_debug_safety_contract"
+    ]
+    safety = json.loads((ROOT / safety_contract).read_text(encoding="utf-8"))
+    umbrella = safety["optimization_safety_umbrella_readiness"]
+    umbrella["optimizer_success_path_fail_closed_policy"][
+        "rejects_if_any_missing"
+    ] = False
+    umbrella["capability_row_recommendations"][0]["support_level"] = "full"
+    safety_path = tmp_path / "optimization_runtime_debug_safety_contract.json"
+    safety_path.write_text(json.dumps(safety, indent=2), encoding="utf-8")
+    payload["performance_governance"]["optimization_runtime_debug_safety_contract"] = (
+        safety_path.as_posix()
+    )
+
+    result = validate_pipeline(_write_pipeline_variant(tmp_path, payload))
+
+    assert not result.passed
+    assert any(
+        "optimization safety umbrella success policy must reject missing proof"
+        in failure
+        for failure in result.failures
+    )
+    assert any(
+        "optimization safety umbrella overclaims full support" in failure
+        for failure in result.failures
+    )
+
+
+def test_semantic_optimization_pipeline_rejects_negative_fixture_success_claim(
+    tmp_path: Path,
+) -> None:
+    payload = json.loads(PIPELINE_PATH.read_text(encoding="utf-8"))
+    safety_contract = payload["performance_governance"][
+        "optimization_runtime_debug_safety_contract"
+    ]
+    safety = json.loads((ROOT / safety_contract).read_text(encoding="utf-8"))
+    bad_fixture = tmp_path / "negative_method_inlining_success_claim.json"
+    bad_fixture.write_text(
+        json.dumps(
+            {
+                "contract_id": (
+                    "objc3c.optimization.method_inlining.negative.success_claim.v1"
+                ),
+                "issue_refs": [8224],
+                "pass_id": "method-inlining",
+                "case_id": "method-inlining-negative-success-claim",
+                "candidate_overrides": {
+                    "method_inline_callee_body_identity_present": False
+                },
+                "expected_result": {
+                    "decision": "REJECTED_FAIL_CLOSED",
+                    "success_claim": True,
+                    "diagnostic_contains": [
+                        "method_inline_callee_body_identity_present"
+                    ],
+                },
+            },
+            indent=2,
+        ),
+        encoding="utf-8",
+    )
+    safety["optimization_safety_umbrella_readiness"][
+        "negative_fixture_contracts"
+    ].append(bad_fixture.as_posix())
+    safety_path = tmp_path / "optimization_runtime_debug_safety_contract.json"
+    safety_path.write_text(json.dumps(safety, indent=2), encoding="utf-8")
+    payload["performance_governance"]["optimization_runtime_debug_safety_contract"] = (
+        safety_path.as_posix()
+    )
+
+    result = validate_pipeline(_write_pipeline_variant(tmp_path, payload))
+
+    assert not result.passed
+    assert any(
+        "optimization method-inlining negative fixture permits success claim"
+        in failure
         for failure in result.failures
     )
 

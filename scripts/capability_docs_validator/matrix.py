@@ -30,78 +30,69 @@ OBJECT_MODEL_BROAD_SCOPE_PHRASES = (
 FOUNDATION_BOUNDARY_EXPECTATIONS = (
     {
         "id": "runtime.object-model.full-realization",
-        "state": "reserved",
+        "state": "implemented",
         "summary_tokens": (
-            "production compiler-owned object-model source identity",
-            "statement-level debugger stepping remain reserved",
+            "debugger-grade identity graph",
+            "integrated object-model statement stepping",
         ),
         "evidence_paths": (
             "tests/tooling/fixtures/object_model_closure/debugger_value_inspection_replay_contract.json",
             "tests/tooling/fixtures/cross_lane_e2e/object_reflection_debugger.expectation.json",
         ),
-        "no_support_claims": True,
+        "support_claims": ("objc3c.behavior.runtime.object-model.full-realization",),
     },
     {
         "id": "language.advanced-runtime-closure",
-        "state": "reserved",
+        "state": "implemented",
         "summary_tokens": (
-            "17-case negative-matrix",
-            "native executable closure",
+            "native link/run",
+            "broad scheduler fairness",
         ),
         "evidence_paths": (
             "tests/native/runtime/advanced_closure/negative_matrix.contract.json",
             "tests/tooling/fixtures/advanced_runtime_closure/combined_runtime_identity_contract.json",
             "tests/tooling/fixtures/cross_lane_e2e/advanced_runtime_closure.expectation.json",
         ),
-        "no_support_claims": True,
     },
     {
         "id": "compiler.optimization.method-inlining",
-        "state": "reserved",
+        "state": "implemented",
         "summary_tokens": (
-            "production ir still retains",
-            "fails closed",
+            "exact callee identity",
+            "reject fail-closed",
         ),
         "evidence_paths": (
-            "tests/tooling/fixtures/cross_lane_e2e/optimization_runtime_equivalence.expectation.json",
-            "tests/tooling/fixtures/semantic_optimization_pipeline/reserved_method_inlining_skip.json",
+            "tests/tooling/fixtures/semantic_optimization_pipeline/proof_cases.json",
+            "tests/tooling/fixtures/semantic_optimization_pipeline/method_inlining_replay_contract.json",
+            "tests/native/ir/optimization/semantic_pipeline_method_inlining.before.ll",
+            "tests/native/ir/optimization/semantic_pipeline_method_inlining.after.ll",
         ),
-        "no_support_claims": True,
+        "support_claims": ("objc3c.behavior.optimization.method-inlining-safe-subset",),
     },
     {
         "id": "modules.direct-import-syntax",
-        "state": "reserved",
+        "state": "implemented",
         "summary_tokens": (
-            "direct @import module syntax remains reserved",
-            "without promoting direct import syntax",
+            "parser-admitted",
+            "locked package provenance",
+            "fail closed",
         ),
         "evidence_paths": (
-            "tests/tooling/fixtures/cross_lane_e2e/text_collections_package.expectation.json",
+            "tests/tooling/fixtures/package_ecosystem/direct_import_module_syntax_contract.json",
+            "scripts/check_objc3c_direct_import_module_syntax.py",
         ),
-        "no_support_claims": True,
     },
     {
         "id": "runtime.debug-trace.full-source-map-publication",
         "state": "reserved",
         "summary_tokens": (
             "full source-map publication remains reserved",
-            "statement stepping",
+            "narrower rows",
         ),
         "evidence_paths": (
             "tests/tooling/fixtures/cross_lane_e2e/text_collections_package.expectation.json",
             "tests/tooling/fixtures/developer_tooling/runtime_debug_trace/debug-map.json",
-        ),
-        "no_support_claims": True,
-    },
-    {
-        "id": "runtime.debug-trace.statement-stepping",
-        "state": "reserved",
-        "summary_tokens": (
-            "statement-level debugger stepping is fail-closed",
-            "emitted on the canonical toolchain path",
-        ),
-        "evidence_paths": (
-            "tests/tooling/fixtures/developer_tooling/runtime_debug_trace/debug-map.json",
+            "tests/tooling/fixtures/developer_tooling/debug_source_maps/positive.json",
         ),
         "no_support_claims": True,
     },
@@ -109,8 +100,8 @@ FOUNDATION_BOUNDARY_EXPECTATIONS = (
         "id": "ecosystem.package-manager.public-hosted-registry",
         "state": "reserved",
         "summary_tokens": (
-            "public hosted package registry support remains reserved",
-            "fail-closed hosted-registry",
+            "public hosted package registry service support remains reserved",
+            "fallback registry success",
         ),
         "evidence_paths": (
             "tests/tooling/fixtures/cross_lane_e2e/distribution_package_lifecycle.expectation.json",
@@ -169,6 +160,37 @@ FOUNDATION_IMPLEMENTED_EVIDENCE_EXPECTATIONS = (
             "tests/tooling/fixtures/cross_lane_e2e/optimization_runtime_equivalence.expectation.json",
             "tests/tooling/fixtures/cross_lane_e2e/advanced_runtime_closure.expectation.json",
             "tests/tooling/fixtures/cross_lane_e2e/distribution_package_lifecycle.expectation.json",
+        ),
+    },
+    {
+        "id": "runtime.debug-trace.statement-stepping",
+        "evidence_paths": (
+            "tests/tooling/fixtures/developer_tooling/debug_source_maps/positive.json",
+            "tests/tooling/fixtures/developer_tooling/debugger_integration/replay.json",
+            "tests/tooling/fixtures/developer_tooling/debug_source_maps/negative_cases.json",
+        ),
+    },
+    {
+        "id": "runtime.debug-trace.lldb-plugin",
+        "evidence_paths": (
+            "tests/tooling/fixtures/developer_tooling/debugger_integration/replay.json",
+            "tests/tooling/fixtures/developer_tooling/debugger_integration/lldb_protocol_contract.json",
+        ),
+    },
+    {
+        "id": "runtime.debug-trace.inline-frame-source-map",
+        "evidence_paths": (
+            "tests/tooling/fixtures/developer_tooling/debug_source_maps/inline_frame_source_map_contract.json",
+            "tests/tooling/fixtures/developer_tooling/debug_source_maps/positive.json",
+            "tests/tooling/fixtures/developer_tooling/debug_source_maps/negative_cases.json",
+        ),
+    },
+    {
+        "id": "runtime.typed-keypath.debugger-lowering",
+        "evidence_paths": (
+            "tests/tooling/fixtures/native/typed_keypath_debugger_lowering_contract.json",
+            "tests/tooling/fixtures/native/typed_keypath_artifact_positive.objc3",
+            "tests/tooling/fixtures/native/typed_keypath_runtime_positive.objc3",
         ),
     },
 )

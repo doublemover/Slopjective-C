@@ -14,6 +14,9 @@ struct Objc3CallableLoweringState {
   bool has_body = false;
   bool async_declared = false;
   bool throws_declared = false;
+  bool typed_throws_declared = false;
+  bool throws_error_out_abi_ready = false;
+  std::string typed_throws_error_type_spelling;
   bool runtime_dispatch_required = false;
   bool arc_sensitive = false;
   std::size_t parameter_count = 0;

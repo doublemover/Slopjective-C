@@ -67,8 +67,8 @@ std::string BuildConcurrencyActorIsolationSendableSemanticModelSummaryJson(
       << ",\"actor_isolation_sendability_profile_normalized\":"
       << (summary.actor_isolation_sendability_profile_normalized ? "true"
                                                                  : "false")
-      << ",\"strict_concurrency_selection_fail_closed\":"
-      << (summary.strict_concurrency_selection_fail_closed ? "true" : "false")
+      << ",\"strict_concurrency_selection_supported\":"
+      << (summary.strict_concurrency_selection_supported ? "true" : "false")
       << ",\"actor_runtime_deferred\":"
       << (summary.actor_runtime_deferred ? "true" : "false")
       << ",\"executor_runtime_deferred\":"

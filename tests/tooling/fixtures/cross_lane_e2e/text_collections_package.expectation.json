@@ -117,32 +117,38 @@
     "text_fixture_uses_direct_module_import_syntax": false,
     "direct_import_source_truth": {
       "status": "expected-pass",
-      "capability_id": "modules.public-import-lookup",
-      "support_claim": "objc3c.behavior.modules.public-import-lookup",
-      "owner_phase": "sema",
-      "public_replay_command": "npm run objc3c -- validate-conformance-corpus",
-      "consumer_fixture": "tests/tooling/fixtures/native/module_import_lookup_consumer.objc3",
+      "capability_id": "modules.direct-import-syntax",
+      "support_claim": "objc3c.behavior.modules.direct-import-syntax",
+      "owner_phase": "parser",
+      "public_replay_command": "npm run objc3c -- validate-direct-import-module-syntax",
+      "consumer_fixture": "tests/tooling/fixtures/native/direct_import_syntax_consumer.objc3",
       "provider_fixture": "tests/tooling/fixtures/native/module_import_lookup_provider.objc3",
-      "conformance_fixture": "tests/conformance/module_roundtrip/MOD-53-01.json",
-      "traceability_fixture": "tests/conformance/module_roundtrip/MOD-53-02.json",
+      "conformance_fixture": "tests/tooling/fixtures/package_ecosystem/direct_import_module_syntax_contract.json",
+      "traceability_fixture": "tests/tooling/fixtures/package_ecosystem/negative_package_metadata_contracts.json",
       "required_consumer_tokens": [
-        "@import moduleImportLookupProvider;",
-        "@moduleImportLookupProvider.ModuleImportPacketCount"
+        "@import moduleImportLookupProvider;"
       ],
       "required_positive_evidence": [
+        "tests/tooling/fixtures/package_ecosystem/direct_import_module_syntax_contract.json",
+        "tests/tooling/fixtures/native/direct_import_syntax_consumer.objc3",
         "tests/tooling/fixtures/native/module_import_lookup_consumer.objc3",
         "tests/tooling/fixtures/native/module_import_lookup_provider.objc3",
-        "tests/conformance/module_roundtrip/MOD-53-01.json",
-        "native/objc3c/src/driver/objc3_driver_cross_module_imported_surfaces.h",
-        "native/objc3c/src/io/objc3_cross_module_imported_modules_document.h"
+        "native/objc3c/src/token/objc3_token_kind_contract.h",
+        "native/objc3c/src/ast/objc3_ast_declarations.h",
+        "native/objc3c/src/parse/objc3_parser_core_cstyle_parameters_module_global_parsing.inc",
+        "scripts/objc3c_package_manager/model.py",
+        "scripts/check_objc3c_direct_import_module_syntax.py",
+        "tests/tooling/test_direct_import_module_syntax_contract.py"
       ],
       "required_negative_evidence": [
-        "tests/conformance/module_roundtrip/MOD-53-02.json",
-        "tests/conformance/diagnostics/DIAG-GRP-07.json",
-        "tests/tooling/fixtures/native/execution/negative/module_duplicate_declaration.objc3"
+        "tests/tooling/fixtures/native/recovery/negative/negative_direct_import_malformed_module_identity.objc3",
+        "tests/tooling/fixtures/native/recovery/negative/negative_direct_import_without_package_provenance.objc3",
+        "tests/tooling/fixtures/native/recovery/negative/negative_direct_import_ambiguous_module_identity.objc3",
+        "tests/tooling/fixtures/package_ecosystem/negative_package_metadata_contracts.json"
       ],
       "required_diagnostic_codes": [
-        "O3S200"
+        "O3MOD8219",
+        "O3PKG8055"
       ]
     },
     "runtime_package_execution": {
@@ -200,8 +206,8 @@
       "language.collections.literal-syntax-runtime-backed",
       "language.collections.for-in-syntax-runtime-backed",
       "runtime.interop.package-loader-bridge",
-      "modules.public-import-lookup"
+      "modules.direct-import-syntax"
     ],
-    "claim_boundary": "this fixture proves source collection literals, source for-in syntax, package text identity, bounded package source graph, declaration debug-map anchors, sema-owned direct @import source truth, objc_import_module linked-provider execution, and missing-provider link rejection; semantic reference closure, full source maps, and statement stepping remain unpromoted"
+    "claim_boundary": "this fixture proves source collection literals, source for-in syntax, package text identity, bounded package source graph, declaration debug-map anchors, parser-owned direct @import syntax truth, objc_import_module linked-provider execution, and missing-provider link rejection; semantic reference closure, full source maps, and statement stepping remain unpromoted"
   }
 }

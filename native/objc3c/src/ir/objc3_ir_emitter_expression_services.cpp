@@ -16,6 +16,7 @@ BuildObjc3IREmitterExpressionCallEmissionOptions(
       state.direct_dispatch_symbols_by_key,
       state.direct_dispatch_signatures_by_key,
       state.runtime_dispatch_return_types_by_key,
+      state.runtime_dispatch_return_value_optional_carriers_by_key,
       state.runtime_dispatch_superclass_by_name,
       state.lowering_ir_boundary.runtime_dispatch_arg_slots,
       state.lowering_ir_boundary.runtime_dispatch_symbol,

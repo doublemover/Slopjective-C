@@ -1,5 +1,34 @@
 #include "io/objc3_process_internal.h"
 
+namespace {
+
+std::vector<std::string> BuildObjc3IrCompileArgs(
+    const std::filesystem::path &ir_path,
+    const std::filesystem::path &object_out) {
+  std::vector<std::string> args = {"-x", "ir", "-c", ir_path.string(), "-o",
+                                   object_out.string()};
+#if !defined(_WIN32)
+  args.push_back("-fPIC");
+#endif
+  args.push_back("-fno-color-diagnostics");
+  return args;
+}
+
+std::vector<std::string> BuildObjc3LlcObjectArgs(
+    const std::filesystem::path &ir_path,
+    const std::filesystem::path &object_out) {
+  std::vector<std::string> args = {"-filetype=obj"};
+#if !defined(_WIN32)
+  args.push_back("--relocation-model=pic");
+#endif
+  args.push_back("-o");
+  args.push_back(object_out.string());
+  args.push_back(ir_path.string());
+  return args;
+}
+
+}  // namespace
+
 int RunProcess(const std::string &executable,
                const std::vector<std::string> &args) {
   std::vector<std::string> owned_argv;
@@ -96,8 +125,7 @@ int RunIRCompile(const std::filesystem::path &clang_path,
                  const std::filesystem::path &object_out) {
   const std::string clang_exe = clang_path.string();
   const int compile_status =
-      RunProcess(clang_exe, {"-x", "ir", "-c", ir_path.string(), "-o",
-                             object_out.string(), "-fno-color-diagnostics"});
+      RunProcess(clang_exe, BuildObjc3IrCompileArgs(ir_path, object_out));
   if (compile_status == 0) {
     NormalizeObjectDeterminism(object_out);
   }
@@ -155,9 +183,10 @@ int RunIRCompileLLVMDirect(const std::filesystem::path &llc_path,
   // fail-closed and produce no synthesized object-inspection artifacts.
   // object-packaging/retention freeze anchor: this same produced
   // object boundary is now frozen as the lane-D packaging handoff, rooted in
-  // module.obj, @llvm.used retention, and retained __objc3_sec_* aggregate
-  // symbols. Later archive/link/startup registration work may extend the
-  // pipeline, but it may not replace or silently bypass these current anchors.
+  // the host-default object artifact, @llvm.used retention, and retained
+  // __objc3_sec_* aggregate symbols. Later archive/link/startup registration
+  // work may extend the pipeline, but it may not replace or silently bypass
+  // these current anchors.
   // live-optional-send-and-keypath-runtime-support anchor: the same
   // llvm-direct object path must preserve retained keypath descriptor sections
   // and runtime-link sidecars because the runtime now consumes those
@@ -168,9 +197,9 @@ int RunIRCompileLLVMDirect(const std::filesystem::path &llc_path,
   // module link-plan path must carry those artifacts forward without silently
   // degrading them into generic metadata-only packaging.
   // backend may not drop, pool, or reshape those member records opportunistically.
-  const int llc_status = RunProcess(
-      llc_path.string(), {"-filetype=obj", "-o", object_out.string(),
-                          ir_path.string()});
+  const int llc_status =
+      RunProcess(llc_path.string(), BuildObjc3LlcObjectArgs(ir_path,
+                                                            object_out));
   if (llc_status == 0) {
     NormalizeObjectDeterminism(object_out);
     return 0;

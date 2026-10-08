@@ -15,7 +15,11 @@ from ..runtime_contract_interop import (
 )
 from ..fixture_compilation import compile_fixture_expect_failure
 from ..fixture_compilation import compile_fixture_with_args
-from ..paths import ROOT
+from ..paths import (
+    ROOT,
+    RUNTIME_LIB_RELATIVE_PATH,
+    TAMPERED_RUNTIME_LIB_RELATIVE_PATH,
+)
 from ..probes import compile_probe, parse_key_value_output, run_probe
 
 
@@ -25,7 +29,7 @@ def _write_tampered_runtime_library_import_surface(
 ) -> None:
     payload = json.loads(source_path.read_text(encoding="utf-8"))
     payload["runtime_support_library_archive_relative_path"] = (
-        "artifacts/lib/tampered_objc3_runtime.lib"
+        TAMPERED_RUNTIME_LIB_RELATIVE_PATH
     )
     target_path.write_text(
         json.dumps(payload, indent=2, sort_keys=True),
@@ -88,7 +92,7 @@ def check_live_package_loading_interop_runtime_implementation_case(
 
     expect(
         packaging_payload.get("runtime_support_library_archive_relative_path")
-        == "artifacts/lib/objc3_runtime.lib",
+        == RUNTIME_LIB_RELATIVE_PATH,
         "expected live package-loader runtime snapshot to preserve the runtime archive path",
     )
     expect(

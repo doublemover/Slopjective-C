@@ -12,6 +12,7 @@ from .release_governance_security_names import (
     CHECK_SECURITY_LANGUAGE_RUNTIME_THREAT_MODEL,
     CHECK_SECURITY_RESPONSE_DRILL,
     CHECK_SECURITY_RUNTIME_HARDENING,
+    CHECK_SECURITY_SANITIZER_EXECUTION_EVIDENCE,
     CHECK_SECURITY_SANITIZER_VALIDATION,
     PUBLISH_SECURITY_ADVISORIES,
     SECURITY_HARDENING_HARD_CUTOVER_GUARDRAILS,
@@ -26,6 +27,7 @@ from .release_governance_security_paths import (
     SECURITY_HARDENING_PUBLICATION_PY,
     SECURITY_HARDENING_RESPONSE_DRILL_PY,
     SECURITY_HARDENING_RUNTIME_HARDENING_PY,
+    SECURITY_HARDENING_SANITIZER_EXECUTION_EVIDENCE_PY,
     SECURITY_HARDENING_SANITIZER_VALIDATION_PY,
     SECURITY_HARDENING_SOURCE_SURFACE_PY,
 )
@@ -87,6 +89,18 @@ SECURITY_HARDENING_PUBLIC_TARGETS: dict[str, SecurityHardeningTarget] = {
             "native target application, workflow, fixture, and report surfaces"
         ),
         SECURITY_HARDENING_SANITIZER_VALIDATION_PY,
+        "repo",
+        SECURITY_HARDENING_ALL_DOMAIN_OWNER_IDS,
+    ),
+    CHECK_SECURITY_SANITIZER_EXECUTION_EVIDENCE: SecurityHardeningTarget(
+        CHECK_SECURITY_SANITIZER_EXECUTION_EVIDENCE,
+        "validate sanitizer execution evidence contracts without promoting support truth",
+        "python:scripts/check_security_sanitizer_execution_evidence.py",
+        (
+            "ASan/UBSan execution evidence stays non-promoting, variant-pinned, "
+            "and tied to checked-in source, workflow, schema, and report contracts"
+        ),
+        SECURITY_HARDENING_SANITIZER_EXECUTION_EVIDENCE_PY,
         "repo",
         SECURITY_HARDENING_ALL_DOMAIN_OWNER_IDS,
     ),
@@ -168,6 +182,7 @@ SECURITY_HARDENING_VALIDATION_CHILD_ACTIONS = (
     CHECK_SECURITY_HARDENING_SCHEMA_SURFACE,
     CHECK_SECURITY_RUNTIME_HARDENING,
     CHECK_SECURITY_SANITIZER_VALIDATION,
+    CHECK_SECURITY_SANITIZER_EXECUTION_EVIDENCE,
     CHECK_SECURITY_LANGUAGE_RUNTIME_THREAT_MODEL,
     BUILD_SECURITY_POSTURE,
     CHECK_SECURITY_RESPONSE_DRILL,

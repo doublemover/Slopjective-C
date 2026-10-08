@@ -142,6 +142,17 @@ def test_release_operations_channel_model_rejects_generated_release_note_source(
         )
 
 
+def test_release_operations_channel_model_rejects_missing_required_note_sources() -> None:
+    model = deepcopy(load_channel_model())
+    model["channels"][0]["release_notes_policy"]["required_sources"] = []
+
+    with pytest.raises(RuntimeError, match="must define required release-note sources"):
+        validate_channel_operations_model(
+            channel_operations_model=model,
+            update_channel_policy=update_channel_policy_for(model),
+        )
+
+
 def test_release_operations_package_channel_freshness_accepts_coherent_artifacts() -> None:
     model = load_channel_model()
     channel_by_id = validate_channel_operations_model(
