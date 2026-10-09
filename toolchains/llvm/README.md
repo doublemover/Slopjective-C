@@ -84,6 +84,21 @@ installed. The helper verifies the v143 compiler/linker, the manifest's
 Windows SDK version, CMake and Ninja before it emits a build plan. No global
 PATH changes are required.
 
+For a long Windows build, an implementation-program runner saved under
+`temp/full-compatibility` can be started with:
+
+```powershell
+python -B -m scripts.objc3c_toolchain.run_owned_background --runner temp/full-compatibility/run_compiler_sdk.ps1 --label sdk-run-1
+```
+
+The runner must enter and verify the developer environment before building.
+The launcher uses noninteractive PowerShell with closed stdin and
+`CREATE_NO_WINDOW`, writes separate logs under `out/toolchains/objc3-development`,
+and records its process identity under the task's temp area. Labels are unique
+so a later run cannot overwrite existing evidence. It starts one runner without
+changing terminal preferences or stopping existing processes. Check the runner's
+status and exit evidence before reporting a build result.
+
 When rebasing LLVM, first update the annotated tag and resolved commit together,
 review the semantic/ABI delta, update each patch in canonical order and its
 hash, then verify preparation from a clean generated destination. Preserve old
