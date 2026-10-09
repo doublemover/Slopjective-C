@@ -73,11 +73,18 @@ foreach ($case in $cases) {
       }
     }
     $clientFlags += @('-I', $runtimeSourcePath, '-I', $generatedInclude, '-I', (Join-Path $repoRoot 'native/objc3c/src'))
-    $clientFlags += @($source, '-o', $executable)
-    if ($case.Adapter) { $clientFlags += $adapterObject }
-    $clientFlags += @('/link', ('/LIBPATH:' + $runtimeBuildPath), 'objc.lib')
+    $clientObject = Join-Path $fixtureOutput ($case.Name + '.obj')
+    $clientFlags += @('/c', $source, ('/Fo' + $clientObject))
     & $clangCl @clientFlags
-    if ($LASTEXITCODE -ne 0) { throw "clang-cl client fixture compile/link failed: $($case.Name) ($LASTEXITCODE)" }
+    if ($LASTEXITCODE -ne 0) { throw "clang-cl client fixture compile failed: $($case.Name) ($LASTEXITCODE)" }
+    # The adapter is an existing object, not another source for /Fo. Keep the
+    # compile output explicit and pass all objects to a separate driver link.
+    $clientLinkFlags = @('/nologo', '/MD', '/clang:--target=x86_64-pc-windows-msvc',
+      '/clang:-fuse-ld=lld', ('/Fe' + $executable), $clientObject)
+    if ($case.Adapter) { $clientLinkFlags += $adapterObject }
+    $clientLinkFlags += @('/link', ('/LIBPATH:' + $runtimeBuildPath), 'objc.lib')
+    & $clangCl @clientLinkFlags
+    if ($LASTEXITCODE -ne 0) { throw "clang-cl client fixture link failed: $($case.Name) ($LASTEXITCODE)" }
     continue
   }
   $arguments = @($targetFlags) + $case.Flags + $runtimeIncludes + @('-L', $runtimeBuildPath, '-lobjc')
