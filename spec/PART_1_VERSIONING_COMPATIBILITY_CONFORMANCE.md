@@ -1,6 +1,12 @@
 # Part 1 - Canonical Language Mode And Conformance {#part-1}
 
-_Working draft v0.11 - hard-cutover public surface_
+_Working draft v0.12 - compatibility-preserving Clang foundation, 2026-10-09_
+
+The owner-selected full compatibility revision below supersedes the former
+global-keyword and legacy-macro rejection policy. It defines the migration
+target; it does not upgrade implementation claims in the existing capability
+matrix. Qualification is specific to a compiler build, target, runtime and
+semantic profile.
 
 ## 1.1 Purpose {#part-1-1}
 
@@ -37,10 +43,11 @@ from the action catalog lists them through the npm bridge.
 
 ### 1.2.1 Canonical compiler surface {#part-1-2-1}
 
-A conforming implementation exposes Objective-C 3.0 as one canonical source
-language. The current public command surface must not expose a second language
-profile, source mode, or command switch that accepts retired spelling families
-as supported input.
+A conforming implementation exposes Objective-C 3.0 extensions through one
+patched Clang parser, Sema, AST and CodeGen pipeline. Ordinary C18, C++20,
+Objective-C and Objective-C++ retain their baseline source and target ABI
+semantics. Semantic profiles strengthen checking without creating a second
+extension grammar.
 
 In this repository, the public command bridge is intentionally single-script:
 `package.json` exposes `objc3c`, and `npm run objc3c -- <action>` dispatches to
@@ -56,8 +63,8 @@ for toolchains that also host other languages:
 Selecting Objective-C 3.0 shall:
 
 - enable the canonical Objective-C 3.0 grammar additions,
-- enable Objective-C 3.0 default rules such as nonnull-by-default regions where
-  those rules are implemented,
+- preserve existing pointer nullability and ARC/MRC meaning unless an explicit
+  declaration, region annotation or selected strict profile strengthens it,
 - emit canonical diagnostics for rejected source forms,
 - report support through the capability matrix rather than through chapter status
   prose.
@@ -66,8 +73,15 @@ Selecting Objective-C 3.0 shall:
 
 For Objective-C 3.0 v1, language selection is translation-unit-only.
 
-Mixing Objective-C 3.0 with another Objective-C source language inside a single
-translation unit is not conforming.
+An extension-enabled translation unit may include unchanged C, Objective-C and,
+in Objective-C++ mode, C++ declarations and headers. Selection controls extension
+availability throughout the translation unit; it does not reinterpret ordinary
+identifiers, selectors, macros or unannotated imported pointer types.
+
+`.m` and `.mm` select their ordinary Clang base languages unless extension mode
+is explicitly enabled. `.objc3` selects Objective-C plus extension mode through
+an explicit driver language mapping. Objective-C++ requires an explicit choice;
+header contents shall not trigger an automatic language switch.
 
 A conforming implementation:
 
@@ -108,15 +122,27 @@ Test expectations and diagnostic portability requirements are defined in
 
 ## 1.3 Reserved keywords and rejected source forms {#part-1-3}
 
-### 1.3.1 Reserved keywords {#part-1-3-1}
+### 1.3.1 Compatibility-preserving extension recognition {#part-1-3-1}
 
-In Objective-C 3.0 mode, at minimum the following tokens are reserved as
-keywords:
+An extension shall not steal a valid parse in the selected base language.
+`fn`, `let`, `var`, `defer`, `guard`, `match`, `async`, `await`, `actor` and
+`throws` remain ordinary identifiers in ordinary declarations, expressions,
+members and Objective-C selector pieces. Ergonomic extension recognition is
+contextual and requires an unambiguous grammar position. Ambiguous uses require
+an implementation-reserved `__objc3_...` spelling. Existing C/C++ keywords retain
+their base-language interpretation where applicable.
 
-- Control flow: `defer`, `guard`, `match`, `case`
-- Effects/concurrency: `async`, `await`, `actor`
-- Errors: `try`, `throw`, `do`, `catch`, `throws`
-- Bindings: `let`, `var`
+Preprocessing runs normally before contextual recognition. User macros expand
+normally, including macros with common extension names. A macro that deliberately
+expands to a reserved extension spelling requests that extension. The compiler
+shall not suppress, undefine or re-expand user macros to select a grammar.
+
+In Objective-C++, native `try { ... } catch (...)`, function-try-blocks and
+constructor function-try-blocks remain C++ exception syntax. `@try`/`@throw`
+remain Objective-C exceptions. Slop typed errors use a lexically selected Slop
+callable domain; an ordinary nested C++ lambda establishes its own native domain.
+Bare `throw;` in a native catch retains native rethrow semantics. Cross-domain
+conversion requires an explicit adapter, never an expression-type guess.
 
 ### 1.3.2 Contextual keywords {#part-1-3-1-2}
 
@@ -140,14 +166,16 @@ Acceptable designs include:
 - a raw identifier syntax such as `@identifier(defer)`, or
 - a backtick escape such as `` `defer` ``.
 
-The toolchain may provide fix-its to rewrite collisions to the canonical escaped
-form. The fix-it does not make the rejected unescaped form supported behavior.
+Ordinary baseline identifiers require no escape. Any additional escape syntax
+is optional and cannot substitute for unchanged source compatibility.
 
 ### 1.3.4 Retired spelling rejection {#part-1-3-3}
 
-Retired source spellings such as `YES`, `NO`, `NULL`, and `optional<T>` are
-represented as rejected behavior unless the capability matrix states otherwise.
-They are diagnostic inputs, not accepted Objective-C 3.0 syntax.
+`YES`, `NO` and `NULL` retain ordinary preprocessing and baseline semantics.
+Source compatibility does not turn an unsupported extension type spelling such
+as `optional<T>` into an implemented extension. Such spellings are accepted as
+ordinary identifiers where the base grammar admits them; extension use is
+diagnosed according to its actual capability.
 
 ## 1.4 Feature and capability reporting {#part-1-4}
 

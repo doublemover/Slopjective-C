@@ -823,3 +823,22 @@ That means the Part 9 conformance gate remains tied to the published D002 runtim
 `M272-E002` keeps the milestone closeout truthful by replaying the existing `M272-A002` through `M272-E001` proof chain and freezing one explicit runnable matrix rather than inventing a new runtime or publication boundary.
 
 That closeout matrix is intentionally narrow: it preserves direct exact-call continuity, final/sealed seeded runtime fast-path behavior, and deterministic unresolved-dispatch rejection on top of the same `M272-D002` evidence surface.
+
+## D-036: Full compatibility uses pinned Clang and native platform objects {#decisions-d-036}
+
+Owner decision, 2026-10-09: implement full C/Objective-C compatibility on one
+source-patched Clang 22.1.6 AST/Sema/CodeGen pipeline. Objective-C++ inherits the
+actual C++20 parser, types, target ABI, RAII and exception machinery. The ordered
+repository patch stack and target runtime profile define build identity.
+
+Common extension words are contextual; valid ordinary parses and normal macro
+expansion retain their meaning. Reserved implementation spellings provide an
+unambiguous extension request. C++ exceptions, Objective-C exceptions and Slop
+typed errors remain distinct lexical/ABI domains. Native objects use platform
+layout, dispatch, ARC, weak and Blocks; old i32 handles remain explicitly legacy.
+
+This decision revises the conflicting policy in Parts 0/1 and Appendix F. It
+does not promote existing subset evidence into full language qualification.
+General native noncopyable language policy, value-generic representation,
+async cleanup and typed cancellation expansion require their separate design
+decisions; internal value/task descriptors do not select those public policies.
