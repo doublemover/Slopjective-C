@@ -41,17 +41,8 @@ function Test-NativeCompilerBuildArtifactsReady {
       return $false
     }
   }
-  if (-not (Test-FrontendInvocationLockCurrent -CompilerRepoRoot $CompilerRepoRoot -ExistingBuildResult $ExistingBuildResult)) {
-    return $false
-  }
-
-  $buildInputPaths = Get-NativeCompilerBuildInputPaths -RepoRoot $CompilerRepoRoot
-  if (Test-AnyPathNewerThanTarget -TargetPath $exe -InputPaths $buildInputPaths) {
-    return $false
-  }
-  if (Test-AnyPathNewerThanTarget -TargetPath $runtimeLibrary -InputPaths $buildInputPaths) {
-    return $false
-  }
+  if (-not (Test-FrontendInvocationLockCurrent -CompilerRepoRoot $CompilerRepoRoot -ExistingBuildResult $ExistingBuildResult)) { return $false }
+  if (Test-CMakeGraphHasPendingBuild -RepoRoot $CompilerRepoRoot) { return $false }
 
   return $true
 }

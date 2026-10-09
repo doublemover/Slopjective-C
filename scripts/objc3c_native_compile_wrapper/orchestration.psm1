@@ -21,7 +21,8 @@ function Invoke-Objc3cNativeCompileWrapper {
     -RepoRoot $RepoRoot `
     -ParsedArgs $parsed `
     -EffectiveCompileArgs @($frontendGuardResult.effective_compile_args) `
-    -WrapperScriptPath $WrapperScriptPath
+    -WrapperScriptPath $WrapperScriptPath `
+    -CompilerBinaryPath $exe
 
   Invoke-Objc3cNativeCompileCacheRestore `
     -RepoRoot $RepoRoot `

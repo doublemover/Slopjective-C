@@ -46,6 +46,7 @@ foreach ($readinessModule in $readinessModules) {
 Export-ModuleMember -Function @(
   "Get-NativeCompilerBuildInputPaths",
   "Test-AnyPathNewerThanTarget",
+  "Test-CMakeGraphHasPendingBuild",
   "Test-FrontendInvocationLockCurrent",
   "Test-NativeCompilerBuildArtifactsReady"
 )

@@ -19,7 +19,8 @@ function New-Objc3cNativeCompileCommand {
     [Parameter(Mandatory = $true)][string]$RepoRoot,
     [Parameter(Mandatory = $true)]$ParsedArgs,
     [Parameter(Mandatory = $true)][string[]]$EffectiveCompileArgs,
-    [Parameter(Mandatory = $true)][string]$WrapperScriptPath
+    [Parameter(Mandatory = $true)][string]$WrapperScriptPath,
+    [Parameter(Mandatory = $true)][string]$CompilerBinaryPath
   )
 
   $compileArgs = @($EffectiveCompileArgs)
@@ -29,7 +30,8 @@ function New-Objc3cNativeCompileCommand {
     -RepoRoot $RepoRoot `
     -InputPath $inputPath `
     -ArgsWithoutOutDir $argsWithoutOutDir `
-    -WrapperScriptPath $WrapperScriptPath
+    -WrapperScriptPath $WrapperScriptPath `
+    -CompilerBinaryPath $CompilerBinaryPath
 
   return [pscustomobject]@{
     arguments = $compileArgs

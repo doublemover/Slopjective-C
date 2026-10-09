@@ -4,10 +4,18 @@
 from __future__ import annotations
 
 import sys
+import argparse
+import signal
+import threading
+import uuid
+from contextlib import contextmanager
+from queue import Queue
 import os
 import shutil
 import subprocess
 import hashlib
+import re
+import time
 from copy import deepcopy
 from datetime import datetime, timezone
 from pathlib import Path
@@ -23,7 +31,8 @@ from objc3c_editor_tooling.publication import publish_editor_tooling_surface
 from objc3c_tooling.artifact_identity import current_host_artifact_identity
 from objc3c_tooling.json_io import load_json_object as load_json, write_json_file
 from objc3c_tooling.llvm_discovery import find_llvm_tool_path
-from objc3c_tooling.paths import repo_rel
+from objc3c_tooling.paths import repo_rel as _repo_rel
+from objc3c_cross_lane_selection import PHASES, execution_node_statuses, resolve_execution_plan, safe_run_id, validate_manifest_inventory
 from check_objc3c_public_runtime_reflection_api import validate_public_runtime_reflection_api
 from objc3c_object_model_debugger_proof import (
     DEFAULT_CONTRACT_PATH as OBJECT_MODEL_DEBUGGER_CONTRACT_PATH,
@@ -152,6 +161,8 @@ ARTIFACT_IDENTITY = current_host_artifact_identity()
 EXPECTATION_CONTRACT_ID = "objc3c.cross_lane_e2e.family_expectation.v1"
 WORKSPACE_CONTRACT_ID = "objc3c.cross_lane_e2e.workspace.v1"
 SUMMARY_CONTRACT_ID = "objc3c.cross_lane_e2e.summary.v1"
+RUN_CONTEXT: dict[str, Any] = {}
+RUN_LOG_MAP: dict[str, Path] = {}
 PUBLIC_ACTION = "validate-cross-lane-e2e"
 PUBLIC_COMMAND = "npm run objc3c -- validate-cross-lane-e2e"
 PUBLIC_CONFORMANCE_SUITE_COMMAND = "npm run objc3c -- validate-public-conformance-suite"
@@ -328,31 +339,107 @@ def link_driver_args() -> list[str]:
     return args
 
 
-def run_checked(
-    command: list[str],
-    *,
-    cwd: Path,
-    log_path: Path,
-    domain: str,
-    check: bool = True,
-) -> subprocess.CompletedProcess[str]:
-    result = subprocess.run(command, cwd=cwd, text=True, capture_output=True, check=False)
-    log_path.parent.mkdir(parents=True, exist_ok=True)
-    log_path.write_text(
-        "command: " + " ".join(command) + "\n"
-        + f"exit_code: {result.returncode}\n"
-        + "stdout:\n" + result.stdout
-        + "\nstderr:\n" + result.stderr,
-        encoding="utf-8",
-    )
-    if check and result.returncode != 0:
-        print(f"[fail] {domain} command failed; captured log follows: {repo_rel(log_path)}", file=sys.stderr)
-        print(log_path.read_text(encoding="utf-8"), file=sys.stderr)
-        raise RuntimeError(
-            f"{domain} proof command failed with exit {result.returncode}: {repo_rel(log_path)}"
-        )
-    return result
+def repo_rel(path: Path) -> str:
+    mapped = RUN_LOG_MAP.get(str(path))
+    if mapped is not None:
+        try:
+            return _repo_rel(mapped)
+        except ValueError:
+            return mapped.resolve().as_posix()
+    return _repo_rel(path)
 
+def _terminate_process_tree(process: subprocess.Popen[str]) -> None:
+    if process.poll() is not None:
+        return
+    if os.name == "nt":
+        subprocess.run(["taskkill", "/PID", str(process.pid), "/T", "/F"], capture_output=True, check=False)
+    else:
+        try:
+            os.killpg(process.pid, signal.SIGTERM)
+        except ProcessLookupError:
+            return
+        try:
+            process.wait(timeout=2)
+        except subprocess.TimeoutExpired:
+            try:
+                os.killpg(process.pid, signal.SIGKILL)
+            except ProcessLookupError:
+                pass
+
+
+def run_checked(command: list[str], *, cwd: Path, log_path: Path, domain: str, check: bool = True, timeout_seconds: float | None = None) -> subprocess.CompletedProcess[str]:
+    timeout = timeout_seconds or float(os.environ.get("OBJC3C_CROSS_LANE_TIMEOUT_SECONDS", "1800"))
+    requested_log_path = log_path
+    run_root = RUN_CONTEXT.get("output_root")
+    if run_root is not None:
+        normalized = re.sub(r"[^A-Za-z0-9._-]+", "-", domain).strip("-")[:100]
+        log_path = Path(run_root) / "logs" / f"{normalized}.log"
+    RUN_LOG_MAP[str(log_path)] = log_path
+    log_path.parent.mkdir(parents=True, exist_ok=True)
+    if log_path.exists():
+        prior = log_path
+        suffix = 1
+        while log_path.exists():
+            log_path = prior.with_name(f"{prior.stem}.retry-{suffix}{prior.suffix}")
+            suffix += 1
+    RUN_LOG_MAP[str(requested_log_path)] = log_path
+    RUN_LOG_MAP[str(log_path)] = log_path
+    creation_flags = subprocess.CREATE_NEW_PROCESS_GROUP if os.name == "nt" else 0
+    process = subprocess.Popen(command, cwd=cwd, text=True, encoding="utf-8", errors="replace", stdout=subprocess.PIPE, stderr=subprocess.PIPE, bufsize=1, start_new_session=os.name != "nt", creationflags=creation_flags)
+    events: Queue[tuple[str, str | None]] = Queue()
+    def pump(name: str, stream: Any) -> None:
+        try:
+            for line in iter(stream.readline, ""):
+                events.put((name, line))
+        finally:
+            events.put((name, None))
+    threads = [threading.Thread(target=pump, args=("stdout", process.stdout), daemon=True), threading.Thread(target=pump, args=("stderr", process.stderr), daemon=True)]
+    for thread in threads:
+        thread.start()
+    captures = {"stdout": [], "stderr": []}
+    captured_bytes = logged_bytes = ended = 0
+    truncated_capture = truncated_log = timed_out = False
+    deadline = time.monotonic() + timeout
+    with log_path.open("w", encoding="utf-8", newline="") as log:
+        log.write("command: " + " ".join(command) + "\n")
+        while ended < 2 or process.poll() is None:
+            if time.monotonic() >= deadline and process.poll() is None:
+                timed_out = True
+                _terminate_process_tree(process)
+            try:
+                name, line = events.get(timeout=0.1)
+            except Exception:
+                if process.poll() is not None and ended >= 2:
+                    break
+                continue
+            if line is None:
+                ended += 1
+                continue
+            size = len(line.encode("utf-8", errors="replace"))
+            if logged_bytes + size <= 10 * 1024 * 1024:
+                log.write(line)
+                logged_bytes += size
+            elif not truncated_log:
+                log.write("\n[log truncated after 10 MiB; child output continues to be drained]\n")
+                truncated_log = True
+            if captured_bytes + size <= 2 * 1024 * 1024:
+                captures[name].append(line)
+                captured_bytes += size
+            elif not truncated_capture:
+                captures[name].append("\n[output capture truncated after 2 MiB]\n")
+                truncated_capture = True
+        process.wait()
+        for thread in threads:
+            thread.join(timeout=1)
+        log.write(f"\nexit_code: {process.returncode}\ntimeout: {str(timed_out).lower()}\n")
+    stdout, stderr = "".join(captures["stdout"]), "".join(captures["stderr"])
+    result = subprocess.CompletedProcess(command, 124 if timed_out else int(process.returncode or 0), stdout, stderr)
+    if check and (timed_out or result.returncode != 0):
+        reason = "timed out" if timed_out else f"failed with exit {result.returncode}"
+        print(f"[fail] {domain} command {reason}; captured log follows: {repo_rel(log_path)}", file=sys.stderr)
+        print(log_path.read_text(encoding="utf-8"), file=sys.stderr)
+        raise RuntimeError(f"{domain} proof command {reason}: {repo_rel(log_path)}")
+    return result
 
 def require_artifact(path: Path, label: str) -> None:
     if not path.is_file():
@@ -3489,7 +3576,36 @@ def validate_public_conformance_suite_linkage(family_summaries: list[dict[str, A
     }
 
 
-def validate_manifest() -> dict[str, Any]:
+@contextmanager
+def _serialized_distribution_writer():
+    lock_path = ROOT / "tmp" / "artifacts" / "cross-lane-e2e" / ".distribution-writer.lock"
+    lock_path.parent.mkdir(parents=True, exist_ok=True)
+    with lock_path.open("a+b") as lock:
+        if os.name == "nt":
+            import msvcrt
+            lock.seek(0)
+            msvcrt.locking(lock.fileno(), msvcrt.LK_LOCK, 1)
+            try:
+                yield
+            finally:
+                lock.seek(0)
+                msvcrt.locking(lock.fileno(), msvcrt.LK_UNLCK, 1)
+        else:
+            import fcntl
+            fcntl.flock(lock.fileno(), fcntl.LOCK_EX)
+            try:
+                yield
+            finally:
+                fcntl.flock(lock.fileno(), fcntl.LOCK_UN)
+
+
+def _validate_selected_family(family: dict[str, Any], preflight: dict[str, Any]) -> dict[str, Any]:
+    if family.get("family_id") == "distribution_package_lifecycle":
+        with _serialized_distribution_writer():
+            return validate_family(family, release_operations_preflight=preflight)
+    return validate_family(family, release_operations_preflight=preflight)
+
+def validate_manifest(*, family_ids: list[str] | None = None, phase: str | None = None, output_root: Path | None = None, run_id: str | None = None, pinned_build_identity: str | None = None) -> dict[str, Any]:
     manifest = load_json(MANIFEST_PATH)
     if manifest.get("contract_id") != MANIFEST_CONTRACT_ID:
         raise RuntimeError("cross-lane E2E manifest contract_id drifted")
@@ -3502,6 +3618,20 @@ def validate_manifest() -> dict[str, Any]:
     if manifest.get("public_replay_command") != PUBLIC_COMMAND:
         raise RuntimeError("cross-lane E2E manifest public_replay_command drifted")
     required_public_commands = validate_required_public_commands(manifest)
+    all_family_rows = [manifest_family(row, f"families[{index}]") for index, row in enumerate(require_list(manifest.get("families"), "families"))]
+    plan = resolve_execution_plan(manifest, ROOT, family_ids or [], phase)
+    selected_family_ids = set(plan["selected_families"])
+    selected_rows = [row for row in all_family_rows if row["family_id"] in selected_family_ids]
+    global ARTIFACT_ROOT, REPORT_PATH
+    if output_root is not None:
+        ARTIFACT_ROOT = output_root / "artifacts"
+        REPORT_PATH = output_root / "summary.json"
+    RUN_CONTEXT.update({"output_root": output_root, "run_id": run_id, "plan": plan})
+    exe = resolve_native_exe()
+    runtime = ROOT / ARTIFACT_IDENTITY.runtime_library_relative_path
+    build_identity = hashlib.sha256((sha256_file(exe) + sha256_file(runtime)).encode("ascii")).hexdigest()
+    if pinned_build_identity and pinned_build_identity != build_identity:
+        raise RuntimeError("pinned build identity does not match current compiler/runtime binaries")
 
     policy = require_object(manifest.get("claim_policy"), "claim_policy")
     if policy.get("integrated_success_promotes_reserved_rows") is not False:
@@ -3510,7 +3640,7 @@ def validate_manifest() -> dict[str, Any]:
         raise RuntimeError("claim_policy must reject tmp source truth")
 
     families = require_list(manifest.get("families"), "families")
-    family_rows = [manifest_family(row, f"families[{index}]") for index, row in enumerate(families)]
+    family_rows = all_family_rows
     family_ids = [
         require_nonempty_string(family.get("family_id"), f"families[{index}].family_id")
         for index, family in enumerate(family_rows)
@@ -3521,14 +3651,22 @@ def validate_manifest() -> dict[str, Any]:
             + ", ".join(REQUIRED_FAMILY_IDS)
         )
 
-    release_operations_preflight = prepare_release_operations_preflight(family_rows)
-    family_summaries = [
-        validate_family(
-            family,
-            release_operations_preflight=release_operations_preflight,
-        )
-        for family in family_rows
-    ]
+    if "distribution_package_lifecycle" in selected_family_ids:
+        with _serialized_distribution_writer():
+            release_operations_preflight = prepare_release_operations_preflight(selected_rows)
+    else:
+        release_operations_preflight = {"status": "SKIPPED", "reason": "distribution family not selected"}
+    selected_summaries: dict[str, dict[str, Any]] = {}
+    failures: list[dict[str, str]] = []
+    for family in selected_rows:
+        family_id = str(family["family_id"])
+        try:
+            selected_summaries[family_id] = _validate_selected_family(family, release_operations_preflight)
+            selected_summaries[family_id].setdefault("status", "COMPLETED")
+        except Exception as exc:
+            failures.append({"family_id": family_id, "error": str(exc)})
+            selected_summaries[family_id] = {"family_id": family_id, "source": family["source"], "expectation": family["expectation"], "expected_state": family["expected_state"], "status": "FAILED", "failure": str(exc)}
+    family_summaries = [selected_summaries.get(str(family["family_id"]), {"family_id": family["family_id"], "source": family["source"], "expectation": family["expectation"], "expected_state": family["expected_state"], "status": "UNSELECTED"}) for family in family_rows]
     workflow_action_glue = validate_workflow_action_glue()
     public_conformance_suite_linkage = validate_public_conformance_suite_linkage(family_summaries)
     blocked_count = sum(1 for row in family_summaries if row["expected_state"] in BLOCKED_STATES)
@@ -3543,7 +3681,10 @@ def validate_manifest() -> dict[str, Any]:
         "manifest_path": repo_rel(MANIFEST_PATH),
         "contract_id": SUMMARY_CONTRACT_ID,
         "generated_at_utc": datetime.now(timezone.utc).isoformat(),
-        "status": "PASS",
+        "status": "FAIL" if failures else "PASS",
+        "failures": failures,
+        "partial_report": bool(failures),
+        "reused_nodes": [],
         "source_manifest_contract": MANIFEST_CONTRACT_ID,
         "issue": 8200,
         "public_action": PUBLIC_ACTION,
@@ -3553,24 +3694,51 @@ def validate_manifest() -> dict[str, Any]:
         "public_conformance_suite_linkage": public_conformance_suite_linkage,
         "release_operations_preflight": release_operations_preflight,
         "family_count": len(family_summaries),
+        "run_id": run_id,
+        "build_identity": build_identity,
+        "input_identity": __import__("objc3c_cross_lane_selection").digest_files([MANIFEST_PATH, PUBLIC_CONFORMANCE_SUITE_MANIFEST_PATH, *(ROOT / family[key] for family in selected_rows for key in ("source", "native_meta", "workspace_manifest", "expectation")), *(ROOT / module["source"] for family in selected_rows for module in load_json(ROOT / family["workspace_manifest"]).get("package_modules", []))]),
+        "selected_family_ids": sorted(selected_family_ids),
+        "selection_phase": phase,
+        "execution_plan": plan,
+        "node_statuses": execution_node_statuses(plan, selected_summaries, failures),
         "blocked_or_reserved_family_count": blocked_count,
         "reserved_evidence_ref_count": reserved_ref_count,
         "family_summaries": family_summaries,
     }
 
 
-def main() -> int:
+def build_argument_parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(description="Validate selected or full cross-lane E2E evidence")
+    parser.add_argument("--family", action="append", default=[], help="family id; may be repeated or comma separated")
+    parser.add_argument("--phase", choices=PHASES, help="select a manifest execution phase and dependency closure")
+    parser.add_argument("--output-root", type=Path, help="isolated root for this run's artifacts, logs and summary")
+    parser.add_argument("--run-id", help="stable safe identifier for this run")
+    parser.add_argument("--pinned-build-identity", help="require this compiler/runtime content identity")
+    return parser
+
+
+def main(argv: list[str] | None = None) -> int:
+    global ARTIFACT_ROOT, REPORT_PATH
+    args = build_argument_parser().parse_args(argv)
+    families = [item for raw in args.family for item in raw.split(",") if item]
+    run_id = safe_run_id(args.run_id or (datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%S") + "-" + uuid.uuid4().hex[:8]))
+    selected = bool(families or args.phase or args.output_root)
+    root = (args.output_root or (ROOT / "tmp" / "artifacts" / "cross-lane-e2e" / "runs")) / run_id if selected else None
     try:
-        payload = validate_manifest()
+        if root is not None:
+            root.mkdir(parents=True, exist_ok=True)
+        payload = validate_manifest(family_ids=families, phase=args.phase, output_root=root, run_id=run_id, pinned_build_identity=args.pinned_build_identity)
     except Exception as exc:
+        if root is not None:
+            write_json_file(root / "summary.json", {"status": "FAIL", "run_id": run_id, "partial_report": True, "error": str(exc), "selected_family_ids": families, "selection_phase": args.phase, "reused_nodes": []})
         return fail(str(exc))
-
-    REPORT_PATH.parent.mkdir(parents=True, exist_ok=True)
-    write_json_file(REPORT_PATH, payload)
-    print(f"summary_path: {repo_rel(REPORT_PATH)}")
-    print("objc3c-cross-lane-e2e: PASS")
-    return 0
-
+    report_path = REPORT_PATH
+    report_path.parent.mkdir(parents=True, exist_ok=True)
+    write_json_file(report_path, payload)
+    print(f"summary_path: {repo_rel(report_path)}")
+    print(f"run_id: {run_id}")
+    print(f"objc3c-cross-lane-e2e: {payload['status']}")
+    return 1 if payload['status'] == 'FAIL' else 0
 
 if __name__ == "__main__":
     raise SystemExit(main())
