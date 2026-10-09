@@ -13,6 +13,7 @@ from objc3c_runtime_acceptance.summary import build_runtime_acceptance_summary
 from objc3c_runtime_acceptance.summary_owner_contracts import (
     REPORT_ASSEMBLY_OWNER_CONTRACT,
 )
+from objc3c_runtime_acceptance.reuse_identity import build_runtime_acceptance_reuse_identity
 
 
 def assemble_runtime_acceptance_summary(
@@ -39,6 +40,19 @@ def assemble_runtime_acceptance_summary(
         available_suites=available_suites,
     )
     summary["report_assembly_owner_contract"] = REPORT_ASSEMBLY_OWNER_CONTRACT.payload()
+    reuse_identity = build_runtime_acceptance_reuse_identity(
+        args=args,
+        run_dir=run_dir,
+        clangxx=clangxx,
+        results=results,
+        case_timings=acceptance_progress.case_timings,
+    )
+    summary["final_status"] = "passed" if summary.get("status") == "PASS" else "failed"
+    summary["fixture_ids"] = reuse_identity["fixture_ids"]
+    summary["case_labels"] = reuse_identity["case_labels"]
+    summary["options_digest"] = reuse_identity["options_digest"]
+    summary["artifact_identities"] = reuse_identity["artifacts"]
+    summary["runtime_reuse_identity"] = reuse_identity
     return summary
 
 
