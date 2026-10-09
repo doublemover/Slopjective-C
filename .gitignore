@@ -2,6 +2,7 @@ __pycache__/
 node_modules/
 tmp/
 temp/
+out/toolchains/
 
 # Generated report artifacts (local/CI scratch outputs)
 reports/**/*.log

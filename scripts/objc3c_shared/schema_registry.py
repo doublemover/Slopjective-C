@@ -10,6 +10,9 @@ from objc3c_shared.json_io import load_json_any, load_json_object, validate_json
 ROOT = Path(__file__).resolve().parents[2]
 
 SCHEMA_PATHS: dict[str, Path] = {
+    "objc3-language-capabilities-v1": ROOT
+    / "schemas"
+    / "objc3-language-capabilities-v1.schema.json",
     "objc3-conformance-dashboard-status-v1": ROOT
     / "schemas"
     / "objc3-conformance-dashboard-status-v1.schema.json",

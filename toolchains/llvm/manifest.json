@@ -1,0 +1,85 @@
+{
+  "schema_version": 1,
+  "upstream": {
+    "name": "llvm-project",
+    "url": "https://github.com/llvm/llvm-project.git",
+    "tag": "llvmorg-22.1.6",
+    "tag_object": "e1e54c548235b71134d53ec5e4d93873db5c70ef",
+    "commit": "fc4aad7b5db3fff421df9a9637605b9ca5667881"
+  },
+  "patch_series": "toolchains/llvm/patches/series",
+  "patches": [
+    {
+      "file": "0001-objc3-language-mode-and-build-identity.patch",
+      "sha256": "2c5e537744b687aa41d23c5905f0d1a8e8797f13664d77b51700828932399c97"
+    },
+    {
+      "file": "0002-objc3-native-defer-statement.patch",
+      "sha256": "dc8ef2a4f0900b131bfcdadd037b4c817bef5d2daf2e944a2bf7f9055e541380"
+    },
+    {
+      "file": "0003-objc3-native-payload-type-facts.patch",
+      "sha256": "51fe445728189b97dd7bef5a02751da26fc856223e932c010d694dc0bf044579"
+    }
+  ],
+  "pristine_baseline_build_id": "llvmorg-22.1.6-fc4aad7b5db3-pristine-v1",
+  "build": {
+    "generator": "Ninja",
+    "configuration": "Release",
+    "target_triple": "x86_64-pc-windows-msvc",
+    "host_toolset": "Visual Studio 2022 v143",
+    "windows_sdk_version": "10.0.26100.0",
+    "windows_crt": "MD",
+    "assertions": true,
+    "rtti": true,
+    "eh": true,
+    "targets": ["X86"],
+    "projects": ["clang", "lld", "clang-tools-extra"],
+    "build_targets": [
+      "clang",
+      "FileCheck",
+      "count",
+      "not",
+      "llvm-config",
+      "clang-resource-headers",
+      "clangTooling",
+      "clangIndex",
+      "clangCodeGen",
+      "clangFrontend",
+      "clangDriver",
+      "ObjC3TypeContractsTests"
+    ],
+    "build_target_groups": [
+      {
+        "name": "compiler_and_test_tools",
+        "targets": ["clang", "FileCheck", "count", "not", "llvm-config", "clang-resource-headers"]
+      },
+      {
+        "name": "objc3_facade_libraries",
+        "targets": ["clangTooling", "clangIndex", "clangCodeGen", "clangFrontend", "clangDriver"]
+      },
+      {
+        "name": "native_type_contract_tests",
+        "targets": ["ObjC3TypeContractsTests"]
+      }
+    ],
+    "distribution_components": [
+      "clang",
+      "lld",
+      "clang-resource-headers",
+      "clang-libraries",
+      "clang-headers",
+      "clang-cmake-exports",
+      "llvm-libraries",
+      "llvm-headers",
+      "cmake-exports"
+    ],
+    "test_suite": "clang/test/ObjC3",
+    "runtimes": [],
+    "bootstrap": false,
+    "include_tests": true,
+    "compile_jobs": 8,
+    "link_jobs": 1,
+    "test_binaries": ["tools/clang/unittests/AST/ObjC3TypeContractsTests.exe"]
+  }
+}

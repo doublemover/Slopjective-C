@@ -1,0 +1,70 @@
+{
+  "schema_version": 1,
+  "authority": "schemas/objc3-language-capabilities.json",
+  "authority_sha256": "cc1360a6967f7c924c89b75ae45df00aefcced0fcd77fe53b2e202e79f3a46a7",
+  "compiler_family": "clang-foundation",
+  "language_revision": 202610,
+  "extension_abi_revision": 2,
+  "features": [
+    {
+      "name": "defer",
+      "macro": "DEFER",
+      "aliases": [],
+      "state": "internal",
+      "qualified_targets": [],
+      "feature_query": "objc3_defer",
+      "public_macro": "__OBJC3_FEATURE_DEFER__"
+    },
+    {
+      "name": "optionals",
+      "macro": "OPTIONALS",
+      "aliases": [
+        "OPTIONAL"
+      ],
+      "state": "reserved",
+      "qualified_targets": [],
+      "feature_query": "objc3_optionals",
+      "public_macro": "__OBJC3_FEATURE_OPTIONALS__"
+    },
+    {
+      "name": "result",
+      "macro": "RESULT",
+      "aliases": [],
+      "state": "reserved",
+      "qualified_targets": [],
+      "feature_query": "objc3_result",
+      "public_macro": "__OBJC3_FEATURE_RESULT__"
+    },
+    {
+      "name": "throws",
+      "macro": "THROWS",
+      "aliases": [
+        "TYPED_THROWS"
+      ],
+      "state": "reserved",
+      "qualified_targets": [],
+      "feature_query": "objc3_throws",
+      "public_macro": "__OBJC3_FEATURE_THROWS__"
+    },
+    {
+      "name": "async_await",
+      "macro": "ASYNC_AWAIT",
+      "aliases": [
+        "ASYNC"
+      ],
+      "state": "reserved",
+      "qualified_targets": [],
+      "feature_query": "objc3_async_await",
+      "public_macro": "__OBJC3_FEATURE_ASYNC_AWAIT__"
+    },
+    {
+      "name": "actors",
+      "macro": "ACTORS",
+      "aliases": [],
+      "state": "reserved",
+      "qualified_targets": [],
+      "feature_query": "objc3_actors",
+      "public_macro": "__OBJC3_FEATURE_ACTORS__"
+    }
+  ]
+}

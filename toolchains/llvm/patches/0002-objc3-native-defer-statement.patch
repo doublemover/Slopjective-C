@@ -1,0 +1,419 @@
+diff --git a/clang/include/clang/AST/Stmt.h b/clang/include/clang/AST/Stmt.h
+index 1008e7d66..ccc33dbbd 100644
+--- a/clang/include/clang/AST/Stmt.h
++++ b/clang/include/clang/AST/Stmt.h
+@@ -3229,6 +3229,9 @@ class DeferStmt : public Stmt {
+ 
+   /// The deferred statement.
+   Stmt *Body;
++  // Spelling is preserved for generated interfaces; cleanup semantics remain
++  // the canonical DeferStmt operation rather than a second extension AST.
++  bool ObjC3Spelling = false;
+ 
+   DeferStmt(EmptyShell Empty);
+   DeferStmt(SourceLocation DeferLoc, Stmt *Body);
+@@ -3239,6 +3242,8 @@ public:
+                            Stmt *Body);
+ 
+   SourceLocation getDeferLoc() const { return DeferStmtBits.DeferLoc; }
++  bool hasObjC3Spelling() const { return ObjC3Spelling; }
++  void setObjC3Spelling(bool Value) { ObjC3Spelling = Value; }
+   void setDeferLoc(SourceLocation DeferLoc) {
+     DeferStmtBits.DeferLoc = DeferLoc;
+   }
+diff --git a/clang/include/clang/Parse/Parser.h b/clang/include/clang/Parse/Parser.h
+index f7e7b0ec5..bd04a5538 100644
+--- a/clang/include/clang/Parse/Parser.h
++++ b/clang/include/clang/Parse/Parser.h
+@@ -7503,6 +7503,7 @@ public:
+   ///         unlabeled-statement
+   /// \endverbatim
+   StmtResult ParseDeferStatement(SourceLocation *TrailingElseLoc);
++  StmtResult ParseObjC3DeferStatement();
+ 
+   StmtResult ParsePragmaLoopHint(StmtVector &Stmts, ParsedStmtContext StmtCtx,
+                                  SourceLocation *TrailingElseLoc,
+diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
+index 101ab2c40..a4baaa11c 100644
+--- a/clang/lib/AST/ASTImporter.cpp
++++ b/clang/lib/AST/ASTImporter.cpp
+@@ -589,6 +589,7 @@ namespace clang {
+     ExpectedStmt VisitDefaultStmt(DefaultStmt *S);
+     ExpectedStmt VisitLabelStmt(LabelStmt *S);
+     ExpectedStmt VisitAttributedStmt(AttributedStmt *S);
++    ExpectedStmt VisitDeferStmt(DeferStmt *S);
+     ExpectedStmt VisitIfStmt(IfStmt *S);
+     ExpectedStmt VisitSwitchStmt(SwitchStmt *S);
+     ExpectedStmt VisitWhileStmt(WhileStmt *S);
+@@ -7221,6 +7222,17 @@ ExpectedStmt ASTNodeImporter::VisitAttributedStmt(AttributedStmt *S) {
+       Importer.getToContext(), *ToAttrLocOrErr, ToAttrs, *ToSubStmtOrErr);
+ }
+ 
++ExpectedStmt ASTNodeImporter::VisitDeferStmt(DeferStmt *S) {
++  Error Err = Error::success();
++  auto ToLoc = importChecked(Err, S->getDeferLoc());
++  auto ToBody = importChecked(Err, S->getBody());
++  if (Err)
++    return std::move(Err);
++  auto *ToStmt = DeferStmt::Create(Importer.getToContext(), ToLoc, ToBody);
++  ToStmt->setObjC3Spelling(S->hasObjC3Spelling());
++  return ToStmt;
++}
++
+ ExpectedStmt ASTNodeImporter::VisitIfStmt(IfStmt *S) {
+ 
+   Error Err = Error::success();
+diff --git a/clang/lib/AST/StmtPrinter.cpp b/clang/lib/AST/StmtPrinter.cpp
+index 4d1ad387b..6060a9362 100644
+--- a/clang/lib/AST/StmtPrinter.cpp
++++ b/clang/lib/AST/StmtPrinter.cpp
+@@ -492,7 +492,7 @@ void StmtPrinter::VisitBreakStmt(BreakStmt *Node) {
+ }
+ 
+ void StmtPrinter::VisitDeferStmt(DeferStmt *Node) {
+-  Indent() << "_Defer";
++  Indent() << (Node->hasObjC3Spelling() ? "__objc3_defer" : "_Defer");
+   PrintControlledStmt(Node->getBody());
+ }
+ 
+diff --git a/clang/lib/Parse/CMakeLists.txt b/clang/lib/Parse/CMakeLists.txt
+index e6cbf3b86..8afd7079a 100644
+--- a/clang/lib/Parse/CMakeLists.txt
++++ b/clang/lib/Parse/CMakeLists.txt
+@@ -18,6 +18,7 @@ add_clang_library(clangParse
+   ParseHLSLRootSignature.cpp
+   ParseInit.cpp
+   ParseObjc.cpp
++  ParseObjC3.cpp
+   ParseOpenMP.cpp
+   ParsePragma.cpp
+   ParseStmt.cpp
+diff --git a/clang/lib/Parse/ParseStmt.cpp b/clang/lib/Parse/ParseStmt.cpp
+index 260f81263..4c3bcdd47 100644
+--- a/clang/lib/Parse/ParseStmt.cpp
++++ b/clang/lib/Parse/ParseStmt.cpp
+@@ -161,6 +161,11 @@ Retry:
+   case tok::identifier:
+   ParseIdentifier: {
+     Token Next = NextToken();
++    // Implementation-reserved spelling only. Ordinary words, typedef names,
++    // selector pieces and macro-expanded tokens keep their inherited parse.
++    if (getLangOpts().ObjC3 && Tok.getIdentifierInfo() &&
++        Tok.getIdentifierInfo()->isStr("__objc3_defer"))
++      return ParseObjC3DeferStatement();
+     if (Next.is(tok::colon)) { // C99 6.8.1: labeled-statement
+       // Both C++11 and GNU attributes preceding the label appertain to the
+       // label, so put them in a single list to pass on to
+diff --git a/clang/lib/Sema/TreeTransform.h b/clang/lib/Sema/TreeTransform.h
+index 00be4e8c1..25313c05a 100644
+--- a/clang/lib/Sema/TreeTransform.h
++++ b/clang/lib/Sema/TreeTransform.h
+@@ -8582,7 +8582,10 @@ StmtResult TreeTransform<Derived>::TransformDeferStmt(DeferStmt *S) {
+   StmtResult Result = getDerived().TransformStmt(S->getBody());
+   if (!Result.isUsable())
+     return StmtError();
+-  return DeferStmt::Create(getSema().Context, S->getDeferLoc(), Result.get());
++  auto *Transformed =
++      DeferStmt::Create(getSema().Context, S->getDeferLoc(), Result.get());
++  Transformed->setObjC3Spelling(S->hasObjC3Spelling());
++  return Transformed;
+ }
+ 
+ template<typename Derived>
+diff --git a/clang/lib/Serialization/ASTReaderStmt.cpp b/clang/lib/Serialization/ASTReaderStmt.cpp
+index 5553139df..1a7649df3 100644
+--- a/clang/lib/Serialization/ASTReaderStmt.cpp
++++ b/clang/lib/Serialization/ASTReaderStmt.cpp
+@@ -338,6 +338,7 @@ void ASTStmtReader::VisitBreakStmt(BreakStmt *S) { VisitLoopControlStmt(S); }
+ void ASTStmtReader::VisitDeferStmt(DeferStmt *S) {
+   VisitStmt(S);
+   S->setDeferLoc(readSourceLocation());
++  S->setObjC3Spelling(Record.readInt());
+   S->setBody(Record.readSubStmt());
+ }
+ 
+diff --git a/clang/lib/Serialization/ASTWriterStmt.cpp b/clang/lib/Serialization/ASTWriterStmt.cpp
+index 8f22156f9..99d5b8157 100644
+--- a/clang/lib/Serialization/ASTWriterStmt.cpp
++++ b/clang/lib/Serialization/ASTWriterStmt.cpp
+@@ -333,6 +333,7 @@ void ASTStmtWriter::VisitBreakStmt(BreakStmt *S) {
+ void ASTStmtWriter::VisitDeferStmt(DeferStmt *S) {
+   VisitStmt(S);
+   Record.AddSourceLocation(S->getDeferLoc());
++  Record.push_back(S->hasObjC3Spelling());
+   Record.AddStmt(S->getBody());
+   Code = serialization::STMT_DEFER;
+ }
+diff --git a/clang/lib/Parse/ParseObjC3.cpp b/clang/lib/Parse/ParseObjC3.cpp
+new file mode 100644
+--- /dev/null
++++ b/clang/lib/Parse/ParseObjC3.cpp
+@@ -0,0 +1,39 @@
++//===--- ParseObjC3.cpp - Slopjective-C parser ---------------------------===//
++//
++// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
++// See https://llvm.org/LICENSE.txt for license information.
++// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
++//
++//===----------------------------------------------------------------------===//
++
++#include "clang/Parse/Parser.h"
++#include "llvm/ADT/ScopeExit.h"
++
++using namespace clang;
++
++StmtResult Parser::ParseObjC3DeferStatement() {
++  assert(Tok.is(tok::identifier) && Tok.getIdentifierInfo() &&
++         Tok.getIdentifierInfo()->isStr("__objc3_defer") &&
++         "Not an ObjC3 defer statement!");
++
++  SourceLocation DeferLoc = ConsumeToken();
++  Actions.ActOnStartOfDeferStmt(DeferLoc, getCurScope());
++  llvm::scope_exit OnError(
++      [&] { Actions.ActOnDeferStmtError(getCurScope()); });
++
++  // The first ObjC3 defer spelling is deliberately a compound statement.
++  // Parsing it through Clang's ordinary compound-statement path preserves its
++  // normal lexical scope, recovery, and source locations.
++  if (Tok.isNot(tok::l_brace))
++    return StmtError(Diag(Tok, diag::err_expected) << tok::l_brace);
++
++  StmtResult Body = ParseCompoundStatement();
++  if (!Body.isUsable())
++    return StmtError();
++
++  OnError.release();
++  StmtResult Result = Actions.ActOnEndOfDeferStmt(Body.get(), getCurScope());
++  if (Result.isUsable())
++    cast<DeferStmt>(Result.get())->setObjC3Spelling(true);
++  return Result;
++}
+diff --git a/clang/test/ObjC3/Parser/Inputs/defer-pch-consumer.mm b/clang/test/ObjC3/Parser/Inputs/defer-pch-consumer.mm
+new file mode 100644
+--- /dev/null
++++ b/clang/test/ObjC3/Parser/Inputs/defer-pch-consumer.mm
+@@ -0,0 +1,4 @@
++int pch_defer_consumer() {
++  pch_defer();
++  return 0;
++}
+diff --git a/clang/test/ObjC3/Parser/Inputs/defer-pch.h b/clang/test/ObjC3/Parser/Inputs/defer-pch.h
+new file mode 100644
+--- /dev/null
++++ b/clang/test/ObjC3/Parser/Inputs/defer-pch.h
+@@ -0,0 +1,2 @@
++inline void record(int);
++inline void pch_defer() { __objc3_defer { record(1); } }
+diff --git a/clang/test/ObjC3/Parser/contextual-identifiers.m b/clang/test/ObjC3/Parser/contextual-identifiers.m
+new file mode 100644
+--- /dev/null
++++ b/clang/test/ObjC3/Parser/contextual-identifiers.m
+@@ -0,0 +1,20 @@
++// RUN: %clang_cc1 -x objective-c -fsyntax-only %s
++// RUN: %clang_cc1 -x objective-c -fobjc-version=3 -fsyntax-only %s
++
++typedef int let;
++
++@interface LegacyNames
++- (int)await:(int)defer;
++@end
++
++@implementation LegacyNames
++- (int)await:(int)defer { return defer; }
++@end
++
++int fn, var, defer, guard, match, async, await, actor, throws;
++
++int identifiers_remain_identifiers(LegacyNames *object) {
++  let declaration = fn;
++  return declaration + var + defer + guard + match + async + await + actor +
++         throws + [object await:defer];
++}
+diff --git a/clang/test/ObjC3/Parser/contextual-identifiers.mm b/clang/test/ObjC3/Parser/contextual-identifiers.mm
+new file mode 100644
+--- /dev/null
++++ b/clang/test/ObjC3/Parser/contextual-identifiers.mm
+@@ -0,0 +1,33 @@
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fcxx-exceptions -fexceptions -fsyntax-only %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fcxx-exceptions -fexceptions -fobjc-version=3 -fsyntax-only %s
++
++typedef int let;
++
++int fn, var, defer, guard, match, async, await, actor, throws;
++
++let typedef_name_still_declares() { return fn; }
++
++struct Receiver {
++  int await(int value) { return value; }
++};
++
++int names_and_exception_syntax(Receiver *receiver) {
++  let value = defer;
++  try {
++    return fn + var + guard + match + async + await + actor + throws +
++           receiver->await(value);
++  } catch (...) {
++    return 0;
++  }
++}
++
++void nested_lambda_exception_domain() {
++  auto callback = [] {
++    try {
++      throw 1;
++    } catch (...) {
++      return 2;
++    }
++  };
++  (void)callback();
++}
+diff --git a/clang/test/ObjC3/Parser/contextual-macros.m b/clang/test/ObjC3/Parser/contextual-macros.m
+new file mode 100644
+--- /dev/null
++++ b/clang/test/ObjC3/Parser/contextual-macros.m
+@@ -0,0 +1,18 @@
++// RUN: %clang_cc1 -x objective-c -fsyntax-only %s
++// RUN: %clang_cc1 -x objective-c -fobjc-version=3 -fsyntax-only %s
++
++#define fn 1
++#define let 2
++#define var 3
++#define defer(value) (value)
++#define guard 4
++#define match 5
++#define async 6
++#define await 7
++#define actor 8
++#define throws 9
++
++int macro_names_keep_preprocessor_meaning() {
++  return fn + let + var + defer(10) + guard + match + async + await + actor +
++         throws;
++}
+diff --git a/clang/test/ObjC3/Parser/defer-macro-alias.mm b/clang/test/ObjC3/Parser/defer-macro-alias.mm
+new file mode 100644
+--- /dev/null
++++ b/clang/test/ObjC3/Parser/defer-macro-alias.mm
+@@ -0,0 +1,8 @@
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fobjc-version=3 -fsyntax-only -ast-dump %s | FileCheck %s
++
++void record(int);
++#define defer_alias __objc3_defer
++
++void macro_alias_expands_to_extension() { defer_alias { record(3); } }
++
++// CHECK: DeferStmt
+diff --git a/clang/test/ObjC3/Parser/defer-pch.mm b/clang/test/ObjC3/Parser/defer-pch.mm
+new file mode 100644
+--- /dev/null
++++ b/clang/test/ObjC3/Parser/defer-pch.mm
+@@ -0,0 +1,4 @@
++// RUN: %clang_cc1 -x objective-c++-header -std=c++20 -fcxx-exceptions -fexceptions -fobjc-version=3 -emit-pch -o %t %S/Inputs/defer-pch.h
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fcxx-exceptions -fexceptions -fobjc-version=3 -include-pch %t -ast-print %S/Inputs/defer-pch-consumer.mm | FileCheck %s --check-prefix=PCH
++
++// PCH: __objc3_defer {
+diff --git a/clang/test/ObjC3/Parser/defer-recovery.mm b/clang/test/ObjC3/Parser/defer-recovery.mm
+new file mode 100644
+--- /dev/null
++++ b/clang/test/ObjC3/Parser/defer-recovery.mm
+@@ -0,0 +1,8 @@
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fobjc-version=3 -fsyntax-only -verify %s
++
++void record(int);
++
++void missing_compound_body_recovers() {
++  __objc3_defer record(1); // expected-error {{expected '{'}}
++  record(2);
++}
+diff --git a/clang/test/ObjC3/Parser/defer-template.mm b/clang/test/ObjC3/Parser/defer-template.mm
+new file mode 100644
+--- /dev/null
++++ b/clang/test/ObjC3/Parser/defer-template.mm
+@@ -0,0 +1,9 @@
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fobjc-version=3 -fsyntax-only -ast-dump %s | FileCheck %s
++
++template <class T> void templated_defer(T value) {
++  __objc3_defer { (void)value; }
++}
++
++template void templated_defer<int>(int);
++
++// CHECK-COUNT-2: DeferStmt
+diff --git a/clang/test/ObjC3/Parser/defer-type-temporary.mm b/clang/test/ObjC3/Parser/defer-type-temporary.mm
+new file mode 100644
+--- /dev/null
++++ b/clang/test/ObjC3/Parser/defer-type-temporary.mm
+@@ -0,0 +1,8 @@
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fcxx-exceptions -fexceptions -fsyntax-only %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fcxx-exceptions -fexceptions -fobjc-version=3 -fsyntax-only %s
++
++struct defer {
++  int value;
++};
++
++void legacy_defer_temporary() { defer{1}; }
+diff --git a/clang/test/ObjC3/Parser/defer.mm b/clang/test/ObjC3/Parser/defer.mm
+new file mode 100644
+--- /dev/null
++++ b/clang/test/ObjC3/Parser/defer.mm
+@@ -0,0 +1,60 @@
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fcxx-exceptions -fexceptions -fobjc-version=3 -fsyntax-only -ast-dump %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fcxx-exceptions -fexceptions -fobjc-version=3 -ast-print %s > %t
++// RUN: FileCheck %s --check-prefix=PRINT < %t
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fcxx-exceptions -fexceptions -fobjc-version=3 -fsyntax-only %t
++
++void record(int);
++
++void scopes_and_exits(int value) {
++  __objc3_defer { record(value); }
++  if (value)
++    __objc3_defer { record(value + 1); }
++
++  for (;;) {
++    __objc3_defer {
++      for (;;) {
++        break;
++      }
++      for (;;) {
++        continue;
++      }
++    }
++    break;
++  }
++
++  __objc3_defer { record(value + 2); }
++  return;
++}
++
++void exception_domains(int value) {
++  try {
++    __objc3_defer { throw value; }
++  } catch (...) {
++    record(value);
++  }
++
++  __objc3_defer {
++    auto nested = [] {
++      try {
++        throw 1;
++      } catch (...) {
++        return 2;
++      }
++    };
++    record(nested());
++  }
++}
++
++// A macro expansion is consumed by the ordinary preprocessor before the
++// parser considers the reserved implementation spelling.
++#define __objc3_defer(value) (value)
++#define defer(value) (value)
++int macro_uses() { return __objc3_defer(1) + defer(2); }
++
++// Macro expansion occurs before the contextual parser decision, so an alias
++// that deliberately expands to the reserved spelling selects the extension.
++#define defer_alias __objc3_defer
++void macro_alias_expands_to_extension() { defer_alias { record(3); } }
++
++// CHECK: DeferStmt
++// PRINT: __objc3_defer {
