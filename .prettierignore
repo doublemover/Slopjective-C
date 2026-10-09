@@ -2,5 +2,8 @@ node_modules/
 site/_site/
 tests/tooling/fixtures/
 tmp/
+temp/
+out/toolchains/
+docs/support/clang_foundation_capabilities.json
 docs/objc3c-native.md
 docs/runbooks/objc3c_public_command_surface.md
