@@ -1,0 +1,464 @@
+#include "clang_foundation/interface_codec.h"
+
+#include <algorithm>
+#include <array>
+#include <cstdint>
+#include <set>
+#include <string>
+#include <system_error>
+#include <tuple>
+#include <utility>
+#include <vector>
+
+#include "llvm/Support/JSON.h"
+#include "llvm/Support/FormatVariadic.h"
+#include "llvm/Support/SHA256.h"
+#include "llvm/Support/Error.h"
+#include "llvm/Support/raw_ostream.h"
+
+namespace objc3::clang_foundation {
+namespace {
+using llvm::json::Array;
+using llvm::json::Object;
+using llvm::json::Value;
+
+constexpr std::size_t kMaxSidecarBytes = 32u * 1024u * 1024u;
+constexpr std::size_t kMaxDeclarations = 100000u;
+constexpr std::size_t kMaxDependencies = 8192u;
+constexpr std::size_t kMaxRequiredSemantics = 512u;
+constexpr std::size_t kMaxStringBytes = 65536u;
+
+llvm::Error Invalid(llvm::StringRef message) {
+  return llvm::createStringError(std::errc::invalid_argument, "%s",
+                                 message.str().c_str());
+}
+
+bool IsSha256(llvm::StringRef value) {
+  if (value.size() != 64) return false;
+  return std::all_of(value.begin(), value.end(), [](unsigned char c) {
+    return (c >= '0' && c <= '9') || (c >= 'a' && c <= 'f');
+  });
+}
+
+llvm::Expected<std::string> RequiredString(const Object &object,
+                                           llvm::StringRef key,
+                                           llvm::StringRef path) {
+  auto value = object.getString(key);
+  if (!value) return Invalid(llvm::formatv("{0}/{1}: required string missing or has wrong type", path, key).str());
+  if (value->empty() || value->size() > kMaxStringBytes)
+    return Invalid(llvm::formatv("{0}/{1}: string is empty or exceeds limit", path, key).str());
+  return value->str();
+}
+
+llvm::Expected<std::string> RequiredStringAllowEmpty(const Object &object,
+                                                    llvm::StringRef key,
+                                                    llvm::StringRef path) {
+  auto value = object.getString(key);
+  if (!value) return Invalid(llvm::formatv("{0}/{1}: required string missing or has wrong type", path, key).str());
+  if (value->size() > kMaxStringBytes)
+    return Invalid(llvm::formatv("{0}/{1}: string exceeds limit", path, key).str());
+  return value->str();
+}
+
+llvm::Expected<bool> RequiredBool(const Object &object, llvm::StringRef key,
+                                  llvm::StringRef path) {
+  auto value = object.getBoolean(key);
+  if (!value) return Invalid(llvm::formatv("{0}/{1}: required boolean missing or has wrong type", path, key).str());
+  return *value;
+}
+
+llvm::Expected<std::uint64_t> RequiredUnsigned(const Object &object,
+                                               llvm::StringRef key,
+                                               llvm::StringRef path) {
+  const Value *value = object.get(key);
+  if (!value) return Invalid(llvm::formatv("{0}/{1}: required integer missing", path, key).str());
+  auto number = value->getAsInteger();
+  if (!number || *number < 0)
+    return Invalid(llvm::formatv("{0}/{1}: expected nonnegative integer", path, key).str());
+  return static_cast<std::uint64_t>(*number);
+}
+
+llvm::Expected<const Object *> RequiredObject(const Object &object,
+                                              llvm::StringRef key,
+                                              llvm::StringRef path) {
+  auto *value = object.getObject(key);
+  if (!value) return Invalid(llvm::formatv("{0}/{1}: required object missing or has wrong type", path, key).str());
+  return value;
+}
+
+llvm::Expected<const Array *> RequiredArray(const Object &object,
+                                            llvm::StringRef key,
+                                            llvm::StringRef path,
+                                            std::size_t maximum) {
+  auto *value = object.getArray(key);
+  if (!value) return Invalid(llvm::formatv("{0}/{1}: required array missing or has wrong type", path, key).str());
+  if (value->size() > maximum)
+    return Invalid(llvm::formatv("{0}/{1}: array exceeds item limit", path, key).str());
+  return value;
+}
+
+llvm::Error CheckKeys(const Object &object,
+                      std::initializer_list<llvm::StringRef> allowed,
+                      llvm::StringRef path) {
+  std::set<std::string> known;
+  for (auto key : allowed) known.insert(key.str());
+  for (const auto &entry : object)
+    if (!known.count(entry.first.str()))
+      return Invalid(llvm::formatv("{0}: unknown field '{1}'", path, entry.first).str());
+  return llvm::Error::success();
+}
+
+Object EncodeModule(const InterfaceModuleIdentity &module) {
+  return Object{{"canonical_name", module.canonical_name},
+                {"semantic_fingerprint", module.semantic_fingerprint},
+                {"target_triple", module.target_triple},
+                {"runtime_abi", module.runtime_abi},
+                {"extension_abi", module.extension_abi},
+                {"language_revision", module.language_revision},
+                {"language_profile", module.language_profile},
+                {"package_identity", module.package_identity}};
+}
+
+llvm::Expected<InterfaceModuleIdentity> DecodeModule(const Object &object,
+                                                     llvm::StringRef path) {
+  if (auto error = CheckKeys(object,
+      {"canonical_name", "semantic_fingerprint", "target_triple", "runtime_abi",
+       "extension_abi", "language_revision", "language_profile", "package_identity"}, path))
+    return std::move(error);
+  InterfaceModuleIdentity result;
+#define READ_MODULE_FIELD(field, key)                                      \
+  do {                                                                      \
+    auto value = RequiredString(object, key, path);                         \
+    if (!value) return value.takeError();                                   \
+    result.field = std::move(*value);                                       \
+  } while (false)
+  READ_MODULE_FIELD(canonical_name, "canonical_name");
+  READ_MODULE_FIELD(semantic_fingerprint, "semantic_fingerprint");
+  READ_MODULE_FIELD(target_triple, "target_triple");
+  READ_MODULE_FIELD(runtime_abi, "runtime_abi");
+  READ_MODULE_FIELD(extension_abi, "extension_abi");
+  READ_MODULE_FIELD(language_revision, "language_revision");
+  READ_MODULE_FIELD(language_profile, "language_profile");
+  READ_MODULE_FIELD(package_identity, "package_identity");
+#undef READ_MODULE_FIELD
+  return result;
+}
+
+Object EncodeEffects(const InterfaceEffectIdentity &effects) {
+  return Object{{"async", effects.is_async},
+                {"throws", effects.is_throwing},
+                {"throws_kind", effects.throws_kind},
+                {"error_type_identity", effects.error_type_identity},
+                {"actor_isolation_identity", effects.actor_isolation_identity},
+                {"executor_affinity_identity", effects.executor_affinity_identity},
+                {"ownership_identity", effects.ownership_identity}};
+}
+
+llvm::Expected<InterfaceEffectIdentity> DecodeEffects(const Object &object,
+                                                       llvm::StringRef path) {
+  if (auto error = CheckKeys(object,
+      {"async", "throws", "throws_kind", "error_type_identity",
+       "actor_isolation_identity", "executor_affinity_identity", "ownership_identity"}, path))
+    return std::move(error);
+  InterfaceEffectIdentity result;
+  auto async = RequiredBool(object, "async", path);
+  if (!async) return async.takeError();
+  result.is_async = *async;
+  auto throwing = RequiredBool(object, "throws", path);
+  if (!throwing) return throwing.takeError();
+  result.is_throwing = *throwing;
+#define READ_EFFECT_FIELD(field, key)                                       \
+  do {                                                                      \
+    auto value = RequiredStringAllowEmpty(object, key, path);               \
+    if (!value) return value.takeError();                                   \
+    result.field = std::move(*value);                                       \
+  } while (false)
+  READ_EFFECT_FIELD(throws_kind, "throws_kind");
+  READ_EFFECT_FIELD(error_type_identity, "error_type_identity");
+  READ_EFFECT_FIELD(actor_isolation_identity, "actor_isolation_identity");
+  READ_EFFECT_FIELD(executor_affinity_identity, "executor_affinity_identity");
+  READ_EFFECT_FIELD(ownership_identity, "ownership_identity");
+#undef READ_EFFECT_FIELD
+  return result;
+}
+
+Object EncodeDeclaration(const InterfaceDeclarationIdentity &declaration) {
+  return Object{{"stable_id", declaration.stable_id},
+                {"kind", declaration.kind},
+                {"qualified_name", declaration.qualified_name},
+                {"canonical_type_identity", declaration.canonical_type_identity},
+                {"effects", EncodeEffects(declaration.effects)}};
+}
+
+llvm::Expected<InterfaceDeclarationIdentity> DecodeDeclaration(
+    const Value &value, std::size_t index) {
+  const auto path = llvm::formatv("/declarations/{0}", index).str();
+  const auto *object = value.getAsObject();
+  if (!object) return Invalid(llvm::formatv("{0}: expected object", path).str());
+  if (auto error = CheckKeys(*object,
+      {"stable_id", "kind", "qualified_name", "canonical_type_identity", "effects"}, path))
+    return std::move(error);
+  InterfaceDeclarationIdentity result;
+#define READ_DECL_FIELD(field, key)                                        \
+  do {                                                                      \
+    auto text = RequiredString(*object, key, path);                         \
+    if (!text) return text.takeError();                                     \
+    result.field = std::move(*text);                                        \
+  } while (false)
+  READ_DECL_FIELD(stable_id, "stable_id");
+  READ_DECL_FIELD(kind, "kind");
+  READ_DECL_FIELD(qualified_name, "qualified_name");
+  READ_DECL_FIELD(canonical_type_identity, "canonical_type_identity");
+#undef READ_DECL_FIELD
+  auto *effects = object->getObject("effects");
+  if (!effects) return Invalid(llvm::formatv("{0}/effects: required object missing or has wrong type", path).str());
+  auto parsed_effects = DecodeEffects(*effects, path + "/effects");
+  if (!parsed_effects) return parsed_effects.takeError();
+  result.effects = std::move(*parsed_effects);
+  return result;
+}
+
+Object EncodeDependency(const InterfaceDependency &dependency) {
+  return Object{{"module", EncodeModule(dependency.module)},
+                {"reexported", dependency.reexported},
+                {"public_import", dependency.public_import}};
+}
+
+llvm::Expected<InterfaceDependency> DecodeDependency(const Value &value,
+                                                      std::size_t index) {
+  const auto path = llvm::formatv("/dependencies/{0}", index).str();
+  const auto *object = value.getAsObject();
+  if (!object) return Invalid(llvm::formatv("{0}: expected object", path).str());
+  if (auto error = CheckKeys(*object, {"module", "reexported", "public_import"}, path))
+    return std::move(error);
+  auto *module_object = object->getObject("module");
+  if (!module_object) return Invalid(llvm::formatv("{0}/module: required object missing or has wrong type", path).str());
+  auto module = DecodeModule(*module_object, path + "/module");
+  if (!module) return module.takeError();
+  auto reexported = RequiredBool(*object, "reexported", path);
+  if (!reexported) return reexported.takeError();
+  auto is_public = RequiredBool(*object, "public_import", path);
+  if (!is_public) return is_public.takeError();
+  return InterfaceDependency{std::move(*module), *reexported, *is_public};
+}
+
+std::set<std::string> Supported(llvm::ArrayRef<llvm::StringRef> values) {
+  std::set<std::string> result;
+  for (auto value : values) result.insert(value.str());
+  return result;
+}
+
+llvm::Error ValidateForEncoding(
+    const SemanticInterfaceSidecar &sidecar,
+    const std::set<std::string> &supported) {
+  auto valid_text = [](const std::string &value) {
+    return value.size() <= kMaxStringBytes && llvm::json::isUTF8(value);
+  };
+  if (sidecar.schema_major != kInterfaceSchemaMajor ||
+      sidecar.schema_minor > kInterfaceSchemaMinor)
+    return Invalid("unsupported semantic interface schema version");
+  if (!IsSha256(sidecar.canonical_source_sha256))
+    return Invalid("source binding must be a lowercase SHA256 digest");
+  const auto &module = sidecar.module;
+  if (module.canonical_name.empty() || module.semantic_fingerprint.empty() ||
+      module.target_triple.empty() || module.runtime_abi.empty() ||
+      module.extension_abi.empty() || module.language_revision.empty() ||
+      module.language_profile.empty() || module.package_identity.empty())
+    return Invalid("module identity fields must be nonempty");
+  for (const auto *value : {&module.canonical_name, &module.semantic_fingerprint,
+                            &module.target_triple, &module.runtime_abi,
+                            &module.extension_abi, &module.language_revision,
+                            &module.language_profile, &module.package_identity})
+    if (!valid_text(*value))
+      return Invalid("module identity field is invalid UTF-8 or exceeds string limit");
+  if (sidecar.declarations.size() > kMaxDeclarations ||
+      sidecar.dependencies.size() > kMaxDependencies ||
+      sidecar.required_semantics.size() > kMaxRequiredSemantics)
+    return Invalid("sidecar exceeds a collection bound");
+  std::set<std::string> declaration_ids;
+  for (const auto &declaration : sidecar.declarations) {
+    if (declaration.stable_id.empty() || declaration.kind.empty() ||
+        declaration.qualified_name.empty() || declaration.canonical_type_identity.empty())
+      return Invalid("declaration identity fields must be nonempty");
+    if (!declaration_ids.insert(declaration.stable_id).second)
+      return Invalid(llvm::formatv("duplicate declaration stable id '{0}'", declaration.stable_id).str());
+    for (const auto *value : {&declaration.stable_id, &declaration.kind,
+                              &declaration.qualified_name,
+                              &declaration.canonical_type_identity,
+                              &declaration.effects.throws_kind,
+                              &declaration.effects.error_type_identity,
+                              &declaration.effects.actor_isolation_identity,
+                              &declaration.effects.executor_affinity_identity,
+                              &declaration.effects.ownership_identity})
+      if (!valid_text(*value))
+        return Invalid("declaration field is invalid UTF-8 or exceeds string limit");
+  }
+  std::set<std::string> required;
+  for (const auto &semantic : sidecar.required_semantics) {
+    if (semantic.empty() || !valid_text(semantic))
+      return Invalid("required semantic name is empty, invalid UTF-8, or exceeds limit");
+    if (!required.insert(semantic).second)
+      return Invalid(llvm::formatv("duplicate required semantic '{0}'", semantic).str());
+    if (!supported.count(semantic))
+      return Invalid(llvm::formatv("unknown required semantic '{0}'", semantic).str());
+  }
+  std::set<std::pair<std::string, std::string>> dependency_ids;
+  for (const auto &dependency : sidecar.dependencies) {
+    const auto &id = dependency.module;
+    if (id.canonical_name.empty() || id.semantic_fingerprint.empty() ||
+        id.target_triple.empty() || id.runtime_abi.empty() ||
+        id.extension_abi.empty() || id.language_revision.empty() ||
+        id.language_profile.empty() || id.package_identity.empty())
+      return Invalid("dependency identity fields must be nonempty");
+    for (const auto *value : {&id.canonical_name, &id.semantic_fingerprint,
+                              &id.target_triple, &id.runtime_abi,
+                              &id.extension_abi, &id.language_revision,
+                              &id.language_profile, &id.package_identity})
+      if (!valid_text(*value))
+        return Invalid("dependency identity is invalid UTF-8 or exceeds string limit");
+    if (!dependency_ids.emplace(id.canonical_name, id.semantic_fingerprint).second)
+      return Invalid(llvm::formatv("duplicate dependency identity '{0}'", id.canonical_name).str());
+  }
+  return llvm::Error::success();
+}
+
+}  // namespace
+
+std::string ComputeInterfaceSourceSha256(llvm::StringRef source) {
+  llvm::SHA256 hasher;
+  hasher.update(source);
+  const auto digest = hasher.final();
+  static constexpr char hex[] = "0123456789abcdef";
+  std::string result;
+  result.reserve(64);
+  for (std::uint8_t byte : digest) {
+    result.push_back(hex[byte >> 4]);
+    result.push_back(hex[byte & 0x0f]);
+  }
+  return result;
+}
+
+llvm::Expected<std::string> EncodeSemanticInterfaceSidecar(
+    const SemanticInterfaceSidecar &sidecar,
+    llvm::ArrayRef<llvm::StringRef> supported_required_semantics) {
+  if (auto error = ValidateForEncoding(sidecar, Supported(supported_required_semantics)))
+    return std::move(error);
+  auto declarations = sidecar.declarations;
+  std::sort(declarations.begin(), declarations.end(), [](const auto &a, const auto &b) {
+    return a.stable_id < b.stable_id;
+  });
+  Array encoded_declarations;
+  for (const auto &declaration : declarations)
+    encoded_declarations.push_back(EncodeDeclaration(declaration));
+  auto dependencies = sidecar.dependencies;
+  std::sort(dependencies.begin(), dependencies.end(), [](const auto &a, const auto &b) {
+    return std::tie(a.module.canonical_name, a.module.semantic_fingerprint) <
+           std::tie(b.module.canonical_name, b.module.semantic_fingerprint);
+  });
+  Array encoded_dependencies;
+  for (const auto &dependency : dependencies)
+    encoded_dependencies.push_back(EncodeDependency(dependency));
+  auto semantics = sidecar.required_semantics;
+  std::sort(semantics.begin(), semantics.end());
+  Array encoded_semantics;
+  for (const auto &semantic : semantics) encoded_semantics.push_back(semantic);
+  Object root{{"schema_id", kInterfaceSchemaId},
+              {"schema_major", static_cast<std::int64_t>(sidecar.schema_major)},
+              {"schema_minor", static_cast<std::int64_t>(sidecar.schema_minor)},
+              {"module", EncodeModule(sidecar.module)},
+              {"source_binding_sha256", sidecar.canonical_source_sha256},
+              {"required_semantics", std::move(encoded_semantics)},
+              {"declarations", std::move(encoded_declarations)},
+              {"dependencies", std::move(encoded_dependencies)}};
+  std::string output;
+  llvm::raw_string_ostream stream(output);
+  stream << Value(std::move(root));
+  stream.flush();
+  if (output.size() > kMaxSidecarBytes)
+    return Invalid("encoded sidecar exceeds byte limit");
+  return output;
+}
+
+llvm::Expected<SemanticInterfaceSidecar> DecodeSemanticInterfaceSidecar(
+    llvm::StringRef json_bytes, llvm::StringRef generated_source_bytes,
+    llvm::ArrayRef<llvm::StringRef> supported_required_semantics) {
+  if (json_bytes.size() > kMaxSidecarBytes)
+    return Invalid("sidecar exceeds byte limit");
+  if (!llvm::json::isUTF8(generated_source_bytes))
+    return Invalid("paired .objc3i source is not valid UTF-8");
+  auto parsed = llvm::json::parse(json_bytes);
+  if (!parsed) return parsed.takeError();
+  const auto *root = parsed->getAsObject();
+  if (!root) return Invalid("sidecar root must be a JSON object");
+  if (auto error = CheckKeys(*root,
+      {"schema_id", "schema_major", "schema_minor", "module",
+       "source_binding_sha256", "required_semantics", "declarations", "dependencies"}, "/"))
+    return std::move(error);
+
+  auto schema = RequiredString(*root, "schema_id", "/");
+  if (!schema) return schema.takeError();
+  if (*schema != kInterfaceSchemaId) return Invalid("unsupported semantic interface schema id");
+  auto major = RequiredUnsigned(*root, "schema_major", "/");
+  if (!major) return major.takeError();
+  auto minor = RequiredUnsigned(*root, "schema_minor", "/");
+  if (!minor) return minor.takeError();
+  if (*major != kInterfaceSchemaMajor || *minor > kInterfaceSchemaMinor)
+    return Invalid("unsupported semantic interface schema version");
+
+  SemanticInterfaceSidecar result;
+  result.schema_major = static_cast<unsigned>(*major);
+  result.schema_minor = static_cast<unsigned>(*minor);
+  auto *module_object = root->getObject("module");
+  if (!module_object) return Invalid("/module: required object missing or has wrong type");
+  auto module = DecodeModule(*module_object, "/module");
+  if (!module) return module.takeError();
+  result.module = std::move(*module);
+  auto source_hash = RequiredString(*root, "source_binding_sha256", "/");
+  if (!source_hash) return source_hash.takeError();
+  if (!IsSha256(*source_hash)) return Invalid("source binding is not a lowercase SHA256 digest");
+  if (*source_hash != ComputeInterfaceSourceSha256(generated_source_bytes))
+    return Invalid("source binding digest does not match paired .objc3i bytes");
+  result.canonical_source_sha256 = std::move(*source_hash);
+
+  auto required = RequiredArray(*root, "required_semantics", "/", kMaxRequiredSemantics);
+  if (!required) return required.takeError();
+  const auto supported = Supported(supported_required_semantics);
+  std::set<std::string> seen_semantics;
+  for (std::size_t i = 0; i < (*required)->size(); ++i) {
+    const auto text = (*required)->operator[](i).getAsString();
+    if (!text || text->empty() || text->size() > kMaxStringBytes)
+      return Invalid(llvm::formatv("/required_semantics/{0}: expected nonempty bounded string", i).str());
+    if (!seen_semantics.insert(text->str()).second)
+      return Invalid(llvm::formatv("/required_semantics/{0}: duplicate semantic", i).str());
+    if (!supported.count(text->str()))
+      return Invalid(llvm::formatv("/required_semantics/{0}: unknown required semantic '{1}'", i, *text).str());
+    result.required_semantics.push_back(text->str());
+  }
+
+  auto declarations = RequiredArray(*root, "declarations", "/", kMaxDeclarations);
+  if (!declarations) return declarations.takeError();
+  std::set<std::string> declaration_ids;
+  for (std::size_t i = 0; i < (*declarations)->size(); ++i) {
+    auto declaration = DecodeDeclaration((*declarations)->operator[](i), i);
+    if (!declaration) return declaration.takeError();
+    if (!declaration_ids.insert(declaration->stable_id).second)
+      return Invalid(llvm::formatv("/declarations/{0}: duplicate stable id '{1}'", i, declaration->stable_id).str());
+    result.declarations.push_back(std::move(*declaration));
+  }
+
+  auto dependencies = RequiredArray(*root, "dependencies", "/", kMaxDependencies);
+  if (!dependencies) return dependencies.takeError();
+  std::set<std::pair<std::string, std::string>> dependency_ids;
+  for (std::size_t i = 0; i < (*dependencies)->size(); ++i) {
+    auto dependency = DecodeDependency((*dependencies)->operator[](i), i);
+    if (!dependency) return dependency.takeError();
+    const auto key = std::make_pair(dependency->module.canonical_name,
+                                    dependency->module.semantic_fingerprint);
+    if (!dependency_ids.insert(key).second)
+      return Invalid(llvm::formatv("/dependencies/{0}: duplicate module identity", i).str());
+    result.dependencies.push_back(std::move(*dependency));
+  }
+  return result;
+}
+
+}  // namespace objc3::clang_foundation
