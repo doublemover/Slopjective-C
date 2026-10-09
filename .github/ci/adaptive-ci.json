@@ -1,0 +1,37 @@
+{
+  "version": 1,
+  "timezone": "America/Detroit",
+  "suites": [
+    {
+      "id": "closeout",
+      "workflow": "adaptive-closeout.yml",
+      "monthlyDay": 7,
+      "cron": "47 7 * * 6",
+      "paths": [
+        "**"
+      ],
+      "ignorePaths": [
+        "README.md",
+        "CHANGELOG.md",
+        "LICENSE",
+        "docs/**/*.md"
+      ],
+      "protectedPaths": [
+        ".github/**",
+        "docs/contracts/**",
+        "docs/support/**",
+        "docs/specs/**",
+        "docs/fixtures/**"
+      ],
+      "expectedJobs": [
+        {
+          "name": "compiler-closeout",
+          "requiredSteps": [
+            "^Build full native objc3c closeout surface$"
+          ]
+        }
+      ]
+    }
+  ],
+  "sourceRef": "main"
+}

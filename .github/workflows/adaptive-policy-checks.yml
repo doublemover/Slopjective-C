@@ -1,0 +1,35 @@
+name: Adaptive CI policy checks
+
+on:
+  pull_request:
+    paths:
+      - '.github/ci/**'
+      - '.github/workflows/**'
+  push:
+    branches: [main]
+    paths:
+      - '.github/ci/**'
+      - '.github/workflows/**'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: adaptive-policy-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  policy:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+      - uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd
+        with:
+          script: |
+            const { execFileSync } = require('node:child_process');
+            execFileSync(process.execPath, ['--test', '.github/ci/adaptive-ci.test.mjs'], { stdio: 'inherit' });
+            const { validateConfig } = await import(process.env.GITHUB_WORKSPACE + '/.github/ci/adaptive-ci.mjs');
+            validateConfig(JSON.parse(require('node:fs').readFileSync('.github/ci/adaptive-ci.json', 'utf8')));
