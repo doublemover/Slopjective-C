@@ -64,6 +64,14 @@ struct InterfaceContractDiagnostic {
   std::string subject;
 };
 
+struct InterfaceEmissionArtifact {
+  bool success = false;
+  std::string source_bytes;
+  std::string sidecar_json;
+  InterfaceModuleIdentity identity;
+  std::vector<InterfaceContractDiagnostic> diagnostics;
+};
+
 struct InterfaceContractValidation {
   std::vector<InterfaceContractDiagnostic> diagnostics;
   [[nodiscard]] bool ok() const { return diagnostics.empty(); }

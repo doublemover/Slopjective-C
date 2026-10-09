@@ -1,6 +1,12 @@
 cmake_minimum_required(VERSION 3.20)
 project(objc3c_native LANGUAGES CXX)
 
+option(OBJC3C_ENABLE_CLANG_FOUNDATION
+  "Build the explicit migration frontend against the verified patched Clang SDK."
+  OFF)
+set(OBJC3C_CLANG_FOUNDATION_ROOT "" CACHE PATH
+  "Single coherent patched LLVM/Clang SDK or build-tree root.")
+
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 include(Objc3CompilerOptions)
 include(Objc3Module)
@@ -134,4 +140,13 @@ function(objc3c_apply_archive_output target_name)
   endif()
 endfunction()
 
+if (OBJC3C_ENABLE_CLANG_FOUNDATION)
+  include(Objc3ClangFoundation)
+  # CTest must be enabled at the build root so root invocations discover the
+  # foundation's tests instead of accepting an empty test inventory.
+  include(CTest)
+  add_subdirectory(src/clang_foundation)
+  # An explicitly selected foundation build never falls back to the old parser.
+  return()
+endif()
 add_subdirectory(src)

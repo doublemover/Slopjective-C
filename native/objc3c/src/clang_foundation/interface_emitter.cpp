@@ -1,0 +1,702 @@
+#include "clang_foundation/interface_emitter.h"
+
+#include <algorithm>
+#include <cstdint>
+#include <map>
+#include <set>
+#include <string>
+#include <tuple>
+#include <utility>
+#include <vector>
+
+#include "clang/AST/ASTContext.h"
+#include "clang/AST/Attr.h"
+#include "clang/AST/Decl.h"
+#include "clang/AST/DeclObjC.h"
+#include "clang/AST/PrettyPrinter.h"
+#include "clang/AST/RecursiveASTVisitor.h"
+#include "clang/AST/RecordLayout.h"
+#include "clang/AST/Type.h"
+#include "clang/Basic/LangOptions.h"
+#include "clang/Basic/LangStandard.h"
+#include "clang/Basic/ObjC3Foundation.h"
+#include "clang/Basic/SourceManager.h"
+#include "clang/Index/USRGeneration.h"
+#include "clang/Tooling/Tooling.h"
+#include "clang_foundation/interface_codec.h"
+#include "llvm/ADT/SmallString.h"
+#include "llvm/ADT/SmallVector.h"
+#include "llvm/Support/Error.h"
+#include "llvm/Support/SHA256.h"
+#include "llvm/Support/raw_ostream.h"
+
+namespace objc3::clang_foundation {
+namespace {
+
+void AddDiagnostic(InterfaceEmissionArtifact &result, llvm::StringRef code,
+                   llvm::StringRef message, llvm::StringRef subject = {}) {
+  result.diagnostics.push_back({code.str(), message.str(), subject.str()});
+}
+
+std::string CanonicalType(clang::QualType type,
+                          const clang::ASTContext &context) {
+  clang::PrintingPolicy policy(context.getLangOpts());
+  policy.PrintAsCanonical = true;
+  policy.FullyQualifiedName = true;
+  policy.SuppressScope = false;
+  policy.SuppressUnwrittenScope = false;
+  return type.getCanonicalType().getAsString(policy);
+}
+
+bool IsInMainFile(const clang::ASTContext &context,
+                  clang::SourceLocation location) {
+  return location.isValid() &&
+         context.getSourceManager().isWrittenInMainFile(location);
+}
+
+bool IsTopLevel(const clang::NamedDecl *declaration) {
+  const auto *context = declaration->getDeclContext();
+  return context && context->isTranslationUnit();
+}
+
+bool IsPublicContainer(const clang::DeclContext *context,
+                       const clang::ASTContext &ast) {
+  if (const auto *interface = llvm::dyn_cast<clang::ObjCInterfaceDecl>(context))
+    return IsInMainFile(ast, interface->getLocation()) &&
+           interface->isExternallyVisible();
+  if (const auto *protocol = llvm::dyn_cast<clang::ObjCProtocolDecl>(context))
+    return IsInMainFile(ast, protocol->getLocation()) &&
+           protocol->isExternallyVisible();
+  if (const auto *category = llvm::dyn_cast<clang::ObjCCategoryDecl>(context)) {
+    const auto *interface = category->getClassInterface();
+    return !category->IsClassExtension() && interface &&
+           IsInMainFile(ast, category->getLocation()) &&
+           interface->isExternallyVisible();
+  }
+  return false;
+}
+
+bool IsIdentityCandidate(const clang::NamedDecl *declaration,
+                         const clang::ASTContext &context) {
+  if (declaration->isImplicit() ||
+      !IsInMainFile(context, declaration->getLocation()))
+    return false;
+
+  if (IsTopLevel(declaration)) {
+    if (const auto *function = llvm::dyn_cast<clang::FunctionDecl>(declaration))
+      return !llvm::isa<clang::CXXMethodDecl>(function) &&
+             function->isExternallyVisible();
+    if (const auto *variable = llvm::dyn_cast<clang::VarDecl>(declaration))
+      return variable->hasGlobalStorage() && variable->isExternallyVisible();
+    if (const auto *typedef_name = llvm::dyn_cast<clang::TypedefNameDecl>(declaration))
+      return typedef_name->isExternallyVisible();
+    if (const auto *tag = llvm::dyn_cast<clang::TagDecl>(declaration))
+      return !llvm::isa<clang::CXXRecordDecl>(tag) &&
+             tag->isExternallyVisible();
+    if (const auto *objc = llvm::dyn_cast<clang::ObjCInterfaceDecl>(declaration))
+      return objc->isExternallyVisible();
+    if (const auto *protocol = llvm::dyn_cast<clang::ObjCProtocolDecl>(declaration))
+      return protocol->isExternallyVisible();
+    if (const auto *category = llvm::dyn_cast<clang::ObjCCategoryDecl>(declaration))
+      return !category->IsClassExtension() &&
+             category->getClassInterface() &&
+             category->getClassInterface()->isExternallyVisible();
+    return false;
+  }
+
+  if (const auto *field = llvm::dyn_cast<clang::FieldDecl>(declaration))
+    return !llvm::isa<clang::CXXRecordDecl>(field->getDeclContext()) &&
+           field->getIdentifier() != nullptr;
+  if (llvm::isa<clang::EnumConstantDecl>(declaration))
+    return llvm::isa<clang::EnumDecl>(declaration->getDeclContext());
+  if (llvm::isa<clang::ObjCMethodDecl, clang::ObjCPropertyDecl,
+                clang::ObjCIvarDecl>(declaration))
+    return IsPublicContainer(declaration->getDeclContext(), context);
+  return false;
+}
+
+clang::NamedDecl *Representative(clang::NamedDecl *declaration) {
+  if (auto *function = llvm::dyn_cast<clang::FunctionDecl>(declaration))
+    return function->getMostRecentDecl();
+  if (auto *variable = llvm::dyn_cast<clang::VarDecl>(declaration))
+    return variable->getMostRecentDecl();
+  if (auto *tag = llvm::dyn_cast<clang::TagDecl>(declaration))
+    return tag->getDefinition() ? tag->getDefinition() : tag;
+  if (auto *interface = llvm::dyn_cast<clang::ObjCInterfaceDecl>(declaration))
+    return interface->getDefinition() ? interface->getDefinition() : interface;
+  if (auto *protocol = llvm::dyn_cast<clang::ObjCProtocolDecl>(declaration))
+    return protocol->getDefinition() ? protocol->getDefinition() : protocol;
+  if (auto *typedef_name = llvm::dyn_cast<clang::TypedefNameDecl>(declaration))
+    return typedef_name->getMostRecentDecl();
+  return declaration;
+}
+
+bool IsDefinition(const clang::NamedDecl *declaration) {
+  if (const auto *function = llvm::dyn_cast<clang::FunctionDecl>(declaration))
+    return function->doesThisDeclarationHaveABody();
+  if (const auto *variable = llvm::dyn_cast<clang::VarDecl>(declaration))
+    return variable->isThisDeclarationADefinition();
+  if (const auto *tag = llvm::dyn_cast<clang::TagDecl>(declaration))
+    return tag->isCompleteDefinition();
+  if (const auto *interface = llvm::dyn_cast<clang::ObjCInterfaceDecl>(declaration))
+    return interface->isThisDeclarationADefinition();
+  if (const auto *protocol = llvm::dyn_cast<clang::ObjCProtocolDecl>(declaration))
+    return protocol->isThisDeclarationADefinition();
+  return true;
+}
+
+std::string RecordLayoutIdentity(const clang::RecordDecl *record,
+                                const clang::ASTContext &context) {
+  std::string text;
+  llvm::raw_string_ostream out(text);
+  out << "record{";
+  if (record->isCompleteDefinition()) {
+    const auto &layout = context.getASTRecordLayout(record);
+    out << "size=" << layout.getSize().getQuantity() << ";align="
+        << layout.getAlignment().getQuantity() << ';';
+    unsigned index = 0;
+    for (const auto *field : record->fields()) {
+      out << "field=" << (field->getIdentifier()
+                                ? field->getNameAsString()
+                                : std::string("<anonymous>"))
+          << ':' << CanonicalType(field->getType(), context) << '@'
+          << layout.getFieldOffset(index++);
+      if (field->isBitField())
+        out << ":bits=" << field->getBitWidthValue();
+      out << ';';
+    }
+  } else {
+    out << "incomplete;";
+  }
+  out << '}';
+  out.flush();
+  return text;
+}
+
+std::string EnumIdentity(const clang::EnumDecl *enumeration,
+                         const clang::ASTContext &context) {
+  std::string text = "enum{" + CanonicalType(
+      context.getCanonicalTagType(enumeration), context);
+  for (const auto *constant : enumeration->enumerators()) {
+    llvm::SmallString<32> value;
+    constant->getInitVal().toString(value, 10);
+    text += ";" + constant->getNameAsString() + "=" + value.str().str();
+  }
+  return text + '}';
+}
+
+std::string ObjCMethodIdentity(const clang::ObjCMethodDecl *method,
+                               const clang::ASTContext &context) {
+  std::string text;
+  llvm::raw_string_ostream out(text);
+  out << (method->isInstanceMethod() ? "instance" : "class") << ':'
+      << method->getSelector().getAsString() << "->"
+      << CanonicalType(method->getReturnType(), context) << '(';
+  for (unsigned i = 0; i < method->param_size(); ++i) {
+    if (i) out << ',';
+    out << CanonicalType(method->getParamDecl(i)->getType(), context);
+    const auto lifetime = method->getParamDecl(i)->getType().getObjCLifetime();
+    if (lifetime != clang::Qualifiers::OCL_None)
+      out << "#lifetime=" << static_cast<unsigned>(lifetime);
+  }
+  out << ")";
+  if (method->isVariadic()) out << ";variadic";
+  if (method->isOptional()) out << ";optional";
+  const auto return_lifetime = method->getReturnType().getObjCLifetime();
+  if (return_lifetime != clang::Qualifiers::OCL_None)
+    out << ";return-lifetime=" << static_cast<unsigned>(return_lifetime);
+  out.flush();
+  return text;
+}
+
+std::string ObjCContainerIdentity(const clang::NamedDecl *declaration,
+                                  const clang::ASTContext &context) {
+  if (const auto *interface = llvm::dyn_cast<clang::ObjCInterfaceDecl>(declaration)) {
+    std::string text = "objc-interface:" + interface->getNameAsString();
+    if (const auto *superclass = interface->getSuperClass())
+      text += ";super=" + superclass->getNameAsString();
+    for (const auto *protocol : interface->protocols())
+      text += ";protocol=" + protocol->getNameAsString();
+    for (const auto *ivar : interface->ivars())
+      text += ";ivar=" + ivar->getNameAsString() + ':' +
+              CanonicalType(ivar->getType(), context) + "@" +
+              std::to_string(static_cast<unsigned>(ivar->getAccessControl()));
+    return text;
+  }
+  if (const auto *protocol = llvm::dyn_cast<clang::ObjCProtocolDecl>(declaration)) {
+    std::string text = "objc-protocol:" + protocol->getNameAsString();
+    for (const auto *adopted : protocol->protocols())
+      text += ";protocol=" + adopted->getNameAsString();
+    return text;
+  }
+  if (const auto *category = llvm::dyn_cast<clang::ObjCCategoryDecl>(declaration)) {
+    return "objc-category:" +
+           (category->getClassInterface()
+                ? category->getClassInterface()->getNameAsString()
+                : std::string("<missing-class>")) +
+           '(' + category->getNameAsString() + ')';
+  }
+  return {};
+}
+
+std::string DeclarationTypeIdentity(const clang::NamedDecl *declaration,
+                                    const clang::ASTContext &context) {
+  if (const auto *method = llvm::dyn_cast<clang::ObjCMethodDecl>(declaration))
+    return ObjCMethodIdentity(method, context);
+  if (const auto *property = llvm::dyn_cast<clang::ObjCPropertyDecl>(declaration))
+    return CanonicalType(property->getType(), context) + ";objc-property-attributes=" +
+           std::to_string(static_cast<unsigned>(property->getPropertyAttributesAsWritten()));
+  if (const auto *record = llvm::dyn_cast<clang::RecordDecl>(declaration))
+    return RecordLayoutIdentity(record, context);
+  if (const auto *enumeration = llvm::dyn_cast<clang::EnumDecl>(declaration))
+    return EnumIdentity(enumeration, context);
+  if (llvm::isa<clang::ObjCInterfaceDecl, clang::ObjCProtocolDecl,
+                clang::ObjCCategoryDecl>(declaration))
+    return ObjCContainerIdentity(declaration, context);
+  if (const auto *constant = llvm::dyn_cast<clang::EnumConstantDecl>(declaration)) {
+    llvm::SmallString<32> value;
+    constant->getInitVal().toString(value, 10);
+    return CanonicalType(constant->getType(), context) + "=" + value.str().str();
+  }
+  if (const auto *value = llvm::dyn_cast<clang::ValueDecl>(declaration)) {
+    std::string identity = CanonicalType(value->getType(), context);
+    const auto lifetime = value->getType().getObjCLifetime();
+    if (lifetime != clang::Qualifiers::OCL_None)
+      identity += ";objc-lifetime=" + std::to_string(static_cast<unsigned>(lifetime));
+    return identity;
+  }
+  if (const auto *type = llvm::dyn_cast<clang::TypeDecl>(declaration))
+    return CanonicalType(context.getTypeDeclType(type), context);
+  return {};
+}
+
+class TypeDependencyVisitor final
+    : public clang::RecursiveASTVisitor<TypeDependencyVisitor> {
+ public:
+  TypeDependencyVisitor(const clang::ASTContext &context,
+                        InterfaceEmissionArtifact &result)
+      : context_(context), result_(result) {}
+
+  bool VisitTagType(clang::TagType *type) {
+    const auto *declaration = type->getDecl();
+    if (declaration && !IsInMainFile(context_, declaration->getLocation()))
+      AddDiagnostic(result_, "O3IFC112",
+                    "public declaration references a record or enum from an unresolved external dependency",
+                    declaration->getQualifiedNameAsString());
+    return true;
+  }
+
+  bool VisitObjCInterfaceType(clang::ObjCInterfaceType *type) {
+    const auto *declaration = type->getDecl();
+    if (declaration && !IsInMainFile(context_, declaration->getLocation()))
+      AddDiagnostic(result_, "O3IFC112",
+                    "public declaration references an Objective-C class from an unresolved external dependency",
+                    declaration->getNameAsString());
+    return true;
+  }
+
+  bool VisitObjCObjectType(clang::ObjCObjectType *type) {
+    for (const auto *protocol : type->quals())
+      if (!IsInMainFile(context_, protocol->getLocation()))
+        AddDiagnostic(result_, "O3IFC112",
+                      "public declaration references a protocol from an unresolved external dependency",
+                      protocol->getNameAsString());
+    return true;
+  }
+
+ private:
+  const clang::ASTContext &context_;
+  InterfaceEmissionArtifact &result_;
+};
+
+void CheckTypeDependencies(const clang::NamedDecl *declaration,
+                           const clang::ASTContext &context,
+                           InterfaceEmissionArtifact &result) {
+  TypeDependencyVisitor visitor(context, result);
+  auto check = [&](clang::QualType type) {
+    if (!type.isNull()) visitor.TraverseType(type);
+  };
+  if (const auto *value = llvm::dyn_cast<clang::ValueDecl>(declaration))
+    check(value->getType());
+  if (const auto *method = llvm::dyn_cast<clang::ObjCMethodDecl>(declaration)) {
+    check(method->getReturnType());
+    for (unsigned i = 0; i < method->param_size(); ++i)
+      check(method->getParamDecl(i)->getType());
+  }
+  if (const auto *interface = llvm::dyn_cast<clang::ObjCInterfaceDecl>(declaration)) {
+    if (const auto *superclass = interface->getSuperClass())
+      if (!IsInMainFile(context, superclass->getLocation()))
+        AddDiagnostic(result, "O3IFC112",
+                      "Objective-C superclass dependency has no resolved interface identity",
+                      superclass->getNameAsString());
+    for (const auto *protocol : interface->protocols())
+      if (!IsInMainFile(context, protocol->getLocation()))
+        AddDiagnostic(result, "O3IFC112",
+                      "adopted Objective-C protocol dependency has no resolved interface identity",
+                      protocol->getNameAsString());
+    for (const auto *ivar : interface->ivars()) check(ivar->getType());
+  }
+  if (const auto *protocol = llvm::dyn_cast<clang::ObjCProtocolDecl>(declaration))
+    for (const auto *adopted : protocol->protocols())
+      if (!IsInMainFile(context, adopted->getLocation()))
+        AddDiagnostic(result, "O3IFC112",
+                      "adopted Objective-C protocol dependency has no resolved interface identity",
+                      adopted->getNameAsString());
+}
+
+class InterfaceCollector final
+    : public clang::RecursiveASTVisitor<InterfaceCollector> {
+ public:
+  InterfaceCollector(clang::ASTContext &context,
+                     InterfaceEmissionArtifact &result)
+      : context_(context), result_(result) {}
+
+  bool VisitImportDecl(clang::ImportDecl *declaration) {
+    if (IsInMainFile(context_, declaration->getLocation())) {
+      const auto *module = declaration->getImportedModule();
+      AddDiagnostic(result_, "O3IFC111",
+                    "source contains a module import but its resolved interface dependency identity is unavailable",
+                    module ? module->getFullModuleName() : "<unknown-module>");
+    }
+    return true;
+  }
+
+  bool VisitNamedDecl(clang::NamedDecl *declaration) {
+    if (const auto *category = llvm::dyn_cast<clang::ObjCCategoryDecl>(declaration)) {
+      if (category->IsClassExtension() &&
+          IsInMainFile(context_, category->getLocation())) {
+        AddDiagnostic(result_, "O3IFC113",
+                      "Objective-C class extension layout is not yet represented in the public interface contract",
+                      category->getNameAsString());
+        return true;
+      }
+    }
+    if (!IsIdentityCandidate(declaration, context_)) return true;
+    if (auto *method = llvm::dyn_cast<clang::ObjCMethodDecl>(declaration)) {
+      if (method->getBody()) return true;
+      if (context_.getLangOpts().ObjC3) {
+        AddDiagnostic(result_, "O3IFC124",
+                      "Objective-C 3 method effect identity is unknown because the canonical effect AST is not available to the interface emitter",
+                      method->getQualifiedNameAsString());
+        return true;
+      }
+    }
+    if (auto *category = llvm::dyn_cast<clang::ObjCCategoryDecl>(declaration)) {
+      if (category->IsClassExtension()) {
+        AddDiagnostic(result_, "O3IFC113",
+                      "Objective-C class extensions are not exported as public interfaces",
+                      category->getClassInterface()
+                          ? category->getClassInterface()->getNameAsString()
+                          : "<unknown-class>");
+        return true;
+      }
+    }
+    if (auto *ivar = llvm::dyn_cast<clang::ObjCIvarDecl>(declaration)) {
+      if (ivar->getAccessControl() != clang::ObjCIvarDecl::None) {
+        AddDiagnostic(result_, "O3IFC114",
+                      "explicit Objective-C ivar access is not preserved by Clang's interface printer",
+                      ivar->getNameAsString());
+        return true;
+      }
+    }
+    if (auto *function = llvm::dyn_cast<clang::FunctionDecl>(declaration)) {
+      if (function->isInlineSpecified()) {
+        AddDiagnostic(result_, "O3IFC115",
+                      "inline function body removal may change linkage and is unsupported",
+                      function->getQualifiedNameAsString());
+        return true;
+      }
+    }
+    for (const auto *attribute : declaration->attrs()) {
+      if (attribute->isImplicit()) continue;
+      AddDiagnostic(result_, "O3IFC116",
+                    (llvm::Twine("public declaration has an attribute not yet modeled in the sidecar: ") +
+                     attribute->getSpelling()).str(),
+                    declaration->getQualifiedNameAsString());
+      return true;
+    }
+
+    // Preserve declaration/redeclaration order, including incomplete tag
+    // declarations needed by signatures that precede the eventual definition.
+    // The sidecar still records one semantic identity per USR below.
+    if (IsTopLevel(declaration) &&
+        !llvm::isa<clang::ObjCMethodDecl, clang::ObjCPropertyDecl,
+                   clang::ObjCIvarDecl, clang::FieldDecl,
+                   clang::EnumConstantDecl>(declaration))
+      root_declarations_.push_back(declaration);
+
+    llvm::SmallString<128> usr;
+    if (clang::index::generateUSRForDecl(declaration, usr)) {
+      AddDiagnostic(result_, "O3IFC117",
+                    "Clang could not derive a stable declaration USR",
+                    declaration->getQualifiedNameAsString());
+      return true;
+    }
+    auto *representative = Representative(declaration);
+    const std::string stable_id = usr.str().str();
+    InterfaceDeclarationIdentity identity;
+    identity.stable_id = stable_id;
+    identity.kind = declaration->getDeclKindName();
+    identity.qualified_name = declaration->getQualifiedNameAsString();
+    if (identity.qualified_name.empty())
+      identity.qualified_name = declaration->getNameAsString();
+    identity.canonical_type_identity =
+        DeclarationTypeIdentity(representative, context_);
+    if (identity.canonical_type_identity.empty()) {
+      AddDiagnostic(result_, "O3IFC118",
+                    "declaration has no canonical type identity supported by the interface contract",
+                    identity.stable_id);
+      return true;
+    }
+    if (auto *value = llvm::dyn_cast<clang::ValueDecl>(representative)) {
+      const auto lifetime = value->getType().getObjCLifetime();
+      if (lifetime != clang::Qualifiers::OCL_None)
+        identity.effects.ownership_identity =
+            std::to_string(static_cast<unsigned>(lifetime));
+    }
+    CheckTypeDependencies(representative, context_, result_);
+
+    const auto found = declarations_.find(stable_id);
+    if (found == declarations_.end() ||
+        (!IsDefinition(found->second) && IsDefinition(representative)))
+      declarations_[stable_id] = representative;
+    identities_[stable_id] = std::move(identity);
+    return true;
+  }
+
+  std::vector<clang::NamedDecl *> RootDeclarations() const {
+    auto roots = root_declarations_;
+    const auto &source_manager = context_.getSourceManager();
+    std::sort(roots.begin(), roots.end(), [&](const auto *a, const auto *b) {
+      const auto a_offset = source_manager.getFileOffset(a->getLocation());
+      const auto b_offset = source_manager.getFileOffset(b->getLocation());
+      if (a_offset != b_offset) return a_offset < b_offset;
+      return a->getQualifiedNameAsString() < b->getQualifiedNameAsString();
+    });
+    return roots;
+  }
+
+  std::vector<InterfaceDeclarationIdentity> Identities() const {
+    std::vector<InterfaceDeclarationIdentity> result;
+    result.reserve(identities_.size());
+    for (const auto &[_, identity] : identities_) result.push_back(identity);
+    return result;
+  }
+
+ private:
+  clang::ASTContext &context_;
+  InterfaceEmissionArtifact &result_;
+  std::map<std::string, clang::NamedDecl *> declarations_;
+  std::map<std::string, InterfaceDeclarationIdentity> identities_;
+  std::vector<clang::NamedDecl *> root_declarations_;
+};
+
+void PrintRootDeclaration(clang::NamedDecl *declaration,
+                          clang::ASTContext &context,
+                          llvm::raw_ostream &out) {
+  clang::PrintingPolicy policy(context.getLangOpts());
+  policy.PrintAsCanonical = true;
+  policy.FullyQualifiedName = true;
+  policy.SuppressScope = false;
+  policy.SuppressUnwrittenScope = false;
+  policy.PolishForDeclaration = true;
+  if (llvm::isa<clang::FunctionDecl>(declaration))
+    policy.TerseOutput = true;
+  if (llvm::isa<clang::VarDecl>(declaration)) {
+    policy.SuppressInitializers = true;
+    const auto *variable = llvm::cast<clang::VarDecl>(declaration);
+    if (variable->getStorageClass() == clang::SC_None)
+      out << "extern ";
+  }
+  declaration->print(out, policy);
+  if (llvm::isa<clang::ObjCInterfaceDecl, clang::ObjCProtocolDecl,
+                clang::ObjCCategoryDecl>(declaration)) {
+    out << '\n';
+    return;
+  }
+  out << ";\n";
+}
+
+std::vector<std::string> RoundTripArguments(const clang::ASTContext &context) {
+  const auto &lang = context.getLangOpts();
+  const auto &standard = clang::LangStandard::getLangStandardForKind(lang.LangStd);
+  std::vector<std::string> args = {
+      "-fsyntax-only", "--target=" + context.getTargetInfo().getTriple().str(),
+      std::string("-x"), lang.ObjC ? "objective-c" : "c",
+      "-std=" + std::string(standard.getName())};
+  if (lang.ObjC) {
+    args.push_back("-fobjc-runtime=" + lang.ObjCRuntime.getAsString());
+    if (lang.ObjCAutoRefCount) args.push_back("-fobjc-arc");
+  }
+  if (lang.Blocks) args.push_back("-fblocks");
+  if (lang.ObjC3) {
+    args.push_back("-fobjc-version=3");
+    static constexpr const char *profiles[] = {
+        "compatibility", "strict", "strict-concurrency", "strict-system"};
+    const auto index = static_cast<unsigned>(lang.ObjC3Profile);
+    if (index < std::size(profiles))
+      args.push_back(std::string("-fobjc3-profile=") + profiles[index]);
+    if (lang.ObjC3StrictConcurrency)
+      args.push_back("-fobjc3-strict-concurrency");
+  }
+  return args;
+}
+
+bool SameDeclaration(const InterfaceDeclarationIdentity &a,
+                     const InterfaceDeclarationIdentity &b) {
+  return std::tie(a.stable_id, a.kind, a.qualified_name,
+                  a.canonical_type_identity,
+                  a.effects.is_async, a.effects.is_throwing,
+                  a.effects.throws_kind, a.effects.error_type_identity,
+                  a.effects.actor_isolation_identity,
+                  a.effects.executor_affinity_identity,
+                  a.effects.ownership_identity) ==
+         std::tie(b.stable_id, b.kind, b.qualified_name,
+                  b.canonical_type_identity,
+                  b.effects.is_async, b.effects.is_throwing,
+                  b.effects.throws_kind, b.effects.error_type_identity,
+                  b.effects.actor_isolation_identity,
+                  b.effects.executor_affinity_identity,
+                  b.effects.ownership_identity);
+}
+
+}  // namespace
+
+InterfaceEmissionArtifact EmitSemanticInterface(
+    clang::ASTContext &context, llvm::StringRef canonical_module_name,
+    llvm::StringRef package_identity,
+    const std::vector<InterfaceDependency> &resolved_dependencies) {
+  InterfaceEmissionArtifact result;
+  if (canonical_module_name.empty() || package_identity.empty()) {
+    AddDiagnostic(result, "O3IFC100",
+                  "canonical module name and package identity are required");
+    return result;
+  }
+  const auto &lang = context.getLangOpts();
+  if (lang.CPlusPlus) {
+    AddDiagnostic(result, "O3IFC101",
+                  "Objective-C++/C++ interface emission is not yet supported",
+                  canonical_module_name);
+    return result;
+  }
+  if (!resolved_dependencies.empty()) {
+    AddDiagnostic(result, "O3IFC111",
+                  "resolved dependency source imports are not yet emitted",
+                  canonical_module_name);
+    return result;
+  }
+
+  result.identity.canonical_name = canonical_module_name.str();
+  result.identity.target_triple = context.getTargetInfo().getTriple().str();
+  result.identity.runtime_abi =
+      (lang.ObjC ? lang.ObjCRuntime.getAsString() : std::string("no-objc-runtime")) +
+      (lang.ObjCAutoRefCount ? ";arc" : ";manual-reference-counting");
+  result.identity.extension_abi =
+      std::string("objc3-extension-abi-") +
+      std::to_string(CLANG_OBJC3_EXTENSION_ABI_REVISION) + ":" +
+      CLANG_OBJC3_PATCH_DIGEST;
+  result.identity.language_revision = lang.ObjC3
+      ? std::to_string(lang.ObjC3Revision)
+      : "objc3-disabled";
+  static constexpr const char *profiles[] = {
+      "compatibility", "strict", "strict-concurrency", "strict-system"};
+  const auto profile_index = static_cast<unsigned>(lang.ObjC3Profile);
+  result.identity.language_profile =
+      std::string("objc3=") + (lang.ObjC3 ? "enabled" : "disabled") +
+      ";profile=" + (profile_index < std::size(profiles)
+                           ? profiles[profile_index]
+                           : "unknown") +
+      ";strict-concurrency=" + (lang.ObjC3StrictConcurrency ? "true" : "false") +
+      ";arc=" + (lang.ObjCAutoRefCount ? "true" : "false");
+  result.identity.package_identity = package_identity.str();
+
+  InterfaceCollector collector(context, result);
+  collector.TraverseDecl(context.getTranslationUnitDecl());
+  if (!result.diagnostics.empty()) return result;
+
+  result.source_bytes = "/* Generated canonical Clang interface. */\n#pragma once\n";
+  llvm::raw_string_ostream source(result.source_bytes);
+  for (auto *declaration : collector.RootDeclarations()) {
+    if (auto *variable = llvm::dyn_cast<clang::VarDecl>(declaration)) {
+      if (variable->getStorageClass() == clang::SC_PrivateExtern) {
+        AddDiagnostic(result, "O3IFC119",
+                      "private-extern storage cannot be represented as a public interface",
+                      variable->getQualifiedNameAsString());
+        continue;
+      }
+    }
+    PrintRootDeclaration(declaration, context, source);
+  }
+  source.flush();
+  if (!result.diagnostics.empty()) {
+    result.source_bytes.clear();
+    return result;
+  }
+
+  SemanticInterfaceSidecar sidecar;
+  sidecar.module = result.identity;
+  sidecar.declarations = collector.Identities();
+  sidecar.dependencies = resolved_dependencies;
+  const auto fingerprint_input = BuildSemanticFingerprintInput(sidecar);
+  result.identity.semantic_fingerprint = ComputeInterfaceSourceSha256(fingerprint_input);
+  sidecar.module = result.identity;
+  sidecar.canonical_source_sha256 = ComputeInterfaceSourceSha256(result.source_bytes);
+
+  const std::vector<llvm::StringRef> supported_semantics;
+  auto encoded = EncodeSemanticInterfaceSidecar(sidecar, supported_semantics);
+  if (!encoded) {
+    AddDiagnostic(result, "O3IFC120",
+                  llvm::toString(encoded.takeError()), canonical_module_name);
+    result.source_bytes.clear();
+    return result;
+  }
+
+  const auto input_file = lang.ObjC ? "objc3-interface-roundtrip.m"
+                                    : "objc3-interface-roundtrip.c";
+  auto roundtrip = clang::tooling::buildASTFromCodeWithArgs(
+      result.source_bytes, RoundTripArguments(context), input_file);
+  if (!roundtrip || roundtrip->getDiagnostics().hasErrorOccurred()) {
+    AddDiagnostic(result, "O3IFC121",
+                  "Clang rejected the generated interface when reparsed with the original language, target, runtime, and ARC settings",
+                  canonical_module_name);
+    result.source_bytes.clear();
+    return result;
+  }
+  InterfaceEmissionArtifact roundtrip_result;
+  InterfaceCollector roundtrip_collector(roundtrip->getASTContext(),
+                                         roundtrip_result);
+  roundtrip_collector.TraverseDecl(
+      roundtrip->getASTContext().getTranslationUnitDecl());
+  if (!roundtrip_result.diagnostics.empty()) {
+    result.diagnostics = std::move(roundtrip_result.diagnostics);
+    result.source_bytes.clear();
+    return result;
+  }
+  auto emitted_identities = collector.Identities();
+  auto reparsed_identities = roundtrip_collector.Identities();
+  auto by_id = [](const auto &a, const auto &b) { return a.stable_id < b.stable_id; };
+  std::sort(emitted_identities.begin(), emitted_identities.end(), by_id);
+  std::sort(reparsed_identities.begin(), reparsed_identities.end(), by_id);
+  if (emitted_identities.size() != reparsed_identities.size()) {
+    AddDiagnostic(result, "O3IFC122",
+                  "reparsed interface declaration set differs from source AST",
+                  canonical_module_name);
+    result.source_bytes.clear();
+    return result;
+  }
+  for (std::size_t i = 0; i < emitted_identities.size(); ++i) {
+    if (!SameDeclaration(emitted_identities[i], reparsed_identities[i])) {
+      AddDiagnostic(result, "O3IFC123",
+                    "reparsed declaration USR or canonical signature differs from source AST",
+                    emitted_identities[i].stable_id);
+      result.source_bytes.clear();
+      return result;
+    }
+  }
+
+  result.sidecar_json = std::move(*encoded);
+  result.success = true;
+  return result;
+}
+
+}  // namespace objc3::clang_foundation
