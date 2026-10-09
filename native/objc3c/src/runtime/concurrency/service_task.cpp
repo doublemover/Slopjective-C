@@ -162,10 +162,20 @@ objc3_service_status objc3_task_wait_quiescent(objc3_task_t *task) {
   if (current_service_task == task) return OBJC3_SERVICE_NOT_READY;
   if (!objc3_task_internal_retain(task)) return OBJC3_SERVICE_NOT_READY;
   std::unique_lock<std::mutex> lock(task->mutex);
-  task->completed.wait(lock, [task] {
+  auto quiescent = [task] {
     return task->terminal && task->frame_destroyed && !task->frame_destroying &&
            !task->resume_active && task->callbacks_active == 0;
-  });
+  };
+  // Blocking a serial executor can prevent this task's queued resume or
+  // cleanup from running. This is a logical executor check, independent of
+  // whether a manual pump or a worker currently runs the callback.
+  if (!quiescent() && task->executor &&
+      objc3::services::executor_is_current_identity(task->executor->identity)) {
+    lock.unlock();
+    objc3_task_internal_release(task);
+    return OBJC3_SERVICE_NOT_READY;
+  }
+  task->completed.wait(lock, quiescent);
   lock.unlock();
   objc3_task_internal_release(task);
   return OBJC3_SERVICE_OK;
@@ -407,6 +417,13 @@ extern "C" objc3_service_status objc3_task_wait(objc3_task_t *task) {
   if (!task) return OBJC3_SERVICE_INVALID_ARGUMENT;
   if (!objc3_task_internal_retain(task)) return OBJC3_SERVICE_NOT_READY;
   std::unique_lock<std::mutex> lock(task->mutex);
+  if (!task->terminal && (current_service_task == task ||
+      (task->executor && objc3::services::executor_is_current_identity(
+                             task->executor->identity)))) {
+    lock.unlock();
+    objc3_task_internal_release(task);
+    return OBJC3_SERVICE_NOT_READY;
+  }
   task->completed.wait(lock, [task] { return task->terminal; });
   lock.unlock();
   objc3_task_internal_release(task);

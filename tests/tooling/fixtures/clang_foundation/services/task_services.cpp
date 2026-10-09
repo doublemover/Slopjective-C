@@ -227,6 +227,70 @@ objc3_task_t *start_task(objc3_executor_t *executor, Frame *frame,
   return task;
 }
 
+struct ExecutorWaitTrace {
+  objc3_task_t *task{};
+  objc3_service_status wait_status{OBJC3_SERVICE_CLOSED};
+  objc3_service_status quiescent_status{OBJC3_SERVICE_CLOSED};
+};
+
+void wait_from_executor(void *opaque) {
+  auto *trace = static_cast<ExecutorWaitTrace *>(opaque);
+  trace->wait_status = objc3_task_wait(trace->task);
+  trace->quiescent_status = objc3_task_wait_quiescent(trace->task);
+}
+
+void test_same_executor_pending_wait_returns_not_ready() {
+  auto *executor = manual_executor();
+  ExecutorWaitTrace trace;
+  // This callback precedes the task's queued resume on the same serial
+  // executor. Blocking here would prevent that resume from completing.
+  assert(objc3_executor_enqueue(executor, wait_from_executor, &trace) ==
+         OBJC3_SERVICE_OK);
+  std::atomic<int> destroyed{0};
+  trace.task = start_task(executor, new Frame{executor, 0, 7, true, &destroyed});
+  uint32_t executed = 0;
+  assert(objc3_executor_pump(executor, 1, &executed) == OBJC3_SERVICE_OK);
+  assert(executed == 1 && destroyed == 0);
+  assert(trace.wait_status == OBJC3_SERVICE_NOT_READY);
+  assert(trace.quiescent_status == OBJC3_SERVICE_NOT_READY);
+  assert(objc3_executor_pump(executor, 1, &executed) == OBJC3_SERVICE_OK);
+  assert(executed == 1 && destroyed == 1);
+  assert(objc3_executor_enqueue(executor, wait_from_executor, &trace) ==
+         OBJC3_SERVICE_OK);
+  assert(objc3_executor_pump(executor, 1, &executed) == OBJC3_SERVICE_OK);
+  assert(executed == 1 && trace.wait_status == OBJC3_SERVICE_OK);
+  assert(trace.quiescent_status == OBJC3_SERVICE_OK);
+  objc3_task_release(trace.task);
+  objc3_executor_release(executor);
+}
+
+void wait_then_complete_self(objc3_task_t *task, void *opaque) {
+  auto *frame = static_cast<Frame *>(opaque);
+  assert(objc3_task_wait(task) == OBJC3_SERVICE_NOT_READY);
+  assert(objc3_task_wait_quiescent(task) == OBJC3_SERVICE_NOT_READY);
+  resume_task(task, frame);
+  assert(objc3_task_wait(task) == OBJC3_SERVICE_OK);
+}
+
+void test_task_pending_self_wait_returns_not_ready() {
+  auto *executor = manual_executor();
+  std::atomic<int> destroyed{0};
+  objc3_task_start_options options{};
+  options.struct_size = sizeof(options);
+  options.version = OBJC3_SERVICE_ABI_VERSION;
+  options.executor = executor;
+  options.frame = new Frame{executor, 0, 11, true, &destroyed};
+  options.resume = wait_then_complete_self;
+  options.destroy = destroy_frame;
+  objc3_task_t *task = nullptr;
+  assert(objc3_task_start(&options, &task) == OBJC3_SERVICE_OK);
+  uint32_t executed = 0;
+  assert(objc3_executor_pump(executor, 1, &executed) == OBJC3_SERVICE_OK);
+  assert(executed == 1 && destroyed == 1);
+  objc3_task_release(task);
+  objc3_executor_release(executor);
+}
+
 void test_zero_payload_and_reentry() {
   auto *executor = manual_executor();
   std::atomic<int> destroyed{0};
@@ -1600,6 +1664,8 @@ void test_actor_serial_mailbox_hops_and_cancellation() {
 } // namespace
 
 int main() {
+  test_same_executor_pending_wait_returns_not_ready();
+  test_task_pending_self_wait_returns_not_ready();
   test_zero_payload_and_reentry();
   test_false_payload_is_present();
   test_invalid_value_descriptors_and_presence_rules();

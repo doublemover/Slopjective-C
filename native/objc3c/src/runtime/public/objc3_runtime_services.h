@@ -108,7 +108,9 @@ objc3_service_status objc3_task_complete(objc3_task_t *task,
 objc3_service_status objc3_task_add_waiter(objc3_task_t *task,
                                           objc3_completion_callback callback,
                                           void *context);
-/* wait blocks until terminal completion; it does not pump a manual executor. */
+/* wait blocks until terminal completion; it does not pump a manual executor.
+ * A pending wait from the task itself or its current serial executor returns
+ * NOT_READY so queued task work can continue. Completed waits remain valid. */
 objc3_service_status objc3_task_wait(objc3_task_t *task);
 
 /* A serial executor runs one callback at a time. Manual executors advance only
