@@ -5,9 +5,11 @@
 
 #include <atomic>
 #include <cassert>
+#include <chrono>
 #include <cstdint>
 #include <cstdio>
 #include <condition_variable>
+#include <limits>
 #include <mutex>
 #include <thread>
 #include <vector>
@@ -49,6 +51,53 @@ static void destroy_empty(void *) { ++empty_destroys; }
 static const objc3_value_ops empty_ops = {
     sizeof(objc3_value_ops), OBJC3_VALUE_OPS_VERSION, 0, 1,
     copy_empty, move_empty, destroy_empty};
+
+struct ReentrantErrorPayload {
+  objc3_task_t *target{};
+  std::atomic<int> *destroyed{};
+  std::atomic<int> *completion_status{};
+};
+
+static objc3_service_status copy_reentrant_error(void *destination,
+                                                const void *source) {
+  *static_cast<ReentrantErrorPayload *>(destination) =
+      *static_cast<const ReentrantErrorPayload *>(source);
+  return OBJC3_SERVICE_OK;
+}
+
+static objc3_service_status move_reentrant_error(void *destination,
+                                                void *source) {
+  *static_cast<ReentrantErrorPayload *>(destination) =
+      *static_cast<ReentrantErrorPayload *>(source);
+  return OBJC3_SERVICE_OK;
+}
+
+static objc3_service_status complete_with_int_error(objc3_task_t *task,
+                                                    int value) {
+  objc3_error_t *error = nullptr;
+  objc3_service_status status = objc3_error_create(&value, &int_ops, &error);
+  if (status != OBJC3_SERVICE_OK) return status;
+  objc3_completion completion{};
+  completion.struct_size = sizeof(completion);
+  completion.version = OBJC3_SERVICE_ABI_VERSION;
+  completion.kind = OBJC3_COMPLETION_ERROR;
+  completion.error = error;
+  status = objc3_task_complete(task, &completion);
+  objc3_error_release(error);
+  return status;
+}
+
+static void destroy_reentrant_error(void *opaque) {
+  auto *payload = static_cast<ReentrantErrorPayload *>(opaque);
+  if (payload->destroyed) ++*payload->destroyed;
+  if (payload->target && payload->completion_status)
+    *payload->completion_status = complete_with_int_error(payload->target, 219);
+}
+
+static const objc3_value_ops reentrant_error_ops = {
+    sizeof(objc3_value_ops), OBJC3_VALUE_OPS_VERSION,
+    sizeof(ReentrantErrorPayload), alignof(ReentrantErrorPayload),
+    copy_reentrant_error, move_reentrant_error, destroy_reentrant_error};
 
 namespace {
 
@@ -915,6 +964,213 @@ void test_nested_group_failure_after_parent_release_is_safe() {
   objc3_executor_release(executor);
 }
 
+struct FailurePropagationGate {
+  std::mutex mutex;
+  std::condition_variable condition;
+  bool entered{false};
+  bool proceed{false};
+};
+
+void pause_first_failure_propagation(void *opaque) {
+  auto *gate = static_cast<FailurePropagationGate *>(opaque);
+  std::unique_lock<std::mutex> lock(gate->mutex);
+  gate->entered = true;
+  gate->condition.notify_all();
+  gate->condition.wait(lock, [&] { return gate->proceed; });
+}
+
+struct DropGroupReferenceOnce {
+  objc3::services::TaskGroup **group;
+  std::atomic<bool> dropped{false};
+};
+
+void release_public_group_reference(void *opaque) {
+  auto *context = static_cast<DropGroupReferenceOnce *>(opaque);
+  if (context->dropped.exchange(true)) return;
+  assert(context->group && *context->group);
+  objc3::services::TaskGroup *released = *context->group;
+  *context->group = nullptr;
+  task_group_release(released);
+}
+
+void test_group_failure_release_defers_reentrant_destruction_until_unlocked() {
+  using namespace objc3::services;
+  auto *executor = manual_executor();
+  TaskGroup *root = nullptr;
+  TaskGroup *child = nullptr;
+  assert(task_group_create(nullptr, &root) == OBJC3_SERVICE_OK);
+  assert(task_group_create(root, &child) == OBJC3_SERVICE_OK);
+
+  std::atomic<int> destroyed{0};
+  std::atomic<int> reentrant_error_destroyed{0};
+  std::atomic<int> reentrant_completion_status{-1};
+  auto *root_error_owner = start_task(
+      executor, new Frame{executor, 0, 0, false, &destroyed});
+  auto *primary_failure = start_task(
+      executor, new Frame{executor, 0, 0, false, &destroyed});
+  auto *reentrant_failure = start_task(
+      executor, new Frame{executor, 0, 0, false, &destroyed});
+  uint32_t executed = 0;
+  assert(objc3_executor_pump(executor, 3, &executed) == OBJC3_SERVICE_OK);
+  assert(task_group_add_task(root, root_error_owner) == OBJC3_SERVICE_OK);
+  assert(task_group_add_task(child, primary_failure) == OBJC3_SERVICE_OK);
+  assert(task_group_add_task(child, reentrant_failure) == OBJC3_SERVICE_OK);
+  assert(task_group_close(root) == OBJC3_SERVICE_OK);
+
+  ReentrantErrorPayload payload{reentrant_failure, &reentrant_error_destroyed,
+                                &reentrant_completion_status};
+  objc3_error_t *reentrant_error = nullptr;
+  assert(objc3_error_create(&payload, &reentrant_error_ops, &reentrant_error) ==
+         OBJC3_SERVICE_OK);
+  objc3_completion initial_failure{};
+  initial_failure.struct_size = sizeof(initial_failure);
+  initial_failure.version = OBJC3_SERVICE_ABI_VERSION;
+  initial_failure.kind = OBJC3_COMPLETION_ERROR;
+  initial_failure.error = reentrant_error;
+  assert(objc3_task_complete(root_error_owner, &initial_failure) ==
+         OBJC3_SERVICE_OK);
+  objc3_error_release(reentrant_error);
+  objc3_task_release(root_error_owner);
+
+  // The hook drops the public root reference while failure propagation still
+  // owns an ancestor lease. Releasing that lease must happen after the tree's
+  // publication lock is unlocked: root destruction releases the stored task,
+  // whose error payload completes another task in this same group tree.
+  DropGroupReferenceOnce drop_root{&root};
+  task_group_test_set_failure_propagation_hook(
+      release_public_group_reference, &drop_root);
+  const objc3_service_status primary_status =
+      complete_with_int_error(primary_failure, 218);
+  task_group_test_set_failure_propagation_hook(nullptr, nullptr);
+
+  assert(primary_status == OBJC3_SERVICE_OK);
+  assert(root == nullptr);
+  assert(reentrant_error_destroyed == 1);
+  assert(reentrant_completion_status == OBJC3_SERVICE_OK);
+  assert(task_group_join(child) == OBJC3_SERVICE_OK);
+  task_group_release(child);
+  objc3_task_release(reentrant_failure);
+  objc3_task_release(primary_failure);
+  assert(destroyed == 3);
+  objc3_executor_release(executor);
+}
+
+struct FailurePoll {
+  objc3::services::TaskGroup *group;
+  objc3_task_t *root_sibling;
+  std::atomic<bool> started{false};
+  std::atomic<bool> finished{false};
+  std::atomic<bool> saw_before_ancestor_cancel{false};
+  objc3_service_status status{OBJC3_SERVICE_OK};
+  objc3_task_t *observed{nullptr};
+};
+
+void test_concurrent_group_failures_publish_after_ancestor_cancellation() {
+  using namespace objc3::services;
+  auto *executor = manual_executor();
+  TaskGroup *root = nullptr;
+  assert(task_group_create(nullptr, &root) == OBJC3_SERVICE_OK);
+  std::vector<TaskGroup *> chain{root};
+  for (int depth = 0; depth < 32; ++depth) {
+    TaskGroup *child = nullptr;
+    assert(task_group_create(chain.back(), &child) == OBJC3_SERVICE_OK);
+    chain.push_back(child);
+  }
+  TaskGroup *leaf = chain.back();
+  std::atomic<int> destroyed{0};
+  auto *first_failure = start_task(
+      executor, new Frame{executor, 0, 0, false, &destroyed});
+  auto *second_failure = start_task(
+      executor, new Frame{executor, 0, 0, false, &destroyed});
+  auto *root_sibling = start_task(
+      executor, new Frame{executor, 0, 0, false, &destroyed});
+  uint32_t executed = 0;
+  assert(objc3_executor_pump(executor, 3, &executed) == OBJC3_SERVICE_OK);
+  assert(task_group_add_task(leaf, first_failure) == OBJC3_SERVICE_OK);
+  assert(task_group_add_task(leaf, second_failure) == OBJC3_SERVICE_OK);
+  assert(task_group_add_task(root, root_sibling) == OBJC3_SERVICE_OK);
+  assert(task_group_close(root) == OBJC3_SERVICE_OK);
+
+  FailurePropagationGate gate;
+  task_group_test_set_failure_propagation_hook(
+      pause_first_failure_propagation, &gate);
+  auto complete_error = [](objc3_task_t *task, int code) {
+    objc3_error_t *error = nullptr;
+    assert(objc3_error_create(&code, &int_ops, &error) == OBJC3_SERVICE_OK);
+    objc3_completion failure{};
+    failure.struct_size = sizeof(failure);
+    failure.version = OBJC3_SERVICE_ABI_VERSION;
+    failure.kind = OBJC3_COMPLETION_ERROR;
+    failure.error = error;
+    const auto status = objc3_task_complete(task, &failure);
+    objc3_error_release(error);
+    return status;
+  };
+
+  objc3_service_status first_status = OBJC3_SERVICE_OK;
+  objc3_service_status second_status = OBJC3_SERVICE_OK;
+  std::atomic<bool> second_started{false};
+  std::atomic<bool> second_finished{false};
+  std::thread first([&] { first_status = complete_error(first_failure, 211); });
+  {
+    std::unique_lock<std::mutex> lock(gate.mutex);
+    gate.condition.wait(lock, [&] { return gate.entered; });
+  }
+  FailurePoll poll{leaf, root_sibling};
+  std::thread poller([&] {
+    poll.started = true;
+    poll.status = task_group_next_completed(leaf, &poll.observed);
+    poll.saw_before_ancestor_cancel =
+        !objc3_task_is_cancel_requested(root_sibling);
+    poll.finished = true;
+  });
+  while (!poll.started.load()) std::this_thread::yield();
+  std::thread second([&] {
+    second_started = true;
+    second_status = complete_error(second_failure, 212);
+    second_finished = true;
+  });
+  while (!second_started.load()) std::this_thread::yield();
+  std::this_thread::sleep_for(std::chrono::milliseconds(30));
+  assert(!second_finished.load());
+  assert(!poll.finished.load());
+
+  {
+    std::lock_guard<std::mutex> lock(gate.mutex);
+    gate.proceed = true;
+  }
+  gate.condition.notify_all();
+  first.join();
+  second.join();
+  poller.join();
+  task_group_test_set_failure_propagation_hook(nullptr, nullptr);
+
+  assert(first_status == OBJC3_SERVICE_OK);
+  assert(second_status == OBJC3_SERVICE_OK);
+  assert(poll.status == OBJC3_SERVICE_OK && poll.observed);
+  assert(!poll.saw_before_ancestor_cancel.load());
+  assert(objc3_task_is_cancel_requested(root_sibling));
+  objc3_task_t *another = nullptr;
+  assert(task_group_next_completed(leaf, &another) == OBJC3_SERVICE_OK);
+  assert(another && another != poll.observed);
+  objc3_task_release(another);
+  objc3_task_release(poll.observed);
+
+  objc3_completion cancelled{};
+  cancelled.struct_size = sizeof(cancelled);
+  cancelled.version = OBJC3_SERVICE_ABI_VERSION;
+  cancelled.kind = OBJC3_COMPLETION_CANCELLED;
+  assert(objc3_task_complete(root_sibling, &cancelled) == OBJC3_SERVICE_OK);
+  assert(task_group_join(root) == OBJC3_SERVICE_OK);
+  assert(destroyed == 3);
+  for (auto it = chain.rbegin(); it != chain.rend(); ++it)
+    task_group_release(*it);
+  objc3_task_release(root_sibling);
+  objc3_task_release(second_failure);
+  objc3_task_release(first_failure);
+  objc3_executor_release(executor);
+}
+
 void test_group_failure_cancels_siblings_before_delivery() {
   using namespace objc3::services;
   auto *executor = manual_executor();
@@ -1077,6 +1333,114 @@ void test_saturated_resume_can_retry_without_lost_wakeup() {
   objc3_executor_release(executor);
 }
 
+void test_refcount_saturation_fails_without_losing_ownership() {
+  using namespace objc3::services;
+  constexpr uint32_t maximum = std::numeric_limits<uint32_t>::max();
+  std::atomic<uint32_t> primitive{maximum};
+  assert(!try_retain(primitive) && primitive.load() == maximum);
+  primitive.store(maximum - 1);
+  assert(try_retain(primitive) && primitive.load() == maximum);
+  assert(!try_retain(primitive) && primitive.load() == maximum);
+  primitive.store(0);
+  assert(!try_retain(primitive));
+
+  auto *executor = manual_executor();
+  const uint32_t executor_references = executor->references.load();
+  executor->references.store(maximum);
+  assert(objc3_executor_retain(executor) == nullptr);
+  assert(executor->references.load() == maximum);
+  executor->references.store(executor_references);
+
+  const uint32_t public_references = executor->public_references.load();
+  executor->public_references.store(maximum);
+  assert(objc3_executor_retain(executor) == nullptr);
+  assert(executor->references.load() == executor_references);
+  executor->public_references.store(public_references);
+
+  Actor *actor = reinterpret_cast<Actor *>(1);
+  executor->public_references.store(maximum);
+  assert(actor_create(executor, &actor) == OBJC3_SERVICE_NOT_READY);
+  assert(actor == nullptr);
+  executor->public_references.store(public_references);
+
+  std::atomic<int> destroyed{0};
+  auto *unsubmitted_frame = new Frame{executor, 0, 0, false, &destroyed};
+  objc3_task_start_options options{};
+  options.struct_size = sizeof(options);
+  options.version = OBJC3_SERVICE_ABI_VERSION;
+  options.executor = executor;
+  options.frame = unsubmitted_frame;
+  options.resume = resume_task;
+  options.destroy = destroy_frame;
+  objc3_task_t *unsubmitted = nullptr;
+  executor->public_references.store(maximum);
+  assert(objc3_task_start(&options, &unsubmitted) == OBJC3_SERVICE_NOT_READY);
+  assert(unsubmitted == nullptr && destroyed == 0);
+  executor->public_references.store(public_references);
+  destroy_frame(unsubmitted_frame); // start failure left the frame with caller
+  assert(destroyed == 1);
+
+  auto *task = start_task(executor, new Frame{executor, 0, 0, false,
+                                               &destroyed});
+  uint32_t executed = 0;
+  assert(objc3_executor_pump(executor, 1, &executed) == OBJC3_SERVICE_OK);
+  const uint32_t task_references = task->references.load();
+  task->references.store(maximum);
+  assert(objc3_task_retain(task) == nullptr);
+  assert(objc3_task_schedule_resume(task) == OBJC3_SERVICE_NOT_READY);
+  assert(objc3_task_add_waiter(task, record_result, nullptr) ==
+         OBJC3_SERVICE_NOT_READY);
+  assert(task->references.load() == maximum);
+  task->references.store(task_references);
+
+  TaskGroup *group = nullptr;
+  assert(task_group_create(nullptr, &group) == OBJC3_SERVICE_OK);
+  assert(task_group_test_set_references(group, maximum) == OBJC3_SERVICE_OK);
+  assert(task_group_retain(group) == nullptr);
+  assert(task_group_add_task(group, task) == OBJC3_SERVICE_NOT_READY);
+  assert(task_group_test_set_references(group, 1) == OBJC3_SERVICE_OK);
+  assert(task_group_add_task(group, task) == OBJC3_SERVICE_OK);
+
+  objc3_completion cancelled{};
+  cancelled.struct_size = sizeof(cancelled);
+  cancelled.version = OBJC3_SERVICE_ABI_VERSION;
+  cancelled.kind = OBJC3_COMPLETION_CANCELLED;
+  assert(objc3_task_complete(task, &cancelled) == OBJC3_SERVICE_OK);
+  assert(task_group_close(group) == OBJC3_SERVICE_OK);
+  objc3_task_t *completed = nullptr;
+  const uint32_t grouped_task_references = task->references.load();
+  task->references.store(maximum);
+  assert(task_group_next_completed(group, &completed) == OBJC3_SERVICE_NOT_READY);
+  assert(completed == nullptr);
+  task->references.store(grouped_task_references);
+  assert(task_group_next_completed(group, &completed) == OBJC3_SERVICE_OK);
+  assert(completed == task);
+  objc3_task_release(completed);
+  assert(task_group_next_completed(group, &completed) == OBJC3_SERVICE_CLOSED);
+  assert(task_group_join(group) == OBJC3_SERVICE_OK);
+
+  TaskGroup *parent = nullptr;
+  TaskGroup *child = nullptr;
+  assert(task_group_create(nullptr, &parent) == OBJC3_SERVICE_OK);
+  assert(task_group_create(parent, &child) == OBJC3_SERVICE_OK);
+  assert(task_group_test_set_references(child, maximum) == OBJC3_SERVICE_OK);
+  assert(task_group_close(parent) == OBJC3_SERVICE_NOT_READY);
+  assert(task_group_cancel(parent) == OBJC3_SERVICE_NOT_READY);
+  assert(task_group_test_set_references(child, 2) == OBJC3_SERVICE_OK);
+  assert(task_group_close(parent) == OBJC3_SERVICE_OK);
+  assert(task_group_test_set_references(child, maximum) == OBJC3_SERVICE_OK);
+  assert(task_group_join(parent) == OBJC3_SERVICE_NOT_READY);
+  assert(task_group_test_set_references(child, 2) == OBJC3_SERVICE_OK);
+  assert(task_group_join(parent) == OBJC3_SERVICE_OK);
+  task_group_release(child);
+  task_group_release(parent);
+
+  task_group_release(group);
+  objc3_task_release(task);
+  assert(destroyed == 2);
+  objc3_executor_release(executor);
+}
+
 struct ActorTrace {
   std::vector<int> sequence;
   int active{0};
@@ -1115,6 +1479,10 @@ void actor_test_job(void *opaque) {
          objc3::services::actor_executor_identity(context->actor));
   assert(objc3::services::executor_is_current_identity(
       current.executor_identity));
+  assert(current.executor_identity ==
+         objc3::services::actor_executor_identity(context->actor));
+  assert(objc3::services::executor_is_current_identity(
+      current.executor_identity));
   if (context->cross_actor) {
     trace->cross_facts = {sizeof(trace->cross_facts),
                           objc3::services::kActorServiceVersion, 0, 0,
@@ -1146,6 +1514,14 @@ void actor_test_job(void *opaque) {
 
 void destroy_actor_test_job(void *opaque) {
   auto *context = static_cast<ActorJobContext *>(opaque);
+  objc3::services::CurrentActorFacts current{
+      sizeof(objc3::services::CurrentActorFacts),
+      objc3::services::kActorServiceVersion, 0, 0};
+  assert(objc3::services::actor_current_facts(&current) == OBJC3_SERVICE_OK);
+  assert(current.actor_identity ==
+         objc3::services::actor_identity(context->actor));
+  assert(objc3::services::actor_join(context->actor) ==
+         OBJC3_SERVICE_NOT_READY);
   ++context->trace->destroyed;
   delete context;
 }
@@ -1210,8 +1586,10 @@ void test_actor_serial_mailbox_hops_and_cancellation() {
                                            nullptr, nullptr},
                        destroy_actor_test_job, &facts) == OBJC3_SERVICE_OK);
   assert(actor_cancel(cancelled) == OBJC3_SERVICE_OK);
-  assert(cancelled_trace.destroyed == 1 && cancelled_trace.sequence.empty());
+  assert(cancelled_trace.destroyed == 0 && cancelled_trace.sequence.empty());
+  assert(actor_join(cancelled) == OBJC3_SERVICE_NOT_READY);
   assert(objc3_executor_pump(executor, 1, &executed) == OBJC3_SERVICE_OK);
+  assert(cancelled_trace.destroyed == 1 && cancelled_trace.sequence.empty());
   assert(actor_join(cancelled) == OBJC3_SERVICE_OK);
   actor_release(cancelled);
   actor_release(second);
@@ -1241,10 +1619,13 @@ int main() {
   test_group_next_completed_self_wait_returns_not_ready();
   test_nested_group_failure_cancels_ancestor_siblings();
   test_nested_group_failure_after_parent_release_is_safe();
+  test_concurrent_group_failures_publish_after_ancestor_cancellation();
+  test_group_failure_release_defers_reentrant_destruction_until_unlocked();
   test_group_failure_cancels_siblings_before_delivery();
   test_recursive_group_close_and_join();
   test_executor_admission_and_queue_saturation();
   test_saturated_resume_can_retry_without_lost_wakeup();
+  test_refcount_saturation_fails_without_losing_ownership();
   test_actor_serial_mailbox_hops_and_cancellation();
   test_worker_executor_self_release();
   std::puts("task services: all focused checks passed");

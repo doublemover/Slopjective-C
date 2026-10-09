@@ -2,6 +2,7 @@
 #define OBJC3_RUNTIME_SERVICE_INTERNAL_H
 
 #include "../public/objc3_runtime_services.h"
+#include "service_ref_count.h"
 
 #include <atomic>
 #include <condition_variable>
@@ -77,9 +78,9 @@ struct objc3_task final {
   ~objc3_task();
 };
 
-void objc3_executor_internal_retain(objc3_executor_t *executor);
+bool objc3_executor_internal_retain(objc3_executor_t *executor);
 void objc3_executor_internal_release(objc3_executor_t *executor);
-void objc3_task_internal_retain(objc3_task_t *task);
+bool objc3_task_internal_retain(objc3_task_t *task);
 void objc3_task_internal_release(objc3_task_t *task);
 void objc3_service_run_task_resume(void *context);
 void objc3_task_destroy_frame(void *frame, objc3_frame_destroy destroy);

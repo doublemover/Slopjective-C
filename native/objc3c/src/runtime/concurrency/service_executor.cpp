@@ -78,8 +78,8 @@ bool objc3::services::executor_is_current_identity(uint64_t identity) noexcept {
   return identity != 0 && current_executor_logical_identity == identity;
 }
 
-void objc3_executor_internal_retain(objc3_executor_t *executor) {
-  executor->references.fetch_add(1, std::memory_order_relaxed);
+bool objc3_executor_internal_retain(objc3_executor_t *executor) {
+  return executor && objc3::services::try_retain(executor->references);
 }
 
 void objc3_executor_internal_release(objc3_executor_t *executor) {
@@ -105,7 +105,12 @@ extern "C" objc3_service_status objc3_executor_create(
     }
     executor->worker_slot = true;
     // The worker owns a lifetime reference, independent of public handles.
-    executor->references.fetch_add(1, std::memory_order_relaxed);
+    if (!objc3_executor_internal_retain(executor)) {
+      executor->worker_slot = false;
+      live_worker_executors.fetch_sub(1, std::memory_order_acq_rel);
+      delete executor;
+      return OBJC3_SERVICE_NOT_READY;
+    }
     try {
       executor->worker = std::thread(worker_main, executor);
     } catch (...) {
@@ -122,8 +127,11 @@ extern "C" objc3_service_status objc3_executor_create(
 
 extern "C" objc3_executor_t *objc3_executor_retain(objc3_executor_t *executor) {
   if (!executor) return nullptr;
-  executor->public_references.fetch_add(1, std::memory_order_relaxed);
-  objc3_executor_internal_retain(executor);
+  if (!objc3::services::try_retain(executor->public_references)) return nullptr;
+  if (!objc3_executor_internal_retain(executor)) {
+    executor->public_references.fetch_sub(1, std::memory_order_relaxed);
+    return nullptr;
+  }
   return executor;
 }
 
@@ -171,7 +179,8 @@ extern "C" objc3_service_status objc3_executor_pump(
   *out_executed = 0;
   std::unique_lock<std::mutex> serial(executor->pump_mutex, std::try_to_lock);
   if (!serial.owns_lock()) return OBJC3_SERVICE_NOT_READY;
-  objc3_executor_internal_retain(executor);
+  if (!objc3_executor_internal_retain(executor))
+    return OBJC3_SERVICE_NOT_READY;
   while (*out_executed < limit) {
     objc3_executor_t::WorkItem item{};
     {

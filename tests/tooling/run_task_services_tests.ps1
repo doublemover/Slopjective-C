@@ -21,7 +21,8 @@ try {
     & $cCompiler -std=c18 -fsyntax-only -I $publicDir $cFixture
     if ($LASTEXITCODE -ne 0) { throw "C18 ABI header check failed with exit code $LASTEXITCODE" }
 
-    & $compiler -std=c++17 -pthread -I $publicDir -I $sourceDir `
+    & $compiler -std=c++17 -pthread -DOBJC3_RUNTIME_SERVICE_TESTING `
+        -I $publicDir -I $sourceDir `
         $fixture `
         (Join-Path $runtimeDir 'service_task.cpp') `
         (Join-Path $runtimeDir 'service_executor.cpp') `

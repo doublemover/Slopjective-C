@@ -25,6 +25,7 @@ struct Actor final {
   std::condition_variable changed;
   std::deque<Entry> mailbox;
   bool closed{false};
+  bool cancelled{false};
   bool drain_scheduled{false};
   bool active{false};
   bool callback_failed{false};
@@ -71,9 +72,17 @@ void release_internal(Actor *actor) noexcept {
     delete actor;
 }
 
+struct ActorExecutionScope {
+  Actor *previous_actor;
+  explicit ActorExecutionScope(Actor *actor) noexcept
+      : previous_actor(std::exchange(current_actor, actor)) {}
+  ~ActorExecutionScope() { current_actor = previous_actor; }
+};
+
 void invoke_destroy(Actor *actor, const ActorContextDestroy destroy,
                     void *context) noexcept {
   if (!destroy) return;
+  ActorExecutionScope current(actor);
   try {
     destroy(context);
   } catch (...) {
@@ -82,17 +91,11 @@ void invoke_destroy(Actor *actor, const ActorContextDestroy destroy,
   }
 }
 
-struct ActorExecutionScope {
-  Actor *previous_actor;
-  explicit ActorExecutionScope(Actor *actor) noexcept
-      : previous_actor(std::exchange(current_actor, actor)) {}
-  ~ActorExecutionScope() { current_actor = previous_actor; }
-};
-
 void drain_mailbox(void *opaque) noexcept {
   auto *actor = static_cast<Actor *>(opaque);
   for (;;) {
     Actor::Entry entry{};
+    bool execute_job = false;
     {
       std::lock_guard<std::mutex> lock(actor->mutex);
       if (actor->mailbox.empty()) {
@@ -104,15 +107,18 @@ void drain_mailbox(void *opaque) noexcept {
       entry = actor->mailbox.front();
       actor->mailbox.pop_front();
       actor->active = true;
+      execute_job = !actor->cancelled;
     }
 
-    {
-      ActorExecutionScope current(actor);
-      try {
-        entry.job(entry.context);
-      } catch (...) {
-        std::lock_guard<std::mutex> lock(actor->mutex);
-        actor->callback_failed = true;
+    if (execute_job) {
+      {
+        ActorExecutionScope current(actor);
+        try {
+          entry.job(entry.context);
+        } catch (...) {
+          std::lock_guard<std::mutex> lock(actor->mutex);
+          actor->callback_failed = true;
+        }
       }
     }
     invoke_destroy(actor, entry.destroy, entry.context);
@@ -136,6 +142,10 @@ objc3_service_status actor_create(objc3_executor_t *executor,
     return OBJC3_SERVICE_NOT_READY;
   auto *actor = new (std::nothrow) Actor(identity, executor);
   if (!actor) return OBJC3_SERVICE_OUT_OF_MEMORY;
+  if (!actor->executor) {
+    delete actor;
+    return OBJC3_SERVICE_NOT_READY;
+  }
   *out_actor = actor;
   return OBJC3_SERVICE_OK;
 }
@@ -237,14 +247,11 @@ objc3_service_status actor_close(Actor *actor) {
 
 objc3_service_status actor_cancel(Actor *actor) {
   if (!actor) return OBJC3_SERVICE_INVALID_ARGUMENT;
-  std::deque<Actor::Entry> cancelled;
   {
     std::lock_guard<std::mutex> lock(actor->mutex);
     actor->closed = true;
-    cancelled.swap(actor->mailbox);
+    actor->cancelled = true;
   }
-  for (const auto &entry : cancelled)
-    invoke_destroy(actor, entry.destroy, entry.context);
   actor->changed.notify_all();
   return OBJC3_SERVICE_OK;
 }

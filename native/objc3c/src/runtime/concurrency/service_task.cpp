@@ -160,7 +160,7 @@ objc3_task_t *objc3_task_current_callback() noexcept {
 objc3_service_status objc3_task_wait_quiescent(objc3_task_t *task) {
   if (!task) return OBJC3_SERVICE_INVALID_ARGUMENT;
   if (current_service_task == task) return OBJC3_SERVICE_NOT_READY;
-  objc3_task_internal_retain(task);
+  if (!objc3_task_internal_retain(task)) return OBJC3_SERVICE_NOT_READY;
   std::unique_lock<std::mutex> lock(task->mutex);
   task->completed.wait(lock, [task] {
     return task->terminal && task->frame_destroyed && !task->frame_destroying &&
@@ -171,8 +171,8 @@ objc3_service_status objc3_task_wait_quiescent(objc3_task_t *task) {
   return OBJC3_SERVICE_OK;
 }
 
-void objc3_task_internal_retain(objc3_task_t *task) {
-  task->references.fetch_add(1, std::memory_order_relaxed);
+bool objc3_task_internal_retain(objc3_task_t *task) {
+  return task && objc3::services::try_retain(task->references);
 }
 
 void objc3_task_internal_release(objc3_task_t *task) {
@@ -210,6 +210,11 @@ extern "C" objc3_service_status objc3_task_start(
   auto *task = new (std::nothrow) objc3_task;
   if (!task) return OBJC3_SERVICE_OUT_OF_MEMORY;
   task->executor = objc3_executor_retain(options->executor);
+  if (!task->executor) {
+    task->frame = nullptr;
+    delete task;
+    return OBJC3_SERVICE_NOT_READY;
+  }
   task->frame = options->frame;
   task->frame_destroyed = options->frame == nullptr;
   task->resume = options->resume;
@@ -229,7 +234,13 @@ extern "C" objc3_service_status objc3_task_start(
     std::lock_guard<std::mutex> lock(task->mutex);
     task->resume_queued = true;
   }
-  objc3_task_internal_retain(task); // queued resume owns the task until return
+  if (!objc3_task_internal_retain(task)) {
+    task->frame = nullptr; // Ownership transfers only after start succeeds.
+    objc3_executor_release(task->executor);
+    task->executor = nullptr;
+    delete task;
+    return OBJC3_SERVICE_NOT_READY;
+  }
   const objc3_service_status queued = objc3_executor_enqueue(
       task->executor, objc3_service_run_task_resume, task);
   if (queued != OBJC3_SERVICE_OK) {
@@ -247,8 +258,7 @@ extern "C" objc3_service_status objc3_task_start(
 }
 
 extern "C" objc3_task_t *objc3_task_retain(objc3_task_t *task) {
-  if (task) objc3_task_internal_retain(task);
-  return task;
+  return objc3_task_internal_retain(task) ? task : nullptr;
 }
 
 extern "C" void objc3_task_release(objc3_task_t *task) {
@@ -272,7 +282,11 @@ extern "C" objc3_service_status objc3_task_schedule_resume(objc3_task_t *task) {
     if (task->resume_queued) return OBJC3_SERVICE_OK;
     task->resume_queued = true;
   }
-  objc3_task_internal_retain(task);
+  if (!objc3_task_internal_retain(task)) {
+    std::lock_guard<std::mutex> lock(task->mutex);
+    task->resume_queued = false;
+    return OBJC3_SERVICE_NOT_READY;
+  }
   const objc3_service_status status = objc3_executor_enqueue(
       task->executor, objc3_service_run_task_resume, task);
   if (status != OBJC3_SERVICE_OK) {
@@ -288,7 +302,7 @@ extern "C" objc3_service_status objc3_task_schedule_resume(objc3_task_t *task) {
 extern "C" objc3_service_status objc3_task_complete(
     objc3_task_t *task, const objc3_completion *completion) {
   if (!task) return OBJC3_SERVICE_INVALID_ARGUMENT;
-  objc3_task_internal_retain(task);
+  if (!objc3_task_internal_retain(task)) return OBJC3_SERVICE_NOT_READY;
   TaskReleaseGuard task_guard{task};
   const objc3_service_status validation = validate_completion(completion);
   if (validation != OBJC3_SERVICE_OK) return validation;
@@ -360,7 +374,7 @@ extern "C" objc3_service_status objc3_task_complete(
 extern "C" objc3_service_status objc3_task_add_waiter(
     objc3_task_t *task, objc3_completion_callback callback, void *context) {
   if (!task || !callback) return OBJC3_SERVICE_INVALID_ARGUMENT;
-  objc3_task_internal_retain(task);
+  if (!objc3_task_internal_retain(task)) return OBJC3_SERVICE_NOT_READY;
   TaskReleaseGuard task_guard{task};
   objc3_completion borrowed{};
   bool call_now = false;
@@ -391,7 +405,7 @@ extern "C" objc3_service_status objc3_task_add_waiter(
 
 extern "C" objc3_service_status objc3_task_wait(objc3_task_t *task) {
   if (!task) return OBJC3_SERVICE_INVALID_ARGUMENT;
-  objc3_task_internal_retain(task);
+  if (!objc3_task_internal_retain(task)) return OBJC3_SERVICE_NOT_READY;
   std::unique_lock<std::mutex> lock(task->mutex);
   task->completed.wait(lock, [task] { return task->terminal; });
   lock.unlock();
