@@ -375,7 +375,7 @@ index d63d4c593..b06b47379 100644
      return CreateType(cast<RecordType>(Ty));
    case Type::Enum:
 diff --git a/clang/lib/CodeGen/CGDecl.cpp b/clang/lib/CodeGen/CGDecl.cpp
-index aeecf0bac..631b45263 100644
+index aeecf0bac..c08ed51be 100644
 --- a/clang/lib/CodeGen/CGDecl.cpp
 +++ b/clang/lib/CodeGen/CGDecl.cpp
 @@ -11,6 +11,7 @@
@@ -386,28 +386,131 @@ index aeecf0bac..631b45263 100644
  #include "CGCXXABI.h"
  #include "CGCleanup.h"
  #include "CGDebugInfo.h"
-@@ -1346,6 +1347,21 @@ static llvm::Constant *replaceUndef(CodeGenModule &CGM, IsPattern isPattern,
+@@ -30,6 +31,7 @@
+ #include "clang/AST/DeclObjC.h"
+ #include "clang/AST/DeclOpenACC.h"
+ #include "clang/AST/DeclOpenMP.h"
++#include "clang/AST/Expr.h"
+ #include "clang/Basic/CodeGenOptions.h"
+ #include "clang/Basic/TargetInfo.h"
+ #include "clang/CodeGen/CGFunctionInfo.h"
+@@ -484,6 +486,56 @@ void CodeGenFunction::EmitStaticVarDecl(const VarDecl &D,
+ }
+ 
+ namespace {
++  struct DestroyObjC3CarrierLocal final : EHScopeStack::Cleanup {
++    Address Storage;
++    QualType CarrierType;
++    bool IsVolatile;
++    DestroyObjC3CarrierLocal(Address Storage, QualType CarrierType,
++                             bool IsVolatile)
++        : Storage(Storage), CarrierType(CarrierType), IsVolatile(IsVolatile) {}
++    void Emit(CodeGenFunction &CGF, Flags) override {
++      bool Emitted = CodeGen::emitObjC3CarrierDestroyActivePayload(
++          CGF, CarrierType, Storage, IsVolatile);
++      assert(Emitted && "admitted ObjC3 carrier cleanup became unavailable");
++    }
++  };
++
++  struct ScopedObjC3CarrierLocalInit final {
++    CodeGenFunction &CGF;
++    CodeGenFunction::ObjC3CarrierLocalInitState Saved;
++    ScopedObjC3CarrierLocalInit(CodeGenFunction &CGF, Address Storage,
++                                QualType CarrierType)
++        : CGF(CGF), Saved(CGF.getObjC3CarrierLocalInitState()) {
++      CGF.setObjC3CarrierLocalInitState(
++          {Storage, CarrierType.getUnqualifiedType()});
++    }
++    ~ScopedObjC3CarrierLocalInit() {
++      CGF.setObjC3CarrierLocalInitState(Saved);
++    }
++  };
++
++  bool isDirectObjC3CarrierConstruction(const VarDecl &D,
++                                         QualType CarrierType) {
++    const Expr *Init = D.getInit();
++    if (!Init)
++      return false;
++    while (const auto *WithCleanups = dyn_cast<ExprWithCleanups>(Init))
++      Init = WithCleanups->getSubExpr();
++    Init = Init->IgnoreParenImpCasts();
++    const Type *Ty = CarrierType.getTypePtr();
++    if (isa<ObjC3OptionalType>(Ty)) {
++      const auto *E = dyn_cast<ObjC3OptionalExpr>(Init);
++      return E && (E->getKind() == ObjC3OptionalExpr::Kind::Some ||
++                   E->getKind() == ObjC3OptionalExpr::Kind::None);
++    }
++    if (isa<ObjC3ResultType>(Ty)) {
++      const auto *E = dyn_cast<ObjC3ResultExpr>(Init);
++      return E && (E->getKind() == ObjC3ResultExpr::Kind::Ok ||
++                   E->getKind() == ObjC3ResultExpr::Kind::Err);
++    }
++    return false;
++  }
++
+   struct DestroyObject final : EHScopeStack::Cleanup {
+     DestroyObject(Address addr, QualType type,
+                   CodeGenFunction::Destroyer *destroyer,
+@@ -1346,8 +1398,34 @@ static llvm::Constant *replaceUndef(CodeGenModule &CGM, IsPattern isPattern,
  /// variable declaration with auto, register, or no storage class specifier.
  /// These turn into simple stack objects, or GlobalValues depending on target.
  void CodeGenFunction::EmitAutoVarDecl(const VarDecl &D) {
 +  QualType Canonical = getContext().getCanonicalType(D.getType());
-+  if (isa<ObjC3OptionalType>(Canonical.getTypePtr()) ||
-+      isa<ObjC3ResultType>(Canonical.getTypePtr())) {
-+    if (!CodeGen::supportsPlainObjC3CarrierStorageLifetime(CGM, Canonical)) {
-+      CodeGen::diagnoseUnsupportedObjC3CarrierOperation(
-+          CGM, D.getLocation(), Canonical, "local lifetime");
-+      // The diagnostic rejects this lifetime, but later expressions may still
-+      // reference the declaration while CodeGen recovers. Keep LocalDeclMap
-+      // valid without running initialization or registering destruction.
-+      if (getContext().getObjC3CarrierRepresentationType(Canonical).State ==
-+          ObjC3CarrierRepresentationInfo::Status::Materialized)
-+        (void)EmitAutoVarAlloca(D);
-+      return;
-+    }
++  const bool IsCarrier = isa<ObjC3OptionalType>(Canonical.getTypePtr()) ||
++                         isa<ObjC3ResultType>(Canonical.getTypePtr());
++  const bool IsPlainCarrier =
++      IsCarrier && CodeGen::supportsPlainObjC3CarrierStorageLifetime(CGM,
++                                                                     Canonical);
++  const bool IsDirectCppLocal =
++      IsCarrier && !IsPlainCarrier &&
++      isDirectObjC3CarrierConstruction(D, Canonical) &&
++      CodeGen::supportsObjC3CarrierCppLocalLifetime(CGM, Canonical);
++  if (IsCarrier && !IsPlainCarrier && !IsDirectCppLocal) {
++    CodeGen::diagnoseUnsupportedObjC3CarrierOperation(
++        CGM, D.getLocation(), Canonical, "local lifetime");
++    // Keep LocalDeclMap valid for recovery, without evaluating an initializer
++    // or registering a cleanup for a carrier whose active arm is unknown.
++    if (getContext().getObjC3CarrierRepresentationType(Canonical).State ==
++        ObjC3CarrierRepresentationInfo::Status::Materialized)
++      (void)EmitAutoVarAlloca(D);
++    return;
 +  }
    AutoVarEmission emission = EmitAutoVarAlloca(D);
-   EmitAutoVarInit(emission);
+-  EmitAutoVarInit(emission);
++  if (IsDirectCppLocal) {
++    ScopedObjC3CarrierLocalInit Context(
++        *this, emission.getObjectAddress(*this), Canonical);
++    EmitAutoVarInit(emission);
++  } else {
++    EmitAutoVarInit(emission);
++  }
    EmitAutoVarCleanups(emission);
+ }
+ 
+@@ -2211,9 +2289,21 @@ void CodeGenFunction::EmitAutoVarCleanups(const AutoVarEmission &emission) {
+ 
+   const VarDecl &D = *emission.Variable;
+ 
+-  // Check the type for a cleanup.
+-  if (QualType::DestructionKind dtorKind = D.needsDestruction(getContext()))
++  // Register extension cleanup only after successful initialization, so a
++  // throwing payload constructor never reads the carrier's uninitialized tag.
++  QualType Canonical = getContext().getCanonicalType(D.getType());
++  bool IsCarrier = isa<ObjC3OptionalType>(Canonical.getTypePtr()) ||
++                   isa<ObjC3ResultType>(Canonical.getTypePtr());
++  if (IsCarrier && isDirectObjC3CarrierConstruction(D, Canonical) &&
++      CodeGen::supportsObjC3CarrierCppLocalLifetime(CGM, Canonical) &&
++      CodeGen::hasObjC3CarrierCppLocalDestructor(CGM, Canonical)) {
++    EHStack.pushCleanup<DestroyObjC3CarrierLocal>(
++        NormalAndEHCleanup, emission.getObjectAddress(*this), Canonical,
++        D.getType().isVolatileQualified());
++  } else if (QualType::DestructionKind dtorKind =
++                 D.needsDestruction(getContext())) {
+     emitAutoVarTypeCleanup(emission, dtorKind);
++  }
+ 
+   // In GC mode, honor objc_precise_lifetime.
+   if (getLangOpts().getGC() != LangOptions::NonGC &&
 diff --git a/clang/lib/CodeGen/CGExpr.cpp b/clang/lib/CodeGen/CGExpr.cpp
 index 24878710d..b673725b6 100644
 --- a/clang/lib/CodeGen/CGExpr.cpp
@@ -472,7 +575,7 @@ index 24878710d..b673725b6 100644
    if (!CallOrInvoke) {
      CallOrInvoke = &CallOrInvokeStorage;
 diff --git a/clang/lib/CodeGen/CGExprAgg.cpp b/clang/lib/CodeGen/CGExprAgg.cpp
-index 7cc4d6c8f..c59a290c4 100644
+index 7cc4d6c8f..7d0f7f7a3 100644
 --- a/clang/lib/CodeGen/CGExprAgg.cpp
 +++ b/clang/lib/CodeGen/CGExprAgg.cpp
 @@ -11,6 +11,9 @@
@@ -485,26 +588,32 @@ index 7cc4d6c8f..c59a290c4 100644
  #include "CGDebugInfo.h"
  #include "CGHLSLRuntime.h"
  #include "CGObjCRuntime.h"
-@@ -235,6 +238,18 @@ public:
+@@ -235,6 +238,24 @@ public:
    void EmitInitializationToLValue(Expr *E, LValue Address);
    void EmitNullInitializationToLValue(LValue Address);
    //  case Expr::ChooseExprClass:
 +  // H4 carrier expression visitor hooks: scalar queries stay in
 +  // CGExprScalar; aggregate constructors initialize only their active arm.
 +  void VisitObjC3OptionalExpr(ObjC3OptionalExpr *E) {
++    bool IsLocalCarrierInitialization = CGF.isObjC3CarrierLocalInitialization(
++        Dest.getAddress(), E->getCarrierType());
 +    if (!CodeGen::emitObjC3OptionalAggregateExpr(
-+            CGF, *E, Dest.getAddress(), Dest.isIgnored(), Dest.isVolatile()))
++            CGF, *E, Dest.getAddress(), Dest.isIgnored(), Dest.isVolatile(),
++            IsLocalCarrierInitialization))
 +      CGF.ErrorUnsupported(E, "ObjC3 Optional aggregate expression");
 +  }
 +  void VisitObjC3ResultExpr(ObjC3ResultExpr *E) {
++    bool IsLocalCarrierInitialization = CGF.isObjC3CarrierLocalInitialization(
++        Dest.getAddress(), E->getCarrierType());
 +    if (!CodeGen::emitObjC3ResultAggregateExpr(
-+            CGF, *E, Dest.getAddress(), Dest.isIgnored(), Dest.isVolatile()))
++            CGF, *E, Dest.getAddress(), Dest.isIgnored(), Dest.isVolatile(),
++            IsLocalCarrierInitialization))
 +      CGF.ErrorUnsupported(E, "ObjC3 Result aggregate expression");
 +  }
    void VisitCXXThrowExpr(const CXXThrowExpr *E) { CGF.EmitCXXThrowExpr(E); }
    void VisitAtomicExpr(AtomicExpr *E) {
      RValue Res = CGF.EmitAtomicExpr(E);
-@@ -356,6 +371,35 @@ void AggExprEmitter::EmitFinalDestCopy(
+@@ -356,6 +377,35 @@ void AggExprEmitter::EmitFinalDestCopy(
    if (Dest.isIgnored())
      return;
  
@@ -540,7 +649,7 @@ index 7cc4d6c8f..c59a290c4 100644
    // Copy non-trivial C structs here.
    LValue DstLV = CGF.MakeAddrLValue(
        Dest.getAddress(), Dest.isVolatile() ? type.withVolatile() : type);
-@@ -390,6 +434,10 @@ void AggExprEmitter::EmitFinalDestCopy(
+@@ -390,6 +440,10 @@ void AggExprEmitter::EmitFinalDestCopy(
  ///   ignored
  void AggExprEmitter::EmitCopy(QualType type, const AggValueSlot &dest,
                                const AggValueSlot &src) {
@@ -551,7 +660,7 @@ index 7cc4d6c8f..c59a290c4 100644
    if (dest.requiresGCollection()) {
      CharUnits sz = dest.getPreferredSize(CGF.getContext(), type);
      llvm::Value *size = llvm::ConstantInt::get(CGF.SizeTy, sz.getQuantity());
-@@ -828,6 +876,14 @@ void AggExprEmitter::VisitCastExpr(CastExpr *E) {
+@@ -828,6 +882,14 @@ void AggExprEmitter::VisitCastExpr(CastExpr *E) {
    }
  
    case CK_LValueToRValueBitCast: {
@@ -566,7 +675,7 @@ index 7cc4d6c8f..c59a290c4 100644
      if (Dest.isIgnored()) {
        CGF.EmitAnyExpr(E->getSubExpr(), AggValueSlot::ignored(),
                        /*ignoreResult=*/true);
-@@ -1298,6 +1354,25 @@ void AggExprEmitter::VisitBinAssign(const BinaryOperator *E) {
+@@ -1298,6 +1360,25 @@ void AggExprEmitter::VisitBinAssign(const BinaryOperator *E) {
                                                   E->getRHS()->getType())
           && "Invalid assignment");
  
@@ -592,7 +701,7 @@ index 7cc4d6c8f..c59a290c4 100644
    // If the LHS might be a __block variable, and the RHS can
    // potentially cause a block copy, we need to evaluate the RHS first
    // so that the assignment goes the right place.
-@@ -2248,7 +2323,37 @@ void CodeGenFunction::EmitAggregateCopy(LValue Dest, LValue Src, QualType Ty,
+@@ -2248,7 +2329,37 @@ void CodeGenFunction::EmitAggregateCopy(LValue Dest, LValue Src, QualType Ty,
                                          AggValueSlot::Overlap_t MayOverlap,
                                          bool isVolatile) {
    assert(!Ty->isAnyComplexType() && "Shouldn't happen for complex");
@@ -826,6 +935,41 @@ index 6c0589be3..a98a899d2 100644
    CurGD = GD;
  
    FunctionArgList Args;
+diff --git a/clang/lib/CodeGen/CodeGenFunction.h b/clang/lib/CodeGen/CodeGenFunction.h
+index 13c8f2002..9f80d0208 100644
+--- a/clang/lib/CodeGen/CodeGenFunction.h
++++ b/clang/lib/CodeGen/CodeGenFunction.h
+@@ -278,6 +278,30 @@ public:
+   CodeGenModule &CGM; // Per-module state.
+   const TargetInfo &Target;
+ 
++  // ObjC3 nontrivial payload construction is admitted only while initializing
++  // the exact direct carrier local that owns the destination storage.
++  struct ObjC3CarrierLocalInitState {
++    Address Storage = Address::invalid();
++    QualType CarrierType;
++  };
++  ObjC3CarrierLocalInitState ObjC3CarrierLocalInit;
++  ObjC3CarrierLocalInitState getObjC3CarrierLocalInitState() const {
++    return ObjC3CarrierLocalInit;
++  }
++  void setObjC3CarrierLocalInitState(ObjC3CarrierLocalInitState State) {
++    ObjC3CarrierLocalInit = State;
++  }
++  bool isObjC3CarrierLocalInitialization(Address Storage,
++                                         QualType CarrierType) const {
++    return Storage.isValid() && !Storage.isSigned() &&
++           ObjC3CarrierLocalInit.Storage.isValid() &&
++           !ObjC3CarrierLocalInit.Storage.isSigned() &&
++           !Storage.hasOffset() && !ObjC3CarrierLocalInit.Storage.hasOffset() &&
++           Storage.getBasePointer() ==
++               ObjC3CarrierLocalInit.Storage.getBasePointer() &&
++           CarrierType == ObjC3CarrierLocalInit.CarrierType;
++  }
++
+   // For EH/SEH outlined funclets, this field points to parent's CGF
+   CodeGenFunction *ParentCGF = nullptr;
+ 
 diff --git a/clang/lib/CodeGen/CodeGenModule.cpp b/clang/lib/CodeGen/CodeGenModule.cpp
 index 85ed38f14..58e347aea 100644
 --- a/clang/lib/CodeGen/CodeGenModule.cpp
@@ -1226,7 +1370,7 @@ diff --git a/clang/lib/CodeGen/CGObjC3Carriers.cpp b/clang/lib/CodeGen/CGObjC3Ca
 new file mode 100644
 --- /dev/null
 +++ b/clang/lib/CodeGen/CGObjC3Carriers.cpp
-@@ -0,0 +1,924 @@
+@@ -0,0 +1,1106 @@
 +//===--- CGObjC3Carriers.cpp - ObjC3 carrier CodeGen adapter ----*- C++ -*-===//
 +//
 +//===----------------------------------------------------------------------===//
@@ -1338,17 +1482,9 @@ new file mode 100644
 +  Result.StorageType = Outer.getLLVMType();
 +  Result.TagField = Outer.getLLVMFieldNo(Info.TagField);
 +  if (Info.PayloadField) {
-+    Result.PayloadField = Outer.getLLVMFieldNo(Info.PayloadField);
 +    if (!Info.PayloadUnion)
 +      return false;
-+    const CGRecordLayout &Union =
-+        CGM.getTypes().getCGRecordLayout(Info.PayloadUnion);
-+    if (Info.ValueField)
-+      Result.ValueField = Union.getLLVMFieldNo(Info.ValueField);
-+    if (Info.SuccessField)
-+      Result.SuccessField = Union.getLLVMFieldNo(Info.SuccessField);
-+    if (Info.ErrorField)
-+      Result.ErrorField = Union.getLLVMFieldNo(Info.ErrorField);
++    Result.HasPayloadStorage = true;
 +  }
 +
 +  // Guard against accidental disagreement between AST representation identity
@@ -1383,34 +1519,35 @@ new file mode 100644
 +      !Layout.hasPayloadStorage())
 +    return Address::invalid();
 +
-+  unsigned ArmField = ~0U;
++  uint64_t ArmOffsetBits = 0;
 +  FieldDecl *SourceField = nullptr;
 +  auto Info = CGF.getContext().getObjC3CarrierRepresentationType(CarrierType);
 +  switch (Arm) {
 +  case ObjC3CarrierPayloadArm::Value:
-+    ArmField = Layout.ValueField;
++    ArmOffsetBits = Info.ValueOffsetBits;
 +    SourceField = Info.ValueField;
 +    break;
 +  case ObjC3CarrierPayloadArm::Success:
-+    ArmField = Layout.SuccessField;
++    ArmOffsetBits = Info.SuccessOffsetBits;
 +    SourceField = Info.SuccessField;
 +    break;
 +  case ObjC3CarrierPayloadArm::Error:
-+    ArmField = Layout.ErrorField;
++    ArmOffsetBits = Info.ErrorOffsetBits;
 +    SourceField = Info.ErrorField;
 +    break;
 +  }
-+  if (ArmField == ~0U || !SourceField)
++  const unsigned CharWidth = CGF.getContext().getCharWidth();
++  if (!SourceField || ArmOffsetBits % CharWidth)
 +    return Address::invalid();
-+  Address UnionStorage = CGF.Builder.CreateStructGEP(
-+      CarrierStorage, Layout.PayloadField, "objc3.carrier.payload.addr");
-+  // Union member field numbers often all refer to physical element zero, whose
-+  // LLVM type is selected from a different/larger member. Keep the union's
-+  // target offset and alignment, but type this address from the selected
-+  // source FieldDecl rather than inheriting an unrelated union member type.
++  // Empty C++ fields may have no physical LLVM field number. The AST's native
++  // record layout still owns their byte offset and required object address.
++  // Using that offset also avoids inheriting another union arm's memory type.
++  Address PayloadStorage = CGF.Builder.CreateConstInBoundsByteGEP(
++      CarrierStorage.withElementType(CGF.Int8Ty),
++      CharUnits::fromQuantity(ArmOffsetBits / CharWidth),
++      "objc3.carrier.payload.addr");
 +  llvm::Type *ArmMemoryType = CGF.ConvertTypeForMem(SourceField->getType());
-+  return Address(UnionStorage.getBasePointer(), ArmMemoryType,
-+                 UnionStorage.getAlignment(), UnionStorage.isKnownNonNull());
++  return PayloadStorage.withElementType(ArmMemoryType);
 +}
 +
 +llvm::Value *CodeGen::emitObjC3CarrierLoadTag(CodeGenFunction &CGF,
@@ -1442,14 +1579,17 @@ new file mode 100644
 +// H4 OPTIONAL EXPR LOWERING BEGIN.
 +bool CodeGen::emitObjC3OptionalAggregateExpr(
 +    CodeGenFunction &CGF, const ObjC3OptionalExpr &E, Address Destination,
-+    bool DestinationIsIgnored, bool DestinationIsVolatile) {
++    bool DestinationIsIgnored, bool DestinationIsVolatile,
++    bool IsLocalCarrierInitialization) {
 +  const QualType CarrierType = E.getCarrierType();
 +  const bool IsNone = E.getKind() == ObjC3OptionalExpr::Kind::None;
 +  const bool IsSome = E.getKind() == ObjC3OptionalExpr::Kind::Some;
 +  if (!IsNone && !IsSome)
 +    return false;
 +
-+  if (!supportsPlainObjC3CarrierStorageLifetime(CGF.CGM, CarrierType)) {
++  if (!supportsPlainObjC3CarrierStorageLifetime(CGF.CGM, CarrierType) &&
++      !(IsLocalCarrierInitialization && !DestinationIsIgnored &&
++        supportsObjC3CarrierCppLocalLifetime(CGF.CGM, CarrierType))) {
 +    diagnoseUnsupportedObjC3CarrierOperation(
 +        CGF.CGM, E.getKeywordLoc(), CarrierType,
 +        IsSome ? "Some construction" : "None construction");
@@ -1923,6 +2063,192 @@ new file mode 100644
 +  return true;
 +}
 +
++namespace {
++
++bool hasNoNestedManagedCarrierFields(
++    ASTContext &Ctx, QualType T,
++    llvm::SmallPtrSetImpl<const CXXRecordDecl *> &Seen) {
++  if (T.isNull())
++    return false;
++  T = Ctx.getCanonicalType(T);
++  const Type *Ty = T.getTypePtr();
++  if (isa<ObjC3OptionalType>(Ty) || isa<ObjC3ResultType>(Ty) ||
++      Ty->isObjCObjectPointerType() || Ty->isBlockPointerType() ||
++      Ty->isObjCObjectType() || T.getObjCLifetime() != Qualifiers::OCL_None)
++    return false;
++  if (const auto *AT = Ctx.getAsArrayType(T))
++    return isa<ConstantArrayType>(AT) &&
++           hasNoNestedManagedCarrierFields(Ctx, AT->getElementType(), Seen);
++  if (const auto *RT = T->getAs<RecordType>()) {
++    const RecordDecl *RD = RT->getDecl();
++    const RecordDecl *Definition = RD->getDefinition();
++    if (!Definition || !Definition->isCompleteDefinition())
++      return false;
++    if (const auto *CXX = dyn_cast<CXXRecordDecl>(Definition)) {
++      if (!Seen.insert(CXX->getCanonicalDecl()).second)
++        return true;
++      for (const CXXBaseSpecifier &Base : CXX->bases())
++        if (!hasNoNestedManagedCarrierFields(Ctx, Base.getType(), Seen))
++          return false;
++    }
++    for (const FieldDecl *Field : Definition->fields())
++      if (!hasNoNestedManagedCarrierFields(Ctx, Field->getType(), Seen))
++        return false;
++    return true;
++  }
++  // Pointer pointees do not form owned subobjects. Qualifiers on the pointer
++  // itself were checked above; ordinary C++ destruction owns pointed-to state.
++  return true;
++}
++
++bool isEligibleCarrierCppLocalArm(ASTContext &Ctx, QualType T) {
++  if (T.isNull())
++    return false;
++  if (T->isVoidType())
++    return true;
++  llvm::SmallPtrSet<const CXXRecordDecl *, 8> Seen;
++  if (!hasNoNestedManagedCarrierFields(Ctx, T, Seen))
++    return false;
++  if (const auto *RT = T->getAs<RecordType>()) {
++    const RecordDecl *RD = RT->getDecl();
++    if (const auto *CXX = dyn_cast<CXXRecordDecl>(RD)) {
++      if (!CXX->isCompleteDefinition())
++        return false;
++      if (!CXX->hasTrivialDestructor()) {
++        const CXXDestructorDecl *Dtor = CXX->getDestructor();
++        // The current semantic lane does not yet call CheckDestructorAccess
++        // for carrier locals. Require an unambiguous public destructor here.
++        if (!Dtor || Dtor->isDeleted() || Dtor->getAccess() != AS_public)
++          return false;
++      }
++      return true;
++    }
++    return hasOnlyTrivialCallABILeaves(Ctx, T);
++  }
++  return hasOnlyTrivialCallABILeaves(Ctx, T);
++}
++
++bool isNontrivialCXXDestructor(QualType T) {
++  if (T.isNull() || T.isDestructedType() != QualType::DK_cxx_destructor)
++    return false;
++  const CXXRecordDecl *RD = T->getAsCXXRecordDecl();
++  const CXXDestructorDecl *Dtor = RD ? RD->getDestructor() : nullptr;
++  // CodeGen has no use-site access context. Keep this lane to an unambiguous
++  // destructor call until Sema wires carrier destruction access checking.
++  return Dtor && !Dtor->isDeleted() && Dtor->getAccess() == AS_public;
++}
++
++} // namespace
++
++bool CodeGen::supportsObjC3CarrierCppLocalLifetime(CodeGenModule &CGM,
++                                                    QualType CarrierType) {
++  ASTContext &Ctx = CGM.getContext();
++  const Type *Canonical = Ctx.getCanonicalType(CarrierType).getTypePtr();
++  if (!isa<ObjC3OptionalType>(Canonical) && !isa<ObjC3ResultType>(Canonical))
++    return false;
++  auto Info = Ctx.getObjC3CarrierRepresentationType(CarrierType);
++  if (Info.State != ObjC3CarrierRepresentationInfo::Status::Materialized)
++    return false;
++  return (!Info.ValueField ||
++          isEligibleCarrierCppLocalArm(Ctx, Info.ValueField->getType())) &&
++         (!Info.SuccessField ||
++          isEligibleCarrierCppLocalArm(Ctx, Info.SuccessField->getType())) &&
++         (!Info.ErrorField ||
++          isEligibleCarrierCppLocalArm(Ctx, Info.ErrorField->getType()));
++}
++
++bool CodeGen::hasObjC3CarrierCppLocalDestructor(CodeGenModule &CGM,
++                                                 QualType CarrierType) {
++  ASTContext &Ctx = CGM.getContext();
++  auto Info = Ctx.getObjC3CarrierRepresentationType(CarrierType);
++  return isNontrivialCXXDestructor(
++             Info.ValueField ? Info.ValueField->getType() : QualType()) ||
++         isNontrivialCXXDestructor(
++             Info.SuccessField ? Info.SuccessField->getType() : QualType()) ||
++         isNontrivialCXXDestructor(
++             Info.ErrorField ? Info.ErrorField->getType() : QualType());
++}
++
++bool CodeGen::emitObjC3CarrierDestroyActivePayload(
++    CodeGenFunction &CGF, QualType CarrierType, Address CarrierStorage,
++    bool IsVolatile) {
++  ASTContext &Ctx = CGF.getContext();
++  auto Info = Ctx.getObjC3CarrierRepresentationType(CarrierType);
++  const Type *Canonical = Ctx.getCanonicalType(CarrierType).getTypePtr();
++  const bool IsOptional = isa<ObjC3OptionalType>(Canonical);
++  const bool IsResult = isa<ObjC3ResultType>(Canonical);
++  if ((!IsOptional && !IsResult) ||
++      !supportsObjC3CarrierCppLocalLifetime(CGF.CGM, CarrierType))
++    return false;
++
++  QualType ValueType = Info.ValueField ? Info.ValueField->getType() : QualType();
++  QualType SuccessType =
++      Info.SuccessField ? Info.SuccessField->getType() : QualType();
++  QualType ErrorType = Info.ErrorField ? Info.ErrorField->getType() : QualType();
++  const bool DestroysValue = IsOptional && isNontrivialCXXDestructor(ValueType);
++  const bool DestroysSuccess = IsResult && isNontrivialCXXDestructor(SuccessType);
++  const bool DestroysError = IsResult && isNontrivialCXXDestructor(ErrorType);
++  if (!DestroysValue && !DestroysSuccess && !DestroysError)
++    return true;
++
++  llvm::Value *Tag = emitObjC3CarrierLoadTag(CGF, CarrierStorage, CarrierType,
++                                              SourceLocation(), IsVolatile);
++  if (!Tag)
++    return false;
++  auto DestroyArm = [&](ObjC3CarrierPayloadArm Arm, QualType PayloadType) {
++    Address Payload = getObjC3CarrierPayloadAddress(
++        CGF, CarrierStorage, CarrierType, Arm);
++    if (!Payload.isValid())
++      return false;
++    if (IsVolatile)
++      PayloadType = PayloadType.withVolatile();
++    CGF.emitDestroy(Payload, PayloadType,
++                    CGF.getDestroyer(QualType::DK_cxx_destructor),
++                    /*useEHCleanupForArray=*/false);
++    return true;
++  };
++  llvm::BasicBlock *Done = CGF.createBasicBlock("objc3.carrier.dtor.done");
++  if (DestroysValue) {
++    llvm::BasicBlock *Destroy =
++        CGF.createBasicBlock("objc3.carrier.dtor.present");
++    CGF.Builder.CreateCondBr(Tag, Destroy, Done);
++    CGF.EmitBlock(Destroy);
++    if (!DestroyArm(ObjC3CarrierPayloadArm::Value, ValueType))
++      return false;
++    CGF.Builder.CreateBr(Done);
++  } else if (DestroysSuccess && DestroysError) {
++    llvm::BasicBlock *DestroySuccess =
++        CGF.createBasicBlock("objc3.result.dtor.success");
++    llvm::BasicBlock *DestroyError =
++        CGF.createBasicBlock("objc3.result.dtor.error");
++    CGF.Builder.CreateCondBr(Tag, DestroySuccess, DestroyError);
++    CGF.EmitBlock(DestroySuccess);
++    if (!DestroyArm(ObjC3CarrierPayloadArm::Success, SuccessType))
++      return false;
++    CGF.Builder.CreateBr(Done);
++    CGF.EmitBlock(DestroyError);
++    if (!DestroyArm(ObjC3CarrierPayloadArm::Error, ErrorType))
++      return false;
++    CGF.Builder.CreateBr(Done);
++  } else {
++    const bool DestroyOnSuccess = DestroysSuccess;
++    llvm::BasicBlock *Destroy =
++        CGF.createBasicBlock("objc3.carrier.dtor.selected");
++    llvm::Value *ShouldDestroy = DestroyOnSuccess
++                                     ? Tag
++                                     : CGF.Builder.CreateNot(Tag);
++    CGF.Builder.CreateCondBr(ShouldDestroy, Destroy, Done);
++    CGF.EmitBlock(Destroy);
++    if (!DestroyArm(DestroyOnSuccess ? ObjC3CarrierPayloadArm::Success
++                                     : ObjC3CarrierPayloadArm::Error,
++                    DestroyOnSuccess ? SuccessType : ErrorType))
++      return false;
++    CGF.Builder.CreateBr(Done);
++  }
++  CGF.EmitBlock(Done);
++  return true;
++}
++
 +bool CodeGen::supportsPlainObjC3CarrierStorageLifetime(CodeGenModule &CGM,
 +                                                       QualType CarrierType) {
 +  ASTContext &Ctx = CGM.getContext();
@@ -2155,7 +2481,7 @@ diff --git a/clang/lib/CodeGen/CGObjC3Carriers.h b/clang/lib/CodeGen/CGObjC3Carr
 new file mode 100644
 --- /dev/null
 +++ b/clang/lib/CodeGen/CGObjC3Carriers.h
-@@ -0,0 +1,174 @@
+@@ -0,0 +1,188 @@
 +//===--- CGObjC3Carriers.h - ObjC3 carrier CodeGen adapter ------*- C++ -*-===//
 +//
 +// Staged adapter for canonical ObjC3 Optional/Result storage.  This header is
@@ -2179,24 +2505,22 @@ new file mode 100644
 +class QualType;
 +class SourceLocation;
 +class ObjC3OptionalExpr;
++class Expr;
 +namespace CodeGen {
 +class CodeGenModule;
 +class CodeGenFunction;
 +
 +enum class ObjC3CarrierPayloadArm : unsigned char { Value, Success, Error };
 +
-+/// LLVM field numbers for the hidden Clang record produced by ASTContext.
-+/// PayloadField is absent for tag-only (void) carriers. The payload indexes
-+/// name fields in the hidden union, not fields in the outer record.
++/// Physical memory type and tag field for the AST-owned hidden carrier record.
++/// A payload can have storage even when an empty C++ field is omitted from the
++/// physical LLVM record. Payload addresses use AST field offsets instead.
 +struct ObjC3CarrierStorageLayout {
 +  llvm::StructType *StorageType = nullptr;
 +  unsigned TagField = ~0U;
-+  unsigned PayloadField = ~0U;
-+  unsigned ValueField = ~0U;
-+  unsigned SuccessField = ~0U;
-+  unsigned ErrorField = ~0U;
++  bool HasPayloadStorage = false;
 +
-+  bool hasPayloadStorage() const { return PayloadField != ~0U; }
++  bool hasPayloadStorage() const { return HasPayloadStorage; }
 +};
 +
 +/// Translate only the representation already owned by ASTContext. This uses
@@ -2231,7 +2555,8 @@ new file mode 100644
 +                                    const ObjC3OptionalExpr &E,
 +                                    Address Destination,
 +                                    bool DestinationIsIgnored,
-+                                    bool DestinationIsVolatile);
++                                    bool DestinationIsVolatile,
++                                    bool IsLocalCarrierInitialization = false);
 +
 +/// Evaluate HasValue's carrier operand once, then read only the explicit tag.
 +/// Unsupported payload ownership is diagnosed before any generic copy path.
@@ -2313,6 +2638,21 @@ new file mode 100644
 +bool supportsPlainObjC3CarrierStorageLifetime(CodeGenModule &CGM,
 +                                              QualType CarrierType);
 +
++/// True for materialized direct Optional/Result storage whose selected payload
++/// can use ordinary C++ construction/destruction. Nested carriers, ARC-bearing
++/// subobjects, nontrivial C records, and incomplete payloads remain rejected.
++bool supportsObjC3CarrierCppLocalLifetime(CodeGenModule &CGM,
++                                           QualType CarrierType);
++bool hasObjC3CarrierCppLocalDestructor(CodeGenModule &CGM,
++                                        QualType CarrierType);
++/// Destroy only the active C++ payload arm using Clang's ordinary destroyer.
++/// The caller must have registered a NormalAndEH cleanup after successful
++/// aggregate initialization; the discriminant is never read earlier.
++bool emitObjC3CarrierDestroyActivePayload(CodeGenFunction &CGF,
++                                          QualType CarrierType,
++                                          Address CarrierStorage,
++                                          bool IsVolatile);
++
 +/// Diagnose a function type that passes a carrier itself, or a complete
 +/// aggregate containing a carrier, by value. Pointer pointees are not walked.
 +bool diagnoseUnsupportedObjC3CarrierByValue(CodeGenModule &CGM,
@@ -2334,7 +2674,7 @@ diff --git a/clang/lib/CodeGen/CGObjC3ResultExpr.cpp b/clang/lib/CodeGen/CGObjC3
 new file mode 100644
 --- /dev/null
 +++ b/clang/lib/CodeGen/CGObjC3ResultExpr.cpp
-@@ -0,0 +1,273 @@
+@@ -0,0 +1,276 @@
 +//===--- CGObjC3ResultExpr.cpp - Private Result expression lowering
 +//---------===//
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -2354,7 +2694,8 @@ new file mode 100644
 +                                           const ObjC3ResultExpr &E,
 +                                           Address Destination,
 +                                           bool DestinationIsIgnored,
-+                                           bool DestinationIsVolatile) {
++                                           bool DestinationIsVolatile,
++                                           bool IsLocalCarrierInitialization) {
 +  const bool IsOk = E.getKind() == ObjC3ResultExpr::Kind::Ok;
 +  const bool IsErr = E.getKind() == ObjC3ResultExpr::Kind::Err;
 +  if (!IsOk && !IsErr)
@@ -2375,7 +2716,9 @@ new file mode 100644
 +        "unmaterialized Result construction");
 +    return true;
 +  }
-+  if (!supportsPlainObjC3CarrierStorageLifetime(CGF.CGM, CarrierType)) {
++  if (!supportsPlainObjC3CarrierStorageLifetime(CGF.CGM, CarrierType) &&
++      !(IsLocalCarrierInitialization && !DestinationIsIgnored &&
++        supportsObjC3CarrierCppLocalLifetime(CGF.CGM, CarrierType))) {
 +    diagnoseUnsupportedObjC3CarrierOperation(
 +        CGF.CGM, E.getKeywordLoc(), CarrierType,
 +        IsOk ? "Ok construction" : "Err construction");
@@ -2612,7 +2955,7 @@ diff --git a/clang/lib/CodeGen/CGObjC3ResultExpr.h b/clang/lib/CodeGen/CGObjC3Re
 new file mode 100644
 --- /dev/null
 +++ b/clang/lib/CodeGen/CGObjC3ResultExpr.h
-@@ -0,0 +1,32 @@
+@@ -0,0 +1,33 @@
 +//===--- CGObjC3ResultExpr.h - Private Result expression lowering
 +//----------===//
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -2633,7 +2976,8 @@ new file mode 100644
 +bool emitObjC3ResultAggregateExpr(CodeGenFunction &CGF,
 +                                  const ObjC3ResultExpr &E, Address Destination,
 +                                  bool DestinationIsIgnored,
-+                                  bool DestinationIsVolatile);
++                                  bool DestinationIsVolatile,
++                                  bool IsLocalCarrierInitialization = false);
 +llvm::Value *emitObjC3ResultIsOkExpr(CodeGenFunction &CGF,
 +                                     const ObjC3ResultExpr &E);
 +/// Copy a Result through its tag and only the selected active arm. Sema has
@@ -2720,6 +3064,130 @@ new file mode 100644
 +  return 0;
 +}
 \ No newline at end of file
+diff --git a/clang/test/ObjC3/CodeGen/Inputs/carrier-cxx-local-lifetime-runtime.cpp b/clang/test/ObjC3/CodeGen/Inputs/carrier-cxx-local-lifetime-runtime.cpp
+new file mode 100644
+--- /dev/null
++++ b/clang/test/ObjC3/CodeGen/Inputs/carrier-cxx-local-lifetime-runtime.cpp
+@@ -0,0 +1,119 @@
++#include <stddef.h>
++
++extern "C" int lifetime_events[1024];
++extern "C" void lifetime_event(int code) { ++lifetime_events[code]; }
++extern "C" int lifetime_events[1024] = {};
++
++struct Source {
++  int value;
++  explicit Source(int value) : value(value) { lifetime_event(500 + value); }
++  ~Source() { lifetime_event(600 + value); }
++};
++struct Tracked {
++  int value;
++  explicit Tracked(int value) : value(value) { lifetime_event(100 + value); }
++  Tracked(Source &&source) : value(source.value) {
++    lifetime_event(100 + value);
++  }
++  Tracked(const Tracked &) = delete;
++  Tracked(Tracked &&) = delete;
++  ~Tracked() { lifetime_event(200 + value); }
++};
++struct Failure {
++  int value;
++  explicit Failure(int value) : value(value) { lifetime_event(300 + value); }
++  Failure(const Failure &) = delete;
++  Failure(Failure &&) = delete;
++  ~Failure() { lifetime_event(400 + value); }
++};
++struct Throwing {
++  explicit Throwing(int) { throw 9; }
++  ~Throwing() { lifetime_event(700); }
++};
++struct alignas(32) Empty {
++  Empty() {
++    lifetime_event(710);
++    if (reinterpret_cast<__UINTPTR_TYPE__>(this) % alignof(Empty))
++      lifetime_event(712);
++  }
++  ~Empty() { lifetime_event(711); }
++};
++typedef __objc3_optional(Tracked) MaybeTracked;
++typedef __objc3_optional(Throwing) MaybeThrowing;
++typedef __objc3_result(Tracked, Failure) TrackedResult;
++typedef __objc3_optional(Empty) MaybeEmpty;
++typedef __objc3_result(Empty, Failure) EmptyResult;
++
++static void unwind_optional() {
++  MaybeTracked local = __objc3_some(Tracked, Tracked(7));
++  throw 1;
++}
++static void unwind_result_error() {
++  TrackedResult local = __objc3_err(Tracked, Failure, Failure(8));
++  throw 2;
++}
++static void throw_during_payload_construction() {
++  MaybeThrowing local = __objc3_some(Throwing, Throwing(9));
++  (void)local;
++}
++
++int main() {
++  {
++    MaybeTracked some = __objc3_some(Tracked, Tracked(1));
++    if (lifetime_events[201] != 0) return 1;
++  }
++  if (lifetime_events[201] != 1) return 2;
++  {
++    MaybeTracked fromSource = __objc3_some(Tracked, Source(6));
++    if (lifetime_events[606] != 1 || lifetime_events[206] != 0) return 8;
++  }
++  if (lifetime_events[206] != 1) return 9;
++  {
++    MaybeTracked none = __objc3_none(Tracked);
++    (void)none;
++  }
++  if (lifetime_events[201] != 1) return 3;
++  {
++    TrackedResult ok = __objc3_ok(Tracked, Failure, Tracked(2));
++    (void)ok;
++  }
++  if (lifetime_events[202] != 1 || lifetime_events[402] != 0) return 4;
++  {
++    TrackedResult err = __objc3_err(Tracked, Failure, Failure(3));
++    (void)err;
++  }
++  if (lifetime_events[403] != 1 || lifetime_events[203] != 0) return 5;
++  try { unwind_optional(); } catch (...) {}
++  if (lifetime_events[207] != 1) return 6;
++  try { unwind_result_error(); } catch (...) {}
++  if (lifetime_events[408] != 1 || lifetime_events[208] != 0) return 7;
++  try { throw_during_payload_construction(); } catch (...) {}
++  if (lifetime_events[700] != 0) return 10;
++  {
++    const MaybeTracked local = __objc3_some(Tracked, Tracked(10));
++    if (lifetime_events[210] != 0) return 11;
++  }
++  if (lifetime_events[210] != 1) return 12;
++  {
++    const MaybeEmpty local = __objc3_some(Empty, Empty());
++    if (lifetime_events[710] != 1 || lifetime_events[711] != 0) return 13;
++  }
++  if (lifetime_events[711] != 1 || lifetime_events[712] != 0) return 14;
++  {
++    MaybeEmpty absent = __objc3_none(Empty);
++    (void)absent;
++  }
++  if (lifetime_events[710] != 1 || lifetime_events[711] != 1) return 15;
++  {
++    EmptyResult present = __objc3_ok(Empty, Failure, Empty());
++    (void)present;
++  }
++  if (lifetime_events[710] != 2 || lifetime_events[711] != 2 ||
++      lifetime_events[712] != 0) return 16;
++  {
++    EmptyResult error = __objc3_err(Empty, Failure, Failure(11));
++    (void)error;
++  }
++  if (lifetime_events[711] != 2 || lifetime_events[411] != 1) return 17;
++  return 0;
++}
 diff --git a/clang/test/ObjC3/CodeGen/Inputs/carrier-expression-adversarial-runtime.c b/clang/test/ObjC3/CodeGen/Inputs/carrier-expression-adversarial-runtime.c
 new file mode 100644
 --- /dev/null
@@ -3502,6 +3970,171 @@ new file mode 100644
 +// CHECK: store volatile i32 42
 +// CHECK: store volatile i8 1
 \ No newline at end of file
+diff --git a/clang/test/ObjC3/CodeGen/carrier-cxx-local-lifetime-rejections.cpp b/clang/test/ObjC3/CodeGen/carrier-cxx-local-lifetime-rejections.cpp
+new file mode 100644
+--- /dev/null
++++ b/clang/test/ObjC3/CodeGen/carrier-cxx-local-lifetime-rejections.cpp
+@@ -0,0 +1,23 @@
++// RUN: %clang_cc1 -x objective-c++ -fobjc-version=3 -fobjc-runtime=gnustep-2.0 -std=c++20 -DTEST_UNINITIALIZED -emit-llvm -o %t.uninitialized.ll -verify %s
++// RUN: test ! -e %t.uninitialized.ll
++// RUN: %clang_cc1 -x objective-c++ -fobjc-version=3 -fobjc-runtime=gnustep-2.0 -std=c++20 -DTEST_COPY -emit-llvm -o %t.copy.ll -verify %s
++// RUN: test ! -e %t.copy.ll
++
++struct Owned {
++  explicit Owned(int);
++  Owned(const Owned &);
++  Owned(Owned &&) noexcept;
++  ~Owned();
++};
++typedef __objc3_optional(Owned) MaybeOwned;
++extern MaybeOwned source;
++
++#if defined(TEST_UNINITIALIZED)
++void reject_unknown_active_arm(void) {
++  MaybeOwned value; // expected-error {{ObjC3 carrier operation 'local lifetime'}}
++}
++#elif defined(TEST_COPY)
++void reject_local_carrier_copy(void) {
++  MaybeOwned value = source; // expected-error {{ObjC3 carrier operation 'local lifetime'}}
++}
++#endif
+diff --git a/clang/test/ObjC3/CodeGen/carrier-cxx-local-lifetime.cpp b/clang/test/ObjC3/CodeGen/carrier-cxx-local-lifetime.cpp
+new file mode 100644
+--- /dev/null
++++ b/clang/test/ObjC3/CodeGen/carrier-cxx-local-lifetime.cpp
+@@ -0,0 +1,132 @@
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c++ -fobjc-version=3 -fobjc-runtime=gnustep-2.0 -std=c++20 -fexceptions -fcxx-exceptions -emit-llvm -o - %s | FileCheck %s
++
++extern "C" void lifetime_event(int);
++struct Source {
++  int value;
++  explicit Source(int value) : value(value) { lifetime_event(500 + value); }
++  ~Source() { lifetime_event(600 + value); }
++};
++struct Tracked {
++  int value;
++  explicit Tracked(int value) : value(value) { lifetime_event(100 + value); }
++  Tracked(Source &&source) : value(source.value) {
++    lifetime_event(100 + value);
++  }
++  Tracked(const Tracked &) = delete;
++  Tracked(Tracked &&) = delete;
++  ~Tracked() { lifetime_event(200 + value); }
++};
++struct Failure {
++  int value;
++  explicit Failure(int value) : value(value) { lifetime_event(300 + value); }
++  Failure(const Failure &) = delete;
++  Failure(Failure &&) = delete;
++  ~Failure() { lifetime_event(400 + value); }
++};
++typedef __objc3_optional(Tracked) MaybeTracked;
++typedef __objc3_result(Tracked, Failure) TrackedResult;
++
++void optional_some_normal_cleanup() {
++  MaybeTracked local = __objc3_some(Tracked, Tracked(1));
++  (void)local;
++}
++// CHECK-LABEL: define{{.*}} void @_Z28optional_some_normal_cleanupv
++// CHECK: store i8 1
++// CHECK: load i8
++// CHECK: call void @_ZN7TrackedD1Ev
++
++void optional_some_constructs_from_source_temporary() {
++  MaybeTracked local = __objc3_some(Tracked, Source(6));
++  (void)local;
++}
++// CHECK-LABEL: define{{.*}} void @_Z46optional_some_constructs_from_source_temporaryv
++// CHECK: store i8 1
++// CHECK: call void @_ZN6SourceD1Ev
++// CHECK: load i8
++// CHECK: call void @_ZN7TrackedD1Ev
++
++void optional_none_has_no_payload_cleanup() {
++  MaybeTracked local = __objc3_none(Tracked);
++  (void)local;
++}
++// CHECK-LABEL: define{{.*}} void @_Z36optional_none_has_no_payload_cleanupv
++// CHECK: store i8 0
++// CHECK: load i8
++// CHECK: br i1 {{.*}}, label %objc3.carrier.dtor.present, label %objc3.carrier.dtor.done
++// CHECK: objc3.carrier.dtor.present:
++// CHECK: call void @_ZN7TrackedD1Ev
++// CHECK: objc3.carrier.dtor.done:
++
++void result_ok_selected_cleanup() {
++  TrackedResult local = __objc3_ok(Tracked, Failure, Tracked(2));
++  (void)local;
++}
++// CHECK-LABEL: define{{.*}} void @_Z26result_ok_selected_cleanupv
++// CHECK: store i8 1
++// CHECK: load i8
++// CHECK: call void @_ZN7TrackedD1Ev
++// CHECK: call void @_ZN7FailureD1Ev
++
++struct alignas(32) Empty {
++  Empty();
++  ~Empty();
++};
++typedef __objc3_optional(Empty) MaybeEmpty;
++void empty_aligned_payload_cleanup() {
++  const MaybeEmpty local = __objc3_some(Empty, Empty());
++  (void)local;
++}
++// CHECK-LABEL: define{{.*}} void @_Z29empty_aligned_payload_cleanupv
++// CHECK: getelementptr inbounds i8, ptr {{.*}}, i64 32
++// CHECK: call void @_ZN5EmptyC1Ev
++// CHECK: store i8 1
++// CHECK: load i8
++// CHECK: call void @_ZN5EmptyD1Ev
++
++void result_err_selected_cleanup() {
++  TrackedResult local = __objc3_err(Tracked, Failure, Failure(3));
++  (void)local;
++}
++// CHECK-LABEL: define{{.*}} void @_Z27result_err_selected_cleanupv
++// CHECK: store i8 0
++// CHECK: load i8
++// CHECK: call void @_ZN7TrackedD1Ev
++// CHECK: call void @_ZN7FailureD1Ev
++
++void optional_some_unwinds_through_payload_cleanup() {
++  MaybeTracked local = __objc3_some(Tracked, Tracked(4));
++  throw 7;
++}
++// CHECK-LABEL: define{{.*}} void @_Z45optional_some_unwinds_through_payload_cleanupv
++// CHECK: landingpad
++// CHECK: call void @_ZN7TrackedD1Ev
++
++struct Throwing {
++  explicit Throwing(int) { throw 9; }
++  ~Throwing() { lifetime_event(700); }
++};
++typedef __objc3_optional(Throwing) MaybeThrowing;
++struct Guard {
++  ~Guard() { lifetime_event(701); }
++};
++void payload_constructor_throws_before_carrier_is_active() {
++  Guard guard;
++  MaybeThrowing local = __objc3_some(Throwing, Throwing(9));
++  (void)local;
++}
++// CHECK-LABEL: define{{.*}} void @_Z51payload_constructor_throws_before_carrier_is_activev
++// CHECK: invoke void @_ZN8ThrowingC1Ei
++// CHECK: to label {{.*}} unwind label %[[UNWIND:[a-zA-Z0-9._]+]]
++// CHECK: [[UNWIND]]:
++// CHECK: landingpad
++// CHECK: call void @_ZN5GuardD1Ev
++// CHECK-NOT: load i8
++// CHECK-NOT: call void @_ZN8ThrowingD1Ev
++
++void result_err_unwinds_through_selected_cleanup() {
++  TrackedResult local = __objc3_err(Tracked, Failure, Failure(5));
++  throw 8;
++}
++// CHECK-LABEL: define{{.*}} void @_Z43result_err_unwinds_through_selected_cleanupv
++// CHECK: landingpad
++// CHECK: call void @_ZN7FailureD1Ev
 diff --git a/clang/test/ObjC3/CodeGen/carrier-debug-info-deferred.c b/clang/test/ObjC3/CodeGen/carrier-debug-info-deferred.c
 new file mode 100644
 --- /dev/null

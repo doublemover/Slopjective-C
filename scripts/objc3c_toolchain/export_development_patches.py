@@ -146,6 +146,7 @@ PACKETS = {
         "clang/lib/CodeGen/CGObjC.cpp",
         "clang/lib/CodeGen/CGObjCGNU.cpp",
         "clang/lib/CodeGen/CodeGenFunction.cpp",
+        "clang/lib/CodeGen/CodeGenFunction.h",
         "clang/lib/CodeGen/CodeGenModule.cpp",
         "clang/lib/CodeGen/CodeGenTypes.cpp",
         "clang/lib/CodeGen/CodeGenTypes.h",

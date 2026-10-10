@@ -3052,7 +3052,7 @@ index 9da3d0d2e..ccec2f748 100644
    I.Fun.TrailingReturnTypeLoc   = TrailingReturnTypeLoc;
    I.Fun.MethodQualifiers        = nullptr;
 diff --git a/clang/lib/Sema/SemaDecl.cpp b/clang/lib/Sema/SemaDecl.cpp
-index d67220a2f..55d9292a1 100644
+index d67220a2f..d3c5be812 100644
 --- a/clang/lib/Sema/SemaDecl.cpp
 +++ b/clang/lib/Sema/SemaDecl.cpp
 @@ -3982,6 +3982,26 @@ bool Sema::MergeFunctionDecl(FunctionDecl *New, NamedDecl *&OldD, Scope *S,
@@ -3082,6 +3082,57 @@ index d67220a2f..55d9292a1 100644
    QualType OldQTypeForComparison = OldQType;
    if (Context.hasAnyFunctionEffects()) {
      const auto OldFX = Old->getFunctionEffects();
+@@ -14769,9 +14789,50 @@ StmtResult Sema::ActOnCXXForRangeIdentifier(Scope *S, SourceLocation IdentLoc,
+                                                       : IdentLoc);
+ }
+ 
++static void checkObjC3CarrierLocalDestruction(Sema &S, VarDecl *VD) {
++  if (!S.getLangOpts().ObjC3 || !S.getLangOpts().CPlusPlus ||
++      !VD->hasLocalStorage() || !VD->hasInit() ||
++      VD->getType()->isDependentType() || VD->getInit()->containsErrors())
++    return;
++  QualType Carrier = S.Context.getCanonicalType(VD->getType());
++  const Type *Ty = Carrier.getTypePtr();
++  if (!isa<ObjC3OptionalType>(Ty) && !isa<ObjC3ResultType>(Ty))
++    return;
++  auto Info = S.Context.getObjC3CarrierRepresentationType(Carrier);
++  if (Info.State != ObjC3CarrierRepresentationInfo::Status::Materialized)
++    return;
++
++  // The synthetic carrier record describes layout only. Reference actual
++  // payload destructors in the user's access context, including empty/inactive
++  // arms, without binding a stored member as a full-expression temporary.
++  for (FieldDecl *Field : {Info.ValueField, Info.SuccessField, Info.ErrorField}) {
++    if (!Field)
++      continue;
++    QualType Payload = Field->getType();
++    CXXRecordDecl *RD = Payload->getAsCXXRecordDecl();
++    if (!RD || RD->isDependentContext())
++      continue;
++    CXXDestructorDecl *Dtor = S.LookupDestructor(RD);
++    if (!Dtor) {
++      VD->setInvalidDecl();
++      continue;
++    }
++    S.CheckDestructorAccess(VD->getLocation(), Dtor,
++                            S.PDiag(diag::err_access_dtor_var)
++                                << VD->getDeclName() << Payload);
++    S.MarkFunctionReferenced(VD->getLocation(), Dtor);
++    if (S.DiagnoseUseOfDecl(Dtor, VD->getLocation()))
++      VD->setInvalidDecl();
++  }
++}
++
+ void Sema::CheckCompleteVariableDeclaration(VarDecl *var) {
+   if (var->isInvalidDecl()) return;
+ 
++  checkObjC3CarrierLocalDestruction(*this, var);
++  if (var->isInvalidDecl())
++    return;
++
+   CUDA().MaybeAddConstantAttr(var);
+ 
+   if (getLangOpts().OpenCL) {
 diff --git a/clang/lib/Sema/SemaExpr.cpp b/clang/lib/Sema/SemaExpr.cpp
 index 12681a1f0..c704cb92d 100644
 --- a/clang/lib/Sema/SemaExpr.cpp
@@ -4856,6 +4907,34 @@ new file mode 100644
 +}
 +
 +
+diff --git a/clang/test/ObjC3/Sema/carrier-local-destructors.mm b/clang/test/ObjC3/Sema/carrier-local-destructors.mm
+new file mode 100644
+--- /dev/null
++++ b/clang/test/ObjC3/Sema/carrier-local-destructors.mm
+@@ -0,0 +1,23 @@
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.0 -fsyntax-only -verify %s
++
++class PrivateDestructor {
++  ~PrivateDestructor(); // expected-note {{declared private here}}
++};
++struct DeletedDestructor {
++  ~DeletedDestructor() = delete; // expected-note {{explicitly marked deleted here}}
++};
++typedef __objc3_optional(PrivateDestructor) PrivateOptional;
++typedef __objc3_optional(DeletedDestructor) DeletedOptional;
++void check_empty_local_destructors() {
++  PrivateOptional private_value = __objc3_none(PrivateDestructor); // expected-error {{variable of type 'PrivateDestructor' has private destructor}}
++  DeletedOptional deleted_value = __objc3_none(DeletedDestructor); // expected-error {{attempt to use a deleted function}}
++}
++
++struct Ordinary {
++  ~Ordinary();
++};
++void check_jump_over_carrier_init() {
++  goto target; // expected-error {{cannot jump from this goto statement to its label}}
++  __objc3_optional(Ordinary) value = __objc3_none(Ordinary); // expected-note {{jump bypasses variable initialization}}
++target:;
++}
 diff --git a/clang/test/ObjC3/Sema/carrier-standard-expressions.c b/clang/test/ObjC3/Sema/carrier-standard-expressions.c
 new file mode 100644
 --- /dev/null

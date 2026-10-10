@@ -108,7 +108,19 @@ their explicit active tag, snapshots sources before assignment, and evaluates
 query operands once. Zero, false and null payloads retain presence independently
 of their bits. It rejects whole enclosing aggregate copies, object-representation
 bitcasts and atomic accesses which would bypass the selected-arm adapter.
-Nontrivial C++/ARC carrier lifetimes and payload extraction remain gated.
+Direct initialized C++ carrier locals now construct their selected payload with
+native InitializationSequence semantics and register tag-guarded normal/EH
+destruction after successful initialization. Sema resolves actual payload
+destructors, including access/deletion and declaration references; native jump
+checks reject entering a scope past initialization. Empty C++ payload addresses
+use AST-owned byte offsets, including explicit alignment. The admitted slice
+requires a public nondeleted payload destructor and a direct Some/None/Ok/Err
+initializer; carrier copy/move, temporaries, nested managed payloads, ARC and
+payload extraction remain gated. Its executable counter checks cover source
+temporary cleanup, selected destruction once, C++ unwinding, failed construction,
+const locals and aligned empty payloads at O0/O2 through clang++ and clang-cl.
+Run `scripts/objc3c_toolchain_runtime/run_carrier_cpp_lifetime_fixtures_windows.ps1`
+from the admitted developer environment. This is private migration evidence.
 An internal by-value adapter qualifies supported plain direct carrier values
 for nonvariadic C functions on `x86_64-pc-windows-msvc`. Clang's target ABIInfo
 classifies the AST-owned hidden record while source declarations retain their
