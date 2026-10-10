@@ -62,8 +62,13 @@ including nested callback types, until source interchange and ABI are qualified.
 
 Carrier storage uses an AST-owned hidden record and its actual target layout.
 It is a value representation, separate from platform Objective-C object layout.
-Unqualified by-value calls, runtime type encodings, copy operations and payload
-lifetimes diagnose during CodeGen. Carrier pointer overloads can have distinct
-native symbols without qualifying a by-value carrier ABI. Optional/Result
-construction, nontrivial C++/ARC carrier operations and async execution remain
-in progress; public feature gates continue to report unavailable.
+Private Some/None/Ok/Err construction, explicit tag queries and plain active-arm
+copies now lower through native CodeGen. Presence is independent of zero, false
+and null payloads; source snapshots preserve self-assignment and overlapping
+storage. Stored payload initialization uses its actual hidden record field,
+with ordinary C++ source-temporary cleanups owned by the full expression.
+Unqualified by-value calls, runtime type encodings, nontrivial C++/ARC lifetimes,
+whole enclosing aggregate copies, atomic access and representation bitcasts
+diagnose during CodeGen. Carrier pointer overloads can have distinct native
+symbols without qualifying a by-value carrier ABI. Payload extraction and async
+execution remain in progress; public feature gates report unavailable.

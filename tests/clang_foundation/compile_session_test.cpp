@@ -97,6 +97,70 @@ int main() {
       assert(first_carrier_symbol != declaration.stable_id);
   }
   assert(carrier_overloads == 2);
+  // Both facades must drive the same native expression/defer pipeline. The
+  // selected zero remains present; the zero-valued error remains an error.
+  constexpr char carrier_code[] =
+      "extern void record(int); "
+      "typedef __objc3_optional(int) MaybeInt; "
+      "typedef __objc3_result(int, long long) IntResult; "
+      "int carrier_presence(void) { "
+      "__objc3_defer { record(9); } "
+      "MaybeInt value = __objc3_some(int, 0); "
+      "MaybeInt copied = __objc3_none(int); copied = value; "
+      "IntResult error = __objc3_err(int, long long, 0); "
+      "return __objc3_has_value(copied) && !__objc3_is_ok(error); }";
+  auto carrier_values = request;
+  carrier_values.language = BaseLanguage::ObjectiveC;
+  carrier_values.objc3 = true;
+  carrier_values.input_path = "objc3c-session-carrier-values.m";
+  carrier_values.emit = EmitKind::LLVM;
+  carrier_values.output_path = "objc3c-session-carrier-values.ll";
+  carrier_values.arguments = {"-std=c17", "-O1"};
+  carrier_values.source_text = carrier_code;
+  auto carrier_lowered = Compile(carrier_values);
+  assert(carrier_lowered.success);
+  auto read_ir = [](const std::filesystem::path &path) {
+    std::ifstream stream(path);
+    return std::string(std::istreambuf_iterator<char>(stream), {});
+  };
+  const auto native_carrier_ir = read_ir(carrier_values.output_path);
+  assert(native_carrier_ir.find("@carrier_presence(") != std::string::npos);
+  assert(native_carrier_ir.find("call void @record(i32 noundef 9)") !=
+             std::string::npos ||
+         native_carrier_ir.find("call void @record(i32 9)") != std::string::npos);
+  const char *carrier_arguments[] = {"-std=c17", "-O1"};
+  objc3c_frontend_v2_options carrier_options{};
+  carrier_options.struct_size = sizeof(carrier_options);
+  carrier_options.abi_version = OBJC3C_FRONTEND_V2_ABI;
+  carrier_options.input_path = carrier_values.input_path.c_str();
+  carrier_options.source = carrier_code;
+  carrier_options.source_size = sizeof(carrier_code) - 1;
+  carrier_options.output_path = "objc3c-session-carrier-c-api.ll";
+  carrier_options.arguments = carrier_arguments;
+  carrier_options.argument_count = 2;
+  carrier_options.language = 2;
+  carrier_options.emit = 2;
+  carrier_options.objc3 = 1;
+  objc3c_frontend_v2_result *carrier_result = nullptr;
+  assert(objc3c_frontend_v2_compile(&carrier_options, &carrier_result) == 0);
+  assert(carrier_result && objc3c_frontend_v2_result_success(carrier_result));
+  assert(carrier_lowered.compiler_identity ==
+         objc3c_frontend_v2_result_identity(carrier_result));
+  assert(native_carrier_ir == read_ir(carrier_options.output_path));
+  objc3c_frontend_v2_result_destroy(carrier_result);
+  // A failed native query preserves a prior emitted artifact through the C ABI.
+  constexpr char invalid_query[] =
+      "void bad(void) { (void)__objc3_has_value(42); }";
+  carrier_options.source = invalid_query;
+  carrier_options.source_size = sizeof(invalid_query) - 1;
+  carrier_result = nullptr;
+  assert(objc3c_frontend_v2_compile(&carrier_options, &carrier_result) == 1);
+  assert(carrier_result && !objc3c_frontend_v2_result_success(carrier_result));
+  assert(objc3c_frontend_v2_diagnostic_count(carrier_result) != 0);
+  assert(native_carrier_ir == read_ir(carrier_options.output_path));
+  objc3c_frontend_v2_result_destroy(carrier_result);
+  std::filesystem::remove(carrier_values.output_path);
+  std::filesystem::remove(carrier_options.output_path);
   effect_request.emit = EmitKind::LLVM;
   effect_request.output_path = "objc3c-session-unlowered.ll";
   effect_request.source_text = "void asynchronous() __objc3_async {}";

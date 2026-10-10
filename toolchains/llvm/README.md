@@ -94,6 +94,26 @@ symbols. The corresponding executable runtime fixtures use both GNU-style
 Clang and clang-cl client drivers. These checks are scoped evidence for the
 internal migration; they do not enable a public language capability.
 
+Reserved `__objc3_some`, `__objc3_none`, `__objc3_has_value`, `__objc3_ok`,
+`__objc3_err` and `__objc3_is_ok` expressions now use native AST nodes and
+InitializationSequence conversions. Their source type information survives
+aliases, templates, AST import, PCH and module serialization. Tentative C++
+declaration/type-id parsing preserves these expression tokens, including inside
+parentheses and conditions. Stored payloads initialize their actual hidden
+record fields; native source argument temporaries belong to the enclosing full
+expression rather than an intrinsic's internal parse boundary.
+
+The current CodeGen slice initializes and copies supported plain payloads by
+their explicit active tag, snapshots sources before assignment, and evaluates
+query operands once. Zero, false and null payloads retain presence independently
+of their bits. It rejects whole enclosing aggregate copies, object-representation
+bitcasts and atomic accesses which would bypass the selected-arm adapter.
+Nontrivial C++/ARC carrier lifetimes, payload extraction and carrier by-value
+call ABI remain gated. Executable expression fixtures run at O0/O2 through both
+GNU-style Clang and clang-cl; the facade checks identical native IR through its
+C++ compile session and versioned C embedding API, including failed-output
+rollback. These scoped migration checks do not promote public feature gates.
+
 Configure from a VS 2022 x64 Developer Command Prompt with the selected SDK
 installed. The helper verifies the v143 compiler/linker, the manifest's
 Windows SDK version, CMake and Ninja before it emits a build plan. No global
