@@ -108,8 +108,21 @@ their explicit active tag, snapshots sources before assignment, and evaluates
 query operands once. Zero, false and null payloads retain presence independently
 of their bits. It rejects whole enclosing aggregate copies, object-representation
 bitcasts and atomic accesses which would bypass the selected-arm adapter.
-Nontrivial C++/ARC carrier lifetimes, payload extraction and carrier by-value
-call ABI remain gated. Executable expression fixtures run at O0/O2 through both
+Nontrivial C++/ARC carrier lifetimes and payload extraction remain gated.
+An internal by-value adapter qualifies supported plain direct carrier values
+for nonvariadic C functions on `x86_64-pc-windows-msvc`. Clang's target ABIInfo
+classifies the AST-owned hidden record while source declarations retain their
+carrier types. Caller snapshots copy only the active arm into zeroed storage;
+direct return coercions use the same adapter. Native C++ functions, other
+targets, variadic calls, enclosing records, blocks and Objective-C methods
+retain explicit failure boundaries. Two-TU executables include an ordinary C
+consumer with private test-only mirror declarations and verify active payload
+bits, independently compiled at O0/O2 with both client drivers. The mirrors do
+not define a public ABI and inactive storage bytes have no promised value.
+The Windows witness uses the admitted `/MD` UCRT profile, including the
+`memset` required by zeroed snapshots at O0. Run it from the selected developer
+environment with `scripts/objc3c_toolchain_runtime/run_carrier_abi_fixtures_windows.ps1`.
+Executable expression fixtures run at O0/O2 through both
 GNU-style Clang and clang-cl; the facade checks identical native IR through its
 C++ compile session and versioned C embedding API, including failed-output
 rollback. These scoped migration checks do not promote public feature gates.

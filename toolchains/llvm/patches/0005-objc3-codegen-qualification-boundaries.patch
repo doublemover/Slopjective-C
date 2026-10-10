@@ -54,7 +54,7 @@ index 06ef2f5b8..f66acdb74 100644
  
    switch (atomics.getEvaluationKind()) {
 diff --git a/clang/lib/CodeGen/CGCall.cpp b/clang/lib/CodeGen/CGCall.cpp
-index 06203733a..b349dec70 100644
+index 06203733a..0c0e10b31 100644
 --- a/clang/lib/CodeGen/CGCall.cpp
 +++ b/clang/lib/CodeGen/CGCall.cpp
 @@ -12,6 +12,7 @@
@@ -73,20 +73,218 @@ index 06203733a..b349dec70 100644
  #include "llvm/ADT/StringExtras.h"
  #include "llvm/Analysis/ValueTracking.h"
  #include "llvm/IR/Assumptions.h"
-@@ -231,6 +233,13 @@ static const CGFunctionInfo &
+@@ -231,10 +233,36 @@ static const CGFunctionInfo &
  arrangeLLVMFunctionInfo(CodeGenTypes &CGT, bool instanceMethod,
                          SmallVectorImpl<CanQualType> &prefix,
                          CanQual<FunctionProtoType> FTP) {
-+  if (CodeGen::diagnoseUnsupportedObjC3CarrierByValue(
-+          CGT.getCGM(), QualType(FTP.getTypePtr(), 0), SourceLocation())) {
-+    // Error-only sentinel: never pass custom carrier QualTypes into target
-+    // ABIInfo. A prior diagnostic prevents object emission.
++  const QualType SourceFunctionType(FTP.getTypePtr(), 0);
++  const bool Unsupported = instanceMethod
++                               ? CodeGen::diagnoseUnsupportedObjC3CarrierByValue(
++                                     CGT.getCGM(), SourceFunctionType,
++                                     SourceLocation())
++                               : CodeGen::diagnoseUnsupportedObjC3CarrierFreeFunctionABI(
++                                     CGT.getCGM(), SourceFunctionType,
++                                     SourceLocation());
++  if (Unsupported) {
++    // Error-only sentinel: never pass unqualified extension carrier types to
++    // target ABIInfo. A prior diagnostic prevents object emission.
 +    return CGT.arrangeNullaryFunction();
 +  }
 +
    ExtParameterInfoList paramInfos;
    RequiredArgs Required = RequiredArgs::forPrototypePlus(FTP, prefix.size());
    appendParameterTypes(CGT, prefix, paramInfos, FTP);
++
+   CanQualType resultType = FTP->getReturnType().getUnqualifiedType();
++  if (!instanceMethod) {
++    QualType Projected;
++    if (CodeGen::getObjC3CarrierABIProjectionType(
++            CGT.getCGM(), QualType(resultType.getTypePtr(), 0), Projected))
++      resultType = CGT.getContext().getCanonicalType(Projected);
++    for (CanQualType &ArgType : prefix) {
++      if (CodeGen::getObjC3CarrierABIProjectionType(
++              CGT.getCGM(), QualType(ArgType.getTypePtr(), 0), Projected))
++        ArgType = CGT.getContext().getCanonicalType(Projected);
++    }
++  }
+ 
+   FnInfoOpts opts =
+       instanceMethod ? FnInfoOpts::IsInstanceMethod : FnInfoOpts::None;
+@@ -675,6 +703,17 @@ arrangeFreeFunctionLikeCall(CodeGenTypes &CGT, CodeGenModule &CGM,
+       addExtParameterInfosForCall(paramInfos, proto, numExtraRequiredArgs,
+                                   args.size());
+ 
++    // Blocks and other prefixed call forms retain their existing ABI. This
++    // native carrier projection is for ordinary non-variadic C function calls.
++    if (numExtraRequiredArgs != 0 || proto->isVariadic()) {
++      if (CodeGen::diagnoseUnsupportedObjC3CarrierByValue(
++              CGM, QualType(proto, 0), SourceLocation()))
++        return CGT.arrangeNullaryFunction();
++    } else if (CodeGen::diagnoseUnsupportedObjC3CarrierFreeFunctionABI(
++                   CGM, QualType(proto, 0), SourceLocation())) {
++      return CGT.arrangeNullaryFunction();
++    }
++
+   // If we don't have a prototype at all, but we're supposed to
+   // explicitly use the variadic convention for unprototyped calls,
+   // treat all of the arguments as required but preserve the nominal
+@@ -685,12 +724,32 @@ arrangeFreeFunctionLikeCall(CodeGenTypes &CGT, CodeGenModule &CGM,
+   }
+ 
+   CanQualTypeList argTypes;
+-  for (const auto &arg : args)
+-    argTypes.push_back(CGT.getContext().getCanonicalParamType(arg.Ty));
++  const auto *Proto = dyn_cast<FunctionProtoType>(fnType);
++  const unsigned FixedArgCount =
++      Proto ? Proto->getNumParams() + numExtraRequiredArgs : numExtraRequiredArgs;
++  for (unsigned ArgIndex = 0; ArgIndex < args.size(); ++ArgIndex) {
++    const auto &arg = args[ArgIndex];
++    QualType ABIType = arg.Ty;
++    if (numExtraRequiredArgs == 0 && Proto && !Proto->isVariadic()) {
++      QualType Projected;
++      if (CodeGen::getObjC3CarrierABIProjectionType(CGM, arg.Ty, Projected))
++        ABIType = Projected;
++    } else if (ArgIndex >= FixedArgCount &&
++               CodeGen::diagnoseUnsupportedObjC3CarrierVariadicArgument(
++                   CGM, arg.Ty, SourceLocation())) {
++      return CGT.arrangeNullaryFunction();
++    }
++    argTypes.push_back(CGT.getContext().getCanonicalParamType(ABIType));
++  }
++  QualType ResultType = fnType->getReturnType();
++  if (numExtraRequiredArgs == 0) {
++    QualType Projected;
++    if (CodeGen::getObjC3CarrierABIProjectionType(CGM, ResultType, Projected))
++      ResultType = Projected;
++  }
+   FnInfoOpts opts = chainCall ? FnInfoOpts::IsChainCall : FnInfoOpts::None;
+-  return CGT.arrangeLLVMFunctionInfo(GetReturnType(fnType->getReturnType()),
+-                                     opts, argTypes, fnType->getExtInfo(),
+-                                     paramInfos, required);
++  return CGT.arrangeLLVMFunctionInfo(GetReturnType(ResultType), opts, argTypes,
++                                     fnType->getExtInfo(), paramInfos, required);
+ }
+ 
+ /// Figure out the rules for calling a function with the given formal
+@@ -4090,6 +4149,37 @@ void CodeGenFunction::EmitFunctionEpilog(
+ 
+   case ABIArgInfo::Extend:
+   case ABIArgInfo::Direct:
++    if (auto *FD = dyn_cast_or_null<FunctionDecl>(CurCodeDecl)) {
++      QualType SourceReturnType = FD->getReturnType();
++      QualType ProjectedReturnType;
++      if (getObjC3CarrierABIProjectionType(CGM, SourceReturnType,
++                                           ProjectedReturnType)) {
++        Address Snapshot = CreateMemTemp(SourceReturnType,
++                                         "objc3.carrier.abi.return");
++        if (!emitObjC3CarrierABISnapshot(
++                *this, SourceReturnType, Snapshot, ReturnValue,
++                /*DestinationIsVolatile=*/false,
++                /*SourceIsVolatile=*/SourceReturnType.isVolatileQualified(),
++                EndLoc)) {
++          diagnoseUnsupportedObjC3CarrierOperation(
++              CGM, EndLoc, SourceReturnType, "by-value call ABI snapshot");
++          llvm::Type *RecoveryType = RetAI.getCoerceToType();
++          if (!RecoveryType)
++            RecoveryType = ConvertType(RetTy);
++          RV = llvm::UndefValue::get(RecoveryType);
++          break;
++        }
++
++        if (RetAI.getCoerceToType() == ConvertType(RetTy) &&
++            RetAI.getDirectOffset() == 0) {
++          RV = Builder.CreateLoad(Snapshot);
++        } else {
++          Address V = emitAddressAtOffset(*this, Snapshot, RetAI);
++          RV = CreateCoercedLoad(V, RetAI.getCoerceToType(), *this);
++        }
++        break;
++      }
++    }
+     if (RetAI.getCoerceToType() == ConvertType(RetTy) &&
+         RetAI.getDirectOffset() == 0) {
+       // The internal return value temp always will have pointer-to-return-type
+@@ -5397,6 +5487,41 @@ RValue CodeGenFunction::EmitCall(const CGFunctionInfo &CallInfo,
+     bool ArgHasMaybeUndefAttr =
+         IsArgumentMaybeUndef(TargetDecl, CallInfo.getNumRequiredArgs(), ArgNo);
+ 
++    QualType ProjectedCarrierType;
++    const bool IsCarrierABIArgument =
++        getObjC3CarrierABIProjectionType(CGM, I->Ty, ProjectedCarrierType);
++    Address CarrierABISnapshot = Address::invalid();
++    if (IsCarrierABIArgument) {
++      if (!I->isAggregate()) {
++        diagnoseUnsupportedObjC3CarrierOperation(
++            CGM, SourceLocation(), I->Ty,
++            "by-value call ABI snapshot");
++        for (unsigned J = 0; J != NumIRArgs; ++J)
++          IRCallArgs[FirstIRArg + J] =
++              llvm::UndefValue::get(IRFuncTy->getParamType(FirstIRArg + J));
++        continue;
++      }
++      Address Source = I->hasLValue()
++                           ? I->getKnownLValue().getAddress()
++                           : I->getKnownRValue().getAggregateAddress();
++      const bool SourceIsVolatile =
++          I->hasLValue() ? I->getKnownLValue().isVolatile()
++                         : I->Ty.isVolatileQualified();
++      CarrierABISnapshot = CreateMemTemp(I->Ty, "objc3.carrier.abi.arg");
++      if (!emitObjC3CarrierABISnapshot(
++              *this, I->Ty, CarrierABISnapshot, Source,
++              /*DestinationIsVolatile=*/false, SourceIsVolatile,
++              SourceLocation())) {
++        diagnoseUnsupportedObjC3CarrierOperation(
++            CGM, SourceLocation(), I->Ty,
++            "by-value call ABI snapshot");
++        for (unsigned J = 0; J != NumIRArgs; ++J)
++          IRCallArgs[FirstIRArg + J] =
++              llvm::UndefValue::get(IRFuncTy->getParamType(FirstIRArg + J));
++        continue;
++      }
++    }
++
+     switch (ArgInfo.getKind()) {
+     case ABIArgInfo::InAlloca: {
+       assert(NumIRArgs == 0);
+@@ -5457,9 +5582,12 @@ RValue CodeGenFunction::EmitCall(const CGFunctionInfo &CallInfo,
+         //    we cannot force it to be sufficiently aligned.
+         // 3. If the argument is byval, but RV is not located in default
+         //    or alloca address space.
+-        Address Addr = I->hasLValue()
+-                           ? I->getKnownLValue().getAddress()
+-                           : I->getKnownRValue().getAggregateAddress();
++        Address Addr = IsCarrierABIArgument
++                           ? CarrierABISnapshot
++                           : (I->hasLValue()
++                                  ? I->getKnownLValue().getAddress()
++                                  : I->getKnownRValue()
++                                        .getAggregateAddress());
+         CharUnits Align = ArgInfo.getIndirectAlign();
+         const llvm::DataLayout *TD = &CGM.getDataLayout();
+ 
+@@ -5474,7 +5602,7 @@ RValue CodeGenFunction::EmitCall(const CGFunctionInfo &CallInfo,
+                                              Align.getAsAlign(),
+                                              *TD) < Align.getAsAlign()) {
+           NeedCopy = true;
+-        } else if (I->hasLValue()) {
++        } else if (I->hasLValue() && !IsCarrierABIArgument) {
+           auto LV = I->getKnownLValue();
+ 
+           bool isByValOrRef =
+@@ -5606,8 +5734,11 @@ RValue CodeGenFunction::EmitCall(const CGFunctionInfo &CallInfo,
+         Src = CreateMemTemp(I->Ty, "coerce");
+         I->copyInto(*this, Src);
+       } else {
+-        Src = I->hasLValue() ? I->getKnownLValue().getAddress()
+-                             : I->getKnownRValue().getAggregateAddress();
++        Src = IsCarrierABIArgument
++                  ? CarrierABISnapshot
++                  : (I->hasLValue()
++                         ? I->getKnownLValue().getAddress()
++                         : I->getKnownRValue().getAggregateAddress());
+       }
+ 
+       // If the value is offset in memory, apply the offset now.
 diff --git a/clang/lib/CodeGen/CGDebugInfo.cpp b/clang/lib/CodeGen/CGDebugInfo.cpp
 index d63d4c593..b06b47379 100644
 --- a/clang/lib/CodeGen/CGDebugInfo.cpp
@@ -211,7 +409,7 @@ index aeecf0bac..631b45263 100644
    EmitAutoVarInit(emission);
    EmitAutoVarCleanups(emission);
 diff --git a/clang/lib/CodeGen/CGExpr.cpp b/clang/lib/CodeGen/CGExpr.cpp
-index 24878710d..ca9af0a17 100644
+index 24878710d..b673725b6 100644
 --- a/clang/lib/CodeGen/CGExpr.cpp
 +++ b/clang/lib/CodeGen/CGExpr.cpp
 @@ -14,6 +14,8 @@
@@ -223,7 +421,7 @@ index 24878710d..ca9af0a17 100644
  #include "CGCleanup.h"
  #include "CGDebugInfo.h"
  #include "CGHLSLRuntime.h"
-@@ -6199,6 +6201,32 @@ RValue CodeGenFunction::EmitRValueForField(LValue LV,
+@@ -6199,6 +6201,49 @@ RValue CodeGenFunction::EmitRValueForField(LValue LV,
  RValue CodeGenFunction::EmitCallExpr(const CallExpr *E,
                                       ReturnValueSlot ReturnValue,
                                       llvm::CallBase **CallOrInvoke) {
@@ -232,21 +430,38 @@ index 24878710d..ca9af0a17 100644
 +    CalledType = getContext().getCanonicalType(PT->getPointeeType());
 +  else if (const auto *BPT = CalledType->getAs<BlockPointerType>())
 +    CalledType = getContext().getCanonicalType(BPT->getPointeeType());
++  const bool IsFreeFunctionCall =
++      !getLangOpts().CPlusPlus &&
++      !E->getCallee()->getType()->isBlockPointerType();
 +  if (CalledType->isFunctionType()) {
 +    const Decl *CalleeDecl = E->getDirectCallee();
++    const bool UnsupportedCarrier =
++        IsFreeFunctionCall
++            ? diagnoseUnsupportedObjC3CarrierFreeFunctionABI(
++                  CGM, CalledType, E->getExprLoc())
++            : diagnoseUnsupportedObjC3CarrierByValue(
++                  CGM, CalledType, E->getExprLoc());
 +    if (CGM.getTypes().diagnoseUnsupportedObjC3Effects(CalledType, CalleeDecl) ||
-+        CodeGen::diagnoseUnsupportedObjC3CarrierByValue(
-+            CGM, CalledType, E->getExprLoc())) {
++        UnsupportedCarrier) {
 +      if (CallOrInvoke)
 +        *CallOrInvoke = nullptr;
 +      return GetUndefRValue(E->getType());
 +    }
 +  }
 +
-+  // Inspect actual arguments as well as the formal prototype. Variadic and
-+  // unprototyped calls must never classify a carrier as an ordinary scalar.
++  // Admit direct carriers only as fixed arguments of the qualified C
++  // prototype. Ellipsis, unprototyped, block and C++ calls stay strict.
++  const auto *Proto = CalledType->getAs<FunctionProtoType>();
++  unsigned ArgIndex = 0;
 +  for (const Expr *Arg : E->arguments()) {
-+    if (diagnoseUnsupportedObjC3ValueABI(CGM, Arg->getType(), Arg->getExprLoc())) {
++    QualType Projection;
++    const bool HasCarrierProjection =
++        IsFreeFunctionCall && Proto && !Proto->isVariadic() &&
++        Proto->getCallConv() == CC_C && ArgIndex < Proto->getNumParams() &&
++        getObjC3CarrierABIProjectionType(CGM, Arg->getType(), Projection);
++    ++ArgIndex;
++    if (!HasCarrierProjection &&
++        diagnoseUnsupportedObjC3ValueABI(CGM, Arg->getType(), Arg->getExprLoc())) {
 +      if (CallOrInvoke)
 +        *CallOrInvoke = nullptr;
 +      return GetUndefRValue(E->getType());
@@ -579,7 +794,7 @@ index dbbc35b37..becc03109 100644
    CGObjCMac.cpp
    CGObjCRuntime.cpp
 diff --git a/clang/lib/CodeGen/CodeGenFunction.cpp b/clang/lib/CodeGen/CodeGenFunction.cpp
-index 6c0589be3..71ac63b7d 100644
+index 6c0589be3..a98a899d2 100644
 --- a/clang/lib/CodeGen/CodeGenFunction.cpp
 +++ b/clang/lib/CodeGen/CodeGenFunction.cpp
 @@ -19,6 +19,7 @@
@@ -605,14 +820,14 @@ index 6c0589be3..71ac63b7d 100644
    const FunctionDecl *FD = cast<FunctionDecl>(GD.getDecl());
 +  if (CGM.getTypes().diagnoseUnsupportedObjC3Effects(FD->getType(), FD))
 +    return;
-+  if (CodeGen::diagnoseUnsupportedObjC3CarrierByValue(
++  if (CodeGen::diagnoseUnsupportedObjC3CarrierFreeFunctionABI(
 +          CGM, FD->getType(), FD->getLocation()))
 +    return;
    CurGD = GD;
  
    FunctionArgList Args;
 diff --git a/clang/lib/CodeGen/CodeGenModule.cpp b/clang/lib/CodeGen/CodeGenModule.cpp
-index 85ed38f14..c64bd4a74 100644
+index 85ed38f14..58e347aea 100644
 --- a/clang/lib/CodeGen/CodeGenModule.cpp
 +++ b/clang/lib/CodeGen/CodeGenModule.cpp
 @@ -11,6 +11,8 @@
@@ -643,7 +858,7 @@ index 85ed38f14..c64bd4a74 100644
 +  // the function prototype may already have been materialized.
 +  if (getTypes().diagnoseUnsupportedObjC3Effects(D->getType(), D))
 +    return;
-+  if (CodeGen::diagnoseUnsupportedObjC3CarrierByValue(
++  if (CodeGen::diagnoseUnsupportedObjC3CarrierFreeFunctionABI(
 +          *this, D->getType(), D->getLocation()))
 +    return;
 +
@@ -1011,7 +1226,7 @@ diff --git a/clang/lib/CodeGen/CGObjC3Carriers.cpp b/clang/lib/CodeGen/CGObjC3Ca
 new file mode 100644
 --- /dev/null
 +++ b/clang/lib/CodeGen/CGObjC3Carriers.cpp
-@@ -0,0 +1,783 @@
+@@ -0,0 +1,924 @@
 +//===--- CGObjC3Carriers.cpp - ObjC3 carrier CodeGen adapter ----*- C++ -*-===//
 +//
 +//===----------------------------------------------------------------------===//
@@ -1756,6 +1971,147 @@ new file mode 100644
 +}
 +} // namespace
 +
++static bool supportsWindowsX64CarrierABI(CodeGenModule &CGM,
++                                           QualType CarrierType) {
++  ASTContext &Ctx = CGM.getContext();
++  const llvm::Triple &Triple = CGM.getTarget().getTriple();
++  if (Ctx.getLangOpts().CPlusPlus ||
++      Triple.getArch() != llvm::Triple::x86_64 ||
++      Triple.getVendor() != llvm::Triple::PC ||
++      !Triple.isKnownWindowsMSVCEnvironment() ||
++      !CGM.getTarget().getCXXABI().isMicrosoft())
++    return false;
++
++  auto Info = Ctx.getObjC3CarrierRepresentationType(CarrierType);
++  if (Info.State != ObjC3CarrierRepresentationInfo::Status::Materialized ||
++      Info.Type.isNull())
++    return false;
++
++  // ABI projection is useful only if both call boundaries can produce the
++  // active-arm snapshot. In particular, ordinary C records containing nested
++  // carriers are not yet supported by the payload-copy helper.
++  if (!supportsObjC3CarrierCopyPayload(CGM, CarrierType))
++    return false;
++
++  auto IsPlainField = [&](FieldDecl *Field) {
++    return !Field || hasOnlyTrivialCallABILeaves(Ctx, Field->getType());
++  };
++  return IsPlainField(Info.ValueField) && IsPlainField(Info.SuccessField) &&
++         IsPlainField(Info.ErrorField);
++}
++
++bool CodeGen::getObjC3CarrierABIProjectionType(CodeGenModule &CGM,
++                                                QualType SourceType,
++                                                QualType &ABIType) {
++  ABIType = SourceType;
++  if (SourceType.isNull())
++    return false;
++  ASTContext &Ctx = CGM.getContext();
++  const Type *Canonical = Ctx.getCanonicalType(SourceType).getTypePtr();
++  if (!isa<ObjC3OptionalType>(Canonical) && !isa<ObjC3ResultType>(Canonical))
++    return false;
++  if (!supportsWindowsX64CarrierABI(CGM, SourceType))
++    return false;
++  auto Info = Ctx.getObjC3CarrierRepresentationType(SourceType);
++  ABIType = Ctx.getQualifiedType(Info.Type, SourceType.getQualifiers());
++  return true;
++}
++
++bool CodeGen::emitObjC3CarrierABISnapshot(CodeGenFunction &CGF,
++                                          QualType CarrierType,
++                                          Address Destination,
++                                          Address Source,
++                                          bool DestinationIsVolatile,
++                                          bool SourceIsVolatile,
++                                          SourceLocation Loc) {
++  CodeGenModule &CGM = CGF.CGM;
++  QualType ABIType;
++  if (!getObjC3CarrierABIProjectionType(CGM, CarrierType, ABIType) ||
++      !supportsObjC3CarrierCopyPayload(CGM, CarrierType) ||
++      !validateObjC3CarrierCopyStorage(CGF, CarrierType, Destination, Source))
++    return false;
++
++  llvm::TypeSize Size = CGM.getDataLayout().getTypeAllocSize(
++      Destination.getElementType());
++  if (Size.isScalable())
++    return false;
++
++  // The target ABI coercion may read every byte of its native record. Clear
++  // only the fresh ABI destination so inactive union arms and padding are
++  // initialized without reading any inactive source bytes.
++  CGF.Builder.CreateMemSet(Destination, CGF.Builder.getInt8(0),
++                           CGF.Builder.getInt64(Size.getFixedValue()),
++                           DestinationIsVolatile);
++  return emitObjC3CarrierCopyPayload(
++      CGF, CarrierType, Destination, Source, DestinationIsVolatile,
++      SourceIsVolatile, /*IsInitialization=*/true, Loc);
++}
++
++bool CodeGen::diagnoseUnsupportedObjC3CarrierFreeFunctionABI(
++    CodeGenModule &CGM, QualType FunctionType, SourceLocation Loc) {
++  ASTContext &Ctx = CGM.getContext();
++  FunctionType = Ctx.getCanonicalType(FunctionType);
++  const auto *FPT = dyn_cast<FunctionProtoType>(FunctionType.getTypePtr());
++  auto Diagnose = [&](QualType Carrier) {
++    diagnoseUnsupportedObjC3CarrierOperation(CGM, Loc, Carrier,
++                                             "by-value call ABI");
++    return true;
++  };
++
++  if (!FPT || FPT->getCallConv() != CC_C || FPT->isVariadic()) {
++    QualType Carrier;
++    llvm::SmallPtrSet<const Type *, 16> Seen;
++    if (FPT) {
++      Carrier = findCarrierByValue(Ctx, FPT->getReturnType(), Seen);
++      for (QualType Param : FPT->param_types())
++        if (Carrier.isNull()) {
++          Seen.clear();
++          Carrier = findCarrierByValue(Ctx, Param, Seen);
++        }
++    } else if (const auto *FNPT =
++                   dyn_cast<FunctionNoProtoType>(FunctionType.getTypePtr())) {
++      Carrier = findCarrierByValue(Ctx, FNPT->getReturnType(), Seen);
++    }
++    return !Carrier.isNull() && Diagnose(Carrier);
++  }
++
++  auto CheckType = [&](QualType T) {
++    llvm::SmallPtrSet<const Type *, 16> Seen;
++    QualType Found = findCarrierByValue(Ctx, T, Seen);
++    if (Found.isNull())
++      return false;
++
++    QualType Projection;
++    if (getObjC3CarrierABIProjectionType(CGM, T, Projection))
++      return false;
++
++    // A carrier under an ordinary record/array has no source-to-physical
++    // projection in this packet. Only a direct Optional/Result is admitted.
++    const Type *Canonical = Ctx.getCanonicalType(T).getTypePtr();
++    if (isa<ObjC3OptionalType>(Canonical) || isa<ObjC3ResultType>(Canonical))
++      return Diagnose(T);
++    return Diagnose(Found);
++  };
++
++  if (CheckType(FPT->getReturnType()))
++    return true;
++  for (QualType Param : FPT->param_types())
++    if (CheckType(Param))
++      return true;
++  return false;
++}
++
++bool CodeGen::diagnoseUnsupportedObjC3CarrierVariadicArgument(
++    CodeGenModule &CGM, QualType ArgumentType, SourceLocation Loc) {
++  llvm::SmallPtrSet<const Type *, 16> Seen;
++  QualType Carrier = findCarrierByValue(CGM.getContext(), ArgumentType, Seen);
++  if (Carrier.isNull())
++    return false;
++  diagnoseUnsupportedObjC3CarrierOperation(CGM, Loc, Carrier,
++                                           "by-value call ABI");
++  return true;
++}
++
 +bool CodeGen::diagnoseUnsupportedObjC3CarrierByValue(CodeGenModule &CGM,
 +                                                     QualType FunctionType,
 +                                                     SourceLocation Loc) {
@@ -1799,7 +2155,7 @@ diff --git a/clang/lib/CodeGen/CGObjC3Carriers.h b/clang/lib/CodeGen/CGObjC3Carr
 new file mode 100644
 --- /dev/null
 +++ b/clang/lib/CodeGen/CGObjC3Carriers.h
-@@ -0,0 +1,146 @@
+@@ -0,0 +1,174 @@
 +//===--- CGObjC3Carriers.h - ObjC3 carrier CodeGen adapter ------*- C++ -*-===//
 +//
 +// Staged adapter for canonical ObjC3 Optional/Result storage.  This header is
@@ -1922,6 +2278,34 @@ new file mode 100644
 +
 +bool classifyObjC3CarrierCallABI(CodeGenModule &CGM, QualType CarrierType,
 +                                 ObjC3CarrierCallABI &Result);
++
++/// Project a plain Optional/Result source type to its exact AST-owned native
++/// record for the admitted Windows x86_64 C calling convention. Returns true
++/// only when SourceType is a carrier and the complete payload tree is eligible.
++/// The returned QualType is an ABI classification type, not a source type.
++bool getObjC3CarrierABIProjectionType(CodeGenModule &CGM, QualType SourceType,
++                                      QualType &ABIType);
++
++/// Create a zero-initialized ABI snapshot of a carrier, then copy only its
++/// discriminant and active payload. Destination must be fresh, disjoint
++/// storage with the AST-owned representation type; Source remains untouched.
++/// This is for native ABI coercion only and does not imply carrier ownership
++/// semantics beyond the copy operation admitted by Sema.
++bool emitObjC3CarrierABISnapshot(CodeGenFunction &CGF, QualType CarrierType,
++                                 Address Destination, Address Source,
++                                 bool DestinationIsVolatile,
++                                 bool SourceIsVolatile, SourceLocation Loc);
++
++/// Diagnose by-value carriers in an ordinary free-function type unless every
++/// direct carrier parameter/result is eligible for the narrow Windows x64 C ABI
++/// projection. Carriers nested in an ordinary aggregate remain unsupported.
++bool diagnoseUnsupportedObjC3CarrierFreeFunctionABI(
++    CodeGenModule &CGM, QualType FunctionType, SourceLocation Loc);
++
++/// Variadic actual arguments have no formal source type to project. Reject a
++/// carrier or aggregate containing one before CodeGen arranges the ellipsis.
++bool diagnoseUnsupportedObjC3CarrierVariadicArgument(
++    CodeGenModule &CGM, QualType ArgumentType, SourceLocation Loc);
 +
 +/// True only when the carrier can be materialized as plain local storage with
 +/// no C++ special-member or ARC lifetime operation. This does not qualify
@@ -2428,6 +2812,335 @@ new file mode 100644
 +  return 0;
 +}
 +
+diff --git a/clang/test/ObjC3/CodeGen/Inputs/carrier-native-abi-c-client.c b/clang/test/ObjC3/CodeGen/Inputs/carrier-native-abi-c-client.c
+new file mode 100644
+--- /dev/null
++++ b/clang/test/ObjC3/CodeGen/Inputs/carrier-native-abi-c-client.c
+@@ -0,0 +1,49 @@
++#include "carrier-native-abi-c-mirror.h"
++
++typedef MirrorOptionalInt (*OptionalIntEcho)(MirrorOptionalInt);
++typedef MirrorResultIntLong (*ResultEcho)(MirrorResultIntLong);
++static OptionalIntEcho optional_echo_indirect = echo_optional_int;
++static ResultEcho result_echo_indirect = echo_result;
++
++int main(void) {
++  MirrorOptionalInt zero = echo_optional_int(make_optional_int(1, 0));
++  if (zero.state != 1 || zero.payload.value != 0)
++    return 1;
++
++  MirrorOptionalInt nonzero =
++      optional_echo_indirect(make_optional_int(1, 73));
++  if (nonzero.state != 1 || nonzero.payload.value != 73)
++    return 2;
++
++  MirrorOptionalInt absent = echo_optional_int(make_optional_int(0, 99));
++  if (absent.state != 0)
++    return 3;
++
++  MirrorOptionalBool false_value = echo_optional_bool(make_optional_false());
++  if (false_value.state != 1 || false_value.payload.value != 0)
++    return 4;
++
++  MirrorOptionalPointer null_value =
++      echo_optional_pointer(make_optional_null());
++  if (null_value.state != 1 || null_value.payload.value != (void *)0)
++    return 5;
++
++  MirrorResultIntLong success = echo_result(make_result_ok(0));
++  if (success.is_ok != 1 || success.payload.ok_value != 0)
++    return 6;
++
++  MirrorResultIntLong error_zero = echo_result(make_result_err(0));
++  if (error_zero.is_ok != 0 || error_zero.payload.error_value != 0)
++    return 7;
++
++  MirrorResultIntLong error_wide = result_echo_indirect(
++      make_result_err(0x123456789abcdefLL));
++  if (error_wide.is_ok != 0 ||
++      error_wide.payload.error_value != 0x123456789abcdefLL)
++    return 8;
++
++  MirrorResultIntLong success_nonzero = result_echo_indirect(make_result_ok(42));
++  if (success_nonzero.is_ok != 1 || success_nonzero.payload.ok_value != 42)
++    return 9;
++  return 0;
++}
+\ No newline at end of file
+diff --git a/clang/test/ObjC3/CodeGen/Inputs/carrier-native-abi-c-mirror.h b/clang/test/ObjC3/CodeGen/Inputs/carrier-native-abi-c-mirror.h
+new file mode 100644
+--- /dev/null
++++ b/clang/test/ObjC3/CodeGen/Inputs/carrier-native-abi-c-mirror.h
+@@ -0,0 +1,79 @@
++#ifndef CARRIER_NATIVE_ABI_C_MIRROR_H
++#define CARRIER_NATIVE_ABI_C_MIRROR_H
++#include <stddef.h>
++
++/* Test-only native-layout mirrors. These do not define a public ABI. */
++typedef struct {
++  _Bool state;
++  union { int value; } payload;
++} MirrorOptionalInt;
++typedef struct {
++  _Bool state;
++  union { _Bool value; } payload;
++} MirrorOptionalBool;
++typedef struct {
++  _Bool state;
++  union { void *value; } payload;
++} MirrorOptionalPointer;
++typedef struct {
++  _Bool is_ok;
++  union { int ok_value; long long error_value; } payload;
++} MirrorResultIntLong;
++
++/* Win64 target facts captured from the compiler-owned hidden records. */
++_Static_assert(sizeof(MirrorOptionalInt) == 8, "Win64 Optional<int> mirror size");
++_Static_assert(_Alignof(MirrorOptionalInt) == 4, "Win64 Optional<int> mirror alignment");
++_Static_assert(offsetof(MirrorOptionalInt, state) == 0, "Optional<int> tag offset");
++_Static_assert(offsetof(MirrorOptionalInt, payload) == 4, "Optional<int> payload offset");
++_Static_assert(sizeof(MirrorOptionalBool) == 2, "Win64 Optional<bool> mirror size");
++_Static_assert(_Alignof(MirrorOptionalBool) == 1, "Win64 Optional<bool> mirror alignment");
++_Static_assert(offsetof(MirrorOptionalBool, state) == 0, "Optional<bool> tag offset");
++_Static_assert(offsetof(MirrorOptionalBool, payload) == 1, "Optional<bool> payload offset");
++_Static_assert(sizeof(MirrorOptionalPointer) == 16, "Win64 Optional<pointer> mirror size");
++_Static_assert(_Alignof(MirrorOptionalPointer) == 8, "Win64 Optional<pointer> mirror alignment");
++_Static_assert(offsetof(MirrorOptionalPointer, state) == 0, "Optional<pointer> tag offset");
++_Static_assert(offsetof(MirrorOptionalPointer, payload) == 8, "Optional<pointer> payload offset");
++_Static_assert(sizeof(MirrorResultIntLong) == 16, "Win64 Result mirror size");
++_Static_assert(_Alignof(MirrorResultIntLong) == 8, "Win64 Result mirror alignment");
++_Static_assert(offsetof(MirrorResultIntLong, is_ok) == 0, "Result tag offset");
++_Static_assert(offsetof(MirrorResultIntLong, payload) == 8, "Result payload offset");
++
++#ifdef CARRIER_NATIVE_PROVIDER
++typedef __objc3_optional(int) NativeOptionalInt;
++typedef __objc3_optional(_Bool) NativeOptionalBool;
++typedef __objc3_optional(void *) NativeOptionalPointer;
++typedef __objc3_result(int, long long) NativeResultIntLong;
++
++/* Tie native extension carriers directly to the private mirrors above. */
++_Static_assert(sizeof(NativeOptionalInt) == sizeof(MirrorOptionalInt), "Optional<int> mirror size match");
++_Static_assert(_Alignof(NativeOptionalInt) == _Alignof(MirrorOptionalInt), "Optional<int> mirror alignment match");
++_Static_assert(sizeof(NativeOptionalBool) == sizeof(MirrorOptionalBool), "Optional<bool> mirror size match");
++_Static_assert(_Alignof(NativeOptionalBool) == _Alignof(MirrorOptionalBool), "Optional<bool> mirror alignment match");
++_Static_assert(sizeof(NativeOptionalPointer) == sizeof(MirrorOptionalPointer), "Optional<pointer> mirror size match");
++_Static_assert(_Alignof(NativeOptionalPointer) == _Alignof(MirrorOptionalPointer), "Optional<pointer> mirror alignment match");
++_Static_assert(sizeof(NativeResultIntLong) == sizeof(MirrorResultIntLong), "Result mirror size match");
++_Static_assert(_Alignof(NativeResultIntLong) == _Alignof(MirrorResultIntLong), "Result mirror alignment match");
++
++NativeOptionalInt make_optional_int(int present, int value);
++NativeOptionalInt echo_optional_int(NativeOptionalInt value);
++NativeOptionalBool make_optional_false(void);
++NativeOptionalBool echo_optional_bool(NativeOptionalBool value);
++NativeOptionalPointer make_optional_null(void);
++NativeOptionalPointer echo_optional_pointer(NativeOptionalPointer value);
++NativeResultIntLong make_result_ok(int value);
++NativeResultIntLong make_result_err(long long value);
++NativeResultIntLong echo_result(NativeResultIntLong value);
++#else
++/* Plain C declarations intentionally use only private mirror records. */
++MirrorOptionalInt make_optional_int(int present, int value);
++MirrorOptionalInt echo_optional_int(MirrorOptionalInt value);
++MirrorOptionalBool make_optional_false(void);
++MirrorOptionalBool echo_optional_bool(MirrorOptionalBool value);
++MirrorOptionalPointer make_optional_null(void);
++MirrorOptionalPointer echo_optional_pointer(MirrorOptionalPointer value);
++MirrorResultIntLong make_result_ok(int value);
++MirrorResultIntLong make_result_err(long long value);
++MirrorResultIntLong echo_result(MirrorResultIntLong value);
++#endif
++
++#endif
+\ No newline at end of file
+diff --git a/clang/test/ObjC3/CodeGen/Inputs/carrier-native-abi-c-provider.c b/clang/test/ObjC3/CodeGen/Inputs/carrier-native-abi-c-provider.c
+new file mode 100644
+--- /dev/null
++++ b/clang/test/ObjC3/CodeGen/Inputs/carrier-native-abi-c-provider.c
+@@ -0,0 +1,27 @@
++#define CARRIER_NATIVE_PROVIDER
++#include "carrier-native-abi-c-mirror.h"
++
++NativeOptionalInt make_optional_int(int present, int value) {
++  return present ? __objc3_some(int, value) : __objc3_none(int);
++}
++NativeOptionalInt echo_optional_int(NativeOptionalInt value) { return value; }
++
++NativeOptionalBool make_optional_false(void) {
++  return __objc3_some(_Bool, 0);
++}
++NativeOptionalBool echo_optional_bool(NativeOptionalBool value) { return value; }
++
++NativeOptionalPointer make_optional_null(void) {
++  return __objc3_some(void *, (void *)0);
++}
++NativeOptionalPointer echo_optional_pointer(NativeOptionalPointer value) {
++  return value;
++}
++
++NativeResultIntLong make_result_ok(int value) {
++  return __objc3_ok(int, long long, value);
++}
++NativeResultIntLong make_result_err(long long value) {
++  return __objc3_err(int, long long, value);
++}
++NativeResultIntLong echo_result(NativeResultIntLong value) { return value; }
+\ No newline at end of file
+diff --git a/clang/test/ObjC3/CodeGen/Inputs/carrier-native-abi-callee.c b/clang/test/ObjC3/CodeGen/Inputs/carrier-native-abi-callee.c
+new file mode 100644
+--- /dev/null
++++ b/clang/test/ObjC3/CodeGen/Inputs/carrier-native-abi-callee.c
+@@ -0,0 +1,9 @@
++#include "carrier-native-abi.h"
++
++OptionalInt carrier_int_identity(OptionalInt value) { return value; }
++OptionalBool carrier_bool_identity(OptionalBool value) { return value; }
++OptionalPointer carrier_pointer_identity(OptionalPointer value) { return value; }
++OptionalWide carrier_wide_identity(OptionalWide value) { return value; }
++ResultMixed carrier_result_identity(ResultMixed value) { return value; }
++ResultVoid carrier_void_result_identity(ResultVoid value) { return value; }
++NestedOptional carrier_nested_identity(NestedOptional value) { return value; }
+diff --git a/clang/test/ObjC3/CodeGen/Inputs/carrier-native-abi-caller.c b/clang/test/ObjC3/CodeGen/Inputs/carrier-native-abi-caller.c
+new file mode 100644
+--- /dev/null
++++ b/clang/test/ObjC3/CodeGen/Inputs/carrier-native-abi-caller.c
+@@ -0,0 +1,63 @@
++#include "carrier-native-abi.h"
++
++typedef OptionalWide (*WideFunction)(OptionalWide);
++typedef ResultMixed (*ResultFunction)(ResultMixed);
++typedef ResultVoid (*VoidResultFunction)(ResultVoid);
++
++OptionalInt call_int_direct(OptionalInt value) {
++  return carrier_int_identity(value);
++}
++OptionalWide call_wide_direct(OptionalWide value) {
++  return carrier_wide_identity(value);
++}
++ResultMixed call_result_direct(ResultMixed value) {
++  return carrier_result_identity(value);
++}
++NestedOptional call_nested_direct(NestedOptional value) {
++  return carrier_nested_identity(value);
++}
++ResultVoid call_void_result_direct(ResultVoid value) {
++  return carrier_void_result_identity(value);
++}
++OptionalWide call_wide_indirect(WideFunction function, OptionalWide value) {
++  return function(value);
++}
++ResultMixed call_result_indirect(ResultFunction function, ResultMixed value) {
++  return function(value);
++}
++ResultVoid call_void_result_indirect(VoidResultFunction function,
++                                     ResultVoid value) {
++  return function(value);
++}
++
++extern int increment_once(void);
++void exercise_payload_tags(void) {
++  OptionalInt zero = __objc3_some(int, 0);
++  OptionalInt absent = __objc3_none(int);
++  OptionalBool false_value = __objc3_some(_Bool, 0);
++  OptionalPointer null_value = __objc3_some(void *, (void *)0);
++  ResultVoid ok_void = __objc3_ok(void, int, (void)increment_once());
++  ResultVoid err_zero = __objc3_err(void, int, 0);
++  (void)carrier_int_identity(zero);
++  (void)carrier_int_identity(absent);
++  (void)carrier_bool_identity(false_value);
++  (void)carrier_pointer_identity(null_value);
++  (void)carrier_void_result_identity(ok_void);
++  (void)carrier_void_result_identity(err_zero);
++}
++
++int native_zero_present(void) {
++  return __objc3_has_value(__objc3_some(int, 0));
++}
++int native_false_present(void) {
++  return __objc3_has_value(__objc3_some(_Bool, 0));
++}
++int native_null_present(void) {
++  return __objc3_has_value(__objc3_some(void *, (void *)0));
++}
++int native_void_success_once(void) {
++  return __objc3_is_ok(__objc3_ok(void, int, (void)increment_once()));
++}
++int native_void_error(void) {
++  return __objc3_is_ok(__objc3_err(void, int, 0));
++}
+diff --git a/clang/test/ObjC3/CodeGen/Inputs/carrier-native-abi-runtime-main.c b/clang/test/ObjC3/CodeGen/Inputs/carrier-native-abi-runtime-main.c
+new file mode 100644
+--- /dev/null
++++ b/clang/test/ObjC3/CodeGen/Inputs/carrier-native-abi-runtime-main.c
+@@ -0,0 +1,34 @@
++#include "carrier-native-abi.h"
++
++extern OptionalInt carrier_runtime_int_round_trip(OptionalInt);
++extern OptionalWide carrier_runtime_wide_round_trip(OptionalWide);
++extern ResultMixed carrier_runtime_result_round_trip(ResultMixed);
++extern ResultVoid carrier_runtime_void_round_trip(ResultVoid);
++
++static int side_effect_count;
++static void note_side_effect(void) { ++side_effect_count; }
++
++int main(void) {
++  OptionalInt zero = __objc3_some(int, 0);
++  OptionalInt absent = __objc3_none(int);
++  if (!__objc3_has_value(carrier_runtime_int_round_trip(zero)))
++    return 1;
++  if (__objc3_has_value(carrier_runtime_int_round_trip(absent)))
++    return 2;
++
++  OptionalWide wide = __objc3_some(long long, 0x123456789abcdefLL);
++  if (!__objc3_has_value(carrier_runtime_wide_round_trip(wide)))
++    return 3;
++
++  ResultMixed zero_error = __objc3_err(int, long long, 0);
++  if (__objc3_is_ok(carrier_runtime_result_round_trip(zero_error)))
++    return 4;
++
++  ResultVoid success =
++      __objc3_ok(void, int, (void)note_side_effect());
++  if (!__objc3_is_ok(carrier_runtime_void_round_trip(success)))
++    return 5;
++  if (side_effect_count != 1)
++    return 6;
++  return 0;
++}
+diff --git a/clang/test/ObjC3/CodeGen/Inputs/carrier-native-abi-runtime-provider.c b/clang/test/ObjC3/CodeGen/Inputs/carrier-native-abi-runtime-provider.c
+new file mode 100644
+--- /dev/null
++++ b/clang/test/ObjC3/CodeGen/Inputs/carrier-native-abi-runtime-provider.c
+@@ -0,0 +1,10 @@
++#include "carrier-native-abi.h"
++
++OptionalInt carrier_runtime_int_round_trip(OptionalInt value) { return value; }
++OptionalWide carrier_runtime_wide_round_trip(OptionalWide value) {
++  return value;
++}
++ResultMixed carrier_runtime_result_round_trip(ResultMixed value) {
++  return value;
++}
++ResultVoid carrier_runtime_void_round_trip(ResultVoid value) { return value; }
+diff --git a/clang/test/ObjC3/CodeGen/Inputs/carrier-native-abi.h b/clang/test/ObjC3/CodeGen/Inputs/carrier-native-abi.h
+new file mode 100644
+--- /dev/null
++++ b/clang/test/ObjC3/CodeGen/Inputs/carrier-native-abi.h
+@@ -0,0 +1,15 @@
++typedef __objc3_optional(int) OptionalInt;
++typedef __objc3_optional(_Bool) OptionalBool;
++typedef __objc3_optional(void *) OptionalPointer;
++typedef __objc3_optional(long long) OptionalWide;
++typedef __objc3_result(int, long long) ResultMixed;
++typedef __objc3_result(void, int) ResultVoid;
++typedef __objc3_optional(OptionalWide) NestedOptional;
++
++OptionalInt carrier_int_identity(OptionalInt value);
++OptionalBool carrier_bool_identity(OptionalBool value);
++OptionalPointer carrier_pointer_identity(OptionalPointer value);
++OptionalWide carrier_wide_identity(OptionalWide value);
++ResultMixed carrier_result_identity(ResultMixed value);
++ResultVoid carrier_void_result_identity(ResultVoid value);
++NestedOptional carrier_nested_identity(NestedOptional value);
 diff --git a/clang/test/ObjC3/CodeGen/Inputs/optional-copy-runtime.c b/clang/test/ObjC3/CodeGen/Inputs/optional-copy-runtime.c
 new file mode 100644
 --- /dev/null
@@ -2995,10 +3708,10 @@ new file mode 100644
 --- /dev/null
 +++ b/clang/test/ObjC3/CodeGen/carrier-indirect-call-abi.c
 @@ -0,0 +1,12 @@
-+// RUN: not %clang_cc1 -x objective-c -fobjc-version=3 -fobjc-runtime=gnustep-2.0 -emit-llvm -o /dev/null %s 2>&1 | FileCheck %s
++// RUN: not %clang_cc1 -x objective-c -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.0 -emit-llvm -o /dev/null %s 2>&1 | FileCheck %s
 +//
 +// A typed indirect function signature is representable, but its by-value ABI
-+// is unavailable. The guard must reject it before target ABIInfo sees it.
++// is unavailable on this target. The guard must reject it before target ABIInfo sees it.
 +
 +typedef __objc3_optional(long long) OptionalI64;
 +typedef OptionalI64 (*CarrierFunction)(OptionalI64);
@@ -3007,6 +3720,163 @@ new file mode 100644
 +  function(local);
 +}
 +// CHECK: ObjC3 carrier operation 'by-value call ABI'
+diff --git a/clang/test/ObjC3/CodeGen/carrier-native-abi-c-client.c b/clang/test/ObjC3/CodeGen/carrier-native-abi-c-client.c
+new file mode 100644
+--- /dev/null
++++ b/clang/test/ObjC3/CodeGen/carrier-native-abi-c-client.c
+@@ -0,0 +1,23 @@
++// REQUIRES: lld, system-windows
++// RUN: %clang --target=x86_64-pc-windows-msvc -x objective-c -std=c17 -fobjc-version=3 -fobjc-runtime=gnustep-2.0 -O0 -I %S/Inputs -c %S/Inputs/carrier-native-abi-c-provider.c -o %t.gnu.o0.provider.obj
++// RUN: %clang --target=x86_64-pc-windows-msvc -x c -std=c17 -O0 -I %S/Inputs -c %S/Inputs/carrier-native-abi-c-client.c -o %t.gnu.o0.client.obj
++// RUN: %clang --target=x86_64-pc-windows-msvc -fuse-ld=lld -fms-runtime-lib=dll %t.gnu.o0.provider.obj %t.gnu.o0.client.obj -o %t.gnu.o0.exe
++// RUN: %t.gnu.o0.exe
++// RUN: %clang --target=x86_64-pc-windows-msvc -x objective-c -std=c17 -fobjc-version=3 -fobjc-runtime=gnustep-2.0 -O2 -I %S/Inputs -c %S/Inputs/carrier-native-abi-c-provider.c -o %t.gnu.o2.provider.obj
++// RUN: %clang --target=x86_64-pc-windows-msvc -x c -std=c17 -O2 -I %S/Inputs -c %S/Inputs/carrier-native-abi-c-client.c -o %t.gnu.o2.client.obj
++// RUN: %clang --target=x86_64-pc-windows-msvc -fuse-ld=lld -fms-runtime-lib=dll %t.gnu.o2.provider.obj %t.gnu.o2.client.obj -o %t.gnu.o2.exe
++// RUN: %t.gnu.o2.exe
++// RUN: %clang_cl /MD --target=x86_64-pc-windows-msvc -x objective-c /clang:-std=c17 /clang:-fobjc-version=3 /clang:-fobjc-runtime=gnustep-2.0 /Od /I %S/Inputs /c %S/Inputs/carrier-native-abi-c-provider.c /Fo%t.cl.o0.provider.obj
++// RUN: %clang_cl /MD --target=x86_64-pc-windows-msvc -x c /clang:-std=c17 /Od /I %S/Inputs /c %S/Inputs/carrier-native-abi-c-client.c /Fo%t.cl.o0.client.obj
++// RUN: %clang_cl /MD --target=x86_64-pc-windows-msvc -fuse-ld=lld /Fe%t.cl.o0.exe %t.cl.o0.provider.obj %t.cl.o0.client.obj
++// RUN: %t.cl.o0.exe
++// RUN: %clang_cl /MD --target=x86_64-pc-windows-msvc -x objective-c /clang:-std=c17 /clang:-fobjc-version=3 /clang:-fobjc-runtime=gnustep-2.0 /O2 /I %S/Inputs /c %S/Inputs/carrier-native-abi-c-provider.c /Fo%t.cl.o2.provider.obj
++// RUN: %clang_cl /MD --target=x86_64-pc-windows-msvc -x c /clang:-std=c17 /O2 /I %S/Inputs /c %S/Inputs/carrier-native-abi-c-client.c /Fo%t.cl.o2.client.obj
++// RUN: %clang_cl /MD --target=x86_64-pc-windows-msvc -fuse-ld=lld /Fe%t.cl.o2.exe %t.cl.o2.provider.obj %t.cl.o2.client.obj
++// RUN: %t.cl.o2.exe
++//
++// An ordinary C caller and an extension-mode provider exchange carrier values
++// through private mirror declarations. The mirror is test-only, not a public
++// ABI promise. The provider compares mirror sizes/alignments with compiler-owned
++// target layouts. The client reads only the active union arm and makes no claim
++// about inactive storage bytes.
+\ No newline at end of file
+diff --git a/clang/test/ObjC3/CodeGen/carrier-native-abi-preflight.c b/clang/test/ObjC3/CodeGen/carrier-native-abi-preflight.c
+new file mode 100644
+--- /dev/null
++++ b/clang/test/ObjC3/CodeGen/carrier-native-abi-preflight.c
+@@ -0,0 +1,32 @@
++// RUN: %clang_cc1 -x objective-c -std=c17 -fblocks -fobjc-version=3 -triple x86_64-pc-windows-msvc -DTEST_VARIADIC_FIXED -emit-llvm -o %t.fixed.ll -verify %s
++// RUN: test ! -e %t.fixed.ll
++// RUN: %clang_cc1 -x objective-c -std=c17 -fblocks -fobjc-version=3 -triple x86_64-pc-windows-msvc -DTEST_BLOCK_FIXED -emit-llvm -o %t.block.ll -verify %s
++// RUN: test ! -e %t.block.ll
++// RUN: %clang_cc1 -x objective-c -std=c17 -fblocks -fobjc-version=3 -triple x86_64-pc-windows-msvc -DTEST_C_AGGREGATE -emit-llvm -o %t.aggregate.ll -verify %s
++// RUN: test ! -e %t.aggregate.ll
++// RUN: %clang_cc1 -x objective-c -std=c17 -fblocks -fobjc-version=3 -triple x86_64-pc-windows-msvc -DTEST_C_VECTORCALL -emit-llvm -o %t.vectorcall.ll -verify %s
++// RUN: test ! -e %t.vectorcall.ll
++
++typedef __objc3_optional(int) OptionalInt;
++
++#if defined(TEST_VARIADIC_FIXED)
++extern void variadic_fixed(OptionalInt value, ...);
++void caller(OptionalInt *value) {
++  variadic_fixed(*value, 42); // expected-error {{ObjC3 carrier operation 'by-value call ABI'}}
++}
++#elif defined(TEST_BLOCK_FIXED)
++void caller(void (^block)(OptionalInt), OptionalInt *value) {
++  block(*value); // expected-error {{ObjC3 carrier operation 'by-value call ABI'}}
++}
++#elif defined(TEST_C_AGGREGATE)
++struct Wrapped { OptionalInt value; };
++extern void aggregate_sink(struct Wrapped);
++void caller(struct Wrapped *value) {
++  aggregate_sink(*value); // expected-error {{ObjC3 carrier operation 'by-value call ABI'}}
++}
++#elif defined(TEST_C_VECTORCALL)
++extern void __attribute__((vectorcall)) alternate_sink(OptionalInt);
++void caller(OptionalInt *value) {
++  alternate_sink(*value); // expected-error {{ObjC3 carrier operation 'by-value call ABI'}}
++}
++#endif
+diff --git a/clang/test/ObjC3/CodeGen/carrier-native-abi-runtime.c b/clang/test/ObjC3/CodeGen/carrier-native-abi-runtime.c
+new file mode 100644
+--- /dev/null
++++ b/clang/test/ObjC3/CodeGen/carrier-native-abi-runtime.c
+@@ -0,0 +1,9 @@
++// REQUIRES: lld, system-windows
++// RUN: %clang --target=x86_64-pc-windows-msvc -x objective-c -std=c17 -fobjc-version=3 -fobjc-runtime=gnustep-2.0 -fuse-ld=lld -fms-runtime-lib=dll -I %S/Inputs -o %t.gnu.exe %S/Inputs/carrier-native-abi-runtime-provider.c %S/Inputs/carrier-native-abi-runtime-main.c
++// RUN: %t.gnu.exe
++// RUN: %clang_cl /MD --target=x86_64-pc-windows-msvc -x objective-c /clang:-std=c17 /clang:-fobjc-version=3 /clang:-fobjc-runtime=gnustep-2.0 -fuse-ld=lld /I %S/Inputs %S/Inputs/carrier-native-abi-runtime-provider.c %S/Inputs/carrier-native-abi-runtime-main.c /Fe%t.cl.exe
++// RUN: %t.cl.exe
++//
++// This runtime witness crosses a true translation-unit boundary and checks
++// discriminants after calls. Full-width payload transfer is asserted in the
++// adjacent IR test; tag checks alone do not inspect hidden payload bytes.
+diff --git a/clang/test/ObjC3/CodeGen/carrier-native-abi-unsupported.c b/clang/test/ObjC3/CodeGen/carrier-native-abi-unsupported.c
+new file mode 100644
+--- /dev/null
++++ b/clang/test/ObjC3/CodeGen/carrier-native-abi-unsupported.c
+@@ -0,0 +1,13 @@
++// RUN: %clang_cc1 -x objective-c -std=c17 -fobjc-version=3 -fobjc-runtime=gnustep-2.0 -triple x86_64-unknown-linux-gnu -emit-llvm -o %t.ll -verify %s
++// RUN: test ! -e %t.ll
++// RUN: %clang_cc1 -x objective-c -std=c17 -fobjc-version=3 -fobjc-runtime=gnustep-2.0 -triple x86_64-w64-windows-gnu -emit-llvm -o %t.gnu.ll -verify %s
++// RUN: test ! -e %t.gnu.ll
++//
++// The new carrier-by-value ABI is deliberately qualified only for Windows
++// x86_64-pc-windows-msvc Microsoft C ABI tuple. In particular, a MinGW target
++// is not admitted based only on its architecture and OS.
++typedef __objc3_optional(long long) OptionalWide;
++OptionalWide unsupported_target(OptionalWide value) { // expected-error-re {{ObjC3 carrier operation 'by-value call ABI' for type {{.*}} has no qualified lowering: {{.*}}}}
++  return value;
++}
++
+diff --git a/clang/test/ObjC3/CodeGen/carrier-native-abi.c b/clang/test/ObjC3/CodeGen/carrier-native-abi.c
+new file mode 100644
+--- /dev/null
++++ b/clang/test/ObjC3/CodeGen/carrier-native-abi.c
+@@ -0,0 +1,54 @@
++// RUN: %clang_cc1 -x objective-c -std=c17 -fobjc-version=3 -fobjc-runtime=gnustep-2.0 -triple x86_64-pc-windows-msvc -emit-llvm -o %t.msvc.callee.ll -I %S/Inputs %S/Inputs/carrier-native-abi-callee.c
++// RUN: FileCheck %s --check-prefix=MSVC-CALLEE < %t.msvc.callee.ll
++// RUN: %clang_cc1 -x objective-c -std=c17 -fobjc-version=3 -fobjc-runtime=gnustep-2.0 -triple x86_64-pc-windows-msvc -emit-llvm -o %t.msvc.caller.ll -I %S/Inputs %S/Inputs/carrier-native-abi-caller.c
++// RUN: FileCheck %s --check-prefix=MSVC-CALLER < %t.msvc.caller.ll
++// RUN: %clang -x objective-c -std=c17 -fobjc-version=3 -fobjc-runtime=gnustep-2.0 --target=x86_64-pc-windows-msvc -S -emit-llvm -o %t.clang-driver.callee.ll -I %S/Inputs %S/Inputs/carrier-native-abi-callee.c
++// RUN: FileCheck %s --check-prefix=MSVC-CALLEE < %t.clang-driver.callee.ll
++// RUN: %clang -x objective-c -std=c17 -fobjc-version=3 -fobjc-runtime=gnustep-2.0 --target=x86_64-pc-windows-msvc -S -emit-llvm -o %t.clang-driver.caller.ll -I %S/Inputs %S/Inputs/carrier-native-abi-caller.c
++// RUN: FileCheck %s --check-prefix=MSVC-CALLER < %t.clang-driver.caller.ll
++// RUN: %clang_cl --target=x86_64-pc-windows-msvc -x objective-c /clang:-fobjc-version=3 /clang:-fobjc-runtime=gnustep-2.0 /clang:-S /clang:-emit-llvm /clang:-o /clang:- /I %S/Inputs %S/Inputs/carrier-native-abi-callee.c | FileCheck %s --check-prefix=MSVC-CALLEE
++// RUN: %clang_cl --target=x86_64-pc-windows-msvc -x objective-c /clang:-fobjc-version=3 /clang:-fobjc-runtime=gnustep-2.0 /clang:-S /clang:-emit-llvm /clang:-o /clang:- /I %S/Inputs %S/Inputs/carrier-native-abi-caller.c | FileCheck %s --check-prefix=MSVC-CALLER
++//
++// The hidden records are classified by Clang's x86_64-pc-windows-msvc target
++// ABI. These checks
++// exercise separate provider/consumer signatures, direct and indirect calls,
++// narrow and wide payloads, Result, and nested Optional storage. They do not
++// qualify an Objective-C method encoding or MinGW ABI.
++// MSVC-CALLEE-LABEL: define{{.*}} @carrier_int_identity(i64
++// MSVC-CALLEE: call void @llvm.memset{{.*}}(ptr
++// MSVC-CALLEE-LABEL: define{{.*}} @carrier_wide_identity(ptr{{.*}}sret
++// MSVC-CALLEE-LABEL: define{{.*}} @carrier_result_identity(ptr{{.*}}sret
++// MSVC-CALLEE-LABEL: define{{.*}} @carrier_nested_identity(ptr{{.*}}sret
++// MSVC-CALLER-LABEL: define{{.*}} @call_int_direct(i64
++// MSVC-CALLER: call void @llvm.memset{{.*}}(ptr
++// MSVC-CALLER: load i32
++// MSVC-CALLER: store i32
++// MSVC-CALLER: call i64 @carrier_int_identity(i64
++// MSVC-CALLER-LABEL: define{{.*}} @call_wide_direct(ptr{{.*}}sret
++// MSVC-CALLER: load i64
++// MSVC-CALLER: store i64
++// MSVC-CALLER: call void @carrier_wide_identity(ptr{{.*}}sret
++// MSVC-CALLER-LABEL: define{{.*}} @call_result_direct(ptr{{.*}}sret
++// MSVC-CALLER: load i32
++// MSVC-CALLER: load i64
++// MSVC-CALLER: call void @carrier_result_identity(ptr{{.*}}sret
++// MSVC-CALLER-LABEL: define{{.*}} @call_nested_direct(ptr{{.*}}sret
++// MSVC-CALLER: call void @carrier_nested_identity(ptr{{.*}}sret
++// MSVC-CALLER-LABEL: define{{.*}} @call_wide_indirect(ptr
++// MSVC-CALLER: load i64
++// MSVC-CALLER: store i64
++// MSVC-CALLER: call void %{{.*}}(ptr
++// MSVC-CALLER-LABEL: define{{.*}} @exercise_payload_tags()
++// MSVC-CALLER: store i8 0
++// MSVC-CALLER-LABEL: define{{.*}} @native_zero_present()
++// MSVC-CALLER: store i8 1
++// MSVC-CALLER: load i8
++// MSVC-CALLER-LABEL: define{{.*}} @native_false_present()
++// MSVC-CALLER: store i8 1
++// MSVC-CALLER-LABEL: define{{.*}} @native_null_present()
++// MSVC-CALLER: store i8 1
++// MSVC-CALLER-LABEL: define{{.*}} @native_void_success_once()
++// MSVC-CALLER-COUNT-1: call i32 @increment_once()
++// MSVC-CALLER: store i8 1
++// MSVC-CALLER-LABEL: define{{.*}} @native_void_error()
++// MSVC-CALLER: store i8 0
 diff --git a/clang/test/ObjC3/CodeGen/carrier-native-layout-aarch64.c b/clang/test/ObjC3/CodeGen/carrier-native-layout-aarch64.c
 new file mode 100644
 --- /dev/null
