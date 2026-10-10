@@ -1,0 +1,1443 @@
+diff --git a/clang/include/clang/AST/Expr.h b/clang/include/clang/AST/Expr.h
+index 3e30a8b42..1f0e69be7 100644
+--- a/clang/include/clang/AST/Expr.h
++++ b/clang/include/clang/AST/Expr.h
+@@ -4845,6 +4845,103 @@ public:
+ ///   and all predicates (whether it's an l-value, whether it's an integer
+ ///   constant expression, etc.) return the same result as for the chosen
+ ///   sub-expression.
++/// Internal Optional construction/presence expressions. The payload child is
++/// initialized by Sema; the hidden layout record never defines source operations.
++/// Internal Result construction/query expressions with independent arm types.
++class ObjC3ResultExpr : public Expr {
++public:
++  enum class Kind : unsigned char { Ok, Err, IsOk };
++private:
++  Kind Operation = Kind::IsOk;
++  QualType CarrierType;
++  TypeSourceInfo *SuccessTypeInfo = nullptr;
++  TypeSourceInfo *ErrorTypeInfo = nullptr;
++  Stmt *Payload = nullptr;
++  SourceLocation KeywordLoc, LParenLoc, FirstCommaLoc, SecondCommaLoc, RParenLoc;
++  ObjC3ResultExpr(Kind Operation, QualType ResultType, QualType CarrierType,
++      TypeSourceInfo *SuccessTypeInfo, TypeSourceInfo *ErrorTypeInfo, Expr *Payload,
++      SourceLocation KeywordLoc, SourceLocation LParenLoc, SourceLocation FirstCommaLoc,
++      SourceLocation SecondCommaLoc, SourceLocation RParenLoc);
++public:
++  explicit ObjC3ResultExpr(EmptyShell Empty) : Expr(ObjC3ResultExprClass, Empty) {}
++  static ObjC3ResultExpr *Create(ASTContext &Context, Kind Operation,
++      QualType ResultType, QualType CarrierType, TypeSourceInfo *SuccessTypeInfo,
++      TypeSourceInfo *ErrorTypeInfo, Expr *Payload, SourceLocation KeywordLoc,
++      SourceLocation LParenLoc, SourceLocation FirstCommaLoc,
++      SourceLocation SecondCommaLoc, SourceLocation RParenLoc);
++  Kind getKind() const { return Operation; }
++  void setKind(Kind Value) { Operation = Value; }
++  QualType getCarrierType() const { return CarrierType; }
++  void setCarrierType(QualType Value) { CarrierType = Value; }
++  TypeSourceInfo *getSuccessTypeInfo() const { return SuccessTypeInfo; }
++  void setSuccessTypeInfo(TypeSourceInfo *Value) { SuccessTypeInfo = Value; }
++  TypeSourceInfo *getErrorTypeInfo() const { return ErrorTypeInfo; }
++  void setErrorTypeInfo(TypeSourceInfo *Value) { ErrorTypeInfo = Value; }
++  Expr *getPayload() const { return cast_or_null<Expr>(Payload); }
++  void setPayload(Expr *Value) { Payload = Value; }
++  SourceLocation getKeywordLoc() const { return KeywordLoc; }
++  SourceLocation getLParenLoc() const { return LParenLoc; }
++  SourceLocation getFirstCommaLoc() const { return FirstCommaLoc; }
++  SourceLocation getSecondCommaLoc() const { return SecondCommaLoc; }
++  SourceLocation getRParenLoc() const { return RParenLoc; }
++  void setKeywordLoc(SourceLocation Value) { KeywordLoc = Value; }
++  void setLParenLoc(SourceLocation Value) { LParenLoc = Value; }
++  void setFirstCommaLoc(SourceLocation Value) { FirstCommaLoc = Value; }
++  void setSecondCommaLoc(SourceLocation Value) { SecondCommaLoc = Value; }
++  void setRParenLoc(SourceLocation Value) { RParenLoc = Value; }
++  SourceLocation getBeginLoc() const LLVM_READONLY { return KeywordLoc; }
++  SourceLocation getEndLoc() const LLVM_READONLY { return RParenLoc; }
++  child_range children() { return child_range(&Payload, &Payload + (Payload != nullptr)); }
++  const_child_range children() const { return const_child_range(&Payload, &Payload + (Payload != nullptr)); }
++  static bool classof(const Stmt *S) { return S->getStmtClass() == ObjC3ResultExprClass; }
++};
++
++class ObjC3OptionalExpr : public Expr {
++public:
++  enum class Kind : unsigned char { Some, None, HasValue };
++
++private:
++  Kind Operation = Kind::None;
++  QualType CarrierType;
++  TypeSourceInfo *PayloadTypeInfo = nullptr;
++  Stmt *Payload = nullptr;
++  SourceLocation KeywordLoc, LParenLoc, CommaLoc, RParenLoc;
++
++  ObjC3OptionalExpr(Kind Operation, QualType ResultType, QualType CarrierType,
++                   TypeSourceInfo *PayloadTypeInfo, Expr *Payload,
++                   SourceLocation KeywordLoc, SourceLocation LParenLoc,
++                   SourceLocation CommaLoc, SourceLocation RParenLoc);
++
++public:
++  explicit ObjC3OptionalExpr(EmptyShell Empty)
++      : Expr(ObjC3OptionalExprClass, Empty) {}
++  static ObjC3OptionalExpr *Create(ASTContext &Context, Kind Operation,
++      QualType ResultType, QualType CarrierType, TypeSourceInfo *PayloadTypeInfo,
++      Expr *Payload, SourceLocation KeywordLoc, SourceLocation LParenLoc,
++      SourceLocation CommaLoc, SourceLocation RParenLoc);
++  Kind getKind() const { return Operation; }
++  void setKind(Kind Value) { Operation = Value; }
++  QualType getCarrierType() const { return CarrierType; }
++  void setCarrierType(QualType Value) { CarrierType = Value; }
++  TypeSourceInfo *getPayloadTypeInfo() const { return PayloadTypeInfo; }
++  void setPayloadTypeInfo(TypeSourceInfo *Value) { PayloadTypeInfo = Value; }
++  Expr *getPayload() const { return cast_or_null<Expr>(Payload); }
++  void setPayload(Expr *Value) { Payload = Value; }
++  SourceLocation getKeywordLoc() const { return KeywordLoc; }
++  SourceLocation getLParenLoc() const { return LParenLoc; }
++  SourceLocation getCommaLoc() const { return CommaLoc; }
++  SourceLocation getRParenLoc() const { return RParenLoc; }
++  void setKeywordLoc(SourceLocation Value) { KeywordLoc = Value; }
++  void setLParenLoc(SourceLocation Value) { LParenLoc = Value; }
++  void setCommaLoc(SourceLocation Value) { CommaLoc = Value; }
++  void setRParenLoc(SourceLocation Value) { RParenLoc = Value; }
++  SourceLocation getBeginLoc() const LLVM_READONLY { return KeywordLoc; }
++  SourceLocation getEndLoc() const LLVM_READONLY { return RParenLoc; }
++  child_range children() { return child_range(&Payload, &Payload + (Payload != nullptr)); }
++  const_child_range children() const { return const_child_range(&Payload, &Payload + (Payload != nullptr)); }
++  static bool classof(const Stmt *S) { return S->getStmtClass() == ObjC3OptionalExprClass; }
++};
++
+ class ChooseExpr : public Expr {
+   enum { COND, LHS, RHS, END_EXPR };
+   Stmt* SubExprs[END_EXPR]; // Left/Middle/Right hand sides.
+diff --git a/clang/include/clang/Basic/StmtNodes.td b/clang/include/clang/Basic/StmtNodes.td
+index b08b9fe3b..dc1270b66 100644
+--- a/clang/include/clang/Basic/StmtNodes.td
++++ b/clang/include/clang/Basic/StmtNodes.td
+@@ -117,6 +117,8 @@ def AtomicExpr : StmtNode<Expr>;
+ def AddrLabelExpr : StmtNode<Expr>;
+ def StmtExpr : StmtNode<Expr>;
+ def ChooseExpr : StmtNode<Expr>;
++def ObjC3OptionalExpr : StmtNode<Expr>;
++def ObjC3ResultExpr : StmtNode<Expr>;
+ def GNUNullExpr : StmtNode<Expr>;
+ 
+ // C++ Expressions.
+diff --git a/clang/lib/AST/Expr.cpp b/clang/lib/AST/Expr.cpp
+index d3e381ba4..cfaeb4b99 100644
+--- a/clang/lib/AST/Expr.cpp
++++ b/clang/lib/AST/Expr.cpp
+@@ -40,6 +40,64 @@
+ #include <optional>
+ using namespace clang;
+ 
++
++
++ObjC3ResultExpr::ObjC3ResultExpr(
++    Kind Operation, QualType ResultType, QualType CarrierType,
++    TypeSourceInfo *SuccessTypeInfo, TypeSourceInfo *ErrorTypeInfo, Expr *Payload,
++    SourceLocation KeywordLoc, SourceLocation LParenLoc, SourceLocation FirstCommaLoc,
++    SourceLocation SecondCommaLoc, SourceLocation RParenLoc)
++    : Expr(ObjC3ResultExprClass, ResultType, VK_PRValue, OK_Ordinary),
++      Operation(Operation), CarrierType(CarrierType), SuccessTypeInfo(SuccessTypeInfo),
++      ErrorTypeInfo(ErrorTypeInfo), Payload(Payload), KeywordLoc(KeywordLoc),
++      LParenLoc(LParenLoc), FirstCommaLoc(FirstCommaLoc), SecondCommaLoc(SecondCommaLoc),
++      RParenLoc(RParenLoc) {
++  auto Dependence = toExprDependenceForImpliedType(ResultType->getDependence());
++  if (SuccessTypeInfo)
++    Dependence |= toExprDependenceAsWritten(SuccessTypeInfo->getType()->getDependence());
++  if (ErrorTypeInfo)
++    Dependence |= toExprDependenceAsWritten(ErrorTypeInfo->getType()->getDependence());
++  if (Payload)
++    Dependence |= Operation == Kind::IsOk
++        ? turnTypeToValueDependence(Payload->getDependence()) : Payload->getDependence();
++  setDependence(Dependence);
++}
++ObjC3ResultExpr *ObjC3ResultExpr::Create(
++    ASTContext &Context, Kind Operation, QualType ResultType, QualType CarrierType,
++    TypeSourceInfo *SuccessTypeInfo, TypeSourceInfo *ErrorTypeInfo, Expr *Payload,
++    SourceLocation KeywordLoc, SourceLocation LParenLoc, SourceLocation FirstCommaLoc,
++    SourceLocation SecondCommaLoc, SourceLocation RParenLoc) {
++  return new (Context) ObjC3ResultExpr(Operation, ResultType, CarrierType,
++      SuccessTypeInfo, ErrorTypeInfo, Payload, KeywordLoc, LParenLoc,
++      FirstCommaLoc, SecondCommaLoc, RParenLoc);
++}
++
++ObjC3OptionalExpr::ObjC3OptionalExpr(
++    Kind Operation, QualType ResultType, QualType CarrierType,
++    TypeSourceInfo *PayloadTypeInfo, Expr *Payload, SourceLocation KeywordLoc,
++    SourceLocation LParenLoc, SourceLocation CommaLoc, SourceLocation RParenLoc)
++    : Expr(ObjC3OptionalExprClass, ResultType, VK_PRValue, OK_Ordinary),
++      Operation(Operation), CarrierType(CarrierType),
++      PayloadTypeInfo(PayloadTypeInfo), Payload(Payload), KeywordLoc(KeywordLoc),
++      LParenLoc(LParenLoc), CommaLoc(CommaLoc), RParenLoc(RParenLoc) {
++  auto Dependence = toExprDependenceForImpliedType(ResultType->getDependence());
++  if (PayloadTypeInfo)
++    Dependence |= toExprDependenceAsWritten(PayloadTypeInfo->getType()->getDependence());
++  if (Payload)
++    Dependence |= Operation == Kind::HasValue
++        ? turnTypeToValueDependence(Payload->getDependence())
++        : Payload->getDependence();
++  setDependence(Dependence);
++}
++
++ObjC3OptionalExpr *ObjC3OptionalExpr::Create(
++    ASTContext &Context, Kind Operation, QualType ResultType, QualType CarrierType,
++    TypeSourceInfo *PayloadTypeInfo, Expr *Payload, SourceLocation KeywordLoc,
++    SourceLocation LParenLoc, SourceLocation CommaLoc, SourceLocation RParenLoc) {
++  return new (Context) ObjC3OptionalExpr(Operation, ResultType, CarrierType,
++      PayloadTypeInfo, Payload, KeywordLoc, LParenLoc, CommaLoc, RParenLoc);
++}
++
+ const Expr *Expr::getBestDynamicClassTypeExpr() const {
+   const Expr *E = this;
+   while (true) {
+@@ -3839,6 +3897,21 @@ bool Expr::HasSideEffects(const ASTContext &Ctx,
+     return cast<GenericSelectionExpr>(this)->getResultExpr()->HasSideEffects(
+         Ctx, IncludePossibleEffects);
+ 
++  case ObjC3OptionalExprClass: {
++    const auto *E = cast<ObjC3OptionalExpr>(this);
++    if (IncludePossibleEffects && E->getKind() == ObjC3OptionalExpr::Kind::HasValue &&
++        E->getPayload()->getType().isVolatileQualified())
++      return true;
++    break;
++  }
++  case ObjC3ResultExprClass: {
++    const auto *E = cast<ObjC3ResultExpr>(this);
++    if (IncludePossibleEffects && E->getKind() == ObjC3ResultExpr::Kind::IsOk &&
++        E->getPayload()->getType().isVolatileQualified())
++      return true;
++    break;
++  }
++
+   case ChooseExprClass:
+     return cast<ChooseExpr>(this)->getChosenSubExpr()->HasSideEffects(
+         Ctx, IncludePossibleEffects);
+diff --git a/clang/lib/AST/ExprClassification.cpp b/clang/lib/AST/ExprClassification.cpp
+index 9995d1b41..b7cf4d3d6 100644
+--- a/clang/lib/AST/ExprClassification.cpp
++++ b/clang/lib/AST/ExprClassification.cpp
+@@ -169,6 +169,11 @@ static Cl::Kinds ClassifyInternal(ASTContext &Ctx, const Expr *E) {
+   case Expr::CompoundLiteralExprClass:
+     return !E->isLValue() ? ClassifyTemporary(E->getType()) : Cl::CL_LValue;
+ 
++    // Carrier constructors and queries produce values, never payload lvalues.
++  case Expr::ObjC3OptionalExprClass:
++  case Expr::ObjC3ResultExprClass:
++    return ClassifyExprValueKind(Lang, E, E->getValueKind());
++
+     // Expressions that are prvalues.
+   case Expr::CXXBoolLiteralExprClass:
+   case Expr::CXXPseudoDestructorExprClass:
+diff --git a/clang/lib/AST/ExprConstant.cpp b/clang/lib/AST/ExprConstant.cpp
+index ec7ca893f..af1632e86 100644
+--- a/clang/lib/AST/ExprConstant.cpp
++++ b/clang/lib/AST/ExprConstant.cpp
+@@ -15469,6 +15469,12 @@ GCCTypeClass EvaluateBuiltinClassifyType(QualType T,
+     return CanTy->isUnionType() ? GCCTypeClass::Union
+                                 : GCCTypeClass::ClassOrStruct;
+ 
++  // ObjC3 carriers have aggregate value semantics and should classify like a
++  // record rather than reaching the unexpected-type fallback.
++  case Type::ObjC3Optional:
++  case Type::ObjC3Result:
++    return GCCTypeClass::ClassOrStruct;
++
+   case Type::Atomic:
+     // GCC classifies _Atomic T the same as T.
+     return EvaluateBuiltinClassifyType(
+@@ -21016,6 +21022,8 @@ static ICEDiag CheckICE(const Expr* E, const ASTContext &Ctx) {
+ #define STMT(Node, Base) case Expr::Node##Class:
+ #define EXPR(Node, Base)
+ #include "clang/AST/StmtNodes.inc"
++  case Expr::ObjC3OptionalExprClass:
++  case Expr::ObjC3ResultExprClass:
+   case Expr::PredefinedExprClass:
+   case Expr::FloatingLiteralClass:
+   case Expr::ImaginaryLiteralClass:
+diff --git a/clang/lib/AST/StmtProfile.cpp b/clang/lib/AST/StmtProfile.cpp
+index a626d0436..c9352004c 100644
+--- a/clang/lib/AST/StmtProfile.cpp
++++ b/clang/lib/AST/StmtProfile.cpp
+@@ -1604,6 +1604,18 @@ void StmtProfiler::VisitConvertVectorExpr(const ConvertVectorExpr *S) {
+   VisitExpr(S);
+ }
+ 
++void StmtProfiler::VisitObjC3ResultExpr(const ObjC3ResultExpr *S) {
++  VisitExpr(S);
++  ID.AddInteger(static_cast<unsigned>(S->getKind()));
++  VisitType(S->getCarrierType());
++}
++
++void StmtProfiler::VisitObjC3OptionalExpr(const ObjC3OptionalExpr *S) {
++  VisitExpr(S);
++  ID.AddInteger(static_cast<unsigned>(S->getKind()));
++  VisitType(S->getCarrierType());
++}
++
+ void StmtProfiler::VisitChooseExpr(const ChooseExpr *S) {
+   VisitExpr(S);
+ }
+diff --git a/clang/lib/Parse/ParseExpr.cpp b/clang/lib/Parse/ParseExpr.cpp
+index 351534320..6155ac533 100644
+--- a/clang/lib/Parse/ParseExpr.cpp
++++ b/clang/lib/Parse/ParseExpr.cpp
+@@ -864,6 +864,22 @@ Parser::ParseCastExpression(CastParseKind ParseKind, bool isAddressOfOperand,
+   ParseIdentifier: {    // primary-expression: identifier
+                         // unqualified-id: identifier
+                         // constant: enumeration-constant
++    if (getLangOpts().ObjC3 && Tok.is(tok::identifier) &&
++        Tok.getIdentifierInfo() &&
++        (Tok.getIdentifierInfo()->isStr("__objc3_some") ||
++         Tok.getIdentifierInfo()->isStr("__objc3_none") ||
++         Tok.getIdentifierInfo()->isStr("__objc3_has_value"))) {
++      Res = ParseObjC3OptionalExpression();
++      break;
++    }
++    if (getLangOpts().ObjC3 && Tok.is(tok::identifier) &&
++        Tok.getIdentifierInfo() &&
++        (Tok.getIdentifierInfo()->isStr("__objc3_ok") ||
++         Tok.getIdentifierInfo()->isStr("__objc3_err") ||
++         Tok.getIdentifierInfo()->isStr("__objc3_is_ok"))) {
++      Res = ParseObjC3ResultExpression();
++      break;
++    }
+     // Turn a potentially qualified name into a annot_typename or
+     // annot_cxxscope if it would be valid.  This handles things like x::y, etc.
+     if (getLangOpts().CPlusPlus) {
+diff --git a/clang/lib/Sema/SemaExceptionSpec.cpp b/clang/lib/Sema/SemaExceptionSpec.cpp
+index 6208d6679..8db6ed78b 100644
+--- a/clang/lib/Sema/SemaExceptionSpec.cpp
++++ b/clang/lib/Sema/SemaExceptionSpec.cpp
+@@ -1325,6 +1325,11 @@ CanThrowResult Sema::canThrow(const Stmt *S) {
+     return mergeCanThrow(CT, canSubStmtsThrow(*this, S));
+   }
+ 
++  case Expr::ObjC3OptionalExprClass:
++  case Expr::ObjC3ResultExprClass:
++    return mergeCanThrow(cast<Expr>(S)->isValueDependent() ? CT_Dependent : CT_Cannot,
++                         canSubStmtsThrow(*this, S));
++
+   case Expr::CXXDefaultArgExprClass:
+     return canThrow(cast<CXXDefaultArgExpr>(S)->getExpr());
+ 
+diff --git a/clang/lib/Sema/SemaObjC3OptionalExpr.cpp b/clang/lib/Sema/SemaObjC3OptionalExpr.cpp
+new file mode 100644
+--- /dev/null
++++ b/clang/lib/Sema/SemaObjC3OptionalExpr.cpp
+@@ -0,0 +1,189 @@
++//===--- SemaObjC3OptionalExpr.cpp - Optional expression semantics --------===//
++//
++// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
++// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
++//
++//===----------------------------------------------------------------------===//
++
++#include "clang/AST/ASTContext.h"
++#include "clang/AST/Expr.h"
++#include "clang/AST/ObjC3TypeContracts.h"
++#include "clang/AST/TypeBase.h"
++#include "clang/Basic/DiagnosticSema.h"
++#include "clang/Sema/Initialization.h"
++#include "clang/Sema/Sema.h"
++
++using namespace clang;
++
++namespace {
++
++bool checkOptionalConstructionType(Sema &S, SourceLocation Loc,
++                                   QualType PayloadType,
++                                   QualType CarrierType) {
++  if (PayloadType->isArrayType() || PayloadType->isVariablyModifiedType() ||
++      PayloadType->isFunctionType() || PayloadType->isReferenceType()) {
++    S.Diag(Loc, diag::err_objc3_carrier_payload_unsupported) << PayloadType;
++    return true;
++  }
++  if (PayloadType->isDependentType())
++    return false;
++
++  ObjC3CarrierRepresentationInfo Representation =
++      S.Context.getObjC3CarrierRepresentationType(CarrierType);
++  if (Representation.State ==
++      ObjC3CarrierRepresentationInfo::Status::Unsupported) {
++    S.Diag(Loc, diag::err_objc3_carrier_payload_unsupported) << PayloadType;
++    return true;
++  }
++
++  if (Representation.State ==
++      ObjC3CarrierRepresentationInfo::Status::Deferred) {
++    return S.RequireCompleteType(Loc, PayloadType,
++                                 diag::err_typecheck_decl_incomplete_type);
++  }
++  return false;
++}
++
++TypeSourceInfo *getPayloadTypeInfo(Sema &S, ParsedType ParsedType,
++                                   QualType &PayloadType) {
++  TypeSourceInfo *Info = nullptr;
++  PayloadType = S.GetTypeFromParser(ParsedType, &Info);
++  if (PayloadType.isNull())
++    return nullptr;
++  if (!Info)
++    Info = S.Context.getTrivialTypeSourceInfo(PayloadType);
++  return Info;
++}
++
++ExprResult buildOptionalExpr(Sema &S, ObjC3OptionalExpr::Kind Kind,
++                             QualType ResultType, QualType CarrierType,
++                             TypeSourceInfo *PayloadTypeInfo, Expr *Payload,
++                             SourceLocation KeywordLoc,
++                             SourceLocation LParenLoc,
++                             SourceLocation CommaLoc,
++                             SourceLocation RParenLoc) {
++  return ObjC3OptionalExpr::Create(
++      S.Context, Kind, ResultType, CarrierType, PayloadTypeInfo, Payload,
++      KeywordLoc, LParenLoc, CommaLoc, RParenLoc);
++}
++
++} // namespace
++
++ExprResult Sema::ActOnObjC3OptionalSomeExpr(SourceLocation KeywordLoc,
++                                            SourceLocation LParenLoc,
++                                            ParsedType PayloadTypeAsWritten,
++                                            Expr *Payload,
++                                            SourceLocation CommaLoc,
++                                            SourceLocation RParenLoc) {
++  if (!Payload)
++    return ExprError();
++
++  QualType PayloadType;
++  TypeSourceInfo *PayloadTypeInfo =
++      getPayloadTypeInfo(*this, PayloadTypeAsWritten, PayloadType);
++  if (!PayloadTypeInfo)
++    return ExprError();
++
++  QualType CarrierType = Context.getObjC3OptionalType(PayloadType);
++  if (checkOptionalConstructionType(*this, KeywordLoc, PayloadType,
++                                    CarrierType))
++    return ExprError();
++
++  if (PayloadType->isDependentType() || Payload->isTypeDependent()) {
++    return buildOptionalExpr(*this, ObjC3OptionalExpr::Kind::Some,
++                             CarrierType, CarrierType, PayloadTypeInfo, Payload,
++                             KeywordLoc, LParenLoc, CommaLoc, RParenLoc);
++  }
++
++  ExprResult InitializedPayload;
++  if (PayloadType->isVoidType()) {
++    if (!Payload->getType()->isVoidType()) {
++      DiagnoseAssignmentResult(AssignConvertType::Incompatible, CommaLoc,
++                               PayloadType, Payload->getType(), Payload,
++                               AssignmentAction::Initializing);
++      return ExprError();
++    }
++    InitializedPayload = Payload;
++  } else {
++    // Construct the active payload in its carrier field. Binding that field as
++    // a temporary would schedule destruction at the enclosing full expression
++    // and conflict with the carrier's eventual lifetime adapter. Source
++    // argument temporaries keep their normal native cleanup bindings.
++    auto Representation = Context.getObjC3CarrierRepresentationType(CarrierType);
++    assert(Representation.ValueField && "complete Optional payload field");
++    InitializedEntity Entity =
++        InitializedEntity::InitializeMember(Representation.ValueField);
++    InitializationKind Kind =
++        InitializationKind::CreateCopy(KeywordLoc, CommaLoc);
++    InitializationSequence Sequence(*this, Entity, Kind, Payload);
++    InitializedPayload = Sequence.Perform(*this, Entity, Kind, Payload);
++    if (InitializedPayload.isInvalid())
++      return ExprError();
++  }
++
++  Expr *InitializedExpr = InitializedPayload.getAs<Expr>();
++  CheckCompletedExpr(InitializedExpr, CommaLoc);
++  ExprResult Result = buildOptionalExpr(
++      *this, ObjC3OptionalExpr::Kind::Some, CarrierType, CarrierType,
++      PayloadTypeInfo, InitializedExpr, KeywordLoc, LParenLoc, CommaLoc,
++      RParenLoc);
++  if (Result.isInvalid())
++    return Result;
++  return Result;
++}
++
++ExprResult Sema::ActOnObjC3OptionalNoneExpr(SourceLocation KeywordLoc,
++                                            SourceLocation LParenLoc,
++                                            ParsedType PayloadTypeAsWritten,
++                                            SourceLocation RParenLoc) {
++  QualType PayloadType;
++  TypeSourceInfo *PayloadTypeInfo =
++      getPayloadTypeInfo(*this, PayloadTypeAsWritten, PayloadType);
++  if (!PayloadTypeInfo)
++    return ExprError();
++
++  QualType CarrierType = Context.getObjC3OptionalType(PayloadType);
++  if (checkOptionalConstructionType(*this, KeywordLoc, PayloadType,
++                                    CarrierType))
++    return ExprError();
++
++  return buildOptionalExpr(*this, ObjC3OptionalExpr::Kind::None, CarrierType,
++                           CarrierType, PayloadTypeInfo, nullptr, KeywordLoc,
++                           LParenLoc, SourceLocation(), RParenLoc);
++}
++
++ExprResult Sema::ActOnObjC3OptionalHasValueExpr(SourceLocation KeywordLoc,
++                                                 SourceLocation LParenLoc,
++                                                 Expr *OptionalValue,
++                                                 SourceLocation RParenLoc) {
++  if (!OptionalValue)
++    return ExprError();
++
++  ExprResult CheckedValue = CheckPlaceholderExpr(OptionalValue);
++  if (CheckedValue.isInvalid())
++    return ExprError();
++  OptionalValue = CheckedValue.get();
++
++  QualType CarrierType = Context.getCanonicalType(OptionalValue->getType());
++  const auto *Optional = CarrierType->getAs<ObjC3OptionalType>();
++  if (!OptionalValue->isTypeDependent() && !Optional) {
++    Diag(KeywordLoc, diag::err_objc3_has_value_requires_optional)
++        << OptionalValue->getType() << OptionalValue->getSourceRange();
++    return ExprError();
++  }
++
++  if (Optional && checkOptionalConstructionType(
++                      *this, KeywordLoc, Optional->getElementType(),
++                      CarrierType))
++    return ExprError();
++
++  CheckCompletedExpr(OptionalValue, RParenLoc);
++  const QualType ResultType = Context.BoolTy;
++  ExprResult Result = buildOptionalExpr(
++      *this, ObjC3OptionalExpr::Kind::HasValue, ResultType, CarrierType,
++      nullptr, OptionalValue, KeywordLoc, LParenLoc, SourceLocation(),
++      RParenLoc);
++  if (Result.isInvalid())
++    return Result;
++  return Result;
++}
+diff --git a/clang/lib/Sema/SemaObjC3ResultExpr.cpp b/clang/lib/Sema/SemaObjC3ResultExpr.cpp
+new file mode 100644
+--- /dev/null
++++ b/clang/lib/Sema/SemaObjC3ResultExpr.cpp
+@@ -0,0 +1,267 @@
++//===--- SemaObjC3ResultExpr.cpp - Result expression semantics ------------===//
++//
++// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
++// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
++//
++//===----------------------------------------------------------------------===//
++
++#include "clang/AST/ASTContext.h"
++#include "clang/AST/Expr.h"
++#include "clang/AST/ObjC3TypeContracts.h"
++#include "clang/AST/TypeBase.h"
++#include "clang/Basic/DiagnosticSema.h"
++#include "clang/Sema/Initialization.h"
++#include "clang/Sema/Sema.h"
++
++using namespace clang;
++
++namespace {
++
++TypeSourceInfo *getResultPayloadTypeInfo(Sema &S, ParsedType Parsed,
++                                         QualType &PayloadType) {
++  TypeSourceInfo *Info = nullptr;
++  PayloadType = S.GetTypeFromParser(Parsed, &Info);
++  if (PayloadType.isNull())
++    return nullptr;
++  if (!Info)
++    Info = S.Context.getTrivialTypeSourceInfo(PayloadType);
++  return Info;
++}
++
++/// Validate an arm independently so an unselected arm cannot make the Result
++/// carrier incomplete or admit a type with no native storage representation.
++bool checkResultPayloadType(Sema &S, SourceLocation Loc, QualType PayloadType,
++                            bool DeferCompleteness) {
++  if (PayloadType->isArrayType() || PayloadType->isVariablyModifiedType() ||
++      PayloadType->isFunctionType() || PayloadType->isReferenceType()) {
++    S.Diag(Loc, diag::err_objc3_carrier_payload_unsupported) << PayloadType;
++    return true;
++  }
++  if (PayloadType->isVoidType() || PayloadType->isDependentType())
++    return false;
++  if (PayloadType->isIncompleteType() && !DeferCompleteness)
++    return S.RequireCompleteType(Loc, PayloadType,
++                                 diag::err_typecheck_decl_incomplete_type);
++  if (PayloadType->isIncompleteType())
++    return false;
++  if (!PayloadType->isObjectType()) {
++    S.Diag(Loc, diag::err_objc3_carrier_payload_unsupported) << PayloadType;
++    return true;
++  }
++  return false;
++}
++
++bool checkResultRepresentation(Sema &S, SourceLocation Loc,
++                               QualType SuccessType, QualType ErrorType,
++                               QualType CarrierType,
++                               bool DeferCompleteness) {
++  if (checkResultPayloadType(S, Loc, SuccessType, DeferCompleteness) ||
++      checkResultPayloadType(S, Loc, ErrorType, DeferCompleteness))
++    return true;
++
++  ObjC3CarrierRepresentationInfo Representation =
++      S.Context.getObjC3CarrierRepresentationType(CarrierType);
++  if (Representation.State ==
++      ObjC3CarrierRepresentationInfo::Status::Unsupported) {
++    S.Diag(Loc, diag::err_objc3_carrier_payload_unsupported) << SuccessType;
++    return true;
++  }
++
++  if (Representation.State ==
++          ObjC3CarrierRepresentationInfo::Status::Deferred &&
++      !DeferCompleteness && !SuccessType->isDependentType() &&
++      !ErrorType->isDependentType()) {
++    if (S.RequireCompleteType(Loc, SuccessType,
++                              diag::err_typecheck_decl_incomplete_type))
++      return true;
++    if (S.RequireCompleteType(Loc, ErrorType,
++                              diag::err_typecheck_decl_incomplete_type))
++      return true;
++    // A non-dependent carrier must not pass construction while its computed
++    // representation remains deferred for any other reason.
++    S.Diag(Loc, diag::err_objc3_carrier_payload_unsupported) << ErrorType;
++    return true;
++  }
++  return false;
++}
++
++ExprResult buildResultExpr(Sema &S, ObjC3ResultExpr::Kind Kind,
++                           QualType ResultType, QualType CarrierType,
++                           TypeSourceInfo *SuccessTypeInfo,
++                           TypeSourceInfo *ErrorTypeInfo, Expr *Payload,
++                           SourceLocation KeywordLoc,
++                           SourceLocation LParenLoc,
++                           SourceLocation FirstCommaLoc,
++                           SourceLocation SecondCommaLoc,
++                           SourceLocation RParenLoc) {
++  return ObjC3ResultExpr::Create(
++      S.Context, Kind, ResultType, CarrierType, SuccessTypeInfo,
++      ErrorTypeInfo, Payload, KeywordLoc, LParenLoc, FirstCommaLoc,
++      SecondCommaLoc, RParenLoc);
++}
++
++ExprResult initializeResultPayload(Sema &S, SourceLocation KeywordLoc,
++                                   SourceLocation InitLoc,
++                                   FieldDecl *PayloadField,
++                                   QualType PayloadType, Expr *Payload) {
++  if (PayloadType->isVoidType()) {
++    if (Payload->getType()->isVoidType())
++      return Payload;
++    S.DiagnoseAssignmentResult(AssignConvertType::Incompatible, InitLoc,
++                               PayloadType, Payload->getType(), Payload,
++                               AssignmentAction::Initializing);
++    return ExprError();
++  }
++
++  assert(PayloadField && "complete Result payload field");
++  // The selected destination is a carrier field, not a native C++ temporary.
++  // The enclosing full-expression action owns source argument cleanups.
++  InitializedEntity Entity = InitializedEntity::InitializeMember(PayloadField);
++  InitializationKind Kind = InitializationKind::CreateCopy(KeywordLoc,
++                                                            InitLoc);
++  InitializationSequence Sequence(S, Entity, Kind, Payload);
++  return Sequence.Perform(S, Entity, Kind, Payload);
++}
++
++} // namespace
++
++ExprResult Sema::ActOnObjC3ResultOkExpr(
++    SourceLocation KeywordLoc, SourceLocation LParenLoc,
++    ParsedType SuccessTypeAsWritten, SourceLocation FirstCommaLoc,
++    ParsedType ErrorTypeAsWritten, SourceLocation SecondCommaLoc,
++    Expr *Payload, SourceLocation RParenLoc) {
++  if (!Payload)
++    return ExprError();
++
++  QualType SuccessType;
++  TypeSourceInfo *SuccessTypeInfo = getResultPayloadTypeInfo(
++      *this, SuccessTypeAsWritten, SuccessType);
++  if (!SuccessTypeInfo)
++    return ExprError();
++  QualType ErrorType;
++  TypeSourceInfo *ErrorTypeInfo =
++      getResultPayloadTypeInfo(*this, ErrorTypeAsWritten, ErrorType);
++  if (!ErrorTypeInfo)
++    return ExprError();
++
++  QualType CarrierType = Context.getObjC3ResultType(SuccessType, ErrorType);
++  const bool DeferCompleteness = SuccessType->isDependentType() ||
++                                 ErrorType->isDependentType() ||
++                                 Payload->isTypeDependent();
++  if (checkResultRepresentation(*this, KeywordLoc, SuccessType, ErrorType,
++                                CarrierType, DeferCompleteness))
++    return ExprError();
++
++  if (DeferCompleteness) {
++    return buildResultExpr(*this, ObjC3ResultExpr::Kind::Ok, CarrierType,
++                           CarrierType, SuccessTypeInfo, ErrorTypeInfo, Payload,
++                           KeywordLoc, LParenLoc, FirstCommaLoc, SecondCommaLoc,
++                           RParenLoc);
++  }
++
++  ExprResult InitializedPayload = initializeResultPayload(
++      *this, KeywordLoc, SecondCommaLoc,
++      Context.getObjC3CarrierRepresentationType(CarrierType).SuccessField,
++      SuccessType, Payload);
++  if (InitializedPayload.isInvalid())
++    return ExprError();
++  Expr *InitializedExpr = InitializedPayload.getAs<Expr>();
++  CheckCompletedExpr(InitializedExpr, SecondCommaLoc);
++
++  ExprResult Result = buildResultExpr(
++      *this, ObjC3ResultExpr::Kind::Ok, CarrierType, CarrierType,
++      SuccessTypeInfo, ErrorTypeInfo, InitializedExpr, KeywordLoc, LParenLoc,
++      FirstCommaLoc, SecondCommaLoc, RParenLoc);
++  if (Result.isInvalid())
++    return Result;
++  return Result;
++}
++
++ExprResult Sema::ActOnObjC3ResultErrExpr(
++    SourceLocation KeywordLoc, SourceLocation LParenLoc,
++    ParsedType SuccessTypeAsWritten, SourceLocation FirstCommaLoc,
++    ParsedType ErrorTypeAsWritten, SourceLocation SecondCommaLoc,
++    Expr *Payload, SourceLocation RParenLoc) {
++  if (!Payload)
++    return ExprError();
++
++  QualType SuccessType;
++  TypeSourceInfo *SuccessTypeInfo = getResultPayloadTypeInfo(
++      *this, SuccessTypeAsWritten, SuccessType);
++  if (!SuccessTypeInfo)
++    return ExprError();
++  QualType ErrorType;
++  TypeSourceInfo *ErrorTypeInfo =
++      getResultPayloadTypeInfo(*this, ErrorTypeAsWritten, ErrorType);
++  if (!ErrorTypeInfo)
++    return ExprError();
++
++  QualType CarrierType = Context.getObjC3ResultType(SuccessType, ErrorType);
++  const bool DeferCompleteness = SuccessType->isDependentType() ||
++                                 ErrorType->isDependentType() ||
++                                 Payload->isTypeDependent();
++  if (checkResultRepresentation(*this, KeywordLoc, SuccessType, ErrorType,
++                                CarrierType, DeferCompleteness))
++    return ExprError();
++
++  if (DeferCompleteness) {
++    return buildResultExpr(*this, ObjC3ResultExpr::Kind::Err, CarrierType,
++                           CarrierType, SuccessTypeInfo, ErrorTypeInfo, Payload,
++                           KeywordLoc, LParenLoc, FirstCommaLoc, SecondCommaLoc,
++                           RParenLoc);
++  }
++
++  ExprResult InitializedPayload = initializeResultPayload(
++      *this, KeywordLoc, SecondCommaLoc,
++      Context.getObjC3CarrierRepresentationType(CarrierType).ErrorField,
++      ErrorType, Payload);
++  if (InitializedPayload.isInvalid())
++    return ExprError();
++  Expr *InitializedExpr = InitializedPayload.getAs<Expr>();
++  CheckCompletedExpr(InitializedExpr, SecondCommaLoc);
++
++  ExprResult Result = buildResultExpr(
++      *this, ObjC3ResultExpr::Kind::Err, CarrierType, CarrierType,
++      SuccessTypeInfo, ErrorTypeInfo, InitializedExpr, KeywordLoc, LParenLoc,
++      FirstCommaLoc, SecondCommaLoc, RParenLoc);
++  if (Result.isInvalid())
++    return Result;
++  return Result;
++}
++
++ExprResult Sema::ActOnObjC3ResultIsOkExpr(SourceLocation KeywordLoc,
++                                          SourceLocation LParenLoc,
++                                          Expr *Operand,
++                                          SourceLocation RParenLoc) {
++  if (!Operand)
++    return ExprError();
++
++  ExprResult CheckedOperand = CheckPlaceholderExpr(Operand);
++  if (CheckedOperand.isInvalid())
++    return ExprError();
++  Operand = CheckedOperand.get();
++
++  QualType CarrierType = Context.getCanonicalType(Operand->getType());
++  const auto *ResultType = CarrierType->getAs<ObjC3ResultType>();
++  if (!Operand->isTypeDependent() && !ResultType) {
++    Diag(KeywordLoc, diag::err_objc3_is_ok_requires_result)
++        << Operand->getType() << Operand->getSourceRange();
++    return ExprError();
++  }
++
++  if (ResultType &&
++      checkResultRepresentation(*this, KeywordLoc,
++                                ResultType->getSuccessType(),
++                                ResultType->getErrorType(), CarrierType,
++                                Operand->isTypeDependent()))
++    return ExprError();
++
++  CheckCompletedExpr(Operand, RParenLoc);
++  ExprResult Result = buildResultExpr(
++      *this, ObjC3ResultExpr::Kind::IsOk, Context.BoolTy, CarrierType, nullptr,
++      nullptr, Operand, KeywordLoc, LParenLoc, SourceLocation(),
++      SourceLocation(), RParenLoc);
++  if (Result.isInvalid())
++    return Result;
++  return Result;
++}
+diff --git a/clang/unittests/AST/ObjC3CarrierExprSemanticsTest.cpp b/clang/unittests/AST/ObjC3CarrierExprSemanticsTest.cpp
+new file mode 100644
+--- /dev/null
++++ b/clang/unittests/AST/ObjC3CarrierExprSemanticsTest.cpp
+@@ -0,0 +1,134 @@
++//===--- ObjC3CarrierExprSemanticsTest.cpp - carrier Expr semantics tests --===//
++//
++// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
++// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
++//
++//===----------------------------------------------------------------------===//
++
++#include "clang/AST/ASTContext.h"
++#include "clang/AST/Decl.h"
++#include "clang/AST/Expr.h"
++#include "clang/AST/ExprCXX.h"
++#include "clang/Frontend/ASTUnit.h"
++#include "clang/Tooling/Tooling.h"
++#include "gtest/gtest.h"
++
++using namespace clang;
++
++namespace {
++
++std::unique_ptr<ASTUnit> parse(llvm::StringRef Source) {
++  return tooling::buildASTFromCodeWithArgs(
++      Source, {"-x", "objective-c++", "-std=c++20", "-fobjc-version=3"},
++      "objc3-carrier-expression-semantics.mm");
++}
++
++NamedDecl *lookup(ASTContext &Context, llvm::StringRef Name) {
++  auto Decls = Context.getTranslationUnitDecl()->lookup(
++      &Context.Idents.get(Name));
++  return Decls.empty() ? nullptr : Decls.front();
++}
++
++Expr *getInit(ASTContext &Context, llvm::StringRef Name) {
++  auto *Variable = dyn_cast_or_null<VarDecl>(lookup(Context, Name));
++  if (!Variable || !Variable->hasInit())
++    return nullptr;
++
++  Expr *E = Variable->getInit();
++  while (E) {
++    if (auto *WithCleanups = dyn_cast<ExprWithCleanups>(E)) {
++      E = WithCleanups->getSubExpr();
++      continue;
++    }
++    Expr *Unwrapped = E->IgnoreParenImpCasts();
++    if (Unwrapped == E)
++      return E;
++    E = Unwrapped;
++  }
++  return nullptr;
++}
++
++TEST(ObjC3CarrierExprSemantics, ValueKindAndSideEffects) {
++  auto AST = parse(R"cpp(
++    auto NoneValue = __objc3_none(int);
++    auto SomeZero = __objc3_some(int, 0);
++    auto ResultOkZero = __objc3_ok(int, int, 0);
++    auto ResultErrZero = __objc3_err(int, int, 0);
++    bool OptionalQuery = __objc3_has_value(NoneValue);
++    bool ResultQuery = __objc3_is_ok(ResultOkZero);
++
++    typedef __objc3_optional(int) IntOptional;
++    typedef __objc3_result(int, int) IntResult;
++    volatile IntOptional VolatileOptional;
++    volatile IntResult VolatileResult;
++    bool VolatileOptionalQuery = __objc3_has_value(VolatileOptional);
++    bool VolatileResultQuery = __objc3_is_ok(VolatileResult);
++  )cpp");
++  ASSERT_TRUE(AST);
++  ASSERT_FALSE(AST->getDiagnostics().hasErrorOccurred());
++  ASTContext &Context = AST->getASTContext();
++
++  Expr *NoneValue = getInit(Context, "NoneValue");
++  Expr *SomeZero = getInit(Context, "SomeZero");
++  Expr *ResultOkZero = getInit(Context, "ResultOkZero");
++  Expr *ResultErrZero = getInit(Context, "ResultErrZero");
++  Expr *OptionalQuery = getInit(Context, "OptionalQuery");
++  Expr *ResultQuery = getInit(Context, "ResultQuery");
++  Expr *VolatileOptionalQuery = getInit(Context, "VolatileOptionalQuery");
++  Expr *VolatileResultQuery = getInit(Context, "VolatileResultQuery");
++  ASSERT_NE(NoneValue, nullptr);
++  ASSERT_NE(SomeZero, nullptr);
++  ASSERT_NE(ResultOkZero, nullptr);
++  ASSERT_NE(ResultErrZero, nullptr);
++  ASSERT_NE(OptionalQuery, nullptr);
++  ASSERT_NE(ResultQuery, nullptr);
++  ASSERT_NE(VolatileOptionalQuery, nullptr);
++  ASSERT_NE(VolatileResultQuery, nullptr);
++
++  for (Expr *E : {NoneValue, SomeZero, ResultOkZero, ResultErrZero,
++                  OptionalQuery, ResultQuery, VolatileOptionalQuery,
++                  VolatileResultQuery})
++    EXPECT_TRUE(E->isPRValue());
++
++  EXPECT_FALSE(NoneValue->HasSideEffects(Context));
++  EXPECT_FALSE(SomeZero->HasSideEffects(Context));
++  EXPECT_FALSE(ResultOkZero->HasSideEffects(Context));
++  EXPECT_FALSE(ResultErrZero->HasSideEffects(Context));
++  EXPECT_FALSE(OptionalQuery->HasSideEffects(Context));
++  EXPECT_FALSE(ResultQuery->HasSideEffects(Context));
++  EXPECT_FALSE(NoneValue->isEvaluatable(Context));
++  EXPECT_FALSE(SomeZero->isEvaluatable(Context));
++  EXPECT_FALSE(ResultOkZero->isEvaluatable(Context));
++  EXPECT_FALSE(ResultQuery->isEvaluatable(Context));
++  EXPECT_TRUE(VolatileOptionalQuery->HasSideEffects(Context));
++  EXPECT_TRUE(VolatileResultQuery->HasSideEffects(Context));
++  EXPECT_FALSE(VolatileOptionalQuery->HasSideEffects(Context, false));
++  EXPECT_FALSE(VolatileResultQuery->HasSideEffects(Context, false));
++}
++
++TEST(ObjC3CarrierExprSemantics, NoexceptTracksNativePayloadOperations) {
++  auto AST = parse(R"cpp(
++    int noexcept_function() noexcept;
++    int throwing_function();
++    struct NoexceptConstruction { NoexceptConstruction(int) noexcept; };
++    struct ThrowingConstruction { ThrowingConstruction(int); };
++    using IntOptional = __objc3_optional(int);
++    using IntResult = __objc3_result(int, int);
++    IntResult noexcept_result_function() noexcept;
++    IntResult throwing_result_function();
++
++    static_assert(noexcept(__objc3_none(int)));
++    static_assert(noexcept(__objc3_some(int, noexcept_function())));
++    static_assert(!noexcept(__objc3_some(int, throwing_function())));
++    static_assert(noexcept(__objc3_some(NoexceptConstruction, 0)));
++    static_assert(!noexcept(__objc3_some(ThrowingConstruction, 0)));
++    static_assert(noexcept(__objc3_ok(int, int, noexcept_function())));
++    static_assert(!noexcept(__objc3_err(int, int, throwing_function())));
++    static_assert(noexcept(__objc3_is_ok(noexcept_result_function())));
++    static_assert(!noexcept(__objc3_is_ok(throwing_result_function())));
++  )cpp");
++  ASSERT_TRUE(AST);
++  EXPECT_FALSE(AST->getDiagnostics().hasErrorOccurred());
++}
++
++} // namespace
+diff --git a/clang/unittests/AST/ObjC3OptionalExprTest.cpp b/clang/unittests/AST/ObjC3OptionalExprTest.cpp
+new file mode 100644
+--- /dev/null
++++ b/clang/unittests/AST/ObjC3OptionalExprTest.cpp
+@@ -0,0 +1,251 @@
++//===--- ObjC3OptionalExprTest.cpp - Optional expression AST tests --------===//
++//
++// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
++// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
++//
++//===----------------------------------------------------------------------===//
++
++#include "clang/AST/ASTContext.h"
++#include "clang/AST/ASTImporter.h"
++#include "clang/AST/Decl.h"
++#include "clang/AST/DeclTemplate.h"
++#include "clang/AST/Expr.h"
++#include "clang/AST/RecursiveASTVisitor.h"
++#include "clang/AST/Type.h"
++#include "clang/AST/TypeLoc.h"
++#include "clang/Frontend/ASTUnit.h"
++#include "clang/Tooling/Tooling.h"
++#include "gtest/gtest.h"
++
++#include <algorithm>
++#include <iterator>
++#include <memory>
++#include <vector>
++
++using namespace clang;
++
++namespace {
++
++std::unique_ptr<ASTUnit> parse(
++    llvm::StringRef Source,
++    llvm::StringRef FileName = "objc3-optional-expressions.mm",
++    const tooling::FileContentMappings &Mappings = {}) {
++  return tooling::buildASTFromCodeWithArgs(
++      Source, {"-x", "objective-c++", "-std=c++20", "-fobjc-version=3"},
++      FileName, "clang-tool", std::make_shared<PCHContainerOperations>(),
++      tooling::getClangStripDependencyFileAdjuster(), Mappings);
++}
++
++NamedDecl *lookup(ASTContext &Context, llvm::StringRef Name) {
++  auto Decls = Context.getTranslationUnitDecl()->lookup(
++      &Context.Idents.get(Name));
++  return Decls.empty() ? nullptr : Decls.front();
++}
++
++ObjC3OptionalExpr *getOptionalExpr(ASTContext &Context,
++                                   llvm::StringRef VariableName) {
++  auto *Variable = dyn_cast_or_null<VarDecl>(lookup(Context, VariableName));
++  if (!Variable || !Variable->hasInit())
++    return nullptr;
++  return dyn_cast<ObjC3OptionalExpr>(Variable->getInit()->IgnoreImplicit());
++}
++
++unsigned childCount(const Stmt *S) {
++  return std::distance(S->child_begin(), S->child_end());
++}
++
++class OptionalExprCollector
++    : public RecursiveASTVisitor<OptionalExprCollector> {
++public:
++  std::vector<ObjC3OptionalExpr *> Expressions;
++
++  bool shouldVisitTemplateInstantiations() const { return true; }
++
++  bool VisitObjC3OptionalExpr(ObjC3OptionalExpr *E) {
++    Expressions.push_back(E);
++    return true;
++  }
++};
++
++TEST(ObjC3OptionalExpr, StoresKindCanonicalCarrierAndPayloadSourceInfo) {
++  auto AST = parse(R"cpp(
++    typedef int Count;
++    typedef __objc3_optional(Count) AliasOptional;
++    typedef __objc3_optional(int) IntOptional;
++    auto SomeAlias = __objc3_some(Count, 0);
++    auto SomeInt = __objc3_some(int, 1);
++    auto NoneAlias = __objc3_none(Count);
++    bool HasValue = __objc3_has_value(NoneAlias);
++  )cpp");
++  ASSERT_TRUE(AST);
++  ASTContext &Context = AST->getASTContext();
++
++  auto *SomeAlias = getOptionalExpr(Context, "SomeAlias");
++  auto *SomeInt = getOptionalExpr(Context, "SomeInt");
++  auto *NoneAlias = getOptionalExpr(Context, "NoneAlias");
++  auto *HasValue = getOptionalExpr(Context, "HasValue");
++  ASSERT_NE(SomeAlias, nullptr);
++  ASSERT_NE(SomeInt, nullptr);
++  ASSERT_NE(NoneAlias, nullptr);
++  ASSERT_NE(HasValue, nullptr);
++
++  EXPECT_EQ(SomeAlias->getKind(), ObjC3OptionalExpr::Kind::Some);
++  EXPECT_EQ(NoneAlias->getKind(), ObjC3OptionalExpr::Kind::None);
++  EXPECT_EQ(HasValue->getKind(), ObjC3OptionalExpr::Kind::HasValue);
++  EXPECT_EQ(childCount(SomeAlias), 1u);
++  EXPECT_EQ(childCount(SomeInt), 1u);
++  EXPECT_EQ(childCount(NoneAlias), 0u);
++  EXPECT_EQ(childCount(HasValue), 1u);
++  EXPECT_TRUE(HasValue->getType()->isBooleanType());
++  EXPECT_EQ(HasValue->getPayloadTypeInfo(), nullptr);
++
++  ASSERT_NE(SomeAlias->getPayloadTypeInfo(), nullptr);
++  ASSERT_NE(SomeInt->getPayloadTypeInfo(), nullptr);
++  ASSERT_NE(NoneAlias->getPayloadTypeInfo(), nullptr);
++  EXPECT_TRUE(SomeAlias->getPayloadTypeInfo()->getType()->isTypedefNameType());
++  EXPECT_TRUE(NoneAlias->getPayloadTypeInfo()->getType()->isTypedefNameType());
++  EXPECT_TRUE(SomeInt->getPayloadTypeInfo()->getType()->isBuiltinType());
++  EXPECT_NE(SomeAlias->getPayloadTypeInfo(), SomeInt->getPayloadTypeInfo());
++  EXPECT_NE(SomeAlias->getPayloadTypeInfo()->getTypeLoc().getBeginLoc(),
++            SomeInt->getPayloadTypeInfo()->getTypeLoc().getBeginLoc());
++
++  QualType AliasCarrier = Context.getObjC3OptionalType(
++      SomeAlias->getPayloadTypeInfo()->getType());
++  QualType IntCarrier = Context.getObjC3OptionalType(
++      SomeInt->getPayloadTypeInfo()->getType());
++  EXPECT_TRUE(Context.hasSameType(AliasCarrier, IntCarrier));
++  EXPECT_TRUE(Context.hasSameType(SomeAlias->getCarrierType(), AliasCarrier));
++  EXPECT_TRUE(Context.hasSameType(SomeInt->getCarrierType(), IntCarrier));
++  EXPECT_TRUE(Context.hasSameType(NoneAlias->getCarrierType(), AliasCarrier));
++  EXPECT_TRUE(Context.hasSameType(HasValue->getCarrierType(), AliasCarrier));
++  EXPECT_TRUE(Context.hasSameType(SomeAlias->getType(), AliasCarrier));
++  EXPECT_TRUE(Context.hasSameType(NoneAlias->getType(), AliasCarrier));
++
++  auto *AliasOptional =
++      dyn_cast_or_null<TypedefNameDecl>(lookup(Context, "AliasOptional"));
++  auto *IntOptional =
++      dyn_cast_or_null<TypedefNameDecl>(lookup(Context, "IntOptional"));
++  ASSERT_NE(AliasOptional, nullptr);
++  ASSERT_NE(IntOptional, nullptr);
++  EXPECT_TRUE(Context.hasSameType(AliasOptional->getUnderlyingType(),
++                                  IntOptional->getUnderlyingType()));
++  auto AliasLoc = AliasOptional->getTypeSourceInfo()->getTypeLoc().getAs<
++      ObjC3OptionalTypeLoc>();
++  auto IntLoc = IntOptional->getTypeSourceInfo()->getTypeLoc().getAs<
++      ObjC3OptionalTypeLoc>();
++  ASSERT_FALSE(AliasLoc.isNull());
++  ASSERT_FALSE(IntLoc.isNull());
++  ASSERT_NE(AliasLoc.getElementLoc(), nullptr);
++  ASSERT_NE(IntLoc.getElementLoc(), nullptr);
++  EXPECT_TRUE(AliasLoc.getElementLoc()->getType()->isTypedefNameType());
++  EXPECT_TRUE(IntLoc.getElementLoc()->getType()->isBuiltinType());
++  EXPECT_NE(AliasLoc.getKeywordLoc(), IntLoc.getKeywordLoc());
++}
++
++TEST(ObjC3OptionalExpr, DependentTemplateSubstitutionRebuildsCarrier) {
++  auto AST = parse(R"cpp(
++    template <class T> auto make_optional(T value) {
++      return __objc3_some(T, value);
++    }
++    template <class T> bool is_present(T value) {
++      return __objc3_has_value(value);
++    }
++    auto Concrete = make_optional(1);
++    bool ConcretePresence = is_present(Concrete);
++  )cpp");
++  ASSERT_TRUE(AST);
++  ASTContext &Context = AST->getASTContext();
++
++  OptionalExprCollector Collector;
++  Collector.TraverseDecl(Context.getTranslationUnitDecl());
++  auto HasCarrier = [&Context](const ObjC3OptionalExpr *E, bool IsDependent) {
++    QualType Carrier = E->getCarrierType();
++    if (Carrier->isDependentType() != IsDependent)
++      return false;
++    if (E->getKind() == ObjC3OptionalExpr::Kind::HasValue)
++      return E->getType()->isBooleanType() &&
++             (IsDependent ||
++              (Carrier->getAs<ObjC3OptionalType>() &&
++               Carrier->getAs<ObjC3OptionalType>()->getElementType() ==
++                   Context.IntTy));
++    const auto *Optional = Carrier->getAs<ObjC3OptionalType>();
++    return E->getKind() == ObjC3OptionalExpr::Kind::Some && Optional &&
++           (IsDependent || Optional->getElementType() == Context.IntTy);
++  };
++  EXPECT_TRUE(std::any_of(Collector.Expressions.begin(),
++                          Collector.Expressions.end(), [&](const auto *E) {
++                            return E->getKind() ==
++                                       ObjC3OptionalExpr::Kind::Some &&
++                                   HasCarrier(E, true);
++                          }));
++  EXPECT_TRUE(std::any_of(Collector.Expressions.begin(),
++                          Collector.Expressions.end(), [&](const auto *E) {
++                            return E->getKind() ==
++                                       ObjC3OptionalExpr::Kind::Some &&
++                                   HasCarrier(E, false);
++                          }));
++  EXPECT_TRUE(std::any_of(Collector.Expressions.begin(),
++                          Collector.Expressions.end(), [&](const auto *E) {
++                            return E->getKind() ==
++                                       ObjC3OptionalExpr::Kind::HasValue &&
++                                   HasCarrier(E, true);
++                          }));
++  EXPECT_TRUE(std::any_of(Collector.Expressions.begin(),
++                          Collector.Expressions.end(), [&](const auto *E) {
++                            return E->getKind() ==
++                                       ObjC3OptionalExpr::Kind::HasValue &&
++                                   HasCarrier(E, false);
++                          }));
++}
++
++TEST(ObjC3OptionalExpr, ImportPreservesPayloadTypeInfoAndChildAssociation) {
++  const std::string Source = R"cpp(
++    typedef int Count;
++    auto Imported = __objc3_some(Count, 0);
++  )cpp";
++  auto From = parse(Source, "from-optional.mm");
++  auto To = parse("", "to-optional.mm", {{"from-optional.mm", Source}});
++  ASSERT_TRUE(From);
++  ASSERT_TRUE(To);
++  ASTContext &FromContext = From->getASTContext();
++  ASTContext &ToContext = To->getASTContext();
++  auto *FromVariable =
++      dyn_cast_or_null<VarDecl>(lookup(FromContext, "Imported"));
++  ASSERT_NE(FromVariable, nullptr);
++  auto *FromExpr = dyn_cast<ObjC3OptionalExpr>(
++      FromVariable->getInit()->IgnoreImplicit());
++  ASSERT_NE(FromExpr, nullptr);
++  ASSERT_NE(FromExpr->getPayloadTypeInfo(), nullptr);
++
++  ASTImporter Importer(ToContext, To->getFileManager(), FromContext,
++                       From->getFileManager(), false);
++  auto Imported = Importer.Import(FromVariable);
++  if (!Imported) {
++    ADD_FAILURE() << llvm::toString(Imported.takeError());
++    return;
++  }
++  auto *ToVariable = cast<VarDecl>(*Imported);
++  auto *ToExpr =
++      dyn_cast<ObjC3OptionalExpr>(ToVariable->getInit()->IgnoreImplicit());
++  ASSERT_NE(ToExpr, nullptr);
++  ASSERT_NE(ToExpr->getPayloadTypeInfo(), nullptr);
++  EXPECT_NE(ToExpr, FromExpr);
++  EXPECT_NE(ToExpr->getPayloadTypeInfo(), FromExpr->getPayloadTypeInfo());
++  EXPECT_TRUE(ToExpr->getPayloadTypeInfo()->getType()->isTypedefNameType());
++  EXPECT_EQ(ToExpr->getKind(), FromExpr->getKind());
++  EXPECT_EQ(childCount(ToExpr), 1u);
++  EXPECT_EQ(ToExpr->getPayload(), *ToExpr->child_begin());
++  EXPECT_NE(ToExpr->getPayload(), FromExpr->getPayload());
++  QualType ExpectedCarrier = ToContext.getObjC3OptionalType(
++      ToExpr->getPayloadTypeInfo()->getType());
++  EXPECT_TRUE(ToContext.hasSameType(ToExpr->getCarrierType(), ExpectedCarrier));
++  EXPECT_TRUE(ToExpr->getKeywordLoc().isValid());
++  EXPECT_TRUE(ToExpr->getCommaLoc().isValid());
++  EXPECT_TRUE(ToExpr->getRParenLoc().isValid());
++  EXPECT_EQ(ToContext.getSourceManager().getSpellingLineNumber(
++                ToExpr->getKeywordLoc()),
++            FromContext.getSourceManager().getSpellingLineNumber(
++                FromExpr->getKeywordLoc()));
++}
++
++} // namespace
+diff --git a/clang/unittests/AST/ObjC3ResultExprTest.cpp b/clang/unittests/AST/ObjC3ResultExprTest.cpp
+new file mode 100644
+--- /dev/null
++++ b/clang/unittests/AST/ObjC3ResultExprTest.cpp
+@@ -0,0 +1,257 @@
++//===--- ObjC3ResultExprTest.cpp - Result expression AST tests ------------===//
++//
++// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
++// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
++//
++//===----------------------------------------------------------------------===//
++
++#include "clang/AST/ASTContext.h"
++#include "clang/AST/ASTImporter.h"
++#include "clang/AST/Decl.h"
++#include "clang/AST/DeclTemplate.h"
++#include "clang/AST/Expr.h"
++#include "clang/AST/RecursiveASTVisitor.h"
++#include "clang/AST/Type.h"
++#include "clang/Frontend/ASTUnit.h"
++#include "clang/Tooling/Tooling.h"
++#include "gtest/gtest.h"
++
++#include <algorithm>
++#include <iterator>
++#include <memory>
++#include <vector>
++
++using namespace clang;
++
++namespace {
++
++std::unique_ptr<ASTUnit> parse(
++    llvm::StringRef Source,
++    llvm::StringRef FileName = "objc3-result-expressions.mm",
++    const tooling::FileContentMappings &Mappings = {}) {
++  return tooling::buildASTFromCodeWithArgs(
++      Source, {"-x", "objective-c++", "-std=c++20", "-fobjc-version=3"},
++      FileName, "clang-tool", std::make_shared<PCHContainerOperations>(),
++      tooling::getClangStripDependencyFileAdjuster(), Mappings);
++}
++
++NamedDecl *lookup(ASTContext &Context, llvm::StringRef Name) {
++  auto Decls = Context.getTranslationUnitDecl()->lookup(
++      &Context.Idents.get(Name));
++  return Decls.empty() ? nullptr : Decls.front();
++}
++
++ObjC3ResultExpr *getResultExpr(ASTContext &Context,
++                               llvm::StringRef VariableName) {
++  auto *Variable = dyn_cast_or_null<VarDecl>(lookup(Context, VariableName));
++  if (!Variable || !Variable->hasInit())
++    return nullptr;
++  return dyn_cast<ObjC3ResultExpr>(Variable->getInit()->IgnoreImplicit());
++}
++
++unsigned childCount(const Stmt *S) {
++  return std::distance(S->child_begin(), S->child_end());
++}
++
++class ResultExprCollector : public RecursiveASTVisitor<ResultExprCollector> {
++public:
++  std::vector<ObjC3ResultExpr *> Expressions;
++
++  bool shouldVisitTemplateInstantiations() const { return true; }
++
++  bool VisitObjC3ResultExpr(ObjC3ResultExpr *E) {
++    Expressions.push_back(E);
++    return true;
++  }
++};
++
++TEST(ObjC3ResultExpr, StoresBothArmTypesKindsAndQueryChild) {
++  auto AST = parse(R"cpp(
++    typedef int SuccessAlias;
++    typedef int ErrorAlias;
++    using AliasResult = __objc3_result(SuccessAlias, ErrorAlias);
++    using CanonicalResult = __objc3_result(int, int);
++    static_assert(__is_same(AliasResult, CanonicalResult), "canonical Result");
++    auto OkValue = __objc3_ok(SuccessAlias, ErrorAlias, 0);
++    auto ErrValue = __objc3_err(SuccessAlias, ErrorAlias, 0);
++    bool IsOkValue = __objc3_is_ok(OkValue);
++    using VoidResult = __objc3_result(void, void);
++    auto VoidOk = __objc3_ok(void, void, (void)0);
++    auto VoidErr = __objc3_err(void, void, (void)0);
++    bool VoidOkTag = __objc3_is_ok(VoidOk);
++    bool VoidErrTag = __objc3_is_ok(VoidErr);
++  )cpp");
++  ASSERT_TRUE(AST);
++  ASTContext &Context = AST->getASTContext();
++
++  auto *OkValue = getResultExpr(Context, "OkValue");
++  auto *ErrValue = getResultExpr(Context, "ErrValue");
++  auto *IsOkValue = getResultExpr(Context, "IsOkValue");
++  auto *VoidOk = getResultExpr(Context, "VoidOk");
++  auto *VoidErr = getResultExpr(Context, "VoidErr");
++  auto *VoidOkTag = getResultExpr(Context, "VoidOkTag");
++  auto *VoidErrTag = getResultExpr(Context, "VoidErrTag");
++  ASSERT_NE(OkValue, nullptr);
++  ASSERT_NE(ErrValue, nullptr);
++  ASSERT_NE(IsOkValue, nullptr);
++  ASSERT_NE(VoidOk, nullptr);
++  ASSERT_NE(VoidErr, nullptr);
++  ASSERT_NE(VoidOkTag, nullptr);
++  ASSERT_NE(VoidErrTag, nullptr);
++
++  EXPECT_EQ(OkValue->getKind(), ObjC3ResultExpr::Kind::Ok);
++  EXPECT_EQ(ErrValue->getKind(), ObjC3ResultExpr::Kind::Err);
++  EXPECT_EQ(IsOkValue->getKind(), ObjC3ResultExpr::Kind::IsOk);
++  EXPECT_EQ(childCount(OkValue), 1u);
++  EXPECT_EQ(childCount(ErrValue), 1u);
++  EXPECT_EQ(childCount(IsOkValue), 1u);
++  EXPECT_EQ(childCount(VoidOk), 1u);
++  EXPECT_EQ(childCount(VoidErr), 1u);
++  EXPECT_EQ(childCount(VoidOkTag), 1u);
++  EXPECT_EQ(childCount(VoidErrTag), 1u);
++  EXPECT_EQ(OkValue->getPayload(), *OkValue->child_begin());
++  EXPECT_EQ(ErrValue->getPayload(), *ErrValue->child_begin());
++  EXPECT_EQ(IsOkValue->getPayload(), *IsOkValue->child_begin());
++  EXPECT_TRUE(IsOkValue->getType()->isBooleanType());
++  EXPECT_TRUE(VoidOkTag->getType()->isBooleanType());
++  EXPECT_TRUE(VoidErrTag->getType()->isBooleanType());
++
++  for (ObjC3ResultExpr *E : {OkValue, ErrValue, VoidOk, VoidErr}) {
++    ASSERT_NE(E->getSuccessTypeInfo(), nullptr);
++    ASSERT_NE(E->getErrorTypeInfo(), nullptr);
++    EXPECT_TRUE(Context.hasSameType(E->getType(), E->getCarrierType()));
++  }
++  EXPECT_TRUE(OkValue->getSuccessTypeInfo()->getType()->isTypedefNameType());
++  EXPECT_TRUE(OkValue->getErrorTypeInfo()->getType()->isTypedefNameType());
++  EXPECT_NE(OkValue->getSuccessTypeInfo(), OkValue->getErrorTypeInfo());
++  EXPECT_NE(OkValue->getSuccessTypeInfo()->getTypeLoc().getBeginLoc(),
++            OkValue->getErrorTypeInfo()->getTypeLoc().getBeginLoc());
++  EXPECT_TRUE(Context.hasSameType(OkValue->getCarrierType(),
++                                  ErrValue->getCarrierType()));
++  EXPECT_TRUE(Context.hasSameType(
++      OkValue->getCarrierType(),
++      Context.getObjC3ResultType(Context.IntTy, Context.IntTy)));
++  auto *AliasResult =
++      dyn_cast_or_null<TypeAliasDecl>(lookup(Context, "AliasResult"));
++  auto *CanonicalResult =
++      dyn_cast_or_null<TypeAliasDecl>(lookup(Context, "CanonicalResult"));
++  ASSERT_NE(AliasResult, nullptr);
++  ASSERT_NE(CanonicalResult, nullptr);
++  EXPECT_TRUE(Context.hasSameType(AliasResult->getUnderlyingType(),
++                                  CanonicalResult->getUnderlyingType()));
++  EXPECT_EQ(IsOkValue->getSuccessTypeInfo(), nullptr);
++  EXPECT_EQ(IsOkValue->getErrorTypeInfo(), nullptr);
++  EXPECT_TRUE(Context.hasSameType(IsOkValue->getCarrierType(),
++                                  OkValue->getCarrierType()));
++  EXPECT_TRUE(Context.hasSameType(VoidOk->getCarrierType(),
++                                  VoidErr->getCarrierType()));
++  EXPECT_EQ(VoidOk->getPayload()->getType(), Context.VoidTy);
++  EXPECT_EQ(VoidErr->getPayload()->getType(), Context.VoidTy);
++  EXPECT_EQ(VoidOkTag->getPayload(), *VoidOkTag->child_begin());
++  EXPECT_EQ(VoidErrTag->getPayload(), *VoidErrTag->child_begin());
++}
++
++TEST(ObjC3ResultExpr, DependentArmSelectionAndQueryRevalidateAfterSubstitution) {
++  auto AST = parse(R"cpp(
++    template <class T, class E> using Result = __objc3_result(T, E);
++    template <class T, class E> auto make_ok(T value) {
++      return __objc3_ok(T, E, value);
++    }
++    template <class T, class E> auto make_err(E value) {
++      return __objc3_err(T, E, value);
++    }
++    template <class T, class E> bool is_ok(Result<T, E> value) {
++      return __objc3_is_ok(value);
++    }
++    auto ConcreteOk = make_ok<int, long>(1);
++    auto ConcreteErr = make_err<int, long>(2L);
++    bool ConcreteOkTag = is_ok(ConcreteOk);
++    bool ConcreteErrTag = is_ok(ConcreteErr);
++  )cpp");
++  ASSERT_TRUE(AST);
++  ASTContext &Context = AST->getASTContext();
++
++  ResultExprCollector Collector;
++  Collector.TraverseDecl(Context.getTranslationUnitDecl());
++  auto IsCarrier = [&Context](const ObjC3ResultExpr *E, bool IsDependent) {
++    QualType Carrier = E->getCarrierType();
++    if (Carrier->isDependentType() != IsDependent)
++      return false;
++    const auto *Result = Carrier->getAs<ObjC3ResultType>();
++    return Result &&
++           (IsDependent || (Result->getSuccessType() == Context.IntTy &&
++                             Result->getErrorType() == Context.LongTy));
++  };
++  auto Has = [&](ObjC3ResultExpr::Kind Kind, bool IsDependent) {
++    return std::any_of(Collector.Expressions.begin(),
++                       Collector.Expressions.end(), [&](const auto *E) {
++                         return E->getKind() == Kind &&
++                                IsCarrier(E, IsDependent);
++                       });
++  };
++  EXPECT_TRUE(Has(ObjC3ResultExpr::Kind::Ok, true));
++  EXPECT_TRUE(Has(ObjC3ResultExpr::Kind::Err, true));
++  EXPECT_TRUE(Has(ObjC3ResultExpr::Kind::IsOk, true));
++  EXPECT_TRUE(Has(ObjC3ResultExpr::Kind::Ok, false));
++  EXPECT_TRUE(Has(ObjC3ResultExpr::Kind::Err, false));
++  EXPECT_TRUE(Has(ObjC3ResultExpr::Kind::IsOk, false));
++}
++
++TEST(ObjC3ResultExpr, ImportPreservesBothArmTypeInfoAndPayloadAssociation) {
++  const std::string Source = R"cpp(
++    typedef int SuccessAlias;
++    typedef long ErrorAlias;
++    auto Imported = __objc3_err(SuccessAlias, ErrorAlias, 0L);
++  )cpp";
++  auto From = parse(Source, "from-result.mm");
++  auto To = parse("", "to-result.mm", {{"from-result.mm", Source}});
++  ASSERT_TRUE(From);
++  ASSERT_TRUE(To);
++  ASTContext &FromContext = From->getASTContext();
++  ASTContext &ToContext = To->getASTContext();
++  auto *FromVariable =
++      dyn_cast_or_null<VarDecl>(lookup(FromContext, "Imported"));
++  ASSERT_NE(FromVariable, nullptr);
++  auto *FromExpr = dyn_cast<ObjC3ResultExpr>(
++      FromVariable->getInit()->IgnoreImplicit());
++  ASSERT_NE(FromExpr, nullptr);
++  ASSERT_NE(FromExpr->getSuccessTypeInfo(), nullptr);
++  ASSERT_NE(FromExpr->getErrorTypeInfo(), nullptr);
++
++  ASTImporter Importer(ToContext, To->getFileManager(), FromContext,
++                       From->getFileManager(), false);
++  auto Imported = Importer.Import(FromVariable);
++  if (!Imported) {
++    ADD_FAILURE() << llvm::toString(Imported.takeError());
++    return;
++  }
++  auto *ToVariable = cast<VarDecl>(*Imported);
++  auto *ToExpr =
++      dyn_cast<ObjC3ResultExpr>(ToVariable->getInit()->IgnoreImplicit());
++  ASSERT_NE(ToExpr, nullptr);
++  EXPECT_NE(ToExpr, FromExpr);
++  ASSERT_NE(ToExpr->getSuccessTypeInfo(), nullptr);
++  ASSERT_NE(ToExpr->getErrorTypeInfo(), nullptr);
++  EXPECT_NE(ToExpr->getSuccessTypeInfo(), FromExpr->getSuccessTypeInfo());
++  EXPECT_NE(ToExpr->getErrorTypeInfo(), FromExpr->getErrorTypeInfo());
++  EXPECT_TRUE(ToExpr->getSuccessTypeInfo()->getType()->isTypedefNameType());
++  EXPECT_TRUE(ToExpr->getErrorTypeInfo()->getType()->isTypedefNameType());
++  EXPECT_EQ(ToExpr->getKind(), FromExpr->getKind());
++  EXPECT_EQ(childCount(ToExpr), 1u);
++  EXPECT_EQ(ToExpr->getPayload(), *ToExpr->child_begin());
++  EXPECT_NE(ToExpr->getPayload(), FromExpr->getPayload());
++  QualType ExpectedCarrier = ToContext.getObjC3ResultType(
++      ToExpr->getSuccessTypeInfo()->getType(),
++      ToExpr->getErrorTypeInfo()->getType());
++  EXPECT_TRUE(ToContext.hasSameType(ToExpr->getCarrierType(), ExpectedCarrier));
++  EXPECT_TRUE(ToExpr->getKeywordLoc().isValid());
++  EXPECT_TRUE(ToExpr->getFirstCommaLoc().isValid());
++  EXPECT_TRUE(ToExpr->getSecondCommaLoc().isValid());
++  EXPECT_TRUE(ToExpr->getRParenLoc().isValid());
++  EXPECT_EQ(ToContext.getSourceManager().getSpellingLineNumber(
++                ToExpr->getKeywordLoc()),
++            FromContext.getSourceManager().getSpellingLineNumber(
++                FromExpr->getKeywordLoc()));
++}
++
++} // namespace

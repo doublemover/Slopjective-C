@@ -64,7 +64,7 @@ index 68205dd1c..087f6f1df 100644
    /// the specified type.
    QualType getPointerType(QualType T) const;
 diff --git a/clang/include/clang/AST/ASTNodeTraverser.h b/clang/include/clang/AST/ASTNodeTraverser.h
-index e74bb7257..97bab2f51 100644
+index e74bb7257..eec6020d7 100644
 --- a/clang/include/clang/AST/ASTNodeTraverser.h
 +++ b/clang/include/clang/AST/ASTNodeTraverser.h
 @@ -382,6 +382,13 @@ public:
@@ -81,6 +81,25 @@ index e74bb7257..97bab2f51 100644
    void VisitLocInfoType(const LocInfoType *T) {
      Visit(T->getTypeSourceInfo()->getTypeLoc());
    }
+@@ -872,6 +879,18 @@ public:
+     }
+   }
+ 
++  void VisitObjC3ResultExpr(const ObjC3ResultExpr *Node) {
++    if (TypeSourceInfo *Info = Node->getSuccessTypeInfo())
++      Visit(Info->getTypeLoc());
++    if (TypeSourceInfo *Info = Node->getErrorTypeInfo())
++      Visit(Info->getTypeLoc());
++  }
++
++  void VisitObjC3OptionalExpr(const ObjC3OptionalExpr *Node) {
++    if (TypeSourceInfo *Info = Node->getPayloadTypeInfo())
++      Visit(Info->getTypeLoc());
++  }
++
+   void VisitBlockExpr(const BlockExpr *Node) { Visit(Node->getBlockDecl()); }
+ 
+   void VisitOpaqueValueExpr(const OpaqueValueExpr *Node) {
 diff --git a/clang/include/clang/AST/CanonicalType.h b/clang/include/clang/AST/CanonicalType.h
 index b46fc8f50..925bd2d9d 100644
 --- a/clang/include/clang/AST/CanonicalType.h
@@ -108,7 +127,7 @@ index 5b1012752..e77304e64 100644
  def LValuePathEntry : PropertyType<"APValue::LValuePathEntry">;
  def LValuePathSerializationHelper :
 diff --git a/clang/include/clang/AST/RecursiveASTVisitor.h b/clang/include/clang/AST/RecursiveASTVisitor.h
-index ddec2c52f..275771bdf 100644
+index ddec2c52f..95542c25c 100644
 --- a/clang/include/clang/AST/RecursiveASTVisitor.h
 +++ b/clang/include/clang/AST/RecursiveASTVisitor.h
 @@ -998,6 +998,14 @@ DEF_TRAVERSE_TYPE(BuiltinType, {})
@@ -166,6 +185,23 @@ index ddec2c52f..275771bdf 100644
    const FunctionProtoType *T = TL.getTypePtr();
  
    for (unsigned I = 0, E = TL.getNumParams(); I != E; ++I) {
+@@ -2905,6 +2932,16 @@ DEF_TRAVERSE_STMT(BlockExpr, {
+   return true; // no child statements to loop through.
+ })
+ 
++DEF_TRAVERSE_STMT(ObjC3ResultExpr, {
++  if (TypeSourceInfo *Info = S->getSuccessTypeInfo())
++    TRY_TO(TraverseTypeLoc(Info->getTypeLoc()));
++  if (TypeSourceInfo *Info = S->getErrorTypeInfo())
++    TRY_TO(TraverseTypeLoc(Info->getTypeLoc()));
++})
++DEF_TRAVERSE_STMT(ObjC3OptionalExpr, {
++  if (TypeSourceInfo *Info = S->getPayloadTypeInfo())
++    TRY_TO(TraverseTypeLoc(Info->getTypeLoc()));
++})
+ DEF_TRAVERSE_STMT(ChooseExpr, {})
+ DEF_TRAVERSE_STMT(CompoundLiteralExpr, {
+   TRY_TO(TraverseTypeLoc(S->getTypeSourceInfo()->getTypeLoc()));
 diff --git a/clang/include/clang/AST/TypeBase.h b/clang/include/clang/AST/TypeBase.h
 index 279b75f14..6c69a4b1c 100644
 --- a/clang/include/clang/AST/TypeBase.h
@@ -593,7 +629,7 @@ index 63fc4bf2e..670f88c2a 100644
  defm enum_fixed_underlying_type : CXX11Compat<
    "enumeration types with a fixed underlying type are",
 diff --git a/clang/include/clang/Basic/DiagnosticSemaKinds.td b/clang/include/clang/Basic/DiagnosticSemaKinds.td
-index 43315a6f7..1c10fbafc 100644
+index 43315a6f7..dcc43eed5 100644
 --- a/clang/include/clang/Basic/DiagnosticSemaKinds.td
 +++ b/clang/include/clang/Basic/DiagnosticSemaKinds.td
 @@ -12,6 +12,8 @@
@@ -605,10 +641,16 @@ index 43315a6f7..1c10fbafc 100644
  // C++11 compatibility with C++98.
  defm nonclass_type_friend : CXX11Compat<"non-class friend type %0 is">;
  defm static_data_member_in_union : CXX11Compat<"static data member %0 in union is">;
-@@ -7829,6 +7831,8 @@ def warn_param_mismatched_alignment : Warning<
+@@ -7829,6 +7831,14 @@ def warn_param_mismatched_alignment : Warning<
  
  def err_objc_object_assignment : Error<
    "cannot assign to class object (%0 invalid)">;
++def err_objc3_is_ok_requires_result : Error<
++  "argument to '__objc3_is_ok' must have a Result type (got %0)">;
++
++def err_objc3_has_value_requires_optional : Error<
++  "argument to '__objc3_has_value' must have an Optional type (got %0)">;
++
 +def err_objc3_carrier_payload_unsupported : Error<
 +  "payload type %0 is not supported in an Objective-C 3 value carrier">;
  def err_typecheck_invalid_operands : Error<
@@ -630,7 +672,7 @@ index db43a8529..2ff6033cc 100644
  def BlockPointerType : TypeNode<Type>;
  def ReferenceType : TypeNode<Type, 1>;
 diff --git a/clang/include/clang/Parse/Parser.h b/clang/include/clang/Parse/Parser.h
-index f7e7b0ec5..65b34c40a 100644
+index f7e7b0ec5..c60472d8c 100644
 --- a/clang/include/clang/Parse/Parser.h
 +++ b/clang/include/clang/Parse/Parser.h
 @@ -2711,6 +2711,13 @@ private:
@@ -647,10 +689,12 @@ index f7e7b0ec5..65b34c40a 100644
    void InitCXXThisScopeForDeclaratorIfRelevant(
        const Declarator &D, const DeclSpec &DS,
        std::optional<Sema::CXXThisScopeRAII> &ThisScope);
-@@ -7503,6 +7510,8 @@ public:
+@@ -7503,6 +7510,10 @@ public:
    ///         unlabeled-statement
    /// \endverbatim
    StmtResult ParseDeferStatement(SourceLocation *TrailingElseLoc);
++  ExprResult ParseObjC3OptionalExpression();
++  ExprResult ParseObjC3ResultExpression();
 +  StmtResult ParseObjC3DeferStatement();
 +  TypeResult ParseObjC3TypeConstructor(SourceLocation &EndLoc);
  
@@ -718,13 +762,30 @@ index 43a48c92f..c9e4a1566 100644
    /// Return a DeclaratorChunk for a block.
    static DeclaratorChunk getBlockPointer(unsigned TypeQuals,
 diff --git a/clang/include/clang/Sema/Sema.h b/clang/include/clang/Sema/Sema.h
-index d68ed7c75..ccc58ebaf 100644
+index d68ed7c75..f04255686 100644
 --- a/clang/include/clang/Sema/Sema.h
 +++ b/clang/include/clang/Sema/Sema.h
-@@ -11101,6 +11101,16 @@ public:
+@@ -11101,6 +11101,33 @@ public:
                              LabelDecl *Label, SourceLocation LabelLoc);
  
    void ActOnStartOfDeferStmt(SourceLocation DeferLoc, Scope *CurScope);
++  ExprResult ActOnObjC3ResultOkExpr(SourceLocation KeywordLoc,
++      SourceLocation LParenLoc, ParsedType SuccessType, SourceLocation FirstCommaLoc,
++      ParsedType ErrorType, SourceLocation SecondCommaLoc, Expr *Payload,
++      SourceLocation RParenLoc);
++  ExprResult ActOnObjC3ResultErrExpr(SourceLocation KeywordLoc,
++      SourceLocation LParenLoc, ParsedType SuccessType, SourceLocation FirstCommaLoc,
++      ParsedType ErrorType, SourceLocation SecondCommaLoc, Expr *Payload,
++      SourceLocation RParenLoc);
++  ExprResult ActOnObjC3ResultIsOkExpr(SourceLocation KeywordLoc,
++      SourceLocation LParenLoc, Expr *ResultValue, SourceLocation RParenLoc);
++  ExprResult ActOnObjC3OptionalSomeExpr(SourceLocation KeywordLoc,
++      SourceLocation LParenLoc, ParsedType PayloadType, Expr *Payload,
++      SourceLocation CommaLoc, SourceLocation RParenLoc);
++  ExprResult ActOnObjC3OptionalNoneExpr(SourceLocation KeywordLoc,
++      SourceLocation LParenLoc, ParsedType PayloadType, SourceLocation RParenLoc);
++  ExprResult ActOnObjC3OptionalHasValueExpr(SourceLocation KeywordLoc,
++      SourceLocation LParenLoc, Expr *OptionalValue, SourceLocation RParenLoc);
 +  TypeResult ActOnObjC3OptionalType(SourceLocation KeywordLoc,
 +                                    SourceLocation LParenLoc,
 +                                    ParsedType ElementType,
@@ -738,7 +799,7 @@ index d68ed7c75..ccc58ebaf 100644
    void ActOnDeferStmtError(Scope *CurScope);
    StmtResult ActOnEndOfDeferStmt(Stmt *Body, Scope *CurScope);
  
-@@ -15187,6 +15197,11 @@ public:
+@@ -15187,6 +15214,11 @@ public:
                               SourceLocation Loc, DeclarationName Entity,
                               const FunctionProtoType::ExtProtoInfo &EPI);
  
@@ -751,7 +812,7 @@ index d68ed7c75..ccc58ebaf 100644
    ///
    /// \param T the type to which the member pointer refers.
 diff --git a/clang/include/clang/Serialization/ASTBitCodes.h b/clang/include/clang/Serialization/ASTBitCodes.h
-index 5a86d540e..89fd4f61a 100644
+index 5a86d540e..8b5a72720 100644
 --- a/clang/include/clang/Serialization/ASTBitCodes.h
 +++ b/clang/include/clang/Serialization/ASTBitCodes.h
 @@ -44,7 +44,7 @@ namespace serialization {
@@ -759,10 +820,19 @@ index 5a86d540e..89fd4f61a 100644
  /// revision match exactly, since there is no backward compatibility of
  /// AST files at this time.
 -const unsigned VERSION_MAJOR = 35;
-+const unsigned VERSION_MAJOR = 36;
++const unsigned VERSION_MAJOR = 37;
  
  /// AST file minor version number supported by this version of
  /// Clang.
+@@ -2065,6 +2065,8 @@ enum StmtCode {
+   EXPR_HLSL_OUT_ARG,
+ 
+   STMT_DEFER,
++  EXPR_OBJC3_OPTIONAL,
++  EXPR_OBJC3_RESULT,
+ };
+ 
+ /// The kinds of designators that can occur in a
 diff --git a/clang/include/clang/Serialization/TypeBitCodes.def b/clang/include/clang/Serialization/TypeBitCodes.def
 index d6c484563..b7a6cb6b1 100644
 --- a/clang/include/clang/Serialization/TypeBitCodes.def
@@ -776,7 +846,7 @@ index d6c484563..b7a6cb6b1 100644
  
  #undef TYPE_BIT_CODE
 diff --git a/clang/lib/AST/ASTContext.cpp b/clang/lib/AST/ASTContext.cpp
-index d5aacd801..fd217918c 100644
+index d5aacd801..962a811a3 100644
 --- a/clang/lib/AST/ASTContext.cpp
 +++ b/clang/lib/AST/ASTContext.cpp
 @@ -2363,6 +2363,15 @@ TypeInfo ASTContext::getTypeInfoImpl(const Type *T) const {
@@ -795,7 +865,65 @@ index d5aacd801..fd217918c 100644
    case Type::ObjCObject:
      return getTypeInfo(cast<ObjCObjectType>(T)->getBaseType().getTypePtr());
    case Type::Adjusted:
-@@ -3828,6 +3837,179 @@ QualType ASTContext::getComplexType(QualType T) const {
+@@ -3257,7 +3266,16 @@ ASTContext::getPointerAuthVTablePointerDiscriminator(const CXXRecordDecl *RD) {
+ /// other. Therefore this encoding function must be careful to only distinguish
+ /// types if there is no third type with which they are both required to be
+ /// compatible.
+-static void encodeTypeForFunctionPointerAuth(const ASTContext &Ctx,
++static bool pointerPointeeContainsObjC3Carrier(QualType QT) {
++  const Type *T = QT.getCanonicalType().getTypePtr();
++  if (T->getTypeClass() == Type::ObjC3Optional ||
++      T->getTypeClass() == Type::ObjC3Result)
++    return true;
++  if (const auto *Pointer = dyn_cast<PointerType>(T))
++    return pointerPointeeContainsObjC3Carrier(Pointer->getPointeeType());
++  return false;
++}
++static void encodeTypeForFunctionPointerAuth(ASTContext &Ctx,
+                                              raw_ostream &OS, QualType QT) {
+   // FIXME: Consider address space qualifiers.
+   const Type *T = QT.getCanonicalType().getTypePtr();
+@@ -3281,13 +3299,16 @@ static void encodeTypeForFunctionPointerAuth(const ASTContext &Ctx,
+                                      cast<ReferenceType>(T)->getPointeeType());
+     return;
+ 
+-  case Type::Pointer:
+-    // C11 6.7.6.1p2:
+-    //   For two pointer types to be compatible, both shall be identically
+-    //   qualified and both shall be pointers to compatible types.
+-    // FIXME: we should also consider pointee types.
++  case Type::Pointer: {
++    // Preserve the ordinary C discriminator for native pointers. A pointer to
++    // an ObjC3 carrier is not compatible with a pointer to a different
++    // carrier, so include that compiler-owned pointee identity as well.
+     OS << "P";
++    QualType Pointee = cast<PointerType>(T)->getPointeeType();
++    if (pointerPointeeContainsObjC3Carrier(Pointee))
++      encodeTypeForFunctionPointerAuth(Ctx, OS, Pointee);
+     return;
++  }
+ 
+   case Type::ObjCObjectPointer:
+   case Type::BlockPointer:
+@@ -3470,6 +3491,17 @@ static void encodeTypeForFunctionPointerAuth(const ASTContext &Ctx,
+     }
+     llvm_unreachable("should never get here");
+   }
++  case Type::ObjC3Optional:
++  case Type::ObjC3Result: {
++    // The C-compatible encoder intentionally coalesces many native integer
++    // types (for example, int and long) to the same ABI code. ObjC3 carriers
++    // have compiler-owned structural identity, so encode their complete
++    // canonical type with the target C++ mangler instead of recursively using
++    // that coarser C compatibility encoding for their payload arms.
++    std::unique_ptr<MangleContext> MC(Ctx.createMangleContext());
++    MC->mangleCanonicalTypeName(QualType(T, 0), OS);
++    return;
++  }
+   case Type::Record: {
+     const RecordDecl *RD = T->castAsCanonical<RecordType>()->getDecl();
+     const IdentifierInfo *II = RD->getIdentifier();
+@@ -3828,6 +3860,179 @@ QualType ASTContext::getComplexType(QualType T) const {
    return QualType(New, 0);
  }
  
@@ -975,7 +1103,24 @@ index d5aacd801..fd217918c 100644
  /// getPointerType - Return the uniqued reference to the type for a pointer to
  /// the specified type.
  QualType ASTContext::getPointerType(QualType T) const {
-@@ -4911,6 +5093,12 @@ static bool isCanonicalExceptionSpecification(
+@@ -4218,12 +4423,15 @@ QualType ASTContext::getVariableArrayDecayedType(QualType type) const {
+     llvm_unreachable("type should never be variably-modified");
+ 
+   // These types can be variably-modified but should never need to
+-  // further decay.
++  // further decay. Carrier payloads that are variably-modified are rejected
++  // by Sema; do not rewrite a carrier here if one is formed by recovery.
+   case Type::FunctionNoProto:
+   case Type::FunctionProto:
+   case Type::BlockPointer:
+   case Type::MemberPointer:
+   case Type::Pipe:
++  case Type::ObjC3Optional:
++  case Type::ObjC3Result:
+     return type;
+ 
+   // These types can be variably-modified.  All these modifications
+@@ -4911,6 +5119,12 @@ static bool isCanonicalExceptionSpecification(
  QualType ASTContext::getFunctionTypeInternal(
      QualType ResultTy, ArrayRef<QualType> ArgArray,
      const FunctionProtoType::ExtProtoInfo &EPI, bool OnlyWantCanonical) const {
@@ -988,7 +1133,7 @@ index d5aacd801..fd217918c 100644
    size_t NumArgs = ArgArray.size();
  
    // Unique functions, to guarantee there is only one function of a particular
-@@ -4949,7 +5137,9 @@ QualType ASTContext::getFunctionTypeInternal(
+@@ -4949,7 +5163,9 @@ QualType ASTContext::getFunctionTypeInternal(
  
    // Determine whether the type being created is already canonical or not.
    bool isCanonical = !Unique && IsCanonicalExceptionSpec &&
@@ -999,7 +1144,7 @@ index d5aacd801..fd217918c 100644
    for (unsigned i = 0; i != NumArgs && isCanonical; ++i)
      if (!ArgArray[i].isCanonicalAsParam())
        isCanonical = false;
-@@ -4970,6 +5160,9 @@ QualType ASTContext::getFunctionTypeInternal(
+@@ -4970,6 +5186,9 @@ QualType ASTContext::getFunctionTypeInternal(
      llvm::SmallVector<QualType, 8> ExceptionTypeStorage;
      FunctionProtoType::ExtProtoInfo CanonicalEPI = EPI;
      CanonicalEPI.HasTrailingReturn = false;
@@ -1009,7 +1154,7 @@ index d5aacd801..fd217918c 100644
  
      if (IsCanonicalExceptionSpec) {
        // Exception spec is already OK.
-@@ -5035,14 +5228,15 @@ QualType ASTContext::getFunctionTypeInternal(
+@@ -5035,14 +5254,15 @@ QualType ASTContext::getFunctionTypeInternal(
        FunctionType::FunctionTypeExtraAttributeInfo,
        FunctionType::FunctionTypeArmAttributes, FunctionType::ExceptionType,
        Expr *, FunctionDecl *, FunctionProtoType::ExtParameterInfo, Qualifiers,
@@ -1027,7 +1172,7 @@ index d5aacd801..fd217918c 100644
  
    auto *FTP = (FunctionProtoType *)Allocate(Size, alignof(FunctionProtoType));
    FunctionProtoType::ExtProtoInfo newEPI = EPI;
-@@ -9572,6 +9766,16 @@ void ASTContext::getObjCEncodingForTypeImpl(QualType T, std::string &S,
+@@ -9572,6 +9792,16 @@ void ASTContext::getObjCEncodingForTypeImpl(QualType T, std::string &S,
        *NotEncodedT = T;
      return;
  
@@ -1044,7 +1189,7 @@ index d5aacd801..fd217918c 100644
    // We could see an undeduced auto type here during error recovery.
    // Just ignore it.
    case Type::Auto:
-@@ -11454,6 +11658,17 @@ QualType ASTContext::mergeFunctionTypes(QualType lhs, QualType rhs,
+@@ -11454,6 +11684,17 @@ QualType ASTContext::mergeFunctionTypes(QualType lhs, QualType rhs,
      if (lproto->getMethodQuals() != rproto->getMethodQuals())
        return {};
  
@@ -1062,7 +1207,7 @@ index d5aacd801..fd217918c 100644
      // Function protos with different 'cfi_salt' values aren't compatible.
      if (lproto->getExtraAttributeInfo().CFISalt !=
          rproto->getExtraAttributeInfo().CFISalt)
-@@ -11532,6 +11747,11 @@ QualType ASTContext::mergeFunctionTypes(QualType lhs, QualType rhs,
+@@ -11532,6 +11773,11 @@ QualType ASTContext::mergeFunctionTypes(QualType lhs, QualType rhs,
    const FunctionProtoType *proto = lproto ? lproto : rproto;
    if (proto) {
      assert((AllowCXX || !proto->hasExceptionSpec()) && "C++ shouldn't be here");
@@ -1074,7 +1219,7 @@ index d5aacd801..fd217918c 100644
      if (proto->isVariadic())
        return {};
      // Check that the types are compatible with the types that
-@@ -11759,6 +11979,13 @@ QualType ASTContext::mergeTypes(QualType LHS, QualType RHS, bool OfBlockPointer,
+@@ -11759,6 +12005,13 @@ QualType ASTContext::mergeTypes(QualType LHS, QualType RHS, bool OfBlockPointer,
    case Type::ExtVector:
      llvm_unreachable("Types are eliminated above");
  
@@ -1088,8 +1233,42 @@ index d5aacd801..fd217918c 100644
    case Type::Pointer:
    {
      // Merge two pointer types, while trying to preserve typedef info
+@@ -14111,6 +14364,24 @@ static QualType getCommonNonSugarTypeNode(const ASTContext &Ctx, const Type *X,
+         getCommonSizeModifier(AX, AY), getCommonIndexTypeCVRQualifiers(AX, AY));
+     return Ctx.getArrayParameterType(ArrayTy);
+   }
++  case Type::ObjC3Optional: {
++    const auto *OX = cast<ObjC3OptionalType>(X);
++    const auto *OY = cast<ObjC3OptionalType>(Y);
++    assert(Ctx.hasSameType(OX->getElementType(), OY->getElementType()) &&
++           "common carrier reconstruction requires identical payload types");
++    return Ctx.getObjC3OptionalType(
++        Ctx.getCommonSugaredType(OX->getElementType(), OY->getElementType()));
++  }
++  case Type::ObjC3Result: {
++    const auto *RX = cast<ObjC3ResultType>(X);
++    const auto *RY = cast<ObjC3ResultType>(Y);
++    assert(Ctx.hasSameType(RX->getSuccessType(), RY->getSuccessType()) &&
++           Ctx.hasSameType(RX->getErrorType(), RY->getErrorType()) &&
++           "common carrier reconstruction requires identical arm types");
++    return Ctx.getObjC3ResultType(
++        Ctx.getCommonSugaredType(RX->getSuccessType(), RY->getSuccessType()),
++        Ctx.getCommonSugaredType(RX->getErrorType(), RY->getErrorType()));
++  }
+   case Type::Atomic: {
+     const auto *AX = cast<AtomicType>(X), *AY = cast<AtomicType>(Y);
+     return Ctx.getAtomicType(
+@@ -14381,6 +14652,8 @@ static QualType getCommonSugarTypeNode(const ASTContext &Ctx, const Type *X,
+     CANONICAL_TYPE(HLSLInlineSpirv)
+     CANONICAL_TYPE(LValueReference)
+     CANONICAL_TYPE(ObjCInterface)
++    CANONICAL_TYPE(ObjC3Optional)
++    CANONICAL_TYPE(ObjC3Result)
+     CANONICAL_TYPE(ObjCObject)
+     CANONICAL_TYPE(ObjCObjectPointer)
+     CANONICAL_TYPE(Pipe)
 diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
-index 101ab2c40..556be6b2c 100644
+index 101ab2c40..6c12322da 100644
 --- a/clang/lib/AST/ASTImporter.cpp
 +++ b/clang/lib/AST/ASTImporter.cpp
 @@ -589,6 +589,7 @@ namespace clang {
@@ -1100,7 +1279,16 @@ index 101ab2c40..556be6b2c 100644
      ExpectedStmt VisitIfStmt(IfStmt *S);
      ExpectedStmt VisitSwitchStmt(SwitchStmt *S);
      ExpectedStmt VisitWhileStmt(WhileStmt *S);
-@@ -1414,6 +1415,27 @@ ExpectedType ASTNodeImporter::VisitComplexType(const ComplexType *T) {
+@@ -621,6 +622,8 @@ namespace clang {
+     ExpectedStmt VisitExpr(Expr *E);
+     ExpectedStmt VisitSourceLocExpr(SourceLocExpr *E);
+     ExpectedStmt VisitVAArgExpr(VAArgExpr *E);
++    ExpectedStmt VisitObjC3ResultExpr(ObjC3ResultExpr *E);
++    ExpectedStmt VisitObjC3OptionalExpr(ObjC3OptionalExpr *E);
+     ExpectedStmt VisitChooseExpr(ChooseExpr *E);
+     ExpectedStmt VisitConvertVectorExpr(ConvertVectorExpr *E);
+     ExpectedStmt VisitShuffleVectorExpr(ShuffleVectorExpr *E);
+@@ -1414,6 +1417,27 @@ ExpectedType ASTNodeImporter::VisitComplexType(const ComplexType *T) {
    return Importer.getToContext().getComplexType(*ToElementTypeOrErr);
  }
  
@@ -1128,7 +1316,7 @@ index 101ab2c40..556be6b2c 100644
  ExpectedType ASTNodeImporter::VisitPointerType(const PointerType *T) {
    ExpectedType ToPointeeTypeOrErr = import(T->getPointeeType());
    if (!ToPointeeTypeOrErr)
-@@ -1614,6 +1636,12 @@ ASTNodeImporter::VisitFunctionProtoType(const FunctionProtoType *T) {
+@@ -1614,6 +1638,12 @@ ASTNodeImporter::VisitFunctionProtoType(const FunctionProtoType *T) {
        importChecked(Err, FromEPI.ExceptionSpec.SourceTemplate);
    ToEPI.ExceptionSpec.Exceptions = ExceptionTypes;
  
@@ -1141,7 +1329,7 @@ index 101ab2c40..556be6b2c 100644
    if (Err)
      return std::move(Err);
  
-@@ -4042,6 +4070,7 @@ ExpectedDecl ASTNodeImporter::VisitFunctionDecl(FunctionDecl *D) {
+@@ -4042,6 +4072,7 @@ ExpectedDecl ASTNodeImporter::VisitFunctionDecl(FunctionDecl *D) {
  
    QualType FromTy = D->getType();
    TypeSourceInfo *FromTSI = D->getTypeSourceInfo();
@@ -1149,7 +1337,7 @@ index 101ab2c40..556be6b2c 100644
    // Set to true if we do not import the type of the function as is. There are
    // cases when the original type would result in an infinite recursion during
    // the import. To avoid an infinite recursion when importing, we create the
-@@ -4097,6 +4126,46 @@ ExpectedDecl ASTNodeImporter::VisitFunctionDecl(FunctionDecl *D) {
+@@ -4097,6 +4128,46 @@ ExpectedDecl ASTNodeImporter::VisitFunctionDecl(FunctionDecl *D) {
    if (Err)
      return std::move(Err);
  
@@ -1196,7 +1384,7 @@ index 101ab2c40..556be6b2c 100644
    // Import the function parameters.
    SmallVector<ParmVarDecl *, 8> Parameters;
    for (auto *P : D->parameters()) {
-@@ -7221,6 +7290,17 @@ ExpectedStmt ASTNodeImporter::VisitAttributedStmt(AttributedStmt *S) {
+@@ -7221,6 +7292,17 @@ ExpectedStmt ASTNodeImporter::VisitAttributedStmt(AttributedStmt *S) {
        Importer.getToContext(), *ToAttrLocOrErr, ToAttrs, *ToSubStmtOrErr);
  }
  
@@ -1214,7 +1402,47 @@ index 101ab2c40..556be6b2c 100644
  ExpectedStmt ASTNodeImporter::VisitIfStmt(IfStmt *S) {
  
    Error Err = Error::success();
-@@ -9522,7 +9602,97 @@ Expected<TypeSourceInfo *> ASTImporter::Import(TypeSourceInfo *FromTSI) {
+@@ -7594,6 +7676,39 @@ ExpectedStmt ASTNodeImporter::VisitVAArgExpr(VAArgExpr *E) {
+       E->isMicrosoftABI());
+ }
+ 
++ExpectedStmt ASTNodeImporter::VisitObjC3ResultExpr(ObjC3ResultExpr *E) {
++  Error Err = Error::success();
++  auto Type = importChecked(Err, E->getType());
++  auto Carrier = importChecked(Err, E->getCarrierType());
++  auto *Success = importChecked(Err, E->getSuccessTypeInfo());
++  auto *ErrorInfo = importChecked(Err, E->getErrorTypeInfo());
++  auto *Payload = importChecked(Err, E->getPayload());
++  auto Keyword = importChecked(Err, E->getKeywordLoc());
++  auto LParen = importChecked(Err, E->getLParenLoc());
++  auto FirstComma = importChecked(Err, E->getFirstCommaLoc());
++  auto SecondComma = importChecked(Err, E->getSecondCommaLoc());
++  auto RParen = importChecked(Err, E->getRParenLoc());
++  if (Err) return std::move(Err);
++  return ObjC3ResultExpr::Create(Importer.getToContext(), E->getKind(), Type,
++      Carrier, Success, ErrorInfo, Payload, Keyword, LParen, FirstComma,
++      SecondComma, RParen);
++}
++
++ExpectedStmt ASTNodeImporter::VisitObjC3OptionalExpr(ObjC3OptionalExpr *E) {
++  Error Err = Error::success();
++  auto Type = importChecked(Err, E->getType());
++  auto Carrier = importChecked(Err, E->getCarrierType());
++  auto *Info = importChecked(Err, E->getPayloadTypeInfo());
++  auto *Payload = importChecked(Err, E->getPayload());
++  auto Keyword = importChecked(Err, E->getKeywordLoc());
++  auto LParen = importChecked(Err, E->getLParenLoc());
++  auto Comma = importChecked(Err, E->getCommaLoc());
++  auto RParen = importChecked(Err, E->getRParenLoc());
++  if (Err) return std::move(Err);
++  return ObjC3OptionalExpr::Create(Importer.getToContext(), E->getKind(),
++      Type, Carrier, Info, Payload, Keyword, LParen, Comma, RParen);
++}
++
+ ExpectedStmt ASTNodeImporter::VisitChooseExpr(ChooseExpr *E) {
+ 
+   Error Err = Error::success();
+@@ -9522,7 +9637,97 @@ Expected<TypeSourceInfo *> ASTImporter::Import(TypeSourceInfo *FromTSI) {
    if (!BeginLocOrErr)
      return BeginLocOrErr.takeError();
  
@@ -1314,10 +1542,35 @@ index 101ab2c40..556be6b2c 100644
  
  namespace {
 diff --git a/clang/lib/AST/ASTStructuralEquivalence.cpp b/clang/lib/AST/ASTStructuralEquivalence.cpp
-index da64c9222..8ec9159f9 100644
+index da64c9222..825185fce 100644
 --- a/clang/lib/AST/ASTStructuralEquivalence.cpp
 +++ b/clang/lib/AST/ASTStructuralEquivalence.cpp
-@@ -903,6 +903,23 @@ static bool IsStructurallyEquivalent(StructuralEquivalenceContext &Context,
+@@ -206,6 +206,24 @@ class StmtComparer {
+     return E1->getValue() == E2->getValue() && E1->getKind() == E2->getKind();
+   }
+ 
++  bool IsStmtEquivalent(const ObjC3OptionalExpr *E1,
++                        const ObjC3OptionalExpr *E2) {
++    return E1->getKind() == E2->getKind() &&
++           IsStructurallyEquivalent(Context, E1->getType(), E2->getType()) &&
++           IsStructurallyEquivalent(Context, E1->getCarrierType(),
++                                    E2->getCarrierType());
++  }
++
++  bool IsStmtEquivalent(const ObjC3ResultExpr *E1,
++                        const ObjC3ResultExpr *E2) {
++    // Ok and Err can have identical result and operand types. The selected
++    // alternative is semantic identity even when both payload values are zero.
++    return E1->getKind() == E2->getKind() &&
++           IsStructurallyEquivalent(Context, E1->getType(), E2->getType()) &&
++           IsStructurallyEquivalent(Context, E1->getCarrierType(),
++                                    E2->getCarrierType());
++  }
++
+   bool IsStmtEquivalent(const ChooseExpr *E1, const ChooseExpr *E2) {
+     return true; // Semantics only depend on children.
+   }
+@@ -903,6 +921,23 @@ static bool IsStructurallyEquivalent(StructuralEquivalenceContext &Context,
        return false;
      break;
  
@@ -1341,11 +1594,38 @@ index da64c9222..8ec9159f9 100644
    case Type::Adjusted:
    case Type::Decayed:
    case Type::ArrayParameter:
+@@ -1086,6 +1121,17 @@ static bool IsStructurallyEquivalent(StructuralEquivalenceContext &Context,
+     const auto *Proto1 = cast<FunctionProtoType>(T1);
+     const auto *Proto2 = cast<FunctionProtoType>(T2);
+ 
++    // ObjC3 effects survive canonicalization and are independent of the C++
++    // exception specification checked below. Import must not unify callbacks
++    // whose async bit, throws kind or typed error payload differs.
++    if (Proto1->isObjC3Async() != Proto2->isObjC3Async() ||
++        Proto1->getObjC3ThrowsKind() != Proto2->getObjC3ThrowsKind())
++      return false;
++    if (Proto1->getObjC3ThrowsKind() == ObjC3ThrowsKind::Typed &&
++        !IsStructurallyEquivalent(Context, Proto1->getObjC3ErrorType(),
++                                  Proto2->getObjC3ErrorType()))
++      return false;
++
+     if (Proto1->getNumParams() != Proto2->getNumParams())
+       return false;
+     for (unsigned I = 0, N = Proto1->getNumParams(); I != N; ++I) {
 diff --git a/clang/lib/AST/ItaniumMangle.cpp b/clang/lib/AST/ItaniumMangle.cpp
-index fa28c0d44..166de11c1 100644
+index fa28c0d44..9d576effb 100644
 --- a/clang/lib/AST/ItaniumMangle.cpp
 +++ b/clang/lib/AST/ItaniumMangle.cpp
-@@ -4579,6 +4579,22 @@ void CXXNameMangler::mangleType(const AtomicType *T) {
+@@ -2420,6 +2420,8 @@ bool CXXNameMangler::mangleUnresolvedTypeOrSimpleId(QualType Ty,
+   case Type::ObjCInterface:
+   case Type::ObjCObjectPointer:
+   case Type::ObjCTypeParam:
++  case Type::ObjC3Optional:
++  case Type::ObjC3Result:
+   case Type::Atomic:
+   case Type::Pipe:
+   case Type::MacroQualified:
+@@ -4579,6 +4581,22 @@ void CXXNameMangler::mangleType(const AtomicType *T) {
    mangleType(T->getValueType());
  }
  
@@ -1368,6 +1648,53 @@ index fa28c0d44..166de11c1 100644
  void CXXNameMangler::mangleType(const PipeType *T) {
    // Pipe type mangling rules are described in SPIR 2.0 specification
    // A.1 Data types and A.3 Summary of changes
+@@ -5914,6 +5932,46 @@ recurse:
+   case Expr::HLSLOutArgExprClass:
+     llvm_unreachable(
+         "cannot mangle hlsl temporary value; mangling wrong thing?");
++  case Expr::ObjC3OptionalExprClass: {
++    const auto *Carrier = cast<ObjC3OptionalExpr>(E);
++    StringRef Spelling;
++    switch (Carrier->getKind()) {
++    case ObjC3OptionalExpr::Kind::Some: Spelling = "__objc3_some"; break;
++    case ObjC3OptionalExpr::Kind::None: Spelling = "__objc3_none"; break;
++    case ObjC3OptionalExpr::Kind::HasValue:
++      Spelling = "__objc3_has_value";
++      break;
++    }
++    NotPrimaryExpr();
++    // Use the native vendor-expression grammar with ordered type/operand
++    // arguments. Never substitute the layout-only record for source identity.
++    Out << 'u' << Spelling.size() << Spelling;
++    if (const auto *Info = Carrier->getPayloadTypeInfo())
++      mangleType(Info->getType());
++    if (const Expr *Payload = Carrier->getPayload())
++      mangleExpression(Payload);
++    Out << 'E';
++    break;
++  }
++  case Expr::ObjC3ResultExprClass: {
++    const auto *Carrier = cast<ObjC3ResultExpr>(E);
++    StringRef Spelling;
++    switch (Carrier->getKind()) {
++    case ObjC3ResultExpr::Kind::Ok: Spelling = "__objc3_ok"; break;
++    case ObjC3ResultExpr::Kind::Err: Spelling = "__objc3_err"; break;
++    case ObjC3ResultExpr::Kind::IsOk: Spelling = "__objc3_is_ok"; break;
++    }
++    NotPrimaryExpr();
++    Out << 'u' << Spelling.size() << Spelling;
++    if (const auto *Info = Carrier->getSuccessTypeInfo())
++      mangleType(Info->getType());
++    if (const auto *Info = Carrier->getErrorTypeInfo())
++      mangleType(Info->getType());
++    if (const Expr *Payload = Carrier->getPayload())
++      mangleExpression(Payload);
++    Out << 'E';
++    break;
++  }
+   case Expr::OpenACCAsteriskSizeExprClass: {
+     // We shouldn't ever be able to get here, but diagnose anyway.
+     DiagnosticsEngine &Diags = Context.getDiags();
 diff --git a/clang/lib/AST/MicrosoftMangle.cpp b/clang/lib/AST/MicrosoftMangle.cpp
 index 551aa7bf3..54518cca3 100644
 --- a/clang/lib/AST/MicrosoftMangle.cpp
@@ -1651,10 +1978,19 @@ index f54ccf093..7920e8dba 100644
  
  //===----------------------------------------------------------------------===//
 diff --git a/clang/lib/AST/TypePrinter.cpp b/clang/lib/AST/TypePrinter.cpp
-index 5a0cbc47e..b88e49444 100644
+index 5a0cbc47e..49e873f1c 100644
 --- a/clang/lib/AST/TypePrinter.cpp
 +++ b/clang/lib/AST/TypePrinter.cpp
-@@ -400,6 +400,30 @@ void TypePrinter::printComplexAfter(const ComplexType *T, raw_ostream &OS) {
+@@ -236,6 +236,8 @@ bool TypePrinter::canPrefixQualifiers(const Type *T,
+     case Type::InjectedClassName:
+     case Type::DependentName:
+     case Type::ObjCObject:
++    case Type::ObjC3Optional:
++    case Type::ObjC3Result:
+     case Type::ObjCTypeParam:
+     case Type::ObjCInterface:
+     case Type::Atomic:
+@@ -400,6 +402,30 @@ void TypePrinter::printComplexAfter(const ComplexType *T, raw_ostream &OS) {
    printAfter(T->getElementType(), OS);
  }
  
@@ -1685,7 +2021,7 @@ index 5a0cbc47e..b88e49444 100644
  void TypePrinter::printPointerBefore(const PointerType *T, raw_ostream &OS) {
    IncludeStrongLifetimeRAII Strong(Policy);
    SaveAndRestore NonEmptyPH(HasEmptyPlaceHolder, false);
-@@ -1073,6 +1097,24 @@ void TypePrinter::printFunctionProtoAfter(const FunctionProtoType *T,
+@@ -1073,6 +1099,24 @@ void TypePrinter::printFunctionProtoAfter(const FunctionProtoType *T,
      OS << "))";
    }
  
@@ -2638,13 +2974,25 @@ index f8c49646f..64d83eb78 100644
                                 SourceLocation &RefQualifierLoc) {
    if (Tok.isOneOf(tok::amp, tok::ampamp)) {
 diff --git a/clang/lib/Parse/ParseTentative.cpp b/clang/lib/Parse/ParseTentative.cpp
-index c8ddc120a..80e00fb0d 100644
+index c8ddc120a..cdd12eced 100644
 --- a/clang/lib/Parse/ParseTentative.cpp
 +++ b/clang/lib/Parse/ParseTentative.cpp
-@@ -1018,6 +1018,10 @@ Parser::TPResult
+@@ -1018,6 +1018,22 @@ Parser::TPResult
  Parser::isCXXDeclarationSpecifier(ImplicitTypenameContext AllowImplicitTypename,
                                    Parser::TPResult BracedCastResult,
                                    bool *InvalidAsDeclSpec) {
++  // These reserved calls start expressions in ObjC3 mode. Name classification
++  // during tentative type-id parsing must not replace their tokens with native
++  // non-type annotations before ParseCastExpression sees the intrinsic.
++  if (getLangOpts().ObjC3 && Tok.is(tok::identifier) &&
++      Tok.getIdentifierInfo() && NextToken().is(tok::l_paren) &&
++      (Tok.getIdentifierInfo()->isStr("__objc3_some") ||
++       Tok.getIdentifierInfo()->isStr("__objc3_none") ||
++       Tok.getIdentifierInfo()->isStr("__objc3_has_value") ||
++       Tok.getIdentifierInfo()->isStr("__objc3_ok") ||
++       Tok.getIdentifierInfo()->isStr("__objc3_err") ||
++       Tok.getIdentifierInfo()->isStr("__objc3_is_ok")))
++    return TPResult::False;
 +  if (getLangOpts().ObjC3 && Tok.is(tok::identifier) &&
 +      (Tok.getIdentifierInfo()->isStr("__objc3_optional") ||
 +       Tok.getIdentifierInfo()->isStr("__objc3_result")))
@@ -2653,15 +3001,17 @@ index c8ddc120a..80e00fb0d 100644
                                      int Lookahead) {
      // We have a placeholder-constraint (we check for 'auto' or 'decltype' to
 diff --git a/clang/lib/Sema/CMakeLists.txt b/clang/lib/Sema/CMakeLists.txt
-index 0ebf56ecf..f4cd31a0f 100644
+index 0ebf56ecf..203de5a79 100644
 --- a/clang/lib/Sema/CMakeLists.txt
 +++ b/clang/lib/Sema/CMakeLists.txt
-@@ -70,6 +70,8 @@ add_clang_library(clangSema
+@@ -70,6 +70,10 @@ add_clang_library(clangSema
    SemaMSP430.cpp
    SemaModule.cpp
    SemaNVPTX.cpp
 +  SemaObjC3Effects.cpp
 +  SemaObjC3Carriers.cpp
++  SemaObjC3OptionalExpr.cpp
++  SemaObjC3ResultExpr.cpp
    SemaObjC.cpp
    SemaObjCProperty.cpp
    SemaOpenACC.cpp
@@ -2733,10 +3083,31 @@ index d67220a2f..55d9292a1 100644
    if (Context.hasAnyFunctionEffects()) {
      const auto OldFX = Old->getFunctionEffects();
 diff --git a/clang/lib/Sema/SemaExpr.cpp b/clang/lib/Sema/SemaExpr.cpp
-index 12681a1f0..e33f0918e 100644
+index 12681a1f0..c704cb92d 100644
 --- a/clang/lib/Sema/SemaExpr.cpp
 +++ b/clang/lib/Sema/SemaExpr.cpp
-@@ -9222,17 +9222,107 @@ static AssignConvertType checkPointerTypesForAssignment(Sema &S,
+@@ -4587,6 +4587,20 @@ static void captureVariablyModifiedType(ASTContext &Context, QualType T,
+     case Type::Atomic:
+       T = cast<AtomicType>(Ty)->getValueType();
+       break;
++    case Type::ObjC3Optional:
++      T = cast<ObjC3OptionalType>(Ty)->getElementType();
++      break;
++    case Type::ObjC3Result: {
++      const auto *Result = cast<ObjC3ResultType>(Ty);
++      QualType SuccessType = Result->getSuccessType();
++      QualType ErrorType = Result->getErrorType();
++      if (SuccessType->isVariablyModifiedType())
++        captureVariablyModifiedType(Context, SuccessType, CSI);
++      if (ErrorType->isVariablyModifiedType())
++        captureVariablyModifiedType(Context, ErrorType, CSI);
++      T = QualType();
++      break;
++    }
+     case Type::PredefinedSugar:
+       T = cast<PredefinedSugarType>(Ty)->desugar();
+       break;
+@@ -9222,17 +9236,107 @@ static AssignConvertType checkPointerTypesForAssignment(Sema &S,
      return AssignConvertType::FunctionVoidPointer;
    }
  
@@ -2849,7 +3220,7 @@ index 12681a1f0..e33f0918e 100644
      // Check if the pointee types are compatible ignoring the sign.
      // We explicitly check for char so that we catch "char" vs
      // "unsigned char" on systems where "char" is unsigned.
-@@ -9304,12 +9394,20 @@ static AssignConvertType checkPointerTypesForAssignment(Sema &S,
+@@ -9304,12 +9408,20 @@ static AssignConvertType checkPointerTypesForAssignment(Sema &S,
      const auto *LFPT = dyn_cast<FunctionProtoType>(LFT);
      const auto *RFPT = dyn_cast<FunctionProtoType>(RFT);
      if (LFPT && RFPT) {
@@ -2872,7 +3243,7 @@ index 12681a1f0..e33f0918e 100644
        rtrans = S.Context.getFunctionType(LFPT->getReturnType(),
                                           LFPT->getParamTypes(), EPI);
      } else if (RFPT) {
-@@ -9372,12 +9470,60 @@ static AssignConvertType checkBlockPointerTypesForAssignment(Sema &S,
+@@ -9372,12 +9484,60 @@ static AssignConvertType checkBlockPointerTypesForAssignment(Sema &S,
    //  * CVR and address space of LHS should be a superset of CVR and address
    //  space of RHS.
    //  * unqualified types should be compatible.
@@ -3044,8 +3415,74 @@ index 3497ff785..f39e480f7 100644
  bool UnnamedLocalNoLinkageFinder::VisitArrayParameterType(
      const ArrayParameterType *T) {
    return VisitConstantArrayType(T);
+diff --git a/clang/lib/Sema/SemaTemplateDeduction.cpp b/clang/lib/Sema/SemaTemplateDeduction.cpp
+index 2b2b9c60f..3ee50269e 100644
+--- a/clang/lib/Sema/SemaTemplateDeduction.cpp
++++ b/clang/lib/Sema/SemaTemplateDeduction.cpp
+@@ -1898,6 +1898,40 @@ static TemplateDeductionResult DeduceTemplateArgumentsByTypeMatch(
+                  ? TemplateDeductionResult::Success
+                  : TemplateDeductionResult::NonDeducedMismatch;
+ 
++    // Objective-C 3 carriers are invariant constructors for deduction: match
++    // the same carrier kind, then recursively deduce each payload arm.
++    case Type::ObjC3Optional: {
++      const auto *OptionalPattern = P->castAs<ObjC3OptionalType>();
++      const auto *OptionalArgument = A->getAs<ObjC3OptionalType>();
++      if (!OptionalArgument)
++        return TemplateDeductionResult::NonDeducedMismatch;
++      return DeduceTemplateArgumentsByTypeMatch(
++          S, TemplateParams, OptionalPattern->getElementType(),
++          OptionalArgument->getElementType(), Info, Deduced,
++          TDF & ~TDF_DerivedClass,
++          degradeCallPartialOrderingKind(POK),
++          /*DeducedFromArrayBound=*/false, HasDeducedAnyParam);
++    }
++    case Type::ObjC3Result: {
++      const auto *ResultPattern = P->castAs<ObjC3ResultType>();
++      const auto *ResultArgument = A->getAs<ObjC3ResultType>();
++      if (!ResultArgument)
++        return TemplateDeductionResult::NonDeducedMismatch;
++      if (auto Result = DeduceTemplateArgumentsByTypeMatch(
++              S, TemplateParams, ResultPattern->getSuccessType(),
++              ResultArgument->getSuccessType(), Info, Deduced,
++              TDF & ~TDF_DerivedClass,
++              degradeCallPartialOrderingKind(POK),
++              /*DeducedFromArrayBound=*/false, HasDeducedAnyParam);
++          Result != TemplateDeductionResult::Success)
++        return Result;
++      return DeduceTemplateArgumentsByTypeMatch(
++          S, TemplateParams, ResultPattern->getErrorType(),
++          ResultArgument->getErrorType(), Info, Deduced,
++          TDF & ~TDF_DerivedClass,
++          degradeCallPartialOrderingKind(POK),
++          /*DeducedFromArrayBound=*/false, HasDeducedAnyParam);
++    }
+     //     _Complex T   [placeholder extension]
+     case Type::Complex: {
+       const auto *CP = P->castAs<ComplexType>(), *CA = A->getAs<ComplexType>();
+@@ -6977,6 +7011,20 @@ MarkUsedTemplateParameters(ASTContext &Ctx, QualType T,
+     break;
+   }
+ 
++  case Type::ObjC3Optional:
++    MarkUsedTemplateParameters(
++        Ctx, cast<ObjC3OptionalType>(T)->getElementType(), OnlyDeduced,
++        Depth, Used);
++    break;
++
++  case Type::ObjC3Result: {
++    const auto *Result = cast<ObjC3ResultType>(T);
++    MarkUsedTemplateParameters(Ctx, Result->getSuccessType(), OnlyDeduced,
++                               Depth, Used);
++    MarkUsedTemplateParameters(Ctx, Result->getErrorType(), OnlyDeduced,
++                               Depth, Used);
++    break;
++  }
+   case Type::Complex:
+     if (!OnlyDeduced)
+       MarkUsedTemplateParameters(Ctx,
 diff --git a/clang/lib/Sema/SemaType.cpp b/clang/lib/Sema/SemaType.cpp
-index 28bb352b1..99f536ec8 100644
+index 28bb352b1..21864e449 100644
 --- a/clang/lib/Sema/SemaType.cpp
 +++ b/clang/lib/Sema/SemaType.cpp
 @@ -2665,6 +2665,9 @@ QualType Sema::BuildFunctionType(QualType T,
@@ -3077,7 +3514,26 @@ index 28bb352b1..99f536ec8 100644
  
          // Otherwise, we have a function with a parameter list that is
          // potentially variadic.
-@@ -6247,6 +6262,10 @@ namespace {
+@@ -5990,6 +6005,18 @@ namespace {
+       Sema::GetTypeFromParser(DS.getRepAsType(), &RepTInfo);
+       TL.copy(RepTInfo->getTypeLoc());
+     }
++    void VisitObjC3OptionalTypeLoc(ObjC3OptionalTypeLoc TL) {
++      TypeSourceInfo *TInfo = nullptr;
++      Sema::GetTypeFromParser(DS.getRepAsType(), &TInfo);
++      if (TInfo)
++        TL.copy(TInfo->getTypeLoc().castAs<ObjC3OptionalTypeLoc>());
++    }
++    void VisitObjC3ResultTypeLoc(ObjC3ResultTypeLoc TL) {
++      TypeSourceInfo *TInfo = nullptr;
++      Sema::GetTypeFromParser(DS.getRepAsType(), &TInfo);
++      if (TInfo)
++        TL.copy(TInfo->getTypeLoc().castAs<ObjC3ResultTypeLoc>());
++    }
+     void VisitTemplateSpecializationTypeLoc(TemplateSpecializationTypeLoc TL) {
+       TypeSourceInfo *TInfo = nullptr;
+       Sema::GetTypeFromParser(DS.getRepAsType(), &TInfo);
+@@ -6247,6 +6274,10 @@ namespace {
          TL.setParam(tpi++, Param);
        }
        TL.setExceptionSpecRange(FTI.getExceptionSpecRange());
@@ -3089,7 +3545,7 @@ index 28bb352b1..99f536ec8 100644
      void VisitParenTypeLoc(ParenTypeLoc TL) {
        assert(Chunk.Kind == DeclaratorChunk::Paren);
 diff --git a/clang/lib/Sema/TreeTransform.h b/clang/lib/Sema/TreeTransform.h
-index 00be4e8c1..923da4d7b 100644
+index 00be4e8c1..7c571ad9d 100644
 --- a/clang/lib/Sema/TreeTransform.h
 +++ b/clang/lib/Sema/TreeTransform.h
 @@ -5661,6 +5661,42 @@ QualType TreeTransform<Derived>::TransformComplexType(TypeLocBuilder &TLB,
@@ -3188,6 +3644,78 @@ index 00be4e8c1..923da4d7b 100644
  }
  
  template<typename Derived>
+@@ -14166,6 +14232,71 @@ TreeTransform<Derived>::TransformStmtExpr(StmtExpr *E) {
+                                       E->getRParenLoc(), NewDepth);
+ }
+ 
++template<typename Derived>
++ExprResult TreeTransform<Derived>::TransformObjC3ResultExpr(ObjC3ResultExpr *E) {
++  TypeSourceInfo *Success = E->getSuccessTypeInfo();
++  TypeSourceInfo *Error = E->getErrorTypeInfo();
++  if (Success) {
++    Success = getDerived().TransformType(Success);
++    if (!Success) return ExprError();
++  }
++  if (Error) {
++    Error = getDerived().TransformType(Error);
++    if (!Error) return ExprError();
++  }
++  ExprResult Payload = getDerived().TransformExpr(E->getPayload());
++  if (Payload.isInvalid()) return ExprError();
++  if (!getDerived().AlwaysRebuild() && Success == E->getSuccessTypeInfo() &&
++      Error == E->getErrorTypeInfo() && Payload.get() == E->getPayload())
++    return E;
++  ParsedType SuccessType = Success ? SemaRef.CreateParsedType(Success->getType(), Success) : ParsedType();
++  ParsedType ErrorType = Error ? SemaRef.CreateParsedType(Error->getType(), Error) : ParsedType();
++  switch (E->getKind()) {
++  case ObjC3ResultExpr::Kind::Ok:
++    return SemaRef.ActOnObjC3ResultOkExpr(E->getKeywordLoc(), E->getLParenLoc(),
++        SuccessType, E->getFirstCommaLoc(), ErrorType, E->getSecondCommaLoc(),
++        Payload.get(), E->getRParenLoc());
++  case ObjC3ResultExpr::Kind::Err:
++    return SemaRef.ActOnObjC3ResultErrExpr(E->getKeywordLoc(), E->getLParenLoc(),
++        SuccessType, E->getFirstCommaLoc(), ErrorType, E->getSecondCommaLoc(),
++        Payload.get(), E->getRParenLoc());
++  case ObjC3ResultExpr::Kind::IsOk:
++    return SemaRef.ActOnObjC3ResultIsOkExpr(E->getKeywordLoc(), E->getLParenLoc(),
++        Payload.get(), E->getRParenLoc());
++  }
++  llvm_unreachable("Invalid ObjC3 Result expression kind");
++}
++
++template<typename Derived>
++ExprResult TreeTransform<Derived>::TransformObjC3OptionalExpr(ObjC3OptionalExpr *E) {
++  TypeSourceInfo *Info = E->getPayloadTypeInfo();
++  if (Info) {
++    Info = getDerived().TransformType(Info);
++    if (!Info) return ExprError();
++  }
++  ExprResult Payload;
++  if (E->getPayload()) {
++    Payload = getDerived().TransformExpr(E->getPayload());
++    if (Payload.isInvalid()) return ExprError();
++  }
++  if (!getDerived().AlwaysRebuild() && Info == E->getPayloadTypeInfo() &&
++      Payload.get() == E->getPayload())
++    return E;
++  ParsedType Type = Info ? SemaRef.CreateParsedType(Info->getType(), Info) : ParsedType();
++  switch (E->getKind()) {
++  case ObjC3OptionalExpr::Kind::Some:
++    return SemaRef.ActOnObjC3OptionalSomeExpr(E->getKeywordLoc(), E->getLParenLoc(),
++        Type, Payload.get(), E->getCommaLoc(), E->getRParenLoc());
++  case ObjC3OptionalExpr::Kind::None:
++    return SemaRef.ActOnObjC3OptionalNoneExpr(E->getKeywordLoc(), E->getLParenLoc(),
++        Type, E->getRParenLoc());
++  case ObjC3OptionalExpr::Kind::HasValue:
++    return SemaRef.ActOnObjC3OptionalHasValueExpr(E->getKeywordLoc(), E->getLParenLoc(),
++        Payload.get(), E->getRParenLoc());
++  }
++  llvm_unreachable("Invalid ObjC3 Optional expression kind");
++}
++
+ template<typename Derived>
+ ExprResult
+ TreeTransform<Derived>::TransformChooseExpr(ChooseExpr *E) {
 diff --git a/clang/lib/Serialization/ASTReader.cpp b/clang/lib/Serialization/ASTReader.cpp
 index 66cf484bb..0a6b37b94 100644
 --- a/clang/lib/Serialization/ASTReader.cpp
@@ -3239,7 +3767,7 @@ index 66cf484bb..0a6b37b94 100644
      TL.setParam(i, Reader.readDeclAs<ParmVarDecl>());
    }
 diff --git a/clang/lib/Serialization/ASTWriter.cpp b/clang/lib/Serialization/ASTWriter.cpp
-index 39104da10..9a45f3138 100644
+index 39104da10..68bc3bc14 100644
 --- a/clang/lib/Serialization/ASTWriter.cpp
 +++ b/clang/lib/Serialization/ASTWriter.cpp
 @@ -368,6 +368,22 @@ void TypeLocWriter::VisitComplexTypeLoc(ComplexTypeLoc TL) {
@@ -3276,6 +3804,15 @@ index 39104da10..9a45f3138 100644
    for (unsigned i = 0, e = TL.getNumParams(); i != e; ++i)
      Record.AddDeclRef(TL.getParam(i));
  }
+@@ -805,6 +825,8 @@ static void AddStmtsExprs(llvm::BitstreamWriter &Stream,
+   RECORD(EXPR_ADDR_LABEL);
+   RECORD(EXPR_STMT);
+   RECORD(EXPR_CHOOSE);
++  RECORD(EXPR_OBJC3_OPTIONAL);
++  RECORD(EXPR_OBJC3_RESULT);
+   RECORD(EXPR_GNU_NULL);
+   RECORD(EXPR_SHUFFLE_VECTOR);
+   RECORD(EXPR_BLOCK);
 diff --git a/clang/lib/Serialization/TemplateArgumentHasher.cpp b/clang/lib/Serialization/TemplateArgumentHasher.cpp
 index 353e8a2da..f07f7f03b 100644
 --- a/clang/lib/Serialization/TemplateArgumentHasher.cpp
@@ -3294,10 +3831,10 @@ index 353e8a2da..f07f7f03b 100644
    }
  
 diff --git a/clang/unittests/AST/CMakeLists.txt b/clang/unittests/AST/CMakeLists.txt
-index 3a12a4a06..be57c757b 100644
+index 3a12a4a06..7aef62320 100644
 --- a/clang/unittests/AST/CMakeLists.txt
 +++ b/clang/unittests/AST/CMakeLists.txt
-@@ -54,3 +54,22 @@ add_clang_unittest(ASTTests
+@@ -54,3 +54,31 @@ add_clang_unittest(ASTTests
    Support
    TargetParser
    )
@@ -3310,6 +3847,15 @@ index 3a12a4a06..be57c757b 100644
 +  ObjC3FunctionEffectTest.cpp
 +  ObjC3IndexIdentityTest.cpp
 +  ObjC3CarrierMangleTest.cpp
++  ObjC3CarrierExprMangleTest.cpp
++  ObjC3OptionalExprTest.cpp
++  ObjC3ResultExprTest.cpp
++  ObjC3CarrierExprSemanticsTest.cpp
++  ObjC3CarrierCommonSugarTest.cpp
++  ObjC3CarrierAdversarialTest.cpp
++  ObjC3CarrierIdentityTest.cpp
++  ObjC3CarrierExprIdentityTest.cpp
++  ObjC3FunctionEffectImportTest.cpp
 +  CLANG_LIBS
 +  clangAST
 +  clangFrontend
@@ -3543,6 +4089,72 @@ new file mode 100644
 +  Diag(Loc, diag::err_objc3_invalid_function_effect_shape);
 +  return false;
 +}
+diff --git a/clang/test/ObjC3/AST/Inputs/carrier-expression-adversarial-pch.h b/clang/test/ObjC3/AST/Inputs/carrier-expression-adversarial-pch.h
+new file mode 100644
+--- /dev/null
++++ b/clang/test/ObjC3/AST/Inputs/carrier-expression-adversarial-pch.h
+@@ -0,0 +1,26 @@
++using PersistedCount = int;
++using PersistedCountOptional = __objc3_optional(PersistedCount);
++using PersistedNestedOptional = __objc3_optional(PersistedCountOptional);
++using PersistedResult = __objc3_result(PersistedCount, long);
++using PersistedNestedResult =
++    __objc3_result(PersistedResult, PersistedNestedOptional);
++
++inline PersistedNestedOptional persisted_nested_optional() {
++  return __objc3_some(PersistedCountOptional,
++                      __objc3_some(PersistedCount, 0));
++}
++inline PersistedNestedResult persisted_nested_result() {
++  return __objc3_err(PersistedResult, PersistedNestedOptional,
++                     __objc3_some(PersistedCountOptional,
++                                  __objc3_some(PersistedCount, 0)));
++}
++inline bool persisted_nested_queries() {
++  return __objc3_has_value(persisted_nested_optional()) &&
++         !__objc3_is_ok(persisted_nested_result());
++}
++
++template <class T> auto persisted_dependent_nested(T value) {
++  using Inner = __objc3_optional(T);
++  return __objc3_some(Inner, __objc3_some(T, value));
++}
++inline auto persisted_template_instance = persisted_dependent_nested(0);
+\ No newline at end of file
+diff --git a/clang/test/ObjC3/AST/Inputs/carrier-expressions-module/carrier-expressions.h b/clang/test/ObjC3/AST/Inputs/carrier-expressions-module/carrier-expressions.h
+new file mode 100644
+--- /dev/null
++++ b/clang/test/ObjC3/AST/Inputs/carrier-expressions-module/carrier-expressions.h
+@@ -0,0 +1,20 @@
++typedef __objc3_optional(int) ModuleOptional;
++typedef __objc3_result(int, long long) ModuleResult;
++extern void module_record(int);
++
++static inline int module_present_zero(void) {
++  __objc3_defer { module_record(3); }
++  ModuleOptional source = __objc3_some(int, 0);
++  ModuleOptional copy = __objc3_none(int);
++  copy = source;
++  return __objc3_has_value(copy);
++}
++
++static inline int module_zero_error(void) {
++  ModuleResult error = __objc3_err(int, long long, 0);
++  return !__objc3_is_ok(error);
++}
++
++static inline int module_void_once(void) {
++  return __objc3_is_ok(__objc3_ok(void, int, module_record(4)));
++}
+diff --git a/clang/test/ObjC3/AST/Inputs/carrier-expressions-module/module.modulemap b/clang/test/ObjC3/AST/Inputs/carrier-expressions-module/module.modulemap
+new file mode 100644
+--- /dev/null
++++ b/clang/test/ObjC3/AST/Inputs/carrier-expressions-module/module.modulemap
+@@ -0,0 +1,4 @@
++module CarrierExpressions {
++  header "carrier-expressions.h"
++  export *
++}
 diff --git a/clang/test/ObjC3/AST/Inputs/carrier-pointer-compatibility-pch.h b/clang/test/ObjC3/AST/Inputs/carrier-pointer-compatibility-pch.h
 new file mode 100644
 --- /dev/null
@@ -3580,6 +4192,19 @@ new file mode 100644
 +
 +void accept_plain_pch(PchPlainPointer Callback);
 +void accept_throwing_pch(PchThrowingPointer Callback);
+diff --git a/clang/test/ObjC3/AST/Inputs/function-effect-template-pch.h b/clang/test/ObjC3/AST/Inputs/function-effect-template-pch.h
+new file mode 100644
+--- /dev/null
++++ b/clang/test/ObjC3/AST/Inputs/function-effect-template-pch.h
+@@ -0,0 +1,8 @@
++struct Error {};
++
++template <class E>
++void pch_substituted_effect() __objc3_async __objc3_throws(const E *) {}
++
++// The explicit instantiation repeats the exact canonical effect payload.
++template void pch_substituted_effect<Error>() __objc3_async
++    __objc3_throws(const Error *);
 diff --git a/clang/test/ObjC3/AST/Inputs/function-effects-pch.h b/clang/test/ObjC3/AST/Inputs/function-effects-pch.h
 new file mode 100644
 --- /dev/null
@@ -3587,6 +4212,97 @@ new file mode 100644
 @@ -0,0 +1,2 @@
 +struct E {};
 +void pch_async_typed_effect() __objc3_async __objc3_throws(const E *);
+diff --git a/clang/test/ObjC3/AST/Inputs/optional-expressions-pch.h b/clang/test/ObjC3/AST/Inputs/optional-expressions-pch.h
+new file mode 100644
+--- /dev/null
++++ b/clang/test/ObjC3/AST/Inputs/optional-expressions-pch.h
+@@ -0,0 +1,16 @@
++typedef int PchCount;
++typedef __objc3_optional(PchCount) PchAliasOptional;
++typedef __objc3_optional(int) PchIntOptional;
++
++inline PchAliasOptional pch_some_alias() {
++  return __objc3_some(PchCount, 0);
++}
++inline PchIntOptional pch_some_int() {
++  return __objc3_some(int, 1);
++}
++inline PchAliasOptional pch_none_alias() {
++  return __objc3_none(PchCount);
++}
++inline bool pch_has_value() {
++  return __objc3_has_value(pch_none_alias());
++}
+diff --git a/clang/test/ObjC3/AST/Inputs/result-expressions-pch.h b/clang/test/ObjC3/AST/Inputs/result-expressions-pch.h
+new file mode 100644
+--- /dev/null
++++ b/clang/test/ObjC3/AST/Inputs/result-expressions-pch.h
+@@ -0,0 +1,19 @@
++typedef int PchSuccess;
++typedef long PchFailure;
++using PchAliasResult = __objc3_result(PchSuccess, PchFailure);
++using PchCanonicalResult = __objc3_result(int, long);
++using PchVoidResult = __objc3_result(void, void);
++
++inline PchAliasResult pch_ok() {
++  return __objc3_ok(PchSuccess, PchFailure, 0);
++}
++inline PchAliasResult pch_err() {
++  return __objc3_err(PchSuccess, PchFailure, 0L);
++}
++inline bool pch_is_ok() { return __objc3_is_ok(pch_err()); }
++inline PchVoidResult pch_void_ok() {
++  return __objc3_ok(void, void, (void)0);
++}
++inline PchVoidResult pch_void_err() {
++  return __objc3_err(void, void, (void)0);
++}
+diff --git a/clang/test/ObjC3/AST/carrier-expression-adversarial-pch.mm b/clang/test/ObjC3/AST/carrier-expression-adversarial-pch.mm
+new file mode 100644
+--- /dev/null
++++ b/clang/test/ObjC3/AST/carrier-expression-adversarial-pch.mm
+@@ -0,0 +1,13 @@
++// RUN: %clang_cc1 -x objective-c++ -fobjc-version=3 -std=c++20 -emit-pch -o %t.pch %S/Inputs/carrier-expression-adversarial-pch.h
++// RUN: %clang_cc1 -x objective-c++ -fobjc-version=3 -std=c++20 -include-pch %t.pch -ast-print %s | FileCheck %s
++
++void use_persisted_nested_carriers();
++
++// CHECK: using PersistedNestedOptional = __objc3_optional(__objc3_optional(int));
++// CHECK: using PersistedNestedResult = __objc3_result(__objc3_result(int, long), __objc3_optional(__objc3_optional(int)));
++// CHECK: __objc3_some(PersistedCountOptional, __objc3_some(PersistedCount, 0))
++// CHECK: __objc3_err(PersistedResult, PersistedNestedOptional,
++// CHECK: __objc3_some(Inner, __objc3_some(T, value))
++// CHECK: __objc3_optional(__objc3_optional(int)) persisted_dependent_nested<int>(int value)
++
++
+diff --git a/clang/test/ObjC3/AST/carrier-expression-module.m b/clang/test/ObjC3/AST/carrier-expression-module.m
+new file mode 100644
+--- /dev/null
++++ b/clang/test/ObjC3/AST/carrier-expression-module.m
+@@ -0,0 +1,23 @@
++// RUN: %clang_cc1 -x objective-c -std=c17 -triple x86_64-pc-windows-msvc -fobjc-runtime=gnustep-2.0 -fobjc-version=3 -fmodules -fmodule-name=CarrierExpressions -emit-module %S/Inputs/carrier-expressions-module/module.modulemap -o %t.pcm
++// RUN: %clang_cc1 -x objective-c -std=c17 -triple x86_64-pc-windows-msvc -fobjc-runtime=gnustep-2.0 -fobjc-version=3 -fmodules -fmodule-file=CarrierExpressions=%t.pcm -I %S/Inputs/carrier-expressions-module -emit-llvm -o %t.ll %s
++// RUN: FileCheck %s --check-prefix=IR < %t.ll
++// RUN: %clang_cc1 -x objective-c -std=c17 -triple x86_64-pc-windows-msvc -fobjc-runtime=gnustep-2.0 -fobjc-version=3 -fmodules -fmodule-file=CarrierExpressions=%t.pcm -I %S/Inputs/carrier-expressions-module -ast-dump-all %s | FileCheck %s --check-prefix=AST
++// RUN: not %clang_cc1 -x objective-c -std=c17 -triple x86_64-pc-windows-msvc -fobjc-runtime=gnustep-2.0 -fmodules -fmodule-file=CarrierExpressions=%t.pcm -I %S/Inputs/carrier-expressions-module -fsyntax-only %s 2>&1 | FileCheck %s --check-prefix=MODE
++
++@import CarrierExpressions;
++int module_roundtrip(void) {
++  return module_present_zero() && module_zero_error() && module_void_once();
++}
++
++// IR: define{{.*}} @module_roundtrip(
++// IR: define internal{{.*}} @module_present_zero(
++// IR: call void @module_record(i32{{.*}}3)
++// IR: define internal{{.*}} @module_zero_error(
++// IR: define internal{{.*}} @module_void_once(
++// IR: call void @module_record(i32{{.*}}4)
++// AST: TypedefDecl{{.*}}ModuleOptional
++// AST: TypedefDecl{{.*}}ModuleResult
++// AST: DeferStmt
++// AST: ObjC3OptionalExpr
++// AST: ObjC3ResultExpr
++// MODE: error: Slopjective-C extensions was enabled in precompiled file
 diff --git a/clang/test/ObjC3/AST/carrier-pointer-compatibility-pch.c b/clang/test/ObjC3/AST/carrier-pointer-compatibility-pch.c
 new file mode 100644
 --- /dev/null
@@ -3674,6 +4390,21 @@ new file mode 100644
 +  (void)Widened;
 +  (void)Narrowed;
 +}
+diff --git a/clang/test/ObjC3/AST/function-effect-template-pch.mm b/clang/test/ObjC3/AST/function-effect-template-pch.mm
+new file mode 100644
+--- /dev/null
++++ b/clang/test/ObjC3/AST/function-effect-template-pch.mm
+@@ -0,0 +1,10 @@
++// RUN: %clang_cc1 -x objective-c++ -fobjc-version=3 -std=c++20 -emit-pch -o %t.pch %S/Inputs/function-effect-template-pch.h
++// RUN: %clang_cc1 -x objective-c++ -fobjc-version=3 -std=c++20 -include-pch %t.pch -fsyntax-only -ast-dump-all %s | FileCheck %s
++
++struct OtherError {};
++void instantiate_pch_effect_from_call() {
++  pch_substituted_effect<OtherError>();
++}
++
++// CHECK: FunctionDecl {{.*}} pch_substituted_effect 'void () async throws(const Error *)' explicit_instantiation_definition
++// CHECK: FunctionDecl {{.*}} pch_substituted_effect 'void () async throws(const OtherError *)'
 diff --git a/clang/test/ObjC3/AST/function-effect-type-adjustment.c b/clang/test/ObjC3/AST/function-effect-type-adjustment.c
 new file mode 100644
 --- /dev/null
@@ -3769,6 +4500,45 @@ new file mode 100644
 +// CHECK: internal_reordered_typed 'void () async throws(Error)'
 +// CHECK: substituted_throw 'void () throws(Error)'
 +// CHECK: substituted_throw 'void () throws(Other)'
+diff --git a/clang/test/ObjC3/AST/optional-expressions-pch.mm b/clang/test/ObjC3/AST/optional-expressions-pch.mm
+new file mode 100644
+--- /dev/null
++++ b/clang/test/ObjC3/AST/optional-expressions-pch.mm
+@@ -0,0 +1,15 @@
++// RUN: %clang_cc1 -x objective-c++ -fobjc-version=3 -std=c++20 -emit-pch -o %t.pch %S/Inputs/optional-expressions-pch.h
++// RUN: %clang_cc1 -x objective-c++ -fobjc-version=3 -std=c++20 -include-pch %t.pch -ast-print %s | FileCheck %s
++
++void consume_pch_optional();
++
++// Verify the PCH retains each expression kind and the source spelling of the
++// explicit payload type, including aliases that canonicalize to one carrier.
++// CHECK: typedef __objc3_optional(int) PchAliasOptional;
++// CHECK-NEXT: typedef __objc3_optional(int) PchIntOptional;
++// CHECK: __objc3_some(PchCount, 0)
++// CHECK: __objc3_some(int, 1)
++// CHECK: __objc3_none(PchCount)
++// CHECK: __objc3_has_value(pch_none_alias())
++
++
+diff --git a/clang/test/ObjC3/AST/result-expressions-pch.mm b/clang/test/ObjC3/AST/result-expressions-pch.mm
+new file mode 100644
+--- /dev/null
++++ b/clang/test/ObjC3/AST/result-expressions-pch.mm
+@@ -0,0 +1,14 @@
++// RUN: %clang_cc1 -x objective-c++ -fobjc-version=3 -std=c++20 -emit-pch -o %t.pch %S/Inputs/result-expressions-pch.h
++// RUN: %clang_cc1 -x objective-c++ -fobjc-version=3 -std=c++20 -include-pch %t.pch -ast-print %s | FileCheck %s
++
++void consume_pch_result();
++
++// CHECK: using PchAliasResult = __objc3_result(int, long);
++// CHECK: using PchCanonicalResult = __objc3_result(int, long);
++// CHECK: __objc3_ok(PchSuccess, PchFailure, 0)
++// CHECK: __objc3_err(PchSuccess, PchFailure, 0L)
++// CHECK: __objc3_is_ok(pch_err())
++// CHECK: __objc3_ok(void, void, (void)0)
++// CHECK: __objc3_err(void, void, (void)0)
++
++
 diff --git a/clang/test/ObjC3/Parser/Inputs/objc3-type-constructors.h b/clang/test/ObjC3/Parser/Inputs/objc3-type-constructors.h
 new file mode 100644
 --- /dev/null
@@ -3986,6 +4756,209 @@ new file mode 100644
 +
 +RecoveredOptional recovered_optional;
 +RecoveredResult recovered_result;
+diff --git a/clang/test/ObjC3/Sema/carrier-builtin-classification.c b/clang/test/ObjC3/Sema/carrier-builtin-classification.c
+new file mode 100644
+--- /dev/null
++++ b/clang/test/ObjC3/Sema/carrier-builtin-classification.c
+@@ -0,0 +1,13 @@
++// RUN: %clang_cc1 -x objective-c -fobjc-version=3 -std=c17 -fsyntax-only -verify %s
++// expected-no-diagnostics
++
++struct NativeAggregate { int value; };
++typedef __objc3_optional(int) IntOptional;
++typedef __objc3_result(int, long) IntLongResult;
++
++_Static_assert(__builtin_classify_type(*(IntOptional *)0) ==
++                   __builtin_classify_type(*(struct NativeAggregate *)0),
++               "Optional is classified as an aggregate value");
++_Static_assert(__builtin_classify_type(*(IntLongResult *)0) ==
++                   __builtin_classify_type(*(struct NativeAggregate *)0),
++               "Result is classified as an aggregate value");
+\ No newline at end of file
+diff --git a/clang/test/ObjC3/Sema/carrier-expression-adversarial.mm b/clang/test/ObjC3/Sema/carrier-expression-adversarial.mm
+new file mode 100644
+--- /dev/null
++++ b/clang/test/ObjC3/Sema/carrier-expression-adversarial.mm
+@@ -0,0 +1,76 @@
++// RUN: %clang_cc1 -x objective-c++ -fobjc-version=3 -std=c++20 -fsyntax-only -verify %s
++
++typedef int Count;
++using CountOptional = __objc3_optional(Count);
++using NestedOptional = __objc3_optional(CountOptional);
++using CountResult = __objc3_result(Count, long);
++using NestedResult = __objc3_result(CountResult, NestedOptional);
++
++NestedOptional make_nested_optional() {
++  return __objc3_some(CountOptional, __objc3_some(Count, 0));
++}
++NestedResult make_nested_success() {
++  return __objc3_ok(CountResult, NestedOptional,
++                    __objc3_ok(Count, long, 0));
++}
++NestedResult make_nested_error() {
++  return __objc3_err(CountResult, NestedOptional,
++                     __objc3_some(CountOptional, __objc3_some(Count, 0)));
++}
++
++int optional_operand_calls;
++int result_operand_calls;
++NestedOptional next_optional() {
++  ++optional_operand_calls;
++  return make_nested_optional();
++}
++NestedResult next_result() {
++  ++result_operand_calls;
++  return make_nested_success();
++}
++bool query_call_operands() {
++  bool has_value = __objc3_has_value(next_optional());
++  bool is_ok = __objc3_is_ok(next_result());
++  return has_value && is_ok;
++}
++
++bool parenthesized_and_condition_queries() {
++  bool present = (__objc3_has_value(__objc3_some(int, 0)));
++  int sequenced = ((void)__objc3_is_ok(__objc3_ok(int, long, 0)), 42);
++  if (__objc3_has_value(__objc3_none(int)))
++    return false;
++  return present && sequenced == 42;
++}
++
++// The payload type and expression remain dependent until this template is
++// instantiated, including the nested carrier construction.
++template <class T> auto make_dependent_nested(T value) {
++  using Inner = __objc3_optional(T);
++  return __objc3_some(Inner, __objc3_some(T, value));
++}
++auto dependent_instantiation = make_dependent_nested(0);
++
++struct NotConvertible {};
++template <class T> auto defer_invalid_optional(T value) {
++  return __objc3_some(int, value); // expected-error {{no viable conversion from 'NotConvertible' to 'int'}}
++}
++void failed_conversion_after_instantiation() {
++  (void)defer_invalid_optional(NotConvertible{}); // expected-note {{in instantiation of function template specialization 'defer_invalid_optional<NotConvertible>' requested here}}
++}
++
++struct Tracked {
++  Tracked();
++  Tracked(const Tracked &);
++  ~Tracked();
++};
++Tracked make_tracked();
++using TrackedAlias = Tracked;
++using TrackedOptional = __objc3_optional(TrackedAlias);
++TrackedOptional make_tracked_optional();
++void cleanup_boundaries() {
++  __objc3_some(TrackedAlias, make_tracked()); // expected-warning {{expression result unused}}
++  bool present = __objc3_has_value(make_tracked_optional());
++  (void)present;
++}
++
++
+diff --git a/clang/test/ObjC3/Sema/carrier-standard-expressions.c b/clang/test/ObjC3/Sema/carrier-standard-expressions.c
+new file mode 100644
+--- /dev/null
++++ b/clang/test/ObjC3/Sema/carrier-standard-expressions.c
+@@ -0,0 +1,29 @@
++// RUN: %clang_cc1 -x objective-c -std=c17 -fobjc-version=3 -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c -std=c23 -fobjc-version=3 -fsyntax-only -verify %s
++// expected-no-diagnostics
++
++typedef __objc3_optional(int) OptionalInt;
++typedef __objc3_optional(int) OptionalIntAlias;
++typedef __objc3_result(int, long) IntLongResult;
++typedef __objc3_result(int, long) IntLongResultAlias;
++
++_Static_assert(__builtin_types_compatible_p(__typeof__(__objc3_some(int, 0)),
++                                            OptionalInt),
++               "typeof preserves the canonical Optional result type");
++_Static_assert(__builtin_types_compatible_p(
++                   __typeof__(__objc3_ok(int, long, 0)), IntLongResult),
++               "typeof preserves the ordered Result arms");
++
++_Static_assert(_Generic(__objc3_some(int, 0), OptionalIntAlias: 1, default: 0),
++               "_Generic matches a carrier through a payload alias");
++_Static_assert(_Generic(__objc3_ok(int, long, 0), IntLongResultAlias: 1,
++                        default: 0),
++               "_Generic matches the exact ordered Result carrier");
++
++OptionalInt choose_optional(_Bool choose, int value) {
++  return choose ? __objc3_some(int, value) : __objc3_none(int);
++}
++IntLongResult choose_result(_Bool choose, int value, long error) {
++  return choose ? __objc3_ok(int, long, value)
++                : __objc3_err(int, long, error);
++}
+diff --git a/clang/test/ObjC3/Sema/carrier-standard-expressions.mm b/clang/test/ObjC3/Sema/carrier-standard-expressions.mm
+new file mode 100644
+--- /dev/null
++++ b/clang/test/ObjC3/Sema/carrier-standard-expressions.mm
+@@ -0,0 +1,34 @@
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fobjc-version=3 -fsyntax-only -verify %s
++// expected-no-diagnostics
++
++using OptionalInt = __objc3_optional(int);
++using OptionalIntAlias = __objc3_optional(int);
++using IntLongResult = __objc3_result(int, long);
++using LongIntResult = __objc3_result(long, int);
++
++int nonthrowing_value() noexcept;
++int potentially_throwing_value();
++
++static_assert(__is_same(decltype(__objc3_some(int, 0)), OptionalInt));
++static_assert(__is_same(decltype(__objc3_ok(int, long, 0)), IntLongResult));
++static_assert(!__is_same(IntLongResult, LongIntResult));
++static_assert(noexcept(__objc3_none(int)));
++static_assert(noexcept(__objc3_some(int, nonthrowing_value())));
++static_assert(!noexcept(__objc3_some(int, potentially_throwing_value())));
++static_assert(noexcept(__objc3_has_value(__objc3_none(int))));
++static_assert(noexcept(__objc3_is_ok(__objc3_ok(int, long, 0))));
++static_assert(noexcept(__objc3_ok(int, long, nonthrowing_value())));
++static_assert(!noexcept(__objc3_err(int, long, potentially_throwing_value())));
++
++static_assert(__is_same(decltype(false ? __objc3_some(int, 0)
++                                      : __objc3_none(int)),
++                        OptionalIntAlias));
++static_assert(__is_same(decltype(false ? __objc3_ok(int, long, 0)
++                                      : __objc3_err(int, long, 0L)),
++                        IntLongResult));
++
++template <class T> using Optional = __objc3_optional(T);
++template <class T> auto select_optional(bool choose, T value) {
++  return choose ? __objc3_some(T, value) : __objc3_none(T);
++}
++static_assert(__is_same(decltype(select_optional(true, 0)), Optional<int>));
+diff --git a/clang/test/ObjC3/Sema/carrier-template-deduction.mm b/clang/test/ObjC3/Sema/carrier-template-deduction.mm
+new file mode 100644
+--- /dev/null
++++ b/clang/test/ObjC3/Sema/carrier-template-deduction.mm
+@@ -0,0 +1,25 @@
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fobjc-version=3 -fsyntax-only -verify %s
++
++using LongOptional = __objc3_optional(long);
++template <class T> T infer_optional(__objc3_optional(T) *);
++static_assert(__is_same(decltype(infer_optional((LongOptional *)nullptr)),
++                        long));
++
++template <class T, class E> struct OrderedArms {};
++template <class T, class E>
++OrderedArms<T, E> infer_result(__objc3_result(T, E) *);
++using LongIntResult = __objc3_result(long, int);
++using IntLongResult = __objc3_result(int, long);
++static_assert(__is_same(decltype(infer_result((LongIntResult *)nullptr)),
++                        OrderedArms<long, int>));
++static_assert(__is_same(decltype(infer_result((IntLongResult *)nullptr)),
++                        OrderedArms<int, long>));
++
++template <class T> struct CarrierBase {};
++template <class T> struct CarrierDerived : CarrierBase<T> {};
++template <class T> T infer_optional_base(__objc3_optional(CarrierBase<T>) *); // expected-note {{candidate template ignored: could not match 'CarrierBase' against 'CarrierDerived'}}
++void reject_optional_payload_covariance(
++    __objc3_optional(CarrierDerived<int>) *value) {
++  (void)infer_optional_base(value); // expected-error {{no matching function for call to 'infer_optional_base'}}
++}
++
 diff --git a/clang/test/ObjC3/Sema/carrier-type-admission.mm b/clang/test/ObjC3/Sema/carrier-type-admission.mm
 new file mode 100644
 --- /dev/null
@@ -4427,6 +5400,77 @@ new file mode 100644
 +  (void)@encode(OptionalInt *); // expected-warning {{encoding of 'OptionalInt *' (aka '__objc3_optional(int) *') type is incomplete because 'OptionalInt' (aka '__objc3_optional(int)') component has unknown encoding}}
 +  (void)@encode(IntResult *); // expected-warning {{encoding of 'IntResult *' (aka '__objc3_result(int, long) *') type is incomplete because 'IntResult' (aka '__objc3_result(int, long)') component has unknown encoding}}
 +}
+diff --git a/clang/test/ObjC3/Sema/objc3-carrier-common-sugar.c b/clang/test/ObjC3/Sema/objc3-carrier-common-sugar.c
+new file mode 100644
+--- /dev/null
++++ b/clang/test/ObjC3/Sema/objc3-carrier-common-sugar.c
+@@ -0,0 +1,33 @@
++// RUN: %clang_cc1 -x objective-c -fobjc-version=3 -std=c17 -Werror=incompatible-pointer-types -Werror=pointer-type-mismatch -fsyntax-only -verify=c17 %s
++// RUN: %clang_cc1 -x objective-c -fobjc-version=3 -std=c23 -Werror=incompatible-pointer-types -Werror=pointer-type-mismatch -fsyntax-only -verify=c23 %s
++
++typedef int IntAlias;
++typedef __objc3_optional(int) OptionalInt;
++typedef __objc3_optional(IntAlias) OptionalAlias;
++typedef __objc3_optional(long) OptionalLong;
++typedef __objc3_result(int, short) IntShortResult;
++typedef __objc3_result(IntAlias, short) AliasShortResult;
++typedef __objc3_result(short, int) ShortIntResult;
++
++void redeclared_optional(OptionalInt *);
++void redeclared_optional(OptionalAlias *);
++void redeclared_result(IntShortResult *);
++void redeclared_result(AliasShortResult *);
++
++void common_conditional(int choose, OptionalInt *a, OptionalAlias *b,
++                        IntShortResult *x, AliasShortResult *y) {
++  OptionalInt *optional = choose ? a : b;
++  IntShortResult *result = choose ? x : y;
++  optional = choose ? b : a;
++  result = choose ? y : x;
++  (void)optional;
++  (void)result;
++}
++
++void incompatible_conditional(int choose, OptionalInt *a, OptionalLong *b) {
++  OptionalInt *optional = choose ? a : b; // c17-error {{pointer type mismatch}} c23-error {{pointer type mismatch}}
++  (void)optional;
++}
++
++void incompatible_redeclaration(IntShortResult *); // c17-note {{previous declaration is here}} c23-note {{previous declaration is here}}
++void incompatible_redeclaration(ShortIntResult *); // c17-error {{conflicting types for 'incompatible_redeclaration'}} c23-error {{conflicting types for 'incompatible_redeclaration'}}
+\ No newline at end of file
+diff --git a/clang/test/ObjC3/Sema/objc3-carrier-common-sugar.mm b/clang/test/ObjC3/Sema/objc3-carrier-common-sugar.mm
+new file mode 100644
+--- /dev/null
++++ b/clang/test/ObjC3/Sema/objc3-carrier-common-sugar.mm
+@@ -0,0 +1,27 @@
++// RUN: %clang_cc1 -x objective-c++ -fobjc-version=3 -std=c++20 -fsyntax-only -verify %s
++
++typedef int IntAlias;
++using OptionalInt = __objc3_optional(int);
++using OptionalAlias = __objc3_optional(IntAlias);
++using OptionalLong = __objc3_optional(long);
++using IntShortResult = __objc3_result(int, short);
++using AliasShortResult = __objc3_result(IntAlias, short);
++using ShortIntResult = __objc3_result(short, int);
++
++void redeclared_optional(OptionalInt *);
++void redeclared_optional(OptionalAlias *);
++void redeclared_result(IntShortResult *);
++void redeclared_result(AliasShortResult *);
++
++void common_conditional(bool choose, OptionalInt *a, OptionalAlias *b,
++                        IntShortResult *x, AliasShortResult *y) {
++  OptionalInt *optional = choose ? a : b;
++  IntShortResult *result = choose ? x : y;
++  (void)optional;
++  (void)result;
++}
++
++void incompatible_conditional(bool choose, OptionalInt *a, OptionalLong *b) {
++  OptionalInt *optional = choose ? a : b; // expected-error {{incompatible operand types}}
++  (void)optional;
++}
 diff --git a/clang/test/ObjC3/Sema/objc3-carrier-compatible-types.c b/clang/test/ObjC3/Sema/objc3-carrier-compatible-types.c
 new file mode 100644
 --- /dev/null
@@ -4485,6 +5529,862 @@ new file mode 100644
 +  optional = different_optional; // c17-error {{incompatible pointer types}} c23-error {{incompatible pointer types}}
 +  result = different_result; // c17-error {{incompatible pointer types}} c23-error {{incompatible pointer types}}
 +}
+diff --git a/clang/test/ObjC3/Sema/optional-expression-construction.c b/clang/test/ObjC3/Sema/optional-expression-construction.c
+new file mode 100644
+--- /dev/null
++++ b/clang/test/ObjC3/Sema/optional-expression-construction.c
+@@ -0,0 +1,42 @@
++// RUN: %clang_cc1 -x objective-c -fobjc-version=3 -std=c17 -fsyntax-only -verify %s
++
++typedef __objc3_optional(int) OptionalInt;
++typedef __objc3_optional(_Bool) OptionalBool;
++typedef __objc3_optional(id) OptionalId;
++typedef __objc3_optional(void) OptionalVoid;
++
++struct Pair { int value; };
++
++void construction_and_presence(struct Pair pair) {
++  OptionalInt present_zero = __objc3_some(int, 0);
++  OptionalInt absent = __objc3_none(int);
++  OptionalBool present_false = __objc3_some(_Bool, 0);
++  OptionalId present_null = __objc3_some(id, (id)0);
++  __objc3_optional(struct Pair) present_aggregate =
++      __objc3_some(struct Pair, pair);
++  OptionalVoid absent_void = __objc3_none(void);
++  OptionalVoid present_void = __objc3_some(void, (void)0);
++  _Bool has = __objc3_has_value(present_zero);
++  _Bool does_not_have = __objc3_has_value(absent);
++  _Bool aggregate_has = __objc3_has_value(present_aggregate);
++  (void)present_false;
++  (void)present_null;
++  (void)absent_void;
++  (void)present_void;
++  (void)has;
++  (void)does_not_have;
++  (void)aggregate_has;
++}
++
++void rejects_invalid_initialization(void) {
++  __objc3_some(struct Pair, 1); // expected-error {{incompatible type}}
++  __objc3_some(void, 1); // expected-error {{incompatible type}}
++  __objc3_has_value(1); // expected-error {{must have an Optional type}}
++}
++
++struct Incomplete; // expected-note 2 {{forward declaration of 'struct Incomplete'}}
++extern struct Incomplete incomplete_value;
++void incomplete_construction(void) {
++  __objc3_some(struct Incomplete, incomplete_value); // expected-error {{incomplete type}}
++  __objc3_none(struct Incomplete); // expected-error {{incomplete type}}
++}
+diff --git a/clang/test/ObjC3/Sema/optional-expression-cxx-initialization.mm b/clang/test/ObjC3/Sema/optional-expression-cxx-initialization.mm
+new file mode 100644
+--- /dev/null
++++ b/clang/test/ObjC3/Sema/optional-expression-cxx-initialization.mm
+@@ -0,0 +1,60 @@
++// RUN: %clang_cc1 -x objective-c++ -fobjc-version=3 -std=c++20 -fsyntax-only -verify %s
++
++struct Source {};
++struct Target {
++  Target(const Source &);
++};
++struct ExplicitOnly { // expected-note {{candidate constructor (the implicit copy constructor) not viable: no known conversion from 'int' to 'const ExplicitOnly &' for 1st argument}} expected-note {{candidate constructor (the implicit move constructor) not viable: no known conversion from 'int' to 'ExplicitOnly &&' for 1st argument}}
++  explicit ExplicitOnly(int); // expected-note {{explicit constructor is not a candidate}}
++};
++struct MoveOnly {
++  MoveOnly();
++  MoveOnly(const MoveOnly &) = delete; // expected-note {{'MoveOnly' has been explicitly marked deleted here}}
++  MoveOnly(MoveOnly &&);
++};
++
++struct Source source;
++struct MoveOnly move_only;
++
++template <class T> using Optional = __objc3_optional(T);
++template <class T> auto make_optional(T value) {
++  return __objc3_some(T, value);
++}
++template <class T> bool is_present(Optional<T> value) {
++  return __objc3_has_value(value);
++}
++
++void conversion_and_move_semantics(void) {
++  auto converted = __objc3_some(Target, source);
++  auto moved = __objc3_some(MoveOnly, static_cast<MoveOnly &&>(move_only));
++  auto absent_move_only = __objc3_none(MoveOnly);
++  auto generic = make_optional(0);
++  bool generic_presence = is_present(generic);
++  bool false_is_present =
++      __objc3_has_value(__objc3_some(bool, false));
++  bool null_is_present =
++      __objc3_has_value(__objc3_some(id, (id)0));
++  (void)converted;
++  (void)moved;
++  (void)absent_move_only;
++  (void)generic_presence;
++  (void)false_is_present;
++  (void)null_is_present;
++}
++
++void rejects_invalid_operations(void) {
++  auto copied = __objc3_some(MoveOnly, move_only); // expected-error {{call to deleted constructor}}
++  auto explicit_conversion = __objc3_some(ExplicitOnly, 1); // expected-error {{no viable conversion from 'int' to 'ExplicitOnly'}}
++  (void)copied;
++  (void)explicit_conversion;
++}
++
++struct Incomplete; // expected-note 2 {{forward declaration of 'Incomplete'}}
++using IncompleteAlias = Incomplete;
++extern Incomplete incomplete_value;
++void incomplete_payload_is_diagnosed_at_construction(void) {
++  __objc3_some(IncompleteAlias, incomplete_value); // expected-error {{incomplete type}}
++  __objc3_none(IncompleteAlias); // expected-error {{incomplete type}}
++}
++
++
+diff --git a/clang/test/ObjC3/Sema/optional-expression-no-optin-names.c b/clang/test/ObjC3/Sema/optional-expression-no-optin-names.c
+new file mode 100644
+--- /dev/null
++++ b/clang/test/ObjC3/Sema/optional-expression-no-optin-names.c
+@@ -0,0 +1,15 @@
++// RUN: %clang_cc1 -x objective-c -std=c17 -fsyntax-only -verify %s
++
++#define some(x) ((x) + 1)
++#define none 4
++#define has_value(x) ((x) != 0)
++
++int ordinary_macro_names(void) { return some(0) + none + has_value(1); }
++
++#undef some
++#undef none
++#undef has_value
++int some;
++int none;
++int has_value;
++int ordinary_identifiers(void) { return some + none + has_value; }// expected-no-diagnostics
+diff --git a/clang/test/ObjC3/Sema/result-expression-construction.c b/clang/test/ObjC3/Sema/result-expression-construction.c
+new file mode 100644
+--- /dev/null
++++ b/clang/test/ObjC3/Sema/result-expression-construction.c
+@@ -0,0 +1,49 @@
++// RUN: %clang_cc1 -x objective-c -fobjc-version=3 -std=c17 -fsyntax-only -verify %s
++
++typedef __objc3_result(int, int) IntResult;
++typedef __objc3_result(_Bool, int) BoolResult;
++typedef __objc3_result(id, int) ObjectResult;
++typedef __objc3_result(void, void) VoidResult;
++
++struct Pair { int value; };
++
++void valid_construction_and_query(struct Pair pair) {
++  IntResult zero_success = __objc3_ok(int, int, 0);
++  IntResult zero_error = __objc3_err(int, int, 0);
++  BoolResult false_success = __objc3_ok(_Bool, int, 0);
++  ObjectResult null_success = __objc3_ok(id, int, (id)0);
++  __objc3_result(struct Pair, int) aggregate_success =
++      __objc3_ok(struct Pair, int, pair);
++  VoidResult void_success = __objc3_ok(void, void, (void)0);
++  VoidResult void_error = __objc3_err(void, void, (void)0);
++  _Bool success_tag = __objc3_is_ok(zero_success);
++  _Bool error_tag = __objc3_is_ok(zero_error);
++  _Bool aggregate_tag = __objc3_is_ok(aggregate_success);
++  (void)false_success;
++  (void)null_success;
++  (void)void_success;
++  (void)void_error;
++  (void)success_tag;
++  (void)error_tag;
++  (void)aggregate_tag;
++}
++
++void rejects_invalid_initialization(void) {
++  __objc3_ok(struct Pair, int, 1); // expected-error {{incompatible type}}
++  __objc3_err(int, struct Pair, 1); // expected-error {{incompatible type}}
++  __objc3_ok(void, int, 1); // expected-error {{incompatible type}}
++  __objc3_err(int, void, 1); // expected-error {{incompatible type}}
++  __objc3_is_ok(1); // expected-error {{must have a Result type}}
++  __objc3_ok(void, int[4], (void)0); // expected-error {{not supported}}
++}
++
++struct IncompleteSuccess; // expected-note {{forward declaration of 'struct IncompleteSuccess'}}
++struct IncompleteError; // expected-note {{forward declaration of 'struct IncompleteError'}}
++extern struct IncompleteSuccess incomplete_success;
++extern struct IncompleteError incomplete_error;
++void incomplete_unselected_arm_is_rejected(void) {
++  __objc3_ok(int, struct IncompleteError, 0);
++  // expected-error@-1 {{incomplete type}}
++  __objc3_err(struct IncompleteSuccess, int, 0);
++  // expected-error@-1 {{incomplete type}}
++}
+diff --git a/clang/test/ObjC3/Sema/result-expression-cxx-initialization.mm b/clang/test/ObjC3/Sema/result-expression-cxx-initialization.mm
+new file mode 100644
+--- /dev/null
++++ b/clang/test/ObjC3/Sema/result-expression-cxx-initialization.mm
+@@ -0,0 +1,77 @@
++// RUN: %clang_cc1 -x objective-c++ -fobjc-version=3 -std=c++20 -fsyntax-only -verify %s
++
++struct SuccessSource {};
++struct SuccessTarget {
++  SuccessTarget(const SuccessSource &);
++};
++struct ErrorSource {};
++struct ErrorTarget {
++  ErrorTarget(const ErrorSource &);
++};
++struct ExplicitOnly { // expected-note {{candidate constructor (the implicit copy constructor) not viable: no known conversion from 'int' to 'const ExplicitOnly &' for 1st argument}} expected-note {{candidate constructor (the implicit move constructor) not viable: no known conversion from 'int' to 'ExplicitOnly &&' for 1st argument}}
++  explicit ExplicitOnly(int); // expected-note {{explicit constructor is not a candidate}}
++};
++struct MoveOnly {
++  MoveOnly();
++  MoveOnly(const MoveOnly &) = delete; // expected-note 2 {{'MoveOnly' has been explicitly marked deleted here}}
++  MoveOnly(MoveOnly &&);
++};
++
++SuccessSource success_source;
++ErrorSource error_source;
++MoveOnly move_only;
++
++template <class T, class E> using Result = __objc3_result(T, E);
++using SuccessAlias = int;
++using ErrorAlias = int;
++using AliasResult = __objc3_result(SuccessAlias, ErrorAlias);
++using CanonicalResult = Result<int, int>;
++static_assert(__is_same(AliasResult, CanonicalResult),
++              "payload aliases must canonicalize to one Result type");
++
++template <class T, class E> auto make_ok(T value) {
++  return __objc3_ok(T, E, value);
++}
++template <class T, class E> bool is_ok(Result<T, E> value) {
++  return __objc3_is_ok(value);
++}
++
++void native_conversions_and_moves(void) {
++  auto converted_success =
++      __objc3_ok(SuccessTarget, ErrorTarget, success_source);
++  auto converted_error = __objc3_err(SuccessTarget, ErrorTarget, error_source);
++  auto moved_success =
++      __objc3_ok(MoveOnly, int, static_cast<MoveOnly &&>(move_only));
++  auto moved_error =
++      __objc3_err(int, MoveOnly, static_cast<MoveOnly &&>(move_only));
++  AliasResult alias_result =
++      __objc3_ok(SuccessAlias, ErrorAlias, 0);
++  auto instantiated = make_ok<int, int>(1);
++  bool instantiated_tag = is_ok(instantiated);
++  bool zero_success_tag =
++      __objc3_is_ok(__objc3_ok(int, int, 0));
++  (void)converted_success;
++  (void)converted_error;
++  (void)moved_success;
++  (void)moved_error;
++  (void)alias_result;
++  (void)instantiated_tag;
++  (void)zero_success_tag;
++}
++
++void rejects_invalid_initialization(void) {
++  auto copied_success = __objc3_ok(MoveOnly, int, move_only); // expected-error {{call to deleted constructor}}
++  auto copied_error = __objc3_err(int, MoveOnly, move_only); // expected-error {{call to deleted constructor}}
++  auto explicit_success = __objc3_ok(ExplicitOnly, int, 1); // expected-error {{no viable conversion from 'int' to 'ExplicitOnly'}}
++  (void)copied_success;
++  (void)copied_error;
++  (void)explicit_success;
++}
++
++struct Incomplete; // expected-note {{forward declaration of 'Incomplete'}}
++using IncompleteAlias = Incomplete;
++extern Incomplete incomplete_value;
++void incomplete_error_arm_is_checked_even_for_ok(void) {
++  __objc3_ok(int, IncompleteAlias, 0); // expected-error {{incomplete type}}
++}
++
+diff --git a/clang/test/ObjC3/Sema/result-expression-no-optin-names.c b/clang/test/ObjC3/Sema/result-expression-no-optin-names.c
+new file mode 100644
+--- /dev/null
++++ b/clang/test/ObjC3/Sema/result-expression-no-optin-names.c
+@@ -0,0 +1,18 @@
++// RUN: %clang_cc1 -x objective-c -std=c17 -fsyntax-only -verify %s
++
++#define ok(a, b, c) ((c) + (a) + (b))
++#define err(a, b, c) ((c) + (a) + (b))
++#define is_ok(value) ((value) != 0)
++
++int ordinary_result_names(void) {
++  return ok(1, 2, 3) + err(1, 2, 3) + is_ok(1);
++}
++
++#undef ok
++#undef err
++#undef is_ok
++int ok;
++int err;
++int is_ok;
++int ordinary_result_identifiers(void) { return ok + err + is_ok; }
++// expected-no-diagnostics
+diff --git a/clang/unittests/AST/ObjC3CarrierAdversarialTest.cpp b/clang/unittests/AST/ObjC3CarrierAdversarialTest.cpp
+new file mode 100644
+--- /dev/null
++++ b/clang/unittests/AST/ObjC3CarrierAdversarialTest.cpp
+@@ -0,0 +1,232 @@
++//===--- ObjC3CarrierAdversarialTest.cpp - carrier lifetime tests ---------===//
++//
++// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
++// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
++//
++//===----------------------------------------------------------------------===//
++
++#include "clang/AST/ASTContext.h"
++#include "clang/AST/Decl.h"
++#include "clang/AST/Expr.h"
++#include "clang/AST/ExprCXX.h"
++#include "clang/AST/RecursiveASTVisitor.h"
++#include "clang/Frontend/ASTUnit.h"
++#include "clang/Tooling/Tooling.h"
++#include "gtest/gtest.h"
++
++#include <iterator>
++#include <memory>
++#include <vector>
++
++using namespace clang;
++
++namespace {
++
++std::unique_ptr<ASTUnit> parse(llvm::StringRef Source) {
++  return tooling::buildASTFromCodeWithArgs(
++      Source, {"-x", "objective-c++", "-std=c++20", "-fobjc-version=3"},
++      "objc3-carrier-adversarial.mm");
++}
++
++NamedDecl *lookup(ASTContext &Context, llvm::StringRef Name) {
++  auto Decls = Context.getTranslationUnitDecl()->lookup(
++      &Context.Idents.get(Name));
++  return Decls.empty() ? nullptr : Decls.front();
++}
++
++Expr *stripFullExprAndImplicit(Expr *E) {
++  while (E) {
++    if (auto *FullExpr = dyn_cast<ExprWithCleanups>(E)) {
++      E = FullExpr->getSubExpr();
++      continue;
++    }
++    Expr *Unwrapped = E->IgnoreParenImpCasts();
++    if (Unwrapped == E)
++      return E;
++    E = Unwrapped;
++  }
++  return nullptr;
++}
++
++class CallCollector : public RecursiveASTVisitor<CallCollector> {
++public:
++  llvm::StringRef Name;
++  unsigned Count = 0;
++  explicit CallCollector(llvm::StringRef Name) : Name(Name) {}
++  bool VisitCallExpr(CallExpr *E) {
++    if (const auto *Callee = dyn_cast_or_null<DeclRefExpr>(
++            E->getCallee()->IgnoreParenImpCasts()))
++      Count += Callee->getDecl()->getName() == Name;
++    return true;
++  }
++};
++
++class TemporaryCollector : public RecursiveASTVisitor<TemporaryCollector> {
++public:
++  unsigned Count = 0;
++  bool VisitCXXBindTemporaryExpr(CXXBindTemporaryExpr *) {
++    ++Count;
++    return true;
++  }
++};
++
++TEST(ObjC3CarrierAdversarial, NestedCarrierAliasesAndQueryOperands) {
++  auto AST = parse(R"cpp(
++    typedef int Count;
++    using CountOptional = __objc3_optional(Count);
++    using NestedOptional = __objc3_optional(CountOptional);
++    using CountResult = __objc3_result(Count, long);
++    using NestedResult = __objc3_result(CountResult, NestedOptional);
++    auto Nested = __objc3_some(CountOptional, __objc3_some(Count, 0));
++    auto NestedOk = __objc3_ok(CountResult, NestedOptional,
++                               __objc3_ok(Count, long, 0));
++    auto NestedErr = __objc3_err(CountResult, NestedOptional,
++                                 __objc3_some(CountOptional,
++                                              __objc3_some(Count, 0)));
++    NestedOptional next_optional();
++    NestedResult next_result();
++    bool OptionalQuery = __objc3_has_value(next_optional());
++    bool ResultQuery = __objc3_is_ok(next_result());
++  )cpp");
++  ASSERT_TRUE(AST);
++  ASSERT_FALSE(AST->getDiagnostics().hasErrorOccurred());
++  ASTContext &Context = AST->getASTContext();
++
++  auto *Nested = dyn_cast_or_null<VarDecl>(lookup(Context, "Nested"));
++  auto *NestedOk = dyn_cast_or_null<VarDecl>(lookup(Context, "NestedOk"));
++  auto *NestedErr = dyn_cast_or_null<VarDecl>(lookup(Context, "NestedErr"));
++  auto *OptionalQuery =
++      dyn_cast_or_null<VarDecl>(lookup(Context, "OptionalQuery"));
++  auto *ResultQuery =
++      dyn_cast_or_null<VarDecl>(lookup(Context, "ResultQuery"));
++  ASSERT_NE(Nested, nullptr);
++  ASSERT_NE(NestedOk, nullptr);
++  ASSERT_NE(NestedErr, nullptr);
++  ASSERT_NE(OptionalQuery, nullptr);
++  ASSERT_NE(ResultQuery, nullptr);
++
++  auto *OuterSome = dyn_cast<ObjC3OptionalExpr>(
++      stripFullExprAndImplicit(Nested->getInit()));
++  ASSERT_NE(OuterSome, nullptr);
++  ASSERT_EQ(OuterSome->getKind(), ObjC3OptionalExpr::Kind::Some);
++  ASSERT_TRUE(OuterSome->getPayloadTypeInfo()->getType()->isTypedefNameType());
++  auto *InnerSome = dyn_cast<ObjC3OptionalExpr>(
++      stripFullExprAndImplicit(OuterSome->getPayload()));
++  ASSERT_NE(InnerSome, nullptr);
++  EXPECT_TRUE(InnerSome->getPayloadTypeInfo()->getType()->isTypedefNameType());
++  EXPECT_TRUE(Context.hasSameType(OuterSome->getCarrierType(),
++                                  Nested->getType()));
++
++  auto *Ok = dyn_cast<ObjC3ResultExpr>(
++      stripFullExprAndImplicit(NestedOk->getInit()));
++  auto *Err = dyn_cast<ObjC3ResultExpr>(
++      stripFullExprAndImplicit(NestedErr->getInit()));
++  ASSERT_NE(Ok, nullptr);
++  ASSERT_NE(Err, nullptr);
++  EXPECT_EQ(Ok->getKind(), ObjC3ResultExpr::Kind::Ok);
++  EXPECT_EQ(Err->getKind(), ObjC3ResultExpr::Kind::Err);
++  EXPECT_TRUE(Ok->getSuccessTypeInfo()->getType()->isTypedefNameType());
++  EXPECT_TRUE(Ok->getErrorTypeInfo()->getType()->isTypedefNameType());
++  EXPECT_TRUE(Context.hasSameType(Ok->getCarrierType(), NestedOk->getType()));
++  EXPECT_TRUE(Context.hasSameType(Err->getCarrierType(), NestedErr->getType()));
++
++  auto *OptionalTest = dyn_cast<ObjC3OptionalExpr>(
++      stripFullExprAndImplicit(OptionalQuery->getInit()));
++  auto *ResultTest = dyn_cast<ObjC3ResultExpr>(
++      stripFullExprAndImplicit(ResultQuery->getInit()));
++  ASSERT_NE(OptionalTest, nullptr);
++  ASSERT_NE(ResultTest, nullptr);
++  CallCollector OptionalCalls("next_optional");
++  OptionalCalls.TraverseStmt(OptionalTest->getPayload());
++  EXPECT_EQ(OptionalCalls.Count, 1u);
++  CallCollector ResultCalls("next_result");
++  ResultCalls.TraverseStmt(ResultTest->getPayload());
++  EXPECT_EQ(ResultCalls.Count, 1u);
++  EXPECT_EQ(std::distance(OptionalTest->child_begin(),
++                          OptionalTest->child_end()), 1);
++  EXPECT_EQ(std::distance(ResultTest->child_begin(), ResultTest->child_end()),
++            1);
++}
++
++TEST(ObjC3CarrierAdversarial, CleanupWrappersEncloseEachFullExpression) {
++  auto AST = parse(R"cpp(
++    struct Source {
++      Source();
++      ~Source();
++    };
++    struct Tracked {
++      Tracked(const Source &);
++      ~Tracked();
++    };
++    Source make_source();
++    int finish();
++    void cleanup_boundaries() {
++      __objc3_some(Tracked, make_source());
++      bool present = __objc3_has_value(__objc3_some(Tracked, make_source()));
++      int sequenced =
++          (__objc3_is_ok(__objc3_ok(Tracked, int, make_source())), finish());
++      (void)present;
++      (void)sequenced;
++    }
++  )cpp");
++  ASSERT_TRUE(AST);
++  ASSERT_FALSE(AST->getDiagnostics().hasErrorOccurred());
++  ASTContext &Context = AST->getASTContext();
++  auto *Function = dyn_cast_or_null<FunctionDecl>(
++      lookup(Context, "cleanup_boundaries"));
++  ASSERT_NE(Function, nullptr);
++  auto *Body = dyn_cast<CompoundStmt>(Function->getBody());
++  ASSERT_NE(Body, nullptr);
++  ASSERT_GE(Body->size(), 3u);
++
++  auto *ConstructionFullExpr = dyn_cast<ExprWithCleanups>(*Body->body_begin());
++  ASSERT_NE(ConstructionFullExpr, nullptr);
++  auto *Construction = dyn_cast<ObjC3OptionalExpr>(
++      stripFullExprAndImplicit(ConstructionFullExpr->getSubExpr()));
++  ASSERT_NE(Construction, nullptr);
++  EXPECT_EQ(Construction->getKind(), ObjC3OptionalExpr::Kind::Some);
++
++  auto It = Body->body_begin();
++  ++It;
++  auto *QueryDecl = dyn_cast<DeclStmt>(*It);
++  ASSERT_NE(QueryDecl, nullptr);
++  ASSERT_EQ(std::distance(QueryDecl->decl_begin(), QueryDecl->decl_end()), 1);
++  auto *Present = dyn_cast<VarDecl>(*QueryDecl->decl_begin());
++  ASSERT_NE(Present, nullptr);
++  auto *QueryFullExpr = dyn_cast<ExprWithCleanups>(Present->getInit());
++  ASSERT_NE(QueryFullExpr, nullptr);
++  auto *Query = dyn_cast<ObjC3OptionalExpr>(
++      stripFullExprAndImplicit(QueryFullExpr->getSubExpr()));
++  ASSERT_NE(Query, nullptr);
++  EXPECT_EQ(Query->getKind(), ObjC3OptionalExpr::Kind::HasValue);
++  // A carrier returned by value with nontrivial payload has no qualified
++  // lifetime adapter yet. This witness instead checks a real native Source
++  // temporary used to initialize the selected field, across a nested query.
++  EXPECT_FALSE(isa<ExprWithCleanups>(Query->getPayload()));
++
++  TemporaryCollector ConstructionTemps;
++  ConstructionTemps.TraverseStmt(ConstructionFullExpr->getSubExpr());
++  TemporaryCollector QueryTemps;
++  QueryTemps.TraverseStmt(QueryFullExpr->getSubExpr());
++  EXPECT_GT(ConstructionTemps.Count, 0u);
++  EXPECT_GT(QueryTemps.Count, 0u);
++
++  ++It;
++  auto *SequencedDecl = dyn_cast<DeclStmt>(*It);
++  ASSERT_NE(SequencedDecl, nullptr);
++  auto *Sequenced = dyn_cast<VarDecl>(*SequencedDecl->decl_begin());
++  ASSERT_NE(Sequenced, nullptr);
++  auto *SequencedFullExpr = dyn_cast<ExprWithCleanups>(Sequenced->getInit());
++  ASSERT_NE(SequencedFullExpr, nullptr);
++  auto *Comma = dyn_cast<BinaryOperator>(
++      SequencedFullExpr->getSubExpr()->IgnoreParenImpCasts());
++  ASSERT_NE(Comma, nullptr);
++  EXPECT_EQ(Comma->getOpcode(), BO_Comma);
++  TemporaryCollector SequencedTemps;
++  SequencedTemps.TraverseStmt(Comma);
++  EXPECT_GT(SequencedTemps.Count, 0u);
++  // Cleanup belongs to the complete comma expression, after finish().
++  EXPECT_FALSE(isa<ExprWithCleanups>(Comma->getLHS()->IgnoreParens()));
++}
++
++} // namespace
+diff --git a/clang/unittests/AST/ObjC3CarrierCommonSugarTest.cpp b/clang/unittests/AST/ObjC3CarrierCommonSugarTest.cpp
+new file mode 100644
+--- /dev/null
++++ b/clang/unittests/AST/ObjC3CarrierCommonSugarTest.cpp
+@@ -0,0 +1,114 @@
++//===--- ObjC3CarrierCommonSugarTest.cpp - Carrier common type tests ------===//
++//
++// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
++// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
++//
++//===----------------------------------------------------------------------===//
++
++#include "clang/AST/ASTContext.h"
++#include "clang/AST/Decl.h"
++#include "clang/AST/RecursiveASTVisitor.h"
++#include "clang/AST/Type.h"
++#include "clang/Frontend/ASTUnit.h"
++#include "clang/Tooling/Tooling.h"
++#include "gtest/gtest.h"
++
++#include <memory>
++#include <vector>
++
++using namespace clang;
++
++namespace {
++
++std::unique_ptr<ASTUnit> parse(llvm::StringRef Source) {
++  return tooling::buildASTFromCodeWithArgs(
++      Source, {"-x", "objective-c++", "-std=c++20", "-fobjc-version=3"},
++      "objc3-carrier-common-sugar.mm");
++}
++
++TypedefNameDecl *lookupTypedef(ASTContext &Context, llvm::StringRef Name) {
++  auto Decls = Context.getTranslationUnitDecl()->lookup(
++      &Context.Idents.get(Name));
++  for (NamedDecl *Decl : Decls)
++    if (auto *Typedef = dyn_cast<TypedefNameDecl>(Decl))
++      return Typedef;
++  return nullptr;
++}
++
++class LocalVariableCollector
++    : public RecursiveASTVisitor<LocalVariableCollector> {
++public:
++  std::vector<VarDecl *> Variables;
++
++  bool VisitVarDecl(VarDecl *D) {
++    if (D->getName() == "values")
++      Variables.push_back(D);
++    return true;
++  }
++};
++
++TEST(ObjC3CarrierCommonSugar, PayloadAliasesRetainCanonicalCarrierIdentity) {
++  auto AST = parse(R"(
++    typedef int IntAlias;
++    typedef __objc3_optional(int) OptionalInt;
++    typedef __objc3_optional(IntAlias) OptionalAlias;
++    typedef __objc3_result(int, short) IntShortResult;
++    typedef __objc3_result(IntAlias, short) AliasShortResult;
++    typedef __objc3_result(short, int) ShortIntResult;
++  )");
++  ASSERT_TRUE(AST);
++  ASTContext &Context = AST->getASTContext();
++
++  auto *OptionalDecl = lookupTypedef(Context, "OptionalInt");
++  auto *OptionalAliasDecl = lookupTypedef(Context, "OptionalAlias");
++  ASSERT_TRUE(OptionalDecl);
++  ASSERT_TRUE(OptionalAliasDecl);
++  QualType Optional = Context.getTypeDeclType(OptionalDecl);
++  QualType OptionalAlias = Context.getTypeDeclType(OptionalAliasDecl);
++  EXPECT_EQ(Optional->getTypeClass(), Type::Typedef);
++  EXPECT_EQ(Optional.getCanonicalType()->getTypeClass(), Type::ObjC3Optional);
++  ASSERT_TRUE(Context.hasSameType(Optional, OptionalAlias));
++  QualType CommonOptional =
++      Context.getCommonSugaredType(Optional, OptionalAlias);
++  EXPECT_TRUE(Context.hasSameType(CommonOptional, Optional));
++  EXPECT_EQ(CommonOptional.getCanonicalType(), Optional.getCanonicalType());
++
++  auto *ResultDecl = lookupTypedef(Context, "IntShortResult");
++  auto *ResultAliasDecl = lookupTypedef(Context, "AliasShortResult");
++  auto *ReversedResultDecl = lookupTypedef(Context, "ShortIntResult");
++  ASSERT_TRUE(ResultDecl);
++  ASSERT_TRUE(ResultAliasDecl);
++  ASSERT_TRUE(ReversedResultDecl);
++  QualType Result = Context.getTypeDeclType(ResultDecl);
++  QualType ResultAlias = Context.getTypeDeclType(ResultAliasDecl);
++  QualType ReversedResult = Context.getTypeDeclType(ReversedResultDecl);
++  EXPECT_EQ(Result->getTypeClass(), Type::Typedef);
++  EXPECT_EQ(Result.getCanonicalType()->getTypeClass(), Type::ObjC3Result);
++  EXPECT_TRUE(Context.hasSameType(Result, ResultAlias));
++  EXPECT_FALSE(Context.hasSameType(Result, ReversedResult));
++  QualType CommonResult = Context.getCommonSugaredType(Result, ResultAlias);
++  EXPECT_TRUE(Context.hasSameType(CommonResult, Result));
++  EXPECT_EQ(CommonResult.getCanonicalType(), Result.getCanonicalType());
++}
++
++TEST(ObjC3CarrierCommonSugar, RejectedVariablyModifiedPayloadIsNotRewritten) {
++  auto AST = parse(R"(
++    void f(int n) {
++      int values[n];
++    }
++  )");
++  ASSERT_TRUE(AST);
++  ASTContext &Context = AST->getASTContext();
++  LocalVariableCollector Collector;
++  Collector.TraverseDecl(Context.getTranslationUnitDecl());
++  ASSERT_EQ(Collector.Variables.size(), 1u);
++
++  QualType VLA = Collector.Variables.front()->getType();
++  ASSERT_TRUE(VLA->isVariablyModifiedType());
++  QualType Optional = Context.getObjC3OptionalType(VLA);
++  QualType Result = Context.getObjC3ResultType(Context.IntTy, VLA);
++  EXPECT_EQ(Context.getVariableArrayDecayedType(Optional), Optional);
++  EXPECT_EQ(Context.getVariableArrayDecayedType(Result), Result);
++}
++
++} // namespace
+\ No newline at end of file
+diff --git a/clang/unittests/AST/ObjC3CarrierExprIdentityTest.cpp b/clang/unittests/AST/ObjC3CarrierExprIdentityTest.cpp
+new file mode 100644
+--- /dev/null
++++ b/clang/unittests/AST/ObjC3CarrierExprIdentityTest.cpp
+@@ -0,0 +1,63 @@
++// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
++#include "clang/AST/ASTContext.h"
++#include "clang/AST/ASTStructuralEquivalence.h"
++#include "clang/AST/Expr.h"
++#include "clang/AST/ODRHash.h"
++#include "clang/AST/RecursiveASTVisitor.h"
++#include "clang/Frontend/ASTUnit.h"
++#include "clang/Tooling/Tooling.h"
++#include "gtest/gtest.h"
++#include <memory>
++#include <string>
++#include <vector>
++
++using namespace clang;
++namespace {
++class ResultCollector : public RecursiveASTVisitor<ResultCollector> {
++public:
++  std::vector<ObjC3ResultExpr *> Results;
++  bool VisitObjC3ResultExpr(ObjC3ResultExpr *E) {
++    Results.push_back(E);
++    return true;
++  }
++};
++
++std::unique_ptr<ASTUnit> parse(llvm::StringRef Expression) {
++  const std::string Source = "typedef int Alias; void f(void) { (void)" +
++                            Expression.str() + "; }";
++  return tooling::buildASTFromCodeWithArgs(
++      Source, {"-x", "objective-c", "-std=c17", "-fobjc-version=3"},
++      "carrier-expression-identity.m");
++}
++
++bool equivalent(ASTUnit &From, ASTUnit &To, Stmt *Left, Stmt *Right) {
++  StructuralEquivalenceContext::NonEquivalentDeclSet Known;
++  StructuralEquivalenceContext Context(
++      From.getLangOpts(), From.getASTContext(), To.getASTContext(), Known,
++      StructuralEquivalenceKind::Default, false, false);
++  return Context.IsEquivalent(Left, Right);
++}
++
++TEST(ObjC3CarrierExprIdentity, OppositeZeroArmsAreNotEquivalent) {
++  auto OkAST = parse("__objc3_ok(int, int, 0)");
++  auto ErrAST = parse("__objc3_err(int, int, 0)");
++  auto AliasAST = parse("__objc3_ok(Alias, int, 0)");
++  ASSERT_TRUE(OkAST && ErrAST && AliasAST);
++  ASSERT_FALSE(OkAST->getDiagnostics().hasErrorOccurred());
++  ASSERT_FALSE(ErrAST->getDiagnostics().hasErrorOccurred());
++  ASSERT_FALSE(AliasAST->getDiagnostics().hasErrorOccurred());
++  ResultCollector Ok, Err, Alias;
++  Ok.TraverseDecl(OkAST->getASTContext().getTranslationUnitDecl());
++  Err.TraverseDecl(ErrAST->getASTContext().getTranslationUnitDecl());
++  Alias.TraverseDecl(AliasAST->getASTContext().getTranslationUnitDecl());
++  ASSERT_EQ(Ok.Results.size(), 1u);
++  ASSERT_EQ(Err.Results.size(), 1u);
++  ASSERT_EQ(Alias.Results.size(), 1u);
++  EXPECT_FALSE(equivalent(*OkAST, *ErrAST, Ok.Results[0], Err.Results[0]));
++  EXPECT_TRUE(equivalent(*OkAST, *AliasAST, Ok.Results[0], Alias.Results[0]));
++  ODRHash OkHash, ErrHash;
++  OkHash.AddStmt(Ok.Results[0]);
++  ErrHash.AddStmt(Err.Results[0]);
++  EXPECT_NE(OkHash.CalculateHash(), ErrHash.CalculateHash());
++}
++} // namespace
+diff --git a/clang/unittests/AST/ObjC3CarrierExprMangleTest.cpp b/clang/unittests/AST/ObjC3CarrierExprMangleTest.cpp
+new file mode 100644
+--- /dev/null
++++ b/clang/unittests/AST/ObjC3CarrierExprMangleTest.cpp
+@@ -0,0 +1,51 @@
++// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
++#include "clang/AST/ASTContext.h"
++#include "clang/AST/DeclTemplate.h"
++#include "clang/AST/Mangle.h"
++#include "clang/Frontend/ASTUnit.h"
++#include "clang/Tooling/Tooling.h"
++#include "gtest/gtest.h"
++#include "llvm/Support/raw_ostream.h"
++#include <memory>
++#include <string>
++
++using namespace clang;
++
++namespace {
++TEST(ObjC3CarrierExprMangle, DependentConstructionRetainsOperationAndArmOrder) {
++  auto AST = tooling::buildASTFromCodeWithArgs(R"(
++    template<class T> using Some = decltype(__objc3_some(T, T()));
++    template<class T> using None = decltype(__objc3_none(T));
++    template<class T> using Ok = decltype(__objc3_ok(T, int, T()));
++    template<class T> using Err = decltype(__objc3_err(T, int, 0));
++    template<class T> using Reversed = decltype(__objc3_ok(int, T, 0));
++  )", {"-x", "objective-c++", "-std=c++20", "-fobjc-version=3",
++       "-target", "x86_64-unknown-linux-gnu"}, "carrier-expression-mangle.mm");
++  ASSERT_TRUE(AST);
++  ASSERT_FALSE(AST->getDiagnostics().hasErrorOccurred());
++  ASTContext &Context = AST->getASTContext();
++  std::unique_ptr<MangleContext> Mangler(Context.createMangleContext());
++  auto MangleAlias = [&](llvm::StringRef Name) {
++    auto Decls = Context.getTranslationUnitDecl()->lookup(&Context.Idents.get(Name));
++    std::string Result;
++    for (NamedDecl *Decl : Decls) {
++      auto *Alias = dyn_cast<TypeAliasTemplateDecl>(Decl);
++      if (!Alias) continue;
++      llvm::raw_string_ostream Out(Result);
++      Mangler->mangleCanonicalTypeName(Alias->getTemplatedDecl()->getUnderlyingType(), Out);
++    }
++    return Result;
++  };
++  const auto Some = MangleAlias("Some"), None = MangleAlias("None");
++  const auto Ok = MangleAlias("Ok"), Err = MangleAlias("Err");
++  const auto Reversed = MangleAlias("Reversed");
++  EXPECT_NE(Some.find("__objc3_some"), std::string::npos);
++  EXPECT_NE(None.find("__objc3_none"), std::string::npos);
++  EXPECT_NE(Ok.find("__objc3_ok"), std::string::npos);
++  EXPECT_NE(Err.find("__objc3_err"), std::string::npos);
++  EXPECT_NE(Some, None);
++  EXPECT_NE(Ok, Err);
++  EXPECT_NE(Ok, Reversed);
++  EXPECT_EQ(Ok, MangleAlias("Ok"));
++}
++} // namespace
+diff --git a/clang/unittests/AST/ObjC3CarrierIdentityTest.cpp b/clang/unittests/AST/ObjC3CarrierIdentityTest.cpp
+new file mode 100644
+--- /dev/null
++++ b/clang/unittests/AST/ObjC3CarrierIdentityTest.cpp
+@@ -0,0 +1,78 @@
++//===--- ObjC3CarrierIdentityTest.cpp - carrier runtime identity tests ---===//
++//
++// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
++// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
++//
++//===----------------------------------------------------------------------===//
++
++#include "clang/AST/ASTContext.h"
++#include "clang/AST/Decl.h"
++#include "clang/Frontend/ASTUnit.h"
++#include "clang/Tooling/Tooling.h"
++#include "gtest/gtest.h"
++
++#include <memory>
++
++using namespace clang;
++
++namespace {
++
++std::unique_ptr<ASTUnit> parse(llvm::StringRef Source) {
++  return tooling::buildASTFromCodeWithArgs(
++      Source, {"-x", "objective-c++", "-std=c++20", "-fobjc-version=3"},
++      "objc3-carrier-type-identity.mm");
++}
++
++TypedefNameDecl *lookupTypedef(ASTContext &Context, llvm::StringRef Name) {
++  auto Decls = Context.getTranslationUnitDecl()->lookup(
++      &Context.Idents.get(Name));
++  for (NamedDecl *Decl : Decls)
++    if (auto *Typedef = dyn_cast<TypedefNameDecl>(Decl))
++      return Typedef;
++  return nullptr;
++}
++
++TEST(ObjC3CarrierIdentity, PointerAuthDiscriminatorPreservesCanonicalArms) {
++  auto AST = parse(R"cpp(
++    typedef int IntAlias;
++    using OptionalInt = __objc3_optional(int);
++    using OptionalAlias = __objc3_optional(IntAlias);
++    using OptionalLong = __objc3_optional(long);
++    using ResultIntLong = __objc3_result(int, long);
++    using ResultLongInt = __objc3_result(long, int);
++    using OptionalIntFunction = void (*)(OptionalInt);
++    using OptionalAliasFunction = void (*)(OptionalAlias);
++    using OptionalLongFunction = void (*)(OptionalLong);
++    using ResultIntLongFunction = void (*)(ResultIntLong);
++    using ResultLongIntFunction = void (*)(ResultLongInt);
++    using OptionalIntPointerFunction = void (*)(OptionalInt *);
++    using OptionalLongPointerFunction = void (*)(OptionalLong *);
++    using OptionalIntPointerPointerFunction = void (*)(OptionalInt **);
++    using OptionalLongPointerPointerFunction = void (*)(OptionalLong **);
++    using NativeIntPointerPointerFunction = void (*)(int **);
++    using NativeFloatPointerPointerFunction = void (*)(float **);
++  )cpp");
++  ASSERT_TRUE(AST);
++  ASTContext &Context = AST->getASTContext();
++  auto discriminator = [&](llvm::StringRef Name) {
++    auto *Decl = lookupTypedef(Context, Name);
++    EXPECT_NE(Decl, nullptr);
++    return Context.getPointerAuthTypeDiscriminator(
++        Context.getCanonicalType(Context.getTypeDeclType(Decl)));
++  };
++
++  EXPECT_EQ(discriminator("OptionalIntFunction"),
++            discriminator("OptionalAliasFunction"));
++  EXPECT_NE(discriminator("OptionalIntFunction"),
++            discriminator("OptionalLongFunction"));
++  EXPECT_NE(discriminator("ResultIntLongFunction"),
++            discriminator("ResultLongIntFunction"));
++  EXPECT_NE(discriminator("OptionalIntPointerFunction"),
++            discriminator("OptionalLongPointerFunction"));
++  EXPECT_NE(discriminator("OptionalIntPointerPointerFunction"),
++            discriminator("OptionalLongPointerPointerFunction"));
++  EXPECT_EQ(discriminator("NativeIntPointerPointerFunction"),
++            discriminator("NativeFloatPointerPointerFunction"));
++}
++
++} // namespace
+\ No newline at end of file
 diff --git a/clang/unittests/AST/ObjC3CarrierMangleTest.cpp b/clang/unittests/AST/ObjC3CarrierMangleTest.cpp
 new file mode 100644
 --- /dev/null
@@ -4890,6 +6790,173 @@ new file mode 100644
 +                                      ->getTypeLoc()
 +                                      .getAs<ObjC3ResultTypeLoc>()
 +                                      .getSuccessLoc());
++}
++
++} // namespace
+diff --git a/clang/unittests/AST/ObjC3FunctionEffectImportTest.cpp b/clang/unittests/AST/ObjC3FunctionEffectImportTest.cpp
+new file mode 100644
+--- /dev/null
++++ b/clang/unittests/AST/ObjC3FunctionEffectImportTest.cpp
+@@ -0,0 +1,162 @@
++//===--- ObjC3FunctionEffectImportTest.cpp - effect type import -----------===//
++// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
++// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
++//===----------------------------------------------------------------------===//
++
++#include "clang/AST/ASTContext.h"
++#include "clang/AST/ASTImporter.h"
++#include "clang/AST/ASTStructuralEquivalence.h"
++#include "clang/AST/Decl.h"
++#include "clang/AST/Type.h"
++#include "clang/Frontend/ASTUnit.h"
++#include "clang/Tooling/Tooling.h"
++#include "llvm/Support/Error.h"
++#include "gtest/gtest.h"
++
++#include <memory>
++#include <string>
++#include <vector>
++
++using namespace clang;
++
++namespace {
++
++FunctionDecl *findFunction(ASTContext &Context, llvm::StringRef Name) {
++  auto Decls =
++      Context.getTranslationUnitDecl()->lookup(&Context.Idents.get(Name));
++  for (Decl *D : Decls)
++    if (auto *FD = dyn_cast<FunctionDecl>(D))
++      return FD;
++  return nullptr;
++}
++
++QualType recordType(ASTContext &Context, llvm::StringRef Name) {
++  auto Decls =
++      Context.getTranslationUnitDecl()->lookup(&Context.Idents.get(Name));
++  for (Decl *D : Decls)
++    if (auto *RD = dyn_cast<RecordDecl>(D))
++      return Context.getCanonicalTagType(RD);
++  return {};
++}
++
++bool structurallyEquivalent(ASTContext &FromContext, QualType From,
++                            ASTContext &ToContext, QualType To) {
++  StructuralEquivalenceContext::NonEquivalentDeclSet NonEquivalentDecls;
++  StructuralEquivalenceContext Context(
++      FromContext.getLangOpts(), FromContext, ToContext, NonEquivalentDecls,
++      StructuralEquivalenceKind::Default, /*StrictTypeSpelling=*/false,
++      /*Complain=*/false);
++  return Context.IsEquivalent(From, To);
++}
++
++TEST(ObjC3FunctionEffectImport, CanonicalEffectsAndPayloadsImportIntoTarget) {
++  const std::string FromCode = R"(
++    struct Error { int Value; };
++    typedef Error ErrorAlias;
++    struct Other { int Value; };
++    void plain_effect();
++    void async_effect() __objc3_async;
++    void untyped_effect() __objc3_throws;
++    void typed_effect() __objc3_throws(Error);
++    void typed_alias_effect() __objc3_throws(ErrorAlias);
++    void other_payload_effect() __objc3_throws(Other);
++    void qualified_pointer_effect() __objc3_async __objc3_throws(const Error *);
++    void noexcept_effect() noexcept __objc3_throws(Error);
++  )";
++  const std::string ToCode = R"(
++    struct Error { int Value; };
++    typedef Error ErrorAlias;
++    struct Other { int Value; };
++  )";
++  const std::vector<std::string> Args = {"-x", "objective-c++", "-std=c++20",
++                                         "-fobjc-version=3"};
++  auto From = tooling::buildASTFromCodeWithArgs(FromCode, Args, "from.mm");
++  auto To = tooling::buildASTFromCodeWithArgs(
++      ToCode, Args, "to.mm", "clang-tool",
++      std::make_shared<PCHContainerOperations>(),
++      tooling::getClangStripDependencyFileAdjuster(), {{"from.mm", FromCode}});
++  ASSERT_TRUE(From);
++  ASSERT_TRUE(To);
++
++  // The mapped source buffer remains available to the target FileManager for
++  // imported declaration/type source locations, without full-test utilities.
++  ASTContext &FromContext = From->getASTContext();
++  ASTContext &ToContext = To->getASTContext();
++  ASTImporter Importer(ToContext, To->getFileManager(), FromContext,
++                       From->getFileManager(), /*MinimalImport=*/false);
++
++  auto ImportFunctionType = [&](llvm::StringRef Name) -> QualType {
++    FunctionDecl *FD = findFunction(FromContext, Name);
++    EXPECT_NE(FD, nullptr) << Name;
++    if (!FD)
++      return {};
++    auto Imported = Importer.Import(FD->getType());
++    if (!Imported) {
++      ADD_FAILURE() << llvm::toString(Imported.takeError());
++      return {};
++    }
++    return *Imported;
++  };
++
++  QualType Plain = ImportFunctionType("plain_effect");
++  QualType Async = ImportFunctionType("async_effect");
++  QualType Untyped = ImportFunctionType("untyped_effect");
++  QualType Typed = ImportFunctionType("typed_effect");
++  QualType TypedAlias = ImportFunctionType("typed_alias_effect");
++  QualType OtherPayload = ImportFunctionType("other_payload_effect");
++  QualType QualifiedPointer = ImportFunctionType("qualified_pointer_effect");
++  QualType Noexcept = ImportFunctionType("noexcept_effect");
++  ASSERT_FALSE(Plain.isNull());
++  ASSERT_FALSE(Async.isNull());
++  ASSERT_FALSE(Untyped.isNull());
++  ASSERT_FALSE(Typed.isNull());
++  ASSERT_FALSE(TypedAlias.isNull());
++  ASSERT_FALSE(OtherPayload.isNull());
++  ASSERT_FALSE(QualifiedPointer.isNull());
++  ASSERT_FALSE(Noexcept.isNull());
++
++  EXPECT_TRUE(ToContext.hasSameType(Typed, TypedAlias));
++  EXPECT_FALSE(ToContext.hasSameType(Plain, Async));
++  EXPECT_FALSE(ToContext.hasSameType(Plain, Untyped));
++  EXPECT_FALSE(ToContext.hasSameType(Untyped, Typed));
++  EXPECT_FALSE(ToContext.hasSameType(Typed, OtherPayload));
++  EXPECT_FALSE(ToContext.hasSameType(Async, QualifiedPointer));
++
++  const auto *TypedProto = Typed->castAs<FunctionProtoType>();
++  ASSERT_EQ(TypedProto->getObjC3ThrowsKind(), ObjC3ThrowsKind::Typed);
++  QualType ImportedError = TypedProto->getObjC3ErrorType();
++  QualType TargetError = recordType(ToContext, "Error");
++  ASSERT_FALSE(TargetError.isNull());
++  EXPECT_TRUE(ToContext.hasSameType(ImportedError, TargetError));
++  auto *ImportedErrorDecl =
++      cast<RecordType>(ImportedError.getCanonicalType().getTypePtr())
++          ->getDecl();
++  EXPECT_EQ(&ImportedErrorDecl->getASTContext(), &ToContext);
++
++  const auto *QualifiedProto = QualifiedPointer->castAs<FunctionProtoType>();
++  ASSERT_TRUE(QualifiedProto->isObjC3Async());
++  QualType ErrorPointer = QualifiedProto->getObjC3ErrorType();
++  ASSERT_TRUE(ErrorPointer->isPointerType());
++  EXPECT_TRUE(ErrorPointer->getPointeeType().isConstQualified());
++  EXPECT_TRUE(ToContext.hasSameType(ErrorPointer->getPointeeType(),
++                                    TargetError.withConst()));
++
++  const auto *NoexceptProto = Noexcept->castAs<FunctionProtoType>();
++  EXPECT_EQ(NoexceptProto->getExceptionSpecType(), EST_BasicNoexcept);
++  EXPECT_EQ(NoexceptProto->getObjC3ThrowsKind(), ObjC3ThrowsKind::Typed);
++  EXPECT_FALSE(ToContext.hasSameType(Noexcept, Typed));
++
++  QualType ReimportedTyped = ImportFunctionType("typed_effect");
++  EXPECT_EQ(ReimportedTyped, Typed);
++  EXPECT_TRUE(structurallyEquivalent(
++      FromContext, findFunction(FromContext, "typed_effect")->getType(),
++      ToContext, TypedAlias));
++  EXPECT_FALSE(structurallyEquivalent(
++      FromContext, findFunction(FromContext, "typed_effect")->getType(),
++      ToContext, OtherPayload));
++  EXPECT_FALSE(structurallyEquivalent(
++      FromContext, findFunction(FromContext, "typed_effect")->getType(),
++      ToContext, Async));
 +}
 +
 +} // namespace

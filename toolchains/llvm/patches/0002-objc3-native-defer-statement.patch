@@ -22,7 +22,7 @@ index 1008e7d66..ccc33dbbd 100644
      DeferStmtBits.DeferLoc = DeferLoc;
    }
 diff --git a/clang/lib/AST/StmtPrinter.cpp b/clang/lib/AST/StmtPrinter.cpp
-index 4d1ad387b..6060a9362 100644
+index 4d1ad387b..7aef3b81d 100644
 --- a/clang/lib/AST/StmtPrinter.cpp
 +++ b/clang/lib/AST/StmtPrinter.cpp
 @@ -492,7 +492,7 @@ void StmtPrinter::VisitBreakStmt(BreakStmt *Node) {
@@ -34,11 +34,62 @@ index 4d1ad387b..6060a9362 100644
    PrintControlledStmt(Node->getBody());
  }
  
+@@ -1884,6 +1884,36 @@ void StmtPrinter::VisitStmtExpr(StmtExpr *E) {
+   OS << ")";
+ }
+ 
++void StmtPrinter::VisitObjC3ResultExpr(ObjC3ResultExpr *Node) {
++  switch (Node->getKind()) {
++  case ObjC3ResultExpr::Kind::Ok: OS << "__objc3_ok("; break;
++  case ObjC3ResultExpr::Kind::Err: OS << "__objc3_err("; break;
++  case ObjC3ResultExpr::Kind::IsOk: OS << "__objc3_is_ok("; break;
++  }
++  if (TypeSourceInfo *Info = Node->getSuccessTypeInfo()) {
++    Info->getType().print(OS, Policy);
++    OS << ", ";
++    Node->getErrorTypeInfo()->getType().print(OS, Policy);
++    OS << ", ";
++  }
++  if (Node->getPayload()) PrintExpr(Node->getPayload());
++  OS << ")";
++}
++
++void StmtPrinter::VisitObjC3OptionalExpr(ObjC3OptionalExpr *Node) {
++  switch (Node->getKind()) {
++  case ObjC3OptionalExpr::Kind::Some: OS << "__objc3_some("; break;
++  case ObjC3OptionalExpr::Kind::None: OS << "__objc3_none("; break;
++  case ObjC3OptionalExpr::Kind::HasValue: OS << "__objc3_has_value("; break;
++  }
++  if (TypeSourceInfo *Info = Node->getPayloadTypeInfo()) {
++    Info->getType().print(OS, Policy);
++    if (Node->getKind() == ObjC3OptionalExpr::Kind::Some) OS << ", ";
++  }
++  if (Node->getPayload()) PrintExpr(Node->getPayload());
++  OS << ")";
++}
++
+ void StmtPrinter::VisitChooseExpr(ChooseExpr *Node) {
+   OS << "__builtin_choose_expr(";
+   PrintExpr(Node->getCond());
 diff --git a/clang/lib/Parse/ParseStmt.cpp b/clang/lib/Parse/ParseStmt.cpp
-index 260f81263..e426b088d 100644
+index 260f81263..65e969afc 100644
 --- a/clang/lib/Parse/ParseStmt.cpp
 +++ b/clang/lib/Parse/ParseStmt.cpp
-@@ -161,6 +161,11 @@ Retry:
+@@ -138,11 +138,13 @@ StmtResult Parser::ParseStatementOrDeclarationAfterAttributes(
+   const char *SemiError = nullptr;
+   StmtResult Res;
+   SourceLocation GNUAttributeLoc;
++  bool StartsObjC3CarrierExpression = false;
+ 
+   // Cases in this switch statement should fall through if the parser expects
+   // the token to end in a semicolon (in which case SemiError should be set),
+   // or they directly 'return;' if not.
+ Retry:
++  StartsObjC3CarrierExpression = false;
+   tok::TokenKind Kind  = Tok.getKind();
+   SourceLocation AtLoc;
+   switch (Kind) {
+@@ -161,6 +163,11 @@ Retry:
    case tok::identifier:
    ParseIdentifier: {
      Token Next = NextToken();
@@ -50,7 +101,7 @@ index 260f81263..e426b088d 100644
      if (Next.is(tok::colon)) { // C99 6.8.1: labeled-statement
        // Both C++11 and GNU attributes preceding the label appertain to the
        // label, so put them in a single list to pass on to
-@@ -173,7 +178,14 @@ Retry:
+@@ -173,7 +180,23 @@ Retry:
  
      // Look up the identifier, and typo-correct it to a keyword if it's not
      // found.
@@ -59,15 +110,34 @@ index 260f81263..e426b088d 100644
 +        getLangOpts().ObjC3 && Next.is(tok::l_paren) &&
 +        (Tok.getIdentifierInfo()->isStr("__objc3_optional") ||
 +         Tok.getIdentifierInfo()->isStr("__objc3_result"));
++    StartsObjC3CarrierExpression =
++        getLangOpts().ObjC3 && Next.is(tok::l_paren) &&
++        (Tok.getIdentifierInfo()->isStr("__objc3_some") ||
++         Tok.getIdentifierInfo()->isStr("__objc3_none") ||
++         Tok.getIdentifierInfo()->isStr("__objc3_has_value") ||
++         Tok.getIdentifierInfo()->isStr("__objc3_ok") ||
++         Tok.getIdentifierInfo()->isStr("__objc3_err") ||
++         Tok.getIdentifierInfo()->isStr("__objc3_is_ok"));
 +    // Keep the private constructor token available to declaration
 +    // disambiguation. Ordinary identifier annotation treats its argument list
 +    // as an expression before the carrier type parser can consume it.
-+    if (Next.isNot(tok::coloncolon) && !IsObjC3CarrierSpecifier) {
++    if (Next.isNot(tok::coloncolon) && !IsObjC3CarrierSpecifier &&
++        !StartsObjC3CarrierExpression) {
        // Try to limit which sets of keywords should be included in typo
        // correction based on what the next token is.
        StatementFilterCCC CCC(Next);
+@@ -208,7 +231,8 @@ Retry:
+     // in C++, we always allow a declaration, but in C we need to check whether
+     // we're in a statement context that allows declarations. e.g., in C, the
+     // following is invalid: if (1) int x;
+-    if ((getLangOpts().CPlusPlus || getLangOpts().MicrosoftExt ||
++    if (!StartsObjC3CarrierExpression &&
++        (getLangOpts().CPlusPlus || getLangOpts().MicrosoftExt ||
+          (StmtCtx & ParsedStmtContext::AllowDeclarationsInC) !=
+              ParsedStmtContext()) &&
+         ((GNUAttributeLoc.isValid() && !(HaveAttrs && AllAttrsAreStmtAttrs)) ||
 diff --git a/clang/lib/Serialization/ASTReaderStmt.cpp b/clang/lib/Serialization/ASTReaderStmt.cpp
-index 5553139df..1a7649df3 100644
+index 5553139df..78edbfc45 100644
 --- a/clang/lib/Serialization/ASTReaderStmt.cpp
 +++ b/clang/lib/Serialization/ASTReaderStmt.cpp
 @@ -338,6 +338,7 @@ void ASTStmtReader::VisitBreakStmt(BreakStmt *S) { VisitLoopControlStmt(S); }
@@ -78,8 +148,56 @@ index 5553139df..1a7649df3 100644
    S->setBody(Record.readSubStmt());
  }
  
+@@ -1382,6 +1383,32 @@ void ASTStmtReader::VisitStmtExpr(StmtExpr *E) {
+   E->StmtExprBits.TemplateDepth = Record.readInt();
+ }
+ 
++void ASTStmtReader::VisitObjC3ResultExpr(ObjC3ResultExpr *E) {
++  VisitExpr(E);
++  E->setKind(static_cast<ObjC3ResultExpr::Kind>(Record.readInt()));
++  E->setCarrierType(Record.readType());
++  E->setSuccessTypeInfo(Record.readTypeSourceInfo());
++  E->setErrorTypeInfo(Record.readTypeSourceInfo());
++  E->setPayload(Record.readSubExpr());
++  E->setKeywordLoc(readSourceLocation());
++  E->setLParenLoc(readSourceLocation());
++  E->setFirstCommaLoc(readSourceLocation());
++  E->setSecondCommaLoc(readSourceLocation());
++  E->setRParenLoc(readSourceLocation());
++}
++
++void ASTStmtReader::VisitObjC3OptionalExpr(ObjC3OptionalExpr *E) {
++  VisitExpr(E);
++  E->setKind(static_cast<ObjC3OptionalExpr::Kind>(Record.readInt()));
++  E->setCarrierType(Record.readType());
++  E->setPayloadTypeInfo(Record.readTypeSourceInfo());
++  E->setPayload(Record.readSubExpr());
++  E->setKeywordLoc(readSourceLocation());
++  E->setLParenLoc(readSourceLocation());
++  E->setCommaLoc(readSourceLocation());
++  E->setRParenLoc(readSourceLocation());
++}
++
+ void ASTStmtReader::VisitChooseExpr(ChooseExpr *E) {
+   VisitExpr(E);
+   E->setCond(Record.readSubExpr());
+@@ -3427,6 +3454,14 @@ Stmt *ASTReader::ReadStmtFromStream(ModuleFile &F) {
+       S = new (Context) StmtExpr(Empty);
+       break;
+ 
++    case EXPR_OBJC3_RESULT:
++      S = new (Context) ObjC3ResultExpr(Empty);
++      break;
++
++    case EXPR_OBJC3_OPTIONAL:
++      S = new (Context) ObjC3OptionalExpr(Empty);
++      break;
++
+     case EXPR_CHOOSE:
+       S = new (Context) ChooseExpr(Empty);
+       break;
 diff --git a/clang/lib/Serialization/ASTWriterStmt.cpp b/clang/lib/Serialization/ASTWriterStmt.cpp
-index 8f22156f9..99d5b8157 100644
+index 8f22156f9..2af963cde 100644
 --- a/clang/lib/Serialization/ASTWriterStmt.cpp
 +++ b/clang/lib/Serialization/ASTWriterStmt.cpp
 @@ -333,6 +333,7 @@ void ASTStmtWriter::VisitBreakStmt(BreakStmt *S) {
@@ -90,11 +208,46 @@ index 8f22156f9..99d5b8157 100644
    Record.AddStmt(S->getBody());
    Code = serialization::STMT_DEFER;
  }
+@@ -1338,6 +1339,34 @@ void ASTStmtWriter::VisitStmtExpr(StmtExpr *E) {
+   Code = serialization::EXPR_STMT;
+ }
+ 
++void ASTStmtWriter::VisitObjC3ResultExpr(ObjC3ResultExpr *E) {
++  VisitExpr(E);
++  Record.push_back(static_cast<unsigned>(E->getKind()));
++  Record.AddTypeRef(E->getCarrierType());
++  Record.AddTypeSourceInfo(E->getSuccessTypeInfo());
++  Record.AddTypeSourceInfo(E->getErrorTypeInfo());
++  Record.AddStmt(E->getPayload());
++  Record.AddSourceLocation(E->getKeywordLoc());
++  Record.AddSourceLocation(E->getLParenLoc());
++  Record.AddSourceLocation(E->getFirstCommaLoc());
++  Record.AddSourceLocation(E->getSecondCommaLoc());
++  Record.AddSourceLocation(E->getRParenLoc());
++  Code = serialization::EXPR_OBJC3_RESULT;
++}
++
++void ASTStmtWriter::VisitObjC3OptionalExpr(ObjC3OptionalExpr *E) {
++  VisitExpr(E);
++  Record.push_back(static_cast<unsigned>(E->getKind()));
++  Record.AddTypeRef(E->getCarrierType());
++  Record.AddTypeSourceInfo(E->getPayloadTypeInfo());
++  Record.AddStmt(E->getPayload());
++  Record.AddSourceLocation(E->getKeywordLoc());
++  Record.AddSourceLocation(E->getLParenLoc());
++  Record.AddSourceLocation(E->getCommaLoc());
++  Record.AddSourceLocation(E->getRParenLoc());
++  Code = serialization::EXPR_OBJC3_OPTIONAL;
++}
++
+ void ASTStmtWriter::VisitChooseExpr(ChooseExpr *E) {
+   VisitExpr(E);
+   Record.AddStmt(E->getCond());
 diff --git a/clang/lib/Parse/ParseObjC3.cpp b/clang/lib/Parse/ParseObjC3.cpp
 new file mode 100644
 --- /dev/null
 +++ b/clang/lib/Parse/ParseObjC3.cpp
-@@ -0,0 +1,39 @@
+@@ -0,0 +1,115 @@
 +//===--- ParseObjC3.cpp - Slopjective-C parser ---------------------------===//
 +//
 +// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
@@ -104,9 +257,85 @@ new file mode 100644
 +//===----------------------------------------------------------------------===//
 +
 +#include "clang/Parse/Parser.h"
++#include "clang/Basic/DiagnosticParse.h"
++#include "clang/Parse/RAIIObjectsForParser.h"
 +#include "llvm/ADT/ScopeExit.h"
 +
 +using namespace clang;
++
++ExprResult Parser::ParseObjC3ResultExpression() {
++  const bool Ok = Tok.getIdentifierInfo()->isStr("__objc3_ok");
++  const bool Err = Tok.getIdentifierInfo()->isStr("__objc3_err");
++  const char *Name = Ok ? "__objc3_ok" : Err ? "__objc3_err" : "__objc3_is_ok";
++  SourceLocation Keyword = ConsumeToken();
++  BalancedDelimiterTracker Parens(*this, tok::l_paren);
++  if (Parens.expectAndConsume(diag::err_expected_lparen_after, Name, tok::r_paren))
++    return ExprError();
++  if (!Ok && !Err) {
++    ExprResult Operand = ParseAssignmentExpression();
++    if (Operand.isInvalid()) { Parens.skipToEnd(); return ExprError(); }
++    if (Parens.consumeClose()) return ExprError();
++    return Actions.ActOnObjC3ResultIsOkExpr(Keyword, Parens.getOpenLocation(),
++        Operand.get(), Parens.getCloseLocation());
++  }
++  TypeResult Success = ParseTypeName();
++  if (Success.isInvalid()) { Parens.skipToEnd(); return ExprError(); }
++  if (Tok.isNot(tok::comma)) {
++    Diag(Tok, diag::err_expected) << tok::comma;
++    Parens.skipToEnd(); return ExprError();
++  }
++  SourceLocation FirstComma = ConsumeToken();
++  TypeResult Error = ParseTypeName();
++  if (Error.isInvalid()) { Parens.skipToEnd(); return ExprError(); }
++  if (Tok.isNot(tok::comma)) {
++    Diag(Tok, diag::err_expected) << tok::comma;
++    Parens.skipToEnd(); return ExprError();
++  }
++  SourceLocation SecondComma = ConsumeToken();
++  ExprResult Payload = ParseAssignmentExpression();
++  if (Payload.isInvalid()) { Parens.skipToEnd(); return ExprError(); }
++  if (Parens.consumeClose()) return ExprError();
++  if (Ok)
++    return Actions.ActOnObjC3ResultOkExpr(Keyword, Parens.getOpenLocation(),
++        Success.get(), FirstComma, Error.get(), SecondComma, Payload.get(),
++        Parens.getCloseLocation());
++  return Actions.ActOnObjC3ResultErrExpr(Keyword, Parens.getOpenLocation(),
++      Success.get(), FirstComma, Error.get(), SecondComma, Payload.get(),
++      Parens.getCloseLocation());
++}
++
++
++ExprResult Parser::ParseObjC3OptionalExpression() {
++  const bool Some = Tok.getIdentifierInfo()->isStr("__objc3_some");
++  const bool None = Tok.getIdentifierInfo()->isStr("__objc3_none");
++  const char *Name = Some ? "__objc3_some" : None ? "__objc3_none" : "__objc3_has_value";
++  SourceLocation Keyword = ConsumeToken();
++  BalancedDelimiterTracker Parens(*this, tok::l_paren);
++  if (Parens.expectAndConsume(diag::err_expected_lparen_after, Name, tok::r_paren))
++    return ExprError();
++  if (!Some && !None) {
++    ExprResult Operand = ParseAssignmentExpression();
++    if (Operand.isInvalid()) { Parens.skipToEnd(); return ExprError(); }
++    if (Parens.consumeClose()) return ExprError();
++    return Actions.ActOnObjC3OptionalHasValueExpr(Keyword, Parens.getOpenLocation(), Operand.get(), Parens.getCloseLocation());
++  }
++  TypeResult PayloadType = ParseTypeName();
++  if (PayloadType.isInvalid()) { Parens.skipToEnd(); return ExprError(); }
++  if (None) {
++    if (Parens.consumeClose()) return ExprError();
++    return Actions.ActOnObjC3OptionalNoneExpr(Keyword, Parens.getOpenLocation(), PayloadType.get(), Parens.getCloseLocation());
++  }
++  if (Tok.isNot(tok::comma)) {
++    Diag(Tok, diag::err_expected) << tok::comma;
++    Parens.skipToEnd(); return ExprError();
++  }
++  SourceLocation Comma = ConsumeToken();
++  ExprResult Payload = ParseAssignmentExpression();
++  if (Payload.isInvalid()) { Parens.skipToEnd(); return ExprError(); }
++  if (Parens.consumeClose()) return ExprError();
++  return Actions.ActOnObjC3OptionalSomeExpr(Keyword, Parens.getOpenLocation(), PayloadType.get(), Payload.get(), Comma, Parens.getCloseLocation());
++}
++
 +
 +StmtResult Parser::ParseObjC3DeferStatement() {
 +  assert(Tok.is(tok::identifier) && Tok.getIdentifierInfo() &&

@@ -1,3 +1,58 @@
+diff --git a/clang/lib/CodeGen/CGAtomic.cpp b/clang/lib/CodeGen/CGAtomic.cpp
+index 06ef2f5b8..f66acdb74 100644
+--- a/clang/lib/CodeGen/CGAtomic.cpp
++++ b/clang/lib/CodeGen/CGAtomic.cpp
+@@ -11,6 +11,7 @@
+ //===----------------------------------------------------------------------===//
+ 
+ #include "CGCall.h"
++#include "CGObjC3ABIBoundaries.h"
+ #include "CGRecordLayout.h"
+ #include "CodeGenFunction.h"
+ #include "CodeGenModule.h"
+@@ -899,6 +900,10 @@ static void EmitAtomicOp(CodeGenFunction &CGF, AtomicExpr *Expr, Address Dest,
+ }
+ 
+ RValue CodeGenFunction::EmitAtomicExpr(AtomicExpr *E) {
++  QualType AccessType = E->getPtr()->getType()->getPointeeType();
++  if (CodeGen::diagnoseUnsupportedObjC3AtomicAccess(
++          CGM, AccessType, E->getExprLoc()))
++    return GetUndefRValue(E->getType());
+   ApplyAtomGroup Grp(getDebugInfo());
+ 
+   QualType AtomicTy = E->getPtr()->getType()->getPointeeType();
+@@ -1658,6 +1663,11 @@ RValue AtomicInfo::EmitAtomicLoad(AggValueSlot ResultSlot, SourceLocation Loc,
+ RValue CodeGenFunction::EmitAtomicLoad(LValue src, SourceLocation loc,
+                                        llvm::AtomicOrdering AO, bool IsVolatile,
+                                        AggValueSlot resultSlot) {
++  QualType ValueType = src.getType();
++  if (const auto *AT = ValueType->getAs<AtomicType>())
++    ValueType = AT->getValueType();
++  if (CodeGen::diagnoseUnsupportedObjC3AtomicAccess(CGM, src.getType(), loc))
++    return GetUndefRValue(ValueType);
+   AtomicInfo Atomics(*this, src);
+   return Atomics.EmitAtomicLoad(resultSlot, loc, /*AsValue=*/true, AO,
+                                 IsVolatile);
+@@ -2054,6 +2064,9 @@ void CodeGenFunction::EmitAtomicStore(RValue rvalue, LValue lvalue,
+ void CodeGenFunction::EmitAtomicStore(RValue rvalue, LValue dest,
+                                       llvm::AtomicOrdering AO, bool IsVolatile,
+                                       bool isInit) {
++  SourceLocation Loc = CurCodeDecl ? CurCodeDecl->getLocation() : SourceLocation();
++  if (CodeGen::diagnoseUnsupportedObjC3AtomicAccess(CGM, dest.getType(), Loc))
++    return;
+   // If this is an aggregate r-value, it should agree in type except
+   // maybe for address-space qualification.
+   assert(!rvalue.isAggregate() ||
+@@ -2160,6 +2173,9 @@ void CodeGenFunction::EmitAtomicUpdate(
+ }
+ 
+ void CodeGenFunction::EmitAtomicInit(Expr *init, LValue dest) {
++  if (CodeGen::diagnoseUnsupportedObjC3AtomicAccess(
++          CGM, dest.getType(), init->getExprLoc()))
++    return;
+   AtomicInfo atomics(*this, dest);
+ 
+   switch (atomics.getEvaluationKind()) {
 diff --git a/clang/lib/CodeGen/CGCall.cpp b/clang/lib/CodeGen/CGCall.cpp
 index 06203733a..b349dec70 100644
 --- a/clang/lib/CodeGen/CGCall.cpp
@@ -202,50 +257,241 @@ index 24878710d..ca9af0a17 100644
    if (!CallOrInvoke) {
      CallOrInvoke = &CallOrInvokeStorage;
 diff --git a/clang/lib/CodeGen/CGExprAgg.cpp b/clang/lib/CodeGen/CGExprAgg.cpp
-index 7cc4d6c8f..c893a4b51 100644
+index 7cc4d6c8f..c59a290c4 100644
 --- a/clang/lib/CodeGen/CGExprAgg.cpp
 +++ b/clang/lib/CodeGen/CGExprAgg.cpp
-@@ -11,6 +11,7 @@
+@@ -11,6 +11,9 @@
  //===----------------------------------------------------------------------===//
  
  #include "CGCXXABI.h"
++#include "CGObjC3ABIBoundaries.h"
 +#include "CGObjC3Carriers.h"
++#include "CGObjC3ResultExpr.h"
  #include "CGDebugInfo.h"
  #include "CGHLSLRuntime.h"
  #include "CGObjCRuntime.h"
-@@ -356,6 +357,17 @@ void AggExprEmitter::EmitFinalDestCopy(
+@@ -235,6 +238,18 @@ public:
+   void EmitInitializationToLValue(Expr *E, LValue Address);
+   void EmitNullInitializationToLValue(LValue Address);
+   //  case Expr::ChooseExprClass:
++  // H4 carrier expression visitor hooks: scalar queries stay in
++  // CGExprScalar; aggregate constructors initialize only their active arm.
++  void VisitObjC3OptionalExpr(ObjC3OptionalExpr *E) {
++    if (!CodeGen::emitObjC3OptionalAggregateExpr(
++            CGF, *E, Dest.getAddress(), Dest.isIgnored(), Dest.isVolatile()))
++      CGF.ErrorUnsupported(E, "ObjC3 Optional aggregate expression");
++  }
++  void VisitObjC3ResultExpr(ObjC3ResultExpr *E) {
++    if (!CodeGen::emitObjC3ResultAggregateExpr(
++            CGF, *E, Dest.getAddress(), Dest.isIgnored(), Dest.isVolatile()))
++      CGF.ErrorUnsupported(E, "ObjC3 Result aggregate expression");
++  }
+   void VisitCXXThrowExpr(const CXXThrowExpr *E) { CGF.EmitCXXThrowExpr(E); }
+   void VisitAtomicExpr(AtomicExpr *E) {
+     RValue Res = CGF.EmitAtomicExpr(E);
+@@ -356,6 +371,35 @@ void AggExprEmitter::EmitFinalDestCopy(
    if (Dest.isIgnored())
      return;
  
++  if (diagnoseUnsupportedObjC3AggregateCopy(
++          CGF.CGM, type, CGF.CurCodeDecl ? CGF.CurCodeDecl->getLocation()
++                                       : SourceLocation()))
++    return;
++
 +  const Type *CanonicalType =
 +      CGF.getContext().getCanonicalType(type).getTypePtr();
 +  if (isa<ObjC3OptionalType>(CanonicalType) ||
 +      isa<ObjC3ResultType>(CanonicalType)) {
-+    CodeGen::diagnoseUnsupportedObjC3CarrierOperation(
-+        CGF.CGM, CGF.CurCodeDecl ? CGF.CurCodeDecl->getLocation()
-+                                  : SourceLocation(),
-+        type, "copy");
++    const SourceLocation Loc =
++        CGF.CurCodeDecl ? CGF.CurCodeDecl->getLocation() : SourceLocation();
++    const bool SourceIsVolatile = src.isVolatile();
++    const bool DestinationIsVolatile = Dest.isVolatile();
++    bool Handled = false;
++    if (isa<ObjC3OptionalType>(CanonicalType))
++      Handled = CodeGen::emitObjC3OptionalCopy(
++          CGF, type, Dest.getAddress(), src.getAddress(),
++          DestinationIsVolatile, SourceIsVolatile,
++          /*IsInitialization=*/true, Loc);
++    else
++      Handled = CodeGen::emitObjC3ResultCopy(
++          CGF, type, Dest.getAddress(), src.getAddress(),
++          DestinationIsVolatile, SourceIsVolatile,
++          /*IsInitialization=*/true, Loc);
++    if (!Handled)
++      CodeGen::diagnoseUnsupportedObjC3CarrierOperation(CGF.CGM, Loc, type,
++                                                        "copy adapter");
 +    return;
 +  }
-+
    // Copy non-trivial C structs here.
    LValue DstLV = CGF.MakeAddrLValue(
        Dest.getAddress(), Dest.isVolatile() ? type.withVolatile() : type);
-@@ -2248,6 +2260,14 @@ void CodeGenFunction::EmitAggregateCopy(LValue Dest, LValue Src, QualType Ty,
+@@ -390,6 +434,10 @@ void AggExprEmitter::EmitFinalDestCopy(
+ ///   ignored
+ void AggExprEmitter::EmitCopy(QualType type, const AggValueSlot &dest,
+                               const AggValueSlot &src) {
++  if (diagnoseUnsupportedObjC3AggregateCopy(
++          CGF.CGM, type, CGF.CurCodeDecl ? CGF.CurCodeDecl->getLocation()
++                                       : SourceLocation()))
++    return;
+   if (dest.requiresGCollection()) {
+     CharUnits sz = dest.getPreferredSize(CGF.getContext(), type);
+     llvm::Value *size = llvm::ConstantInt::get(CGF.SizeTy, sz.getQuantity());
+@@ -828,6 +876,14 @@ void AggExprEmitter::VisitCastExpr(CastExpr *E) {
+   }
+ 
+   case CK_LValueToRValueBitCast: {
++    // Bit-casting reads the complete source representation and may create a
++    // destination representation containing carriers. Neither direction has
++    // a qualified source-level carrier copy operation.
++    if (CodeGen::diagnoseUnsupportedObjC3RepresentationAccess(
++            CGF.CGM, E->getSubExpr()->getType(), E->getExprLoc()) ||
++        CodeGen::diagnoseUnsupportedObjC3RepresentationAccess(
++            CGF.CGM, E->getType(), E->getExprLoc()))
++      return;
+     if (Dest.isIgnored()) {
+       CGF.EmitAnyExpr(E->getSubExpr(), AggValueSlot::ignored(),
+                       /*ignoreResult=*/true);
+@@ -1298,6 +1354,25 @@ void AggExprEmitter::VisitBinAssign(const BinaryOperator *E) {
+                                                  E->getRHS()->getType())
+          && "Invalid assignment");
+ 
++  if (diagnoseUnsupportedObjC3AggregateCopy(CGF.CGM, E->getType(),
++                                           E->getOperatorLoc()))
++    return;
++
++  const Type *AssignmentType =
++      CGF.getContext().getCanonicalType(E->getType()).getTypePtr();
++  if (isa<ObjC3OptionalType, ObjC3ResultType>(AssignmentType) &&
++      (!supportsPlainObjC3CarrierStorageLifetime(CGF.CGM, E->getType()) ||
++       !supportsObjC3CarrierCopyPayload(CGF.CGM, E->getType()))) {
++    // Diagnose the source operation before RHS/LHS/result materialization.
++    // Otherwise the two internal aggregate-copy paths diagnose the same
++    // assignment twice and can attempt to read recovery storage. Failed
++    // compilation emits no operand, payload copy or destruction here.
++    diagnoseUnsupportedObjC3CarrierOperation(
++        CGF.CGM, E->getOperatorLoc(), E->getType(),
++        isa<ObjC3OptionalType>(AssignmentType) ? "Optional copy" : "Result copy");
++    return;
++  }
++
+   // If the LHS might be a __block variable, and the RHS can
+   // potentially cause a block copy, we need to evaluate the RHS first
+   // so that the assignment goes the right place.
+@@ -2248,7 +2323,37 @@ void CodeGenFunction::EmitAggregateCopy(LValue Dest, LValue Src, QualType Ty,
                                          AggValueSlot::Overlap_t MayOverlap,
                                          bool isVolatile) {
    assert(!Ty->isAnyComplexType() && "Shouldn't happen for complex");
+-
++  if (diagnoseUnsupportedObjC3AggregateCopy(
++          CGM, Ty, CurCodeDecl ? CurCodeDecl->getLocation() : SourceLocation()))
++    return;
 +  const Type *CanonicalType = getContext().getCanonicalType(Ty).getTypePtr();
 +  if (isa<ObjC3OptionalType>(CanonicalType) ||
 +      isa<ObjC3ResultType>(CanonicalType)) {
-+    CodeGen::diagnoseUnsupportedObjC3CarrierOperation(
-+        CGM, CurCodeDecl ? CurCodeDecl->getLocation() : SourceLocation(),
-+        Ty, "copy");
++    const SourceLocation Loc =
++        CurCodeDecl ? CurCodeDecl->getLocation() : SourceLocation();
++    bool DestinationIsVolatile = Dest.isVolatile();
++    bool SourceIsVolatile = Src.isVolatile();
++    // This legacy flag is the union of endpoint volatility. The LValues above
++    // identify a single volatile endpoint; if neither is volatile, preserve
++    // it for volatile members nested in the carrier payload.
++    if (isVolatile && !DestinationIsVolatile && !SourceIsVolatile)
++      DestinationIsVolatile = SourceIsVolatile = true;
++    bool Handled = false;
++    if (isa<ObjC3OptionalType>(CanonicalType))
++      Handled = CodeGen::emitObjC3OptionalCopy(
++          *this, Ty, Dest.getAddress(), Src.getAddress(),
++          DestinationIsVolatile, SourceIsVolatile,
++          /*IsInitialization=*/false, Loc);
++    else
++      Handled = CodeGen::emitObjC3ResultCopy(
++          *this, Ty, Dest.getAddress(), Src.getAddress(),
++          DestinationIsVolatile, SourceIsVolatile,
++          /*IsInitialization=*/false, Loc);
++    if (!Handled)
++      CodeGen::diagnoseUnsupportedObjC3CarrierOperation(CGM, Loc, Ty,
++                                                        "copy adapter");
 +    return;
 +  }
- 
    Address DestPtr = Dest.getAddress();
    Address SrcPtr = Src.getAddress();
+ 
+diff --git a/clang/lib/CodeGen/CGExprComplex.cpp b/clang/lib/CodeGen/CGExprComplex.cpp
+index e5815ef11..230e39243 100644
+--- a/clang/lib/CodeGen/CGExprComplex.cpp
++++ b/clang/lib/CodeGen/CGExprComplex.cpp
+@@ -10,6 +10,7 @@
+ //
+ //===----------------------------------------------------------------------===//
+ 
++#include "CGObjC3ABIBoundaries.h"
+ #include "CGDebugInfo.h"
+ #include "CGOpenMPRuntime.h"
+ #include "CodeGenFunction.h"
+@@ -561,6 +562,15 @@ ComplexPairTy ComplexExprEmitter::EmitCast(CastKind CK, Expr *Op,
+   }
+ 
+   case CK_LValueToRValueBitCast: {
++    if (CodeGen::diagnoseUnsupportedObjC3RepresentationAccess(
++            CGF.CGM, Op->getType(), Op->getExprLoc()) ||
++        CodeGen::diagnoseUnsupportedObjC3RepresentationAccess(
++            CGF.CGM, DestTy, Op->getExprLoc())) {
++      llvm::Type *ElementTy =
++          CGF.ConvertType(DestTy->castAs<ComplexType>()->getElementType());
++      llvm::Value *Undef = llvm::UndefValue::get(ElementTy);
++      return ComplexPairTy(Undef, Undef);
++    }
+     LValue SourceLVal = CGF.EmitLValue(Op);
+     Address Addr =
+         SourceLVal.getAddress().withElementType(CGF.ConvertTypeForMem(DestTy));
+diff --git a/clang/lib/CodeGen/CGExprScalar.cpp b/clang/lib/CodeGen/CGExprScalar.cpp
+index 6fd94752f..7454cf98e 100644
+--- a/clang/lib/CodeGen/CGExprScalar.cpp
++++ b/clang/lib/CodeGen/CGExprScalar.cpp
+@@ -15,6 +15,9 @@
+ #include "CGDebugInfo.h"
+ #include "CGHLSLRuntime.h"
+ #include "CGObjCRuntime.h"
++#include "CGObjC3ABIBoundaries.h"
++#include "CGObjC3Carriers.h"
++#include "CGObjC3ResultExpr.h"
+ #include "CGOpenMPRuntime.h"
+ #include "CGRecordLayout.h"
+ #include "CodeGenFunction.h"
+@@ -459,6 +462,21 @@ public:
+   }
+   Value *VisitExpr(Expr *S);
+ 
++  // H4 carrier queries borrow/read their explicit tag in the private helper.
++  Value *VisitObjC3OptionalExpr(ObjC3OptionalExpr *E) {
++    if (E->getKind() != ObjC3OptionalExpr::Kind::HasValue) {
++      CGF.ErrorUnsupported(E, "non-query ObjC3 Optional scalar expression");
++      return llvm::PoisonValue::get(CGF.ConvertType(E->getType()));
++    }
++    return CodeGen::emitObjC3OptionalHasValueExpr(CGF, *E);
++  }
++  Value *VisitObjC3ResultExpr(ObjC3ResultExpr *E) {
++    if (E->getKind() != ObjC3ResultExpr::Kind::IsOk) {
++      CGF.ErrorUnsupported(E, "non-query ObjC3 Result scalar expression");
++      return llvm::PoisonValue::get(CGF.ConvertType(E->getType()));
++    }
++    return CodeGen::emitObjC3ResultIsOkExpr(CGF, *E);
++  }
+   Value *VisitConstantExpr(ConstantExpr *E) {
+     // A constant expression of type 'void' generates no code and produces no
+     // value.
+@@ -2533,6 +2551,11 @@ Value *ScalarExprEmitter::VisitCastExpr(CastExpr *CE) {
+   }
+ 
+   case CK_LValueToRValueBitCast: {
++    if (CodeGen::diagnoseUnsupportedObjC3RepresentationAccess(
++            CGF.CGM, E->getType(), CE->getExprLoc()) ||
++        CodeGen::diagnoseUnsupportedObjC3RepresentationAccess(
++            CGF.CGM, DestTy, CE->getExprLoc()))
++      return llvm::UndefValue::get(CGF.ConvertType(DestTy));
+     LValue SourceLVal = CGF.EmitLValue(E);
+     Address Addr =
+         SourceLVal.getAddress().withElementType(CGF.ConvertTypeForMem(DestTy));
 diff --git a/clang/lib/CodeGen/CGObjC.cpp b/clang/lib/CodeGen/CGObjC.cpp
 index 10aad2e26..75a73d1a3 100644
 --- a/clang/lib/CodeGen/CGObjC.cpp
@@ -319,14 +565,15 @@ index a81c42174..44fc35e6a 100644
        llvm::FunctionType::get(llvm::Type::getVoidTy(VMContext), false),
        llvm::GlobalValue::LinkOnceODRLinkage, ".objcv2_load_function",
 diff --git a/clang/lib/CodeGen/CMakeLists.txt b/clang/lib/CodeGen/CMakeLists.txt
-index dbbc35b37..e68ed983e 100644
+index dbbc35b37..becc03109 100644
 --- a/clang/lib/CodeGen/CMakeLists.txt
 +++ b/clang/lib/CodeGen/CMakeLists.txt
-@@ -86,6 +86,8 @@ add_clang_library(clangCodeGen
+@@ -86,6 +86,9 @@ add_clang_library(clangCodeGen
    CGLoopInfo.cpp
    CGNonTrivialStruct.cpp
    CGObjC.cpp
 +  CGObjC3Carriers.cpp
++  CGObjC3ResultExpr.cpp
 +  CGObjC3ABIBoundaries.cpp
    CGObjCGNU.cpp
    CGObjCMac.cpp
@@ -590,7 +837,7 @@ diff --git a/clang/lib/CodeGen/CGObjC3ABIBoundaries.cpp b/clang/lib/CodeGen/CGOb
 new file mode 100644
 --- /dev/null
 +++ b/clang/lib/CodeGen/CGObjC3ABIBoundaries.cpp
-@@ -0,0 +1,101 @@
+@@ -0,0 +1,134 @@
 +//===--- CGObjC3ABIBoundaries.cpp - Unqualified native boundaries ----------===//
 +// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -617,6 +864,8 @@ new file mode 100644
 +    return T;
 +  if (const auto *Array = Ctx.getAsArrayType(T))
 +    return findCarrier(Ctx, Array->getElementType(), FollowPointers, Seen);
++  if (const auto *Atomic = dyn_cast<AtomicType>(Ty))
++    return findCarrier(Ctx, Atomic->getValueType(), FollowPointers, Seen);
 +  if (FollowPointers)
 +    if (const auto *Pointer = dyn_cast<PointerType>(Ty))
 +      return findCarrier(Ctx, Pointer->getPointeeType(), true, Seen);
@@ -653,10 +902,41 @@ new file mode 100644
 +  return diagnose(CGM, Type, Loc, false, "by-value call ABI");
 +}
 +
++bool CodeGen::diagnoseUnsupportedObjC3AggregateCopy(CodeGenModule &CGM,
++                                                   QualType Type,
++                                                   SourceLocation Loc) {
++  if (Type.isNull() ||
++      isa<ObjC3OptionalType, ObjC3ResultType>(
++          CGM.getContext().getCanonicalType(Type).getTypePtr()))
++    return false;
++  return diagnose(CGM, Type, Loc, false, "enclosing aggregate copy");
++}
++
++bool CodeGen::diagnoseUnsupportedObjC3AtomicAccess(CodeGenModule &CGM,
++                                                   QualType Type,
++                                                   SourceLocation Loc) {
++  return diagnose(CGM, Type, Loc, false, "atomic access");
++}
++
++bool CodeGen::diagnoseUnsupportedObjC3RepresentationAccess(CodeGenModule &CGM,
++                                                           QualType Type,
++                                                           SourceLocation Loc) {
++  return diagnose(CGM, Type, Loc, false, "object representation bitcast");
++}
++
 +bool CodeGen::diagnoseUnsupportedObjC3ObjCMethod(CodeGenModule &CGM,
 +                                                const ObjCMethodDecl *Method) {
 +  if (!Method)
 +    return false;
++  // Objective-C message sends and method metadata have separate lowering
++  // paths from ordinary CallExprs. Preserve callable effects in each value
++  // type instead of treating an effectful callback as an ordinary callback.
++  if (CGM.getTypes().diagnoseUnsupportedObjC3Effects(Method->getReturnType(),
++                                                  Method))
++    return true;
++  for (const ParmVarDecl *Param : Method->parameters())
++    if (CGM.getTypes().diagnoseUnsupportedObjC3Effects(Param->getType(), Param))
++      return true;
 +  bool Invalid = diagnoseUnsupportedObjC3ValueABI(
 +      CGM, Method->getReturnType(), Method->getLocation());
 +  for (const ParmVarDecl *Param : Method->parameters())
@@ -696,7 +976,7 @@ diff --git a/clang/lib/CodeGen/CGObjC3ABIBoundaries.h b/clang/lib/CodeGen/CGObjC
 new file mode 100644
 --- /dev/null
 +++ b/clang/lib/CodeGen/CGObjC3ABIBoundaries.h
-@@ -0,0 +1,21 @@
+@@ -0,0 +1,30 @@
 +//===--- CGObjC3ABIBoundaries.h - Unqualified native boundaries -*- C++ -*-===//
 +// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -711,6 +991,15 @@ new file mode 100644
 +class CodeGenModule;
 +bool diagnoseUnsupportedObjC3ValueABI(CodeGenModule &CGM, QualType Type,
 +                                     SourceLocation Loc);
++// Direct carriers use their selected-arm adapters. Whole enclosing aggregates
++// must not silently copy inactive carrier payload bytes through generic memcpy.
++bool diagnoseUnsupportedObjC3AggregateCopy(CodeGenModule &CGM, QualType Type,
++                                          SourceLocation Loc);
++bool diagnoseUnsupportedObjC3AtomicAccess(CodeGenModule &CGM, QualType Type,
++                                              SourceLocation Loc);
++bool diagnoseUnsupportedObjC3RepresentationAccess(CodeGenModule &CGM,
++                                                  QualType Type,
++                                                  SourceLocation Loc);
 +bool diagnoseUnsupportedObjC3ObjCMethod(CodeGenModule &CGM,
 +                                       const ObjCMethodDecl *Method);
 +bool diagnoseUnsupportedObjC3ObjCContainer(CodeGenModule &CGM,
@@ -722,12 +1011,13 @@ diff --git a/clang/lib/CodeGen/CGObjC3Carriers.cpp b/clang/lib/CodeGen/CGObjC3Ca
 new file mode 100644
 --- /dev/null
 +++ b/clang/lib/CodeGen/CGObjC3Carriers.cpp
-@@ -0,0 +1,337 @@
+@@ -0,0 +1,783 @@
 +//===--- CGObjC3Carriers.cpp - ObjC3 carrier CodeGen adapter ----*- C++ -*-===//
 +//
 +//===----------------------------------------------------------------------===//
 +
 +#include "CGObjC3Carriers.h"
++#include "CGObjC3ResultExpr.h"
 +#include "CGRecordLayout.h"
 +#include "CodeGenFunction.h"
 +#include "CodeGenModule.h"
@@ -735,9 +1025,12 @@ new file mode 100644
 +#include "clang/AST/CanonicalType.h"
 +#include "clang/AST/Decl.h"
 +#include "clang/AST/DeclCXX.h"
++#include "clang/AST/Expr.h"
++#include "clang/AST/TypeLoc.h"
 +#include "clang/AST/Type.h"
 +#include "clang/CodeGen/CGFunctionInfo.h"
 +#include "llvm/ADT/SmallPtrSet.h"
++#include "llvm/IR/Constants.h"
 +#include "llvm/IR/DerivedTypes.h"
 +
 +using namespace clang;
@@ -908,25 +1201,467 @@ new file mode 100644
 +llvm::Value *CodeGen::emitObjC3CarrierLoadTag(CodeGenFunction &CGF,
 +                                              Address CarrierStorage,
 +                                              QualType CarrierType,
-+                                              SourceLocation Loc) {
++                                              SourceLocation Loc,
++                                              bool IsVolatile) {
 +  Address Tag = getObjC3CarrierTagAddress(CGF, CarrierStorage, CarrierType);
 +  if (!Tag.isValid())
 +    return nullptr;
-+  return CGF.EmitLoadOfScalar(Tag, /*Volatile=*/false, CGF.getContext().BoolTy,
-+                              Loc);
++  return CGF.EmitLoadOfScalar(Tag, IsVolatile, CGF.getContext().BoolTy, Loc);
 +}
 +
 +bool CodeGen::emitObjC3CarrierStoreTag(CodeGenFunction &CGF,
 +                                       Address CarrierStorage,
 +                                       QualType CarrierType,
 +                                       llvm::Value *TagValue,
-+                                       bool IsInitialization) {
++                                      bool IsInitialization,
++                                      bool IsVolatile) {
 +  Address Tag = getObjC3CarrierTagAddress(CGF, CarrierStorage, CarrierType);
 +  if (!Tag.isValid() || !TagValue)
 +    return false;
-+  CGF.EmitStoreOfScalar(TagValue, Tag, /*Volatile=*/false,
++  CGF.EmitStoreOfScalar(TagValue, Tag, IsVolatile,
 +                        CGF.getContext().BoolTy, AlignmentSource::Type,
 +                        IsInitialization);
++  return true;
++}
++
++// H4 OPTIONAL EXPR LOWERING BEGIN.
++bool CodeGen::emitObjC3OptionalAggregateExpr(
++    CodeGenFunction &CGF, const ObjC3OptionalExpr &E, Address Destination,
++    bool DestinationIsIgnored, bool DestinationIsVolatile) {
++  const QualType CarrierType = E.getCarrierType();
++  const bool IsNone = E.getKind() == ObjC3OptionalExpr::Kind::None;
++  const bool IsSome = E.getKind() == ObjC3OptionalExpr::Kind::Some;
++  if (!IsNone && !IsSome)
++    return false;
++
++  if (!supportsPlainObjC3CarrierStorageLifetime(CGF.CGM, CarrierType)) {
++    diagnoseUnsupportedObjC3CarrierOperation(
++        CGF.CGM, E.getKeywordLoc(), CarrierType,
++        IsSome ? "Some construction" : "None construction");
++    return true;
++  }
++
++  // A discarded Some still evaluates its payload exactly once, including a
++  // void side-effect expression, but needs no Optional storage.
++  if (DestinationIsIgnored) {
++    if (IsSome && E.getPayload())
++      (void)CGF.EmitAnyExpr(E.getPayload(), AggValueSlot::ignored(),
++                            /*ignoreResult=*/true);
++    return true;
++  }
++
++  ObjC3CarrierStorageLayout Layout;
++  if (!Destination.isValid() ||
++      !getObjC3CarrierStorageLayout(CGF.CGM, CarrierType, Layout) ||
++      Destination.getElementType() != Layout.StorageType) {
++    diagnoseUnsupportedObjC3CarrierOperation(
++        CGF.CGM, E.getKeywordLoc(), CarrierType,
++        "aggregate storage construction");
++    return true;
++  }
++
++  if (IsSome) {
++    Expr *Payload = E.getPayload();
++    TypeSourceInfo *PayloadInfo = E.getPayloadTypeInfo();
++    if (!Payload || !PayloadInfo) {
++      diagnoseUnsupportedObjC3CarrierOperation(
++          CGF.CGM, E.getKeywordLoc(), CarrierType,
++          "Some payload construction");
++      return true;
++    }
++
++    QualType PayloadType = PayloadInfo->getType();
++    if (PayloadType->isVoidType()) {
++      // The tag is the only representation field for Optional<void>. Evaluate
++      // before setting it so a throwing/side-effecting expression is once-only.
++      (void)CGF.EmitAnyExpr(Payload, AggValueSlot::ignored(),
++                            /*ignoreResult=*/true);
++    } else {
++      Address PayloadStorage = getObjC3CarrierPayloadAddress(
++          CGF, Destination, CarrierType, ObjC3CarrierPayloadArm::Value);
++      if (!PayloadStorage.isValid()) {
++        diagnoseUnsupportedObjC3CarrierOperation(
++            CGF.CGM, E.getKeywordLoc(), CarrierType,
++            "Some payload storage");
++        return true;
++      }
++
++      // The Sema child is already copy-initialized to T. Emit it directly into
++      // the selected hidden union arm; never load/copy the enclosing record.
++      // EmitAnyExprToMem reconstructs scalar LValues from the expression type,
++      // which drops qualifiers supplied only by a volatile carrier destination.
++      // Store scalar children explicitly so both payload and carrier volatility
++      // survive, while evaluating the child exactly once.
++      const bool PayloadIsVolatile =
++          DestinationIsVolatile || PayloadType.isVolatileQualified();
++      if (PayloadType->isScalarType()) {
++        llvm::Value *Value = CGF.EmitScalarExpr(Payload);
++        CGF.EmitStoreOfScalar(Value, PayloadStorage, PayloadIsVolatile,
++                              PayloadType, AlignmentSource::Type,
++                              /*isInit=*/true);
++      } else {
++        Qualifiers PayloadQualifiers = PayloadType.getQualifiers();
++        if (DestinationIsVolatile)
++          PayloadQualifiers.addVolatile();
++        CGF.EmitAnyExprToMem(Payload, PayloadStorage, PayloadQualifiers,
++                             /*IsInit=*/true);
++      }
++    }
++  }
++
++  // Presence is committed only after successful payload initialization.
++  // None writes false and never touches the inactive union storage.
++  if (!emitObjC3CarrierStoreTag(CGF, Destination, CarrierType,
++                                CGF.Builder.getInt1(IsSome),
++                                /*IsInitialization=*/true,
++                                DestinationIsVolatile)) {
++    diagnoseUnsupportedObjC3CarrierOperation(
++        CGF.CGM, E.getKeywordLoc(), CarrierType,
++        "discriminant initialization");
++  }
++  return true;
++}
++
++llvm::Value *CodeGen::emitObjC3OptionalHasValueExpr(
++    CodeGenFunction &CGF, const ObjC3OptionalExpr &E) {
++  QualType CarrierType = E.getCarrierType();
++  auto UndefBool = [&]() -> llvm::Value * {
++    return llvm::PoisonValue::get(CGF.ConvertType(E.getType()));
++  };
++
++  if (!supportsPlainObjC3CarrierStorageLifetime(CGF.CGM, CarrierType)) {
++    diagnoseUnsupportedObjC3CarrierOperation(
++        CGF.CGM, E.getKeywordLoc(), CarrierType, "hasValue query");
++    return UndefBool();
++  }
++
++  Expr *Operand = E.getPayload();
++  if (!Operand) {
++    diagnoseUnsupportedObjC3CarrierOperation(
++        CGF.CGM, E.getKeywordLoc(), CarrierType, "hasValue operand");
++    return UndefBool();
++  }
++
++  Address Storage = Address::invalid();
++  if (Operand->isGLValue()) {
++    // Reading a tag from an Optional glvalue is a borrow, not a copy or move.
++    Storage = CGF.EmitLValue(Operand).getAddress();
++  } else {
++    // Materialize an Optional rvalue once, then inspect only the tag. This
++    // avoids duplicating calls, side effects, and temporary cleanup.
++    Storage = CGF.CreateMemTemp(CarrierType, "objc3.optional.hasvalue");
++    CGF.EmitAnyExprToMem(Operand, Storage, Qualifiers(), /*IsInit=*/true);
++  }
++
++  llvm::Value *Tag = emitObjC3CarrierLoadTag(
++      CGF, Storage, CarrierType, E.getExprLoc(),
++      Operand->getType().isVolatileQualified());
++  if (!Tag) {
++    diagnoseUnsupportedObjC3CarrierOperation(
++        CGF.CGM, E.getKeywordLoc(), CarrierType, "hasValue tag read");
++    return UndefBool();
++  }
++  return Tag;
++}
++// H4 OPTIONAL EXPR LOWERING END.
++
++namespace {
++bool supportsOptionalCopyPayload(CodeGenModule &CGM, QualType PayloadType,
++                                 unsigned Depth = 0) {
++  if (Depth > 64 || PayloadType.isNull())
++    return false;
++  ASTContext &Ctx = CGM.getContext();
++  QualType Canonical = Ctx.getCanonicalType(PayloadType);
++  const Type *Ty = Canonical.getTypePtr();
++  if (Ty->isVoidType())
++    return true;
++  if (const auto *Optional = dyn_cast<ObjC3OptionalType>(Ty)) {
++    ObjC3CarrierStorageLayout Layout;
++    if (!getObjC3CarrierStorageLayout(CGM, Canonical, Layout))
++      return false;
++    auto Info = Ctx.getObjC3CarrierRepresentationType(Canonical);
++    return !Info.ValueField ||
++           supportsOptionalCopyPayload(CGM, Optional->getElementType(),
++                                       Depth + 1);
++  }
++  if (const auto *Result = dyn_cast<ObjC3ResultType>(Ty)) {
++    ObjC3CarrierStorageLayout Layout;
++    if (!getObjC3CarrierStorageLayout(CGM, Canonical, Layout))
++      return false;
++    return supportsOptionalCopyPayload(CGM, Result->getSuccessType(),
++                                       Depth + 1) &&
++           supportsOptionalCopyPayload(CGM, Result->getErrorType(),
++                                       Depth + 1);
++  }
++  // Ordinary Clang aggregate copying is valid only when the leaf contains no
++  // carrier subobject. Such subobjects must be recursively transferred by tag.
++  return !containsNestedCarrierValue(Ctx, Canonical) &&
++         hasOnlyTrivialCallABILeaves(Ctx, Canonical);
++}
++
++bool emitOptionalCopyImpl(CodeGenFunction &CGF, QualType CarrierType,
++                          Address Destination, Address Source,
++                          bool DestinationIsVolatile,
++                          bool SourceIsVolatile, bool IsInitialization,
++                          SourceLocation Loc, unsigned Depth);
++
++bool emitOptionalCopyPayload(CodeGenFunction &CGF, QualType PayloadType,
++                             Address Destination, Address Source,
++                             bool DestinationIsVolatile,
++                             bool SourceIsVolatile, bool IsInitialization,
++                             SourceLocation Loc, unsigned Depth) {
++  if (Depth > 64 || PayloadType.isNull())
++    return false;
++  ASTContext &Ctx = CGF.getContext();
++  QualType Canonical = Ctx.getCanonicalType(PayloadType);
++  const Type *Ty = Canonical.getTypePtr();
++  if (Ty->isVoidType())
++    return true;
++
++  if (isa<ObjC3OptionalType>(Ty))
++    return emitOptionalCopyImpl(CGF, Canonical, Destination, Source,
++                                DestinationIsVolatile, SourceIsVolatile,
++                                IsInitialization, Loc, Depth);
++  if (isa<ObjC3ResultType>(Ty))
++    return emitObjC3ResultCopy(CGF, Canonical, Destination, Source,
++                               DestinationIsVolatile, SourceIsVolatile,
++                               IsInitialization, Loc);
++
++  const bool SrcVolatile = SourceIsVolatile || PayloadType.isVolatileQualified();
++  const bool DstVolatile = DestinationIsVolatile || PayloadType.isVolatileQualified();
++  if (Ty->isScalarType()) {
++    llvm::Value *Value =
++        CGF.EmitLoadOfScalar(Source, SrcVolatile, PayloadType, Loc);
++    if (!Value)
++      return false;
++    CGF.EmitStoreOfScalar(Value, Destination, DstVolatile, PayloadType,
++                          AlignmentSource::Type, IsInitialization);
++    return true;
++  }
++
++  if (!Ty->isAggregateType() ||
++      containsNestedCarrierValue(Ctx, PayloadType))
++    return false;
++  const uint64_t Size = Ctx.getTypeSizeInChars(PayloadType).getQuantity();
++  // The leaf is an ordinary C aggregate, not a carrier or C++ object. memmove
++  // handles exact-self/overlap safely; the enclosing carrier is never copied.
++  CGF.Builder.CreateMemMove(Destination, Source, CGF.Builder.getInt64(Size),
++                            DstVolatile || SrcVolatile);
++  return true;
++}
++
++bool validateCarrierCopyStorageImpl(CodeGenFunction &CGF, QualType CarrierType,
++                                    Address Destination, Address Source,
++                                    unsigned Depth) {
++  if (Depth > 64)
++    return false;
++  ObjC3CarrierStorageLayout Layout;
++  if (!getObjC3CarrierStorageLayout(CGF.CGM, CarrierType, Layout) ||
++      !Destination.isValid() || !Source.isValid() || Destination.isSigned() ||
++      Source.isSigned() || Destination.getElementType() != Layout.StorageType ||
++      Source.getElementType() != Layout.StorageType)
++    return false;
++  const Type *Canonical =
++      CGF.getContext().getCanonicalType(CarrierType).getTypePtr();
++  auto Info = CGF.getContext().getObjC3CarrierRepresentationType(CarrierType);
++  const auto *Optional = dyn_cast<ObjC3OptionalType>(Canonical);
++  const auto *Result = dyn_cast<ObjC3ResultType>(Canonical);
++  if (!Optional && !Result)
++    return false;
++
++  auto ValidateArm = [&](FieldDecl *Field, QualType PayloadType,
++                         ObjC3CarrierPayloadArm Arm) {
++    if (PayloadType->isVoidType())
++      return Field == nullptr;
++    if (!Field ||
++        !CGF.getContext().hasSameType(Field->getType(), PayloadType))
++      return false;
++    Address SrcPayload =
++        getObjC3CarrierPayloadAddress(CGF, Source, CarrierType, Arm);
++    Address DstPayload =
++        getObjC3CarrierPayloadAddress(CGF, Destination, CarrierType, Arm);
++    if (!SrcPayload.isValid() || !DstPayload.isValid() ||
++        SrcPayload.getElementType() != CGF.ConvertTypeForMem(PayloadType) ||
++        DstPayload.getElementType() != CGF.ConvertTypeForMem(PayloadType))
++      return false;
++    const Type *PayloadCanonical =
++        CGF.getContext().getCanonicalType(PayloadType).getTypePtr();
++    if (isa<ObjC3OptionalType>(PayloadCanonical) ||
++        isa<ObjC3ResultType>(PayloadCanonical))
++      return validateCarrierCopyStorageImpl(CGF, PayloadType, DstPayload,
++                                            SrcPayload, Depth + 1);
++    return supportsOptionalCopyPayload(CGF.CGM, PayloadType, Depth + 1);
++  };
++
++  if (Optional)
++    return ValidateArm(Info.ValueField, Optional->getElementType(),
++                       ObjC3CarrierPayloadArm::Value);
++  return ValidateArm(Info.SuccessField, Result->getSuccessType(),
++                     ObjC3CarrierPayloadArm::Success) &&
++         ValidateArm(Info.ErrorField, Result->getErrorType(),
++                     ObjC3CarrierPayloadArm::Error);
++}
++
++bool emitOptionalCopyImpl(CodeGenFunction &CGF, QualType CarrierType,
++                          Address Destination, Address Source,
++                          bool DestinationIsVolatile,
++                          bool SourceIsVolatile, bool IsInitialization,
++                          SourceLocation Loc, unsigned Depth) {
++  if (Depth > 64)
++    return false;
++  ObjC3CarrierStorageLayout Layout;
++  if (!getObjC3CarrierStorageLayout(CGF.CGM, CarrierType, Layout) ||
++      !Destination.isValid() || !Source.isValid() || Destination.isSigned() ||
++      Source.isSigned() || Destination.getElementType() != Layout.StorageType ||
++      Source.getElementType() != Layout.StorageType)
++    return false;
++
++  ASTContext &Ctx = CGF.getContext();
++  const Type *Canonical = Ctx.getCanonicalType(CarrierType).getTypePtr();
++  const auto *Optional = dyn_cast<ObjC3OptionalType>(Canonical);
++  if (!Optional ||
++      !supportsOptionalCopyPayload(CGF.CGM, Optional->getElementType(), Depth))
++    return false;
++  auto Info = Ctx.getObjC3CarrierRepresentationType(CarrierType);
++  Address SrcPayload = Address::invalid();
++  Address DstPayload = Address::invalid();
++  if (Info.ValueField) {
++    SrcPayload = getObjC3CarrierPayloadAddress(
++        CGF, Source, CarrierType, ObjC3CarrierPayloadArm::Value);
++    DstPayload = getObjC3CarrierPayloadAddress(
++        CGF, Destination, CarrierType, ObjC3CarrierPayloadArm::Value);
++    if (!SrcPayload.isValid() || !DstPayload.isValid())
++      return false;
++  }
++
++  llvm::Value *Present = emitObjC3CarrierLoadTag(
++      CGF, Source, CarrierType, Loc, SourceIsVolatile);
++  if (!Present)
++    return false;
++  llvm::BasicBlock *CopyPayload =
++      CGF.createBasicBlock("objc3.optional.copy.present");
++  llvm::BasicBlock *CopyAbsent =
++      CGF.createBasicBlock("objc3.optional.copy.absent");
++  llvm::BasicBlock *Continue =
++      CGF.createBasicBlock("objc3.optional.copy.cont");
++  CGF.Builder.CreateCondBr(Present, CopyPayload, CopyAbsent);
++
++  CGF.EmitBlock(CopyPayload);
++  if (Info.ValueField &&
++      !emitOptionalCopyPayload(CGF, Optional->getElementType(), DstPayload,
++                               SrcPayload, DestinationIsVolatile,
++                               SourceIsVolatile, IsInitialization, Loc,
++                               Depth + 1))
++    return false;
++  if (!emitObjC3CarrierStoreTag(CGF, Destination, CarrierType,
++                                CGF.Builder.getInt1(true), IsInitialization,
++                                DestinationIsVolatile))
++    return false;
++  CGF.Builder.CreateBr(Continue);
++
++  CGF.EmitBlock(CopyAbsent);
++  if (!emitObjC3CarrierStoreTag(CGF, Destination, CarrierType,
++                                CGF.Builder.getInt1(false), IsInitialization,
++                                DestinationIsVolatile))
++    return false;
++  CGF.Builder.CreateBr(Continue);
++  CGF.EmitBlock(Continue);
++  return true;
++}
++} // namespace
++
++bool CodeGen::supportsObjC3CarrierCopyPayload(CodeGenModule &CGM,
++                                              QualType PayloadType,
++                                              unsigned Depth) {
++  return supportsOptionalCopyPayload(CGM, PayloadType, Depth);
++}
++
++bool CodeGen::validateObjC3CarrierCopyStorage(CodeGenFunction &CGF,
++                                               QualType CarrierType,
++                                               Address Destination,
++                                               Address Source,
++                                               unsigned Depth) {
++  return validateCarrierCopyStorageImpl(CGF, CarrierType, Destination, Source,
++                                        Depth);
++}
++
++bool CodeGen::emitObjC3CarrierCopyPayload(
++    CodeGenFunction &CGF, QualType PayloadType, Address Destination,
++    Address Source, bool DestinationIsVolatile, bool SourceIsVolatile,
++    bool IsInitialization, SourceLocation Loc, unsigned Depth) {
++  if (Depth > 64 || PayloadType.isNull())
++    return false;
++  ASTContext &Ctx = CGF.getContext();
++  QualType Canonical = Ctx.getCanonicalType(PayloadType);
++  const Type *Ty = Canonical.getTypePtr();
++  if (Ty->isVoidType())
++    return true;
++  if (isa<ObjC3OptionalType>(Ty))
++    return emitOptionalCopyImpl(CGF, Canonical, Destination, Source,
++                                DestinationIsVolatile, SourceIsVolatile,
++                                IsInitialization, Loc, Depth);
++  if (isa<ObjC3ResultType>(Ty))
++    return emitObjC3ResultCopy(CGF, Canonical, Destination, Source,
++                               DestinationIsVolatile, SourceIsVolatile,
++                               IsInitialization, Loc);
++  if (!supportsOptionalCopyPayload(CGF.CGM, PayloadType, Depth))
++    return false;
++  const bool SrcVolatile = SourceIsVolatile || PayloadType.isVolatileQualified();
++  const bool DstVolatile = DestinationIsVolatile || PayloadType.isVolatileQualified();
++  if (Ty->isScalarType()) {
++    llvm::Value *Value =
++        CGF.EmitLoadOfScalar(Source, SrcVolatile, PayloadType, Loc);
++    if (!Value)
++      return false;
++    CGF.EmitStoreOfScalar(Value, Destination, DstVolatile, PayloadType,
++                          AlignmentSource::Type, IsInitialization);
++    return true;
++  }
++  if (!Ty->isAggregateType() ||
++      containsNestedCarrierValue(Ctx, PayloadType))
++    return false;
++  const uint64_t Size = Ctx.getTypeSizeInChars(PayloadType).getQuantity();
++  CGF.Builder.CreateMemMove(Destination, Source, CGF.Builder.getInt64(Size),
++                            DstVolatile || SrcVolatile);
++  return true;
++}
++
++bool CodeGen::emitObjC3OptionalCopy(CodeGenFunction &CGF,
++                                    QualType CarrierType,
++                                    Address Destination, Address Source,
++                                    bool DestinationIsVolatile,
++                                    bool SourceIsVolatile,
++                                    bool IsInitialization,
++                                    SourceLocation Loc) {
++  ASTContext &Ctx = CGF.getContext();
++  const Type *Canonical = Ctx.getCanonicalType(CarrierType).getTypePtr();
++  const auto *Optional = dyn_cast<ObjC3OptionalType>(Canonical);
++  if (!Optional ||
++      !supportsPlainObjC3CarrierStorageLifetime(CGF.CGM, CarrierType) ||
++      !supportsOptionalCopyPayload(CGF.CGM, Optional->getElementType()) ||
++      !validateObjC3CarrierCopyStorage(CGF, CarrierType, Destination, Source,
++                                       0)) {
++    diagnoseUnsupportedObjC3CarrierOperation(CGF.CGM, Loc, CarrierType,
++                                             "Optional copy");
++    return true;
++  }
++  // Snapshot the complete active tree before writing any destination field.
++  // This preserves source reads under exact self-copy and overlapping ranges,
++  // while leaving every inactive temporary payload uninitialized and unread.
++  QualType SnapshotType = Ctx.getCanonicalType(CarrierType).getUnqualifiedType();
++  Address Snapshot = CGF.CreateMemTemp(SnapshotType,
++                                       "objc3.optional.copy.snapshot");
++  if (!emitOptionalCopyImpl(CGF, SnapshotType, Snapshot, Source,
++                            /*DestinationIsVolatile=*/false,
++                            SourceIsVolatile, /*IsInitialization=*/true, Loc,
++                            0) ||
++      !emitOptionalCopyImpl(CGF, CarrierType, Destination, Snapshot,
++                            DestinationIsVolatile,
++                            /*SourceIsVolatile=*/false, IsInitialization, Loc,
++                            0))
++    diagnoseUnsupportedObjC3CarrierOperation(CGF.CGM, Loc, CarrierType,
++                                             "Optional copy storage");
++  // true means the ordinary whole-carrier memcpy fallback is always forbidden.
 +  return true;
 +}
 +
@@ -954,7 +1689,7 @@ new file mode 100644
 +  QualType ProbeArgs[] = {Info.Type};
 +  QualType ProbeType = Ctx.getFunctionType(Info.Type, ProbeArgs,
 +                                           FunctionProtoType::ExtProtoInfo());
-+  const auto *Proto = dyn_cast<FunctionProtoType>(
++  auto *Proto = dyn_cast<FunctionProtoType>(
 +      Ctx.getCanonicalType(ProbeType).getTypePtr());
 +  if (!Proto)
 +    return false;
@@ -1064,7 +1799,7 @@ diff --git a/clang/lib/CodeGen/CGObjC3Carriers.h b/clang/lib/CodeGen/CGObjC3Carr
 new file mode 100644
 --- /dev/null
 +++ b/clang/lib/CodeGen/CGObjC3Carriers.h
-@@ -0,0 +1,103 @@
+@@ -0,0 +1,146 @@
 +//===--- CGObjC3Carriers.h - ObjC3 carrier CodeGen adapter ------*- C++ -*-===//
 +//
 +// Staged adapter for canonical ObjC3 Optional/Result storage.  This header is
@@ -1087,6 +1822,7 @@ new file mode 100644
 +namespace clang {
 +class QualType;
 +class SourceLocation;
++class ObjC3OptionalExpr;
 +namespace CodeGen {
 +class CodeGenModule;
 +class CodeGenFunction;
@@ -1125,10 +1861,52 @@ new file mode 100644
 +                                      ObjC3CarrierPayloadArm Arm);
 +llvm::Value *emitObjC3CarrierLoadTag(CodeGenFunction &CGF,
 +                                     Address CarrierStorage,
-+                                     QualType CarrierType, SourceLocation Loc);
++                                     QualType CarrierType, SourceLocation Loc,
++                                     bool IsVolatile = false);
 +bool emitObjC3CarrierStoreTag(CodeGenFunction &CGF, Address CarrierStorage,
 +                              QualType CarrierType, llvm::Value *TagValue,
-+                              bool IsInitialization);
++                              bool IsInitialization,
++                              bool IsVolatile = false);
++
++/// Emit the first qualified Optional expression subset. Aggregate construction
++/// accepts only payloads whose storage/lifetime facts are already proven plain;
++/// the caller must not fall back to an ordinary aggregate copy on false.
++bool emitObjC3OptionalAggregateExpr(CodeGenFunction &CGF,
++                                    const ObjC3OptionalExpr &E,
++                                    Address Destination,
++                                    bool DestinationIsIgnored,
++                                    bool DestinationIsVolatile);
++
++/// Evaluate HasValue's carrier operand once, then read only the explicit tag.
++/// Unsupported payload ownership is diagnosed before any generic copy path.
++llvm::Value *emitObjC3OptionalHasValueExpr(CodeGenFunction &CGF,
++                                           const ObjC3OptionalExpr &E);
++
++/// Copy an initialized Optional using only its discriminant and active
++/// payload. Sema must already have admitted this copy operation. This helper
++/// performs no move, destruction, or by-value call-ABI adaptation. The caller
++/// must not fall back to whole-carrier copying when it returns true.
++bool emitObjC3OptionalCopy(CodeGenFunction &CGF, QualType CarrierType,
++                           Address Destination, Address Source,
++                           bool DestinationIsVolatile,
++                           bool SourceIsVolatile, bool IsInitialization,
++                           SourceLocation Loc);
++
++/// Shared private payload-copy checks used by Optional and Result transfer.
++/// Nested carriers recurse through the corresponding copy helper; aggregates
++/// containing carrier subobjects remain unsupported by this packet.
++bool supportsObjC3CarrierCopyPayload(CodeGenModule &CGM, QualType PayloadType,
++                                     unsigned Depth = 0);
++bool validateObjC3CarrierCopyStorage(CodeGenFunction &CGF,
++                                     QualType CarrierType,
++                                     Address Destination, Address Source,
++                                     unsigned Depth = 0);
++bool emitObjC3CarrierCopyPayload(CodeGenFunction &CGF, QualType PayloadType,
++                                 Address Destination, Address Source,
++                                 bool DestinationIsVolatile,
++                                 bool SourceIsVolatile,
++                                 bool IsInitialization, SourceLocation Loc,
++                                 unsigned Depth = 0);
 +
 +/// Compute the target's ordinary C argument and result classifications for a
 +/// one-argument probe whose argument and result are the carrier record. This
@@ -1168,6 +1946,629 @@ new file mode 100644
 +} // namespace clang
 +
 +#endif
+diff --git a/clang/lib/CodeGen/CGObjC3ResultExpr.cpp b/clang/lib/CodeGen/CGObjC3ResultExpr.cpp
+new file mode 100644
+--- /dev/null
++++ b/clang/lib/CodeGen/CGObjC3ResultExpr.cpp
+@@ -0,0 +1,273 @@
++//===--- CGObjC3ResultExpr.cpp - Private Result expression lowering
++//---------===//
++// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
++
++#include "CGObjC3ResultExpr.h"
++#include "CGObjC3Carriers.h"
++#include "CodeGenFunction.h"
++#include "CodeGenModule.h"
++#include "clang/AST/Expr.h"
++#include "clang/AST/Type.h"
++#include "llvm/IR/Constants.h"
++
++using namespace clang;
++using namespace clang::CodeGen;
++
++bool CodeGen::emitObjC3ResultAggregateExpr(CodeGenFunction &CGF,
++                                           const ObjC3ResultExpr &E,
++                                           Address Destination,
++                                           bool DestinationIsIgnored,
++                                           bool DestinationIsVolatile) {
++  const bool IsOk = E.getKind() == ObjC3ResultExpr::Kind::Ok;
++  const bool IsErr = E.getKind() == ObjC3ResultExpr::Kind::Err;
++  if (!IsOk && !IsErr)
++    return false;
++
++  const QualType CarrierType = E.getCarrierType();
++  ASTContext &Ctx = CGF.getContext();
++  const Type *CanonicalCarrier = Ctx.getCanonicalType(CarrierType).getTypePtr();
++  const auto *Result = dyn_cast<ObjC3ResultType>(CanonicalCarrier);
++  const auto Representation =
++      Ctx.getObjC3CarrierRepresentationType(CarrierType);
++  if (!Result ||
++      Representation.State !=
++          ObjC3CarrierRepresentationInfo::Status::Materialized ||
++      !Representation.Record || !Representation.TagField) {
++    diagnoseUnsupportedObjC3CarrierOperation(
++        CGF.CGM, E.getKeywordLoc(), CarrierType,
++        "unmaterialized Result construction");
++    return true;
++  }
++  if (!supportsPlainObjC3CarrierStorageLifetime(CGF.CGM, CarrierType)) {
++    diagnoseUnsupportedObjC3CarrierOperation(
++        CGF.CGM, E.getKeywordLoc(), CarrierType,
++        IsOk ? "Ok construction" : "Err construction");
++    return true;
++  }
++  Expr *Payload = E.getPayload();
++  TypeSourceInfo *PayloadInfo =
++      IsOk ? E.getSuccessTypeInfo() : E.getErrorTypeInfo();
++  if (!Payload || !PayloadInfo) {
++    diagnoseUnsupportedObjC3CarrierOperation(
++        CGF.CGM, E.getKeywordLoc(), CarrierType, "Result payload construction");
++    return true;
++  }
++  QualType ExpectedPayloadType =
++      IsOk ? Result->getSuccessType() : Result->getErrorType();
++  FieldDecl *SelectedPayloadField =
++      IsOk ? Representation.SuccessField : Representation.ErrorField;
++  if (!Ctx.hasSameType(PayloadInfo->getType(), ExpectedPayloadType) ||
++      (ExpectedPayloadType->isVoidType() ? SelectedPayloadField != nullptr
++                                         : !SelectedPayloadField) ||
++      (SelectedPayloadField &&
++       !Ctx.hasSameType(SelectedPayloadField->getType(),
++                        ExpectedPayloadType))) {
++    diagnoseUnsupportedObjC3CarrierOperation(
++        CGF.CGM, E.getKeywordLoc(), CarrierType,
++        "mismatched Result active payload");
++    return true;
++  }
++
++  // Discarding the constructed value still evaluates the selected payload once.
++  if (DestinationIsIgnored) {
++    (void)CGF.EmitAnyExpr(Payload, AggValueSlot::ignored(), true);
++    return true;
++  }
++  ObjC3CarrierStorageLayout Layout;
++  if (!Destination.isValid() ||
++      !getObjC3CarrierStorageLayout(CGF.CGM, CarrierType, Layout) ||
++      Destination.getElementType() != Layout.StorageType) {
++    diagnoseUnsupportedObjC3CarrierOperation(
++        CGF.CGM, E.getKeywordLoc(), CarrierType, "Result storage construction");
++    return true;
++  }
++
++  QualType PayloadType = PayloadInfo->getType();
++  if (PayloadType->isVoidType()) {
++    (void)CGF.EmitAnyExpr(Payload, AggValueSlot::ignored(), true);
++  } else {
++    Address PayloadStorage = getObjC3CarrierPayloadAddress(
++        CGF, Destination, CarrierType,
++        IsOk ? ObjC3CarrierPayloadArm::Success : ObjC3CarrierPayloadArm::Error);
++    if (!PayloadStorage.isValid()) {
++      diagnoseUnsupportedObjC3CarrierOperation(CGF.CGM, E.getKeywordLoc(),
++                                               CarrierType,
++                                               "Result active payload storage");
++      return true;
++    }
++    // Match Optional lowering: EmitAnyExprToMem loses qualifiers that exist
++    // only on the carrier destination for scalar expressions.
++    const bool PayloadIsVolatile =
++        DestinationIsVolatile || PayloadType.isVolatileQualified();
++    if (PayloadType->isScalarType()) {
++      llvm::Value *Value = CGF.EmitScalarExpr(Payload);
++      CGF.EmitStoreOfScalar(Value, PayloadStorage, PayloadIsVolatile,
++                            PayloadType, AlignmentSource::Type,
++                            /*isInit=*/true);
++    } else {
++      Qualifiers Quals = PayloadType.getQualifiers();
++      if (DestinationIsVolatile)
++        Quals.addVolatile();
++      CGF.EmitAnyExprToMem(Payload, PayloadStorage, Quals, true);
++    }
++  }
++
++  // Tag true denotes success; an error with a zero/false/void payload is an
++  // actual error. Commit the tag after initialization of only its active arm.
++  if (!emitObjC3CarrierStoreTag(CGF, Destination, CarrierType,
++                                CGF.Builder.getInt1(IsOk), true,
++                                DestinationIsVolatile)) {
++    diagnoseUnsupportedObjC3CarrierOperation(
++        CGF.CGM, E.getKeywordLoc(), CarrierType, "Result tag initialization");
++  }
++  return true;
++}
++
++llvm::Value *CodeGen::emitObjC3ResultIsOkExpr(CodeGenFunction &CGF,
++                                              const ObjC3ResultExpr &E) {
++  QualType CarrierType = E.getCarrierType();
++  auto Fail = [&](const char *Operation) -> llvm::Value * {
++    diagnoseUnsupportedObjC3CarrierOperation(CGF.CGM, E.getKeywordLoc(),
++                                             CarrierType, Operation);
++    return llvm::PoisonValue::get(CGF.ConvertType(E.getType()));
++  };
++  const Type *CanonicalCarrier =
++      CGF.getContext().getCanonicalType(CarrierType).getTypePtr();
++  if (!isa<ObjC3ResultType>(CanonicalCarrier))
++    return Fail("non-Result IsOk carrier");
++  if (!supportsPlainObjC3CarrierStorageLifetime(CGF.CGM, CarrierType))
++    return Fail("IsOk query");
++  Expr *Operand = E.getPayload();
++  if (!Operand)
++    return Fail("IsOk operand");
++
++  Address Storage = Address::invalid();
++  if (Operand->isGLValue()) {
++    Storage = CGF.EmitLValue(Operand).getAddress();
++  } else {
++    Storage = CGF.CreateMemTemp(CarrierType, "objc3.result.isok");
++    Qualifiers TempQualifiers;
++    if (Operand->getType().isVolatileQualified())
++      TempQualifiers.addVolatile();
++    CGF.EmitAnyExprToMem(Operand, Storage, TempQualifiers, true);
++  }
++  Address Tag = getObjC3CarrierTagAddress(CGF, Storage, CarrierType);
++  if (!Tag.isValid())
++    return Fail("IsOk tag read");
++  return CGF.EmitLoadOfScalar(Tag, Operand->getType().isVolatileQualified(),
++                              CGF.getContext().BoolTy, E.getExprLoc());
++}
++
++namespace {
++bool emitResultCopyImpl(CodeGenFunction &CGF, QualType CarrierType,
++                        Address Destination, Address Source,
++                        bool DestinationIsVolatile, bool SourceIsVolatile,
++                        bool IsInitialization, SourceLocation Loc) {
++  ObjC3CarrierStorageLayout Layout;
++  if (!getObjC3CarrierStorageLayout(CGF.CGM, CarrierType, Layout) ||
++      !Destination.isValid() || !Source.isValid() || Destination.isSigned() ||
++      Source.isSigned() || Destination.getElementType() != Layout.StorageType ||
++      Source.getElementType() != Layout.StorageType ||
++      !validateObjC3CarrierCopyStorage(CGF, CarrierType, Destination, Source))
++    return false;
++
++  ASTContext &Ctx = CGF.getContext();
++  const auto *Result = dyn_cast<ObjC3ResultType>(
++      Ctx.getCanonicalType(CarrierType).getTypePtr());
++  if (!Result)
++    return false;
++  auto Info = Ctx.getObjC3CarrierRepresentationType(CarrierType);
++  Address SrcSuccess = Address::invalid();
++  Address DstSuccess = Address::invalid();
++  Address SrcError = Address::invalid();
++  Address DstError = Address::invalid();
++  if (Info.SuccessField) {
++    SrcSuccess = getObjC3CarrierPayloadAddress(
++        CGF, Source, CarrierType, ObjC3CarrierPayloadArm::Success);
++    DstSuccess = getObjC3CarrierPayloadAddress(
++        CGF, Destination, CarrierType, ObjC3CarrierPayloadArm::Success);
++    if (!SrcSuccess.isValid() || !DstSuccess.isValid())
++      return false;
++  }
++  if (Info.ErrorField) {
++    SrcError = getObjC3CarrierPayloadAddress(
++        CGF, Source, CarrierType, ObjC3CarrierPayloadArm::Error);
++    DstError = getObjC3CarrierPayloadAddress(
++        CGF, Destination, CarrierType, ObjC3CarrierPayloadArm::Error);
++    if (!SrcError.isValid() || !DstError.isValid())
++      return false;
++  }
++
++  llvm::Value *IsOk = emitObjC3CarrierLoadTag(
++      CGF, Source, CarrierType, Loc, SourceIsVolatile);
++  if (!IsOk)
++    return false;
++  llvm::BasicBlock *CopySuccess =
++      CGF.createBasicBlock("objc3.result.copy.ok");
++  llvm::BasicBlock *CopyError =
++      CGF.createBasicBlock("objc3.result.copy.error");
++  llvm::BasicBlock *Continue = CGF.createBasicBlock("objc3.result.copy.cont");
++  CGF.Builder.CreateCondBr(IsOk, CopySuccess, CopyError);
++
++  CGF.EmitBlock(CopySuccess);
++  if (Info.SuccessField &&
++      !emitObjC3CarrierCopyPayload(
++          CGF, Result->getSuccessType(), DstSuccess, SrcSuccess,
++          DestinationIsVolatile, SourceIsVolatile, IsInitialization, Loc))
++    return false;
++  if (!emitObjC3CarrierStoreTag(CGF, Destination, CarrierType,
++                                CGF.Builder.getInt1(true), IsInitialization,
++                                DestinationIsVolatile))
++    return false;
++  CGF.Builder.CreateBr(Continue);
++
++  CGF.EmitBlock(CopyError);
++  if (Info.ErrorField &&
++      !emitObjC3CarrierCopyPayload(
++          CGF, Result->getErrorType(), DstError, SrcError,
++          DestinationIsVolatile, SourceIsVolatile, IsInitialization, Loc))
++    return false;
++  if (!emitObjC3CarrierStoreTag(CGF, Destination, CarrierType,
++                                CGF.Builder.getInt1(false), IsInitialization,
++                                DestinationIsVolatile))
++    return false;
++  CGF.Builder.CreateBr(Continue);
++  CGF.EmitBlock(Continue);
++  return true;
++}
++} // namespace
++
++bool CodeGen::emitObjC3ResultCopy(CodeGenFunction &CGF, QualType CarrierType,
++                                 Address Destination, Address Source,
++                                 bool DestinationIsVolatile,
++                                 bool SourceIsVolatile,
++                                 bool IsInitialization, SourceLocation Loc) {
++  ASTContext &Ctx = CGF.getContext();
++  const auto *Result = dyn_cast<ObjC3ResultType>(
++      Ctx.getCanonicalType(CarrierType).getTypePtr());
++  if (!Result ||
++      !supportsPlainObjC3CarrierStorageLifetime(CGF.CGM, CarrierType) ||
++      !supportsObjC3CarrierCopyPayload(CGF.CGM, Result->getSuccessType()) ||
++      !supportsObjC3CarrierCopyPayload(CGF.CGM, Result->getErrorType()) ||
++      !validateObjC3CarrierCopyStorage(CGF, CarrierType, Destination, Source)) {
++    diagnoseUnsupportedObjC3CarrierOperation(CGF.CGM, Loc, CarrierType,
++                                             "Result copy");
++    return true;
++  }
++
++  // Capture the complete active arm before touching the destination. This
++  // gives self/overlapping copies safe source-read ordering without copying
++  // either inactive union arm.
++  QualType SnapshotType = Ctx.getCanonicalType(CarrierType).getUnqualifiedType();
++  Address Snapshot = CGF.CreateMemTemp(SnapshotType,
++                                       "objc3.result.copy.snapshot");
++  if (!emitResultCopyImpl(CGF, SnapshotType, Snapshot, Source,
++                          /*DestinationIsVolatile=*/false, SourceIsVolatile,
++                          /*IsInitialization=*/true, Loc) ||
++      !emitResultCopyImpl(CGF, CarrierType, Destination, Snapshot,
++                          DestinationIsVolatile,
++                          /*SourceIsVolatile=*/false, IsInitialization, Loc))
++    diagnoseUnsupportedObjC3CarrierOperation(CGF.CGM, Loc, CarrierType,
++                                             "Result copy storage");
++  return true;
++}
+diff --git a/clang/lib/CodeGen/CGObjC3ResultExpr.h b/clang/lib/CodeGen/CGObjC3ResultExpr.h
+new file mode 100644
+--- /dev/null
++++ b/clang/lib/CodeGen/CGObjC3ResultExpr.h
+@@ -0,0 +1,32 @@
++//===--- CGObjC3ResultExpr.h - Private Result expression lowering
++//----------===//
++// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
++
++#ifndef LLVM_CLANG_LIB_CODEGEN_CGOBJC3RESULTEXPR_H
++#define LLVM_CLANG_LIB_CODEGEN_CGOBJC3RESULTEXPR_H
++
++#include "Address.h"
++#include "clang/AST/Type.h"
++#include "clang/Basic/SourceLocation.h"
++#include "clang/Basic/LLVM.h"
++
++namespace clang {
++class ObjC3ResultExpr;
++namespace CodeGen {
++class CodeGenFunction;
++
++bool emitObjC3ResultAggregateExpr(CodeGenFunction &CGF,
++                                  const ObjC3ResultExpr &E, Address Destination,
++                                  bool DestinationIsIgnored,
++                                  bool DestinationIsVolatile);
++llvm::Value *emitObjC3ResultIsOkExpr(CodeGenFunction &CGF,
++                                     const ObjC3ResultExpr &E);
++/// Copy a Result through its tag and only the selected active arm. Sema has
++/// already admitted the copy; this performs no Move or call-ABI adaptation.
++bool emitObjC3ResultCopy(CodeGenFunction &CGF, QualType CarrierType,
++                         Address Destination, Address Source,
++                         bool DestinationIsVolatile, bool SourceIsVolatile,
++                         bool IsInitialization, SourceLocation Loc);
++} // namespace CodeGen
++} // namespace clang
++#endif
+diff --git a/clang/test/ObjC3/CodeGen/Inputs/carrier-copy-adversarial-runtime.c b/clang/test/ObjC3/CodeGen/Inputs/carrier-copy-adversarial-runtime.c
+new file mode 100644
+--- /dev/null
++++ b/clang/test/ObjC3/CodeGen/Inputs/carrier-copy-adversarial-runtime.c
+@@ -0,0 +1,69 @@
++// Standalone runtime regression companion to carrier-copy-adversarial.c.
++// Nested payload-arm routing is checked structurally in the IR fixture because
++// this source subset exposes carrier tags but no payload-unwrapping operation.
++
++typedef __objc3_optional(int) OptionalInt;
++typedef __objc3_result(int, long long) PlainResult;
++typedef __objc3_result(OptionalInt, OptionalInt) InnerResult;
++typedef __objc3_result(InnerResult, OptionalInt) NestedResult;
++static int calls;
++static void side_effect(void) { ++calls; }
++static void copy_optional(OptionalInt *destination, const OptionalInt *source) {
++  *destination = *source;
++}
++static void copy_result(PlainResult *destination, const PlainResult *source) {
++  *destination = *source;
++}
++static void copy_nested_result(NestedResult *destination,
++                               const NestedResult *source) {
++  *destination = *source;
++}
++static void copy_volatile_optional(volatile OptionalInt *destination,
++                                   const volatile OptionalInt *source) {
++  *destination = *source;
++}
++static void copy_volatile_result(volatile PlainResult *destination,
++                                 const volatile PlainResult *source) {
++  *destination = *source;
++}
++
++int main(void) {
++  OptionalInt present = __objc3_some(int, 0);
++  OptionalInt absent = __objc3_none(int);
++  copy_optional(&present, &present);
++  copy_optional(&absent, &absent);
++  if (!__objc3_has_value(present) || __objc3_has_value(absent)) return 1;
++
++  PlainResult success = __objc3_ok(int, long long, 0);
++  PlainResult error = __objc3_err(int, long long, 0);
++  copy_result(&success, &success);
++  copy_result(&error, &error);
++  if (!__objc3_is_ok(success) || __objc3_is_ok(error)) return 2;
++
++  NestedResult nested = __objc3_ok(
++      InnerResult, OptionalInt,
++      __objc3_err(OptionalInt, OptionalInt, __objc3_some(int, 0)));
++  copy_nested_result(&nested, &nested);
++  if (!__objc3_is_ok(nested)) return 9;
++
++  volatile OptionalInt volatile_present = __objc3_some(int, 0);
++  volatile OptionalInt volatile_destination = __objc3_none(int);
++  copy_volatile_optional(&volatile_destination, &volatile_present);
++  if (!__objc3_has_value(volatile_destination)) return 3;
++  copy_volatile_optional(&volatile_destination, &absent);
++  if (__objc3_has_value(volatile_destination)) return 4;
++
++  volatile PlainResult volatile_error = __objc3_err(int, long long, 0);
++  volatile PlainResult volatile_result_destination =
++      __objc3_ok(int, long long, 0);
++  copy_volatile_result(&volatile_result_destination, &volatile_error);
++  if (__objc3_is_ok(volatile_result_destination)) return 5;
++  copy_volatile_result(&volatile_result_destination, &success);
++  if (!__objc3_is_ok(volatile_result_destination)) return 6;
++
++  if (!__objc3_is_ok(__objc3_ok(void, int, side_effect())) || calls != 1)
++    return 7;
++  if (__objc3_is_ok(__objc3_err(int, void, side_effect())) || calls != 2)
++    return 8;
++  return 0;
++}
+\ No newline at end of file
+diff --git a/clang/test/ObjC3/CodeGen/Inputs/carrier-expression-adversarial-runtime.c b/clang/test/ObjC3/CodeGen/Inputs/carrier-expression-adversarial-runtime.c
+new file mode 100644
+--- /dev/null
++++ b/clang/test/ObjC3/CodeGen/Inputs/carrier-expression-adversarial-runtime.c
+@@ -0,0 +1,87 @@
++// Runtime companion for carrier-expression-adversarial.c. It exercises
++// ordinary local/global/field storage and conditional/comma sequencing only;
++// it does not test or claim a carrier call ABI.
++
++typedef __objc3_optional(int) OptionalInt;
++typedef __objc3_result(int, long long) IntResult;
++typedef __objc3_result(OptionalInt, OptionalInt) InnerResult;
++typedef __objc3_result(InnerResult, OptionalInt) NestedResult;
++
++static OptionalInt global_optional;
++struct Holder { unsigned marker; OptionalInt member; };
++static struct Holder global_holder;
++static int calls;
++static int order;
++
++static int optional_payload(void) { ++calls; return 0; }
++static int ok_payload(void) { ++calls; return 0; }
++static long long error_payload(void) { ++calls; return 0; }
++static void comma_left(void) { if (order != 0) order = -100; else order = 1; }
++static int comma_payload(void) {
++  if (order != 1) order = -100;
++  else order = 2;
++  ++calls;
++  return 0;
++}
++static void discarded(void) { ++calls; }
++static void discarded_void(void) { ++calls; }
++static void copy_nested(NestedResult *dst, const NestedResult *src) {
++  *dst = *src;
++}
++
++int main(void) {
++  calls = 0;
++  OptionalInt present = 0 ? __objc3_some(int, optional_payload())
++                           : __objc3_none(int);
++  if (__objc3_has_value(present) || calls != 0) return 1;
++  present = 1 ? __objc3_some(int, optional_payload())
++              : __objc3_none(int);
++  if (!__objc3_has_value(present) || calls != 1) return 2;
++
++  IntResult result = 1 ? __objc3_ok(int, long long, ok_payload())
++                       : __objc3_err(int, long long, error_payload());
++  if (!__objc3_is_ok(result) || calls != 2) return 3;
++  result = 0 ? __objc3_ok(int, long long, ok_payload())
++             : __objc3_err(int, long long, error_payload());
++  if (__objc3_is_ok(result) || calls != 3) return 4;
++
++  order = 0;
++  OptionalInt comma_value = (comma_left(),
++                              __objc3_some(int, comma_payload()));
++  if (!__objc3_has_value(comma_value) || order != 2 || calls != 4) return 5;
++
++  (void)__objc3_some(int, (discarded(), 0));
++  (void)__objc3_some(void, discarded_void());
++  if (calls != 6) return 6;
++
++  global_optional = __objc3_none(int);
++  global_holder.member = __objc3_none(int);
++  if (__objc3_has_value(global_optional) ||
++      __objc3_has_value(global_holder.member)) return 7;
++  global_optional = __objc3_some(int, 0);
++  global_holder.marker = 17;
++  global_holder.member = __objc3_some(int, 0);
++  if (!__objc3_has_value(global_optional) ||
++      !__objc3_has_value(global_holder.member) || global_holder.marker != 17)
++    return 8;
++
++  NestedResult destination = __objc3_ok(
++      InnerResult, OptionalInt,
++      __objc3_ok(OptionalInt, OptionalInt, __objc3_some(int, 0)));
++  NestedResult source = __objc3_err(
++      InnerResult, OptionalInt, __objc3_some(int, 0));
++  copy_nested(&destination, &source);
++  if (__objc3_is_ok(destination)) return 9;
++  source = __objc3_ok(
++      InnerResult, OptionalInt,
++      __objc3_err(OptionalInt, OptionalInt, __objc3_none(int)));
++  copy_nested(&destination, &source);
++  if (!__objc3_is_ok(destination)) return 10;
++
++  volatile OptionalInt volatile_value = __objc3_some(int, 0);
++  if (!__objc3_has_value(volatile_value)) return 11;
++  volatile_value = __objc3_none(int);
++  if (__objc3_has_value(volatile_value)) return 12;
++  return 0;
++}
++
+diff --git a/clang/test/ObjC3/CodeGen/Inputs/optional-copy-runtime.c b/clang/test/ObjC3/CodeGen/Inputs/optional-copy-runtime.c
+new file mode 100644
+--- /dev/null
++++ b/clang/test/ObjC3/CodeGen/Inputs/optional-copy-runtime.c
+@@ -0,0 +1,56 @@
++// Standalone executable companion to optional-expression-lowering.c.
++// Run after the focused CodeGen fixture passes:
++//   pwsh -NoProfile -File temp/full-compatibility/H4-optional-expressions/run_optional_runtime.ps1 -Clang <clang.exe> -TargetTriple <native-triple>
++
++typedef __objc3_optional(int) OptionalInt;
++typedef __objc3_optional(_Bool) OptionalBool;
++typedef __objc3_optional(void *) OptionalPointer;
++typedef __objc3_optional(void) OptionalVoid;
++struct Pair { int value; double fraction; };
++typedef __objc3_optional(struct Pair) OptionalPair;
++
++static void copy_int_optional(OptionalInt *destination,
++                              const OptionalInt *source) {
++  *destination = *source;
++}
++
++static int calls;
++static int return_zero_once(void) {
++  ++calls;
++  return 0;
++}
++static void increment_once(void) { ++calls; }
++
++int main(void) {
++  OptionalInt zero = __objc3_some(int, 0);
++  OptionalInt absent = __objc3_none(int);
++  OptionalBool false_value = __objc3_some(_Bool, 0);
++  OptionalPointer null_value = __objc3_some(void *, (void *)0);
++  struct Pair source = {17, 0.5};
++  OptionalPair aggregate = __objc3_some(struct Pair, source);
++
++  if (!__objc3_has_value(zero) || __objc3_has_value(absent) ||
++      !__objc3_has_value(false_value) || !__objc3_has_value(null_value))
++    return 1;
++  if (!__objc3_has_value(aggregate))
++    return 4;
++
++  if (!__objc3_has_value(__objc3_some(int, return_zero_once())) || calls != 1)
++    return 2;
++
++  OptionalVoid present_void =
++      __objc3_some(void, increment_once());
++  OptionalVoid absent_void = __objc3_none(void);
++  if (!__objc3_has_value(present_void) || __objc3_has_value(absent_void) ||
++      calls != 2)
++    return 3;
++
++  OptionalInt copied_zero = __objc3_none(int);
++  copy_int_optional(&copied_zero, &zero);
++  if (!__objc3_has_value(copied_zero))
++    return 5;
++  copy_int_optional(&copied_zero, &absent);
++  if (__objc3_has_value(copied_zero))
++    return 6;
++  return 0;
++}
+diff --git a/clang/test/ObjC3/CodeGen/Inputs/optional-expression-runtime.c b/clang/test/ObjC3/CodeGen/Inputs/optional-expression-runtime.c
+new file mode 100644
+--- /dev/null
++++ b/clang/test/ObjC3/CodeGen/Inputs/optional-expression-runtime.c
+@@ -0,0 +1,43 @@
++// Standalone executable companion to optional-expression-lowering.c.
++// Run after the focused CodeGen fixture passes:
++//   pwsh -NoProfile -File temp/full-compatibility/H4-optional-expressions/run_optional_runtime.ps1 -Clang <clang.exe> -TargetTriple <native-triple>
++
++typedef __objc3_optional(int) OptionalInt;
++typedef __objc3_optional(_Bool) OptionalBool;
++typedef __objc3_optional(void *) OptionalPointer;
++typedef __objc3_optional(void) OptionalVoid;
++struct Pair { int value; double fraction; };
++typedef __objc3_optional(struct Pair) OptionalPair;
++
++static int calls;
++static int return_zero_once(void) {
++  ++calls;
++  return 0;
++}
++static void increment_once(void) { ++calls; }
++
++int main(void) {
++  OptionalInt zero = __objc3_some(int, 0);
++  OptionalInt absent = __objc3_none(int);
++  OptionalBool false_value = __objc3_some(_Bool, 0);
++  OptionalPointer null_value = __objc3_some(void *, (void *)0);
++  struct Pair source = {17, 0.5};
++  OptionalPair aggregate = __objc3_some(struct Pair, source);
++
++  if (!__objc3_has_value(zero) || __objc3_has_value(absent) ||
++      !__objc3_has_value(false_value) || !__objc3_has_value(null_value))
++    return 1;
++  if (!__objc3_has_value(aggregate))
++    return 4;
++
++  if (!__objc3_has_value(__objc3_some(int, return_zero_once())) || calls != 1)
++    return 2;
++
++  OptionalVoid present_void =
++      __objc3_some(void, increment_once());
++  OptionalVoid absent_void = __objc3_none(void);
++  if (!__objc3_has_value(present_void) || __objc3_has_value(absent_void) ||
++      calls != 2)
++    return 3;
++  return 0;
++}
+diff --git a/clang/test/ObjC3/CodeGen/Inputs/result-expression-runtime.c b/clang/test/ObjC3/CodeGen/Inputs/result-expression-runtime.c
+new file mode 100644
+--- /dev/null
++++ b/clang/test/ObjC3/CodeGen/Inputs/result-expression-runtime.c
+@@ -0,0 +1,27 @@
++// Standalone native executable companion; the owned Windows qualification
++// runner compiles and runs this with the explicit admitted target/profile.
++
++static int calls;
++typedef __objc3_result(int, long long) R;
++static void side_effect(void) { ++calls; }
++static int next_value(void) { ++calls; return 0; }
++static void copy_result(R *destination, const R *source) {
++  *destination = *source;
++}
++
++int main(void) {
++  R success = __objc3_ok(int, long long, 0);
++  R error = __objc3_err(int, long long, 0);
++  if (!__objc3_is_ok(success) || __objc3_is_ok(error)) return 1;
++  if (!__objc3_is_ok(__objc3_ok(_Bool, int, 0))) return 2;
++  if (!__objc3_is_ok(__objc3_ok(void *, int, (void *)0))) return 3;
++  if (!__objc3_is_ok(__objc3_ok(void, int, side_effect())) || calls != 1) return 4;
++  if (__objc3_is_ok(__objc3_err(int, void, side_effect())) || calls != 2) return 5;
++  if (__objc3_is_ok(__objc3_err(int, long long, next_value())) || calls != 3) return 6;
++  R copied = __objc3_err(int, long long, 0);
++  copy_result(&copied, &success);
++  if (!__objc3_is_ok(copied)) return 7;
++  copy_result(&copied, &error);
++  if (__objc3_is_ok(copied)) return 8;
++  return 0;
++}
 diff --git a/clang/test/ObjC3/CodeGen/async-definition-unsupported.cpp b/clang/test/ObjC3/CodeGen/async-definition-unsupported.cpp
 new file mode 100644
 --- /dev/null
@@ -1178,6 +2579,216 @@ new file mode 100644
 +// Function definitions must fail closed before CodeGen creates an ordinary
 +// C++ ABI body for a callable with an unlowered ObjC3 effect.
 +void async_definition() __objc3_async {} // expected-error {{ObjC3 async/throws callable ABI lowering}}
+diff --git a/clang/test/ObjC3/CodeGen/carrier-atomic-access.c b/clang/test/ObjC3/CodeGen/carrier-atomic-access.c
+new file mode 100644
+--- /dev/null
++++ b/clang/test/ObjC3/CodeGen/carrier-atomic-access.c
+@@ -0,0 +1,34 @@
++// RUN: %clang_cc1 -x objective-c -fobjc-version=3 -std=c11 -DTEST_ATOMIC_BUILTIN_LOAD -emit-llvm -o %t.load.ll -verify %s
++// RUN: test ! -e %t.load.ll
++// RUN: %clang_cc1 -x objective-c -fobjc-version=3 -std=c11 -DTEST_ATOMIC_LVALUE_DISCARD -emit-llvm -o %t.load-lvalue.ll -verify %s
++// RUN: test ! -e %t.load-lvalue.ll
++// RUN: %clang_cc1 -x objective-c -fobjc-version=3 -std=c11 -DTEST_ATOMIC_BUILTIN_STORE -emit-llvm -o %t.store.ll -verify %s
++// RUN: test ! -e %t.store.ll
++// RUN: %clang_cc1 -x objective-c -fobjc-version=3 -std=c11 -DTEST_ATOMIC_LVALUE_STORE -emit-llvm -o %t.lvalue-store.ll -verify %s
++// RUN: test ! -e %t.lvalue-store.ll
++//
++// Atomic operations must not copy inactive carrier payload bytes. External
++// storage keeps local lifetime checks from masking the atomic CodeGen boundary.
++
++typedef __objc3_optional(int) OptionalInt;
++struct Wrapper { OptionalInt value; };
++_Atomic(struct Wrapper) atomic_value;
++extern struct Wrapper source_value;
++
++#if defined(TEST_ATOMIC_BUILTIN_LOAD)
++void atomic_builtin_load(void) {
++  (void)__c11_atomic_load(&atomic_value, __ATOMIC_SEQ_CST); // expected-error {{ObjC3 carrier operation 'atomic access'}}
++}
++#elif defined(TEST_ATOMIC_LVALUE_DISCARD)
++void atomic_lvalue_discard(void) {
++  (void)atomic_value; // expected-error {{ObjC3 carrier operation 'atomic access'}}
++}
++#elif defined(TEST_ATOMIC_BUILTIN_STORE)
++void atomic_builtin_store(void) {
++  __c11_atomic_store(&atomic_value, source_value, __ATOMIC_SEQ_CST); // expected-error {{ObjC3 carrier operation 'atomic access'}}
++}
++#elif defined(TEST_ATOMIC_LVALUE_STORE)
++void atomic_lvalue_store(void) {
++  atomic_value = source_value; // expected-error {{ObjC3 carrier operation 'enclosing aggregate copy'}}
++}
++#endif
+\ No newline at end of file
+diff --git a/clang/test/ObjC3/CodeGen/carrier-containing-aggregate-bitcast.cpp b/clang/test/ObjC3/CodeGen/carrier-containing-aggregate-bitcast.cpp
+new file mode 100644
+--- /dev/null
++++ b/clang/test/ObjC3/CodeGen/carrier-containing-aggregate-bitcast.cpp
+@@ -0,0 +1,27 @@
++// RUN: %clang_cc1 -x objective-c++ -fobjc-version=3 -fobjc-runtime=gnustep-2.0 -std=c++20 -DTEST_SCALAR -emit-llvm -o %t.scalar.ll -verify %s
++// RUN: test ! -e %t.scalar.ll
++// RUN: %clang_cc1 -x objective-c++ -fobjc-version=3 -fobjc-runtime=gnustep-2.0 -std=c++20 -DTEST_AGGREGATE -emit-llvm -o %t.aggregate.ll -verify %s
++// RUN: test ! -e %t.aggregate.ll
++// RUN: %clang_cc1 -x objective-c++ -fobjc-version=3 -fobjc-runtime=gnustep-2.0 -std=c++20 -DTEST_COMPLEX -emit-llvm -o %t.complex.ll -verify %s
++// RUN: test ! -e %t.complex.ll
++
++// Each builtin is accepted by Clang's source semantics and reaches a distinct
++// CGExpr visitor for CK_LValueToRValueBitCast. Generic representation reads
++// must reject a wrapper containing a carrier on the source side.
++typedef __objc3_optional(int) OptionalInt;
++struct CarrierWrapper { OptionalInt value; };
++struct PlainBlob { unsigned long long bits; };
++
++#if defined(TEST_SCALAR)
++unsigned long long expose_scalar_representation(CarrierWrapper &value) {
++  return __builtin_bit_cast(unsigned long long, value); // expected-error {{ObjC3 carrier operation 'object representation bitcast'}}
++}
++#elif defined(TEST_AGGREGATE)
++PlainBlob expose_aggregate_representation(CarrierWrapper &value) {
++  return __builtin_bit_cast(PlainBlob, value); // expected-error {{ObjC3 carrier operation 'object representation bitcast'}}
++}
++#elif defined(TEST_COMPLEX)
++__complex__ int expose_complex_representation(CarrierWrapper &value) {
++  return __builtin_bit_cast(__complex__ int, value); // expected-error {{ObjC3 carrier operation 'object representation bitcast'}}
++}
++#endif
+diff --git a/clang/test/ObjC3/CodeGen/carrier-containing-aggregate-copy.c b/clang/test/ObjC3/CodeGen/carrier-containing-aggregate-copy.c
+new file mode 100644
+--- /dev/null
++++ b/clang/test/ObjC3/CodeGen/carrier-containing-aggregate-copy.c
+@@ -0,0 +1,35 @@
++// RUN: %clang_cc1 -x objective-c -fobjc-version=3 -std=c17 -DTEST_RECORD_COPY -emit-llvm -o %t.record.ll -verify %s
++// RUN: test ! -e %t.record.ll
++// RUN: %clang_cc1 -x objective-c -fobjc-version=3 -std=c17 -DTEST_ARRAY_MEMBER_COPY -emit-llvm -o %t.array.ll -verify %s
++// RUN: test ! -e %t.array.ll
++//
++// Generic C aggregate copies must not byte-copy carrier-containing records or
++// records whose array members contain carriers. Each RUN is isolated so both
++// source-level copy forms are checked independently.
++
++typedef __objc3_optional(int) OptionalInt;
++
++struct CarrierRecord {
++  OptionalInt value;
++  unsigned marker;
++};
++
++struct CarrierArrayRecord {
++  OptionalInt values[2];
++  unsigned marker;
++};
++
++extern struct CarrierRecord source_record;
++extern struct CarrierRecord destination_record;
++extern struct CarrierArrayRecord source_array_record;
++extern struct CarrierArrayRecord destination_array_record;
++
++#if defined(TEST_RECORD_COPY)
++void copy_record_containing_carrier(void) {
++  destination_record = source_record; // expected-error {{ObjC3 carrier operation 'enclosing aggregate copy'}}
++}
++#elif defined(TEST_ARRAY_MEMBER_COPY)
++void copy_record_containing_carrier_array(void) {
++  destination_array_record = source_array_record; // expected-error {{ObjC3 carrier operation 'enclosing aggregate copy'}}
++}
++#endif
+\ No newline at end of file
+diff --git a/clang/test/ObjC3/CodeGen/carrier-containing-aggregate-cxx-copy.cpp b/clang/test/ObjC3/CodeGen/carrier-containing-aggregate-cxx-copy.cpp
+new file mode 100644
+--- /dev/null
++++ b/clang/test/ObjC3/CodeGen/carrier-containing-aggregate-cxx-copy.cpp
+@@ -0,0 +1,15 @@
++// RUN: %clang_cc1 -x objective-c++ -fobjc-version=3 -fobjc-runtime=gnustep-2.0 -std=c++20 -emit-llvm -o %t.copy.ll -verify %s
++// RUN: test ! -e %t.copy.ll
++
++// The implicit C++ copy constructor is a separate source path: pinned Clang
++// marks it memcpy-equivalent and emits a whole object copy in CGClass.
++typedef __objc3_optional(int) OptionalInt;
++struct CarrierWrapper { OptionalInt value; };
++
++void *operator new(__SIZE_TYPE__, void *p) noexcept { return p; }
++void operator delete(void *, void *) noexcept {}
++
++void implicit_wrapper_copy_constructor( // expected-error {{ObjC3 carrier operation}}
++    CarrierWrapper *destination, const CarrierWrapper *source) {
++  new (destination) CarrierWrapper(*source);
++}
+\ No newline at end of file
+diff --git a/clang/test/ObjC3/CodeGen/carrier-copy-adversarial.c b/clang/test/ObjC3/CodeGen/carrier-copy-adversarial.c
+new file mode 100644
+--- /dev/null
++++ b/clang/test/ObjC3/CodeGen/carrier-copy-adversarial.c
+@@ -0,0 +1,70 @@
++// RUN: %clang_cc1 -x objective-c -triple x86_64-unknown-linux-gnu -fobjc-version=3 -std=c17 -emit-llvm -o - %s | FileCheck %s
++
++typedef __objc3_optional(int) OptionalInt;
++typedef __objc3_result(int, long long) ResultInt;
++typedef __objc3_result(OptionalInt, OptionalInt) InnerResult;
++typedef __objc3_result(InnerResult, OptionalInt) NestedResult;
++typedef __objc3_optional(InnerResult) OptionalResult;
++
++void copy_nested_result(NestedResult *destination,
++                        const NestedResult *source) {
++  *destination = *source;
++}
++// CHECK-LABEL: define{{.*}} @copy_nested_result(
++// Outer Result, nested Result, both nested Optionals, and outer error Optional
++// each branch on their own source tag. The nested active-arm snapshot must not
++// become a whole-carrier memcpy.
++// CHECK-COUNT-5: br i1
++// CHECK-NOT: llvm.memcpy
++
++void copy_optional_result(OptionalResult *destination,
++                          const OptionalResult *source) {
++  *destination = *source;
++}
++// CHECK-LABEL: define{{.*}} @copy_optional_result(
++// CHECK-COUNT-4: br i1
++// CHECK-NOT: llvm.memcpy
++
++typedef __objc3_result(int, long long) PlainResult;
++void copy_self_result(PlainResult *value) { *value = *value; }
++// CHECK-LABEL: define{{.*}} @copy_self_result(
++// The helper snapshots the active source arm before its first destination write.
++// CHECK: objc3.result.copy.snapshot
++// CHECK: load i8
++// CHECK: br i1
++// CHECK: store i8 1
++// CHECK: store i8 0
++
++void copy_volatile_result(volatile PlainResult *destination,
++                          const volatile PlainResult *source) {
++  *destination = *source;
++}
++// CHECK-LABEL: define{{.*}} @copy_volatile_result(
++// The first phase reads each selected source arm through the volatile source
++// and snapshots it into ordinary temporary storage. The second phase reads
++// that snapshot nonvolatile and writes each selected destination arm volatile.
++// CHECK: load volatile i8
++// CHECK: br i1
++// CHECK: load volatile i32
++// CHECK: store i32
++// CHECK: store i8 1
++// CHECK: load volatile i64
++// CHECK: store i64
++// CHECK: store i8 0
++// CHECK: load i8
++// CHECK: br i1
++// CHECK: load i32
++// CHECK: store volatile i32
++// CHECK: store volatile i8 1
++// CHECK: load i64
++// CHECK: store volatile i64
++// CHECK: store volatile i8 0
++
++void initialize_volatile_optional(void) {
++  volatile OptionalInt value = __objc3_some(int, 42);
++  (void)value;
++}
++// The selected payload and presence tag are both volatile subobject stores.
++// CHECK-LABEL: define{{.*}} @initialize_volatile_optional()
++// CHECK: store volatile i32 42
++// CHECK: store volatile i8 1
+\ No newline at end of file
 diff --git a/clang/test/ObjC3/CodeGen/carrier-debug-info-deferred.c b/clang/test/ObjC3/CodeGen/carrier-debug-info-deferred.c
 new file mode 100644
 --- /dev/null
@@ -1238,6 +2849,147 @@ new file mode 100644
 +// CHECK-DAG: !DILocalVariable(name: "optional_local"{{.*}}type: !
 +// CHECK-DAG: !DILocalVariable(name: "result_local"{{.*}}type: !
 +// CHECK-DAG: !DIDerivedType(tag: DW_TAG_typedef, name: "__objc3_optional(__objc3_optional(int))"{{.*}}baseType: !
+diff --git a/clang/test/ObjC3/CodeGen/carrier-expression-adversarial.c b/clang/test/ObjC3/CodeGen/carrier-expression-adversarial.c
+new file mode 100644
+--- /dev/null
++++ b/clang/test/ObjC3/CodeGen/carrier-expression-adversarial.c
+@@ -0,0 +1,111 @@
++// RUN: %clang_cc1 -x objective-c -std=c17 -fobjc-version=3 -triple x86_64-unknown-linux-gnu -emit-llvm -o - %s | FileCheck %s
++// Adversarial aggregate-expression coverage; no carrier by-value ABI claim.
++
++typedef __objc3_optional(int) OptionalInt;
++typedef __objc3_result(int, long long) IntResult;
++typedef __objc3_optional(IntResult) OptionalResult;
++typedef __objc3_result(IntResult, OptionalInt) NestedResult;
++
++static OptionalInt global_optional;
++struct Holder { unsigned marker; OptionalInt member; };
++static struct Holder global_holder;
++
++extern int next_optional_payload(void);
++extern int next_ok_payload(void);
++extern long long next_error_payload(void);
++extern void mark_comma_left(void);
++extern void discarded_side_effect(void);
++extern void discarded_void_side_effect(void);
++
++void optional_from_conditional(int choose, int use_input) {
++  OptionalInt selected = choose
++      ? __objc3_some(int, use_input ? next_optional_payload() : 0)
++      : __objc3_none(int);
++  global_optional = selected;
++}
++// CHECK-LABEL: define{{.*}} @optional_from_conditional(
++// The payload call occurs only on the Some edge; both edges initialize a tag.
++// CHECK-DAG: call i32 @next_optional_payload()
++// CHECK-DAG: store i8 1
++// CHECK-DAG: store i8 0
++
++void result_from_conditional(int choose) {
++  IntResult selected = choose
++      ? __objc3_ok(int, long long, next_ok_payload())
++      : __objc3_err(int, long long, next_error_payload());
++  global_holder.member = __objc3_some(int, __objc3_is_ok(selected));
++}
++// CHECK-LABEL: define{{.*}} @result_from_conditional(
++// Each arm's operand is lowered in its selected branch, then the active tag is
++// written. The final Optional records the queried result without returning a
++// carrier through the function ABI.
++// CHECK: call i32 @next_ok_payload()
++// CHECK: store i8 1
++// CHECK: call i64 @next_error_payload()
++// CHECK: store i8 0
++
++void optional_from_comma(void) {
++  OptionalInt selected = (mark_comma_left(),
++                          __objc3_some(int, next_optional_payload()));
++  global_optional = selected;
++}
++// CHECK-LABEL: define{{.*}} @optional_from_comma()
++// CHECK: call void @mark_comma_left()
++// CHECK: call i32 @next_optional_payload()
++// CHECK: store i8 1
++
++void discard_some(void) {
++  (void)__objc3_some(int, next_optional_payload());
++}
++// CHECK-LABEL: define{{.*}} @discard_some()
++// A discarded constructor still evaluates its child exactly once.
++// CHECK-COUNT-1: call i32 @next_optional_payload()
++// CHECK-NOT: objc3.optional
++
++void discard_void_some(void) {
++  (void)__objc3_some(void, discarded_void_side_effect());
++  (void)__objc3_some(int, (discarded_side_effect(), 0));
++}
++// CHECK-LABEL: define{{.*}} @discard_void_some()
++// CHECK-COUNT-1: call void @discarded_void_side_effect()
++// CHECK-COUNT-1: call void @discarded_side_effect()
++
++void assign_global_and_field(int present, int payload) {
++  global_optional = present ? __objc3_some(int, payload) : __objc3_none(int);
++  global_holder.marker = 7;
++  global_holder.member = present ? __objc3_some(int, payload) : __objc3_none(int);
++}
++// CHECK-LABEL: define{{.*}} @assign_global_and_field(
++// CHECK: store i8 1, ptr @global_optional
++// CHECK: store i32 7, ptr @global_holder
++// CHECK: store i8 1, ptr getelementptr{{.*}}@global_holder
++
++int inspect_global_and_field(void) {
++  return __objc3_has_value(global_optional) +
++         __objc3_has_value(global_holder.member);
++}
++// CHECK-LABEL: define{{.*}} @inspect_global_and_field()
++// CHECK: load i8, ptr @global_optional
++// CHECK: load i8, ptr getelementptr{{.*}}@global_holder
++
++int query_volatile_after_conditional(int choose) {
++  volatile OptionalInt selected = choose
++      ? __objc3_some(int, 0) : __objc3_none(int);
++  return __objc3_has_value(selected);
++}
++// CHECK-LABEL: define{{.*}} @query_volatile_after_conditional(
++// CHECK: store volatile i8 1
++// CHECK: store volatile i8 0
++// CHECK: load volatile i8
++
++void copy_nested_selected_arm_transitions(NestedResult *destination,
++                                          const NestedResult *source) {
++  *destination = *source;
++}
++// CHECK-LABEL: define{{.*}} @copy_nested_selected_arm_transitions(
++// Both outer and selected nested discriminants choose the active payload arm.
++// CHECK: br i1
++// CHECK: br i1
++// CHECK-NOT: llvm.memcpy
++
++
+diff --git a/clang/test/ObjC3/CodeGen/carrier-expression-recovery-adversarial.cpp b/clang/test/ObjC3/CodeGen/carrier-expression-recovery-adversarial.cpp
+new file mode 100644
+--- /dev/null
++++ b/clang/test/ObjC3/CodeGen/carrier-expression-recovery-adversarial.cpp
+@@ -0,0 +1,20 @@
++// RUN: %clang_cc1 -x objective-c++ -fobjc-version=3 -fobjc-runtime=gnustep-2.0 -fobjc-arc -DTEST_NONTRIVIAL -emit-llvm -o %t.cxx.ll -verify %s
++// RUN: test ! -e %t.cxx.ll
++// RUN: %clang_cc1 -x objective-c++ -fobjc-version=3 -fobjc-runtime=gnustep-2.0 -fobjc-arc -DTEST_ARC -emit-llvm -o %t.arc.ll -verify %s
++// RUN: test ! -e %t.arc.ll
++
++#if defined(TEST_NONTRIVIAL)
++struct Owned { Owned(const Owned &); ~Owned(); };
++typedef __objc3_optional(Owned) MaybeOwned;
++void query_after_rejected_lifetime(void) {
++  MaybeOwned value; // expected-error {{ObjC3 carrier operation 'local lifetime'}}
++  (void)__objc3_has_value(value); // expected-error {{ObjC3 carrier operation 'hasValue query'}}
++}
++#elif defined(TEST_ARC)
++@interface Object @end
++typedef __objc3_optional(Object *) MaybeObject;
++void query_after_rejected_lifetime(void) {
++  MaybeObject value; // expected-error {{ObjC3 carrier operation 'local lifetime'}}
++  (void)__objc3_has_value(value); // expected-error {{ObjC3 carrier operation 'hasValue query'}}
++}
++#endif
 diff --git a/clang/test/ObjC3/CodeGen/carrier-indirect-call-abi.c b/clang/test/ObjC3/CodeGen/carrier-indirect-call-abi.c
 new file mode 100644
 --- /dev/null
@@ -1378,7 +3130,7 @@ diff --git a/clang/test/ObjC3/CodeGen/carrier-unsupported-operations.cpp b/clang
 new file mode 100644
 --- /dev/null
 +++ b/clang/test/ObjC3/CodeGen/carrier-unsupported-operations.cpp
-@@ -0,0 +1,52 @@
+@@ -0,0 +1,51 @@
 +// RUN: %clang_cc1 -x objective-c++ -fobjc-version=3 -fobjc-runtime=gnustep-2.0 -fobjc-arc -DTEST_CARRIER_BY_VALUE -emit-llvm -o %t.by-value.ll -verify %s
 +// RUN: test ! -e %t.by-value.ll
 +// RUN: %clang_cc1 -x objective-c++ -fobjc-version=3 -fobjc-runtime=gnustep-2.0 -fobjc-arc -DTEST_CARRIER_LIFETIME -emit-llvm -o %t.lifetime.ll -verify %s
@@ -1406,8 +3158,8 @@ new file mode 100644
 +};
 +typedef __objc3_optional(MoveOnly) MaybeMoveOnly;
 +
-+typedef __objc3_optional(long long) MaybeLong;
-+extern MaybeLong external_long;
++extern MaybeOwned external_owned;
++extern MaybeOwned other_owned;
 +
 +@interface Object
 +@end
@@ -1422,9 +3174,8 @@ new file mode 100644
 +  MaybeOwned value; // expected-error-re {{ObjC3 carrier operation 'local lifetime' for type {{.*}} has no qualified lowering: {{.*}}}}
 +}
 +#elif defined(TEST_CARRIER_COPY)
-+void copy_trivial_carrier(void) { // expected-error-re {{ObjC3 carrier operation 'copy' for type {{.*}} has no qualified lowering: {{.*}}}}
-+  MaybeLong local = external_long;
-+  (void)local;
++void copy_nontrivial_carrier(void) {
++  external_owned = other_owned; // expected-error-re {{ObjC3 carrier operation 'Optional copy' for type {{.*}} has no qualified lowering: {{.*}}}}
 +}
 +#elif defined(TEST_CARRIER_ARC)
 +void arc_lifetime(void) {
@@ -1491,6 +3242,27 @@ new file mode 100644
 +  function();
 +}
 +// CHECK: cannot compile this ObjC3 async/throws callable ABI lowering yet
+diff --git a/clang/test/ObjC3/CodeGen/effect-objc-message-abi.mm b/clang/test/ObjC3/CodeGen/effect-objc-message-abi.mm
+new file mode 100644
+--- /dev/null
++++ b/clang/test/ObjC3/CodeGen/effect-objc-message-abi.mm
+@@ -0,0 +1,15 @@
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.0 -fblocks -emit-llvm -o %t.ll -verify %s
++// RUN: test ! -e %t.ll
++
++struct Error {};
++typedef void (^TypedCallback)(void) __objc3_throws(Error);
++
++// ObjC message signatures and runtime metadata bypass ordinary CallExpr ABI
++// checks. An effectful block parameter must not be erased at either boundary.
++@interface EffectWorker
++- (void)registerCallback:(TypedCallback)callback; // expected-error {{ObjC3 async/throws callable ABI lowering}}
++@end
++
++void ordinary_caller(EffectWorker *worker) {
++  [worker registerCallback:0];
++}
+\ No newline at end of file
 diff --git a/clang/test/ObjC3/CodeGen/gnustep-empty-coff.m b/clang/test/ObjC3/CodeGen/gnustep-empty-coff.m
 new file mode 100644
 --- /dev/null
@@ -1615,6 +3387,154 @@ new file mode 100644
 +
 +// CHECK: c"i{{[0-9]+}}@0:8q{{[0-9]+}}\00"
 +// CHECK: c"i\00"
+diff --git a/clang/test/ObjC3/CodeGen/optional-copy.c b/clang/test/ObjC3/CodeGen/optional-copy.c
+new file mode 100644
+--- /dev/null
++++ b/clang/test/ObjC3/CodeGen/optional-copy.c
+@@ -0,0 +1,59 @@
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c -fobjc-version=3 -std=c17 -emit-llvm -o - %s | FileCheck %s
++
++typedef __objc3_optional(int) OptionalInt;
++typedef __objc3_optional(void) OptionalVoid;
++typedef __objc3_optional(OptionalInt) NestedOptionalInt;
++struct Pair { int left; double right; };
++typedef __objc3_optional(struct Pair) OptionalPair;
++
++void copy_optional(OptionalInt *destination, const OptionalInt *source) {
++  *destination = *source;
++}
++// CHECK-LABEL: define{{.*}} void @copy_optional(
++// CHECK: load i8
++// CHECK: br i1
++// CHECK: load i32
++// CHECK: store i32
++// CHECK: store i8 1
++// CHECK: store i8 0
++// CHECK-NOT: llvm.memcpy
++
++void copy_nested_optional(NestedOptionalInt *destination,
++                          const NestedOptionalInt *source) {
++  *destination = *source;
++}
++// CHECK-LABEL: define{{.*}} void @copy_nested_optional(
++// CHECK: br i1
++// CHECK: br i1
++// CHECK: load i32
++// CHECK: store i32
++
++void copy_pair(OptionalPair *destination, const OptionalPair *source) {
++  *destination = *source;
++}
++// CHECK-LABEL: define{{.*}} void @copy_pair(
++// CHECK: br i1
++// CHECK: llvm.memmove
++
++void copy_volatile(volatile OptionalInt *destination,
++                   const volatile OptionalInt *source) {
++  *destination = *source;
++}
++// CHECK-LABEL: define{{.*}} void @copy_volatile(
++// CHECK: load volatile i8
++// CHECK: br i1
++// CHECK: load volatile i32
++// CHECK: store volatile i32
++// CHECK: store volatile i8 1
++// CHECK: store volatile i8 0
++
++void copy_void_optional(OptionalVoid *destination,
++                        const OptionalVoid *source) {
++  *destination = *source;
++}
++// CHECK-LABEL: define{{.*}} void @copy_void_optional(
++// CHECK: load i8
++// CHECK: br i1
++// CHECK: store i8 1
++// CHECK: store i8 0
++// CHECK-NOT: load i8, ptr {{.*}}payload
+diff --git a/clang/test/ObjC3/CodeGen/optional-expression-lowering.c b/clang/test/ObjC3/CodeGen/optional-expression-lowering.c
+new file mode 100644
+--- /dev/null
++++ b/clang/test/ObjC3/CodeGen/optional-expression-lowering.c
+@@ -0,0 +1,79 @@
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c -fobjc-version=3 -std=c17 -emit-llvm -o - %s | FileCheck %s
++
++typedef __objc3_optional(int) OptionalInt;
++typedef __objc3_optional(_Bool) OptionalBool;
++typedef __objc3_optional(void *) OptionalPointer;
++typedef __objc3_optional(void) OptionalVoid;
++struct Pair { int value; double fraction; };
++typedef __objc3_optional(struct Pair) OptionalPair;
++
++extern int side_effect_int(void);
++extern void side_effect_void(void);
++
++int zero_is_present(void) {
++  OptionalInt value = __objc3_some(int, 0);
++  return __objc3_has_value(value);
++}
++// CHECK-LABEL: define{{.*}} i32 @zero_is_present()
++// CHECK: store i8 1
++// CHECK: load i8
++
++int none_is_absent(void) {
++  OptionalInt value = __objc3_none(int);
++  return __objc3_has_value(value);
++}
++// CHECK-LABEL: define{{.*}} i32 @none_is_absent()
++// CHECK: store i8 0
++// CHECK: load i8
++
++int false_is_present(void) {
++  OptionalBool value = __objc3_some(_Bool, 0);
++  return __objc3_has_value(value);
++}
++// CHECK-LABEL: define{{.*}} i32 @false_is_present()
++// CHECK: store i8 1
++
++int null_is_present(void) {
++  OptionalPointer value = __objc3_some(void *, (void *)0);
++  return __objc3_has_value(value);
++}
++// CHECK-LABEL: define{{.*}} i32 @null_is_present()
++// CHECK: store i8 1
++
++int aggregate_is_present(struct Pair source) {
++  OptionalPair value = __objc3_some(struct Pair, source);
++  return __objc3_has_value(value);
++}
++// CHECK-LABEL: define{{.*}} i32 @aggregate_is_present(
++// CHECK: store i8 1
++// CHECK: load i8
++
++void void_some_evaluates_once(void) {
++  OptionalVoid value = __objc3_some(void, side_effect_void());
++  (void)value;
++}
++// CHECK-LABEL: define{{.*}} void @void_some_evaluates_once()
++// CHECK-COUNT-1: call void @side_effect_void()
++// CHECK: store i8 1
++
++int has_value_evaluates_payload_once(void) {
++  return __objc3_has_value(__objc3_some(int, side_effect_int()));
++}
++// CHECK-LABEL: define{{.*}} i32 @has_value_evaluates_payload_once()
++// CHECK-COUNT-1: call i32 @side_effect_int()
++// CHECK: store i8 1
++// CHECK: load i8
++
++int volatile_optional_tag_read(const volatile OptionalInt *source) {
++  return __objc3_has_value(*source);
++}
++// CHECK-LABEL: define{{.*}} i32 @volatile_optional_tag_read(
++// CHECK: load volatile i8
++
++int volatile_optional_tag_initialization(void) {
++  volatile OptionalInt value = __objc3_some(int, 0);
++  return __objc3_has_value(value);
++}
++// CHECK-LABEL: define{{.*}} i32 @volatile_optional_tag_initialization()
++// CHECK: store volatile i8 1
++// CHECK: load volatile i8
 diff --git a/clang/test/ObjC3/CodeGen/ordinary-c-passthrough.c b/clang/test/ObjC3/CodeGen/ordinary-c-passthrough.c
 new file mode 100644
 --- /dev/null
@@ -1624,3 +3544,61 @@ new file mode 100644
 +
 +void ordinary_c_function(void) {}
 +void (*ordinary_c_callback)(int);
+diff --git a/clang/test/ObjC3/CodeGen/result-expression-lowering.c b/clang/test/ObjC3/CodeGen/result-expression-lowering.c
+new file mode 100644
+--- /dev/null
++++ b/clang/test/ObjC3/CodeGen/result-expression-lowering.c
+@@ -0,0 +1,53 @@
++// RUN: %clang_cc1 -x objective-c -triple x86_64-unknown-linux-gnu -fobjc-version=3 -emit-llvm -o - %s | FileCheck %s
++
++typedef __objc3_result(int, long long) IntResult;
++typedef __objc3_result(void, int) VoidResult;
++extern void consume_storage(void *);
++extern void side_effect(void);
++extern int next_value(void);
++
++void success_zero(void) {
++  IntResult result = __objc3_ok(int, long long, 0);
++  consume_storage(&result);
++}
++void error_zero(void) {
++  IntResult result = __objc3_err(int, long long, 0);
++  consume_storage(&result);
++}
++void volatile_success(void) {
++  volatile IntResult result = __objc3_ok(int, long long, 0);
++  consume_storage((void *)&result);
++}
++_Bool query_success_zero(void) {
++  return __objc3_is_ok(__objc3_ok(int, long long, 0));
++}
++_Bool query_error_zero(void) {
++  return __objc3_is_ok(__objc3_err(int, long long, 0));
++}
++_Bool query_void_side_effect(void) {
++  return __objc3_is_ok(__objc3_ok(void, int, side_effect()));
++}
++_Bool exactly_once(void) {
++  return __objc3_is_ok(__objc3_err(int, long long, next_value()));
++}
++_Bool volatile_query(volatile IntResult *result) {
++  return __objc3_is_ok(*result);
++}
++
++// CHECK-LABEL: define{{.*}} @success_zero
++// CHECK: store i32 0
++// CHECK: store i8 1
++// CHECK-LABEL: define{{.*}} @error_zero
++// CHECK: store i64 0
++// CHECK: store i8 0
++// CHECK-LABEL: define{{.*}} @volatile_success
++// CHECK: store volatile i32 0
++// CHECK: store volatile i8 1
++// CHECK-LABEL: define{{.*}} @query_void_side_effect
++// CHECK: call void @side_effect()
++// CHECK-NOT: call void @side_effect()
++// CHECK-LABEL: define{{.*}} @exactly_once
++// CHECK: call i32 @next_value()
++// CHECK-NOT: call i32 @next_value()
++// CHECK-LABEL: define{{.*}} @volatile_query
++// CHECK: load volatile i8
