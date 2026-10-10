@@ -1,0 +1,17 @@
+{
+  "schema_version": 1,
+  "format_style": "LLVM",
+  "required_ordinary_spellings": ["async", "throws", "throws:"],
+  "cases": [
+    {
+      "source": "reserved_intrinsics.m",
+      "language": "objective-c",
+      "standard": "c17"
+    },
+    {
+      "source": "reserved_intrinsics.mm",
+      "language": "objective-c++",
+      "standard": "c++20"
+    }
+  ]
+}

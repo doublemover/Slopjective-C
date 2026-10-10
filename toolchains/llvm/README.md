@@ -157,6 +157,15 @@ GNU-style Clang and clang-cl; the facade checks identical native IR through its
 C++ compile session and versioned C embedding API, including failed-output
 rollback. These scoped migration checks do not promote public feature gates.
 
+The sealed development compiler can also qualify its matching clang-format
+and clangd binaries with `python -B -m scripts.objc3c_editor_tooling.qualification`.
+This checks identical C17 Objective-C and C++20 Objective-C++ fixture bytes,
+ordinary `async`/`throws` identifiers and selectors, exact formatting and
+idempotence, the normalized compilation database, and actual stdio diagnostics,
+hover, definition and completion requests. Each run preserves separate evidence
+with the source seal, tool hashes and resource-header digest. This private editor
+slice does not qualify extension-aware refactoring or enable public feature gates.
+
 Configure from a VS 2022 x64 Developer Command Prompt with the selected SDK
 installed. The helper verifies the v143 compiler/linker, the manifest's
 Windows SDK version, CMake and Ninja before it emits a build plan. No global
