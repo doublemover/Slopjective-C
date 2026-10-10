@@ -42,6 +42,76 @@ int main() {
       "static_assert(Sized<int>); "
       "int native_exception() { try { throw 7; } catch (int x) { return x; } }";
   assert(Compile(cxx_request).success);
+  auto effect_request = request;
+  effect_request.language = BaseLanguage::ObjectiveCxx;
+  effect_request.input_path = "objc3c-session-effects.mm";
+  effect_request.objc3 = true;
+  effect_request.source_text = "struct Error {}; typedef Error ErrorAlias; "
+      "void asynchronous() __objc3_async; "
+      "void throwing() __objc3_throws(ErrorAlias); "
+      "typedef void TypedCallback(void) __objc3_throws(ErrorAlias); "
+      "TypedCallback *callback; "
+      "void native_noexcept() noexcept;";
+  auto observed_effects = Compile(effect_request);
+  assert(observed_effects.success);
+  bool saw_async = false, saw_typed = false, saw_native = false;
+  bool saw_callback = false, saw_callback_typedef = false;
+  for (const auto &declaration : observed_effects.declarations) {
+    if (declaration.qualified_name == "asynchronous") {
+      saw_async = true;
+      assert(declaration.effects.is_async && !declaration.effects.is_throwing);
+    } else if (declaration.qualified_name == "throwing") {
+      saw_typed = true;
+      assert(!declaration.effects.is_async && declaration.effects.is_throwing);
+      assert(declaration.effects.throws_kind == "typed");
+      assert(declaration.effects.error_type_identity == "Error");
+    } else if (declaration.qualified_name == "native_noexcept") {
+      saw_native = true;
+      assert(!declaration.effects.is_async && !declaration.effects.is_throwing);
+    } else if (declaration.qualified_name == "callback" ||
+               declaration.qualified_name == "TypedCallback") {
+      if (declaration.qualified_name == "callback") saw_callback = true;
+      else saw_callback_typedef = true;
+      assert(declaration.effects.is_throwing &&
+             declaration.effects.throws_kind == "typed" &&
+             declaration.effects.error_type_identity == "Error");
+    }
+  }
+  assert(saw_async && saw_typed && saw_native && saw_callback &&
+         saw_callback_typedef);
+  auto carrier_request = effect_request;
+  carrier_request.input_path = "objc3c-session-carriers.mm";
+  carrier_request.source_text =
+      "typedef __objc3_optional(int) A; typedef __objc3_optional(long) B; "
+      "void consume(A *); void consume(B *);";
+  auto carrier_symbols = Compile(carrier_request);
+  assert(carrier_symbols.success);
+  std::string first_carrier_symbol;
+  unsigned carrier_overloads = 0;
+  for (const auto &declaration : carrier_symbols.declarations) {
+    if (declaration.qualified_name != "consume") continue;
+    ++carrier_overloads;
+    if (first_carrier_symbol.empty())
+      first_carrier_symbol = declaration.stable_id;
+    else
+      assert(first_carrier_symbol != declaration.stable_id);
+  }
+  assert(carrier_overloads == 2);
+  effect_request.emit = EmitKind::LLVM;
+  effect_request.output_path = "objc3c-session-unlowered.ll";
+  effect_request.source_text = "void asynchronous() __objc3_async {}";
+  {
+    std::ofstream prior(effect_request.output_path);
+    prior << "preserved prior output";
+  }
+  auto rejected_effect = Compile(effect_request);
+  assert(!rejected_effect.success && !rejected_effect.diagnostics.empty());
+  {
+    std::ifstream preserved(effect_request.output_path);
+    assert(std::string(std::istreambuf_iterator<char>(preserved), {}) ==
+           "preserved prior output");
+  }
+  std::filesystem::remove(effect_request.output_path);
   auto objcxx_request = request;
   objcxx_request.language = BaseLanguage::ObjectiveCxx;
   objcxx_request.input_path = "objc3c-session-native.mm";

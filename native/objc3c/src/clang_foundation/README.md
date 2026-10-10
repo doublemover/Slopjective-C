@@ -51,3 +51,19 @@ and C++ cleanup/EH IR, interfaces, artifact rollback, carriers, task services an
 generic collections. These checks establish their tested behavior; full language
 cutover, complete semantic imports and extension lowering remain in progress.
 Public extension availability follows the separate capability authority.
+
+Private `__objc3_optional(T)` and `__objc3_result(T, E)` forms now enter native
+canonical type identity, declaration parsing, template substitution, PCH,
+AST import, indexing and target layout. Callable async and typed/untyped throws
+facts belong to the native function type; native C++ exception specifications
+remain separate. The consumer observes effects on functions, callable pointers
+and typedefs from that AST. Public interface emission rejects callable effects,
+including nested callback types, until source interchange and ABI are qualified.
+
+Carrier storage uses an AST-owned hidden record and its actual target layout.
+It is a value representation, separate from platform Objective-C object layout.
+Unqualified by-value calls, runtime type encodings, copy operations and payload
+lifetimes diagnose during CodeGen. Carrier pointer overloads can have distinct
+native symbols without qualifying a by-value carrier ABI. Optional/Result
+construction, nontrivial C++/ARC carrier operations and async execution remain
+in progress; public feature gates continue to report unavailable.

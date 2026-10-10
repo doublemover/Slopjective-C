@@ -1,4 +1,5 @@
 #include "clang_foundation/interface_emitter.h"
+#include "clang_foundation/ast_effect_identity.h"
 
 #include <algorithm>
 #include <cstdint>
@@ -304,6 +305,14 @@ class TypeDependencyVisitor final
     return true;
   }
 
+  bool VisitFunctionProtoType(clang::FunctionProtoType *type) {
+    const auto effects = type->getObjC3FunctionEffects();
+    if (effects.Async || effects.Throws != clang::ObjC3ThrowsKind::None)
+      AddDiagnostic(result_, "O3IFC125",
+                    "canonical callable effects require a qualified public source and ABI interchange");
+    return true;
+  }
+
  private:
   const clang::ASTContext &context_;
   InterfaceEmissionArtifact &result_;
@@ -314,10 +323,17 @@ void CheckTypeDependencies(const clang::NamedDecl *declaration,
                            InterfaceEmissionArtifact &result) {
   TypeDependencyVisitor visitor(context, result);
   auto check = [&](clang::QualType type) {
-    if (!type.isNull()) visitor.TraverseType(type);
+    if (type.isNull()) return;
+    visitor.TraverseType(type);
+    // Clang's type visitor deliberately stops at typedef sugar. Canonical
+    // traversal exposes nested callable contracts behind those aliases.
+    if (type != type.getCanonicalType())
+      visitor.TraverseType(type.getCanonicalType());
   };
   if (const auto *value = llvm::dyn_cast<clang::ValueDecl>(declaration))
     check(value->getType());
+  if (const auto *type = llvm::dyn_cast<clang::TypeDecl>(declaration))
+    check(context.getTypeDeclType(type));
   if (const auto *method = llvm::dyn_cast<clang::ObjCMethodDecl>(declaration)) {
     check(method->getReturnType());
     for (unsigned i = 0; i < method->param_size(); ++i)
@@ -371,7 +387,16 @@ class InterfaceCollector final
         return true;
       }
     }
-    if (!IsIdentityCandidate(declaration, context_)) return true;
+    if (!IsIdentityCandidate(declaration, context_)) {
+      // Native C typedefs can have no linkage while naming a callable contract.
+      // Validate their type even when the current public identity model does
+      // not export them, rather than silently accepting unqualified effects.
+      if (IsTopLevel(declaration) &&
+          IsInMainFile(context_, declaration->getLocation()) &&
+          llvm::isa<clang::TypedefNameDecl>(declaration))
+        CheckTypeDependencies(declaration, context_, result_);
+      return true;
+    }
     if (auto *method = llvm::dyn_cast<clang::ObjCMethodDecl>(declaration)) {
       if (method->getBody()) return true;
       if (context_.getLangOpts().ObjC3) {
@@ -449,11 +474,15 @@ class InterfaceCollector final
       return true;
     }
     if (auto *value = llvm::dyn_cast<clang::ValueDecl>(representative)) {
+      identity.effects = ReadCanonicalFunctionEffects(value->getType(), context_);
       const auto lifetime = value->getType().getObjCLifetime();
       if (lifetime != clang::Qualifiers::OCL_None)
         identity.effects.ownership_identity =
             std::to_string(static_cast<unsigned>(lifetime));
     }
+    if (auto *type = llvm::dyn_cast<clang::TypeDecl>(representative))
+      identity.effects = ReadCanonicalFunctionEffects(
+          context_.getTypeDeclType(type), context_);
     CheckTypeDependencies(representative, context_, result_);
 
     const auto found = declarations_.find(stable_id);

@@ -2,6 +2,7 @@
 #include "clang_foundation/interface_emitter.h"
 
 #include <cassert>
+#include <cstdio>
 #include <string>
 #include <vector>
 
@@ -73,11 +74,40 @@ void TestObjectiveCContainerRoundTrips() {
   assert(emitted.source_bytes.find("- (int)value") != std::string::npos);
 }
 
+void TestUnqualifiedEffectInterchangeFailsClosed() {
+  for (const char *source : {
+      "void typed_api(void) __objc3_throws(int);\n",
+      "typedef void TypedCallback(void) __objc3_throws(int);\n",
+      "typedef void TypedCallback(void) __objc3_throws(int); "
+      "void accepts_callback(TypedCallback *);\n",
+      "typedef void TypedCallback(void) __objc3_throws(int); "
+      "struct CallbackStorage { TypedCallback *callback; };\n"}) {
+    auto ast = clang::tooling::buildASTFromCodeWithArgs(
+        source,
+        {"-x", "objective-c", "-std=c17", "-fobjc-version=3",
+         "-fobjc-runtime=gnustep-2.0", "--target=x86_64-unknown-linux-gnu"},
+        "effect_fixture.m");
+    assert(ast && !ast->getDiagnostics().hasErrorOccurred());
+    auto emitted = EmitSemanticInterface(ast->getASTContext(), "fixture.effect",
+                                         "test-package");
+    if (emitted.success || !emitted.source_bytes.empty() ||
+        !emitted.sidecar_json.empty())
+      std::fprintf(stderr, "Unexpected effect interface acceptance: %s\n", source);
+    assert(!emitted.success && emitted.source_bytes.empty() &&
+           emitted.sidecar_json.empty());
+    bool found_effect_diagnostic = false;
+    for (const auto &diagnostic : emitted.diagnostics)
+      found_effect_diagnostic |= diagnostic.code == "O3IFC125";
+    assert(found_effect_diagnostic);
+  }
+}
+
 }  // namespace
 
 int main() {
   TestOrdinaryCDeclarationsRoundTrip();
   TestUnmodeledAttributesFailClosed();
   TestObjectiveCContainerRoundTrips();
+  TestUnqualifiedEffectInterchangeFailsClosed();
   return 0;
 }

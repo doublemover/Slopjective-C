@@ -1,4 +1,5 @@
 #include "clang_foundation/ast_contract_consumer.h"
+#include "clang_foundation/ast_effect_identity.h"
 #include "clang_foundation/interface_emitter.h"
 
 #include <algorithm>
@@ -40,6 +41,7 @@ class ContractConsumer final : public clang::ASTConsumer,
     if (auto *type_decl = llvm::dyn_cast<clang::TypeDecl>(decl))
       type = context_->getTypeDeclType(type_decl);
     if (!type.isNull()) {
+      identity.effects = ReadCanonicalFunctionEffects(type, *context_);
       clang::PrintingPolicy policy(context_->getLangOpts());
       identity.canonical_type_identity = type.getCanonicalType().getAsString(policy);
       if (type.getObjCLifetime() != clang::Qualifiers::OCL_None)
