@@ -1,3 +1,23 @@
+diff --git a/clang/lib/Analysis/CFG.cpp b/clang/lib/Analysis/CFG.cpp
+index f8a2afec7..3324c962d 100644
+--- a/clang/lib/Analysis/CFG.cpp
++++ b/clang/lib/Analysis/CFG.cpp
+@@ -2300,6 +2300,15 @@ CFGBlock *CFGBuilder::Visit(Stmt * S, AddStmtChoice asc,
+     default:
+       return VisitStmt(S, asc);
+ 
++    case Stmt::ObjC3TryExprClass:
++    case Stmt::ObjC3ThrowStmtClass:
++    case Stmt::ObjC3CatchStmtClass:
++    case Stmt::ObjC3DoCatchStmtClass:
++      // Native C++ EH edges do not model Slop typed-error transfer. Do not
++      // silently flatten these control-flow nodes into ordinary child visits.
++      badCFG = true;
++      return nullptr;
++
+     case Stmt::ImplicitValueInitExprClass:
+       if (BuildOpts.OmitImplicitValueInitializers)
+         return Block;
 diff --git a/clang/lib/CodeGen/CGAtomic.cpp b/clang/lib/CodeGen/CGAtomic.cpp
 index 06ef2f5b8..f66acdb74 100644
 --- a/clang/lib/CodeGen/CGAtomic.cpp
@@ -575,7 +595,7 @@ index 24878710d..b673725b6 100644
    if (!CallOrInvoke) {
      CallOrInvoke = &CallOrInvokeStorage;
 diff --git a/clang/lib/CodeGen/CGExprAgg.cpp b/clang/lib/CodeGen/CGExprAgg.cpp
-index 7cc4d6c8f..7d0f7f7a3 100644
+index 7cc4d6c8f..169f147ab 100644
 --- a/clang/lib/CodeGen/CGExprAgg.cpp
 +++ b/clang/lib/CodeGen/CGExprAgg.cpp
 @@ -11,6 +11,9 @@
@@ -588,7 +608,7 @@ index 7cc4d6c8f..7d0f7f7a3 100644
  #include "CGDebugInfo.h"
  #include "CGHLSLRuntime.h"
  #include "CGObjCRuntime.h"
-@@ -235,6 +238,24 @@ public:
+@@ -235,6 +238,28 @@ public:
    void EmitInitializationToLValue(Expr *E, LValue Address);
    void EmitNullInitializationToLValue(LValue Address);
    //  case Expr::ChooseExprClass:
@@ -610,10 +630,14 @@ index 7cc4d6c8f..7d0f7f7a3 100644
 +            IsLocalCarrierInitialization))
 +      CGF.ErrorUnsupported(E, "ObjC3 Result aggregate expression");
 +  }
++  void VisitObjC3TryExpr(ObjC3TryExpr *E) {
++    CGF.ErrorUnsupported(E, "Slop typed-error try ABI");
++  }
++
    void VisitCXXThrowExpr(const CXXThrowExpr *E) { CGF.EmitCXXThrowExpr(E); }
    void VisitAtomicExpr(AtomicExpr *E) {
      RValue Res = CGF.EmitAtomicExpr(E);
-@@ -356,6 +377,35 @@ void AggExprEmitter::EmitFinalDestCopy(
+@@ -356,6 +381,35 @@ void AggExprEmitter::EmitFinalDestCopy(
    if (Dest.isIgnored())
      return;
  
@@ -649,7 +673,7 @@ index 7cc4d6c8f..7d0f7f7a3 100644
    // Copy non-trivial C structs here.
    LValue DstLV = CGF.MakeAddrLValue(
        Dest.getAddress(), Dest.isVolatile() ? type.withVolatile() : type);
-@@ -390,6 +440,10 @@ void AggExprEmitter::EmitFinalDestCopy(
+@@ -390,6 +444,10 @@ void AggExprEmitter::EmitFinalDestCopy(
  ///   ignored
  void AggExprEmitter::EmitCopy(QualType type, const AggValueSlot &dest,
                                const AggValueSlot &src) {
@@ -660,7 +684,7 @@ index 7cc4d6c8f..7d0f7f7a3 100644
    if (dest.requiresGCollection()) {
      CharUnits sz = dest.getPreferredSize(CGF.getContext(), type);
      llvm::Value *size = llvm::ConstantInt::get(CGF.SizeTy, sz.getQuantity());
-@@ -828,6 +882,14 @@ void AggExprEmitter::VisitCastExpr(CastExpr *E) {
+@@ -828,6 +886,14 @@ void AggExprEmitter::VisitCastExpr(CastExpr *E) {
    }
  
    case CK_LValueToRValueBitCast: {
@@ -675,7 +699,7 @@ index 7cc4d6c8f..7d0f7f7a3 100644
      if (Dest.isIgnored()) {
        CGF.EmitAnyExpr(E->getSubExpr(), AggValueSlot::ignored(),
                        /*ignoreResult=*/true);
-@@ -1298,6 +1360,25 @@ void AggExprEmitter::VisitBinAssign(const BinaryOperator *E) {
+@@ -1298,6 +1364,25 @@ void AggExprEmitter::VisitBinAssign(const BinaryOperator *E) {
                                                   E->getRHS()->getType())
           && "Invalid assignment");
  
@@ -701,7 +725,7 @@ index 7cc4d6c8f..7d0f7f7a3 100644
    // If the LHS might be a __block variable, and the RHS can
    // potentially cause a block copy, we need to evaluate the RHS first
    // so that the assignment goes the right place.
-@@ -2248,7 +2329,37 @@ void CodeGenFunction::EmitAggregateCopy(LValue Dest, LValue Src, QualType Ty,
+@@ -2248,7 +2333,37 @@ void CodeGenFunction::EmitAggregateCopy(LValue Dest, LValue Src, QualType Ty,
                                          AggValueSlot::Overlap_t MayOverlap,
                                          bool isVolatile) {
    assert(!Ty->isAnyComplexType() && "Shouldn't happen for complex");
@@ -741,7 +765,7 @@ index 7cc4d6c8f..7d0f7f7a3 100644
    Address SrcPtr = Src.getAddress();
  
 diff --git a/clang/lib/CodeGen/CGExprComplex.cpp b/clang/lib/CodeGen/CGExprComplex.cpp
-index e5815ef11..230e39243 100644
+index e5815ef11..28eefb2bb 100644
 --- a/clang/lib/CodeGen/CGExprComplex.cpp
 +++ b/clang/lib/CodeGen/CGExprComplex.cpp
 @@ -10,6 +10,7 @@
@@ -752,7 +776,19 @@ index e5815ef11..230e39243 100644
  #include "CGDebugInfo.h"
  #include "CGOpenMPRuntime.h"
  #include "CodeGenFunction.h"
-@@ -561,6 +562,15 @@ ComplexPairTy ComplexExprEmitter::EmitCast(CastKind CK, Expr *Op,
+@@ -106,6 +107,11 @@ public:
+     llvm_unreachable("Stmt can't have complex result type!");
+   }
+   ComplexPairTy VisitExpr(Expr *S);
++  ComplexPairTy VisitObjC3TryExpr(ObjC3TryExpr *E) {
++    CGF.ErrorUnsupported(E, "Slop typed-error try ABI");
++    return CGF.GetUndefRValue(E->getType()).getComplexVal();
++  }
++
+   ComplexPairTy VisitConstantExpr(ConstantExpr *E) {
+     if (llvm::Constant *Result = ConstantEmitter(CGF).tryEmitConstantExpr(E))
+       return ComplexPairTy(Result->getAggregateElement(0U),
+@@ -561,6 +567,15 @@ ComplexPairTy ComplexExprEmitter::EmitCast(CastKind CK, Expr *Op,
    }
  
    case CK_LValueToRValueBitCast: {
@@ -769,7 +805,7 @@ index e5815ef11..230e39243 100644
      Address Addr =
          SourceLVal.getAddress().withElementType(CGF.ConvertTypeForMem(DestTy));
 diff --git a/clang/lib/CodeGen/CGExprScalar.cpp b/clang/lib/CodeGen/CGExprScalar.cpp
-index 6fd94752f..7454cf98e 100644
+index 6fd94752f..8fc228efc 100644
 --- a/clang/lib/CodeGen/CGExprScalar.cpp
 +++ b/clang/lib/CodeGen/CGExprScalar.cpp
 @@ -15,6 +15,9 @@
@@ -782,7 +818,7 @@ index 6fd94752f..7454cf98e 100644
  #include "CGOpenMPRuntime.h"
  #include "CGRecordLayout.h"
  #include "CodeGenFunction.h"
-@@ -459,6 +462,21 @@ public:
+@@ -459,6 +462,26 @@ public:
    }
    Value *VisitExpr(Expr *S);
  
@@ -801,10 +837,15 @@ index 6fd94752f..7454cf98e 100644
 +    }
 +    return CodeGen::emitObjC3ResultIsOkExpr(CGF, *E);
 +  }
++  Value *VisitObjC3TryExpr(ObjC3TryExpr *E) {
++    CGF.ErrorUnsupported(E, "Slop typed-error try ABI");
++    return CGF.GetUndefRValue(E->getType()).getScalarVal();
++  }
++
    Value *VisitConstantExpr(ConstantExpr *E) {
      // A constant expression of type 'void' generates no code and produces no
      // value.
-@@ -2533,6 +2551,11 @@ Value *ScalarExprEmitter::VisitCastExpr(CastExpr *CE) {
+@@ -2533,6 +2556,11 @@ Value *ScalarExprEmitter::VisitCastExpr(CastExpr *CE) {
    }
  
    case CK_LValueToRValueBitCast: {
@@ -888,6 +929,27 @@ index a81c42174..44fc35e6a 100644
      llvm::Function *LoadFunction = llvm::Function::Create(
        llvm::FunctionType::get(llvm::Type::getVoidTy(VMContext), false),
        llvm::GlobalValue::LinkOnceODRLinkage, ".objcv2_load_function",
+diff --git a/clang/lib/CodeGen/CGStmt.cpp b/clang/lib/CodeGen/CGStmt.cpp
+index c050fd41a..f9b889c01 100644
+--- a/clang/lib/CodeGen/CGStmt.cpp
++++ b/clang/lib/CodeGen/CGStmt.cpp
+@@ -161,6 +161,16 @@ void CodeGenFunction::EmitStmt(const Stmt *S, ArrayRef<const Attr *> Attrs) {
+   case Stmt::DoStmtClass:      EmitDoStmt(cast<DoStmt>(*S), Attrs);       break;
+   case Stmt::ForStmtClass:     EmitForStmt(cast<ForStmt>(*S), Attrs);     break;
+ 
++  case Stmt::ObjC3ThrowStmtClass:
++    ErrorUnsupported(S, "Slop typed-error raise ABI");
++    break;
++
++  case Stmt::ObjC3DoCatchStmtClass:
++  case Stmt::ObjC3CatchStmtClass:
++    ErrorUnsupported(S, "Slop typed-error handler ABI");
++    break;
++
++
+   case Stmt::ReturnStmtClass:  EmitReturnStmt(cast<ReturnStmt>(*S));      break;
+ 
+   case Stmt::SwitchStmtClass:  EmitSwitchStmt(cast<SwitchStmt>(*S));      break;
 diff --git a/clang/lib/CodeGen/CMakeLists.txt b/clang/lib/CodeGen/CMakeLists.txt
 index dbbc35b37..becc03109 100644
 --- a/clang/lib/CodeGen/CMakeLists.txt
@@ -1192,6 +1254,70 @@ index 9de7e0a83..f1e7138a5 100644
    ASTContext &getContext() const { return Context; }
    const TargetInfo &getTarget() const { return Target; }
    CGCXXABI &getCXXABI() const;
+diff --git a/clang/lib/StaticAnalyzer/Frontend/AnalysisConsumer.cpp b/clang/lib/StaticAnalyzer/Frontend/AnalysisConsumer.cpp
+index 1cc2b8dfb..9239880d9 100644
+--- a/clang/lib/StaticAnalyzer/Frontend/AnalysisConsumer.cpp
++++ b/clang/lib/StaticAnalyzer/Frontend/AnalysisConsumer.cpp
+@@ -36,6 +36,7 @@
+ #include "clang/StaticAnalyzer/Core/PathSensitive/ExprEngine.h"
+ #include "llvm/ADT/PostOrderIterator.h"
+ #include "llvm/ADT/ScopeExit.h"
++#include "llvm/ADT/SmallPtrSet.h"
+ #include "llvm/Support/TimeProfiler.h"
+ #include "llvm/Support/Timer.h"
+ #include "llvm/Support/raw_ostream.h"
+@@ -111,6 +112,7 @@ public:
+   /// The local declaration to all declarations ratio might be very small when
+   /// working with a PCH file.
+   SetOfDecls LocalTUDecls;
++  llvm::SmallPtrSet<const Decl *, 16> UnsupportedObjC3Decls;
+ 
+   MacroExpansionContext MacroExpansions;
+ 
+@@ -714,6 +716,21 @@ AnalysisConsumer::getModeForDecl(const Decl *D, AnalysisMode Mode) const {
+ static UnsignedEPStat PathRunningTime("PathRunningTime");
+ static UnsignedEPStat SyntaxRunningTime("SyntaxRunningTime");
+ 
++namespace {
++class FindUnsupportedObjC3AnalysisStmt final
++    : public DynamicRecursiveASTVisitor {
++public:
++  const Stmt *Unsupported = nullptr;
++  bool VisitStmt(Stmt *S) override {
++    if (isa<ObjC3TryExpr, ObjC3ThrowStmt, ObjC3CatchStmt, ObjC3DoCatchStmt>(S)) {
++      Unsupported = S;
++      return false;
++    }
++    return true;
++  }
++};
++} // namespace
++
+ void AnalysisConsumer::HandleCode(Decl *D, AnalysisMode Mode,
+                                   ExprEngine::InliningModes IMode,
+                                   SetOfConstDecls *VisitedCallees) {
+@@ -725,6 +742,21 @@ void AnalysisConsumer::HandleCode(Decl *D, AnalysisMode Mode,
+   if (Mode == AM_None)
+     return;
+ 
++  if (UnsupportedObjC3Decls.contains(D))
++    return;
++  FindUnsupportedObjC3AnalysisStmt ObjC3Nodes;
++  ObjC3Nodes.TraverseStmt(D->getBody());
++  if (ObjC3Nodes.Unsupported) {
++    // Syntax and path analysis may both visit a declaration. Reject both
++    // modes, while reporting the unsupported model once per declaration.
++    UnsupportedObjC3Decls.insert(D);
++    unsigned ID = Ctx->getDiagnostics().getCustomDiagID(
++        DiagnosticsEngine::Error,
++        "Slop typed-error control flow has no qualified static-analysis model");
++    Ctx->getDiagnostics().Report(ObjC3Nodes.Unsupported->getBeginLoc(), ID);
++    return;
++  }
++
+   // Clear the AnalysisManager of old AnalysisDeclContexts.
+   Mgr->ClearContexts();
+   // Ignore autosynthesized code.
 diff --git a/clang/lib/CodeGen/CGObjC3ABIBoundaries.cpp b/clang/lib/CodeGen/CGObjC3ABIBoundaries.cpp
 new file mode 100644
 --- /dev/null
@@ -2116,8 +2242,8 @@ new file mode 100644
 +        return false;
 +      if (!CXX->hasTrivialDestructor()) {
 +        const CXXDestructorDecl *Dtor = CXX->getDestructor();
-+        // The current semantic lane does not yet call CheckDestructorAccess
-+        // for carrier locals. Require an unambiguous public destructor here.
++        // Sema checks destructor access at the carrier declaration. This
++        // qualified lowering slice additionally requires a public destructor.
 +        if (!Dtor || Dtor->isDeleted() || Dtor->getAccess() != AS_public)
 +          return false;
 +      }
@@ -2133,8 +2259,8 @@ new file mode 100644
 +    return false;
 +  const CXXRecordDecl *RD = T->getAsCXXRecordDecl();
 +  const CXXDestructorDecl *Dtor = RD ? RD->getDestructor() : nullptr;
-+  // CodeGen has no use-site access context. Keep this lane to an unambiguous
-+  // destructor call until Sema wires carrier destruction access checking.
++  // Sema checks access at the carrier declaration; retain this narrower
++  // public-destructor qualification boundary in CodeGen.
 +  return Dtor && !Dtor->isDeleted() && Dtor->getAccess() == AS_public;
 +}
 +
@@ -5105,3 +5231,50 @@ new file mode 100644
 +// CHECK-NOT: call i32 @next_value()
 +// CHECK-LABEL: define{{.*}} @volatile_query
 +// CHECK: load volatile i8
+diff --git a/clang/test/ObjC3/CodeGen/try-throw-fail-closed.mm b/clang/test/ObjC3/CodeGen/try-throw-fail-closed.mm
+new file mode 100644
+--- /dev/null
++++ b/clang/test/ObjC3/CodeGen/try-throw-fail-closed.mm
+@@ -0,0 +1,42 @@
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fobjc-version=3 -DTEST_KIND=1 -emit-llvm -o /dev/null -verify=propagate %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fobjc-version=3 -DTEST_KIND=2 -emit-llvm -o /dev/null -verify=raise %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fobjc-version=3 -DTEST_KIND=3 -emit-llvm -o /dev/null -verify=force %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fobjc-version=3 -DTEST_KIND=4 -emit-llvm -o /dev/null -verify=optionalize %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fobjc-version=3 -DTEST_KIND=5 -emit-llvm -o /dev/null -verify=complex %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fobjc-version=3 -DTEST_KIND=6 -emit-llvm -o /dev/null -verify=handler %s
++
++struct Error {};
++
++// Each gate runs in its own translation unit. A top-level effect-qualified
++// declaration rejects the callable ABI before reaching a try visitor, so
++// the value visitors use native local function declarations instead.
++#if TEST_KIND == 1
++int propagate() __objc3_throws(Error) { // propagate-error {{ObjC3 async/throws callable ABI lowering}}
++  int typed_call(void) __objc3_throws(Error);
++  return __objc3_try(typed_call());
++}
++#elif TEST_KIND == 2
++void raise() __objc3_throws(Error) { // raise-error {{ObjC3 async/throws callable ABI lowering}}
++  __objc3_throw(Error{});
++}
++#elif TEST_KIND == 3
++int force_in_plain_callable() {
++  int typed_call(void) __objc3_throws(Error);
++  return __objc3_try_force(typed_call()); // force-error {{Slop typed-error try ABI}}
++}
++#elif TEST_KIND == 4
++void optionalize_in_plain_callable() {
++  int typed_call(void) __objc3_throws(Error);
++  __objc3_optional(int) value = __objc3_try_optional(typed_call()); // optionalize-error {{Slop typed-error try ABI}}
++}
++#elif TEST_KIND == 5
++_Complex double force_complex() {
++  _Complex double complex_call(void) __objc3_throws(Error);
++  return __objc3_try_force(complex_call()); // complex-error {{Slop typed-error try ABI}}
++}
++#elif TEST_KIND == 6
++void reject_unqualified_handler() {
++  __objc3_do { __objc3_throw(Error{}); } // handler-error {{Slop typed-error handler ABI}}
++  __objc3_catch(Error error) { (void)error; }
++}
++#endif

@@ -1,8 +1,24 @@
 diff --git a/clang/include/clang/AST/Stmt.h b/clang/include/clang/AST/Stmt.h
-index 1008e7d66..ccc33dbbd 100644
+index 1008e7d66..6d76ee7d7 100644
 --- a/clang/include/clang/AST/Stmt.h
 +++ b/clang/include/clang/AST/Stmt.h
-@@ -3229,6 +3229,9 @@ class DeferStmt : public Stmt {
+@@ -38,6 +38,7 @@
+ #include "llvm/Support/Casting.h"
+ #include "llvm/Support/Compiler.h"
+ #include "llvm/Support/ErrorHandling.h"
++#include "llvm/Support/TrailingObjects.h"
+ #include <algorithm>
+ #include <cassert>
+ #include <cstddef>
+@@ -68,6 +69,7 @@ class SourceManager;
+ class StringLiteral;
+ class Token;
+ class VarDecl;
++class TypeSourceInfo;
+ enum class CharacterLiteralKind;
+ enum class ConstantResultStorageKind;
+ enum class CXXConstructionKind;
+@@ -3229,6 +3231,9 @@ class DeferStmt : public Stmt {
  
    /// The deferred statement.
    Stmt *Body;
@@ -12,7 +28,7 @@ index 1008e7d66..ccc33dbbd 100644
  
    DeferStmt(EmptyShell Empty);
    DeferStmt(SourceLocation DeferLoc, Stmt *Body);
-@@ -3239,6 +3242,8 @@ public:
+@@ -3239,6 +3244,8 @@ public:
                             Stmt *Body);
  
    SourceLocation getDeferLoc() const { return DeferStmtBits.DeferLoc; }
@@ -21,8 +37,172 @@ index 1008e7d66..ccc33dbbd 100644
    void setDeferLoc(SourceLocation DeferLoc) {
      DeferStmtBits.DeferLoc = DeferLoc;
    }
+@@ -3264,6 +3271,99 @@ public:
+   }
+ };
+ 
++/// Structured ObjC3 error transfer, kept separate from C++ ThrowExpr and
++/// Objective-C @throw statements.
++class ObjC3ThrowStmt : public Stmt {
++  friend class ASTStmtReader;
++  Stmt *Payload = nullptr;
++  SourceLocation KeywordLoc, SemiLoc;
++  ObjC3ThrowStmt(EmptyShell Empty) : Stmt(ObjC3ThrowStmtClass, Empty) {}
++  ObjC3ThrowStmt(SourceLocation KeywordLoc, Expr *Payload,
++                 SourceLocation SemiLoc);
++public:
++  static ObjC3ThrowStmt *CreateEmpty(ASTContext &Context, EmptyShell Empty);
++  static ObjC3ThrowStmt *Create(ASTContext &Context, SourceLocation KeywordLoc,
++                                Expr *Payload, SourceLocation SemiLoc);
++  Expr *getPayload() const { return reinterpret_cast<Expr *>(Payload); }
++  SourceLocation getKeywordLoc() const { return KeywordLoc; }
++  SourceLocation getSemiLoc() const { return SemiLoc; }
++  SourceLocation getBeginLoc() const { return KeywordLoc; }
++  SourceLocation getEndLoc() const { return SemiLoc; }
++  child_range children() { return child_range(&Payload, &Payload + 1); }
++  const_child_range children() const {
++    return const_child_range(&Payload, &Payload + 1);
++  }
++  static bool classof(const Stmt *S) {
++    return S->getStmtClass() == ObjC3ThrowStmtClass;
++  }
++};
++
++/// A typed ObjC3 catch clause. This remains distinct from CXXCatchStmt.
++class ObjC3CatchStmt : public Stmt {
++  friend class ASTStmtReader;
++  SourceLocation CatchLoc, LParenLoc, RParenLoc;
++  TypeSourceInfo *CatchTypeInfo = nullptr;
++  Stmt *SubStmts[2] = {nullptr, nullptr}; // optional binding DeclStmt, handler body
++  bool CatchAll = false;
++  ObjC3CatchStmt(EmptyShell Empty) : Stmt(ObjC3CatchStmtClass, Empty) {}
++  ObjC3CatchStmt(SourceLocation CatchLoc, SourceLocation LParenLoc,
++                 SourceLocation RParenLoc, TypeSourceInfo *CatchTypeInfo,
++                 DeclStmt *Binding, CompoundStmt *Body, bool CatchAll)
++      : Stmt(ObjC3CatchStmtClass), CatchLoc(CatchLoc), LParenLoc(LParenLoc),
++        RParenLoc(RParenLoc), CatchTypeInfo(CatchTypeInfo),
++        SubStmts{Binding, Body}, CatchAll(CatchAll) {}
++public:
++  static ObjC3CatchStmt *CreateEmpty(ASTContext &Context, EmptyShell Empty);
++  static ObjC3CatchStmt *Create(ASTContext &Context, SourceLocation CatchLoc,
++      SourceLocation LParenLoc, SourceLocation RParenLoc,
++      TypeSourceInfo *CatchTypeInfo, DeclStmt *Binding,
++      CompoundStmt *Body, bool CatchAll);
++  bool isCatchAll() const { return CatchAll; }
++  TypeSourceInfo *getCatchTypeInfo() const { return CatchTypeInfo; }
++  DeclStmt *getBindingDeclStmt() const { return cast_or_null<DeclStmt>(SubStmts[0]); }
++  CompoundStmt *getHandlerBody() const { return cast<CompoundStmt>(SubStmts[1]); }
++  SourceLocation getCatchLoc() const { return CatchLoc; }
++  SourceLocation getLParenLoc() const { return LParenLoc; }
++  SourceLocation getRParenLoc() const { return RParenLoc; }
++  SourceLocation getBeginLoc() const { return CatchLoc; }
++  SourceLocation getEndLoc() const { return getHandlerBody()->getEndLoc(); }
++  child_range children() { return child_range(SubStmts, SubStmts + 2); }
++  const_child_range children() const { return const_child_range(SubStmts, SubStmts + 2); }
++  static bool classof(const Stmt *S) { return S->getStmtClass() == ObjC3CatchStmtClass; }
++};
++
++/// A private migration AST node for the ObjC3 structured error handler.
++class ObjC3DoCatchStmt final : public Stmt,
++                               private llvm::TrailingObjects<ObjC3DoCatchStmt, Stmt *> {
++  friend class ASTStmtReader;
++  friend TrailingObjects;
++  SourceLocation DoLoc;
++  unsigned NumCatchClauses;
++  size_t numTrailingObjects(OverloadToken<Stmt *>) const { return NumCatchClauses + 1; }
++  Stmt **getStmts() { return getTrailingObjects(); }
++  Stmt *const *getStmts() const { return getTrailingObjects(); }
++  ObjC3DoCatchStmt(SourceLocation DoLoc, CompoundStmt *Body,
++                   ArrayRef<ObjC3CatchStmt *> Clauses);
++  ObjC3DoCatchStmt(EmptyShell Empty, unsigned NumCatchClauses)
++      : Stmt(ObjC3DoCatchStmtClass, Empty), NumCatchClauses(NumCatchClauses) {}
++public:
++  static ObjC3DoCatchStmt *Create(ASTContext &Context, SourceLocation DoLoc,
++      CompoundStmt *Body, ArrayRef<ObjC3CatchStmt *> Clauses);
++  static ObjC3DoCatchStmt *CreateEmpty(ASTContext &Context, EmptyShell Empty,
++                                       unsigned NumCatchClauses);
++  SourceLocation getDoLoc() const { return DoLoc; }
++  CompoundStmt *getBody() const { return cast<CompoundStmt>(getStmts()[0]); }
++  unsigned getNumCatchClauses() const { return NumCatchClauses; }
++  ObjC3CatchStmt *getCatchClause(unsigned I) const {
++    assert(I < NumCatchClauses);
++    return cast<ObjC3CatchStmt>(getStmts()[I + 1]);
++  }
++  SourceLocation getBeginLoc() const { return DoLoc; }
++  SourceLocation getEndLoc() const { return getCatchClause(NumCatchClauses - 1)->getEndLoc(); }
++  child_range children() { return child_range(getStmts(), getStmts() + NumCatchClauses + 1); }
++  const_child_range children() const { return const_child_range(getStmts(), getStmts() + NumCatchClauses + 1); }
++  static bool classof(const Stmt *S) { return S->getStmtClass() == ObjC3DoCatchStmtClass; }
++};
+ /// AsmStmt is the base class for GCCAsmStmt and MSAsmStmt.
+ class AsmStmt : public Stmt {
+ protected:
+diff --git a/clang/lib/AST/Stmt.cpp b/clang/lib/AST/Stmt.cpp
+index 10aacd75a..85c365e12 100644
+--- a/clang/lib/AST/Stmt.cpp
++++ b/clang/lib/AST/Stmt.cpp
+@@ -1500,6 +1500,59 @@ const Stmt *LoopControlStmt::getNamedLoopOrSwitch() const {
+   return getLabelDecl()->getStmt()->getInnermostLabeledStmt();
+ }
+ 
++ObjC3ThrowStmt::ObjC3ThrowStmt(SourceLocation KeywordLoc, Expr *Payload,
++                              SourceLocation SemiLoc)
++    : Stmt(ObjC3ThrowStmtClass), Payload(Payload), KeywordLoc(KeywordLoc),
++      SemiLoc(SemiLoc) {}
++
++ObjC3ThrowStmt *ObjC3ThrowStmt::CreateEmpty(ASTContext &Context,
++                                             EmptyShell Empty) {
++  return new (Context) ObjC3ThrowStmt(Empty);
++}
++
++ObjC3ThrowStmt *ObjC3ThrowStmt::Create(ASTContext &Context,
++                                       SourceLocation KeywordLoc,
++                                       Expr *Payload,
++                                       SourceLocation SemiLoc) {
++  return new (Context) ObjC3ThrowStmt(KeywordLoc, Payload, SemiLoc);
++}
++
++ObjC3CatchStmt *ObjC3CatchStmt::CreateEmpty(ASTContext &Context,
++                                            EmptyShell Empty) {
++  return new (Context) ObjC3CatchStmt(Empty);
++}
++
++ObjC3CatchStmt *ObjC3CatchStmt::Create(ASTContext &Context,
++    SourceLocation CatchLoc, SourceLocation LParenLoc,
++    SourceLocation RParenLoc, TypeSourceInfo *CatchTypeInfo,
++    DeclStmt *Binding, CompoundStmt *Body, bool CatchAll) {
++  return new (Context) ObjC3CatchStmt(CatchLoc, LParenLoc, RParenLoc,
++      CatchTypeInfo, Binding, Body, CatchAll);
++}
++
++ObjC3DoCatchStmt *ObjC3DoCatchStmt::Create(ASTContext &Context,
++    SourceLocation DoLoc, CompoundStmt *Body,
++    ArrayRef<ObjC3CatchStmt *> Clauses) {
++  const size_t Size = totalSizeToAlloc<Stmt *>(Clauses.size() + 1);
++  void *Mem = Context.Allocate(Size, alignof(ObjC3DoCatchStmt));
++  return new (Mem) ObjC3DoCatchStmt(DoLoc, Body, Clauses);
++}
++
++ObjC3DoCatchStmt *ObjC3DoCatchStmt::CreateEmpty(ASTContext &Context,
++    EmptyShell Empty, unsigned NumCatchClauses) {
++  const size_t Size = totalSizeToAlloc<Stmt *>(NumCatchClauses + 1);
++  void *Mem = Context.Allocate(Size, alignof(ObjC3DoCatchStmt));
++  return new (Mem) ObjC3DoCatchStmt(Empty, NumCatchClauses);
++}
++
++ObjC3DoCatchStmt::ObjC3DoCatchStmt(SourceLocation DoLoc,
++    CompoundStmt *Body, ArrayRef<ObjC3CatchStmt *> Clauses)
++    : Stmt(ObjC3DoCatchStmtClass), DoLoc(DoLoc),
++      NumCatchClauses(Clauses.size()) {
++  Stmt **Nodes = getStmts();
++  Nodes[0] = Body;
++  llvm::copy(Clauses, Nodes + 1);
++}
+ DeferStmt::DeferStmt(EmptyShell Empty) : Stmt(DeferStmtClass, Empty) {}
+ DeferStmt::DeferStmt(SourceLocation DeferLoc, Stmt *Body)
+     : Stmt(DeferStmtClass) {
 diff --git a/clang/lib/AST/StmtPrinter.cpp b/clang/lib/AST/StmtPrinter.cpp
-index 4d1ad387b..7aef3b81d 100644
+index 4d1ad387b..00b1a6727 100644
 --- a/clang/lib/AST/StmtPrinter.cpp
 +++ b/clang/lib/AST/StmtPrinter.cpp
 @@ -492,7 +492,7 @@ void StmtPrinter::VisitBreakStmt(BreakStmt *Node) {
@@ -34,7 +214,7 @@ index 4d1ad387b..7aef3b81d 100644
    PrintControlledStmt(Node->getBody());
  }
  
-@@ -1884,6 +1884,36 @@ void StmtPrinter::VisitStmtExpr(StmtExpr *E) {
+@@ -1884,6 +1884,77 @@ void StmtPrinter::VisitStmtExpr(StmtExpr *E) {
    OS << ")";
  }
  
@@ -68,11 +248,52 @@ index 4d1ad387b..7aef3b81d 100644
 +  OS << ")";
 +}
 +
++void StmtPrinter::VisitObjC3TryExpr(ObjC3TryExpr *Node) {
++  switch (Node->getKind()) {
++  case ObjC3TryExpr::Kind::Propagate: OS << "__objc3_try("; break;
++  case ObjC3TryExpr::Kind::Optionalize: OS << "__objc3_try_optional("; break;
++  case ObjC3TryExpr::Kind::Force: OS << "__objc3_try_force("; break;
++  }
++  PrintExpr(Node->getOperand());
++  OS << ")";
++}
++
++void StmtPrinter::VisitObjC3ThrowStmt(ObjC3ThrowStmt *Node) {
++  OS << "__objc3_throw(";
++  PrintExpr(Node->getPayload());
++  OS << ");";
++}
++
++void StmtPrinter::VisitObjC3CatchStmt(ObjC3CatchStmt *Node) {
++  OS << "__objc3_catch";
++  if (!Node->isCatchAll()) {
++    OS << "(";
++    Node->getCatchTypeInfo()->getType().print(OS, Policy);
++    if (Node->getBindingDeclStmt()) {
++      if (const auto *Binding = dyn_cast<VarDecl>(
++              Node->getBindingDeclStmt()->getSingleDecl()))
++        OS << " " << Binding->getName();
++    }
++    OS << ")";
++  }
++  OS << " ";
++  PrintStmt(Node->getHandlerBody());
++}
++
++void StmtPrinter::VisitObjC3DoCatchStmt(ObjC3DoCatchStmt *Node) {
++  OS << "__objc3_do ";
++  PrintStmt(Node->getBody());
++  for (unsigned I = 0; I != Node->getNumCatchClauses(); ++I) {
++    OS << " ";
++    PrintStmt(Node->getCatchClause(I));
++  }
++}
++
  void StmtPrinter::VisitChooseExpr(ChooseExpr *Node) {
    OS << "__builtin_choose_expr(";
    PrintExpr(Node->getCond());
 diff --git a/clang/lib/Parse/ParseStmt.cpp b/clang/lib/Parse/ParseStmt.cpp
-index 260f81263..65e969afc 100644
+index 260f81263..f8be87b56 100644
 --- a/clang/lib/Parse/ParseStmt.cpp
 +++ b/clang/lib/Parse/ParseStmt.cpp
 @@ -138,11 +138,13 @@ StmtResult Parser::ParseStatementOrDeclarationAfterAttributes(
@@ -89,7 +310,7 @@ index 260f81263..65e969afc 100644
    tok::TokenKind Kind  = Tok.getKind();
    SourceLocation AtLoc;
    switch (Kind) {
-@@ -161,6 +163,11 @@ Retry:
+@@ -161,6 +163,18 @@ Retry:
    case tok::identifier:
    ParseIdentifier: {
      Token Next = NextToken();
@@ -98,10 +319,17 @@ index 260f81263..65e969afc 100644
 +    if (getLangOpts().ObjC3 && Tok.getIdentifierInfo() &&
 +        Tok.getIdentifierInfo()->isStr("__objc3_defer"))
 +      return ParseObjC3DeferStatement();
++    if (getLangOpts().ObjC3 && Tok.getIdentifierInfo() &&
++        Tok.getIdentifierInfo()->isStr("__objc3_throw") &&
++        Next.is(tok::l_paren))
++      return ParseObjC3ThrowStatement();
++    if (getLangOpts().ObjC3 && Tok.getIdentifierInfo() &&
++        Tok.getIdentifierInfo()->isStr("__objc3_do"))
++      return ParseObjC3DoCatchStatement();
      if (Next.is(tok::colon)) { // C99 6.8.1: labeled-statement
        // Both C++11 and GNU attributes preceding the label appertain to the
        // label, so put them in a single list to pass on to
-@@ -173,7 +180,23 @@ Retry:
+@@ -173,7 +187,26 @@ Retry:
  
      // Look up the identifier, and typo-correct it to a keyword if it's not
      // found.
@@ -117,7 +345,10 @@ index 260f81263..65e969afc 100644
 +         Tok.getIdentifierInfo()->isStr("__objc3_has_value") ||
 +         Tok.getIdentifierInfo()->isStr("__objc3_ok") ||
 +         Tok.getIdentifierInfo()->isStr("__objc3_err") ||
-+         Tok.getIdentifierInfo()->isStr("__objc3_is_ok"));
++         Tok.getIdentifierInfo()->isStr("__objc3_is_ok") ||
++         Tok.getIdentifierInfo()->isStr("__objc3_try") ||
++         Tok.getIdentifierInfo()->isStr("__objc3_try_optional") ||
++         Tok.getIdentifierInfo()->isStr("__objc3_try_force"));
 +    // Keep the private constructor token available to declaration
 +    // disambiguation. Ordinary identifier annotation treats its argument list
 +    // as an expression before the carrier type parser can consume it.
@@ -126,7 +357,7 @@ index 260f81263..65e969afc 100644
        // Try to limit which sets of keywords should be included in typo
        // correction based on what the next token is.
        StatementFilterCCC CCC(Next);
-@@ -208,7 +231,8 @@ Retry:
+@@ -208,7 +241,8 @@ Retry:
      // in C++, we always allow a declaration, but in C we need to check whether
      // we're in a statement context that allows declarations. e.g., in C, the
      // following is invalid: if (1) int x;
@@ -137,10 +368,10 @@ index 260f81263..65e969afc 100644
               ParsedStmtContext()) &&
          ((GNUAttributeLoc.isValid() && !(HaveAttrs && AllAttrsAreStmtAttrs)) ||
 diff --git a/clang/lib/Serialization/ASTReaderStmt.cpp b/clang/lib/Serialization/ASTReaderStmt.cpp
-index 5553139df..78edbfc45 100644
+index 5553139df..e2b281408 100644
 --- a/clang/lib/Serialization/ASTReaderStmt.cpp
 +++ b/clang/lib/Serialization/ASTReaderStmt.cpp
-@@ -338,6 +338,7 @@ void ASTStmtReader::VisitBreakStmt(BreakStmt *S) { VisitLoopControlStmt(S); }
+@@ -338,9 +338,39 @@ void ASTStmtReader::VisitBreakStmt(BreakStmt *S) { VisitLoopControlStmt(S); }
  void ASTStmtReader::VisitDeferStmt(DeferStmt *S) {
    VisitStmt(S);
    S->setDeferLoc(readSourceLocation());
@@ -148,7 +379,39 @@ index 5553139df..78edbfc45 100644
    S->setBody(Record.readSubStmt());
  }
  
-@@ -1382,6 +1383,32 @@ void ASTStmtReader::VisitStmtExpr(StmtExpr *E) {
++void ASTStmtReader::VisitObjC3ThrowStmt(ObjC3ThrowStmt *S) {
++  VisitStmt(S);
++  S->Payload = Record.readSubExpr();
++  S->KeywordLoc = readSourceLocation();
++  S->SemiLoc = readSourceLocation();
++}
++
++void ASTStmtReader::VisitObjC3CatchStmt(ObjC3CatchStmt *S) {
++  VisitStmt(S);
++  S->CatchLoc = readSourceLocation();
++  S->LParenLoc = readSourceLocation();
++  S->RParenLoc = readSourceLocation();
++  S->CatchTypeInfo = Record.readTypeSourceInfo();
++  S->SubStmts[0] = Record.readSubStmt();
++  S->SubStmts[1] = Record.readSubStmt();
++  S->CatchAll = Record.readInt();
++}
++
++void ASTStmtReader::VisitObjC3DoCatchStmt(ObjC3DoCatchStmt *S) {
++  VisitStmt(S);
++  assert(Record.peekInt() == S->NumCatchClauses &&
++         "NumStmtFields is wrong for ObjC3DoCatchStmt");
++  Record.skipInts(1);
++  S->DoLoc = readSourceLocation();
++  S->getStmts()[0] = Record.readSubStmt();
++  for (unsigned I = 0; I != S->NumCatchClauses; ++I)
++    S->getStmts()[I + 1] = Record.readSubStmt();
++}
++
+ void ASTStmtReader::VisitReturnStmt(ReturnStmt *S) {
+   VisitStmt(S);
+ 
+@@ -1382,6 +1412,41 @@ void ASTStmtReader::VisitStmtExpr(StmtExpr *E) {
    E->StmtExprBits.TemplateDepth = Record.readInt();
  }
  
@@ -178,10 +441,39 @@ index 5553139df..78edbfc45 100644
 +  E->setRParenLoc(readSourceLocation());
 +}
 +
++void ASTStmtReader::VisitObjC3TryExpr(ObjC3TryExpr *E) {
++  VisitExpr(E);
++  E->Operation = static_cast<ObjC3TryExpr::Kind>(Record.readInt());
++  E->Operand = Record.readSubExpr();
++  E->KeywordLoc = readSourceLocation();
++  E->LParenLoc = readSourceLocation();
++  E->RParenLoc = readSourceLocation();
++}
++
  void ASTStmtReader::VisitChooseExpr(ChooseExpr *E) {
    VisitExpr(E);
    E->setCond(Record.readSubExpr());
-@@ -3427,6 +3454,14 @@ Stmt *ASTReader::ReadStmtFromStream(ModuleFile &F) {
+@@ -3164,6 +3229,19 @@ Stmt *ASTReader::ReadStmtFromStream(ModuleFile &F) {
+       S = DeferStmt::CreateEmpty(Context, Empty);
+       break;
+ 
++    case STMT_OBJC3_THROW:
++      S = ObjC3ThrowStmt::CreateEmpty(Context, Empty);
++      break;
++
++    case STMT_OBJC3_CATCH:
++      S = ObjC3CatchStmt::CreateEmpty(Context, Empty);
++      break;
++
++    case STMT_OBJC3_DO_CATCH:
++      S = ObjC3DoCatchStmt::CreateEmpty(
++          Context, Empty, Record[ASTStmtReader::NumStmtFields]);
++      break;
++
+     case STMT_RETURN:
+       S = ReturnStmt::CreateEmpty(
+           Context, /* HasNRVOCandidate=*/Record[ASTStmtReader::NumStmtFields]);
+@@ -3427,6 +3505,18 @@ Stmt *ASTReader::ReadStmtFromStream(ModuleFile &F) {
        S = new (Context) StmtExpr(Empty);
        break;
  
@@ -193,14 +485,18 @@ index 5553139df..78edbfc45 100644
 +      S = new (Context) ObjC3OptionalExpr(Empty);
 +      break;
 +
++    case EXPR_OBJC3_TRY:
++      S = new (Context) ObjC3TryExpr(Empty);
++      break;
++
      case EXPR_CHOOSE:
        S = new (Context) ChooseExpr(Empty);
        break;
 diff --git a/clang/lib/Serialization/ASTWriterStmt.cpp b/clang/lib/Serialization/ASTWriterStmt.cpp
-index 8f22156f9..2af963cde 100644
+index 8f22156f9..6325b554c 100644
 --- a/clang/lib/Serialization/ASTWriterStmt.cpp
 +++ b/clang/lib/Serialization/ASTWriterStmt.cpp
-@@ -333,6 +333,7 @@ void ASTStmtWriter::VisitBreakStmt(BreakStmt *S) {
+@@ -333,10 +333,41 @@ void ASTStmtWriter::VisitBreakStmt(BreakStmt *S) {
  void ASTStmtWriter::VisitDeferStmt(DeferStmt *S) {
    VisitStmt(S);
    Record.AddSourceLocation(S->getDeferLoc());
@@ -208,7 +504,41 @@ index 8f22156f9..2af963cde 100644
    Record.AddStmt(S->getBody());
    Code = serialization::STMT_DEFER;
  }
-@@ -1338,6 +1339,34 @@ void ASTStmtWriter::VisitStmtExpr(StmtExpr *E) {
+ 
++void ASTStmtWriter::VisitObjC3ThrowStmt(ObjC3ThrowStmt *S) {
++  VisitStmt(S);
++  Record.AddStmt(S->getPayload());
++  Record.AddSourceLocation(S->getKeywordLoc());
++  Record.AddSourceLocation(S->getSemiLoc());
++  Code = serialization::STMT_OBJC3_THROW;
++}
++
++void ASTStmtWriter::VisitObjC3CatchStmt(ObjC3CatchStmt *S) {
++  VisitStmt(S);
++  Record.AddSourceLocation(S->getCatchLoc());
++  Record.AddSourceLocation(S->getLParenLoc());
++  Record.AddSourceLocation(S->getRParenLoc());
++  Record.AddTypeSourceInfo(S->getCatchTypeInfo());
++  Record.AddStmt(S->getBindingDeclStmt());
++  Record.AddStmt(S->getHandlerBody());
++  Record.push_back(S->isCatchAll());
++  Code = serialization::STMT_OBJC3_CATCH;
++}
++
++void ASTStmtWriter::VisitObjC3DoCatchStmt(ObjC3DoCatchStmt *S) {
++  VisitStmt(S);
++  Record.push_back(S->getNumCatchClauses());
++  Record.AddSourceLocation(S->getDoLoc());
++  Record.AddStmt(S->getBody());
++  for (unsigned I = 0; I != S->getNumCatchClauses(); ++I)
++    Record.AddStmt(S->getCatchClause(I));
++  Code = serialization::STMT_OBJC3_DO_CATCH;
++}
++
+ void ASTStmtWriter::VisitReturnStmt(ReturnStmt *S) {
+   VisitStmt(S);
+ 
+@@ -1338,6 +1369,44 @@ void ASTStmtWriter::VisitStmtExpr(StmtExpr *E) {
    Code = serialization::EXPR_STMT;
  }
  
@@ -240,6 +570,16 @@ index 8f22156f9..2af963cde 100644
 +  Code = serialization::EXPR_OBJC3_OPTIONAL;
 +}
 +
++void ASTStmtWriter::VisitObjC3TryExpr(ObjC3TryExpr *E) {
++  VisitExpr(E);
++  Record.push_back(static_cast<unsigned>(E->getKind()));
++  Record.AddStmt(E->getOperand());
++  Record.AddSourceLocation(E->getKeywordLoc());
++  Record.AddSourceLocation(E->getLParenLoc());
++  Record.AddSourceLocation(E->getRParenLoc());
++  Code = serialization::EXPR_OBJC3_TRY;
++}
++
  void ASTStmtWriter::VisitChooseExpr(ChooseExpr *E) {
    VisitExpr(E);
    Record.AddStmt(E->getCond());
@@ -247,7 +587,7 @@ diff --git a/clang/lib/Parse/ParseObjC3.cpp b/clang/lib/Parse/ParseObjC3.cpp
 new file mode 100644
 --- /dev/null
 +++ b/clang/lib/Parse/ParseObjC3.cpp
-@@ -0,0 +1,115 @@
+@@ -0,0 +1,244 @@
 +//===--- ParseObjC3.cpp - Slopjective-C parser ---------------------------===//
 +//
 +// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
@@ -336,6 +676,135 @@ new file mode 100644
 +  return Actions.ActOnObjC3OptionalSomeExpr(Keyword, Parens.getOpenLocation(), PayloadType.get(), Payload.get(), Comma, Parens.getCloseLocation());
 +}
 +
++
++ExprResult Parser::ParseObjC3TryExpression() {
++  IdentifierInfo *II = Tok.getIdentifierInfo();
++  const bool Optional = II->isStr("__objc3_try_optional");
++  const bool Force = II->isStr("__objc3_try_force");
++  const unsigned Kind = Optional ? 1 : Force ? 2 : 0;
++  SourceLocation Keyword = ConsumeToken();
++  BalancedDelimiterTracker Parens(*this, tok::l_paren);
++  if (Parens.expectAndConsume(diag::err_expected_lparen_after,
++                              Optional ? "__objc3_try_optional"
++                                       : Force ? "__objc3_try_force"
++                                               : "__objc3_try",
++                              tok::r_paren))
++    return ExprError();
++  ExprResult Operand = ParseAssignmentExpression();
++  if (Operand.isInvalid()) {
++    Parens.skipToEnd();
++    return ExprError();
++  }
++  if (Parens.consumeClose())
++    return ExprError();
++  return Actions.ActOnObjC3TryExpr(Kind, Keyword, Parens.getOpenLocation(),
++                                   Operand.get(), Parens.getCloseLocation());
++}
++
++StmtResult Parser::ParseObjC3ThrowStatement() {
++  SourceLocation Keyword = ConsumeToken();
++  BalancedDelimiterTracker Parens(*this, tok::l_paren);
++  if (Parens.expectAndConsume(diag::err_expected_lparen_after,
++                              "__objc3_throw", tok::r_paren))
++    return StmtError();
++  ExprResult Payload = ParseAssignmentExpression();
++  if (Payload.isInvalid()) {
++    Parens.skipToEnd();
++    return StmtError();
++  }
++  if (Parens.consumeClose())
++    return StmtError();
++  if (Tok.isNot(tok::semi))
++    return StmtError(Diag(Tok, diag::err_expected) << tok::semi);
++  SourceLocation Semi = ConsumeToken();
++  return Actions.ActOnObjC3ThrowStmt(Keyword, Payload.get(), Semi);
++}
++
++StmtResult Parser::ParseObjC3DoCatchStatement() {
++  assert(getLangOpts().ObjC3 && Tok.is(tok::identifier) &&
++         Tok.getIdentifierInfo()->isStr("__objc3_do"));
++  SourceLocation DoLoc = ConsumeToken();
++  ObjC3DoCatchContext *Handler = Actions.ActOnObjC3BeginDoCatch(DoLoc);
++  llvm::scope_exit AbortHandler(
++      [&] { Actions.ActOnObjC3AbortDoCatch(Handler); });
++
++  if (Tok.isNot(tok::l_brace))
++    return StmtError(Diag(Tok, diag::err_expected) << tok::l_brace);
++  StmtResult Body = ParseCompoundStatement();
++  if (Body.isInvalid())
++    return StmtError();
++  auto *CompoundBody = dyn_cast<CompoundStmt>(Body.get());
++  if (!CompoundBody)
++    return StmtError();
++  Actions.ActOnObjC3EndDoCatchBody(Handler);
++
++  SmallVector<ObjC3CatchStmt *, 2> Clauses;
++  while (Tok.is(tok::identifier) && Tok.getIdentifierInfo() &&
++         Tok.getIdentifierInfo()->isStr("__objc3_catch")) {
++    SourceLocation CatchLoc = ConsumeToken();
++    SourceLocation LParenLoc;
++    SourceLocation RParenLoc;
++    TypeResult CatchType;
++    IdentifierInfo *BindingName = nullptr;
++    SourceLocation BindingLoc;
++    bool CatchAll = Tok.isNot(tok::l_paren);
++
++    if (!CatchAll) {
++      BalancedDelimiterTracker Pattern(*this, tok::l_paren);
++      if (Pattern.consumeOpen())
++        return StmtError();
++      LParenLoc = Pattern.getOpenLocation();
++      CatchType = ParseTypeName();
++      if (CatchType.isInvalid()) {
++        Pattern.skipToEnd();
++        return StmtError();
++      }
++      if (Tok.is(tok::identifier)) {
++        BindingName = Tok.getIdentifierInfo();
++        BindingLoc = ConsumeToken();
++      }
++      if (Pattern.consumeClose())
++        return StmtError();
++      RParenLoc = Pattern.getCloseLocation();
++    }
++
++    if (Tok.isNot(tok::l_brace))
++      return StmtError(Diag(Tok, diag::err_expected) << tok::l_brace);
++
++    ParseScope CatchScope(this, Scope::DeclScope | Scope::ControlScope |
++                                    Scope::CatchScope);
++    DeclStmt *Binding = nullptr;
++    if (BindingName)
++      Binding = Actions.ActOnObjC3CatchBinding(getCurScope(), CatchType.get(),
++                                               CatchLoc, BindingName,
++                                               BindingLoc);
++    if (BindingName && !Binding)
++      return StmtError();
++    ObjC3DoCatchContext *CatchContext = Actions.ActOnObjC3BeginCatchBody();
++    llvm::scope_exit AbortCatch(
++        [&] { Actions.ActOnObjC3AbortCatchBody(CatchContext); });
++    StmtResult HandlerBody = ParseCompoundStatement();
++    if (HandlerBody.isInvalid())
++      return StmtError();
++    auto *CompoundHandler = dyn_cast<CompoundStmt>(HandlerBody.get());
++    if (!CompoundHandler)
++      return StmtError();
++    Actions.ActOnObjC3EndCatchBody(CatchContext);
++    AbortCatch.release();
++
++    ObjC3CatchStmt *Clause = Actions.ActOnObjC3CatchClause(
++        CatchLoc, LParenLoc, CatchType.isUsable() ? CatchType.get() : ParsedType(),
++        RParenLoc, Binding, CompoundHandler, CatchAll);
++    if (!Clause)
++      return StmtError();
++    Clauses.push_back(Clause);
++  }
++
++  StmtResult Result =
++      Actions.ActOnObjC3FinishDoCatch(Handler, CompoundBody, Clauses);
++  AbortHandler.release();
++  return Result;
++}
 +
 +StmtResult Parser::ParseObjC3DeferStatement() {
 +  assert(Tok.is(tok::identifier) && Tok.getIdentifierInfo() &&

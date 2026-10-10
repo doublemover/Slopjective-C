@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import argparse
 import datetime
+import hashlib
 import json
 import os
 from pathlib import Path
@@ -43,6 +44,11 @@ def main() -> int:
     record_path = owned / f"process-{args.label}.json"
     if any(path.exists() for path in (stdout_path, stderr_path, record_path)):
         parser.error("This run label already has evidence; choose a fresh label")
+    identities = {
+        "runner_sha256": hashlib.sha256(runner.read_bytes()).hexdigest(),
+        "launcher_sha256": hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),
+        "powershell_sha256": hashlib.sha256(powershell.read_bytes()).hexdigest(),
+    }
     with stdout_path.open("xb") as stdout, stderr_path.open("xb") as stderr:
         process = subprocess.Popen(
             command, cwd=root, stdin=subprocess.DEVNULL, stdout=stdout,
@@ -51,6 +57,7 @@ def main() -> int:
         )
     record = {
         "pid": process.pid, "runner": str(runner), "command": command,
+        **identities,
         "created_utc": datetime.datetime.now(datetime.timezone.utc).isoformat(),
         "stdin": "DEVNULL", "stdout": str(stdout_path), "stderr": str(stderr_path),
         "create_no_window": True, "new_process_group": True, "noninteractive": True,

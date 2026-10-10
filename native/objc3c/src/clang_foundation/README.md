@@ -67,8 +67,22 @@ copies now lower through native CodeGen. Presence is independent of zero, false
 and null payloads; source snapshots preserve self-assignment and overlapping
 storage. Stored payload initialization uses its actual hidden record field,
 with ordinary C++ source-temporary cleanups owned by the full expression.
-Unqualified by-value calls, runtime type encodings, nontrivial C++/ARC lifetimes,
-whole enclosing aggregate copies, atomic access and representation bitcasts
-diagnose during CodeGen. Carrier pointer overloads can have distinct native
-symbols without qualifying a by-value carrier ABI. Payload extraction and async
-execution remain in progress; public feature gates report unavailable.
+Plain carrier values also cross nonvariadic C function boundaries on the tested
+Win64 target, using Clang's native ABI classification of the hidden record.
+Direct initialized carrier locals with admitted C++ payloads use their native
+constructors and selected-arm destructors, including normal and C++ exception
+cleanup. These private slices are exercised at O0/O2 with GNU-style drivers and
+clang-cl. Other carrier call boundaries, ARC carrier lifetimes, runtime type
+encodings, whole enclosing aggregate copies, atomic access and representation
+bitcasts still diagnose during CodeGen. Carrier pointer overloads can have
+distinct native symbols without qualifying other by-value carrier ABIs.
+Payload extraction and async execution remain in progress; public feature gates
+report unavailable.
+
+Private typed-error try, raise and ordered do/catch forms now have native AST
+nodes, template revalidation, PCH persistence and AST import. Propagation checks
+the actual callable's effect; surrounding handlers do not authorize errors
+inside separate lambdas or Blocks. Native C++ and Objective-C exceptions retain
+their separate controls. The unfinished typed-error ABI and static-analysis
+model diagnose explicitly before emission or analysis; this frontend slice
+does not qualify executable typed-error handling.

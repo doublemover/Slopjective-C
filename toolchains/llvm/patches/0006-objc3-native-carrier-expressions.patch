@@ -1,8 +1,28 @@
+diff --git a/clang/include/clang/AST/ComputeDependence.h b/clang/include/clang/AST/ComputeDependence.h
+index 895105640..54579d756 100644
+--- a/clang/include/clang/AST/ComputeDependence.h
++++ b/clang/include/clang/AST/ComputeDependence.h
+@@ -109,6 +109,7 @@ class ObjCIsaExpr;
+ class ObjCIndirectCopyRestoreExpr;
+ class ObjCMessageExpr;
+ class OpenACCAsteriskSizeExpr;
++class ObjC3TryExpr;
+ 
+ // The following functions are called from constructors of `Expr`, so they
+ // should not access anything beyond basic
+@@ -208,6 +209,7 @@ ExprDependence computeDependence(ObjCIsaExpr *E);
+ ExprDependence computeDependence(ObjCIndirectCopyRestoreExpr *E);
+ ExprDependence computeDependence(ObjCMessageExpr *E);
+ ExprDependence computeDependence(OpenACCAsteriskSizeExpr *E);
++ExprDependence computeDependence(ObjC3TryExpr *E);
+ 
+ } // namespace clang
+ #endif
 diff --git a/clang/include/clang/AST/Expr.h b/clang/include/clang/AST/Expr.h
-index 3e30a8b42..1f0e69be7 100644
+index 3e30a8b42..b76a6c668 100644
 --- a/clang/include/clang/AST/Expr.h
 +++ b/clang/include/clang/AST/Expr.h
-@@ -4845,6 +4845,103 @@ public:
+@@ -4845,6 +4845,140 @@ public:
  ///   and all predicates (whether it's an l-value, whether it's an integer
  ///   constant expression, etc.) return the same result as for the chosen
  ///   sub-expression.
@@ -103,27 +123,90 @@ index 3e30a8b42..1f0e69be7 100644
 +  static bool classof(const Stmt *S) { return S->getStmtClass() == ObjC3OptionalExprClass; }
 +};
 +
++/// Internal ObjC3 throwing-call wrapper. It retains the operation so semantic
++/// queries and future lowering can distinguish propagation, optionalization,
++/// and forced propagation without conflating C++ exception expressions.
++class ObjC3TryExpr : public Expr {
++  friend class ASTStmtReader;
++public:
++  enum class Kind : unsigned char { Propagate, Optionalize, Force };
++private:
++  Kind Operation;
++  Stmt *Operand;
++  SourceLocation KeywordLoc, LParenLoc, RParenLoc;
++  ObjC3TryExpr(Kind Operation, Expr *Operand, QualType ResultType,
++               SourceLocation KeywordLoc, SourceLocation LParenLoc,
++               SourceLocation RParenLoc);
++public:
++  explicit ObjC3TryExpr(EmptyShell Empty)
++      : Expr(ObjC3TryExprClass, Empty), Operation(Kind::Propagate),
++        Operand(nullptr) {}
++  static ObjC3TryExpr *Create(ASTContext &Context, Kind Operation,
++      Expr *Operand, QualType ResultType, SourceLocation KeywordLoc,
++      SourceLocation LParenLoc, SourceLocation RParenLoc);
++  Kind getKind() const { return Operation; }
++  Expr *getOperand() const { return cast<Expr>(Operand); }
++  SourceLocation getKeywordLoc() const { return KeywordLoc; }
++  SourceLocation getLParenLoc() const { return LParenLoc; }
++  SourceLocation getRParenLoc() const { return RParenLoc; }
++  SourceLocation getBeginLoc() const LLVM_READONLY { return KeywordLoc; }
++  SourceLocation getEndLoc() const LLVM_READONLY { return RParenLoc; }
++  child_range children() { return child_range(&Operand, &Operand + 1); }
++  const_child_range children() const {
++    return const_child_range(&Operand, &Operand + 1);
++  }
++  static bool classof(const Stmt *S) {
++    return S->getStmtClass() == ObjC3TryExprClass;
++  }
++};
++
  class ChooseExpr : public Expr {
    enum { COND, LHS, RHS, END_EXPR };
    Stmt* SubExprs[END_EXPR]; // Left/Middle/Right hand sides.
 diff --git a/clang/include/clang/Basic/StmtNodes.td b/clang/include/clang/Basic/StmtNodes.td
-index b08b9fe3b..dc1270b66 100644
+index b08b9fe3b..94e79069d 100644
 --- a/clang/include/clang/Basic/StmtNodes.td
 +++ b/clang/include/clang/Basic/StmtNodes.td
-@@ -117,6 +117,8 @@ def AtomicExpr : StmtNode<Expr>;
+@@ -18,6 +18,9 @@ def GotoStmt : StmtNode<Stmt>;
+ def IndirectGotoStmt : StmtNode<Stmt>;
+ def ReturnStmt : StmtNode<Stmt>;
+ def DeferStmt : StmtNode<Stmt>;
++def ObjC3ThrowStmt : StmtNode<Stmt>;
++def ObjC3CatchStmt : StmtNode<Stmt>;
++def ObjC3DoCatchStmt : StmtNode<Stmt>;
+ def DeclStmt  : StmtNode<Stmt>;
+ def SwitchCase : StmtNode<Stmt, 1>;
+ def CaseStmt : StmtNode<SwitchCase>;
+@@ -117,6 +120,9 @@ def AtomicExpr : StmtNode<Expr>;
  def AddrLabelExpr : StmtNode<Expr>;
  def StmtExpr : StmtNode<Expr>;
  def ChooseExpr : StmtNode<Expr>;
 +def ObjC3OptionalExpr : StmtNode<Expr>;
 +def ObjC3ResultExpr : StmtNode<Expr>;
++def ObjC3TryExpr : StmtNode<Expr>;
  def GNUNullExpr : StmtNode<Expr>;
  
  // C++ Expressions.
+diff --git a/clang/lib/AST/ComputeDependence.cpp b/clang/lib/AST/ComputeDependence.cpp
+index 8429f17d2..3094a908b 100644
+--- a/clang/lib/AST/ComputeDependence.cpp
++++ b/clang/lib/AST/ComputeDependence.cpp
+@@ -963,3 +963,10 @@ ExprDependence clang::computeDependence(OpenACCAsteriskSizeExpr *E) {
+   // way.
+   return ExprDependence::None;
+ }
++
++ExprDependence clang::computeDependence(ObjC3TryExpr *E) {
++  // A try operation keeps the operand's type/value/pack dependence and also
++  // reflects dependence introduced by the result type of `try?` optionality.
++  return toExprDependenceForImpliedType(E->getType()->getDependence()) |
++         E->getOperand()->getDependence();
++}
 diff --git a/clang/lib/AST/Expr.cpp b/clang/lib/AST/Expr.cpp
-index d3e381ba4..cfaeb4b99 100644
+index d3e381ba4..785037c92 100644
 --- a/clang/lib/AST/Expr.cpp
 +++ b/clang/lib/AST/Expr.cpp
-@@ -40,6 +40,64 @@
+@@ -40,6 +40,83 @@
  #include <optional>
  using namespace clang;
  
@@ -159,6 +242,25 @@ index d3e381ba4..cfaeb4b99 100644
 +      FirstCommaLoc, SecondCommaLoc, RParenLoc);
 +}
 +
++ObjC3TryExpr::ObjC3TryExpr(Kind Operation, Expr *Operand, QualType ResultType,
++                           SourceLocation KeywordLoc,
++                           SourceLocation LParenLoc,
++                           SourceLocation RParenLoc)
++    : Expr(ObjC3TryExprClass, ResultType, VK_PRValue, OK_Ordinary),
++      Operation(Operation), Operand(Operand), KeywordLoc(KeywordLoc),
++      LParenLoc(LParenLoc), RParenLoc(RParenLoc) {
++  setDependence(computeDependence(this));
++}
++
++ObjC3TryExpr *ObjC3TryExpr::Create(ASTContext &Context, Kind Operation,
++                                   Expr *Operand, QualType ResultType,
++                                   SourceLocation KeywordLoc,
++                                   SourceLocation LParenLoc,
++                                   SourceLocation RParenLoc) {
++  return new (Context) ObjC3TryExpr(Operation, Operand, ResultType, KeywordLoc,
++                                    LParenLoc, RParenLoc);
++}
++
 +ObjC3OptionalExpr::ObjC3OptionalExpr(
 +    Kind Operation, QualType ResultType, QualType CarrierType,
 +    TypeSourceInfo *PayloadTypeInfo, Expr *Payload, SourceLocation KeywordLoc,
@@ -188,7 +290,34 @@ index d3e381ba4..cfaeb4b99 100644
  const Expr *Expr::getBestDynamicClassTypeExpr() const {
    const Expr *E = this;
    while (true) {
-@@ -3839,6 +3897,21 @@ bool Expr::HasSideEffects(const ASTContext &Ctx,
+@@ -2643,6 +2720,12 @@ bool Expr::isUnusedResultAWarning(const Expr *&WarnE, SourceLocation &Loc,
+     Loc = getExprLoc();
+     R1 = getSourceRange();
+     return true;
++  case ObjC3TryExprClass:
++    // Retain the throwing call's native unused-result contract. Propagating
++    // and forcing an error are observable operations even if the value is
++    // discarded; ordinary impure calls do not become unused comma warnings.
++    return cast<ObjC3TryExpr>(this)->getOperand()->
++        isUnusedResultAWarning(WarnE, Loc, R1, R2, Ctx);
+   case ParenExprClass:
+     return cast<ParenExpr>(this)->getSubExpr()->
+       isUnusedResultAWarning(WarnE, Loc, R1, R2, Ctx);
+@@ -3663,6 +3746,13 @@ namespace {
+           E->HasSideEffects(Context, IncludePossibleEffects))
+         HasSideEffects = true;
+     }
++
++    void VisitObjC3ThrowStmt(const ObjC3ThrowStmt *S) {
++      // A typed-error transfer is observable control flow even though it is
++      // not a C++ exception edge.
++      HasSideEffects = true;
++      Inherited::VisitObjC3ThrowStmt(S);
++    }
+   };
+ }
+ 
+@@ -3839,6 +3929,31 @@ bool Expr::HasSideEffects(const ASTContext &Ctx,
      return cast<GenericSelectionExpr>(this)->getResultExpr()->HasSideEffects(
          Ctx, IncludePossibleEffects);
  
@@ -206,31 +335,77 @@ index d3e381ba4..cfaeb4b99 100644
 +      return true;
 +    break;
 +  }
++  case ObjC3TryExprClass: {
++    const auto *E = cast<ObjC3TryExpr>(this);
++    // `try` may leave the current function and `try!` may trap. `try?`
++    // converts failure to a result value; its operand's effects are still
++    // visited below in the ordinary child walk.
++    if (IncludePossibleEffects &&
++        E->getKind() != ObjC3TryExpr::Kind::Optionalize)
++      return true;
++    break;
++  }
 +
    case ChooseExprClass:
      return cast<ChooseExpr>(this)->getChosenSubExpr()->HasSideEffects(
          Ctx, IncludePossibleEffects);
 diff --git a/clang/lib/AST/ExprClassification.cpp b/clang/lib/AST/ExprClassification.cpp
-index 9995d1b41..b7cf4d3d6 100644
+index 9995d1b41..b46bc53f3 100644
 --- a/clang/lib/AST/ExprClassification.cpp
 +++ b/clang/lib/AST/ExprClassification.cpp
-@@ -169,6 +169,11 @@ static Cl::Kinds ClassifyInternal(ASTContext &Ctx, const Expr *E) {
+@@ -169,6 +169,12 @@ static Cl::Kinds ClassifyInternal(ASTContext &Ctx, const Expr *E) {
    case Expr::CompoundLiteralExprClass:
      return !E->isLValue() ? ClassifyTemporary(E->getType()) : Cl::CL_LValue;
  
 +    // Carrier constructors and queries produce values, never payload lvalues.
 +  case Expr::ObjC3OptionalExprClass:
 +  case Expr::ObjC3ResultExprClass:
++  case Expr::ObjC3TryExprClass:
 +    return ClassifyExprValueKind(Lang, E, E->getValueKind());
 +
      // Expressions that are prvalues.
    case Expr::CXXBoolLiteralExprClass:
    case Expr::CXXPseudoDestructorExprClass:
 diff --git a/clang/lib/AST/ExprConstant.cpp b/clang/lib/AST/ExprConstant.cpp
-index ec7ca893f..af1632e86 100644
+index ec7ca893f..58e30c818 100644
 --- a/clang/lib/AST/ExprConstant.cpp
 +++ b/clang/lib/AST/ExprConstant.cpp
-@@ -15469,6 +15469,12 @@ GCCTypeClass EvaluateBuiltinClassifyType(QualType T,
+@@ -8540,6 +8540,34 @@ public:
+   bool VisitStmt(const Stmt *) {
+     llvm_unreachable("Expression evaluator should not be called on stmts");
+   }
++
++  bool RejectObjC3ConstexprStmt(const Stmt *S) {
++    // Typed-error transfer and handler dispatch are not C++ constant-
++    // evaluation operations. In particular, do not let the generic Stmt
++    // visitor reach its assertion-only fallback for these new nodes.
++    Info.FFDiag(S->getBeginLoc(), diag::note_invalid_subexpr_in_const_expr);
++    return false;
++  }
++
++  bool VisitObjC3ThrowStmt(const ObjC3ThrowStmt *S) {
++    return RejectObjC3ConstexprStmt(S);
++  }
++
++  bool VisitObjC3CatchStmt(const ObjC3CatchStmt *S) {
++    return RejectObjC3ConstexprStmt(S);
++  }
++
++  bool VisitObjC3DoCatchStmt(const ObjC3DoCatchStmt *S) {
++    return RejectObjC3ConstexprStmt(S);
++  }
++
++  bool VisitObjC3TryExpr(const ObjC3TryExpr *E) {
++    // The evaluator has no typed-error transfer semantics yet. Fail through
++    // the ordinary constexpr diagnostic path rather than evaluating the
++    // wrapped call as if try were a transparent C++ expression.
++    return Error(E);
++  }
++
+   bool VisitExpr(const Expr *E) {
+     return Error(E);
+   }
+@@ -15469,6 +15497,12 @@ GCCTypeClass EvaluateBuiltinClassifyType(QualType T,
      return CanTy->isUnionType() ? GCCTypeClass::Union
                                  : GCCTypeClass::ClassOrStruct;
  
@@ -243,20 +418,21 @@ index ec7ca893f..af1632e86 100644
    case Type::Atomic:
      // GCC classifies _Atomic T the same as T.
      return EvaluateBuiltinClassifyType(
-@@ -21016,6 +21022,8 @@ static ICEDiag CheckICE(const Expr* E, const ASTContext &Ctx) {
+@@ -21016,6 +21050,9 @@ static ICEDiag CheckICE(const Expr* E, const ASTContext &Ctx) {
  #define STMT(Node, Base) case Expr::Node##Class:
  #define EXPR(Node, Base)
  #include "clang/AST/StmtNodes.inc"
 +  case Expr::ObjC3OptionalExprClass:
 +  case Expr::ObjC3ResultExprClass:
++  case Expr::ObjC3TryExprClass:
    case Expr::PredefinedExprClass:
    case Expr::FloatingLiteralClass:
    case Expr::ImaginaryLiteralClass:
 diff --git a/clang/lib/AST/StmtProfile.cpp b/clang/lib/AST/StmtProfile.cpp
-index a626d0436..c9352004c 100644
+index a626d0436..5e930d63e 100644
 --- a/clang/lib/AST/StmtProfile.cpp
 +++ b/clang/lib/AST/StmtProfile.cpp
-@@ -1604,6 +1604,18 @@ void StmtProfiler::VisitConvertVectorExpr(const ConvertVectorExpr *S) {
+@@ -1604,6 +1604,45 @@ void StmtProfiler::VisitConvertVectorExpr(const ConvertVectorExpr *S) {
    VisitExpr(S);
  }
  
@@ -272,14 +448,41 @@ index a626d0436..c9352004c 100644
 +  VisitType(S->getCarrierType());
 +}
 +
++void StmtProfiler::VisitObjC3TryExpr(const ObjC3TryExpr *S) {
++  VisitExpr(S);
++  ID.AddInteger(static_cast<unsigned>(S->getKind()));
++}
++
++void StmtProfiler::VisitObjC3ThrowStmt(const ObjC3ThrowStmt *S) {
++  VisitStmt(S);
++}
++
++void StmtProfiler::VisitObjC3CatchStmt(const ObjC3CatchStmt *S) {
++  VisitStmtNoChildren(S);
++  ID.AddBoolean(S->isCatchAll());
++  if (TypeSourceInfo *TSI = S->getCatchTypeInfo())
++    VisitType(TSI->getType());
++  if (const DeclStmt *Binding = S->getBindingDeclStmt())
++    VisitStmt(Binding);
++  VisitStmt(S->getHandlerBody());
++}
++
++void StmtProfiler::VisitObjC3DoCatchStmt(const ObjC3DoCatchStmt *S) {
++  VisitStmtNoChildren(S);
++  ID.AddInteger(S->getNumCatchClauses());
++  VisitStmt(S->getBody());
++  for (unsigned I = 0; I != S->getNumCatchClauses(); ++I)
++    VisitStmt(S->getCatchClause(I));
++}
++
  void StmtProfiler::VisitChooseExpr(const ChooseExpr *S) {
    VisitExpr(S);
  }
 diff --git a/clang/lib/Parse/ParseExpr.cpp b/clang/lib/Parse/ParseExpr.cpp
-index 351534320..6155ac533 100644
+index 351534320..604a74343 100644
 --- a/clang/lib/Parse/ParseExpr.cpp
 +++ b/clang/lib/Parse/ParseExpr.cpp
-@@ -864,6 +864,22 @@ Parser::ParseCastExpression(CastParseKind ParseKind, bool isAddressOfOperand,
+@@ -864,6 +864,30 @@ Parser::ParseCastExpression(CastParseKind ParseKind, bool isAddressOfOperand,
    ParseIdentifier: {    // primary-expression: identifier
                          // unqualified-id: identifier
                          // constant: enumeration-constant
@@ -289,6 +492,14 @@ index 351534320..6155ac533 100644
 +         Tok.getIdentifierInfo()->isStr("__objc3_none") ||
 +         Tok.getIdentifierInfo()->isStr("__objc3_has_value"))) {
 +      Res = ParseObjC3OptionalExpression();
++      break;
++    }
++    if (getLangOpts().ObjC3 && Tok.is(tok::identifier) &&
++        Tok.getIdentifierInfo() &&
++        (Tok.getIdentifierInfo()->isStr("__objc3_try") ||
++         Tok.getIdentifierInfo()->isStr("__objc3_try_optional") ||
++         Tok.getIdentifierInfo()->isStr("__objc3_try_force"))) {
++      Res = ParseObjC3TryExpression();
 +      break;
 +    }
 +    if (getLangOpts().ObjC3 && Tok.is(tok::identifier) &&
@@ -303,10 +514,10 @@ index 351534320..6155ac533 100644
      // annot_cxxscope if it would be valid.  This handles things like x::y, etc.
      if (getLangOpts().CPlusPlus) {
 diff --git a/clang/lib/Sema/SemaExceptionSpec.cpp b/clang/lib/Sema/SemaExceptionSpec.cpp
-index 6208d6679..8db6ed78b 100644
+index 6208d6679..adc259a5a 100644
 --- a/clang/lib/Sema/SemaExceptionSpec.cpp
 +++ b/clang/lib/Sema/SemaExceptionSpec.cpp
-@@ -1325,6 +1325,11 @@ CanThrowResult Sema::canThrow(const Stmt *S) {
+@@ -1325,6 +1325,21 @@ CanThrowResult Sema::canThrow(const Stmt *S) {
      return mergeCanThrow(CT, canSubStmtsThrow(*this, S));
    }
  
@@ -315,8 +526,33 @@ index 6208d6679..8db6ed78b 100644
 +    return mergeCanThrow(cast<Expr>(S)->isValueDependent() ? CT_Dependent : CT_Cannot,
 +                         canSubStmtsThrow(*this, S));
 +
++  case Expr::ObjC3TryExprClass: {
++    // ObjC3 error propagation is not C++ EH. Preserve only native C++ throws
++    // that may arise while evaluating the operand.
++    const auto *Try = cast<ObjC3TryExpr>(S);
++    CanThrowResult CT = (Try->isTypeDependent() || Try->isValueDependent())
++                            ? CT_Dependent
++                            : CT_Cannot;
++    return mergeCanThrow(CT, canThrow(Try->getOperand()));
++  }
++
    case Expr::CXXDefaultArgExprClass:
      return canThrow(cast<CXXDefaultArgExpr>(S)->getExpr());
+ 
+@@ -1594,6 +1609,14 @@ CanThrowResult Sema::canThrow(const Stmt *S) {
+     return canSubStmtsThrow(*this, S);
+   }
+ 
++  // These structured-error statements are not native C++ exception edges.
++  // Recursing into their children still observes ordinary C++ calls and
++  // constructors used to form payloads or execute handler bodies.
++  case Stmt::ObjC3ThrowStmtClass:
++  case Stmt::ObjC3CatchStmtClass:
++  case Stmt::ObjC3DoCatchStmtClass:
++    return canSubStmtsThrow(*this, S);
++
+   case Stmt::ObjCAtThrowStmtClass:
+     return CT_Can;
  
 diff --git a/clang/lib/Sema/SemaObjC3OptionalExpr.cpp b/clang/lib/Sema/SemaObjC3OptionalExpr.cpp
 new file mode 100644

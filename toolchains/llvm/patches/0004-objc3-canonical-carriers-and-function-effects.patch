@@ -127,7 +127,7 @@ index 5b1012752..e77304e64 100644
  def LValuePathEntry : PropertyType<"APValue::LValuePathEntry">;
  def LValuePathSerializationHelper :
 diff --git a/clang/include/clang/AST/RecursiveASTVisitor.h b/clang/include/clang/AST/RecursiveASTVisitor.h
-index ddec2c52f..95542c25c 100644
+index ddec2c52f..45ea0be71 100644
 --- a/clang/include/clang/AST/RecursiveASTVisitor.h
 +++ b/clang/include/clang/AST/RecursiveASTVisitor.h
 @@ -998,6 +998,14 @@ DEF_TRAVERSE_TYPE(BuiltinType, {})
@@ -185,7 +185,7 @@ index ddec2c52f..95542c25c 100644
    const FunctionProtoType *T = TL.getTypePtr();
  
    for (unsigned I = 0, E = TL.getNumParams(); I != E; ++I) {
-@@ -2905,6 +2932,16 @@ DEF_TRAVERSE_STMT(BlockExpr, {
+@@ -2905,6 +2932,23 @@ DEF_TRAVERSE_STMT(BlockExpr, {
    return true; // no child statements to loop through.
  })
  
@@ -199,9 +199,31 @@ index ddec2c52f..95542c25c 100644
 +  if (TypeSourceInfo *Info = S->getPayloadTypeInfo())
 +    TRY_TO(TraverseTypeLoc(Info->getTypeLoc()));
 +})
++DEF_TRAVERSE_STMT(ObjC3TryExpr, {})
++DEF_TRAVERSE_STMT(ObjC3ThrowStmt, {})
++DEF_TRAVERSE_STMT(ObjC3CatchStmt, {
++  if (TypeSourceInfo *Info = S->getCatchTypeInfo())
++    TRY_TO(TraverseTypeLoc(Info->getTypeLoc()));
++})
++DEF_TRAVERSE_STMT(ObjC3DoCatchStmt, {})
  DEF_TRAVERSE_STMT(ChooseExpr, {})
  DEF_TRAVERSE_STMT(CompoundLiteralExpr, {
    TRY_TO(TraverseTypeLoc(S->getTypeSourceInfo()->getTypeLoc()));
+diff --git a/clang/include/clang/AST/TextNodeDumper.h b/clang/include/clang/AST/TextNodeDumper.h
+index 88ecd526e..087b9d6d4 100644
+--- a/clang/include/clang/AST/TextNodeDumper.h
++++ b/clang/include/clang/AST/TextNodeDumper.h
+@@ -264,6 +264,10 @@ public:
+   void VisitCaseStmt(const CaseStmt *Node);
+   void VisitReturnStmt(const ReturnStmt *Node);
+   void VisitCoawaitExpr(const CoawaitExpr *Node);
++  void VisitObjC3TryExpr(const ObjC3TryExpr *Node);
++  void VisitObjC3ThrowStmt(const ObjC3ThrowStmt *Node);
++  void VisitObjC3CatchStmt(const ObjC3CatchStmt *Node);
++  void VisitObjC3DoCatchStmt(const ObjC3DoCatchStmt *Node);
+   void VisitCoreturnStmt(const CoreturnStmt *Node);
+   void VisitCompoundStmt(const CompoundStmt *Node);
+   void VisitConstantExpr(const ConstantExpr *Node);
 diff --git a/clang/include/clang/AST/TypeBase.h b/clang/include/clang/AST/TypeBase.h
 index 279b75f14..6c69a4b1c 100644
 --- a/clang/include/clang/AST/TypeBase.h
@@ -629,19 +651,41 @@ index 63fc4bf2e..670f88c2a 100644
  defm enum_fixed_underlying_type : CXX11Compat<
    "enumeration types with a fixed underlying type are",
 diff --git a/clang/include/clang/Basic/DiagnosticSemaKinds.td b/clang/include/clang/Basic/DiagnosticSemaKinds.td
-index 43315a6f7..dcc43eed5 100644
+index 43315a6f7..5fd8cc7c9 100644
 --- a/clang/include/clang/Basic/DiagnosticSemaKinds.td
 +++ b/clang/include/clang/Basic/DiagnosticSemaKinds.td
-@@ -12,6 +12,8 @@
+@@ -12,6 +12,30 @@
  
  let Component = "Sema" in {
  let CategoryName = "Semantic Issue" in {
 +def err_objc3_invalid_function_effect_shape : Error<
 +  "invalid ObjC3 function effect payload">;
++def err_objc3_try_requires_prvalue : Error<
++  "an ObjC3 try currently requires a throwing call that returns a prvalue">;
++def err_objc3_try_requires_throwing_call : Error<
++  "an ObjC3 try operation requires a throwing call expression">;
++def err_objc3_try_requires_throwing_context : Error<
++  "propagating ObjC3 try requires a matching throwing function">;
++def err_objc3_try_effect_mismatch : Error<
++  "the ObjC3 try error type does not match the enclosing function's throws type">;
++def err_objc3_do_catch_requires_clause : Error<
++  "an ObjC3 do handler requires at least one __objc3_catch clause">;
++def err_objc3_catch_type_mismatch : Error<
++  "the ObjC3 catch type %0 is incompatible with thrown error type %1">;
++def err_objc3_catch_untyped_mismatch : Error<
++  "the ObjC3 catch type %0 cannot handle an untyped error">;
++def err_objc3_unhandled_error_effect : Error<
++  "an ObjC3 error is neither caught here nor compatible with the enclosing throws effect">;
++def err_objc3_catch_binding_requires_type : Error<
++    "an ObjC3 catch binding requires a typed catch pattern">;
++def err_objc3_throw_requires_throwing_context : Error<
++  "an ObjC3 throw requires a throwing function">;
++def err_objc3_throw_payload_mismatch : Error<
++  "the ObjC3 throw payload type does not match the enclosing function's throws type">;
  // C++11 compatibility with C++98.
  defm nonclass_type_friend : CXX11Compat<"non-class friend type %0 is">;
  defm static_data_member_in_union : CXX11Compat<"static data member %0 in union is">;
-@@ -7829,6 +7831,14 @@ def warn_param_mismatched_alignment : Warning<
+@@ -7829,6 +7853,14 @@ def warn_param_mismatched_alignment : Warning<
  
  def err_objc_object_assignment : Error<
    "cannot assign to class object (%0 invalid)">;
@@ -672,7 +716,7 @@ index db43a8529..2ff6033cc 100644
  def BlockPointerType : TypeNode<Type>;
  def ReferenceType : TypeNode<Type, 1>;
 diff --git a/clang/include/clang/Parse/Parser.h b/clang/include/clang/Parse/Parser.h
-index f7e7b0ec5..c60472d8c 100644
+index f7e7b0ec5..9226549dd 100644
 --- a/clang/include/clang/Parse/Parser.h
 +++ b/clang/include/clang/Parse/Parser.h
 @@ -2711,6 +2711,13 @@ private:
@@ -689,11 +733,14 @@ index f7e7b0ec5..c60472d8c 100644
    void InitCXXThisScopeForDeclaratorIfRelevant(
        const Declarator &D, const DeclSpec &DS,
        std::optional<Sema::CXXThisScopeRAII> &ThisScope);
-@@ -7503,6 +7510,10 @@ public:
+@@ -7503,6 +7510,13 @@ public:
    ///         unlabeled-statement
    /// \endverbatim
    StmtResult ParseDeferStatement(SourceLocation *TrailingElseLoc);
 +  ExprResult ParseObjC3OptionalExpression();
++  ExprResult ParseObjC3TryExpression();
++  StmtResult ParseObjC3ThrowStatement();
++  StmtResult ParseObjC3DoCatchStatement();
 +  ExprResult ParseObjC3ResultExpression();
 +  StmtResult ParseObjC3DeferStatement();
 +  TypeResult ParseObjC3TypeConstructor(SourceLocation &EndLoc);
@@ -762,10 +809,27 @@ index 43a48c92f..c9e4a1566 100644
    /// Return a DeclaratorChunk for a block.
    static DeclaratorChunk getBlockPointer(unsigned TypeQuals,
 diff --git a/clang/include/clang/Sema/Sema.h b/clang/include/clang/Sema/Sema.h
-index d68ed7c75..f04255686 100644
+index d68ed7c75..a71361049 100644
 --- a/clang/include/clang/Sema/Sema.h
 +++ b/clang/include/clang/Sema/Sema.h
-@@ -11101,6 +11101,33 @@ public:
+@@ -174,6 +174,7 @@ class SemaObjC;
+ class SemaOpenACC;
+ class SemaOpenCL;
+ class SemaOpenMP;
++struct ObjC3DoCatchContext;
+ class SemaPPC;
+ class SemaPseudoObject;
+ class SemaRISCV;
+@@ -4751,6 +4752,8 @@ public:
+   llvm::SmallSetVector<Decl *, 4> DeclsToCheckForDeferredDiags;
+ 
+ private:
++  SmallVector<ObjC3DoCatchContext *, 2> ObjC3ErrorHandlerStack;
++
+   /// Map of current shadowing declarations to shadowed declarations. Warn if
+   /// it looks like the user is trying to modify the shadowing declaration.
+   llvm::DenseMap<const NamedDecl *, const NamedDecl *> ShadowingDecls;
+@@ -11101,6 +11104,53 @@ public:
                              LabelDecl *Label, SourceLocation LabelLoc);
  
    void ActOnStartOfDeferStmt(SourceLocation DeferLoc, Scope *CurScope);
@@ -777,6 +841,26 @@ index d68ed7c75..f04255686 100644
 +      SourceLocation LParenLoc, ParsedType SuccessType, SourceLocation FirstCommaLoc,
 +      ParsedType ErrorType, SourceLocation SecondCommaLoc, Expr *Payload,
 +      SourceLocation RParenLoc);
++  ExprResult ActOnObjC3TryExpr(unsigned Kind, SourceLocation KeywordLoc,
++      SourceLocation LParenLoc, Expr *Operand, SourceLocation RParenLoc);
++  ObjC3DoCatchContext *ActOnObjC3BeginDoCatch(SourceLocation DoLoc);
++  void ActOnObjC3EndDoCatchBody(ObjC3DoCatchContext *Context);
++  void ActOnObjC3AbortDoCatch(ObjC3DoCatchContext *Context);
++  ObjC3DoCatchContext *ActOnObjC3BeginCatchBody();
++  void ActOnObjC3EndCatchBody(ObjC3DoCatchContext *Context);
++  void ActOnObjC3AbortCatchBody(ObjC3DoCatchContext *Context);
++  DeclStmt *ActOnObjC3CatchBinding(Scope *CatchScope, ParsedType CatchType,
++      SourceLocation CatchLoc, IdentifierInfo *Name, SourceLocation NameLoc);
++  ObjC3CatchStmt *ActOnObjC3CatchClause(SourceLocation CatchLoc,
++      SourceLocation LParenLoc, ParsedType CatchType,
++      SourceLocation RParenLoc, DeclStmt *Binding, CompoundStmt *Body,
++      bool CatchAll);
++  StmtResult ActOnObjC3FinishDoCatch(ObjC3DoCatchContext *Context,
++      CompoundStmt *Body, ArrayRef<ObjC3CatchStmt *> Clauses);
++  bool RecordObjC3ThrownEffect(const ObjC3FunctionEffectInfo &Effect,
++      SourceLocation Loc);
++  StmtResult ActOnObjC3ThrowStmt(SourceLocation KeywordLoc, Expr *Payload,
++      SourceLocation SemiLoc);
 +  ExprResult ActOnObjC3ResultIsOkExpr(SourceLocation KeywordLoc,
 +      SourceLocation LParenLoc, Expr *ResultValue, SourceLocation RParenLoc);
 +  ExprResult ActOnObjC3OptionalSomeExpr(SourceLocation KeywordLoc,
@@ -799,7 +883,7 @@ index d68ed7c75..f04255686 100644
    void ActOnDeferStmtError(Scope *CurScope);
    StmtResult ActOnEndOfDeferStmt(Stmt *Body, Scope *CurScope);
  
-@@ -15187,6 +15214,11 @@ public:
+@@ -15187,6 +15237,11 @@ public:
                               SourceLocation Loc, DeclarationName Entity,
                               const FunctionProtoType::ExtProtoInfo &EPI);
  
@@ -812,7 +896,7 @@ index d68ed7c75..f04255686 100644
    ///
    /// \param T the type to which the member pointer refers.
 diff --git a/clang/include/clang/Serialization/ASTBitCodes.h b/clang/include/clang/Serialization/ASTBitCodes.h
-index 5a86d540e..8b5a72720 100644
+index 5a86d540e..ff6996c5b 100644
 --- a/clang/include/clang/Serialization/ASTBitCodes.h
 +++ b/clang/include/clang/Serialization/ASTBitCodes.h
 @@ -44,7 +44,7 @@ namespace serialization {
@@ -820,16 +904,20 @@ index 5a86d540e..8b5a72720 100644
  /// revision match exactly, since there is no backward compatibility of
  /// AST files at this time.
 -const unsigned VERSION_MAJOR = 35;
-+const unsigned VERSION_MAJOR = 37;
++const unsigned VERSION_MAJOR = 38;
  
  /// AST file minor version number supported by this version of
  /// Clang.
-@@ -2065,6 +2065,8 @@ enum StmtCode {
+@@ -2065,6 +2065,12 @@ enum StmtCode {
    EXPR_HLSL_OUT_ARG,
  
    STMT_DEFER,
 +  EXPR_OBJC3_OPTIONAL,
 +  EXPR_OBJC3_RESULT,
++  STMT_OBJC3_THROW,
++  EXPR_OBJC3_TRY,
++  STMT_OBJC3_CATCH,
++  STMT_OBJC3_DO_CATCH,
  };
  
  /// The kinds of designators that can occur in a
@@ -1268,27 +1356,31 @@ index d5aacd801..962a811a3 100644
      CANONICAL_TYPE(ObjCObjectPointer)
      CANONICAL_TYPE(Pipe)
 diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
-index 101ab2c40..6c12322da 100644
+index 101ab2c40..008a1a468 100644
 --- a/clang/lib/AST/ASTImporter.cpp
 +++ b/clang/lib/AST/ASTImporter.cpp
-@@ -589,6 +589,7 @@ namespace clang {
+@@ -589,6 +589,10 @@ namespace clang {
      ExpectedStmt VisitDefaultStmt(DefaultStmt *S);
      ExpectedStmt VisitLabelStmt(LabelStmt *S);
      ExpectedStmt VisitAttributedStmt(AttributedStmt *S);
 +    ExpectedStmt VisitDeferStmt(DeferStmt *S);
++    ExpectedStmt VisitObjC3ThrowStmt(ObjC3ThrowStmt *S);
++    ExpectedStmt VisitObjC3CatchStmt(ObjC3CatchStmt *S);
++    ExpectedStmt VisitObjC3DoCatchStmt(ObjC3DoCatchStmt *S);
      ExpectedStmt VisitIfStmt(IfStmt *S);
      ExpectedStmt VisitSwitchStmt(SwitchStmt *S);
      ExpectedStmt VisitWhileStmt(WhileStmt *S);
-@@ -621,6 +622,8 @@ namespace clang {
+@@ -621,6 +625,9 @@ namespace clang {
      ExpectedStmt VisitExpr(Expr *E);
      ExpectedStmt VisitSourceLocExpr(SourceLocExpr *E);
      ExpectedStmt VisitVAArgExpr(VAArgExpr *E);
 +    ExpectedStmt VisitObjC3ResultExpr(ObjC3ResultExpr *E);
 +    ExpectedStmt VisitObjC3OptionalExpr(ObjC3OptionalExpr *E);
++    ExpectedStmt VisitObjC3TryExpr(ObjC3TryExpr *E);
      ExpectedStmt VisitChooseExpr(ChooseExpr *E);
      ExpectedStmt VisitConvertVectorExpr(ConvertVectorExpr *E);
      ExpectedStmt VisitShuffleVectorExpr(ShuffleVectorExpr *E);
-@@ -1414,6 +1417,27 @@ ExpectedType ASTNodeImporter::VisitComplexType(const ComplexType *T) {
+@@ -1414,6 +1421,27 @@ ExpectedType ASTNodeImporter::VisitComplexType(const ComplexType *T) {
    return Importer.getToContext().getComplexType(*ToElementTypeOrErr);
  }
  
@@ -1316,7 +1408,7 @@ index 101ab2c40..6c12322da 100644
  ExpectedType ASTNodeImporter::VisitPointerType(const PointerType *T) {
    ExpectedType ToPointeeTypeOrErr = import(T->getPointeeType());
    if (!ToPointeeTypeOrErr)
-@@ -1614,6 +1638,12 @@ ASTNodeImporter::VisitFunctionProtoType(const FunctionProtoType *T) {
+@@ -1614,6 +1642,12 @@ ASTNodeImporter::VisitFunctionProtoType(const FunctionProtoType *T) {
        importChecked(Err, FromEPI.ExceptionSpec.SourceTemplate);
    ToEPI.ExceptionSpec.Exceptions = ExceptionTypes;
  
@@ -1329,7 +1421,7 @@ index 101ab2c40..6c12322da 100644
    if (Err)
      return std::move(Err);
  
-@@ -4042,6 +4072,7 @@ ExpectedDecl ASTNodeImporter::VisitFunctionDecl(FunctionDecl *D) {
+@@ -4042,6 +4076,7 @@ ExpectedDecl ASTNodeImporter::VisitFunctionDecl(FunctionDecl *D) {
  
    QualType FromTy = D->getType();
    TypeSourceInfo *FromTSI = D->getTypeSourceInfo();
@@ -1337,7 +1429,7 @@ index 101ab2c40..6c12322da 100644
    // Set to true if we do not import the type of the function as is. There are
    // cases when the original type would result in an infinite recursion during
    // the import. To avoid an infinite recursion when importing, we create the
-@@ -4097,6 +4128,46 @@ ExpectedDecl ASTNodeImporter::VisitFunctionDecl(FunctionDecl *D) {
+@@ -4097,6 +4132,46 @@ ExpectedDecl ASTNodeImporter::VisitFunctionDecl(FunctionDecl *D) {
    if (Err)
      return std::move(Err);
  
@@ -1384,7 +1476,7 @@ index 101ab2c40..6c12322da 100644
    // Import the function parameters.
    SmallVector<ParmVarDecl *, 8> Parameters;
    for (auto *P : D->parameters()) {
-@@ -7221,6 +7292,17 @@ ExpectedStmt ASTNodeImporter::VisitAttributedStmt(AttributedStmt *S) {
+@@ -7221,6 +7296,60 @@ ExpectedStmt ASTNodeImporter::VisitAttributedStmt(AttributedStmt *S) {
        Importer.getToContext(), *ToAttrLocOrErr, ToAttrs, *ToSubStmtOrErr);
  }
  
@@ -1399,10 +1491,53 @@ index 101ab2c40..6c12322da 100644
 +  return ToStmt;
 +}
 +
++ExpectedStmt ASTNodeImporter::VisitObjC3ThrowStmt(ObjC3ThrowStmt *S) {
++  Error Err = Error::success();
++  auto Payload = importChecked(Err, S->getPayload());
++  auto Keyword = importChecked(Err, S->getKeywordLoc());
++  auto Semi = importChecked(Err, S->getSemiLoc());
++  if (Err)
++    return std::move(Err);
++  return ObjC3ThrowStmt::Create(Importer.getToContext(), Keyword, Payload,
++                               Semi);
++}
++
++ExpectedStmt ASTNodeImporter::VisitObjC3CatchStmt(ObjC3CatchStmt *S) {
++  Error Err = Error::success();
++  TypeSourceInfo *CatchType =
++      importChecked(Err, S->getCatchTypeInfo());
++  auto *Binding = importChecked(Err, S->getBindingDeclStmt());
++  auto *Body = importChecked(Err, S->getHandlerBody());
++  auto CatchLoc = importChecked(Err, S->getCatchLoc());
++  auto LParenLoc = importChecked(Err, S->getLParenLoc());
++  auto RParenLoc = importChecked(Err, S->getRParenLoc());
++  if (Err)
++    return std::move(Err);
++  return ObjC3CatchStmt::Create(Importer.getToContext(), CatchLoc, LParenLoc,
++      RParenLoc, CatchType, Binding, Body, S->isCatchAll());
++}
++
++ExpectedStmt ASTNodeImporter::VisitObjC3DoCatchStmt(ObjC3DoCatchStmt *S) {
++  Error Err = Error::success();
++  auto DoLoc = importChecked(Err, S->getDoLoc());
++  auto *Body = importChecked(Err, S->getBody());
++  SmallVector<ObjC3CatchStmt *, 2> Clauses;
++  for (unsigned I = 0; I != S->getNumCatchClauses(); ++I) {
++    auto *Clause = importChecked(Err, S->getCatchClause(I));
++    if (Err)
++      return std::move(Err);
++    Clauses.push_back(Clause);
++  }
++  if (Err)
++    return std::move(Err);
++  return ObjC3DoCatchStmt::Create(Importer.getToContext(), DoLoc, Body,
++                                  Clauses);
++}
++
  ExpectedStmt ASTNodeImporter::VisitIfStmt(IfStmt *S) {
  
    Error Err = Error::success();
-@@ -7594,6 +7676,39 @@ ExpectedStmt ASTNodeImporter::VisitVAArgExpr(VAArgExpr *E) {
+@@ -7594,6 +7723,52 @@ ExpectedStmt ASTNodeImporter::VisitVAArgExpr(VAArgExpr *E) {
        E->isMicrosoftABI());
  }
  
@@ -1439,10 +1574,23 @@ index 101ab2c40..6c12322da 100644
 +      Type, Carrier, Info, Payload, Keyword, LParen, Comma, RParen);
 +}
 +
++ExpectedStmt ASTNodeImporter::VisitObjC3TryExpr(ObjC3TryExpr *E) {
++  Error Err = Error::success();
++  auto Type = importChecked(Err, E->getType());
++  auto Operand = importChecked(Err, E->getOperand());
++  auto Keyword = importChecked(Err, E->getKeywordLoc());
++  auto LParen = importChecked(Err, E->getLParenLoc());
++  auto RParen = importChecked(Err, E->getRParenLoc());
++  if (Err)
++    return std::move(Err);
++  return ObjC3TryExpr::Create(Importer.getToContext(), E->getKind(), Operand,
++                              Type, Keyword, LParen, RParen);
++}
++
  ExpectedStmt ASTNodeImporter::VisitChooseExpr(ChooseExpr *E) {
  
    Error Err = Error::success();
-@@ -9522,7 +9637,97 @@ Expected<TypeSourceInfo *> ASTImporter::Import(TypeSourceInfo *FromTSI) {
+@@ -9522,7 +9697,97 @@ Expected<TypeSourceInfo *> ASTImporter::Import(TypeSourceInfo *FromTSI) {
    if (!BeginLocOrErr)
      return BeginLocOrErr.takeError();
  
@@ -1542,10 +1690,10 @@ index 101ab2c40..6c12322da 100644
  
  namespace {
 diff --git a/clang/lib/AST/ASTStructuralEquivalence.cpp b/clang/lib/AST/ASTStructuralEquivalence.cpp
-index da64c9222..825185fce 100644
+index da64c9222..7f7e7104f 100644
 --- a/clang/lib/AST/ASTStructuralEquivalence.cpp
 +++ b/clang/lib/AST/ASTStructuralEquivalence.cpp
-@@ -206,6 +206,24 @@ class StmtComparer {
+@@ -206,6 +206,57 @@ class StmtComparer {
      return E1->getValue() == E2->getValue() && E1->getKind() == E2->getKind();
    }
  
@@ -1567,10 +1715,43 @@ index da64c9222..825185fce 100644
 +                                    E2->getCarrierType());
 +  }
 +
++  bool IsStmtEquivalent(const ObjC3TryExpr *E1, const ObjC3TryExpr *E2) {
++    // The operation changes error behavior even when both nodes have the
++    // same operand and value type. Their operands are compared by traversal.
++    return E1->getKind() == E2->getKind() &&
++           IsStructurallyEquivalent(Context, E1->getType(), E2->getType());
++  }
++
++  bool IsStmtEquivalent(const ObjC3ThrowStmt *, const ObjC3ThrowStmt *) {
++    // Payload equivalence is handled by child traversal.
++    return true;
++  }
++
++  bool IsStmtEquivalent(const ObjC3CatchStmt *C1,
++                        const ObjC3CatchStmt *C2) {
++    if (C1->isCatchAll() != C2->isCatchAll())
++      return false;
++    TypeSourceInfo *T1 = C1->getCatchTypeInfo();
++    TypeSourceInfo *T2 = C2->getCatchTypeInfo();
++    if (static_cast<bool>(T1) != static_cast<bool>(T2))
++      return false;
++    if (T1 && !IsStructurallyEquivalent(Context, T1->getType(), T2->getType()))
++      return false;
++    // Binding declarations and ordered handler bodies are compared as
++    // children; source locations intentionally do not affect equivalence.
++    return true;
++  }
++
++  bool IsStmtEquivalent(const ObjC3DoCatchStmt *D1,
++                        const ObjC3DoCatchStmt *D2) {
++    // The generic child comparison preserves body and catch-clause order.
++    return D1->getNumCatchClauses() == D2->getNumCatchClauses();
++  }
++
    bool IsStmtEquivalent(const ChooseExpr *E1, const ChooseExpr *E2) {
      return true; // Semantics only depend on children.
    }
-@@ -903,6 +921,23 @@ static bool IsStructurallyEquivalent(StructuralEquivalenceContext &Context,
+@@ -903,6 +954,23 @@ static bool IsStructurallyEquivalent(StructuralEquivalenceContext &Context,
        return false;
      break;
  
@@ -1594,7 +1775,7 @@ index da64c9222..825185fce 100644
    case Type::Adjusted:
    case Type::Decayed:
    case Type::ArrayParameter:
-@@ -1086,6 +1121,17 @@ static bool IsStructurallyEquivalent(StructuralEquivalenceContext &Context,
+@@ -1086,6 +1154,17 @@ static bool IsStructurallyEquivalent(StructuralEquivalenceContext &Context,
      const auto *Proto1 = cast<FunctionProtoType>(T1);
      const auto *Proto2 = cast<FunctionProtoType>(T2);
  
@@ -1612,8 +1793,37 @@ index da64c9222..825185fce 100644
      if (Proto1->getNumParams() != Proto2->getNumParams())
        return false;
      for (unsigned I = 0, N = Proto1->getNumParams(); I != N; ++I) {
+diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
+index 29f171641..c97cfb8ef 100644
+--- a/clang/lib/AST/DeclPrinter.cpp
++++ b/clang/lib/AST/DeclPrinter.cpp
+@@ -817,6 +817,24 @@ void DeclPrinter::VisitFunctionDecl(FunctionDecl *D) {
+       }
+     }
+ 
++    if (FT) {
++      ObjC3FunctionEffectInfo Effects = FT->getObjC3FunctionEffects();
++      if (Effects.Async)
++        Proto += " __objc3_async";
++      switch (Effects.Throws) {
++      case ObjC3ThrowsKind::None:
++        break;
++      case ObjC3ThrowsKind::Untyped:
++        Proto += " __objc3_throws";
++        break;
++      case ObjC3ThrowsKind::Typed:
++        Proto += " __objc3_throws(";
++        Proto += Effects.ErrorType.getAsString(SubPolicy);
++        Proto += ")";
++        break;
++      }
++    }
++
+     if (CDecl) {
+       if (!Policy.TerseOutput)
+         PrintConstructorInitializers(CDecl, Proto);
 diff --git a/clang/lib/AST/ItaniumMangle.cpp b/clang/lib/AST/ItaniumMangle.cpp
-index fa28c0d44..9d576effb 100644
+index fa28c0d44..595ebd748 100644
 --- a/clang/lib/AST/ItaniumMangle.cpp
 +++ b/clang/lib/AST/ItaniumMangle.cpp
 @@ -2420,6 +2420,8 @@ bool CXXNameMangler::mangleUnresolvedTypeOrSimpleId(QualType Ty,
@@ -1648,7 +1858,26 @@ index fa28c0d44..9d576effb 100644
  void CXXNameMangler::mangleType(const PipeType *T) {
    // Pipe type mangling rules are described in SPIR 2.0 specification
    // A.1 Data types and A.3 Summary of changes
-@@ -5914,6 +5932,46 @@ recurse:
+@@ -5440,6 +5458,18 @@ recurse:
+     break;
+   }
+ 
++  case Expr::ObjC3TryExprClass: {
++    // Typed-error transfer is not a C++ constant-expression mangling
++    // extension. If this reaches an ABI expression mangler, reject it rather
++    // than accidentally encoding it as an ordinary operand expression.
++    DiagnosticsEngine &Diags = Context.getDiags();
++    unsigned DiagID = Diags.getCustomDiagID(
++        DiagnosticsEngine::Error,
++        "cannot yet mangle ObjC3 try expression in a template argument");
++    Diags.Report(E->getExprLoc(), DiagID) << E->getSourceRange();
++    return;
++  }
++
+   case Expr::CXXTypeidExprClass: {
+     NotPrimaryExpr();
+     const CXXTypeidExpr *TIE = cast<CXXTypeidExpr>(E);
+@@ -5914,6 +5944,46 @@ recurse:
    case Expr::HLSLOutArgExprClass:
      llvm_unreachable(
          "cannot mangle hlsl temporary value; mangling wrong thing?");
@@ -1696,10 +1925,22 @@ index fa28c0d44..9d576effb 100644
      // We shouldn't ever be able to get here, but diagnose anyway.
      DiagnosticsEngine &Diags = Context.getDiags();
 diff --git a/clang/lib/AST/MicrosoftMangle.cpp b/clang/lib/AST/MicrosoftMangle.cpp
-index 551aa7bf3..54518cca3 100644
+index 551aa7bf3..1fe8a323d 100644
 --- a/clang/lib/AST/MicrosoftMangle.cpp
 +++ b/clang/lib/AST/MicrosoftMangle.cpp
-@@ -3469,7 +3469,8 @@ void MicrosoftCXXNameMangler::mangleType(const ComplexType *T, Qualifiers,
+@@ -1710,6 +1710,11 @@ void MicrosoftCXXNameMangler::mangleIntegerLiteral(
+ 
+ void MicrosoftCXXNameMangler::mangleExpression(
+     const Expr *E, const NonTypeTemplateParmDecl *PD) {
++  if (isa<ObjC3TryExpr>(E)) {
++    Error(E->getExprLoc(), "ObjC3 try template argument");
++    return;
++  }
++
+   // See if this is a constant expression.
+   if (std::optional<llvm::APSInt> Value =
+           E->getIntegerConstantExpr(Context.getASTContext())) {
+@@ -3469,7 +3474,8 @@ void MicrosoftCXXNameMangler::mangleType(const ComplexType *T, Qualifiers,
    Extra.mangleSourceName("_Complex");
    Extra.mangleType(ElementType, Range, QMM_Escape);
  
@@ -1709,7 +1950,7 @@ index 551aa7bf3..54518cca3 100644
  }
  
  // Returns true for types that mangleArtificialTagType() gets called for with
-@@ -3571,7 +3572,8 @@ void MicrosoftCXXNameMangler::mangleType(const ConstantMatrixType *T,
+@@ -3571,7 +3577,8 @@ void MicrosoftCXXNameMangler::mangleType(const ConstantMatrixType *T,
    Extra.mangleIntegerLiteral(llvm::APSInt::getUnsigned(T->getNumRows()));
    Extra.mangleIntegerLiteral(llvm::APSInt::getUnsigned(T->getNumColumns()));
  
@@ -1719,7 +1960,7 @@ index 551aa7bf3..54518cca3 100644
  }
  
  void MicrosoftCXXNameMangler::mangleType(const DependentSizedMatrixType *T,
-@@ -3719,6 +3721,31 @@ void MicrosoftCXXNameMangler::mangleType(const AtomicType *T, Qualifiers,
+@@ -3719,6 +3726,31 @@ void MicrosoftCXXNameMangler::mangleType(const AtomicType *T, Qualifiers,
    mangleArtificialTagType(TagTypeKind::Struct, TemplateMangling, {"__clang"});
  }
  
@@ -1769,10 +2010,48 @@ index 46a4e256e..15cdd5d5f 100644
    }
  
 diff --git a/clang/lib/AST/TextNodeDumper.cpp b/clang/lib/AST/TextNodeDumper.cpp
-index 7bc0404db..3f6a49759 100644
+index 7bc0404db..5452f83ee 100644
 --- a/clang/lib/AST/TextNodeDumper.cpp
 +++ b/clang/lib/AST/TextNodeDumper.cpp
-@@ -2129,6 +2129,24 @@ void TextNodeDumper::VisitFunctionProtoType(const FunctionProtoType *T) {
+@@ -1493,6 +1493,37 @@ void clang::TextNodeDumper::VisitCoawaitExpr(const CoawaitExpr *Node) {
+     OS << " implicit";
+ }
+ 
++void clang::TextNodeDumper::VisitObjC3TryExpr(const ObjC3TryExpr *Node) {
++  switch (Node->getKind()) {
++  case ObjC3TryExpr::Kind::Propagate:
++    OS << " operation=propagate";
++    break;
++  case ObjC3TryExpr::Kind::Optionalize:
++    OS << " operation=optionalize";
++    break;
++  case ObjC3TryExpr::Kind::Force:
++    OS << " operation=force";
++    break;
++  }
++}
++
++void clang::TextNodeDumper::VisitObjC3ThrowStmt(const ObjC3ThrowStmt *) {
++  OS << " typed_error_transfer";
++}
++
++void clang::TextNodeDumper::VisitObjC3CatchStmt(const ObjC3CatchStmt *Node) {
++  if (Node->isCatchAll()) {
++    OS << " catch_all";
++  } else if (TypeSourceInfo *TSI = Node->getCatchTypeInfo()) {
++    OS << " catch_type=";
++    dumpType(TSI->getType());
++  }
++}
++
++void clang::TextNodeDumper::VisitObjC3DoCatchStmt(const ObjC3DoCatchStmt *Node) {
++  OS << " catch_clauses=" << Node->getNumCatchClauses();
++}
++
+ void clang::TextNodeDumper::VisitCoreturnStmt(const CoreturnStmt *Node) {
+   if (Node->isImplicit())
+     OS << " implicit";
+@@ -2129,6 +2160,24 @@ void TextNodeDumper::VisitFunctionProtoType(const FunctionProtoType *T) {
    dumpDeclRef(EPI.ExceptionSpec.SourceDecl, "ExceptionSourceDecl");
    dumpDeclRef(EPI.ExceptionSpec.SourceTemplate, "ExceptionSourceTemplate");
  
@@ -2974,10 +3253,10 @@ index f8c49646f..64d83eb78 100644
                                 SourceLocation &RefQualifierLoc) {
    if (Tok.isOneOf(tok::amp, tok::ampamp)) {
 diff --git a/clang/lib/Parse/ParseTentative.cpp b/clang/lib/Parse/ParseTentative.cpp
-index c8ddc120a..cdd12eced 100644
+index c8ddc120a..078557dda 100644
 --- a/clang/lib/Parse/ParseTentative.cpp
 +++ b/clang/lib/Parse/ParseTentative.cpp
-@@ -1018,6 +1018,22 @@ Parser::TPResult
+@@ -1018,6 +1018,25 @@ Parser::TPResult
  Parser::isCXXDeclarationSpecifier(ImplicitTypenameContext AllowImplicitTypename,
                                    Parser::TPResult BracedCastResult,
                                    bool *InvalidAsDeclSpec) {
@@ -2991,7 +3270,10 @@ index c8ddc120a..cdd12eced 100644
 +       Tok.getIdentifierInfo()->isStr("__objc3_has_value") ||
 +       Tok.getIdentifierInfo()->isStr("__objc3_ok") ||
 +       Tok.getIdentifierInfo()->isStr("__objc3_err") ||
-+       Tok.getIdentifierInfo()->isStr("__objc3_is_ok")))
++       Tok.getIdentifierInfo()->isStr("__objc3_is_ok") ||
++       Tok.getIdentifierInfo()->isStr("__objc3_try") ||
++       Tok.getIdentifierInfo()->isStr("__objc3_try_optional") ||
++       Tok.getIdentifierInfo()->isStr("__objc3_try_force")))
 +    return TPResult::False;
 +  if (getLangOpts().ObjC3 && Tok.is(tok::identifier) &&
 +      (Tok.getIdentifierInfo()->isStr("__objc3_optional") ||
@@ -3000,11 +3282,33 @@ index c8ddc120a..cdd12eced 100644
    auto IsPlaceholderSpecifier = [&](TemplateIdAnnotation *TemplateId,
                                      int Lookahead) {
      // We have a placeholder-constraint (we check for 'auto' or 'decltype' to
+@@ -1875,6 +1894,21 @@ Parser::TryParseFunctionDeclarator(bool MayHaveTrailingReturnType) {
+     }
+   }
+ 
++  // Match the reserved effects consumed by the real function declarator.
++  // Tentative parsing must also recognize them in nested function-pointer
++  // parameters, without changing ordinary async/throws name classification.
++  while (getLangOpts().ObjC3 && Tok.is(tok::identifier) &&
++         (Tok.getIdentifierInfo()->isStr("__objc3_async") ||
++          Tok.getIdentifierInfo()->isStr("__objc3_throws"))) {
++    bool IsThrows = Tok.getIdentifierInfo()->isStr("__objc3_throws");
++    ConsumeToken();
++    if (IsThrows && Tok.is(tok::l_paren)) {
++      ConsumeParen();
++      if (!SkipUntil(tok::r_paren, StopAtSemi))
++        return TPResult::Error;
++    }
++  }
++
+   // attribute-specifier-seq
+   if (!TrySkipAttributes())
+     return TPResult::Ambiguous;
 diff --git a/clang/lib/Sema/CMakeLists.txt b/clang/lib/Sema/CMakeLists.txt
-index 0ebf56ecf..203de5a79 100644
+index 0ebf56ecf..636c2106d 100644
 --- a/clang/lib/Sema/CMakeLists.txt
 +++ b/clang/lib/Sema/CMakeLists.txt
-@@ -70,6 +70,10 @@ add_clang_library(clangSema
+@@ -70,6 +70,12 @@ add_clang_library(clangSema
    SemaMSP430.cpp
    SemaModule.cpp
    SemaNVPTX.cpp
@@ -3012,6 +3316,8 @@ index 0ebf56ecf..203de5a79 100644
 +  SemaObjC3Carriers.cpp
 +  SemaObjC3OptionalExpr.cpp
 +  SemaObjC3ResultExpr.cpp
++  SemaObjC3Propagation.cpp
++  SemaObjC3DoCatch.cpp
    SemaObjC.cpp
    SemaObjCProperty.cpp
    SemaOpenACC.cpp
@@ -3596,10 +3902,18 @@ index 28bb352b1..21864e449 100644
      void VisitParenTypeLoc(ParenTypeLoc TL) {
        assert(Chunk.Kind == DeclaratorChunk::Paren);
 diff --git a/clang/lib/Sema/TreeTransform.h b/clang/lib/Sema/TreeTransform.h
-index 00be4e8c1..7c571ad9d 100644
+index 00be4e8c1..dd5f1e37b 100644
 --- a/clang/lib/Sema/TreeTransform.h
 +++ b/clang/lib/Sema/TreeTransform.h
-@@ -5661,6 +5661,42 @@ QualType TreeTransform<Derived>::TransformComplexType(TypeLocBuilder &TLB,
+@@ -46,6 +46,7 @@
+ #include "clang/Sema/SemaPseudoObject.h"
+ #include "clang/Sema/SemaSYCL.h"
+ #include "clang/Sema/Template.h"
++#include "llvm/ADT/ScopeExit.h"
+ #include "llvm/ADT/ArrayRef.h"
+ #include "llvm/Support/ErrorHandling.h"
+ #include <algorithm>
+@@ -5661,6 +5662,42 @@ QualType TreeTransform<Derived>::TransformComplexType(TypeLocBuilder &TLB,
    return TransformTypeSpecType(TLB, T);
  }
  
@@ -3642,7 +3956,7 @@ index 00be4e8c1..7c571ad9d 100644
  template <typename Derived>
  QualType TreeTransform<Derived>::TransformAdjustedType(TypeLocBuilder &TLB,
                                                         AdjustedTypeLoc TL) {
-@@ -6715,6 +6751,29 @@ QualType TreeTransform<Derived>::TransformFunctionProtoType(
+@@ -6715,6 +6752,29 @@ QualType TreeTransform<Derived>::TransformFunctionProtoType(
      EPIChanged = true;
    }
  
@@ -3672,7 +3986,7 @@ index 00be4e8c1..7c571ad9d 100644
    QualType Result = TL.getType();
    if (getDerived().AlwaysRebuild() || ResultType != T->getReturnType() ||
        T->getParamTypes() != llvm::ArrayRef(ParamTypes) || EPIChanged) {
-@@ -6728,6 +6787,10 @@ QualType TreeTransform<Derived>::TransformFunctionProtoType(
+@@ -6728,6 +6788,10 @@ QualType TreeTransform<Derived>::TransformFunctionProtoType(
    NewTL.setLParenLoc(TL.getLParenLoc());
    NewTL.setRParenLoc(TL.getRParenLoc());
    NewTL.setExceptionSpecRange(TL.getExceptionSpecRange());
@@ -3683,7 +3997,22 @@ index 00be4e8c1..7c571ad9d 100644
    NewTL.setLocalRangeEnd(TL.getLocalRangeEnd());
    for (unsigned i = 0, e = NewTL.getNumParams(); i != e; ++i)
      NewTL.setParam(i, ParamDecls[i]);
-@@ -8582,7 +8645,10 @@ StmtResult TreeTransform<Derived>::TransformDeferStmt(DeferStmt *S) {
+@@ -8577,12 +8641,93 @@ TreeTransform<Derived>::TransformBreakStmt(BreakStmt *S) {
+       BreakStmt(S->getKwLoc(), S->getLabelLoc(), cast<LabelDecl>(LD));
+ }
+ 
++template<typename Derived>
++StmtResult TreeTransform<Derived>::TransformObjC3ThrowStmt(ObjC3ThrowStmt *S) {
++  ExprResult Payload = getDerived().TransformExpr(S->getPayload());
++  if (Payload.isInvalid())
++    return StmtError();
++  // The lexical handler and enclosing callable may have changed even when
++  // substitution leaves the payload untouched. Re-record the typed effect.
++  return SemaRef.ActOnObjC3ThrowStmt(S->getKeywordLoc(), Payload.get(),
++                                     S->getSemiLoc());
++}
+ template <typename Derived>
+ StmtResult TreeTransform<Derived>::TransformDeferStmt(DeferStmt *S) {
    StmtResult Result = getDerived().TransformStmt(S->getBody());
    if (!Result.isUsable())
      return StmtError();
@@ -3692,13 +4021,92 @@ index 00be4e8c1..7c571ad9d 100644
 +      DeferStmt::Create(getSema().Context, S->getDeferLoc(), Result.get());
 +  Transformed->setObjC3Spelling(S->hasObjC3Spelling());
 +  return Transformed;
++}
++
++template <typename Derived>
++StmtResult TreeTransform<Derived>::TransformObjC3CatchStmt(
++    ObjC3CatchStmt *S) {
++    TypeSourceInfo *CatchType = S->getCatchTypeInfo();
++    if (CatchType) {
++      CatchType = getDerived().TransformType(CatchType);
++      if (!CatchType)
++        return StmtError();
++    }
++
++    StmtResult Binding;
++    if (S->getBindingDeclStmt()) {
++      Binding = getDerived().TransformStmt(S->getBindingDeclStmt());
++      if (Binding.isInvalid())
++        return StmtError();
++    }
++
++    ObjC3DoCatchContext *CatchContext =
++        SemaRef.ActOnObjC3BeginCatchBody();
++    llvm::scope_exit AbortCatch(
++        [&] { SemaRef.ActOnObjC3AbortCatchBody(CatchContext); });
++    StmtResult HandlerBody =
++        getDerived().TransformStmt(S->getHandlerBody());
++    if (HandlerBody.isInvalid())
++      return StmtError();
++    auto *CompoundHandler = dyn_cast<CompoundStmt>(HandlerBody.get());
++    if (!CompoundHandler)
++      return StmtError();
++    SemaRef.ActOnObjC3EndCatchBody(CatchContext);
++    AbortCatch.release();
++
++    return ObjC3CatchStmt::Create(
++        SemaRef.Context, S->getCatchLoc(), S->getLParenLoc(),
++        S->getRParenLoc(), CatchType,
++        cast_or_null<DeclStmt>(Binding.get()), CompoundHandler,
++        S->isCatchAll());
++}
++
++template <typename Derived>
++StmtResult TreeTransform<Derived>::TransformObjC3DoCatchStmt(
++    ObjC3DoCatchStmt *S) {
++  ObjC3DoCatchContext *Handler =
++      SemaRef.ActOnObjC3BeginDoCatch(S->getDoLoc());
++  llvm::scope_exit AbortHandler(
++      [&] { SemaRef.ActOnObjC3AbortDoCatch(Handler); });
++
++  StmtResult Body = getDerived().TransformStmt(S->getBody());
++  if (Body.isInvalid())
++    return StmtError();
++  auto *CompoundBody = dyn_cast<CompoundStmt>(Body.get());
++  if (!CompoundBody)
++    return StmtError();
++  SemaRef.ActOnObjC3EndDoCatchBody(Handler);
++
++  SmallVector<ObjC3CatchStmt *, 2> Clauses;
++  for (unsigned I = 0; I != S->getNumCatchClauses(); ++I) {
++    StmtResult Clause = getDerived().TransformStmt(S->getCatchClause(I));
++    if (Clause.isInvalid())
++      return StmtError();
++    Clauses.push_back(cast<ObjC3CatchStmt>(Clause.get()));
++  }
++
++  StmtResult Result =
++      SemaRef.ActOnObjC3FinishDoCatch(Handler, CompoundBody, Clauses);
++  AbortHandler.release();
++  return Result;
  }
  
  template<typename Derived>
-@@ -14166,6 +14232,71 @@ TreeTransform<Derived>::TransformStmtExpr(StmtExpr *E) {
+@@ -14166,6 +14311,82 @@ TreeTransform<Derived>::TransformStmtExpr(StmtExpr *E) {
                                        E->getRParenLoc(), NewDepth);
  }
  
++template<typename Derived>
++ExprResult TreeTransform<Derived>::TransformObjC3TryExpr(ObjC3TryExpr *E) {
++  ExprResult Operand = getDerived().TransformExpr(E->getOperand());
++  if (Operand.isInvalid())
++    return ExprError();
++  // Revalidate against the instantiated callable and record the effect in a
++  // newly transformed handler even for a nondependent, unchanged operand.
++  return SemaRef.ActOnObjC3TryExpr(static_cast<unsigned>(E->getKind()),
++      E->getKeywordLoc(), E->getLParenLoc(), Operand.get(), E->getRParenLoc());
++}
++
 +template<typename Derived>
 +ExprResult TreeTransform<Derived>::TransformObjC3ResultExpr(ObjC3ResultExpr *E) {
 +  TypeSourceInfo *Success = E->getSuccessTypeInfo();
@@ -3882,10 +4290,10 @@ index 353e8a2da..f07f7f03b 100644
    }
  
 diff --git a/clang/unittests/AST/CMakeLists.txt b/clang/unittests/AST/CMakeLists.txt
-index 3a12a4a06..7aef62320 100644
+index 3a12a4a06..7567da266 100644
 --- a/clang/unittests/AST/CMakeLists.txt
 +++ b/clang/unittests/AST/CMakeLists.txt
-@@ -54,3 +54,31 @@ add_clang_unittest(ASTTests
+@@ -54,3 +54,33 @@ add_clang_unittest(ASTTests
    Support
    TargetParser
    )
@@ -3907,6 +4315,8 @@ index 3a12a4a06..7aef62320 100644
 +  ObjC3CarrierIdentityTest.cpp
 +  ObjC3CarrierExprIdentityTest.cpp
 +  ObjC3FunctionEffectImportTest.cpp
++  ObjC3DoCatchPersistenceTest.cpp
++  ObjC3TryThrowConsumerTest.cpp
 +  CLANG_LIBS
 +  clangAST
 +  clangFrontend
@@ -4110,6 +4520,257 @@ new file mode 100644
 +  Loc.setRParenLoc(RParenLoc);
 +  return CreateParsedType(Carrier, CarrierInfo);
 +}
+diff --git a/clang/lib/Sema/SemaObjC3DoCatch.cpp b/clang/lib/Sema/SemaObjC3DoCatch.cpp
+new file mode 100644
+--- /dev/null
++++ b/clang/lib/Sema/SemaObjC3DoCatch.cpp
+@@ -0,0 +1,246 @@
++#include "SemaObjC3ErrorContext.h"
++#include "clang/AST/ASTContext.h"
++#include "clang/AST/Decl.h"
++#include "clang/AST/DeclObjC.h"
++#include "clang/AST/Stmt.h"
++#include "clang/AST/Type.h"
++#include "clang/Sema/Sema.h"
++#include "llvm/ADT/STLExtras.h"
++
++namespace clang {
++
++struct ObjC3DoCatchContext {
++  struct ThrownFact {
++    ObjC3FunctionEffectInfo Effect;
++    SourceLocation Loc;
++  };
++  SourceLocation DoLoc;
++  DeclContext *Owner;
++  bool IsCatchBody = false;
++  SmallVector<ThrownFact, 4> Facts;
++  explicit ObjC3DoCatchContext(SourceLocation Loc, DeclContext *Owner,
++                              bool CatchBody = false)
++      : DoLoc(Loc), Owner(Owner), IsCatchBody(CatchBody) {}
++};
++
++namespace {
++bool sameTypedEffect(Sema &S, const ObjC3FunctionEffectInfo &A,
++                     const ObjC3FunctionEffectInfo &B) {
++  return A.Throws == ObjC3ThrowsKind::Typed &&
++         B.Throws == ObjC3ThrowsKind::Typed &&
++         S.Context.hasSameType(S.Context.getCanonicalType(A.ErrorType),
++                               S.Context.getCanonicalType(B.ErrorType));
++}
++
++bool isErrorBridgeType(QualType T) {
++  const auto *Pointer = T->getAs<ObjCObjectPointerType>();
++  if (!Pointer)
++    return false;
++  const ObjCObjectType *Object = Pointer->getObjectType();
++  if (!Object->isObjCId())
++    return false;
++  return llvm::any_of(Object->quals(), [](const ObjCProtocolDecl *Protocol) {
++    return Protocol->getNameAsString() == "Error";
++  });
++}
++
++bool clauseMatches(Sema &S, const ObjC3CatchStmt &Clause,
++                   const ObjC3FunctionEffectInfo &Effect) {
++  if (Clause.isCatchAll())
++    return true;
++  TypeSourceInfo *Info = Clause.getCatchTypeInfo();
++  if (!Info || Effect.Throws == ObjC3ThrowsKind::None)
++    return false;
++  QualType CatchType = S.Context.getCanonicalType(Info->getType());
++  // An instantiated handler will re-record its protected-body effects and
++  // check the concrete pattern. Do not reject a potentially matching pattern
++  // while either its type or the thrown type is still dependent.
++  if (CatchType->isDependentType() ||
++      (!Effect.ErrorType.isNull() && Effect.ErrorType->isDependentType()))
++    return true;
++  if (isErrorBridgeType(CatchType))
++    return Effect.Throws == ObjC3ThrowsKind::Untyped ||
++           Effect.Throws == ObjC3ThrowsKind::Typed;
++  if (Effect.Throws == ObjC3ThrowsKind::Untyped || Effect.ErrorType.isNull())
++    return false;
++  return S.Context.hasSameType(CatchType,
++                               S.Context.getCanonicalType(Effect.ErrorType));
++}
++
++bool compatibleOuterEffect(Sema &S, const ObjC3FunctionEffectInfo &Effect) {
++  ObjC3FunctionEffectInfo Outer = getCurrentObjC3CallableEffects(S);
++  if (Effect.Throws == ObjC3ThrowsKind::Untyped)
++    return Outer.Throws == ObjC3ThrowsKind::Untyped;
++  return sameTypedEffect(S, Effect, Outer);
++}
++
++bool reportUncaughtEffect(Sema &S,
++                          const ObjC3DoCatchContext::ThrownFact &Fact) {
++  if (compatibleOuterEffect(S, Fact.Effect))
++    return false;
++  S.Diag(Fact.Loc, diag::err_objc3_unhandled_error_effect);
++  return true;
++}
++} // namespace
++
++ObjC3DoCatchContext *Sema::ActOnObjC3BeginDoCatch(SourceLocation DoLoc) {
++  auto *Context = new ObjC3DoCatchContext(
++      DoLoc, getCurrentObjC3CallableContext(*this));
++  ObjC3ErrorHandlerStack.push_back(Context);
++  return Context;
++}
++
++void Sema::ActOnObjC3EndDoCatchBody(ObjC3DoCatchContext *Context) {
++  assert(!ObjC3ErrorHandlerStack.empty() &&
++         ObjC3ErrorHandlerStack.back() == Context &&
++         "ObjC3 handler contexts must be properly nested");
++  ObjC3ErrorHandlerStack.pop_back();
++}
++
++void Sema::ActOnObjC3AbortDoCatch(ObjC3DoCatchContext *Context) {
++  if (!Context)
++    return;
++  if (!ObjC3ErrorHandlerStack.empty() &&
++      ObjC3ErrorHandlerStack.back() == Context)
++    ObjC3ErrorHandlerStack.pop_back();
++  delete Context;
++}
++
++ObjC3DoCatchContext *Sema::ActOnObjC3BeginCatchBody() {
++  auto *Context = new ObjC3DoCatchContext(
++      SourceLocation(), getCurrentObjC3CallableContext(*this), true);
++  ObjC3ErrorHandlerStack.push_back(Context);
++  return Context;
++}
++
++bool Sema::RecordObjC3ThrownEffect(const ObjC3FunctionEffectInfo &Effect,
++                                  SourceLocation Loc) {
++  if (ObjC3ErrorHandlerStack.empty() ||
++      ObjC3ErrorHandlerStack.back()->Owner !=
++          getCurrentObjC3CallableContext(*this))
++    return false;
++  if (Effect.Throws != ObjC3ThrowsKind::None)
++    ObjC3ErrorHandlerStack.back()->Facts.push_back({Effect, Loc});
++  return true;
++}
++
++void Sema::ActOnObjC3EndCatchBody(ObjC3DoCatchContext *Context) {
++  assert(Context && Context->IsCatchBody &&
++         !ObjC3ErrorHandlerStack.empty() &&
++         ObjC3ErrorHandlerStack.back() == Context &&
++         "catch body contexts must be properly nested");
++  ObjC3ErrorHandlerStack.pop_back();
++  for (const auto &Fact : Context->Facts) {
++    if (RecordObjC3ThrownEffect(Fact.Effect, Fact.Loc))
++      continue;
++    reportUncaughtEffect(*this, Fact);
++  }
++  delete Context;
++}
++
++void Sema::ActOnObjC3AbortCatchBody(ObjC3DoCatchContext *Context) {
++  if (!Context)
++    return;
++  if (!ObjC3ErrorHandlerStack.empty() &&
++      ObjC3ErrorHandlerStack.back() == Context)
++    ObjC3ErrorHandlerStack.pop_back();
++  delete Context;
++}
++
++DeclStmt *Sema::ActOnObjC3CatchBinding(Scope *CatchScope, ParsedType CatchType,
++    SourceLocation CatchLoc, IdentifierInfo *Name, SourceLocation NameLoc) {
++  if (!Name)
++    return nullptr;
++  TypeSourceInfo *TypeInfo = nullptr;
++  QualType Type = GetTypeFromParser(CatchType, &TypeInfo);
++  if (Type.isNull() || !TypeInfo) {
++    Diag(NameLoc, diag::err_objc3_catch_binding_requires_type);
++    return nullptr;
++  }
++  if (!Type->isDependentType() && Type->isVoidType()) {
++    Diag(NameLoc, diag::err_objc3_catch_binding_requires_type);
++    return nullptr;
++  }
++  // This declaration is the lexical binding node only. Payload extraction,
++  // object ownership and binding initialization remain gated at CodeGen.
++  VarDecl *Binding = VarDecl::Create(Context, CurContext, CatchLoc, NameLoc,
++      Name, Type, TypeInfo, SC_None);
++  PushOnScopeChains(Binding, CatchScope);
++  auto *BindingStmt = new (Context) DeclStmt(DeclGroupRef(Binding), CatchLoc,
++                                              NameLoc);
++  return BindingStmt;
++}
++
++ObjC3CatchStmt *Sema::ActOnObjC3CatchClause(SourceLocation CatchLoc,
++    SourceLocation LParenLoc, ParsedType CatchType,
++    SourceLocation RParenLoc, DeclStmt *Binding, CompoundStmt *Body,
++    bool CatchAll) {
++  TypeSourceInfo *TypeInfo = nullptr;
++  if (!CatchAll) {
++    QualType Type = GetTypeFromParser(CatchType, &TypeInfo);
++    if (Type.isNull() || !TypeInfo)
++      return nullptr;
++  }
++  return ObjC3CatchStmt::Create(Context, CatchLoc, LParenLoc, RParenLoc,
++      TypeInfo, Binding, Body, CatchAll);
++}
++
++StmtResult Sema::ActOnObjC3FinishDoCatch(ObjC3DoCatchContext *Context,
++    CompoundStmt *Body, ArrayRef<ObjC3CatchStmt *> Clauses) {
++  if (!Context || !Body || Clauses.empty()) {
++    Diag(Context ? Context->DoLoc : SourceLocation(),
++         diag::err_objc3_do_catch_requires_clause);
++    ActOnObjC3AbortDoCatch(Context);
++    return StmtError();
++  }
++  SourceLocation DoLoc = Context->DoLoc;
++
++  bool Invalid = false;
++  for (const auto &Fact : Context->Facts) {
++    bool Matched = false;
++    for (ObjC3CatchStmt *Clause : Clauses) {
++      if (clauseMatches(*this, *Clause, Fact.Effect)) {
++        Matched = true;
++        break; // source order gives the specified first-match behavior
++      }
++    }
++    if (!Matched) {
++      // Once this handler's protected body has been popped, an enclosing
++      // ObjC3 do/catch receives the fact before callable compatibility is
++      // considered. Native C++ catch and ObjC @catch are not on this stack.
++      if (!RecordObjC3ThrownEffect(Fact.Effect, Fact.Loc)) {
++        Invalid |= reportUncaughtEffect(*this, Fact);
++      }
++    }
++  }
++
++  // A typed pattern must correspond to a statically observed typed effect, or
++  // be the explicit Error bridge. Do not invent general conversion matching.
++  for (ObjC3CatchStmt *Clause : Clauses) {
++    if (Clause->isCatchAll() || !Clause->getCatchTypeInfo())
++      continue;
++    QualType Type = Clause->getCatchTypeInfo()->getType();
++    if (isErrorBridgeType(Type))
++      continue;
++    bool Compatible = false;
++    for (const auto &Fact : Context->Facts)
++      Compatible |= clauseMatches(*this, *Clause, Fact.Effect);
++    if (!Compatible && !Context->Facts.empty()) {
++      QualType ThrownType = Context->Facts.front().Effect.ErrorType;
++      if (ThrownType.isNull())
++        Diag(Clause->getCatchLoc(), diag::err_objc3_catch_untyped_mismatch)
++            << Type;
++      else
++        Diag(Clause->getCatchLoc(), diag::err_objc3_catch_type_mismatch)
++            << Type << ThrownType;
++      Invalid = true;
++    }
++  }
++
++  delete Context;
++  if (Invalid)
++    return StmtError();
++  return ObjC3DoCatchStmt::Create(this->Context, DoLoc, Body, Clauses);
++}
++
++} // namespace clang
 diff --git a/clang/lib/Sema/SemaObjC3Effects.cpp b/clang/lib/Sema/SemaObjC3Effects.cpp
 new file mode 100644
 --- /dev/null
@@ -4139,6 +4800,172 @@ new file mode 100644
 +
 +  Diag(Loc, diag::err_objc3_invalid_function_effect_shape);
 +  return false;
++}
+diff --git a/clang/lib/Sema/SemaObjC3ErrorContext.h b/clang/lib/Sema/SemaObjC3ErrorContext.h
+new file mode 100644
+--- /dev/null
++++ b/clang/lib/Sema/SemaObjC3ErrorContext.h
+@@ -0,0 +1,45 @@
++//===--- SemaObjC3ErrorContext.h - Native typed-error callable ownership ---===//
++// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
++// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
++
++#ifndef LLVM_CLANG_LIB_SEMA_SEMAOBJC3ERRORCONTEXT_H
++#define LLVM_CLANG_LIB_SEMA_SEMAOBJC3ERRORCONTEXT_H
++
++#include "clang/AST/Decl.h"
++#include "clang/AST/DeclObjC.h"
++#include "clang/AST/Type.h"
++#include "clang/Sema/Sema.h"
++
++namespace clang {
++
++inline DeclContext *getCurrentObjC3CallableContext(Sema &S) {
++  DeclContext *DC = S.CurContext;
++  while (DC && isa<EnumDecl, RequiresExprBodyDecl>(DC))
++    DC = DC->getParent();
++  // Lambdas and Blocks own their effects. Do not use getCurFunctionDecl(),
++  // which deliberately skips those callable boundaries for native checks.
++  // A local record's member initializer likewise cannot inherit an outer
++  // function's effect merely because its lexical parent is that function.
++  if (DC && isa<FunctionDecl, BlockDecl, ObjCMethodDecl>(DC))
++    return DC;
++  return nullptr;
++}
++
++inline ObjC3FunctionEffectInfo getCurrentObjC3CallableEffects(Sema &S) {
++  DeclContext *DC = getCurrentObjC3CallableContext(S);
++  QualType Type;
++  if (auto *FD = dyn_cast_or_null<FunctionDecl>(DC))
++    Type = FD->getType();
++  else if (auto *BD = dyn_cast_or_null<BlockDecl>(DC)) {
++    if (TypeSourceInfo *Info = BD->getSignatureAsWritten())
++      Type = Info->getType();
++  }
++  if (!Type.isNull())
++    if (const auto *FPT = Type->getAs<FunctionProtoType>())
++      return FPT->getObjC3FunctionEffects();
++  return {};
++}
++
++} // namespace clang
++
++#endif
+diff --git a/clang/lib/Sema/SemaObjC3Propagation.cpp b/clang/lib/Sema/SemaObjC3Propagation.cpp
+new file mode 100644
+--- /dev/null
++++ b/clang/lib/Sema/SemaObjC3Propagation.cpp
+@@ -0,0 +1,111 @@
++//===--- SemaObjC3Propagation.cpp - ObjC3 typed propagation semantics -----===//
++// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
++// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
++
++#include "SemaObjC3ErrorContext.h"
++#include "clang/AST/ASTContext.h"
++#include "clang/AST/Expr.h"
++#include "clang/AST/Stmt.h"
++#include "clang/Sema/Sema.h"
++
++using namespace clang;
++
++namespace {
++const FunctionProtoType *getCalledObjC3FunctionType(Sema &S, Expr *Operand) {
++  auto *Call = dyn_cast<CallExpr>(Operand->IgnoreParenImpCasts());
++  if (!Call)
++    return nullptr;
++  QualType CalleeType = S.Context.getCanonicalType(Call->getCallee()->getType());
++  if (const auto *Pointer = CalleeType->getAs<PointerType>())
++    CalleeType = S.Context.getCanonicalType(Pointer->getPointeeType());
++  else if (const auto *Block = CalleeType->getAs<BlockPointerType>())
++    CalleeType = S.Context.getCanonicalType(Block->getPointeeType());
++  return CalleeType->getAs<FunctionProtoType>();
++}
++
++} // namespace
++
++ExprResult Sema::ActOnObjC3TryExpr(unsigned Kind, SourceLocation KeywordLoc,
++                                   SourceLocation LParenLoc, Expr *Operand,
++                                   SourceLocation RParenLoc) {
++  if (!Operand)
++    return ExprError();
++  auto Operation = static_cast<ObjC3TryExpr::Kind>(Kind);
++  if (Kind > static_cast<unsigned>(ObjC3TryExpr::Kind::Force))
++    return ExprError();
++  if (!Operand->isTypeDependent() && Operand->getValueKind() != VK_PRValue) {
++    Diag(KeywordLoc, diag::err_objc3_try_requires_prvalue);
++    return ExprError();
++  }
++
++  QualType ResultType = Operand->getType();
++  if (!Operand->isTypeDependent()) {
++    const FunctionProtoType *Called = getCalledObjC3FunctionType(*this, Operand);
++    if (!Called ||
++        Called->getObjC3FunctionEffects().Throws == ObjC3ThrowsKind::None) {
++      Diag(KeywordLoc, diag::err_objc3_try_requires_throwing_call);
++      return ExprError();
++    }
++
++    ObjC3FunctionEffectInfo CalleeEffects =
++        Called->getObjC3FunctionEffects();
++    if (Operation == ObjC3TryExpr::Kind::Propagate &&
++        !isUnevaluatedContext() &&
++        !RecordObjC3ThrownEffect(CalleeEffects, KeywordLoc)) {
++      ObjC3FunctionEffectInfo CallerEffects =
++          getCurrentObjC3CallableEffects(*this);
++      // Native C++ and Objective-C exception handlers do not handle this
++      // separate typed-error effect.
++      if (CallerEffects.Throws == ObjC3ThrowsKind::None) {
++        Diag(KeywordLoc, diag::err_objc3_try_requires_throwing_context);
++        return ExprError();
++      }
++      if (CallerEffects.Throws != CalleeEffects.Throws ||
++          (CalleeEffects.Throws == ObjC3ThrowsKind::Typed &&
++           !Context.hasSameType(Context.getCanonicalType(CallerEffects.ErrorType),
++                                Context.getCanonicalType(CalleeEffects.ErrorType)))) {
++        Diag(KeywordLoc, diag::err_objc3_try_effect_mismatch);
++        return ExprError();
++      }
++    }
++    if (Operation == ObjC3TryExpr::Kind::Optionalize)
++      ResultType = Context.getObjC3OptionalType(ResultType);
++  } else if (Operation == ObjC3TryExpr::Kind::Optionalize) {
++    ResultType = Context.getObjC3OptionalType(ResultType);
++  }
++
++  CheckCompletedExpr(Operand, RParenLoc);
++  return ObjC3TryExpr::Create(Context, Operation, Operand, ResultType,
++                              KeywordLoc, LParenLoc, RParenLoc);
++}
++
++StmtResult Sema::ActOnObjC3ThrowStmt(SourceLocation KeywordLoc, Expr *Payload,
++                                     SourceLocation SemiLoc) {
++  if (!Payload)
++    return StmtError();
++  ObjC3FunctionEffectInfo PayloadEffect =
++      {false, ObjC3ThrowsKind::Typed, Payload->getType()};
++  if (RecordObjC3ThrownEffect(PayloadEffect, KeywordLoc)) {
++    // In a protected body, the explicit expression carries the statically
++    // known typed payload. The enclosing callable effect is checked only if
++    // this fact escapes all matching clauses.
++  } else {
++    ObjC3FunctionEffectInfo Effects = getCurrentObjC3CallableEffects(*this);
++    // Native C++ catch and Objective-C @catch do not authorize ObjC3 throw.
++    if (Effects.Throws == ObjC3ThrowsKind::None) {
++      Diag(KeywordLoc, diag::err_objc3_throw_requires_throwing_context);
++      return StmtError();
++    }
++    if (Effects.Throws == ObjC3ThrowsKind::Typed &&
++        !Payload->isTypeDependent() &&
++        !Context.hasSameType(Context.getCanonicalType(Payload->getType()),
++                             Context.getCanonicalType(Effects.ErrorType))) {
++      Diag(KeywordLoc, diag::err_objc3_throw_payload_mismatch);
++      return StmtError();
++    }
++  }
++
++  CheckCompletedExpr(Payload, KeywordLoc);
++  ExprResult FullExpr = MaybeCreateExprWithCleanups(Payload);
++  return ObjC3ThrowStmt::Create(Context, KeywordLoc, FullExpr.get(), SemiLoc);
 +}
 diff --git a/clang/test/ObjC3/AST/Inputs/carrier-expression-adversarial-pch.h b/clang/test/ObjC3/AST/Inputs/carrier-expression-adversarial-pch.h
 new file mode 100644
@@ -4230,6 +5057,30 @@ new file mode 100644
 +typedef __objc3_result(PchOptional, CarrierFailure) PchResult;
 +template <class T> using PchGenericOptional = __objc3_optional(T);
 \ No newline at end of file
+diff --git a/clang/test/ObjC3/AST/Inputs/do-catch-pch.h b/clang/test/ObjC3/AST/Inputs/do-catch-pch.h
+new file mode 100644
+--- /dev/null
++++ b/clang/test/ObjC3/AST/Inputs/do-catch-pch.h
+@@ -0,0 +1,19 @@
++struct PayloadError {};
++struct OtherPayloadError {};
++void typed_payload() __objc3_throws(PayloadError);
++
++template <class E> void dependent_do_catch() {
++  __objc3_do {
++    __objc3_throw(E{});
++  } __objc3_catch(E payload) {
++    (void)payload;
++  }
++}
++
++inline void exact_catch_roundtrip() {
++  __objc3_do {
++    __objc3_try(typed_payload());
++  } __objc3_catch(PayloadError payload) {
++    (void)payload;
++  }
++}
 diff --git a/clang/test/ObjC3/AST/Inputs/function-effect-pointer-compatibility-pch.h b/clang/test/ObjC3/AST/Inputs/function-effect-pointer-compatibility-pch.h
 new file mode 100644
 --- /dev/null
@@ -4308,6 +5159,62 @@ new file mode 100644
 +inline PchVoidResult pch_void_err() {
 +  return __objc3_err(void, void, (void)0);
 +}
+diff --git a/clang/test/ObjC3/AST/Inputs/try-throw-pch.h b/clang/test/ObjC3/AST/Inputs/try-throw-pch.h
+new file mode 100644
+--- /dev/null
++++ b/clang/test/ObjC3/AST/Inputs/try-throw-pch.h
+@@ -0,0 +1,23 @@
++struct PchError {};
++int pch_typed_call() __objc3_throws(PchError);
++
++template <class F>
++inline int pch_template_propagate(F f) __objc3_throws(PchError) {
++  return __objc3_try(f());
++}
++
++inline int pch_propagate() __objc3_throws(PchError) {
++  return __objc3_try(pch_typed_call());
++}
++
++inline __objc3_optional(int) pch_optionalize() {
++  return __objc3_try_optional(pch_typed_call());
++}
++
++inline int pch_force() {
++  return __objc3_try_force(pch_typed_call());
++}
++
++inline void pch_throw(PchError error) __objc3_throws(PchError) {
++  __objc3_throw(error);
++}
+diff --git a/clang/test/ObjC3/AST/Inputs/typed-error-native-consumers-pch.h b/clang/test/ObjC3/AST/Inputs/typed-error-native-consumers-pch.h
+new file mode 100644
+--- /dev/null
++++ b/clang/test/ObjC3/AST/Inputs/typed-error-native-consumers-pch.h
+@@ -0,0 +1,23 @@
++struct PCHError {};
++int pch_typed_call() __objc3_throws(PCHError);
++int pch_nothrow_typed_call() noexcept __objc3_throws(PCHError);
++
++template <class E> int pch_dependent_try(int (*fn)() __objc3_throws(E))
++    __objc3_throws(E) {
++  return __objc3_try(fn());
++}
++
++inline int pch_all_try_kinds() __objc3_throws(PCHError) {
++  int value = __objc3_try(pch_typed_call());
++  __objc3_optional(int) optional =
++      __objc3_try_optional(pch_typed_call());
++  return value + __objc3_has_value(optional) +
++         __objc3_try_force(pch_nothrow_typed_call());
++}
++
++inline void pch_ordered_handlers() {
++  __objc3_do { __objc3_throw(PCHError{}); }
++  __objc3_catch(PCHError first) { (void)first; }
++  __objc3_catch { }
++}
++
 diff --git a/clang/test/ObjC3/AST/carrier-expression-adversarial-pch.mm b/clang/test/ObjC3/AST/carrier-expression-adversarial-pch.mm
 new file mode 100644
 --- /dev/null
@@ -4393,6 +5300,21 @@ new file mode 100644
 +// CHECK: TypedefDecl {{.*}} PchOptional '__objc3_optional(int)'
 +// CHECK: TypedefDecl {{.*}} PchResult '__objc3_result(__objc3_optional(int), CarrierFailure)'
 +// CHECK: TypeAliasDecl {{.*}} PchInstantiated 'PchGenericOptional<const long *>':'__objc3_optional(const long *)'
+diff --git a/clang/test/ObjC3/AST/do-catch-pch.mm b/clang/test/ObjC3/AST/do-catch-pch.mm
+new file mode 100644
+--- /dev/null
++++ b/clang/test/ObjC3/AST/do-catch-pch.mm
+@@ -0,0 +1,10 @@
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fobjc-version=3 -emit-pch %S/Inputs/do-catch-pch.h -o %t.pch
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fobjc-version=3 -include-pch %t.pch -fsyntax-only %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fobjc-version=3 -ast-dump %S/Inputs/do-catch-pch.h | FileCheck %s
++// CHECK: ObjC3DoCatchStmt
++// CHECK: ObjC3CatchStmt
++// CHECK: VarDecl {{.*}} payload 'PayloadError'
++
++void instantiate_after_pch() {
++  dependent_do_catch<PayloadError>();
++}
 diff --git a/clang/test/ObjC3/AST/function-effect-canonical-uniquing.c b/clang/test/ObjC3/AST/function-effect-canonical-uniquing.c
 new file mode 100644
 --- /dev/null
@@ -4589,6 +5511,91 @@ new file mode 100644
 +// CHECK: __objc3_ok(void, void, (void)0)
 +// CHECK: __objc3_err(void, void, (void)0)
 +
++
+diff --git a/clang/test/ObjC3/AST/try-throw-pch.mm b/clang/test/ObjC3/AST/try-throw-pch.mm
+new file mode 100644
+--- /dev/null
++++ b/clang/test/ObjC3/AST/try-throw-pch.mm
+@@ -0,0 +1,17 @@
++// RUN: %clang_cc1 -x objective-c++ -fobjc-version=3 -std=c++20 -emit-pch -o %t.pch %S/Inputs/try-throw-pch.h
++// RUN: %clang_cc1 -x objective-c++ -fobjc-version=3 -std=c++20 -include-pch %t.pch -ast-print %s | FileCheck %s
++
++void consume_try_throw_pch();
++
++int pch_template_use() __objc3_throws(PchError) {
++  return pch_template_propagate(pch_typed_call);
++}
++
++// Verify the PCH restores all three typed-try kinds and ObjC3 throw separately
++// from native C++ exception statements.
++// CHECK: inline int pch_propagate() __objc3_throws(PchError)
++// CHECK: __objc3_try(pch_typed_call())
++// CHECK: __objc3_try_optional(pch_typed_call())
++// CHECK: __objc3_try_force(pch_typed_call())
++// CHECK: __objc3_throw(error);
++// CHECK: pch_template_propagate
+diff --git a/clang/test/ObjC3/AST/typed-error-native-consumers-pch.mm b/clang/test/ObjC3/AST/typed-error-native-consumers-pch.mm
+new file mode 100644
+--- /dev/null
++++ b/clang/test/ObjC3/AST/typed-error-native-consumers-pch.mm
+@@ -0,0 +1,17 @@
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fobjc-version=3 -emit-pch %S/Inputs/typed-error-native-consumers-pch.h -o %t.pch
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fobjc-version=3 -include-pch %t.pch -fsyntax-only %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fobjc-version=3 -ast-dump %S/Inputs/typed-error-native-consumers-pch.h | FileCheck %s
++// CHECK: ObjC3TryExpr{{.*}} operation=propagate
++// CHECK: ObjC3TryExpr{{.*}} operation=propagate
++// CHECK: ObjC3TryExpr{{.*}} operation=optionalize
++// CHECK: ObjC3TryExpr{{.*}} operation=force
++// CHECK: ObjC3DoCatchStmt
++// CHECK: ObjC3CatchStmt
++// CHECK: VarDecl {{.*}} first 'PCHError'
++// CHECK: ObjC3CatchStmt
++
++void instantiate_after_pch() {
++  int (*fn)() __objc3_throws(PCHError) = pch_typed_call;
++  (void)pch_dependent_try<PCHError>(fn);
++  pch_ordered_handlers();
++}
+diff --git a/clang/test/ObjC3/AST/typed-error-native-consumers.mm b/clang/test/ObjC3/AST/typed-error-native-consumers.mm
+new file mode 100644
+--- /dev/null
++++ b/clang/test/ObjC3/AST/typed-error-native-consumers.mm
+@@ -0,0 +1,36 @@
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fobjc-version=3 -ast-dump %s | FileCheck %s --check-prefix=AST
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fobjc-version=3 -ast-print %s | FileCheck %s --check-prefix=PRINT
++
++struct Error {};
++int typed_call() __objc3_throws(Error);
++int native_nothrow_typed_call() noexcept __objc3_throws(Error);
++
++int exercise_try_kinds() __objc3_throws(Error) {
++  int direct = __objc3_try(typed_call());
++  __objc3_optional(int) optional = __objc3_try_optional(typed_call());
++  int forced = __objc3_try_force(typed_call());
++  return direct + __objc3_has_value(optional) + forced;
++}
++
++void exercise_handler_tree() {
++  __objc3_do {
++    __objc3_throw(Error{});
++  } __objc3_catch(Error error) {
++    (void)error;
++  } __objc3_catch {
++  }
++}
++
++// AST: ObjC3TryExpr{{.*}} operation=propagate
++// AST: ObjC3TryExpr{{.*}} operation=optionalize
++// AST: ObjC3TryExpr{{.*}} operation=force
++// AST: ObjC3DoCatchStmt{{.*}} catch_clauses=2
++// AST: ObjC3CatchStmt{{.*}} catch_type= 'Error'
++// AST: VarDecl {{.*}} error 'Error'
++// AST: ObjC3CatchStmt{{.*}} catch_all
++// PRINT: __objc3_try(typed_call())
++// PRINT: __objc3_try_optional(typed_call())
++// PRINT: __objc3_try_force(typed_call())
++// PRINT: __objc3_catch(Error error)
++// PRINT: __objc3_catch {
 +
 diff --git a/clang/test/ObjC3/Parser/Inputs/objc3-type-constructors.h b/clang/test/ObjC3/Parser/Inputs/objc3-type-constructors.h
 new file mode 100644
@@ -5102,6 +6109,136 @@ new file mode 100644
 +void carrier_alias_redeclaration(__objc3_optional(IntAlias));
 +void carrier_payload_overload(__objc3_result(int, short));
 +void carrier_payload_overload(__objc3_result(int, char));
+diff --git a/clang/test/ObjC3/Sema/do-catch-no-optin-identifiers.m b/clang/test/ObjC3/Sema/do-catch-no-optin-identifiers.m
+new file mode 100644
+--- /dev/null
++++ b/clang/test/ObjC3/Sema/do-catch-no-optin-identifiers.m
+@@ -0,0 +1,9 @@
++// RUN: %clang_cc1 -x objective-c -std=c17 -fsyntax-only %s
++
++int __objc3_do = 1;
++int __objc3_catch = 2;
++void legacy_do_while(void) {
++  do {
++  } while (__objc3_do);
++  (void)__objc3_catch;
++}
+diff --git a/clang/test/ObjC3/Sema/do-catch-private-spellings.mm b/clang/test/ObjC3/Sema/do-catch-private-spellings.mm
+new file mode 100644
+--- /dev/null
++++ b/clang/test/ObjC3/Sema/do-catch-private-spellings.mm
+@@ -0,0 +1,111 @@
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fobjc-version=3 -fexceptions -fcxx-exceptions -fobjc-exceptions -fsyntax-only -verify %s
++
++@protocol Error
++@end
++
++struct ParseError {};
++struct OtherError {};
++void typed() __objc3_throws(ParseError);
++void untyped() __objc3_throws;
++
++void catches_exact_typed_effect() {
++  __objc3_do {
++    __objc3_try(typed());
++  } __objc3_catch(ParseError error) {
++    (void)error;
++  }
++}
++
++void catches_unknown_with_bare_clause() {
++  __objc3_do {
++    __objc3_try(untyped());
++  } __objc3_catch {
++  }
++}
++
++void catches_unknown_with_explicit_bridge(id<Error> error) {
++  __objc3_do {
++    __objc3_try(untyped());
++  } __objc3_catch(id<Error> error) {
++    (void)error;
++  }
++}
++
++void rejects_inexact_typed_catch() {
++  __objc3_do {
++    __objc3_try(typed()); // expected-error {{ObjC3 error is neither caught here nor compatible with the enclosing throws effect}}
++  } __objc3_catch(OtherError error) { // expected-error {{ObjC3 catch type 'OtherError' is incompatible with thrown error type 'ParseError'}}
++    (void)error;
++  }
++}
++
++void native_cpp_exception_domain_is_separate() {
++  try {
++    throw 1;
++  } catch (int value) {
++    (void)value;
++  }
++}
++
++void native_objc_exception_domain_is_separate(id value) {
++  @try {
++    (void)value;
++  } @catch (id exception) {
++    (void)exception;
++  }
++}
++
++void typed_second() __objc3_throws(OtherError);
++void forwards_unmatched_facts_to_outer_handler() {
++  __objc3_do {
++    __objc3_do {
++      __objc3_try(typed());
++      __objc3_try(typed_second());
++    } __objc3_catch(ParseError) {
++    }
++  } __objc3_catch(OtherError) {
++  }
++}
++
++void explicit_typed_rethrow_reaches_outer_catch() {
++  __objc3_do {
++    __objc3_do {
++      __objc3_try(typed());
++    } __objc3_catch(ParseError error) {
++      __objc3_throw(error);
++    }
++  } __objc3_catch(ParseError outer) {
++    (void)outer;
++  }
++}
++
++void untyped_error_rejects_concrete_pattern() {
++  __objc3_do {
++    __objc3_try(untyped()); // expected-error {{ObjC3 error is neither caught here nor compatible with the enclosing throws effect}}
++  } __objc3_catch(ParseError) { // expected-error {{ObjC3 catch type 'ParseError' cannot handle an untyped error}}
++  }
++}
++
++// This call is nondependent. Transforming the handler must still re-record
++// its effect before checking the substituted catch type.
++template<class E> void instantiate_pattern() {
++  __objc3_do {
++    __objc3_try(typed()); // expected-error {{ObjC3 error is neither caught here nor compatible with the enclosing throws effect}}
++  } __objc3_catch(E) { // expected-error {{ObjC3 catch type 'OtherError' is incompatible with thrown error type 'ParseError'}}
++  }
++}
++void instantiate_matching_and_mismatching_patterns() {
++  instantiate_pattern<ParseError>();
++  instantiate_pattern<OtherError>(); // expected-note {{in instantiation of function template specialization}}
++}
++
++template<class E> void instantiate_explicit_raise() {
++  __objc3_do {
++    __objc3_throw(ParseError{}); // expected-error {{ObjC3 error is neither caught here nor compatible with the enclosing throws effect}}
++  } __objc3_catch(E) { // expected-error {{ObjC3 catch type 'OtherError' is incompatible with thrown error type 'ParseError'}}
++  }
++}
++void instantiate_matching_and_mismatching_raise_patterns() {
++  instantiate_explicit_raise<ParseError>();
++  instantiate_explicit_raise<OtherError>(); // expected-note {{in instantiation of function template specialization}}
++}
 diff --git a/clang/test/ObjC3/Sema/function-effect-c-block-pointer.c b/clang/test/ObjC3/Sema/function-effect-c-block-pointer.c
 new file mode 100644
 --- /dev/null
@@ -5899,6 +7036,233 @@ new file mode 100644
 +int is_ok;
 +int ordinary_result_identifiers(void) { return ok + err + is_ok; }
 +// expected-no-diagnostics
+diff --git a/clang/test/ObjC3/Sema/try-throw-no-optin-identifiers.m b/clang/test/ObjC3/Sema/try-throw-no-optin-identifiers.m
+new file mode 100644
+--- /dev/null
++++ b/clang/test/ObjC3/Sema/try-throw-no-optin-identifiers.m
+@@ -0,0 +1,15 @@
++// RUN: %clang_cc1 -x objective-c -fexceptions -fobjc-exceptions -fsyntax-only %s
++
++int try;
++int throw;
++int ordinary_names(void) { return try + throw; }
++
++#define __objc3_try(x) ((x) + 1)
++int private_spelling_is_ordinary_without_optin(void) { return __objc3_try(1); }
++
++void native_objc_exception_syntax_is_unchanged(void) {
++  @try {
++  } @catch (id error) {
++    @throw;
++  }
++}
+diff --git a/clang/test/ObjC3/Sema/try-throw-private-spellings.mm b/clang/test/ObjC3/Sema/try-throw-private-spellings.mm
+new file mode 100644
+--- /dev/null
++++ b/clang/test/ObjC3/Sema/try-throw-private-spellings.mm
+@@ -0,0 +1,84 @@
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fobjc-version=3 -fexceptions -fcxx-exceptions -fsyntax-only -verify %s
++
++struct Error {};
++struct Other {};
++
++int typed_call() __objc3_throws(Error);
++int other_call() __objc3_throws(Other);
++int native_noexcept_typed_call() noexcept __objc3_throws(Error);
++
++static_assert(noexcept(__objc3_try(native_noexcept_typed_call())),
++              "ObjC3 effects remain separate from native C++ noexcept");
++
++int propagate_exact_error() __objc3_throws(Error) {
++  return __objc3_try(typed_call());
++}
++__objc3_optional(int) optionalize_error() {
++  return __objc3_try_optional(typed_call());
++}
++int explicitly_trap_on_error() {
++  return __objc3_try_force(typed_call());
++}
++int parenthesized_try_comma() __objc3_throws(Error) {
++  return (__objc3_try(typed_call()), 7);
++}
++void raise_exact_error() __objc3_throws(Error) {
++  __objc3_throw(Error{});
++}
++
++int propagate_without_effect() {
++  return __objc3_try(typed_call()); // expected-error {{propagating ObjC3 try requires a matching throwing function}}
++}
++int propagate_wrong_error() __objc3_throws(Other) {
++  return __objc3_try(typed_call()); // expected-error {{ObjC3 try error type does not match the enclosing function's throws type}}
++}
++void throw_wrong_error() __objc3_throws(Error) {
++  __objc3_throw(Other{}); // expected-error {{ObjC3 throw payload type does not match the enclosing function's throws type}}
++}
++int try_nonthrowing_value() {
++  return __objc3_try(1); // expected-error {{ObjC3 try operation requires a throwing call expression}}
++}
++void throw_without_effect() {
++  __objc3_throw(Error{}); // expected-error {{ObjC3 throw requires a throwing function}}
++}
++
++int native_cpp_catch_does_not_handle_typed_error() {
++  try {
++    return __objc3_try(typed_call()); // expected-error {{propagating ObjC3 try requires a matching throwing function}}
++  } catch (...) {
++    return 0;
++  }
++}
++
++void native_cpp_catch_does_not_authorize_objc3_throw() {
++  try {
++    __objc3_throw(Error{}); // expected-error {{ObjC3 throw requires a throwing function}}
++  } catch (...) {
++  }
++}
++
++struct Value {};
++Value &lvalue_typed_call() __objc3_throws(Error);
++Value &&xvalue_typed_call() __objc3_throws(Error);
++Value &ordinary_lvalue_call();
++Value &&ordinary_xvalue_call();
++Value &ordinary_reference_identity() { return ordinary_lvalue_call(); }
++Value &&ordinary_xvalue_identity() { return static_cast<Value &&>(ordinary_xvalue_call()); }
++Value &reject_lvalue_propagate() __objc3_throws(Error) {
++  return __objc3_try(lvalue_typed_call()); // expected-error {{ObjC3 try currently requires a throwing call that returns a prvalue}}
++}
++Value &&reject_xvalue_propagate() __objc3_throws(Error) {
++  return __objc3_try(xvalue_typed_call()); // expected-error {{ObjC3 try currently requires a throwing call that returns a prvalue}}
++}
++__objc3_optional(Value) reject_lvalue_optionalize() {
++  return __objc3_try_optional(lvalue_typed_call()); // expected-error {{ObjC3 try currently requires a throwing call that returns a prvalue}}
++}
++__objc3_optional(Value) reject_xvalue_optionalize() {
++  return __objc3_try_optional(xvalue_typed_call()); // expected-error {{ObjC3 try currently requires a throwing call that returns a prvalue}}
++}
++Value &reject_lvalue_force() {
++  return __objc3_try_force(lvalue_typed_call()); // expected-error {{ObjC3 try currently requires a throwing call that returns a prvalue}}
++}
++Value &&reject_xvalue_force() {
++  return __objc3_try_force(xvalue_typed_call()); // expected-error {{ObjC3 try currently requires a throwing call that returns a prvalue}}
++}
+diff --git a/clang/test/ObjC3/Sema/typed-error-callable-ownership.mm b/clang/test/ObjC3/Sema/typed-error-callable-ownership.mm
+new file mode 100644
+--- /dev/null
++++ b/clang/test/ObjC3/Sema/typed-error-callable-ownership.mm
+@@ -0,0 +1,49 @@
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fblocks -fobjc-version=3 -fsyntax-only -verify %s
++
++struct Error {};
++int typed_call() __objc3_throws(Error);
++
++void outer_handler_does_not_handle_separate_callables() {
++  __objc3_do {
++    auto lambda = [] {
++      __objc3_try(typed_call()); // expected-error {{propagating ObjC3 try requires a matching throwing function}}
++      __objc3_throw(Error{}); // expected-error {{ObjC3 throw requires a throwing function}}
++    };
++    auto block = ^{
++      __objc3_try(typed_call()); // expected-error {{propagating ObjC3 try requires a matching throwing function}}
++      __objc3_throw(Error{}); // expected-error {{ObjC3 throw requires a throwing function}}
++    };
++    (void)lambda;
++    (void)block;
++    __objc3_try(typed_call());
++  } __objc3_catch(Error error) { (void)error; }
++}
++
++void outer_effect_does_not_authorize_separate_callables()
++    __objc3_throws(Error) {
++  auto lambda = [] {
++    __objc3_try(typed_call()); // expected-error {{propagating ObjC3 try requires a matching throwing function}}
++    __objc3_throw(Error{}); // expected-error {{ObjC3 throw requires a throwing function}}
++  };
++  auto block = ^{
++    __objc3_try(typed_call()); // expected-error {{propagating ObjC3 try requires a matching throwing function}}
++    __objc3_throw(Error{}); // expected-error {{ObjC3 throw requires a throwing function}}
++  };
++  (void)lambda;
++  (void)block;
++}
++
++void inner_handlers_own_their_facts() {
++  __objc3_do {
++    auto lambda = [] {
++      __objc3_do { __objc3_try(typed_call()); }
++      __objc3_catch(Error error) { (void)error; }
++    };
++    auto block = ^{
++      __objc3_do { __objc3_throw(Error{}); }
++      __objc3_catch(Error error) { (void)error; }
++    };
++    lambda();
++    block();
++  } __objc3_catch { }
++}
+diff --git a/clang/test/ObjC3/Sema/typed-error-native-exception-boundaries.mm b/clang/test/ObjC3/Sema/typed-error-native-exception-boundaries.mm
+new file mode 100644
+--- /dev/null
++++ b/clang/test/ObjC3/Sema/typed-error-native-exception-boundaries.mm
+@@ -0,0 +1,41 @@
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fobjc-version=3 -fexceptions -fcxx-exceptions -fobjc-exceptions -fsyntax-only -verify %s
++
++struct Error {};
++constexpr int typed_nothrow() noexcept __objc3_throws(Error) { return 7; }
++int typed_may_throw_cpp() noexcept(false) __objc3_throws(Error);
++int ordinary_may_throw_cpp() noexcept(false);
++
++// Slop typed throws is independent of the C++ exception specification.
++static_assert(noexcept(__objc3_try(typed_nothrow())));
++static_assert(!noexcept(__objc3_try(typed_may_throw_cpp())));
++
++int propagate_typed_error() __objc3_throws(Error) {
++  return __objc3_try(typed_nothrow());
++}
++
++void typed_catch_does_not_claim_native_cpp_catch() {
++  __objc3_do {
++    ordinary_may_throw_cpp();
++  } __objc3_catch(Error error) {
++    (void)error;
++  }
++}
++
++// Native C++ and Objective-C exception constructs remain distinct controls.
++void native_cpp_and_objc_controls() {
++  try {
++    ordinary_may_throw_cpp();
++  } catch (...) {
++  }
++  @try {
++    ordinary_may_throw_cpp();
++  } @catch (id error) {
++    (void)error;
++  }
++}
++
++
++constexpr int force_in_constant_evaluation() { // expected-error {{constexpr function never produces a constant expression}}
++  return __objc3_try_force(typed_nothrow()); // expected-note 2 {{subexpression not valid in a constant expression}}
++}
++static_assert(force_in_constant_evaluation() == 7); // expected-error {{not an integral constant expression}} expected-note {{in call to 'force_in_constant_evaluation()'}}
+diff --git a/clang/test/ObjC3/Sema/typed-error-static-analysis-gate.mm b/clang/test/ObjC3/Sema/typed-error-static-analysis-gate.mm
+new file mode 100644
+--- /dev/null
++++ b/clang/test/ObjC3/Sema/typed-error-static-analysis-gate.mm
+@@ -0,0 +1,13 @@
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fobjc-version=3 -analyze -analyzer-checker=core -verify %s
++
++struct Error {};
++int typed() __objc3_throws(Error);
++int propagate() __objc3_throws(Error) {
++  return __objc3_try(typed()); // expected-error {{Slop typed-error control flow has no qualified static-analysis model}}
++}
++void handled() {
++  __objc3_do { __objc3_throw(Error{}); } // expected-error {{Slop typed-error control flow has no qualified static-analysis model}}
++  __objc3_catch(Error error) { (void)error; }
++}
++
++int inherited_control(int input) { return input + 1; }
 diff --git a/clang/unittests/AST/ObjC3CarrierAdversarialTest.cpp b/clang/unittests/AST/ObjC3CarrierAdversarialTest.cpp
 new file mode 100644
 --- /dev/null
@@ -6872,6 +8236,115 @@ new file mode 100644
 +}
 +
 +} // namespace
+diff --git a/clang/unittests/AST/ObjC3DoCatchPersistenceTest.cpp b/clang/unittests/AST/ObjC3DoCatchPersistenceTest.cpp
+new file mode 100644
+--- /dev/null
++++ b/clang/unittests/AST/ObjC3DoCatchPersistenceTest.cpp
+@@ -0,0 +1,104 @@
++//===--- ObjC3DoCatchPersistenceTest.cpp - do/catch import -----===//
++// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
++// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
++
++#include "clang/AST/ASTContext.h"
++#include "clang/AST/ASTImporter.h"
++#include "clang/AST/RecursiveASTVisitor.h"
++#include "clang/Frontend/ASTUnit.h"
++#include "clang/Tooling/Tooling.h"
++#include "llvm/Support/Error.h"
++#include "gtest/gtest.h"
++
++#include <string>
++#include <vector>
++
++using namespace clang;
++
++namespace {
++class FindDoCatch : public RecursiveASTVisitor<FindDoCatch> {
++public:
++  ObjC3DoCatchStmt *Found = nullptr;
++  bool VisitObjC3DoCatchStmt(ObjC3DoCatchStmt *S) {
++    Found = S;
++    return false;
++  }
++};
++
++class FindCatchBinding : public RecursiveASTVisitor<FindCatchBinding> {
++public:
++  VarDecl *Binding = nullptr;
++  DeclRefExpr *Reference = nullptr;
++  bool VisitVarDecl(VarDecl *D) {
++    if (D->getName() == "error")
++      Binding = D;
++    return true;
++  }
++  bool VisitDeclRefExpr(DeclRefExpr *E) {
++    if (E->getDecl()->getName() == "error")
++      Reference = E;
++    return true;
++  }
++};
++} // namespace
++
++TEST(ObjC3DoCatchPersistence, ImportsOrderedClausesAndBindingIntoTarget) {
++  const std::string FromCode = R"(
++    struct Error { int Value; };
++    void typed() __objc3_throws(Error);
++    void handled() {
++      __objc3_do { __objc3_try(typed()); }
++      __objc3_catch(Error error) { (void)error; }
++      __objc3_catch { }
++    }
++  )";
++  const std::string ToCode = "struct Error { int Value; };\n";
++  const std::vector<std::string> Args = {"-x", "objective-c++", "-std=c++20",
++                                         "-fobjc-version=3"};
++  auto From = tooling::buildASTFromCodeWithArgs(FromCode, Args, "from.mm");
++  auto To = tooling::buildASTFromCodeWithArgs(
++      ToCode, Args, "to.mm", "clang-tool",
++      std::make_shared<PCHContainerOperations>(),
++      tooling::getClangStripDependencyFileAdjuster(), {{"from.mm", FromCode}});
++  ASSERT_TRUE(From);
++  ASSERT_TRUE(To);
++
++  ASTContext &FromContext = From->getASTContext();
++  ASTContext &ToContext = To->getASTContext();
++  auto Decls = FromContext.getTranslationUnitDecl()->lookup(
++      &FromContext.Idents.get("handled"));
++  FunctionDecl *Function = nullptr;
++  for (Decl *D : Decls)
++    if (auto *FD = dyn_cast<FunctionDecl>(D))
++      Function = FD;
++  ASSERT_NE(Function, nullptr);
++  FindDoCatch FindFrom;
++  FindFrom.TraverseStmt(Function->getBody());
++  ASSERT_NE(FindFrom.Found, nullptr);
++  ASSERT_EQ(FindFrom.Found->getNumCatchClauses(), 2u);
++  EXPECT_TRUE(FindFrom.Found->getCatchClause(0)->getCatchTypeInfo());
++  EXPECT_TRUE(FindFrom.Found->getCatchClause(1)->isCatchAll());
++
++  ASTImporter Importer(ToContext, To->getFileManager(), FromContext,
++                       From->getFileManager(), /*MinimalImport=*/false);
++  auto Imported = Importer.Import(FindFrom.Found);
++  ASSERT_TRUE(static_cast<bool>(Imported))
++      << llvm::toString(Imported.takeError());
++  auto *ImportedDoCatch = dyn_cast<ObjC3DoCatchStmt>(*Imported);
++  ASSERT_NE(ImportedDoCatch, nullptr);
++  EXPECT_EQ(ImportedDoCatch->getNumCatchClauses(), 2u);
++  EXPECT_FALSE(ImportedDoCatch->getCatchClause(0)->isCatchAll());
++  EXPECT_TRUE(ImportedDoCatch->getCatchClause(1)->isCatchAll());
++
++  FindCatchBinding FindTarget;
++  FindTarget.TraverseStmt(ImportedDoCatch);
++  ASSERT_NE(FindTarget.Binding, nullptr);
++  ASSERT_NE(FindTarget.Reference, nullptr);
++  EXPECT_EQ(FindTarget.Reference->getDecl(), FindTarget.Binding);
++  EXPECT_EQ(&FindTarget.Binding->getASTContext(), &ToContext);
++  QualType ImportedCatchType =
++      ImportedDoCatch->getCatchClause(0)->getCatchTypeInfo()->getType();
++  const auto *ImportedRecord = ImportedCatchType->getAs<RecordType>();
++  ASSERT_NE(ImportedRecord, nullptr);
++  EXPECT_EQ(&ImportedRecord->getDecl()->getASTContext(), &ToContext);
++}
 diff --git a/clang/unittests/AST/ObjC3FunctionEffectImportTest.cpp b/clang/unittests/AST/ObjC3FunctionEffectImportTest.cpp
 new file mode 100644
 --- /dev/null
@@ -7358,3 +8831,154 @@ new file mode 100644
 +}
 +
 +} // namespace
+diff --git a/clang/unittests/AST/ObjC3TryThrowConsumerTest.cpp b/clang/unittests/AST/ObjC3TryThrowConsumerTest.cpp
+new file mode 100644
+--- /dev/null
++++ b/clang/unittests/AST/ObjC3TryThrowConsumerTest.cpp
+@@ -0,0 +1,146 @@
++//===--- ObjC3TryThrowConsumerTest.cpp - AST consumer identity tests -------===//
++// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
++// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
++
++#include "clang/AST/ASTContext.h"
++#include "clang/AST/ASTImporter.h"
++#include "clang/AST/ASTStructuralEquivalence.h"
++#include "clang/AST/Expr.h"
++#include "clang/AST/RecursiveASTVisitor.h"
++#include "clang/Frontend/ASTUnit.h"
++#include "clang/Tooling/Tooling.h"
++#include "llvm/ADT/FoldingSet.h"
++#include "llvm/Support/Error.h"
++#include "gtest/gtest.h"
++
++#include <array>
++#include <string>
++#include <vector>
++
++using namespace clang;
++
++namespace {
++class FindTryExprs : public RecursiveASTVisitor<FindTryExprs> {
++public:
++  std::vector<ObjC3TryExpr *> Nodes;
++  bool VisitObjC3TryExpr(ObjC3TryExpr *E) {
++    Nodes.push_back(E);
++    return true;
++  }
++};
++
++class FindStmtExprs : public RecursiveASTVisitor<FindStmtExprs> {
++public:
++  std::vector<StmtExpr *> Nodes;
++  bool VisitStmtExpr(StmtExpr *E) {
++    Nodes.push_back(E);
++    return true;
++  }
++};
++} // namespace
++
++TEST(ObjC3TryThrowConsumers, ProfilesOperationsAndImportsIntoTargetContext) {
++  const std::string FromCode = R"(
++    struct Error {};
++    __attribute__((const)) int typed() __objc3_throws(Error);
++    int propagate() __objc3_throws(Error) { return __objc3_try(typed()); }
++    __objc3_optional(int) optionalize() {
++      return __objc3_try_optional(typed());
++    }
++    int force() { return __objc3_try_force(typed()); }
++    int statement_expression() __objc3_throws(Error) {
++      return ({ __objc3_throw(Error{}); 0; });
++    }
++  )";
++  const std::string ToCode = R"(
++    struct Error {};
++    __attribute__((const)) int typed() __objc3_throws(Error);
++    int propagate() __objc3_throws(Error) { return __objc3_try(typed()); }
++    __objc3_optional(int) optionalize() {
++      return __objc3_try_optional(typed());
++    }
++    int force() { return __objc3_try_force(typed()); }
++  )";
++  const std::vector<std::string> Args = {"-x", "objective-c++", "-std=c++20",
++                                         "-fobjc-version=3"};
++  auto From = tooling::buildASTFromCodeWithArgs(FromCode, Args, "from.mm");
++  auto To = tooling::buildASTFromCodeWithArgs(
++      ToCode, Args, "to.mm", "clang-tool",
++      std::make_shared<PCHContainerOperations>(),
++      tooling::getClangStripDependencyFileAdjuster(), {{"from.mm", FromCode}});
++  ASSERT_TRUE(From);
++  ASSERT_TRUE(To);
++
++  FindTryExprs Finder;
++  Finder.TraverseDecl(From->getASTContext().getTranslationUnitDecl());
++  ASSERT_EQ(Finder.Nodes.size(), 3u);
++  const std::array<ObjC3TryExpr::Kind, 3> Expected = {
++      ObjC3TryExpr::Kind::Propagate, ObjC3TryExpr::Kind::Optionalize,
++      ObjC3TryExpr::Kind::Force};
++  for (unsigned I = 0; I != Expected.size(); ++I)
++    EXPECT_EQ(Finder.Nodes[I]->getKind(), Expected[I]);
++  EXPECT_TRUE(Finder.Nodes[0]->HasSideEffects(From->getASTContext(), true));
++  EXPECT_FALSE(Finder.Nodes[1]->HasSideEffects(From->getASTContext(), true));
++  EXPECT_TRUE(Finder.Nodes[2]->HasSideEffects(From->getASTContext(), true));
++
++  FindStmtExprs StmtExprFinder;
++  StmtExprFinder.TraverseDecl(From->getASTContext().getTranslationUnitDecl());
++  ASSERT_EQ(StmtExprFinder.Nodes.size(), 1u);
++  EXPECT_TRUE(StmtExprFinder.Nodes.front()->HasSideEffects(
++      From->getASTContext(), /*IncludePossibleEffects=*/false));
++
++  FindTryExprs ToFinder;
++  ToFinder.TraverseDecl(To->getASTContext().getTranslationUnitDecl());
++  ASSERT_EQ(ToFinder.Nodes.size(), 3u);
++  StructuralEquivalenceContext::NonEquivalentDeclSet NonEquivalent;
++  StructuralEquivalenceContext Eq(
++      From->getASTContext().getLangOpts(), From->getASTContext(),
++      To->getASTContext(), NonEquivalent, StructuralEquivalenceKind::Default,
++      /*StrictTypeSpelling=*/false, /*Complain=*/false);
++  EXPECT_TRUE(Eq.IsEquivalent(Finder.Nodes[0], ToFinder.Nodes[0]));
++  StructuralEquivalenceContext::NonEquivalentDeclSet DifferentKindSet;
++  StructuralEquivalenceContext DifferentKindEq(
++      From->getASTContext().getLangOpts(), From->getASTContext(),
++      From->getASTContext(), DifferentKindSet,
++      StructuralEquivalenceKind::Default, /*StrictTypeSpelling=*/false,
++      /*Complain=*/false);
++  EXPECT_FALSE(DifferentKindEq.IsEquivalent(Finder.Nodes[0], Finder.Nodes[1]));
++
++  llvm::FoldingSetNodeID PropagateProfile, OptionalizeProfile;
++  Finder.Nodes[0]->Profile(PropagateProfile, From->getASTContext(),
++                           /*Canonical=*/false);
++  Finder.Nodes[1]->Profile(OptionalizeProfile, From->getASTContext(),
++                           /*Canonical=*/false);
++  EXPECT_NE(PropagateProfile.ComputeHash(), OptionalizeProfile.ComputeHash());
++
++  ASTContext &FromContext = From->getASTContext();
++  ASTContext &ToContext = To->getASTContext();
++  ASTImporter Importer(ToContext, To->getFileManager(), FromContext,
++                       From->getFileManager(), /*MinimalImport=*/false);
++  for (unsigned I = 0; I != Expected.size(); ++I) {
++    auto Imported = Importer.Import(Finder.Nodes[I]);
++    ASSERT_TRUE(static_cast<bool>(Imported))
++        << llvm::toString(Imported.takeError());
++    auto *Try = dyn_cast<ObjC3TryExpr>(*Imported);
++    ASSERT_NE(Try, nullptr);
++    EXPECT_EQ(Try->getKind(), Expected[I]);
++    if (Expected[I] == ObjC3TryExpr::Kind::Optionalize) {
++      const auto *Optional = Try->getType()->getAs<ObjC3OptionalType>();
++      ASSERT_NE(Optional, nullptr);
++      EXPECT_EQ(Optional->getElementType(), ToContext.IntTy);
++    } else {
++      EXPECT_EQ(Try->getType(), ToContext.IntTy);
++    }
++    auto *Call = dyn_cast<CallExpr>(Try->getOperand()->IgnoreParenImpCasts());
++    ASSERT_NE(Call, nullptr);
++    auto *Callee = dyn_cast<FunctionDecl>(Call->getCalleeDecl());
++    ASSERT_NE(Callee, nullptr);
++    EXPECT_EQ(&Callee->getASTContext(), &ToContext);
++    const auto *FPT = Callee->getType()->getAs<FunctionProtoType>();
++    ASSERT_NE(FPT, nullptr);
++    const auto *ErrorTy = FPT->getObjC3ErrorType()->getAs<RecordType>();
++    ASSERT_NE(ErrorTy, nullptr);
++    const auto *ErrorRecord = ErrorTy->getDecl();
++    EXPECT_EQ(&ErrorRecord->getASTContext(), &ToContext);
++  }
++}

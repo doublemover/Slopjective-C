@@ -15,7 +15,7 @@
     },
     {
       "file": "0002-objc3-native-defer-statement.patch",
-      "sha256": "9975c5ca0d24b2c997b0ce1d7491e3d841391488f1fb27e7ec73ec0f122e15db"
+      "sha256": "76acfd2efd17a8335a8bbf18755a2ae90cbe5831273d3917d73eadb47076fde0"
     },
     {
       "file": "0003-objc3-native-payload-type-facts.patch",
@@ -23,15 +23,15 @@
     },
     {
       "file": "0004-objc3-canonical-carriers-and-function-effects.patch",
-      "sha256": "2b1f5ab150aac7bd6ced5467d8de389206e556252207fffeb77bd25564840bcc"
+      "sha256": "d8af17581a42f3426e359537123cfbd70fdff896a5289c1181b45f13c31e15e3"
     },
     {
       "file": "0005-objc3-codegen-qualification-boundaries.patch",
-      "sha256": "0d1ad6bf5a193e2ad0db6655104e729ebf762883d2970415cd354f8b7f6d79f5"
+      "sha256": "22aa1d44e7e474d06abacb7b880b47469ffe52e672482d3966dca248a5498f07"
     },
     {
       "file": "0006-objc3-native-carrier-expressions.patch",
-      "sha256": "65001ef15118defb6a689f194b53cbb42e4cc3fd7b365f32d8d4e45975c8007d"
+      "sha256": "4e4084fc9b5d8dc150213742fce1289d33687d5ad4d20b51c86989487b7105f1"
     }
   ],
   "pristine_baseline_build_id": "llvmorg-22.1.6-fc4aad7b5db3-pristine-v1",
