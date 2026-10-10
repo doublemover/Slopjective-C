@@ -15,11 +15,19 @@
     },
     {
       "file": "0002-objc3-native-defer-statement.patch",
-      "sha256": "dc8ef2a4f0900b131bfcdadd037b4c817bef5d2daf2e944a2bf7f9055e541380"
+      "sha256": "1b9c79252bbfff8591ece704289a8de1296d80f1b532f98ed9b82a17a0b92934"
     },
     {
       "file": "0003-objc3-native-payload-type-facts.patch",
-      "sha256": "51fe445728189b97dd7bef5a02751da26fc856223e932c010d694dc0bf044579"
+      "sha256": "0ff0eb1ed83325730c0fd1425fe6c0b33cf9abdb1ba7df73fd4a4280b57e17b0"
+    },
+    {
+      "file": "0004-objc3-canonical-carriers-and-function-effects.patch",
+      "sha256": "52db5825f928fc0aed40d867fab9f1478a6e137079a1f19c5b63a48bf91044a3"
+    },
+    {
+      "file": "0005-objc3-codegen-qualification-boundaries.patch",
+      "sha256": "a623746e7c18981530421165cbc4e93c5d0f4cb421d8ed72b52b794b0e458f60"
     }
   ],
   "pristine_baseline_build_id": "llvmorg-22.1.6-fc4aad7b5db3-pristine-v1",
@@ -33,14 +41,21 @@
     "assertions": true,
     "rtti": true,
     "eh": true,
-    "targets": ["X86"],
-    "projects": ["clang", "lld", "clang-tools-extra"],
+    "targets": [
+      "X86"
+    ],
+    "projects": [
+      "clang",
+      "lld",
+      "clang-tools-extra"
+    ],
     "build_targets": [
       "clang",
       "FileCheck",
       "count",
       "not",
       "llvm-config",
+      "llvm-nm",
       "clang-resource-headers",
       "clangTooling",
       "clangIndex",
@@ -52,15 +67,31 @@
     "build_target_groups": [
       {
         "name": "compiler_and_test_tools",
-        "targets": ["clang", "FileCheck", "count", "not", "llvm-config", "clang-resource-headers"]
+        "targets": [
+          "clang",
+          "FileCheck",
+          "count",
+          "not",
+          "llvm-config",
+          "llvm-nm",
+          "clang-resource-headers"
+        ]
       },
       {
         "name": "objc3_facade_libraries",
-        "targets": ["clangTooling", "clangIndex", "clangCodeGen", "clangFrontend", "clangDriver"]
+        "targets": [
+          "clangTooling",
+          "clangIndex",
+          "clangCodeGen",
+          "clangFrontend",
+          "clangDriver"
+        ]
       },
       {
         "name": "native_type_contract_tests",
-        "targets": ["ObjC3TypeContractsTests"]
+        "targets": [
+          "ObjC3TypeContractsTests"
+        ]
       }
     ],
     "distribution_components": [
@@ -80,6 +111,8 @@
     "include_tests": true,
     "compile_jobs": 8,
     "link_jobs": 1,
-    "test_binaries": ["tools/clang/unittests/AST/ObjC3TypeContractsTests.exe"]
+    "test_binaries": [
+      "tools/clang/unittests/AST/ObjC3TypeContractsTests.exe"
+    ]
   }
 }

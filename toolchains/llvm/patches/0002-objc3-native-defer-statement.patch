@@ -21,48 +21,6 @@ index 1008e7d66..ccc33dbbd 100644
    void setDeferLoc(SourceLocation DeferLoc) {
      DeferStmtBits.DeferLoc = DeferLoc;
    }
-diff --git a/clang/include/clang/Parse/Parser.h b/clang/include/clang/Parse/Parser.h
-index f7e7b0ec5..bd04a5538 100644
---- a/clang/include/clang/Parse/Parser.h
-+++ b/clang/include/clang/Parse/Parser.h
-@@ -7503,6 +7503,7 @@ public:
-   ///         unlabeled-statement
-   /// \endverbatim
-   StmtResult ParseDeferStatement(SourceLocation *TrailingElseLoc);
-+  StmtResult ParseObjC3DeferStatement();
- 
-   StmtResult ParsePragmaLoopHint(StmtVector &Stmts, ParsedStmtContext StmtCtx,
-                                  SourceLocation *TrailingElseLoc,
-diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
-index 101ab2c40..a4baaa11c 100644
---- a/clang/lib/AST/ASTImporter.cpp
-+++ b/clang/lib/AST/ASTImporter.cpp
-@@ -589,6 +589,7 @@ namespace clang {
-     ExpectedStmt VisitDefaultStmt(DefaultStmt *S);
-     ExpectedStmt VisitLabelStmt(LabelStmt *S);
-     ExpectedStmt VisitAttributedStmt(AttributedStmt *S);
-+    ExpectedStmt VisitDeferStmt(DeferStmt *S);
-     ExpectedStmt VisitIfStmt(IfStmt *S);
-     ExpectedStmt VisitSwitchStmt(SwitchStmt *S);
-     ExpectedStmt VisitWhileStmt(WhileStmt *S);
-@@ -7221,6 +7222,17 @@ ExpectedStmt ASTNodeImporter::VisitAttributedStmt(AttributedStmt *S) {
-       Importer.getToContext(), *ToAttrLocOrErr, ToAttrs, *ToSubStmtOrErr);
- }
- 
-+ExpectedStmt ASTNodeImporter::VisitDeferStmt(DeferStmt *S) {
-+  Error Err = Error::success();
-+  auto ToLoc = importChecked(Err, S->getDeferLoc());
-+  auto ToBody = importChecked(Err, S->getBody());
-+  if (Err)
-+    return std::move(Err);
-+  auto *ToStmt = DeferStmt::Create(Importer.getToContext(), ToLoc, ToBody);
-+  ToStmt->setObjC3Spelling(S->hasObjC3Spelling());
-+  return ToStmt;
-+}
-+
- ExpectedStmt ASTNodeImporter::VisitIfStmt(IfStmt *S) {
- 
-   Error Err = Error::success();
 diff --git a/clang/lib/AST/StmtPrinter.cpp b/clang/lib/AST/StmtPrinter.cpp
 index 4d1ad387b..6060a9362 100644
 --- a/clang/lib/AST/StmtPrinter.cpp
@@ -76,20 +34,8 @@ index 4d1ad387b..6060a9362 100644
    PrintControlledStmt(Node->getBody());
  }
  
-diff --git a/clang/lib/Parse/CMakeLists.txt b/clang/lib/Parse/CMakeLists.txt
-index e6cbf3b86..8afd7079a 100644
---- a/clang/lib/Parse/CMakeLists.txt
-+++ b/clang/lib/Parse/CMakeLists.txt
-@@ -18,6 +18,7 @@ add_clang_library(clangParse
-   ParseHLSLRootSignature.cpp
-   ParseInit.cpp
-   ParseObjc.cpp
-+  ParseObjC3.cpp
-   ParseOpenMP.cpp
-   ParsePragma.cpp
-   ParseStmt.cpp
 diff --git a/clang/lib/Parse/ParseStmt.cpp b/clang/lib/Parse/ParseStmt.cpp
-index 260f81263..4c3bcdd47 100644
+index 260f81263..e426b088d 100644
 --- a/clang/lib/Parse/ParseStmt.cpp
 +++ b/clang/lib/Parse/ParseStmt.cpp
 @@ -161,6 +161,11 @@ Retry:
@@ -104,22 +50,22 @@ index 260f81263..4c3bcdd47 100644
      if (Next.is(tok::colon)) { // C99 6.8.1: labeled-statement
        // Both C++11 and GNU attributes preceding the label appertain to the
        // label, so put them in a single list to pass on to
-diff --git a/clang/lib/Sema/TreeTransform.h b/clang/lib/Sema/TreeTransform.h
-index 00be4e8c1..25313c05a 100644
---- a/clang/lib/Sema/TreeTransform.h
-+++ b/clang/lib/Sema/TreeTransform.h
-@@ -8582,7 +8582,10 @@ StmtResult TreeTransform<Derived>::TransformDeferStmt(DeferStmt *S) {
-   StmtResult Result = getDerived().TransformStmt(S->getBody());
-   if (!Result.isUsable())
-     return StmtError();
--  return DeferStmt::Create(getSema().Context, S->getDeferLoc(), Result.get());
-+  auto *Transformed =
-+      DeferStmt::Create(getSema().Context, S->getDeferLoc(), Result.get());
-+  Transformed->setObjC3Spelling(S->hasObjC3Spelling());
-+  return Transformed;
- }
+@@ -173,7 +178,14 @@ Retry:
  
- template<typename Derived>
+     // Look up the identifier, and typo-correct it to a keyword if it's not
+     // found.
+-    if (Next.isNot(tok::coloncolon)) {
++    const bool IsObjC3CarrierSpecifier =
++        getLangOpts().ObjC3 && Next.is(tok::l_paren) &&
++        (Tok.getIdentifierInfo()->isStr("__objc3_optional") ||
++         Tok.getIdentifierInfo()->isStr("__objc3_result"));
++    // Keep the private constructor token available to declaration
++    // disambiguation. Ordinary identifier annotation treats its argument list
++    // as an expression before the carrier type parser can consume it.
++    if (Next.isNot(tok::coloncolon) && !IsObjC3CarrierSpecifier) {
+       // Try to limit which sets of keywords should be included in typo
+       // correction based on what the next token is.
+       StatementFilterCCC CCC(Next);
 diff --git a/clang/lib/Serialization/ASTReaderStmt.cpp b/clang/lib/Serialization/ASTReaderStmt.cpp
 index 5553139df..1a7649df3 100644
 --- a/clang/lib/Serialization/ASTReaderStmt.cpp

@@ -234,6 +234,7 @@ def test_build_plan_carries_pinned_patch_and_windows_sdk_identity(tmp_path: Path
     assert tests["follow_up_commands"] == [[
         (repo / "out/toolchains/objc3-development/build/tools/clang/unittests/AST/ObjC3TypeContractsTests.exe").as_posix()
     ]]
+    assert tests["command_environment"] == {"PYTHONDONTWRITEBYTECODE": "1"}
 
     staged = core.build_plan(repo, phase="stage", manifest_path=manifest, source_dir=source)
     assert "install-distribution" in staged["command"]

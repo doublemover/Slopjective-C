@@ -403,6 +403,9 @@ def build_plan(repo: Path, *, phase: str, manifest_path: Path | None = None,
         identity_payload["follow_up_commands"] = group_commands[1:]
     elif phase == "test":
         identity_payload["follow_up_commands"] = test_follow_ups
+        # lit workers launch new Python processes, which do not inherit -B.
+        # Record the environment required to keep the sealed source unchanged.
+        identity_payload["command_environment"] = {"PYTHONDONTWRITEBYTECODE": "1"}
     identity_payload["identity"] = hashlib.sha256(
         json.dumps(identity_payload, sort_keys=True, separators=(",", ":")).encode()
     ).hexdigest()

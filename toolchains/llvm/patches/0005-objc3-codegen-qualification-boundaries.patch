@@ -1,0 +1,1626 @@
+diff --git a/clang/lib/CodeGen/CGCall.cpp b/clang/lib/CodeGen/CGCall.cpp
+index 06203733a..b349dec70 100644
+--- a/clang/lib/CodeGen/CGCall.cpp
++++ b/clang/lib/CodeGen/CGCall.cpp
+@@ -12,6 +12,7 @@
+ //===----------------------------------------------------------------------===//
+ 
+ #include "CGCall.h"
++#include "CGObjC3Carriers.h"
+ #include "ABIInfo.h"
+ #include "ABIInfoImpl.h"
+ #include "CGBlocks.h"
+@@ -31,6 +32,7 @@
+ #include "clang/Basic/TargetInfo.h"
+ #include "clang/CodeGen/CGFunctionInfo.h"
+ #include "clang/CodeGen/SwiftCallingConv.h"
++#include "llvm/ADT/SmallPtrSet.h"
+ #include "llvm/ADT/StringExtras.h"
+ #include "llvm/Analysis/ValueTracking.h"
+ #include "llvm/IR/Assumptions.h"
+@@ -231,6 +233,13 @@ static const CGFunctionInfo &
+ arrangeLLVMFunctionInfo(CodeGenTypes &CGT, bool instanceMethod,
+                         SmallVectorImpl<CanQualType> &prefix,
+                         CanQual<FunctionProtoType> FTP) {
++  if (CodeGen::diagnoseUnsupportedObjC3CarrierByValue(
++          CGT.getCGM(), QualType(FTP.getTypePtr(), 0), SourceLocation())) {
++    // Error-only sentinel: never pass custom carrier QualTypes into target
++    // ABIInfo. A prior diagnostic prevents object emission.
++    return CGT.arrangeNullaryFunction();
++  }
++
+   ExtParameterInfoList paramInfos;
+   RequiredArgs Required = RequiredArgs::forPrototypePlus(FTP, prefix.size());
+   appendParameterTypes(CGT, prefix, paramInfos, FTP);
+diff --git a/clang/lib/CodeGen/CGDebugInfo.cpp b/clang/lib/CodeGen/CGDebugInfo.cpp
+index d63d4c593..b06b47379 100644
+--- a/clang/lib/CodeGen/CGDebugInfo.cpp
++++ b/clang/lib/CodeGen/CGDebugInfo.cpp
+@@ -31,6 +31,7 @@
+ #include "clang/AST/RecursiveASTVisitor.h"
+ #include "clang/AST/VTableBuilder.h"
+ #include "clang/Basic/CodeGenOptions.h"
++#include "clang/Basic/Diagnostic.h"
+ #include "clang/Basic/SourceManager.h"
+ #include "clang/Basic/Version.h"
+ #include "clang/CodeGen/ModuleBuilder.h"
+@@ -4173,6 +4174,76 @@ llvm::DIType *CGDebugInfo::CreateTypeNode(QualType Ty, llvm::DIFile *Unit) {
+     return CreateType(cast<BlockPointerType>(Ty), Unit);
+   case Type::Typedef:
+     return CreateType(cast<TypedefType>(Ty), Unit);
++  case Type::ObjC3Optional:
++  case Type::ObjC3Result: {
++    ASTContext &Ctx = CGM.getContext();
++    QualType CarrierType = Ctx.getCanonicalType(Ty);
++    auto DiagnoseUnavailable = [&]() -> llvm::DIType * {
++      unsigned DiagID = CGM.getDiags().getCustomDiagID(
++          DiagnosticsEngine::Error,
++          "ObjC3 carrier type %0 has no materialized native representation "
++          "for debug information");
++      CGM.getDiags().Report(DiagID) << CarrierType;
++      return nullptr;
++    };
++
++    ObjC3CarrierRepresentationInfo Representation =
++        Ctx.getObjC3CarrierRepresentationType(CarrierType);
++    if (Representation.State !=
++            ObjC3CarrierRepresentationInfo::Status::Materialized ||
++        !Representation.Record || !Representation.TagField ||
++        Representation.Type.isNull())
++      return DiagnoseUnavailable();
++
++    const RecordType *PhysicalRecord =
++        Representation.Type->getAs<RecordType>();
++    if (!PhysicalRecord || PhysicalRecord->getDecl() != Representation.Record ||
++        !Ctx.hasSameType(Representation.Type,
++                         Ctx.getCanonicalTagType(Representation.Record)) ||
++        !Ctx.hasSameType(Representation.TagField->getType(), Ctx.BoolTy))
++      return DiagnoseUnavailable();
++
++    auto MatchesPayload = [&](FieldDecl *Field, QualType Payload) {
++      if (Payload->isVoidType())
++        return Field == nullptr;
++      return Field && Ctx.hasSameType(Field->getType(), Payload);
++    };
++    bool LayoutMatches = false;
++    if (const auto *Optional = dyn_cast<ObjC3OptionalType>(Ty)) {
++      LayoutMatches = !Representation.SuccessField &&
++                      !Representation.ErrorField &&
++                      MatchesPayload(Representation.ValueField,
++                                     Optional->getElementType());
++    } else if (const auto *Result = dyn_cast<ObjC3ResultType>(Ty)) {
++      LayoutMatches = !Representation.ValueField &&
++                      MatchesPayload(Representation.SuccessField,
++                                     Result->getSuccessType()) &&
++                      MatchesPayload(Representation.ErrorField,
++                                     Result->getErrorType());
++    }
++    const bool HasPayloadStorage = Representation.ValueField ||
++                                   Representation.SuccessField ||
++                                   Representation.ErrorField;
++    LayoutMatches &= HasPayloadStorage
++                         ? Representation.PayloadUnion &&
++                               Representation.PayloadField
++                         : !Representation.PayloadUnion &&
++                               !Representation.PayloadField;
++    if (!LayoutMatches)
++      return DiagnoseUnavailable();
++
++    // Reuse the ASTContext-owned record whose CodeGen memory type carries the
++    // target's actual size, alignment, union offset, and payload-qualified
++    // fields. The typedef wrapper gives debuggers the canonical source carrier
++    // identity without inventing a parallel layout or operation semantics.
++    llvm::DIType *PhysicalType =
++        getOrCreateType(Representation.Type, Unit);
++    if (!PhysicalType)
++      return DiagnoseUnavailable();
++    return DBuilder.createTypedef(PhysicalType,
++                                  CarrierType.getAsString(getPrintingPolicy()),
++                                  Unit, 0, Unit);
++  }
+   case Type::Record:
+     return CreateType(cast<RecordType>(Ty));
+   case Type::Enum:
+diff --git a/clang/lib/CodeGen/CGDecl.cpp b/clang/lib/CodeGen/CGDecl.cpp
+index aeecf0bac..631b45263 100644
+--- a/clang/lib/CodeGen/CGDecl.cpp
++++ b/clang/lib/CodeGen/CGDecl.cpp
+@@ -11,6 +11,7 @@
+ //===----------------------------------------------------------------------===//
+ 
+ #include "CGBlocks.h"
++#include "CGObjC3Carriers.h"
+ #include "CGCXXABI.h"
+ #include "CGCleanup.h"
+ #include "CGDebugInfo.h"
+@@ -1346,6 +1347,21 @@ static llvm::Constant *replaceUndef(CodeGenModule &CGM, IsPattern isPattern,
+ /// variable declaration with auto, register, or no storage class specifier.
+ /// These turn into simple stack objects, or GlobalValues depending on target.
+ void CodeGenFunction::EmitAutoVarDecl(const VarDecl &D) {
++  QualType Canonical = getContext().getCanonicalType(D.getType());
++  if (isa<ObjC3OptionalType>(Canonical.getTypePtr()) ||
++      isa<ObjC3ResultType>(Canonical.getTypePtr())) {
++    if (!CodeGen::supportsPlainObjC3CarrierStorageLifetime(CGM, Canonical)) {
++      CodeGen::diagnoseUnsupportedObjC3CarrierOperation(
++          CGM, D.getLocation(), Canonical, "local lifetime");
++      // The diagnostic rejects this lifetime, but later expressions may still
++      // reference the declaration while CodeGen recovers. Keep LocalDeclMap
++      // valid without running initialization or registering destruction.
++      if (getContext().getObjC3CarrierRepresentationType(Canonical).State ==
++          ObjC3CarrierRepresentationInfo::Status::Materialized)
++        (void)EmitAutoVarAlloca(D);
++      return;
++    }
++  }
+   AutoVarEmission emission = EmitAutoVarAlloca(D);
+   EmitAutoVarInit(emission);
+   EmitAutoVarCleanups(emission);
+diff --git a/clang/lib/CodeGen/CGExpr.cpp b/clang/lib/CodeGen/CGExpr.cpp
+index 24878710d..ca9af0a17 100644
+--- a/clang/lib/CodeGen/CGExpr.cpp
++++ b/clang/lib/CodeGen/CGExpr.cpp
+@@ -14,6 +14,8 @@
+ #include "CGCUDARuntime.h"
+ #include "CGCXXABI.h"
+ #include "CGCall.h"
++#include "CGObjC3Carriers.h"
++#include "CGObjC3ABIBoundaries.h"
+ #include "CGCleanup.h"
+ #include "CGDebugInfo.h"
+ #include "CGHLSLRuntime.h"
+@@ -6199,6 +6201,32 @@ RValue CodeGenFunction::EmitRValueForField(LValue LV,
+ RValue CodeGenFunction::EmitCallExpr(const CallExpr *E,
+                                      ReturnValueSlot ReturnValue,
+                                      llvm::CallBase **CallOrInvoke) {
++  QualType CalledType = getContext().getCanonicalType(E->getCallee()->getType());
++  if (const auto *PT = CalledType->getAs<PointerType>())
++    CalledType = getContext().getCanonicalType(PT->getPointeeType());
++  else if (const auto *BPT = CalledType->getAs<BlockPointerType>())
++    CalledType = getContext().getCanonicalType(BPT->getPointeeType());
++  if (CalledType->isFunctionType()) {
++    const Decl *CalleeDecl = E->getDirectCallee();
++    if (CGM.getTypes().diagnoseUnsupportedObjC3Effects(CalledType, CalleeDecl) ||
++        CodeGen::diagnoseUnsupportedObjC3CarrierByValue(
++            CGM, CalledType, E->getExprLoc())) {
++      if (CallOrInvoke)
++        *CallOrInvoke = nullptr;
++      return GetUndefRValue(E->getType());
++    }
++  }
++
++  // Inspect actual arguments as well as the formal prototype. Variadic and
++  // unprototyped calls must never classify a carrier as an ordinary scalar.
++  for (const Expr *Arg : E->arguments()) {
++    if (diagnoseUnsupportedObjC3ValueABI(CGM, Arg->getType(), Arg->getExprLoc())) {
++      if (CallOrInvoke)
++        *CallOrInvoke = nullptr;
++      return GetUndefRValue(E->getType());
++    }
++  }
++
+   llvm::CallBase *CallOrInvokeStorage;
+   if (!CallOrInvoke) {
+     CallOrInvoke = &CallOrInvokeStorage;
+diff --git a/clang/lib/CodeGen/CGExprAgg.cpp b/clang/lib/CodeGen/CGExprAgg.cpp
+index 7cc4d6c8f..c893a4b51 100644
+--- a/clang/lib/CodeGen/CGExprAgg.cpp
++++ b/clang/lib/CodeGen/CGExprAgg.cpp
+@@ -11,6 +11,7 @@
+ //===----------------------------------------------------------------------===//
+ 
+ #include "CGCXXABI.h"
++#include "CGObjC3Carriers.h"
+ #include "CGDebugInfo.h"
+ #include "CGHLSLRuntime.h"
+ #include "CGObjCRuntime.h"
+@@ -356,6 +357,17 @@ void AggExprEmitter::EmitFinalDestCopy(
+   if (Dest.isIgnored())
+     return;
+ 
++  const Type *CanonicalType =
++      CGF.getContext().getCanonicalType(type).getTypePtr();
++  if (isa<ObjC3OptionalType>(CanonicalType) ||
++      isa<ObjC3ResultType>(CanonicalType)) {
++    CodeGen::diagnoseUnsupportedObjC3CarrierOperation(
++        CGF.CGM, CGF.CurCodeDecl ? CGF.CurCodeDecl->getLocation()
++                                  : SourceLocation(),
++        type, "copy");
++    return;
++  }
++
+   // Copy non-trivial C structs here.
+   LValue DstLV = CGF.MakeAddrLValue(
+       Dest.getAddress(), Dest.isVolatile() ? type.withVolatile() : type);
+@@ -2248,6 +2260,14 @@ void CodeGenFunction::EmitAggregateCopy(LValue Dest, LValue Src, QualType Ty,
+                                         AggValueSlot::Overlap_t MayOverlap,
+                                         bool isVolatile) {
+   assert(!Ty->isAnyComplexType() && "Shouldn't happen for complex");
++  const Type *CanonicalType = getContext().getCanonicalType(Ty).getTypePtr();
++  if (isa<ObjC3OptionalType>(CanonicalType) ||
++      isa<ObjC3ResultType>(CanonicalType)) {
++    CodeGen::diagnoseUnsupportedObjC3CarrierOperation(
++        CGM, CurCodeDecl ? CurCodeDecl->getLocation() : SourceLocation(),
++        Ty, "copy");
++    return;
++  }
+ 
+   Address DestPtr = Dest.getAddress();
+   Address SrcPtr = Src.getAddress();
+diff --git a/clang/lib/CodeGen/CGObjC.cpp b/clang/lib/CodeGen/CGObjC.cpp
+index 10aad2e26..75a73d1a3 100644
+--- a/clang/lib/CodeGen/CGObjC.cpp
++++ b/clang/lib/CodeGen/CGObjC.cpp
+@@ -12,6 +12,7 @@
+ 
+ #include "CGDebugInfo.h"
+ #include "CGObjCRuntime.h"
++#include "CGObjC3ABIBoundaries.h"
+ #include "CodeGenFunction.h"
+ #include "CodeGenModule.h"
+ #include "CodeGenPGO.h"
+@@ -572,6 +573,14 @@ tryEmitSpecializedAllocInit(CodeGenFunction &CGF, const ObjCMessageExpr *OME) {
+ 
+ RValue CodeGenFunction::EmitObjCMessageExpr(const ObjCMessageExpr *E,
+                                             ReturnValueSlot Return) {
++  // Preflight before evaluating the receiver or any argument.
++  if (diagnoseUnsupportedObjC3ObjCMethod(CGM, E->getMethodDecl()) ||
++      diagnoseUnsupportedObjC3ValueABI(CGM, E->getType(), E->getExprLoc()))
++    return GetUndefRValue(E->getType());
++  for (const Expr *Arg : E->arguments())
++    if (diagnoseUnsupportedObjC3ValueABI(CGM, Arg->getType(), Arg->getExprLoc()))
++      return GetUndefRValue(E->getType());
++
+   // Only the lookup mechanism and first two arguments of the method
+   // implementation vary between runtimes.  We can get the receiver and
+   // arguments in generic code.
+@@ -805,6 +814,9 @@ static llvm::Value *emitARCRetainLoadOfScalar(CodeGenFunction &CGF,
+ /// Generate an Objective-C method.  An Objective-C method is a C function with
+ /// its pointer, name, and types registered in the class structure.
+ void CodeGenFunction::GenerateObjCMethod(const ObjCMethodDecl *OMD) {
++  if (CGM.getDiags().hasErrorOccurred() ||
++      diagnoseUnsupportedObjC3ObjCMethod(CGM, OMD))
++    return;
+   StartObjCMethod(OMD, OMD->getClassInterface());
+   PGO->assignRegionCounters(GlobalDecl(OMD), CurFn);
+   assert(isa<CompoundStmt>(OMD->getBody()));
+diff --git a/clang/lib/CodeGen/CGObjCGNU.cpp b/clang/lib/CodeGen/CGObjCGNU.cpp
+index a81c42174..44fc35e6a 100644
+--- a/clang/lib/CodeGen/CGObjCGNU.cpp
++++ b/clang/lib/CodeGen/CGObjCGNU.cpp
+@@ -1543,6 +1543,30 @@ class CGObjCGNUstep2 : public CGObjCGNUstep {
+     return CGM.getCXXABI().getCatchAllTypeInfo();
+   }
+   llvm::Function *ModuleInitFunction() override {
++    // A COFF translation unit with no Objective-C metadata needs no runtime
++    // registration. Emitting only zero-sized section sentinels creates an
++    // entirely empty .objcrt section, which COFF linkers may discard even
++    // though the synthesized registration record refers to its boundaries.
++    // Keep registration for any actual or pending metadata, including selector
++    // and class references that need not define a class in this unit.
++    if (CGM.getTriple().isOSBinFormatCOFF() && !EmittedClass &&
++        !EmittedProtocol && !EmittedProtocolRef && Categories.empty() &&
++        ClassAliases.empty() && ConstantStrings.empty() && EarlyInitList.empty()) {
++      bool HasSectionMetadata = false;
++      for (const llvm::GlobalVariable &GV : TheModule.globals()) {
++        if (!GV.hasSection())
++          continue;
++        for (const char *Section : PECOFFSectionsBaseNames)
++          if (GV.getSection() == (Twine(Section) + "$m").str()) {
++            HasSectionMetadata = true;
++            break;
++          }
++        if (HasSectionMetadata)
++          break;
++      }
++      if (!HasSectionMetadata)
++        return nullptr;
++    }
+     llvm::Function *LoadFunction = llvm::Function::Create(
+       llvm::FunctionType::get(llvm::Type::getVoidTy(VMContext), false),
+       llvm::GlobalValue::LinkOnceODRLinkage, ".objcv2_load_function",
+diff --git a/clang/lib/CodeGen/CMakeLists.txt b/clang/lib/CodeGen/CMakeLists.txt
+index dbbc35b37..e68ed983e 100644
+--- a/clang/lib/CodeGen/CMakeLists.txt
++++ b/clang/lib/CodeGen/CMakeLists.txt
+@@ -86,6 +86,8 @@ add_clang_library(clangCodeGen
+   CGLoopInfo.cpp
+   CGNonTrivialStruct.cpp
+   CGObjC.cpp
++  CGObjC3Carriers.cpp
++  CGObjC3ABIBoundaries.cpp
+   CGObjCGNU.cpp
+   CGObjCMac.cpp
+   CGObjCRuntime.cpp
+diff --git a/clang/lib/CodeGen/CodeGenFunction.cpp b/clang/lib/CodeGen/CodeGenFunction.cpp
+index 6c0589be3..71ac63b7d 100644
+--- a/clang/lib/CodeGen/CodeGenFunction.cpp
++++ b/clang/lib/CodeGen/CodeGenFunction.cpp
+@@ -19,6 +19,7 @@
+ #include "CGHLSLRuntime.h"
+ #include "CGOpenMPRuntime.h"
+ #include "CodeGenModule.h"
++#include "CGObjC3Carriers.h"
+ #include "CodeGenPGO.h"
+ #include "TargetInfo.h"
+ #include "clang/AST/ASTContext.h"
+@@ -292,6 +293,8 @@ TypeEvaluationKind CodeGenFunction::getEvaluationKind(QualType type) {
+     case Type::IncompleteArray:
+     case Type::VariableArray:
+     case Type::Record:
++    case Type::ObjC3Optional:
++    case Type::ObjC3Result:
+     case Type::ObjCObject:
+     case Type::ObjCInterface:
+     case Type::ArrayParameter:
+@@ -1465,6 +1468,11 @@ void CodeGenFunction::GenerateCode(GlobalDecl GD, llvm::Function *Fn,
+                                    const CGFunctionInfo &FnInfo) {
+   assert(Fn && "generating code for null Function");
+   const FunctionDecl *FD = cast<FunctionDecl>(GD.getDecl());
++  if (CGM.getTypes().diagnoseUnsupportedObjC3Effects(FD->getType(), FD))
++    return;
++  if (CodeGen::diagnoseUnsupportedObjC3CarrierByValue(
++          CGM, FD->getType(), FD->getLocation()))
++    return;
+   CurGD = GD;
+ 
+   FunctionArgList Args;
+diff --git a/clang/lib/CodeGen/CodeGenModule.cpp b/clang/lib/CodeGen/CodeGenModule.cpp
+index 85ed38f14..c64bd4a74 100644
+--- a/clang/lib/CodeGen/CodeGenModule.cpp
++++ b/clang/lib/CodeGen/CodeGenModule.cpp
+@@ -11,6 +11,8 @@
+ //===----------------------------------------------------------------------===//
+ 
+ #include "CodeGenModule.h"
++#include "CGObjC3Carriers.h"
++#include "CGObjC3ABIBoundaries.h"
+ #include "ABIInfo.h"
+ #include "CGBlocks.h"
+ #include "CGCUDARuntime.h"
+@@ -5621,6 +5623,9 @@ llvm::Constant *
+ CodeGenModule::GetAddrOfGlobal(GlobalDecl GD, ForDefinition_t IsForDefinition) {
+   const Decl *D = GD.getDecl();
+ 
++  if (const auto *FD = dyn_cast<FunctionDecl>(D))
++    getTypes().diagnoseUnsupportedObjC3Effects(FD->getType(), FD);
++
+   if (isa<CXXConstructorDecl>(D) || isa<CXXDestructorDecl>(D))
+     return getAddrOfCXXStructor(GD, /*FnInfo=*/nullptr, /*FnType=*/nullptr,
+                                 /*DontDefer=*/false, IsForDefinition);
+@@ -6520,6 +6525,15 @@ void CodeGenModule::EmitGlobalFunctionDefinition(GlobalDecl GD,
+                                                  llvm::GlobalValue *GV) {
+   const auto *D = cast<FunctionDecl>(GD.getDecl());
+ 
++  // Reject before arranging the target ABI or creating an LLVM declaration.
++  // GenerateCode also checks this path for non-top-level callers, but by then
++  // the function prototype may already have been materialized.
++  if (getTypes().diagnoseUnsupportedObjC3Effects(D->getType(), D))
++    return;
++  if (CodeGen::diagnoseUnsupportedObjC3CarrierByValue(
++          *this, D->getType(), D->getLocation()))
++    return;
++
+   // Compute the function info and LLVM type.
+   const CGFunctionInfo &FI = getTypes().arrangeGlobalDeclaration(GD);
+   llvm::FunctionType *Ty = getTypes().GetFunctionType(FI);
+@@ -7448,10 +7462,38 @@ void CodeGenModule::EmitTopLevelDecl(Decl *D) {
+   if (D->isTemplated())
+     return;
+ 
++  // Reject unresolved native runtime encodings before generating method,
++  // property, ivar, class or protocol metadata. Check each new declaration
++  // even after an earlier diagnostic, but never emit metadata after errors.
++  if (const auto *Container = dyn_cast<ObjCContainerDecl>(D)) {
++    if (diagnoseUnsupportedObjC3ObjCContainer(*this, Container))
++      return;
++    if (const auto *Impl = dyn_cast<ObjCImplDecl>(Container)) {
++      if (!getDiags().hasErrorOccurred() &&
++          diagnoseUnsupportedObjC3ObjCContainer(*this, Impl->getClassInterface()))
++        return;
++      if (const auto *Category = dyn_cast<ObjCCategoryImplDecl>(Impl))
++        if (!getDiags().hasErrorOccurred() &&
++            diagnoseUnsupportedObjC3ObjCContainer(*this, Category->getCategoryDecl()))
++          return;
++    }
++    if (getDiags().hasErrorOccurred())
++      return;
++  }
++
+   // Consteval function shouldn't be emitted.
+   if (auto *FD = dyn_cast<FunctionDecl>(D); FD && FD->isImmediateFunction())
+     return;
+ 
++  // Fail before ordinary function or global-variable ABI construction. The
++  // recursive type check also catches function pointers nested in aggregates.
++  if (const auto *FD = dyn_cast<FunctionDecl>(D))
++    if (getTypes().diagnoseUnsupportedObjC3Effects(FD->getType(), FD))
++      return;
++  if (const auto *VD = dyn_cast<VarDecl>(D))
++    if (getTypes().diagnoseUnsupportedObjC3Effects(VD->getType(), VD))
++      return;
++
+   switch (D->getKind()) {
+   case Decl::CXXConversion:
+   case Decl::CXXMethod:
+diff --git a/clang/lib/CodeGen/CodeGenTypes.cpp b/clang/lib/CodeGen/CodeGenTypes.cpp
+index 0e1131d58..f915df993 100644
+--- a/clang/lib/CodeGen/CodeGenTypes.cpp
++++ b/clang/lib/CodeGen/CodeGenTypes.cpp
+@@ -24,6 +24,7 @@
+ #include "clang/AST/Expr.h"
+ #include "clang/AST/RecordLayout.h"
+ #include "clang/CodeGen/CGFunctionInfo.h"
++#include "llvm/ADT/SmallPtrSet.h"
+ #include "llvm/IR/DataLayout.h"
+ #include "llvm/IR/DerivedTypes.h"
+ #include "llvm/IR/Module.h"
+@@ -312,9 +313,71 @@ static llvm::Type *getTypeForFormat(llvm::LLVMContext &VMContext,
+   llvm_unreachable("Unknown float format!");
+ }
+ 
++bool CodeGenTypes::diagnoseUnsupportedObjC3Effects(QualType T,
++                                                   const Decl *D) {
++  llvm::SmallPtrSet<const Type *, 16> Seen;
++  bool FoundUnsupportedEffect = false;
++  auto Visit = [&](auto &&VisitSelf, QualType Current) -> void {
++    if (Current.isNull())
++      return;
++    Current = Context.getCanonicalType(Current);
++    const Type *Ty = Current.getTypePtr();
++    if (!Seen.insert(Ty).second)
++      return;
++
++    if (const auto *FPT = dyn_cast<FunctionProtoType>(Ty)) {
++      ObjC3FunctionEffectInfo Effects = FPT->getObjC3FunctionEffects();
++      if (Effects.Async || Effects.Throws != ObjC3ThrowsKind::None) {
++        FoundUnsupportedEffect = true;
++        if (DiagnosedObjC3EffectTypes.insert(Ty).second) {
++          if (D)
++            CGM.ErrorUnsupported(D, "ObjC3 async/throws callable ABI lowering");
++          else
++            CGM.Error(SourceLocation(),
++                      "cannot compile ObjC3 async/throws callable type without ABI lowering");
++        }
++      }
++      VisitSelf(VisitSelf, FPT->getReturnType());
++      for (QualType Param : FPT->param_types())
++        VisitSelf(VisitSelf, Param);
++    } else if (const auto *FT = dyn_cast<FunctionNoProtoType>(Ty)) {
++      VisitSelf(VisitSelf, FT->getReturnType());
++    } else if (const auto *PT = dyn_cast<PointerType>(Ty)) {
++      VisitSelf(VisitSelf, PT->getPointeeType());
++    } else if (const auto *BPT = dyn_cast<BlockPointerType>(Ty)) {
++      VisitSelf(VisitSelf, BPT->getPointeeType());
++    } else if (const auto *RefTy = dyn_cast<ReferenceType>(Ty)) {
++      VisitSelf(VisitSelf, RefTy->getPointeeType());
++    } else if (const auto *MPT = dyn_cast<MemberPointerType>(Ty)) {
++      VisitSelf(VisitSelf, MPT->getPointeeType());
++    } else if (const auto *AT = dyn_cast<ArrayType>(Ty)) {
++      VisitSelf(VisitSelf, AT->getElementType());
++    } else if (const auto *Optional = dyn_cast<ObjC3OptionalType>(Ty)) {
++      VisitSelf(VisitSelf, Optional->getElementType());
++    } else if (const auto *Result = dyn_cast<ObjC3ResultType>(Ty)) {
++      VisitSelf(VisitSelf, Result->getSuccessType());
++      VisitSelf(VisitSelf, Result->getErrorType());
++    } else if (const auto *OPT = dyn_cast<ObjCObjectPointerType>(Ty)) {
++      VisitSelf(VisitSelf, OPT->getPointeeType());
++    } else if (const auto *RecordTy = dyn_cast<RecordType>(Ty)) {
++      if (const RecordDecl *RD = RecordTy->getDecl()->getDefinition())
++        for (const FieldDecl *Field : RD->fields())
++          VisitSelf(VisitSelf, Field->getType());
++    }
++  };
++  Visit(Visit, T);
++  return FoundUnsupportedEffect;
++}
++
+ llvm::Type *CodeGenTypes::ConvertFunctionTypeInternal(QualType QFT) {
+   assert(QFT.isCanonical());
+   const FunctionType *FT = cast<FunctionType>(QFT.getTypePtr());
++  if (diagnoseUnsupportedObjC3Effects(QFT)) {
++    // This sized opaque placeholder is an error-only path. It is never a
++    // function type or a C ABI substitute; diagnostics prevent object output.
++    SkippedLayout = true;
++    return llvm::StructType::get(getLLVMContext());
++  }
+   // First, check whether we can build the full function type.  If the
+   // function type depends on an incomplete type (e.g. a struct or enum), we
+   // cannot lower the function type.
+@@ -370,6 +433,20 @@ llvm::Type *CodeGenTypes::ConvertType(QualType T) {
+ 
+   const Type *Ty = T.getTypePtr();
+ 
++  if (isa<ObjC3OptionalType>(Ty) || isa<ObjC3ResultType>(Ty)) {
++    auto Representation = Context.getObjC3CarrierRepresentationType(T);
++    if (Representation.State ==
++            ObjC3CarrierRepresentationInfo::Status::Materialized &&
++        Representation.Record && !Representation.Type.isNull())
++      return ConvertTypeForMem(Representation.Type);
++
++    CGM.Error(SourceLocation(),
++              "cannot lower ObjC3 carrier without a materialized storage "
++              "representation");
++    SkippedLayout = true;
++    return llvm::StructType::get(getLLVMContext());
++  }
++
+   // For the device-side compilation, CUDA device builtin surface/texture types
+   // may be represented in different types.
+   if (Context.getLangOpts().CUDAIsDevice) {
+diff --git a/clang/lib/CodeGen/CodeGenTypes.h b/clang/lib/CodeGen/CodeGenTypes.h
+index 9de7e0a83..f1e7138a5 100644
+--- a/clang/lib/CodeGen/CodeGenTypes.h
++++ b/clang/lib/CodeGen/CodeGenTypes.h
+@@ -17,6 +17,7 @@
+ #include "clang/Basic/ABI.h"
+ #include "clang/CodeGen/CGFunctionInfo.h"
+ #include "llvm/ADT/DenseMap.h"
++#include "llvm/ADT/DenseSet.h"
+ #include "llvm/IR/Module.h"
+ 
+ namespace llvm {
+@@ -32,6 +33,7 @@ class ASTContext;
+ template <typename> class CanQual;
+ class CXXConstructorDecl;
+ class CXXMethodDecl;
++class Decl;
+ class CodeGenOptions;
+ class FunctionProtoType;
+ class QualType;
+@@ -86,6 +88,10 @@ class CodeGenTypes {
+   /// corresponding llvm::Type.
+   llvm::DenseMap<const Type *, llvm::Type *> TypeCache;
+ 
++  /// Function types whose unsupported ObjC3 effects already produced a
++  /// diagnostic, shared by declaration and type-conversion guards.
++  llvm::DenseSet<const Type *> DiagnosedObjC3EffectTypes;
++
+   llvm::DenseMap<const Type *, llvm::Type *> RecordsWithOpaqueMemberPointers;
+ 
+   static constexpr unsigned FunctionInfosLog2InitSize = 9;
+@@ -100,6 +106,7 @@ public:
+     return TheModule.getDataLayout();
+   }
+   CodeGenModule &getCGM() const { return CGM; }
++  bool diagnoseUnsupportedObjC3Effects(QualType T, const Decl *D = nullptr);
+   ASTContext &getContext() const { return Context; }
+   const TargetInfo &getTarget() const { return Target; }
+   CGCXXABI &getCXXABI() const;
+diff --git a/clang/lib/CodeGen/CGObjC3ABIBoundaries.cpp b/clang/lib/CodeGen/CGObjC3ABIBoundaries.cpp
+new file mode 100644
+--- /dev/null
++++ b/clang/lib/CodeGen/CGObjC3ABIBoundaries.cpp
+@@ -0,0 +1,101 @@
++//===--- CGObjC3ABIBoundaries.cpp - Unqualified native boundaries ----------===//
++// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
++// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
++#include "CGObjC3ABIBoundaries.h"
++#include "CGObjC3Carriers.h"
++#include "CodeGenModule.h"
++#include "clang/AST/DeclCXX.h"
++#include "clang/AST/DeclObjC.h"
++#include "llvm/ADT/SmallPtrSet.h"
++
++using namespace clang;
++using namespace clang::CodeGen;
++
++namespace {
++QualType findCarrier(ASTContext &Ctx, QualType T, bool FollowPointers,
++                     llvm::SmallPtrSetImpl<const Type *> &Seen) {
++  if (T.isNull())
++    return {};
++  T = Ctx.getCanonicalType(T);
++  const Type *Ty = T.getTypePtr();
++  if (!Seen.insert(Ty).second)
++    return {};
++  if (isa<ObjC3OptionalType, ObjC3ResultType>(Ty))
++    return T;
++  if (const auto *Array = Ctx.getAsArrayType(T))
++    return findCarrier(Ctx, Array->getElementType(), FollowPointers, Seen);
++  if (FollowPointers)
++    if (const auto *Pointer = dyn_cast<PointerType>(Ty))
++      return findCarrier(Ctx, Pointer->getPointeeType(), true, Seen);
++  if (const auto *Record = dyn_cast<RecordType>(Ty)) {
++    const RecordDecl *Definition = Record->getDecl()->getDefinition();
++    if (!Definition)
++      return {};
++    if (const auto *CXXRecord = dyn_cast<CXXRecordDecl>(Definition))
++      for (const CXXBaseSpecifier &Base : CXXRecord->bases())
++        if (QualType Found = findCarrier(Ctx, Base.getType(), FollowPointers, Seen);
++            !Found.isNull())
++          return Found;
++    for (const FieldDecl *Field : Definition->fields())
++      if (QualType Found = findCarrier(Ctx, Field->getType(), FollowPointers, Seen);
++          !Found.isNull())
++        return Found;
++  }
++  return {};
++}
++
++bool diagnose(CodeGenModule &CGM, QualType Type, SourceLocation Loc,
++              bool FollowPointers, const char *Operation) {
++  llvm::SmallPtrSet<const clang::Type *, 16> Seen;
++  QualType Carrier = findCarrier(CGM.getContext(), Type, FollowPointers, Seen);
++  if (Carrier.isNull())
++    return false;
++  diagnoseUnsupportedObjC3CarrierOperation(CGM, Loc, Carrier, Operation);
++  return true;
++}
++} // namespace
++
++bool CodeGen::diagnoseUnsupportedObjC3ValueABI(CodeGenModule &CGM, QualType Type,
++                                              SourceLocation Loc) {
++  return diagnose(CGM, Type, Loc, false, "by-value call ABI");
++}
++
++bool CodeGen::diagnoseUnsupportedObjC3ObjCMethod(CodeGenModule &CGM,
++                                                const ObjCMethodDecl *Method) {
++  if (!Method)
++    return false;
++  bool Invalid = diagnoseUnsupportedObjC3ValueABI(
++      CGM, Method->getReturnType(), Method->getLocation());
++  for (const ParmVarDecl *Param : Method->parameters())
++    Invalid |= diagnoseUnsupportedObjC3ValueABI(CGM, Param->getType(),
++                                               Param->getLocation());
++  if (Invalid)
++    return true;
++  Invalid = diagnose(CGM, Method->getReturnType(), Method->getLocation(), true,
++                     "Objective-C runtime type encoding");
++  for (const ParmVarDecl *Param : Method->parameters())
++    Invalid |= diagnose(CGM, Param->getType(), Param->getLocation(), true,
++                        "Objective-C runtime type encoding");
++  return Invalid;
++}
++
++bool CodeGen::diagnoseUnsupportedObjC3ObjCContainer(
++    CodeGenModule &CGM, const ObjCContainerDecl *Container) {
++  if (!Container)
++    return false;
++  bool Invalid = false;
++  for (const ObjCMethodDecl *Method : Container->methods())
++    // The property declaration below supplies one precise metadata diagnostic
++    // instead of repeating it on implicit getter and setter declarations.
++    if (!Method->isPropertyAccessor())
++      Invalid |= diagnoseUnsupportedObjC3ObjCMethod(CGM, Method);
++  for (const Decl *Member : Container->decls()) {
++    if (const auto *Ivar = dyn_cast<ObjCIvarDecl>(Member))
++      Invalid |= diagnose(CGM, Ivar->getType(), Ivar->getLocation(), true,
++                          "Objective-C runtime type encoding");
++    else if (const auto *Property = dyn_cast<ObjCPropertyDecl>(Member))
++      Invalid |= diagnose(CGM, Property->getType(), Property->getLocation(), true,
++                          "Objective-C runtime type encoding");
++  }
++  return Invalid;
++}
+diff --git a/clang/lib/CodeGen/CGObjC3ABIBoundaries.h b/clang/lib/CodeGen/CGObjC3ABIBoundaries.h
+new file mode 100644
+--- /dev/null
++++ b/clang/lib/CodeGen/CGObjC3ABIBoundaries.h
+@@ -0,0 +1,21 @@
++//===--- CGObjC3ABIBoundaries.h - Unqualified native boundaries -*- C++ -*-===//
++// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
++// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
++#ifndef LLVM_CLANG_LIB_CODEGEN_CGOBJC3ABIBOUNDARIES_H
++#define LLVM_CLANG_LIB_CODEGEN_CGOBJC3ABIBOUNDARIES_H
++#include "clang/AST/Type.h"
++#include "clang/Basic/SourceLocation.h"
++namespace clang {
++class ObjCMethodDecl;
++class ObjCContainerDecl;
++namespace CodeGen {
++class CodeGenModule;
++bool diagnoseUnsupportedObjC3ValueABI(CodeGenModule &CGM, QualType Type,
++                                     SourceLocation Loc);
++bool diagnoseUnsupportedObjC3ObjCMethod(CodeGenModule &CGM,
++                                       const ObjCMethodDecl *Method);
++bool diagnoseUnsupportedObjC3ObjCContainer(CodeGenModule &CGM,
++                                          const ObjCContainerDecl *Container);
++} // namespace CodeGen
++} // namespace clang
++#endif
+diff --git a/clang/lib/CodeGen/CGObjC3Carriers.cpp b/clang/lib/CodeGen/CGObjC3Carriers.cpp
+new file mode 100644
+--- /dev/null
++++ b/clang/lib/CodeGen/CGObjC3Carriers.cpp
+@@ -0,0 +1,337 @@
++//===--- CGObjC3Carriers.cpp - ObjC3 carrier CodeGen adapter ----*- C++ -*-===//
++//
++//===----------------------------------------------------------------------===//
++
++#include "CGObjC3Carriers.h"
++#include "CGRecordLayout.h"
++#include "CodeGenFunction.h"
++#include "CodeGenModule.h"
++#include "CodeGenTypes.h"
++#include "clang/AST/CanonicalType.h"
++#include "clang/AST/Decl.h"
++#include "clang/AST/DeclCXX.h"
++#include "clang/AST/Type.h"
++#include "clang/CodeGen/CGFunctionInfo.h"
++#include "llvm/ADT/SmallPtrSet.h"
++#include "llvm/IR/DerivedTypes.h"
++
++using namespace clang;
++using namespace clang::CodeGen;
++
++namespace {
++
++/// The hidden synthetic CXXRecordDecl is layout-only. Inspect source payload
++/// types recursively and conservatively; never ask its implicit special-member
++/// traits whether copying, moving, or destruction is legal.
++bool hasOnlyTrivialCallABILeaves(ASTContext &Ctx, QualType T) {
++  if (T.isNull())
++    return false;
++  if (const auto *Array = Ctx.getAsArrayType(T))
++    return isa<ConstantArrayType>(Array) &&
++           hasOnlyTrivialCallABILeaves(Ctx, Array->getElementType());
++  if (T->isVoidType() || T->isIntegerType() || T->isEnumeralType() ||
++      T->isRealFloatingType() || T->isPointerType())
++    return !T->isObjCObjectPointerType() && !T->isBlockPointerType() &&
++           T.getObjCLifetime() == Qualifiers::OCL_None;
++
++  const Type *Canonical = Ctx.getCanonicalType(T).getTypePtr();
++  if (isa<ObjC3OptionalType>(Canonical)) {
++    auto Info = Ctx.getObjC3CarrierRepresentationType(T);
++    if (Info.State != ObjC3CarrierRepresentationInfo::Status::Materialized)
++      return false;
++    return !Info.ValueField ||
++           hasOnlyTrivialCallABILeaves(Ctx, Info.ValueField->getType());
++  }
++  if (isa<ObjC3ResultType>(Canonical)) {
++    auto Info = Ctx.getObjC3CarrierRepresentationType(T);
++    if (Info.State != ObjC3CarrierRepresentationInfo::Status::Materialized)
++      return false;
++    return (!Info.SuccessField ||
++            hasOnlyTrivialCallABILeaves(Ctx, Info.SuccessField->getType())) &&
++           (!Info.ErrorField ||
++            hasOnlyTrivialCallABILeaves(Ctx, Info.ErrorField->getType()));
++  }
++
++  // C records have no user-declared C++ special members. Walk their declared
++  // fields rather than inferring operation properties from a synthetic
++  // carrier record. C++ records remain fail-closed until Sema supplies the
++  // actual use-site operation resolution.
++  if (const auto *RT = T->getAs<RecordType>()) {
++    const RecordDecl *RD = RT->getDecl();
++    if (isa<CXXRecordDecl>(RD) || !RD->isCompleteDefinition())
++      return false;
++    for (const FieldDecl *Field : RD->fields())
++      if (!hasOnlyTrivialCallABILeaves(Ctx, Field->getType()))
++        return false;
++    return true;
++  }
++
++  // Includes C++ records, ARC-qualified storage, vectors, and any type whose
++  // actual use-site special-member/lifetime facts are not available here.
++  return false;
++}
++
++bool containsNestedCarrierValue(ASTContext &Ctx, QualType T) {
++  if (T.isNull())
++    return false;
++  const Type *Canonical = Ctx.getCanonicalType(T).getTypePtr();
++  if (isa<ObjC3OptionalType>(Canonical) || isa<ObjC3ResultType>(Canonical))
++    return true;
++  if (const auto *Array = Ctx.getAsArrayType(T))
++    return containsNestedCarrierValue(Ctx, Array->getElementType());
++  if (const auto *RT = T->getAs<RecordType>()) {
++    const RecordDecl *RD = RT->getDecl();
++    if (const RecordDecl *Definition = RD->getDefinition())
++      for (const FieldDecl *Field : Definition->fields())
++        if (containsNestedCarrierValue(Ctx, Field->getType()))
++          return true;
++  }
++  return false;
++}
++
++} // namespace
++
++bool CodeGen::getObjC3CarrierStorageLayout(CodeGenModule &CGM,
++                                           QualType CarrierType,
++                                           ObjC3CarrierStorageLayout &Result) {
++  Result = {};
++  ASTContext &Ctx = CGM.getContext();
++  auto Info = Ctx.getObjC3CarrierRepresentationType(CarrierType);
++  if (Info.State != ObjC3CarrierRepresentationInfo::Status::Materialized ||
++      !Info.Record || !Info.TagField || Info.Type.isNull())
++    return false;
++
++  const CGRecordLayout &Outer = CGM.getTypes().getCGRecordLayout(Info.Record);
++  Result.StorageType = Outer.getLLVMType();
++  Result.TagField = Outer.getLLVMFieldNo(Info.TagField);
++  if (Info.PayloadField) {
++    Result.PayloadField = Outer.getLLVMFieldNo(Info.PayloadField);
++    if (!Info.PayloadUnion)
++      return false;
++    const CGRecordLayout &Union =
++        CGM.getTypes().getCGRecordLayout(Info.PayloadUnion);
++    if (Info.ValueField)
++      Result.ValueField = Union.getLLVMFieldNo(Info.ValueField);
++    if (Info.SuccessField)
++      Result.SuccessField = Union.getLLVMFieldNo(Info.SuccessField);
++    if (Info.ErrorField)
++      Result.ErrorField = Union.getLLVMFieldNo(Info.ErrorField);
++  }
++
++  // Guard against accidental disagreement between AST representation identity
++  // and CodeGen's actual memory type. Never rebuild a lookalike LLVM struct.
++  if (CGM.getTypes().ConvertTypeForMem(Info.Type) != Result.StorageType) {
++    Result = {};
++    return false;
++  }
++  return true;
++}
++
++Address CodeGen::getObjC3CarrierTagAddress(CodeGenFunction &CGF,
++                                           Address CarrierStorage,
++                                           QualType CarrierType) {
++  ObjC3CarrierStorageLayout Layout;
++  if (!CarrierStorage.isValid() || CarrierStorage.isSigned() ||
++      !getObjC3CarrierStorageLayout(CGF.CGM, CarrierType, Layout) ||
++      CarrierStorage.getElementType() != Layout.StorageType)
++    return Address::invalid();
++  return CGF.Builder.CreateStructGEP(CarrierStorage, Layout.TagField,
++                                     "objc3.carrier.tag.addr");
++}
++
++Address CodeGen::getObjC3CarrierPayloadAddress(CodeGenFunction &CGF,
++                                               Address CarrierStorage,
++                                               QualType CarrierType,
++                                               ObjC3CarrierPayloadArm Arm) {
++  ObjC3CarrierStorageLayout Layout;
++  if (!CarrierStorage.isValid() || CarrierStorage.isSigned() ||
++      !getObjC3CarrierStorageLayout(CGF.CGM, CarrierType, Layout) ||
++      CarrierStorage.getElementType() != Layout.StorageType ||
++      !Layout.hasPayloadStorage())
++    return Address::invalid();
++
++  unsigned ArmField = ~0U;
++  FieldDecl *SourceField = nullptr;
++  auto Info = CGF.getContext().getObjC3CarrierRepresentationType(CarrierType);
++  switch (Arm) {
++  case ObjC3CarrierPayloadArm::Value:
++    ArmField = Layout.ValueField;
++    SourceField = Info.ValueField;
++    break;
++  case ObjC3CarrierPayloadArm::Success:
++    ArmField = Layout.SuccessField;
++    SourceField = Info.SuccessField;
++    break;
++  case ObjC3CarrierPayloadArm::Error:
++    ArmField = Layout.ErrorField;
++    SourceField = Info.ErrorField;
++    break;
++  }
++  if (ArmField == ~0U || !SourceField)
++    return Address::invalid();
++  Address UnionStorage = CGF.Builder.CreateStructGEP(
++      CarrierStorage, Layout.PayloadField, "objc3.carrier.payload.addr");
++  // Union member field numbers often all refer to physical element zero, whose
++  // LLVM type is selected from a different/larger member. Keep the union's
++  // target offset and alignment, but type this address from the selected
++  // source FieldDecl rather than inheriting an unrelated union member type.
++  llvm::Type *ArmMemoryType = CGF.ConvertTypeForMem(SourceField->getType());
++  return Address(UnionStorage.getBasePointer(), ArmMemoryType,
++                 UnionStorage.getAlignment(), UnionStorage.isKnownNonNull());
++}
++
++llvm::Value *CodeGen::emitObjC3CarrierLoadTag(CodeGenFunction &CGF,
++                                              Address CarrierStorage,
++                                              QualType CarrierType,
++                                              SourceLocation Loc) {
++  Address Tag = getObjC3CarrierTagAddress(CGF, CarrierStorage, CarrierType);
++  if (!Tag.isValid())
++    return nullptr;
++  return CGF.EmitLoadOfScalar(Tag, /*Volatile=*/false, CGF.getContext().BoolTy,
++                              Loc);
++}
++
++bool CodeGen::emitObjC3CarrierStoreTag(CodeGenFunction &CGF,
++                                       Address CarrierStorage,
++                                       QualType CarrierType,
++                                       llvm::Value *TagValue,
++                                       bool IsInitialization) {
++  Address Tag = getObjC3CarrierTagAddress(CGF, CarrierStorage, CarrierType);
++  if (!Tag.isValid() || !TagValue)
++    return false;
++  CGF.EmitStoreOfScalar(TagValue, Tag, /*Volatile=*/false,
++                        CGF.getContext().BoolTy, AlignmentSource::Type,
++                        IsInitialization);
++  return true;
++}
++
++bool CodeGen::classifyObjC3CarrierCallABI(CodeGenModule &CGM,
++                                          QualType CarrierType,
++                                          ObjC3CarrierCallABI &Result) {
++  Result = {};
++  ASTContext &Ctx = CGM.getContext();
++  ObjC3CarrierStorageLayout Layout;
++  if (!getObjC3CarrierStorageLayout(CGM, CarrierType, Layout))
++    return false;
++
++  auto Info = Ctx.getObjC3CarrierRepresentationType(CarrierType);
++  auto IsTrivialField = [&](FieldDecl *FD) {
++    return !FD || (!containsNestedCarrierValue(Ctx, FD->getType()) &&
++                   hasOnlyTrivialCallABILeaves(Ctx, FD->getType()));
++  };
++  if (!IsTrivialField(Info.ValueField) || !IsTrivialField(Info.SuccessField) ||
++      !IsTrivialField(Info.ErrorField))
++    return false;
++
++  // Let this target's ABIInfo classify the actual Clang record, for both a
++  // return and a parameter. No host macros, hand-authored coercions, or ABI
++  // claims based on synthetic record special-member traits are involved.
++  QualType ProbeArgs[] = {Info.Type};
++  QualType ProbeType = Ctx.getFunctionType(Info.Type, ProbeArgs,
++                                           FunctionProtoType::ExtProtoInfo());
++  const auto *Proto = dyn_cast<FunctionProtoType>(
++      Ctx.getCanonicalType(ProbeType).getTypePtr());
++  if (!Proto)
++    return false;
++  const CGFunctionInfo &FI = CGM.getTypes().arrangeFreeFunctionType(
++      CanQual<FunctionProtoType>::CreateUnsafe(QualType(Proto, 0)));
++  const ABIArgInfo &Ret = FI.getReturnInfo();
++  if (FI.arguments().size() != 1)
++    return false;
++  const ABIArgInfo &Arg = FI.arguments()[0].info;
++  Result.ResultKind = static_cast<unsigned>(Ret.getKind());
++  Result.ArgumentKind = static_cast<unsigned>(Arg.getKind());
++  if (Ret.canHaveCoerceToType())
++    Result.ResultCoerceType = Ret.getCoerceToType();
++  if (Arg.canHaveCoerceToType())
++    Result.ArgumentCoerceType = Arg.getCoerceToType();
++  return true;
++}
++
++bool CodeGen::supportsPlainObjC3CarrierStorageLifetime(CodeGenModule &CGM,
++                                                       QualType CarrierType) {
++  ASTContext &Ctx = CGM.getContext();
++  const Type *Canonical = Ctx.getCanonicalType(CarrierType).getTypePtr();
++  if (!isa<ObjC3OptionalType>(Canonical) && !isa<ObjC3ResultType>(Canonical))
++    return false;
++
++  auto Info = Ctx.getObjC3CarrierRepresentationType(CarrierType);
++  if (Info.State != ObjC3CarrierRepresentationInfo::Status::Materialized)
++    return false;
++  auto IsPlainField = [&](FieldDecl *Field) {
++    return !Field || hasOnlyTrivialCallABILeaves(Ctx, Field->getType());
++  };
++  return IsPlainField(Info.ValueField) && IsPlainField(Info.SuccessField) &&
++         IsPlainField(Info.ErrorField);
++}
++
++namespace {
++QualType findCarrierByValue(ASTContext &Ctx, QualType T,
++                            llvm::SmallPtrSetImpl<const Type *> &Seen) {
++  if (T.isNull())
++    return QualType();
++  T = Ctx.getCanonicalType(T);
++  const Type *Ty = T.getTypePtr();
++  if (!Seen.insert(Ty).second)
++    return QualType();
++  if (isa<ObjC3OptionalType>(Ty) || isa<ObjC3ResultType>(Ty))
++    return T;
++  if (const auto *AT = Ctx.getAsArrayType(T))
++    return findCarrierByValue(Ctx, AT->getElementType(), Seen);
++  if (const auto *RT = T->getAs<RecordType>()) {
++    const RecordDecl *RD = RT->getDecl();
++    if (const RecordDecl *Definition = RD->getDefinition()) {
++      if (const auto *CXXRD = dyn_cast<CXXRecordDecl>(Definition))
++        for (const CXXBaseSpecifier &Base : CXXRD->bases())
++          if (QualType Found = findCarrierByValue(Ctx, Base.getType(), Seen);
++              !Found.isNull())
++            return Found;
++      for (const FieldDecl *Field : Definition->fields())
++        if (QualType Found = findCarrierByValue(Ctx, Field->getType(), Seen);
++            !Found.isNull())
++          return Found;
++    }
++  }
++  return QualType();
++}
++} // namespace
++
++bool CodeGen::diagnoseUnsupportedObjC3CarrierByValue(CodeGenModule &CGM,
++                                                     QualType FunctionType,
++                                                     SourceLocation Loc) {
++  ASTContext &Ctx = CGM.getContext();
++  FunctionType = Ctx.getCanonicalType(FunctionType);
++  auto Search = [&](QualType T) {
++    llvm::SmallPtrSet<const Type *, 16> Seen;
++    return findCarrierByValue(Ctx, T, Seen);
++  };
++
++  QualType Carrier;
++  if (const auto *FPT =
++          dyn_cast<FunctionProtoType>(FunctionType.getTypePtr())) {
++    Carrier = Search(FPT->getReturnType());
++    for (QualType Param : FPT->param_types())
++      if (Carrier.isNull())
++        Carrier = Search(Param);
++  } else if (const auto *FT =
++                 dyn_cast<FunctionNoProtoType>(FunctionType.getTypePtr())) {
++    Carrier = Search(FT->getReturnType());
++  }
++  if (Carrier.isNull())
++    return false;
++
++  diagnoseUnsupportedObjC3CarrierOperation(CGM, Loc, Carrier,
++                                           "by-value call ABI");
++  return true;
++}
++
++void CodeGen::diagnoseUnsupportedObjC3CarrierOperation(CodeGenModule &CGM,
++                                                       SourceLocation Loc,
++                                                       QualType CarrierType,
++                                                       const char *Operation) {
++  unsigned DiagID = CGM.getDiags().getCustomDiagID(
++      DiagnosticsEngine::Error,
++      "ObjC3 carrier operation '%0' for type %1 has no qualified lowering: "
++      "payload ownership or target call-ABI facts are unresolved");
++  CGM.getDiags().Report(Loc, DiagID) << Operation << CarrierType;
++}
+diff --git a/clang/lib/CodeGen/CGObjC3Carriers.h b/clang/lib/CodeGen/CGObjC3Carriers.h
+new file mode 100644
+--- /dev/null
++++ b/clang/lib/CodeGen/CGObjC3Carriers.h
+@@ -0,0 +1,103 @@
++//===--- CGObjC3Carriers.h - ObjC3 carrier CodeGen adapter ------*- C++ -*-===//
++//
++// Staged adapter for canonical ObjC3 Optional/Result storage.  This header is
++// intentionally private to Clang CodeGen; it does not declare a source ABI.
++//
++//===----------------------------------------------------------------------===//
++
++#ifndef LLVM_CLANG_LIB_CODEGEN_CGOBJC3CARRIERS_H
++#define LLVM_CLANG_LIB_CODEGEN_CGOBJC3CARRIERS_H
++
++#include "Address.h"
++#include "clang/AST/ASTContext.h"
++#include "clang/Basic/LLVM.h"
++
++namespace llvm {
++class StructType;
++class Type;
++} // namespace llvm
++
++namespace clang {
++class QualType;
++class SourceLocation;
++namespace CodeGen {
++class CodeGenModule;
++class CodeGenFunction;
++
++enum class ObjC3CarrierPayloadArm : unsigned char { Value, Success, Error };
++
++/// LLVM field numbers for the hidden Clang record produced by ASTContext.
++/// PayloadField is absent for tag-only (void) carriers. The payload indexes
++/// name fields in the hidden union, not fields in the outer record.
++struct ObjC3CarrierStorageLayout {
++  llvm::StructType *StorageType = nullptr;
++  unsigned TagField = ~0U;
++  unsigned PayloadField = ~0U;
++  unsigned ValueField = ~0U;
++  unsigned SuccessField = ~0U;
++  unsigned ErrorField = ~0U;
++
++  bool hasPayloadStorage() const { return PayloadField != ~0U; }
++};
++
++/// Translate only the representation already owned by ASTContext. This uses
++/// Clang's target record converter and field maps, preserving target padding,
++/// alignment, zero-sized/void-arm tags, and union offsets.
++bool getObjC3CarrierStorageLayout(CodeGenModule &CGM, QualType CarrierType,
++                                  ObjC3CarrierStorageLayout &Result);
++
++/// Field-address and discriminant hooks for address-backed carrier values.
++/// PayloadAddress returns invalid for a void/unavailable arm. The caller must
++/// test the discriminant before reading an arm and must initialize the active
++/// arm before storing a present tag.
++Address getObjC3CarrierTagAddress(CodeGenFunction &CGF, Address CarrierStorage,
++                                  QualType CarrierType);
++Address getObjC3CarrierPayloadAddress(CodeGenFunction &CGF,
++                                      Address CarrierStorage,
++                                      QualType CarrierType,
++                                      ObjC3CarrierPayloadArm Arm);
++llvm::Value *emitObjC3CarrierLoadTag(CodeGenFunction &CGF,
++                                     Address CarrierStorage,
++                                     QualType CarrierType, SourceLocation Loc);
++bool emitObjC3CarrierStoreTag(CodeGenFunction &CGF, Address CarrierStorage,
++                              QualType CarrierType, llvm::Value *TagValue,
++                              bool IsInitialization);
++
++/// Compute the target's ordinary C argument and result classifications for a
++/// one-argument probe whose argument and result are the carrier record. This
++/// is deliberately available only for recursively trivial, non-ARC payloads
++/// without nested carriers. It is diagnostic/probe data only; function
++/// signature normalization and source parameter/result adapters are not wired.
++struct ObjC3CarrierCallABI {
++  unsigned ResultKind = 0;
++  unsigned ArgumentKind = 0;
++  llvm::Type *ResultCoerceType = nullptr;
++  llvm::Type *ArgumentCoerceType = nullptr;
++};
++
++bool classifyObjC3CarrierCallABI(CodeGenModule &CGM, QualType CarrierType,
++                                 ObjC3CarrierCallABI &Result);
++
++/// True only when the carrier can be materialized as plain local storage with
++/// no C++ special-member or ARC lifetime operation. This does not qualify
++/// initialization, copy, move, destruction, or call-ABI lowering.
++bool supportsPlainObjC3CarrierStorageLifetime(CodeGenModule &CGM,
++                                              QualType CarrierType);
++
++/// Diagnose a function type that passes a carrier itself, or a complete
++/// aggregate containing a carrier, by value. Pointer pointees are not walked.
++bool diagnoseUnsupportedObjC3CarrierByValue(CodeGenModule &CGM,
++                                            QualType FunctionType,
++                                            SourceLocation Loc);
++
++/// Emit a precise error before ordinary call lowering can silently apply a
++/// wrong ABI to an unsupported payload operation.
++void diagnoseUnsupportedObjC3CarrierOperation(CodeGenModule &CGM,
++                                              SourceLocation Loc,
++                                              QualType CarrierType,
++                                              const char *Operation);
++
++} // namespace CodeGen
++} // namespace clang
++
++#endif
+diff --git a/clang/test/ObjC3/CodeGen/async-definition-unsupported.cpp b/clang/test/ObjC3/CodeGen/async-definition-unsupported.cpp
+new file mode 100644
+--- /dev/null
++++ b/clang/test/ObjC3/CodeGen/async-definition-unsupported.cpp
+@@ -0,0 +1,5 @@
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fobjc-version=3 -emit-llvm -o /dev/null -verify %s
++
++// Function definitions must fail closed before CodeGen creates an ordinary
++// C++ ABI body for a callable with an unlowered ObjC3 effect.
++void async_definition() __objc3_async {} // expected-error {{ObjC3 async/throws callable ABI lowering}}
+diff --git a/clang/test/ObjC3/CodeGen/carrier-debug-info-deferred.c b/clang/test/ObjC3/CodeGen/carrier-debug-info-deferred.c
+new file mode 100644
+--- /dev/null
++++ b/clang/test/ObjC3/CodeGen/carrier-debug-info-deferred.c
+@@ -0,0 +1,10 @@
++// RUN: not %clang_cc1 -x objective-c -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.0 -debug-info-kind=standalone -emit-llvm -o /dev/null %s 2>&1 | FileCheck %s
++//
++// A forward payload has no target materialized representation yet. Debug info
++// must diagnose it instead of creating a guessed record description.
++
++struct Forward;
++typedef __objc3_optional(struct Forward) DeferredOptional;
++void debug_deferred(DeferredOptional *value) {}
++
++// CHECK: error: ObjC3 carrier type '__objc3_optional(struct Forward)' has no materialized native representation for debug information
+\ No newline at end of file
+diff --git a/clang/test/ObjC3/CodeGen/carrier-debug-info.c b/clang/test/ObjC3/CodeGen/carrier-debug-info.c
+new file mode 100644
+--- /dev/null
++++ b/clang/test/ObjC3/CodeGen/carrier-debug-info.c
+@@ -0,0 +1,39 @@
++// RUN: %clang_cc1 -x objective-c -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.0 -debug-info-kind=standalone -emit-llvm -o - %s | FileCheck %s
++//
++// Debug types use the same AST-owned materialized record as carrier storage.
++// These checks cover native storage/debug identity, not lifetime or call ABI.
++
++typedef __objc3_optional(int) OptionalInt;
++typedef __objc3_optional(const int) OptionalConstInt;
++typedef __objc3_result(int, long) IntLongResult;
++typedef __objc3_optional(OptionalInt) NestedOptional;
++extern void consume_storage(void *);
++
++void debug_carriers(OptionalInt *optional_pointer,
++                    IntLongResult *result_pointer) {
++  OptionalInt optional_local;
++  OptionalConstInt qualified_local;
++  IntLongResult result_local;
++  NestedOptional nested_local;
++  consume_storage(&optional_local);
++  consume_storage(&qualified_local);
++  consume_storage(&result_local);
++  consume_storage(&nested_local);
++  consume_storage(optional_pointer);
++  consume_storage(result_pointer);
++}
++
++// CHECK-DAG: !DIDerivedType(tag: DW_TAG_typedef, name: "__objc3_optional(int)"{{.*}}baseType: ![[OPTIONAL:[0-9]+]]
++// CHECK-DAG: ![[OPTIONAL]] = distinct !DICompositeType(tag: DW_TAG_structure_type,{{.*}}elements: ![[OPT_FIELDS:[0-9]+]]
++// CHECK-DAG: !DIDerivedType(tag: DW_TAG_member, name: "__objc3_payload"{{.*}}baseType: !{{.*}}size:{{.*}}offset:
++// CHECK-DAG: !DIDerivedType(tag: DW_TAG_member, name: "__objc3_state"{{.*}}baseType: !{{.*}}size:
++// CHECK-DAG: !DIDerivedType(tag: DW_TAG_member, name: "__objc3_value"{{.*}}baseType: !{{.*}}size:
++// CHECK-DAG: !DIDerivedType(tag: DW_TAG_typedef, name: "__objc3_optional(const int)"{{.*}}baseType: !
++// CHECK-DAG: !DIDerivedType(tag: DW_TAG_typedef, name: "__objc3_result(int, long)"{{.*}}baseType: ![[RESULT:[0-9]+]]
++// CHECK-DAG: ![[RESULT]] = distinct !DICompositeType(tag: DW_TAG_structure_type,{{.*}}elements: ![[RESULT_FIELDS:[0-9]+]]
++// CHECK-DAG: !DIDerivedType(tag: DW_TAG_member, name: "__objc3_success"{{.*}}baseType: !{{.*}}size:
++// CHECK-DAG: !DIDerivedType(tag: DW_TAG_member, name: "__objc3_error"{{.*}}baseType: !{{.*}}size:
++// CHECK-DAG: !DIDerivedType(tag: DW_TAG_pointer_type, baseType: !
++// CHECK-DAG: !DILocalVariable(name: "optional_local"{{.*}}type: !
++// CHECK-DAG: !DILocalVariable(name: "result_local"{{.*}}type: !
++// CHECK-DAG: !DIDerivedType(tag: DW_TAG_typedef, name: "__objc3_optional(__objc3_optional(int))"{{.*}}baseType: !
+diff --git a/clang/test/ObjC3/CodeGen/carrier-indirect-call-abi.c b/clang/test/ObjC3/CodeGen/carrier-indirect-call-abi.c
+new file mode 100644
+--- /dev/null
++++ b/clang/test/ObjC3/CodeGen/carrier-indirect-call-abi.c
+@@ -0,0 +1,12 @@
++// RUN: not %clang_cc1 -x objective-c -fobjc-version=3 -fobjc-runtime=gnustep-2.0 -emit-llvm -o /dev/null %s 2>&1 | FileCheck %s
++//
++// A typed indirect function signature is representable, but its by-value ABI
++// is unavailable. The guard must reject it before target ABIInfo sees it.
++
++typedef __objc3_optional(long long) OptionalI64;
++typedef OptionalI64 (*CarrierFunction)(OptionalI64);
++void call_indirect(CarrierFunction function) {
++  OptionalI64 local;
++  function(local);
++}
++// CHECK: ObjC3 carrier operation 'by-value call ABI'
+diff --git a/clang/test/ObjC3/CodeGen/carrier-native-layout-aarch64.c b/clang/test/ObjC3/CodeGen/carrier-native-layout-aarch64.c
+new file mode 100644
+--- /dev/null
++++ b/clang/test/ObjC3/CodeGen/carrier-native-layout-aarch64.c
+@@ -0,0 +1,15 @@
++// REQUIRES: aarch64-registered-target
++// RUN: %clang_cc1 -x objective-c -triple aarch64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.0 -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c -triple aarch64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.0 -emit-obj -o %t.aarch64.o %s
++// RUN: llvm-nm --defined-only %t.aarch64.o | FileCheck %s --check-prefix=OBJ
++
++typedef __objc3_optional(long long) OptionalI64;
++typedef __objc3_result(long long, void) ResultI64Void;
++extern void consume_storage(void *);
++void materialize_i64(void) { OptionalI64 local; consume_storage(&local); }
++void materialize_result(void) { ResultI64Void local; consume_storage(&local); }
++
++// CHECK: type { i8,
++// CHECK: i64
++// CHECK: define{{.*}} @materialize_i64
++// OBJ-DAG: materialize_i64
+diff --git a/clang/test/ObjC3/CodeGen/carrier-native-layout.c b/clang/test/ObjC3/CodeGen/carrier-native-layout.c
+new file mode 100644
+--- /dev/null
++++ b/clang/test/ObjC3/CodeGen/carrier-native-layout.c
+@@ -0,0 +1,30 @@
++// RUN: %clang_cc1 -x objective-c -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.0 -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.0 -emit-obj -o %t.x86.o %s
++// RUN: llvm-nm --defined-only %t.x86.o | FileCheck %s --check-prefix=OBJ
++//
++// Real local storage escapes through an ordinary void pointer. These checks
++// cover target layout only, not by-value calls or active-arm operations.
++
++typedef __objc3_optional(long long) OptionalI64;
++typedef __objc3_optional(_Bool) OptionalBool;
++typedef __objc3_optional(void) OptionalVoid;
++typedef __objc3_result(long long, void) ResultI64Void;
++struct Pair { long long wide; int narrow; };
++typedef __objc3_optional(struct Pair) OptionalPair;
++typedef __objc3_optional(OptionalI64) NestedOptional;
++extern void consume_storage(void *);
++
++void materialize_i64(void) { OptionalI64 local; consume_storage(&local); }
++void materialize_bool(void) { OptionalBool local; consume_storage(&local); }
++void materialize_void(void) { OptionalVoid local; consume_storage(&local); }
++void materialize_result(void) { ResultI64Void local; consume_storage(&local); }
++void materialize_pair(void) { OptionalPair local; consume_storage(&local); }
++void materialize_nested(void) { NestedOptional local; consume_storage(&local); }
++
++// CHECK: type { i8,
++// CHECK: i64
++// CHECK: define{{.*}} @materialize_i64
++// CHECK: @materialize_void
++// CHECK: define{{.*}} @materialize_pair
++// OBJ-DAG: materialize_i64
++// OBJ-DAG: materialize_pair
+diff --git a/clang/test/ObjC3/CodeGen/carrier-type-mangling.mm b/clang/test/ObjC3/CodeGen/carrier-type-mangling.mm
+new file mode 100644
+--- /dev/null
++++ b/clang/test/ObjC3/CodeGen/carrier-type-mangling.mm
+@@ -0,0 +1,30 @@
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c++ -std=c++20 -fobjc-version=3 -emit-llvm -o - %s | FileCheck %s --check-prefix=ITANIUM
++// RUN: %clang_cc1 -triple x86_64-pc-windows-msvc -x objective-c++ -std=c++20 -fobjc-version=3 -emit-llvm -o - %s | FileCheck %s --check-prefix=MSVC
++
++void optional(__objc3_optional(int) *) {}
++void optional(__objc3_optional(long) *) {}
++void optional(__objc3_optional(const int) *) {}
++void result(__objc3_result(int, long) *) {}
++void result(__objc3_result(long, int) *) {}
++void result(__objc3_result(const int, long) *) {}
++void result(__objc3_result(int, const long) *) {}
++
++using OptionalIntAlias = __objc3_optional(int);
++void alias_same(OptionalIntAlias *);
++void alias_same(__objc3_optional(int) *) {}
++
++// ITANIUM-DAG: define{{.*}} @_Z8optionalPU16__objc3_optionali
++// ITANIUM-DAG: define{{.*}} @_Z8optionalPU16__objc3_optionall
++// ITANIUM-DAG: define{{.*}} @_Z8optionalPU16__objc3_optionalKi
++// ITANIUM-DAG: define{{.*}} @_Z6resultPU14__objc3_resultil
++// ITANIUM-DAG: define{{.*}} @_Z6resultPU14__objc3_resultli
++// ITANIUM-DAG: define{{.*}} @_Z6resultPU14__objc3_resultKil
++// ITANIUM-DAG: define{{.*}} @_Z6resultPU14__objc3_resultiKl
++// ITANIUM-DAG: define{{.*}} @_Z10alias_samePU16__objc3_optionali
++
++// The AST unit assertions check distinct overload identity and alias equality
++// directly for both targets. These checks additionally ensure each ABI emits
++// the expected set of function definitions.
++// MSVC-COUNT-3: define{{.*}} @"?optional@@{{.*}}
++// MSVC-COUNT-4: define{{.*}} @"?result@@{{.*}}
++// MSVC-COUNT-1: define{{.*}} @"?alias_same@@{{.*}}
+diff --git a/clang/test/ObjC3/CodeGen/carrier-unsupported-lifetime-use.cpp b/clang/test/ObjC3/CodeGen/carrier-unsupported-lifetime-use.cpp
+new file mode 100644
+--- /dev/null
++++ b/clang/test/ObjC3/CodeGen/carrier-unsupported-lifetime-use.cpp
+@@ -0,0 +1,24 @@
++// RUN: %clang_cc1 -x objective-c++ -fobjc-version=3 -fobjc-runtime=gnustep-2.0 -fobjc-arc -DTEST_NONTRIVIAL -emit-llvm -o %t.cxx.ll -verify %s
++// RUN: test ! -e %t.cxx.ll
++// RUN: %clang_cc1 -x objective-c++ -fobjc-version=3 -fobjc-runtime=gnustep-2.0 -fobjc-arc -DTEST_ARC -emit-llvm -o %t.arc.ll -verify %s
++// RUN: test ! -e %t.arc.ll
++
++#if defined(TEST_NONTRIVIAL)
++struct Owned {
++  Owned(const Owned &);
++  ~Owned();
++};
++typedef __objc3_optional(Owned) MaybeOwned;
++void read_after_rejected_lifetime(void) {
++  MaybeOwned value; // expected-error {{ObjC3 carrier operation 'local lifetime'}}
++  (void)value; // CodeGen must recover from the rejected declaration before this use.
++}
++#elif defined(TEST_ARC)
++@interface Object
++@end
++typedef __objc3_optional(Object *) MaybeObject;
++void read_after_rejected_lifetime(void) {
++  MaybeObject value; // expected-error {{ObjC3 carrier operation 'local lifetime'}}
++  (void)value; // CodeGen must not synthesize an ARC lifetime after rejecting it.
++}
++#endif
+diff --git a/clang/test/ObjC3/CodeGen/carrier-unsupported-operations.cpp b/clang/test/ObjC3/CodeGen/carrier-unsupported-operations.cpp
+new file mode 100644
+--- /dev/null
++++ b/clang/test/ObjC3/CodeGen/carrier-unsupported-operations.cpp
+@@ -0,0 +1,52 @@
++// RUN: %clang_cc1 -x objective-c++ -fobjc-version=3 -fobjc-runtime=gnustep-2.0 -fobjc-arc -DTEST_CARRIER_BY_VALUE -emit-llvm -o %t.by-value.ll -verify %s
++// RUN: test ! -e %t.by-value.ll
++// RUN: %clang_cc1 -x objective-c++ -fobjc-version=3 -fobjc-runtime=gnustep-2.0 -fobjc-arc -DTEST_CARRIER_LIFETIME -emit-llvm -o %t.lifetime.ll -verify %s
++// RUN: test ! -e %t.lifetime.ll
++// RUN: %clang_cc1 -x objective-c++ -fobjc-version=3 -fobjc-runtime=gnustep-2.0 -fobjc-arc -DTEST_CARRIER_COPY -emit-llvm -o %t.copy.ll -verify %s
++// RUN: test ! -e %t.copy.ll
++// RUN: %clang_cc1 -x objective-c++ -fobjc-version=3 -fobjc-runtime=gnustep-2.0 -fobjc-arc -DTEST_CARRIER_ARC -emit-llvm -o %t.arc.ll -verify %s
++// RUN: test ! -e %t.arc.ll
++//
++// Keep each expected CodeGen rejection in its own translation unit so an
++// earlier diagnostic cannot suppress coverage of later operation boundaries.
++
++struct Owned {
++  Owned(const Owned &);
++  Owned(Owned &&) noexcept;
++  ~Owned();
++  int value;
++};
++typedef __objc3_optional(Owned) MaybeOwned;
++
++struct MoveOnly {
++  MoveOnly(const MoveOnly &) = delete;
++  MoveOnly(MoveOnly &&) noexcept;
++  ~MoveOnly();
++};
++typedef __objc3_optional(MoveOnly) MaybeMoveOnly;
++
++typedef __objc3_optional(long long) MaybeLong;
++extern MaybeLong external_long;
++
++@interface Object
++@end
++typedef __objc3_optional(Object *) MaybeObject;
++
++#if defined(TEST_CARRIER_BY_VALUE)
++MaybeOwned by_value(MaybeOwned value) { // expected-error-re {{ObjC3 carrier operation 'by-value call ABI' for type {{.*}} has no qualified lowering: {{.*}}}}
++  return value;
++}
++#elif defined(TEST_CARRIER_LIFETIME)
++void scope_lifetime(void) {
++  MaybeOwned value; // expected-error-re {{ObjC3 carrier operation 'local lifetime' for type {{.*}} has no qualified lowering: {{.*}}}}
++}
++#elif defined(TEST_CARRIER_COPY)
++void copy_trivial_carrier(void) { // expected-error-re {{ObjC3 carrier operation 'copy' for type {{.*}} has no qualified lowering: {{.*}}}}
++  MaybeLong local = external_long;
++  (void)local;
++}
++#elif defined(TEST_CARRIER_ARC)
++void arc_lifetime(void) {
++  MaybeObject value; // expected-error-re {{ObjC3 carrier operation 'local lifetime' for type {{.*}} has no qualified lowering: {{.*}}}}
++}
++#endif
+diff --git a/clang/test/ObjC3/CodeGen/carrier-variadic-call-abi.c b/clang/test/ObjC3/CodeGen/carrier-variadic-call-abi.c
+new file mode 100644
+--- /dev/null
++++ b/clang/test/ObjC3/CodeGen/carrier-variadic-call-abi.c
+@@ -0,0 +1,23 @@
++// RUN: %clang_cc1 -x objective-c -std=c17 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.0 -Wno-non-pod-varargs -DTEST_VARARG_DIRECT -emit-llvm -o %t.direct.ll -verify %s
++// RUN: test ! -e %t.direct.ll
++// RUN: %clang_cc1 -x objective-c -std=c17 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.0 -Wno-non-pod-varargs -DTEST_VARARG_INDIRECT -emit-llvm -o %t.indirect.ll -verify %s
++// RUN: test ! -e %t.indirect.ll
++// RUN: %clang_cc1 -x objective-c -std=c17 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.0 -Wno-non-pod-varargs -DTEST_VARARG_BLOCK -emit-llvm -o %t.block.ll -verify %s
++// RUN: test ! -e %t.block.ll
++
++typedef __objc3_optional(int) OptionalInt;
++void variadic_sink(int marker, ...);
++
++#if defined(TEST_VARARG_DIRECT)
++void direct_variadic(OptionalInt *value) {
++  variadic_sink(0, *value); // expected-error-re {{ObjC3 carrier operation 'by-value call ABI' for type {{.*}} has no qualified lowering: {{.*}}}}
++}
++#elif defined(TEST_VARARG_INDIRECT)
++void indirect_variadic(void (*sink)(int, ...), OptionalInt *value) {
++  sink(0, *value); // expected-error-re {{ObjC3 carrier operation 'by-value call ABI' for type {{.*}} has no qualified lowering: {{.*}}}}
++}
++#elif defined(TEST_VARARG_BLOCK)
++void block_variadic(void (^sink)(int, ...), OptionalInt *value) {
++  sink(0, *value); // expected-error-re {{ObjC3 carrier operation 'by-value call ABI' for type {{.*}} has no qualified lowering: {{.*}}}}
++}
++#endif
+diff --git a/clang/test/ObjC3/CodeGen/cxx-eh-passthrough.cpp b/clang/test/ObjC3/CodeGen/cxx-eh-passthrough.cpp
+new file mode 100644
+--- /dev/null
++++ b/clang/test/ObjC3/CodeGen/cxx-eh-passthrough.cpp
+@@ -0,0 +1,10 @@
++// RUN: %clang_cc1 -x c++ -std=c++20 -fcxx-exceptions -emit-llvm -o /dev/null %s
++
++void ordinary_noexcept() noexcept {}
++
++void ordinary_cpp_eh() {
++  try {
++    throw 1;
++  } catch (...) {
++  }
++}
+diff --git a/clang/test/ObjC3/CodeGen/effect-indirect-call-abi.mm b/clang/test/ObjC3/CodeGen/effect-indirect-call-abi.mm
+new file mode 100644
+--- /dev/null
++++ b/clang/test/ObjC3/CodeGen/effect-indirect-call-abi.mm
+@@ -0,0 +1,12 @@
++// RUN: not %clang_cc1 -x objective-c++ -std=c++20 -fobjc-version=3 -emit-llvm -o /dev/null %s 2>&1 | FileCheck %s
++//
++// An effect-bearing local function pointer must be checked at its indirect
++// call, even though the containing function has an ordinary empty signature.
++
++struct Error {};
++void effect_target() __objc3_throws(Error);
++void ordinary_caller() {
++  auto function = &effect_target;
++  function();
++}
++// CHECK: cannot compile this ObjC3 async/throws callable ABI lowering yet
+diff --git a/clang/test/ObjC3/CodeGen/gnustep-empty-coff.m b/clang/test/ObjC3/CodeGen/gnustep-empty-coff.m
+new file mode 100644
+--- /dev/null
++++ b/clang/test/ObjC3/CodeGen/gnustep-empty-coff.m
+@@ -0,0 +1,22 @@
++// RUN: %clang_cc1 -x objective-c -triple x86_64-pc-windows-msvc -fobjc-runtime=gnustep-2.0 -emit-llvm -o - %s | FileCheck %s --check-prefix=EMPTY
++// RUN: %clang_cc1 -x objective-c -triple x86_64-pc-windows-msvc -fobjc-runtime=gnustep-2.0 -DMETADATA -emit-llvm -o - %s | FileCheck %s --check-prefix=METADATA
++// RUN: %clang_cc1 -x objective-c -triple x86_64-unknown-linux-gnu -fobjc-runtime=gnustep-2.0 -emit-llvm -o - %s | FileCheck %s --check-prefix=ELF
++// The same baseline behavior applies without ObjC3 language opt-in.
++
++int baseline_value(void) { return 17; }
++#ifdef METADATA
++SEL retained_selector(void) { return @selector(baseline_value); }
++#endif
++
++// EMPTY-NOT: .objc_section_sentinel
++// EMPTY-NOT: .objc_init
++// EMPTY-NOT: .objcv2_load_function
++// EMPTY: define{{.*}} @baseline_value
++// EMPTY-NOT: .objc_section_sentinel
++// EMPTY-NOT: .objc_init
++// EMPTY-NOT: .objcv2_load_function
++// METADATA: section ".objcrt$SEL$m"
++// METADATA: @.objc_init
++// METADATA: call void @__objc_load
++// ELF: @.objc_init
++// ELF: call void @__objc_load
+diff --git a/clang/test/ObjC3/CodeGen/nested-throws-pointer-unsupported.cpp b/clang/test/ObjC3/CodeGen/nested-throws-pointer-unsupported.cpp
+new file mode 100644
+--- /dev/null
++++ b/clang/test/ObjC3/CodeGen/nested-throws-pointer-unsupported.cpp
+@@ -0,0 +1,10 @@
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fobjc-version=3 -emit-llvm -o /dev/null -verify %s
++
++struct Error {};
++using ThrowingFunction = void(int) __objc3_throws(Error);
++using ThrowingFunctionPointer = ThrowingFunction *;
++using NestedThrowingFunctionPointer = ThrowingFunctionPointer *;
++
++// Recursive pointer aliases must still reach and reject the effect-bearing
++// FunctionProtoType rather than silently lowering an ordinary function pointer.
++NestedThrowingFunctionPointer callback_storage; // expected-error {{ObjC3 async/throws callable ABI lowering}}
+diff --git a/clang/test/ObjC3/CodeGen/objc-eh-passthrough.m b/clang/test/ObjC3/CodeGen/objc-eh-passthrough.m
+new file mode 100644
+--- /dev/null
++++ b/clang/test/ObjC3/CodeGen/objc-eh-passthrough.m
+@@ -0,0 +1,10 @@
++// RUN: %clang_cc1 -x objective-c -fobjc-exceptions -fobjc-runtime=gnustep-2.0 -emit-llvm -o /dev/null %s
++
++@interface ObjC3EHObject
++@end
++
++void ordinary_objc_eh(void) {
++  @try {
++  } @catch (id exception) {
++  }
++}
+diff --git a/clang/test/ObjC3/CodeGen/objc-runtime-carrier-signatures.mm b/clang/test/ObjC3/CodeGen/objc-runtime-carrier-signatures.mm
+new file mode 100644
+--- /dev/null
++++ b/clang/test/ObjC3/CodeGen/objc-runtime-carrier-signatures.mm
+@@ -0,0 +1,38 @@
++// RUN: %clang_cc1 -triple x86_64-apple-macosx10.15 -fobjc-runtime=macosx-10.15 -x objective-c++ -std=c++20 -fobjc-version=3 -Wno-objc-root-class -DTEST_PROTOCOL -emit-obj -o %t.protocol.o -verify %s
++// RUN: test ! -e %t.protocol.o
++// RUN: %clang_cc1 -triple x86_64-apple-macosx10.15 -fobjc-runtime=macosx-10.15 -x objective-c++ -std=c++20 -fobjc-version=3 -Wno-objc-root-class -DTEST_IVAR -emit-obj -o %t.ivar.o -verify %s
++// RUN: test ! -e %t.ivar.o
++// RUN: %clang_cc1 -triple x86_64-apple-macosx10.15 -fobjc-runtime=macosx-10.15 -x objective-c++ -std=c++20 -fobjc-version=3 -Wno-objc-root-class -Wno-incomplete-implementation -DTEST_METHODS -emit-obj -o %t.methods.o -verify %s
++// RUN: test ! -e %t.methods.o
++// RUN: %clang_cc1 -triple x86_64-apple-macosx10.15 -fobjc-runtime=macosx-10.15 -x objective-c++ -std=c++20 -fobjc-version=3 -Wno-objc-root-class -DTEST_PROPERTY -emit-obj -o %t.property.o -verify %s
++// RUN: test ! -e %t.property.o
++
++#if defined(TEST_PROTOCOL)
++@protocol CarrierSignatureProtocol
++- (__objc3_optional(int))optionalValue; // expected-error {{ObjC3 carrier operation 'by-value call ABI'}}
++- (void)consumeResult:(__objc3_result(int, long))value; // expected-error {{ObjC3 carrier operation 'by-value call ABI'}}
++- (void)consumeOptionalPointer:(__objc3_optional(int) *)value; // expected-error {{ObjC3 carrier operation 'Objective-C runtime type encoding'}}
++@end
++#elif defined(TEST_IVAR)
++__attribute__((objc_root_class))
++@interface CarrierSignatureClass {
++  __objc3_optional(int) _stored; // expected-error {{ObjC3 carrier operation 'Objective-C runtime type encoding'}}
++}
++@end
++#elif defined(TEST_METHODS)
++__attribute__((objc_root_class))
++@interface CarrierSignatureClass
++- (__objc3_result(int, long))resultValue; // expected-error {{ObjC3 carrier operation 'by-value call ABI'}}
++- (void)consumeOptional:(__objc3_optional(long))value; // expected-error {{ObjC3 carrier operation 'by-value call ABI'}}
++@end
++@implementation CarrierSignatureClass
++@end
++#elif defined(TEST_PROPERTY)
++__attribute__((objc_root_class))
++@interface CarrierSignatureClass
++@property(nonatomic) __objc3_result(int, long) stored; // expected-error {{ObjC3 carrier operation 'Objective-C runtime type encoding'}}
++@end
++@implementation CarrierSignatureClass
++@dynamic stored;
++@end
++#endif
+diff --git a/clang/test/ObjC3/CodeGen/objc-runtime-native-metadata.m b/clang/test/ObjC3/CodeGen/objc-runtime-native-metadata.m
+new file mode 100644
+--- /dev/null
++++ b/clang/test/ObjC3/CodeGen/objc-runtime-native-metadata.m
+@@ -0,0 +1,19 @@
++// RUN: %clang_cc1 -triple x86_64-apple-macosx10.15 -fobjc-runtime=macosx-10.15 -x objective-c -Werror -Wno-objc-root-class -emit-llvm -o - %s | FileCheck %s
++
++@protocol NativeMetadataProtocol
++- (int)numberForCode:(long)code;
++@end
++
++__attribute__((objc_root_class))
++@interface NativeMetadataClass <NativeMetadataProtocol>
++- (int)numberForCode:(long)code;
++@end
++
++@implementation NativeMetadataClass
++- (int)numberForCode:(long)code { return (int)code; }
++@end
++
++const char *native_integer_encoding(void) { return @encode(int); }
++
++// CHECK: c"i{{[0-9]+}}@0:8q{{[0-9]+}}\00"
++// CHECK: c"i\00"
+diff --git a/clang/test/ObjC3/CodeGen/ordinary-c-passthrough.c b/clang/test/ObjC3/CodeGen/ordinary-c-passthrough.c
+new file mode 100644
+--- /dev/null
++++ b/clang/test/ObjC3/CodeGen/ordinary-c-passthrough.c
+@@ -0,0 +1,4 @@
++// RUN: %clang_cc1 -x c -std=c11 -emit-llvm -o /dev/null %s
++
++void ordinary_c_function(void) {}
++void (*ordinary_c_callback)(int);

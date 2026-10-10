@@ -3,7 +3,9 @@ param(
   [string]$RuntimeSource = 'out/toolchains/libobjc2-v2.3/src',
   [string]$RuntimeBuild = 'out/toolchains/libobjc2-v2.3/build/stage',
   [string]$ClangBin = 'C:\Program Files\LLVM\bin',
-  [ValidateSet('clang', 'clang-cl')][string]$ClientDriver = 'clang'
+  [ValidateSet('clang', 'clang-cl')][string]$ClientDriver = 'clang',
+  [switch]$IncludeObjC3Defer,
+  [switch]$IncludeEmptyObjCModule
 )
 
 $ErrorActionPreference = 'Stop'
@@ -57,6 +59,14 @@ $cases = @(
   @{ Name = 'root_class_objcxx_aggregate_cleanup'; Source = 'root_class_objcxx_aggregate_cleanup.mm'; Driver = $clangxx; Flags = @('-std=c++17', '-fobjc-arc'); Adapter = $true },
   @{ Name = 'native_weak_slot_adapter'; Source = 'native_weak_slot_adapter.mm'; Driver = $clangxx; Flags = @('-std=c++17', '-fobjc-arc'); Adapter = $true }
 )
+if ($IncludeObjC3Defer) {
+  $cases += @{ Name = 'defer_native_cleanup'; Source = 'defer_native_cleanup.mm';
+    Driver = $clangxx; Flags = @('-std=c++17', '-fobjc-version=3'); Adapter = $false }
+}
+if ($IncludeEmptyObjCModule) {
+  $cases += @{ Name = 'baseline_empty_objcxx'; Source = 'baseline_empty_objcxx.mm';
+    Driver = $clangxx; Flags = @('-std=c++17'); Adapter = $false }
+}
 
 foreach ($case in $cases) {
   $source = Join-Path $fixturesRoot $case.Source
@@ -69,6 +79,7 @@ foreach ($case in $cases) {
         '-fno-objc-arc' { $clientFlags += '/clang:-fno-objc-arc' }
         '-fblocks' { $clientFlags += '/clang:-fblocks' }
         '-std=c++17' { $clientFlags += '/std:c++17' }
+        '-fobjc-version=3' { $clientFlags += '/clang:-fobjc-version=3' }
         default { throw "No clang-cl spelling is defined for fixture flag '$flag'." }
       }
     }

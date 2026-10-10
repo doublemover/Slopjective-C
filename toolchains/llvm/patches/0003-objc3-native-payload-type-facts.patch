@@ -10,28 +10,6 @@ index f9a5f4f0e..50d1b1318 100644
    TypeLoc.cpp
    TypePrinter.cpp
    VTableBuilder.cpp
-diff --git a/clang/unittests/AST/CMakeLists.txt b/clang/unittests/AST/CMakeLists.txt
-index 3a12a4a06..5a90d26ff 100644
---- a/clang/unittests/AST/CMakeLists.txt
-+++ b/clang/unittests/AST/CMakeLists.txt
-@@ -54,3 +54,17 @@ add_clang_unittest(ASTTests
-   Support
-   TargetParser
-   )
-+
-+# Keep the focused carrier-facts gate independent of AllClangUnitTests.
-+add_distinct_clang_unittest(ObjC3TypeContractsTests
-+  PARTIAL_SOURCES_INTENDED
-+  ObjC3TypeContractsTest.cpp
-+  CLANG_LIBS
-+  clangAST
-+  clangFrontend
-+  clangTooling
-+  LLVM_COMPONENTS
-+  FrontendOpenMP
-+  Support
-+  TargetParser
-+  )
 diff --git a/clang/include/clang/AST/ObjC3TypeContracts.h b/clang/include/clang/AST/ObjC3TypeContracts.h
 new file mode 100644
 --- /dev/null
