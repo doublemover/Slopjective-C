@@ -23,15 +23,15 @@
     },
     {
       "file": "0004-objc3-canonical-carriers-and-function-effects.patch",
-      "sha256": "d8af17581a42f3426e359537123cfbd70fdff896a5289c1181b45f13c31e15e3"
+      "sha256": "e07f17182a0d8d17c758aeb2ea8c030ea352c25b258bd17a6523c864d6958e04"
     },
     {
       "file": "0005-objc3-codegen-qualification-boundaries.patch",
-      "sha256": "22aa1d44e7e474d06abacb7b880b47469ffe52e672482d3966dca248a5498f07"
+      "sha256": "d961bbe623ec5a31d652a0f768881dec0a54228a8c6d94a759deaf0ea28ae6d6"
     },
     {
       "file": "0006-objc3-native-carrier-expressions.patch",
-      "sha256": "4e4084fc9b5d8dc150213742fce1289d33687d5ad4d20b51c86989487b7105f1"
+      "sha256": "5ca6b7e890d452a1a8cd7801da9feaa8aa887420e0cf5420f095db957124b1fc"
     }
   ],
   "pristine_baseline_build_id": "llvmorg-22.1.6-fc4aad7b5db3-pristine-v1",
@@ -66,7 +66,9 @@
       "clangCodeGen",
       "clangFrontend",
       "clangDriver",
-      "ObjC3TypeContractsTests"
+      "ObjC3TypeContractsTests",
+      "clangd",
+      "clang-format"
     ],
     "build_target_groups": [
       {
@@ -96,11 +98,20 @@
         "targets": [
           "ObjC3TypeContractsTests"
         ]
+      },
+      {
+        "name": "native_editor_tools",
+        "targets": [
+          "clangd",
+          "clang-format"
+        ]
       }
     ],
     "distribution_components": [
       "clang",
       "lld",
+      "clangd",
+      "clang-format",
       "clang-resource-headers",
       "clang-libraries",
       "clang-headers",

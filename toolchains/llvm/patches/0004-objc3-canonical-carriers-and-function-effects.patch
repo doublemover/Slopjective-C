@@ -3305,15 +3305,16 @@ index c8ddc120a..078557dda 100644
    if (!TrySkipAttributes())
      return TPResult::Ambiguous;
 diff --git a/clang/lib/Sema/CMakeLists.txt b/clang/lib/Sema/CMakeLists.txt
-index 0ebf56ecf..636c2106d 100644
+index 0ebf56ecf..2d3755506 100644
 --- a/clang/lib/Sema/CMakeLists.txt
 +++ b/clang/lib/Sema/CMakeLists.txt
-@@ -70,6 +70,12 @@ add_clang_library(clangSema
+@@ -70,6 +70,13 @@ add_clang_library(clangSema
    SemaMSP430.cpp
    SemaModule.cpp
    SemaNVPTX.cpp
 +  SemaObjC3Effects.cpp
 +  SemaObjC3Carriers.cpp
++  SemaObjC3CarrierARC.cpp
 +  SemaObjC3OptionalExpr.cpp
 +  SemaObjC3ResultExpr.cpp
 +  SemaObjC3Propagation.cpp
@@ -4405,11 +4406,121 @@ new file mode 100644
 +      KeywordLoc, Parens.getOpenLocation(), FirstType.get(), CommaLoc,
 +      SecondType.get(), Parens.getCloseLocation());
 +}
+diff --git a/clang/lib/Sema/SemaObjC3CarrierARC.cpp b/clang/lib/Sema/SemaObjC3CarrierARC.cpp
+new file mode 100644
+--- /dev/null
++++ b/clang/lib/Sema/SemaObjC3CarrierARC.cpp
+@@ -0,0 +1,85 @@
++//===--- SemaObjC3CarrierARC.cpp - ARC payload admission --------*- C++ -*-===//
++#include "SemaObjC3CarrierARC.h"
++#include "clang/AST/ASTContext.h"
++#include "clang/AST/DeclCXX.h"
++#include "clang/Basic/DiagnosticSema.h"
++#include "clang/Sema/Sema.h"
++
++using namespace clang;
++
++namespace {
++
++bool containsNestedRetainableField(QualType Type, unsigned Depth = 0) {
++  if (Type.isNull() || Depth > 64)
++    return true;
++  if (Type->isObjCObjectPointerType() || Type->isBlockPointerType())
++    return true;
++  if (const auto *Array = dyn_cast<ArrayType>(Type.getTypePtr()))
++    return containsNestedRetainableField(Array->getElementType(), Depth + 1);
++  if (const auto *Optional = Type->getAs<ObjC3OptionalType>())
++    return containsNestedRetainableField(Optional->getElementType(), Depth + 1);
++  if (const auto *Result = Type->getAs<ObjC3ResultType>())
++    return containsNestedRetainableField(Result->getSuccessType(), Depth + 1) ||
++           containsNestedRetainableField(Result->getErrorType(), Depth + 1);
++  if (const auto *Record = Type->getAs<RecordType>()) {
++    if (!Record->getDecl()->isCompleteDefinition())
++      return false;
++    if (const auto *CXX = dyn_cast<CXXRecordDecl>(Record->getDecl()))
++      for (const CXXBaseSpecifier &Base : CXX->bases())
++        if (containsNestedRetainableField(Base.getType(), Depth + 1))
++          return true;
++    for (const FieldDecl *Field : Record->getDecl()->fields())
++      if (containsNestedRetainableField(Field->getType(), Depth + 1))
++        return true;
++  }
++  return false;
++}
++
++} // namespace
++
++bool clang::normalizeObjC3CarrierPayloadOwnership(Sema &S, SourceLocation Loc,
++                                                  QualType &PayloadType) {
++  if (PayloadType.isNull() || PayloadType->isDependentType())
++    return false;
++
++  // ARC object-pointer carrier payloads are native platform pointers. Blocks
++  // remain unsupported until their distinct retain/copy ownership operations
++  // are admitted here and in CodeGen.
++  if (PayloadType->isBlockPointerType()) {
++    S.Diag(Loc, diag::err_objc3_carrier_payload_unsupported) << PayloadType;
++    return true;
++  }
++  if ((PayloadType->getAs<RecordType>() ||
++       PayloadType->getAs<ObjC3OptionalType>() ||
++       PayloadType->getAs<ObjC3ResultType>()) &&
++      containsNestedRetainableField(PayloadType)) {
++    S.Diag(Loc, diag::err_objc3_carrier_payload_unsupported) << PayloadType;
++    return true;
++  }
++  if (!PayloadType->isObjCObjectPointerType())
++    return false;
++
++  switch (PayloadType.getObjCLifetime()) {
++  case Qualifiers::OCL_None:
++    if (!S.getLangOpts().ObjCAutoRefCount)
++      return false;
++    // A retainable object stored in a value carrier owns its payload strongly
++    // by default. Encode this as a real type qualifier before carrier uniquing;
++    // CodeGen must never infer strong ownership from OCL_None.
++    PayloadType = S.Context.getLifetimeQualifiedType(
++        PayloadType, Qualifiers::OCL_Strong);
++    return false;
++  case Qualifiers::OCL_Strong:
++  case Qualifiers::OCL_Weak:
++  case Qualifiers::OCL_ExplicitNone:
++    // Preserve native strong, zeroing weak, and explicit unsafe-unretained
++    // storage semantics respectively.
++    return false;
++  case Qualifiers::OCL_Autoreleasing:
++    // Autoreleasing is a call/out-parameter convention, not persistent carrier
++    // storage. Keep the rejection in Sema, before a synthetic field is formed.
++    S.Diag(Loc, diag::err_objc3_carrier_payload_unsupported) << PayloadType;
++    return true;
++  }
++  llvm_unreachable("unknown ObjC lifetime qualifier");
++}
+diff --git a/clang/lib/Sema/SemaObjC3CarrierARC.h b/clang/lib/Sema/SemaObjC3CarrierARC.h
+new file mode 100644
+--- /dev/null
++++ b/clang/lib/Sema/SemaObjC3CarrierARC.h
+@@ -0,0 +1,15 @@
++//===--- SemaObjC3CarrierARC.h - ARC carrier type checks --------*- C++ -*-===//
++#ifndef LLVM_CLANG_LIB_SEMA_SEMAOBJC3CARRIERARC_H
++#define LLVM_CLANG_LIB_SEMA_SEMAOBJC3CARRIERARC_H
++
++#include "clang/AST/Type.h"
++namespace clang {
++class Sema;
++
++/// Normalize implicit ARC object ownership for a stored carrier payload, and
++/// reject ownership modes that do not describe stable carrier storage.
++/// Returns true after issuing a diagnostic.
++bool normalizeObjC3CarrierPayloadOwnership(Sema &S, SourceLocation Loc,
++                                           QualType &PayloadType);
++} // namespace clang
++#endif
 diff --git a/clang/lib/Sema/SemaObjC3Carriers.cpp b/clang/lib/Sema/SemaObjC3Carriers.cpp
 new file mode 100644
 --- /dev/null
 +++ b/clang/lib/Sema/SemaObjC3Carriers.cpp
-@@ -0,0 +1,110 @@
+@@ -0,0 +1,118 @@
 +//===--- SemaObjC3Carriers.cpp - ObjC3 carrier type admission -------------===//
 +//
 +// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
@@ -4420,6 +4531,7 @@ new file mode 100644
 +#include "clang/AST/ASTContext.h"
 +#include "clang/AST/TypeLoc.h"
 +#include "clang/Basic/DiagnosticSema.h"
++#include "SemaObjC3CarrierARC.h"
 +#include "clang/Sema/Sema.h"
 +
 +using namespace clang;
@@ -4471,6 +4583,9 @@ new file mode 100644
 +  if (!ElementInfo)
 +    return TypeError();
 +
++  if (normalizeObjC3CarrierPayloadOwnership(*this, KeywordLoc, Element))
++    return TypeError();
++
 +  QualType Carrier = Context.getObjC3OptionalType(Element);
 +  if (!isAdmittedCarrierPayload(Context, Element)) {
 +    Diag(KeywordLoc, diag::err_objc3_carrier_payload_unsupported) << Element;
@@ -4498,6 +4613,10 @@ new file mode 100644
 +  QualType Error;
 +  TypeSourceInfo *ErrorInfo = getChildTypeInfo(*this, ErrorType, Error);
 +  if (!ErrorInfo)
++    return TypeError();
++
++  if (normalizeObjC3CarrierPayloadOwnership(*this, KeywordLoc, Success) ||
++      normalizeObjC3CarrierPayloadOwnership(*this, KeywordLoc, Error))
 +    return TypeError();
 +
 +  QualType Carrier = Context.getObjC3ResultType(Success, Error);
@@ -5814,6 +5933,37 @@ new file mode 100644
 +
 +RecoveredOptional recovered_optional;
 +RecoveredResult recovered_result;
+diff --git a/clang/test/ObjC3/Sema/carrier-arc-ownership.mm b/clang/test/ObjC3/Sema/carrier-arc-ownership.mm
+new file mode 100644
+--- /dev/null
++++ b/clang/test/ObjC3/Sema/carrier-arc-ownership.mm
+@@ -0,0 +1,26 @@
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c++ -fobjc-version=3 -fobjc-runtime=gnustep-2.0 -fobjc-arc -fblocks -std=c++20 -verify -fsyntax-only %s
++
++typedef __objc3_optional(id) StrongOptional;
++typedef __objc3_optional(id __weak) WeakOptional;
++typedef __objc3_optional(id __unsafe_unretained) UnsafeOptional;
++typedef __objc3_result(id, id __weak) MixedResult;
++
++struct ContainsRetainableField { id value; };
++typedef __objc3_optional(id __autoreleasing) AutoreleasingOptional; // expected-error {{payload type}} 
++typedef __objc3_optional(void (^)(void)) BlockOptional; // expected-error {{payload type}}
++typedef __objc3_optional(struct ContainsRetainableField) AggregateOptional; // expected-error {{payload type}}
++
++void accepted_types(id object) {
++  StrongOptional strong = __objc3_some(id, object);
++  WeakOptional weak = __objc3_some(id __weak, object);
++  UnsafeOptional unsafe = __objc3_some(id __unsafe_unretained, object);
++  MixedResult result = __objc3_err(id, id __weak, object);
++  (void)strong; (void)weak; (void)unsafe; (void)result;
++}
++
++struct ArrayOfRetainableFields { id values[2]; };
++struct ManagedBase { id value; };
++struct DerivedManaged : ManagedBase { int plain; };
++typedef __objc3_optional(ArrayOfRetainableFields) ArrayAggregate; // expected-error {{payload type}}
++typedef __objc3_optional(DerivedManaged) DerivedAggregate; // expected-error {{payload type}}
++typedef __objc3_optional(StrongOptional) NestedManagedCarrier; // expected-error {{payload type}}
 diff --git a/clang/test/ObjC3/Sema/carrier-builtin-classification.c b/clang/test/ObjC3/Sema/carrier-builtin-classification.c
 new file mode 100644
 --- /dev/null

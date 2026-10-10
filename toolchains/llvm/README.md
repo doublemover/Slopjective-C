@@ -115,12 +115,30 @@ destructors, including access/deletion and declaration references; native jump
 checks reject entering a scope past initialization. Empty C++ payload addresses
 use AST-owned byte offsets, including explicit alignment. The admitted slice
 requires a public nondeleted payload destructor and a direct Some/None/Ok/Err
-initializer; carrier copy/move, temporaries, nested managed payloads, ARC and
+initializer; carrier copy/move, temporaries, nested managed payloads and
 payload extraction remain gated. Its executable counter checks cover source
 temporary cleanup, selected destruction once, C++ unwinding, failed construction,
 const locals and aligned empty payloads at O0/O2 through clang++ and clang-cl.
 Run `scripts/objc3c_toolchain_runtime/run_carrier_cpp_lifetime_fixtures_windows.ps1`
 from the admitted developer environment. This is private migration evidence.
+
+Direct initialized ARC carrier locals now use native strong, weak or unsafe
+object fields. Sema makes implicit ARC `id` ownership explicitly strong before
+carrier uniquing, preserves explicit weak/unsafe ownership, and rejects
+autoreleasing, Block and nested managed payload storage. CodeGen initializes
+only the selected payload, stores the tag after initialization, and registers
+selected normal/EH cleanup; None and inactive Result arms do not initialize or
+destroy managed storage. Tag queries require an admitted direct initializer so
+recovery cannot read a rejected or uninitialized local. ARC copy/move,
+assignment, temporaries, payload extraction and by-value calls remain gated.
+The native executable witness covers strong retention, weak zeroing, unsafe
+nonretention, Some(nil), inactive arms and native C++ unwinding at O0/O2 through
+clang++ and clang-cl. Its separately compiled MRC root class implements the
+pinned runtime's required weak-load hook and weak-reference teardown. Run
+`scripts/objc3c_toolchain_runtime/run_carrier_arc_lifetime_fixtures_windows.ps1`
+from the admitted developer environment. These checks are private migration
+evidence and do not enable a public language capability.
+
 An internal by-value adapter qualifies supported plain direct carrier values
 for nonvariadic C functions on `x86_64-pc-windows-msvc`. Clang's target ABIInfo
 classifies the AST-owned hidden record while source declarations retain their

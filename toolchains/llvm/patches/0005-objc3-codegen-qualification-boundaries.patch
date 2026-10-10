@@ -395,18 +395,19 @@ index d63d4c593..b06b47379 100644
      return CreateType(cast<RecordType>(Ty));
    case Type::Enum:
 diff --git a/clang/lib/CodeGen/CGDecl.cpp b/clang/lib/CodeGen/CGDecl.cpp
-index aeecf0bac..c08ed51be 100644
+index aeecf0bac..1ab5f0e7b 100644
 --- a/clang/lib/CodeGen/CGDecl.cpp
 +++ b/clang/lib/CodeGen/CGDecl.cpp
-@@ -11,6 +11,7 @@
+@@ -11,6 +11,8 @@
  //===----------------------------------------------------------------------===//
  
  #include "CGBlocks.h"
 +#include "CGObjC3Carriers.h"
++#include "CGObjC3ArcCarriers.h"
  #include "CGCXXABI.h"
  #include "CGCleanup.h"
  #include "CGDebugInfo.h"
-@@ -30,6 +31,7 @@
+@@ -30,6 +32,7 @@
  #include "clang/AST/DeclObjC.h"
  #include "clang/AST/DeclOpenACC.h"
  #include "clang/AST/DeclOpenMP.h"
@@ -414,7 +415,7 @@ index aeecf0bac..c08ed51be 100644
  #include "clang/Basic/CodeGenOptions.h"
  #include "clang/Basic/TargetInfo.h"
  #include "clang/CodeGen/CGFunctionInfo.h"
-@@ -484,6 +486,56 @@ void CodeGenFunction::EmitStaticVarDecl(const VarDecl &D,
+@@ -484,6 +487,72 @@ void CodeGenFunction::EmitStaticVarDecl(const VarDecl &D,
  }
  
  namespace {
@@ -429,6 +430,22 @@ index aeecf0bac..c08ed51be 100644
 +      bool Emitted = CodeGen::emitObjC3CarrierDestroyActivePayload(
 +          CGF, CarrierType, Storage, IsVolatile);
 +      assert(Emitted && "admitted ObjC3 carrier cleanup became unavailable");
++    }
++  };
++
++  struct DestroyObjC3ARCCarrierLocal final : EHScopeStack::Cleanup {
++    Address Storage;
++    QualType CarrierType;
++    bool PreciseLifetime;
++    bool DestroyStrong;
++    DestroyObjC3ARCCarrierLocal(Address Storage, QualType CarrierType,
++                               bool PreciseLifetime, bool DestroyStrong)
++        : Storage(Storage), CarrierType(CarrierType),
++          PreciseLifetime(PreciseLifetime), DestroyStrong(DestroyStrong) {}
++    void Emit(CodeGenFunction &CGF, Flags) override {
++      CodeGen::emitObjC3CarrierDestroyActiveARCPayload(
++          CGF, CarrierType, Storage, PreciseLifetime, DestroyStrong,
++          !DestroyStrong);
 +    }
 +  };
 +
@@ -471,7 +488,7 @@ index aeecf0bac..c08ed51be 100644
    struct DestroyObject final : EHScopeStack::Cleanup {
      DestroyObject(Address addr, QualType type,
                    CodeGenFunction::Destroyer *destroyer,
-@@ -1346,8 +1398,34 @@ static llvm::Constant *replaceUndef(CodeGenModule &CGM, IsPattern isPattern,
+@@ -1346,8 +1415,38 @@ static llvm::Constant *replaceUndef(CodeGenModule &CGM, IsPattern isPattern,
  /// variable declaration with auto, register, or no storage class specifier.
  /// These turn into simple stack objects, or GlobalValues depending on target.
  void CodeGenFunction::EmitAutoVarDecl(const VarDecl &D) {
@@ -485,7 +502,11 @@ index aeecf0bac..c08ed51be 100644
 +      IsCarrier && !IsPlainCarrier &&
 +      isDirectObjC3CarrierConstruction(D, Canonical) &&
 +      CodeGen::supportsObjC3CarrierCppLocalLifetime(CGM, Canonical);
-+  if (IsCarrier && !IsPlainCarrier && !IsDirectCppLocal) {
++  const bool IsDirectARCLocal =
++      IsCarrier && !IsPlainCarrier && !IsDirectCppLocal &&
++      isDirectObjC3CarrierConstruction(D, Canonical) &&
++      CodeGen::supportsObjC3CarrierARCLocalLifetime(CGM, Canonical);
++  if (IsCarrier && !IsPlainCarrier && !IsDirectCppLocal && !IsDirectARCLocal) {
 +    CodeGen::diagnoseUnsupportedObjC3CarrierOperation(
 +        CGM, D.getLocation(), Canonical, "local lifetime");
 +    // Keep LocalDeclMap valid for recovery, without evaluating an initializer
@@ -497,7 +518,7 @@ index aeecf0bac..c08ed51be 100644
 +  }
    AutoVarEmission emission = EmitAutoVarAlloca(D);
 -  EmitAutoVarInit(emission);
-+  if (IsDirectCppLocal) {
++  if (IsDirectCppLocal || IsDirectARCLocal) {
 +    ScopedObjC3CarrierLocalInit Context(
 +        *this, emission.getObjectAddress(*this), Canonical);
 +    EmitAutoVarInit(emission);
@@ -507,7 +528,7 @@ index aeecf0bac..c08ed51be 100644
    EmitAutoVarCleanups(emission);
  }
  
-@@ -2211,9 +2289,21 @@ void CodeGenFunction::EmitAutoVarCleanups(const AutoVarEmission &emission) {
+@@ -2211,9 +2310,32 @@ void CodeGenFunction::EmitAutoVarCleanups(const AutoVarEmission &emission) {
  
    const VarDecl &D = *emission.Variable;
  
@@ -519,6 +540,17 @@ index aeecf0bac..c08ed51be 100644
 +  bool IsCarrier = isa<ObjC3OptionalType>(Canonical.getTypePtr()) ||
 +                   isa<ObjC3ResultType>(Canonical.getTypePtr());
 +  if (IsCarrier && isDirectObjC3CarrierConstruction(D, Canonical) &&
++      CodeGen::supportsObjC3CarrierARCLocalLifetime(CGM, Canonical)) {
++    bool Precise = D.hasAttr<ObjCPreciseLifetimeAttr>();
++    if (CodeGen::hasObjC3CarrierStrongPayload(CGM, Canonical))
++      EHStack.pushCleanup<DestroyObjC3ARCCarrierLocal>(
++          getARCCleanupKind(), emission.getObjectAddress(*this), Canonical,
++          Precise, /*DestroyStrong=*/true);
++    if (CodeGen::hasObjC3CarrierWeakPayload(CGM, Canonical))
++      EHStack.pushCleanup<DestroyObjC3ARCCarrierLocal>(
++          NormalAndEHCleanup, emission.getObjectAddress(*this), Canonical,
++          Precise, /*DestroyStrong=*/false);
++  } else if (IsCarrier && isDirectObjC3CarrierConstruction(D, Canonical) &&
 +      CodeGen::supportsObjC3CarrierCppLocalLifetime(CGM, Canonical) &&
 +      CodeGen::hasObjC3CarrierCppLocalDestructor(CGM, Canonical)) {
 +    EHStack.pushCleanup<DestroyObjC3CarrierLocal>(
@@ -595,20 +627,21 @@ index 24878710d..b673725b6 100644
    if (!CallOrInvoke) {
      CallOrInvoke = &CallOrInvokeStorage;
 diff --git a/clang/lib/CodeGen/CGExprAgg.cpp b/clang/lib/CodeGen/CGExprAgg.cpp
-index 7cc4d6c8f..169f147ab 100644
+index 7cc4d6c8f..e235bf062 100644
 --- a/clang/lib/CodeGen/CGExprAgg.cpp
 +++ b/clang/lib/CodeGen/CGExprAgg.cpp
-@@ -11,6 +11,9 @@
+@@ -11,6 +11,10 @@
  //===----------------------------------------------------------------------===//
  
  #include "CGCXXABI.h"
 +#include "CGObjC3ABIBoundaries.h"
 +#include "CGObjC3Carriers.h"
++#include "CGObjC3ArcCarriers.h"
 +#include "CGObjC3ResultExpr.h"
  #include "CGDebugInfo.h"
  #include "CGHLSLRuntime.h"
  #include "CGObjCRuntime.h"
-@@ -235,6 +238,28 @@ public:
+@@ -235,6 +239,40 @@ public:
    void EmitInitializationToLValue(Expr *E, LValue Address);
    void EmitNullInitializationToLValue(LValue Address);
    //  case Expr::ChooseExprClass:
@@ -617,6 +650,12 @@ index 7cc4d6c8f..169f147ab 100644
 +  void VisitObjC3OptionalExpr(ObjC3OptionalExpr *E) {
 +    bool IsLocalCarrierInitialization = CGF.isObjC3CarrierLocalInitialization(
 +        Dest.getAddress(), E->getCarrierType());
++    if (CodeGen::containsObjC3CarrierARCPayload(CGF.CGM, E->getCarrierType())) {
++      CodeGen::emitObjC3OptionalARCLocalExpr(
++          CGF, *E, Dest.getAddress(), IsLocalCarrierInitialization,
++          Dest.isIgnored(), Dest.isVolatile());
++      return;
++    }
 +    if (!CodeGen::emitObjC3OptionalAggregateExpr(
 +            CGF, *E, Dest.getAddress(), Dest.isIgnored(), Dest.isVolatile(),
 +            IsLocalCarrierInitialization))
@@ -625,6 +664,12 @@ index 7cc4d6c8f..169f147ab 100644
 +  void VisitObjC3ResultExpr(ObjC3ResultExpr *E) {
 +    bool IsLocalCarrierInitialization = CGF.isObjC3CarrierLocalInitialization(
 +        Dest.getAddress(), E->getCarrierType());
++    if (CodeGen::containsObjC3CarrierARCPayload(CGF.CGM, E->getCarrierType())) {
++      CodeGen::emitObjC3ResultARCLocalExpr(
++          CGF, *E, Dest.getAddress(), IsLocalCarrierInitialization,
++          Dest.isIgnored(), Dest.isVolatile());
++      return;
++    }
 +    if (!CodeGen::emitObjC3ResultAggregateExpr(
 +            CGF, *E, Dest.getAddress(), Dest.isIgnored(), Dest.isVolatile(),
 +            IsLocalCarrierInitialization))
@@ -637,7 +682,7 @@ index 7cc4d6c8f..169f147ab 100644
    void VisitCXXThrowExpr(const CXXThrowExpr *E) { CGF.EmitCXXThrowExpr(E); }
    void VisitAtomicExpr(AtomicExpr *E) {
      RValue Res = CGF.EmitAtomicExpr(E);
-@@ -356,6 +381,35 @@ void AggExprEmitter::EmitFinalDestCopy(
+@@ -356,6 +394,35 @@ void AggExprEmitter::EmitFinalDestCopy(
    if (Dest.isIgnored())
      return;
  
@@ -673,7 +718,7 @@ index 7cc4d6c8f..169f147ab 100644
    // Copy non-trivial C structs here.
    LValue DstLV = CGF.MakeAddrLValue(
        Dest.getAddress(), Dest.isVolatile() ? type.withVolatile() : type);
-@@ -390,6 +444,10 @@ void AggExprEmitter::EmitFinalDestCopy(
+@@ -390,6 +457,10 @@ void AggExprEmitter::EmitFinalDestCopy(
  ///   ignored
  void AggExprEmitter::EmitCopy(QualType type, const AggValueSlot &dest,
                                const AggValueSlot &src) {
@@ -684,7 +729,7 @@ index 7cc4d6c8f..169f147ab 100644
    if (dest.requiresGCollection()) {
      CharUnits sz = dest.getPreferredSize(CGF.getContext(), type);
      llvm::Value *size = llvm::ConstantInt::get(CGF.SizeTy, sz.getQuantity());
-@@ -828,6 +886,14 @@ void AggExprEmitter::VisitCastExpr(CastExpr *E) {
+@@ -828,6 +899,14 @@ void AggExprEmitter::VisitCastExpr(CastExpr *E) {
    }
  
    case CK_LValueToRValueBitCast: {
@@ -699,7 +744,7 @@ index 7cc4d6c8f..169f147ab 100644
      if (Dest.isIgnored()) {
        CGF.EmitAnyExpr(E->getSubExpr(), AggValueSlot::ignored(),
                        /*ignoreResult=*/true);
-@@ -1298,6 +1364,25 @@ void AggExprEmitter::VisitBinAssign(const BinaryOperator *E) {
+@@ -1298,6 +1377,25 @@ void AggExprEmitter::VisitBinAssign(const BinaryOperator *E) {
                                                   E->getRHS()->getType())
           && "Invalid assignment");
  
@@ -725,7 +770,7 @@ index 7cc4d6c8f..169f147ab 100644
    // If the LHS might be a __block variable, and the RHS can
    // potentially cause a block copy, we need to evaluate the RHS first
    // so that the assignment goes the right place.
-@@ -2248,7 +2333,37 @@ void CodeGenFunction::EmitAggregateCopy(LValue Dest, LValue Src, QualType Ty,
+@@ -2248,7 +2346,37 @@ void CodeGenFunction::EmitAggregateCopy(LValue Dest, LValue Src, QualType Ty,
                                          AggValueSlot::Overlap_t MayOverlap,
                                          bool isVolatile) {
    assert(!Ty->isAnyComplexType() && "Shouldn't happen for complex");
@@ -805,20 +850,21 @@ index e5815ef11..28eefb2bb 100644
      Address Addr =
          SourceLVal.getAddress().withElementType(CGF.ConvertTypeForMem(DestTy));
 diff --git a/clang/lib/CodeGen/CGExprScalar.cpp b/clang/lib/CodeGen/CGExprScalar.cpp
-index 6fd94752f..8fc228efc 100644
+index 6fd94752f..43e042e58 100644
 --- a/clang/lib/CodeGen/CGExprScalar.cpp
 +++ b/clang/lib/CodeGen/CGExprScalar.cpp
-@@ -15,6 +15,9 @@
+@@ -15,6 +15,10 @@
  #include "CGDebugInfo.h"
  #include "CGHLSLRuntime.h"
  #include "CGObjCRuntime.h"
 +#include "CGObjC3ABIBoundaries.h"
 +#include "CGObjC3Carriers.h"
++#include "CGObjC3ArcCarriers.h"
 +#include "CGObjC3ResultExpr.h"
  #include "CGOpenMPRuntime.h"
  #include "CGRecordLayout.h"
  #include "CodeGenFunction.h"
-@@ -459,6 +462,26 @@ public:
+@@ -459,6 +463,34 @@ public:
    }
    Value *VisitExpr(Expr *S);
  
@@ -828,6 +874,10 @@ index 6fd94752f..8fc228efc 100644
 +      CGF.ErrorUnsupported(E, "non-query ObjC3 Optional scalar expression");
 +      return llvm::PoisonValue::get(CGF.ConvertType(E->getType()));
 +    }
++    if (CodeGen::containsObjC3CarrierARCPayload(CGF.CGM, E->getCarrierType()))
++      return CodeGen::emitObjC3CarrierARCTagQuery(
++          CGF, E->getCarrierType(), E->getPayload(), false,
++          E->getKeywordLoc());
 +    return CodeGen::emitObjC3OptionalHasValueExpr(CGF, *E);
 +  }
 +  Value *VisitObjC3ResultExpr(ObjC3ResultExpr *E) {
@@ -835,6 +885,10 @@ index 6fd94752f..8fc228efc 100644
 +      CGF.ErrorUnsupported(E, "non-query ObjC3 Result scalar expression");
 +      return llvm::PoisonValue::get(CGF.ConvertType(E->getType()));
 +    }
++    if (CodeGen::containsObjC3CarrierARCPayload(CGF.CGM, E->getCarrierType()))
++      return CodeGen::emitObjC3CarrierARCTagQuery(
++          CGF, E->getCarrierType(), E->getPayload(), true,
++          E->getKeywordLoc());
 +    return CodeGen::emitObjC3ResultIsOkExpr(CGF, *E);
 +  }
 +  Value *VisitObjC3TryExpr(ObjC3TryExpr *E) {
@@ -845,7 +899,7 @@ index 6fd94752f..8fc228efc 100644
    Value *VisitConstantExpr(ConstantExpr *E) {
      // A constant expression of type 'void' generates no code and produces no
      // value.
-@@ -2533,6 +2556,11 @@ Value *ScalarExprEmitter::VisitCastExpr(CastExpr *CE) {
+@@ -2533,6 +2565,11 @@ Value *ScalarExprEmitter::VisitCastExpr(CastExpr *CE) {
    }
  
    case CK_LValueToRValueBitCast: {
@@ -951,14 +1005,15 @@ index c050fd41a..f9b889c01 100644
  
    case Stmt::SwitchStmtClass:  EmitSwitchStmt(cast<SwitchStmt>(*S));      break;
 diff --git a/clang/lib/CodeGen/CMakeLists.txt b/clang/lib/CodeGen/CMakeLists.txt
-index dbbc35b37..becc03109 100644
+index dbbc35b37..150c6e389 100644
 --- a/clang/lib/CodeGen/CMakeLists.txt
 +++ b/clang/lib/CodeGen/CMakeLists.txt
-@@ -86,6 +86,9 @@ add_clang_library(clangCodeGen
+@@ -86,6 +86,10 @@ add_clang_library(clangCodeGen
    CGLoopInfo.cpp
    CGNonTrivialStruct.cpp
    CGObjC.cpp
 +  CGObjC3Carriers.cpp
++  CGObjC3ArcCarriers.cpp
 +  CGObjC3ResultExpr.cpp
 +  CGObjC3ABIBoundaries.cpp
    CGObjCGNU.cpp
@@ -1489,6 +1544,498 @@ new file mode 100644
 +                                       const ObjCMethodDecl *Method);
 +bool diagnoseUnsupportedObjC3ObjCContainer(CodeGenModule &CGM,
 +                                          const ObjCContainerDecl *Container);
++} // namespace CodeGen
++} // namespace clang
++#endif
+diff --git a/clang/lib/CodeGen/CGObjC3ArcCarriers.cpp b/clang/lib/CodeGen/CGObjC3ArcCarriers.cpp
+new file mode 100644
+--- /dev/null
++++ b/clang/lib/CodeGen/CGObjC3ArcCarriers.cpp
+@@ -0,0 +1,432 @@
++//===--- CGObjC3ArcCarriers.cpp - ARC local carrier lowering --*- C++ -*-===//
++// Private native ARC operations for the first direct-local carrier slice.
++#include "CGObjC3ArcCarriers.h"
++#include "CGObjC3Carriers.h"
++#include "CodeGenFunction.h"
++#include "CodeGenModule.h"
++#include "clang/AST/Decl.h"
++#include "clang/AST/Expr.h"
++#include "clang/AST/Type.h"
++#include "llvm/ADT/SmallPtrSet.h"
++#include "llvm/IR/BasicBlock.h"
++#include "llvm/IR/Constants.h"
++
++using namespace clang;
++using namespace clang::CodeGen;
++
++namespace {
++
++Qualifiers::ObjCLifetime effectiveARCStorageLifetime(QualType T) {
++  switch (T.getObjCLifetime()) {
++  case Qualifiers::OCL_None:
++    // Sema normalizes implicit ARC carrier payload ownership to OCL_Strong.
++    // CodeGen deliberately does not supply that default itself.
++    return Qualifiers::OCL_None;
++  case Qualifiers::OCL_Strong:
++  case Qualifiers::OCL_Weak:
++  case Qualifiers::OCL_ExplicitNone:
++    return T.getObjCLifetime();
++  case Qualifiers::OCL_Autoreleasing:
++    return Qualifiers::OCL_Autoreleasing;
++  }
++  llvm_unreachable("unknown Objective-C lifetime qualifier");
++}
++
++bool isPlainLeaf(ASTContext &Ctx, QualType T, unsigned Depth = 0) {
++  if (T.isNull() || Depth > 64)
++    return false;
++  if (T->isVoidType() || T->isIntegerType() || T->isEnumeralType() ||
++      T->isRealFloatingType())
++    return T.getObjCLifetime() == Qualifiers::OCL_None;
++  if (T->isPointerType())
++    return !T->isObjCObjectPointerType() && !T->isBlockPointerType() &&
++           T.getObjCLifetime() == Qualifiers::OCL_None;
++  if (const auto *RT = T->getAs<RecordType>()) {
++    const RecordDecl *RD = RT->getDecl();
++    if (isa<CXXRecordDecl>(RD) || !RD->isCompleteDefinition())
++      return false;
++    for (const FieldDecl *Field : RD->fields())
++      if (!isPlainLeaf(Ctx, Field->getType(), Depth + 1))
++        return false;
++    return true;
++  }
++  return false;
++}
++
++bool isARCPointerField(QualType T) {
++  if (T.isNull() || !T->isObjCObjectPointerType())
++    return false;
++  switch (effectiveARCStorageLifetime(T)) {
++  case Qualifiers::OCL_Strong:
++  case Qualifiers::OCL_Weak:
++  case Qualifiers::OCL_ExplicitNone:
++    return true;
++  case Qualifiers::OCL_None:
++  case Qualifiers::OCL_Autoreleasing:
++    return false;
++  }
++  return false;
++}
++
++bool isSupportedField(ASTContext &Ctx, QualType T) {
++  if (T.isNull())
++    return true;
++  if (T->isObjCObjectPointerType())
++    return isARCPointerField(T);
++  return isPlainLeaf(Ctx, T);
++}
++
++FieldDecl *getSelectedField(const ObjC3CarrierRepresentationInfo &Info,
++                            ObjC3CarrierPayloadArm Arm) {
++  switch (Arm) {
++  case ObjC3CarrierPayloadArm::Value:
++    return Info.ValueField;
++  case ObjC3CarrierPayloadArm::Success:
++    return Info.SuccessField;
++  case ObjC3CarrierPayloadArm::Error:
++    return Info.ErrorField;
++  }
++  llvm_unreachable("unknown ObjC3 carrier arm");
++}
++
++QualType getSelectedPayloadType(ASTContext &Ctx, QualType CarrierType,
++                                ObjC3CarrierPayloadArm Arm) {
++  const Type *Ty = Ctx.getCanonicalType(CarrierType).getTypePtr();
++  if (Arm == ObjC3CarrierPayloadArm::Value) {
++    if (const auto *Optional = dyn_cast<ObjC3OptionalType>(Ty))
++      return Optional->getElementType();
++    return QualType();
++  }
++  if (const auto *Result = dyn_cast<ObjC3ResultType>(Ty))
++    return Arm == ObjC3CarrierPayloadArm::Success
++               ? Result->getSuccessType()
++               : Result->getErrorType();
++  return QualType();
++}
++
++bool hasLifetime(QualType T, Qualifiers::ObjCLifetime Life) {
++  return !T.isNull() && T->isObjCObjectPointerType() &&
++         effectiveARCStorageLifetime(T) == Life;
++}
++
++bool emitInitArm(CodeGenFunction &CGF, QualType CarrierType,
++                 Address Destination, ObjC3CarrierPayloadArm Arm,
++                 QualType PayloadType, Expr *Payload,
++                 SourceLocation Loc) {
++  if (!PayloadType->isVoidType()) {
++    auto Info = CGF.getContext().getObjC3CarrierRepresentationType(CarrierType);
++    FieldDecl *Field = getSelectedField(Info, Arm);
++    Address PayloadStorage = getObjC3CarrierPayloadAddress(
++        CGF, Destination, CarrierType, Arm);
++    if (!Field || !PayloadStorage.isValid())
++      return false;
++
++    QualType FieldType = Field->getType();
++    if (FieldType->isObjCObjectPointerType()) {
++      Qualifiers::ObjCLifetime Life = effectiveARCStorageLifetime(FieldType);
++      if (Life == Qualifiers::OCL_None ||
++          Life == Qualifiers::OCL_Autoreleasing)
++        return false;
++      // Feed Clang's normal ARC scalar initializer with the AST-established
++      // field ownership. This preserves retain/autorelease and weak-init rules.
++      LValue PayloadLV = CGF.MakeAddrLValue(PayloadStorage, FieldType);
++      CGF.EmitScalarInit(Payload, /*D=*/nullptr, PayloadLV,
++                         /*capturedByInit=*/false);
++    } else {
++      // Only plain native fields arrive here. ARC subobjects within C/C++
++      // aggregates were rejected by the field classifier above.
++      CGF.EmitAnyExprToMem(Payload, PayloadStorage,
++                           FieldType.getQualifiers(), /*IsInit=*/true);
++    }
++  } else if (Payload) {
++    // A void arm has presence but no storage; evaluate its effect before the
++    // tag is committed, preserving the expression's full-expression cleanup.
++    (void)CGF.EmitAnyExpr(Payload, AggValueSlot::ignored(),
++                          /*ignoreResult=*/true);
++  }
++
++  const bool Engaged = Arm != ObjC3CarrierPayloadArm::Error;
++  return emitObjC3CarrierStoreTag(CGF, Destination, CarrierType,
++                                  CGF.Builder.getInt1(Engaged),
++                                  /*IsInitialization=*/true,
++                                  /*IsVolatile=*/false);
++}
++
++bool emitARCLocalExpr(CodeGenFunction &CGF, QualType CarrierType,
++                      Address Destination, bool IsLocalInitialization,
++                      bool DestinationIsIgnored, bool DestinationIsVolatile,
++                      Expr *Payload, ObjC3CarrierPayloadArm Arm,
++                      bool IsNone, SourceLocation Loc) {
++  if (!containsObjC3CarrierARCPayload(CGF.CGM, CarrierType))
++    return false;
++  if (!supportsObjC3CarrierARCLocalLifetime(CGF.CGM, CarrierType) ||
++      !IsLocalInitialization || DestinationIsIgnored ||
++      DestinationIsVolatile || !Destination.isValid()) {
++    diagnoseUnsupportedObjC3CarrierOperation(
++        CGF.CGM, Loc, CarrierType, "ARC carrier local initialization");
++    return true;
++  }
++  ObjC3CarrierStorageLayout Layout;
++  if (!getObjC3CarrierStorageLayout(CGF.CGM, CarrierType, Layout) ||
++      Destination.getElementType() != Layout.StorageType ||
++      !CGF.isObjC3CarrierLocalInitialization(Destination, CarrierType)) {
++    diagnoseUnsupportedObjC3CarrierOperation(
++        CGF.CGM, Loc, CarrierType, "ARC carrier destination context");
++    return true;
++  }
++
++  if (!IsNone && !emitInitArm(CGF, CarrierType, Destination, Arm,
++                              getSelectedPayloadType(CGF.getContext(),
++                                                     CarrierType, Arm),
++                              Payload, Loc)) {
++    diagnoseUnsupportedObjC3CarrierOperation(
++        CGF.CGM, Loc, CarrierType, "ARC carrier selected payload init");
++  } else if (IsNone &&
++             !emitObjC3CarrierStoreTag(CGF, Destination, CarrierType,
++                                       CGF.Builder.getInt1(false),
++                                       /*IsInitialization=*/true,
++                                       /*IsVolatile=*/false)) {
++    diagnoseUnsupportedObjC3CarrierOperation(
++        CGF.CGM, Loc, CarrierType, "ARC carrier None tag init");
++  }
++  return true;
++}
++
++} // namespace
++
++bool CodeGen::containsObjC3CarrierARCPayload(CodeGenModule &CGM,
++                                             QualType CarrierType) {
++  ASTContext &Ctx = CGM.getContext();
++  const Type *Canonical = Ctx.getCanonicalType(CarrierType).getTypePtr();
++  if (!isa<ObjC3OptionalType>(Canonical) && !isa<ObjC3ResultType>(Canonical))
++    return false;
++  auto Info = Ctx.getObjC3CarrierRepresentationType(CarrierType);
++  auto IsObjCPointer = [](FieldDecl *Field) {
++    return Field && Field->getType()->isObjCObjectPointerType();
++  };
++  return IsObjCPointer(Info.ValueField) || IsObjCPointer(Info.SuccessField) ||
++         IsObjCPointer(Info.ErrorField);
++}
++
++bool CodeGen::supportsObjC3CarrierARCLocalLifetime(CodeGenModule &CGM,
++                                                   QualType CarrierType) {
++  if (!CGM.getLangOpts().ObjCAutoRefCount ||
++      !containsObjC3CarrierARCPayload(CGM, CarrierType))
++    return false;
++  ASTContext &Ctx = CGM.getContext();
++  auto Info = Ctx.getObjC3CarrierRepresentationType(CarrierType);
++  if (Info.State != ObjC3CarrierRepresentationInfo::Status::Materialized)
++    return false;
++  return isSupportedField(Ctx, Info.ValueField ? Info.ValueField->getType()
++                                               : QualType()) &&
++         isSupportedField(Ctx, Info.SuccessField ? Info.SuccessField->getType()
++                                                 : QualType()) &&
++         isSupportedField(Ctx, Info.ErrorField ? Info.ErrorField->getType()
++                                               : QualType());
++}
++
++bool CodeGen::hasObjC3CarrierARCCleanup(CodeGenModule &CGM,
++                                         QualType CarrierType) {
++  return hasObjC3CarrierStrongPayload(CGM, CarrierType) ||
++         hasObjC3CarrierWeakPayload(CGM, CarrierType);
++}
++
++bool CodeGen::hasObjC3CarrierStrongPayload(CodeGenModule &CGM,
++                                            QualType CarrierType) {
++  if (!supportsObjC3CarrierARCLocalLifetime(CGM, CarrierType))
++    return false;
++  auto Info = CGM.getContext().getObjC3CarrierRepresentationType(CarrierType);
++  return hasLifetime(Info.ValueField ? Info.ValueField->getType() : QualType(),
++                     Qualifiers::OCL_Strong) ||
++         hasLifetime(Info.SuccessField ? Info.SuccessField->getType()
++                                       : QualType(),
++                     Qualifiers::OCL_Strong) ||
++         hasLifetime(Info.ErrorField ? Info.ErrorField->getType() : QualType(),
++                     Qualifiers::OCL_Strong);
++}
++
++bool CodeGen::hasObjC3CarrierWeakPayload(CodeGenModule &CGM,
++                                          QualType CarrierType) {
++  if (!supportsObjC3CarrierARCLocalLifetime(CGM, CarrierType))
++    return false;
++  auto Info = CGM.getContext().getObjC3CarrierRepresentationType(CarrierType);
++  return hasLifetime(Info.ValueField ? Info.ValueField->getType() : QualType(),
++                     Qualifiers::OCL_Weak) ||
++         hasLifetime(Info.SuccessField ? Info.SuccessField->getType()
++                                       : QualType(),
++                     Qualifiers::OCL_Weak) ||
++         hasLifetime(Info.ErrorField ? Info.ErrorField->getType() : QualType(),
++                     Qualifiers::OCL_Weak);
++}
++
++bool CodeGen::emitObjC3OptionalARCLocalExpr(
++    CodeGenFunction &CGF, const ObjC3OptionalExpr &E, Address Destination,
++    bool IsLocalInitialization, bool DestinationIsIgnored,
++    bool DestinationIsVolatile) {
++  const bool IsNone = E.getKind() == ObjC3OptionalExpr::Kind::None;
++  return emitARCLocalExpr(
++      CGF, E.getCarrierType(), Destination, IsLocalInitialization,
++      DestinationIsIgnored, DestinationIsVolatile, E.getPayload(),
++      ObjC3CarrierPayloadArm::Value, IsNone, E.getKeywordLoc());
++}
++
++bool CodeGen::emitObjC3ResultARCLocalExpr(
++    CodeGenFunction &CGF, const ObjC3ResultExpr &E, Address Destination,
++    bool IsLocalInitialization, bool DestinationIsIgnored,
++    bool DestinationIsVolatile) {
++  const bool IsErr = E.getKind() == ObjC3ResultExpr::Kind::Err;
++  const ObjC3CarrierPayloadArm Arm = IsErr ? ObjC3CarrierPayloadArm::Error
++                                           : ObjC3CarrierPayloadArm::Success;
++  return emitARCLocalExpr(
++      CGF, E.getCarrierType(), Destination, IsLocalInitialization,
++      DestinationIsIgnored, DestinationIsVolatile, E.getPayload(), Arm,
++      /*IsNone=*/false, E.getKeywordLoc());
++}
++
++llvm::Value *CodeGen::emitObjC3CarrierARCTagQuery(
++    CodeGenFunction &CGF, QualType CarrierType, Expr *Operand, bool IsResult,
++    SourceLocation Loc) {
++  auto Fail = [&]() -> llvm::Value * {
++    diagnoseUnsupportedObjC3CarrierOperation(
++        CGF.CGM, Loc, CarrierType, IsResult ? "isOk query" : "hasValue query");
++    return llvm::PoisonValue::get(CGF.ConvertType(CGF.getContext().BoolTy));
++  };
++  const Type *Canonical =
++      CGF.getContext().getCanonicalType(CarrierType).getTypePtr();
++  if (!supportsObjC3CarrierARCLocalLifetime(CGF.CGM, CarrierType) ||
++      IsResult != isa<ObjC3ResultType>(Canonical) ||
++      !Operand || !Operand->isGLValue() ||
++      Operand->getType().isVolatileQualified())
++    return Fail();
++  const auto *Ref = dyn_cast<DeclRefExpr>(Operand->IgnoreParenCasts());
++  const auto *VD = Ref ? dyn_cast<VarDecl>(Ref->getDecl()) : nullptr;
++  if (!VD || !VD->isLocalVarDecl() || VD->hasGlobalStorage())
++    return Fail();
++  // A rejected or absent initializer does not establish readable ARC storage.
++  // Keep error recovery on the same direct-construction boundary as CGDecl.
++  const Expr *Init = VD->getInit();
++  if (!Init)
++    return Fail();
++  while (const auto *Cleanups = dyn_cast<ExprWithCleanups>(Init))
++    Init = Cleanups->getSubExpr();
++  Init = Init->IgnoreParenImpCasts();
++  if (!CGF.getContext().hasSameType(Init->getType().getUnqualifiedType(),
++                                  CarrierType.getUnqualifiedType()))
++    return Fail();
++  if (IsResult) {
++    const auto *Construction = dyn_cast<ObjC3ResultExpr>(Init);
++    if (!Construction ||
++        (Construction->getKind() != ObjC3ResultExpr::Kind::Ok &&
++         Construction->getKind() != ObjC3ResultExpr::Kind::Err))
++      return Fail();
++  } else {
++    const auto *Construction = dyn_cast<ObjC3OptionalExpr>(Init);
++    if (!Construction ||
++        (Construction->getKind() != ObjC3OptionalExpr::Kind::Some &&
++         Construction->getKind() != ObjC3OptionalExpr::Kind::None))
++      return Fail();
++  }
++
++  Address Storage = CGF.EmitLValue(Operand).getAddress();
++  if (!Storage.isValid())
++    return Fail();
++  llvm::Value *Tag = emitObjC3CarrierLoadTag(
++      CGF, Storage, CarrierType, Loc, /*IsVolatile=*/false);
++  if (!Tag)
++    return Fail();
++  (void)IsResult; // Both supported queries read the explicit active tag.
++  return Tag;
++}
++void CodeGen::emitObjC3CarrierDestroyActiveARCPayload(
++    CodeGenFunction &CGF, QualType CarrierType, Address Storage,
++    bool PreciseLifetime, bool DestroyStrong, bool DestroyWeak) {
++  ASTContext &Ctx = CGF.getContext();
++  auto Info = Ctx.getObjC3CarrierRepresentationType(CarrierType);
++  const Type *Canonical = Ctx.getCanonicalType(CarrierType).getTypePtr();
++  const bool IsOptional = isa<ObjC3OptionalType>(Canonical);
++  const bool IsResult = isa<ObjC3ResultType>(Canonical);
++  assert((IsOptional || IsResult) &&
++         supportsObjC3CarrierARCLocalLifetime(CGF.CGM, CarrierType));
++
++  llvm::Value *Tag = emitObjC3CarrierLoadTag(
++      CGF, Storage, CarrierType, SourceLocation(), /*IsVolatile=*/false);
++  assert(Tag && "admitted ARC carrier has a readable tag");
++  auto HasSelectedCleanup = [&](FieldDecl *Field) {
++    if (!Field)
++      return false;
++    Qualifiers::ObjCLifetime Life = effectiveARCStorageLifetime(Field->getType());
++    return (DestroyStrong && Life == Qualifiers::OCL_Strong) ||
++           (DestroyWeak && Life == Qualifiers::OCL_Weak);
++  };
++  const bool SuccessDestroys =
++      HasSelectedCleanup(Info.ValueField) ||
++      HasSelectedCleanup(Info.SuccessField);
++  const bool ErrorDestroys = HasSelectedCleanup(Info.ErrorField);
++  if (!SuccessDestroys && !ErrorDestroys)
++    return;
++
++  auto Destroy = [&](ObjC3CarrierPayloadArm Arm) {
++    FieldDecl *Field = getSelectedField(Info, Arm);
++    if (!Field || !HasSelectedCleanup(Field))
++      return;
++    Address Payload = getObjC3CarrierPayloadAddress(CGF, Storage,
++                                                    CarrierType, Arm);
++    assert(Payload.isValid());
++    switch (effectiveARCStorageLifetime(Field->getType())) {
++    case Qualifiers::OCL_Strong:
++      CGF.EmitARCDestroyStrong(
++          Payload, PreciseLifetime ? ARCPreciseLifetime : ARCImpreciseLifetime);
++      break;
++    case Qualifiers::OCL_Weak:
++      CGF.EmitARCDestroyWeak(Payload);
++      break;
++    case Qualifiers::OCL_ExplicitNone:
++    case Qualifiers::OCL_None:
++    case Qualifiers::OCL_Autoreleasing:
++      llvm_unreachable("non-owning/unsupported payload has no ARC cleanup");
++    }
++  };
++
++  llvm::BasicBlock *Done = CGF.createBasicBlock("objc3.arc.carrier.destroy.done");
++  if (IsOptional) {
++    if (SuccessDestroys) {
++      llvm::BasicBlock *Present =
++          CGF.createBasicBlock("objc3.arc.optional.destroy.present");
++      CGF.Builder.CreateCondBr(Tag, Present, Done);
++      CGF.EmitBlock(Present);
++      Destroy(ObjC3CarrierPayloadArm::Value);
++      CGF.Builder.CreateBr(Done);
++    } else {
++      CGF.Builder.CreateBr(Done);
++    }
++  } else if (SuccessDestroys && ErrorDestroys) {
++    llvm::BasicBlock *Success =
++        CGF.createBasicBlock("objc3.arc.result.destroy.success");
++    llvm::BasicBlock *Error =
++        CGF.createBasicBlock("objc3.arc.result.destroy.error");
++    CGF.Builder.CreateCondBr(Tag, Success, Error);
++    CGF.EmitBlock(Success);
++    Destroy(ObjC3CarrierPayloadArm::Success);
++    CGF.Builder.CreateBr(Done);
++    CGF.EmitBlock(Error);
++    Destroy(ObjC3CarrierPayloadArm::Error);
++    CGF.Builder.CreateBr(Done);
++  } else if (SuccessDestroys || ErrorDestroys) {
++    ObjC3CarrierPayloadArm Arm = SuccessDestroys
++                                     ? ObjC3CarrierPayloadArm::Success
++                                     : ObjC3CarrierPayloadArm::Error;
++    llvm::BasicBlock *Selected =
++        CGF.createBasicBlock("objc3.arc.result.destroy.selected");
++    CGF.Builder.CreateCondBr(Tag, SuccessDestroys ? Selected : Done,
++                             ErrorDestroys ? Selected : Done);
++    CGF.EmitBlock(Selected);
++    Destroy(Arm);
++    CGF.Builder.CreateBr(Done);
++  }
++  CGF.EmitBlock(Done);
++}
++
++
++
++
++
+diff --git a/clang/lib/CodeGen/CGObjC3ArcCarriers.h b/clang/lib/CodeGen/CGObjC3ArcCarriers.h
+new file mode 100644
+--- /dev/null
++++ b/clang/lib/CodeGen/CGObjC3ArcCarriers.h
+@@ -0,0 +1,50 @@
++//===--- CGObjC3ArcCarriers.h - ARC local carrier adapter ------*- C++ -*-===//
++// Staged private adapter; no source ABI or capability promotion.
++#ifndef LLVM_CLANG_LIB_CODEGEN_CGOBJC3ARCCARRIERS_H
++#define LLVM_CLANG_LIB_CODEGEN_CGOBJC3ARCCARRIERS_H
++#include "Address.h"
++#include "clang/AST/ASTContext.h"
++namespace llvm { class Value; }
++namespace clang {
++class Expr;
++class ObjC3OptionalExpr;
++class ObjC3ResultExpr;
++class SourceLocation;
++namespace CodeGen {
++class CodeGenFunction;
++class CodeGenModule;
++bool supportsObjC3CarrierARCLocalLifetime(CodeGenModule &CGM,
++                                          QualType CarrierType);
++bool containsObjC3CarrierARCPayload(CodeGenModule &CGM, QualType CarrierType);
++bool hasObjC3CarrierARCCleanup(CodeGenModule &CGM, QualType CarrierType);
++bool hasObjC3CarrierStrongPayload(CodeGenModule &CGM, QualType CarrierType);
++bool hasObjC3CarrierWeakPayload(CodeGenModule &CGM, QualType CarrierType);
++bool emitObjC3OptionalARCLocalExpr(CodeGenFunction &CGF,
++                                   const ObjC3OptionalExpr &E,
++                                   Address Destination,
++                                   bool IsLocalInitialization,
++                                   bool DestinationIsIgnored,
++                                   bool DestinationIsVolatile);
++bool emitObjC3ResultARCLocalExpr(CodeGenFunction &CGF,
++                                 const ObjC3ResultExpr &E,
++                                 Address Destination,
++                                 bool IsLocalInitialization,
++                                 bool DestinationIsIgnored,
++                                 bool DestinationIsVolatile);
++/// Read only the tag of a direct local lvalue; carrier temporaries and
++/// nonlocal storage remain unqualified.
++llvm::Value *emitObjC3CarrierARCTagQuery(CodeGenFunction &CGF,
++                                         QualType CarrierType,
++                                         Expr *Operand, bool IsResult,
++                                         SourceLocation Loc);
++/// Active-arm destroy operation for a NormalAndEHCleanup registered after a
++/// successful direct local initialization.
++void emitObjC3CarrierDestroyActiveARCPayload(CodeGenFunction &CGF,
++                                             QualType CarrierType,
++                                             Address Storage,
++                                             bool PreciseLifetime,
++                                             bool DestroyStrong,
++                                             bool DestroyWeak);
 +} // namespace CodeGen
 +} // namespace clang
 +#endif
@@ -3115,6 +3662,187 @@ new file mode 100644
 +} // namespace CodeGen
 +} // namespace clang
 +#endif
+diff --git a/clang/test/ObjC3/CodeGen/Inputs/carrier-arc-local-lifetime-runtime.mm b/clang/test/ObjC3/CodeGen/Inputs/carrier-arc-local-lifetime-runtime.mm
+new file mode 100644
+--- /dev/null
++++ b/clang/test/ObjC3/CodeGen/Inputs/carrier-arc-local-lifetime-runtime.mm
+@@ -0,0 +1,114 @@
++#include <objc/objc.h>
++
++// Companion executable for the staged native runtime check. Compile this file
++// as Objective-C++ with ARC and link carrier-arc-local-runtime-support.m in
++// MRC mode against the pinned libobjc2/UCRT profile.
++typedef __objc3_optional(id) StrongOptional;
++typedef __objc3_optional(id __weak) WeakOptional;
++typedef __objc3_optional(id __unsafe_unretained) UnsafeOptional;
++typedef __objc3_result(id, int) StrongResult;
++typedef __objc3_result(int, id __weak) WeakErrorResult;
++
++extern "C" id make_arc_carrier_probe(void) __attribute__((ns_returns_retained));
++extern "C" int arc_carrier_probe_deallocations(void);
++
++static bool nil_payload_stays_engaged() {
++  StrongOptional Value = __objc3_some(id, nil);
++  return __objc3_has_value(Value) && arc_carrier_probe_deallocations() == 0;
++}
++
++static bool strong_optional_holds_reference() {
++  __weak id Observer = nil;
++  {
++    id Object = make_arc_carrier_probe();
++    Observer = Object;
++    StrongOptional Value = __objc3_some(id, Object);
++    Object = nil;
++    if (Observer == nil || !__objc3_has_value(Value))
++      return false;
++  }
++  return Observer == nil && arc_carrier_probe_deallocations() == 1;
++}
++
++static bool weak_optional_does_not_hold_reference() {
++  __weak id Observer = nil;
++  {
++    id Object = make_arc_carrier_probe();
++    Observer = Object;
++    WeakOptional Value = __objc3_some(id __weak, Object);
++    Object = nil;
++    if (Observer != nil || !__objc3_has_value(Value))
++      return false;
++  }
++  return arc_carrier_probe_deallocations() == 2;
++}
++
++static bool result_selected_arm_cleanup() {
++  {
++    id Object = make_arc_carrier_probe();
++    StrongResult Value = __objc3_ok(id, int, Object);
++    Object = nil;
++    if (!__objc3_is_ok(Value) || arc_carrier_probe_deallocations() != 2)
++      return false;
++  }
++  if (arc_carrier_probe_deallocations() != 3)
++    return false;
++  {
++    id Object = make_arc_carrier_probe();
++    WeakErrorResult Value = __objc3_err(int, id __weak, Object);
++    Object = nil;
++    if (__objc3_is_ok(Value) || arc_carrier_probe_deallocations() != 4)
++      return false;
++  }
++  return arc_carrier_probe_deallocations() == 4;
++}
++
++static bool inactive_and_nil_weak_slots() {
++  WeakOptional Absent = __objc3_none(id __weak);
++  WeakOptional PresentNil = __objc3_some(id __weak, nil);
++  StrongResult PlainError = __objc3_err(id, int, 0);
++  return !__objc3_has_value(Absent) && __objc3_has_value(PresentNil) &&
++         !__objc3_is_ok(PlainError) && arc_carrier_probe_deallocations() == 4;
++}
++
++static bool native_exception_unwinds_active_payload() {
++  __weak id Observer = nil;
++  try {
++    id Object = make_arc_carrier_probe();
++    Observer = Object;
++    StrongOptional Value = __objc3_some(id, Object);
++    Object = nil;
++    if (Observer == nil || !__objc3_has_value(Value))
++      return false;
++    throw 7;
++  } catch (int Value) {
++    return Value == 7 && Observer == nil &&
++           arc_carrier_probe_deallocations() == 5;
++  }
++  return false;
++}
++
++static bool unsafe_optional_does_not_hold_reference() {
++  __weak id Observer = nil;
++  {
++    id Object = make_arc_carrier_probe();
++    Observer = Object;
++    UnsafeOptional Value = __objc3_some(id __unsafe_unretained, Object);
++    Object = nil;
++    // Only query the tag after release; the unsafe payload is never read.
++    if (Observer != nil || !__objc3_has_value(Value))
++      return false;
++  }
++  return arc_carrier_probe_deallocations() == 6;
++}
++
++int main() {
++  if (!nil_payload_stays_engaged()) return 1;
++  if (!strong_optional_holds_reference()) return 2;
++  if (!weak_optional_does_not_hold_reference()) return 3;
++  if (!result_selected_arm_cleanup()) return 4;
++  if (!inactive_and_nil_weak_slots()) return 5;
++  if (!native_exception_unwinds_active_payload()) return 6;
++  if (!unsafe_optional_does_not_hold_reference()) return 7;
++  return 0;
++}
+diff --git a/clang/test/ObjC3/CodeGen/Inputs/carrier-arc-local-runtime-support.m b/clang/test/ObjC3/CodeGen/Inputs/carrier-arc-local-runtime-support.m
+new file mode 100644
+--- /dev/null
++++ b/clang/test/ObjC3/CodeGen/Inputs/carrier-arc-local-runtime-support.m
+@@ -0,0 +1,57 @@
++// Build this companion with the pinned GNUstep runtime in MRC mode. The ARC
++// executable imports only the native object-return and count functions below.
++#include <objc/objc.h>
++#include <objc/runtime.h>
++#include <objc/objc-arc.h>
++#include <objc/hooks.h>
++
++static int Deallocations;
++
++__attribute__((objc_root_class))
++@interface ArcCarrierProbe {
++  Class isa;
++}
++- (id)retain;
++- (oneway void)release;
++- (unsigned long)retainCount;
++- (void)dealloc;
++@end
++
++@implementation ArcCarrierProbe
++- (id)retain {
++  unsigned long *Count = (unsigned long *)object_getIndexedIvars(self);
++  ++*Count;
++  return self;
++}
++- (oneway void)release {
++  unsigned long *Count = (unsigned long *)object_getIndexedIvars(self);
++  if (--*Count == 0)
++    [self dealloc];
++}
++- (unsigned long)retainCount {
++  return *(unsigned long *)object_getIndexedIvars(self);
++}
++- (void)dealloc {
++  ++Deallocations;
++  // A custom MRC root class owns its weak-reference teardown.
++  objc_delete_weak_refs(self);
++  object_dispose(self);
++}
++@end
++
++// libobjc2 requires this hook for custom MRC retain/release classes. The
++// runtime invokes it under its weak table lock; this single-thread fixture
++// owns the corresponding count and explicitly removes weak refs in dealloc.
++static id LoadLiveProbe(id Object) {
++  return *(unsigned long *)object_getIndexedIvars(Object) ? Object : nil;
++}
++
++id make_arc_carrier_probe(void) __attribute__((ns_returns_retained));
++id make_arc_carrier_probe(void) {
++  _objc_weak_load = LoadLiveProbe;
++  id Object = class_createInstance(objc_getClass("ArcCarrierProbe"),
++                                   sizeof(unsigned long));
++  *(unsigned long *)object_getIndexedIvars(Object) = 1;
++  return Object;
++}
++int arc_carrier_probe_deallocations(void) { return Deallocations; }
 diff --git a/clang/test/ObjC3/CodeGen/Inputs/carrier-copy-adversarial-runtime.c b/clang/test/ObjC3/CodeGen/Inputs/carrier-copy-adversarial-runtime.c
 new file mode 100644
 --- /dev/null
@@ -3886,6 +4614,92 @@ new file mode 100644
 +// Function definitions must fail closed before CodeGen creates an ordinary
 +// C++ ABI body for a callable with an unlowered ObjC3 effect.
 +void async_definition() __objc3_async {} // expected-error {{ObjC3 async/throws callable ABI lowering}}
+diff --git a/clang/test/ObjC3/CodeGen/carrier-arc-local-lifetime.mm b/clang/test/ObjC3/CodeGen/carrier-arc-local-lifetime.mm
+new file mode 100644
+--- /dev/null
++++ b/clang/test/ObjC3/CodeGen/carrier-arc-local-lifetime.mm
+@@ -0,0 +1,81 @@
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c++ -fobjc-version=3 -fobjc-runtime=gnustep-2.0 -fobjc-arc -fexceptions -fcxx-exceptions -std=c++20 -emit-llvm -o - %s | FileCheck %s
++
++#define nil ((id)0)
++
++typedef __objc3_optional(id) StrongOptional;
++typedef __objc3_optional(id __weak) WeakOptional;
++typedef __objc3_optional(id __unsafe_unretained) UnsafeOptional;
++typedef __objc3_result(id, int) StrongResult;
++typedef __objc3_result(int, id __weak) WeakErrorResult;
++
++void strong_optional_local(id object) {
++  StrongOptional value = __objc3_some(id, object);
++  object = nil;
++  (void)__objc3_has_value(value);
++}
++// CHECK-LABEL: define{{.*}} @_Z21strong_optional_localP11objc_object
++// CHECK: call ptr @llvm.objc.retain
++// CHECK: store i8 1
++// CHECK: call void @llvm.objc.storeStrong
++// CHECK: load i8
++
++bool strong_nil_keeps_presence(void) {
++  StrongOptional value = __objc3_some(id, nil);
++  return __objc3_has_value(value);
++}
++// CHECK-LABEL: define{{.*}} @{{.*}}strong_nil_keeps_presence
++// CHECK: store ptr null
++// CHECK: store i8 1
++// CHECK: load i8
++
++void weak_optional_local(id object) {
++  WeakOptional value = __objc3_some(id __weak, object);
++  object = nil;
++  (void)__objc3_has_value(value);
++}
++// CHECK-LABEL: define{{.*}} @_Z19weak_optional_localP11objc_object
++// CHECK: call{{.*}} @llvm.objc.initWeak
++// CHECK: store i8 1
++// CHECK: load i8
++// CHECK: call{{.*}} @llvm.objc.destroyWeak
++
++void unsafe_optional_local(id __unsafe_unretained object) {
++  UnsafeOptional value = __objc3_some(id __unsafe_unretained, object);
++  (void)__objc3_has_value(value);
++}
++// CHECK-LABEL: define{{.*}} @{{.*}}unsafe_optional_local
++// CHECK-NOT: @llvm.objc.retain
++// CHECK-NOT: @llvm.objc.initWeak
++// CHECK-NOT: @llvm.objc.destroyWeak
++// CHECK: store i8 1
++
++void strong_result_ok_local(id object) {
++  StrongResult value = __objc3_ok(id, int, object);
++  object = nil;
++  (void)__objc3_is_ok(value);
++}
++// CHECK-LABEL: define{{.*}} @_Z22strong_result_ok_localP11objc_object
++// CHECK: call ptr @llvm.objc.retain
++// CHECK: store i8 1
++// CHECK: load i8
++// CHECK: call void @llvm.objc.storeStrong
++
++void weak_result_err_local(id object) {
++  WeakErrorResult value = __objc3_err(int, id __weak, object);
++  object = nil;
++  (void)__objc3_is_ok(value);
++}
++// CHECK-LABEL: define{{.*}} @_Z21weak_result_err_localP11objc_object
++// CHECK: call{{.*}} @llvm.objc.initWeak
++// CHECK: store i8 0
++// CHECK: load i8
++// CHECK: call{{.*}} @llvm.objc.destroyWeak
++
++void weak_result_err_unwinds(id object) {
++  WeakErrorResult value = __objc3_err(int, id __weak, object);
++  throw 19;
++}
++// CHECK-LABEL: define{{.*}} @{{.*}}weak_result_err_unwinds
++// CHECK: invoke void @__cxa_throw
++// CHECK: landingpad
++// CHECK: call{{.*}} @llvm.objc.destroyWeak
 diff --git a/clang/test/ObjC3/CodeGen/carrier-atomic-access.c b/clang/test/ObjC3/CodeGen/carrier-atomic-access.c
 new file mode 100644
 --- /dev/null
