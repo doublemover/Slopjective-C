@@ -252,11 +252,65 @@ for CLI/API scope and the 21-case text application result.
 The sealed development compiler can also qualify its matching clang-format
 and clangd binaries with `python -B -m scripts.objc3c_editor_tooling.qualification`.
 This checks identical C17 Objective-C and C++20 Objective-C++ fixture bytes,
-ordinary `async`/`throws` identifiers and selectors, exact formatting and
-idempotence, the normalized compilation database, and actual stdio diagnostics,
-hover, definition and completion requests. Each run preserves separate evidence
-with the source seal, tool hashes and resource-header digest. This private editor
-slice does not qualify extension-aware refactoring or enable public feature gates.
+ordinary `async`/`throws` identifiers and selectors, private scalar Optional/Result
+construction, queries and statement matches. Qualification requires an exact
+format golden and idempotence, syntax checks in both language modes, the normalized
+compilation database, `clangd --check`, and live stdio diagnostics, hover,
+definition and completion. The live probes retain the ordinary parameter and add
+the match's borrowed `const int` payload binding with its exact declaration
+location. Each run preserves separate evidence with the source seal, tool hashes
+and resource-header digest. Matching rebuilt tools passed this expanded
+qualification on 2026-10-13 at 03:36:46 UTC: both language modes passed exact
+formatting/idempotence, native syntax and `clangd --check` with zero errors.
+All four live navigation probes (ordinary parameter and borrowed payload in each
+mode) passed hover, definition at the exact declaration location and completion
+checks with no diagnostic errors. This private editor slice does not qualify extension-aware refactoring
+or enable public feature gates.
+
+`npm run objc3c -- validate-native-foundation` runs selected native checks after
+the matching sealed SDK and facade are built. Its complete inventory contains
+18 nodes across the `carriers`, `native-package` and `editor` families:
+
+- Four carrier suites (`expression`, `abi`, `cpp-lifetime`, `arc-lifetime`) each
+  run with `clang` and `clang-cl`; `match` and `transfer` also admit
+  `objc3c-clang`, giving 14 suite/driver nodes. Their exact IDs are
+  `carriers:<suite>:<driver>` and each suite includes its O0/O2 witnesses.
+- `native-package:provider` emits a provider object, semantic interface and
+  sidecar. `native-package:consumer-eager` and `native-package:consumer-source`
+  install those products in fresh system-temp directories outside the checkout
+  without provider source, then compile, link and run their consumers. They check
+  the installed lock and compiler identity and preserve evidence before removing
+  their scratch directories. These three nodes use `objc3c-clang`.
+- `editor:qualification` uses the matching clang, clang-format and clangd tools
+  and is selected under the `clang` driver.
+
+```powershell
+npm run objc3c -- validate-native-foundation --list
+npm run objc3c -- validate-native-foundation --family carriers --driver objc3c-clang --run-id facade-carriers
+npm run objc3c -- validate-native-foundation --node native-package:consumer-source --run-id package-source
+npm run objc3c -- validate-native-foundation --family carriers --driver clang --run-id clang-reuse --reuse-report out/native-validation/prior/summary.json
+```
+
+With no filters, all 18 nodes are selected. Family, node and driver selectors are
+repeatable exact names; unknown names and incompatible combinations fail.
+Explicit node selection must agree with family/driver filters, and dependency
+closure adds the provider for a selected package consumer. `--list` prints the
+complete inventory and selection without requiring built tools. Run results
+preserve unselected entries and publish `summary.json`, logs and explicit hashed
+node artifacts under `out/native-validation/<run-id>` by default. Every run uses
+a fresh directory. `--reuse-report` requires a compatible complete prior report;
+toolchain and tracked-input identities and artifact size/hash checks decide
+whether passing nodes can be reused. Changed or damaged products invalidate
+their nodes and dependents for rerun. The workflow records the admitted native
+toolchain before and after execution, does not install Clang and does not promote
+any public capability. At checkpoint 47, all 18 nodes passed with 68 runtime
+executions: 66 carrier witnesses and two compiled-package consumers. Source and
+toolchain snapshots matched before and after the batch; the matching editor node
+passed both language modes and all four live navigation probes. The focused
+Python suites passed 188 tests, with two Windows symlink-permission skips.
+An unchanged follow-up reused all 18 nodes. A deliberately damaged copy of the
+provider object invalidated and reran exactly the three package nodes while
+reusing the other 15; the original passing artifacts remained unchanged.
 
 Configure from a VS 2022 x64 Developer Command Prompt with the selected SDK
 installed. The helper verifies the v143 compiler/linker, the manifest's

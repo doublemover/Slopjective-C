@@ -11,15 +11,47 @@ import time
 from typing import Any
 
 
+def probe_positions(source_text: str, probe: dict[str, str]) -> tuple[dict[str, int], dict[str, int]]:
+    """Locate one exact use/declaration anchor in the formatted source."""
+    lines = source_text.splitlines()
+
+    def locate(anchor_key: str, name_key: str) -> dict[str, int]:
+        anchor = probe[anchor_key]
+        name = probe[name_key]
+        candidates = [index for index, line in enumerate(lines) if anchor in line]
+        if len(candidates) != 1 or sum(line.count(anchor) for line in lines) != 1:
+            raise RuntimeError(f"LSP probe {probe['name']} needs one {anchor_key} anchor: {anchor!r}")
+        line = candidates[0]
+        try:
+            column = lines[line].index(name, lines[line].index(anchor))
+        except ValueError as error:
+            raise RuntimeError(f"LSP probe {probe['name']} anchor has no {name!r}") from error
+        return {"line": line, "character": column}
+
+    return locate("use_line", "use_name"), locate("declaration_line", "declaration_name")
+
+
 def qualify_lsp(clangd: Path, source: Path, database_dir: Path,
                 resource_dir: Path, work: Path,
-                env: dict[str, str]) -> dict[str, Any]:
-    """Require clean diagnostics, hover and definition from the sealed server."""
+                env: dict[str, str],
+                probes: list[dict[str, str]] | None = None) -> dict[str, Any]:
+    """Require clean diagnostics and ordinary/private navigation from the sealed server."""
     source_text = source.read_text(encoding="utf-8")
-    lines = source_text.splitlines()
-    line = next(i for i, value in enumerate(lines) if "return throws(value)" in value)
-    column = lines[line].index("value", lines[line].index("return"))
-    declaration_column = lines[line].index("value")
+    navigation_probes = [{"name": "ordinary_parameter",
+        "use_line": "return throws(value)", "use_name": "value",
+        "declaration_line": "int async(int value)", "declaration_name": "value",
+        "hover_type": "int", "completion_name": "value"}, *(probes or [])]
+    probe_names: set[str] = set()
+    for probe in navigation_probes:
+        for key in ("name", "use_line", "use_name", "declaration_line", "declaration_name",
+                    "hover_type", "completion_name"):
+            if not isinstance(probe.get(key), str) or not probe[key]:
+                raise RuntimeError(f"LSP probe has no nonempty {key}: {probe}")
+        if probe["name"] in probe_names:
+            raise RuntimeError(f"duplicate LSP probe name: {probe['name']}")
+        probe_names.add(probe["name"])
+    locations = {probe["name"]: probe_positions(source_text, probe)
+                 for probe in navigation_probes}
     uri = source.as_uri()
     incoming: queue.Queue[Any] = queue.Queue()
     transcript: list[dict[str, Any]] = []
@@ -115,36 +147,44 @@ def qualify_lsp(clangd: Path, source: Path, database_dir: Path,
             diagnostics = published["params"].get("diagnostics", [])
             if any(item.get("severity", 1) == 1 for item in diagnostics):
                 raise RuntimeError(f"clangd live diagnostics contain errors: {diagnostics}")
-            position = {"textDocument": {"uri": uri},
-                        "position": {"line": line, "character": column}}
-            hover = request("textDocument/hover", position)
-            if not hover or "int" not in json.dumps(hover):
-                raise RuntimeError(f"clangd hover lost native int type: {hover}")
-            definitions = request("textDocument/definition", position)
-            if isinstance(definitions, dict):
-                definitions = [definitions]
-            if not definitions or not any(
-                    item.get("uri") == uri and
-                    item.get("range", {}).get("start") == {
-                        "line": line, "character": declaration_column}
-                    for item in definitions):
-                raise RuntimeError(f"clangd definition did not resolve the actual parameter: {definitions}")
-            completion = request("textDocument/completion", {
-                "textDocument": {"uri": uri},
-                "position": {"line": line, "character": column + 3},
-                "context": {"triggerKind": 1}})
-            items = completion.get("items", []) if isinstance(completion, dict) else completion
-            if not items or not any(item.get("label", "").strip().split()[0] == "value"
-                                    for item in items if item.get("label", "").strip()):
-                raise RuntimeError(f"clangd completion did not include the native parameter: {completion}")
+            navigation_results: dict[str, Any] = {}
+            for probe in navigation_probes:
+                name = probe["name"]
+                use, declaration = locations[name]
+                position = {"textDocument": {"uri": uri}, "position": use}
+                hover = request("textDocument/hover", position)
+                if not hover or probe["hover_type"] not in json.dumps(hover):
+                    raise RuntimeError(f"clangd {name} hover lost {probe['hover_type']!r}: {hover}")
+                definitions = request("textDocument/definition", position)
+                if isinstance(definitions, dict):
+                    definitions = [definitions]
+                if not definitions or not any(
+                        item.get("uri") == uri and
+                        item.get("range", {}).get("start") == declaration
+                        for item in definitions):
+                    raise RuntimeError(f"clangd {name} definition did not resolve its declaration: {definitions}")
+                completion = request("textDocument/completion", {
+                    "textDocument": {"uri": uri},
+                    "position": {"line": use["line"],
+                                 "character": use["character"] + min(3, len(probe["use_name"]))},
+                    "context": {"triggerKind": 1}})
+                items = completion.get("items", []) if isinstance(completion, dict) else completion
+                if not items or not any(
+                        item.get("label", "").strip().split()[0] == probe["completion_name"]
+                        for item in items if item.get("label", "").strip()):
+                    raise RuntimeError(f"clangd {name} completion lost {probe['completion_name']!r}: {completion}")
+                navigation_results[name] = {"position": use, "declaration": declaration,
+                    "hover": hover, "definition": definitions, "completion": completion}
             request("shutdown", None)
             send({"jsonrpc": "2.0", "method": "exit", "params": None})
             process.wait(timeout=10)
             if process.returncode != 0:
                 raise RuntimeError(f"clangd LSP shutdown exit {process.returncode}")
+            ordinary = navigation_results["ordinary_parameter"]
             return {"command": command, "exit_code": process.returncode,
-                    "diagnostics": diagnostics, "hover": hover, "definition": definitions,
-                    "completion": completion,
+                    "diagnostics": diagnostics, "hover": ordinary["hover"],
+                    "definition": ordinary["definition"], "completion": ordinary["completion"],
+                    "navigation_probes": navigation_results,
                     "transcript": str(transcript_path), "stderr": str(stderr_path)}
         finally:
             if process.poll() is None:

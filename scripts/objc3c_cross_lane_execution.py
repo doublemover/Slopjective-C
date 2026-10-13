@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import math
 import os
 import re
 import signal
@@ -17,14 +18,20 @@ import time
 import tempfile
 import shutil
 from pathlib import Path
-from queue import Queue
+from queue import Empty, Full, Queue
 from typing import Any, Callable, Iterable, Sequence
 
-from objc3c_cross_lane_selection import safe_run_id
+if __package__:
+    from .objc3c_cross_lane_selection import safe_run_id
+else:
+    from objc3c_cross_lane_selection import safe_run_id
 
 NODE_REPORT_CONTRACT_ID = "objc3c.cross_lane_e2e.node_report.v1"
 _LOG_LIMIT = 10 * 1024 * 1024
 _MAX_TIMEOUT_SECONDS = 24 * 60 * 60
+_TERMINATE_TIMEOUT_SECONDS = 2.0
+_OUTPUT_DRAIN_TIMEOUT_SECONDS = 1.0
+_READER_JOIN_TIMEOUT_SECONDS = 0.2
 
 
 def _canonical_digest(value: Any) -> str:
@@ -158,22 +165,44 @@ def validate_reuse_report(
 
 
 def _terminate_tree(process: subprocess.Popen[str]) -> None:
-    if process.poll() is not None:
-        return
     if os.name == "nt":
-        subprocess.run(["taskkill", "/PID", str(process.pid), "/T", "/F"],
-                       capture_output=True, check=False)
-        return
-    try:
-        os.killpg(process.pid, signal.SIGTERM)
-    except ProcessLookupError:
-        return
-    try:
-        process.wait(timeout=2)
-    except subprocess.TimeoutExpired:
+        # An exited leader's PID can be reused. Never taskkill that stale PID;
+        # a descendant retaining stdout is handled by bounded output draining.
+        if process.poll() is not None:
+            return
+        try:
+            subprocess.run(
+                ["taskkill", "/PID", str(process.pid), "/T", "/F"],
+                capture_output=True, check=False, timeout=_TERMINATE_TIMEOUT_SECONDS,
+                creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0))
+        except (OSError, subprocess.TimeoutExpired):
+            pass
+    else:
+        # Popen created this session. Its group can still contain descendants
+        # after the leader exits, so do not skip group cleanup in that case.
+        try:
+            os.killpg(process.pid, signal.SIGTERM)
+        except OSError:
+            pass
+        if process.poll() is None:
+            try:
+                process.wait(timeout=_TERMINATE_TIMEOUT_SECONDS)
+            except subprocess.TimeoutExpired:
+                pass
         try:
             os.killpg(process.pid, signal.SIGKILL)
-        except ProcessLookupError:
+        except OSError:
+            pass
+    # taskkill can fail or report success before the leader has exited. kill()
+    # targets this owned Popen handle, without depending on a working taskkill.
+    if process.poll() is None:
+        try:
+            process.kill()
+        except OSError:
+            pass
+        try:
+            process.wait(timeout=_TERMINATE_TIMEOUT_SECONDS)
+        except subprocess.TimeoutExpired:
             pass
 
 
@@ -186,8 +215,8 @@ def run_node_command(
     timeout_seconds: float,
 ) -> dict[str, Any]:
     """Stream merged child output to a node-owned log and bound its deadline."""
-    if timeout_seconds <= 0 or timeout_seconds > _MAX_TIMEOUT_SECONDS:
-        raise ValueError("node timeout must be positive and at most 24 hours")
+    if not math.isfinite(timeout_seconds) or timeout_seconds <= 0 or timeout_seconds > _MAX_TIMEOUT_SECONDS:
+        raise ValueError("node timeout must be finite, positive and at most 24 hours")
     if not command or any(not isinstance(token, str) or not token for token in command):
         raise ValueError("node command must be a non-empty string argument list")
     node_id = str(node["node_id"])
@@ -208,31 +237,48 @@ def run_node_command(
         return {"exit_code": 127, "timed_out": False, "log_path": str(log_path),
                 "spawn_error": str(error)}
     events: Queue[str | None] = Queue(maxsize=1024)
+    stopped = threading.Event()
+
+    def publish(line: str | None) -> None:
+        while not stopped.is_set():
+            try:
+                events.put(line, timeout=0.1)
+                return
+            except Full:
+                continue
 
     def pump() -> None:
         assert process.stdout is not None
         try:
             for line in iter(process.stdout.readline, ""):
-                events.put(line)
+                if stopped.is_set():
+                    break
+                publish(line)
         finally:
-            events.put(None)
+            process.stdout.close()
+            publish(None)
 
     reader = threading.Thread(target=pump, daemon=True)
     reader.start()
     deadline = time.monotonic() + timeout_seconds
     timed_out = False
+    drain_deadline = None
     bytes_written = 0
     ended = False
     with log_path.open("w", encoding="utf-8", newline="") as log:
         log.write("command: " + " ".join(map(str, command)) + "\n")
         log.write("node_id: " + node_id + "\n")
         while not ended or process.poll() is None:
-            if not timed_out and process.poll() is None and time.monotonic() >= deadline:
+            if not timed_out and time.monotonic() >= deadline:
                 timed_out = True
                 _terminate_tree(process)
+                drain_deadline = time.monotonic() + _OUTPUT_DRAIN_TIMEOUT_SECONDS
+            if drain_deadline is not None and time.monotonic() >= drain_deadline:
+                log.write("\n[node output drain deadline exceeded]\n")
+                break
             try:
                 line = events.get(timeout=0.1)
-            except Exception:
+            except Empty:
                 if process.poll() is not None and ended:
                     break
                 continue
@@ -246,8 +292,13 @@ def run_node_command(
             elif bytes_written <= _LOG_LIMIT:
                 log.write("\n[node log truncated at 10 MiB; output drained]\n")
                 bytes_written = _LOG_LIMIT + 1
-        process.wait()
-        reader.join(timeout=1)
+        stopped.set()
+        try:
+            process.wait(timeout=_TERMINATE_TIMEOUT_SECONDS)
+        except subprocess.TimeoutExpired:
+            timed_out = True
+            log.write("\n[node leader did not exit within cleanup deadline]\n")
+        reader.join(timeout=_READER_JOIN_TIMEOUT_SECONDS)
         exit_code = 124 if timed_out else int(process.returncode or 0)
         log.write(f"\nexit_code: {exit_code}\ntimeout: {str(timed_out).lower()}\n")
     return {"exit_code": exit_code, "timed_out": timed_out, "log_path": str(log_path)}

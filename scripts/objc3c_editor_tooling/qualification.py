@@ -116,6 +116,8 @@ def main() -> int:
         (work / f"{source_fixture.stem}.formatted{source_fixture.suffix}").write_text(formatted, encoding="utf-8", newline="\n")
         for spelling in cases.get("required_ordinary_spellings", []):
             require(spelling in formatted, f"clang-format changed or removed ordinary spelling {spelling!r}")
+        for spelling in cases.get("required_private_spellings", []):
+            require(spelling in formatted, f"clang-format changed or removed private spelling {spelling!r}")
         require(formatted == expected_formatted,
                 f"clang-format output for {source_fixture.name} differs from reserved_intrinsics.formatted; actual saved in {work}")
         normalized = (normalized_dir / source_fixture.name).resolve()
@@ -157,7 +159,8 @@ def main() -> int:
             "clangd_exit_code": check.returncode,
             "clangd_transcript_sha256": hashlib.sha256(transcript.encode("utf-8")).hexdigest(),
             "language": case["language"], "standard": case["standard"]}
-        live = qualify_lsp(tools["clangd"], path, normalized_dir, resource_dir, work, env)
+        live = qualify_lsp(tools["clangd"], path, normalized_dir, resource_dir, work, env,
+                           probes=cases.get("live_probes", []))
         live["transcript_sha256"] = sha256(Path(live["transcript"]))
         live["stderr_sha256"] = sha256(Path(live["stderr"]))
         command_results[path.suffix]["live_lsp"] = live

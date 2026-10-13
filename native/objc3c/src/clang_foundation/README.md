@@ -92,6 +92,39 @@ Full language cutover and complete extension lowering remain in progress.
 Public extension availability follows the separate capability authority; these
 checks do not promote public feature gates.
 
+The `validate-native-foundation` workflow selects actual native checks from an
+18-node inventory: 14 carrier suite/driver nodes, a compiled-package provider and
+two consumers, and one editor qualification node. The package consumers install
+only the emitted object/interface/sidecar in fresh directories outside the
+checkout, then compile, link and execute against that installed provider.
+
+```powershell
+npm run objc3c -- validate-native-foundation --list
+npm run objc3c -- validate-native-foundation --node native-package:consumer-source --run-id package-source
+npm run objc3c -- validate-native-foundation --family editor --run-id editor-private
+```
+
+`--family`, `--node` and `--driver` accept exact, repeatable selectors; selecting
+a consumer includes its provider dependency. `--list` shows the inventory and
+selected dependency closure without requiring built tools. `--reuse-report`
+checks a prior complete report, toolchain/input identities and artifact hashes
+before reusing passing nodes. Reports and durable products are written under
+`out/native-validation/<run-id>` by default. See the pinned LLVM README for the
+full selector inventory and reuse example. This workflow does not build/install
+the compiler or promote public capabilities. At checkpoint 47, all 18 nodes
+passed with 68 runtime executions and unchanged source/toolchain snapshots.
+Both compiled-package consumers ran outside the checkout without provider
+source, using the sealed native linker and exact emitted module identities.
+
+Matching editor qualification passed on 2026-10-13 at 03:36:46 UTC. Identical C17
+`.m` and C++20 `.mm` fixtures passed exact formatting, idempotence, native syntax
+and `clangd --check` with zero errors. In each mode, both the ordinary parameter
+and the match's borrowed `const int` payload passed live hover, definition at the
+exact declaration location and completion checks; live diagnostics contained no
+errors. This establishes
+the tested private scalar carrier/match editor scope without promoting public
+capabilities.
+
 Private `__objc3_optional(T)` and `__objc3_result(T, E)` forms now enter native
 canonical type identity, declaration parsing, template substitution, PCH,
 AST import, indexing and target layout. Callable async and typed/untyped throws

@@ -5,6 +5,17 @@ from __future__ import annotations
 from .action_spec import ActionSpec
 
 CONFORMANCE_ACTION_SPECS: dict[str, ActionSpec] = {
+    "validate-native-foundation": ActionSpec(
+        "validate-native-foundation",
+        "run selected sealed Clang carrier, compiled-package, and editor checks with verified artifact reuse",
+        "python:scripts/check_objc3c_native_validation.py",
+        pass_through_args=True,
+        validation_tier="repo",
+        guarantee_owner=(
+            "native migration checks execute the sealed compiler and preserve explicit "
+            "dependency, artifact, and toolchain identity without promoting public capabilities"
+        ),
+    ),
     "validate-conformance-corpus": ActionSpec(
         "validate-conformance-corpus",
         "run the integrated conformance corpus taxonomy indexing and current gate-surface validation flow",

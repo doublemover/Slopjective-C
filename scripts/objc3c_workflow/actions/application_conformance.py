@@ -8,6 +8,7 @@ from ..commands import pwsh_file, run
 from .application_surface_paths import (
     CONFORMANCE_CORPUS_INTEGRATION_PY,
     CROSS_LANE_E2E_PY,
+    NATIVE_FOUNDATION_PY,
     CONFORMANCE_MINIMA_PS1,
     PUBLIC_CONFORMANCE_SUITE_PY,
     RUNNABLE_CONFORMANCE_CORPUS_E2E_PY,
@@ -32,3 +33,8 @@ def action_validate_runnable_conformance_corpus(_: list[str]) -> int:
 
 def action_validate_cross_lane_e2e(_: list[str]) -> int:
     return run([sys.executable, str(CROSS_LANE_E2E_PY)])
+
+
+def action_validate_native_foundation(rest: list[str]) -> int:
+    passthrough = rest[1:] if rest[:1] == ["--"] else rest
+    return run([sys.executable, "-B", str(NATIVE_FOUNDATION_PY), *passthrough])

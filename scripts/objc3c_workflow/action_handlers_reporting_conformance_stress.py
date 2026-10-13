@@ -15,6 +15,7 @@ REPORTING_CONFORMANCE_STRESS_HANDLERS: dict[str, ActionHandler] = {
     "check-conformance-minima": application_surfaces.action_check_conformance_minima,
     "validate-runnable-conformance-corpus": application_surfaces.action_validate_runnable_conformance_corpus,
     "validate-cross-lane-e2e": application_surfaces.action_validate_cross_lane_e2e,
+    "validate-native-foundation": application_surfaces.action_validate_native_foundation,
     "check-stress-surface": stress.action_check_stress_surface,
     "test-fuzz-safety": stress.action_test_fuzz_safety,
     "test-lowering-runtime-stress": stress.action_test_lowering_runtime_stress,

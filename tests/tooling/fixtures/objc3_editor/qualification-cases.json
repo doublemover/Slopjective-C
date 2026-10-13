@@ -2,6 +2,18 @@
   "schema_version": 1,
   "format_style": "LLVM",
   "required_ordinary_spellings": ["async", "throws", "throws:"],
+  "required_private_spellings": ["__objc3_optional", "__objc3_result", "__objc3_some", "__objc3_none", "__objc3_has_value", "__objc3_ok", "__objc3_is_ok", "__objc3_match_stmt", "__objc3_case_some", "__objc3_case_none", "case.Ok(let success):", "case.Err(let error):"],
+  "live_probes": [
+    {
+      "name": "optional_match_payload",
+      "use_line": "selected = throws(payload);",
+      "use_name": "payload",
+      "declaration_line": "case __objc3_case_some(let payload):",
+      "declaration_name": "payload",
+      "hover_type": "const int",
+      "completion_name": "payload"
+    }
+  ],
   "cases": [
     {
       "source": "reserved_intrinsics.m",
