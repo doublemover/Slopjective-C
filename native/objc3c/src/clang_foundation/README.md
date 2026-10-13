@@ -34,31 +34,76 @@ out/toolchains/objc3-facade/build/src/clang_foundation/objc3c-clang.exe source.m
   --arc --emit-object out/source.obj -- --target=x86_64-pc-windows-msvc
 ```
 
-`frontend_api.h` exposes version 2 through plain C data and owned result handles.
-Clang private C++ types remain inside the implementation. Results preserve
+`frontend_api.h` exposes versions 2 and 3 through plain C data and owned result
+handles. Clang private C++ types remain inside the implementation. Results preserve
 diagnostic IDs and spelling/expansion locations. A host failure is distinct from
-language diagnostics and Slop typed errors.
+language diagnostics and Slop typed errors. Version 3 adds locked semantic
+interface imports and a compiler/dependency identity record while preserving the
+version 2 options and result ownership contract.
 
-Semantic interface emission currently supports modeled C and Objective-C public
-declarations. It reparses generated source with the original language, target,
-runtime and ARC settings and compares declaration identities. Unsupported C++,
-attributes and dependency imports fail explicitly. Source, sidecar and optional
-object output share a rollback boundary; failed compilation preserves prior
-products.
+Semantic interface emission and import currently support modeled C and
+Objective-C public declarations. Emission reparses generated source with the
+original language, target, runtime and ARC settings and compares declaration
+identities. Reparse and import helpers use isolated physical filesystems, so
+their working-directory settings do not change the host process directory.
+Imports validate `.objc3i` source and its JSON sidecar against the
+locked module name, semantic fingerprint, package identity and consumer target,
+runtime, extension ABI, language revision and profile. Canonical modules resolve
+through configured search roots in dependency-first order. Clang ASTImporter
+inserts validated declarations into the consumer AST; dependency provenance
+retains the originating module, and only public re-export edges extend lookup
+visibility. Conflicting identities, invalid artifacts, cycles and unsupported
+declarations fail explicitly. C++/Objective-C++ semantic interface interchange
+remains unsupported. Source, sidecar and optional object output share a rollback
+boundary; failed compilation preserves prior products.
 
-The eight native tests cover compilation and C embedding, native pointer/ARC
-and C++ cleanup/EH IR, interfaces, artifact rollback, carriers, task services and
-generic collections. These checks establish their tested behavior; full language
-cutover, complete semantic imports and extension lowering remain in progress.
-Public extension availability follows the separate capability authority.
+The CLI's `--module-search-path` and `--import-module name fingerprint package`
+options select locked interfaces eagerly. Adding `--source-imports` makes those
+entries a registry for ObjC3 `@import Module.Path;`: an unused registry entry
+contributes neither visible declarations nor a semantic dependency. Import
+directives resolve and validate selected modules as parsing reaches them;
+qualified module names use the same visibility rules. Unregistered imports
+continue through Clang's native module loader. Version 3 embedding options expose
+the same source-directed mode, and the older version 3 prefix retains eager
+imports. Successful imported compilations expose compiler, driver, resource,
+patch and module identity through the dependency record; the CLI can write it
+with `--emit-dependency-record`.
+
+The tracked
+`scripts/objc3c_toolchain_runtime/run_source_import_fixtures_windows.ps1`
+runner emits a provider interface and object, archives the original provider
+source, then separately compiles, links and runs eager and source-directed
+consumers. It checks the dependency record against the provider lock and verifies
+that rejected wrong-lock builds preserve existing object and dependency outputs.
+At checkpoint 46, both consumer modes compiled, linked and executed successfully,
+including qualified imported types at file and block scope; wrong-lock outputs
+were preserved.
+Package ecosystem install/reuse scripts validate metadata agreement and local
+artifact installation/reuse; they do not install Clang. The matching compiler
+SDK must be built or staged separately through the pinned LLVM toolchain workflow.
+
+Checkpoint 46 passed all 15 facade CTest tests, including scalar-boundary text
+checks and the file CLI's 21 input/error cases. The tests cover compilation and C
+embedding, native pointer/ARC and C++ cleanup/EH IR, semantic interfaces and
+imports, artifact rollback, carriers, task services and generic collections.
+The broader compiler and runtime matrix is recorded in
+[`toolchains/llvm/README.md`](../../../../toolchains/llvm/README.md).
+Full language cutover and complete extension lowering remain in progress.
+Public extension availability follows the separate capability authority; these
+checks do not promote public feature gates.
 
 Private `__objc3_optional(T)` and `__objc3_result(T, E)` forms now enter native
 canonical type identity, declaration parsing, template substitution, PCH,
 AST import, indexing and target layout. Callable async and typed/untyped throws
 facts belong to the native function type; native C++ exception specifications
 remain separate. The consumer observes effects on functions, callable pointers
-and typedefs from that AST. Public interface emission rejects callable effects,
-including nested callback types, until source interchange and ABI are qualified.
+and typedefs from that AST. Modeled C/Objective-C interfaces preserve canonical
+async and typed/untyped throws declarations, including nested callback types,
+through source/sidecar emission and exact declaration-identity roundtrips.
+When used, sidecars declare `objc3.native-carrier-types.v1` and
+`objc3.canonical-function-effects.v1`; imports reject unknown required semantics.
+Executable typed-error handling and async execution remain unsupported.
+C++/Objective-C++ semantic interface interchange remains unsupported.
 
 Carrier storage uses an AST-owned hidden record and its actual target layout.
 It is a value representation, separate from platform Objective-C object layout.
@@ -71,13 +116,54 @@ Plain carrier values also cross nonvariadic C function boundaries on the tested
 Win64 target, using Clang's native ABI classification of the hidden record.
 Direct initialized carrier locals with admitted C++ payloads use their native
 constructors and selected-arm destructors, including normal and C++ exception
-cleanup. These private slices are exercised at O0/O2 with GNU-style drivers and
-clang-cl. Other carrier call boundaries, ARC carrier lifetimes, runtime type
-encodings, whole enclosing aggregate copies, atomic access and representation
-bitcasts still diagnose during CodeGen. Carrier pointer overloads can have
-distinct native symbols without qualifying other by-value carrier ABIs.
-Payload extraction and async execution remain in progress; public feature gates
-report unavailable.
+cleanup. For admitted C++ record payloads, `__objc3_has_value` and `__objc3_is_ok`
+borrow the tag from an existing carrier glvalue without copying, moving,
+constructing or destroying its payload. Queries on those carrier temporaries
+remain rejected. Ordinary fixed reference parameters transport the carrier's
+address through Clang's native reference ABI; this does not admit by-value carrier
+transport or new payload lifetime operations. Direct initialized ARC carrier
+locals admit strong, weak and unsafe object fields with selected-arm
+initialization and normal/EH cleanup; None and
+inactive Result arms do not initialize managed storage. Autoreleasing, Block and
+nested managed payload storage remain rejected. ARC carrier copying, assignment,
+temporaries and by-value calls remain gated. Other carrier call boundaries,
+runtime type encodings, whole enclosing aggregate copies, atomic access and
+representation bitcasts still diagnose during CodeGen. Carrier pointer overloads
+can have distinct native symbols without qualifying other by-value carrier ABIs.
+
+Private C++ `__objc3_copy` and `__objc3_move` expressions additionally initialize
+direct carrier locals from a nonvolatile source glvalue. Sema resolves the actual
+payload constructors for each arm; copy requires an lvalue, while move supplies
+an xvalue and permits native copy fallback for a const source. CodeGen evaluates
+the source once, constructs only the active payload and publishes the destination
+tag after successful construction. Moving preserves the source tag and leaves
+its active payload in the state produced by the selected native constructor.
+Destination cleanup uses the same selected-arm normal/EH lifetime path. These
+expressions do not qualify
+assignment, arbitrary carrier temporaries, nested carriers or ARC payload
+transfer.
+
+Private `__objc3_match` statement and expression forms have native AST nodes,
+template revalidation, PCH persistence and AST import. Sema checks pattern types,
+case binding scope, guards and coverage. CodeGen evaluates the scrutinee once and
+tries cases in source order. Its admitted domains are plain Optional/Result
+carriers and native integral, enum and pointer values, with immutable borrowed
+`let` bindings to scalar scrutinees or active carrier payloads. Expression forms
+require exhaustive coverage and a supported scalar result. Guards and arm bodies
+use native temporary/EH cleanup scopes. Managed payload matches, mutable or move
+bindings, type tests, string patterns and aggregate expression results remain
+unsupported. General payload extraction outside this match slice and async
+execution remain in progress; public feature gates report unavailable.
+
+`objc3_text_file_cli` is a native text-service application fixture. It reads an
+explicitly selected UTF-8 file, parses `label:signed-decimal` records with
+scalar-index search and slicing, checks a signed 64-bit sum and renders `records=N sum=S`
+through an owned reusable text builder. Embedded NUL remains text data, and
+scalar indexing does not imply normalization or grapheme segmentation. The
+external-directory Python harness covers Unicode, CRLF and unterminated final
+lines, malformed input, integer range errors, aggregate overflow, the 1 MiB input
+bound and file errors. Opaque service handles remain outside the Objective-C object and
+value-operations ABIs.
 
 Private typed-error try, raise and ordered do/catch forms now have native AST
 nodes, template revalidation, PCH persistence and AST import. Propagation checks

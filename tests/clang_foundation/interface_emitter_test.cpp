@@ -74,14 +74,15 @@ void TestObjectiveCContainerRoundTrips() {
   assert(emitted.source_bytes.find("- (int)value") != std::string::npos);
 }
 
-void TestUnqualifiedEffectInterchangeFailsClosed() {
+void TestTypedEffectSemanticInterfacesRoundTrip() {
   for (const char *source : {
       "void typed_api(void) __objc3_throws(int);\n",
       "typedef void TypedCallback(void) __objc3_throws(int);\n",
       "typedef void TypedCallback(void) __objc3_throws(int); "
       "void accepts_callback(TypedCallback *);\n",
       "typedef void TypedCallback(void) __objc3_throws(int); "
-      "struct CallbackStorage { TypedCallback *callback; };\n"}) {
+      "struct CallbackStorage { TypedCallback *callback; };\n",
+      "void accepts_inline_callback(void (*callback)(void) __objc3_throws(int));\n"}) {
     auto ast = clang::tooling::buildASTFromCodeWithArgs(
         source,
         {"-x", "objective-c", "-std=c17", "-fobjc-version=3",
@@ -90,15 +91,46 @@ void TestUnqualifiedEffectInterchangeFailsClosed() {
     assert(ast && !ast->getDiagnostics().hasErrorOccurred());
     auto emitted = EmitSemanticInterface(ast->getASTContext(), "fixture.effect",
                                          "test-package");
-    if (emitted.success || !emitted.source_bytes.empty() ||
-        !emitted.sidecar_json.empty())
-      std::fprintf(stderr, "Unexpected effect interface acceptance: %s\n", source);
-    assert(!emitted.success && emitted.source_bytes.empty() &&
-           emitted.sidecar_json.empty());
-    bool found_effect_diagnostic = false;
-    for (const auto &diagnostic : emitted.diagnostics)
-      found_effect_diagnostic |= diagnostic.code == "O3IFC125";
-    assert(found_effect_diagnostic);
+    if (!emitted.success)
+      for (const auto &diagnostic : emitted.diagnostics)
+        std::fprintf(stderr, "%s: %s\n", diagnostic.code.c_str(),
+                     diagnostic.message.c_str());
+    assert(emitted.success && !emitted.source_bytes.empty() &&
+           !emitted.sidecar_json.empty());
+    const std::vector<llvm::StringRef> semantics = {
+        "objc3.canonical-function-effects.v1"};
+    auto decoded = DecodeSemanticInterfaceSidecar(
+        emitted.sidecar_json, emitted.source_bytes, semantics);
+    assert(decoded);
+    assert(decoded->required_semantics ==
+        std::vector<std::string>{"objc3.canonical-function-effects.v1"});
+    bool found_typed_effect = false;
+    bool found_canonical_effect = false;
+    for (const auto &identity : decoded->declarations) {
+      found_canonical_effect |= identity.canonical_type_identity.find("throws(int)") !=
+          std::string::npos;
+      if (identity.effects.is_throwing) {
+        assert(identity.effects.throws_kind == "typed");
+        assert(identity.effects.error_type_identity == "int");
+        assert(identity.canonical_type_identity.find("throws(int)") !=
+            std::string::npos);
+        found_typed_effect = true;
+      }
+    }
+    assert(found_canonical_effect);
+    if (std::string(source).find("accepts_inline_callback") == std::string::npos)
+      assert(found_typed_effect);
+    auto regenerated_ast = clang::tooling::buildASTFromCodeWithArgs(
+        emitted.source_bytes,
+        {"-x", "objective-c", "-std=c17", "-fobjc-version=3",
+         "-fobjc-runtime=gnustep-2.0", "--target=x86_64-unknown-linux-gnu"},
+        "relocated-effect-interface.m");
+    assert(regenerated_ast && !regenerated_ast->getDiagnostics().hasErrorOccurred());
+    auto regenerated = EmitSemanticInterface(regenerated_ast->getASTContext(),
+        "fixture.effect", "test-package");
+    assert(regenerated.success);
+    assert(regenerated.source_bytes == emitted.source_bytes);
+    assert(regenerated.identity.semantic_fingerprint == emitted.identity.semantic_fingerprint);
   }
 }
 
@@ -108,6 +140,6 @@ int main() {
   TestOrdinaryCDeclarationsRoundTrip();
   TestUnmodeledAttributesFailClosed();
   TestObjectiveCContainerRoundTrips();
-  TestUnqualifiedEffectInterchangeFailsClosed();
+  TestTypedEffectSemanticInterfacesRoundTrip();
   return 0;
 }

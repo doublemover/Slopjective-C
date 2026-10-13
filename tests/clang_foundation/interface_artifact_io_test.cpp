@@ -7,13 +7,15 @@
 #include <filesystem>
 #include <fstream>
 #include <string>
+#include <vector>
 
 using namespace objc3::clang_foundation;
 namespace fs = std::filesystem;
 
 namespace {
 
-InterfaceEmissionArtifact MakeArtifact() {
+InterfaceEmissionArtifact MakeArtifact(
+    const std::vector<std::string> &required_semantics = {}) {
   InterfaceEmissionArtifact artifact;
   artifact.success = true;
   artifact.source_bytes = "/* canonical interface */\nextern int sample;\n";
@@ -25,6 +27,7 @@ InterfaceEmissionArtifact MakeArtifact() {
   sidecar.module.language_revision = "objc3-disabled";
   sidecar.module.language_profile = "objc3=disabled;profile=compatibility;strict-concurrency=false;arc=false";
   sidecar.module.package_identity = "test-package";
+  sidecar.required_semantics = required_semantics;
   InterfaceDeclarationIdentity declaration;
   declaration.stable_id = "c:@V@sample";
   declaration.kind = "Var";
@@ -36,7 +39,10 @@ InterfaceEmissionArtifact MakeArtifact() {
   artifact.identity = sidecar.module;
   sidecar.canonical_source_sha256 =
       ComputeInterfaceSourceSha256(artifact.source_bytes);
-  auto encoded = EncodeSemanticInterfaceSidecar(sidecar, {});
+  std::vector<llvm::StringRef> encoder_semantics;
+  for (const auto &semantic : required_semantics)
+    encoder_semantics.push_back(semantic);
+  auto encoded = EncodeSemanticInterfaceSidecar(sidecar, encoder_semantics);
   assert(static_cast<bool>(encoded));
   artifact.sidecar_json = std::move(*encoded);
   return artifact;
@@ -99,6 +105,25 @@ void TestFilesystemFailurePreservesExistingSource() {
   assert(!failed.success);
   assert(ReadBytes(source_path) == "prior source\n");
   assert(fs::is_directory(sidecar_path));
+  fs::remove_all(directory);
+}
+
+void TestKnownNativeSemanticCapabilitiesAndUnknownRefusal() {
+  const auto directory = MakeTempDirectory();
+  const auto source = directory / "native.objc3i";
+  const auto sidecar = fs::path(source.string() + ".json");
+  auto known = MakeArtifact({"objc3.canonical-function-effects.v1",
+                             "objc3.native-carrier-types.v1"});
+  auto accepted = WriteSemanticInterfaceArtifact(known, source.string());
+  assert(accepted.success);
+  assert(ReadBytes(source) == known.source_bytes);
+  assert(ReadBytes(sidecar) == known.sidecar_json);
+
+  auto unknown = MakeArtifact({"objc3.future-semantic.v1"});
+  auto rejected = WriteSemanticInterfaceArtifact(unknown, source.string());
+  assert(!rejected.success);
+  assert(ReadBytes(source) == known.source_bytes);
+  assert(ReadBytes(sidecar) == known.sidecar_json);
   fs::remove_all(directory);
 }
 
@@ -176,6 +201,7 @@ void TestObjectAndInterfaceTripleRollbackAcrossDirectories() {
 int main() {
   TestPairReplacementAndMalformedArtifactRefusal();
   TestFilesystemFailurePreservesExistingSource();
+  TestKnownNativeSemanticCapabilitiesAndUnknownRefusal();
   TestObjectAndInterfaceTripleRollbackAcrossDirectories();
   return 0;
 }

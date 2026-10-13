@@ -23,6 +23,8 @@ namespace objc3::clang_foundation {
 namespace {
 
 namespace fs = std::filesystem;
+const std::array<llvm::StringRef, 2> kSupportedSemantics = {
+    "objc3.canonical-function-effects.v1", "objc3.native-carrier-types.v1"};
 
 bool HasReparseAncestor(const fs::path &directory) {
   const auto normalized = directory.lexically_normal();
@@ -146,7 +148,7 @@ bool ValidateArtifact(const InterfaceEmissionArtifact &artifact,
   }
 
   auto decoded = DecodeSemanticInterfaceSidecar(
-      artifact.sidecar_json, artifact.source_bytes, {});
+      artifact.sidecar_json, artifact.source_bytes, kSupportedSemantics);
   if (!decoded) {
     AddDiagnostic(result, "O3IFIO102",
                   "interface artifact sidecar is malformed or is not bound to its source: " +
@@ -335,7 +337,7 @@ static InterfaceArtifactWriteResult WriteSemanticInterfaceArtifactImpl(
     return result;
   }
   auto staged_decoded = DecodeSemanticInterfaceSidecar(
-      staged_sidecar_bytes, staged_source_bytes, {});
+      staged_sidecar_bytes, staged_source_bytes, kSupportedSemantics);
   if (!staged_decoded) {
     AddDiagnostic(result, "O3IFIO113",
                   "staged interface pair failed source-binding validation: " +
@@ -443,7 +445,7 @@ static InterfaceArtifactWriteResult WriteSemanticInterfaceArtifactImpl(
     return result;
   }
   auto visible_decoded = DecodeSemanticInterfaceSidecar(
-      visible_sidecar, visible_source, {});
+      visible_sidecar, visible_source, kSupportedSemantics);
   if (!visible_decoded) {
     error = std::make_error_code(std::errc::invalid_argument);
     fail_publish("O3IFIO119", sidecar_path);

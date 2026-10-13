@@ -7,7 +7,7 @@ import re
 from pathlib import Path
 from typing import Any, Iterable
 
-PHASES = ("provider", "consumer-compile", "link-run", "debugger", "reflection", "optimization", "distribution")
+PHASES = ("provider", "consumer-compile", "link-run", "debugger", "reflection", "optimization", "package-producer", "clean-install-consumer", "distribution")
 
 
 def _safe_manifest_path(root: Path, value: str, field: str) -> Path:
@@ -59,25 +59,73 @@ def _family_nodes(family: dict[str, Any], root: Path) -> list[dict[str, Any]]:
         provider_source = _safe_manifest_path(root, module["source"], f"{family_id}.package_modules.source")
         node_id = f"{family_id}:provider:{module.get('module_name', provider_source.stem)}"
         provider_ids.append(node_id)
-        nodes.append({"node_id": node_id, "family_id": family_id, "phase": "provider", "source": module["source"], "depends_on": []})
+        nodes.append({"node_id": node_id, "family_id": family_id, "phase": "provider", "source": module["source"], "identity_inputs": [module["source"], str(family["workspace_manifest"])], "depends_on": []})
+    provider_by_package = {
+        str(module.get("package_id")): f"{family_id}:provider:{module.get('module_name', Path(str(module['source'])).stem)}"
+        for module in modules
+        if isinstance(module, dict) and isinstance(module.get("package_id"), str)
+    }
+    provider_nodes = {node["node_id"]: node for node in nodes}
+    for edge_index, edge in enumerate(workspace.get("package_edges", [])):
+        if not isinstance(edge, dict):
+            raise ValueError(f"{family_id}.package_edges[{edge_index}] must be an object")
+        owner = provider_by_package.get(str(edge.get("from", "")))
+        dependency = provider_by_package.get(str(edge.get("to", "")))
+        if owner and dependency:
+            provider_nodes[owner]["depends_on"].append(dependency)
+    family_inputs = [str(family[key]) for key in ("source", "native_meta", "workspace_manifest", "expectation")]
     consumer = f"{family_id}:consumer"
     link_run = f"{family_id}:link-run"
     nodes.extend([
-        {"node_id": consumer, "family_id": family_id, "phase": "consumer-compile", "source": family["source"], "depends_on": provider_ids},
-        {"node_id": link_run, "family_id": family_id, "phase": "link-run", "source": family["source"], "depends_on": [consumer]},
+        {"node_id": consumer, "family_id": family_id, "phase": "consumer-compile", "source": family["source"], "identity_inputs": family_inputs, "depends_on": provider_ids},
+        {"node_id": link_run, "family_id": family_id, "phase": "link-run", "source": family["source"], "identity_inputs": family_inputs, "depends_on": [consumer, *provider_ids]},
     ])
     debug_status = expectation.get("debug_source_map", {}).get("status")
     if family_id == "object_reflection_debugger" or debug_status == "expected-pass":
-        nodes.append({"node_id": f"{family_id}:debugger", "family_id": family_id, "phase": "debugger", "source": family["source"], "depends_on": [link_run]})
-        nodes.append({"node_id": f"{family_id}:reflection", "family_id": family_id, "phase": "reflection", "source": family["source"], "depends_on": [link_run]})
+        nodes.append({"node_id": f"{family_id}:debugger", "family_id": family_id, "phase": "debugger", "source": family["source"], "identity_inputs": family_inputs, "depends_on": [link_run]})
+        nodes.append({"node_id": f"{family_id}:reflection", "family_id": family_id, "phase": "reflection", "source": family["source"], "identity_inputs": family_inputs, "depends_on": [link_run]})
     if expectation.get("optimization_trace", {}).get("status") == "expected-pass":
-        nodes.append({"node_id": f"{family_id}:optimization", "family_id": family_id, "phase": "optimization", "source": family["source"], "depends_on": [link_run]})
+        nodes.append({"node_id": f"{family_id}:optimization", "family_id": family_id, "phase": "optimization", "source": family["source"], "identity_inputs": family_inputs, "depends_on": [link_run]})
     if expectation.get("distribution_lifecycle", {}).get("status") == "expected-pass":
-        nodes.append({"node_id": f"{family_id}:distribution", "family_id": family_id, "phase": "distribution", "source": family["source"], "depends_on": [link_run]})
+        producer = f"{family_id}:package-producer"
+        clean_consumer = f"{family_id}:clean-install-consumer"
+        nodes.append({"node_id": producer, "family_id": family_id, "phase": "package-producer", "source": family["source"], "identity_inputs": family_inputs, "depends_on": [link_run]})
+        nodes.append({"node_id": clean_consumer, "family_id": family_id, "phase": "clean-install-consumer", "source": family["source"], "identity_inputs": family_inputs, "depends_on": [producer]})
+        nodes.append({"node_id": f"{family_id}:distribution", "family_id": family_id, "phase": "distribution", "source": family["source"], "identity_inputs": family_inputs, "depends_on": [clean_consumer]})
     return nodes
 
 
-def resolve_execution_plan(manifest: dict[str, Any], root: Path, families: Iterable[str] = (), phase: str | None = None) -> dict[str, Any]:
+def _topological_nodes(nodes: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    order = {str(node["node_id"]): index for index, node in enumerate(nodes)}
+    if len(order) != len(nodes):
+        raise ValueError("execution graph contains duplicate node ids")
+    pending = {node_id: set(node.get("depends_on", [])) for node_id, node in
+               ((str(node["node_id"]), node) for node in nodes)}
+    for node_id, dependencies in pending.items():
+        missing = dependencies - set(order)
+        if missing:
+            raise ValueError(f"{node_id} has unknown dependencies: " + ", ".join(sorted(missing)))
+    result: list[dict[str, Any]] = []
+    emitted: set[str] = set()
+    while len(result) != len(nodes):
+        ready = [node_id for node_id in pending
+                 if node_id not in emitted and pending[node_id] <= emitted]
+        if not ready:
+            raise ValueError("execution graph contains a dependency cycle")
+        ready.sort(key=order.__getitem__)
+        for node_id in ready:
+            emitted.add(node_id)
+            result.append(nodes[order[node_id]])
+    return result
+
+
+def resolve_execution_plan(
+    manifest: dict[str, Any],
+    root: Path,
+    families: Iterable[str] = (),
+    phase: str | None = None,
+    node_ids: Iterable[str] = (),
+) -> dict[str, Any]:
     rows = validate_manifest_inventory(manifest, root)
     selected_families = set(families)
     known = {str(row["family_id"]) for row in rows}
@@ -86,14 +134,30 @@ def resolve_execution_plan(manifest: dict[str, Any], root: Path, families: Itera
         raise ValueError("unknown family selector: " + ", ".join(sorted(unknown)))
     if phase is not None and phase not in PHASES:
         raise ValueError("unknown phase selector: " + phase)
-    nodes = [node for family in rows for node in _family_nodes(family, root)]
+    nodes = _topological_nodes([node for family in rows for node in _family_nodes(family, root)])
     node_map = {node["node_id"]: node for node in nodes}
-    selected = {node_id for node_id, node in node_map.items() if (not selected_families or node["family_id"] in selected_families) and (phase is None or node["phase"] == phase)}
-    # The current runner executes families atomically. Selecting any family phase
-    # schedules the entire family unit, preserving all internal producer/consumer
-    # and post-link proof dependencies.
-    selected_family_units = {node_map[node_id]["family_id"] for node_id in selected}
-    selected.update(node_id for node_id, node in node_map.items() if node["family_id"] in selected_family_units)
+    requested_nodes = set(node_ids)
+    unknown_nodes = requested_nodes - set(node_map)
+    if unknown_nodes:
+        raise ValueError("unknown node selector: " + ", ".join(sorted(unknown_nodes)))
+    selected = {
+        node_id for node_id, node in node_map.items()
+        if (not selected_families or node["family_id"] in selected_families)
+        and (phase is None or node["phase"] == phase)
+    }
+    if requested_nodes:
+        incompatible = {
+            node_id for node_id in requested_nodes
+            if ((selected_families and node_map[node_id]["family_id"] not in selected_families)
+                or (phase is not None and node_map[node_id]["phase"] != phase))
+        }
+        if incompatible:
+            raise ValueError("node selector conflicts with family/phase filter: " +
+                             ", ".join(sorted(incompatible)))
+        selected = {
+            node_id for node_id in requested_nodes
+            if not selected_families or node_map[node_id]["family_id"] in selected_families
+        }
     pending = list(selected)
     while pending:
         node = node_map[pending.pop()]
@@ -101,8 +165,18 @@ def resolve_execution_plan(manifest: dict[str, Any], root: Path, families: Itera
             if dependency not in selected:
                 selected.add(dependency)
                 pending.append(dependency)
+    if not selected:
+        raise ValueError("selectors do not match any execution node")
     ordered = [node for node in nodes if node["node_id"] in selected]
-    return {"nodes": nodes, "selected_nodes": ordered, "selected_node_ids": [node["node_id"] for node in ordered], "unselected_node_ids": [node["node_id"] for node in nodes if node["node_id"] not in selected], "selected_families": sorted({node["family_id"] for node in ordered}), "unselected_families": sorted(known - {node["family_id"] for node in ordered})}
+    return {
+        "nodes": nodes,
+        "selected_nodes": ordered,
+        "selected_node_ids": [node["node_id"] for node in ordered],
+        "unselected_node_ids": [node["node_id"] for node in nodes if node["node_id"] not in selected],
+        "selected_families": sorted({node["family_id"] for node in ordered}),
+        "unselected_families": sorted(known - {node["family_id"] for node in ordered}),
+        "selection_complete": True,
+    }
 
 
 def digest_files(paths: Iterable[Path]) -> str:
@@ -139,6 +213,8 @@ def execution_node_statuses(plan: dict[str, Any], family_summaries: dict[str, di
             "debugger": ("debugger", "source-map/debug"),
             "reflection": ("reflection",),
             "optimization": ("optimization", "ir proof"),
+            "package-producer": ("package producer", "mirror generator"),
+            "clean-install-consumer": ("clean install", "package consumer"),
             "distribution": ("distribution", "package lifecycle"),
         }
         failed = {node["node_id"] for node in nodes if any(token in message.lower() for token in phase_tokens.get(node["phase"], ()))}

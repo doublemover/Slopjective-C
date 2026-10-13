@@ -41,6 +41,39 @@ typedef struct objc3c_frontend_v2_options {
   const char *package_identity;
 } objc3c_frontend_v2_options;
 
+#define OBJC3C_FRONTEND_V3_ABI 3u
+
+/* Each import element uses the sizeof(objc3c_frontend_v3_import) array stride.
+ * Names, fingerprints, package identities, and search paths must be nonempty.
+ * The strings and arrays are borrowed until compile returns. */
+typedef struct objc3c_frontend_v3_import {
+  uint32_t struct_size;
+  const char *canonical_name;
+  const char *semantic_fingerprint;
+  const char *package_identity;
+  uint8_t public_import;
+  uint8_t reexported;
+} objc3c_frontend_v3_import;
+
+/* Set the outer ABI to V3 and the embedded base ABI to V2, with both struct
+ * sizes initialized. The source_directed_imports tail is optional: callers
+ * supplying the older prefix ending at import_count retain eager imports.
+ * Module imports require at least one search path. Source-directed imports
+ * additionally require an ObjC3 ObjC/ObjC++ base language and a nonempty lock
+ * registry; a registry entry contributes no dependency until imported. */
+typedef struct objc3c_frontend_v3_options {
+  uint32_t struct_size;
+  uint32_t abi_version;
+  objc3c_frontend_v2_options base;
+  const char *const *interface_search_paths;
+  size_t interface_search_path_count;
+  const objc3c_frontend_v3_import *imports;
+  size_t import_count;
+  /* Imports are a locked source-import registry when enabled. They become
+   * visible only after `@import Module.Path;` in an ObjC3 translation unit. */
+  uint8_t source_directed_imports;
+} objc3c_frontend_v3_options;
+
 typedef struct objc3c_frontend_v2_location {
   const char *file;
   uint32_t line;
@@ -51,6 +84,12 @@ typedef struct objc3c_frontend_v2_location {
  * 3 host allocation/internal failure. out_result is cleared on entry. */
 int objc3c_frontend_v2_compile(const objc3c_frontend_v2_options *options,
                              objc3c_frontend_v2_result **out_result);
+int objc3c_frontend_v3_compile(const objc3c_frontend_v3_options *options,
+                             objc3c_frontend_v2_result **out_result);
+/* Compiler/import identity record for cache and editor invalidation. Borrowed
+ * from the result handle and present only after a successful imported compile. */
+const char *objc3c_frontend_v3_result_dependency_record(
+    const objc3c_frontend_v2_result *result);
 void objc3c_frontend_v2_result_destroy(objc3c_frontend_v2_result *result);
 int objc3c_frontend_v2_result_success(const objc3c_frontend_v2_result *result);
 const char *objc3c_frontend_v2_result_failure(const objc3c_frontend_v2_result *result);

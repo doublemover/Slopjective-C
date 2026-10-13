@@ -238,8 +238,14 @@ def _windows_build_environment(manifest: dict[str, Any]) -> dict[str, Any]:
     vswhere = program_files_x86 / "Microsoft Visual Studio" / "Installer" / "vswhere.exe"
     if not vswhere.is_file():
         raise ToolchainError(f"Visual Studio discovery tool is missing: {vswhere}")
-    vs_install = Path(_run([str(vswhere), "-latest", "-products", "*", "-requires",
-                            "Microsoft.VisualStudio.Component.VC.Tools.x86.x64", "-property", "installationPath"]))
+    # A newer Visual Studio installation must not silently replace the
+    # manifest's VS 2022/v143 toolchain or invalidate an existing Ninja graph.
+    installation = _run([str(vswhere), "-latest", "-version", "[17.0,18.0)",
+                            "-products", "*", "-requires",
+                            "Microsoft.VisualStudio.Component.VC.Tools.x86.x64", "-property", "installationPath"])
+    if not installation:
+        raise ToolchainError("Visual Studio 2022 v143 with the x64 C++ toolset is not installed")
+    vs_install = Path(installation)
     if not vs_install.is_dir():
         raise ToolchainError("Visual Studio 2022 v143 with the x64 C++ toolset is not installed")
     version_file = vs_install / "VC" / "Auxiliary" / "Build" / "Microsoft.VCToolsVersion.default.txt"

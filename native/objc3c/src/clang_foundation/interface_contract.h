@@ -33,18 +33,35 @@ struct InterfaceEffectIdentity {
 };
 
 struct InterfaceDeclarationIdentity {
-  std::string stable_id;       // Clang USR derived from the emitted declaration.
+  std::string stable_id;       // Clang USR, normalized for file-scope C typedefs.
   std::string kind;
   std::string qualified_name;
   std::string canonical_type_identity;
   InterfaceEffectIdentity effects;
 };
 
+// Compare the complete declaration contract, including every modeled effect.
+[[nodiscard]] bool SameInterfaceDeclarationIdentity(
+    const InterfaceDeclarationIdentity &left,
+    const InterfaceDeclarationIdentity &right);
+
 struct InterfaceDependency {
   InterfaceModuleIdentity module;
   bool reexported = false;
   bool public_import = false;
 };
+
+// Canonical source and exported identities needed to parse a dependent
+// interface through Clang's normal frontend. The path is a stable virtual
+// include name; it is never a module identity or a filesystem authority.
+struct InterfaceSourceArtifact {
+  InterfaceModuleIdentity module;
+  std::string virtual_include_path;
+  std::string source_bytes;
+  std::vector<InterfaceDeclarationIdentity> declarations;
+  std::vector<InterfaceDependency> dependencies;
+};
+
 
 // `required_semantics` names versioned semantics whose absence changes meaning.
 // Optional producer hints belong elsewhere and are ignored by importers.

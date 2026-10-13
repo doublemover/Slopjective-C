@@ -299,4 +299,15 @@ int main() {
   objc3c_frontend_v2_result_destroy(result);
   options.abi_version = 99;
   assert(objc3c_frontend_v2_compile(&options, &result) == 2 && !result);
+  options.abi_version = OBJC3C_FRONTEND_V2_ABI;
+  options.input_path = "";
+  assert(objc3c_frontend_v2_compile(&options, &result) == 2 && !result);
+  options.input_path = "objc3c-session-memory.m";
+  options.emit = 1;
+  assert(objc3c_frontend_v2_compile(&options, &result) == 2 && !result);
+  options.emit = 0;
+  options.source = "";
+  options.source_size = 0;
+  assert(objc3c_frontend_v2_compile(&options, &result) == 0 && result);
+  objc3c_frontend_v2_result_destroy(result);
 }

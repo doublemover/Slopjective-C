@@ -1,28 +1,50 @@
 diff --git a/clang/include/clang/AST/ComputeDependence.h b/clang/include/clang/AST/ComputeDependence.h
-index 895105640..54579d756 100644
+index 895105640..2811a10d1 100644
 --- a/clang/include/clang/AST/ComputeDependence.h
 +++ b/clang/include/clang/AST/ComputeDependence.h
-@@ -109,6 +109,7 @@ class ObjCIsaExpr;
+@@ -109,6 +109,9 @@ class ObjCIsaExpr;
  class ObjCIndirectCopyRestoreExpr;
  class ObjCMessageExpr;
  class OpenACCAsteriskSizeExpr;
++class ObjC3MatchExpr;
++
 +class ObjC3TryExpr;
  
  // The following functions are called from constructors of `Expr`, so they
  // should not access anything beyond basic
-@@ -208,6 +209,7 @@ ExprDependence computeDependence(ObjCIsaExpr *E);
+@@ -208,6 +211,9 @@ ExprDependence computeDependence(ObjCIsaExpr *E);
  ExprDependence computeDependence(ObjCIndirectCopyRestoreExpr *E);
  ExprDependence computeDependence(ObjCMessageExpr *E);
  ExprDependence computeDependence(OpenACCAsteriskSizeExpr *E);
++ExprDependence computeDependence(ObjC3MatchExpr *E);
++
 +ExprDependence computeDependence(ObjC3TryExpr *E);
  
  } // namespace clang
  #endif
 diff --git a/clang/include/clang/AST/Expr.h b/clang/include/clang/AST/Expr.h
-index 3e30a8b42..b76a6c668 100644
+index 3e30a8b42..b360bd06a 100644
 --- a/clang/include/clang/AST/Expr.h
 +++ b/clang/include/clang/AST/Expr.h
-@@ -4845,6 +4845,140 @@ public:
+@@ -16,6 +16,8 @@
+ #include "clang/AST/APNumericStorage.h"
+ #include "clang/AST/APValue.h"
+ #include "clang/AST/ASTVector.h"
++#include "clang/AST/ObjC3MatchCoverage.h"
++
+ #include "clang/AST/ComputeDependence.h"
+ #include "clang/AST/Decl.h"
+ #include "clang/AST/DeclAccessPair.h"
+@@ -3602,6 +3604,8 @@ public:
+ 
+ /// CompoundLiteralExpr - [C99 6.5.2.5]
+ ///
++#include "clang/AST/ObjC3MatchNodes.inc"
++
+ class CompoundLiteralExpr : public Expr {
+   /// LParenLoc - If non-null, this is the location of the left paren in a
+   /// compound literal like "(int){4}".  This can be null if this is a
+@@ -4845,6 +4849,213 @@ public:
  ///   and all predicates (whether it's an l-value, whether it's an integer
  ///   constant expression, etc.) return the same result as for the chosen
  ///   sub-expression.
@@ -160,11 +182,84 @@ index 3e30a8b42..b76a6c668 100644
 +  }
 +};
 +
++/// Explicit copy or move construction of a local ObjC3 Optional/Result from
++/// another carrier glvalue. The source is a real child and is evaluated once.
++/// The per-arm initialization recipes are ordinary Sema-produced expressions
++/// that reference their associated payload OpaqueValueExpr. CodeGen binds only
++/// the selected leaf to the corresponding source field after testing the tag.
++/// No carrier-wide native C++ special member is implied by this node.
++class ObjC3CarrierTransferExpr : public Expr {
++public:
++  enum class Kind : unsigned char { Copy, Move };
++
++private:
++  Kind Operation = Kind::Copy;
++  QualType CarrierType;
++  Stmt *SubExprs[4] = {};
++  OpaqueValueExpr *ValueSource = nullptr;
++  OpaqueValueExpr *SuccessSource = nullptr;
++  OpaqueValueExpr *ErrorSource = nullptr;
++  SourceLocation KeywordLoc, LParenLoc, RParenLoc;
++
++  ObjC3CarrierTransferExpr(Kind Operation, QualType CarrierType, Expr *Source,
++                           OpaqueValueExpr *ValueSource, Expr *ValueInit,
++                           OpaqueValueExpr *SuccessSource, Expr *SuccessInit,
++                           OpaqueValueExpr *ErrorSource, Expr *ErrorInit,
++                           SourceLocation KeywordLoc,
++                           SourceLocation LParenLoc, SourceLocation RParenLoc);
++
++public:
++  explicit ObjC3CarrierTransferExpr(EmptyShell Empty)
++      : Expr(ObjC3CarrierTransferExprClass, Empty) {}
++  static ObjC3CarrierTransferExpr *Create(
++      ASTContext &Context, Kind Operation, QualType CarrierType, Expr *Source,
++      OpaqueValueExpr *ValueSource, Expr *ValueInit,
++      OpaqueValueExpr *SuccessSource, Expr *SuccessInit,
++      OpaqueValueExpr *ErrorSource, Expr *ErrorInit,
++      SourceLocation KeywordLoc, SourceLocation LParenLoc,
++      SourceLocation RParenLoc);
++
++  Kind getKind() const { return Operation; }
++  void setKind(Kind Value) { Operation = Value; }
++  bool isMove() const { return Operation == Kind::Move; }
++  QualType getCarrierType() const { return CarrierType; }
++  void setCarrierType(QualType Value) { CarrierType = Value; }
++  Expr *getSource() const { return cast_or_null<Expr>(SubExprs[0]); }
++  void setSource(Expr *Value) { SubExprs[0] = Value; }
++  OpaqueValueExpr *getValueSource() const { return ValueSource; }
++  void setValueSource(OpaqueValueExpr *Value) { ValueSource = Value; }
++  Expr *getValueInit() const { return cast_or_null<Expr>(SubExprs[1]); }
++  void setValueInit(Expr *Value) { SubExprs[1] = Value; }
++  OpaqueValueExpr *getSuccessSource() const { return SuccessSource; }
++  void setSuccessSource(OpaqueValueExpr *Value) { SuccessSource = Value; }
++  Expr *getSuccessInit() const { return cast_or_null<Expr>(SubExprs[2]); }
++  void setSuccessInit(Expr *Value) { SubExprs[2] = Value; }
++  OpaqueValueExpr *getErrorSource() const { return ErrorSource; }
++  void setErrorSource(OpaqueValueExpr *Value) { ErrorSource = Value; }
++  Expr *getErrorInit() const { return cast_or_null<Expr>(SubExprs[3]); }
++  void setErrorInit(Expr *Value) { SubExprs[3] = Value; }
++  SourceLocation getKeywordLoc() const { return KeywordLoc; }
++  SourceLocation getLParenLoc() const { return LParenLoc; }
++  SourceLocation getRParenLoc() const { return RParenLoc; }
++  void setKeywordLoc(SourceLocation Value) { KeywordLoc = Value; }
++  void setLParenLoc(SourceLocation Value) { LParenLoc = Value; }
++  void setRParenLoc(SourceLocation Value) { RParenLoc = Value; }
++  SourceLocation getBeginLoc() const LLVM_READONLY { return KeywordLoc; }
++  SourceLocation getEndLoc() const LLVM_READONLY { return RParenLoc; }
++  child_range children() { return child_range(&SubExprs[0], &SubExprs[4]); }
++  const_child_range children() const {
++    return const_child_range(&SubExprs[0], &SubExprs[4]);
++  }
++  static bool classof(const Stmt *S) {
++    return S->getStmtClass() == ObjC3CarrierTransferExprClass;
++  }
++};
++
  class ChooseExpr : public Expr {
    enum { COND, LHS, RHS, END_EXPR };
    Stmt* SubExprs[END_EXPR]; // Left/Middle/Right hand sides.
 diff --git a/clang/include/clang/Basic/StmtNodes.td b/clang/include/clang/Basic/StmtNodes.td
-index b08b9fe3b..94e79069d 100644
+index b08b9fe3b..e1dc99782 100644
 --- a/clang/include/clang/Basic/StmtNodes.td
 +++ b/clang/include/clang/Basic/StmtNodes.td
 @@ -18,6 +18,9 @@ def GotoStmt : StmtNode<Stmt>;
@@ -177,21 +272,27 @@ index b08b9fe3b..94e79069d 100644
  def DeclStmt  : StmtNode<Stmt>;
  def SwitchCase : StmtNode<Stmt, 1>;
  def CaseStmt : StmtNode<SwitchCase>;
-@@ -117,6 +120,9 @@ def AtomicExpr : StmtNode<Expr>;
+@@ -117,6 +120,15 @@ def AtomicExpr : StmtNode<Expr>;
  def AddrLabelExpr : StmtNode<Expr>;
  def StmtExpr : StmtNode<Expr>;
  def ChooseExpr : StmtNode<Expr>;
++def ObjC3CarrierTransferExpr : StmtNode<Expr>;
++
 +def ObjC3OptionalExpr : StmtNode<Expr>;
 +def ObjC3ResultExpr : StmtNode<Expr>;
++def ObjC3MatchArm : StmtNode<Stmt>;
++def ObjC3MatchStmt : StmtNode<Stmt>;
++def ObjC3MatchExpr : StmtNode<Expr>;
++
 +def ObjC3TryExpr : StmtNode<Expr>;
  def GNUNullExpr : StmtNode<Expr>;
  
  // C++ Expressions.
 diff --git a/clang/lib/AST/ComputeDependence.cpp b/clang/lib/AST/ComputeDependence.cpp
-index 8429f17d2..3094a908b 100644
+index 8429f17d2..4e789ae2c 100644
 --- a/clang/lib/AST/ComputeDependence.cpp
 +++ b/clang/lib/AST/ComputeDependence.cpp
-@@ -963,3 +963,10 @@ ExprDependence clang::computeDependence(OpenACCAsteriskSizeExpr *E) {
+@@ -963,3 +963,24 @@ ExprDependence clang::computeDependence(OpenACCAsteriskSizeExpr *E) {
    // way.
    return ExprDependence::None;
  }
@@ -202,11 +303,25 @@ index 8429f17d2..3094a908b 100644
 +  return toExprDependenceForImpliedType(E->getType()->getDependence()) |
 +         E->getOperand()->getDependence();
 +}
++
++ExprDependence clang::computeDependence(ObjC3MatchExpr *E) {
++  ExprDependence D = toExprDependenceForImpliedType(E->getType()->getDependence());
++  D |= E->getScrutinee()->getDependence();
++  for (unsigned I = 0; I != E->getNumArms(); ++I) {
++    const ObjC3MatchArm *Arm = E->getArm(I);
++    if (!Arm->getCanonicalPatternType().isNull())
++      D |= toExprDependenceForImpliedType(Arm->getCanonicalPatternType()->getDependence());
++    for (const Stmt *Child : Arm->children())
++      if (const auto *Expression = dyn_cast_or_null<Expr>(Child))
++        D |= Expression->getDependence();
++  }
++  return D;
++}
 diff --git a/clang/lib/AST/Expr.cpp b/clang/lib/AST/Expr.cpp
-index d3e381ba4..785037c92 100644
+index d3e381ba4..b2e8c59bf 100644
 --- a/clang/lib/AST/Expr.cpp
 +++ b/clang/lib/AST/Expr.cpp
-@@ -40,6 +40,83 @@
+@@ -40,6 +40,123 @@
  #include <optional>
  using namespace clang;
  
@@ -287,10 +402,50 @@ index d3e381ba4..785037c92 100644
 +      PayloadTypeInfo, Payload, KeywordLoc, LParenLoc, CommaLoc, RParenLoc);
 +}
 +
++ObjC3CarrierTransferExpr::ObjC3CarrierTransferExpr(
++    Kind Operation, QualType CarrierType, Expr *Source,
++    OpaqueValueExpr *ValueSource, Expr *ValueInit,
++    OpaqueValueExpr *SuccessSource, Expr *SuccessInit,
++    OpaqueValueExpr *ErrorSource, Expr *ErrorInit,
++    SourceLocation KeywordLoc, SourceLocation LParenLoc,
++    SourceLocation RParenLoc)
++    : Expr(ObjC3CarrierTransferExprClass, CarrierType, VK_PRValue, OK_Ordinary),
++      Operation(Operation), CarrierType(CarrierType),
++      ValueSource(ValueSource), SuccessSource(SuccessSource),
++      ErrorSource(ErrorSource), KeywordLoc(KeywordLoc), LParenLoc(LParenLoc),
++      RParenLoc(RParenLoc) {
++  SubExprs[0] = Source;
++  SubExprs[1] = ValueInit;
++  SubExprs[2] = SuccessInit;
++  SubExprs[3] = ErrorInit;
++  auto Dependence = toExprDependenceForImpliedType(CarrierType->getDependence());
++  if (Source)
++    Dependence |= Source->getDependence();
++  if (ValueInit)
++    Dependence |= ValueInit->getDependence();
++  if (SuccessInit)
++    Dependence |= SuccessInit->getDependence();
++  if (ErrorInit)
++    Dependence |= ErrorInit->getDependence();
++  setDependence(Dependence);
++}
++
++ObjC3CarrierTransferExpr *ObjC3CarrierTransferExpr::Create(
++    ASTContext &Context, Kind Operation, QualType CarrierType, Expr *Source,
++    OpaqueValueExpr *ValueSource, Expr *ValueInit,
++    OpaqueValueExpr *SuccessSource, Expr *SuccessInit,
++    OpaqueValueExpr *ErrorSource, Expr *ErrorInit,
++    SourceLocation KeywordLoc, SourceLocation LParenLoc,
++    SourceLocation RParenLoc) {
++  return new (Context) ObjC3CarrierTransferExpr(
++      Operation, CarrierType, Source, ValueSource, ValueInit, SuccessSource,
++      SuccessInit, ErrorSource, ErrorInit, KeywordLoc, LParenLoc, RParenLoc);
++}
++
  const Expr *Expr::getBestDynamicClassTypeExpr() const {
    const Expr *E = this;
    while (true) {
-@@ -2643,6 +2720,12 @@ bool Expr::isUnusedResultAWarning(const Expr *&WarnE, SourceLocation &Loc,
+@@ -2643,6 +2760,12 @@ bool Expr::isUnusedResultAWarning(const Expr *&WarnE, SourceLocation &Loc,
      Loc = getExprLoc();
      R1 = getSourceRange();
      return true;
@@ -303,7 +458,7 @@ index d3e381ba4..785037c92 100644
    case ParenExprClass:
      return cast<ParenExpr>(this)->getSubExpr()->
        isUnusedResultAWarning(WarnE, Loc, R1, R2, Ctx);
-@@ -3663,6 +3746,13 @@ namespace {
+@@ -3663,6 +3786,13 @@ namespace {
            E->HasSideEffects(Context, IncludePossibleEffects))
          HasSideEffects = true;
      }
@@ -317,7 +472,7 @@ index d3e381ba4..785037c92 100644
    };
  }
  
-@@ -3839,6 +3929,31 @@ bool Expr::HasSideEffects(const ASTContext &Ctx,
+@@ -3839,6 +3969,49 @@ bool Expr::HasSideEffects(const ASTContext &Ctx,
      return cast<GenericSelectionExpr>(this)->getResultExpr()->HasSideEffects(
          Ctx, IncludePossibleEffects);
  
@@ -335,6 +490,24 @@ index d3e381ba4..785037c92 100644
 +      return true;
 +    break;
 +  }
++
++  case ObjC3CarrierTransferExprClass:
++    return true;
++
++  case ObjC3MatchExprClass: {
++    const auto *Match = cast<ObjC3MatchExpr>(this);
++    if (Match->getScrutinee()->HasSideEffects(Ctx, IncludePossibleEffects))
++      return true;
++    for (unsigned I = 0; I != Match->getNumArms(); ++I) {
++      const ObjC3MatchArm *Arm = Match->getArm(I);
++      for (const Stmt *Child : Arm->children())
++        if (const auto *Expression = dyn_cast_or_null<Expr>(Child))
++          if (Expression->HasSideEffects(Ctx, IncludePossibleEffects))
++            return true;
++    }
++    return false;
++  }
++
 +  case ObjC3TryExprClass: {
 +    const auto *E = cast<ObjC3TryExpr>(this);
 +    // `try` may leave the current function and `try!` may trap. `try?`
@@ -350,16 +523,18 @@ index d3e381ba4..785037c92 100644
      return cast<ChooseExpr>(this)->getChosenSubExpr()->HasSideEffects(
          Ctx, IncludePossibleEffects);
 diff --git a/clang/lib/AST/ExprClassification.cpp b/clang/lib/AST/ExprClassification.cpp
-index 9995d1b41..b46bc53f3 100644
+index 9995d1b41..d7b01980d 100644
 --- a/clang/lib/AST/ExprClassification.cpp
 +++ b/clang/lib/AST/ExprClassification.cpp
-@@ -169,6 +169,12 @@ static Cl::Kinds ClassifyInternal(ASTContext &Ctx, const Expr *E) {
+@@ -169,6 +169,14 @@ static Cl::Kinds ClassifyInternal(ASTContext &Ctx, const Expr *E) {
    case Expr::CompoundLiteralExprClass:
      return !E->isLValue() ? ClassifyTemporary(E->getType()) : Cl::CL_LValue;
  
 +    // Carrier constructors and queries produce values, never payload lvalues.
++  case Expr::ObjC3CarrierTransferExprClass:
 +  case Expr::ObjC3OptionalExprClass:
 +  case Expr::ObjC3ResultExprClass:
++  case Expr::ObjC3MatchExprClass:
 +  case Expr::ObjC3TryExprClass:
 +    return ClassifyExprValueKind(Lang, E, E->getValueKind());
 +
@@ -367,10 +542,10 @@ index 9995d1b41..b46bc53f3 100644
    case Expr::CXXBoolLiteralExprClass:
    case Expr::CXXPseudoDestructorExprClass:
 diff --git a/clang/lib/AST/ExprConstant.cpp b/clang/lib/AST/ExprConstant.cpp
-index ec7ca893f..58e30c818 100644
+index ec7ca893f..a913625d0 100644
 --- a/clang/lib/AST/ExprConstant.cpp
 +++ b/clang/lib/AST/ExprConstant.cpp
-@@ -8540,6 +8540,34 @@ public:
+@@ -8540,6 +8540,40 @@ public:
    bool VisitStmt(const Stmt *) {
      llvm_unreachable("Expression evaluator should not be called on stmts");
    }
@@ -395,6 +570,12 @@ index ec7ca893f..58e30c818 100644
 +    return RejectObjC3ConstexprStmt(S);
 +  }
 +
++  bool VisitObjC3MatchArm(const ObjC3MatchArm *S) { return RejectObjC3ConstexprStmt(S); }
++  bool VisitObjC3MatchStmt(const ObjC3MatchStmt *S) { return RejectObjC3ConstexprStmt(S); }
++  bool VisitObjC3MatchExpr(const ObjC3MatchExpr *E) { return Error(E); }
++
++  bool VisitObjC3CarrierTransferExpr(const ObjC3CarrierTransferExpr *E) { return Error(E); }
++
 +  bool VisitObjC3TryExpr(const ObjC3TryExpr *E) {
 +    // The evaluator has no typed-error transfer semantics yet. Fail through
 +    // the ordinary constexpr diagnostic path rather than evaluating the
@@ -405,7 +586,7 @@ index ec7ca893f..58e30c818 100644
    bool VisitExpr(const Expr *E) {
      return Error(E);
    }
-@@ -15469,6 +15497,12 @@ GCCTypeClass EvaluateBuiltinClassifyType(QualType T,
+@@ -15469,6 +15503,12 @@ GCCTypeClass EvaluateBuiltinClassifyType(QualType T,
      return CanTy->isUnionType() ? GCCTypeClass::Union
                                  : GCCTypeClass::ClassOrStruct;
  
@@ -418,24 +599,33 @@ index ec7ca893f..58e30c818 100644
    case Type::Atomic:
      // GCC classifies _Atomic T the same as T.
      return EvaluateBuiltinClassifyType(
-@@ -21016,6 +21050,9 @@ static ICEDiag CheckICE(const Expr* E, const ASTContext &Ctx) {
+@@ -21016,6 +21056,11 @@ static ICEDiag CheckICE(const Expr* E, const ASTContext &Ctx) {
  #define STMT(Node, Base) case Expr::Node##Class:
  #define EXPR(Node, Base)
  #include "clang/AST/StmtNodes.inc"
++  case Expr::ObjC3CarrierTransferExprClass:
 +  case Expr::ObjC3OptionalExprClass:
 +  case Expr::ObjC3ResultExprClass:
++  case Expr::ObjC3MatchExprClass:
 +  case Expr::ObjC3TryExprClass:
    case Expr::PredefinedExprClass:
    case Expr::FloatingLiteralClass:
    case Expr::ImaginaryLiteralClass:
 diff --git a/clang/lib/AST/StmtProfile.cpp b/clang/lib/AST/StmtProfile.cpp
-index a626d0436..5e930d63e 100644
+index a626d0436..ac06ad5c1 100644
 --- a/clang/lib/AST/StmtProfile.cpp
 +++ b/clang/lib/AST/StmtProfile.cpp
-@@ -1604,6 +1604,45 @@ void StmtProfiler::VisitConvertVectorExpr(const ConvertVectorExpr *S) {
+@@ -1604,6 +1604,67 @@ void StmtProfiler::VisitConvertVectorExpr(const ConvertVectorExpr *S) {
    VisitExpr(S);
  }
  
++void StmtProfiler::VisitObjC3CarrierTransferExpr(
++    const ObjC3CarrierTransferExpr *S) {
++  VisitExpr(S);
++  ID.AddInteger(static_cast<unsigned>(S->getKind()));
++  VisitType(S->getCarrierType());
++}
++
 +void StmtProfiler::VisitObjC3ResultExpr(const ObjC3ResultExpr *S) {
 +  VisitExpr(S);
 +  ID.AddInteger(static_cast<unsigned>(S->getKind()));
@@ -446,6 +636,21 @@ index a626d0436..5e930d63e 100644
 +  VisitExpr(S);
 +  ID.AddInteger(static_cast<unsigned>(S->getKind()));
 +  VisitType(S->getCarrierType());
++}
++
++void StmtProfiler::VisitObjC3MatchArm(const ObjC3MatchArm *S) {
++  VisitStmt(S);
++  ID.AddInteger(static_cast<unsigned>(S->getPatternKind()));
++  ID.AddInteger(static_cast<unsigned>(S->getBindingKind()));
++  ID.AddBoolean(S->isMutableBinding());
++  ID.AddBoolean(S->hasExpressionBody());
++  VisitType(S->getCanonicalPatternType());
++}
++void StmtProfiler::VisitObjC3MatchStmt(const ObjC3MatchStmt *S) {
++  VisitStmt(S);
++}
++void StmtProfiler::VisitObjC3MatchExpr(const ObjC3MatchExpr *S) {
++  VisitExpr(S);
 +}
 +
 +void StmtProfiler::VisitObjC3TryExpr(const ObjC3TryExpr *S) {
@@ -479,10 +684,10 @@ index a626d0436..5e930d63e 100644
    VisitExpr(S);
  }
 diff --git a/clang/lib/Parse/ParseExpr.cpp b/clang/lib/Parse/ParseExpr.cpp
-index 351534320..604a74343 100644
+index 351534320..070a6ade6 100644
 --- a/clang/lib/Parse/ParseExpr.cpp
 +++ b/clang/lib/Parse/ParseExpr.cpp
-@@ -864,6 +864,30 @@ Parser::ParseCastExpression(CastParseKind ParseKind, bool isAddressOfOperand,
+@@ -864,6 +864,44 @@ Parser::ParseCastExpression(CastParseKind ParseKind, bool isAddressOfOperand,
    ParseIdentifier: {    // primary-expression: identifier
                          // unqualified-id: identifier
                          // constant: enumeration-constant
@@ -494,6 +699,12 @@ index 351534320..604a74343 100644
 +      Res = ParseObjC3OptionalExpression();
 +      break;
 +    }
++    if (getLangOpts().ObjC3 && Tok.getIdentifierInfo() &&
++        Tok.getIdentifierInfo()->isStr("__objc3_match")) {
++      Res = ParseObjC3MatchExpression();
++      break;
++    }
++
 +    if (getLangOpts().ObjC3 && Tok.is(tok::identifier) &&
 +        Tok.getIdentifierInfo() &&
 +        (Tok.getIdentifierInfo()->isStr("__objc3_try") ||
@@ -510,6 +721,14 @@ index 351534320..604a74343 100644
 +      Res = ParseObjC3ResultExpression();
 +      break;
 +    }
++    if (getLangOpts().ObjC3 && Tok.is(tok::identifier) &&
++        Tok.getIdentifierInfo() &&
++        (Tok.getIdentifierInfo()->isStr("__objc3_copy") ||
++         Tok.getIdentifierInfo()->isStr("__objc3_move"))) {
++      Res = ParseObjC3CarrierTransferExpression();
++      break;
++    }
++
      // Turn a potentially qualified name into a annot_typename or
      // annot_cxxscope if it would be valid.  This handles things like x::y, etc.
      if (getLangOpts().CPlusPlus) {

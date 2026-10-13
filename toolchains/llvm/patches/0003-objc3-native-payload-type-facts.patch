@@ -1,8 +1,16 @@
 diff --git a/clang/lib/AST/CMakeLists.txt b/clang/lib/AST/CMakeLists.txt
-index f9a5f4f0e..50d1b1318 100644
+index f9a5f4f0e..0b1879e6d 100644
 --- a/clang/lib/AST/CMakeLists.txt
 +++ b/clang/lib/AST/CMakeLists.txt
-@@ -131,6 +131,7 @@ add_clang_library(clangAST
+@@ -58,6 +58,7 @@ add_clang_library(clangAST
+   DynamicRecursiveASTVisitor.cpp
+   ParentMapContext.cpp
+   Expr.cpp
++  ObjC3MatchNodes.cpp
+   ExprClassification.cpp
+   ExprConcepts.cpp
+   ExprConstant.cpp
+@@ -131,6 +132,7 @@ add_clang_library(clangAST
    TemplateName.cpp
    TextNodeDumper.cpp
    Type.cpp

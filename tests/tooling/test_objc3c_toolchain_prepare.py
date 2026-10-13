@@ -7,11 +7,75 @@ import json
 import os
 import subprocess
 from pathlib import Path
+from types import SimpleNamespace
 
 import pytest
 
 from scripts.objc3c_toolchain import core
 from scripts.objc3c_toolchain.core import ToolchainError, prepare
+
+
+def test_windows_discovery_keeps_vs2022_when_newer_visual_studio_is_installed(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    programs = tmp_path / "Program Files"
+    vswhere = programs / "Microsoft Visual Studio/Installer/vswhere.exe"
+    vs2022 = programs / "Microsoft Visual Studio/2022/Community"
+    vs_newer = programs / "Microsoft Visual Studio/18/Community"
+    sdk = "10.0.26100.0"
+    version_file = vs2022 / "VC/Auxiliary/Build/Microsoft.VCToolsVersion.default.txt"
+    cl = vs2022 / "VC/Tools/MSVC/14.44.35207/bin/Hostx64/x64/cl.exe"
+    link = cl.with_name("link.exe")
+    python = tmp_path / "python.exe"
+    cmake, ninja, launcher = (tmp_path / name for name in ("cmake.exe", "ninja.exe", "py.exe"))
+    files = [vswhere, cl, link, python, cmake, ninja, launcher,
+             programs / f"Windows Kits/10/Include/{sdk}/um/Windows.h",
+             programs / f"Windows Kits/10/Include/{sdk}/ucrt/stdio.h",
+             programs / f"Windows Kits/10/Lib/{sdk}/um/x64/kernel32.lib",
+             programs / f"Windows Kits/10/Lib/{sdk}/ucrt/x64/ucrt.lib"]
+    for path in files:
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_bytes(b"fixture")
+    version_file.parent.mkdir(parents=True, exist_ok=True)
+    version_file.write_text("14.44.35207\n", encoding="utf-8")
+    vs_newer.mkdir(parents=True)
+
+    def run(command: list[str]) -> str:
+        if command[0] == str(vswhere):
+            # Model vswhere's latest selection with two installed generations.
+            return str(vs2022 if "[17.0,18.0)" in command else vs_newer)
+        if command[0] == str(launcher):
+            return str(python)
+        if command[0] == str(python):
+            return "Python 3.13.3"
+        if command[0] == str(cmake):
+            return "cmake version 4.2.0"
+        return "1.13.2"
+
+    monkeypatch.setattr(core, "os", SimpleNamespace(
+        name="nt", environ={"ProgramFiles(x86)": str(programs)}))
+    monkeypatch.setattr(core, "_run", run)
+    monkeypatch.setattr(core.shutil, "which", lambda name: str(
+        {"cmake": cmake, "ninja": ninja, "py": launcher}[name]))
+    environment = core._windows_build_environment({"build": {
+        "host_toolset": "Visual Studio 2022 v143", "windows_sdk_version": sdk,
+        "windows_crt": "MD"}})
+    assert environment["cl_path"] == str(cl.resolve())
+    assert environment["vs_installation"] == str(vs2022.resolve())
+    assert environment["msvc_toolset_version"] == "14.44.35207"
+
+
+def test_windows_discovery_reports_missing_vs2022(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    vswhere = tmp_path / "Microsoft Visual Studio/Installer/vswhere.exe"
+    vswhere.parent.mkdir(parents=True)
+    vswhere.write_bytes(b"fixture")
+    monkeypatch.setattr(core, "os", SimpleNamespace(
+        name="nt", environ={"ProgramFiles(x86)": str(tmp_path)}))
+    monkeypatch.setattr(core, "_run", lambda command: "")
+    with pytest.raises(ToolchainError, match="Visual Studio 2022 v143.*not installed"):
+        core._windows_build_environment({})
 
 
 def git(*args: str, cwd: Path | None = None) -> str:

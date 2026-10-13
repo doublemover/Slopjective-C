@@ -37,6 +37,9 @@ endif()
 find_program(OBJC3C_FOUNDATION_DRIVER NAMES clang
   PATHS "${_objc3_sdk}/bin" NO_DEFAULT_PATH REQUIRED)
 file(TO_CMAKE_PATH "${OBJC3C_FOUNDATION_DRIVER}" OBJC3C_FOUNDATION_DRIVER)
+set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS
+  "${OBJC3C_FOUNDATION_DRIVER}")
+file(SHA256 "${OBJC3C_FOUNDATION_DRIVER}" OBJC3C_FOUNDATION_DRIVER_SHA256)
 execute_process(
   COMMAND "${OBJC3C_FOUNDATION_DRIVER}" --version
   RESULT_VARIABLE _objc3_driver_exit
@@ -51,4 +54,21 @@ set(OBJC3C_FOUNDATION_RESOURCE_DIR "${_objc3_sdk}/lib/clang/22")
 if (NOT EXISTS "${OBJC3C_FOUNDATION_RESOURCE_DIR}/include/stddef.h")
   message(FATAL_ERROR "Matching Clang resource headers are missing")
 endif()
+file(GLOB_RECURSE _objc3_resource_files CONFIGURE_DEPENDS LIST_DIRECTORIES FALSE
+  "${OBJC3C_FOUNDATION_RESOURCE_DIR}/*")
+list(SORT _objc3_resource_files)
+set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS
+  ${_objc3_resource_files})
+set(_objc3_resource_identity_input "")
+foreach(_objc3_resource_file IN LISTS _objc3_resource_files)
+  file(RELATIVE_PATH _objc3_resource_relative
+    "${OBJC3C_FOUNDATION_RESOURCE_DIR}" "${_objc3_resource_file}")
+  file(TO_CMAKE_PATH "${_objc3_resource_relative}" _objc3_resource_relative)
+  file(SHA256 "${_objc3_resource_file}" _objc3_resource_sha256)
+  string(LENGTH "${_objc3_resource_relative}" _objc3_resource_path_length)
+  string(APPEND _objc3_resource_identity_input
+    "${_objc3_resource_path_length}:${_objc3_resource_relative}${_objc3_resource_sha256}\n")
+endforeach()
+string(SHA256 OBJC3C_FOUNDATION_RESOURCE_SHA256
+  "${_objc3_resource_identity_input}")
 message(STATUS "ObjC3 pinned Clang patch digest: ${OBJC3C_FOUNDATION_PATCH_DIGEST}")

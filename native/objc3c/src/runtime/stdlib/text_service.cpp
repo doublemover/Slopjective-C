@@ -292,6 +292,72 @@ extern "C" int objc3_runtime_stdlib_text_v2_find_bytes(
   return OBJC3_STDLIB_V2_OK;
 }
 
+extern "C" int objc3_runtime_stdlib_text_v2_find_scalars(
+    objc3_text_v2_t text, const char *needle, uint64_t needle_byte_count,
+    uint64_t start_scalar, int *out_found, uint64_t *out_scalar_index) {
+  if (out_found == nullptr || out_scalar_index == nullptr ||
+      (needle == nullptr && needle_byte_count != 0))
+    return OBJC3_STDLIB_V2_INVALID_ARGUMENT;
+  *out_found = 0;
+  *out_scalar_index = 0;
+  if (needle_byte_count > kTextV2MaxBytes)
+    return OBJC3_STDLIB_V2_CAPACITY_EXCEEDED;
+
+  int needle_scalar_count = 0;
+  if (!TryDecodeUtf8Scalars(
+          reinterpret_cast<const unsigned char *>(needle),
+          static_cast<int>(needle_byte_count), needle_scalar_count, nullptr))
+    return OBJC3_STDLIB_V2_INVALID_UTF8;
+
+  int status = OBJC3_STDLIB_V2_OK;
+  const bool found_handle = TextV2Storage().With(text, kTextV2Kind,
+      [&](TextV2Value &value) {
+        std::lock_guard<std::mutex> lock(value.mutex);
+        const auto &haystack = value.bytes;
+        const auto &scalar_offsets = value.scalar_offsets;
+        const uint64_t scalar_count = scalar_offsets.size() - 1;
+        if (start_scalar > scalar_count) {
+          status = OBJC3_STDLIB_V2_OUT_OF_BOUNDS;
+          return;
+        }
+        if (needle_byte_count == 0) {
+          *out_found = 1;
+          *out_scalar_index = start_scalar;
+          return;
+        }
+
+        const auto *needle_bytes =
+            reinterpret_cast<const unsigned char *>(needle);
+        auto search_begin = haystack.begin() + scalar_offsets[start_scalar];
+        while (search_begin != haystack.end()) {
+          const auto match = std::search(
+              search_begin, haystack.end(), needle_bytes,
+              needle_bytes + static_cast<std::size_t>(needle_byte_count));
+          if (match == haystack.end())
+            break;
+          const std::size_t first_byte =
+              static_cast<std::size_t>(std::distance(haystack.begin(), match));
+          const std::size_t last_byte = first_byte +
+              static_cast<std::size_t>(needle_byte_count);
+          const auto first_scalar = std::lower_bound(
+              scalar_offsets.begin() + static_cast<std::ptrdiff_t>(start_scalar),
+              scalar_offsets.end(), first_byte);
+          const auto last_scalar = std::lower_bound(
+              scalar_offsets.begin(), scalar_offsets.end(), last_byte);
+          if (first_scalar != scalar_offsets.end() && *first_scalar == first_byte &&
+              last_scalar != scalar_offsets.end() && *last_scalar == last_byte) {
+            *out_found = 1;
+            *out_scalar_index = static_cast<uint64_t>(
+                std::distance(scalar_offsets.begin(), first_scalar));
+            return;
+          }
+          search_begin = match + 1;
+        }
+      });
+  return found_handle ? status :
+      TextV2RegistryStatus(TextV2Storage().Inspect(text, kTextV2Kind));
+}
+
 extern "C" int objc3_runtime_stdlib_text_v2_concat(
     objc3_text_v2_t left, objc3_text_v2_t right,
     objc3_text_v2_t *out_text) {
@@ -358,8 +424,6 @@ extern "C" int objc3_runtime_stdlib_text_builder_v2_append_utf8(
           return;
         }
         try {
-          value.bytes.reserve(value.bytes.size() +
-                              static_cast<std::size_t>(byte_count));
           if (byte_count != 0) {
             const auto *first = reinterpret_cast<const unsigned char *>(bytes);
             value.bytes.insert(value.bytes.end(), first,
@@ -371,6 +435,32 @@ extern "C" int objc3_runtime_stdlib_text_builder_v2_append_utf8(
       });
   return found ? status : TextBuilderV2RegistryStatus(
       TextBuilderV2Storage().Inspect(builder, kTextBuilderV2Kind));
+}
+
+extern "C" int objc3_runtime_stdlib_text_builder_v2_append_scalar(
+    objc3_text_builder_v2_t builder, uint32_t scalar) {
+  if (scalar > 0x10ffff || (scalar >= 0xd800 && scalar <= 0xdfff))
+    return OBJC3_STDLIB_V2_INVALID_ARGUMENT;
+
+  char bytes[4];
+  std::size_t byte_count = 0;
+  if (scalar <= 0x7f) {
+    bytes[byte_count++] = static_cast<char>(scalar);
+  } else if (scalar <= 0x7ff) {
+    bytes[byte_count++] = static_cast<char>(0xc0 | (scalar >> 6));
+    bytes[byte_count++] = static_cast<char>(0x80 | (scalar & 0x3f));
+  } else if (scalar <= 0xffff) {
+    bytes[byte_count++] = static_cast<char>(0xe0 | (scalar >> 12));
+    bytes[byte_count++] = static_cast<char>(0x80 | ((scalar >> 6) & 0x3f));
+    bytes[byte_count++] = static_cast<char>(0x80 | (scalar & 0x3f));
+  } else {
+    bytes[byte_count++] = static_cast<char>(0xf0 | (scalar >> 18));
+    bytes[byte_count++] = static_cast<char>(0x80 | ((scalar >> 12) & 0x3f));
+    bytes[byte_count++] = static_cast<char>(0x80 | ((scalar >> 6) & 0x3f));
+    bytes[byte_count++] = static_cast<char>(0x80 | (scalar & 0x3f));
+  }
+  return objc3_runtime_stdlib_text_builder_v2_append_utf8(
+      builder, bytes, byte_count);
 }
 
 extern "C" int objc3_runtime_stdlib_text_builder_v2_append_text(

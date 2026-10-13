@@ -64,7 +64,9 @@ class ContractConsumer final : public clang::ASTConsumer,
         declarations.end());
     if (request_.emit_semantic_interface)
       result_.interface_artifact = EmitSemanticInterface(
-          context, request_.module_name, request_.package_identity);
+          context, request_.module_name, request_.package_identity,
+          result_.resolved_interface_dependencies,
+          result_.resolved_interface_sources);
   }
 
  private:

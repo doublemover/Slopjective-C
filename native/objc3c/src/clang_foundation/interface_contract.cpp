@@ -61,6 +61,25 @@ void Add(InterfaceContractValidation &r, std::string code,
 }
 }  // namespace
 
+bool SameInterfaceDeclarationIdentity(
+    const InterfaceDeclarationIdentity &left,
+    const InterfaceDeclarationIdentity &right) {
+  return std::tie(left.stable_id, left.kind, left.qualified_name,
+                  left.canonical_type_identity,
+                  left.effects.is_async, left.effects.is_throwing,
+                  left.effects.throws_kind, left.effects.error_type_identity,
+                  left.effects.actor_isolation_identity,
+                  left.effects.executor_affinity_identity,
+                  left.effects.ownership_identity) ==
+         std::tie(right.stable_id, right.kind, right.qualified_name,
+                  right.canonical_type_identity,
+                  right.effects.is_async, right.effects.is_throwing,
+                  right.effects.throws_kind, right.effects.error_type_identity,
+                  right.effects.actor_isolation_identity,
+                  right.effects.executor_affinity_identity,
+                  right.effects.ownership_identity);
+}
+
 std::string BuildSemanticFingerprintInput(const SemanticInterfaceSidecar &sidecar) {
   std::ostringstream out;
   out << kInterfaceSchemaId << '\n' << sidecar.schema_major << '.'
@@ -138,9 +157,22 @@ InterfaceContractValidation ValidateSemanticInterface(
   for (std::size_t i = 0; i < count; ++i)
     if (DeclarationKey(expected_decls[i]) != DeclarationKey(actual_decls[i]))
       Add(result, "O3IFC010", "declaration type or effect identity mismatch", expected_decls[i].stable_id);
+  const bool effect_semantic = std::binary_search(
+      required.begin(), required.end(), "objc3.canonical-function-effects.v1");
   for (const auto &declaration : sidecar.declarations)
-    if (HasEffects(declaration.effects))
-      Add(result, "O3IFC012", "effect-bearing declaration unsupported until canonical effect AST is available", declaration.stable_id);
+    if (HasEffects(declaration.effects) && !effect_semantic)
+      Add(result, "O3IFC012",
+          "effect-bearing declaration is missing the canonical function-effects semantic capability",
+          declaration.stable_id);
+  const bool carrier_semantic = std::binary_search(
+      required.begin(), required.end(), "objc3.native-carrier-types.v1");
+  for (const auto &declaration : sidecar.declarations)
+    if ((declaration.canonical_type_identity.find("__objc3_optional(") != std::string::npos ||
+         declaration.canonical_type_identity.find("__objc3_result(") != std::string::npos) &&
+        !carrier_semantic)
+      Add(result, "O3IFC013",
+          "carrier declaration is missing the native carrier type semantic capability",
+          declaration.stable_id);
   for (const auto &dep : sidecar.dependencies)
     if (dep.module.canonical_name.empty() || dep.module.semantic_fingerprint.empty() ||
         dep.module.target_triple != sidecar.module.target_triple ||

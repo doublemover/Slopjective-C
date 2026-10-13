@@ -4,7 +4,9 @@
 from __future__ import annotations
 
 import hashlib
+import argparse
 import json
+import re
 import shutil
 import subprocess
 import sys
@@ -123,7 +125,26 @@ def write_cache_entries(mirror_packages: list[dict[str, Any]]) -> list[str]:
     return sorted(written_paths)
 
 
-def main() -> int:
+def main(argv: list[str] | None = None) -> int:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--producer-report", type=Path, help="write identity-bound evidence for a clean-install graph consumer")
+    parser.add_argument("--run-id")
+    parser.add_argument("--producer-node-identity")
+    parser.add_argument("--build-identity", help="compiler/runtime content identity supplied by the graph owner")
+    args = parser.parse_args(argv)
+    identities = (args.run_id, args.producer_node_identity, args.build_identity)
+    if args.producer_report is not None and not all(value and value.strip() for value in identities):
+        parser.error("producer report requires run, producer node, and build identities")
+    if args.producer_report is None and any(identities):
+        parser.error("producer identities require --producer-report")
+    if args.producer_report is not None:
+        report_path = args.producer_report.resolve()
+        if not report_path.is_relative_to((ROOT / "tmp").resolve()):
+            parser.error("producer report must stay within repository tmp")
+        if report_path.exists():
+            parser.error("producer report already exists; choose a fresh run output")
+        if not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._-]{0,79}", args.run_id):
+            parser.error("run id must contain 1-80 safe filename characters")
     ensure_lock()
     lock = load_json(LOCK_PATH)
     build_lock_command = public_workflow_command("build-package-lock")
@@ -251,6 +272,12 @@ def main() -> int:
     }
     SUMMARY_PATH.parent.mkdir(parents=True, exist_ok=True)
     write_json_file(SUMMARY_PATH, summary)
+    if args.producer_report is not None:
+        from objc3c_package_manager.producer_report import write_producer_report
+
+        write_producer_report(ROOT, args.producer_report.resolve(), run_id=args.run_id,
+            node_identity=args.producer_node_identity, build_identity=args.build_identity)
+        print(f"producer_report: {repo_rel(args.producer_report.resolve())}")
     print(f"mirror_path: {repo_rel(MIRROR_PATH)}")
     print(f"cache_root: {repo_rel(CACHE_ROOT)}")
     print(f"registry_path: {repo_rel(REGISTRY_PATH)}")

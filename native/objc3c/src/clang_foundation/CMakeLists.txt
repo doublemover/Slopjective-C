@@ -10,7 +10,10 @@ add_library(objc3c_clang_foundation STATIC
   interface_codec.cpp
   interface_emitter.cpp
   interface_artifact_io.cpp
-  interface_validation.cpp)
+  interface_validation.cpp
+  interface_import.cpp
+  interface_module_resolver.cpp
+  interface_source_import_bridge.cpp)
 target_include_directories(objc3c_clang_foundation SYSTEM PRIVATE
   ${LLVM_INCLUDE_DIRS} ${CLANG_INCLUDE_DIRS})
 target_link_libraries(objc3c_clang_foundation PUBLIC objc3c_build_defaults)
@@ -21,12 +24,16 @@ llvm_map_components_to_libnames(_objc3_native_codegen
 target_link_libraries(objc3c_clang_foundation PRIVATE ${_objc3_native_codegen})
 target_compile_definitions(objc3c_clang_foundation PRIVATE
   "OBJC3C_FOUNDATION_DRIVER=\"${OBJC3C_FOUNDATION_DRIVER}\""
+  "OBJC3C_FOUNDATION_DRIVER_SHA256=\"${OBJC3C_FOUNDATION_DRIVER_SHA256}\""
   "OBJC3C_FOUNDATION_PATCH_DIGEST=\"${OBJC3C_FOUNDATION_PATCH_DIGEST}\""
+  "OBJC3C_FOUNDATION_RESOURCE_SHA256=\"${OBJC3C_FOUNDATION_RESOURCE_SHA256}\""
   "OBJC3C_FOUNDATION_RESOURCE_DIR=\"${OBJC3C_FOUNDATION_RESOURCE_DIR}\"")
 
 add_library(objc3c_frontend_v2 STATIC frontend_api.cpp)
 target_link_libraries(objc3c_frontend_v2 PUBLIC objc3c_clang_foundation)
 add_executable(objc3c-clang driver_main.cpp)
+target_include_directories(objc3c-clang SYSTEM PRIVATE
+  ${LLVM_INCLUDE_DIRS} ${CLANG_INCLUDE_DIRS})
 target_link_libraries(objc3c-clang PRIVATE objc3c_clang_foundation)
 
 add_library(objc3_runtime_services STATIC
@@ -54,6 +61,38 @@ if (BUILD_TESTING)
     ../../../../tests/clang_foundation/interface_contract_test.cpp)
   target_link_libraries(objc3_interface_contract_test PRIVATE objc3c_clang_foundation)
   add_test(NAME objc3_interface_contract COMMAND objc3_interface_contract_test)
+  add_executable(objc3_interface_import_test
+    ../../../../tests/clang_foundation/interface_import_test.cpp)
+  target_include_directories(objc3_interface_import_test SYSTEM PRIVATE
+    ${LLVM_INCLUDE_DIRS} ${CLANG_INCLUDE_DIRS})
+  target_link_libraries(objc3_interface_import_test PRIVATE objc3c_clang_foundation)
+  add_test(NAME objc3_interface_import COMMAND objc3_interface_import_test)
+  add_executable(objc3_interface_import_api_test
+    ../../../../tests/clang_foundation/interface_import_api_test.cpp)
+  target_include_directories(objc3_interface_import_api_test SYSTEM PRIVATE
+    ${LLVM_INCLUDE_DIRS} ${CLANG_INCLUDE_DIRS})
+  target_link_libraries(objc3_interface_import_api_test PRIVATE objc3c_frontend_v2)
+  add_test(NAME objc3_interface_import_api COMMAND objc3_interface_import_api_test)
+  add_executable(objc3_interface_module_resolution_test
+    ../../../../tests/clang_foundation/interface_module_resolution_test.cpp)
+  target_link_libraries(objc3_interface_module_resolution_test PRIVATE objc3c_frontend_v2)
+  add_test(NAME objc3_interface_module_resolution COMMAND objc3_interface_module_resolution_test)
+  add_executable(objc3_interface_module_provenance_test
+    ../../../../tests/clang_foundation/interface_module_provenance_test.cpp)
+  target_include_directories(objc3_interface_module_provenance_test SYSTEM PRIVATE
+    ${LLVM_INCLUDE_DIRS} ${CLANG_INCLUDE_DIRS})
+  target_link_libraries(objc3_interface_module_provenance_test PRIVATE
+    objc3c_clang_foundation clangTooling clangFrontend clangAST)
+  add_test(NAME objc3_interface_module_provenance COMMAND objc3_interface_module_provenance_test)
+
+  add_executable(objc3_interface_source_import_bridge_test
+    ../../../../tests/clang_foundation/interface_source_import_bridge_test.cpp)
+  target_include_directories(objc3_interface_source_import_bridge_test SYSTEM PRIVATE
+    ${LLVM_INCLUDE_DIRS} ${CLANG_INCLUDE_DIRS})
+  target_link_libraries(objc3_interface_source_import_bridge_test PRIVATE
+    objc3c_clang_foundation clangTooling clangFrontend clangAST)
+  add_test(NAME objc3_interface_source_import_bridge
+    COMMAND objc3_interface_source_import_bridge_test)
   add_executable(objc3_compile_session_test
     ../../../../tests/clang_foundation/compile_session_test.cpp)
   target_link_libraries(objc3_compile_session_test PRIVATE objc3c_frontend_v2)
@@ -87,9 +126,24 @@ if (BUILD_TESTING)
     ../../tests/generic_associative_service_test.cpp)
   target_link_libraries(objc3_generic_associative_service_test PRIVATE objc3_runtime_services)
   add_test(NAME objc3_generic_associative_service COMMAND objc3_generic_associative_service_test)
+  add_executable(objc3_text_scalar_boundary_test ../../tests/text_scalar_boundary_test.cpp)
+  target_link_libraries(objc3_text_scalar_boundary_test PRIVATE objc3_runtime_services)
+  add_test(NAME objc3_text_scalar_boundary COMMAND objc3_text_scalar_boundary_test)
+  add_executable(objc3_text_file_cli ../../tests/text_file_cli.cpp)
+  target_link_libraries(objc3_text_file_cli PRIVATE objc3_runtime_services)
+  find_package(Python3 COMPONENTS Interpreter REQUIRED)
+  add_test(NAME objc3_text_file_cli
+    COMMAND "${Python3_EXECUTABLE}" -B
+      "${CMAKE_CURRENT_SOURCE_DIR}/../../../../tests/clang_foundation/text_file_cli_test.py"
+      "$<TARGET_FILE:objc3_text_file_cli>")
+  set_tests_properties(objc3_text_file_cli PROPERTIES TIMEOUT 30)
   foreach(_objc3_test objc3_carrier_service_test objc3_interface_contract_test objc3_compile_session_test
-      objc3_interface_emitter_test objc3_interface_artifact_io_test objc3_task_services_test
-      objc3_generic_collection_service_test objc3_generic_associative_service_test)
+      objc3_interface_emitter_test objc3_interface_artifact_io_test objc3_interface_import_test
+      objc3_interface_import_api_test
+      objc3_interface_module_resolution_test objc3_interface_module_provenance_test
+      objc3_interface_source_import_bridge_test objc3_task_services_test
+      objc3_generic_collection_service_test objc3_generic_associative_service_test
+      objc3_text_scalar_boundary_test)
     if (MSVC)
       target_compile_options(${_objc3_test} PRIVATE /UNDEBUG)
     else()

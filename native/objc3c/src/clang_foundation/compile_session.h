@@ -5,6 +5,8 @@
 #include <vector>
 
 #include "clang_foundation/interface_contract.h"
+#include "clang_foundation/interface_import.h"
+#include "clang_foundation/interface_module_resolver.h"
 
 namespace objc3::clang_foundation {
 
@@ -32,6 +34,13 @@ struct CompileRequest {
   // Optional publication destination. With emitted object/IR output, all
   // products are published through one rollback boundary.
   std::string interface_output_path;
+  std::vector<std::string> interface_search_paths;
+  // Locked modules available to source-level `@import`. When enabled, these
+  // are prepared before parsing but remain invisible until the matching
+  // source directive is encountered.
+  bool source_directed_imports = false;
+  std::vector<InterfaceModuleRequest> module_imports;
+  std::vector<InterfaceImportInput> imported_interfaces;
 };
 
 struct DiagnosticLocation {
@@ -52,9 +61,22 @@ struct CompileResult {
   bool success = false;
   std::string failure;
   std::string compiler_identity;
+  std::string compiler_driver_path;
+  std::string compiler_driver_sha256;
+  std::string resource_directory;
+  std::string resource_directory_sha256;
+  std::string clang_patch_digest;
   std::vector<std::string> driver_arguments;
   std::vector<CompileDiagnostic> diagnostics;
   std::vector<InterfaceDeclarationIdentity> declarations;
+  std::vector<InterfaceDeclarationIdentity> imported_declarations;
+  std::vector<InterfaceDependency> resolved_interface_dependencies;
+  std::vector<std::string> interface_dependency_order;
+  std::vector<InterfaceModuleIdentity> resolved_module_identities;
+  std::vector<InterfaceSourceArtifact> resolved_interface_sources;
+  std::vector<std::string> visible_module_names;
+  std::string semantic_dependency_record;
+  std::vector<InterfaceContractDiagnostic> interface_import_diagnostics;
   std::string target_triple;
   std::string runtime_abi;
   std::optional<InterfaceEmissionArtifact> interface_artifact;

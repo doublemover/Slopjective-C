@@ -6,6 +6,16 @@ changes are the ordered patch files listed in `patches/series` and locked by
 their SHA-256 values in `manifest.json`. Do not maintain a second editable copy
 of patched Clang files.
 
+Checkpoint 46 validated SDK build
+`llvmorg-22.1.6-fc4aad7b5db3-2e6c31d39542-f01d29b2` on the admitted Windows
+x64 profile. All 121 supported extension lit tests passed; 3 of the 124 discovered
+tests were unsupported. All 44 AST checks, 15 facade CTest tests and 32 tooling
+checks passed. The native match and transfer matrices passed 12 and 18 runtime
+executions, respectively, across clang, clang-cl and objc3c-clang at O0/O2.
+Baseline runtime coverage passed 20 expression, 8 plain C ABI, 4 C++ local and
+4 ARC local executions. These are scoped migration results and do not promote
+any public language capability.
+
 ## Prepare and verify
 
 From the repository root, use:
@@ -83,8 +93,9 @@ are inputs to Sema and CodeGen; they do not establish carrier call ABI or
 extension-language qualification by themselves.
 
 The canonical stack has separate ownership for language/build identity, native
-defer parsing/persistence, payload facts, canonical carrier/function types, and
-CodeGen qualification boundaries. Export requires exactly one owner for every
+defer parsing/persistence, payload facts, canonical carrier/function types,
+source-import hooks, match/transfer AST semantics and CodeGen qualification
+boundaries. Export requires exactly one owner for every
 changed or new source path. Canonical type regressions cover aliases, payload
 qualifiers, type interning and rehashing, PCH/import, templates, C compatibility,
 index identity and pointer overload mangling. CodeGen checks actual carrier
@@ -114,13 +125,22 @@ destruction after successful initialization. Sema resolves actual payload
 destructors, including access/deletion and declaration references; native jump
 checks reject entering a scope past initialization. Empty C++ payload addresses
 use AST-owned byte offsets, including explicit alignment. The admitted slice
-requires a public nondeleted payload destructor and a direct Some/None/Ok/Err
-initializer; carrier copy/move, temporaries, nested managed payloads and
-payload extraction remain gated. Its executable counter checks cover source
+requires a public nondeleted payload destructor and an admitted direct
+Some/None/Ok/Err or explicit carrier-transfer initializer. General carrier
+assignment, temporaries, nested managed payloads and payload extraction outside
+the plain match slice remain gated. Its executable counter checks cover source
 temporary cleanup, selected destruction once, C++ unwinding, failed construction,
 const locals and aligned empty payloads at O0/O2 through clang++ and clang-cl.
 Run `scripts/objc3c_toolchain_runtime/run_carrier_cpp_lifetime_fixtures_windows.ps1`
 from the admitted developer environment. This is private migration evidence.
+
+For admitted C++ record payloads, private `__objc3_has_value` and `__objc3_is_ok`
+queries borrow only the tag from existing carrier glvalues. They perform no
+payload construction, copy, move or destruction; queries on those carrier
+temporaries remain rejected. Ordinary calls through fixed reference parameters
+use Clang's native reference transport and carry the carrier address. This does
+not qualify by-value carrier transport, overloaded operator calls or additional
+payload lifetime operations.
 
 Direct initialized ARC carrier locals now use native strong, weak or unsafe
 object fields. Sema makes implicit ARC `id` ownership explicitly strong before
@@ -139,6 +159,43 @@ pinned runtime's required weak-load hook and weak-reference teardown. Run
 from the admitted developer environment. These checks are private migration
 evidence and do not enable a public language capability.
 
+Private C++ `__objc3_copy` and `__objc3_move` expressions now use native AST
+nodes with InitializationSequence recipes for each payload arm. Copy requires a
+carrier lvalue; move accepts a carrier glvalue and presents the payload as an
+xvalue, including native copy fallback for a const source. Template
+revalidation, PCH and AST import preserve those recipes. CodeGen admits these
+expressions only as direct local initializers with supported C++ payload
+lifetimes. It evaluates the source once, constructs only the active arm and
+stores the destination tag after successful construction. The source tag stays
+active after a move, so source destruction follows ordinary moved-from payload
+lifetime rules. Failed destination construction registers no destination payload
+destruction; normal and C++ exception cleanup use the selected-arm local lifetime
+path. Nonvolatile sources and destinations are required. Assignment, discarded
+transfer results, arbitrary carrier temporaries, nested carrier payloads and
+ARC/Block transfer remain unsupported. The tracked runtime witnesses cover
+copy/move construction, const-source fallback, selected Result arms and throwing
+constructors. Run
+`scripts/objc3c_toolchain_runtime/run_carrier_transfer_fixtures_windows.ps1`
+with `-ClientDriver clang`, `clang-cl` or `objc3c-clang` for O0/O2 checks.
+These private forms leave public feature gates unavailable.
+
+Private `__objc3_match` statement and expression forms have native AST nodes,
+type-directed pattern checks, case-local binding scope, coverage diagnostics,
+template revalidation, PCH and AST import. Optional case spellings remain private
+`__objc3_case_some`/`__objc3_case_none`; Result patterns use `.Ok`/`.Err`.
+CodeGen evaluates the scrutinee once, tries cases in source order and binds
+immutable borrowed `let` names only inside their case. It admits plain
+Optional/Result carriers and integral, enum and native pointer scrutinees.
+Expression forms require exhaustive coverage and a supported scalar result;
+their guards must be boolean and free of observable side effects. Statement
+guards and selected arm bodies run native temporary and EH cleanups, including
+cleanup before proceeding past a false guard. Managed payload matches, mutable
+or move bindings, type tests, string patterns and aggregate expression results
+remain unsupported. Run
+`scripts/objc3c_toolchain_runtime/run_native_match_fixtures_windows.ps1`
+with the same three client drivers for the O0/O2 runtime witnesses. This does not
+qualify the public match spelling.
+
 An internal by-value adapter qualifies supported plain direct carrier values
 for nonvariadic C functions on `x86_64-pc-windows-msvc`. Clang's target ABIInfo
 classifies the AST-owned hidden record while source declarations retain their
@@ -156,6 +213,41 @@ Executable expression fixtures run at O0/O2 through both
 GNU-style Clang and clang-cl; the facade checks identical native IR through its
 C++ compile session and versioned C embedding API, including failed-output
 rollback. These scoped migration checks do not promote public feature gates.
+
+The matching facade now includes locked semantic interface import and
+source-directed registry plumbing. It checks canonical `.objc3i` source/sidecar
+pairs, module fingerprints, package identity and target/runtime/language profile,
+reparses in dependency-first order and imports validated declarations through
+Clang ASTImporter. Modeled C/Objective-C interfaces preserve canonical async and
+typed/untyped throws declarations, including nested callback types, with known
+required-semantics identifiers and exact declaration-identity roundtrips.
+Unknown required semantics are rejected. Reparse/import helpers use isolated
+physical filesystems without changing the host process working directory.
+Executable typed-error handling and async execution remain unsupported. Public
+re-export edges control visibility and module provenance survives emission.
+Version 3 of the C embedding API and the CLI expose
+search roots, locked module requests and compiler/dependency identity records.
+`--source-imports` defers resolution and visibility until ObjC3
+`@import Module.Path;`; unused registry entries contribute no semantic dependency,
+and unregistered imports retain Clang's native module-loader path. C++ and
+Objective-C++ semantic interface interchange remain unsupported. The facade also
+registers scalar-boundary text tests and the native `objc3_text_file_cli`
+application fixture, which parses a bounded UTF-8 record file through opaque text
+and builder services. The tracked
+`scripts/objc3c_toolchain_runtime/run_source_import_fixtures_windows.ps1`
+runner archives the original provider source after emitting its interface and
+object, then separately compiles, links and runs eager/source-directed consumers.
+It verifies the provider lock in dependency records and preserves previously
+published object/dependency outputs after a wrong-lock rejection. Package
+ecosystem install/reuse scripts check metadata agreement and local artifact
+installation/reuse; they do not install Clang. Build or stage the matching SDK
+through the toolchain path above. At checkpoint 46, both separately linked source
+import consumers passed, including qualified types at file/block scope and
+wrong-lock output preservation. The compiler-free package producer, clean
+consumer installation and reuse passed without regenerating producer artifacts.
+See
+[`native/objc3c/src/clang_foundation/README.md`](../../native/objc3c/src/clang_foundation/README.md)
+for CLI/API scope and the 21-case text application result.
 
 The sealed development compiler can also qualify its matching clang-format
 and clangd binaries with `python -B -m scripts.objc3c_editor_tooling.qualification`.
