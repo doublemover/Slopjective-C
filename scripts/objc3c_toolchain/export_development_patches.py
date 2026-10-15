@@ -167,6 +167,8 @@ PACKETS = {
         "clang/lib/CodeGen/CGObjC3ResultExpr.cpp",
         "clang/lib/CodeGen/CGObjC3ABIBoundaries.h",
         "clang/lib/CodeGen/CGObjC3ABIBoundaries.cpp",
+        "clang/lib/CodeGen/CGObjC3TypedErrors.h",
+        "clang/lib/CodeGen/CGObjC3TypedErrors.cpp",
         "clang/lib/CodeGen/CMakeLists.txt",
         "clang/lib/CodeGen/CGCall.cpp",
         "clang/lib/CodeGen/CGAtomic.cpp",

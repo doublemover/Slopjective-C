@@ -23,6 +23,7 @@ _RUNNERS = {
     "arc-lifetime": ("run_carrier_arc_lifetime_fixtures_windows.ps1", "carrier-arc-lifetime-fixtures"),
     "match": ("run_native_match_fixtures_windows.ps1", "native-match-fixtures"),
     "transfer": ("run_carrier_transfer_fixtures_windows.ps1", "native-transfer-fixtures"),
+    "typed-errors": ("run_native_typed_error_fixtures_windows.ps1", "native-typed-error-fixtures"),
 }
 _CASES = {
     "expression": (
@@ -35,6 +36,9 @@ _CASES = {
     "match": ("match-native-runtime", "match-guard-cleanup-runtime"),
     "transfer": (
         "carrier-transfer-runtime", "carrier-transfer-runtime-v2", "carrier-transfer-local-runtime",
+    ),
+    "typed-errors": (
+        "typed-error-out-runtime", "typed-error-dynamic-nil-trap", "typed-error-force-error-trap",
     ),
 }
 _SHA256 = re.compile(r"[0-9a-fA-F]{64}\Z")
@@ -211,7 +215,12 @@ def _validate_report(report: dict, suite: str, driver: str, build_id: str,
     if any(not isinstance(name, str) for name in names) or set(names) != expected or len(names) != len(expected):
         raise ValueError("Fixture report is missing expected O0/O2 cases or contains duplicates")
     for row in fixtures:
-        if type(row.get("exit_code")) is not int or row["exit_code"] != 0:
+        expected_exit = 0
+        if suite == "typed-errors" and "-trap-O" in row["name"]:
+            expected_exit = -1073741795  # Windows illegal-instruction trap.
+            if type(row.get("expected_exit_code")) is not int or row["expected_exit_code"] != expected_exit:
+                raise ValueError(f"Runtime trap fixture has an invalid expected exit: {row['name']}")
+        if type(row.get("exit_code")) is not int or row["exit_code"] != expected_exit:
             raise ValueError(f"Runtime fixture did not exit successfully: {row['name']}")
         if "status" in row and row["status"] != "passed":
             raise ValueError(f"Runtime fixture did not pass: {row['name']}")

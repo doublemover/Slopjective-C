@@ -684,10 +684,10 @@ index 63fc4bf2e..b9710ea45 100644
 +
  } // end of Parser diagnostics
 diff --git a/clang/include/clang/Basic/DiagnosticSemaKinds.td b/clang/include/clang/Basic/DiagnosticSemaKinds.td
-index 43315a6f7..d5705f24b 100644
+index 43315a6f7..5e7cda78f 100644
 --- a/clang/include/clang/Basic/DiagnosticSemaKinds.td
 +++ b/clang/include/clang/Basic/DiagnosticSemaKinds.td
-@@ -12,6 +12,30 @@
+@@ -12,6 +12,32 @@
  
  let Component = "Sema" in {
  let CategoryName = "Semantic Issue" in {
@@ -713,12 +713,14 @@ index 43315a6f7..d5705f24b 100644
 +    "an ObjC3 catch binding requires a typed catch pattern">;
 +def err_objc3_throw_requires_throwing_context : Error<
 +  "an ObjC3 throw requires a throwing function">;
++def err_objc3_throw_static_nil : Error<
++  "an ObjC3 throw payload must not be statically nil">;
 +def err_objc3_throw_payload_mismatch : Error<
 +  "the ObjC3 throw payload type does not match the enclosing function's throws type">;
  // C++11 compatibility with C++98.
  defm nonclass_type_friend : CXX11Compat<"non-class friend type %0 is">;
  defm static_data_member_in_union : CXX11Compat<"static data member %0 in union is">;
-@@ -7829,6 +7853,25 @@ def warn_param_mismatched_alignment : Warning<
+@@ -7829,6 +7855,25 @@ def warn_param_mismatched_alignment : Warning<
  
  def err_objc_object_assignment : Error<
    "cannot assign to class object (%0 invalid)">;
@@ -744,7 +746,7 @@ index 43315a6f7..d5705f24b 100644
  def err_typecheck_invalid_operands : Error<
    "invalid operands to binary expression (%0 and %1)">, Deferrable;
  def note_typecheck_invalid_operands_converted : Note<
-@@ -13862,4 +13905,17 @@ def err_cuda_device_kernel_launch_not_supported
+@@ -13862,4 +13907,17 @@ def err_cuda_device_kernel_launch_not_supported
  def err_cuda_device_kernel_launch_require_rdc
      : Error<"kernel launch from __device__ or __global__ function requires "
              "relocatable device code (i.e. requires -fgpu-rdc)">;
@@ -7224,7 +7226,7 @@ diff --git a/clang/lib/Sema/SemaObjC3Propagation.cpp b/clang/lib/Sema/SemaObjC3P
 new file mode 100644
 --- /dev/null
 +++ b/clang/lib/Sema/SemaObjC3Propagation.cpp
-@@ -0,0 +1,111 @@
+@@ -0,0 +1,127 @@
 +//===--- SemaObjC3Propagation.cpp - ObjC3 typed propagation semantics -----===//
 +// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -7242,7 +7244,8 @@ new file mode 100644
 +  auto *Call = dyn_cast<CallExpr>(Operand->IgnoreParenImpCasts());
 +  if (!Call)
 +    return nullptr;
-+  QualType CalleeType = S.Context.getCanonicalType(Call->getCallee()->getType());
++  QualType CalleeType =
++      S.Context.getCanonicalType(Call->getCallee()->getType());
 +  if (const auto *Pointer = CalleeType->getAs<PointerType>())
 +    CalleeType = S.Context.getCanonicalType(Pointer->getPointeeType());
 +  else if (const auto *Block = CalleeType->getAs<BlockPointerType>())
@@ -7267,17 +7270,16 @@ new file mode 100644
 +
 +  QualType ResultType = Operand->getType();
 +  if (!Operand->isTypeDependent()) {
-+    const FunctionProtoType *Called = getCalledObjC3FunctionType(*this, Operand);
++    const FunctionProtoType *Called =
++        getCalledObjC3FunctionType(*this, Operand);
 +    if (!Called ||
 +        Called->getObjC3FunctionEffects().Throws == ObjC3ThrowsKind::None) {
 +      Diag(KeywordLoc, diag::err_objc3_try_requires_throwing_call);
 +      return ExprError();
 +    }
 +
-+    ObjC3FunctionEffectInfo CalleeEffects =
-+        Called->getObjC3FunctionEffects();
-+    if (Operation == ObjC3TryExpr::Kind::Propagate &&
-+        !isUnevaluatedContext() &&
++    ObjC3FunctionEffectInfo CalleeEffects = Called->getObjC3FunctionEffects();
++    if (Operation == ObjC3TryExpr::Kind::Propagate && !isUnevaluatedContext() &&
 +        !RecordObjC3ThrownEffect(CalleeEffects, KeywordLoc)) {
 +      ObjC3FunctionEffectInfo CallerEffects =
 +          getCurrentObjC3CallableEffects(*this);
@@ -7289,8 +7291,9 @@ new file mode 100644
 +      }
 +      if (CallerEffects.Throws != CalleeEffects.Throws ||
 +          (CalleeEffects.Throws == ObjC3ThrowsKind::Typed &&
-+           !Context.hasSameType(Context.getCanonicalType(CallerEffects.ErrorType),
-+                                Context.getCanonicalType(CalleeEffects.ErrorType)))) {
++           !Context.hasSameType(
++               Context.getCanonicalType(CallerEffects.ErrorType),
++               Context.getCanonicalType(CalleeEffects.ErrorType)))) {
 +        Diag(KeywordLoc, diag::err_objc3_try_effect_mismatch);
 +        return ExprError();
 +      }
@@ -7310,8 +7313,23 @@ new file mode 100644
 +                                     SourceLocation SemiLoc) {
 +  if (!Payload)
 +    return StmtError();
-+  ObjC3FunctionEffectInfo PayloadEffect =
-+      {false, ObjC3ThrowsKind::Typed, Payload->getType()};
++  ExprResult Converted = DefaultLvalueConversion(Payload);
++  if (Converted.isInvalid())
++    return StmtError();
++  Payload = Converted.get();
++  if (Payload->getType()->isObjCObjectPointerType() &&
++      !Payload->isValueDependent() && !Payload->isTypeDependent()) {
++    // ObjC pointer casts are not C/C++ null pointer constants. Use Clang's
++    // constant evaluator to recognize a typed nil without rejecting scalar 0.
++    Expr::EvalResult Value;
++    if (Payload->EvaluateAsRValue(Value, Context) && !Value.HasSideEffects &&
++        Value.Val.isLValue() && Value.Val.isNullPointer()) {
++      Diag(KeywordLoc, diag::err_objc3_throw_static_nil);
++      return StmtError();
++    }
++  }
++  ObjC3FunctionEffectInfo PayloadEffect = {false, ObjC3ThrowsKind::Typed,
++                                           Payload->getType()};
 +  if (RecordObjC3ThrownEffect(PayloadEffect, KeywordLoc)) {
 +    // In a protected body, the explicit expression carries the statically
 +    // known typed payload. The enclosing callable effect is checked only if
@@ -10259,6 +10277,28 @@ new file mode 100644
 +  return __objc3_try_force(typed_nothrow()); // expected-note 2 {{subexpression not valid in a constant expression}}
 +}
 +static_assert(force_in_constant_evaluation() == 7); // expected-error {{not an integral constant expression}} expected-note {{in call to 'force_in_constant_evaluation()'}}
+diff --git a/clang/test/ObjC3/Sema/typed-error-nil-payload.m b/clang/test/ObjC3/Sema/typed-error-nil-payload.m
+new file mode 100644
+--- /dev/null
++++ b/clang/test/ObjC3/Sema/typed-error-nil-payload.m
+@@ -0,0 +1,17 @@
++// RUN: %clang_cc1 -x objective-c -std=c17 -fobjc-version=3 -fsyntax-only -verify %s
++
++@protocol Error;
++typedef id<Error> TestError;
++
++void reject_static_nil(void) __objc3_throws(TestError) {
++  __objc3_throw((TestError)0); // expected-error {{an ObjC3 throw payload must not be statically nil}}
++}
++
++void dynamic_nil_is_checked(TestError value) __objc3_throws(TestError) {
++  __objc3_throw(value);
++}
++
++// Zero is a valid scalar error value at the semantic layer.
++void scalar_zero_is_not_nil(void) __objc3_throws(int) {
++  __objc3_throw(0);
++}
 diff --git a/clang/test/ObjC3/Sema/typed-error-static-analysis-gate.mm b/clang/test/ObjC3/Sema/typed-error-static-analysis-gate.mm
 new file mode 100644
 --- /dev/null

@@ -223,7 +223,12 @@ typed/untyped throws declarations, including nested callback types, with known
 required-semantics identifiers and exact declaration-identity roundtrips.
 Unknown required semantics are rejected. Reparse/import helpers use isolated
 physical filesystems without changing the host process working directory.
-Executable typed-error handling and async execution remain unsupported. Public
+Private synchronous ARC free functions returning scalar/void values can lower
+Error-object throws through the C.4.1 trailing autoreleasing error-output slot.
+Direct try propagation, forced try and scalar/void optionalization use that
+native ABI; ordered do/catch execution, autorelease pools within throwing
+functions, other callable shapes and async
+execution remain unsupported. Public
 re-export edges control visibility and module provenance survives emission.
 Version 3 of the C embedding API and the CLI expose
 search roots, locked module requests and compiler/dependency identity records.
@@ -269,12 +274,17 @@ or enable public feature gates.
 
 `npm run objc3c -- validate-native-foundation` runs selected native checks after
 the matching sealed SDK and facade are built. Its complete inventory contains
-18 nodes across the `carriers`, `native-package` and `editor` families:
+20 nodes across the `carriers`, `typed-errors`, `native-package` and `editor` families:
 
 - Four carrier suites (`expression`, `abi`, `cpp-lifetime`, `arc-lifetime`) each
   run with `clang` and `clang-cl`; `match` and `transfer` also admit
   `objc3c-clang`, giving 14 suite/driver nodes. Their exact IDs are
   `carriers:<suite>:<driver>` and each suite includes its O0/O2 witnesses.
+- `typed-errors:clang` and `typed-errors:clang-cl` run the synchronous Error-object
+  output ABI at O0/O2, including native Objective-C 2 callers, ARC pool lifetime,
+  propagation cleanup and C++ exception separation. Each driver also executes
+  dynamic-nil and forced-error witnesses and requires the Windows
+  illegal-instruction trap code; another failure cause cannot satisfy a trap.
 - `native-package:provider` emits a provider object, semantic interface and
   sidecar. `native-package:consumer-eager` and `native-package:consumer-source`
   install those products in fresh system-temp directories outside the checkout
@@ -287,6 +297,7 @@ the matching sealed SDK and facade are built. Its complete inventory contains
 ```powershell
 npm run objc3c -- validate-native-foundation --list
 npm run objc3c -- validate-native-foundation --family carriers --driver objc3c-clang --run-id facade-carriers
+npm run objc3c -- validate-native-foundation --family typed-errors --run-id typed-errors-private
 npm run objc3c -- validate-native-foundation --node native-package:consumer-source --run-id package-source
 npm run objc3c -- validate-native-foundation --family carriers --driver clang --run-id clang-reuse --reuse-report out/native-validation/prior/summary.json
 ```
@@ -308,7 +319,11 @@ executions: 66 carrier witnesses and two compiled-package consumers. Source and
 toolchain snapshots matched before and after the batch; the matching editor node
 passed both language modes and all four live navigation probes. The focused
 Python suites passed 188 tests, with two Windows symlink-permission skips.
-An unchanged follow-up reused all 18 nodes. A deliberately damaged copy of the
+Checkpoint 49 passed the expanded 20-node inventory with 80 runtime executions,
+including all 12 Error-object ABI/trap witnesses. Its matching SDK passed 126
+extension tests (three platform skips), 44 AST tests and all 15 facade CTest
+tests, with matching source/toolchain identities across the native batch.
+An unchanged checkpoint-47 follow-up reused all 18 nodes. A deliberately damaged copy of the
 provider object invalidated and reran exactly the three package nodes while
 reusing the other 15; the original passing artifacts remained unchanged.
 

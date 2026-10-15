@@ -8,9 +8,9 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any, Sequence
 
-FAMILIES = ("carriers", "native-package", "editor")
+FAMILIES = ("carriers", "typed-errors", "native-package", "editor")
 DRIVERS = ("clang", "clang-cl", "objc3c-clang")
-FIXTURE_SUITES = ("expression", "abi", "cpp-lifetime", "arc-lifetime", "match", "transfer")
+FIXTURE_SUITES = ("expression", "abi", "cpp-lifetime", "arc-lifetime", "match", "transfer", "typed-errors")
 
 _RUNTIME = "scripts/objc3c_toolchain_runtime"
 _VALIDATION = "scripts/objc3c_native_validation"
@@ -34,6 +34,7 @@ _SUITE_RUNNERS = {
     "arc-lifetime": f"{_RUNTIME}/run_carrier_arc_lifetime_fixtures_windows.ps1",
     "match": f"{_RUNTIME}/run_native_match_fixtures_windows.ps1",
     "transfer": f"{_RUNTIME}/run_carrier_transfer_fixtures_windows.ps1",
+    "typed-errors": f"{_RUNTIME}/run_native_typed_error_fixtures_windows.ps1",
 }
 _WITNESSES = {
     "match": ("tests/clang_foundation/match-native-runtime.mm",
@@ -141,12 +142,16 @@ def build_plan(
 
     for suite in FIXTURE_SUITES:
         suite_inputs = runtime + fixture_impl
+        if suite == "typed-errors":
+            suite_inputs += [_file(repo, f"{_RUNTIME}/run_expected_trap_windows.py")]
         if suite in _WITNESSES:
             suite_inputs += [_file(repo, path) for path in _WITNESSES[suite]]
             suite_inputs += [_file(repo, f"{_RUNTIME}/run_native_match_transfer_fixtures_windows.ps1")]
         supported = DRIVERS if suite in ("match", "transfer") else DRIVERS[:2]
         for driver in supported:
-            add(f"carriers:{suite}:{driver}", "carriers", "fixture", "fixture", driver,
+            family = "typed-errors" if suite == "typed-errors" else "carriers"
+            node_id = f"typed-errors:{driver}" if suite == "typed-errors" else f"carriers:{suite}:{driver}"
+            add(node_id, family, "fixture", "fixture", driver,
                 _SUITE_RUNNERS[suite], suite_inputs + (native if driver == "objc3c-clang" else []),
                 suite=suite)
 

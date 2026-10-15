@@ -102,8 +102,9 @@ Public extension availability follows the separate capability authority; these
 checks do not promote public feature gates.
 
 The `validate-native-foundation` workflow selects actual native checks from an
-18-node inventory: 14 carrier suite/driver nodes, a compiled-package provider and
-two consumers, and one editor qualification node. The package consumers install
+20-node inventory: 14 carrier suite/driver nodes, two typed-error runtime nodes,
+a compiled-package provider and two consumers, and one editor qualification
+node. The package consumers install
 only the emitted object/interface/sidecar in fresh directories outside the
 checkout, then compile, link and execute against that installed provider.
 
@@ -111,6 +112,7 @@ checkout, then compile, link and execute against that installed provider.
 npm run objc3c -- validate-native-foundation --list
 npm run objc3c -- validate-native-foundation --node native-package:consumer-source --run-id package-source
 npm run objc3c -- validate-native-foundation --family editor --run-id editor-private
+npm run objc3c -- validate-native-foundation --family typed-errors --run-id typed-errors-private
 ```
 
 `--family`, `--node` and `--driver` accept exact, repeatable selectors; selecting
@@ -124,6 +126,12 @@ the compiler or promote public capabilities. At checkpoint 47, all 18 nodes
 passed with 68 runtime executions and unchanged source/toolchain snapshots.
 Both compiled-package consumers ran outside the checkout without provider
 source, using the sealed native linker and exact emitted module identities.
+
+At checkpoint 49, all 20 nodes passed with 80 runtime executions, including 12
+typed-error witnesses across both drivers at O0/O2. The matching SDK passed 126
+extension tests with three platform skips and 44 AST tests; its rebuilt facade
+passed all 15 CTest tests. Source and toolchain identities matched before and
+after the native batch. Public extension gates remain unavailable.
 
 Matching editor qualification passed on 2026-10-13 at 03:36:46 UTC. Identical C17
 `.m` and C++20 `.mm` fixtures passed exact formatting, idempotence, native syntax
@@ -144,7 +152,9 @@ async and typed/untyped throws declarations, including nested callback types,
 through source/sidecar emission and exact declaration-identity roundtrips.
 When used, sidecars declare `objc3.native-carrier-types.v1` and
 `objc3.canonical-function-effects.v1`; imports reject unknown required semantics.
-Executable typed-error handling and async execution remain unsupported.
+Private synchronous ARC free functions returning scalar/void values can lower
+Error-object throws through a trailing autoreleasing error-output pointer.
+Ordered do/catch execution and async execution remain unsupported.
 C++/Objective-C++ semantic interface interchange remains unsupported.
 
 Carrier storage uses an AST-owned hidden record and its actual target layout.
@@ -211,6 +221,20 @@ Private typed-error try, raise and ordered do/catch forms now have native AST
 nodes, template revalidation, PCH persistence and AST import. Propagation checks
 the actual callable's effect; surrounding handlers do not authorize errors
 inside separate lambdas or Blocks. Native C++ and Objective-C exceptions retain
-their separate controls. The unfinished typed-error ABI and static-analysis
-model diagnose explicitly before emission or analysis; this frontend slice
-does not qualify executable typed-error handling.
+their separate controls. The private Error-object ABI admits synchronous direct ARC
+free calls returning scalar/void values, with a nullable trailing
+`id<Error> __autoreleasing *` slot. Success clears the slot to nil; failure
+stores a non-null error and returns a zero/void placeholder. Native Clang's ARC
+throw-operand handling gives the object a pool lifetime before local cleanup.
+Propagating try forwards that error, forced try traps on failure, and
+try-optional builds the native scalar/void Optional representation. Exact call
+contexts prevent an outer try from authorizing nested bare throwing calls.
+Static typed nil is rejected, dynamic nil traps, and scalar zero remains valid
+in the semantic model. Ordered do/catch execution, scalar/value error transport,
+aggregate or managed success returns, indirect calls, methods, Blocks, variadic
+calls, MRC callees, autorelease pools within throwing functions and async
+execution still diagnose before emission. Error ownership across a callee's
+pool cleanup requires a separate transport witness. Ordinary
+MRC callers of the physical C output ABI are covered by the runtime witness.
+Static analysis of
+the extension remains unqualified. Public typed-error capabilities stay disabled.

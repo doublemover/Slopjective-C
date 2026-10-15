@@ -98,6 +98,8 @@ class FixtureRun:
                     row["command"] = ["clang-cl", str(source), "/Fo" + str(obj), "/Fe" + str(exe)]
                 else:
                     row["command"] = ["clang", str(source), "-o", str(exe)]
+                if self.suite == "typed-errors" and "-trap-O" in name:
+                    row.update(exit_code=-1073741795, expected_exit_code=-1073741795)
                 rows.append(row)
         stamp = datetime.now(timezone.utc).isoformat()
         report = {"status": "passed", "build_identity": "sdk-test", "client_driver": self.driver,
@@ -159,6 +161,31 @@ def test_fixed_output_rerun_cannot_change_prior_cached_products(tmp_path, monkey
     assert first["data"]["attempt_id"] != second["data"]["attempt_id"]
     assert all(path.read_bytes() == frozen[role] for role, path in first["artifacts"].items())
     assert first["artifacts"]["report"].read_bytes() != second["artifacts"]["report"].read_bytes()
+
+
+@pytest.mark.parametrize("exit_code", [0, 1, -1073741819])
+def test_typed_error_trap_rejects_success_and_other_failure_causes(tmp_path, monkeypatch, exit_code):
+    run = FixtureRun(tmp_path, "typed-errors")
+
+    def wrong_trap(report):
+        trap = next(row for row in report["fixtures"] if "-trap-O" in row["name"])
+        trap["exit_code"] = exit_code
+
+    run.mutate_report = wrong_trap
+    with pytest.raises(ValueError, match="did not exit successfully"):
+        run.run(monkeypatch)
+
+
+def test_typed_error_trap_cannot_redefine_its_expected_exit(tmp_path, monkeypatch):
+    run = FixtureRun(tmp_path, "typed-errors")
+
+    def forged_trap(report):
+        trap = next(row for row in report["fixtures"] if "-trap-O" in row["name"])
+        trap.update(exit_code=0, expected_exit_code=0)
+
+    run.mutate_report = forged_trap
+    with pytest.raises(ValueError, match="invalid expected exit"):
+        run.run(monkeypatch)
 
 
 @pytest.mark.parametrize("suite", ["expression", "match"])

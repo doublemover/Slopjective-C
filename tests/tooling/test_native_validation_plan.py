@@ -31,11 +31,11 @@ def identities(plan: dict, repo: Path) -> dict[str, str]:
 
 def test_default_full_inventory_is_dependency_first_and_deterministic(inventory_repo: Path) -> None:
     plan = build_plan(inventory_repo)
-    assert plan == build_plan(inventory_repo, families=["editor", "native-package", "carriers"],
+    assert plan == build_plan(inventory_repo, families=["editor", "native-package", "carriers", "typed-errors"],
                               drivers=["objc3c-clang", "clang-cl", "clang"])
-    assert len(plan["nodes"]) == 18
+    assert len(plan["nodes"]) == 20
     assert plan["selected_node_ids"] == [node["node_id"] for node in plan["nodes"]]
-    assert plan["selected_families"] == ["carriers", "editor", "native-package"]
+    assert plan["selected_families"] == ["carriers", "editor", "native-package", "typed-errors"]
     assert plan["selection_complete"] is True
     seen = set()
     for node in plan["nodes"]:
@@ -46,13 +46,13 @@ def test_default_full_inventory_is_dependency_first_and_deterministic(inventory_
             assert (inventory_repo / relative).is_file()
             assert relative.split("/")[0] not in {"out", "temp", "tmp", "artifacts"}
         seen.add(node["node_id"])
-    assert len(identities(plan, inventory_repo)) == 18
+    assert len(identities(plan, inventory_repo)) == 20
 
 
 def test_exact_consumer_selection_keeps_full_inventory_and_adds_provider(inventory_repo: Path) -> None:
     plan = build_plan(inventory_repo, families=["native-package"],
                       node_ids=["native-package:consumer-source"])
-    assert len(plan["nodes"]) == 18
+    assert len(plan["nodes"]) == 20
     assert plan["selected_node_ids"] == ["native-package:provider", "native-package:consumer-source"]
     consumer = plan["selected_nodes"][-1]
     assert consumer["operation"] == "package-consumer"
@@ -64,7 +64,7 @@ def test_exact_consumer_selection_keeps_full_inventory_and_adds_provider(invento
 def test_native_driver_omits_unsupported_baselines(inventory_repo: Path) -> None:
     plan = build_plan(inventory_repo, families=["carriers"], drivers=["objc3c-clang"])
     assert plan["selected_node_ids"] == ["carriers:match:objc3c-clang", "carriers:transfer:objc3c-clang"]
-    assert len(plan["nodes"]) == 18
+    assert len(plan["nodes"]) == 20
     assert all(node["driver"] == "objc3c-clang" for node in plan["selected_nodes"])
 
 
@@ -126,7 +126,17 @@ def test_operation_sources_invalidate_only_owning_nodes_and_dependents(inventory
     fixture.write_text("fixture implementation two\n", encoding="utf-8")
     after_fixture = identities(plan, inventory_repo)
     changed = {node_id for node_id in before if after_package[node_id] != after_fixture[node_id]}
-    assert len(changed) == 14 and all(node_id.startswith("carriers:") for node_id in changed)
+    assert len(changed) == 16 and all(node_id.startswith(("carriers:", "typed-errors:")) for node_id in changed)
+
+
+def test_trap_runner_edit_invalidates_only_typed_error_nodes(inventory_repo: Path) -> None:
+    plan = build_plan(inventory_repo)
+    before = identities(plan, inventory_repo)
+    helper = inventory_repo / "scripts/objc3c_toolchain_runtime/run_expected_trap_windows.py"
+    helper.write_text("trap subprocess policy changed\n", encoding="utf-8")
+    after = identities(plan, inventory_repo)
+    assert {node_id for node_id in before if before[node_id] != after[node_id]} == {
+        "typed-errors:clang", "typed-errors:clang-cl"}
 
 
 def test_package_fixture_changes_follow_provider_dependency_only(inventory_repo: Path) -> None:
@@ -200,7 +210,7 @@ def test_existing_executor_accepts_full_inventory_and_selected_closure(
     )
     assert observed == ["native-package:provider", "native-package:consumer-eager"]
     assert report["status"] == "PASS" and report["selection_complete"] is True
-    assert len(report["node_inventory"]) == len(report["node_records"]) == 18
+    assert len(report["node_inventory"]) == len(report["node_records"]) == 20
     assert {record["node_id"] for record in report["node_records"]
             if record["status"] == "completed"} == set(observed)
 
