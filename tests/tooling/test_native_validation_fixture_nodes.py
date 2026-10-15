@@ -164,11 +164,18 @@ def test_fixed_output_rerun_cannot_change_prior_cached_products(tmp_path, monkey
 
 
 @pytest.mark.parametrize("exit_code", [0, 1, -1073741819])
-def test_typed_error_trap_rejects_success_and_other_failure_causes(tmp_path, monkeypatch, exit_code):
+@pytest.mark.parametrize("trap_case", [
+    "typed-error-dynamic-nil-trap",
+    "typed-error-block-dynamic-nil-trap",
+    "typed-error-mrc-block-force-error-trap",
+])
+def test_typed_error_trap_rejects_success_and_other_failure_causes(
+    tmp_path, monkeypatch, exit_code, trap_case,
+):
     run = FixtureRun(tmp_path, "typed-errors")
 
     def wrong_trap(report):
-        trap = next(row for row in report["fixtures"] if "-trap-O" in row["name"])
+        trap = next(row for row in report["fixtures"] if row["name"].startswith(trap_case + "-O"))
         trap["exit_code"] = exit_code
 
     run.mutate_report = wrong_trap

@@ -16,6 +16,10 @@ CASE_ARGUMENTS = {
     "force-error": ("force", "error"),
     "mrc-dynamic-nil": ("mrc", "nil", "error"),
     "mrc-force-error": ("mrc", "force", "error", "trap"),
+    "block-dynamic-nil": ("block", "nil", "error", "trap", "arc"),
+    "block-force-error": ("block", "force", "error", "trap", "arc", "owned"),
+    "mrc-block-dynamic-nil": ("block", "nil", "error", "trap", "mrc", "owned", "copy"),
+    "mrc-block-force-error": ("block", "force", "error", "trap", "mrc", "owned", "copy", "dispose"),
 }
 
 

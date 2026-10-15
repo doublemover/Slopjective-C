@@ -227,7 +227,8 @@ Private synchronous ARC and MRC free functions returning scalar/void values can 
 Error-object throws through the C.4.1 trailing autoreleasing error-output slot.
 Direct and indirect try propagation, forced try and scalar/void optionalization
 use that native ABI. Ordinary function pointers/references and static C++ members
-share the free-function error output; instance methods and Blocks remain closed.
+share the free-function error output. Blocks keep their native context prefix
+and add the same trailing output; instance methods remain closed.
 A retained pending error survives callee expression/function cleanup
 and pools; an EH-only cleanup releases it if a native exception interrupts that
 return. Publication to the caller's autoreleasing slot occurs after callee
@@ -245,8 +246,13 @@ templates, exact-once evaluation, consumed ARC parameters and throwing C++
 parameter destructors. Pending-error unwind cleanup outlives parameter cleanup.
 The admitted Win64 C ABI preserves thin pointers when a nonthrowing function is
 converted to an effect-qualified type; its extra trailing output stays nil.
-Installed C/Objective-C consumers execute imported callbacks and higher-order
-error calls without the provider source. Other callable shapes and async
+Throwing Blocks use native capture layouts, copy/dispose helpers and byref
+forwarding. Their signature descriptors include the physical error output.
+ARC/MRC execution checks escaping object/C++ captures, consumed object parameters,
+local handlers, C++ unwind cleanup and an Objective-C 2 caller of the physical
+invoke signature. PCH and installed interfaces preserve the Block effect.
+Installed C/Objective-C consumers execute imported callbacks, Blocks and
+higher-order error calls without the provider source. Other callable shapes and async
 execution remain unsupported. Public re-export edges control visibility and
 module provenance survives emission.
 Version 3 of the C embedding API and the CLI expose
@@ -302,8 +308,8 @@ the matching sealed SDK and facade are built. Its complete inventory contains
 - `typed-errors:clang` and `typed-errors:clang-cl` run the synchronous Error-object
   output ABI at O0/O2, including native Objective-C 2 callers, mixed ARC/MRC
   calls, pool lifetime, propagation cleanup and C++ exception separation. Each
-  driver also executes dynamic-nil and forced-error witnesses in both ownership
-  modes, including first autorelease before any caller pool, and requires the Windows
+  driver also executes function and Block dynamic-nil/forced-error witnesses in
+  both ownership modes, including first autorelease before any caller pool, and requires the Windows
   illegal-instruction trap code; another failure cause cannot satisfy a trap.
 - `native-package:provider` emits a provider object, semantic interface and
   sidecar. `native-package:consumer-eager` and `native-package:consumer-source`

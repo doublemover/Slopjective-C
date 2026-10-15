@@ -15,3 +15,8 @@ CheckedCallback checked_callback(void) { return checked_value; }
 int call_checked(CheckedCallback callback, int value) __objc3_throws(id<Error>) {
   return __objc3_try(callback(value));
 }
+
+typedef int (^CheckedBlock)(int) __objc3_throws(id<Error>);
+CheckedBlock checked_block(void) {
+  return ^int(int value) __objc3_throws(id<Error>) { return value; };
+}

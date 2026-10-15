@@ -160,7 +160,7 @@ def _clang_arguments(toolchain: dict[str, Any]) -> list[str]:
     directory = Path(toolchain["resource_dir"]).resolve()
     if not directory.is_dir():
         raise ValueError("sealed Clang resource directory is missing")
-    return ["--", "-std=c17", "-fms-runtime-lib=dll", "-O2", "-resource-dir", str(directory)]
+    return ["--", "-std=c17", "-fblocks", "-fms-runtime-lib=dll", "-O2", "-resource-dir", str(directory)]
 
 
 def _module_identity(interface: Path, sidecar: Path) -> dict[str, str]:

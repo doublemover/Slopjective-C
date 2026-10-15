@@ -77,6 +77,79 @@ index 06ef2f5b8..f66acdb74 100644
    AtomicInfo atomics(*this, dest);
  
    switch (atomics.getEvaluationKind()) {
+diff --git a/clang/lib/CodeGen/CGBlocks.cpp b/clang/lib/CodeGen/CGBlocks.cpp
+index 20a595e58..03c3281dd 100644
+--- a/clang/lib/CodeGen/CGBlocks.cpp
++++ b/clang/lib/CodeGen/CGBlocks.cpp
+@@ -14,6 +14,7 @@
+ #include "CGCXXABI.h"
+ #include "CGDebugInfo.h"
+ #include "CGObjCRuntime.h"
++#include "CGObjC3TypedErrors.h"
+ #include "CGOpenCLRuntime.h"
+ #include "CodeGenFunction.h"
+ #include "CodeGenModule.h"
+@@ -762,6 +763,9 @@ static void computeBlockInfo(CodeGenModule &CGM, CodeGenFunction *CGF,
+ 
+ /// Emit a block literal expression in the current function.
+ llvm::Value *CodeGenFunction::EmitBlockLiteral(const BlockExpr *blockExpr) {
++  if (CGM.getTypes().diagnoseUnsupportedObjC3Effects(
++          blockExpr->getType(), blockExpr->getBlockDecl()))
++    return llvm::UndefValue::get(ConvertType(blockExpr->getType()));
+   // If the block has no captures, we won't have a pre-computed
+   // layout for it.
+   if (!blockExpr->getBlockDecl()->hasCaptures())
+@@ -1282,6 +1286,8 @@ void CodeGenModule::setAddrOfGlobalBlock(const BlockExpr *BE,
+ llvm::Constant *
+ CodeGenModule::GetAddrOfGlobalBlock(const BlockExpr *BE,
+                                     StringRef Name) {
++  if (getTypes().diagnoseUnsupportedObjC3Effects(BE->getType(), BE->getBlockDecl()))
++    return llvm::UndefValue::get(getTypes().ConvertType(BE->getType()));
+   if (llvm::Constant *Block = getAddrOfGlobalBlockIfEmitted(BE))
+     return Block;
+ 
+@@ -1500,6 +1506,15 @@ llvm::Function *CodeGenFunction::GenerateBlockFunction(
+ 
+   // Create the function declaration.
+   const FunctionProtoType *fnType = blockInfo.getBlockExpr()->getFunctionType();
++  if (supportsObjC3ErrorOutFunction(CGM, fnType, blockDecl, true)) {
++    QualType ValueType, ParameterType;
++    getObjC3ErrorOutTypes(CGM, ValueType, ParameterType);
++    auto *Out = ImplicitParamDecl::Create(
++        getContext(), const_cast<BlockDecl *>(blockDecl), blockDecl->getLocation(),
++        nullptr, ParameterType, ImplicitParamKind::Other);
++    args.push_back(Out);
++    ObjC3FunctionErrorOutDecl = Out;
++  }
+   const CGFunctionInfo &fnInfo =
+     CGM.getTypes().arrangeBlockFunctionDeclaration(fnType, args);
+   if (CGM.ReturnSlotInterferesWithArgs(fnInfo))
+@@ -1568,7 +1583,11 @@ llvm::Function *CodeGenFunction::GenerateBlockFunction(
+   // Save a spot to insert the debug information for all the DeclRefExprs.
+   llvm::BasicBlock *entry = Builder.GetInsertBlock();
+   llvm::BasicBlock::iterator entry_ptr = Builder.GetInsertPoint();
+-  --entry_ptr;
++  // An error-output prolog can end in an empty continuation block. Preserve
++  // the position before the body without stepping onto the list sentinel.
++  llvm::Instruction *entry_prev = nullptr;
++  if (entry_ptr != entry->begin())
++    entry_prev = &*--entry_ptr;
+ 
+   if (IsLambdaConversionToBlock)
+     EmitLambdaBlockInvokeBody();
+@@ -1582,8 +1601,10 @@ llvm::Function *CodeGenFunction::GenerateBlockFunction(
+   llvm::BasicBlock *resume = Builder.GetInsertBlock();
+ 
+   // Go back to the entry.
+-  if (entry_ptr->getNextNode())
+-    entry_ptr = entry_ptr->getNextNode()->getIterator();
++  if (!entry_prev)
++    entry_ptr = entry->begin();
++  else if (entry_prev->getNextNode())
++    entry_ptr = entry_prev->getNextNode()->getIterator();
+   else
+     entry_ptr = entry->end();
+   Builder.SetInsertPoint(entry, entry_ptr);
 diff --git a/clang/lib/CodeGen/CGCall.cpp b/clang/lib/CodeGen/CGCall.cpp
 index 06203733a..055fcc8b8 100644
 --- a/clang/lib/CodeGen/CGCall.cpp
@@ -439,7 +512,7 @@ index d63d4c593..b06b47379 100644
      return CreateType(cast<RecordType>(Ty));
    case Type::Enum:
 diff --git a/clang/lib/CodeGen/CGDecl.cpp b/clang/lib/CodeGen/CGDecl.cpp
-index aeecf0bac..6897a02a4 100644
+index aeecf0bac..a438849b7 100644
 --- a/clang/lib/CodeGen/CGDecl.cpp
 +++ b/clang/lib/CodeGen/CGDecl.cpp
 @@ -11,6 +11,8 @@
@@ -622,6 +695,20 @@ index aeecf0bac..6897a02a4 100644
  
    // In GC mode, honor objc_precise_lifetime.
    if (getLangOpts().getGC() != LangOptions::NonGC &&
+@@ -2666,9 +2803,10 @@ void CodeGenFunction::EmitParmDecl(const VarDecl &D, ParamValue Arg,
+ 
+   // Use better IR generation for certain implicit parameters.
+   if (auto IPD = dyn_cast<ImplicitParamDecl>(&D)) {
+-    // The only implicit argument a block has is its literal.
+-    // This may be passed as an inalloca'ed value on Windows x86.
+-    if (BlockInfo) {
++    // The block context has a specialized prolog; a typed-error output
++    // suffix uses ordinary parameter storage and must not replace it.
++    // The context may be passed inalloca on Windows x86.
++    if (BlockInfo && IPD->getParameterKind() == ImplicitParamKind::ObjCSelf) {
+       llvm::Value *V = Arg.isIndirect()
+                            ? Builder.CreateLoad(Arg.getIndirectAddress())
+                            : Arg.getDirectValue();
 diff --git a/clang/lib/CodeGen/CGExpr.cpp b/clang/lib/CodeGen/CGExpr.cpp
 index 24878710d..b35bf7275 100644
 --- a/clang/lib/CodeGen/CGExpr.cpp
@@ -1377,7 +1464,7 @@ index 85ed38f14..58e347aea 100644
    case Decl::CXXConversion:
    case Decl::CXXMethod:
 diff --git a/clang/lib/CodeGen/CodeGenTypes.cpp b/clang/lib/CodeGen/CodeGenTypes.cpp
-index 0e1131d58..826425742 100644
+index 0e1131d58..fd7b2e61f 100644
 --- a/clang/lib/CodeGen/CodeGenTypes.cpp
 +++ b/clang/lib/CodeGen/CodeGenTypes.cpp
 @@ -11,6 +11,7 @@
@@ -1402,23 +1489,23 @@ index 0e1131d58..826425742 100644
  
 +bool CodeGenTypes::diagnoseUnsupportedObjC3Effects(QualType T,
 +                                                   const Decl *D) {
-+  // A FunctionProtoType can be shared by a free function pointer and a Block
-+  // or member pointer. Visiting its free ABI must not hide an unsupported
-+  // prefixed ABI elsewhere in the same type graph.
-+  llvm::SmallPtrSet<const Type *, 16> SeenFree, SeenPrefixed;
++  // A FunctionProtoType can be shared by a function/Block pointer and a
++  // member pointer. Visiting its supported error-output ABI must not hide an
++  // unsupported method ABI elsewhere in the same type graph.
++  llvm::SmallPtrSet<const Type *, 16> SeenErrorOut, SeenPrefixed;
 +  bool FoundUnsupportedEffect = false;
-+  auto Visit = [&](auto &&VisitSelf, QualType Current, bool FreeABI) -> void {
++  auto Visit = [&](auto &&VisitSelf, QualType Current, bool ErrorOutABI) -> void {
 +    if (Current.isNull())
 +      return;
 +    Current = Context.getCanonicalType(Current);
 +    const Type *Ty = Current.getTypePtr();
-+    auto &Seen = FreeABI ? SeenFree : SeenPrefixed;
++    auto &Seen = ErrorOutABI ? SeenErrorOut : SeenPrefixed;
 +    if (!Seen.insert(Ty).second)
 +      return;
 +
 +    if (const auto *FPT = dyn_cast<FunctionProtoType>(Ty)) {
 +      ObjC3FunctionEffectInfo Effects = FPT->getObjC3FunctionEffects();
-+      const bool SupportedThrows = FreeABI &&
++      const bool SupportedThrows = ErrorOutABI &&
 +          supportsObjC3ErrorOutFunction(CGM, FPT, nullptr, false);
 +      if (Effects.Async ||
 +          (Effects.Throws != ObjC3ThrowsKind::None && !SupportedThrows)) {
@@ -1439,7 +1526,7 @@ index 0e1131d58..826425742 100644
 +    } else if (const auto *PT = dyn_cast<PointerType>(Ty)) {
 +      VisitSelf(VisitSelf, PT->getPointeeType(), true);
 +    } else if (const auto *BPT = dyn_cast<BlockPointerType>(Ty)) {
-+      VisitSelf(VisitSelf, BPT->getPointeeType(), false);
++      VisitSelf(VisitSelf, BPT->getPointeeType(), true);
 +    } else if (const auto *RefTy = dyn_cast<ReferenceType>(Ty)) {
 +      VisitSelf(VisitSelf, RefTy->getPointeeType(), true);
 +    } else if (const auto *MPT = dyn_cast<MemberPointerType>(Ty)) {
@@ -1465,7 +1552,7 @@ index 0e1131d58..826425742 100644
 +  };
 +  const auto *Method = dyn_cast_or_null<CXXMethodDecl>(D);
 +  const bool PrefixedDeclaration = !T.isNull() && T->isFunctionType() && D &&
-+      ((Method && !Method->isStatic()) || isa<ObjCMethodDecl, BlockDecl>(D));
++      ((Method && !Method->isStatic()) || isa<ObjCMethodDecl>(D));
 +  Visit(Visit, T, !PrefixedDeclaration);
 +  return FoundUnsupportedEffect;
 +}
@@ -4700,7 +4787,7 @@ diff --git a/clang/lib/CodeGen/CGObjC3TypedErrors.cpp b/clang/lib/CodeGen/CGObjC
 new file mode 100644
 --- /dev/null
 +++ b/clang/lib/CodeGen/CGObjC3TypedErrors.cpp
-@@ -0,0 +1,518 @@
+@@ -0,0 +1,517 @@
 +//===--- CGObjC3TypedErrors.cpp - ObjC3 error-output CodeGen -----*- C++
 +//-*-===//
 +//
@@ -4788,6 +4875,8 @@ new file mode 100644
 +    return Direct;
 +  if (const auto *Pointer = Callee->getAs<PointerType>())
 +    Callee = CGF.getContext().getCanonicalType(Pointer->getPointeeType());
++  else if (const auto *Block = Callee->getAs<BlockPointerType>())
++    Callee = CGF.getContext().getCanonicalType(Block->getPointeeType());
 +  return Callee->getAs<FunctionProtoType>();
 +}
 +
@@ -4893,9 +4982,9 @@ new file mode 100644
 +    if (D && isa<ObjCMethodDecl>(D))
 +      return false;
 +    const auto *FD = dyn_cast_or_null<FunctionDecl>(D);
-+    if (!FD)
++    if (!FD && !isa_and_nonnull<BlockDecl>(D))
 +      return false;
-+    if (const auto *Method = dyn_cast<CXXMethodDecl>(FD))
++    if (const auto *Method = dyn_cast_or_null<CXXMethodDecl>(FD))
 +      if (!Method->isStatic())
 +        return false;
 +  }
@@ -5030,13 +5119,10 @@ new file mode 100644
 +bool CodeGen::emitObjC3ThrowStmt(CodeGenFunction &CGF,
 +                                 const ObjC3ThrowStmt &S) {
 +  const Expr *Payload = S.getPayload();
-+  const auto *FD = dyn_cast_or_null<FunctionDecl>(CGF.CurCodeDecl);
-+  const auto *FPT = FD ? FD->getType()->getAs<FunctionProtoType>() : nullptr;
 +  Address Storage = getObjC3ErrorDestinationStorage(CGF);
 +  if (!Payload || !isErrorBoundObjectPointer(CGF.CGM, Payload->getType()) ||
 +      !Storage.isValid() ||
-+      (!CGF.ObjC3ActiveErrorHandler &&
-+       !supportsObjC3ErrorOutFunction(CGF.CGM, FPT, FD, true))) {
++      (!CGF.ObjC3ActiveErrorHandler && !CGF.ObjC3FunctionErrorOutDecl)) {
 +    CGF.CGM.ErrorUnsupported(&S, "typed Error-object throw lowering");
 +    return false;
 +  }
@@ -6806,6 +6892,197 @@ new file mode 100644
 +  if (__objc3_is_ok(copied)) return 8;
 +  return 0;
 +}
+diff --git a/clang/test/ObjC3/CodeGen/Inputs/typed-error-block-arc-runtime.inc b/clang/test/ObjC3/CodeGen/Inputs/typed-error-block-arc-runtime.inc
+new file mode 100644
+--- /dev/null
++++ b/clang/test/ObjC3/CodeGen/Inputs/typed-error-block-arc-runtime.inc
+@@ -0,0 +1,105 @@
++#include "typed-error-block-runtime.h"
++
++struct BlockCaptureLifetime {
++  int *Live;
++  explicit BlockCaptureLifetime(int *live) : Live(live) { ++*Live; }
++  BlockCaptureLifetime(const BlockCaptureLifetime &other) : Live(other.Live) { ++*Live; }
++  ~BlockCaptureLifetime() { --*Live; }
++};
++extern "C" RuntimeErrorBlock make_arc_error_block(RuntimeError error,
++                                                   int *live, int *cleanups) {
++  BlockCaptureLifetime Owner(live);
++  __block int Sequence = 0;
++  return ^int(int fail) __objc3_throws(RuntimeError) {
++    int Value = Sequence++;
++    CallbackCleanup Cleanup{cleanups, false};
++    if (*Owner.Live < 1) __builtin_trap();
++    @autoreleasepool { if (fail) __objc3_throw(error); }
++    return Value;
++  };
++}
++extern "C" int invoke_consumed_error_block(
++    id owner __attribute__((ns_consumed)), int fail)
++    __objc3_throws(RuntimeError) {
++  RuntimeErrorBlock block = (RuntimeErrorBlock)owner;
++  return __objc3_try(block(fail));
++}
++extern "C" int run_block_checks(void) {
++  int Before = zero_code_error_deallocations();
++  int Live = 0, Cleanups = 0;
++  @autoreleasepool {
++    __attribute__((objc_precise_lifetime)) RuntimeError Error =
++        (RuntimeError)make_zero_code_error();
++    __attribute__((objc_precise_lifetime)) RuntimeErrorBlock Arc =
++        make_arc_error_block(Error, &Live, &Cleanups);
++    if (Live != 1 || __objc3_try_force(Arc(0)) != 0 || Cleanups != 1) return 130;
++    int Caught = 0;
++    __objc3_do { __objc3_try(Arc(1)); }
++    __objc3_catch(RuntimeError error) { if (error != Error) return 131; ++Caught; }
++    if (Caught != 1 || Cleanups != 2) return 132;
++    if (!verify_physical_error_block((__bridge void *)Arc, Error, 2) || Cleanups != 5)
++      return 133;
++    RuntimeErrorBlock Forward = ^int(int fail) __objc3_throws(RuntimeError) {
++      return __objc3_try(Arc(fail));
++    };
++    if (__objc3_try_force(Forward(0)) != 5 || Cleanups != 6) return 134;
++    if (__objc3_has_value(__objc3_try_optional(Forward(1))) || Cleanups != 7) return 135;
++    RuntimeErrorBlock Plain = ^int(int value) { return value; };
++    if (__objc3_try_force(Plain(7)) != 7) return 136;
++    RuntimeVoidErrorBlock Void = ^void(int fail) __objc3_throws(RuntimeError) {
++      if (fail) __objc3_throw(Error);
++    };
++    __objc3_try_force(Void(0));
++    if (__objc3_has_value(__objc3_try_optional(Void(1)))) return 137;
++    RuntimeErrorBlock MRC = make_mrc_error_block(Error);
++    if (__objc3_try_force(MRC(0)) != 0 ||
++        __objc3_has_value(__objc3_try_optional(MRC(1))) ||
++        __objc3_try_force(MRC(0)) != 1) return 138;
++    int ParameterCleanups = 0;
++    RuntimeCleanupErrorBlock WithCleanup =
++        ^int(int fail, RuntimeError error, CallbackCleanup cleanup)
++            __objc3_throws(RuntimeError) {
++          if (fail) __objc3_throw(error);
++          return 0;
++        };
++    try {
++      __objc3_try_force(WithCleanup(1, Error, CallbackCleanup{&ParameterCleanups, true}));
++      return 139;
++    } catch (int Value) {
++      if (Value != 79 || ParameterCleanups != 1) return 140;
++    }
++  }
++  if (Live != 0 || zero_code_error_deallocations() != Before + 1) return 141;
++  Before = zero_code_error_deallocations();
++  @autoreleasepool {
++    if (__objc3_has_value(__objc3_try_optional(invoke_consumed_error_block(
++            make_mrc_error_block((RuntimeError)make_zero_code_error()), 1))) ||
++        zero_code_error_deallocations() != Before) return 142;
++  }
++  if (zero_code_error_deallocations() != Before + 1) return 143;
++  Before = zero_code_error_deallocations();
++  @autoreleasepool {
++    RuntimeConsumedArgumentBlock Consumed =
++        ^int(int fail, RuntimeError error __attribute__((ns_consumed)))
++            __objc3_throws(RuntimeError) {
++          if (fail) __objc3_throw(error);
++          return 0;
++        };
++    if (__objc3_has_value(__objc3_try_optional(
++            Consumed(1, (RuntimeError)make_zero_code_error()))) ||
++        zero_code_error_deallocations() != Before) return 151;
++  }
++  if (zero_code_error_deallocations() != Before + 1) return 152;
++  return run_mrc_block_checks();
++}
++
++extern "C" void block_trap(int kind) {
++  @autoreleasepool {
++    RuntimeError Error = kind == 1 ? nil : (RuntimeError)make_zero_code_error();
++    RuntimeErrorBlock Block = ^int(int fail) __objc3_throws(RuntimeError) {
++      if (fail) __objc3_throw(Error);
++      return 0;
++    };
++    __objc3_try_force(Block(1));
++  }
++}
+diff --git a/clang/test/ObjC3/CodeGen/Inputs/typed-error-block-mrc-runtime.inc b/clang/test/ObjC3/CodeGen/Inputs/typed-error-block-mrc-runtime.inc
+new file mode 100644
+--- /dev/null
++++ b/clang/test/ObjC3/CodeGen/Inputs/typed-error-block-mrc-runtime.inc
+@@ -0,0 +1,37 @@
++#include "typed-error-block-runtime.h"
++extern "C" RuntimeErrorBlock make_mrc_error_block(RuntimeError error) {
++  __block int Sequence = 0;
++  RuntimeErrorBlock Stack = ^int(int fail) __objc3_throws(RuntimeError) {
++    @autoreleasepool { if (fail) __objc3_throw(error); }
++    return Sequence++;
++  };
++  return (RuntimeErrorBlock)_Block_copy((const void *)Stack);
++}
++extern "C" int run_mrc_block_checks(void) {
++  int Before = zero_code_error_deallocations();
++  int Live = 0, Cleanups = 0;
++  @autoreleasepool {
++    OwnedError Owner;
++    RuntimeErrorBlock Arc = make_arc_error_block(Owner.Object, &Live, &Cleanups);
++    RuntimeErrorBlock MRC = make_mrc_error_block(Owner.Object);
++    if (Live != 1 || __objc3_try_force(Arc(0)) != 0 ||
++        __objc3_try_force(MRC(0)) != 0) return 144;
++    int Caught = 0;
++    __objc3_do { __objc3_try(Arc(1)); }
++    __objc3_catch(RuntimeError error) { if (error != Owner.Object) return 145; ++Caught; }
++    if (Caught != 1 || Cleanups != 2 ||
++        __objc3_has_value(__objc3_try_optional(MRC(1)))) return 146;
++    _Block_release((const void *)Arc);
++    _Block_release((const void *)MRC);
++    if (Live != 0) return 147;
++  }
++  return zero_code_error_deallocations() == Before + 1 ? 0 : 148;
++}
++
++extern "C" void mrc_block_trap(int kind) {
++  @autoreleasepool {
++    OwnedError Owner;
++    RuntimeErrorBlock Block = make_mrc_error_block(kind == 1 ? nil : Owner.Object);
++    __objc3_try_force(Block(1));
++  }
++}
+diff --git a/clang/test/ObjC3/CodeGen/Inputs/typed-error-block-pch.h b/clang/test/ObjC3/CodeGen/Inputs/typed-error-block-pch.h
+new file mode 100644
+--- /dev/null
++++ b/clang/test/ObjC3/CodeGen/Inputs/typed-error-block-pch.h
+@@ -0,0 +1,6 @@
++@protocol Error @end
++typedef id<Error> PCHError;
++typedef int (^PCHBlock)(int, PCHError) __objc3_throws(PCHError);
++inline int pch_block_apply(PCHBlock block, PCHError error) __objc3_throws(PCHError) {
++  return __objc3_try(block(1, error));
++}
+diff --git a/clang/test/ObjC3/CodeGen/Inputs/typed-error-block-runtime.h b/clang/test/ObjC3/CodeGen/Inputs/typed-error-block-runtime.h
+new file mode 100644
+--- /dev/null
++++ b/clang/test/ObjC3/CodeGen/Inputs/typed-error-block-runtime.h
+@@ -0,0 +1,23 @@
++#ifndef TYPED_ERROR_BLOCK_RUNTIME_H
++#define TYPED_ERROR_BLOCK_RUNTIME_H
++#include "typed-error-callback-runtime.h"
++typedef int (^RuntimeErrorBlock)(int) __objc3_throws(RuntimeError);
++typedef void (^RuntimeVoidErrorBlock)(int) __objc3_throws(RuntimeError);
++typedef int (^RuntimeConsumedArgumentBlock)(int, RuntimeError __attribute__((ns_consumed)))
++    __objc3_throws(RuntimeError);
++typedef int (^RuntimeCleanupErrorBlock)(int, RuntimeError, CallbackCleanup)
++    __objc3_throws(RuntimeError);
++extern "C" {
++RuntimeErrorBlock make_arc_error_block(RuntimeError, int *, int *)
++    __attribute__((ns_returns_retained));
++RuntimeErrorBlock make_mrc_error_block(RuntimeError)
++    __attribute__((ns_returns_retained));
++int invoke_consumed_error_block(id owner __attribute__((ns_consumed)), int)
++    __objc3_throws(RuntimeError);
++int run_block_checks(void);
++int run_mrc_block_checks(void);
++void mrc_block_trap(int kind);
++void *_Block_copy(const void *);
++void _Block_release(const void *);
++}
++#endif
 diff --git a/clang/test/ObjC3/CodeGen/Inputs/typed-error-callback-arc-runtime.inc b/clang/test/ObjC3/CodeGen/Inputs/typed-error-callback-arc-runtime.inc
 new file mode 100644
 --- /dev/null
@@ -7308,7 +7585,7 @@ diff --git a/clang/test/ObjC3/CodeGen/Inputs/typed-error-mrc-runtime.mm b/clang/
 new file mode 100644
 --- /dev/null
 +++ b/clang/test/ObjC3/CodeGen/Inputs/typed-error-mrc-runtime.mm
-@@ -0,0 +1,166 @@
+@@ -0,0 +1,168 @@
 +// Compile this translation unit with -fno-objc-arc. All source-owned references
 +// are explicitly balanced. The compiler owns a separate error transport retain.
 +#include "typed-error-mixed-runtime.h"
@@ -7475,11 +7752,13 @@ new file mode 100644
 +}
 +
 +#include "typed-error-callback-mrc-runtime.inc"
++
++#include "typed-error-block-mrc-runtime.inc"
 diff --git a/clang/test/ObjC3/CodeGen/Inputs/typed-error-native-runtime-support.m b/clang/test/ObjC3/CodeGen/Inputs/typed-error-native-runtime-support.m
 new file mode 100644
 --- /dev/null
 +++ b/clang/test/ObjC3/CodeGen/Inputs/typed-error-native-runtime-support.m
-@@ -0,0 +1,130 @@
+@@ -0,0 +1,146 @@
 +// Compile this companion in MRC mode with pinned libobjc2. It supplies a real
 +// Error object whose application code is zero and explicit lifetime counters.
 +#include <objc/objc.h>
@@ -7610,11 +7889,27 @@ new file mode 100644
 +  }
 +  return Deallocations == Before + 2;
 +}
++
++// An ordinary Objective-C 2 client sees the real context-prefix/error-suffix
++// invoke ABI and uses the same platform Block object without a wrapper layout.
++int verify_physical_error_block(void *block, id expected, int success_value) {
++  typedef int (^PhysicalBlock)(int, id *);
++  PhysicalBlock Physical = (PhysicalBlock)block;
++  id Error = (id)1;
++  if (Physical(0, &Error) != success_value || Error != nil) return 0;
++  @autoreleasepool {
++    if (Physical(1, &Error) != 0 || Error != expected) return 0;
++    int Before = zero_code_error_retain_count(expected);
++    if (Physical(1, 0) != 0 || zero_code_error_retain_count(expected) != Before)
++      return 0;
++  }
++  return 1;
++}
 diff --git a/clang/test/ObjC3/CodeGen/Inputs/typed-error-out-runtime.mm b/clang/test/ObjC3/CodeGen/Inputs/typed-error-out-runtime.mm
 new file mode 100644
 --- /dev/null
 +++ b/clang/test/ObjC3/CodeGen/Inputs/typed-error-out-runtime.mm
-@@ -0,0 +1,250 @@
+@@ -0,0 +1,256 @@
 +// Runtime witness for the direct C.4.1 error-out slice. Compile with ARC,
 +// C++ exceptions, pinned libobjc2 and the admitted Windows MSVC/UCRT profile.
 +#include "typed-error-runtime-interface.h"
@@ -7792,7 +8087,11 @@ new file mode 100644
 +#include "typed-error-mixed-arc-runtime.inc"
 +#include "typed-error-callback-arc-runtime.inc"
 +
++#include "typed-error-block-arc-runtime.inc"
++
 +int main(int argc, char **) {
++  if (argc >= 8) { mrc_block_trap(argc == 8 ? 1 : 2); return 149; }
++  if (argc >= 6) { block_trap(argc == 6 ? 1 : 2); return 150; }
 +  if (argc >= 4) {
 +    mixed_mrc_trap(argc == 4 ? 1 : 2);
 +    return 105;
@@ -7863,13 +8162,15 @@ new file mode 100644
 +  if (MixedARCResult) return MixedARCResult;
 +  int CallbackResult = run_callback_checks();
 +  if (CallbackResult) return CallbackResult;
++  int BlockResult = run_block_checks();
++  if (BlockResult) return BlockResult;
 +  return SawNonNullZeroCodeError == 1 ? 0 : 5;
 +}
 diff --git a/clang/test/ObjC3/CodeGen/Inputs/typed-error-runtime-interface.h b/clang/test/ObjC3/CodeGen/Inputs/typed-error-runtime-interface.h
 new file mode 100644
 --- /dev/null
 +++ b/clang/test/ObjC3/CodeGen/Inputs/typed-error-runtime-interface.h
-@@ -0,0 +1,43 @@
+@@ -0,0 +1,44 @@
 +#ifndef TYPED_ERROR_RUNTIME_INTERFACE_H
 +#define TYPED_ERROR_RUNTIME_INTERFACE_H
 +
@@ -7903,6 +8204,7 @@ new file mode 100644
 +id make_error_kind(int kind) __attribute__((ns_returns_retained));
 +int zero_code_error_retain_count(id value);
 +int verify_mrc_physical_error_abi(void);
++int verify_physical_error_block(void *block, id expected, int success_value);
 +int zero_code_error_deallocations(void);
 +int is_nonnull_zero_code_error(id value);
 +int verify_error_out_abi(void);
@@ -9707,6 +10009,123 @@ new file mode 100644
 +// CHECK: call ptr @llvm.objc.autorelease
 +// CHECK: store ptr
 +// CHECK: ret void
+diff --git a/clang/test/ObjC3/CodeGen/typed-error-block-bare-call.m b/clang/test/ObjC3/CodeGen/typed-error-block-bare-call.m
+new file mode 100644
+--- /dev/null
++++ b/clang/test/ObjC3/CodeGen/typed-error-block-bare-call.m
+@@ -0,0 +1,11 @@
++// RUN: %clang_cc1 -x objective-c -fobjc-version=3 -fblocks -DTEST_KIND=1 -emit-llvm -o /dev/null -verify %s
++// RUN: %clang_cc1 -x objective-c -fobjc-version=3 -fblocks -DTEST_KIND=2 -emit-llvm -o /dev/null -verify %s
++@protocol Error @end
++typedef int (^Checked)(int) __objc3_throws(id<Error>);
++#if TEST_KIND == 1
++int bare(Checked block) { return block(0); } // expected-error {{throwing call without an exact qualified try context}}
++#else
++int nested(Checked block) {
++  return __objc3_try_force(block(block(0))); // expected-error {{throwing call without an exact qualified try context}}
++}
++#endif
+diff --git a/clang/test/ObjC3/CodeGen/typed-error-block-boundaries.mm b/clang/test/ObjC3/CodeGen/typed-error-block-boundaries.mm
+new file mode 100644
+--- /dev/null
++++ b/clang/test/ObjC3/CodeGen/typed-error-block-boundaries.mm
+@@ -0,0 +1,19 @@
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fobjc-version=3 -fblocks -DTEST_KIND=1 -emit-llvm -o /dev/null -verify %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fobjc-version=3 -fblocks -DTEST_KIND=2 -emit-llvm -o /dev/null -verify %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fobjc-version=3 -fblocks -DTEST_KIND=3 -emit-llvm -o /dev/null -verify %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fobjc-version=3 -fblocks -DTEST_KIND=4 -emit-llvm -o /dev/null -verify %s
++@protocol Error @end
++using E = id<Error>;
++#if TEST_KIND == 1
++int (^Value)(int, ...) __objc3_throws(E); // expected-error {{ObjC3 async/throws callable ABI lowering}}
++#elif TEST_KIND == 2
++id (^Value)(void) __objc3_throws(E); // expected-error {{ObjC3 async/throws callable ABI lowering}}
++#elif TEST_KIND == 3
++int (^Value)(void) __objc3_async __objc3_throws(E); // expected-error {{ObjC3 async/throws callable ABI lowering}}
++#elif TEST_KIND == 4
++void rejected_literal() {
++  (void)^_Complex double(void) __objc3_throws(E) { // expected-error {{ObjC3 async/throws callable ABI lowering}}
++    return 0;
++  };
++}
++#endif
+diff --git a/clang/test/ObjC3/CodeGen/typed-error-block-empty-prolog.mm b/clang/test/ObjC3/CodeGen/typed-error-block-empty-prolog.mm
+new file mode 100644
+--- /dev/null
++++ b/clang/test/ObjC3/CodeGen/typed-error-block-empty-prolog.mm
+@@ -0,0 +1,17 @@
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -triple x86_64-pc-windows-msvc -fobjc-runtime=gnustep-2.0 -fobjc-version=3 -fblocks -fexceptions -fcxx-exceptions -O2 -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -triple x86_64-pc-windows-msvc -fobjc-runtime=gnustep-2.0 -fobjc-version=3 -fblocks -fexceptions -fcxx-exceptions -debug-info-kind=limited -O2 -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++@protocol Error @end
++typedef id<Error> E;
++typedef int (^B)(int) __objc3_throws(E);
++extern "C" void *_Block_copy(const void *);
++B make_block(E error) {
++  __block int Sequence = 0;
++  B Block = ^int(int fail) __objc3_throws(E) {
++    if (fail) __objc3_throw(error);
++    return Sequence++;
++  };
++  return (B)_Block_copy((const void *)Block);
++}
++// CHECK: define internal {{.*}}i32 @{{.*}}block_invoke
++// CHECK: objc3.error.pending
++// CHECK: objc3.throw.store
+diff --git a/clang/test/ObjC3/CodeGen/typed-error-block-pch.mm b/clang/test/ObjC3/CodeGen/typed-error-block-pch.mm
+new file mode 100644
+--- /dev/null
++++ b/clang/test/ObjC3/CodeGen/typed-error-block-pch.mm
+@@ -0,0 +1,12 @@
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -triple x86_64-unknown-linux-gnu -fobjc-runtime=gnustep-2.0 -fobjc-version=3 -fobjc-arc -fblocks -emit-pch -o %t.pch %S/Inputs/typed-error-block-pch.h
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -triple x86_64-unknown-linux-gnu -fobjc-runtime=gnustep-2.0 -fobjc-version=3 -fobjc-arc -fblocks -include-pch %t.pch -emit-llvm -o - %s | FileCheck %s
++int force_pch_block(PCHError error) {
++  PCHBlock Block = ^int(int fail, PCHError value) __objc3_throws(PCHError) {
++    if (fail) __objc3_throw(value);
++    return 0;
++  };
++  return __objc3_try_force(pch_block_apply(Block, error));
++}
++// CHECK: define{{.*}} i32 @{{.*}}pch_block_apply
++// CHECK: call{{.*}} i32 %{{.*}}(ptr {{.*}}, i32 {{.*}}, ptr {{.*}}, ptr {{.*}})
++// CHECK: objc3.try.failed
+diff --git a/clang/test/ObjC3/CodeGen/typed-error-blocks.m b/clang/test/ObjC3/CodeGen/typed-error-blocks.m
+new file mode 100644
+--- /dev/null
++++ b/clang/test/ObjC3/CodeGen/typed-error-blocks.m
+@@ -0,0 +1,33 @@
++// RUN: %clang_cc1 -x objective-c -std=c17 -triple x86_64-pc-windows-msvc -fobjc-runtime=gnustep-2.0 -fobjc-version=3 -fblocks -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c -std=c17 -triple x86_64-unknown-linux-gnu -fobjc-runtime=gnustep-2.0 -fobjc-version=3 -fblocks -fobjc-arc -emit-llvm -o - %s | FileCheck %s
++@protocol Error @end
++typedef id<Error> E;
++typedef int (^Checked)(int, E) __objc3_throws(E);
++typedef void (^VoidChecked)(void) __objc3_throws(E);
++Checked Global = ^int(int fail, E error) __objc3_throws(E) {
++  if (fail) __objc3_throw(error);
++  return 0;
++};
++// CHECK: c"i28@?0i8@12^@20\00"
++// CHECK: define internal i32 @{{.*}}block_invoke(ptr {{.*}}, i32 {{.*}}, ptr {{.*}}, ptr {{.*}})
++// CHECK: objc3.error.pending
++// CHECK: objc3.throw.store
++int apply(Checked block, E error) __objc3_throws(E) {
++  return __objc3_try(block(1, error));
++}
++// CHECK-LABEL: define{{.*}} i32 @apply(
++// CHECK: call i32 %{{.*}}(ptr {{.*}}, i32 {{.*}}, ptr {{.*}}, ptr {{.*}})
++// CHECK: objc3.try.failed
++void optional(Checked block, E error) {
++  __objc3_optional(int) value = __objc3_try_optional(block(0, error));
++  (void)value;
++}
++// CHECK-LABEL: define{{.*}} void @optional(
++// CHECK: call i32 %{{.*}}(ptr {{.*}}, i32 {{.*}}, ptr {{.*}}, ptr {{.*}})
++void handler(VoidChecked block) {
++  __objc3_do { __objc3_try(block()); }
++  __objc3_catch(E error) { (void)error; }
++}
++// CHECK-LABEL: define{{.*}} void @handler(
++// CHECK: call void %{{.*}}(ptr {{.*}}, ptr {{.*}})
++// CHECK: objc3.catch.dispatch:
 diff --git a/clang/test/ObjC3/CodeGen/typed-error-function-pointers.m b/clang/test/ObjC3/CodeGen/typed-error-function-pointers.m
 new file mode 100644
 --- /dev/null
@@ -10071,7 +10490,7 @@ new file mode 100644
 +@protocol Error @end
 +typedef id<Error> E;
 +using Callback = int (*)(int) __objc3_throws(E);
-+using Block = int (^)(int) __objc3_throws(E);
++using Block = int (^)(int) __objc3_async __objc3_throws(E);
 +struct Receiver;
 +using Member = int (Receiver::*)(int) __objc3_throws(E);
 +

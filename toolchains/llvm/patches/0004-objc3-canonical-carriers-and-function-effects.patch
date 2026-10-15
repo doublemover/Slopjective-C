@@ -1129,7 +1129,7 @@ index d6c484563..b7a6cb6b1 100644
  
  #undef TYPE_BIT_CODE
 diff --git a/clang/lib/AST/ASTContext.cpp b/clang/lib/AST/ASTContext.cpp
-index d5aacd801..962a811a3 100644
+index d5aacd801..1f65fbca1 100644
 --- a/clang/lib/AST/ASTContext.cpp
 +++ b/clang/lib/AST/ASTContext.cpp
 @@ -2363,6 +2363,15 @@ TypeInfo ASTContext::getTypeInfoImpl(const Type *T) const {
@@ -1455,7 +1455,39 @@ index d5aacd801..962a811a3 100644
  
    auto *FTP = (FunctionProtoType *)Allocate(Size, alignof(FunctionProtoType));
    FunctionProtoType::ExtProtoInfo newEPI = EPI;
-@@ -9572,6 +9792,16 @@ void ASTContext::getObjCEncodingForTypeImpl(QualType T, std::string &S,
+@@ -8714,6 +8934,11 @@ std::string ASTContext::getObjCEncodingForBlock(const BlockExpr *Expr) const {
+   QualType BlockTy =
+       Expr->getType()->castAs<BlockPointerType>()->getPointeeType();
+   QualType BlockReturnTy = BlockTy->castAs<FunctionType>()->getReturnType();
++  const auto *FPT = BlockTy->getAs<FunctionProtoType>();
++  const ObjC3FunctionEffectInfo Effects = FPT ? FPT->getObjC3FunctionEffects()
++                                             : ObjC3FunctionEffectInfo();
++  const bool HasErrorOut = !Effects.Async &&
++                          Effects.Throws != ObjC3ThrowsKind::None;
+   // Encode result type.
+   if (getLangOpts().EncodeExtendedBlockSig)
+     getObjCEncodingForMethodParameter(Decl::OBJC_TQ_None, BlockReturnTy, S,
+@@ -8733,6 +8958,8 @@ std::string ASTContext::getObjCEncodingForBlock(const BlockExpr *Expr) const {
+     assert(sz.isPositive() && "BlockExpr - Incomplete param type");
+     ParmOffset += sz;
+   }
++  if (HasErrorOut)
++    ParmOffset += PtrSize;
+   // Size of the argument frame
+   S += charUnitsToString(ParmOffset);
+   // Block pointer and offset.
+@@ -8759,6 +8986,10 @@ std::string ASTContext::getObjCEncodingForBlock(const BlockExpr *Expr) const {
+     ParmOffset += getObjCEncodingTypeSize(PType);
+   }
+ 
++  // Describe the actual synchronous invoke signature, including its hidden
++  // object error output. Ordinary Block encodings remain unchanged.
++  if (HasErrorOut)
++    S += "^@" + charUnitsToString(ParmOffset);
+   return S;
+ }
+ 
+@@ -9572,6 +9803,16 @@ void ASTContext::getObjCEncodingForTypeImpl(QualType T, std::string &S,
        *NotEncodedT = T;
      return;
  
@@ -1472,7 +1504,7 @@ index d5aacd801..962a811a3 100644
    // We could see an undeduced auto type here during error recovery.
    // Just ignore it.
    case Type::Auto:
-@@ -11454,6 +11684,17 @@ QualType ASTContext::mergeFunctionTypes(QualType lhs, QualType rhs,
+@@ -11454,6 +11695,17 @@ QualType ASTContext::mergeFunctionTypes(QualType lhs, QualType rhs,
      if (lproto->getMethodQuals() != rproto->getMethodQuals())
        return {};
  
@@ -1490,7 +1522,7 @@ index d5aacd801..962a811a3 100644
      // Function protos with different 'cfi_salt' values aren't compatible.
      if (lproto->getExtraAttributeInfo().CFISalt !=
          rproto->getExtraAttributeInfo().CFISalt)
-@@ -11532,6 +11773,11 @@ QualType ASTContext::mergeFunctionTypes(QualType lhs, QualType rhs,
+@@ -11532,6 +11784,11 @@ QualType ASTContext::mergeFunctionTypes(QualType lhs, QualType rhs,
    const FunctionProtoType *proto = lproto ? lproto : rproto;
    if (proto) {
      assert((AllowCXX || !proto->hasExceptionSpec()) && "C++ shouldn't be here");
@@ -1502,7 +1534,7 @@ index d5aacd801..962a811a3 100644
      if (proto->isVariadic())
        return {};
      // Check that the types are compatible with the types that
-@@ -11759,6 +12005,13 @@ QualType ASTContext::mergeTypes(QualType LHS, QualType RHS, bool OfBlockPointer,
+@@ -11759,6 +12016,13 @@ QualType ASTContext::mergeTypes(QualType LHS, QualType RHS, bool OfBlockPointer,
    case Type::ExtVector:
      llvm_unreachable("Types are eliminated above");
  
@@ -1516,7 +1548,7 @@ index d5aacd801..962a811a3 100644
    case Type::Pointer:
    {
      // Merge two pointer types, while trying to preserve typedef info
-@@ -14111,6 +14364,24 @@ static QualType getCommonNonSugarTypeNode(const ASTContext &Ctx, const Type *X,
+@@ -14111,6 +14375,24 @@ static QualType getCommonNonSugarTypeNode(const ASTContext &Ctx, const Type *X,
          getCommonSizeModifier(AX, AY), getCommonIndexTypeCVRQualifiers(AX, AY));
      return Ctx.getArrayParameterType(ArrayTy);
    }
@@ -1541,7 +1573,7 @@ index d5aacd801..962a811a3 100644
    case Type::Atomic: {
      const auto *AX = cast<AtomicType>(X), *AY = cast<AtomicType>(Y);
      return Ctx.getAtomicType(
-@@ -14381,6 +14652,8 @@ static QualType getCommonSugarTypeNode(const ASTContext &Ctx, const Type *X,
+@@ -14381,6 +14663,8 @@ static QualType getCommonSugarTypeNode(const ASTContext &Ctx, const Type *X,
      CANONICAL_TYPE(HLSLInlineSpirv)
      CANONICAL_TYPE(LValueReference)
      CANONICAL_TYPE(ObjCInterface)

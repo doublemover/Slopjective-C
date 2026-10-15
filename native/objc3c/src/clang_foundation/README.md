@@ -229,8 +229,8 @@ nodes, template revalidation, PCH persistence and AST import. Propagation checks
 the actual callable's effect; surrounding handlers do not authorize errors
 inside separate lambdas or Blocks. Native C++ and Objective-C exceptions retain
 their separate controls. The private Error-object ABI admits synchronous ARC/MRC
-free-function calls, ordinary function pointers/references and static C++ members
-returning scalar/void values, with a nullable trailing
+free-function calls, ordinary function pointers/references, static C++ members
+and Blocks returning scalar/void values, with a nullable trailing
 `id<Error> __autoreleasing *` slot. Success clears the slot to nil; failure
 stores a non-null error and returns a zero/void placeholder. The compiler retains
 the pending error before expression cleanup and owns it through function cleanup,
@@ -242,7 +242,7 @@ try-optional builds the native scalar/void Optional representation. Exact call
 contexts prevent an outer try from authorizing nested bare throwing calls.
 Static typed nil is rejected, dynamic nil traps, and scalar zero remains valid
 in the semantic model. Scalar/value error transport,
-aggregate or managed success returns, instance methods, Blocks, variadic calls
+aggregate or managed success returns, instance methods, variadic calls
 and async execution still diagnose before emission. The runtime
 witness covers nested pools, a pool-owning C++ temporary, expression and function
 cleanup interrupted by native exceptions, and nullable output discard. Ordinary
@@ -264,6 +264,18 @@ the plain callee ignores the extra trailing output and the caller observes its
 initialized nil slot. This includes nonthrowing static C++ functions. Installed
 C/Objective-C interface consumers execute imported callbacks and higher-order
 error calls without provider source; C++ interface interchange remains closed.
+
+Synchronous throwing Blocks retain Clang's native context prefix, capture
+layout, byref forwarding and copy/dispose helpers. Their invoke function receives
+the trailing error output after source arguments; the Block signature descriptor
+includes that physical slot. The hidden output receives ordinary parameter
+storage without replacing the Block context. ARC/MRC witnesses check escaping
+captures, C++ capture destruction, captured objects, consumed object arguments,
+local handlers and C++ parameter cleanup. An Objective-C 2 client directly calls
+the physical Block signature, including nullable output discard. Nonthrowing
+Block widening uses the qualified Win64 convention. PCH and installed interfaces
+preserve the effect-qualified Block type. Dynamic-nil and forced-error Block
+witnesses require the exact illegal-instruction exit in both ownership modes.
 
 Ordered Error-object do/catch owns the pending error through protected-body
 cleanup and selects the first matching class, protocol or bare catch. Unmatched

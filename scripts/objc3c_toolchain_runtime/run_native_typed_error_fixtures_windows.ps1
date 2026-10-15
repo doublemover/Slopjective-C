@@ -69,7 +69,7 @@ try {
     $objc3MRCEffectObject = Join-Path $objc3Output ($objc3Name + '-mrc-effect.obj')
     if ($ClientDriver -eq 'clang') {
       $objc3Common = @('--target=x86_64-pc-windows-msvc', '-fobjc-runtime=gnustep-2.0',
-        '-fms-runtime-lib=dll', ('-O' + $objc3Optimization)) + $objc3Includes
+        '-fms-runtime-lib=dll', '-fblocks', ('-O' + $objc3Optimization)) + $objc3Includes
       $objc3SupportArguments = $objc3Common + @('-x', 'objective-c', '-fno-objc-arc',
         '-c', $objc3Support, '-o', $objc3SupportObject)
       $objc3Arguments = $objc3Common + @('-x', 'objective-c++', '-std=c++20',
@@ -83,7 +83,7 @@ try {
         '-lobjc', '-o', $objc3Executable)
     } else {
       $objc3Common = @('/nologo', '/MD', '/clang:--target=x86_64-pc-windows-msvc',
-        '/clang:-fobjc-runtime=gnustep-2.0', ('/clang:-O' + $objc3Optimization)) + $objc3Includes
+        '/clang:-fobjc-runtime=gnustep-2.0', '/clang:-fblocks', ('/clang:-O' + $objc3Optimization)) + $objc3Includes
       $objc3SupportArguments = $objc3Common + @('-x', 'objective-c', '/clang:-fno-objc-arc',
         '/c', $objc3Support, ('/Fo' + $objc3SupportObject))
       $objc3Arguments = $objc3Common + @('-x', 'objective-c++', '/std:c++20', '/EHsc',
@@ -103,7 +103,10 @@ try {
       (Join-Path $objc3InputRoot 'typed-error-mixed-arc-runtime.inc'),
       (Join-Path $objc3InputRoot 'typed-error-callback-runtime.h'),
       (Join-Path $objc3InputRoot 'typed-error-callback-arc-runtime.inc'),
-      (Join-Path $objc3InputRoot 'typed-error-callback-mrc-runtime.inc')) | ForEach-Object {
+      (Join-Path $objc3InputRoot 'typed-error-callback-mrc-runtime.inc'),
+      (Join-Path $objc3InputRoot 'typed-error-block-runtime.h'),
+      (Join-Path $objc3InputRoot 'typed-error-block-arc-runtime.inc'),
+      (Join-Path $objc3InputRoot 'typed-error-block-mrc-runtime.inc')) | ForEach-Object {
         @{file=$_; sha256=(Get-FileHash -LiteralPath $_ -Algorithm SHA256).Hash}
       }
     $objc3Attempt = @{name=$objc3Name; source=$objc3Source; sources=@($objc3Sources);
@@ -141,7 +144,8 @@ try {
     if ($LASTEXITCODE -ne 0) { throw "Typed-error runtime failed: $objc3Name ($LASTEXITCODE)" }
     $objc3Attempt.status = 'passed'
     Write-Output "NATIVE TYPED ERROR PASS ($ClientDriver): $objc3Name"
-    foreach ($objc3TrapCase in @('dynamic-nil', 'force-error', 'mrc-dynamic-nil', 'mrc-force-error')) {
+    foreach ($objc3TrapCase in @('dynamic-nil', 'force-error', 'mrc-dynamic-nil', 'mrc-force-error',
+        'block-dynamic-nil', 'block-force-error', 'mrc-block-dynamic-nil', 'mrc-block-force-error')) {
       $objc3TrapName = 'typed-error-' + $objc3TrapCase + '-trap-O' + $objc3Optimization
       $objc3TrapJson = & 'C:\Python313\python.exe' -B (Join-Path $PSScriptRoot 'run_expected_trap_windows.py') $objc3Executable $objc3TrapCase
       if ($LASTEXITCODE -ne 0) { throw "Expected native trap failed: $objc3TrapName ($objc3TrapJson)" }
