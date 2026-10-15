@@ -225,8 +225,10 @@ Unknown required semantics are rejected. Reparse/import helpers use isolated
 physical filesystems without changing the host process working directory.
 Private synchronous ARC and MRC free functions returning scalar/void values can lower
 Error-object throws through the C.4.1 trailing autoreleasing error-output slot.
-Direct try propagation, forced try and scalar/void optionalization use that
-native ABI. A retained pending error survives callee expression/function cleanup
+Direct and indirect try propagation, forced try and scalar/void optionalization
+use that native ABI. Ordinary function pointers/references and static C++ members
+share the free-function error output; instance methods and Blocks remain closed.
+A retained pending error survives callee expression/function cleanup
 and pools; an EH-only cleanup releases it if a native exception interrupts that
 return. Publication to the caller's autoreleasing slot occurs after callee
 cleanup, with immediate release for a null slot. Ordered Error-object do/catch
@@ -238,8 +240,15 @@ MRC code keeps its manual reference ownership while the error transport retains
 its own reference. MRC catch bindings borrow from the handler. Separately compiled
 ARC/MRC units check calls in both directions, manual escaping retains, callee-owned
 pools, interrupted cleanup and physical Objective-C 2 callers.
-Other callable shapes and async execution remain unsupported. Public
-re-export edges control visibility and module provenance survives emission.
+Callback witnesses include local/global/aggregate storage, higher-order calls,
+templates, exact-once evaluation, consumed ARC parameters and throwing C++
+parameter destructors. Pending-error unwind cleanup outlives parameter cleanup.
+The admitted Win64 C ABI preserves thin pointers when a nonthrowing function is
+converted to an effect-qualified type; its extra trailing output stays nil.
+Installed C/Objective-C consumers execute imported callbacks and higher-order
+error calls without the provider source. Other callable shapes and async
+execution remain unsupported. Public re-export edges control visibility and
+module provenance survives emission.
 Version 3 of the C embedding API and the CLI expose
 search roots, locked module requests and compiler/dependency identity records.
 `--source-imports` defers resolution and visibility until ObjC3

@@ -100,7 +100,10 @@ try {
       (Join-Path $objc3InputRoot 'typed-error-runtime-interface.h'),
       (Join-Path $objc3InputRoot 'typed-error-do-catch-runtime.inc'),
       (Join-Path $objc3InputRoot 'typed-error-mixed-runtime.h'),
-      (Join-Path $objc3InputRoot 'typed-error-mixed-arc-runtime.inc')) | ForEach-Object {
+      (Join-Path $objc3InputRoot 'typed-error-mixed-arc-runtime.inc'),
+      (Join-Path $objc3InputRoot 'typed-error-callback-runtime.h'),
+      (Join-Path $objc3InputRoot 'typed-error-callback-arc-runtime.inc'),
+      (Join-Path $objc3InputRoot 'typed-error-callback-mrc-runtime.inc')) | ForEach-Object {
         @{file=$_; sha256=(Get-FileHash -LiteralPath $_ -Algorithm SHA256).Hash}
       }
     $objc3Attempt = @{name=$objc3Name; source=$objc3Source; sources=@($objc3Sources);

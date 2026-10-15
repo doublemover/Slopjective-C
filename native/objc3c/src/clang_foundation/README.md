@@ -101,7 +101,7 @@ Full language cutover and complete extension lowering remain in progress.
 Public extension availability follows the separate capability authority; these
 checks do not promote public feature gates.
 
-The `validate-native-foundation` workflow selects actual native checks from an
+The `validate-native-foundation` workflow selects actual native checks from a
 20-node inventory: 14 carrier suite/driver nodes, two typed-error runtime nodes,
 a compiled-package provider and two consumers, and one editor qualification
 node. The package consumers install
@@ -228,8 +228,9 @@ Private typed-error try, raise and ordered do/catch forms now have native AST
 nodes, template revalidation, PCH persistence and AST import. Propagation checks
 the actual callable's effect; surrounding handlers do not authorize errors
 inside separate lambdas or Blocks. Native C++ and Objective-C exceptions retain
-their separate controls. The private Error-object ABI admits synchronous direct ARC/MRC
-free calls returning scalar/void values, with a nullable trailing
+their separate controls. The private Error-object ABI admits synchronous ARC/MRC
+free-function calls, ordinary function pointers/references and static C++ members
+returning scalar/void values, with a nullable trailing
 `id<Error> __autoreleasing *` slot. Success clears the slot to nil; failure
 stores a non-null error and returns a zero/void placeholder. The compiler retains
 the pending error before expression cleanup and owns it through function cleanup,
@@ -241,8 +242,8 @@ try-optional builds the native scalar/void Optional representation. Exact call
 contexts prevent an outer try from authorizing nested bare throwing calls.
 Static typed nil is rejected, dynamic nil traps, and scalar zero remains valid
 in the semantic model. Scalar/value error transport,
-aggregate or managed success returns, indirect calls, methods, Blocks, variadic
-calls and async execution still diagnose before emission. The runtime
+aggregate or managed success returns, instance methods, Blocks, variadic calls
+and async execution still diagnose before emission. The runtime
 witness covers nested pools, a pool-owning C++ temporary, expression and function
 cleanup interrupted by native exceptions, and nullable output discard. Ordinary
 MRC callers of the physical C output ABI are covered by the runtime witness.
@@ -251,6 +252,18 @@ reference. Source-owned references remain the program's responsibility, includin
 an owning factory result. Mixed ARC/MRC translation units exercise calls in both
 directions, propagation through callee-owned pools, manual releases from C++
 destructors and defer, and nullable-output discard without a caller pool.
+
+Effect-qualified callbacks retain the trailing error-output ABI through local,
+global, array and record storage, higher-order calls and C++ templates. The
+runtime witness covers argument/callee evaluation once, ARC consumed parameters,
+C++ by-value parameter cleanup and native exceptions interrupting that cleanup.
+Pending-error unwind cleanup is registered before parameter cleanup so that it
+remains active if a parameter destructor throws. On the qualified Win64 C ABI,
+implicit nonthrowing-to-throwing conversion preserves the thin function pointer;
+the plain callee ignores the extra trailing output and the caller observes its
+initialized nil slot. This includes nonthrowing static C++ functions. Installed
+C/Objective-C interface consumers execute imported callbacks and higher-order
+error calls without provider source; C++ interface interchange remains closed.
 
 Ordered Error-object do/catch owns the pending error through protected-body
 cleanup and selects the first matching class, protocol or bare catch. Unmatched
