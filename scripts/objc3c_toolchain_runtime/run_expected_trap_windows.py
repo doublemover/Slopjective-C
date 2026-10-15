@@ -11,17 +11,23 @@ import sys
 
 
 ILLEGAL_INSTRUCTION_EXIT = -1073741795
+CASE_ARGUMENTS = {
+    "dynamic-nil": ("nil",),
+    "force-error": ("force", "error"),
+    "mrc-dynamic-nil": ("mrc", "nil", "error"),
+    "mrc-force-error": ("mrc", "force", "error", "trap"),
+}
 
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("executable", type=Path)
-    parser.add_argument("case", choices=("dynamic-nil", "force-error"))
+    parser.add_argument("case", choices=tuple(CASE_ARGUMENTS))
     args = parser.parse_args()
     if sys.platform != "win32":
         parser.error("this witness requires the admitted Windows runtime")
     executable = args.executable.resolve(strict=True)
-    command = [str(executable), "nil"] if args.case == "dynamic-nil" else [str(executable), "force", "error"]
+    command = [str(executable), *CASE_ARGUMENTS[args.case]]
     kernel = ctypes.windll.kernel32
     kernel.SetErrorMode.argtypes = [ctypes.c_uint]
     kernel.SetErrorMode.restype = ctypes.c_uint

@@ -38,6 +38,7 @@ try {
   $objc3InputRoot = Join-Path $objc3Repo 'out/toolchains/objc3-development/src/clang/test/ObjC3/CodeGen/Inputs'
   $objc3Source = Join-Path $objc3InputRoot 'typed-error-out-runtime.mm'
   $objc3Support = Join-Path $objc3InputRoot 'typed-error-native-runtime-support.m'
+  $objc3MRCEffectSource = Join-Path $objc3InputRoot 'typed-error-mrc-runtime.mm'
   $objc3Output = Join-Path $objc3Repo ('out/toolchains/objc3-development/native-typed-error-fixtures/' + $objc3Seal.build_id + '/' + $ClientDriver)
   New-Item -ItemType Directory -Force -Path $objc3Output | Out-Null
   $objc3Compiler = Join-Path $objc3Bin $(if ($ClientDriver -eq 'clang') { 'clang++.exe' } else { 'clang-cl.exe' })
@@ -65,6 +66,7 @@ try {
     $objc3Executable = Join-Path $objc3Output ($objc3Name + '.exe')
     $objc3Object = Join-Path $objc3Output ($objc3Name + '.obj')
     $objc3SupportObject = Join-Path $objc3Output ($objc3Name + '-support.obj')
+    $objc3MRCEffectObject = Join-Path $objc3Output ($objc3Name + '-mrc-effect.obj')
     if ($ClientDriver -eq 'clang') {
       $objc3Common = @('--target=x86_64-pc-windows-msvc', '-fobjc-runtime=gnustep-2.0',
         '-fms-runtime-lib=dll', ('-O' + $objc3Optimization)) + $objc3Includes
@@ -73,8 +75,11 @@ try {
       $objc3Arguments = $objc3Common + @('-x', 'objective-c++', '-std=c++20',
         '-fexceptions', '-fcxx-exceptions', '-fobjc-arc', '-fobjc-arc-exceptions',
         '-fobjc-version=3', '-c', $objc3Source, '-o', $objc3Object)
+      $objc3MRCEffectArguments = $objc3Common + @('-x', 'objective-c++', '-std=c++20',
+        '-fexceptions', '-fcxx-exceptions', '-fno-objc-arc', '-fobjc-version=3',
+        '-c', $objc3MRCEffectSource, '-o', $objc3MRCEffectObject)
       $objc3LinkArguments = @('--target=x86_64-pc-windows-msvc', '-fms-runtime-lib=dll',
-        '-fuse-ld=lld', $objc3SupportObject, $objc3Object, '-L', $objc3Runtime,
+        '-fuse-ld=lld', $objc3SupportObject, $objc3MRCEffectObject, $objc3Object, '-L', $objc3Runtime,
         '-lobjc', '-o', $objc3Executable)
     } else {
       $objc3Common = @('/nologo', '/MD', '/clang:--target=x86_64-pc-windows-msvc',
@@ -84,19 +89,25 @@ try {
       $objc3Arguments = $objc3Common + @('-x', 'objective-c++', '/std:c++20', '/EHsc',
         '/clang:-fobjc-arc', '/clang:-fobjc-arc-exceptions', '/clang:-fobjc-version=3',
         '/c', $objc3Source, ('/Fo' + $objc3Object))
+      $objc3MRCEffectArguments = $objc3Common + @('-x', 'objective-c++', '/std:c++20', '/EHsc',
+        '/clang:-fno-objc-arc', '/clang:-fobjc-version=3',
+        '/c', $objc3MRCEffectSource, ('/Fo' + $objc3MRCEffectObject))
       $objc3LinkArguments = @('/nologo', '/MD', '/clang:--target=x86_64-pc-windows-msvc',
-        '/clang:-fuse-ld=lld', $objc3SupportObject, $objc3Object, ('/Fe' + $objc3Executable),
+        '/clang:-fuse-ld=lld', $objc3SupportObject, $objc3MRCEffectObject, $objc3Object, ('/Fe' + $objc3Executable),
         '/link', ('/LIBPATH:' + $objc3Runtime), 'objc.lib')
     }
-    $objc3Sources = @($objc3Source, $objc3Support,
+    $objc3Sources = @($objc3Source, $objc3Support, $objc3MRCEffectSource,
       (Join-Path $objc3InputRoot 'typed-error-runtime-interface.h'),
-      (Join-Path $objc3InputRoot 'typed-error-do-catch-runtime.inc')) | ForEach-Object {
+      (Join-Path $objc3InputRoot 'typed-error-do-catch-runtime.inc'),
+      (Join-Path $objc3InputRoot 'typed-error-mixed-runtime.h'),
+      (Join-Path $objc3InputRoot 'typed-error-mixed-arc-runtime.inc')) | ForEach-Object {
         @{file=$_; sha256=(Get-FileHash -LiteralPath $_ -Algorithm SHA256).Hash}
       }
     $objc3Attempt = @{name=$objc3Name; source=$objc3Source; sources=@($objc3Sources);
       executable=$objc3Executable; status='running';
       source_sha256=(Get-FileHash -LiteralPath $objc3Source -Algorithm SHA256).Hash;
       command=@($objc3Compiler) + $objc3Arguments;
+      mrc_effect_command=@($objc3Compiler) + $objc3MRCEffectArguments;
       support_command=@($objc3SupportCompiler) + $objc3SupportArguments;
       link_command=@($objc3Compiler) + $objc3LinkArguments}
     $objc3Records += $objc3Attempt
@@ -105,6 +116,12 @@ try {
     $objc3Attempt.exit_code = $LASTEXITCODE
     if ($LASTEXITCODE -ne 0) { throw "MRC companion compile failed: $objc3Name ($LASTEXITCODE)" }
     $objc3Attempt.support_object_sha256 = (Get-FileHash -LiteralPath $objc3SupportObject -Algorithm SHA256).Hash
+    $objc3Attempt.phase = 'mrc-effect-compile'
+    & $objc3Compiler @objc3MRCEffectArguments
+    $objc3Attempt.exit_code = $LASTEXITCODE
+    if ($LASTEXITCODE -ne 0) { throw "MRC effect compile failed: $objc3Name ($LASTEXITCODE)" }
+    $objc3Attempt.objects = @(@{file=$objc3MRCEffectObject;
+      sha256=(Get-FileHash -LiteralPath $objc3MRCEffectObject -Algorithm SHA256).Hash})
     $objc3Attempt.phase = 'native-typed-error-compile'
     & $objc3Compiler @objc3Arguments
     $objc3Attempt.exit_code = $LASTEXITCODE
@@ -121,7 +138,7 @@ try {
     if ($LASTEXITCODE -ne 0) { throw "Typed-error runtime failed: $objc3Name ($LASTEXITCODE)" }
     $objc3Attempt.status = 'passed'
     Write-Output "NATIVE TYPED ERROR PASS ($ClientDriver): $objc3Name"
-    foreach ($objc3TrapCase in @('dynamic-nil', 'force-error')) {
+    foreach ($objc3TrapCase in @('dynamic-nil', 'force-error', 'mrc-dynamic-nil', 'mrc-force-error')) {
       $objc3TrapName = 'typed-error-' + $objc3TrapCase + '-trap-O' + $objc3Optimization
       $objc3TrapJson = & 'C:\Python313\python.exe' -B (Join-Path $PSScriptRoot 'run_expected_trap_windows.py') $objc3Executable $objc3TrapCase
       if ($LASTEXITCODE -ne 0) { throw "Expected native trap failed: $objc3TrapName ($objc3TrapJson)" }

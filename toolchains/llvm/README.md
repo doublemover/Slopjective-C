@@ -223,7 +223,7 @@ typed/untyped throws declarations, including nested callback types, with known
 required-semantics identifiers and exact declaration-identity roundtrips.
 Unknown required semantics are rejected. Reparse/import helpers use isolated
 physical filesystems without changing the host process working directory.
-Private synchronous ARC free functions returning scalar/void values can lower
+Private synchronous ARC and MRC free functions returning scalar/void values can lower
 Error-object throws through the C.4.1 trailing autoreleasing error-output slot.
 Direct try propagation, forced try and scalar/void optionalization use that
 native ABI. A retained pending error survives callee expression/function cleanup
@@ -234,6 +234,10 @@ uses owned handler storage, source-order class/protocol matching and native ARC
 bindings. Unmatched errors propagate outward, and a catch body cannot route an
 error to its siblings. The runtime witness covers strong/weak bindings, nested
 handlers, rethrow, structured exits, pools, defer and native exception cleanup.
+MRC code keeps its manual reference ownership while the error transport retains
+its own reference. MRC catch bindings borrow from the handler. Separately compiled
+ARC/MRC units check calls in both directions, manual escaping retains, callee-owned
+pools, interrupted cleanup and physical Objective-C 2 callers.
 Other callable shapes and async execution remain unsupported. Public
 re-export edges control visibility and module provenance survives emission.
 Version 3 of the C embedding API and the CLI expose
@@ -287,9 +291,10 @@ the matching sealed SDK and facade are built. Its complete inventory contains
   `objc3c-clang`, giving 14 suite/driver nodes. Their exact IDs are
   `carriers:<suite>:<driver>` and each suite includes its O0/O2 witnesses.
 - `typed-errors:clang` and `typed-errors:clang-cl` run the synchronous Error-object
-  output ABI at O0/O2, including native Objective-C 2 callers, ARC pool lifetime,
-  propagation cleanup and C++ exception separation. Each driver also executes
-  dynamic-nil and forced-error witnesses and requires the Windows
+  output ABI at O0/O2, including native Objective-C 2 callers, mixed ARC/MRC
+  calls, pool lifetime, propagation cleanup and C++ exception separation. Each
+  driver also executes dynamic-nil and forced-error witnesses in both ownership
+  modes, including first autorelease before any caller pool, and requires the Windows
   illegal-instruction trap code; another failure cause cannot satisfy a trap.
 - `native-package:provider` emits a provider object, semantic interface and
   sidecar. `native-package:consumer-eager` and `native-package:consumer-source`

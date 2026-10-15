@@ -10339,8 +10339,9 @@ diff --git a/clang/test/ObjC3/Sema/typed-error-handler-scopes.mm b/clang/test/Ob
 new file mode 100644
 --- /dev/null
 +++ b/clang/test/ObjC3/Sema/typed-error-handler-scopes.mm
-@@ -0,0 +1,75 @@
+@@ -0,0 +1,76 @@
 +// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fobjc-runtime=gnustep-2.0 -fobjc-version=3 -fobjc-arc -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fobjc-runtime=gnustep-2.0 -fobjc-version=3 -fsyntax-only -verify %s
 +
 +@protocol Error @end
 +typedef id<Error> E;

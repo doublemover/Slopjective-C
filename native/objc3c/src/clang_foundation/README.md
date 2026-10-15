@@ -158,9 +158,9 @@ async and typed/untyped throws declarations, including nested callback types,
 through source/sidecar emission and exact declaration-identity roundtrips.
 When used, sidecars declare `objc3.native-carrier-types.v1` and
 `objc3.canonical-function-effects.v1`; imports reject unknown required semantics.
-Private synchronous ARC free functions returning scalar/void values can lower
+Private synchronous ARC and MRC free functions returning scalar/void values can lower
 Error-object throws through a trailing autoreleasing error-output pointer.
-Private ARC Error-object do/catch also runs in nonthrowing functions.
+Private Error-object do/catch also runs in nonthrowing functions in both modes.
 Async execution remains unsupported.
 C++/Objective-C++ semantic interface interchange remains unsupported.
 
@@ -228,7 +228,7 @@ Private typed-error try, raise and ordered do/catch forms now have native AST
 nodes, template revalidation, PCH persistence and AST import. Propagation checks
 the actual callable's effect; surrounding handlers do not authorize errors
 inside separate lambdas or Blocks. Native C++ and Objective-C exceptions retain
-their separate controls. The private Error-object ABI admits synchronous direct ARC
+their separate controls. The private Error-object ABI admits synchronous direct ARC/MRC
 free calls returning scalar/void values, with a nullable trailing
 `id<Error> __autoreleasing *` slot. Success clears the slot to nil; failure
 stores a non-null error and returns a zero/void placeholder. The compiler retains
@@ -242,17 +242,23 @@ contexts prevent an outer try from authorizing nested bare throwing calls.
 Static typed nil is rejected, dynamic nil traps, and scalar zero remains valid
 in the semantic model. Scalar/value error transport,
 aggregate or managed success returns, indirect calls, methods, Blocks, variadic
-calls, MRC callees and async execution still diagnose before emission. The runtime
+calls and async execution still diagnose before emission. The runtime
 witness covers nested pools, a pool-owning C++ temporary, expression and function
 cleanup interrupted by native exceptions, and nullable output discard. Ordinary
 MRC callers of the physical C output ABI are covered by the runtime witness.
+MRC throw evaluates the operand normally and retains a separate transport
+reference. Source-owned references remain the program's responsibility, including
+an owning factory result. Mixed ARC/MRC translation units exercise calls in both
+directions, propagation through callee-owned pools, manual releases from C++
+destructors and defer, and nullable-output discard without a caller pool.
 
 Ordered Error-object do/catch owns the pending error through protected-body
 cleanup and selects the first matching class, protocol or bare catch. Unmatched
 errors move to an enclosing handler or the callable's error output; errors raised
 inside a catch body reach the enclosing context rather than sibling clauses.
-Catch bindings use native ARC lifetime inference and support explicit weak
-storage. A strong binding can transfer ownership to an outer local. The runtime
+ARC catch bindings use native lifetime inference and support explicit weak
+storage. A strong binding can transfer ownership to an outer local. MRC bindings
+borrow from the handler; retaining an escaping binding is explicit. The runtime
 witness covers subclass and protocol matching, nested propagation, explicit
 rethrow, strong/weak binding lifetime, catch return/break/continue/goto, deferred
 cleanup and native C++ exceptions interrupting either the body or a catch.
@@ -261,5 +267,5 @@ defer body, including after template substitution; a handler wholly inside the
 defer remains valid. ARC catch bindings retain their types and lowering through
 PCH and template instantiation.
 
-Static analysis of
-the extension remains unqualified. Public typed-error capabilities stay disabled.
+Static analysis of the extension remains unqualified. Public typed-error
+capabilities stay disabled.

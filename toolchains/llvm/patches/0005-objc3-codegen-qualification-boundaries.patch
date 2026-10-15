@@ -3729,7 +3729,7 @@ diff --git a/clang/lib/CodeGen/CGObjC3ErrorHandlers.cpp b/clang/lib/CodeGen/CGOb
 new file mode 100644
 --- /dev/null
 +++ b/clang/lib/CodeGen/CGObjC3ErrorHandlers.cpp
-@@ -0,0 +1,217 @@
+@@ -0,0 +1,216 @@
 +//===--- CGObjC3ErrorHandlers.cpp - ObjC3 error handlers
 +//--------------------===//
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -3890,8 +3890,7 @@ new file mode 100644
 +bool CodeGen::emitObjC3DoCatchStmt(CodeGenFunction &CGF,
 +                                   const ObjC3DoCatchStmt &S) {
 +  QualType ErrorType, ParameterType;
-+  if (!CGF.getLangOpts().ObjCAutoRefCount ||
-+      !getObjC3ErrorOutTypes(CGF.CGM, ErrorType, ParameterType)) {
++  if (!getObjC3ErrorOutTypes(CGF.CGM, ErrorType, ParameterType)) {
 +    CGF.ErrorUnsupported(&S, "Slop typed-error handler ABI");
 +    return false;
 +  }
@@ -4680,7 +4679,7 @@ diff --git a/clang/lib/CodeGen/CGObjC3TypedErrors.cpp b/clang/lib/CodeGen/CGObjC
 new file mode 100644
 --- /dev/null
 +++ b/clang/lib/CodeGen/CGObjC3TypedErrors.cpp
-@@ -0,0 +1,498 @@
+@@ -0,0 +1,499 @@
 +//===--- CGObjC3TypedErrors.cpp - ObjC3 error-output CodeGen -----*- C++
 +//-*-===//
 +//
@@ -4856,9 +4855,7 @@ new file mode 100644
 +                                            const FunctionProtoType *FPT,
 +                                            const Decl *D,
 +                                            bool RequireDirectFunction) {
-+  // MRC callee ownership requires its own transport implementation and runtime
-+  // witness. Ordinary MRC callers may still use the physical C output ABI.
-+  if (!FPT || !CGM.getLangOpts().ObjCAutoRefCount)
++  if (!FPT)
 +    return false;
 +  ObjC3FunctionEffectInfo Effects = FPT->getObjC3FunctionEffects();
 +  if (Effects.Async || Effects.Throws == ObjC3ThrowsKind::None ||
@@ -4875,8 +4872,7 @@ new file mode 100644
 +      !CodeGenFunction::hasScalarEvaluationKind(FPT->getReturnType()))
 +    return false;
 +
-+  if (CGM.getLangOpts().ObjCAutoRefCount &&
-+      FPT->getReturnType()->isObjCRetainableType())
++  if (FPT->getReturnType()->isObjCRetainableType())
 +    return false;
 +
 +  QualType OutValueType, OutParameterType;
@@ -4997,8 +4993,7 @@ new file mode 100644
 +  const auto *FD = dyn_cast_or_null<FunctionDecl>(CGF.CurCodeDecl);
 +  const auto *FPT = FD ? FD->getType()->getAs<FunctionProtoType>() : nullptr;
 +  Address Storage = getObjC3ErrorDestinationStorage(CGF);
-+  if (!Payload || !CGF.getLangOpts().ObjCAutoRefCount ||
-+      !isErrorBoundObjectPointer(CGF.CGM, Payload->getType()) ||
++  if (!Payload || !isErrorBoundObjectPointer(CGF.CGM, Payload->getType()) ||
 +      !Storage.isValid() ||
 +      (!CGF.ObjC3ActiveErrorHandler &&
 +       !supportsObjC3ErrorOutFunction(CGF.CGM, FPT, FD, true))) {
@@ -5013,7 +5008,12 @@ new file mode 100644
 +  QualType ErrorType, ParameterType;
 +  if (!getObjC3ErrorOutTypes(CGF.CGM, ErrorType, ParameterType))
 +    return false;
-+  llvm::Value *Owned = CGF.EmitARCRetainScalarExpr(Operand);
++  // ARC may consume a naturally +1 expression. MRC evaluates the operand
++  // normally and retains an independent transport reference; any +1 held by
++  // the source expression remains the MRC program's responsibility.
++  llvm::Value *Owned = CGF.getLangOpts().ObjCAutoRefCount
++                           ? CGF.EmitARCRetainScalarExpr(Operand)
++                           : CGF.EmitARCRetainNonBlock(CGF.EmitScalarExpr(Operand));
 +  storeOwnedObjC3Error(CGF, Storage, Owned, ErrorType);
 +  ExpressionCleanups.ForceCleanup();
 +  LValue Pending = CGF.MakeAddrLValue(Storage,
@@ -7009,11 +7009,241 @@ new file mode 100644
 +  __objc3_catch(id<Error> __weak weak_binding) { return weak_binding != (id)0; }
 +  return 0;
 +}
+diff --git a/clang/test/ObjC3/CodeGen/Inputs/typed-error-mixed-arc-runtime.inc b/clang/test/ObjC3/CodeGen/Inputs/typed-error-mixed-arc-runtime.inc
+new file mode 100644
+--- /dev/null
++++ b/clang/test/ObjC3/CodeGen/Inputs/typed-error-mixed-arc-runtime.inc
+@@ -0,0 +1,38 @@
++// ARC consumers and a provider called from the separate MRC effect unit.
++#include "typed-error-mixed-runtime.h"
++
++extern "C" int mixed_arc_value(int fail, RuntimeError error)
++    __objc3_throws(RuntimeError) {
++  if (fail) __objc3_throw(error);
++  return 0;
++}
++
++static int run_mixed_arc_checks() {
++  int Before = zero_code_error_deallocations();
++  @autoreleasepool {
++    __attribute__((objc_precise_lifetime)) RuntimeError Error =
++        (RuntimeError)make_zero_code_error();
++    if (__objc3_try_force(mixed_mrc_value(0, Error)) != 0 ||
++        __objc3_try_force(mixed_mrc_forward_arc(0, Error)) != 0 ||
++        __objc3_has_value(__objc3_try_optional(mixed_mrc_value(1, Error))))
++      return 101;
++    int Caught = 0;
++    __objc3_do { __objc3_try(mixed_mrc_forward_arc(1, Error)); }
++    __objc3_catch(RuntimeError binding) {
++      if (binding != Error || !is_nonnull_zero_code_error(binding)) return 102;
++      ++Caught;
++    }
++    if (Caught != 1 || zero_code_error_deallocations() != Before) return 103;
++  }
++  if (zero_code_error_deallocations() != Before + 1) return 104;
++  Before = zero_code_error_deallocations();
++  @autoreleasepool {
++    if (__objc3_try_force(mixed_mrc_owned_pool(0)) != 0 ||
++        zero_code_error_deallocations() != Before + 1)
++      return 106;
++    if (__objc3_has_value(__objc3_try_optional(mixed_mrc_owned_pool(1))) ||
++        zero_code_error_deallocations() != Before + 1)
++      return 107;
++  }
++  return zero_code_error_deallocations() == Before + 2 ? 0 : 108;
++}
+diff --git a/clang/test/ObjC3/CodeGen/Inputs/typed-error-mixed-runtime.h b/clang/test/ObjC3/CodeGen/Inputs/typed-error-mixed-runtime.h
+new file mode 100644
+--- /dev/null
++++ b/clang/test/ObjC3/CodeGen/Inputs/typed-error-mixed-runtime.h
+@@ -0,0 +1,14 @@
++#ifndef TYPED_ERROR_MIXED_RUNTIME_H
++#define TYPED_ERROR_MIXED_RUNTIME_H
++#include "typed-error-runtime-interface.h"
++
++typedef ZeroCodeError *RuntimeError;
++extern "C" {
++int mixed_arc_value(int fail, RuntimeError error) __objc3_throws(RuntimeError);
++int mixed_mrc_value(int fail, RuntimeError error) __objc3_throws(RuntimeError);
++int mixed_mrc_owned_pool(int fail) __objc3_throws(RuntimeError);
++int mixed_mrc_forward_arc(int fail, RuntimeError error) __objc3_throws(RuntimeError);
++int run_mrc_error_checks(void);
++void mixed_mrc_trap(int kind);
++}
++#endif
+diff --git a/clang/test/ObjC3/CodeGen/Inputs/typed-error-mrc-runtime.mm b/clang/test/ObjC3/CodeGen/Inputs/typed-error-mrc-runtime.mm
+new file mode 100644
+--- /dev/null
++++ b/clang/test/ObjC3/CodeGen/Inputs/typed-error-mrc-runtime.mm
+@@ -0,0 +1,163 @@
++// Compile this translation unit with -fno-objc-arc. All source-owned references
++// are explicitly balanced. The compiler owns a separate error transport retain.
++#include "typed-error-mixed-runtime.h"
++
++typedef __objc3_optional(int) MRCOptionalInt;
++static int MRCCleanupEvents;
++
++struct OwnedError {
++  RuntimeError Object = (RuntimeError)make_zero_code_error();
++  OwnedError() = default;
++  OwnedError(const OwnedError &) = delete;
++  ~OwnedError() {
++    [Object release];
++    ++MRCCleanupEvents;
++  }
++};
++struct CountCleanup { ~CountCleanup() { ++MRCCleanupEvents; } };
++struct ThrowCleanup { ~ThrowCleanup() noexcept(false) { throw 37; } };
++struct ThrowingOwnedError {
++  RuntimeError Object = (RuntimeError)make_zero_code_error();
++  ~ThrowingOwnedError() noexcept(false) { [Object release]; throw 41; }
++};
++
++extern "C" int mixed_mrc_value(int fail, RuntimeError error)
++    __objc3_throws(RuntimeError) {
++  if (fail) __objc3_throw(error);
++  return 0;
++}
++
++extern "C" int mixed_mrc_owned_pool(int fail) __objc3_throws(RuntimeError) {
++  @autoreleasepool {
++    OwnedError Owner;
++    if (fail) __objc3_throw(Owner.Object);
++    return 0;
++  }
++}
++
++extern "C" int mixed_mrc_forward_arc(int fail, RuntimeError error)
++    __objc3_throws(RuntimeError) {
++  @autoreleasepool {
++    CountCleanup Cleanup;
++    return __objc3_try(mixed_arc_value(fail, error));
++  }
++}
++
++static void mrc_expression_unwind() __objc3_throws(RuntimeError) {
++  __objc3_throw(ThrowingOwnedError().Object);
++}
++static void mrc_function_unwind() __objc3_throws(RuntimeError) {
++  OwnedError Owner;
++  ThrowCleanup Cleanup;
++  __objc3_throw(Owner.Object);
++}
++
++static int mrc_nested_rethrow() {
++  __objc3_do {
++    __objc3_do {
++      __objc3_throw(OwnedError().Object);
++    } __objc3_catch(RuntimeError error) {
++      // The temporary's original +1 is gone; the binding borrows the one
++      // reference owned by the handler. Rethrow must acquire a new retain.
++      if (zero_code_error_retain_count(error) != 1) return 80;
++      __objc3_throw(error);
++    } __objc3_catch { return 81; }
++  } __objc3_catch(RuntimeError error) {
++    if (zero_code_error_retain_count(error) != 1) return 82;
++    return 0;
++  }
++  return 83;
++}
++
++extern "C" int run_mrc_error_checks(void) {
++  int Before = zero_code_error_deallocations();
++  int Events = MRCCleanupEvents;
++  if (mrc_nested_rethrow() || zero_code_error_deallocations() != Before + 1 ||
++      MRCCleanupEvents != Events + 1)
++    return 84;
++
++  Before = zero_code_error_deallocations();
++  RuntimeError Escaped = nil;
++  __objc3_do { __objc3_throw(OwnedError().Object); }
++  __objc3_catch(RuntimeError error) {
++    if (zero_code_error_retain_count(error) != 1) return 85;
++    Escaped = [error retain];
++  }
++  if (!Escaped || zero_code_error_retain_count(Escaped) != 1 ||
++      zero_code_error_deallocations() != Before)
++    return 86;
++  [Escaped release];
++  if (zero_code_error_deallocations() != Before + 1) return 87;
++
++  Before = zero_code_error_deallocations();
++  @autoreleasepool {
++    OwnedError Owner;
++    if (__objc3_try_force(mixed_arc_value(0, Owner.Object)) != 0 ||
++        __objc3_has_value(__objc3_try_optional(mixed_arc_value(1, Owner.Object))) ||
++        __objc3_has_value(__objc3_try_optional(mixed_mrc_forward_arc(1, Owner.Object))))
++      return 88;
++  }
++  if (zero_code_error_deallocations() != Before + 1) return 89;
++
++  Before = zero_code_error_deallocations();
++  try {
++    __objc3_try_force(mrc_expression_unwind());
++    return 90;
++  } catch (int Value) {
++    if (Value != 41 || zero_code_error_deallocations() != Before + 1)
++      return 91;
++  }
++  Before = zero_code_error_deallocations();
++  try {
++    __objc3_try_force(mrc_function_unwind());
++    return 92;
++  } catch (int Value) {
++    if (Value != 37 || zero_code_error_deallocations() != Before + 1)
++      return 93;
++  }
++
++  Before = zero_code_error_deallocations();
++  try {
++    __objc3_do {
++      OwnedError Owner;
++      ThrowCleanup Cleanup;
++      __objc3_throw(Owner.Object);
++    } __objc3_catch { return 94; }
++  } catch (int Value) {
++    if (Value != 37 || zero_code_error_deallocations() != Before + 1)
++      return 95;
++  }
++  Before = zero_code_error_deallocations();
++  try {
++    __objc3_do { __objc3_throw(OwnedError().Object); }
++    __objc3_catch(RuntimeError error) {
++      if (!error) return 96;
++      throw 43;
++    }
++  } catch (int Value) {
++    if (Value != 43 || zero_code_error_deallocations() != Before + 1)
++      return 97;
++  }
++
++  // A source-created +1 remains owned by MRC code even when it throws. Retain
++  // a separate source reference and release it in defer before dispatch.
++  Before = zero_code_error_deallocations();
++  __objc3_do {
++    RuntimeError Source = (RuntimeError)make_zero_code_error();
++    __objc3_defer { [Source release]; }
++    __objc3_throw(Source);
++  } __objc3_catch(RuntimeError error) {
++    if (zero_code_error_retain_count(error) != 1) return 98;
++  }
++  if (zero_code_error_deallocations() != Before + 1) return 99;
++  return verify_mrc_physical_error_abi() ? 0 : 100;
++}
++
++extern "C" void mixed_mrc_trap(int kind) {
++  if (kind == 1) {
++    __objc3_try_force(mixed_mrc_value(1, (RuntimeError)nil));
++    return;
++  }
++  OwnedError Owner;
++  __objc3_try_force(mixed_mrc_value(1, Owner.Object));
++}
 diff --git a/clang/test/ObjC3/CodeGen/Inputs/typed-error-native-runtime-support.m b/clang/test/ObjC3/CodeGen/Inputs/typed-error-native-runtime-support.m
 new file mode 100644
 --- /dev/null
 +++ b/clang/test/ObjC3/CodeGen/Inputs/typed-error-native-runtime-support.m
-@@ -0,0 +1,91 @@
+@@ -0,0 +1,130 @@
 +// Compile this companion in MRC mode with pinned libobjc2. It supplies a real
 +// Error object whose application code is zero and explicit lifetime counters.
 +#include <objc/objc.h>
@@ -7040,7 +7270,14 @@ new file mode 100644
 +  objc_delete_weak_refs(self);
 +  object_dispose(self);
 +}
-+- (id)autorelease { return objc_autorelease(self); }
++- (id)autorelease {
++  // Before the first explicit pool, libobjc2 delegates autorelease of this
++  // custom MRC root back to this method. Bootstrap its Foundation-free native
++  // pool support with a balanced empty pool, then enqueue the reference.
++  void *Token = objc_autoreleasePoolPush();
++  objc_autoreleasePoolPop(Token);
++  return objc_autorelease(self);
++}
 +- (int)code { return Code; }
 +@end
 +
@@ -7105,11 +7342,43 @@ new file mode 100644
 +  int Before = Deallocations;
 +  return typed_runtime_owned_pool(1, 0) == 0 && Deallocations == Before + 1;
 +}
++
++
++int zero_code_error_retain_count(id Value) {
++  return Value ? (int)*(unsigned long *)object_getIndexedIvars(Value) : 0;
++}
++// This Objective-C 2 MRC unit uses only the physical C signature. Neither the
++// effect syntax nor ARC is required to exchange the autoreleasing error slot.
++extern int mixed_mrc_value(int fail, ZeroCodeError *error, id *out_error);
++extern int mixed_mrc_owned_pool(int fail, id *out_error);
++int verify_mrc_physical_error_abi(void) {
++  int Before = Deallocations;
++  // No ambient caller pool: discarded errors must release after the callee's
++  // own source ownership and pool cleanup, with no autorelease left behind.
++  if (mixed_mrc_owned_pool(1, 0) != 0 || Deallocations != Before + 1) return 0;
++  Before = Deallocations;
++  ZeroCodeError *Owner = (ZeroCodeError *)make_zero_code_error();
++  if (mixed_mrc_value(1, Owner, 0) != 0 ||
++      zero_code_error_retain_count(Owner) != 1) return 0;
++  [Owner release];
++  if (Deallocations != Before + 1) return 0;
++  @autoreleasepool {
++    Owner = (ZeroCodeError *)make_zero_code_error();
++    id Error = (id)1;
++    if (mixed_mrc_value(0, Owner, &Error) != 0 || Error != nil) return 0;
++    if (mixed_mrc_value(1, Owner, &Error) != 0 || Error != Owner ||
++        zero_code_error_retain_count(Owner) != 2) return 0;
++    [Owner release];
++    if (!is_nonnull_zero_code_error(Error) || Deallocations != Before + 1)
++      return 0;
++  }
++  return Deallocations == Before + 2;
++}
 diff --git a/clang/test/ObjC3/CodeGen/Inputs/typed-error-out-runtime.mm b/clang/test/ObjC3/CodeGen/Inputs/typed-error-out-runtime.mm
 new file mode 100644
 --- /dev/null
 +++ b/clang/test/ObjC3/CodeGen/Inputs/typed-error-out-runtime.mm
-@@ -0,0 +1,236 @@
+@@ -0,0 +1,245 @@
 +// Runtime witness for the direct C.4.1 error-out slice. Compile with ARC,
 +// C++ exceptions, pinned libobjc2 and the admitted Windows MSVC/UCRT profile.
 +#include "typed-error-runtime-interface.h"
@@ -7284,8 +7553,13 @@ new file mode 100644
 +}
 +
 +#include "typed-error-do-catch-runtime.inc"
++#include "typed-error-mixed-arc-runtime.inc"
 +
 +int main(int argc, char **) {
++  if (argc >= 4) {
++    mixed_mrc_trap(argc == 4 ? 1 : 2);
++    return 105;
++  }
 +  if (argc == 2) {
 +    __objc3_try_force(throw_dynamic((TestError)nil));
 +    return 9;
@@ -7344,13 +7618,17 @@ new file mode 100644
 +  if (OwnedResult) return OwnedResult;
 +  int HandlerResult = run_handler_checks();
 +  if (HandlerResult) return HandlerResult;
++  int MRCResult = run_mrc_error_checks();
++  if (MRCResult) return MRCResult;
++  int MixedARCResult = run_mixed_arc_checks();
++  if (MixedARCResult) return MixedARCResult;
 +  return SawNonNullZeroCodeError == 1 ? 0 : 5;
 +}
 diff --git a/clang/test/ObjC3/CodeGen/Inputs/typed-error-runtime-interface.h b/clang/test/ObjC3/CodeGen/Inputs/typed-error-runtime-interface.h
 new file mode 100644
 --- /dev/null
 +++ b/clang/test/ObjC3/CodeGen/Inputs/typed-error-runtime-interface.h
-@@ -0,0 +1,41 @@
+@@ -0,0 +1,43 @@
 +#ifndef TYPED_ERROR_RUNTIME_INTERFACE_H
 +#define TYPED_ERROR_RUNTIME_INTERFACE_H
 +
@@ -7382,6 +7660,8 @@ new file mode 100644
 +#endif
 +id make_zero_code_error(void) __attribute__((ns_returns_retained));
 +id make_error_kind(int kind) __attribute__((ns_returns_retained));
++int zero_code_error_retain_count(id value);
++int verify_mrc_physical_error_abi(void);
 +int zero_code_error_deallocations(void);
 +int is_nonnull_zero_code_error(id value);
 +int verify_error_out_abi(void);
@@ -9297,15 +9577,86 @@ diff --git a/clang/test/ObjC3/CodeGen/typed-error-mrc-boundary.m b/clang/test/Ob
 new file mode 100644
 --- /dev/null
 +++ b/clang/test/ObjC3/CodeGen/typed-error-mrc-boundary.m
-@@ -0,0 +1,8 @@
-+// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c -std=c17 -fobjc-runtime=gnustep-2.0 -fobjc-version=3 -emit-llvm -o /dev/null -verify %s
+@@ -0,0 +1,39 @@
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c -std=c17 -fobjc-runtime=gnustep-2.0 -fobjc-version=3 -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -triple x86_64-pc-windows-msvc -x objective-c -std=c17 -fobjc-runtime=gnustep-2.0 -fobjc-version=3 -emit-llvm -o - %s | FileCheck %s
 +
-+@protocol Error;
++@protocol Error @end
 +typedef id<Error> TestError;
++void use(TestError);
++TestError owned_factory(void) __attribute__((ns_returns_retained));
 +
-+void unqualified_mrc_callee(TestError error) __objc3_throws(TestError) { // expected-error {{ObjC3 async/throws callable ABI lowering}}
++void mrc_raise(TestError error) __objc3_throws(TestError) {
 +  __objc3_throw(error);
 +}
++// CHECK-LABEL: define{{.*}} void @mrc_raise(ptr {{.*}}, ptr {{.*}})
++// CHECK: call ptr @llvm.objc.retain(
++// CHECK: objc3.thrown.error.present
++// CHECK: objc3.error.publish:
++// CHECK: call ptr @llvm.objc.autorelease(
++// CHECK: objc3.error.discard:
++// CHECK: call void @llvm.objc.release(
++
++void mrc_owned_expression(void) __objc3_throws(TestError) {
++  // MRC code still owns the factory's +1. Throw owns a separate retain.
++  __objc3_throw(owned_factory());
++}
++// CHECK-LABEL: define{{.*}} void @mrc_owned_expression(
++// CHECK: call ptr @owned_factory()
++// CHECK: call ptr @llvm.objc.retain(
++
++void mrc_handler(TestError error) {
++  __objc3_do { __objc3_throw(error); }
++  __objc3_catch(TestError binding) { use(binding); }
++}
++// CHECK-LABEL: define{{.*}} void @mrc_handler(
++// CHECK: call ptr @llvm.objc.retain(
++// CHECK: objc3.catch.dispatch:
++// CHECK-NOT: call ptr @llvm.objc.retain(
++// CHECK: call void @use(
++// CHECK-NOT: call ptr @llvm.objc.retain(
++// CHECK: call void @llvm.objc.storeStrong(ptr %objc3.catch.error, ptr null)
++// CHECK: ret void
+diff --git a/clang/test/ObjC3/CodeGen/typed-error-mrc-unsupported.m b/clang/test/ObjC3/CodeGen/typed-error-mrc-unsupported.m
+new file mode 100644
+--- /dev/null
++++ b/clang/test/ObjC3/CodeGen/typed-error-mrc-unsupported.m
+@@ -0,0 +1,7 @@
++// RUN: %clang_cc1 -x objective-c -std=c17 -fobjc-runtime=gnustep-2.0 -fobjc-version=3 -emit-llvm -o /dev/null -verify %s
++
++@protocol Error @end
++typedef id<Error> E;
++E managed_success(void) __objc3_throws(E) { // expected-error {{ObjC3 async/throws callable ABI lowering}}
++  return (id)0;
++}
+diff --git a/clang/test/ObjC3/CodeGen/typed-error-mrc-unwind.mm b/clang/test/ObjC3/CodeGen/typed-error-mrc-unwind.mm
+new file mode 100644
+--- /dev/null
++++ b/clang/test/ObjC3/CodeGen/typed-error-mrc-unwind.mm
+@@ -0,0 +1,23 @@
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -triple x86_64-unknown-linux-gnu -fobjc-runtime=gnustep-2.0 -fobjc-version=3 -fexceptions -fcxx-exceptions -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -triple x86_64-pc-windows-msvc -fobjc-runtime=gnustep-2.0 -fobjc-version=3 -fexceptions -fcxx-exceptions -emit-llvm -o - %s | FileCheck %s --check-prefix=WIN
++
++@protocol Error @end
++typedef id<Error> TestError;
++struct Cleanup { ~Cleanup() noexcept(false); };
++
++extern "C" void mrc_pending_unwind(TestError error) __objc3_throws(TestError) {
++  Cleanup C;
++  __objc3_throw(error);
++}
++// CHECK-LABEL: define{{.*}} void @mrc_pending_unwind(
++// CHECK: call ptr @llvm.objc.retain(
++// CHECK: invoke void @_ZN7CleanupD1Ev
++// CHECK: landingpad
++// CHECK: call void @llvm.objc.storeStrong(ptr {{.*}}, ptr null)
++// CHECK: resume
++// WIN-LABEL: define{{.*}} void @mrc_pending_unwind(
++// WIN: call ptr @llvm.objc.retain(
++// WIN: invoke void @"??1Cleanup
++// WIN: cleanuppad
++// WIN: call void @llvm.objc.storeStrong(ptr {{.*}}, ptr null)
++// WIN: cleanupret
 diff --git a/clang/test/ObjC3/CodeGen/typed-error-nested-bare-call.m b/clang/test/ObjC3/CodeGen/typed-error-nested-bare-call.m
 new file mode 100644
 --- /dev/null
