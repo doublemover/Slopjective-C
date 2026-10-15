@@ -168,6 +168,8 @@ def test_fixed_output_rerun_cannot_change_prior_cached_products(tmp_path, monkey
     "typed-error-dynamic-nil-trap",
     "typed-error-block-dynamic-nil-trap",
     "typed-error-mrc-block-force-error-trap",
+    "typed-error-member-dynamic-nil-trap",
+    "typed-error-mrc-member-force-error-trap",
 ])
 def test_typed_error_trap_rejects_success_and_other_failure_causes(
     tmp_path, monkeypatch, exit_code, trap_case,

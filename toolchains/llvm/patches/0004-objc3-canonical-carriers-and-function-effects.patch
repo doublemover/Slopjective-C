@@ -3961,6 +3961,61 @@ index d67220a2f..d3c5be812 100644
    CUDA().MaybeAddConstantAttr(var);
  
    if (getLangOpts().OpenCL) {
+diff --git a/clang/lib/Sema/SemaDeclCXX.cpp b/clang/lib/Sema/SemaDeclCXX.cpp
+index 51b3f8059..19140a4ac 100644
+--- a/clang/lib/Sema/SemaDeclCXX.cpp
++++ b/clang/lib/Sema/SemaDeclCXX.cpp
+@@ -11024,6 +11024,13 @@ static void diagnoseInvalidDeclaratorChunks(Sema &S, Declarator &D,
+ 
+ QualType Sema::CheckConstructorDeclarator(Declarator &D, QualType R,
+                                           StorageClass &SC) {
++  const auto *ObjC3Proto = R->getAs<FunctionProtoType>();
++  if (ObjC3Proto && ObjC3Proto->getObjC3FunctionEffects() != ObjC3FunctionEffectInfo()) {
++    Diag(D.getIdentifierLoc(), diag::err_constructor_cannot_be)
++        << "ObjC3 async/throws";
++    D.setInvalidType();
++  }
++
+   bool isVirtual = D.getDeclSpec().isVirtualSpecified();
+ 
+   // C++ [class.ctor]p3:
+@@ -11219,6 +11226,13 @@ bool Sema::CheckDestructor(CXXDestructorDecl *Destructor) {
+ 
+ QualType Sema::CheckDestructorDeclarator(Declarator &D, QualType R,
+                                          StorageClass& SC) {
++  const auto *ObjC3Proto = R->getAs<FunctionProtoType>();
++  if (ObjC3Proto && ObjC3Proto->getObjC3FunctionEffects() != ObjC3FunctionEffectInfo()) {
++    Diag(D.getIdentifierLoc(), diag::err_destructor_cannot_be)
++        << "ObjC3 async/throws";
++    D.setInvalidType();
++  }
++
+   // C++ [class.dtor]p1:
+   //   [...] A typedef-name that names a class is a class-name
+   //   (7.1.3); however, a typedef-name that names a class shall not
+@@ -18680,6 +18694,22 @@ bool Sema::CheckOverridingFunctionAttributes(CXXMethodDecl *New,
+   const auto *NewFT = New->getType()->castAs<FunctionProtoType>();
+   const auto *OldFT = Old->getType()->castAs<FunctionProtoType>();
+ 
++  // ObjC3 effects have exact override identity, independently of native C++
++  // exception specifications and Clang's inferred FunctionEffects. Function
++  // value widening does not change a virtual slot's declared error contract.
++  const auto NewObjC3 = NewFT->getObjC3FunctionEffects();
++  const auto OldObjC3 = OldFT->getObjC3FunctionEffects();
++  bool SameObjC3 = NewObjC3.Async == OldObjC3.Async &&
++                   NewObjC3.Throws == OldObjC3.Throws;
++  if (SameObjC3 && NewObjC3.Throws == ObjC3ThrowsKind::Typed)
++    SameObjC3 = Context.hasSameType(NewObjC3.ErrorType, OldObjC3.ErrorType);
++  if (!SameObjC3) {
++    Diag(New->getLocation(), diag::err_conflicting_overriding_attributes)
++        << New << New->getType() << Old->getType();
++    Diag(Old->getLocation(), diag::note_overridden_virtual_function);
++    return true;
++  }
++
+   if (OldFT->hasExtParameterInfos()) {
+     for (unsigned I = 0, E = OldFT->getNumParams(); I != E; ++I)
+       // A parameter of the overriding method should be annotated with noescape
 diff --git a/clang/lib/Sema/SemaExpr.cpp b/clang/lib/Sema/SemaExpr.cpp
 index 12681a1f0..c704cb92d 100644
 --- a/clang/lib/Sema/SemaExpr.cpp
@@ -7362,7 +7417,7 @@ diff --git a/clang/lib/Sema/SemaObjC3Propagation.cpp b/clang/lib/Sema/SemaObjC3P
 new file mode 100644
 --- /dev/null
 +++ b/clang/lib/Sema/SemaObjC3Propagation.cpp
-@@ -0,0 +1,127 @@
+@@ -0,0 +1,131 @@
 +//===--- SemaObjC3Propagation.cpp - ObjC3 typed propagation semantics -----===//
 +// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -7380,8 +7435,12 @@ new file mode 100644
 +  auto *Call = dyn_cast<CallExpr>(Operand->IgnoreParenImpCasts());
 +  if (!Call)
 +    return nullptr;
-+  QualType CalleeType =
-+      S.Context.getCanonicalType(Call->getCallee()->getType());
++  QualType CalleeType = Call->getCallee()->getType();
++  if (Call->getCallee()->hasPlaceholderType(BuiltinType::BoundMember))
++    CalleeType = Expr::findBoundMemberType(Call->getCallee());
++  if (CalleeType.isNull())
++    return nullptr;
++  CalleeType = S.Context.getCanonicalType(CalleeType);
 +  if (const auto *Pointer = CalleeType->getAs<PointerType>())
 +    CalleeType = S.Context.getCanonicalType(Pointer->getPointeeType());
 +  else if (const auto *Block = CalleeType->getAs<BlockPointerType>())
@@ -10448,6 +10507,40 @@ new file mode 100644
 +  } __objc3_catch(id<Error, Extra>) { // expected-error {{is incompatible with thrown error type}}
 +  }
 +}
+diff --git a/clang/test/ObjC3/Sema/typed-error-member-overrides.mm b/clang/test/ObjC3/Sema/typed-error-member-overrides.mm
+new file mode 100644
+--- /dev/null
++++ b/clang/test/ObjC3/Sema/typed-error-member-overrides.mm
+@@ -0,0 +1,29 @@
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fobjc-version=3 -fsyntax-only -verify %s
++@protocol Error @end
++@protocol Other @end
++using E = id<Error>;
++using Alias = E;
++using Different = id<Other>;
++struct Base {
++  virtual int exact() __objc3_throws(E); // expected-note 2 {{overridden virtual function is here}}
++  virtual int untyped() __objc3_throws; // expected-note {{overridden virtual function is here}}
++  virtual int plain(); // expected-note {{overridden virtual function is here}}
++  virtual int async() __objc3_async; // expected-note {{overridden virtual function is here}}
++};
++struct Accepted : Base { int exact() __objc3_throws(Alias) override; };
++struct Missing : Base {
++  int exact() override; // expected-error {{has different attributes}}
++};
++struct Changed : Base {
++  int exact() __objc3_throws(Different) override; // expected-error {{has different attributes}}
++  int untyped() __objc3_throws(E) override; // expected-error {{has different attributes}}
++  int plain() __objc3_throws(E) override; // expected-error {{has different attributes}}
++  int async() override; // expected-error {{has different attributes}}
++};
++struct Special {
++  Special() __objc3_throws(E); // expected-error {{constructor cannot be declared 'ObjC3 async/throws'}}
++  ~Special() __objc3_throws(E); // expected-error {{destructor cannot be declared 'ObjC3 async/throws'}}
++};
++template<class T> struct GenericBase { virtual int get() __objc3_throws(T); };
++template<class T> struct GenericDerived : GenericBase<T> { int get() __objc3_throws(T) override; };
++GenericDerived<E> AcceptedInstantiation;
 diff --git a/clang/test/ObjC3/Sema/typed-error-native-exception-boundaries.mm b/clang/test/ObjC3/Sema/typed-error-native-exception-boundaries.mm
 new file mode 100644
 --- /dev/null

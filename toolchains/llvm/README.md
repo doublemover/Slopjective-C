@@ -226,9 +226,9 @@ physical filesystems without changing the host process working directory.
 Private synchronous ARC and MRC free functions returning scalar/void values can lower
 Error-object throws through the C.4.1 trailing autoreleasing error-output slot.
 Direct and indirect try propagation, forced try and scalar/void optionalization
-use that native ABI. Ordinary function pointers/references and static C++ members
-share the free-function error output. Blocks keep their native context prefix
-and add the same trailing output; instance methods remain closed.
+use that native ABI. Function/member pointers, static and instance C++ methods
+and Blocks retain their native receiver/context prefixes and add the same
+trailing output. Objective-C message effects remain closed.
 A retained pending error survives callee expression/function cleanup
 and pools; an EH-only cleanup releases it if a native exception interrupts that
 return. Publication to the caller's autoreleasing slot occurs after callee
@@ -251,6 +251,14 @@ forwarding. Their signature descriptors include the physical error output.
 ARC/MRC execution checks escaping object/C++ captures, consumed object parameters,
 local handlers, C++ unwind cleanup and an Objective-C 2 caller of the physical
 invoke signature. PCH and installed interfaces preserve the Block effect.
+C++ member witnesses additionally cover direct/virtual calls, native member
+pointer layouts, multiple/virtual inheritance, covariant returns, receiver/member
+evaluation once, consumed arguments and exceptional parameter cleanup across
+ARC/MRC units. Adjustment thunks forward the caller's physical error slot.
+Override effects have exact identity; ordinary nonthrowing callable-value
+widening remains separate. Constructors/destructors reject ObjC3 effects and
+reference-valued success transport remains closed. Member effects persist in
+PCH and template instantiation; C++ semantic interfaces remain unsupported.
 Installed C/Objective-C consumers execute imported callbacks, Blocks and
 higher-order error calls without the provider source. Other callable shapes and async
 execution remain unsupported. Public re-export edges control visibility and
@@ -308,7 +316,7 @@ the matching sealed SDK and facade are built. Its complete inventory contains
 - `typed-errors:clang` and `typed-errors:clang-cl` run the synchronous Error-object
   output ABI at O0/O2, including native Objective-C 2 callers, mixed ARC/MRC
   calls, pool lifetime, propagation cleanup and C++ exception separation. Each
-  driver also executes function and Block dynamic-nil/forced-error witnesses in
+  driver also executes function, Block and member dynamic-nil/forced-error witnesses in
   both ownership modes, including first autorelease before any caller pool, and requires the Windows
   illegal-instruction trap code; another failure cause cannot satisfy a trap.
 - `native-package:provider` emits a provider object, semantic interface and

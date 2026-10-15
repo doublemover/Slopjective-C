@@ -106,7 +106,10 @@ try {
       (Join-Path $objc3InputRoot 'typed-error-callback-mrc-runtime.inc'),
       (Join-Path $objc3InputRoot 'typed-error-block-runtime.h'),
       (Join-Path $objc3InputRoot 'typed-error-block-arc-runtime.inc'),
-      (Join-Path $objc3InputRoot 'typed-error-block-mrc-runtime.inc')) | ForEach-Object {
+      (Join-Path $objc3InputRoot 'typed-error-block-mrc-runtime.inc'),
+      (Join-Path $objc3InputRoot 'typed-error-member-runtime.h'),
+      (Join-Path $objc3InputRoot 'typed-error-member-arc-runtime.inc'),
+      (Join-Path $objc3InputRoot 'typed-error-member-mrc-runtime.inc')) | ForEach-Object {
         @{file=$_; sha256=(Get-FileHash -LiteralPath $_ -Algorithm SHA256).Hash}
       }
     $objc3Attempt = @{name=$objc3Name; source=$objc3Source; sources=@($objc3Sources);
@@ -145,7 +148,8 @@ try {
     $objc3Attempt.status = 'passed'
     Write-Output "NATIVE TYPED ERROR PASS ($ClientDriver): $objc3Name"
     foreach ($objc3TrapCase in @('dynamic-nil', 'force-error', 'mrc-dynamic-nil', 'mrc-force-error',
-        'block-dynamic-nil', 'block-force-error', 'mrc-block-dynamic-nil', 'mrc-block-force-error')) {
+        'block-dynamic-nil', 'block-force-error', 'mrc-block-dynamic-nil', 'mrc-block-force-error',
+        'member-dynamic-nil', 'member-force-error', 'mrc-member-dynamic-nil', 'mrc-member-force-error')) {
       $objc3TrapName = 'typed-error-' + $objc3TrapCase + '-trap-O' + $objc3Optimization
       $objc3TrapJson = & 'C:\Python313\python.exe' -B (Join-Path $PSScriptRoot 'run_expected_trap_windows.py') $objc3Executable $objc3TrapCase
       if ($LASTEXITCODE -ne 0) { throw "Expected native trap failed: $objc3TrapName ($objc3TrapJson)" }

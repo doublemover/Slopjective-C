@@ -12,14 +12,11 @@ import sys
 
 ILLEGAL_INSTRUCTION_EXIT = -1073741795
 CASE_ARGUMENTS = {
-    "dynamic-nil": ("nil",),
-    "force-error": ("force", "error"),
-    "mrc-dynamic-nil": ("mrc", "nil", "error"),
-    "mrc-force-error": ("mrc", "force", "error", "trap"),
-    "block-dynamic-nil": ("block", "nil", "error", "trap", "arc"),
-    "block-force-error": ("block", "force", "error", "trap", "arc", "owned"),
-    "mrc-block-dynamic-nil": ("block", "nil", "error", "trap", "mrc", "owned", "copy"),
-    "mrc-block-force-error": ("block", "force", "error", "trap", "mrc", "owned", "copy", "dispose"),
+    case: (case,) for case in (
+        "dynamic-nil", "force-error", "mrc-dynamic-nil", "mrc-force-error",
+        "block-dynamic-nil", "block-force-error", "mrc-block-dynamic-nil", "mrc-block-force-error",
+        "member-dynamic-nil", "member-force-error", "mrc-member-dynamic-nil", "mrc-member-force-error",
+    )
 }
 
 

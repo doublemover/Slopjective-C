@@ -42,6 +42,8 @@ _CASES = {
         "typed-error-mrc-dynamic-nil-trap", "typed-error-mrc-force-error-trap",
         "typed-error-block-dynamic-nil-trap", "typed-error-block-force-error-trap",
         "typed-error-mrc-block-dynamic-nil-trap", "typed-error-mrc-block-force-error-trap",
+        "typed-error-member-dynamic-nil-trap", "typed-error-member-force-error-trap",
+        "typed-error-mrc-member-dynamic-nil-trap", "typed-error-mrc-member-force-error-trap",
     ),
 }
 _SHA256 = re.compile(r"[0-9a-fA-F]{64}\Z")

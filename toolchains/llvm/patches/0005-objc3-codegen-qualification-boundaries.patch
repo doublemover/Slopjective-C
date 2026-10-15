@@ -151,7 +151,7 @@ index 20a595e58..03c3281dd 100644
      entry_ptr = entry->end();
    Builder.SetInsertPoint(entry, entry_ptr);
 diff --git a/clang/lib/CodeGen/CGCall.cpp b/clang/lib/CodeGen/CGCall.cpp
-index 06203733a..055fcc8b8 100644
+index 06203733a..7212969f3 100644
 --- a/clang/lib/CodeGen/CGCall.cpp
 +++ b/clang/lib/CodeGen/CGCall.cpp
 @@ -12,6 +12,8 @@
@@ -194,7 +194,7 @@ index 06203733a..055fcc8b8 100644
    appendParameterTypes(CGT, prefix, paramInfos, FTP);
 +  const auto Effects = FTP.getTypePtr()->getObjC3FunctionEffects();
 +  if (Effects.Throws != ObjC3ThrowsKind::None) {
-+    if (instanceMethod || !supportsObjC3ErrorOutFunction(CGT.getCGM(), FTP.getTypePtr(), nullptr, false)) {
++    if (!supportsObjC3ErrorOutFunction(CGT.getCGM(), FTP.getTypePtr(), nullptr, false)) {
 +      CGT.getCGM().Error(SourceLocation(), "unsupported ObjC3 throws function ABI");
 +      return CGT.arrangeNullaryFunction();
 +    }
@@ -710,7 +710,7 @@ index aeecf0bac..a438849b7 100644
                             ? Builder.CreateLoad(Arg.getIndirectAddress())
                             : Arg.getDirectValue();
 diff --git a/clang/lib/CodeGen/CGExpr.cpp b/clang/lib/CodeGen/CGExpr.cpp
-index 24878710d..b35bf7275 100644
+index 24878710d..1e29bd391 100644
 --- a/clang/lib/CodeGen/CGExpr.cpp
 +++ b/clang/lib/CodeGen/CGExpr.cpp
 @@ -14,6 +14,9 @@
@@ -723,11 +723,17 @@ index 24878710d..b35bf7275 100644
  #include "CGCleanup.h"
  #include "CGDebugInfo.h"
  #include "CGHLSLRuntime.h"
-@@ -6199,6 +6202,71 @@ RValue CodeGenFunction::EmitRValueForField(LValue LV,
+@@ -6199,6 +6202,77 @@ RValue CodeGenFunction::EmitRValueForField(LValue LV,
  RValue CodeGenFunction::EmitCallExpr(const CallExpr *E,
                                       ReturnValueSlot ReturnValue,
                                       llvm::CallBase **CallOrInvoke) {
-+  QualType CalledType = getContext().getCanonicalType(E->getCallee()->getType());
++  QualType CalledType = E->getCallee()->getType();
++  if (E->getCallee()->hasPlaceholderType(BuiltinType::BoundMember)) {
++    QualType BoundType = Expr::findBoundMemberType(E->getCallee());
++    if (!BoundType.isNull())
++      CalledType = BoundType;
++  }
++  CalledType = getContext().getCanonicalType(CalledType);
 +  if (const auto *PT = CalledType->getAs<PointerType>())
 +    CalledType = getContext().getCanonicalType(PT->getPointeeType());
 +  else if (const auto *BPT = CalledType->getAs<BlockPointerType>())
@@ -1223,6 +1229,45 @@ index c050fd41a..e09e06477 100644
    case Stmt::ReturnStmtClass:  EmitReturnStmt(cast<ReturnStmt>(*S));      break;
  
    case Stmt::SwitchStmtClass:  EmitSwitchStmt(cast<SwitchStmt>(*S));      break;
+diff --git a/clang/lib/CodeGen/CGVTables.cpp b/clang/lib/CodeGen/CGVTables.cpp
+index 46f00192c..3d44250e2 100644
+--- a/clang/lib/CodeGen/CGVTables.cpp
++++ b/clang/lib/CodeGen/CGVTables.cpp
+@@ -11,6 +11,7 @@
+ //===----------------------------------------------------------------------===//
+ 
+ #include "CGCXXABI.h"
++#include "CGObjC3TypedErrors.h"
+ #include "CGDebugInfo.h"
+ #include "CodeGenFunction.h"
+ #include "CodeGenModule.h"
+@@ -289,6 +290,17 @@ void CodeGenFunction::StartThunk(llvm::Function *Fn, GlobalDecl GD,
+                                                 FunctionArgs);
+   }
+ 
++  const auto *FPT = MD->getType()->castAs<FunctionProtoType>();
++  if (!IsUnprototyped && supportsObjC3ErrorOutFunction(CGM, FPT, MD, true)) {
++    QualType ValueType, ParameterType;
++    getObjC3ErrorOutTypes(CGM, ValueType, ParameterType);
++    auto *Out = ImplicitParamDecl::Create(
++        getContext(), const_cast<CXXMethodDecl *>(MD), MD->getLocation(), nullptr,
++        ParameterType, ImplicitParamKind::Other);
++    FunctionArgs.push_back(Out);
++    ObjC3FunctionErrorOutDecl = Out;
++  }
++
+   // Start defining the function.
+   auto NL = ApplyDebugLocation::CreateEmpty(*this);
+   StartFunction(GlobalDecl(), ResultType, Fn, FnInfo, FunctionArgs,
+@@ -363,6 +375,8 @@ void CodeGenFunction::EmitCallAndReturnForThunk(llvm::FunctionCallee Callee,
+   // Add the rest of the arguments.
+   for (const ParmVarDecl *PD : MD->parameters())
+     EmitDelegateCallArg(CallArgs, PD, SourceLocation());
++  if (ObjC3FunctionErrorOutDecl)
++    EmitDelegateCallArg(CallArgs, ObjC3FunctionErrorOutDecl, SourceLocation());
+ 
+   const FunctionProtoType *FPT = MD->getType()->castAs<FunctionProtoType>();
+ 
 diff --git a/clang/lib/CodeGen/CMakeLists.txt b/clang/lib/CodeGen/CMakeLists.txt
 index dbbc35b37..7a23edbae 100644
 --- a/clang/lib/CodeGen/CMakeLists.txt
@@ -1242,7 +1287,7 @@ index dbbc35b37..7a23edbae 100644
    CGObjCMac.cpp
    CGObjCRuntime.cpp
 diff --git a/clang/lib/CodeGen/CodeGenFunction.cpp b/clang/lib/CodeGen/CodeGenFunction.cpp
-index 6c0589be3..8c1d21397 100644
+index 6c0589be3..556138faf 100644
 --- a/clang/lib/CodeGen/CodeGenFunction.cpp
 +++ b/clang/lib/CodeGen/CodeGenFunction.cpp
 @@ -19,6 +19,8 @@
@@ -1272,19 +1317,21 @@ index 6c0589be3..8c1d21397 100644
  
    if (ShouldInstrumentFunction()) {
      if (CGM.getCodeGenOpts().InstrumentFunctions)
-@@ -1273,7 +1279,11 @@ void CodeGenFunction::StartFunction(GlobalDecl GD, QualType RetTy,
+@@ -1273,7 +1279,13 @@ void CodeGenFunction::StartFunction(GlobalDecl GD, QualType RetTy,
      }
    }
  
-+  if (ObjC3FunctionErrorOutDecl)
++  // Native adjustment thunks forward the caller's physical error output.
++  // They do not initialize it or acquire another pending-error reference.
++  if (ObjC3FunctionErrorOutDecl && !CurFuncIsThunk)
 +    emitObjC3PendingErrorProlog(*this);
    EmitFunctionProlog(*CurFnInfo, CurFn, Args);
-+  if (ObjC3FunctionErrorOutDecl)
++  if (ObjC3FunctionErrorOutDecl && !CurFuncIsThunk)
 +    emitObjC3ErrorOutProlog(*this, ObjC3FunctionErrorOutDecl);
  
    if (const CXXMethodDecl *MD = dyn_cast_if_present<CXXMethodDecl>(D);
        MD && !MD->isStatic()) {
-@@ -1457,6 +1467,15 @@ QualType CodeGenFunction::BuildFunctionArgList(GlobalDecl GD,
+@@ -1457,6 +1469,15 @@ QualType CodeGenFunction::BuildFunctionArgList(GlobalDecl GD,
  
    if (MD && (isa<CXXConstructorDecl>(MD) || isa<CXXDestructorDecl>(MD)))
      CGM.getCXXABI().addImplicitStructorParams(*this, ResTy, Args);
@@ -1300,7 +1347,7 @@ index 6c0589be3..8c1d21397 100644
  
    return ResTy;
  }
-@@ -1465,6 +1484,11 @@ void CodeGenFunction::GenerateCode(GlobalDecl GD, llvm::Function *Fn,
+@@ -1465,6 +1486,11 @@ void CodeGenFunction::GenerateCode(GlobalDecl GD, llvm::Function *Fn,
                                     const CGFunctionInfo &FnInfo) {
    assert(Fn && "generating code for null Function");
    const FunctionDecl *FD = cast<FunctionDecl>(GD.getDecl());
@@ -1464,7 +1511,7 @@ index 85ed38f14..58e347aea 100644
    case Decl::CXXConversion:
    case Decl::CXXMethod:
 diff --git a/clang/lib/CodeGen/CodeGenTypes.cpp b/clang/lib/CodeGen/CodeGenTypes.cpp
-index 0e1131d58..fd7b2e61f 100644
+index 0e1131d58..d8236c216 100644
 --- a/clang/lib/CodeGen/CodeGenTypes.cpp
 +++ b/clang/lib/CodeGen/CodeGenTypes.cpp
 @@ -11,6 +11,7 @@
@@ -1483,15 +1530,15 @@ index 0e1131d58..fd7b2e61f 100644
  #include "llvm/IR/DataLayout.h"
  #include "llvm/IR/DerivedTypes.h"
  #include "llvm/IR/Module.h"
-@@ -312,9 +314,85 @@ static llvm::Type *getTypeForFormat(llvm::LLVMContext &VMContext,
+@@ -312,9 +314,84 @@ static llvm::Type *getTypeForFormat(llvm::LLVMContext &VMContext,
    llvm_unreachable("Unknown float format!");
  }
  
 +bool CodeGenTypes::diagnoseUnsupportedObjC3Effects(QualType T,
 +                                                   const Decl *D) {
-+  // A FunctionProtoType can be shared by a function/Block pointer and a
-+  // member pointer. Visiting its supported error-output ABI must not hide an
-+  // unsupported method ABI elsewhere in the same type graph.
++  // Callable prototypes can share type nodes with declarations whose implicit
++  // ABI remains unsupported. Visit both roles so a supported pointer type does
++  // not hide an unsupported declaration in the same type graph.
 +  llvm::SmallPtrSet<const Type *, 16> SeenErrorOut, SeenPrefixed;
 +  bool FoundUnsupportedEffect = false;
 +  auto Visit = [&](auto &&VisitSelf, QualType Current, bool ErrorOutABI) -> void {
@@ -1530,7 +1577,7 @@ index 0e1131d58..fd7b2e61f 100644
 +    } else if (const auto *RefTy = dyn_cast<ReferenceType>(Ty)) {
 +      VisitSelf(VisitSelf, RefTy->getPointeeType(), true);
 +    } else if (const auto *MPT = dyn_cast<MemberPointerType>(Ty)) {
-+      VisitSelf(VisitSelf, MPT->getPointeeType(), false);
++      VisitSelf(VisitSelf, MPT->getPointeeType(), true);
 +    } else if (const auto *AT = dyn_cast<ArrayType>(Ty)) {
 +      VisitSelf(VisitSelf, AT->getElementType(), true);
 +    } else if (const auto *Optional = dyn_cast<ObjC3OptionalType>(Ty)) {
@@ -1550,9 +1597,8 @@ index 0e1131d58..fd7b2e61f 100644
 +      }
 +    }
 +  };
-+  const auto *Method = dyn_cast_or_null<CXXMethodDecl>(D);
 +  const bool PrefixedDeclaration = !T.isNull() && T->isFunctionType() && D &&
-+      ((Method && !Method->isStatic()) || isa<ObjCMethodDecl>(D));
++      isa<ObjCMethodDecl, CXXConstructorDecl, CXXDestructorDecl>(D);
 +  Visit(Visit, T, !PrefixedDeclaration);
 +  return FoundUnsupportedEffect;
 +}
@@ -1569,7 +1615,7 @@ index 0e1131d58..fd7b2e61f 100644
    // First, check whether we can build the full function type.  If the
    // function type depends on an incomplete type (e.g. a struct or enum), we
    // cannot lower the function type.
-@@ -370,6 +448,20 @@ llvm::Type *CodeGenTypes::ConvertType(QualType T) {
+@@ -370,6 +447,20 @@ llvm::Type *CodeGenTypes::ConvertType(QualType T) {
  
    const Type *Ty = T.getTypePtr();
  
@@ -4787,7 +4833,7 @@ diff --git a/clang/lib/CodeGen/CGObjC3TypedErrors.cpp b/clang/lib/CodeGen/CGObjC
 new file mode 100644
 --- /dev/null
 +++ b/clang/lib/CodeGen/CGObjC3TypedErrors.cpp
-@@ -0,0 +1,517 @@
+@@ -0,0 +1,521 @@
 +//===--- CGObjC3TypedErrors.cpp - ObjC3 error-output CodeGen -----*- C++
 +//-*-===//
 +//
@@ -4869,8 +4915,12 @@ new file mode 100644
 +                                             const CallExpr *Call) {
 +  if (!Call)
 +    return nullptr;
-+  QualType Callee =
-+      CGF.getContext().getCanonicalType(Call->getCallee()->getType());
++  QualType Callee = Call->getCallee()->getType();
++  if (Call->getCallee()->hasPlaceholderType(BuiltinType::BoundMember))
++    Callee = Expr::findBoundMemberType(Call->getCallee());
++  if (Callee.isNull())
++    return nullptr;
++  Callee = CGF.getContext().getCanonicalType(Callee);
 +  if (const auto *Direct = Callee->getAs<FunctionProtoType>())
 +    return Direct;
 +  if (const auto *Pointer = Callee->getAs<PointerType>())
@@ -4918,8 +4968,8 @@ new file mode 100644
 +    return false;
 +  const FunctionDecl *Callee = Call->getDirectCallee();
 +  // An effect conversion can retain a known nonthrowing callee, including a
-+  // static C++ member. Check its converted free-function value type; actual
-+  // instance-method declarations retain their separate ABI guards.
++  // static C++ member. Check the converted callable value type rather than
++  // accidentally applying the source declaration's nonthrowing prototype.
 +  bool SamePrototype = Callee && CGF.getContext().hasSameType(
 +      Callee->getType(), QualType(FPT, 0));
 +  return supportsObjC3ErrorOutFunction(CGF.CGM, FPT, Callee, SamePrototype);
@@ -4984,15 +5034,15 @@ new file mode 100644
 +    const auto *FD = dyn_cast_or_null<FunctionDecl>(D);
 +    if (!FD && !isa_and_nonnull<BlockDecl>(D))
 +      return false;
-+    if (const auto *Method = dyn_cast_or_null<CXXMethodDecl>(FD))
-+      if (!Method->isStatic())
-+        return false;
++    if (FD && isa<CXXConstructorDecl, CXXDestructorDecl>(FD))
++      return false;
 +  }
 +  if (!FPT->getReturnType()->isVoidType() &&
 +      !CodeGenFunction::hasScalarEvaluationKind(FPT->getReturnType()))
 +    return false;
 +
-+  if (FPT->getReturnType()->isObjCRetainableType())
++  if (FPT->getReturnType()->isReferenceType() ||
++      FPT->getReturnType()->isObjCRetainableType())
 +    return false;
 +
 +  QualType OutValueType, OutParameterType;
@@ -7519,6 +7569,245 @@ new file mode 100644
 +  __objc3_catch(id<Error> __weak weak_binding) { return weak_binding != (id)0; }
 +  return 0;
 +}
+diff --git a/clang/test/ObjC3/CodeGen/Inputs/typed-error-member-arc-runtime.inc b/clang/test/ObjC3/CodeGen/Inputs/typed-error-member-arc-runtime.inc
+new file mode 100644
+--- /dev/null
++++ b/clang/test/ObjC3/CodeGen/Inputs/typed-error-member-arc-runtime.inc
+@@ -0,0 +1,109 @@
++#include "typed-error-member-runtime.h"
++struct ArcMember : RuntimeOtherBase, RuntimeMemberBase {
++  int value(int fail, RuntimeError error) const __objc3_throws(RuntimeError) override {
++    if (fail) __objc3_throw(error);
++    return Marker;
++  }
++  ArcMember *self(int mode, RuntimeError error) __objc3_throws(RuntimeError) override {
++    if (mode == 1) __objc3_throw(error);
++    return mode == 2 ? nullptr : this;
++  }
++  void note(int fail, RuntimeError error) __objc3_throws(RuntimeError) override {
++    if (fail) __objc3_throw(error);
++    ++Marker;
++  }
++  int clean(int fail, RuntimeError error, CallbackCleanup cleanup)
++      __objc3_throws(RuntimeError) override {
++    if (fail) __objc3_throw(error);
++    return 0;
++  }
++  int consume(RuntimeError error __attribute__((ns_consumed)), int fail)
++      __objc3_throws(RuntimeError) override {
++    if (fail) __objc3_throw(error);
++    return 0;
++  }
++  int plain(int value, RuntimeError) const { return value; }
++  int operator()(int fail, RuntimeError error) const __objc3_throws(RuntimeError) {
++    return __objc3_try(value(fail, error));
++  }
++};
++using ArcMemberPointer = int (ArcMember::*)(int, RuntimeError) const
++    __objc3_throws(RuntimeError);
++static ArcMember &select_member_receiver(ArcMember &receiver, int *count) {
++  ++*count; return receiver;
++}
++static ArcMemberPointer select_member_pointer(int *count) {
++  ++*count; return &ArcMember::value;
++}
++template<class T> static int member_forward(const T &receiver, RuntimeError error)
++    __objc3_throws(RuntimeError) { return __objc3_try(receiver.value(1, error)); }
++extern "C" int verify_mrc_member_from_arc(RuntimeMemberBase *receiver, RuntimeError error) {
++  RuntimeMember Pointer = &RuntimeMemberBase::value;
++  if (__objc3_try_force(receiver->value(0, error)) != receiver->Marker ||
++      __objc3_try_force((receiver->*Pointer)(0, error)) != receiver->Marker ||
++      __objc3_try_force(receiver->self(0, error)) != receiver ||
++      __objc3_try_force(receiver->self(2, error)) != nullptr) return 170;
++  if (__objc3_has_value(__objc3_try_optional(receiver->value(1, error))) ||
++      __objc3_has_value(__objc3_try_optional(receiver->self(1, error)))) return 171;
++  int Count = 0;
++  __objc3_do { __objc3_try(receiver->note(1, error)); }
++  __objc3_catch(RuntimeError caught) { if (caught != error) return 172; ++Count; }
++  return Count == 1 ? 0 : 173;
++}
++extern "C" int verify_mrc_consumed_from_arc(RuntimeMemberBase *receiver) {
++  int Before = zero_code_error_deallocations();
++  @autoreleasepool {
++    if (__objc3_has_value(__objc3_try_optional(receiver->consume(
++            (RuntimeError)make_zero_code_error(), 1))) ||
++        zero_code_error_deallocations() != Before) return 174;
++  }
++  return zero_code_error_deallocations() == Before + 1 ? 0 : 175;
++}
++extern "C" int run_member_checks(void) {
++  ArcMember Object;
++  RuntimeMemberBase *Base = &Object;
++  int Before = zero_code_error_deallocations();
++  @autoreleasepool {
++    __attribute__((objc_precise_lifetime)) RuntimeError Error =
++        (RuntimeError)make_zero_code_error();
++    if (Object.other() != 41 || (void *)Base == (void *)&Object ||
++        __objc3_try_force(Object.value(0, Error)) != 0 ||
++        __objc3_try_force(Object(0, Error)) != 0 ||
++        __objc3_try_force(Base->value(0, Error)) != 0) return 160;
++    ArcMemberPointer DerivedPointer = &ArcMember::value;
++    RuntimeMember BasePointer = &RuntimeMemberBase::value;
++    if (__objc3_try_force((Object.*DerivedPointer)(0, Error)) != 0 ||
++        __objc3_try_force((Object.*BasePointer)(0, Error)) != 0) return 161;
++    int Receivers = 0, Members = 0;
++    if (__objc3_try_force((select_member_receiver(Object, &Receivers).*select_member_pointer(&Members))(0, Error)) != 0 ||
++        Receivers != 1 || Members != 1) return 162;
++    ArcMemberPointer Widened = &ArcMember::plain;
++    if (__objc3_try_force((Object.*Widened)(7, Error)) != 7) return 163;
++    if (__objc3_try_force(Base->self(0, Error)) != Base ||
++        __objc3_try_force(Base->self(2, Error)) != nullptr ||
++        __objc3_has_value(__objc3_try_optional(Base->self(1, Error)))) return 164;
++    __objc3_try_force(Base->note(0, Error));
++    if (Object.Marker != 1 ||
++        __objc3_has_value(__objc3_try_optional(Base->note(1, Error))) ||
++        __objc3_has_value(__objc3_try_optional(member_forward(Object, Error)))) return 165;
++    int Cleanups = 0;
++    try {
++      __objc3_try_force(Base->clean(1, Error, CallbackCleanup{&Cleanups, true}));
++      return 166;
++    } catch (int Value) { if (Value != 79 || Cleanups != 1) return 167; }
++    int MRCResult = run_mrc_member_checks(Base, Error);
++    if (MRCResult) return MRCResult;
++  }
++  if (zero_code_error_deallocations() != Before + 1) return 168;
++  int Consumed = verify_mrc_consumed_from_arc(Base);
++  if (Consumed) return Consumed;
++  return run_mrc_member_consumed_checks(Base);
++}
++extern "C" void member_trap(int kind) {
++  @autoreleasepool {
++    ArcMember Object;
++    RuntimeMemberBase *Base = &Object;
++    RuntimeError Error = kind == 1 ? nil : (RuntimeError)make_zero_code_error();
++    __objc3_try_force(Base->value(1, Error));
++  }
++}
+diff --git a/clang/test/ObjC3/CodeGen/Inputs/typed-error-member-mrc-runtime.inc b/clang/test/ObjC3/CodeGen/Inputs/typed-error-member-mrc-runtime.inc
+new file mode 100644
+--- /dev/null
++++ b/clang/test/ObjC3/CodeGen/Inputs/typed-error-member-mrc-runtime.inc
+@@ -0,0 +1,70 @@
++#include "typed-error-member-runtime.h"
++struct MrcMember : RuntimeOtherBase, virtual RuntimeMemberBase {
++  int value(int fail, RuntimeError error) const __objc3_throws(RuntimeError) override {
++    if (fail) __objc3_throw(error);
++    return Marker;
++  }
++  MrcMember *self(int mode, RuntimeError error) __objc3_throws(RuntimeError) override {
++    if (mode == 1) __objc3_throw(error);
++    return mode == 2 ? nullptr : this;
++  }
++  void note(int fail, RuntimeError error) __objc3_throws(RuntimeError) override {
++    if (fail) __objc3_throw(error);
++    ++Marker;
++  }
++  int clean(int fail, RuntimeError error, CallbackCleanup cleanup)
++      __objc3_throws(RuntimeError) override {
++    if (fail) __objc3_throw(error);
++    return 0;
++  }
++  int consume(RuntimeError error __attribute__((ns_consumed)), int fail)
++      __objc3_throws(RuntimeError) override {
++    __objc3_defer { [error release]; }
++    if (fail) __objc3_throw(error);
++    return 0;
++  }
++};
++extern "C" int run_mrc_member_checks(RuntimeMemberBase *arc, RuntimeError error) {
++  MrcMember Object;
++  RuntimeMemberBase *Base = &Object;
++  using Pointer = int (MrcMember::*)(int, RuntimeError) const __objc3_throws(RuntimeError);
++  Pointer Method = &MrcMember::value;
++  if ((void *)Base == (void *)&Object || __objc3_try_force((Object.*Method)(0, error)) != 0 ||
++      __objc3_try_force(arc->value(0, error)) != arc->Marker ||
++      __objc3_try_force(Base->self(0, error)) != Base ||
++      __objc3_try_force(Base->self(2, error)) != nullptr) return 176;
++  int Caught = 0;
++  __objc3_do { __objc3_try(arc->value(1, error)); }
++  __objc3_catch(RuntimeError caught) { if (caught != error) return 177; ++Caught; }
++  if (Caught != 1 || __objc3_has_value(__objc3_try_optional(Base->self(1, error)))) return 178;
++  int Cleanups = 0;
++  try {
++    __objc3_try_force(Base->clean(1, error, CallbackCleanup{&Cleanups, true}));
++    return 179;
++  } catch (int Value) { if (Value != 79 || Cleanups != 1) return 180; }
++  return verify_mrc_member_from_arc(Base, error);
++}
++extern "C" int run_mrc_member_consumed_checks(RuntimeMemberBase *arc) {
++  MrcMember Object;
++  RuntimeMemberBase *Base = &Object;
++  int Before = zero_code_error_deallocations();
++  @autoreleasepool {
++    OwnedError Owner;
++    int Caught = 0;
++    __objc3_do { __objc3_try(arc->consume((RuntimeError)[Owner.Object retain], 1)); }
++    __objc3_catch(RuntimeError error) { if (error != Owner.Object) return 181; ++Caught; }
++    __objc3_do { __objc3_try(Base->consume((RuntimeError)[Owner.Object retain], 1)); }
++    __objc3_catch(RuntimeError error) { if (error != Owner.Object) return 182; ++Caught; }
++    if (Caught != 2) return 183;
++  }
++  if (zero_code_error_deallocations() != Before + 1) return 184;
++  return verify_mrc_consumed_from_arc(Base);
++}
++extern "C" void mrc_member_trap(int kind) {
++  @autoreleasepool {
++    MrcMember Object;
++    RuntimeMemberBase *Base = &Object;
++    OwnedError Owner;
++    __objc3_try_force(Base->value(1, kind == 1 ? nil : Owner.Object));
++  }
++}
+diff --git a/clang/test/ObjC3/CodeGen/Inputs/typed-error-member-pch.h b/clang/test/ObjC3/CodeGen/Inputs/typed-error-member-pch.h
+new file mode 100644
+--- /dev/null
++++ b/clang/test/ObjC3/CodeGen/Inputs/typed-error-member-pch.h
+@@ -0,0 +1,10 @@
++@protocol Error @end
++using PCHError = id<Error>;
++struct CachedReceiver {
++  int value(int fail, PCHError error) const __objc3_throws(PCHError) {
++    if (fail) __objc3_throw(error);
++    return 0;
++  }
++};
++template<class T> int cached_forward(const T &receiver, PCHError error)
++    __objc3_throws(PCHError) { return __objc3_try(receiver.value(1, error)); }
+diff --git a/clang/test/ObjC3/CodeGen/Inputs/typed-error-member-runtime.h b/clang/test/ObjC3/CodeGen/Inputs/typed-error-member-runtime.h
+new file mode 100644
+--- /dev/null
++++ b/clang/test/ObjC3/CodeGen/Inputs/typed-error-member-runtime.h
+@@ -0,0 +1,30 @@
++#ifndef TYPED_ERROR_MEMBER_RUNTIME_H
++#define TYPED_ERROR_MEMBER_RUNTIME_H
++#include "typed-error-callback-runtime.h"
++struct RuntimeOtherBase {
++  int Padding[3] = {41, 42, 43};
++  virtual int other() const { return Padding[0]; }
++  virtual ~RuntimeOtherBase() = default;
++};
++struct RuntimeMemberBase {
++  int Marker = 0;
++  virtual int value(int, RuntimeError) const __objc3_throws(RuntimeError) = 0;
++  virtual RuntimeMemberBase *self(int, RuntimeError) __objc3_throws(RuntimeError) = 0;
++  virtual void note(int, RuntimeError) __objc3_throws(RuntimeError) = 0;
++  virtual int clean(int, RuntimeError, CallbackCleanup) __objc3_throws(RuntimeError) = 0;
++  virtual int consume(RuntimeError __attribute__((ns_consumed)), int)
++      __objc3_throws(RuntimeError) = 0;
++  virtual ~RuntimeMemberBase() = default;
++};
++using RuntimeMember = int (RuntimeMemberBase::*)(int, RuntimeError) const
++    __objc3_throws(RuntimeError);
++extern "C" {
++int run_member_checks(void);
++int run_mrc_member_checks(RuntimeMemberBase *, RuntimeError);
++int verify_mrc_member_from_arc(RuntimeMemberBase *, RuntimeError);
++int verify_mrc_consumed_from_arc(RuntimeMemberBase *);
++int run_mrc_member_consumed_checks(RuntimeMemberBase *);
++void member_trap(int);
++void mrc_member_trap(int);
++}
++#endif
 diff --git a/clang/test/ObjC3/CodeGen/Inputs/typed-error-mixed-arc-runtime.inc b/clang/test/ObjC3/CodeGen/Inputs/typed-error-mixed-arc-runtime.inc
 new file mode 100644
 --- /dev/null
@@ -7585,7 +7874,7 @@ diff --git a/clang/test/ObjC3/CodeGen/Inputs/typed-error-mrc-runtime.mm b/clang/
 new file mode 100644
 --- /dev/null
 +++ b/clang/test/ObjC3/CodeGen/Inputs/typed-error-mrc-runtime.mm
-@@ -0,0 +1,168 @@
+@@ -0,0 +1,170 @@
 +// Compile this translation unit with -fno-objc-arc. All source-owned references
 +// are explicitly balanced. The compiler owns a separate error transport retain.
 +#include "typed-error-mixed-runtime.h"
@@ -7754,6 +8043,8 @@ new file mode 100644
 +#include "typed-error-callback-mrc-runtime.inc"
 +
 +#include "typed-error-block-mrc-runtime.inc"
++
++#include "typed-error-member-mrc-runtime.inc"
 diff --git a/clang/test/ObjC3/CodeGen/Inputs/typed-error-native-runtime-support.m b/clang/test/ObjC3/CodeGen/Inputs/typed-error-native-runtime-support.m
 new file mode 100644
 --- /dev/null
@@ -7909,7 +8200,7 @@ diff --git a/clang/test/ObjC3/CodeGen/Inputs/typed-error-out-runtime.mm b/clang/
 new file mode 100644
 --- /dev/null
 +++ b/clang/test/ObjC3/CodeGen/Inputs/typed-error-out-runtime.mm
-@@ -0,0 +1,256 @@
+@@ -0,0 +1,261 @@
 +// Runtime witness for the direct C.4.1 error-out slice. Compile with ARC,
 +// C++ exceptions, pinned libobjc2 and the admitted Windows MSVC/UCRT profile.
 +#include "typed-error-runtime-interface.h"
@@ -8088,26 +8379,29 @@ new file mode 100644
 +#include "typed-error-callback-arc-runtime.inc"
 +
 +#include "typed-error-block-arc-runtime.inc"
++#include "typed-error-member-arc-runtime.inc"
 +
-+int main(int argc, char **) {
-+  if (argc >= 8) { mrc_block_trap(argc == 8 ? 1 : 2); return 149; }
-+  if (argc >= 6) { block_trap(argc == 6 ? 1 : 2); return 150; }
-+  if (argc >= 4) {
-+    mixed_mrc_trap(argc == 4 ? 1 : 2);
-+    return 105;
-+  }
++int main(int argc, char **argv) {
 +  if (argc == 2) {
-+    auto Callback = throw_dynamic;
-+    __objc3_try_force(Callback((TestError)nil));
-+    return 9;
++    const char *Case = argv[1];
++    if (__builtin_strcmp(Case, "dynamic-nil") == 0) {
++      auto Callback = throw_dynamic;
++      __objc3_try_force(Callback((TestError)nil));
++    } else if (__builtin_strcmp(Case, "force-error") == 0) {
++      @autoreleasepool { __objc3_try_force(typed_runtime_zero(1)); }
++    } else if (__builtin_strcmp(Case, "mrc-dynamic-nil") == 0) mixed_mrc_trap(1);
++    else if (__builtin_strcmp(Case, "mrc-force-error") == 0) mixed_mrc_trap(2);
++    else if (__builtin_strcmp(Case, "block-dynamic-nil") == 0) block_trap(1);
++    else if (__builtin_strcmp(Case, "block-force-error") == 0) block_trap(2);
++    else if (__builtin_strcmp(Case, "mrc-block-dynamic-nil") == 0) mrc_block_trap(1);
++    else if (__builtin_strcmp(Case, "mrc-block-force-error") == 0) mrc_block_trap(2);
++    else if (__builtin_strcmp(Case, "member-dynamic-nil") == 0) member_trap(1);
++    else if (__builtin_strcmp(Case, "member-force-error") == 0) member_trap(2);
++    else if (__builtin_strcmp(Case, "mrc-member-dynamic-nil") == 0) mrc_member_trap(1);
++    else if (__builtin_strcmp(Case, "mrc-member-force-error") == 0) mrc_member_trap(2);
++    return 250;
 +  }
-+  if (argc > 2) {
-+    @autoreleasepool {
-+      auto Callback = typed_runtime_zero;
-+      __objc3_try_force(Callback(1));
-+    }
-+    return 10;
-+  }
++  if (argc != 1) return 250;
 +  if (force_zero_success() != 0)
 +    return 1;
 +  force_void_success();
@@ -8164,6 +8458,8 @@ new file mode 100644
 +  if (CallbackResult) return CallbackResult;
 +  int BlockResult = run_block_checks();
 +  if (BlockResult) return BlockResult;
++  int MemberResult = run_member_checks();
++  if (MemberResult) return MemberResult;
 +  return SawNonNullZeroCodeError == 1 ? 0 : 5;
 +}
 diff --git a/clang/test/ObjC3/CodeGen/Inputs/typed-error-runtime-interface.h b/clang/test/ObjC3/CodeGen/Inputs/typed-error-runtime-interface.h
@@ -10282,6 +10578,104 @@ new file mode 100644
 +// CHECK: objc3.catch.dispatch:
 +// CHECK-NOT: @class_conformsToProtocol
 +// CHECK: ret void
+diff --git a/clang/test/ObjC3/CodeGen/typed-error-member-bare-call.mm b/clang/test/ObjC3/CodeGen/typed-error-member-bare-call.mm
+new file mode 100644
+--- /dev/null
++++ b/clang/test/ObjC3/CodeGen/typed-error-member-bare-call.mm
+@@ -0,0 +1,16 @@
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fobjc-version=3 -DTEST_KIND=1 -emit-llvm -o /dev/null -verify %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fobjc-version=3 -DTEST_KIND=2 -emit-llvm -o /dev/null -verify %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fobjc-version=3 -DTEST_KIND=3 -emit-llvm -o /dev/null -verify %s
++@protocol Error @end
++using E = id<Error>;
++struct Receiver { int value(int) __objc3_throws(E); };
++using Member = int (Receiver::*)(int) __objc3_throws(E);
++#if TEST_KIND == 1
++int bare(Receiver &receiver) { return receiver.value(0); } // expected-error {{throwing call without an exact qualified try context}}
++#elif TEST_KIND == 2
++int indirect(Receiver &receiver, Member member) { return (receiver.*member)(0); } // expected-error {{throwing call without an exact qualified try context}}
++#else
++int nested(Receiver &receiver) {
++  return __objc3_try_force(receiver.value(receiver.value(0))); // expected-error {{throwing call without an exact qualified try context}}
++}
++#endif
+diff --git a/clang/test/ObjC3/CodeGen/typed-error-member-boundaries.mm b/clang/test/ObjC3/CodeGen/typed-error-member-boundaries.mm
+new file mode 100644
+--- /dev/null
++++ b/clang/test/ObjC3/CodeGen/typed-error-member-boundaries.mm
+@@ -0,0 +1,15 @@
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fobjc-version=3 -DTEST_KIND=1 -emit-llvm -o /dev/null -verify %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fobjc-version=3 -DTEST_KIND=2 -emit-llvm -o /dev/null -verify %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fobjc-version=3 -DTEST_KIND=3 -emit-llvm -o /dev/null -verify %s
++@protocol Error @end
++using E = id<Error>;
++#if TEST_KIND == 1
++struct Receiver { int value(int, ...) __objc3_throws(E); };
++auto Member = &Receiver::value; // expected-error {{ObjC3 async/throws callable ABI lowering}}
++#elif TEST_KIND == 2
++struct Receiver { id value() __objc3_throws(E); };
++auto Member = &Receiver::value; // expected-error {{ObjC3 async/throws callable ABI lowering}}
++#else
++struct Receiver { int &value() __objc3_throws(E); };
++auto Member = &Receiver::value; // expected-error {{ObjC3 async/throws callable ABI lowering}}
++#endif
+diff --git a/clang/test/ObjC3/CodeGen/typed-error-member-pch.mm b/clang/test/ObjC3/CodeGen/typed-error-member-pch.mm
+new file mode 100644
+--- /dev/null
++++ b/clang/test/ObjC3/CodeGen/typed-error-member-pch.mm
+@@ -0,0 +1,8 @@
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -triple x86_64-unknown-linux-gnu -fobjc-runtime=gnustep-2.0 -fobjc-version=3 -fobjc-arc -emit-pch -o %t.pch %S/Inputs/typed-error-member-pch.h
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -triple x86_64-unknown-linux-gnu -fobjc-runtime=gnustep-2.0 -fobjc-version=3 -fobjc-arc -include-pch %t.pch -emit-llvm -o - %s | FileCheck %s
++int use_cached(CachedReceiver &receiver, PCHError error) {
++  return __objc3_try_force(cached_forward(receiver, error));
++}
++// CHECK: define{{.*}} i32 @{{.*}}cached_forward
++// CHECK: call{{.*}} i32 @{{.*}}value{{.*}}(ptr {{.*}}, i32 {{.*}}, ptr {{.*}}, ptr {{.*}})
++// CHECK: objc3.try.failed
+diff --git a/clang/test/ObjC3/CodeGen/typed-error-members.mm b/clang/test/ObjC3/CodeGen/typed-error-members.mm
+new file mode 100644
+--- /dev/null
++++ b/clang/test/ObjC3/CodeGen/typed-error-members.mm
+@@ -0,0 +1,39 @@
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -triple x86_64-pc-windows-msvc -fobjc-runtime=gnustep-2.0 -fobjc-version=3 -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -triple x86_64-pc-windows-msvc -fobjc-runtime=gnustep-2.0 -fobjc-version=3 -fobjc-arc -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -triple x86_64-unknown-linux-gnu -fobjc-runtime=gnustep-2.0 -fobjc-version=3 -fobjc-arc -emit-llvm -o - %s | FileCheck %s
++@protocol Error @end
++using E = id<Error>;
++struct Receiver {
++  int value(int fail, E error) const __objc3_throws(E) {
++    if (fail) __objc3_throw(error);
++    return 0;
++  }
++  virtual int dynamic(int, E) __objc3_throws(E);
++  int operator()(int fail, E error) __objc3_throws(E) {
++    return __objc3_try(value(fail, error));
++  }
++};
++using Member = int (Receiver::*)(int, E) const __objc3_throws(E);
++Member Saved = &Receiver::value;
++extern "C" int direct(Receiver *receiver, E error) {
++  return __objc3_try_force(receiver->value(0, error));
++}
++// CHECK-LABEL: define{{.*}} i32 @direct(
++// CHECK: call{{.*}} i32 @{{.*}}value{{.*}}(ptr {{.*}}, i32 {{.*}}, ptr {{.*}}, ptr {{.*}})
++// CHECK: objc3.try.failed
++extern "C" int indirect(Receiver *receiver, Member member, E error) {
++  return __objc3_try_force((receiver->*member)(0, error));
++}
++// CHECK-LABEL: define{{.*}} i32 @indirect(
++// CHECK: call{{.*}} i32 %{{.*}}(ptr {{.*}}, i32 {{.*}}, ptr {{.*}}, ptr {{.*}})
++// CHECK: objc3.try.failed
++extern "C" int dynamic(Receiver *receiver, E error) {
++  return __objc3_try_force(receiver->dynamic(0, error));
++}
++// CHECK-LABEL: define{{.*}} i32 @dynamic(
++// CHECK: call{{.*}} i32 %{{.*}}(ptr {{.*}}, i32 {{.*}}, ptr {{.*}}, ptr {{.*}})
++extern "C" int functor(Receiver &receiver, E error) {
++  return __objc3_try_force(receiver(0, error));
++}
++// CHECK-LABEL: define{{.*}} i32 @functor(
++// CHECK: call{{.*}} i32 @{{.*}}(ptr {{.*}}, i32 {{.*}}, ptr {{.*}}, ptr {{.*}})
 diff --git a/clang/test/ObjC3/CodeGen/typed-error-mrc-boundary.m b/clang/test/ObjC3/CodeGen/typed-error-mrc-boundary.m
 new file mode 100644
 --- /dev/null
@@ -10492,7 +10886,7 @@ new file mode 100644
 +using Callback = int (*)(int) __objc3_throws(E);
 +using Block = int (^)(int) __objc3_async __objc3_throws(E);
 +struct Receiver;
-+using Member = int (Receiver::*)(int) __objc3_throws(E);
++using Member = int (Receiver::*)(int) __objc3_async __objc3_throws(E);
 +
 +#if TEST_KIND == 1
 +struct Mixed { Callback good; Block bad; };
@@ -10506,9 +10900,9 @@ new file mode 100644
 +Derived Value; // expected-error {{ObjC3 async/throws callable ABI lowering}}
 +#elif TEST_KIND == 4
 +struct Receiver {
-+  int member_effect(int) __objc3_throws(E);
++  int member_effect(int) __objc3_async __objc3_throws(E);
 +};
-+int Receiver::member_effect(int value) __objc3_throws(E) { // expected-error {{ObjC3 async/throws callable ABI lowering}}
++int Receiver::member_effect(int value) __objc3_async __objc3_throws(E) { // expected-error {{ObjC3 async/throws callable ABI lowering}}
 +  return value;
 +}
 +#endif

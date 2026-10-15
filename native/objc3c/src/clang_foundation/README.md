@@ -229,8 +229,8 @@ nodes, template revalidation, PCH persistence and AST import. Propagation checks
 the actual callable's effect; surrounding handlers do not authorize errors
 inside separate lambdas or Blocks. Native C++ and Objective-C exceptions retain
 their separate controls. The private Error-object ABI admits synchronous ARC/MRC
-free-function calls, ordinary function pointers/references, static C++ members
-and Blocks returning scalar/void values, with a nullable trailing
+free-function calls, ordinary function/member pointers and references, static
+and instance C++ methods, and Blocks returning scalar/void values, with a nullable trailing
 `id<Error> __autoreleasing *` slot. Success clears the slot to nil; failure
 stores a non-null error and returns a zero/void placeholder. The compiler retains
 the pending error before expression cleanup and owns it through function cleanup,
@@ -242,8 +242,8 @@ try-optional builds the native scalar/void Optional representation. Exact call
 contexts prevent an outer try from authorizing nested bare throwing calls.
 Static typed nil is rejected, dynamic nil traps, and scalar zero remains valid
 in the semantic model. Scalar/value error transport,
-aggregate or managed success returns, instance methods, variadic calls
-and async execution still diagnose before emission. The runtime
+aggregate, managed or reference-valued success returns, Objective-C message
+effects, variadic calls and async execution still diagnose before emission. The runtime
 witness covers nested pools, a pool-owning C++ temporary, expression and function
 cleanup interrupted by native exceptions, and nullable output discard. Ordinary
 MRC callers of the physical C output ABI are covered by the runtime witness.
@@ -276,6 +276,18 @@ the physical Block signature, including nullable output discard. Nonthrowing
 Block widening uses the qualified Win64 convention. PCH and installed interfaces
 preserve the effect-qualified Block type. Dynamic-nil and forced-error Block
 witnesses require the exact illegal-instruction exit in both ownership modes.
+
+Native C++ member calls, virtual dispatch, functors and member pointers use the
+same error suffix after their native receiver and source arguments. Clang owns
+the member-pointer representation and receiver/return adjustment. Forwarding
+thunks pass the caller's slot through without clearing it or owning another
+pending error. Runtime witnesses cover multiple and virtual inheritance,
+covariant pointer returns (including successful null), single receiver/member
+selection, templates, PCH, consumed arguments and C++ parameter unwind across
+ARC/MRC units. Override effects match exactly, separately from native C++
+exception specifications and nonthrowing callable-value widening. Constructors
+and destructors reject ObjC3 effects before lowering; ordinary native C++
+construction, destruction and exceptions retain their existing rules.
 
 Ordered Error-object do/catch owns the pending error through protected-body
 cleanup and selects the first matching class, protocol or bare catch. Unmatched
