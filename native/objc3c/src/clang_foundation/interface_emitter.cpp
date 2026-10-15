@@ -209,6 +209,8 @@ std::string ObjCMethodIdentity(const clang::ObjCMethodDecl *method,
   out << ")";
   if (method->isVariadic()) out << ";variadic";
   if (method->isOptional()) out << ";optional";
+  if (!method->getObjC3FunctionType().isNull())
+    out << ";callable=" << CanonicalType(method->getObjC3FunctionType(), context);
   const auto return_lifetime = method->getReturnType().getObjCLifetime();
   if (return_lifetime != clang::Qualifiers::OCL_None)
     out << ";return-lifetime=" << static_cast<unsigned>(return_lifetime);
@@ -222,6 +224,7 @@ std::string ObjCContainerIdentity(const clang::NamedDecl *declaration,
     std::string text = "objc-interface:" + interface->getNameAsString();
     if (const auto *superclass = interface->getSuperClass())
       text += ";super=" + superclass->getNameAsString();
+    if (interface->hasAttr<clang::ObjCRootClassAttr>()) text += ";root-class";
     for (const auto *protocol : interface->protocols())
       text += ";protocol=" + protocol->getNameAsString();
     for (const auto *ivar : interface->ivars())
@@ -363,6 +366,7 @@ bool CheckTypeDependencies(const clang::NamedDecl *declaration,
   if (const auto *type = llvm::dyn_cast<clang::TypeDecl>(declaration))
     check(context.getTypeDeclType(type));
   if (const auto *method = llvm::dyn_cast<clang::ObjCMethodDecl>(declaration)) {
+    check(method->getObjC3FunctionType());
     check(method->getReturnType());
     for (unsigned i = 0; i < method->param_size(); ++i)
       check(method->getParamDecl(i)->getType());
@@ -429,12 +433,6 @@ class InterfaceCollector final
     }
     if (auto *method = llvm::dyn_cast<clang::ObjCMethodDecl>(declaration)) {
       if (method->getBody()) return true;
-      if (context_.getLangOpts().ObjC3) {
-        AddDiagnostic(result_, "O3IFC124",
-                      "Objective-C 3 method effect identity is unknown because the canonical effect AST is not available to the interface emitter",
-                      method->getQualifiedNameAsString());
-        return true;
-      }
     }
     if (auto *category = llvm::dyn_cast<clang::ObjCCategoryDecl>(declaration)) {
       if (category->IsClassExtension()) {
@@ -464,6 +462,9 @@ class InterfaceCollector final
     }
     for (const auto *attribute : declaration->attrs()) {
       if (attribute->isImplicit()) continue;
+      if (llvm::isa<clang::ObjCInterfaceDecl>(declaration) &&
+          llvm::isa<clang::ObjCRootClassAttr>(attribute))
+        continue;
       AddDiagnostic(result_, "O3IFC116",
                     (llvm::Twine("public declaration has an attribute not yet modeled in the sidecar: ") +
                      attribute->getSpelling()).str(),
@@ -551,6 +552,14 @@ void PrintRootDeclaration(clang::NamedDecl *declaration,
     if (variable->getStorageClass() == clang::SC_None)
       out << "extern ";
   }
+  // Clang's declaration-polishing policy omits non-keyword attributes.
+  // Emit this modeled class contract through its native attribute printer.
+  if (const auto *interface =
+          llvm::dyn_cast<clang::ObjCInterfaceDecl>(declaration))
+    if (const auto *root = interface->getAttr<clang::ObjCRootClassAttr>()) {
+      root->printPretty(out, policy);
+      out << '\n';
+    }
   declaration->print(out, policy);
   if (llvm::isa<clang::ObjCInterfaceDecl, clang::ObjCProtocolDecl,
                 clang::ObjCCategoryDecl>(declaration)) {
@@ -647,6 +656,9 @@ bool ReadInterfaceDeclarationIdentity(
   if (auto *type = llvm::dyn_cast<clang::TypeDecl>(representative))
     identity.effects = ReadCanonicalFunctionEffects(
         context.getTypeDeclType(type), context);
+  if (auto *method = llvm::dyn_cast<clang::ObjCMethodDecl>(representative))
+    identity.effects = ReadCanonicalFunctionEffects(
+        method->getObjC3FunctionType(), context);
   return true;
 }
 
@@ -831,7 +843,9 @@ InterfaceEmissionArtifact EmitSemanticInterface(
   for (std::size_t i = 0; i < emitted_identities.size(); ++i) {
     if (!SameDeclaration(emitted_identities[i], reparsed_identities[i])) {
       AddDiagnostic(result, "O3IFC123",
-                    "reparsed declaration USR or canonical signature differs from source AST",
+                    "reparsed declaration USR or canonical signature differs from source AST: " +
+                        emitted_identities[i].canonical_type_identity + " -> " +
+                        reparsed_identities[i].canonical_type_identity,
                     emitted_identities[i].stable_id);
       result.source_bytes.clear();
       return result;

@@ -51,13 +51,23 @@ int main() {
       "void throwing() __objc3_throws(ErrorAlias); "
       "typedef void TypedCallback(void) __objc3_throws(ErrorAlias); "
       "TypedCallback *callback; "
+      "@interface MethodEffects "
+      "- (int)messageEffect:(int)value __objc3_throws(ErrorAlias); @end "
       "void native_noexcept() noexcept;";
   auto observed_effects = Compile(effect_request);
   assert(observed_effects.success);
   bool saw_async = false, saw_typed = false, saw_native = false;
   bool saw_callback = false, saw_callback_typedef = false;
+  bool saw_method = false;
   for (const auto &declaration : observed_effects.declarations) {
-    if (declaration.qualified_name == "asynchronous") {
+    if (declaration.kind == "ObjCMethod") {
+      saw_method = true;
+      assert(declaration.effects.is_throwing &&
+             declaration.effects.throws_kind == "typed" &&
+             declaration.effects.error_type_identity == "Error");
+      assert(declaration.canonical_type_identity.find("messageEffect:") !=
+             std::string::npos);
+    } else if (declaration.qualified_name == "asynchronous") {
       saw_async = true;
       assert(declaration.effects.is_async && !declaration.effects.is_throwing);
     } else if (declaration.qualified_name == "throwing") {
@@ -78,7 +88,7 @@ int main() {
     }
   }
   assert(saw_async && saw_typed && saw_native && saw_callback &&
-         saw_callback_typedef);
+         saw_callback_typedef && saw_method);
   auto carrier_request = effect_request;
   carrier_request.input_path = "objc3c-session-carriers.mm";
   carrier_request.source_text =

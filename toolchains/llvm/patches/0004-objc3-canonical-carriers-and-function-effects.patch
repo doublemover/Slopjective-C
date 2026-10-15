@@ -120,6 +120,37 @@ index b46fc8f50..925bd2d9d 100644
  
    using param_type_iterator =
        CanTypeIterator<FunctionProtoType::param_type_iterator>;
+diff --git a/clang/include/clang/AST/DeclObjC.h b/clang/include/clang/AST/DeclObjC.h
+index 2541edba8..162412847 100644
+--- a/clang/include/clang/AST/DeclObjC.h
++++ b/clang/include/clang/AST/DeclObjC.h
+@@ -147,6 +147,11 @@ class ObjCMethodDecl : public NamedDecl, public DeclContext {
+   /// Type source information for the return type.
+   TypeSourceInfo *ReturnTInfo;
+ 
++  // Effectful methods use the same canonical callable-effect type as functions
++  // and Blocks. Its parameters are source parameters, without self/_cmd or the
++  // physical error output. Ordinary Objective-C declarations keep a null type.
++  QualType ObjC3FunctionType;
++
+   /// Array of ParmVarDecls for the formal parameters of this method
+   /// and optionally followed by selector locations.
+   void *ParamsAndSelLocs = nullptr;
+@@ -328,6 +333,14 @@ public:
+ 
+   QualType getReturnType() const { return MethodDeclType; }
+   void setReturnType(QualType T) { MethodDeclType = T; }
++
++  QualType getObjC3FunctionType() const { return ObjC3FunctionType; }
++  void setObjC3FunctionType(QualType T) { ObjC3FunctionType = T; }
++  ObjC3FunctionEffectInfo getObjC3FunctionEffects() const {
++    if (ObjC3FunctionType.isNull())
++      return {};
++    return ObjC3FunctionType->castAs<FunctionProtoType>()->getObjC3FunctionEffects();
++  }
+   SourceRange getReturnTypeSourceRange() const;
+ 
+   /// Determine the type of an expression that sends a message to this
 diff --git a/clang/include/clang/AST/PropertiesBase.td b/clang/include/clang/AST/PropertiesBase.td
 index 5b1012752..e77304e64 100644
 --- a/clang/include/clang/AST/PropertiesBase.td
@@ -133,7 +164,7 @@ index 5b1012752..e77304e64 100644
  def LValuePathEntry : PropertyType<"APValue::LValuePathEntry">;
  def LValuePathSerializationHelper :
 diff --git a/clang/include/clang/AST/RecursiveASTVisitor.h b/clang/include/clang/AST/RecursiveASTVisitor.h
-index ddec2c52f..b414631cd 100644
+index ddec2c52f..0389fbb58 100644
 --- a/clang/include/clang/AST/RecursiveASTVisitor.h
 +++ b/clang/include/clang/AST/RecursiveASTVisitor.h
 @@ -998,6 +998,14 @@ DEF_TRAVERSE_TYPE(BuiltinType, {})
@@ -191,7 +222,16 @@ index ddec2c52f..b414631cd 100644
    const FunctionProtoType *T = TL.getTypePtr();
  
    for (unsigned I = 0, E = TL.getNumParams(); I != E; ++I) {
-@@ -2905,6 +2932,29 @@ DEF_TRAVERSE_STMT(BlockExpr, {
+@@ -1834,6 +1861,8 @@ DEF_TRAVERSE_DECL(ObjCProtocolDecl, {
+ })
+ 
+ DEF_TRAVERSE_DECL(ObjCMethodDecl, {
++  if (QualType Error = D->getObjC3FunctionEffects().ErrorType; !Error.isNull())
++    TRY_TO(TraverseType(Error));
+   if (D->getReturnTypeSourceInfo()) {
+     TRY_TO(TraverseTypeLoc(D->getReturnTypeSourceInfo()->getTypeLoc()));
+   }
+@@ -2905,6 +2934,29 @@ DEF_TRAVERSE_STMT(BlockExpr, {
    return true; // no child statements to loop through.
  })
  
@@ -684,13 +724,17 @@ index 63fc4bf2e..b9710ea45 100644
 +
  } // end of Parser diagnostics
 diff --git a/clang/include/clang/Basic/DiagnosticSemaKinds.td b/clang/include/clang/Basic/DiagnosticSemaKinds.td
-index 43315a6f7..ada6d1d6b 100644
+index 43315a6f7..6fd657d12 100644
 --- a/clang/include/clang/Basic/DiagnosticSemaKinds.td
 +++ b/clang/include/clang/Basic/DiagnosticSemaKinds.td
-@@ -12,6 +12,32 @@
+@@ -12,6 +12,36 @@
  
  let Component = "Sema" in {
  let CategoryName = "Semantic Issue" in {
++def err_objc3_ambiguous_method_effect : Error<
++  "ambiguous ObjC3 async/throws effects for message %0">;
++def err_objc3_method_effect_mismatch : Error<
++  "async/throws effects of method %0 do not match the previous declaration">;
 +def err_objc3_invalid_function_effect_shape : Error<
 +  "invalid ObjC3 function effect payload">;
 +def err_objc3_try_requires_prvalue : Error<
@@ -720,7 +764,7 @@ index 43315a6f7..ada6d1d6b 100644
  // C++11 compatibility with C++98.
  defm nonclass_type_friend : CXX11Compat<"non-class friend type %0 is">;
  defm static_data_member_in_union : CXX11Compat<"static data member %0 in union is">;
-@@ -6839,6 +6865,13 @@ def note_protected_by_objc_synchronized : Note<
+@@ -6839,6 +6869,13 @@ def note_protected_by_objc_synchronized : Note<
    "jump bypasses initialization of @synchronized block">;
  def note_protected_by_objc_autoreleasepool : Note<
    "jump bypasses auto release push of @autoreleasepool block">;
@@ -734,7 +778,7 @@ index 43315a6f7..ada6d1d6b 100644
  def note_protected_by_cxx_try : Note<
    "jump bypasses initialization of try block">;
  def note_protected_by_cxx_catch : Note<
-@@ -7829,6 +7862,25 @@ def warn_param_mismatched_alignment : Warning<
+@@ -7829,6 +7866,25 @@ def warn_param_mismatched_alignment : Warning<
  
  def err_objc_object_assignment : Error<
    "cannot assign to class object (%0 invalid)">;
@@ -760,7 +804,7 @@ index 43315a6f7..ada6d1d6b 100644
  def err_typecheck_invalid_operands : Error<
    "invalid operands to binary expression (%0 and %1)">, Deferrable;
  def note_typecheck_invalid_operands_converted : Note<
-@@ -13862,4 +13914,17 @@ def err_cuda_device_kernel_launch_not_supported
+@@ -13862,4 +13918,17 @@ def err_cuda_device_kernel_launch_not_supported
  def err_cuda_device_kernel_launch_require_rdc
      : Error<"kernel launch from __device__ or __global__ function requires "
              "relocatable device code (i.e. requires -fgpu-rdc)">;
@@ -1086,6 +1130,20 @@ index d68ed7c75..7df54f325 100644
    /// Build a member pointer type \c T Class::*.
    ///
    /// \param T the type to which the member pointer refers.
+diff --git a/clang/include/clang/Sema/SemaObjC.h b/clang/include/clang/Sema/SemaObjC.h
+index ed08ff0ac..0ff1ae6a0 100644
+--- a/clang/include/clang/Sema/SemaObjC.h
++++ b/clang/include/clang/Sema/SemaObjC.h
+@@ -366,7 +366,8 @@ public:
+       ParmVarDecl **ArgInfo, DeclaratorChunk::ParamInfo *CParamInfo,
+       unsigned CNumArgs, // c-style args
+       const ParsedAttributesView &AttrList, tok::ObjCKeywordKind MethodImplKind,
+-      bool isVariadic, bool MethodDefinition);
++      bool isVariadic, bool MethodDefinition,
++      ObjC3FunctionEffectInfo ObjC3Effects = {});
+ 
+   bool CheckARCMethodDecl(ObjCMethodDecl *method);
+ 
 diff --git a/clang/include/clang/Serialization/ASTBitCodes.h b/clang/include/clang/Serialization/ASTBitCodes.h
 index 5a86d540e..3714c3875 100644
 --- a/clang/include/clang/Serialization/ASTBitCodes.h
@@ -1129,7 +1187,7 @@ index d6c484563..b7a6cb6b1 100644
  
  #undef TYPE_BIT_CODE
 diff --git a/clang/lib/AST/ASTContext.cpp b/clang/lib/AST/ASTContext.cpp
-index d5aacd801..1f65fbca1 100644
+index d5aacd801..a8910c968 100644
 --- a/clang/lib/AST/ASTContext.cpp
 +++ b/clang/lib/AST/ASTContext.cpp
 @@ -2363,6 +2363,15 @@ TypeInfo ASTContext::getTypeInfoImpl(const Type *T) const {
@@ -1487,7 +1545,36 @@ index d5aacd801..1f65fbca1 100644
    return S;
  }
  
-@@ -9572,6 +9803,16 @@ void ASTContext::getObjCEncodingForTypeImpl(QualType T, std::string &S,
+@@ -8828,6 +9059,8 @@ std::string ASTContext::getObjCEncodingForMethodDecl(const ObjCMethodDecl *Decl,
+   std::string S;
+   getObjCEncodingForMethodParameter(Decl->getObjCDeclQualifier(),
+                                     Decl->getReturnType(), S, Extended);
++  const bool HasErrorOutput =
++      Decl->getObjC3FunctionEffects().Throws != ObjC3ThrowsKind::None;
+   // Compute size of all parameters.
+   // Start with computing size of a pointer in number of bytes.
+   // FIXME: There might(should) be a better way of doing this computation!
+@@ -8846,6 +9079,8 @@ std::string ASTContext::getObjCEncodingForMethodDecl(const ObjCMethodDecl *Decl,
+            "getObjCEncodingForMethodDecl - Incomplete param type");
+     ParmOffset += sz;
+   }
++  if (HasErrorOutput)
++    ParmOffset += PtrSize;
+   S += charUnitsToString(ParmOffset);
+   S += "@0:";
+   S += charUnitsToString(PtrSize);
+@@ -8869,6 +9104,10 @@ std::string ASTContext::getObjCEncodingForMethodDecl(const ObjCMethodDecl *Decl,
+     S += charUnitsToString(ParmOffset);
+     ParmOffset += getObjCEncodingTypeSize(PType);
+   }
++  if (HasErrorOutput) {
++    S += "^@";
++    S += charUnitsToString(ParmOffset);
++  }
+ 
+   return S;
+ }
+@@ -9572,6 +9811,16 @@ void ASTContext::getObjCEncodingForTypeImpl(QualType T, std::string &S,
        *NotEncodedT = T;
      return;
  
@@ -1504,7 +1591,7 @@ index d5aacd801..1f65fbca1 100644
    // We could see an undeduced auto type here during error recovery.
    // Just ignore it.
    case Type::Auto:
-@@ -11454,6 +11695,17 @@ QualType ASTContext::mergeFunctionTypes(QualType lhs, QualType rhs,
+@@ -11454,6 +11703,17 @@ QualType ASTContext::mergeFunctionTypes(QualType lhs, QualType rhs,
      if (lproto->getMethodQuals() != rproto->getMethodQuals())
        return {};
  
@@ -1522,7 +1609,7 @@ index d5aacd801..1f65fbca1 100644
      // Function protos with different 'cfi_salt' values aren't compatible.
      if (lproto->getExtraAttributeInfo().CFISalt !=
          rproto->getExtraAttributeInfo().CFISalt)
-@@ -11532,6 +11784,11 @@ QualType ASTContext::mergeFunctionTypes(QualType lhs, QualType rhs,
+@@ -11532,6 +11792,11 @@ QualType ASTContext::mergeFunctionTypes(QualType lhs, QualType rhs,
    const FunctionProtoType *proto = lproto ? lproto : rproto;
    if (proto) {
      assert((AllowCXX || !proto->hasExceptionSpec()) && "C++ shouldn't be here");
@@ -1534,7 +1621,7 @@ index d5aacd801..1f65fbca1 100644
      if (proto->isVariadic())
        return {};
      // Check that the types are compatible with the types that
-@@ -11759,6 +12016,13 @@ QualType ASTContext::mergeTypes(QualType LHS, QualType RHS, bool OfBlockPointer,
+@@ -11759,6 +12024,13 @@ QualType ASTContext::mergeTypes(QualType LHS, QualType RHS, bool OfBlockPointer,
    case Type::ExtVector:
      llvm_unreachable("Types are eliminated above");
  
@@ -1548,7 +1635,7 @@ index d5aacd801..1f65fbca1 100644
    case Type::Pointer:
    {
      // Merge two pointer types, while trying to preserve typedef info
-@@ -14111,6 +14375,24 @@ static QualType getCommonNonSugarTypeNode(const ASTContext &Ctx, const Type *X,
+@@ -14111,6 +14383,24 @@ static QualType getCommonNonSugarTypeNode(const ASTContext &Ctx, const Type *X,
          getCommonSizeModifier(AX, AY), getCommonIndexTypeCVRQualifiers(AX, AY));
      return Ctx.getArrayParameterType(ArrayTy);
    }
@@ -1573,7 +1660,7 @@ index d5aacd801..1f65fbca1 100644
    case Type::Atomic: {
      const auto *AX = cast<AtomicType>(X), *AY = cast<AtomicType>(Y);
      return Ctx.getAtomicType(
-@@ -14381,6 +14663,8 @@ static QualType getCommonSugarTypeNode(const ASTContext &Ctx, const Type *X,
+@@ -14381,6 +14671,8 @@ static QualType getCommonSugarTypeNode(const ASTContext &Ctx, const Type *X,
      CANONICAL_TYPE(HLSLInlineSpirv)
      CANONICAL_TYPE(LValueReference)
      CANONICAL_TYPE(ObjCInterface)
@@ -1583,7 +1670,7 @@ index d5aacd801..1f65fbca1 100644
      CANONICAL_TYPE(ObjCObjectPointer)
      CANONICAL_TYPE(Pipe)
 diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
-index 101ab2c40..3c2bdbbf6 100644
+index 101ab2c40..e7cb3ad21 100644
 --- a/clang/lib/AST/ASTImporter.cpp
 +++ b/clang/lib/AST/ASTImporter.cpp
 @@ -589,6 +589,10 @@ namespace clang {
@@ -1709,7 +1796,39 @@ index 101ab2c40..3c2bdbbf6 100644
    // Import the function parameters.
    SmallVector<ParmVarDecl *, 8> Parameters;
    for (auto *P : D->parameters()) {
-@@ -7221,6 +7302,60 @@ ExpectedStmt ASTNodeImporter::VisitAttributedStmt(AttributedStmt *S) {
+@@ -4971,6 +5052,14 @@ ExpectedDecl ASTNodeImporter::VisitObjCMethodDecl(ObjCMethodDecl *D) {
+       if (FoundMethod->isInstanceMethod() != D->isInstanceMethod())
+         continue;
+ 
++      // Effect identity cannot be erased when merging an imported method.
++      QualType FromEffects = D->getObjC3FunctionType();
++      QualType ToEffects = FoundMethod->getObjC3FunctionType();
++      if (FromEffects.isNull() != ToEffects.isNull() ||
++          (!FromEffects.isNull() &&
++           !Importer.IsStructurallyEquivalent(FromEffects, ToEffects)))
++        return make_error<ASTImportError>(ASTImportError::NameConflict);
++
+       // Check return types.
+       if (!Importer.IsStructurallyEquivalent(D->getReturnType(),
+                                              FoundMethod->getReturnType())) {
+@@ -5033,6 +5122,7 @@ ExpectedDecl ASTNodeImporter::VisitObjCMethodDecl(ObjCMethodDecl *D) {
+   Error Err = Error::success();
+   auto ToEndLoc = importChecked(Err, D->getEndLoc());
+   auto ToReturnType = importChecked(Err, D->getReturnType());
++  auto ToObjC3Type = importChecked(Err, D->getObjC3FunctionType());
+   auto ToReturnTypeSourceInfo =
+       importChecked(Err, D->getReturnTypeSourceInfo());
+   if (Err)
+@@ -5047,6 +5137,8 @@ ExpectedDecl ASTNodeImporter::VisitObjCMethodDecl(ObjCMethodDecl *D) {
+           D->getImplementationControl(), D->hasRelatedResultType()))
+     return ToMethod;
+ 
++  ToMethod->setObjC3FunctionType(ToObjC3Type);
++
+   // FIXME: When we decide to merge method definitions, we'll need to
+   // deal with implicit parameters.
+ 
+@@ -7221,6 +7313,60 @@ ExpectedStmt ASTNodeImporter::VisitAttributedStmt(AttributedStmt *S) {
        Importer.getToContext(), *ToAttrLocOrErr, ToAttrs, *ToSubStmtOrErr);
  }
  
@@ -1770,7 +1889,7 @@ index 101ab2c40..3c2bdbbf6 100644
  ExpectedStmt ASTNodeImporter::VisitIfStmt(IfStmt *S) {
  
    Error Err = Error::success();
-@@ -7594,6 +7729,133 @@ ExpectedStmt ASTNodeImporter::VisitVAArgExpr(VAArgExpr *E) {
+@@ -7594,6 +7740,133 @@ ExpectedStmt ASTNodeImporter::VisitVAArgExpr(VAArgExpr *E) {
        E->isMicrosoftABI());
  }
  
@@ -1904,7 +2023,7 @@ index 101ab2c40..3c2bdbbf6 100644
  ExpectedStmt ASTNodeImporter::VisitChooseExpr(ChooseExpr *E) {
  
    Error Err = Error::success();
-@@ -9522,7 +9784,97 @@ Expected<TypeSourceInfo *> ASTImporter::Import(TypeSourceInfo *FromTSI) {
+@@ -9522,7 +9795,97 @@ Expected<TypeSourceInfo *> ASTImporter::Import(TypeSourceInfo *FromTSI) {
    if (!BeginLocOrErr)
      return BeginLocOrErr.takeError();
  
@@ -2132,7 +2251,7 @@ index da64c9222..4adc41e0b 100644
        return false;
      for (unsigned I = 0, N = Proto1->getNumParams(); I != N; ++I) {
 diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
-index 29f171641..c97cfb8ef 100644
+index 29f171641..f4b49942f 100644
 --- a/clang/lib/AST/DeclPrinter.cpp
 +++ b/clang/lib/AST/DeclPrinter.cpp
 @@ -817,6 +817,24 @@ void DeclPrinter::VisitFunctionDecl(FunctionDecl *D) {
@@ -2160,6 +2279,22 @@ index 29f171641..c97cfb8ef 100644
      if (CDecl) {
        if (!Policy.TerseOutput)
          PrintConstructorInitializers(CDecl, Proto);
+@@ -1439,6 +1457,15 @@ void DeclPrinter::VisitObjCMethodDecl(ObjCMethodDecl *OMD) {
+   if (OMD->isVariadic())
+       Out << ", ...";
+ 
++  const auto Effects = OMD->getObjC3FunctionEffects();
++  if (Effects.Async)
++    Out << " __objc3_async";
++  if (Effects.Throws != ObjC3ThrowsKind::None) {
++    Out << " __objc3_throws";
++    if (Effects.Throws == ObjC3ThrowsKind::Typed)
++      Out << '(' << Effects.ErrorType.getAsString(Policy) << ')';
++  }
++
+   if (std::optional<std::string> Attrs = prettyPrintAttributes(OMD))
+     Out << ' ' << *Attrs;
+ 
 diff --git a/clang/lib/AST/ItaniumMangle.cpp b/clang/lib/AST/ItaniumMangle.cpp
 index fa28c0d44..7e46541f9 100644
 --- a/clang/lib/AST/ItaniumMangle.cpp
@@ -2279,6 +2414,19 @@ index fa28c0d44..7e46541f9 100644
    case Expr::OpenACCAsteriskSizeExprClass: {
      // We shouldn't ever be able to get here, but diagnose anyway.
      DiagnosticsEngine &Diags = Context.getDiags();
+diff --git a/clang/lib/AST/JSONNodeDumper.cpp b/clang/lib/AST/JSONNodeDumper.cpp
+index 715e1e098..4b5c4ecc4 100644
+--- a/clang/lib/AST/JSONNodeDumper.cpp
++++ b/clang/lib/AST/JSONNodeDumper.cpp
+@@ -1120,6 +1120,8 @@ void JSONNodeDumper::VisitObjCIvarDecl(const ObjCIvarDecl *D) {
+ void JSONNodeDumper::VisitObjCMethodDecl(const ObjCMethodDecl *D) {
+   VisitNamedDecl(D);
+   JOS.attribute("returnType", createQualType(D->getReturnType()));
++  if (!D->getObjC3FunctionType().isNull())
++    JOS.attribute("objc3CallableType", createQualType(D->getObjC3FunctionType()));
+   JOS.attribute("instance", D->isInstanceMethod());
+   attributeOnlyIfTrue("variadic", D->isVariadic());
+ }
 diff --git a/clang/lib/AST/MicrosoftMangle.cpp b/clang/lib/AST/MicrosoftMangle.cpp
 index 551aa7bf3..f0e833378 100644
 --- a/clang/lib/AST/MicrosoftMangle.cpp
@@ -2358,10 +2506,19 @@ index 551aa7bf3..f0e833378 100644
                                           SourceRange Range) {
    QualType ElementType = T->getElementType();
 diff --git a/clang/lib/AST/ODRHash.cpp b/clang/lib/AST/ODRHash.cpp
-index 46a4e256e..15cdd5d5f 100644
+index 46a4e256e..3459b4cb5 100644
 --- a/clang/lib/AST/ODRHash.cpp
 +++ b/clang/lib/AST/ODRHash.cpp
-@@ -1055,6 +1055,12 @@ public:
+@@ -392,6 +392,8 @@ public:
+ 
+   void VisitObjCMethodDecl(const ObjCMethodDecl *Method) {
+     ID.AddInteger(Method->getDeclKind());
++    if (!Method->getObjC3FunctionType().isNull())
++      AddQualType(Method->getObjC3FunctionType());
+     Hash.AddBoolean(Method->isInstanceMethod()); // false if class method
+     Hash.AddBoolean(Method->isVariadic());
+     Hash.AddBoolean(Method->isSynthesizedAccessorStub());
+@@ -1055,6 +1057,12 @@ public:
      for (auto ParamType : T->getParamTypes())
        AddQualType(ParamType);
  
@@ -2375,7 +2532,7 @@ index 46a4e256e..15cdd5d5f 100644
    }
  
 diff --git a/clang/lib/AST/TextNodeDumper.cpp b/clang/lib/AST/TextNodeDumper.cpp
-index 7bc0404db..5452f83ee 100644
+index 7bc0404db..3f96162f4 100644
 --- a/clang/lib/AST/TextNodeDumper.cpp
 +++ b/clang/lib/AST/TextNodeDumper.cpp
 @@ -1493,6 +1493,37 @@ void clang::TextNodeDumper::VisitCoawaitExpr(const CoawaitExpr *Node) {
@@ -2441,6 +2598,15 @@ index 7bc0404db..5452f83ee 100644
    // FIXME: Consumed parameters.
    VisitFunctionType(T);
  }
+@@ -2941,6 +2990,8 @@ void TextNodeDumper::VisitObjCMethodDecl(const ObjCMethodDecl *D) {
+     OS << " +";
+   dumpName(D);
+   dumpType(D->getReturnType());
++  if (!D->getObjC3FunctionType().isNull())
++    dumpType(D->getObjC3FunctionType());
+ 
+   if (D->isVariadic())
+     OS << " variadic";
 diff --git a/clang/lib/AST/Type.cpp b/clang/lib/AST/Type.cpp
 index 53082bcf7..19ff2e886 100644
 --- a/clang/lib/AST/Type.cpp
@@ -3654,7 +3820,7 @@ index f8c49646f..d807b3202 100644
                                 SourceLocation &RefQualifierLoc) {
    if (Tok.isOneOf(tok::amp, tok::ampamp)) {
 diff --git a/clang/lib/Parse/ParseObjc.cpp b/clang/lib/Parse/ParseObjc.cpp
-index 0b9f113d9..d1a3c418b 100644
+index 0b9f113d9..07efb23c8 100644
 --- a/clang/lib/Parse/ParseObjc.cpp
 +++ b/clang/lib/Parse/ParseObjc.cpp
 @@ -88,7 +88,8 @@ Parser::ParseObjCAtDirectives(ParsedAttributes &DeclAttrs,
@@ -3667,7 +3833,73 @@ index 0b9f113d9..d1a3c418b 100644
        Sema::ModuleImportState IS = Sema::ModuleImportState::NotACXX20Module;
        SingleDecl = ParseModuleImport(AtLoc, IS);
        break;
-@@ -2515,6 +2516,8 @@ StmtResult Parser::ParseObjCAtStatement(SourceLocation AtLoc,
+@@ -1206,8 +1207,23 @@ Decl *Parser::ParseObjCMethodDecl(SourceLocation mLoc,
+     return nullptr;
+   }
+ 
++  auto ParseMethodEffects = [&]() {
++    bool Async = false;
++    unsigned Throws = 0;
++    ParsedType ErrorType;
++    TypeSourceInfo *ErrorInfo = nullptr;
++    SourceLocation EffectsLoc, AsyncLoc, ThrowsLoc;
++    SourceRange PayloadRange;
++    ParseObjC3FunctionEffects(Async, Throws, ErrorType, ErrorInfo, EffectsLoc,
++                             AsyncLoc, ThrowsLoc, PayloadRange);
++    return ObjC3FunctionEffectInfo{
++        Async, static_cast<ObjC3ThrowsKind>(Throws),
++        ErrorType ? Actions.GetTypeFromParser(ErrorType) : QualType()};
++  };
++
+   SmallVector<DeclaratorChunk::ParamInfo, 8> CParamInfo;
+   if (Tok.isNot(tok::colon)) {
++    auto Effects = ParseMethodEffects();
+     // If attributes exist after the method, parse them.
+     MaybeParseAttributes(PAKM_CXX11 | (getLangOpts().ObjC ? PAKM_GNU : 0),
+                          methodAttrs);
+@@ -1216,7 +1232,7 @@ Decl *Parser::ParseObjCMethodDecl(SourceLocation mLoc,
+     Decl *Result = Actions.ObjC().ActOnMethodDeclaration(
+         getCurScope(), mLoc, Tok.getLocation(), mType, DSRet, ReturnType,
+         selLoc, Sel, nullptr, CParamInfo.data(), CParamInfo.size(), methodAttrs,
+-        MethodImplKind, false, MethodDefinition);
++        MethodImplKind, false, MethodDefinition, Effects);
+     PD.complete(Result);
+     return Result;
+   }
+@@ -1280,6 +1296,14 @@ Decl *Parser::ParseObjCMethodDecl(SourceLocation mLoc,
+       return nullptr;
+     }
+ 
++    // Effect spellings terminate the selector only in suffix position.
++    // A selector component with the same identifier followed by ':' is native.
++    if (getLangOpts().ObjC3 && Tok.is(tok::identifier) &&
++        (Tok.getIdentifierInfo()->isStr("__objc3_async") ||
++         Tok.getIdentifierInfo()->isStr("__objc3_throws")) &&
++        NextToken().isNot(tok::colon))
++      break;
++
+     // Check for another keyword selector.
+     SelIdent = ParseObjCSelectorPiece(selLoc);
+     if (!SelIdent && Tok.isNot(tok::colon))
+@@ -1335,6 +1359,8 @@ Decl *Parser::ParseObjCMethodDecl(SourceLocation mLoc,
+     ObjCParamInfo.push_back(Param);
+   }
+ 
++  auto Effects = ParseMethodEffects();
++
+   // FIXME: Add support for optional parameter list...
+   // If attributes exist after the method, parse them.
+   MaybeParseAttributes(PAKM_CXX11 | (getLangOpts().ObjC ? PAKM_GNU : 0),
+@@ -1348,7 +1374,7 @@ Decl *Parser::ParseObjCMethodDecl(SourceLocation mLoc,
+   Decl *Result = Actions.ObjC().ActOnMethodDeclaration(
+       getCurScope(), mLoc, Tok.getLocation(), mType, DSRet, ReturnType, KeyLocs,
+       Sel, ObjCParamInfo.data(), CParamInfo.data(), CParamInfo.size(),
+-      methodAttrs, MethodImplKind, isVariadic, MethodDefinition);
++      methodAttrs, MethodImplKind, isVariadic, MethodDefinition, Effects);
+ 
+   PD.complete(Result);
+   return Result;
+@@ -2515,6 +2541,8 @@ StmtResult Parser::ParseObjCAtStatement(SourceLocation AtLoc,
  }
  
  ExprResult Parser::ParseObjCAtExpression(SourceLocation AtLoc) {
@@ -4016,6 +4248,114 @@ index 51b3f8059..19140a4ac 100644
    if (OldFT->hasExtParameterInfos()) {
      for (unsigned I = 0, E = OldFT->getNumParams(); I != E; ++I)
        // A parameter of the overriding method should be annotated with noescape
+diff --git a/clang/lib/Sema/SemaDeclObjC.cpp b/clang/lib/Sema/SemaDeclObjC.cpp
+index 53ff818a2..6bdc45d31 100644
+--- a/clang/lib/Sema/SemaDeclObjC.cpp
++++ b/clang/lib/Sema/SemaDeclObjC.cpp
+@@ -137,8 +137,30 @@ static void diagnoseNoescape(const ParmVarDecl *NewD, const ParmVarDecl *OldD,
+         << cast<ObjCMethodDecl>(NewD->getDeclContext());
+ }
+ 
++static bool sameObjC3MethodEffects(ASTContext &Context,
++                                   const ObjCMethodDecl *Left,
++                                   const ObjCMethodDecl *Right) {
++  auto L = Left->getObjC3FunctionEffects();
++  auto R = Right->getObjC3FunctionEffects();
++  return L.Async == R.Async && L.Throws == R.Throws &&
++         (L.Throws != ObjC3ThrowsKind::Typed ||
++          Context.hasSameType(L.ErrorType, R.ErrorType));
++}
++
++static void checkObjC3MethodEffects(Sema &S, ObjCMethodDecl *New,
++                                   const ObjCMethodDecl *Previous) {
++  if (New->isInvalidDecl() || Previous->isInvalidDecl() ||
++      sameObjC3MethodEffects(S.Context, New, Previous))
++    return;
++  S.Diag(New->getLocation(), diag::err_objc3_method_effect_mismatch)
++      << New->getDeclName();
++  S.Diag(Previous->getLocation(), diag::note_previous_declaration);
++  New->setInvalidDecl();
++}
++
+ void SemaObjC::CheckObjCMethodOverride(ObjCMethodDecl *NewMethod,
+                                        const ObjCMethodDecl *Overridden) {
++  checkObjC3MethodEffects(SemaRef, NewMethod, Overridden);
+   ASTContext &Context = getASTContext();
+   if (Overridden->hasRelatedResultType() &&
+       !NewMethod->hasRelatedResultType()) {
+@@ -2595,6 +2617,7 @@ static bool checkMethodFamilyMismatch(Sema &S, ObjCMethodDecl *impl,
+ void SemaObjC::WarnConflictingTypedMethods(ObjCMethodDecl *ImpMethodDecl,
+                                            ObjCMethodDecl *MethodDecl,
+                                            bool IsProtocolMethodDecl) {
++  checkObjC3MethodEffects(SemaRef, ImpMethodDecl, MethodDecl);
+   if (getLangOpts().ObjCAutoRefCount &&
+       checkMethodFamilyMismatch(SemaRef, ImpMethodDecl, MethodDecl))
+     return;
+@@ -3269,6 +3292,8 @@ bool SemaObjC::MatchTwoMethodDeclarations(const ObjCMethodDecl *left,
+                                           const ObjCMethodDecl *right,
+                                           MethodMatchStrategy strategy) {
+   ASTContext &Context = getASTContext();
++  if (!sameObjC3MethodEffects(Context, left, right))
++    return false;
+   if (!matchTypes(Context, strategy, left->getReturnType(),
+                   right->getReturnType()))
+     return false;
+@@ -3600,6 +3625,16 @@ ObjCMethodDecl *SemaObjC::LookupMethodInGlobalPool(Selector Sel, SourceRange R,
+ void SemaObjC::DiagnoseMultipleMethodInGlobalPool(
+     SmallVectorImpl<ObjCMethodDecl *> &Methods, Selector Sel, SourceRange R,
+     bool receiverIdOrClass) {
++  // A dynamic receiver cannot choose between different physical effect
++  // ABIs. This is an error in both ARC and MRC, even with warnings disabled.
++  for (unsigned I = 1; I < Methods.size(); ++I) {
++    if (!sameObjC3MethodEffects(getASTContext(), Methods[0], Methods[I])) {
++      Diag(R.getBegin(), diag::err_objc3_ambiguous_method_effect) << Sel;
++      Diag(Methods[0]->getLocation(), diag::note_possibility);
++      Diag(Methods[I]->getLocation(), diag::note_possibility);
++      return;
++    }
++  }
+   // We found multiple methods, so we may have to complain.
+   bool issueDiagnostic = false, issueError = false;
+ 
+@@ -4462,6 +4497,7 @@ void SemaObjC::CheckObjCMethodOverrides(ObjCMethodDecl *ObjCMethod,
+   // overriding the same method in the interface or its categories.
+   bool hasOverriddenMethodsInBaseOrProtocol = false;
+   for (ObjCMethodDecl *overridden : overrides) {
++    checkObjC3MethodEffects(SemaRef, ObjCMethod, overridden);
+     if (!hasOverriddenMethodsInBaseOrProtocol) {
+       if (isa<ObjCProtocolDecl>(overridden->getDeclContext()) ||
+           !IsMethodInCurrentClass(overridden) || overridden->isOverriding()) {
+@@ -4787,7 +4823,8 @@ Decl *SemaObjC::ActOnMethodDeclaration(
+     ParmVarDecl **ArgInfo, DeclaratorChunk::ParamInfo *CParamInfo,
+     unsigned CNumArgs, // c-style args
+     const ParsedAttributesView &AttrList, tok::ObjCKeywordKind MethodDeclKind,
+-    bool isVariadic, bool MethodDefinition) {
++    bool isVariadic, bool MethodDefinition,
++    ObjC3FunctionEffectInfo ObjC3Effects) {
+   ASTContext &Context = getASTContext();
+   // Make sure we can establish a context for the method.
+   if (!SemaRef.CurContext->isObjCContainer()) {
+@@ -4847,6 +4884,20 @@ Decl *SemaObjC::ActOnMethodDeclaration(
+   }
+ 
+   ObjCMethod->setMethodParams(Context, Params, SelectorLocs);
++  if (ObjC3Effects != ObjC3FunctionEffectInfo()) {
++    if (!SemaRef.CheckObjC3FunctionEffects(ObjC3Effects, MethodLoc)) {
++      ObjCMethod->setInvalidDecl();
++    } else {
++      SmallVector<QualType, 16> ParamTypes;
++      for (const auto *Param : Params)
++        ParamTypes.push_back(Param->getType());
++      FunctionProtoType::ExtProtoInfo EPI;
++      EPI.Variadic = isVariadic;
++      EPI.ObjC3Effects = ObjC3Effects;
++      ObjCMethod->setObjC3FunctionType(
++          Context.getFunctionType(resultDeclType, ParamTypes, EPI));
++    }
++  }
+   ObjCMethod->setObjCDeclQualifier(
+     CvtQTToAstBitMask(ReturnQT.getObjCDeclQualifier()));
+ 
 diff --git a/clang/lib/Sema/SemaExpr.cpp b/clang/lib/Sema/SemaExpr.cpp
 index 12681a1f0..c704cb92d 100644
 --- a/clang/lib/Sema/SemaExpr.cpp
@@ -4845,6 +5185,18 @@ index 66cf484bb..0a6b37b94 100644
    for (unsigned i = 0, e = TL.getNumParams(); i != e; ++i) {
      TL.setParam(i, Reader.readDeclAs<ParmVarDecl>());
    }
+diff --git a/clang/lib/Serialization/ASTReaderDecl.cpp b/clang/lib/Serialization/ASTReaderDecl.cpp
+index 45ba42312..d802037aa 100644
+--- a/clang/lib/Serialization/ASTReaderDecl.cpp
++++ b/clang/lib/Serialization/ASTReaderDecl.cpp
+@@ -1193,6 +1193,7 @@ void ASTDeclReader::VisitObjCMethodDecl(ObjCMethodDecl *MD) {
+   MD->setObjCDeclQualifier((Decl::ObjCDeclQualifier)Record.readInt());
+   MD->setRelatedResultType(Record.readInt());
+   MD->setReturnType(Record.readType());
++  MD->setObjC3FunctionType(Record.readType());
+   MD->setReturnTypeSourceInfo(readTypeSourceInfo());
+   MD->DeclEndLoc = readSourceLocation();
+   unsigned NumParams = Record.readInt();
 diff --git a/clang/lib/Serialization/ASTWriter.cpp b/clang/lib/Serialization/ASTWriter.cpp
 index 39104da10..68bc3bc14 100644
 --- a/clang/lib/Serialization/ASTWriter.cpp
@@ -4892,6 +5244,18 @@ index 39104da10..68bc3bc14 100644
    RECORD(EXPR_GNU_NULL);
    RECORD(EXPR_SHUFFLE_VECTOR);
    RECORD(EXPR_BLOCK);
+diff --git a/clang/lib/Serialization/ASTWriterDecl.cpp b/clang/lib/Serialization/ASTWriterDecl.cpp
+index df24a1227..2507f1251 100644
+--- a/clang/lib/Serialization/ASTWriterDecl.cpp
++++ b/clang/lib/Serialization/ASTWriterDecl.cpp
+@@ -998,6 +998,7 @@ void ASTDeclWriter::VisitObjCMethodDecl(ObjCMethodDecl *D) {
+   Record.push_back(D->getObjCDeclQualifier());
+   Record.push_back(D->hasRelatedResultType());
+   Record.AddTypeRef(D->getReturnType());
++  Record.AddTypeRef(D->getObjC3FunctionType());
+   Record.AddTypeSourceInfo(D->getReturnTypeSourceInfo());
+   Record.AddSourceLocation(D->getEndLoc());
+   Record.push_back(D->param_size());
 diff --git a/clang/lib/Serialization/TemplateArgumentHasher.cpp b/clang/lib/Serialization/TemplateArgumentHasher.cpp
 index 353e8a2da..f07f7f03b 100644
 --- a/clang/lib/Serialization/TemplateArgumentHasher.cpp
@@ -6861,7 +7225,7 @@ diff --git a/clang/lib/Sema/SemaObjC3ErrorContext.h b/clang/lib/Sema/SemaObjC3Er
 new file mode 100644
 --- /dev/null
 +++ b/clang/lib/Sema/SemaObjC3ErrorContext.h
-@@ -0,0 +1,45 @@
+@@ -0,0 +1,47 @@
 +//===--- SemaObjC3ErrorContext.h - Native typed-error callable ownership ---===//
 +// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -6898,6 +7262,8 @@ new file mode 100644
 +    if (TypeSourceInfo *Info = BD->getSignatureAsWritten())
 +      Type = Info->getType();
 +  }
++  else if (auto *MD = dyn_cast_or_null<ObjCMethodDecl>(DC))
++    Type = MD->getObjC3FunctionType();
 +  if (!Type.isNull())
 +    if (const auto *FPT = Type->getAs<FunctionProtoType>())
 +      return FPT->getObjC3FunctionEffects();
@@ -7417,7 +7783,7 @@ diff --git a/clang/lib/Sema/SemaObjC3Propagation.cpp b/clang/lib/Sema/SemaObjC3P
 new file mode 100644
 --- /dev/null
 +++ b/clang/lib/Sema/SemaObjC3Propagation.cpp
-@@ -0,0 +1,131 @@
+@@ -0,0 +1,139 @@
 +//===--- SemaObjC3Propagation.cpp - ObjC3 typed propagation semantics -----===//
 +// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -7425,6 +7791,7 @@ new file mode 100644
 +#include "SemaObjC3ErrorContext.h"
 +#include "clang/AST/ASTContext.h"
 +#include "clang/AST/Expr.h"
++#include "clang/AST/ExprObjC.h"
 +#include "clang/AST/Stmt.h"
 +#include "clang/Sema/Sema.h"
 +
@@ -7432,7 +7799,14 @@ new file mode 100644
 +
 +namespace {
 +const FunctionProtoType *getCalledObjC3FunctionType(Sema &S, Expr *Operand) {
-+  auto *Call = dyn_cast<CallExpr>(Operand->IgnoreParenImpCasts());
++  Operand = Operand->IgnoreParenImpCasts();
++  if (auto *Message = dyn_cast<ObjCMessageExpr>(Operand)) {
++    const auto *Method = Message->getMethodDecl();
++    if (Method && !Method->getObjC3FunctionType().isNull())
++      return Method->getObjC3FunctionType()->castAs<FunctionProtoType>();
++    return nullptr;
++  }
++  auto *Call = dyn_cast<CallExpr>(Operand);
 +  if (!Call)
 +    return nullptr;
 +  QualType CalleeType = Call->getCallee()->getType();
@@ -8370,6 +8744,29 @@ new file mode 100644
 +int consume_pch_match(MaybeInt optional, IntOrWide result) {
 +  return pch_match(optional, result);
 +}
+diff --git a/clang/test/ObjC3/AST/method-effects.m b/clang/test/ObjC3/AST/method-effects.m
+new file mode 100644
+--- /dev/null
++++ b/clang/test/ObjC3/AST/method-effects.m
+@@ -0,0 +1,18 @@
++// RUN: %clang_cc1 -x objective-c -fobjc-version=3 -ast-print %s | FileCheck %s --check-prefix=PRINT
++// RUN: %clang_cc1 -x objective-c -fobjc-version=3 -ast-dump %s | FileCheck %s --check-prefix=DUMP
++// RUN: %clang_cc1 -x objective-c -fobjc-version=3 -ast-dump=json %s | FileCheck %s --check-prefix=JSON
++@protocol Error @end
++typedef id<Error> E;
++@interface MethodEffects
++- (int)plain;
++- (int)checked __objc3_throws(E);
+++ (void)combined:(int)value __objc3_async __objc3_throws;
++- (int)first:(int)value __objc3_throws:(int)other;
++@end
++// PRINT: - (int)checked __objc3_throws(E);
++// PRINT: + (void)combined:(int)value __objc3_async __objc3_throws;
++// PRINT: - (int)first:(int)value __objc3_throws:(int)other;
++// DUMP: ObjCMethodDecl{{.*}} checked 'int' 'int (void) throws(E)'
++// DUMP: ObjCMethodDecl{{.*}} combined: 'void' 'void (int) async throws'
++// JSON: "objc3CallableType":
++// JSON: "qualType": "int (void) throws(E)"
 diff --git a/clang/test/ObjC3/AST/optional-expressions-pch.mm b/clang/test/ObjC3/AST/optional-expressions-pch.mm
 new file mode 100644
 --- /dev/null
@@ -10541,6 +10938,62 @@ new file mode 100644
 +template<class T> struct GenericBase { virtual int get() __objc3_throws(T); };
 +template<class T> struct GenericDerived : GenericBase<T> { int get() __objc3_throws(T) override; };
 +GenericDerived<E> AcceptedInstantiation;
+diff --git a/clang/test/ObjC3/Sema/typed-error-message-ambiguity.m b/clang/test/ObjC3/Sema/typed-error-message-ambiguity.m
+new file mode 100644
+--- /dev/null
++++ b/clang/test/ObjC3/Sema/typed-error-message-ambiguity.m
+@@ -0,0 +1,12 @@
++// RUN: %clang_cc1 -x objective-c -fobjc-version=3 -Wno-everything -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c -fobjc-version=3 -fobjc-runtime=gnustep-2.0 -fobjc-arc -Wno-everything -fsyntax-only -verify %s
++@protocol Error @end
++@interface A
++- (int)value __objc3_throws(id<Error>); // expected-note {{one possibility}}
++@end
++@interface B
++- (int)value; // expected-note {{one possibility}}
++@end
++int dynamic(id receiver) {
++  return [receiver value]; // expected-error {{ambiguous ObjC3 async/throws effects}}
++}
+diff --git a/clang/test/ObjC3/Sema/typed-error-message-effects.m b/clang/test/ObjC3/Sema/typed-error-message-effects.m
+new file mode 100644
+--- /dev/null
++++ b/clang/test/ObjC3/Sema/typed-error-message-effects.m
+@@ -0,0 +1,34 @@
++// RUN: %clang_cc1 -x objective-c -fobjc-version=3 -fsyntax-only -verify %s
++@protocol Error @end
++@protocol Other @end
++typedef id<Error> E;
++typedef E Alias;
++@protocol Checked
++- (int)value:(int)x __objc3_throws(E); // expected-note {{previous declaration}}
++@end
++__attribute__((objc_root_class)) @interface Receiver
++- (int)value:(int)x __objc3_throws(E); // expected-note {{previous declaration}}
+++ (void)classValue __objc3_throws;
++@end
++@interface Good : Receiver
++- (int)value:(int)x __objc3_throws(Alias);
++@end
++@interface Bad : Receiver
++- (int)value:(int)x; // expected-error {{effects of method 'value:' do not match}}
++@end
++__attribute__((objc_root_class)) @interface BadProtocol <Checked>
++- (int)value:(int)x __objc3_throws(id<Other>); // expected-error {{effects of method 'value:' do not match}}
++@end
++@implementation Receiver
++- (int)value:(int)x __objc3_throws(E) {
++  if (x) { E error = (E)0; __objc3_throw(error); }
++  return 0;
++}
+++ (void)classValue __objc3_throws { return; }
++@end
++int propagate(Receiver *r) __objc3_throws(E) { return __objc3_try([r value:0]); }
++void wrong(Receiver *r) { __objc3_try([r value:0]); } // expected-error {{requires a matching throwing function}}
++void handled(Receiver *r) {
++  __objc3_do { __objc3_try([r value:1]); }
++  __objc3_catch(E error) { (void)error; }
++}
 diff --git a/clang/test/ObjC3/Sema/typed-error-native-exception-boundaries.mm b/clang/test/ObjC3/Sema/typed-error-native-exception-boundaries.mm
 new file mode 100644
 --- /dev/null
@@ -11713,7 +12166,7 @@ diff --git a/clang/unittests/AST/ObjC3FunctionEffectImportTest.cpp b/clang/unitt
 new file mode 100644
 --- /dev/null
 +++ b/clang/unittests/AST/ObjC3FunctionEffectImportTest.cpp
-@@ -0,0 +1,162 @@
+@@ -0,0 +1,227 @@
 +//===--- ObjC3FunctionEffectImportTest.cpp - effect type import -----------===//
 +// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -11723,6 +12176,7 @@ new file mode 100644
 +#include "clang/AST/ASTImporter.h"
 +#include "clang/AST/ASTStructuralEquivalence.h"
 +#include "clang/AST/Decl.h"
++#include "clang/AST/DeclObjC.h"
 +#include "clang/AST/Type.h"
 +#include "clang/Frontend/ASTUnit.h"
 +#include "clang/Tooling/Tooling.h"
@@ -11873,6 +12327,70 @@ new file mode 100644
 +  EXPECT_FALSE(structurallyEquivalent(
 +      FromContext, findFunction(FromContext, "typed_effect")->getType(),
 +      ToContext, Async));
++}
++
++
++TEST(ObjC3MethodEffectImport, PreservesCanonicalMethodEffect) {
++  const std::string Code = "@interface Widget\n- (int)value __objc3_throws(int);\n@end\n";
++  const std::vector<std::string> Args = {"-x", "objective-c", "-fobjc-version=3"};
++  auto From = tooling::buildASTFromCodeWithArgs(Code, Args, "method-from.m");
++  auto To = tooling::buildASTFromCodeWithArgs(
++      "", Args, "method-to.m", "clang-tool",
++      std::make_shared<PCHContainerOperations>(),
++      tooling::getClangStripDependencyFileAdjuster(), {{"method-from.m", Code}});
++  ASSERT_TRUE(From);
++  ASSERT_TRUE(To);
++  ASSERT_FALSE(From->getDiagnostics().hasErrorOccurred());
++  auto Decls = From->getASTContext().getTranslationUnitDecl()->lookup(
++      &From->getASTContext().Idents.get("Widget"));
++  auto *Interface = cast<ObjCInterfaceDecl>(Decls.front());
++  auto *Method = *Interface->meth_begin();
++  ASTImporter Importer(To->getASTContext(), To->getFileManager(),
++                       From->getASTContext(), From->getFileManager(), false);
++  auto Imported = Importer.Import(Method);
++  ASSERT_TRUE(bool(Imported)) << llvm::toString(Imported.takeError());
++  auto *Target = cast<ObjCMethodDecl>(*Imported);
++  EXPECT_EQ(Target->getObjC3FunctionEffects().Throws, ObjC3ThrowsKind::Typed);
++  EXPECT_TRUE(To->getASTContext().hasSameType(
++      Target->getObjC3FunctionEffects().ErrorType, To->getASTContext().IntTy));
++  EXPECT_EQ(&Target->getASTContext(), &To->getASTContext());
++  EXPECT_EQ(Target->getSelector().getAsString(), "value");
++}
++
++
++TEST(ObjC3MethodEffectImport, RejectsEffectChangesWhenMerging) {
++  const std::vector<std::string> Args = {"-x", "objective-c", "-fobjc-version=3"};
++  const char *Effects[] = {"", " __objc3_throws(int)", " __objc3_throws(long)"};
++  for (const char *FromEffect : Effects) {
++    for (const char *ToEffect : Effects) {
++      const std::string FromCode = std::string("@interface Widget\n- (int)value") +
++                                   FromEffect + ";\n@end\n";
++      const std::string ToCode = std::string("@interface Widget\n- (int)value") +
++                                 ToEffect + ";\n@end\n";
++      auto From = tooling::buildASTFromCodeWithArgs(FromCode, Args, "merge-from.m");
++      auto To = tooling::buildASTFromCodeWithArgs(
++          ToCode, Args, "merge-to.m", "clang-tool",
++          std::make_shared<PCHContainerOperations>(),
++          tooling::getClangStripDependencyFileAdjuster(), {{"merge-from.m", FromCode}});
++      ASSERT_TRUE(From);
++      ASSERT_TRUE(To);
++      auto FindMethod = [](ASTContext &Context) {
++        auto Decls = Context.getTranslationUnitDecl()->lookup(&Context.Idents.get("Widget"));
++        return *cast<ObjCInterfaceDecl>(Decls.front())->meth_begin();
++      };
++      auto *Source = FindMethod(From->getASTContext());
++      auto *Target = FindMethod(To->getASTContext());
++      QualType Before = Target->getObjC3FunctionType();
++      ASTImporter Importer(To->getASTContext(), To->getFileManager(),
++                           From->getASTContext(), From->getFileManager(), false);
++      auto Imported = Importer.Import(Source);
++      bool Same = std::string(FromEffect) == ToEffect;
++      EXPECT_EQ(bool(Imported), Same) << FromEffect << " -> " << ToEffect;
++      if (!Imported)
++        llvm::consumeError(Imported.takeError());
++      EXPECT_EQ(Target->getObjC3FunctionType(), Before);
++    }
++  }
 +}
 +
 +} // namespace

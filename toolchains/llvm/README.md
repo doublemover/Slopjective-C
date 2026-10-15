@@ -226,9 +226,9 @@ physical filesystems without changing the host process working directory.
 Private synchronous ARC and MRC free functions returning scalar/void values can lower
 Error-object throws through the C.4.1 trailing autoreleasing error-output slot.
 Direct and indirect try propagation, forced try and scalar/void optionalization
-use that native ABI. Function/member pointers, static and instance C++ methods
-and Blocks retain their native receiver/context prefixes and add the same
-trailing output. Objective-C message effects remain closed.
+use that native ABI. Function/member pointers, static and instance C++ methods,
+Blocks and Objective-C messages retain their native dispatch/context prefixes
+and add the same trailing output.
 A retained pending error survives callee expression/function cleanup
 and pools; an EH-only cleanup releases it if a native exception interrupts that
 return. Publication to the caller's autoreleasing slot occurs after callee
@@ -259,8 +259,19 @@ Override effects have exact identity; ordinary nonthrowing callable-value
 widening remains separate. Constructors/destructors reject ObjC3 effects and
 reference-valued success transport remains closed. Member effects persist in
 PCH and template instantiation; C++ semantic interfaces remain unsupported.
-Installed C/Objective-C consumers execute imported callbacks, Blocks and
-higher-order error calls without the provider source. Other callable shapes and async
+Objective-C methods store canonical effects, compare redeclaration/override and
+protocol identity, and reject ambiguous dynamic effect ABIs in both ownership
+modes. Native dispatch keeps selector spelling; physical method encodings include
+the error output. Class/protocol/super sends, nil-receiver success,
+consumed arguments and exceptional parameter cleanup have ARC/MRC witnesses.
+Direct-method IR checks use GNUstep 2.2 and Apple runtimes; the executable
+GNUstep 2.0 profile preserves its native dispatch rules.
+An Objective-C 2 client calls the physical IMP. Method effects persist in PCH,
+AST import and semantic interfaces, including explicit root-class identity.
+Matching editor fixtures include throwing messages in both language modes.
+Installed C/Objective-C consumers execute imported callbacks, Blocks, class
+messages and higher-order error calls without the provider source. Special
+Objective-C method families, other callable shapes and async
 execution remain unsupported. Public re-export edges control visibility and
 module provenance survives emission.
 Version 3 of the C embedding API and the CLI expose
@@ -316,7 +327,7 @@ the matching sealed SDK and facade are built. Its complete inventory contains
 - `typed-errors:clang` and `typed-errors:clang-cl` run the synchronous Error-object
   output ABI at O0/O2, including native Objective-C 2 callers, mixed ARC/MRC
   calls, pool lifetime, propagation cleanup and C++ exception separation. Each
-  driver also executes function, Block and member dynamic-nil/forced-error witnesses in
+  driver also executes function, Block, member and message dynamic-nil/forced-error witnesses in
   both ownership modes, including first autorelease before any caller pool, and requires the Windows
   illegal-instruction trap code; another failure cause cannot satisfy a trap.
 - `native-package:provider` emits a provider object, semantic interface and

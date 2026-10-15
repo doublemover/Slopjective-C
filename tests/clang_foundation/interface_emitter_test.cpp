@@ -61,7 +61,7 @@ void TestUnmodeledAttributesFailClosed() {
 
 void TestObjectiveCContainerRoundTrips() {
   auto ast = clang::tooling::buildASTFromCodeWithArgs(
-      "@interface Widget\n- (int)value;\n@end\n",
+      "__attribute__((objc_root_class)) @interface Widget\n- (int)value;\n@end\n",
       {"-x", "objective-c", "-std=gnu11",
        "-fobjc-runtime=gnustep-2.0", "--target=x86_64-unknown-linux-gnu"},
       "objc_fixture.m");
@@ -69,9 +69,14 @@ void TestObjectiveCContainerRoundTrips() {
 
   auto emitted = EmitSemanticInterface(ast->getASTContext(), "fixture.widget",
                                        "test-package");
+  if (!emitted.success)
+    for (const auto &diagnostic : emitted.diagnostics)
+      std::fprintf(stderr, "%s: %s\n", diagnostic.code.c_str(),
+                   diagnostic.message.c_str());
   assert(emitted.success);
   assert(emitted.source_bytes.find("@interface Widget") != std::string::npos);
   assert(emitted.source_bytes.find("- (int)value") != std::string::npos);
+  assert(emitted.source_bytes.find("objc_root_class") != std::string::npos);
 }
 
 void TestTypedEffectSemanticInterfacesRoundTrip() {
@@ -82,7 +87,9 @@ void TestTypedEffectSemanticInterfacesRoundTrip() {
       "void accepts_callback(TypedCallback *);\n",
       "typedef void TypedCallback(void) __objc3_throws(int); "
       "struct CallbackStorage { TypedCallback *callback; };\n",
-      "void accepts_inline_callback(void (*callback)(void) __objc3_throws(int));\n"}) {
+      "void accepts_inline_callback(void (*callback)(void) __objc3_throws(int));\n",
+      "@interface EffectWidget\n- (int)value __objc3_throws(int);\n@end\n",
+      "@protocol EffectProtocol\n+ (int)value:(int)x __objc3_throws(int);\n@end\n"}) {
     auto ast = clang::tooling::buildASTFromCodeWithArgs(
         source,
         {"-x", "objective-c", "-std=c17", "-fobjc-version=3",

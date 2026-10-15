@@ -16,6 +16,7 @@ CASE_ARGUMENTS = {
         "dynamic-nil", "force-error", "mrc-dynamic-nil", "mrc-force-error",
         "block-dynamic-nil", "block-force-error", "mrc-block-dynamic-nil", "mrc-block-force-error",
         "member-dynamic-nil", "member-force-error", "mrc-member-dynamic-nil", "mrc-member-force-error",
+        "message-dynamic-nil", "message-force-error", "mrc-message-dynamic-nil", "mrc-message-force-error",
     )
 }
 

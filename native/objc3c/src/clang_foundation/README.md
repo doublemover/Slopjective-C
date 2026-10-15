@@ -230,7 +230,8 @@ the actual callable's effect; surrounding handlers do not authorize errors
 inside separate lambdas or Blocks. Native C++ and Objective-C exceptions retain
 their separate controls. The private Error-object ABI admits synchronous ARC/MRC
 free-function calls, ordinary function/member pointers and references, static
-and instance C++ methods, and Blocks returning scalar/void values, with a nullable trailing
+and instance C++ methods, Blocks and Objective-C messages returning scalar/void
+values, with a nullable trailing
 `id<Error> __autoreleasing *` slot. Success clears the slot to nil; failure
 stores a non-null error and returns a zero/void placeholder. The compiler retains
 the pending error before expression cleanup and owns it through function cleanup,
@@ -242,8 +243,8 @@ try-optional builds the native scalar/void Optional representation. Exact call
 contexts prevent an outer try from authorizing nested bare throwing calls.
 Static typed nil is rejected, dynamic nil traps, and scalar zero remains valid
 in the semantic model. Scalar/value error transport,
-aggregate, managed or reference-valued success returns, Objective-C message
-effects, variadic calls and async execution still diagnose before emission. The runtime
+aggregate, managed or reference-valued success returns, special Objective-C
+method families, variadic calls and async execution still diagnose before emission. The runtime
 witness covers nested pools, a pool-owning C++ temporary, expression and function
 cleanup interrupted by native exceptions, and nullable output discard. Ordinary
 MRC callers of the physical C output ABI are covered by the runtime witness.
@@ -288,6 +289,23 @@ ARC/MRC units. Override effects match exactly, separately from native C++
 exception specifications and nonthrowing callable-value widening. Constructors
 and destructors reject ObjC3 effects before lowering; ordinary native C++
 construction, destruction and exceptions retain their existing rules.
+
+Objective-C methods own a canonical callable-effect type with source parameters.
+Declarations, implementations, overrides and protocol contracts compare effects
+exactly. Ambiguous effect ABIs on dynamic receivers diagnose in ARC and MRC.
+Message lowering preserves native dispatch, selector spelling and receiver/selector
+prefixes. Direct-method IR checks use the native GNUstep 2.2 and Apple paths;
+the executable GNUstep 2.0 profile retains its native dispatch rules.
+Method type encodings include the
+physical trailing error output. Nil receivers retain native zero/void success
+and argument evaluation; the caller's initialized nil slot preserves presence
+when optionalizing that success. ARC/MRC witnesses cover class/protocol sends,
+super propagation, consumed arguments, callee pools and C++
+parameter unwind. An Objective-C 2 client calls the physical IMP signature.
+PCH, AST import and C/Objective-C semantic interfaces preserve method effects;
+installed consumers execute an imported class message without provider source.
+Native root-class attributes have explicit interface identity. Matching editor
+fixtures parse and format throwing messages in Objective-C and Objective-C++.
 
 Ordered Error-object do/catch owns the pending error through protected-body
 cleanup and selects the first matching class, protocol or bare catch. Unmatched

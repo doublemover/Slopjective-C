@@ -32,3 +32,12 @@ int scalar_match(int input) {
   }
   return __objc3_is_ok(outcome) ? selected : async(input);
 }
+
+@protocol Error
+@end
+@protocol MessageProbe
+- (int)checked:(int)value __objc3_throws(id<Error>);
+@end
+int message_probe(id<MessageProbe> receiver) {
+  return __objc3_try_force([receiver checked:0]);
+}

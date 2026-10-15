@@ -19,6 +19,16 @@ class ContractConsumer final : public clang::ASTConsumer,
   ContractConsumer(const CompileRequest &request, CompileResult &result)
       : request_(request), result_(result) {}
 
+  bool VisitObjCMethodDecl(clang::ObjCMethodDecl *decl) {
+    if (!context_ || decl->isImplicit() ||
+        !context_->getSourceManager().isWrittenInMainFile(decl->getLocation()))
+      return true;
+    InterfaceDeclarationIdentity identity;
+    if (ReadInterfaceDeclarationIdentity(decl, *context_, identity))
+      result_.declarations.push_back(std::move(identity));
+    return true;
+  }
+
   bool VisitNamedDecl(clang::NamedDecl *decl) {
     if (decl->isImplicit() || !decl->getIdentifier() || !context_ ||
         !context_->getSourceManager().isWrittenInMainFile(decl->getLocation()))

@@ -7,5 +7,7 @@ int main(void) {
   int forwarded = __objc3_try_force(call_checked(callback, 7));
   CheckedBlock block = checked_block();
   int block_value = __objc3_try_force(block(11));
-  return block_value == 11 && value == 42 && saved == 0 && zero == 0 && forwarded == 7 ? 0 : 1;
+  __auto_type receiver = checked_message_class();
+  int message_value = __objc3_try_force([receiver messageValue:19]);
+  return message_value == 19 && block_value == 11 && value == 42 && saved == 0 && zero == 0 && forwarded == 7 ? 0 : 1;
 }

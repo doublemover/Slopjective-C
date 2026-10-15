@@ -10,3 +10,9 @@ int scalar_match(int input){MaybeInt maybe=__objc3_some(int,input);IntOrLong out
 __objc3_match_stmt(maybe){case __objc3_case_some(let payload):{selected=throws(payload);}case __objc3_case_none:{selected=0;}}
 __objc3_match_stmt(outcome){case .Ok(let success):{selected+=success;}case .Err(let error):{selected+=(int)error;}}
 return __objc3_is_ok(outcome)?selected:async(input);}
+
+@protocol Error @end
+@protocol MessageProbe
+- (int)checked:(int)value __objc3_throws(id<Error>);
+@end
+int message_probe(id<MessageProbe> receiver){return __objc3_try_force([receiver checked:0]);}
