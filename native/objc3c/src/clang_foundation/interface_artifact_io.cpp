@@ -18,6 +18,7 @@
 #endif
 
 #include "clang_foundation/interface_codec.h"
+#include "llvm/ADT/ScopeExit.h"
 
 namespace objc3::clang_foundation {
 namespace {
@@ -676,6 +677,91 @@ WriteSemanticInterfaceArtifactWithObjectImpl(
   if (object_backed_up) RemoveKnownFile(backup_object, error);
   fs::remove(transaction, error);
   return result;
+}
+
+bool PublishCompilationProductsWithDependencyRecord(
+    const std::string &record_path, const std::string &record_bytes,
+    const std::function<bool()> &publish_products, std::string &failure) {
+  failure.clear();
+  std::error_code error;
+  const auto requested = fs::absolute(fs::path(record_path), error).lexically_normal();
+  if (error || HasReparseAncestor(requested.parent_path())) {
+    failure = "dependency record directory is inaccessible or contains a reparse point";
+    return false;
+  }
+  const auto parent = fs::canonical(requested.parent_path(), error);
+  if (error || !fs::is_directory(parent, error) || error) {
+    failure = "dependency record directory must already exist";
+    return false;
+  }
+  const auto destination = parent / requested.filename();
+  bool existed = false;
+  if (!InspectDestination(destination, existed, error)) {
+    failure = "dependency record destination must be a regular non-symlink file";
+    return false;
+  }
+  const auto transaction = MakeTransactionDirectory(parent, error);
+  if (error || transaction.empty()) {
+    failure = "cannot create dependency record staging directory: " + error.message();
+    return false;
+  }
+  const auto stage = transaction / "record.stage";
+  const auto backup = transaction / "record.previous";
+  bool backed_up = false;
+  bool published = false;
+  auto cleanup = [&] {
+    std::error_code ignored;
+    RemoveKnownFile(stage, ignored);
+    RemoveKnownFile(backup, ignored);
+    fs::remove(transaction, ignored);
+  };
+  auto restore = [&] {
+    std::error_code rollback_error;
+    bool destination_exists = false;
+    if (published) {
+      if (!InspectDestination(destination, destination_exists, rollback_error) ||
+          !destination_exists)
+        return false;
+      fs::rename(destination, stage, rollback_error);
+      if (rollback_error) return false;
+      published = false;
+    }
+    if (backed_up) {
+      if (!InspectDestination(destination, destination_exists, rollback_error) ||
+          destination_exists)
+        return false;
+      fs::rename(backup, destination, rollback_error);
+      if (rollback_error) return false;
+      backed_up = false;
+    }
+    cleanup();
+    return true;
+  };
+  auto rollback = llvm::make_scope_exit([&] { restore(); });
+  auto fail = [&](std::string message) {
+    const bool restored = restore();
+    rollback.release();
+    failure = std::move(message);
+    if (!restored)
+      failure += "; dependency record rollback incomplete; recovery files retained at " +
+                 transaction.string();
+    return false;
+  };
+  if (!WriteFile(stage, record_bytes + "\n", error))
+    return fail("cannot stage dependency record: " + error.message());
+  if (existed) {
+    fs::rename(destination, backup, error);
+    if (error) return fail("cannot preserve previous dependency record: " + error.message());
+    backed_up = true;
+  }
+  fs::rename(stage, destination, error);
+  if (error) return fail("cannot publish dependency record: " + error.message());
+  published = true;
+  if (!publish_products())
+    return fail("compilation product publication failed");
+  rollback.release();
+  cleanup();
+  return true;
 }
 
 namespace testing {

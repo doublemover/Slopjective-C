@@ -148,6 +148,7 @@ public:
     result_.resolved_module_identities = lookup_->GetImportedModuleIdentities();
     result_.interface_dependency_order = lookup_->GetDependencyOrder();
     result_.resolved_interface_sources = lookup_->GetResolvedSourceArtifacts();
+    result_.interface_input_paths = lookup_->GetResolvedInputPaths();
     result_.imported_declarations = lookup_->GetVisibleDeclarationIdentities();
     result_.resolved_interface_dependencies = lookup_->GetDirectDependencies();
     result_.interface_import_diagnostics = lookup_->GetDiagnostics();
@@ -380,6 +381,11 @@ class ActionFactory final : public clang::tooling::FrontendActionFactory {
             return false;
         }
       }
+      for (const auto &input : resolved_inputs) {
+        result_.interface_input_paths.push_back(input.source_path);
+        result_.interface_input_paths.push_back(input.sidecar_path.empty()
+            ? input.source_path + ".json" : input.sidecar_path);
+      }
       import_session_ = InterfaceImportSession::Prepare(
           resolved_inputs, target, import_diagnostics);
       if (!import_session_) {
@@ -549,10 +555,36 @@ CompileResult Compile(const CompileRequest &request) {
   TemporaryOutput temporary;
   llvm::SmallString<256> final_output(request.output_path);
   llvm::SmallString<256> interface_output(request.interface_output_path);
+  llvm::SmallString<256> record_output(request.dependency_record_output_path);
   if ((!final_output.empty() && overlay->makeAbsolute(final_output)) ||
-      (!interface_output.empty() && overlay->makeAbsolute(interface_output))) {
+      (!interface_output.empty() && overlay->makeAbsolute(interface_output)) ||
+      (!record_output.empty() && overlay->makeAbsolute(record_output))) {
     result.failure = "Cannot resolve output paths in the compilation working directory";
     return result;
+  }
+  auto aliases_record = [&](const std::string &path) {
+    if (record_output.empty() || path.empty()) return false;
+    llvm::SmallString<256> candidate(path);
+    if (overlay->makeAbsolute(candidate)) return true;
+    auto normalized_record = record_output;
+    llvm::sys::path::remove_dots(normalized_record, true);
+    llvm::sys::path::remove_dots(candidate, true);
+#if defined(_WIN32)
+    if (llvm::StringRef(candidate).equals_insensitive(normalized_record)) return true;
+#else
+    if (candidate == normalized_record) return true;
+#endif
+    bool equivalent = false;
+    return !llvm::sys::fs::equivalent(candidate, normalized_record, equivalent) && equivalent;
+  };
+  if (!record_output.empty()) {
+    if (aliases_record(request.input_path) || aliases_record(request.output_path) ||
+        aliases_record(request.interface_output_path) ||
+        (!request.interface_output_path.empty() &&
+         aliases_record(request.interface_output_path + ".json"))) {
+      result.failure = "Dependency record path conflicts with compilation input or outputs";
+      return result;
+    }
   }
   if (request.emit != EmitKind::Syntax) {
     auto error = llvm::sys::fs::createUniqueFile(std::string(final_output) + ".objc3c-%%%%%%",
@@ -621,24 +653,50 @@ CompileResult Compile(const CompileRequest &request) {
     result.success = false;
     result.failure = "Semantic interface emission failed";
   }
-  if (result.success && !interface_output.empty()) {
-    auto written = temporary.path.empty()
-        ? WriteSemanticInterfaceArtifact(*result.interface_artifact, std::string(interface_output))
-        : WriteSemanticInterfaceArtifactWithObject(*result.interface_artifact,
-              std::string(interface_output), std::string(temporary.path), std::string(final_output));
-    result.interface_artifact->diagnostics.insert(result.interface_artifact->diagnostics.end(),
-        written.diagnostics.begin(), written.diagnostics.end());
-    if (!written.success) {
-      result.success = false;
-      result.failure = "Compilation products could not be published";
-    }
-  } else if (result.success && !temporary.path.empty()) {
-    auto error = llvm::sys::fs::rename(temporary.path, final_output);
-    if (error) { result.success = false; result.failure = error.message(); }
-    else temporary.path.clear();
-  }
   if (result.success && !result.resolved_module_identities.empty())
     BuildDependencyRecord(result);
+  if (result.success && std::any_of(result.interface_input_paths.begin(),
+          result.interface_input_paths.end(), aliases_record)) {
+    result.success = false;
+    result.failure = "Dependency record path conflicts with an imported interface artifact";
+  }
+  if (result.success && !record_output.empty() && result.semantic_dependency_record.empty()) {
+    result.success = false;
+    result.failure = "No imported semantic dependency record was produced";
+  }
+  auto publish_products = [&]() {
+    if (!interface_output.empty()) {
+      auto written = temporary.path.empty()
+          ? WriteSemanticInterfaceArtifact(*result.interface_artifact, std::string(interface_output))
+          : WriteSemanticInterfaceArtifactWithObject(*result.interface_artifact,
+                std::string(interface_output), std::string(temporary.path), std::string(final_output));
+      result.interface_artifact->diagnostics.insert(result.interface_artifact->diagnostics.end(),
+          written.diagnostics.begin(), written.diagnostics.end());
+      if (!written.success) {
+        result.success = false;
+        result.failure = "Compilation products could not be published";
+      }
+    } else if (!temporary.path.empty()) {
+      auto error = llvm::sys::fs::rename(temporary.path, final_output);
+      if (error) { result.success = false; result.failure = error.message(); }
+      else temporary.path.clear();
+    }
+    return result.success;
+  };
+  if (result.success) {
+    if (record_output.empty()) {
+      publish_products();
+    } else {
+      std::string publication_failure;
+      if (!PublishCompilationProductsWithDependencyRecord(
+              std::string(record_output), result.semantic_dependency_record,
+              publish_products, publication_failure)) {
+        result.success = false;
+        if (result.failure.empty()) result.failure = std::move(publication_failure);
+        else result.failure += "; " + publication_failure;
+      }
+    }
+  }
   if (!result.success && result.failure.empty()) result.failure = "Clang compilation failed";
   return result;
 }

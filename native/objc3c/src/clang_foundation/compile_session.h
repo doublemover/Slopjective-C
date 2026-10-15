@@ -34,6 +34,10 @@ struct CompileRequest {
   // Optional publication destination. With emitted object/IR output, all
   // products are published through one rollback boundary.
   std::string interface_output_path;
+  // Internal CLI publication destination. The C embedding API continues to
+  // return this record in memory. Disk publication shares the product rollback
+  // boundary, including failures after a record has been staged.
+  std::string dependency_record_output_path;
   std::vector<std::string> interface_search_paths;
   // Locked modules available to source-level `@import`. When enabled, these
   // are prepared before parsing but remain invisible until the matching
@@ -74,6 +78,9 @@ struct CompileResult {
   std::vector<std::string> interface_dependency_order;
   std::vector<InterfaceModuleIdentity> resolved_module_identities;
   std::vector<InterfaceSourceArtifact> resolved_interface_sources;
+  // Physical interface inputs prepared by the native import session. Keep
+  // publication destinations from replacing those provider artifacts.
+  std::vector<std::string> interface_input_paths;
   std::vector<std::string> visible_module_names;
   std::string semantic_dependency_record;
   std::vector<InterfaceContractDiagnostic> interface_import_diagnostics;

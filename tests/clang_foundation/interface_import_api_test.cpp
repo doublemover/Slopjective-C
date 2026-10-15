@@ -434,7 +434,67 @@ int main() {
   cli.back() = blocked_record.string();
   assert(InvokeCLI(cli) == 1);
   assert(ReadBytes(blocked_record / "sentinel") == "preserved");
+
+  const auto provider_source_path = directory.path / "Api.objc3i";
+  const auto provider_sidecar_path = directory.path / "Api.objc3i.json";
+  for (const auto &provider_path : {provider_source_path, provider_sidecar_path}) {
+    const auto provider_bytes = ReadBytes(provider_path);
+    auto overwrite_provider = cli;
+    overwrite_provider.back() = provider_path.string();
+    assert(InvokeCLI(overwrite_provider) == 1);
+    assert(ReadBytes(provider_path) == provider_bytes);
+  }
+
+  // A record failure must preserve the object and interface pair too.
+  const auto consumer_interface = directory.path / "Consumer.objc3i";
+  const auto consumer_sidecar = directory.path / "Consumer.objc3i.json";
+  auto products_cli = cli;
+  products_cli.insert(products_cli.end(), {
+      "--emit-object", object_path.string(),
+      "--emit-interface", consumer_interface.string(),
+      "--module", "Consumer", "--package", "consumer-package"});
+  auto write_prior = [&](const std::filesystem::path &path, const char *bytes) {
+    std::ofstream output(path, std::ios::binary);
+    output << bytes;
+    output.close();
+    assert(output);
+  };
+  write_prior(object_path, "prior object");
+  write_prior(consumer_interface, "prior interface");
+  write_prior(consumer_sidecar, "prior sidecar");
+  assert(InvokeCLI(products_cli) == 1);
+  assert(ReadBytes(object_path) == "prior object");
+  assert(ReadBytes(consumer_interface) == "prior interface");
+  assert(ReadBytes(consumer_sidecar) == "prior sidecar");
+  assert(ReadBytes(blocked_record / "sentinel") == "preserved");
+
+  // A late interface failure restores the already published dependency record.
+  products_cli[cli.size() - 1] = dependency_path.string();
+  std::filesystem::remove(consumer_sidecar);
+  std::filesystem::create_directory(consumer_sidecar);
+  assert(InvokeCLI(products_cli) == 1);
+  assert(ReadBytes(dependency_path) == successful_record);
+  assert(ReadBytes(object_path) == "prior object");
+  assert(ReadBytes(consumer_interface) == "prior interface");
+  assert(std::filesystem::is_directory(consumer_sidecar));
+  std::filesystem::remove(consumer_sidecar);
+  assert(InvokeCLI(products_cli) == 0);
+  assert(ReadBytes(object_path) != "prior object");
+  assert(ReadBytes(consumer_interface) != "prior interface");
+  assert(ReadBytes(dependency_path).find(identity.semantic_fingerprint) != std::string::npos);
+
+  // An unused registry emits no record; that rejection must preserve products.
+  write_prior(consumer_path, "int local(void) { return 7; }\n");
+  const auto prior_object = ReadBytes(object_path);
+  const auto prior_interface = ReadBytes(consumer_interface);
+  const auto prior_sidecar = ReadBytes(consumer_sidecar);
+  const auto prior_record = ReadBytes(dependency_path);
+  assert(InvokeCLI(products_cli) == 1);
+  assert(ReadBytes(object_path) == prior_object);
+  assert(ReadBytes(consumer_interface) == prior_interface);
+  assert(ReadBytes(consumer_sidecar) == prior_sidecar);
+  assert(ReadBytes(dependency_path) == prior_record);
   for (const auto &entry : std::filesystem::directory_iterator(directory.path))
-    assert(entry.path().filename().string().find(".objc3c-record-") ==
+    assert(entry.path().filename().string().find(".objc3i-txn-") ==
            std::string::npos);
 }

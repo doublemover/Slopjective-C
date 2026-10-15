@@ -77,6 +77,7 @@ public:
   GetImportedModuleIdentities() const;
   [[nodiscard]] std::vector<InterfaceSourceArtifact>
   GetResolvedSourceArtifacts() const;
+  [[nodiscard]] std::vector<std::string> GetResolvedInputPaths() const;
   [[nodiscard]] std::vector<InterfaceDeclarationIdentity>
   GetVisibleDeclarationIdentities() const;
   [[nodiscard]] std::vector<InterfaceDependency> GetDirectDependencies() const;
@@ -148,6 +149,7 @@ private:
   std::vector<InterfaceDeclarationIdentity> imported_identities_;
   std::vector<InterfaceDependency> direct_dependencies_;
   std::vector<std::string> dependency_order_;
+  std::vector<std::string> input_paths_;
   std::set<std::string> recorded_identities_;
   std::vector<InterfaceContractDiagnostic> diagnostics_;
   std::string last_failure_;

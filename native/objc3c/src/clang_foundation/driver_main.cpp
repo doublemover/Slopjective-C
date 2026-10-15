@@ -1,35 +1,10 @@
 #include "clang_foundation/compile_session.h"
 
 #include <filesystem>
-#include <fstream>
 #include <iostream>
 #include <string_view>
 
-#include "llvm/ADT/SmallString.h"
-#include "llvm/Support/FileSystem.h"
-
 namespace {
-bool WriteDependencyRecord(const std::string &path, const std::string &bytes) {
-  struct TemporaryRecord {
-    llvm::SmallString<256> path;
-    ~TemporaryRecord() {
-      if (!path.empty())
-        llvm::sys::fs::remove(path);
-    }
-  } temporary;
-  if (llvm::sys::fs::createUniqueFile(path + ".objc3c-record-%%%%%%",
-                                      temporary.path))
-    return false;
-  std::ofstream record(temporary.path.c_str(),
-                       std::ios::binary | std::ios::trunc);
-  record << bytes << '\n';
-  record.close();
-  if (!record || llvm::sys::fs::rename(temporary.path, path))
-    return false;
-  temporary.path.clear();
-  return true;
-}
-
 int RunCompiler(int argc, char **argv) {
   using namespace objc3::clang_foundation;
   if (argc < 2) {
@@ -191,6 +166,7 @@ int RunCompiler(int argc, char **argv) {
       return 2;
     }
   }
+  request.dependency_record_output_path = dependency_record_path;
   auto result = Compile(request);
   for (const auto &diagnostic : result.diagnostics)
     std::cerr << diagnostic.expansion.file << ':' << diagnostic.expansion.line
@@ -198,18 +174,6 @@ int RunCompiler(int argc, char **argv) {
               << diagnostic.message << '\n';
   if (!result.success)
     std::cerr << result.failure << '\n';
-  if (result.success && !dependency_record_path.empty()) {
-    if (result.semantic_dependency_record.empty()) {
-      std::cerr << "no imported semantic dependency record was produced\n";
-      return 1;
-    }
-    if (!WriteDependencyRecord(dependency_record_path,
-                               result.semantic_dependency_record)) {
-      std::cerr << "could not write dependency record: "
-                << dependency_record_path << '\n';
-      return 1;
-    }
-  }
   if (result.interface_artifact) {
     for (const auto &diagnostic : result.interface_artifact->diagnostics)
       std::cerr << diagnostic.code << ": " << diagnostic.message << '\n';

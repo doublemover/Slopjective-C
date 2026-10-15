@@ -57,6 +57,15 @@ declarations fail explicitly. C++/Objective-C++ semantic interface interchange
 remains unsupported. Source, sidecar and optional object output share a rollback
 boundary; failed compilation preserves prior products.
 
+Dependency-record publication uses that same rollback boundary. An inaccessible
+record destination or a request with no imported dependencies preserves existing
+object, interface and sidecar outputs. A later product-publication failure
+restores the previous record; failed rollback retains its backup for recovery.
+Record destinations must be regular files with accessible physical parents and
+must differ from compilation inputs, imported interfaces and other product paths.
+The C embedding API continues to return dependency records in memory without
+choosing a filesystem destination.
+
 The CLI's `--module-search-path` and `--import-module name fingerprint package`
 options select locked interfaces eagerly. Adding `--source-imports` makes those
 entries a registry for ObjC3 `@import Module.Path;`: an unused registry entry

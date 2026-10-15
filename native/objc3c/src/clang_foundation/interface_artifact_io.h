@@ -1,5 +1,6 @@
 #pragma once
 
+#include <functional>
 #include <string>
 #include <vector>
 
@@ -32,5 +33,12 @@ WriteSemanticInterfaceArtifactWithObject(
     const std::string &explicit_source_path,
     const std::string &staged_object_path,
     const std::string &final_object_path);
+
+// Stage and publish a dependency record before publishing its compiler
+// products. If the product publisher fails or throws, restore the previous
+// record. The publisher must preserve its own products on failure.
+[[nodiscard]] bool PublishCompilationProductsWithDependencyRecord(
+    const std::string &record_path, const std::string &record_bytes,
+    const std::function<bool()> &publish_products, std::string &failure);
 
 }  // namespace objc3::clang_foundation

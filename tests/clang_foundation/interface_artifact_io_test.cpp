@@ -7,6 +7,7 @@
 #include <filesystem>
 #include <fstream>
 #include <string>
+#include <stdexcept>
 #include <vector>
 
 using namespace objc3::clang_foundation;
@@ -198,10 +199,53 @@ void TestObjectAndInterfaceTripleRollbackAcrossDirectories() {
 
 }  // namespace
 
+void TestDependencyRecordProductTransaction() {
+  const auto root = MakeTempDirectory();
+  const auto record = root / "dependency.json";
+  std::string failure;
+  unsigned calls = 0;
+  auto reject_products = [&] { ++calls; return false; };
+  assert(!PublishCompilationProductsWithDependencyRecord(
+      record.string(), "new record", reject_products, failure));
+  assert(calls == 1 && !fs::exists(record));
+  WriteBytes(record, "prior record\n");
+  assert(!PublishCompilationProductsWithDependencyRecord(
+      record.string(), "new record", reject_products, failure));
+  assert(ReadBytes(record) == "prior record\n");
+  try {
+    const bool published = PublishCompilationProductsWithDependencyRecord(
+        record.string(), "new record", []() -> bool {
+          throw std::runtime_error("product publisher failed");
+        }, failure);
+    (void)published;
+    assert(false && "publisher exception must propagate");
+  } catch (const std::runtime_error &) {
+    assert(ReadBytes(record) == "prior record\n");
+  }
+  assert(PublishCompilationProductsWithDependencyRecord(
+      record.string(), "new record", [&] {
+        assert(ReadBytes(record) == "new record\n");
+        return true;
+      }, failure));
+  assert(ReadBytes(record) == "new record\n");
+  const auto blocked = root / "directory.json";
+  fs::create_directory(blocked);
+  assert(!PublishCompilationProductsWithDependencyRecord(
+      blocked.string(), "new record", [&] {
+        assert(false && "invalid record destination must not publish products");
+        return true;
+      }, failure));
+  assert(fs::is_directory(blocked));
+  for (const auto &entry : fs::directory_iterator(root))
+    assert(!entry.path().filename().string().starts_with(".objc3i-txn-"));
+  fs::remove_all(root);
+}
+
 int main() {
   TestPairReplacementAndMalformedArtifactRefusal();
   TestFilesystemFailurePreservesExistingSource();
   TestKnownNativeSemanticCapabilitiesAndUnknownRefusal();
   TestObjectAndInterfaceTripleRollbackAcrossDirectories();
+  TestDependencyRecordProductTransaction();
   return 0;
 }

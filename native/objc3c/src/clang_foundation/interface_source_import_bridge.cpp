@@ -125,6 +125,7 @@ void InterfaceSourceImportBridge::Reset() {
   imported_identities_.clear();
   direct_dependencies_.clear();
   dependency_order_.clear();
+  input_paths_.clear();
   recorded_identities_.clear();
   diagnostics_.clear();
   last_failure_.clear();
@@ -509,6 +510,11 @@ SourceModuleImportStatus InterfaceSourceImportBridge::ImportObjC3Module(
       if (recorded_identities_.insert(identity.stable_id).second)
         imported_identities_.push_back(identity);
     dependency_order_ = graph.topological_order;
+    for (const auto &input : resolution.artifacts) {
+      input_paths_.push_back(input.source_path);
+      input_paths_.push_back(input.sidecar_path.empty()
+          ? input.source_path + ".json" : input.sidecar_path);
+    }
     sessions_.push_back(std::move(session));
     return SourceModuleImportStatus::Imported;
   }
@@ -632,6 +638,11 @@ InterfaceSourceImportBridge::GetResolvedSourceArtifacts() const {
     if (found != artifacts_.end()) result.push_back(found->second);
   }
   return result;
+}
+
+std::vector<std::string>
+InterfaceSourceImportBridge::GetResolvedInputPaths() const {
+  return input_paths_;
 }
 
 std::vector<InterfaceDeclarationIdentity>
