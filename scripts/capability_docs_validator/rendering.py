@@ -16,6 +16,7 @@ from capability_docs_validator.constants import (
 )
 from capability_docs_validator.conformance import _phase_contract_rows
 from capability_docs_validator.manifest import _manifest_support_claims
+from capability_docs_validator.markdown_format import format_support_docs
 from capability_docs_validator.support_links import _row_support_claims
 from capability_docs_validator.umbrella_readiness import render_umbrella_readiness_doc
 
@@ -270,7 +271,7 @@ def render_support_docs(
     }
     if umbrella_readiness is not None:
         rendered[UMBRELLA_READINESS_DOC] = render_umbrella_readiness_doc(umbrella_readiness)
-    return rendered
+    return format_support_docs(rendered)
 
 
 def _validate_generated_docs(rendered_docs: dict[Path, str]) -> None:

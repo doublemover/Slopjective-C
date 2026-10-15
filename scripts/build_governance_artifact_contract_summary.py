@@ -62,7 +62,7 @@ def main() -> int:
 
     required_mentions = {
         "runbook_mentions_contract": "tests/tooling/fixtures/governance_sustainability/artifact_contract.json" in runbook_text,
-        "runbook_mentions_summary": "python scripts/build_governance_artifact_contract_summary.py" in runbook_text,
+        "runbook_mentions_summary": "npm run objc3c -- validate-governance-sustainability" in runbook_text,
         "runbook_mentions_schema": evidence_schema in runbook_text,
     }
     for key, value in required_mentions.items():

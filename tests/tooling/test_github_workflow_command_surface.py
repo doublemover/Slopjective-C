@@ -6,9 +6,6 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 WORKFLOW_ROOT = ROOT / ".github" / "workflows"
 ALLOWED_NON_OBJC3C_RUN_COMMANDS = {
-    "./scripts/install_objc3c_ci_llvm.ps1",
-    "bash scripts/install_objc3c_ci_llvm_darwin.sh",
-    "bash scripts/install_objc3c_ci_llvm_linux.sh",
     "npm ci",
     "python -m pip install --upgrade jsonschema",
     "python -m pip install --upgrade pytest",

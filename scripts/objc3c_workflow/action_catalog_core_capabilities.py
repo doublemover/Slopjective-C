@@ -5,6 +5,17 @@ from __future__ import annotations
 from .action_spec import ActionSpec
 
 CORE_CAPABILITY_ACTION_SPECS: dict[str, ActionSpec] = {
+    "materialize-ci-llvm": ActionSpec(
+        "materialize-ci-llvm",
+        "install the coherent LLVM prerequisites on the selected hosted CI platform",
+        "runner-internal",
+        validation_tier="ci",
+        guarantee_owner=(
+            "explicit host selection routes to its existing LLVM installer; "
+            "installation does not promote language or platform support"
+        ),
+        pass_through_args=True,
+    ),
     "check-llvm-capabilities": ActionSpec(
         "check-llvm-capabilities",
         "probe llvm capability availability and write the summary artifact",
@@ -13,6 +24,7 @@ CORE_CAPABILITY_ACTION_SPECS: dict[str, ActionSpec] = {
         guarantee_owner=(
             "llvm capability probe output stays tied to the live toolchain environment"
         ),
+        pass_through_args=True,
     ),
     "check-hosted-llvm-capabilities": ActionSpec(
         "check-hosted-llvm-capabilities",

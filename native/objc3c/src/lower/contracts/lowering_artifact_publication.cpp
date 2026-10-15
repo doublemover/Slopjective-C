@@ -1,6 +1,6 @@
 #include "lower/contracts/lowering_artifact_publication.h"
 
-#include "artifacts/identity/artifact_identity.h"
+#include "lower/contracts/native_artifact_names.h"
 
 #include <sstream>
 

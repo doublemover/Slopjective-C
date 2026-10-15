@@ -208,9 +208,8 @@ The runtime evidence collection commands are exactly
 `check-sanitizer-runtime-evidence-asan` for #8230 and
 `check-sanitizer-runtime-evidence-ubsan` for #8231. They are explicit
 review-only public actions, not aliases for sanitizer package builds, not
-fallback routes across sanitizer variants or target platforms, not report/probe
-rerouting hooks, not npm pass-through surfaces, and not support-promotion
-commands. Their action contracts pin the package root, report path, probe path,
+commands for rerouting across sanitizer variants or target platforms. Report and
+probe rerouting, npm pass-through, and support promotion remain forbidden. Their action contracts pin the package root, report path, probe path,
 fixture glob, parallelism, and run id.
 The shared execution evidence surface is
 `check-security-sanitizer-execution-evidence`; it validates the ASan/UBSan

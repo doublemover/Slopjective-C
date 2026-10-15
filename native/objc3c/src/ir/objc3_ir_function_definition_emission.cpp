@@ -11,7 +11,7 @@
 #include "ir/objc3_ir_receiver_identity_contracts.h"
 #include "ir/objc3_ir_type_model.h"
 #include "lower/contracts/ownership_runtime_accessor_helper_contracts.h"
-#include "sema/objc3_typed_throws_effect_contract.h"
+#include "ast/objc3_typed_throws_effect_contract.h"
 
 namespace {
 

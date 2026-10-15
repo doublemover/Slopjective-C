@@ -4,8 +4,8 @@ This runbook is generated from the canonical public command contract.
 It is an operator-facing appendix, not the primary onboarding or project-explanation surface.
 
 - Package bridge count: `1`
-- Operator action count: `173`
-- Maintainer action count: `80`
+- Operator action count: `175`
+- Maintainer action count: `81`
 - Runner path: `package.json scripts.objc3c -> scripts.objc3c_workflow`
 - Contract builder: `scripts/build_objc3c_public_command_contract.py`
 - Contract artifact: `tmp/artifacts/public-command-surface/objc3c-public-command-contract.json`
@@ -38,6 +38,7 @@ It is an operator-facing appendix, not the primary onboarding or project-explana
 | `inspect-source-graph` | `inspect` | `repo` | `source graph nodes, spans, package provenance, fail-closed reference candidates, rename diagnostics, and semantic-token consumers stay tied to real compile artifacts and checked workspace guardrails` | `pass-through` | `python:scripts/build_objc3c_editor_tooling_surface.py --source-graph-only` |
 | `inspect-validation-timing` | `inspect` | `repo` | `validation timing, warning budgets, child reports, and issue-specific profiles stay explainable from generated suite reports` | `fixed-shape` | `runner-internal + tmp timing reports` |
 | `materialize-canonical-application-workspace` | `materialize` | `repo` | `canonical application workspace materialization stays derived from the checked-in showcase and stdlib contracts` | `pass-through` | `python:scripts/materialize_objc3c_canonical_application_workspace.py` |
+| `materialize-ci-llvm` | `materialize` | `ci` | `explicit host selection routes to its existing LLVM installer; installation does not promote language or platform support` | `pass-through` | `runner-internal` |
 | `materialize-playground-workspace` | `materialize` | `repo` | `playground workspaces stay machine-owned, compile-coupled, and rooted in tmp outputs with editor/debug drill references instead of shared evidence-only buckets` | `pass-through` | `runner-internal + artifacts/bin/objc3c-frontend-c-api-runner.exe` |
 | `materialize-project-template` | `materialize` | `repo` | `starter-template and demo-harness outputs stay derived from checked-in showcase sources and executable public actions` | `pass-through` | `python:scripts/materialize_objc3c_project_template.py` |
 | `materialize-stdlib-workspace` | `materialize` | `repo` | `stdlib workspace materializations stay machine-owned and derived from the checked-in stdlib root plus lowering/import contract surface` | `pass-through` | `python:scripts/materialize_objc3c_stdlib_workspace.py` |
@@ -117,6 +118,7 @@ It is an operator-facing appendix, not the primary onboarding or project-explana
 | `validate-migration-workflow` | `validate` | `repo` | `ObjC2 Swift C++ migration analyzer and rewrite workflow remain backed by checked-in contracts and runnable validation` | `fixed-shape` | `python:scripts/check_objc3c_migration_workflow.py` |
 | `validate-module-interop-contracts` | `validate` | `targeted` | `checked-in module/interop owner contract for cross-module import identity and C, ObjC2, Swift, and C++ bridge metadata` | `fixed-shape` | `python:scripts/check_objc3c_module_interop_contracts.py` |
 | `validate-native-clean-room-rebuild` | `validate` | `full` | `native bootstrap rebuilds stay clean-room routed and reproducible without preexisting tmp or artifact outputs` | `fixed-shape` | `python:scripts/check_objc3c_native_clean_room_rebuild.py` |
+| `validate-native-foundation` | `validate` | `repo` | `native migration checks execute the sealed compiler and preserve explicit dependency, artifact, and toolchain identity without promoting public capabilities` | `pass-through` | `python:scripts/check_objc3c_native_validation.py` |
 | `validate-object-model-conformance` | `validate` | `full` | `integrated object-model conformance over the live runtime architecture workflow` | `fixed-shape` | `python:scripts/check_objc3c_runnable_object_model_conformance.py` |
 | `validate-object-model-debugger-proof` | `validate` | `repo` | `object-model debugger proof stays fail-closed unless source-map entries, debug-map records, native line-table rows, runtime reflection debug anchors, and replayable value-inspection commands all point at the same runtime reflection identities` | `pass-through` | `python:scripts/check_objc3c_object_model_debugger_proof.py` |
 | `validate-optimization-proof-model` | `validate` | `policy` | `Objective-C 3.0 optimization passes carry source graph, source-map, ownership, runtime ABI, package identity, semantic equivalence, invalidation, and unsupported-skip proof records` | `fixed-shape` | `python:scripts/check_objc3c_optimization_proof_model.py` |
@@ -216,7 +218,7 @@ It is an operator-facing appendix, not the primary onboarding or project-explana
 | `check-external-support-claim-gate` | `check` | `repo` | `support and adoption claims fail closed when external validation evidence is missing stale non-reproducible or local-only` | `fixed-shape` | `python:scripts/check_objc3c_external_support_claim_gate.py` |
 | `check-external-validation-surface` | `check` | `repo` | `external validation stays rooted in checked-in trust, intake, quarantine, and artifact contracts` | `fixed-shape` | `python:scripts/check_external_validation_source_surface.py` |
 | `check-hosted-llvm-capabilities` | `check` | `ci` | `hosted CI publishes capability truth only from coherent llc --filetype=obj evidence; optional gates skip without success claims, and required conformance gates fail closed` | `fixed-shape` | `python:scripts/probe_objc3c_llvm_capabilities.py --summary-out tmp/artifacts/objc3c-native/m144/llvm_capabilities/summary.json` |
-| `check-llvm-capabilities` | `check` | `repo` | `llvm capability probe output stays tied to the live toolchain environment` | `fixed-shape` | `python:scripts/probe_objc3c_llvm_capabilities.py --summary-out tmp/artifacts/objc3c-native/llvm_capabilities/summary.json` |
+| `check-llvm-capabilities` | `check` | `repo` | `llvm capability probe output stays tied to the live toolchain environment` | `pass-through` | `python:scripts/probe_objc3c_llvm_capabilities.py --summary-out tmp/artifacts/objc3c-native/llvm_capabilities/summary.json` |
 | `check-markdown` | `check` | `-` | `-` | `fixed-shape` | `npx prettier --check <checked-in-md-globs>` |
 | `check-native-docs` | `check` | `docs` | `generated native implementation documentation stays in sync with docs/objc3c-native/src inputs` | `fixed-shape` | `python:scripts/build_objc3c_native_docs.py --check` |
 | `check-packaging-channels-schema-surface` | `check` | `repo` | `packaging-channels-source -> packaging-channels-gate -> packaging-channels-blockers: packaging-channel and install-receipt artifacts stay on checked-in schema contracts` | `fixed-shape` | `python:scripts/check_packaging_channels_schema_surface.py` |

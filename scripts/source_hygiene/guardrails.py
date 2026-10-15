@@ -22,6 +22,7 @@ GUARDRAIL_PHRASES: tuple[str, ...] = (
     "does not publish",
     "fail closed",
     "forbidden",
+    "forbids",
     "instead of",
     "is not allowed",
     "is absent",

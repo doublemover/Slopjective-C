@@ -107,7 +107,7 @@ def main() -> int:
         "overfull_surfaces": overfull_surfaces,
         "runbook_mentions_policy": "tests/tooling/fixtures/governance_sustainability/sustainable_progress_policy.json" in runbook_text,
         "runbook_mentions_waiver_registry": "tests/tooling/fixtures/governance_sustainability/waiver_registry.json" in runbook_text,
-        "runbook_mentions_summary_script": "python scripts/build_governance_policy_summary.py" in runbook_text,
+        "runbook_mentions_summary_script": "npm run objc3c -- validate-governance-sustainability" in runbook_text,
         "claim_statuses": [
             entry.get("status")
             for entry in policy.get("claim_statuses", [])

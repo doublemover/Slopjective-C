@@ -2,7 +2,7 @@
 
 #include <string>
 
-#include "artifacts/identity/artifact_identity.h"
+#include "lower/contracts/native_artifact_names.h"
 
 // Metaprogramming runtime/cache contracts own the disabled host-runtime
 // boundary, private property-runtime handoff, and the macro host process cache

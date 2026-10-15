@@ -4,7 +4,6 @@ from pathlib import Path
 from typing import Any
 
 from .models import EvidenceOwner
-from .source_owner_policy import HARD_CUTOVER_SOURCE_OWNER_CONTRACT
 
 
 def relative_file_exists(root: Path, relative_path: str) -> bool:
@@ -19,11 +18,12 @@ def base_owner_contract_checks(
     contract: dict[str, Any],
     owner_contracts: Any,
     expected_owner_ids: tuple[str, ...],
+    expected_policy: dict[str, object],
 ) -> dict[str, bool]:
     return {
         "hard_cutover_source_owner_contract_matches": (
             contract.get("hard_cutover_source_owner_contract")
-            == HARD_CUTOVER_SOURCE_OWNER_CONTRACT
+            == expected_policy
         ),
         "source_owner_contract_ids_match": (
             sorted(owner_contracts) == sorted(expected_owner_ids)

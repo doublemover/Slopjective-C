@@ -42,11 +42,11 @@ def main() -> int:
 
     required_mentions = {
         "runbook_mentions_governance_runbook": "docs/runbooks/objc3c_governance_sustainability.md" in runbook_text,
-        "runbook_mentions_inventory_summary": "python scripts/build_governance_budget_inventory_summary.py" in runbook_text,
-        "runbook_mentions_policy_summary": "python scripts/build_governance_policy_summary.py" in runbook_text,
-        "runbook_mentions_review_summary": "python scripts/build_governance_maintainer_review_summary.py" in runbook_text,
-        "contributing_mentions_review_summary": "python scripts/build_governance_maintainer_review_summary.py" in contributing_text,
-        "contributing_mentions_policy_summary": "python scripts/build_governance_policy_summary.py" in contributing_text,
+        "runbook_mentions_inventory_summary": "npm run objc3c -- validate-governance-sustainability" in runbook_text,
+        "runbook_mentions_policy_summary": "npm run objc3c -- validate-governance-sustainability" in runbook_text,
+        "runbook_mentions_review_summary": "npm run objc3c -- validate-governance-sustainability" in runbook_text,
+        "contributing_mentions_review_summary": "npm run objc3c -- validate-governance-sustainability" in contributing_text,
+        "contributing_mentions_policy_summary": "npm run objc3c -- validate-governance-sustainability" in contributing_text,
     }
 
     summary = {

@@ -10,6 +10,10 @@ The native frontend is split into five primary layers plus adapter modules:
 4. `lower/*`
 5. `ir/*`
 
+`ast/*` owns shared declarations, type identity, and effect facts consumed by
+these layers. Shared AST headers contain data and pure fact queries; they do
+not invoke semantic passes, lowering, emission, or artifact publication.
+
 Adapter modules:
 
 - `artifacts/*`: cross-phase manifest, metadata, and publication projections
@@ -17,6 +21,10 @@ Adapter modules:
 - `libobjc3c_frontend/*`: embedding API over the pipeline
 - `driver/*`: CLI parsing and top-level command routing
 - `io/*`: filesystem, manifest, artifact, and tool adapters
+
+Artifact names used by lowering belong to `lower/contracts/*`. The artifact
+adapter consumes those names when publishing products and host identity; IR
+must not call the publication adapter to obtain a default filename.
 
 Allowed dependencies:
 

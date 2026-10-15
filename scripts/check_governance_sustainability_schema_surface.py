@@ -63,8 +63,12 @@ def main() -> int:
         return fail("contract_id drifted")
     if surface.get("schema_version") != 1:
         return fail("schema_version drifted")
-    if surface.get("schema_check_script") != "scripts/check_governance_sustainability_schema_surface.py":
-        return fail("schema_check_script drifted")
+    if surface.get("schema_check_implementation_anchor") != "scripts/check_governance_sustainability_schema_surface.py":
+        return fail("schema_check_implementation_anchor drifted")
+    if surface.get("schema_check_action") != "validate-governance-sustainability":
+        return fail("schema_check_action drifted")
+    if surface.get("schema_check_command") != "npm run objc3c -- validate-governance-sustainability":
+        return fail("schema_check_command drifted")
 
     checked_paths: list[str] = []
     schema_ids: list[str] = []
@@ -83,6 +87,7 @@ def main() -> int:
         payload = load_schema(schema_id)
         if payload.get("$schema") != JSON_SCHEMA_DRAFT:
             return fail(f"{expected_schema} drifted from draft 2020-12")
+        expected_schema_id = "https://objc3c.dev/" + expected_schema_id
         if payload.get("$id") != expected_schema_id:
             return fail(f"{expected_schema} drifted from expected schema id {expected_schema_id}")
         if property_const(payload, "contract_id") != expected_contract_id:

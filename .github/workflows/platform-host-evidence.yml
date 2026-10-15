@@ -51,7 +51,7 @@ jobs:
       - name: Install host toolchain prerequisites
         id: toolchain
         continue-on-error: true
-        run: bash scripts/install_objc3c_ci_llvm_linux.sh
+        run: npm run objc3c -- materialize-ci-llvm --platform linux-x64
 
       - name: Install workflow dependencies
         id: deps
@@ -65,7 +65,7 @@ jobs:
         continue-on-error: true
         run: |
           set +e
-          python scripts/probe_objc3c_llvm_capabilities.py --summary-out "$OBJC3C_PLATFORM_EVIDENCE_ROOT/llvm-capabilities.json"
+          npm run objc3c -- check-llvm-capabilities --summary-out "$OBJC3C_PLATFORM_EVIDENCE_ROOT/llvm-capabilities.json"
           probe_exit=$?
           mkdir -p tmp/artifacts/objc3c-native/m144/llvm_capabilities
           if [ -f "$OBJC3C_PLATFORM_EVIDENCE_ROOT/llvm-capabilities.json" ]; then
@@ -195,7 +195,7 @@ jobs:
       - name: Install host toolchain prerequisites
         id: toolchain
         continue-on-error: true
-        run: bash scripts/install_objc3c_ci_llvm_darwin.sh
+        run: npm run objc3c -- materialize-ci-llvm --platform darwin-arm64
 
       - name: Install workflow dependencies
         id: deps
@@ -209,7 +209,7 @@ jobs:
         continue-on-error: true
         run: |
           set +e
-          python scripts/probe_objc3c_llvm_capabilities.py --summary-out "$OBJC3C_PLATFORM_EVIDENCE_ROOT/llvm-capabilities.json"
+          npm run objc3c -- check-llvm-capabilities --summary-out "$OBJC3C_PLATFORM_EVIDENCE_ROOT/llvm-capabilities.json"
           probe_exit=$?
           mkdir -p tmp/artifacts/objc3c-native/m144/llvm_capabilities
           if [ -f "$OBJC3C_PLATFORM_EVIDENCE_ROOT/llvm-capabilities.json" ]; then

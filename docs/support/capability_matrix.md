@@ -401,7 +401,7 @@ the canonical manifest fixture and public npm command above.
 - Owner modules:
   - `native/objc3c/src/parse/objc3_parser_core_cstyle_parameters_async_throws_clause_parsing.inc`
   - `native/objc3c/src/parse/objc3_parser_rejection_diagnostics.cpp`
-  - `native/objc3c/src/sema/objc3_typed_throws_effect_contract.h`
+  - `native/objc3c/src/ast/objc3_typed_throws_effect_contract.h`
   - `native/objc3c/src/sema/objc3_semantic_error_handling_try_do_catch_do_scope.inc`
   - `native/objc3c/src/sema/objc3_semantic_error_handling_try_do_catch_operand_surface.inc`
   - `native/objc3c/src/sema/objc3_semantic_signature_compatibility.cpp`
@@ -438,7 +438,7 @@ the canonical manifest fixture and public npm command above.
   - test: `tests/tooling/fixtures/native/execution/positive/typed_throws_runtime_message_send_catch_positive.objc3` via `npm run objc3c -- test-execution-smoke`
   - test: `tests/tooling/fixtures/native/execution/positive/typed_throws_runtime_try_optional_positive.objc3` via `npm run objc3c -- test-execution-smoke`
   - schema: `schemas/objc3c-typed-throws-effect-contract-v1.schema.json`
-  - source: `native/objc3c/src/sema/objc3_typed_throws_effect_contract.h`
+  - source: `native/objc3c/src/ast/objc3_typed_throws_effect_contract.h`
   - source: `native/objc3c/src/sema/objc3_semantic_error_handling_try_do_catch_do_scope.inc`
   - source: `native/objc3c/src/sema/objc3_semantic_error_handling_try_do_catch_operand_surface.inc`
   - source: `native/objc3c/src/sema/objc3_semantic_signature_compatibility.cpp`

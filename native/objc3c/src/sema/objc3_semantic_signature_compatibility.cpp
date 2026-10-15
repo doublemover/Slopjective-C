@@ -1,6 +1,6 @@
 #include "sema/objc3_semantic_signature_compatibility.h"
 
-#include "sema/objc3_typed_throws_effect_contract.h"
+#include "ast/objc3_typed_throws_effect_contract.h"
 
 bool AreEquivalentProtocolCompositions(
     bool lhs_has_composition, const std::vector<std::string> &lhs_names,

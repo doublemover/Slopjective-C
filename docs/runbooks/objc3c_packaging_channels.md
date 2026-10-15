@@ -47,8 +47,8 @@ evidence collection is exposed only through
 `scripts/objc3c_workflow/actions/sanitizer_runtime_evidence.py` and route to
 `scripts/check_objc3c_sanitizer_runtime_evidence.py` with the exact
 `address` or `undefined` sanitizer variant. Do not add aliases, generic
-sanitizer fallback commands, target-platform fallback routing, or report/probe
-rerouting for these actions. They are fixed-shape public commands: package
+sanitizer rerouting commands or target-platform rerouting. Report and probe
+rerouting is also forbidden for these actions. They are fixed-shape public commands: package
 root, report path, probe path, fixture glob, parallelism, and run id are pinned
 by the action contract rather than accepted from npm pass-through arguments.
 These action registrations are command-surface evidence only.
@@ -258,11 +258,11 @@ they are not support claims until host evidence is reviewed into checked source
 truth, the platform support rows are promoted, and package/install/installed-root
 execution plus native execution evidence all agree.
 Release packaging-channel builds may select that release target explicitly with
-`python scripts/build_objc3c_package_channels.py --target-platform-id windows-x64`,
+`npm run objc3c -- build-package-channels --target-platform-id windows-x64`,
 `--target-platform-id linux-x64`, or `--target-platform-id darwin-arm64`.
 The target override is rejected for `--sanitizer-variant address` and
 `--sanitizer-variant undefined`; those reserved sanitizer rows have no
-non-Windows escape path or target-platform alias.
+non-Windows targets.
 
 Reusable runnable package roots are source inputs only after the package-channel
 builder re-checks their runnable manifest identity. The manifest must publish

@@ -7,7 +7,7 @@
 #include <vector>
 
 #include "pipeline/frontend_metadata_handoff_helpers.h"
-#include "sema/objc3_typed_throws_effect_contract.h"
+#include "ast/objc3_typed_throws_effect_contract.h"
 
 namespace objc3c::pipeline::orchestration {
 

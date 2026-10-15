@@ -2,7 +2,7 @@
 
 #include "ast/objc3_ast_decl_surface.h"
 #include "ast/objc3_ast_type_surface.h"
-#include "sema/objc3_typed_throws_effect_contract.h"
+#include "ast/objc3_typed_throws_effect_contract.h"
 
 #include <sstream>
 

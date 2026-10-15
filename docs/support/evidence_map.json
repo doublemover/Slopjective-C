@@ -327,7 +327,7 @@
       "capability_id": "language.errors.typed-throws",
       "support_claim": "objc3c.behavior.language.errors.typed-throws",
       "evidence_kind": "source",
-      "path": "native/objc3c/src/sema/objc3_typed_throws_effect_contract.h"
+      "path": "native/objc3c/src/ast/objc3_typed_throws_effect_contract.h"
     },
     {
       "capability_id": "language.errors.typed-throws",

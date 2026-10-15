@@ -161,7 +161,7 @@
     "native/objc3c/src/parse/objc3_parser_rejection_diagnostics.cpp",
     "schemas/objc3c-typed-throws-effect-contract-v1.schema.json",
     "native/objc3c/src/sema/model/semantic_symbol_core_source_closures.h",
-    "native/objc3c/src/sema/objc3_typed_throws_effect_contract.h",
+    "native/objc3c/src/ast/objc3_typed_throws_effect_contract.h",
     "native/objc3c/src/sema/objc3_semantic_error_handling_try_do_catch_do_scope.inc",
     "native/objc3c/src/sema/objc3_semantic_signature_compatibility.cpp",
     "native/objc3c/src/sema/objc3_sema_contract_type_handoff_callable_records_function_fields.inc",

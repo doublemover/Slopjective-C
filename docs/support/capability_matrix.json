@@ -414,7 +414,7 @@
       "owner_modules": [
         "native/objc3c/src/parse/objc3_parser_core_cstyle_parameters_async_throws_clause_parsing.inc",
         "native/objc3c/src/parse/objc3_parser_rejection_diagnostics.cpp",
-        "native/objc3c/src/sema/objc3_typed_throws_effect_contract.h",
+        "native/objc3c/src/ast/objc3_typed_throws_effect_contract.h",
         "native/objc3c/src/sema/objc3_semantic_error_handling_try_do_catch_do_scope.inc",
         "native/objc3c/src/sema/objc3_semantic_error_handling_try_do_catch_operand_surface.inc",
         "native/objc3c/src/sema/objc3_semantic_signature_compatibility.cpp",
@@ -499,7 +499,7 @@
         },
         {
           "kind": "source",
-          "path": "native/objc3c/src/sema/objc3_typed_throws_effect_contract.h"
+          "path": "native/objc3c/src/ast/objc3_typed_throws_effect_contract.h"
         },
         {
           "kind": "source",

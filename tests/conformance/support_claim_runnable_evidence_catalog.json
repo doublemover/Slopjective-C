@@ -193,7 +193,7 @@
         "tests/tooling/fixtures/native/execution/positive/typed_throws_runtime_try_optional_positive.objc3",
         "tests/tooling/fixtures/native/language_evolution_typed_throws_value_optionals_contract.json",
         "tests/tooling/fixtures/native/typed_throws_semantic_effect_identity.contract.json",
-        "native/objc3c/src/sema/objc3_typed_throws_effect_contract.h",
+        "native/objc3c/src/ast/objc3_typed_throws_effect_contract.h",
         "native/objc3c/src/ir/objc3_ir_runtime_dispatch_calls.cpp",
         "native/objc3c/src/runtime/errors/catch_filter.cpp"
       ],

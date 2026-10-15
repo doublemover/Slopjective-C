@@ -8,7 +8,7 @@
 #include "ir/objc3_ir_frontend_metadata.h"
 #include "ir/objc3_ir_symbol_model.h"
 #include "ir/objc3_ir_type_model.h"
-#include "sema/objc3_typed_throws_effect_contract.h"
+#include "ast/objc3_typed_throws_effect_contract.h"
 
 bool Objc3IRRuntimeMetadataPropertyBundleIsImplementationOwned(
     const Objc3IRRuntimeMetadataPropertyBundle &bundle) {

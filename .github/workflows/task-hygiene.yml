@@ -47,7 +47,7 @@ jobs:
 
       - name: Install coherent LLVM toolchain
         shell: pwsh
-        run: ./scripts/install_objc3c_ci_llvm.ps1
+        run: npm run objc3c -- materialize-ci-llvm --platform windows-x64
 
       - name: Install Node dependencies
         run: npm ci

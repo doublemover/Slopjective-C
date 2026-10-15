@@ -167,7 +167,7 @@ def main() -> int:
             "expired_waiver_count": len(expired_waivers),
         },
         "schema_path": schema.get("$id"),
-        "runbook_mentions_enforcement": "python scripts/check_governance_sustainability_budget_enforcement.py" in runbook_text,
+        "runbook_mentions_enforcement": "npm run objc3c -- validate-governance-sustainability" in runbook_text,
         "failures": failures,
     }
 

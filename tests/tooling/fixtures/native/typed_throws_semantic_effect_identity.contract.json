@@ -93,7 +93,7 @@
     }
   ],
   "source_anchors": [
-    "native/objc3c/src/sema/objc3_typed_throws_effect_contract.h",
+    "native/objc3c/src/ast/objc3_typed_throws_effect_contract.h",
     "native/objc3c/src/sema/objc3_semantic_error_handling_try_do_catch_do_scope.inc",
     "native/objc3c/src/sema/objc3_semantic_signature_compatibility.cpp",
     "native/objc3c/src/ir/objc3_ir_statement_block_emission.cpp",

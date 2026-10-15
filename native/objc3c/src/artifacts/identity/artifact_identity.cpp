@@ -100,19 +100,6 @@ Objc3NativeArtifactIdentity BuildObjc3NativeArtifactIdentityForHost() {
 #endif
 }
 
-std::string BuildObjc3NativeArtifactName(
-    std::string_view stem,
-    std::string_view suffix) {
-  if (stem.empty()) {
-    return {};
-  }
-  return std::string(stem) + std::string(suffix);
-}
-
-std::string BuildObjc3NativeObjectArtifactName(std::string_view stem) {
-  return BuildObjc3NativeArtifactName(stem, kObjc3NativeObjectFileExtension);
-}
-
 std::string BuildObjc3TranslationUnitIdentityKey(
     const Objc3TranslationUnitIdentityEvidence &evidence) {
   return evidence.input_path.generic_string() + "|" +

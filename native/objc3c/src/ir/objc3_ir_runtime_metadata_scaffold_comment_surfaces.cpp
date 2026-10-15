@@ -4,7 +4,7 @@
 #include <sstream>
 #include <string>
 
-#include "artifacts/objc3_runtime_state_publication_paths.h"
+#include "lower/contracts/native_artifact_names.h"
 #include "ir/objc3_ir_frontend_metadata.h"
 #include "ir/objc3_ir_module_identity.h"
 #include "ir/objc3_ir_runtime_bootstrap_global_emission.h"
@@ -152,9 +152,6 @@ void EmitRuntimeMetadataPackagingCommentSurfaces(
     const Objc3IRRuntimeMetadataScaffoldEmissionOptions &options,
     std::ostringstream &out) {
   const Objc3IRFrontendMetadata &frontend_metadata = options.frontend_metadata;
-  const auto default_runtime_state_publication_paths =
-      objc3::artifacts::frontend::BuildRuntimeStatePublicationPathsForEmitPrefix(
-          "module");
   if (!options.selector_pool_globals.empty() ||
       !options.runtime_string_pool_globals.empty()) {
     out << "; runtime_metadata_selector_string_pool_emission = "
@@ -255,11 +252,11 @@ void EmitRuntimeMetadataPackagingCommentSurfaces(
   out << "; manifest_object_ir_truth_gate = "
       << Objc3ManifestObjectIrTruthGateSummary()
       << ";manifest_artifact="
-      << default_runtime_state_publication_paths.compile_manifest_artifact
+      << objc3::artifacts::identity::kObjc3NativeDefaultManifestArtifactName
       << ";ir_artifact="
-      << default_runtime_state_publication_paths.backend_artifact
+      << objc3::artifacts::identity::kObjc3NativeDefaultIrArtifactName
       << ";object_artifact="
-      << default_runtime_state_publication_paths.object_artifact
+      << objc3::artifacts::identity::kObjc3NativeDefaultObjectArtifactName
       << ";registration_descriptor_artifact=module.runtime-registration-descriptor.json"
       << ";registration_manifest_artifact=module.runtime-registration-manifest.json"
       << ";conformance_report_artifact=module.objc3-conformance-report.json"

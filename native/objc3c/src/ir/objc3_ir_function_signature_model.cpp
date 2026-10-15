@@ -5,7 +5,7 @@
 #include <unordered_set>
 #include <utility>
 
-#include "sema/objc3_typed_throws_effect_contract.h"
+#include "ast/objc3_typed_throws_effect_contract.h"
 #include "support/objc3_string_predicates.h"
 
 bool IsArcExecutableObjectParam(const FuncParam &param) {

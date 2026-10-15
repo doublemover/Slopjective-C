@@ -123,7 +123,7 @@
     "native/objc3c/src/sema/objc3_semantic_passes.cpp",
     "native/objc3c/src/pipeline/frontend_pipeline_orchestration.cpp",
     "native/objc3c/src/artifacts/objc3_frontend_artifacts.cpp",
-    "native/objc3c/src/io/objc3_process.cpp"
+    "native/objc3c/src/io/objc3_process_execution.cpp"
   ],
   "policy_contract_paths": [
     "tests/tooling/fixtures/release_foundation/provenance_policy.json",

@@ -8,7 +8,7 @@
 #include "ast/objc3_ast.h"
 #include "lower/contracts/error_handling_runtime_bridge_contracts.h"
 #include "lower/contracts/ownership_runtime_memory_management_contracts.h"
-#include "sema/objc3_typed_throws_effect_contract.h"
+#include "ast/objc3_typed_throws_effect_contract.h"
 
 namespace {
 

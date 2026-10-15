@@ -2,7 +2,7 @@
 
 #include <string>
 
-#include "artifacts/identity/artifact_identity.h"
+#include "lower/contracts/native_artifact_names.h"
 
 // binary inspection harness expansion anchor: lane-C now freezes one
 // emitted-metadata inspection corpus over llvm-readobj/llvm-objdump so every

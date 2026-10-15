@@ -4,6 +4,7 @@ from pathlib import Path
 from typing import Any
 
 from .family_catalog import EVIDENCE_FAMILIES
+from .source_owner_policy import HARD_CUTOVER_SOURCE_OWNER_CONTRACT
 from .validation_helpers import (
     base_owner_contract_checks,
     owner_contract_entry_checks,
@@ -26,7 +27,11 @@ def validate_boundary_owner_contracts(
     family = EVIDENCE_FAMILIES[family_name]
     owner_contracts = contract.get("source_owner_contracts", {})
     expected_owner_ids = owner_contract_ids(family_name)
-    checks = base_owner_contract_checks(contract, owner_contracts, expected_owner_ids)
+    expected_policy = {
+        **HARD_CUTOVER_SOURCE_OWNER_CONTRACT,
+        **dict(family.additional_source_owner_policy),
+    }
+    checks = base_owner_contract_checks(contract, owner_contracts, expected_owner_ids, expected_policy)
 
     if not isinstance(owner_contracts, dict):
         return checks

@@ -1,6 +1,6 @@
 #include "lower/objc3_lowering_contract.h"
 
-#include "artifacts/identity/artifact_identity.h"
+#include "lower/contracts/native_artifact_names.h"
 #include "lower/metadata/lowering_metadata_helpers.h"
 
 #include <sstream>
