@@ -226,9 +226,11 @@ physical filesystems without changing the host process working directory.
 Private synchronous ARC free functions returning scalar/void values can lower
 Error-object throws through the C.4.1 trailing autoreleasing error-output slot.
 Direct try propagation, forced try and scalar/void optionalization use that
-native ABI; ordered do/catch execution, autorelease pools within throwing
-functions, other callable shapes and async
-execution remain unsupported. Public
+native ABI. A retained pending error survives callee expression/function cleanup
+and pools; an EH-only cleanup releases it if a native exception interrupts that
+return. Publication to the caller's autoreleasing slot occurs after callee
+cleanup, with immediate release for a null slot. Ordered do/catch execution,
+other callable shapes and async execution remain unsupported. Public
 re-export edges control visibility and module provenance survives emission.
 Version 3 of the C embedding API and the CLI expose
 search roots, locked module requests and compiler/dependency identity records.
@@ -323,6 +325,10 @@ Checkpoint 49 passed the expanded 20-node inventory with 80 runtime executions,
 including all 12 Error-object ABI/trap witnesses. Its matching SDK passed 126
 extension tests (three platform skips), 44 AST tests and all 15 facade CTest
 tests, with matching source/toolchain identities across the native batch.
+Checkpoint 50 extended the error witnesses to retained transport through
+expression and function cleanup, including nested pools and interrupted cleanup.
+Its SDK passed 127 extension tests (three platform skips), 44 AST tests and 15
+facade CTest tests; all 20 nodes and 80 executions passed with matching identities.
 An unchanged checkpoint-47 follow-up reused all 18 nodes. A deliberately damaged copy of the
 provider object invalidated and reran exactly the three package nodes while
 reusing the other 15; the original passing artifacts remained unchanged.

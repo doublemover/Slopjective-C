@@ -1017,7 +1017,7 @@ index 6fd94752f..eda756909 100644
      Address Addr =
          SourceLVal.getAddress().withElementType(CGF.ConvertTypeForMem(DestTy));
 diff --git a/clang/lib/CodeGen/CGObjC.cpp b/clang/lib/CodeGen/CGObjC.cpp
-index 10aad2e26..a8d97ef8d 100644
+index 10aad2e26..75a73d1a3 100644
 --- a/clang/lib/CodeGen/CGObjC.cpp
 +++ b/clang/lib/CodeGen/CGObjC.cpp
 @@ -12,6 +12,7 @@
@@ -1053,18 +1053,6 @@ index 10aad2e26..a8d97ef8d 100644
    StartObjCMethod(OMD, OMD->getClassInterface());
    PGO->assignRegionCounters(GlobalDecl(OMD), CurFn);
    assert(isa<CompoundStmt>(OMD->getBody()));
-@@ -3687,6 +3699,11 @@ CodeGenFunction::EmitARCStoreAutoreleasing(const BinaryOperator *e) {
- 
- void CodeGenFunction::EmitObjCAutoreleasePoolStmt(
-                                           const ObjCAutoreleasePoolStmt &ARPS) {
-+  if (ObjC3FunctionErrorOutDecl) {
-+    ErrorUnsupported(&ARPS,
-+                     "ObjC3 error-output transport across an autorelease pool");
-+    return;
-+  }
-   const Stmt *subStmt = ARPS.getSubStmt();
-   const CompoundStmt &S = cast<CompoundStmt>(*subStmt);
- 
 diff --git a/clang/lib/CodeGen/CGObjCGNU.cpp b/clang/lib/CodeGen/CGObjCGNU.cpp
 index a81c42174..44fc35e6a 100644
 --- a/clang/lib/CodeGen/CGObjCGNU.cpp
@@ -1155,7 +1143,7 @@ index dbbc35b37..43e273902 100644
    CGObjCMac.cpp
    CGObjCRuntime.cpp
 diff --git a/clang/lib/CodeGen/CodeGenFunction.cpp b/clang/lib/CodeGen/CodeGenFunction.cpp
-index 6c0589be3..2a2635757 100644
+index 6c0589be3..553b4c02a 100644
 --- a/clang/lib/CodeGen/CodeGenFunction.cpp
 +++ b/clang/lib/CodeGen/CodeGenFunction.cpp
 @@ -19,6 +19,8 @@
@@ -1176,7 +1164,16 @@ index 6c0589be3..2a2635757 100644
      case Type::ObjCObject:
      case Type::ObjCInterface:
      case Type::ArrayParameter:
-@@ -1274,6 +1278,8 @@ void CodeGenFunction::StartFunction(GlobalDecl GD, QualType RetTy,
+@@ -424,6 +428,8 @@ void CodeGenFunction::FinishFunction(SourceLocation EndLoc) {
+ 
+   // Emit function epilog (to return).
+   llvm::DebugLoc Loc = EmitReturnBlock();
++  if (ObjC3PendingErrorStorage.isValid())
++    emitObjC3ErrorOutEpilog(*this);
+ 
+   if (ShouldInstrumentFunction()) {
+     if (CGM.getCodeGenOpts().InstrumentFunctions)
+@@ -1274,6 +1280,8 @@ void CodeGenFunction::StartFunction(GlobalDecl GD, QualType RetTy,
    }
  
    EmitFunctionProlog(*CurFnInfo, CurFn, Args);
@@ -1185,7 +1182,7 @@ index 6c0589be3..2a2635757 100644
  
    if (const CXXMethodDecl *MD = dyn_cast_if_present<CXXMethodDecl>(D);
        MD && !MD->isStatic()) {
-@@ -1457,6 +1463,15 @@ QualType CodeGenFunction::BuildFunctionArgList(GlobalDecl GD,
+@@ -1457,6 +1465,15 @@ QualType CodeGenFunction::BuildFunctionArgList(GlobalDecl GD,
  
    if (MD && (isa<CXXConstructorDecl>(MD) || isa<CXXDestructorDecl>(MD)))
      CGM.getCXXABI().addImplicitStructorParams(*this, ResTy, Args);
@@ -1201,7 +1198,7 @@ index 6c0589be3..2a2635757 100644
  
    return ResTy;
  }
-@@ -1465,6 +1480,11 @@ void CodeGenFunction::GenerateCode(GlobalDecl GD, llvm::Function *Fn,
+@@ -1465,6 +1482,11 @@ void CodeGenFunction::GenerateCode(GlobalDecl GD, llvm::Function *Fn,
                                     const CGFunctionInfo &FnInfo) {
    assert(Fn && "generating code for null Function");
    const FunctionDecl *FD = cast<FunctionDecl>(GD.getDecl());
@@ -1214,7 +1211,7 @@ index 6c0589be3..2a2635757 100644
  
    FunctionArgList Args;
 diff --git a/clang/lib/CodeGen/CodeGenFunction.h b/clang/lib/CodeGen/CodeGenFunction.h
-index 13c8f2002..df0003ad9 100644
+index 13c8f2002..a297ed7ed 100644
 --- a/clang/lib/CodeGen/CodeGenFunction.h
 +++ b/clang/lib/CodeGen/CodeGenFunction.h
 @@ -78,6 +78,9 @@ class ObjCForCollectionStmt;
@@ -1227,12 +1224,13 @@ index 13c8f2002..df0003ad9 100644
  class ObjCAutoreleasePoolStmt;
  class OMPUseDevicePtrClause;
  class OMPUseDeviceAddrClause;
-@@ -278,6 +281,36 @@ public:
+@@ -278,6 +281,37 @@ public:
    CodeGenModule &CGM; // Per-module state.
    const TargetInfo &Target;
  
 +  VarDecl *ObjC3FunctionErrorOutDecl = nullptr;
 +  llvm::Value *ObjC3FunctionErrorOutPointer = nullptr;
++  Address ObjC3PendingErrorStorage = Address::invalid();
 +  Address ObjC3CallErrorOutStorage = Address::invalid();
 +  QualType ObjC3CallErrorOutValueType;
 +  const CallExpr *ObjC3CallErrorOutExpr = nullptr;
@@ -1264,7 +1262,7 @@ index 13c8f2002..df0003ad9 100644
    // For EH/SEH outlined funclets, this field points to parent's CGF
    CodeGenFunction *ParentCGF = nullptr;
  
-@@ -3607,6 +3640,11 @@ public:
+@@ -3607,6 +3641,11 @@ public:
    /// This function may clear the current insertion point; callers should use
    /// EnsureInsertPoint if they wish to subsequently generate code without first
    /// calling EmitBlock, EmitBranch, or EmitStmt.
@@ -4421,8 +4419,9 @@ diff --git a/clang/lib/CodeGen/CGObjC3TypedErrors.cpp b/clang/lib/CodeGen/CGObjC
 new file mode 100644
 --- /dev/null
 +++ b/clang/lib/CodeGen/CGObjC3TypedErrors.cpp
-@@ -0,0 +1,426 @@
-+//===--- CGObjC3TypedErrors.cpp - ObjC3 error-output CodeGen -----*- C++ -*-===//
+@@ -0,0 +1,495 @@
++//===--- CGObjC3TypedErrors.cpp - ObjC3 error-output CodeGen -----*- C++
++//-*-===//
 +//
 +// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -4545,6 +4544,24 @@ new file mode 100644
 +  }
 +};
 +
++QualType strongErrorType(CodeGenFunction &CGF, QualType ErrorType) {
++  auto &Ctx = CGF.getContext();
++  return Ctx.getLifetimeQualifiedType(
++      Ctx.getUnqualifiedObjCPointerType(ErrorType), Qualifiers::OCL_Strong);
++}
++
++// Adopt a +1 error before any expression or function cleanup can run. Replacing
++// a pending error is an ownership transfer, just like native ARC strong
++// storage.
++void stageOwnedError(CodeGenFunction &CGF, llvm::Value *OwnedError,
++                     QualType ErrorType) {
++  LValue Slot = CGF.MakeAddrLValue(CGF.ObjC3PendingErrorStorage,
++                                   strongErrorType(CGF, ErrorType));
++  llvm::Value *Previous = CGF.EmitLoadOfScalar(Slot, SourceLocation());
++  CGF.EmitStoreOfScalar(OwnedError, Slot);
++  CGF.EmitARCRelease(Previous, ARCPreciseLifetime);
++}
++
 +} // namespace
 +
 +bool CodeGen::getObjC3ErrorOutTypes(CodeGenModule &CGM, QualType &ValueType,
@@ -4616,6 +4633,21 @@ new file mode 100644
 +      CGF.EmitLoadOfScalar(ParameterLV, OutErrorDecl->getLocation());
 +  CGF.ObjC3FunctionErrorOutPointer = OutPointer;
 +
++  QualType PendingType = strongErrorType(CGF, ValueType);
++  CGF.ObjC3PendingErrorStorage =
++      CGF.CreateMemTemp(PendingType, "objc3.error.pending");
++  LValue Pending =
++      CGF.MakeAddrLValue(CGF.ObjC3PendingErrorStorage, PendingType);
++  CGF.EmitStoreOfScalar(
++      llvm::Constant::getNullValue(CGF.ConvertType(PendingType)), Pending,
++      /*isInit=*/true);
++  // Internal error ownership remains exception-safe even when user ARC locals
++  // do not request unwind cleanup. Normal cleanup deliberately leaves this
++  // ownership for the return-block transfer below.
++  if (CGF.getLangOpts().Exceptions)
++    CGF.pushDestroy(EHCleanup, CGF.ObjC3PendingErrorStorage, PendingType,
++                    CodeGenFunction::destroyARCStrongPrecise, false);
++
 +  llvm::Value *HasOutPointer =
 +      CGF.Builder.CreateIsNotNull(OutPointer, "objc3.error.out.present");
 +  llvm::BasicBlock *Initialize =
@@ -4656,6 +4688,37 @@ new file mode 100644
 +  CGF.EmitBlock(Done);
 +}
 +
++void CodeGen::emitObjC3ErrorOutEpilog(CodeGenFunction &CGF) {
++  QualType ErrorType, ParameterType;
++  if (!getObjC3ErrorOutTypes(CGF.CGM, ErrorType, ParameterType))
++    return;
++  LValue Pending = CGF.MakeAddrLValue(CGF.ObjC3PendingErrorStorage,
++                                      strongErrorType(CGF, ErrorType));
++  llvm::Value *Owned = CGF.EmitLoadOfScalar(Pending, SourceLocation());
++  CGF.EmitStoreOfScalar(
++      llvm::Constant::getNullValue(CGF.ConvertType(ErrorType)), Pending);
++  llvm::BasicBlock *Failure = CGF.createBasicBlock("objc3.error.transfer");
++  llvm::BasicBlock *Publish = CGF.createBasicBlock("objc3.error.publish");
++  llvm::BasicBlock *Discard = CGF.createBasicBlock("objc3.error.discard");
++  llvm::BasicBlock *Done = CGF.createBasicBlock("objc3.error.return");
++  CGF.Builder.CreateCondBr(CGF.Builder.CreateIsNotNull(Owned), Failure, Done);
++  CGF.EmitBlock(Failure);
++  CGF.Builder.CreateCondBr(
++      CGF.Builder.CreateIsNotNull(CGF.ObjC3FunctionErrorOutPointer), Publish,
++      Discard);
++  CGF.EmitBlock(Publish);
++  // All callee cleanups, including its autorelease pools, are now complete.
++  // Transfer the +1 into the caller's pool only on the actual return path.
++  llvm::Value *Borrowed = CGF.EmitARCAutorelease(Owned);
++  emitObjC3ErrorOutStore(CGF, CGF.ObjC3FunctionErrorOutPointer, ErrorType,
++                         Borrowed, SourceLocation());
++  CGF.Builder.CreateBr(Done);
++  CGF.EmitBlock(Discard);
++  CGF.EmitARCRelease(Owned, ARCPreciseLifetime);
++  CGF.Builder.CreateBr(Done);
++  CGF.EmitBlock(Done);
++}
++
 +bool CodeGen::emitObjC3ThrowStmt(CodeGenFunction &CGF,
 +                                 const ObjC3ThrowStmt &S) {
 +  const Expr *Payload = S.getPayload();
@@ -4668,9 +4731,19 @@ new file mode 100644
 +    return false;
 +  }
 +
-+  // Native Clang retains/autoreleases ARC throw operands before their
-+  // full-expression cleanups. The output slot borrows that pool lifetime.
-+  llvm::Value *Object = CGF.EmitObjCThrowOperand(Payload);
++  CodeGenFunction::RunCleanupsScope ExpressionCleanups(CGF);
++  const Expr *Operand = Payload;
++  if (const auto *Cleanups = dyn_cast<ExprWithCleanups>(Operand))
++    Operand = Cleanups->getSubExpr();
++  QualType ErrorType, ParameterType;
++  if (!getObjC3ErrorOutTypes(CGF.CGM, ErrorType, ParameterType))
++    return false;
++  llvm::Value *Owned = CGF.EmitARCRetainScalarExpr(Operand);
++  stageOwnedError(CGF, Owned, ErrorType);
++  ExpressionCleanups.ForceCleanup();
++  LValue Pending = CGF.MakeAddrLValue(CGF.ObjC3PendingErrorStorage,
++                                      strongErrorType(CGF, ErrorType));
++  llvm::Value *Object = CGF.EmitLoadOfScalar(Pending, S.getBeginLoc());
 +  llvm::Value *IsNonNull =
 +      CGF.Builder.CreateIsNotNull(Object, "objc3.thrown.error.present");
 +  llvm::BasicBlock *Store = CGF.createBasicBlock("objc3.throw.store");
@@ -4682,13 +4755,8 @@ new file mode 100644
 +  CGF.Builder.CreateUnreachable();
 +
 +  CGF.EmitBlock(Store);
-+  QualType OutValueType, OutParameterType;
-+  if (!getObjC3ErrorOutTypes(CGF.CGM, OutValueType, OutParameterType))
-+    return false;
-+  emitObjC3ErrorOutStore(CGF, CGF.ObjC3FunctionErrorOutPointer, OutValueType,
-+                         Object, S.getBeginLoc());
 +
-+  // Return the specified zero/void placeholder only after storing the error.
++  // Return the zero/void placeholder after staging the owned error.
 +  // Branching through ReturnBlock runs native Clang cleanup actions.
 +  QualType ReturnType = FD->getReturnType();
 +  if (!ReturnType->isVoidType()) {
@@ -4749,8 +4817,7 @@ new file mode 100644
 +      CGF.Builder.CreateUnreachable();
 +      break;
 +    }
-+    emitObjC3ErrorOutStore(CGF, CGF.ObjC3FunctionErrorOutPointer,
-+                           ErrorValueType, Error, E.getKeywordLoc());
++    stageOwnedError(CGF, CGF.EmitARCRetainNonBlock(Error), ErrorValueType);
 +    QualType ReturnType = CGF.FnRetTy;
 +    if (!ReturnType->isVoidType())
 +      CGF.Builder.CreateStore(
@@ -4852,8 +4919,9 @@ diff --git a/clang/lib/CodeGen/CGObjC3TypedErrors.h b/clang/lib/CodeGen/CGObjC3T
 new file mode 100644
 --- /dev/null
 +++ b/clang/lib/CodeGen/CGObjC3TypedErrors.h
-@@ -0,0 +1,49 @@
-+//===--- CGObjC3TypedErrors.h - ObjC3 error-output CodeGen -------*- C++ -*-===//
+@@ -0,0 +1,51 @@
++//===--- CGObjC3TypedErrors.h - ObjC3 error-output CodeGen -------*- C++
++//-*-===//
 +//
 +// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -4890,6 +4958,7 @@ new file mode 100644
 +                                   const FunctionProtoType *FPT, const Decl *D,
 +                                   bool RequireDirectFunction);
 +void emitObjC3ErrorOutProlog(CodeGenFunction &CGF, VarDecl *OutErrorDecl);
++void emitObjC3ErrorOutEpilog(CodeGenFunction &CGF);
 +void emitObjC3ErrorOutStore(CodeGenFunction &CGF, llvm::Value *OutErrorPointer,
 +                            QualType ErrorValueType, llvm::Value *ErrorValue,
 +                            SourceLocation Loc);
@@ -6427,7 +6496,7 @@ diff --git a/clang/test/ObjC3/CodeGen/Inputs/typed-error-native-runtime-support.
 new file mode 100644
 --- /dev/null
 +++ b/clang/test/ObjC3/CodeGen/Inputs/typed-error-native-runtime-support.m
-@@ -0,0 +1,59 @@
+@@ -0,0 +1,77 @@
 +// Compile this companion in MRC mode with pinned libobjc2. It supplies a real
 +// Error object whose application code is zero and explicit lifetime counters.
 +#include <objc/objc.h>
@@ -6487,14 +6556,33 @@ new file mode 100644
 +    return 4;
 +  return 0;
 +}
++
++extern int typed_runtime_owned_pool(int argument, id *out_error);
++int verify_owned_error_out_abi(void) {
++  int Before = Deallocations;
++  id Error = (id)1;
++  if (typed_runtime_owned_pool(0, &Error) != 0 || Error != nil)
++    return 1;
++  if (typed_runtime_owned_pool(1, &Error) != 0 ||
++      !is_nonnull_zero_code_error(Error) || Deallocations != Before)
++    return 2;
++  if (typed_runtime_owned_pool(1, 0) != 0 || Deallocations != Before + 1)
++    return 3;
++  return 0;
++}
++int verify_owned_null_error_out(void) {
++  int Before = Deallocations;
++  return typed_runtime_owned_pool(1, 0) == 0 && Deallocations == Before + 1;
++}
 diff --git a/clang/test/ObjC3/CodeGen/Inputs/typed-error-out-runtime.mm b/clang/test/ObjC3/CodeGen/Inputs/typed-error-out-runtime.mm
 new file mode 100644
 --- /dev/null
 +++ b/clang/test/ObjC3/CodeGen/Inputs/typed-error-out-runtime.mm
-@@ -0,0 +1,112 @@
+@@ -0,0 +1,232 @@
 +// Runtime witness for the direct C.4.1 error-out slice. Compile with ARC,
 +// C++ exceptions, pinned libobjc2 and the admitted Windows MSVC/UCRT profile.
 +#include "typed-error-runtime-interface.h"
++#include <objc/objc-arc.h>
 +typedef ZeroCodeError *TestError;
 +typedef __objc3_optional(int) OptionalInt;
 +typedef __objc3_optional(void) OptionalVoid;
@@ -6547,6 +6635,123 @@ new file mode 100644
 +  return []() -> int { throw 17; }();
 +}
 +
++static int OwnedCleanupEvents;
++
++struct OwnedTracker {
++  ~OwnedTracker() { ++OwnedCleanupEvents; }
++};
++
++extern "C" int typed_runtime_owned_pool(int argument) __objc3_throws(TestError) {
++  @autoreleasepool {
++    OwnedTracker Object;
++    if (argument)
++      __objc3_throw((TestError)make_zero_code_error());
++    return 0;
++  }
++}
++
++static int propagates_owned_pool(int argument) __objc3_throws(TestError) {
++  @autoreleasepool {
++    OwnedTracker Object;
++    return __objc3_try(typed_runtime_owned_pool(argument));
++  }
++}
++
++struct TemporaryPool {
++  void *Token = objc_autoreleasePoolPush();
++  ~TemporaryPool() { objc_autoreleasePoolPop(Token); }
++  TestError error() { return (TestError)make_zero_code_error(); }
++};
++
++static int expression_pool_cleanup(void) __objc3_throws(TestError) {
++  __objc3_throw(TemporaryPool().error());
++}
++
++struct ThrowingExpression {
++  TestError Object = (TestError)make_zero_code_error();
++  ~ThrowingExpression() noexcept(false) { throw 41; }
++  operator TestError() { return Object; }
++};
++
++static int expression_cleanup_interrupts(void) __objc3_throws(TestError) {
++  __objc3_throw((TestError)ThrowingExpression());
++}
++
++struct ThrowingLocalCleanup {
++  ~ThrowingLocalCleanup() noexcept(false) { throw 37; }
++};
++
++static int function_cleanup_interrupts(void) __objc3_throws(TestError) {
++  @autoreleasepool {
++    ThrowingLocalCleanup Cleanup;
++    TestError Error = (TestError)make_zero_code_error();
++    __objc3_throw(Error);
++  }
++}
++
++static int run_owned_cleanup_checks() {
++  int Before = zero_code_error_deallocations();
++  // A callee with its own pool must discard a nullable output immediately,
++  // without requiring an ambient caller pool or leaving an owned error behind.
++  if (!verify_owned_null_error_out())
++    return 20;
++  if (zero_code_error_deallocations() != Before + 1)
++    return 21;
++  Before = zero_code_error_deallocations();
++  @autoreleasepool {
++    if (__objc3_try_force(propagates_owned_pool(0)) != 0)
++      return 22;
++    OptionalInt Failed = __objc3_try_optional(propagates_owned_pool(1));
++    if (__objc3_has_value(Failed) || zero_code_error_deallocations() != Before)
++      return 23;
++  }
++  if (zero_code_error_deallocations() != Before + 1 || OwnedCleanupEvents != 5)
++    return 24;
++
++  Before = zero_code_error_deallocations();
++  @autoreleasepool {
++    OptionalInt Failed = __objc3_try_optional(expression_pool_cleanup());
++    if (__objc3_has_value(Failed) || zero_code_error_deallocations() != Before)
++      return 25;
++  }
++  if (zero_code_error_deallocations() != Before + 1)
++    return 26;
++
++  Before = zero_code_error_deallocations();
++  @autoreleasepool {
++    try {
++      __objc3_try_force(expression_cleanup_interrupts());
++      return 27;
++    } catch (int Value) {
++      if (Value != 41 || zero_code_error_deallocations() != Before + 1)
++        return 28;
++    }
++  }
++  if (zero_code_error_deallocations() != Before + 1)
++    return 29;
++
++  Before = zero_code_error_deallocations();
++  @autoreleasepool {
++    try {
++      __objc3_try_force(function_cleanup_interrupts());
++      return 30;
++    } catch (int Value) {
++      if (Value != 37 || zero_code_error_deallocations() != Before + 1)
++        return 31;
++    }
++  }
++  if (zero_code_error_deallocations() != Before + 1)
++    return 32;
++
++  Before = zero_code_error_deallocations();
++  @autoreleasepool {
++    if (verify_owned_error_out_abi() != 0 ||
++        zero_code_error_deallocations() != Before + 1)
++      return 33;
++  }
++  return zero_code_error_deallocations() == Before + 2 ? 0 : 34;
++}
++
 +int main(int argc, char **) {
 +  if (argc == 2) {
 +    __objc3_try_force(throw_dynamic((TestError)nil));
@@ -6579,7 +6784,7 @@ new file mode 100644
 +  @autoreleasepool {
 +    if (verify_error_out_abi() != 0)
 +      return 7;
-+    if (zero_code_error_deallocations() != 1)
++    if (zero_code_error_deallocations() != 2)
 +      return 8;
 +  }
 +  if (zero_code_error_deallocations() != 3)
@@ -6602,13 +6807,15 @@ new file mode 100644
 +    if (value != 17 || CleanupEvents != 4)
 +      return 13;
 +  }
++  int OwnedResult = run_owned_cleanup_checks();
++  if (OwnedResult) return OwnedResult;
 +  return SawNonNullZeroCodeError == 1 ? 0 : 5;
 +}
 diff --git a/clang/test/ObjC3/CodeGen/Inputs/typed-error-runtime-interface.h b/clang/test/ObjC3/CodeGen/Inputs/typed-error-runtime-interface.h
 new file mode 100644
 --- /dev/null
 +++ b/clang/test/ObjC3/CodeGen/Inputs/typed-error-runtime-interface.h
-@@ -0,0 +1,33 @@
+@@ -0,0 +1,35 @@
 +#ifndef TYPED_ERROR_RUNTIME_INTERFACE_H
 +#define TYPED_ERROR_RUNTIME_INTERFACE_H
 +
@@ -6637,6 +6844,8 @@ new file mode 100644
 +int zero_code_error_deallocations(void);
 +int is_nonnull_zero_code_error(id value);
 +int verify_error_out_abi(void);
++int verify_owned_error_out_abi(void);
++int verify_owned_null_error_out(void);
 +#ifdef __cplusplus
 +}
 +#endif
@@ -8417,17 +8626,25 @@ diff --git a/clang/test/ObjC3/CodeGen/typed-error-autorelease-pool-boundary.m b/
 new file mode 100644
 --- /dev/null
 +++ b/clang/test/ObjC3/CodeGen/typed-error-autorelease-pool-boundary.m
-@@ -0,0 +1,10 @@
-+// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c -std=c17 -fobjc-runtime=gnustep-2.0 -fobjc-arc -fobjc-version=3 -emit-llvm -o /dev/null -verify %s
+@@ -0,0 +1,18 @@
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c -std=c17 -fobjc-runtime=gnustep-2.0 -fobjc-arc -fobjc-version=3 -emit-llvm -o - %s | FileCheck %s
 +
 +@protocol Error;
 +typedef id<Error> TestError;
 +
-+void unqualified_pool_cleanup(TestError error) __objc3_throws(TestError) {
-+  @autoreleasepool { // expected-error {{ObjC3 error-output transport across an autorelease pool}}
++void owned_pool_cleanup(TestError error) __objc3_throws(TestError) {
++  @autoreleasepool {
 +    __objc3_throw(error);
 +  }
 +}
++// CHECK-LABEL: define{{.*}} void @owned_pool_cleanup
++// CHECK: objc3.error.pending
++// CHECK: call ptr @llvm.objc.retain
++// CHECK: call void @llvm.objc.autoreleasePoolPop
++// CHECK: objc3.error.publish
++// CHECK: call ptr @llvm.objc.autorelease
++// CHECK: store ptr
++// CHECK: ret void
 diff --git a/clang/test/ObjC3/CodeGen/typed-error-mrc-boundary.m b/clang/test/ObjC3/CodeGen/typed-error-mrc-boundary.m
 new file mode 100644
 --- /dev/null
@@ -8496,7 +8713,7 @@ new file mode 100644
 +}
 +
 +// CHECK-LABEL: define{{.*}} void @raise_error(ptr{{.*}}, ptr{{.*}})
-+// CHECK: call ptr @llvm.objc.retainAutorelease
++// CHECK: call ptr @llvm.objc.retain
 +// CHECK: objc3.thrown.error.present
 +// CHECK: call void @llvm.trap()
 +
@@ -8506,3 +8723,28 @@ new file mode 100644
 +// CHECK-LABEL: define{{.*}} i32 @nested_explicit_try()
 +// CHECK: call i32 @typed_zero(i32 {{.*}}, ptr{{.*}})
 +// CHECK: call i32 @typed_zero(i32 {{.*}}, ptr{{.*}})
+diff --git a/clang/test/ObjC3/CodeGen/typed-error-owned-unwind.mm b/clang/test/ObjC3/CodeGen/typed-error-owned-unwind.mm
+new file mode 100644
+--- /dev/null
++++ b/clang/test/ObjC3/CodeGen/typed-error-owned-unwind.mm
+@@ -0,0 +1,20 @@
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c++ -std=c++20 -fobjc-runtime=gnustep-2.0 -fobjc-arc -fobjc-arc-exceptions -fexceptions -fcxx-exceptions -fobjc-version=3 -emit-llvm -o - %s | FileCheck %s
++
++@protocol Error;
++typedef id<Error> TestError;
++
++struct TailCleanup {
++  TestError Error;
++  ~TailCleanup() noexcept(false);
++  operator TestError() { return Error; }
++};
++
++extern "C" void owned_expression(TestError error) __objc3_throws(TestError) {
++  __objc3_throw((TestError)TailCleanup{error});
++}
++// CHECK-LABEL: define{{.*}} void @owned_expression
++// CHECK: %objc3.error.pending = alloca ptr
++// CHECK: store ptr null, ptr %objc3.error.pending
++// CHECK: store ptr %{{.*}}, ptr %objc3.error.pending
++// CHECK: invoke void @{{.*}}TailCleanup
++// CHECK: call void @llvm.objc.storeStrong(ptr{{.*}} %objc3.error.pending, ptr null)

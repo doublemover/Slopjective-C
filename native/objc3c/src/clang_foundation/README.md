@@ -133,6 +133,12 @@ extension tests with three platform skips and 44 AST tests; its rebuilt facade
 passed all 15 CTest tests. Source and toolchain identities matched before and
 after the native batch. Public extension gates remain unavailable.
 
+Checkpoint 50 qualified owned error transport through callee cleanup: the SDK
+passed 127 extension tests (three platform skips), 44 AST tests and all 15 facade
+CTest tests. All 20 native nodes and 80 executions passed with matching source
+and toolchain identities. The typed-error witnesses additionally check nested
+pools, temporary cleanup, native exception interruption and nullable discard.
+
 Matching editor qualification passed on 2026-10-13 at 03:36:46 UTC. Identical C17
 `.m` and C++20 `.mm` fixtures passed exact formatting, idempotence, native syntax
 and `clangd --check` with zero errors. In each mode, both the ordinary parameter
@@ -224,17 +230,20 @@ inside separate lambdas or Blocks. Native C++ and Objective-C exceptions retain
 their separate controls. The private Error-object ABI admits synchronous direct ARC
 free calls returning scalar/void values, with a nullable trailing
 `id<Error> __autoreleasing *` slot. Success clears the slot to nil; failure
-stores a non-null error and returns a zero/void placeholder. Native Clang's ARC
-throw-operand handling gives the object a pool lifetime before local cleanup.
+stores a non-null error and returns a zero/void placeholder. The compiler retains
+the pending error before expression cleanup and owns it through function cleanup,
+including callee autorelease pools. A native exception releases that pending
+ownership without publishing the typed error. The return block transfers the
+error to the caller's pool, or releases it immediately for a null output pointer.
 Propagating try forwards that error, forced try traps on failure, and
 try-optional builds the native scalar/void Optional representation. Exact call
 contexts prevent an outer try from authorizing nested bare throwing calls.
 Static typed nil is rejected, dynamic nil traps, and scalar zero remains valid
 in the semantic model. Ordered do/catch execution, scalar/value error transport,
 aggregate or managed success returns, indirect calls, methods, Blocks, variadic
-calls, MRC callees, autorelease pools within throwing functions and async
-execution still diagnose before emission. Error ownership across a callee's
-pool cleanup requires a separate transport witness. Ordinary
+calls, MRC callees and async execution still diagnose before emission. The runtime
+witness covers nested pools, a pool-owning C++ temporary, expression and function
+cleanup interrupted by native exceptions, and nullable output discard. Ordinary
 MRC callers of the physical C output ABI are covered by the runtime witness.
 Static analysis of
 the extension remains unqualified. Public typed-error capabilities stay disabled.
