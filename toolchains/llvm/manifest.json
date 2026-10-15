@@ -1,0 +1,133 @@
+{
+  "schema_version": 1,
+  "upstream": {
+    "name": "llvm-project",
+    "url": "https://github.com/llvm/llvm-project.git",
+    "tag": "llvmorg-22.1.6",
+    "tag_object": "e1e54c548235b71134d53ec5e4d93873db5c70ef",
+    "commit": "fc4aad7b5db3fff421df9a9637605b9ca5667881"
+  },
+  "patch_series": "toolchains/llvm/patches/series",
+  "patches": [
+    {
+      "file": "0001-objc3-language-mode-and-build-identity.patch",
+      "sha256": "2c5e537744b687aa41d23c5905f0d1a8e8797f13664d77b51700828932399c97"
+    },
+    {
+      "file": "0002-objc3-native-defer-statement.patch",
+      "sha256": "1864f7ef61b1a439d4b0570ecc1b66702f169c28085ff8f9b0f129a8381abb70"
+    },
+    {
+      "file": "0003-objc3-native-payload-type-facts.patch",
+      "sha256": "e0db71c702cf5f7fdbf895020d8b370034498260b4881c28353447b783630fd1"
+    },
+    {
+      "file": "0004-objc3-canonical-carriers-and-function-effects.patch",
+      "sha256": "57e8eb081ed7af159647813722af7f53a6d270eddbf4c6d6d102e81b77b1b746"
+    },
+    {
+      "file": "0005-objc3-codegen-qualification-boundaries.patch",
+      "sha256": "a28a3854a2a031c2c59b7b9c852bec99e3d513b0eacec2a06df7385e33ee1666"
+    },
+    {
+      "file": "0006-objc3-native-carrier-expressions.patch",
+      "sha256": "239bc5fa4b7170fd52ec13b6fe1828e8c50c96f4cd1b25554bd17809b8a088bf"
+    }
+  ],
+  "pristine_baseline_build_id": "llvmorg-22.1.6-fc4aad7b5db3-pristine-v1",
+  "build": {
+    "generator": "Ninja",
+    "configuration": "Release",
+    "target_triple": "x86_64-pc-windows-msvc",
+    "host_toolset": "Visual Studio 2022 v143",
+    "windows_sdk_version": "10.0.26100.0",
+    "windows_crt": "MD",
+    "assertions": true,
+    "rtti": true,
+    "eh": true,
+    "targets": [
+      "X86"
+    ],
+    "projects": [
+      "clang",
+      "lld",
+      "clang-tools-extra"
+    ],
+    "build_targets": [
+      "clang",
+      "FileCheck",
+      "count",
+      "not",
+      "llvm-config",
+      "llvm-nm",
+      "clang-resource-headers",
+      "clangTooling",
+      "clangIndex",
+      "clangCodeGen",
+      "clangFrontend",
+      "clangDriver",
+      "ObjC3TypeContractsTests",
+      "clangd",
+      "clang-format"
+    ],
+    "build_target_groups": [
+      {
+        "name": "compiler_and_test_tools",
+        "targets": [
+          "clang",
+          "FileCheck",
+          "count",
+          "not",
+          "llvm-config",
+          "llvm-nm",
+          "clang-resource-headers"
+        ]
+      },
+      {
+        "name": "objc3_facade_libraries",
+        "targets": [
+          "clangTooling",
+          "clangIndex",
+          "clangCodeGen",
+          "clangFrontend",
+          "clangDriver"
+        ]
+      },
+      {
+        "name": "native_type_contract_tests",
+        "targets": [
+          "ObjC3TypeContractsTests"
+        ]
+      },
+      {
+        "name": "native_editor_tools",
+        "targets": [
+          "clangd",
+          "clang-format"
+        ]
+      }
+    ],
+    "distribution_components": [
+      "clang",
+      "lld",
+      "clangd",
+      "clang-format",
+      "clang-resource-headers",
+      "clang-libraries",
+      "clang-headers",
+      "clang-cmake-exports",
+      "llvm-libraries",
+      "llvm-headers",
+      "cmake-exports"
+    ],
+    "test_suite": "clang/test/ObjC3",
+    "runtimes": [],
+    "bootstrap": false,
+    "include_tests": true,
+    "compile_jobs": 8,
+    "link_jobs": 1,
+    "test_binaries": [
+      "tools/clang/unittests/AST/ObjC3TypeContractsTests.exe"
+    ]
+  }
+}

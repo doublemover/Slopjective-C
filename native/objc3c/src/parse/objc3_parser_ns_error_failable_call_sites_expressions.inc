@@ -53,6 +53,15 @@ std::size_t CountFailableCallSitesInExpr(const Expr *expr) {
     }
     return count;
   }
+  case Expr::Kind::MatchExpression: {
+    std::size_t count =
+        CountFailableCallSitesInExpr(expr->match_expression_scrutinee.get());
+    for (const auto &arm : expr->match_expression_arms) {
+      count += CountFailableCallSitesInExpr(arm.guard_condition.get());
+      count += CountFailableCallSitesInExpr(arm.value.get());
+    }
+    return count;
+  }
   case Expr::Kind::BlockLiteral:
   case Expr::Kind::Identifier:
   case Expr::Kind::KeyPathLiteral:

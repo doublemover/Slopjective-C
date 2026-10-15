@@ -18,6 +18,7 @@
         parsed_return_type.object_pointer_spelling;
     fn.return_object_pointer_type_name =
         parsed_return_type.object_pointer_name;
+    fn.return_value_optional = parsed_return_type.value_optional;
     fn.has_return_generic_suffix = parsed_return_type.has_generic_suffix;
     fn.return_generic_suffix_terminated =
         parsed_return_type.generic_suffix_terminated;

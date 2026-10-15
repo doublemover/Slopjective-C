@@ -4,7 +4,25 @@
 
 #include "lex/objc3_lexer_contract.h"
 #include "pipeline/objc3_frontend_types.h"
+#include "pipeline/results/compile_options.h"
 #include "sema/objc3_sema_pass_manager.h"
+
+namespace {
+
+Objc3SemaLanguageProfile Objc3SemaLanguageProfileFromFrontendProfile(
+    Objc3FrontendLanguageProfile profile) {
+  switch (profile) {
+    case Objc3FrontendLanguageProfile::kCanonical:
+      return Objc3SemaLanguageProfile::Canonical;
+    case Objc3FrontendLanguageProfile::kStrict:
+      return Objc3SemaLanguageProfile::Strict;
+    case Objc3FrontendLanguageProfile::kStrictConcurrency:
+      return Objc3SemaLanguageProfile::StrictConcurrency;
+  }
+  return Objc3SemaLanguageProfile::Canonical;
+}
+
+}  // namespace
 
 void CaptureObjc3FrontendCanonicalLiteralRejections(
     Objc3FrontendPipelineResult &result,
@@ -19,11 +37,13 @@ void CaptureObjc3FrontendCanonicalLiteralRejections(
 
 void PopulateObjc3FrontendSemaInputHandoff(
     Objc3FrontendPipelineResult &result,
+    const Objc3FrontendOptions &options,
     const Objc3SemanticValidationOptions &semantic_options,
     Objc3SemaPassManagerInput &sema_input) {
   sema_input.program = &result.program;
   sema_input.validation_options = semantic_options;
-  sema_input.language_profile = Objc3SemaLanguageProfile::Canonical;
+  sema_input.language_profile =
+      Objc3SemaLanguageProfileFromFrontendProfile(options.language_profile);
   sema_input.canonical_literal_rejection_counts.yes_literal_sites =
       result.canonical_literal_rejection_counts.yes_literal_sites;
   sema_input.canonical_literal_rejection_counts.no_literal_sites =

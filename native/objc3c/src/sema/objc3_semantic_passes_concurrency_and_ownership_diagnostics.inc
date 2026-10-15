@@ -123,6 +123,22 @@ static void DiagnoseOwnershipResourceMoveExpr(
       DiagnoseOwnershipResourceMoveExpr(expr->right.get(), scopes, diagnostics);
       DiagnoseOwnershipResourceMoveExpr(expr->third.get(), scopes, diagnostics);
       return;
+    case Expr::Kind::MatchExpression:
+      DiagnoseOwnershipResourceMoveExpr(
+          expr->match_expression_scrutinee.get(), scopes, diagnostics);
+      for (const auto &arm : expr->match_expression_arms) {
+        scopes.push_back({});
+        if (!arm.binding_name.empty()) {
+          scopes.back().emplace(arm.binding_name,
+                                OwnershipResourceMoveBindingState{});
+        }
+        DiagnoseOwnershipResourceMoveExpr(
+            arm.guard_condition.get(), scopes, diagnostics);
+        DiagnoseOwnershipResourceMoveExpr(arm.value.get(), scopes,
+                                          diagnostics);
+        scopes.pop_back();
+      }
+      return;
     case Expr::Kind::CollectionLiteral:
       for (const auto &key : expr->collection_keys) {
         DiagnoseOwnershipResourceMoveExpr(key.get(), scopes, diagnostics);

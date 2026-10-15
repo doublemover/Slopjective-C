@@ -168,6 +168,15 @@ static void CollectConcurrencyActorMethodBodyProfileExpr(
     CollectConcurrencyActorMethodBodyProfileExpr(expr->left.get(), profile);
     CollectConcurrencyActorMethodBodyProfileExpr(expr->right.get(), profile);
     return;
+  case Expr::Kind::MatchExpression:
+    CollectConcurrencyActorMethodBodyProfileExpr(
+        expr->match_expression_scrutinee.get(), profile);
+    for (const auto &arm : expr->match_expression_arms) {
+      CollectConcurrencyActorMethodBodyProfileExpr(
+          arm.guard_condition.get(), profile);
+      CollectConcurrencyActorMethodBodyProfileExpr(arm.value.get(), profile);
+    }
+    return;
   default:
     return;
   }

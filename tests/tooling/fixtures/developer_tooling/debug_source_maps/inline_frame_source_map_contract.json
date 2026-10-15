@@ -1,0 +1,76 @@
+{
+  "contract_id": "objc3c.debug-source-maps.inline-frame.method-inlining.v1",
+  "issue_refs": [
+    8225
+  ],
+  "depends_on": [
+    "objc3c.optimization.method_inlining_replay_contract.v1"
+  ],
+  "source_truth": {
+    "debug_source_map_model": "scripts/objc3c_debug_maps/model.py",
+    "positive_bundle": "tests/tooling/fixtures/developer_tooling/debug_source_maps/positive.json",
+    "negative_cases": "tests/tooling/fixtures/developer_tooling/debug_source_maps/negative_cases.json",
+    "method_inlining_executor": "native/objc3c/src/opt/objc3_semantic_optimization_executor.cpp",
+    "method_inlining_pipeline": "native/objc3c/src/pipeline/objc3_semantic_optimization_pipeline.cpp",
+    "method_inlining_ir_before": "tests/native/ir/optimization/semantic_pipeline_method_inlining.before.ll",
+    "method_inlining_ir_after": "tests/native/ir/optimization/semantic_pipeline_method_inlining.after.ll"
+  },
+  "required_inline_frame_fields": [
+    "frame_id",
+    "caller_source_map_entry_id",
+    "callee_source_map_entry_id",
+    "original_caller_span",
+    "callsite_span",
+    "inlined_callsite_span",
+    "callee_body_span",
+    "stepping_policy",
+    "imported_debug_map_entry_id",
+    "emitted_debug_map_entry_id",
+    "optimized_ir_source_correlation_id",
+    "optimized_ir_anchor",
+    "optimized_source_map_entry_id",
+    "caller_runtime_anchor_id",
+    "callee_runtime_anchor_id",
+    "optimization_proof_id",
+    "emitted_ir_anchor",
+    "emitted_native_symbol"
+  ],
+  "fail_closed_diagnostics": [
+    {
+      "case_id": "inline-frame-missing-frame-id",
+      "diagnostic_code": "inline-frame-id-missing"
+    },
+    {
+      "case_id": "inline-frame-missing-callsite-callee-span",
+      "diagnostic_code": "inline-frame-source-span-missing"
+    },
+    {
+      "case_id": "inline-frame-source-map-drift",
+      "diagnostic_code": "inline-frame-range-drift"
+    },
+    {
+      "case_id": "inline-frame-ambiguous-stepping-policy",
+      "diagnostic_code": "inline-frame-stepping-policy-ambiguous"
+    },
+    {
+      "case_id": "inline-frame-generated-only-map",
+      "diagnostic_code": "inline-frame-generated-only-map"
+    },
+    {
+      "case_id": "inline-frame-native-range-drift",
+      "diagnostic_code": "inline-native-range-drift"
+    }
+  ],
+  "source_map_policy": {
+    "generated_only_inline_maps_allowed": false,
+    "ambiguous_stepping_policy_allowed": false,
+    "optimized_ir_without_source_correlation_allowed": false,
+    "missing_imported_or_emitted_debug_map_allowed": false
+  },
+  "central_docs_deferred": [
+    "README.md",
+    "docs/support/capability_matrix.*",
+    "docs/support/evidence_map.*",
+    "docs/support/umbrella_readiness.*"
+  ]
+}

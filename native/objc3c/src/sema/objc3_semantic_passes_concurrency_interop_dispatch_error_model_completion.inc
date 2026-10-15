@@ -51,7 +51,9 @@
   summary.parser_fail_closed_boundary_preserved =
       source_summary.try_keyword_reserved &&
       source_summary.throw_keyword_reserved &&
-      source_summary.catch_keyword_reserved && source_summary.try_fail_closed &&
+      source_summary.catch_keyword_reserved &&
+      source_summary.typed_throws_fail_closed &&
+      source_summary.try_fail_closed &&
       source_summary.throw_fail_closed && source_summary.do_catch_fail_closed;
   summary.propagation_runtime_deferred = true;
   summary.status_to_error_runtime_deferred = true;

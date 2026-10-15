@@ -1,14 +1,16 @@
 #!/usr/bin/env python3
 from __future__ import annotations
 
+from pathlib import Path
 from typing import Any
 
-from scripts.objc3c_workflow.public_command_api import public_workflow_command
 from objc3c_tooling.subprocesses import python_script_command, run_completed
 from objc3c_tooling.paths import repo_rel
 from platform_hardening_contracts import (
+    BUILD_PACKAGE_VALIDATION_SUMMARY_PATH,
     BUILD_PLATFORM_SUPPORT_MATRIX_SCRIPT,
     CHANNEL_CATALOG_PATH,
+    PACKAGE_CHANNELS_SUMMARY_PATH,
     RELEASE_PUBLICATION_SUMMARY_PATH,
     ROOT,
     SUPPORT_MATRIX_ARTIFACT_PATH,
@@ -44,12 +46,38 @@ def run_refresh_step(step: str, command: list[str]) -> dict[str, Any]:
     return {"step": step, "command": command, "status": "PASS"}
 
 
+def require_passing_summary(path: Path, *, label: str) -> dict[str, Any]:
+    if not path.is_file():
+        raise RuntimeError(f"{label} summary is missing: {repo_rel(path)}")
+    payload = load_json_object(path)
+    if not summary_passes(payload):
+        raise RuntimeError(f"{label} summary did not pass: {repo_rel(path)}")
+    return payload
+
+
+def require_packaging_validation_input() -> dict[str, Any]:
+    require_passing_summary(
+        BUILD_PACKAGE_VALIDATION_SUMMARY_PATH,
+        label="platform build/package validation",
+    )
+    require_passing_summary(
+        PACKAGE_CHANNELS_SUMMARY_PATH,
+        label="package channels",
+    )
+    return {
+        "step": "reuse-platform-build-package-validation",
+        "command": [
+            "report",
+            repo_rel(BUILD_PACKAGE_VALIDATION_SUMMARY_PATH),
+            repo_rel(PACKAGE_CHANNELS_SUMMARY_PATH),
+        ],
+        "status": "PASS",
+    }
+
+
 def refresh_release_operations_metadata() -> list[dict[str, Any]]:
     return [
-        run_refresh_step(
-            "validate-packaging-channels",
-            public_workflow_command("validate-packaging-channels"),
-        ),
+        require_packaging_validation_input(),
         run_refresh_step(
             "check-release-operations-surface",
             python_script_command(RELEASE_OPERATIONS_SOURCE_SURFACE_SCRIPT),

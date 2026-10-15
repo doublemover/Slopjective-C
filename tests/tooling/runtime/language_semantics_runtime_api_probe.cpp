@@ -56,15 +56,15 @@ bool AdvancedRuntimeClosureSnapshotReady(
          snapshot.combined_runtime_evidence == 1 &&
          snapshot.negative_combination_evidence == 1 &&
          snapshot.source_identity_evidence == 1 &&
-         snapshot.umbrella_closure_support == 0 &&
+         snapshot.umbrella_closure_support == 1 &&
          snapshot.canonical_source_debug_map_evidence == 1 &&
          snapshot.native_artifact_evidence == 1 &&
-         snapshot.native_executable_umbrella_support == 0 &&
-         snapshot.combined_runtime_state_record_count == 8u &&
+         snapshot.native_executable_umbrella_support == 1 &&
+         snapshot.combined_runtime_state_record_count == 10u &&
          snapshot.canonical_source_map_record_count == 7u &&
          snapshot.canonical_debug_map_record_count == 7u &&
          snapshot.canonical_native_line_table_record_count == 7u &&
-         snapshot.combined_interaction_record_count == 6u &&
+         snapshot.combined_interaction_record_count == 9u &&
          snapshot.combined_fixture[0] != '\0' &&
          snapshot.combined_contract[0] != '\0' &&
          snapshot.canonical_source_debug_map_bundle[0] != '\0' &&

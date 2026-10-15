@@ -35,6 +35,9 @@ struct Objc3FrontendTypeSystemOptionalKeypathLoweringContractRecord {
   std::size_t single_evaluation_nil_short_circuit_sites = 0;
   std::size_t live_typed_keypath_artifact_sites = 0;
   std::size_t deferred_typed_keypath_sites = 0;
+  std::size_t typed_keypath_descriptor_publication_sites = 0;
+  std::size_t typed_keypath_source_map_evidence_sites = 0;
+  std::size_t typed_keypath_runtime_handle_evidence_sites = 0;
   std::size_t contract_violation_sites = 0;
   bool deterministic = true;
 };

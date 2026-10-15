@@ -32,6 +32,9 @@ bool IngestObjc3IREmitterMethodDefinitionState(
       std::move(method_definition_plan.direct_dispatch_signatures_by_key);
   state.runtime_dispatch_return_types_by_key =
       std::move(method_definition_plan.runtime_dispatch_return_types_by_key);
+  state.runtime_dispatch_return_value_optional_carriers_by_key = std::move(
+      method_definition_plan
+          .runtime_dispatch_return_value_optional_carriers_by_key);
   state.runtime_dispatch_superclass_by_name =
       std::move(method_definition_plan.runtime_dispatch_superclass_by_name);
   state.metaprogramming_global_artifacts =

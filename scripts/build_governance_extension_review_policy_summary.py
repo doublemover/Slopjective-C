@@ -75,9 +75,9 @@ def main() -> int:
 
     required_mentions = {
         "runbook_mentions_policy": "tests/tooling/fixtures/governance_sustainability/extension_review_policy.json" in runbook_text,
-        "runbook_mentions_summary": "python scripts/build_governance_extension_review_policy_summary.py" in runbook_text,
+        "runbook_mentions_summary": "npm run objc3c -- validate-governance-sustainability" in runbook_text,
         "author_guide_mentions_policy": "tests/tooling/fixtures/governance_sustainability/extension_review_policy.json" in author_guide_text,
-        "author_guide_mentions_summary": "python scripts/build_governance_extension_review_policy_summary.py" in author_guide_text,
+        "author_guide_mentions_summary": "npm run objc3c -- validate-governance-sustainability" in author_guide_text,
     }
     for key, value in required_mentions.items():
         expect(value, f"{key} is false", failures)

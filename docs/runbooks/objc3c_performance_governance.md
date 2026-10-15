@@ -26,6 +26,7 @@ Use these checked-in surfaces directly:
   - `tests/tooling/fixtures/performance_governance/claim_policy.json`
   - `tests/tooling/fixtures/performance_governance/breach_triage_policy.json`
   - `tests/tooling/fixtures/performance_governance/lab_policy.json`
+  - `tests/tooling/fixtures/performance_governance/optimization_runtime_debug_safety_contract.json`
 
 Machine-owned governance outputs must stay under:
 
@@ -36,6 +37,13 @@ Machine-owned governance outputs must stay under:
 
 The live budget model is checked in at
 `tests/tooling/fixtures/performance_governance/budget_model.json`.
+
+Optimization speedup publication also depends on
+`tests/tooling/fixtures/performance_governance/optimization_runtime_debug_safety_contract.json`
+and `schemas/objc3c-optimization-runtime-debug-safety-v1.schema.json`. Those
+source-owned records bind #8205/#8227 to checked budget metrics, proof fixtures,
+deoptimization/invalidation boundaries, debug source-map preservation, and
+negative overclaim cases.
 
 Current budget families:
 
@@ -82,6 +90,32 @@ Only these checked-in sources may feed the public performance report:
 
 No spreadsheet-only, screenshot-only, or operator-maintained sidecar performance summary
 is allowed.
+
+## Optimization Proof Safety Boundary
+
+Method-inlining and optimized-method performance claims must stay behind the
+semantic optimization proof model. A benchmark improvement, generated report, or
+synthetic IR-only fixture cannot create a public optimization support claim
+unless the proof case also preserves:
+
+- source identity: callsite source graph ids and callee body provenance
+- debug identity: source-map ids, inline-frame id, diagnostic location, and
+  line-table status
+- runtime identity: runtime metadata ids, runtime ABI, package/import ABI, and
+  runtime generation dependencies
+- invalidation replay: the optimized site records the runtime mutation event and
+  observed fail-closed behavior; runtime miss handling remains runtime-owned and
+  cannot be counted as optimization success
+
+Missing source/debug/runtime preservation evidence or missing invalidation replay
+is a fail-closed optimization rejection with no success claim.
+
+The checked safety contract adds explicit negative cases for timing-only
+speedup overclaims, fallback-as-speedup overclaims, generated report
+source-truth overclaims, missing optimized debug-source-map preservation,
+missing runtime invalidation replay, side-effecting inline candidates, and
+stale runtime-cache devirtualization proofs. Public performance reports must
+treat those as blockers rather than cautionary prose.
 
 ## Public Claim And Waiver Policy
 

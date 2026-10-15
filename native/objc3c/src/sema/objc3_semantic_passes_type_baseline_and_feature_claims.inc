@@ -33,6 +33,7 @@
 #include <optional>
 #include <sstream>
 #include <type_traits>
+#include <unordered_map>
 #include <unordered_set>
 #include <vector>
 
@@ -51,6 +52,8 @@ static Objc3SemanticCanonicalType BuildCanonicalSemanticTypeFromMethodReturn(
     const std::unordered_set<std::string> *generic_interface_names = nullptr);
 static Objc3SemanticCanonicalType BuildCanonicalSemanticTypeFromProperty(
     const Objc3PropertyDecl &property);
+
+#include "sema/objc3_semantic_passes_generic_callable_contracts.inc"
 
 #include "sema/objc3_semantic_passes_type_baseline_semantic_type_accounting.inc"
 #include "sema/objc3_semantic_passes_type_baseline_bootstrap_publication.inc"

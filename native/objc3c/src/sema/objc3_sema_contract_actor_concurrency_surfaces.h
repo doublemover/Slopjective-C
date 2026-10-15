@@ -48,7 +48,7 @@ struct Objc3ConcurrencyActorIsolationSendableSemanticModelSummary {
   bool source_dependency_required = false;
   bool actor_member_source_supported = false;
   bool actor_isolation_sendability_profile_normalized = false;
-  bool strict_concurrency_selection_fail_closed = false;
+  bool strict_concurrency_selection_supported = false;
   bool actor_runtime_deferred = false;
   bool executor_runtime_deferred = false;
   bool cross_actor_enforcement_deferred = false;
@@ -63,7 +63,7 @@ inline bool IsReadyObjc3ConcurrencyActorIsolationSendableSemanticModelSummary(
   return summary.source_dependency_required &&
          summary.actor_member_source_supported &&
          summary.actor_isolation_sendability_profile_normalized &&
-         summary.strict_concurrency_selection_fail_closed &&
+         summary.strict_concurrency_selection_supported &&
          summary.actor_runtime_deferred &&
          summary.executor_runtime_deferred &&
          summary.cross_actor_enforcement_deferred &&

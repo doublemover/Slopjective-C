@@ -2,7 +2,10 @@ from __future__ import annotations
 
 from pathlib import Path
 
+from objc3c_tooling.artifact_identity import current_host_artifact_identity
+
 ROOT = Path(__file__).resolve().parents[2]
+ARTIFACT_IDENTITY = current_host_artifact_identity()
 REPORT_DIR = ROOT / "tmp" / "reports" / "claimability" / "type-semantic-model-closure"
 JSON_OUT = REPORT_DIR / "type_semantic_model_closure_summary.json"
 MD_OUT = REPORT_DIR / "type_semantic_model_closure_summary.md"
@@ -10,7 +13,7 @@ TMP_ROOT = ROOT / "tmp" / "artifacts" / "objc3c-native" / "type-semantic-model-c
 
 CONTRACT_ID = "objc3c.semantic.type-semantic-model-closure.v1"
 ISSUE = "#8013"
-COMPILER = ROOT / "artifacts" / "bin" / "objc3c-native.exe"
+COMPILER = ROOT / ARTIFACT_IDENTITY.native_executable_relative_path
 POSITIVE_FIXTURE = ROOT / "tests" / "tooling" / "fixtures" / "native" / "type_semantic_model_closure_positive.objc3"
 NESTED_GENERIC_POSITIVE_FIXTURE = ROOT / "tests" / "tooling" / "fixtures" / "native" / "type_semantic_nested_generic_positive.objc3"
 GENERIC_VARIANCE_POSITIVE_FIXTURE = ROOT / "tests" / "tooling" / "fixtures" / "native" / "type_semantic_generic_variance_positive.objc3"

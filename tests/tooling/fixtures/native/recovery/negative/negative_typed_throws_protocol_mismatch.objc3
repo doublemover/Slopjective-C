@@ -1,0 +1,21 @@
+// Expected diagnostic code(s): O3S218.
+module NegativeTypedThrowsProtocolMismatch;
+
+@protocol TypedThrowingLoader
+@required
+- (i32)loadValue throws(NSError);
+@end
+
+@interface Widget <TypedThrowingLoader>
+- (i32)loadValue throws;
+@end
+
+@implementation Widget
+- (i32)loadValue throws {
+  return 7;
+}
+@end
+
+fn main() -> i32 {
+  return 0;
+}

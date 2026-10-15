@@ -10,6 +10,8 @@ const char *RuntimeErrorCatchKindName(int catch_kind) {
     return "id<error>";
   case 3:
     return "foreign-exception";
+  case 4:
+    return "typed-error";
   default:
     return "unknown";
   }

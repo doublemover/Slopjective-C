@@ -21,6 +21,10 @@ void WriteRuntimeAwareImportModuleArtifact(
     const std::filesystem::path &out_dir,
     const std::string &emit_prefix,
     const std::string &artifact_json);
+void WriteStandaloneTextualInterfacePayloadArtifact(
+    const std::filesystem::path &out_dir,
+    const std::string &emit_prefix,
+    const std::string &artifact_json);
 void WriteErrorHandlingResultBridgeArtifactReplay(
     const std::filesystem::path &out_dir,
     const std::string &emit_prefix,

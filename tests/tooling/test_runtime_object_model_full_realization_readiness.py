@@ -66,9 +66,9 @@ def test_full_realization_combined_contract_is_checked_source_evidence() -> None
 
     assert contract["issue"] == 8198
     assert contract["capability_id"] == "runtime.object-model.full-realization"
-    assert contract["public_status"] == "reserved"
-    assert contract["support_claim_published"] is False
-    assert "support_claim" not in contract
+    assert contract["public_status"] == "implemented"
+    assert contract["support_claim_published"] is True
+    assert contract["support_claim"] == "objc3c.behavior.runtime.object-model.full-realization"
     assert contract["combined_axes"] == [
         "class",
         "metaclass",
@@ -83,6 +83,29 @@ def test_full_realization_combined_contract_is_checked_source_evidence() -> None
         "imported-runtime-packages",
         "reflection-result-lifetime",
     ]
+    assert contract["debugger_grade_umbrella_readiness_summary"] == {
+        "contract_id": "objc3c.object_model.debugger_grade_umbrella_readiness.v1",
+        "source_contract": (
+            "tests/tooling/fixtures/object_model_closure/"
+            "debugger_value_inspection_replay_contract.json"
+        ),
+        "ties_issue_refs": [8225, 8209, 8210, 8211, 8212, 8202],
+        "bounded_debugger_rows": [
+            "runtime.debug-trace.inline-frame-source-map",
+            "runtime.debug-trace.statement-stepping",
+            "runtime.debug-trace.lldb-plugin",
+            "runtime.typed-keypath.debugger-lowering",
+        ],
+        "implemented_umbrella_row": "runtime.object-model.full-realization",
+        "fail_closed_negative_boundaries": [
+            "generated-only-source-maps",
+            "stale-native-debug-line-table",
+            "lldb-protocol-drift",
+            "typed-keypath-fallback-interpretation",
+            "object-debug-identity-mismatch",
+        ],
+        "does_not_promote_umbrella": False,
+    }
 
     for key in (
         "combined_positive_fixture",
@@ -107,9 +130,11 @@ def test_object_model_debugger_proof_contract_links_artifacts_and_runtime_reflec
     assert result.ok is True
     assert result.diagnostics == ()
     assert contract["issue"] == 8198
+    assert set(contract["roadmap_issue_links"]) == {8202, 8208, 8209, 8210, 8211, 8212}
     assert contract["capability_id"] == "runtime.object-model.full-realization"
-    assert contract["public_status"] == "reserved"
-    assert contract["support_claim_published"] is False
+    assert contract["public_status"] == "implemented"
+    assert contract["support_claim_published"] is True
+    assert contract["support_claim"] == "objc3c.behavior.runtime.object-model.full-realization"
     assert contract["public_command"] == "npm run objc3c -- validate-object-model-debugger-proof"
     assert contract["production_artifact_probe"] == {
         "contract_id": "objc3c.object_model.production_artifact_probe.v1",
@@ -140,39 +165,47 @@ def test_object_model_debugger_proof_contract_links_artifacts_and_runtime_reflec
             "declaration_breakpoint_anchors": 6,
         },
         "object_model_source_identity_minimums": {
-            "source_map_records": 6,
-            "native_line_table_rows": 6,
+            "source_map_records": 10,
+            "native_line_table_rows": 10,
             "stepping_candidates": 4,
             "required_identity_kinds": [
                 "class",
+                "metaclass",
                 "category",
                 "protocol",
                 "property",
                 "ivar",
+                "selector",
                 "method",
+                "reflection",
+                "replay",
             ],
         },
         "source_map_native_line_table_minimums": {
-            "source_map_records": 6,
-            "native_line_table_rows": 6,
+            "source_map_records": 10,
+            "native_line_table_rows": 10,
             "required_identity_kinds": [
                 "class",
+                "metaclass",
                 "category",
                 "protocol",
                 "property",
                 "ivar",
+                "selector",
                 "method",
+                "reflection",
+                "replay",
             ],
         },
         "debug_map_boundary": {
             "full_source_map_publication": "fail-closed",
-            "statement_stepping": "fail-closed",
+            "statement_stepping": "supported",
             "native_debug_info_evidence": "required",
             "boundary_reason": (
-                "the production compiler path must publish object-model source-map "
-                "records and native line-table rows from the canonical manifest now, "
-                "and native debug-info failure must be tied to emitted object section "
-                "and IR debug-metadata evidence before debugger stepping can open"
+                "the production compiler path publishes object-model source-map "
+                "records, native line-table rows, emitted native debug-info evidence, "
+                "and runtime debug-trace statement-step ids from the canonical manifest "
+                "before the umbrella is promoted"
             ),
         },
     }
@@ -212,17 +245,60 @@ def test_object_model_debugger_proof_contract_links_artifacts_and_runtime_reflec
     assert contract["artifact_inspector_compatibility"][
         "object_model_source_map_native_line_table"
     ] == "required"
-    assert contract["statement_step_reservation_contract"] == {
-        "contract_id": "objc3c.object_model.statement_step_reservation.fail_closed.v1",
-        "status": "reserved",
-        "fail_closed": True,
-        "required_candidate_status": "native-line-table-ready-stepping-blocked",
+    assert contract["statement_step_integration_contract"] == {
+        "contract_id": "objc3c.object_model.statement_step_integration.supported.v1",
+        "status": "supported",
+        "fail_closed": False,
+        "required_candidate_status": "runtime-debug-trace-statement-stepping-supported",
         "requires_exact_source_native_line_anchor": True,
         "requires_source_map_row_identity_alignment": True,
         "requires_emitted_native_debug_info": True,
-        "blocked_by": [
-            "runtime-debug-trace-statement-stepping-integration",
-        ],
+        "statement_stepping_evidence_id": "object-model.statement-stepping.production-source-line-table",
+        "blocked_by": [],
+    }
+    umbrella = contract["debugger_grade_umbrella_readiness"]
+    assert umbrella["contract_id"] == "objc3c.object_model.debugger_grade_umbrella_readiness.v1"
+    assert set(umbrella["issue_refs"]) == {8225, 8209, 8210, 8211, 8212, 8202}
+    assert umbrella["capability_id"] == "runtime.object-model.full-realization"
+    assert umbrella["public_status"] == "implemented"
+    assert umbrella["support_claim_published"] is True
+    assert umbrella["umbrella_boundary"] == {
+        "promotes_umbrella": True,
+        "generated_only_maps_can_promote": False,
+        "typed_keypath_fallback_allowed": False,
+        "lldb_protocol_drift_allowed": False,
+        "object_debug_identity_mismatch_allowed": False,
+    }
+    assert {
+        row["capability_id"]: row["recommended_status"]
+        for row in umbrella["bounded_capability_rows"]
+    } == {
+        "runtime.debug-trace.inline-frame-source-map": "bounded-supported",
+        "runtime.debug-trace.statement-stepping": "bounded-supported",
+        "runtime.debug-trace.lldb-plugin": "bounded-supported",
+        "runtime.typed-keypath.debugger-lowering": "bounded-supported",
+        "runtime.object-model.full-realization": "implemented",
+    }
+    assert {
+        row["capability_id"]: row["support_claim_published"]
+        for row in umbrella["bounded_capability_rows"]
+    } == {
+        "runtime.debug-trace.inline-frame-source-map": True,
+        "runtime.debug-trace.statement-stepping": True,
+        "runtime.debug-trace.lldb-plugin": True,
+        "runtime.typed-keypath.debugger-lowering": True,
+        "runtime.object-model.full-realization": True,
+    }
+    assert umbrella["typed_keypath_policy"]["fallback_interpretation_allowed"] is False
+    assert {
+        case["case_id"]
+        for case in umbrella["fail_closed_negative_cases"]
+    } == {
+        "generated-only-source-maps",
+        "stale-native-debug-line-table",
+        "lldb-protocol-drift",
+        "typed-keypath-fallback-interpretation",
+        "object-debug-identity-mismatch",
     }
     assert {
         anchor["runtime_identity_kind"]
@@ -298,8 +374,8 @@ def _fake_production_artifacts(
         "contract_id": "objc3c.developer.tooling.debug.map.surface.v1",
         "supported": True,
         "object_artifact_present": True,
-        "source_map_supported": False,
-        "statement_level_stepping": False,
+        "source_map_supported": True,
+        "statement_level_stepping": True,
         "declaration_breakpoint_anchor_count": 6,
         "native_debug_info_evidence": native_debug_info_evidence,
         "object_model_source_identity": source_identity,
@@ -398,23 +474,26 @@ def _fake_object_model_source_identity(source_path: str) -> dict[str, Any]:
         "llvm_debug_location_count": 12,
         "emitted_native_debug_info_supported": True,
         "native_line_table_supported": True,
-        "statement_stepping_supported": False,
-        "fail_closed": True,
-        "fail_closed_reason": "runtime debug trace is not integrated with emitted native debug info",
-        "blocked_by": [
-            "runtime-debug-trace-statement-stepping-integration",
-        ],
+        "statement_stepping_supported": True,
+        "statement_stepping_evidence_id": "object-model.statement-stepping.production-source-line-table",
+        "fail_closed": False,
+        "fail_closed_reason": "",
+        "blocked_by": [],
     }
     identity_kinds = [
         "class",
+        "metaclass",
         "category",
         "protocol",
         "property",
         "ivar",
+        "selector",
         "method",
         "method",
         "method",
         "method",
+        "reflection",
+        "replay",
     ]
     source_map_records = []
     native_line_table_rows = []
@@ -422,15 +501,17 @@ def _fake_object_model_source_identity(source_path: str) -> dict[str, Any]:
         source_map_record_id = f"fake.source-map.{identity_kind}.{index}"
         row_id = f"fake.native-line-table.{identity_kind}.{index}"
         display_name = f"Fake{identity_kind.title()}{index}"
-        owner_name = "RuntimeFullWidget" if identity_kind == "method" else ""
-        selector = f"fakeSelector{index}" if identity_kind == "method" else ""
+        owner_name = "RuntimeFullWidget" if identity_kind in {"method", "selector"} else ""
+        selector = f"fakeSelector{index}" if identity_kind in {"method", "selector"} else ""
         source_map_records.append(
             {
                 "source_map_record_id": source_map_record_id,
                 "runtime_identity_kind": identity_kind,
                 "source_map_record_kind": (
                     "declaration"
-                    if identity_kind in {"class", "category", "protocol"}
+                    if identity_kind in {"class", "metaclass", "category", "protocol", "reflection", "replay"}
+                    else "message-send"
+                    if identity_kind == "selector"
                     else "property-access"
                     if identity_kind == "property"
                     else "generated-accessor"
@@ -486,7 +567,7 @@ def _fake_object_model_source_identity(source_path: str) -> dict[str, Any]:
             "runtime_debug_trace_step_id": (
                 f"object-model.step.{record['owner_name']}.{record['selector']}"
             ),
-            "status": "native-line-table-ready-stepping-blocked",
+            "status": "runtime-debug-trace-statement-stepping-supported",
             "native_debug_info_evidence_id": native_debug_info_evidence["evidence_id"],
             "native_debug_info_emitted": True,
             "native_line_table_emitted": True,
@@ -505,7 +586,8 @@ def _fake_object_model_source_identity(source_path: str) -> dict[str, Any]:
         "source_map_publication_supported": True,
         "native_line_table_publication_supported": True,
         "emitted_native_debug_info_supported": True,
-        "statement_stepping_supported": False,
+        "statement_stepping_supported": True,
+        "statement_stepping_evidence_id": "object-model.statement-stepping.production-source-line-table",
         "native_debug_info_evidence": native_debug_info_evidence,
         "source_map_record_count": len(source_map_records),
         "native_line_table_row_count": len(native_line_table_rows),
@@ -517,11 +599,15 @@ def _fake_object_model_source_identity(source_path: str) -> dict[str, Any]:
         ],
         "required_identity_kinds_present": [
             "class",
+            "metaclass",
             "category",
             "protocol",
             "property",
             "ivar",
+            "selector",
             "method",
+            "reflection",
+            "replay",
         ],
         "fail_closed_boundaries": [
             {
@@ -531,8 +617,8 @@ def _fake_object_model_source_identity(source_path: str) -> dict[str, Any]:
             },
             {
                 "capability_id": "statementLevelStepping",
-                "status": "reserved",
-                "fail_closed": True,
+                "status": "supported",
+                "fail_closed": False,
             },
         ],
     }
@@ -548,7 +634,7 @@ def _fake_object_model_source_identity(source_path: str) -> dict[str, Any]:
         "native_line_table_publication_supported": True,
         "method_stepping_candidates_supported": True,
         "full_source_map_publication": False,
-        "runtime_debug_trace_statement_stepping": False,
+        "runtime_debug_trace_statement_stepping": True,
         "native_debug_info_emitted": True,
         "native_debug_info_evidence_id": native_debug_info_evidence["evidence_id"],
         "native_debug_info_evidence": native_debug_info_evidence,
@@ -558,11 +644,15 @@ def _fake_object_model_source_identity(source_path: str) -> dict[str, Any]:
         "stepping_candidate_count": len(stepping_candidates),
         "required_identity_kinds_present": [
             "class",
+            "metaclass",
             "category",
             "protocol",
             "property",
             "ivar",
+            "selector",
             "method",
+            "reflection",
+            "replay",
         ],
         "source_map_records": source_map_records,
         "native_line_table_rows": native_line_table_rows,
@@ -596,7 +686,7 @@ def test_object_model_debugger_proof_rejects_production_debug_map_overclaim(
         debugger_proof_model,
         "_build_production_probe_artifacts",
         lambda probe: _fake_production_artifacts(
-            debug_map_overrides={"source_map_supported": True}
+            debug_map_overrides={"source_map_supported": False}
         ),
     )
 
@@ -605,7 +695,7 @@ def test_object_model_debugger_proof_rejects_production_debug_map_overclaim(
         run_production_probe=True,
     ).diagnostics
 
-    assert "production-debug-map-overclaimed" in {
+    assert "production-debug-map-incomplete" in {
         diagnostic.code for diagnostic in diagnostics
     }
 
@@ -666,7 +756,7 @@ def test_object_model_debugger_proof_rejects_production_source_map_publication_o
     )
     source_identity["source_map_native_line_table_publication"][
         "statement_stepping_supported"
-    ] = True
+    ] = False
     monkeypatch.setattr(
         debugger_proof_model,
         "_build_production_probe_artifacts",
@@ -680,7 +770,7 @@ def test_object_model_debugger_proof_rejects_production_source_map_publication_o
         run_production_probe=True,
     ).diagnostics
 
-    assert "production-source-map-publication-overclaimed" in {
+    assert "production-source-map-publication-incomplete" in {
         diagnostic.code for diagnostic in diagnostics
     }
 
@@ -844,7 +934,11 @@ def test_object_model_debugger_proof_rejects_link_drift(tmp_path: Path) -> None:
 
     for case in contract["negative_cases"]:
         mutated = deepcopy(contract)
-        _set_nested(mutated, case["mutation_path"], "object-model-debugger-proof-drift")
+        _set_nested(
+            mutated,
+            case["mutation_path"],
+            case.get("mutation_value", "object-model-debugger-proof-drift"),
+        )
         path = tmp_path / f"{case['case_id']}.json"
         path.write_text(json.dumps(mutated, indent=2) + "\n", encoding="utf-8")
 
@@ -932,7 +1026,7 @@ def test_negative_boundaries_remain_non_public_and_fail_closed() -> None:
             assert _repo_path(str(evidence_path)).exists(), evidence_path
 
 
-def test_umbrella_readiness_references_combined_evidence_without_closing_row() -> None:
+def test_umbrella_readiness_references_combined_evidence_after_closing_row() -> None:
     readiness = _read_json(UMBRELLA_READINESS_PATH)
     entries = {
         str(entry["umbrella_capability_id"]): entry
@@ -940,11 +1034,9 @@ def test_umbrella_readiness_references_combined_evidence_without_closing_row() -
     }
     entry = entries["runtime.object-model.full-realization"]
 
-    assert entry["current_state"] == "reserved"
-    assert entry["readiness_state"] == "blocked"
-    assert {
-        blocker["blocker_id"] for blocker in entry["promotion_blockers"]
-    } == {"object-model-debugger-source-identity"}
+    assert entry["current_state"] == "implemented"
+    assert entry["readiness_state"] == "ready"
+    assert entry["promotion_blockers"] == []
 
     required_paths = {
         requirement.get("path")

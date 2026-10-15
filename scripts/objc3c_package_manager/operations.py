@@ -24,6 +24,7 @@ from .model import (
 )
 from .registry import collect_registry_index_failures
 from .trust import LOCAL_PACKAGE_TRUST_KEY_ID
+from .trust import collect_extraction_plan_failures, package_extraction_plan_payload
 
 PACKAGE_OPERATION_PLAN_CONTRACT_ID = "objc3c.package_ecosystem.operation_plan.v1"
 PACKAGE_OPERATION_RECEIPT_CONTRACT_ID = "objc3c.package_ecosystem.operation_receipt.v1"
@@ -33,6 +34,9 @@ PACKAGE_OPERATION_HOSTED_SUPPORT = "offline-metadata-only-live-network-fail-clos
 PACKAGE_OPERATION_CACHE_ROOT = "tmp/artifacts/package-ecosystem/mirrors/cache"
 PACKAGE_OPERATION_OWNED_INSTALL_ROOT = (
     "tmp/artifacts/package-ecosystem/install-validation/clean-root/objc3c/packages"
+)
+PACKAGE_OPERATION_LOCAL_ARTIFACT_ROOT = (
+    "tmp/artifacts/package-ecosystem/install-validation/local-package-artifacts"
 )
 PACKAGE_OPERATION_RECEIPT_ROOT = "tmp/artifacts/package-ecosystem/operations"
 
@@ -96,6 +100,8 @@ def _dependency_edges(lock: dict[str, Any], package_id: str) -> list[dict[str, s
         {
             "from": str(edge.get("from")),
             "to": str(edge.get("to")),
+            "source_authority": str(edge.get("source_authority", "")),
+            "source_authority_digest": str(edge.get("source_authority_digest", "")),
             "required_version": str(edge.get("required_version", "")),
             "resolved_version": str(edge.get("resolved_version", "")),
             "language_requirement": str(edge.get("language_requirement", "")),
@@ -209,6 +215,50 @@ def _owned_package_root(package_id: str) -> str:
     if not separator or not namespace or not name:
         return ""
     return f"{PACKAGE_OPERATION_OWNED_INSTALL_ROOT}/{namespace}/{name.replace('.', '_')}"
+
+
+def _local_artifact_path(package_id: str) -> str:
+    namespace, separator, name = package_id.partition(":")
+    if not separator or not namespace or not name:
+        return ""
+    return f"{PACKAGE_OPERATION_LOCAL_ARTIFACT_ROOT}/{namespace}/{name.replace('.', '_')}.json"
+
+
+def _operation_extraction_plan(
+    *,
+    operation: str,
+    package_order: list[str],
+) -> dict[str, Any]:
+    mutation = "record" if operation == "uninstall" else "write"
+    entries: list[dict[str, str | int]] = []
+    for index, package_id in enumerate(package_order):
+        owned_root = _owned_package_root(package_id)
+        local_artifact = _local_artifact_path(package_id)
+        if owned_root:
+            entries.append(
+                {
+                    "path": f"{owned_root}/package-manifest.json",
+                    "entry_type": "file",
+                    "mutation": mutation,
+                    "package_id": package_id,
+                    "order": index,
+                }
+            )
+        if local_artifact:
+            entries.append(
+                {
+                    "path": local_artifact,
+                    "entry_type": "file",
+                    "mutation": mutation,
+                    "package_id": package_id,
+                    "order": index,
+                }
+            )
+    return package_extraction_plan_payload(
+        plan_id=f"package-operation-{operation}-{stable_digest(package_order)}",
+        entries=entries,
+        provenance="package-operation-plan",
+    )
 
 
 def _installed_records_by_id(installed_state: dict[str, Any] | None) -> dict[str, dict[str, Any]]:
@@ -328,6 +378,21 @@ def collect_package_operation_failures(
     if request.allow_network or request.live_registry_url:
         target = request.live_registry_url or "live registry endpoint"
         failures.append(package_operation_diagnostic(f"live network package {operation} rejected for {target}"))
+        failures.append(
+            package_operation_diagnostic(
+                f"live public hosted registry service unavailable for package {operation}"
+            )
+        )
+        failures.append(
+            package_operation_diagnostic(
+                f"live public hosted registry transport disabled for package {operation}"
+            )
+        )
+        failures.append(
+            package_operation_diagnostic(
+                f"unsupported live hosted registry service mode for package {operation}"
+            )
+        )
     failures.extend(collect_lock_model_failures(lock, root=root))
     failures.extend(collect_registry_index_failures(registry, lock, root=root))
 
@@ -379,12 +444,32 @@ def collect_package_operation_failures(
             installed_state=installed_state,
         )
     )
+    package_order = [
+        *_dependency_closure(lock, package_id),
+        package_id,
+    ]
+    if operation in {"uninstall", "rollback"}:
+        package_order = list(reversed(package_order))
+    failures.extend(
+        collect_extraction_plan_failures(
+            _operation_extraction_plan(
+                operation=operation,
+                package_order=package_order,
+            )
+        )
+    )
 
     if hosted_registry is not None or hosted_mirror is not None:
         if not isinstance(hosted_registry, dict) or not isinstance(hosted_mirror, dict):
             failures.append(package_operation_diagnostic("hosted registry inputs are incomplete"))
         else:
-            failures.extend(collect_hosted_registry_model_failures(hosted_registry, hosted_mirror))
+            failures.extend(
+                collect_hosted_registry_model_failures(
+                    hosted_registry,
+                    hosted_mirror,
+                    root=root,
+                )
+            )
             try:
                 resolve_hosted_registry_package(
                     hosted_registry,
@@ -439,6 +524,10 @@ def package_operation_plan(
     ]
     if request.operation in {"uninstall", "rollback"}:
         package_order = list(reversed(package_order))
+    extraction_plan = _operation_extraction_plan(
+        operation=request.operation,
+        package_order=package_order,
+    )
     rollback_token = _rollback_token(
         operation=request.operation,
         package_identity=identity,
@@ -468,8 +557,11 @@ def package_operation_plan(
             "previous_manifest_digest": identity["manifest_digest"],
             "owned_package_root": _owned_package_root(request.package_id),
         },
+        "extraction_plan": extraction_plan,
+        "extraction_plan_digest": extraction_plan["plan_digest"],
         "network_policy": PACKAGE_OPERATION_NETWORK_POLICY,
         "hosted_registry_support": PACKAGE_OPERATION_HOSTED_SUPPORT,
+        "hosted_registry_live_boundary": "public-live-service-reserved-fail-closed",
         "live_network_publication": "fail-closed",
         "language_version": LOCAL_PACKAGE_LANGUAGE_VERSION,
         "abi_identity": LOCAL_PACKAGE_ABI_IDENTITY,
@@ -495,6 +587,7 @@ def package_operation_receipt(plan: dict[str, Any]) -> dict[str, Any]:
         "next_state": str(plan["next_state"]),
         "rollback_token": str(plan["rollback_token"]),
         "rollback_state": dict(plan["rollback_state"]),
+        "extraction_plan_digest": str(plan["extraction_plan_digest"]),
         "network_policy": str(plan["network_policy"]),
         "hosted_registry_support": str(plan["hosted_registry_support"]),
         "live_network_publication": str(plan["live_network_publication"]),
@@ -522,6 +615,8 @@ def collect_package_operation_receipt_failures(
         failures.append(package_operation_diagnostic("operation receipt contract id drifted"))
     if receipt.get("plan_digest") != plan.get("plan_digest"):
         failures.append(package_operation_diagnostic("operation receipt plan digest drifted"))
+    if receipt.get("extraction_plan_digest") != plan.get("extraction_plan_digest"):
+        failures.append(package_operation_diagnostic("operation receipt extraction plan digest drifted"))
     if receipt.get("machine_owned") is not True:
         failures.append(package_operation_diagnostic("operation receipt is not machine-owned"))
     if receipt.get("network_policy") != PACKAGE_OPERATION_NETWORK_POLICY:
@@ -541,6 +636,7 @@ def package_operation_artifact_paths(operation: str, package_id: str) -> tuple[s
 
 __all__ = [
     "PACKAGE_OPERATION_HOSTED_SUPPORT",
+    "PACKAGE_OPERATION_LOCAL_ARTIFACT_ROOT",
     "PACKAGE_OPERATION_NETWORK_POLICY",
     "PACKAGE_OPERATION_PLAN_CONTRACT_ID",
     "PACKAGE_OPERATION_PUBLIC_ACTIONS",

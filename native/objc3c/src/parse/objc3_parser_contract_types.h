@@ -60,6 +60,7 @@ struct Objc3ParserContractSnapshot {
 };
 
 using Objc3ParsedGlobalDecl = GlobalDecl;
+using Objc3ParsedModuleImportDecl = Objc3ModuleImportDecl;
 using Objc3ParsedProtocolDecl = Objc3ProtocolDecl;
 using Objc3ParsedInterfaceDecl = Objc3InterfaceDecl;
 using Objc3ParsedImplementationDecl = Objc3ImplementationDecl;

@@ -1,0 +1,14 @@
+// Expected advanced-runtime diagnostic: advanced-runtime.foreign-abi-missing-bridge-ownership
+module AdvancedRuntimeClosureNegativeForeignAbiMissingBridgeOwnership;
+
+extern fn missingBridgeOwnership() -> id
+    __attribute__((objc_foreign,
+                   objc_foreign_type(named("c-abi")),
+                   objc_mixed_image(named("ForeignRuntimeCore")),
+                   objc_package_entry(named("ForeignRuntime.missingOwnership"))));
+
+fn consumeMissingBridgeOwnership() -> id {
+  // A foreign callable that returns ownership-sensitive object state must not
+  // be consumed by typed dispatch without bridge_ownership_ready replay.
+  return missingBridgeOwnership();
+}

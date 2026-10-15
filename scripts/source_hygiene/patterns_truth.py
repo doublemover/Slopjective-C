@@ -4,6 +4,17 @@ from .pattern_model import ForbiddenPattern
 from .pattern_scopes import PUBLIC_SURFACE_PATHS
 
 
+# A report's destination is not a support claim. Require an affirmative
+# authority/completion relation outside the path, rather than matching words
+# such as "evidence" inside directory and file names.
+LOCAL_REPORT_PATH = r"\b(?:tmp|reports)[\\/][^\s`\"'<>),;]+"
+REPORT_AUTHORITY = (
+    r"(?:source[-_\s]+of[-_\s]+truth|support[-_\s]+truth|"
+    r"authoritative(?:\s+(?:input|evidence|support))?|canonical\s+(?:input|evidence)|"
+    r"(?:support|closeout|completion)\s+(?:truth|proof|evidence))"
+)
+
+
 TRUTH_BOUNDARY_PATTERNS: tuple[ForbiddenPattern, ...] = (
     ForbiddenPattern(
         "generated-output-source-of-truth-claim",
@@ -46,7 +57,9 @@ TRUTH_BOUNDARY_PATTERNS: tuple[ForbiddenPattern, ...] = (
         "local-only-report-truth",
         "Local-only reports must not become support truth or closeout evidence.",
         r"\blocal[-_\s]+only\s+reports?\b"
-        r"|\b(?:tmp|reports)[\\/][^\n]{0,120}\b(?:truth|support|closeout|evidence)\b",
+        rf"|{LOCAL_REPORT_PATH}[^\n|]{{0,100}}\b(?:is|are|becomes?|serves?\s+as|as)\s+(?:the\s+)?{REPORT_AUTHORITY}\b"
+        rf"|\b{REPORT_AUTHORITY}\b[^\n|]{{0,100}}{LOCAL_REPORT_PATH}"
+        rf"|\b(?:establish(?:es)?|proves?|confirms?|promotes?)\s+(?:public\s+)?support\b[^\n|]{{0,100}}{LOCAL_REPORT_PATH}",
         residue_class="report-only-completion",
     ),
 )

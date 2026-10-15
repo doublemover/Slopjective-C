@@ -45,6 +45,7 @@ Objc3IREmitterRuntimeSession::ServiceContextState() {
       initialized_state.direct_dispatch_symbols_by_key,
       initialized_state.direct_dispatch_signatures_by_key,
       initialized_state.runtime_dispatch_return_types_by_key,
+      initialized_state.runtime_dispatch_return_value_optional_carriers_by_key,
       initialized_state.runtime_dispatch_superclass_by_name,
       initialized_state.selector_pool_globals,
       initialized_state.runtime_string_pool_globals,

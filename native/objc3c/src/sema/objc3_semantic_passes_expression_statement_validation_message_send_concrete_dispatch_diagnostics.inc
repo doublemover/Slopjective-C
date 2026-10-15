@@ -110,12 +110,25 @@
               resolution.owner_name + "'"));
       return MakeScalarSemanticType(ValueType::Unknown);
     }
+    std::unordered_map<std::string, SemanticTypeInfo>
+        generic_method_bindings;
     for (std::size_t i = 0; i < expr->args.size(); ++i) {
       const SemanticTypeInfo arg_type = ValidateExpr(
           expr->args[i].get(), scopes, globals, functions, diagnostics,
           max_message_send_args, message_send_context);
-      const SemanticTypeInfo expected =
+      const SemanticTypeInfo raw_expected =
           MakeSemanticTypeFromMethodInfoParam(*resolution.method, i);
+      BindGenericMethodParameterFromArgument(
+          *resolution.method, selector, i, raw_expected, arg_type,
+          message_send_context, expr->args[i]->line, expr->args[i]->column,
+          generic_method_bindings, diagnostics);
+      const SemanticTypeInfo expected =
+          SubstituteGenericMethodTypeParameters(
+              *resolution.method, raw_expected, generic_method_bindings);
+      if (IsUnknownSemanticType(expected) &&
+          !IsUnknownSemanticType(raw_expected)) {
+        continue;
+      }
       const bool bool_coercion =
           !expected.is_vector && expected.type == ValueType::Bool &&
           !arg_type.is_vector && arg_type.type == ValueType::I32;
@@ -135,8 +148,14 @@
                 "'"));
       }
     }
-    const SemanticTypeInfo return_type =
+    const SemanticTypeInfo raw_return_type =
         MakeSemanticTypeFromMethodInfoReturn(*resolution.method);
+    DiagnoseUnresolvedGenericMethodReturn(
+        *resolution.method, selector, raw_return_type,
+        generic_method_bindings, expr->line, expr->column, diagnostics);
+    const SemanticTypeInfo return_type =
+        SubstituteGenericMethodTypeParameters(
+            *resolution.method, raw_return_type, generic_method_bindings);
     DiagnoseRetainedMethodFamilyReturnTypeMismatch(
         expr, selector,
         "concrete dispatch receiver '" + resolution.owner_name + "'",

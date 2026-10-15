@@ -10,6 +10,9 @@
     "trust_roots",
     "revocations",
     "key_rotation_policy",
+    "extraction_path_policy",
+    "installer_update_key_policy",
+    "release_registry_trust_root_policy",
     "production_signing_backend",
     "verification_policy"
   ],
@@ -38,6 +41,9 @@
         "implicit_key_rollover_allowed": { "const": false }
       }
     },
+    "extraction_path_policy": { "$ref": "#/$defs/extractionPathPolicy" },
+    "installer_update_key_policy": { "$ref": "#/$defs/installerUpdateKeyPolicy" },
+    "release_registry_trust_root_policy": { "$ref": "#/$defs/releaseRegistryTrustRootPolicy" },
     "production_signing_backend": {
       "type": "object",
       "required": ["state", "required_backend", "diagnostic_code"],
@@ -124,6 +130,7 @@
             "package-manifest",
             "package-artifact",
             "package-lock",
+            "hosted-registry-record",
             "registry-metadata",
             "install-receipt",
             "update-receipt"
@@ -148,17 +155,24 @@
       "type": "object",
       "required": [
         "trust_root_id",
+        "issuer_id",
         "root_kind",
         "signer_id",
         "signing_key_id",
         "signature_format",
+        "signature_algorithm",
         "signing_backend",
         "key_state",
-        "trust_scope"
+        "valid_from_utc",
+        "valid_until_utc",
+        "trust_scope",
+        "compatibility_scope",
+        "allowed_package_namespaces"
       ],
       "additionalProperties": false,
       "properties": {
         "trust_root_id": { "type": "string", "minLength": 1 },
+        "issuer_id": { "type": "string", "minLength": 1 },
         "root_kind": {
           "enum": [
             "local-development",
@@ -174,6 +188,12 @@
             "ed25519-reserved-fail-closed"
           ]
         },
+        "signature_algorithm": {
+          "enum": [
+            "sha256-fixture-digest",
+            "ed25519-reserved"
+          ]
+        },
         "signing_backend": {
           "enum": [
             "deterministic-test-replay",
@@ -181,8 +201,145 @@
           ]
         },
         "deterministic_public_material": { "type": "string", "minLength": 1 },
-        "key_state": { "enum": ["active", "reserved", "revoked"] },
-        "trust_scope": { "type": "string", "minLength": 1 }
+        "key_state": { "enum": ["active", "reserved", "revoked", "expired"] },
+        "valid_from_utc": { "type": "string", "minLength": 1 },
+        "valid_until_utc": { "type": "string", "minLength": 1 },
+        "trust_scope": { "type": "string", "minLength": 1 },
+        "compatibility_scope": { "type": "string", "minLength": 1 },
+        "allowed_package_namespaces": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "type": "string", "minLength": 1 },
+          "uniqueItems": true
+        }
+      }
+    },
+    "extractionPathPolicy": {
+      "type": "object",
+      "required": [
+        "contract_id",
+        "policy",
+        "diagnostic_code",
+        "plan_contract_id",
+        "path_root",
+        "before_filesystem_mutation_required",
+        "reject_absolute_paths",
+        "reject_parent_traversal",
+        "reject_symlink_entries",
+        "reject_overwrite_existing_paths",
+        "reject_duplicate_paths",
+        "reject_case_conflicting_paths",
+        "allow_empty_path"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "contract_id": { "const": "objc3c.package_ecosystem.extraction_path_policy.v1" },
+        "policy": { "const": "fail-closed-no-absolute-traversal-symlink-overwrite-duplicates-v1" },
+        "diagnostic_code": { "const": "O3PKG8055" },
+        "plan_contract_id": { "const": "objc3c.package_ecosystem.extraction_plan.v1" },
+        "path_root": { "const": "repo-relative-owned-package-root" },
+        "before_filesystem_mutation_required": { "const": true },
+        "reject_absolute_paths": { "const": true },
+        "reject_parent_traversal": { "const": true },
+        "reject_symlink_entries": { "const": true },
+        "reject_overwrite_existing_paths": { "const": true },
+        "reject_duplicate_paths": { "const": true },
+        "reject_case_conflicting_paths": { "const": true },
+        "allow_empty_path": { "const": false }
+      }
+    },
+    "installerUpdateKeyPolicy": {
+      "type": "object",
+      "required": [
+        "contract_id",
+        "policy",
+        "diagnostic_code",
+        "installer_key_required",
+        "update_key_required",
+        "installer_key_state",
+        "update_key_state",
+        "reserved_key_use_fails_closed",
+        "implicit_installer_key_rollover_allowed",
+        "implicit_update_key_rollover_allowed"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "contract_id": { "const": "objc3c.package_ecosystem.installer_update_key_policy.v1" },
+        "policy": { "const": "reserved-fail-closed-installer-update-keys-v1" },
+        "diagnostic_code": { "const": "O3PKG8055" },
+        "installer_key_required": { "const": true },
+        "update_key_required": { "const": true },
+        "installer_key_state": { "const": "reserved-fail-closed" },
+        "update_key_state": { "const": "reserved-fail-closed" },
+        "reserved_key_use_fails_closed": { "const": true },
+        "implicit_installer_key_rollover_allowed": { "const": false },
+        "implicit_update_key_rollover_allowed": { "const": false }
+      }
+    },
+    "releaseRegistryTrustRootPolicy": {
+      "type": "object",
+      "required": [
+        "contract_id",
+        "policy",
+        "diagnostic_code",
+        "local_fixture_root_only_active",
+        "release_root_required_state",
+        "registry_root_required_state",
+        "reserved_root_use_fails_closed",
+        "fallback_trust_root_allowed"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "contract_id": { "const": "objc3c.package_ecosystem.release_registry_trust_root_policy.v1" },
+        "policy": { "const": "reserved-fail-closed-release-registry-trust-roots-v1" },
+        "diagnostic_code": { "const": "O3PKG8055" },
+        "local_fixture_root_only_active": { "const": true },
+        "release_root_required_state": { "const": "reserved" },
+        "registry_root_required_state": { "const": "reserved" },
+        "reserved_root_use_fails_closed": { "const": true },
+        "fallback_trust_root_allowed": { "const": false }
+      }
+    },
+    "extractionPlan": {
+      "type": "object",
+      "required": [
+        "contract_id",
+        "plan_id",
+        "path_root",
+        "path_policy",
+        "entries",
+        "entry_count",
+        "before_filesystem_mutation",
+        "provenance",
+        "plan_digest"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "contract_id": { "const": "objc3c.package_ecosystem.extraction_plan.v1" },
+        "plan_id": { "type": "string", "minLength": 1 },
+        "path_root": { "const": "repo-relative-owned-package-root" },
+        "path_policy": { "$ref": "#/$defs/extractionPathPolicy" },
+        "entries": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "#/$defs/extractionEntry" }
+        },
+        "entry_count": { "type": "integer", "minimum": 1 },
+        "before_filesystem_mutation": { "const": true },
+        "provenance": { "type": "string", "minLength": 1 },
+        "plan_digest": { "$ref": "#/$defs/sha256" }
+      }
+    },
+    "extractionEntry": {
+      "type": "object",
+      "required": ["path", "entry_type", "mutation"],
+      "additionalProperties": true,
+      "properties": {
+        "path": { "type": "string", "minLength": 1 },
+        "entry_type": { "enum": ["file", "directory", "symlink"] },
+        "mutation": { "enum": ["write", "copy", "record"] },
+        "package_id": { "type": "string" },
+        "order": { "type": "integer", "minimum": 0 }
       }
     },
     "revocations": {

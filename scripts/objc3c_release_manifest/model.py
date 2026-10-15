@@ -77,23 +77,22 @@ def build_release_manifest_payload(
     git_commit: str,
     git_tree_dirty: bool,
 ) -> dict[str, Any]:
-    return {
-        "contract_id": "objc3c.release.foundation.manifest.v1",
-        "schema_version": 1,
-        "package_model": first.package_manifest["package_model"],
-        "reproducibility_scope": reproducibility_policy["reproducibility_scope"],
-        "build_run_count": 2,
-        "reproducibility_match": validation.reproducibility_match,
-        "source_surface": repo_rel(source_surface),
-        "package_runs": [
-            {
-                "run_id": "run-1",
-                "package_root": repo_rel(first.package_root),
-                "package_manifest_path": repo_rel(first.manifest_path),
-                "package_manifest_sha256": sha256_file(first.manifest_path),
-                "copied_file_count": first.package_manifest["copied_file_count"],
-                "release_payload_digest_sha256": first.payload_digest,
-            },
+    reused_single_package_root = (
+        first.package_root == second.package_root
+        and first.manifest_path == second.manifest_path
+    )
+    package_runs = [
+        {
+            "run_id": "run-1" if not reused_single_package_root else "reused-package-root",
+            "package_root": repo_rel(first.package_root),
+            "package_manifest_path": repo_rel(first.manifest_path),
+            "package_manifest_sha256": sha256_file(first.manifest_path),
+            "copied_file_count": first.package_manifest["copied_file_count"],
+            "release_payload_digest_sha256": first.payload_digest,
+        }
+    ]
+    if not reused_single_package_root:
+        package_runs.append(
             {
                 "run_id": "run-2",
                 "package_root": repo_rel(second.package_root),
@@ -101,8 +100,22 @@ def build_release_manifest_payload(
                 "package_manifest_sha256": sha256_file(second.manifest_path),
                 "copied_file_count": second.package_manifest["copied_file_count"],
                 "release_payload_digest_sha256": second.payload_digest,
-            },
-        ],
+            }
+        )
+    return {
+        "contract_id": "objc3c.release.foundation.manifest.v1",
+        "schema_version": 1,
+        "package_model": first.package_manifest["package_model"],
+        "reproducibility_scope": reproducibility_policy["reproducibility_scope"],
+        "reproducibility_mode": (
+            "single-reused-package-root"
+            if reused_single_package_root
+            else "repeated-runnable-package-assembly"
+        ),
+        "build_run_count": len(package_runs),
+        "reproducibility_match": validation.reproducibility_match,
+        "source_surface": repo_rel(source_surface),
+        "package_runs": package_runs,
         "primary_package_root": repo_rel(first.package_root),
         "primary_package_manifest_path": repo_rel(first.manifest_path),
         "primary_package_manifest_sha256": sha256_file(first.manifest_path),
@@ -136,6 +149,8 @@ def build_release_manifest_summary(
         "source_surface": repo_rel(source_surface),
         "release_manifest_path": repo_rel(manifest_path),
         "reproducibility_match": validation.reproducibility_match,
+        "reproducibility_mode": payload["reproducibility_mode"],
+        "build_run_count": payload["build_run_count"],
         "primary_package_root": payload["primary_package_root"],
         "primary_package_manifest_path": payload["primary_package_manifest_path"],
         "primary_package_manifest_sha256": payload["primary_package_manifest_sha256"],

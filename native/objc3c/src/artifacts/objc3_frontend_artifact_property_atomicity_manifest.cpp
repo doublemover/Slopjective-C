@@ -1,12 +1,12 @@
 #include "artifacts/objc3_frontend_artifact_property_atomicity_manifest.h"
-
+#include "artifacts/identity/artifact_identity.h"
 #include <ostream>
-
 #include "artifacts/objc3_frontend_artifact_storage_accessor_manifest_contracts.h"
 #include "ast/objc3_ast_contracts.h"
 #include "runtime/metadata/runtime_metadata_bootstrap.h"
 #include "runtime/metadata/selector_metadata_registration_descriptor_surfaces.h"
 #include "runtime/metadata/selector_metadata_registration_manifest.h"
+
 
 namespace objc3::artifacts::frontend {
 
@@ -27,7 +27,7 @@ void WriteRuntimePropertyAtomicitySynthesisReflectionSourceSurface(
            << "\",\"registration_descriptor_artifact\":\""
            << runtime_registration_descriptor_frontend_closure.artifact_relative_path
            << "\",\"object_artifact\":\""
-           << runtime_state_publication_emit_prefix << ".obj"
+           << objc3::artifacts::identity::BuildObjc3NativeObjectArtifactName(runtime_state_publication_emit_prefix)
            << "\",\"backend_artifact\":\""
            << runtime_state_publication_emit_prefix << ".ll"
            << "\",\"property_storage_source_surface_contract_id\":\""

@@ -35,6 +35,9 @@ def assert_performance_owner_contracts_are_shape_valid() -> None:
             "unsupported-benchmark-claim",
             "compatibility-retired-route-performance-claim",
             "wrapper-only-action-surface",
+            "optimization-speedup-without-safety-proof",
+            "generated-report-optimization-source-truth",
+            "optimization-fallback-success-path",
         },
     )
     assert_same_values(

@@ -98,7 +98,7 @@ static void ValidateParameterTypeSuffixes(
                                      "type mismatch: generic parameter type suffix '" + suffix +
                                          "' is unsupported for non-id/Class/instancetype parameter annotation '" +
                                          param.name + "'"));
-    } else if (param.has_generic_suffix &&
+    } else if (param.has_generic_suffix && !param.value_optional.present &&
                !ValidateGenericCollectionSpecializationSuffix(
                    param.object_pointer_type_spelling,
                    param.object_pointer_type_name,
@@ -147,6 +147,11 @@ static void ValidateParameterTypeSuffixes(
 static void ValidateReturnTypeSuffixes(
     const FunctionDecl &fn, std::vector<std::string> &diagnostics,
     const std::unordered_set<std::string> *generic_interface_names = nullptr) {
+  ValidateGenericCallableParameterList(
+      fn.generic_params, "function '" + fn.name + "'",
+      fn.generic_callable_reification_marker_declared,
+      fn.generic_callable_reification_marker_line,
+      fn.generic_callable_reification_marker_column, diagnostics);
   if (fn.has_return_generic_suffix && !SupportsGenericReturnTypeSuffix(fn)) {
     std::string suffix = fn.return_generic_suffix_text;
     if (suffix.empty()) {
@@ -156,7 +161,7 @@ static void ValidateReturnTypeSuffixes(
                                    "type mismatch: unsupported function return type suffix '" + suffix +
                                        "' for non-id/Class/instancetype return annotation in function '" + fn.name +
                                        "'"));
-  } else if (fn.has_return_generic_suffix &&
+  } else if (fn.has_return_generic_suffix && !fn.return_value_optional.present &&
              !ValidateGenericCollectionSpecializationSuffix(
                  fn.return_object_pointer_type_spelling,
                  fn.return_object_pointer_type_name,

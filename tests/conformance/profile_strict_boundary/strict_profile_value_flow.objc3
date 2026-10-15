@@ -1,0 +1,13 @@
+// Strict profile positive fixture: ordinary typed value flow remains accepted.
+module StrictProfileValueFlow;
+
+fn choose(flag: bool) -> i32 {
+  if (flag) {
+    return 42;
+  }
+  return 7;
+}
+
+fn main() -> i32 {
+  return choose(true);
+}

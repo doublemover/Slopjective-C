@@ -4,10 +4,18 @@
 from __future__ import annotations
 
 import sys
+import argparse
+import signal
+import threading
+import uuid
+from contextlib import contextmanager
+from queue import Queue
 import os
 import shutil
 import subprocess
 import hashlib
+import re
+import time
 from copy import deepcopy
 from datetime import datetime, timezone
 from pathlib import Path
@@ -15,13 +23,21 @@ from typing import Any
 
 from check_objc3c_advanced_runtime_closure import validate_advanced_runtime_closure
 from objc3c_package_manager.install_distribution import collect_install_distribution_failures
+from objc3c_package_manager.producer_report import (
+    write_producer_report, validate_producer_report, write_consumer_report, validate_consumer_report,
+)
 from objc3c_package_manager.model import PACKAGE_MANAGER_TAMPER_CODE
 from objc3c_editor_tooling.input_loading import load_editor_tooling_inputs, run_frontend_compile
 from objc3c_editor_tooling.model import build_editor_tooling_model
 from objc3c_editor_tooling.paths import paths_for_source, resolve_source
 from objc3c_editor_tooling.publication import publish_editor_tooling_surface
+from objc3c_tooling.artifact_identity import current_host_artifact_identity
 from objc3c_tooling.json_io import load_json_object as load_json, write_json_file
-from objc3c_tooling.paths import repo_rel
+from objc3c_tooling.llvm_discovery import find_llvm_tool_path
+from objc3c_tooling.paths import repo_rel as _repo_rel
+from objc3c_cross_lane_selection import PHASES, execution_node_statuses, resolve_execution_plan, safe_run_id, validate_manifest_inventory
+from objc3c_cross_lane_selection import digest_files
+from objc3c_cross_lane_execution import compute_node_identities, execute_node_plan
 from check_objc3c_public_runtime_reflection_api import validate_public_runtime_reflection_api
 from objc3c_object_model_debugger_proof import (
     DEFAULT_CONTRACT_PATH as OBJECT_MODEL_DEBUGGER_CONTRACT_PATH,
@@ -146,9 +162,12 @@ RELEASE_CHANNEL_OPERATIONS_MODEL_PATH = (
 )
 
 MANIFEST_CONTRACT_ID = "objc3c.cross_lane_e2e.manifest.v1"
+ARTIFACT_IDENTITY = current_host_artifact_identity()
 EXPECTATION_CONTRACT_ID = "objc3c.cross_lane_e2e.family_expectation.v1"
 WORKSPACE_CONTRACT_ID = "objc3c.cross_lane_e2e.workspace.v1"
 SUMMARY_CONTRACT_ID = "objc3c.cross_lane_e2e.summary.v1"
+RUN_CONTEXT: dict[str, Any] = {}
+RUN_LOG_MAP: dict[str, Path] = {}
 PUBLIC_ACTION = "validate-cross-lane-e2e"
 PUBLIC_COMMAND = "npm run objc3c -- validate-cross-lane-e2e"
 PUBLIC_CONFORMANCE_SUITE_COMMAND = "npm run objc3c -- validate-public-conformance-suite"
@@ -169,13 +188,21 @@ CANONICAL_MANIFEST_PATH = ROOT / "tests" / "fixtures" / "canonical" / "manifest.
 SUPPORT_CLAIM_EVIDENCE_CATALOG_PATH = (
     ROOT / "tests" / "conformance" / "support_claim_runnable_evidence_catalog.json"
 )
-DIRECT_IMPORT_CAPABILITY_ID = "modules.public-import-lookup"
-DIRECT_IMPORT_SUPPORT_CLAIM = "objc3c.behavior.modules.public-import-lookup"
-DIRECT_IMPORT_PUBLIC_COMMAND = "npm run objc3c -- validate-conformance-corpus"
+DIRECT_IMPORT_CAPABILITY_ID = "modules.direct-import-syntax"
+DIRECT_IMPORT_SUPPORT_CLAIM = "objc3c.behavior.modules.direct-import-syntax"
+DIRECT_IMPORT_OWNER_PHASE = "parser"
+DIRECT_IMPORT_PUBLIC_COMMAND = "npm run objc3c -- validate-direct-import-module-syntax"
 TEXT_PACKAGE_RUNTIME_FFI_BLOCKER_ID = "cross-lane-text-package-runtime-import-ffi-preservation-reserved"
 TEXT_PACKAGE_RUNTIME_FFI_BLOCKER_TEXT = (
     "cross-module runtime link-plan Part 11 ffi preservation surface incomplete "
     "for CrossLaneFixtureProvider"
+)
+NATIVE_OBJECT_EMISSION_MISSING_LLC_STATUS = "native_object_emission_missing_llc"
+NATIVE_OBJECT_EMISSION_MISSING_LLC_DIAGNOSTIC = (
+    f"{NATIVE_OBJECT_EMISSION_MISSING_LLC_STATUS}: native object emission "
+    "fail-closed; llc executable not found; set "
+    "OBJC3C_NATIVE_EXECUTION_LLC_PATH or install LLVM with llc on PATH; no "
+    "native object, package, or execution success claim is published"
 )
 
 REQUIRED_FAMILY_IDS = (
@@ -266,7 +293,11 @@ def slug_from_family_id(family_id: str) -> str:
 
 def resolve_native_exe() -> Path:
     configured = os.environ.get("OBJC3C_NATIVE_EXECUTABLE")
-    path = Path(configured) if configured else ROOT / "artifacts" / "bin" / "objc3c-native.exe"
+    path = (
+        Path(configured)
+        if configured
+        else ROOT / ARTIFACT_IDENTITY.native_executable_relative_path
+    )
     if not path.is_absolute():
         path = ROOT / path
     if not path.is_file():
@@ -274,23 +305,27 @@ def resolve_native_exe() -> Path:
     return path
 
 
+def host_executable_artifact_name(stem: str) -> str:
+    suffix = ".exe" if ARTIFACT_IDENTITY.native_executable_name.endswith(".exe") else ""
+    return f"{stem}{suffix}"
+
+
 def resolve_clangxx() -> str:
     configured = os.environ.get("OBJC3C_NATIVE_EXECUTION_CLANG_PATH")
     if configured:
         return configured
-    llvm_root = os.environ.get("LLVM_ROOT")
-    if llvm_root:
-        candidate = Path(llvm_root) / "bin" / "clang++.exe"
-        if candidate.is_file():
-            return str(candidate)
-    return shutil.which("clang++") or "clang++"
+    candidate = find_llvm_tool_path("clang++")
+    return str(candidate) if candidate else "clang++"
 
 
 def resolve_llc() -> str:
     configured = os.environ.get("OBJC3C_NATIVE_EXECUTION_LLC_PATH")
     if configured:
         return configured
-    return shutil.which("llc") or "llc"
+    candidate = find_llvm_tool_path("llc")
+    if candidate:
+        return str(candidate)
+    raise RuntimeError(NATIVE_OBJECT_EMISSION_MISSING_LLC_DIAGNOSTIC)
 
 
 def link_driver_args() -> list[str]:
@@ -309,31 +344,107 @@ def link_driver_args() -> list[str]:
     return args
 
 
-def run_checked(
-    command: list[str],
-    *,
-    cwd: Path,
-    log_path: Path,
-    domain: str,
-    check: bool = True,
-) -> subprocess.CompletedProcess[str]:
-    result = subprocess.run(command, cwd=cwd, text=True, capture_output=True, check=False)
-    log_path.parent.mkdir(parents=True, exist_ok=True)
-    log_path.write_text(
-        "command: " + " ".join(command) + "\n"
-        + f"exit_code: {result.returncode}\n"
-        + "stdout:\n" + result.stdout
-        + "\nstderr:\n" + result.stderr,
-        encoding="utf-8",
-    )
-    if check and result.returncode != 0:
-        print(f"[fail] {domain} command failed; captured log follows: {repo_rel(log_path)}", file=sys.stderr)
-        print(log_path.read_text(encoding="utf-8"), file=sys.stderr)
-        raise RuntimeError(
-            f"{domain} proof command failed with exit {result.returncode}: {repo_rel(log_path)}"
-        )
-    return result
+def repo_rel(path: Path) -> str:
+    mapped = RUN_LOG_MAP.get(str(path))
+    if mapped is not None:
+        try:
+            return _repo_rel(mapped)
+        except ValueError:
+            return mapped.resolve().as_posix()
+    return _repo_rel(path)
 
+def _terminate_process_tree(process: subprocess.Popen[str]) -> None:
+    if process.poll() is not None:
+        return
+    if os.name == "nt":
+        subprocess.run(["taskkill", "/PID", str(process.pid), "/T", "/F"], capture_output=True, check=False)
+    else:
+        try:
+            os.killpg(process.pid, signal.SIGTERM)
+        except ProcessLookupError:
+            return
+        try:
+            process.wait(timeout=2)
+        except subprocess.TimeoutExpired:
+            try:
+                os.killpg(process.pid, signal.SIGKILL)
+            except ProcessLookupError:
+                pass
+
+
+def run_checked(command: list[str], *, cwd: Path, log_path: Path, domain: str, check: bool = True, timeout_seconds: float | None = None) -> subprocess.CompletedProcess[str]:
+    timeout = timeout_seconds or float(os.environ.get("OBJC3C_CROSS_LANE_TIMEOUT_SECONDS", "1800"))
+    requested_log_path = log_path
+    run_root = RUN_CONTEXT.get("output_root")
+    if run_root is not None:
+        normalized = re.sub(r"[^A-Za-z0-9._-]+", "-", domain).strip("-")[:100]
+        log_path = Path(run_root) / "logs" / f"{normalized}.log"
+    RUN_LOG_MAP[str(log_path)] = log_path
+    log_path.parent.mkdir(parents=True, exist_ok=True)
+    if log_path.exists():
+        prior = log_path
+        suffix = 1
+        while log_path.exists():
+            log_path = prior.with_name(f"{prior.stem}.retry-{suffix}{prior.suffix}")
+            suffix += 1
+    RUN_LOG_MAP[str(requested_log_path)] = log_path
+    RUN_LOG_MAP[str(log_path)] = log_path
+    creation_flags = subprocess.CREATE_NEW_PROCESS_GROUP if os.name == "nt" else 0
+    process = subprocess.Popen(command, cwd=cwd, text=True, encoding="utf-8", errors="replace", stdout=subprocess.PIPE, stderr=subprocess.PIPE, bufsize=1, start_new_session=os.name != "nt", creationflags=creation_flags)
+    events: Queue[tuple[str, str | None]] = Queue()
+    def pump(name: str, stream: Any) -> None:
+        try:
+            for line in iter(stream.readline, ""):
+                events.put((name, line))
+        finally:
+            events.put((name, None))
+    threads = [threading.Thread(target=pump, args=("stdout", process.stdout), daemon=True), threading.Thread(target=pump, args=("stderr", process.stderr), daemon=True)]
+    for thread in threads:
+        thread.start()
+    captures = {"stdout": [], "stderr": []}
+    captured_bytes = logged_bytes = ended = 0
+    truncated_capture = truncated_log = timed_out = False
+    deadline = time.monotonic() + timeout
+    with log_path.open("w", encoding="utf-8", newline="") as log:
+        log.write("command: " + " ".join(command) + "\n")
+        while ended < 2 or process.poll() is None:
+            if time.monotonic() >= deadline and process.poll() is None:
+                timed_out = True
+                _terminate_process_tree(process)
+            try:
+                name, line = events.get(timeout=0.1)
+            except Exception:
+                if process.poll() is not None and ended >= 2:
+                    break
+                continue
+            if line is None:
+                ended += 1
+                continue
+            size = len(line.encode("utf-8", errors="replace"))
+            if logged_bytes + size <= 10 * 1024 * 1024:
+                log.write(line)
+                logged_bytes += size
+            elif not truncated_log:
+                log.write("\n[log truncated after 10 MiB; child output continues to be drained]\n")
+                truncated_log = True
+            if captured_bytes + size <= 2 * 1024 * 1024:
+                captures[name].append(line)
+                captured_bytes += size
+            elif not truncated_capture:
+                captures[name].append("\n[output capture truncated after 2 MiB]\n")
+                truncated_capture = True
+        process.wait()
+        for thread in threads:
+            thread.join(timeout=1)
+        log.write(f"\nexit_code: {process.returncode}\ntimeout: {str(timed_out).lower()}\n")
+    stdout, stderr = "".join(captures["stdout"]), "".join(captures["stderr"])
+    result = subprocess.CompletedProcess(command, 124 if timed_out else int(process.returncode or 0), stdout, stderr)
+    if check and (timed_out or result.returncode != 0):
+        reason = "timed out" if timed_out else f"failed with exit {result.returncode}"
+        print(f"[fail] {domain} command {reason}; captured log follows: {repo_rel(log_path)}", file=sys.stderr)
+        print(log_path.read_text(encoding="utf-8"), file=sys.stderr)
+        raise RuntimeError(f"{domain} proof command {reason}: {repo_rel(log_path)}")
+    return result
 
 def require_artifact(path: Path, label: str) -> None:
     if not path.is_file():
@@ -415,7 +526,7 @@ def compile_native_module(
         domain=f"{family_id}.{domain}",
     )
 
-    obj_path = compile_dir / "module.obj"
+    obj_path = compile_dir / ARTIFACT_IDENTITY.module_object_artifact_name
     ll_path = compile_dir / "module.ll"
     import_surface_path = compile_dir / "module.runtime-import-surface.json"
     require_artifact(obj_path, "native object")
@@ -608,8 +719,8 @@ def validate_optimization_trace_proof(
     method_before_text = OPTIMIZATION_METHOD_INLINING_BEFORE_IR_PATH.read_text(encoding="utf-8")
     method_after_text = OPTIMIZATION_METHOD_INLINING_AFTER_IR_PATH.read_text(encoding="utf-8")
     required_method_reference_tokens = {
-        "method_before_call": "call i32 @objc3_inlineable_Math_addOne",
-        "method_before_body_identity": "callee body identity: body:Math.addOne:v1",
+        "method_before_call": "call i32 @objc3_inlineable_InlineMath_addOne",
+        "method_before_body_identity": "callee body identity: body:InlineMath.addOne:v1",
         "method_after_inline_frame": "source-map inline frame preserved",
         "method_after_invalidation": "semantic-optimization.invalidate-global-proof-state",
     }
@@ -835,8 +946,39 @@ def validate_object_typed_keypath_reflection_proof(
         minimum_key="live_typed_keypath_artifact_sites",
         domain="typed keypath lowering contract",
     )
+    typed_keypath_descriptor_publication_sites = validate_minimum_count(
+        family_id=family_id,
+        actual=lowering_contract.get("typed_keypath_descriptor_publication_sites"),
+        minimums=minimums,
+        minimum_key="typed_keypath_descriptor_publication_sites",
+        domain="typed keypath lowering contract",
+    )
+    typed_keypath_source_map_evidence_sites = validate_minimum_count(
+        family_id=family_id,
+        actual=lowering_contract.get("typed_keypath_source_map_evidence_sites"),
+        minimums=minimums,
+        minimum_key="typed_keypath_source_map_evidence_sites",
+        domain="typed keypath lowering contract",
+    )
+    typed_keypath_runtime_handle_evidence_sites = validate_minimum_count(
+        family_id=family_id,
+        actual=lowering_contract.get("typed_keypath_runtime_handle_evidence_sites"),
+        minimums=minimums,
+        minimum_key="typed_keypath_runtime_handle_evidence_sites",
+        domain="typed keypath lowering contract",
+    )
+    if (
+        typed_keypath_descriptor_publication_sites != live_typed_keypath_artifact_sites
+        or typed_keypath_source_map_evidence_sites != live_typed_keypath_artifact_sites
+        or typed_keypath_runtime_handle_evidence_sites != live_typed_keypath_artifact_sites
+    ):
+        raise RuntimeError(f"{family_id}.typed keypath evidence counters drifted from live artifacts")
     if runtime_helper_contract.get("typed_keypath_descriptor_handles_ready") is not True:
         raise RuntimeError(f"{family_id}.typed keypath descriptor handles must be runtime-ready")
+    if runtime_helper_contract.get("typed_keypath_source_map_evidence_ready") is not True:
+        raise RuntimeError(f"{family_id}.typed keypath source-map evidence must be runtime-ready")
+    if runtime_helper_contract.get("typed_keypath_runtime_handle_evidence_ready") is not True:
+        raise RuntimeError(f"{family_id}.typed keypath runtime-handle evidence must be runtime-ready")
     if runtime_helper_contract.get("typed_keypath_runtime_execution_helper_landed") is not True:
         raise RuntimeError(f"{family_id}.typed keypath runtime helper must be landed")
 
@@ -867,7 +1009,12 @@ def validate_object_typed_keypath_reflection_proof(
         "semantic_typed_keypath_literal_sites": semantic_typed_keypath_literal_sites,
         "lowering_typed_keypath_literal_sites": lowering_typed_keypath_literal_sites,
         "live_typed_keypath_artifact_sites": live_typed_keypath_artifact_sites,
+        "typed_keypath_descriptor_publication_sites": typed_keypath_descriptor_publication_sites,
+        "typed_keypath_source_map_evidence_sites": typed_keypath_source_map_evidence_sites,
+        "typed_keypath_runtime_handle_evidence_sites": typed_keypath_runtime_handle_evidence_sites,
         "descriptor_handles_ready": True,
+        "source_map_evidence_ready": True,
+        "runtime_handle_evidence_ready": True,
         "runtime_execution_helper_landed": True,
         "required_ir_tokens": required_ir_tokens,
     }
@@ -878,6 +1025,8 @@ def validate_object_reflection_debugger_proof(
     source_path: Path,
     expectation: dict[str, Any],
     executable_proof: dict[str, Any] | None,
+    *,
+    include_public_reflection: bool = True,
 ) -> dict[str, Any] | None:
     if family_id != "object_reflection_debugger":
         return None
@@ -1028,10 +1177,10 @@ def validate_object_reflection_debugger_proof(
     debug_map = require_object(model.debug, f"{family_id}.debug_source_map")
     if debug_map.get("supported") is not True or debug_map.get("object_artifact_present") is not True:
         raise RuntimeError(f"{family_id}.debug map must be tied to the emitted object artifact")
-    if debug_map.get("source_map_supported") is not False:
-        raise RuntimeError(f"{family_id}.debug map must keep full source maps fail-closed")
-    if debug_map.get("statement_level_stepping") is not False:
-        raise RuntimeError(f"{family_id}.debug map must keep statement stepping fail-closed")
+    if debug_map.get("source_map_supported") is not True:
+        raise RuntimeError(f"{family_id}.debug map must publish object-model source maps")
+    if debug_map.get("statement_level_stepping") is not True:
+        raise RuntimeError(f"{family_id}.debug map must publish object-model statement stepping")
     declaration_breakpoint_anchors = validate_minimum_count(
         family_id=family_id,
         actual=debug_map.get("declaration_breakpoint_anchor_count"),
@@ -1057,26 +1206,30 @@ def validate_object_reflection_debugger_proof(
         diagnostics = ", ".join(diagnostic.code for diagnostic in debugger_result.diagnostics)
         raise RuntimeError(f"{family_id}.object-model debugger proof failed: {diagnostics}")
 
-    public_reflection = validate_public_runtime_reflection_api()
-    if public_reflection.get("status") != "PASS":
-        failures = ", ".join(str(failure) for failure in public_reflection.get("failures", []))
-        raise RuntimeError(f"{family_id}.public runtime reflection proof failed: {failures}")
-    public_reflection_report_path = (
-        ROOT / "tmp" / "reports" / "runtime" / "public-runtime-reflection-api.json"
-    )
-    write_json_file(public_reflection_report_path, public_reflection)
+    public_reflection_report_path = None
+    if include_public_reflection:
+        public_reflection = validate_public_runtime_reflection_api()
+        if public_reflection.get("status") != "PASS":
+            failures = ", ".join(str(failure) for failure in public_reflection.get("failures", []))
+            raise RuntimeError(f"{family_id}.public runtime reflection proof failed: {failures}")
+        public_reflection_report_path = (
+            ROOT / "tmp" / "reports" / "runtime" / "public-runtime-reflection-api.json"
+        )
+        write_json_file(public_reflection_report_path, public_reflection)
 
     reserved_rows = require_list(
         proof.get("reserved_rows_not_promoted"),
         f"{family_id}.object_reflection_debugger_proof.reserved_rows_not_promoted",
     )
-    for required_row in (
-        "runtime.object-model.full-realization",
-        "runtime.debug-trace.statement-stepping",
-        "runtime.debug-trace.full-source-map-publication",
-    ):
+    for required_row in ("runtime.debug-trace.full-source-map-publication",):
         if required_row not in reserved_rows:
             raise RuntimeError(f"{family_id}.object reflection proof must keep {required_row} reserved")
+    for promoted_row in (
+        "runtime.object-model.full-realization",
+        "runtime.debug-trace.statement-stepping",
+    ):
+        if promoted_row in reserved_rows:
+            raise RuntimeError(f"{family_id}.object reflection proof must not reserve promoted row {promoted_row}")
 
     return {
         "status": "PASS",
@@ -1089,7 +1242,7 @@ def validate_object_reflection_debugger_proof(
         "source_graph_nodes": source_graph_nodes,
         "declaration_breakpoint_anchors": declaration_breakpoint_anchors,
         "typed_keypath_object_reflection": typed_keypath_object_reflection,
-        "public_runtime_reflection_report": repo_rel(public_reflection_report_path),
+        "public_runtime_reflection_report": repo_rel(public_reflection_report_path) if public_reflection_report_path else None,
         "object_model_debugger_contract": repo_rel(debugger_contract),
         "reserved_rows_not_promoted": reserved_rows,
     }
@@ -1365,8 +1518,11 @@ def _validate_direct_import_source_truth(
         raise RuntimeError(f"{family_id}.direct_import_source_truth.capability_id drifted")
     if direct_import.get("support_claim") != DIRECT_IMPORT_SUPPORT_CLAIM:
         raise RuntimeError(f"{family_id}.direct_import_source_truth.support_claim drifted")
-    if direct_import.get("owner_phase") != "sema":
-        raise RuntimeError(f"{family_id}.direct_import_source_truth.owner_phase must stay sema-owned")
+    if direct_import.get("owner_phase") != DIRECT_IMPORT_OWNER_PHASE:
+        raise RuntimeError(
+            f"{family_id}.direct_import_source_truth.owner_phase must stay "
+            f"{DIRECT_IMPORT_OWNER_PHASE}-owned"
+        )
     if direct_import.get("public_replay_command") != DIRECT_IMPORT_PUBLIC_COMMAND:
         raise RuntimeError(f"{family_id}.direct_import_source_truth.public command drifted")
 
@@ -1418,7 +1574,7 @@ def _validate_direct_import_source_truth(
     )
     if support_claim.get("owner_phase") != direct_import.get("owner_phase"):
         raise RuntimeError(f"{family_id}.direct_import_source_truth owner phase drifted from canonical manifest")
-    if normalize_path(str(support_claim.get("behavior_fixture", ""))) != repo_rel(consumer_fixture):
+    if normalize_path(str(support_claim.get("behavior_fixture", ""))) != repo_rel(conformance_fixture):
         raise RuntimeError(f"{family_id}.direct_import_source_truth behavior fixture drifted from canonical manifest")
     if support_claim.get("executable_command") != DIRECT_IMPORT_PUBLIC_COMMAND:
         raise RuntimeError(f"{family_id}.direct_import_source_truth executable command drifted from canonical manifest")
@@ -1612,10 +1768,10 @@ def _validate_missing_provider_link_failure(
     compile_dir = ROOT / normalize_path(
         require_nonempty_string(executable_proof.get("compile_dir"), f"{family_id}.compile_dir")
     )
-    obj_path = compile_dir / "module.obj"
+    obj_path = compile_dir / ARTIFACT_IDENTITY.module_object_artifact_name
     require_artifact(obj_path, "text package missing-provider object")
     runtime_library, driver_flags = load_runtime_launch_inputs(compile_dir)
-    missing_provider_exe = artifact_dir / "missing-provider.exe"
+    missing_provider_exe = artifact_dir / host_executable_artifact_name("missing-provider")
     missing_provider_log = artifact_dir / "missing-provider-link.log"
     result = run_checked(
         [
@@ -2358,6 +2514,7 @@ def validate_tampered_package_rejection(
     publication: dict[str, Any],
     restore_receipt: dict[str, Any],
     verification: dict[str, Any],
+    output_root: Path | None = None,
 ) -> dict[str, Any]:
     tampered_verification = deepcopy(verification)
     installed_records = require_list(
@@ -2389,6 +2546,7 @@ def validate_tampered_package_rejection(
         publication=publication,
         restore_receipt=restore_receipt,
         verification=tampered_verification,
+        output_root=output_root,
     )
     expected_diagnostic = f"{PACKAGE_MANAGER_TAMPER_CODE}: installed trust signature drifted for {package_id}"
     if expected_diagnostic not in observed_failures:
@@ -2616,6 +2774,9 @@ def validate_distribution_package_lifecycle_proof(
     expectation: dict[str, Any],
     executable_proof: dict[str, Any],
     release_operations_preflight: dict[str, Any],
+    *,
+    run_clean_install: bool = True,
+    install_output_root: Path | None = None,
 ) -> dict[str, Any]:
     lifecycle = require_object(expectation.get("distribution_lifecycle"), f"{family_id}.distribution_lifecycle")
     expected_path = require_nonempty_string(
@@ -2624,13 +2785,16 @@ def validate_distribution_package_lifecycle_proof(
     )
     trace_path = ROOT / normalize_path(expected_path)
     artifact_dir = ARTIFACT_ROOT / slug_from_family_id(family_id)
+    if not run_clean_install:
+        trace_path = artifact_dir / Path(expected_path).name
 
-    run_public_workflow_action(
-        "validate-package-install-distribution",
-        args=["--from-nothing"],
-        log_path=artifact_dir / "package-install-distribution.log",
-        domain=f"{family_id}.package trust diagnostic",
-    )
+    if run_clean_install:
+        run_public_workflow_action(
+            "validate-package-install-distribution",
+            args=["--from-nothing"],
+            log_path=artifact_dir / "package-install-distribution.log",
+            domain=f"{family_id}.package trust diagnostic",
+        )
     release_model = require_release_operations_preflight(family_id, release_operations_preflight)
 
     package_summary = _require_json_artifact(PACKAGE_INSTALL_SUMMARY_PATH, "package install summary")
@@ -2703,6 +2867,7 @@ def validate_distribution_package_lifecycle_proof(
         publication=publication,
         restore_receipt=restore_receipt,
         verification=verification,
+        output_root=install_output_root,
     )
 
     payload = {
@@ -2827,8 +2992,8 @@ def validate_advanced_runtime_contract_backed_proof(
     )
     if evidence.get("public_replay_command") != ADVANCED_RUNTIME_PUBLIC_COMMAND:
         raise RuntimeError(f"{family_id}.workspace canonical evidence command drifted")
-    if evidence.get("umbrella_support_promoted") is not False:
-        raise RuntimeError(f"{family_id}.workspace must not promote advanced-runtime umbrella support")
+    if evidence.get("umbrella_support_promoted") is not True:
+        raise RuntimeError(f"{family_id}.workspace must promote advanced-runtime umbrella support")
     require_path_field(evidence, "positive_fixture", ADVANCED_RUNTIME_POSITIVE_FIXTURE)
     require_path_field(
         evidence,
@@ -2879,8 +3044,8 @@ def validate_advanced_runtime_contract_backed_proof(
         raise RuntimeError(f"{family_id}.source_graph.proof_kind drifted")
     if debug_source_map.get("proof_kind") != "advanced-runtime-canonical-source-debug-map":
         raise RuntimeError(f"{family_id}.debug_source_map.proof_kind drifted")
-    if runtime.get("umbrella_support_promoted") is not False:
-        raise RuntimeError(f"{family_id}.runtime must not promote advanced-runtime umbrella support")
+    if runtime.get("umbrella_support_promoted") is not True:
+        raise RuntimeError(f"{family_id}.runtime must promote advanced-runtime umbrella support")
     if source_graph.get("source_truth") is True or debug_source_map.get("source_truth") is True:
         raise RuntimeError(f"{family_id} generated evidence must not be marked source truth")
 
@@ -2963,7 +3128,7 @@ def validate_advanced_runtime_contract_backed_proof(
         "negative_matrix_case_count": payload["advanced_runtime_negative_matrix_case_count"],
         "compile_manifest_status": compile_manifest["status"],
         "optimization_trace_status": optimization_trace["status"],
-        "umbrella_support_promoted": False,
+        "umbrella_support_promoted": True,
     }
 
 
@@ -3194,7 +3359,8 @@ def validate_expectation(
             raise RuntimeError(f"{family_id}.{section_name} must not mark generated artifacts as source truth")
 
     boundary = require_object(expectation.get("capability_boundary"), f"{family_id}.capability_boundary")
-    if boundary.get("cannot_promote_reserved_rows") is not True:
+    expected_no_reserved_promotion = family_id != "object_reflection_debugger"
+    if boundary.get("cannot_promote_reserved_rows") is not expected_no_reserved_promotion:
         raise RuntimeError(f"{family_id}.capability_boundary must forbid reserved-row promotion")
     require_list(boundary.get("referenced_capability_rows"), f"{family_id}.capability_boundary.rows")
     return expectation
@@ -3212,6 +3378,7 @@ def validate_family(
     family: dict[str, Any],
     *,
     release_operations_preflight: dict[str, Any],
+    execute_phase_proofs: bool = True,
 ) -> dict[str, Any]:
     family_id = require_nonempty_string(family.get("family_id"), "family.family_id")
     require_nonempty_string(family.get("display_name"), f"{family_id}.display_name")
@@ -3250,7 +3417,7 @@ def validate_family(
     advanced_runtime_contract_proof: dict[str, Any] | None = None
     optimization_trace_proof: dict[str, Any] | None = None
     distribution_lifecycle_proof: dict[str, Any] | None = None
-    if require_object(expectation["runtime"], f"{family_id}.runtime").get("status") == "expected-pass":
+    if execute_phase_proofs and require_object(expectation["runtime"], f"{family_id}.runtime").get("status") == "expected-pass":
         if family_id == ADVANCED_RUNTIME_FAMILY_ID:
             advanced_runtime_contract_proof = validate_advanced_runtime_contract_backed_proof(
                 family_id,
@@ -3258,25 +3425,19 @@ def validate_family(
                 workspace,
             )
         executable_proof = validate_executable_runtime_proof(family_id, source_path, expectation, workspace)
-    object_reflection_debugger_proof = validate_object_reflection_debugger_proof(
-        family_id,
-        source_path,
-        expectation,
-        executable_proof,
-    )
-    text_collections_package_proof = validate_text_collections_package_proof(
-        family_id,
-        source_path,
-        expectation,
-        workspace,
-        executable_proof,
-    )
-    if require_object(expectation["optimization_trace"], f"{family_id}.optimization_trace").get("status") == "expected-pass":
+    if execute_phase_proofs:
+        object_reflection_debugger_proof = validate_object_reflection_debugger_proof(
+            family_id, source_path, expectation, executable_proof,
+        )
+        text_collections_package_proof = validate_text_collections_package_proof(
+            family_id, source_path, expectation, workspace, executable_proof,
+        )
+    if execute_phase_proofs and require_object(expectation["optimization_trace"], f"{family_id}.optimization_trace").get("status") == "expected-pass":
         if executable_proof is None:
             raise RuntimeError(f"{family_id}.optimization proof diagnostic requires executable runtime proof")
         optimization_trace_proof = validate_optimization_trace_proof(family_id, expectation, executable_proof)
     distribution_lifecycle = expectation.get("distribution_lifecycle")
-    if isinstance(distribution_lifecycle, dict) and distribution_lifecycle.get("status") == "expected-pass":
+    if execute_phase_proofs and isinstance(distribution_lifecycle, dict) and distribution_lifecycle.get("status") == "expected-pass":
         if executable_proof is None:
             raise RuntimeError(f"{family_id}.distribution lifecycle proof requires executable runtime proof")
         distribution_lifecycle_proof = validate_distribution_package_lifecycle_proof(
@@ -3428,7 +3589,388 @@ def validate_public_conformance_suite_linkage(family_summaries: list[dict[str, A
     }
 
 
-def validate_manifest() -> dict[str, Any]:
+@contextmanager
+def _serialized_distribution_writer():
+    lock_path = ROOT / "tmp" / "artifacts" / "cross-lane-e2e" / ".distribution-writer.lock"
+    lock_path.parent.mkdir(parents=True, exist_ok=True)
+    with lock_path.open("a+b") as lock:
+        if os.name == "nt":
+            import msvcrt
+            lock.seek(0)
+            msvcrt.locking(lock.fileno(), msvcrt.LK_LOCK, 1)
+            try:
+                yield
+            finally:
+                lock.seek(0)
+                msvcrt.locking(lock.fileno(), msvcrt.LK_UNLCK, 1)
+        else:
+            import fcntl
+            fcntl.flock(lock.fileno(), fcntl.LOCK_EX)
+            try:
+                yield
+            finally:
+                fcntl.flock(lock.fileno(), fcntl.LOCK_UN)
+
+
+def _validate_selected_family(family: dict[str, Any], preflight: dict[str, Any]) -> dict[str, Any]:
+    if family.get("family_id") == "distribution_package_lifecycle":
+        with _serialized_distribution_writer():
+            return validate_family(family, release_operations_preflight=preflight)
+    return validate_family(family, release_operations_preflight=preflight)
+
+
+def _node_result_path(run_dir: Path, node_id: str) -> Path:
+    return run_dir / "node-results" / (hashlib.sha256(node_id.encode("utf-8")).hexdigest() + ".json")
+
+
+def _read_node_result(run_dir: Path, node_id: str) -> dict[str, Any]:
+    path = _node_result_path(run_dir, node_id)
+    if not path.is_file():
+        raise RuntimeError(f"required completed dependency result is missing: {node_id}")
+    value = load_json(path)
+    if not isinstance(value, dict) or value.get("node_id") != node_id or value.get("status") != "PASS":
+        raise RuntimeError(f"required dependency result is incomplete: {node_id}")
+    _validate_node_artifacts(value)
+    return value
+
+
+def _node_artifact_digests(result: dict[str, Any]) -> dict[str, str]:
+    artifacts: dict[str, str] = {}
+    def collect(value: Any) -> None:
+        if isinstance(value, dict):
+            for child in value.values():
+                collect(child)
+        elif isinstance(value, list):
+            for child in value:
+                collect(child)
+        elif isinstance(value, str) and value:
+            path = Path(value)
+            candidate = path if path.is_absolute() else ROOT / path
+            try:
+                resolved = candidate.resolve()
+                resolved.relative_to(ROOT.resolve())
+            except (ValueError, OSError):
+                return
+            if resolved.is_file():
+                artifacts[repo_rel(resolved)] = sha256_file(resolved)
+    collect(result)
+    return artifacts
+
+
+def _validate_node_artifacts(result: dict[str, Any]) -> None:
+    artifacts = result.get("artifact_digests")
+    if not isinstance(artifacts, dict) or not artifacts:
+        raise ValueError("completed node result has no artifact digest inventory")
+    for raw, expected in artifacts.items():
+        path = (ROOT / raw).resolve()
+        if not path.is_relative_to(ROOT.resolve()) or not path.is_file() or sha256_file(path) != expected:
+            raise ValueError(f"completed node artifact is missing or changed: {raw}")
+
+
+def _write_node_result(run_dir: Path, node: dict[str, Any], result: dict[str, Any], *,
+                       node_identity: str | None = None, build_identity: str | None = None,
+                       run_id: str | None = None) -> None:
+    path = _node_result_path(run_dir, str(node["node_id"]))
+    path.parent.mkdir(parents=True, exist_ok=True)
+    write_json_file(path, {"node_id": node["node_id"], "status": "PASS", "run_id": run_id,
+                           "node_identity": node_identity, "build_identity": build_identity,
+                           **result, "artifact_digests": _node_artifact_digests(result)})
+
+
+def _node_worker(node_id: str, run_dir: Path, run_id: str,
+                 node_identity: str, build_identity: str) -> int:
+    """Execute exactly one real phase callback in a disposable child process."""
+    global ARTIFACT_ROOT, REPORT_PATH
+    safe_run_id(run_id)
+    if run_dir.name != run_id or not run_dir.resolve().is_relative_to((ROOT / "tmp").resolve()):
+        raise RuntimeError("node worker run directory must be isolated within repository tmp")
+    manifest = load_json(MANIFEST_PATH)
+    rows = [manifest_family(row, f"families[{index}]") for index, row in enumerate(require_list(manifest.get("families"), "families"))]
+    plan = resolve_execution_plan(manifest, ROOT, node_ids=[node_id])
+    node = next((item for item in plan["nodes"] if item["node_id"] == node_id), None)
+    if node is None:
+        raise RuntimeError(f"unknown execution node: {node_id}")
+    family = next(row for row in rows if row["family_id"] == node["family_id"])
+    family_id = str(family["family_id"])
+    workspace_path = require_source_owned_path(str(family["workspace_manifest"]), f"{family_id}.workspace_manifest")
+    source_path = require_source_owned_path(str(family["source"]), f"{family_id}.source")
+    expectation_path = require_source_owned_path(str(family["expectation"]), f"{family_id}.expectation")
+    workspace = validate_workspace(family_id, workspace_path, str(family["source"]))
+    expectation = validate_expectation(family, expectation_path, source_path, workspace_path)
+    ARTIFACT_ROOT = run_dir / "artifacts"
+    REPORT_PATH = run_dir / "summary.json"
+    family_artifacts = ARTIFACT_ROOT / slug_from_family_id(family_id)
+    family_artifacts.mkdir(parents=True, exist_ok=True)
+    phase = str(node["phase"])
+
+    if phase == "provider":
+        expected_module_id = node_id.rsplit(":provider:", 1)[-1]
+        module = next((item for item in workspace.get("package_modules", [])
+                       if str(item.get("module_name") or Path(str(item.get("source", ""))).stem) == expected_module_id), None)
+        if module is None:
+            raise RuntimeError(f"provider node has no package module: {node_id}")
+        module_name = require_nonempty_string(module.get("module_name"), f"{node_id}.module_name")
+        provider_source = require_source_owned_path(str(module.get("source", "")), f"{node_id}.source")
+        provider_dir = family_artifacts / "packages" / module_name
+        provider_dir.mkdir(parents=True, exist_ok=True)
+        built = compile_native_module(source_path=provider_source, compile_dir=provider_dir,
+                                      compile_log=provider_dir / "compile.log", family_id=family_id,
+                                      domain="package trust diagnostic",
+                                      import_surfaces=[Path(_read_node_result(run_dir, dependency)["import_surface_path"])
+                                                       for dependency in node.get("depends_on", [])])
+        result = {key: repo_rel(value) if isinstance(value, Path) else value for key, value in built.items()}
+        result["module_name"] = module_name
+        result["runtime_library"] = repo_rel(built["runtime_library"])
+    elif phase == "consumer-compile":
+        provider_results = [_read_node_result(run_dir, dependency) for dependency in node.get("depends_on", [])]
+        surfaces = [Path(result["import_surface_path"]) for result in provider_results]
+        compile_dir = family_artifacts / "compile"
+        compile_dir.mkdir(parents=True, exist_ok=True)
+        built = compile_native_module(source_path=source_path, compile_dir=compile_dir,
+                                      compile_log=compile_dir / "compile.log", family_id=family_id,
+                                      domain="lowering/IR diagnostic", import_surfaces=surfaces,
+                                      bootstrap_order_ordinal=len(provider_results) + 1)
+        result = {key: repo_rel(value) if isinstance(value, Path) else value for key, value in built.items()}
+    elif phase == "link-run":
+        consumer_id = f"{family_id}:consumer"
+        consumer = _read_node_result(run_dir, consumer_id)
+        provider_results = [_read_node_result(run_dir, dependency) for dependency in node.get("depends_on", [])
+                            if dependency != consumer_id]
+        runtime = Path(consumer["runtime_library"])
+        objects = [Path(item["obj_path"]) for item in provider_results]
+        flags = list(consumer["driver_flags"])
+        for item in provider_results:
+            if Path(item["runtime_library"]) != runtime:
+                raise RuntimeError(f"{family_id}.provider runtime support library mismatch")
+            flags.extend(item["driver_flags"])
+        executable = family_artifacts / "module.exe"
+        link_log = family_artifacts / "link.log"
+        run_checked([resolve_clangxx(), *link_driver_args(), consumer["obj_path"],
+                     *[str(path) for path in objects], str(runtime), *flags, "-o", str(executable),
+                     "-fno-color-diagnostics"], cwd=ROOT, log_path=link_log,
+                    domain=f"{family_id}.runtime status")
+        require_artifact(executable, "linked executable")
+        runtime_expectation = require_object(expectation["runtime"], f"{family_id}.runtime")
+        execution = run_checked([str(executable)], cwd=ROOT, log_path=family_artifacts / "run.log",
+                                domain=f"{family_id}.runtime status", check=False)
+        expected_exit = runtime_expectation.get("expected_exit_code")
+        if execution.returncode != expected_exit:
+            raise RuntimeError(f"{family_id}.runtime status expected exit {expected_exit} but got {execution.returncode}")
+        for artifact in runtime_expectation.get("required_artifacts", []):
+            candidate = executable if artifact == "module.exe" else Path(consumer["compile_dir"]) / artifact
+            require_artifact(candidate, str(artifact))
+        result = {"status": "PASS", "expected_exit_code": expected_exit,
+                  "actual_exit_code": execution.returncode, "compile_dir": consumer["compile_dir"],
+                  "executable": str(executable), "compile_log": consumer["compile_log"],
+                  "link_log": str(link_log), "run_log": str(family_artifacts / "run.log"),
+                  "package_module_proofs": [{"module_name": item["module_name"],
+                    "runtime_import_surface": item["import_surface_path"], "object": item["obj_path"]}
+                    for item in provider_results]}
+        if family_id == "text_collections_package":
+            result["text_collections_package_proof"] = validate_text_collections_package_proof(
+                family_id, source_path, expectation, workspace, result)
+    elif phase in ("debugger", "reflection"):
+        proof = _read_node_result(run_dir, f"{family_id}:link-run")
+        if phase == "debugger":
+            result = validate_object_reflection_debugger_proof(family_id, source_path, expectation, proof,
+                                                               include_public_reflection=False) or {"status": "PASS"}
+        else:
+            reflection = validate_public_runtime_reflection_api()
+            if reflection.get("status") != "PASS":
+                raise RuntimeError(f"public runtime reflection proof failed: {reflection.get('failures', [])}")
+            report = ROOT / "tmp" / "reports" / "runtime" / "public-runtime-reflection-api.json"
+            write_json_file(report, reflection)
+            result = {"status": "PASS", "report": repo_rel(report)}
+    elif phase == "optimization":
+        proof = _read_node_result(run_dir, f"{family_id}:link-run")
+        result = validate_optimization_trace_proof(family_id, expectation, proof)
+    elif phase == "package-producer":
+        with _serialized_distribution_writer():
+            preflight = prepare_release_operations_preflight([family])
+            write_json_file(run_dir / "release-operations-preflight.json", preflight)
+            generator = ROOT / "scripts" / "build_objc3c_package_mirror.py"
+            run_checked([sys.executable, str(generator)], cwd=ROOT,
+                        log_path=family_artifacts / "package-producer.log",
+                        domain=f"{family_id}.package trust diagnostic")
+            producer_report_path = run_dir / "package-producer" / "producer-report.json"
+            producer_report_path.parent.mkdir(parents=True, exist_ok=True)
+            write_producer_report(ROOT, producer_report_path, run_id=run_id,
+                                  node_identity=node_identity, build_identity=build_identity)
+            result = {"status": "PASS", "action": repo_rel(generator),
+                      "preflight": repo_rel(run_dir / "release-operations-preflight.json"),
+                      "producer_report": repo_rel(producer_report_path)}
+    elif phase == "clean-install-consumer":
+        with _serialized_distribution_writer():
+            if not (run_dir / "release-operations-preflight.json").is_file():
+                raise RuntimeError("distribution producer did not write its preflight identity")
+            producer_node_id = str(node.get("depends_on", [""])[0])
+            producer_result = _read_node_result(run_dir, producer_node_id)
+            producer_report_path = Path(str(producer_result.get("producer_report", "")))
+            if not producer_report_path.is_absolute():
+                producer_report_path = ROOT / producer_report_path
+            producer_report = validate_producer_report(
+                ROOT, producer_report_path,
+                expected_node_identity=str(producer_result.get("node_identity", "")),
+                expected_build_identity=str(producer_result.get("build_identity", "")),
+            )
+            if producer_report.get("run_id") != producer_result.get("run_id"):
+                raise RuntimeError("producer report run identity mismatch")
+            output_root = run_dir / "package-consumer"
+            runs_root = (ROOT / "tmp").resolve()
+            resolved_run = run_dir.resolve()
+            resolved_output = output_root.resolve()
+            if not resolved_run.is_relative_to(runs_root) or resolved_output.parent != resolved_run:
+                raise RuntimeError("clean-install output root escaped the isolated cross-lane run")
+            report_path = run_dir / "package-producer" / "producer-report.json"
+            if producer_result.get("producer_report") != repo_rel(report_path) and producer_report.get("run_id") == run_id:
+                raise RuntimeError("producer report path does not match producer node result")
+            summary_path = output_root / "tmp" / "reports" / "package-ecosystem" / "install-distribution-credibility-summary.json"
+            run_public_workflow_action("validate-package-install-distribution", args=[
+                "--producer-report", str(producer_report_path), "--output-root", str(output_root),
+                "--producer-node-identity", str(producer_result.get("node_identity", "")),
+                "--build-identity", str(producer_result.get("build_identity", "")),
+            ],
+                log_path=family_artifacts / "package-install-distribution.log",
+                domain=f"{family_id}.package trust diagnostic")
+            package_summary = _require_json_artifact(summary_path, "package install summary")
+            if (package_summary.get("status") != "PASS"
+                    or package_summary.get("from_nothing_probe", {}).get("requested") is not True
+                    or package_summary.get("from_nothing_probe", {}).get("producer_report_digest") != producer_report["report_digest"]):
+                raise RuntimeError("clean-install consumer did not produce a passing from-nothing report")
+            result = {"status": "PASS", "summary": repo_rel(summary_path),
+                      "producer_report": repo_rel(producer_report_path),
+                      "producer_report_digest": producer_report["report_digest"],
+                      "install_output_root": repo_rel(output_root),
+                      "install_log": repo_rel(family_artifacts / "package-install-distribution.log")}
+            consumer_report_path = output_root / "consumer-report.json"
+            write_consumer_report(ROOT, consumer_report_path, run_id=run_id,
+                node_identity=node_identity, build_identity=build_identity,
+                producer_report_path=producer_report_path, output_root=output_root,
+                summary_path=summary_path)
+            result["consumer_report"] = repo_rel(consumer_report_path)
+    elif phase == "distribution":
+        proof = _read_node_result(run_dir, f"{family_id}:link-run")
+        consumer_result = _read_node_result(run_dir, f"{family_id}:clean-install-consumer")
+        install_output_root = ROOT / str(consumer_result["install_output_root"])
+        globals()["PACKAGE_INSTALL_SUMMARY_PATH"] = install_output_root / "tmp/reports/package-ecosystem/install-distribution-credibility-summary.json"
+        globals()["PACKAGE_INSTALL_VERIFICATION_PATH"] = install_output_root / "tmp/artifacts/package-ecosystem/install-validation/objc3c-install-distribution-verification.json"
+        globals()["PACKAGE_INSTALL_PROOF_PATH"] = install_output_root / "tmp/artifacts/package-ecosystem/install-validation/objc3c-install-proof-manifest.json"
+        globals()["PACKAGE_UPDATE_RECEIPT_PATH"] = install_output_root / "tmp/artifacts/package-ecosystem/install-validation/clean-root/objc3c/receipts/objc3c-update-plan-receipt.json"
+        globals()["PACKAGE_UNINSTALL_RECEIPT_PATH"] = install_output_root / "tmp/artifacts/package-ecosystem/install-validation/clean-root/objc3c/receipts/objc3c-uninstall-plan-receipt.json"
+        with _serialized_distribution_writer():
+            preflight_path = run_dir / "release-operations-preflight.json"
+            if not preflight_path.is_file():
+                raise RuntimeError("package producer did not persist the required release preflight")
+            preflight = load_json(preflight_path)
+            result = validate_distribution_package_lifecycle_proof(family_id, expectation, proof, preflight,
+                run_clean_install=False, install_output_root=install_output_root)
+    else:
+        raise RuntimeError(f"no executor callback for phase {phase}")
+    _write_node_result(run_dir, node, result, node_identity=node_identity,
+                       build_identity=build_identity, run_id=run_id)
+    return 0
+
+
+def execute_selected_nodes(manifest: dict[str, Any], *, families: list[str], phase: str | None,
+                           node_ids: list[str], run_id: str, output_base: Path,
+                           build_identity: str, timeout_seconds: float,
+                           reuse_report: dict[str, Any] | None = None) -> dict[str, Any]:
+    from objc3c_cross_lane_execution import compute_node_identities, execute_node_plan
+    plan = resolve_execution_plan(manifest, ROOT, families, phase, node_ids)
+    engine_inputs = ["scripts/check_objc3c_cross_lane_e2e.py",
+                     "scripts/objc3c_cross_lane_execution.py", "scripts/objc3c_cross_lane_selection.py"]
+    package_inputs = [repo_rel(path) for path in (ROOT / "scripts" / "objc3c_package_manager").glob("*.py")]
+    package_inputs.extend(["scripts/build_objc3c_package_lock.py", "scripts/build_objc3c_package_mirror.py",
+                           "scripts/check_objc3c_package_install_distribution_credibility.py",
+                           "scripts/package_ecosystem_contracts.py"])
+    package_inputs.extend(repo_rel(path) for path in (ROOT / "tests/tooling/fixtures/package_ecosystem").glob("*.json"))
+    # Read only checked-in package sources here. Generated locks cannot enter a
+    # producer node identity because production replaces those artifacts.
+    authoring = load_json(ROOT / "tests/tooling/fixtures/package_ecosystem/package_authoring_workflow_contract.json")
+    source_paths = authoring["package_sources"]
+    package_inputs.extend(str(raw) for raw in source_paths.values())
+    module_inventory = load_json(ROOT / source_paths["stdlib_module_inventory"])
+    portfolio = load_json(ROOT / source_paths["showcase_portfolio"])
+    package_inputs.extend(str(module["manifest"]) for module in module_inventory["canonical_modules"])
+    package_inputs.extend(str(example["workspace_manifest"]) for example in portfolio["examples"])
+    for node in plan["nodes"]:
+        node["identity_inputs"] = sorted(set(node["identity_inputs"] + engine_inputs +
+            (package_inputs if node["phase"] in ("package-producer", "clean-install-consumer", "distribution") else [])))
+    # This identity describes the complete inventory/graph shape. Mutable source
+    # contents are bound by each node's own declared inputs instead, allowing a
+    # clean provider result to survive an isolated consumer edit.
+    input_paths = [MANIFEST_PATH, PUBLIC_CONFORMANCE_SUITE_MANIFEST_PATH]
+    for family in manifest["families"]:
+        input_paths.append(ROOT / family["workspace_manifest"])
+    inventory_identity = digest_files(input_paths)
+    node_identities = compute_node_identities(plan, input_root=ROOT,
+                                              build_identity=build_identity,
+                                              inventory_identity=inventory_identity)
+    script = Path(__file__).resolve()
+    def command_for_node(node: dict[str, Any]) -> list[str]:
+        return [sys.executable, str(script), "--_node-worker", str(node["node_id"]),
+                "--_worker-run-dir", str(output_base / run_id), "--_run-id", run_id,
+                "--_node-identity", node_identities[str(node["node_id"])],
+                "--_build-identity", build_identity]
+    def reuse_artifacts(node_id: str, _record: dict[str, Any], new_run_dir: Path) -> None:
+        if reuse_report is None:
+            return
+        old_root = Path(str(reuse_report.get("run_directory", "")))
+        source = _node_result_path(old_root, node_id)
+        if not source.is_file():
+            raise ValueError(f"completed node has no reusable result artifact: {node_id}")
+        prior_result = load_json(source)
+        if (prior_result.get("node_id") != node_id or prior_result.get("status") != "PASS"
+                or prior_result.get("node_identity") != node_identities[node_id]
+                or prior_result.get("build_identity") != build_identity):
+            raise ValueError(f"reusable result identity mismatch: {node_id}")
+        _validate_node_artifacts(prior_result)
+        if node_id.endswith(":package-producer"):
+            raw_report = prior_result.get("producer_report")
+            if not isinstance(raw_report, str) or not raw_report:
+                raise ValueError("reusable package producer lacks its artifact report")
+            report_path = ROOT / raw_report
+            report = validate_producer_report(
+                ROOT, report_path,
+                expected_node_identity=node_identities[node_id],
+                expected_build_identity=build_identity,
+            )
+            if report.get("run_id") != prior_result.get("run_id"):
+                raise ValueError("reusable package producer report run identity mismatch")
+            old_preflight = old_root / "release-operations-preflight.json"
+            if not old_preflight.is_file():
+                raise ValueError("reusable package producer preflight is missing")
+            require_release_operations_preflight(str(node_id.split(":", 1)[0]), load_json(old_preflight))
+        elif node_id.endswith(":clean-install-consumer"):
+            raw_report = prior_result.get("consumer_report")
+            if not isinstance(raw_report, str) or not raw_report:
+                raise ValueError("reusable clean-install consumer lacks installed artifact evidence")
+            report = validate_consumer_report(ROOT, ROOT / raw_report,
+                expected_node_identity=node_identities[node_id],
+                expected_producer_identity=node_identities[next(
+                    node["depends_on"][0] for node in plan["nodes"] if node["node_id"] == node_id)],
+                expected_build_identity=build_identity)
+            if report.get("run_id") != prior_result.get("run_id"):
+                raise ValueError("reusable clean-install report run identity mismatch")
+        target = _node_result_path(new_run_dir, node_id)
+        target.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(source, target)
+        if node_id.endswith(":package-producer"):
+            old_preflight = old_root / "release-operations-preflight.json"
+            if old_preflight.is_file():
+                shutil.copy2(old_preflight, new_run_dir / old_preflight.name)
+    execution = execute_node_plan(plan, run_id=run_id, output_root=output_base,
+        build_identity=build_identity, inventory_identity=inventory_identity,
+        node_identities=node_identities, command_for_node=command_for_node,
+        cwd=ROOT, timeout_seconds=timeout_seconds, reuse_report=reuse_report,
+        on_reuse=reuse_artifacts)
+    execution["plan"] = plan
+    execution["node_identities"] = node_identities
+    return execution
+
+def validate_manifest(*, family_ids: list[str] | None = None, phase: str | None = None, node_ids: list[str] | None = None, output_root: Path | None = None, run_id: str | None = None, pinned_build_identity: str | None = None, timeout_seconds: float = 1800, reuse_report: dict[str, Any] | None = None) -> dict[str, Any]:
+    requested_family_ids = list(family_ids or [])
+    requested_node_ids = list(node_ids or [])
     manifest = load_json(MANIFEST_PATH)
     if manifest.get("contract_id") != MANIFEST_CONTRACT_ID:
         raise RuntimeError("cross-lane E2E manifest contract_id drifted")
@@ -3441,6 +3983,21 @@ def validate_manifest() -> dict[str, Any]:
     if manifest.get("public_replay_command") != PUBLIC_COMMAND:
         raise RuntimeError("cross-lane E2E manifest public_replay_command drifted")
     required_public_commands = validate_required_public_commands(manifest)
+    all_family_rows = [manifest_family(row, f"families[{index}]") for index, row in enumerate(require_list(manifest.get("families"), "families"))]
+    plan = resolve_execution_plan(manifest, ROOT, requested_family_ids, phase, requested_node_ids)
+    selected_family_ids = set(plan["selected_families"])
+    selected_rows = [row for row in all_family_rows if row["family_id"] in selected_family_ids]
+    global ARTIFACT_ROOT, REPORT_PATH
+    if output_root is not None:
+        selected_run_root = output_root / (run_id or "run")
+        ARTIFACT_ROOT = selected_run_root / "artifacts"
+        REPORT_PATH = selected_run_root / "summary.json"
+    RUN_CONTEXT.update({"output_root": output_root, "run_id": run_id, "plan": plan})
+    exe = resolve_native_exe()
+    runtime = ROOT / ARTIFACT_IDENTITY.runtime_library_relative_path
+    build_identity = hashlib.sha256((sha256_file(exe) + sha256_file(runtime)).encode("ascii")).hexdigest()
+    if pinned_build_identity and pinned_build_identity != build_identity:
+        raise RuntimeError("pinned build identity does not match current compiler/runtime binaries")
 
     policy = require_object(manifest.get("claim_policy"), "claim_policy")
     if policy.get("integrated_success_promotes_reserved_rows") is not False:
@@ -3449,7 +4006,7 @@ def validate_manifest() -> dict[str, Any]:
         raise RuntimeError("claim_policy must reject tmp source truth")
 
     families = require_list(manifest.get("families"), "families")
-    family_rows = [manifest_family(row, f"families[{index}]") for index, row in enumerate(families)]
+    family_rows = all_family_rows
     family_ids = [
         require_nonempty_string(family.get("family_id"), f"families[{index}].family_id")
         for index, family in enumerate(family_rows)
@@ -3460,14 +4017,93 @@ def validate_manifest() -> dict[str, Any]:
             + ", ".join(REQUIRED_FAMILY_IDS)
         )
 
-    release_operations_preflight = prepare_release_operations_preflight(family_rows)
-    family_summaries = [
-        validate_family(
-            family,
-            release_operations_preflight=release_operations_preflight,
-        )
-        for family in family_rows
-    ]
+    if output_root is not None or requested_family_ids or phase or requested_node_ids or reuse_report is not None:
+        static_summaries: dict[str, dict[str, Any]] = {}
+        for family in family_rows:
+            family_id = str(family["family_id"])
+            static_summaries[family_id] = validate_family(
+                family, release_operations_preflight={"status": "SKIPPED"},
+                execute_phase_proofs=False)
+        base = output_root or (ROOT / "tmp" / "artifacts" / "cross-lane-e2e" / "runs")
+        execution = execute_selected_nodes(
+            manifest, families=requested_family_ids, phase=phase, node_ids=requested_node_ids,
+            run_id=run_id or safe_run_id(datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%S-%f")),
+            output_base=base, build_identity=build_identity,
+            timeout_seconds=timeout_seconds, reuse_report=reuse_report)
+        run_dir = Path(str(execution["run_directory"]))
+        write_json_file(run_dir / "node-execution-report.json",
+                        {key: value for key, value in execution.items() if key not in ("plan", "node_identities")})
+        failures = [{"node_id": row["node_id"], "error": row.get("setup_error", f"node exited {row.get('exit_code')}")}
+                    for row in execution["node_records"] if row.get("status") == "failed"]
+        selected_ids = set(execution["selected_node_ids"])
+        node_rows = {row["node_id"]: row for row in execution["node_records"]}
+        summaries = []
+        for family in family_rows:
+            family_id = str(family["family_id"])
+            summary = dict(static_summaries[family_id])
+            family_nodes = [node for node in execution["plan"]["nodes"] if node["family_id"] == family_id]
+            selected_family_nodes = [node for node in family_nodes if node["node_id"] in selected_ids]
+            if not selected_family_nodes:
+                summary["status"] = "UNSELECTED"
+            else:
+                statuses = [node_rows[node["node_id"]]["status"] for node in selected_family_nodes]
+                summary["status"] = "FAILED" if "failed" in statuses else ("BLOCKED" if "dependency-blocked" in statuses else "COMPLETED")
+                summary["phase_results"] = {}
+                for node in selected_family_nodes:
+                    record = node_rows[node["node_id"]]
+                    summary["phase_results"][node["phase"]] = record
+                    if record.get("status") in ("completed", "reused"):
+                        result_path = _node_result_path(run_dir, node["node_id"])
+                        if result_path.is_file():
+                            summary["phase_results"][node["phase"]]["result"] = load_json(result_path)
+            summaries.append(summary)
+        workflow_action_glue = validate_workflow_action_glue()
+        public_conformance_suite_linkage = validate_public_conformance_suite_linkage(summaries)
+        blocked_count = sum(1 for row in family_rows if row["expected_state"] in BLOCKED_STATES)
+        reserved_ref_count = sum(1 for family in family_rows for raw_ref in family["evidence_map_refs"]
+                                 if raw_ref.get("status") == "reserved")
+        result = {
+            "manifest_path": repo_rel(MANIFEST_PATH), "contract_id": SUMMARY_CONTRACT_ID,
+            "generated_at_utc": datetime.now(timezone.utc).isoformat(),
+            "status": execution["status"], "failures": failures,
+            "partial_report": execution["partial_report"], "reused_nodes": [row["node_id"] for row in execution["node_records"] if row.get("status") == "reused"],
+            "source_manifest_contract": MANIFEST_CONTRACT_ID, "issue": 8200,
+            "public_action": PUBLIC_ACTION, "public_replay_command": PUBLIC_COMMAND,
+            "required_public_commands": required_public_commands,
+            "workflow_action_glue": workflow_action_glue,
+            "public_conformance_suite_linkage": public_conformance_suite_linkage,
+            "release_operations_preflight": {"status": "DEFERRED" if not any(node["phase"] == "distribution" and node["node_id"] in selected_ids for node in execution["plan"]["nodes"]) else "RUN_ON_DISTRIBUTION_NODE"},
+            "family_count": len(summaries), "run_id": execution["run_id"],
+            "build_identity": build_identity, "input_identity": execution["inventory_identity"],
+            "selected_family_ids": sorted({node["family_id"] for node in execution["plan"]["selected_nodes"]}),
+            "selection_phase": phase, "execution_plan": execution["plan"],
+            "node_statuses": [{"node_id": row["node_id"], "family_id": next(node["family_id"] for node in execution["plan"]["nodes"] if node["node_id"] == row["node_id"]),
+                               "phase": next(node["phase"] for node in execution["plan"]["nodes"] if node["node_id"] == row["node_id"]), "status": row["status"]}
+                              for row in execution["node_records"]],
+            "node_execution": {key: value for key, value in execution.items() if key not in ("plan", "node_identities")},
+            "node_execution_report": repo_rel(run_dir / "node-execution-report.json"),
+            "blocked_or_reserved_family_count": blocked_count,
+            "reserved_evidence_ref_count": reserved_ref_count,
+            "family_summaries": summaries,
+        }
+        return result
+
+    if "distribution_package_lifecycle" in selected_family_ids:
+        with _serialized_distribution_writer():
+            release_operations_preflight = prepare_release_operations_preflight(selected_rows)
+    else:
+        release_operations_preflight = {"status": "SKIPPED", "reason": "distribution family not selected"}
+    selected_summaries: dict[str, dict[str, Any]] = {}
+    failures: list[dict[str, str]] = []
+    for family in selected_rows:
+        family_id = str(family["family_id"])
+        try:
+            selected_summaries[family_id] = _validate_selected_family(family, release_operations_preflight)
+            selected_summaries[family_id].setdefault("status", "COMPLETED")
+        except Exception as exc:
+            failures.append({"family_id": family_id, "error": str(exc)})
+            selected_summaries[family_id] = {"family_id": family_id, "source": family["source"], "expectation": family["expectation"], "expected_state": family["expected_state"], "status": "FAILED", "failure": str(exc)}
+    family_summaries = [selected_summaries.get(str(family["family_id"]), {"family_id": family["family_id"], "source": family["source"], "expectation": family["expectation"], "expected_state": family["expected_state"], "status": "UNSELECTED"}) for family in family_rows]
     workflow_action_glue = validate_workflow_action_glue()
     public_conformance_suite_linkage = validate_public_conformance_suite_linkage(family_summaries)
     blocked_count = sum(1 for row in family_summaries if row["expected_state"] in BLOCKED_STATES)
@@ -3482,7 +4118,10 @@ def validate_manifest() -> dict[str, Any]:
         "manifest_path": repo_rel(MANIFEST_PATH),
         "contract_id": SUMMARY_CONTRACT_ID,
         "generated_at_utc": datetime.now(timezone.utc).isoformat(),
-        "status": "PASS",
+        "status": "FAIL" if failures else "PASS",
+        "failures": failures,
+        "partial_report": bool(failures),
+        "reused_nodes": [],
         "source_manifest_contract": MANIFEST_CONTRACT_ID,
         "issue": 8200,
         "public_action": PUBLIC_ACTION,
@@ -3492,24 +4131,81 @@ def validate_manifest() -> dict[str, Any]:
         "public_conformance_suite_linkage": public_conformance_suite_linkage,
         "release_operations_preflight": release_operations_preflight,
         "family_count": len(family_summaries),
+        "run_id": run_id,
+        "build_identity": build_identity,
+        "input_identity": __import__("objc3c_cross_lane_selection").digest_files([MANIFEST_PATH, PUBLIC_CONFORMANCE_SUITE_MANIFEST_PATH, *(ROOT / family[key] for family in selected_rows for key in ("source", "native_meta", "workspace_manifest", "expectation")), *(ROOT / module["source"] for family in selected_rows for module in load_json(ROOT / family["workspace_manifest"]).get("package_modules", []))]),
+        "selected_family_ids": sorted(selected_family_ids),
+        "selection_phase": phase,
+        "execution_plan": plan,
+        "node_statuses": execution_node_statuses(plan, selected_summaries, failures),
         "blocked_or_reserved_family_count": blocked_count,
         "reserved_evidence_ref_count": reserved_ref_count,
         "family_summaries": family_summaries,
     }
 
 
-def main() -> int:
+def build_argument_parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(description="Validate selected or full cross-lane E2E evidence")
+    parser.add_argument("--family", action="append", default=[], help="family id; may be repeated or comma separated")
+    parser.add_argument("--phase", choices=PHASES, help="select a manifest execution phase and dependency closure")
+    parser.add_argument("--output-root", type=Path, help="isolated root for this run's artifacts, logs and summary")
+    parser.add_argument("--run-id", help="stable safe identifier for this run")
+    parser.add_argument("--pinned-build-identity", help="require this compiler/runtime content identity")
+    parser.add_argument("--node", action="append", default=[], help="exact DAG node id; may be repeated")
+    parser.add_argument("--timeout-seconds", type=float, default=1800, help="per-node deadline (1..86400 seconds)")
+    parser.add_argument("--reuse-report", type=Path, help="completed full-identity node report to reuse")
+    parser.add_argument("--_node-worker", help=argparse.SUPPRESS)
+    parser.add_argument("--_worker-run-dir", type=Path, help=argparse.SUPPRESS)
+    parser.add_argument("--_run-id", help=argparse.SUPPRESS)
+    parser.add_argument("--_node-identity", help=argparse.SUPPRESS)
+    parser.add_argument("--_build-identity", help=argparse.SUPPRESS)
+    return parser
+
+
+def main(argv: list[str] | None = None) -> int:
+    global ARTIFACT_ROOT, REPORT_PATH
+    args = build_argument_parser().parse_args(argv)
+    if args._node_worker:
+        try:
+            if args._worker_run_dir is None or not args._run_id or not args._node_identity or not args._build_identity:
+                raise RuntimeError("node worker requires a run directory and run id")
+            return _node_worker(args._node_worker, args._worker_run_dir, args._run_id,
+                                 args._node_identity, args._build_identity)
+        except Exception as exc:
+            print(f"node-worker: FAIL: {exc}", file=sys.stderr)
+            return 1
+    families = [item for raw in args.family for item in raw.split(",") if item]
+    run_id = safe_run_id(args.run_id or (datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%S") + "-" + uuid.uuid4().hex[:8]))
+    selected = bool(families or args.phase or args.node or args.output_root or args.reuse_report)
+    root = (args.output_root or (ROOT / "tmp" / "artifacts" / "cross-lane-e2e" / "runs")) if selected else None
+    reuse_report = load_json(args.reuse_report) if args.reuse_report else None
     try:
-        payload = validate_manifest()
+        if args.timeout_seconds <= 0 or args.timeout_seconds > 86400:
+            raise RuntimeError("timeout-seconds must be between 1 and 86400")
+        payload = validate_manifest(family_ids=families, phase=args.phase, node_ids=args.node,
+            output_root=root, run_id=run_id, pinned_build_identity=args.pinned_build_identity,
+            timeout_seconds=args.timeout_seconds, reuse_report=reuse_report)
     except Exception as exc:
+        if root is not None:
+            failed_root = root / run_id
+            if not failed_root.exists():
+                failed_root.mkdir(parents=True, exist_ok=False)
+                write_json_file(failed_root / "summary.json", {"status": "FAIL", "run_id": run_id, "partial_report": True, "error": str(exc), "selected_family_ids": families, "selection_phase": args.phase, "reused_nodes": []})
         return fail(str(exc))
-
-    REPORT_PATH.parent.mkdir(parents=True, exist_ok=True)
-    write_json_file(REPORT_PATH, payload)
-    print(f"summary_path: {repo_rel(REPORT_PATH)}")
-    print("objc3c-cross-lane-e2e: PASS")
-    return 0
-
+    report_path = REPORT_PATH
+    report_path.parent.mkdir(parents=True, exist_ok=True)
+    write_json_file(report_path, payload)
+    print(f"summary_path: {repo_rel(report_path)}")
+    print(f"run_id: {run_id}")
+    print(f"objc3c-cross-lane-e2e: {payload['status']}")
+    selected_statuses = [row.get("status") for row in payload.get("node_statuses", [])]
+    unsuccessful = (
+        payload.get("status") != "PASS"
+        or (selected and payload.get("partial_report") is not False)
+        or bool(payload.get("failures"))
+        or any(status in {"failed", "dependency-blocked", "blocked"} for status in selected_statuses)
+    )
+    return 1 if unsuccessful else 0
 
 if __name__ == "__main__":
     raise SystemExit(main())

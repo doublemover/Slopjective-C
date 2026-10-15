@@ -17,6 +17,13 @@ bool IsResultLikeFailureExpr(const Expr *expr) {
   case Expr::Kind::StringLiteral:
   case Expr::Kind::StringInterpolation:
     return false;
+  case Expr::Kind::MatchExpression:
+    for (const auto &arm : expr->match_expression_arms) {
+      if (IsResultLikeFailureExpr(arm.value.get())) {
+        return true;
+      }
+    }
+    return false;
   default:
     return false;
   }

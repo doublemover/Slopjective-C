@@ -13,7 +13,7 @@
   "phase_support_claim_authority": false,
   "negative_claim_authority": true,
   "selectors": [
-    "non_goal:hosted package registry service",
+    "non_goal:live public hosted package registry service",
     "non_goal:network-backed dependency resolution",
     "non_goal:system package manager publication",
     "non_goal:manual package manifests outside checked-in contracts and generated artifacts",
@@ -26,15 +26,15 @@
     "forbidden_dependency_source:unpinned-hosted-registry-reference",
     "forbidden_dependency_source:manual-sidecar-manifest",
     "forbidden_dependency_source:tmp-only-source-of-truth",
-    "registry_layer:hosted-registry:support_state=unsupported-fail-closed-if-claimed",
-    "claim_truth_policy:hosted_registry_claim_allowed=false",
+    "registry_layer:live-public-hosted-registry:support_state=unsupported-fail-closed-if-claimed",
+    "claim_truth_policy:live_public_hosted_registry_claim_allowed=false",
     "claim_truth_policy:retired_source_acceptance_claims_allowed=false",
     "claim_truth_policy:retired_surface_acceptance_claims_allowed=false",
     "claim_truth_policy:evidence_log_allowed=false",
     "claim_truth_policy:wrapper_only_allowed=false",
     "hard_cutover_publication_policy:wrapper_only_publication_allowed=false",
     "hard_cutover_publication_policy:evidence_log_allowed=false",
-    "unsupported_overclaim:hosted-registry-availability",
+    "unsupported_overclaim:live-public-hosted-registry-availability",
     "unsupported_overclaim:package-manager-parity",
     "unsupported_overclaim:network-dependent-install",
     "unsupported_overclaim:manual-package-manifest-source-authority",
@@ -53,5 +53,5 @@
     "*generated_only*"
   ],
   "canonical_anchor": "tests/conformance/hard_cutover_retired_surface_fixture_contracts.json",
-  "retired_surface_rule": "hosted package registry services, hosted registry availability, package-manager parity, network-backed dependency resolution, implicit network fetches, unpinned hosted registry references, system package manager publication, manual sidecar manifests, manual package manifests, tmp-only source authority, second compiler payloads, second package layouts, second install workflows, retired source acceptance, retired surface acceptance, old-mode package rows, gate package rows, retired route package rows, compatibility package rows, migration-only rows, generated-only rows, evidence-log rows, wrapper-only rows, and alternate acceptance paths are canonical rejection, strict-error, absent-support, or provenance-only evidence"
+  "retired_surface_rule": "live hosted package registry services, live public hosted registry availability, package-manager parity, network-backed dependency resolution, implicit network fetches, unpinned hosted registry references, system package manager publication, manual sidecar manifests, manual package manifests, tmp-only source authority, second compiler payloads, second package layouts, second install workflows, retired source acceptance, retired surface acceptance, old-mode package rows, gate package rows, retired route package rows, compatibility package rows, migration-only rows, generated-only rows, evidence-log rows, wrapper-only rows, and alternate acceptance paths are canonical rejection, strict-error, absent-support, or provenance-only evidence"
 }

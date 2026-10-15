@@ -5,9 +5,12 @@ import os
 import subprocess
 from pathlib import Path
 
+from scripts.objc3c_tooling.artifact_identity import current_host_artifact_identity
+
 
 ROOT = Path(__file__).resolve().parents[2]
-NATIVE_EXE = ROOT / "artifacts" / "bin" / "objc3c-native.exe"
+ARTIFACT_IDENTITY = current_host_artifact_identity()
+NATIVE_EXE = ROOT / ARTIFACT_IDENTITY.native_executable_relative_path
 FIXTURE_ROOT = ROOT / "tests" / "tooling" / "fixtures" / "native"
 
 
@@ -49,7 +52,7 @@ def test_direct_native_error_control_flow_lowers_without_live_flag(tmp_path: Pat
     result = _compile_fixture("try_do_catch_semantics_positive.objc3", out_dir)
 
     assert result.returncode == 0, result.stderr
-    assert (out_dir / "module.obj").is_file()
+    assert (out_dir / ARTIFACT_IDENTITY.module_object_artifact_name).is_file()
     assert (out_dir / "module.ll").is_file()
 
     manifest = json.loads((out_dir / "module.manifest.json").read_text(encoding="utf-8"))

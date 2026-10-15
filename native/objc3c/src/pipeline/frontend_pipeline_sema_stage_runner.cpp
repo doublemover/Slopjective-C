@@ -35,7 +35,8 @@ Objc3SemaPassManagerResult RunObjc3FrontendSemaStage(
       options.arc_mode == Objc3FrontendArcMode::kEnabled;
 
   Objc3SemaPassManagerInput sema_input;
-  PopulateObjc3FrontendSemaInputHandoff(result, semantic_options, sema_input);
+  PopulateObjc3FrontendSemaInputHandoff(
+      result, options, semantic_options, sema_input);
 
   Objc3SemaPassManagerResult sema_result =
       RunObjc3SemaPassManager(sema_input);

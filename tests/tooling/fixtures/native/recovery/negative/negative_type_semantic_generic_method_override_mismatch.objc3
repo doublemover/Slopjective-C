@@ -1,0 +1,12 @@
+// Negative fixture: same-selector generic method overrides must preserve the
+// generic callable signature replay key exactly.
+// Expected diagnostic code(s): O3S206.
+module NegativeTypeSemanticGenericMethodOverrideMismatch;
+
+@interface GenericOverrideBase
+- <T>(T)identity:(T)value;
+@end
+
+@interface GenericOverrideChild : GenericOverrideBase
+- <U>(U)identity:(U)value;
+@end

@@ -243,6 +243,19 @@
               !case_stmt.match_binding_name.empty()) {
             scopes.back()[case_stmt.match_binding_name] = condition_type;
           }
+          if (case_stmt.has_match_guard) {
+            const SemanticTypeInfo guard_type = ValidateExpr(
+                case_stmt.match_guard_condition.get(), scopes, globals,
+                functions, diagnostics, max_message_send_args,
+                message_send_context);
+            if (!IsUnknownSemanticType(guard_type) &&
+                (guard_type.is_vector || guard_type.type != ValueType::Bool)) {
+              diagnostics.push_back(MakeDiag(
+                  case_stmt.match_guard_line, case_stmt.match_guard_column,
+                  "O3S206",
+                  "type mismatch: match guard condition must be bool"));
+            }
+          }
           ValidateStatements(case_stmt.body, scopes, globals, functions,
                              expected_return_type, function_name, diagnostics,
                              loop_depth, switch_depth + 1,

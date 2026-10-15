@@ -6,6 +6,7 @@
 #include "ir/objc3_ir_block_lowering.h"
 #include "ir/objc3_ir_compile_time_proof_analysis.h"
 #include "ir/objc3_ir_emitter_context.h"
+#include "ir/objc3_ir_function_signature_model.h"
 #include "ir/objc3_ir_function_local_flow.h"
 #include "ir/objc3_ir_scope_cleanup_emission.h"
 #include "ir/objc3_ir_value_materialization.h"
@@ -25,6 +26,8 @@ struct Objc3IRStatementOrchestrationServices {
       build_value_materialization_context;
   std::function<Objc3IRCompileTimeProofAnalysisContext()>
       build_compile_time_proof_analysis_context;
+  std::function<const LoweredFunctionSignature *(const std::string &name)>
+      lookup_function_signature;
 };
 
 struct Objc3IRStatementOrchestrationOptions {

@@ -21,6 +21,10 @@
   std::vector<std::string> typed_keypath_components;
   std::string typed_keypath_literal_profile;
   bool typed_keypath_literal_is_normalized = false;
+  mutable bool typed_keypath_metadata_expanded = false;
+  mutable std::vector<std::string> typed_keypath_component_owner_identities;
+  mutable std::vector<std::string> typed_keypath_component_member_identities;
+  mutable std::vector<std::string> typed_keypath_component_type_identities;
   bool try_expression_enabled = false;
   TryOperatorKind try_operator_kind = TryOperatorKind::None;
   bool try_expression_requires_throwing_context = false;
@@ -30,6 +34,14 @@
   bool throw_statement_enabled = false;
   bool throw_statement_is_normalized = false;
   std::string throw_statement_profile;
+  std::unique_ptr<Expr> match_expression_scrutinee;
+  std::vector<MatchExpressionArm> match_expression_arms;
+  mutable bool match_expression_result_typing_supported = false;
+  mutable bool match_expression_exhaustive = false;
+  mutable bool match_expression_lowering_eligible = false;
+  mutable bool match_expression_result_type_mismatch = false;
+  mutable bool match_expression_guard_effect_fail_closed = false;
+  mutable std::string match_expression_result_type_spelling;
   std::vector<std::unique_ptr<Stmt>> block_body;
   std::string op = "+";
   std::unique_ptr<Expr> receiver;

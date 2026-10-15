@@ -14,7 +14,11 @@ struct Objc3CrossModuleRuntimeLinkPlanSections {
   std::vector<std::string> imported_error_handling_module_names_lexicographic;
   std::vector<std::string>
       imported_concurrency_actor_module_names_lexicographic;
+  std::vector<std::string>
+      imported_scheduler_task_module_names_lexicographic;
   std::vector<std::string> imported_interop_ffi_module_names_lexicographic;
+  std::vector<std::string>
+      imported_foreign_abi_module_names_lexicographic;
   std::vector<std::string>
       imported_interop_header_module_bridge_module_names_lexicographic;
   std::vector<std::string>

@@ -17,6 +17,8 @@ struct FrontendCApiRunnerOptions {
   std::string emit_prefix = "module";
   std::filesystem::path clang_path = std::filesystem::path("clang");
   std::filesystem::path llc_path = std::filesystem::path("llc");
+  bool clang_path_explicit = false;
+  bool llc_path_explicit = false;
   objc3c_frontend_c_ir_object_backend_t ir_object_backend =
       OBJC3C_FRONTEND_IR_OBJECT_BACKEND_CLANG;
   std::uint32_t max_message_send_args = 0;

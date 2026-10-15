@@ -48,8 +48,8 @@ void WriteRuntimeReleaseCandidateClaimAbiSurface(
            << ",\"release_evidence_operation_contract_id\":\"objc3c.tooling.release.evidence.toolchain.operations.v1\""
            << ",\"dashboard_status_publication_contract_id\":\"objc3c.tooling.dashboard.status.publication.v1\""
            << ",\"release_candidate_matrix_contract_id\":\"objc3c.tooling.release.candidate.execution.matrix.v1\""
-           << ",\"claimed_profile_ids\":[\"core\",\"strict\",\"strict-concurrency\",\"strict-system\"]"
-           << ",\"targeted_profile_ids\":[\"strict\",\"strict-concurrency\",\"strict-system\"]"
+           << ",\"claimed_profile_ids\":[\"core\",\"strict\",\"strict-concurrency\"]"
+           << ",\"targeted_profile_ids\":[\"strict-system\"]"
            << ",\"authoritative_probe_paths\":[\""
            << kObjc3RuntimeReleaseCandidateClaimProbePath
            << "\"],\"runtime_claim_boundary_model\":\""

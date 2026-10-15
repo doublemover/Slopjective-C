@@ -1,0 +1,7 @@
+module directImportSyntaxConsumer;
+
+@import moduleImportLookupProvider;
+
+fn direct_import_syntax_marker() -> i32 {
+  return 1;
+}

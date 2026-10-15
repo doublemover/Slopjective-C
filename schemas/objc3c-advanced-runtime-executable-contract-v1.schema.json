@@ -1,0 +1,329 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://objc3c.dev/schemas/objc3c-advanced-runtime-executable-contract-v1.schema.json",
+  "title": "objc3c Advanced Runtime Executable Contract",
+  "type": "object",
+  "required": [
+    "contract_id",
+    "schema_id",
+    "schema_version",
+    "schema_path",
+    "dependency_issue_ref",
+    "public_command",
+    "runtime_public_contract",
+    "support_boundary",
+    "integration_contract",
+    "surfaces",
+    "negative_fixtures"
+  ],
+  "properties": {
+    "contract_id": {
+      "const": "objc3c.advanced-runtime.executable-contract-surfaces.v1"
+    },
+    "schema_id": {
+      "const": "objc3c-advanced-runtime-executable-contract-v1"
+    },
+    "schema_version": {"const": 1},
+    "schema_path": {"const": "schemas/objc3c-advanced-runtime-executable-contract-v1.schema.json"},
+    "dependency_issue_ref": {"const": 8213},
+    "public_command": {"type": "string"},
+    "runtime_public_contract": {
+      "type": "object",
+      "required": [
+        "header",
+        "implementation",
+        "abi_version_macro",
+        "snapshot_type",
+        "copy_symbols",
+        "strict_invalid_query_status"
+      ],
+      "properties": {
+        "header": {"type": "string"},
+        "implementation": {"type": "string"},
+        "abi_version_macro": {"const": "OBJC3_RUNTIME_EXECUTABLE_CONTRACT_ABI_VERSION"},
+        "snapshot_type": {"const": "objc3_runtime_executable_contract_surface_snapshot"},
+        "copy_symbols": {
+          "type": "array",
+          "minItems": 2,
+          "items": {"type": "string"}
+        },
+        "strict_invalid_query_status": {
+          "const": "OBJC3_RUNTIME_EXECUTABLE_CONTRACT_SUPPORT_REJECTED"
+        }
+      },
+      "additionalProperties": false
+    },
+    "support_boundary": {
+      "type": "object",
+      "required": [
+        "typed_dispatch_required",
+        "native_registration_required",
+        "executable_runtime_required",
+        "compatibility_shims",
+        "unsupported_surface_policy"
+      ],
+      "properties": {
+        "typed_dispatch_required": {"const": true},
+        "native_registration_required": {"const": true},
+        "executable_runtime_required": {"const": true},
+        "compatibility_shims": {"const": false},
+        "unsupported_surface_policy": {"type": "string"}
+      },
+      "additionalProperties": false
+    },
+    "integration_contract": {
+      "type": "object",
+      "required": [
+        "contract_fixture",
+        "umbrella_issue_ref",
+        "promotion_issue_ref",
+        "runtime_envelope",
+        "required_surface_kinds",
+        "required_reserved_claims",
+        "required_negative_case_ids"
+      ],
+      "properties": {
+        "contract_fixture": {
+          "const": "tests/tooling/fixtures/advanced_runtime_closure/advanced_runtime_integration_closure_contract.json"
+        },
+        "umbrella_issue_ref": {"const": 8203},
+        "promotion_issue_ref": {"const": 8218},
+        "runtime_envelope": {"const": "integrated-objective-c-3-runtime"},
+        "required_surface_kinds": {
+          "type": "array",
+          "minItems": 4,
+          "items": {
+            "enum": [
+              "scheduler-task-runtime-contract",
+              "foreign-abi-runtime-contract",
+              "actor-mailbox-runtime-expansion-contract",
+              "macro-package-replay-runtime-contract"
+            ]
+          }
+        },
+        "required_reserved_claims": {
+          "type": "array",
+          "minItems": 4,
+          "items": {
+            "enum": [
+              "broad-scheduler-guarantees",
+              "swift-cpp-abi-mirroring",
+              "distributed-actor-networking",
+              "arbitrary-macro-host-execution"
+            ]
+          }
+        },
+        "required_negative_case_ids": {
+          "type": "array",
+          "minItems": 5,
+          "items": {
+            "enum": [
+              "scheduler_priority_fairness_overclaim",
+              "distributed_actor_transport_overclaim",
+              "macro_host_arbitrary_execution",
+              "macro_package_replay_stale_cache",
+              "foreign_abi_unsafe_mixed_image"
+            ]
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "surfaces": {
+      "type": "array",
+      "minItems": 2,
+      "items": {
+        "type": "object",
+        "required": [
+          "surface_name",
+          "surface_kind",
+          "issue_ref",
+          "dependency_issue_ref",
+          "support_status",
+          "support_claim",
+          "typed_dispatch_required",
+          "native_registration_required",
+          "executable_runtime_required",
+          "fail_closed_required",
+          "compatibility_shim_allowed",
+          "supported_boundary",
+          "reserved_boundary",
+          "strict_failure_diagnostic",
+          "primary_fixture",
+          "negative_fixture",
+          "runtime_contract",
+          "source_anchors",
+          "replay_key"
+        ],
+        "properties": {
+          "surface_name": {"type": "string"},
+          "surface_kind": {
+            "enum": [
+              "scheduler-task-runtime-contract",
+              "foreign-abi-runtime-contract",
+              "actor-mailbox-runtime-expansion-contract",
+              "macro-package-replay-runtime-contract"
+            ]
+          },
+          "issue_ref": {"enum": [8214, 8215, 8216, 8217]},
+          "dependency_issue_ref": {"const": 8213},
+          "support_status": {"enum": ["supported", "reserved", "rejected"]},
+          "support_claim": {"type": "string"},
+          "typed_dispatch_required": {"const": true},
+          "native_registration_required": {"const": true},
+          "executable_runtime_required": {"const": true},
+          "fail_closed_required": {"const": true},
+          "compatibility_shim_allowed": {"const": false},
+          "supported_boundary": {"type": "string"},
+          "reserved_boundary": {"type": "string"},
+          "strict_failure_diagnostic": {"type": "string", "pattern": "^advanced-runtime\\."},
+          "primary_fixture": {"type": "string"},
+          "negative_fixture": {"type": "string"},
+          "runtime_contract": {"type": "string"},
+          "source_anchors": {
+            "type": "array",
+            "minItems": 1,
+            "items": {"type": "string"}
+          },
+          "replay_key": {"type": "string"},
+          "scheduler_task_runtime_guarantees": {
+            "type": "object",
+            "required": [
+              "contract_fixture",
+              "required_snapshot_fields",
+              "required_import_surface_fields",
+              "required_negative_case_ids"
+            ],
+            "properties": {
+              "contract_fixture": {"type": "string"},
+              "required_snapshot_fields": {
+                "type": "array",
+                "minItems": 1,
+                "items": {"type": "string"}
+              },
+              "required_import_surface_fields": {
+                "type": "array",
+                "minItems": 1,
+                "items": {"type": "string"}
+              },
+              "required_negative_case_ids": {
+                "type": "array",
+                "minItems": 1,
+                "items": {"type": "string"}
+              }
+            },
+            "additionalProperties": false
+          },
+          "foreign_abi_runtime_closure": {
+            "type": "object",
+            "required": [
+              "contract_fixture",
+              "supported_runtime_boundary",
+              "preserved_metadata_boundaries",
+              "required_import_surface_fields",
+              "required_negative_case_ids"
+            ],
+            "properties": {
+              "contract_fixture": {"type": "string"},
+              "supported_runtime_boundary": {"type": "string"},
+              "preserved_metadata_boundaries": {
+                "type": "array",
+                "minItems": 1,
+                "items": {"type": "string"}
+              },
+              "required_import_surface_fields": {
+                "type": "array",
+                "minItems": 1,
+                "items": {"type": "string"}
+              },
+              "required_negative_case_ids": {
+                "type": "array",
+                "minItems": 1,
+                "items": {"type": "string"}
+              }
+            },
+            "additionalProperties": false
+          },
+          "actor_mailbox_runtime_expansion": {
+            "type": "object",
+            "required": [
+              "contract_fixture",
+              "required_snapshot_fields",
+              "required_import_surface_fields",
+              "required_negative_case_ids"
+            ],
+            "properties": {
+              "contract_fixture": {"type": "string"},
+              "required_snapshot_fields": {
+                "type": "array",
+                "minItems": 1,
+                "items": {"type": "string"}
+              },
+              "required_import_surface_fields": {
+                "type": "array",
+                "minItems": 1,
+                "items": {"type": "string"}
+              },
+              "required_negative_case_ids": {
+                "type": "array",
+                "minItems": 1,
+                "items": {"type": "string"}
+              }
+            },
+            "additionalProperties": false
+          },
+          "macro_package_replay_runtime_closure": {
+            "type": "object",
+            "required": [
+              "contract_fixture",
+              "required_import_surface_fields",
+              "required_identity_fields",
+              "required_negative_case_ids"
+            ],
+            "properties": {
+              "contract_fixture": {"type": "string"},
+              "required_import_surface_fields": {
+                "type": "array",
+                "minItems": 1,
+                "items": {"type": "string"}
+              },
+              "required_identity_fields": {
+                "type": "array",
+                "minItems": 1,
+                "items": {"type": "string"}
+              },
+              "required_negative_case_ids": {
+                "type": "array",
+                "minItems": 1,
+                "items": {"type": "string"}
+              }
+            },
+            "additionalProperties": false
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "negative_fixtures": {
+      "type": "array",
+      "minItems": 2,
+      "items": {
+        "type": "object",
+        "required": [
+          "fixture",
+          "issue_ref",
+          "expected_diagnostic",
+          "unsupported_boundary"
+        ],
+        "properties": {
+          "fixture": {"type": "string"},
+          "issue_ref": {"enum": [8214, 8215, 8216, 8217]},
+          "expected_diagnostic": {"type": "string", "pattern": "^advanced-runtime\\."},
+          "unsupported_boundary": {"type": "string"}
+        },
+        "additionalProperties": false
+      }
+    }
+  },
+  "additionalProperties": false
+}

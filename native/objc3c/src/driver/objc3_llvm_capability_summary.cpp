@@ -53,6 +53,12 @@ bool ParseObjc3LLVMCapabilitySummary(const std::string &text,
     error = "llvm capability summary mode mismatch: expected objc3c-llvm-capabilities-v2";
     return false;
   }
+  const auto ok = root.GetBool("ok");
+  if (!ok) {
+    error = "llvm capability summary parse failure: missing ok";
+    return false;
+  }
+  summary.ok = *ok;
 
   const JsonValue *clang = root.Find("clang");
   if (clang == nullptr || !clang->IsObject() || !clang->GetString("path") ||
@@ -74,12 +80,41 @@ bool ParseObjc3LLVMCapabilitySummary(const std::string &text,
 
   const JsonValue *llc_features = root.Find("llc_features");
   if (llc_features == nullptr || !llc_features->IsObject() ||
-      !llc_features->GetBool("supports_filetype_obj")) {
+      !llc_features->GetBool("supports_filetype_obj") ||
+      !llc_features->GetBool("supports_target_object_emission")) {
     error = "llvm capability summary parse failure: invalid llc_features section";
     return false;
   }
   summary.llc_supports_filetype_obj =
       *llc_features->GetBool("supports_filetype_obj");
+  summary.llc_supports_target_object_emission =
+      *llc_features->GetBool("supports_target_object_emission");
+
+  const JsonValue *toolchain_identity = root.Find("toolchain_identity");
+  if (toolchain_identity == nullptr || !toolchain_identity->IsObject() ||
+      !toolchain_identity->GetBool("claimable")) {
+    error = "llvm capability summary parse failure: invalid toolchain_identity section";
+    return false;
+  }
+  summary.toolchain_identity_claimable =
+      *toolchain_identity->GetBool("claimable");
+  summary.toolchain_identity_diagnostics =
+      ReadStringArrayField(*toolchain_identity, "diagnostics");
+
+  const JsonValue *support_matrix = root.Find("llvm_support_matrix");
+  if (support_matrix == nullptr || !support_matrix->IsObject()) {
+    error = "llvm capability summary parse failure: missing llvm_support_matrix section";
+    return false;
+  }
+  const JsonValue *native_object_contract =
+      support_matrix->Find("native_object_emission_contract");
+  if (native_object_contract == nullptr || !native_object_contract->IsObject() ||
+      !native_object_contract->GetString("status")) {
+    error = "llvm capability summary parse failure: invalid native object emission contract";
+    return false;
+  }
+  summary.native_object_emission_status =
+      *native_object_contract->GetString("status");
 
   const JsonValue *sema = root.Find("sema_type_system_parity");
   if (sema == nullptr || !sema->IsObject() || !sema->GetBool("parity_ready")) {

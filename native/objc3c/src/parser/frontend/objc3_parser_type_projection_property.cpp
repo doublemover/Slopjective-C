@@ -14,6 +14,7 @@ void CopyObjc3PropertyTypeFromParam(const FuncParam &source,
   target.instancetype_spelling = source.instancetype_spelling;
   target.object_pointer_type_spelling = source.object_pointer_type_spelling;
   target.object_pointer_type_name = source.object_pointer_type_name;
+  target.value_optional = source.value_optional;
   target.typecheck_family_symbol = source.typecheck_family_symbol;
   target.has_generic_suffix = source.has_generic_suffix;
   target.generic_suffix_terminated = source.generic_suffix_terminated;

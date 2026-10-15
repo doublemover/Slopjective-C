@@ -16,6 +16,9 @@ SECURITY_HARDENING_RUNTIME_HARDENING_PY = (
 SECURITY_HARDENING_SANITIZER_VALIDATION_PY = (
     ROOT / "scripts" / "check_security_sanitizer_validation.py"
 )
+SECURITY_HARDENING_SANITIZER_EXECUTION_EVIDENCE_PY = (
+    ROOT / "scripts" / "check_security_sanitizer_execution_evidence.py"
+)
 SECURITY_HARDENING_LANGUAGE_RUNTIME_THREAT_MODEL_PY = (
     ROOT / "scripts" / "check_security_language_runtime_threat_model.py"
 )

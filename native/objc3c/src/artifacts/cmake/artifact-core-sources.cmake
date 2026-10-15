@@ -89,6 +89,10 @@ target_sources(objc3c_artifacts PRIVATE
   objc3_frontend_artifact_semantic_closure_metadata.h
   objc3_frontend_artifact_semantic_lowering_plan.cpp
   objc3_frontend_artifact_semantic_lowering_plan.h
+  objc3_frontend_textual_interface_payload_artifact.cpp
+  objc3_frontend_textual_interface_payload_artifact.h
+  objc3_frontend_textual_interface_payload_import.cpp
+  objc3_frontend_textual_interface_payload_import.h
   objc3_frontend_artifact_source_linkage_metadata.cpp
   objc3_frontend_artifact_source_linkage_metadata.h
   objc3_frontend_artifact_source_shape_plan.cpp

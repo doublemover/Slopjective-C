@@ -23,6 +23,14 @@ struct GlobalDecl {
   unsigned column = 1;
 };
 
+struct Objc3ModuleImportDecl {
+  std::string module_name;
+  std::string module_identity_key;
+  std::string package_resolution = "required-locked-package-provenance";
+  unsigned line = 1;
+  unsigned column = 1;
+};
+
 struct Objc3DraftSyntaxSurfaceSummary {
   std::size_t block_literal_sites = 0;
   std::size_t block_explicit_capture_list_sites = 0;
@@ -77,6 +85,7 @@ struct Objc3DraftSyntaxSurfaceSummary {
 
 struct Objc3Program {
   std::string module_name = "objc3_module";
+  std::vector<Objc3ModuleImportDecl> module_imports;
   std::vector<GlobalDecl> globals;
   std::vector<Objc3ProtocolDecl> protocols;
   std::vector<Objc3InterfaceDecl> interfaces;

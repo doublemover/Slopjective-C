@@ -1,0 +1,249 @@
+{
+  "$id": "https://objc3c.dev/schemas/objc3c-generic-callable-model-v1.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "objc3c Generic Callable Model",
+  "type": "object",
+  "required": [
+    "contract_id",
+    "issue_refs",
+    "accepted_surfaces",
+    "source_anchors",
+    "claimable_metadata_requirements",
+    "reserved_surfaces",
+    "fail_closed_semantic_contracts",
+    "unsupported_boundaries"
+  ],
+  "properties": {
+    "$schema": {
+      "const": "https://objc3c.dev/schemas/objc3c-generic-callable-model-v1.schema.json"
+    },
+    "contract_id": {
+      "const": "objc3c.native.generic_callable_reification_contract.v1"
+    },
+    "issue_refs": {
+      "type": "array",
+      "contains": {
+        "const": 8235
+      }
+    },
+    "accepted_surfaces": {
+      "type": "array",
+      "minItems": 2,
+      "items": {
+        "$ref": "#/$defs/acceptedSurface"
+      },
+      "allOf": [
+        {
+          "contains": {
+            "type": "object",
+            "required": [
+              "surface"
+            ],
+            "properties": {
+              "surface": {
+                "const": "generic_free_function"
+              }
+            }
+          }
+        },
+        {
+          "contains": {
+            "type": "object",
+            "required": [
+              "surface"
+            ],
+            "properties": {
+              "surface": {
+                "const": "objective_c_generic_method"
+              }
+            }
+          }
+        }
+      ]
+    },
+    "claimable_metadata_requirements": {
+      "type": "array",
+      "allOf": [
+        {
+          "contains": {
+            "type": "string",
+            "pattern": "generic_callable_reification_policy"
+          }
+        },
+        {
+          "contains": {
+            "type": "string",
+            "pattern": "generic_callable_mangling_policy_id|mangling policy"
+          }
+        },
+        {
+          "contains": {
+            "type": "string",
+            "pattern": "generic_callable_signature_replay_key"
+          }
+        }
+      ]
+    },
+    "reserved_surfaces": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/reservedSurface"
+      },
+      "allOf": [
+        {
+          "contains": {
+            "type": "object",
+            "required": [
+              "surface"
+            ],
+            "properties": {
+              "surface": {
+                "const": "c_style_generic_free_function"
+              }
+            }
+          }
+        },
+        {
+          "contains": {
+            "type": "object",
+            "required": [
+              "surface"
+            ],
+            "properties": {
+              "surface": {
+                "const": "selector_local_generic_method_clause"
+              }
+            }
+          }
+        }
+      ]
+    },
+    "fail_closed_semantic_contracts": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/failClosedContract"
+      },
+      "allOf": [
+        {
+          "contains": {
+            "type": "object",
+            "required": [
+              "contract"
+            ],
+            "properties": {
+              "contract": {
+                "const": "generic_method_override_signature_drift"
+              }
+            }
+          }
+        },
+        {
+          "contains": {
+            "type": "object",
+            "required": [
+              "contract"
+            ],
+            "properties": {
+              "contract": {
+                "const": "erased_to_reified_redeclaration_drift"
+              }
+            }
+          }
+        },
+        {
+          "contains": {
+            "type": "object",
+            "required": [
+              "contract"
+            ],
+            "properties": {
+              "contract": {
+                "const": "cross_module_mangling_policy_mismatch"
+              }
+            }
+          }
+        }
+      ]
+    },
+    "unsupported_boundaries": {
+      "type": "array",
+      "contains": {
+        "type": "string",
+        "pattern": "runtime-specialized"
+      }
+    }
+  },
+  "$defs": {
+    "acceptedSurface": {
+      "type": "object",
+      "required": [
+        "surface",
+        "canonical_syntax",
+        "parser_owner",
+        "sema_owner",
+        "positive_fixture",
+        "reification_policy",
+        "mangling_policy_id"
+      ],
+      "properties": {
+        "reification_policy": {
+          "enum": [
+            "erased_default",
+            "explicit_reified"
+          ]
+        },
+        "mangling_policy_id": {
+          "enum": [
+            "objc3c.generic-callable.semantic-mangling.v1",
+            "objc3c.generic-callable.reified-semantic-mangling.v1"
+          ]
+        },
+        "selector_identity_includes_generic_clause": {
+          "const": false
+        },
+        "runtime_specialization_claimed": {
+          "const": false
+        }
+      },
+      "additionalProperties": true
+    },
+    "reservedSurface": {
+      "type": "object",
+      "required": [
+        "surface",
+        "canonical_reserved_shape",
+        "diagnostic_code",
+        "negative_fixture"
+      ],
+      "properties": {
+        "diagnostic_code": {
+          "enum": [
+            "O3P114",
+            "O3S206"
+          ]
+        }
+      },
+      "additionalProperties": true
+    },
+    "failClosedContract": {
+      "type": "object",
+      "required": [
+        "contract",
+        "diagnostic_code",
+        "negative_fixture",
+        "required_invariants"
+      ],
+      "properties": {
+        "diagnostic_code": {
+          "const": "O3S206"
+        },
+        "required_invariants": {
+          "type": "array",
+          "minItems": 1
+        }
+      },
+      "additionalProperties": true
+    }
+  },
+  "additionalProperties": true
+}

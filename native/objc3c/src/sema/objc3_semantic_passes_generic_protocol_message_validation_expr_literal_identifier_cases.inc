@@ -56,28 +56,38 @@
                   "' must resolve to 'self', a known class type, or an ObjC-reference-compatible identifier"));
           return MakeScalarSemanticType(ValueType::Unknown);
         }
-        if (is_class_root) {
-          if (expr->typed_keypath_components.size() != 1u) {
-            diagnostics.push_back(MakeDiag(
-                expr->line, expr->column, "O3S206",
-                "type mismatch: typed key-path member chain '" +
-                    objc3c::support::JoinStringVector(
-                        expr->typed_keypath_components, ".") +
-                    "' is unsupported until executable typed key-path lowering is enabled"));
-            return MakeScalarSemanticType(ValueType::Unknown);
-          }
-          const std::string &component = expr->typed_keypath_components.front();
-          if (FindTypedKeyPathPropertyOnOwner(
-                  *message_send_context.surface, validated_owner_name,
-                  component) == nullptr) {
-            diagnostics.push_back(MakeDiag(
-                expr->line, expr->column, "O3S206",
-                "type mismatch: typed key-path component '" + component +
-                    "' is not a readable property on root '" +
-                    validated_owner_name + "'"));
-            return MakeScalarSemanticType(ValueType::Unknown);
-          }
+        if (validated_owner_name.empty() ||
+            message_send_context.surface == nullptr) {
+          diagnostics.push_back(MakeDiag(
+              expr->line, expr->column, "O3S206",
+              "type mismatch: typed key-path root '" +
+                  expr->typed_keypath_root_name +
+                  "' must resolve to concrete object metadata before lowering"));
+          return MakeScalarSemanticType(ValueType::Unknown);
         }
+        std::string failure_component;
+        std::string failure_reason;
+        expr->typed_keypath_metadata_expanded = false;
+        expr->typed_keypath_component_owner_identities.clear();
+        expr->typed_keypath_component_member_identities.clear();
+        expr->typed_keypath_component_type_identities.clear();
+        if (!ResolveTypedKeyPathPropertyChain(
+                *message_send_context.surface, validated_owner_name,
+                expr->typed_keypath_components, failure_component,
+                failure_reason,
+                &expr->typed_keypath_component_owner_identities,
+                &expr->typed_keypath_component_member_identities,
+                &expr->typed_keypath_component_type_identities)) {
+          diagnostics.push_back(MakeDiag(
+              expr->line, expr->column, "O3S206",
+              "type mismatch: typed key-path member chain '" +
+                  objc3c::support::JoinStringVector(
+                      expr->typed_keypath_components, ".") +
+                  "' failed closed at component '" + failure_component +
+                  "': " + failure_reason));
+          return MakeScalarSemanticType(ValueType::Unknown);
+        }
+        expr->typed_keypath_metadata_expanded = true;
         return MakeScalarSemanticType(ValueType::ObjCId);
       }
       if (expr->ident == "super" && !message_send_context.inside_method) {

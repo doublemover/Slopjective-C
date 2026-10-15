@@ -7,6 +7,7 @@
 #include "ir/objc3_ir_emitter_context.h"
 #include "ir/objc3_ir_expression_emission.h"
 #include "ir/objc3_ir_function_signature_model.h"
+#include "ir/objc3_ir_type_model.h"
 
 std::string EmitObjc3IRCallExpression(
     const Expr *expr, FunctionContext &ctx,
@@ -23,22 +24,58 @@ std::string EmitObjc3IRCallExpression(
   if (expr->kind == Expr::Kind::Try) {
     const Expr *operand =
         !expr->args.empty() ? expr->args.front().get() : expr->left.get();
-    if (operand == nullptr || operand->kind != Expr::Kind::Call) {
+    if (operand == nullptr ||
+        (operand->kind != Expr::Kind::Call &&
+         operand->kind != Expr::Kind::MessageSend)) {
       return callbacks.emit_unsupported_i32_value(
           "try lowering expected callable operand");
     }
-    const LoweredFunctionSignature *operand_signature =
-        callbacks.lookup_function_signature(operand->ident);
+    LoweredFunctionSignature resolved_message_send_signature;
+    const LoweredFunctionSignature *operand_signature = nullptr;
+    if (operand->kind == Expr::Kind::MessageSend) {
+      if (callbacks.resolve_message_send_signature &&
+          callbacks.resolve_message_send_signature(
+              operand, ctx, resolved_message_send_signature)) {
+        operand_signature = &resolved_message_send_signature;
+      }
+    } else {
+      operand_signature = callbacks.lookup_function_signature(operand->ident);
+    }
     if (operand_signature == nullptr) {
       return callbacks.emit_unsupported_i32_value(
           "try lowering requires declared callable signature");
     }
+    if (operand_signature->has_value_optional_type_signature &&
+        !operand_signature->value_optional_lowering_supported) {
+      const std::string payload =
+          operand_signature->value_optional_payload_type_spelling.empty()
+              ? "unknown"
+              : operand_signature->value_optional_payload_type_spelling;
+      return callbacks.emit_unsupported_i32_value(
+          "try lowering for value optional payload " + payload +
+          " requires value optional ABI support");
+    }
+    const ValueType result_type = operand_signature->return_type;
+    if (result_type == ValueType::Void) {
+      return callbacks.emit_unsupported_i32_value(
+          "try expression lowering requires a non-void result");
+    }
+    const Objc3IRValueOptionalCarrierKind result_optional_carrier =
+        Objc3IRValueOptionalCarrierKindFor(
+            operand_signature->return_value_optional_carrier);
+    const std::string result_storage_type =
+        LLVMLocalStorageTypeForValueOptionalCarrier(result_type,
+                                                   result_optional_carrier);
+    const unsigned result_storage_alignment =
+        LLVMLocalStorageAlignmentForValueOptionalCarrier(
+            result_type, result_optional_carrier);
     const std::string result_ptr =
         "%try.result.addr." + std::to_string(ctx.temp_counter++);
     const std::string error_slot =
         callbacks.build_throws_error_slot_alloca(ctx, "try");
-    ctx.entry_lines.push_back("  " + result_ptr +
-                              " = alloca i32, align 4");
+    ctx.entry_lines.push_back("  " + result_ptr + " = alloca " +
+                              result_storage_type + ", align " +
+                              std::to_string(result_storage_alignment));
     const std::string merged_label =
         callbacks.new_label(ctx, "try_merge_");
     const std::string failure_label =
@@ -50,9 +87,24 @@ std::string EmitObjc3IRCallExpression(
     bool bridge_failed = false;
     std::string bridge_error_value = "0";
     std::string bridge_failure_condition;
-    std::string result = callbacks.emit_direct_function_call(
-        operand, operand_signature, ctx, error_slot, &bridge_failed,
-        &bridge_error_value, &bridge_failure_condition);
+    std::string result;
+    if (operand->kind == Expr::Kind::MessageSend) {
+      const std::string previous_error_slot =
+          ctx.active_message_send_error_out_slot;
+      const Expr *previous_error_expr =
+          ctx.active_message_send_error_out_expr;
+      if (operand_signature->throws_error_out_abi_ready) {
+        ctx.active_message_send_error_out_slot = error_slot;
+        ctx.active_message_send_error_out_expr = operand;
+      }
+      result = callbacks.emit_message_send_expr(operand, ctx);
+      ctx.active_message_send_error_out_slot = previous_error_slot;
+      ctx.active_message_send_error_out_expr = previous_error_expr;
+    } else {
+      result = callbacks.emit_direct_function_call(
+          operand, operand_signature, ctx, error_slot, &bridge_failed,
+          &bridge_error_value, &bridge_failure_condition);
+    }
     std::string actual_result = result;
     std::string failure_cond;
     if (bridge_failed) {
@@ -61,7 +113,7 @@ std::string EmitObjc3IRCallExpression(
             "try lowering received bridged operand without failure condition");
       }
       failure_cond = bridge_failure_condition;
-    } else if (operand_signature->throws_declared) {
+    } else if (operand_signature->throws_error_out_abi_ready) {
       const std::string has_error = callbacks.new_temp(ctx);
       const std::string loaded_error =
           callbacks.emit_load_thrown_error(error_slot, ctx);
@@ -76,14 +128,20 @@ std::string EmitObjc3IRCallExpression(
     ctx.code_lines.push_back("  br i1 " + failure_cond + ", label %" +
                              failure_label + ", label %" + success_label);
     ctx.code_lines.push_back(success_label + ":");
-    ctx.code_lines.push_back("  store i32 " + actual_result + ", ptr " +
-                             result_ptr + ", align 4");
+    ctx.code_lines.push_back("  store " + result_storage_type + " " +
+                             actual_result + ", ptr " + result_ptr +
+                             ", align " +
+                             std::to_string(result_storage_alignment));
     ctx.code_lines.push_back("  br label %" + merged_label);
     ctx.code_lines.push_back(failure_label + ":");
     switch (expr->try_operator_kind) {
       case Expr::TryOperatorKind::Optional:
-        ctx.code_lines.push_back("  store i32 0, ptr " + result_ptr +
-                                 ", align 4");
+        ctx.code_lines.push_back("  store " + result_storage_type +
+                                 " " +
+                                 std::string(LLVMZeroValueForValueOptionalCarrier(
+                                     result_type, result_optional_carrier)) +
+                                 ", ptr " + result_ptr + ", align " +
+                                 std::to_string(result_storage_alignment));
         ctx.code_lines.push_back("  br label %" + merged_label);
         break;
       case Expr::TryOperatorKind::Forced:
@@ -94,8 +152,10 @@ std::string EmitObjc3IRCallExpression(
         callbacks.emit_propagate_thrown_error(bridge_error_value, ctx);
         break;
       case Expr::TryOperatorKind::None:
-        ctx.code_lines.push_back("  store i32 " + actual_result +
-                                 ", ptr " + result_ptr + ", align 4");
+        ctx.code_lines.push_back("  store " + result_storage_type + " " +
+                                 actual_result + ", ptr " + result_ptr +
+                                 ", align " +
+                                 std::to_string(result_storage_alignment));
         ctx.code_lines.push_back("  br label %" + merged_label);
         break;
     }
@@ -107,8 +167,13 @@ std::string EmitObjc3IRCallExpression(
     }
     ctx.code_lines.push_back(merged_label + ":");
     const std::string loaded = callbacks.new_temp(ctx);
-    ctx.code_lines.push_back("  " + loaded + " = load i32, ptr " +
-                             result_ptr + ", align 4");
+    ctx.code_lines.push_back("  " + loaded + " = load " +
+                             result_storage_type + ", ptr " + result_ptr +
+                             ", align " +
+                             std::to_string(result_storage_alignment));
+    if (result_type == ValueType::Optional) {
+      ctx.value_optional_carrier_by_value[loaded] = result_optional_carrier;
+    }
     return loaded;
   }
   const auto local_block_it = ctx.block_bindings.find(expr->ident);
@@ -118,7 +183,17 @@ std::string EmitObjc3IRCallExpression(
   }
   const LoweredFunctionSignature *signature =
       callbacks.lookup_function_signature(expr->ident);
-  if (signature != nullptr && signature->throws_declared) {
+  if (signature != nullptr && signature->has_value_optional_type_signature &&
+      !signature->value_optional_lowering_supported) {
+    const std::string payload =
+        signature->value_optional_payload_type_spelling.empty()
+            ? "unknown"
+            : signature->value_optional_payload_type_spelling;
+    return callbacks.emit_unsupported_i32_value(
+        "value optional call lowering for payload " + payload +
+        " requires value optional ABI support");
+  }
+  if (signature != nullptr && signature->throws_error_out_abi_ready) {
     const std::string ignored_error_slot =
         callbacks.build_throws_error_slot_alloca(ctx, "ignored");
     ctx.code_lines.push_back("  store i32 0, ptr " + ignored_error_slot +

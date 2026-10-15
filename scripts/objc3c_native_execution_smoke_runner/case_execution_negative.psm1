@@ -88,7 +88,8 @@ function Invoke-NegativeExecutionSmokeFixtureImpl {
   }
 
   if ($compileExit -ne 0) {
-    throw "execution smoke FAIL: compile failed for negative fixture $fixtureRel (exit=$compileExit)"
+    $compileExcerpt = Get-ExecutionSmokeLogExcerpt -Path $compileLog
+    throw "execution smoke FAIL: compile failed for negative fixture $fixtureRel (exit=$compileExit)`n$compileExcerpt"
   }
 
   $launchContract = Get-RuntimeLaunchLinkContract -CompileDir $compileDir -RepoRoot $Context.repo_root -EmitPrefix "module"
@@ -163,13 +164,15 @@ function Invoke-NegativeExecutionSmokeFixtureImpl {
     $linkStep = Invoke-TimedLoggedCommand -StageKey "negative_link_seconds" -Command $Context.clang_command -Arguments $linkArgs -LogPath $linkLog
     $linkExit = [int]$linkStep.exit_code
     if ($linkExit -ne 0) {
-      throw "execution smoke FAIL: expected successful link for run-stage negative fixture $fixtureRel (exit=$linkExit)"
+      $linkExcerpt = Get-ExecutionSmokeLogExcerpt -Path $linkLog
+      throw "execution smoke FAIL: expected successful link for run-stage negative fixture $fixtureRel (exit=$linkExit)`n$linkExcerpt"
     }
 
     $runStep = Invoke-TimedLoggedCommand -StageKey "negative_run_seconds" -Command $exePath -Arguments @() -LogPath $runLog
     $runExit = [int]$runStep.exit_code
     if ($runExit -eq 0) {
-      throw "execution smoke FAIL: expected non-zero run exit for negative fixture $fixtureRel"
+      $runExcerpt = Get-ExecutionSmokeLogExcerpt -Path $runLog
+      throw "execution smoke FAIL: expected non-zero run exit for negative fixture $fixtureRel`n$runExcerpt"
     }
     $runText = if (Test-Path -LiteralPath $runLog -PathType Leaf) { Get-Content -LiteralPath $runLog -Raw } else { "" }
     $missingTokens = @(Get-MissingTokens -Text $runText -Tokens $spec.required_link_tokens)

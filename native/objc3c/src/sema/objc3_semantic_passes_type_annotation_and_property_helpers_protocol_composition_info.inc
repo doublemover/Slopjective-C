@@ -7,7 +7,7 @@ static ProtocolCompositionInfo BuildProtocolCompositionInfoFromParam(
     const FuncParam &param,
     const std::unordered_set<std::string> *generic_interface_names = nullptr) {
   ProtocolCompositionInfo info;
-  if (!param.has_generic_suffix) {
+  if (!param.has_generic_suffix || param.value_optional.present) {
     return info;
   }
   if (IsGenericInterfaceSpecializationSuffix(
@@ -27,7 +27,7 @@ static ProtocolCompositionInfo BuildProtocolCompositionInfoFromFunctionReturn(
     const FunctionDecl &fn,
     const std::unordered_set<std::string> *generic_interface_names = nullptr) {
   ProtocolCompositionInfo info;
-  if (!fn.has_return_generic_suffix) {
+  if (!fn.has_return_generic_suffix || fn.return_value_optional.present) {
     return info;
   }
   if (IsGenericInterfaceSpecializationSuffix(
@@ -47,7 +47,8 @@ static ProtocolCompositionInfo BuildProtocolCompositionInfoFromMethodReturn(
     const Objc3MethodDecl &method,
     const std::unordered_set<std::string> *generic_interface_names = nullptr) {
   ProtocolCompositionInfo info;
-  if (!method.has_return_generic_suffix) {
+  if (!method.has_return_generic_suffix ||
+      method.return_value_optional.present) {
     return info;
   }
   if (IsGenericInterfaceSpecializationSuffix(

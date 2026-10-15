@@ -14,6 +14,9 @@ bool IsObjc3ActorClassDeclarationLead(
 bool IsObjc3RemovedOptionalTemplateAliasLead(
     const std::vector<Objc3LexToken> &tokens,
     std::size_t index);
+bool IsObjc3ReservedValueOptionalTypeLead(
+    const std::vector<Objc3LexToken> &tokens,
+    std::size_t index);
 bool IsObjc3TopLevelFunctionQualifierLead(Objc3LexTokenKind kind);
 GlobalDecl BuildObjc3GlobalLetDeclarationIdentity(
     const Objc3LexToken &name_token);

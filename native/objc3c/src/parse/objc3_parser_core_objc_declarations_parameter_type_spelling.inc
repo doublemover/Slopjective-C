@@ -1,5 +1,6 @@
 #include "parse/objc3_parser_core_objc_declarations_parameter_type_spelling_builtin.inc"
 #include "parse/objc3_parser_core_objc_declarations_parameter_type_spelling_objc_keywords.inc"
 #include "parse/objc3_parser_core_objc_declarations_parameter_type_spelling_removed_alias.inc"
+#include "parse/objc3_parser_core_objc_declarations_parameter_type_spelling_reserved_optional.inc"
 #include "parse/objc3_parser_core_objc_declarations_parameter_type_spelling_identifier.inc"
 #include "parse/objc3_parser_core_objc_declarations_parameter_type_spelling_diagnostics.inc"

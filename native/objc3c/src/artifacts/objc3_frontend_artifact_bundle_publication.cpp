@@ -14,6 +14,7 @@
 #include "artifacts/objc3_frontend_artifact_runtime_metadata_plan.h"
 #include "artifacts/objc3_frontend_artifact_runtime_registration_plan.h"
 #include "artifacts/objc3_frontend_artifact_semantic_lowering_plan.h"
+#include "artifacts/objc3_frontend_textual_interface_payload_artifact.h"
 #include "artifacts/objc3_frontend_artifact_type_system_lowering_plan.h"
 #include "artifacts/objc3_frontend_artifacts.h"
 
@@ -24,6 +25,10 @@ void PublishObjc3FrontendArtifactBundleOutputs(
   inputs.bundle.manifest_json = inputs.manifest_json;
   inputs.bundle.runtime_metadata_binary =
       inputs.runtime_metadata_plan.executable_metadata_runtime_ingest_binary_payload;
+  inputs.bundle.standalone_textual_interface_payload_json =
+      BuildObjc3StandaloneTextualInterfacePayloadArtifact(
+          inputs.input_path, inputs.program, inputs.options,
+          inputs.pipeline_result);
 
   PopulateObjc3FrontendArtifactBundleOutputs(
       inputs.bundle, inputs.program,

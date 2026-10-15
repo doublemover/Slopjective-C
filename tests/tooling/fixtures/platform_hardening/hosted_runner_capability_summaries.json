@@ -1,0 +1,214 @@
+{
+  "contract_id": "objc3c.platform.hosted-runner.capability-summaries.v1",
+  "schema_version": 1,
+  "schema_path": "schemas/objc3c-platform-hosted-runner-capability-summaries-v1.schema.json",
+  "source_path": "tests/tooling/fixtures/platform_hardening/hosted_runner_capability_summaries.json",
+  "support_claim_policy": "summary-only-no-support-promotion",
+  "workflow_gate_policy": {
+    "optional_hosted_gate_missing_llc_result": "skip-no-success-claim",
+    "required_conformance_minima_missing_llc_result": "fail-closed-required-native-object-emission",
+    "required_conformance_minima_env": "OBJC3C_REQUIRE_HOSTED_NATIVE_OBJECT_EMISSION",
+    "clang_substitute_success_allowed": false
+  },
+  "issue_refs": [
+    8206,
+    8228,
+    8229,
+    8230,
+    8231,
+    8232
+  ],
+  "summaries": [
+    {
+      "summary_id": "objc3c.hosted.windows-x64.supported.current",
+      "summary_kind": "platform",
+      "issue_ref": 8206,
+      "claim_state": "evidence-bound",
+      "platform_ids": [
+        "windows-x64"
+      ],
+      "hosted_runner": "windows-latest",
+      "required_evidence_classes": [
+        "build",
+        "package",
+        "install",
+        "execution",
+        "toolchain"
+      ],
+      "required_missing_evidence_classes": [],
+      "native_object_emission_status": "native_object_emission_supported",
+      "publication_allowed": true,
+      "diagnostic": "Windows x64 may publish support only through the checked build, package, install, native execution, hosted CI, clean-room install, and coherent LLVM toolchain evidence rows."
+    },
+    {
+      "summary_id": "objc3c.hosted.linux-x64.unsupported",
+      "summary_kind": "platform",
+      "issue_ref": 8228,
+      "claim_state": "unsupported",
+      "platform_ids": [],
+      "hosted_runner": "ubuntu-24.04",
+      "required_evidence_classes": [
+        "build",
+        "package",
+        "install",
+        "execution"
+      ],
+      "required_missing_evidence_classes": [
+        "build",
+        "package",
+        "install",
+        "execution"
+      ],
+      "native_object_emission_status": "native_object_emission_supported",
+      "publication_allowed": false,
+      "diagnostic": "Linux x64 hosted-runner tool presence is not support; generated Ubuntu 24.04 build/package/install/execution reports must be reviewed into checked source truth before this row can publish support."
+    },
+    {
+      "summary_id": "objc3c.hosted.darwin-arm64.unsupported",
+      "summary_kind": "platform",
+      "issue_ref": 8229,
+      "claim_state": "unsupported",
+      "platform_ids": [],
+      "hosted_runner": "macos-15",
+      "required_evidence_classes": [
+        "build",
+        "package",
+        "install",
+        "execution"
+      ],
+      "required_missing_evidence_classes": [
+        "build",
+        "package",
+        "install",
+        "execution"
+      ],
+      "native_object_emission_status": "native_object_emission_supported",
+      "publication_allowed": false,
+      "diagnostic": "macOS arm64 hosted-runner tool presence is not support; generated macOS 15 Mach-O/load-path, package, install, and native execution reports must be reviewed into checked source truth before this row can publish support."
+    },
+    {
+      "summary_id": "objc3c.hosted.sanitizer.address.reserved",
+      "summary_kind": "sanitizer",
+      "issue_ref": 8230,
+      "claim_state": "reserved",
+      "platform_ids": [],
+      "hosted_runner": "windows-latest",
+      "required_evidence_classes": [
+        "package",
+        "install",
+        "execution"
+      ],
+      "required_missing_evidence_classes": [
+        "package",
+        "install",
+        "execution"
+      ],
+      "native_object_emission_status": "native_object_emission_supported",
+      "publication_allowed": false,
+      "diagnostic": "Hosted ASan summaries are non-promoting; Windows x64 support truth is owned by checked sanitizer runtime promotion evidence, and generated-only or unsupported-host evidence still fails closed."
+    },
+    {
+      "summary_id": "objc3c.hosted.sanitizer.undefined.reserved",
+      "summary_kind": "sanitizer",
+      "issue_ref": 8231,
+      "claim_state": "reserved",
+      "platform_ids": [],
+      "hosted_runner": "windows-latest",
+      "required_evidence_classes": [
+        "package",
+        "install",
+        "execution"
+      ],
+      "required_missing_evidence_classes": [
+        "package",
+        "install",
+        "execution"
+      ],
+      "native_object_emission_status": "native_object_emission_supported",
+      "publication_allowed": false,
+      "diagnostic": "Hosted UBSan summaries are non-promoting; Windows x64 support truth is owned by checked sanitizer runtime promotion evidence, and generated-only or unsupported-host evidence still fails closed."
+    },
+    {
+      "summary_id": "objc3c.hosted.toolchain.missing-llc.fail-closed",
+      "summary_kind": "toolchain",
+      "issue_ref": 8232,
+      "claim_state": "fail-closed",
+      "platform_ids": [],
+      "hosted_runner": "any",
+      "required_evidence_classes": [
+        "toolchain",
+        "native-object-emission"
+      ],
+      "required_missing_evidence_classes": [
+        "native-object-emission"
+      ],
+      "native_object_emission_status": "native_object_emission_missing_llc",
+      "publication_allowed": false,
+      "diagnostic": "Missing llc blocks native object, package, execution, and platform success; clang substitute object emission is not a success path."
+    },
+    {
+      "summary_id": "objc3c.hosted.toolchain.target-object.fail-closed",
+      "summary_kind": "toolchain",
+      "issue_ref": 8232,
+      "claim_state": "fail-closed",
+      "platform_ids": [],
+      "hosted_runner": "any",
+      "required_evidence_classes": [
+        "toolchain",
+        "native-object-emission"
+      ],
+      "required_missing_evidence_classes": [
+        "native-object-emission"
+      ],
+      "native_object_emission_status": "native_object_emission_target_object_unavailable",
+      "publication_allowed": false,
+      "diagnostic": "llc that accepts --filetype=obj but cannot emit a non-empty object for the target triple blocks native object, package, execution, and platform success."
+    },
+    {
+      "summary_id": "objc3c.hosted.toolchain.mixed-root.fail-closed",
+      "summary_kind": "toolchain",
+      "issue_ref": 8232,
+      "claim_state": "fail-closed",
+      "platform_ids": [],
+      "hosted_runner": "any",
+      "required_evidence_classes": [
+        "toolchain",
+        "native-object-emission"
+      ],
+      "required_missing_evidence_classes": [
+        "native-object-emission"
+      ],
+      "native_object_emission_status": "native_object_emission_mixed_toolchain_root",
+      "publication_allowed": false,
+      "diagnostic": "Mixed LLVM roots block native object, package, execution, and platform success until a single coherent toolchain root is proven."
+    },
+    {
+      "summary_id": "objc3c.hosted.toolchain.mismatched-version.fail-closed",
+      "summary_kind": "toolchain",
+      "issue_ref": 8232,
+      "claim_state": "fail-closed",
+      "platform_ids": [],
+      "hosted_runner": "any",
+      "required_evidence_classes": [
+        "toolchain",
+        "native-object-emission"
+      ],
+      "required_missing_evidence_classes": [
+        "native-object-emission"
+      ],
+      "native_object_emission_status": "native_object_emission_mismatched_tool_versions",
+      "publication_allowed": false,
+      "diagnostic": "Mismatched LLVM tool version families block native object, package, execution, and platform success until a coherent version family is proven."
+    }
+  ],
+  "forbidden_success_claims": [
+    "Linux x64 support from hosted-runner tool presence alone",
+    "macOS arm64 support from hosted-runner tool presence alone",
+    "ASan or UBSan package support without package install and native execution evidence",
+    "Native object emission success when llc is missing",
+    "Native object emission success when target object emission fails",
+    "Native object emission success from mixed LLVM roots",
+    "Native object emission success from mismatched LLVM tool versions",
+    "Clang substitute object emission published as llvm-direct success"
+  ]
+}

@@ -7,7 +7,7 @@ NormalizeObjc3ParserContractSnapshotForSemaHandoff(
     const Objc3ParserContractSnapshot &snapshot, const Objc3ParsedProgram &program,
     const Objc3SemaLanguageProfile language_profile, bool &normalization_applied) {
   normalization_applied = false;
-  if (language_profile == Objc3SemaLanguageProfile::Canonical) {
+  if (IsSupportedObjc3SemaLanguageProfile(language_profile)) {
     return snapshot;
   }
   if (!IsObjc3ParserContractSnapshotNormalizationCandidate(snapshot, program)) {
@@ -260,6 +260,6 @@ inline bool IsObjc3ParserContractSnapshotNormalizationRejectedForSemaHandoff(
     const Objc3ParserContractSnapshot &snapshot,
     const Objc3ParsedProgram &program,
     const Objc3SemaLanguageProfile language_profile) {
-  return language_profile == Objc3SemaLanguageProfile::Canonical &&
+  return IsSupportedObjc3SemaLanguageProfile(language_profile) &&
          IsObjc3ParserContractSnapshotNormalizationCandidate(snapshot, program);
 }

@@ -8,7 +8,7 @@
 namespace objc3c::config {
 
 inline constexpr std::size_t kImplementedFeatureStateDataCount = 1;
-inline constexpr std::size_t kReservedFeatureStateDataCount = 1;
+inline constexpr std::size_t kReservedFeatureStateDataCount = 5;
 
 std::span<const LanguageFeatureState> ImplementedFeatureStateData();
 std::span<const LanguageFeatureState> ReservedFeatureStateData();

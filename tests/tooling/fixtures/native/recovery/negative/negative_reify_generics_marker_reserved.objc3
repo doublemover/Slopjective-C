@@ -1,0 +1,9 @@
+// Negative fixture: declaration-scoped generic reification markers require a
+// generic callable declaration.
+// Expected diagnostic code(s): O3P114.
+module NegativeReifyGenericsMarkerReserved;
+
+@reify_generics
+fn plainIdentity(value: id) -> id {
+  return value;
+}

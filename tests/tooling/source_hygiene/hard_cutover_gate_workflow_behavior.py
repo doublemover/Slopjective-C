@@ -20,9 +20,7 @@ def assert_retired_public_workflow_runner_path_rejected(tmp_path: Path) -> None:
     report = build_report(root=tmp_path, scan_roots=("docs",), excludes=())
 
     assert report["ok"] is False
-    assert report["active_findings"][0]["pattern_id"] == (
-        "retired-public-workflow-runner"
-    )
+    assert "retired-public-workflow-runner" in active_pattern_ids(report)
 
 
 def assert_retired_npm_workflow_aliases_rejected(tmp_path: Path) -> None:
@@ -53,7 +51,7 @@ def assert_direct_native_compile_wrapper_commands_rejected(tmp_path: Path) -> No
 
 def assert_native_compile_wrapper_as_source_anchor_allowed(tmp_path: Path) -> None:
     write_fixture(
-        tmp_path / "docs/objc3c-native.md",
+        tmp_path / "docs/objc3c-native/src/10-cli.md",
         "- implementation anchor: `scripts/objc3c_native_compile.ps1`\n",
     )
 

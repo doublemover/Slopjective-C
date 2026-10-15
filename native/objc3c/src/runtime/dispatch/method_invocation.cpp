@@ -6,7 +6,8 @@ namespace objc3c::runtime {
 
 RuntimeTypedDispatchResult InvokeRuntimeMethodImplementation(
     const void *implementation, RuntimeMethodReturnKind return_kind,
-    std::uint64_t parameter_count, int a0, int a1, int a2, int a3) {
+    std::uint64_t parameter_count, int a0, int a1, int a2, int a3,
+    int *throws_error_out) {
   if (implementation == nullptr) {
     return RuntimeTypedDispatchFailure(
         OBJC3_RUNTIME_DISPATCH_STATUS_MALFORMED_METADATA, return_kind);
@@ -18,13 +19,16 @@ RuntimeTypedDispatchResult InvokeRuntimeMethodImplementation(
     case RuntimeMethodReturnKind::SelectorReference:
     case RuntimeMethodReturnKind::ProtocolReference:
       return InvokeI32RuntimeMethodSignature(
-          implementation, return_kind, parameter_count, a0, a1, a2, a3);
+          implementation, return_kind, parameter_count, a0, a1, a2, a3,
+          throws_error_out);
     case RuntimeMethodReturnKind::Bool:
       return InvokeBoolRuntimeMethodSignature(
-          implementation, return_kind, parameter_count, a0, a1, a2, a3);
+          implementation, return_kind, parameter_count, a0, a1, a2, a3,
+          throws_error_out);
     case RuntimeMethodReturnKind::Void:
       return InvokeVoidRuntimeMethodSignature(
-          implementation, return_kind, parameter_count, a0, a1, a2, a3);
+          implementation, return_kind, parameter_count, a0, a1, a2, a3,
+          throws_error_out);
     case RuntimeMethodReturnKind::Unsupported:
       return RuntimeTypedDispatchFailure(
           OBJC3_RUNTIME_DISPATCH_STATUS_UNSUPPORTED_RETURN_TYPE, return_kind);

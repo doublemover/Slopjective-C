@@ -94,9 +94,16 @@ bool IsCrossModuleConformanceProfileNormalized(
 std::string BuildThrowsDeclarationProfile(
     bool throws_declared, bool has_return_annotation, bool is_prototype,
     bool has_body, bool is_method_declaration, bool is_class_method,
-    std::size_t parameter_count, std::size_t selector_piece_count);
+    std::size_t parameter_count, std::size_t selector_piece_count,
+    bool typed_throws_declared, const std::string &typed_error_type_spelling,
+    bool typed_error_generic_suffix_terminated,
+    unsigned typed_error_pointer_depth);
 bool IsThrowsDeclarationProfileNormalized(bool is_prototype, bool has_body,
                                           bool is_method_declaration,
-                                          std::size_t selector_piece_count);
+                                          std::size_t selector_piece_count,
+                                          bool throws_declared,
+                                          bool typed_throws_declared,
+                                          const std::string &typed_error_type_spelling,
+                                          bool typed_error_generic_suffix_terminated);
 
 }  // namespace objc3c::parse

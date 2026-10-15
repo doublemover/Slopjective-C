@@ -1,0 +1,3 @@
+module negativeDirectImportWithoutPackageProvenance;
+
+@import moduleImportLookupProvider;

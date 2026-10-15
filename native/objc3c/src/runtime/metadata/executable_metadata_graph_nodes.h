@@ -180,6 +180,7 @@ struct Objc3ExecutableMetadataMethodGraphNode {
   bool has_body = false;
   bool effective_direct_dispatch = false;
   bool objc_final_declared = false;
+  bool throws_error_out_abi_ready = false;
   std::size_t parameter_count = 0;
   std::string return_type_name;
   unsigned line = 1;

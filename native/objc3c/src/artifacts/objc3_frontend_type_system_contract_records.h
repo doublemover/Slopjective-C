@@ -31,6 +31,9 @@ inline constexpr const char
     *kObjc3FrontendTypeSystemOptionalKeypathLoweringFailClosedModel =
         ::kObjc3TypeSystemOptionalKeypathLoweringFailClosedModel;
 inline constexpr const char
+    *kObjc3FrontendTypeSystemOptionalKeypathLoweringDebugEvidenceModel =
+        ::kObjc3TypeSystemOptionalKeypathLoweringDebugEvidenceModel;
+inline constexpr const char
     *kObjc3FrontendTypeSystemOptionalKeypathRuntimeHelperContractId =
         ::kObjc3TypeSystemOptionalKeypathRuntimeHelperContractId;
 inline constexpr const char

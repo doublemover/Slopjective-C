@@ -23,6 +23,16 @@ std::string Objc3MethodSignatureReplayKey(const Objc3MethodDecl &method) {
                                          method.async_declared,
                                          method.throws_declared)
       << ";class_method=" << (method.is_class_method ? "true" : "false")
+      << ";typed_throws="
+      << (method.typed_throws_declared ? "true" : "false")
+      << ";typed_throws_payload="
+      << method.typed_throws_payload.canonical_spelling
+      << ";return_value_optional="
+      << (method.return_value_optional.present ? "true" : "false")
+      << ";return_value_optional_payload="
+      << method.return_value_optional.payload_type_spelling
+      << ";return_value_optional_abi="
+      << method.return_value_optional.abi_layout_id
       << ";selector_normalized="
       << (method.selector_is_normalized ? "true" : "false")
       << ";selector_piece_count=" << method.selector_pieces.size()

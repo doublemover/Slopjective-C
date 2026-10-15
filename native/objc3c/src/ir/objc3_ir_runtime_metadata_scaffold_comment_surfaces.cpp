@@ -4,6 +4,7 @@
 #include <sstream>
 #include <string>
 
+#include "lower/contracts/native_artifact_names.h"
 #include "ir/objc3_ir_frontend_metadata.h"
 #include "ir/objc3_ir_module_identity.h"
 #include "ir/objc3_ir_runtime_bootstrap_global_emission.h"
@@ -173,6 +174,9 @@ void EmitRuntimeMetadataPackagingCommentSurfaces(
         << Objc3RuntimeMetadataHostSectionForLogicalName(
                kObjc3RuntimeKeypathDescriptorLogicalSection)
         << ";aggregate_symbol=@__objc3_sec_keypath_descriptors"
+        << ";debugger_metadata=source-span,type-identity,object-model-owner,"
+           "object-model-member,source-map-key,diagnostic-anchor"
+        << ";fallback_interpretation_allowed=false"
         << ";generic_metadata_abi_replay_key="
         << (frontend_metadata.lowering_generic_metadata_abi_replay_key.empty()
                 ? "none"
@@ -247,9 +251,12 @@ void EmitRuntimeMetadataPackagingCommentSurfaces(
       << "\n";
   out << "; manifest_object_ir_truth_gate = "
       << Objc3ManifestObjectIrTruthGateSummary()
-      << ";manifest_artifact=module.manifest.json"
-      << ";ir_artifact=module.ll"
-      << ";object_artifact=module.obj"
+      << ";manifest_artifact="
+      << objc3::artifacts::identity::kObjc3NativeDefaultManifestArtifactName
+      << ";ir_artifact="
+      << objc3::artifacts::identity::kObjc3NativeDefaultIrArtifactName
+      << ";object_artifact="
+      << objc3::artifacts::identity::kObjc3NativeDefaultObjectArtifactName
       << ";registration_descriptor_artifact=module.runtime-registration-descriptor.json"
       << ";registration_manifest_artifact=module.runtime-registration-manifest.json"
       << ";conformance_report_artifact=module.objc3-conformance-report.json"

@@ -53,9 +53,8 @@ struct Objc3ToolingCorpusShardingReleaseEvidencePackagingSummary {
       kObjc3ToolingCorpusShardingReleaseEvidencePackagingPayloadModel;
   std::string authority_model =
       kObjc3ToolingCorpusShardingReleaseEvidencePackagingAuthorityModel;
-  std::vector<std::string> targeted_profile_ids = {
-      "strict", "strict-concurrency", "strict-system"};
-  std::size_t targeted_profile_count = 3;
+  std::vector<std::string> targeted_profile_ids = {"strict-system"};
+  std::size_t targeted_profile_count = 1;
   std::vector<std::string> corpus_shard_ids = {
       "parser", "semantic", "lowering_abi", "module_roundtrip",
       "diagnostics"};
@@ -88,7 +87,9 @@ struct Objc3ToolingCorpusShardingReleaseEvidencePackagingSummary {
 inline bool IsReadyObjc3ToolingFeatureAwareConformanceReportEmissionSummary(
     const Objc3ToolingFeatureAwareConformanceReportEmissionSummary &summary) {
   const bool language_profile_valid =
-      summary.effective_language_profile == "canonical";
+      summary.effective_language_profile == "canonical" ||
+      summary.effective_language_profile == "strict" ||
+      summary.effective_language_profile == "strict-concurrency";
   return !summary.contract_id.empty() &&
          !summary.dependency_contract_id.empty() &&
          !summary.machine_readable_report_contract_id.empty() &&
@@ -107,7 +108,9 @@ inline bool IsReadyObjc3ToolingFeatureAwareConformanceReportEmissionSummary(
 inline bool IsReadyObjc3ToolingCorpusShardingReleaseEvidencePackagingSummary(
     const Objc3ToolingCorpusShardingReleaseEvidencePackagingSummary &summary) {
   const bool language_profile_valid =
-      summary.effective_language_profile == "canonical";
+      summary.effective_language_profile == "canonical" ||
+      summary.effective_language_profile == "strict" ||
+      summary.effective_language_profile == "strict-concurrency";
   return !summary.contract_id.empty() &&
          !summary.dependency_contract_id.empty() &&
          !summary.feature_aware_report_contract_id.empty() &&

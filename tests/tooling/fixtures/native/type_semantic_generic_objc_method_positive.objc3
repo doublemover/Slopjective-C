@@ -1,0 +1,27 @@
+module TypeSemanticGenericObjcMethodPositive;
+
+@protocol Persistable
+@end
+
+@interface SemanticBox <Persistable>
+@property (readonly) id title;
+@end
+
+@implementation SemanticBox
+@end
+
+@interface GenericMethodVault
+- <T : id<Persistable>> (T)echo:(T)value;
+@end
+
+@implementation GenericMethodVault
+- <T : id<Persistable>> (T)echo:(T)value {
+  return value;
+}
+@end
+
+fn consumeGenericObjcMethod(vault: GenericMethodVault *?, box: SemanticBox *?) -> i32 {
+  let record = [vault? echo:box];
+  let title = [record? title];
+  return 0;
+}

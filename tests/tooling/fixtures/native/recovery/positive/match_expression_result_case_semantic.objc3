@@ -1,0 +1,10 @@
+module MatchExpressionResultCaseSemantic;
+
+fn main(token: id) -> i32 {
+  let mapped = match (token) {
+    case .Ok(let value) where value != nil => 1;
+    case .Ok(let value) => 2;
+    case .Err(let error) => 3;
+  };
+  return mapped;
+}

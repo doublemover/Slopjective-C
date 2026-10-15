@@ -48,5 +48,6 @@ Export-ModuleMember -Function @(
   "Resolve-FrontendInvocationLockPath",
   "Resolve-FrontendRecoveryDeterminismHardeningPath",
   "Resolve-FrontendScaffoldPath",
-  "Resolve-NativeCompilerExecutablePath"
+  "Resolve-NativeCompilerExecutablePath",
+  "Resolve-NativeCompilerRuntimeLibraryPath"
 )

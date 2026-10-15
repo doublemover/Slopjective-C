@@ -16,7 +16,7 @@ inline constexpr const char *kObjc3ControlFlowControlFlowSafetyLoweringSurfacePa
 inline constexpr const char *kObjc3ControlFlowControlFlowSafetyLoweringGuardModel =
     "native-lowering-executes-guard-clauses-via-short-circuit-control-flow-and-else-edge-cleanup";
 inline constexpr const char *kObjc3ControlFlowControlFlowSafetyLoweringMatchModel =
-    "native-lowering-executes-literal-default-wildcard-and-binding-match-arms-while-result-case-patterns-remain-explicitly-fail-closed";
+    "native-lowering-executes-literal-default-wildcard-binding-statement-match-arms-and-lowering-eligible-expression-match-arms-while-result-case-payload-lowering-remains-explicitly-fail-closed";
 inline constexpr const char *kObjc3ControlFlowControlFlowSafetyLoweringDeferModel =
     "native-lowering-registers-defer-cleanups-per-scope-and-emits-lifo-cleanup-insertion-on-scope-exit";
 inline constexpr const char *kObjc3ControlFlowControlFlowSafetyLoweringAuthorityModel =
@@ -28,12 +28,15 @@ struct Objc3ControlFlowControlFlowSafetyLoweringContract {
   std::size_t guard_statement_sites = 0;
   std::size_t guard_clause_sites = 0;
   std::size_t match_statement_sites = 0;
+  std::size_t match_expression_sites = 0;
   std::size_t defer_statement_sites = 0;
   std::size_t live_guard_short_circuit_sites = 0;
   std::size_t live_match_dispatch_sites = 0;
+  std::size_t live_match_expression_dispatch_sites = 0;
   std::size_t live_defer_cleanup_sites = 0;
   std::size_t fail_closed_guard_short_circuit_sites = 0;
   std::size_t fail_closed_match_dispatch_sites = 0;
+  std::size_t fail_closed_match_expression_dispatch_sites = 0;
   std::size_t fail_closed_defer_cleanup_sites = 0;
   std::size_t deterministic_fail_closed_sites = 0;
   std::size_t contract_violation_sites = 0;

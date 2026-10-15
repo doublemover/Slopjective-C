@@ -1,11 +1,11 @@
 from __future__ import annotations
 
 import os
-import shutil
 import subprocess
 from pathlib import Path
 from typing import Callable, Sequence
 
+from objc3c_tooling.llvm_discovery import find_llvm_tool_path
 from objc3c_tooling.paths import ROOT, repo_rel
 from objc3c_tooling.subprocesses import failure_snippet, run_capture
 
@@ -24,13 +24,9 @@ def normal_user_manifest_link_args() -> list[str]:
 
 def find_clangxx(*, llvm_root: str | None = None) -> str:
     configured_root = llvm_root if llvm_root is not None else os.environ.get("LLVM_ROOT")
-    if configured_root:
-        candidate = Path(configured_root) / "bin" / "clang++.exe"
-        if candidate.is_file():
-            return str(candidate)
-    candidate = shutil.which("clang++")
+    candidate = find_llvm_tool_path("clang++", llvm_root=configured_root)
     if candidate:
-        return candidate
+        return str(candidate)
     raise RuntimeError("clang++ not found; set LLVM_ROOT or ensure clang++ is on PATH")
 
 

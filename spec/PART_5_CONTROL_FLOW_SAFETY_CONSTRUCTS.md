@@ -132,25 +132,29 @@ match-statement:
 match-case:
     'case' pattern ':' compound-statement
 
+match-case-guarded:
+    'case' pattern 'where' expression ':' compound-statement
+
 match-default:
     'default' ':' compound-statement
 ```
 
 Notes:
 
-- `match` is a statement (not an expression) in v1.
-- `case pattern => expression` is reserved for a future expression form ([§5.4.7](#part-5-4-7)).
+- `match` is available as both a statement and a bounded value-producing expression ([§5.4.7](#part-5-4-7)).
+- `case pattern => expression` is the expression-form arm spelling and is not accepted in statement-form `match`.
 - Fallthrough is not permitted.
 
 ### 5.4.3 Evaluation order (normative) {#part-5-4-3}
 
 - The scrutinee expression in `match (expr)` shall be evaluated exactly once.
 - Case patterns are tested top-to-bottom.
-- The first matching case is selected and its body executes.
+- For guarded arms, pattern bindings are established before the guard is evaluated.
+- The first matching unguarded arm or matching guarded arm whose guard evaluates `true` is selected.
 
 ### 5.4.4 Scoping (normative) {#part-5-4-4}
 
-Bindings introduced by a case pattern are scoped to that case body only.
+Bindings introduced by a case pattern are scoped to that case body, guard, or arm expression only. They do not leak into following arms or the surrounding scope.
 
 ### 5.4.5 Exhaustiveness (normative) {#part-5-4-5}
 
@@ -173,32 +177,39 @@ For closed sets:
 - a switch/if-chain that preserves evaluation order and side effects,
 - with no heap allocation required by `match` itself.
 
-### 5.4.7 Reserved expression form (v2+ hook; rejected in v1) {#part-5-4-7}
+Expression-form `match` over scalar and object-reference handle values may lower to a single-evaluation scrutinee, top-to-bottom branch chain, and result slot. Forms requiring result payload ABI extraction or unsupported type-test patterns shall fail closed instead of claiming lowering success.
 
-ObjC 3.0 v1 keeps `match` statement-only. A value-producing form is reserved for a future revision:
+### 5.4.7 Expression form (normative bounded surface) {#part-5-4-7}
+
+ObjC 3.0 supports a value-producing form:
 
 ```text
-match-expression (reserved):
+match-expression:
     'match' '(' expression ')' '{' match-expression-case+ match-expression-default? '}'
 
-match-expression-case (reserved):
+match-expression-case:
     'case' pattern '=>' expression ';'
 
-match-expression-default (reserved):
+match-expression-case-guarded:
+    'case' pattern 'where' expression '=>' expression ';'
+
+match-expression-default:
     'default' '=>' expression ';'
 ```
 
-Reserved typing behavior (for v2+ design stability):
+Typing behavior:
 
 - each selected arm yields one value (non-`void`),
 - all arm values must converge to a common result type under the same conversion lattice used for `?:`,
-- expression form must be exhaustive for closed sets (or include `default`).
+- expression form must be exhaustive for the admitted pattern surface.
 
-Required v1 behavior:
+Supported exhaustive proofs include:
 
-- using `match` in expression position is ill-formed,
-- using `case ... => ...` is ill-formed and shall diagnose that this spelling is reserved for future expression-form `match`,
-- parser/diagnostic conformance shall include [Appendix F](#f) rows `P-31`, `P-32`, and `P-33` ([Part 12](#part-12) [§12.5.1](#part-12-5-1), [§12.5.7](#part-12-5-7)).
+- an unguarded `default`, wildcard, or binding catch-all,
+- complete `true` and `false` literal arms,
+- complete `.Ok(...)` and `.Err(...)` result-case arms.
+
+Guards must be `bool` and side-effect-free. Calls, message sends, throwing expressions, nested match expressions, and other side-effectful guard forms shall be rejected in this bounded surface. Type-test patterns remain governed by [§5.5.5](#part-5-5-5).
 
 ## 5.5 Patterns (v1) {#part-5-5}
 
@@ -278,18 +289,21 @@ Unsupported-mode requirements (`__OBJC3_FEATURE_MATCH_TYPE_TEST_PATTERNS__ == 0`
 - `case is ...` in a pattern position is ill-formed.
 - Diagnostics shall explicitly state that type-test patterns are optional and disabled in the current mode, and suggest a mechanical rewrite (`default` + explicit `if`/cast chain) when feasible.
 
-### 5.5.6 Guarded patterns are deferred in v1 (reserved syntax) {#part-5-5-6}
+### 5.5.6 Guarded patterns {#part-5-5-6}
 
-Guarded patterns are **deferred** from v1 core syntax. The following slot is reserved for a future revision:
+Guarded patterns refine a pattern arm with a post-binding bool condition:
 
 ```text
-guarded-match-case (reserved):
+guarded-match-case:
     'case' pattern 'where' expression ':' compound-statement
 ```
 
-Reservation and compatibility requirements:
+Requirements:
 
-- In v1, `case pattern where condition:` is ill-formed and shall be rejected with a targeted “guarded patterns are deferred” diagnostic.
+- The guard expression must have type `bool`.
+- The guard is evaluated only after the pattern matches and after pattern bindings are in scope.
+- A guarded catch-all does not by itself prove exhaustiveness, because the guard may evaluate `false`.
+- Side-effectful guards in expression-form `match` are rejected in the bounded supported surface.
 - `where` is reserved as a contextual keyword only in the post-pattern guard slot.
 - Outside that slot, `where` remains usable as an identifier for source compatibility.
 - Parser conformance shall include [Appendix F](#f) rows `P-37`, `P-38`, and `P-39` ([Part 12](#part-12) [§12.5.1](#part-12-5-1), [§12.5.7](#part-12-5-7)).
@@ -302,11 +316,13 @@ Minimum diagnostics include:
 - `defer` bodies containing non-local exits (error),
 - unreachable `match` cases (warning),
 - non-exhaustive `match` over `Result` in strict mode (error; fix-it: add missing case or `default`),
-- `match` used where an expression is required (error; explain v1 statement-only rule),
-- `case ... => ...` spelling in v1 (error; explain reserved future expression-form syntax),
+- non-exhaustive expression-form `match` (error; add a missing arm or `default`),
+- incompatible expression-form `match` arm result types (error),
+- expression-form `match` guards that are not `bool` or are side-effectful in the bounded surface (error),
+- `case ... => ...` spelling in statement-form `match` (error; use `:` plus a compound statement, or use expression-form `match` in expression position),
 - `case is ...` when `__OBJC3_FEATURE_MATCH_TYPE_TEST_PATTERNS__ == 0` (error; explain optional feature gate and suggest rewrite),
 - importing module metadata that requires `objc3.pattern.type_test.v1` when unsupported locally (hard error),
-- `case pattern where condition:` in v1 (error; explain guarded-pattern deferral and reservation).
+- `case pattern where` with no condition (error; explain that guarded patterns require a bool condition).
 
 ## 5.7 Open issues {#part-5-7}
 

@@ -1,0 +1,18 @@
+module TypedThrowsErrorOutAbiPositive;
+
+fn decode(value: i32) throws(NSError) -> i32 {
+  if (value == 0) {
+    return 41;
+  }
+  throw value;
+}
+
+fn recover(value: i32) throws(NSError) -> i32 {
+  return try decode(value);
+}
+
+fn main() -> i32 {
+  let present = try? recover(0);
+  let absent = try? recover(9);
+  return present + absent;
+}

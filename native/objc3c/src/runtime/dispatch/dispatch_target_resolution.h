@@ -17,6 +17,7 @@ struct RuntimeDispatchTarget {
   std::uint64_t parameter_count = 0;
   RuntimeMethodReturnKind return_kind = RuntimeMethodReturnKind::Unsupported;
   RuntimeBuiltinKind builtin_kind = RuntimeBuiltinKind::None;
+  bool throws_error_out_abi_ready = false;
   bool resolved_live_method = false;
   std::uint64_t receiver_base_identity = 0;
   objc3_runtime_dispatch_status_code dispatch_status =

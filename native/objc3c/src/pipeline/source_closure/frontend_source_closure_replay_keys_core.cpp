@@ -25,6 +25,30 @@ std::string BuildTypeSystemTypeSourceClosureReplayKey(
       << summary.typed_keypath_literal_sites
       << ";optional_member_access_sites="
       << summary.optional_member_access_sites
+      << ";value_optional_type_signatures="
+      << summary.value_optional_type_signature_sites
+      << ";value_optional_semantic_type_admission="
+      << (summary.value_optional_semantic_type_admission_supported ? "true"
+                                                                   : "false")
+      << ";value_optional_stable_layout_contract="
+      << (summary.value_optional_stable_layout_contract_supported ? "true"
+                                                                  : "false")
+      << ";value_optional_binding_narrowing_contract="
+      << (summary.value_optional_binding_narrowing_contract_supported ? "true"
+                                                                      : "false")
+      << ";value_optional_interface_roundtrip_contract="
+      << (summary.value_optional_interface_roundtrip_supported ? "true"
+                                                               : "false")
+      << ";value_optional_runtime_fail_closed="
+      << (summary.value_optional_runtime_execution_fail_closed ? "true" : "false")
+      << ";value_optional_implicit_nil_absence_allowed="
+      << (summary.value_optional_implicit_nil_absence_allowed ? "true" : "false")
+      << ";value_optional_reserved_diagnostic="
+      << summary.value_optional_reserved_diagnostic_code
+      << ";lowercase_optional_alias_diagnostic="
+      << summary.lowercase_optional_alias_diagnostic_code
+      << ";value_optional_interface_roundtrip="
+      << summary.value_optional_interface_roundtrip_status
       << ";deterministic="
       << (summary.deterministic_handoff ? "true" : "false");
   return out.str();
@@ -45,7 +69,22 @@ std::string BuildControlFlowControlFlowSourceClosureReplayKey(
       << ":" << summary.match_wildcard_pattern_sites << ":"
       << summary.match_literal_pattern_sites << ":"
       << summary.match_binding_pattern_sites << ":"
+      << summary.guarded_match_pattern_sites << ":"
       << summary.match_result_case_pattern_sites
+      << ";match_expression_sites=" << summary.match_expression_sites << ":"
+      << summary.match_expression_arm_sites << ":"
+      << summary.match_expression_guard_sites
+      << ";guarded_match_issue_ref=" << summary.guarded_match_issue_ref
+      << ";guarded_match_admitted_syntax="
+      << summary.guarded_match_admitted_syntax
+      << ";guarded_match_condition_bool_required="
+      << (summary.guarded_match_condition_bool_required ? "true" : "false")
+      << ";match_expression_fail_closed="
+      << (summary.match_expression_fail_closed ? "true" : "false")
+      << ";match_expression_result_typing_supported="
+      << (summary.match_expression_result_typing_supported ? "true" : "false")
+      << ";match_fat_arrow_arms_supported="
+      << (summary.match_fat_arrow_arms_supported ? "true" : "false")
       << ";reserved_keyword_sites=" << summary.defer_keyword_sites
       << ";deterministic="
       << (summary.deterministic_handoff ? "true" : "false");
@@ -72,6 +111,26 @@ std::string BuildErrorHandlingErrorSourceClosureReplayKey(
       << summary.status_code_mapping_clause_sites
       << ";reserved_keyword_sites=" << summary.try_keyword_sites << ":"
       << summary.throw_keyword_sites << ":" << summary.catch_keyword_sites
+      << ";typed_throws_fail_closed="
+      << (summary.typed_throws_fail_closed ? "true" : "false")
+      << ";typed_throws_source_supported="
+      << (summary.typed_throws_source_supported ? "true" : "false")
+      << ";typed_throws_declaration_sites="
+      << summary.typed_throws_declaration_sites
+      << ";typed_throws_abi_lowering_fail_closed="
+      << (summary.typed_throws_abi_lowering_fail_closed ? "true" : "false")
+      << ";typed_throws_reserved_diagnostic="
+      << summary.typed_throws_reserved_diagnostic_code
+      << ";typed_throws_abi_status=" << summary.typed_throws_abi_status
+      << ";typed_throws_interface_roundtrip="
+      << summary.typed_throws_interface_roundtrip_status
+      << ";typed_throws_catch_compatibility="
+      << summary.typed_throws_catch_compatibility_status
+      << ";typed_throws_bridge_to_id_error="
+      << summary.typed_throws_bridge_to_id_error_policy
+      << ";typed_throws_foreign_carrier_fail_closed="
+      << (summary.typed_throws_foreign_carrier_fail_closed ? "true"
+                                                           : "false")
       << ";deterministic="
       << (summary.deterministic_handoff ? "true" : "false");
   return out.str();

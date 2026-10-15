@@ -29,6 +29,12 @@ BuildFrontendTypeSystemOptionalKeypathLoweringContract(
   contract.live_typed_keypath_artifact_sites =
       summary.typed_keypath_literal_sites;
   contract.deferred_typed_keypath_sites = 0;
+  contract.typed_keypath_descriptor_publication_sites =
+      contract.live_typed_keypath_artifact_sites;
+  contract.typed_keypath_source_map_evidence_sites =
+      contract.live_typed_keypath_artifact_sites;
+  contract.typed_keypath_runtime_handle_evidence_sites =
+      contract.live_typed_keypath_artifact_sites;
   contract.contract_violation_sites =
       summary.optional_binding_contract_violation_sites +
       summary.optional_send_contract_violation_sites +
@@ -66,6 +72,14 @@ bool IsValidFrontendTypeSystemOptionalKeypathLoweringContract(
       contract.typed_keypath_literal_sites) {
     return false;
   }
+  if (contract.typed_keypath_descriptor_publication_sites !=
+          contract.live_typed_keypath_artifact_sites ||
+      contract.typed_keypath_source_map_evidence_sites !=
+          contract.live_typed_keypath_artifact_sites ||
+      contract.typed_keypath_runtime_handle_evidence_sites !=
+          contract.live_typed_keypath_artifact_sites) {
+    return false;
+  }
   if (contract.contract_violation_sites >
       contract.live_optional_lowering_sites +
           contract.live_typed_keypath_artifact_sites +
@@ -100,6 +114,12 @@ std::string FrontendTypeSystemOptionalKeypathLoweringReplayKey(
          std::to_string(contract.live_typed_keypath_artifact_sites) +
          ";deferred_typed_keypath_sites=" +
          std::to_string(contract.deferred_typed_keypath_sites) +
+         ";typed_keypath_descriptor_publication_sites=" +
+         std::to_string(contract.typed_keypath_descriptor_publication_sites) +
+         ";typed_keypath_source_map_evidence_sites=" +
+         std::to_string(contract.typed_keypath_source_map_evidence_sites) +
+         ";typed_keypath_runtime_handle_evidence_sites=" +
+         std::to_string(contract.typed_keypath_runtime_handle_evidence_sites) +
          ";contract_violation_sites=" +
          std::to_string(contract.contract_violation_sites) +
          ";deterministic=" +

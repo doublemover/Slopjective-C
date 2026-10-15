@@ -99,6 +99,8 @@ bool BuildObjc3FrontendRuntimeMetadataMethodListBundles(
     entry.has_body = method_node.has_body;
     entry.effective_direct_dispatch = method_node.effective_direct_dispatch;
     entry.objc_final_declared = method_node.objc_final_declared;
+    entry.throws_error_out_abi_ready =
+        method_node.throws_error_out_abi_ready;
     bundle.entries_lexicographic.push_back(std::move(entry));
     method_owner_identities.insert(method_node.owner_identity);
   }
@@ -173,6 +175,7 @@ bool BuildObjc3FrontendRuntimeMetadataMethodListBundles(
           entry.has_body = true;
           entry.effective_direct_dispatch = false;
           entry.objc_final_declared = false;
+          entry.throws_error_out_abi_ready = false;
           bundle.entries_lexicographic.push_back(std::move(entry));
           return true;
         };
@@ -237,6 +240,7 @@ bool BuildObjc3FrontendRuntimeMetadataMethodListBundles(
     entry.has_body = true;
     entry.effective_direct_dispatch = false;
     entry.objc_final_declared = false;
+    entry.throws_error_out_abi_ready = false;
     bundle.entries_lexicographic.push_back(std::move(entry));
   }
 
@@ -257,11 +261,13 @@ bool BuildObjc3FrontendRuntimeMetadataMethodListBundles(
                 return std::tie(lhs.selector, lhs.owner_identity,
                                 lhs.parameter_count, lhs.return_type_name,
                                 lhs.has_body, lhs.effective_direct_dispatch,
-                                lhs.objc_final_declared) <
+                                lhs.objc_final_declared,
+                                lhs.throws_error_out_abi_ready) <
                        std::tie(rhs.selector, rhs.owner_identity,
                                 rhs.parameter_count, rhs.return_type_name,
                                 rhs.has_body, rhs.effective_direct_dispatch,
-                                rhs.objc_final_declared);
+                                rhs.objc_final_declared,
+                                rhs.throws_error_out_abi_ready);
               });
   }
   return true;

@@ -67,7 +67,7 @@ REQUIRED_SURFACE_CONTRACTS = {
     ),
 }
 
-TARGETED_PROFILE_IDS = ["strict", "strict-concurrency", "strict-system"]
+TARGETED_PROFILE_IDS = ["strict-system"]
 DASHBOARD_SCHEMA_PATH = "schemas/objc3-conformance-dashboard-status-v1.schema.json"
 RETIRED_RELEASE_CLAIM_ARTIFACT_FILENAMES = [
     "module.objc3-release-runtime-claim-matrix.json",

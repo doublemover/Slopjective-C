@@ -1,6 +1,7 @@
   void SynchronizeObjcContainer() {
     while (!At(TokenKind::Eof)) {
-      if (At(TokenKind::KwAtEnd) || At(TokenKind::Minus) || At(TokenKind::Plus) || At(TokenKind::KwAtProperty) ||
+      if (At(TokenKind::KwAtEnd) || At(TokenKind::Minus) || At(TokenKind::Plus) ||
+          At(TokenKind::KwAtProperty) || At(TokenKind::KwAtReifyGenerics) ||
           At(TokenKind::KwAtRequired) || At(TokenKind::KwAtOptional)) {
         return;
       }
@@ -18,6 +19,18 @@
       }
       Advance();
     }
+  }
+
+  bool RejectReservedReificationControl(
+      const Token &marker,
+      const std::string &target_description) {
+    diagnostics_.push_back(MakeDiag(
+        marker.line, marker.column, "O3P114",
+        "declaration-scoped generic reification marker '@reify_generics' is "
+        "reserved for a future Objective-C 3 revision on " +
+            target_description +
+            "; admitted generic callables remain erased by default"));
+    return false;
   }
 
   bool ParseObjcProtocolCompositionClause(std::vector<std::string> &protocols) {

@@ -37,9 +37,9 @@ def assert_summary_matches_registered_schemas(summary: dict[str, Any]) -> None:
         governance_evidence_schema,
     ]
     assert summary["schema_ids"] == [
-        "schemas/objc3c-governance-budget-summary-v1.schema.json",
-        "schemas/objc3c-governance-anti-regression-summary-v1.schema.json",
-        "schemas/objc3c-governance-sustainability-evidence-v1.schema.json",
+        "https://objc3c.dev/schemas/objc3c-governance-budget-summary-v1.schema.json",
+        "https://objc3c.dev/schemas/objc3c-governance-anti-regression-summary-v1.schema.json",
+        "https://objc3c.dev/schemas/objc3c-governance-sustainability-evidence-v1.schema.json",
     ]
 
 

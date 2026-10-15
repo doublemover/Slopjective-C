@@ -140,6 +140,50 @@ bool PopulateImportedMetaprogrammingMacroHostProcessCacheRuntimeIntegration(
       !ReadStringMember(
           *integration_object, "cache_root_relative_path",
           surface.metaprogramming_macro_host_process_cache_root_relative_path,
+          error) ||
+      !ReadStringMember(
+          *integration_object, "macro_package_identity",
+          surface
+              .metaprogramming_macro_host_process_cache_package_identity,
+          error) ||
+      !ReadStringMember(
+          *integration_object, "macro_package_lock_identity",
+          surface
+              .metaprogramming_macro_host_process_cache_package_lock_identity,
+          error) ||
+      !ReadStringMember(
+          *integration_object, "macro_package_trust_identity",
+          surface
+              .metaprogramming_macro_host_process_cache_package_trust_identity,
+          error) ||
+      !ReadStringMember(
+          *integration_object, "macro_input_content_identity",
+          surface
+              .metaprogramming_macro_host_process_cache_input_content_identity,
+          error) ||
+      !ReadStringMember(
+          *integration_object, "macro_output_content_identity",
+          surface
+              .metaprogramming_macro_host_process_cache_output_content_identity,
+          error) ||
+      !ReadStringMember(
+          *integration_object, "macro_host_identity",
+          surface.metaprogramming_macro_host_process_cache_host_identity,
+          error) ||
+      !ReadStringMember(
+          *integration_object, "cache_validation_status",
+          surface
+              .metaprogramming_macro_host_process_cache_validation_status,
+          error) ||
+      !ReadStringMember(
+          *integration_object, "runtime_consumption_artifact_identity",
+          surface
+              .metaprogramming_macro_host_process_cache_runtime_consumption_artifact_identity,
+          error) ||
+      !ReadSizeMember(
+          *integration_object, "package_replay_generation",
+          surface
+              .metaprogramming_macro_host_process_cache_package_replay_generation,
           error)) {
     return false;
   }
@@ -163,6 +207,12 @@ bool PopulateImportedMetaprogrammingMacroHostProcessCacheRuntimeIntegration(
       std::move(contract_id);
   surface.metaprogramming_macro_host_process_cache_source_contract_id =
       std::move(source_contract_id);
+  if (!IsReadyObjc3ImportedMetaprogrammingMacroHostProcessCacheRuntimeImportSurface(
+          surface)) {
+    error =
+        "metaprogramming macro host process/cache package replay surface is incomplete";
+    return false;
+  }
   return true;
 }
 

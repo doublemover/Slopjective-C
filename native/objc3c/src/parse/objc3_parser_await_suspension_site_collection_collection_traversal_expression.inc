@@ -55,6 +55,14 @@ void CollectAwaitSuspensionExprSites(
       CollectAwaitSuspensionExprSites(arg.get(), counts);
     }
     return;
+  case Expr::Kind::MatchExpression:
+    CollectAwaitSuspensionExprSites(expr->match_expression_scrutinee.get(),
+                                    counts);
+    for (const auto &arm : expr->match_expression_arms) {
+      CollectAwaitSuspensionExprSites(arm.guard_condition.get(), counts);
+      CollectAwaitSuspensionExprSites(arm.value.get(), counts);
+    }
+    return;
   case Expr::Kind::BlockLiteral:
   case Expr::Kind::BoolLiteral:
   case Expr::Kind::Identifier:

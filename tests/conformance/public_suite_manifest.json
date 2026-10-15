@@ -780,7 +780,8 @@
         "tests/tooling/fixtures/cross_lane_e2e/optimization_runtime_equivalence.expectation.json"
       ],
       "negative_evidence": [
-        "tests/tooling/fixtures/semantic_optimization_pipeline/reserved_method_inlining_skip.json",
+        "tests/tooling/fixtures/semantic_optimization_pipeline/negative_method_inlining_missing_inline_proof.json",
+        "tests/tooling/fixtures/semantic_optimization_pipeline/negative_method_inlining_stale_dispatch_invalidation.json",
         "tests/tooling/fixtures/cross_lane_e2e/object_reflection_debugger.expectation.json",
         "tests/tooling/fixtures/cross_lane_e2e/advanced_runtime_closure.expectation.json",
         "tests/tooling/fixtures/cross_lane_e2e/distribution_package_lifecycle.expectation.json"
@@ -788,7 +789,51 @@
       "source_truth_requirements": [
         "Cross-lane optimization public conformance references the checked #8200 manifest and executable optimization/runtime fixture.",
         "The public command generates the runtime IR trace from checked sources and writes tmp artifacts only as proof, not source truth.",
-        "Method inlining remains reserved, and object/debugger, advanced runtime, and distribution umbrella rows remain blocked in their own expectation files."
+        "Method inlining is claimable only through the bounded safe-subset proof cases; missing inline proof and stale invalidation paths remain fail-closed alongside object/debugger, advanced runtime, and distribution umbrella blockers."
+      ]
+    },
+    {
+      "case_id": "public.ir.standalone-textual-interface-payload",
+      "phase": "ir",
+      "feature_id": "modules.standalone-textual-interface-payload",
+      "capability_id": "modules.standalone-textual-interface-payload",
+      "support_claim": "objc3c.behavior.modules.standalone-textual-interface-payload",
+      "stable_case_index": 13,
+      "fixture_provenance": {
+        "origin": "checked-in-public-suite",
+        "owner": "objc3-public-conformance",
+        "source_owned": true,
+        "internal_only": false,
+        "generated": false
+      },
+      "expectation": "pass",
+      "profile_ids": [
+        "core",
+        "release-candidate"
+      ],
+      "source_manifest": "tests/tooling/fixtures/foundations_umbrella_readiness/source_truth_contract.json",
+      "conformance_fixture": "tests/tooling/fixtures/module_interfaces/standalone_textual_interface_payload.json",
+      "traceability_fixture": "schemas/objc3c-standalone-textual-interface-payload-v1.schema.json",
+      "runnable_command": "npm run objc3c -- validate-standalone-textual-interface-payload",
+      "platform_requirements": [
+        "repo-python",
+        "node-npm"
+      ],
+      "packaging_class": "public-stable",
+      "release_gate": true,
+      "positive_evidence": [
+        "schemas/objc3c-standalone-textual-interface-payload-v1.schema.json",
+        "tests/tooling/fixtures/module_interfaces/standalone_textual_interface_payload.json",
+        "native/objc3c/src/artifacts/objc3_frontend_textual_interface_payload_artifact.cpp",
+        "native/objc3c/src/artifacts/objc3_frontend_textual_interface_payload_import.cpp"
+      ],
+      "negative_evidence": [
+        "tests/tooling/fixtures/module_interfaces/standalone_textual_interface_payload.json"
+      ],
+      "source_truth_requirements": [
+        "Standalone textual interface payload support resolves to the checked schema, fixture, importer, and public command before public reporting.",
+        "Implementation declarations remain reserved metadata and broad hosted module distribution remains outside this claim.",
+        "Stale schema, unlocked import, hidden declaration, source-count drift, and reserved roundtrip cases stay fail-closed."
       ]
     }
   ],

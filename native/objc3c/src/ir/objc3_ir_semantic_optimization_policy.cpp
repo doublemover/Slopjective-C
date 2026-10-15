@@ -60,7 +60,7 @@ BuildObjc3IRSemanticOptimizationProofContracts() {
        false,
        false},
       {"method-inlining",
-       "callee body identity, scalar subset, ownership and side-effect summaries, source-map and diagnostic preservation, ABI/package identity, depth and recursion limits, callee generation snapshot, and invalidation completeness",
+       "callee body identity, original call and callee source spans, inline frame id, inlined callsite source span, imported and emitted debug-map inline-frame records, unambiguous stepping policy, optimized IR/source correlation, receiver/dispatch assumptions, scalar subset, ownership and side-effect replay, source-map and debug stepping preservation, diagnostic preservation, ABI/package identity, depth and recursion limits, callee generation snapshot, runtime cache freshness, generated-only source-map rejection, and invalidation replay completeness",
        "REJECT_FAIL_CLOSED",
        true,
        true,
@@ -117,6 +117,31 @@ bool IsObjc3IRSemanticOptimizationProofContractFailClosed(
       !contract.invalidates_global_proof_state) {
     reason =
         "method inlining semantic optimization must invalidate global proof state";
+    return false;
+  }
+  if (contract.pass_id == "method-inlining" &&
+      (contract.required_proof.find("source spans") == std::string::npos ||
+       contract.required_proof.find("inline frame id") == std::string::npos ||
+       contract.required_proof.find("inlined callsite source span") ==
+           std::string::npos ||
+       contract.required_proof.find("debug-map inline-frame records") ==
+           std::string::npos ||
+       contract.required_proof.find("stepping policy") == std::string::npos ||
+       contract.required_proof.find("optimized IR/source correlation") ==
+           std::string::npos ||
+       contract.required_proof.find("generated-only source-map rejection") ==
+           std::string::npos ||
+       contract.required_proof.find("receiver/dispatch assumptions") ==
+           std::string::npos ||
+       contract.required_proof.find("side-effect replay") ==
+           std::string::npos ||
+       contract.required_proof.find("debug stepping") == std::string::npos ||
+       contract.required_proof.find("runtime cache freshness") ==
+           std::string::npos ||
+       contract.required_proof.find("invalidation replay") ==
+           std::string::npos)) {
+    reason =
+        "method inlining proof contract is missing inline-frame source/debug/runtime replay proofs";
     return false;
   }
   if (contract.pass_id == "cache-aware-dispatch" &&

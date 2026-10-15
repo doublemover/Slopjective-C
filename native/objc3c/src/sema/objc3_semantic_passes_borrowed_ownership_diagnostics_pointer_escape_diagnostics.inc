@@ -152,6 +152,24 @@ static void DiagnoseOwnershipBorrowedEscapeExpr(
       DiagnoseOwnershipBorrowedEscapeExpr(expr->third.get(), scopes,
                                           callable_contracts, diagnostics);
       return;
+    case Expr::Kind::MatchExpression:
+      DiagnoseOwnershipBorrowedEscapeExpr(
+          expr->match_expression_scrutinee.get(), scopes, callable_contracts,
+          diagnostics);
+      for (const auto &arm : expr->match_expression_arms) {
+        scopes.push_back({});
+        if (!arm.binding_name.empty()) {
+          scopes.back().emplace(arm.binding_name,
+                                OwnershipBorrowedBindingState{});
+        }
+        DiagnoseOwnershipBorrowedEscapeExpr(
+            arm.guard_condition.get(), scopes, callable_contracts,
+            diagnostics);
+        DiagnoseOwnershipBorrowedEscapeExpr(
+            arm.value.get(), scopes, callable_contracts, diagnostics);
+        scopes.pop_back();
+      }
+      return;
     case Expr::Kind::CollectionLiteral:
       for (const auto &key : expr->collection_keys) {
         DiagnoseOwnershipBorrowedEscapeExpr(key.get(), scopes,

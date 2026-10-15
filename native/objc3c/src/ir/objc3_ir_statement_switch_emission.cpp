@@ -47,10 +47,39 @@ void EmitObjc3IRSwitchStatement(
                 ? test_labels[case_index + 1u]
                 : end_label;
         ctx.code_lines.push_back(test_labels[case_index] + ":");
+        const bool has_guard =
+            case_stmt.has_match_guard &&
+            case_stmt.match_guard_condition != nullptr;
+        const std::string match_success_label =
+            has_guard ? callbacks.new_label(ctx, "match_guard_")
+                      : arm_labels[case_index];
         if (case_stmt.is_default ||
             case_stmt.match_pattern_kind == MatchPatternKind::Wildcard ||
             case_stmt.match_pattern_kind == MatchPatternKind::Binding) {
-          ctx.code_lines.push_back("  br label %" + arm_labels[case_index]);
+          ctx.code_lines.push_back("  br label %" + match_success_label);
+          if (has_guard) {
+            ctx.code_lines.push_back(match_success_label + ":");
+            callbacks.push_scope(ctx);
+            if (!case_stmt.match_binding_name.empty() &&
+                case_stmt.match_pattern_kind == MatchPatternKind::Binding) {
+              const std::string ptr =
+                  "%" + case_stmt.match_binding_name + ".guard.addr." +
+                  std::to_string(ctx.temp_counter++);
+              ctx.entry_lines.push_back("  " + ptr + " = alloca i32, align 4");
+              ctx.code_lines.push_back("  store i32 " + condition_value +
+                                       ", ptr " + ptr + ", align 4");
+              ctx.scopes.back()[case_stmt.match_binding_name] = ptr;
+            }
+            const std::string guard_value =
+                callbacks.emit_expr(case_stmt.match_guard_condition.get(), ctx);
+            const std::string guard_i1 = callbacks.new_temp(ctx);
+            ctx.code_lines.push_back("  " + guard_i1 + " = icmp ne i32 " +
+                                     guard_value + ", 0");
+            callbacks.pop_scope(ctx, false);
+            ctx.code_lines.push_back("  br i1 " + guard_i1 + ", label %" +
+                                     arm_labels[case_index] + ", label %" +
+                                     next_label);
+          }
           continue;
         }
         if (case_stmt.match_pattern_kind ==
@@ -62,8 +91,21 @@ void EmitObjc3IRSwitchStatement(
                                    condition_value + ", " +
                                    std::to_string(case_stmt.value));
           ctx.code_lines.push_back("  br i1 " + cmp + ", label %" +
-                                   arm_labels[case_index] + ", label %" +
+                                   match_success_label + ", label %" +
                                    next_label);
+          if (has_guard) {
+            ctx.code_lines.push_back(match_success_label + ":");
+            callbacks.push_scope(ctx);
+            const std::string guard_value =
+                callbacks.emit_expr(case_stmt.match_guard_condition.get(), ctx);
+            const std::string guard_i1 = callbacks.new_temp(ctx);
+            ctx.code_lines.push_back("  " + guard_i1 + " = icmp ne i32 " +
+                                     guard_value + ", 0");
+            callbacks.pop_scope(ctx, false);
+            ctx.code_lines.push_back("  br i1 " + guard_i1 + ", label %" +
+                                     arm_labels[case_index] + ", label %" +
+                                     next_label);
+          }
           continue;
         }
         if (case_stmt.match_pattern_kind == MatchPatternKind::ResultCase) {

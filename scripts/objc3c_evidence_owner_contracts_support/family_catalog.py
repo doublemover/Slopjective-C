@@ -48,17 +48,39 @@ EVIDENCE_FAMILIES: dict[str, EvidenceFamily] = {
                 SECURITY_HARDENING,
                 "runtime_hardening_owner",
                 "runtime_hardening_contract.json",
+                supporting_contracts=(
+                    "sanitizer_validation_contract.json",
+                    "sanitizer_package_install_model_contract.json",
+                ),
                 summary_script="build_security_hardening_artifact_contract_summary.py",
                 check_scripts=(
                     "check_security_hardening_runtime_hardening.py",
+                    "check_security_sanitizer_validation.py",
                     "check_objc3c_security_hardening_integration.py",
                     "check_objc3c_security_hardening_end_to_end.py",
                 ),
+            ),
+            owner_contract(
+                SECURITY_HARDENING,
+                "language_runtime_threat_model_owner",
+                "language_runtime_threat_model_backlog.json",
+                supporting_contracts=(
+                    "macro_package_provenance_trust_policy.json",
+                    "macro_supply_chain_trust_registry.json",
+                    "runtime_hardening_contract.json",
+                    "sanitizer_validation_contract.json",
+                ),
+                summary_script="check_security_language_runtime_threat_model.py",
+                check_scripts=("check_security_language_runtime_threat_model.py",),
             ),
         ),
     ),
     OBJECT_MODEL_CLOSURE: EvidenceFamily(
         boundary_inventory=boundary_inventory_path(OBJECT_MODEL_CLOSURE),
+        additional_source_owner_policy=(
+            ("behavior_owner_split_required", True),
+            ("canonical_rejection_owner", "tests/tooling/fixtures/object_model_closure/behavior_owner_splits/canonical_rejection.json"),
+        ),
         owners=(
             owner_contract(
                 OBJECT_MODEL_CLOSURE,

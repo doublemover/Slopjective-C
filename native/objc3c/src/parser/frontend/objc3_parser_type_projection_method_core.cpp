@@ -14,6 +14,7 @@ void CopyObjc3MethodReturnTypeCoreProjection(const FunctionDecl &source,
   target.return_instancetype_spelling = source.return_instancetype_spelling;
   target.return_object_pointer_type_spelling = source.return_object_pointer_type_spelling;
   target.return_object_pointer_type_name = source.return_object_pointer_type_name;
+  target.return_value_optional = source.return_value_optional;
   target.return_typecheck_family_symbol = source.return_typecheck_family_symbol;
   target.has_return_generic_suffix = source.has_return_generic_suffix;
   target.return_generic_suffix_terminated = source.return_generic_suffix_terminated;
@@ -86,6 +87,8 @@ void CopyObjc3MethodReturnTypeCoreProjection(const FunctionDecl &source,
   target.objc_returns_borrowed_owner_index = source.objc_returns_borrowed_owner_index;
   target.returns_borrowed_profile = source.returns_borrowed_profile;
   target.throws_declared = source.throws_declared;
+  target.typed_throws_declared = source.typed_throws_declared;
+  target.typed_throws_payload = source.typed_throws_payload;
   target.throws_declaration_profile_is_normalized =
       source.throws_declaration_profile_is_normalized;
   target.throws_declaration_profile = source.throws_declaration_profile;

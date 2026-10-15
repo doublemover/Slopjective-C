@@ -50,6 +50,14 @@ void WalkObjc3ProfileSymbolsInExpr(
       WalkObjc3ProfileSymbolsInExpr(arg.get(), walker);
     }
     return;
+  case Expr::Kind::MatchExpression:
+    WalkObjc3ProfileSymbolsInExpr(
+        expr->match_expression_scrutinee.get(), walker);
+    for (const auto &arm : expr->match_expression_arms) {
+      WalkObjc3ProfileSymbolsInExpr(arm.guard_condition.get(), walker);
+      WalkObjc3ProfileSymbolsInExpr(arm.value.get(), walker);
+    }
+    return;
   case Expr::Kind::BlockLiteral:
   case Expr::Kind::BoolLiteral:
   case Expr::Kind::Identifier:

@@ -46,6 +46,14 @@ void CollectPointerArithmeticExprSites(const Expr *expr, std::size_t &sites) {
       CollectPointerArithmeticExprSites(arg.get(), sites);
     }
     return;
+  case Expr::Kind::MatchExpression:
+    CollectPointerArithmeticExprSites(expr->match_expression_scrutinee.get(),
+                                      sites);
+    for (const auto &arm : expr->match_expression_arms) {
+      CollectPointerArithmeticExprSites(arm.guard_condition.get(), sites);
+      CollectPointerArithmeticExprSites(arm.value.get(), sites);
+    }
+    return;
   case Expr::Kind::BlockLiteral:
   case Expr::Kind::BoolLiteral:
   case Expr::Kind::Identifier:

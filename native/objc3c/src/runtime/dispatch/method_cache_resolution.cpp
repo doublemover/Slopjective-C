@@ -23,6 +23,7 @@ RuntimeDispatchTarget BuildResolvedDispatchTarget(
   target.parameter_count = entry.parameter_count;
   target.return_kind = entry.return_kind;
   target.builtin_kind = entry.builtin_kind;
+  target.throws_error_out_abi_ready = entry.throws_error_out_abi_ready;
   target.resolved_live_method = true;
   target.receiver_base_identity = receiver_base_identity;
   target.dispatch_status = OBJC3_RUNTIME_DISPATCH_STATUS_OK;
@@ -37,6 +38,8 @@ RuntimeDispatchTarget BuildResolvedDispatchTarget(
   target.parameter_count = resolution.parameter_count;
   target.return_kind = resolution.return_kind;
   target.builtin_kind = resolution.builtin_kind;
+  target.throws_error_out_abi_ready =
+      resolution.throws_error_out_abi_ready;
   target.resolved_live_method = true;
   target.receiver_base_identity = receiver_base_identity;
   target.dispatch_status = OBJC3_RUNTIME_DISPATCH_STATUS_OK;
@@ -68,6 +71,8 @@ MethodCacheEntry BuildMethodCacheEntry(
       state.next_method_cache_entry_generation++;
   cache_entry.parameter_count = resolution.parameter_count;
   cache_entry.return_kind = resolution.return_kind;
+  cache_entry.throws_error_out_abi_ready =
+      resolution.throws_error_out_abi_ready;
   cache_entry.category_probe_count = resolution.category_probe_count;
   cache_entry.protocol_probe_count = resolution.protocol_probe_count;
   cache_entry.cache_registered_image_count = state.registered_image_count;

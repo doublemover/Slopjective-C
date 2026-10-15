@@ -11,6 +11,7 @@
 #include <string>
 #include <vector>
 
+#include "artifacts/objc3_runtime_state_publication_paths.h"
 #include "diag/objc3_diag_utils.h"
 #include "io/objc3_diagnostics_artifacts.h"
 #include "io/objc3_manifest_artifacts.h"
@@ -47,7 +48,10 @@ int RunObjectiveCPath(const Objc3CliOptions &cli_options) {
                         cli_options.emit_prefix,
                         BuildObjectiveCSymbolManifest(cli_options.input, tu));
 
-  const fs::path object_out = cli_options.out_dir / (cli_options.emit_prefix + ".obj");
+  const auto publication_paths =
+      objc3::artifacts::frontend::BuildRuntimeStatePublicationPathsForEmitPrefix(
+          cli_options.emit_prefix);
+  const fs::path object_out = cli_options.out_dir / publication_paths.object_artifact;
   const int compile_status = RunObjectiveCCompile(cli_options.clang_path, cli_options.input, object_out);
 
   clang_disposeTranslationUnit(tu);

@@ -7,6 +7,7 @@
     param.instancetype_spelling = false;
     param.object_pointer_type_spelling = false;
     param.object_pointer_type_name.clear();
+    param.value_optional = Objc3ValueOptionalTypeDescriptor{};
     param.typecheck_family_symbol.clear();
     param.has_generic_suffix = false;
     param.generic_suffix_terminated = true;

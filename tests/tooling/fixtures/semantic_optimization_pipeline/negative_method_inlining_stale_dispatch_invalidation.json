@@ -1,0 +1,61 @@
+{
+  "contract_id": "objc3c.optimization.method_inlining.negative.stale_dispatch_invalidation.v1",
+  "issue_refs": [
+    8226
+  ],
+  "pass_id": "method-inlining",
+  "case_id": "method-inlining-stale-dispatch-invalidation",
+  "description": "A candidate with stale receiver/dispatch or runtime cache assumptions must reject unless runtime invalidation replay is present.",
+  "candidate_overrides": {
+    "method_inline_callee_body_identity_present": true,
+    "method_inline_exact_callee_identity_key": "method:InlineMath.addOne:i32->i32",
+    "method_inline_original_call_source_span_key": "source-span:method-inline:original-callsite",
+    "method_inline_callee_source_span_key": "source-span:method-inline:callee-body",
+    "method_inline_before_ir_proof_key": "tests/native/ir/optimization/semantic_pipeline_method_inlining.before.ll",
+    "method_inline_after_ir_proof_key": "tests/native/ir/optimization/semantic_pipeline_method_inlining.after.ll",
+    "method_inline_original_call_source_span_present": true,
+    "method_inline_inline_frame_id_key": "inline-frame:method-inline:caller+callee",
+    "method_inline_inlined_callsite_source_span_key": "source-span:method-inline:inlined-callsite",
+    "method_inline_stepping_policy_key": "stepping-policy:method-inline:step-into-callee-step-out-caller",
+    "method_inline_optimized_ir_source_correlation_key": "ir-source-correlation:method-inline:optimized-ir-to-caller-callee",
+    "method_inline_inline_frame_id_present": true,
+    "method_inline_inlined_callsite_source_span_present": true,
+    "method_inline_imported_debug_map_inline_frame_present": true,
+    "method_inline_emitted_debug_map_inline_frame_present": true,
+    "method_inline_stepping_policy_unambiguous": true,
+    "method_inline_optimized_ir_source_correlation_present": true,
+    "method_inline_generated_only_source_map": false,
+    "method_inline_receiver_dispatch_assumption_key": "",
+    "method_inline_receiver_dispatch_assumptions_pinned": false,
+    "method_inline_scalar_subset": true,
+    "method_inline_ownership_arc_effects_safe": true,
+    "method_inline_side_effect_summary_safe": true,
+    "method_inline_side_effect_replay_key": "side-effect-replay:method-inline:pure-no-writes-no-calls-no-runtime-helpers",
+    "method_inline_side_effect_replay_complete": true,
+    "method_inline_source_map_debug_preserved": true,
+    "method_inline_diagnostic_location_preserved": true,
+    "method_inline_debug_stepping_evidence_key": "debug-step:method-inline:caller-frame+callee-inline-frame",
+    "method_inline_debug_stepping_evidence_present": true,
+    "method_inline_runtime_abi_safe": true,
+    "method_inline_package_abi_identical": true,
+    "method_inline_depth_within_limit": true,
+    "method_inline_recursion_absent": true,
+    "method_inline_callee_generation_pinned": true,
+    "method_inline_runtime_cache_assumptions_fresh": false,
+    "method_inline_runtime_invalidation_replay_key": "",
+    "method_inline_runtime_invalidation_replay_present": false,
+    "method_inline_invalidation_complete": false
+  },
+  "expected_result": {
+    "decision": "REJECTED_FAIL_CLOSED",
+    "success_claim": false,
+    "diagnostic_contains": [
+      "method_inline_receiver_dispatch_assumption_key",
+      "method_inline_receiver_dispatch_assumptions_pinned",
+      "method_inline_runtime_cache_assumptions_fresh",
+      "method_inline_runtime_invalidation_replay_key",
+      "method_inline_runtime_invalidation_replay_present",
+      "method_inline_invalidation_complete"
+    ]
+  }
+}

@@ -46,20 +46,11 @@ def test_composite_steps_preserves_nested_and_reuse_public_imports() -> None:
     assert public_runtime_acceptance_reuse_step is runtime_acceptance_reuse_step
 
 
-def test_runtime_acceptance_reuse_step_shape(monkeypatch) -> None:
+def test_runtime_acceptance_skip_without_verified_report_runs_action(monkeypatch) -> None:
     monkeypatch.setenv("OBJC3C_SKIP_RUNTIME_ACCEPTANCE_RERUN", "1")
-
-    step = runtime_acceptance_reuse_step(
-        "test-runtime-acceptance-fast",
-        ["python", "acceptance.py"],
-        0.0,
-    )
-
-    assert step is not None
-    assert step["exit_code"] == 0
-    assert step["report_reused"] is True
-    assert step["report_paths"] == ["tmp/reports/runtime/acceptance/summary.json"]
-
+    monkeypatch.setenv("OBJC3C_RUNTIME_ACCEPTANCE_EXPECTED_FIXTURES", "fixture-a")
+    step = runtime_acceptance_reuse_step("test-runtime-acceptance-fast", ["python", "acceptance.py"], 0.0)
+    assert step is None
 
 def test_composite_step_payload_preserves_shared_shape() -> None:
     payload = composite_step_payload(

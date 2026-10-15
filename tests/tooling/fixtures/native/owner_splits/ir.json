@@ -12,16 +12,18 @@
       "selectors": [
         "*-ir.expect.txt",
         "synthesized_ast_ir_*.objc3",
-        "typed_keypath_artifact_positive.objc3"
+        "typed_keypath_artifact_positive.objc3",
+        "typed_keypath_nested_chain_positive.objc3"
       ],
       "disposition": "IR expectation provenance for accepted canonical source forms"
     },
     {
       "surface": "tests/tooling/fixtures/native/*.objc3",
       "selectors": [
-        "*ir_*",
-        "*artifact_positive.objc3",
-        "artifact_replay_producer.objc3"
+    "*ir_*",
+    "*artifact_positive.objc3",
+    "typed_keypath_nested_chain_positive.objc3",
+    "artifact_replay_producer.objc3"
       ],
       "disposition": "IR or artifact-shape evidence only"
     }

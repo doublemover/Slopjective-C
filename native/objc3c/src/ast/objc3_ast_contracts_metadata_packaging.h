@@ -1,6 +1,9 @@
 #pragma once
 
 #include <cstdint>
+#include <string>
+
+#include "artifacts/identity/artifact_identity.h"
 
 // emitted metadata inventory freeze anchor: these constants define
 // the canonical logical sections, symbol families, linkage, visibility,
@@ -45,17 +48,17 @@ inline constexpr const char *kObjc3RuntimeMetadataRetentionPolicyRoot =
 inline constexpr const char *kObjc3RuntimeMetadataObjectInspectionFixturePath =
     "tests/tooling/fixtures/native/runtime_metadata_object_inspection_zero_descriptor.objc3";
 inline constexpr const char *kObjc3RuntimeMetadataObjectInspectionEmitPrefix =
-    "module";
+    objc3::artifacts::identity::kObjc3NativeDefaultArtifactStem;
 inline constexpr const char *kObjc3RuntimeMetadataObjectInspectionObjectRelativePath =
-    "module.obj";
+    objc3::artifacts::identity::kObjc3NativeDefaultObjectArtifactName;
 inline constexpr const char *kObjc3RuntimeMetadataObjectInspectionSectionInventoryRowKey =
     "zero-descriptor-section-inventory";
 inline constexpr const char *kObjc3RuntimeMetadataObjectInspectionSymbolInventoryRowKey =
     "zero-descriptor-symbol-inventory";
 inline constexpr const char *kObjc3RuntimeMetadataObjectInspectionSectionCommand =
-    "llvm-readobj --sections module.obj";
+    objc3::artifacts::identity::kObjc3NativeDefaultObjectSectionInventoryCommand;
 inline constexpr const char *kObjc3RuntimeMetadataObjectInspectionSymbolCommand =
-    "llvm-objdump --syms module.obj";
+    objc3::artifacts::identity::kObjc3NativeDefaultObjectSymbolInventoryCommand;
 inline constexpr const char *kObjc3RuntimeMetadataSourceToSectionMatrixContractId =
     "objc3c.runtime.metadata.source.to.section.matrix.v1";
 inline constexpr const char *kObjc3RuntimeMetadataSourceToSectionMatrixSurfacePath =
@@ -109,50 +112,64 @@ inline constexpr const char *kObjc3ExecutableMetadataDebugProjectionCategoryFixt
 inline constexpr const char *kObjc3ExecutableMetadataDebugProjectionIrFixturePath =
     "tests/tooling/fixtures/native/hello.objc3";
 inline constexpr const char *kObjc3ExecutableMetadataDebugProjectionEmitPrefix =
-    "module";
+    objc3::artifacts::identity::kObjc3NativeDefaultArtifactStem;
 inline constexpr const char *kObjc3ExecutableMetadataDebugProjectionManifestRelativePath =
-    "module.manifest.json";
+    objc3::artifacts::identity::kObjc3NativeDefaultManifestArtifactName;
 inline constexpr const char *kObjc3ExecutableMetadataDebugProjectionIrRelativePath =
-    "module.ll";
+    objc3::artifacts::identity::kObjc3NativeDefaultIrArtifactName;
 inline constexpr const char *kObjc3ExecutableMetadataDebugProjectionClassManifestRowKey =
     "class-protocol-property-ivar-manifest-projection";
 inline constexpr const char *kObjc3ExecutableMetadataDebugProjectionCategoryManifestRowKey =
     "category-protocol-property-manifest-projection";
 inline constexpr const char *kObjc3ExecutableMetadataDebugProjectionIrNamedMetadataRowKey =
     "hello-ir-named-metadata-anchor";
-inline constexpr const char *kObjc3ExecutableMetadataDebugProjectionClassProbeCommand =
-    "artifacts/bin/objc3c-frontend-c-api-runner.exe "
-    "tests/tooling/fixtures/native/runtime_metadata_source_records_class_protocol_property_ivar.objc3 "
-    "--out-dir <probe-root>/class_protocol_property_ivar --emit-prefix module "
-    "--no-emit-ir --no-emit-object";
-inline constexpr const char *kObjc3ExecutableMetadataDebugProjectionCategoryProbeCommand =
-    "artifacts/bin/objc3c-frontend-c-api-runner.exe "
-    "tests/tooling/fixtures/native/runtime_metadata_source_records_category_protocol_property.objc3 "
-    "--out-dir <probe-root>/category_protocol_property --emit-prefix module "
-    "--no-emit-ir --no-emit-object";
-inline constexpr const char *kObjc3ExecutableMetadataDebugProjectionIrProbeCommand =
-    "artifacts/bin/objc3c-frontend-c-api-runner.exe tests/tooling/fixtures/native/hello.objc3 "
-    "--out-dir <probe-root>/hello_ir_anchor --emit-prefix module --no-emit-object";
-inline constexpr const char *kObjc3ExecutableMetadataDebugProjectionManifestInspectionCommand =
-    "python -c \"import json,pathlib; "
-    "payload=json.loads(pathlib.Path('module.manifest.json').read_text()); "
-    "print(payload['frontend']['pipeline']['semantic_surface']['objc_executable_metadata_debug_projection'])\"";
-inline constexpr const char *kObjc3ExecutableMetadataDebugProjectionIrInspectionCommand =
-    "Select-String -Path module.ll -Pattern '!objc3.objc_executable_metadata_debug_projection'";
+inline const std::string kObjc3ExecutableMetadataDebugProjectionClassProbeCommand =
+    objc3::artifacts::identity::BuildObjc3NativeFrontendRunnerProbeCommand(
+        kObjc3ExecutableMetadataDebugProjectionClassFixturePath,
+        "<probe-root>/class_protocol_property_ivar",
+        kObjc3ExecutableMetadataDebugProjectionEmitPrefix,
+        true,
+        true);
+inline const std::string
+    kObjc3ExecutableMetadataDebugProjectionCategoryProbeCommand =
+        objc3::artifacts::identity::BuildObjc3NativeFrontendRunnerProbeCommand(
+            kObjc3ExecutableMetadataDebugProjectionCategoryFixturePath,
+            "<probe-root>/category_protocol_property",
+            kObjc3ExecutableMetadataDebugProjectionEmitPrefix,
+            true,
+            true);
+inline const std::string kObjc3ExecutableMetadataDebugProjectionIrProbeCommand =
+    objc3::artifacts::identity::BuildObjc3NativeFrontendRunnerProbeCommand(
+        kObjc3ExecutableMetadataDebugProjectionIrFixturePath,
+        "<probe-root>/hello_ir_anchor",
+        kObjc3ExecutableMetadataDebugProjectionEmitPrefix,
+        false,
+        true);
+inline const std::string
+    kObjc3ExecutableMetadataDebugProjectionManifestInspectionCommand =
+        std::string("python -c \"import json,pathlib; "
+                    "payload=json.loads(pathlib.Path('") +
+        objc3::artifacts::identity::kObjc3NativeDefaultManifestArtifactName +
+        "').read_text()); "
+        "print(payload['frontend']['pipeline']['semantic_surface']['objc_executable_metadata_debug_projection'])\"";
+inline const std::string kObjc3ExecutableMetadataDebugProjectionIrInspectionCommand =
+    std::string("Select-String -Path ") +
+    objc3::artifacts::identity::kObjc3NativeDefaultIrArtifactName +
+    " -Pattern '!objc3.objc_executable_metadata_debug_projection'";
 inline constexpr const char *kObjc3ExecutableMetadataRuntimeIngestPackagingSurfacePath =
     "frontend.pipeline.semantic_surface.objc_executable_metadata_runtime_ingest_packaging_contract";
 inline constexpr const char *kObjc3ExecutableMetadataRuntimeIngestPackagingPayloadModel =
     "typed-handoff-plus-debug-projection-manifest-v1";
 inline constexpr const char *kObjc3ExecutableMetadataRuntimeIngestPackagingTransportArtifact =
-    "module.manifest.json";
+    objc3::artifacts::identity::kObjc3NativeDefaultManifestArtifactName;
 inline constexpr const char *kObjc3ExecutableMetadataRuntimeIngestBinaryBoundarySurfacePath =
     "frontend.pipeline.semantic_surface.objc_executable_metadata_runtime_ingest_binary_boundary";
 inline constexpr const char *kObjc3ExecutableMetadataRuntimeIngestBinaryEnvelopeFormat =
     "objc3-runtime-metadata-envelope-v1";
 inline constexpr const char *kObjc3ExecutableMetadataRuntimeIngestBinaryArtifactSuffix =
-    ".runtime-metadata.bin";
+    objc3::artifacts::identity::kObjc3NativeRuntimeMetadataBinaryArtifactSuffix;
 inline constexpr const char *kObjc3ExecutableMetadataRuntimeIngestBinaryArtifactRelativePath =
-    "module.runtime-metadata.bin";
+    objc3::artifacts::identity::kObjc3NativeDefaultRuntimeMetadataBinaryArtifactName;
 inline constexpr const char *kObjc3ExecutableMetadataRuntimeIngestBinaryMagic =
     "OBJC3RM1";
 inline constexpr const char *kObjc3ExecutableMetadataRuntimeIngestBinaryPackagingChunkName =
@@ -174,10 +191,12 @@ inline constexpr const char
         kObjc3ExecutableMetadataRuntimeIngestBinaryArtifactRelativePath;
 inline constexpr const char
     *kObjc3RuntimeTranslationUnitRegistrationLinkerResponseArtifactRelativePath =
-        "module.runtime-metadata-linker-options.rsp";
+        objc3::artifacts::identity::
+            kObjc3NativeDefaultRuntimeMetadataLinkerOptionsArtifactName;
 inline constexpr const char
     *kObjc3RuntimeTranslationUnitRegistrationDiscoveryArtifactRelativePath =
-        "module.runtime-metadata-discovery.json";
+        objc3::artifacts::identity::
+            kObjc3NativeDefaultRuntimeMetadataDiscoveryArtifactName;
 inline constexpr const char
     *kObjc3RuntimeTranslationUnitRegistrationConstructorRootSymbol =
         "__objc3_runtime_register_image_ctor";
@@ -208,7 +227,9 @@ inline constexpr const char
         "translation-unit-registration-manifest-json-v1";
 inline constexpr const char
     *kObjc3RuntimeTranslationUnitRegistrationManifestArtifactSuffix =
-        ".runtime-registration-manifest.json";
+        objc3::artifacts::identity::
+            kObjc3NativeRuntimeRegistrationManifestArtifactSuffix;
 inline constexpr const char
     *kObjc3RuntimeTranslationUnitRegistrationManifestArtifactRelativePath =
-        "module.runtime-registration-manifest.json";
+        objc3::artifacts::identity::
+            kObjc3NativeDefaultRuntimeRegistrationManifestArtifactName;

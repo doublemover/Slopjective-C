@@ -56,6 +56,9 @@ typedef struct objc3_runtime_keypath_entry_snapshot {
   const char *component_path;
   const char *profile;
   const char *generic_metadata_replay_key;
+  const char *component_owner_identity_path;
+  const char *component_member_identity_path;
+  const char *component_type_identity_path;
 } objc3_runtime_keypath_entry_snapshot;
 
 int objc3_runtime_copy_selector_lookup_table_state_for_testing(
@@ -71,15 +74,16 @@ int objc3_runtime_copy_keypath_entry_for_testing(
 // optional/key-path runtime-helper freeze anchor: the current Part 3
 // runtime boundary does not add a new public helper API. Optional sends remain
 // routed through the public selector lookup/dispatch entrypoints, while the
-// validated typed key-path slice currently exposes retained descriptor handles
-// and sections as the runtime-facing input boundary. Full runtime key-path
-// evaluation helpers remain deferred to the next runtime step.
+// validated typed key-path slice currently exposes retained descriptor handles,
+// component owner/member/type identity paths, and sections as the runtime-facing
+// input boundary. Full runtime key-path evaluation helpers remain deferred to
+// the next runtime step.
 // live-optional-send-and-keypath-runtime-support anchor: the first
 // live typed key-path runtime support stays on this private runtime header.
 // The runtime consumes emitted key-path descriptor roots into an image-backed
 // registry, publishes query/state snapshots for probes, and exposes narrow
-// helper entrypoints for validated single-component handle execution without
-// widening the stable public runtime header yet.
+// helper entrypoints for validated handle inspection without widening the stable
+// public runtime header yet.
 // cross-module type-surface preservation anchor: imported runtime
 // surfaces must preserve the same typed key-path/runtime-helper packets so
 // multi-image registration keeps provider metadata truthful without inventing a

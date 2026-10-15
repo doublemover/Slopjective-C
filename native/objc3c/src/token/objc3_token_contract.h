@@ -171,7 +171,7 @@ inline constexpr const char *kObjc3RunnableFeatureClaimTruthModel =
 inline constexpr const char *kObjc3FeatureClaimStrictnessTruthSurfaceContractId =
     "objc3c.feature.claim.strictness.truth.surface.v1";
 inline constexpr const char *kObjc3FeatureClaimStrictnessTruthDriverSurfaceModel =
-    "language-version-and-compatibility-live-strictness-and-feature-macro-fail-closed";
+    "language-version-language-profile-strictness-and-strict-concurrency-live-feature-macro-fail-closed";
 
 inline constexpr const char *kObjc3RunnableFeatureClaimModule =
     "runnable:module-declaration";
@@ -187,6 +187,8 @@ inline constexpr const char *kObjc3RunnableFeatureClaimControlFlow =
     "runnable:control-flow";
 inline constexpr const char *kObjc3RunnableFeatureClaimMessageSend =
     "runnable:message-send-basic";
+inline constexpr const char *kObjc3RunnableFeatureClaimTypedThrows =
+    "runnable:typed-throws";
 
 inline constexpr const char *kObjc3SourceOnlyFeatureClaimProtocols =
     "source-only:protocol-declarations";
@@ -219,8 +221,12 @@ inline constexpr const char *kObjc3SourceOnlyFeatureClaimNilCoalescing =
     "source-only:nil-coalescing";
 inline constexpr const char *kObjc3SourceOnlyFeatureClaimTypedKeyPathLiterals =
     "source-only:typed-keypath-literals";
+inline constexpr const char *kObjc3SourceOnlyFeatureClaimValueOptionalTypeSignatures =
+    "source-only:value-optional-type-signatures";
 inline constexpr const char *kObjc3SourceOnlyFeatureClaimThrowsDeclarations =
     "source-only:throws-declarations";
+inline constexpr const char *kObjc3SourceOnlyFeatureClaimTypedThrowsDeclarations =
+    "source-only:typed-throws-declarations";
 inline constexpr const char *kObjc3SourceOnlyFeatureClaimAsyncDeclarations =
     "source-only:async-declarations";
 inline constexpr const char *kObjc3SourceOnlyFeatureClaimAwaitExpressions =
@@ -231,18 +237,24 @@ inline constexpr const char *kObjc3SourceOnlyFeatureClaimResultCarrierProfiles =
     "source-only:result-carrier-profiles";
 inline constexpr const char *kObjc3SourceOnlyFeatureClaimNSErrorBridgingProfiles =
     "source-only:nserror-bridging-profiles";
+inline constexpr const char *kObjc3ErrorHandlingFailClosedConstructTypedThrows =
+    "error_handling-fail-closed:typed-throws";
+inline constexpr const char *kObjc3ErrorHandlingFailClosedConstructTypedThrowsAbiLowering =
+    "error_handling-fail-closed:typed-throws-abi-lowering";
 inline constexpr const char *kObjc3ErrorHandlingFailClosedConstructTryExpressions =
     "error_handling-fail-closed:try-expressions";
 inline constexpr const char *kObjc3ErrorHandlingFailClosedConstructThrowStatements =
     "error_handling-fail-closed:throw-statements";
 inline constexpr const char *kObjc3ErrorHandlingFailClosedConstructDoCatchStatements =
     "error_handling-fail-closed:do-catch-statements";
+inline constexpr const char *kObjc3TypeSystemFailClosedConstructValueOptionals =
+    "type_system-fail-closed:value-optionals";
 
 // control-flow source+semantic surface anchor: the frontend now
 // owns the Part 5 keyword classification boundary directly. Guard bindings,
-// defer statements, and statement-form match stay explicit parser-owned
-// surfaces while match-expression / guarded-pattern / type-test-pattern
-// families remain fail-closed instead of drifting as ordinary identifiers.
+// defer statements, statement-form match, guarded match patterns, and
+// expression-form match stay explicit parser-owned surfaces while type-test
+// pattern families remain fail-closed instead of drifting as ordinary identifiers.
 inline constexpr const char *kObjc3ControlFlowSourceSurfaceGuardBindings =
     "control_flow-source:guard-bindings";
 inline constexpr const char *kObjc3ControlFlowSourceSurfaceGuardConditionLists =
@@ -259,12 +271,14 @@ inline constexpr const char *kObjc3ControlFlowSourceSurfaceMatchLiteralPatterns 
     "control_flow-source:match-literal-patterns";
 inline constexpr const char *kObjc3ControlFlowSourceSurfaceMatchBindingPatterns =
     "control_flow-source:match-binding-patterns";
+inline constexpr const char *kObjc3ControlFlowSourceSurfaceGuardedMatchPatterns =
+    "control_flow-source:guarded-match-patterns";
 inline constexpr const char *kObjc3ControlFlowSourceSurfaceMatchResultCasePatterns =
     "control_flow-source:match-result-case-patterns";
+inline constexpr const char *kObjc3ControlFlowSourceSurfaceMatchExpression =
+    "control_flow-source:match-expression";
 inline constexpr const char *kObjc3ControlFlowFailClosedConstructMatchExpression =
     "control_flow-fail-closed:match-expression";
-inline constexpr const char *kObjc3ControlFlowFailClosedConstructGuardedPatterns =
-    "control_flow-fail-closed:guarded-match-patterns";
 inline constexpr const char *kObjc3ControlFlowFailClosedConstructMatchTypeTestPatterns =
     "control_flow-fail-closed:match-type-test-patterns";
 
@@ -286,6 +300,14 @@ inline constexpr const char *kObjc3UnsupportedFeatureClaimArc =
     "unsupported:arc";
 inline constexpr const char *kObjc3UnsupportedFeatureClaimOptionalMemberAccess =
     "unsupported:optional-member-access";
+inline constexpr const char *kObjc3UnsupportedFeatureClaimTypedThrows =
+    "unsupported:typed-throws";
+inline constexpr const char *kObjc3UnsupportedFeatureClaimValueOptionals =
+    "unsupported:value-optionals";
+inline constexpr const char *kObjc3UnsupportedFeatureClaimMatchExpressions =
+    "unsupported:match-expressions";
+inline constexpr const char *kObjc3UnsupportedFeatureClaimGuardedPatterns =
+    "unsupported:guarded-patterns";
 
 inline constexpr const char *kObjc3SupportedSelectionSurfaceLanguageVersion =
     "selection:language-version";

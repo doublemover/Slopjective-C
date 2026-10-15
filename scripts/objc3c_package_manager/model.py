@@ -1,8 +1,8 @@
 """Deterministic local package manager model for Objective-C 3.0.
 
 The package manager intentionally starts with checked-in local package roots.
-Network resolution and hosted registry behavior remain fail-closed until they
-have their own replayable evidence.
+Network resolution remains fail-closed; hosted registry behavior is admitted
+only through source-owned, offline fixture metadata with pinned trust material.
 """
 
 from __future__ import annotations
@@ -24,10 +24,21 @@ from .trust import (
 )
 
 PACKAGE_MANIFEST_CONTRACT_ID = "objc3c.package_ecosystem.package_manifest.v1"
+PACKAGE_MODULE_GRAPH_CONTRACT_ID = "objc3c.package_ecosystem.module_graph.v1"
 LOCAL_PACKAGE_LANGUAGE_VERSION = "3.0"
 LOCAL_PACKAGE_LANGUAGE_MODE = "strict"
 LOCAL_PACKAGE_ABI_IDENTITY = "objc3-abi-2025Q4"
 LOCAL_PACKAGE_HOST_PLATFORM = "windows-x64"
+DIRECT_IMPORT_SYNTAX_SUPPORT = "supported-fail-closed"
+DIRECT_IMPORT_PACKAGE_PROVENANCE = "locked-package"
+LOCAL_MODULE_GRAPH_RESOLVER = "checked-in-local-registry"
+LOCAL_DEPENDENCY_SOURCE = "checked-in-local-workspace"
+LOCAL_DEPENDENCY_RESOLUTION = "locked-local-registry"
+DEPENDENCY_SOURCE_AUTHORITY_ALLOWLIST = {
+    "stdlib/module_inventory.json",
+    "showcase/portfolio.json",
+}
+FORBIDDEN_SOURCE_AUTHORITY_PREFIXES = ("tmp/", "artifacts/")
 
 
 @dataclass(frozen=True)
@@ -101,10 +112,18 @@ def trust_payload(package_id: str, signing_material: dict[str, Any]) -> dict[str
     )
 
 
-def dependency_payload(package_id: str, *, required_version: str) -> dict[str, str]:
+def dependency_payload(
+    package_id: str,
+    *,
+    required_version: str,
+    source_authority: str,
+    source_authority_digest: str,
+) -> dict[str, str]:
     return {
         "package_id": package_id,
-        "source": "checked-in-local-workspace",
+        "source": LOCAL_DEPENDENCY_SOURCE,
+        "source_authority": source_authority,
+        "source_authority_digest": source_authority_digest,
         "version_requirement": required_version,
         "language_requirement": LOCAL_PACKAGE_LANGUAGE_VERSION,
         "abi_requirement": LOCAL_PACKAGE_ABI_IDENTITY,
@@ -135,6 +154,102 @@ def package_manifest_digest(manifest: dict[str, Any]) -> str:
     return stable_digest(payload)
 
 
+def module_import_edges(
+    *,
+    from_module: str,
+    dependencies: list[dict[str, str]],
+) -> list[dict[str, str]]:
+    return sorted(
+        [
+            {
+                "from_module": from_module,
+                "to_module": package_name(str(dependency["package_id"])),
+                "to_package_id": str(dependency["package_id"]),
+                "source": str(dependency["source"]),
+                "source_authority": str(dependency["source_authority"]),
+                "source_authority_digest": str(dependency["source_authority_digest"]),
+                "resolution": LOCAL_DEPENDENCY_RESOLUTION,
+                "required_version": str(dependency["version_requirement"]),
+            }
+            for dependency in dependencies
+        ],
+        key=lambda edge: (edge["to_package_id"], edge["required_version"]),
+    )
+
+
+def module_direct_imports(
+    *,
+    from_module: str,
+    dependencies: list[dict[str, str]],
+) -> list[dict[str, str]]:
+    return sorted(
+        [
+            {
+                "syntax": "@import",
+                "source_module": from_module,
+                "imported_module": package_name(str(dependency["package_id"])),
+                "to_package_id": str(dependency["package_id"]),
+                "package_provenance": DIRECT_IMPORT_PACKAGE_PROVENANCE,
+                "source_authority": str(dependency["source_authority"]),
+                "source_authority_digest": str(dependency["source_authority_digest"]),
+                "resolution": LOCAL_DEPENDENCY_RESOLUTION,
+                "required_version": str(dependency["version_requirement"]),
+                "missing_provenance_diagnostic": PACKAGE_MANAGER_TAMPER_CODE,
+            }
+            for dependency in dependencies
+        ],
+        key=lambda edge: (
+            edge["imported_module"].lower(),
+            edge["to_package_id"],
+            edge["required_version"],
+        ),
+    )
+
+
+def module_graph_payload(
+    *,
+    package_id: str,
+    source_kind: str,
+    source: str,
+    source_digest: str,
+    module_id: str,
+    implementation_module: str,
+    source_authority: str,
+    source_authority_digest: str,
+    dependencies: list[dict[str, str]],
+) -> dict[str, Any]:
+    return {
+        "contract_id": PACKAGE_MODULE_GRAPH_CONTRACT_ID,
+        "package_id": package_id,
+        "package_source_kind": source_kind,
+        "source": source,
+        "source_digest": source_digest,
+        "source_authority": source_authority,
+        "source_authority_digest": source_authority_digest,
+        "module_name": {
+            "canonical": module_id,
+            "implementation": implementation_module,
+            "case_sensitive": True,
+        },
+        "resolver": LOCAL_MODULE_GRAPH_RESOLVER,
+        "direct_import_syntax": DIRECT_IMPORT_SYNTAX_SUPPORT,
+        "direct_imports": module_direct_imports(
+            from_module=module_id,
+            dependencies=dependencies,
+        ),
+        "import_edges": module_import_edges(
+            from_module=module_id,
+            dependencies=dependencies,
+        ),
+        "unsafe_metadata_policy": {
+            "missing_module_graph": "fail-closed",
+            "missing_package_manifest": "fail-closed",
+            "manual_sidecar_manifest": "fail-closed",
+            "network_or_hosted_metadata": "fail-closed",
+        },
+    }
+
+
 def package_manifest_payload(
     *,
     package_id: str,
@@ -142,6 +257,7 @@ def package_manifest_payload(
     source_kind: str,
     package_version: str,
     source_digest: str,
+    module_graph: dict[str, Any],
     dependencies: list[dict[str, str]],
     runtime_symbols: list[str],
     replay_actions: list[str],
@@ -164,6 +280,7 @@ def package_manifest_payload(
             "minimum": LOCAL_PACKAGE_ABI_IDENTITY,
             "runtime_symbols": sorted(runtime_symbols),
         },
+        "module_graph": module_graph,
         "dependencies": dependencies,
         "registry": {
             "resolution": "checked-in-local-registry",
@@ -200,6 +317,7 @@ def package_lock_entry(
             "contract_id": manifest["contract_id"],
             "digest": manifest["manifest_digest"],
         },
+        "module_graph": manifest["module_graph"],
         "provenance_id": provenance_id(str(manifest["package_id"])),
         "trust": manifest["trust"],
     }
@@ -219,9 +337,11 @@ def lock_dependency_payload(
         "from": from_package_id,
         "to": str(manifest_dependency["package_id"]),
         "source": str(manifest_dependency["source"]),
+        "source_authority": str(manifest_dependency["source_authority"]),
+        "source_authority_digest": str(manifest_dependency["source_authority_digest"]),
         "language_requirement": str(manifest_dependency["language_requirement"]),
         "abi_requirement": str(manifest_dependency["abi_requirement"]),
-        "resolution": "locked-local-registry",
+        "resolution": LOCAL_DEPENDENCY_RESOLUTION,
         "required_version": str(manifest_dependency.get("version_requirement", target_version)),
         "resolved_version": target_version,
         "target_source_digest": str(target_package.get("source_digest", "")),
@@ -287,6 +407,8 @@ def package_resolution_plan(
         {
             "from": from_id,
             "to": to_id,
+            "source_authority": str(edge.get("source_authority", "")),
+            "source_authority_digest": str(edge.get("source_authority_digest", "")),
             "required_version": str(edge.get("required_version", "")),
             "resolved_version": str(edge.get("resolved_version", "")),
             "target_source_digest": str(edge.get("target_source_digest", "")),
@@ -345,6 +467,10 @@ def build_lock_components(
     manifest_dependencies_by_package: dict[str, list[dict[str, str]]] = {}
     digest_inputs: list[str] = []
     generator = "scripts/build_objc3c_package_lock.py"
+    stdlib_module_inventory_source = "stdlib/module_inventory.json"
+    showcase_portfolio_source = "showcase/portfolio.json"
+    stdlib_module_inventory_digest = file_digest(root / stdlib_module_inventory_source)
+    showcase_portfolio_digest = file_digest(root / showcase_portfolio_source)
 
     stdlib_versions: dict[str, str] = {}
     for module in sorted((entry for entry in modules if isinstance(entry, dict)), key=lambda entry: str(entry.get("module", ""))):
@@ -364,11 +490,24 @@ def build_lock_components(
             source_kind="stdlib-module-manifest",
             package_version=package_version,
             source_digest=file_digest(root / source),
+            module_graph=module_graph_payload(
+                package_id=package_id,
+                source=source,
+                source_kind="stdlib-module-manifest",
+                source_digest=file_digest(root / source),
+                module_id=module_id,
+                implementation_module=str(module.get("implementation_module", "")),
+                source_authority=stdlib_module_inventory_source,
+                source_authority_digest=stdlib_module_inventory_digest,
+                dependencies=[],
+            ),
             dependencies=[],
             runtime_symbols=runtime_symbols,
             replay_actions=[
                 "build-package-lock",
+                "validate-package-security-hardening",
                 "validate-package-manager-model",
+                "validate-direct-import-module-syntax",
                 "validate-package-authoring",
             ],
         )
@@ -384,6 +523,8 @@ def build_lock_components(
             dependency_payload(
                 f"stdlib:{name}",
                 required_version=stdlib_versions.get(f"stdlib:{name}", "0.0.0"),
+                source_authority=showcase_portfolio_source,
+                source_authority_digest=showcase_portfolio_digest,
             )
             for name in sorted(str(name) for name in example.get("stdlib_followup_modules", []) if isinstance(name, str))
         ]
@@ -393,11 +534,24 @@ def build_lock_components(
             source_kind="showcase-workspace-manifest",
             package_version="1.0.0",
             source_digest=file_digest(root / source),
+            module_graph=module_graph_payload(
+                package_id=package_id,
+                source=source,
+                source_kind="showcase-workspace-manifest",
+                source_digest=file_digest(root / source),
+                module_id=f"showcase.{example_id}",
+                implementation_module=example_id,
+                source_authority=showcase_portfolio_source,
+                source_authority_digest=showcase_portfolio_digest,
+                dependencies=package_dependencies,
+            ),
             dependencies=package_dependencies,
             runtime_symbols=[],
             replay_actions=[
                 "build-package-lock",
+                "validate-package-security-hardening",
                 "validate-package-manager-model",
+                "validate-direct-import-module-syntax",
                 "validate-package-authoring",
                 "validate-package-ecosystem",
             ],
@@ -436,9 +590,11 @@ def build_lock_components(
                         "from": from_package_id,
                         "to": str(manifest_dependency["package_id"]),
                         "source": str(manifest_dependency["source"]),
+                        "source_authority": str(manifest_dependency["source_authority"]),
+                        "source_authority_digest": str(manifest_dependency["source_authority_digest"]),
                         "language_requirement": str(manifest_dependency["language_requirement"]),
                         "abi_requirement": str(manifest_dependency["abi_requirement"]),
-                        "resolution": "locked-local-registry",
+                        "resolution": LOCAL_DEPENDENCY_RESOLUTION,
                         "required_version": str(manifest_dependency["version_requirement"]),
                         "resolved_version": "",
                         "target_source_digest": "",
@@ -489,6 +645,177 @@ def cache_payload_from_mirror_package(mirror_package: dict[str, Any]) -> dict[st
     return payload
 
 
+def collect_dependency_source_authority_failures(
+    dependency: dict[str, Any],
+    *,
+    root: Path,
+    from_package_id: str | None = None,
+) -> list[str]:
+    from_id = from_package_id or str(dependency.get("from", ""))
+    to_id = str(dependency.get("to", dependency.get("package_id", "")))
+    edge_id = f"{from_id}->{to_id}" if from_id else to_id
+    source_authority = str(dependency.get("source_authority", ""))
+    source_authority_digest = str(dependency.get("source_authority_digest", ""))
+    if not source_authority:
+        return [f"{PACKAGE_MANAGER_TAMPER_CODE}: missing dependency source authority for {edge_id}"]
+    normalized = source_authority.replace("\\", "/")
+    authority_path = Path(normalized)
+    if (
+        normalized != source_authority
+        or authority_path.is_absolute()
+        or ".." in authority_path.parts
+        or normalized.startswith(FORBIDDEN_SOURCE_AUTHORITY_PREFIXES)
+        or normalized not in DEPENDENCY_SOURCE_AUTHORITY_ALLOWLIST
+    ):
+        return [f"{PACKAGE_MANAGER_TAMPER_CODE}: unsafe dependency source authority for {edge_id}"]
+    resolved_authority = root / normalized
+    if not resolved_authority.is_file():
+        return [f"{PACKAGE_MANAGER_TAMPER_CODE}: missing dependency source authority file for {edge_id}"]
+    if source_authority_digest != file_digest(resolved_authority):
+        return [f"{PACKAGE_MANAGER_TAMPER_CODE}: dependency source authority digest drift for {edge_id}"]
+    return []
+
+
+def collect_package_module_graph_failures(
+    package: dict[str, Any],
+    *,
+    dependencies: list[dict[str, Any]],
+    root: Path,
+) -> list[str]:
+    package_id = str(package.get("package_id", ""))
+    graph = package.get("module_graph")
+    if not isinstance(graph, dict):
+        return [f"{PACKAGE_MANAGER_TAMPER_CODE}: missing module graph metadata for {package_id}"]
+
+    failures: list[str] = []
+    if graph.get("contract_id") != PACKAGE_MODULE_GRAPH_CONTRACT_ID:
+        failures.append(f"{PACKAGE_MANAGER_TAMPER_CODE}: module graph contract drift for {package_id}")
+    if graph.get("package_id") != package_id:
+        failures.append(f"{PACKAGE_MANAGER_TAMPER_CODE}: module graph package id drift for {package_id}")
+    if graph.get("package_source_kind") != package.get("source_kind"):
+        failures.append(f"{PACKAGE_MANAGER_TAMPER_CODE}: module graph source kind drift for {package_id}")
+    if graph.get("source") != package.get("source"):
+        failures.append(f"{PACKAGE_MANAGER_TAMPER_CODE}: module graph source drift for {package_id}")
+    if graph.get("source_digest") != package.get("source_digest"):
+        failures.append(f"{PACKAGE_MANAGER_TAMPER_CODE}: module graph source digest drift for {package_id}")
+
+    source_authority = str(graph.get("source_authority", ""))
+    if source_authority not in {"stdlib/module_inventory.json", "showcase/portfolio.json"}:
+        failures.append(f"{PACKAGE_MANAGER_TAMPER_CODE}: unsafe module graph source authority for {package_id}")
+    source_authority_path = root / source_authority
+    if not source_authority_path.is_file():
+        failures.append(f"{PACKAGE_MANAGER_TAMPER_CODE}: missing module graph source authority for {package_id}")
+    elif graph.get("source_authority_digest") != file_digest(source_authority_path):
+        failures.append(f"{PACKAGE_MANAGER_TAMPER_CODE}: module graph source authority digest drift for {package_id}")
+
+    module_name = graph.get("module_name", {})
+    if not isinstance(module_name, dict):
+        failures.append(f"{PACKAGE_MANAGER_TAMPER_CODE}: missing module graph module name for {package_id}")
+        from_module = ""
+    else:
+        from_module = str(module_name.get("canonical", ""))
+        if not from_module:
+            failures.append(f"{PACKAGE_MANAGER_TAMPER_CODE}: missing canonical module name for {package_id}")
+        if not str(module_name.get("implementation", "")):
+            failures.append(f"{PACKAGE_MANAGER_TAMPER_CODE}: missing implementation module name for {package_id}")
+        if module_name.get("case_sensitive") is not True:
+            failures.append(f"{PACKAGE_MANAGER_TAMPER_CODE}: module graph case sensitivity drift for {package_id}")
+
+    if graph.get("resolver") != LOCAL_MODULE_GRAPH_RESOLVER:
+        failures.append(f"{PACKAGE_MANAGER_TAMPER_CODE}: module graph resolver drift for {package_id}")
+    if graph.get("direct_import_syntax") != DIRECT_IMPORT_SYNTAX_SUPPORT:
+        failures.append(f"{PACKAGE_MANAGER_TAMPER_CODE}: direct @import syntax contract drift for {package_id}")
+
+    unsafe_policy = graph.get("unsafe_metadata_policy", {})
+    expected_unsafe_policy = {
+        "missing_module_graph": "fail-closed",
+        "missing_package_manifest": "fail-closed",
+        "manual_sidecar_manifest": "fail-closed",
+        "network_or_hosted_metadata": "fail-closed",
+    }
+    if not isinstance(unsafe_policy, dict):
+        failures.append(f"{PACKAGE_MANAGER_TAMPER_CODE}: missing unsafe metadata policy for {package_id}")
+    elif unsafe_policy != expected_unsafe_policy:
+        failures.append(f"{PACKAGE_MANAGER_TAMPER_CODE}: unsafe metadata policy drift for {package_id}")
+
+    expected_edges: list[dict[str, str]] = []
+    for dependency in dependencies:
+        to_package_id = str(dependency.get("to", ""))
+        expected_edges.append(
+            {
+                "from_module": from_module,
+                "to_module": package_name(to_package_id) if ":" in to_package_id else "",
+                "to_package_id": to_package_id,
+                "source": str(dependency.get("source", "")),
+                "source_authority": str(dependency.get("source_authority", "")),
+                "source_authority_digest": str(dependency.get("source_authority_digest", "")),
+                "resolution": str(dependency.get("resolution", "")),
+                "required_version": str(dependency.get("required_version", "")),
+            }
+        )
+    expected_edges = sorted(
+        expected_edges,
+        key=lambda edge: (edge["to_package_id"], edge["required_version"]),
+    )
+    actual_edges = graph.get("import_edges", [])
+    if actual_edges != expected_edges:
+        failures.append(f"{PACKAGE_MANAGER_TAMPER_CODE}: module graph import edges drift for {package_id}")
+
+    expected_direct_imports: list[dict[str, str]] = []
+    for dependency in dependencies:
+        to_package_id = str(dependency.get("to", ""))
+        expected_direct_imports.append(
+            {
+                "syntax": "@import",
+                "source_module": from_module,
+                "imported_module": package_name(to_package_id) if ":" in to_package_id else "",
+                "to_package_id": to_package_id,
+                "package_provenance": DIRECT_IMPORT_PACKAGE_PROVENANCE,
+                "source_authority": str(dependency.get("source_authority", "")),
+                "source_authority_digest": str(dependency.get("source_authority_digest", "")),
+                "resolution": str(dependency.get("resolution", "")),
+                "required_version": str(dependency.get("required_version", "")),
+                "missing_provenance_diagnostic": PACKAGE_MANAGER_TAMPER_CODE,
+            }
+        )
+    expected_direct_imports = sorted(
+        expected_direct_imports,
+        key=lambda item: (
+            item["imported_module"].lower(),
+            item["to_package_id"],
+            item["required_version"],
+        ),
+    )
+    actual_direct_imports = graph.get("direct_imports", [])
+    if not isinstance(actual_direct_imports, list):
+        failures.append(f"{PACKAGE_MANAGER_TAMPER_CODE}: missing direct @import module identity data for {package_id}")
+        actual_direct_imports = []
+    import_identity_packages: dict[str, set[str]] = {}
+    for direct_import in actual_direct_imports:
+        if not isinstance(direct_import, dict):
+            failures.append(f"{PACKAGE_MANAGER_TAMPER_CODE}: malformed direct @import metadata for {package_id}")
+            continue
+        imported_module = str(direct_import.get("imported_module", ""))
+        to_package_id = str(direct_import.get("to_package_id", ""))
+        if not imported_module or not to_package_id or direct_import.get("package_provenance") != DIRECT_IMPORT_PACKAGE_PROVENANCE:
+            failures.append(f"{PACKAGE_MANAGER_TAMPER_CODE}: missing direct @import package provenance for {package_id}")
+        if direct_import.get("syntax") != "@import":
+            failures.append(f"{PACKAGE_MANAGER_TAMPER_CODE}: direct @import syntax marker drift for {package_id}")
+        if direct_import.get("missing_provenance_diagnostic") != PACKAGE_MANAGER_TAMPER_CODE:
+            failures.append(f"{PACKAGE_MANAGER_TAMPER_CODE}: direct @import diagnostic contract drift for {package_id}")
+        if imported_module and to_package_id:
+            import_identity_packages.setdefault(imported_module.lower(), set()).add(to_package_id)
+    for imported_module_key, package_ids_for_identity in sorted(import_identity_packages.items()):
+        if len(package_ids_for_identity) > 1:
+            failures.append(
+                f"{PACKAGE_MANAGER_TAMPER_CODE}: ambiguous direct @import module identity "
+                f"{imported_module_key} for {package_id}"
+            )
+    if actual_direct_imports != expected_direct_imports:
+        failures.append(f"{PACKAGE_MANAGER_TAMPER_CODE}: direct @import module identity drift for {package_id}")
+    return failures
+
+
 def collect_lock_model_failures(lock: dict[str, Any], *, root: Path) -> list[str]:
     failures: list[str] = []
     raw_packages = lock.get("packages", [])
@@ -533,6 +860,11 @@ def collect_lock_model_failures(lock: dict[str, Any], *, root: Path) -> list[str
     for package in packages:
         package_id = str(package.get("package_id"))
         source = str(package.get("source", ""))
+        package_dependencies = [
+            dependency
+            for dependency in dependencies
+            if str(dependency.get("from")) == package_id
+        ]
         source_path = root / source
         if not source_path.is_file():
             failures.append(f"{PACKAGE_MANAGER_TAMPER_CODE}: missing package source for {package_id}")
@@ -542,6 +874,13 @@ def collect_lock_model_failures(lock: dict[str, Any], *, root: Path) -> list[str
             failures.append(f"{PACKAGE_MANAGER_TAMPER_CODE}: language version mismatch for {package_id}")
         if package.get("abi_identity") != LOCAL_PACKAGE_ABI_IDENTITY:
             failures.append(f"{PACKAGE_MANAGER_TAMPER_CODE}: ABI identity mismatch for {package_id}")
+        failures.extend(
+            collect_package_module_graph_failures(
+                package,
+                dependencies=package_dependencies,
+                root=root,
+            )
+        )
         trust = package.get("trust", {})
         if not isinstance(trust, dict):
             failures.append(f"{PACKAGE_MANAGER_TAMPER_CODE}: missing trust envelope for {package_id}")
@@ -557,7 +896,7 @@ def collect_lock_model_failures(lock: dict[str, Any], *, root: Path) -> list[str
             if trust.get("revocation_state") != "not-revoked":
                 failures.append(f"{PACKAGE_MANAGER_TAMPER_CODE}: revoked package cannot resolve {package_id}")
         manifest = package.get("package_manifest", {})
-        if not isinstance(manifest, dict):
+        if not isinstance(manifest, dict) or not manifest:
             failures.append(f"{PACKAGE_MANAGER_TAMPER_CODE}: missing package manifest envelope for {package_id}")
         else:
             manifest_path = str(manifest.get("path", ""))
@@ -583,6 +922,8 @@ def collect_lock_model_failures(lock: dict[str, Any], *, root: Path) -> list[str
                     failures.append(f"{PACKAGE_MANAGER_TAMPER_CODE}: package manifest digest field drift for {package_id}")
                 if manifest_digest != manifest.get("digest"):
                     failures.append(f"{PACKAGE_MANAGER_TAMPER_CODE}: package manifest digest mismatch for {package_id}")
+                if manifest_payload.get("module_graph") != package.get("module_graph"):
+                    failures.append(f"{PACKAGE_MANAGER_TAMPER_CODE}: package manifest module graph drift for {package_id}")
                 failures.extend(
                     collect_manifest_trust_failures(
                         manifest_payload,
@@ -604,6 +945,8 @@ def collect_lock_model_failures(lock: dict[str, Any], *, root: Path) -> list[str
                         {
                             "package_id": str(dependency.get("to")),
                             "source": str(dependency.get("source")),
+                            "source_authority": str(dependency.get("source_authority")),
+                            "source_authority_digest": str(dependency.get("source_authority_digest")),
                             "version_requirement": str(dependency.get("required_version")),
                             "language_requirement": str(dependency.get("language_requirement")),
                             "abi_requirement": str(dependency.get("abi_requirement")),
@@ -640,8 +983,14 @@ def collect_lock_model_failures(lock: dict[str, Any], *, root: Path) -> list[str
             failures.append(f"{PACKAGE_MANAGER_TAMPER_CODE}: dependency target is not locked: {to_id}")
         if dependency.get("source") != "checked-in-local-workspace":
             failures.append(f"{PACKAGE_MANAGER_TAMPER_CODE}: unsupported dependency source for {from_id}->{to_id}")
-        if dependency.get("resolution") != "locked-local-registry":
+        if dependency.get("resolution") != LOCAL_DEPENDENCY_RESOLUTION:
             failures.append(f"{PACKAGE_MANAGER_TAMPER_CODE}: unsupported dependency resolution for {from_id}->{to_id}")
+        failures.extend(
+            collect_dependency_source_authority_failures(
+                dependency,
+                root=root,
+            )
+        )
         target_package = package_by_id.get(to_id)
         if target_package is not None and dependency.get("abi_requirement") != target_package.get("abi_identity"):
             failures.append(f"{PACKAGE_MANAGER_TAMPER_CODE}: ABI requirement mismatch for {from_id}->{to_id}")

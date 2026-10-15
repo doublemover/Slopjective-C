@@ -11,8 +11,14 @@
     "tests/tooling/fixtures/package_ecosystem/registry_publication_semantics.json",
     "tests/tooling/fixtures/package_ecosystem/package_authoring_workflow_contract.json",
     "tests/tooling/fixtures/package_ecosystem/package_manager_model_contract.json",
+    "tests/tooling/fixtures/package_ecosystem/package_security_hardening_contract.json",
+    "tests/tooling/fixtures/package_ecosystem/hosted_registry/hosted-registry-index.json",
+    "tests/tooling/fixtures/package_ecosystem/hosted_registry/offline-mirror-index.json",
+    "tests/tooling/fixtures/package_ecosystem/network_resolution/network-dependency-resolution.json",
+    "tests/tooling/fixtures/package_ecosystem/network_resolution/package-release-channel-publication.json",
     "tests/tooling/fixtures/package_ecosystem/registry_mirror_reproducibility_contract.json",
-    "tests/tooling/fixtures/package_ecosystem/from_nothing_install_proof_contract.json"
+    "tests/tooling/fixtures/package_ecosystem/from_nothing_install_proof_contract.json",
+    "tests/tooling/fixtures/package_ecosystem/package_ecosystem_umbrella_contract.json"
   ],
   "generated_outputs": {
     "lock": "tmp/artifacts/package-ecosystem/locks/objc3c-package-lock.json",
@@ -54,18 +60,42 @@
   "minimum_dependency_count": 7,
   "required_public_actions": [
     "build-package-lock",
+    "package-sign",
+    "package-verify",
+    "validate-package-security-hardening",
+    "validate-direct-import-module-syntax",
     "validate-package-manager-model",
     "validate-package-authoring",
     "validate-package-mirror",
-    "validate-package-install-distribution"
+    "validate-package-registry-model",
+    "package-registry-resolve",
+    "validate-package-network-publication",
+    "validate-package-install-distribution",
+    "package-publish",
+    "package-install",
+    "package-update",
+    "package-uninstall",
+    "package-rollback",
+    "validate-package-operations"
   ],
+  "public_action_invocations": {
+    "validate-package-install-distribution": {
+      "required_command": "npm run objc3c -- validate-package-install-distribution --from-nothing",
+      "from_nothing_required": true,
+      "default_behavior": "public action injects --from-nothing when no pass-through arguments are supplied",
+      "source_owner": "scripts/objc3c_workflow/actions/ecosystem_publication_package.py",
+      "source_contract": "tests/tooling/fixtures/package_ecosystem/from_nothing_install_proof_contract.json"
+    }
+  },
   "required_install_receipt_fields": [
     "contract_id",
+    "schema",
     "install_root",
     "install_home",
     "bootstrap_entrypoint",
     "package_bridge",
     "install_command",
+    "machine_owned",
     "installed_at_utc"
   ],
   "required_operation_receipts": [
@@ -79,11 +109,15 @@
     "update and uninstall operation receipts must be deterministic, digest-bound to the locked package graph, and stored under the clean install receipt root",
     "update receipts preserve dependency-first package order while uninstall receipts use reverse dependency order",
     "local package install artifacts must digest-bind source manifests, installed manifests, lock manifest digests, and trust signatures",
+    "install distribution consumes hosted registry, hermetic hosted service, and network publication only as checked-in offline fixture contracts; live network install and fallback registry success remain fail-closed",
+    "clean install materialization must validate extraction plan path safety, duplicate and case-conflicting paths, symlink rejection, installer/update-key policy hooks, and reserved release/registry trust roots before filesystem mutation",
     "release manifest input contracts must exclude generated report paths and consume tmp/artifacts install proof records instead",
+    "public package install distribution support truth must name the from-nothing replay command and must not present a generated report as source authority",
     "installed package sources, lock entries, mirror entries, local registry entries, publication metadata, and restore receipt counts must agree",
     "offline mirror cache entries must digest-match the lock-derived mirror index before an install claim can pass",
-    "install receipts must be machine-generated under the package ecosystem validation root and must publish the objc3c package bridge",
-    "network install, hosted registry, and alternate package-manager claims remain fail-closed until separate evidence exists"
+    "install receipts must be machine-generated under the package ecosystem validation root, validate against the package-ecosystem install distribution receipt schema, publish the objc3c package bridge, and name the from-nothing public replay command",
+    "update and uninstall receipts must use the package-ecosystem install distribution operation receipt schema instead of the package operation schema used by publish/install/update/rollback operations",
+    "network install, live public hosted registry, and alternate package-manager claims remain fail-closed until separate evidence exists"
   ],
   "blocker_metadata": {
     "blocker_owner": "package-ecosystem-blockers",
@@ -94,9 +128,12 @@
       "offline mirror cache entry missing or digest-mismatched",
       "from-nothing install proof manifest missing or report-derived release input accepted",
       "hosted registry or network install claim widened without evidence",
+      "hosted registry or network fixture metadata accepted live network or fallback registry success during install distribution",
+      "install distribution filesystem mutation occurred before extraction path safety proof",
+      "install distribution accepted active release or registry trust roots without source-owned security hardening contract",
       "public package install validation action missing from objc3c bridge",
       "generated install evidence escaped the package ecosystem artifact root"
     ]
   },
-  "claim_boundary": "clean local package install credibility only: checked-in source contracts generate package manifests, a deterministic lock, an offline mirror, local registry metadata, an install receipt, and a clean-root verification record; hosted registry, network dependency resolution, system installer publication, and release-channel operations remain outside this contract"
+  "claim_boundary": "clean local package install credibility only: checked-in source contracts generate package manifests, a deterministic lock, an offline mirror, local registry metadata, offline hosted/service/network/release-channel fixture inputs, an extraction safety plan, an install receipt, and a clean-root verification record; live hosted registry access, live network dependency resolution, fallback registry success, system installer publication, and remote release-channel operations remain outside this contract"
 }

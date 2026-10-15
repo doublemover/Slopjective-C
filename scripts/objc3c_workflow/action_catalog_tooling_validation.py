@@ -27,13 +27,13 @@ TOOLING_VALIDATION_ACTION_SPECS: dict[str, ActionSpec] = {
     ),
     "validate-debug-source-maps": ActionSpec(
         "validate-debug-source-maps",
-        "validate Objective-C 3 source maps, debug maps, provenance links, and native line-table rows",
+        "validate Objective-C 3 source maps, debug maps, provenance links, native line-table rows, and inline frames",
         "python:scripts/check_objc3c_debug_source_maps.py",
         validation_tier="repo",
         guarantee_owner=(
             "debug/source-map artifacts fail closed when source graph nodes, source digests, "
-            "provenance links, optimization preservation claims, package identity, or native "
-            "line-table rows drift"
+            "provenance links, optimization preservation claims, package identity, native "
+            "line-table rows, or inline-frame ranges drift"
         ),
     ),
     "validate-debugger-integration": ActionSpec(

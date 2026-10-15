@@ -28,7 +28,13 @@ std::string RenderTypeSystemOptionalKeypathLoweringContractJson(
   const bool ready_for_typed_keypath_artifact_emission =
       contract.deterministic && contract.contract_violation_sites == 0 &&
       contract.live_typed_keypath_artifact_sites ==
-          contract.typed_keypath_literal_sites;
+          contract.typed_keypath_literal_sites &&
+      contract.typed_keypath_descriptor_publication_sites ==
+          contract.live_typed_keypath_artifact_sites &&
+      contract.typed_keypath_source_map_evidence_sites ==
+          contract.live_typed_keypath_artifact_sites &&
+      contract.typed_keypath_runtime_handle_evidence_sites ==
+          contract.live_typed_keypath_artifact_sites;
   out << "{"
       << "\"contract_id\":\""
       << EscapeJsonString(
@@ -47,6 +53,9 @@ std::string RenderTypeSystemOptionalKeypathLoweringContractJson(
       << "\",\"authority_model\":\""
       << EscapeJsonString(
              kObjc3FrontendTypeSystemOptionalKeypathLoweringAuthorityModel)
+      << "\",\"debug_evidence_model\":\""
+      << EscapeJsonString(
+             kObjc3FrontendTypeSystemOptionalKeypathLoweringDebugEvidenceModel)
       << "\",\"fail_closed_model\":\""
       << EscapeJsonString(
              kObjc3FrontendTypeSystemOptionalKeypathLoweringFailClosedModel)
@@ -70,6 +79,12 @@ std::string RenderTypeSystemOptionalKeypathLoweringContractJson(
       << contract.live_typed_keypath_artifact_sites
       << ",\"deferred_typed_keypath_sites\":"
       << contract.deferred_typed_keypath_sites
+      << ",\"typed_keypath_descriptor_publication_sites\":"
+      << contract.typed_keypath_descriptor_publication_sites
+      << ",\"typed_keypath_source_map_evidence_sites\":"
+      << contract.typed_keypath_source_map_evidence_sites
+      << ",\"typed_keypath_runtime_handle_evidence_sites\":"
+      << contract.typed_keypath_runtime_handle_evidence_sites
       << ",\"contract_violation_sites\":"
       << contract.contract_violation_sites
       << ",\"deterministic\":"
@@ -113,7 +128,13 @@ std::string RenderTypeSystemOptionalKeypathRuntimeHelperContractJson(
   const bool typed_keypath_descriptor_handles_ready =
       contract.live_typed_keypath_artifact_sites ==
           contract.typed_keypath_literal_sites &&
-      contract.deferred_typed_keypath_sites == 0;
+      contract.deferred_typed_keypath_sites == 0 &&
+      contract.typed_keypath_descriptor_publication_sites ==
+          contract.live_typed_keypath_artifact_sites &&
+      contract.typed_keypath_source_map_evidence_sites ==
+          contract.live_typed_keypath_artifact_sites &&
+      contract.typed_keypath_runtime_handle_evidence_sites ==
+          contract.live_typed_keypath_artifact_sites;
   const bool typed_keypath_runtime_execution_helper_landed = true;
   const bool diagnostic_fail_closed_ready = true;
   std::ostringstream replay_key;
@@ -130,7 +151,13 @@ std::string RenderTypeSystemOptionalKeypathRuntimeHelperContractJson(
              << ";typed_keypath_literal_sites="
              << contract.typed_keypath_literal_sites
              << ";live_typed_keypath_artifact_sites="
-             << contract.live_typed_keypath_artifact_sites;
+             << contract.live_typed_keypath_artifact_sites
+             << ";typed_keypath_descriptor_publication_sites="
+             << contract.typed_keypath_descriptor_publication_sites
+             << ";typed_keypath_source_map_evidence_sites="
+             << contract.typed_keypath_source_map_evidence_sites
+             << ";typed_keypath_runtime_handle_evidence_sites="
+             << contract.typed_keypath_runtime_handle_evidence_sites;
   std::ostringstream out;
   out << "{"
       << "\"contract_id\":\""
@@ -171,6 +198,16 @@ std::string RenderTypeSystemOptionalKeypathRuntimeHelperContractJson(
       << (optional_send_runtime_ready ? "true" : "false")
       << ",\"typed_keypath_descriptor_handles_ready\":"
       << (typed_keypath_descriptor_handles_ready ? "true" : "false")
+      << ",\"typed_keypath_source_map_evidence_ready\":"
+      << (contract.typed_keypath_source_map_evidence_sites ==
+                  contract.live_typed_keypath_artifact_sites
+              ? "true"
+              : "false")
+      << ",\"typed_keypath_runtime_handle_evidence_ready\":"
+      << (contract.typed_keypath_runtime_handle_evidence_sites ==
+                  contract.live_typed_keypath_artifact_sites
+              ? "true"
+              : "false")
       << ",\"typed_keypath_runtime_execution_helper_landed\":"
       << (typed_keypath_runtime_execution_helper_landed ? "true" : "false")
       << ",\"diagnostic_fail_closed_ready\":"

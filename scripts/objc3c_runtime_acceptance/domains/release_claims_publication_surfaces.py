@@ -86,7 +86,7 @@ def build_runtime_claim_publication_dashboard_schema_surface(
             "schemas/objc3-conformance-dashboard-status-v1.schema.json",
         ],
         "dashboard_schema_model": (
-            "validation-publishes-a-schema-shaped-claim-dashboard-over-the-live-report-publication-validation-and-release-evidence-artifacts"
+            "validation-publishes-a-schema-shaped-claim-dashboard-over-the-live-report-publication-validation-and-release-evidence-artifacts-with-strict-profile-blockers-visible"
         ),
         "authoritative_case_ids": authoritative_case_ids,
         "authoritative_fixture_paths": [RELEASE_CLAIMABLE_SURFACE_FIXTURE],

@@ -4,6 +4,7 @@
 #include <string_view>
 
 #include "contracts/objc3_diagnostic_owner_contract.h"
+#include "contracts/objc3_language_evolution_reserved_diagnostic_codes.h"
 #include "token/objc3_token_contract.h"
 
 namespace objc3c::parse {
@@ -26,7 +27,6 @@ inline constexpr std::string_view kObjc3ParserDiagnosticFixitOwnerName =
     ::kObjc3ParserDiagnosticFixitOwner;
 inline constexpr std::string_view kObjc3ParserDiagnosticRecoveryOwnerName =
     ::kObjc3ParserDiagnosticRecoveryOwner;
-
 bool IsObjc3ParserOwnedDiagnosticCode(const char *code);
 std::string BuildObjc3ParserDiagnostic(
     const Objc3LexToken &token,
@@ -60,6 +60,15 @@ std::string BuildObjc3MissingSemicolonDiagnostic(
 std::string BuildObjc3InvalidDeclarationIdentifierDiagnostic(
     const Objc3LexToken &token);
 std::string BuildObjc3RemovedOptionalTemplateAliasDiagnostic(
+    const Objc3LexToken &token);
+std::string BuildObjc3ReservedValueOptionalTypeDiagnostic(
+    const Objc3LexToken &token);
+std::string BuildObjc3ReservedTypedThrowsDiagnostic(
+    const Objc3LexToken &token,
+    std::string_view payload_shape = "single-payload");
+std::string BuildObjc3ReservedMatchExpressionDiagnostic(
+    const Objc3LexToken &token);
+std::string BuildObjc3ReservedMatchTypeTestPatternDiagnostic(
     const Objc3LexToken &token);
 std::string BuildObjc3UnsupportedTopLevelDiagnostic(
     const Objc3LexToken &token);

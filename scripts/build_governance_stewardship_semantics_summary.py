@@ -77,10 +77,10 @@ def main() -> int:
 
     required_mentions = {
         "runbook_mentions_semantics": "tests/tooling/fixtures/governance_sustainability/stewardship_semantics.json" in runbook_text,
-        "runbook_mentions_summary": "python scripts/build_governance_stewardship_semantics_summary.py" in runbook_text,
+        "runbook_mentions_summary": "npm run objc3c -- validate-governance-sustainability" in runbook_text,
         "maintainer_runbook_mentions_semantics": "tests/tooling/fixtures/governance_sustainability/stewardship_semantics.json" in maintainer_runbook_text,
-        "maintainer_runbook_mentions_summary": "python scripts/build_governance_stewardship_semantics_summary.py" in maintainer_runbook_text,
-        "contributing_mentions_summary": "python scripts/build_governance_stewardship_semantics_summary.py" in contributing_text,
+        "maintainer_runbook_mentions_summary": "npm run objc3c -- validate-governance-sustainability" in maintainer_runbook_text,
+        "contributing_mentions_summary": "npm run objc3c -- validate-governance-sustainability" in contributing_text,
     }
     for key, value in required_mentions.items():
         expect(value, f"{key} is false", failures)

@@ -1,0 +1,9 @@
+{
+  "contract_id": "objc3c.package_ecosystem.package_manifest.v1",
+  "package_id": "fixture:network.core",
+  "package_version": "1.0.0",
+  "source": "tests/tooling/fixtures/package_ecosystem/hosted_registry/network-core.objc3",
+  "source_digest": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
+  "manifest_digest": "sha256:2222222222222222222222222222222222222222222222222222222222222222",
+  "provenance": "source-owned-hosted-registry-fixture"
+}

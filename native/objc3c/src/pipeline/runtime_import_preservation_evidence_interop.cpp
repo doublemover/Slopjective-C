@@ -416,6 +416,123 @@ bool PopulateImportedInteropHeaderModuleBridgeGeneration(
   return true;
 }
 
+bool PopulateImportedInteropForeignAbiRuntimeClosure(
+    const RuntimeImportJsonValue::Object &root,
+    Objc3ImportedRuntimeModuleSurface &surface,
+    std::string &error) {
+  const RuntimeImportJsonValue *closure_value =
+      FindMember(root, "objc_interop_foreign_abi_runtime_closure");
+  if (closure_value == nullptr) {
+    return true;
+  }
+
+  const RuntimeImportJsonValue::Object *closure_object =
+      AsObject(*closure_value);
+  if (closure_object == nullptr) {
+    error = "interop foreign ABI runtime closure surface must be a JSON object";
+    return false;
+  }
+
+  if (!ReadStringMember(*closure_object, "contract_id",
+                        surface.interop_foreign_abi_runtime_contract_id,
+                        error) ||
+      !ReadStringMember(*closure_object, "source_contract_id",
+                        surface.interop_foreign_abi_source_contract_id,
+                        error) ||
+      !ReadStringMember(*closure_object, "package_identity",
+                        surface.interop_foreign_abi_package_identity, error) ||
+      !ReadStringMember(*closure_object, "runtime_identity",
+                        surface.interop_foreign_abi_runtime_identity, error) ||
+      !ReadBoolMember(*closure_object, "runtime_closure_ready",
+                      surface.interop_foreign_abi_runtime_closure_ready,
+                      error) ||
+      !ReadBoolMember(*closure_object, "deterministic",
+                      surface.interop_foreign_abi_runtime_closure_deterministic,
+                      error) ||
+      !ReadBoolMember(*closure_object, "typed_dispatch_ready",
+                      surface.interop_foreign_abi_typed_dispatch_ready,
+                      error) ||
+      !ReadBoolMember(
+          *closure_object, "package_runtime_identity_ready",
+          surface.interop_foreign_abi_package_runtime_identity_ready, error) ||
+      !ReadBoolMember(*closure_object, "bridge_ownership_ready",
+                      surface.interop_foreign_abi_bridge_ownership_ready,
+                      error) ||
+      !ReadStringMember(*closure_object, "replay_key",
+                        surface.interop_foreign_abi_replay_key, error) ||
+      !ReadStringMember(
+          *closure_object, "classification_replay_key",
+          surface.interop_foreign_abi_classification_replay_key, error) ||
+      !ReadStringMember(
+          *closure_object, "bridge_metadata_replay_key",
+          surface.interop_foreign_abi_bridge_metadata_replay_key, error) ||
+      !ReadSizeMember(*closure_object, "foreign_surface_count",
+                      surface.interop_foreign_abi_foreign_surface_count,
+                      error) ||
+      !ReadSizeMember(
+          *closure_object, "supported_c_abi_surface_count",
+          surface.interop_foreign_abi_supported_c_abi_surface_count, error) ||
+      !ReadSizeMember(
+          *closure_object, "preserved_swift_metadata_surface_count",
+          surface.interop_foreign_abi_preserved_swift_metadata_surface_count,
+          error) ||
+      !ReadSizeMember(
+          *closure_object, "preserved_cpp_metadata_surface_count",
+          surface.interop_foreign_abi_preserved_cpp_metadata_surface_count,
+          error) ||
+      !ReadSizeMember(*closure_object, "rejected_surface_count",
+                      surface.interop_foreign_abi_rejected_surface_count,
+                      error) ||
+      !ReadSizeMember(
+          *closure_object, "abi_mismatch_negative_case_count",
+          surface.interop_foreign_abi_mismatch_negative_case_count, error) ||
+      !ReadSizeMember(
+          *closure_object, "missing_bridge_ownership_negative_case_count",
+          surface
+              .interop_foreign_abi_missing_bridge_ownership_negative_case_count,
+          error) ||
+      !ReadSizeMember(
+          *closure_object, "unsafe_mixed_image_negative_case_count",
+          surface.interop_foreign_abi_unsafe_mixed_image_negative_case_count,
+          error) ||
+      !ReadSizeMember(
+          *closure_object, "stale_import_negative_case_count",
+          surface.interop_foreign_abi_stale_import_negative_case_count,
+          error) ||
+      !ReadSizeMember(
+          *closure_object, "unsupported_runtime_fallback_negative_case_count",
+          surface
+              .interop_foreign_abi_unsupported_runtime_fallback_negative_case_count,
+          error)) {
+    return false;
+  }
+
+  if (surface.interop_foreign_abi_runtime_contract_id !=
+      "objc3c.interop.foreign.abi.runtime.closure.v1") {
+    error = "unexpected Part 11 foreign ABI runtime closure contract id";
+    return false;
+  }
+  if (surface.interop_foreign_abi_source_contract_id !=
+      "objc3c.interop.ffi.metadata.interface.preservation.v1") {
+    error = "unexpected Part 11 foreign ABI runtime closure source contract id";
+    return false;
+  }
+  if (!surface.interop_foreign_surface_interface_preservation_present ||
+      !surface.interop_ffi_metadata_interface_preservation_present) {
+    error =
+        "active Part 11 foreign ABI runtime closure requires foreign surface and ffi preservation packets";
+    return false;
+  }
+
+  surface.interop_foreign_abi_runtime_closure_present = true;
+  if (!IsReadyObjc3ImportedForeignAbiRuntimeClosureSurface(surface)) {
+    error =
+        "Part 11 foreign ABI runtime closure surface is incomplete or missing fail-closed negative evidence";
+    return false;
+  }
+  return true;
+}
+
 }  // namespace
 
 bool PopulateImportedInteropEvidence(const RuntimeImportJsonValue::Object &root,
@@ -429,8 +546,11 @@ bool PopulateImportedInteropEvidence(const RuntimeImportJsonValue::Object &root,
                                                               error)) {
     return false;
   }
-  return PopulateImportedInteropHeaderModuleBridgeGeneration(root, surface,
-                                                            error);
+  if (!PopulateImportedInteropHeaderModuleBridgeGeneration(root, surface,
+                                                           error)) {
+    return false;
+  }
+  return PopulateImportedInteropForeignAbiRuntimeClosure(root, surface, error);
 }
 
 }  // namespace objc3c::pipeline::runtime_import_preservation

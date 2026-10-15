@@ -92,10 +92,10 @@ BuildVersionedConformanceReportLoweringSummary(
         semantic_summary.live_unsupported_feature_source_rejection_landed;
     summary.compatibility_selection_truthful =
         semantic_summary.language_profile_semantics_landed;
-    summary.strictness_selection_fail_closed =
-        semantic_summary.strictness_selection_rejection_semantics_landed;
-    summary.strict_concurrency_selection_fail_closed =
-        semantic_summary.strictness_selection_rejection_semantics_landed;
+    summary.strictness_selection_supported =
+        semantic_summary.strictness_selection_semantics_landed;
+    summary.strict_concurrency_selection_supported =
+        semantic_summary.strict_concurrency_selection_semantics_landed;
     summary.canonical_interface_truthful =
         semantic_summary.canonical_interface_truth_semantics_landed;
     summary.feature_macro_truthful =
@@ -172,10 +172,10 @@ std::string BuildVersionedConformanceReportLoweringSummaryJson(
       << (summary.known_unsupported_surface_published ? "true" : "false")
       << ",\"compatibility_selection_truthful\":"
       << (summary.compatibility_selection_truthful ? "true" : "false")
-      << ",\"strictness_selection_fail_closed\":"
-      << (summary.strictness_selection_fail_closed ? "true" : "false")
-      << ",\"strict_concurrency_selection_fail_closed\":"
-      << (summary.strict_concurrency_selection_fail_closed ? "true" : "false")
+      << ",\"strictness_selection_supported\":"
+      << (summary.strictness_selection_supported ? "true" : "false")
+      << ",\"strict_concurrency_selection_supported\":"
+      << (summary.strict_concurrency_selection_supported ? "true" : "false")
       << ",\"canonical_interface_truthful\":"
       << (summary.canonical_interface_truthful ? "true" : "false")
       << ",\"feature_macro_truthful\":"

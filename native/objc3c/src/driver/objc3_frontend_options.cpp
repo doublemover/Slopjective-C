@@ -2,11 +2,31 @@
 
 #include "config/objc3_language_profile.h"
 
+namespace {
+
+Objc3FrontendLanguageProfile FrontendLanguageProfileForConformanceProfile(
+    Objc3ConformanceProfile profile) {
+  switch (profile) {
+    case Objc3ConformanceProfile::kCore:
+      return Objc3FrontendLanguageProfile::kCanonical;
+    case Objc3ConformanceProfile::kStrict:
+      return Objc3FrontendLanguageProfile::kStrict;
+    case Objc3ConformanceProfile::kStrictConcurrency:
+      return Objc3FrontendLanguageProfile::kStrictConcurrency;
+    case Objc3ConformanceProfile::kStrictSystem:
+      return Objc3FrontendLanguageProfile::kStrictConcurrency;
+  }
+  return Objc3FrontendLanguageProfile::kCanonical;
+}
+
+}  // namespace
+
 Objc3FrontendOptions BuildObjc3FrontendOptions(const Objc3CliOptions &cli_options) {
   Objc3FrontendOptions options;
   options.language_version =
       static_cast<std::uint8_t>(objc3c::config::kCanonicalLanguageVersion);
-  options.language_profile = Objc3FrontendLanguageProfile::kCanonical;
+  options.language_profile =
+      FrontendLanguageProfileForConformanceProfile(cli_options.conformance_profile);
   options.arc_mode = cli_options.arc_mode == Objc3ArcMode::kEnabled
                          ? Objc3FrontendArcMode::kEnabled
                          : Objc3FrontendArcMode::kDisabled;

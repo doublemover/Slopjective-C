@@ -14,5 +14,15 @@ int EnqueueRuntimeActorMailboxValue(RuntimeActorState &state,
 int DrainRuntimeActorMailboxNextValue(RuntimeActorState &state,
                                       int actor_handle,
                                       int executor_tag);
+int CancelRuntimeActorMailbox(RuntimeActorState &state,
+                              int actor_handle,
+                              int executor_tag);
+int RecordRuntimeActorMailboxError(RuntimeActorState &state,
+                                   int actor_handle,
+                                   int error_code,
+                                   int executor_tag);
+int ShutdownRuntimeActorMailbox(RuntimeActorState &state,
+                                int actor_handle,
+                                int executor_tag);
 
 }  // namespace objc3c::runtime

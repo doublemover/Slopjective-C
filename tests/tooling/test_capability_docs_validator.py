@@ -588,7 +588,10 @@ def test_runtime_object_model_interface_claim_is_narrow_and_evidence_backed() ->
     assert rows["runtime.object-model.bounded-query-snapshots"]["support_claims"] == [
         "objc3c.behavior.runtime.object-model-bounded-query-snapshots"
     ]
-    assert rows["runtime.object-model.full-realization"]["state"] == "reserved"
+    assert rows["runtime.object-model.full-realization"]["state"] == "implemented"
+    assert rows["runtime.object-model.full-realization"]["support_claims"] == [
+        "objc3c.behavior.runtime.object-model.full-realization"
+    ]
 
 
 def test_cross_lane_manifest_support_claims_are_matrix_backed() -> None:
@@ -743,6 +746,7 @@ def _minimal_umbrella_readiness(blocker_id: str = "missing-integrated-proof") ->
                     "source_truth_allowed": False,
                     "unsupported_sources": [
                         "tmp/",
+                        "temp/",
                         "generated markdown projections",
                         "issue comments",
                         "PR bodies",

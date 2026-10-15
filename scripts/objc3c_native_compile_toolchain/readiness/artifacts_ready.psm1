@@ -28,7 +28,7 @@ function Test-NativeCompilerBuildArtifactsReady {
   )
 
   $exe = Resolve-NativeCompilerExecutablePath -RepoRoot $CompilerRepoRoot
-  $runtimeLibrary = Join-Path $CompilerRepoRoot "artifacts/lib/objc3_runtime.lib"
+  $runtimeLibrary = Resolve-NativeCompilerRuntimeLibraryPath -RepoRoot $CompilerRepoRoot
   if (!(Test-Path -LiteralPath $exe -PathType Leaf)) {
     return $false
   }
@@ -41,17 +41,8 @@ function Test-NativeCompilerBuildArtifactsReady {
       return $false
     }
   }
-  if (-not (Test-FrontendInvocationLockCurrent -CompilerRepoRoot $CompilerRepoRoot -ExistingBuildResult $ExistingBuildResult)) {
-    return $false
-  }
-
-  $buildInputPaths = Get-NativeCompilerBuildInputPaths -RepoRoot $CompilerRepoRoot
-  if (Test-AnyPathNewerThanTarget -TargetPath $exe -InputPaths $buildInputPaths) {
-    return $false
-  }
-  if (Test-AnyPathNewerThanTarget -TargetPath $runtimeLibrary -InputPaths $buildInputPaths) {
-    return $false
-  }
+  if (-not (Test-FrontendInvocationLockCurrent -CompilerRepoRoot $CompilerRepoRoot -ExistingBuildResult $ExistingBuildResult)) { return $false }
+  if (Test-CMakeGraphHasPendingBuild -RepoRoot $CompilerRepoRoot) { return $false }
 
   return $true
 }

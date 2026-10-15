@@ -113,8 +113,18 @@ typedef struct objc3_runtime_actor_runtime_state_snapshot {
   uint64_t bind_executor_call_count;
   uint64_t mailbox_enqueue_call_count;
   uint64_t mailbox_drain_call_count;
+  uint64_t mailbox_cancel_call_count;
+  uint64_t mailbox_error_call_count;
+  uint64_t mailbox_shutdown_call_count;
   uint64_t failed_operation_count;
   uint64_t actor_executor_binding_count;
+  uint64_t mailbox_message_sequence;
+  uint64_t last_mailbox_message_id;
+  uint64_t last_mailbox_enqueue_sequence;
+  uint64_t last_mailbox_dequeue_sequence;
+  uint64_t last_mailbox_completion_sequence;
+  uint64_t last_mailbox_cancelled_count;
+  uint64_t last_mailbox_shutdown_pending_count;
   int last_isolation_executor_tag;
   int last_nonisolated_value;
   int last_nonisolated_executor_tag;
@@ -131,8 +141,11 @@ typedef struct objc3_runtime_actor_runtime_state_snapshot {
   int last_mailbox_depth;
   int last_mailbox_drained_value;
   int last_expected_executor_tag;
+  int last_mailbox_error_code;
   int mailbox_identity_guard_passed;
   int executor_binding_guard_passed;
+  int mailbox_ordering_guard_passed;
+  int mailbox_shutdown_guard_passed;
   int last_operation_succeeded;
   int last_failure_code;
 } objc3_runtime_actor_runtime_state_snapshot;
@@ -144,6 +157,10 @@ enum {
   OBJC3_RUNTIME_ACTOR_FAILURE_EMPTY_MAILBOX = 3,
   OBJC3_RUNTIME_ACTOR_FAILURE_UNBOUND_ACTOR = 4,
   OBJC3_RUNTIME_ACTOR_FAILURE_EXECUTOR_MISMATCH = 5,
+  OBJC3_RUNTIME_ACTOR_FAILURE_MAILBOX_SHUTDOWN = 6,
+  OBJC3_RUNTIME_ACTOR_FAILURE_MAILBOX_ORDERING_DRIFT = 7,
+  OBJC3_RUNTIME_ACTOR_FAILURE_STALE_ACTOR_IDENTITY = 8,
+  OBJC3_RUNTIME_ACTOR_FAILURE_ACTOR_METHOD_ERROR = 9,
 };
 
 // actor lowering/runtime anchor: actor thunk, nonisolated entry,
@@ -154,8 +171,10 @@ enum {
 // canonical lane-D runtime contract for actor-state, mailbox-ownership, and
 // executor-binding proof without widening the public runtime header.
 // actor-mailbox/isolation-runtime anchor: live mailbox binding,
-// enqueue, and drain helpers also remain inside that same private snapshot-
-// backed runtime slice rather than claiming a public actor runtime ABI.
+// enqueue, drain, cancellation, error, and shutdown helpers also remain inside
+// that same private snapshot-backed runtime slice rather than claiming a public
+// actor runtime ABI. Mailbox message identity is a stable logical sequence, not
+// a raw address or transport identity.
 // cross-module isolation-metadata hardening anchor: imported modules
 // now preserve the replay facts that describe this same private actor mailbox
 // runtime slice across runtime-import surfaces and mixed-module link plans.
@@ -203,6 +222,12 @@ int objc3_runtime_actor_mailbox_enqueue_i32(int actor_handle, int value,
                                             int executor_tag);
 int objc3_runtime_actor_mailbox_drain_next_i32(int actor_handle,
                                                int executor_tag);
+int objc3_runtime_actor_mailbox_cancel_i32(int actor_handle, int executor_tag);
+int objc3_runtime_actor_mailbox_record_error_i32(int actor_handle,
+                                                 int error_code,
+                                                 int executor_tag);
+int objc3_runtime_actor_mailbox_shutdown_i32(int actor_handle,
+                                             int executor_tag);
 // live task runtime anchor: task-runtime snapshot publication stays
 // private and is consumed by the linked runtime probe rather than a widened
 // public scheduler ABI.

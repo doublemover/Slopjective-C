@@ -171,6 +171,19 @@ ValueType InferObjc3IRInterpolationPayloadType(const Expr *expr,
       return ValueType::TextHandle;
     case Expr::Kind::Number:
       return ValueType::I32;
+    case Expr::Kind::BoolLiteral:
+      return ValueType::Bool;
+    case Expr::Kind::MatchExpression:
+      if (expr->match_expression_result_type_spelling == "Text") {
+        return ValueType::TextHandle;
+      }
+      if (expr->match_expression_result_type_spelling == "bool") {
+        return ValueType::Bool;
+      }
+      if (expr->match_expression_result_type_spelling == "id") {
+        return ValueType::ObjCId;
+      }
+      return ValueType::I32;
     case Expr::Kind::Identifier:
       for (auto it = ctx.scopes.rbegin(); it != ctx.scopes.rend(); ++it) {
         const auto found_ptr = it->find(expr->ident);
@@ -393,6 +406,124 @@ std::string EmitObjc3IRExprImpl(
     }
     case Expr::Kind::KeyPathLiteral:
       return callbacks.emit_typed_keypath_literal_value(*expr);
+    case Expr::Kind::MatchExpression: {
+      for (const auto &arm : expr->match_expression_arms) {
+        if (arm.pattern_kind ==
+            Expr::MatchExpressionPatternKind::ResultCase) {
+          return callbacks.emit_unsupported_i32_value(
+              "match expression result-case payload patterns require the Result payload ABI before native lowering");
+        }
+      }
+      const std::string scrutinee =
+          EmitObjc3IRExprImpl(expr->match_expression_scrutinee.get(), ctx,
+                              callbacks);
+      const std::string result_ptr =
+          "%match.expr.addr." + std::to_string(ctx.temp_counter++);
+      const std::string done_label =
+          callbacks.new_label(ctx, "match_expr_done_");
+      ctx.entry_lines.push_back("  " + result_ptr + " = alloca i32, align 4");
+      for (const auto &arm : expr->match_expression_arms) {
+        const std::string arm_label =
+            callbacks.new_label(ctx, "match_expr_arm_");
+        const std::string next_label =
+            callbacks.new_label(ctx, "match_expr_next_");
+        const bool has_binding =
+            !arm.binding_name.empty() &&
+            (arm.pattern_kind == Expr::MatchExpressionPatternKind::Binding ||
+             arm.pattern_kind == Expr::MatchExpressionPatternKind::ResultCase);
+        std::string binding_ptr;
+        if (has_binding) {
+          binding_ptr =
+              "%match.expr.bind." + std::to_string(ctx.temp_counter++);
+          ctx.entry_lines.push_back("  " + binding_ptr +
+                                    " = alloca i32, align 4");
+        }
+        const bool unconditional =
+            !arm.has_guard &&
+            (arm.is_default ||
+             arm.pattern_kind == Expr::MatchExpressionPatternKind::Wildcard ||
+             arm.pattern_kind == Expr::MatchExpressionPatternKind::Binding);
+        if (unconditional) {
+          ctx.code_lines.push_back("  br label %" + arm_label);
+        } else {
+          std::string candidate_i1;
+          const bool catch_all_pattern =
+              arm.is_default ||
+              arm.pattern_kind == Expr::MatchExpressionPatternKind::Wildcard ||
+              arm.pattern_kind == Expr::MatchExpressionPatternKind::Binding;
+          if (!catch_all_pattern) {
+            candidate_i1 = callbacks.new_temp(ctx);
+            int pattern_value = arm.literal_value;
+            if (arm.pattern_kind ==
+                Expr::MatchExpressionPatternKind::LiteralNil) {
+              pattern_value = 0;
+            }
+            ctx.code_lines.push_back("  " + candidate_i1 +
+                                     " = icmp eq i32 " + scrutinee + ", " +
+                                     std::to_string(pattern_value));
+          }
+          if (arm.has_guard) {
+            const std::string guard_label =
+                callbacks.new_label(ctx, "match_expr_guard_");
+            if (catch_all_pattern) {
+              ctx.code_lines.push_back("  br label %" + guard_label);
+            } else {
+              ctx.code_lines.push_back("  br i1 " + candidate_i1 +
+                                       ", label %" + guard_label +
+                                       ", label %" + next_label);
+            }
+            ctx.code_lines.push_back(guard_label + ":");
+            if (has_binding) {
+              ctx.code_lines.push_back("  store i32 " + scrutinee + ", ptr " +
+                                       binding_ptr + ", align 4");
+              ctx.scopes.push_back({});
+              ctx.scopes.back()[arm.binding_name] = binding_ptr;
+              ctx.value_type_by_ptr[binding_ptr] = ValueType::I32;
+            }
+            const std::string guard_value = EmitObjc3IRExprImpl(
+                arm.guard_condition.get(), ctx, callbacks);
+            if (has_binding) {
+              ctx.scopes.pop_back();
+            }
+            const std::string guard_i1 = callbacks.new_temp(ctx);
+            ctx.code_lines.push_back("  " + guard_i1 +
+                                     " = icmp ne i32 " + guard_value + ", 0");
+            ctx.code_lines.push_back("  br i1 " + guard_i1 + ", label %" +
+                                     arm_label + ", label %" + next_label);
+          } else {
+            ctx.code_lines.push_back("  br i1 " + candidate_i1 +
+                                     ", label %" + arm_label + ", label %" +
+                                     next_label);
+          }
+        }
+
+        ctx.code_lines.push_back(arm_label + ":");
+        if (has_binding) {
+          ctx.code_lines.push_back("  store i32 " + scrutinee + ", ptr " +
+                                   binding_ptr + ", align 4");
+          ctx.scopes.push_back({});
+          ctx.scopes.back()[arm.binding_name] = binding_ptr;
+          ctx.value_type_by_ptr[binding_ptr] = ValueType::I32;
+        }
+        const std::string arm_value =
+            EmitObjc3IRExprImpl(arm.value.get(), ctx, callbacks);
+        if (has_binding) {
+          ctx.scopes.pop_back();
+        }
+        ctx.code_lines.push_back("  store i32 " + arm_value + ", ptr " +
+                                 result_ptr + ", align 4");
+        ctx.code_lines.push_back("  br label %" + done_label);
+        ctx.code_lines.push_back(next_label + ":");
+      }
+      ctx.code_lines.push_back("  store i32 0, ptr " + result_ptr +
+                               ", align 4");
+      ctx.code_lines.push_back("  br label %" + done_label);
+      ctx.code_lines.push_back(done_label + ":");
+      const std::string out_value = callbacks.new_temp(ctx);
+      ctx.code_lines.push_back("  " + out_value + " = load i32, ptr " +
+                               result_ptr + ", align 4");
+      return out_value;
+    }
     case Expr::Kind::Binary: {
       if (expr->op == "&&" || expr->op == "||") {
         const std::string lhs = EmitObjc3IRExprImpl(expr->left.get(), ctx,

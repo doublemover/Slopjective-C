@@ -1,0 +1,14 @@
+// Expected advanced-runtime diagnostic: advanced-runtime.foreign-abi-unsupported-runtime-fallback
+module AdvancedRuntimeClosureNegativeForeignAbiUnsupportedRuntimeFallback;
+
+extern fn unsupportedRuntimeFallback() -> i32
+    __attribute__((objc_foreign,
+                   objc_cxx_name(named("ForeignRuntime::fallback")),
+                   objc_swift_name(named("ForeignRuntime.fallback()")),
+                   objc_package_entry(named("ForeignRuntime.unsupportedFallback"))));
+
+fn consumeUnsupportedRuntimeFallback() -> i32 {
+  // Unsupported Swift/C++ runtime fallback cannot replace the supported C ABI
+  // typed-dispatch boundary.
+  return unsupportedRuntimeFallback();
+}

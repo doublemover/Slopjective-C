@@ -26,6 +26,9 @@ BuildErrorHandlingErrorSourceClosureSummary(
     if (fn.throws_declared) {
       ++summary.function_throws_declaration_sites;
     }
+    if (fn.typed_throws_declared) {
+      ++summary.typed_throws_declaration_sites;
+    }
     throws_profiles_normalized =
         throws_profiles_normalized &&
         fn.throws_declaration_profile_is_normalized;
@@ -60,6 +63,9 @@ BuildErrorHandlingErrorSourceClosureSummary(
       if (method.throws_declared) {
         ++summary.method_throws_declaration_sites;
       }
+      if (method.typed_throws_declared) {
+        ++summary.typed_throws_declaration_sites;
+      }
       throws_profiles_normalized =
           throws_profiles_normalized &&
           method.throws_declaration_profile_is_normalized;
@@ -93,14 +99,41 @@ BuildErrorHandlingErrorSourceClosureSummary(
           method.error_bridge_marker_profile_is_normalized;
     }
   }
+  for (const auto &interface_decl : program.interfaces) {
+    for (const auto &method : interface_decl.methods) {
+      if (method.typed_throws_declared) {
+        ++summary.typed_throws_declaration_sites;
+      }
+    }
+  }
+  for (const auto &protocol_decl : program.protocols) {
+    for (const auto &method : protocol_decl.methods) {
+      if (method.typed_throws_declared) {
+        ++summary.typed_throws_declaration_sites;
+      }
+    }
+  }
 
   summary.throws_declaration_source_supported = true;
+  summary.typed_throws_source_supported = true;
   summary.result_carrier_source_supported = true;
   summary.ns_error_bridging_source_supported = true;
   summary.error_bridge_marker_source_supported = true;
   summary.try_keyword_reserved = true;
   summary.throw_keyword_reserved = true;
   summary.catch_keyword_reserved = true;
+  summary.typed_throws_fail_closed = true;
+  summary.typed_throws_abi_lowering_fail_closed = false;
+  summary.typed_throws_single_payload_reserved = false;
+  summary.typed_throws_effect_record_status =
+      "typed-and-untyped-effects-preserved-with-exact-callable-compatibility";
+  summary.typed_throws_abi_status = "typed-error-out-abi";
+  summary.typed_throws_interface_roundtrip_status = "typed-payload-preserved";
+  summary.typed_throws_catch_compatibility_status =
+      "typed-catch-exact-untyped-id-error-bridge-incompatible-rejects";
+  summary.typed_throws_bridge_to_id_error_policy =
+      "explicit-bridge-to-id<Error>-only";
+  summary.typed_throws_foreign_carrier_fail_closed = true;
   summary.try_fail_closed = true;
   summary.throw_fail_closed = true;
   summary.do_catch_fail_closed = true;

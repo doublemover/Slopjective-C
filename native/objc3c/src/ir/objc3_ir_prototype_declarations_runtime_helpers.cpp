@@ -219,6 +219,20 @@ bool Objc3IRExprRequiresTextLiteralHelperDeclarations(const Expr *expr) {
                  expr->left.get()) ||
              Objc3IRExprRequiresTextLiteralHelperDeclarations(
                  expr->right.get());
+    case Expr::Kind::MatchExpression:
+      if (Objc3IRExprRequiresTextLiteralHelperDeclarations(
+              expr->match_expression_scrutinee.get())) {
+        return true;
+      }
+      for (const auto &arm : expr->match_expression_arms) {
+        if (Objc3IRExprRequiresTextLiteralHelperDeclarations(
+                arm.guard_condition.get()) ||
+            Objc3IRExprRequiresTextLiteralHelperDeclarations(
+                arm.value.get())) {
+          return true;
+        }
+      }
+      return false;
     case Expr::Kind::Number:
     case Expr::Kind::BoolLiteral:
     case Expr::Kind::NilLiteral:
@@ -273,6 +287,20 @@ bool Objc3IRExprRequiresCollectionHelperDeclarations(const Expr *expr) {
     case Expr::Kind::StringInterpolation:
       for (const auto &arg : expr->args) {
         if (Objc3IRExprRequiresCollectionHelperDeclarations(arg.get())) {
+          return true;
+        }
+      }
+      return false;
+    case Expr::Kind::MatchExpression:
+      if (Objc3IRExprRequiresCollectionHelperDeclarations(
+              expr->match_expression_scrutinee.get())) {
+        return true;
+      }
+      for (const auto &arm : expr->match_expression_arms) {
+        if (Objc3IRExprRequiresCollectionHelperDeclarations(
+                arm.guard_condition.get()) ||
+            Objc3IRExprRequiresCollectionHelperDeclarations(
+                arm.value.get())) {
           return true;
         }
       }
@@ -815,6 +843,60 @@ void EmitObjc3IRRuntimeHelperDeclarations(
       declared_symbols, emitted, out, kObjc3RuntimeAutoreleaseI32Symbol,
       "declare i32 @" + std::string(kObjc3RuntimeAutoreleaseI32Symbol) +
           "(i32)\n");
+  EmitObjc3IRDeclarationOnce(
+      declared_symbols, emitted, out, kObjc3RuntimeOptionalAbsentFullI64Symbol,
+#if defined(_WIN32)
+      "declare void @" + std::string(kObjc3RuntimeOptionalAbsentFullI64Symbol) +
+          "(ptr sret({ i8, i64 }) align 8)\n"
+#else
+      "declare { i8, i64 } @" +
+          std::string(kObjc3RuntimeOptionalAbsentFullI64Symbol) + "()\n"
+#endif
+  );
+  EmitObjc3IRDeclarationOnce(
+      declared_symbols, emitted, out, kObjc3RuntimeOptionalPresentFullI64Symbol,
+#if defined(_WIN32)
+      "declare void @" + std::string(kObjc3RuntimeOptionalPresentFullI64Symbol) +
+          "(ptr sret({ i8, i64 }) align 8, i64)\n"
+#else
+      "declare { i8, i64 } @" +
+          std::string(kObjc3RuntimeOptionalPresentFullI64Symbol) + "(i64)\n"
+#endif
+  );
+  EmitObjc3IRDeclarationOnce(
+      declared_symbols, emitted, out, kObjc3RuntimeOptionalHasValueFullI64Symbol,
+      "declare i1 @" +
+          std::string(kObjc3RuntimeOptionalHasValueFullI64Symbol) +
+          "("
+#if defined(_WIN32)
+          "ptr"
+#else
+          "{ i8, i64 }"
+#endif
+          ")\n");
+  EmitObjc3IRDeclarationOnce(
+      declared_symbols, emitted, out,
+      kObjc3RuntimeOptionalPayloadOrFullI64Symbol,
+      "declare i64 @" +
+          std::string(kObjc3RuntimeOptionalPayloadOrFullI64Symbol) +
+          "("
+#if defined(_WIN32)
+          "ptr"
+#else
+          "{ i8, i64 }"
+#endif
+          ", i64)\n");
+  EmitObjc3IRDeclarationOnce(
+      declared_symbols, emitted, out, kObjc3RuntimeOptionalUnwrapFullI64Symbol,
+      "declare i64 @" +
+          std::string(kObjc3RuntimeOptionalUnwrapFullI64Symbol) +
+          "("
+#if defined(_WIN32)
+          "ptr"
+#else
+          "{ i8, i64 }"
+#endif
+          ")\n");
   EmitObjc3IRDeclarationOnce(
       declared_symbols, emitted, out, kObjc3RuntimePromoteBlockI32Symbol,
       "declare i32 @" + std::string(kObjc3RuntimePromoteBlockI32Symbol) +

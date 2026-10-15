@@ -60,11 +60,28 @@ extern "C" objc3_runtime_dispatch_i32_result objc3_runtime_dispatch_i32_checked(
 }
 
 extern "C" objc3_runtime_dispatch_i32_result
+objc3_runtime_dispatch_i32_checked_error_out(
+    int receiver, const char *selector, int a0, int a1, int a2, int a3,
+    int *throws_error_out) {
+  return objc3c::runtime::ExecuteRuntimeDispatchI32CheckedWithErrorOut(
+      receiver, selector, a0, a1, a2, a3, throws_error_out);
+}
+
+extern "C" objc3_runtime_dispatch_i32_result
 objc3_runtime_dispatch_i32_from_class_checked(
     int receiver, const char *lookup_start_class_name, const char *selector,
     int a0, int a1, int a2, int a3) {
   return objc3c::runtime::ExecuteRuntimeDispatchI32FromClassChecked(
       receiver, lookup_start_class_name, selector, a0, a1, a2, a3);
+}
+
+extern "C" objc3_runtime_dispatch_i32_result
+objc3_runtime_dispatch_i32_from_class_checked_error_out(
+    int receiver, const char *lookup_start_class_name, const char *selector,
+    int a0, int a1, int a2, int a3, int *throws_error_out) {
+  return objc3c::runtime::ExecuteRuntimeDispatchI32FromClassCheckedWithErrorOut(
+      receiver, lookup_start_class_name, selector, a0, a1, a2, a3,
+      throws_error_out);
 }
 
 extern "C" objc3_runtime_dispatch_typed_result
@@ -75,11 +92,28 @@ objc3_runtime_dispatch_typed_checked(int receiver, const char *selector, int a0,
 }
 
 extern "C" objc3_runtime_dispatch_typed_result
+objc3_runtime_dispatch_typed_checked_error_out(
+    int receiver, const char *selector, int a0, int a1, int a2, int a3,
+    int *throws_error_out) {
+  return objc3c::runtime::ExecuteRuntimeDispatchTypedCheckedWithErrorOut(
+      receiver, selector, a0, a1, a2, a3, throws_error_out);
+}
+
+extern "C" objc3_runtime_dispatch_typed_result
 objc3_runtime_dispatch_typed_from_class_checked(
     int receiver, const char *lookup_start_class_name, const char *selector,
     int a0, int a1, int a2, int a3) {
   return objc3c::runtime::ExecuteRuntimeDispatchTypedFromClassChecked(
       receiver, lookup_start_class_name, selector, a0, a1, a2, a3);
+}
+
+extern "C" objc3_runtime_dispatch_typed_result
+objc3_runtime_dispatch_typed_from_class_checked_error_out(
+    int receiver, const char *lookup_start_class_name, const char *selector,
+    int a0, int a1, int a2, int a3, int *throws_error_out) {
+  return objc3c::runtime::ExecuteRuntimeDispatchTypedFromClassCheckedWithErrorOut(
+      receiver, lookup_start_class_name, selector, a0, a1, a2, a3,
+      throws_error_out);
 }
 
 extern "C" int objc3_runtime_dispatch_i32(int receiver, const char *selector,
@@ -106,6 +140,33 @@ extern "C" int objc3_runtime_dispatch_i32_from_class(
   return result.value;
 }
 
+extern "C" int objc3_runtime_dispatch_i32_error_out(
+    int receiver, const char *selector, int a0, int a1, int a2, int a3,
+    int *throws_error_out) {
+  const objc3_runtime_dispatch_i32_result result =
+      objc3_runtime_dispatch_i32_checked_error_out(
+          receiver, selector, a0, a1, a2, a3, throws_error_out);
+  if (!objc3c::runtime::RuntimeDispatchStatusCarriesValueResult(
+          result.status_code)) {
+    objc3c::runtime::AbortRuntimeDispatchFailure(result);
+  }
+  return result.value;
+}
+
+extern "C" int objc3_runtime_dispatch_i32_from_class_error_out(
+    int receiver, const char *lookup_start_class_name, const char *selector,
+    int a0, int a1, int a2, int a3, int *throws_error_out) {
+  const objc3_runtime_dispatch_i32_result result =
+      objc3_runtime_dispatch_i32_from_class_checked_error_out(
+          receiver, lookup_start_class_name, selector, a0, a1, a2, a3,
+          throws_error_out);
+  if (!objc3c::runtime::RuntimeDispatchStatusCarriesValueResult(
+          result.status_code)) {
+    objc3c::runtime::AbortRuntimeDispatchFailure(result);
+  }
+  return result.value;
+}
+
 extern "C" int objc3_runtime_dispatch_typed_value(
     objc3_runtime_dispatch_return_kind_code expected_return_kind,
     int receiver, const char *selector, int a0, int a1, int a2, int a3) {
@@ -123,6 +184,27 @@ extern "C" int objc3_runtime_dispatch_typed_value_from_class(
       expected_return_kind,
       objc3_runtime_dispatch_typed_from_class_checked(
           receiver, lookup_start_class_name, selector, a0, a1, a2, a3));
+}
+
+extern "C" int objc3_runtime_dispatch_typed_value_error_out(
+    objc3_runtime_dispatch_return_kind_code expected_return_kind,
+    int receiver, const char *selector, int a0, int a1, int a2, int a3,
+    int *throws_error_out) {
+  return ProjectRuntimeTypedDispatchValueOrAbort(
+      expected_return_kind,
+      objc3_runtime_dispatch_typed_checked_error_out(
+          receiver, selector, a0, a1, a2, a3, throws_error_out));
+}
+
+extern "C" int objc3_runtime_dispatch_typed_value_from_class_error_out(
+    objc3_runtime_dispatch_return_kind_code expected_return_kind, int receiver,
+    const char *lookup_start_class_name, const char *selector, int a0, int a1,
+    int a2, int a3, int *throws_error_out) {
+  return ProjectRuntimeTypedDispatchValueOrAbort(
+      expected_return_kind,
+      objc3_runtime_dispatch_typed_from_class_checked_error_out(
+          receiver, lookup_start_class_name, selector, a0, a1, a2, a3,
+          throws_error_out));
 }
 
 extern "C" objc3_runtime_dispatch_i32_result

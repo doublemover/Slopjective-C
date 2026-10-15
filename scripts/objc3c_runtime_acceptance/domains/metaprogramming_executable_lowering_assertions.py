@@ -5,6 +5,7 @@ from __future__ import annotations
 from typing import Any
 
 from objc3c_runtime_acceptance.expectation_matching import expect
+from objc3c_runtime_acceptance.paths import RUNTIME_LIB_RELATIVE_PATH
 
 
 def expect_synthesized_emission_surface(surface: dict[str, Any]) -> None:
@@ -59,7 +60,7 @@ def expect_runtime_boundary_payload(payload: dict[str, Any]) -> None:
     )
     expect(
         payload.get("runtime_support_library_archive_relative_path")
-        == "artifacts/lib/objc3_runtime.lib",
+        == RUNTIME_LIB_RELATIVE_PATH,
         "expected runtime boundary probe to preserve the runtime support library archive path",
     )
     expect(

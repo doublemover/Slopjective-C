@@ -8,6 +8,7 @@
     "schema_version",
     "package_model",
     "reproducibility_scope",
+    "reproducibility_mode",
     "build_run_count",
     "reproducibility_match",
     "source_surface",
@@ -30,6 +31,12 @@
     "schema_version": { "const": 1 },
     "package_model": { "type": "string" },
     "reproducibility_scope": { "type": "string" },
+    "reproducibility_mode": {
+      "enum": [
+        "repeated-runnable-package-assembly",
+        "single-reused-package-root"
+      ]
+    },
     "build_run_count": { "type": "integer", "minimum": 1 },
     "reproducibility_match": { "type": "boolean" },
     "source_surface": { "type": "string" },
@@ -86,5 +93,64 @@
       "additionalProperties": false
     }
   },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "reproducibility_mode": {
+            "const": "single-reused-package-root"
+          }
+        },
+        "required": ["reproducibility_mode"]
+      },
+      "then": {
+        "properties": {
+          "build_run_count": { "const": 1 },
+          "package_runs": {
+            "minItems": 1,
+            "maxItems": 1,
+            "prefixItems": [
+              {
+                "properties": {
+                  "run_id": { "const": "reused-package-root" }
+                }
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "reproducibility_mode": {
+            "const": "repeated-runnable-package-assembly"
+          }
+        },
+        "required": ["reproducibility_mode"]
+      },
+      "then": {
+        "properties": {
+          "build_run_count": { "const": 2 },
+          "package_runs": {
+            "minItems": 2,
+            "maxItems": 2,
+            "prefixItems": [
+              {
+                "properties": {
+                  "run_id": { "const": "run-1" }
+                }
+              },
+              {
+                "properties": {
+                  "run_id": { "const": "run-2" }
+                }
+              }
+            ]
+          }
+        }
+      }
+    }
+  ],
   "additionalProperties": false
 }

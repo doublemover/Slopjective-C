@@ -1,0 +1,21 @@
+// Expected advanced-runtime diagnostic: advanced-runtime.scheduler-cancellation-error-cleanup-missing-evidence
+module AdvancedRuntimeClosureNegativeSchedulerCancellationErrorCleanupMissingEvidence;
+
+extern fn objc3_runtime_cancel_task_group_i32(executor_tag: i32) -> i32;
+extern fn objc3_runtime_task_on_cancel_i32(executor_tag: i32) -> i32;
+
+fn throwingCleanupBoundary(seed: i32) throws -> i32 {
+  if seed == 0 {
+    throw 8214;
+  }
+  return seed;
+}
+
+async fn cancellationCleanupWithoutReplay(seed: i32) throws -> i32
+    __attribute__((objc_scheduler_guarantee(cancellation_error_cleanup))) {
+  // cancellation_error_cleanup_ready is required before cancellation and
+  // thrown-error cleanup can be promoted as one deterministic scheduler row.
+  let cancelled = objc3_runtime_cancel_task_group_i32(4);
+  let handler = objc3_runtime_task_on_cancel_i32(4);
+  return try throwingCleanupBoundary(seed + cancelled + handler);
+}

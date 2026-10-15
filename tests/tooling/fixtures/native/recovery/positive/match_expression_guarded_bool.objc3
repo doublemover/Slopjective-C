@@ -1,0 +1,10 @@
+module MatchExpressionGuardedBool;
+
+fn main(flag: bool) -> i32 {
+  let result = match (flag) {
+    case true where flag == true => 1;
+    case false => 0;
+    default => 2;
+  };
+  return result;
+}

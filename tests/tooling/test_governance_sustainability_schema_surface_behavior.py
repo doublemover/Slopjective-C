@@ -5,12 +5,21 @@ from pathlib import Path
 import pytest
 
 from governance_sustainability_schema_surface_behavior import (
+    assert_governance_schema_surface_rejects_command_drift,
     assert_governance_sustainability_schema_surface_rejects_broken_registered_contract,
     assert_governance_sustainability_schema_surface_rejects_broken_registered_draft,
     assert_governance_sustainability_schema_surface_rejects_broken_registered_schema_id,
     assert_governance_sustainability_schema_surface_rejects_unregistered_surface_path,
     assert_governance_sustainability_schema_surface_uses_registered_schemas,
 )
+
+
+@pytest.mark.parametrize(
+    "field",
+    ["schema_check_command", "schema_check_action", "schema_check_implementation_anchor"],
+)
+def test_governance_schema_surface_rejects_command_drift(tmp_path: Path, field: str) -> None:
+    assert_governance_schema_surface_rejects_command_drift(tmp_path, field)
 
 
 def test_governance_sustainability_schema_surface_uses_registered_schemas() -> None:

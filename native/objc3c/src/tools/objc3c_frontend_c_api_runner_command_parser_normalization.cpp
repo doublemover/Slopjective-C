@@ -2,6 +2,8 @@
 
 #include <filesystem>
 
+#include "driver/objc3_cli_environment.h"
+
 void InitializeFrontendCApiRunnerParsedOptions(
     char **argv,
     FrontendCApiRunnerOptions &options) {
@@ -10,4 +12,11 @@ void InitializeFrontendCApiRunnerParsedOptions(
 }
 
 void NormalizeFrontendCApiRunnerParsedOptions(
-    FrontendCApiRunnerOptions &) {}
+    FrontendCApiRunnerOptions &options) {
+  if (!options.clang_path_explicit) {
+    options.clang_path = DefaultObjc3DriverClangPath();
+  }
+  if (!options.llc_path_explicit) {
+    options.llc_path = DefaultObjc3DriverLlcPath();
+  }
+}

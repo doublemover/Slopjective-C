@@ -12,6 +12,7 @@ from .application_conformance import (
     action_check_conformance_minima,
     action_validate_conformance_corpus,
     action_validate_cross_lane_e2e,
+    action_validate_native_foundation,
     action_validate_public_conformance_suite,
     action_validate_runnable_conformance_corpus,
 )
@@ -40,6 +41,7 @@ from .application_surface_paths import (
     CONFORMANCE_CORPUS_INTEGRATION_PY,
     CONFORMANCE_MINIMA_PS1,
     CROSS_LANE_E2E_PY,
+    NATIVE_FOUNDATION_PY,
     GETTING_STARTED_INTEGRATION_PY,
     MATERIALIZE_STDLIB_PY,
     PUBLIC_CONFORMANCE_SUITE_MANIFEST_PY,

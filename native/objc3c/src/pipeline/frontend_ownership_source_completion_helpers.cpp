@@ -68,6 +68,16 @@ void CollectOwnershipCleanupResourceCaptureExprSites(
     CollectOwnershipCleanupResourceCaptureExprSites(expr->right.get(), summary);
     CollectOwnershipCleanupResourceCaptureExprSites(expr->third.get(), summary);
     return;
+  case Expr::Kind::MatchExpression:
+    CollectOwnershipCleanupResourceCaptureExprSites(
+        expr->match_expression_scrutinee.get(), summary);
+    for (const auto &arm : expr->match_expression_arms) {
+      CollectOwnershipCleanupResourceCaptureExprSites(
+          arm.guard_condition.get(), summary);
+      CollectOwnershipCleanupResourceCaptureExprSites(arm.value.get(),
+                                                      summary);
+    }
+    return;
   default:
     return;
   }

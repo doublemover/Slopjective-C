@@ -7,7 +7,7 @@ function Write-Objc3cNativeCompileCacheRecoverySignal {
     [string]$Reason
   )
 
-  Write-Output ("cache_recovery=" + $Reason)
+  Write-Host ("cache_recovery=" + $Reason)
 }
 
 function Read-Objc3cNativeCompileCacheMetadata {

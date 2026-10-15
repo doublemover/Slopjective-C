@@ -40,8 +40,8 @@ def test_next_runtime_public_rows_are_issue_backed_and_replayable() -> None:
 
     assert report["status"] == "PASS"
     assert report["issues"] == [8154, 8155]
-    assert "runtime.object-model.full-realization" in report["reserved_umbrella_rows"]
-    assert "language.advanced-runtime-closure" in report["reserved_umbrella_rows"]
+    assert "runtime.object-model.full-realization" not in report["reserved_umbrella_rows"]
+    assert "language.advanced-runtime-closure" not in report["reserved_umbrella_rows"]
     assert {
         "runtime.errors.nserror-status-bridge",
         "runtime.concurrency.async-actors",

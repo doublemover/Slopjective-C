@@ -41,6 +41,9 @@ inline void InitializeRuntimeKeyPathEntrySnapshot(
   snapshot->component_path = nullptr;
   snapshot->profile = nullptr;
   snapshot->generic_metadata_replay_key = nullptr;
+  snapshot->component_owner_identity_path = nullptr;
+  snapshot->component_member_identity_path = nullptr;
+  snapshot->component_type_identity_path = nullptr;
 }
 
 inline void CopyRuntimeKeyPathEntrySnapshotUnlocked(
@@ -72,6 +75,12 @@ inline void CopyRuntimeKeyPathEntrySnapshotUnlocked(
       slot->generic_metadata_replay_key_storage.empty()
           ? nullptr
           : BorrowRuntimeCString(slot->generic_metadata_replay_key_storage);
+  snapshot->component_owner_identity_path =
+      BorrowRuntimeCString(slot->component_owner_identity_path_storage);
+  snapshot->component_member_identity_path =
+      BorrowRuntimeCString(slot->component_member_identity_path_storage);
+  snapshot->component_type_identity_path =
+      BorrowRuntimeCString(slot->component_type_identity_path_storage);
 }
 
 inline int RuntimeKeyPathComponentCountForTestingUnlocked(

@@ -78,6 +78,16 @@ static void DiagnoseUnsupportedFeatureClaimsInExpr(
       DiagnoseUnsupportedFeatureClaimsInExpr(arg.get(), diagnostics, stats, context);
     }
     return;
+  case Expr::Kind::MatchExpression:
+    DiagnoseUnsupportedFeatureClaimsInExpr(
+        expr->match_expression_scrutinee.get(), diagnostics, stats, context);
+    for (const auto &arm : expr->match_expression_arms) {
+      DiagnoseUnsupportedFeatureClaimsInExpr(
+          arm.guard_condition.get(), diagnostics, stats, context);
+      DiagnoseUnsupportedFeatureClaimsInExpr(
+          arm.value.get(), diagnostics, stats, context);
+    }
+    return;
   case Expr::Kind::BoolLiteral:
   case Expr::Kind::Identifier:
   case Expr::Kind::KeyPathLiteral:

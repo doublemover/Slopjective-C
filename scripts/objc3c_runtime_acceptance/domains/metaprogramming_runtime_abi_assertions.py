@@ -5,6 +5,10 @@ from __future__ import annotations
 from typing import Any
 
 from objc3c_runtime_acceptance.expectation_matching import expect
+from objc3c_runtime_acceptance.paths import (
+    FRONTEND_RUNNER_RELATIVE_PATH,
+    RUNTIME_LIB_RELATIVE_PATH,
+)
 
 
 BOUNDARY_EXPECTED_PAYLOAD = {
@@ -14,7 +18,7 @@ BOUNDARY_EXPECTED_PAYLOAD = {
     "macro_host_process_launch_ready": 0,
     "runtime_package_loader_ready": 0,
     "deterministic": 1,
-    "runtime_support_library_archive_relative_path": "artifacts/lib/objc3_runtime.lib",
+    "runtime_support_library_archive_relative_path": RUNTIME_LIB_RELATIVE_PATH,
     "property_behavior_runtime_model": (
         "supported-property-behavior-lowering-reuses-existing-private-runtime-property-accessor-layout-and-current-property-hooks"
     ),
@@ -31,7 +35,7 @@ HOST_CACHE_EXPECTED_PAYLOAD = {
     "macro_host_process_launch_ready": 1,
     "runtime_package_loader_ready": 0,
     "deterministic": 1,
-    "host_executable_relative_path": "artifacts/bin/objc3c-frontend-c-api-runner.exe",
+    "host_executable_relative_path": FRONTEND_RUNNER_RELATIVE_PATH,
     "cache_root_relative_path": "tmp/artifacts/objc3c-native/cache/metaprogramming",
     "host_model": (
         "native-driver-launches-objc3c-frontend-c-api-runner-for-supported-metaprogramming-expansion-cache-materialization"

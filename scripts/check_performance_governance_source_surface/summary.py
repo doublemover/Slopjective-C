@@ -36,6 +36,9 @@ def build_summary_payload(
         "waiver_registry": expected_required_paths["waiver_registry"],
         "workflow_surface": expected_required_paths["workflow_surface"],
         "schema_surface": expected_required_paths["schema_surface"],
+        "optimization_runtime_debug_safety_contract": expected_required_paths[
+            "optimization_runtime_debug_safety_contract"
+        ],
         "checked_in_sources": list(checked_in_sources),
         "checked_in_roots": list(expected_checked_in_roots),
         "owner_split": owner_split,

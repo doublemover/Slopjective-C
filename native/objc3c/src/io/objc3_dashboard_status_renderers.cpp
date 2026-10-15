@@ -8,24 +8,26 @@
 
 namespace {
 
-std::string RenderDashboardDependencyStatus() {
+std::string RenderDashboardDependencyStatus(std::string_view status) {
   std::ostringstream out;
-  JsonObjectWriter status(out);
-  status.StringField("B-04", "pass");
-  status.StringField("B-10", "pass");
-  status.StringField("B-11", "pass");
-  status.StringField("B-12", "pass");
-  return FinishJsonObject(status, out);
+  JsonObjectWriter dependency_status(out);
+  dependency_status.StringField("B-04", status);
+  dependency_status.StringField("B-10", status);
+  dependency_status.StringField("B-11", status);
+  dependency_status.StringField("B-12", status);
+  return FinishJsonObject(dependency_status, out);
 }
 
-std::string RenderDashboardProfile(std::string_view profile_id) {
+std::string RenderDashboardProfile(std::string_view profile_id,
+                                   std::string_view status,
+                                   std::string_view blocker_ids) {
   std::ostringstream out;
   JsonObjectWriter profile(out);
   profile.StringField("profile_id", profile_id);
-  profile.StringField("status", "pass");
-  profile.RawJsonField("dependency_status", RenderDashboardDependencyStatus());
+  profile.StringField("status", status);
+  profile.RawJsonField("dependency_status", RenderDashboardDependencyStatus(status));
   profile.StringField("last_refresh", kObjc3DeterministicReplayTimestamp);
-  profile.RawJsonField("blocker_ids", "[]");
+  profile.RawJsonField("blocker_ids", blocker_ids);
   return FinishJsonObject(profile, out);
 }
 
@@ -77,15 +79,36 @@ std::string RenderDashboardCountObject(std::initializer_list<const char *> keys,
   return FinishJsonObject(counts, out);
 }
 
+std::string RenderDashboardProfileCounts() {
+  std::ostringstream out;
+  JsonObjectWriter counts(out);
+  counts.IntField("pass", 3);
+  counts.IntField("fail", 0);
+  counts.IntField("blocked", 1);
+  counts.IntField("incomplete", 0);
+  return FinishJsonObject(counts, out);
+}
+
+std::string RenderDashboardBlockerCounts() {
+  std::ostringstream out;
+  JsonObjectWriter counts(out);
+  counts.IntField("open", 1);
+  counts.IntField("resolved", 0);
+  counts.IntField("high_or_critical", 1);
+  return FinishJsonObject(counts, out);
+}
+
 }  // namespace
 
 std::string RenderDashboardProfiles() {
   std::ostringstream out;
   objc3::io::json::JsonArrayWriter profiles(out);
-  profiles.RawJsonValue(RenderDashboardProfile("core"));
-  profiles.RawJsonValue(RenderDashboardProfile("strict"));
-  profiles.RawJsonValue(RenderDashboardProfile("strict-concurrency"));
-  profiles.RawJsonValue(RenderDashboardProfile("strict-system"));
+  profiles.RawJsonValue(RenderDashboardProfile("core", "pass", "[]"));
+  profiles.RawJsonValue(RenderDashboardProfile("strict", "pass", "[]"));
+  profiles.RawJsonValue(
+      RenderDashboardProfile("strict-concurrency", "pass", "[]"));
+  profiles.RawJsonValue(RenderDashboardProfile(
+      "strict-system", "blocked", "[\"BLK-STRICT-PROFILES\"]"));
   profiles.End();
   return out.str();
 }
@@ -129,22 +152,50 @@ std::string RenderDashboardArtifacts(
   return out.str();
 }
 
+std::string RenderDashboardBlockers() {
+  std::ostringstream entry_out;
+  JsonObjectWriter blocker(entry_out);
+  blocker.StringField("blocker_id", "BLK-STRICT-PROFILES");
+  blocker.StringField("severity", "high");
+  blocker.StringField("state", "open");
+  blocker.StringField(
+      "title",
+      "Strict-system remains targeted but unclaimed until system evidence lands");
+  blocker.RawJsonField(
+      "dependency_ids",
+      BuildIndentedStringArrayJson({"B-04", "B-10", "B-11", "B-12"}, "    "));
+  blocker.RawJsonField(
+      "profile_ids",
+      BuildIndentedStringArrayJson(
+          {"strict-system"}, "    "));
+  blocker.StringField("created_at", kObjc3DeterministicReplayTimestamp);
+  blocker.StringField("owner", "objc3-roadmap");
+  blocker.StringField("failure_code", "DASH-B04-STRICT-SYSTEM-NOT-CLAIMED");
+  blocker.RawJsonField(
+      "artifact_refs",
+      BuildIndentedStringArrayJson({"ART-B04-REPORT", "ART-B10-PUBLICATION",
+                                    "ART-B11-VALIDATION",
+                                    "ART-B12-RELEASE-EVIDENCE"},
+                                   "    "));
+  blocker.StringField("taxonomy", "coverage-gap");
+
+  std::ostringstream out;
+  objc3::io::json::JsonArrayWriter blockers(out);
+  blockers.RawJsonValue(FinishJsonObject(blocker, entry_out));
+  blockers.End();
+  return out.str();
+}
+
 std::string RenderDashboardSummary() {
   std::ostringstream out;
   JsonObjectWriter summary(out);
-  summary.RawJsonField(
-      "profile_counts",
-      RenderDashboardCountObject({"pass", "fail", "blocked", "incomplete"},
-                                 4));
+  summary.RawJsonField("profile_counts", RenderDashboardProfileCounts());
   summary.RawJsonField(
       "dependency_counts",
       RenderDashboardCountObject({"pass", "fail", "blocked", "stale",
                                   "missing"},
                                  4));
-  summary.RawJsonField(
-      "blocker_counts",
-      RenderDashboardCountObject({"open", "resolved", "high_or_critical"},
-                                 0));
+  summary.RawJsonField("blocker_counts", RenderDashboardBlockerCounts());
   return FinishJsonObject(summary, out);
 }
 
@@ -165,7 +216,7 @@ std::string RenderDashboardRefresh() {
                       kObjc3DeterministicReplayTimestamp);
   refresh.RawJsonField("stale_dependency_ids", "[]");
   refresh.IntField("missed_scheduled_refreshes", 0);
-  refresh.StringField("escalation_state", "none");
+  refresh.StringField("escalation_state", "high");
   return FinishJsonObject(refresh, out);
 }
 
@@ -176,7 +227,9 @@ std::string RenderDashboardChangeHistory() {
   entry.RawJsonField("previous_snapshot_id", "null");
   entry.StringField("change_kind", "refresh-only");
   entry.StringField("changed_at", kObjc3DeterministicReplayTimestamp);
-  entry.StringField("summary", "Deterministic claim dashboard refresh.");
+  entry.StringField(
+      "summary",
+      "Deterministic claim dashboard refresh with strict-system blocked.");
 
   std::ostringstream out;
   objc3::io::json::JsonArrayWriter history(out);

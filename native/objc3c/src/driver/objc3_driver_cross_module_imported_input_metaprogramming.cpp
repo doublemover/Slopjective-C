@@ -29,4 +29,36 @@ void PopulateObjc3DriverCrossModuleRuntimeImportedInputMetaprogramming(
   imported_input.metaprogramming_macro_host_process_cache_root_relative_path =
       imported_surface
           .metaprogramming_macro_host_process_cache_root_relative_path;
+  imported_input.metaprogramming_macro_host_process_cache_package_identity =
+      imported_surface
+          .metaprogramming_macro_host_process_cache_package_identity;
+  imported_input
+      .metaprogramming_macro_host_process_cache_package_lock_identity =
+      imported_surface
+          .metaprogramming_macro_host_process_cache_package_lock_identity;
+  imported_input
+      .metaprogramming_macro_host_process_cache_package_trust_identity =
+      imported_surface
+          .metaprogramming_macro_host_process_cache_package_trust_identity;
+  imported_input
+      .metaprogramming_macro_host_process_cache_input_content_identity =
+      imported_surface
+          .metaprogramming_macro_host_process_cache_input_content_identity;
+  imported_input
+      .metaprogramming_macro_host_process_cache_output_content_identity =
+      imported_surface
+          .metaprogramming_macro_host_process_cache_output_content_identity;
+  imported_input.metaprogramming_macro_host_process_cache_host_identity =
+      imported_surface.metaprogramming_macro_host_process_cache_host_identity;
+  imported_input.metaprogramming_macro_host_process_cache_validation_status =
+      imported_surface
+          .metaprogramming_macro_host_process_cache_validation_status;
+  imported_input
+      .metaprogramming_macro_host_process_cache_runtime_consumption_artifact_identity =
+      imported_surface
+          .metaprogramming_macro_host_process_cache_runtime_consumption_artifact_identity;
+  imported_input
+      .metaprogramming_macro_host_process_cache_package_replay_generation =
+      imported_surface
+          .metaprogramming_macro_host_process_cache_package_replay_generation;
 }

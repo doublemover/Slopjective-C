@@ -90,6 +90,13 @@ struct Objc3ImportedRuntimeModuleSurface {
   std::size_t concurrency_actor_replay_proof_dependency_sites = 0;
   std::size_t concurrency_actor_race_guard_dependency_sites = 0;
   std::size_t concurrency_actor_task_handoff_sites = 0;
+  std::size_t concurrency_actor_mailbox_message_identity_field_count = 0;
+  std::size_t concurrency_actor_mailbox_fifo_ordering_field_count = 0;
+  std::size_t concurrency_actor_mailbox_drain_operation_field_count = 0;
+  std::size_t concurrency_actor_mailbox_cancel_operation_field_count = 0;
+  std::size_t concurrency_actor_mailbox_error_operation_field_count = 0;
+  std::size_t concurrency_actor_mailbox_shutdown_operation_field_count = 0;
+  std::size_t concurrency_actor_distributed_transport_evidence_sites = 0;
   std::size_t concurrency_actor_guard_blocked_sites = 0;
   std::size_t concurrency_actor_contract_violation_sites = 0;
   bool concurrency_actor_mailbox_runtime_ready = false;
@@ -99,6 +106,25 @@ struct Objc3ImportedRuntimeModuleSurface {
   std::string concurrency_actor_mailbox_runtime_replay_key;
   std::string concurrency_actor_lowering_replay_key;
   std::string concurrency_actor_isolation_lowering_replay_key;
+  bool concurrency_scheduler_task_runtime_import_present = false;
+  bool concurrency_scheduler_task_runtime_ready = false;
+  bool concurrency_scheduler_task_runtime_deterministic = false;
+  bool concurrency_scheduler_shutdown_drain_ready = false;
+  bool concurrency_scheduler_cancellation_error_cleanup_ready = false;
+  std::string concurrency_scheduler_task_runtime_contract_id;
+  std::string concurrency_scheduler_task_runtime_source_contract_id;
+  std::string concurrency_scheduler_task_runtime_replay_key;
+  std::string concurrency_scheduler_task_lifecycle_replay_key;
+  std::string concurrency_scheduler_task_cancellation_replay_key;
+  std::string concurrency_scheduler_task_shutdown_replay_key;
+  std::size_t concurrency_scheduler_task_record_sites = 0;
+  std::size_t concurrency_scheduler_continuation_record_sites = 0;
+  std::size_t concurrency_scheduler_executor_hop_record_sites = 0;
+  std::size_t concurrency_scheduler_queue_lifecycle_record_sites = 0;
+  std::size_t concurrency_scheduler_cancellation_checkpoint_sites = 0;
+  std::size_t concurrency_scheduler_error_cleanup_sites = 0;
+  std::size_t concurrency_scheduler_shutdown_drain_sites = 0;
+  std::size_t concurrency_scheduler_unsupported_policy_sites = 0;
   bool interop_runtime_import_artifact_ready = false;
   bool interop_separate_compilation_preservation_ready = false;
   bool interop_deterministic = false;
@@ -142,6 +168,29 @@ struct Objc3ImportedRuntimeModuleSurface {
   std::string interop_bridge_module_artifact_relative_path;
   std::string interop_bridge_artifact_relative_path;
   std::size_t interop_header_module_bridge_local_foreign_callable_count = 0;
+  bool interop_foreign_abi_runtime_closure_present = false;
+  bool interop_foreign_abi_runtime_closure_ready = false;
+  bool interop_foreign_abi_runtime_closure_deterministic = false;
+  bool interop_foreign_abi_typed_dispatch_ready = false;
+  bool interop_foreign_abi_package_runtime_identity_ready = false;
+  bool interop_foreign_abi_bridge_ownership_ready = false;
+  std::string interop_foreign_abi_runtime_contract_id;
+  std::string interop_foreign_abi_source_contract_id;
+  std::string interop_foreign_abi_package_identity;
+  std::string interop_foreign_abi_runtime_identity;
+  std::string interop_foreign_abi_replay_key;
+  std::string interop_foreign_abi_classification_replay_key;
+  std::string interop_foreign_abi_bridge_metadata_replay_key;
+  std::size_t interop_foreign_abi_foreign_surface_count = 0;
+  std::size_t interop_foreign_abi_supported_c_abi_surface_count = 0;
+  std::size_t interop_foreign_abi_preserved_swift_metadata_surface_count = 0;
+  std::size_t interop_foreign_abi_preserved_cpp_metadata_surface_count = 0;
+  std::size_t interop_foreign_abi_rejected_surface_count = 0;
+  std::size_t interop_foreign_abi_mismatch_negative_case_count = 0;
+  std::size_t interop_foreign_abi_missing_bridge_ownership_negative_case_count = 0;
+  std::size_t interop_foreign_abi_unsafe_mixed_image_negative_case_count = 0;
+  std::size_t interop_foreign_abi_stale_import_negative_case_count = 0;
+  std::size_t interop_foreign_abi_unsupported_runtime_fallback_negative_case_count = 0;
   bool metaprogramming_runtime_import_artifact_ready = false;
   bool metaprogramming_separate_compilation_preservation_ready = false;
   bool metaprogramming_deterministic = false;
@@ -158,6 +207,15 @@ struct Objc3ImportedRuntimeModuleSurface {
   std::string metaprogramming_macro_host_process_cache_replay_key;
   std::string metaprogramming_macro_host_process_cache_host_executable_relative_path;
   std::string metaprogramming_macro_host_process_cache_root_relative_path;
+  std::string metaprogramming_macro_host_process_cache_package_identity;
+  std::string metaprogramming_macro_host_process_cache_package_lock_identity;
+  std::string metaprogramming_macro_host_process_cache_package_trust_identity;
+  std::string metaprogramming_macro_host_process_cache_input_content_identity;
+  std::string metaprogramming_macro_host_process_cache_output_content_identity;
+  std::string metaprogramming_macro_host_process_cache_host_identity;
+  std::string metaprogramming_macro_host_process_cache_validation_status;
+  std::string metaprogramming_macro_host_process_cache_runtime_consumption_artifact_identity;
+  std::size_t metaprogramming_macro_host_process_cache_package_replay_generation = 0;
   std::size_t metaprogramming_local_derive_method_count = 0;
   std::size_t metaprogramming_local_macro_artifact_count = 0;
   std::size_t metaprogramming_local_interface_property_behavior_artifact_count = 0;
@@ -290,7 +348,15 @@ inline bool IsReadyObjc3ImportedConcurrencyActorMailboxRuntimeImportSurface(
     const Objc3ImportedRuntimeModuleSurface &surface) {
   if (!HasObjc3ImportedConcurrencyActorRuntimeMetadata(surface)) {
     return !surface.concurrency_actor_mailbox_runtime_import_present &&
-           !surface.concurrency_actor_mailbox_runtime_ready;
+           !surface.concurrency_actor_mailbox_runtime_ready &&
+           surface.concurrency_actor_mailbox_message_identity_field_count == 0u &&
+           surface.concurrency_actor_mailbox_fifo_ordering_field_count == 0u &&
+           surface.concurrency_actor_mailbox_drain_operation_field_count == 0u &&
+           surface.concurrency_actor_mailbox_cancel_operation_field_count == 0u &&
+           surface.concurrency_actor_mailbox_error_operation_field_count == 0u &&
+           surface.concurrency_actor_mailbox_shutdown_operation_field_count ==
+               0u &&
+           surface.concurrency_actor_distributed_transport_evidence_sites == 0u;
   }
   return surface.concurrency_actor_mailbox_runtime_import_present &&
          surface.concurrency_actor_mailbox_runtime_ready &&
@@ -300,9 +366,209 @@ inline bool IsReadyObjc3ImportedConcurrencyActorMailboxRuntimeImportSurface(
          !surface.concurrency_actor_mailbox_runtime_replay_key.empty() &&
          !surface.concurrency_actor_lowering_replay_key.empty() &&
          !surface.concurrency_actor_isolation_lowering_replay_key.empty() &&
+         surface.concurrency_actor_mailbox_message_identity_field_count != 0u &&
+         surface.concurrency_actor_mailbox_fifo_ordering_field_count != 0u &&
+         surface.concurrency_actor_mailbox_drain_operation_field_count != 0u &&
+         surface.concurrency_actor_mailbox_cancel_operation_field_count != 0u &&
+         surface.concurrency_actor_mailbox_error_operation_field_count != 0u &&
+         surface.concurrency_actor_mailbox_shutdown_operation_field_count !=
+             0u &&
+         surface.concurrency_actor_distributed_transport_evidence_sites == 0u &&
          surface.concurrency_actor_metadata_record_sites >=
              surface.concurrency_actor_interface_sites &&
          surface.concurrency_actor_contract_violation_sites == 0u;
+}
+
+inline bool IsReadyObjc3ImportedConcurrencySchedulerTaskRuntimeImportSurface(
+    const Objc3ImportedRuntimeModuleSurface &surface) {
+  if (!surface.concurrency_scheduler_task_runtime_import_present) {
+    return !surface.concurrency_scheduler_task_runtime_ready &&
+           !surface.concurrency_scheduler_task_runtime_deterministic &&
+           !surface.concurrency_scheduler_shutdown_drain_ready &&
+           !surface.concurrency_scheduler_cancellation_error_cleanup_ready &&
+           surface.concurrency_scheduler_task_runtime_contract_id.empty() &&
+           surface.concurrency_scheduler_task_runtime_source_contract_id
+               .empty() &&
+           surface.concurrency_scheduler_task_runtime_replay_key.empty() &&
+           surface.concurrency_scheduler_task_lifecycle_replay_key.empty() &&
+           surface.concurrency_scheduler_task_cancellation_replay_key.empty() &&
+           surface.concurrency_scheduler_task_shutdown_replay_key.empty() &&
+           surface.concurrency_scheduler_task_record_sites == 0u &&
+           surface.concurrency_scheduler_continuation_record_sites == 0u &&
+           surface.concurrency_scheduler_executor_hop_record_sites == 0u &&
+           surface.concurrency_scheduler_queue_lifecycle_record_sites == 0u &&
+           surface.concurrency_scheduler_cancellation_checkpoint_sites == 0u &&
+           surface.concurrency_scheduler_error_cleanup_sites == 0u &&
+           surface.concurrency_scheduler_shutdown_drain_sites == 0u &&
+           surface.concurrency_scheduler_unsupported_policy_sites == 0u;
+  }
+  return surface.concurrency_scheduler_task_runtime_ready &&
+         surface.concurrency_scheduler_task_runtime_deterministic &&
+         surface.concurrency_scheduler_shutdown_drain_ready &&
+         surface.concurrency_scheduler_cancellation_error_cleanup_ready &&
+         !surface.concurrency_scheduler_task_runtime_contract_id.empty() &&
+         !surface.concurrency_scheduler_task_runtime_source_contract_id.empty() &&
+         !surface.concurrency_scheduler_task_runtime_replay_key.empty() &&
+         !surface.concurrency_scheduler_task_lifecycle_replay_key.empty() &&
+         !surface.concurrency_scheduler_task_cancellation_replay_key.empty() &&
+         !surface.concurrency_scheduler_task_shutdown_replay_key.empty() &&
+         surface.concurrency_scheduler_task_record_sites != 0u &&
+         surface.concurrency_scheduler_continuation_record_sites != 0u &&
+         surface.concurrency_scheduler_executor_hop_record_sites != 0u &&
+         surface.concurrency_scheduler_queue_lifecycle_record_sites != 0u &&
+         surface.concurrency_scheduler_cancellation_checkpoint_sites != 0u &&
+         surface.concurrency_scheduler_error_cleanup_sites != 0u &&
+         surface.concurrency_scheduler_shutdown_drain_sites != 0u &&
+         surface.concurrency_scheduler_unsupported_policy_sites == 0u;
+}
+
+inline bool IsReadyObjc3ImportedForeignAbiRuntimeClosureSurface(
+    const Objc3ImportedRuntimeModuleSurface &surface) {
+  if (!surface.interop_foreign_abi_runtime_closure_present) {
+    return !surface.interop_foreign_abi_runtime_closure_ready &&
+           !surface.interop_foreign_abi_runtime_closure_deterministic &&
+           !surface.interop_foreign_abi_typed_dispatch_ready &&
+           !surface.interop_foreign_abi_package_runtime_identity_ready &&
+           !surface.interop_foreign_abi_bridge_ownership_ready &&
+           surface.interop_foreign_abi_runtime_contract_id.empty() &&
+           surface.interop_foreign_abi_source_contract_id.empty() &&
+           surface.interop_foreign_abi_package_identity.empty() &&
+           surface.interop_foreign_abi_runtime_identity.empty() &&
+           surface.interop_foreign_abi_replay_key.empty() &&
+           surface.interop_foreign_abi_classification_replay_key.empty() &&
+           surface.interop_foreign_abi_bridge_metadata_replay_key.empty() &&
+           surface.interop_foreign_abi_foreign_surface_count == 0u &&
+           surface.interop_foreign_abi_supported_c_abi_surface_count == 0u &&
+           surface.interop_foreign_abi_preserved_swift_metadata_surface_count == 0u &&
+           surface.interop_foreign_abi_preserved_cpp_metadata_surface_count == 0u &&
+           surface.interop_foreign_abi_rejected_surface_count == 0u &&
+           surface.interop_foreign_abi_mismatch_negative_case_count == 0u &&
+           surface
+                   .interop_foreign_abi_missing_bridge_ownership_negative_case_count ==
+               0u &&
+           surface.interop_foreign_abi_unsafe_mixed_image_negative_case_count ==
+               0u &&
+           surface.interop_foreign_abi_stale_import_negative_case_count == 0u &&
+           surface
+                   .interop_foreign_abi_unsupported_runtime_fallback_negative_case_count ==
+               0u;
+  }
+  return surface.interop_foreign_abi_runtime_closure_ready &&
+         surface.interop_foreign_abi_runtime_closure_deterministic &&
+         surface.interop_foreign_abi_typed_dispatch_ready &&
+         surface.interop_foreign_abi_package_runtime_identity_ready &&
+         surface.interop_foreign_abi_bridge_ownership_ready &&
+         !surface.interop_foreign_abi_runtime_contract_id.empty() &&
+         !surface.interop_foreign_abi_source_contract_id.empty() &&
+         !surface.interop_foreign_abi_package_identity.empty() &&
+         !surface.interop_foreign_abi_runtime_identity.empty() &&
+         !surface.interop_foreign_abi_replay_key.empty() &&
+         !surface.interop_foreign_abi_classification_replay_key.empty() &&
+         !surface.interop_foreign_abi_bridge_metadata_replay_key.empty() &&
+         surface.interop_foreign_abi_foreign_surface_count != 0u &&
+         surface.interop_foreign_abi_supported_c_abi_surface_count != 0u &&
+         surface.interop_foreign_abi_preserved_swift_metadata_surface_count !=
+             0u &&
+         surface.interop_foreign_abi_preserved_cpp_metadata_surface_count != 0u &&
+         surface.interop_foreign_abi_supported_c_abi_surface_count <=
+             surface.interop_foreign_abi_foreign_surface_count &&
+         surface.interop_foreign_abi_rejected_surface_count != 0u &&
+         surface.interop_foreign_abi_mismatch_negative_case_count != 0u &&
+         surface
+                 .interop_foreign_abi_missing_bridge_ownership_negative_case_count !=
+             0u &&
+         surface.interop_foreign_abi_unsafe_mixed_image_negative_case_count !=
+             0u &&
+         surface.interop_foreign_abi_stale_import_negative_case_count != 0u &&
+         surface
+                 .interop_foreign_abi_unsupported_runtime_fallback_negative_case_count !=
+             0u;
+}
+
+inline bool IsReadyObjc3ImportedMetaprogrammingMacroHostProcessCacheRuntimeImportSurface(
+    const Objc3ImportedRuntimeModuleSurface &surface) {
+  if (!surface.metaprogramming_macro_host_process_cache_runtime_integration_present) {
+    return !surface.metaprogramming_macro_host_process_cache_runtime_ready &&
+           !surface
+                .metaprogramming_macro_host_process_cache_separate_compilation_ready &&
+           !surface.metaprogramming_macro_host_process_cache_deterministic &&
+           surface.metaprogramming_macro_host_process_cache_contract_id
+               .empty() &&
+           surface
+                .metaprogramming_macro_host_process_cache_source_contract_id
+                .empty() &&
+           surface.metaprogramming_macro_host_process_cache_replay_key.empty() &&
+           surface
+                .metaprogramming_macro_host_process_cache_host_executable_relative_path
+                .empty() &&
+           surface.metaprogramming_macro_host_process_cache_root_relative_path
+                .empty() &&
+           surface
+                .metaprogramming_macro_host_process_cache_package_identity
+                .empty() &&
+           surface
+                .metaprogramming_macro_host_process_cache_package_lock_identity
+                .empty() &&
+           surface
+                .metaprogramming_macro_host_process_cache_package_trust_identity
+                .empty() &&
+           surface
+                .metaprogramming_macro_host_process_cache_input_content_identity
+                .empty() &&
+           surface
+                .metaprogramming_macro_host_process_cache_output_content_identity
+                .empty() &&
+           surface.metaprogramming_macro_host_process_cache_host_identity
+                .empty() &&
+           surface
+                .metaprogramming_macro_host_process_cache_validation_status
+                .empty() &&
+           surface
+                .metaprogramming_macro_host_process_cache_runtime_consumption_artifact_identity
+                .empty() &&
+           surface
+                   .metaprogramming_macro_host_process_cache_package_replay_generation ==
+               0u;
+  }
+  return surface.metaprogramming_macro_host_process_cache_runtime_ready &&
+         surface
+             .metaprogramming_macro_host_process_cache_separate_compilation_ready &&
+         surface.metaprogramming_macro_host_process_cache_deterministic &&
+         !surface.metaprogramming_macro_host_process_cache_contract_id.empty() &&
+         !surface
+              .metaprogramming_macro_host_process_cache_source_contract_id
+              .empty() &&
+         !surface.metaprogramming_macro_host_process_cache_replay_key.empty() &&
+         !surface
+              .metaprogramming_macro_host_process_cache_host_executable_relative_path
+              .empty() &&
+         !surface.metaprogramming_macro_host_process_cache_root_relative_path
+              .empty() &&
+         !surface
+              .metaprogramming_macro_host_process_cache_package_identity
+              .empty() &&
+         !surface
+              .metaprogramming_macro_host_process_cache_package_lock_identity
+              .empty() &&
+         !surface
+              .metaprogramming_macro_host_process_cache_package_trust_identity
+              .empty() &&
+         !surface
+              .metaprogramming_macro_host_process_cache_input_content_identity
+              .empty() &&
+         !surface
+              .metaprogramming_macro_host_process_cache_output_content_identity
+              .empty() &&
+         !surface.metaprogramming_macro_host_process_cache_host_identity
+              .empty() &&
+         surface.metaprogramming_macro_host_process_cache_validation_status ==
+             "valid" &&
+         !surface
+              .metaprogramming_macro_host_process_cache_runtime_consumption_artifact_identity
+              .empty() &&
+         surface
+                 .metaprogramming_macro_host_process_cache_package_replay_generation !=
+             0u;
 }
 
 bool IsReadyObjc3ImportedRuntimeModulePackagingLinkPlan(

@@ -3,6 +3,7 @@
 #include <string>
 #include <vector>
 
+#include "ast/objc3_ast_generic_param_decl_nodes.h"
 #include "ast/objc3_ast_method_decl_nodes.h"
 #include "ast/objc3_ast_property_decl_nodes.h"
 
@@ -21,20 +22,6 @@ struct Objc3ProtocolDecl {
   bool is_forward_declaration = false;
   unsigned line = 1;
   unsigned column = 1;
-};
-
-struct Objc3GenericParamDecl {
-  std::string name;
-  std::string variance_spelling;
-  bool has_constraint = false;
-  std::string constraint_type_name;
-  bool has_constraint_generic_suffix = false;
-  bool constraint_generic_suffix_terminated = true;
-  std::string constraint_generic_suffix_text;
-  unsigned line = 1;
-  unsigned column = 1;
-  unsigned constraint_line = 1;
-  unsigned constraint_column = 1;
 };
 
 struct Objc3InterfaceDecl {

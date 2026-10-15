@@ -124,6 +124,14 @@
     }
   },
   "$defs": {
+    "packageId": {
+      "type": "string",
+      "pattern": "^[a-z0-9_.-]+:[A-Za-z0-9_.-]+$"
+    },
+    "sha256": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
     "package": {
       "type": "object",
       "required": [
@@ -135,6 +143,7 @@
         "abi_identity",
         "source_digest",
         "package_manifest",
+        "module_graph",
         "provenance_id",
         "trust"
       ],
@@ -171,6 +180,9 @@
         "package_manifest": {
           "$ref": "#/$defs/packageManifestRef"
         },
+        "module_graph": {
+          "$ref": "#/$defs/moduleGraph"
+        },
         "provenance_id": {
           "type": "string",
           "minLength": 1
@@ -194,6 +206,142 @@
         },
         "contract_id": { "const": "objc3c.package_ecosystem.package_manifest.v1" },
         "digest": { "type": "string", "pattern": "^sha256:[0-9a-f]{64}$" }
+      }
+    },
+    "moduleGraph": {
+      "type": "object",
+      "required": [
+        "contract_id",
+        "package_id",
+        "package_source_kind",
+        "source",
+        "source_digest",
+        "source_authority",
+        "source_authority_digest",
+        "module_name",
+        "resolver",
+        "direct_import_syntax",
+        "direct_imports",
+        "import_edges",
+        "unsafe_metadata_policy"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "contract_id": { "const": "objc3c.package_ecosystem.module_graph.v1" },
+        "package_id": { "$ref": "#/$defs/packageId" },
+        "package_source_kind": {
+          "enum": [
+            "stdlib-module-manifest",
+            "showcase-workspace-manifest"
+          ]
+        },
+        "source": { "type": "string", "minLength": 1 },
+        "source_digest": { "$ref": "#/$defs/sha256" },
+        "source_authority": {
+          "enum": [
+            "stdlib/module_inventory.json",
+            "showcase/portfolio.json"
+          ]
+        },
+        "source_authority_digest": { "$ref": "#/$defs/sha256" },
+        "module_name": {
+          "type": "object",
+          "required": ["canonical", "implementation", "case_sensitive"],
+          "additionalProperties": false,
+          "properties": {
+            "canonical": { "type": "string", "minLength": 1 },
+            "implementation": { "type": "string", "minLength": 1 },
+            "case_sensitive": { "const": true }
+          }
+        },
+        "resolver": { "const": "checked-in-local-registry" },
+        "direct_import_syntax": { "const": "supported-fail-closed" },
+        "direct_imports": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/directImportRecord" }
+        },
+        "import_edges": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/moduleImportEdge" }
+        },
+        "unsafe_metadata_policy": {
+          "type": "object",
+          "required": [
+            "missing_module_graph",
+            "missing_package_manifest",
+            "manual_sidecar_manifest",
+            "network_or_hosted_metadata"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "missing_module_graph": { "const": "fail-closed" },
+            "missing_package_manifest": { "const": "fail-closed" },
+            "manual_sidecar_manifest": { "const": "fail-closed" },
+            "network_or_hosted_metadata": { "const": "fail-closed" }
+          }
+        }
+      }
+    },
+    "directImportRecord": {
+      "type": "object",
+      "required": [
+        "syntax",
+        "source_module",
+        "imported_module",
+        "to_package_id",
+        "package_provenance",
+        "source_authority",
+        "source_authority_digest",
+        "resolution",
+        "required_version",
+        "missing_provenance_diagnostic"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "syntax": { "const": "@import" },
+        "source_module": { "type": "string", "minLength": 1 },
+        "imported_module": { "type": "string", "minLength": 1 },
+        "to_package_id": { "$ref": "#/$defs/packageId" },
+        "package_provenance": { "const": "locked-package" },
+        "source_authority": {
+          "enum": [
+            "stdlib/module_inventory.json",
+            "showcase/portfolio.json"
+          ]
+        },
+        "source_authority_digest": { "$ref": "#/$defs/sha256" },
+        "resolution": { "const": "locked-local-registry" },
+        "required_version": { "type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$" },
+        "missing_provenance_diagnostic": { "const": "O3PKG8055" }
+      }
+    },
+    "moduleImportEdge": {
+      "type": "object",
+      "required": [
+        "from_module",
+        "to_module",
+        "to_package_id",
+        "source",
+        "source_authority",
+        "source_authority_digest",
+        "resolution",
+        "required_version"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "from_module": { "type": "string", "minLength": 1 },
+        "to_module": { "type": "string", "minLength": 1 },
+        "to_package_id": { "$ref": "#/$defs/packageId" },
+        "source": { "const": "checked-in-local-workspace" },
+        "source_authority": {
+          "enum": [
+            "stdlib/module_inventory.json",
+            "showcase/portfolio.json"
+          ]
+        },
+        "source_authority_digest": { "$ref": "#/$defs/sha256" },
+        "resolution": { "const": "locked-local-registry" },
+        "required_version": { "type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$" }
       }
     },
     "trust": {
@@ -253,6 +401,9 @@
         "trust_roots",
         "revocations",
         "key_rotation_policy",
+        "extraction_path_policy",
+        "installer_update_key_policy",
+        "release_registry_trust_root_policy",
         "production_signing_backend",
         "verification_policy"
       ],
@@ -280,6 +431,64 @@
             "revoked_signing_key_ids": { "type": "array", "items": { "type": "string" } },
             "revoked_package_ids": { "type": "array", "items": { "type": "string" } },
             "revoked_signature_ids": { "type": "array", "items": { "type": "string" } }
+          }
+        },
+        "extraction_path_policy": {
+          "type": "object",
+          "required": [
+            "contract_id",
+            "before_filesystem_mutation_required",
+            "reject_absolute_paths",
+            "reject_parent_traversal",
+            "reject_symlink_entries",
+            "reject_overwrite_existing_paths",
+            "reject_duplicate_paths",
+            "reject_case_conflicting_paths"
+          ],
+          "additionalProperties": true,
+          "properties": {
+            "contract_id": { "const": "objc3c.package_ecosystem.extraction_path_policy.v1" },
+            "before_filesystem_mutation_required": { "const": true },
+            "reject_absolute_paths": { "const": true },
+            "reject_parent_traversal": { "const": true },
+            "reject_symlink_entries": { "const": true },
+            "reject_overwrite_existing_paths": { "const": true },
+            "reject_duplicate_paths": { "const": true },
+            "reject_case_conflicting_paths": { "const": true }
+          }
+        },
+        "installer_update_key_policy": {
+          "type": "object",
+          "required": [
+            "contract_id",
+            "installer_key_required",
+            "update_key_required",
+            "installer_key_state",
+            "update_key_state"
+          ],
+          "additionalProperties": true,
+          "properties": {
+            "contract_id": { "const": "objc3c.package_ecosystem.installer_update_key_policy.v1" },
+            "installer_key_required": { "const": true },
+            "update_key_required": { "const": true },
+            "installer_key_state": { "const": "reserved-fail-closed" },
+            "update_key_state": { "const": "reserved-fail-closed" }
+          }
+        },
+        "release_registry_trust_root_policy": {
+          "type": "object",
+          "required": [
+            "contract_id",
+            "release_root_required_state",
+            "registry_root_required_state",
+            "fallback_trust_root_allowed"
+          ],
+          "additionalProperties": true,
+          "properties": {
+            "contract_id": { "const": "objc3c.package_ecosystem.release_registry_trust_root_policy.v1" },
+            "release_root_required_state": { "const": "reserved" },
+            "registry_root_required_state": { "const": "reserved" },
+            "fallback_trust_root_allowed": { "const": false }
           }
         },
         "production_signing_backend": {
@@ -475,6 +684,8 @@
         "from",
         "to",
         "source",
+        "source_authority",
+        "source_authority_digest",
         "language_requirement",
         "abi_requirement",
         "resolution",
@@ -499,6 +710,15 @@
             "generated-local-package-artifact",
             "offline-mirror-artifact"
           ]
+        },
+        "source_authority": {
+          "enum": [
+            "stdlib/module_inventory.json",
+            "showcase/portfolio.json"
+          ]
+        },
+        "source_authority_digest": {
+          "$ref": "#/$defs/sha256"
         },
         "language_requirement": {
           "const": "3.0"
@@ -572,6 +792,8 @@
             "required": [
               "from",
               "to",
+              "source_authority",
+              "source_authority_digest",
               "required_version",
               "resolved_version",
               "target_source_digest",
@@ -581,6 +803,15 @@
             "properties": {
               "from": { "type": "string", "minLength": 1 },
               "to": { "type": "string", "minLength": 1 },
+              "source_authority": {
+                "enum": [
+                  "stdlib/module_inventory.json",
+                  "showcase/portfolio.json"
+                ]
+              },
+              "source_authority_digest": {
+                "$ref": "#/$defs/sha256"
+              },
               "required_version": {
                 "type": "string",
                 "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"

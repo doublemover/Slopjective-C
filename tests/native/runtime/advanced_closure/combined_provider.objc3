@@ -1,0 +1,18 @@
+// #8213 provider module for the native advanced-runtime closure link/run proof.
+module AdvancedRuntimeClosureProvider;
+
+fn ConsumeBorrowed(bytes: borrowed id *) -> void {
+  return;
+}
+
+fn CFRetain(value: id) -> id {
+  return value;
+}
+
+fn CFRelease(value: id) -> void {
+  return;
+}
+
+fn packageReplayEntry(selector: SEL) -> i32 {
+  return 0;
+}

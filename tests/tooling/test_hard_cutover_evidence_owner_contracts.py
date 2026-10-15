@@ -25,6 +25,7 @@ def test_evidence_families_publish_source_owned_hard_cutover_contracts() -> None
             "release_key_owner",
             "supply_chain_owner",
             "runtime_hardening_owner",
+            "language_runtime_threat_model_owner",
         },
         "object_model_closure": {
             "object_model_semantic_owner",
@@ -53,7 +54,10 @@ def test_evidence_families_publish_source_owned_hard_cutover_contracts() -> None
         boundary = _load_json(family.boundary_inventory)
         owner_contracts = boundary["source_owner_contracts"]
 
-        assert boundary["hard_cutover_source_owner_contract"] == HARD_CUTOVER_SOURCE_OWNER_CONTRACT
+        assert boundary["hard_cutover_source_owner_contract"] == {
+            **HARD_CUTOVER_SOURCE_OWNER_CONTRACT,
+            **dict(family.additional_source_owner_policy),
+        }
         assert set(owner_contract_ids(family_name)) == expected_owner_ids[family_name]
         assert set(owner_contracts) == expected_owner_ids[family_name]
         assert all(validate_boundary_owner_contracts(family_name, boundary, ROOT).values())
@@ -64,6 +68,23 @@ def test_evidence_families_publish_source_owned_hard_cutover_contracts() -> None
             assert owner_contract["retired_route_claims_allowed"] is False
             assert owner_contract["generated_report_claims_allowed"] is False
 
+
+def test_object_model_owner_policy_requires_its_behavior_boundary() -> None:
+    import copy
+
+    family_name = "object_model_closure"
+    family = EVIDENCE_FAMILIES[family_name]
+    original = _load_json(family.boundary_inventory)
+    for field, replacement in (
+        ("behavior_owner_split_required", False),
+        ("canonical_rejection_owner", "unregistered"),
+        ("generated_report_claims_allowed", True),
+        ("unknown_policy", True),
+    ):
+        boundary = copy.deepcopy(original)
+        boundary["hard_cutover_source_owner_contract"][field] = replacement
+        checks = validate_boundary_owner_contracts(family_name, boundary, ROOT)
+        assert not checks["hard_cutover_source_owner_contract_matches"]
 
 def test_boundary_summary_builders_publish_owner_contracts_not_legacy_summary_keys() -> None:
     builder_paths = [

@@ -5,11 +5,13 @@
 #include <array>
 #include <cstdint>
 #include <limits>
+#include <memory>
 #include <mutex>
 #include <utility>
 #include <vector>
 
 namespace storage = objc3c::runtime::stdlib_runtime;
+
 using namespace objc3c::runtime::collections_runtime_internal;
 
 namespace objc3c::runtime {
@@ -534,6 +536,7 @@ extern "C" int objc3_runtime_stdlib_collections_array_iterator_i32(
                OBJC3_RUNTIME_STDLIB_COLLECTIONS_STATUS_CAPACITY_EXCEEDED, 0);
     return 0;
   }
+  (void)state.records.Retain(handle);
   RecordCall(state, state.iterator_create_call_count, iterator_handle, handle,
              0, 0, OBJC3_RUNTIME_STDLIB_COLLECTIONS_STATUS_OK,
              iterator_handle);
@@ -791,6 +794,7 @@ extern "C" int objc3_runtime_stdlib_collections_map_key_iterator_i32(
                OBJC3_RUNTIME_STDLIB_COLLECTIONS_STATUS_CAPACITY_EXCEEDED, 0);
     return 0;
   }
+  (void)state.records.Retain(handle);
   RecordCall(state, state.iterator_create_call_count, iterator_handle, handle,
              0, 0, OBJC3_RUNTIME_STDLIB_COLLECTIONS_STATUS_OK,
              iterator_handle);
@@ -826,6 +830,7 @@ extern "C" int objc3_runtime_stdlib_collections_map_value_iterator_i32(
                OBJC3_RUNTIME_STDLIB_COLLECTIONS_STATUS_CAPACITY_EXCEEDED, 0);
     return 0;
   }
+  (void)state.records.Retain(handle);
   RecordCall(state, state.iterator_create_call_count, iterator_handle, handle,
              0, 0, OBJC3_RUNTIME_STDLIB_COLLECTIONS_STATUS_OK,
              iterator_handle);
@@ -1167,6 +1172,7 @@ extern "C" int objc3_runtime_stdlib_collections_slice_iterator_i32(
   iterator.iterator_source_kind = slice_lookup.record->array_handle_kind;
   iterator.expected_mutation_generation =
       slice_lookup.record->expected_array_mutation_generation;
+  const int retained_owner_handle = iterator.iterator_source_handle;
   AssignDefaultDescriptor(iterator, storage::DescriptorKind::CollectionIterator);
   const int iterator_handle = state.records.Store(
       storage::DescriptorKind::CollectionIterator, std::move(iterator));
@@ -1175,6 +1181,7 @@ extern "C" int objc3_runtime_stdlib_collections_slice_iterator_i32(
                OBJC3_RUNTIME_STDLIB_COLLECTIONS_STATUS_CAPACITY_EXCEEDED, 0);
     return 0;
   }
+  (void)state.records.Retain(retained_owner_handle);
   RecordCall(state, state.iterator_create_call_count, iterator_handle, handle,
              0, 0, OBJC3_RUNTIME_STDLIB_COLLECTIONS_STATUS_OK,
              iterator_handle);
@@ -1206,6 +1213,7 @@ extern "C" int objc3_runtime_stdlib_collections_set_iterator_i32(int handle) {
                OBJC3_RUNTIME_STDLIB_COLLECTIONS_STATUS_CAPACITY_EXCEEDED, 0);
     return 0;
   }
+  (void)state.records.Retain(handle);
   RecordCall(state, state.iterator_create_call_count, iterator_handle, handle,
              0, 0, OBJC3_RUNTIME_STDLIB_COLLECTIONS_STATUS_OK,
              iterator_handle);
@@ -1333,4 +1341,39 @@ extern "C" int objc3_runtime_copy_stdlib_collections_state_for_testing(
   out->last_descriptor_expected_value_type =
       state.last_descriptor_expected.value_type;
   return 0;
+}
+
+extern "C" int objc3_runtime_stdlib_collections_retain_i32(int handle) {
+  RuntimeStdlibCollectionsState &state = State();
+  std::lock_guard<std::mutex> lock(state.mutex);
+  const int status = StatusForLookup(state.records.Retain(handle));
+  RecordCall(state, state.array_query_call_count, handle, 0, 0, 0, status,
+             status == OBJC3_RUNTIME_STDLIB_COLLECTIONS_STATUS_OK);
+  return status;
+}
+
+extern "C" int objc3_runtime_stdlib_collections_release_i32(int handle) {
+  RuntimeStdlibCollectionsState &state = State();
+  CollectionRecord retired;
+  CollectionRecord retired_owner;
+  std::unique_lock<std::mutex> lock(state.mutex);
+  int owner_handle = 0;
+  auto decoded = storage::DecodeHandle(handle);
+  if (decoded.well_formed && decoded.descriptor_kind ==
+                                 storage::DescriptorKind::CollectionIterator) {
+    auto iterator = state.records.Lookup(
+        handle, {storage::DescriptorKind::CollectionIterator});
+    if (iterator.status == storage::LookupStatus::Ok) {
+      owner_handle = iterator.record->iterator_source_handle;
+    }
+  }
+  const int status = StatusForLookup(state.records.Release(handle, &retired));
+  if (status == OBJC3_RUNTIME_STDLIB_COLLECTIONS_STATUS_OK &&
+      owner_handle != 0) {
+    (void)state.records.Release(owner_handle, &retired_owner);
+  }
+  RecordCall(state, state.array_query_call_count, handle, 0, 0, 0, status,
+             status == OBJC3_RUNTIME_STDLIB_COLLECTIONS_STATUS_OK);
+  lock.unlock();
+  return status;
 }

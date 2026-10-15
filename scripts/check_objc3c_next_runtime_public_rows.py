@@ -511,10 +511,7 @@ ADVANCED_RUNTIME_UMBRELLA_EVIDENCE = {
 }
 
 
-RESERVED_UMBRELLA_ROWS = {
-    "runtime.object-model.full-realization": "8154 object-model umbrella",
-    "language.advanced-runtime-closure": "8155 advanced runtime umbrella",
-}
+RESERVED_UMBRELLA_ROWS: dict[str, str] = {}
 
 
 def _load_json(path: Path) -> dict[str, Any]:
@@ -764,11 +761,16 @@ def _check_advanced_runtime_reserved_umbrella(
     ]
     _append(
         failures,
-        matching_evidence and all(not row.get("support_claim") for row in matching_evidence),
-        "language.advanced-runtime-closure evidence-map rows must remain non-claiming",
+        matching_evidence
+        and all(
+            row.get("support_claim")
+            == "objc3c.behavior.language.advanced-runtime-closure"
+            for row in matching_evidence
+        ),
+        "language.advanced-runtime-closure evidence-map rows must publish the advanced-runtime support claim",
     )
 
-    summary = str(umbrella.get("summary", ""))
+    summary = str(umbrella.get("summary", "")).lower()
     for boundary_id, required_text in ADVANCED_RUNTIME_RESERVED_BOUNDARIES.items():
         _append(
             failures,
@@ -787,8 +789,10 @@ def _check_advanced_runtime_reserved_umbrella(
         )
     _append(
         failures,
-        "remaining broad runtime closure stays reserved" in summary,
-        "language.advanced-runtime-closure summary must keep broad runtime closure reserved",
+        "broad scheduler fairness" in summary
+        and "distributed actor networking" in summary
+        and "arbitrary macro-host execution" in summary,
+        "language.advanced-runtime-closure summary must keep broad runtime boundaries reserved",
     )
 
 
@@ -807,7 +811,6 @@ def _check_advanced_runtime_reserved_capabilities_fail_closed(
     catalog_rows: dict[str, dict[str, Any]],
 ) -> None:
     reserved_capability_ids = {
-        "language.advanced-runtime-closure",
         *ADVANCED_RUNTIME_RESERVED_BOUNDARIES,
     }
 

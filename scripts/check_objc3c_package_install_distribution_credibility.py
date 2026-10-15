@@ -21,6 +21,7 @@ from objc3c_package_manager.install_distribution import (
     INSTALL_LOCAL_ARTIFACT_ROOT_REL,
     INSTALL_PROOF_MANIFEST_REL,
     INSTALL_RECEIPT_REL,
+    INSTALL_VALIDATION_ROOT_REL,
     INSTALL_VERIFICATION_REL,
     PACKAGE_UNINSTALL_RECEIPT_REL,
     PACKAGE_UPDATE_RECEIPT_REL,
@@ -28,6 +29,7 @@ from objc3c_package_manager.install_distribution import (
     materialize_clean_distribution_install,
     package_ids,
 )
+from objc3c_package_manager.producer_report import validate_producer_report
 from objc3c_tooling.json_io import load_json_object as load_json
 from objc3c_tooling.paths import repo_rel
 from objc3c_tooling.subprocesses import python_script_command
@@ -67,8 +69,13 @@ SUMMARY_PATH = (
     / "install-distribution-credibility-summary.json"
 )
 FROM_NOTHING_ROOTS = (
-    ROOT / "tmp" / "artifacts" / "package-ecosystem",
-    ROOT / "tmp" / "reports" / "package-ecosystem",
+    LOCK_PATH,
+    MIRROR_PATH.parent,
+    REGISTRY_PATH.parent,
+    RESTORE_RECEIPT_PATH.parent,
+    ROOT / INSTALL_VALIDATION_ROOT_REL,
+    MIRROR_SUMMARY_PATH,
+    SUMMARY_PATH,
 )
 
 
@@ -84,6 +91,12 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
             "product path so the run cannot depend on preexisting artifacts."
         ),
     )
+    parser.add_argument("--producer-report", type=Path,
+                        help="validated package producer report for graph consumers")
+    parser.add_argument("--output-root", type=Path,
+                        help="isolated graph consumer output root; standalone defaults are unchanged")
+    parser.add_argument("--producer-node-identity", help=argparse.SUPPRESS)
+    parser.add_argument("--build-identity", help=argparse.SUPPRESS)
     return parser.parse_args(argv)
 
 
@@ -142,8 +155,46 @@ def clean_owned_from_nothing_outputs(*, enabled: bool) -> dict[str, Any]:
 
 def main(argv: list[str] | None = None) -> int:
     args = parse_args(sys.argv[1:] if argv is None else argv)
+    graph_consumer = args.producer_report is not None or args.output_root is not None
+    if graph_consumer and (args.producer_report is None or args.output_root is None):
+        raise RuntimeError("graph consumer requires both producer report and isolated output root")
+    if graph_consumer and (not args.producer_node_identity or not args.build_identity):
+        raise RuntimeError("graph consumer requires producer node and build identities")
+    if not graph_consumer and (args.producer_node_identity or args.build_identity):
+        raise RuntimeError("producer identities require a graph consumer report")
+    output_root = args.output_root.resolve() if args.output_root else ROOT
+    summary_path = output_root / "tmp" / "reports" / "package-ecosystem" / "install-distribution-credibility-summary.json"
     contract = load_json(CONTRACT_PATH)
-    from_nothing_probe = clean_owned_from_nothing_outputs(enabled=args.from_nothing)
+    if graph_consumer:
+        runs_root = (ROOT / "tmp").resolve()
+        run_output = output_root.parent.resolve()
+        if output_root.name != "package-consumer" or not run_output.is_relative_to(runs_root):
+            raise RuntimeError("graph consumer output root must be package-consumer within repository tmp")
+        report_path = args.producer_report.resolve()
+        if not report_path.is_relative_to(runs_root):
+            raise RuntimeError("producer report must be contained in repository tmp")
+        producer_report = validate_producer_report(
+            ROOT, report_path,
+            expected_node_identity=args.producer_node_identity,
+            expected_build_identity=args.build_identity,
+        )
+        validation_root = (output_root / INSTALL_VALIDATION_ROOT_REL).resolve()
+        try:
+            validation_root.relative_to(output_root)
+        except ValueError as error:
+            raise RuntimeError("refusing to remove an install output outside the isolated consumer root") from error
+        if report_path.is_relative_to(validation_root):
+            raise RuntimeError("producer report cannot be contained in the install root being cleaned")
+        if validation_root.exists():
+            shutil.rmtree(validation_root)
+        from_nothing_probe = {
+            "requested": True, "generated_from_clean_owned_outputs": True,
+            "producer_report": repo_rel(report_path),
+            "producer_report_digest": producer_report["report_digest"],
+            "isolated_output_root": repo_rel(output_root),
+        }
+    else:
+        from_nothing_probe = clean_owned_from_nothing_outputs(enabled=args.from_nothing)
     owner_policy = require_package_ecosystem_owner_policy(
         contract,
         surface_name="package install distribution credibility",
@@ -158,14 +209,15 @@ def main(argv: list[str] | None = None) -> int:
             "hosted registry or network install claim widened without evidence",
         ),
     )
-    result = run_package_mirror_generator()
-    if result.stdout:
+    result = None if graph_consumer else run_package_mirror_generator()
+    if result is not None and result.stdout:
         sys.stdout.write(result.stdout)
-    if result.stderr:
+    if result is not None and result.stderr:
         sys.stderr.write(result.stderr)
 
     failures: list[str] = []
-    expect(result.returncode == 0, "package mirror generator failed", failures)
+    if result is not None:
+        expect(result.returncode == 0, "package mirror generator failed", failures)
     for path in (
         LOCK_PATH,
         MIRROR_PATH,
@@ -195,6 +247,7 @@ def main(argv: list[str] | None = None) -> int:
             registry_path=REGISTRY_PATH,
             publication_path=PUBLICATION_PATH,
             restore_receipt_path=RESTORE_RECEIPT_PATH,
+            output_root=output_root if graph_consumer else None,
         )
         if not failures
         else {}
@@ -211,6 +264,7 @@ def main(argv: list[str] | None = None) -> int:
                 publication=publication,
                 restore_receipt=restore_receipt,
                 verification=verification,
+                output_root=output_root if graph_consumer else None,
             )
         )
     action_names = set(public_workflow_action_names())
@@ -238,12 +292,12 @@ def main(argv: list[str] | None = None) -> int:
         "local_registry_index": repo_rel(REGISTRY_PATH),
         "publication_metadata": repo_rel(PUBLICATION_PATH),
         "restore_receipt": repo_rel(RESTORE_RECEIPT_PATH),
-        "install_receipt": INSTALL_RECEIPT_REL,
-        "update_receipt": PACKAGE_UPDATE_RECEIPT_REL,
-        "uninstall_receipt": PACKAGE_UNINSTALL_RECEIPT_REL,
-        "install_verification": INSTALL_VERIFICATION_REL,
-        "install_proof_manifest": INSTALL_PROOF_MANIFEST_REL,
-        "local_package_artifact_root": INSTALL_LOCAL_ARTIFACT_ROOT_REL,
+        "install_receipt": repo_rel(output_root / INSTALL_RECEIPT_REL) if graph_consumer else INSTALL_RECEIPT_REL,
+        "update_receipt": repo_rel(output_root / PACKAGE_UPDATE_RECEIPT_REL) if graph_consumer else PACKAGE_UPDATE_RECEIPT_REL,
+        "uninstall_receipt": repo_rel(output_root / PACKAGE_UNINSTALL_RECEIPT_REL) if graph_consumer else PACKAGE_UNINSTALL_RECEIPT_REL,
+        "install_verification": repo_rel(output_root / INSTALL_VERIFICATION_REL) if graph_consumer else INSTALL_VERIFICATION_REL,
+        "install_proof_manifest": repo_rel(output_root / INSTALL_PROOF_MANIFEST_REL) if graph_consumer else INSTALL_PROOF_MANIFEST_REL,
+        "local_package_artifact_root": repo_rel(output_root / INSTALL_LOCAL_ARTIFACT_ROOT_REL) if graph_consumer else INSTALL_LOCAL_ARTIFACT_ROOT_REL,
         "mirror_summary": repo_rel(MIRROR_SUMMARY_PATH),
         "package_count": len(package_ids(lock)),
         "mirror_package_count": len(package_ids(mirror)),
@@ -257,14 +311,18 @@ def main(argv: list[str] | None = None) -> int:
         "mirror_summary_status": mirror_summary.get("status"),
         "clean_start": verification.get("clean_start", {}),
         "from_nothing_probe": from_nothing_probe,
+        "platform_host_evidence": verification.get("platform_host_evidence", {}),
         "generated_paths": verification.get("generated_paths", []),
         "required_public_actions": required_actions,
         "missing_public_actions": missing_public_actions,
         "failures": failures,
     }
-    SUMMARY_PATH.parent.mkdir(parents=True, exist_ok=True)
-    SUMMARY_PATH.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
-    print(f"summary_path: {repo_rel(SUMMARY_PATH)}")
+    if graph_consumer:
+        payload["install_output_root"] = repo_rel(output_root)
+        payload["producer_report"] = repo_rel(args.producer_report.resolve())
+    summary_path.parent.mkdir(parents=True, exist_ok=True)
+    summary_path.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    print(f"summary_path: {repo_rel(summary_path)}")
     if failures:
         print("objc3c-package-install-distribution-credibility: FAIL", file=sys.stderr)
         for failure in failures:

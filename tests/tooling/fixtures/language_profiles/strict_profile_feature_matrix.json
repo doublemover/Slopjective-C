@@ -1,0 +1,102 @@
+{
+  "contract_id": "objc3c.language_profiles.strict_admission_matrix.v1",
+  "issue_refs": [
+    8207,
+    8237
+  ],
+  "umbrella_contract": "tests/tooling/fixtures/native/language_evolution_umbrella_contract.json",
+  "profile_claim_policy": {
+    "claimed_public_profiles": [
+      "core",
+      "strict",
+      "strict-concurrency"
+    ],
+    "native_frontend_profiles": [
+      "canonical",
+      "strict",
+      "strict-concurrency"
+    ],
+    "targeted_release_evidence_profiles": [
+      "strict-system"
+    ],
+    "selection_source_anchor": "native/objc3c/src/config/objc3_language_profile_validation.cpp",
+    "strict_profile_aliases_allowed": false,
+    "strict_concurrency_aliases_allowed": false,
+    "strict_system_native_frontend_profile_allowed": false,
+    "objc2_compatibility_profile_allowed": false,
+    "local_temp_evidence_allowed": false
+  },
+  "accepted_profiles": [
+    {
+      "profile_id": "canonical",
+      "selection_state": "accepted",
+      "language_profile": "canonical",
+      "support_boundary": "Native frontend compilation keeps canonical as the default language profile."
+    },
+    {
+      "profile_id": "strict",
+      "selection_state": "accepted",
+      "language_profile": "strict",
+      "support_boundary": "Native frontend compilation accepts strict profile selection with strict diagnostics enabled."
+    },
+    {
+      "profile_id": "strict-concurrency",
+      "selection_state": "accepted",
+      "language_profile": "strict-concurrency",
+      "support_boundary": "Native frontend compilation accepts strict-concurrency profile selection with actor isolation, sendability, task lifecycle, and scheduler enforcement enabled."
+    },
+    {
+      "profile_id": "core",
+      "selection_state": "claimed-conformance-profile",
+      "language_profile": "canonical",
+      "support_boundary": "Public conformance publication may claim core, strict, and strict-concurrency."
+    }
+  ],
+  "rejected_profiles": [
+    {
+      "profile_id": "strict-system",
+      "selection_state": "rejected-target-only-profile",
+      "diagnostic_codes": [
+        "O3C038"
+      ],
+      "required_capabilities": [
+        "strict",
+        "strict-concurrency",
+        "platform-release-evidence",
+        "public-release-evidence"
+      ],
+      "disabled_allowances": [
+        "native-frontend-selection",
+        "retired-mode",
+        "legacy-alias",
+        "local-temp-evidence",
+        "parser-recognition-only-feature-macro"
+      ],
+      "rejection_policy": "Selection is rejected before compilation because strict-system is only a targeted release-evidence profile, not a native frontend language profile."
+    }
+  ],
+  "negative_selection_fixtures": [
+    {
+      "case_id": "strict_concurrency_alias_rejected",
+      "selection": "strict_concurrency",
+      "expected_diagnostic": "O3C001",
+      "forbidden_outcome": "underscore alias accepted"
+    },
+    {
+      "case_id": "strict_system_target_profile_rejected",
+      "selection": "strict-system",
+      "expected_diagnostic": "O3C038",
+      "forbidden_outcome": "strict-system accepted as a native frontend language profile"
+    }
+  ],
+  "remaining_blockers": [
+    {
+      "blocker_id": "strict-system-release-evidence",
+      "required_next_work": [
+        "platform-release evidence",
+        "strict and strict-concurrency profile validation replay",
+        "public conformance publication that claims strict-system without aliasing strict-concurrency"
+      ]
+    }
+  ]
+}

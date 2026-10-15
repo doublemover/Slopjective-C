@@ -16,6 +16,8 @@ Canonical checked-in boundary and contract surfaces:
 
 - `tests/tooling/fixtures/platform_hardening/boundary_inventory.json`
 - `tests/tooling/fixtures/platform_hardening/platform_toolchain_support_evidence.json`
+- `tests/tooling/fixtures/platform_hardening/platform_host_promotion_evidence_contract.json`
+- `tests/tooling/fixtures/platform_hardening/host_promotion_reviewed_source_inputs.json`
 - `tests/tooling/fixtures/packaging_channels/supported_platforms.json`
 - `tests/tooling/fixtures/packaging_channels/installer_policy.json`
 - release operations upgrade-claim policy:
@@ -27,11 +29,16 @@ Canonical checked-in boundary and contract surfaces:
 Replayable public workflow actions:
 
 - `npm run objc3c -- build-platform-support-matrix`
+- `npm run objc3c -- ingest-platform-host-evidence`
+- `npm run objc3c -- review-platform-host-evidence`
+- `npm run objc3c -- review-platform-support-promotion`
+- `npm run objc3c -- check-platform-host-promotion-evidence`
 - `npm run objc3c -- validate-platform-hardening`
 - `npm run objc3c -- validate-platform-hardening-end-to-end`
 - `npm run objc3c -- build-package-channels`
 - `npm run objc3c -- validate-packaging-channels`
 - `npm run objc3c -- validate-packaging-channels-end-to-end`
+- `npm run objc3c -- validate-package-install-distribution --from-nothing`
 - `npm run objc3c -- build-update-manifest`
 - `npm run objc3c -- publish-release-operations`
 - `npm run objc3c -- validate-release-operations`
@@ -48,10 +55,19 @@ actions above, not separate current-facing commands.
 - runnable package assembly:
   - `npm run objc3c -- package-runnable-toolchain`
   - `npm run objc3c -- build-release-manifest`
+- platform host evidence flow:
+  - `npm run objc3c -- ingest-platform-host-evidence`
+  - `npm run objc3c -- review-platform-host-evidence`
+  - `npm run objc3c -- review-platform-support-promotion`
+  - `npm run objc3c -- check-platform-host-promotion-evidence`
 - package-channel and installer flow:
   - `npm run objc3c -- build-package-channels`
   - `npm run objc3c -- validate-packaging-channels`
   - `npm run objc3c -- validate-packaging-channels-end-to-end`
+  - `npm run objc3c -- validate-package-install-distribution --from-nothing`
+  - `validate-packaging-channels-end-to-end` must prove both
+    `installed_root_execution` and `offline_installed_root_execution`; install
+    receipt and bootstrap output alone are not package execution evidence
 - release/update support flow:
   - `npm run objc3c -- build-update-manifest`
   - `npm run objc3c -- publish-release-operations`
@@ -90,7 +106,139 @@ The current checked-in support matrix is intentionally narrow.
   - every signed/notarized installer or cross-platform parity claim
 
 The supported host/toolchain matrix is narrow but real, verified, tiered, and
-rooted in the same package and release workflows users run.
+rooted in the same package and release workflows users run. The Windows row is
+hosted support only because checked source truth links it to build, package,
+install, native execution, clean-room install, hosted CI, and coherent LLVM
+toolchain evidence; it is not a prose support statement.
+
+## #8206 Umbrella Closure Boundary
+
+#8206 is the platform expansion readiness umbrella, not a broad platform
+success claim. It closes only over checked-in source contracts:
+
+- #8228 `linux-x64` remains an unsupported, fail-closed row until build,
+  package, install, installed-root execution, and native execution evidence
+  exists.
+- #8229 `darwin-arm64` remains an unsupported, fail-closed row until build,
+  package, install, installed-root execution, Mach-O/load-path, and native
+  execution evidence exists.
+- #8230 ASan and #8231 UBSan are Windows x64 sanitizer package rows with
+  source-owned package/install/execution evidence and fail-closed negative
+  contracts; they do not promote host/platform support and hosted sanitizer
+  summaries remain non-promoting.
+- #8232 native object emission is a toolchain prerequisite: `llc` must resolve,
+  prove `llc --filetype=obj`, and emit a non-empty object for the target triple;
+  missing `llc` records `native_object_emission_missing_llc`, failed target
+  object output records `native_object_emission_target_object_unavailable`, and
+  neither can publish object, package, execution, or platform success. Package
+  and native execution promotion also requires the hosted LLVM matrix to
+  resolve clang++, llvm-ar, LLVM
+  header/library discovery from llvm-config or an installed LLVM root, coherent
+  LLVM tool roots, and a coherent LLVM tool version family; missing subtools,
+  mixed roots, unresolved versions, or mismatched versions fail closed before
+  those broader support claims.
+
+Linux and macOS promotion is governed by
+`tests/tooling/fixtures/platform_hardening/platform_host_promotion_evidence_contract.json`,
+`scripts/platform_hardening_contracts/host_promotion.py`, and
+`scripts/check_platform_host_promotion_evidence.py`. That contract requires
+generated hosted evidence, but records it with `support_truth: false`; future
+promotion is eligible only after reviewed source-truth rows cover host identity,
+toolchain probe, package root, install receipt, native execution, object
+identity, debug identity, package install identity, and runtime link/load proof
+records.
+Generated hosted reports, object emission probes, sanitizer runs, install
+summaries, runtime smoke summaries, and prose issue updates do not promote
+Linux or macOS support.
+
+The reviewed-source proposal step for generated host evidence is
+`npm run objc3c -- review-platform-host-evidence`. It consumes the generated
+review candidate and required hosted artifacts, then stages
+`reviewed-source-inputs.proposed.json` plus a staging summary under the
+platform evidence root. That proposal is not support truth by itself:
+Linux/macOS generated hosted evidence remains non-promoting until the reviewed
+source-truth rows are applied, checked in, and accepted by the host-promotion
+contract.
+
+For hosted CI evidence, review from the GitHub Actions artifact rather than
+from whatever happens to exist in local `tmp/`:
+`npm run objc3c -- review-platform-host-evidence -- --platform-id linux-x64 --github-run-id <run-id> --expected-head-sha <sha>`.
+The command requires a green completed run, verifies the platform host-evidence
+job, downloads `objc3c-platform-host-evidence-<platform>` under
+`tmp/reports/platform-host-evidence-runs/`, locates the complete evidence root,
+and then runs the same source-owned review path. `--apply-reviewed-source-truth`
+is still required before checked source fixtures are overwritten.
+
+After reviewed-source inputs are applied and show `promotion_allowed=true`,
+`npm run objc3c -- review-platform-support-promotion -- --platform-id <platform> --apply`
+is the only checked-source promotion path for Linux/macOS support rows. It
+rewrites the tiered platform support fixtures from reviewed source records; it
+refuses generated-only reports and does not promote an unreviewed platform.
+
+The direct replay command for that non-promoting contract is
+`npm run objc3c -- check-platform-host-promotion-evidence`. The integrated
+`validate-platform-hardening` action runs the same checker as a child step so
+platform validation cannot pass without reasserting the Linux/macOS fail-closed
+promotion model.
+
+Hosted workflow gates use the same capability truth with different publication
+semantics. Task-hygiene smoke and parity gates may skip when native object
+emission is unavailable, but their summaries must keep
+`support_claim_published=false` and cannot report success. Conformance minima is
+a required native-object-emission gate: it sets
+`OBJC3C_REQUIRE_HOSTED_NATIVE_OBJECT_EMISSION=1`, and missing `llc`, missing
+`llc --filetype=obj`, or incoherent LLVM tool identity fails the job before
+cross-lane runtime proof can publish.
+
+Capability truth is anchored in
+`tests/tooling/fixtures/platform_hardening/hosted_runner_capability_summaries.json`,
+`tests/tooling/fixtures/platform_support/source_truth_matrix.json`, and the
+support-evidence fixture. A hosted summary may explain runner capability or why
+a lane failed closed, but it cannot override `platform_ids`, `publication_allowed`,
+`promotion_allowed`, `support_truth`, or `required_missing_evidence_classes` in
+checked source truth. The Linux and macOS summaries may record native
+object-emission capability, but they still have empty platform ids and
+publication disabled until reviewed source-truth records are promotion-ready.
+
+Do not project the umbrella as Linux, macOS, sanitizer, or cross-lane runtime
+support. The only supported projection remains `windows-x64`.
+
+### Issue Closeout Criteria
+
+Closing #8228 as Linux x64 support requires all of the following checked-in
+source truth to agree for `linux-x64`: the capability row is promoted out of
+`platform.linux-x64.unsupported`, the package variant row is no longer
+fail-closed, build/package/install/installed-root-execution/native-execution
+evidence classes are all present, reviewed source-truth records cover host
+identity, toolchain probe, package root, install receipt, installed-root
+execution, native execution, object identity, debug identity, package install
+identity, and runtime load/link proof, and generated hosted reports remain
+review inputs rather than support truth.
+
+Closing #8229 as macOS arm64 support has the same source-truth requirements for
+`darwin-arm64`, plus the reviewed package/object records must prove Mach-O,
+DWARF/dSYM, `@rpath`/`install_name`/codesign loader behavior, package install,
+installed-root execution, runtime load/link proof, and native execution. A
+generated macOS hosted run, cross-compiled artifact,
+tool presence report, or issue comment is not enough to close the support gap.
+The checked host-promotion contract requires the macOS runtime load/link proof
+to carry `install_name`, `LC_RPATH`/`LC_ID_DYLIB`/`LC_LOAD_DYLIB` load-command
+coverage, codesign proof, arm64 architecture proof, and runtime-reference proof
+before the generated row can be marked present. The debug proof must
+carry arm64 dSYM UUID records and binary-to-dSYM UUID matching. These generated
+fields remain `support_truth=false` and cannot promote `darwin-arm64` without
+reviewed checked-source rows.
+
+#8206 has a source-owned fail-closed closure boundary and a separate future
+public platform-promotion boundary. The source-owned boundary keeps the
+umbrella matrix row `internal`, keeps Windows x64 as the only supported
+projection, keeps #8228 and #8229 rejected/fail-closed, and keeps hosted
+Linux/macOS evidence as review input rather than support truth. Public platform
+promotion is valid only after the umbrella matrix row is promoted from
+`internal`, #8228 and #8229 are promoted with the evidence above, sanitizer
+package rows remain bounded by their Windows x64 runtime-promotion gates, and
+#8232 native object emission is coherent through `llc --filetype=obj` with no
+clang-substitute success path.
 
 ## Host And Toolchain Claim Boundary
 
@@ -150,6 +298,14 @@ story.
 - archive and installer support claims remain `windows-x64` only until
   another host is proved on the same public workflow surface
 
+`package_root_layout` is a package-channel payload list. Release layouts must
+use the exact artifact-scoped runnable package entries published by the
+package-channel payload contract for `windows-x64`, `linux-x64`, and
+`darwin-arm64`; they must not use the legacy installed-tree shape such as
+`bin/objc3c-native*`, `lib/*`, or `include/objc3/runtime`. Linux and macOS
+release layouts are vocabulary for fail-closed rows only until their native
+host evidence is promoted.
+
 ## Toolchain-Range And Archive Compatibility Policy
 
 Toolchain-range and archive support claims must also stay narrower than
@@ -180,8 +336,118 @@ best-effort language.
 - unsupported host claims stay fail-closed
 - unsupported channel claims stay fail-closed
 - unsupported toolchain-range claims stay fail-closed
-- widening support later must happen by expanding checked-in contracts,
-  generated matrix artifacts, and public workflow validation
+- widening support later must happen by expanding checked-in contracts and
+  public workflow validation; generated artifacts stay review inputs until
+  promoted into source truth
+
+The checked-in source contract may contain fail-closed package rows for future
+hosts. Those rows are not support claims: `linux-x64` (#8228) and
+`darwin-arm64` (#8229) remain unsupported until their source rows are replaced
+with build, package, install, installed-root execution, and native execution
+evidence from the public workflow surface.
+
+Sanitizer package variants are separate from host support. The ASan (#8230) and
+UBSan (#8231) runtime package rows now carry concrete Windows x64
+package/install/execution evidence plus package-root layout, metadata manifest
+path, required install receipt fields, runtime library probe inputs, explicit
+opt-in install selectors, release versus sanitizer runtime mixing rejection,
+ASan environment metadata, UBSan trap-or-recover metadata, and package metadata
+freshness inputs. These rows are implemented sanitizer package support for the
+checked Windows x64 sanitizer lanes, not host/platform support promotion.
+Default release runtime packages must not inherit sanitizer behavior, and
+sanitizer rows must fail closed for unsupported hosts, default-release misuse,
+mixed runtime libraries, missing sanitizer runtime libraries, missing expected
+detection records, missing UBSan trap-or-recover metadata, missing sanitizer
+install receipt fields, and stale package metadata.
+The shared package install receipt schema has a reserved
+`sanitizer_package_variant` field so sanitizer package rows can bind explicit
+install selection to native-execution evidence without promoting generated
+reports into support truth.
+Sanitizer package staging must now copy the resolved Windows x64 Clang runtime
+artifacts into the package payload and publish
+`share/objc3c/sanitizer/*-runtime-libraries.json` before metadata, receipts, or
+archives are emitted. Those runtime-library manifests are package/install
+identity evidence only; native execution and expected detection records remain
+required for the Windows x64 sanitizer package claims, and they still do not
+promote Linux, macOS, or platform support.
+The sanitizer `package_root_layout` fields describe only the sanitizer overlay
+entries: the Windows release import library, sanitizer metadata, sanitizer
+runtime-library manifest, and copied Clang runtime artifacts. They are not
+full release package layouts and do not create Linux or macOS sanitizer
+support.
+The durable non-promoting anchors are the runnable package staging source,
+artifact-report sanitizer section, package-channel model/render/validation
+source, public package action registrations, explicit sanitizer runtime
+evidence actions, package-channel and install-receipt schemas, the dedicated
+sanitizer runtime-library manifest schema, and the checked
+sanitizer/package-channel fixtures named by `docs/support/capability_matrix.json`
+and `docs/support/evidence_map.json`.
+The only public runtime-evidence action names are
+`check-sanitizer-runtime-evidence-asan` for #8230 and
+`check-sanitizer-runtime-evidence-ubsan` for #8231; sanitizer aliases, generic
+variant fallbacks, platform fallback routing, and report/probe rerouting remain
+unsupported. Those actions are fixed-shape: package root, probe path, fixture
+glob, parallelism, and run id are action-pinned rather than operator-provided
+pass-through arguments.
+
+Every future platform promotion must preserve the package identity contract
+checked into the support evidence fixture. Linux promotion requires the
+ELF/DWARF `libobjc3-runtime.so` package layout, package-root loader policy,
+clean install evidence, and native execution evidence. macOS arm64 promotion
+requires the Mach-O/DWARF/dSYM `libobjc3-runtime.dylib` layout,
+`@rpath`/`install_name`/codesign loader proof, clean install evidence, and
+native execution evidence. Future sanitizer package promotion for any new host
+requires exact target sanitizer runtime discovery, sanitizer package metadata,
+isolated opt-in package channels, expected detection records, unsupported-host
+diagnostics, release-runtime isolation, and native execution evidence;
+sanitizer reports alone are validation artifacts, not support truth.
+
+The support evidence fixture now separates host identity, toolchain probe,
+package root, install receipt, native execution, object identity, debug
+identity, package install identity, and runtime link/load proof records. Future
+Linux x64 and macOS arm64 promotion must advance those records together: a
+source-owned host triple, hosted-runner tool summary, object-emission status, or
+generated host report is not enough. The package-root records may describe ELF
+versus Mach-O, DWARF versus DWARF/dSYM, loader behavior, runtime library names,
+and layout expectations, but they stay fail-closed until matching reviewed
+source records cite real host package, install, load/link, and native execution
+evidence.
+
+The canonical public hosted evidence workflow is
+`.github/workflows/platform-host-evidence.yml`; `.github/workflows/conformance-minima.yml`
+is modeled separately as a dispatch gateway for the same Linux x64 and macOS
+arm64 generated host evidence jobs. Both paths feed
+`npm run objc3c -- ingest-platform-host-evidence`, and both are non-promoting:
+generated-only output cannot alter source truth, clear missing evidence classes,
+or publish support. The helper refuses generated-only promotion and leaves the
+source rows fail-closed until a maintainer reviews the reports and promotes the
+relevant host identity, toolchain, package-root, object-format/debug, runtime
+link/load, and native execution records into checked-in source truth. The helper
+also writes `promotion-readiness-requirements.json` and
+`review-candidate-source-truth.json` into the same platform evidence root. The
+candidate file packages generated artifact paths, digests when present, and
+target checked-source record ids for all required host-promotion record classes;
+it remains generated review material, not a checked source row.
+`npm run objc3c -- review-platform-host-evidence` stages that generated review
+material into reviewed-source proposals for maintainer review, but those
+proposals remain non-promoting until reviewed source truth is applied and
+checked in. The generated host evidence row must enumerate the same
+platform-scoped artifact set,
+including object identity, debug identity, runtime-library manifest, install
+receipt, runtime load probe outputs, and the review candidate. Hosted execution
+smoke normalizes
+its dynamic run artifact into stable report paths before ingestion:
+`tmp/reports/hosted-execution-smoke/summary.json` and
+`tmp/reports/objc3c-native-execution-smoke/summary.json`. The Linux and macOS
+workflow jobs set deterministic `OBJC3C_NATIVE_EXECUTION_RUN_ID` values so the
+normalized native execution summary remains traceable to the per-platform
+artifact run directory without turning that generated summary into support
+truth.
+
+Package variant rows are required to carry source-owned metadata freshness
+guards. Generated package metadata can be emitted as replay output, but stale or
+generated metadata is never source truth and must block package publication
+before it becomes a support, install, or sanitizer claim.
 
 ## Unsupported-Host Fail-Closed Policy
 
@@ -191,6 +457,16 @@ Hard-fail classes:
 
 - host OS or host architecture outside the checked-in support matrix
 - missing required local tools for the claimed host tier
+- missing runtime libraries for the claimed release package variant
+- missing sanitizer runtime libraries for ASan or UBSan package variants
+- stale package metadata on any release or sanitizer package variant
+- unavailable native object emission, including missing `llc`, missing
+  `llc --filetype=obj`, failed target-specific object output from `llc`, or any
+  clang substitute published as object-emission success
+- missing required LLVM package/execution subtools, including clang++,
+  llvm-ar, or LLVM header/library discovery from llvm-config or an installed LLVM root
+- mixed LLVM install roots, mismatched LLVM tool versions, unresolved required
+  tool versions, or unsupported LLVM version families
 - installer or package-channel invocation outside the published host/channel set
 - update or support publication that implies support outside the checked-in
   matrix
@@ -207,6 +483,7 @@ No unsupported host may be described as:
 - `best effort supported`
 - `probably compatible`
 - `supported if LLVM is installed`
+- `object emission supported via clang substitute`
 
 ## Working Rules For Downstream Issues
 
@@ -255,6 +532,13 @@ public build/package surfaces users run:
 - `npm run objc3c -- build-package-channels`
 - `npm run objc3c -- validate-packaging-channels`
 - `npm run objc3c -- validate-packaging-channels-end-to-end`
+- `npm run objc3c -- validate-package-install-distribution --from-nothing`
+
+The package-channel end-to-end report must launch the installed native
+executable from the local-installer root before rollback and from the
+offline-bundle install root after bootstrap. Platform promotion may consume the
+resulting installed-root execution records only as generated review inputs
+until checked source truth for the host exists.
 
 The matrix validator for this slice is:
 
@@ -321,6 +605,10 @@ release/update metadata surfaces:
 
 - public commands:
   - `npm run objc3c -- build-platform-support-matrix`
+  - `npm run objc3c -- ingest-platform-host-evidence`
+  - `npm run objc3c -- review-platform-host-evidence`
+  - `npm run objc3c -- review-platform-support-promotion`
+  - `npm run objc3c -- check-platform-host-promotion-evidence`
   - `npm run objc3c -- validate-platform-hardening`
   - `npm run objc3c -- validate-platform-hardening-end-to-end`
 - update metadata:

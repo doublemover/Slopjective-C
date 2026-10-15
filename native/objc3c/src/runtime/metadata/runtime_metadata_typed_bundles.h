@@ -52,6 +52,7 @@ struct Objc3IRRuntimeMetadataMethodEntry {
   bool has_body = false;
   bool effective_direct_dispatch = false;
   bool objc_final_declared = false;
+  bool throws_error_out_abi_ready = false;
 };
 
 struct Objc3IRRuntimeMetadataMethodListBundle {

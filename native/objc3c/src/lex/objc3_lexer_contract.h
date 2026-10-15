@@ -8,6 +8,8 @@
 
 enum class Objc3LexerLanguageProfile {
   kCanonical,
+  kStrict,
+  kStrictConcurrency,
 };
 
 struct Objc3LexerOptions {

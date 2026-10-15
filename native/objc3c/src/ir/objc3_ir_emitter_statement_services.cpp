@@ -5,7 +5,22 @@
 #include "ir/objc3_ir_emitter_service_contexts.h"
 #include "ir/objc3_ir_frontend_metadata.h"
 #include "ir/objc3_ir_expression_call_orchestration.h"
+#include "ir/objc3_ir_function_signature_model.h"
 #include "ir/objc3_ir_statement_orchestration.h"
+
+namespace {
+
+const LoweredFunctionSignature *LookupObjc3IRStatementFunctionSignature(
+    const Objc3IREmitterServiceContextState &state,
+    const std::string &name) {
+  auto signature_it = state.function_signatures.find(name);
+  if (signature_it == state.function_signatures.end()) {
+    return nullptr;
+  }
+  return &signature_it->second;
+}
+
+}  // namespace
 
 Objc3IRStatementOrchestrationOptions
 BuildObjc3IREmitterStatementOrchestrationOptions(
@@ -33,5 +48,9 @@ BuildObjc3IREmitterStatementOrchestrationOptions(
           [state, callbacks]() {
             return BuildObjc3IREmitterCompileTimeProofAnalysisContext(
                 state, callbacks);
+          },
+          [state](const std::string &name)
+              -> const LoweredFunctionSignature * {
+            return LookupObjc3IRStatementFunctionSignature(state, name);
           }}};
 }

@@ -1,7 +1,6 @@
 #include "artifacts/objc3_frontend_artifact_dispatch_accessor_lowering_manifest.h"
-
+#include "artifacts/identity/artifact_identity.h"
 #include <ostream>
-
 #include "artifacts/objc3_frontend_artifact_dispatch_accessor_manifest_contracts.h"
 #include "artifacts/objc3_frontend_artifact_storage_accessor_manifest_contracts.h"
 #include "artifacts/objc3_frontend_runtime_metadata_section_artifacts.h"
@@ -10,6 +9,7 @@
 #include "runtime/metadata/runtime_metadata_bootstrap.h"
 #include "runtime/metadata/runtime_metadata_section_surfaces.h"
 #include "runtime/metadata/selector_metadata_registration_manifest.h"
+
 
 namespace objc3::artifacts::frontend {
 
@@ -32,7 +32,7 @@ void WriteDispatchAndSynthesizedAccessorLoweringSurface(
            << runtime_translation_unit_registration_manifest
                   .manifest_artifact_relative_path
            << "\",\"object_artifact\":\""
-           << runtime_state_publication_emit_prefix << ".obj"
+           << objc3::artifacts::identity::BuildObjc3NativeObjectArtifactName(runtime_state_publication_emit_prefix)
            << "\",\"backend_artifact\":\""
            << runtime_state_publication_emit_prefix << ".ll\""
            << ",\"runtime_dispatch_symbol\":\""

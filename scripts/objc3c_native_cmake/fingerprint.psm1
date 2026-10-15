@@ -15,12 +15,21 @@ function Get-Objc3cNativeBuildFingerprint {
     [Parameter(Mandatory = $true)][string]$RuntimeOutputDir,
     [Parameter(Mandatory = $true)][string]$LibraryOutputDir,
     [Parameter(Mandatory = $true)][string]$SourceDir,
+    [Parameter(Mandatory = $true)][string]$SanitizerVariant,
     [Parameter(Mandatory = $true)][string]$SourceDateEpoch
   )
 
+  function Get-ToolIdentity([string]$Path) {
+    $resolved = if (Test-Path -LiteralPath $Path -PathType Leaf) { (Resolve-Path -LiteralPath $Path).Path } else { $Path }
+    $digest = if (Test-Path -LiteralPath $Path -PathType Leaf) { (Get-FileHash -LiteralPath $Path -Algorithm SHA256).Hash.ToLowerInvariant() } else { "missing" }
+    $version = ""
+    if (Test-Path -LiteralPath $Path -PathType Leaf) { try { $version = ((& $Path --version 2>&1 | Select-Object -First 1) -join "").Trim() } catch { $version = "unavailable" } }
+    return [ordered]@{ path = $resolved; sha256 = $digest; version = $version }
+  }
   return [ordered]@{
-    schema_version = 1
+    schema_version = 2
     generator = "Ninja"
+    tool_identities = [ordered]@{ clangxx = (Get-ToolIdentity $Clangxx); cmake = (Get-ToolIdentity $CmakeTool); ninja = (Get-ToolIdentity $NinjaTool); llvm_ar = (Get-ToolIdentity $LlvmArTool); llvm_ranlib = (Get-ToolIdentity $LlvmRanlibTool); llvm_lib = (Get-ToolIdentity $LlvmLibTool); libclang = (Get-ToolIdentity $Libclang) }
     cmake = $CmakeTool
     ninja = $NinjaTool
     llvm_ar = $LlvmArTool
@@ -34,7 +43,8 @@ function Get-Objc3cNativeBuildFingerprint {
     source_dir = $SourceDir
     runtime_output_dir = $RuntimeOutputDir
     library_output_dir = $LibraryOutputDir
-    build_type = "Release"
+    sanitizer_variant = $SanitizerVariant
+    build_type = "RelWithDebInfo"
     direct_object_emission = $true
     warning_parity = $true
     reproducible_build = $true
@@ -64,7 +74,9 @@ function Test-Objc3cNativeBuildFingerprintMatch {
     if (!$actual.ContainsKey($key)) {
       return $false
     }
-    if ([string]$actual[$key] -ne [string]$ExpectedFingerprint[$key]) {
+    $actualValue = ConvertTo-Json -InputObject $actual[$key] -Compress -Depth 12
+    $expectedValue = ConvertTo-Json -InputObject $ExpectedFingerprint[$key] -Compress -Depth 12
+    if ($actualValue -cne $expectedValue) {
       return $false
     }
   }

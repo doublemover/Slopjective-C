@@ -33,15 +33,17 @@ def build_matrix(
         "publication_model": "derived-from-source-sema-lowering-runtime-and-integrated-native-frontend-probes",
         "profiles": [
             {"id": "core", "claim_status": "claimed", "selection_status": "supported", "runtime_status": "runnable"},
-            {"id": "strict", "claim_status": "not-claimed", "selection_status": "fail-closed", "runtime_status": "unsupported"},
-            {"id": "strict-concurrency", "claim_status": "not-claimed", "selection_status": "fail-closed", "runtime_status": "unsupported"},
+            {"id": "strict", "claim_status": "claimed", "selection_status": "supported", "runtime_status": "runnable"},
+            {"id": "strict-concurrency", "claim_status": "claimed", "selection_status": "supported", "runtime_status": "runnable"},
             {"id": "strict-system", "claim_status": "not-claimed", "selection_status": "fail-closed", "runtime_status": "unsupported"},
         ],
         "language_profiles": [
             {"id": "canonical", "status": "supported"},
+            {"id": "strict", "status": "supported"},
+            {"id": "strict-concurrency", "status": "supported"},
         ],
         "canonical_literal_rejection_diagnostics": {"status": "supported"},
-        "macro_claim_surface": {"status": "suppressed"},
+        "macro_claim_surface": {"status": "truthful-fail-closed"},
         "operator_formats": [
             {"format": "json", "emit_status": "supported", "validate_status": "supported"},
             {"format": "yaml", "emit_status": "fail-closed", "validate_status": "fail-closed"},
@@ -52,6 +54,7 @@ def build_matrix(
         ],
         "optional_features": [
             {"id": "throws", "status": "not-claimed"},
+            {"id": "typed-throws", "status": "claimed"},
             {"id": "async-await", "status": "not-claimed"},
             {"id": "actors", "status": "not-claimed"},
             {"id": "blocks", "status": "not-claimed"},
@@ -86,7 +89,7 @@ def build_matrix(
                 "selected_profile": runner_report.get("selected_profile"),
                 "publication_surface_kind": runner_publication.get("publication_surface_kind"),
             },
-            "strict_profile_reject": {
+            "strict_system_reject": {
                 "returncode": probes.strict_reject.returncode,
                 "diagnostic": first_line(probes.strict_reject.stderr or probes.strict_reject.stdout),
             },

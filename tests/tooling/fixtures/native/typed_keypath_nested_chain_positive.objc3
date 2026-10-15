@@ -1,0 +1,30 @@
+module typedKeyPathNestedChainPositive;
+
+@interface Street
+@property (readonly) id name;
+@end
+
+@implementation Street
+@end
+
+@interface Address
+@property (readonly) Street*? street;
+@end
+
+@implementation Address
+@end
+
+@interface Person
+@property (readonly) Address*? address;
+@end
+
+@implementation Person
+@end
+
+fn main() -> i32 {
+  let path = @keypath(Person, address.street.name);
+  if (path != nil) {
+    return 13;
+  }
+  return 0;
+}

@@ -10,6 +10,6 @@ struct RuntimeState;
 RuntimeTypedDispatchResult ExecuteResolvedRuntimeDispatchTargetStrict(
     RuntimeState &state, int receiver,
     const RuntimeDispatchTarget &dispatch_target, int a0, int a1, int a2,
-    int a3);
+    int a3, int *throws_error_out);
 
 }  // namespace objc3c::runtime

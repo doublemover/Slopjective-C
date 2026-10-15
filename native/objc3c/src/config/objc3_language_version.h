@@ -10,6 +10,9 @@ namespace objc3c::config {
 
 inline constexpr std::uint8_t kCanonicalLanguageVersion = 3u;
 inline constexpr const char *kCanonicalLanguageProfileName = "canonical";
+inline constexpr const char *kStrictLanguageProfileName = "strict";
+inline constexpr const char *kStrictConcurrencyLanguageProfileName =
+    "strict-concurrency";
 
 inline constexpr bool IsCanonicalLanguageVersion(std::uint32_t version) {
   return version == kCanonicalLanguageVersion;

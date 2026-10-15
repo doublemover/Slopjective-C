@@ -31,6 +31,18 @@ def assert_governance_sustainability_schema_surface_uses_registered_schemas() ->
         checker.SUMMARY_PATH.unlink(missing_ok=True)
 
 
+def assert_governance_schema_surface_rejects_command_drift(
+    tmp_path: Path, field: str,
+) -> None:
+    checker = load_checker()
+    surface = load_json(checker.SCHEMA_SURFACE)
+    surface[field] = "unregistered"
+    checker.SCHEMA_SURFACE = tmp_path / "schema_surface.json"
+    checker.SUMMARY_PATH = tmp_path / "summary.json"
+    write_json(checker.SCHEMA_SURFACE, surface)
+    assert_fail_closed_without_summary(checker)
+
+
 def assert_governance_sustainability_schema_surface_rejects_unregistered_surface_path(
     tmp_path: Path,
 ) -> None:

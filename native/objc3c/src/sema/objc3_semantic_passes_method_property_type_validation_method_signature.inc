@@ -14,7 +14,7 @@ static void ValidateMethodParameterTypeSuffixes(const Objc3MethodDecl &method,
                                      "type mismatch: generic parameter type suffix '" + suffix +
                                          "' is unsupported for selector '" + selector + "' parameter '" + param.name +
                                          "' in " + owner_kind + " '" + owner_name + "'"));
-    } else if (param.has_generic_suffix &&
+    } else if (param.has_generic_suffix && !param.value_optional.present &&
                !ValidateGenericCollectionSpecializationSuffix(
                    param.object_pointer_type_spelling,
                    param.object_pointer_type_name,
@@ -66,6 +66,13 @@ static void ValidateMethodReturnTypeSuffixes(const Objc3MethodDecl &method,
                                              std::vector<std::string> &diagnostics,
                                              const std::unordered_set<std::string> *generic_interface_names = nullptr) {
   const std::string selector = MethodSelectorName(method);
+  ValidateGenericCallableParameterList(
+      method.generic_params,
+      owner_kind + " selector '" + selector + "' in '" + owner_name + "'",
+      method.generic_callable_reification_marker_declared,
+      method.generic_callable_reification_marker_line,
+      method.generic_callable_reification_marker_column,
+      diagnostics);
   if (method.has_return_generic_suffix && !SupportsGenericReturnTypeSuffix(method)) {
     std::string suffix = method.return_generic_suffix_text;
     if (suffix.empty()) {
@@ -76,6 +83,7 @@ static void ValidateMethodReturnTypeSuffixes(const Objc3MethodDecl &method,
                                        "' for selector '" + selector + "' in " + owner_kind + " '" + owner_name +
                                        "'"));
   } else if (method.has_return_generic_suffix &&
+             !method.return_value_optional.present &&
              !ValidateGenericCollectionSpecializationSuffix(
                  method.return_object_pointer_type_spelling,
                  method.return_object_pointer_type_name,

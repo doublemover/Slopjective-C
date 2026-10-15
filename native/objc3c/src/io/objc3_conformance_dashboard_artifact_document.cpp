@@ -52,7 +52,7 @@ bool TryBuildObjc3DashboardStatusArtifact(
   JsonValue profiles;
   JsonValue dependencies;
   JsonValue artifacts;
-  JsonValue blockers = JsonValue::ArrayValue({});
+  JsonValue blockers;
   JsonValue summary;
   JsonValue refresh;
   JsonValue change_history;
@@ -65,6 +65,8 @@ bool TryBuildObjc3DashboardStatusArtifact(
                                    validation_json,
                                    release_evidence_operation_json),
           "dashboard artifacts", artifacts, error) ||
+      !TryParseJsonValueText(RenderDashboardBlockers(), "dashboard blockers",
+                             blockers, error) ||
       !TryParseJsonValueText(RenderDashboardSummary(), "dashboard summary",
                              summary, error) ||
       !TryParseJsonValueText(RenderDashboardRefresh(), "dashboard refresh",
@@ -81,7 +83,7 @@ bool TryBuildObjc3DashboardStatusArtifact(
   dashboard.StringField("release_id", kObjc3DashboardReleaseId);
   dashboard.StringField("generated_at", kObjc3DeterministicReplayTimestamp);
   dashboard.StringField("source_revision", kObjc3DeterministicSourceRevision);
-  dashboard.StringField("status", "pass");
+  dashboard.StringField("status", "blocked");
   dashboard.ValueField("profiles", profiles);
   dashboard.ValueField("dependencies", dependencies);
   dashboard.ValueField("artifacts", artifacts);

@@ -1,0 +1,13 @@
+// Expected diagnostic code(s): O3S206.
+module NegativeGuardedMatchPatternNonBool;
+
+fn main(value: i32) -> i32 {
+  match (value) {
+    case let candidate where candidate: {
+      return candidate;
+    }
+    default: {
+      return 0;
+    }
+  }
+}

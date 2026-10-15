@@ -6,6 +6,7 @@
 #include <vector>
 
 #include "ast/objc3_ast_core.h"
+#include "ast/objc3_ast_generic_param_decl_nodes.h"
 #include "token/objc3_token_contract.h"
 
 enum class Objc3ProtocolRequirementKind {
@@ -26,6 +27,10 @@ struct Objc3MethodDecl {
   std::string selector;
   std::vector<SelectorPiece> selector_pieces;
   bool selector_is_normalized = false;
+  std::vector<Objc3GenericParamDecl> generic_params;
+  bool generic_callable_reification_marker_declared = false;
+  unsigned generic_callable_reification_marker_line = 1;
+  unsigned generic_callable_reification_marker_column = 1;
   std::vector<FuncParam> params;
   ValueType return_type = ValueType::I32;
   bool return_vector_spelling = false;
@@ -37,6 +42,7 @@ struct Objc3MethodDecl {
   bool return_instancetype_spelling = false;
   bool return_object_pointer_type_spelling = false;
   std::string return_object_pointer_type_name;
+  Objc3ValueOptionalTypeDescriptor return_value_optional;
   std::string return_typecheck_family_symbol;
   bool has_return_generic_suffix = false;
   bool return_generic_suffix_terminated = true;
@@ -137,6 +143,8 @@ struct Objc3MethodDecl {
   bool retainable_c_family_profile_is_normalized = false;
   std::string retainable_c_family_profile;
   bool throws_declared = false;
+  bool typed_throws_declared = false;
+  Objc3TypedThrowsPayload typed_throws_payload;
   bool throws_declaration_profile_is_normalized = false;
   std::string throws_declaration_profile;
   bool result_like_profile_is_normalized = false;
