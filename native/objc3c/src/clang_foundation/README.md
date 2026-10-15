@@ -160,7 +160,8 @@ When used, sidecars declare `objc3.native-carrier-types.v1` and
 `objc3.canonical-function-effects.v1`; imports reject unknown required semantics.
 Private synchronous ARC free functions returning scalar/void values can lower
 Error-object throws through a trailing autoreleasing error-output pointer.
-Ordered do/catch execution and async execution remain unsupported.
+Private ARC Error-object do/catch also runs in nonthrowing functions.
+Async execution remains unsupported.
 C++/Objective-C++ semantic interface interchange remains unsupported.
 
 Carrier storage uses an AST-owned hidden record and its actual target layout.
@@ -239,11 +240,26 @@ Propagating try forwards that error, forced try traps on failure, and
 try-optional builds the native scalar/void Optional representation. Exact call
 contexts prevent an outer try from authorizing nested bare throwing calls.
 Static typed nil is rejected, dynamic nil traps, and scalar zero remains valid
-in the semantic model. Ordered do/catch execution, scalar/value error transport,
+in the semantic model. Scalar/value error transport,
 aggregate or managed success returns, indirect calls, methods, Blocks, variadic
 calls, MRC callees and async execution still diagnose before emission. The runtime
 witness covers nested pools, a pool-owning C++ temporary, expression and function
 cleanup interrupted by native exceptions, and nullable output discard. Ordinary
 MRC callers of the physical C output ABI are covered by the runtime witness.
+
+Ordered Error-object do/catch owns the pending error through protected-body
+cleanup and selects the first matching class, protocol or bare catch. Unmatched
+errors move to an enclosing handler or the callable's error output; errors raised
+inside a catch body reach the enclosing context rather than sibling clauses.
+Catch bindings use native ARC lifetime inference and support explicit weak
+storage. A strong binding can transfer ownership to an outer local. The runtime
+witness covers subclass and protocol matching, nested propagation, explicit
+rethrow, strong/weak binding lifetime, catch return/break/continue/goto, deferred
+cleanup and native C++ exceptions interrupting either the body or a catch.
+Jumps into protected bodies and catches are rejected. An error cannot escape a
+defer body, including after template substitution; a handler wholly inside the
+defer remains valid. ARC catch bindings retain their types and lowering through
+PCH and template instantiation.
+
 Static analysis of
 the extension remains unqualified. Public typed-error capabilities stay disabled.

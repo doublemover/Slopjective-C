@@ -1089,18 +1089,19 @@ index a81c42174..44fc35e6a 100644
        llvm::FunctionType::get(llvm::Type::getVoidTy(VMContext), false),
        llvm::GlobalValue::LinkOnceODRLinkage, ".objcv2_load_function",
 diff --git a/clang/lib/CodeGen/CGStmt.cpp b/clang/lib/CodeGen/CGStmt.cpp
-index c050fd41a..c2ef08b6b 100644
+index c050fd41a..e09e06477 100644
 --- a/clang/lib/CodeGen/CGStmt.cpp
 +++ b/clang/lib/CodeGen/CGStmt.cpp
-@@ -13,6 +13,7 @@
+@@ -13,6 +13,8 @@
  #include "CGDebugInfo.h"
  #include "CGOpenMPRuntime.h"
  #include "CodeGenFunction.h"
 +#include "CGObjC3TypedErrors.h"
++#include "CGObjC3ErrorHandlers.h"
  #include "CodeGenModule.h"
  #include "CodeGenPGO.h"
  #include "TargetInfo.h"
-@@ -161,6 +162,24 @@ void CodeGenFunction::EmitStmt(const Stmt *S, ArrayRef<const Attr *> Attrs) {
+@@ -161,6 +163,27 @@ void CodeGenFunction::EmitStmt(const Stmt *S, ArrayRef<const Attr *> Attrs) {
    case Stmt::DoStmtClass:      EmitDoStmt(cast<DoStmt>(*S), Attrs);       break;
    case Stmt::ForStmtClass:     EmitForStmt(cast<ForStmt>(*S), Attrs);     break;
  
@@ -1109,6 +1110,9 @@ index c050fd41a..c2ef08b6b 100644
 +    break;
 +
 +  case Stmt::ObjC3DoCatchStmtClass:
++    emitObjC3DoCatchStmt(*this, *cast<ObjC3DoCatchStmt>(S));
++    break;
++
 +  case Stmt::ObjC3CatchStmtClass:
 +    ErrorUnsupported(S, "Slop typed-error handler ABI");
 +    break;
@@ -1126,15 +1130,16 @@ index c050fd41a..c2ef08b6b 100644
  
    case Stmt::SwitchStmtClass:  EmitSwitchStmt(cast<SwitchStmt>(*S));      break;
 diff --git a/clang/lib/CodeGen/CMakeLists.txt b/clang/lib/CodeGen/CMakeLists.txt
-index dbbc35b37..43e273902 100644
+index dbbc35b37..7a23edbae 100644
 --- a/clang/lib/CodeGen/CMakeLists.txt
 +++ b/clang/lib/CodeGen/CMakeLists.txt
-@@ -86,6 +86,12 @@ add_clang_library(clangCodeGen
+@@ -86,6 +86,13 @@ add_clang_library(clangCodeGen
    CGLoopInfo.cpp
    CGNonTrivialStruct.cpp
    CGObjC.cpp
 +  CGObjC3Carriers.cpp
 +  CGObjC3TypedErrors.cpp
++  CGObjC3ErrorHandlers.cpp
 +  CGObjC3Match.cpp
 +  CGObjC3ArcCarriers.cpp
 +  CGObjC3ResultExpr.cpp
@@ -1211,7 +1216,7 @@ index 6c0589be3..553b4c02a 100644
  
    FunctionArgList Args;
 diff --git a/clang/lib/CodeGen/CodeGenFunction.h b/clang/lib/CodeGen/CodeGenFunction.h
-index 13c8f2002..a297ed7ed 100644
+index 13c8f2002..b3a022be9 100644
 --- a/clang/lib/CodeGen/CodeGenFunction.h
 +++ b/clang/lib/CodeGen/CodeGenFunction.h
 @@ -78,6 +78,9 @@ class ObjCForCollectionStmt;
@@ -1224,13 +1229,22 @@ index 13c8f2002..a297ed7ed 100644
  class ObjCAutoreleasePoolStmt;
  class OMPUseDevicePtrClause;
  class OMPUseDeviceAddrClause;
-@@ -278,6 +281,37 @@ public:
+@@ -102,6 +105,7 @@ class RegionCodeGenTy;
+ class TargetCodeGenInfo;
+ struct OMPTaskDataTy;
+ struct CGCoroData;
++struct ObjC3ErrorHandler;
+ 
+ // clang-format off
+ /// The kind of evaluation to perform on values of a particular
+@@ -278,6 +282,38 @@ public:
    CodeGenModule &CGM; // Per-module state.
    const TargetInfo &Target;
  
 +  VarDecl *ObjC3FunctionErrorOutDecl = nullptr;
 +  llvm::Value *ObjC3FunctionErrorOutPointer = nullptr;
 +  Address ObjC3PendingErrorStorage = Address::invalid();
++  ObjC3ErrorHandler *ObjC3ActiveErrorHandler = nullptr;
 +  Address ObjC3CallErrorOutStorage = Address::invalid();
 +  QualType ObjC3CallErrorOutValueType;
 +  const CallExpr *ObjC3CallErrorOutExpr = nullptr;
@@ -1262,7 +1276,7 @@ index 13c8f2002..a297ed7ed 100644
    // For EH/SEH outlined funclets, this field points to parent's CGF
    CodeGenFunction *ParentCGF = nullptr;
  
-@@ -3607,6 +3641,11 @@ public:
+@@ -3607,6 +3643,11 @@ public:
    /// This function may clear the current insertion point; callers should use
    /// EnsureInsertPoint if they wish to subsequently generate code without first
    /// calling EmitBlock, EmitBranch, or EmitStmt.
@@ -3711,6 +3725,253 @@ new file mode 100644
 +} // namespace clang
 +
 +#endif
+diff --git a/clang/lib/CodeGen/CGObjC3ErrorHandlers.cpp b/clang/lib/CodeGen/CGObjC3ErrorHandlers.cpp
+new file mode 100644
+--- /dev/null
++++ b/clang/lib/CodeGen/CGObjC3ErrorHandlers.cpp
+@@ -0,0 +1,217 @@
++//===--- CGObjC3ErrorHandlers.cpp - ObjC3 error handlers
++//--------------------===//
++// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
++
++#include "CGObjC3ErrorHandlers.h"
++#include "CGObjC3TypedErrors.h"
++#include "CGObjCRuntime.h"
++#include "CodeGenFunction.h"
++#include "CodeGenModule.h"
++#include "clang/AST/ASTContext.h"
++#include "clang/AST/DeclObjC.h"
++#include "clang/AST/Expr.h"
++#include "clang/AST/Stmt.h"
++#include "clang/Basic/TargetInfo.h"
++#include "llvm/IR/Constants.h"
++#include "llvm/IR/Intrinsics.h"
++#include "llvm/Support/SaveAndRestore.h"
++
++using namespace clang;
++using namespace clang::CodeGen;
++
++namespace clang::CodeGen {
++struct ObjC3ErrorHandler {
++  Address ErrorStorage;
++  CodeGenFunction::JumpDest Dispatch;
++};
++} // namespace clang::CodeGen
++
++Address CodeGen::getObjC3ErrorDestinationStorage(CodeGenFunction &CGF) {
++  if (auto *Handler = CGF.ObjC3ActiveErrorHandler)
++    return Handler->ErrorStorage;
++  return CGF.ObjC3PendingErrorStorage;
++}
++
++void CodeGen::emitObjC3ErrorTransfer(CodeGenFunction &CGF) {
++  if (auto *Handler = CGF.ObjC3ActiveErrorHandler) {
++    CGF.EmitBranchThroughCleanup(Handler->Dispatch);
++    return;
++  }
++  if (!CGF.ObjC3PendingErrorStorage.isValid()) {
++    // Sema proves exhaustiveness from the observed static effects. A payload
++    // forged with an unsafe object cast can still fail a runtime type test.
++    CGF.EmitTrapCall(llvm::Intrinsic::trap);
++    CGF.Builder.CreateUnreachable();
++    CGF.Builder.ClearInsertionPoint();
++    return;
++  }
++  if (!CGF.FnRetTy->isVoidType())
++    CGF.Builder.CreateStore(
++        llvm::Constant::getNullValue(CGF.ConvertType(CGF.FnRetTy)),
++        CGF.ReturnValue);
++  CGF.EmitBranchThroughCleanup(CGF.ReturnBlock);
++}
++
++namespace {
++llvm::Value *emitObjectClass(CodeGenFunction &CGF, llvm::Value *Object) {
++  auto *Type = llvm::FunctionType::get(CGF.Int8PtrTy, {CGF.Int8PtrTy}, false);
++  return CGF.EmitNounwindRuntimeCall(
++      CGF.CGM.CreateRuntimeFunction(Type, "object_getClass"), {Object},
++      "objc3.error.class");
++}
++
++llvm::Value *emitClassMatch(CodeGenFunction &CGF, llvm::Value *ObjectClass,
++                            ObjCInterfaceDecl *Interface) {
++  llvm::Value *Expected = CGF.CGM.getObjCRuntime().GetClass(CGF, Interface);
++  auto *Entry = CGF.Builder.GetInsertBlock();
++  auto *Loop = CGF.createBasicBlock("objc3.catch.class.test");
++  auto *Compare = CGF.createBasicBlock("objc3.catch.class.compare");
++  auto *Next = CGF.createBasicBlock("objc3.catch.class.next");
++  auto *Done = CGF.createBasicBlock("objc3.catch.class.done");
++  CGF.Builder.CreateBr(Loop);
++  CGF.EmitBlock(Loop);
++  auto *Class = CGF.Builder.CreatePHI(CGF.Int8PtrTy, 2, "objc3.catch.class");
++  Class->addIncoming(ObjectClass, Entry);
++  CGF.Builder.CreateCondBr(CGF.Builder.CreateIsNotNull(Class), Compare, Done);
++  CGF.EmitBlock(Compare);
++  llvm::Value *Matches = CGF.Builder.CreateICmpEQ(Class, Expected);
++  CGF.Builder.CreateCondBr(Matches, Done, Next);
++  CGF.EmitBlock(Next);
++  auto *Type = llvm::FunctionType::get(CGF.Int8PtrTy, {CGF.Int8PtrTy}, false);
++  llvm::Value *Super = CGF.EmitNounwindRuntimeCall(
++      CGF.CGM.CreateRuntimeFunction(Type, "class_getSuperclass"), {Class});
++  Class->addIncoming(Super, CGF.Builder.GetInsertBlock());
++  CGF.Builder.CreateBr(Loop);
++  CGF.EmitBlock(Done);
++  auto *Result = CGF.Builder.CreatePHI(CGF.Builder.getInt1Ty(), 2,
++                                       "objc3.catch.class.matches");
++  Result->addIncoming(CGF.Builder.getFalse(), Loop);
++  Result->addIncoming(CGF.Builder.getTrue(), Compare);
++  return Result;
++}
++
++llvm::Value *emitProtocolMatch(CodeGenFunction &CGF, llvm::Value *ObjectClass,
++                               ObjCProtocolDecl *Protocol) {
++  llvm::Value *Reference =
++      CGF.CGM.getObjCRuntime().GenerateProtocolRef(CGF, Protocol);
++  // libobjc2 uses int BOOL on Windows and byte BOOL on Unix. A parsed runtime
++  // header is authoritative when present; otherwise use the selected runtime
++  // and target. Never assume a C++ i1 return for a runtime C BOOL function.
++  auto &Ctx = CGF.getContext();
++  llvm::Type *BoolType =
++      Ctx.getBOOLDecl() ? CGF.ConvertType(Ctx.getBOOLType())
++                        : (CGF.CGM.getTarget().getTriple().isOSWindows() &&
++                                   CGF.getLangOpts().ObjCRuntime.isGNUFamily()
++                               ? CGF.Int32Ty
++                               : CGF.Int8Ty);
++  auto *Type =
++      llvm::FunctionType::get(BoolType, {CGF.Int8PtrTy, CGF.Int8PtrTy}, false);
++  llvm::Value *Matches = CGF.EmitNounwindRuntimeCall(
++      CGF.CGM.CreateRuntimeFunction(Type, "class_conformsToProtocol"),
++      {ObjectClass, Reference}, "objc3.catch.protocol");
++  return CGF.Builder.CreateIsNotNull(Matches, "objc3.catch.protocol.matches");
++}
++
++llvm::Value *emitPatternMatch(CodeGenFunction &CGF, llvm::Value *Error,
++                              const ObjC3CatchStmt &Clause) {
++  if (Clause.isCatchAll())
++    return CGF.Builder.getTrue();
++  const auto *Pointer =
++      Clause.getCatchTypeInfo()->getType()->getAs<ObjCObjectPointerType>();
++  // A bridge to id<Error> is guaranteed by the admitted error transport. It
++  // also includes Foundation's standard NSError bridge on older SDKs.
++  if (Pointer->isObjCQualifiedIdType() && Pointer->getNumProtocols() == 1 &&
++      (*Pointer->qual_begin())->getName() == "Error")
++    return CGF.Builder.getTrue();
++
++  llvm::Value *Class = emitObjectClass(CGF, Error);
++  llvm::Value *Matches = CGF.Builder.getTrue();
++  if (ObjCInterfaceDecl *Interface = Pointer->getInterfaceDecl())
++    Matches = emitClassMatch(CGF, Class, Interface);
++  for (ObjCProtocolDecl *Protocol : Pointer->quals())
++    Matches =
++        CGF.Builder.CreateAnd(Matches, emitProtocolMatch(CGF, Class, Protocol));
++  return Matches;
++}
++
++void emitCatchBody(CodeGenFunction &CGF, const ObjC3CatchStmt &Clause,
++                   llvm::Value *Error) {
++  CodeGenFunction::RunCleanupsScope Cleanups(CGF);
++  if (DeclStmt *Binding = Clause.getBindingDeclStmt()) {
++    auto *Variable = cast<VarDecl>(Binding->getSingleDecl());
++    auto Emission = CGF.EmitAutoVarAlloca(*Variable);
++    QualType ValueType =
++        CGF.getContext().getUnqualifiedObjCPointerType(Variable->getType());
++    OpaqueValueExpr Value(Clause.getCatchLoc(), ValueType, VK_PRValue);
++    CodeGenFunction::OpaqueValueMapping Mapping(CGF, &Value,
++                                                RValue::get(Error));
++    CGF.EmitScalarInit(
++        &Value, Variable,
++        CGF.MakeAddrLValue(Emission.getObjectAddress(CGF), Variable->getType()),
++        false);
++    CGF.EmitAutoVarCleanups(Emission);
++  }
++  CGF.EmitStmt(Clause.getHandlerBody());
++}
++} // namespace
++
++bool CodeGen::emitObjC3DoCatchStmt(CodeGenFunction &CGF,
++                                   const ObjC3DoCatchStmt &S) {
++  QualType ErrorType, ParameterType;
++  if (!CGF.getLangOpts().ObjCAutoRefCount ||
++      !getObjC3ErrorOutTypes(CGF.CGM, ErrorType, ParameterType)) {
++    CGF.ErrorUnsupported(&S, "Slop typed-error handler ABI");
++    return false;
++  }
++  for (unsigned I = 0; I != S.getNumCatchClauses(); ++I) {
++    auto *Clause = S.getCatchClause(I);
++    if (!Clause->isCatchAll() &&
++        !isObjC3ErrorObjectType(CGF.CGM,
++                                Clause->getCatchTypeInfo()->getType())) {
++      CGF.ErrorUnsupported(&S, "non-object typed-error handler ABI");
++      return false;
++    }
++  }
++
++  CodeGenFunction::RunCleanupsScope HandlerCleanups(CGF);
++  QualType OwnedType = getObjC3OwnedErrorType(CGF, ErrorType);
++  Address Storage = CGF.CreateMemTemp(OwnedType, "objc3.catch.error");
++  CGF.EmitStoreOfScalar(
++      llvm::Constant::getNullValue(CGF.ConvertType(OwnedType)),
++      CGF.MakeAddrLValue(Storage, OwnedType), true);
++  CGF.pushDestroy(NormalAndEHCleanup, Storage, OwnedType,
++                  CodeGenFunction::destroyARCStrongPrecise, false);
++  ObjC3ErrorHandler Handler{
++      Storage, CGF.getJumpDestInCurrentScope("objc3.catch.dispatch")};
++  auto *Done = CGF.createBasicBlock("objc3.catch.done");
++  {
++    llvm::SaveAndRestore<ObjC3ErrorHandler *> Active(
++        CGF.ObjC3ActiveErrorHandler, &Handler);
++    CGF.EmitStmt(S.getBody());
++  }
++  CGF.EmitBranch(Done);
++  CGF.EmitBlock(Handler.Dispatch.getBlock());
++  llvm::Value *Error = CGF.EmitLoadOfScalar(
++      CGF.MakeAddrLValue(Storage, OwnedType), S.getDoLoc());
++  for (unsigned I = 0; I != S.getNumCatchClauses(); ++I) {
++    auto *Clause = S.getCatchClause(I);
++    llvm::Value *Matches = emitPatternMatch(CGF, Error, *Clause);
++    auto *Catch = CGF.createBasicBlock("objc3.catch.body");
++    auto *Next = CGF.createBasicBlock("objc3.catch.next");
++    CGF.Builder.CreateCondBr(Matches, Catch, Next);
++    CGF.EmitBlock(Catch);
++    // This handler is no longer active. Errors raised by a catch body go to
++    // an enclosing handler or the callable, never to a sibling clause.
++    emitCatchBody(CGF, *Clause, Error);
++    CGF.EmitBranch(Done);
++    CGF.EmitBlock(Next);
++  }
++
++  Address Outer = getObjC3ErrorDestinationStorage(CGF);
++  if (Outer.isValid())
++    storeOwnedObjC3Error(
++        CGF, Outer, takeOwnedObjC3Error(CGF, Storage, ErrorType), ErrorType);
++  emitObjC3ErrorTransfer(CGF);
++  CGF.EmitBlock(Done);
++  return true;
++}
+diff --git a/clang/lib/CodeGen/CGObjC3ErrorHandlers.h b/clang/lib/CodeGen/CGObjC3ErrorHandlers.h
+new file mode 100644
+--- /dev/null
++++ b/clang/lib/CodeGen/CGObjC3ErrorHandlers.h
+@@ -0,0 +1,20 @@
++//===--- CGObjC3ErrorHandlers.h - ObjC3 error handlers ------------*- C++
++//-*-===//
++// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
++
++#ifndef LLVM_CLANG_LIB_CODEGEN_CGOBJC3ERRORHANDLERS_H
++#define LLVM_CLANG_LIB_CODEGEN_CGOBJC3ERRORHANDLERS_H
++
++namespace clang {
++class ObjC3DoCatchStmt;
++namespace CodeGen {
++class Address;
++class CodeGenFunction;
++
++Address getObjC3ErrorDestinationStorage(CodeGenFunction &CGF);
++void emitObjC3ErrorTransfer(CodeGenFunction &CGF);
++bool emitObjC3DoCatchStmt(CodeGenFunction &CGF, const ObjC3DoCatchStmt &S);
++
++} // namespace CodeGen
++} // namespace clang
++#endif
 diff --git a/clang/lib/CodeGen/CGObjC3Match.cpp b/clang/lib/CodeGen/CGObjC3Match.cpp
 new file mode 100644
 --- /dev/null
@@ -4419,7 +4680,7 @@ diff --git a/clang/lib/CodeGen/CGObjC3TypedErrors.cpp b/clang/lib/CodeGen/CGObjC
 new file mode 100644
 --- /dev/null
 +++ b/clang/lib/CodeGen/CGObjC3TypedErrors.cpp
-@@ -0,0 +1,495 @@
+@@ -0,0 +1,498 @@
 +//===--- CGObjC3TypedErrors.cpp - ObjC3 error-output CodeGen -----*- C++
 +//-*-===//
 +//
@@ -4432,6 +4693,7 @@ new file mode 100644
 +
 +#include "CGCall.h"
 +#include "CGObjC3Carriers.h"
++#include "CGObjC3ErrorHandlers.h"
 +#include "CodeGenFunction.h"
 +#include "CodeGenModule.h"
 +#include "CodeGenTypes.h"
@@ -4544,25 +4806,35 @@ new file mode 100644
 +  }
 +};
 +
-+QualType strongErrorType(CodeGenFunction &CGF, QualType ErrorType) {
++} // namespace
++
++bool CodeGen::isObjC3ErrorObjectType(CodeGenModule &CGM, QualType Type) {
++  return isErrorBoundObjectPointer(CGM, Type);
++}
++
++QualType CodeGen::getObjC3OwnedErrorType(CodeGenFunction &CGF, QualType ErrorType) {
 +  auto &Ctx = CGF.getContext();
 +  return Ctx.getLifetimeQualifiedType(
 +      Ctx.getUnqualifiedObjCPointerType(ErrorType), Qualifiers::OCL_Strong);
 +}
 +
-+// Adopt a +1 error before any expression or function cleanup can run. Replacing
-+// a pending error is an ownership transfer, just like native ARC strong
-+// storage.
-+void stageOwnedError(CodeGenFunction &CGF, llvm::Value *OwnedError,
-+                     QualType ErrorType) {
-+  LValue Slot = CGF.MakeAddrLValue(CGF.ObjC3PendingErrorStorage,
-+                                   strongErrorType(CGF, ErrorType));
++// Adopt a +1 error before any expression or lexical cleanup can run.
++void CodeGen::storeOwnedObjC3Error(CodeGenFunction &CGF, Address Storage,
++                                  llvm::Value *OwnedError, QualType ErrorType) {
++  LValue Slot = CGF.MakeAddrLValue(Storage, getObjC3OwnedErrorType(CGF, ErrorType));
 +  llvm::Value *Previous = CGF.EmitLoadOfScalar(Slot, SourceLocation());
 +  CGF.EmitStoreOfScalar(OwnedError, Slot);
 +  CGF.EmitARCRelease(Previous, ARCPreciseLifetime);
 +}
 +
-+} // namespace
++llvm::Value *CodeGen::takeOwnedObjC3Error(CodeGenFunction &CGF, Address Storage,
++                                        QualType ErrorType) {
++  LValue Slot = CGF.MakeAddrLValue(Storage, getObjC3OwnedErrorType(CGF, ErrorType));
++  llvm::Value *Owned = CGF.EmitLoadOfScalar(Slot, SourceLocation());
++  CGF.EmitStoreOfScalar(
++      llvm::Constant::getNullValue(CGF.ConvertType(ErrorType)), Slot);
++  return Owned;
++}
 +
 +bool CodeGen::getObjC3ErrorOutTypes(CodeGenModule &CGM, QualType &ValueType,
 +                                    QualType &ParameterType) {
@@ -4633,7 +4905,7 @@ new file mode 100644
 +      CGF.EmitLoadOfScalar(ParameterLV, OutErrorDecl->getLocation());
 +  CGF.ObjC3FunctionErrorOutPointer = OutPointer;
 +
-+  QualType PendingType = strongErrorType(CGF, ValueType);
++  QualType PendingType = getObjC3OwnedErrorType(CGF, ValueType);
 +  CGF.ObjC3PendingErrorStorage =
 +      CGF.CreateMemTemp(PendingType, "objc3.error.pending");
 +  LValue Pending =
@@ -4693,7 +4965,7 @@ new file mode 100644
 +  if (!getObjC3ErrorOutTypes(CGF.CGM, ErrorType, ParameterType))
 +    return;
 +  LValue Pending = CGF.MakeAddrLValue(CGF.ObjC3PendingErrorStorage,
-+                                      strongErrorType(CGF, ErrorType));
++                                      getObjC3OwnedErrorType(CGF, ErrorType));
 +  llvm::Value *Owned = CGF.EmitLoadOfScalar(Pending, SourceLocation());
 +  CGF.EmitStoreOfScalar(
 +      llvm::Constant::getNullValue(CGF.ConvertType(ErrorType)), Pending);
@@ -4724,9 +4996,12 @@ new file mode 100644
 +  const Expr *Payload = S.getPayload();
 +  const auto *FD = dyn_cast_or_null<FunctionDecl>(CGF.CurCodeDecl);
 +  const auto *FPT = FD ? FD->getType()->getAs<FunctionProtoType>() : nullptr;
-+  if (!Payload || !supportsObjC3ErrorOutFunction(CGF.CGM, FPT, FD, true) ||
++  Address Storage = getObjC3ErrorDestinationStorage(CGF);
++  if (!Payload || !CGF.getLangOpts().ObjCAutoRefCount ||
 +      !isErrorBoundObjectPointer(CGF.CGM, Payload->getType()) ||
-+      !CGF.ObjC3FunctionErrorOutPointer) {
++      !Storage.isValid() ||
++      (!CGF.ObjC3ActiveErrorHandler &&
++       !supportsObjC3ErrorOutFunction(CGF.CGM, FPT, FD, true))) {
 +    CGF.CGM.ErrorUnsupported(&S, "typed Error-object throw lowering");
 +    return false;
 +  }
@@ -4739,10 +5014,10 @@ new file mode 100644
 +  if (!getObjC3ErrorOutTypes(CGF.CGM, ErrorType, ParameterType))
 +    return false;
 +  llvm::Value *Owned = CGF.EmitARCRetainScalarExpr(Operand);
-+  stageOwnedError(CGF, Owned, ErrorType);
++  storeOwnedObjC3Error(CGF, Storage, Owned, ErrorType);
 +  ExpressionCleanups.ForceCleanup();
-+  LValue Pending = CGF.MakeAddrLValue(CGF.ObjC3PendingErrorStorage,
-+                                      strongErrorType(CGF, ErrorType));
++  LValue Pending = CGF.MakeAddrLValue(Storage,
++                                      getObjC3OwnedErrorType(CGF, ErrorType));
 +  llvm::Value *Object = CGF.EmitLoadOfScalar(Pending, S.getBeginLoc());
 +  llvm::Value *IsNonNull =
 +      CGF.Builder.CreateIsNotNull(Object, "objc3.thrown.error.present");
@@ -4756,15 +5031,7 @@ new file mode 100644
 +
 +  CGF.EmitBlock(Store);
 +
-+  // Return the zero/void placeholder after staging the owned error.
-+  // Branching through ReturnBlock runs native Clang cleanup actions.
-+  QualType ReturnType = FD->getReturnType();
-+  if (!ReturnType->isVoidType()) {
-+    llvm::Type *LLVMTy = CGF.ConvertType(ReturnType);
-+    CGF.Builder.CreateStore(llvm::Constant::getNullValue(LLVMTy),
-+                            CGF.ReturnValue);
-+  }
-+  CGF.EmitBranchThroughCleanup(CGF.ReturnBlock);
++  emitObjC3ErrorTransfer(CGF);
 +  return true;
 +}
 +
@@ -4810,20 +5077,17 @@ new file mode 100644
 +    CGF.Builder.CreateUnreachable();
 +    break;
 +  case ObjC3TryExpr::Kind::Propagate: {
-+    if (!CGF.ObjC3FunctionErrorOutPointer) {
++    Address Storage = getObjC3ErrorDestinationStorage(CGF);
++    if (!Storage.isValid()) {
 +      CGF.CGM.ErrorUnsupported(
 +          &E, "typed error propagation without error-out context");
 +      CGF.EmitTrapCall(llvm::Intrinsic::trap);
 +      CGF.Builder.CreateUnreachable();
 +      break;
 +    }
-+    stageOwnedError(CGF, CGF.EmitARCRetainNonBlock(Error), ErrorValueType);
-+    QualType ReturnType = CGF.FnRetTy;
-+    if (!ReturnType->isVoidType())
-+      CGF.Builder.CreateStore(
-+          llvm::Constant::getNullValue(CGF.ConvertType(ReturnType)),
-+          CGF.ReturnValue);
-+    CGF.EmitBranchThroughCleanup(CGF.ReturnBlock);
++    storeOwnedObjC3Error(CGF, Storage, CGF.EmitARCRetainNonBlock(Error),
++                         ErrorValueType);
++    emitObjC3ErrorTransfer(CGF);
 +    break;
 +  }
 +  }
@@ -4919,7 +5183,7 @@ diff --git a/clang/lib/CodeGen/CGObjC3TypedErrors.h b/clang/lib/CodeGen/CGObjC3T
 new file mode 100644
 --- /dev/null
 +++ b/clang/lib/CodeGen/CGObjC3TypedErrors.h
-@@ -0,0 +1,51 @@
+@@ -0,0 +1,58 @@
 +//===--- CGObjC3TypedErrors.h - ObjC3 error-output CodeGen -------*- C++
 +//-*-===//
 +//
@@ -4947,11 +5211,18 @@ new file mode 100644
 +class QualType;
 +class SourceLocation;
 +namespace CodeGen {
++class Address;
 +class AggValueSlot;
 +class CodeGenFunction;
 +class CodeGenModule;
 +class RValue;
 +
++bool isObjC3ErrorObjectType(CodeGenModule &CGM, QualType Type);
++QualType getObjC3OwnedErrorType(CodeGenFunction &CGF, QualType ErrorType);
++void storeOwnedObjC3Error(CodeGenFunction &CGF, Address Storage,
++                         llvm::Value *OwnedError, QualType ErrorType);
++llvm::Value *takeOwnedObjC3Error(CodeGenFunction &CGF, Address Storage,
++                                QualType ErrorType);
 +bool getObjC3ErrorOutTypes(CodeGenModule &CGM, QualType &ValueType,
 +                           QualType &ParameterType);
 +bool supportsObjC3ErrorOutFunction(CodeGenModule &CGM,
@@ -6492,16 +6763,263 @@ new file mode 100644
 +  if (__objc3_is_ok(copied)) return 8;
 +  return 0;
 +}
+diff --git a/clang/test/ObjC3/CodeGen/Inputs/typed-error-do-catch-runtime.inc b/clang/test/ObjC3/CodeGen/Inputs/typed-error-do-catch-runtime.inc
+new file mode 100644
+--- /dev/null
++++ b/clang/test/ObjC3/CodeGen/Inputs/typed-error-do-catch-runtime.inc
+@@ -0,0 +1,220 @@
++// Included by the ARC Objective-C++ executable witness. The MRC companion
++// owns actual root-class reference counts and weak-reference teardown.
++static int HandlerEvents;
++
++static void throw_first() __objc3_throws(FirstError *) {
++  __objc3_throw((FirstError *)make_error_kind(1));
++}
++static void throw_second() __objc3_throws(SecondError *) {
++  __objc3_throw((SecondError *)make_error_kind(2));
++}
++static void throw_marker() __objc3_throws(id<Marker>) {
++  __objc3_throw((id<Marker>)make_error_kind(3));
++}
++
++static int ordered_handler(int Kind) {
++  __objc3_do {
++    if (Kind == 1)
++      __objc3_try(throw_first());
++    else
++      __objc3_try(throw_second());
++  } __objc3_catch(FirstError *Error) {
++    return is_nonnull_zero_code_error(Error) ? 1 : 90;
++  } __objc3_catch(FirstError *) {
++    return 91;
++  } __objc3_catch(SecondError *Error) {
++    return is_nonnull_zero_code_error(Error) ? 2 : 92;
++  } __objc3_catch {
++    return 93;
++  }
++  return 94;
++}
++
++static int nested_handler(int Kind) {
++  __objc3_do {
++    __objc3_do {
++      if (Kind == 1)
++        __objc3_try(throw_first());
++      else
++        __objc3_try(throw_second());
++    } __objc3_catch(FirstError *) {
++      return 1;
++    }
++  } __objc3_catch(SecondError *Error) {
++    return is_nonnull_zero_code_error(Error) ? 2 : 95;
++  }
++  return 96;
++}
++
++static void unmatched_to_callable(int Kind) __objc3_throws(SecondError *) {
++  __objc3_do {
++    if (Kind == 1)
++      __objc3_try(throw_first());
++    else
++      __objc3_try(throw_second());
++  } __objc3_catch(FirstError *) {
++    ++HandlerEvents;
++  }
++}
++
++static int rethrow_handler() {
++  __objc3_do {
++    __objc3_do {
++      __objc3_throw((FirstError *)make_error_kind(1));
++    } __objc3_catch(FirstError *Error) {
++      ++HandlerEvents;
++      __objc3_throw(Error);
++    } __objc3_catch(FirstError *) {
++      return 97;
++    }
++  } __objc3_catch(FirstError *Error) {
++    return is_nonnull_zero_code_error(Error) ? 1 : 98;
++  }
++  return 99;
++}
++
++static int protocol_handler() {
++  __objc3_do {
++    __objc3_try(throw_marker());
++  } __objc3_catch(id<Marker> Error) {
++    return is_nonnull_zero_code_error(Error);
++  }
++  return 0;
++}
++
++static int inherited_class_handler() {
++  __objc3_do {
++    // MarkedError inherits FirstError, so this is a legal exact static
++    // FirstError pattern with a subclass as its actual dynamic payload.
++    __objc3_throw((FirstError *)make_error_kind(3));
++  } __objc3_catch(FirstError *Error) {
++    return is_nonnull_zero_code_error(Error);
++  }
++  return 0;
++}
++
++static int bridge_handler() {
++  __objc3_do {
++    __objc3_try(throw_first());
++  } __objc3_catch(id<Error> Error) {
++    return is_nonnull_zero_code_error(Error);
++  }
++  return 0;
++}
++
++static int run_handler_checks() {
++  @autoreleasepool {
++    if (ordered_handler(1) != 1 || ordered_handler(2) != 2 ||
++        nested_handler(1) != 1 || nested_handler(2) != 2 ||
++        !protocol_handler() || !inherited_class_handler() || !bridge_handler())
++      return 50;
++    if (!__objc3_has_value(__objc3_try_optional(unmatched_to_callable(1))) ||
++        __objc3_has_value(__objc3_try_optional(unmatched_to_callable(2))) ||
++        HandlerEvents != 1)
++      return 51;
++  }
++  int Before = zero_code_error_deallocations();
++  if (rethrow_handler() != 1 || HandlerEvents != 2 ||
++      zero_code_error_deallocations() != Before + 1)
++    return 52;
++
++  Before = zero_code_error_deallocations();
++  __attribute__((objc_precise_lifetime)) FirstError *Escaped = nil;
++  __weak FirstError *Witness = nil;
++  __objc3_do {
++    @autoreleasepool {
++      Tracker Cleanup;
++      __objc3_defer { ++HandlerEvents; }
++      __objc3_throw((FirstError *)make_error_kind(1));
++    }
++  } __objc3_catch(FirstError *Error) {
++    if (HandlerEvents != 3 || !is_nonnull_zero_code_error(Error))
++      return 53;
++    Escaped = Error;
++    Witness = Error;
++  }
++  if (!Escaped || !Witness || zero_code_error_deallocations() != Before)
++    return 54;
++  Escaped = nil;
++  if (Witness || zero_code_error_deallocations() != Before + 1)
++    return 55;
++
++  Before = zero_code_error_deallocations();
++  __objc3_do {
++    __objc3_throw((FirstError *)make_error_kind(1));
++  } __objc3_catch(FirstError *__weak Error) {
++    Witness = Error;
++    if (!Error || !Witness)
++      return 56;
++  }
++  if (Witness || zero_code_error_deallocations() != Before + 1)
++    return 57;
++
++  Before = zero_code_error_deallocations();
++  for (int I = 0; I != 3; ++I) {
++    __objc3_do {
++      __objc3_throw((FirstError *)make_error_kind(1));
++    } __objc3_catch(FirstError *) {
++      if (I == 0) continue;
++      if (I == 1) break;
++      return 58;
++    }
++  }
++  if (zero_code_error_deallocations() != Before + 2)
++    return 59;
++  Before = zero_code_error_deallocations();
++  __objc3_do {
++    __objc3_throw((FirstError *)make_error_kind(1));
++  } __objc3_catch(FirstError *) {
++    goto HandlerExit;
++  }
++HandlerExit:
++  if (zero_code_error_deallocations() != Before + 1)
++    return 60;
++
++  Before = zero_code_error_deallocations();
++  try {
++    __objc3_do {
++      ThrowingLocalCleanup Cleanup;
++      __objc3_throw((FirstError *)make_error_kind(1));
++    } __objc3_catch {
++      return 61;
++    }
++    return 62;
++  } catch (int Value) {
++    if (Value != 37 || zero_code_error_deallocations() != Before + 1)
++      return 63;
++  }
++  Before = zero_code_error_deallocations();
++  try {
++    __objc3_do {
++      __objc3_throw((FirstError *)make_error_kind(1));
++    } __objc3_catch(FirstError *Error) {
++      if (!Error) return 64;
++      throw 43;
++    }
++  } catch (int Value) {
++    if (Value != 43 || zero_code_error_deallocations() != Before + 1)
++      return 65;
++  }
++
++  int Caught = 0;
++  Before = zero_code_error_deallocations();
++  {
++    __objc3_defer {
++      // A handler wholly contained in a defer body is a local transfer.
++      __objc3_do { __objc3_throw((FirstError *)make_error_kind(1)); }
++      __objc3_catch { ++Caught; }
++    }
++  }
++  if (Caught != 1 || zero_code_error_deallocations() != Before + 1)
++    return 66;
++  // A nested callable owns its own error context even when lexically in do.
++  try {
++    __objc3_do { [] { throw 47; }(); }
++    __objc3_catch { return 67; }
++  } catch (int Value) {
++    if (Value != 47) return 68;
++  }
++  return 0;
++}
+diff --git a/clang/test/ObjC3/CodeGen/Inputs/typed-error-handlers-pch.h b/clang/test/ObjC3/CodeGen/Inputs/typed-error-handlers-pch.h
+new file mode 100644
+--- /dev/null
++++ b/clang/test/ObjC3/CodeGen/Inputs/typed-error-handlers-pch.h
+@@ -0,0 +1,16 @@
++@protocol Error @end
++inline int pch_handler(id<Error> error) {
++  __objc3_do { __objc3_throw(error); }
++  __objc3_catch(id<Error> strong_binding) { return strong_binding != (id)0; }
++  return 0;
++}
++template<class T> int template_handler(T error) {
++  __objc3_do { __objc3_throw(error); }
++  __objc3_catch(T template_binding) { return template_binding != (id)0; }
++  return 0;
++}
++inline int weak_pch_handler(id<Error> error) {
++  __objc3_do { __objc3_throw(error); }
++  __objc3_catch(id<Error> __weak weak_binding) { return weak_binding != (id)0; }
++  return 0;
++}
 diff --git a/clang/test/ObjC3/CodeGen/Inputs/typed-error-native-runtime-support.m b/clang/test/ObjC3/CodeGen/Inputs/typed-error-native-runtime-support.m
 new file mode 100644
 --- /dev/null
 +++ b/clang/test/ObjC3/CodeGen/Inputs/typed-error-native-runtime-support.m
-@@ -0,0 +1,77 @@
+@@ -0,0 +1,91 @@
 +// Compile this companion in MRC mode with pinned libobjc2. It supplies a real
 +// Error object whose application code is zero and explicit lifetime counters.
 +#include <objc/objc.h>
 +#include <objc/runtime.h>
 +#include <objc/objc-arc.h>
++#include <objc/hooks.h>
 +#include "typed-error-runtime-interface.h"
 +
 +static int Deallocations;
@@ -6519,20 +7037,33 @@ new file mode 100644
 +}
 +- (void)dealloc {
 +  ++Deallocations;
++  objc_delete_weak_refs(self);
 +  object_dispose(self);
 +}
 +- (id)autorelease { return objc_autorelease(self); }
 +- (int)code { return Code; }
 +@end
 +
-+id make_zero_code_error(void) __attribute__((ns_returns_retained));
-+id make_zero_code_error(void) {
++@implementation FirstError @end
++@implementation SecondError @end
++@implementation MarkedError @end
++
++// Custom MRC roots own weak teardown and provide libobjc2's live-object hook.
++// This fixture is single-threaded and uses the same indexed count for subclasses.
++static id LoadLiveError(id Object) {
++  return *(unsigned long *)object_getIndexedIvars(Object) ? Object : nil;
++}
++id make_error_kind(int Kind) {
++  _objc_weak_load = LoadLiveError;
++  const char *Name = Kind == 1 ? "FirstError" : Kind == 2 ? "SecondError" :
++                     Kind == 3 ? "MarkedError" : "ZeroCodeError";
 +  ZeroCodeError *Value = (ZeroCodeError *)class_createInstance(
-+      objc_getClass("ZeroCodeError"), sizeof(unsigned long));
++      objc_getClass(Name), sizeof(unsigned long));
 +  *(unsigned long *)object_getIndexedIvars(Value) = 1;
 +  Value->Code = 0;
 +  return Value;
 +}
++id make_zero_code_error(void) { return make_error_kind(0); }
 +int zero_code_error_deallocations(void) { return Deallocations; }
 +int is_nonnull_zero_code_error(id Value) {
 +  return Value != nil && [(ZeroCodeError *)Value code] == 0;
@@ -6578,7 +7109,7 @@ diff --git a/clang/test/ObjC3/CodeGen/Inputs/typed-error-out-runtime.mm b/clang/
 new file mode 100644
 --- /dev/null
 +++ b/clang/test/ObjC3/CodeGen/Inputs/typed-error-out-runtime.mm
-@@ -0,0 +1,232 @@
+@@ -0,0 +1,236 @@
 +// Runtime witness for the direct C.4.1 error-out slice. Compile with ARC,
 +// C++ exceptions, pinned libobjc2 and the admitted Windows MSVC/UCRT profile.
 +#include "typed-error-runtime-interface.h"
@@ -6752,6 +7283,8 @@ new file mode 100644
 +  return zero_code_error_deallocations() == Before + 2 ? 0 : 34;
 +}
 +
++#include "typed-error-do-catch-runtime.inc"
++
 +int main(int argc, char **) {
 +  if (argc == 2) {
 +    __objc3_try_force(throw_dynamic((TestError)nil));
@@ -6809,13 +7342,15 @@ new file mode 100644
 +  }
 +  int OwnedResult = run_owned_cleanup_checks();
 +  if (OwnedResult) return OwnedResult;
++  int HandlerResult = run_handler_checks();
++  if (HandlerResult) return HandlerResult;
 +  return SawNonNullZeroCodeError == 1 ? 0 : 5;
 +}
 diff --git a/clang/test/ObjC3/CodeGen/Inputs/typed-error-runtime-interface.h b/clang/test/ObjC3/CodeGen/Inputs/typed-error-runtime-interface.h
 new file mode 100644
 --- /dev/null
 +++ b/clang/test/ObjC3/CodeGen/Inputs/typed-error-runtime-interface.h
-@@ -0,0 +1,35 @@
+@@ -0,0 +1,41 @@
 +#ifndef TYPED_ERROR_RUNTIME_INTERFACE_H
 +#define TYPED_ERROR_RUNTIME_INTERFACE_H
 +
@@ -6837,10 +7372,16 @@ new file mode 100644
 +- (int)code;
 +@end
 +
++@protocol Marker <Error> @end
++@interface FirstError : ZeroCodeError @end
++@interface SecondError : ZeroCodeError @end
++@interface MarkedError : FirstError <Marker> @end
++
 +#ifdef __cplusplus
 +extern "C" {
 +#endif
 +id make_zero_code_error(void) __attribute__((ns_returns_retained));
++id make_error_kind(int kind) __attribute__((ns_returns_retained));
 +int zero_code_error_deallocations(void);
 +int is_nonnull_zero_code_error(id value);
 +int verify_error_out_abi(void);
@@ -8644,6 +9185,113 @@ new file mode 100644
 +// CHECK: objc3.error.publish
 +// CHECK: call ptr @llvm.objc.autorelease
 +// CHECK: store ptr
++// CHECK: ret void
+diff --git a/clang/test/ObjC3/CodeGen/typed-error-handlers-pch.mm b/clang/test/ObjC3/CodeGen/typed-error-handlers-pch.mm
+new file mode 100644
+--- /dev/null
++++ b/clang/test/ObjC3/CodeGen/typed-error-handlers-pch.mm
+@@ -0,0 +1,15 @@
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -triple x86_64-unknown-linux-gnu -fobjc-runtime=gnustep-2.0 -fobjc-version=3 -fobjc-arc -emit-pch %S/Inputs/typed-error-handlers-pch.h -o %t.pch
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -triple x86_64-unknown-linux-gnu -fobjc-runtime=gnustep-2.0 -fobjc-version=3 -fobjc-arc -include-pch %t.pch -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -triple x86_64-unknown-linux-gnu -fobjc-runtime=gnustep-2.0 -fobjc-version=3 -fobjc-arc -include-pch %t.pch -ast-dump-all %s | FileCheck %s --check-prefix=AST
++
++int use_pch_handler(id<Error> error) {
++  return pch_handler(error) + template_handler(error) + weak_pch_handler(error);
++}
++// CHECK: objc3.catch.dispatch:
++// CHECK: objc3.catch.dispatch:
++// CHECK: objc3.catch.dispatch:
++// CHECK: @llvm.objc.initWeak
++// CHECK: @llvm.objc.destroyWeak
++// AST: VarDecl{{.*}} strong_binding '{{.*}}__strong{{.*}}'
++// AST: VarDecl{{.*}} template_binding '{{.*}}__strong{{.*}}'
++// AST: VarDecl{{.*}} weak_binding '{{.*}}__weak{{.*}}'
+diff --git a/clang/test/ObjC3/CodeGen/typed-error-handlers-unwind.mm b/clang/test/ObjC3/CodeGen/typed-error-handlers-unwind.mm
+new file mode 100644
+--- /dev/null
++++ b/clang/test/ObjC3/CodeGen/typed-error-handlers-unwind.mm
+@@ -0,0 +1,24 @@
++// RUN: %clang_cc1 -x objective-c++ -triple x86_64-unknown-linux-gnu -fobjc-runtime=gnustep-2.0 -fobjc-version=3 -fobjc-arc -fexceptions -fcxx-exceptions -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++ -triple x86_64-pc-windows-msvc -fobjc-runtime=gnustep-2.0 -fobjc-version=3 -fobjc-arc -fexceptions -fcxx-exceptions -emit-llvm -o - %s | FileCheck %s --check-prefix=WIN
++// Internal handler ownership has EH cleanup even without -fobjc-arc-exceptions.
++
++@protocol Error @end
++typedef id<Error> E;
++struct Cleanup { ~Cleanup() noexcept(false); };
++
++extern "C" void cleanup_before_dispatch(E error) {
++  __objc3_do {
++    Cleanup C;
++    __objc3_throw(error);
++  } __objc3_catch { }
++}
++// CHECK-LABEL: define{{.*}} void @cleanup_before_dispatch(
++// CHECK: invoke void @_ZN7CleanupD1Ev
++// CHECK: landingpad
++// CHECK: call void @llvm.objc.storeStrong(ptr {{.*}}, ptr null)
++// CHECK: resume
++// WIN-LABEL: define{{.*}} void @cleanup_before_dispatch(
++// WIN: invoke void @"??1Cleanup
++// WIN: cleanuppad
++// WIN: call void @llvm.objc.storeStrong(ptr {{.*}}, ptr null)
++// WIN: cleanupret
+diff --git a/clang/test/ObjC3/CodeGen/typed-error-handlers.m b/clang/test/ObjC3/CodeGen/typed-error-handlers.m
+new file mode 100644
+--- /dev/null
++++ b/clang/test/ObjC3/CodeGen/typed-error-handlers.m
+@@ -0,0 +1,53 @@
++// RUN: %clang_cc1 -x objective-c -triple x86_64-unknown-linux-gnu -fobjc-runtime=gnustep-2.0 -fobjc-version=3 -fobjc-arc -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c -triple x86_64-pc-windows-msvc -fobjc-runtime=gnustep-2.0 -fobjc-version=3 -fobjc-arc -emit-llvm -o - %s | FileCheck %s
++
++@protocol Error @end
++@protocol Marker <Error> @end
++__attribute__((objc_root_class)) @interface First <Error> @end
++__attribute__((objc_root_class)) @interface Second <Error> @end
++
++void first(void) __objc3_throws(First *);
++void second(void) __objc3_throws(Second *);
++void marked(void) __objc3_throws(id<Marker>);
++
++int ordered(int which) {
++  __objc3_do {
++    if (which) __objc3_try(first());
++    else __objc3_try(second());
++  } __objc3_catch(First *error) {
++    return error != (id)0;
++  } __objc3_catch(Second *) {
++    return 2;
++  }
++  return 0;
++}
++// CHECK-LABEL: define{{.*}} i32 @ordered(
++// CHECK: call void @first(ptr
++// CHECK: objc3.try.failed
++// CHECK: call void @second(ptr
++// CHECK: objc3.catch.dispatch:
++// CHECK: call ptr @object_getClass(
++// CHECK: call ptr @class_getSuperclass(
++// CHECK: objc3.catch.body:
++// CHECK: call ptr @llvm.objc.retain(
++// CHECK: call ptr @object_getClass(
++// CHECK: call ptr @class_getSuperclass(
++// CHECK: call void @llvm.objc.storeStrong(ptr %objc3.catch.error, ptr null)
++
++void catches_protocol(void) {
++  __objc3_do { __objc3_try(marked()); }
++  __objc3_catch(id<Marker> error) { (void)error; }
++}
++// CHECK-LABEL: define{{.*}} void @catches_protocol(
++// CHECK: call {{i8|i32}} @class_conformsToProtocol(
++// CHECK: objc3.catch.protocol.matches
++
++void bridge(First *error) {
++  __objc3_do { __objc3_throw(error); }
++  __objc3_catch(id<Error> error) { (void)error; }
++}
++// CHECK-LABEL: define{{.*}} void @bridge(
++// CHECK: objc3.thrown.error.present
++// CHECK: objc3.catch.dispatch:
++// CHECK-NOT: @class_conformsToProtocol
 +// CHECK: ret void
 diff --git a/clang/test/ObjC3/CodeGen/typed-error-mrc-boundary.m b/clang/test/ObjC3/CodeGen/typed-error-mrc-boundary.m
 new file mode 100644

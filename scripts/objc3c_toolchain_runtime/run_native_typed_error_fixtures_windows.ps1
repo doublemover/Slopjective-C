@@ -89,7 +89,8 @@ try {
         '/link', ('/LIBPATH:' + $objc3Runtime), 'objc.lib')
     }
     $objc3Sources = @($objc3Source, $objc3Support,
-      (Join-Path $objc3InputRoot 'typed-error-runtime-interface.h')) | ForEach-Object {
+      (Join-Path $objc3InputRoot 'typed-error-runtime-interface.h'),
+      (Join-Path $objc3InputRoot 'typed-error-do-catch-runtime.inc')) | ForEach-Object {
         @{file=$_; sha256=(Get-FileHash -LiteralPath $_ -Algorithm SHA256).Hash}
       }
     $objc3Attempt = @{name=$objc3Name; source=$objc3Source; sources=@($objc3Sources);

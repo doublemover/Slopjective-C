@@ -684,7 +684,7 @@ index 63fc4bf2e..b9710ea45 100644
 +
  } // end of Parser diagnostics
 diff --git a/clang/include/clang/Basic/DiagnosticSemaKinds.td b/clang/include/clang/Basic/DiagnosticSemaKinds.td
-index 43315a6f7..5e7cda78f 100644
+index 43315a6f7..ada6d1d6b 100644
 --- a/clang/include/clang/Basic/DiagnosticSemaKinds.td
 +++ b/clang/include/clang/Basic/DiagnosticSemaKinds.td
 @@ -12,6 +12,32 @@
@@ -720,7 +720,21 @@ index 43315a6f7..5e7cda78f 100644
  // C++11 compatibility with C++98.
  defm nonclass_type_friend : CXX11Compat<"non-class friend type %0 is">;
  defm static_data_member_in_union : CXX11Compat<"static data member %0 in union is">;
-@@ -7829,6 +7855,25 @@ def warn_param_mismatched_alignment : Warning<
+@@ -6839,6 +6865,13 @@ def note_protected_by_objc_synchronized : Note<
+   "jump bypasses initialization of @synchronized block">;
+ def note_protected_by_objc_autoreleasepool : Note<
+   "jump bypasses auto release push of @autoreleasepool block">;
++def note_protected_by_objc3_do : Note<
++  "jump bypasses initialization of ObjC3 do block">;
++def note_protected_by_objc3_catch : Note<
++  "jump bypasses initialization of ObjC3 catch block">;
++def note_exits_objc3_do : Note<"jump exits ObjC3 do block">;
++def note_exits_objc3_catch : Note<"jump exits ObjC3 catch block">;
++def err_objc3_error_exits_defer : Error<"an ObjC3 error may not escape a defer body">;
+ def note_protected_by_cxx_try : Note<
+   "jump bypasses initialization of try block">;
+ def note_protected_by_cxx_catch : Note<
+@@ -7829,6 +7862,25 @@ def warn_param_mismatched_alignment : Warning<
  
  def err_objc_object_assignment : Error<
    "cannot assign to class object (%0 invalid)">;
@@ -746,7 +760,7 @@ index 43315a6f7..5e7cda78f 100644
  def err_typecheck_invalid_operands : Error<
    "invalid operands to binary expression (%0 and %1)">, Deferrable;
  def note_typecheck_invalid_operands_converted : Note<
-@@ -13862,4 +13907,17 @@ def err_cuda_device_kernel_launch_not_supported
+@@ -13862,4 +13914,17 @@ def err_cuda_device_kernel_launch_not_supported
  def err_cuda_device_kernel_launch_require_rdc
      : Error<"kernel launch from __device__ or __global__ function requires "
              "relocatable device code (i.e. requires -fgpu-rdc)">;
@@ -946,7 +960,7 @@ index 11cd69df8..e63c5651f 100644
    /// source.
    ///
 diff --git a/clang/include/clang/Sema/Sema.h b/clang/include/clang/Sema/Sema.h
-index d68ed7c75..b97848a2f 100644
+index d68ed7c75..7df54f325 100644
 --- a/clang/include/clang/Sema/Sema.h
 +++ b/clang/include/clang/Sema/Sema.h
 @@ -15,6 +15,8 @@
@@ -966,16 +980,17 @@ index d68ed7c75..b97848a2f 100644
  class SemaPPC;
  class SemaPseudoObject;
  class SemaRISCV;
-@@ -4751,6 +4754,8 @@ public:
+@@ -4751,6 +4754,9 @@ public:
    llvm::SmallSetVector<Decl *, 4> DeclsToCheckForDeferredDiags;
  
  private:
 +  SmallVector<ObjC3DoCatchContext *, 2> ObjC3ErrorHandlerStack;
++  SmallVector<DeclContext *, 2> ObjC3DeferOwnerStack;
 +
    /// Map of current shadowing declarations to shadowed declarations. Warn if
    /// it looks like the user is trying to modify the shadowing declaration.
    llvm::DenseMap<const NamedDecl *, const NamedDecl *> ShadowingDecls;
-@@ -11101,6 +11106,81 @@ public:
+@@ -11101,6 +11107,83 @@ public:
                              LabelDecl *Label, SourceLocation LabelLoc);
  
    void ActOnStartOfDeferStmt(SourceLocation DeferLoc, Scope *CurScope);
@@ -1005,6 +1020,8 @@ index d68ed7c75..b97848a2f 100644
 +
 +  ExprResult ActOnObjC3TryExpr(unsigned Kind, SourceLocation KeywordLoc,
 +      SourceLocation LParenLoc, Expr *Operand, SourceLocation RParenLoc);
++  void PushObjC3DeferContext();
++  void PopObjC3DeferContext();
 +  ObjC3DoCatchContext *ActOnObjC3BeginDoCatch(SourceLocation DoLoc);
 +  void ActOnObjC3EndDoCatchBody(ObjC3DoCatchContext *Context);
 +  void ActOnObjC3AbortDoCatch(ObjC3DoCatchContext *Context);
@@ -1057,7 +1074,7 @@ index d68ed7c75..b97848a2f 100644
    void ActOnDeferStmtError(Scope *CurScope);
    StmtResult ActOnEndOfDeferStmt(Stmt *Body, Scope *CurScope);
  
-@@ -15187,6 +15267,11 @@ public:
+@@ -15187,6 +15270,11 @@ public:
                               SourceLocation Loc, DeclarationName Entity,
                               const FunctionProtoType::ExtProtoInfo &EPI);
  
@@ -3801,6 +3818,35 @@ index 9da3d0d2e..ccec2f748 100644
    I.Fun.TrailingReturnType      = TrailingReturnType.get();
    I.Fun.TrailingReturnTypeLoc   = TrailingReturnTypeLoc;
    I.Fun.MethodQualifiers        = nullptr;
+diff --git a/clang/lib/Sema/JumpDiagnostics.cpp b/clang/lib/Sema/JumpDiagnostics.cpp
+index 2c45de69e..fb396b8d7 100644
+--- a/clang/lib/Sema/JumpDiagnostics.cpp
++++ b/clang/lib/Sema/JumpDiagnostics.cpp
+@@ -401,6 +401,24 @@ void JumpScopeChecker::BuildScopeInformation(Stmt *S,
+     return;
+   }
+ 
++  case Stmt::ObjC3DoCatchStmtClass: {
++    auto *DS = cast<ObjC3DoCatchStmt>(S);
++    unsigned BodyScope = Scopes.size();
++    Scopes.push_back(GotoScope(ParentScope, diag::note_protected_by_objc3_do,
++                               diag::note_exits_objc3_do, DS->getDoLoc()));
++    BuildScopeInformation(DS->getBody(), BodyScope);
++    for (unsigned I = 0; I != DS->getNumCatchClauses(); ++I) {
++      auto *CS = DS->getCatchClause(I);
++      unsigned CatchScope = Scopes.size();
++      Scopes.push_back(GotoScope(ParentScope, diag::note_protected_by_objc3_catch,
++                                 diag::note_exits_objc3_catch, CS->getCatchLoc()));
++      if (DeclStmt *Binding = CS->getBindingDeclStmt())
++        BuildScopeInformation(Binding, CatchScope);
++      BuildScopeInformation(CS->getHandlerBody(), CatchScope);
++    }
++    return;
++  }
++
+   case Stmt::CXXTryStmtClass: {
+     CXXTryStmt *TS = cast<CXXTryStmt>(S);
+     {
 diff --git a/clang/lib/Sema/SemaDecl.cpp b/clang/lib/Sema/SemaDecl.cpp
 index d67220a2f..d3c5be812 100644
 --- a/clang/lib/Sema/SemaDecl.cpp
@@ -4176,6 +4222,31 @@ index 0b6296e9b..0a3169306 100644
    // Perform the quick checks that will tell us whether these
    // function types are obviously different.
    if (FromFunctionType->getNumParams() != ToFunctionType->getNumParams() ||
+diff --git a/clang/lib/Sema/SemaStmt.cpp b/clang/lib/Sema/SemaStmt.cpp
+index 1b1643250..c18259a6f 100644
+--- a/clang/lib/Sema/SemaStmt.cpp
++++ b/clang/lib/Sema/SemaStmt.cpp
+@@ -3953,17 +3953,20 @@ Sema::ActOnReturnStmt(SourceLocation ReturnLoc, Expr *RetValExp,
+ 
+ void Sema::ActOnStartOfDeferStmt(SourceLocation DeferLoc, Scope *CurScope) {
+   CurrentDefer.emplace_back(CurScope, DeferLoc);
++  PushObjC3DeferContext();
+ }
+ 
+ void Sema::ActOnDeferStmtError([[maybe_unused]] Scope *CurScope) {
+   assert(!CurrentDefer.empty() && CurrentDefer.back().first == CurScope);
+   CurrentDefer.pop_back();
++  PopObjC3DeferContext();
+ }
+ 
+ StmtResult Sema::ActOnEndOfDeferStmt(Stmt *Body,
+                                      [[maybe_unused]] Scope *CurScope) {
+   assert(!CurrentDefer.empty() && CurrentDefer.back().first == CurScope);
+   SourceLocation DeferLoc = CurrentDefer.pop_back_val().second;
++  PopObjC3DeferContext();
+   DiagnoseEmptyStmtBody(DeferLoc, Body, diag::warn_empty_defer_body);
+   setFunctionHasBranchProtectedScope();
+   return DeferStmt::Create(Context, DeferLoc, Body);
 diff --git a/clang/lib/Sema/SemaTemplate.cpp b/clang/lib/Sema/SemaTemplate.cpp
 index 3497ff785..f39e480f7 100644
 --- a/clang/lib/Sema/SemaTemplate.cpp
@@ -4346,7 +4417,7 @@ index 28bb352b1..21864e449 100644
      void VisitParenTypeLoc(ParenTypeLoc TL) {
        assert(Chunk.Kind == DeclaratorChunk::Paren);
 diff --git a/clang/lib/Sema/TreeTransform.h b/clang/lib/Sema/TreeTransform.h
-index 00be4e8c1..981cd355a 100644
+index 00be4e8c1..d20e8d858 100644
 --- a/clang/lib/Sema/TreeTransform.h
 +++ b/clang/lib/Sema/TreeTransform.h
 @@ -46,6 +46,7 @@
@@ -4441,7 +4512,7 @@ index 00be4e8c1..981cd355a 100644
    NewTL.setLocalRangeEnd(TL.getLocalRangeEnd());
    for (unsigned i = 0, e = NewTL.getNumParams(); i != e; ++i)
      NewTL.setParam(i, ParamDecls[i]);
-@@ -8577,12 +8641,95 @@ TreeTransform<Derived>::TransformBreakStmt(BreakStmt *S) {
+@@ -8577,12 +8641,98 @@ TreeTransform<Derived>::TransformBreakStmt(BreakStmt *S) {
        BreakStmt(S->getKwLoc(), S->getLabelLoc(), cast<LabelDecl>(LD));
  }
  
@@ -4457,6 +4528,9 @@ index 00be4e8c1..981cd355a 100644
 +}
  template <typename Derived>
  StmtResult TreeTransform<Derived>::TransformDeferStmt(DeferStmt *S) {
++  Sema &Actions = getSema();
++  Actions.PushObjC3DeferContext();
++  llvm::scope_exit PopDefer([&] { Actions.PopObjC3DeferContext(); });
    StmtResult Result = getDerived().TransformStmt(S->getBody());
    if (!Result.isUsable())
      return StmtError();
@@ -4538,7 +4612,7 @@ index 00be4e8c1..981cd355a 100644
  }
  
  template<typename Derived>
-@@ -14166,6 +14313,95 @@ TreeTransform<Derived>::TransformStmtExpr(StmtExpr *E) {
+@@ -14166,6 +14316,95 @@ TreeTransform<Derived>::TransformStmtExpr(StmtExpr *E) {
                                        E->getRParenLoc(), NewDepth);
  }
  
@@ -6389,7 +6463,7 @@ diff --git a/clang/lib/Sema/SemaObjC3DoCatch.cpp b/clang/lib/Sema/SemaObjC3DoCat
 new file mode 100644
 --- /dev/null
 +++ b/clang/lib/Sema/SemaObjC3DoCatch.cpp
-@@ -0,0 +1,246 @@
+@@ -0,0 +1,276 @@
 +#include "SemaObjC3ErrorContext.h"
 +#include "clang/AST/ASTContext.h"
 +#include "clang/AST/Decl.h"
@@ -6397,6 +6471,7 @@ new file mode 100644
 +#include "clang/AST/Stmt.h"
 +#include "clang/AST/Type.h"
 +#include "clang/Sema/Sema.h"
++#include "clang/Sema/SemaObjC.h"
 +#include "llvm/ADT/STLExtras.h"
 +
 +namespace clang {
@@ -6409,10 +6484,12 @@ new file mode 100644
 +  SourceLocation DoLoc;
 +  DeclContext *Owner;
 +  bool IsCatchBody = false;
++  size_t DeferDepth;
 +  SmallVector<ThrownFact, 4> Facts;
 +  explicit ObjC3DoCatchContext(SourceLocation Loc, DeclContext *Owner,
 +                              bool CatchBody = false)
-+      : DoLoc(Loc), Owner(Owner), IsCatchBody(CatchBody) {}
++      : DoLoc(Loc), Owner(Owner), IsCatchBody(CatchBody),
++        DeferDepth(0) {}
 +};
 +
 +namespace {
@@ -6431,9 +6508,10 @@ new file mode 100644
 +  const ObjCObjectType *Object = Pointer->getObjectType();
 +  if (!Object->isObjCId())
 +    return false;
-+  return llvm::any_of(Object->quals(), [](const ObjCProtocolDecl *Protocol) {
-+    return Protocol->getNameAsString() == "Error";
-+  });
++  // Extra protocol constraints narrow the pattern and do not form the
++  // universal Error bridge. They must match the observed static effect.
++  return Object->getNumProtocols() == 1 &&
++         (*Object->qual_begin())->getName() == "Error";
 +}
 +
 +bool clauseMatches(Sema &S, const ObjC3CatchStmt &Clause,
@@ -6455,8 +6533,14 @@ new file mode 100644
 +           Effect.Throws == ObjC3ThrowsKind::Typed;
 +  if (Effect.Throws == ObjC3ThrowsKind::Untyped || Effect.ErrorType.isNull())
 +    return false;
-+  return S.Context.hasSameType(CatchType,
-+                               S.Context.getCanonicalType(Effect.ErrorType));
++  QualType ThrownType = S.Context.getCanonicalType(Effect.ErrorType);
++  // Catch binding lifetime is storage policy, not part of the error pattern.
++  if (CatchType->isObjCObjectPointerType() &&
++      ThrownType->isObjCObjectPointerType()) {
++    CatchType = S.Context.getUnqualifiedObjCPointerType(CatchType);
++    ThrownType = S.Context.getUnqualifiedObjCPointerType(ThrownType);
++  }
++  return S.Context.hasSameType(CatchType, ThrownType);
 +}
 +
 +bool compatibleOuterEffect(Sema &S, const ObjC3FunctionEffectInfo &Effect) {
@@ -6475,9 +6559,16 @@ new file mode 100644
 +}
 +} // namespace
 +
++void Sema::PushObjC3DeferContext() {
++  ObjC3DeferOwnerStack.push_back(getCurrentObjC3CallableContext(*this));
++}
++
++void Sema::PopObjC3DeferContext() { ObjC3DeferOwnerStack.pop_back(); }
++
 +ObjC3DoCatchContext *Sema::ActOnObjC3BeginDoCatch(SourceLocation DoLoc) {
 +  auto *Context = new ObjC3DoCatchContext(
 +      DoLoc, getCurrentObjC3CallableContext(*this));
++  Context->DeferDepth = ObjC3DeferOwnerStack.size();
 +  ObjC3ErrorHandlerStack.push_back(Context);
 +  return Context;
 +}
@@ -6501,15 +6592,24 @@ new file mode 100644
 +ObjC3DoCatchContext *Sema::ActOnObjC3BeginCatchBody() {
 +  auto *Context = new ObjC3DoCatchContext(
 +      SourceLocation(), getCurrentObjC3CallableContext(*this), true);
++  Context->DeferDepth = ObjC3DeferOwnerStack.size();
 +  ObjC3ErrorHandlerStack.push_back(Context);
 +  return Context;
 +}
 +
 +bool Sema::RecordObjC3ThrownEffect(const ObjC3FunctionEffectInfo &Effect,
 +                                  SourceLocation Loc) {
-+  if (ObjC3ErrorHandlerStack.empty() ||
-+      ObjC3ErrorHandlerStack.back()->Owner !=
-+          getCurrentObjC3CallableContext(*this))
++  bool HasHandler = !ObjC3ErrorHandlerStack.empty() &&
++      ObjC3ErrorHandlerStack.back()->Owner ==
++          getCurrentObjC3CallableContext(*this);
++  if (llvm::is_contained(ObjC3DeferOwnerStack,
++                         getCurrentObjC3CallableContext(*this)) &&
++      (!HasHandler ||
++       ObjC3ErrorHandlerStack.back()->DeferDepth < ObjC3DeferOwnerStack.size())) {
++    Diag(Loc, diag::err_objc3_error_exits_defer);
++    return true;
++  }
++  if (!HasHandler)
 +    return false;
 +  if (Effect.Throws != ObjC3ThrowsKind::None)
 +    ObjC3ErrorHandlerStack.back()->Facts.push_back({Effect, Loc});
@@ -6553,10 +6653,13 @@ new file mode 100644
 +    Diag(NameLoc, diag::err_objc3_catch_binding_requires_type);
 +    return nullptr;
 +  }
-+  // This declaration is the lexical binding node only. Payload extraction,
-+  // object ownership and binding initialization remain gated at CodeGen.
++  // Use native ARC inference for the lexical binding. CodeGen initializes
++  // it from the selected payload without adding a synthetic AST initializer.
 +  VarDecl *Binding = VarDecl::Create(Context, CurContext, CatchLoc, NameLoc,
 +      Name, Type, TypeInfo, SC_None);
++  if (getLangOpts().ObjCAutoRefCount &&
++      ObjC().inferObjCARCLifetime(Binding))
++    Binding->setInvalidDecl();
 +  PushOnScopeChains(Binding, CatchScope);
 +  auto *BindingStmt = new (Context) DeclStmt(DeclGroupRef(Binding), CatchLoc,
 +                                              NameLoc);
@@ -6586,6 +6689,7 @@ new file mode 100644
 +    return StmtError();
 +  }
 +  SourceLocation DoLoc = Context->DoLoc;
++  setFunctionHasBranchProtectedScope();
 +
 +  bool Invalid = false;
 +  for (const auto &Fact : Context->Facts) {
@@ -10230,6 +10334,86 @@ new file mode 100644
 +    lambda();
 +    block();
 +  } __objc3_catch { }
++}
+diff --git a/clang/test/ObjC3/Sema/typed-error-handler-scopes.mm b/clang/test/ObjC3/Sema/typed-error-handler-scopes.mm
+new file mode 100644
+--- /dev/null
++++ b/clang/test/ObjC3/Sema/typed-error-handler-scopes.mm
+@@ -0,0 +1,75 @@
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fobjc-runtime=gnustep-2.0 -fobjc-version=3 -fobjc-arc -fsyntax-only -verify %s
++
++@protocol Error @end
++typedef id<Error> E;
++void raises() __objc3_throws(E);
++
++void reject_entry(E error) {
++  goto body; // expected-error {{cannot jump from this goto statement to its label}}
++  __objc3_do { // expected-note {{jump bypasses initialization of ObjC3 do block}}
++  body:
++    __objc3_throw(error);
++  } __objc3_catch { }
++}
++void reject_catch_entry(E error) {
++  goto handler; // expected-error {{cannot jump from this goto statement to its label}}
++  __objc3_do { __objc3_throw(error); }
++  __objc3_catch { // expected-note {{jump bypasses initialization of ObjC3 catch block}}
++  handler:;
++  }
++}
++void reject_sibling_entry(E error) {
++  __objc3_do { __objc3_throw(error); }
++  __objc3_catch { goto sibling; } // expected-error {{cannot jump from this goto statement to its label}}
++  __objc3_catch { // expected-note {{jump bypasses initialization of ObjC3 catch block}}
++  sibling:;
++  }
++}
++void reject_switch_entry(E error, int which) {
++  switch (which) {
++  __objc3_do { // expected-note {{jump bypasses initialization of ObjC3 do block}}
++  case 1: // expected-error {{cannot jump from switch statement to this case label}}
++    __objc3_throw(error);
++  } __objc3_catch { }
++  }
++}
++
++void escaping_defer(E error) __objc3_throws(E) {
++  __objc3_defer { __objc3_throw(error); } // expected-error {{an ObjC3 error may not escape a defer body}}
++}
++void escaping_defer_try() __objc3_throws(E) {
++  __objc3_defer { __objc3_try(raises()); } // expected-error {{an ObjC3 error may not escape a defer body}}
++}
++void defer_cannot_reach_outer_catch(E error) {
++  __objc3_do {
++    __objc3_defer { __objc3_throw(error); } // expected-error {{an ObjC3 error may not escape a defer body}}
++  } __objc3_catch { }
++}
++void local_defer_handler(E error) {
++  __objc3_defer {
++    __objc3_do { __objc3_throw(error); }
++    __objc3_catch(E bound) { (void)bound; }
++  }
++}
++void independent_callable_in_defer(E error) {
++  __objc3_defer {
++    struct Local {
++      static void f(E e) __objc3_throws(E) { __objc3_throw(e); }
++    };
++  }
++}
++
++template<class F> void dependent_escape(F f) __objc3_throws(E) {
++  __objc3_defer { __objc3_try(f()); } // expected-error {{an ObjC3 error may not escape a defer body}}
++}
++void instantiate_escape() {
++  __objc3_try_optional(dependent_escape(raises)); // expected-note {{in instantiation of function template specialization}}
++}
++
++@protocol Extra @end
++void extra_protocol_is_not_a_universal_bridge(E error) {
++  __objc3_do {
++    __objc3_throw(error); // expected-error {{ObjC3 error is neither caught here nor compatible}}
++  } __objc3_catch(id<Error, Extra>) { // expected-error {{is incompatible with thrown error type}}
++  }
 +}
 diff --git a/clang/test/ObjC3/Sema/typed-error-native-exception-boundaries.mm b/clang/test/ObjC3/Sema/typed-error-native-exception-boundaries.mm
 new file mode 100644

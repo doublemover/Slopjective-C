@@ -229,8 +229,12 @@ Direct try propagation, forced try and scalar/void optionalization use that
 native ABI. A retained pending error survives callee expression/function cleanup
 and pools; an EH-only cleanup releases it if a native exception interrupts that
 return. Publication to the caller's autoreleasing slot occurs after callee
-cleanup, with immediate release for a null slot. Ordered do/catch execution,
-other callable shapes and async execution remain unsupported. Public
+cleanup, with immediate release for a null slot. Ordered Error-object do/catch
+uses owned handler storage, source-order class/protocol matching and native ARC
+bindings. Unmatched errors propagate outward, and a catch body cannot route an
+error to its siblings. The runtime witness covers strong/weak bindings, nested
+handlers, rethrow, structured exits, pools, defer and native exception cleanup.
+Other callable shapes and async execution remain unsupported. Public
 re-export edges control visibility and module provenance survives emission.
 Version 3 of the C embedding API and the CLI expose
 search roots, locked module requests and compiler/dependency identity records.
@@ -304,7 +308,7 @@ npm run objc3c -- validate-native-foundation --node native-package:consumer-sour
 npm run objc3c -- validate-native-foundation --family carriers --driver clang --run-id clang-reuse --reuse-report out/native-validation/prior/summary.json
 ```
 
-With no filters, all 18 nodes are selected. Family, node and driver selectors are
+With no filters, all 20 nodes are selected. Family, node and driver selectors are
 repeatable exact names; unknown names and incompatible combinations fail.
 Explicit node selection must agree with family/driver filters, and dependency
 closure adds the provider for a selected package consumer. `--list` prints the
