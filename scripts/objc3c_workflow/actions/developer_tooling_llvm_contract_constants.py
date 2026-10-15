@@ -11,7 +11,7 @@ LLVM_CAPABILITY_PROBE_BACKEND: Final[str] = (
     "python:scripts/probe_objc3c_llvm_capabilities.py"
 )
 FRONTEND_RUNNER_BACKEND: Final[str] = (
-    f"runner-internal + {ARTIFACT_IDENTITY.frontend_runner_relative_path}"
+    "runner-internal + host frontend C API runner"
 )
 CAPABILITY_EXPLORER_ACTION: Final[str] = "inspect-capability-explorer"
 CAPABILITY_EXPLORER_DUMP_FILENAME: Final[str] = "capability-explorer.json"
