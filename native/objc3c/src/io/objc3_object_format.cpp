@@ -1,5 +1,6 @@
 #include "io/objc3_object_format.h"
 
+#include <algorithm>
 #include <array>
 #include <cstddef>
 #include <fstream>
@@ -70,116 +71,143 @@ bool CoffSectionNameEquals(const std::vector<unsigned char> &bytes,
   return true;
 }
 
-bool LooksLikeObjectPath(std::string_view value) {
-  if (value.find(".obj") == std::string_view::npos) {
-    return false;
+void WriteU16(std::vector<unsigned char> &bytes, std::size_t offset,
+              std::uint16_t value) {
+  bytes[offset] = static_cast<unsigned char>(value);
+  bytes[offset + 1] = static_cast<unsigned char>(value >> 8u);
+}
+
+void WriteU32(std::vector<unsigned char> &bytes, std::size_t offset,
+              std::uint32_t value) {
+  for (unsigned index = 0; index != 4; ++index) {
+    bytes[offset + index] = static_cast<unsigned char>(value >> (8u * index));
   }
-  return value.find(':') != std::string_view::npos ||
-         value.find('\\') != std::string_view::npos ||
-         value.find('/') != std::string_view::npos;
 }
 
 bool NormalizeCoffDebugSObjectPaths(std::vector<unsigned char> &bytes) {
-  if (bytes.size() < 20) {
+  // Rewrite the actual C13 S_OBJNAME record, including its lengths. Padding
+  // a replacement path to the old path's size leaves output-directory lengths
+  // observable in the object. Do not scan arbitrary debug bytes as C strings.
+  if (bytes.size() < 20 || bytes.size() > 0xffffffffu ||
+      !IsRecognizedCoffMachine(ReadU16(bytes, 0)) ||
+      ReadU16(bytes, 16) != 0) {
     return false;
   }
-
-  const std::uint16_t machine = ReadU16(bytes, 0);
-  if (!IsRecognizedCoffMachine(machine)) {
+  const std::size_t section_count = ReadU16(bytes, 2);
+  const std::size_t section_table_end = 20 + section_count * 40;
+  const std::size_t symbols = ReadU32(bytes, 8);
+  const std::size_t symbol_count = ReadU32(bytes, 12);
+  if (!section_count || section_table_end > bytes.size() ||
+      (symbol_count && (symbols < section_table_end || symbols > bytes.size() ||
+                        symbol_count > (bytes.size() - symbols) / 18))) {
     return false;
   }
-
-  const std::uint16_t section_count = ReadU16(bytes, 2);
-  const std::uint32_t symbol_table_offset = ReadU32(bytes, 8);
-  const std::uint32_t symbol_count = ReadU32(bytes, 12);
-  const std::uint16_t optional_header_size = ReadU16(bytes, 16);
-  const std::size_t section_table_offset =
-      20u + static_cast<std::size_t>(optional_header_size);
-  if (section_count == 0 ||
-      section_table_offset + static_cast<std::size_t>(section_count) * 40u >
-          bytes.size()) {
-    return false;
-  }
-
-  std::uint16_t debug_s_section_number = 0;
-  std::size_t debug_s_raw_offset = 0;
-  std::size_t debug_s_raw_size = 0;
-  for (std::uint16_t index = 0; index < section_count; ++index) {
-    const std::size_t header_offset =
-        section_table_offset + static_cast<std::size_t>(index) * 40u;
-    if (!CoffSectionNameEquals(bytes, header_offset, ".debug$S")) {
-      continue;
+  std::size_t section_index = 0;
+  for (; section_index < section_count; ++section_index) {
+    if (CoffSectionNameEquals(bytes, 20 + section_index * 40, ".debug$S")) {
+      break;
     }
-    debug_s_raw_size = ReadU32(bytes, header_offset + 16u);
-    debug_s_raw_offset = ReadU32(bytes, header_offset + 20u);
-    if (debug_s_raw_size == 0 ||
-        debug_s_raw_offset + debug_s_raw_size > bytes.size()) {
+  }
+  if (section_index == section_count) {
+    return false;
+  }
+  const std::size_t header = 20 + section_index * 40;
+  const std::size_t raw = ReadU32(bytes, header + 20);
+  const std::size_t size = ReadU32(bytes, header + 16);
+  // This rewrite owns the compiler-information subsection, which has no
+  // relocations or line records. Leave other layouts untouched.
+  if (raw < section_table_end || raw > bytes.size() || size > bytes.size() - raw ||
+      size < 20 || ReadU16(bytes, header + 32) || ReadU16(bytes, header + 34) ||
+      ReadU32(bytes, raw) != 4 || ReadU32(bytes, raw + 4) != 0xf1) {
+    return false;
+  }
+  const std::size_t subsection_size = ReadU32(bytes, raw + 8);
+  const std::size_t record = raw + 12;
+  const std::size_t record_size = ReadU16(bytes, record) + 2;
+  if (subsection_size > size - 12 || record_size < 12 ||
+      record_size > subsection_size || record_size % 4 ||
+      ReadU16(bytes, record + 2) != 0x1101) {
+    return false;
+  }
+  std::size_t name_end = record + 8;
+  while (name_end < record + record_size && bytes[name_end]) {
+    ++name_end;
+  }
+  if (name_end == record + record_size) {
+    return false;
+  }
+  constexpr std::string_view canonical = "objc3c-deterministic-object.obj";
+  const std::size_t canonical_size = (8 + canonical.size() + 1 + 3) & ~std::size_t(3);
+  const std::int64_t delta = static_cast<std::int64_t>(canonical_size) -
+                             static_cast<std::int64_t>(record_size);
+  const std::size_t removed_end = record + record_size;
+  auto shifted = [&](std::uint32_t offset) -> std::uint32_t {
+    return offset >= removed_end ? static_cast<std::uint32_t>(offset + delta) : offset;
+  };
+  auto valid_offset = [&](std::uint32_t offset) {
+    return !offset || (offset <= bytes.size() &&
+        (offset < record || offset >= removed_end) &&
+        (offset < removed_end ||
+         static_cast<std::uint64_t>(offset + delta) <= 0xffffffffu));
+  };
+  if (!valid_offset(static_cast<std::uint32_t>(symbols)) ||
+      static_cast<std::int64_t>(size) + delta < 0 ||
+      static_cast<std::int64_t>(size) + delta > 0xffffffffu ||
+      static_cast<std::int64_t>(subsection_size) + delta < 0 ||
+      static_cast<std::int64_t>(subsection_size) + delta > 0xffffffffu ||
+      static_cast<std::int64_t>(bytes.size()) + delta > 0xffffffffu) {
+    return false;
+  }
+  for (std::size_t index = 0; index < section_count; ++index) {
+    const std::size_t section = 20 + index * 40;
+    for (std::size_t field : {20u, 24u, 28u}) {
+      if (!valid_offset(ReadU32(bytes, section + field))) {
+        return false;
+      }
+    }
+  }
+  // Validate symbol and auxiliary records before changing any bytes. Native
+  // compiler-info sections have only a section symbol at value zero.
+  for (std::size_t index = 0; index < symbol_count;) {
+    const std::size_t symbol = symbols + index * 18;
+    const std::size_t auxiliaries = bytes[symbol + 17];
+    if (auxiliaries >= symbol_count - index ||
+        (ReadU16(bytes, symbol + 12) == section_index + 1 &&
+         (ReadU32(bytes, symbol + 8) != 0 || bytes[symbol + 16] != 3 || auxiliaries != 1))) {
       return false;
     }
-    debug_s_section_number = static_cast<std::uint16_t>(index + 1u);
-    break;
+    index += auxiliaries + 1;
   }
-  if (debug_s_section_number == 0) {
+  std::vector<unsigned char> rewritten(bytes.begin(), bytes.begin() + record);
+  rewritten.resize(record + canonical_size, 0);
+  WriteU16(rewritten, record, static_cast<std::uint16_t>(canonical_size - 2));
+  WriteU16(rewritten, record + 2, 0x1101);
+  WriteU32(rewritten, record + 4, ReadU32(bytes, record + 4));
+  std::copy(canonical.begin(), canonical.end(), rewritten.begin() + record + 8);
+  rewritten.insert(rewritten.end(), bytes.begin() + removed_end, bytes.end());
+  WriteU32(rewritten, raw + 8, static_cast<std::uint32_t>(subsection_size + delta));
+  WriteU32(rewritten, header + 16, static_cast<std::uint32_t>(size + delta));
+  WriteU32(rewritten, 8, shifted(static_cast<std::uint32_t>(symbols)));
+  for (std::size_t index = 0; index < section_count; ++index) {
+    const std::size_t section = 20 + index * 40;
+    for (std::size_t field : {20u, 24u, 28u}) {
+      WriteU32(rewritten, section + field, shifted(ReadU32(bytes, section + field)));
+    }
+  }
+  for (std::size_t index = 0; index < symbol_count;) {
+    const std::size_t symbol = symbols + index * 18;
+    const std::size_t auxiliaries = bytes[symbol + 17];
+    if (ReadU16(bytes, symbol + 12) == section_index + 1) {
+      const std::size_t auxiliary = shifted(static_cast<std::uint32_t>(symbols)) + (index + 1) * 18;
+      WriteU32(rewritten, auxiliary, static_cast<std::uint32_t>(size + delta));
+      WriteU32(rewritten, auxiliary + 8, 0); // Checksum of rewritten debug data.
+    }
+    index += auxiliaries + 1;
+  }
+  if (rewritten == bytes) {
     return false;
   }
-
-  static constexpr std::string_view kCanonicalObjectPath =
-      "objc3c-deterministic-object.obj";
-  bool changed = false;
-  const std::size_t raw_end = debug_s_raw_offset + debug_s_raw_size;
-  for (std::size_t cursor = debug_s_raw_offset; cursor < raw_end;) {
-    std::size_t end = cursor;
-    while (end < raw_end && bytes[end] != 0u) {
-      ++end;
-    }
-    if (end > cursor) {
-      const std::string_view field(
-          reinterpret_cast<const char *>(bytes.data() + cursor), end - cursor);
-      if (LooksLikeObjectPath(field) &&
-          field.size() >= kCanonicalObjectPath.size()) {
-        for (std::size_t index = 0; index < field.size(); ++index) {
-          bytes[cursor + index] =
-              index < kCanonicalObjectPath.size()
-                  ? static_cast<unsigned char>(kCanonicalObjectPath[index])
-                  : 0u;
-        }
-        changed = true;
-      }
-    }
-    cursor = end + 1u;
-  }
-
-  if (!changed || symbol_table_offset == 0 || symbol_count == 0) {
-    return changed;
-  }
-  const std::size_t symbol_table_start = symbol_table_offset;
-  if (symbol_table_start >= bytes.size()) {
-    return changed;
-  }
-
-  for (std::uint32_t symbol_index = 0; symbol_index < symbol_count;) {
-    const std::size_t symbol_offset =
-        symbol_table_start + static_cast<std::size_t>(symbol_index) * 18u;
-    if (symbol_offset + 18u > bytes.size()) {
-      return changed;
-    }
-    const std::uint16_t section_number = ReadU16(bytes, symbol_offset + 12u);
-    const unsigned char aux_count = bytes[symbol_offset + 17u];
-    if (section_number == debug_s_section_number) {
-      for (unsigned char aux_index = 0; aux_index < aux_count; ++aux_index) {
-        const std::size_t aux_offset =
-            symbol_offset + static_cast<std::size_t>(aux_index + 1u) * 18u;
-        if (aux_offset + 12u <= bytes.size()) {
-          bytes[aux_offset + 8u] = 0u;
-          bytes[aux_offset + 9u] = 0u;
-          bytes[aux_offset + 10u] = 0u;
-          bytes[aux_offset + 11u] = 0u;
-        }
-      }
-    }
-    symbol_index += static_cast<std::uint32_t>(aux_count) + 1u;
-  }
-
+  bytes.swap(rewritten);
   return true;
 }
 

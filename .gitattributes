@@ -1,1 +1,2 @@
 *.md text eol=lf
+tests/tooling/fixtures/native/library_cli_parity/**/*.ll text eol=lf
