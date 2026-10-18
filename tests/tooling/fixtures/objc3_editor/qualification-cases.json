@@ -22,7 +22,9 @@
     "case.Err(let error):",
     "__objc3_throws(id<Error>)",
     "__objc3_try_force([receiver checked:0])",
-    "__objc3_try_optional"
+    "__objc3_try_optional",
+    "__objc3_copy",
+    "__objc3_move"
   ],
   "live_probes": [
     {
@@ -53,7 +55,18 @@
     {
       "source": "reserved_intrinsics.mm",
       "language": "objective-c++",
-      "standard": "c++20"
+      "standard": "c++20",
+      "live_probes": [
+        {
+          "name": "managed_optional_copy",
+          "use_line": "(void)__objc3_has_value(copied);",
+          "use_name": "copied",
+          "declaration_line": "__objc3_optional(id) copied = __objc3_copy(source);",
+          "declaration_name": "copied",
+          "hover_type": "__objc3_optional",
+          "completion_name": "copied"
+        }
+      ]
     }
   ]
 }

@@ -35,6 +35,10 @@ def qualify_installed(repo: Path, prefix: Path, output: Path) -> dict:
             if 'main.objc3' not in (client / 'main.d').read_text():
                 raise ValueError('Clang dependency output omits the source')
             run(f'run-{optimize}', [application])
+            transfer = client / ('carrier-transfer-' + optimize)
+            run(f'carrier-transfer-compile-{optimize}', [compiler, 'carrier-transfer.mm',
+                '-std=c++20', '-fexceptions', '-fobjc-arc-exceptions', f'-{optimize}', '-g', '-o', transfer])
+            run(f'carrier-transfer-run-{optimize}', [transfer])
         (client / 'arguments.rsp').write_text('main.objc3 -O2 -o "response app"')
         run('response-file', [compiler, '@arguments.rsp'])
         run('run-response', [client / 'response app'])
@@ -46,6 +50,7 @@ def qualify_installed(repo: Path, prefix: Path, output: Path) -> dict:
         run('embedding-build', ['cmake', '--build', client / 'build', '--parallel', '2'])
         run('embedding-run', [client / 'build/embedding', prefix])
         run('dwarf', [prefix / 'bin/llvm-dwarfdump', '--verify', client / 'application-O0'])
+        run('carrier-transfer-dwarf', [prefix / 'bin/llvm-dwarfdump', '--verify', client / 'carrier-transfer-O0'])
         run('debugger', [prefix / 'bin/lldb', '--batch', '-o', 'settings set target.disable-aslr false',
                         '-o', 'breakpoint set --name main', '-o', 'run',
                         '-o', 'frame variable cleanup_order', '-o', 'expression -- cleanup_order + 42',

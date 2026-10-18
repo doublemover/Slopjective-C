@@ -11,6 +11,13 @@ Historical custom-parser and Windows plans do not govern this development path.
 
 Carry the qualified native Optional/Result and typed-error implementation through
 its remaining ownership, transfer, assignment, storage and callable ABI bounds.
+Explicit local ARC copy/move construction is now qualified for direct strong,
+weak and unsafe object leaves and strong Blocks, including const copies, weak
+zeroing, typed-error optionalization and native unwinding. Source tags survive
+moves; mutable strong/weak payloads are cleared by native ARC initialization.
+Implicit managed copies, assignment, by-value returns and nested storage remain
+separate implementation work. The installed ownership witness and live clangd
+probe cover the supported Objective-C++ construction contract.
 Managed MRC `try?`, weak/unsafe Block carriers and nested managed carriers still
 need explicit semantics and lowering. Define the public bounded contract and
 syntax together with their feature queries and capability predicates. Promote a

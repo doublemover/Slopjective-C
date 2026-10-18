@@ -92,6 +92,14 @@ qualification. Validation snapshots compiler, runtime and system header/library
 contents before and after each batch. Reused evidence must retain matching
 source, toolchain, node and artifact identities.
 
+The managed carrier transfer milestone uses Clang's native ARC member
+initialization for explicit Objective-C++ local copy/move construction. Its IR
+and PCH checks cover strong objects, weak storage, unsafe pointers, Blocks,
+Result arms and template instantiation. O0/O2 runtime witnesses add source
+evaluation, nil/none, weak zeroing, typed-error optionalization and exception
+cleanup. Implicit managed copying, assignment, returns and nested managed
+payloads retain their diagnostic boundaries.
+
 [`scripts/qualify_linux_archive.sh`](../../scripts/qualify_linux_archive.sh)
 qualifies the actual archive on fresh Debian/Ubuntu hosts: install and relocation,
 public compilation/linking, a source-built ARC/defer application, CMake embedding

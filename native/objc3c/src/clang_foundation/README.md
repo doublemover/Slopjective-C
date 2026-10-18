@@ -63,5 +63,14 @@ Optional/Result local construction. Presence queries borrow the active tag.
 O0/O2 runtime cases exercise retained and autoreleased returns, callbacks,
 throwing Blocks, C++ members, Objective-C messages, failure arms and native
 exception cleanup. MRC managed `try?`, weak/unsafe Block carriers, managed carrier
-assignment/copy/return and nested managed payloads remain outside this slice.
+assignment, implicit copy, by-value return and nested managed payloads remain
+outside this slice.
+
+Explicit `__objc3_copy`/`__objc3_move` construction of Objective-C++ ARC locals
+uses native strong, weak and unsafe object initialization and strong Block
+initialization. The source is evaluated once and only its active arm is read.
+Mutable strong/weak moves clear the source payload while retaining its tag;
+const strong moves copy the payload. IR/PCH, O0/O2 ownership/unwind execution,
+installed typed-error/transfer consumers and live clangd probes qualify this
+bounded construction contract.
 The editor and interface consumers use the same sealed SDK and Linux target.

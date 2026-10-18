@@ -1395,10 +1395,10 @@ index 000000000..eefcc9109
 +#endif
 diff --git a/clang/lib/CodeGen/CGObjC3ArcCarriers.cpp b/clang/lib/CodeGen/CGObjC3ArcCarriers.cpp
 new file mode 100644
-index 000000000..d09577332
+index 000000000..eb6e6f4e4
 --- /dev/null
 +++ b/clang/lib/CodeGen/CGObjC3ArcCarriers.cpp
-@@ -0,0 +1,440 @@
+@@ -0,0 +1,444 @@
 +//===--- CGObjC3ArcCarriers.cpp - ARC local carrier lowering --*- C++ -*-===//
 +// Private native ARC operations for the first direct-local carrier slice.
 +#include "CGObjC3ArcCarriers.h"
@@ -1719,7 +1719,11 @@ index 000000000..d09577332
 +  if (!CGF.getContext().hasSameType(Init->getType().getUnqualifiedType(),
 +                                  CarrierType.getUnqualifiedType()))
 +    return Fail();
-+  if (IsResult) {
++  if (const auto *Transfer = dyn_cast<ObjC3CarrierTransferExpr>(Init)) {
++    if (!CGF.getContext().hasSameType(Transfer->getCarrierType(),
++                                     CarrierType.getUnqualifiedType()))
++      return Fail();
++  } else if (IsResult) {
 +    const auto *Construction = dyn_cast<ObjC3ResultExpr>(Init);
 +    if (!Construction ||
 +        (Construction->getKind() != ObjC3ResultExpr::Kind::Ok &&
@@ -1897,15 +1901,16 @@ index 000000000..125829f02
 +#endif
 diff --git a/clang/lib/CodeGen/CGObjC3Carriers.cpp b/clang/lib/CodeGen/CGObjC3Carriers.cpp
 new file mode 100644
-index 000000000..a8f1ad2dd
+index 000000000..2855e0efa
 --- /dev/null
 +++ b/clang/lib/CodeGen/CGObjC3Carriers.cpp
-@@ -0,0 +1,1261 @@
+@@ -0,0 +1,1277 @@
 +//===--- CGObjC3Carriers.cpp - ObjC3 carrier CodeGen adapter ----*- C++ -*-===//
 +//
 +//===----------------------------------------------------------------------===//
 +
 +#include "CGObjC3Carriers.h"
++#include "CGObjC3ArcCarriers.h"
 +#include "CGObjC3ResultExpr.h"
 +#include "CGRecordLayout.h"
 +#include "CodeGenFunction.h"
@@ -3035,7 +3040,8 @@ index 000000000..a8f1ad2dd
 +  if ((!IsOptional && !IsResult) || DestinationIsIgnored ||
 +      DestinationIsVolatile || !IsLocalCarrierInitialization ||
 +      !E.getSource() || E.getSource()->getType().isVolatileQualified() ||
-+      !supportsObjC3CarrierCppLocalLifetime(CGF.CGM, CarrierType))
++      (!supportsObjC3CarrierCppLocalLifetime(CGF.CGM, CarrierType) &&
++       !supportsObjC3CarrierARCLocalLifetime(CGF.CGM, CarrierType)))
 +    return Fail();
 +
 +  ObjC3CarrierStorageLayout Layout;
@@ -3070,9 +3076,14 @@ index 000000000..a8f1ad2dd
 +      return false;
 +    QualType ExpectedSource = Ctx.getQualifiedType(
 +        Plan.Field->getType(), E.getSource()->getType().getQualifiers());
++    const bool IsARCPointer = Plan.Field->getType()->isObjCObjectPointerType() ||
++                              Plan.Field->getType()->isBlockPointerType();
 +    return Ctx.hasSameType(Plan.Source->getType(), ExpectedSource) &&
-+           Ctx.hasSameType(Plan.Initializer->getType(),
-+                           Plan.Field->getType());
++           (IsARCPointer
++                ? Ctx.hasSameUnqualifiedType(Plan.Initializer->getType(),
++                                             Plan.Field->getType())
++                : Ctx.hasSameType(Plan.Initializer->getType(),
++                                  Plan.Field->getType()));
 +  };
 +  if (!IsValidArm(Value) || !IsValidArm(Success) || !IsValidArm(Error))
 +    return Fail();
@@ -3118,9 +3129,18 @@ index 000000000..a8f1ad2dd
 +        CGF, Destination, CarrierType, Plan.Arm);
 +    LValue SourcePayload = CGF.MakeAddrLValue(Src, Plan.Source->getType());
 +    CodeGenFunction::OpaqueValueMapping Bind(CGF, Plan.Source, SourcePayload);
-+    CGF.EmitAnyExprToMem(Plan.Initializer, Dst,
-+                         Plan.Field->getType().getQualifiers(),
-+                         /*IsInit=*/true);
++    QualType PayloadType = Plan.Field->getType();
++    if (PayloadType->isObjCObjectPointerType() || PayloadType->isBlockPointerType()) {
++      // Initialization is not an ARC assignment into an existing slot. Native
++      // scalar initialization retains strong objects, copies Blocks, and
++      // initializes/copies/moves weak storage without reading inactive bytes.
++      CGF.EmitScalarInit(Plan.Initializer, /*D=*/nullptr,
++                         CGF.MakeAddrLValue(Dst, PayloadType),
++                         /*capturedByInit=*/false);
++    } else {
++      CGF.EmitAnyExprToMem(Plan.Initializer, Dst,
++                           PayloadType.getQualifiers(), /*IsInit=*/true);
++    }
 +    return true;
 +  };
 +
@@ -5583,10 +5603,10 @@ index ce44fcd24..54595784c 100644
    // Ignore autosynthesized code.
 diff --git a/clang/test/ObjC3/CodeGen/Inputs/carrier-arc-local-lifetime-runtime.mm b/clang/test/ObjC3/CodeGen/Inputs/carrier-arc-local-lifetime-runtime.mm
 new file mode 100644
-index 000000000..cca206561
+index 000000000..e77b13633
 --- /dev/null
 +++ b/clang/test/ObjC3/CodeGen/Inputs/carrier-arc-local-lifetime-runtime.mm
-@@ -0,0 +1,114 @@
+@@ -0,0 +1,275 @@
 +#include <objc/objc.h>
 +
 +// Companion executable for the staged native runtime check. Compile this file
@@ -5691,6 +5711,160 @@ index 000000000..cca206561
 +  return arc_carrier_probe_deallocations() == 6;
 +}
 +
++
++// Explicit transfers use native ARC member initialization. Mutable strong moves
++// transfer and clear the source pointer; weak moves use objc_moveWeak. The
++// source remains engaged with a nil payload: presence is independent of value.
++static bool explicit_object_transfers() {
++  int before = arc_carrier_probe_deallocations();
++  __weak id observer = nil;
++  {
++    id object = make_arc_carrier_probe();
++    observer = object;
++    StrongOptional source = __objc3_some(id, object);
++    object = nil;
++    {
++      StrongOptional copy = __objc3_copy(source);
++      StrongOptional moved = __objc3_move(copy);
++      StrongOptional copied_again = __objc3_copy(moved);
++      if (!__objc3_has_value(source) || !__objc3_has_value(copy) ||
++          !__objc3_has_value(moved) || !__objc3_has_value(copied_again)) return false;
++    }
++    // A missing retain in any copy would release the source's last reference.
++    if (observer == nil || arc_carrier_probe_deallocations() != before) return false;
++  }
++  return observer == nil && arc_carrier_probe_deallocations() == before + 1;
++}
++
++static bool explicit_weak_transfers() {
++  int before = arc_carrier_probe_deallocations();
++  __weak id observer = nil;
++  {
++    id object = make_arc_carrier_probe();
++    observer = object;
++    WeakOptional source = __objc3_some(id __weak, object);
++    WeakOptional copy = __objc3_copy(source);
++    WeakOptional moved = __objc3_move(copy);
++    object = nil;
++    if (observer != nil || !__objc3_has_value(source) ||
++        !__objc3_has_value(copy) || !__objc3_has_value(moved)) return false;
++    // Copying and moving a live zeroed weak slot must preserve presence.
++    WeakOptional zeroed_copy = __objc3_copy(source);
++    WeakOptional zeroed_move = __objc3_move(moved);
++    if (!__objc3_has_value(zeroed_copy) || !__objc3_has_value(zeroed_move)) return false;
++  }
++  return arc_carrier_probe_deallocations() == before + 1;
++}
++
++static bool explicit_result_transfers(bool success) {
++  using Both = __objc3_result(id, id __weak);
++  int before = arc_carrier_probe_deallocations();
++  __weak id observer = nil;
++  {
++    id object = make_arc_carrier_probe();
++    observer = object;
++    if (success) {
++      Both source = __objc3_ok(id, id __weak, object);
++      {
++        Both copied = __objc3_copy(source);
++        Both moved = __objc3_move(copied);
++        object = nil;
++        if (!__objc3_is_ok(copied) || !__objc3_is_ok(moved)) return false;
++      }
++      if (observer == nil) return false;
++    } else {
++      Both source = __objc3_err(id, id __weak, object);
++      Both copied = __objc3_copy(source);
++      Both moved = __objc3_move(copied);
++      object = nil;
++      if (observer != nil || __objc3_is_ok(source) ||
++          __objc3_is_ok(copied) || __objc3_is_ok(moved)) return false;
++    }
++  }
++  return observer == nil && arc_carrier_probe_deallocations() == before + 1;
++}
++
++static bool explicit_inactive_nil_and_unsafe() {
++  StrongOptional none = __objc3_none(id);
++  StrongOptional copy = __objc3_copy(none);
++  StrongOptional moved = __objc3_move(copy);
++  StrongOptional present = __objc3_some(id, nil);
++  StrongOptional present_copy = __objc3_copy(present);
++  WeakOptional weak_none = __objc3_none(id __weak);
++  WeakOptional weak_copy = __objc3_copy(weak_none);
++  WeakOptional weak_move = __objc3_move(weak_copy);
++  UnsafeOptional unsafe = __objc3_some(id __unsafe_unretained, nil);
++  UnsafeOptional unsafe_copy = __objc3_copy(unsafe);
++  return !__objc3_has_value(copy) && !__objc3_has_value(moved) &&
++      __objc3_has_value(present_copy) && !__objc3_has_value(weak_copy) &&
++      !__objc3_has_value(weak_move) && __objc3_has_value(unsafe_copy);
++}
++
++static bool explicit_block_transfers() {
++  using Block = void (^)(void);
++  using OptionalBlock = __objc3_optional(Block);
++  using BlockResult = __objc3_result(int, Block);
++  int before = arc_carrier_probe_deallocations();
++  __weak id observer = nil;
++  {
++    id object = make_arc_carrier_probe();
++    observer = object;
++    Block block = ^{ if (!object) __builtin_trap(); };
++    OptionalBlock source = __objc3_some(Block, block);
++    BlockResult error = __objc3_err(int, Block, block);
++    object = nil;
++    block = nil;
++    {
++      OptionalBlock copy = __objc3_copy(source);
++      OptionalBlock moved = __objc3_move(copy);
++      BlockResult error_copy = __objc3_copy(error);
++      BlockResult error_move = __objc3_move(error_copy);
++      if (!__objc3_has_value(copy) || !__objc3_has_value(moved) ||
++          __objc3_is_ok(error_copy) || __objc3_is_ok(error_move)) return false;
++    }
++    if (observer == nil) return false;
++  }
++  return observer == nil && arc_carrier_probe_deallocations() == before + 1;
++}
++
++static int source_evaluations;
++static StrongOptional &source_once(StrongOptional &source, bool fail) {
++  ++source_evaluations;
++  if (fail) throw 17;
++  return source;
++}
++template <class Carrier> static bool copy_through_template(const Carrier &source) {
++  Carrier local = __objc3_copy(source);
++  return __objc3_has_value(local);
++}
++static bool explicit_source_and_unwind() {
++  int before = arc_carrier_probe_deallocations();
++  __weak id observer = nil;
++  try {
++    id object = make_arc_carrier_probe();
++    observer = object;
++    StrongOptional source = __objc3_some(id, object);
++    object = nil;
++    StrongOptional copied = __objc3_copy(source_once(source, false));
++    if (source_evaluations != 1 || !copy_through_template(copied)) return false;
++    try {
++      StrongOptional never_initialized = __objc3_copy(source_once(source, true));
++      return false;
++    } catch (int value) {
++      if (value != 17 || source_evaluations != 2 || observer == nil) return false;
++    }
++    WeakOptional weak_source = __objc3_some(id __weak, observer);
++    WeakOptional weak_copy = __objc3_copy(weak_source);
++    StrongOptional moved = __objc3_move(copied);
++    defer { if (observer == nil) __builtin_trap(); }
++    throw 29;
++  } catch (int value) {
++    return value == 29 && observer == nil &&
++        arc_carrier_probe_deallocations() == before + 1;
++  }
++  return false;
++}
++
 +int main() {
 +  if (!nil_payload_stays_engaged()) return 1;
 +  if (!strong_optional_holds_reference()) return 2;
@@ -5699,6 +5873,13 @@ index 000000000..cca206561
 +  if (!inactive_and_nil_weak_slots()) return 5;
 +  if (!native_exception_unwinds_active_payload()) return 6;
 +  if (!unsafe_optional_does_not_hold_reference()) return 7;
++  if (!explicit_object_transfers()) return 8;
++  if (!explicit_weak_transfers()) return 9;
++  if (!explicit_result_transfers(true)) return 10;
++  if (!explicit_result_transfers(false)) return 11;
++  if (!explicit_inactive_nil_and_unsafe()) return 12;
++  if (!explicit_block_transfers()) return 13;
++  if (!explicit_source_and_unwind()) return 14;
 +  return 0;
 +}
 diff --git a/clang/test/ObjC3/CodeGen/Inputs/carrier-arc-local-runtime-support.m b/clang/test/ObjC3/CodeGen/Inputs/carrier-arc-local-runtime-support.m
@@ -12024,6 +12205,137 @@ new file mode 100644
 +int run_mrc_managed_checks(void);
 +}
 +#endif
+diff --git a/clang/test/ObjC3/CodeGen/carrier-arc-transfer-rejections.mm b/clang/test/ObjC3/CodeGen/carrier-arc-transfer-rejections.mm
+new file mode 100644
+--- /dev/null
++++ b/clang/test/ObjC3/CodeGen/carrier-arc-transfer-rejections.mm
+@@ -0,0 +1,30 @@
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c++ -fobjc-version=3 -fobjc-runtime=gnustep-2.0 -fobjc-arc -std=c++20 -DIGNORED -emit-llvm -o %t.ignored.ll -verify=ignored %s
++// RUN: test ! -e %t.ignored.ll
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c++ -fobjc-version=3 -fobjc-runtime=gnustep-2.0 -fobjc-arc -std=c++20 -DIMPLICIT -emit-llvm -o %t.implicit.ll -verify=implicit %s
++// RUN: test ! -e %t.implicit.ll
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c++ -fobjc-version=3 -fobjc-runtime=gnustep-2.0 -fobjc-arc -std=c++20 -DASSIGNMENT -emit-llvm -o %t.assignment.ll -verify=assignment %s
++// RUN: test ! -e %t.assignment.ll
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c++ -fobjc-version=3 -fobjc-runtime=gnustep-2.0 -fobjc-arc -std=c++20 -DVOLATILE -emit-llvm -o %t.volatile.ll -verify=volatile %s
++// RUN: test ! -e %t.volatile.ll
++
++using Strong = __objc3_optional(id);
++#ifdef IGNORED
++void ignored_transfer(Strong &source) {
++  (void)__objc3_copy(source); // ignored-error {{ObjC3 carrier operation 'carrier copy construction'}}
++}
++#endif
++#ifdef IMPLICIT
++void implicit_copy(Strong &source) {
++  Strong copy = source; // implicit-error {{ObjC3 carrier operation 'local lifetime'}}
++}
++#endif
++#ifdef ASSIGNMENT
++void assignment(Strong &destination, Strong &source) {
++  destination = __objc3_copy(source); // assignment-error {{ObjC3 carrier operation 'Optional copy'}}
++}
++#endif
++#ifdef VOLATILE
++void volatile_destination(Strong &source) {
++  volatile Strong copy = __objc3_copy(source); // volatile-error {{ObjC3 carrier operation 'local lifetime'}}
++}
++#endif
+diff --git a/clang/test/ObjC3/CodeGen/carrier-arc-transfer.mm b/clang/test/ObjC3/CodeGen/carrier-arc-transfer.mm
+new file mode 100644
+--- /dev/null
++++ b/clang/test/ObjC3/CodeGen/carrier-arc-transfer.mm
+@@ -0,0 +1,91 @@
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c++ -fobjc-version=3 -fobjc-runtime=gnustep-2.0 -fobjc-arc -fblocks -fexceptions -fcxx-exceptions -std=c++20 -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c++ -fobjc-version=3 -fobjc-runtime=gnustep-2.0 -fobjc-arc -fblocks -fexceptions -fcxx-exceptions -std=c++20 -emit-pch -o %t.pch %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c++ -fobjc-version=3 -fobjc-runtime=gnustep-2.0 -fobjc-arc -fblocks -fexceptions -fcxx-exceptions -std=c++20 -include-pch %t.pch -emit-llvm -o - /dev/null | FileCheck %s
++
++using Strong = __objc3_optional(id);
++using Weak = __objc3_optional(id __weak);
++using Unsafe = __objc3_optional(id __unsafe_unretained);
++using Outcome = __objc3_result(id, id __weak);
++using Action = void (^)(void);
++using OptionalAction = __objc3_optional(Action);
++
++bool copy_strong(const Strong &source) {
++  Strong copy = __objc3_copy(source);
++  return __objc3_has_value(copy);
++}
++// CHECK-LABEL: define{{.*}} @{{.*}}copy_strong
++// CHECK: load i8
++// CHECK: br i1
++// CHECK: call ptr @llvm.objc.retain
++// CHECK: store i8 1
++// CHECK: load i8
++// CHECK: call void @llvm.objc.storeStrong
++
++bool move_strong(Strong &source) {
++  Strong moved = __objc3_move(source);
++  return __objc3_has_value(moved);
++}
++// CHECK-LABEL: define{{.*}} @{{.*}}move_strong
++// CHECK: objc3.transfer.active:
++// CHECK: [[MOVED:%.*]] = load ptr, ptr [[SOURCE:%.*]], align
++// CHECK-NEXT: store ptr null, ptr [[SOURCE]]
++// CHECK-NEXT: store ptr [[MOVED]]
++// CHECK: store i8 1
++// CHECK: call void @llvm.objc.storeStrong
++
++bool copy_weak(const Weak &source) {
++  Weak copy = __objc3_copy(source);
++  return __objc3_has_value(copy);
++}
++// CHECK-LABEL: define{{.*}} @{{.*}}copy_weak
++// CHECK: call void @llvm.objc.copyWeak
++// CHECK: store i8 1
++// CHECK: call void @llvm.objc.destroyWeak
++
++bool move_weak(Weak &source) {
++  Weak moved = __objc3_move(source);
++  return __objc3_has_value(moved);
++}
++// CHECK-LABEL: define{{.*}} @{{.*}}move_weak
++// CHECK: call void @llvm.objc.moveWeak
++// CHECK: store i8 1
++// CHECK: call void @llvm.objc.destroyWeak
++
++bool copy_unsafe(const Unsafe &source) {
++  Unsafe copy = __objc3_copy(source);
++  return __objc3_has_value(copy);
++}
++// CHECK-LABEL: define{{.*}} @{{.*}}copy_unsafe
++// CHECK-NOT: @llvm.objc.retain
++// CHECK-NOT: @llvm.objc.copyWeak
++// CHECK: store i8 1
++
++bool copy_result(const Outcome &source) {
++  Outcome copy = __objc3_copy(source);
++  return __objc3_is_ok(copy);
++}
++// CHECK-LABEL: define{{.*}} @{{.*}}copy_result
++// CHECK: call ptr @llvm.objc.retain
++// CHECK: store i8 1
++// CHECK: call void @llvm.objc.copyWeak
++// CHECK: store i8 0
++// CHECK-DAG: call void @llvm.objc.storeStrong
++// CHECK-DAG: call void @llvm.objc.destroyWeak
++
++bool copy_block(const OptionalAction &source) {
++  OptionalAction copy = __objc3_copy(source);
++  return __objc3_has_value(copy);
++}
++// CHECK-LABEL: define{{.*}} @{{.*}}copy_block
++// CHECK: call ptr @llvm.objc.retainBlock
++// CHECK: store i8 1
++// CHECK: call void @llvm.objc.storeStrong
++
++template <class Carrier> bool copy_template(const Carrier &source) {
++  Carrier copy = __objc3_copy(source);
++  return __objc3_has_value(copy);
++}
++template bool copy_template<Strong>(const Strong &);
++// CHECK-LABEL: define{{.*}} @{{.*}}copy_template
++// CHECK: call ptr @llvm.objc.retain
++// CHECK: store i8 1
 diff --git a/clang/test/ObjC3/CodeGen/carrier-native-abi-linux.c b/clang/test/ObjC3/CodeGen/carrier-native-abi-linux.c
 new file mode 100644
 --- /dev/null

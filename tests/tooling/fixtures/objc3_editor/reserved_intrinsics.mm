@@ -28,3 +28,13 @@ void managed_optional_probe(id input) {
   (void)__objc3_has_value(object);
   (void)__objc3_has_value(action);
 }
+
+#ifdef __cplusplus
+void managed_transfer_probe(id input) {
+  __objc3_optional(id) source = __objc3_some(id, input);
+  __objc3_optional(id) copied = __objc3_copy(source);
+  __objc3_optional(id) moved = __objc3_move(copied);
+  (void)__objc3_has_value(copied);
+  (void)__objc3_has_value(moved);
+}
+#endif

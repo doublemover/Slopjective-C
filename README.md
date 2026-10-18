@@ -141,9 +141,19 @@ int main(void) {
 ```
 
 Optional/Result, expression matches and typed error transport have bounded
-native implementation and migration fixtures. Public Optional/Result and
-synchronous throws syntax, managed payload generalization, async/await and
-actors still require further implementation and qualification. Private native
+native implementation and migration fixtures. Objective-C++ ARC locals support
+explicit `__objc3_copy` and `__objc3_move` construction for direct strong, weak
+and unsafe object payloads and strong Block payloads. Copies preserve their
+source; mutable strong and weak moves clear its payload while preserving the
+carrier tag. Moving a const strong payload copies it. Inactive arms are never
+read, and native ARC cleanup applies on normal exits and exception unwinding.
+Implicit managed copies, assignment, by-value returns, nested managed carriers
+and managed MRC transfers remain outside this bounded contract. The installed
+`share/objc3c/examples/native/carrier-transfer.mm` witness exercises these
+rules together with typed-error optionalization and `defer` at O0 and O2.
+
+Public Optional/Result and synchronous throws syntax, managed payload
+generalization, async/await and actors still require further implementation and qualification. Private native
 fixtures do not make these public features available. Generic callable metadata
 and interfaces have explicit supported subsets; they do not establish complete
 language-evolution readiness.

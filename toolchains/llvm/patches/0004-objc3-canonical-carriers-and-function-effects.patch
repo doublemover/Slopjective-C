@@ -5157,10 +5157,10 @@ index 000000000..547b8c20d
 +#endif
 diff --git a/clang/lib/Sema/SemaObjC3CarrierTransfer.cpp b/clang/lib/Sema/SemaObjC3CarrierTransfer.cpp
 new file mode 100644
-index 000000000..ccd59dae8
+index 000000000..a6e7ba910
 --- /dev/null
 +++ b/clang/lib/Sema/SemaObjC3CarrierTransfer.cpp
-@@ -0,0 +1,195 @@
+@@ -0,0 +1,206 @@
 +//===--- SemaObjC3CarrierTransfer.cpp - carrier transfer semantics -------===//
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 +//===----------------------------------------------------------------------===//
@@ -5302,6 +5302,17 @@ index 000000000..ccd59dae8
 +                           Representation.SuccessField,
 +                           Representation.ErrorField}) {
 +    if (!Field || Field->getType()->isVoidType())
++      continue;
++    QualType Payload = Field->getType();
++    // A direct ARC leaf uses the same native member-initialization recipe as
++    // an ordinary strong, weak or unsafe Objective-C/Block field. Do not admit
++    // managed subobjects hidden inside a C/C++ aggregate or nested carrier.
++    const bool IsARCPointer = getLangOpts().ObjCAutoRefCount &&
++        (Payload->isObjCObjectPointerType() || Payload->isBlockPointerType()) &&
++        (Payload.getObjCLifetime() == Qualifiers::OCL_Strong ||
++         Payload.getObjCLifetime() == Qualifiers::OCL_Weak ||
++         Payload.getObjCLifetime() == Qualifiers::OCL_ExplicitNone);
++    if (IsARCPointer)
 +      continue;
 +    Seen.clear();
 +    if (containsNestedCarrierOrManagedField(Context, Field->getType(), Seen)) {
