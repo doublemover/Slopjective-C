@@ -22,7 +22,8 @@ set_source_files_properties(source_identity.cpp PROPERTIES
 target_include_directories(objc3c_clang_foundation SYSTEM PRIVATE
   ${LLVM_INCLUDE_DIRS} ${CLANG_INCLUDE_DIRS})
 target_link_libraries(objc3c_clang_foundation PUBLIC objc3c_build_defaults)
-target_link_libraries(objc3c_clang_foundation PRIVATE
+find_package(OpenSSL 3.5 REQUIRED COMPONENTS Crypto)
+target_link_libraries(objc3c_clang_foundation PRIVATE OpenSSL::Crypto
   clangTooling clangFrontend clangCodeGen clangIndex)
 llvm_map_components_to_libnames(_objc3_native_codegen
   nativecodegen "${LLVM_NATIVE_ARCH}AsmParser")

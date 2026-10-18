@@ -24,6 +24,17 @@ int main(void) {
 #endif
     __auto_type object_callback = @fixture.NativePackage.checked_object_callback();
     if (__objc3_try_force(object_callback(managed, (id)0)) != managed) return 2;
+#if __has_feature(objc_arc)
+    __objc3_optional(id) optional_object =
+        __objc3_try_optional(object_callback(managed, (id)0));
+    __objc3_optional(id) optional_failure =
+        __objc3_try_optional(object_callback(managed, managed));
+    __auto_type optional_block =
+        __objc3_try_optional(@fixture.NativePackage.checked_managed_block(block));
+    if (!__objc3_has_value(optional_object) ||
+        !__objc3_has_value(optional_block) ||
+        __objc3_has_value(optional_failure)) return 5;
+#endif
     __auto_type managed_block = __objc3_try_force(@fixture.NativePackage.checked_managed_block(block));
     if (__objc3_try_force(managed_block(13)) != 13) return 3;
     __objc3_do { (void)__objc3_try(@fixture.NativePackage.checked_object(managed, managed)); }

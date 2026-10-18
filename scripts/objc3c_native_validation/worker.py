@@ -40,21 +40,39 @@ def result_path(run_dir: Path, node_id: str) -> Path:
     return node_directory(run_dir, node_id) / "result.json"
 
 
+def validate_editor_toolchain(report: dict[str, Any], toolchain: dict[str, Any]) -> None:
+    if report.get("status") != "passed" or report.get("build_identity") != toolchain["sdk_build_id"]:
+        raise ValueError("editor qualification did not publish a passing result for this SDK")
+    if report.get("target_triple") != toolchain["target_triple"]:
+        raise ValueError("editor qualification used a different target")
+    if Path(report.get("resource_dir", "")).resolve() != Path(toolchain["resource_dir"]).resolve():
+        raise ValueError("editor qualification used different resource headers")
+    admitted = {entry['path']: entry['sha256'] for entry in toolchain['input_files']}
+    for name, key in (("clang", "clang"), ("clang-format", "clang_format"), ("clangd", "clangd")):
+        expected = Path(toolchain['tools'][key]).resolve()
+        actual = report.get('tools', {}).get(name, {})
+        if (Path(actual.get('path', '')).resolve() != expected or
+                actual.get('sha256') != admitted.get(str(expected)) or
+                str(expected) not in admitted):
+            raise ValueError(f"editor qualification used a different {name} binary")
+
+
 def run_editor_node(repo: Path, output_dir: Path, toolchain: dict[str, Any],
                     timeout: float) -> dict[str, Any]:
     from scripts.objc3c_cross_lane_execution import run_node_command
     work = output_dir / "editor"
     report_path = work / "results.json"
     command = [sys.executable, "-B", "-m", "scripts.objc3c_editor_tooling.qualification",
-               "--repo", str(repo), "--work-dir", str(work), "--report", str(report_path)]
+               "--repo", str(repo), "--work-dir", str(work), "--report", str(report_path),
+               "--sdk-root", str(Path(toolchain["tools"]["clang"]).parent.parent),
+               "--target", toolchain["target_triple"]]
     log = output_dir / "editor.log"
     execution = run_node_command({"node_id": "editor:qualification"}, command,
                                  cwd=repo, log_path=log, timeout_seconds=timeout)
     if execution["exit_code"] or execution["timed_out"]:
         raise RuntimeError(f"editor qualification failed; see {log}")
     report = json.loads(report_path.read_text(encoding="utf-8-sig"))
-    if report.get("status") != "passed" or report.get("build_identity") != toolchain["sdk_build_id"]:
-        raise ValueError("editor qualification did not publish a passing result for this SDK")
+    validate_editor_toolchain(report, toolchain)
     artifacts = {"execution_log": log}
     artifacts.update({"editor/" + path.relative_to(work).as_posix(): path
                       for path in sorted(work.rglob("*")) if path.is_file()})

@@ -12,6 +12,7 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--output-dir', type=Path, required=True)
     parser.add_argument('--installed-layout', action='store_true')
+    parser.add_argument('--optimization', choices=('O0', 'O2'), default='O2')
     args = parser.parse_args()
     example = Path(__file__).resolve().parent
     sdk = example.parents[3]
@@ -27,7 +28,7 @@ def main():
                '--target', identity['target_triple'], '--runtime', 'gnustep-2.0',
                '--source-imports', '--module-search-path', str(example), '--import-module',
                identity['canonical_name'], identity['semantic_fingerprint'], identity['package_identity'],
-               '--emit-object', str(obj), '--', '-std=c17', '-fblocks', '-O2', '-g']
+               '--emit-object', str(obj), '--', '-std=c17', '-fblocks', '-' + args.optimization, '-g']
     subprocess.run(command, cwd=example, env=environment, check=True)
     rpath = '$ORIGIN/../lib' if args.installed_layout else str(sdk / 'lib')
     subprocess.run([str(sdk / 'bin/clang++'), '-fuse-ld=lld', str(obj), str(example / 'provider.obj'),

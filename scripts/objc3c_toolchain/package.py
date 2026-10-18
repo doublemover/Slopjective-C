@@ -12,6 +12,7 @@ import tarfile
 import tempfile
 
 MANIFEST = 'objc3-sdk.json'
+SCHEMA = 'objc3.sdk.v2'
 
 
 def _digest(value) -> str:
@@ -25,7 +26,7 @@ def _file_hash(path: Path) -> str:
 
 def inventory(prefix: Path) -> dict:
     prefix = prefix.resolve()
-    files = {}
+    files = {'.': {'kind': 'directory', 'mode': stat.S_IMODE(prefix.stat().st_mode)}}
     for path in sorted(prefix.rglob('*')):
         name = path.relative_to(prefix).as_posix()
         if name == MANIFEST:
@@ -37,13 +38,27 @@ def inventory(prefix: Path) -> dict:
         elif path.is_file():
             files[name] = {'kind': 'file', 'sha256': _file_hash(path),
                            'mode': stat.S_IMODE(path.stat().st_mode)}
+        elif path.is_dir():
+            files[name] = {'kind': 'directory', 'mode': stat.S_IMODE(path.stat().st_mode)}
     return files
 
 
+def normalize_permissions(prefix: Path) -> None:
+    for path in (prefix, *prefix.rglob('*')):
+        if path.is_symlink():
+            continue
+        if path.is_dir():
+            path.chmod(0o755)
+        elif path.is_file():
+            path.chmod(0o755 if path.stat().st_mode & 0o111 else 0o644)
+
+
 def verify_sdk(prefix: Path, expected: str | None = None) -> dict:
+    if stat.S_IMODE((prefix / MANIFEST).stat().st_mode) != 0o644:
+        raise ValueError('SDK manifest permissions differ from the distribution contract')
     data = json.loads((prefix / MANIFEST).read_text())
     seal = data.pop('seal_sha256')
-    if data.get('schema') != 'objc3.sdk.v1' or _digest(data) != seal or (expected and seal != expected):
+    if data.get('schema') != SCHEMA or _digest(data) != seal or (expected and seal != expected):
         raise ValueError('SDK seal identity mismatch')
     if inventory(prefix) != data['files']:
         raise ValueError('SDK files, permissions or symbolic links differ from the seal')
@@ -118,7 +133,8 @@ def package_sdk(repo: Path, prefix: Path, validation_report: Path, cache_dir: Pa
     license_dir = prefix / 'share/licenses/robin-map'
     license_dir.mkdir(parents=True, exist_ok=True)
     shutil.copyfile(robin_license, license_dir / 'LICENSE')
-    data = {'schema': 'objc3.sdk.v1', 'source_build_id': source['build_id'],
+    normalize_permissions(prefix)
+    data = {'schema': SCHEMA, 'source_build_id': source['build_id'],
             'upstream_commit': source['upstream_commit'], 'patch_digest': source['patch_digest'],
             'target': toolchain['target_triple'],
             'linux_abi': {name: json.loads((repo / 'scripts/objc3c_toolchain_runtime/runtime-profile.json').read_text())['profiles']['linux-x86_64'][name]
@@ -129,6 +145,7 @@ def package_sdk(repo: Path, prefix: Path, validation_report: Path, cache_dir: Pa
                               'runtime_count': report['runtime_count']}, 'files': inventory(prefix)}
     data['seal_sha256'] = _digest(data)
     (prefix / MANIFEST).write_text(json.dumps(data, indent=2) + '\n')
+    (prefix / MANIFEST).chmod(0o644)
     cache_dir.mkdir(parents=True, exist_ok=True)
     archive = cache_dir / (source['build_id'] + '-linux-x86_64-' + data['seal_sha256'][:16] + '.tar.zst')
     if archive.exists():
@@ -169,7 +186,8 @@ def main(argv=None):
     except (OSError, ValueError, KeyError) as error:
         parser.exit(2, str(error) + '\n')
     print(json.dumps({'status': 'PASS', 'source_build_id': result['source_build_id'],
-                      'seal_sha256': result['seal_sha256'], 'files': len(result['files'])}, indent=2))
+                      'seal_sha256': result['seal_sha256'], 'entries': len(result['files']),
+                      'files': sum(item['kind'] != 'directory' for item in result['files'].values())}, indent=2))
 
 
 if __name__ == '__main__':

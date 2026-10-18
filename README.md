@@ -11,6 +11,8 @@ The authoritative versions are in
 [`toolchains/llvm/manifest.json`](toolchains/llvm/manifest.json). The current
 foundation is LLVM 23.1.3. Development requires Python 3.15.0, Node 26.12.0,
 npm 12.2.1, CMake 4.4.4 and Ninja 1.13.2. A compiler cache is recommended.
+Native SDK development also needs the system OpenSSL 3.5+, zlib and zstd
+development headers.
 PowerShell is not part of the Linux compiler build or qualification pipeline.
 
 In the managed Linux development environment:
@@ -74,12 +76,24 @@ Release installers are shipped under `share/objc3c/` in the archive and alongsid
 CI release artifacts. Installations live under `sdks/<full-content-seal>`;
 activation atomically switches `current`. Existing prefixes are verified before
 reuse. The standalone verifier checks all file contents, modes and relative
-symbolic links after extraction or relocation.
+symbolic links after extraction or relocation. Directory permissions are also
+sealed; archives and activation files support root installation followed by
+ordinary-user development, including under a restrictive installation umask.
 
 The current binary qualification baseline is Debian 13, x86-64, glibc 2.41 and
-libstdc++ with GLIBCXX_3.4.33. The shipped archive is also qualified on Ubuntu 26.04. Other distributions
-require their own installed archive execution evidence before being declared supported. Windows, Darwin,
+libstdc++ with GLIBCXX_3.4.33. The shipped archive is also qualified on Ubuntu
+26.04. Other distributions require their own installed archive execution
+evidence before being declared supported. Windows, Darwin,
 other architectures and older Linux runtimes are outside this milestone.
+
+The installed sample combines semantic interface imports, managed objects and
+Blocks, typed errors and `defer` cleanup. It uses the bounded native migration
+intrinsics described below. Rebuild and run it outside the checkout:
+
+```sh
+python3 "$OBJC3C_SDK_ROOT/share/objc3c/examples/managed/build.py" \
+  --output-dir ./managed-sample --optimization O2
+```
 
 ## Language status
 
@@ -121,6 +135,9 @@ python -m scripts.objc3c_toolchain check-host-tools --runtime
 python -m scripts.objc3c_native_validation
 python -m pytest -q tests/tooling/test_toolchain_package.py
 python -m scripts.objc3c_toolchain.generate_features --check
+python -m scripts.measure_objc3c_linux --sdk "$OBJC3C_SDK_ROOT" --report tmp/benchmarks/development.json
+python -m scripts.measure_objc3c_linux --sdk "$OBJC3C_SDK_ROOT" \
+  --budget-report docs/support/linux_development_latency.json --report tmp/benchmarks/regression.json
 ```
 
 Native validation checks O0/O2 behavior, ABI, ownership, cleanup, expected
@@ -129,5 +146,11 @@ source, compiler, runtime, system headers and executable contents and reject
 changes during validation. The
 [Linux SDK acceptance receipt](docs/support/linux_sdk_release_acceptance.json)
 records the qualified archive and fresh-host checks; each new SDK has its own
-qualification and release receipt. Runtime timings must be distinguished from compile and wrapper
-timings when comparing performance.
+qualification and release receipt. Runtime timings must be distinguished from
+compile and wrapper timings when comparing performance.
+The [paired latency report](docs/support/linux_development_latency.json) records
+warm command measurements and regression budgets for its CPU model and quota.
+Use a separate output report when checking those budgets.
+
+The [forward development milestones](docs/roadmap/linux_forward_development.md)
+identify the remaining public-language, module, concurrency and architecture work.

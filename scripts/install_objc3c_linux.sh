@@ -10,7 +10,7 @@ if [ "${1:-}" = --provision ]; then
   fi
   apt-get update
   DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
-    python3 zstd g++ libc6-dev libzstd-dev zlib1g-dev
+    python3 zstd g++ libc6-dev libzstd-dev zlib1g-dev libssl-dev
 fi
 installer_dir=$(CDPATH='' cd -- "$(dirname -- "$0")" && pwd)
 if [ -f "$installer_dir/objc3c_toolchain/install_sdk.py" ]; then

@@ -19,13 +19,33 @@ from .package import inventory, package_sdk, verify_sdk
 from .qualify_installed import qualify_installed
 
 
+PROJECT_SDK_PREFIXES = ('bin/objc3', 'bin/clang-scan-deps', 'lib/libobjc',
+                        'lib/cmake/objc3c/', 'include/objc/', 'include/objc3c/',
+                        'include/runtime/', 'share/objc3c/')
+
+
+def is_project_sdk_path(name: str) -> bool:
+    return name == 'objc3-sdk.json' or any(
+        name == prefix.rstrip('/') or name.startswith(prefix)
+        for prefix in PROJECT_SDK_PREFIXES)
+
+
+def copy_foundation(sdk: Path, prefix: Path) -> None:
+    def ignore(directory, names):
+        relative = Path(directory).relative_to(sdk)
+        return [name for name in names if name == '__pycache__' or
+                is_project_sdk_path((relative / name).as_posix())]
+    # Reinstall every current project component; a cached SDK must never
+    # resurrect a removed compiler header, library, example or executable.
+    shutil.copytree(sdk, prefix, symlinks=True, ignore=ignore)
+
+
 def foundation_identity(sdk: Path) -> str:
     records = inventory(sdk)
     # Project frontend/runtime/sample changes do not invalidate the LLVM cache.
     selected = {name: record for name, record in records.items()
-                if name.startswith(('bin/', 'lib/', 'include/')) and not name.startswith(
-                    ('bin/objc3', 'bin/clang-scan-deps', 'lib/libobjc', 'lib/cmake/objc3c/', 'include/objc/',
-                     'include/objc3c/', 'include/runtime/'))}
+                if record['kind'] != 'directory' and name.startswith(('bin/', 'lib/', 'include/'))
+                and not is_project_sdk_path(name)}
     return hashlib.sha256(json.dumps(selected, sort_keys=True).encode()).hexdigest()
 
 
@@ -36,6 +56,12 @@ def input_identity(repo: Path, sdk: Path) -> dict:
                       'tests/tooling/fixtures/clang_foundation', 'native/objc3c/src/runtime'):
         files.update(path for path in (repo / directory).rglob('*') if path.is_file()
                      and '__pycache__' not in path.parts and path.suffix not in ('.pyc',))
+    # Qualification owners, including editor fixtures and shared executor code,
+    # are authoritative inputs to release reuse rather than a second file list.
+    from scripts.objc3c_native_validation.plan import build_plan
+    qualification = build_plan(repo, drivers=('clang', 'objc3c-clang'))
+    for node in qualification['selected_nodes']:
+        files.update(repo / name for name in node['identity_inputs'])
     files.add(repo / 'scripts/install_objc3c_linux.sh')
     files.add(repo / 'out/toolchains/objc3-development/build-linux-x86_64/bin/llvm-tblgen')
     inputs = {path.relative_to(repo).as_posix(): hashlib.sha256(path.read_bytes()).hexdigest()
@@ -91,8 +117,7 @@ def _build_sdk(repo: Path, base: Path, fetch: bool, install_root: Path, foundati
         raise ValueError(f'incomplete SDK build preserved at {directory}; inspect it before removing it and retrying')
     # This is a mutable build candidate. Only a sealed archive is published to
     # the immutable installation store after all consumers have passed.
-    shutil.copytree(sdk, prefix, symlinks=True,
-        ignore=shutil.ignore_patterns('objc3-sdk.json', 'objc3c-clang', 'objc3c', 'objc3-managed-sample'))
+    copy_foundation(sdk, prefix)
     report = {'status': 'running', 'input_identity': identity['sha256'], 'build_prefix': str(prefix),
               'foundation': foundation, 'commands': []}
     env = {**os.environ, 'LD_LIBRARY_PATH': str(sdk / 'lib'), 'PYTHONDONTWRITEBYTECODE': '1',

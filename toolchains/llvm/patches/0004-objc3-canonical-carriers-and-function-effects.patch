@@ -5042,10 +5042,10 @@ index 5d4c5ff7d..60f0b15f2 100644
    return ConvTy;
 diff --git a/clang/lib/Sema/SemaObjC3CarrierARC.cpp b/clang/lib/Sema/SemaObjC3CarrierARC.cpp
 new file mode 100644
-index 000000000..70e05aaca
+index 000000000..86a8bba6f
 --- /dev/null
 +++ b/clang/lib/Sema/SemaObjC3CarrierARC.cpp
-@@ -0,0 +1,85 @@
+@@ -0,0 +1,88 @@
 +//===--- SemaObjC3CarrierARC.cpp - ARC payload admission --------*- C++ -*-===//
 +#include "SemaObjC3CarrierARC.h"
 +#include "clang/AST/ASTContext.h"
@@ -5090,10 +5090,12 @@ index 000000000..70e05aaca
 +  if (PayloadType.isNull() || PayloadType->isDependentType())
 +    return false;
 +
-+  // ARC object-pointer carrier payloads are native platform pointers. Blocks
-+  // remain unsupported until their distinct retain/copy ownership operations
-+  // are admitted here and in CodeGen.
-+  if (PayloadType->isBlockPointerType()) {
++  // Strong ARC Blocks use native block-copy initialization and destruction.
++  // Other Block ownership conventions remain outside this qualified slice.
++  if (PayloadType->isBlockPointerType() &&
++      (!S.getLangOpts().ObjCAutoRefCount ||
++       (PayloadType.getObjCLifetime() != Qualifiers::OCL_None &&
++        PayloadType.getObjCLifetime() != Qualifiers::OCL_Strong))) {
 +    S.Diag(Loc, diag::err_objc3_carrier_payload_unsupported) << PayloadType;
 +    return true;
 +  }
@@ -5104,7 +5106,8 @@ index 000000000..70e05aaca
 +    S.Diag(Loc, diag::err_objc3_carrier_payload_unsupported) << PayloadType;
 +    return true;
 +  }
-+  if (!PayloadType->isObjCObjectPointerType())
++  if (!PayloadType->isObjCObjectPointerType() &&
++      !PayloadType->isBlockPointerType())
 +    return false;
 +
 +  switch (PayloadType.getObjCLifetime()) {
@@ -6353,15 +6356,16 @@ index 000000000..2c37de629
 +}
 diff --git a/clang/lib/Sema/SemaObjC3Propagation.cpp b/clang/lib/Sema/SemaObjC3Propagation.cpp
 new file mode 100644
-index 000000000..28eb66128
+index 000000000..ae48b65d0
 --- /dev/null
 +++ b/clang/lib/Sema/SemaObjC3Propagation.cpp
-@@ -0,0 +1,139 @@
+@@ -0,0 +1,143 @@
 +//===--- SemaObjC3Propagation.cpp - ObjC3 typed propagation semantics -----===//
 +// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 +
 +#include "SemaObjC3ErrorContext.h"
++#include "SemaObjC3CarrierARC.h"
 +#include "clang/AST/ASTContext.h"
 +#include "clang/AST/Expr.h"
 +#include "clang/AST/ExprObjC.h"
@@ -6440,9 +6444,12 @@ index 000000000..28eb66128
 +        return ExprError();
 +      }
 +    }
-+    if (Operation == ObjC3TryExpr::Kind::Optionalize)
-+      ResultType = Context.getObjC3OptionalType(ResultType);
-+  } else if (Operation == ObjC3TryExpr::Kind::Optionalize) {
++  }
++  if (Operation == ObjC3TryExpr::Kind::Optionalize) {
++    // A successful call becomes a stored payload. Use the same ownership
++    // normalization as an explicit Optional constructor before type uniquing.
++    if (normalizeObjC3CarrierPayloadOwnership(*this, KeywordLoc, ResultType))
++      return ExprError();
 +    ResultType = Context.getObjC3OptionalType(ResultType);
 +  }
 +
@@ -8467,10 +8474,10 @@ index 000000000..a5c7b2fb5
 +RecoveredResult recovered_result;
 diff --git a/clang/test/ObjC3/Sema/carrier-arc-ownership.mm b/clang/test/ObjC3/Sema/carrier-arc-ownership.mm
 new file mode 100644
-index 000000000..dd90f587e
+index 000000000..948d33443
 --- /dev/null
 +++ b/clang/test/ObjC3/Sema/carrier-arc-ownership.mm
-@@ -0,0 +1,26 @@
+@@ -0,0 +1,29 @@
 +// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c++ -fobjc-version=3 -fobjc-runtime=gnustep-2.0 -fobjc-arc -fblocks -std=c++20 -verify -fsyntax-only %s
 +
 +typedef __objc3_optional(id) StrongOptional;
@@ -8480,7 +8487,10 @@ index 000000000..dd90f587e
 +
 +struct ContainsRetainableField { id value; };
 +typedef __objc3_optional(id __autoreleasing) AutoreleasingOptional; // expected-error {{payload type}} 
-+typedef __objc3_optional(void (^)(void)) BlockOptional; // expected-error {{payload type}}
++typedef void (^Action)(void);
++typedef __objc3_optional(Action) BlockOptional;
++typedef __objc3_optional(Action __weak) WeakBlockOptional; // expected-error {{payload type}}
++typedef __objc3_optional(Action __unsafe_unretained) UnsafeBlockOptional; // expected-error {{payload type}}
 +typedef __objc3_optional(struct ContainsRetainableField) AggregateOptional; // expected-error {{payload type}}
 +
 +void accepted_types(id object) {

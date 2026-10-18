@@ -21,10 +21,10 @@ def file_hash(path: Path) -> str:
         return hashlib.file_digest(stream, 'sha256').hexdigest()
 
 
-def verify(prefix: Path) -> dict:
+def verify(prefix: Path, *, verifier: Path | None = None) -> dict:
     # Loading a module through importlib writes __pycache__ unless the parent
     # happens to use -B. A verifier must never mutate the sealed installation.
-    path = prefix / 'share/objc3c/verify-sdk.py'
+    path = verifier or prefix / 'share/objc3c/verify-sdk.py'
     module = types.ModuleType('objc3_sdk_verifier')
     module.__file__ = str(path)
     exec(compile(path.read_bytes(), str(path), 'exec'), module.__dict__)
@@ -58,6 +58,7 @@ export LD_LIBRARY_PATH="$OBJC3C_SDK_ROOT/lib"
     pending = root / f'.activate-{os.getpid()}'
     try:
         pending.write_text(text)
+        pending.chmod(0o644)
         os.replace(pending, script)
     finally:
         pending.unlink(missing_ok=True)
@@ -71,6 +72,7 @@ def install(archive: Path, expected_sha256: str, root: Path) -> dict:
     if len(expected_sha256) != 64 or file_hash(archive) != expected_sha256.lower():
         raise ValueError('archive SHA-256 does not match the release receipt')
     root.mkdir(parents=True, exist_ok=True)
+    root.chmod(0o755)
     with (root / '.install.lock').open('a+b') as lock:
         fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
         with tempfile.TemporaryDirectory(prefix='.install-', dir=root) as temporary:
@@ -86,11 +88,20 @@ def install(archive: Path, expected_sha256: str, root: Path) -> dict:
             if {path.name for path in destination.iterdir()} != {'objc3-sdk'}:
                 raise ValueError('SDK archive must contain exactly one objc3-sdk directory')
             candidate = destination / 'objc3-sdk'
+            # Python's data extraction filter intentionally discards directory
+            # modes. Restore the public distribution modes before seal checks,
+            # independently of the installing user's umask.
+            for directory in (candidate, *candidate.rglob('*')):
+                if not directory.is_symlink() and directory.is_dir():
+                    directory.chmod(0o755)
             data = verify(candidate)
             prefix = root / 'sdks' / data['seal_sha256']
             prefix.parent.mkdir(exist_ok=True)
+            prefix.parent.chmod(0o755)
             if prefix.exists():
-                if verify(prefix)['seal_sha256'] != data['seal_sha256']:
+                # Cached contents, including their verifier, are inputs to
+                # verify with code admitted from the SHA-verified archive.
+                if verify(prefix, verifier=candidate / 'share/objc3c/verify-sdk.py')['seal_sha256'] != data['seal_sha256']:
                     raise ValueError('existing SDK prefix differs from the release seal')
             else:
                 os.replace(candidate, prefix)

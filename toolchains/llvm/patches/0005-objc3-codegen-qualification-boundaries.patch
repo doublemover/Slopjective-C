@@ -527,7 +527,7 @@ index 7421733ef..7d4225f73 100644
      return CreateType(cast<RecordType>(Ty));
    case Type::Enum:
 diff --git a/clang/lib/CodeGen/CGDecl.cpp b/clang/lib/CodeGen/CGDecl.cpp
-index e84e05e8e..310b3d8a5 100644
+index e84e05e8e..e885bca87 100644
 --- a/clang/lib/CodeGen/CGDecl.cpp
 +++ b/clang/lib/CodeGen/CGDecl.cpp
 @@ -11,6 +11,8 @@
@@ -547,7 +547,7 @@ index e84e05e8e..310b3d8a5 100644
  #include "clang/Basic/CodeGenOptions.h"
  #include "clang/Basic/TargetInfo.h"
  #include "clang/CodeGen/CGFunctionInfo.h"
-@@ -492,6 +495,78 @@ void CodeGenFunction::EmitStaticVarDecl(const VarDecl &D,
+@@ -492,6 +495,83 @@ void CodeGenFunction::EmitStaticVarDecl(const VarDecl &D,
  }
  
  namespace {
@@ -605,6 +605,11 @@ index e84e05e8e..310b3d8a5 100644
 +    Init = Init->IgnoreParenImpCasts();
 +    const Type *Ty = CarrierType.getTypePtr();
 +    if (isa<ObjC3OptionalType>(Ty)) {
++      if (const auto *Try = dyn_cast<ObjC3TryExpr>(Init))
++        return Try->getKind() == ObjC3TryExpr::Kind::Optionalize &&
++               !D.getType().isVolatileQualified() &&
++               Try->getType().getCanonicalType().getUnqualifiedType() ==
++                   CarrierType.getUnqualifiedType();
 +      if (const auto *Transfer = dyn_cast<ObjC3CarrierTransferExpr>(Init))
 +        return !D.getType().isVolatileQualified() &&
 +               Transfer->getCarrierType() == CarrierType.getUnqualifiedType();
@@ -626,7 +631,7 @@ index e84e05e8e..310b3d8a5 100644
    struct DestroyObject final : EHScopeStack::Cleanup {
      DestroyObject(Address addr, QualType type,
                    CodeGenFunction::Destroyer *destroyer,
-@@ -1354,8 +1429,47 @@ static llvm::Constant *replaceUndef(CodeGenModule &CGM, IsPattern isPattern,
+@@ -1354,8 +1434,47 @@ static llvm::Constant *replaceUndef(CodeGenModule &CGM, IsPattern isPattern,
  /// variable declaration with auto, register, or no storage class specifier.
  /// These turn into simple stack objects, or GlobalValues depending on target.
  void CodeGenFunction::EmitAutoVarDecl(const VarDecl &D) {
@@ -675,7 +680,7 @@ index e84e05e8e..310b3d8a5 100644
    EmitAutoVarCleanups(emission);
  }
  
-@@ -2234,8 +2348,30 @@ void CodeGenFunction::EmitAutoVarCleanups(const AutoVarEmission &emission) {
+@@ -2234,8 +2353,30 @@ void CodeGenFunction::EmitAutoVarCleanups(const AutoVarEmission &emission) {
  
    const VarDecl &D = *emission.Variable;
  
@@ -708,7 +713,7 @@ index e84e05e8e..310b3d8a5 100644
      // Check if we're in a SEH block with /EH, prevent it
      if (getLangOpts().CXXExceptions && currentFunctionUsesSEHTry())
        getContext().getDiagnostics().Report(D.getLocation(),
-@@ -2696,9 +2832,10 @@ void CodeGenFunction::EmitParmDecl(const VarDecl &D, ParamValue Arg,
+@@ -2696,9 +2837,10 @@ void CodeGenFunction::EmitParmDecl(const VarDecl &D, ParamValue Arg,
  
    // Use better IR generation for certain implicit parameters.
    if (auto IPD = dyn_cast<ImplicitParamDecl>(&D)) {
@@ -1390,10 +1395,10 @@ index 000000000..eefcc9109
 +#endif
 diff --git a/clang/lib/CodeGen/CGObjC3ArcCarriers.cpp b/clang/lib/CodeGen/CGObjC3ArcCarriers.cpp
 new file mode 100644
-index 000000000..4112bdaa0
+index 000000000..d09577332
 --- /dev/null
 +++ b/clang/lib/CodeGen/CGObjC3ArcCarriers.cpp
-@@ -0,0 +1,432 @@
+@@ -0,0 +1,440 @@
 +//===--- CGObjC3ArcCarriers.cpp - ARC local carrier lowering --*- C++ -*-===//
 +// Private native ARC operations for the first direct-local carrier slice.
 +#include "CGObjC3ArcCarriers.h"
@@ -1411,6 +1416,11 @@ index 000000000..4112bdaa0
 +using namespace clang::CodeGen;
 +
 +namespace {
++
++bool isRetainablePointer(QualType T) {
++  return !T.isNull() &&
++         (T->isObjCObjectPointerType() || T->isBlockPointerType());
++}
 +
 +Qualifiers::ObjCLifetime effectiveARCStorageLifetime(QualType T) {
 +  switch (T.getObjCLifetime()) {
@@ -1450,7 +1460,7 @@ index 000000000..4112bdaa0
 +}
 +
 +bool isARCPointerField(QualType T) {
-+  if (T.isNull() || !T->isObjCObjectPointerType())
++  if (!isRetainablePointer(T))
 +    return false;
 +  switch (effectiveARCStorageLifetime(T)) {
 +  case Qualifiers::OCL_Strong:
@@ -1467,7 +1477,7 @@ index 000000000..4112bdaa0
 +bool isSupportedField(ASTContext &Ctx, QualType T) {
 +  if (T.isNull())
 +    return true;
-+  if (T->isObjCObjectPointerType())
++  if (isRetainablePointer(T))
 +    return isARCPointerField(T);
 +  return isPlainLeaf(Ctx, T);
 +}
@@ -1501,7 +1511,7 @@ index 000000000..4112bdaa0
 +}
 +
 +bool hasLifetime(QualType T, Qualifiers::ObjCLifetime Life) {
-+  return !T.isNull() && T->isObjCObjectPointerType() &&
++  return isRetainablePointer(T) &&
 +         effectiveARCStorageLifetime(T) == Life;
 +}
 +
@@ -1518,7 +1528,7 @@ index 000000000..4112bdaa0
 +      return false;
 +
 +    QualType FieldType = Field->getType();
-+    if (FieldType->isObjCObjectPointerType()) {
++    if (isRetainablePointer(FieldType)) {
 +      Qualifiers::ObjCLifetime Life = effectiveARCStorageLifetime(FieldType);
 +      if (Life == Qualifiers::OCL_None ||
 +          Life == Qualifiers::OCL_Autoreleasing)
@@ -1598,7 +1608,7 @@ index 000000000..4112bdaa0
 +    return false;
 +  auto Info = Ctx.getObjC3CarrierRepresentationType(CarrierType);
 +  auto IsObjCPointer = [](FieldDecl *Field) {
-+    return Field && Field->getType()->isObjCObjectPointerType();
++    return Field && isRetainablePointer(Field->getType());
 +  };
 +  return IsObjCPointer(Info.ValueField) || IsObjCPointer(Info.SuccessField) ||
 +         IsObjCPointer(Info.ErrorField);
@@ -1714,6 +1724,9 @@ index 000000000..4112bdaa0
 +    if (!Construction ||
 +        (Construction->getKind() != ObjC3ResultExpr::Kind::Ok &&
 +         Construction->getKind() != ObjC3ResultExpr::Kind::Err))
++      return Fail();
++  } else if (const auto *Try = dyn_cast<ObjC3TryExpr>(Init)) {
++    if (Try->getKind() != ObjC3TryExpr::Kind::Optionalize)
 +      return Fail();
 +  } else {
 +    const auto *Construction = dyn_cast<ObjC3OptionalExpr>(Init);
@@ -4313,10 +4326,10 @@ index 000000000..554f67296
 +#endif
 diff --git a/clang/lib/CodeGen/CGObjC3TypedErrors.cpp b/clang/lib/CodeGen/CGObjC3TypedErrors.cpp
 new file mode 100644
-index 000000000..9dacf9740
+index 000000000..3d8ac1d14
 --- /dev/null
 +++ b/clang/lib/CodeGen/CGObjC3TypedErrors.cpp
-@@ -0,0 +1,550 @@
+@@ -0,0 +1,570 @@
 +//===--- CGObjC3TypedErrors.cpp - ObjC3 error-output CodeGen -----*- C++
 +//-*-===//
 +//
@@ -4329,6 +4342,7 @@ index 000000000..9dacf9740
 +
 +#include "CGCall.h"
 +#include "CGObjC3Carriers.h"
++#include "CGObjC3ArcCarriers.h"
 +#include "CGObjC3ErrorHandlers.h"
 +#include "CodeGenFunction.h"
 +#include "CodeGenModule.h"
@@ -4788,7 +4802,13 @@ index 000000000..9dacf9740
 +    CGF.CGM.ErrorUnsupported(&E, "non-optional aggregate try result");
 +    return false;
 +  }
-+  if (!supportsObjC3CarrierCopyPayload(CGF.CGM, E.getType())) {
++  const bool ARCLocal =
++      supportsObjC3CarrierARCLocalLifetime(CGF.CGM, E.getType());
++  if (!supportsObjC3CarrierCopyPayload(CGF.CGM, E.getType()) &&
++      (!ARCLocal || (!Dest.isIgnored() &&
++                    (Dest.isVolatile() ||
++                     !CGF.isObjC3CarrierLocalInitialization(
++                         Dest.getAddress(), E.getType()))))) {
 +    CGF.CGM.ErrorUnsupported(&E, "managed try? Optional initialization");
 +    return false;
 +  }
@@ -4855,9 +4875,22 @@ index 000000000..9dacf9740
 +        CGF.CGM.ErrorUnsupported(&E, "unsupported try? Optional payload");
 +        return false;
 +      }
-+      LValue PayloadLV = CGF.MakeAddrLValue(Payload, E.getOperand()->getType());
-+      CGF.EmitStoreOfScalar(CallValue.getScalarVal(), PayloadLV,
-+                            /*isInit=*/true);
++      QualType PayloadType = Representation.ValueField->getType();
++      LValue PayloadLV = CGF.MakeAddrLValue(Payload, PayloadType);
++      llvm::Value *Value = CallValue.getScalarVal();
++      if (ARCLocal) {
++        // The operand keeps its ordinary ARC consume/reclaim cleanups. The
++        // engaged Optional needs an independent strong reference after those
++        // full-expression cleanups run. Acquire it only on the success edge.
++        if (PayloadType.getObjCLifetime() != Qualifiers::OCL_Strong) {
++          CGF.CGM.ErrorUnsupported(&E, "non-strong managed try? payload");
++          return false;
++        }
++        Value = PayloadType->isBlockPointerType()
++                    ? CGF.EmitARCRetainBlock(Value, /*mandatory=*/true)
++                    : CGF.EmitARCRetainNonBlock(Value);
++      }
++      CGF.EmitStoreOfScalar(Value, PayloadLV, /*isInit=*/true);
 +    }
 +    emitObjC3CarrierStoreTag(CGF, Dest.getAddress(), E.getType(),
 +                             llvm::ConstantInt::getTrue(CGF.getLLVMContext()),
@@ -11565,7 +11598,7 @@ diff --git a/clang/test/ObjC3/CodeGen/Inputs/typed-error-managed-arc-runtime.inc
 new file mode 100644
 --- /dev/null
 +++ b/clang/test/ObjC3/CodeGen/Inputs/typed-error-managed-arc-runtime.inc
-@@ -0,0 +1,147 @@
+@@ -0,0 +1,151 @@
 +#include "typed-error-managed-runtime.h"
 +
 +static TestError managed_object(TestError value, TestError error)
@@ -11622,7 +11655,11 @@ new file mode 100644
 +  if (block() != 42) __builtin_trap();
 +  throw 73;
 +}
++#include "typed-error-managed-optional-runtime.inc"
++
 +static int run_managed_success_checks() {
++  int optional_result = run_managed_optional_checks();
++  if (optional_result) return optional_result;
 +  int result = run_mrc_managed_checks();
 +  if (result) return result;
 +  int before = zero_code_error_deallocations();
@@ -11779,6 +11816,189 @@ new file mode 100644
 +  [owner release];
 +  return zero_code_error_deallocations() == before + 3 ? 0 : 185;
 +}
+diff --git a/clang/test/ObjC3/CodeGen/Inputs/typed-error-managed-optional-runtime.inc b/clang/test/ObjC3/CodeGen/Inputs/typed-error-managed-optional-runtime.inc
+new file mode 100644
+--- /dev/null
++++ b/clang/test/ObjC3/CodeGen/Inputs/typed-error-managed-optional-runtime.inc
+@@ -0,0 +1,178 @@
++// Managed try? keeps a strong success payload beyond the call's ordinary
++// full-expression cleanup. Failed calls must never inspect inactive storage.
++static __weak ZeroCodeError *optional_observed;
++static int optional_calls;
++
++static TestError optional_owned(TestError error) __objc3_throws(TestError)
++    __attribute__((ns_returns_retained)) {
++  ++optional_calls;
++  @autoreleasepool {
++    if (error) __objc3_throw(error);
++    TestError value = (TestError)make_zero_code_error();
++    optional_observed = value;
++    return value;
++  }
++}
++static TestError optional_borrowed() __objc3_throws(TestError) {
++  ++optional_calls;
++  @autoreleasepool {
++    TestError value = (TestError)make_zero_code_error();
++    optional_observed = value;
++    return value;
++  }
++}
++static ManagedSuccessBlock optional_owned_block(TestError error)
++    __objc3_throws(TestError) __attribute__((ns_returns_retained)) {
++  ++optional_calls;
++  @autoreleasepool {
++    if (error) __objc3_throw(error);
++    TestError value = (TestError)make_zero_code_error();
++    optional_observed = value;
++    return ^{ return [value code] + 42; };
++  }
++}
++static ManagedSuccessBlock optional_borrowed_block() __objc3_throws(TestError) {
++  @autoreleasepool {
++    TestError value = (TestError)make_zero_code_error();
++    optional_observed = value;
++    return ^{ return [value code] + 42; };
++  }
++}
++extern "C" void *objc_autoreleasePoolPush(void);
++extern "C" void objc_autoreleasePoolPop(void *);
++
++static void optional_native_unwind() {
++  __objc3_optional(TestError) value = __objc3_try_optional(optional_owned(nil));
++  if (!__objc3_has_value(value) || !optional_observed) __builtin_trap();
++  throw 311;
++}
++
++static int run_managed_optional_checks() {
++  int before = zero_code_error_deallocations();
++  int calls = optional_calls;
++  {
++    __objc3_optional(TestError) value = __objc3_try_optional(optional_owned(nil));
++    if (!__objc3_has_value(value) || !optional_observed) return 211;
++  }
++  if (optional_observed || zero_code_error_deallocations() != before + 1 ||
++      optional_calls != calls + 1) return 212;
++
++  // Pop the callee's return-value autorelease pool while the Optional remains
++  // live. Its own reference, rather than an ambient pool, must keep it alive.
++  before = zero_code_error_deallocations();
++  void *pool = objc_autoreleasePoolPush();
++  {
++    __objc3_optional(TestError) value = __objc3_try_optional(optional_borrowed());
++    objc_autoreleasePoolPop(pool);
++    if (!__objc3_has_value(value) || !optional_observed ||
++        zero_code_error_deallocations() != before) return 213;
++  }
++  if (optional_observed || zero_code_error_deallocations() != before + 1) return 214;
++
++  before = zero_code_error_deallocations();
++  {
++    __objc3_optional(ZeroCodeError *) value =
++        __objc3_try_optional(managed_mrc_owned(nil));
++    if (!__objc3_has_value(value)) return 215;
++  }
++  if (zero_code_error_deallocations() != before + 1) return 216;
++
++  @autoreleasepool {
++    TestError owner = (TestError)make_zero_code_error();
++    auto callback = managed_object;
++    __objc3_optional(TestError) indirect = __objc3_try_optional(callback(owner, nil));
++    TestError (^block)(TestError, TestError) __objc3_throws(TestError) =
++        ^TestError(TestError value, TestError error) __objc3_throws(TestError) {
++          return __objc3_try(managed_object(value, error));
++        };
++    __objc3_optional(TestError) block_call = __objc3_try_optional(block(owner, nil));
++    ManagedMember member;
++    auto pointer = &ManagedMember::object;
++    __objc3_optional(TestError) member_call =
++        __objc3_try_optional((member.*pointer)(owner, nil));
++    ManagedSuccessReceiver *receiver = (ManagedSuccessReceiver *)
++        make_named_zero_code_error("ManagedSuccessReceiver");
++    __objc3_optional(TestError) message =
++        __objc3_try_optional([receiver object:owner error:nil]);
++    __objc3_optional(TestError) nil_success =
++        __objc3_try_optional(managed_object(nil, nil));
++    __objc3_optional(TestError) failure = __objc3_try_optional(optional_owned(owner));
++    if (!__objc3_has_value(indirect) || !__objc3_has_value(block_call) ||
++        !__objc3_has_value(member_call) || !__objc3_has_value(message) ||
++        !__objc3_has_value(nil_success) || __objc3_has_value(failure)) return 217;
++  }
++  before = zero_code_error_deallocations();
++  (void)__objc3_try_optional(optional_owned(nil));
++  if (optional_observed || zero_code_error_deallocations() != before + 1) return 218;
++  before = zero_code_error_deallocations();
++  int caught = 0;
++  try { optional_native_unwind(); }
++  catch (int value) { caught = value == 311; }
++  if (!caught || optional_observed ||
++      zero_code_error_deallocations() != before + 1) return 219;
++
++  before = zero_code_error_deallocations();
++  {
++    __objc3_optional(ManagedSuccessBlock) block =
++        __objc3_try_optional(optional_owned_block(nil));
++    if (!__objc3_has_value(block) || !optional_observed) return 221;
++  }
++  if (optional_observed || zero_code_error_deallocations() != before + 1) return 222;
++  before = zero_code_error_deallocations();
++  pool = objc_autoreleasePoolPush();
++  {
++    __objc3_optional(ManagedSuccessBlock) block =
++        __objc3_try_optional(optional_borrowed_block());
++    objc_autoreleasePoolPop(pool);
++    if (!__objc3_has_value(block) || !optional_observed) return 223;
++  }
++  if (optional_observed || zero_code_error_deallocations() != before + 1) return 224;
++  before = zero_code_error_deallocations();
++  @autoreleasepool {
++    TestError owner = (TestError)make_zero_code_error();
++    optional_observed = owner;
++    {
++      __objc3_optional(ManagedSuccessBlock) direct =
++          __objc3_some(ManagedSuccessBlock, ^{ return [owner code] + 42; });
++      __objc3_result(ManagedSuccessBlock, int) result =
++          __objc3_ok(ManagedSuccessBlock, int, ^{ return [owner code] + 42; });
++      __objc3_result(ManagedSuccessBlock, int) inactive =
++          __objc3_err(ManagedSuccessBlock, int, 7);
++      owner = nil;
++      if (!optional_observed || !__objc3_has_value(direct) ||
++          !__objc3_is_ok(result) || __objc3_is_ok(inactive)) return 225;
++    }
++  }
++  if (optional_observed || zero_code_error_deallocations() != before + 1) return 226;
++  before = zero_code_error_deallocations();
++  (void)__objc3_try_optional(optional_owned_block(nil));
++  if (optional_observed || zero_code_error_deallocations() != before + 1) return 227;
++
++  before = zero_code_error_deallocations();
++  @autoreleasepool {
++    TestError error = (TestError)make_zero_code_error();
++    __objc3_optional(ManagedSuccessBlock) failure =
++        __objc3_try_optional(optional_owned_block(error));
++    if (__objc3_has_value(failure)) return 228;
++  }
++  if (zero_code_error_deallocations() != before + 1) return 229;
++  before = zero_code_error_deallocations();
++  caught = 0;
++  try {
++    __objc3_optional(ManagedSuccessBlock) block =
++        __objc3_try_optional(optional_owned_block(nil));
++    if (!__objc3_has_value(block) || !optional_observed) return 230;
++    throw 312;
++  } catch (int value) { caught = value == 312; }
++  if (!caught || optional_observed ||
++      zero_code_error_deallocations() != before + 1) return 231;
++
++  before = zero_code_error_deallocations();
++  caught = 0;
++  try {
++    __objc3_optional(TestError) incomplete =
++        __objc3_try_optional(managed_native_exception());
++    (void)__objc3_has_value(incomplete);
++  } catch (int value) { caught = value == 73; }
++  return caught && zero_code_error_deallocations() == before + 1 ? 0 : 220;
++}
 diff --git a/clang/test/ObjC3/CodeGen/Inputs/typed-error-managed-runtime.h b/clang/test/ObjC3/CodeGen/Inputs/typed-error-managed-runtime.h
 new file mode 100644
 --- /dev/null
@@ -11832,7 +12052,7 @@ diff --git a/clang/test/ObjC3/CodeGen/typed-error-managed-optional-unsupported.m
 new file mode 100644
 --- /dev/null
 +++ b/clang/test/ObjC3/CodeGen/typed-error-managed-optional-unsupported.m
-@@ -0,0 +1,14 @@
+@@ -0,0 +1,21 @@
 +// RUN: %clang_cc1 -x objective-c -std=c17 -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.0 -fblocks -fobjc-arc -DTEST_BLOCK=0 -emit-llvm -o /dev/null -verify %s
 +// RUN: %clang_cc1 -x objective-c -std=c17 -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.0 -fblocks -fobjc-arc -DTEST_BLOCK=1 -emit-llvm -o /dev/null -verify %s
 +// RUN: %clang_cc1 -x objective-c -std=c17 -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.0 -fblocks -DTEST_BLOCK=0 -emit-llvm -o /dev/null -verify %s
@@ -11845,7 +12065,14 @@ new file mode 100644
 +#endif
 +Value value(void) __objc3_throws(id<Error>);
 +void optional(void) {
++#if TEST_BLOCK && !__has_feature(objc_arc)
++  (void)__objc3_try_optional(value()); // expected-error {{is not supported in an Objective-C 3 value carrier}}
++#elif __has_feature(objc_arc)
++  // expected-no-diagnostics
++  (void)__objc3_try_optional(value());
++#else
 +  (void)__objc3_try_optional(value()); // expected-error {{managed try? Optional initialization}}
++#endif
 +}
 diff --git a/clang/test/ObjC3/CodeGen/typed-error-managed-success.mm b/clang/test/ObjC3/CodeGen/typed-error-managed-success.mm
 new file mode 100644

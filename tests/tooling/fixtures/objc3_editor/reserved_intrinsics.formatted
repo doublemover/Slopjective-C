@@ -45,3 +45,13 @@ int message_probe(id<MessageProbe> receiver) {
 void defer_probe(int *value) {
   defer { ++*value; }
 }
+
+id managed_probe(id value) __objc3_throws(id<Error>);
+typedef void (^Action)(void);
+Action managed_action(void) __objc3_throws(id<Error>);
+void managed_optional_probe(id input) {
+  __objc3_optional(id) object = __objc3_try_optional(managed_probe(input));
+  __objc3_optional(Action) action = __objc3_try_optional(managed_action());
+  (void)__objc3_has_value(object);
+  (void)__objc3_has_value(action);
+}

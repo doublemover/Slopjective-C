@@ -56,12 +56,12 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--repo", type=Path, default=Path.cwd())
     parser.add_argument("--work-dir", type=Path)
+    parser.add_argument("--sdk-root", type=Path, required=True)
+    parser.add_argument("--target", required=True)
     parser.add_argument("--report", type=Path)
     args = parser.parse_args()
     repo = args.repo.resolve()
-    build = repo / "out" / "toolchains" / "objc3-development" / "build"
-    if sys.platform == "linux":
-        build = build.with_name("build-linux-x86_64")
+    build = args.sdk_root.resolve(strict=True)
     source = repo / "out" / "toolchains" / "objc3-development" / "src"
     fixtures = repo / "tests" / "tooling" / "fixtures" / "objc3_editor"
     env = os.environ.copy()
@@ -82,11 +82,7 @@ def main() -> int:
     REPORT.update(status="running", run_identity=run_identity, started_utc=datetime.now(timezone.utc).isoformat(),
                   build_identity=sealed["build_id"], patch_digest=patch_digest)
     save_report()
-    tools = {"clang": build / "bin" / "clang.exe",
-             "clang-format": build / "bin" / "clang-format.exe",
-             "clangd": build / "bin" / "clangd.exe"}
-    if sys.platform == "linux":
-        tools = {name: path.with_suffix("") for name, path in tools.items()}
+    tools = {name: build / "bin" / name for name in ("clang", "clang-format", "clangd")}
     for name, path in tools.items():
         require(path.is_file(), f"required tool is missing: {name}: {path}")
     tool_identity: dict[str, Any] = {}
@@ -137,7 +133,8 @@ def main() -> int:
     normalized_argv: dict[str, list[str]] = {}
     for path, case in normalized_sources:
         argv = [str(clang), "-x", case["language"], f"-std={case['standard']}", "-fobjc-version=3",
-                "--target=x86_64-pc-windows-msvc", "-fobjc-runtime=gnustep-2.0",
+                "--target=" + args.target, "-fobjc-runtime=gnustep-2.0",
+                "-fobjc-arc", "-fblocks",
                 f"-resource-dir={resource_dir}", "-fsyntax-only", str(path)]
         normalized_argv[path.suffix] = argv
         compile_commands.append({"directory": str(normalized_dir), "file": str(path), "arguments": argv})
@@ -170,7 +167,7 @@ def main() -> int:
         command_results[path.suffix]["live_lsp"] = live
     report = {"schema_version": 1,
         "source": {"build_id": sealed["build_id"], "tree_sha256": sealed["tree_sha256"], "patch_digest": patch_digest},
-        "tools": tool_identity, "resource_dir": str(resource_dir),
+        "tools": tool_identity, "target_triple": args.target, "resource_dir": str(resource_dir),
         "resource_headers_sha256": directory_digest(resource_dir / "include"), "fixtures": format_evidence,
         "compile_commands": {"path": str(database), "sha256": sha256(database), "normalized_arguments": normalized_argv},
         "results": command_results}

@@ -1,0 +1,118 @@
+{
+  "schema": "objc3.development-latency.v1",
+  "recorded_utc": "2026-10-18T18:38:36.189079+00:00",
+  "repetitions": 5,
+  "python": "3.15.0",
+  "script_sha256": "2bc3018fabf20b8088197b4ed30b90d74a4b7001c07b5cb8e765b3a885ab904e",
+  "scope": "Warm installed command latency; runtime excludes compilation/linking and SDK admission.",
+  "cpu_quota": "400000 100000",
+  "cpu_model": "INTEL(R) XEON(R) PLATINUM 8573C",
+  "peak_child_rss_kib": 94736,
+  "memory_scope": "Maximum individual descendant RSS for benchmark commands; not aggregate tree memory.",
+  "results": [
+    {
+      "sdk": "/workspace/Slopjective-C/out/toolchains/linux-sdk/sdks/434f74c020ad0c61cd7a2d9e260c1a2442bd66fb1d10daf787d6b05a80d485eb",
+      "seal_sha256": "434f74c020ad0c61cd7a2d9e260c1a2442bd66fb1d10daf787d6b05a80d485eb",
+      "samples_seconds": {
+        "python_startup": [
+          0.032313510000676615, 0.038050414997996995, 0.016264242000033846, 0.02692125700195902,
+          0.01732807599910302
+        ],
+        "compiler_version": [
+          1.0717777140016551, 1.1960091539986024, 1.0829495030011458, 0.9785759919977863,
+          1.0774339260024135
+        ],
+        "direct_syntax": [
+          0.02764893199855578, 0.01502055300079519, 0.014837863000138896, 0.01373076199888601,
+          0.026398892001452623
+        ],
+        "public_syntax": [
+          1.0569534349997411, 1.0749739689999842, 1.0406922879992635, 0.9313947609989555,
+          1.0977963810000801
+        ],
+        "public_compile_and_link": [
+          1.057517501001712, 1.1907441450020997, 0.9191646090002905, 0.8969822590006515,
+          1.2972634269972332
+        ],
+        "program_runtime": [
+          0.007535901000665035, 0.006160152999655111, 0.005985130002954975, 0.004982344999007182,
+          0.004839582001295639
+        ]
+      },
+      "median_seconds": {
+        "python_startup": 0.02692125700195902,
+        "compiler_version": 1.0774339260024135,
+        "direct_syntax": 0.01502055300079519,
+        "public_syntax": 1.0569534349997411,
+        "public_compile_and_link": 1.057517501001712,
+        "program_runtime": 0.005985130002954975
+      },
+      "source_build_id": "llvmorg-23.1.3-0d261d1ca552-2fb07f866fe4-fd761312"
+    },
+    {
+      "sdk": "/workspace/Slopjective-C/out/toolchains/linux-sdk/sdks/2d8057a20408278c689d5386395dc033401820f1aaab3092961b32cefc7d4cca",
+      "seal_sha256": "2d8057a20408278c689d5386395dc033401820f1aaab3092961b32cefc7d4cca",
+      "samples_seconds": {
+        "python_startup": [
+          0.022084558000642573, 0.035253232999821194, 0.023358604001259664, 0.023308664000069257,
+          0.0322268609997991
+        ],
+        "compiler_version": [
+          0.23350918500000262, 0.2841201040027954, 0.21638950600026874, 0.26009393999993335,
+          0.21815114399942104
+        ],
+        "direct_syntax": [
+          0.015066980999108637, 0.013616631000331836, 0.018652016002306482, 0.014462104998528957,
+          0.016235226998105645
+        ],
+        "public_syntax": [
+          0.3306598050003231, 0.2267923140025232, 0.3481909040019673, 0.2143675980005355,
+          0.2554316089990607
+        ],
+        "public_compile_and_link": [
+          0.6170829139991838, 0.3911767649988178, 0.29157527000279515, 0.24352848999842536,
+          0.29608505699798116
+        ],
+        "program_runtime": [
+          0.01017282599786995, 0.00521681499958504, 0.006416141000954667, 0.004163803001574706,
+          0.009475202001340222
+        ]
+      },
+      "median_seconds": {
+        "python_startup": 0.023358604001259664,
+        "compiler_version": 0.23350918500000262,
+        "direct_syntax": 0.015066980999108637,
+        "public_syntax": 0.2554316089990607,
+        "public_compile_and_link": 0.29608505699798116,
+        "program_runtime": 0.006416141000954667
+      },
+      "source_build_id": "llvmorg-23.1.3-0d261d1ca552-04e1e6cb31df-fd761312"
+    }
+  ],
+  "comparison": {
+    "compiler_version": {
+      "baseline_seconds": 1.0774339260024135,
+      "current_seconds": 0.23350918500000262,
+      "speedup": 4.614096554713261
+    },
+    "public_syntax": {
+      "baseline_seconds": 1.0569534349997411,
+      "current_seconds": 0.2554316089990607,
+      "speedup": 4.137911667007617
+    },
+    "public_compile_and_link": {
+      "baseline_seconds": 1.057517501001712,
+      "current_seconds": 0.29608505699798116,
+      "speedup": 3.5716679244941516
+    }
+  },
+  "budgets": {
+    "context": "Same CPU model and cgroup quota, warm median of at least three runs; 50% headroom plus 10 ms over this five-run baseline.",
+    "median_seconds": {
+      "compiler_version": 0.360264,
+      "direct_syntax": 0.0326,
+      "public_syntax": 0.393147,
+      "public_compile_and_link": 0.454128
+    }
+  }
+}

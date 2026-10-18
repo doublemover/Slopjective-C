@@ -47,3 +47,12 @@ Public capability claims follow
 `defer` is qualified for Linux x86-64/GNUstep 2.0/compatibility under ARC and
 MRC. Optional/Result, synchronous typed errors and match fixtures remain bounded
 native migration facilities; their complete public syntax is pending.
+
+The native typed-error milestone includes direct `try?` initialization of strong
+ARC object and Block Optional locals, plus strong Block payloads in direct
+Optional/Result local construction. Presence queries borrow the active tag.
+O0/O2 runtime cases exercise retained and autoreleased returns, callbacks,
+throwing Blocks, C++ members, Objective-C messages, failure arms and native
+exception cleanup. MRC managed `try?`, weak/unsafe Block carriers, managed carrier
+assignment/copy/return and nested managed payloads remain outside this slice.
+The editor and interface consumers use the same sealed SDK and Linux target.

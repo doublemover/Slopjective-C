@@ -18,12 +18,15 @@ def release(tmp_path: Path):
     prefix = tmp_path / 'source'
     (prefix / 'bin').mkdir(parents=True)
     (prefix / 'bin/objc3c').write_text('compiler')
+    (prefix / 'bin/objc3c').chmod(0o700)
     verifier = prefix / 'share/objc3c/verify-sdk.py'
     verifier.parent.mkdir(parents=True)
     shutil.copyfile(package.__file__, verifier)
-    data = {'schema': 'objc3.sdk.v1', 'source_build_id': 'test-release', 'files': package.inventory(prefix)}
+    package.normalize_permissions(prefix)
+    data = {'schema': package.SCHEMA, 'source_build_id': 'test-release', 'files': package.inventory(prefix)}
     data['seal_sha256'] = package._digest(data)
     (prefix / package.MANIFEST).write_text(json.dumps(data))
+    (prefix / package.MANIFEST).chmod(0o644)
     archive = tmp_path / 'sdk.tar.zst'
     with zstd.ZstdFile(archive, 'wb') as stream:
         with tarfile.open(fileobj=stream, mode='w|') as tar:
@@ -56,6 +59,19 @@ def test_bad_archive_and_tampered_prefix_preserve_activation(tmp_path):
     assert (root / 'current').resolve() == Path(installed['prefix'])
 
 
+def test_cached_verifier_cannot_hide_modified_installation_contents(tmp_path):
+    archive, digest = release(tmp_path)
+    root = tmp_path / 'installed'
+    installed = install(archive, digest, root)
+    prefix = Path(installed['prefix'])
+    (prefix / 'bin/objc3c').write_text('modified compiler')
+    (prefix / 'share/objc3c/verify-sdk.py').write_text(
+        "def verify_sdk(prefix):\n    return " + repr({'seal_sha256': installed['seal_sha256']}) + "\n")
+    with pytest.raises(ValueError, match='differ'):
+        install(archive, digest, root)
+    assert (root / 'current').resolve() == prefix
+
+
 def test_installer_rejects_archive_paths_escaping_destination(tmp_path):
     archive = tmp_path / 'bad.tar.zst'
     with zstd.ZstdFile(archive, 'wb') as stream:
@@ -80,4 +96,22 @@ def test_standalone_installer_does_not_write_bytecode_into_sealed_prefix(tmp_pat
     assert result.returncode == 0, result.stderr
     prefix = Path(json.loads(result.stdout)['prefix'])
     assert not list(prefix.rglob('*.pyc'))
+    package.verify_sdk(prefix)
+
+
+def test_root_install_is_readable_and_executable_with_a_private_umask(tmp_path):
+    import os
+    archive, digest = release(tmp_path)
+    previous = os.umask(0o077)
+    try:
+        root = tmp_path / 'shared-installation'
+        installed = install(archive, digest, root)
+    finally:
+        os.umask(previous)
+    assert root.stat().st_mode & 0o777 == 0o755
+    assert (root / 'sdks').stat().st_mode & 0o777 == 0o755
+    assert (root / 'activate.sh').stat().st_mode & 0o777 == 0o644
+    prefix = Path(installed['prefix'])
+    assert prefix.stat().st_mode & 0o777 == 0o755
+    assert (prefix / 'bin/objc3c').stat().st_mode & 0o777 == 0o755
     package.verify_sdk(prefix)
