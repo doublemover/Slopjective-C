@@ -12,6 +12,7 @@ from pathlib import Path
 PIN = "e877e782fb965c4e870d2ecf6aff58dddc6290ae"
 ROBIN_MAP_PIN = "4ec1bf19c6a96125ea22062f38c2cf5b958e448e"
 WINDOWS_TOOLS = ("clang.exe", "clang++.exe", "lld-link.exe")
+LINUX_TOOLS = ("clang", "clang++", "ld.lld")
 
 
 def fail(message: str) -> int:
@@ -53,11 +54,16 @@ def main() -> int:
             return fail("Windows runtime profile must name the VS2022 v143 environment")
         if profile.get("runtime_linker") != "lld-link.exe" or profile.get("runtime_generator") != "Ninja":
             return fail("Windows runtime profile must use Ninja and LLD")
+    if args.profile in ("windows-x86_64", "linux-x86_64"):
         if args.bin_dir:
-            missing = [tool for tool in WINDOWS_TOOLS if not (args.bin_dir / tool).is_file()]
+            admitted = json.loads((Path(__file__).resolve().parents[2] / "toolchains/llvm/manifest.json").read_text())
+            expected_version = admitted["upstream"]["tag"].removeprefix("llvmorg-")
+            expected_commit = admitted["upstream"]["commit"]
+            required_tools = WINDOWS_TOOLS if args.profile == "windows-x86_64" else LINUX_TOOLS
+            missing = [tool for tool in required_tools if not (args.bin_dir / tool).is_file()]
             if missing:
                 return fail("toolchain executables unavailable: " + ", ".join(missing))
-            for compiler in ("clang.exe", "clang++.exe", "lld-link.exe"):
+            for compiler in required_tools:
                 try:
                     version = subprocess.check_output(
                         [str(args.bin_dir / compiler), "--version"], text=True,
@@ -65,8 +71,8 @@ def main() -> int:
                     )
                 except (OSError, subprocess.CalledProcessError) as exc:
                     return fail(f"cannot query {compiler}: {exc}")
-                if "22.1.6" not in version or "fc4aad7b5db3fff421df9a9637605b9ca5667881" not in version:
-                    return fail(f"{compiler} is not from pinned LLVM 22.1.6: {version.splitlines()[0]}")
+                if expected_version not in version or expected_commit not in version:
+                    return fail(f"{compiler} is not from pinned LLVM {expected_version}: {version.splitlines()[0]}")
 
     if args.source:
         if not args.source.is_dir():
@@ -101,7 +107,7 @@ def main() -> int:
         for symbol in ("_Block_copy", "_Block_release"):
             if not re.search(r"\b" + symbol + r"\s*\(\s*const\s+void\s*\*", blocks_header):
                 return fail(f"pinned objc/blocks_runtime.h does not declare {symbol}(const void *)")
-        if args.profile == "windows-x86_64":
+        if args.profile in ("windows-x86_64", "linux-x86_64"):
             if args.robin_map_source is None or not args.robin_map_source.is_dir():
                 return fail("local robin-map v1.4.0 source is unavailable; configure would fetch from the network")
             try:
@@ -125,7 +131,7 @@ def main() -> int:
     if args.robin_map_source:
         print(f"DEPENDENCY VERIFIED: robin-map v1.4.0 at {ROBIN_MAP_PIN}")
     if args.bin_dir:
-        print("TOOLCHAIN VERIFIED: Clang/LLD 22.1.6 files match the pinned source revision")
+        print(f"TOOLCHAIN VERIFIED: Clang/LLD {expected_version} files match the pinned source revision")
     return 0
 
 

@@ -89,6 +89,12 @@ int main() {
   std::string source = "int api_plain(void) { return 7; }\n";
   const auto valid = Options(source);
   auto changed = valid;
+  changed.compiler_sdk_root = "";
+  Invalid(changed);
+  changed = valid;
+  changed.struct_size = offsetof(objc3c_frontend_v3_options, compiler_sdk_root) + 1;
+  Invalid(changed);
+  changed = valid;
   changed.struct_size =
       offsetof(objc3c_frontend_v3_options, source_directed_imports) - 1;
   Invalid(changed);

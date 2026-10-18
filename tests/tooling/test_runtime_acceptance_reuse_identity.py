@@ -174,7 +174,8 @@ def test_reuse_identity_rejects_compiler_runtime_source_and_tool_mutations(tmp_p
         path.write_text(original, encoding="utf-8")
 
 
-def test_current_fresh_runtime_acceptance_report_is_reusable_without_running_cases() -> None:
+def test_current_fresh_runtime_acceptance_report_is_reusable_without_running_cases(monkeypatch) -> None:
+    monkeypatch.setenv("OBJC3C_SKIP_RUNTIME_ACCEPTANCE_RERUN", "1")
     report_path = reuse.ROOT / "tmp/reports/runtime/acceptance/summary.json"
     if not report_path.is_file():
         return

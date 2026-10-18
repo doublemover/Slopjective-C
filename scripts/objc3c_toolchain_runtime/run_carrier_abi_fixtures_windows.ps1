@@ -15,7 +15,7 @@ if (-not $env:VCToolsInstallDir -or -not $env:WindowsSdkDir -or
 $env:PYTHONDONTWRITEBYTECODE = '1'
 Push-Location -LiteralPath $objc3Repo
 try {
-  $objc3SealJson = & 'C:\Python313\python.exe' -B -m scripts.objc3c_toolchain verify-development
+  $objc3SealJson = & 'python' -B -m scripts.objc3c_toolchain verify-development
   if ($LASTEXITCODE -ne 0) { throw 'Carrier ABI source/build identity did not verify.' }
   $objc3Seal = ($objc3SealJson -join "`n") | ConvertFrom-Json
   if ($objc3Bin -ne (Resolve-Path 'out/toolchains/objc3-development/build/bin').Path) {

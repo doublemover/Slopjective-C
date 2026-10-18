@@ -41,3 +41,7 @@ int scalar_match(int input) {
 int message_probe(id<MessageProbe> receiver) {
   return __objc3_try_force([receiver checked:0]);
 }
+
+void defer_probe(int *value) {
+  defer { ++*value; }
+}

@@ -11,6 +11,15 @@ there is a checked source, fixture, schema, runtime probe, or public command
 that owns that claim. Prose introduces the system; the capability matrix and
 evidence map define exact support.
 
+The public `objc3c-native` pipeline and the Clang foundation migration frontend
+have separate support boundaries. The examples below use the public pipeline.
+The `objc3c-clang` frontend preserves native C, C++, Objective-C, and
+Objective-C++ parsing, types, ownership, and ABI through the repository's patched
+Clang SDK. Its extension checks are scoped migration evidence; public feature
+availability follows `schemas/objc3-language-capabilities.json`. See
+[`native/objc3c/src/clang_foundation/README.md`](native/objc3c/src/clang_foundation/README.md)
+for the migration build and validation workflow.
+
 ## Start With The Language
 
 Objective-C 3.0 keeps Objective-C message syntax and runtime-oriented
@@ -91,12 +100,10 @@ npm run objc3c -- compile-objc3c showcase/signalMesh/main.objc3 --out-dir tmp/re
 
 ## Current Support Snapshot
 
-The checked capability matrix currently contains 123 rows:
-
-- 93 implemented rows
-- 14 internal implementation or workflow-owner rows
-- 13 reserved rows
-- 3 rejected rows
+The generated capability matrix reports the current capability inventory and
+its `implemented`, `internal`, `reserved`, and `rejected` states. Consult that
+inventory directly so support changes do not leave a second numeric snapshot
+out of date.
 
 Authoritative support data lives in:
 
@@ -124,8 +131,10 @@ generated reports.
 - Typed flow for current scalar, function, expression, statement, control-flow,
   protocol, generic, ownership, and effect surfaces.
 - Statement-form guarded match patterns using
-  `case pattern where bool_condition: { ... }`; expression match, `=>` arms,
-  type-test patterns, and strict-profile promotion remain outside that row.
+  `case pattern where bool_condition: { ... }`, plus the separate bounded
+  expression-match row with `=>` expression arms, case-local bindings,
+  exhaustiveness checks, and scalar/object-handle lowering. Type-test patterns,
+  Result payload extraction, and statement `=>` arms remain reserved.
 - Protocol-qualified existentials, witness-model evidence, generic
   protocol-qualified arguments, callable type parameters, variance and
   specialization evidence, and collection generic identity semantics.
@@ -271,18 +280,17 @@ rejected rows include:
   `optional<T>` is rejected as `O3C004`; nil-to-scalar, nullable-pointer
   conversion, generalized nested/generic/property/ivar lowering, and broad
   runtime support remain unclaimed.
-- Generic callable reification. Current support is the erased generic class
-  receiver/free-function subset named by the generic callable row; explicit
-  `@reify_generics`, Objective-C method type-parameter clauses, C/Objective-C
-  style generic functions, and runtime reified metadata remain reserved.
+- Generic runtime specialization beyond the implemented callable metadata
+  model. Generic free functions and Objective-C generic methods preserve
+  parameter, constraint, substitution, selector, and declaration-scoped
+  `@reify_generics` policy metadata. Runtime-specialized metadata, generic body
+  cloning, module-wide implicit reification, and C/Objective-C style generic
+  function syntax remain reserved.
 - Strict-system language profile selection. `strict` and `strict-concurrency`
   are current claimable conformance selections with native profile validation,
   strict diagnostics, and strict-concurrency actor/sendability/task/scheduler
   checks. `strict-system` remains target-only release evidence and rejects
   fail-closed rather than aliasing strict-concurrency.
-- The #8207 language-evolution umbrella. It is a readiness/truth row over
-  typed throws, value optionals, generic callable reification, guarded match,
-  and strict profiles, not a separate behavior claim.
 - Live public hosted package registry services and arbitrary live network
   dependency resolution. Current package evidence is local/offline,
   fixture-backed, deterministic, and fail-closed.
@@ -317,12 +325,38 @@ rejected rows include:
 
 The supported host row is Windows x64 with PowerShell 7.
 
+The Clang migration frontend now has a separately qualified Linux x86-64 SDK
+on LLVM 23.1.3, including the pinned GNUstep runtime, native debugging, editor
+checks and installed ARC/MRC package consumers. Follow the
+[pinned SDK workflow](toolchains/llvm/README.md). This migration scope does not
+change the legacy public compiler's platform row described above.
+
+For a Linux x64 cloud development instance, use the existing checkout and run:
+
+```sh
+bash scripts/setup_cloud_environment.sh
+source /workspace/.cloud-setup/Slopjective-C/activate.sh
+npm run objc3c -- test-smoke
+```
+
+The cloud installer pins Python 3.15.0, Node.js 26.12.0, npm 12.2.1, LLVM 23.1.3,
+PowerShell 7.6.7, CMake 4.4.4, Ninja 1.13.2, and ccache 4.14.1. It installs
+independent tools in parallel, verifies downloads, and builds with four jobs,
+the LLVM linker, and a persistent compiler cache capped at 4 GiB by default. It removes
+installer staging files and expendable package caches, preserves incremental
+builds, and stops if free space drops below 4 GiB or `tmp/` exceeds 8 GiB or
+`artifacts/` exceeds 2 GiB. These limits preserve existing work on failure.
+Set `OBJC3C_CLOUD_CCACHE_MAXSIZE=8G` before setup for a larger cache (1G through
+8G are accepted). Repeat the activation command in each new shell. This development setup does
+not promote the Linux host support row or provide the separately patched LLVM
+SDK required by the optional Clang foundation migration build.
+
 Install prerequisites:
 
-- PowerShell 7 (`pwsh`)
-- Node.js and `npm`
-- Python 3 with `pip`
-- A complete LLVM install with `clang++`, `llc`, `llvm-ar`, `llvm-config`,
+- PowerShell 7.6.7 (`pwsh`)
+- Node.js 26.12.0 and npm 12.2.1
+- Python 3.15.0 with `pip`
+- A complete LLVM 23.1.3 install with `clang++`, `llc`, `llvm-ar`, `llvm-config`,
   LLVM headers, and CMake package files. The repo-owned CI installer stages
   this under `C:\Users\<you>\Tools\LLVM\llvm-<version>-msvc`; alternatively,
   set `OBJC3C_LLVM_ROOT` or `LLVM_ROOT` to an equivalent full LLVM root.
@@ -340,9 +374,23 @@ From a fresh clone:
 ```powershell
 git clone https://github.com/doublemover/Slopjective-C.git
 cd .\Slopjective-C
+npm install --global npm@12.2.1
 npm ci
-python -m pip install --upgrade pytest jsonschema
+python -m pip install uv==0.13.1
+uv sync --locked --group dev
 ```
+
+Activate the generated Python environment before running development checks:
+
+```powershell
+. .\.venv\Scripts\Activate.ps1
+```
+
+Development tool versions are owned by `toolchains/llvm/manifest.json` under
+`host_tools`. Python development dependencies and their transitive dependencies
+are locked in `uv.lock`; Node dependencies are locked in `package-lock.json`.
+The Clang foundation maintainer workflow checks version references and installed
+tools with `check-host-tools`, as documented in `toolchains/llvm/README.md`.
 
 If LLVM is installed somewhere else:
 
@@ -378,7 +426,7 @@ npm run objc3c -- test-smoke
 Run native execution smoke when `llc.exe` is available:
 
 ```powershell
-$env:OBJC3C_NATIVE_EXECUTION_LLC_PATH = 'C:\Users\<you>\Tools\LLVM\llvm-22.1.6-msvc\bin\llc.exe'
+$env:OBJC3C_NATIVE_EXECUTION_LLC_PATH = 'C:\Users\<you>\Tools\LLVM\llvm-23.1.3-msvc\bin\llc.exe'
 npm run objc3c -- test-execution-smoke
 ```
 

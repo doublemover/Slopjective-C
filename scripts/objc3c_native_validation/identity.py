@@ -1,4 +1,4 @@
-"""Resolve one sealed Windows toolchain for an immutable native validation batch.
+"""Resolve one sealed native toolchain for an immutable native validation batch.
 
 Only the coordinator calls these functions, before and after its batch. Workers
 use the recorded absolute paths and child environment without rehashing tools.
@@ -12,10 +12,12 @@ import os
 import platform
 import shutil
 import subprocess
+import sys
 from pathlib import Path
 from typing import Any
 
 from scripts.objc3c_toolchain.core import ToolchainError, verify_development
+from scripts.objc3c_toolchain.facade import facade_identity
 
 SCHEMA = "objc3c.native-toolchain-snapshot.v1"
 ENVIRONMENT_KEYS = (
@@ -40,6 +42,8 @@ def _snapshot_digest(snapshot: dict[str, Any]) -> str:
 
 
 def _host_platform() -> str:
+    if sys.platform == "linux" and platform.machine().lower() in {"amd64", "x86_64"}:
+        return "linux-x86_64"
     if os.name != "nt" or platform.machine().lower() not in {"amd64", "x86_64"}:
         raise NativeToolchainError("native validation currently admits Windows x86-64 only")
     return "windows-x86_64"
@@ -52,11 +56,12 @@ def _required_file(path: Path, label: str) -> Path:
     return path
 
 
-def _run(command: list[str]) -> str:
+def _run(command: list[str], *, environment: dict[str, str] | None = None) -> str:
     try:
+        options = {"env": environment, "timeout": 30} if environment is not None else {}
         result = subprocess.run(command, check=False, capture_output=True, text=True,
-                                creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0))
-    except OSError as exc:
+                                creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0), **options)
+    except (OSError, subprocess.TimeoutExpired) as exc:
         raise NativeToolchainError(f"cannot run {command[0]}: {exc}") from exc
     if result.returncode:
         raise NativeToolchainError(f"native toolchain admission failed ({result.returncode}): "
@@ -186,9 +191,11 @@ def _verify_seal(repo: Path) -> dict[str, Any]:
         raise NativeToolchainError(f"development compiler source seal rejected: {exc}") from exc
 
 
-def _tool_version(path: Path, label: str, upstream: str, marker: str = "") -> str:
+def _tool_version(path: Path, label: str, upstream: str, marker: str = "", *,
+                  environment: dict[str, str] | None = None) -> str:
     _required_file(path, label)
-    version = _run([str(path), "--version"])
+    version = (_run([str(path), "--version"], environment=environment)
+               if environment is not None else _run([str(path), "--version"]))
     # LLVM composes the prefix and digest from separate string literals; the
     # observable version marker need not occur contiguously inside the binary.
     if upstream not in version or (marker and marker not in version):
@@ -200,6 +207,9 @@ def resolve_toolchain(repo: Path, *, require_editor: bool = False) -> dict[str, 
     """Hash the actual admitted inputs once and return a JSON-serializable snapshot."""
     repo = repo.resolve()
     selected_platform = _host_platform()
+    if selected_platform == "linux-x86_64":
+        from .identity_linux import resolve_linux_toolchain
+        return resolve_linux_toolchain(repo, require_editor=require_editor)
     seal = _verify_seal(repo)
     manifest_path = repo / "toolchains/llvm/manifest.json"
     profile_path = repo / "scripts/objc3c_toolchain_runtime/runtime-profile.json"
@@ -225,7 +235,7 @@ def resolve_toolchain(repo: Path, *, require_editor: bool = False) -> dict[str, 
     sdk = repo / "out/toolchains/objc3-development/build"
     inputs.add_file(sdk / "tools/clang/include/clang/Basic/ObjC3Foundation.h", "compiled SDK identity header",
                     (seal["patch_digest"], seal["upstream_commit"]))
-    resource_dir = sdk / "lib/clang/22"
+    resource_dir = sdk / "lib/clang/23"
     _required_file(resource_dir / "include/stddef.h", "matching Clang resource headers")
     resources = inputs.add_tree(resource_dir)
     resource_sha256 = _resource_digest(resources, inputs.files)
@@ -243,7 +253,7 @@ def resolve_toolchain(repo: Path, *, require_editor: bool = False) -> dict[str, 
     tools["linker"] = str(linker)
     facade = (repo / "out/toolchains/objc3-facade/build/src/clang_foundation/objc3c-clang.exe").resolve()
     inputs.add_file(facade, "native facade executable", (marker, seal["upstream_commit"],
-                    inputs.files[tools["clang"]], resource_sha256))
+                    inputs.files[tools["clang"]], resource_sha256, facade_identity(repo)["sha256"]))
     tools["facade"] = str(facade)
     editors = {}
     for name, filename in {"clangd": "clangd.exe", "clang_format": "clang-format.exe"}.items():

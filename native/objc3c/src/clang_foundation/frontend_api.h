@@ -72,6 +72,9 @@ typedef struct objc3c_frontend_v3_options {
   /* Imports are a locked source-import registry when enabled. They become
    * visible only after `@import Module.Path;` in an ObjC3 translation unit. */
   uint8_t source_directed_imports;
+  /* Optional size-guarded tail. A relocated SDK must have the same driver
+   * bytes and resource contents as the SDK linked into this library. */
+  const char *compiler_sdk_root;
 } objc3c_frontend_v3_options;
 
 typedef struct objc3c_frontend_v2_location {

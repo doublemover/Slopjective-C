@@ -4,6 +4,16 @@ version = "0.0.0"
 requires-python = ">=3.12"
 dependencies = []
 
+[dependency-groups]
+dev = [
+  "pip==26.2.1",
+  "uv==0.13.1",
+  "pytest==9.1.1",
+  "jsonschema==4.26.0",
+  "cmake==4.4.4",
+  "ninja==1.13.2",
+]
+
 [tool.objc3c.workflow]
 entrypoint = "python -m scripts.objc3c_workflow"
 dependency-lock = "requirements.lock"

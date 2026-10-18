@@ -19,7 +19,7 @@ function Get-ExecutionReplayProofLlvmRootCandidates {
   }
 
   if ([System.Environment]::OSVersion.Platform -eq [System.PlatformID]::Win32NT) {
-    $version = if ($env:OBJC3C_CI_LLVM_VERSION) { $env:OBJC3C_CI_LLVM_VERSION } else { "22.1.6" }
+    $version = if ($env:OBJC3C_CI_LLVM_VERSION) { $env:OBJC3C_CI_LLVM_VERSION } else { "23.1.3" }
     $userProfile = [System.Environment]::GetEnvironmentVariable("USERPROFILE")
     if (-not [string]::IsNullOrWhiteSpace($userProfile)) {
       $candidates += (Join-Path $userProfile ("Tools\LLVM\llvm-{0}-msvc" -f $version))
@@ -76,7 +76,8 @@ function Initialize-ExecutionReplayProofContext {
   $script:summaryPath = Join-Path $script:proofDir "summary.json"
   $script:buildScript = Join-Path $script:repoRoot "scripts/build_objc3c_native.ps1"
   $script:compileScript = Join-Path $script:repoRoot "scripts/objc3c_native_compile.ps1"
-  $script:defaultNativeExe = Join-Path $script:repoRoot "artifacts/bin/objc3c-native.exe"
+  $nativeName = Get-ExecutionReplayProofLlvmToolName -ToolName "objc3c-native"
+  $script:defaultNativeExe = Join-Path $script:repoRoot "artifacts/bin/$nativeName"
   $script:configuredNativeExe = $env:OBJC3C_NATIVE_EXECUTABLE
   $script:nativeExe = if ([string]::IsNullOrWhiteSpace($script:configuredNativeExe)) { $script:defaultNativeExe } else { $script:configuredNativeExe }
   $script:nativeExeExplicit = -not [string]::IsNullOrWhiteSpace($script:configuredNativeExe)

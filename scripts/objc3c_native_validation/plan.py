@@ -22,10 +22,12 @@ _COMMON_INPUTS = (
     "scripts/objc3c_toolchain/__main__.py",
     "scripts/objc3c_toolchain/cli.py",
     "scripts/objc3c_toolchain/core.py",
+    "scripts/objc3c_toolchain/host.py",
+    "scripts/objc3c_toolchain/facade.py",
     "toolchains/llvm/manifest.json",
     "toolchains/llvm/patches/series",
 )
-_COMMON_SIBLINGS = ("__init__.py", "cli.py", "worker.py", "artifacts.py", "identity.py")
+_COMMON_SIBLINGS = ("__init__.py", "cli.py", "worker.py", "artifacts.py", "identity.py", "identity_linux.py")
 _RUNTIME_INPUTS = (f"{_RUNTIME}/runtime-profile.json", f"{_RUNTIME}/verify_runtime_profile.py")
 _SUITE_RUNNERS = {
     "expression": f"{_RUNTIME}/run_carrier_expression_fixtures_windows.ps1",
@@ -45,6 +47,7 @@ _WITNESSES = {
 }
 _PACKAGE_SOURCES = {
     "provider": "tests/clang_foundation/native_package/provider.m",
+    "managed_support": "tests/clang_foundation/native_package/managed-value-support.h",
     "eager": "tests/clang_foundation/native_package/consumer-eager.m",
     "source": "tests/clang_foundation/native_package/consumer-source.m",
 }
@@ -127,7 +130,7 @@ def build_plan(
     common += _source_files(repo, "toolchains/llvm/patches", (".patch",))
     runtime = [_file(repo, path) for path in _RUNTIME_INPUTS]
     native = _source_files(repo, "native/objc3c/src/clang_foundation", (".cpp", ".h"))
-    fixture_impl = [_file(repo, f"{_VALIDATION}/fixture_nodes.py")]
+    fixture_impl = [_file(repo, f"{_VALIDATION}/fixture_nodes.py"), _file(repo, f"{_VALIDATION}/fixture_linux.py")]
     package_impl = [_file(repo, f"{_VALIDATION}/package_nodes.py")]
     nodes: list[dict[str, Any]] = []
 
@@ -155,7 +158,7 @@ def build_plan(
                 _SUITE_RUNNERS[suite], suite_inputs + (native if driver == "objc3c-clang" else []),
                 suite=suite)
 
-    package_inputs = runtime + native + package_impl
+    package_inputs = runtime + native + package_impl + [_file(repo, _PACKAGE_SOURCES["managed_support"])]
     add("native-package:provider", "native-package", "provider", "package-provider",
         "objc3c-clang", _PACKAGE_SOURCES["provider"], package_inputs)
     for name, mode in (("eager", "eager"), ("source", "source-directed")):

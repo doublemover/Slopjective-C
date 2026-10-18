@@ -7,6 +7,7 @@ import json
 import os
 import shutil
 import subprocess
+import sys
 import tempfile
 from pathlib import Path
 from typing import Any
@@ -17,9 +18,9 @@ class ToolchainError(RuntimeError):
 
 
 PINNED_UPSTREAM = {
-    "tag": "llvmorg-22.1.6",
-    "tag_object": "e1e54c548235b71134d53ec5e4d93873db5c70ef",
-    "commit": "fc4aad7b5db3fff421df9a9637605b9ca5667881",
+    "tag": "llvmorg-23.1.3",
+    "tag_object": "856f0005e57023e63664c560a829c620360ea1f1",
+    "commit": "0d261d1ca552c95a8f007e061c787ac7132fbcbc",
 }
 
 
@@ -127,7 +128,7 @@ def _identity(manifest: dict[str, Any], patches: list[tuple[str, Path, str]], pr
     if pristine:
         build_id = f"{manifest['pristine_baseline_build_id']}-{build_digest[:8]}"
     else:
-        build_id = f"llvmorg-22.1.6-{upstream['commit'][:12]}-{patch_digest[:12]}-{build_digest[:8]}"
+        build_id = f"{upstream['tag']}-{upstream['commit'][:12]}-{patch_digest[:12]}-{build_digest[:8]}"
     return {
         "schema_version": 1,
         "build_id": build_id,
@@ -270,13 +271,11 @@ def _windows_build_environment(manifest: dict[str, Any]) -> dict[str, Any]:
         raise ToolchainError("CMake and Ninja must be available on PATH")
     cmake_path = Path(cmake).resolve()
     ninja_path = Path(ninja).resolve()
-    py_launcher = shutil.which("py")
-    if not py_launcher:
-        raise ToolchainError("Python launcher is required to select the pinned Python 3.13 interpreter")
-    python_executable = Path(_run([py_launcher, "-3.13", "-c", "import sys; print(sys.executable)"])).resolve()
+    python_executable = Path(os.environ.get("OBJC3C_TOOLCHAIN_PYTHON", sys.executable)).resolve()
     python_version = _run([str(python_executable), "--version"])
-    if not python_version.startswith("Python 3.13."):
-        raise ToolchainError(f"Python 3.13 is required for the LLVM build, found {python_version}")
+    required_python = manifest.get("host_tools", {}).get("python", "3.15.0")
+    if python_version != f"Python {required_python}":
+        raise ToolchainError(f"Python {required_python} is required for the LLVM build, found {python_version}")
     sdk_inputs = {}
     for name, path in {
         "windows_header": sdk_include / "um" / "Windows.h",
@@ -308,32 +307,41 @@ def _windows_build_environment(manifest: dict[str, Any]) -> dict[str, Any]:
     }
 
 
-def build_plan(repo: Path, *, phase: str, manifest_path: Path | None = None,
-               source_dir: Path | None = None) -> dict[str, Any]:
-    """Return a fully identified configure/build/stage command plan; never execute it."""
-    if phase not in {"configure", "build", "test", "stage"}:
-        raise ToolchainError(f"unsupported build phase: {phase}")
+def build_plans(repo: Path, *, manifest_path: Path | None = None,
+                source_dir: Path | None = None, host: str | None = None) -> dict[str, dict[str, Any]]:
+    """Identify one sealed build session and all its commands; never execute them."""
     repo = repo.resolve()
     manifest_path = manifest_path or repo / "toolchains" / "llvm" / "manifest.json"
     source = (source_dir or repo / "out" / "toolchains" / "objc3-development" / "src").resolve()
     sealed = verify_development(repo, manifest_path=manifest_path, source_dir=source)
     manifest, _ = _load_manifest(manifest_path)
-    environment = _windows_build_environment(manifest)
+    host = host or ("windows-x86_64" if os.name == "nt" else "linux-x86_64")
+    if host == "windows-x86_64":
+        environment = _windows_build_environment(manifest)
+    elif host == "linux-x86_64":
+        from .host import linux_environment
+        try:
+            environment = linux_environment(manifest)
+        except (ValueError, OSError, subprocess.SubprocessError) as exc:
+            raise ToolchainError(str(exc)) from exc
+    else:
+        raise ToolchainError(f"unsupported foundation host: {host}")
     build = manifest["build"]
-    build_dir = repo / "out" / "toolchains" / "objc3-development" / "build"
-    stage_dir = repo / "out" / "toolchains" / "objc3-development" / "stage"
+    output_suffix = "" if host == "windows-x86_64" else "-" + host
+    build_dir = repo / "out" / "toolchains" / "objc3-development" / ("build" + output_suffix)
+    stage_dir = repo / "out" / "toolchains" / "objc3-development" / ("stage" + output_suffix)
     source_id = sealed["build_id"]
     llvm_source = (source / "llvm").as_posix()
     build_path = build_dir.as_posix()
     stage_path = stage_dir.as_posix()
-    cl_path = Path(environment["cl_path"]).as_posix()
+    cl_path = Path(environment.get("cl_path", environment.get("clang_path", ""))).as_posix()
     link_path = Path(environment["link_path"]).as_posix()
     cmake_cache = (repo / "toolchains" / "llvm" / "cmake" / "ObjC3LLVMCache.cmake").as_posix()
     configure = [
         "cmake", "-S", llvm_source, "-B", build_path, "-G", "Ninja",
         "-C", cmake_cache,
         f"-DCMAKE_C_COMPILER={cl_path}",
-        f"-DCMAKE_CXX_COMPILER={cl_path}",
+        f"-DCMAKE_CXX_COMPILER={Path(environment.get('clangxx_path', cl_path)).as_posix()}",
         f"-DCMAKE_LINKER={link_path}",
         f"-DCMAKE_SYSTEM_VERSION={build['windows_sdk_version']}",
         f"-DPython3_EXECUTABLE={Path(environment['python_executable']).as_posix()}",
@@ -350,6 +358,17 @@ def build_plan(repo: Path, *, phase: str, manifest_path: Path | None = None,
         f"-DCMAKE_JOB_POOLS=objc3_link={build['link_jobs']}",
         "-DCMAKE_JOB_POOL_LINK=objc3_link",
     ]
+    jobs = environment.get("resource_limits", build)
+    if host == "linux-x86_64":
+        configure = [argument for argument in configure if not argument.startswith((
+            "-DCMAKE_SYSTEM_VERSION=", "-DCMAKE_MSVC_RUNTIME_LIBRARY=", "-DLLVM_USE_CRT_RELEASE="))]
+        configure += ["-DLLVM_USE_LINKER=lld", "-DLLVM_ENABLE_LLD=OFF",
+                      f"-DLLVM_DEFAULT_TARGET_TRIPLE={environment['target_triple']}",
+                      f"-DLLVM_PARALLEL_COMPILE_JOBS={jobs['compile_jobs']}",
+                      f"-DLLVM_PARALLEL_LINK_JOBS={jobs['link_jobs']}"]
+        if environment.get("ccache_path"):
+            configure += [f"-DCMAKE_C_COMPILER_LAUNCHER={environment['ccache_path']}",
+                          f"-DCMAKE_CXX_COMPILER_LAUNCHER={environment['ccache_path']}"]
     target_groups = build.get("build_target_groups")
     if not isinstance(target_groups, list) or not target_groups:
         raise ToolchainError("build.build_target_groups must define ordered nonempty target groups")
@@ -358,19 +377,21 @@ def build_plan(repo: Path, *, phase: str, manifest_path: Path | None = None,
         raise ToolchainError("build target groups must exactly match build_targets in order")
     group_commands = [
         ["cmake", "--build", build_path, "--config", "Release", "--target",
-         *group["targets"], "--parallel", str(build["compile_jobs"])]
+         *group["targets"], "--parallel", str(jobs["compile_jobs"])]
         for group in target_groups
     ]
     build_cmd = group_commands[0]
-    test_runner = (build_dir / "bin" / "llvm-lit.py").as_posix()
+    test_runner = (build_dir / "bin" / ("llvm-lit.py" if host == "windows-x86_64" else "llvm-lit")).as_posix()
     test_path = (source / build["test_suite"]).as_posix()
-    test_cmd = [environment["python_executable"], "-B", test_runner, "-sv", "-j",
-                str(min(build["compile_jobs"], 4)), test_path]
+    test_cmd = [environment["python_executable"], "-B", test_runner, "-sv", "--show-unsupported", "-j",
+                str(min(jobs["compile_jobs"], 4)), test_path]
     test_follow_ups = []
     test_binaries = build.get("test_binaries", [])
     if not isinstance(test_binaries, list):
         raise ToolchainError("test_binaries must be a list of relative paths")
     for relative in test_binaries:
+        if host == "linux-x86_64" and relative.endswith(".exe"):
+            relative = relative[:-4]
         if not isinstance(relative, str) or not relative:
             raise ToolchainError("test binary paths must be nonempty strings")
         executable = (build_dir / relative).resolve()
@@ -378,11 +399,10 @@ def build_plan(repo: Path, *, phase: str, manifest_path: Path | None = None,
             raise ToolchainError("test binary paths must remain within the selected build")
         test_follow_ups.append([executable.as_posix()])
     stage_cmd = ["cmake", "--build", build_path, "--config", "Release",
-                 "--target", "install-distribution", "--parallel", str(build["compile_jobs"])]
+                 "--target", "install-distribution", "--parallel", str(jobs["compile_jobs"])]
     commands = {"configure": configure, "build": build_cmd, "test": test_cmd, "stage": stage_cmd}
-    identity_payload = {
+    common = {
         "schema_version": 1,
-        "phase": phase,
         "source_build_id": source_id,
         "source_tree": sealed["tree_sha256"],
         "build_config_digest": sealed["build_config_digest"],
@@ -398,25 +418,27 @@ def build_plan(repo: Path, *, phase: str, manifest_path: Path | None = None,
         "sdk_consumers": {
             "build_tree_LLVM_DIR": _artifact_identity(build_dir / "lib" / "cmake" / "llvm"),
             "build_tree_Clang_DIR": _artifact_identity(build_dir / "lib" / "cmake" / "clang"),
-            "build_tree_resource_dir": _artifact_identity(build_dir / "lib" / "clang" / "22"),
+            "build_tree_resource_dir": _artifact_identity(build_dir / "lib" / "clang" / "23"),
             "LLVM_DIR": _artifact_identity(stage_dir / "lib" / "cmake" / "llvm"),
             "Clang_DIR": _artifact_identity(stage_dir / "lib" / "cmake" / "clang"),
-            "resource_dir": _artifact_identity(stage_dir / "lib" / "clang" / "22"),
+            "resource_dir": _artifact_identity(stage_dir / "lib" / "clang" / "23"),
         },
-        "command": commands[phase],
     }
-    if phase == "build":
-        identity_payload["follow_up_commands"] = group_commands[1:]
-    elif phase == "test":
-        identity_payload["follow_up_commands"] = test_follow_ups
-        # lit workers launch new Python processes, which do not inherit -B.
-        # Record the environment required to keep the sealed source unchanged.
-        identity_payload["command_environment"] = {"PYTHONDONTWRITEBYTECODE": "1"}
-    identity_payload["identity"] = hashlib.sha256(
-        json.dumps(identity_payload, sort_keys=True, separators=(",", ":")).encode()
-    ).hexdigest()
-    return identity_payload
-
+    plans = {}
+    for phase, command in commands.items():
+        identity_payload = {**common, "phase": phase, "command": command}
+        if phase == "build":
+            identity_payload["follow_up_commands"] = group_commands[1:]
+        elif phase == "test":
+            identity_payload["follow_up_commands"] = test_follow_ups
+            # lit workers launch new Python processes, which do not inherit -B.
+            # Record the environment required to keep the sealed source unchanged.
+            identity_payload["command_environment"] = {"PYTHONDONTWRITEBYTECODE": "1"}
+        identity_payload["identity"] = hashlib.sha256(
+            json.dumps(identity_payload, sort_keys=True, separators=(",", ":")).encode()
+        ).hexdigest()
+        plans[phase] = identity_payload
+    return plans
 
 def _artifact_identity(path: Path) -> dict[str, Any]:
     resolved = path.resolve()
@@ -495,4 +517,12 @@ def prepare(repo: Path, *, manifest_path: Path | None = None, fetch: bool = Fals
         return recorded
     finally:
         if temp_root.exists():
-            shutil.rmtree(temp_root)
+                shutil.rmtree(temp_root, ignore_errors=True)
+
+
+def build_plan(repo: Path, *, phase: str, manifest_path: Path | None = None,
+               source_dir: Path | None = None, host: str | None = None) -> dict[str, Any]:
+    """Return one identified command plan; standalone calls reverify all inputs."""
+    if phase not in {"configure", "build", "test", "stage"}:
+        raise ToolchainError(f"unsupported build phase: {phase}")
+    return build_plans(repo, manifest_path=manifest_path, source_dir=source_dir, host=host)[phase]

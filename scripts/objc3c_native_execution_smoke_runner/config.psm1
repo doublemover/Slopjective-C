@@ -249,7 +249,7 @@ function Get-Objc3cNativeExecutionSmokeLlvmRootCandidates {
   }
 
   if (Test-Objc3cNativeExecutionSmokeHostIsWindows) {
-    $version = if ($env:OBJC3C_CI_LLVM_VERSION) { $env:OBJC3C_CI_LLVM_VERSION } else { "22.1.6" }
+    $version = if ($env:OBJC3C_CI_LLVM_VERSION) { $env:OBJC3C_CI_LLVM_VERSION } else { "23.1.3" }
     $userProfile = [System.Environment]::GetEnvironmentVariable("USERPROFILE")
     if (-not [string]::IsNullOrWhiteSpace($userProfile)) {
       $candidates += (Join-Path $userProfile ("Tools\LLVM\llvm-{0}-msvc" -f $version))

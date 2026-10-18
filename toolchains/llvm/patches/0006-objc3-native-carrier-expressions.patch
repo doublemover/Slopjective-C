@@ -1,8 +1,8 @@
 diff --git a/clang/include/clang/AST/ComputeDependence.h b/clang/include/clang/AST/ComputeDependence.h
-index 895105640..2811a10d1 100644
+index 3a3c86842..913b6a1a3 100644
 --- a/clang/include/clang/AST/ComputeDependence.h
 +++ b/clang/include/clang/AST/ComputeDependence.h
-@@ -109,6 +109,9 @@ class ObjCIsaExpr;
+@@ -110,6 +110,9 @@ class ObjCIsaExpr;
  class ObjCIndirectCopyRestoreExpr;
  class ObjCMessageExpr;
  class OpenACCAsteriskSizeExpr;
@@ -12,7 +12,7 @@ index 895105640..2811a10d1 100644
  
  // The following functions are called from constructors of `Expr`, so they
  // should not access anything beyond basic
-@@ -208,6 +211,9 @@ ExprDependence computeDependence(ObjCIsaExpr *E);
+@@ -210,6 +213,9 @@ ExprDependence computeDependence(ObjCIsaExpr *E);
  ExprDependence computeDependence(ObjCIndirectCopyRestoreExpr *E);
  ExprDependence computeDependence(ObjCMessageExpr *E);
  ExprDependence computeDependence(OpenACCAsteriskSizeExpr *E);
@@ -23,7 +23,7 @@ index 895105640..2811a10d1 100644
  } // namespace clang
  #endif
 diff --git a/clang/include/clang/AST/Expr.h b/clang/include/clang/AST/Expr.h
-index 3e30a8b42..b360bd06a 100644
+index 53107e279..f5a455bf5 100644
 --- a/clang/include/clang/AST/Expr.h
 +++ b/clang/include/clang/AST/Expr.h
 @@ -16,6 +16,8 @@
@@ -35,7 +35,7 @@ index 3e30a8b42..b360bd06a 100644
  #include "clang/AST/ComputeDependence.h"
  #include "clang/AST/Decl.h"
  #include "clang/AST/DeclAccessPair.h"
-@@ -3602,6 +3604,8 @@ public:
+@@ -3608,6 +3610,8 @@ public:
  
  /// CompoundLiteralExpr - [C99 6.5.2.5]
  ///
@@ -44,7 +44,7 @@ index 3e30a8b42..b360bd06a 100644
  class CompoundLiteralExpr : public Expr {
    /// LParenLoc - If non-null, this is the location of the left paren in a
    /// compound literal like "(int){4}".  This can be null if this is a
-@@ -4845,6 +4849,213 @@ public:
+@@ -4851,6 +4855,213 @@ public:
  ///   and all predicates (whether it's an l-value, whether it's an integer
  ///   constant expression, etc.) return the same result as for the chosen
  ///   sub-expression.
@@ -259,7 +259,7 @@ index 3e30a8b42..b360bd06a 100644
    enum { COND, LHS, RHS, END_EXPR };
    Stmt* SubExprs[END_EXPR]; // Left/Middle/Right hand sides.
 diff --git a/clang/include/clang/Basic/StmtNodes.td b/clang/include/clang/Basic/StmtNodes.td
-index b08b9fe3b..e1dc99782 100644
+index f5fa397c9..14c6af8f6 100644
 --- a/clang/include/clang/Basic/StmtNodes.td
 +++ b/clang/include/clang/Basic/StmtNodes.td
 @@ -18,6 +18,9 @@ def GotoStmt : StmtNode<Stmt>;
@@ -272,7 +272,7 @@ index b08b9fe3b..e1dc99782 100644
  def DeclStmt  : StmtNode<Stmt>;
  def SwitchCase : StmtNode<Stmt, 1>;
  def CaseStmt : StmtNode<SwitchCase>;
-@@ -117,6 +120,15 @@ def AtomicExpr : StmtNode<Expr>;
+@@ -124,6 +127,15 @@ def AtomicExpr : StmtNode<Expr>;
  def AddrLabelExpr : StmtNode<Expr>;
  def StmtExpr : StmtNode<Expr>;
  def ChooseExpr : StmtNode<Expr>;
@@ -289,10 +289,10 @@ index b08b9fe3b..e1dc99782 100644
  
  // C++ Expressions.
 diff --git a/clang/lib/AST/ComputeDependence.cpp b/clang/lib/AST/ComputeDependence.cpp
-index 8429f17d2..4e789ae2c 100644
+index 95cfd19c0..804b26750 100644
 --- a/clang/lib/AST/ComputeDependence.cpp
 +++ b/clang/lib/AST/ComputeDependence.cpp
-@@ -963,3 +963,24 @@ ExprDependence clang::computeDependence(OpenACCAsteriskSizeExpr *E) {
+@@ -965,3 +965,24 @@ ExprDependence clang::computeDependence(OpenACCAsteriskSizeExpr *E) {
    // way.
    return ExprDependence::None;
  }
@@ -318,10 +318,10 @@ index 8429f17d2..4e789ae2c 100644
 +  return D;
 +}
 diff --git a/clang/lib/AST/Expr.cpp b/clang/lib/AST/Expr.cpp
-index d3e381ba4..b2e8c59bf 100644
+index 0bb9c6aa0..11df4193d 100644
 --- a/clang/lib/AST/Expr.cpp
 +++ b/clang/lib/AST/Expr.cpp
-@@ -40,6 +40,123 @@
+@@ -42,6 +42,123 @@
  #include <optional>
  using namespace clang;
  
@@ -445,7 +445,7 @@ index d3e381ba4..b2e8c59bf 100644
  const Expr *Expr::getBestDynamicClassTypeExpr() const {
    const Expr *E = this;
    while (true) {
-@@ -2643,6 +2760,12 @@ bool Expr::isUnusedResultAWarning(const Expr *&WarnE, SourceLocation &Loc,
+@@ -2653,6 +2770,12 @@ bool Expr::isUnusedResultAWarning(const Expr *&WarnE, SourceLocation &Loc,
      Loc = getExprLoc();
      R1 = getSourceRange();
      return true;
@@ -458,7 +458,7 @@ index d3e381ba4..b2e8c59bf 100644
    case ParenExprClass:
      return cast<ParenExpr>(this)->getSubExpr()->
        isUnusedResultAWarning(WarnE, Loc, R1, R2, Ctx);
-@@ -3663,6 +3786,13 @@ namespace {
+@@ -3691,6 +3814,13 @@ namespace {
            E->HasSideEffects(Context, IncludePossibleEffects))
          HasSideEffects = true;
      }
@@ -472,7 +472,7 @@ index d3e381ba4..b2e8c59bf 100644
    };
  }
  
-@@ -3839,6 +3969,49 @@ bool Expr::HasSideEffects(const ASTContext &Ctx,
+@@ -3870,6 +4000,49 @@ bool Expr::HasSideEffects(const ASTContext &Ctx,
      return cast<GenericSelectionExpr>(this)->getResultExpr()->HasSideEffects(
          Ctx, IncludePossibleEffects);
  
@@ -523,10 +523,10 @@ index d3e381ba4..b2e8c59bf 100644
      return cast<ChooseExpr>(this)->getChosenSubExpr()->HasSideEffects(
          Ctx, IncludePossibleEffects);
 diff --git a/clang/lib/AST/ExprClassification.cpp b/clang/lib/AST/ExprClassification.cpp
-index 9995d1b41..d7b01980d 100644
+index ef071cdef..74aabcb4d 100644
 --- a/clang/lib/AST/ExprClassification.cpp
 +++ b/clang/lib/AST/ExprClassification.cpp
-@@ -169,6 +169,14 @@ static Cl::Kinds ClassifyInternal(ASTContext &Ctx, const Expr *E) {
+@@ -170,6 +170,14 @@ static Cl::Kinds ClassifyInternal(ASTContext &Ctx, const Expr *E) {
    case Expr::CompoundLiteralExprClass:
      return !E->isLValue() ? ClassifyTemporary(E->getType()) : Cl::CL_LValue;
  
@@ -542,10 +542,10 @@ index 9995d1b41..d7b01980d 100644
    case Expr::CXXBoolLiteralExprClass:
    case Expr::CXXPseudoDestructorExprClass:
 diff --git a/clang/lib/AST/ExprConstant.cpp b/clang/lib/AST/ExprConstant.cpp
-index ec7ca893f..a913625d0 100644
+index 120af89a9..b276b0d64 100644
 --- a/clang/lib/AST/ExprConstant.cpp
 +++ b/clang/lib/AST/ExprConstant.cpp
-@@ -8540,6 +8540,40 @@ public:
+@@ -8538,6 +8538,40 @@ public:
    bool VisitStmt(const Stmt *) {
      llvm_unreachable("Expression evaluator should not be called on stmts");
    }
@@ -586,7 +586,7 @@ index ec7ca893f..a913625d0 100644
    bool VisitExpr(const Expr *E) {
      return Error(E);
    }
-@@ -15469,6 +15503,12 @@ GCCTypeClass EvaluateBuiltinClassifyType(QualType T,
+@@ -16184,6 +16218,12 @@ GCCTypeClass EvaluateBuiltinClassifyType(QualType T,
      return CanTy->isUnionType() ? GCCTypeClass::Union
                                  : GCCTypeClass::ClassOrStruct;
  
@@ -599,7 +599,7 @@ index ec7ca893f..a913625d0 100644
    case Type::Atomic:
      // GCC classifies _Atomic T the same as T.
      return EvaluateBuiltinClassifyType(
-@@ -21016,6 +21056,11 @@ static ICEDiag CheckICE(const Expr* E, const ASTContext &Ctx) {
+@@ -22121,6 +22161,11 @@ static ICEDiag CheckICE(const Expr* E, const ASTContext &Ctx) {
  #define STMT(Node, Base) case Expr::Node##Class:
  #define EXPR(Node, Base)
  #include "clang/AST/StmtNodes.inc"
@@ -612,10 +612,10 @@ index ec7ca893f..a913625d0 100644
    case Expr::FloatingLiteralClass:
    case Expr::ImaginaryLiteralClass:
 diff --git a/clang/lib/AST/StmtProfile.cpp b/clang/lib/AST/StmtProfile.cpp
-index a626d0436..ac06ad5c1 100644
+index fdefb6d6b..ae47c3ef7 100644
 --- a/clang/lib/AST/StmtProfile.cpp
 +++ b/clang/lib/AST/StmtProfile.cpp
-@@ -1604,6 +1604,67 @@ void StmtProfiler::VisitConvertVectorExpr(const ConvertVectorExpr *S) {
+@@ -1653,6 +1653,67 @@ void StmtProfiler::VisitConvertVectorExpr(const ConvertVectorExpr *S) {
    VisitExpr(S);
  }
  
@@ -684,10 +684,10 @@ index a626d0436..ac06ad5c1 100644
    VisitExpr(S);
  }
 diff --git a/clang/lib/Parse/ParseExpr.cpp b/clang/lib/Parse/ParseExpr.cpp
-index 351534320..070a6ade6 100644
+index 74209f579..e5978ff2a 100644
 --- a/clang/lib/Parse/ParseExpr.cpp
 +++ b/clang/lib/Parse/ParseExpr.cpp
-@@ -864,6 +864,44 @@ Parser::ParseCastExpression(CastParseKind ParseKind, bool isAddressOfOperand,
+@@ -890,6 +890,44 @@ Parser::ParseCastExpression(CastParseKind ParseKind, bool isAddressOfOperand,
    ParseIdentifier: {    // primary-expression: identifier
                          // unqualified-id: identifier
                          // constant: enumeration-constant
@@ -733,10 +733,10 @@ index 351534320..070a6ade6 100644
      // annot_cxxscope if it would be valid.  This handles things like x::y, etc.
      if (getLangOpts().CPlusPlus) {
 diff --git a/clang/lib/Sema/SemaExceptionSpec.cpp b/clang/lib/Sema/SemaExceptionSpec.cpp
-index 6208d6679..adc259a5a 100644
+index 0ed5c35c4..2d3e90a61 100644
 --- a/clang/lib/Sema/SemaExceptionSpec.cpp
 +++ b/clang/lib/Sema/SemaExceptionSpec.cpp
-@@ -1325,6 +1325,21 @@ CanThrowResult Sema::canThrow(const Stmt *S) {
+@@ -1340,6 +1340,21 @@ CanThrowResult Sema::canThrow(const Stmt *S) {
      return mergeCanThrow(CT, canSubStmtsThrow(*this, S));
    }
  
@@ -758,7 +758,7 @@ index 6208d6679..adc259a5a 100644
    case Expr::CXXDefaultArgExprClass:
      return canThrow(cast<CXXDefaultArgExpr>(S)->getExpr());
  
-@@ -1594,6 +1609,14 @@ CanThrowResult Sema::canThrow(const Stmt *S) {
+@@ -1617,6 +1632,14 @@ CanThrowResult Sema::canThrow(const Stmt *S) {
      return canSubStmtsThrow(*this, S);
    }
  
@@ -775,6 +775,7 @@ index 6208d6679..adc259a5a 100644
  
 diff --git a/clang/lib/Sema/SemaObjC3OptionalExpr.cpp b/clang/lib/Sema/SemaObjC3OptionalExpr.cpp
 new file mode 100644
+index 000000000..113d259be
 --- /dev/null
 +++ b/clang/lib/Sema/SemaObjC3OptionalExpr.cpp
 @@ -0,0 +1,196 @@
@@ -976,6 +977,7 @@ new file mode 100644
 +}
 diff --git a/clang/lib/Sema/SemaObjC3ResultExpr.cpp b/clang/lib/Sema/SemaObjC3ResultExpr.cpp
 new file mode 100644
+index 000000000..0183e9b78
 --- /dev/null
 +++ b/clang/lib/Sema/SemaObjC3ResultExpr.cpp
 @@ -0,0 +1,276 @@
@@ -1257,6 +1259,7 @@ new file mode 100644
 +}
 diff --git a/clang/unittests/AST/ObjC3CarrierExprSemanticsTest.cpp b/clang/unittests/AST/ObjC3CarrierExprSemanticsTest.cpp
 new file mode 100644
+index 000000000..718ff5d6c
 --- /dev/null
 +++ b/clang/unittests/AST/ObjC3CarrierExprSemanticsTest.cpp
 @@ -0,0 +1,134 @@
@@ -1396,9 +1399,10 @@ new file mode 100644
 +} // namespace
 diff --git a/clang/unittests/AST/ObjC3OptionalExprTest.cpp b/clang/unittests/AST/ObjC3OptionalExprTest.cpp
 new file mode 100644
+index 000000000..f3085d69a
 --- /dev/null
 +++ b/clang/unittests/AST/ObjC3OptionalExprTest.cpp
-@@ -0,0 +1,251 @@
+@@ -0,0 +1,252 @@
 +//===--- ObjC3OptionalExprTest.cpp - Optional expression AST tests --------===//
 +//
 +// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
@@ -1605,7 +1609,8 @@ new file mode 100644
 +    auto Imported = __objc3_some(Count, 0);
 +  )cpp";
 +  auto From = parse(Source, "from-optional.mm");
-+  auto To = parse("", "to-optional.mm", {{"from-optional.mm", Source}});
++  const tooling::FileContentMappings Mappings = {{"from-optional.mm", Source}};
++  auto To = parse("", "to-optional.mm", Mappings);
 +  ASSERT_TRUE(From);
 +  ASSERT_TRUE(To);
 +  ASTContext &FromContext = From->getASTContext();
@@ -1652,9 +1657,10 @@ new file mode 100644
 +} // namespace
 diff --git a/clang/unittests/AST/ObjC3ResultExprTest.cpp b/clang/unittests/AST/ObjC3ResultExprTest.cpp
 new file mode 100644
+index 000000000..f6ec1a941
 --- /dev/null
 +++ b/clang/unittests/AST/ObjC3ResultExprTest.cpp
-@@ -0,0 +1,257 @@
+@@ -0,0 +1,258 @@
 +//===--- ObjC3ResultExprTest.cpp - Result expression AST tests ------------===//
 +//
 +// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
@@ -1861,7 +1867,8 @@ new file mode 100644
 +    auto Imported = __objc3_err(SuccessAlias, ErrorAlias, 0L);
 +  )cpp";
 +  auto From = parse(Source, "from-result.mm");
-+  auto To = parse("", "to-result.mm", {{"from-result.mm", Source}});
++  const tooling::FileContentMappings Mappings = {{"from-result.mm", Source}};
++  auto To = parse("", "to-result.mm", Mappings);
 +  ASSERT_TRUE(From);
 +  ASSERT_TRUE(To);
 +  ASTContext &FromContext = From->getASTContext();

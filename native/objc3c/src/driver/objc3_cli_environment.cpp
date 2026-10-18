@@ -64,7 +64,7 @@ std::filesystem::path DefaultObjc3DriverLlvmToolPath(const char *tool_name) {
     std::string version =
         ReadObjc3DriverEnvironmentVariable("OBJC3C_CI_LLVM_VERSION");
     if (version.empty()) {
-      version = "22.1.6";
+      version = "23.1.3";
     }
     const std::filesystem::path user_tool =
         std::filesystem::path(user_profile) / "Tools" / "LLVM" /

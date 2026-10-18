@@ -43,8 +43,8 @@ def toolchain(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> dict:
           json.dumps({"profiles": {"windows-x86_64": profile}}))
     write(repo / "out/toolchains/objc3-development/src/.objc3c-prepared-source.json", json.dumps(seal))
     write(sdk / "tools/clang/include/clang/Basic/ObjC3Foundation.h", patch_digest + upstream)
-    write(sdk / "lib/clang/22/include/stddef.h", "typedef long ptrdiff_t;\n")
-    write(sdk / "lib/clang/22/lib/windows/builtins.lib", "resource builtin archive")
+    write(sdk / "lib/clang/23/include/stddef.h", "typedef long ptrdiff_t;\n")
+    write(sdk / "lib/clang/23/lib/windows/builtins.lib", "resource builtin archive")
     for filename in ("clang.exe", "clang++.exe", "clang-cl.exe", "clangd.exe", "clang-format.exe"):
         write(sdk / "bin" / filename, "synthetic " + filename + marker + upstream)
     write(sdk / "bin/lld-link.exe", "synthetic LLD " + upstream)
@@ -81,12 +81,13 @@ def toolchain(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> dict:
 
     monkeypatch.setattr(identity, "verify_development", verify)
     monkeypatch.setattr(identity, "_run", run)
+    monkeypatch.setattr(identity, "facade_identity", lambda _: {"sha256": "9" * 64})
     inputs = identity._Inputs()
-    tree = inputs.add_tree(sdk / "lib/clang/22")
+    tree = inputs.add_tree(sdk / "lib/clang/23")
     resource_digest = identity._resource_digest(tree, inputs.files)
     driver_digest = hashlib.sha256((sdk / "bin/clang.exe").read_bytes()).hexdigest()
     facade = repo / "out/toolchains/objc3-facade/build/src/clang_foundation/objc3c-clang.exe"
-    write(facade, "synthetic facade " + marker + upstream + driver_digest + resource_digest)
+    write(facade, "synthetic facade " + marker + upstream + driver_digest + resource_digest + "9" * 64)
     return {"repo": repo, "sdk": sdk, "stage": stage, "source": source, "facade": facade,
             "seal": seal, "profile": profile, "environment": environment, "seal_calls": seal_calls}
 
@@ -114,7 +115,7 @@ def test_snapshot_is_actual_stable_inputs_and_family_independent(toolchain: dict
     assert dict(os.environ) == before_environment
 
 
-@pytest.mark.parametrize("relative", ["bin/lld-link.exe", "lib/clang/22/include/stddef.h"])
+@pytest.mark.parametrize("relative", ["bin/lld-link.exe", "lib/clang/23/include/stddef.h"])
 def test_actual_binary_or_resource_mutation_invalidates_snapshot(toolchain: dict, relative: str) -> None:
     snapshot = identity.resolve_toolchain(toolchain["repo"])
     path = toolchain["sdk"] / relative
@@ -136,7 +137,7 @@ def test_runtime_dll_change_changes_batch_identity(toolchain: dict) -> None:
 @pytest.mark.parametrize("operation", ["add", "delete", "rename"])
 def test_tree_inventory_detects_new_missing_and_renamed_resources(toolchain: dict, operation: str) -> None:
     snapshot = identity.resolve_toolchain(toolchain["repo"])
-    header = toolchain["sdk"] / "lib/clang/22/include/stddef.h"
+    header = toolchain["sdk"] / "lib/clang/23/include/stddef.h"
     if operation == "add":
         write(header.with_name("new-resource.h"), "new compiler resource")
     elif operation == "delete":
@@ -239,3 +240,9 @@ def test_private_devshell_captures_environment_without_global_changes(
     assert "Import-Module" in commands[1][-1] and "Enter-VsDevShell" in commands[1][-1]
     assert "-arch=x64 -host_arch=x64 -winsdk=10.0.26100.0 -vcvars_ver=14.44.35207" in commands[1][-1]
     assert dict(os.environ) == before
+
+
+def test_stale_frontend_source_receipt_is_rejected(toolchain, monkeypatch):
+    monkeypatch.setattr(identity, 'facade_identity', lambda _: {'sha256': '8' * 64})
+    with pytest.raises(identity.NativeToolchainError, match='missing sealed marker'):
+        identity.resolve_toolchain(toolchain['repo'])

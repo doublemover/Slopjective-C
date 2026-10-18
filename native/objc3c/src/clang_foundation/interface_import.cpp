@@ -21,7 +21,7 @@
 #include "clang/Basic/LangOptions.h"
 #include "clang/Basic/SourceManager.h"
 #include "clang/Frontend/ASTUnit.h"
-#include "clang/Index/USRGeneration.h"
+#include "clang/UnifiedSymbolResolution/USRGeneration.h"
 #include "clang/Tooling/Tooling.h"
 #include "clang_foundation/interface_codec.h"
 #include "clang_foundation/interface_emitter.h"
@@ -43,7 +43,7 @@ constexpr std::uint64_t kMaxInterfaceBytes = 32ull * 1024ull * 1024ull;
 constexpr llvm::StringLiteral kCarrierSemantics = "objc3.native-carrier-types.v1";
 constexpr llvm::StringLiteral kEffectSemantics = "objc3.canonical-function-effects.v1";
 const std::vector<llvm::StringRef> kSupportedSemantics = {
-    kCarrierSemantics, kEffectSemantics};
+    kCarrierSemantics, kEffectSemantics, "objc3.native-return-ownership.v1"};
 
 void Add(std::vector<InterfaceContractDiagnostic> &out, const llvm::Twine &code,
          const llvm::Twine &message, const llvm::Twine &subject = llvm::Twine()) {

@@ -1,11 +1,26 @@
 #pragma once
 
 #include "clang/AST/ASTContext.h"
+#include "clang/AST/Attr.h"
+#include "clang/AST/Decl.h"
 #include "clang/AST/PrettyPrinter.h"
 #include "clang/AST/Type.h"
 #include "clang_foundation/interface_contract.h"
 
 namespace objc3::clang_foundation {
+
+inline std::string ReadNativeReturnOwnership(const clang::NamedDecl *declaration) {
+  const auto *function = llvm::dyn_cast<clang::FunctionDecl>(declaration);
+  if (!function) return {};
+  // ARC stores ns_returns_retained on the function type, while MRC keeps
+  // the declaration attribute. Both spellings have the same return contract.
+  if (function->getType()->castAs<clang::FunctionType>()->getExtInfo().getProducesResult())
+    return "native-return:retained";
+  if (declaration->hasAttr<clang::NSReturnsRetainedAttr>()) return "native-return:retained";
+  if (declaration->hasAttr<clang::NSReturnsNotRetainedAttr>()) return "native-return:not-retained";
+  if (declaration->hasAttr<clang::NSReturnsAutoreleasedAttr>()) return "native-return:autoreleased";
+  return {};
+}
 
 // Callable effects come from the same canonical function type that Clang
 // parsed. C++ exception specifications are a separate part of that type.

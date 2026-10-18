@@ -16,3 +16,5 @@ return __objc3_is_ok(outcome)?selected:async(input);}
 - (int)checked:(int)value __objc3_throws(id<Error>);
 @end
 int message_probe(id<MessageProbe> receiver){return __objc3_try_force([receiver checked:0]);}
+
+void defer_probe(int *value) { defer { ++*value; } }

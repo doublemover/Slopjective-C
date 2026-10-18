@@ -8,7 +8,7 @@ param(
 
 $ErrorActionPreference = 'Stop'
 $objc3Repo = (Resolve-Path (Join-Path $PSScriptRoot '..\..')).Path
-$objc3Python = 'C:\Python313\python.exe'
+$objc3Python = 'python'
 $objc3Results = $null
 $objc3Records = @()
 $objc3Identity = $null

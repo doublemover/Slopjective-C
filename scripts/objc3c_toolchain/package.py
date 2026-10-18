@@ -1,0 +1,162 @@
+"""Seal, verify and cache a qualified relocatable SDK using Python 3.15 zstd."""
+from __future__ import annotations
+
+import argparse
+from compression import zstd
+import hashlib
+import json
+import os
+from pathlib import Path
+import shutil
+import stat
+import tarfile
+import tempfile
+
+MANIFEST = 'objc3-sdk.json'
+
+
+def _digest(value) -> str:
+    return hashlib.sha256(json.dumps(value, sort_keys=True, separators=(',', ':')).encode()).hexdigest()
+
+
+def _file_hash(path: Path) -> str:
+    with path.open('rb') as stream:
+        return hashlib.file_digest(stream, 'sha256').hexdigest()
+
+
+def inventory(prefix: Path) -> dict:
+    prefix = prefix.resolve()
+    files = {}
+    for path in sorted(prefix.rglob('*')):
+        name = path.relative_to(prefix).as_posix()
+        if name == MANIFEST:
+            continue
+        if path.is_symlink():
+            if Path(os.readlink(path)).is_absolute() or not path.resolve(strict=True).is_relative_to(prefix):
+                raise ValueError(f'SDK symbolic link escapes its prefix: {name}')
+            files[name] = {'kind': 'symlink', 'target': os.readlink(path)}
+        elif path.is_file():
+            files[name] = {'kind': 'file', 'sha256': _file_hash(path),
+                           'mode': stat.S_IMODE(path.stat().st_mode)}
+    return files
+
+
+def verify_sdk(prefix: Path, expected: str | None = None) -> dict:
+    data = json.loads((prefix / MANIFEST).read_text())
+    seal = data.pop('seal_sha256')
+    if data.get('schema') != 'objc3.sdk.v1' or _digest(data) != seal or (expected and seal != expected):
+        raise ValueError('SDK seal identity mismatch')
+    if inventory(prefix) != data['files']:
+        raise ValueError('SDK files, permissions or symbolic links differ from the seal')
+    return {**data, 'seal_sha256': seal}
+
+
+def package_sdk(repo: Path, prefix: Path, validation_report: Path, cache_dir: Path) -> dict:
+    # Imports stay inside this producer so the installed verifier needs only
+    # Python's standard library and never needs a source checkout.
+    from .core import verify_development
+    from .facade import facade_identity
+    from scripts.objc3c_native_validation.identity import verify_toolchain_snapshot
+    from scripts.objc3c_native_validation.plan import build_plan
+    from scripts.objc3c_native_validation.artifacts import read_node_result
+    from scripts.objc3c_native_validation.cli import inventory_identity
+    from scripts.objc3c_cross_lane_execution import compute_node_identities
+
+    repo, prefix = repo.resolve(), prefix.resolve()
+    report = json.loads(validation_report.read_text())
+    plan = build_plan(repo, drivers=('clang', 'objc3c-clang'))
+    expected_nodes = plan['selected_node_ids']
+    if (report.get('validation_complete') is not True or report.get('status') != 'PASS' or
+            set(report.get('selected_node_ids', [])) != set(expected_nodes)):
+        raise ValueError('SDK packaging requires a complete successful Linux native validation report')
+    context = json.loads(Path(report['context_path']).read_text())
+    toolchain = context['toolchain']
+    if toolchain['platform'] != 'linux-x86_64' or Path(toolchain['tools']['facade']).parent != prefix / 'bin':
+        raise ValueError('qualify the installed SDK frontend before packaging')
+    verify_toolchain_snapshot(toolchain)
+    identities = compute_node_identities(plan, input_root=repo,
+        build_identity=toolchain['build_identity'], inventory_identity=inventory_identity(plan))
+    records = {record['node_id']: record for record in report['node_records']
+               if record['status'] in ('completed', 'reused')}
+    if (report['build_identity'] != toolchain['build_identity'] or
+            context['node_identities'] != identities or set(records) != set(expected_nodes)):
+        raise ValueError('SDK validation source or node identities are stale')
+    for node in expected_nodes:
+        saved = read_node_result(Path(records[node]['result_path']), node_id=node,
+            node_identity=identities[node], build_identity=toolchain['build_identity'], allowed_roots=[repo])
+        if saved['run_id'] != report['run_id']:
+            raise ValueError('SDK validation node belongs to a different run')
+    source = verify_development(repo)
+    if source['build_id'] != report['sdk_build_id']:
+        raise ValueError('SDK report refers to another source build')
+    source_root = repo / 'out/toolchains/objc3-development/src'
+    for project in ('llvm', 'clang', 'lld', 'lldb', 'clang-tools-extra'):
+        destination = prefix / 'share/licenses' / project
+        destination.mkdir(parents=True, exist_ok=True)
+        shutil.copyfile(source_root / project / 'LICENSE.TXT', destination / 'LICENSE.TXT')
+    provider = json.loads(Path(records['native-package:provider']['result_path']).read_text())
+    example = prefix / 'share/objc3c/examples/managed'
+    example.mkdir(parents=True, exist_ok=True)
+    for role in ('arc_object', 'arc_interface', 'arc_sidecar', 'arc_package_manifest'):
+        artifact = Path(provider['artifacts'][role]['path'])
+        shutil.copyfile(artifact, example / artifact.name)
+    shutil.copyfile(repo / 'tests/clang_foundation/native_package/consumer-source.m', example / 'main.m')
+    shutil.copyfile(Path(__file__).with_name('sdk_example.py'), example / 'build.py')
+    import subprocess
+    subprocess.run([os.sys.executable, str(example / 'build.py'), '--output-dir', str(prefix / 'bin'),
+                    '--installed-layout'], check=True)
+    verifier = prefix / 'share/objc3c/verify-sdk.py'
+    verifier.parent.mkdir(parents=True, exist_ok=True)
+    shutil.copyfile(Path(__file__), verifier)
+    data = {'schema': 'objc3.sdk.v1', 'source_build_id': source['build_id'],
+            'upstream_commit': source['upstream_commit'], 'patch_digest': source['patch_digest'],
+            'target': toolchain['target_triple'], 'frontend_inputs': facade_identity(repo)['sha256'],
+            'qualification': {'build_identity': report['build_identity'], 'nodes': expected_nodes,
+                              'runtime_count': report['runtime_count']}, 'files': inventory(prefix)}
+    data['seal_sha256'] = _digest(data)
+    (prefix / MANIFEST).write_text(json.dumps(data, indent=2) + '\n')
+    cache_dir.mkdir(parents=True, exist_ok=True)
+    archive = cache_dir / (source['build_id'] + '-linux-x86_64-' + data['seal_sha256'][:16] + '.tar.zst')
+    if archive.exists():
+        receipt = json.loads(archive.with_suffix('.json').read_text())
+        if receipt['archive_sha256'] != _file_hash(archive):
+            raise ValueError('cached SDK archive changed; preserving it for inspection')
+        verify_sdk(prefix, receipt['seal_sha256'])
+        return {**receipt, 'cache_hit': True}
+    descriptor, temporary = tempfile.mkstemp(prefix='.sdk-', dir=cache_dir)
+    os.close(descriptor)
+    try:
+        def normalize(info):
+            info.uid = info.gid = 0
+            info.uname = info.gname = ''
+            info.mtime = 0
+            return info
+        with zstd.ZstdFile(temporary, 'wb', level=3) as compressed:
+            with tarfile.open(fileobj=compressed, mode='w|', dereference=False) as tar:
+                tar.add(prefix, arcname='objc3-sdk', filter=normalize)
+        verify_sdk(prefix, data['seal_sha256'])
+        os.replace(temporary, archive)
+    finally:
+        Path(temporary).unlink(missing_ok=True)
+    receipt = {'archive': str(archive), 'archive_sha256': _file_hash(archive),
+               'archive_bytes': archive.stat().st_size, 'seal_sha256': data['seal_sha256'],
+               'source_build_id': source['build_id']}
+    archive.with_suffix('.json').write_text(json.dumps(receipt, indent=2) + '\n')
+    return {**receipt, 'cache_hit': False}
+
+
+def main(argv=None):
+    parser = argparse.ArgumentParser(description='Verify an installed SDK without a checkout')
+    parser.add_argument('prefix', type=Path)
+    parser.add_argument('--expected-seal')
+    args = parser.parse_args(argv)
+    try:
+        result = verify_sdk(args.prefix, args.expected_seal)
+    except (OSError, ValueError, KeyError) as error:
+        parser.exit(2, str(error) + '\n')
+    print(json.dumps({'status': 'PASS', 'source_build_id': result['source_build_id'],
+                      'seal_sha256': result['seal_sha256'], 'files': len(result['files'])}, indent=2))
+
+
+if __name__ == '__main__':
+    main()

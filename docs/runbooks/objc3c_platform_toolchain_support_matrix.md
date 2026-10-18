@@ -49,6 +49,23 @@ Generated artifacts are replay outputs only:
 - `tmp/reports/platform-host-evidence/<platform>/review-candidate-source-truth.json`
 - `tmp/reports/platform-host-evidence/<platform>/ingestion-summary.json`
 
+## Clang migration Linux qualification
+
+The separate Clang migration frontend has an LLVM 23.1.3 Linux x86-64
+qualification path on Debian 13. Its pinned runtime, native ELF consumers,
+LLDB execution, interface ownership and editor checks are exercised by
+`npm run objc3c -- validate-native-foundation`; all 13 Linux nodes pass.
+The SDK packager requires that complete report and revalidates node artifacts,
+source identities and installed toolchain content before producing a sealed
+relocatable archive. See the [SDK workflow](../../toolchains/llvm/README.md).
+
+These are concrete build, package, install, execution and debug inputs for the
+migration frontend's platform review. They do not satisfy the legacy public
+compiler's `libobjc3-runtime.so` package contract or promote its host row.
+Review must retain the compiler family, runtime ABI and source-seal identity;
+substituting libobjc2 evidence for legacy runtime evidence is invalid. Windows
+23.1.3 qualification and other Linux ABIs still require their own executions.
+
 ## Current Support State
 
 `windows-x64` is the only supported host row. It is supported only because the

@@ -20,7 +20,7 @@ def _setup(tmp_path: Path) -> tuple[Path, dict]:
     repo = tmp_path / "checkout"
     fixture_root = repo / package.FIXTURES
     fixture_root.mkdir(parents=True)
-    for name in ("provider.m", "consumer-eager.m", "consumer-source.m"):
+    for name in ("provider.m", "consumer-eager.m", "consumer-source.m", "managed-value-support.h"):
         shutil.copy2(REPO / package.FIXTURES / name, fixture_root / name)
     sdk = tmp_path / "sealed-sdk"
     sdk.mkdir()
@@ -43,10 +43,10 @@ def _setup(tmp_path: Path) -> tuple[Path, dict]:
                   "environment": {"PACKAGE_TEST_SNAPSHOT": "captured"}}
 
 
-def _identity(toolchain: dict) -> dict:
+def _identity(toolchain: dict, *, arc: bool = False) -> dict:
     return {"canonical_name": package.MODULE, "package_identity": package.PACKAGE,
-            "semantic_fingerprint": "c" * 64, "target_triple": toolchain["target_triple"],
-            "runtime_abi": "objc-runtime=gnustep-2.0;manual-reference-counting",
+            "semantic_fingerprint": ("d" if arc else "c") * 64, "target_triple": toolchain["target_triple"],
+            "runtime_abi": "objc-runtime=gnustep-2.0;" + ("arc" if arc else "manual-reference-counting"),
             "extension_abi": "objc3-extension-abi-2:" + toolchain["patch_digest"],
             "language_revision": "objc3-enabled", "language_profile": "compatibility"}
 
@@ -74,18 +74,19 @@ class FakeNativeCommands:
     def __call__(self, command, **kwargs):
         phase = "consumer-run"
         if command[0] == self.toolchain["tools"]["facade"]:
-            phase = "provider-compile" if "--emit-interface" in command else "consumer-compile"
+            phase = ("provider-arc-interface" if "--arc" in command else "provider-compile") if "--emit-interface" in command else "consumer-compile"
         elif command[0] == self.toolchain["tools"]["clangxx"]:
             phase = "consumer-link"
         self.commands.append({"phase": phase, "argv": command, **kwargs})
         if phase == self.fail_phase:
             return subprocess.CompletedProcess(command, 7, stdout="reached failing phase\n", stderr="native failure\n")
-        identity = _identity(self.toolchain)
+        identity = _identity(self.toolchain, arc="--arc" in command)
         if self.emitted_target is not None:
             identity["target_triple"] = self.emitted_target
-        if phase == "provider-compile":
-            object_path = Path(command[command.index("--emit-object") + 1])
-            object_path.write_bytes(b"mock native provider object")
+        if phase in {"provider-compile", "provider-arc-interface"}:
+            if "--emit-object" in command:
+                object_path = Path(command[command.index("--emit-object") + 1])
+                object_path.write_bytes(b"mock native provider object")
             interface = Path(command[command.index("--emit-interface") + 1])
             interface.write_text("typedef int Answer;\nAnswer answer(void);\n", encoding="utf-8")
             sidecar = {"schema_id": "objc3c.semantic-interface.v1", "schema_major": 1,
@@ -137,6 +138,8 @@ def test_provider_emits_an_explicit_three_file_package(tmp_path, monkeypatch):
     assert {row["role"] for row in manifest["files"]} == set(package.PACKAGE_FILENAMES)
     assert manifest["provider_source_in_package"] is False
     assert result["data"]["module_identity"] == _identity(toolchain)
+    assert result["data"]["arc_package_manifest"]["module_identity"] == _identity(toolchain, arc=True)
+    assert result["artifacts"]["arc_object"].read_bytes() == result["artifacts"]["object"].read_bytes()
     assert result["data"]["runtime_count"] == 0
     assert result["data"]["commands"][0]["exit_code"] == 0
     assert "--objc3" in commands.commands[0]["argv"]
@@ -167,7 +170,7 @@ def test_installed_consumer_compiles_links_and_runs_outside_checkout(tmp_path, m
     assert not any(token.startswith("--ld-path") for token in link_command)
     assert ("--source-imports" in compile_command) == (mode == "source-directed")
     lock = compile_command.index("--import-module")
-    assert compile_command[lock + 1:lock + 4] == [package.MODULE, "c" * 64, package.PACKAGE]
+    assert compile_command[lock + 1:lock + 4] == [package.MODULE, ("d" if mode == "source-directed" else "c") * 64, package.PACKAGE]
     source = result["artifacts"]["consumer_source"].read_text()
     if mode == "source-directed":
         assert source.count("@fixture.NativePackage.Answer") == 2
@@ -195,7 +198,7 @@ def test_consumer_rejects_changed_or_wrong_identity_packages_before_compile(tmp_
     with pytest.raises(package.PackageNodeError):
         package.run_package_node(repo, {"operation": "package-consumer", "mode": "eager"},
             tmp_path / "rejected", toolchain, _dependencies(provider))
-    assert len(commands.commands) == 1
+    assert len(commands.commands) == 2
     evidence = json.loads((tmp_path / "rejected/package-node-evidence.json").read_text())
     assert evidence["status"] == "FAIL" and evidence["runtime_count"] == 0
 
@@ -230,7 +233,7 @@ def test_dependency_record_must_use_the_sealed_driver(tmp_path, monkeypatch):
     with pytest.raises(package.PackageNodeError, match="another compiler driver"):
         package.run_package_node(repo, {"operation": "package-consumer", "mode": "source-directed"},
             tmp_path / "rejected", toolchain, _dependencies(provider))
-    assert [row["phase"] for row in commands.commands] == ["provider-compile", "consumer-compile"]
+    assert [row["phase"] for row in commands.commands] == ["provider-compile", "provider-arc-interface", "consumer-compile"]
 
 
 def test_consumer_rejects_checkout_local_system_temp(tmp_path, monkeypatch):

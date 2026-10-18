@@ -23,7 +23,7 @@
 #include "clang/Basic/LangStandard.h"
 #include "clang/Basic/ObjC3Foundation.h"
 #include "clang/Basic/SourceManager.h"
-#include "clang/Index/USRGeneration.h"
+#include "clang/UnifiedSymbolResolution/USRGeneration.h"
 #include "clang/Tooling/Tooling.h"
 #include "clang_foundation/interface_codec.h"
 #include "llvm/ADT/SmallString.h"
@@ -268,6 +268,21 @@ std::string DeclarationTypeIdentity(const clang::NamedDecl *declaration,
     constant->getInitVal().toString(value, 10);
     return CanonicalType(constant->getType(), context) + "=" + value.str().str();
   }
+  if (const auto *function = llvm::dyn_cast<clang::FunctionDecl>(declaration)) {
+    // ARC represents retained returns in ExtInfo, MRC in a declaration
+    // attribute. Ownership has its own identity field, so normalize this one
+    // top-level bit while keeping nested callable return contracts intact.
+    clang::QualType type = function->getType();
+    if (const auto *proto = type->getAs<clang::FunctionProtoType>()) {
+      auto info = proto->getExtProtoInfo();
+      info.ExtInfo = info.ExtInfo.withProducesResult(false);
+      type = context.getFunctionType(proto->getReturnType(), proto->getParamTypes(), info);
+    } else if (const auto *no_proto = type->getAs<clang::FunctionNoProtoType>()) {
+      type = context.getFunctionNoProtoType(no_proto->getReturnType(),
+          no_proto->getExtInfo().withProducesResult(false));
+    }
+    return CanonicalType(type, context);
+  }
   if (const auto *value = llvm::dyn_cast<clang::ValueDecl>(declaration)) {
     std::string identity = CanonicalType(value->getType(), context);
     const auto lifetime = value->getType().getObjCLifetime();
@@ -305,6 +320,13 @@ class TypeDependencyVisitor final
 
   bool VisitTypedefType(clang::TypedefType *type) {
     const auto *declaration = type->getDecl();
+    // Compiler-provided id/Class/SEL are native language types, with no
+    // external module to resolve. Compare declarations, never spellings.
+    if (context_.getLangOpts().ObjC && declaration &&
+        (declaration == context_.getObjCIdDecl() ||
+         declaration == context_.getObjCClassDecl() ||
+         declaration == context_.getObjCSelDecl()))
+      return true;
     if (declaration && !IsInMainFile(context_, declaration->getLocation()) &&
         !IsResolved(declaration))
       AddDiagnostic(result_, "O3IFC112",
@@ -462,6 +484,10 @@ class InterfaceCollector final
     }
     for (const auto *attribute : declaration->attrs()) {
       if (attribute->isImplicit()) continue;
+      if (llvm::isa<clang::FunctionDecl>(declaration) &&
+          llvm::isa<clang::NSReturnsRetainedAttr, clang::NSReturnsNotRetainedAttr,
+                    clang::NSReturnsAutoreleasedAttr>(attribute))
+        continue;
       if (llvm::isa<clang::ObjCInterfaceDecl>(declaration) &&
           llvm::isa<clang::ObjCRootClassAttr>(attribute))
         continue;
@@ -544,8 +570,12 @@ void PrintRootDeclaration(clang::NamedDecl *declaration,
   policy.SuppressScope = false;
   policy.SuppressUnwrittenScope = false;
   policy.PolishForDeclaration = true;
-  if (llvm::isa<clang::FunctionDecl>(declaration))
+  if (llvm::isa<clang::FunctionDecl>(declaration)) {
     policy.TerseOutput = true;
+    // Print modeled ownership exactly once, independently of whether the
+    // original declaration placed its GNU attribute before or after the type.
+    policy.SuppressDeclAttributes = true;
+  }
   if (llvm::isa<clang::VarDecl>(declaration)) {
     policy.SuppressInitializers = true;
     const auto *variable = llvm::cast<clang::VarDecl>(declaration);
@@ -561,6 +591,14 @@ void PrintRootDeclaration(clang::NamedDecl *declaration,
       out << '\n';
     }
   declaration->print(out, policy);
+  if (llvm::isa<clang::FunctionDecl>(declaration)) {
+    // Use one suffix for the declaration attribute in MRC and the canonical
+    // produces-result function type bit in ARC.
+    const auto ownership = ReadNativeReturnOwnership(declaration);
+    if (ownership == "native-return:retained") out << " __attribute__((ns_returns_retained))";
+    else if (ownership == "native-return:not-retained") out << " __attribute__((ns_returns_not_retained))";
+    else if (ownership == "native-return:autoreleased") out << " __attribute__((ns_returns_autoreleased))";
+  }
   if (llvm::isa<clang::ObjCInterfaceDecl, clang::ObjCProtocolDecl,
                 clang::ObjCCategoryDecl>(declaration)) {
     out << '\n';
@@ -659,6 +697,8 @@ bool ReadInterfaceDeclarationIdentity(
   if (auto *method = llvm::dyn_cast<clang::ObjCMethodDecl>(representative))
     identity.effects = ReadCanonicalFunctionEffects(
         method->getObjC3FunctionType(), context);
+  const auto return_ownership = ReadNativeReturnOwnership(representative);
+  if (!return_ownership.empty()) identity.effects.ownership_identity = return_ownership;
   return true;
 }
 
@@ -770,8 +810,10 @@ InterfaceEmissionArtifact EmitSemanticInterface(
     sidecar.required_semantics.push_back("objc3.canonical-function-effects.v1");
   for (const auto &declaration : sidecar.declarations) {
     const auto &effects = declaration.effects;
-    if (effects.is_async || effects.is_throwing)
+    if (effects.is_async || effects.is_throwing || !effects.ownership_identity.empty())
       sidecar.required_semantics.push_back("objc3.canonical-function-effects.v1");
+    if (effects.ownership_identity.starts_with("native-return:"))
+      sidecar.required_semantics.push_back("objc3.native-return-ownership.v1");
     if (declaration.canonical_type_identity.find("__objc3_optional(") != std::string::npos ||
         declaration.canonical_type_identity.find("__objc3_result(") != std::string::npos)
       sidecar.required_semantics.push_back("objc3.native-carrier-types.v1");
@@ -786,7 +828,8 @@ InterfaceEmissionArtifact EmitSemanticInterface(
   sidecar.canonical_source_sha256 = ComputeInterfaceSourceSha256(result.source_bytes);
 
   const std::vector<llvm::StringRef> supported_semantics = {
-      "objc3.canonical-function-effects.v1", "objc3.native-carrier-types.v1"};
+      "objc3.canonical-function-effects.v1", "objc3.native-carrier-types.v1",
+      "objc3.native-return-ownership.v1"};
   auto encoded = EncodeSemanticInterfaceSidecar(sidecar, supported_semantics);
   if (!encoded) {
     AddDiagnostic(result, "O3IFC120",

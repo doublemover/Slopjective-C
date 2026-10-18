@@ -1,4 +1,5 @@
 #include "clang_foundation/compile_session.h"
+#include "llvm/Support/FileSystem.h"
 
 #include <filesystem>
 #include <iostream>
@@ -14,6 +15,7 @@ int RunCompiler(int argc, char **argv) {
            "[--emit-llvm path] [--arc] [--profile name] [--strict-concurrency] "
            "[--emit-interface path.objc3i --module name --package identity] "
            "[--target triple] [--runtime abi] [--module-search-path dir] "
+           "[--sdk-root dir] "
            "[--import-module name fingerprint package "
            "[--private-import] [--reexport-import]] [--source-imports] "
            "[--emit-dependency-record path] "
@@ -21,6 +23,12 @@ int RunCompiler(int argc, char **argv) {
     return 2;
   }
   CompileRequest request;
+  const auto executable = std::filesystem::path(
+      llvm::sys::fs::getMainExecutable(argv[0], reinterpret_cast<void *>(&RunCompiler)));
+  const auto installed_root = executable.parent_path().parent_path();
+  if (std::filesystem::is_directory(installed_root / "lib/clang") &&
+      std::filesystem::is_directory(installed_root / "bin"))
+    request.compiler_sdk_root = installed_root.string();
   std::string dependency_record_path;
   request.input_path = argv[1];
   if (request.input_path.empty() || request.input_path.starts_with("--")) {
@@ -57,6 +65,8 @@ int RunCompiler(int argc, char **argv) {
       request.objc3 = true;
     else if (argument == "--source-imports")
       request.source_directed_imports = true;
+    else if (argument == "--sdk-root" && has_values(1))
+      request.compiler_sdk_root = argv[++i];
     else if (argument == "--emit-dependency-record" && has_values(1)) {
       dependency_record_path = argv[++i];
     } else if (argument == "--private-import" &&

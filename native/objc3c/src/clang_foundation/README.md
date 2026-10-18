@@ -1,6 +1,6 @@
 # Clang foundation migration frontend
 
-This explicit build path uses the repository's verified Clang 22.1.6 SDK for
+This explicit build path uses the repository's verified Clang 23.1.3 SDK for
 parsing, Sema, AST and native CodeGen. The `objc3c-clang` CLI and versioned C
 embedding API call the same in-process compile session. Selecting this build
 path never falls back to the legacy parser.
@@ -10,10 +10,10 @@ From the admitted Windows x64 developer environment, configure with:
 ```powershell
 cmake -S native/objc3c -B out/toolchains/objc3-facade/build -G Ninja `
   -DOBJC3C_ENABLE_CLANG_FOUNDATION=ON `
-  -DOBJC3C_CLANG_FOUNDATION_ROOT=C:/Users/sneak/Development/Slopjective-C/out/toolchains/objc3-development/build `
+  -DOBJC3C_CLANG_FOUNDATION_ROOT="$PWD/out/toolchains/objc3-development/build" `
   -DCMAKE_CXX_COMPILER=cl.exe -DCMAKE_MSVC_RUNTIME_LIBRARY=MultiThreadedDLL `
   -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=ON
-cmake --build out/toolchains/objc3-facade/build --parallel 8
+cmake --build out/toolchains/objc3-facade/build --parallel 4
 ctest --test-dir out/toolchains/objc3-facade/build --no-tests=error --output-on-failure
 ```
 
@@ -22,6 +22,32 @@ SDK. Its LLVM/Clang configurations, generated identity header, driver and
 resource headers must belong to the same SDK. Configuration verifies the source
 seal and driver patch digest; compile sessions also verify the linked library
 identity.
+
+On Linux x86-64, first build/stage the sealed SDK and runtime using the
+[pinned toolchain instructions](../../../../toolchains/llvm/README.md). Then run:
+
+```sh
+sdk="$PWD/out/toolchains/objc3-development/stage-linux-x86_64"
+cmake -S native/objc3c -B out/toolchains/objc3-facade/build-linux-x86_64 -G Ninja \
+  -DOBJC3C_ENABLE_CLANG_FOUNDATION=ON -DOBJC3C_CLANG_FOUNDATION_ROOT="$sdk" \
+  -DCMAKE_CXX_COMPILER="$sdk/bin/clang++" -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=ON
+cmake --build out/toolchains/objc3-facade/build-linux-x86_64 --parallel 4
+ctest --test-dir out/toolchains/objc3-facade/build-linux-x86_64 --output-on-failure
+cmake --install out/toolchains/objc3-facade/build-linux-x86_64 --prefix "$sdk"
+```
+
+The October 2026 LLVM 23.1.3 Linux milestone passes all 16 facade tests.
+Native validation selects 13 Linux nodes (clang-cl is a Windows driver), with
+76 executable runs including expected failure traps. Both ARC and MRC package
+consumers run outside the checkout; ELF identity, LLDB execution and live
+clangd/clang-format behavior are checked. This scope is separate from the
+legacy public compiler's platform support matrix.
+
+Installed frontends discover their adjacent SDK, or accept `--sdk-root`.
+Driver and resource-header content hashes must match the linked frontend.
+The version 3 C API accepts an optional terminal `compiler_sdk_root` field;
+older version 3 prefixes and version 2 remain supported. Source and CMake
+content stamps reject stale frontend binaries during validation.
 
 The CLI recognizes ordinary `.c`, `.cc`/`.cpp`/`.cxx`, `.m` and `.mm` input.
 `.objc3` explicitly selects Objective-C extension mode. C18 and C++20 are
@@ -158,7 +184,7 @@ async and typed/untyped throws declarations, including nested callback types,
 through source/sidecar emission and exact declaration-identity roundtrips.
 When used, sidecars declare `objc3.native-carrier-types.v1` and
 `objc3.canonical-function-effects.v1`; imports reject unknown required semantics.
-Private synchronous ARC and MRC free functions returning scalar/void values can lower
+Private synchronous ARC and MRC free functions returning scalar/void, Objective-C object or Block values can lower
 Error-object throws through a trailing autoreleasing error-output pointer.
 Private Error-object do/catch also runs in nonthrowing functions in both modes.
 Async execution remains unsupported.
@@ -230,8 +256,8 @@ the actual callable's effect; surrounding handlers do not authorize errors
 inside separate lambdas or Blocks. Native C++ and Objective-C exceptions retain
 their separate controls. The private Error-object ABI admits synchronous ARC/MRC
 free-function calls, ordinary function/member pointers and references, static
-and instance C++ methods, Blocks and Objective-C messages returning scalar/void
-values, with a nullable trailing
+and instance C++ methods, Blocks and Objective-C messages returning scalar/void,
+Objective-C object or Block values, with a nullable trailing
 `id<Error> __autoreleasing *` slot. Success clears the slot to nil; failure
 stores a non-null error and returns a zero/void placeholder. The compiler retains
 the pending error before expression cleanup and owns it through function cleanup,
@@ -239,11 +265,15 @@ including callee autorelease pools. A native exception releases that pending
 ownership without publishing the typed error. The return block transfers the
 error to the caller's pool, or releases it immediately for a null output pointer.
 Propagating try forwards that error, forced try traps on failure, and
-try-optional builds the native scalar/void Optional representation. Exact call
+try-optional builds the native scalar/void Optional representation. Managed
+success values retain Clang ARC/MRC return ownership, including retained
+factories and escaping capturing Blocks. Semantic interfaces preserve explicit
+return ownership with `objc3.native-return-ownership.v1`; ARC and MRC module
+views retain distinct ABI identities. Exact call
 contexts prevent an outer try from authorizing nested bare throwing calls.
 Static typed nil is rejected, dynamic nil traps, and scalar zero remains valid
 in the semantic model. Scalar/value error transport,
-aggregate, managed or reference-valued success returns, special Objective-C
+aggregate or reference-valued success returns, managed try-optional results, special Objective-C
 method families, variadic calls and async execution still diagnose before emission. The runtime
 witness covers nested pools, a pool-owning C++ temporary, expression and function
 cleanup interrupted by native exceptions, and nullable output discard. Ordinary

@@ -9,6 +9,7 @@ import math
 import os
 import sys
 import tempfile
+import time
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
@@ -83,6 +84,7 @@ def prepare_reuse(report: dict[str, Any], *, repo: Path, plan: dict[str, Any],
 def run_validation(*, repo: Path, plan: dict[str, Any], output_root: Path,
                    run_id: str, timeout_seconds: float, reuse_path: Path | None = None,
                    pinned_build_identity: str | None = None) -> dict[str, Any]:
+    started = time.monotonic()
     repo = repo.resolve(strict=True)
     output_root = output_root.resolve()
     if output_root == repo or not output_root.is_relative_to(repo):
@@ -179,11 +181,13 @@ def run_validation(*, repo: Path, plan: dict[str, Any], output_root: Path,
     if failures:
         result.update(status="FAIL", partial_report=True, selection_complete=False,
                       validation_errors=failures)
-    result.update(native_validation_schema=1, validation_complete=result["status"] == "PASS",
+    result.update(elapsed_seconds=round(time.monotonic() - started, 6),
+                  runtime_count=sum(entry.get("runtime_count", 0) for entry in result["node_records"]),
+                  native_validation_schema=1, validation_complete=result["status"] == "PASS",
                   sdk_build_id=toolchain["sdk_build_id"],
                   patch_digest=toolchain["patch_digest"], context_path=str(context_path),
                   invalidated_reuse_nodes=invalidated,
-                  scope="Private native migration checks; public capabilities remain unavailable.")
+                  scope="Native Clang foundation checks; feature claims follow schemas/objc3-language-capabilities.json.")
     write_json(run_dir / "summary.json", result)
     return result
 
@@ -203,7 +207,10 @@ def main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
     try:
         repo = args.repo.resolve(strict=True)
-        plan = build_plan(repo, families=args.family, node_ids=args.node, drivers=args.driver)
+        drivers = args.driver
+        if not drivers and not args.node and sys.platform == "linux":
+            drivers = ["clang", "objc3c-clang"]
+        plan = build_plan(repo, families=args.family, node_ids=args.node, drivers=drivers)
         if args.list:
             print(json.dumps(plan, indent=2))
             return 0

@@ -17,7 +17,7 @@ if ($env:VCToolsVersion.TrimEnd('\') -ne '14.44.35207' -or
 $env:PYTHONDONTWRITEBYTECODE = '1'
 Push-Location -LiteralPath $objc3Repo
 try {
-  $objc3SealJson = & 'C:\Python313\python.exe' -B -m scripts.objc3c_toolchain verify-development
+  $objc3SealJson = & 'python' -B -m scripts.objc3c_toolchain verify-development
   if ($LASTEXITCODE -ne 0) { throw 'Carrier fixture source/build identity did not verify.' }
   $objc3Seal = ($objc3SealJson -join "`n") | ConvertFrom-Json
   $objc3ExpectedBin = (Resolve-Path 'out/toolchains/objc3-development/build/bin').Path
@@ -26,7 +26,7 @@ try {
   }
   $objc3RuntimeSource = (Resolve-Path 'out/toolchains/libobjc2-v2.3/src').Path
   $objc3RobinSource = (Resolve-Path 'out/toolchains/robin-map-v1.4.0/src').Path
-  & 'C:\Python313\python.exe' -B (Join-Path $PSScriptRoot 'verify_runtime_profile.py') --profile windows-x86_64 --source $objc3RuntimeSource --robin-map-source $objc3RobinSource --bin-dir $objc3Bin
+  & 'python' -B (Join-Path $PSScriptRoot 'verify_runtime_profile.py') --profile windows-x86_64 --source $objc3RuntimeSource --robin-map-source $objc3RobinSource --bin-dir $objc3Bin
   if ($LASTEXITCODE -ne 0) { throw 'Pinned native compiler/runtime profile validation failed.' }
 
   $objc3Inputs = Join-Path $objc3Repo 'out/toolchains/objc3-development/src/clang/test/ObjC3/CodeGen/Inputs'
@@ -47,7 +47,7 @@ try {
     ConvertTo-Json | Set-Content -LiteralPath $objc3Results -Encoding utf8
   $objc3Cases = @('optional-expression-runtime', 'optional-copy-runtime',
     'result-expression-runtime', 'carrier-copy-adversarial-runtime',
-    'carrier-expression-adversarial-runtime')
+    'carrier-expression-adversarial-runtime', 'defer-public-runtime')
   foreach ($objc3Case in $objc3Cases) {
     $objc3Source = Join-Path $objc3Inputs ($objc3Case + '.c')
     $objc3SourceHash = (Get-FileHash -LiteralPath $objc3Source -Algorithm SHA256).Hash

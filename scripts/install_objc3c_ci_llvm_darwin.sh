@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-version="${OBJC3C_CI_LLVM_VERSION:-22.1.6}"
+version="${OBJC3C_CI_LLVM_VERSION:-23.1.3}"
 major="${OBJC3C_CI_LLVM_MAJOR:-${version%%.*}}"
 
 if [[ "$major" == "$version" && "$major" == *.* ]]; then

@@ -24,8 +24,9 @@ namespace objc3::clang_foundation {
 namespace {
 
 namespace fs = std::filesystem;
-const std::array<llvm::StringRef, 2> kSupportedSemantics = {
-    "objc3.canonical-function-effects.v1", "objc3.native-carrier-types.v1"};
+const std::array<llvm::StringRef, 3> kSupportedSemantics = {
+    "objc3.canonical-function-effects.v1", "objc3.native-carrier-types.v1",
+    "objc3.native-return-ownership.v1"};
 
 bool HasReparseAncestor(const fs::path &directory) {
   const auto normalized = directory.lexically_normal();
@@ -737,7 +738,7 @@ bool PublishCompilationProductsWithDependencyRecord(
     cleanup();
     return true;
   };
-  auto rollback = llvm::make_scope_exit([&] { restore(); });
+  auto rollback = llvm::scope_exit([&] { restore(); });
   auto fail = [&](std::string message) {
     const bool restored = restore();
     rollback.release();

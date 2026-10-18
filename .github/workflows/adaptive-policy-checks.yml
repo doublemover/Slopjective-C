@@ -3,13 +3,13 @@ name: Adaptive CI policy checks
 on:
   pull_request:
     paths:
-      - '.github/ci/**'
-      - '.github/workflows/**'
+      - ".github/ci/**"
+      - ".github/workflows/**"
   push:
     branches: [main]
     paths:
-      - '.github/ci/**'
-      - '.github/workflows/**'
+      - ".github/ci/**"
+      - ".github/workflows/**"
 
 permissions:
   contents: read
@@ -23,10 +23,10 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 3
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-      - uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd
+      - uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
         with:
           script: |
             const { execFileSync } = require('node:child_process');

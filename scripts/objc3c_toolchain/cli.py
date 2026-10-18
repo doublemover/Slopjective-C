@@ -13,6 +13,21 @@ from .core import ToolchainError, build_plan, prepare, seal_development, verify_
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="python -m scripts.objc3c_toolchain")
     commands = parser.add_subparsers(dest="command", required=True)
+    package = commands.add_parser("package-sdk", help="seal and cache an installed, fully qualified Linux SDK")
+    package.add_argument("--repo", type=Path, default=Path.cwd())
+    package.add_argument("--prefix", type=Path, required=True)
+    package.add_argument("--validation-report", type=Path, required=True)
+    package.add_argument("--cache-dir", type=Path, required=True)
+    facade = commands.add_parser("facade-identity", help="identify native frontend source and CMake inputs")
+    facade.add_argument("--repo", type=Path, default=Path.cwd())
+    tools = commands.add_parser("check-host-tools", help="check development version references and optional live tools")
+    tools.add_argument("--repo", type=Path, default=Path.cwd())
+    tools.add_argument("--runtime", action="store_true", help="also check installed development tool versions")
+    build = commands.add_parser("build", help="execute sealed foundation configure/build/test plans and retain timings")
+    build.add_argument("--repo", type=Path, default=Path.cwd())
+    build.add_argument("--host", choices=("windows-x86_64", "linux-x86_64"))
+    build.add_argument("--fetch", action="store_true", help="acquire pinned source when the development checkout is absent")
+    build.add_argument("--stage", action="store_true", help="also install the SDK distribution")
     for name in ("prepare", "verify"):
         command = commands.add_parser(name, help=f"{'materialize' if name == 'prepare' else 'verify'} pinned LLVM source")
         command.add_argument("--repo", type=Path, default=Path.cwd(), help="repository root")
@@ -32,9 +47,23 @@ def main(argv: list[str] | None = None) -> int:
     plan.add_argument("--repo", type=Path, default=Path.cwd(), help="repository root")
     plan.add_argument("--manifest", type=Path, help="manifest path (defaults to repository manifest)")
     plan.add_argument("--source-dir", type=Path, help="sealed development source directory")
+    plan.add_argument("--host", choices=("windows-x86_64", "linux-x86_64"),
+                      help="native build host (defaults to the current host)")
     args = parser.parse_args(argv)
     try:
-        if args.command in {"prepare", "verify"}:
+        if args.command == "package-sdk":
+            from .package import package_sdk
+            result = package_sdk(args.repo, args.prefix, args.validation_report, args.cache_dir)
+        elif args.command == "facade-identity":
+            from .facade import facade_identity
+            result = facade_identity(args.repo)
+        elif args.command == "build":
+            from .build import build_foundation
+            result = build_foundation(args.repo, host=args.host, fetch=args.fetch, stage=args.stage)
+        elif args.command == "check-host-tools":
+            from .versions import check_host_tools
+            result = check_host_tools(args.repo, runtime=args.runtime)
+        elif args.command in {"prepare", "verify"}:
             result = prepare(
                 args.repo,
                 manifest_path=args.manifest,
@@ -48,8 +77,9 @@ def main(argv: list[str] | None = None) -> int:
         elif args.command == "verify-development":
             result = verify_development(args.repo, manifest_path=args.manifest, source_dir=args.source_dir)
         else:
-            result = build_plan(args.repo, phase=args.phase, manifest_path=args.manifest, source_dir=args.source_dir)
-    except ToolchainError as exc:
+            result = build_plan(args.repo, phase=args.phase, manifest_path=args.manifest,
+                                source_dir=args.source_dir, host=args.host)
+    except (ToolchainError, ValueError, OSError, KeyError) as exc:
         print(f"objc3c-toolchain: {exc}", file=sys.stderr)
         return 2
     print(json.dumps(result, indent=2))

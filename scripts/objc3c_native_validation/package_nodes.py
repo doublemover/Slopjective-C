@@ -148,19 +148,23 @@ def _fixture(repo: Path, name: str) -> Path:
     return source
 
 
-def _compile_arguments(toolchain: dict[str, Any], source: Path, object_path: Path) -> list[str]:
+def _compile_arguments(toolchain: dict[str, Any], source: Path, object_path: Path | None) -> list[str]:
     target = toolchain.get("target_triple")
     if not isinstance(target, str) or not target:
         raise ValueError("sealed toolchain target_triple is required")
-    return [str(_tool(toolchain, "facade")), str(source), "--objc3", "--target", target,
-            "--runtime", "gnustep-2.0", "--emit-object", str(object_path)]
+    command = [str(_tool(toolchain, "facade")), str(source), "--objc3", "--target", target,
+               "--runtime", "gnustep-2.0"]
+    return command + (["--emit-object", str(object_path)] if object_path is not None else [])
 
 
 def _clang_arguments(toolchain: dict[str, Any]) -> list[str]:
     directory = Path(toolchain["resource_dir"]).resolve()
     if not directory.is_dir():
         raise ValueError("sealed Clang resource directory is missing")
-    return ["--", "-std=c17", "-fblocks", "-fms-runtime-lib=dll", "-O2", "-resource-dir", str(directory)]
+    flags = ["--", "-std=c17", "-fblocks", "-O2", "-resource-dir", str(directory)]
+    if toolchain.get("platform") != "linux-x86_64":
+        flags.append("-fms-runtime-lib=dll")
+    return flags
 
 
 def _module_identity(interface: Path, sidecar: Path) -> dict[str, str]:
@@ -223,14 +227,41 @@ def _provider(repo: Path, output: Path, toolchain: dict[str, Any], timeout: floa
     artifacts["package_manifest"] = manifest_path
     data.update({"module_identity": identity, "package_manifest": manifest,
                  "provider_source_in_package": False, "fixture_sha256": _sha256(source)})
+    # Reparse the same declarations under ARC and bind a distinct interface
+    # identity to the same native provider object. Runtime ownership modes
+    # remain exact; consumers never silently rewrite the provider's ABI lock.
+    arc_bundle = output / "bundle-arc"
+    arc_bundle.mkdir()
+    arc_files = {role: arc_bundle / name for role, name in PACKAGE_FILENAMES.items()}
+    shutil.copy2(files["object"], arc_files["object"])
+    arc_source = output / "provider-arc-interface.m"
+    shutil.copy2(files["interface"], arc_source)
+    command = _compile_arguments(toolchain, arc_source, None)
+    command += ["--arc", "--emit-interface", str(arc_files["interface"]), "--module", MODULE, "--package", PACKAGE]
+    command += _clang_arguments(toolchain)
+    _execute(command, phase="provider-arc-interface", cwd=output, output=output,
+             environment=_environment(toolchain), timeout=timeout, data=data, artifacts=artifacts)
+    arc_identity = _module_identity(arc_files["interface"], arc_files["sidecar"])
+    if not arc_identity["runtime_abi"].endswith(";arc"):
+        raise ValueError("ARC interface view does not identify ARC ownership")
+    arc_manifest = {**manifest, "module_identity": arc_identity,
+        "files": [{"role": role, "filename": path.name, "sha256": _sha256(path)}
+                  for role, path in arc_files.items()]}
+    arc_manifest_path = output / "package-manifest-arc.json"
+    _write_json(arc_manifest_path, arc_manifest)
+    artifacts.update({"arc_" + role: path for role, path in arc_files.items()})
+    artifacts["arc_package_manifest"] = arc_manifest_path
+    data["arc_package_manifest"] = arc_manifest
 
 
-def _package_dependency(dependencies: dict[str, dict[str, Any]], toolchain: dict[str, Any]
-                        ) -> tuple[dict[str, Path], dict[str, Any]]:
+
+def _package_dependency(dependencies: dict[str, dict[str, Any]], toolchain: dict[str, Any],
+                        *, arc: bool = False) -> tuple[dict[str, Path], dict[str, Any]]:
     dependency = dependencies.get(PROVIDER_NODE)
     if not isinstance(dependency, dict) or not isinstance(dependency.get("artifacts"), dict):
         raise ValueError("native package consumer requires native-package:provider artifacts")
-    files = {role: _file(dependency["artifacts"].get(role), f"provider dependency {role}")
+    prefix = "arc_" if arc else ""
+    files = {role: _file(dependency["artifacts"].get(prefix + role), f"provider dependency {role}")
              for role in (*PACKAGE_FILENAMES, "package_manifest")}
     manifest = _json(files["package_manifest"])
     if manifest.get("contract_id") != PACKAGE_CONTRACT or manifest.get("sdk_build_id") != toolchain["sdk_build_id"]:
@@ -281,7 +312,7 @@ def _consumer(repo: Path, node: dict[str, Any], output: Path, toolchain: dict[st
     if mode not in ("eager", "source-directed"):
         raise ValueError("native package consumer mode must be eager or source-directed")
     source = _fixture(repo, "consumer-eager.m" if mode == "eager" else "consumer-source.m")
-    files, manifest = _package_dependency(dependencies, toolchain)
+    files, manifest = _package_dependency(dependencies, toolchain, arc=mode == "source-directed")
     identity = manifest["module_identity"]
     runtime_library = _file(toolchain.get("runtime", {}).get("import_library"), "native runtime import library")
     _file(toolchain.get("runtime", {}).get("dll"), "native runtime DLL")
@@ -323,28 +354,57 @@ def _consumer(repo: Path, node: dict[str, Any], output: Path, toolchain: dict[st
                             identity["semantic_fingerprint"], PACKAGE,
                             "--emit-dependency-record", str(dependency_path)]
         if mode == "source-directed":
-            compile_command.append("--source-imports")
+            compile_command += ["--source-imports", "--arc"]
         compile_command += _clang_arguments(toolchain)
         _execute(compile_command, phase="consumer-compile", cwd=scratch, output=output,
                  environment=_environment(toolchain), timeout=timeout, data=data, artifacts=artifacts)
         _file(object_path, "emitted consumer object")
         data["dependency_record"] = _dependency_record(dependency_path, identity, toolchain)
         linker = _tool(toolchain, "linker")
-        if linker.name.lower() != "lld-link.exe":
+        linux = toolchain.get("platform") == "linux-x86_64"
+        if not linux and linker.name.lower() != "lld-link.exe":
             raise ValueError("the native MSVC package profile requires the sealed lld-link.exe")
         link_command = [str(_tool(toolchain, "clangxx")), "--target=" + toolchain["target_triple"],
                         "-fms-runtime-lib=dll", "-B", str(linker.parent), "-fuse-ld=lld", str(installed["object"]),
                         str(object_path), str(runtime_library), "-o", str(executable)]
+        if linux:
+            link_command.remove("-fms-runtime-lib=dll")
+            library_dir = scratch / "lib"
+            library_dir.mkdir()
+            installed_runtime = library_dir / runtime_library.name
+            shutil.copy2(runtime_library, installed_runtime)
+            link_command[link_command.index(str(runtime_library))] = str(installed_runtime)
+            link_command += ["--driver-mode=g++", "-Wl,-rpath,$ORIGIN/lib"]
+            data.update(runtime_in_package=True, runtime_sha256=_sha256(installed_runtime))
         _execute(link_command, phase="consumer-link", cwd=scratch, output=output,
                  environment=_environment(toolchain), timeout=timeout, data=data, artifacts=artifacts)
         _file(executable, "linked native package consumer")
         data["expected_exit_code"] = 0
         try:
+            run_environment = _environment(toolchain, executable=True)
+            if linux:
+                run_environment.pop("LD_LIBRARY_PATH", None)
+                run_environment.pop("LD_PRELOAD", None)
             _execute([str(executable)], phase="consumer-run", cwd=scratch, output=output,
-                     environment=_environment(toolchain, executable=True), timeout=timeout, data=data, artifacts=artifacts)
+                     environment=run_environment, timeout=timeout, data=data, artifacts=artifacts)
         finally:
             if data["commands"][-1]["phase"] == "consumer-run":
                 data["actual_exit_code"] = data["commands"][-1]["exit_code"]
+        if linux:
+            _execute([str(_tool(toolchain, "readobj")), "--file-headers", "--needed-libs", str(executable)],
+                     phase="consumer-elf", cwd=scratch, output=output,
+                     environment=run_environment, timeout=timeout, data=data, artifacts=artifacts)
+            elf = (output / "consumer-elf.stdout.log").read_text()
+            if "elf64-x86-64" not in elf or installed_runtime.name not in elf:
+                raise ValueError("installed Linux consumer has the wrong ELF ABI or runtime dependency")
+            _execute([str(_tool(toolchain, "debugger")), "--batch", "-o", "settings set target.disable-aslr false",
+                      "-o", "breakpoint set --name main", "-o", "run", "-o", "thread backtrace", "-o", "continue",
+                      str(executable)], phase="consumer-debug", cwd=scratch, output=output,
+                     environment=run_environment, timeout=timeout, data=data, artifacts=artifacts)
+            debug = (output / "consumer-debug.stdout.log").read_text()
+            if "stop reason = breakpoint" not in debug or "exited with status = 0" not in debug:
+                raise ValueError("installed Linux consumer did not stop at main and exit under LLDB")
+            data.update(elf_verified=True, debugger_verified=True, checkout_runtime_path_required=False)
         for role, path in installed.items():
             if _sha256(path) != expected_hashes[role]:
                 raise ValueError(f"installed native package {role} changed during consumer execution")

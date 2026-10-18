@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 from pathlib import Path
 
 import pytest
@@ -274,8 +275,9 @@ def test_probe_defaults_to_configured_llvm_root_when_present(
     bin_dir.mkdir(parents=True)
     include_dir.mkdir()
     lib_dir.mkdir()
-    for tool in ("clang.exe", "clang++.exe", "llc.exe", "llvm-ar.exe", "llvm-config.exe"):
-        (bin_dir / tool).write_text("", encoding="utf-8")
+    suffix = ".exe" if os.name == "nt" else ""
+    for tool in ("clang", "clang++", "llc", "llvm-ar", "llvm-config"):
+        (bin_dir / f"{tool}{suffix}").write_text("", encoding="utf-8")
 
     monkeypatch.setenv("LLVM_ROOT", str(install_root))
     monkeypatch.setattr(probe.subprocess, "run", fake_mixed_toolchain_root_run)
@@ -286,11 +288,11 @@ def test_probe_defaults_to_configured_llvm_root_when_present(
     assert exit_code == 0
     assert payload["ok"] is True
     assert payload["toolchain_identity"]["claimable"] is True
-    assert payload["toolchain_resolution"]["clang"]["configured_path"] == str(bin_dir / "clang.exe")
-    assert payload["toolchain_resolution"]["clang++"]["configured_path"] == str(bin_dir / "clang++.exe")
-    assert payload["toolchain_resolution"]["llc"]["configured_path"] == str(bin_dir / "llc.exe")
-    assert payload["toolchain_resolution"]["llvm-ar"]["configured_path"] == str(bin_dir / "llvm-ar.exe")
-    assert payload["toolchain_resolution"]["llvm-config"]["configured_path"] == str(bin_dir / "llvm-config.exe")
+    assert payload["toolchain_resolution"]["clang"]["configured_path"] == str(bin_dir / f"clang{suffix}")
+    assert payload["toolchain_resolution"]["clang++"]["configured_path"] == str(bin_dir / f"clang++{suffix}")
+    assert payload["toolchain_resolution"]["llc"]["configured_path"] == str(bin_dir / f"llc{suffix}")
+    assert payload["toolchain_resolution"]["llvm-ar"]["configured_path"] == str(bin_dir / f"llvm-ar{suffix}")
+    assert payload["toolchain_resolution"]["llvm-config"]["configured_path"] == str(bin_dir / f"llvm-config{suffix}")
 
 
 def test_package_wires_llvm_capability_probe_script() -> None:

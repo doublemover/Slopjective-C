@@ -7,7 +7,7 @@ from pathlib import Path
 from typing import Iterable
 
 
-DEFAULT_LLVM_VERSION = "22.1.6"
+DEFAULT_LLVM_VERSION = "23.1.3"
 CORE_LLVM_TOOLS = ("clang", "clang++", "llc", "llvm-ar")
 
 
@@ -38,6 +38,7 @@ def _configured_llvm_roots(explicit_root: str | os.PathLike[str] | None = None) 
         yield Path("/usr/local/opt/llvm")
     else:
         for root in (
+            "/usr/lib/llvm-23",
             "/usr/lib/llvm-22",
             "/usr/lib/llvm-21",
             "/usr/lib/llvm-20",

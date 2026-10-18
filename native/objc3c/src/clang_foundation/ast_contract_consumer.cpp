@@ -8,7 +8,7 @@
 #include "clang/AST/DeclObjC.h"
 #include "clang/AST/RecursiveASTVisitor.h"
 #include "clang/Basic/SourceManager.h"
-#include "clang/Index/USRGeneration.h"
+#include "clang/UnifiedSymbolResolution/USRGeneration.h"
 #include "llvm/ADT/SmallString.h"
 
 namespace objc3::clang_foundation {
@@ -35,6 +35,10 @@ class ContractConsumer final : public clang::ASTConsumer,
       return true;
     if (auto *function = llvm::dyn_cast<clang::FunctionDecl>(decl)) {
       if (!function->isExternallyVisible()) return true;
+      InterfaceDeclarationIdentity identity;
+      if (ReadInterfaceDeclarationIdentity(function, *context_, identity))
+        result_.declarations.push_back(std::move(identity));
+      return true;
     } else if (auto *variable = llvm::dyn_cast<clang::VarDecl>(decl)) {
       if (!variable->hasGlobalStorage() || !variable->isExternallyVisible()) return true;
     } else if (!llvm::isa<clang::TypeDecl, clang::ObjCContainerDecl>(decl)) {
@@ -57,6 +61,8 @@ class ContractConsumer final : public clang::ASTConsumer,
       if (type.getObjCLifetime() != clang::Qualifiers::OCL_None)
         identity.effects.ownership_identity = std::to_string(type.getObjCLifetime());
     }
+    const auto ownership = ReadNativeReturnOwnership(decl);
+    if (!ownership.empty()) identity.effects.ownership_identity = ownership;
     result_.declarations.push_back(std::move(identity));
     return true;
   }

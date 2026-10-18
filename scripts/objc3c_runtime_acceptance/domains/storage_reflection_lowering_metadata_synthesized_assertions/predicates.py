@@ -4,6 +4,8 @@ from __future__ import annotations
 
 from typing import Any
 
+from objc3c_runtime_acceptance.paths import ARTIFACT_IDENTITY
+
 from .catalog import SYNTHESIZED_LL_COUNT_FRAGMENTS
 from .data import SurfaceValueExpectation
 
@@ -21,7 +23,7 @@ def lowering_surface_field_matches(
 
 def lowering_surface_artifacts_match(surface: dict[str, Any]) -> bool:
     return (
-        surface.get("object_artifact") == "module.obj"
+        surface.get("object_artifact") == ARTIFACT_IDENTITY.module_object_artifact_name
         and surface.get("backend_artifact") == "module.ll"
     )
 

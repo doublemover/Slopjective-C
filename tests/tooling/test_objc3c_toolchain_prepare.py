@@ -47,13 +47,13 @@ def test_windows_discovery_keeps_vs2022_when_newer_visual_studio_is_installed(
         if command[0] == str(launcher):
             return str(python)
         if command[0] == str(python):
-            return "Python 3.13.3"
+            return "Python 3.15.0"
         if command[0] == str(cmake):
             return "cmake version 4.2.0"
         return "1.13.2"
 
     monkeypatch.setattr(core, "os", SimpleNamespace(
-        name="nt", environ={"ProgramFiles(x86)": str(programs)}))
+        name="nt", environ={"ProgramFiles(x86)": str(programs), "OBJC3C_TOOLCHAIN_PYTHON": str(python)}))
     monkeypatch.setattr(core, "_run", run)
     monkeypatch.setattr(core.shutil, "which", lambda name: str(
         {"cmake": cmake, "ninja": ninja, "py": launcher}[name]))
@@ -269,14 +269,14 @@ def test_build_plan_carries_pinned_patch_and_windows_sdk_identity(tmp_path: Path
         "cl_sha256": "compiler-hash",
         "ninja_version": "synthetic-ninja",
         "cmake_version": "synthetic-cmake",
-        "python_executable": "C:/Python313/python.exe",
-        "python_version": "Python 3.13.synthetic",
+        "python_executable": "C:/Python315/python.exe",
+        "python_version": "Python 3.15.synthetic",
         "python_sha256": "python-hash",
     })
-    plan = core.build_plan(repo, phase="configure", manifest_path=manifest, source_dir=source)
+    plan = core.build_plan(repo, phase="configure", manifest_path=manifest, source_dir=source, host="windows-x86_64")
     assert f"-DCLANG_OBJC3_PATCH_DIGEST={sealed['patch_digest']}" in plan["command"]
     assert "-DCMAKE_SYSTEM_VERSION=synthetic-sdk" in plan["command"]
-    assert "-DPython3_EXECUTABLE=C:/Python313/python.exe" in plan["command"]
+    assert "-DPython3_EXECUTABLE=C:/Python315/python.exe" in plan["command"]
     assert "-DCMAKE_JOB_POOLS=objc3_link=1" in plan["command"]
     assert plan["command"][plan["command"].index("-S") + 1] == (source / "llvm").as_posix()
     assert all("\\" not in value for value in plan["command"] if value.startswith(("C:/", "-D")))
@@ -287,12 +287,12 @@ def test_build_plan_carries_pinned_patch_and_windows_sdk_identity(tmp_path: Path
     )
     assert plan["sdk_consumers"]["build_tree_Clang_DIR"]["sha256"] is None
 
-    tests = core.build_plan(repo, phase="test", manifest_path=manifest, source_dir=source)
+    tests = core.build_plan(repo, phase="test", manifest_path=manifest, source_dir=source, host="windows-x86_64")
     assert tests["command"] == [
-        "C:/Python313/python.exe",
+        "C:/Python315/python.exe",
         "-B",
         (repo / "out" / "toolchains" / "objc3-development" / "build" / "bin" / "llvm-lit.py").as_posix(),
-        "-sv", "-j", "4",
+        "-sv", "--show-unsupported", "-j", "4",
         (source / "clang" / "test" / "ObjC3" / "Parser").as_posix(),
     ]
     assert tests["follow_up_commands"] == [[
@@ -300,9 +300,9 @@ def test_build_plan_carries_pinned_patch_and_windows_sdk_identity(tmp_path: Path
     ]]
     assert tests["command_environment"] == {"PYTHONDONTWRITEBYTECODE": "1"}
 
-    staged = core.build_plan(repo, phase="stage", manifest_path=manifest, source_dir=source)
+    staged = core.build_plan(repo, phase="stage", manifest_path=manifest, source_dir=source, host="windows-x86_64")
     assert "install-distribution" in staged["command"]
-    build = core.build_plan(repo, phase="build", manifest_path=manifest, source_dir=source)
+    build = core.build_plan(repo, phase="build", manifest_path=manifest, source_dir=source, host="windows-x86_64")
     assert "clang" in build["command"]
     assert "FileCheck" in build["command"]
     assert "clangTooling" not in build["command"]

@@ -1,4 +1,4 @@
-"""Run the admitted Windows fixture scripts and retain independent evidence."""
+"""Run admitted native fixture suites and retain independent evidence."""
 
 from __future__ import annotations
 
@@ -28,7 +28,7 @@ _RUNNERS = {
 _CASES = {
     "expression": (
         "optional-expression-runtime", "optional-copy-runtime", "result-expression-runtime",
-        "carrier-copy-adversarial-runtime", "carrier-expression-adversarial-runtime",
+        "carrier-copy-adversarial-runtime", "carrier-expression-adversarial-runtime", "defer-public-runtime",
     ),
     "abi": ("extension-provider-consumer", "ordinary-c-active-payload"),
     "cpp-lifetime": ("carrier-cxx-local-lifetime-runtime",),
@@ -338,6 +338,9 @@ def run_fixture_node(repo: Path, node: dict, output_dir: Path, toolchain: dict) 
     directory, so unrelated executions of fixed-output runners cannot corrupt
     the artifacts returned to the DAG executor for later reuse.
     """
+    if toolchain.get("platform") == "linux-x86_64":
+        from .fixture_linux import run_linux_fixture_node
+        return run_linux_fixture_node(repo, node, output_dir, toolchain)
     suite, driver = node.get("suite"), node.get("driver")
     if node.get("operation") != "fixture" or suite not in _RUNNERS:
         raise ValueError("Invalid native fixture node operation or suite")

@@ -18,6 +18,8 @@ struct CompileRequest {
   std::string input_path;
   std::optional<std::string> source_text;
   std::string working_directory;
+  // Optional relocated installation of exactly the compiled-in SDK identity.
+  std::string compiler_sdk_root;
   std::string output_path;
   BaseLanguage language = BaseLanguage::ObjectiveC;
   SemanticProfile profile = SemanticProfile::Compatibility;

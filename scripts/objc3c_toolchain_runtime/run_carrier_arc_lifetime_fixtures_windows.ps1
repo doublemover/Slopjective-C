@@ -17,7 +17,7 @@ if (-not $env:VCToolsInstallDir -or -not $env:WindowsSdkDir -or
 $env:PYTHONDONTWRITEBYTECODE = '1'
 Push-Location -LiteralPath $objc3Repo
 try {
-  $objc3SealJson = & 'C:\Python313\python.exe' -B -m scripts.objc3c_toolchain verify-development
+  $objc3SealJson = & 'python' -B -m scripts.objc3c_toolchain verify-development
   if ($LASTEXITCODE -ne 0) { throw 'ARC fixture compiler source identity did not verify.' }
   $objc3Seal = ($objc3SealJson -join "`n") | ConvertFrom-Json
   if ($objc3Bin -ne (Resolve-Path 'out/toolchains/objc3-development/build/bin').Path) {
@@ -25,7 +25,7 @@ try {
   }
   $objc3RuntimeSource = (Resolve-Path 'out/toolchains/libobjc2-v2.3/src').Path
   $objc3RobinSource = (Resolve-Path 'out/toolchains/robin-map-v1.4.0/src').Path
-  & 'C:\Python313\python.exe' -B (Join-Path $PSScriptRoot 'verify_runtime_profile.py') --profile windows-x86_64 --source $objc3RuntimeSource --robin-map-source $objc3RobinSource --bin-dir $objc3Bin
+  & 'python' -B (Join-Path $PSScriptRoot 'verify_runtime_profile.py') --profile windows-x86_64 --source $objc3RuntimeSource --robin-map-source $objc3RobinSource --bin-dir $objc3Bin
   if ($LASTEXITCODE -ne 0) { throw 'Pinned compiler/runtime profile validation failed.' }
   $objc3Runtime = (Resolve-Path 'out/toolchains/libobjc2-v2.3/build/stage').Path
   $objc3RuntimeDll = Join-Path $objc3Runtime 'objc.dll'

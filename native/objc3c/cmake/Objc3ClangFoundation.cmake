@@ -4,7 +4,7 @@ endif()
 file(REAL_PATH "${OBJC3C_CLANG_FOUNDATION_ROOT}" _objc3_sdk)
 set(LLVM_DIR "${_objc3_sdk}/lib/cmake/llvm")
 set(Clang_DIR "${_objc3_sdk}/lib/cmake/clang")
-find_package(LLVM 22.1.6 EXACT REQUIRED CONFIG PATHS "${LLVM_DIR}" NO_DEFAULT_PATH)
+find_package(LLVM 23.1.3 EXACT REQUIRED CONFIG PATHS "${LLVM_DIR}" NO_DEFAULT_PATH)
 find_package(Clang REQUIRED CONFIG PATHS "${Clang_DIR}" NO_DEFAULT_PATH)
 file(REAL_PATH "${LLVM_DIR}" _objc3_llvm_config)
 file(REAL_PATH "${Clang_DIR}" _objc3_clang_config)
@@ -25,15 +25,19 @@ if (NOT _objc3_verify_exit EQUAL 0)
   message(FATAL_ERROR "Clang source seal rejected: ${_objc3_verify_error}")
 endif()
 string(JSON OBJC3C_FOUNDATION_PATCH_DIGEST GET "${_objc3_source_identity}" patch_digest)
+unset(_objc3_identity_header)
+unset(_objc3_identity_header CACHE)
 find_file(_objc3_identity_header ObjC3Foundation.h
   PATHS "${_objc3_sdk}/include/clang/Basic"
         "${_objc3_sdk}/tools/clang/include/clang/Basic"
   NO_DEFAULT_PATH REQUIRED)
 file(READ "${_objc3_identity_header}" _objc3_compiled_identity)
-if (NOT _objc3_compiled_identity MATCHES "fc4aad7b5db3fff421df9a9637605b9ca5667881" OR
+if (NOT _objc3_compiled_identity MATCHES "0d261d1ca552c95a8f007e061c787ac7132fbcbc" OR
     NOT _objc3_compiled_identity MATCHES "${OBJC3C_FOUNDATION_PATCH_DIGEST}")
   message(FATAL_ERROR "Clang headers do not match the pinned source and patch stack")
 endif()
+unset(OBJC3C_FOUNDATION_DRIVER)
+unset(OBJC3C_FOUNDATION_DRIVER CACHE)
 find_program(OBJC3C_FOUNDATION_DRIVER NAMES clang
   PATHS "${_objc3_sdk}/bin" NO_DEFAULT_PATH REQUIRED)
 file(TO_CMAKE_PATH "${OBJC3C_FOUNDATION_DRIVER}" OBJC3C_FOUNDATION_DRIVER)
@@ -46,11 +50,11 @@ execute_process(
   OUTPUT_VARIABLE _objc3_driver_identity
   ERROR_VARIABLE _objc3_driver_error)
 if (NOT _objc3_driver_exit EQUAL 0 OR
-    NOT _objc3_driver_identity MATCHES "fc4aad7b5db3fff421df9a9637605b9ca5667881" OR
+    NOT _objc3_driver_identity MATCHES "0d261d1ca552c95a8f007e061c787ac7132fbcbc" OR
     NOT _objc3_driver_identity MATCHES "ObjC3-patches=${OBJC3C_FOUNDATION_PATCH_DIGEST}")
   message(FATAL_ERROR "Clang executable does not match the sealed source and SDK headers: ${_objc3_driver_error}")
 endif()
-set(OBJC3C_FOUNDATION_RESOURCE_DIR "${_objc3_sdk}/lib/clang/22")
+set(OBJC3C_FOUNDATION_RESOURCE_DIR "${_objc3_sdk}/lib/clang/23")
 if (NOT EXISTS "${OBJC3C_FOUNDATION_RESOURCE_DIR}/include/stddef.h")
   message(FATAL_ERROR "Matching Clang resource headers are missing")
 endif()
@@ -72,3 +76,22 @@ endforeach()
 string(SHA256 OBJC3C_FOUNDATION_RESOURCE_SHA256
   "${_objc3_resource_identity_input}")
 message(STATUS "ObjC3 pinned Clang patch digest: ${OBJC3C_FOUNDATION_PATCH_DIGEST}")
+
+# Reconfigure when a frontend input changes, but embed its identity in one tiny
+# translation unit so an edit does not rebuild every frontend source file.
+file(GLOB_RECURSE _objc3_frontend_sources CONFIGURE_DEPENDS
+  "${_objc3_repo}/native/objc3c/src/clang_foundation/*.cpp"
+  "${_objc3_repo}/native/objc3c/src/clang_foundation/*.h")
+file(GLOB _objc3_frontend_cmake CONFIGURE_DEPENDS "${_objc3_repo}/native/objc3c/cmake/*.cmake")
+set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS
+  ${_objc3_frontend_sources} ${_objc3_frontend_cmake}
+  "${_objc3_repo}/scripts/objc3c_toolchain/facade.py"
+  "${_objc3_repo}/native/objc3c/CMakeLists.txt"
+  "${_objc3_repo}/native/objc3c/src/clang_foundation/CMakeLists.txt")
+execute_process(COMMAND "${Python3_EXECUTABLE}" -B -m scripts.objc3c_toolchain facade-identity
+  WORKING_DIRECTORY "${_objc3_repo}" RESULT_VARIABLE _objc3_frontend_identity_exit
+  OUTPUT_VARIABLE _objc3_frontend_identity ERROR_VARIABLE _objc3_frontend_identity_error)
+if(NOT _objc3_frontend_identity_exit EQUAL 0)
+  message(FATAL_ERROR "Cannot identify native frontend inputs: ${_objc3_frontend_identity_error}")
+endif()
+string(JSON OBJC3C_FRONTEND_INPUT_SHA256 GET "${_objc3_frontend_identity}" sha256)

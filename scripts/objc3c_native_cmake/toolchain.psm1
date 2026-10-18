@@ -42,7 +42,7 @@ function Get-Objc3cNativeLlvmRootCandidates {
   }
 
   if (Test-Objc3cNativeHostIsWindows) {
-    $version = if ($env:OBJC3C_CI_LLVM_VERSION) { $env:OBJC3C_CI_LLVM_VERSION } else { "22.1.6" }
+    $version = if ($env:OBJC3C_CI_LLVM_VERSION) { $env:OBJC3C_CI_LLVM_VERSION } else { "23.1.3" }
     $userProfile = [System.Environment]::GetEnvironmentVariable("USERPROFILE")
     if (-not [string]::IsNullOrWhiteSpace($userProfile)) {
       $candidates += (Join-Path $userProfile ("Tools\LLVM\llvm-{0}-msvc" -f $version))
@@ -52,6 +52,7 @@ function Get-Objc3cNativeLlvmRootCandidates {
     $candidates += "/opt/homebrew/opt/llvm"
     $candidates += "/usr/local/opt/llvm"
   } else {
+    $candidates += "/usr/lib/llvm-23"
     $candidates += "/usr/lib/llvm-22"
     $candidates += "/usr/lib/llvm-21"
     $candidates += "/usr/lib/llvm-20"

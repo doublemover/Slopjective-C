@@ -164,6 +164,13 @@ InterfaceContractValidation ValidateSemanticInterface(
       Add(result, "O3IFC012",
           "effect-bearing declaration is missing the canonical function-effects semantic capability",
           declaration.stable_id);
+  const bool return_ownership_semantic = std::binary_search(
+      required.begin(), required.end(), "objc3.native-return-ownership.v1");
+  for (const auto &declaration : sidecar.declarations)
+    if (declaration.effects.ownership_identity.starts_with("native-return:") &&
+        !return_ownership_semantic)
+      Add(result, "O3IFC014", "managed return ownership is missing its semantic capability",
+          declaration.stable_id);
   const bool carrier_semantic = std::binary_search(
       required.begin(), required.end(), "objc3.native-carrier-types.v1");
   for (const auto &declaration : sidecar.declarations)

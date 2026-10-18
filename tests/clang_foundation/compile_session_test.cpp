@@ -206,7 +206,10 @@ int main() {
     assert(ir.find("llvm.objc.storeStrong") != std::string::npos);
     assert(ir.find("call void @cpp_cleanup(") != std::string::npos ||
            ir.find("invoke void @cpp_cleanup(") != std::string::npos);
-    assert(ir.find("__CxxFrameHandler3") != std::string::npos);
+    if (native_lowered.target_triple.find("windows-msvc") != std::string::npos)
+      assert(ir.find("__CxxFrameHandler3") != std::string::npos);
+    else
+      assert(ir.find("__gnustep_objcxx_personality_v0") != std::string::npos);
   }
   std::filesystem::remove(objcxx_request.output_path);
   request.emit = EmitKind::Object;

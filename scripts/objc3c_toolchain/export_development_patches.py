@@ -58,6 +58,7 @@ PACKETS = {
         "clang/unittests/AST/ObjC3TypeContractsTest.cpp",
     ],
     "0004-objc3-canonical-carriers-and-function-effects.patch": [
+        "clang/CMakeLists.txt",
         "clang/include/clang/AST/ASTContext.h",
         "clang/include/clang/AST/ASTNodeTraverser.h",
         "clang/include/clang/AST/AbstractBasicReader.h",
@@ -106,7 +107,7 @@ PACKETS = {
         "clang/lib/Parse/ParseObjC3Match.cpp",
         "clang/lib/Parse/ParseObjC3QualifiedName.cpp",
         "clang/lib/Parse/ParseObjC3Type.cpp",
-        "clang/lib/Index/USRGeneration.cpp",
+        "clang/lib/UnifiedSymbolResolution/USRGeneration.cpp",
         "clang/lib/Sema/CMakeLists.txt",
         "clang/lib/Sema/DeclSpec.cpp",
         "clang/lib/Sema/SemaObjC3Carriers.cpp",

@@ -1,12 +1,12 @@
 # Pinned LLVM foundation
 
-The foundation is prepared from LLVM `llvmorg-22.1.6`, pinned to resolved
-commit `fc4aad7b5db3fff421df9a9637605b9ca5667881`. The canonical downstream
+The foundation is prepared from LLVM `llvmorg-23.1.3`, pinned to resolved
+commit `0d261d1ca552c95a8f007e061c787ac7132fbcbc`. The canonical downstream
 changes are the ordered patch files listed in `patches/series` and locked by
 their SHA-256 values in `manifest.json`. Do not maintain a second editable copy
 of patched Clang files.
 
-Checkpoint 46 validated SDK build
+Historical LLVM 22.1.6 checkpoint 46 validated SDK build
 `llvmorg-22.1.6-fc4aad7b5db3-2e6c31d39542-f01d29b2` on the admitted Windows
 x64 profile. All 121 supported extension lit tests passed; 3 of the 124 discovered
 tests were unsupported. All 44 AST checks, 15 facade CTest tests and 32 tooling
@@ -15,6 +15,15 @@ executions, respectively, across clang, clang-cl and objc3c-clang at O0/O2.
 Baseline runtime coverage passed 20 expression, 8 plain C ABI, 4 C++ local and
 4 ARC local executions. These are scoped migration results and do not promote
 any public language capability.
+
+The LLVM 23.1.3 Linux milestone passes 158 extension lit tests and 46 native
+AST tests. Three discovered lit cases remain unsupported: two Windows-only C
+ABI runners and an AArch64 layout case in this X86 SDK. All 16 facade CTests,
+five Linux runtime CTests and all 13 selected native validation nodes pass.
+The native matrix runs 76 programs at O0/O2, including expected trap exits,
+managed typed-error successes/failures, installed ARC/MRC consumers, ELF/LLDB
+checks and editor qualification. Historical Windows evidence below remains
+historical; this Linux run does not requalify Windows or macOS.
 
 ## Prepare and verify
 
@@ -43,11 +52,45 @@ does not reset, stage, or rewrite source files.
 
 ## Reproducing the build configuration
 
+Development versions are locked by `manifest.json` under `host_tools`,
+`.python-version`, `.node-version`, `package.json`, `uv.lock`, and
+`package-lock.json`. Check their agreement and the activated environment with:
+
+```sh
+python -m scripts.objc3c_toolchain check-host-tools --runtime
+```
+
+On Linux x86-64, activate the cloud development environment first. Build the
+sealed compiler, libraries, test tools, editor tools, and installable SDK with:
+
+```sh
+python -m scripts.objc3c_toolchain build --host linux-x86_64 --fetch --stage
+python -m scripts.objc3c_toolchain_runtime.build_linux --fetch
+```
+
+The executor preserves incremental outputs under
+`out/toolchains/objc3-development/build-linux-x86_64` and installs to the
+adjacent `stage-linux-x86_64` directory. Each phase records its identified
+command, exit status, duration, and log in `foundation-build-report.json`.
+Immutable per-run reports and logs remain in `foundation-runs/<timestamp>`.
+Existing development sources must pass their seal before a build starts;
+`--fetch` acquires missing pinned sources and never replaces an existing tree.
+The development SDK disables bundled clang-tidy checks in clangd and Python/Lua
+bindings in LLDB. Live language-server checks, formatting and native debugging
+remain qualified; embedded scripting and bundled lint checks are outside this
+profile. It installs the facade's required library closure rather than every
+LLVM library. Compiler caches use content-based compiler identity. Ninja's
+incremental state is preserved; PCH-heavy LLVM compilation currently yields few
+ccache hits, so a high compiler-cache hit rate is not an acceptance claim.
+
+Linux runtime setup records its independent build and install report under
+`out/toolchains/libobjc2-v2.3/build-linux-x86_64`.
+
 `cmake/ObjC3LLVMCache.cmake` and `manifest.json` record the deterministic Ninja
 Release configuration: assertions, RTTI and exceptions enabled; X86 target;
-Clang, LLD and clang-tools-extra projects; Windows VS 2022 v143 with the
+Clang, LLD, clang-tools-extra and LLDB projects; Windows VS 2022 v143 with the
 manifest-selected SDK and dynamic release CRT; no forced libc++; no bootstrap;
-eight compile jobs and one link job. The initial named build graph includes
+four compile jobs and one link job. The initial named build graph includes
 `clang`, `clangTooling`, `clangIndex`, `clangCodeGen`, `clangFrontend`,
 `clangDriver`, and the lit utilities `FileCheck`, `count`, `not`, and
 `llvm-config`. The last tool is required by lit's actual site configuration.
@@ -69,8 +112,10 @@ Run `build-plan configure`, `build-plan build`, or `build-plan stage` to print a
 machine-readable command and identity. These actions never execute CMake.
 Their identity includes the sealed source digest, host compiler and SDK input
 hashes, CMake/Ninja and Python versions and executable hashes, CRT, build
-options and target set. Python 3.13 is selected through the Windows Python
-launcher and passed as `Python3_EXECUTABLE`; no global PATH changes are made.
+options and target set. Python 3.15.0 is selected from the invoking interpreter (or
+`OBJC3C_TOOLCHAIN_PYTHON` on Windows) and passed as `Python3_EXECUTABLE`.
+The Linux profile uses the coherent LLVM 23.1.3 bootstrap tools and bounds
+compiler/linker parallelism by CPU quota and memory capacity.
 Each plan records source and generated include roots, including the configured
 `ObjC3Foundation.h`, along with hashes for build-tree and staged `LLVM_DIR`,
 `Clang_DIR`, and Clang resource directories whenever those paths exist. This
@@ -223,7 +268,7 @@ typed/untyped throws declarations, including nested callback types, with known
 required-semantics identifiers and exact declaration-identity roundtrips.
 Unknown required semantics are rejected. Reparse/import helpers use isolated
 physical filesystems without changing the host process working directory.
-Private synchronous ARC and MRC free functions returning scalar/void values can lower
+Private synchronous ARC and MRC free functions returning scalar/void, Objective-C object or Block values can lower
 Error-object throws through the C.4.1 trailing autoreleasing error-output slot.
 Direct and indirect try propagation, forced try and scalar/void optionalization
 use that native ABI. Function/member pointers, static and instance C++ methods,
@@ -400,3 +445,61 @@ When rebasing LLVM, first update the annotated tag and resolved commit together,
 review the semantic/ABI delta, update each patch in canonical order and its
 hash, then verify preparation from a clean generated destination. Preserve old
 prepared trees as evidence until no active build depends on them.
+
+## Install and relocate the Linux SDK
+
+After building the LLVM SDK and runtime, install the facade using its
+[Linux CMake instructions](../../native/objc3c/src/clang_foundation/README.md).
+Install the native adapter, runtime library and headers into the same prefix:
+
+```sh
+sdk="$PWD/out/toolchains/objc3-development/stage-linux-x86_64"
+runtime="$PWD/out/toolchains/libobjc2-v2.3/build-linux-x86_64/stage"
+cmake -S tests/clang_foundation/native_runtime -B out/toolchains/libobjc2-v2.3/client-tests-linux -G Ninja \
+  -DCMAKE_C_COMPILER="$sdk/bin/clang" -DCMAKE_CXX_COMPILER="$sdk/bin/clang++" \
+  -DCMAKE_OBJC_COMPILER="$sdk/bin/clang" -DCMAKE_OBJCXX_COMPILER="$sdk/bin/clang++" \
+  -DOBJC3_LIBOBJC2_SOURCE_DIR="$PWD/out/toolchains/libobjc2-v2.3/src" \
+  -DOBJC3_LIBOBJC2_BUILD_DIR="$runtime" \
+  -DOBJC3_ROBIN_MAP_SOURCE_DIR="$PWD/out/toolchains/robin-map-v1.4.0/src"
+cmake --build out/toolchains/libobjc2-v2.3/client-tests-linux --parallel 4
+ctest --test-dir out/toolchains/libobjc2-v2.3/client-tests-linux --output-on-failure
+cmake --install out/toolchains/libobjc2-v2.3/client-tests-linux --prefix "$sdk" --component Runtime
+npm run objc3c -- validate-native-foundation --run-id installed-sdk
+python -m scripts.objc3c_toolchain package-sdk --prefix "$sdk" \
+  --validation-report out/native-validation/installed-sdk/summary.json \
+  --cache-dir out/toolchains/sdk-cache
+```
+
+Packaging requires all 13 Linux nodes to pass against the installed frontend.
+It rechecks current toolchain, source identities and every node artifact before
+sealing. Archives use zstd and content-addressed names; cache hits verify the
+archive hash. The seal covers installed file bytes, file modes and relative
+symlinks. Absolute or escaping symlinks are rejected. Keep the returned archive
+SHA-256 and seal SHA-256 alongside the archive.
+
+Extract the archive into a fresh directory and run its independent verifier:
+
+```sh
+python /absolute/install/objc3-sdk/share/objc3c/verify-sdk.py \
+  /absolute/install/objc3-sdk --expected-seal <seal-sha256>
+/absolute/install/objc3-sdk/bin/objc3-managed-sample
+python /absolute/install/objc3-sdk/share/objc3c/examples/managed/build.py \
+  --output-dir /absolute/work/sample
+```
+
+The sample combines source-directed imports, an opaque managed object, throwing
+callbacks/Blocks, caught errors and defer cleanup. Its provider source is absent;
+mode-specific semantic interfaces and the qualified provider object are shipped.
+Rebuild into a separate output directory to preserve the SDK seal. LLVM/Clang
+CMake packages and the C frontend API are also installed. The verifier and sample
+builder require the pinned Python; their execution requires no repository,
+Node.js, npm or PowerShell.
+
+This distribution is qualified on Debian 13 x86-64 with the GNU/Itanium ABI and
+system development headers, libc/libstdc++, libedit, ncurses, zlib and zstd.
+The admission snapshot hashes the actual system headers and loader dependencies.
+It is not a musl, AArch64, macOS, Windows, or universal Linux binary claim.
+Changing compiler, patches, target, configuration or installed content creates
+a different qualified cache identity. Release LTO/PGO remains a separate build
+profile pending representative training and runtime/memory measurements; it is
+not enabled for frequent development builds.

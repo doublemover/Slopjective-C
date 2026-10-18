@@ -5,6 +5,8 @@ endif()
 
 add_library(objc3c_clang_foundation STATIC
   compile_session.cpp
+  sdk_identity.cpp
+  source_identity.cpp
   ast_contract_consumer.cpp
   interface_contract.cpp
   interface_codec.cpp
@@ -14,6 +16,8 @@ add_library(objc3c_clang_foundation STATIC
   interface_import.cpp
   interface_module_resolver.cpp
   interface_source_import_bridge.cpp)
+set_source_files_properties(source_identity.cpp PROPERTIES
+  COMPILE_DEFINITIONS "OBJC3C_FRONTEND_INPUT_SHA256=\"${OBJC3C_FRONTEND_INPUT_SHA256}\"")
 target_include_directories(objc3c_clang_foundation SYSTEM PRIVATE
   ${LLVM_INCLUDE_DIRS} ${CLANG_INCLUDE_DIRS})
 target_link_libraries(objc3c_clang_foundation PUBLIC objc3c_build_defaults)
@@ -22,7 +26,7 @@ target_link_libraries(objc3c_clang_foundation PRIVATE
 llvm_map_components_to_libnames(_objc3_native_codegen
   nativecodegen "${LLVM_NATIVE_ARCH}AsmParser")
 target_link_libraries(objc3c_clang_foundation PRIVATE ${_objc3_native_codegen})
-target_compile_definitions(objc3c_clang_foundation PRIVATE
+set_property(SOURCE compile_session.cpp APPEND PROPERTY COMPILE_DEFINITIONS
   "OBJC3C_FOUNDATION_DRIVER=\"${OBJC3C_FOUNDATION_DRIVER}\""
   "OBJC3C_FOUNDATION_DRIVER_SHA256=\"${OBJC3C_FOUNDATION_DRIVER_SHA256}\""
   "OBJC3C_FOUNDATION_PATCH_DIGEST=\"${OBJC3C_FOUNDATION_PATCH_DIGEST}\""
@@ -53,7 +57,17 @@ target_include_directories(objc3_runtime_services PUBLIC
 find_package(Threads REQUIRED)
 target_link_libraries(objc3_runtime_services PRIVATE Threads::Threads)
 
+include(GNUInstallDirs)
+install(TARGETS objc3c-clang objc3c_frontend_v2 objc3c_clang_foundation objc3_runtime_services
+  RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+  ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR})
+install(FILES frontend_api.h DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/objc3c)
+
 if (BUILD_TESTING)
+  add_executable(objc3_sdk_identity_test ../../../../tests/clang_foundation/sdk_identity_test.cpp)
+  target_include_directories(objc3_sdk_identity_test SYSTEM PRIVATE ${LLVM_INCLUDE_DIRS} ${CLANG_INCLUDE_DIRS})
+  target_link_libraries(objc3_sdk_identity_test PRIVATE objc3c_clang_foundation)
+  add_test(NAME objc3_sdk_identity COMMAND objc3_sdk_identity_test)
   add_executable(objc3_carrier_service_test ../../tests/carrier_service_test.cpp)
   target_link_libraries(objc3_carrier_service_test PRIVATE objc3_runtime_services)
   add_test(NAME objc3_carrier_service COMMAND objc3_carrier_service_test)
@@ -137,7 +151,7 @@ if (BUILD_TESTING)
       "${CMAKE_CURRENT_SOURCE_DIR}/../../../../tests/clang_foundation/text_file_cli_test.py"
       "$<TARGET_FILE:objc3_text_file_cli>")
   set_tests_properties(objc3_text_file_cli PROPERTIES TIMEOUT 30)
-  foreach(_objc3_test objc3_carrier_service_test objc3_interface_contract_test objc3_compile_session_test
+  foreach(_objc3_test objc3_sdk_identity_test objc3_carrier_service_test objc3_interface_contract_test objc3_compile_session_test
       objc3_interface_emitter_test objc3_interface_artifact_io_test objc3_interface_import_test
       objc3_interface_import_api_test
       objc3_interface_module_resolution_test objc3_interface_module_provenance_test

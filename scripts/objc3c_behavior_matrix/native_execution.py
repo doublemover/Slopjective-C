@@ -11,7 +11,7 @@ from objc3c_tooling.paths import repo_rel
 from objc3c_tooling.probe_compile import find_clangxx, normal_user_manifest_link_args
 from objc3c_tooling.subprocesses import CommandExecution, bounded_text, run_timed
 
-from .config import BUILD_SCRIPT, NATIVE_EXE, RUNTIME_LIB
+from .config import ARTIFACT_IDENTITY, BUILD_SCRIPT, NATIVE_EXE, RUNTIME_LIB
 from .errors import BehaviorMatrixFailure
 
 
@@ -71,7 +71,7 @@ def compile_output_text(result: CommandExecution, compile_dir: Path) -> str:
 
 
 def object_path(compile_dir: Path) -> Path:
-    obj_path = compile_dir / "module.obj"
+    obj_path = compile_dir / ARTIFACT_IDENTITY.module_object_artifact_name
     if not obj_path.is_file():
         raise BehaviorMatrixFailure(f"compile did not publish object artifact: {repo_rel(obj_path)}")
     return obj_path
@@ -123,11 +123,11 @@ def link_fixture(
     *,
     include_runtime: bool,
 ) -> CommandExecution:
-    exe_path = case_dir / "module.exe"
+    exe_path = executable_path(case_dir)
     command: list[object] = [
         clang_command(),
         "-std=c++20",
-        "-fms-runtime-lib=dll",
+        *(["-fms-runtime-lib=dll"] if ARTIFACT_IDENTITY.platform_id.startswith("windows-") else []),
         *normal_user_manifest_link_args(),
         object_path(compile_dir),
     ]
@@ -156,9 +156,13 @@ def canonical_link_text(fixture: BehaviorFixture, link_result: CommandExecution,
     return "\n".join([text, *canonical_lines])
 
 
+def executable_path(case_dir: Path) -> Path:
+    return case_dir / ("module.exe" if ARTIFACT_IDENTITY.platform_id.startswith("windows-") else "module")
+
+
 def run_executable(fixture: BehaviorFixture, case_dir: Path) -> CommandExecution:
     return run_timed(
-        [case_dir / "module.exe"],
+        [executable_path(case_dir)],
         metadata={
             "stage": "run",
             "fixture": fixture.relative_source,

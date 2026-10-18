@@ -6,7 +6,7 @@ param(
 $ErrorActionPreference = "Stop"
 
 if ([string]::IsNullOrWhiteSpace($Version)) {
-  $Version = if ($env:OBJC3C_CI_LLVM_VERSION) { $env:OBJC3C_CI_LLVM_VERSION } else { "22.1.6" }
+  $Version = if ($env:OBJC3C_CI_LLVM_VERSION) { $env:OBJC3C_CI_LLVM_VERSION } else { "23.1.3" }
 }
 
 $repoRoot = (Resolve-Path (Join-Path $PSScriptRoot "..")).Path
@@ -54,6 +54,10 @@ function Test-Objc3cRequiredLlvmTools {
   return (Test-Path -LiteralPath (Join-Path $LlvmRoot "lib/libclang.lib") -PathType Leaf)
 }
 
+if ($Version -ne "23.1.3") {
+  throw "no verified Windows release checksum configured for LLVM $Version"
+}
+$archiveSha256 = "9ee6a2192fbb30c776415af529927f76ca6b5d1d55699bb1315f9878e610b5b8"
 $archiveStem = "clang+llvm-$Version-x86_64-pc-windows-msvc"
 $installRoot = Join-Path $resolvedInstallParent "llvm-$Version-msvc"
 $archive = Join-Path $resolvedInstallParent "$archiveStem.tar.xz"
@@ -62,6 +66,10 @@ $url = "https://github.com/llvm/llvm-project/releases/download/llvmorg-$Version/
 if (!(Test-Objc3cRequiredLlvmTools -LlvmRoot $installRoot)) {
   if (!(Test-Path -LiteralPath $archive -PathType Leaf)) {
     Invoke-WebRequest -Uri $url -OutFile $archive
+  }
+
+  if ((Get-FileHash -LiteralPath $archive -Algorithm SHA256).Hash.ToLowerInvariant() -ne $archiveSha256) {
+    throw "LLVM release archive checksum mismatch: $archive"
   }
 
   $stagingRoot = Join-Path $resolvedInstallParent "llvm-$Version-msvc-staging"

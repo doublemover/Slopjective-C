@@ -1,4 +1,6 @@
+#include "clang_foundation/source_identity.h"
 #include "clang_foundation/compile_session.h"
+#include "clang_foundation/sdk_identity.h"
 
 #include <algorithm>
 #include <mutex>
@@ -497,12 +499,18 @@ struct TemporaryOutput {
 
 CompileResult Compile(const CompileRequest &request) {
   CompileResult result;
-  result.compiler_identity = clang::getClangFullRepositoryVersion();
+  result.compiler_identity = clang::getClangFullRepositoryVersion() +
+      " Frontend-inputs=" + CompiledFrontendSourceIdentity();
   result.compiler_driver_path = OBJC3C_FOUNDATION_DRIVER;
   result.compiler_driver_sha256 = OBJC3C_FOUNDATION_DRIVER_SHA256;
   result.resource_directory = OBJC3C_FOUNDATION_RESOURCE_DIR;
   result.resource_directory_sha256 = OBJC3C_FOUNDATION_RESOURCE_SHA256;
   result.clang_patch_digest = OBJC3C_FOUNDATION_PATCH_DIGEST;
+  if (!request.compiler_sdk_root.empty() &&
+      !VerifyRelocatedSDK(request.compiler_sdk_root,
+          OBJC3C_FOUNDATION_DRIVER_SHA256, OBJC3C_FOUNDATION_RESOURCE_SHA256,
+          result.compiler_driver_path, result.resource_directory, result.failure))
+    return result;
   if (result.compiler_identity.find("ObjC3-patches=" OBJC3C_FOUNDATION_PATCH_DIGEST) ==
       std::string::npos) {
     result.failure = "Linked Clang libraries differ from the sealed compiler SDK";
@@ -592,7 +600,7 @@ CompileResult Compile(const CompileRequest &request) {
     if (error) { result.failure = error.message(); return result; }
   }
   // Driver response expansion expects argv[0], including for empty user args.
-  llvm::SmallVector<const char *, 32> expanded{OBJC3C_FOUNDATION_DRIVER};
+  llvm::SmallVector<const char *, 32> expanded{result.compiler_driver_path.c_str()};
   for (const auto &argument : request.arguments) expanded.push_back(argument.c_str());
   llvm::BumpPtrAllocator allocator;
   if (auto error = clang::driver::expandResponseFiles(expanded, false, allocator, overlay.get())) {
@@ -611,7 +619,7 @@ CompileResult Compile(const CompileRequest &request) {
       : llvm::StringRef(request.target_triple);
   llvm::Triple selected_target(llvm::Triple::normalize(selected_triple));
   auto &arguments = result.driver_arguments;
-  arguments = {OBJC3C_FOUNDATION_DRIVER};
+  arguments = {result.compiler_driver_path};
   // Explicit -std and CRT arguments retain normal Clang driver behavior.
   bool cxx = request.language == BaseLanguage::Cxx || request.language == BaseLanguage::ObjectiveCxx;
   arguments.push_back(cxx ? "-std=c++20" : "-std=c18");
@@ -619,7 +627,7 @@ CompileResult Compile(const CompileRequest &request) {
   for (const char *argument : llvm::drop_begin(expanded)) {
     if (argument) arguments.emplace_back(argument);
   }
-  arguments.insert(arguments.end(), {"-resource-dir", OBJC3C_FOUNDATION_RESOURCE_DIR,
+  arguments.insert(arguments.end(), {"-resource-dir", result.resource_directory,
       "-x", Languages[static_cast<unsigned>(request.language)]});
   if (!request.target_triple.empty()) arguments.push_back("--target=" + request.target_triple);
   if (objc) {

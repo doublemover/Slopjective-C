@@ -60,6 +60,8 @@ def main() -> int:
     args = parser.parse_args()
     repo = args.repo.resolve()
     build = repo / "out" / "toolchains" / "objc3-development" / "build"
+    if sys.platform == "linux":
+        build = build.with_name("build-linux-x86_64")
     source = repo / "out" / "toolchains" / "objc3-development" / "src"
     fixtures = repo / "tests" / "tooling" / "fixtures" / "objc3_editor"
     env = os.environ.copy()
@@ -83,6 +85,8 @@ def main() -> int:
     tools = {"clang": build / "bin" / "clang.exe",
              "clang-format": build / "bin" / "clang-format.exe",
              "clangd": build / "bin" / "clangd.exe"}
+    if sys.platform == "linux":
+        tools = {name: path.with_suffix("") for name, path in tools.items()}
     for name, path in tools.items():
         require(path.is_file(), f"required tool is missing: {name}: {path}")
     tool_identity: dict[str, Any] = {}

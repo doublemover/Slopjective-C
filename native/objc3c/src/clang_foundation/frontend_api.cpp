@@ -11,7 +11,7 @@ namespace {
 int CompileFrontendOptions(const objc3c_frontend_v2_options *options,
     const char *const *search_paths, size_t search_path_count,
     const objc3c_frontend_v3_import *imports, size_t import_count,
-    bool source_directed_imports,
+    bool source_directed_imports, const char *compiler_sdk_root,
     objc3c_frontend_v2_result **out_result) {
   if (!out_result) return 2;
   *out_result = nullptr;
@@ -23,7 +23,8 @@ int CompileFrontendOptions(const objc3c_frontend_v2_options *options,
       options->strict_concurrency > 1 || options->emit_semantic_interface > 1 ||
       (!options->arguments && options->argument_count) ||
       (!options->source && options->source_size) ||
-      (!search_paths && search_path_count) || (!imports && import_count)) return 2;
+      (!search_paths && search_path_count) || (!imports && import_count) ||
+      (compiler_sdk_root && !*compiler_sdk_root)) return 2;
   const bool objc = options->language == 2 || options->language == 3;
   if (((options->objc3 || options->arc ||
         (options->objc_runtime && *options->objc_runtime)) && !objc) ||
@@ -43,6 +44,7 @@ int CompileFrontendOptions(const objc3c_frontend_v2_options *options,
     if (options->source) request.source_text = std::string(options->source, options->source_size);
     auto string = [](const char *value) { return value ? std::string(value) : std::string(); };
     request.working_directory = string(options->working_directory);
+    request.compiler_sdk_root = string(compiler_sdk_root);
     request.output_path = string(options->output_path);
     request.target_triple = string(options->target_triple);
     request.objc_runtime = string(options->objc_runtime);
@@ -94,7 +96,7 @@ int CompileFrontendOptions(const objc3c_frontend_v2_options *options,
 extern "C" int objc3c_frontend_v2_compile(
     const objc3c_frontend_v2_options *options,
     objc3c_frontend_v2_result **out_result) {
-  return CompileFrontendOptions(options, nullptr, 0, nullptr, 0, false, out_result);
+  return CompileFrontendOptions(options, nullptr, 0, nullptr, 0, false, nullptr, out_result);
 }
 
 extern "C" int objc3c_frontend_v3_compile(
@@ -113,9 +115,15 @@ extern "C" int objc3c_frontend_v3_compile(
   if (options->struct_size >= V3MinimumSize + sizeof(options->source_directed_imports) &&
       options->source_directed_imports > 1)
     return 2;
+  constexpr size_t SDKOffset = offsetof(objc3c_frontend_v3_options, compiler_sdk_root);
+  if (options->struct_size > SDKOffset &&
+      options->struct_size < SDKOffset + sizeof(options->compiler_sdk_root))
+    return 2;
+  const char *sdk_root = options->struct_size >= SDKOffset + sizeof(options->compiler_sdk_root)
+      ? options->compiler_sdk_root : nullptr;
   return CompileFrontendOptions(&options->base, options->interface_search_paths,
       options->interface_search_path_count, options->imports,
-      options->import_count, source_directed_imports, out_result);
+      options->import_count, source_directed_imports, sdk_root, out_result);
 }
 
 extern "C" void objc3c_frontend_v2_result_destroy(objc3c_frontend_v2_result *result) {

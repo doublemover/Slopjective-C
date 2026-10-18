@@ -305,7 +305,7 @@ def fake_mixed_toolchain_root_run(
     command: list[str],
     **_: object,
 ) -> subprocess.CompletedProcess[str]:
-    tool_name = Path(command[0]).name.lower()
+    tool_name = Path(command[0]).name.lower().removesuffix(".exe") + ".exe"
     option_tuple = tuple(command[1:])
     if tool_name in {"clang.exe", "clang++.exe"} and option_tuple == ("--version",):
         return fake_completed(command, returncode=0, stdout="clang version 22.1.0\n")
