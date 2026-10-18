@@ -1,5 +1,0 @@
-#include "parse/objc3_parser_core_objc_declarations_function_return_profiles_module_contracts_import_graph.inc"
-
-#include "parse/objc3_parser_core_objc_declarations_function_return_profiles_module_contracts_namespace_partition.inc"
-
-#include "parse/objc3_parser_core_objc_declarations_function_return_profiles_module_contracts_cache_conformance.inc"

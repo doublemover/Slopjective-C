@@ -1,4 +1,0 @@
-#include "parse/objc3_type_generic_variance_metadata_profiles_evidence_model.inc"
-#include "parse/objc3_type_generic_variance_metadata_profiles_diagnostic_helpers.inc"
-#include "parse/objc3_type_generic_variance_metadata_profiles_profile_normalization.inc"
-#include "parse/objc3_type_generic_variance_metadata_profiles_profile_publication.inc"

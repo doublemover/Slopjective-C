@@ -24,7 +24,7 @@ def foundation_identity(sdk: Path) -> str:
     # Project frontend/runtime/sample changes do not invalidate the LLVM cache.
     selected = {name: record for name, record in records.items()
                 if name.startswith(('bin/', 'lib/', 'include/')) and not name.startswith(
-                    ('bin/objc3', 'lib/libobjc', 'lib/cmake/objc3c/', 'include/objc/',
+                    ('bin/objc3', 'bin/clang-scan-deps', 'lib/libobjc', 'lib/cmake/objc3c/', 'include/objc/',
                      'include/objc3c/', 'include/runtime/'))}
     return hashlib.sha256(json.dumps(selected, sort_keys=True).encode()).hexdigest()
 

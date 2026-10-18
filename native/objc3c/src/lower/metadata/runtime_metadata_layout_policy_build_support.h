@@ -1,6 +1,0 @@
-#pragma once
-
-#include "lower/metadata/runtime_metadata_layout_policy_build_initialization_support.h"
-#include "lower/metadata/runtime_metadata_layout_policy_build_prerequisite_validation_support.h"
-#include "lower/metadata/runtime_metadata_layout_policy_build_family_population_support.h"
-#include "lower/metadata/runtime_metadata_layout_policy_build_inventory_validation_support.h"

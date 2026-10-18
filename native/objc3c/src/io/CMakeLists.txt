@@ -1,5 +1,0 @@
-include(${CMAKE_CURRENT_LIST_DIR}/cmake/json-io.cmake)
-include(${CMAKE_CURRENT_LIST_DIR}/cmake/file-path-helpers.cmake)
-include(${CMAKE_CURRENT_LIST_DIR}/cmake/process-io.cmake)
-include(${CMAKE_CURRENT_LIST_DIR}/cmake/public-include-propagation.cmake)
-include(${CMAKE_CURRENT_LIST_DIR}/cmake/target-linkage-exports.cmake)

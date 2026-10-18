@@ -30,6 +30,7 @@ jobs:
           tests/tooling/test_objc3c_toolchain_prepare.py
           tests/tooling/test_toolchain_package.py
           tests/tooling/test_toolchain_install.py
+          tests/tooling/test_linux_sdk_reuse.py
           tests/tooling/test_toolchain_facade_identity.py
           tests/tooling/test_clang_feature_authority.py
           tests/tooling/test_native_validation_plan.py

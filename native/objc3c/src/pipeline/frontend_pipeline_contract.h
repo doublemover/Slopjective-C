@@ -1,6 +1,0 @@
-#ifndef OBJC3C_PIPELINE_FRONTEND_PIPELINE_CONTRACT_H_
-#define OBJC3C_PIPELINE_FRONTEND_PIPELINE_CONTRACT_H_
-
-#include "pipeline/frontend_pipeline_result_contract.h"
-
-#endif  // OBJC3C_PIPELINE_FRONTEND_PIPELINE_CONTRACT_H_

@@ -3,7 +3,7 @@
 `objc3c` is the public Linux compiler. The default CMake build uses only the
 qualified LLVM/Clang 23.1.3 frontend, with native C, C++, Objective-C and
 Objective-C++ types, ownership and ABI. The former optional migration build
-switch and custom compiler build graph have been removed from the default path.
+switch, custom parser/lowering and custom runtime integration have been removed.
 
 Use `python -m scripts.objc3c_toolchain build-sdk --fetch` from the repository
 root to build, test, install, qualify, archive and activate the complete SDK.

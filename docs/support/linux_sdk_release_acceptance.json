@@ -1,14 +1,14 @@
 {
   "schema": "objc3.linux.sdk.acceptance.v1",
-  "accepted_utc": "2026-10-18T16:38:25.120317+00:00",
+  "accepted_utc": "2026-10-18T16:54:30.801764+00:00",
   "status": "PASS",
   "source_build_id": "llvmorg-23.1.3-0d261d1ca552-2fb07f866fe4-fd761312",
   "upstream_commit": "0d261d1ca552c95a8f007e061c787ac7132fbcbc",
   "patch_digest": "2fb07f866fe4eaca1f75d60399a8c2d82fd85f8b05189e640ae63cc4dbb797e4",
-  "frontend_inputs": "40ef3355612091c454996f77e9138eeb50ef19bfbdd205f790216a3a5a40c0a7",
-  "archive_sha256": "a5990a091e3706915d30f099bb4db4cb02c15598a0f4f80705fcb2647628c863",
-  "archive_bytes": 413624133,
-  "seal_sha256": "98fce679ac799b5956e338e670877a3a349fd07b8933cef4a1336dcc3f4bc2b9",
+  "frontend_inputs": "62caf60217b04cd0623fc727de6f0556d45002efd08816731e76711e68345756",
+  "archive_sha256": "0f05d002a3fd06bbb83cc4943eb8ccf1a0081fa375cd2d0f11fa6f98a5c6d6fe",
+  "archive_bytes": 413636238,
+  "seal_sha256": "434f74c020ad0c61cd7a2d9e260c1a2442bd66fb1d10daf787d6b05a80d485eb",
   "sealed_files": 3893,
   "target": "x86_64-unknown-linux-gnu",
   "linux_abi": {
@@ -32,7 +32,7 @@
     "robin_map": "1.4.1"
   },
   "qualification": {
-    "build_identity": "6a53217de80026f3f6c43e8b091ca407fd9fe426544a5862162aae76e37c4f82",
+    "build_identity": "a2630b31650de66c7c4ba717b5b6294750c7e9bc3f617c56b028d3e3039ceaae",
     "nodes": [
       "carriers:expression:clang",
       "carriers:abi:clang",
@@ -49,12 +49,12 @@
       "editor:qualification"
     ],
     "runtime_count": 76,
-    "native_report": "out/native-validation/linux-sdk-20261018T163104151057Z/summary.json",
+    "native_report": "out/native-validation/linux-sdk-20261018T164304624923Z/summary.json",
     "frontend_ctests": 16,
     "runtime_ctests": 5,
     "installed_commands": 14,
     "tooling_tests": {
-      "passed": 117,
+      "passed": 119,
       "skipped": 1,
       "subtests": 45
     },
@@ -63,27 +63,40 @@
         "distribution": "debian13",
         "image": "debian:13-slim@sha256:a29215f6a35e51e22adffa17f89e9d2ef06214e64a2bad10d765c46aea49f11f",
         "exit_code": 0,
-        "elapsed_seconds": 88.487013,
-        "archive_sha256": "a5990a091e3706915d30f099bb4db4cb02c15598a0f4f80705fcb2647628c863",
-        "seal_sha256": "98fce679ac799b5956e338e670877a3a349fd07b8933cef4a1336dcc3f4bc2b9",
+        "elapsed_seconds": 104.248905,
+        "archive_sha256": "0f05d002a3fd06bbb83cc4943eb8ccf1a0081fa375cd2d0f11fa6f98a5c6d6fe",
+        "seal_sha256": "434f74c020ad0c61cd7a2d9e260c1a2442bd66fb1d10daf787d6b05a80d485eb",
         "log": "/workspace/scratch/objc3-fresh-debian13-cutover.log"
       },
       {
         "distribution": "ubuntu2604",
         "image": "ubuntu:26.04@sha256:c098726dd9b9733f3e885f8de0ef375206a311b0a317eadc40d347b1115fb944",
         "exit_code": 0,
-        "elapsed_seconds": 143.492865,
-        "archive_sha256": "a5990a091e3706915d30f099bb4db4cb02c15598a0f4f80705fcb2647628c863",
-        "seal_sha256": "98fce679ac799b5956e338e670877a3a349fd07b8933cef4a1336dcc3f4bc2b9",
+        "elapsed_seconds": 146.443673,
+        "archive_sha256": "0f05d002a3fd06bbb83cc4943eb8ccf1a0081fa375cd2d0f11fa6f98a5c6d6fe",
+        "seal_sha256": "434f74c020ad0c61cd7a2d9e260c1a2442bd66fb1d10daf787d6b05a80d485eb",
         "log": "/workspace/scratch/objc3-fresh-ubuntu2604-cutover.log"
       }
     ]
   },
   "timings": {
-    "sdk_build_with_verified_foundation_seconds": 163.39678,
-    "native_validation_seconds": 37.26669,
-    "prior_verified_reuse_seconds": 35.022999,
-    "prior_pipeline_peak_rss_kib": 994820,
-    "limits": "The reuse and RSS samples precede addition of clang-scan-deps; cold LLVM build time is not measured."
+    "sdk_build_with_verified_foundation_seconds": 174.782635,
+    "native_validation_seconds": 37.041076,
+    "pipeline_process_measurements": {
+      "exit_code": 0,
+      "elapsed_seconds": 174.94394390300113,
+      "peak_rss_kib": 997840,
+      "user_cpu_seconds": 137.641253,
+      "system_cpu_seconds": 64.356743
+    },
+    "verified_sdk_reuse_seconds": 32.886239,
+    "reuse_context": "two concurrent fresh container qualifications",
+    "limits": "Cold LLVM build time, runtime-only performance and an isolated repeatability sample remain unmeasured."
+  },
+  "hard_cutover": {
+    "obsolete_native_source_files_removed": 5313,
+    "remaining_native_source_files": 59,
+    "compiler": "Clang only",
+    "runtime_integration": "native libobjc2 plus explicit independent service library"
   }
 }

@@ -18,7 +18,6 @@ def repo(tmp_path: Path) -> Path:
                  "package.json", "pyproject.toml", "README.md", ".github/workflows/spec-quality.yml",
                  "native/objc3c/cmake/Objc3ClangFoundation.cmake",
                  "native/objc3c/cmake/Objc3LinuxRuntime.cmake",
-                 "native/objc3c/src/driver/objc3_cli_environment.cpp",
                  "scripts/install_objc3c_ci_llvm.ps1", "scripts/install_objc3c_ci_llvm_linux.sh",
                  "scripts/install_objc3c_ci_llvm_darwin.sh", "scripts/objc3c_tooling/llvm_discovery.py"):
         target = tmp_path / name

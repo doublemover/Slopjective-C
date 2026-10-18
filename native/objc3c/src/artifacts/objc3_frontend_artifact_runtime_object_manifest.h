@@ -1,5 +1,0 @@
-#pragma once
-
-#include "artifacts/objc3_frontend_artifact_runtime_object_query_lookup_manifest.h"
-#include "artifacts/objc3_frontend_artifact_runtime_object_realization_manifest.h"
-#include "artifacts/objc3_frontend_artifact_runtime_object_realized_dispatch_manifest.h"
