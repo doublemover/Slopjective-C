@@ -6,6 +6,8 @@ import pytest
 
 from scripts.objc3c_toolchain.package import MANIFEST, _digest, inventory, verify_sdk
 
+pytestmark = pytest.mark.skipif(os.name != "posix", reason="Linux SDK filesystem seal qualification")
+
 
 def sealed(tmp_path):
     prefix = tmp_path / "sdk"

@@ -120,7 +120,8 @@ foreach ($exampleRecord in @($showcaseSummary.examples)) {
     throw "showcase runtime FAIL: driver linker flag consumption model drifted for $exampleId"
   }
 
-  $exePath = Join-Path $runtimeDir "module.exe"
+  $executableName = if ([System.Environment]::OSVersion.Platform -eq [System.PlatformID]::Win32NT) { "module.exe" } else { "module" }
+  $exePath = Join-Path $runtimeDir $executableName
   $linkLog = Join-Path $runtimeDir "link.log"
   $runLog = Join-Path $runtimeDir "run.log"
   $linkArgs = @($objectPath, $launchContract.runtime_library_path) + @($launchContract.driver_linker_flags) + @("-o", $exePath, "-fno-color-diagnostics")
@@ -129,7 +130,7 @@ foreach ($exampleRecord in @($showcaseSummary.examples)) {
     throw "showcase runtime FAIL: link failed for $exampleId (exit=$linkExit)"
   }
   if (!(Test-Path -LiteralPath $exePath -PathType Leaf)) {
-    throw "showcase runtime FAIL: missing module.exe for $exampleId at $exePath"
+    throw "showcase runtime FAIL: missing executable for $exampleId at $exePath"
   }
 
   $runExit = Invoke-LoggedCommand -Command $exePath -Arguments @() -LogPath $runLog

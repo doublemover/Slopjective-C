@@ -35,6 +35,9 @@ The [capability authority](../../schemas/objc3-language-capabilities.json) and
 [generated support view](../../docs/support/clang_foundation_capabilities.json)
 record the exact qualification tuple and evidence identities.
 
+See the [Linux milestone acceptance results](../../docs/support/clang_foundation_linux_acceptance.md)
+for the qualified SDK, throughput samples, regression envelopes and remaining scope.
+
 ## Prepare and verify
 
 From the repository root, use:
@@ -487,7 +490,17 @@ archive hash. The seal covers installed file bytes, file modes and relative
 symlinks. Absolute or escaping symlinks are rejected. Keep the returned archive
 SHA-256 and seal SHA-256 alongside the archive.
 
-Extract the archive into a fresh directory and run its independent verifier:
+On Debian 13, install the SDK's development dependencies before building
+CMake consumers (runtime-only packages do not provide their headers/targets):
+
+```sh
+sudo apt-get update
+sudo apt-get install build-essential cmake ninja-build libedit-dev libncurses-dev \
+  libxml2-dev libzstd-dev zlib1g-dev liblzma-dev
+```
+
+Install the pinned Python separately using the cloud setup workflow. Extract the
+archive into a fresh directory and run its independent verifier:
 
 ```sh
 python /absolute/install/objc3-sdk/share/objc3c/verify-sdk.py \

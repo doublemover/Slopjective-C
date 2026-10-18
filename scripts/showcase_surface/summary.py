@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from pathlib import Path
 from typing import Any
+from objc3c_tooling.artifact_identity import current_host_artifact_identity
 
 from .paths import ROOT, repo_relative
 
@@ -14,7 +15,7 @@ def required_showcase_artifacts(
         "workspace_manifest": ROOT / str(entry["workspace_manifest"]),
         "compile_provenance": out_dir / "module.compile-provenance.json",
         "llvm_ir": out_dir / "module.ll",
-        "object": out_dir / "module.obj",
+        "object": out_dir / current_host_artifact_identity().module_object_artifact_name,
         "manifest": out_dir / "module.manifest.json",
         "runtime_registration_manifest": out_dir / "module.runtime-registration-manifest.json",
     }
