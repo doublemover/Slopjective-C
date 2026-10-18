@@ -17,7 +17,7 @@ def test_checked_in_feature_views_match_one_authority():
 
 def test_unqualified_feature_cannot_claim_implementation():
     authority = json.loads(AUTHORITY.read_text(encoding="utf-8"))
-    authority["features"][0]["state"] = "implemented"
+    authority["features"][0].update(state="implemented", qualified_targets=[])
     with pytest.raises(ValueError, match="require qualified"):
         generated(authority)
 

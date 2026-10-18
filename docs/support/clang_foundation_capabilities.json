@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "authority": "schemas/objc3-language-capabilities.json",
-  "authority_sha256": "cc1360a6967f7c924c89b75ae45df00aefcced0fcd77fe53b2e202e79f3a46a7",
+  "authority_sha256": "f7d2bb730f1b8273786981b77c278cf17e11e5c49e6613ccba77ca37f9d5fe52",
   "compiler_family": "clang-foundation",
   "language_revision": 202610,
   "extension_abi_revision": 2,
@@ -10,8 +10,22 @@
       "name": "defer",
       "macro": "DEFER",
       "aliases": [],
-      "state": "internal",
-      "qualified_targets": [],
+      "state": "implemented",
+      "qualified_targets": [
+        {
+          "triple": "x86_64-unknown-linux-gnu",
+          "runtime": "gnustep-2.0",
+          "profile": "compatibility",
+          "evidence": [
+            "clang/test/ObjC3/CodeGen/public-defer.c",
+            "carriers:expression:clang:defer-public-runtime:O0",
+            "carriers:expression:clang:defer-public-runtime:O2",
+            "native-package:consumer-eager",
+            "native-package:consumer-source",
+            "editor:qualification"
+          ]
+        }
+      ],
       "feature_query": "objc3_defer",
       "public_macro": "__OBJC3_FEATURE_DEFER__"
     },

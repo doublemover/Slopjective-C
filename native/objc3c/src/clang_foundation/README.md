@@ -49,6 +49,16 @@ The version 3 C API accepts an optional terminal `compiler_sdk_root` field;
 older version 3 prefixes and version 2 remain supported. Source and CMake
 content stamps reject stale frontend binaries during validation.
 
+Public `defer { ... }` is qualified for `x86_64-unknown-linux-gnu`,
+`gnustep-2.0`, compatibility profile, under ARC and MRC. On that tuple,
+`__has_feature(objc3_defer)`, `__has_extension(objc3_defer)` and
+`__OBJC3_FEATURE_DEFER__` agree. Other target/runtime/profile combinations
+remain unadvertised. Existing functions and C++ types named `defer` keep their
+ordinary meaning. Cleanup runs in reverse registration order across normal
+returns, structured exits and native exception unwinding. Optional/Result and
+synchronous throws remain bounded migration facilities with public queries
+closed; their complete public syntax is still pending.
+
 The CLI recognizes ordinary `.c`, `.cc`/`.cpp`/`.cxx`, `.m` and `.mm` input.
 `.objc3` explicitly selects Objective-C extension mode. C18 and C++20 are
 defaults; explicit Clang dialect arguments after `--` override them. ARC is an
@@ -157,7 +167,7 @@ At checkpoint 49, all 20 nodes passed with 80 runtime executions, including 12
 typed-error witnesses across both drivers at O0/O2. The matching SDK passed 126
 extension tests with three platform skips and 44 AST tests; its rebuilt facade
 passed all 15 CTest tests. Source and toolchain identities matched before and
-after the native batch. Public extension gates remain unavailable.
+after the native batch. At that historical checkpoint, public extension gates remained unavailable.
 
 Checkpoint 50 qualified owned error transport through callee cleanup: the SDK
 passed 127 extension tests (three platform skips), 44 AST tests and all 15 facade
@@ -238,7 +248,7 @@ require exhaustive coverage and a supported scalar result. Guards and arm bodies
 use native temporary/EH cleanup scopes. Managed payload matches, mutable or move
 bindings, type tests, string patterns and aggregate expression results remain
 unsupported. General payload extraction outside this match slice and async
-execution remain in progress; public feature gates report unavailable.
+execution remain in progress; the corresponding public carrier gates report unavailable.
 
 `objc3_text_file_cli` is a native text-service application fixture. It reads an
 explicitly selected UTF-8 file, parses `label:signed-decimal` records with

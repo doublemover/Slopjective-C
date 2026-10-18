@@ -327,7 +327,9 @@ The supported host row is Windows x64 with PowerShell 7.
 
 The Clang migration frontend now has a separately qualified Linux x86-64 SDK
 on LLVM 23.1.3, including the pinned GNUstep runtime, native debugging, editor
-checks and installed ARC/MRC package consumers. Follow the
+checks and installed ARC/MRC package consumers. Public `defer` is qualified
+for that frontend’s GNUstep 2.0 compatibility profile; its other public feature
+queries remain bounded by the separate capability authority. Follow the
 [pinned SDK workflow](toolchains/llvm/README.md). This migration scope does not
 change the legacy public compiler's platform row described above.
 

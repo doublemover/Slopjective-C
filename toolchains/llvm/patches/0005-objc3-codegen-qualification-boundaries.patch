@@ -5070,7 +5070,7 @@ index 853f038c4..6f7dcb332 100644
    CGObjCMac.cpp
    CGObjCRuntime.cpp
 diff --git a/clang/lib/CodeGen/CodeGenFunction.cpp b/clang/lib/CodeGen/CodeGenFunction.cpp
-index 7629b42dd..4cb9e4172 100644
+index 7629b42dd..02433746b 100644
 --- a/clang/lib/CodeGen/CodeGenFunction.cpp
 +++ b/clang/lib/CodeGen/CodeGenFunction.cpp
 @@ -19,6 +19,8 @@
@@ -5091,16 +5091,19 @@ index 7629b42dd..4cb9e4172 100644
      case Type::ObjCObject:
      case Type::ObjCInterface:
      case Type::ArrayParameter:
-@@ -420,6 +424,8 @@ void CodeGenFunction::FinishFunction(SourceLocation EndLoc) {
+@@ -420,6 +424,11 @@ void CodeGenFunction::FinishFunction(SourceLocation EndLoc) {
  
    // Emit function epilog (to return).
    llvm::DebugLoc Loc = EmitReturnBlock();
-+  if (ObjC3PendingErrorStorage.isValid())
++  // FinishFunction deletes an unused return block below. Do not create error
++  // publication blocks that would retain uses of values in that dead block.
++  if (ObjC3PendingErrorStorage.isValid() &&
++      (!ReturnBlock.isValid() || !ReturnBlock.getBlock()->use_empty()))
 +    emitObjC3ErrorOutEpilog(*this);
  
    if (ShouldInstrumentFunction()) {
      if (CGM.getCodeGenOpts().InstrumentFunctions)
-@@ -1274,7 +1280,13 @@ void CodeGenFunction::StartFunction(GlobalDecl GD, QualType RetTy,
+@@ -1274,7 +1283,13 @@ void CodeGenFunction::StartFunction(GlobalDecl GD, QualType RetTy,
      }
    }
  
@@ -5114,7 +5117,7 @@ index 7629b42dd..4cb9e4172 100644
  
    if (const CXXMethodDecl *MD = dyn_cast_if_present<CXXMethodDecl>(D);
        MD && !MD->isStatic()) {
-@@ -1455,6 +1467,15 @@ QualType CodeGenFunction::BuildFunctionArgList(GlobalDecl GD,
+@@ -1455,6 +1470,15 @@ QualType CodeGenFunction::BuildFunctionArgList(GlobalDecl GD,
  
    if (MD && (isa<CXXConstructorDecl>(MD) || isa<CXXDestructorDecl>(MD)))
      CGM.getCXXABI().addImplicitStructorParams(*this, ResTy, Args);
@@ -5130,7 +5133,7 @@ index 7629b42dd..4cb9e4172 100644
  
    return ResTy;
  }
-@@ -1463,6 +1484,11 @@ void CodeGenFunction::GenerateCode(GlobalDecl GD, llvm::Function *Fn,
+@@ -1463,6 +1487,11 @@ void CodeGenFunction::GenerateCode(GlobalDecl GD, llvm::Function *Fn,
                                     const CGFunctionInfo &FnInfo) {
    assert(Fn && "generating code for null Function");
    const FunctionDecl *FD = cast<FunctionDecl>(GD.getDecl());
@@ -5142,7 +5145,7 @@ index 7629b42dd..4cb9e4172 100644
    CurGD = GD;
  
    FunctionArgList Args;
-@@ -2556,6 +2582,8 @@ void CodeGenFunction::EmitVariablyModifiedType(QualType type) {
+@@ -2556,6 +2585,8 @@ void CodeGenFunction::EmitVariablyModifiedType(QualType type) {
        llvm_unreachable("unexpected dependent type!");
  
      // These types are never variably-modified.
@@ -11562,7 +11565,7 @@ diff --git a/clang/test/ObjC3/CodeGen/Inputs/typed-error-managed-arc-runtime.inc
 new file mode 100644
 --- /dev/null
 +++ b/clang/test/ObjC3/CodeGen/Inputs/typed-error-managed-arc-runtime.inc
-@@ -0,0 +1,125 @@
+@@ -0,0 +1,147 @@
 +#include "typed-error-managed-runtime.h"
 +
 +static TestError managed_object(TestError value, TestError error)
@@ -11613,6 +11616,12 @@ new file mode 100644
 +}
 +@end
 +
++static TestError managed_native_exception() __objc3_throws(TestError) {
++  TestError owner = (TestError)make_zero_code_error();
++  ManagedSuccessBlock block = __objc3_try_force(managed_block(owner, nil));
++  if (block() != 42) __builtin_trap();
++  throw 73;
++}
 +static int run_managed_success_checks() {
 +  int result = run_mrc_managed_checks();
 +  if (result) return result;
@@ -11686,13 +11695,29 @@ new file mode 100644
 +  }
 +  if (!weak || escaped() != 42 || zero_code_error_deallocations() != before) return 197;
 +  escaped = nil;
-+  return weak == nil && zero_code_error_deallocations() == before + 1 ? 0 : 198;
++  if (weak || zero_code_error_deallocations() != before + 1) return 198;
++  before = zero_code_error_deallocations();
++  @autoreleasepool {
++    TestError owner = (TestError)make_zero_code_error();
++    weak = owner;
++    escaped = __objc3_try_force(managed_mrc_owned_block(owner, nil));
++  }
++  if (!weak || escaped() != 42) return 204;
++  escaped = nil;
++  if (weak || zero_code_error_deallocations() != before + 1) return 205;
++  before = zero_code_error_deallocations();
++  int native_caught = 0;
++  @autoreleasepool {
++    try { (void)__objc3_try_force(managed_native_exception()); }
++    catch (int value) { native_caught = value == 73; }
++  }
++  return native_caught && zero_code_error_deallocations() == before + 1 ? 0 : 206;
 +}
 diff --git a/clang/test/ObjC3/CodeGen/Inputs/typed-error-managed-mrc-runtime.inc b/clang/test/ObjC3/CodeGen/Inputs/typed-error-managed-mrc-runtime.inc
 new file mode 100644
 --- /dev/null
 +++ b/clang/test/ObjC3/CodeGen/Inputs/typed-error-managed-mrc-runtime.inc
-@@ -0,0 +1,51 @@
+@@ -0,0 +1,61 @@
 +#include "typed-error-managed-runtime.h"
 +extern "C" ZeroCodeError *managed_mrc_object(ZeroCodeError *value, ZeroCodeError *error)
 +    __objc3_throws(ZeroCodeError *) {
@@ -11708,6 +11733,13 @@ new file mode 100644
 +    __objc3_throws(ZeroCodeError *) {
 +  if (error) __objc3_throw(error);
 +  return ^{ return 42; };
++}
++extern "C" void *_Block_copy(const void *);
++extern "C" void _Block_release(const void *);
++extern "C" ManagedSuccessBlock managed_mrc_owned_block(ZeroCodeError *value, ZeroCodeError *error)
++    __objc3_throws(ZeroCodeError *) __attribute__((ns_returns_retained)) {
++  if (error) __objc3_throw(error);
++  return (ManagedSuccessBlock)_Block_copy(^{ return [value code] + 42; });
 +}
 +ZeroCodeError *ManagedMRCMember::object(ZeroCodeError *value, ZeroCodeError *error)
 +    __objc3_throws(ZeroCodeError *) { return __objc3_try(managed_mrc_object(value, error)); }
@@ -11741,6 +11773,9 @@ new file mode 100644
 +  if (__objc3_try_force([receiver object:owner error:nil]) != owner ||
 +      __objc3_try_force([receiver block:nil])() != 42) return 201;
 +  [receiver release];
++  ManagedSuccessBlock heap = __objc3_try_force(managed_mrc_owned_block(owner, nil));
++  if (heap() != 42) return 203;
++  _Block_release(heap);
 +  [owner release];
 +  return zero_code_error_deallocations() == before + 3 ? 0 : 185;
 +}
@@ -11748,7 +11783,7 @@ diff --git a/clang/test/ObjC3/CodeGen/Inputs/typed-error-managed-runtime.h b/cla
 new file mode 100644
 --- /dev/null
 +++ b/clang/test/ObjC3/CodeGen/Inputs/typed-error-managed-runtime.h
-@@ -0,0 +1,19 @@
+@@ -0,0 +1,20 @@
 +#ifndef TYPED_ERROR_MANAGED_RUNTIME_H
 +#define TYPED_ERROR_MANAGED_RUNTIME_H
 +#include "typed-error-runtime-interface.h"
@@ -11765,6 +11800,7 @@ new file mode 100644
 +ZeroCodeError *managed_mrc_object(ZeroCodeError *, ZeroCodeError *) __objc3_throws(ZeroCodeError *);
 +ZeroCodeError *managed_mrc_owned(ZeroCodeError *) __objc3_throws(ZeroCodeError *) __attribute__((ns_returns_retained));
 +ManagedSuccessBlock managed_mrc_block(ZeroCodeError *) __objc3_throws(ZeroCodeError *);
++ManagedSuccessBlock managed_mrc_owned_block(ZeroCodeError *, ZeroCodeError *) __objc3_throws(ZeroCodeError *) __attribute__((ns_returns_retained));
 +int run_mrc_managed_checks(void);
 +}
 +#endif
@@ -11849,3 +11885,28 @@ new file mode 100644
 +// CHECK: objc3.error.out.initialize
 +// CHECK-LABEL: define{{.*}} ptr @block_value(ptr {{.*}}, ptr {{.*}}, ptr {{.*}})
 +// CHECK: objc3.error.out.initialize
+diff --git a/clang/test/ObjC3/CodeGen/typed-error-noreturn.mm b/clang/test/ObjC3/CodeGen/typed-error-noreturn.mm
+new file mode 100644
+--- /dev/null
++++ b/clang/test/ObjC3/CodeGen/typed-error-noreturn.mm
+@@ -0,0 +1,20 @@
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c++ -std=c++20 -fblocks -fobjc-runtime=gnustep-2.0 -fobjc-arc -fobjc-arc-exceptions -fexceptions -fcxx-exceptions -fobjc-version=3 -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c++ -std=c++20 -fblocks -fobjc-runtime=gnustep-2.0 -fexceptions -fcxx-exceptions -fobjc-version=3 -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -triple x86_64-pc-windows-msvc -x objective-c++ -std=c++20 -fblocks -fobjc-runtime=gnustep-2.0 -fobjc-arc -fobjc-arc-exceptions -fexceptions -fcxx-exceptions -fobjc-version=3 -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -triple x86_64-pc-windows-msvc -x objective-c++ -std=c++20 -fblocks -fobjc-runtime=gnustep-2.0 -fexceptions -fcxx-exceptions -fobjc-version=3 -emit-llvm -o - %s | FileCheck %s
++
++@protocol Error;
++using TestError = id<Error>;
++using SuccessBlock = int (^)(void);
++extern "C" TestError never_object() __objc3_throws(TestError) { throw 73; }
++// CHECK-LABEL: define{{.*}} ptr @never_object(
++// CHECK-NOT: objc3.error.transfer
++extern "C" void never_void() __objc3_throws(TestError) { throw 74; }
++// CHECK-LABEL: define{{.*}} void @never_void(
++// CHECK-NOT: objc3.error.transfer
++extern "C" int never_scalar() __objc3_throws(TestError) { throw 75; }
++// CHECK-LABEL: define{{.*}} i32 @never_scalar(
++// CHECK-NOT: objc3.error.transfer
++extern "C" SuccessBlock never_block() __objc3_throws(TestError) { throw 76; }
++// CHECK-LABEL: define{{.*}} ptr @never_block(
++// CHECK-NOT: objc3.error.transfer

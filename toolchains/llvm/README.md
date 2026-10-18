@@ -16,7 +16,7 @@ Baseline runtime coverage passed 20 expression, 8 plain C ABI, 4 C++ local and
 4 ARC local executions. These are scoped migration results and do not promote
 any public language capability.
 
-The LLVM 23.1.3 Linux milestone passes 158 extension lit tests and 46 native
+The LLVM 23.1.3 Linux milestone passes 160 extension lit tests and 46 native
 AST tests. Three discovered lit cases remain unsupported: two Windows-only C
 ABI runners and an AArch64 layout case in this X86 SDK. All 16 facade CTests,
 five Linux runtime CTests and all 13 selected native validation nodes pass.
@@ -24,6 +24,16 @@ The native matrix runs 76 programs at O0/O2, including expected trap exits,
 managed typed-error successes/failures, installed ARC/MRC consumers, ELF/LLDB
 checks and editor qualification. Historical Windows evidence below remains
 historical; this Linux run does not requalify Windows or macOS.
+
+Public `defer { ... }` is qualified only for Linux x86-64, GNUstep 2.0,
+compatibility profile, with matching native feature queries and generated macros.
+Its executable LIFO/return/break/continue checks run at O0/O2; installed ARC/MRC
+consumers and editor checks also exercise it. Existing `defer` functions and
+C++ type names remain usable. Optional/Result, throws, async and actors keep
+their separate closed public gates until their complete evidence is available.
+The [capability authority](../../schemas/objc3-language-capabilities.json) and
+[generated support view](../../docs/support/clang_foundation_capabilities.json)
+record the exact qualification tuple and evidence identities.
 
 ## Prepare and verify
 
