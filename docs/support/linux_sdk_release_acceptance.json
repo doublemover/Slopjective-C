@@ -1,0 +1,89 @@
+{
+  "schema": "objc3.linux.sdk.acceptance.v1",
+  "accepted_utc": "2026-10-18T16:38:25.120317+00:00",
+  "status": "PASS",
+  "source_build_id": "llvmorg-23.1.3-0d261d1ca552-2fb07f866fe4-fd761312",
+  "upstream_commit": "0d261d1ca552c95a8f007e061c787ac7132fbcbc",
+  "patch_digest": "2fb07f866fe4eaca1f75d60399a8c2d82fd85f8b05189e640ae63cc4dbb797e4",
+  "frontend_inputs": "40ef3355612091c454996f77e9138eeb50ef19bfbdd205f790216a3a5a40c0a7",
+  "archive_sha256": "a5990a091e3706915d30f099bb4db4cb02c15598a0f4f80705fcb2647628c863",
+  "archive_bytes": 413624133,
+  "seal_sha256": "98fce679ac799b5956e338e670877a3a349fd07b8933cef4a1336dcc3f4bc2b9",
+  "sealed_files": 3893,
+  "target": "x86_64-unknown-linux-gnu",
+  "linux_abi": {
+    "glibc_minimum": "2.41",
+    "libstdcxx_symbol_minimum": "GLIBCXX_3.4.33"
+  },
+  "development_tools": {
+    "python": "3.15.0",
+    "node": "26.12.0",
+    "npm": "12.2.1",
+    "cmake": "4.4.4",
+    "ninja": "1.13.2",
+    "ccache": "4.14.2",
+    "uv": "0.13.1",
+    "pip": "26.2.1",
+    "pytest": "9.1.1",
+    "jsonschema": "4.26.0"
+  },
+  "runtime": {
+    "libobjc2": "2.3",
+    "robin_map": "1.4.1"
+  },
+  "qualification": {
+    "build_identity": "6a53217de80026f3f6c43e8b091ca407fd9fe426544a5862162aae76e37c4f82",
+    "nodes": [
+      "carriers:expression:clang",
+      "carriers:abi:clang",
+      "carriers:cpp-lifetime:clang",
+      "carriers:arc-lifetime:clang",
+      "carriers:match:clang",
+      "carriers:match:objc3c-clang",
+      "carriers:transfer:clang",
+      "carriers:transfer:objc3c-clang",
+      "typed-errors:clang",
+      "native-package:provider",
+      "native-package:consumer-eager",
+      "native-package:consumer-source",
+      "editor:qualification"
+    ],
+    "runtime_count": 76,
+    "native_report": "out/native-validation/linux-sdk-20261018T163104151057Z/summary.json",
+    "frontend_ctests": 16,
+    "runtime_ctests": 5,
+    "installed_commands": 14,
+    "tooling_tests": {
+      "passed": 117,
+      "skipped": 1,
+      "subtests": 45
+    },
+    "fresh_distributions": [
+      {
+        "distribution": "debian13",
+        "image": "debian:13-slim@sha256:a29215f6a35e51e22adffa17f89e9d2ef06214e64a2bad10d765c46aea49f11f",
+        "exit_code": 0,
+        "elapsed_seconds": 88.487013,
+        "archive_sha256": "a5990a091e3706915d30f099bb4db4cb02c15598a0f4f80705fcb2647628c863",
+        "seal_sha256": "98fce679ac799b5956e338e670877a3a349fd07b8933cef4a1336dcc3f4bc2b9",
+        "log": "/workspace/scratch/objc3-fresh-debian13-cutover.log"
+      },
+      {
+        "distribution": "ubuntu2604",
+        "image": "ubuntu:26.04@sha256:c098726dd9b9733f3e885f8de0ef375206a311b0a317eadc40d347b1115fb944",
+        "exit_code": 0,
+        "elapsed_seconds": 143.492865,
+        "archive_sha256": "a5990a091e3706915d30f099bb4db4cb02c15598a0f4f80705fcb2647628c863",
+        "seal_sha256": "98fce679ac799b5956e338e670877a3a349fd07b8933cef4a1336dcc3f4bc2b9",
+        "log": "/workspace/scratch/objc3-fresh-ubuntu2604-cutover.log"
+      }
+    ]
+  },
+  "timings": {
+    "sdk_build_with_verified_foundation_seconds": 163.39678,
+    "native_validation_seconds": 37.26669,
+    "prior_verified_reuse_seconds": 35.022999,
+    "prior_pipeline_peak_rss_kib": 994820,
+    "limits": "The reuse and RSS samples precede addition of clang-scan-deps; cold LLVM build time is not measured."
+  }
+}

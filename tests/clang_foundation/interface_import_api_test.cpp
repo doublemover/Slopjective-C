@@ -50,7 +50,7 @@ int InvokeCLI(std::vector<std::string> arguments,
   std::ostringstream errors;
   auto *previous = std::cerr.rdbuf(errors.rdbuf());
   const int status =
-      objc3c_import_cli_main(static_cast<int>(arguments.size()), argv.data());
+      RunCompiler(static_cast<int>(arguments.size()), argv.data());
   std::cerr.rdbuf(previous);
   if (diagnostics)
     *diagnostics = errors.str();

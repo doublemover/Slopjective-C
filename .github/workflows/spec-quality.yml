@@ -1,14 +1,13 @@
-name: Site And Spec Quality
-
+name: Current compiler documentation and capabilities
 on:
   pull_request:
   push:
-    branches: ["main"]
-
+    branches: [main]
+permissions:
+  contents: read
 jobs:
-  lint:
-    runs-on: ubuntu-latest
-    timeout-minutes: 20
+  documentation:
+    runs-on: ubuntu-26.04
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
@@ -17,15 +16,15 @@ jobs:
       - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
         with:
           python-version: "3.15.0"
-      - name: Install Node dependencies
+      - name: Exact development dependencies
         run: |
           npm install --global npm@12.2.1
           npm ci
-      - name: Enforce generated-only objc3c-native docs drift contract
-        run: npm run objc3c -- check-native-docs
-      - name: Enforce generated-only published site drift contract
-        run: npm run objc3c -- check-site
-      - name: Run canonical maintainer lint workflow
-        run: npm run objc3c -- lint
-      - name: Run spec structural lint suite
-        run: npm run objc3c -- lint-spec
+          python -m pip install uv==0.13.1
+          uv sync --locked --group dev
+      - name: Onboarding and generated feature authority
+        run: |
+          npx prettier --check README.md toolchains/llvm/README.md native/objc3c/src/clang_foundation/README.md
+          uv run python -m scripts.objc3c_toolchain.generate_features --check
+          uv run python -m scripts.objc3c_toolchain check-host-tools
+          uv run python -m pytest -q tests/tooling/test_clang_feature_authority.py

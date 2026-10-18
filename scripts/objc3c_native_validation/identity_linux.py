@@ -23,16 +23,21 @@ def resolve_linux_toolchain(repo: Path, *, require_editor: bool = False) -> dict
         raise NativeToolchainError("Linux runtime profile has an unsupported target")
     sdk = Path(os.environ.get("OBJC3C_CLANG_FOUNDATION_ROOT", str(repo / "out/toolchains/objc3-development/stage-linux-x86_64"))).resolve()
     runtime_source = repo / "out/toolchains/libobjc2-v2.3/src"
-    robin_source = repo / "out/toolchains/robin-map-v1.4.0/src"
+    robin_source = repo / f"out/toolchains/robin-map-{profile['robin_map_release']}/src"
     stage = repo / "out/toolchains/libobjc2-v2.3/build-linux-x86_64/stage"
     installed_runtime = (sdk / "lib/libobjc.so").is_file() and (sdk / "include/objc/objc-config.h").is_file()
-    if installed_runtime:
-        stage = sdk
+    if not installed_runtime:
+        raise NativeToolchainError('a complete installed runtime is required; run build-sdk')
+    stage = sdk
+    installed_profile = sdk / 'share/objc3c/runtime/runtime-profile.json'
+    if json.loads(installed_profile.read_text())['profiles']['linux-x86_64'] != profile:
+        raise NativeToolchainError('installed runtime profile differs from the current qualified pin')
     environment = {key: os.environ[key] for key in ("PATH", "LANG", "LC_ALL", "TMPDIR") if key in os.environ}
     environment["LD_LIBRARY_PATH"] = os.pathsep.join((str(sdk / "lib"), str(stage / "lib")))
     environment["PYTHONDONTWRITEBYTECODE"] = "1"
     admission_environment = {**os.environ, **environment}
     inputs = _Inputs()
+    inputs.add_file(installed_profile, "installed runtime profile")
     for path in (manifest_path, profile_path, repo / manifest["patch_series"],
                  repo / "out/toolchains/objc3-development/src/.objc3c-prepared-source.json"):
         inputs.add_file(path, "compiler source seal input")
@@ -66,16 +71,16 @@ def resolve_linux_toolchain(repo: Path, *, require_editor: bool = False) -> dict
                 editors[name] = {"status": "sealed"}
     expected_version = manifest["upstream"]["tag"].removeprefix("llvmorg-")
     for name, filename in (("readobj", "llvm-readobj"), ("dwarfdump", "llvm-dwarfdump"),
-                           ("debugger", "lldb")):
+                           ("debugger", "lldb"), ("scan_deps", "clang-scan-deps")):
         path = (sdk / "bin" / filename).resolve()
         version = _run([str(path), "--version"], environment=admission_environment)
         if expected_version not in version:
             raise NativeToolchainError(f"{filename} differs from the pinned LLVM version")
         inputs.add_file(path, name)
         tools[name], versions[name] = str(path), version
-    facade = (repo / "out/toolchains/objc3-facade/build-linux-x86_64/src/clang_foundation/objc3c-clang").resolve()
-    if (sdk / "bin/objc3c-clang").is_file():
-        facade = (sdk / "bin/objc3c-clang").resolve()
+    facade = (repo / "out/toolchains/objc3-facade/build-linux-x86_64/src/clang_foundation/objc3c").resolve()
+    if (sdk / "bin/objc3c").is_file():
+        facade = (sdk / "bin/objc3c").resolve()
     inputs.add_file(facade, "native facade executable", (marker, seal["upstream_commit"],
                     inputs.files[tools["clang"]], resource_sha, facade_identity(repo)["sha256"]))
     tools["facade"] = str(facade)

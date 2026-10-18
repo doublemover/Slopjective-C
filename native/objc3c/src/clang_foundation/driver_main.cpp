@@ -1,5 +1,10 @@
 #include "clang_foundation/compile_session.h"
+#include "clang_foundation/driver_native.h"
 #include "llvm/Support/FileSystem.h"
+#include "clang/Driver/Driver.h"
+#include "llvm/ADT/SmallVector.h"
+#include "llvm/Support/Allocator.h"
+#include "llvm/Support/Error.h"
 
 #include <filesystem>
 #include <iostream>
@@ -10,7 +15,7 @@ int RunCompiler(int argc, char **argv) {
   using namespace objc3::clang_foundation;
   if (argc < 2) {
     std::cerr
-        << "usage: objc3c-clang <source> [--objc3] [--objcxx] [--emit-object "
+        << "usage: objc3c <source> [--objc3] [--objcxx] [--emit-object "
            "path] "
            "[--emit-llvm path] [--arc] [--profile name] [--strict-concurrency] "
            "[--emit-interface path.objc3i --module name --package identity] "
@@ -194,7 +199,17 @@ int RunCompiler(int argc, char **argv) {
 
 int main(int argc, char **argv) {
   try {
-    return RunCompiler(argc, argv);
+    llvm::BumpPtrAllocator allocator;
+    llvm::SmallVector<const char *, 32> arguments(argv, argv + argc);
+    if (auto error = clang::driver::expandResponseFiles(arguments, false, allocator)) {
+      std::cerr << llvm::toString(std::move(error)) << '\n';
+      return 2;
+    }
+    std::vector<char *> expanded;
+    for (auto argument : arguments) expanded.push_back(const_cast<char *>(argument));
+    return UsesInterfaceCompiler(expanded.size(), expanded.data())
+        ? RunCompiler(expanded.size(), expanded.data())
+        : RunNativeDriver(expanded.size(), expanded.data());
   } catch (const std::exception &error) {
     std::cerr << "compiler host failure: " << error.what() << '\n';
     return 3;

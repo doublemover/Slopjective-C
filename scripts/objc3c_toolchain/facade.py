@@ -10,7 +10,7 @@ def facade_identity(repo: Path) -> dict:
     repo = repo.resolve()
     root = repo / 'native/objc3c'
     files = {root / 'CMakeLists.txt', repo / 'scripts/objc3c_toolchain/facade.py'}
-    files.update((root / 'cmake').glob('*.cmake'))
+    files.update((root / 'cmake').glob('*.cmake*'))
     files.update(path for path in (root / 'src/clang_foundation').rglob('*')
                  if path.suffix in {'.cpp', '.h'} or path.name == 'CMakeLists.txt')
     if not (root / 'src/clang_foundation/compile_session.cpp').is_file():

@@ -98,6 +98,8 @@ def check_host_tools(repo: Path, *, runtime: bool = False) -> dict[str, Any]:
             "powershell": ["pwsh", "-NoLogo", "-NoProfile", "-NonInteractive", "-Command",
                            "$PSVersionTable.PSVersion.ToString()"],
         }
+        if sys.platform != "win32":
+            commands.pop("powershell")
         for name, command in commands.items():
             if not Path(command[0]).is_absolute():
                 executable = shutil.which(command[0])

@@ -49,7 +49,7 @@ def linux_environment(manifest: dict[str, Any]) -> dict[str, Any]:
     if sys.platform != "linux" or platform.machine().lower() not in {"x86_64", "amd64"}:
         raise ValueError("Linux foundation requires a native Linux x86-64 host")
     expected = manifest["upstream"]["tag"].removeprefix("llvmorg-")
-    root_value = os.environ.get("OBJC3C_LLVM_ROOT") or os.environ.get("LLVM_ROOT")
+    root_value = os.environ.get("OBJC3C_BOOTSTRAP_LLVM_ROOT") or os.environ.get("OBJC3C_LLVM_ROOT") or os.environ.get("LLVM_ROOT")
     root = Path(root_value).resolve() if root_value else None
     paths = {}
     for tool in ("clang", "clang++", "ld.lld", "llvm-config"):
@@ -92,5 +92,5 @@ def linux_environment(manifest: dict[str, Any]) -> dict[str, Any]:
             "cmake_version": _output([str(tools["cmake"]), "--version"]).splitlines()[0],
             "ninja_path": str(tools["ninja"]),
             "ninja_version": _output([str(tools["ninja"]), "--version"]),
-            "ccache_path": str(Path(ccache).resolve()) if ccache else None,
+            "ccache_path": str(Path(ccache).absolute()) if ccache else None,
             "resource_limits": resource_limits(manifest["build"])}

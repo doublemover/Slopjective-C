@@ -23,7 +23,7 @@ def main():
     environment['LD_LIBRARY_PATH'] = str(sdk / 'lib')
     obj = output / 'objc3-managed-sample.o'
     executable = output / 'objc3-managed-sample'
-    command = [str(sdk / 'bin/objc3c-clang'), str(example / 'main.m'), '--objc3', '--arc',
+    command = [str(sdk / 'bin/objc3c'), str(example / 'main.m'), '--objc3', '--arc',
                '--target', identity['target_triple'], '--runtime', 'gnustep-2.0',
                '--source-imports', '--module-search-path', str(example), '--import-module',
                identity['canonical_name'], identity['semantic_fingerprint'], identity['package_identity'],

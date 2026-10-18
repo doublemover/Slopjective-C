@@ -4,6 +4,7 @@ from __future__ import annotations
 import argparse
 from datetime import datetime, timezone
 import json
+import hashlib
 import os
 from pathlib import Path
 import subprocess
@@ -39,13 +40,18 @@ def main(argv: list[str] | None = None) -> int:
     repo = args.repo.resolve()
     profile = json.loads((repo / "scripts/objc3c_toolchain_runtime/runtime-profile.json").read_text())["profiles"]["linux-x86_64"]
     source = repo / "out/toolchains/libobjc2-v2.3/src"
-    robin = repo / "out/toolchains/robin-map-v1.4.0/src"
-    build = repo / "out/toolchains/libobjc2-v2.3/build-linux-x86_64"
-    stage = build / "stage"
+    robin = repo / f"out/toolchains/robin-map-{profile['robin_map_release']}/src"
     bin_dir = args.compiler_root.resolve() / "bin"
+    with (bin_dir / 'clang').open('rb') as compiler:
+        compiler_sha256 = hashlib.file_digest(compiler, 'sha256').hexdigest()
+    configuration = {'compiler_root': str(args.compiler_root.resolve()), 'profile': profile, 'compiler_sha256': compiler_sha256,
+                     'build_type': 'Release', 'oldabi': False, 'legacy_compat': False}
+    build_key = hashlib.sha256(json.dumps(configuration, sort_keys=True).encode()).hexdigest()
+    build = repo / "out/toolchains/libobjc2-v2.3/build-linux-x86_64" / build_key
+    stage = build / "stage"
     report = {"status": "running", "profile": "linux-x86_64", "commands": [],
               "started_utc": datetime.now(timezone.utc).isoformat(),
-              "source_commit": profile["runtime_commit"], "robin_map_commit": profile["robin_map_commit"]}
+              "configuration": configuration, "build_key": build_key, "source_commit": profile["runtime_commit"], "robin_map_commit": profile["robin_map_commit"]}
     try:
         checkout(source, profile["runtime_source"], profile["runtime_commit"], "v" + profile["runtime_release"], args.fetch)
         checkout(robin, profile["robin_map_source"], profile["robin_map_commit"], profile["robin_map_release"], args.fetch)
@@ -63,7 +69,7 @@ def main(argv: list[str] | None = None) -> int:
              "--profile", "linux-x86_64", "--source", str(source),
              "--robin-map-source", str(robin), "--bin-dir", str(bin_dir)],
             configure, ["cmake", "--build", str(build), "--parallel", str(args.jobs)],
-            ["cmake", "--install", str(build)],
+            ["cmake", "--install", str(build), "--prefix", str(stage)],
         ]
         for index, command in enumerate(commands):
             started = time.monotonic()
@@ -75,7 +81,7 @@ def main(argv: list[str] | None = None) -> int:
                 raise ValueError(f"runtime step {index} exited {result.returncode}; see {build / f'step-{index}.log'}")
         if not (stage / "lib/libobjc.so").is_file():
             raise ValueError("runtime installation did not produce lib/libobjc.so")
-        report.update(status="passed", stage=str(stage))
+        report.update(status="passed", stage=str(stage), robin_map_source=str(robin))
     except (OSError, ValueError, subprocess.SubprocessError) as error:
         report.update(status="failed", error=str(error))
     finally:

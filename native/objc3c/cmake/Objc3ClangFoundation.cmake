@@ -82,7 +82,7 @@ message(STATUS "ObjC3 pinned Clang patch digest: ${OBJC3C_FOUNDATION_PATCH_DIGES
 file(GLOB_RECURSE _objc3_frontend_sources CONFIGURE_DEPENDS
   "${_objc3_repo}/native/objc3c/src/clang_foundation/*.cpp"
   "${_objc3_repo}/native/objc3c/src/clang_foundation/*.h")
-file(GLOB _objc3_frontend_cmake CONFIGURE_DEPENDS "${_objc3_repo}/native/objc3c/cmake/*.cmake")
+file(GLOB _objc3_frontend_cmake CONFIGURE_DEPENDS "${_objc3_repo}/native/objc3c/cmake/*.cmake*")
 set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS
   ${_objc3_frontend_sources} ${_objc3_frontend_cmake}
   "${_objc3_repo}/scripts/objc3c_toolchain/facade.py"

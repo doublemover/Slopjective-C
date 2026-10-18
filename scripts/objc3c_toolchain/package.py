@@ -2,7 +2,6 @@
 from __future__ import annotations
 
 import argparse
-from compression import zstd
 import hashlib
 import json
 import os
@@ -52,6 +51,8 @@ def verify_sdk(prefix: Path, expected: str | None = None) -> dict:
 
 
 def package_sdk(repo: Path, prefix: Path, validation_report: Path, cache_dir: Path) -> dict:
+    from compression import zstd
+
     # Imports stay inside this producer so the installed verifier needs only
     # Python's standard library and never needs a source checkout.
     from .core import verify_development
@@ -105,12 +106,25 @@ def package_sdk(repo: Path, prefix: Path, validation_report: Path, cache_dir: Pa
     import subprocess
     subprocess.run([os.sys.executable, str(example / 'build.py'), '--output-dir', str(prefix / 'bin'),
                     '--installed-layout'], check=True)
+    shutil.copytree(repo / 'tests/clang_foundation/installed_sdk',
+                    prefix / 'share/objc3c/examples/native', dirs_exist_ok=True)
     verifier = prefix / 'share/objc3c/verify-sdk.py'
     verifier.parent.mkdir(parents=True, exist_ok=True)
     shutil.copyfile(Path(__file__), verifier)
+    shutil.copyfile(Path(__file__).with_name('install_sdk.py'), prefix / 'share/objc3c/install-sdk.py')
+    shutil.copyfile(repo / 'scripts/install_objc3c_linux.sh', prefix / 'share/objc3c/install-linux.sh')
+    runtime_profile = json.loads((repo / 'scripts/objc3c_toolchain_runtime/runtime-profile.json').read_text())['profiles']['linux-x86_64']
+    robin_license = repo / f"out/toolchains/robin-map-{runtime_profile['robin_map_release']}/src/LICENSE"
+    license_dir = prefix / 'share/licenses/robin-map'
+    license_dir.mkdir(parents=True, exist_ok=True)
+    shutil.copyfile(robin_license, license_dir / 'LICENSE')
     data = {'schema': 'objc3.sdk.v1', 'source_build_id': source['build_id'],
             'upstream_commit': source['upstream_commit'], 'patch_digest': source['patch_digest'],
-            'target': toolchain['target_triple'], 'frontend_inputs': facade_identity(repo)['sha256'],
+            'target': toolchain['target_triple'],
+            'linux_abi': {name: json.loads((repo / 'scripts/objc3c_toolchain_runtime/runtime-profile.json').read_text())['profiles']['linux-x86_64'][name]
+                          for name in ('glibc_minimum', 'libstdcxx_symbol_minimum')},
+            'host_tools': json.loads((repo / 'toolchains/llvm/manifest.json').read_text())['host_tools'],
+            'frontend_inputs': facade_identity(repo)['sha256'],
             'qualification': {'build_identity': report['build_identity'], 'nodes': expected_nodes,
                               'runtime_count': report['runtime_count']}, 'files': inventory(prefix)}
     data['seal_sha256'] = _digest(data)

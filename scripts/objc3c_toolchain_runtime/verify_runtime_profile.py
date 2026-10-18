@@ -10,7 +10,6 @@ import sys
 from pathlib import Path
 
 PIN = "e877e782fb965c4e870d2ecf6aff58dddc6290ae"
-ROBIN_MAP_PIN = "4ec1bf19c6a96125ea22062f38c2cf5b958e448e"
 WINDOWS_TOOLS = ("clang.exe", "clang++.exe", "lld-link.exe")
 LINUX_TOOLS = ("clang", "clang++", "ld.lld")
 
@@ -25,7 +24,7 @@ def main() -> int:
     parser.add_argument("--manifest", type=Path, default=Path(__file__).with_name("runtime-profile.json"))
     parser.add_argument("--profile", default="windows-x86_64")
     parser.add_argument("--source", type=Path, help="existing local libobjc2 checkout; this tool never downloads")
-    parser.add_argument("--robin-map-source", type=Path, help="existing local robin-map v1.4.0 checkout")
+    parser.add_argument("--robin-map-source", type=Path, help="existing local robin-map checkout at the profile pin")
     parser.add_argument("--bin-dir", type=Path, help="directory containing pinned Clang and LLD drivers")
     args = parser.parse_args()
 
@@ -35,6 +34,8 @@ def main() -> int:
     except (OSError, ValueError, KeyError) as exc:
         return fail(f"runtime manifest is unreadable or lacks {args.profile}: {exc}")
 
+    robin_pin = profile.get("robin_map_commit", "")
+    robin_release = profile.get("robin_map_release", "")
     if manifest.get("schema_version") != 1:
         return fail("unsupported runtime manifest schema")
     if args.profile in ("windows-x86_64", "linux-x86_64"):
@@ -109,7 +110,7 @@ def main() -> int:
                 return fail(f"pinned objc/blocks_runtime.h does not declare {symbol}(const void *)")
         if args.profile in ("windows-x86_64", "linux-x86_64"):
             if args.robin_map_source is None or not args.robin_map_source.is_dir():
-                return fail("local robin-map v1.4.0 source is unavailable; configure would fetch from the network")
+                return fail("local pinned robin-map source is unavailable; configure would fetch from the network")
             try:
                 robin_revision = subprocess.check_output(
                     ["git", "-C", str(args.robin_map_source), "rev-parse", "HEAD"], text=True,
@@ -117,8 +118,8 @@ def main() -> int:
                 ).strip()
             except (OSError, subprocess.CalledProcessError) as exc:
                 return fail(f"cannot read local robin-map revision: {exc}")
-            if robin_revision != ROBIN_MAP_PIN:
-                return fail(f"robin-map source is {robin_revision}, expected {ROBIN_MAP_PIN}")
+            if robin_revision != robin_pin:
+                return fail(f"robin-map source is {robin_revision}, expected {robin_pin}")
             if not (args.robin_map_source / "include" / "tsl" / "robin_map.h").is_file():
                 return fail("pinned robin-map checkout lacks include/tsl/robin_map.h")
     else:
@@ -129,7 +130,7 @@ def main() -> int:
     print(f"PROFILE VERIFIED: {args.profile}")
     print(f"RUNTIME SOURCE VERIFIED: libobjc2 v2.3 at {PIN}")
     if args.robin_map_source:
-        print(f"DEPENDENCY VERIFIED: robin-map v1.4.0 at {ROBIN_MAP_PIN}")
+        print(f"DEPENDENCY VERIFIED: robin-map {robin_release} at {robin_pin}")
     if args.bin_dir:
         print(f"TOOLCHAIN VERIFIED: Clang/LLD {expected_version} files match the pinned source revision")
     return 0

@@ -27,4 +27,4 @@ jobs:
           npm ci
 
       - name: Check planning publication drift
-        run: npm run objc3c -- check-planning-publication-drift
+        run: python -m scripts.objc3c_workflow check-planning-publication-drift

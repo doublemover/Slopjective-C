@@ -91,22 +91,6 @@ install_node() {
   fi
 }
 
-install_powershell() {
-  local dest="$setup_root/powershell-7.6.7" archive="$scratch/powershell.tar.gz"
-  if [[ -f "$dest/.objc3c-install-incomplete" ]]; then rm -rf -- "$dest"; fi
-  if [[ ! -x "$dest/pwsh" ]]; then
-    download_verified https://github.com/PowerShell/PowerShell/releases/download/v7.6.7/powershell-7.6.7-linux-x64.tar.gz \
-      "$archive" 6896f9e3a6b0a354bf470835a96da76d2f801cd50dcf047ad7c4563bf93bf431
-    mkdir -p "$dest"
-    touch "$dest/.objc3c-install-incomplete"
-    tar -xzf "$archive" -C "$dest"
-    rm -f "$dest/.objc3c-install-incomplete"
-    chmod u+x "$dest/pwsh"
-    rm -f "$archive"
-  fi
-  ln -sfn ../powershell-7.6.7/pwsh "$setup_root/bin/pwsh"
-  "$dest/pwsh" -NoProfile -NonInteractive -Command '$PSVersionTable.PSVersion.ToString()'
-}
 
 install_llvm() {
   local dest="$setup_root/llvm-23.1.3" archive="$scratch/llvm.tar.xz"
@@ -130,25 +114,25 @@ install_llvm() {
 }
 
 install_ccache() {
-  local dest="$setup_root/ccache-4.14.1-linux-x86_64-glibc" archive="$scratch/ccache.tar.xz"
+  local dest="$setup_root/ccache-4.14.2-linux-x86_64-glibc" archive="$scratch/ccache.tar.xz"
   if [[ ! -x "$dest/ccache" ]]; then
     download_verified https://deb.debian.org/debian/pool/main/m/minisign/minisign_0.12-1_amd64.deb \
       "$scratch/minisign.deb" 4a3f9611a0e363e5c574129dc0195ba951c6be4b8f7ac13d64880000e3b22ebe
     dpkg-deb -x "$scratch/minisign.deb" "$scratch/minisign"
-    download_verified https://github.com/ccache/ccache/releases/download/v4.14.1/ccache-4.14.1-linux-x86_64-glibc.tar.xz \
-      "$archive" ad63d19f5d09ea13f749651653a561c98a59994e673504a4266617b8754218f7
-    curl -fsSL --max-filesize 4096 https://github.com/ccache/ccache/releases/download/v4.14.1/ccache-4.14.1-linux-x86_64-glibc.tar.xz.minisig -o "$archive.minisig"
+    download_verified https://github.com/ccache/ccache/releases/download/v4.14.2/ccache-4.14.2-linux-x86_64-glibc.tar.xz \
+      "$archive" bd1313f5316f594443dcb4113a4191c666ac6450e0cf016ff8cb8b080f46c160
+    curl -fsSL --max-filesize 4096 https://github.com/ccache/ccache/releases/download/v4.14.2/ccache-4.14.2-linux-x86_64-glibc.tar.xz.minisig -o "$archive.minisig"
     "$scratch/minisign/usr/bin/minisign" -P RWQX7yXbBedVfI4PNx6FLdFXu9GHUFsr28s4BVGxm4BeybtnX3P06saF -Vm "$archive"
     tar -xJf "$archive" -C "$setup_root"
     rm -rf "$archive" "$archive.minisig" "$scratch/minisign" "$scratch/minisign.deb"
   fi
-  ln -sfn ../ccache-4.14.1-linux-x86_64-glibc/ccache "$setup_root/bin/ccache"
+  ln -sfn ../ccache-4.14.2-linux-x86_64-glibc/ccache "$setup_root/bin/ccache"
   "$dest/ccache" --version
 }
 
 parallel_installs() {
   local job status=0 index
-  local -a jobs=(install_python install_node install_powershell install_llvm install_ccache) pids=()
+  local -a jobs=(install_python install_node install_llvm install_ccache) pids=()
   for job in "${jobs[@]}"; do
     echo "Starting $job"
     ( set -e; "$job" ) >"$setup_root/logs/$job.log" 2>&1 & pids+=("$!")
@@ -167,10 +151,11 @@ parallel_installs() {
 
 write_activation() {
   cat >"$setup_root/activate.sh" <<EOF
-export OBJC3C_LLVM_ROOT='$setup_root/llvm-23.1.3'
+export OBJC3C_BOOTSTRAP_LLVM_ROOT='$setup_root/llvm-23.1.3'
+export OBJC3C_LLVM_ROOT="\$OBJC3C_BOOTSTRAP_LLVM_ROOT"
 export LLVM_ROOT="\$OBJC3C_LLVM_ROOT"
 export LLVM_DIR="\$LLVM_ROOT/lib/cmake/llvm"
-export LD_LIBRARY_PATH='$repo_root/artifacts/lib:$setup_root/llvm-23.1.3/lib'\${LD_LIBRARY_PATH:+:\$LD_LIBRARY_PATH}
+export LD_LIBRARY_PATH='$setup_root/llvm-23.1.3/lib'
 export PATH='$setup_root/venv315/bin:$setup_root/node-v26.12.0-linux-x64/bin:$setup_root/bin:'"\$LLVM_ROOT/bin:\$PATH"
 export OBJC3C_CI_LLVM_VERSION=23.1.3
 export OBJC3C_NATIVE_EXECUTION_CLANG_PATH="\$LLVM_ROOT/bin/clang++"
@@ -226,7 +211,6 @@ main() {
   if [[ -d "$setup_root/npm-cache" ]] && (( $(du -sm "$setup_root/npm-cache" | cut -f1) > 512 )); then
     npm cache clean --force
   fi
-  run_with_budget npm run objc3c -- build-native-binaries >"$setup_root/logs/build.log" 2>&1
   check_disk_budget
   echo "Setup complete. Source $setup_root/activate.sh in each new shell."
 }

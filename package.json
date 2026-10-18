@@ -6,7 +6,7 @@
     "prettier": "3.9.10"
   },
   "scripts": {
-    "objc3c": "python -m scripts.objc3c_workflow"
+    "objc3c": "python -m scripts.objc3c_toolchain"
   },
   "packageManager": "npm@12.2.1",
   "engines": {

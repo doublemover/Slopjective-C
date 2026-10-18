@@ -5,6 +5,7 @@ endif()
 
 add_library(objc3c_clang_foundation STATIC
   compile_session.cpp
+  driver_native.cpp
   sdk_identity.cpp
   source_identity.cpp
   ast_contract_consumer.cpp
@@ -26,7 +27,7 @@ target_link_libraries(objc3c_clang_foundation PRIVATE
 llvm_map_components_to_libnames(_objc3_native_codegen
   nativecodegen "${LLVM_NATIVE_ARCH}AsmParser")
 target_link_libraries(objc3c_clang_foundation PRIVATE ${_objc3_native_codegen})
-set_property(SOURCE compile_session.cpp APPEND PROPERTY COMPILE_DEFINITIONS
+set_property(SOURCE compile_session.cpp driver_native.cpp APPEND PROPERTY COMPILE_DEFINITIONS
   "OBJC3C_FOUNDATION_DRIVER=\"${OBJC3C_FOUNDATION_DRIVER}\""
   "OBJC3C_FOUNDATION_DRIVER_SHA256=\"${OBJC3C_FOUNDATION_DRIVER_SHA256}\""
   "OBJC3C_FOUNDATION_PATCH_DIGEST=\"${OBJC3C_FOUNDATION_PATCH_DIGEST}\""
@@ -35,10 +36,32 @@ set_property(SOURCE compile_session.cpp APPEND PROPERTY COMPILE_DEFINITIONS
 
 add_library(objc3c_frontend_v2 STATIC frontend_api.cpp)
 target_link_libraries(objc3c_frontend_v2 PUBLIC objc3c_clang_foundation)
-add_executable(objc3c-clang driver_main.cpp)
-target_include_directories(objc3c-clang SYSTEM PRIVATE
+add_executable(objc3c driver_main.cpp)
+target_include_directories(objc3c SYSTEM PRIVATE
   ${LLVM_INCLUDE_DIRS} ${CLANG_INCLUDE_DIRS})
-target_link_libraries(objc3c-clang PRIVATE objc3c_clang_foundation)
+target_link_libraries(objc3c PRIVATE objc3c_clang_foundation)
+
+# CMake's C++20 module scanning must use this SDK, including on fresh hosts.
+# Build the upstream tool against the same qualified Clang/LLVM libraries.
+set(_scan_source "${_objc3_repo}/out/toolchains/objc3-development/src/clang/tools/clang-scan-deps")
+set(_tablegen "${_objc3_repo}/out/toolchains/objc3-development/build-linux-x86_64/bin/llvm-tblgen")
+if(NOT EXISTS "${_tablegen}")
+  message(FATAL_ERROR "The sealed foundation build must provide llvm-tblgen")
+endif()
+add_custom_command(OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/Opts.inc"
+  COMMAND "${_tablegen}" -gen-opt-parser-defs
+    -I "${_objc3_repo}/out/toolchains/objc3-development/src/llvm/include"
+    "${_scan_source}/Opts.td" -o "${CMAKE_CURRENT_BINARY_DIR}/Opts.inc"
+  DEPENDS "${_scan_source}/Opts.td" "${_tablegen}"
+  VERBATIM)
+add_executable(clang-scan-deps "${_scan_source}/ClangScanDeps.cpp"
+  scan_deps_main.cpp "${CMAKE_CURRENT_BINARY_DIR}/Opts.inc")
+target_include_directories(clang-scan-deps SYSTEM PRIVATE
+  "${CMAKE_CURRENT_BINARY_DIR}" ${LLVM_INCLUDE_DIRS} ${CLANG_INCLUDE_DIRS})
+target_compile_features(clang-scan-deps PRIVATE cxx_std_20)
+target_link_libraries(clang-scan-deps PRIVATE clangAST clangBasic clangDependencyScanning
+  clangDriver clangFrontend clangLex clangSerialization clangTooling ${_objc3_native_codegen})
+install(TARGETS clang-scan-deps RUNTIME DESTINATION bin)
 
 add_library(objc3_runtime_services STATIC
   ../runtime/services/error_service.cpp
@@ -53,15 +76,28 @@ add_library(objc3_runtime_services STATIC
   ../runtime/stdlib/generic_associative_service.cpp)
 target_link_libraries(objc3_runtime_services PUBLIC objc3c_build_defaults)
 target_include_directories(objc3_runtime_services PUBLIC
-  "${CMAKE_CURRENT_SOURCE_DIR}/../runtime/public")
+  "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../runtime/public>"
+  "$<INSTALL_INTERFACE:include>")
 find_package(Threads REQUIRED)
 target_link_libraries(objc3_runtime_services PRIVATE Threads::Threads)
 
 include(GNUInstallDirs)
-install(TARGETS objc3c-clang objc3c_frontend_v2 objc3c_clang_foundation objc3_runtime_services
+install(TARGETS objc3c objc3c_frontend_v2 objc3c_clang_foundation objc3_runtime_services
+  EXPORT objc3cTargets
   RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
   ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR})
+install(TARGETS objc3c_build_defaults EXPORT objc3cTargets)
+set_target_properties(objc3c_frontend_v2 PROPERTIES EXPORT_NAME Frontend)
+set_target_properties(objc3_runtime_services PROPERTIES EXPORT_NAME RuntimeServices)
 install(FILES frontend_api.h DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/objc3c)
+install(FILES ../runtime/public/objc3_runtime_services.h
+  DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/objc3c/runtime)
+target_include_directories(objc3c_frontend_v2 INTERFACE "$<INSTALL_INTERFACE:include>")
+install(EXPORT objc3cTargets NAMESPACE objc3c:: DESTINATION lib/cmake/objc3c)
+include(CMakePackageConfigHelpers)
+configure_package_config_file("${CMAKE_CURRENT_SOURCE_DIR}/../../cmake/objc3cConfig.cmake.in"
+  "${CMAKE_CURRENT_BINARY_DIR}/objc3cConfig.cmake" INSTALL_DESTINATION lib/cmake/objc3c)
+install(FILES "${CMAKE_CURRENT_BINARY_DIR}/objc3cConfig.cmake" DESTINATION lib/cmake/objc3c)
 
 if (BUILD_TESTING)
   add_executable(objc3_sdk_identity_test ../../../../tests/clang_foundation/sdk_identity_test.cpp)

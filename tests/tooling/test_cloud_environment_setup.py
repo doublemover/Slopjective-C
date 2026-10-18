@@ -28,18 +28,18 @@ install_python() {
   return 1
 }
 install_node() { test -f "$setup_root/python-started" || sleep 0.1; touch "$setup_root/node-started"; }
-install_powershell() { :; }; install_llvm() { :; }; install_ccache() { :; }
+install_llvm() { :; }; install_ccache() { :; }
 parallel_installs
 ''')
     assert result.returncode == 0, result.stderr
-    assert result.stdout.count("Completed install_") == 5
+    assert result.stdout.count("Completed install_") == 4
 
 
 def test_parallel_failure_is_reported_after_other_jobs_complete(tmp_path: Path) -> None:
     result = run_shell(tmp_path, '''
 install_python() { echo broken >&2; return 7; }
 install_node() { sleep 0.1; touch "$setup_root/node-complete"; }
-install_powershell() { :; }; install_llvm() { :; }; install_ccache() { :; }
+install_llvm() { :; }; install_ccache() { :; }
 parallel_installs
 ''')
     assert result.returncode == 1
