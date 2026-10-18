@@ -170,6 +170,11 @@ def _build_sdk(repo: Path, base: Path, fetch: bool, install_root: Path, foundati
             raise ValueError('SDK inputs changed during qualification; candidate has not been published')
         receipt = package_sdk(repo, prefix, repo / 'out/native-validation' / run_id / 'summary.json',
                               repo / 'out/toolchains/sdk-cache')
+        # Packaging now runs substantial installed-source qualification. Bind
+        # its scripts and fixtures through publication, not just through the
+        # preceding native validation batch.
+        if input_identity(repo, sdk) != identity:
+            raise ValueError('SDK inputs changed during packaging; candidate has not been published')
         installed = install(Path(receipt['archive']), receipt['archive_sha256'], install_root)
         report.update(receipt, status='PASS', installed=installed,
                       elapsed_seconds=round(time.monotonic() - started, 6))

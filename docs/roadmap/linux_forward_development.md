@@ -22,12 +22,19 @@ semantic interface identity; and live Linux editor behavior. Extend the installe
 imports/managed-values/errors/cleanup sample as the public syntax becomes ready.
 Private migration intrinsics do not justify a public feature claim.
 
-## Then: installed modules and structured concurrency
+## Installed module foundation and structured concurrency
 
-Make source-built providers and consumers a hermetic installed-package workflow,
-including reproducible dependency records, incremental invalidation and package
-identity failures outside the checkout. Reuse admitted compiler artifacts and
-module work without substituting timestamp checks for content identity.
+The installed source example now rebuilds both providers and consumers, emits
+reproducible dependency records, and reuses compilation through content identity.
+O0/O2 qualification covers implementation and API invalidation, private header
+edits with preserved timestamps, damaged artifacts and rejected package,
+fingerprint and ownership locks outside the checkout. Fresh Debian and Ubuntu
+archive qualification runs this suite as an ordinary user.
+
+Generalize that bounded build graph into explicit multi-package dependency
+resolution, transitive visibility and reproducible installation records. Define
+public module syntax together with its language and interface contract. Keep
+the qualified example distinct from a general package manager.
 
 Build task groups, cancellation and actor isolation on that module and ownership
 foundation. Existing independent executor services are useful implementation

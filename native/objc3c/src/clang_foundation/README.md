@@ -35,6 +35,15 @@ objc3c consumer.m --objc3 --arc --emit-object Consumer.o \
 objc3c Consumer.o Provider.o -o application
 ```
 
+The installed `share/objc3c/examples/managed/build.py` provides a source-built
+provider/consumer workflow. It compiles the MRC implementation, derives an ARC
+interface from exported declarations, and compiles an ARC consumer against the
+locked identity. Clang depfiles and content hashes control incremental reuse;
+the consumer emits a v2 semantic dependency record. The installed `qualify.py`
+checks O0/O2 builds, implementation versus API invalidation, preserved timestamps,
+damaged artifacts, reproducible dependency records and rejected package,
+fingerprint and ownership locks outside the checkout.
+
 Installed frontends discover their adjacent SDK or accept `--sdk-root`. Driver
 and resource content hashes must match the SDK linked into the frontend. The
 C API's `compiler_sdk_root` selects the same verified relocation. Installed

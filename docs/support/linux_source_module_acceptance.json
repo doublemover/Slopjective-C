@@ -1,0 +1,253 @@
+{
+  "schema": "objc3c.installed-source-modules.v1",
+  "status": "PASS",
+  "sdk_seal": "008345bf70fa4746fa274273e44a2d6c697f0fb2989e9f5315e157823d2c9d90",
+  "outside_checkout": true,
+  "builds": [
+    {
+      "optimization": "O0",
+      "case": "cold",
+      "reused_stages": [],
+      "build_seconds": 0.83133,
+      "sdk_admission_seconds": 1.988607,
+      "sdk_final_verification_seconds": 2.106991,
+      "elapsed_seconds": 4.926931,
+      "sdk_seal": "008345bf70fa4746fa274273e44a2d6c697f0fb2989e9f5315e157823d2c9d90",
+      "fingerprint": "8384394beb20b62b81844cd6d2adf1c00849238554be6c7553a56c2e14d6a2bb"
+    },
+    {
+      "optimization": "O0",
+      "case": "warm",
+      "reused_stages": ["arc-interface", "consumer", "provider"],
+      "build_seconds": 0.053919,
+      "sdk_admission_seconds": 2.180791,
+      "sdk_final_verification_seconds": 1.768878,
+      "elapsed_seconds": 4.003591,
+      "sdk_seal": "008345bf70fa4746fa274273e44a2d6c697f0fb2989e9f5315e157823d2c9d90",
+      "fingerprint": "8384394beb20b62b81844cd6d2adf1c00849238554be6c7553a56c2e14d6a2bb"
+    },
+    {
+      "optimization": "O0",
+      "case": "provider-body-preserved-mtime",
+      "reused_stages": ["arc-interface", "consumer"],
+      "build_seconds": 0.288236,
+      "sdk_admission_seconds": 2.130081,
+      "sdk_final_verification_seconds": 2.309723,
+      "elapsed_seconds": 4.728043,
+      "sdk_seal": "008345bf70fa4746fa274273e44a2d6c697f0fb2989e9f5315e157823d2c9d90",
+      "fingerprint": "8384394beb20b62b81844cd6d2adf1c00849238554be6c7553a56c2e14d6a2bb"
+    },
+    {
+      "optimization": "O0",
+      "case": "private-header-preserved-mtime",
+      "reused_stages": ["arc-interface", "consumer"],
+      "build_seconds": 0.37052,
+      "sdk_admission_seconds": 1.915118,
+      "sdk_final_verification_seconds": 2.213835,
+      "elapsed_seconds": 4.499476,
+      "sdk_seal": "008345bf70fa4746fa274273e44a2d6c697f0fb2989e9f5315e157823d2c9d90",
+      "fingerprint": "8384394beb20b62b81844cd6d2adf1c00849238554be6c7553a56c2e14d6a2bb"
+    },
+    {
+      "optimization": "O0",
+      "case": "missing-consumer-output",
+      "reused_stages": ["arc-interface", "provider"],
+      "build_seconds": 0.328723,
+      "sdk_admission_seconds": 2.68826,
+      "sdk_final_verification_seconds": 2.057127,
+      "elapsed_seconds": 5.074113,
+      "sdk_seal": "008345bf70fa4746fa274273e44a2d6c697f0fb2989e9f5315e157823d2c9d90",
+      "fingerprint": "8384394beb20b62b81844cd6d2adf1c00849238554be6c7553a56c2e14d6a2bb"
+    },
+    {
+      "optimization": "O0",
+      "case": "damaged-interface-preserved-mtime",
+      "reused_stages": ["consumer", "provider"],
+      "build_seconds": 0.299707,
+      "sdk_admission_seconds": 2.032028,
+      "sdk_final_verification_seconds": 2.70916,
+      "elapsed_seconds": 5.040898,
+      "sdk_seal": "008345bf70fa4746fa274273e44a2d6c697f0fb2989e9f5315e157823d2c9d90",
+      "fingerprint": "8384394beb20b62b81844cd6d2adf1c00849238554be6c7553a56c2e14d6a2bb"
+    },
+    {
+      "optimization": "O0",
+      "case": "provider-api",
+      "reused_stages": [],
+      "build_seconds": 1.069872,
+      "sdk_admission_seconds": 2.592269,
+      "sdk_final_verification_seconds": 2.188245,
+      "elapsed_seconds": 5.850389,
+      "sdk_seal": "008345bf70fa4746fa274273e44a2d6c697f0fb2989e9f5315e157823d2c9d90",
+      "fingerprint": "11f15361d36219ca1cebe200c1c1fbe80eced370b7a781cdf66e997c11b01e47"
+    },
+    {
+      "optimization": "O2",
+      "case": "cold",
+      "reused_stages": [],
+      "build_seconds": 3.189614,
+      "sdk_admission_seconds": 2.581725,
+      "sdk_final_verification_seconds": 2.732927,
+      "elapsed_seconds": 8.50427,
+      "sdk_seal": "008345bf70fa4746fa274273e44a2d6c697f0fb2989e9f5315e157823d2c9d90",
+      "fingerprint": "8384394beb20b62b81844cd6d2adf1c00849238554be6c7553a56c2e14d6a2bb"
+    },
+    {
+      "optimization": "O2",
+      "case": "warm",
+      "reused_stages": ["arc-interface", "consumer", "provider"],
+      "build_seconds": 0.099451,
+      "sdk_admission_seconds": 2.117882,
+      "sdk_final_verification_seconds": 2.063199,
+      "elapsed_seconds": 4.280535,
+      "sdk_seal": "008345bf70fa4746fa274273e44a2d6c697f0fb2989e9f5315e157823d2c9d90",
+      "fingerprint": "8384394beb20b62b81844cd6d2adf1c00849238554be6c7553a56c2e14d6a2bb"
+    },
+    {
+      "optimization": "O2",
+      "case": "provider-body-preserved-mtime",
+      "reused_stages": ["arc-interface", "consumer"],
+      "build_seconds": 0.444683,
+      "sdk_admission_seconds": 2.118404,
+      "sdk_final_verification_seconds": 1.978161,
+      "elapsed_seconds": 4.541251,
+      "sdk_seal": "008345bf70fa4746fa274273e44a2d6c697f0fb2989e9f5315e157823d2c9d90",
+      "fingerprint": "8384394beb20b62b81844cd6d2adf1c00849238554be6c7553a56c2e14d6a2bb"
+    },
+    {
+      "optimization": "O2",
+      "case": "private-header-preserved-mtime",
+      "reused_stages": ["arc-interface", "consumer"],
+      "build_seconds": 0.328702,
+      "sdk_admission_seconds": 1.996783,
+      "sdk_final_verification_seconds": 2.051831,
+      "elapsed_seconds": 4.37732,
+      "sdk_seal": "008345bf70fa4746fa274273e44a2d6c697f0fb2989e9f5315e157823d2c9d90",
+      "fingerprint": "8384394beb20b62b81844cd6d2adf1c00849238554be6c7553a56c2e14d6a2bb"
+    },
+    {
+      "optimization": "O2",
+      "case": "missing-consumer-output",
+      "reused_stages": ["arc-interface", "provider"],
+      "build_seconds": 0.324721,
+      "sdk_admission_seconds": 2.314027,
+      "sdk_final_verification_seconds": 2.05866,
+      "elapsed_seconds": 4.69741,
+      "sdk_seal": "008345bf70fa4746fa274273e44a2d6c697f0fb2989e9f5315e157823d2c9d90",
+      "fingerprint": "8384394beb20b62b81844cd6d2adf1c00849238554be6c7553a56c2e14d6a2bb"
+    },
+    {
+      "optimization": "O2",
+      "case": "damaged-interface-preserved-mtime",
+      "reused_stages": ["consumer", "provider"],
+      "build_seconds": 0.328706,
+      "sdk_admission_seconds": 1.804644,
+      "sdk_final_verification_seconds": 1.88208,
+      "elapsed_seconds": 4.015433,
+      "sdk_seal": "008345bf70fa4746fa274273e44a2d6c697f0fb2989e9f5315e157823d2c9d90",
+      "fingerprint": "8384394beb20b62b81844cd6d2adf1c00849238554be6c7553a56c2e14d6a2bb"
+    },
+    {
+      "optimization": "O2",
+      "case": "provider-api",
+      "reused_stages": [],
+      "build_seconds": 0.834662,
+      "sdk_admission_seconds": 1.879522,
+      "sdk_final_verification_seconds": 2.498017,
+      "elapsed_seconds": 5.212205,
+      "sdk_seal": "008345bf70fa4746fa274273e44a2d6c697f0fb2989e9f5315e157823d2c9d90",
+      "fingerprint": "11f15361d36219ca1cebe200c1c1fbe80eced370b7a781cdf66e997c11b01e47"
+    }
+  ],
+  "rejected_imports": [
+    {
+      "optimization": "O0",
+      "case": "fingerprint",
+      "exit_code": 1,
+      "diagnostic": "O3IFC134",
+      "outputs_absent": true
+    },
+    {
+      "optimization": "O0",
+      "case": "package",
+      "exit_code": 1,
+      "diagnostic": "O3IFC134",
+      "outputs_absent": true
+    },
+    {
+      "optimization": "O0",
+      "case": "ownership",
+      "exit_code": 1,
+      "diagnostic": "O3IFC134",
+      "outputs_absent": true
+    },
+    {
+      "optimization": "O2",
+      "case": "fingerprint",
+      "exit_code": 1,
+      "diagnostic": "O3IFC134",
+      "outputs_absent": true
+    },
+    {
+      "optimization": "O2",
+      "case": "package",
+      "exit_code": 1,
+      "diagnostic": "O3IFC134",
+      "outputs_absent": true
+    },
+    {
+      "optimization": "O2",
+      "case": "ownership",
+      "exit_code": 1,
+      "diagnostic": "O3IFC134",
+      "outputs_absent": true
+    }
+  ],
+  "source_builder_sha256": "5e3bb6ebd17e13fbb9f544778f483397c2abc6eed3373e993c372943c63232cf",
+  "limits": "Example module graph, not a general package manager. Build timings exclude full SDK admission and final verification; elapsed timings include both. The native linker runs on every invocation.",
+  "accepted_utc": "2026-10-18T19:10:37.993262+00:00",
+  "source_build_id": "llvmorg-23.1.3-0d261d1ca552-04e1e6cb31df-fd761312",
+  "archive_sha256": "d1ec5a4a4074ee8b9f098125baee301c579507665177d3333af5112ada4b7a37",
+  "fresh_distributions": [
+    {
+      "distribution": "debian13",
+      "image": "debian:13-slim@sha256:a29215f6a35e51e22adffa17f89e9d2ef06214e64a2bad10d765c46aea49f11f",
+      "parallel_jobs": 2,
+      "exit_code": 0,
+      "elapsed_seconds": 189.01675,
+      "archive_sha256": "d1ec5a4a4074ee8b9f098125baee301c579507665177d3333af5112ada4b7a37",
+      "seal_sha256": "008345bf70fa4746fa274273e44a2d6c697f0fb2989e9f5315e157823d2c9d90",
+      "log": "/workspace/scratch/objc3-fresh-debian13-cutover.log"
+    },
+    {
+      "distribution": "ubuntu2604",
+      "image": "ubuntu:26.04@sha256:c098726dd9b9733f3e885f8de0ef375206a311b0a317eadc40d347b1115fb944",
+      "parallel_jobs": 2,
+      "exit_code": 0,
+      "elapsed_seconds": 238.430458,
+      "archive_sha256": "d1ec5a4a4074ee8b9f098125baee301c579507665177d3333af5112ada4b7a37",
+      "seal_sha256": "008345bf70fa4746fa274273e44a2d6c697f0fb2989e9f5315e157823d2c9d90",
+      "log": "/workspace/scratch/objc3-fresh-ubuntu2604-cutover.log"
+    }
+  ],
+  "measurement_scope": "One cold and one warm observation per optimization in a correctness suite; these are not regression budgets or statistical throughput claims. Full SDK admission and final verification remain in elapsed timings.",
+  "upstream_refresh": {
+    "llvm": "llvmorg-23.1.3",
+    "cmake": "v4.4.4",
+    "ninja": "v1.13.2",
+    "ccache": "v4.14.2",
+    "uv": "0.13.1",
+    "node": "v26.12.0",
+    "npm_release": "v12.2.1",
+    "npm_qualified": "12.2.1",
+    "npm_registry_latest": "12.2.0"
+  },
+  "npm_qualification": "GitHub stable release and exact registry package confirm 12.2.1; the registry latest dist-tag still reports 12.2.0.",
+  "packaging_input_guard": "PASS: unit regression and a real source edit during packaging both prevented publication.",
+  "compiler_command_budget_check": {
+    "status": "PASS",
+    "failures": [],
+    "authority": "docs/support/linux_development_latency.json",
+    "authority_sha256": "f33db63850ca67b859249d2351ce49fd72e5e95dea04e9929c157575ee2cdb69"
+  }
+}

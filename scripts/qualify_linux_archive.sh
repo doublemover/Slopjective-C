@@ -68,6 +68,7 @@ cp -R "$OBJC3C_SDK_ROOT/share/objc3c/examples/native/." .
 objc3c main.objc3 -O0 -g -o application
 env -u LD_LIBRARY_PATH ./application
 python3 "$OBJC3C_SDK_ROOT/share/objc3c/examples/managed/build.py" --output-dir ./managed
+python3 "$OBJC3C_SDK_ROOT/share/objc3c/examples/managed/qualify.py" --output-dir ./module-evidence
 "$OBJC3C_SDK_ROOT/bin/lldb" --batch -o 'settings set target.disable-aslr false' \
   -o 'breakpoint set --name main' -o run -o 'expression -- cleanup_order + 42' -o continue ./application
 python3 "$OBJC3C_SDK_ROOT/share/objc3c/verify-sdk.py" "$OBJC3C_SDK_ROOT"

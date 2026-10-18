@@ -1,15 +1,15 @@
 {
   "schema": "objc3.linux.sdk.acceptance.v1",
-  "accepted_utc": "2026-10-18T18:45:23.123460+00:00",
+  "accepted_utc": "2026-10-18T19:10:37.993262+00:00",
   "status": "PASS",
   "source_build_id": "llvmorg-23.1.3-0d261d1ca552-04e1e6cb31df-fd761312",
   "upstream_commit": "0d261d1ca552c95a8f007e061c787ac7132fbcbc",
   "patch_digest": "04e1e6cb31dff31cdec4cca50f5b84852cb069eb806f5d83c0abd91bbe1c08d2",
   "frontend_inputs": "ca24e4a548544810ef0f41c36142a887724c5c363927bb8d8db6ac66a18a3763",
-  "archive_sha256": "c803b525384da00c854e9c6893e3004b7936457ba3b3ebdb51a8a7a79faeb651",
-  "archive_bytes": 413670885,
-  "seal_sha256": "2d8057a20408278c689d5386395dc033401820f1aaab3092961b32cefc7d4cca",
-  "sealed_files": 3893,
+  "archive_sha256": "d1ec5a4a4074ee8b9f098125baee301c579507665177d3333af5112ada4b7a37",
+  "archive_bytes": 413685837,
+  "seal_sha256": "008345bf70fa4746fa274273e44a2d6c697f0fb2989e9f5315e157823d2c9d90",
+  "sealed_files": 3891,
   "target": "x86_64-unknown-linux-gnu",
   "linux_abi": {
     "glibc_minimum": "2.41",
@@ -32,7 +32,7 @@
     "robin_map": "1.4.1"
   },
   "qualification": {
-    "build_identity": "d368158f25489aade3fcebe6383a2bcda335ff8f6ad446d4c4f90b50022f07b0",
+    "build_identity": "2785f5632274da30f58d67fb9d9ef28b6ecf7ebbfdf44e9783d770ceacf4e31b",
     "nodes": [
       "carriers:expression:clang",
       "carriers:abi:clang",
@@ -49,12 +49,12 @@
       "editor:qualification"
     ],
     "runtime_count": 76,
-    "native_report": "out/native-validation/linux-sdk-20261018T183619513531Z/summary.json",
+    "native_report": "out/native-validation/linux-sdk-20261018T190308362723Z/summary.json",
     "frontend_ctests": 16,
     "runtime_ctests": 5,
     "installed_commands": 15,
     "tooling_tests": {
-      "passed": 233,
+      "passed": 245,
       "skipped": 3,
       "subtests": 33
     },
@@ -64,9 +64,9 @@
         "image": "debian:13-slim@sha256:a29215f6a35e51e22adffa17f89e9d2ef06214e64a2bad10d765c46aea49f11f",
         "parallel_jobs": 2,
         "exit_code": 0,
-        "elapsed_seconds": 101.628457,
-        "archive_sha256": "c803b525384da00c854e9c6893e3004b7936457ba3b3ebdb51a8a7a79faeb651",
-        "seal_sha256": "2d8057a20408278c689d5386395dc033401820f1aaab3092961b32cefc7d4cca",
+        "elapsed_seconds": 189.01675,
+        "archive_sha256": "d1ec5a4a4074ee8b9f098125baee301c579507665177d3333af5112ada4b7a37",
+        "seal_sha256": "008345bf70fa4746fa274273e44a2d6c697f0fb2989e9f5315e157823d2c9d90",
         "log": "/workspace/scratch/objc3-fresh-debian13-cutover.log"
       },
       {
@@ -74,9 +74,9 @@
         "image": "ubuntu:26.04@sha256:c098726dd9b9733f3e885f8de0ef375206a311b0a317eadc40d347b1115fb944",
         "parallel_jobs": 2,
         "exit_code": 0,
-        "elapsed_seconds": 164.230865,
-        "archive_sha256": "c803b525384da00c854e9c6893e3004b7936457ba3b3ebdb51a8a7a79faeb651",
-        "seal_sha256": "2d8057a20408278c689d5386395dc033401820f1aaab3092961b32cefc7d4cca",
+        "elapsed_seconds": 238.430458,
+        "archive_sha256": "d1ec5a4a4074ee8b9f098125baee301c579507665177d3333af5112ada4b7a37",
+        "seal_sha256": "008345bf70fa4746fa274273e44a2d6c697f0fb2989e9f5315e157823d2c9d90",
         "log": "/workspace/scratch/objc3-fresh-ubuntu2604-cutover.log"
       }
     ],
@@ -86,105 +86,53 @@
     },
     "ast_contract_tests": 46,
     "cached_verifier_regression": "PASS: modified verifier and compiler are rejected using code from the checksum-verified archive",
-    "archive_runner_sha256": "f35b7891aa992608699d63500d4108648bfd279d7ea617784dff8ff44f8b59bf",
+    "archive_runner_sha256": "a07a47fdedec09af63194dca7fc2f9ac173c991761c1fff2b68ab856299997e4",
     "archive_checks": [
       "installation and relocation under umask 077",
       "full file, directory, mode and relative-link seal",
       "O0/O2 managed imports/errors/cleanup sample rebuilt outside checkout",
       "DWARF validation and LLDB variable/expression evaluation",
-      "separate unprivileged user compiles, runs, rebuilds the installed sample and debugs native code"
-    ]
+      "separate unprivileged user compiles, runs, rebuilds the installed sample and debugs native code",
+      "ordinary-user O0/O2 source-provider/module invalidation and rejected identity suite"
+    ],
+    "source_modules": {
+      "report": "docs/support/linux_source_module_acceptance.json",
+      "builds": 14,
+      "rejected_imports": 6,
+      "source_builder_sha256": "5e3bb6ebd17e13fbb9f544778f483397c2abc6eed3373e993c372943c63232cf"
+    }
   },
   "timings": {
-    "sdk_pipeline_seconds": 223.49144,
-    "native_validation_seconds": 27.461912,
-    "preceding_pipeline_process_measurements": {
-      "exit_code": 0,
-      "elapsed_seconds": 242.44848296599957,
-      "peak_child_rss_kib": 986356,
-      "user_cpu_seconds": 261.126775,
-      "system_cpu_seconds": 89.722547,
-      "memory_scope": "Maximum individual descendant RSS reported by getrusage; not an aggregate process-tree peak.",
-      "sdk_seal": "b49d1e6690dd1864304b2831290e0225066472328c13b37e4ca0cbfd4256635d",
-      "scope": "Preceding SDK with the same compiler/runtime source, before the installer cache-verifier correction."
-    },
+    "sdk_pipeline_seconds": 189.72128,
+    "native_validation_seconds": 28.359616,
     "foundation_admission": {
       "status": "passed",
       "cache_hit": true,
-      "prefix": "/workspace/Slopjective-C/out/toolchains/linux-sdk/sdks/b49d1e6690dd1864304b2831290e0225066472328c13b37e4ca0cbfd4256635d",
+      "prefix": "/workspace/Slopjective-C/out/toolchains/linux-sdk/sdks/2d8057a20408278c689d5386395dc033401820f1aaab3092961b32cefc7d4cca",
       "source_identity": "llvmorg-23.1.3-0d261d1ca552-04e1e6cb31df-fd761312",
-      "seal_sha256": "b49d1e6690dd1864304b2831290e0225066472328c13b37e4ca0cbfd4256635d"
+      "seal_sha256": "2d8057a20408278c689d5386395dc033401820f1aaab3092961b32cefc7d4cca"
     },
-    "limits": "The LLVM build reused intermediate objects; this is not a cold clean-build measurement. Runtime smoke latency is not a representative runtime throughput benchmark.",
+    "verified_sdk_reuse_seconds": 27.193249,
+    "limits": "The pinned LLVM foundation and incremental frontend outputs were reused; this is not a cold LLVM build. Module stage observations are single correctness-suite cases. Program smoke latency is not representative application runtime throughput.",
     "development_latency_report": "docs/support/linux_development_latency.json",
-    "verified_sdk_reuse_seconds": 36.4942,
     "budget_check": {
       "status": "PASS",
       "failures": [],
       "authority": "docs/support/linux_development_latency.json",
       "authority_sha256": "f33db63850ca67b859249d2351ce49fd72e5e95dea04e9929c157575ee2cdb69"
     },
-    "cache_context": "Idle verified SDK reuse; five interleaved warm compiler-command measurements; native validation includes installed Linux editor tools.",
-    "compiler_cache": {
-      "version": "4.14.2",
-      "scope": "Cumulative session statistics, not isolated cold/warm build counters",
-      "statistics": [
-        "autoconf_test\t0",
-        "bad_compiler_arguments\t0",
-        "bad_input_file\t0",
-        "bad_output_file\t0",
-        "cache_miss\t2278",
-        "cache_size_kibibyte\t204052",
-        "called_for_link\t0",
-        "called_for_preprocessing\t0",
-        "cleanups_performed\t0",
-        "compile_failed\t3",
-        "compiler_check_failed\t0",
-        "compiler_produced_empty_output\t0",
-        "compiler_produced_no_output\t0",
-        "compiler_produced_stdout\t0",
-        "could_not_find_compiler\t0",
-        "could_not_use_modules\t0",
-        "could_not_use_precompiled_header\t8514",
-        "direct_cache_hit\t128",
-        "direct_cache_miss\t2384",
-        "disabled\t0",
-        "error_hashing_extra_file\t0",
-        "files_in_cache\t4477",
-        "internal_error\t0",
-        "local_storage_hit\t221",
-        "local_storage_miss\t2278",
-        "local_storage_read_hit\t352",
-        "local_storage_read_miss\t4664",
-        "local_storage_write\t4479",
-        "max_cache_size_kibibyte\t3906250",
-        "max_files_in_cache\t0",
-        "missing_cache_file\t0",
-        "modified_input_file\t2",
-        "multiple_source_files\t0",
-        "no_input_file\t0",
-        "output_to_stdout\t0",
-        "preprocessed_cache_hit\t93",
-        "preprocessed_cache_miss\t2283",
-        "preprocessor_error\t8",
-        "recache\t0",
-        "remote_storage_error\t0",
-        "remote_storage_hit\t0",
-        "remote_storage_miss\t0",
-        "remote_storage_read_hit\t0",
-        "remote_storage_read_miss\t0",
-        "remote_storage_timeout\t0",
-        "remote_storage_write\t0",
-        "stats_updated_timestamp\t1792348576",
-        "stats_zeroed_timestamp\t0",
-        "unsupported_code_directive\t0",
-        "unsupported_compiler_option\t0",
-        "unsupported_environment_variable\t0",
-        "unsupported_source_encoding\t0",
-        "unsupported_source_language\t0"
-      ],
-      "qualification_note": "LLVM PCH calls bypass compiler caching under strict settings. No ccache sloppiness was enabled."
-    }
+    "compiler_command_medians_seconds": {
+      "python_startup": 0.02158161400075187,
+      "compiler_version": 0.2059067589980259,
+      "direct_syntax": 0.015273680997779593,
+      "public_syntax": 0.26121574599892483,
+      "public_compile_and_link": 0.2802151550022245,
+      "program_runtime": 0.004233986001054291
+    },
+    "compiler_command_repetitions": 5,
+    "compiler_command_peak_child_rss_kib": 94700,
+    "memory_scope": "Maximum individual descendant RSS for benchmark commands; not aggregate tree memory.",
+    "module_stage_report": "docs/support/linux_source_module_acceptance.json"
   },
   "hard_cutover": {
     "obsolete_native_source_files_removed": 5313,
@@ -198,10 +146,15 @@
     "provider": "tested distribution packages"
   },
   "sdk_schema": "objc3.sdk.v2",
-  "sealed_entries": 4145,
+  "sealed_entries": 4144,
   "native_milestone": {
     "scope": "Strong ARC object and Block try? Optional locals; direct strong Block Optional/Result construction.",
     "evidence": "O0/O2 executable ownership, autorelease-pool drain, failure, discarded-result and native-unwind paths; installed semantic consumers and live Linux editor tools.",
     "public_status": "defer qualified; Optional/Result and synchronous throws remain reserved pending complete public-language qualification."
+  },
+  "installed_module_milestone": {
+    "scope": "Source-built MRC provider, derived ARC interface and managed consumer; content-verified compilation reuse, always-linked executable and v2 dependency records.",
+    "acceptance": "14 O0/O2 builds and six rejected imports on the qualified SDK and each fresh ordinary-user distribution; private body/header, API and damaged artifact cases; spaces and quotes in source paths.",
+    "limits": "Bounded installed example graph; general multi-package resolution and public module syntax remain future work."
   }
 }

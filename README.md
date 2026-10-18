@@ -88,12 +88,36 @@ other architectures and older Linux runtimes are outside this milestone.
 
 The installed sample combines semantic interface imports, managed objects and
 Blocks, typed errors and `defer` cleanup. It uses the bounded native migration
-intrinsics described below. Rebuild and run it outside the checkout:
+intrinsics described below. Both provider and consumer are built from installed
+source outside the checkout; no precompiled provider is needed:
 
 ```sh
 python3 "$OBJC3C_SDK_ROOT/share/objc3c/examples/managed/build.py" \
   --output-dir ./managed-sample --optimization O2
 ```
+
+The build writes fresh MRC and ARC semantic interfaces, a locked v2 consumer
+dependency record and `build-report.json`. Repeated builds reuse compilation
+stages only when source, transitive header, SDK, flags and output hashes match.
+Reuse and dependency records bind the concrete source and installation paths.
+Private provider edits can retain the consumer's interface identity; API edits
+invalidate its compilation. Every invocation links and runs the application.
+Full SDK verification occurs before and after building, with its time reported
+separately from compilation and linking.
+
+Copy `share/objc3c/examples/managed/src` into a working directory and pass
+`--source-dir ./my-source` to edit the example. Keep `--output-dir` separate from
+both sources and the SDK. Run the installed invalidation and identity suite with:
+
+```sh
+python3 "$OBJC3C_SDK_ROOT/share/objc3c/examples/managed/qualify.py" \
+  --output-dir ./module-qualification
+```
+
+This is an installed example build graph; a general package manager and public
+language module syntax remain future work. The
+[source-module acceptance report](docs/support/linux_source_module_acceptance.json)
+records the qualified invalidation cases and their timing scope.
 
 ## Language status
 

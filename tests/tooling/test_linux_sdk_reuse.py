@@ -1,5 +1,8 @@
 from pathlib import Path
 import os
+import json
+
+import pytest
 
 from scripts.objc3c_toolchain.linux_sdk import copy_foundation, foundation_identity
 
@@ -72,3 +75,47 @@ def test_editor_qualification_changes_invalidate_release_reuse(tmp_path, monkeyp
     before = linux_sdk.input_identity(repo, prefix)['sha256']
     (repo / fixture).write_text('updated qualification expectations')
     assert linux_sdk.input_identity(repo, prefix)['sha256'] != before
+
+
+def test_packaging_input_edit_prevents_installation(tmp_path, monkeypatch):
+    """Edits during the installed source suite must not publish stale evidence."""
+    from scripts.objc3c_toolchain import linux_sdk
+    from types import SimpleNamespace
+    repo = tmp_path / 'repo'
+    repo.mkdir()
+    sdk = tmp_path / 'sdk'
+    sdk.mkdir()
+    monkeypatch.setenv('OBJC3C_BOOTSTRAP_LLVM_ROOT', str(sdk))
+    monkeypatch.setattr(linux_sdk, 'verify_sdk', lambda *a: {
+        'source_build_id': 'llvm-build', 'seal_sha256': 'seal'})
+    monkeypatch.setattr(linux_sdk, 'verify_development', lambda *a: {'build_id': 'llvm-build'})
+    changed = False
+    monkeypatch.setattr(linux_sdk, 'input_identity', lambda *a: {
+        'sha256': 'edited' if changed else 'qualified'})
+    monkeypatch.setattr(linux_sdk, 'copy_foundation', lambda _, prefix: prefix.mkdir())
+    monkeypatch.setattr(linux_sdk, 'build_plans', lambda *a, **kw: {
+        'configure': {'host_environment': {'resource_limits': {'compile_jobs': 1}}}})
+    monkeypatch.setattr(linux_sdk, 'qualify_installed', lambda *a: {'status': 'PASS'})
+
+    def execute(command, **kwargs):
+        if 'scripts.objc3c_toolchain_runtime.build_linux' in command:
+            json.dump({'stage': str(sdk), 'build_key': 'runtime', 'robin_map_source': str(sdk)},
+                      kwargs['stdout'])
+        return SimpleNamespace(returncode=0)
+
+    def package(*args):
+        nonlocal changed
+        changed = True
+        return {'archive': str(tmp_path / 'sdk.tar.zst'), 'archive_sha256': 'archive', 'seal_sha256': 'seal'}
+
+    def install(*args):
+        pytest.fail('a candidate with edited packaging inputs must not be installed')
+
+    monkeypatch.setattr(linux_sdk.subprocess, 'run', execute)
+    monkeypatch.setattr(linux_sdk, 'package_sdk', package)
+    monkeypatch.setattr(linux_sdk, 'install', install)
+    with pytest.raises(ValueError, match='inputs changed during packaging'):
+        linux_sdk.build_sdk(repo, foundation_sdk=sdk)
+    report = json.loads((repo / 'out/toolchains/linux-sdk-builds/qualified/build-report.json').read_text())
+    assert report['status'] == 'FAIL'
+    assert not (repo / 'out/toolchains/linux-sdk-builds/qualified/release.json').exists()
