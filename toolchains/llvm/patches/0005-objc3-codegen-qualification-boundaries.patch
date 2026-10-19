@@ -78,37 +78,47 @@ index 61e13d492..b4d457303 100644
  
    switch (atomics.getEvaluationKind()) {
 diff --git a/clang/lib/CodeGen/CGBlocks.cpp b/clang/lib/CodeGen/CGBlocks.cpp
-index 0683a4937..931cc3074 100644
+index 0683a4937..22fa3e1ca 100644
 --- a/clang/lib/CodeGen/CGBlocks.cpp
 +++ b/clang/lib/CodeGen/CGBlocks.cpp
-@@ -14,6 +14,7 @@
+@@ -14,6 +14,8 @@
  #include "CGCXXABI.h"
  #include "CGDebugInfo.h"
  #include "CGObjCRuntime.h"
 +#include "CGObjC3TypedErrors.h"
++#include "CGObjC3ABIBoundaries.h"
  #include "CGOpenCLRuntime.h"
  #include "CodeGenFunction.h"
  #include "CodeGenModule.h"
-@@ -762,6 +763,9 @@ static void computeBlockInfo(CodeGenModule &CGM, CodeGenFunction *CGF,
+@@ -762,6 +764,16 @@ static void computeBlockInfo(CodeGenModule &CGM, CodeGenFunction *CGF,
  
  /// Emit a block literal expression in the current function.
  llvm::Value *CodeGenFunction::EmitBlockLiteral(const BlockExpr *blockExpr) {
++  if (diagnoseUnsupportedObjC3RuntimeFunction(
++          CGM, QualType(blockExpr->getFunctionType(), 0), blockExpr->getExprLoc()))
++    return llvm::UndefValue::get(ConvertType(blockExpr->getType()));
++  for (const auto &Capture : blockExpr->getBlockDecl()->captures())
++    if (diagnoseUnsupportedObjC3ValueABI(CGM, Capture.getVariable()->getType(),
++                                        Capture.getVariable()->getLocation()))
++      return llvm::UndefValue::get(ConvertType(blockExpr->getType()));
 +  if (CGM.getTypes().diagnoseUnsupportedObjC3Effects(
 +          blockExpr->getType(), blockExpr->getBlockDecl()))
 +    return llvm::UndefValue::get(ConvertType(blockExpr->getType()));
    // If the block has no captures, we won't have a pre-computed
    // layout for it.
    if (!blockExpr->getBlockDecl()->hasCaptures())
-@@ -1282,6 +1286,8 @@ void CodeGenModule::setAddrOfGlobalBlock(const BlockExpr *BE,
+@@ -1282,6 +1294,10 @@ void CodeGenModule::setAddrOfGlobalBlock(const BlockExpr *BE,
  llvm::Constant *
  CodeGenModule::GetAddrOfGlobalBlock(const BlockExpr *BE,
                                      StringRef Name) {
-+  if (getTypes().diagnoseUnsupportedObjC3Effects(BE->getType(), BE->getBlockDecl()))
++  if (diagnoseUnsupportedObjC3RuntimeFunction(
++          *this, QualType(BE->getFunctionType(), 0), BE->getExprLoc()) ||
++      getTypes().diagnoseUnsupportedObjC3Effects(BE->getType(), BE->getBlockDecl()))
 +    return llvm::UndefValue::get(getTypes().ConvertType(BE->getType()));
    if (llvm::Constant *Block = getAddrOfGlobalBlockIfEmitted(BE))
      return Block;
  
-@@ -1501,6 +1507,15 @@ llvm::Function *CodeGenFunction::GenerateBlockFunction(
+@@ -1501,6 +1517,15 @@ llvm::Function *CodeGenFunction::GenerateBlockFunction(
  
    // Create the function declaration.
    const FunctionProtoType *fnType = blockInfo.getBlockExpr()->getFunctionType();
@@ -124,7 +134,7 @@ index 0683a4937..931cc3074 100644
    const CGFunctionInfo &fnInfo =
      CGM.getTypes().arrangeBlockFunctionDeclaration(fnType, args);
    if (CGM.ReturnSlotInterferesWithArgs(fnInfo))
-@@ -1569,7 +1584,11 @@ llvm::Function *CodeGenFunction::GenerateBlockFunction(
+@@ -1569,7 +1594,11 @@ llvm::Function *CodeGenFunction::GenerateBlockFunction(
    // Save a spot to insert the debug information for all the DeclRefExprs.
    llvm::BasicBlock *entry = Builder.GetInsertBlock();
    llvm::BasicBlock::iterator entry_ptr = Builder.GetInsertPoint();
@@ -137,7 +147,7 @@ index 0683a4937..931cc3074 100644
  
    if (IsLambdaConversionToBlock)
      EmitLambdaBlockInvokeBody();
-@@ -1583,8 +1602,10 @@ llvm::Function *CodeGenFunction::GenerateBlockFunction(
+@@ -1583,8 +1612,10 @@ llvm::Function *CodeGenFunction::GenerateBlockFunction(
    llvm::BasicBlock *resume = Builder.GetInsertBlock();
  
    // Go back to the entry.
@@ -151,20 +161,21 @@ index 0683a4937..931cc3074 100644
      entry_ptr = entry->end();
    Builder.SetInsertPoint(entry, entry_ptr);
 diff --git a/clang/lib/CodeGen/CGCall.cpp b/clang/lib/CodeGen/CGCall.cpp
-index 08cb9860f..3c111e4f8 100644
+index 08cb9860f..ba9d38db1 100644
 --- a/clang/lib/CodeGen/CGCall.cpp
 +++ b/clang/lib/CodeGen/CGCall.cpp
-@@ -12,6 +12,9 @@
+@@ -12,6 +12,10 @@
  //===----------------------------------------------------------------------===//
  
  #include "CGCall.h"
 +#include "CGObjC3Carriers.h"
 +#include "CGObjC3ArcCarriers.h"
++#include "CGObjC3ABIBoundaries.h"
 +#include "CGObjC3TypedErrors.h"
  #include "ABIInfo.h"
  #include "ABIInfoImpl.h"
  #include "CGBlocks.h"
-@@ -38,6 +41,7 @@
+@@ -38,6 +42,7 @@
  #include "llvm/ABI/TargetInfo.h"
  #include "llvm/ABI/Types.h"
  #include "llvm/ADT/STLExtras.h"
@@ -172,7 +183,7 @@ index 08cb9860f..3c111e4f8 100644
  #include "llvm/ADT/StringExtras.h"
  #include "llvm/Analysis/ValueTracking.h"
  #include "llvm/IR/Assumptions.h"
-@@ -238,10 +242,45 @@ static const CGFunctionInfo &
+@@ -238,10 +243,45 @@ static const CGFunctionInfo &
  arrangeLLVMFunctionInfo(CodeGenTypes &CGT, bool instanceMethod,
                          SmallVectorImpl<CanQualType> &prefix,
                          CanQual<FunctionProtoType> FTP) {
@@ -218,7 +229,16 @@ index 08cb9860f..3c111e4f8 100644
  
    FnInfoOpts opts =
        instanceMethod ? FnInfoOpts::IsInstanceMethod : FnInfoOpts::None;
-@@ -353,6 +392,8 @@ const CGFunctionInfo &
+@@ -260,7 +300,7 @@ CodeGenTypes::arrangeFreeFunctionType(CanQual<FunctionProtoType> FTP) {
+                                    FTP);
+ }
+ 
+-static CallingConv getCallingConventionForDecl(const ObjCMethodDecl *D,
++CallingConv CodeGen::getObjCMethodCallingConvention(const ObjCMethodDecl *D,
+                                                bool IsTargetDefaultMSABI) {
+   // Set the appropriate calling convention for the Function.
+   if (D->hasAttr<StdCallAttr>())
+@@ -353,6 +393,8 @@ const CGFunctionInfo &
  CodeGenTypes::arrangeCXXMethodType(const CXXRecordDecl *RD,
                                     const FunctionProtoType *FTP,
                                     const CXXMethodDecl *MD) {
@@ -227,7 +247,7 @@ index 08cb9860f..3c111e4f8 100644
    CanQualTypeList argTypes;
  
    // Add the 'this' pointer.
-@@ -408,6 +449,9 @@ bool CodeGenTypes::inheritingCtorHasParams(
+@@ -408,6 +450,9 @@ bool CodeGenTypes::inheritingCtorHasParams(
  const CGFunctionInfo &
  CodeGenTypes::arrangeCXXStructorDeclaration(GlobalDecl GD) {
    auto *MD = cast<CXXMethodDecl>(GD.getDecl());
@@ -237,7 +257,16 @@ index 08cb9860f..3c111e4f8 100644
  
    CanQualTypeList argTypes;
    ExtParameterInfoList paramInfos;
-@@ -587,6 +631,13 @@ CodeGenTypes::arrangeObjCMessageSendSignature(const ObjCMethodDecl *MD,
+@@ -575,6 +620,8 @@ CodeGenTypes::arrangeObjCMethodDeclaration(const ObjCMethodDecl *MD) {
+ const CGFunctionInfo &
+ CodeGenTypes::arrangeObjCMessageSendSignature(const ObjCMethodDecl *MD,
+                                               QualType receiverType) {
++  if (CodeGen::diagnoseUnsupportedObjC3ObjCMethod(CGM, MD))
++    return arrangeNullaryFunction();
+   CanQualTypeList argTys;
+   ExtParameterInfoList extParamInfos(MD->isDirectMethod() ? 1 : 2);
+   argTys.push_back(Context.getCanonicalParamType(receiverType));
+@@ -587,12 +634,19 @@ CodeGenTypes::arrangeObjCMessageSendSignature(const ObjCMethodDecl *MD,
      extParamInfos.push_back(extParamInfo);
    }
  
@@ -251,13 +280,24 @@ index 08cb9860f..3c111e4f8 100644
    FunctionType::ExtInfo einfo;
    bool IsTargetDefaultMSABI =
        getContext().getTargetInfo().getTriple().isOSWindows() ||
-@@ -682,6 +733,17 @@ arrangeFreeFunctionLikeCall(CodeGenTypes &CGT, CodeGenModule &CGM,
+       getContext().getTargetInfo().getTriple().isUEFI();
+   einfo = einfo.withCallingConv(
+-      getCallingConventionForDecl(MD, IsTargetDefaultMSABI));
++      getObjCMethodCallingConvention(MD, IsTargetDefaultMSABI));
+ 
+   if (getContext().getLangOpts().ObjCAutoRefCount &&
+       MD->hasAttr<NSReturnsRetainedAttr>())
+@@ -682,6 +736,21 @@ arrangeFreeFunctionLikeCall(CodeGenTypes &CGT, CodeGenModule &CGM,
        addExtParameterInfosForCall(paramInfos, proto, numExtraRequiredArgs,
                                    args.size());
  
 +    // Blocks and other prefixed call forms retain their existing ABI. This
 +    // native carrier projection is for ordinary non-variadic C function calls.
-+    if (numExtraRequiredArgs != 0 || proto->isVariadic()) {
++    if (numExtraRequiredArgs == 1 && !chainCall) {
++      if (CodeGen::diagnoseUnsupportedObjC3RuntimeFunction(
++              CGM, QualType(proto, 0), SourceLocation()))
++        return CGT.arrangeNullaryFunction();
++    } else if (numExtraRequiredArgs != 0 || proto->isVariadic()) {
 +      if (CodeGen::diagnoseUnsupportedObjC3CarrierByValue(
 +              CGM, QualType(proto, 0), SourceLocation()))
 +        return CGT.arrangeNullaryFunction();
@@ -269,7 +309,7 @@ index 08cb9860f..3c111e4f8 100644
    // If we don't have a prototype at all, but we're supposed to
    // explicitly use the variadic convention for unprototyped calls,
    // treat all of the arguments as required but preserve the nominal
-@@ -692,12 +754,32 @@ arrangeFreeFunctionLikeCall(CodeGenTypes &CGT, CodeGenModule &CGM,
+@@ -692,12 +761,32 @@ arrangeFreeFunctionLikeCall(CodeGenTypes &CGT, CodeGenModule &CGM,
    }
  
    CanQualTypeList argTypes;
@@ -307,17 +347,17 @@ index 08cb9860f..3c111e4f8 100644
  }
  
  /// Figure out the rules for calling a function with the given formal
-@@ -722,6 +804,9 @@ CodeGenTypes::arrangeBlockFunctionCall(const CallArgList &args,
+@@ -722,6 +811,9 @@ CodeGenTypes::arrangeBlockFunctionCall(const CallArgList &args,
  const CGFunctionInfo &
  CodeGenTypes::arrangeBlockFunctionDeclaration(const FunctionProtoType *proto,
                                                const FunctionArgList &params) {
-+  if (CodeGen::diagnoseUnsupportedObjC3CarrierByValue(
++  if (CodeGen::diagnoseUnsupportedObjC3RuntimeFunction(
 +          CGM, QualType(proto, 0), SourceLocation()))
 +    return arrangeNullaryFunction();
    ExtParameterInfoList paramInfos =
        getExtParameterInfosForCall(proto, 1, params.size());
    CanQualTypeList argTypes = getArgTypesForDeclaration(Context, params);
-@@ -779,6 +864,9 @@ const CGFunctionInfo &CodeGenTypes::arrangeCXXMethodCall(
+@@ -779,6 +871,9 @@ const CGFunctionInfo &CodeGenTypes::arrangeCXXMethodCall(
      RequiredArgs required, unsigned numPrefixArgs) {
    assert(numPrefixArgs + 1 <= args.size() &&
           "Emitting a call with less args than the required prefix?");
@@ -327,7 +367,7 @@ index 08cb9860f..3c111e4f8 100644
    // Add one to account for `this`. It's a bit awkward here, but we don't count
    // `this` in similar places elsewhere.
    ExtParameterInfoList paramInfos =
-@@ -1023,6 +1111,17 @@ const CGFunctionInfo &CodeGenTypes::arrangeLLVMFunctionInfo(
+@@ -1023,6 +1118,17 @@ const CGFunctionInfo &CodeGenTypes::arrangeLLVMFunctionInfo(
    assert(llvm::all_of(argTypes,
                        [](CanQualType T) { return T.isCanonicalAsParam(); }));
  
@@ -345,7 +385,7 @@ index 08cb9860f..3c111e4f8 100644
    // Lookup or create unique function info.
    llvm::FoldingSetNodeID ID;
    bool isInstanceMethod =
-@@ -3150,8 +3249,9 @@ void CodeGenModule::ConstructAttributeList(StringRef Name,
+@@ -3150,8 +3256,9 @@ void CodeGenModule::ConstructAttributeList(StringRef Name,
            // This includes trivially-destructible objects, as well as objects
            // whose destruction / clean-up is carried out within the callee
            // (e.g., Obj-C ARC-managed structs, MSVC callee-destroyed objects).
@@ -357,7 +397,7 @@ index 08cb9860f..3c111e4f8 100644
              Attrs.addDeadOnReturnAttr(llvm::DeadOnReturnInfo());
          }
        }
-@@ -4369,6 +4469,38 @@ void CodeGenFunction::EmitFunctionEpilog(
+@@ -4369,6 +4476,38 @@ void CodeGenFunction::EmitFunctionEpilog(
  
    case ABIArgInfo::Extend:
    case ABIArgInfo::Direct:
@@ -396,7 +436,16 @@ index 08cb9860f..3c111e4f8 100644
      if (RetAI.getCoerceToType() == ConvertType(RetTy) &&
          RetAI.getDirectOffset() == 0) {
        // The internal return value temp always will have pointer-to-return-type
-@@ -5121,6 +5253,16 @@ void CodeGenFunction::EmitCallArgs(
+@@ -4998,7 +5137,7 @@ void CodeGenFunction::EmitCallArgs(
+     const auto *MD = dyn_cast<const ObjCMethodDecl *>(Prototype.P);
+     if (MD) {
+       IsVariadic = MD->isVariadic();
+-      ExplicitCC = getCallingConventionForDecl(
++      ExplicitCC = getObjCMethodCallingConvention(
+           MD, CGM.getTarget().getTriple().isOSWindows());
+       ArgTypes.assign(MD->param_type_begin() + ParamsToSkip,
+                       MD->param_type_end());
+@@ -5121,6 +5260,16 @@ void CodeGenFunction::EmitCallArgs(
      // Reverse the writebacks to match the MSVC ABI.
      Args.reverseWritebacks();
    }
@@ -413,7 +462,7 @@ index 08cb9860f..3c111e4f8 100644
  }
  
  namespace {
-@@ -5205,6 +5347,16 @@ void CodeGenFunction::EmitCallArg(CallArgList &args, const Expr *E,
+@@ -5205,6 +5354,16 @@ void CodeGenFunction::EmitCallArg(CallArgList &args, const Expr *E,
      return args.add(EmitReferenceBindingToExpr(E), type);
    }
  
@@ -430,7 +479,7 @@ index 08cb9860f..3c111e4f8 100644
    bool HasAggregateEvalKind = hasAggregateEvaluationKind(type);
  
    // In the Microsoft C++ ABI, aggregate arguments are destructed by the callee.
-@@ -5577,6 +5729,14 @@ RValue CodeGenFunction::EmitCall(const CGFunctionInfo &CallInfo,
+@@ -5577,6 +5736,14 @@ RValue CodeGenFunction::EmitCall(const CGFunctionInfo &CallInfo,
    // FIXME: We no longer need the types from CallArgs; lift up and simplify.
  
    assert(Callee.isOrdinary() || Callee.isVirtual());
@@ -445,7 +494,7 @@ index 08cb9860f..3c111e4f8 100644
  
    // Handle struct-return functions by passing a pointer to the
    // location that we would like to return into.
-@@ -5710,6 +5870,42 @@ RValue CodeGenFunction::EmitCall(const CGFunctionInfo &CallInfo,
+@@ -5710,6 +5877,42 @@ RValue CodeGenFunction::EmitCall(const CGFunctionInfo &CallInfo,
      bool ArgHasMaybeUndefAttr =
          IsArgumentMaybeUndef(TargetDecl, CallInfo.getNumRequiredArgs(), ArgNo);
  
@@ -488,7 +537,7 @@ index 08cb9860f..3c111e4f8 100644
      switch (ArgInfo.getKind()) {
      case ABIArgInfo::InAlloca: {
        assert(NumIRArgs == 0);
-@@ -5771,9 +5967,12 @@ RValue CodeGenFunction::EmitCall(const CGFunctionInfo &CallInfo,
+@@ -5771,9 +5974,12 @@ RValue CodeGenFunction::EmitCall(const CGFunctionInfo &CallInfo,
          //    we cannot force it to be sufficiently aligned.
          // 3. If the argument is byval, but RV is not located in default
          //    or alloca address space.
@@ -504,7 +553,7 @@ index 08cb9860f..3c111e4f8 100644
          CharUnits Align = ArgInfo.getIndirectAlign();
          const llvm::DataLayout *TD = &CGM.getDataLayout();
  
-@@ -5788,7 +5987,7 @@ RValue CodeGenFunction::EmitCall(const CGFunctionInfo &CallInfo,
+@@ -5788,7 +5994,7 @@ RValue CodeGenFunction::EmitCall(const CGFunctionInfo &CallInfo,
                                               Align.getAsAlign(),
                                               *TD) < Align.getAsAlign()) {
            NeedCopy = true;
@@ -513,7 +562,7 @@ index 08cb9860f..3c111e4f8 100644
            auto LV = I->getKnownLValue();
  
            bool isByValOrRef =
-@@ -5917,8 +6116,11 @@ RValue CodeGenFunction::EmitCall(const CGFunctionInfo &CallInfo,
+@@ -5917,8 +6123,11 @@ RValue CodeGenFunction::EmitCall(const CGFunctionInfo &CallInfo,
          Src = CreateMemTempWithoutCast(I->Ty, "coerce");
          I->copyInto(*this, Src);
        } else {
@@ -818,7 +867,7 @@ index e84e05e8e..997a6cda1 100644
                             ? Builder.CreateLoad(Arg.getIndirectAddress())
                             : Arg.getDirectValue();
 diff --git a/clang/lib/CodeGen/CGExpr.cpp b/clang/lib/CodeGen/CGExpr.cpp
-index 6a0d127fb..029e8e4bc 100644
+index 6a0d127fb..0a43ca883 100644
 --- a/clang/lib/CodeGen/CGExpr.cpp
 +++ b/clang/lib/CodeGen/CGExpr.cpp
 @@ -14,6 +14,10 @@
@@ -855,7 +904,7 @@ index 6a0d127fb..029e8e4bc 100644
 +        IsFreeFunctionCall
 +            ? diagnoseUnsupportedObjC3CarrierFreeFunctionABI(
 +                  CGM, CalledType, E->getExprLoc())
-+            : diagnoseUnsupportedObjC3CarrierByValue(
++            : diagnoseUnsupportedObjC3RuntimeFunction(
 +                  CGM, CalledType, E->getExprLoc());
 +    const auto *FPT = CalledType->getAs<FunctionProtoType>();
 +    if (FPT && FPT->getObjC3FunctionEffects().Throws != ObjC3ThrowsKind::None &&
@@ -898,7 +947,7 @@ index 6a0d127fb..029e8e4bc 100644
 +        (Proto && ArgIndex - PrefixArgs < Proto->getNumParams() &&
 +         Proto->getParamType(ArgIndex - PrefixArgs)->isReferenceType());
 +    const bool HasCarrierProjection =
-+        IsFreeFunctionCall && Proto && !Proto->isVariadic() &&
++        Proto && !Proto->isVariadic() &&
 +        Proto->getCallConv() == CC_C && ArgIndex >= PrefixArgs &&
 +        ArgIndex - PrefixArgs < Proto->getNumParams() &&
 +        getObjC3CarrierABIProjectionType(CGM, Arg->getType(), Projection);
@@ -1279,29 +1328,37 @@ index 6f7b7e7d6..98213d9b0 100644
      Address Addr =
          SourceLVal.getAddress().withElementType(CGF.ConvertTypeForMem(DestTy));
 diff --git a/clang/lib/CodeGen/CGObjC.cpp b/clang/lib/CodeGen/CGObjC.cpp
-index c724a063b..880aec2ca 100644
+index c724a063b..2ca88a56c 100644
 --- a/clang/lib/CodeGen/CGObjC.cpp
 +++ b/clang/lib/CodeGen/CGObjC.cpp
-@@ -12,6 +12,8 @@
+@@ -12,6 +12,9 @@
  
  #include "CGDebugInfo.h"
  #include "CGObjCRuntime.h"
 +#include "CGObjC3ABIBoundaries.h"
++#include "CGObjC3ArcCarriers.h"
 +#include "CGObjC3TypedErrors.h"
  #include "CodeGenFunction.h"
  #include "CodeGenModule.h"
  #include "CodeGenPGO.h"
-@@ -590,6 +592,20 @@ tryEmitSpecializedAllocInit(CodeGenFunction &CGF, const ObjCMessageExpr *OME) {
+@@ -590,6 +593,27 @@ tryEmitSpecializedAllocInit(CodeGenFunction &CGF, const ObjCMessageExpr *OME) {
  
  RValue CodeGenFunction::EmitObjCMessageExpr(const ObjCMessageExpr *E,
                                              ReturnValueSlot Return) {
 +  // Preflight before evaluating the receiver or any argument.
 +  if (diagnoseUnsupportedObjC3ObjCMethod(CGM, E->getMethodDecl()) ||
-+      diagnoseUnsupportedObjC3ValueABI(CGM, E->getType(), E->getExprLoc()))
++      (!supportsObjC3CarrierRuntimeCallABI(CGM, E->getType()) &&
++       diagnoseUnsupportedObjC3ValueABI(CGM, E->getType(), E->getExprLoc())))
 +    return GetUndefRValue(E->getType());
-+  for (const Expr *Arg : E->arguments())
-+    if (diagnoseUnsupportedObjC3ValueABI(CGM, Arg->getType(), Arg->getExprLoc()))
++  unsigned ArgumentIndex = 0;
++  for (const Expr *Arg : E->arguments()) {
++    const bool Fixed = E->getMethodDecl() &&
++        ArgumentIndex < E->getMethodDecl()->param_size();
++    if ((!Fixed || !supportsObjC3CarrierRuntimeCallABI(CGM, Arg->getType())) &&
++        diagnoseUnsupportedObjC3ValueABI(CGM, Arg->getType(), Arg->getExprLoc()))
 +      return GetUndefRValue(E->getType());
++    ++ArgumentIndex;
++  }
 +  const bool HasErrorOutput = supportsObjC3ErrorOutMethod(CGM, E->getMethodDecl());
 +  if (HasErrorOutput &&
 +      (ObjC3CallErrorOutExpr != E || !ObjC3CallErrorOutStorage.isValid())) {
@@ -1312,7 +1369,7 @@ index c724a063b..880aec2ca 100644
    // Only the lookup mechanism and first two arguments of the method
    // implementation vary between runtimes.  We can get the receiver and
    // arguments in generic code.
-@@ -680,6 +696,12 @@ RValue CodeGenFunction::EmitObjCMessageExpr(const ObjCMessageExpr *E,
+@@ -680,6 +704,12 @@ RValue CodeGenFunction::EmitObjCMessageExpr(const ObjCMessageExpr *E,
  
    CallArgList Args;
    EmitCallArgs(Args, method, E->arguments(), /*AC*/AbstractCallee(method));
@@ -1325,7 +1382,7 @@ index c724a063b..880aec2ca 100644
  
    // For delegate init calls in ARC, do an unsafe store of null into
    // self.  This represents the call taking direct ownership of that
-@@ -804,6 +826,15 @@ void CodeGenFunction::StartObjCMethod(const ObjCMethodDecl *OMD,
+@@ -804,6 +834,15 @@ void CodeGenFunction::StartObjCMethod(const ObjCMethodDecl *OMD,
      args.push_back(OMD->getCmdDecl());
  
    args.append(OMD->param_begin(), OMD->param_end());
@@ -1341,7 +1398,7 @@ index c724a063b..880aec2ca 100644
  
    CurGD = OMD;
    CurEHLocation = OMD->getEndLoc();
-@@ -832,6 +863,9 @@ static llvm::Value *emitARCRetainLoadOfScalar(CodeGenFunction &CGF,
+@@ -832,6 +871,9 @@ static llvm::Value *emitARCRetainLoadOfScalar(CodeGenFunction &CGF,
  /// Generate an Objective-C method.  An Objective-C method is a C function with
  /// its pointer, name, and types registered in the class structure.
  void CodeGenFunction::GenerateObjCMethod(const ObjCMethodDecl *OMD) {
@@ -1353,16 +1410,18 @@ index c724a063b..880aec2ca 100644
    assert(isa<CompoundStmt>(OMD->getBody()));
 diff --git a/clang/lib/CodeGen/CGObjC3ABIBoundaries.cpp b/clang/lib/CodeGen/CGObjC3ABIBoundaries.cpp
 new file mode 100644
-index 000000000..f573c1f56
+index 000000000..4443357e8
 --- /dev/null
 +++ b/clang/lib/CodeGen/CGObjC3ABIBoundaries.cpp
-@@ -0,0 +1,144 @@
-+//===--- CGObjC3ABIBoundaries.cpp - Unqualified native boundaries ----------===//
+@@ -0,0 +1,176 @@
++//===--- CGObjC3ABIBoundaries.cpp - Unqualified native boundaries
++//----------===//
 +// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 +#include "CGObjC3ABIBoundaries.h"
-+#include "CGObjC3TypedErrors.h"
++#include "CGObjC3ArcCarriers.h"
 +#include "CGObjC3Carriers.h"
++#include "CGObjC3TypedErrors.h"
 +#include "CodeGenModule.h"
 +#include "clang/AST/DeclCXX.h"
 +#include "clang/AST/DeclObjC.h"
@@ -1386,20 +1445,25 @@ index 000000000..f573c1f56
 +    return findCarrier(Ctx, Array->getElementType(), FollowPointers, Seen);
 +  if (const auto *Atomic = dyn_cast<AtomicType>(Ty))
 +    return findCarrier(Ctx, Atomic->getValueType(), FollowPointers, Seen);
-+  if (FollowPointers)
++  if (FollowPointers) {
 +    if (const auto *Pointer = dyn_cast<PointerType>(Ty))
 +      return findCarrier(Ctx, Pointer->getPointeeType(), true, Seen);
++    if (const auto *Reference = dyn_cast<ReferenceType>(Ty))
++      return findCarrier(Ctx, Reference->getPointeeType(), true, Seen);
++  }
 +  if (const auto *Record = dyn_cast<RecordType>(Ty)) {
 +    const RecordDecl *Definition = Record->getDecl()->getDefinition();
 +    if (!Definition)
 +      return {};
 +    if (const auto *CXXRecord = dyn_cast<CXXRecordDecl>(Definition))
 +      for (const CXXBaseSpecifier &Base : CXXRecord->bases())
-+        if (QualType Found = findCarrier(Ctx, Base.getType(), FollowPointers, Seen);
++        if (QualType Found =
++                findCarrier(Ctx, Base.getType(), FollowPointers, Seen);
 +            !Found.isNull())
 +          return Found;
 +    for (const FieldDecl *Field : Definition->fields())
-+      if (QualType Found = findCarrier(Ctx, Field->getType(), FollowPointers, Seen);
++      if (QualType Found =
++              findCarrier(Ctx, Field->getType(), FollowPointers, Seen);
 +          !Found.isNull())
 +        return Found;
 +  }
@@ -1417,14 +1481,15 @@ index 000000000..f573c1f56
 +}
 +} // namespace
 +
-+bool CodeGen::diagnoseUnsupportedObjC3ValueABI(CodeGenModule &CGM, QualType Type,
-+                                              SourceLocation Loc) {
++bool CodeGen::diagnoseUnsupportedObjC3ValueABI(CodeGenModule &CGM,
++                                               QualType Type,
++                                               SourceLocation Loc) {
 +  return diagnose(CGM, Type, Loc, false, "by-value call ABI");
 +}
 +
 +bool CodeGen::diagnoseUnsupportedObjC3AggregateCopy(CodeGenModule &CGM,
-+                                                   QualType Type,
-+                                                   SourceLocation Loc) {
++                                                    QualType Type,
++                                                    SourceLocation Loc) {
 +  if (Type.isNull() ||
 +      isa<ObjC3OptionalType, ObjC3ResultType>(
 +          CGM.getContext().getCanonicalType(Type).getTypePtr()))
@@ -1444,8 +1509,30 @@ index 000000000..f573c1f56
 +  return diagnose(CGM, Type, Loc, false, "object representation bitcast");
 +}
 +
++bool CodeGen::diagnoseUnsupportedObjC3RuntimeFunction(CodeGenModule &CGM,
++                                                      QualType FunctionType,
++                                                      SourceLocation Loc) {
++  const auto *FPT = FunctionType->getAs<FunctionProtoType>();
++  if (!FPT)
++    return diagnoseUnsupportedObjC3CarrierByValue(CGM, FunctionType, Loc);
++  auto Check = [&](QualType T) {
++    if (!FPT->isVariadic() && FPT->getCallConv() == CC_C &&
++        !FPT->getObjC3FunctionEffects().Async &&
++        FPT->getObjC3FunctionEffects().Throws == ObjC3ThrowsKind::None &&
++        supportsObjC3CarrierRuntimeCallABI(CGM, T))
++      return false;
++    return diagnose(CGM, T, Loc, true, "runtime callable type encoding");
++  };
++  if (Check(FPT->getReturnType()))
++    return true;
++  for (QualType Parameter : FPT->param_types())
++    if (Check(Parameter))
++      return true;
++  return false;
++}
++
 +bool CodeGen::diagnoseUnsupportedObjC3ObjCMethod(CodeGenModule &CGM,
-+                                                const ObjCMethodDecl *Method) {
++                                                 const ObjCMethodDecl *Method) {
 +  if (!Method)
 +    return false;
 +  if (!Method->getObjC3FunctionType().isNull()) {
@@ -1461,23 +1548,25 @@ index 000000000..f573c1f56
 +  // paths from ordinary CallExprs. Preserve callable effects in each value
 +  // type instead of treating an effectful callback as an ordinary callback.
 +  if (CGM.getTypes().diagnoseUnsupportedObjC3Effects(Method->getReturnType(),
-+                                                  Method))
++                                                     Method))
 +    return true;
 +  for (const ParmVarDecl *Param : Method->parameters())
 +    if (CGM.getTypes().diagnoseUnsupportedObjC3Effects(Param->getType(), Param))
 +      return true;
-+  bool Invalid = diagnoseUnsupportedObjC3ValueABI(
-+      CGM, Method->getReturnType(), Method->getLocation());
++  auto Check = [&](QualType T, SourceLocation Loc) {
++    if (!Method->isVariadic() &&
++        getObjCMethodCallingConvention(Method, false) == CC_C &&
++        Method->getObjC3FunctionEffects().Throws == ObjC3ThrowsKind::None &&
++        !Method->getObjC3FunctionEffects().Async &&
++        supportsObjC3CarrierRuntimeCallABI(CGM, T))
++      return false;
++    if (diagnoseUnsupportedObjC3ValueABI(CGM, T, Loc))
++      return true;
++    return diagnose(CGM, T, Loc, true, "Objective-C runtime type encoding");
++  };
++  bool Invalid = Check(Method->getReturnType(), Method->getLocation());
 +  for (const ParmVarDecl *Param : Method->parameters())
-+    Invalid |= diagnoseUnsupportedObjC3ValueABI(CGM, Param->getType(),
-+                                               Param->getLocation());
-+  if (Invalid)
-+    return true;
-+  Invalid = diagnose(CGM, Method->getReturnType(), Method->getLocation(), true,
-+                     "Objective-C runtime type encoding");
-+  for (const ParmVarDecl *Param : Method->parameters())
-+    Invalid |= diagnose(CGM, Param->getType(), Param->getLocation(), true,
-+                        "Objective-C runtime type encoding");
++    Invalid |= Check(Param->getType(), Param->getLocation());
 +  return Invalid;
 +}
 +
@@ -1496,17 +1585,17 @@ index 000000000..f573c1f56
 +      Invalid |= diagnose(CGM, Ivar->getType(), Ivar->getLocation(), true,
 +                          "Objective-C runtime type encoding");
 +    else if (const auto *Property = dyn_cast<ObjCPropertyDecl>(Member))
-+      Invalid |= diagnose(CGM, Property->getType(), Property->getLocation(), true,
-+                          "Objective-C runtime type encoding");
++      Invalid |= diagnose(CGM, Property->getType(), Property->getLocation(),
++                          true, "Objective-C runtime type encoding");
 +  }
 +  return Invalid;
 +}
 diff --git a/clang/lib/CodeGen/CGObjC3ABIBoundaries.h b/clang/lib/CodeGen/CGObjC3ABIBoundaries.h
 new file mode 100644
-index 000000000..eefcc9109
+index 000000000..2ae11a4ba
 --- /dev/null
 +++ b/clang/lib/CodeGen/CGObjC3ABIBoundaries.h
-@@ -0,0 +1,30 @@
+@@ -0,0 +1,36 @@
 +//===--- CGObjC3ABIBoundaries.h - Unqualified native boundaries -*- C++ -*-===//
 +// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -1519,30 +1608,36 @@ index 000000000..eefcc9109
 +class ObjCContainerDecl;
 +namespace CodeGen {
 +class CodeGenModule;
++// Shared by source preflight and physical method signature classification.
++CallingConv getObjCMethodCallingConvention(const ObjCMethodDecl *Method,
++                                           bool IsTargetDefaultMSABI);
 +bool diagnoseUnsupportedObjC3ValueABI(CodeGenModule &CGM, QualType Type,
-+                                     SourceLocation Loc);
++                                      SourceLocation Loc);
 +// Direct carriers use their selected-arm adapters. Whole enclosing aggregates
 +// must not silently copy inactive carrier payload bytes through generic memcpy.
 +bool diagnoseUnsupportedObjC3AggregateCopy(CodeGenModule &CGM, QualType Type,
-+                                          SourceLocation Loc);
++                                           SourceLocation Loc);
 +bool diagnoseUnsupportedObjC3AtomicAccess(CodeGenModule &CGM, QualType Type,
-+                                              SourceLocation Loc);
++                                          SourceLocation Loc);
 +bool diagnoseUnsupportedObjC3RepresentationAccess(CodeGenModule &CGM,
 +                                                  QualType Type,
 +                                                  SourceLocation Loc);
++bool diagnoseUnsupportedObjC3RuntimeFunction(CodeGenModule &CGM,
++                                             QualType FunctionType,
++                                             SourceLocation Loc);
 +bool diagnoseUnsupportedObjC3ObjCMethod(CodeGenModule &CGM,
-+                                       const ObjCMethodDecl *Method);
++                                        const ObjCMethodDecl *Method);
 +bool diagnoseUnsupportedObjC3ObjCContainer(CodeGenModule &CGM,
-+                                          const ObjCContainerDecl *Container);
++                                           const ObjCContainerDecl *Container);
 +} // namespace CodeGen
 +} // namespace clang
 +#endif
 diff --git a/clang/lib/CodeGen/CGObjC3ArcCarriers.cpp b/clang/lib/CodeGen/CGObjC3ArcCarriers.cpp
 new file mode 100644
-index 000000000..fb601bd7e
+index 000000000..6ebe04027
 --- /dev/null
 +++ b/clang/lib/CodeGen/CGObjC3ArcCarriers.cpp
-@@ -0,0 +1,624 @@
+@@ -0,0 +1,633 @@
 +//===--- CGObjC3ArcCarriers.cpp - ARC local carrier lowering --*- C++ -*-===//
 +// Private native ARC operations for the first direct-local carrier slice.
 +#include "CGObjC3ArcCarriers.h"
@@ -1552,6 +1647,8 @@ index 000000000..fb601bd7e
 +#include "CodeGenModule.h"
 +#include "clang/AST/Decl.h"
 +#include "clang/AST/Expr.h"
++#include "clang/AST/ExprObjC.h"
++#include "clang/AST/ObjC3TypeContracts.h"
 +#include "clang/AST/Type.h"
 +#include "llvm/ADT/SmallPtrSet.h"
 +#include "llvm/IR/BasicBlock.h"
@@ -1754,7 +1851,7 @@ index 000000000..fb601bd7e
 +  E = E->IgnoreParenImpCasts();
 +  if (E->getType().isVolatileQualified())
 +    return false;
-+  if (E->isGLValue() || isa<ObjC3CarrierTransferExpr, CallExpr>(E))
++  if (E->isGLValue() || isa<ObjC3CarrierTransferExpr, CallExpr, ObjCMessageExpr>(E))
 +    return true;
 +  if (const auto *Optional = dyn_cast<ObjC3OptionalExpr>(E))
 +    return Optional->getKind() == ObjC3OptionalExpr::Kind::Some ||
@@ -1859,6 +1956,13 @@ index 000000000..fb601bd7e
 +         CGM.getTarget().getCXXABI().isItaniumFamily() &&
 +         !CarrierType.isVolatileQualified() &&
 +         supportsObjC3CarrierARCLocalLifetime(CGM, CarrierType);
++}
++
++bool CodeGen::supportsObjC3CarrierRuntimeCallABI(CodeGenModule &CGM,
++                                               QualType CarrierType) {
++  std::string Encoding;
++  return supportsObjC3CarrierARCCallABI(CGM, CarrierType) &&
++         getObjC3CarrierRuntimeEncoding(CGM.getContext(), CarrierType, Encoding);
 +}
 +
 +void CodeGen::emitObjC3CarrierARCValueInit(CodeGenFunction &CGF, const Expr *E,
@@ -2058,7 +2162,7 @@ index 000000000..fb601bd7e
 +    // reference and pointer views use the same active-tag read.
 +    Storage = CGF.EmitLValue(Operand).getAddress();
 +  } else {
-+    if (!isa<CallExpr>(Operand->IgnoreParenImpCasts()) ||
++    if (!isa<CallExpr, ObjCMessageExpr>(Operand->IgnoreParenImpCasts()) ||
 +        !supportsObjC3CarrierARCCallABI(CGF.CGM, CarrierType))
 +      return Fail();
 +    Storage = CGF.CreateMemTemp(CarrierType, "objc3.arc.query.return");
@@ -2169,10 +2273,10 @@ index 000000000..fb601bd7e
 +
 diff --git a/clang/lib/CodeGen/CGObjC3ArcCarriers.h b/clang/lib/CodeGen/CGObjC3ArcCarriers.h
 new file mode 100644
-index 000000000..05f4f07f6
+index 000000000..6252a2ca9
 --- /dev/null
 +++ b/clang/lib/CodeGen/CGObjC3ArcCarriers.h
-@@ -0,0 +1,72 @@
+@@ -0,0 +1,73 @@
 +//===--- CGObjC3ArcCarriers.h - ARC local carrier adapter ------*- C++ -*-===//
 +// Staged private adapter; no source ABI or capability promotion.
 +#ifndef LLVM_CLANG_LIB_CODEGEN_CGOBJC3ARCCARRIERS_H
@@ -2194,6 +2298,7 @@ index 000000000..05f4f07f6
 +bool supportsObjC3CarrierARCLocalLifetime(CodeGenModule &CGM,
 +                                          QualType CarrierType);
 +bool supportsObjC3CarrierARCCallABI(CodeGenModule &CGM, QualType CarrierType);
++bool supportsObjC3CarrierRuntimeCallABI(CodeGenModule &CGM, QualType CarrierType);
 +/// Construct fresh, owned value storage for a local, argument or return slot.
 +void emitObjC3CarrierARCValueInit(CodeGenFunction &CGF, const Expr *E,
 +                                 Address Destination);
@@ -5346,10 +5451,18 @@ index 000000000..736fe8cb4
 +
 +#endif
 diff --git a/clang/lib/CodeGen/CGObjCGNU.cpp b/clang/lib/CodeGen/CGObjCGNU.cpp
-index 9742b496c..f1719bde7 100644
+index 9742b496c..7e1b6d904 100644
 --- a/clang/lib/CodeGen/CGObjCGNU.cpp
 +++ b/clang/lib/CodeGen/CGObjCGNU.cpp
-@@ -1559,6 +1559,30 @@ class CGObjCGNUstep2 : public CGObjCGNUstep {
+@@ -16,6 +16,7 @@
+ #include "CGCXXABI.h"
+ #include "CGCleanup.h"
+ #include "CGObjCRuntime.h"
++#include "CGObjC3ArcCarriers.h"
+ #include "CodeGenFunction.h"
+ #include "CodeGenModule.h"
+ #include "CodeGenTypes.h"
+@@ -1559,6 +1560,30 @@ class CGObjCGNUstep2 : public CGObjCGNUstep {
      return CGM.getCXXABI().getCatchAllTypeInfo();
    }
    llvm::Function *ModuleInitFunction() override {
@@ -5380,6 +5493,16 @@ index 9742b496c..f1719bde7 100644
      llvm::Function *LoadFunction = llvm::Function::Create(
        llvm::FunctionType::get(llvm::Type::getVoidTy(VMContext), false),
        llvm::GlobalValue::LinkOnceODRLinkage, ".objcv2_load_function",
+@@ -2976,7 +3001,8 @@ CGObjCGNU::GenerateMessageSend(CodeGenFunction &CGF,
+     // If the return value isn't flagged as unused, and the result
+     // type isn't in our narrow set where we assume compatibility,
+     // we need a nil check to ensure a nil value.
+-    if (!Return.isUnused()) {
++    if (!Return.isUnused() ||
++        supportsObjC3CarrierRuntimeCallABI(CGM, ResultType)) {
+       if (ResultType->isVoidType()) {
+         // void results are definitely okay.
+       } else if (ResultType->hasPointerRepresentation() &&
 diff --git a/clang/lib/CodeGen/CGStmt.cpp b/clang/lib/CodeGen/CGStmt.cpp
 index 27e74d966..2cb996ad3 100644
 --- a/clang/lib/CodeGen/CGStmt.cpp
@@ -10297,7 +10420,7 @@ index 000000000..53ce2472b
 \ No newline at end of file
 diff --git a/clang/test/ObjC3/CodeGen/carrier-native-abi-preflight.c b/clang/test/ObjC3/CodeGen/carrier-native-abi-preflight.c
 new file mode 100644
-index 000000000..02f61aebe
+index 000000000..008cdd301
 --- /dev/null
 +++ b/clang/test/ObjC3/CodeGen/carrier-native-abi-preflight.c
 @@ -0,0 +1,32 @@
@@ -10319,7 +10442,7 @@ index 000000000..02f61aebe
 +}
 +#elif defined(TEST_BLOCK_FIXED)
 +void caller(void (^block)(OptionalInt), OptionalInt *value) {
-+  block(*value); // expected-error {{ObjC3 carrier operation 'by-value call ABI'}}
++  block(*value); // expected-error {{ObjC3 carrier operation 'runtime callable type encoding'}}
 +}
 +#elif defined(TEST_C_AGGREGATE)
 +struct Wrapped { OptionalInt value; };
@@ -13000,14 +13123,14 @@ index 000000000..3e1d91c36
 +// CHECK: call void @llvm.objc.storeStrong
 diff --git a/clang/test/ObjC3/CodeGen/carrier-arc-call-boundaries.mm b/clang/test/ObjC3/CodeGen/carrier-arc-call-boundaries.mm
 new file mode 100644
-index 000000000..a5ab4ea77
+index 000000000..d1c309b9b
 --- /dev/null
 +++ b/clang/test/ObjC3/CodeGen/carrier-arc-call-boundaries.mm
 @@ -0,0 +1,32 @@
 +// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c++ -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.0 -fobjc-arc -fblocks -DVARIADIC -emit-llvm -o %t.var.ll -verify %s
 +// RUN: test ! -e %t.var.ll
-+// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c++ -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.0 -fobjc-arc -fblocks -DBLOCK -emit-llvm -o %t.block.ll -verify %s
-+// RUN: test ! -e %t.block.ll
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c++ -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.0 -fobjc-arc -fblocks -DBLOCK -emit-llvm -o %t.block-variadic.ll -verify %s
++// RUN: test ! -e %t.block-variadic.ll
 +// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c++ -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.0 -fobjc-arc -fblocks -DTHROWS -emit-llvm -o %t.throws.ll -verify %s
 +// RUN: test ! -e %t.throws.ll
 +// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c++ -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.0 -fobjc-arc -fblocks -DMUSTTAIL -emit-llvm -o %t.tail.ll -verify %s
@@ -13020,8 +13143,8 @@ index 000000000..a5ab4ea77
 +}
 +#endif
 +#ifdef BLOCK
-+void reject(Strong (^callback)(Strong), Strong value) {
-+  callback(value); // expected-error {{ObjC3 carrier operation 'by-value call ABI'}}
++void reject(Strong (^callback)(Strong, ...), Strong value) {
++  callback(value); // expected-error {{ObjC3 carrier operation 'runtime callable type encoding'}}
 +}
 +#endif
 +#ifdef THROWS
@@ -13034,5 +13157,143 @@ index 000000000..a5ab4ea77
 +Strong tail(Strong value);
 +Strong reject(Strong value) {
 +  [[clang::musttail]] return tail(value); // expected-error {{tail call requires that the return value, all parameters, and any temporaries created by the expression are trivially destructible}}
++}
++#endif
+diff --git a/clang/test/ObjC3/CodeGen/carrier-runtime-call-abi.m b/clang/test/ObjC3/CodeGen/carrier-runtime-call-abi.m
+new file mode 100644
+index 000000000..ac3bc359a
+--- /dev/null
++++ b/clang/test/ObjC3/CodeGen/carrier-runtime-call-abi.m
+@@ -0,0 +1,45 @@
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c -std=c17 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.0 -fobjc-arc -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c++ -std=c++20 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.0 -fobjc-arc -emit-llvm -o - %s | FileCheck %s
++// REQUIRES: x86-registered-target
++
++typedef __objc3_optional(id) Strong;
++typedef __objc3_optional(id __weak) Weak;
++const char *encoding = @encode(Strong);
++// CHECK: c"{__objc3_v4_optional_S40=B(__objc3_v4_payload=@)}\00"
++__attribute__((objc_root_class))
++@interface Receiver
++- (Strong)echo:(Strong)value;
++- (Weak)weak:(Weak)value;
++@end
++@implementation Receiver
++- (Strong)echo:(Strong)value { return value; }
++// CHECK-LABEL: define internal void @_i_Receiver__echo_
++// CHECK-SAME: sret(
++// CHECK-NOT: byval
++// CHECK-NOT: dead_on_return
++// CHECK-NOT: memcpy
++// CHECK: call ptr @llvm.objc.retain
++// CHECK: ret void
++- (Weak)weak:(Weak)value { return value; }
++// CHECK-LABEL: define internal void @_i_Receiver__weak_
++// CHECK: call void @llvm.objc.copyWeak
++// CHECK-NOT: destroyWeak
++// CHECK: ret void
++@end
++Strong send(Receiver *receiver, Strong value) { return [receiver echo:value]; }
++// CHECK-LABEL: define{{.*}} void {{.*}}send{{.*}}sret(
++// CHECK: objc3.arc.argument
++// CHECK: nilReceiverCleanup
++// CHECK: call void @llvm.memset
++// CHECK: call void @llvm.objc.storeStrong
++void discard(Receiver *receiver, Strong value) { [receiver echo:value]; }
++// CHECK-LABEL: define{{.*}} void {{.*}}discard
++// CHECK: objc3.arc.discarded.return
++// CHECK: nilReceiverCleanup
++// CHECK: call void @llvm.memset
++// CHECK: call void @llvm.objc.storeStrong
++Strong invoke(Strong (^callback)(Strong), Strong value) { return callback(value); }
++// CHECK-LABEL: define{{.*}} void {{.*}}invoke{{.*}}sret(
++// CHECK: objc3.arc.argument
++// CHECK: call void %{{.*}}sret(
++// CHECK: call void @llvm.objc.storeStrong
+diff --git a/clang/test/ObjC3/CodeGen/carrier-runtime-call-boundaries.m b/clang/test/ObjC3/CodeGen/carrier-runtime-call-boundaries.m
+new file mode 100644
+index 000000000..ade8226bd
+--- /dev/null
++++ b/clang/test/ObjC3/CodeGen/carrier-runtime-call-boundaries.m
+@@ -0,0 +1,56 @@
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.0 -fobjc-arc -DCAPTURE -emit-llvm -o %t.capture.ll -verify %s
++// RUN: test ! -e %t.capture.ll
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.0 -fobjc-arc -DIVAR -emit-llvm -o %t.ivar.ll -verify %s
++// RUN: test ! -e %t.ivar.ll
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.0 -fobjc-arc -DPOINTER -emit-llvm -o %t.pointer.ll -verify %s
++// RUN: test ! -e %t.pointer.ll
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.0 -fobjc-arc -DVARIADIC -emit-llvm -o %t.variadic.ll -verify %s
++// RUN: test ! -e %t.variadic.ll
++
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.0 -fobjc-arc -DINT128 -emit-llvm -o %t.int128.ll -verify %s
++// RUN: test ! -e %t.int128.ll
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.0 -fobjc-arc -DALTERNATE -emit-llvm -o %t.alternate.ll -verify %s
++// RUN: test ! -e %t.alternate.ll
++
++typedef __objc3_optional(id) Strong;
++#ifdef CAPTURE
++void reject(Strong value) { // expected-error {{ObjC3 carrier operation 'by-value call ABI'}}
++  void (^block)(void) = ^{ (void)__objc3_has_value(value); };
++}
++#endif
++#ifdef IVAR
++__attribute__((objc_root_class))
++@interface Rejected { Strong value; } // expected-error {{ObjC3 carrier operation 'Objective-C runtime type encoding'}}
++@end
++@implementation Rejected @end
++#endif
++#ifdef POINTER
++__attribute__((objc_root_class))
++@interface Rejected
++- (Strong *)borrow; // expected-error {{ObjC3 carrier operation 'Objective-C runtime type encoding'}}
++@end
++@implementation Rejected
++- (Strong *)borrow { return 0; }
++@end
++#endif
++#ifdef VARIADIC
++void reject(Strong (^callback)(Strong, ...), Strong value) {
++  callback(value); // expected-error {{ObjC3 carrier operation 'runtime callable type encoding'}}
++}
++#endif
++
++#ifdef INT128
++typedef __objc3_result(id, __int128) Unencoded;
++void reject(Unencoded (^callback)(Unencoded), Unencoded value) {
++  callback(value); // expected-error {{ObjC3 carrier operation 'runtime callable type encoding'}}
++}
++#endif
++#ifdef ALTERNATE
++__attribute__((objc_root_class))
++@interface Rejected
++- (int)alternate:(Strong)value __attribute__((ms_abi)); // expected-error {{ObjC3 carrier operation 'by-value call ABI'}}
++@end
++@implementation Rejected
++- (int)alternate:(Strong)value { return 0; }
++@end
++#endif
+diff --git a/clang/test/ObjC3/CodeGen/carrier-runtime-reference-boundary.mm b/clang/test/ObjC3/CodeGen/carrier-runtime-reference-boundary.mm
+new file mode 100644
+index 000000000..baa96e292
+--- /dev/null
++++ b/clang/test/ObjC3/CodeGen/carrier-runtime-reference-boundary.mm
+@@ -0,0 +1,19 @@
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c++ -std=c++20 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.0 -fobjc-arc -DMETHOD -emit-llvm -o %t.method.ll -verify %s
++// RUN: test ! -e %t.method.ll
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c++ -std=c++20 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.0 -fobjc-arc -DBLOCK -emit-llvm -o %t.block.ll -verify %s
++// RUN: test ! -e %t.block.ll
++typedef __objc3_optional(id) Strong;
++#ifdef METHOD
++__attribute__((objc_root_class))
++@interface Rejected
++- (Strong &)borrow; // expected-error {{ObjC3 carrier operation 'Objective-C runtime type encoding'}}
++@end
++@implementation Rejected
++- (Strong &)borrow { __builtin_trap(); }
++@end
++#endif
++#ifdef BLOCK
++void reject(void (^callback)(Strong &), Strong &value) {
++  callback(value); // expected-error {{ObjC3 carrier operation 'runtime callable type encoding'}}
 +}
 +#endif

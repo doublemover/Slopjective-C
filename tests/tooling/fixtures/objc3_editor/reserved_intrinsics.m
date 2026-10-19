@@ -46,3 +46,13 @@ void managed_assignment_probe(id input) {
   implicit = original;
   (void)__objc3_has_value(implicit);
 }
+
+@protocol ManagedRuntimeProbe
+- (__objc3_optional(id))managedEcho:(__objc3_optional(id))value;
+@end
+void managed_runtime_call_probe(id<ManagedRuntimeProbe> receiver,
+    __objc3_optional(id) (^callback)(__objc3_optional(id))) {
+  __objc3_optional(id) message_result = [receiver managedEcho:__objc3_none(id)];
+  __objc3_optional(id) block_result = callback(message_result);
+  (void)__objc3_has_value(block_result);
+}

@@ -1,9 +1,9 @@
 diff --git a/clang/include/clang/AST/ObjC3TypeContracts.h b/clang/include/clang/AST/ObjC3TypeContracts.h
 new file mode 100644
-index 000000000..a211eaea1
+index 000000000..910aae065
 --- /dev/null
 +++ b/clang/include/clang/AST/ObjC3TypeContracts.h
-@@ -0,0 +1,133 @@
+@@ -0,0 +1,140 @@
 +//===--- ObjC3TypeContracts.h - Clang-backed value type facts ---*- C++ -*-===//
 +//
 +// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
@@ -23,10 +23,17 @@ index 000000000..a211eaea1
 +#include "clang/AST/CharUnits.h"
 +#include "clang/AST/Type.h"
 +#include "clang/Basic/Specifiers.h"
++#include <string>
 +
 +namespace clang {
 +
 +class ASTContext;
++
++/// Versioned storage/ownership encoding for the qualified Linux ARC callable
++/// subset. This describes a nontrivial owned value, not a byte-copyable record.
++/// Semantic class/protocol and callable identity remain in the source type.
++bool getObjC3CarrierRuntimeEncoding(const ASTContext &Ctx, QualType Type,
++                                    std::string &Encoding);
 +
 +/// The carrier position is context for callers and diagnostics. It does not
 +/// enable optional/result syntax or impose a general copyability policy.
@@ -159,10 +166,10 @@ index e3f74d73f..15bac0545 100644
    VTableBuilder.cpp
 diff --git a/clang/lib/AST/ObjC3TypeContracts.cpp b/clang/lib/AST/ObjC3TypeContracts.cpp
 new file mode 100644
-index 000000000..3c17df85b
+index 000000000..2026df11c
 --- /dev/null
 +++ b/clang/lib/AST/ObjC3TypeContracts.cpp
-@@ -0,0 +1,247 @@
+@@ -0,0 +1,323 @@
 +//===--- ObjC3TypeContracts.cpp - Clang-backed value type facts ----------===//
 +//
 +// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
@@ -177,6 +184,8 @@ index 000000000..3c17df85b
 +#include "clang/AST/DeclObjC.h"
 +#include "clang/AST/Type.h"
 +#include "clang/Basic/LangOptions.h"
++#include "clang/Basic/TargetInfo.h"
++#include "llvm/ADT/StringExtras.h"
 +
 +using namespace clang;
 +
@@ -222,8 +231,8 @@ index 000000000..3c17df85b
 +                      ObjC3ValueTypeFacts &Facts) {
 +  Facts.IsObjCObjectPointer = QT->isObjCObjectPointerType();
 +  Facts.IsBlockPointer = QT->isBlockPointerType();
-+  Facts.HasExplicitObjCLifetime = QT.hasQualifiers() &&
-+      QT.getQualifiers().hasObjCLifetime();
++  Facts.HasExplicitObjCLifetime =
++      QT.hasQualifiers() && QT.getQualifiers().hasObjCLifetime();
 +  Facts.WrittenObjCLifetime = QT.getObjCLifetime();
 +  Facts.EffectiveObjCLifetime = Facts.WrittenObjCLifetime;
 +  if (Context.getLangOpts().ObjCAutoRefCount && isRetainablePointer(QT) &&
@@ -231,9 +240,9 @@ index 000000000..3c17df85b
 +    Facts.EffectiveObjCLifetime = QT->getObjCARCImplicitLifetime();
 +}
 +
-+ObjC3ValueOperationFacts recordOperationFacts(
-+    const CXXRecordDecl *Record, ObjC3ValueOperation Operation,
-+    bool IsTrivial) {
++ObjC3ValueOperationFacts recordOperationFacts(const CXXRecordDecl *Record,
++                                              ObjC3ValueOperation Operation,
++                                              bool IsTrivial) {
 +  if (!Record)
 +    return generatedOperation(IsTrivial);
 +
@@ -248,7 +257,8 @@ index 000000000..3c17df85b
 +    break;
 +  case ObjC3ValueOperation::Move:
 +    // A missing move constructor may still select a copy constructor. Sema
-+    // decides that at the use site; never infer move-only or noncopyable policy.
++    // decides that at the use site; never infer move-only or noncopyable
++    // policy.
 +    if (Record->hasMoveConstructor() &&
 +        !Record->needsOverloadResolutionForMoveConstructor())
 +      KnownDeleted = Record->defaultedMoveConstructorIsDeleted();
@@ -271,9 +281,9 @@ index 000000000..3c17df85b
 +
 +} // namespace
 +
-+ObjC3ValueTypeFacts clang::getObjC3ValueTypeFacts(
-+    const ASTContext &Context, QualType PayloadType,
-+    ObjC3PayloadPosition Position) {
++ObjC3ValueTypeFacts
++clang::getObjC3ValueTypeFacts(const ASTContext &Context, QualType PayloadType,
++                              ObjC3PayloadPosition Position) {
 +  ObjC3ValueTypeFacts Facts;
 +  Facts.WrittenType = PayloadType;
 +  Facts.Position = Position;
@@ -365,36 +375,35 @@ index 000000000..3c17df85b
 +
 +    if (const auto *CXXRecord = dyn_cast<CXXRecordDecl>(Record)) {
 +      Facts.IsAbstractRecord = CXXRecord->isAbstract();
-+      Facts.Copy = recordOperationFacts(
-+          CXXRecord, ObjC3ValueOperation::Copy,
-+          CXXRecord->hasTrivialCopyConstructor());
-+      Facts.Move = recordOperationFacts(
-+          CXXRecord, ObjC3ValueOperation::Move,
-+          CXXRecord->hasTrivialMoveConstructor());
-+      Facts.Destroy = recordOperationFacts(
-+          CXXRecord, ObjC3ValueOperation::Destroy,
-+          CXXRecord->hasTrivialDestructor());
++      Facts.Copy = recordOperationFacts(CXXRecord, ObjC3ValueOperation::Copy,
++                                        CXXRecord->hasTrivialCopyConstructor());
++      Facts.Move = recordOperationFacts(CXXRecord, ObjC3ValueOperation::Move,
++                                        CXXRecord->hasTrivialMoveConstructor());
++      Facts.Destroy =
++          recordOperationFacts(CXXRecord, ObjC3ValueOperation::Destroy,
++                               CXXRecord->hasTrivialDestructor());
 +    } else {
 +      const auto CopyKind = PayloadType.isNonTrivialToPrimitiveCopy();
 +      const auto MoveKind =
 +          PayloadType.isNonTrivialToPrimitiveDestructiveMove();
 +      Facts.Copy = generatedOperation(CopyKind == QualType::PCK_Trivial);
 +      Facts.Move = generatedOperation(MoveKind == QualType::PCK_Trivial);
-+      Facts.Destroy = generatedOperation(
-+          PayloadType.isDestructedType() == QualType::DK_none);
++      Facts.Destroy = generatedOperation(PayloadType.isDestructedType() ==
++                                         QualType::DK_none);
 +    }
 +  } else {
 +    classifyLifetime(Context, PayloadType, Facts);
-+    const bool ARCManaged = Context.getLangOpts().ObjCAutoRefCount &&
++    const bool ARCManaged =
++        Context.getLangOpts().ObjCAutoRefCount &&
 +        (Facts.EffectiveObjCLifetime == Qualifiers::OCL_Strong ||
 +         Facts.EffectiveObjCLifetime == Qualifiers::OCL_Weak);
 +    Facts.IsTriviallyCopyable = PayloadType.isTriviallyCopyableType(Context);
 +    const bool IsNonTrivialBlock = Facts.IsBlockPointer;
 +    Facts.Copy = generatedOperation(!ARCManaged && !IsNonTrivialBlock);
 +    Facts.Move = generatedOperation(!ARCManaged && !IsNonTrivialBlock);
-+    Facts.Destroy = generatedOperation(
-+        !ARCManaged && !IsNonTrivialBlock &&
-+        PayloadType.isDestructedType() == QualType::DK_none);
++    Facts.Destroy =
++        generatedOperation(!ARCManaged && !IsNonTrivialBlock &&
++                           PayloadType.isDestructedType() == QualType::DK_none);
 +  }
 +
 +  const TypeInfoChars Layout = Context.getTypeInfoInChars(PayloadType);
@@ -405,11 +414,85 @@ index 000000000..3c17df85b
 +  return Facts;
 +}
 +
-+
-+
-+
-+
-+
++bool clang::getObjC3CarrierRuntimeEncoding(const ASTContext &Ctx, QualType Type,
++                                           std::string &Encoding) {
++  const auto &Triple = Ctx.getTargetInfo().getTriple();
++  const auto &Lang = Ctx.getLangOpts();
++  if (!Lang.ObjCAutoRefCount || Type.isNull() || Type.isVolatileQualified() ||
++      Triple.getArch() != llvm::Triple::x86_64 || !Triple.isOSLinux() ||
++      !Triple.isGNUEnvironment() ||
++      Lang.ObjCRuntime.getKind() != ObjCRuntime::GNUstep ||
++      Lang.ObjCRuntime.getVersion() != VersionTuple(2, 0))
++    return false;
++  Type = Ctx.getCanonicalType(Type);
++  SmallVector<QualType, 2> Leaves;
++  bool IsOptional = false;
++  if (const auto *Optional = Type->getAs<ObjC3OptionalType>()) {
++    IsOptional = true;
++    Leaves.push_back(Optional->getElementType());
++  } else if (const auto *Result = Type->getAs<ObjC3ResultType>()) {
++    Leaves.push_back(Result->getSuccessType());
++    Leaves.push_back(Result->getErrorType());
++  } else {
++    return false;
++  }
++  std::string Name = IsOptional ? "__objc3_v4_optional" : "__objc3_v4_result";
++  std::string Fields;
++  bool HasManaged = false;
++  for (QualType Leaf : Leaves) {
++    if (Leaf.isVolatileQualified())
++      return false;
++    char Ownership = 'P';
++    if (Leaf->isObjCObjectPointerType() || Leaf->isBlockPointerType()) {
++      HasManaged = true;
++      switch (Leaf.getObjCLifetime()) {
++      case Qualifiers::OCL_Strong:
++        Ownership = 'S';
++        break;
++      case Qualifiers::OCL_Weak:
++        Ownership = 'W';
++        break;
++      case Qualifiers::OCL_ExplicitNone:
++        Ownership = 'U';
++        break;
++      default:
++        return false;
++      }
++      if (Leaf->isBlockPointerType() && Ownership != 'S')
++        return false;
++    } else if (!(Leaf->isVoidType() || Leaf->isIntegerType() ||
++                 Leaf->isEnumeralType() || Leaf->isRealFloatingType() ||
++                 Leaf->isPointerType())) {
++      return false;
++    }
++    std::string Field;
++    QualType NotEncoded;
++    Ctx.getObjCEncodingForType(Leaf, Field, nullptr, &NotEncoded);
++    if (!NotEncoded.isNull() || Field.empty())
++      return false;
++    // Match the shipped GNU runtime codec. In particular, it cannot parse
++    // int128/half/extended-float encodings or arbitrary pointed-to records.
++    if (!((Field.size() == 1 &&
++           StringRef("v@#:*cCsSiIlLqQBfdD").contains(Field[0])) ||
++          Field == "@?" || Field == "^v"))
++      return false;
++    Name += '_';
++    Name += Ownership;
++    Name += llvm::toHex(Field);
++    if (!Leaf->isVoidType())
++      Fields += Field;
++  }
++  if (!HasManaged)
++    return false;
++  auto Representation = Ctx.getObjC3CarrierRepresentationType(Type);
++  if (Representation.State !=
++      ObjC3CarrierRepresentationInfo::Status::Materialized)
++    return false;
++  // The stable nominal name carries ownership information absent from '@'.
++  // The boolean plus active payload union use the target's native layout.
++  Encoding += "{" + Name + "=B(__objc3_v4_payload=" + Fields + ")}";
++  return true;
++}
 diff --git a/clang/unittests/AST/ObjC3TypeContractsTest.cpp b/clang/unittests/AST/ObjC3TypeContractsTest.cpp
 new file mode 100644
 index 000000000..96b6f028c
