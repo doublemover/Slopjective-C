@@ -34,6 +34,8 @@ def main(argv: list[str] | None = None) -> int:
                         default=os.environ.get("OBJC3C_LLVM_ROOT") or os.environ.get("LLVM_ROOT"))
     parser.add_argument("--fetch", action="store_true")
     parser.add_argument("--jobs", type=int, default=2)
+    parser.add_argument("--report-file", type=Path,
+                        help="write the structured result separately from subprocess diagnostics")
     args = parser.parse_args(argv)
     if sys.platform != "linux" or args.jobs < 1 or not args.compiler_root:
         parser.error("native Linux, a compiler root, and a positive job count are required")
@@ -88,7 +90,11 @@ def main(argv: list[str] | None = None) -> int:
         if build.is_dir():
             report["finished_utc"] = datetime.now(timezone.utc).isoformat()
             (build / "build-report.json").write_text(json.dumps(report, indent=2) + "\n")
-    print(json.dumps(report, indent=2))
+    contents = json.dumps(report, indent=2) + "\n"
+    if args.report_file:
+        args.report_file.parent.mkdir(parents=True, exist_ok=True)
+        args.report_file.write_text(contents)
+    print(contents, end="")
     return 0 if report["status"] == "passed" else 2
 
 

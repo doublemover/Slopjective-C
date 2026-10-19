@@ -32,6 +32,7 @@ jobs:
           tests/tooling/test_toolchain_install.py
           tests/tooling/test_linux_sdk_reuse.py
           tests/tooling/test_source_graph.py
+          tests/tooling/test_toolchain_runtime_report.py
           tests/tooling/test_toolchain_facade_identity.py
           tests/tooling/test_clang_feature_authority.py
           tests/tooling/test_native_validation_editor.py
