@@ -1,40 +1,43 @@
-#include "clang_foundation/source_identity.h"
 #include "clang_foundation/compile_session.h"
+#include "clang_foundation/interface_emitter.h"
 #include "clang_foundation/sdk_identity.h"
+#include "clang_foundation/source_identity.h"
 
-#include <algorithm>
-#include <mutex>
-#include <map>
-#include <set>
 #include "clang_foundation/ast_contract_consumer.h"
-#include "clang_foundation/interface_source_import_bridge.h"
 #include "clang_foundation/interface_artifact_io.h"
+#include "clang_foundation/interface_source_import_bridge.h"
 #include "clang/Basic/Diagnostic.h"
 #include "clang/Basic/FileManager.h"
-#include "clang/Basic/SourceManager.h"
-#include "clang/Basic/Version.h"
 #include "clang/Basic/LangStandard.h"
 #include "clang/Basic/ObjC3Foundation.h"
+#include "clang/Basic/SourceManager.h"
+#include "clang/Basic/Version.h"
 #include "clang/CodeGen/CodeGenAction.h"
 #include "clang/Driver/Driver.h"
 #include "clang/Frontend/CompilerInstance.h"
 #include "clang/Frontend/CompilerInvocation.h"
-#include "clang/Sema/Sema.h"
-#include "clang/Sema/ExternalSemaSource.h"
-#include "clang/Sema/Lookup.h"
 #include "clang/Frontend/FrontendActions.h"
 #include "clang/Frontend/MultiplexConsumer.h"
+#include "clang/Lex/Preprocessor.h"
+#include "clang/Lex/PreprocessorOptions.h"
 #include "clang/Options/Options.h"
+#include "clang/Sema/ExternalSemaSource.h"
+#include "clang/Sema/Lookup.h"
+#include "clang/Sema/Sema.h"
 #include "clang/Tooling/Tooling.h"
-#include "llvm/Support/FileSystem.h"
+#include "llvm/Option/ArgList.h"
 #include "llvm/Support/Error.h"
+#include "llvm/Support/FileSystem.h"
 #include "llvm/Support/MemoryBuffer.h"
 #include "llvm/Support/Path.h"
 #include "llvm/Support/TargetSelect.h"
 #include "llvm/Support/VirtualFileSystem.h"
-#include "llvm/Option/ArgList.h"
 #include "llvm/TargetParser/Host.h"
 #include "llvm/TargetParser/Triple.h"
+#include <algorithm>
+#include <map>
+#include <mutex>
+#include <set>
 
 #ifndef OBJC3C_FOUNDATION_DRIVER
 #error "The verified patched Clang driver path must be supplied by the build"
@@ -102,6 +105,37 @@ public:
         request_(request), result_(result) {}
 
   void Initialize(clang::ASTContext &context) override {
+    const auto &language = context.getLangOpts();
+    const auto &predefines = compiler_.getPreprocessorOpts();
+    if (session_ && language.ObjC && language.CPlusPlus &&
+        (language.ObjCAutoRefCount || language.ObjCWeak) &&
+        predefines.UsePredefines &&
+        predefines.ObjCXXARCStandardLibrary == clang::ARCXX_libstdcxx) {
+      // ASTImporter may pull in the compiler's ARC type-trait specializations.
+      // Parse their owning builtin namespace before merging provider ASTs.
+      deferred_context_ = &context;
+      return;
+    }
+    ImportDeclarations(context);
+  }
+
+  bool HandleTopLevelDecl(clang::DeclGroupRef declarations) override {
+    if (deferred_context_)
+      for (const auto *declaration : declarations)
+        if (const auto *space =
+                llvm::dyn_cast<clang::NamespaceDecl>(declaration);
+            space && space->getName() == "std" &&
+            deferred_context_->getSourceManager().isWrittenInBuiltinFile(
+                space->getLocation())) {
+          auto *context = deferred_context_;
+          deferred_context_ = nullptr;
+          ImportDeclarations(*context);
+          break;
+        }
+    return true;
+  }
+
+  void ImportDeclarations(clang::ASTContext &context) {
     if (!session_) {
       source_scoped_ = request_.source_directed_imports;
       return;
@@ -128,9 +162,13 @@ public:
     result_.interface_dependency_order = std::move(imported.dependency_order);
     result_.resolved_module_identities = std::move(imported.resolved_modules);
     result_.resolved_interface_sources = session_->GetSourceArtifacts();
-    if (request_.source_directed_imports) {
+    if (lookup_ && !request_.module_imports.empty()) {
       lookup_->ConfigureSourceRegistry(request_.module_imports, imported,
                                        result_.resolved_interface_sources);
+      if (compiler_.hasSema())
+        lookup_->InitializeSema(compiler_.getSema());
+    }
+    if (request_.source_directed_imports) {
       source_scoped_ = true;
       return;
     }
@@ -143,7 +181,15 @@ public:
         lookup_->AddInitiallyVisible(declaration);
   }
 
-  void HandleTranslationUnit(clang::ASTContext &) override {
+  void HandleTranslationUnit(clang::ASTContext &context) override {
+    if (deferred_context_) {
+      result_.failure =
+          "The compiler ARC prelude did not complete before interface import";
+      auto id = context.getDiagnostics().getCustomDiagID(
+          clang::DiagnosticsEngine::Error, "%0");
+      context.getDiagnostics().Report(id) << result_.failure;
+      return;
+    }
     if (!source_scoped_) return;
     const auto visible = lookup_->GetVisibleModules();
     result_.visible_module_names = visible;
@@ -165,6 +211,7 @@ private:
   const CompileRequest &request_;
   CompileResult &result_;
   bool source_scoped_ = false;
+  clang::ASTContext *deferred_context_ = nullptr;
 };
 template <typename NativeAction>
 class ContractAction final : public NativeAction {
@@ -177,6 +224,12 @@ class ContractAction final : public NativeAction {
  protected:
   bool BeginSourceFileAction(clang::CompilerInstance &compiler) override {
     if (!NativeAction::BeginSourceFileAction(compiler)) return false;
+    if (!request_.module_imports.empty()) {
+      std::vector<std::string> names;
+      for (const auto &module : request_.module_imports)
+        names.push_back(module.canonical_name);
+      compiler.getPreprocessor().setObjC3SourceModuleNames(names);
+    }
     if (imports_ || request_.source_directed_imports) {
       if (!lookup_source_)
         lookup_source_ = llvm::makeIntrusiveRefCnt<InterfaceSourceImportBridge>();
@@ -242,15 +295,6 @@ class ActionFactory final : public clang::tooling::FrontendActionFactory {
       result_.failure = "Source-directed interface imports require an ObjC3 Objective-C or Objective-C++ translation unit";
       return false;
     }
-    if (language.CPlusPlus &&
-        (!request_.imported_interfaces.empty() || !request_.module_imports.empty())) {
-      // Provider language/linkage is not yet part of the interface contract.
-      // Reject before C++ preprocessing can hand @import to a native loader.
-      result_.failure = "C++ and Objective-C++ semantic interface interchange is not supported";
-      result_.interface_import_diagnostics.push_back(
-          {"O3IFC101", result_.failure, request_.input_path});
-      return false;
-    }
     result_.target_triple = invocation->getTargetOpts().Triple;
     result_.runtime_abi = language.ObjC ? language.ObjCRuntime.getAsString() : "no-objc-runtime";
     if (!request_.imported_interfaces.empty() || !request_.module_imports.empty() ||
@@ -267,11 +311,7 @@ class ActionFactory final : public clang::tooling::FrontendActionFactory {
       static constexpr const char *profiles[] = {
           "compatibility", "strict", "strict-concurrency", "strict-system"};
       const auto profile_index = static_cast<unsigned>(language.ObjC3Profile);
-      target.language_profile = std::string("objc3=") +
-          (language.ObjC3 ? "enabled" : "disabled") + ";profile=" +
-          (profile_index < std::size(profiles) ? profiles[profile_index] : "unknown") +
-          ";strict-concurrency=" + (language.ObjC3StrictConcurrency ? "true" : "false") +
-          ";arc=" + (language.ObjCAutoRefCount ? "true" : "false");
+      target.language_profile = ReadInterfaceLanguageProfile(language);
       target.objc = language.ObjC;
       target.objc3 = language.ObjC3;
       target.arc = language.ObjCAutoRefCount;

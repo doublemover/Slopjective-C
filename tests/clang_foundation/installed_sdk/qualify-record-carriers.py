@@ -78,24 +78,26 @@ def qualify(sdk: Path, output: Path) -> dict:
                 link_flags = ['-O2', '-flto=thin'] if optimization.endswith('thinlto') else []
                 run(key + '-link', [compiler, *link_flags, native, provider, consumer, '-o', executable])
                 execute(key, executable)
-                if provider_language == consumer_language == 'objective-c' and optimization in ('O0', 'O2'):
+                if provider_language == consumer_language and optimization in ('O0', 'O2'):
                     directory = output / (key + '-module')
                     directory.mkdir(exist_ok=True)
                     interface = directory / 'RecordCarriers.objc3i'
+                    frontend_mode = ['--objcxx'] if provider_language.endswith('++') else []
+                    standard = 'c++20' if provider_language.endswith('++') else 'c17'
                     run(key + '-interface', [compiler, 'carrier-record-module.m', '--objc3', '--arc',
-                        '--emit-interface', interface, '--module', 'RecordCarriers', '--package', 'record-carriers-v1',
-                        '--', '-' + optimization, '-fblocks'])
+                        *frontend_mode, '--emit-interface', interface, '--module', 'RecordCarriers', '--package', 'record-carriers-v1',
+                        '--', '-std=' + standard, '-' + optimization, '-fblocks'])
                     identity = json.loads(interface.with_suffix('.objc3i.json').read_text())['module']
                     imported = output / (key + '-import.o')
                     run(key + '-import-object', [compiler, 'carrier-record-import.m', '--objc3', '--arc',
-                        '--source-imports', '--module-search-path', directory, '--import-module', 'RecordCarriers',
+                        *frontend_mode, '--source-imports', '--module-search-path', directory, '--import-module', 'RecordCarriers',
                         identity['semantic_fingerprint'], 'record-carriers-v1', '--emit-object', imported,
                         '--emit-dependency-record', output / (key + '-dependencies.json'), '--',
-                        '-' + optimization, '-g', '-fblocks'])
+                        '-std=' + standard, '-' + optimization, '-g', '-fblocks'])
                     application = output / (key + '-import')
                     run(key + '-import-link', [compiler, native, provider, imported, '-o', application])
                     execute(key + '-import', application)
-                    report['interfaces'].append({'optimization': optimization,
+                    report['interfaces'].append({'language': provider_language, 'optimization': optimization,
                          'semantic_fingerprint': identity['semantic_fingerprint'],
                          'runtime_abi': identity['runtime_abi']})
         for language in ('objective-c', 'objective-c++'):
@@ -119,9 +121,10 @@ def qualify(sdk: Path, output: Path) -> dict:
         run('pch-link', [compiler, output / (key + '-native.o'), output / (key + '-provider.o'),
                          consumer, '-o', executable])
         execute('pch-application', executable)
-        assert len(report['executions']) == 15
+        assert len(report['executions']) == 17
         assert len(report['rejections']) == 10
-        assert report['interfaces'][0]['semantic_fingerprint'] == report['interfaces'][1]['semantic_fingerprint']
+        assert len(report['interfaces']) == 4
+        assert len({row['semantic_fingerprint'] for row in report['interfaces']}) == 2
         assert all(row['runtime_abi'] == 'gnustep-2.2;arc' for row in report['interfaces'])
         run('seal-after', [sys.executable, '-B', sdk / 'share/objc3c/verify-sdk.py', sdk])
         report['status'] = 'PASS'

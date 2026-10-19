@@ -9,6 +9,9 @@
 #include <tuple>
 #include <utility>
 
+#include "clang_foundation/interface_codec.h"
+#include "clang_foundation/interface_emitter.h"
+#include "clang_foundation/interface_validation.h"
 #include "clang/AST/ASTContext.h"
 #include "clang/AST/ASTImporter.h"
 #include "clang/AST/ASTImporterSharedState.h"
@@ -20,22 +23,20 @@
 #include "clang/Basic/FileManager.h"
 #include "clang/Basic/LangOptions.h"
 #include "clang/Basic/SourceManager.h"
+#include "clang/Basic/TargetInfo.h"
 #include "clang/Frontend/ASTUnit.h"
-#include "clang/UnifiedSymbolResolution/USRGeneration.h"
 #include "clang/Tooling/Tooling.h"
-#include "clang_foundation/interface_codec.h"
-#include "clang_foundation/interface_emitter.h"
-#include "clang_foundation/interface_validation.h"
+#include "clang/UnifiedSymbolResolution/USRGeneration.h"
 #include "llvm/ADT/ArrayRef.h"
 #include "llvm/ADT/SmallString.h"
-#include "llvm/ADT/StringRef.h"
 #include "llvm/ADT/StringExtras.h"
+#include "llvm/ADT/StringRef.h"
 #include "llvm/ADT/Twine.h"
 #include "llvm/Support/Error.h"
 #include "llvm/Support/FileSystem.h"
-#include "llvm/Support/VirtualFileSystem.h"
 #include "llvm/Support/MemoryBuffer.h"
 #include "llvm/Support/Path.h"
+#include "llvm/Support/VirtualFileSystem.h"
 
 namespace objc3::clang_foundation {
 namespace {
@@ -43,7 +44,8 @@ constexpr std::uint64_t kMaxInterfaceBytes = 32ull * 1024ull * 1024ull;
 constexpr llvm::StringLiteral kCarrierSemantics = "objc3.native-carrier-types.v1";
 constexpr llvm::StringLiteral kEffectSemantics = "objc3.canonical-function-effects.v1";
 const std::vector<llvm::StringRef> kSupportedSemantics = {
-    kCarrierSemantics, kEffectSemantics, "objc3.native-return-ownership.v1", "objc3.direct-dispatch.v1"};
+    kCarrierSemantics, kEffectSemantics, "objc3.native-return-ownership.v1",
+    "objc3.direct-dispatch.v1", "objc3.cxx-data-interfaces.v1"};
 
 void Add(std::vector<InterfaceContractDiagnostic> &out, const llvm::Twine &code,
          const llvm::Twine &message, const llvm::Twine &subject = llvm::Twine()) {
@@ -145,7 +147,8 @@ bool CheckExportCollisions(
     std::vector<InterfaceContractDiagnostic> &diagnostics) {
   std::map<std::string, InterfaceDeclarationIdentity> by_name;
   for (const auto &decl : declarations) {
-    const bool is_tag = decl.kind == "Record" || decl.kind == "Enum";
+    const bool is_tag = decl.kind == "Record" || decl.kind == "CXXRecord" ||
+                        decl.kind == "Enum";
     const std::string lookup_key = (is_tag ? "tag:" : "ordinary:") + decl.qualified_name;
     const auto found = by_name.find(lookup_key);
     if (found == by_name.end()) {
@@ -465,6 +468,21 @@ InterfaceImportReport InterfaceImportSession::ImportInto(
   InterfaceImportReport report;
   if (!impl_) {
     Add(report.diagnostics, "O3IFC141", "import session was not prepared");
+    return report;
+  }
+  const auto &language = target_context.getLangOpts();
+  const auto runtime =
+      (language.ObjC ? language.ObjCRuntime.getAsString() : "no-objc-runtime") +
+      std::string(language.ObjCAutoRefCount ? ";arc"
+                                            : ";manual-reference-counting");
+  if (ReadInterfaceLanguageProfile(language) !=
+          impl_->target.language_profile ||
+      runtime != impl_->target.runtime_abi ||
+      target_context.getTargetInfo().getTriple().str() !=
+          impl_->target.target_triple) {
+    Add(report.diagnostics, "O3IFC135",
+        "target AST language, standard, ownership, runtime, or target differs "
+        "from the prepared import session");
     return report;
   }
   report.direct_dependencies = impl_->direct_dependencies;

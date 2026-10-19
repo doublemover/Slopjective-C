@@ -164,6 +164,15 @@
           "declaration_name": "copied",
           "hover_type": "__objc3_optional",
           "completion_name": "copied"
+        },
+        {
+          "name": "cxx_data_record_linkage",
+          "use_line": "(void)__objc3_has_value(cxx_record.value);",
+          "use_name": "cxx_record",
+          "declaration_line": "CxxInterfaceRecord cxx_record =",
+          "declaration_name": "cxx_record",
+          "hover_type": "CxxInterfaceRecord",
+          "completion_name": "cxx_record"
         }
       ]
     }

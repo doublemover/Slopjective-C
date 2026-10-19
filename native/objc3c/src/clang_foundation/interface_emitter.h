@@ -9,9 +9,15 @@
 namespace clang {
 class ASTContext;
 class NamedDecl;
+class LangOptions;
 }
 
 namespace objc3::clang_foundation {
+
+// Exact parser dialect, standard and ownership mode used by providers and
+// importers.
+[[nodiscard]] std::string
+ReadInterfaceLanguageProfile(const clang::LangOptions &language);
 
 // Clang USR with file-scope C typedef locations normalized for artifact moves.
 [[nodiscard]] std::string ReadInterfaceDeclarationStableId(
@@ -23,9 +29,10 @@ namespace objc3::clang_foundation {
     clang::NamedDecl *declaration, const clang::ASTContext &context,
     InterfaceDeclarationIdentity &identity);
 
-// Emits public ordinary C/Objective-C declarations from an already parsed
-// Clang AST. Unsupported semantics are diagnosed and suppress both outputs.
-// Module dependencies are accepted only as fully resolved interface identities.
+// Emits public C/Objective-C declarations and bounded C++ data APIs from an
+// already parsed Clang AST. Unsupported semantics are diagnosed and suppress
+// both outputs. Module dependencies are accepted only as fully resolved
+// interface identities.
 [[nodiscard]] InterfaceEmissionArtifact EmitSemanticInterface(
     clang::ASTContext &context, llvm::StringRef canonical_module_name,
     llvm::StringRef package_identity,

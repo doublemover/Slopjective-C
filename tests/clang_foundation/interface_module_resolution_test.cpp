@@ -3,6 +3,7 @@
 #include "clang_foundation/interface_artifact_io.h"
 
 #include <cassert>
+#include <cstdio>
 #include <filesystem>
 #include <fstream>
 #include <iterator>
@@ -126,6 +127,64 @@ void WriteArtifact(const InterfaceEmissionArtifact &artifact,
   const auto written = WriteSemanticInterfaceArtifact(artifact, path.string());
   assert(written.success);
 }
+void TestCxxSourceImports(const std::filesystem::path &root) {
+  auto provider =
+      Producer("cpp-provider.mm", "fixture.Cxx", "pkg-cxx",
+               "typedef __objc3_optional(id) Strong; "
+               "struct Owned { int marker; Strong value; }; "
+               "extern \"C\" Owned c_echo(Owned); Owned cpp_echo(Owned); "
+               "int overloaded(int); long overloaded(long);");
+  provider.language = BaseLanguage::ObjectiveCxx;
+  provider.arc = true;
+  provider.arguments.insert(provider.arguments.end(),
+                            {"-std=c++20", "-fblocks"});
+  auto built = Compile(provider);
+  assert(built.success && built.interface_artifact &&
+         built.interface_artifact->success);
+  WriteArtifact(*built.interface_artifact, root / "Cxx.objc3i");
+  for (bool source_directed : {false, true}) {
+    auto consumer = provider;
+    consumer.input_path = "cpp-consumer.mm";
+    consumer.emit_semantic_interface = false;
+    consumer.module_name.clear();
+    consumer.package_identity.clear();
+    consumer.source_directed_imports = source_directed;
+    consumer.interface_search_paths = {root.string()};
+    consumer.module_imports = {Locked(built.interface_artifact->identity)};
+    consumer.source_text =
+        std::string(source_directed ? "@import fixture.Cxx;\n" : "") +
+        "int consume(void) { @fixture.Cxx.Owned input{42,__objc3_none(id)}; "
+        "auto output=@fixture.Cxx.cpp_echo(c_echo(input)); "
+        "return output.marker + overloaded(42) + (int)overloaded(42L); }";
+    auto imported = Compile(consumer);
+    for (const auto &diagnostic : imported.interface_import_diagnostics)
+      std::fprintf(stderr, "%s: %s\n", diagnostic.code.c_str(),
+                   diagnostic.message.c_str());
+    if (!imported.success) {
+      std::fprintf(stderr, "C++ import mode=%d: %s\n", source_directed,
+                   imported.failure.c_str());
+      for (const auto &diagnostic : imported.diagnostics)
+        std::fprintf(stderr, "%s:%u: %s\n", diagnostic.expansion.file.c_str(),
+                     diagnostic.expansion.line, diagnostic.message.c_str());
+    }
+    assert(imported.success);
+    assert(imported.resolved_module_identities.size() == 1);
+    if (source_directed) {
+      consumer.source_text = "Owned premature; @import fixture.Cxx;";
+      assert(!Compile(consumer).success);
+    }
+    consumer.source_text =
+        source_directed ? "@import fixture.Cxx;" : "int marker;";
+    consumer.arguments.push_back("-std=c++23");
+    auto mismatch = Compile(consumer);
+    assert(!mismatch.success);
+    bool rejected = false;
+    for (const auto &diagnostic : mismatch.interface_import_diagnostics)
+      rejected |= diagnostic.code == "O3IFC135";
+    assert(rejected);
+  }
+}
+
 } // namespace
 
 int main() {
@@ -208,8 +267,8 @@ int main() {
       "@import fixture.B;\n@import fixture.C;\n"
       "int conflicting_c_imports(void) { return answer(1); }\n", true,
       &built_c.interface_artifact->identity));
-  // Provider language/linkage interchange is not yet represented by the
-  // interface contract. Keep Objective-C++ consumers explicitly unsupported.
+  // C and C++ interfaces have distinct language identities. A C++ consumer
+  // cannot silently reinterpret these C module locks.
   auto cxx_consumer = Producer("consumer.mm", "", "",
       "@import fixture.B;\n@import fixture.C;\n"
       "int overloads(void) { return @fixture.B.answer() + "
@@ -225,10 +284,18 @@ int main() {
     auto unsupported_cxx = Compile(cxx_consumer);
     assert(!unsupported_cxx.success);
     assert(unsupported_cxx.resolved_module_identities.empty());
-    bool unsupported_language = false;
+    bool mismatched_language = false;
     for (const auto &diagnostic : unsupported_cxx.interface_import_diagnostics)
-      unsupported_language |= diagnostic.code == "O3IFC101";
-    assert(unsupported_language);
+      mismatched_language |= diagnostic.code == "O3IFC135";
+    if (!mismatched_language) {
+      std::fprintf(stderr, "language mismatch mode=%d failure=%s\n",
+                   source_directed, unsupported_cxx.failure.c_str());
+      for (const auto &diagnostic :
+           unsupported_cxx.interface_import_diagnostics)
+        std::fprintf(stderr, "%s: %s\n", diagnostic.code.c_str(),
+                     diagnostic.message.c_str());
+    }
+    assert(mismatched_language);
   }
 
   auto hidden_b = Producer("provider-b-private.m", "fixture.B.private",
@@ -379,5 +446,6 @@ int main() {
       "int use_visible_api(void) { return answer(); }\n"));
 
   std::filesystem::remove_all(mutated_root);
+  TestCxxSourceImports(root);
   std::filesystem::remove_all(root);
 }

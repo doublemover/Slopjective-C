@@ -78,7 +78,7 @@ index 61e13d492..b4d457303 100644
  
    switch (atomics.getEvaluationKind()) {
 diff --git a/clang/lib/CodeGen/CGBlocks.cpp b/clang/lib/CodeGen/CGBlocks.cpp
-index 0683a4937..b2f2332b6 100644
+index 0683a4937..653efb258 100644
 --- a/clang/lib/CodeGen/CGBlocks.cpp
 +++ b/clang/lib/CodeGen/CGBlocks.cpp
 @@ -14,6 +14,12 @@
@@ -278,7 +278,7 @@ index 0683a4937..b2f2332b6 100644
 +    (void)Encoded;
 +    llvm::SHA256 Hash;
 +    Hash.update(Encoding);
-+    Str += "objc3v11_" + llvm::toHex(Hash.final());
++    Str += "objc3v12_" + llvm::toHex(Hash.final());
 +    break;
 +  }
    case BlockCaptureEntityKind::ARCWeak:
@@ -14063,7 +14063,7 @@ index 000000000..530728ff0
 +#endif
 diff --git a/clang/test/ObjC3/CodeGen/carrier-runtime-call-abi.m b/clang/test/ObjC3/CodeGen/carrier-runtime-call-abi.m
 new file mode 100644
-index 000000000..52dce260c
+index 000000000..bb04a6852
 --- /dev/null
 +++ b/clang/test/ObjC3/CodeGen/carrier-runtime-call-abi.m
 @@ -0,0 +1,45 @@
@@ -14074,7 +14074,7 @@ index 000000000..52dce260c
 +typedef __objc3_optional(id) Strong;
 +typedef __objc3_optional(id __weak) Weak;
 +const char *encoding = @encode(Strong);
-+// CHECK: c"{__objc3_v11_optional_S40=B(__objc3_v11_payload=@)}\00"
++// CHECK: c"{__objc3_v12_optional_S40=B(__objc3_v12_payload=@)}\00"
 +__attribute__((objc_root_class))
 +@interface Receiver
 +- (Strong)echo:(Strong)value;
@@ -14656,7 +14656,7 @@ index 0a383c8f9..b5566a357 100644
    std::string FuncName = GenName.getName(QT, IsVolatile);
 diff --git a/clang/lib/CodeGen/CGObjC3ManagedStorage.cpp b/clang/lib/CodeGen/CGObjC3ManagedStorage.cpp
 new file mode 100644
-index 000000000..f55830f20
+index 000000000..ea5a9549b
 --- /dev/null
 +++ b/clang/lib/CodeGen/CGObjC3ManagedStorage.cpp
 @@ -0,0 +1,434 @@
@@ -15014,7 +15014,7 @@ index 000000000..f55830f20
 +  }
 +  llvm::SHA256 Hash;
 +  Hash.update(Description);
-+  std::string Name = "__objc3_v11_storage_" + std::to_string(unsigned(Op)) +
++  std::string Name = "__objc3_v12_storage_" + std::to_string(unsigned(Op)) +
 +                     "_" + llvm::toHex(Hash.final());
 +  if (auto *F = CGM.getModule().getFunction(Name))
 +    return F;
@@ -15168,7 +15168,7 @@ index 2b8bd170b..a4a36d8a0 100644
            break;
 diff --git a/clang/test/ObjC3/CodeGen/carrier-managed-records.m b/clang/test/ObjC3/CodeGen/carrier-managed-records.m
 new file mode 100644
-index 000000000..3e0aa3977
+index 000000000..5dae206f3
 --- /dev/null
 +++ b/clang/test/ObjC3/CodeGen/carrier-managed-records.m
 @@ -0,0 +1,35 @@
@@ -15184,15 +15184,15 @@ index 000000000..3e0aa3977
 +#endif
 +struct Record record_echo(struct Record value) { return value; }
 +// C-LABEL: define{{.*}} void @record_echo(ptr {{.*}}sret(%struct.Record){{.*}}, ptr noundef align 8 dead_on_return %value)
-+// C: {{call|invoke}} void @__objc3_v11_storage_2_
-+// C: {{call|invoke}} void @__objc3_v11_storage_1_
++// C: {{call|invoke}} void @__objc3_v12_storage_2_
++// C: {{call|invoke}} void @__objc3_v12_storage_1_
 +// C: ret void
-+// C-LABEL: define internal void @__objc3_v11_storage_2_
++// C-LABEL: define internal void @__objc3_v12_storage_2_
 +// C: llvm.objc.retain
 +// C: llvm.objc.copyWeak
 +// C: objc3.storage.array.header
 +// C: llvm.objc.retain
-+// C-LABEL: define internal void @__objc3_v11_storage_1_
++// C-LABEL: define internal void @__objc3_v12_storage_1_
 +// C: llvm.objc.storeStrong
 +// C: arraydestroy
 +// C: llvm.objc.destroyWeak
@@ -15203,8 +15203,8 @@ index 000000000..3e0aa3977
 +void record_assign(struct Record *dst,struct Record *src) { *dst=*src; }
 +// C-LABEL: define{{.*}} void @record_assign
 +// C: objc3.record.assign.snapshot
-+// C: @__objc3_v11_storage_2_
-+// C: @__objc3_v11_storage_5_
++// C: @__objc3_v12_storage_2_
++// C: @__objc3_v12_storage_5_
 +// CPP-LABEL: define{{.*}} void {{.*}}record_assign
 +// CPP: call {{.*}} @_ZN6RecordaSERKS_
 diff --git a/clang/test/ObjC3/CodeGen/carrier-constructor-rollback.mm b/clang/test/ObjC3/CodeGen/carrier-constructor-rollback.mm

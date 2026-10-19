@@ -88,6 +88,8 @@ python3 -B "$OBJC3C_SDK_ROOT/share/objc3c/examples/native/qualify-record-carrier
   --sdk-root "$OBJC3C_SDK_ROOT" --output-dir ./record-carrier-evidence
 python3 -B "$OBJC3C_SDK_ROOT/share/objc3c/examples/native/qualify-heap-carriers.py" \
   --sdk-root "$OBJC3C_SDK_ROOT" --output-dir ./heap-carrier-evidence
+python3 -B "$OBJC3C_SDK_ROOT/share/objc3c/examples/native/qualify-cpp-interfaces.py" \
+  --sdk-root "$OBJC3C_SDK_ROOT" --output-dir ./cxx-interface-evidence
 for optimization in O0 O2; do
   objc3c carrier-transfer.mm -std=c++20 -fexceptions -fobjc-arc-exceptions \
     -"$optimization" -g -o carrier-transfer

@@ -89,10 +89,10 @@ Private migration intrinsics do not justify a public feature claim.
 
 The next implementation sequence is:
 
-1. Complete bounded C++ semantic interfaces with explicit linkage and data-record
-   identity. Objective-C heap storage, runtime record calls, whole-record captures,
-   and shared `__block` cells are implemented under the
-   [heap storage contract](linux_heap_storage.md).
+1. Qualify the bounded [C++ semantic interface contract](linux_cxx_interfaces.md),
+   including explicit language/standard identity, linkage, data records and
+   source imports. Extend the source-package builder to matching C++ package
+   graphs with the same exact identity locks.
 2. Finish the bounded public Optional/Result and synchronous throws contract,
    including ownership and module interface identity. Add public syntax and
    promote its feature predicates only after that complete contract passes the

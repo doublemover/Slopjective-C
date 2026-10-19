@@ -183,10 +183,16 @@ int RunCompiler(int argc, char **argv) {
   }
   request.dependency_record_output_path = dependency_record_path;
   auto result = Compile(request);
-  for (const auto &diagnostic : result.diagnostics)
+  for (const auto &diagnostic : result.diagnostics) {
+    const char *kind = diagnostic.severity == 5   ? "fatal error"
+                       : diagnostic.severity == 4 ? "error"
+                       : diagnostic.severity == 3 ? "warning"
+                       : diagnostic.severity == 2 ? "remark"
+                                                  : "note";
     std::cerr << diagnostic.expansion.file << ':' << diagnostic.expansion.line
-              << ':' << diagnostic.expansion.column << ": "
+              << ':' << diagnostic.expansion.column << ": " << kind << ": "
               << diagnostic.message << '\n';
+  }
   if (!result.success)
     std::cerr << result.failure << '\n';
   if (result.interface_artifact) {

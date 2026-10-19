@@ -224,6 +224,11 @@ and shared Block captures, including constructor rollback. Volatile carriers
 and managed MRC transfers remain outside the qualified contract. GNUstep 2.2 supports [true direct dispatch](docs/roadmap/linux_direct_dispatch.md),
 including lazy class initialization and managed typed-error calls.
 
+The [C++ interface contract](docs/roadmap/linux_cxx_interfaces.md) extends semantic
+interchange to bounded global APIs and public data records, with exact language,
+standard, ownership and linkage identity. C++20 and C++23 consumers cover C/C++
+linkage, overloads, owned records, source imports and ThinLTO.
+
 Public Optional/Result and synchronous throws syntax, managed payload
 generalization, async/await and actors still require further implementation and qualification. Private native
 fixtures do not make these public features available. Generic callable metadata

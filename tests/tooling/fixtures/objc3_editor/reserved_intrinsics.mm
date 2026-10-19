@@ -117,3 +117,13 @@ int managed_heap_probe(id<ManagedHeapProbe> receiver, id input) {
   (void)__objc3_has_value(heap_value);
   return shared_state() + snapshot().marker;
 }
+
+#ifdef __cplusplus
+struct CxxInterfaceRecord { int marker; __objc3_optional(id) value; };
+extern "C" CxxInterfaceRecord c_linked_record(CxxInterfaceRecord value);
+CxxInterfaceRecord cpp_linked_record(CxxInterfaceRecord value);
+void cxx_interface_probe(CxxInterfaceRecord source) {
+  CxxInterfaceRecord cxx_record = cpp_linked_record(c_linked_record(source));
+  (void)__objc3_has_value(cxx_record.value);
+}
+#endif

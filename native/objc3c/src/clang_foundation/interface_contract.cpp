@@ -157,6 +157,15 @@ InterfaceContractValidation ValidateSemanticInterface(
   for (std::size_t i = 0; i < count; ++i)
     if (DeclarationKey(expected_decls[i]) != DeclarationKey(actual_decls[i]))
       Add(result, "O3IFC010", "declaration type or effect identity mismatch", expected_decls[i].stable_id);
+  if ((sidecar.module.language_profile.find(";language=c++;") !=
+           std::string::npos ||
+       sidecar.module.language_profile.find(";language=objective-c++;") !=
+           std::string::npos) &&
+      !std::binary_search(required.begin(), required.end(),
+                          "objc3.cxx-data-interfaces.v1"))
+    Add(result, "O3IFC016",
+        "C++ declarations are missing their semantic interface capability",
+        expected.canonical_name);
   const bool effect_semantic = std::binary_search(
       required.begin(), required.end(), "objc3.canonical-function-effects.v1");
   for (const auto &declaration : sidecar.declarations)

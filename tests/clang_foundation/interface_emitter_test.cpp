@@ -1,6 +1,7 @@
 #include "clang_foundation/interface_codec.h"
 #include "clang_foundation/interface_emitter.h"
 
+#include <algorithm>
 #include <cassert>
 #include <cstdio>
 #include <map>
@@ -274,6 +275,107 @@ void TestManagedIvarAndPropertyRoundTrip() {
   }
 }
 
+void TestBoundedCxxSemanticInterfaces() {
+  std::string prior;
+  const std::vector<llvm::StringRef> semantics = {
+      "objc3.canonical-function-effects.v1", "objc3.native-carrier-types.v1",
+      "objc3.native-return-ownership.v1", "objc3.direct-dispatch.v1",
+      "objc3.cxx-data-interfaces.v1"};
+  for (const char *language : {"c++", "objective-c++"}) {
+    const bool objc = std::string(language) == "objective-c++";
+    for (const char *standard : {"c++20", "c++23"}) {
+      std::string source =
+          "namespace { struct Private { Private(); }; int helper() { return 0; "
+          "} } "
+          "using Scalar = int; struct Packet { Scalar value; }; "
+          "extern \"C\" Packet c_echo(Packet); Packet echo(Packet); "
+          "int overloaded(int); long overloaded(long); extern \"C\" int "
+          "shared;";
+      if (objc)
+        source +=
+            "typedef __objc3_optional(id) Strong; "
+            "struct Owned { Strong value; id __weak weak; Strong values[2]; }; "
+            "extern \"C\" Owned owned_echo(Owned);";
+      std::vector<std::string> args = {"-x", language,
+                                       std::string("-std=") + standard,
+                                       "--target=x86_64-unknown-linux-gnu"};
+      if (objc)
+        args.insert(args.end(), {"-fobjc-version=3", "-fobjc-arc",
+                                 "-fobjc-runtime=gnustep-2.2"});
+      auto ast =
+          clang::tooling::buildASTFromCodeWithArgs(source, args, "data.cpp");
+      assert(ast && !ast->getDiagnostics().hasErrorOccurred());
+      auto emitted =
+          EmitSemanticInterface(ast->getASTContext(), "fixture.cxx", "test");
+      for (const auto &diagnostic : emitted.diagnostics)
+        std::fprintf(stderr, "%s: %s\n", diagnostic.code.c_str(),
+                     diagnostic.message.c_str());
+      assert(emitted.success && emitted.identity.semantic_fingerprint != prior);
+      assert(emitted.source_bytes.find("extern \"C\"") != std::string::npos);
+      assert(emitted.identity.language_profile.find(
+                 std::string("standard=") + standard) != std::string::npos);
+      prior = emitted.identity.semantic_fingerprint;
+      auto round = clang::tooling::buildASTFromCodeWithArgs(
+          emitted.source_bytes, args, "relocated.cpp");
+      assert(round && !round->getDiagnostics().hasErrorOccurred());
+      auto regenerated =
+          EmitSemanticInterface(round->getASTContext(), "fixture.cxx", "test");
+      assert(regenerated.success &&
+             regenerated.source_bytes == emitted.source_bytes);
+      assert(regenerated.identity.semantic_fingerprint == prior);
+      auto decoded = DecodeSemanticInterfaceSidecar(
+          emitted.sidecar_json, emitted.source_bytes, semantics);
+      assert(decoded);
+      auto erased = *decoded;
+      std::erase(erased.required_semantics, "objc3.cxx-data-interfaces.v1");
+      auto invalid = ValidateSemanticInterface(
+          erased, decoded->module, decoded->canonical_source_sha256,
+          decoded->declarations,
+          {"objc3.canonical-function-effects.v1",
+           "objc3.native-carrier-types.v1", "objc3.native-return-ownership.v1",
+           "objc3.direct-dispatch.v1", "objc3.cxx-data-interfaces.v1"});
+      bool rejected = false;
+      for (const auto &diagnostic : invalid.diagnostics)
+        rejected |= diagnostic.code == "O3IFC016";
+      assert(rejected);
+    }
+  }
+  std::string enum_identity;
+  for (const char *source : {"enum Mode : unsigned { One=1 };",
+                             "enum class Mode : unsigned { One=1 };"}) {
+    auto ast = clang::tooling::buildASTFromCodeWithArgs(
+        source, {"-x", "c++", "-std=c++20"}, "enum.cpp");
+    assert(ast && !ast->getDiagnostics().hasErrorOccurred());
+    auto emitted =
+        EmitSemanticInterface(ast->getASTContext(), "fixture.enum", "test");
+    assert(emitted.success &&
+           emitted.identity.semantic_fingerprint != enum_identity);
+    enum_identity = emitted.identity.semantic_fingerprint;
+  }
+  for (const char *source :
+       {"namespace nested { int api(); }",
+        "template<class T> struct Generic { T value; };",
+        "struct Base { int value; }; struct Derived : Base { int second; };",
+        "struct Special { Special(); int value; };",
+        "struct Method { int value; int get() const; };",
+        "class Hidden { int value; };", "struct Default { int value=42; };",
+        "struct Nested { struct Inner { int value; }; Inner child; };",
+        "int api(int argument=42);", "inline int api() { return 42; }",
+        "extern constexpr int exported=42;", "extern const int exported=42;",
+        "constexpr int evaluated() { return 42; }",
+        "union Overlap { int one; long two; };"}) {
+    auto ast = clang::tooling::buildASTFromCodeWithArgs(
+        source,
+        {"-x", "c++", "-std=c++20", "--target=x86_64-unknown-linux-gnu"},
+        "unsupported.cpp");
+    assert(ast && !ast->getDiagnostics().hasErrorOccurred());
+    auto emitted = EmitSemanticInterface(ast->getASTContext(),
+                                         "fixture.unsupported", "test");
+    assert(!emitted.success && emitted.source_bytes.empty() &&
+           emitted.sidecar_json.empty());
+  }
+}
+
 }  // namespace
 
 int main() {
@@ -284,5 +386,6 @@ int main() {
   TestManagedReturnOwnershipRoundTrips();
   TestDirectMethodIdentityRoundTrip();
   TestManagedIvarAndPropertyRoundTrip();
+  TestBoundedCxxSemanticInterfaces();
   return 0;
 }
