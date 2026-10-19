@@ -50,6 +50,15 @@ of a transitive artifact does not expose its declarations to an importer. The
 installed diamond example uses a type through two public edges and separately
 checks rejection of a private transitive module.
 
+```mermaid
+flowchart TD
+  App[Application] -->|direct import| Top[fixture.Top]
+  Top -->|public| Left[fixture.Left]
+  Top -->|private| Right[fixture.Right]
+  Left -->|public| Leaf[fixture.Leaf]
+  Right -->|private| Leaf
+```
+
 ## Reuse and retained records
 
 Compilation reuse checks SDK seal, recipe, command, source contents and directory
@@ -79,3 +88,8 @@ damaged objects/interfaces, transitive API changes, wrong package locks and
 private visibility rejection. The suite runs outside the checkout with spaces
 and quotes in source paths, and is included in SDK packaging and ordinary-user
 fresh-distribution archive qualification.
+
+The [acceptance receipt](../support/linux_source_graph_acceptance.json) records
+the exact shipped archive, implementation hashes, test cases and distribution
+results. Its public workflow check also verifies cold/warm compilation reuse
+and an identical linked executable digest.

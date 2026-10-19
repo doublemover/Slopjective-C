@@ -139,6 +139,8 @@ package installation inventory. The same operation is exposed through
 The current contract uses local Objective-C source packages in one ARC/MRC mode.
 It does not fetch packages, adapt ownership modes or define public module syntax.
 See the [source-package contract](docs/roadmap/linux_source_packages.md).
+The [package SDK acceptance receipt](docs/support/linux_source_graph_acceptance.json)
+identifies the archive, code hashes and installed/fresh-distribution evidence.
 
 ## Language status
 

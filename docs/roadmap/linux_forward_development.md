@@ -44,8 +44,10 @@ retains content-verified compilation records and a reproducible package
 installation inventory; the installed suite covers ARC/MRC at O0/O2. See the
 [source-package contract](linux_source_packages.md). Next, define public module
 syntax together with its language and interface contract, then add immutable
-package publication and explicit cross-ownership adaptation. Remote registries
-and general package management remain separate work.
+package publication and explicit cross-ownership adaptation. The
+[package acceptance receipt](../support/linux_source_graph_acceptance.json)
+records the shipped SDK's installed and ordinary-user distribution results.
+Remote registries and general package management remain separate work.
 
 Build task groups, cancellation and actor isolation on that module and ownership
 foundation. Existing independent executor services are useful implementation
