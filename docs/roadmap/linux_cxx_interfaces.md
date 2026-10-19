@@ -43,6 +43,11 @@ python3 -B "$OBJC3C_SDK_ROOT/share/objc3c/examples/native/qualify-cpp-interfaces
   --sdk-root "$OBJC3C_SDK_ROOT" --output-dir ./cxx-interface-evidence
 ```
 
+The [source-bound acceptance receipt](../support/linux_cxx_interface_acceptance.json)
+records the exact ABI 12 archive, compiler and runtime source, installed
+qualification, sanitizer and debugger evidence, and fresh Debian 13 and Ubuntu
+26.04 results.
+
 This declaration subset uses the existing native call and ownership bounds.
 Public Optional/Result, synchronous throws, async/await and actors remain
 reserved until their public syntax and complete contracts are qualified.
