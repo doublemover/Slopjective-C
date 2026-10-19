@@ -57,6 +57,11 @@ the SDK seal before and after qualification. Its nine executions cover:
 
 Every executable also passes DWARF verification. SDK publication requires this
 suite; fresh Debian and Ubuntu archive acceptance repeats it as an ordinary user.
+For LLDB field inspection of header-defined C++ carrier typedefs, compile with
+`-g -fstandalone-debug` to retain complete type definitions across translation
+units. A live installed-SDK witness inspects the callee's parameter and copied
+local, then the caller's returned local, checks their shared payload identity
+and continues the application to a successful exit.
 
 Blocks whose own parameters or results contain carriers and Objective-C message
 values still require a runtime signature-encoding contract. Managed signatures

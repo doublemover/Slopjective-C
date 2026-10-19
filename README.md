@@ -176,13 +176,31 @@ before evaluating the destination and releasing its old active payload, so
 self-assignment, overlapping aliases and Result arm changes are safe. Copies
 preserve the source, including const sources. Objective-C++ assignment returns
 the destination lvalue and cleans up its snapshot if evaluating that destination
-throws. Volatile carriers, by-value returns, nested managed carriers and managed
-MRC transfers remain outside this bounded contract. The installed
+throws. The installed
 `share/objc3c/examples/native/carrier-transfer.mm` witness exercises these
 rules together with typed-error optionalization and `defer` at O0 and O2.
 `share/objc3c/examples/native/carrier-assignment.m` qualifies implicit copying,
 replacement, weak zeroing, Blocks, sequencing and native exceptions in both
 Objective-C and Objective-C++ at O0 and O2.
+
+Linux ARC functions now pass and return these direct carriers by value under
+extension ABI revision 3. Each argument gets a caller-owned snapshot when it is
+evaluated; that snapshot survives later argument evaluation and is destroyed at
+the full-expression boundary, including exception exits. Results initialize
+fresh caller-owned storage. Separate provider/consumer witnesses cover ordinary
+functions, callbacks, C++ members and virtual adjustment thunks at O0, O2 and
+ThinLTO, plus PCH and semantic module imports. Run the installed suite with:
+
+```sh
+python3 -B "$OBJC3C_SDK_ROOT/share/objc3c/examples/native/qualify-carrier-calls.py" \
+  --sdk-root "$OBJC3C_SDK_ROOT" --output-dir ./carrier-call-evidence
+```
+
+The [managed call contract](docs/roadmap/linux_managed_call_abi.md) defines the
+ownership and target bounds. Carrier values in Objective-C messages, Block
+signatures and typed-error signatures still need dedicated ABI work. Volatile
+carriers, nested managed storage and managed MRC transfers remain outside this
+contract.
 
 Public Optional/Result and synchronous throws syntax, managed payload
 generalization, async/await and actors still require further implementation and qualification. Private native
@@ -210,7 +228,7 @@ Native validation checks O0/O2 behavior, ABI, ownership, cleanup, expected
 failures, installed interface consumers and editor tools. Evidence records bind
 source, compiler, runtime, system headers and executable contents and reject
 changes during validation. The
-[Linux SDK acceptance receipt](docs/support/linux_arc_assignment_acceptance.json)
+[Linux SDK acceptance receipt](docs/support/linux_managed_call_acceptance.json)
 records the qualified archive and fresh-host checks; each new SDK has its own
 qualification and release receipt. Runtime timings must be distinguished from
 compile and wrapper timings when comparing performance.

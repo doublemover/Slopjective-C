@@ -24,7 +24,7 @@ jobs:
           uv sync --locked --group dev
       - name: Onboarding and generated feature authority
         run: |
-          npx prettier --check README.md toolchains/llvm/README.md native/objc3c/src/clang_foundation/README.md docs/roadmap/linux_forward_development.md docs/roadmap/linux_source_packages.md docs/support/linux_source_graph_acceptance.json docs/support/linux_arc_assignment_acceptance.json 'tests/clang_foundation/source_graph/**/*.json'
+          npx prettier --check README.md toolchains/llvm/README.md native/objc3c/src/clang_foundation/README.md docs/roadmap/linux_forward_development.md docs/roadmap/linux_source_packages.md docs/roadmap/linux_managed_call_abi.md docs/support/linux_source_graph_acceptance.json docs/support/linux_arc_assignment_acceptance.json docs/support/linux_managed_call_acceptance.json 'tests/clang_foundation/source_graph/**/*.json'
           uv run python -m scripts.objc3c_toolchain.generate_features --check
           uv run python -m scripts.objc3c_toolchain check-host-tools
           uv run python -m pytest -q tests/tooling/test_clang_feature_authority.py

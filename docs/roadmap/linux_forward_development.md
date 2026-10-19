@@ -1,7 +1,7 @@
 # Linux forward development
 
 The active product is the Clang-only Linux x86-64 SDK. The
-[acceptance receipt](../support/linux_arc_assignment_acceptance.json) identifies its
+[acceptance receipt](../support/linux_managed_call_acceptance.json) identifies its
 exact archive, source, native execution and fresh-distribution evidence. Tool
 versions come from [the manifest](../../toolchains/llvm/manifest.json); public
 language claims come from [the capability authority](../../schemas/objc3-language-capabilities.json).
@@ -21,8 +21,15 @@ evaluating the LHS or releasing old storage, preserves source values under
 copying, and returns the actual destination lvalue in Objective-C++. Installed
 O0/O2 witnesses cover all Result arm transitions, self/aliased assignment, weak
 zeroing, Blocks, typed-error optionalization, sequencing and native unwinding.
-Live clangd probes cover both languages. By-value returns and nested storage
-remain separate implementation work.
+Live clangd probes cover both languages. The
+[managed call ABI](linux_managed_call_abi.md) now extends direct carriers through
+ordinary functions, callbacks and C++ members under extension ABI revision 3.
+Caller-owned snapshots preserve each argument at evaluation time and clean up
+at full-expression boundaries; returns initialize fresh caller-owned storage.
+Nine installed executions cover separate provider/consumer compilation at
+O0/O2/ThinLTO, PCH and semantic module imports, including virtual adjustment
+thunks, register exhaustion and native exception cleanup. Nested storage remains
+separate implementation work.
 Managed MRC `try?`, weak/unsafe Block carriers and nested managed carriers still
 need explicit semantics and lowering. Define the public bounded contract and
 syntax together with their feature queries and capability predicates. Promote a
@@ -36,11 +43,11 @@ Private migration intrinsics do not justify a public feature claim.
 
 The next implementation sequence is:
 
-1. Define managed parameter and return ownership together with the physical
-   callable ABI. Qualify caller/callee cleanup, consumed and borrowed values,
-   retained/autoreleased results and typed-error success/error paths across
-   functions, callbacks, Blocks, C++ members and Objective-C messages. Reject
-   unsupported conventions before emitting a call.
+1. Extend managed callable ownership into Objective-C messages and Block value
+   signatures with an explicit runtime encoding and copy/dispose contract, then
+   compose managed signatures with typed-error success/error transport. Preserve
+   the qualified caller-owned snapshot and return-storage rules through each
+   callable form; reject unsupported conventions before emitting a call.
 2. Extend active-arm lifetime operations through nested carriers, arrays and
    enclosing records. Cover partial initialization, assignment, destruction and
    exceptions before admitting those storage forms to the callable ABI.
@@ -68,8 +75,9 @@ installation inventory; the installed suite covers ARC/MRC at O0/O2. See the
 [source-package contract](linux_source_packages.md). Next, define public module
 syntax together with its language and interface contract, then add immutable
 package publication and explicit cross-ownership adaptation. The
-[package acceptance receipt](../support/linux_source_graph_acceptance.json)
-records the shipped SDK's installed and ordinary-user distribution results.
+[package milestone acceptance receipt](../support/linux_source_graph_acceptance.json)
+records that milestone's installed and ordinary-user distribution results. The
+current SDK receipt above repeats those checks for the active archive.
 Remote registries and general package management remain separate work.
 
 Build task groups, cancellation and actor isolation on that module and ownership
