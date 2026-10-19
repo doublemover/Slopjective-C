@@ -7425,7 +7425,7 @@ index 000000000..2e93264ae
 \ No newline at end of file
 diff --git a/clang/test/ObjC3/CodeGen/Inputs/carrier-cxx-local-lifetime-runtime.cpp b/clang/test/ObjC3/CodeGen/Inputs/carrier-cxx-local-lifetime-runtime.cpp
 new file mode 100644
-index 000000000..8196b804a
+index 000000000..d38a76a80
 --- /dev/null
 +++ b/clang/test/ObjC3/CodeGen/Inputs/carrier-cxx-local-lifetime-runtime.cpp
 @@ -0,0 +1,119 @@
@@ -7469,48 +7469,48 @@ index 000000000..8196b804a
 +  }
 +  ~Empty() { lifetime_event(711); }
 +};
-+typedef __objc3_optional(Tracked) MaybeTracked;
-+typedef __objc3_optional(Throwing) MaybeThrowing;
-+typedef __objc3_result(Tracked, Failure) TrackedResult;
-+typedef __objc3_optional(Empty) MaybeEmpty;
-+typedef __objc3_result(Empty, Failure) EmptyResult;
++typedef Optional(Tracked) MaybeTracked;
++typedef Optional(Throwing) MaybeThrowing;
++typedef Result(Tracked, Failure) TrackedResult;
++typedef Optional(Empty) MaybeEmpty;
++typedef Result(Empty, Failure) EmptyResult;
 +
 +static void unwind_optional() {
-+  MaybeTracked local = __objc3_some(Tracked, Tracked(7));
++  MaybeTracked local = Some(Tracked, Tracked(7));
 +  throw 1;
 +}
 +static void unwind_result_error() {
-+  TrackedResult local = __objc3_err(Tracked, Failure, Failure(8));
++  TrackedResult local = Err(Tracked, Failure, Failure(8));
 +  throw 2;
 +}
 +static void throw_during_payload_construction() {
-+  MaybeThrowing local = __objc3_some(Throwing, Throwing(9));
++  MaybeThrowing local = Some(Throwing, Throwing(9));
 +  (void)local;
 +}
 +
 +int main() {
 +  {
-+    MaybeTracked some = __objc3_some(Tracked, Tracked(1));
++    MaybeTracked some = Some(Tracked, Tracked(1));
 +    if (lifetime_events[201] != 0) return 1;
 +  }
 +  if (lifetime_events[201] != 1) return 2;
 +  {
-+    MaybeTracked fromSource = __objc3_some(Tracked, Source(6));
++    MaybeTracked fromSource = Some(Tracked, Source(6));
 +    if (lifetime_events[606] != 1 || lifetime_events[206] != 0) return 8;
 +  }
 +  if (lifetime_events[206] != 1) return 9;
 +  {
-+    MaybeTracked none = __objc3_none(Tracked);
++    MaybeTracked none = None(Tracked);
 +    (void)none;
 +  }
 +  if (lifetime_events[201] != 1) return 3;
 +  {
-+    TrackedResult ok = __objc3_ok(Tracked, Failure, Tracked(2));
++    TrackedResult ok = Ok(Tracked, Failure, Tracked(2));
 +    (void)ok;
 +  }
 +  if (lifetime_events[202] != 1 || lifetime_events[402] != 0) return 4;
 +  {
-+    TrackedResult err = __objc3_err(Tracked, Failure, Failure(3));
++    TrackedResult err = Err(Tracked, Failure, Failure(3));
 +    (void)err;
 +  }
 +  if (lifetime_events[403] != 1 || lifetime_events[203] != 0) return 5;
@@ -7521,28 +7521,28 @@ index 000000000..8196b804a
 +  try { throw_during_payload_construction(); } catch (...) {}
 +  if (lifetime_events[700] != 0) return 10;
 +  {
-+    const MaybeTracked local = __objc3_some(Tracked, Tracked(10));
++    const MaybeTracked local = Some(Tracked, Tracked(10));
 +    if (lifetime_events[210] != 0) return 11;
 +  }
 +  if (lifetime_events[210] != 1) return 12;
 +  {
-+    const MaybeEmpty local = __objc3_some(Empty, Empty());
++    const MaybeEmpty local = Some(Empty, Empty());
 +    if (lifetime_events[710] != 1 || lifetime_events[711] != 0) return 13;
 +  }
 +  if (lifetime_events[711] != 1 || lifetime_events[712] != 0) return 14;
 +  {
-+    MaybeEmpty absent = __objc3_none(Empty);
++    MaybeEmpty absent = None(Empty);
 +    (void)absent;
 +  }
 +  if (lifetime_events[710] != 1 || lifetime_events[711] != 1) return 15;
 +  {
-+    EmptyResult present = __objc3_ok(Empty, Failure, Empty());
++    EmptyResult present = Ok(Empty, Failure, Empty());
 +    (void)present;
 +  }
 +  if (lifetime_events[710] != 2 || lifetime_events[711] != 2 ||
 +      lifetime_events[712] != 0) return 16;
 +  {
-+    EmptyResult error = __objc3_err(Empty, Failure, Failure(11));
++    EmptyResult error = Err(Empty, Failure, Failure(11));
 +    (void)error;
 +  }
 +  if (lifetime_events[711] != 2 || lifetime_events[411] != 1) return 17;
@@ -12383,7 +12383,7 @@ index 000000000..d40609cbf
 +// CHECK: ret void
 diff --git a/clang/test/ObjC3/CodeGen/typed-error-block-bare-call.m b/clang/test/ObjC3/CodeGen/typed-error-block-bare-call.m
 new file mode 100644
-index 000000000..9d6c0861c
+index 000000000..e9b9a9dcd
 --- /dev/null
 +++ b/clang/test/ObjC3/CodeGen/typed-error-block-bare-call.m
 @@ -0,0 +1,11 @@
@@ -12392,10 +12392,10 @@ index 000000000..9d6c0861c
 +@protocol Error @end
 +typedef int (^Checked)(int) __objc3_throws(id<Error>);
 +#if TEST_KIND == 1
-+int bare(Checked block) { return block(0); } // expected-error {{throwing call without an exact qualified try context}}
++int bare(Checked block) { return block(0); } // expected-error {{throwing call requires an explicit tryValue, tryOptional or tryForce expression}}
 +#else
 +int nested(Checked block) {
-+  return __objc3_try_force(block(block(0))); // expected-error {{throwing call without an exact qualified try context}}
++  return __objc3_try_force(block(block(0))); // expected-error {{throwing call requires an explicit tryValue, tryOptional or tryForce expression}}
 +}
 +#endif
 diff --git a/clang/test/ObjC3/CodeGen/typed-error-block-boundaries.mm b/clang/test/ObjC3/CodeGen/typed-error-block-boundaries.mm
@@ -12666,7 +12666,7 @@ index 000000000..87a1685d5
 +// CHECK: ret void
 diff --git a/clang/test/ObjC3/CodeGen/typed-error-member-bare-call.mm b/clang/test/ObjC3/CodeGen/typed-error-member-bare-call.mm
 new file mode 100644
-index 000000000..594cf3548
+index 000000000..abd734bc2
 --- /dev/null
 +++ b/clang/test/ObjC3/CodeGen/typed-error-member-bare-call.mm
 @@ -0,0 +1,16 @@
@@ -12678,12 +12678,12 @@ index 000000000..594cf3548
 +struct Receiver { int value(int) __objc3_throws(E); };
 +using Member = int (Receiver::*)(int) __objc3_throws(E);
 +#if TEST_KIND == 1
-+int bare(Receiver &receiver) { return receiver.value(0); } // expected-error {{throwing call without an exact qualified try context}}
++int bare(Receiver &receiver) { return receiver.value(0); } // expected-error {{throwing call requires an explicit tryValue, tryOptional or tryForce expression}}
 +#elif TEST_KIND == 2
-+int indirect(Receiver &receiver, Member member) { return (receiver.*member)(0); } // expected-error {{throwing call without an exact qualified try context}}
++int indirect(Receiver &receiver, Member member) { return (receiver.*member)(0); } // expected-error {{throwing call requires an explicit tryValue, tryOptional or tryForce expression}}
 +#else
 +int nested(Receiver &receiver) {
-+  return __objc3_try_force(receiver.value(receiver.value(0))); // expected-error {{throwing call without an exact qualified try context}}
++  return __objc3_try_force(receiver.value(receiver.value(0))); // expected-error {{throwing call requires an explicit tryValue, tryOptional or tryForce expression}}
 +}
 +#endif
 diff --git a/clang/test/ObjC3/CodeGen/typed-error-member-boundaries.mm b/clang/test/ObjC3/CodeGen/typed-error-member-boundaries.mm
@@ -12769,7 +12769,7 @@ index 000000000..51dd68396
 +// CHECK: call{{.*}} i32 @{{.*}}(ptr {{.*}}, i32 {{.*}}, ptr {{.*}}, ptr {{.*}})
 diff --git a/clang/test/ObjC3/CodeGen/typed-error-message-boundaries.m b/clang/test/ObjC3/CodeGen/typed-error-message-boundaries.m
 new file mode 100644
-index 000000000..0dfd19e34
+index 000000000..0005ba6b8
 --- /dev/null
 +++ b/clang/test/ObjC3/CodeGen/typed-error-message-boundaries.m
 @@ -0,0 +1,29 @@
@@ -12791,16 +12791,16 @@ index 000000000..0dfd19e34
 +@end
 +#if TEST_KIND == 1
 +int bare(Receiver *receiver) {
-+  return [receiver value:0]; // expected-error {{throwing message without an exact qualified try context}}
++  return [receiver value:0]; // expected-error {{throwing call requires an explicit tryValue, tryOptional or tryForce expression}}
 +}
 +#elif TEST_KIND == 2
 +int nested(Receiver *receiver) {
-+  return __objc3_try_force([receiver value:[receiver value:0]]); // expected-error {{throwing message without an exact qualified try context}}
++  return __objc3_try_force([receiver value:[receiver value:0]]); // expected-error {{throwing call requires an explicit tryValue, tryOptional or tryForce expression}}
 +}
 +#elif TEST_KIND == 3
-+int unsupported(Receiver *receiver) { return [receiver value]; }
++int unsupported(Receiver *receiver) { return __objc3_try_force([receiver value]); }
 +#else
-+struct Aggregate unsupported(Receiver *receiver) { return [receiver value]; }
++struct Aggregate unsupported(Receiver *receiver) { return __objc3_try_force([receiver value]); }
 +#endif
 diff --git a/clang/test/ObjC3/CodeGen/typed-error-message-direct.m b/clang/test/ObjC3/CodeGen/typed-error-message-direct.m
 new file mode 100644
@@ -12979,7 +12979,7 @@ index 000000000..06537d73a
 +// WIN: cleanupret
 diff --git a/clang/test/ObjC3/CodeGen/typed-error-nested-bare-call.m b/clang/test/ObjC3/CodeGen/typed-error-nested-bare-call.m
 new file mode 100644
-index 000000000..cfa6fed0f
+index 000000000..a272d283f
 --- /dev/null
 +++ b/clang/test/ObjC3/CodeGen/typed-error-nested-bare-call.m
 @@ -0,0 +1,11 @@
@@ -12993,7 +12993,7 @@ index 000000000..cfa6fed0f
 +int rejected_nested_call(void) {
 +  return __objc3_try_force(outer(inner()));
 +}
-+// CHECK: cannot compile this ObjC3 throwing call without an exact qualified try context yet
++// CHECK: throwing call requires an explicit tryValue, tryOptional or tryForce expression
 diff --git a/clang/test/ObjC3/CodeGen/typed-error-out-abi.c b/clang/test/ObjC3/CodeGen/typed-error-out-abi.c
 new file mode 100644
 index 000000000..d5381f374
@@ -13072,7 +13072,7 @@ index 000000000..1637e2101
 +// CHECK: call void @llvm.objc.storeStrong(ptr{{.*}} %objc3.error.pending, ptr null)
 diff --git a/clang/test/ObjC3/CodeGen/typed-error-pointer-bare-call.m b/clang/test/ObjC3/CodeGen/typed-error-pointer-bare-call.m
 new file mode 100644
-index 000000000..248eff8a2
+index 000000000..3e0db3683
 --- /dev/null
 +++ b/clang/test/ObjC3/CodeGen/typed-error-pointer-bare-call.m
 @@ -0,0 +1,16 @@
@@ -13085,11 +13085,11 @@ index 000000000..248eff8a2
 +
 +#if TEST_KIND == 1
 +int bare(Callback callback) {
-+  return callback(0); // expected-error {{ObjC3 throwing call without an exact qualified try context}}
++  return callback(0); // expected-error {{throwing call requires an explicit tryValue, tryOptional or tryForce expression}}
 +}
 +#else
 +int nested_bare(Callback outer, Callback inner) {
-+  return __objc3_try_force(outer(inner(0))); // expected-error {{ObjC3 throwing call without an exact qualified try context}}
++  return __objc3_try_force(outer(inner(0))); // expected-error {{throwing call requires an explicit tryValue, tryOptional or tryForce expression}}
 +}
 +#endif
 diff --git a/clang/test/ObjC3/CodeGen/typed-error-pointer-boundaries.mm b/clang/test/ObjC3/CodeGen/typed-error-pointer-boundaries.mm

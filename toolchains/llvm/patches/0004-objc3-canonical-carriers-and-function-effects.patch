@@ -1053,10 +1053,10 @@ index 7671f003c..d1b48ff3b 100644
 +
  } // end of Parser diagnostics
 diff --git a/clang/include/clang/Basic/DiagnosticSemaKinds.td b/clang/include/clang/Basic/DiagnosticSemaKinds.td
-index 2cb79b6ba..890d18e13 100644
+index 2cb79b6ba..947af8183 100644
 --- a/clang/include/clang/Basic/DiagnosticSemaKinds.td
 +++ b/clang/include/clang/Basic/DiagnosticSemaKinds.td
-@@ -12,6 +12,36 @@
+@@ -12,6 +12,38 @@
  
  let Component = "Sema" in {
  let CategoryName = "Semantic Issue" in {
@@ -1066,6 +1066,8 @@ index 2cb79b6ba..890d18e13 100644
 +  "async/throws effects of method %0 do not match the previous declaration">;
 +def err_objc3_invalid_function_effect_shape : Error<
 +  "invalid ObjC3 function effect payload">;
++def err_objc3_call_requires_check : Error<
++  "throwing call requires an explicit tryValue, tryOptional or tryForce expression">;
 +def err_objc3_try_requires_prvalue : Error<
 +  "an ObjC3 try currently requires a throwing call that returns a prvalue">;
 +def err_objc3_try_requires_throwing_call : Error<
@@ -1093,7 +1095,7 @@ index 2cb79b6ba..890d18e13 100644
  // C++11 compatibility with C++98.
  defm nonclass_type_friend : CXX11Compat<"non-class friend type %0 is">;
  defm static_data_member_in_union : CXX11Compat<"static data member %0 in union is">;
-@@ -7010,6 +7040,13 @@ def note_protected_by_objc_synchronized : Note<
+@@ -7010,6 +7042,13 @@ def note_protected_by_objc_synchronized : Note<
    "jump bypasses initialization of @synchronized block">;
  def note_protected_by_objc_autoreleasepool : Note<
    "jump bypasses auto release push of @autoreleasepool block">;
@@ -1107,7 +1109,7 @@ index 2cb79b6ba..890d18e13 100644
  def note_protected_by_cxx_try : Note<
    "jump bypasses initialization of try block">;
  def note_protected_by_cxx_catch : Note<
-@@ -7026,6 +7063,10 @@ def note_protected_by_objc_strong_init : Note<
+@@ -7026,6 +7065,10 @@ def note_protected_by_objc_strong_init : Note<
    "jump bypasses initialization of __strong variable">;
  def note_protected_by_objc_weak_init : Note<
    "jump bypasses initialization of __weak variable">;
@@ -1118,7 +1120,7 @@ index 2cb79b6ba..890d18e13 100644
  def note_protected_by_non_trivial_c_struct_init : Note<
    "jump bypasses initialization of variable of non-trivial C struct type">;
  def note_protected_by_defer_stmt : Note<"jump bypasses defer statement">;
-@@ -8001,6 +8042,25 @@ def warn_param_mismatched_alignment : Warning<
+@@ -8001,6 +8044,25 @@ def warn_param_mismatched_alignment : Warning<
  
  def err_objc_object_assignment : Error<
    "cannot assign to class object (%0 invalid)">;
@@ -1144,7 +1146,7 @@ index 2cb79b6ba..890d18e13 100644
  def err_typecheck_invalid_operands : Error<
    "invalid operands to binary expression (%0 and %1)">, Deferrable;
  def note_typecheck_invalid_operands_converted : Note<
-@@ -14367,4 +14427,17 @@ def err_cuda_device_kernel_launch_not_supported
+@@ -14367,4 +14429,17 @@ def err_cuda_device_kernel_launch_not_supported
  def err_cuda_device_kernel_launch_require_rdc
      : Error<"kernel launch from __device__ or __global__ function requires "
              "relocatable device code (i.e. requires -fgpu-rdc)">;
@@ -3453,7 +3455,7 @@ index 8dd120f52..90be9a2ca 100644
    ParsePragma.cpp
    ParseStmt.cpp
 diff --git a/clang/lib/Parse/ParseDecl.cpp b/clang/lib/Parse/ParseDecl.cpp
-index 6262e8b20..329546ede 100644
+index 6262e8b20..d96757e2a 100644
 --- a/clang/lib/Parse/ParseDecl.cpp
 +++ b/clang/lib/Parse/ParseDecl.cpp
 @@ -10,6 +10,7 @@
@@ -3586,7 +3588,7 @@ index 6262e8b20..329546ede 100644
    // Collect non-parameter declarations from the prototype if this is a function
    // declaration. They will be moved into the scope of the function. Only do
    // this in C and not C++, where the decls will continue to live in the
-@@ -7470,10 +7546,97 @@ void Parser::ParseFunctionDeclarator(Declarator &D,
+@@ -7470,10 +7546,96 @@ void Parser::ParseFunctionDeclarator(Declarator &D,
                      NoexceptExpr.isUsable() ? NoexceptExpr.get() : nullptr,
                      ExceptionSpecTokens, DeclsInPrototype, StartLoc,
                      LocalEndLoc, D, TrailingReturnType, TrailingReturnTypeLoc,
@@ -3631,7 +3633,7 @@ index 6262e8b20..329546ede 100644
 +
 +    if (SawThrows) {
 +      Diag(EffectLoc, diag::err_objc3_duplicate_function_effect)
-+          << "__objc3_throws";
++          << "throws";
 +      // Consume the duplicate's optional balanced payload for recovery.
 +      if (Tok.is(tok::l_paren)) {
 +        ConsumeParen();
@@ -3645,8 +3647,7 @@ index 6262e8b20..329546ede 100644
 +    ThrowsLoc = EffectLoc;
 +
 +    if (!Tok.is(tok::l_paren)) {
-+      // The reserved spelling admits bare (untyped) throws in a function
-+      // declarator. The ordinary identifier `throws` is still untouched.
++      // Bare throws uses the native object error contract in suffix position.
 +      ThrowsKind = 1; // ObjC3ThrowsKind::Untyped
 +      continue;
 +    }
@@ -4373,7 +4374,7 @@ index eb50b0e85..cc907879f 100644
    case tok::code_completion:
      cutOffParsing();
 diff --git a/clang/lib/Parse/ParseTentative.cpp b/clang/lib/Parse/ParseTentative.cpp
-index 1477fc38b..ce1fa916c 100644
+index 1477fc38b..937733412 100644
 --- a/clang/lib/Parse/ParseTentative.cpp
 +++ b/clang/lib/Parse/ParseTentative.cpp
 @@ -11,6 +11,7 @@
@@ -4384,29 +4385,16 @@ index 1477fc38b..ce1fa916c 100644
  #include "clang/Parse/Parser.h"
  #include "clang/Parse/RAIIObjectsForParser.h"
  #include "clang/Sema/ParsedTemplate.h"
-@@ -1022,6 +1023,30 @@ Parser::TPResult
+@@ -1022,6 +1023,17 @@ Parser::TPResult
  Parser::isCXXDeclarationSpecifier(ImplicitTypenameContext AllowImplicitTypename,
                                    Parser::TPResult BracedCastResult,
                                    bool *InvalidAsDeclSpec) {
 +  if (getLangOpts().ObjC3 && Tok.is(tok::at))
 +    return isObjC3QualifiedTypeNameAhead() ? TPResult::True : TPResult::False;
-+  // These reserved calls start expressions in ObjC3 mode. Name classification
-+  // during tentative type-id parsing must not replace their tokens with native
-+  // non-type annotations before ParseCastExpression sees the intrinsic.
++  // Preserve contextual expressions during C++ condition/type-id speculation.
 +  if (getLangOpts().ObjC3 && Tok.is(tok::identifier) &&
 +      Tok.getIdentifierInfo() && NextToken().is(tok::l_paren) &&
-+      (Tok.getIdentifierInfo()->isStr("__objc3_match") ||
-+       Tok.getIdentifierInfo()->isStr("__objc3_copy") ||
-+       Tok.getIdentifierInfo()->isStr("__objc3_move") ||
-+       Tok.getIdentifierInfo()->isStr("__objc3_some") ||
-+       Tok.getIdentifierInfo()->isStr("__objc3_none") ||
-+       Tok.getIdentifierInfo()->isStr("__objc3_has_value") ||
-+       Tok.getIdentifierInfo()->isStr("__objc3_ok") ||
-+       Tok.getIdentifierInfo()->isStr("__objc3_err") ||
-+       Tok.getIdentifierInfo()->isStr("__objc3_is_ok") ||
-+       Tok.getIdentifierInfo()->isStr("__objc3_try") ||
-+       Tok.getIdentifierInfo()->isStr("__objc3_try_optional") ||
-+       Tok.getIdentifierInfo()->isStr("__objc3_try_force")))
++      isObjC3ExpressionSyntax(Tok.getIdentifierInfo()->getName()))
 +    return TPResult::False;
 +  if (getLangOpts().ObjC3 && Tok.is(tok::identifier) &&
 +      isObjC3TypeSyntax(Tok.getIdentifierInfo()->getName(),
@@ -4415,7 +4403,7 @@ index 1477fc38b..ce1fa916c 100644
    auto IsPlaceholderSpecifier = [&](TemplateIdAnnotation *TemplateId,
                                      int Lookahead) {
      // We have a placeholder-constraint (we check for 'auto' or 'decltype' to
-@@ -1892,6 +1917,23 @@ Parser::TryParseFunctionDeclarator(bool MayHaveTrailingReturnType) {
+@@ -1892,6 +1904,23 @@ Parser::TryParseFunctionDeclarator(bool MayHaveTrailingReturnType) {
      }
    }
  
@@ -4868,10 +4856,14 @@ index 000000000..f07788326
 +  llvm_unreachable("all ObjC3 match patterns handled");
 +}
 diff --git a/clang/lib/Sema/SemaDecl.cpp b/clang/lib/Sema/SemaDecl.cpp
-index 6a25a799a..5706fa17a 100644
+index 6a25a799a..e6c3725c1 100644
 --- a/clang/lib/Sema/SemaDecl.cpp
 +++ b/clang/lib/Sema/SemaDecl.cpp
-@@ -13,6 +13,7 @@
+@@ -10,9 +10,11 @@
+ //
+ //===----------------------------------------------------------------------===//
+ 
++#include "SemaObjC3ErrorContext.h"
  #include "TypeLocBuilder.h"
  #include "clang/AST/ASTConsumer.h"
  #include "clang/AST/ASTContext.h"
@@ -4879,7 +4871,7 @@ index 6a25a799a..5706fa17a 100644
  #include "clang/AST/ASTLambda.h"
  #include "clang/AST/CXXInheritance.h"
  #include "clang/AST/CharUnits.h"
-@@ -4025,6 +4026,26 @@ bool Sema::MergeFunctionDecl(FunctionDecl *New, NamedDecl *&OldD, Scope *S,
+@@ -4025,6 +4027,26 @@ bool Sema::MergeFunctionDecl(FunctionDecl *New, NamedDecl *&OldD, Scope *S,
      return true;
    }
  
@@ -4906,7 +4898,7 @@ index 6a25a799a..5706fa17a 100644
    QualType OldQTypeForComparison = OldQType;
    if (Context.hasAnyFunctionEffects()) {
      const auto OldFX = Old->getFunctionEffects();
-@@ -12615,10 +12636,44 @@ bool Sema::CheckFunctionDeclaration(Scope *S, FunctionDecl *NewFD,
+@@ -12615,10 +12637,44 @@ bool Sema::CheckFunctionDeclaration(Scope *S, FunctionDecl *NewFD,
      // But, issue any diagnostic on the first declaration only.
      if (Previous.empty() && NewFD->isExternC()) {
        QualType R = NewFD->getReturnType();
@@ -4952,7 +4944,7 @@ index 6a25a799a..5706fa17a 100644
                 !R->isObjCObjectPointerType())
          Diag(NewFD->getLocation(), diag::warn_return_value_udt) << NewFD << R;
      }
-@@ -13600,6 +13655,11 @@ struct DiagNonTrivalCUnionDefaultInitializeVisitor
+@@ -13600,6 +13656,11 @@ struct DiagNonTrivalCUnionDefaultInitializeVisitor
      return Super::visitWithKind(PDIK, QT, FD, InNonTrivialUnion);
    }
  
@@ -4964,7 +4956,7 @@ index 6a25a799a..5706fa17a 100644
    void visitARCStrong(QualType QT, const FieldDecl *FD,
                        bool InNonTrivialUnion) {
      if (InNonTrivialUnion)
-@@ -13666,6 +13726,11 @@ struct DiagNonTrivalCUnionDestructedTypeVisitor
+@@ -13666,6 +13727,11 @@ struct DiagNonTrivalCUnionDestructedTypeVisitor
      return Super::visitWithKind(DK, QT, FD, InNonTrivialUnion);
    }
  
@@ -4976,7 +4968,7 @@ index 6a25a799a..5706fa17a 100644
    void visitARCStrong(QualType QT, const FieldDecl *FD,
                        bool InNonTrivialUnion) {
      if (InNonTrivialUnion)
-@@ -13731,6 +13796,11 @@ struct DiagNonTrivalCUnionCopyVisitor
+@@ -13731,6 +13797,11 @@ struct DiagNonTrivalCUnionCopyVisitor
      return Super::visitWithKind(PCK, QT, FD, InNonTrivialUnion);
    }
  
@@ -4988,7 +4980,7 @@ index 6a25a799a..5706fa17a 100644
    void visitARCStrong(QualType QT, const FieldDecl *FD,
                        bool InNonTrivialUnion) {
      if (InNonTrivialUnion)
-@@ -14943,9 +15013,55 @@ void Sema::addLifetimeBoundToImplicitThis(CXXMethodDecl *MD) {
+@@ -14943,9 +15014,55 @@ void Sema::addLifetimeBoundToImplicitThis(CXXMethodDecl *MD) {
    MD->setTypeSourceInfo(TLB.getTypeSourceInfo(Context, AttributedType));
  }
  
@@ -5044,7 +5036,16 @@ index 6a25a799a..5706fa17a 100644
    CUDA().MaybeAddConstantAttr(var);
  
    if (getLangOpts().OpenCL) {
-@@ -20223,7 +20339,8 @@ void Sema::ActOnFields(Scope *S, SourceLocation RecLoc, Decl *EnclosingDecl,
+@@ -16714,6 +16831,8 @@ Decl *Sema::ActOnFinishFunctionBody(Decl *dcl, Stmt *Body, bool IsInstantiation,
+                                     bool RetainFunctionScopeInfo) {
+   FunctionScopeInfo *FSI = getCurFunction();
+   FunctionDecl *FD = dcl ? dcl->getAsFunction() : nullptr;
++  if (dcl && !dcl->isInvalidDecl() && diagnoseObjC3UncheckedCalls(*this, Body))
++    dcl->setInvalidDecl();
+ 
+   if (FSI->UsesFPIntrin && FD && !FD->hasAttr<StrictFPAttr>())
+     FD->addAttr(StrictFPAttr::CreateImplicit(Context));
+@@ -20223,7 +20342,8 @@ void Sema::ActOnFields(Scope *S, SourceLocation RecLoc, Decl *EnclosingDecl,
              RecordArgPassingKind::CanNeverPassInRegs)
            Record->setArgPassingRestrictions(
                RecordArgPassingKind::CanNeverPassInRegs);
@@ -5298,10 +5299,16 @@ index 04ba52809..e73762664 100644
      CvtQTToAstBitMask(ReturnQT.getObjCDeclQualifier()));
  
 diff --git a/clang/lib/Sema/SemaExpr.cpp b/clang/lib/Sema/SemaExpr.cpp
-index 5d4c5ff7d..973399859 100644
+index 5d4c5ff7d..750a37b6d 100644
 --- a/clang/lib/Sema/SemaExpr.cpp
 +++ b/clang/lib/Sema/SemaExpr.cpp
-@@ -15,6 +15,7 @@
+@@ -10,11 +10,13 @@
+ //
+ //===----------------------------------------------------------------------===//
+ 
++#include "SemaObjC3ErrorContext.h"
+ #include "CheckExprLifetime.h"
+ #include "TreeTransform.h"
  #include "UsedDeclVisitor.h"
  #include "clang/AST/ASTConsumer.h"
  #include "clang/AST/ASTContext.h"
@@ -5309,7 +5316,7 @@ index 5d4c5ff7d..973399859 100644
  #include "clang/AST/ASTDiagnostic.h"
  #include "clang/AST/ASTLambda.h"
  #include "clang/AST/ASTMutationListener.h"
-@@ -4701,6 +4702,20 @@ static void captureVariablyModifiedType(ASTContext &Context, QualType T,
+@@ -4701,6 +4703,20 @@ static void captureVariablyModifiedType(ASTContext &Context, QualType T,
      case Type::Atomic:
        T = cast<AtomicType>(Ty)->getValueType();
        break;
@@ -5330,7 +5337,7 @@ index 5d4c5ff7d..973399859 100644
      case Type::PredefinedSugar:
        T = cast<PredefinedSugarType>(Ty)->desugar();
        break;
-@@ -9422,7 +9437,85 @@ static AssignConvertType checkPointerTypesForAssignment(Sema &S,
+@@ -9422,7 +9438,85 @@ static AssignConvertType checkPointerTypesForAssignment(Sema &S,
      return AssignConvertType::FunctionVoidPointer;
    }
  
@@ -5417,7 +5424,7 @@ index 5d4c5ff7d..973399859 100644
            diag::warn_typecheck_convert_incompatible_function_pointer_strict,
            Loc) &&
        RHSType->isFunctionPointerType() && LHSType->isFunctionPointerType() &&
-@@ -9431,7 +9524,6 @@ static AssignConvertType checkPointerTypesForAssignment(Sema &S,
+@@ -9431,7 +9525,6 @@ static AssignConvertType checkPointerTypesForAssignment(Sema &S,
  
    // C99 6.5.16.1p1 (constraint 3): both operands are pointers to qualified or
    // unqualified versions of compatible types, ...
@@ -5425,7 +5432,7 @@ index 5d4c5ff7d..973399859 100644
  
    if (ltrans->isOverflowBehaviorType() || rtrans->isOverflowBehaviorType()) {
      if (!S.Context.hasSameType(ltrans, rtrans)) {
-@@ -9452,7 +9544,22 @@ static AssignConvertType checkPointerTypesForAssignment(Sema &S,
+@@ -9452,7 +9545,22 @@ static AssignConvertType checkPointerTypesForAssignment(Sema &S,
      }
    }
  
@@ -5449,7 +5456,7 @@ index 5d4c5ff7d..973399859 100644
      // Check if the pointee types are compatible ignoring the sign.
      // We explicitly check for char so that we catch "char" vs
      // "unsigned char" on systems where "char" is unsigned.
-@@ -9524,12 +9631,20 @@ static AssignConvertType checkPointerTypesForAssignment(Sema &S,
+@@ -9524,12 +9632,20 @@ static AssignConvertType checkPointerTypesForAssignment(Sema &S,
      const auto *LFPT = dyn_cast<FunctionProtoType>(LFT);
      const auto *RFPT = dyn_cast<FunctionProtoType>(RFT);
      if (LFPT && RFPT) {
@@ -5472,7 +5479,7 @@ index 5d4c5ff7d..973399859 100644
        rtrans = S.Context.getFunctionType(LFPT->getReturnType(),
                                           LFPT->getParamTypes(), EPI);
      } else if (RFPT) {
-@@ -9592,12 +9707,60 @@ static AssignConvertType checkBlockPointerTypesForAssignment(Sema &S,
+@@ -9592,12 +9708,60 @@ static AssignConvertType checkBlockPointerTypesForAssignment(Sema &S,
    //  * CVR and address space of LHS should be a superset of CVR and address
    //  space of RHS.
    //  * unqualified types should be compatible.
@@ -5535,7 +5542,16 @@ index 5d4c5ff7d..973399859 100644
      return AssignConvertType::IncompatibleBlockPointer;
  
    return ConvTy;
-@@ -17218,7 +17381,9 @@ ExprResult Sema::ActOnBlockStmtExpr(SourceLocation CaretLoc,
+@@ -17056,6 +17220,8 @@ ExprResult Sema::ActOnBlockStmtExpr(SourceLocation CaretLoc,
+ 
+   BlockScopeInfo *BSI = cast<BlockScopeInfo>(FunctionScopes.back());
+   BlockDecl *BD = BSI->TheDecl;
++  if (!BD->isInvalidDecl() && diagnoseObjC3UncheckedCalls(*this, Body))
++    BD->setInvalidDecl();
+ 
+   maybeAddDeclWithEffects(BD);
+ 
+@@ -17218,7 +17384,9 @@ ExprResult Sema::ActOnBlockStmtExpr(SourceLocation CaretLoc,
      // variables needs destruction.
      for (const auto &CI : Result->getBlockDecl()->captures()) {
        const VarDecl *var = CI.getVariable();
@@ -6321,10 +6337,10 @@ index 000000000..08106a8da
 +}
 diff --git a/clang/lib/Sema/SemaObjC3ErrorContext.h b/clang/lib/Sema/SemaObjC3ErrorContext.h
 new file mode 100644
-index 000000000..259fc364d
+index 000000000..c0f59a7b6
 --- /dev/null
 +++ b/clang/lib/Sema/SemaObjC3ErrorContext.h
-@@ -0,0 +1,47 @@
+@@ -0,0 +1,50 @@
 +//===--- SemaObjC3ErrorContext.h - Native typed-error callable ownership ---===//
 +// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -6338,6 +6354,9 @@ index 000000000..259fc364d
 +#include "clang/Sema/Sema.h"
 +
 +namespace clang {
++
++/// Diagnose evaluated throwing calls which lack an explicit checked form.
++bool diagnoseObjC3UncheckedCalls(Sema &S, Stmt *Root);
 +
 +inline DeclContext *getCurrentObjC3CallableContext(Sema &S) {
 +  DeclContext *DC = S.CurContext;
@@ -6882,21 +6901,25 @@ index 000000000..2c37de629
 +}
 diff --git a/clang/lib/Sema/SemaObjC3Propagation.cpp b/clang/lib/Sema/SemaObjC3Propagation.cpp
 new file mode 100644
-index 000000000..ae48b65d0
+index 000000000..029b285e0
 --- /dev/null
 +++ b/clang/lib/Sema/SemaObjC3Propagation.cpp
-@@ -0,0 +1,143 @@
+@@ -0,0 +1,201 @@
 +//===--- SemaObjC3Propagation.cpp - ObjC3 typed propagation semantics -----===//
 +// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 +
-+#include "SemaObjC3ErrorContext.h"
 +#include "SemaObjC3CarrierARC.h"
++#include "SemaObjC3ErrorContext.h"
 +#include "clang/AST/ASTContext.h"
++#include "clang/AST/EvaluatedExprVisitor.h"
 +#include "clang/AST/Expr.h"
 +#include "clang/AST/ExprObjC.h"
 +#include "clang/AST/Stmt.h"
++#include "clang/Basic/DiagnosticSema.h"
 +#include "clang/Sema/Sema.h"
++#include "llvm/ADT/SmallPtrSet.h"
++#include "llvm/Support/SaveAndRestore.h"
 +
 +using namespace clang;
 +
@@ -6925,7 +6948,61 @@ index 000000000..ae48b65d0
 +  return CalleeType->getAs<FunctionProtoType>();
 +}
 +
++class CheckedCallVisitor : public EvaluatedExprVisitor<CheckedCallVisitor> {
++  using Base = EvaluatedExprVisitor<CheckedCallVisitor>;
++  Sema &S;
++  Expr *Handled = nullptr;
++  llvm::SmallPtrSet<Expr *, 16> Diagnosed;
++
++  void check(Expr *E) {
++    if (E == Handled)
++      return;
++    const auto *Function = getCalledObjC3FunctionType(S, E);
++    if (Function &&
++        Function->getObjC3FunctionEffects().Throws != ObjC3ThrowsKind::None &&
++        Diagnosed.insert(E).second)
++      S.Diag(E->getExprLoc(), diag::err_objc3_call_requires_check);
++  }
++
++public:
++  explicit CheckedCallVisitor(Sema &S) : Base(S.Context), S(S) {}
++  bool failed() const { return !Diagnosed.empty(); }
++
++  void VisitObjC3TryExpr(ObjC3TryExpr *E) {
++    // The checked form handles its immediate call. A throwing receiver,
++    // callee expression or argument still needs a separate checked form.
++    llvm::SaveAndRestore Guard(Handled, E->getOperand()->IgnoreParenImpCasts());
++    Visit(E->getOperand());
++  }
++  void VisitCallExpr(CallExpr *E) {
++    if (E->isUnevaluatedBuiltinCall(S.Context))
++      return;
++    check(E);
++    Base::VisitCallExpr(E);
++  }
++  void VisitObjCMessageExpr(ObjCMessageExpr *E) {
++    check(E);
++    Base::VisitStmt(E);
++  }
++  void VisitCXXDefaultArgExpr(CXXDefaultArgExpr *E) {
++    if (Expr *Init = E->getExpr())
++      Visit(Init);
++  }
++  void VisitCXXDefaultInitExpr(CXXDefaultInitExpr *E) {
++    if (Expr *Init = E->getExpr())
++      Visit(Init);
++  }
++};
++
 +} // namespace
++
++bool clang::diagnoseObjC3UncheckedCalls(Sema &S, Stmt *Root) {
++  if (!S.getLangOpts().ObjC3 || !Root)
++    return false;
++  CheckedCallVisitor Visitor(S);
++  Visitor.Visit(Root);
++  return Visitor.failed();
++}
 +
 +ExprResult Sema::ActOnObjC3TryExpr(unsigned Kind, SourceLocation KeywordLoc,
 +                                   SourceLocation LParenLoc, Expr *Operand,
@@ -8448,7 +8525,7 @@ index 000000000..e802b3367
 +}
 diff --git a/clang/test/ObjC3/AST/function-effect-template-pch.mm b/clang/test/ObjC3/AST/function-effect-template-pch.mm
 new file mode 100644
-index 000000000..e852af96e
+index 000000000..19cbb971a
 --- /dev/null
 +++ b/clang/test/ObjC3/AST/function-effect-template-pch.mm
 @@ -0,0 +1,10 @@
@@ -8457,7 +8534,7 @@ index 000000000..e852af96e
 +
 +struct OtherError {};
 +void instantiate_pch_effect_from_call() {
-+  pch_substituted_effect<OtherError>();
++  __objc3_try_force(pch_substituted_effect<OtherError>());
 +}
 +
 +// CHECK: FunctionDecl {{.*}} pch_substituted_effect 'void () async throws(const Error *)' explicit_instantiation_definition
@@ -8529,7 +8606,7 @@ index 000000000..c8f060e1a
 +// CHECK: pch_async_typed_effect 'void () async throws(const E *)'
 diff --git a/clang/test/ObjC3/AST/function-effects.m b/clang/test/ObjC3/AST/function-effects.m
 new file mode 100644
-index 000000000..3ab75bd58
+index 000000000..d4c763d6b
 --- /dev/null
 +++ b/clang/test/ObjC3/AST/function-effects.m
 @@ -0,0 +1,28 @@
@@ -8546,7 +8623,7 @@ index 000000000..3ab75bd58
 +template <typename E> void substituted_throw() __objc3_throws(E) {}
 +// An explicit instantiation names the same callable effect type.
 +template void substituted_throw<Error>() __objc3_throws(Error);
-+void instantiate_from_call() { substituted_throw<Other>(); }
++void instantiate_from_call() { __objc3_try_force(substituted_throw<Other>()); }
 +
 +// Unprefixed spellings remain ordinary identifiers and macro names.
 +int async;
@@ -8634,7 +8711,7 @@ index 000000000..dc39ac0e6
 +}
 diff --git a/clang/test/ObjC3/AST/method-effects.m b/clang/test/ObjC3/AST/method-effects.m
 new file mode 100644
-index 000000000..051e4a026
+index 000000000..cd90dd949
 --- /dev/null
 +++ b/clang/test/ObjC3/AST/method-effects.m
 @@ -0,0 +1,18 @@
@@ -8651,7 +8728,7 @@ index 000000000..051e4a026
 +@end
 +// PRINT: - (int)checked throws(E);
 +// PRINT: + (void)combined:(int)value __objc3_async throws;
-+// PRINT: - (int)first:(int)value throws:(int)other;
++// PRINT: - (int)first:(int)value __objc3_throws:(int)other;
 +// DUMP: ObjCMethodDecl{{.*}} checked 'int' 'int (void) throws(E)'
 +// DUMP: ObjCMethodDecl{{.*}} combined: 'void' 'void (int) async throws'
 +// JSON: "objc3CallableType":
@@ -8699,7 +8776,7 @@ index 000000000..d06b72740
 +
 diff --git a/clang/test/ObjC3/AST/try-throw-pch.mm b/clang/test/ObjC3/AST/try-throw-pch.mm
 new file mode 100644
-index 000000000..d4b5d639b
+index 000000000..4c0263a52
 --- /dev/null
 +++ b/clang/test/ObjC3/AST/try-throw-pch.mm
 @@ -0,0 +1,17 @@
@@ -8709,7 +8786,7 @@ index 000000000..d4b5d639b
 +void consume_try_throw_pch();
 +
 +int pch_template_use() __objc3_throws(PchError) {
-+  return pch_template_propagate(pch_typed_call);
++  return __objc3_try(pch_template_propagate(pch_typed_call));
 +}
 +
 +// Verify the PCH restores all three typed-try kinds and ObjC3 throw separately
@@ -8722,7 +8799,7 @@ index 000000000..d4b5d639b
 +// CHECK: pch_template_propagate
 diff --git a/clang/test/ObjC3/AST/typed-error-native-consumers-pch.mm b/clang/test/ObjC3/AST/typed-error-native-consumers-pch.mm
 new file mode 100644
-index 000000000..e9874ed3f
+index 000000000..537b1abdd
 --- /dev/null
 +++ b/clang/test/ObjC3/AST/typed-error-native-consumers-pch.mm
 @@ -0,0 +1,17 @@
@@ -8740,7 +8817,7 @@ index 000000000..e9874ed3f
 +
 +void instantiate_after_pch() {
 +  int (*fn)() __objc3_throws(PCHError) = pch_typed_call;
-+  (void)pch_dependent_try<PCHError>(fn);
++  (void)__objc3_try_force(pch_dependent_try<PCHError>(fn));
 +  pch_ordered_handlers();
 +}
 diff --git a/clang/test/ObjC3/AST/typed-error-native-consumers.mm b/clang/test/ObjC3/AST/typed-error-native-consumers.mm
@@ -10891,7 +10968,7 @@ index 000000000..a00a83a41
 +GenericDerived<E> AcceptedInstantiation;
 diff --git a/clang/test/ObjC3/Sema/typed-error-message-ambiguity.m b/clang/test/ObjC3/Sema/typed-error-message-ambiguity.m
 new file mode 100644
-index 000000000..86cc49c99
+index 000000000..d2d6b9f33
 --- /dev/null
 +++ b/clang/test/ObjC3/Sema/typed-error-message-ambiguity.m
 @@ -0,0 +1,12 @@
@@ -10905,7 +10982,7 @@ index 000000000..86cc49c99
 +- (int)value; // expected-note {{one possibility}}
 +@end
 +int dynamic(id receiver) {
-+  return [receiver value]; // expected-error {{ambiguous ObjC3 async/throws effects}}
++  return __objc3_try_force([receiver value]); // expected-error {{ambiguous ObjC3 async/throws effects}}
 +}
 diff --git a/clang/test/ObjC3/Sema/typed-error-message-effects.m b/clang/test/ObjC3/Sema/typed-error-message-effects.m
 new file mode 100644
@@ -12400,7 +12477,7 @@ index 000000000..31689c431
 +} // namespace
 diff --git a/clang/unittests/AST/ObjC3FunctionEffectTest.cpp b/clang/unittests/AST/ObjC3FunctionEffectTest.cpp
 new file mode 100644
-index 000000000..4775cee4d
+index 000000000..0376a4c4a
 --- /dev/null
 +++ b/clang/unittests/AST/ObjC3FunctionEffectTest.cpp
 @@ -0,0 +1,222 @@
@@ -12573,12 +12650,12 @@ index 000000000..4775cee4d
 +  PrintingPolicy DeclarationPolicy(Context.getPrintingPolicy());
 +  DeclarationPolicy.PolishForDeclaration = true;
 +  EXPECT_EQ(AsyncTyped.getAsString(DeclarationPolicy),
-+            "void () __objc3_async __objc3_throws(Error)");
++            "void () __objc3_async throws(Error)");
 +  EXPECT_EQ(Context.getPointerType(AsyncTyped).getAsString(DeclarationPolicy),
-+            "void (*)() __objc3_async __objc3_throws(Error)");
++            "void (*)() __objc3_async throws(Error)");
 +  EXPECT_EQ(functionType(Context, {false, ObjC3ThrowsKind::Untyped, {}})
 +                .getAsString(DeclarationPolicy),
-+            "void () __objc3_throws");
++            "void () throws");
 +}
 +
 +TEST(ObjC3FunctionEffects, TypedPayloadContributesTemplateDependence) {
@@ -12999,10 +13076,14 @@ index 000000000..c40497364
 +  }
 +}
 diff --git a/clang/lib/Sema/SemaExprCXX.cpp b/clang/lib/Sema/SemaExprCXX.cpp
-index 538604aa2..d257a5643 100644
+index 538604aa2..d63a153a2 100644
 --- a/clang/lib/Sema/SemaExprCXX.cpp
 +++ b/clang/lib/Sema/SemaExprCXX.cpp
-@@ -14,6 +14,7 @@
+@@ -11,9 +11,11 @@
+ ///
+ //===----------------------------------------------------------------------===//
+ 
++#include "SemaObjC3ErrorContext.h"
  #include "TreeTransform.h"
  #include "TypeLocBuilder.h"
  #include "clang/AST/ASTContext.h"
@@ -13010,7 +13091,7 @@ index 538604aa2..d257a5643 100644
  #include "clang/AST/ASTLambda.h"
  #include "clang/AST/CXXInheritance.h"
  #include "clang/AST/CharUnits.h"
-@@ -6604,6 +6605,39 @@ ExprResult Sema::MaybeBindToTemporary(Expr *E) {
+@@ -6604,6 +6606,39 @@ ExprResult Sema::MaybeBindToTemporary(Expr *E) {
  
    assert(!isa<CXXBindTemporaryExpr>(E) && "Double-bound temporary?");
  
@@ -13050,6 +13131,16 @@ index 538604aa2..d257a5643 100644
    // If the result is a glvalue, we shouldn't bind it.
    if (E->isGLValue())
      return E;
+@@ -7781,6 +7816,9 @@ ExprResult Sema::ActOnFinishFullExpr(Expr *FE, SourceLocation CC,
+   if (FullExpr.isInvalid())
+     return ExprError();
+ 
++  if (!isUnevaluatedContext() && diagnoseObjC3UncheckedCalls(*this, FullExpr.get()))
++    return ExprError();
++
+   CheckCompletedExpr(FullExpr.get(), CC, IsConstexpr);
+ 
+   // At the end of this full expression (which could be a deeply nested
 diff --git a/clang/test/ObjC3/Sema/carrier-typed-error-boundaries.mm b/clang/test/ObjC3/Sema/carrier-typed-error-boundaries.mm
 new file mode 100644
 index 000000000..c71050aa5
@@ -13426,10 +13517,10 @@ index 49bd9596f..360694978 100644
    for(size_t i = 0; i < Sources.size(); ++i)
 diff --git a/clang/include/clang/Basic/ObjC3Syntax.h b/clang/include/clang/Basic/ObjC3Syntax.h
 new file mode 100644
-index 000000000..71a581618
+index 000000000..4cc12b347
 --- /dev/null
 +++ b/clang/include/clang/Basic/ObjC3Syntax.h
-@@ -0,0 +1,51 @@
+@@ -0,0 +1,62 @@
 +//===--- ObjC3Syntax.h - Contextual native carrier syntax ---------*- C++
 +//-*-===//
 +// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
@@ -13452,7 +13543,10 @@ index 000000000..71a581618
 +  Copy,
 +  Move,
 +  MatchExpression,
-+  MatchStatement
++  MatchStatement,
++  TryValue,
++  TryOptional,
++  TryForce
 +};
 +/// Public spellings are contextual before '('. Reserved compiler spellings
 +/// remain internal entry points for native AST and adversarial owner tests.
@@ -13473,11 +13567,19 @@ index 000000000..71a581618
 +      .Cases({"moveValue", "__objc3_move"}, ObjC3Syntax::Move)
 +      .Cases({"match", "__objc3_match"}, ObjC3Syntax::MatchExpression)
 +      .Case("__objc3_match_stmt", ObjC3Syntax::MatchStatement)
++      .Cases({"tryValue", "__objc3_try"}, ObjC3Syntax::TryValue)
++      .Cases({"tryOptional", "__objc3_try_optional"}, ObjC3Syntax::TryOptional)
++      .Cases({"tryForce", "__objc3_try_force"}, ObjC3Syntax::TryForce)
 +      .Default(ObjC3Syntax::Unknown);
 +}
 +inline bool isObjC3TypeSyntax(llvm::StringRef Name, bool FollowedByParen) {
 +  auto Kind = classifyObjC3Syntax(Name, FollowedByParen);
 +  return Kind == ObjC3Syntax::OptionalType || Kind == ObjC3Syntax::ResultType;
++}
++inline bool isObjC3ExpressionSyntax(llvm::StringRef Name) {
++  auto Kind = classifyObjC3Syntax(Name);
++  return Kind != ObjC3Syntax::Unknown && Kind != ObjC3Syntax::OptionalType &&
++         Kind != ObjC3Syntax::ResultType && Kind != ObjC3Syntax::MatchStatement;
 +}
 +} // namespace clang
 +#endif
@@ -13521,10 +13623,10 @@ index 000000000..99dae3605
 +int ordinary(void) { return Optional(Some(3)) + Result(None(2),match(hasValue(1))); }
 diff --git a/clang/test/ObjC3/Parser/public-carriers.mm b/clang/test/ObjC3/Parser/public-carriers.mm
 new file mode 100644
-index 000000000..143c27dde
+index 000000000..e9dd218f4
 --- /dev/null
 +++ b/clang/test/ObjC3/Parser/public-carriers.mm
-@@ -0,0 +1,36 @@
+@@ -0,0 +1,50 @@
 +// RUN: %clang_cc1 -fsyntax-only -verify -x objective-c -std=c17 -fobjc-version=3 -triple x86_64-unknown-linux-gnu -fobjc-runtime=gnustep-2.2 %s
 +// RUN: %clang_cc1 -fsyntax-only -verify -x objective-c++ -std=c++20 -fobjc-version=3 -triple x86_64-unknown-linux-gnu -fobjc-runtime=gnustep-2.2 %s
 +// RUN: %clang_cc1 -fsyntax-only -verify -x objective-c++ -std=c++23 -fobjc-version=3 -triple x86_64-unknown-linux-gnu -fobjc-runtime=gnustep-2.2 %s
@@ -13551,6 +13653,12 @@ index 000000000..143c27dde
 +  } + hasValue(value) + isOk(outcome);
 +}
 +struct Names { int Some; int Optional; int match; };
++int ordinary_names(int input) {
++  int tryValue = input;
++  int tryOptional = input + 1;
++  int tryForce = input + 2;
++  return tryValue + tryOptional + tryForce;
++}
 +#ifdef __cplusplus
 +namespace Native {
 +template<class T> struct Optional { T value; };
@@ -13561,14 +13669,22 @@ index 000000000..143c27dde
 +  return Native::Some(value.value);
 +}
 +#endif
++
++int conditions(Maybe value, Outcome result) {
++  if (hasValue(value)) {
++    if ((isOk(result))) return 1;
++  }
++  while (hasValue(value)) { value = None(int); }
++  return !(hasValue(value)) && !(isOk(result));
++}
 diff --git a/clang/test/ObjC3/Parser/public-errors.mm b/clang/test/ObjC3/Parser/public-errors.mm
 new file mode 100644
-index 000000000..41ab2692d
+index 000000000..7fd0378d9
 --- /dev/null
 +++ b/clang/test/ObjC3/Parser/public-errors.mm
 @@ -0,0 +1,17 @@
 +// RUN: %clang_cc1 -fsyntax-only -verify -x objective-c -std=c17 -fobjc-version=3 -triple x86_64-unknown-linux-gnu -fobjc-runtime=gnustep-2.2 %s
-+// RUN: %clang_cc1 -fsyntax-only -verify -x objective-c++ -std=c++20 -fobjc-version=3 -triple x86_64-unknown-linux-gnu -fobjc-runtime=gnustep-2.2 %s
++// RUN: %clang_cc1 -fsyntax-only -verify -x objective-c++ -std=c++20 -fexceptions -fcxx-exceptions -fobjc-version=3 -triple x86_64-unknown-linux-gnu -fobjc-runtime=gnustep-2.2 %s
 +// expected-no-diagnostics
 +int checked(int value) throws(int) { if (value < 0) throwError(value); return value; }
 +int forward(int value) throws(int) { return tryValue(checked(value)); }
@@ -13584,3 +13700,78 @@ index 000000000..41ab2692d
 +  try { throw 7; } catch (int value) { return value; }
 +}
 +#endif
+diff --git a/clang/test/ObjC3/AST/public-errors-pch.mm b/clang/test/ObjC3/AST/public-errors-pch.mm
+new file mode 100644
+index 000000000..8ef12431f
+--- /dev/null
++++ b/clang/test/ObjC3/AST/public-errors-pch.mm
+@@ -0,0 +1,12 @@
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fexceptions -fcxx-exceptions -fobjc-version=3 -triple x86_64-unknown-linux-gnu -fobjc-runtime=gnustep-2.2 -emit-pch %S/../Parser/public-errors.mm -o %t.pch
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fexceptions -fcxx-exceptions -fobjc-version=3 -triple x86_64-unknown-linux-gnu -fobjc-runtime=gnustep-2.2 -include-pch %t.pch -fsyntax-only %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fexceptions -fcxx-exceptions -fobjc-version=3 -triple x86_64-unknown-linux-gnu -fobjc-runtime=gnustep-2.2 -ast-print %S/../Parser/public-errors.mm -o %t.mm
++// RUN: FileCheck %s < %t.mm
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fexceptions -fcxx-exceptions -fobjc-version=3 -triple x86_64-unknown-linux-gnu -fobjc-runtime=gnustep-2.2 -fsyntax-only %t.mm
++// CHECK: int checked(int value) throws(int)
++// CHECK: throwError(value);
++// CHECK: return tryValue(checked(value));
++// CHECK: handle
++// CHECK: catch(int error)
++// CHECK: tryOptional(checked(value))
++int public_pch_entry() { return recover(-7); }
+diff --git a/clang/test/ObjC3/Sema/public-core-negative.mm b/clang/test/ObjC3/Sema/public-core-negative.mm
+new file mode 100644
+index 000000000..2ff46200a
+--- /dev/null
++++ b/clang/test/ObjC3/Sema/public-core-negative.mm
+@@ -0,0 +1,23 @@
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fobjc-version=3 -triple x86_64-unknown-linux-gnu -fobjc-runtime=gnustep-2.2 -fsyntax-only -verify %s
++using InvalidArray = Optional(int[2]); // expected-error {{payload type 'int[2]' is not supported}}
++int incomplete(Optional(int) value) {
++  return match(value) {
++    case .Some(let payload) => payload;
++  }; // expected-error {{non-exhaustive expression-form match over Optional}}
++}
++int checked() throws(int);
++int missing_check() { return checked(); } // expected-error {{requires an explicit}}
++
++int combine(int) throws(int);
++int nested_check() { return tryForce(combine(checked())); } // expected-error {{requires an explicit}}
++int (*callback)() throws(int);
++int callback_check() { return callback(); } // expected-error {{requires an explicit}}
++struct Member { int method() throws(int); };
++int member_check(Member &value) { return value.method(); } // expected-error {{requires an explicit}}
++void lambda_check() {
++  auto value = [] { return checked(); }; // expected-error {{requires an explicit}}
++  (void)value;
++}
++using ReturnType = decltype(checked());
++static_assert(sizeof(checked()) == sizeof(int));
++static_assert(!noexcept(checked()));
+diff --git a/clang/test/ObjC3/Sema/public-checked-runtime-calls.m b/clang/test/ObjC3/Sema/public-checked-runtime-calls.m
+new file mode 100644
+index 000000000..23474186a
+--- /dev/null
++++ b/clang/test/ObjC3/Sema/public-checked-runtime-calls.m
+@@ -0,0 +1,22 @@
++// RUN: %clang_cc1 -x objective-c -std=c17 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -triple x86_64-unknown-linux-gnu -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -triple x86_64-unknown-linux-gnu -fsyntax-only -verify %s
++int checked(void) throws(int);
++int direct(void) { return checked(); } // expected-error {{requires an explicit}}
++int pointer_call(int (*callback)(void) throws(int)) {
++  return callback(); // expected-error {{requires an explicit}}
++}
++int block_call(int (^callback)(void) throws(int)) {
++  return callback(); // expected-error {{requires an explicit}}
++}
++@interface Checked
++- (int)value throws(int);
++@end
++int message_call(Checked *receiver) {
++  return [receiver value]; // expected-error {{requires an explicit}}
++}
++int checked_message(Checked *receiver) { return tryForce([receiver value]); }
++void block_body(void) {
++  int (^callback)(void) = ^int { return checked(); }; // expected-error {{requires an explicit}}
++  (void)callback;
++}
++int unevaluated(void) { return sizeof(checked()); }

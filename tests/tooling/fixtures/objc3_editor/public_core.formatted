@@ -33,6 +33,7 @@ int scalar_match(int input) {
   return isOk(outcome) ? selected : async(input);
 }
 
+#undef throws
 @protocol Error
 @end
 @protocol MessageProbe

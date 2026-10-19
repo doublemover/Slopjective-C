@@ -379,7 +379,7 @@ index 9a97d52fd..84f027156 100644
    PrintExpr(Node->getCond());
 diff --git a/clang/lib/Parse/ParseObjC3.cpp b/clang/lib/Parse/ParseObjC3.cpp
 new file mode 100644
-index 000000000..0ddde3665
+index 000000000..1939a5d16
 --- /dev/null
 +++ b/clang/lib/Parse/ParseObjC3.cpp
 @@ -0,0 +1,307 @@
@@ -521,9 +521,9 @@ index 000000000..0ddde3665
 +  SourceLocation Keyword = ConsumeToken();
 +  BalancedDelimiterTracker Parens(*this, tok::l_paren);
 +  if (Parens.expectAndConsume(diag::err_expected_lparen_after,
-+                              Optional ? "__objc3_try_optional"
-+                              : Force  ? "__objc3_try_force"
-+                                       : "__objc3_try",
++                              Optional ? "tryOptional"
++                              : Force  ? "tryForce"
++                                       : "tryValue",
 +                              tok::r_paren))
 +    return ExprError();
 +  ExprResult Operand = ParseAssignmentExpression();
@@ -540,7 +540,7 @@ index 000000000..0ddde3665
 +StmtResult Parser::ParseObjC3ThrowStatement() {
 +  SourceLocation Keyword = ConsumeToken();
 +  BalancedDelimiterTracker Parens(*this, tok::l_paren);
-+  if (Parens.expectAndConsume(diag::err_expected_lparen_after, "__objc3_throw",
++  if (Parens.expectAndConsume(diag::err_expected_lparen_after, "throwError",
 +                              tok::r_paren))
 +    return StmtError();
 +  ExprResult Payload = ParseAssignmentExpression();
@@ -691,7 +691,7 @@ index 000000000..0ddde3665
 +  return Result;
 +}
 diff --git a/clang/lib/Parse/ParseStmt.cpp b/clang/lib/Parse/ParseStmt.cpp
-index 44b51a985..eabde1ee7 100644
+index 44b51a985..23baf94df 100644
 --- a/clang/lib/Parse/ParseStmt.cpp
 +++ b/clang/lib/Parse/ParseStmt.cpp
 @@ -11,6 +11,7 @@
@@ -755,7 +755,7 @@ index 44b51a985..eabde1ee7 100644
      if (Next.is(tok::colon)) { // C99 6.8.1: labeled-statement
        // Both C++11 and GNU attributes preceding the label appertain to the
        // label, so put them in a single list to pass on to
-@@ -173,7 +203,34 @@ Retry:
+@@ -173,7 +203,18 @@ Retry:
  
      // Look up the identifier, and typo-correct it to a keyword if it's not
      // found.
@@ -766,23 +766,7 @@ index 44b51a985..eabde1ee7 100644
 +                            NextToken().is(tok::l_paren));
 +    StartsObjC3CarrierExpression =
 +        getLangOpts().ObjC3 && Next.is(tok::l_paren) &&
-+        ((classifyObjC3Syntax(Tok.getIdentifierInfo()->getName(), true) != ObjC3Syntax::Unknown &&
-+          !IsObjC3CarrierSpecifier) ||
-+         Tok.getIdentifierInfo()->isStr("__objc3_match") ||
-+         Tok.getIdentifierInfo()->isStr("__objc3_copy") ||
-+         Tok.getIdentifierInfo()->isStr("__objc3_move") ||
-+         Tok.getIdentifierInfo()->isStr("__objc3_some") ||
-+         Tok.getIdentifierInfo()->isStr("__objc3_none") ||
-+         Tok.getIdentifierInfo()->isStr("__objc3_has_value") ||
-+         Tok.getIdentifierInfo()->isStr("__objc3_ok") ||
-+         Tok.getIdentifierInfo()->isStr("__objc3_err") ||
-+         Tok.getIdentifierInfo()->isStr("__objc3_is_ok") ||
-+         Tok.getIdentifierInfo()->isStr("tryValue") ||
-+         Tok.getIdentifierInfo()->isStr("tryOptional") ||
-+         Tok.getIdentifierInfo()->isStr("tryForce") ||
-+         Tok.getIdentifierInfo()->isStr("__objc3_try") ||
-+         Tok.getIdentifierInfo()->isStr("__objc3_try_optional") ||
-+         Tok.getIdentifierInfo()->isStr("__objc3_try_force"));
++        isObjC3ExpressionSyntax(Tok.getIdentifierInfo()->getName());
 +    // Keep the private constructor token available to declaration
 +    // disambiguation. Ordinary identifier annotation treats its argument list
 +    // as an expression before the carrier type parser can consume it.
@@ -791,7 +775,7 @@ index 44b51a985..eabde1ee7 100644
        // Try to limit which sets of keywords should be included in typo
        // correction based on what the next token is.
        StatementFilterCCC CCC(Next);
-@@ -196,6 +253,7 @@ Retry:
+@@ -196,6 +237,7 @@ Retry:
    }
  
    default: {
@@ -799,7 +783,7 @@ index 44b51a985..eabde1ee7 100644
      if (getLangOpts().CPlusPlus && MaybeParseCXX11Attributes(CXX11Attrs, true))
        goto Retry;
  
-@@ -208,7 +266,8 @@ Retry:
+@@ -208,7 +250,8 @@ Retry:
      // in C++, we always allow a declaration, but in C we need to check whether
      // we're in a statement context that allows declarations. e.g., in C, the
      // following is invalid: if (1) int x;

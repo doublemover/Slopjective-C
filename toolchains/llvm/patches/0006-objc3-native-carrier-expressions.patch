@@ -684,7 +684,7 @@ index fdefb6d6b..ae47c3ef7 100644
    VisitExpr(S);
  }
 diff --git a/clang/lib/Parse/ParseExpr.cpp b/clang/lib/Parse/ParseExpr.cpp
-index 74209f579..8a34a90c7 100644
+index 74209f579..01ac8c212 100644
 --- a/clang/lib/Parse/ParseExpr.cpp
 +++ b/clang/lib/Parse/ParseExpr.cpp
 @@ -20,6 +20,7 @@
@@ -715,9 +715,9 @@ index 74209f579..8a34a90c7 100644
 +
 +    if (getLangOpts().ObjC3 && Tok.is(tok::identifier) &&
 +        Tok.getIdentifierInfo() &&
-+        (Tok.getIdentifierInfo()->isStr("tryValue") ||
-+         Tok.getIdentifierInfo()->isStr("tryOptional") ||
-+         Tok.getIdentifierInfo()->isStr("tryForce") ||
++        ((Tok.getIdentifierInfo()->isStr("tryValue") && NextToken().is(tok::l_paren)) ||
++         (Tok.getIdentifierInfo()->isStr("tryOptional") && NextToken().is(tok::l_paren)) ||
++         (Tok.getIdentifierInfo()->isStr("tryForce") && NextToken().is(tok::l_paren)) ||
 +         Tok.getIdentifierInfo()->isStr("__objc3_try") ||
 +         Tok.getIdentifierInfo()->isStr("__objc3_try_optional") ||
 +         Tok.getIdentifierInfo()->isStr("__objc3_try_force"))) {

@@ -1,6 +1,7 @@
 # Public Linux Optional and Result values
 
-The public carrier syntax uses native Clang types and lifetime operations. It is
+The public carrier syntax uses native Clang types and lifetime operations in
+Objective-C C17 and Objective-C++ C++20/23. It is
 available in explicitly enabled ObjC3 mode on Linux x86-64 with GNUstep 2.2 and
 the compatibility profile. Objective-C ARC owns object and Block payloads;
 plain scalar carriers retain their native C/C++ value semantics. The [synchronous error contract](linux_public_errors.md) composes these values
@@ -55,8 +56,8 @@ Expression result lifetime and native exception cleanup follow Clang's ordinary
 full-expression and lexical rules. Explicit move-pattern extraction remains
 outside the public subset.
 
-In C++ and Objective-C++, `copyValue(value)` and `moveValue(value)` expose
-active-arm construction. C and Objective-C use ordinary initialization and
+In Objective-C++, `copyValue(value)` and `moveValue(value)` expose
+active-arm construction. Objective-C uses ordinary initialization and
 assignment instead. Copies
 preserve source values; a mutable move clears native strong/weak payloads while
 preserving the source tag. A const move copies. Ordinary initialization and
@@ -65,13 +66,16 @@ evaluation or release of prior storage and returns the destination lvalue in
 Objective-C++. Never inspect or depend on the hidden representation fields.
 
 Supported payloads use the existing complete native representation contract:
-scalar values, pointers, qualified object/Block pointers, supported trivial data
-records and recursive Optional/Result values. Declaration-only dependent or
-incomplete types defer representation until use. Function, reference, array,
-variably modified, atomic and unsupported nontrivial object payloads are
-rejected. A fixed-size array of carriers is supported as enclosing storage.
-Managed record payloads and arbitrary C++ class payloads require their own
-qualified operations; enclosing records containing managed carriers have the
+scalar values, pointers, qualified object/Block pointers, supported data records
+and recursive Optional/Result values. C++ local values also retain native payload
+construction and destruction, including elision and exceptional cleanup. Each
+requested operation requires the corresponding native payload operation; deleted
+copy/move operations remain unavailable. Declaration-only dependent or incomplete
+types defer representation until use. Function, reference, array and variably
+modified payloads are rejected; unsupported atomic and object operations are
+diagnosed. A fixed-size array of carriers is supported as enclosing storage.
+Managed record payloads and general callable transfer of nontrivial C++ payloads
+require their own qualified operations; enclosing records containing managed carriers have the
 separate [native record contract](linux_managed_records.md).
 
 Managed values compose through ordinary functions, callbacks, C++ members,

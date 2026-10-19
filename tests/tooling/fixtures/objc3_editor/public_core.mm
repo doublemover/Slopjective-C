@@ -11,6 +11,7 @@ match(maybe){case .Some(let payload):{selected=throws(payload);}case .None:{sele
 match(outcome){case .Ok(let success):{selected+=success;}case .Err(let error):{selected+=(int)error;}}
 return isOk(outcome)?selected:async(input);}
 
+#undef throws
 @protocol Error @end
 @protocol MessageProbe
 - (int)checked:(int)value throws(id<Error>);

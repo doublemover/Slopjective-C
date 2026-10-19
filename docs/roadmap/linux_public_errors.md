@@ -26,15 +26,20 @@ int recover(int value) {
 `throws(E)` declares one error payload type. Native type identity, ownership and
 layout participate in function, callback, Block, C++ member and Objective-C method
 compatibility. A redeclaration or import must preserve that effect and payload.
-The bare `throws` form uses the existing native object error contract. Public
+Nonthrowing functions, member pointers and Blocks can widen to a throwing
+callable view; the qualified ABI appends a caller-initialized error slot which
+the original nonthrowing callee leaves untouched. Checked calls preserve the
+ordinary result and ownership operations. Dropping or changing a throws payload
+is rejected. The bare `throws` form uses the existing native object error contract. Public
 async/await and actors remain reserved.
 
 `tryValue(call())` executes a throwing call and propagates its declared error to
-the current compatible throwing function or active handler. Every throwing call
-requires an explicit checked form. `tryOptional(call())` turns success into a
-present Optional and failure into absence; an Optional return is preserved
-without adding another Optional layer. A Result return retains its Result arm
-inside the Optional. `tryForce(call())` unwraps success and traps on failure.
+the current compatible throwing function or active handler. Every evaluated throwing call requires an explicit checked form, including
+throwing receivers and nested arguments. Unevaluated type and size queries do
+not execute the call. `tryOptional(call())` turns success into a
+present Optional and failure into absence; a returned Optional gains an outer layer, preserving the difference between
+a successful absent value and a failed call. A Result return retains its Result
+arm inside the Optional. `tryForce(call())` unwraps success and traps on failure.
 The call and selected payload conversions are evaluated once.
 
 `throwError(payload);` converts and transfers the payload into the current

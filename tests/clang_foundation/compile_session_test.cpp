@@ -51,7 +51,8 @@ int main() {
   effect_request.language = BaseLanguage::ObjectiveCxx;
   effect_request.input_path = "objc3c-session-effects.mm";
   effect_request.objc3 = true;
-  effect_request.source_text = "struct Error {}; typedef Error ErrorAlias; "
+  effect_request.source_text =
+      "struct Error {}; typedef Error ErrorAlias; "
       "void asynchronous() __objc3_async; "
       "void throwing() throws(ErrorAlias); "
       "typedef void TypedCallback(void) throws(ErrorAlias); "
@@ -164,8 +165,7 @@ int main() {
   assert(native_carrier_ir == read_ir(carrier_options.output_path));
   objc3c_frontend_v2_result_destroy(carrier_result);
   // A failed native query preserves a prior emitted artifact through the C ABI.
-  constexpr char invalid_query[] =
-      "void bad(void) { (void)hasValue(42); }";
+  constexpr char invalid_query[] = "void bad(void) { (void)hasValue(42); }";
   carrier_options.source = invalid_query;
   carrier_options.source_size = sizeof(invalid_query) - 1;
   carrier_result = nullptr;

@@ -11,8 +11,10 @@ NestedStrong nested_make(int key);
 NestedStrong nested_identity(NestedStrong value);
 NestedMixed nested_mixed(NestedMixed value);
 NestedDeep nested_deep(NestedDeep value);
-NestedStrong nested_throwing(NestedStrong value, int key, int fail) throws(id<Error>);
-NestedStrong nested_forward(NestedStrong value, int key, int fail) throws(id<Error>);
+NestedStrong nested_throwing(NestedStrong value, int key, int fail)
+    throws(id<Error>);
+NestedStrong nested_forward(NestedStrong value, int key, int fail)
+    throws(id<Error>);
 int nested_state(NestedStrong value);
 int nested_weak_state(NestedWeak value);
 __attribute__((objc_root_class))
@@ -21,7 +23,9 @@ __attribute__((objc_root_class))
 - (NestedStrong)echo:(NestedStrong)value;
 - (NestedMixed)mixed:(NestedMixed)value;
 - (NestedStrong)direct:(NestedStrong)value __attribute__((objc_direct));
-- (NestedStrong)throwing:(NestedStrong)value key:(int)key fail:(int)fail throws(id<Error>);
+- (NestedStrong)throwing:(NestedStrong)value
+                     key:(int)key
+                    fail:(int)fail throws(id<Error>);
 - (NestedStrong)native:(NestedStrong)value;
 @end
 #ifdef __cplusplus

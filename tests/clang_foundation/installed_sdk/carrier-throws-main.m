@@ -74,6 +74,45 @@ static int functions(void) {
   CHECK(call_destroyed(35) == 1 && call_destroyed(36) == 1);
   return 0;
 }
+static int effect_widening(void) {
+  typedef CallStrong WideMany(int, CallStrong, CallStrong, int, CallStrong,
+                             CallStrong, CallStrong, CallStrong, CallStrong, int)
+      throws(id<Error>);
+  WideMany *wide = call_many;
+  CallStrong source = call_make(52);
+  CallStrong result = tryForce(wide(1, source, source, 2, source, source,
+                                         source, source, source, 3));
+  source = None(id);
+  CHECK(!call_destroyed(52) && hasValue(result));
+  result = None(id);
+  CHECK(call_destroyed(52) == 1);
+
+  typedef CallStrong (^WideBlock)(CallStrong) throws(id<Error>);
+  CallStrong (^plain)(CallStrong) = ^CallStrong(CallStrong value) {
+    return call_identity(value);
+  };
+  WideBlock block = plain;
+  source = call_make(53);
+  result = tryForce(block(source));
+  source = None(id);
+  CHECK(!call_destroyed(53) && hasValue(result));
+  result = None(id);
+  CHECK(call_destroyed(53) == 1);
+#ifdef __cplusplus
+  struct LocalWiden {
+    CallStrong apply(CallStrong value) { return call_identity(value); }
+  } receiver;
+  typedef CallStrong (LocalWiden::*WideMember)(CallStrong) throws(id<Error>);
+  WideMember member = &LocalWiden::apply;
+  source = call_make(54);
+  result = tryForce((receiver.*member)(source));
+  source = None(id);
+  CHECK(!call_destroyed(54) && hasValue(result));
+  result = None(id);
+  CHECK(call_destroyed(54) == 1);
+#endif
+  return 0;
+}
 static int leaves(void) {
   id object = call_object(7);
   CallWeak weak = Some(id __weak, object);
@@ -216,6 +255,7 @@ int main(int argc, char **argv) {
   }
   int status = functions(); if (status) return status;
   status = leaves(); if (status) return status;
+  status = effect_widening(); if (status) return status;
   status = runtime_calls(); if (status) return status;
 #ifdef __cplusplus
   status = cpp_calls(); if (status) return status;
