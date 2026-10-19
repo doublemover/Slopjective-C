@@ -73,14 +73,14 @@ def qualify(sdk: Path, output: Path) -> dict:
                     interface = module_directory / 'RuntimeCarrierCalls.objc3i'
                     run(key + '-interface', [compiler, 'carrier-runtime-module.m', '--objc3', '--arc',
                         '--emit-interface', interface, '--module', 'RuntimeCarrierCalls', '--package', 'runtime-carrier-calls-v1',
-                        '--', '-' + optimization])
+                        '--', '-' + optimization, '-fblocks'])
                     identity = json.loads(interface.with_suffix('.objc3i.json').read_text())['module']
                     imported = output / (key + '-import.o')
                     run(key + '-import', [compiler, 'carrier-runtime-import.m', '--objc3', '--arc',
                         '--source-imports', '--module-search-path', module_directory, '--import-module', 'RuntimeCarrierCalls',
                         identity['semantic_fingerprint'], 'runtime-carrier-calls-v1', '--emit-object', imported,
                         '--emit-dependency-record', output / (key + '-dependencies.json'), '--',
-                        '-' + optimization, '-g'])
+                        '-' + optimization, '-g', '-fblocks'])
                     application = output / (key + '-import')
                     run(key + '-import-link', [compiler, base, provider, imported, '-o', application])
                     execute(key + '-import', application)

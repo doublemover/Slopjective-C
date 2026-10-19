@@ -10,8 +10,8 @@ RuntimeStrongBlock runtime_make_block(int key);
 - (CallWeak)echoWeak:(CallWeak)value;
 @end
 __attribute__((objc_root_class))
-@interface RuntimeCalls <RuntimeCarrierProtocol> { Class isa; }
-+ (instancetype)new;
+@interface RuntimeCalls <RuntimeCarrierProtocol>
++ (id)new;
 - (CallStrong)echo:(CallStrong)value;
 - (CallWeak)echoWeak:(CallWeak)value;
 @end

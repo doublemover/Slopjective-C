@@ -83,6 +83,9 @@ reflection. Reflection verifies encoding identity, argument count and type,
 storage size/alignment and Block signatures. Every executable passes DWARF
 verification. SDK publication requires all 53 commands; Debian and Ubuntu archive
 acceptance repeat the suite as an ordinary user without a checkout mounted.
+The public driver gives discarded COMDAT entries in DWARF 5 address pools an
+all-ones tombstone. This preserves valid debug ranges when separate providers
+emit identical Block copy/dispose helpers and the linker keeps one definition.
 
 The original nine ordinary-function executions remain a separate publication
 gate. Live clangd qualification includes message and Block result navigation,
