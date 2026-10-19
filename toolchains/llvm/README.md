@@ -102,7 +102,7 @@ in Objective-C and Objective-C++: the selected RHS is preserved before LHS
 evaluation and old-arm destruction, including self-aliasing, all Result arm
 transitions, weak zeroing, Blocks, C++ sequencing and exception cleanup.
 Direct managed carriers also cross native function and C++ callable boundaries
-under extension ABI revision 7. Caller-owned argument snapshots preserve source
+under extension ABI revision 8. Caller-owned argument snapshots preserve source
 values at argument evaluation and clean up at full-expression boundaries;
 returned values initialize fresh caller-owned storage. Separate provider and
 consumer compilation covers O0/O2/ThinLTO, PCH, semantic module imports,
@@ -116,8 +116,10 @@ ThinLTO, PCH and semantic imports cover dispatch, reflection and native
 exceptions. Synchronous typed-error signatures and
 [recursive managed carriers](../../docs/roadmap/linux_recursive_carriers.md) now
 compose with these call forms, including owned match snapshots and managed-result
-optionalization. Ivar/captured carrier storage, arrays/enclosing records and
-volatile managed values retain diagnostic boundaries.
+optionalization. [Owned Block value captures](../../docs/roadmap/linux_owned_block_captures.md)
+now use active-arm helpers and exception-safe runtime copying. Ivar/reference
+capture storage, arrays/enclosing records and volatile managed values retain
+diagnostic boundaries.
 Patch export preserves canonical section ordering and
 metadata across untracked and intent-to-add source files, so index bookkeeping
 does not change unrelated patch identities.

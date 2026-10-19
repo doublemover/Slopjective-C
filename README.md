@@ -184,7 +184,7 @@ replacement, weak zeroing, Blocks, sequencing and native exceptions in both
 Objective-C and Objective-C++ at O0 and O2.
 
 Linux ARC functions now pass and return these direct carriers by value under
-extension ABI revision 7. The [recursive carrier contract](docs/roadmap/linux_recursive_carriers.md)
+extension ABI revision 8. The [recursive carrier contract](docs/roadmap/linux_recursive_carriers.md)
 extends ownership through nested Optional/Result values, managed match snapshots
 and optionalization of managed results. Each argument gets a caller-owned snapshot when it is
 evaluated; that snapshot survives later argument evaluation and is destroyed at
@@ -214,8 +214,10 @@ return. Run `share/objc3c/examples/native/qualify-managed-throws.py` with the sa
 SDK/output options for nine executions and eighteen forced-failure checks.
 
 The [managed call contract](docs/roadmap/linux_managed_call_abi.md) defines the
-ownership and target bounds. Carrier storage in ivars or Block captures,
-volatile carriers, arrays/enclosing records and managed MRC transfers still need
+ownership and target bounds. [Owned Block captures](docs/roadmap/linux_owned_block_captures.md) now preserve
+active-arm lifetime through stack/heap closures and exceptional copying. Carrier
+storage in ivars, reference captures, volatile carriers, arrays/enclosing records
+and managed MRC transfers still need
 dedicated implementation. GNUstep 2.2 supports [true direct dispatch](docs/roadmap/linux_direct_dispatch.md),
 including lazy class initialization and managed typed-error calls.
 
@@ -245,7 +247,7 @@ Native validation checks O0/O2 behavior, ABI, ownership, cleanup, expected
 failures, installed interface consumers and editor tools. Evidence records bind
 source, compiler, runtime, system headers and executable contents and reject
 changes during validation. The
-[Linux SDK acceptance receipt](docs/support/linux_recursive_carrier_acceptance.json)
+[Linux SDK acceptance receipt](docs/support/linux_owned_capture_acceptance.json)
 records the qualified archive and fresh-host checks; each new SDK has its own
 qualification and release receipt. Runtime timings must be distinguished from
 compile and wrapper timings when comparing performance.
