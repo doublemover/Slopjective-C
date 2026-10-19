@@ -89,3 +89,7 @@ Privileged SPI, availability metadata expansion, additional public C++ construct
 and module-owned linker/runtime naming require separate contracts. Concurrency
 features retain their reserved status until their native execution and ownership
 requirements are implemented and qualified.
+
+The [Linux acceptance receipt](../support/linux_public_surface_acceptance.json)
+binds the implementation, installed gates, archive identity, sanitizer commands,
+native checks and fresh Debian 13/Ubuntu 26.04 qualification.

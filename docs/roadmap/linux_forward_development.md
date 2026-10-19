@@ -1,7 +1,7 @@
 # Linux forward development
 
 The active product is the Clang-only Linux x86-64 SDK. The
-[acceptance receipt](../support/linux_ownership_projection_acceptance.json) identifies
+[acceptance receipt](../support/linux_public_surface_acceptance.json) identifies
 its exact archive, implementation, installed execution and fresh-distribution
 evidence. Tool versions come from [the manifest](../../toolchains/llvm/manifest.json);
 public language claims come from [the capability authority](../../schemas/objc3-language-capabilities.json).
@@ -38,15 +38,18 @@ The implemented foundations have separate bounded contracts:
   [immutable packages](linux_immutable_packages.md).
 - [Explicit ownership projections](linux_ownership_projections.md) connect
   closed ARC and MRC C APIs, including source-free packages and transitive
-  consumer-mode re-exports. Semantic interface schema 2, source manifests v3
-  and binary packages v2 require regeneration with the current SDK.
+  consumer-mode re-exports.
+- [Public module surfaces](linux_public_module_surfaces.md) select native root
+  declarations, reject private type leaks and preserve dependent build reuse
+  across private implementation edits. Source manifests v4 and binary packages
+  v3 require explicit export policies. Semantic interfaces remain schema 2.
 
 ## Next implementation sequence
 
-1. Define public module syntax with its native declaration, visibility and
-   dependency identity rules. The existing offline source graph and immutable
-   package store provide compilation and installation foundations. Registry
-   transport is a separate concern.
+1. Extend the bounded public module API with privileged SPI, availability
+   metadata and module-owned linker/runtime naming contracts. Native imports,
+   qualified lookup, explicit export selection and immutable dependency
+   identities are implemented. Registry transport is a separate concern.
 2. Build structured task groups, cancellation and actor isolation on that
    ownership and module foundation. Require deterministic error/cleanup tests,
    native threaded execution and sanitizer evidence before feature promotion.
