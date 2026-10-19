@@ -130,6 +130,7 @@ PACKETS = {
         "clang/lib/Sema/SemaDeclCXX.cpp",
         "clang/lib/Sema/SemaDeclObjC.cpp",
         "clang/lib/Sema/SemaExpr.cpp",
+        "clang/lib/Sema/SemaExprCXX.cpp",
         "clang/lib/Sema/SemaOverload.cpp",
         "clang/lib/Sema/SemaTemplate.cpp",
         "clang/lib/Sema/SemaTemplateDeduction.cpp",
@@ -200,6 +201,7 @@ PACKETS = {
         "clang/lib/CodeGen/CodeGenModule.cpp",
         "clang/lib/CodeGen/CodeGenTypes.cpp",
         "clang/lib/CodeGen/CodeGenTypes.h",
+        "clang/lib/CodeGen/Targets/X86.cpp",
         "clang/test/ObjC3/CodeGen",
     ],
     "0006-objc3-native-carrier-expressions.patch": [

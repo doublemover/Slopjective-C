@@ -70,6 +70,8 @@ env -u LD_LIBRARY_PATH ./application
 python3 "$OBJC3C_SDK_ROOT/share/objc3c/examples/managed/build.py" --output-dir ./managed
 python3 "$OBJC3C_SDK_ROOT/share/objc3c/examples/managed/qualify.py" --output-dir ./module-evidence
 python3 "$OBJC3C_SDK_ROOT/share/objc3c/source-build/qualify.py" --output-dir ./package-evidence
+python3 -B "$OBJC3C_SDK_ROOT/share/objc3c/examples/native/qualify-carrier-calls.py" \
+  --sdk-root "$OBJC3C_SDK_ROOT" --output-dir ./carrier-call-evidence
 for optimization in O0 O2; do
   objc3c carrier-transfer.mm -std=c++20 -fexceptions -fobjc-arc-exceptions \
     -"$optimization" -g -o carrier-transfer
