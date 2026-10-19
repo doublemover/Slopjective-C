@@ -145,3 +145,21 @@ void managed_record_probe(id input) {
   managed_record = source;
   (void)__objc3_has_value(managed_record.values[0]);
 }
+
+@protocol ManagedHeapProbe
+@property(nonatomic) __objc3_optional(id) stored;
+@property(nonatomic) struct ManagedRecord record;
+@end
+int managed_heap_probe(id<ManagedHeapProbe> receiver, id input) {
+  receiver.stored = __objc3_some(id, input);
+  __objc3_optional(id) heap_value = receiver.stored;
+  __block struct ManagedRecord shared_record = receiver.record;
+  int (^shared_state)(void) = ^int {
+    return shared_record.marker;
+  };
+  struct ManagedRecord (^snapshot)(void) = ^{
+    return shared_record;
+  };
+  (void)__objc3_has_value(heap_value);
+  return shared_state() + snapshot().marker;
+}
