@@ -1,11 +1,11 @@
+#include <objc/runtime.h>
+#include <objc/objc-arc.h>
 #ifdef __cplusplus
 extern "C" {
 #endif
-id class_createInstance(Class type, unsigned long extra)
+// The runtime allocator returns an owned instance in both compilation modes.
+id class_createInstance(Class type, size_t extra)
     __attribute__((ns_returns_retained));
-id object_dispose(id object);
-id objc_autorelease(id object);
-void objc_release(id object);
 #ifdef __cplusplus
 }
 #endif

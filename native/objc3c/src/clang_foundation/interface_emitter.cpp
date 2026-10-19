@@ -342,13 +342,20 @@ class TypeDependencyVisitor final
 
   bool VisitTypedefType(clang::TypedefType *type) {
     const auto *declaration = type->getDecl();
-    // Compiler-provided id/Class/SEL are native language types, with no
-    // external module to resolve. Compare declarations, never spellings.
-    if (context_.getLangOpts().ObjC && declaration &&
-        (declaration == context_.getObjCIdDecl() ||
-         declaration == context_.getObjCClassDecl() ||
-         declaration == context_.getObjCSelDecl()))
-      return true;
+    // Runtime headers redeclare these compiler-provided language types. Accept
+    // only the same native name and type, without additional typedef contracts.
+    if (context_.getLangOpts().ObjC && declaration) {
+      for (const auto *builtin :
+           {context_.getObjCIdDecl(), context_.getObjCClassDecl(),
+            context_.getObjCSelDecl()}) {
+        if (declaration == builtin ||
+            (builtin && !declaration->hasAttrs() &&
+             declaration->getIdentifier() == builtin->getIdentifier() &&
+             context_.hasSameType(declaration->getUnderlyingType(),
+                                  builtin->getUnderlyingType())))
+          return true;
+      }
+    }
     if (declaration && !IsInMainFile(context_, declaration->getLocation()) &&
         !IsResolved(declaration))
       AddDiagnostic(result_, "O3IFC112",

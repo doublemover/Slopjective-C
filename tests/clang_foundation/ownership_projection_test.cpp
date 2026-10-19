@@ -43,10 +43,12 @@ std::string Read(const fs::path &path) {
 }
 void TestProvenanceAndModeLocks(const fs::path &root, bool producer_arc,
                                 bool cpp, const std::string &standard) {
-  auto source = cpp ? std::string("extern \"C\" {\n") + api + "}\n" : api;
+  auto source = std::string("#include \"native-runtime.h\"\n") +
+                (cpp ? std::string("extern \"C\" {\n") + api + "}\n" : api);
   auto emit = Request(root / (cpp ? "provider.mm" : "provider.m"), producer_arc,
                       cpp, standard, source);
   emit.emit_semantic_interface = true;
+  emit.arguments.push_back("-I" + root.string());
   emit.projected_arc = !producer_arc;
   emit.module_name = "Projected";
   emit.package_identity = "projection-v1";
@@ -155,15 +157,41 @@ void TestRejectedAPIsAndAtomicOutputs(const fs::path &root) {
     assert(!Compile(unsupported).success);
   }
 }
+void TestNativeRuntimeAliases(const fs::path &root, bool arc, bool cpp,
+                              const std::string &standard) {
+  auto declarations =
+      std::string("id native_id(void); Class native_class(void);\n");
+  auto r = Request(
+      root / (cpp ? "runtime.mm" : "runtime.m"), arc, cpp, standard,
+      "#include \"native-runtime.h\"\n" +
+          (cpp ? "extern \"C\" {\n" + declarations + "}\n" : declarations));
+  r.arguments.push_back("-I" + root.string());
+  r.emit_semantic_interface = true;
+  r.module_name = "NativeRuntime";
+  r.package_identity = "runtime-v1";
+  assert(Compile(r).success);
+  r.source_text =
+      "#include \"native-runtime.h\"\nForeignId external_alias(void);";
+  // Canonical type equality alone must not erase an unresolved public alias.
+  assert(!Compile(r).success);
+}
 } // namespace
 int main() {
   auto root = fs::temp_directory_path() / "objc3 ownership projection test";
   fs::remove_all(root);
   fs::create_directories(root);
+  Write(root / "native-runtime.h",
+        "typedef struct objc_class *Class;\n"
+        "typedef struct objc_selector *SEL;\n"
+        "typedef struct objc_object { Class isa; } *id;\n"
+        "typedef id ForeignId;\n");
   for (const auto &standard : {"c17", "c++20", "c++23"})
-    for (bool producer_arc : {false, true})
+    for (bool producer_arc : {false, true}) {
       TestProvenanceAndModeLocks(root, producer_arc,
                                  std::string(standard) != "c17", standard);
+      TestNativeRuntimeAliases(root, producer_arc,
+                               std::string(standard) != "c17", standard);
+    }
   TestRejectedAPIsAndAtomicOutputs(root);
   fs::remove_all(root);
 }
