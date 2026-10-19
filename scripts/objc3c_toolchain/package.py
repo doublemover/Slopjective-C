@@ -207,6 +207,22 @@ def package_sdk(repo: Path, prefix: Path, validation_report: Path, cache_dir: Pa
             or any(row['exit_code'] != row['expected_exit_code']
                    for row in throws_evidence['commands'])):
         raise ValueError('installed managed throws qualification receipt is incomplete')
+    direct_directory = validation_report.parent / 'installed-direct-carrier-calls'
+    direct_directory.mkdir(parents=True, exist_ok=True)
+    with (direct_directory / 'execution.log').open('w') as log:
+        result = subprocess.run([os.sys.executable, '-B',
+            str(prefix / 'share/objc3c/examples/native/qualify-direct-carrier-calls.py'),
+            '--sdk-root', str(prefix), '--output-dir', str(direct_directory)],
+            stdout=log, stderr=subprocess.STDOUT, timeout=1200)
+    if result.returncode:
+        raise ValueError(f'installed direct call qualification failed; see {direct_directory / "execution.log"}')
+    direct_evidence = json.loads((direct_directory / 'qualification.json').read_text())
+    if (direct_evidence['status'] != 'PASS' or direct_evidence['sdk_seal'] != data['seal_sha256']
+            or len(direct_evidence['executions']) != 9
+            or len(direct_evidence['forced_failures']) != 12
+            or len(direct_evidence['runtime_rejections']) != 9
+            or any(row['exit_code'] != row['expected_exit_code'] for row in direct_evidence['commands'])):
+        raise ValueError('installed direct call qualification receipt is incomplete')
     cache_dir.mkdir(parents=True, exist_ok=True)
     archive = cache_dir / (source['build_id'] + '-linux-x86_64-' + data['seal_sha256'][:16] + '.tar.zst')
     if archive.exists():
@@ -236,7 +252,8 @@ def package_sdk(repo: Path, prefix: Path, validation_report: Path, cache_dir: Pa
                'installed_source_modules': module_evidence, 'installed_source_graph': graph_evidence,
                'installed_carrier_calls': call_evidence,
                'installed_runtime_carrier_calls': runtime_call_evidence,
-               'installed_managed_throws': throws_evidence}
+               'installed_managed_throws': throws_evidence,
+               'installed_direct_calls': direct_evidence}
     archive.with_suffix('.json').write_text(json.dumps(receipt, indent=2) + '\n')
     return {**receipt, 'cache_hit': False}
 

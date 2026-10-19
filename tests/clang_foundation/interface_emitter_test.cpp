@@ -64,7 +64,7 @@ void TestObjectiveCContainerRoundTrips() {
   auto ast = clang::tooling::buildASTFromCodeWithArgs(
       "__attribute__((objc_root_class)) @interface Widget\n- (int)value;\n@end\n",
       {"-x", "objective-c", "-std=gnu11",
-       "-fobjc-runtime=gnustep-2.0", "--target=x86_64-unknown-linux-gnu"},
+       "-fobjc-runtime=gnustep-2.2", "--target=x86_64-unknown-linux-gnu"},
       "objc_fixture.m");
   assert(ast && !ast->getDiagnostics().hasErrorOccurred());
 
@@ -94,7 +94,7 @@ void TestTypedEffectSemanticInterfacesRoundTrip() {
     auto ast = clang::tooling::buildASTFromCodeWithArgs(
         source,
         {"-x", "objective-c", "-std=c17", "-fobjc-version=3",
-         "-fobjc-runtime=gnustep-2.0", "--target=x86_64-unknown-linux-gnu"},
+         "-fobjc-runtime=gnustep-2.2", "--target=x86_64-unknown-linux-gnu"},
         "effect_fixture.m");
     assert(ast && !ast->getDiagnostics().hasErrorOccurred());
     auto emitted = EmitSemanticInterface(ast->getASTContext(), "fixture.effect",
@@ -131,7 +131,7 @@ void TestTypedEffectSemanticInterfacesRoundTrip() {
     auto regenerated_ast = clang::tooling::buildASTFromCodeWithArgs(
         emitted.source_bytes,
         {"-x", "objective-c", "-std=c17", "-fobjc-version=3",
-         "-fobjc-runtime=gnustep-2.0", "--target=x86_64-unknown-linux-gnu"},
+         "-fobjc-runtime=gnustep-2.2", "--target=x86_64-unknown-linux-gnu"},
         "relocated-effect-interface.m");
     assert(regenerated_ast && !regenerated_ast->getDiagnostics().hasErrorOccurred());
     auto regenerated = EmitSemanticInterface(regenerated_ast->getASTContext(),
@@ -150,7 +150,7 @@ void TestManagedReturnOwnershipRoundTrips() {
     const std::string source = "@protocol Error @end\nid managed(void) __objc3_throws(id<Error>) __attribute__((" +
         std::string(attribute) + "));\n";
     std::vector<std::string> arguments = {"-x", "objective-c", "-std=c17",
-        "-fobjc-version=3", "-fobjc-runtime=gnustep-2.0", "--target=x86_64-unknown-linux-gnu"};
+        "-fobjc-version=3", "-fobjc-runtime=gnustep-2.2", "--target=x86_64-unknown-linux-gnu"};
     if (arc) arguments.push_back("-fobjc-arc");
     auto ast = clang::tooling::buildASTFromCodeWithArgs(source, arguments, "managed-return.m");
     assert(ast && !ast->getDiagnostics().hasErrorOccurred());
@@ -204,6 +204,42 @@ void TestManagedReturnOwnershipRoundTrips() {
   }
 }
 
+void TestDirectMethodIdentityRoundTrip() {
+  std::string previous;
+  for (bool direct : {false, true}) {
+    const std::string source = "__attribute__((objc_root_class)) @interface Direct "
+        "- (int)value" + std::string(direct ? " __attribute__((objc_direct))" : "") + "; @end";
+    const std::vector<std::string> args = {"-x", "objective-c", "-fobjc-version=3",
+        "-fobjc-runtime=gnustep-2.2", "--target=x86_64-unknown-linux-gnu"};
+    auto ast = clang::tooling::buildASTFromCodeWithArgs(source, args, "direct.m");
+    assert(ast && !ast->getDiagnostics().hasErrorOccurred());
+    auto emitted = EmitSemanticInterface(ast->getASTContext(), "direct.methods", "test");
+    assert(emitted.success && emitted.identity.semantic_fingerprint != previous);
+    previous = emitted.identity.semantic_fingerprint;
+    auto round = clang::tooling::buildASTFromCodeWithArgs(emitted.source_bytes, args, "round.m");
+    assert(round && !round->getDiagnostics().hasErrorOccurred());
+    auto regenerated = EmitSemanticInterface(round->getASTContext(), "direct.methods", "test");
+    assert(regenerated.success && regenerated.identity.semantic_fingerprint == previous);
+    const std::vector<llvm::StringRef> supported = {"objc3.direct-dispatch.v1"};
+    auto decoded = DecodeSemanticInterfaceSidecar(emitted.sidecar_json, emitted.source_bytes, supported);
+    assert(decoded);
+    if (direct) {
+      assert(emitted.source_bytes.find("objc_direct") != std::string::npos);
+      assert(decoded->required_semantics == std::vector<std::string>{"objc3.direct-dispatch.v1"});
+      auto erased = *decoded;
+      erased.required_semantics.clear();
+      auto checked = ValidateSemanticInterface(erased, decoded->module,
+          decoded->canonical_source_sha256, decoded->declarations, {"objc3.direct-dispatch.v1"});
+      bool rejected = false;
+      for (const auto &diagnostic : checked.diagnostics) rejected |= diagnostic.code == "O3IFC015";
+      assert(rejected);
+      auto unaware = DecodeSemanticInterfaceSidecar(emitted.sidecar_json, emitted.source_bytes, {});
+      assert(!unaware);
+      llvm::consumeError(unaware.takeError());
+    }
+  }
+}
+
 }  // namespace
 
 int main() {
@@ -212,5 +248,6 @@ int main() {
   TestObjectiveCContainerRoundTrips();
   TestTypedEffectSemanticInterfacesRoundTrip();
   TestManagedReturnOwnershipRoundTrips();
+  TestDirectMethodIdentityRoundTrip();
   return 0;
 }

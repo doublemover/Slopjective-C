@@ -153,7 +153,7 @@ def _compile_arguments(toolchain: dict[str, Any], source: Path, object_path: Pat
     if not isinstance(target, str) or not target:
         raise ValueError("sealed toolchain target_triple is required")
     command = [str(_tool(toolchain, "facade")), str(source), "--objc3", "--target", target,
-               "--runtime", "gnustep-2.0"]
+               "--runtime", "gnustep-2.2"]
     return command + (["--emit-object", str(object_path)] if object_path is not None else [])
 
 

@@ -209,6 +209,7 @@ std::string ObjCMethodIdentity(const clang::ObjCMethodDecl *method,
   out << ")";
   if (method->isVariadic()) out << ";variadic";
   if (method->isOptional()) out << ";optional";
+  if (method->isDirectMethod()) out << ";dispatch=direct";
   if (!method->getObjC3FunctionType().isNull())
     out << ";callable=" << CanonicalType(method->getObjC3FunctionType(), context);
   const auto return_lifetime = method->getReturnType().getObjCLifetime();
@@ -484,6 +485,9 @@ class InterfaceCollector final
     }
     for (const auto *attribute : declaration->attrs()) {
       if (attribute->isImplicit()) continue;
+      if (llvm::isa<clang::ObjCMethodDecl>(declaration) &&
+          llvm::isa<clang::ObjCDirectAttr>(attribute))
+        continue;
       if (llvm::isa<clang::FunctionDecl>(declaration) &&
           llvm::isa<clang::NSReturnsRetainedAttr, clang::NSReturnsNotRetainedAttr,
                     clang::NSReturnsAutoreleasedAttr>(attribute))
@@ -809,6 +813,9 @@ InterfaceEmissionArtifact EmitSemanticInterface(
   if (collector.UsesCanonicalFunctionEffects())
     sidecar.required_semantics.push_back("objc3.canonical-function-effects.v1");
   for (const auto &declaration : sidecar.declarations) {
+    if (declaration.kind == "ObjCMethod" &&
+        declaration.canonical_type_identity.find(";dispatch=direct") != std::string::npos)
+      sidecar.required_semantics.push_back("objc3.direct-dispatch.v1");
     const auto &effects = declaration.effects;
     if (effects.is_async || effects.is_throwing || !effects.ownership_identity.empty())
       sidecar.required_semantics.push_back("objc3.canonical-function-effects.v1");
@@ -829,7 +836,7 @@ InterfaceEmissionArtifact EmitSemanticInterface(
 
   const std::vector<llvm::StringRef> supported_semantics = {
       "objc3.canonical-function-effects.v1", "objc3.native-carrier-types.v1",
-      "objc3.native-return-ownership.v1"};
+      "objc3.native-return-ownership.v1", "objc3.direct-dispatch.v1"};
   auto encoded = EncodeSemanticInterfaceSidecar(sidecar, supported_semantics);
   if (!encoded) {
     AddDiagnostic(result, "O3IFC120",

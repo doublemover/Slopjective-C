@@ -2,7 +2,7 @@
   "schema_version": 1,
   "compiler_family": "clang-foundation",
   "language_revision": 202610,
-  "extension_abi_revision": 2,
+  "extension_abi_revision": 6,
   "features": [
     {
       "name": "defer",
@@ -12,7 +12,7 @@
       "qualified_targets": [
         {
           "triple": "x86_64-unknown-linux-gnu",
-          "runtime": "gnustep-2.0",
+          "runtime": "gnustep-2.2",
           "profile": "compatibility",
           "evidence": [
             "clang/test/ObjC3/CodeGen/public-defer.c",

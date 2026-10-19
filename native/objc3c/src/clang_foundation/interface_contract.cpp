@@ -166,6 +166,14 @@ InterfaceContractValidation ValidateSemanticInterface(
           declaration.stable_id);
   const bool return_ownership_semantic = std::binary_search(
       required.begin(), required.end(), "objc3.native-return-ownership.v1");
+  const bool direct_semantic = std::binary_search(
+      required.begin(), required.end(), "objc3.direct-dispatch.v1");
+  for (const auto &declaration : sidecar.declarations)
+    if (declaration.kind == "ObjCMethod" &&
+        declaration.canonical_type_identity.find(";dispatch=direct") != std::string::npos &&
+        !direct_semantic)
+      Add(result, "O3IFC015", "direct method is missing its semantic capability",
+          declaration.stable_id);
   for (const auto &declaration : sidecar.declarations)
     if (declaration.effects.ownership_identity.starts_with("native-return:") &&
         !return_ownership_semantic)

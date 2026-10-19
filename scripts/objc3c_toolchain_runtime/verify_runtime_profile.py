@@ -41,7 +41,8 @@ def main() -> int:
     if args.profile in ("windows-x86_64", "linux-x86_64"):
         if profile.get("runtime_commit") != PIN or profile.get("runtime_release") != "2.3":
             return fail("GNUstep runtime pin does not match libobjc2 v2.3 commit " + PIN)
-        if profile.get("objc_abi_flag") != "-fobjc-runtime=gnustep-2.0":
+        abi = "2.2" if args.profile == "linux-x86_64" else "2.0"
+        if profile.get("objc_abi_flag") != "-fobjc-runtime=gnustep-" + abi:
             return fail("GNUstep-v2 ABI flag is missing or changed")
         if profile.get("blocks_provider") != "libobjc2-embedded":
             return fail("profile must select exactly the embedded Blocks provider")

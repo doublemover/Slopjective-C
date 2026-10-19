@@ -131,7 +131,7 @@ def build(sdk: Path, sources: Path, output: Path, optimization: str,
     prior_stages = prior.get('stages', {}) if prior.get('schema') == REPORT else {}
     stages = {}
     common = [str(sdk / 'bin/objc3c')]
-    mode = ['--objc3', '--target', target, '--runtime', 'gnustep-2.0']
+    mode = ['--objc3', '--target', target, '--runtime', 'gnustep-2.2']
     flags = ['--', '--no-default-config', '-std=c17', '-fblocks', '-' + optimization, '-g',
              '-Wno-pragma-once-outside-header']
     base = {'sdk_seal': sdk_identity, 'sdk_root': str(sdk), 'recipe_sha256': recipe,
@@ -179,7 +179,7 @@ def build(sdk: Path, sources: Path, output: Path, optimization: str,
         '--emit-interface', str(arc_interface), '--module', MODULE, '--package', PACKAGE] + flags,
         hashes([interface, sidecar]), [arc_interface, arc_sidecar])
     identity = json.loads(arc_sidecar.read_text())['module']
-    if identity['runtime_abi'] != 'gnustep-2.0;arc' or identity['target_triple'] != target:
+    if identity['runtime_abi'] != 'gnustep-2.2;arc' or identity['target_triple'] != target:
         raise ValueError('rebuilt ARC interface has an unexpected target or ownership ABI')
     consumer = output / 'consumer.o'
     record = output / 'consumer-dependencies.json'

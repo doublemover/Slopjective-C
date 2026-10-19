@@ -2545,7 +2545,7 @@ index e0b62591a..549a1ca48 100644
        return false;
      for (unsigned I = 0, N = Proto1->getNumParams(); I != N; ++I) {
 diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
-index 4be3e977b..1b3190484 100644
+index 4be3e977b..bd3be91ad 100644
 --- a/clang/lib/AST/DeclPrinter.cpp
 +++ b/clang/lib/AST/DeclPrinter.cpp
 @@ -818,6 +818,24 @@ void DeclPrinter::VisitFunctionDecl(FunctionDecl *D) {
@@ -2573,7 +2573,7 @@ index 4be3e977b..1b3190484 100644
      if (CDecl) {
        if (!Policy.TerseOutput)
          PrintConstructorInitializers(CDecl, Proto);
-@@ -1485,6 +1503,15 @@ void DeclPrinter::VisitObjCMethodDecl(ObjCMethodDecl *OMD) {
+@@ -1485,6 +1503,20 @@ void DeclPrinter::VisitObjCMethodDecl(ObjCMethodDecl *OMD) {
    if (OMD->isVariadic())
        Out << ", ...";
  
@@ -2586,6 +2586,11 @@ index 4be3e977b..1b3190484 100644
 +      Out << '(' << Effects.ErrorType.getAsString(Policy) << ')';
 +  }
 +
++  // Direct dispatch changes the calling ABI. Declaration polishing must
++  // preserve it even though it normally suppresses non-keyword attributes.
++  if (Policy.PolishForDeclaration && !Policy.SuppressDeclAttributes &&
++      OMD->isDirectMethod())
++    Out << " __attribute__((objc_direct))";
    if (std::optional<std::string> Attrs = prettyPrintAttributes(OMD))
      Out << ' ' << *Attrs;
  
@@ -7836,12 +7841,12 @@ index 000000000..13f00a7a4
 +}
 diff --git a/clang/test/ObjC3/AST/carrier-transfer-pch.mm b/clang/test/ObjC3/AST/carrier-transfer-pch.mm
 new file mode 100644
-index 000000000..c325507f0
+index 000000000..a0c5c32aa
 --- /dev/null
 +++ b/clang/test/ObjC3/AST/carrier-transfer-pch.mm
 @@ -0,0 +1,7 @@
-+// RUN: %clang_cc1 -x objective-c++ -fobjc-version=3 -fobjc-runtime=gnustep-2.0 -std=c++20 -emit-pch -o %t.pch %S/Inputs/carrier-transfer-pch.h
-+// RUN: %clang_cc1 -x objective-c++ -fobjc-version=3 -fobjc-runtime=gnustep-2.0 -std=c++20 -include-pch %t.pch -ast-print %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++ -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -std=c++20 -emit-pch -o %t.pch %S/Inputs/carrier-transfer-pch.h
++// RUN: %clang_cc1 -x objective-c++ -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -std=c++20 -include-pch %t.pch -ast-print %s | FileCheck %s
 +
 +void consume_transfers();
 +
@@ -8493,11 +8498,11 @@ index 000000000..a5c7b2fb5
 +RecoveredResult recovered_result;
 diff --git a/clang/test/ObjC3/Sema/carrier-arc-ownership.mm b/clang/test/ObjC3/Sema/carrier-arc-ownership.mm
 new file mode 100644
-index 000000000..948d33443
+index 000000000..5584a000b
 --- /dev/null
 +++ b/clang/test/ObjC3/Sema/carrier-arc-ownership.mm
 @@ -0,0 +1,29 @@
-+// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c++ -fobjc-version=3 -fobjc-runtime=gnustep-2.0 -fobjc-arc -fblocks -std=c++20 -verify -fsyntax-only %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c++ -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -fblocks -std=c++20 -verify -fsyntax-only %s
 +
 +typedef __objc3_optional(id) StrongOptional;
 +typedef __objc3_optional(id __weak) WeakOptional;
@@ -8630,11 +8635,11 @@ index 000000000..2b047d942
 +
 diff --git a/clang/test/ObjC3/Sema/carrier-local-destructors.mm b/clang/test/ObjC3/Sema/carrier-local-destructors.mm
 new file mode 100644
-index 000000000..75d4c3d9d
+index 000000000..45866412c
 --- /dev/null
 +++ b/clang/test/ObjC3/Sema/carrier-local-destructors.mm
 @@ -0,0 +1,23 @@
-+// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.0 -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fsyntax-only -verify %s
 +
 +class PrivateDestructor {
 +  ~PrivateDestructor(); // expected-note {{declared private here}}
@@ -8765,22 +8770,22 @@ index 000000000..19f6e1241
 +
 diff --git a/clang/test/ObjC3/Sema/carrier-transfer-c-mode.c b/clang/test/ObjC3/Sema/carrier-transfer-c-mode.c
 new file mode 100644
-index 000000000..c432a36ad
+index 000000000..136b7673a
 --- /dev/null
 +++ b/clang/test/ObjC3/Sema/carrier-transfer-c-mode.c
 @@ -0,0 +1,5 @@
-+// RUN: %clang_cc1 -x objective-c -fobjc-version=3 -fobjc-runtime=gnustep-2.0 -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fsyntax-only -verify %s
 +void c_mode_rejected(void) {
 +  int value = 0;
 +  int copied = __objc3_copy(value); // expected-error {{'__objc3_copy' carrier transfer requires C++ mode}}
 +}
 diff --git a/clang/test/ObjC3/Sema/carrier-transfer.cpp b/clang/test/ObjC3/Sema/carrier-transfer.cpp
 new file mode 100644
-index 000000000..711eefa86
+index 000000000..ba24b8df4
 --- /dev/null
 +++ b/clang/test/ObjC3/Sema/carrier-transfer.cpp
 @@ -0,0 +1,55 @@
-+// RUN: %clang_cc1 -x objective-c++ -fobjc-version=3 -fobjc-runtime=gnustep-2.0 -std=c++20 -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++ -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -std=c++20 -fsyntax-only -verify %s
 +
 +struct CopyMove {
 +  CopyMove();
@@ -10248,12 +10253,12 @@ index 000000000..5223fc0c3
 +}
 diff --git a/clang/test/ObjC3/Sema/typed-error-handler-scopes.mm b/clang/test/ObjC3/Sema/typed-error-handler-scopes.mm
 new file mode 100644
-index 000000000..860a4a672
+index 000000000..a9ba36271
 --- /dev/null
 +++ b/clang/test/ObjC3/Sema/typed-error-handler-scopes.mm
 @@ -0,0 +1,76 @@
-+// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fobjc-runtime=gnustep-2.0 -fobjc-version=3 -fobjc-arc -fsyntax-only -verify %s
-+// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fobjc-runtime=gnustep-2.0 -fobjc-version=3 -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fobjc-runtime=gnustep-2.2 -fobjc-version=3 -fobjc-arc -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fobjc-runtime=gnustep-2.2 -fobjc-version=3 -fsyntax-only -verify %s
 +
 +@protocol Error @end
 +typedef id<Error> E;
@@ -10365,12 +10370,12 @@ index 000000000..a00a83a41
 +GenericDerived<E> AcceptedInstantiation;
 diff --git a/clang/test/ObjC3/Sema/typed-error-message-ambiguity.m b/clang/test/ObjC3/Sema/typed-error-message-ambiguity.m
 new file mode 100644
-index 000000000..d644bf59f
+index 000000000..86cc49c99
 --- /dev/null
 +++ b/clang/test/ObjC3/Sema/typed-error-message-ambiguity.m
 @@ -0,0 +1,12 @@
 +// RUN: %clang_cc1 -x objective-c -fobjc-version=3 -Wno-everything -fsyntax-only -verify %s
-+// RUN: %clang_cc1 -x objective-c -fobjc-version=3 -fobjc-runtime=gnustep-2.0 -fobjc-arc -Wno-everything -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -Wno-everything -fsyntax-only -verify %s
 +@protocol Error @end
 +@interface A
 +- (int)value __objc3_throws(id<Error>); // expected-note {{one possibility}}
@@ -12527,11 +12532,11 @@ index 538604aa2..f9eb0c5cc 100644
      return E;
 diff --git a/clang/test/ObjC3/Sema/carrier-typed-error-boundaries.mm b/clang/test/ObjC3/Sema/carrier-typed-error-boundaries.mm
 new file mode 100644
-index 000000000..e7ebd50d0
+index 000000000..530169c74
 --- /dev/null
 +++ b/clang/test/ObjC3/Sema/carrier-typed-error-boundaries.mm
 @@ -0,0 +1,16 @@
-+// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c++ -std=c++20 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.0 -fobjc-arc -fsyntax-only -verify %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c++ -std=c++20 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -fsyntax-only -verify %s
 +@protocol Error @end
 +typedef __objc3_optional(id) Strong;
 +Strong value(Strong input) __objc3_throws(id<Error>);

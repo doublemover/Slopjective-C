@@ -24,7 +24,12 @@ int main() {
   target_request.source_text = "@interface NativeTarget @end";
   target_request.arguments = {"--target=x86_64-unknown-linux-gnu"};
   auto linux_target = Compile(target_request);
-  assert(linux_target.success && linux_target.runtime_abi == "gnustep-2.0");
+  assert(linux_target.success && linux_target.runtime_abi == "gnustep-2.2");
+  target_request.objc3 = true;
+  target_request.arguments = {"--target=x86_64-unknown-linux-gnu", "-fobjc-runtime=gnustep-2.0"};
+  auto obsolete_runtime = Compile(target_request);
+  assert(!obsolete_runtime.success && obsolete_runtime.failure.find("requires GNUstep 2.2") != std::string::npos);
+  target_request.objc3 = false;
   target_request.arguments = {"--target=x86_64-apple-macosx14.0"};
   auto apple_target = Compile(target_request);
   assert(apple_target.success && apple_target.runtime_abi.starts_with("macosx"));

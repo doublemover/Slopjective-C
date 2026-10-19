@@ -71,6 +71,15 @@
       "declaration_name": "throwing_result",
       "hover_type": "__objc3_optional",
       "completion_name": "throwing_result"
+    },
+    {
+      "name": "managed_direct_call_result",
+      "use_line": "(void)__objc3_has_value(direct_result);",
+      "use_name": "direct_result",
+      "declaration_line": "__objc3_optional(id) direct_result =",
+      "declaration_name": "direct_result",
+      "hover_type": "__objc3_optional",
+      "completion_name": "direct_result"
     }
   ],
   "cases": [

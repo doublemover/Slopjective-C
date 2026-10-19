@@ -5545,7 +5545,7 @@ index 000000000..736fe8cb4
 +
 +#endif
 diff --git a/clang/lib/CodeGen/CGObjCGNU.cpp b/clang/lib/CodeGen/CGObjCGNU.cpp
-index 9742b496c..7e1b6d904 100644
+index 9742b496c..f06722959 100644
 --- a/clang/lib/CodeGen/CGObjCGNU.cpp
 +++ b/clang/lib/CodeGen/CGObjCGNU.cpp
 @@ -16,6 +16,7 @@
@@ -5597,6 +5597,22 @@ index 9742b496c..7e1b6d904 100644
        if (ResultType->isVoidType()) {
          // void results are definitely okay.
        } else if (ResultType->hasPointerRepresentation() &&
+@@ -3141,6 +3167,15 @@ GenerateMethodList(StringRef ClassName,
+                    StringRef CategoryName,
+                    ArrayRef<const ObjCMethodDecl*> Methods,
+                    bool isClassMethodList) {
++  // Direct implementations omit _cmd and are callable only through their
++  // native symbol. Publishing them as IMPs would let ordinary message lookup
++  // call a function with a different ABI.
++  SmallVector<const ObjCMethodDecl *, 16> RuntimeMethods;
++  llvm::copy_if(Methods, std::back_inserter(RuntimeMethods),
++                [](const ObjCMethodDecl *Method) {
++                  return !Method->isDirectMethod();
++                });
++  Methods = RuntimeMethods;
+   if (Methods.empty())
+     return NULLPtr;
+ 
 diff --git a/clang/lib/CodeGen/CGStmt.cpp b/clang/lib/CodeGen/CGStmt.cpp
 index 27e74d966..97e23c306 100644
 --- a/clang/lib/CodeGen/CGStmt.cpp
@@ -9753,11 +9769,11 @@ index 000000000..13d39e962
 +void async_definition() __objc3_async {} // expected-error {{ObjC3 async/throws callable ABI lowering}}
 diff --git a/clang/test/ObjC3/CodeGen/carrier-arc-local-lifetime.mm b/clang/test/ObjC3/CodeGen/carrier-arc-local-lifetime.mm
 new file mode 100644
-index 000000000..2556e9567
+index 000000000..18596b306
 --- /dev/null
 +++ b/clang/test/ObjC3/CodeGen/carrier-arc-local-lifetime.mm
 @@ -0,0 +1,81 @@
-+// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c++ -fobjc-version=3 -fobjc-runtime=gnustep-2.0 -fobjc-arc -fexceptions -fcxx-exceptions -std=c++20 -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c++ -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -fexceptions -fcxx-exceptions -std=c++20 -emit-llvm -o - %s | FileCheck %s
 +
 +#define nil ((id)0)
 +
@@ -9881,15 +9897,15 @@ index 000000000..c1ddd4b5b
 \ No newline at end of file
 diff --git a/clang/test/ObjC3/CodeGen/carrier-containing-aggregate-bitcast.cpp b/clang/test/ObjC3/CodeGen/carrier-containing-aggregate-bitcast.cpp
 new file mode 100644
-index 000000000..829df3081
+index 000000000..8883f8eb4
 --- /dev/null
 +++ b/clang/test/ObjC3/CodeGen/carrier-containing-aggregate-bitcast.cpp
 @@ -0,0 +1,27 @@
-+// RUN: %clang_cc1 -x objective-c++ -fobjc-version=3 -fobjc-runtime=gnustep-2.0 -std=c++20 -DTEST_SCALAR -emit-llvm -o %t.scalar.ll -verify %s
++// RUN: %clang_cc1 -x objective-c++ -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -std=c++20 -DTEST_SCALAR -emit-llvm -o %t.scalar.ll -verify %s
 +// RUN: test ! -e %t.scalar.ll
-+// RUN: %clang_cc1 -x objective-c++ -fobjc-version=3 -fobjc-runtime=gnustep-2.0 -std=c++20 -DTEST_AGGREGATE -emit-llvm -o %t.aggregate.ll -verify %s
++// RUN: %clang_cc1 -x objective-c++ -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -std=c++20 -DTEST_AGGREGATE -emit-llvm -o %t.aggregate.ll -verify %s
 +// RUN: test ! -e %t.aggregate.ll
-+// RUN: %clang_cc1 -x objective-c++ -fobjc-version=3 -fobjc-runtime=gnustep-2.0 -std=c++20 -DTEST_COMPLEX -emit-llvm -o %t.complex.ll -verify %s
++// RUN: %clang_cc1 -x objective-c++ -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -std=c++20 -DTEST_COMPLEX -emit-llvm -o %t.complex.ll -verify %s
 +// RUN: test ! -e %t.complex.ll
 +
 +// Each builtin is accepted by Clang's source semantics and reaches a distinct
@@ -9956,11 +9972,11 @@ index 000000000..64ee69d55
 \ No newline at end of file
 diff --git a/clang/test/ObjC3/CodeGen/carrier-containing-aggregate-cxx-copy.cpp b/clang/test/ObjC3/CodeGen/carrier-containing-aggregate-cxx-copy.cpp
 new file mode 100644
-index 000000000..796b3698d
+index 000000000..e7ccf16ca
 --- /dev/null
 +++ b/clang/test/ObjC3/CodeGen/carrier-containing-aggregate-cxx-copy.cpp
 @@ -0,0 +1,15 @@
-+// RUN: %clang_cc1 -x objective-c++ -fobjc-version=3 -fobjc-runtime=gnustep-2.0 -std=c++20 -emit-llvm -o %t.copy.ll -verify %s
++// RUN: %clang_cc1 -x objective-c++ -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -std=c++20 -emit-llvm -o %t.copy.ll -verify %s
 +// RUN: test ! -e %t.copy.ll
 +
 +// The implicit C++ copy constructor is a separate source path: pinned Clang
@@ -10055,13 +10071,13 @@ index 000000000..1e23935ba
 \ No newline at end of file
 diff --git a/clang/test/ObjC3/CodeGen/carrier-cxx-local-lifetime-rejections.cpp b/clang/test/ObjC3/CodeGen/carrier-cxx-local-lifetime-rejections.cpp
 new file mode 100644
-index 000000000..e15a42475
+index 000000000..93e89f727
 --- /dev/null
 +++ b/clang/test/ObjC3/CodeGen/carrier-cxx-local-lifetime-rejections.cpp
 @@ -0,0 +1,23 @@
-+// RUN: %clang_cc1 -x objective-c++ -fobjc-version=3 -fobjc-runtime=gnustep-2.0 -std=c++20 -DTEST_UNINITIALIZED -emit-llvm -o %t.uninitialized.ll -verify %s
++// RUN: %clang_cc1 -x objective-c++ -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -std=c++20 -DTEST_UNINITIALIZED -emit-llvm -o %t.uninitialized.ll -verify %s
 +// RUN: test ! -e %t.uninitialized.ll
-+// RUN: %clang_cc1 -x objective-c++ -fobjc-version=3 -fobjc-runtime=gnustep-2.0 -std=c++20 -DTEST_COPY -emit-llvm -o %t.copy.ll -verify %s
++// RUN: %clang_cc1 -x objective-c++ -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -std=c++20 -DTEST_COPY -emit-llvm -o %t.copy.ll -verify %s
 +// RUN: test ! -e %t.copy.ll
 +
 +struct Owned {
@@ -10084,11 +10100,11 @@ index 000000000..e15a42475
 +#endif
 diff --git a/clang/test/ObjC3/CodeGen/carrier-cxx-local-lifetime.cpp b/clang/test/ObjC3/CodeGen/carrier-cxx-local-lifetime.cpp
 new file mode 100644
-index 000000000..e9281a9cf
+index 000000000..fb9c729b0
 --- /dev/null
 +++ b/clang/test/ObjC3/CodeGen/carrier-cxx-local-lifetime.cpp
 @@ -0,0 +1,132 @@
-+// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c++ -fobjc-version=3 -fobjc-runtime=gnustep-2.0 -std=c++20 -fexceptions -fcxx-exceptions -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c++ -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -std=c++20 -fexceptions -fcxx-exceptions -emit-llvm -o - %s | FileCheck %s
 +
 +extern "C" void lifetime_event(int);
 +struct Source {
@@ -10256,11 +10272,11 @@ index 000000000..0edd3be8c
 +// CHECK: ret i1
 diff --git a/clang/test/ObjC3/CodeGen/carrier-debug-info-deferred.c b/clang/test/ObjC3/CodeGen/carrier-debug-info-deferred.c
 new file mode 100644
-index 000000000..f42b0b591
+index 000000000..07435cb48
 --- /dev/null
 +++ b/clang/test/ObjC3/CodeGen/carrier-debug-info-deferred.c
 @@ -0,0 +1,10 @@
-+// RUN: not %clang_cc1 -x objective-c -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.0 -debug-info-kind=standalone -emit-llvm -o /dev/null %s 2>&1 | FileCheck %s
++// RUN: not %clang_cc1 -x objective-c -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -debug-info-kind=standalone -emit-llvm -o /dev/null %s 2>&1 | FileCheck %s
 +//
 +// A forward payload has no target materialized representation yet. Debug info
 +// must diagnose it instead of creating a guessed record description.
@@ -10273,11 +10289,11 @@ index 000000000..f42b0b591
 \ No newline at end of file
 diff --git a/clang/test/ObjC3/CodeGen/carrier-debug-info.c b/clang/test/ObjC3/CodeGen/carrier-debug-info.c
 new file mode 100644
-index 000000000..67c51f6e4
+index 000000000..3cc9c6fd8
 --- /dev/null
 +++ b/clang/test/ObjC3/CodeGen/carrier-debug-info.c
 @@ -0,0 +1,39 @@
-+// RUN: %clang_cc1 -x objective-c -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.0 -debug-info-kind=standalone -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -debug-info-kind=standalone -emit-llvm -o - %s | FileCheck %s
 +//
 +// Debug types use the same AST-owned materialized record as carrier storage.
 +// These checks cover native storage/debug identity, not lifetime or call ABI.
@@ -10435,15 +10451,15 @@ index 000000000..3df79e585
 +
 diff --git a/clang/test/ObjC3/CodeGen/carrier-expression-recovery-adversarial.cpp b/clang/test/ObjC3/CodeGen/carrier-expression-recovery-adversarial.cpp
 new file mode 100644
-index 000000000..f926efe82
+index 000000000..77ea93898
 --- /dev/null
 +++ b/clang/test/ObjC3/CodeGen/carrier-expression-recovery-adversarial.cpp
 @@ -0,0 +1,30 @@
-+// RUN: %clang_cc1 -x objective-c++ -fobjc-version=3 -fobjc-runtime=gnustep-2.0 -fobjc-arc -DTEST_NONTRIVIAL -emit-llvm -o %t.cxx.ll -verify %s
++// RUN: %clang_cc1 -x objective-c++ -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -DTEST_NONTRIVIAL -emit-llvm -o %t.cxx.ll -verify %s
 +// RUN: test ! -e %t.cxx.ll
-+// RUN: %clang_cc1 -x objective-c++ -fobjc-version=3 -fobjc-runtime=gnustep-2.0 -fobjc-arc -DTEST_ARC -emit-llvm -o %t.arc.ll -verify %s
++// RUN: %clang_cc1 -x objective-c++ -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -DTEST_ARC -emit-llvm -o %t.arc.ll -verify %s
 +// RUN: test ! -e %t.arc.ll
-+// RUN: %clang_cc1 -x objective-c++ -fobjc-version=3 -fobjc-runtime=gnustep-2.0 -fobjc-arc -DTEST_TEMPORARY -emit-llvm -o %t.temporary.ll -verify %s
++// RUN: %clang_cc1 -x objective-c++ -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -DTEST_TEMPORARY -emit-llvm -o %t.temporary.ll -verify %s
 +// RUN: test ! -e %t.temporary.ll
 +
 +#if defined(TEST_NONTRIVIAL) || defined(TEST_TEMPORARY)
@@ -10471,11 +10487,11 @@ index 000000000..f926efe82
 +#endif
 diff --git a/clang/test/ObjC3/CodeGen/carrier-indirect-call-abi.c b/clang/test/ObjC3/CodeGen/carrier-indirect-call-abi.c
 new file mode 100644
-index 000000000..4dd4abd67
+index 000000000..30c645fcb
 --- /dev/null
 +++ b/clang/test/ObjC3/CodeGen/carrier-indirect-call-abi.c
 @@ -0,0 +1,12 @@
-+// RUN: not %clang_cc1 -x objective-c -triple i686-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.0 -emit-llvm -o /dev/null %s 2>&1 | FileCheck %s
++// RUN: not %clang_cc1 -x objective-c -triple i686-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -emit-llvm -o /dev/null %s 2>&1 | FileCheck %s
 +//
 +// A typed indirect function signature is representable, but its by-value ABI
 +// is unavailable on this target. The guard must reject it before target ABIInfo sees it.
@@ -10572,11 +10588,11 @@ index 000000000..9f7f650cb
 +// adjacent IR test; tag checks alone do not inspect hidden payload bytes.
 diff --git a/clang/test/ObjC3/CodeGen/carrier-native-abi-unsupported.c b/clang/test/ObjC3/CodeGen/carrier-native-abi-unsupported.c
 new file mode 100644
-index 000000000..f11f2514e
+index 000000000..1967126d8
 --- /dev/null
 +++ b/clang/test/ObjC3/CodeGen/carrier-native-abi-unsupported.c
 @@ -0,0 +1,12 @@
-+// RUN: %clang_cc1 -x objective-c -std=c17 -fobjc-version=3 -fobjc-runtime=gnustep-2.0 -triple i686-unknown-linux-gnu -emit-llvm -o %t.ll -verify %s
++// RUN: %clang_cc1 -x objective-c -std=c17 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -triple i686-unknown-linux-gnu -emit-llvm -o %t.ll -verify %s
 +// RUN: test ! -e %t.ll
 +// RUN: %clang_cc1 -x objective-c -std=c17 -fobjc-version=3 -fobjc-runtime=gnustep-2.0 -triple x86_64-w64-windows-gnu -emit-llvm -o %t.gnu.ll -verify %s
 +// RUN: test ! -e %t.gnu.ll
@@ -10650,13 +10666,13 @@ index 000000000..d0859c7ba
 +// MSVC-CALLER: store i8 0
 diff --git a/clang/test/ObjC3/CodeGen/carrier-native-layout-aarch64.c b/clang/test/ObjC3/CodeGen/carrier-native-layout-aarch64.c
 new file mode 100644
-index 000000000..2b7ee1476
+index 000000000..bc2045ec2
 --- /dev/null
 +++ b/clang/test/ObjC3/CodeGen/carrier-native-layout-aarch64.c
 @@ -0,0 +1,15 @@
 +// REQUIRES: aarch64-registered-target
-+// RUN: %clang_cc1 -x objective-c -triple aarch64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.0 -emit-llvm -o - %s | FileCheck %s
-+// RUN: %clang_cc1 -x objective-c -triple aarch64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.0 -emit-obj -o %t.aarch64.o %s
++// RUN: %clang_cc1 -x objective-c -triple aarch64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c -triple aarch64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -emit-obj -o %t.aarch64.o %s
 +// RUN: llvm-nm --defined-only %t.aarch64.o | FileCheck %s --check-prefix=OBJ
 +
 +typedef __objc3_optional(long long) OptionalI64;
@@ -10671,12 +10687,12 @@ index 000000000..2b7ee1476
 +// OBJ-DAG: materialize_i64
 diff --git a/clang/test/ObjC3/CodeGen/carrier-native-layout.c b/clang/test/ObjC3/CodeGen/carrier-native-layout.c
 new file mode 100644
-index 000000000..3b090193d
+index 000000000..61c716cce
 --- /dev/null
 +++ b/clang/test/ObjC3/CodeGen/carrier-native-layout.c
 @@ -0,0 +1,30 @@
-+// RUN: %clang_cc1 -x objective-c -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.0 -emit-llvm -o - %s | FileCheck %s
-+// RUN: %clang_cc1 -x objective-c -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.0 -emit-obj -o %t.x86.o %s
++// RUN: %clang_cc1 -x objective-c -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -emit-obj -o %t.x86.o %s
 +// RUN: llvm-nm --defined-only %t.x86.o | FileCheck %s --check-prefix=OBJ
 +//
 +// Real local storage escapes through an ordinary void pointer. These checks
@@ -10730,11 +10746,11 @@ index 000000000..7363d28dc
 +// CHECK: call void @consume_reference(ptr{{.*}})
 diff --git a/clang/test/ObjC3/CodeGen/carrier-transfer-cxx.cpp b/clang/test/ObjC3/CodeGen/carrier-transfer-cxx.cpp
 new file mode 100644
-index 000000000..8e17c884d
+index 000000000..9e2e826cc
 --- /dev/null
 +++ b/clang/test/ObjC3/CodeGen/carrier-transfer-cxx.cpp
 @@ -0,0 +1,86 @@
-+// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c++ -fobjc-version=3 -fobjc-runtime=gnustep-2.0 -std=c++20 -fexceptions -fcxx-exceptions -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c++ -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -std=c++20 -fexceptions -fcxx-exceptions -emit-llvm -o - %s | FileCheck %s
 +
 +struct Item {
 +  int value;
@@ -10858,13 +10874,13 @@ index 000000000..2fdc85750
 +// MSVC-COUNT-1: define{{.*}} @"?alias_same@@{{.*}}
 diff --git a/clang/test/ObjC3/CodeGen/carrier-unsupported-lifetime-use.cpp b/clang/test/ObjC3/CodeGen/carrier-unsupported-lifetime-use.cpp
 new file mode 100644
-index 000000000..ac91ead32
+index 000000000..e989707ab
 --- /dev/null
 +++ b/clang/test/ObjC3/CodeGen/carrier-unsupported-lifetime-use.cpp
 @@ -0,0 +1,24 @@
-+// RUN: %clang_cc1 -x objective-c++ -fobjc-version=3 -fobjc-runtime=gnustep-2.0 -fobjc-arc -DTEST_NONTRIVIAL -emit-llvm -o %t.cxx.ll -verify %s
++// RUN: %clang_cc1 -x objective-c++ -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -DTEST_NONTRIVIAL -emit-llvm -o %t.cxx.ll -verify %s
 +// RUN: test ! -e %t.cxx.ll
-+// RUN: %clang_cc1 -x objective-c++ -fobjc-version=3 -fobjc-runtime=gnustep-2.0 -fobjc-arc -DTEST_ARC -emit-llvm -o %t.arc.ll -verify %s
++// RUN: %clang_cc1 -x objective-c++ -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -DTEST_ARC -emit-llvm -o %t.arc.ll -verify %s
 +// RUN: test ! -e %t.arc.ll
 +
 +#if defined(TEST_NONTRIVIAL)
@@ -10888,17 +10904,17 @@ index 000000000..ac91ead32
 +#endif
 diff --git a/clang/test/ObjC3/CodeGen/carrier-unsupported-operations.cpp b/clang/test/ObjC3/CodeGen/carrier-unsupported-operations.cpp
 new file mode 100644
-index 000000000..1dd210c02
+index 000000000..e324e7850
 --- /dev/null
 +++ b/clang/test/ObjC3/CodeGen/carrier-unsupported-operations.cpp
 @@ -0,0 +1,51 @@
-+// RUN: %clang_cc1 -x objective-c++ -fobjc-version=3 -fobjc-runtime=gnustep-2.0 -fobjc-arc -DTEST_CARRIER_BY_VALUE -emit-llvm -o %t.by-value.ll -verify %s
++// RUN: %clang_cc1 -x objective-c++ -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -DTEST_CARRIER_BY_VALUE -emit-llvm -o %t.by-value.ll -verify %s
 +// RUN: test ! -e %t.by-value.ll
-+// RUN: %clang_cc1 -x objective-c++ -fobjc-version=3 -fobjc-runtime=gnustep-2.0 -fobjc-arc -DTEST_CARRIER_LIFETIME -emit-llvm -o %t.lifetime.ll -verify %s
++// RUN: %clang_cc1 -x objective-c++ -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -DTEST_CARRIER_LIFETIME -emit-llvm -o %t.lifetime.ll -verify %s
 +// RUN: test ! -e %t.lifetime.ll
-+// RUN: %clang_cc1 -x objective-c++ -fobjc-version=3 -fobjc-runtime=gnustep-2.0 -fobjc-arc -DTEST_CARRIER_COPY -emit-llvm -o %t.copy.ll -verify %s
++// RUN: %clang_cc1 -x objective-c++ -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -DTEST_CARRIER_COPY -emit-llvm -o %t.copy.ll -verify %s
 +// RUN: test ! -e %t.copy.ll
-+// RUN: %clang_cc1 -x objective-c++ -fobjc-version=3 -fobjc-runtime=gnustep-2.0 -fobjc-arc -DTEST_CARRIER_ARC -emit-llvm -o %t.arc.ll -verify %s
++// RUN: %clang_cc1 -x objective-c++ -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -DTEST_CARRIER_ARC -emit-llvm -o %t.arc.ll -verify %s
 +// RUN: test ! -e %t.arc.ll
 +//
 +// Keep each expected CodeGen rejection in its own translation unit so an
@@ -10945,15 +10961,15 @@ index 000000000..1dd210c02
 +#endif
 diff --git a/clang/test/ObjC3/CodeGen/carrier-variadic-call-abi.c b/clang/test/ObjC3/CodeGen/carrier-variadic-call-abi.c
 new file mode 100644
-index 000000000..8546faca8
+index 000000000..170439c24
 --- /dev/null
 +++ b/clang/test/ObjC3/CodeGen/carrier-variadic-call-abi.c
 @@ -0,0 +1,23 @@
-+// RUN: %clang_cc1 -x objective-c -std=c17 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.0 -Wno-non-pod-varargs -DTEST_VARARG_DIRECT -emit-llvm -o %t.direct.ll -verify %s
++// RUN: %clang_cc1 -x objective-c -std=c17 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -Wno-non-pod-varargs -DTEST_VARARG_DIRECT -emit-llvm -o %t.direct.ll -verify %s
 +// RUN: test ! -e %t.direct.ll
-+// RUN: %clang_cc1 -x objective-c -std=c17 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.0 -Wno-non-pod-varargs -DTEST_VARARG_INDIRECT -emit-llvm -o %t.indirect.ll -verify %s
++// RUN: %clang_cc1 -x objective-c -std=c17 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -Wno-non-pod-varargs -DTEST_VARARG_INDIRECT -emit-llvm -o %t.indirect.ll -verify %s
 +// RUN: test ! -e %t.indirect.ll
-+// RUN: %clang_cc1 -x objective-c -std=c17 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.0 -Wno-non-pod-varargs -DTEST_VARARG_BLOCK -emit-llvm -o %t.block.ll -verify %s
++// RUN: %clang_cc1 -x objective-c -std=c17 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -Wno-non-pod-varargs -DTEST_VARARG_BLOCK -emit-llvm -o %t.block.ll -verify %s
 +// RUN: test ! -e %t.block.ll
 +
 +typedef __objc3_optional(int) OptionalInt;
@@ -11008,11 +11024,11 @@ index 000000000..fe064dbbf
 +// CHECK: cannot compile this ObjC3 async/throws callable ABI lowering yet
 diff --git a/clang/test/ObjC3/CodeGen/effect-objc-message-abi.mm b/clang/test/ObjC3/CodeGen/effect-objc-message-abi.mm
 new file mode 100644
-index 000000000..db67181bd
+index 000000000..8a80c05d4
 --- /dev/null
 +++ b/clang/test/ObjC3/CodeGen/effect-objc-message-abi.mm
 @@ -0,0 +1,15 @@
-+// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.0 -fblocks -emit-llvm -o %t.ll -verify %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -emit-llvm -o %t.ll -verify %s
 +// RUN: test ! -e %t.ll
 +
 +struct Error {};
@@ -11030,13 +11046,13 @@ index 000000000..db67181bd
 \ No newline at end of file
 diff --git a/clang/test/ObjC3/CodeGen/gnustep-empty-coff.m b/clang/test/ObjC3/CodeGen/gnustep-empty-coff.m
 new file mode 100644
-index 000000000..8aae148c9
+index 000000000..5819cfab0
 --- /dev/null
 +++ b/clang/test/ObjC3/CodeGen/gnustep-empty-coff.m
 @@ -0,0 +1,22 @@
 +// RUN: %clang_cc1 -x objective-c -triple x86_64-pc-windows-msvc -fobjc-runtime=gnustep-2.0 -emit-llvm -o - %s | FileCheck %s --check-prefix=EMPTY
 +// RUN: %clang_cc1 -x objective-c -triple x86_64-pc-windows-msvc -fobjc-runtime=gnustep-2.0 -DMETADATA -emit-llvm -o - %s | FileCheck %s --check-prefix=METADATA
-+// RUN: %clang_cc1 -x objective-c -triple x86_64-unknown-linux-gnu -fobjc-runtime=gnustep-2.0 -emit-llvm -o - %s | FileCheck %s --check-prefix=ELF
++// RUN: %clang_cc1 -x objective-c -triple x86_64-unknown-linux-gnu -fobjc-runtime=gnustep-2.2 -emit-llvm -o - %s | FileCheck %s --check-prefix=ELF
 +// The same baseline behavior applies without ObjC3 language opt-in.
 +
 +int baseline_value(void) { return 17; }
@@ -11204,11 +11220,11 @@ index 000000000..6ce898696
 +NestedThrowingFunctionPointer callback_storage; // expected-error {{ObjC3 async/throws callable ABI lowering}}
 diff --git a/clang/test/ObjC3/CodeGen/objc-eh-passthrough.m b/clang/test/ObjC3/CodeGen/objc-eh-passthrough.m
 new file mode 100644
-index 000000000..ee0a020d1
+index 000000000..11584548b
 --- /dev/null
 +++ b/clang/test/ObjC3/CodeGen/objc-eh-passthrough.m
 @@ -0,0 +1,10 @@
-+// RUN: %clang_cc1 -x objective-c -fobjc-exceptions -fobjc-runtime=gnustep-2.0 -emit-llvm -o /dev/null %s
++// RUN: %clang_cc1 -x objective-c -fobjc-exceptions -fobjc-runtime=gnustep-2.2 -emit-llvm -o /dev/null %s
 +
 +@interface ObjC3EHObject
 +@end
@@ -11556,11 +11572,11 @@ index 000000000..20ff52c3e
 +#endif
 diff --git a/clang/test/ObjC3/CodeGen/typed-error-autorelease-pool-boundary.m b/clang/test/ObjC3/CodeGen/typed-error-autorelease-pool-boundary.m
 new file mode 100644
-index 000000000..742633289
+index 000000000..d40609cbf
 --- /dev/null
 +++ b/clang/test/ObjC3/CodeGen/typed-error-autorelease-pool-boundary.m
 @@ -0,0 +1,18 @@
-+// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c -std=c17 -fobjc-runtime=gnustep-2.0 -fobjc-arc -fobjc-version=3 -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c -std=c17 -fobjc-runtime=gnustep-2.2 -fobjc-arc -fobjc-version=3 -emit-llvm -o - %s | FileCheck %s
 +
 +@protocol Error;
 +typedef id<Error> TestError;
@@ -11646,12 +11662,12 @@ index 000000000..a7a6d621a
 +// CHECK: objc3.throw.store
 diff --git a/clang/test/ObjC3/CodeGen/typed-error-block-pch.mm b/clang/test/ObjC3/CodeGen/typed-error-block-pch.mm
 new file mode 100644
-index 000000000..a3c73a5df
+index 000000000..eadecc1ce
 --- /dev/null
 +++ b/clang/test/ObjC3/CodeGen/typed-error-block-pch.mm
 @@ -0,0 +1,12 @@
-+// RUN: %clang_cc1 -x objective-c++ -std=c++20 -triple x86_64-unknown-linux-gnu -fobjc-runtime=gnustep-2.0 -fobjc-version=3 -fobjc-arc -fblocks -emit-pch -o %t.pch %S/Inputs/typed-error-block-pch.h
-+// RUN: %clang_cc1 -x objective-c++ -std=c++20 -triple x86_64-unknown-linux-gnu -fobjc-runtime=gnustep-2.0 -fobjc-version=3 -fobjc-arc -fblocks -include-pch %t.pch -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -triple x86_64-unknown-linux-gnu -fobjc-runtime=gnustep-2.2 -fobjc-version=3 -fobjc-arc -fblocks -emit-pch -o %t.pch %S/Inputs/typed-error-block-pch.h
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -triple x86_64-unknown-linux-gnu -fobjc-runtime=gnustep-2.2 -fobjc-version=3 -fobjc-arc -fblocks -include-pch %t.pch -emit-llvm -o - %s | FileCheck %s
 +int force_pch_block(PCHError error) {
 +  PCHBlock Block = ^int(int fail, PCHError value) __objc3_throws(PCHError) {
 +    if (fail) __objc3_throw(value);
@@ -11664,12 +11680,12 @@ index 000000000..a3c73a5df
 +// CHECK: objc3.try.failed
 diff --git a/clang/test/ObjC3/CodeGen/typed-error-blocks.m b/clang/test/ObjC3/CodeGen/typed-error-blocks.m
 new file mode 100644
-index 000000000..edb2f70c0
+index 000000000..64dc3a131
 --- /dev/null
 +++ b/clang/test/ObjC3/CodeGen/typed-error-blocks.m
 @@ -0,0 +1,33 @@
 +// RUN: %clang_cc1 -x objective-c -std=c17 -triple x86_64-pc-windows-msvc -fobjc-runtime=gnustep-2.0 -fobjc-version=3 -fblocks -emit-llvm -o - %s | FileCheck %s
-+// RUN: %clang_cc1 -x objective-c -std=c17 -triple x86_64-unknown-linux-gnu -fobjc-runtime=gnustep-2.0 -fobjc-version=3 -fblocks -fobjc-arc -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c -std=c17 -triple x86_64-unknown-linux-gnu -fobjc-runtime=gnustep-2.2 -fobjc-version=3 -fblocks -fobjc-arc -emit-llvm -o - %s | FileCheck %s
 +@protocol Error @end
 +typedef id<Error> E;
 +typedef int (^Checked)(int, E) __objc3_throws(E);
@@ -11703,11 +11719,11 @@ index 000000000..edb2f70c0
 +// CHECK: objc3.catch.dispatch:
 diff --git a/clang/test/ObjC3/CodeGen/typed-error-function-pointers.m b/clang/test/ObjC3/CodeGen/typed-error-function-pointers.m
 new file mode 100644
-index 000000000..4c788b3a1
+index 000000000..57315754f
 --- /dev/null
 +++ b/clang/test/ObjC3/CodeGen/typed-error-function-pointers.m
 @@ -0,0 +1,44 @@
-+// RUN: %clang_cc1 -x objective-c -std=c17 -triple x86_64-unknown-linux-gnu -fobjc-runtime=gnustep-2.0 -fobjc-version=3 -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c -std=c17 -triple x86_64-unknown-linux-gnu -fobjc-runtime=gnustep-2.2 -fobjc-version=3 -emit-llvm -o - %s | FileCheck %s
 +// RUN: %clang_cc1 -x objective-c -std=c17 -triple x86_64-pc-windows-msvc -fobjc-runtime=gnustep-2.0 -fobjc-version=3 -fobjc-arc -emit-llvm -o - %s | FileCheck %s
 +
 +@protocol Error @end
@@ -11753,13 +11769,13 @@ index 000000000..4c788b3a1
 +// CHECK: objc3.try.failed
 diff --git a/clang/test/ObjC3/CodeGen/typed-error-handlers-pch.mm b/clang/test/ObjC3/CodeGen/typed-error-handlers-pch.mm
 new file mode 100644
-index 000000000..2178685eb
+index 000000000..3717ceb58
 --- /dev/null
 +++ b/clang/test/ObjC3/CodeGen/typed-error-handlers-pch.mm
 @@ -0,0 +1,15 @@
-+// RUN: %clang_cc1 -x objective-c++ -std=c++20 -triple x86_64-unknown-linux-gnu -fobjc-runtime=gnustep-2.0 -fobjc-version=3 -fobjc-arc -emit-pch %S/Inputs/typed-error-handlers-pch.h -o %t.pch
-+// RUN: %clang_cc1 -x objective-c++ -std=c++20 -triple x86_64-unknown-linux-gnu -fobjc-runtime=gnustep-2.0 -fobjc-version=3 -fobjc-arc -include-pch %t.pch -emit-llvm -o - %s | FileCheck %s
-+// RUN: %clang_cc1 -x objective-c++ -std=c++20 -triple x86_64-unknown-linux-gnu -fobjc-runtime=gnustep-2.0 -fobjc-version=3 -fobjc-arc -include-pch %t.pch -ast-dump-all %s | FileCheck %s --check-prefix=AST
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -triple x86_64-unknown-linux-gnu -fobjc-runtime=gnustep-2.2 -fobjc-version=3 -fobjc-arc -emit-pch %S/Inputs/typed-error-handlers-pch.h -o %t.pch
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -triple x86_64-unknown-linux-gnu -fobjc-runtime=gnustep-2.2 -fobjc-version=3 -fobjc-arc -include-pch %t.pch -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -triple x86_64-unknown-linux-gnu -fobjc-runtime=gnustep-2.2 -fobjc-version=3 -fobjc-arc -include-pch %t.pch -ast-dump-all %s | FileCheck %s --check-prefix=AST
 +
 +int use_pch_handler(id<Error> error) {
 +  return pch_handler(error) + template_handler(error) + weak_pch_handler(error);
@@ -11774,11 +11790,11 @@ index 000000000..2178685eb
 +// AST: VarDecl{{.*}} weak_binding '{{.*}}__weak{{.*}}'
 diff --git a/clang/test/ObjC3/CodeGen/typed-error-handlers-unwind.mm b/clang/test/ObjC3/CodeGen/typed-error-handlers-unwind.mm
 new file mode 100644
-index 000000000..a9d002b31
+index 000000000..d78fb8dc3
 --- /dev/null
 +++ b/clang/test/ObjC3/CodeGen/typed-error-handlers-unwind.mm
 @@ -0,0 +1,24 @@
-+// RUN: %clang_cc1 -x objective-c++ -triple x86_64-unknown-linux-gnu -fobjc-runtime=gnustep-2.0 -fobjc-version=3 -fobjc-arc -fexceptions -fcxx-exceptions -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++ -triple x86_64-unknown-linux-gnu -fobjc-runtime=gnustep-2.2 -fobjc-version=3 -fobjc-arc -fexceptions -fcxx-exceptions -emit-llvm -o - %s | FileCheck %s
 +// RUN: %clang_cc1 -x objective-c++ -triple x86_64-pc-windows-msvc -fobjc-runtime=gnustep-2.0 -fobjc-version=3 -fobjc-arc -fexceptions -fcxx-exceptions -emit-llvm -o - %s | FileCheck %s --check-prefix=WIN
 +// Internal handler ownership has EH cleanup even without -fobjc-arc-exceptions.
 +
@@ -11804,11 +11820,11 @@ index 000000000..a9d002b31
 +// WIN: cleanupret
 diff --git a/clang/test/ObjC3/CodeGen/typed-error-handlers.m b/clang/test/ObjC3/CodeGen/typed-error-handlers.m
 new file mode 100644
-index 000000000..38c3bd761
+index 000000000..87a1685d5
 --- /dev/null
 +++ b/clang/test/ObjC3/CodeGen/typed-error-handlers.m
 @@ -0,0 +1,53 @@
-+// RUN: %clang_cc1 -x objective-c -triple x86_64-unknown-linux-gnu -fobjc-runtime=gnustep-2.0 -fobjc-version=3 -fobjc-arc -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c -triple x86_64-unknown-linux-gnu -fobjc-runtime=gnustep-2.2 -fobjc-version=3 -fobjc-arc -emit-llvm -o - %s | FileCheck %s
 +// RUN: %clang_cc1 -x objective-c -triple x86_64-pc-windows-msvc -fobjc-runtime=gnustep-2.0 -fobjc-version=3 -fobjc-arc -emit-llvm -o - %s | FileCheck %s
 +
 +@protocol Error @end
@@ -11907,12 +11923,12 @@ index 000000000..05a3072dc
 +#endif
 diff --git a/clang/test/ObjC3/CodeGen/typed-error-member-pch.mm b/clang/test/ObjC3/CodeGen/typed-error-member-pch.mm
 new file mode 100644
-index 000000000..995bbb63a
+index 000000000..8f3343dcf
 --- /dev/null
 +++ b/clang/test/ObjC3/CodeGen/typed-error-member-pch.mm
 @@ -0,0 +1,8 @@
-+// RUN: %clang_cc1 -x objective-c++ -std=c++20 -triple x86_64-unknown-linux-gnu -fobjc-runtime=gnustep-2.0 -fobjc-version=3 -fobjc-arc -emit-pch -o %t.pch %S/Inputs/typed-error-member-pch.h
-+// RUN: %clang_cc1 -x objective-c++ -std=c++20 -triple x86_64-unknown-linux-gnu -fobjc-runtime=gnustep-2.0 -fobjc-version=3 -fobjc-arc -include-pch %t.pch -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -triple x86_64-unknown-linux-gnu -fobjc-runtime=gnustep-2.2 -fobjc-version=3 -fobjc-arc -emit-pch -o %t.pch %S/Inputs/typed-error-member-pch.h
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -triple x86_64-unknown-linux-gnu -fobjc-runtime=gnustep-2.2 -fobjc-version=3 -fobjc-arc -include-pch %t.pch -emit-llvm -o - %s | FileCheck %s
 +int use_cached(CachedReceiver &receiver, PCHError error) {
 +  return __objc3_try_force(cached_forward(receiver, error));
 +}
@@ -11921,13 +11937,13 @@ index 000000000..995bbb63a
 +// CHECK: objc3.try.failed
 diff --git a/clang/test/ObjC3/CodeGen/typed-error-members.mm b/clang/test/ObjC3/CodeGen/typed-error-members.mm
 new file mode 100644
-index 000000000..806a3082a
+index 000000000..51dd68396
 --- /dev/null
 +++ b/clang/test/ObjC3/CodeGen/typed-error-members.mm
 @@ -0,0 +1,39 @@
 +// RUN: %clang_cc1 -x objective-c++ -std=c++20 -triple x86_64-pc-windows-msvc -fobjc-runtime=gnustep-2.0 -fobjc-version=3 -emit-llvm -o - %s | FileCheck %s
 +// RUN: %clang_cc1 -x objective-c++ -std=c++20 -triple x86_64-pc-windows-msvc -fobjc-runtime=gnustep-2.0 -fobjc-version=3 -fobjc-arc -emit-llvm -o - %s | FileCheck %s
-+// RUN: %clang_cc1 -x objective-c++ -std=c++20 -triple x86_64-unknown-linux-gnu -fobjc-runtime=gnustep-2.0 -fobjc-version=3 -fobjc-arc -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -triple x86_64-unknown-linux-gnu -fobjc-runtime=gnustep-2.2 -fobjc-version=3 -fobjc-arc -emit-llvm -o - %s | FileCheck %s
 +@protocol Error @end
 +using E = id<Error>;
 +struct Receiver {
@@ -11966,14 +11982,14 @@ index 000000000..806a3082a
 +// CHECK: call{{.*}} i32 @{{.*}}(ptr {{.*}}, i32 {{.*}}, ptr {{.*}}, ptr {{.*}})
 diff --git a/clang/test/ObjC3/CodeGen/typed-error-message-boundaries.m b/clang/test/ObjC3/CodeGen/typed-error-message-boundaries.m
 new file mode 100644
-index 000000000..2daaa5dc9
+index 000000000..0dfd19e34
 --- /dev/null
 +++ b/clang/test/ObjC3/CodeGen/typed-error-message-boundaries.m
 @@ -0,0 +1,29 @@
-+// RUN: %clang_cc1 -x objective-c -fobjc-version=3 -fobjc-runtime=gnustep-2.0 -DTEST_KIND=1 -emit-llvm -o /dev/null -verify %s
-+// RUN: %clang_cc1 -x objective-c -fobjc-version=3 -fobjc-runtime=gnustep-2.0 -DTEST_KIND=2 -emit-llvm -o /dev/null -verify %s
-+// RUN: %clang_cc1 -x objective-c -fobjc-version=3 -fobjc-runtime=gnustep-2.0 -DTEST_KIND=3 -emit-llvm -o /dev/null -verify %s
-+// RUN: %clang_cc1 -x objective-c -fobjc-version=3 -fobjc-runtime=gnustep-2.0 -DTEST_KIND=4 -emit-llvm -o /dev/null -verify %s
++// RUN: %clang_cc1 -x objective-c -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -DTEST_KIND=1 -emit-llvm -o /dev/null -verify %s
++// RUN: %clang_cc1 -x objective-c -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -DTEST_KIND=2 -emit-llvm -o /dev/null -verify %s
++// RUN: %clang_cc1 -x objective-c -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -DTEST_KIND=3 -emit-llvm -o /dev/null -verify %s
++// RUN: %clang_cc1 -x objective-c -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -DTEST_KIND=4 -emit-llvm -o /dev/null -verify %s
 +@protocol Error @end
 +typedef id<Error> E;
 +struct Aggregate { int x; };
@@ -12028,12 +12044,12 @@ index 000000000..67cb44a86
 +// CHECK: objc3.try.failed
 diff --git a/clang/test/ObjC3/CodeGen/typed-error-message-pch.m b/clang/test/ObjC3/CodeGen/typed-error-message-pch.m
 new file mode 100644
-index 000000000..c97948a29
+index 000000000..6c5468227
 --- /dev/null
 +++ b/clang/test/ObjC3/CodeGen/typed-error-message-pch.m
 @@ -0,0 +1,7 @@
-+// RUN: %clang_cc1 -x objective-c -triple x86_64-unknown-linux-gnu -fobjc-runtime=gnustep-2.0 -fobjc-version=3 -fobjc-arc -emit-pch -o %t.pch %S/Inputs/typed-error-message-pch.h
-+// RUN: %clang_cc1 -x objective-c -triple x86_64-unknown-linux-gnu -fobjc-runtime=gnustep-2.0 -fobjc-version=3 -fobjc-arc -include-pch %t.pch -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c -triple x86_64-unknown-linux-gnu -fobjc-runtime=gnustep-2.2 -fobjc-version=3 -fobjc-arc -emit-pch -o %t.pch %S/Inputs/typed-error-message-pch.h
++// RUN: %clang_cc1 -x objective-c -triple x86_64-unknown-linux-gnu -fobjc-runtime=gnustep-2.2 -fobjc-version=3 -fobjc-arc -include-pch %t.pch -emit-llvm -o - %s | FileCheck %s
 +int cached_message(CachedReceiver *receiver, CachedError error) {
 +  return __objc3_try_force([receiver value:error]);
 +}
@@ -12041,13 +12057,13 @@ index 000000000..c97948a29
 +// CHECK: objc3.try.failed
 diff --git a/clang/test/ObjC3/CodeGen/typed-error-messages.m b/clang/test/ObjC3/CodeGen/typed-error-messages.m
 new file mode 100644
-index 000000000..1192ef92b
+index 000000000..2dfdff5fe
 --- /dev/null
 +++ b/clang/test/ObjC3/CodeGen/typed-error-messages.m
 @@ -0,0 +1,41 @@
 +// RUN: %clang_cc1 -x objective-c -triple x86_64-pc-windows-msvc -fobjc-runtime=gnustep-2.0 -fobjc-version=3 -emit-llvm -o - %s | FileCheck %s --check-prefixes=CHECK,GNU
 +// RUN: %clang_cc1 -x objective-c -triple x86_64-pc-windows-msvc -fobjc-runtime=gnustep-2.0 -fobjc-version=3 -fobjc-arc -emit-llvm -o - %s | FileCheck %s --check-prefixes=CHECK,GNU
-+// RUN: %clang_cc1 -x objective-c -triple x86_64-unknown-linux-gnu -fobjc-runtime=gnustep-2.0 -fobjc-version=3 -fobjc-arc -emit-llvm -o - %s | FileCheck %s --check-prefixes=CHECK,GNU
++// RUN: %clang_cc1 -x objective-c -triple x86_64-unknown-linux-gnu -fobjc-runtime=gnustep-2.2 -fobjc-version=3 -fobjc-arc -emit-llvm -o - %s | FileCheck %s --check-prefixes=CHECK,GNU
 +// RUN: %clang_cc1 -x objective-c -triple x86_64-apple-macosx14 -fobjc-version=3 -fobjc-arc -emit-llvm -o - %s | FileCheck %s --check-prefixes=CHECK,MAC
 +@protocol Error @end
 +typedef id<Error> E;
@@ -12088,11 +12104,11 @@ index 000000000..1192ef92b
 +}
 diff --git a/clang/test/ObjC3/CodeGen/typed-error-mrc-boundary.m b/clang/test/ObjC3/CodeGen/typed-error-mrc-boundary.m
 new file mode 100644
-index 000000000..0d29f570b
+index 000000000..7b466d150
 --- /dev/null
 +++ b/clang/test/ObjC3/CodeGen/typed-error-mrc-boundary.m
 @@ -0,0 +1,39 @@
-+// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c -std=c17 -fobjc-runtime=gnustep-2.0 -fobjc-version=3 -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c -std=c17 -fobjc-runtime=gnustep-2.2 -fobjc-version=3 -emit-llvm -o - %s | FileCheck %s
 +// RUN: %clang_cc1 -triple x86_64-pc-windows-msvc -x objective-c -std=c17 -fobjc-runtime=gnustep-2.0 -fobjc-version=3 -emit-llvm -o - %s | FileCheck %s
 +
 +@protocol Error @end
@@ -12133,11 +12149,11 @@ index 000000000..0d29f570b
 +// CHECK: ret void
 diff --git a/clang/test/ObjC3/CodeGen/typed-error-mrc-unsupported.m b/clang/test/ObjC3/CodeGen/typed-error-mrc-unsupported.m
 new file mode 100644
-index 000000000..7194e8caf
+index 000000000..cc98b0da2
 --- /dev/null
 +++ b/clang/test/ObjC3/CodeGen/typed-error-mrc-unsupported.m
 @@ -0,0 +1,8 @@
-+// RUN: %clang_cc1 -x objective-c -std=c17 -fobjc-runtime=gnustep-2.0 -fobjc-version=3 -emit-llvm -o /dev/null -verify %s
++// RUN: %clang_cc1 -x objective-c -std=c17 -fobjc-runtime=gnustep-2.2 -fobjc-version=3 -emit-llvm -o /dev/null -verify %s
 +
 +@protocol Error @end
 +typedef id<Error> E;
@@ -12147,11 +12163,11 @@ index 000000000..7194e8caf
 +}
 diff --git a/clang/test/ObjC3/CodeGen/typed-error-mrc-unwind.mm b/clang/test/ObjC3/CodeGen/typed-error-mrc-unwind.mm
 new file mode 100644
-index 000000000..b6449b2ea
+index 000000000..06537d73a
 --- /dev/null
 +++ b/clang/test/ObjC3/CodeGen/typed-error-mrc-unwind.mm
 @@ -0,0 +1,23 @@
-+// RUN: %clang_cc1 -x objective-c++ -std=c++20 -triple x86_64-unknown-linux-gnu -fobjc-runtime=gnustep-2.0 -fobjc-version=3 -fexceptions -fcxx-exceptions -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -triple x86_64-unknown-linux-gnu -fobjc-runtime=gnustep-2.2 -fobjc-version=3 -fexceptions -fcxx-exceptions -emit-llvm -o - %s | FileCheck %s
 +// RUN: %clang_cc1 -x objective-c++ -std=c++20 -triple x86_64-pc-windows-msvc -fobjc-runtime=gnustep-2.0 -fobjc-version=3 -fexceptions -fcxx-exceptions -emit-llvm -o - %s | FileCheck %s --check-prefix=WIN
 +
 +@protocol Error @end
@@ -12176,11 +12192,11 @@ index 000000000..b6449b2ea
 +// WIN: cleanupret
 diff --git a/clang/test/ObjC3/CodeGen/typed-error-nested-bare-call.m b/clang/test/ObjC3/CodeGen/typed-error-nested-bare-call.m
 new file mode 100644
-index 000000000..1627d7370
+index 000000000..cfa6fed0f
 --- /dev/null
 +++ b/clang/test/ObjC3/CodeGen/typed-error-nested-bare-call.m
 @@ -0,0 +1,11 @@
-+// RUN: not %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c -std=c17 -fobjc-runtime=gnustep-2.0 -fobjc-arc -fobjc-version=3 -emit-llvm -o - %s 2>&1 | FileCheck %s
++// RUN: not %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c -std=c17 -fobjc-runtime=gnustep-2.2 -fobjc-arc -fobjc-version=3 -emit-llvm -o - %s 2>&1 | FileCheck %s
 +
 +@protocol Error;
 +typedef id<Error> TestError;
@@ -12193,11 +12209,11 @@ index 000000000..1627d7370
 +// CHECK: cannot compile this ObjC3 throwing call without an exact qualified try context yet
 diff --git a/clang/test/ObjC3/CodeGen/typed-error-out-abi.c b/clang/test/ObjC3/CodeGen/typed-error-out-abi.c
 new file mode 100644
-index 000000000..2fad75436
+index 000000000..d5381f374
 --- /dev/null
 +++ b/clang/test/ObjC3/CodeGen/typed-error-out-abi.c
 @@ -0,0 +1,44 @@
-+// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c -std=c17 -fobjc-runtime=gnustep-2.0 -fobjc-version=3 -fobjc-arc -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c -std=c17 -fobjc-runtime=gnustep-2.2 -fobjc-version=3 -fobjc-arc -emit-llvm -o - %s | FileCheck %s
 +
 +@protocol Error;
 +typedef id<Error> TestError;
@@ -12243,11 +12259,11 @@ index 000000000..2fad75436
 +// CHECK: call i32 @typed_zero(i32 {{.*}}, ptr{{.*}})
 diff --git a/clang/test/ObjC3/CodeGen/typed-error-owned-unwind.mm b/clang/test/ObjC3/CodeGen/typed-error-owned-unwind.mm
 new file mode 100644
-index 000000000..cddae5d8f
+index 000000000..1637e2101
 --- /dev/null
 +++ b/clang/test/ObjC3/CodeGen/typed-error-owned-unwind.mm
 @@ -0,0 +1,20 @@
-+// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c++ -std=c++20 -fobjc-runtime=gnustep-2.0 -fobjc-arc -fobjc-arc-exceptions -fexceptions -fcxx-exceptions -fobjc-version=3 -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c++ -std=c++20 -fobjc-runtime=gnustep-2.2 -fobjc-arc -fobjc-arc-exceptions -fexceptions -fcxx-exceptions -fobjc-version=3 -emit-llvm -o - %s | FileCheck %s
 +
 +@protocol Error;
 +typedef id<Error> TestError;
@@ -12269,12 +12285,12 @@ index 000000000..cddae5d8f
 +// CHECK: call void @llvm.objc.storeStrong(ptr{{.*}} %objc3.error.pending, ptr null)
 diff --git a/clang/test/ObjC3/CodeGen/typed-error-pointer-bare-call.m b/clang/test/ObjC3/CodeGen/typed-error-pointer-bare-call.m
 new file mode 100644
-index 000000000..19098f9af
+index 000000000..248eff8a2
 --- /dev/null
 +++ b/clang/test/ObjC3/CodeGen/typed-error-pointer-bare-call.m
 @@ -0,0 +1,16 @@
-+// RUN: %clang_cc1 -x objective-c -std=c17 -fobjc-runtime=gnustep-2.0 -fobjc-version=3 -DTEST_KIND=1 -emit-llvm -o /dev/null -verify %s
-+// RUN: %clang_cc1 -x objective-c -std=c17 -fobjc-runtime=gnustep-2.0 -fobjc-version=3 -DTEST_KIND=2 -emit-llvm -o /dev/null -verify %s
++// RUN: %clang_cc1 -x objective-c -std=c17 -fobjc-runtime=gnustep-2.2 -fobjc-version=3 -DTEST_KIND=1 -emit-llvm -o /dev/null -verify %s
++// RUN: %clang_cc1 -x objective-c -std=c17 -fobjc-runtime=gnustep-2.2 -fobjc-version=3 -DTEST_KIND=2 -emit-llvm -o /dev/null -verify %s
 +
 +@protocol Error @end
 +typedef id<Error> E;
@@ -12291,14 +12307,14 @@ index 000000000..19098f9af
 +#endif
 diff --git a/clang/test/ObjC3/CodeGen/typed-error-pointer-boundaries.mm b/clang/test/ObjC3/CodeGen/typed-error-pointer-boundaries.mm
 new file mode 100644
-index 000000000..b2e5861ff
+index 000000000..9fce35c47
 --- /dev/null
 +++ b/clang/test/ObjC3/CodeGen/typed-error-pointer-boundaries.mm
 @@ -0,0 +1,30 @@
-+// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fblocks -fobjc-runtime=gnustep-2.0 -fobjc-version=3 -DTEST_KIND=1 -emit-llvm -o /dev/null -verify %s
-+// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fblocks -fobjc-runtime=gnustep-2.0 -fobjc-version=3 -DTEST_KIND=2 -emit-llvm -o /dev/null -verify %s
-+// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fblocks -fobjc-runtime=gnustep-2.0 -fobjc-version=3 -DTEST_KIND=3 -emit-llvm -o /dev/null -verify %s
-+// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fblocks -fobjc-runtime=gnustep-2.0 -fobjc-version=3 -DTEST_KIND=4 -emit-llvm -o /dev/null -verify %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fblocks -fobjc-runtime=gnustep-2.2 -fobjc-version=3 -DTEST_KIND=1 -emit-llvm -o /dev/null -verify %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fblocks -fobjc-runtime=gnustep-2.2 -fobjc-version=3 -DTEST_KIND=2 -emit-llvm -o /dev/null -verify %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fblocks -fobjc-runtime=gnustep-2.2 -fobjc-version=3 -DTEST_KIND=3 -emit-llvm -o /dev/null -verify %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fblocks -fobjc-runtime=gnustep-2.2 -fobjc-version=3 -DTEST_KIND=4 -emit-llvm -o /dev/null -verify %s
 +
 +@protocol Error @end
 +typedef id<Error> E;
@@ -12809,9 +12825,9 @@ new file mode 100644
 --- /dev/null
 +++ b/clang/test/ObjC3/CodeGen/carrier-arc-transfer-rejections.mm
 @@ -0,0 +1,16 @@
-+// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c++ -fobjc-version=3 -fobjc-runtime=gnustep-2.0 -fobjc-arc -std=c++20 -DIGNORED -emit-llvm -o %t.ignored.ll -verify=ignored %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c++ -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -std=c++20 -DIGNORED -emit-llvm -o %t.ignored.ll -verify=ignored %s
 +// RUN: test ! -e %t.ignored.ll
-+// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c++ -fobjc-version=3 -fobjc-runtime=gnustep-2.0 -fobjc-arc -std=c++20 -DVOLATILE -emit-llvm -o %t.volatile.ll -verify=volatile %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c++ -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -std=c++20 -DVOLATILE -emit-llvm -o %t.volatile.ll -verify=volatile %s
 +// RUN: test ! -e %t.volatile.ll
 +
 +using Strong = __objc3_optional(id);
@@ -12830,9 +12846,9 @@ new file mode 100644
 --- /dev/null
 +++ b/clang/test/ObjC3/CodeGen/carrier-arc-transfer.mm
 @@ -0,0 +1,91 @@
-+// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c++ -fobjc-version=3 -fobjc-runtime=gnustep-2.0 -fobjc-arc -fblocks -fexceptions -fcxx-exceptions -std=c++20 -emit-llvm -o - %s | FileCheck %s
-+// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c++ -fobjc-version=3 -fobjc-runtime=gnustep-2.0 -fobjc-arc -fblocks -fexceptions -fcxx-exceptions -std=c++20 -emit-pch -o %t.pch %s
-+// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c++ -fobjc-version=3 -fobjc-runtime=gnustep-2.0 -fobjc-arc -fblocks -fexceptions -fcxx-exceptions -std=c++20 -include-pch %t.pch -emit-llvm -o - /dev/null | FileCheck %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c++ -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -fblocks -fexceptions -fcxx-exceptions -std=c++20 -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c++ -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -fblocks -fexceptions -fcxx-exceptions -std=c++20 -emit-pch -o %t.pch %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c++ -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -fblocks -fexceptions -fcxx-exceptions -std=c++20 -include-pch %t.pch -emit-llvm -o - /dev/null | FileCheck %s
 +
 +using Strong = __objc3_optional(id);
 +using Weak = __objc3_optional(id __weak);
@@ -12926,9 +12942,9 @@ new file mode 100644
 --- /dev/null
 +++ b/clang/test/ObjC3/CodeGen/carrier-native-abi-linux.c
 @@ -0,0 +1,7 @@
-+// RUN: %clang_cc1 -x objective-c -std=c17 -fobjc-version=3 -fobjc-runtime=gnustep-2.0 -triple x86_64-unknown-linux-gnu -emit-llvm -o %t.ll -I %S/Inputs %S/Inputs/carrier-native-abi-callee.c
++// RUN: %clang_cc1 -x objective-c -std=c17 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -triple x86_64-unknown-linux-gnu -emit-llvm -o %t.ll -I %S/Inputs %S/Inputs/carrier-native-abi-callee.c
 +// RUN: FileCheck %s < %t.ll
-+// RUN: %clang_cc1 -x objective-c -std=c17 -fobjc-version=3 -fobjc-runtime=gnustep-2.0 -triple x86_64-unknown-linux-gnu -emit-llvm -o %t.caller.ll -I %S/Inputs %S/Inputs/carrier-native-abi-caller.c
++// RUN: %clang_cc1 -x objective-c -std=c17 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -triple x86_64-unknown-linux-gnu -emit-llvm -o %t.caller.ll -I %S/Inputs %S/Inputs/carrier-native-abi-caller.c
 +// A plain C record mirror is additionally linked against these extension
 +// boundaries by the native validation ABI provider/consumer execution suite.
 +// CHECK: target triple = "x86_64-unknown-linux-gnu"
@@ -12950,10 +12966,10 @@ new file mode 100644
 --- /dev/null
 +++ b/clang/test/ObjC3/CodeGen/typed-error-managed-optional-unsupported.m
 @@ -0,0 +1,21 @@
-+// RUN: %clang_cc1 -x objective-c -std=c17 -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.0 -fblocks -fobjc-arc -DTEST_BLOCK=0 -emit-llvm -o /dev/null -verify %s
-+// RUN: %clang_cc1 -x objective-c -std=c17 -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.0 -fblocks -fobjc-arc -DTEST_BLOCK=1 -emit-llvm -o /dev/null -verify %s
-+// RUN: %clang_cc1 -x objective-c -std=c17 -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.0 -fblocks -DTEST_BLOCK=0 -emit-llvm -o /dev/null -verify %s
-+// RUN: %clang_cc1 -x objective-c -std=c17 -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.0 -fblocks -DTEST_BLOCK=1 -emit-llvm -o /dev/null -verify %s
++// RUN: %clang_cc1 -x objective-c -std=c17 -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -fobjc-arc -DTEST_BLOCK=0 -emit-llvm -o /dev/null -verify %s
++// RUN: %clang_cc1 -x objective-c -std=c17 -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -fobjc-arc -DTEST_BLOCK=1 -emit-llvm -o /dev/null -verify %s
++// RUN: %clang_cc1 -x objective-c -std=c17 -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -DTEST_BLOCK=0 -emit-llvm -o /dev/null -verify %s
++// RUN: %clang_cc1 -x objective-c -std=c17 -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -DTEST_BLOCK=1 -emit-llvm -o /dev/null -verify %s
 +@protocol Error @end
 +#if TEST_BLOCK
 +typedef int (^Value)(void);
@@ -12976,9 +12992,9 @@ new file mode 100644
 --- /dev/null
 +++ b/clang/test/ObjC3/CodeGen/typed-error-managed-success.mm
 @@ -0,0 +1,33 @@
-+// RUN: %clang_cc1 -x objective-c++ -std=c++20 -triple x86_64-unknown-linux-gnu -fobjc-runtime=gnustep-2.0 -fobjc-version=3 -fblocks -fobjc-arc -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -triple x86_64-unknown-linux-gnu -fobjc-runtime=gnustep-2.2 -fobjc-version=3 -fblocks -fobjc-arc -emit-llvm -o - %s | FileCheck %s
 +// RUN: %clang_cc1 -x objective-c++ -std=c++20 -triple x86_64-pc-windows-msvc -fobjc-runtime=gnustep-2.0 -fobjc-version=3 -fblocks -fobjc-arc -emit-llvm -o - %s | FileCheck %s
-+// RUN: %clang_cc1 -x objective-c++ -std=c++20 -triple x86_64-unknown-linux-gnu -fobjc-runtime=gnustep-2.0 -fobjc-version=3 -fblocks -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -triple x86_64-unknown-linux-gnu -fobjc-runtime=gnustep-2.2 -fobjc-version=3 -fblocks -emit-llvm -o - %s | FileCheck %s
 +@protocol Error @end
 +using E = id<Error>;
 +using B = int (^)(void);
@@ -13014,8 +13030,8 @@ new file mode 100644
 --- /dev/null
 +++ b/clang/test/ObjC3/CodeGen/typed-error-noreturn.mm
 @@ -0,0 +1,20 @@
-+// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c++ -std=c++20 -fblocks -fobjc-runtime=gnustep-2.0 -fobjc-arc -fobjc-arc-exceptions -fexceptions -fcxx-exceptions -fobjc-version=3 -emit-llvm -o - %s | FileCheck %s
-+// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c++ -std=c++20 -fblocks -fobjc-runtime=gnustep-2.0 -fexceptions -fcxx-exceptions -fobjc-version=3 -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c++ -std=c++20 -fblocks -fobjc-runtime=gnustep-2.2 -fobjc-arc -fobjc-arc-exceptions -fexceptions -fcxx-exceptions -fobjc-version=3 -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c++ -std=c++20 -fblocks -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -fobjc-version=3 -emit-llvm -o - %s | FileCheck %s
 +// RUN: %clang_cc1 -triple x86_64-pc-windows-msvc -x objective-c++ -std=c++20 -fblocks -fobjc-runtime=gnustep-2.0 -fobjc-arc -fobjc-arc-exceptions -fexceptions -fcxx-exceptions -fobjc-version=3 -emit-llvm -o - %s | FileCheck %s
 +// RUN: %clang_cc1 -triple x86_64-pc-windows-msvc -x objective-c++ -std=c++20 -fblocks -fobjc-runtime=gnustep-2.0 -fexceptions -fcxx-exceptions -fobjc-version=3 -emit-llvm -o - %s | FileCheck %s
 +
@@ -13036,17 +13052,17 @@ new file mode 100644
 +// CHECK-NOT: objc3.error.transfer
 diff --git a/clang/test/ObjC3/CodeGen/carrier-arc-assignment-rejections.m b/clang/test/ObjC3/CodeGen/carrier-arc-assignment-rejections.m
 new file mode 100644
-index 000000000..a4f0925df
+index 000000000..120df1f31
 --- /dev/null
 +++ b/clang/test/ObjC3/CodeGen/carrier-arc-assignment-rejections.m
 @@ -0,0 +1,34 @@
-+// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c -fobjc-version=3 -fobjc-runtime=gnustep-2.0 -fobjc-arc -DDESTINATION -emit-llvm -o %t.DESTINATION.ll -verify %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -DDESTINATION -emit-llvm -o %t.DESTINATION.ll -verify %s
 +// RUN: test ! -e %t.DESTINATION.ll
-+// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c -fobjc-version=3 -fobjc-runtime=gnustep-2.0 -fobjc-arc -DSOURCE -emit-llvm -o %t.SOURCE.ll -verify %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -DSOURCE -emit-llvm -o %t.SOURCE.ll -verify %s
 +// RUN: test ! -e %t.SOURCE.ll
-+// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c -fobjc-version=3 -fobjc-runtime=gnustep-2.0 -fobjc-arc -DLOCAL -emit-llvm -o %t.LOCAL.ll -verify %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -DLOCAL -emit-llvm -o %t.LOCAL.ll -verify %s
 +// RUN: test ! -e %t.LOCAL.ll
-+// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c -fobjc-version=3 -fobjc-runtime=gnustep-2.0 -fobjc-arc -DUNINITIALIZED -emit-llvm -o %t.UNINITIALIZED.ll -verify %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -DUNINITIALIZED -emit-llvm -o %t.UNINITIALIZED.ll -verify %s
 +// RUN: test ! -e %t.UNINITIALIZED.ll
 +
 +typedef __objc3_optional(id) Strong;
@@ -13076,12 +13092,12 @@ index 000000000..a4f0925df
 +#endif
 diff --git a/clang/test/ObjC3/CodeGen/carrier-arc-assignment.m b/clang/test/ObjC3/CodeGen/carrier-arc-assignment.m
 new file mode 100644
-index 000000000..411a0e089
+index 000000000..1806fbfca
 --- /dev/null
 +++ b/clang/test/ObjC3/CodeGen/carrier-arc-assignment.m
 @@ -0,0 +1,63 @@
-+// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c -fobjc-version=3 -fobjc-runtime=gnustep-2.0 -fobjc-arc -fblocks -emit-llvm -o - %s | FileCheck %s
-+// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c++ -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.0 -fobjc-arc -fblocks -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -fblocks -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c++ -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -fblocks -emit-llvm -o - %s | FileCheck %s
 +
 +typedef __objc3_optional(id) Strong;
 +typedef __objc3_optional(id __weak) Weak;
@@ -13177,12 +13193,12 @@ index 807d372c3..cb3795c11 100644
                                             MaxVectorWidth);
 diff --git a/clang/test/ObjC3/CodeGen/carrier-arc-call-abi.m b/clang/test/ObjC3/CodeGen/carrier-arc-call-abi.m
 new file mode 100644
-index 000000000..3e1d91c36
+index 000000000..7d14952bf
 --- /dev/null
 +++ b/clang/test/ObjC3/CodeGen/carrier-arc-call-abi.m
 @@ -0,0 +1,39 @@
-+// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c -fobjc-version=3 -fobjc-runtime=gnustep-2.0 -fobjc-arc -emit-llvm -o - %s | FileCheck %s
-+// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c++ -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.0 -fobjc-arc -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c++ -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -emit-llvm -o - %s | FileCheck %s
 +typedef __objc3_optional(id) Strong;
 +typedef __objc3_optional(id __weak) Weak;
 +Strong make_value(id object) { return __objc3_some(id, object); }
@@ -13222,17 +13238,17 @@ index 000000000..3e1d91c36
 +// CHECK: call void @llvm.objc.storeStrong
 diff --git a/clang/test/ObjC3/CodeGen/carrier-arc-call-boundaries.mm b/clang/test/ObjC3/CodeGen/carrier-arc-call-boundaries.mm
 new file mode 100644
-index 000000000..678e66108
+index 000000000..530728ff0
 --- /dev/null
 +++ b/clang/test/ObjC3/CodeGen/carrier-arc-call-boundaries.mm
 @@ -0,0 +1,32 @@
-+// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c++ -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.0 -fobjc-arc -fblocks -DVARIADIC -emit-llvm -o %t.var.ll -verify %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c++ -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -fblocks -DVARIADIC -emit-llvm -o %t.var.ll -verify %s
 +// RUN: test ! -e %t.var.ll
-+// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c++ -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.0 -fobjc-arc -fblocks -DBLOCK -emit-llvm -o %t.block-variadic.ll -verify %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c++ -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -fblocks -DBLOCK -emit-llvm -o %t.block-variadic.ll -verify %s
 +// RUN: test ! -e %t.block-variadic.ll
-+// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c++ -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.0 -fobjc-arc -fblocks -DTHROWS -emit-llvm -o %t.throws.ll -verify %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c++ -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -fblocks -DTHROWS -emit-llvm -o %t.throws.ll -verify %s
 +// RUN: test ! -e %t.throws.ll
-+// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c++ -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.0 -fobjc-arc -fblocks -DMUSTTAIL -emit-llvm -o %t.tail.ll -verify %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c++ -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -fblocks -DMUSTTAIL -emit-llvm -o %t.tail.ll -verify %s
 +// RUN: test ! -e %t.tail.ll
 +typedef __objc3_optional(id) Strong;
 +#ifdef VARIADIC
@@ -13260,18 +13276,18 @@ index 000000000..678e66108
 +#endif
 diff --git a/clang/test/ObjC3/CodeGen/carrier-runtime-call-abi.m b/clang/test/ObjC3/CodeGen/carrier-runtime-call-abi.m
 new file mode 100644
-index 000000000..fa0407d8d
+index 000000000..1cb0f36c0
 --- /dev/null
 +++ b/clang/test/ObjC3/CodeGen/carrier-runtime-call-abi.m
 @@ -0,0 +1,45 @@
-+// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c -std=c17 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.0 -fobjc-arc -emit-llvm -o - %s | FileCheck %s
-+// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c++ -std=c++20 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.0 -fobjc-arc -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c -std=c17 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c++ -std=c++20 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -emit-llvm -o - %s | FileCheck %s
 +// REQUIRES: x86-registered-target
 +
 +typedef __objc3_optional(id) Strong;
 +typedef __objc3_optional(id __weak) Weak;
 +const char *encoding = @encode(Strong);
-+// CHECK: c"{__objc3_v5_optional_S40=B(__objc3_v5_payload=@)}\00"
++// CHECK: c"{__objc3_v6_optional_S40=B(__objc3_v6_payload=@)}\00"
 +__attribute__((objc_root_class))
 +@interface Receiver
 +- (Strong)echo:(Strong)value;
@@ -13311,22 +13327,22 @@ index 000000000..fa0407d8d
 +// CHECK: call void @llvm.objc.storeStrong
 diff --git a/clang/test/ObjC3/CodeGen/carrier-runtime-call-boundaries.m b/clang/test/ObjC3/CodeGen/carrier-runtime-call-boundaries.m
 new file mode 100644
-index 000000000..ade8226bd
+index 000000000..b0d932815
 --- /dev/null
 +++ b/clang/test/ObjC3/CodeGen/carrier-runtime-call-boundaries.m
 @@ -0,0 +1,56 @@
-+// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.0 -fobjc-arc -DCAPTURE -emit-llvm -o %t.capture.ll -verify %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -DCAPTURE -emit-llvm -o %t.capture.ll -verify %s
 +// RUN: test ! -e %t.capture.ll
-+// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.0 -fobjc-arc -DIVAR -emit-llvm -o %t.ivar.ll -verify %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -DIVAR -emit-llvm -o %t.ivar.ll -verify %s
 +// RUN: test ! -e %t.ivar.ll
-+// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.0 -fobjc-arc -DPOINTER -emit-llvm -o %t.pointer.ll -verify %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -DPOINTER -emit-llvm -o %t.pointer.ll -verify %s
 +// RUN: test ! -e %t.pointer.ll
-+// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.0 -fobjc-arc -DVARIADIC -emit-llvm -o %t.variadic.ll -verify %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -DVARIADIC -emit-llvm -o %t.variadic.ll -verify %s
 +// RUN: test ! -e %t.variadic.ll
 +
-+// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.0 -fobjc-arc -DINT128 -emit-llvm -o %t.int128.ll -verify %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -DINT128 -emit-llvm -o %t.int128.ll -verify %s
 +// RUN: test ! -e %t.int128.ll
-+// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.0 -fobjc-arc -DALTERNATE -emit-llvm -o %t.alternate.ll -verify %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -DALTERNATE -emit-llvm -o %t.alternate.ll -verify %s
 +// RUN: test ! -e %t.alternate.ll
 +
 +typedef __objc3_optional(id) Strong;
@@ -13373,13 +13389,13 @@ index 000000000..ade8226bd
 +#endif
 diff --git a/clang/test/ObjC3/CodeGen/carrier-runtime-reference-boundary.mm b/clang/test/ObjC3/CodeGen/carrier-runtime-reference-boundary.mm
 new file mode 100644
-index 000000000..baa96e292
+index 000000000..be63e0485
 --- /dev/null
 +++ b/clang/test/ObjC3/CodeGen/carrier-runtime-reference-boundary.mm
 @@ -0,0 +1,19 @@
-+// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c++ -std=c++20 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.0 -fobjc-arc -DMETHOD -emit-llvm -o %t.method.ll -verify %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c++ -std=c++20 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -DMETHOD -emit-llvm -o %t.method.ll -verify %s
 +// RUN: test ! -e %t.method.ll
-+// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c++ -std=c++20 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.0 -fobjc-arc -DBLOCK -emit-llvm -o %t.block.ll -verify %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c++ -std=c++20 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -DBLOCK -emit-llvm -o %t.block.ll -verify %s
 +// RUN: test ! -e %t.block.ll
 +typedef __objc3_optional(id) Strong;
 +#ifdef METHOD
@@ -13398,12 +13414,12 @@ index 000000000..baa96e292
 +#endif
 diff --git a/clang/test/ObjC3/CodeGen/carrier-typed-error-abi.m b/clang/test/ObjC3/CodeGen/carrier-typed-error-abi.m
 new file mode 100644
-index 000000000..7f1d0bae4
+index 000000000..48ee82e5d
 --- /dev/null
 +++ b/clang/test/ObjC3/CodeGen/carrier-typed-error-abi.m
 @@ -0,0 +1,58 @@
-+// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c -std=c17 -fblocks -fexceptions -fobjc-arc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.0 -fobjc-arc -emit-llvm -o - %s | FileCheck %s
-+// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c++ -std=c++20 -fblocks -fexceptions -fcxx-exceptions -fobjc-arc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.0 -fobjc-arc -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c -std=c17 -fblocks -fexceptions -fobjc-arc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c++ -std=c++20 -fblocks -fexceptions -fcxx-exceptions -fobjc-arc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -emit-llvm -o - %s | FileCheck %s
 +// REQUIRES: x86-registered-target
 +@protocol Error @end
 +typedef __objc3_optional(id) Strong;
@@ -13459,4 +13475,45 @@ index 000000000..7f1d0bae4
 +}
 +// CHECK-LABEL: define{{.*}} void {{.*}}message{{.*}}sret(
 +// CHECK: objc_msg_lookup_sender
++// CHECK: objc3.try.failure
+diff --git a/clang/test/ObjC3/CodeGen/carrier-direct-call-abi.m b/clang/test/ObjC3/CodeGen/carrier-direct-call-abi.m
+new file mode 100644
+index 000000000..1d8544e7a
+--- /dev/null
++++ b/clang/test/ObjC3/CodeGen/carrier-direct-call-abi.m
+@@ -0,0 +1,35 @@
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c -std=c17 -fblocks -fexceptions -fobjc-arc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -emit-llvm -o - %s | FileCheck %s
++// REQUIRES: x86-registered-target
++@protocol Error @end
++typedef __objc3_optional(id) Strong;
++__attribute__((objc_root_class))
++@interface Direct
+++ (Strong)classValue:(Strong)value __objc3_throws(id<Error>) __attribute__((objc_direct));
++- (Strong)value:(Strong)value __objc3_throws(id<Error>) __attribute__((objc_direct));
++- (int)ordinary;
++@end
++@implementation Direct
+++ (Strong)classValue:(Strong)value __objc3_throws(id<Error>) { return value; }
++- (Strong)value:(Strong)value __objc3_throws(id<Error>) { return value; }
++- (int)ordinary { return 1; }
++@end
++// Only the ordinary IMP belongs in runtime method metadata.
++// CHECK: @.objc_method_list = internal global {{.*}}[1 x
++// CHECK-LABEL: define hidden void @_c_Direct__classValue_
++// CHECK-SAME: sret(
++// CHECK-NOT: %_cmd
++// CHECK: objc3.error.out.initialize
++// CHECK: objc_direct_method.class_uninitialized
++// CHECK: call void @objc_send_initialize
++// CHECK-LABEL: define hidden void @_i_Direct__value_
++// CHECK-SAME: sret(
++// CHECK-NOT: %_cmd
++// CHECK: objc3.error.out.initialize
++// CHECK: objc_direct_method.self_is_nil
++// CHECK: call void @llvm.memset
++Strong call_direct(Direct *receiver, Strong value) __objc3_throws(id<Error>) {
++  return __objc3_try([receiver value:value]);
++}
++// CHECK-LABEL: define{{.*}} void {{.*}}call_direct
++// CHECK: {{call|invoke}} void @_i_Direct__value_
 +// CHECK: objc3.try.failure

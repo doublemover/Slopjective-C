@@ -1,10 +1,10 @@
 {
   "schema_version": 1,
   "authority": "schemas/objc3-language-capabilities.json",
-  "authority_sha256": "f7d2bb730f1b8273786981b77c278cf17e11e5c49e6613ccba77ca37f9d5fe52",
+  "authority_sha256": "f4b380b2dbd286734b5f1f66ec117f513508cd6ab6fc058ae26a424086b4439a",
   "compiler_family": "clang-foundation",
   "language_revision": 202610,
-  "extension_abi_revision": 2,
+  "extension_abi_revision": 6,
   "features": [
     {
       "name": "defer",
@@ -14,7 +14,7 @@
       "qualified_targets": [
         {
           "triple": "x86_64-unknown-linux-gnu",
-          "runtime": "gnustep-2.0",
+          "runtime": "gnustep-2.2",
           "profile": "compatibility",
           "evidence": [
             "clang/test/ObjC3/CodeGen/public-defer.c",

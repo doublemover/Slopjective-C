@@ -1,0 +1,97 @@
+#ifndef _GNU_SOURCE
+#define _GNU_SOURCE
+#endif
+#include "carrier-direct-call.h"
+#include <objc/runtime.h>
+#include <pthread.h>
+#include <stdio.h>
+#include <string.h>
+#define CHECK(test) do { if (!(test)) { fprintf(stderr, "direct test failed at %d: %s\n", __LINE__, #test); return __LINE__; } } while (0)
+#define EXPECT_ERROR(statement) do { \
+  int caught = 0, before = throws_created(); \
+  @autoreleasepool { \
+    __objc3_do { statement; CHECK(0); } \
+    __objc3_catch(id<Error> error) { CHECK(error); caught = 1; } \
+  } \
+  CHECK(caught && throws_created() == before + 1 && throws_destroyed() == throws_created()); \
+} while (0)
+static pthread_barrier_t start;
+static void *initialize_thread(void *unused) {
+  pthread_barrier_wait(&start);
+  @autoreleasepool {
+    for (int i = 0; i != 32; ++i) {
+      CallStrong value = __objc3_try_force([DirectCalls echo:__objc3_none(id) fail:0]);
+      if (__objc3_has_value(value)) return (void *)1;
+    }
+  }
+  return (void *)0;
+}
+int main(int argc, char **argv) {
+  if (argc > 1) {
+    if (!strcmp(argv[1], "force-class")) __objc3_try_force([DirectCalls echo:__objc3_none(id) fail:1]);
+    if (!strcmp(argv[1], "force-instance")) {
+      DirectCalls *receiver = [DirectCalls new];
+      __objc3_try_force([receiver echo:__objc3_none(id) key:40 fail:1]);
+    }
+    return 99;
+  }
+  CHECK(direct_initialized() == 0);
+  CHECK(!class_getClassMethod(objc_getClass("DirectCalls"), sel_registerName("echo:fail:")));
+  CHECK(!class_getInstanceMethod(objc_getClass("DirectCalls"), sel_registerName("echo:key:fail:")));
+  pthread_t threads[4];
+  CHECK(!pthread_barrier_init(&start, 0, 4));
+  for (int i = 0; i != 4; ++i) CHECK(!pthread_create(&threads[i], 0, initialize_thread, 0));
+  for (int i = 0; i != 4; ++i) { void *result = 0; CHECK(!pthread_join(threads[i], &result) && !result); }
+  CHECK(!pthread_barrier_destroy(&start) && direct_initialized() == 1);
+  CallStrong source = call_make(0);
+  CallStrong result = __objc3_try_force([DirectCalls echo:source fail:0]);
+  source = __objc3_none(id);
+  CHECK(!call_destroyed(0) && __objc3_has_value(result));
+  result = __objc3_none(id); CHECK(call_destroyed(0) == 1);
+  DirectCalls *receiver = [DirectCalls new];
+  CHECK([receiver command]);
+  source = call_make(1);
+  result = __objc3_try_force([receiver echo:source key:2 fail:0]);
+  source = __objc3_none(id);
+  CHECK(!call_destroyed(1) && __objc3_has_value(result));
+  EXPECT_ERROR(result = __objc3_try([receiver echo:result key:2 fail:1]));
+  CHECK(call_destroyed(2) == 1 && !call_destroyed(1) && __objc3_has_value(result));
+  EXPECT_ERROR(__objc3_try([DirectCalls echo:__objc3_none(id) fail:1]));
+  result = __objc3_none(id); CHECK(call_destroyed(1) == 2);
+  DirectCalls *missing = (id)0;
+  result = __objc3_try_force([missing echo:call_make(3) key:4 fail:1]);
+  CHECK(!__objc3_has_value(result) && call_destroyed(3) == 1 && !call_destroyed(4));
+  __objc3_try_force([missing echo:call_make(5) key:4 fail:1]); CHECK(call_destroyed(5) == 1);
+  id object = call_object(6);
+  CallWeak weak = __objc3_some(id __weak, object);
+  CallWeak copy = __objc3_try_force([receiver weak:weak fail:0]);
+  EXPECT_ERROR(copy = __objc3_try([receiver weak:weak fail:1]));
+  object = (id)0; CHECK(call_destroyed(6) == 1 && __objc3_has_value(copy));
+  copy = __objc3_try_force([missing weak:copy fail:1]); CHECK(!__objc3_has_value(copy));
+  object = call_object(7);
+  CallMixed mixed = __objc3_err(id, id __weak, object);
+  CallMixed mixedCopy = __objc3_try_force([receiver mixed:mixed fail:0]);
+  EXPECT_ERROR(mixedCopy = __objc3_try([receiver mixed:mixed fail:1]));
+  object = (id)0; CHECK(call_destroyed(7) == 1 && !__objc3_is_ok(mixedCopy));
+  mixedCopy = __objc3_try_force([missing mixed:__objc3_ok(id, id __weak, call_object(8)) fail:1]);
+  CHECK(!__objc3_is_ok(mixedCopy) && call_destroyed(8) == 1);
+  __objc3_try_force([missing mixed:mixedCopy fail:1]);
+  CallBlock block = call_block(call_object(9));
+  CallBlock blockCopy = __objc3_try_force([receiver block:block fail:0]);
+  EXPECT_ERROR(blockCopy = __objc3_try([receiver block:block fail:1]));
+  block = __objc3_none(CallAction); CHECK(!call_destroyed(9));
+  blockCopy = __objc3_none(CallAction); CHECK(call_destroyed(9) == 1);
+  @autoreleasepool {
+    @try { __objc3_try_force([receiver native:call_make(10)]); CHECK(0); }
+    @catch(id error) { CHECK(error && call_destroyed(10) == 1 && call_destroyed(11) == 1); }
+  }
+  CHECK(call_destroyed(12) == 1);
+#ifdef __cplusplus
+  result = call_make(13);
+  try { result = __objc3_try_force([receiver cleanup:14]); CHECK(0); }
+  catch (int error) { CHECK(error == 71 && call_destroyed(14) == 1 && !call_destroyed(13)); }
+  result = __objc3_none(id); CHECK(call_destroyed(13) == 1);
+#endif
+  CHECK(direct_initialized() == 1 && throws_created() == throws_destroyed());
+  return 0;
+}

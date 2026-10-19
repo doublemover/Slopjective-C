@@ -21,7 +21,7 @@ CompileRequest ModuleRequest(const fs::path &input, const std::string &name,
   request.language = BaseLanguage::ObjectiveC;
   request.objc3 = true;
   request.target_triple = "x86_64-unknown-linux-gnu";
-  request.objc_runtime = "gnustep-2.0";
+  request.objc_runtime = "gnustep-2.2";
   request.arguments = {"-std=c17"};
   request.emit_semantic_interface = true;
   request.module_name = name;
