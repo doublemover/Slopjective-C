@@ -50,6 +50,14 @@ ABI dependency, matching libraries/resource headers, libobjc2, the C embedding
 API, CMake targets, source examples, licenses and standalone verification and
 installation tools.
 
+SDK publication retains `qualified-archive.json` after every installed gate and
+archive check passes. It reclaims the completed build candidate before extracting
+the archive into the installation store. Retrying an interrupted installation
+resumes that exact verified archive without recompiling or requalifying; changed
+source input identities start a separate build. Checksums and candidate ownership
+are checked before reclamation. The [recovery evidence](../../docs/support/linux_sdk_publication_recovery.json)
+records a real archive installation after an injected interruption.
+
 ## Change the fork
 
 The six canonical patches define the extension source. A development checkout

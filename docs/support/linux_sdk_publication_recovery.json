@@ -1,0 +1,21 @@
+{
+  "status": "PASS",
+  "archive_sha256": "896ca0879b7d724fd5cb2107bcc17f775ea554f0dd8ccb1d1056db51d677ee65",
+  "seal_sha256": "a17afa7aec67d5d904f492624458a022197acff5e4c7c2355f7f2a1e26e0309a",
+  "candidate_reclaimed_before_install": true,
+  "resumed_after_interruption": true,
+  "full_archive_installed_and_verified": true,
+  "compiler_executed": true,
+  "requalified": false,
+  "elapsed_seconds": 6.583848,
+  "schema": "objc3c.linux-sdk-publication-recovery.v1",
+  "product_implementation_commit": "2a0db6971bde0c2d3996760e638e367808a88350",
+  "tests": {
+    "targeted_publication_installer_and_package_tests": 37,
+    "publication_fault_cases": 7
+  },
+  "evidence": {
+    "live_log_sha256": "044a4cb539607bcb04269cd43087f85e267127669c6fc16a4ef185283904ec1b",
+    "scope": "Real qualified ABI 12 archive installed after an injected interruption; compiler executed. Native product qualification remains bound to its original implementation."
+  }
+}
