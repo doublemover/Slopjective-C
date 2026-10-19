@@ -105,9 +105,10 @@ The next implementation sequence is:
    including ownership and module interface identity. Add public syntax and
    promote its feature predicates only after that complete contract passes the
    installed Linux suite.
-3. Publish immutable packages from the qualified interface and object inventory,
-   with explicit ownership projections and consumer verification. Keep registry
-   transport separate from content identity and installation correctness.
+3. Qualify [immutable packages](linux_immutable_packages.md) from the native
+   interface and object inventory, including source-free consumer execution and
+   explicit mode locks. Add ownership projections as a separate bounded contract;
+   keep registry transport separate from content identity and installation.
 
 ## Installed module foundation and structured concurrency
 

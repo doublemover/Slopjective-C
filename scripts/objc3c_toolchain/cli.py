@@ -14,6 +14,9 @@ from .core import ToolchainError, build_plan, prepare, seal_development, verify_
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="python -m scripts.objc3c_toolchain")
     commands = parser.add_subparsers(dest="command", required=True)
+    binary = commands.add_parser("packages", help="publish, install or consume immutable offline packages")
+    binary.add_argument("--sdk-root", type=Path)
+    binary.add_argument("arguments", nargs=argparse.REMAINDER)
     packages = commands.add_parser("build-packages", help="build a locked offline source-package workspace")
     packages.add_argument("--workspace", type=Path, required=True)
     packages.add_argument("--output-dir", type=Path, required=True)
@@ -64,7 +67,11 @@ def main(argv: list[str] | None = None) -> int:
                       help="native build host (defaults to the current host)")
     args = parser.parse_args(argv)
     try:
-        if args.command == "build-packages":
+        if args.command == "packages":
+            from .binary_packages import main as package_main
+            arguments = (["--sdk-root", str(args.sdk_root)] if args.sdk_root else []) + args.arguments
+            return package_main(arguments) or 0
+        elif args.command == "build-packages":
             import os
             from .source_graph import build_graph
             sdk = args.sdk_root or Path(os.environ.get('OBJC3C_SDK_ROOT', str(Path.cwd() / 'out/toolchains/linux-sdk/current')))

@@ -231,6 +231,11 @@ interchange to bounded global APIs and public data records, with exact language,
 standard, ownership and linkage identity. C++20 and C++23 consumers cover C/C++
 linkage, overloads, owned records, source imports and ThinLTO.
 
+The [immutable package workflow](docs/roadmap/linux_immutable_packages.md) publishes
+verified native dependency closures into local content-addressed stores. Consumers
+compile against relocated installations after producer sources are removed, with
+exact SDK, language, standard and ownership locks.
+
 Public Optional/Result and synchronous throws syntax, managed payload
 generalization, async/await and actors still require further implementation and qualification. Private native
 fixtures do not make these public features available. Generic callable metadata

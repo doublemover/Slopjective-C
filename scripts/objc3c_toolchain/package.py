@@ -160,7 +160,9 @@ def package_sdk(repo: Path, prefix: Path, validation_report: Path, cache_dir: Pa
     builder = prefix / 'share/objc3c/source-build'
     builder.mkdir(parents=True, exist_ok=True)
     for original, installed in (('source_graph.py', 'build.py'), ('sdk_example.py', 'sdk_example.py'),
-                                ('qualify_source_graph.py', 'qualify.py')):
+                                ('qualify_source_graph.py', 'qualify.py'),
+                                ('binary_packages.py', 'binary_packages.py'),
+                                ('qualify_binary_packages.py', 'qualify_binary_packages.py')):
         shutil.copyfile(Path(__file__).with_name(original), builder / installed)
     shutil.copytree(repo / 'tests/clang_foundation/source_graph',
                     prefix / 'share/objc3c/examples/packages')
@@ -168,6 +170,11 @@ def package_sdk(repo: Path, prefix: Path, validation_report: Path, cache_dir: Pa
     launcher.write_text('#!/bin/sh\nset -eu\n'
         'prefix=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)\n'
         'exec python3 -B "$prefix/share/objc3c/source-build/build.py" --sdk-root "$prefix" "$@"\n')
+    launcher.chmod(0o755)
+    launcher = prefix / 'bin/objc3c-package'
+    launcher.write_text('#!/bin/sh\nset -eu\n'
+        'prefix=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)\n'
+        'exec python3 -B "$prefix/share/objc3c/source-build/binary_packages.py" --sdk-root "$prefix" "$@"\n')
     launcher.chmod(0o755)
     import subprocess
     with tempfile.TemporaryDirectory(prefix='objc3-source-sample-') as temporary:
@@ -203,6 +210,7 @@ def package_sdk(repo: Path, prefix: Path, validation_report: Path, cache_dir: Pa
     from .host import resource_limits
     from .qualify_source_modules import qualify
     from .qualify_source_graph import qualify as qualify_graph
+    from .qualify_binary_packages import qualify as qualify_binary
 
     manifest = json.loads((repo / 'toolchains/llvm/manifest.json').read_text())
     budget = min(4, resource_limits(manifest['build'])['compile_jobs'])
@@ -213,6 +221,7 @@ def package_sdk(repo: Path, prefix: Path, validation_report: Path, cache_dir: Pa
     tasks = {
         'installed_source_modules': partial(qualify, prefix, validation_report.parent / 'installed-source-modules'),
         'installed_source_graph': partial(qualify_graph, prefix, validation_report.parent / 'installed-source-graph', jobs=graph_jobs),
+        'installed_binary_packages': partial(qualify_binary, prefix, validation_report.parent / 'installed-binary-packages'),
     }
     suites = (
         ('installed_carrier_calls', 'carrier-calls', {'executions': 9, 'commands': 47}),
