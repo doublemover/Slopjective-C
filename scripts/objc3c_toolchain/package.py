@@ -119,6 +119,18 @@ def package_sdk(repo: Path, prefix: Path, validation_report: Path, cache_dir: Pa
     shutil.copyfile(repo / 'tests/clang_foundation/native_package/consumer-source.m', sources / 'main.m')
     shutil.copyfile(Path(__file__).with_name('sdk_example.py'), example / 'build.py')
     shutil.copyfile(Path(__file__).with_name('qualify_source_modules.py'), example / 'qualify.py')
+    builder = prefix / 'share/objc3c/source-build'
+    builder.mkdir(parents=True, exist_ok=True)
+    for original, installed in (('source_graph.py', 'build.py'), ('sdk_example.py', 'sdk_example.py'),
+                                ('qualify_source_graph.py', 'qualify.py')):
+        shutil.copyfile(Path(__file__).with_name(original), builder / installed)
+    shutil.copytree(repo / 'tests/clang_foundation/source_graph',
+                    prefix / 'share/objc3c/examples/packages')
+    launcher = prefix / 'bin/objc3c-build'
+    launcher.write_text('#!/bin/sh\nset -eu\n'
+        'prefix=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)\n'
+        'exec python3 "$prefix/share/objc3c/source-build/build.py" --sdk-root "$prefix" "$@"\n')
+    launcher.chmod(0o755)
     import subprocess
     with tempfile.TemporaryDirectory(prefix='objc3-source-sample-') as temporary:
         subprocess.run([os.sys.executable, '-B', str(example / 'build.py'), '--output-dir', temporary,
@@ -151,6 +163,8 @@ def package_sdk(repo: Path, prefix: Path, validation_report: Path, cache_dir: Pa
     (prefix / MANIFEST).chmod(0o644)
     from .qualify_source_modules import qualify
     module_evidence = qualify(prefix, validation_report.parent / 'installed-source-modules')
+    from .qualify_source_graph import qualify as qualify_graph
+    graph_evidence = qualify_graph(prefix, validation_report.parent / 'installed-source-graph')
     cache_dir.mkdir(parents=True, exist_ok=True)
     archive = cache_dir / (source['build_id'] + '-linux-x86_64-' + data['seal_sha256'][:16] + '.tar.zst')
     if archive.exists():
@@ -177,7 +191,7 @@ def package_sdk(repo: Path, prefix: Path, validation_report: Path, cache_dir: Pa
     receipt = {'archive': str(archive), 'archive_sha256': _file_hash(archive),
                'archive_bytes': archive.stat().st_size, 'seal_sha256': data['seal_sha256'],
                'source_build_id': source['build_id'],
-               'installed_source_modules': module_evidence}
+               'installed_source_modules': module_evidence, 'installed_source_graph': graph_evidence}
     archive.with_suffix('.json').write_text(json.dumps(receipt, indent=2) + '\n')
     return {**receipt, 'cache_hit': False}
 

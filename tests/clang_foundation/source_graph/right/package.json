@@ -1,0 +1,14 @@
+{
+  "schema": "objc3c.source-package.v1",
+  "name": "fixture.Right",
+  "package": "right-v1",
+  "source": "module.m",
+  "ownership": "arc",
+  "dependencies": [
+    {
+      "name": "fixture.Leaf",
+      "package": "leaf-v1",
+      "visibility": "private"
+    }
+  ]
+}
