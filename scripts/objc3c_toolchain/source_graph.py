@@ -12,6 +12,10 @@ import subprocess
 import sys
 import time
 
+# The standalone builder imports helpers from a sealed, possibly user-owned
+# SDK. Python bytecode caches must never modify that installation.
+sys.dont_write_bytecode = True
+
 if __package__:
     from .sdk_example import dependencies, digest, environment, hashes, reusable, write_json
 else:

@@ -129,7 +129,7 @@ def package_sdk(repo: Path, prefix: Path, validation_report: Path, cache_dir: Pa
     launcher = prefix / 'bin/objc3c-build'
     launcher.write_text('#!/bin/sh\nset -eu\n'
         'prefix=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)\n'
-        'exec python3 "$prefix/share/objc3c/source-build/build.py" --sdk-root "$prefix" "$@"\n')
+        'exec python3 -B "$prefix/share/objc3c/source-build/build.py" --sdk-root "$prefix" "$@"\n')
     launcher.chmod(0o755)
     import subprocess
     with tempfile.TemporaryDirectory(prefix='objc3-source-sample-') as temporary:

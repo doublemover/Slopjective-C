@@ -125,3 +125,18 @@ def test_output_cannot_modify_source_workspace(workspace, tmp_path):
     sdk.mkdir()
     with pytest.raises(ValueError, match='separate'):
         build_graph(sdk, workspace, workspace.parent / 'build')
+
+
+def test_standalone_builder_does_not_write_bytecode_into_sdk(tmp_path):
+    import os
+    import subprocess
+    import sys
+    helper_root = Path(__file__).resolve().parents[2] / 'scripts/objc3c_toolchain'
+    for source, destination in [('source_graph.py', 'build.py'), ('sdk_example.py', 'sdk_example.py')]:
+        shutil.copyfile(helper_root / source, tmp_path / destination)
+    environment = dict(os.environ)
+    environment.pop('PYTHONDONTWRITEBYTECODE', None)
+    result = subprocess.run([sys.executable, str(tmp_path / 'build.py'), '--help'],
+                            env=environment, capture_output=True, text=True, timeout=30)
+    assert result.returncode == 0, result.stderr
+    assert not (tmp_path / '__pycache__').exists()
