@@ -130,6 +130,37 @@ index d638d9772..24208e04d 100644
  		}
  		abort();
  	}
+diff --git a/fast_paths.m b/fast_paths.m
+index ec2f646a2..7bc3fbbb1 100644
+--- a/fast_paths.m
++++ b/fast_paths.m
+@@ -1,4 +1,5 @@
+ #include "objc/runtime.h"
++#include "objc/message.h"
+ #include "class.h"
+ 
+ typedef struct _NSZone NSZone;
+@@ -25,7 +26,9 @@ objc_alloc(Class cls)
+ 	{
+ 		return class_createInstance(cls, 0);
+ 	}
+-    return [cls alloc];
++    // Do not let the GNUstep 2.2 compiler fold this fallback back into
++    // objc_alloc itself.
++    return ((id(*)(id, SEL))objc_msgSend)((id)cls, @selector(alloc));
+ }
+ 
+ /**
+@@ -47,7 +50,8 @@ objc_allocWithZone(Class cls)
+ 	{
+ 		return class_createInstance(cls, 0);
+ 	}
+-	return [cls allocWithZone: NULL];
++	return ((id(*)(id, SEL, NSZone*))objc_msgSend)(
++		(id)cls, @selector(allocWithZone:), NULL);
+ }
+ 
+ /**
 diff --git a/objcxx_eh.cc b/objcxx_eh.cc
 index 8ef5baf33..67576d48e 100644
 --- a/objcxx_eh.cc
