@@ -1,6 +1,6 @@
 # Linux runtime carrier calls
 
-Extension ABI revision 8 extends the [owned carrier call contract](linux_managed_call_abi.md)
+Extension ABI revision 9 extends the [owned carrier call contract](linux_managed_call_abi.md)
 through Objective-C messages and Block invocation on Linux x86-64, GNUstep 2.2,
 with ARC and the ordinary nonvariadic C calling convention. It preserves
 caller-owned argument snapshots and fresh caller-owned result storage. Native

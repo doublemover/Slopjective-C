@@ -184,7 +184,7 @@ replacement, weak zeroing, Blocks, sequencing and native exceptions in both
 Objective-C and Objective-C++ at O0 and O2.
 
 Linux ARC functions now pass and return these direct carriers by value under
-extension ABI revision 8. The [recursive carrier contract](docs/roadmap/linux_recursive_carriers.md)
+extension ABI revision 9. The [recursive carrier contract](docs/roadmap/linux_recursive_carriers.md)
 extends ownership through nested Optional/Result values, managed match snapshots
 and optionalization of managed results. Each argument gets a caller-owned snapshot when it is
 evaluated; that snapshot survives later argument evaluation and is destroyed at
@@ -257,3 +257,8 @@ Use a separate output report when checking those budgets.
 
 The [forward development milestones](docs/roadmap/linux_forward_development.md)
 identify the remaining public-language, module, concurrency and architecture work.
+
+The [managed array contract](docs/roadmap/linux_managed_arrays.md) adds local
+multidimensional carrier arrays, initialization failure cleanup, and weak/unsafe
+Block payloads under ABI 9. Its installed qualification also checks reverse
+partial destruction, imports, PCH, ThinLTO and rejected storage boundaries.

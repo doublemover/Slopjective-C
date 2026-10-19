@@ -80,7 +80,7 @@ replacement and exact self-aliasing. C++ assignment preserves the destination
 lvalue; snapshots clean up when LHS evaluation throws. Installed O0/O2 witnesses
 and live editor probes cover both languages.
 
-The Linux direct-carrier call contract uses extension ABI revision 8. Ordinary
+The Linux direct-carrier call contract uses extension ABI revision 9. Ordinary
 functions, callbacks and C++ members pass caller-owned argument snapshots by
 pointer; callees borrow and may replace those snapshots. Snapshots clean up at
 the caller's full-expression boundary, including later-argument and callee

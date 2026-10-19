@@ -1,6 +1,6 @@
 # Linux managed typed-error calls
 
-Extension ABI revision 8 composes direct ARC Optional/Result parameters and
+Extension ABI revision 9 composes direct ARC Optional/Result parameters and
 results with the private synchronous typed-error transport on Linux x86-64,
 GNUstep 2.2. Providers, consumers, PCH and semantic interfaces must be rebuilt
 with one sealed SDK. Public Optional/Result/throws predicates remain reserved.
