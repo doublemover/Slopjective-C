@@ -1636,10 +1636,10 @@ index 000000000..2ae11a4ba
 +#endif
 diff --git a/clang/lib/CodeGen/CGObjC3ArcCarriers.cpp b/clang/lib/CodeGen/CGObjC3ArcCarriers.cpp
 new file mode 100644
-index 000000000..027f8eacf
+index 000000000..fea00f408
 --- /dev/null
 +++ b/clang/lib/CodeGen/CGObjC3ArcCarriers.cpp
-@@ -0,0 +1,681 @@
+@@ -0,0 +1,682 @@
 +//===--- CGObjC3ArcCarriers.cpp - ARC local carrier lowering --*- C++ -*-===//
 +// Private native ARC operations for the first direct-local carrier slice.
 +#include "CGObjC3ArcCarriers.h"
@@ -2212,7 +2212,8 @@ index 000000000..027f8eacf
 +    // reference and pointer views use the same active-tag read.
 +    Storage = CGF.EmitLValue(Operand).getAddress();
 +  } else {
-+    if (!isa<CallExpr, ObjCMessageExpr>(Operand->IgnoreParenImpCasts()) ||
++    if (!isa<CallExpr, ObjCMessageExpr, ObjC3TryExpr>(
++            Operand->IgnoreParenImpCasts()) ||
 +        !supportsObjC3CarrierARCCallABI(CGF.CGM, CarrierType))
 +      return Fail();
 +    Storage = CGF.CreateMemTemp(CarrierType, "objc3.arc.query.return");
@@ -13397,10 +13398,10 @@ index 000000000..baa96e292
 +#endif
 diff --git a/clang/test/ObjC3/CodeGen/carrier-typed-error-abi.m b/clang/test/ObjC3/CodeGen/carrier-typed-error-abi.m
 new file mode 100644
-index 000000000..8535eadad
+index 000000000..7f1d0bae4
 --- /dev/null
 +++ b/clang/test/ObjC3/CodeGen/carrier-typed-error-abi.m
-@@ -0,0 +1,52 @@
+@@ -0,0 +1,58 @@
 +// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c -std=c17 -fblocks -fexceptions -fobjc-arc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.0 -fobjc-arc -emit-llvm -o - %s | FileCheck %s
 +// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c++ -std=c++20 -fblocks -fexceptions -fcxx-exceptions -fobjc-arc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.0 -fobjc-arc -emit-llvm -o - %s | FileCheck %s
 +// REQUIRES: x86-registered-target
@@ -13434,6 +13435,12 @@ index 000000000..8535eadad
 +// CHECK: {{call|invoke}} void {{.*}}value
 +// CHECK: {{call|invoke}} void @llvm.trap
 +// CHECK: unreachable
++int query(Strong input) { return __objc3_has_value(__objc3_try_force(value(input, 0))); }
++// CHECK-LABEL: define{{.*}} i32 {{.*}}query
++// CHECK: objc3.arc.query.return
++// CHECK: {{call|invoke}} void {{.*}}value
++// CHECK: {{call|invoke}} void @llvm.trap
++// CHECK: objc3.carrier.tag
 +typedef Mixed (^Callback)(Mixed) __objc3_throws(id<Error>);
 +Mixed invoke(Callback callback, Mixed input) __objc3_throws(id<Error>) {
 +  return __objc3_try(callback(input));

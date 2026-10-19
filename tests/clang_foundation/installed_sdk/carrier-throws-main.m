@@ -15,6 +15,22 @@
   CHECK(caught && throws_created() == before + 1 && throws_destroyed() == throws_created()); \
 } while (0)
 
+static int tag_result(CallStrong value, int key, int fail) __objc3_throws(id<Error>) {
+  return __objc3_has_value(__objc3_try(throws_forward(value, key, fail)));
+}
+static int later_argument(void) __objc3_throws(id<Error>) {
+  return __objc3_try(throws_scalar(__objc3_none(id), 36, 1));
+}
+static CallStrong argument_failure(void) __objc3_throws(id<Error>) {
+  return __objc3_try(throws_value(call_make(35), 37, __objc3_try(later_argument())));
+}
+#ifdef __cplusplus
+template <typename Callback>
+static CallStrong template_forward(Callback callback, CallStrong value, int fail)
+    __objc3_throws(id<Error>) {
+  return __objc3_try(callback(value, 39, fail));
+}
+#endif
 static int functions(void) {
   CallStrong source = call_make(0);
   CallStrong result = __objc3_try_force(throws_forward(source, 1, 0));
@@ -49,6 +65,13 @@ static int functions(void) {
   EXPECT_ERROR(__objc3_try(throws_many(source, source, source, source, source, source, source, 1)));
   source = __objc3_none(id); result = __objc3_none(id);
   CHECK(call_destroyed(10) == 1);
+  CHECK(__objc3_has_value(__objc3_try_force(throws_forward(call_make(37), 38, 0))));
+  CHECK(call_destroyed(37) == 1);
+  CHECK(__objc3_try_force(tag_result(__objc3_none(id), 38, 0)) == 0);
+  EXPECT_ERROR(__objc3_try(tag_result(__objc3_none(id), 38, 1)));
+  CHECK(call_destroyed(38) == 1);
+  EXPECT_ERROR(__objc3_try(argument_failure()));
+  CHECK(call_destroyed(35) == 1 && call_destroyed(36) == 1);
   return 0;
 }
 static int leaves(void) {
@@ -171,6 +194,10 @@ static int cpp_calls(void) {
   CHECK(call_destroyed(34) == 1);
   result = __objc3_none(id);
   CHECK(call_destroyed(31) == 1);
+  result = __objc3_try_force(template_forward(throws_forward, __objc3_none(id), 0));
+  CHECK(!__objc3_has_value(result));
+  EXPECT_ERROR(__objc3_try(template_forward(throws_forward, __objc3_none(id), 1)));
+  CHECK(call_destroyed(39) == 1);
   return 0;
 }
 #endif
