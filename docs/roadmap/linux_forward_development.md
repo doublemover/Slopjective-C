@@ -1,7 +1,7 @@
 # Linux forward development
 
 The active product is the Clang-only Linux x86-64 SDK. The
-[acceptance receipt](../support/linux_cxx_interface_acceptance.json) identifies its
+[acceptance receipt](../support/linux_explicit_source_graph_acceptance.json) identifies its
 exact archive, source, native execution and fresh-distribution evidence. Tool
 versions come from [the manifest](../../toolchains/llvm/manifest.json); public
 language claims come from [the capability authority](../../schemas/objc3-language-capabilities.json).
@@ -96,16 +96,20 @@ semantic interface identity; and live Linux editor behavior. Extend the installe
 imports/managed-values/errors/cleanup sample as the public syntax becomes ready.
 Private migration intrinsics do not justify a public feature claim.
 
+The [explicit source-package milestone](linux_source_packages.md) now qualifies
+all eight supported language/standard/ownership combinations at O0/O2. Its 112
+builds and 32 rejections cover transitive identity, reuse, visibility and owned
+record returns through re-exported Objective-C++ ARC packages. V2 manifests
+require explicit modes and reject v1 input. The active receipt identifies the
+exact implementation and archive.
+
 The next implementation sequence is:
 
-1. Qualify explicit C++ source-package graphs on the bounded
-   [C++ semantic interface contract](linux_cxx_interfaces.md), with exact
-   language, standard, ownership and dependency identity locks.
-2. Finish the bounded public Optional/Result and synchronous throws contract,
+1. Finish the bounded public Optional/Result and synchronous throws contract,
    including ownership and module interface identity. Add public syntax and
    promote its feature predicates only after that complete contract passes the
    installed Linux suite.
-3. Publish immutable packages from the qualified interface and object inventory,
+2. Publish immutable packages from the qualified interface and object inventory,
    with explicit ownership projections and consumer verification. Keep registry
    transport separate from content identity and installation correctness.
 
@@ -121,7 +125,8 @@ archive qualification runs this suite as an ordinary user.
 The offline source-package builder now resolves explicit multi-package identity
 locks, public/private transitive visibility and a shared dependency closure. It
 retains content-verified compilation records and a reproducible package
-installation inventory; the installed suite covers ARC/MRC at O0/O2. See the
+installation inventory; the installed suite covers Objective-C17 and Objective-C++20/23 ARC/MRC, plus
+C++20/23 without Objective-C ownership, at O0/O2. See the
 [source-package contract](linux_source_packages.md). Next, define public module
 syntax together with its language and interface contract, then add immutable
 package publication and explicit cross-ownership adaptation. The

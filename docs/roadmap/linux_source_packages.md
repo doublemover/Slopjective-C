@@ -115,7 +115,7 @@ and reduces the number of other concurrent gates accordingly.
 A failed case joins the remaining workers and replaces any prior success receipt
 with a failure report.
 
-The [acceptance receipt](../support/linux_source_graph_acceptance.json) records
+The [acceptance receipt](../support/linux_explicit_source_graph_acceptance.json) records
 the exact shipped archive, implementation hashes, test cases and distribution
 results. Its public workflow check also verifies cold/warm compilation reuse
 and an identical linked executable digest.
