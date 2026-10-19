@@ -11059,7 +11059,7 @@ index 000000000..0edd3be8c
 +// CHECK: ret i1
 diff --git a/clang/test/ObjC3/CodeGen/carrier-debug-info-deferred.c b/clang/test/ObjC3/CodeGen/carrier-debug-info-deferred.c
 new file mode 100644
-index 000000000..07435cb48
+index 000000000..ab1565281
 --- /dev/null
 +++ b/clang/test/ObjC3/CodeGen/carrier-debug-info-deferred.c
 @@ -0,0 +1,10 @@
@@ -11072,11 +11072,11 @@ index 000000000..07435cb48
 +typedef __objc3_optional(struct Forward) DeferredOptional;
 +void debug_deferred(DeferredOptional *value) {}
 +
-+// CHECK: error: ObjC3 carrier type '__objc3_optional(struct Forward)' has no materialized native representation for debug information
++// CHECK: error: ObjC3 carrier type 'Optional(struct Forward)' has no materialized native representation for debug information
 \ No newline at end of file
 diff --git a/clang/test/ObjC3/CodeGen/carrier-debug-info.c b/clang/test/ObjC3/CodeGen/carrier-debug-info.c
 new file mode 100644
-index 000000000..3cc9c6fd8
+index 000000000..b41d6a565
 --- /dev/null
 +++ b/clang/test/ObjC3/CodeGen/carrier-debug-info.c
 @@ -0,0 +1,39 @@
@@ -11105,20 +11105,20 @@ index 000000000..3cc9c6fd8
 +  consume_storage(result_pointer);
 +}
 +
-+// CHECK-DAG: !DIDerivedType(tag: DW_TAG_typedef, name: "__objc3_optional(int)"{{.*}}baseType: ![[OPTIONAL:[0-9]+]]
++// CHECK-DAG: !DIDerivedType(tag: DW_TAG_typedef, name: "Optional(int)"{{.*}}baseType: ![[OPTIONAL:[0-9]+]]
 +// CHECK-DAG: ![[OPTIONAL]] = distinct !DICompositeType(tag: DW_TAG_structure_type,{{.*}}elements: ![[OPT_FIELDS:[0-9]+]]
 +// CHECK-DAG: !DIDerivedType(tag: DW_TAG_member, name: "__objc3_payload"{{.*}}baseType: !{{.*}}size:{{.*}}offset:
 +// CHECK-DAG: !DIDerivedType(tag: DW_TAG_member, name: "__objc3_state"{{.*}}baseType: !{{.*}}size:
 +// CHECK-DAG: !DIDerivedType(tag: DW_TAG_member, name: "__objc3_value"{{.*}}baseType: !{{.*}}size:
-+// CHECK-DAG: !DIDerivedType(tag: DW_TAG_typedef, name: "__objc3_optional(const int)"{{.*}}baseType: !
-+// CHECK-DAG: !DIDerivedType(tag: DW_TAG_typedef, name: "__objc3_result(int, long)"{{.*}}baseType: ![[RESULT:[0-9]+]]
++// CHECK-DAG: !DIDerivedType(tag: DW_TAG_typedef, name: "Optional(const int)"{{.*}}baseType: !
++// CHECK-DAG: !DIDerivedType(tag: DW_TAG_typedef, name: "Result(int, long)"{{.*}}baseType: ![[RESULT:[0-9]+]]
 +// CHECK-DAG: ![[RESULT]] = distinct !DICompositeType(tag: DW_TAG_structure_type,{{.*}}elements: ![[RESULT_FIELDS:[0-9]+]]
 +// CHECK-DAG: !DIDerivedType(tag: DW_TAG_member, name: "__objc3_success"{{.*}}baseType: !{{.*}}size:
 +// CHECK-DAG: !DIDerivedType(tag: DW_TAG_member, name: "__objc3_error"{{.*}}baseType: !{{.*}}size:
 +// CHECK-DAG: !DIDerivedType(tag: DW_TAG_pointer_type, baseType: !
 +// CHECK-DAG: !DILocalVariable(name: "optional_local"{{.*}}type: !
 +// CHECK-DAG: !DILocalVariable(name: "result_local"{{.*}}type: !
-+// CHECK-DAG: !DIDerivedType(tag: DW_TAG_typedef, name: "__objc3_optional(__objc3_optional(int))"{{.*}}baseType: !
++// CHECK-DAG: !DIDerivedType(tag: DW_TAG_typedef, name: "Optional(Optional(int))"{{.*}}baseType: !
 diff --git a/clang/test/ObjC3/CodeGen/carrier-expression-adversarial.c b/clang/test/ObjC3/CodeGen/carrier-expression-adversarial.c
 new file mode 100644
 index 000000000..3df79e585

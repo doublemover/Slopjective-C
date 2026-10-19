@@ -2,7 +2,7 @@
 #include "carrier-nested-call.h"
 typedef int (^CapturedState)(void);
 typedef NestedStrong (^CapturedValue)(void);
-typedef NestedStrong (^CapturedThrowing)(int, int) __objc3_throws(id<Error>);
+typedef NestedStrong (^CapturedThrowing)(int, int) throws(id<Error>);
 CapturedState capture_strong(int key);
 CapturedState capture_weak(id object);
 CapturedState capture_block_payload(int key);

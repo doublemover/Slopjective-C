@@ -56,9 +56,9 @@ _EDITOR_INPUTS = (
     _EDITOR_SOURCE,
     "scripts/objc3c_editor_tooling/lsp_session.py",
     "tests/tooling/fixtures/objc3_editor/qualification-cases.json",
-    "tests/tooling/fixtures/objc3_editor/reserved_intrinsics.m",
-    "tests/tooling/fixtures/objc3_editor/reserved_intrinsics.mm",
-    "tests/tooling/fixtures/objc3_editor/reserved_intrinsics.formatted",
+    "tests/tooling/fixtures/objc3_editor/public_core.m",
+    "tests/tooling/fixtures/objc3_editor/public_core.mm",
+    "tests/tooling/fixtures/objc3_editor/public_core.formatted",
 )
 _GENERATED_ROOTS = {"out", "temp", "tmp", "artifacts", "__pycache__"}
 

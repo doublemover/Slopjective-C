@@ -17,8 +17,8 @@ void rejected(void) { __block RecordStrong values[2]={record_value(0)}; (void)va
 struct __attribute__((packed)) PackedRecord { char c; RecordStrong value; };
 void rejected(void) { struct PackedRecord value={0,record_value(0)}; void (^block)(void)=^{(void)value.c;}; block(); }
 #elif CASE == 5
-typedef struct RecordPair (^ThrowingRecord)(void) __objc3_throws(id<Error>);
-void rejected(ThrowingRecord block) { (void)__objc3_try_force(block()); }
+typedef struct RecordPair (^ThrowingRecord)(void) throws(id<Error>);
+void rejected(ThrowingRecord block) { (void)tryForce(block()); }
 #elif CASE == 6
 __attribute__((objc_root_class))
 @interface VolatileCarrier { Class isa; volatile RecordStrong value; }

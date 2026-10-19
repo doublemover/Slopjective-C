@@ -1,6 +1,6 @@
 #include "carrier-record-call.h"
 struct RecordCall record_make(int key) {
-  struct RecordCall value={42,record_value(key),__objc3_none(id __weak)};
+  struct RecordCall value={42,record_value(key),None(id __weak)};
   return value;
 }
 struct RecordCall record_echo(struct RecordCall value) { return value; }

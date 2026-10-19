@@ -130,7 +130,7 @@ void WriteArtifact(const InterfaceEmissionArtifact &artifact,
 void TestCxxSourceImports(const std::filesystem::path &root) {
   auto provider =
       Producer("cpp-provider.mm", "fixture.Cxx", "pkg-cxx",
-               "typedef __objc3_optional(id) Strong; "
+               "typedef Optional(id) Strong; "
                "struct Owned { int marker; Strong value; }; "
                "extern \"C\" Owned c_echo(Owned); Owned cpp_echo(Owned); "
                "int overloaded(int); long overloaded(long);");
@@ -153,7 +153,7 @@ void TestCxxSourceImports(const std::filesystem::path &root) {
     consumer.module_imports = {Locked(built.interface_artifact->identity)};
     consumer.source_text =
         std::string(source_directed ? "@import fixture.Cxx;\n" : "") +
-        "int consume(void) { @fixture.Cxx.Owned input{42,__objc3_none(id)}; "
+        "int consume(void) { @fixture.Cxx.Owned input{42,None(id)}; "
         "auto output=@fixture.Cxx.cpp_echo(c_echo(input)); "
         "return output.marker + overloaded(42) + (int)overloaded(42L); }";
     auto imported = Compile(consumer);
@@ -196,7 +196,7 @@ int main() {
   auto a = Compile(Producer("provider-a.m", "fixture.A", "pkg-A",
       "typedef struct Error { int code; } Error;\n"
       "typedef Error ErrorAlias;\n"
-      "typedef __objc3_optional(int) MaybeInt;\n"));
+      "typedef Optional(int) MaybeInt;\n"));
   assert(a.success && a.interface_artifact && a.interface_artifact->success);
   WriteArtifact(*a.interface_artifact, root / "A.objc3i");
 
@@ -223,7 +223,7 @@ int main() {
   auto b = Producer("provider-b.m", "fixture.B", "pkg-B",
       "int answer(void);\n"
       "MaybeInt maybe_value(void);\n"
-      "int error_code(ErrorAlias value) __objc3_throws(ErrorAlias);\n");
+      "int error_code(ErrorAlias value) throws(ErrorAlias);\n");
   b.interface_search_paths = {root.string()};
   b.module_imports = {Locked(a.interface_artifact->identity, true)};
   auto built_b = Compile(b);
@@ -301,7 +301,7 @@ int main() {
   auto hidden_b = Producer("provider-b-private.m", "fixture.B.private",
                            "pkg-B-private",
       "int answer(void);\n"
-      "int error_code(ErrorAlias value) __objc3_throws(ErrorAlias);\n");
+      "int error_code(ErrorAlias value) throws(ErrorAlias);\n");
   hidden_b.interface_search_paths = {root.string()};
   hidden_b.module_imports = {Locked(a.interface_artifact->identity, false)};
   auto private_artifact = Compile(hidden_b);

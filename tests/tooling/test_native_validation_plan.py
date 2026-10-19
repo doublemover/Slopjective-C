@@ -86,7 +86,7 @@ def test_invalid_or_conflicting_selectors_fail_closed(inventory_repo: Path, filt
 
 
 def test_missing_unselected_input_is_not_hidden_by_filter(inventory_repo: Path) -> None:
-    (inventory_repo / "tests/tooling/fixtures/objc3_editor/reserved_intrinsics.mm").unlink()
+    (inventory_repo / "tests/tooling/fixtures/objc3_editor/public_core.mm").unlink()
     with pytest.raises(ValueError, match="input is missing"):
         build_plan(inventory_repo, node_ids=["native-package:provider"])
 

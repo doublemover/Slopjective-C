@@ -165,9 +165,12 @@ int main(void) {
 }
 ```
 
-Optional/Result, expression matches and typed error transport have bounded
-native implementation and migration fixtures. Objective-C++ ARC locals support
-explicit `__objc3_copy` and `__objc3_move` construction for direct strong, weak
+The [public carrier contract](docs/roadmap/linux_public_carriers.md) defines
+`Optional(T)`, `Result(T, E)`, constructors, tag queries and exhaustive `match`.
+The [synchronous error contract](docs/roadmap/linux_public_errors.md) adds
+`throws(E)`, checked calls and typed handlers. Native Clang implements their
+qualified ownership, ABI and cleanup operations. Objective-C++ ARC locals support
+explicit `copyValue` and `moveValue` construction for direct strong, weak
 and unsafe object payloads and strong Block payloads. Copies preserve their
 source; mutable strong and weak moves clear its payload while preserving the
 carrier tag. Moving a const strong payload copies it. Inactive arms are never
@@ -236,9 +239,9 @@ verified native dependency closures into local content-addressed stores. Consume
 compile against relocated installations after producer sources are removed, with
 exact SDK, language, standard and ownership locks.
 
-Public Optional/Result and synchronous throws syntax, managed payload
-generalization, async/await and actors still require further implementation and qualification. Private native
-fixtures do not make these public features available. Generic callable metadata
+Managed payload generalization, async/await and actors require further
+implementation and qualification. Private compiler fixtures do not establish
+additional public capabilities. Generic callable metadata
 and interfaces have explicit supported subsets; they do not establish complete
 language-evolution readiness.
 

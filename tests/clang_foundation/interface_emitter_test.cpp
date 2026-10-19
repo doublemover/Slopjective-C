@@ -83,15 +83,15 @@ void TestObjectiveCContainerRoundTrips() {
 
 void TestTypedEffectSemanticInterfacesRoundTrip() {
   for (const char *source : {
-      "void typed_api(void) __objc3_throws(int);\n",
-      "typedef void TypedCallback(void) __objc3_throws(int);\n",
-      "typedef void TypedCallback(void) __objc3_throws(int); "
+      "void typed_api(void) throws(int);\n",
+      "typedef void TypedCallback(void) throws(int);\n",
+      "typedef void TypedCallback(void) throws(int); "
       "void accepts_callback(TypedCallback *);\n",
-      "typedef void TypedCallback(void) __objc3_throws(int); "
+      "typedef void TypedCallback(void) throws(int); "
       "struct CallbackStorage { TypedCallback *callback; };\n",
-      "void accepts_inline_callback(void (*callback)(void) __objc3_throws(int));\n",
-      "@interface EffectWidget\n- (int)value __objc3_throws(int);\n@end\n",
-      "@protocol EffectProtocol\n+ (int)value:(int)x __objc3_throws(int);\n@end\n"}) {
+      "void accepts_inline_callback(void (*callback)(void) throws(int));\n",
+      "@interface EffectWidget\n- (int)value throws(int);\n@end\n",
+      "@protocol EffectProtocol\n+ (int)value:(int)x throws(int);\n@end\n"}) {
     auto ast = clang::tooling::buildASTFromCodeWithArgs(
         source,
         {"-x", "objective-c", "-std=c17", "-fobjc-version=3",
@@ -148,7 +148,7 @@ void TestManagedReturnOwnershipRoundTrips() {
   std::map<std::string, SemanticInterfaceSidecar> mrc_views;
   for (bool arc : {false, true})
   for (const char *attribute : {"ns_returns_retained", "ns_returns_not_retained", "ns_returns_autoreleased"}) {
-    const std::string source = "@protocol Error @end\nid managed(void) __objc3_throws(id<Error>) __attribute__((" +
+    const std::string source = "@protocol Error @end\nid managed(void) throws(id<Error>) __attribute__((" +
         std::string(attribute) + "));\n";
     std::vector<std::string> arguments = {"-x", "objective-c", "-std=c17",
         "-fobjc-version=3", "-fobjc-runtime=gnustep-2.2", "--target=x86_64-unknown-linux-gnu"};
@@ -248,8 +248,8 @@ void TestManagedIvarAndPropertyRoundTrip() {
   std::string previous;
   for (const char *access : {"@public", "@protected", "@private", "@package"}) {
     const std::string source =
-        "typedef __objc3_optional(id) Strong; "
-        "typedef __objc3_optional(id __weak) Weak; "
+        "typedef Optional(id) Strong; "
+        "typedef Optional(id __weak) Weak; "
         "struct Record { int marker; Strong value; }; "
         "__attribute__((objc_root_class)) @interface Heap { Class isa; " +
         std::string(access) + " Strong values[2]; Weak weak; "
@@ -293,7 +293,7 @@ void TestBoundedCxxSemanticInterfaces() {
           "shared;";
       if (objc)
         source +=
-            "typedef __objc3_optional(id) Strong; "
+            "typedef Optional(id) Strong; "
             "struct Owned { Strong value; id __weak weak; Strong values[2]; }; "
             "extern \"C\" Owned owned_echo(Owned);";
       std::vector<std::string> args = {"-x", language,
