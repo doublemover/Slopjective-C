@@ -55,3 +55,7 @@ python3 -B "$OBJC3C_SDK_ROOT/share/objc3c/examples/native/qualify-record-carrier
 Public Optional/Result and synchronous throws predicates remain reserved until
 the bounded public syntax and contract are qualified. Ivar/property storage and
 reference or `__block` captures require their own lifetime integration.
+
+The [acceptance receipt](../support/linux_managed_record_acceptance.json) binds
+implementation commit `e2626d31c` to the exact ABI 10 archive, installed execution,
+ASan/LSan and LLDB evidence, and ordinary-user Debian 13 and Ubuntu 26.04 results.

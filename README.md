@@ -184,7 +184,7 @@ replacement, weak zeroing, Blocks, sequencing and native exceptions in both
 Objective-C and Objective-C++ at O0 and O2.
 
 Linux ARC functions now pass and return these direct carriers by value under
-extension ABI revision 9. The [recursive carrier contract](docs/roadmap/linux_recursive_carriers.md)
+extension ABI revision 10. The [recursive carrier contract](docs/roadmap/linux_recursive_carriers.md)
 extends ownership through nested Optional/Result values, managed match snapshots
 and optionalization of managed results. Each argument gets a caller-owned snapshot when it is
 evaluated; that snapshot survives later argument evaluation and is destroyed at
@@ -215,10 +215,11 @@ SDK/output options for nine executions and eighteen forced-failure checks.
 
 The [managed call contract](docs/roadmap/linux_managed_call_abi.md) defines the
 ownership and target bounds. [Owned Block captures](docs/roadmap/linux_owned_block_captures.md) now preserve
-active-arm lifetime through stack/heap closures and exceptional copying. Carrier
-storage in ivars, reference captures, volatile carriers, arrays/enclosing records
-and managed MRC transfers still need
-dedicated implementation. GNUstep 2.2 supports [true direct dispatch](docs/roadmap/linux_direct_dispatch.md),
+active-arm lifetime through stack/heap closures and exceptional copying. The [managed record contract](docs/roadmap/linux_managed_records.md) extends
+active-arm ownership through enclosing C and C++ records and fixed-size record
+arrays. Ordinary synchronous functions use callee-owned record snapshots and a
+common C/C++ indirect ABI. Carrier storage in ivars, reference captures, volatile
+carriers and managed MRC transfers still need dedicated implementation. GNUstep 2.2 supports [true direct dispatch](docs/roadmap/linux_direct_dispatch.md),
 including lazy class initialization and managed typed-error calls.
 
 Public Optional/Result and synchronous throws syntax, managed payload
@@ -260,5 +261,5 @@ identify the remaining public-language, module, concurrency and architecture wor
 
 The [managed array contract](docs/roadmap/linux_managed_arrays.md) adds local
 multidimensional carrier arrays, initialization failure cleanup, and weak/unsafe
-Block payloads under ABI 9. Its installed qualification also checks reverse
+Block payloads, introduced in ABI 9. Its installed qualification also checks reverse
 partial destruction, imports, PCH, ThinLTO and rejected storage boundaries.
