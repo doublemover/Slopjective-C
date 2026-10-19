@@ -4,28 +4,28 @@ CapturedState capture_strong(int key) {
   return ^{ return nested_state(value); };
 }
 CapturedState capture_weak(id object) {
-  NestedWeak value = __objc3_some(CallWeak, __objc3_some(id __weak, object));
+  NestedWeak value = Some(CallWeak, Some(id __weak, object));
   return ^{ return nested_weak_state(value); };
 }
 CapturedState capture_block_payload(int key) {
-  NestedBlock value = __objc3_some(CallBlock, call_block(call_object(key)));
+  NestedBlock value = Some(CallBlock, call_block(call_object(key)));
   return ^int {
-    __objc3_match_stmt(value) {
-      case __objc3_case_some(let child): {
-        __objc3_match_stmt(child) {
-          case __objc3_case_some(let action): { action(); return 1; }
-          case __objc3_case_none: { return 0; }
+    match(value) {
+      case .Some(let child): {
+        match(child) {
+          case .Some(let action): { action(); return 1; }
+          case .None: { return 0; }
         }
       }
-      case __objc3_case_none: { return 0; }
+      case .None: { return 0; }
     }
     return -1;
   };
 }
 CapturedState capture_binding(int key) {
-  __objc3_match_stmt(nested_make(key)) {
-    case __objc3_case_some(let child): { return ^int { return __objc3_has_value(child); }; }
-    case __objc3_case_none: { return ^{ return 0; }; }
+  match(nested_make(key)) {
+    case .Some(let child): { return ^int { return hasValue(child); }; }
+    case .None: { return ^{ return 0; }; }
   }
   return (CapturedState)0;
 }

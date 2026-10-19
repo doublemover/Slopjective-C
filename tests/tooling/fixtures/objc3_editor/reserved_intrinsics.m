@@ -1,15 +1,15 @@
 #define throws(value) (value)
-typedef __objc3_optional( int ) MaybeInt;
+typedef Optional( int ) MaybeInt;
 @protocol Probe
 - (int)async:(int)async throws:(int)state;
 @end
 int async(int value){return throws(value);}
-void exercise(void){__objc3_some( int,0); __objc3_none( int );__objc3_has_value(__objc3_none( int ));}
-typedef __objc3_result( int,long ) IntOrLong;
-int scalar_match(int input){MaybeInt maybe=__objc3_some(int,input);IntOrLong outcome=__objc3_ok(int,long,input);int selected=0;
-__objc3_match_stmt(maybe){case __objc3_case_some(let payload):{selected=throws(payload);}case __objc3_case_none:{selected=0;}}
-__objc3_match_stmt(outcome){case .Ok(let success):{selected+=success;}case .Err(let error):{selected+=(int)error;}}
-return __objc3_is_ok(outcome)?selected:async(input);}
+void exercise(void){Some( int,0); None( int );hasValue(None( int ));}
+typedef Result( int,long ) IntOrLong;
+int scalar_match(int input){MaybeInt maybe=Some(int,input);IntOrLong outcome=Ok(int,long,input);int selected=0;
+match(maybe){case .Some(let payload):{selected=throws(payload);}case .None:{selected=0;}}
+match(outcome){case .Ok(let success):{selected+=success;}case .Err(let error):{selected+=(int)error;}}
+return isOk(outcome)?selected:async(input);}
 
 @protocol Error @end
 @protocol MessageProbe
@@ -23,107 +23,107 @@ id managed_probe(id value) __objc3_throws(id<Error>);
 typedef void (^Action)(void);
 Action managed_action(void) __objc3_throws(id<Error>);
 void managed_optional_probe(id input) {
-  __objc3_optional(id) object = __objc3_try_optional(managed_probe(input));
-  __objc3_optional(Action) action = __objc3_try_optional(managed_action());
-  (void)__objc3_has_value(object);
-  (void)__objc3_has_value(action);
+  Optional(id) object = __objc3_try_optional(managed_probe(input));
+  Optional(Action) action = __objc3_try_optional(managed_action());
+  (void)hasValue(object);
+  (void)hasValue(action);
 }
 
 #ifdef __cplusplus
 void managed_transfer_probe(id input) {
-  __objc3_optional(id) source = __objc3_some(id, input);
-  __objc3_optional(id) copied = __objc3_copy(source);
-  __objc3_optional(id) moved = __objc3_move(copied);
-  (void)__objc3_has_value(copied);
-  (void)__objc3_has_value(moved);
+  Optional(id) source = Some(id, input);
+  Optional(id) copied = copyValue(source);
+  Optional(id) moved = moveValue(copied);
+  (void)hasValue(copied);
+  (void)hasValue(moved);
 }
 #endif
 
 void managed_assignment_probe(id input) {
-  __objc3_optional(id) original = __objc3_some(id, input);
-  __objc3_optional(id) implicit = original;
-  implicit = __objc3_none(id);
+  Optional(id) original = Some(id, input);
+  Optional(id) implicit = original;
+  implicit = None(id);
   implicit = original;
-  (void)__objc3_has_value(implicit);
+  (void)hasValue(implicit);
 }
 
 @protocol ManagedRuntimeProbe
-- (__objc3_optional(id))managedEcho:(__objc3_optional(id))value;
+- (Optional(id))managedEcho:(Optional(id))value;
 @end
 void managed_runtime_call_probe(id<ManagedRuntimeProbe> receiver,
-    __objc3_optional(id) (^callback)(__objc3_optional(id))) {
-  __objc3_optional(id) message_result = [receiver managedEcho:__objc3_none(id)];
-  __objc3_optional(id) block_result = callback(message_result);
-  (void)__objc3_has_value(block_result);
+    Optional(id) (^callback)(Optional(id))) {
+  Optional(id) message_result = [receiver managedEcho:None(id)];
+  Optional(id) block_result = callback(message_result);
+  (void)hasValue(block_result);
 }
 
-__objc3_optional(id) managed_throwing_value(__objc3_optional(id) input) __objc3_throws(id<Error>);
+Optional(id) managed_throwing_value(Optional(id) input) __objc3_throws(id<Error>);
 void managed_throwing_call_probe(id input) {
-  __objc3_optional(id) throwing_result = __objc3_try_force(managed_throwing_value(__objc3_some(id, input)));
-  (void)__objc3_has_value(throwing_result);
+  Optional(id) throwing_result = __objc3_try_force(managed_throwing_value(Some(id, input)));
+  (void)hasValue(throwing_result);
 }
 
 __attribute__((objc_root_class))
 @interface ManagedDirectProbe
-- (__objc3_optional(id))directEcho:(__objc3_optional(id))input __objc3_throws(id<Error>) __attribute__((objc_direct));
+- (Optional(id))directEcho:(Optional(id))input __objc3_throws(id<Error>) __attribute__((objc_direct));
 @end
 void managed_direct_probe(ManagedDirectProbe *receiver, id input) {
-  __objc3_optional(id) direct_result = __objc3_try_force([receiver directEcho:__objc3_some(id, input)]);
-  (void)__objc3_has_value(direct_result);
+  Optional(id) direct_result = __objc3_try_force([receiver directEcho:Some(id, input)]);
+  (void)hasValue(direct_result);
 }
 
-typedef __objc3_optional(id) ManagedInner;
+typedef Optional(id) ManagedInner;
 void managed_nested_probe(id input) {
-  __objc3_optional(ManagedInner) nested = __objc3_some(ManagedInner, __objc3_some(id, input));
-  (void)__objc3_has_value(nested);
-  __objc3_match_stmt(nested) {
-    case __objc3_case_some(let borrowed): { (void)__objc3_has_value(borrowed); }
-    case __objc3_case_none: { }
+  Optional(ManagedInner) nested = Some(ManagedInner, Some(id, input));
+  (void)hasValue(nested);
+  match(nested) {
+    case .Some(let borrowed): { (void)hasValue(borrowed); }
+    case .None: { }
   }
 }
 
 int managed_capture_probe(id input) {
-  __objc3_optional(id) captured = __objc3_some(id, input);
-  int (^snapshot)(void) = ^int { return __objc3_has_value(captured); };
+  Optional(id) captured = Some(id, input);
+  int (^snapshot)(void) = ^int { return hasValue(captured); };
   return snapshot();
 }
 
 void managed_array_probe(id input, Action action) {
-  __objc3_optional(id) managed_values[2] = {__objc3_some(id, input)};
-  __objc3_optional(Action __weak) weak_action = __objc3_some(Action __weak, action);
-  (void)__objc3_has_value(managed_values[0]);
-  (void)__objc3_has_value(weak_action);
+  Optional(id) managed_values[2] = {Some(id, input)};
+  Optional(Action __weak) weak_action = Some(Action __weak, action);
+  (void)hasValue(managed_values[0]);
+  (void)hasValue(weak_action);
 }
 
-struct ManagedRecord { int marker; __objc3_optional(id) values[2]; };
+struct ManagedRecord { int marker; Optional(id) values[2]; };
 struct ManagedRecord managed_record_echo(struct ManagedRecord value);
 void managed_record_probe(id input) {
-  struct ManagedRecord source = {42, {__objc3_some(id, input)}};
+  struct ManagedRecord source = {42, {Some(id, input)}};
   struct ManagedRecord managed_record = managed_record_echo(source);
   managed_record = source;
-  (void)__objc3_has_value(managed_record.values[0]);
+  (void)hasValue(managed_record.values[0]);
 }
 
 @protocol ManagedHeapProbe
-@property(nonatomic) __objc3_optional(id) stored;
+@property(nonatomic) Optional(id) stored;
 @property(nonatomic) struct ManagedRecord record;
 @end
 int managed_heap_probe(id<ManagedHeapProbe> receiver, id input) {
-  receiver.stored = __objc3_some(id, input);
-  __objc3_optional(id) heap_value = receiver.stored;
+  receiver.stored = Some(id, input);
+  Optional(id) heap_value = receiver.stored;
   __block struct ManagedRecord shared_record = receiver.record;
   int (^shared_state)(void) = ^int { return shared_record.marker; };
   struct ManagedRecord (^snapshot)(void) = ^{ return shared_record; };
-  (void)__objc3_has_value(heap_value);
+  (void)hasValue(heap_value);
   return shared_state() + snapshot().marker;
 }
 
 #ifdef __cplusplus
-struct CxxInterfaceRecord { int marker; __objc3_optional(id) value; };
+struct CxxInterfaceRecord { int marker; Optional(id) value; };
 extern "C" CxxInterfaceRecord c_linked_record(CxxInterfaceRecord value);
 CxxInterfaceRecord cpp_linked_record(CxxInterfaceRecord value);
 void cxx_interface_probe(CxxInterfaceRecord source) {
   CxxInterfaceRecord cxx_record = cpp_linked_record(c_linked_record(source));
-  (void)__objc3_has_value(cxx_record.value);
+  (void)hasValue(cxx_record.value);
 }
 #endif

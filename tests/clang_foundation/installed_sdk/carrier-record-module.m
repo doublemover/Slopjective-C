@@ -1,8 +1,8 @@
-typedef __objc3_optional(id) RecordStrong;
-typedef __objc3_optional(id __weak) RecordWeak;
-typedef __objc3_result(id, id __weak) RecordMixed;
+typedef Optional(id) RecordStrong;
+typedef Optional(id __weak) RecordWeak;
+typedef Result(id, id __weak) RecordMixed;
 typedef void (^RecordAction)(void);
-typedef __objc3_optional(RecordAction) RecordBlock;
+typedef Optional(RecordAction) RecordBlock;
 @protocol Error @end
 struct RecordCall { int marker; RecordStrong value; RecordWeak weak; };
 struct RecordPair { int marker; RecordStrong first; RecordWeak weak; RecordStrong values[2]; };

@@ -44,7 +44,7 @@ CallBlock throws_payload_block(CallBlock value, int fail) __objc3_throws(id<Erro
 }
 int throws_scalar(CallStrong value, int key, int fail) __objc3_throws(id<Error>) {
   if (fail) { value = call_make(key); __objc3_try(fail_now()); }
-  return __objc3_has_value(value);
+  return hasValue(value);
 }
 ThrowsBlock throws_make_block(id capture) {
   return ^CallStrong(CallStrong value, int key, int fail) __objc3_throws(id<Error>) {
@@ -55,8 +55,8 @@ ThrowsBlock throws_make_block(id capture) {
 CallStrong throws_many(CallStrong a, CallStrong b, CallStrong c, CallStrong d,
                        CallStrong e, CallStrong f, CallStrong g, int fail)
     __objc3_throws(id<Error>) {
-  if (!__objc3_has_value(a) || !__objc3_has_value(b) || !__objc3_has_value(c) ||
-      !__objc3_has_value(d) || !__objc3_has_value(e) || !__objc3_has_value(f)) __builtin_trap();
+  if (!hasValue(a) || !hasValue(b) || !hasValue(c) ||
+      !hasValue(d) || !hasValue(e) || !hasValue(f)) __builtin_trap();
   if (fail) __objc3_try(fail_now());
   return g;
 }
@@ -99,6 +99,6 @@ CallStrong throws_return_cleanup(int key, int mode) __objc3_throws(id<Error>) {
 }
 CallWeak throws_weak_return_cleanup(id object) {
   ThrowOnExit cleanup;
-  return __objc3_some(id __weak, object);
+  return Some(id __weak, object);
 }
 #endif

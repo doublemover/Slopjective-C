@@ -1,5 +1,5 @@
-using Strong = __objc3_optional(id);
-using Weak = __objc3_optional(id __weak);
+using Strong = Optional(id);
+using Weak = Optional(id __weak);
 enum class DataMode : unsigned { Copy = 1, Move = 2 };
 struct CxxData { int marker; Strong value; Weak weak; Strong values[2]; };
 extern "C" {

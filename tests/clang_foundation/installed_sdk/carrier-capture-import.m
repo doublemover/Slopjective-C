@@ -10,8 +10,8 @@ int main(void) {
   if (block() != 1 || call_destroyed(46) != 1) return 3;
   CapturedThrowing checked = capture_throwing(47);
   @autoreleasepool {
-    __objc3_optional(NestedStrong) missing = __objc3_try_optional(checked(48, 1));
-    if (__objc3_has_value(missing) || call_destroyed(47) || call_destroyed(48) != 2) return 4;
+    Optional(NestedStrong) missing = __objc3_try_optional(checked(48, 1));
+    if (hasValue(missing) || call_destroyed(47) || call_destroyed(48) != 2) return 4;
   }
   checked = (CapturedThrowing)0;
   if (call_destroyed(47) != 1 || throws_created() != throws_destroyed()) return 5;

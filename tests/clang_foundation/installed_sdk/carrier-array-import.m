@@ -5,7 +5,7 @@ int main(void) {
   {
     id object = call_object(51);
     CallAction action = ^{ if (!object) __builtin_trap(); };
-    ArrayWeakBlock weak = array_weak_identity(__objc3_some(CallAction __weak, action));
+    ArrayWeakBlock weak = array_weak_identity(Some(CallAction __weak, action));
     ArrayWeakBlock values[2] = {weak, weak};
     inspect = array_capture_weak(values[1]);
     if (inspect() != 0) return 2;

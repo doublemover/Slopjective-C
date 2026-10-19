@@ -118,6 +118,8 @@ def main() -> int:
             require(spelling in formatted, f"clang-format changed or removed ordinary spelling {spelling!r}")
         for spelling in cases.get("required_private_spellings", []):
             require(spelling in formatted, f"clang-format changed or removed private spelling {spelling!r}")
+        for spelling in cases.get("required_public_spellings", []):
+            require(spelling in formatted, f"clang-format changed or removed public spelling {spelling!r}")
         require(formatted == expected_formatted,
                 f"clang-format output for {source_fixture.name} differs from reserved_intrinsics.formatted; actual saved in {work}")
         normalized = (normalized_dir / source_fixture.name).resolve()

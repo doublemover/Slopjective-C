@@ -39,68 +39,68 @@ static int messages(void) {
     result = [receiver direct:result];
     [receiver replace:source key:1];
     CHECK(call_destroyed(1) == 1 && call_destroyed(0) == 0);
-    source = __objc3_none(id);
+    source = None(id);
     CHECK(call_destroyed(0) == 0);
-    result = __objc3_none(id);
+    result = None(id);
     CHECK(call_destroyed(0) == 1);
   }
   [RuntimeCalls classMake:18];
   CHECK(call_destroyed(18) == 1);
   Class nilClass = (Class)0;
   CallStrong missingClass = [nilClass classMake:19];
-  CHECK(!__objc3_has_value(missingClass) && !call_destroyed(19));
+  CHECK(!hasValue(missingClass) && !call_destroyed(19));
   [receiver make:2];
   CHECK(call_destroyed(2) == 1);
-  int present = __objc3_has_value([receiver make:3]);
+  int present = hasValue([receiver make:3]);
   CHECK(present && call_destroyed(3) == 1);
   {
     RuntimeCalls *nilReceiver = (id)0;
     CallStrong source = call_make(4);
     CallStrong result = [nilReceiver echo:source];
-    CHECK(!__objc3_has_value(result) && !call_destroyed(4));
+    CHECK(!hasValue(result) && !call_destroyed(4));
     [nilReceiver echo:source];
     result = [nilReceiver direct:source];
-    CHECK(!__objc3_has_value(result));
+    CHECK(!hasValue(result));
     [nilReceiver direct:source];
-    CallWeak weak = [nilReceiver echoWeak:__objc3_none(id __weak)];
-    CHECK(!__objc3_has_value(weak));
-    CallMixed mixed = [nilReceiver echoMixed:__objc3_ok(id, id __weak, call_object(5))];
-    CHECK(!__objc3_is_ok(mixed) && call_destroyed(5) == 1);
+    CallWeak weak = [nilReceiver echoWeak:None(id __weak)];
+    CHECK(!hasValue(weak));
+    CallMixed mixed = [nilReceiver echoMixed:Ok(id, id __weak, call_object(5))];
+    CHECK(!isOk(mixed) && call_destroyed(5) == 1);
   }
   CHECK(call_destroyed(4) == 1);
   {
     id object = call_object(6);
-    CallWeak source = __objc3_some(id __weak, object);
+    CallWeak source = Some(id __weak, object);
     CallWeak result = [protocol echoWeak:source];
     object = (id)0;
-    CHECK(call_destroyed(6) == 1 && __objc3_has_value(result));
+    CHECK(call_destroyed(6) == 1 && hasValue(result));
     result = [receiver echoWeak:result];
-    CallUnsafe unsafe = [receiver echoUnsafe:__objc3_some(id __unsafe_unretained, (id)0)];
-    CHECK(__objc3_has_value(unsafe));
+    CallUnsafe unsafe = [receiver echoUnsafe:Some(id __unsafe_unretained, (id)0)];
+    CHECK(hasValue(unsafe));
   }
   {
     CallStrong source = call_make(7);
     CallStrong other = call_make(8);
     CallStrong result = [receiver many:source b:source c:source d:source
                                   e:source f:source g:other last:7];
-    source = __objc3_none(id); other = __objc3_none(id);
+    source = None(id); other = None(id);
     CHECK(call_destroyed(7) == 1 && !call_destroyed(8));
   }
   CHECK(call_destroyed(8) == 1);
   {
     CallBlock source = call_block(call_object(9));
     CallBlock result = [receiver echoBlock:source];
-    source = __objc3_none(CallAction);
+    source = None(CallAction);
     CHECK(!call_destroyed(9));
   }
   CHECK(call_destroyed(9) == 1);
   for (int arm = 0; arm != 2; ++arm) {
     int key = 10 + arm;
-    CallOutcome source = arm ? __objc3_ok(id, id, call_object(key))
-                             : __objc3_err(id, id, call_object(key));
+    CallOutcome source = arm ? Ok(id, id, call_object(key))
+                             : Err(id, id, call_object(key));
     CallOutcome result = [receiver echoOutcome:source];
-    source = __objc3_ok(id, id, (id)0);
-    CHECK(__objc3_is_ok(result) == (arm != 0) && !call_destroyed(key));
+    source = Ok(id, id, (id)0);
+    CHECK(isOk(result) == (arm != 0) && !call_destroyed(key));
   }
   CHECK(call_destroyed(10) == 1 && call_destroyed(11) == 1);
   return 0;
@@ -110,9 +110,9 @@ static int blocks(void) {
   {
     CallStrong source = call_make(13);
     CallStrong result = block(source);
-    source = __objc3_none(id);
+    source = None(id);
     CHECK(!call_destroyed(13));
-    result = block(__objc3_none(id));
+    result = block(None(id));
     CHECK(call_destroyed(13) == 1 && !call_destroyed(12));
     block = (RuntimeStrongBlock)0;
     CHECK(!call_destroyed(12));
@@ -121,23 +121,23 @@ static int blocks(void) {
   {
     CallWeak (^echo)(CallWeak) = ^CallWeak(CallWeak value) { return value; };
     id object = call_object(14);
-    CallWeak result = echo(__objc3_some(id __weak, object));
+    CallWeak result = echo(Some(id __weak, object));
     object = (id)0;
-    CHECK(call_destroyed(14) == 1 && __objc3_has_value(result));
+    CHECK(call_destroyed(14) == 1 && hasValue(result));
     CallUnsafe (^unsafe)(CallUnsafe) = ^CallUnsafe(CallUnsafe value) { return value; };
-    CallUnsafe borrowed = unsafe(__objc3_some(id __unsafe_unretained, (id)0));
-    CHECK(__objc3_has_value(borrowed));
+    CallUnsafe borrowed = unsafe(Some(id __unsafe_unretained, (id)0));
+    CHECK(hasValue(borrowed));
   }
   {
     CallBlock (^echo)(CallBlock) = ^CallBlock(CallBlock value) { return value; };
     CallBlock result = echo(call_block(call_object(15)));
-    CHECK(__objc3_has_value(result) && !call_destroyed(15));
+    CHECK(hasValue(result) && !call_destroyed(15));
   }
   CHECK(call_destroyed(15) == 1);
   {
     CallMixed (^echo)(CallMixed) = ^CallMixed(CallMixed value) { return value; };
-    CallMixed result = echo(__objc3_ok(id, id __weak, call_object(16)));
-    CHECK(__objc3_is_ok(result) && !call_destroyed(16));
+    CallMixed result = echo(Ok(id, id __weak, call_object(16)));
+    CHECK(isOk(result) && !call_destroyed(16));
   }
   CHECK(call_destroyed(16) == 1);
   return 0;

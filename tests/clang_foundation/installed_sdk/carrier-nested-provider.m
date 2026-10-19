@@ -1,38 +1,38 @@
 #include "carrier-nested-call.h"
 #include <objc/runtime.h>
-NestedStrong nested_make(int key) { return __objc3_some(CallStrong, call_make(key)); }
+NestedStrong nested_make(int key) { return Some(CallStrong, call_make(key)); }
 NestedStrong nested_identity(NestedStrong value) { return value; }
 NestedMixed nested_mixed(NestedMixed value) { return value; }
 NestedDeep nested_deep(NestedDeep value) { return value; }
 NestedStrong nested_throwing(NestedStrong value, int key, int fail) __objc3_throws(id<Error>) {
   CallStrong inner = __objc3_try(throws_value(call_make(key), key, fail));
-  if (!__objc3_has_value(value)) return __objc3_some(CallStrong, inner);
+  if (!hasValue(value)) return Some(CallStrong, inner);
   return value;
 }
 NestedStrong nested_forward(NestedStrong value, int key, int fail) __objc3_throws(id<Error>) {
   return __objc3_try(nested_throwing(value, key, fail));
 }
 int nested_state(NestedStrong value) {
-  __objc3_match_stmt(value) {
-    case __objc3_case_some(let child): {
-      __objc3_match_stmt(child) {
-        case __objc3_case_some(let object): { return object ? 0 : 1; }
-        case __objc3_case_none: { return 2; }
+  match(value) {
+    case .Some(let child): {
+      match(child) {
+        case .Some(let object): { return object ? 0 : 1; }
+        case .None: { return 2; }
       }
     }
-    case __objc3_case_none: { return 3; }
+    case .None: { return 3; }
   }
   return 4;
 }
 int nested_weak_state(NestedWeak value) {
-  __objc3_match_stmt(value) {
-    case __objc3_case_some(let child): {
-      __objc3_match_stmt(child) {
-        case __objc3_case_some(let object): { return object ? 0 : 1; }
-        case __objc3_case_none: { return 2; }
+  match(value) {
+    case .Some(let child): {
+      match(child) {
+        case .Some(let object): { return object ? 0 : 1; }
+        case .None: { return 2; }
       }
     }
-    case __objc3_case_none: { return 3; }
+    case .None: { return 3; }
   }
   return 4;
 }

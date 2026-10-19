@@ -1,7 +1,7 @@
 #pragma once
 #include "carrier-nested-call.h"
-typedef __objc3_optional(CallAction __weak) ArrayWeakBlock;
-typedef __objc3_optional(CallAction __unsafe_unretained) ArrayUnsafeBlock;
+typedef Optional(CallAction __weak) ArrayWeakBlock;
+typedef Optional(CallAction __unsafe_unretained) ArrayUnsafeBlock;
 typedef int (^ArrayWeakState)(void);
 ArrayWeakBlock array_weak_identity(ArrayWeakBlock value);
 ArrayUnsafeBlock array_unsafe_identity(ArrayUnsafeBlock value);

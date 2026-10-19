@@ -22,7 +22,7 @@ static int values(void) {
   {
     NestedStrong source = nested_make(5);
     block = ^{ return nested_state(source); };
-    source = __objc3_none(CallStrong);
+    source = None(CallStrong);
     CHECK(block() == 0 && !call_destroyed(5));
   }
   // Stack-literal storage lives to the end of its enclosing scope; only the
@@ -33,7 +33,7 @@ static int values(void) {
     NestedStrong value = factory();
     factory = (CapturedValue)0;
     CHECK(nested_state(value) == 0 && !call_destroyed(6));
-    value = __objc3_none(CallStrong); CHECK(call_destroyed(6) == 1);
+    value = None(CallStrong); CHECK(call_destroyed(6) == 1);
   }
   CHECK(capture_noescape(7) == 0 && call_destroyed(7) == 1);
   return 0;

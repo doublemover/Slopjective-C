@@ -1,12 +1,12 @@
 #pragma once
 #include "carrier-throws-call.h"
-typedef __objc3_optional(CallStrong) NestedStrong;
-typedef __objc3_optional(CallWeak) NestedWeak;
-typedef __objc3_optional(CallBlock) NestedBlock;
-typedef __objc3_result(CallStrong, CallWeak) NestedMixed;
-typedef __objc3_optional(NestedMixed) NestedDeep;
-typedef __objc3_optional(__objc3_optional(int)) NestedPlain;
-typedef __objc3_result(NestedPlain, CallStrong) NestedPlainMixed;
+typedef Optional(CallStrong) NestedStrong;
+typedef Optional(CallWeak) NestedWeak;
+typedef Optional(CallBlock) NestedBlock;
+typedef Result(CallStrong, CallWeak) NestedMixed;
+typedef Optional(NestedMixed) NestedDeep;
+typedef Optional(Optional(int)) NestedPlain;
+typedef Result(NestedPlain, CallStrong) NestedPlainMixed;
 NestedStrong nested_make(int key);
 NestedStrong nested_identity(NestedStrong value);
 NestedMixed nested_mixed(NestedMixed value);

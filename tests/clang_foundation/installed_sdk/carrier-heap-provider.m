@@ -17,20 +17,20 @@ int heap_weak_reads(void) { return weak_reads; }
 - (void)dealloc { object_dispose(self); }
 @end
 StorageState heap_capture_record(struct RecordPair value) {
-  return ^int(int unused) { return value.marker==42 && __objc3_has_value(value.first); };
+  return ^int(int unused) { return value.marker==42 && hasValue(value.first); };
 }
 StorageState heap_capture_shared(int key) {
   __block RecordStrong value=record_value(key);
   return ^int(int clear) {
-    if(clear) value=__objc3_none(id);
-    return __objc3_has_value(value);
+    if(clear) value=None(id);
+    return hasValue(value);
   };
 }
 StorageState heap_capture_shared_record(int key) {
-  __block struct RecordPair value={42,record_value(key),__objc3_none(id __weak),{}};
+  __block struct RecordPair value={42,record_value(key),None(id __weak),{}};
   return ^int(int clear) {
-    if(clear) value.first=__objc3_none(id);
-    return value.marker==42 && __objc3_has_value(value.first);
+    if(clear) value.first=None(id);
+    return value.marker==42 && hasValue(value.first);
   };
 }
 

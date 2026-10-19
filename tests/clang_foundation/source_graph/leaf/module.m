@@ -5,8 +5,8 @@ int leaf(void) { return 40; }
 extern "C" id class_createInstance(Class cls, unsigned long extra)
     __attribute__((ns_returns_retained));
 extern "C" id object_dispose(id object);
-typedef __objc3_optional(id) PackageStrong;
-typedef __objc3_optional(id __weak) PackageWeak;
+typedef Optional(id) PackageStrong;
+typedef Optional(id __weak) PackageWeak;
 struct PackageValue {
   int marker;
   PackageStrong value;
@@ -30,8 +30,8 @@ __attribute__((objc_root_class))
 @end
 struct PackageValue package_value(void) {
   id object = [PackageObject new];
-  return PackageValue{42, __objc3_some(id, object),
-                      __objc3_some(id __weak, object)};
+  return PackageValue{42, Some(id, object),
+                      Some(id __weak, object)};
 }
 int package_destroyed(void) { return package_releases; }
 #endif

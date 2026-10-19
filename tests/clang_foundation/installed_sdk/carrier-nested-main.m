@@ -25,50 +25,50 @@ static int metadata(void) {
 static int lifetimes(void) {
   {
     NestedStrong source = nested_make(0), copy = nested_identity(source);
-    source = __objc3_none(CallStrong);
+    source = None(CallStrong);
     CHECK(!call_destroyed(0) && nested_state(copy) == 0);
     copy = copy;
 #ifdef __cplusplus
-    copy = __objc3_copy(copy);
+    copy = copyValue(copy);
 #endif
     CHECK(!call_destroyed(0));
-    copy = __objc3_none(CallStrong); CHECK(call_destroyed(0) == 1);
+    copy = None(CallStrong); CHECK(call_destroyed(0) == 1);
   }
   {
     id object = call_object(1);
-    NestedWeak source = __objc3_some(CallWeak, __objc3_some(id __weak, object)), copy = source;
+    NestedWeak source = Some(CallWeak, Some(id __weak, object)), copy = source;
     CHECK(nested_weak_state(copy) == 0);
     object = (id)0;
     CHECK(call_destroyed(1) == 1 && nested_weak_state(copy) == 1);
-    source = __objc3_none(CallWeak); copy = __objc3_none(CallWeak);
+    source = None(CallWeak); copy = None(CallWeak);
   }
   {
-    NestedMixed value = __objc3_ok(CallStrong, CallWeak, call_make(2));
+    NestedMixed value = Ok(CallStrong, CallWeak, call_make(2));
     id object = call_object(3);
-    NestedMixed weak = __objc3_err(CallStrong, CallWeak, __objc3_some(id __weak, object));
+    NestedMixed weak = Err(CallStrong, CallWeak, Some(id __weak, object));
     value = nested_mixed(weak); CHECK(call_destroyed(2) == 1);
     object = (id)0; CHECK(call_destroyed(3) == 1);
-    value = __objc3_ok(CallStrong, CallWeak, call_make(4));
-    CHECK(__objc3_is_ok(value));
-    value = __objc3_err(CallStrong, CallWeak, __objc3_none(id __weak));
+    value = Ok(CallStrong, CallWeak, call_make(4));
+    CHECK(isOk(value));
+    value = Err(CallStrong, CallWeak, None(id __weak));
     CHECK(call_destroyed(4) == 1);
   }
   {
-    NestedBlock source = __objc3_some(CallBlock, call_block(call_object(5))), copy = source;
-    source = __objc3_none(CallBlock); CHECK(!call_destroyed(5));
-    copy = __objc3_none(CallBlock); CHECK(call_destroyed(5) == 1);
+    NestedBlock source = Some(CallBlock, call_block(call_object(5))), copy = source;
+    source = None(CallBlock); CHECK(!call_destroyed(5));
+    copy = None(CallBlock); CHECK(call_destroyed(5) == 1);
   }
   {
-    NestedDeep source = __objc3_some(NestedMixed, __objc3_ok(CallStrong, CallWeak, call_make(6)));
+    NestedDeep source = Some(NestedMixed, Ok(CallStrong, CallWeak, call_make(6)));
     NestedDeep result = nested_deep(source);
-    source = __objc3_none(NestedMixed); CHECK(!call_destroyed(6));
-    result = __objc3_none(NestedMixed); CHECK(call_destroyed(6) == 1);
+    source = None(NestedMixed); CHECK(!call_destroyed(6));
+    result = None(NestedMixed); CHECK(call_destroyed(6) == 1);
   }
   {
-    NestedPlainMixed value = __objc3_ok(NestedPlain, CallStrong,
-        __objc3_some(__objc3_optional(int), __objc3_some(int, 42))), copy = value;
-    value = __objc3_err(NestedPlain, CallStrong, call_make(40));
-    CHECK(__objc3_is_ok(copy) && !__objc3_is_ok(value));
+    NestedPlainMixed value = Ok(NestedPlain, CallStrong,
+        Some(Optional(int), Some(int, 42))), copy = value;
+    value = Err(NestedPlain, CallStrong, call_make(40));
+    CHECK(isOk(copy) && !isOk(value));
     value = copy; CHECK(call_destroyed(40) == 1);
   }
   return 0;
@@ -76,23 +76,23 @@ static int lifetimes(void) {
 static int matches(void) {
   NestedStrong source = nested_make(7);
   int matched = 0;
-  __objc3_match_stmt(source) {
-    case __objc3_case_some(let child): {
-      source = __objc3_none(CallStrong);
-      CHECK(!call_destroyed(7) && __objc3_has_value(child));
-      __objc3_match_stmt(child) {
-        case __objc3_case_some(let object): { CHECK(object != (id)0); matched = 1; }
-        case __objc3_case_none: { return 201; }
+  match(source) {
+    case .Some(let child): {
+      source = None(CallStrong);
+      CHECK(!call_destroyed(7) && hasValue(child));
+      match(child) {
+        case .Some(let object): { CHECK(object != (id)0); matched = 1; }
+        case .None: { return 201; }
       }
     }
-    case __objc3_case_none: { return 202; }
+    case .None: { return 202; }
   }
   CHECK(matched && call_destroyed(7) == 1);
   @autoreleasepool {
     @try {
-      __objc3_match_stmt(nested_make(8)) {
-        case __objc3_case_some(let child): { CHECK(__objc3_has_value(child)); @throw call_object(9); }
-        case __objc3_case_none: { return 203; }
+      match(nested_make(8)) {
+        case .Some(let child): { CHECK(hasValue(child)); @throw call_object(9); }
+        case .None: { return 203; }
       }
     } @catch (id error) { CHECK(error != (id)0 && call_destroyed(8) == 1); }
   }
@@ -101,10 +101,10 @@ static int matches(void) {
   // one snapshot captured before pattern selection.
   source = nested_make(36);
   matched = 0;
-  __objc3_match_stmt(source) {
-    case __objc3_case_some(let child) where ((source = __objc3_none(CallStrong)), (__typeof__(__objc3_has_value(source)))0): { return 206; }
-    case __objc3_case_some(let child): { CHECK(__objc3_has_value(child) && !call_destroyed(36)); matched = 1; }
-    case __objc3_case_none: { return 207; }
+  match(source) {
+    case .Some(let child) where ((source = None(CallStrong)), (__typeof__(hasValue(source)))0): { return 206; }
+    case .Some(let child): { CHECK(hasValue(child) && !call_destroyed(36)); matched = 1; }
+    case .None: { return 207; }
   }
   CHECK(matched && call_destroyed(36) == 1);
   return 0;
@@ -116,16 +116,16 @@ static int calls(void) {
   result = [receiver direct:result];
   NestedStrong (^block)(NestedStrong) = ^NestedStrong(NestedStrong value) { return value; };
   result = block(result);
-  source = __objc3_none(CallStrong); CHECK(!call_destroyed(10));
-  result = __objc3_none(CallStrong); CHECK(call_destroyed(10) == 1);
+  source = None(CallStrong); CHECK(!call_destroyed(10));
+  result = None(CallStrong); CHECK(call_destroyed(10) == 1);
   NestedCalls *missing = (id)0;
   result = [missing echo:nested_make(11)];
   CHECK(nested_state(result) == 3 && call_destroyed(11) == 1);
   result = [missing direct:nested_make(12)];
   CHECK(nested_state(result) == 3 && call_destroyed(12) == 1);
   [receiver echo:nested_make(13)]; CHECK(call_destroyed(13) == 1);
-  NestedMixed mixed = [missing mixed:__objc3_ok(CallStrong, CallWeak, call_make(14))];
-  CHECK(!__objc3_is_ok(mixed) && call_destroyed(14) == 1);
+  NestedMixed mixed = [missing mixed:Ok(CallStrong, CallWeak, call_make(14))];
+  CHECK(!isOk(mixed) && call_destroyed(14) == 1);
   @autoreleasepool {
     @try { result = [receiver native:nested_make(15)]; }
     @catch (id error) { CHECK(error != (id)0 && call_destroyed(15) == 1 && call_destroyed(30) == 1); }
@@ -145,13 +145,13 @@ static int calls(void) {
   return 0;
 }
 static int match_propagate(NestedStrong value) __objc3_throws(id<Error>) {
-  __objc3_match_stmt(value) {
-    case __objc3_case_some(let child): {
-      value = __objc3_none(CallStrong);
-      if (!__objc3_has_value(child)) __builtin_trap();
-      return __objc3_try(throws_scalar(__objc3_none(id), 35, 1));
+  match(value) {
+    case .Some(let child): {
+      value = None(CallStrong);
+      if (!hasValue(child)) __builtin_trap();
+      return __objc3_try(throws_scalar(None(id), 35, 1));
     }
-    case __objc3_case_none: { return 0; }
+    case .None: { return 0; }
   }
   return -1;
 }
@@ -159,7 +159,7 @@ static int errors(void) {
   {
     NestedStrong value = __objc3_try_optional(throws_value(call_make(17), 18, 0));
     CHECK(nested_state(value) == 0);
-    value = __objc3_none(CallStrong); CHECK(call_destroyed(17) == 1);
+    value = None(CallStrong); CHECK(call_destroyed(17) == 1);
   }
   @autoreleasepool {
     NestedStrong missing = __objc3_try_optional(throws_value(call_make(19), 20, 1));
@@ -173,29 +173,29 @@ static int errors(void) {
       __objc3_catch(id<Error> error) { CHECK(error != (id)0); caught = 1; }
       CHECK(caught && nested_state(value) == 0 && !call_destroyed(21) && call_destroyed(22) == 2);
     }
-    value = __objc3_none(CallStrong); CHECK(call_destroyed(21) == 1);
+    value = None(CallStrong); CHECK(call_destroyed(21) == 1);
   }
   NestedCalls *receiver = [NestedCalls new];
   {
-    __objc3_optional(NestedStrong) value = __objc3_try_optional([receiver throwing:nested_make(23) key:24 fail:0]);
-    CHECK(__objc3_has_value(value) && !call_destroyed(23) && call_destroyed(24) == 1);
+    Optional(NestedStrong) value = __objc3_try_optional([receiver throwing:nested_make(23) key:24 fail:0]);
+    CHECK(hasValue(value) && !call_destroyed(23) && call_destroyed(24) == 1);
   }
   CHECK(call_destroyed(23) == 1);
   {
     id object = call_object(37);
-    NestedWeak value = __objc3_try_optional(throws_weak(__objc3_some(id __weak, object), 0));
+    NestedWeak value = __objc3_try_optional(throws_weak(Some(id __weak, object), 0));
     CHECK(nested_weak_state(value) == 0);
     object = (id)0;
     CHECK(nested_weak_state(value) == 1 && call_destroyed(37) == 1);
   }
   {
     NestedBlock value = __objc3_try_optional(throws_payload_block(call_block(call_object(38)), 0));
-    CHECK(__objc3_has_value(value) && !call_destroyed(38));
-    value = __objc3_none(CallBlock); CHECK(call_destroyed(38) == 1);
+    CHECK(hasValue(value) && !call_destroyed(38));
+    value = None(CallBlock); CHECK(call_destroyed(38) == 1);
   }
   @autoreleasepool {
     NestedBlock value = __objc3_try_optional(throws_payload_block(call_block(call_object(39)), 1));
-    CHECK(!__objc3_has_value(value) && call_destroyed(39) == 1);
+    CHECK(!hasValue(value) && call_destroyed(39) == 1);
   }
   @autoreleasepool {
     int caught = 0;
@@ -209,27 +209,27 @@ static int errors(void) {
     __objc3_try_optional(nested_forward(nested_make(43), 44, 1));
     CHECK(call_destroyed(43) == 1 && call_destroyed(44) == 2);
   }
-  CHECK(__objc3_has_value(__objc3_try_optional(nested_forward(nested_make(48), 49, 0))));
+  CHECK(hasValue(__objc3_try_optional(nested_forward(nested_make(48), 49, 0))));
   CHECK(call_destroyed(48) == 1 && call_destroyed(49) == 1);
   CHECK(throws_created() == throws_destroyed());
 #ifdef __cplusplus
   {
-    NestedStrong original = nested_make(25), moved = __objc3_move(original);
+    NestedStrong original = nested_make(25), moved = moveValue(original);
     CHECK(nested_state(original) == 1 && nested_state(moved) == 0);
-    moved = __objc3_none(CallStrong); CHECK(call_destroyed(25) == 1);
+    moved = None(CallStrong); CHECK(call_destroyed(25) == 1);
   }
   {
     const NestedStrong original = nested_make(26);
-    NestedStrong copied = __objc3_move(original);
-    copied = __objc3_none(CallStrong); CHECK(!call_destroyed(26));
+    NestedStrong copied = moveValue(original);
+    copied = None(CallStrong); CHECK(!call_destroyed(26));
   }
   CHECK(call_destroyed(26) == 1);
   try { NestedStrong value = __objc3_try_force(nested_cleanup(27, 1)); return 204; }
   catch (int error) { CHECK(error == 42 && call_destroyed(27) == 1); }
   try {
-    __objc3_match_stmt(nested_make(28)) {
-      case __objc3_case_some(let child): { CHECK(__objc3_has_value(child)); throw 43; }
-      case __objc3_case_none: { return 205; }
+    match(nested_make(28)) {
+      case .Some(let child): { CHECK(hasValue(child)); throw 43; }
+      case .None: { return 205; }
     }
   } catch (int error) { CHECK(error == 43 && call_destroyed(28) == 1); }
 #endif

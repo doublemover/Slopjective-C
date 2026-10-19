@@ -1,5 +1,5 @@
-typedef __objc3_optional(id) CallStrong;
-typedef __objc3_optional(id __weak) CallWeak;
+typedef Optional(id) CallStrong;
+typedef Optional(id __weak) CallWeak;
 @protocol Error @end
 typedef CallStrong (^ThrowsBlock)(CallStrong, int, int) __objc3_throws(id<Error>);
 id call_object(int key) __attribute__((ns_returns_retained));

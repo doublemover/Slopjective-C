@@ -12,12 +12,12 @@ __attribute__((objc_root_class))
 - (void)dealloc { ++destroyed; object_dispose(self); }
 @end
 
-using Strong = __objc3_optional(id);
-using Weak = __objc3_optional(id __weak);
-using Unsafe = __objc3_optional(id __unsafe_unretained);
-using Outcome = __objc3_result(id, id);
+using Strong = Optional(id);
+using Weak = Optional(id __weak);
+using Unsafe = Optional(id __unsafe_unretained);
+using Outcome = Result(id, id);
 using Action = void (^)(void);
-using OptionalAction = __objc3_optional(Action);
+using OptionalAction = Optional(Action);
 
 static bool copy_and_move_strong() {
   int before = destroyed;
@@ -25,14 +25,14 @@ static bool copy_and_move_strong() {
   {
     id object = [TransferProbe new];
     observer = object;
-    Strong source = __objc3_some(id, object);
+    Strong source = Some(id, object);
     object = nil;
     {
-      const Strong copy = __objc3_copy(source);
-      Strong moved_const = __objc3_move(copy);
-      Strong another = __objc3_move(moved_const);
-      if (!__objc3_has_value(copy) || !__objc3_has_value(moved_const) ||
-          !__objc3_has_value(another)) return false;
+      const Strong copy = copyValue(source);
+      Strong moved_const = moveValue(copy);
+      Strong another = moveValue(moved_const);
+      if (!hasValue(copy) || !hasValue(moved_const) ||
+          !hasValue(another)) return false;
     }
     if (observer == nil || destroyed != before) return false;
   }
@@ -45,14 +45,14 @@ static bool copy_and_move_weak() {
   {
     id object = [TransferProbe new];
     observer = object;
-    Weak source = __objc3_some(id __weak, object);
-    Weak copy = __objc3_copy(source);
-    Weak moved = __objc3_move(copy);
+    Weak source = Some(id __weak, object);
+    Weak copy = copyValue(source);
+    Weak moved = moveValue(copy);
     object = nil;
-    if (observer != nil || !__objc3_has_value(source) ||
-        !__objc3_has_value(copy) || !__objc3_has_value(moved)) return false;
-    Weak zeroed = __objc3_copy(moved);
-    if (!__objc3_has_value(zeroed)) return false;
+    if (observer != nil || !hasValue(source) ||
+        !hasValue(copy) || !hasValue(moved)) return false;
+    Weak zeroed = copyValue(moved);
+    if (!hasValue(zeroed)) return false;
   }
   return destroyed == before + 1;
 }
@@ -64,17 +64,17 @@ static bool copy_and_move_result(bool success) {
     id object = [TransferProbe new];
     observer = object;
     if (success) {
-      Outcome source = __objc3_ok(id, id, object);
-      Outcome copy = __objc3_copy(source);
-      Outcome moved = __objc3_move(copy);
+      Outcome source = Ok(id, id, object);
+      Outcome copy = copyValue(source);
+      Outcome moved = moveValue(copy);
       object = nil;
-      if (!__objc3_is_ok(copy) || !__objc3_is_ok(moved) || observer == nil) return false;
+      if (!isOk(copy) || !isOk(moved) || observer == nil) return false;
     } else {
-      Outcome source = __objc3_err(id, id, object);
-      Outcome copy = __objc3_copy(source);
-      Outcome moved = __objc3_move(copy);
+      Outcome source = Err(id, id, object);
+      Outcome copy = copyValue(source);
+      Outcome moved = moveValue(copy);
       object = nil;
-      if (__objc3_is_ok(copy) || __objc3_is_ok(moved) || observer == nil) return false;
+      if (isOk(copy) || isOk(moved) || observer == nil) return false;
     }
   }
   return observer == nil && destroyed == before + 1;
@@ -87,13 +87,13 @@ static bool copy_and_move_blocks() {
     id object = [TransferProbe new];
     observer = object;
     Action action = ^{ if (!object) __builtin_trap(); };
-    OptionalAction source = __objc3_some(Action, action);
+    OptionalAction source = Some(Action, action);
     object = nil;
     action = nil;
     {
-      OptionalAction copy = __objc3_copy(source);
-      OptionalAction moved = __objc3_move(copy);
-      if (!__objc3_has_value(copy) || !__objc3_has_value(moved)) return false;
+      OptionalAction copy = copyValue(source);
+      OptionalAction moved = moveValue(copy);
+      if (!hasValue(copy) || !hasValue(moved)) return false;
     }
     if (observer == nil) return false;
   }
@@ -101,28 +101,28 @@ static bool copy_and_move_blocks() {
 }
 
 template <class Carrier> static bool template_copy(const Carrier &source) {
-  Carrier copy = __objc3_copy(source);
-  return __objc3_has_value(copy);
+  Carrier copy = copyValue(source);
+  return hasValue(copy);
 }
 static bool nil_presence_and_unwind() {
-  Strong absent = __objc3_none(id);
-  Strong absent_copy = __objc3_copy(absent);
-  Strong present = __objc3_some(id, nil);
-  Strong present_copy = __objc3_move(present);
-  Unsafe unsafe = __objc3_some(id __unsafe_unretained, nil);
-  Unsafe unsafe_copy = __objc3_copy(unsafe);
-  if (__objc3_has_value(absent_copy) || !__objc3_has_value(present_copy) ||
-      !__objc3_has_value(unsafe_copy) || !template_copy(present)) return false;
+  Strong absent = None(id);
+  Strong absent_copy = copyValue(absent);
+  Strong present = Some(id, nil);
+  Strong present_copy = moveValue(present);
+  Unsafe unsafe = Some(id __unsafe_unretained, nil);
+  Unsafe unsafe_copy = copyValue(unsafe);
+  if (hasValue(absent_copy) || !hasValue(present_copy) ||
+      !hasValue(unsafe_copy) || !template_copy(present)) return false;
   int before = destroyed;
   __weak id observer = nil;
   try {
     id object = [TransferProbe new];
     observer = object;
-    Strong source = __objc3_some(id, object);
-    Strong copy = __objc3_copy(source);
-    Strong moved = __objc3_move(copy);
-    Weak weak = __objc3_some(id __weak, object);
-    Weak weak_copy = __objc3_copy(weak);
+    Strong source = Some(id, object);
+    Strong copy = copyValue(source);
+    Strong moved = moveValue(copy);
+    Weak weak = Some(id __weak, object);
+    Weak weak_copy = copyValue(weak);
     object = nil;
     defer { if (observer == nil) __builtin_trap(); }
     throw 42;
@@ -146,22 +146,22 @@ static bool transfer_try_optional_results() {
     Strong success = __objc3_try_optional(checked_value(object, nil));
     Strong failure = __objc3_try_optional(checked_value(object, error));
     Strong nil_success = __objc3_try_optional(checked_value(nil, nil));
-    Strong assigned = __objc3_none(id);
+    Strong assigned = None(id);
     assigned = __objc3_try_optional(checked_value(object, nil));
-    if (!__objc3_has_value(assigned)) return false;
+    if (!hasValue(assigned)) return false;
     assigned = __objc3_try_optional(checked_value(object, error));
-    if (__objc3_has_value(assigned)) return false;
+    if (hasValue(assigned)) return false;
     assigned = __objc3_try_optional(checked_value(nil, nil));
-    if (!__objc3_has_value(assigned)) return false;
+    if (!hasValue(assigned)) return false;
     {
-      Strong copy = __objc3_copy(success);
-      Strong moved = __objc3_move(copy);
-      Strong failure_copy = __objc3_copy(failure);
-      Strong failure_move = __objc3_move(failure_copy);
-      Strong nil_copy = __objc3_copy(nil_success);
-      if (!__objc3_has_value(copy) || !__objc3_has_value(moved) ||
-          __objc3_has_value(failure_copy) || __objc3_has_value(failure_move) ||
-          !__objc3_has_value(nil_copy)) return false;
+      Strong copy = copyValue(success);
+      Strong moved = moveValue(copy);
+      Strong failure_copy = copyValue(failure);
+      Strong failure_move = moveValue(failure_copy);
+      Strong nil_copy = copyValue(nil_success);
+      if (!hasValue(copy) || !hasValue(moved) ||
+          hasValue(failure_copy) || hasValue(failure_move) ||
+          !hasValue(nil_copy)) return false;
     }
     object = nil;
     error = nil;

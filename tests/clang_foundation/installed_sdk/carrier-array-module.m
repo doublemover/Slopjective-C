@@ -1,7 +1,7 @@
-typedef __objc3_optional(id) CallStrong;
+typedef Optional(id) CallStrong;
 typedef void (^CallAction)(void);
-typedef __objc3_optional(CallAction __weak) ArrayWeakBlock;
-typedef __objc3_optional(CallAction __unsafe_unretained) ArrayUnsafeBlock;
+typedef Optional(CallAction __weak) ArrayWeakBlock;
+typedef Optional(CallAction __unsafe_unretained) ArrayUnsafeBlock;
 typedef int (^ArrayWeakState)(void);
 id call_object(int key) __attribute__((ns_returns_retained));
 int call_destroyed(int key);

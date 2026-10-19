@@ -3,8 +3,8 @@
 RuntimeStrongBlock runtime_make_block(int key) {
   id object = call_object(key);
   return ^CallStrong(CallStrong value) {
-    if (__objc3_has_value(value)) return value;
-    return __objc3_some(id, object);
+    if (hasValue(value)) return value;
+    return Some(id, object);
   };
 }
 @implementation RuntimeCalls
@@ -23,9 +23,9 @@ RuntimeStrongBlock runtime_make_block(int key) {
 - (CallStrong)many:(CallStrong)a b:(CallStrong)b c:(CallStrong)c
                  d:(CallStrong)d e:(CallStrong)e f:(CallStrong)f
                  g:(CallStrong)g last:(int)last {
-  if (last != 7 || !__objc3_has_value(a) || !__objc3_has_value(b) ||
-      !__objc3_has_value(c) || !__objc3_has_value(d) ||
-      !__objc3_has_value(e) || !__objc3_has_value(f)) __builtin_trap();
+  if (last != 7 || !hasValue(a) || !hasValue(b) ||
+      !hasValue(c) || !hasValue(d) ||
+      !hasValue(e) || !hasValue(f)) __builtin_trap();
   return g;
 }
 - (CallStrong)throwNative:(CallStrong)value {

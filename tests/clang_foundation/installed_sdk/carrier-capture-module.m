@@ -1,6 +1,6 @@
-typedef __objc3_optional(id) CallStrong;
-typedef __objc3_optional(id __weak) CallWeak;
-typedef __objc3_optional(CallStrong) NestedStrong;
+typedef Optional(id) CallStrong;
+typedef Optional(id __weak) CallWeak;
+typedef Optional(CallStrong) NestedStrong;
 @protocol Error @end
 id call_object(int key) __attribute__((ns_returns_retained));
 int call_destroyed(int key);
