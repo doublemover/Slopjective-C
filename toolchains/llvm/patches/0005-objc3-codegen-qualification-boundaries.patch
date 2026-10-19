@@ -1636,10 +1636,10 @@ index 000000000..2ae11a4ba
 +#endif
 diff --git a/clang/lib/CodeGen/CGObjC3ArcCarriers.cpp b/clang/lib/CodeGen/CGObjC3ArcCarriers.cpp
 new file mode 100644
-index 000000000..fea00f408
+index 000000000..a1eb697a8
 --- /dev/null
 +++ b/clang/lib/CodeGen/CGObjC3ArcCarriers.cpp
-@@ -0,0 +1,682 @@
+@@ -0,0 +1,702 @@
 +//===--- CGObjC3ArcCarriers.cpp - ARC local carrier lowering --*- C++ -*-===//
 +// Private native ARC operations for the first direct-local carrier slice.
 +#include "CGObjC3ArcCarriers.h"
@@ -1718,9 +1718,17 @@ index 000000000..fea00f408
 +  return false;
 +}
 +
-+bool isSupportedField(ASTContext &Ctx, QualType T) {
++bool isSupportedField(ASTContext &Ctx, QualType T, unsigned &Budget,
++                      unsigned Depth = 0) {
 +  if (T.isNull())
 +    return true;
++  if (Depth > 64 || Budget == 0 || T.isVolatileQualified()) return false;
++  --Budget;
++  if (const auto *O = T->getAs<ObjC3OptionalType>())
++    return isSupportedField(Ctx, O->getElementType(), Budget, Depth + 1);
++  if (const auto *R = T->getAs<ObjC3ResultType>())
++    return isSupportedField(Ctx, R->getSuccessType(), Budget, Depth + 1) &&
++           isSupportedField(Ctx, R->getErrorType(), Budget, Depth + 1);
 +  if (isRetainablePointer(T))
 +    return isARCPointerField(T);
 +  return isPlainLeaf(Ctx, T);
@@ -1755,6 +1763,11 @@ index 000000000..fea00f408
 +}
 +
 +bool hasLifetime(QualType T, Qualifiers::ObjCLifetime Life) {
++  if (T.isNull()) return false;
++  if (const auto *O = T->getAs<ObjC3OptionalType>())
++    return hasLifetime(O->getElementType(), Life);
++  if (const auto *R = T->getAs<ObjC3ResultType>())
++    return hasLifetime(R->getSuccessType(), Life) || hasLifetime(R->getErrorType(), Life);
 +  return isRetainablePointer(T) &&
 +         effectiveARCStorageLifetime(T) == Life;
 +}
@@ -1772,7 +1785,9 @@ index 000000000..fea00f408
 +      return false;
 +
 +    QualType FieldType = Field->getType();
-+    if (isRetainablePointer(FieldType)) {
++    if (isa<ObjC3OptionalType, ObjC3ResultType>(FieldType.getCanonicalType().getTypePtr())) {
++      emitObjC3CarrierARCValueInit(CGF, Payload, PayloadStorage);
++    } else if (isRetainablePointer(FieldType)) {
 +      Qualifiers::ObjCLifetime Life = effectiveARCStorageLifetime(FieldType);
 +      if (Life == Qualifiers::OCL_None ||
 +          Life == Qualifiers::OCL_Autoreleasing)
@@ -1895,6 +1910,10 @@ index 000000000..fea00f408
 +    QualType PayloadType = Field->getType();
 +    Address Src = getObjC3CarrierPayloadAddress(CGF, Source, Type, Arm);
 +    Address Dst = getObjC3CarrierPayloadAddress(CGF, Destination, Type, Arm);
++    if (isa<ObjC3OptionalType, ObjC3ResultType>(PayloadType.getCanonicalType().getTypePtr())) {
++      emitARCSelectedInit(CGF, PayloadType, Dst, Src, Move && !PayloadType.isConstQualified(), Loc);
++      return;
++    }
 +    if (isRetainablePointer(PayloadType)) {
 +      if (effectiveARCStorageLifetime(PayloadType) == Qualifiers::OCL_Weak) {
 +        if (Move)
@@ -2098,16 +2117,7 @@ index 000000000..fea00f408
 +
 +bool CodeGen::containsObjC3CarrierARCPayload(CodeGenModule &CGM,
 +                                             QualType CarrierType) {
-+  ASTContext &Ctx = CGM.getContext();
-+  const Type *Canonical = Ctx.getCanonicalType(CarrierType).getTypePtr();
-+  if (!isa<ObjC3OptionalType>(Canonical) && !isa<ObjC3ResultType>(Canonical))
-+    return false;
-+  auto Info = Ctx.getObjC3CarrierRepresentationType(CarrierType);
-+  auto IsObjCPointer = [](FieldDecl *Field) {
-+    return Field && isRetainablePointer(Field->getType());
-+  };
-+  return IsObjCPointer(Info.ValueField) || IsObjCPointer(Info.SuccessField) ||
-+         IsObjCPointer(Info.ErrorField);
++  return hasObjC3CarrierManagedPayload(CarrierType);
 +}
 +
 +bool CodeGen::supportsObjC3CarrierARCLocalLifetime(CodeGenModule &CGM,
@@ -2119,12 +2129,13 @@ index 000000000..fea00f408
 +  auto Info = Ctx.getObjC3CarrierRepresentationType(CarrierType);
 +  if (Info.State != ObjC3CarrierRepresentationInfo::Status::Materialized)
 +    return false;
++  unsigned Budget = 256;
 +  return isSupportedField(Ctx, Info.ValueField ? Info.ValueField->getType()
-+                                               : QualType()) &&
++                                               : QualType(), Budget) &&
 +         isSupportedField(Ctx, Info.SuccessField ? Info.SuccessField->getType()
-+                                                 : QualType()) &&
++                                                 : QualType(), Budget) &&
 +         isSupportedField(Ctx, Info.ErrorField ? Info.ErrorField->getType()
-+                                               : QualType());
++                                               : QualType(), Budget);
 +}
 +
 +bool CodeGen::hasObjC3CarrierARCCleanup(CodeGenModule &CGM,
@@ -2206,6 +2217,7 @@ index 000000000..fea00f408
 +      if (const auto *VD = dyn_cast<VarDecl>(Ref->getDecl()))
 +        if (!isa<ParmVarDecl>(VD) && VD->isLocalVarDecl() &&
 +            !VD->hasGlobalStorage() &&
++            !CGF.ObjC3BorrowedMatchBindings.contains(VD) &&
 +            !isObjC3CarrierARCLocalInitializer(CGF.CGM, *VD))
 +          return Fail();
 +    // Borrow initialized storage. By-value parameters are caller-owned slots;
@@ -2246,6 +2258,9 @@ index 000000000..fea00f408
 +  auto HasSelectedCleanup = [&](FieldDecl *Field) {
 +    if (!Field)
 +      return false;
++    if (hasObjC3CarrierManagedPayload(Field->getType()))
++      return (DestroyStrong && hasObjC3CarrierStrongPayload(CGF.CGM, Field->getType())) ||
++             (DestroyWeak && hasObjC3CarrierWeakPayload(CGF.CGM, Field->getType()));
 +    Qualifiers::ObjCLifetime Life = effectiveARCStorageLifetime(Field->getType());
 +    return (DestroyStrong && Life == Qualifiers::OCL_Strong) ||
 +           (DestroyWeak && Life == Qualifiers::OCL_Weak);
@@ -2264,6 +2279,11 @@ index 000000000..fea00f408
 +    Address Payload = getObjC3CarrierPayloadAddress(CGF, Storage,
 +                                                    CarrierType, Arm);
 +    assert(Payload.isValid());
++    if (hasObjC3CarrierManagedPayload(Field->getType())) {
++      emitObjC3CarrierDestroyActiveARCPayload(CGF, Field->getType(), Payload,
++                                            PreciseLifetime, DestroyStrong, DestroyWeak);
++      return;
++    }
 +    switch (effectiveARCStorageLifetime(Field->getType())) {
 +    case Qualifiers::OCL_Strong:
 +      CGF.EmitARCDestroyStrong(
@@ -2408,10 +2428,10 @@ index 000000000..24a081d42
 +#endif
 diff --git a/clang/lib/CodeGen/CGObjC3Carriers.cpp b/clang/lib/CodeGen/CGObjC3Carriers.cpp
 new file mode 100644
-index 000000000..09637baa6
+index 000000000..f5cf5254b
 --- /dev/null
 +++ b/clang/lib/CodeGen/CGObjC3Carriers.cpp
-@@ -0,0 +1,1283 @@
+@@ -0,0 +1,1287 @@
 +//===--- CGObjC3Carriers.cpp - ObjC3 carrier CodeGen adapter ----*- C++ -*-===//
 +//
 +//===----------------------------------------------------------------------===//
@@ -3591,8 +3611,10 @@ index 000000000..09637baa6
 +        Plan.Field->getType(), E.getSource()->getType().getQualifiers());
 +    const bool IsARCPointer = Plan.Field->getType()->isObjCObjectPointerType() ||
 +                              Plan.Field->getType()->isBlockPointerType();
++    const bool IsNestedCarrier = isa<ObjC3OptionalType, ObjC3ResultType>(
++        Plan.Field->getType().getCanonicalType().getTypePtr());
 +    return Ctx.hasSameType(Plan.Source->getType(), ExpectedSource) &&
-+           (IsARCPointer
++           (IsARCPointer || IsNestedCarrier
 +                ? Ctx.hasSameUnqualifiedType(Plan.Initializer->getType(),
 +                                             Plan.Field->getType())
 +                : Ctx.hasSameType(Plan.Initializer->getType(),
@@ -3643,7 +3665,9 @@ index 000000000..09637baa6
 +    LValue SourcePayload = CGF.MakeAddrLValue(Src, Plan.Source->getType());
 +    CodeGenFunction::OpaqueValueMapping Bind(CGF, Plan.Source, SourcePayload);
 +    QualType PayloadType = Plan.Field->getType();
-+    if (PayloadType->isObjCObjectPointerType() || PayloadType->isBlockPointerType()) {
++    if (isa<ObjC3OptionalType, ObjC3ResultType>(PayloadType.getCanonicalType().getTypePtr())) {
++      emitObjC3CarrierARCValueInit(CGF, Plan.Initializer, Dst);
++    } else if (PayloadType->isObjCObjectPointerType() || PayloadType->isBlockPointerType()) {
 +      // Initialization is not an ARC assignment into an existing slot. Native
 +      // scalar initialization retains strong objects, copies Blocks, and
 +      // initializes/copies/moves weak storage without reading inactive bytes.
@@ -4152,15 +4176,16 @@ index 000000000..fbe5ef7b7
 +#endif
 diff --git a/clang/lib/CodeGen/CGObjC3Match.cpp b/clang/lib/CodeGen/CGObjC3Match.cpp
 new file mode 100644
-index 000000000..6e5b4a4bf
+index 000000000..5bbf9dfcb
 --- /dev/null
 +++ b/clang/lib/CodeGen/CGObjC3Match.cpp
-@@ -0,0 +1,358 @@
+@@ -0,0 +1,368 @@
 +//===--- CGObjC3Match.cpp - Native ObjC3 match lowering ------------------===//
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 +
 +#include "CGObjC3Match.h"
 +#include "CGObjC3Carriers.h"
++#include "CGObjC3ArcCarriers.h"
 +#include "CGObjC3ResultExpr.h"
 +#include "CodeGenFunction.h"
 +#include "CodeGenModule.h"
@@ -4177,10 +4202,12 @@ index 000000000..6e5b4a4bf
 +using namespace clang::CodeGen;
 +
 +void CodeGenFunction::BindObjC3MatchDecl(const VarDecl *VD, Address Addr) {
++  ObjC3BorrowedMatchBindings.insert(VD);
 +  setAddrOfLocalVar(VD, Addr);
 +}
 +
 +void CodeGenFunction::UnbindObjC3MatchDecl(const VarDecl *VD) {
++  ObjC3BorrowedMatchBindings.erase(VD);
 +  LocalDeclMap.erase(VD);
 +}
 +
@@ -4229,11 +4256,18 @@ index 000000000..6e5b4a4bf
 +  State.IsVolatile = State.Type.isVolatileQualified();
 +  if (isObjC3Carrier(CGF.getContext(), State.Type, State.IsOptional,
 +                     State.IsResult)) {
-+    if (!supportsPlainObjC3CarrierStorageLifetime(CGF.CGM, State.Type)) {
++    const bool Managed = supportsObjC3CarrierARCLocalLifetime(CGF.CGM, State.Type);
++    if (!Managed && !supportsPlainObjC3CarrierStorageLifetime(CGF.CGM, State.Type)) {
 +      CGF.ErrorUnsupported(Owner, "ObjC3 match with managed carrier payload");
 +      return false;
 +    }
-+    if (Expression->isGLValue()) {
++    if (Managed) {
++      // A managed binding borrows an owned snapshot. A guard or body may
++      // replace the original carrier without invalidating any binding.
++      State.Storage = CGF.CreateMemTemp(State.Type, "objc3.match.owned.scrutinee");
++      emitObjC3CarrierARCValueInit(CGF, Expression, State.Storage);
++      pushObjC3CarrierARCTemporaryCleanup(CGF, State.Type, State.Storage);
++    } else if (Expression->isGLValue()) {
 +      State.Storage = CGF.EmitLValue(Expression).getAddress();
 +    } else {
 +      // Keep a prvalue's storage and cleanup in the enclosing match full
@@ -4860,10 +4894,10 @@ index 000000000..554f67296
 +#endif
 diff --git a/clang/lib/CodeGen/CGObjC3TypedErrors.cpp b/clang/lib/CodeGen/CGObjC3TypedErrors.cpp
 new file mode 100644
-index 000000000..72c51848b
+index 000000000..6117271e2
 --- /dev/null
 +++ b/clang/lib/CodeGen/CGObjC3TypedErrors.cpp
-@@ -0,0 +1,611 @@
+@@ -0,0 +1,626 @@
 +//===--- CGObjC3TypedErrors.cpp - ObjC3 error-output CodeGen -----*- C++
 +//-*-===//
 +//
@@ -5388,9 +5422,12 @@ index 000000000..72c51848b
 +    return false;
 +  }
 +  const Expr *Call = nullptr;
++  const bool AggregateOperand =
++      CodeGenFunction::getEvaluationKind(E.getOperand()->getType()) == TEK_Aggregate;
 +  if (!isSupportedTryCall(CGF, E, Call) ||
 +      (!E.getOperand()->getType()->isVoidType() &&
-+       !CodeGenFunction::hasScalarEvaluationKind(E.getOperand()->getType()))) {
++       !CodeGenFunction::hasScalarEvaluationKind(E.getOperand()->getType()) &&
++       !(AggregateOperand && supportsObjC3CarrierARCCallABI(CGF.CGM, E.getOperand()->getType())))) {
 +    CGF.CGM.ErrorUnsupported(&E, "unsupported typed throws optional result");
 +    return false;
 +  }
@@ -5411,7 +5448,19 @@ index 000000000..72c51848b
 +    // Keep ARC's consume/reclaim casts around managed call results. The raw
 +    // call is still the exact key for the hidden error output, but stripping
 +    // these casts would leak +1 results or miss return-value ownership.
-+    CallValue = E.getOperand()->getType()->isObjCRetainableType()
++    if (AggregateOperand) {
++      if (Dest.isIgnored())
++        CGF.EmitAggExpr(E.getOperand(), AggValueSlot::ignored());
++      else {
++        Address Payload = getObjC3CarrierPayloadAddress(
++            CGF, Dest.getAddress(), E.getType(), ObjC3CarrierPayloadArm::Value);
++        if (!Payload.isValid()) {
++          CGF.CGM.ErrorUnsupported(&E, "nested try? payload storage");
++          return false;
++        }
++        emitObjC3CarrierARCValueInit(CGF, E.getOperand(), Payload);
++      }
++    } else CallValue = E.getOperand()->getType()->isObjCRetainableType()
 +                    ? RValue::get(CGF.EmitScalarExpr(E.getOperand()))
 +                    : emitQualifiedCall(CGF, Call);
 +  }
@@ -5443,7 +5492,7 @@ index 000000000..72c51848b
 +
 +  CGF.EmitBlock(Success);
 +  if (!Dest.isIgnored()) {
-+    if (!E.getOperand()->getType()->isVoidType()) {
++    if (!E.getOperand()->getType()->isVoidType() && !AggregateOperand) {
 +      Address Payload = getObjC3CarrierPayloadAddress(
 +          CGF, Dest.getAddress(), E.getType(), ObjC3CarrierPayloadArm::Value);
 +      if (!Payload.isValid() || !CallValue.isScalar()) {
@@ -5813,7 +5862,7 @@ index 7629b42dd..c41380c74 100644
      case Type::Complex:
      case Type::Vector:
 diff --git a/clang/lib/CodeGen/CodeGenFunction.h b/clang/lib/CodeGen/CodeGenFunction.h
-index e7c24f1f3..b9cde840d 100644
+index e7c24f1f3..43281acd6 100644
 --- a/clang/lib/CodeGen/CodeGenFunction.h
 +++ b/clang/lib/CodeGen/CodeGenFunction.h
 @@ -79,6 +79,9 @@ class ObjCForCollectionStmt;
@@ -5834,7 +5883,7 @@ index e7c24f1f3..b9cde840d 100644
  
  // clang-format off
  /// The kind of evaluation to perform on values of a particular
-@@ -290,6 +294,39 @@ public:
+@@ -290,6 +294,40 @@ public:
    CodeGenModule &CGM; // Per-module state.
    const TargetInfo &Target;
  
@@ -5846,6 +5895,7 @@ index e7c24f1f3..b9cde840d 100644
 +  QualType ObjC3CallErrorOutValueType;
 +  const Expr *ObjC3CallErrorOutExpr = nullptr;
 +  Address ObjC3CarrierReturnInitialized = Address::invalid();
++  llvm::SmallPtrSet<const VarDecl *, 8> ObjC3BorrowedMatchBindings;
 +
 +  // ObjC3 nontrivial payload construction is admitted only while initializing
 +  // the exact direct carrier local that owns the destination storage.
@@ -5874,7 +5924,7 @@ index e7c24f1f3..b9cde840d 100644
    // For EH/SEH outlined funclets, this field points to parent's CGF
    CodeGenFunction *ParentCGF = nullptr;
  
-@@ -3641,6 +3678,11 @@ public:
+@@ -3641,6 +3679,11 @@ public:
    /// This function may clear the current insertion point; callers should use
    /// EnsureInsertPoint if they wish to subsequently generate code without first
    /// calling EmitBlock, EmitBranch, or EmitStmt.
@@ -13276,7 +13326,7 @@ index 000000000..530728ff0
 +#endif
 diff --git a/clang/test/ObjC3/CodeGen/carrier-runtime-call-abi.m b/clang/test/ObjC3/CodeGen/carrier-runtime-call-abi.m
 new file mode 100644
-index 000000000..1cb0f36c0
+index 000000000..22a765e77
 --- /dev/null
 +++ b/clang/test/ObjC3/CodeGen/carrier-runtime-call-abi.m
 @@ -0,0 +1,45 @@
@@ -13287,7 +13337,7 @@ index 000000000..1cb0f36c0
 +typedef __objc3_optional(id) Strong;
 +typedef __objc3_optional(id __weak) Weak;
 +const char *encoding = @encode(Strong);
-+// CHECK: c"{__objc3_v6_optional_S40=B(__objc3_v6_payload=@)}\00"
++// CHECK: c"{__objc3_v7_optional_S40=B(__objc3_v7_payload=@)}\00"
 +__attribute__((objc_root_class))
 +@interface Receiver
 +- (Strong)echo:(Strong)value;
@@ -13517,3 +13567,49 @@ index 000000000..1d8544e7a
 +// CHECK-LABEL: define{{.*}} void {{.*}}call_direct
 +// CHECK: {{call|invoke}} void @_i_Direct__value_
 +// CHECK: objc3.try.failure
+diff --git a/clang/test/ObjC3/CodeGen/carrier-recursive-arc.m b/clang/test/ObjC3/CodeGen/carrier-recursive-arc.m
+new file mode 100644
+index 000000000..ffd53f461
+--- /dev/null
++++ b/clang/test/ObjC3/CodeGen/carrier-recursive-arc.m
+@@ -0,0 +1,40 @@
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -fblocks -fexceptions -fobjc-arc-exceptions -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c++ -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -fblocks -fexceptions -fobjc-arc-exceptions -emit-llvm -o - %s | FileCheck %s
++
++typedef __objc3_optional(id) Strong;
++typedef __objc3_optional(id __weak) Weak;
++typedef __objc3_result(Strong, Weak) Mixed;
++typedef __objc3_optional(Mixed) Nested;
++// All discriminants are followed before any ARC operation. Weak storage is
++// initialized and destroyed at its final address, never copied as bytes.
++Nested copy_nested(Nested *source) { return *source; }
++// CHECK-LABEL: define{{.*}}copy_nested
++// CHECK-NOT: byval
++// CHECK: br i1
++// CHECK: br i1
++// CHECK: call ptr @llvm.objc.retain
++// CHECK: call void @llvm.objc.copyWeak
++// CHECK: ret void
++
++void destroy_nested(Nested value) { value = __objc3_none(Mixed); }
++// CHECK-LABEL: define{{.*}}destroy_nested
++// CHECK: br i1
++// CHECK: br i1
++// CHECK: call void @llvm.objc.storeStrong
++// CHECK: call void @llvm.objc.destroyWeak
++
++int match_snapshot(__objc3_optional(Strong) value) {
++  __objc3_match_stmt(value) {
++    case __objc3_case_some(let child): {
++      value = __objc3_none(Strong);
++      return __objc3_has_value(child);
++    }
++    case __objc3_case_none: { return 0; }
++  }
++  return -1;
++}
++// CHECK-LABEL: define{{.*}}match_snapshot
++// CHECK: objc3.match.owned.scrutinee
++// CHECK: call ptr @llvm.objc.retain
++// CHECK: objc3.match.selected
++// CHECK: call void @llvm.objc.storeStrong

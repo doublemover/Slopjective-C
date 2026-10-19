@@ -5055,10 +5055,10 @@ index 5d4c5ff7d..60f0b15f2 100644
    return ConvTy;
 diff --git a/clang/lib/Sema/SemaObjC3CarrierARC.cpp b/clang/lib/Sema/SemaObjC3CarrierARC.cpp
 new file mode 100644
-index 000000000..86a8bba6f
+index 000000000..80830c638
 --- /dev/null
 +++ b/clang/lib/Sema/SemaObjC3CarrierARC.cpp
-@@ -0,0 +1,88 @@
+@@ -0,0 +1,91 @@
 +//===--- SemaObjC3CarrierARC.cpp - ARC payload admission --------*- C++ -*-===//
 +#include "SemaObjC3CarrierARC.h"
 +#include "clang/AST/ASTContext.h"
@@ -5115,7 +5115,10 @@ index 000000000..86a8bba6f
 +  if ((PayloadType->getAs<RecordType>() ||
 +       PayloadType->getAs<ObjC3OptionalType>() ||
 +       PayloadType->getAs<ObjC3ResultType>()) &&
-+      containsNestedRetainableField(PayloadType)) {
++      containsNestedRetainableField(PayloadType) &&
++      !(S.getLangOpts().ObjCAutoRefCount &&
++        isa<ObjC3OptionalType, ObjC3ResultType>(
++            PayloadType.getCanonicalType().getTypePtr()))) {
 +    S.Diag(Loc, diag::err_objc3_carrier_payload_unsupported) << PayloadType;
 +    return true;
 +  }
@@ -5170,10 +5173,10 @@ index 000000000..547b8c20d
 +#endif
 diff --git a/clang/lib/Sema/SemaObjC3CarrierTransfer.cpp b/clang/lib/Sema/SemaObjC3CarrierTransfer.cpp
 new file mode 100644
-index 000000000..a6e7ba910
+index 000000000..a8af747ad
 --- /dev/null
 +++ b/clang/lib/Sema/SemaObjC3CarrierTransfer.cpp
-@@ -0,0 +1,206 @@
+@@ -0,0 +1,214 @@
 +//===--- SemaObjC3CarrierTransfer.cpp - carrier transfer semantics -------===//
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 +//===----------------------------------------------------------------------===//
@@ -5241,6 +5244,11 @@ index 000000000..a6e7ba910
 +    return ExprResult();
 +  if (!SourceLeaf)
 +    return ExprError();
++  if (S.getLangOpts().ObjCAutoRefCount &&
++      isa<ObjC3OptionalType, ObjC3ResultType>(
++          DestinationField->getType().getCanonicalType().getTypePtr()))
++    return S.ActOnObjC3CarrierTransferExpr(SourceLeaf->isXValue(), Loc, Loc,
++                                          SourceLeaf, Loc);
 +  InitializedEntity Entity =
 +      InitializedEntity::InitializeMember(DestinationField);
 +  InitializationKind InitKind = InitializationKind::CreateCopy(Loc, Loc);
@@ -5317,6 +5325,9 @@ index 000000000..a6e7ba910
 +    if (!Field || Field->getType()->isVoidType())
 +      continue;
 +    QualType Payload = Field->getType();
++    if (getLangOpts().ObjCAutoRefCount &&
++        isa<ObjC3OptionalType, ObjC3ResultType>(Payload.getCanonicalType().getTypePtr()))
++      continue;
 +    // A direct ARC leaf uses the same native member-initialization recipe as
 +    // an ordinary strong, weak or unsafe Objective-C/Block field. Do not admit
 +    // managed subobjects hidden inside a C/C++ aggregate or nested carrier.
@@ -8498,7 +8509,7 @@ index 000000000..a5c7b2fb5
 +RecoveredResult recovered_result;
 diff --git a/clang/test/ObjC3/Sema/carrier-arc-ownership.mm b/clang/test/ObjC3/Sema/carrier-arc-ownership.mm
 new file mode 100644
-index 000000000..5584a000b
+index 000000000..bbc806d2c
 --- /dev/null
 +++ b/clang/test/ObjC3/Sema/carrier-arc-ownership.mm
 @@ -0,0 +1,29 @@
@@ -8530,7 +8541,7 @@ index 000000000..5584a000b
 +struct DerivedManaged : ManagedBase { int plain; };
 +typedef __objc3_optional(ArrayOfRetainableFields) ArrayAggregate; // expected-error {{payload type}}
 +typedef __objc3_optional(DerivedManaged) DerivedAggregate; // expected-error {{payload type}}
-+typedef __objc3_optional(StrongOptional) NestedManagedCarrier; // expected-error {{payload type}}
++typedef __objc3_optional(StrongOptional) NestedManagedCarrier;
 diff --git a/clang/test/ObjC3/Sema/carrier-builtin-classification.c b/clang/test/ObjC3/Sema/carrier-builtin-classification.c
 new file mode 100644
 index 000000000..2d6b281ad
@@ -12478,26 +12489,25 @@ index 000000000..c40497364
 +  }
 +}
 diff --git a/clang/lib/Sema/SemaExprCXX.cpp b/clang/lib/Sema/SemaExprCXX.cpp
-index 538604aa2..f9eb0c5cc 100644
+index 538604aa2..d257a5643 100644
 --- a/clang/lib/Sema/SemaExprCXX.cpp
 +++ b/clang/lib/Sema/SemaExprCXX.cpp
-@@ -6604,6 +6604,48 @@ ExprResult Sema::MaybeBindToTemporary(Expr *E) {
+@@ -14,6 +14,7 @@
+ #include "TreeTransform.h"
+ #include "TypeLocBuilder.h"
+ #include "clang/AST/ASTContext.h"
++#include "clang/AST/ObjC3TypeContracts.h"
+ #include "clang/AST/ASTLambda.h"
+ #include "clang/AST/CXXInheritance.h"
+ #include "clang/AST/CharUnits.h"
+@@ -6604,6 +6605,39 @@ ExprResult Sema::MaybeBindToTemporary(Expr *E) {
  
    assert(!isa<CXXBindTemporaryExpr>(E) && "Double-bound temporary?");
  
 +  // Managed carrier arguments and results own CodeGen temporaries without a
 +  // CXXRecordDecl destructor. They still require an ordinary full-expression
 +  // cleanup boundary, including for C calls, member calls and constructors.
-+  auto IsManagedCarrier = [](QualType T) {
-+    auto IsManaged = [](QualType Leaf) {
-+      return Leaf->isObjCObjectPointerType() || Leaf->isBlockPointerType();
-+    };
-+    if (const auto *Optional = T->getAs<ObjC3OptionalType>())
-+      return IsManaged(Optional->getElementType());
-+    if (const auto *Result = T->getAs<ObjC3ResultType>())
-+      return IsManaged(Result->getSuccessType()) || IsManaged(Result->getErrorType());
-+    return false;
-+  };
++  auto IsManagedCarrier = [](QualType T) { return hasObjC3CarrierManagedPayload(T); };
 +  if (getLangOpts().ObjCAutoRefCount) {
 +    bool NeedsCarrierCleanup = !E->isGLValue() && IsManagedCarrier(E->getType());
 +    if (const auto *Call = dyn_cast<CallExpr>(E)) {
@@ -12532,10 +12542,10 @@ index 538604aa2..f9eb0c5cc 100644
      return E;
 diff --git a/clang/test/ObjC3/Sema/carrier-typed-error-boundaries.mm b/clang/test/ObjC3/Sema/carrier-typed-error-boundaries.mm
 new file mode 100644
-index 000000000..530169c74
+index 000000000..c71050aa5
 --- /dev/null
 +++ b/clang/test/ObjC3/Sema/carrier-typed-error-boundaries.mm
-@@ -0,0 +1,16 @@
+@@ -0,0 +1,17 @@
 +// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c++ -std=c++20 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -fsyntax-only -verify %s
 +@protocol Error @end
 +typedef __objc3_optional(id) Strong;
@@ -12546,7 +12556,8 @@ index 000000000..530169c74
 +  return __objc3_try(value(input)); // expected-error {{requires a matching throwing function}}
 +}
 +void nested_optional(Strong input) {
-+  __objc3_try_optional(value(input)); // expected-error {{payload type}}
++  __objc3_optional(Strong) result = __objc3_try_optional(value(input));
++  (void)result;
 +}
 +Strong &reference() __objc3_throws(id<Error>);
 +void reject_reference() {

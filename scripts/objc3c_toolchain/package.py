@@ -223,6 +223,22 @@ def package_sdk(repo: Path, prefix: Path, validation_report: Path, cache_dir: Pa
             or len(direct_evidence['runtime_rejections']) != 9
             or any(row['exit_code'] != row['expected_exit_code'] for row in direct_evidence['commands'])):
         raise ValueError('installed direct call qualification receipt is incomplete')
+    nested_directory = validation_report.parent / 'installed-nested-carrier-calls'
+    nested_directory.mkdir(parents=True, exist_ok=True)
+    with (nested_directory / 'execution.log').open('w') as log:
+        result = subprocess.run([os.sys.executable, '-B',
+            str(prefix / 'share/objc3c/examples/native/qualify-nested-carrier-calls.py'),
+            '--sdk-root', str(prefix), '--output-dir', str(nested_directory)],
+            stdout=log, stderr=subprocess.STDOUT, timeout=1200)
+    if result.returncode:
+        raise ValueError(f'installed nested call qualification failed; see {nested_directory / "execution.log"}')
+    nested_evidence = json.loads((nested_directory / 'qualification.json').read_text())
+    if (nested_evidence['status'] != 'PASS' or nested_evidence['sdk_seal'] != data['seal_sha256']
+            or len(nested_evidence['executions']) != 9
+            or len(nested_evidence['forced_failures']) != 6
+            or len(nested_evidence['commands']) != 65
+            or any(row['exit_code'] != row['expected_exit_code'] for row in nested_evidence['commands'])):
+        raise ValueError('installed nested call qualification receipt is incomplete')
     cache_dir.mkdir(parents=True, exist_ok=True)
     archive = cache_dir / (source['build_id'] + '-linux-x86_64-' + data['seal_sha256'][:16] + '.tar.zst')
     if archive.exists():
@@ -253,7 +269,8 @@ def package_sdk(repo: Path, prefix: Path, validation_report: Path, cache_dir: Pa
                'installed_carrier_calls': call_evidence,
                'installed_runtime_carrier_calls': runtime_call_evidence,
                'installed_managed_throws': throws_evidence,
-               'installed_direct_calls': direct_evidence}
+               'installed_direct_calls': direct_evidence,
+               'installed_nested_calls': nested_evidence}
     archive.with_suffix('.json').write_text(json.dumps(receipt, indent=2) + '\n')
     return {**receipt, 'cache_hit': False}
 

@@ -1,9 +1,9 @@
 diff --git a/clang/include/clang/AST/ObjC3TypeContracts.h b/clang/include/clang/AST/ObjC3TypeContracts.h
 new file mode 100644
-index 000000000..910aae065
+index 000000000..0a8bf0ab6
 --- /dev/null
 +++ b/clang/include/clang/AST/ObjC3TypeContracts.h
-@@ -0,0 +1,140 @@
+@@ -0,0 +1,142 @@
 +//===--- ObjC3TypeContracts.h - Clang-backed value type facts ---*- C++ -*-===//
 +//
 +// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
@@ -28,6 +28,8 @@ index 000000000..910aae065
 +namespace clang {
 +
 +class ASTContext;
++/// Managed leaves in a recursively nested Optional/Result storage graph.
++bool hasObjC3CarrierManagedPayload(QualType Type);
 +
 +/// Versioned storage/ownership encoding for the qualified Linux ARC callable
 +/// subset. This describes a nontrivial owned value, not a byte-copyable record.
@@ -166,10 +168,10 @@ index e3f74d73f..15bac0545 100644
    VTableBuilder.cpp
 diff --git a/clang/lib/AST/ObjC3TypeContracts.cpp b/clang/lib/AST/ObjC3TypeContracts.cpp
 new file mode 100644
-index 000000000..2a2e2a4a2
+index 000000000..67e84f5a0
 --- /dev/null
 +++ b/clang/lib/AST/ObjC3TypeContracts.cpp
-@@ -0,0 +1,323 @@
+@@ -0,0 +1,403 @@
 +//===--- ObjC3TypeContracts.cpp - Clang-backed value type facts ----------===//
 +//
 +// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
@@ -185,7 +187,9 @@ index 000000000..2a2e2a4a2
 +#include "clang/AST/Type.h"
 +#include "clang/Basic/LangOptions.h"
 +#include "clang/Basic/TargetInfo.h"
++#include "llvm/ADT/DenseMap.h"
 +#include "llvm/ADT/StringExtras.h"
++#include "llvm/Support/SHA256.h"
 +
 +using namespace clang;
 +
@@ -281,9 +285,28 @@ index 000000000..2a2e2a4a2
 +
 +} // namespace
 +
-+ObjC3ValueTypeFacts
-+clang::getObjC3ValueTypeFacts(const ASTContext &Context, QualType PayloadType,
-+                              ObjC3PayloadPosition Position) {
++bool clang::hasObjC3CarrierManagedPayload(QualType Type) {
++  unsigned Budget = 256;
++  auto Visit = [&](auto &&Self, QualType T, unsigned Depth) -> bool {
++    if (T.isNull()) return false;
++    if (Depth > 64 || Budget == 0) return true;
++    --Budget;
++    if (T->isObjCObjectPointerType() || T->isBlockPointerType()) return true;
++    if (const auto *O = T->getAs<ObjC3OptionalType>())
++      return Self(Self, O->getElementType(), Depth + 1);
++    if (const auto *R = T->getAs<ObjC3ResultType>())
++      return Self(Self, R->getSuccessType(), Depth + 1) ||
++             Self(Self, R->getErrorType(), Depth + 1);
++    return false;
++  };
++  return !Type.isNull() && isa<ObjC3OptionalType, ObjC3ResultType>(
++      Type.getCanonicalType().getTypePtr()) && Visit(Visit, Type, 0);
++}
++
++static ObjC3ValueTypeFacts
++getValueTypeFacts(const ASTContext &Context, QualType PayloadType,
++                  ObjC3PayloadPosition Position,
++                  llvm::DenseMap<QualType, ObjC3ValueTypeFacts> &Children) {
 +  ObjC3ValueTypeFacts Facts;
 +  Facts.WrittenType = PayloadType;
 +  Facts.Position = Position;
@@ -391,6 +414,32 @@ index 000000000..2a2e2a4a2
 +      Facts.Destroy = generatedOperation(PayloadType.isDestructedType() ==
 +                                         QualType::DK_none);
 +    }
++  } else if (isa<ObjC3OptionalType, ObjC3ResultType>(
++                 Context.getCanonicalType(PayloadType).getTypePtr())) {
++    SmallVector<QualType, 2> Arms;
++    if (const auto *O = PayloadType->getAs<ObjC3OptionalType>())
++      Arms.push_back(O->getElementType());
++    else {
++      const auto *R = PayloadType->castAs<ObjC3ResultType>();
++      Arms.push_back(R->getSuccessType());
++      Arms.push_back(R->getErrorType());
++    }
++    bool Copy = true, Move = true, Destroy = true;
++    for (QualType Arm : Arms) {
++      auto Found = Children.find(Arm);
++      if (Found == Children.end()) {
++        auto Child = getValueTypeFacts(Context, Arm, Position, Children);
++        Found = Children.try_emplace(Arm, Child).first;
++      }
++      const auto &Child = Found->second;
++      Copy &= Child.Copy.IsTrivial;
++      Move &= Child.Move.IsTrivial;
++      Destroy &= Child.Destroy.IsTrivial;
++    }
++    Facts.Copy = generatedOperation(Copy);
++    Facts.Move = generatedOperation(Move);
++    Facts.Destroy = generatedOperation(Destroy);
++    Facts.IsTriviallyCopyable = Copy && Destroy;
 +  } else {
 +    classifyLifetime(Context, PayloadType, Facts);
 +    const bool ARCManaged =
@@ -414,6 +463,15 @@ index 000000000..2a2e2a4a2
 +  return Facts;
 +}
 +
++ObjC3ValueTypeFacts
++clang::getObjC3ValueTypeFacts(const ASTContext &Context, QualType PayloadType,
++                            ObjC3PayloadPosition Position) {
++  // Shared carrier types form a DAG. Reuse child facts so Result<T,T> chains
++  // cost the number of distinct types rather than every expanded arm path.
++  llvm::DenseMap<QualType, ObjC3ValueTypeFacts> Children;
++  return getValueTypeFacts(Context, PayloadType, Position, Children);
++}
++
 +bool clang::getObjC3CarrierRuntimeEncoding(const ASTContext &Ctx, QualType Type,
 +                                           std::string &Encoding) {
 +  const auto &Triple = Ctx.getTargetInfo().getTriple();
@@ -424,81 +482,105 @@ index 000000000..2a2e2a4a2
 +      Lang.ObjCRuntime.getKind() != ObjCRuntime::GNUstep ||
 +      Lang.ObjCRuntime.getVersion() != VersionTuple(2, 2))
 +    return false;
-+  Type = Ctx.getCanonicalType(Type);
-+  SmallVector<QualType, 2> Leaves;
-+  bool IsOptional = false;
-+  if (const auto *Optional = Type->getAs<ObjC3OptionalType>()) {
-+    IsOptional = true;
-+    Leaves.push_back(Optional->getElementType());
-+  } else if (const auto *Result = Type->getAs<ObjC3ResultType>()) {
-+    Leaves.push_back(Result->getSuccessType());
-+    Leaves.push_back(Result->getErrorType());
-+  } else {
++  if (!hasObjC3CarrierManagedPayload(Type))
 +    return false;
-+  }
-+  std::string Name = IsOptional ? "__objc3_v6_optional" : "__objc3_v6_result";
-+  std::string Fields;
-+  bool HasManaged = false;
-+  for (QualType Leaf : Leaves) {
-+    if (Leaf.isVolatileQualified())
++  unsigned Budget = 256;
++  auto Encode = [&](auto &&Self, QualType Carrier, std::string &Out,
++                    unsigned Depth) -> bool {
++    if (Depth > 64 || Budget == 0 || Carrier.isVolatileQualified())
 +      return false;
-+    char Ownership = 'P';
-+    if (Leaf->isObjCObjectPointerType() || Leaf->isBlockPointerType()) {
-+      HasManaged = true;
-+      switch (Leaf.getObjCLifetime()) {
-+      case Qualifiers::OCL_Strong:
-+        Ownership = 'S';
-+        break;
-+      case Qualifiers::OCL_Weak:
-+        Ownership = 'W';
-+        break;
-+      case Qualifiers::OCL_ExplicitNone:
-+        Ownership = 'U';
-+        break;
-+      default:
-+        return false;
-+      }
-+      if (Leaf->isBlockPointerType() && Ownership != 'S')
-+        return false;
-+    } else if (!(Leaf->isVoidType() || Leaf->isIntegerType() ||
-+                 Leaf->isEnumeralType() || Leaf->isRealFloatingType() ||
-+                 Leaf->isPointerType())) {
++    --Budget;
++    Carrier = Ctx.getCanonicalType(Carrier);
++    SmallVector<QualType, 2> Leaves;
++    bool IsOptional = false;
++    if (const auto *Optional = Carrier->getAs<ObjC3OptionalType>()) {
++      IsOptional = true;
++      Leaves.push_back(Optional->getElementType());
++    } else if (const auto *Result = Carrier->getAs<ObjC3ResultType>()) {
++      Leaves.push_back(Result->getSuccessType());
++      Leaves.push_back(Result->getErrorType());
++    } else {
 +      return false;
 +    }
-+    std::string Field;
-+    QualType NotEncoded;
-+    Ctx.getObjCEncodingForType(Leaf, Field, nullptr, &NotEncoded);
-+    if (!NotEncoded.isNull() || Field.empty())
++    std::string Name = IsOptional ? "__objc3_v7_optional" : "__objc3_v7_result";
++    std::string Fields;
++    for (QualType Leaf : Leaves) {
++      if (Leaf.isVolatileQualified())
++        return false;
++      char Ownership = 'P';
++      std::string Field;
++      const bool Nested = isa<ObjC3OptionalType, ObjC3ResultType>(
++          Ctx.getCanonicalType(Leaf).getTypePtr());
++      if (Nested) {
++        Ownership = 'N';
++        if (!Self(Self, Leaf, Field, Depth + 1))
++          return false;
++      } else {
++        if (Leaf->isObjCObjectPointerType() || Leaf->isBlockPointerType()) {
++          switch (Leaf.getObjCLifetime()) {
++          case Qualifiers::OCL_Strong:
++            Ownership = 'S';
++            break;
++          case Qualifiers::OCL_Weak:
++            Ownership = 'W';
++            break;
++          case Qualifiers::OCL_ExplicitNone:
++            Ownership = 'U';
++            break;
++          default:
++            return false;
++          }
++          if (Leaf->isBlockPointerType() && Ownership != 'S')
++            return false;
++        } else if (!(Leaf->isVoidType() || Leaf->isIntegerType() ||
++                     Leaf->isEnumeralType() || Leaf->isRealFloatingType() ||
++                     Leaf->isPointerType())) {
++          return false;
++        }
++        QualType NotEncoded;
++        Ctx.getObjCEncodingForType(Leaf, Field, nullptr, &NotEncoded);
++        if (!NotEncoded.isNull() || Field.empty())
++          return false;
++        // Match the shipped GNU runtime codec, including its scalar bounds.
++        if (!((Field.size() == 1 &&
++               StringRef("v@#:*cCsSiIlLqQBfdD").contains(Field[0])) ||
++              Field == "@?" || Field == "^v"))
++          return false;
++      }
++      Name += '_';
++      Name += Ownership;
++      if (Nested) {
++        // Hash only the nominal child identity. Embedding its hex-encoded
++        // encoding here would make a linear nesting chain grow exponentially.
++        llvm::SHA256 Hash;
++        Hash.update(Field);
++        Name += llvm::toHex(Hash.final());
++      } else {
++        Name += llvm::toHex(Field);
++      }
++      if (!Leaf->isVoidType())
++        Fields += Field;
++    }
++    auto Representation = Ctx.getObjC3CarrierRepresentationType(Carrier);
++    if (Representation.State !=
++        ObjC3CarrierRepresentationInfo::Status::Materialized)
 +      return false;
-+    // Match the shipped GNU runtime codec. In particular, it cannot parse
-+    // int128/half/extended-float encodings or arbitrary pointed-to records.
-+    if (!((Field.size() == 1 &&
-+           StringRef("v@#:*cCsSiIlLqQBfdD").contains(Field[0])) ||
-+          Field == "@?" || Field == "^v"))
-+      return false;
-+    Name += '_';
-+    Name += Ownership;
-+    Name += llvm::toHex(Field);
-+    if (!Leaf->isVoidType())
-+      Fields += Field;
-+  }
-+  if (!HasManaged)
++    // Recursively mirror native boolean/union layout and ownership identity.
++    Out = "{" + Name + "=B(__objc3_v7_payload=" + Fields + ")}";
++    return true;
++  };
++  std::string Result;
++  if (!Encode(Encode, Type, Result, 0))
 +    return false;
-+  auto Representation = Ctx.getObjC3CarrierRepresentationType(Type);
-+  if (Representation.State !=
-+      ObjC3CarrierRepresentationInfo::Status::Materialized)
-+    return false;
-+  // The stable nominal name carries ownership information absent from '@'.
-+  // The boolean plus active payload union use the target's native layout.
-+  Encoding += "{" + Name + "=B(__objc3_v6_payload=" + Fields + ")}";
++  Encoding += Result;
 +  return true;
 +}
 diff --git a/clang/unittests/AST/ObjC3TypeContractsTest.cpp b/clang/unittests/AST/ObjC3TypeContractsTest.cpp
 new file mode 100644
-index 000000000..96b6f028c
+index 000000000..98996d00e
 --- /dev/null
 +++ b/clang/unittests/AST/ObjC3TypeContractsTest.cpp
-@@ -0,0 +1,325 @@
+@@ -0,0 +1,380 @@
 +//===--- ObjC3TypeContractsTest.cpp - AST value type facts ----------------===//
 +//
 +// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
@@ -574,6 +656,61 @@ index 000000000..96b6f028c
 +}
 +
 +} // namespace
++
++TEST(ObjC3TypeContracts, RecursiveCarrierOperationsAndRuntimeEncoding) {
++  auto AST = parse(R"objc(
++    typedef __objc3_optional(id) Strong;
++    typedef __objc3_optional(id __weak) Weak;
++    typedef __objc3_result(Strong, Weak) Mixed;
++    extern __objc3_optional(Mixed) NestedValue;
++    extern __objc3_optional(__objc3_optional(int)) PlainValue;
++  )objc", {"-x", "objective-c++", "-std=c++20", "-fobjc-version=3",
++           "-fobjc-runtime=gnustep-2.2", "-fobjc-arc",
++           "-target", "x86_64-unknown-linux-gnu"});
++  ASSERT_TRUE(AST);
++  ASSERT_FALSE(AST->getDiagnostics().hasErrorOccurred());
++  ASTContext &Context = AST->getASTContext();
++  QualType Nested = findVar(Context, "NestedValue")->getType();
++  QualType Plain = findVar(Context, "PlainValue")->getType();
++  auto Managed = getObjC3ValueTypeFacts(Context, Nested,
++                                       ObjC3PayloadPosition::OptionalElement);
++  EXPECT_TRUE(Managed.isValid());
++  EXPECT_FALSE(Managed.IsTriviallyCopyable);
++  EXPECT_TRUE(Managed.Copy.NeedsGeneratedOperation);
++  EXPECT_TRUE(Managed.Move.NeedsGeneratedOperation);
++  EXPECT_TRUE(Managed.Destroy.NeedsGeneratedOperation);
++  auto Trivial = getObjC3ValueTypeFacts(Context, Plain,
++                                       ObjC3PayloadPosition::OptionalElement);
++  EXPECT_TRUE(Trivial.IsTriviallyCopyable);
++  EXPECT_TRUE(Trivial.Copy.IsTrivial);
++  EXPECT_TRUE(Trivial.Destroy.IsTrivial);
++  std::string Encoding;
++  ASSERT_TRUE(getObjC3CarrierRuntimeEncoding(Context, Nested, Encoding));
++  EXPECT_NE(Encoding.find("__objc3_v7_optional_N"), std::string::npos);
++  EXPECT_NE(Encoding.find("__objc3_v7_optional_W40="), std::string::npos);
++  EXPECT_LT(Encoding.size(), 600u);
++  // The runtime representation remains linear for a long Optional chain.
++  QualType Deep = Nested;
++  for (unsigned I = 0; I != 30; ++I)
++    Deep = Context.getObjC3OptionalType(Deep);
++  Encoding.clear();
++  ASSERT_TRUE(getObjC3CarrierRuntimeEncoding(Context, Deep, Encoding));
++  EXPECT_LT(Encoding.size(), 5000u);
++  for (unsigned I = 0; I != 40; ++I)
++    Deep = Context.getObjC3OptionalType(Deep);
++  Encoding = "unchanged";
++  EXPECT_FALSE(getObjC3CarrierRuntimeEncoding(Context, Deep, Encoding));
++  EXPECT_EQ(Encoding, "unchanged");
++  QualType Shared = Nested;
++  for (unsigned I = 0; I != 14; ++I)
++    Shared = Context.getObjC3ResultType(Shared, Shared);
++  auto SharedFacts = getObjC3ValueTypeFacts(Context, Shared,
++                                            ObjC3PayloadPosition::ResultSuccess);
++  EXPECT_TRUE(SharedFacts.Destroy.NeedsGeneratedOperation);
++  // Runtime encodings and lowering deliberately bound expanded arm work.
++  EXPECT_FALSE(getObjC3CarrierRuntimeEncoding(Context, Shared, Encoding));
++  EXPECT_EQ(Encoding, "unchanged");
++}
 +
 +TEST(ObjC3TypeContracts, PreservesCanonicalAndTargetLayoutFacts) {
 +  auto AST = parse(R"cpp(

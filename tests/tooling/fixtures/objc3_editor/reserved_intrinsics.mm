@@ -71,3 +71,13 @@ void managed_direct_probe(ManagedDirectProbe *receiver, id input) {
   __objc3_optional(id) direct_result = __objc3_try_force([receiver directEcho:__objc3_some(id, input)]);
   (void)__objc3_has_value(direct_result);
 }
+
+typedef __objc3_optional(id) ManagedInner;
+void managed_nested_probe(id input) {
+  __objc3_optional(ManagedInner) nested = __objc3_some(ManagedInner, __objc3_some(id, input));
+  (void)__objc3_has_value(nested);
+  __objc3_match_stmt(nested) {
+    case __objc3_case_some(let borrowed): { (void)__objc3_has_value(borrowed); }
+    case __objc3_case_none: { }
+  }
+}

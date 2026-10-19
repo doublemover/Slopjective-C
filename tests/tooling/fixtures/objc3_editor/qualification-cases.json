@@ -80,6 +80,15 @@
       "declaration_name": "direct_result",
       "hover_type": "__objc3_optional",
       "completion_name": "direct_result"
+    },
+    {
+      "name": "managed_recursive_carrier",
+      "use_line": "(void)__objc3_has_value(nested);",
+      "use_name": "nested",
+      "declaration_line": "__objc3_optional(ManagedInner) nested =",
+      "declaration_name": "nested",
+      "hover_type": "__objc3_optional",
+      "completion_name": "nested"
     }
   ],
   "cases": [
