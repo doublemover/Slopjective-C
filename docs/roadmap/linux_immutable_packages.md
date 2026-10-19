@@ -78,3 +78,7 @@ cases transport owned records through re-exports, copy them and verify final
 release and weak zeroing. Rejections cover wrong content, SDK, mode and package locks,
 private-module lookup and damaged objects, interfaces and sidecars. The SDK and
 fresh-distribution gates run this suite outside the checkout as ordinary users.
+
+The [source-bound acceptance receipt](../support/linux_immutable_package_acceptance.json)
+records the exact producing archive, all-mode source-free consumers, fault tests,
+installed gates, sanitizer/debugger evidence and clean Debian/Ubuntu results.
