@@ -166,7 +166,7 @@ index e3f74d73f..15bac0545 100644
    VTableBuilder.cpp
 diff --git a/clang/lib/AST/ObjC3TypeContracts.cpp b/clang/lib/AST/ObjC3TypeContracts.cpp
 new file mode 100644
-index 000000000..2026df11c
+index 000000000..93983fff2
 --- /dev/null
 +++ b/clang/lib/AST/ObjC3TypeContracts.cpp
 @@ -0,0 +1,323 @@
@@ -436,7 +436,7 @@ index 000000000..2026df11c
 +  } else {
 +    return false;
 +  }
-+  std::string Name = IsOptional ? "__objc3_v4_optional" : "__objc3_v4_result";
++  std::string Name = IsOptional ? "__objc3_v5_optional" : "__objc3_v5_result";
 +  std::string Fields;
 +  bool HasManaged = false;
 +  for (QualType Leaf : Leaves) {
@@ -490,7 +490,7 @@ index 000000000..2026df11c
 +    return false;
 +  // The stable nominal name carries ownership information absent from '@'.
 +  // The boolean plus active payload union use the target's native layout.
-+  Encoding += "{" + Name + "=B(__objc3_v4_payload=" + Fields + ")}";
++  Encoding += "{" + Name + "=B(__objc3_v5_payload=" + Fields + ")}";
 +  return true;
 +}
 diff --git a/clang/unittests/AST/ObjC3TypeContractsTest.cpp b/clang/unittests/AST/ObjC3TypeContractsTest.cpp
