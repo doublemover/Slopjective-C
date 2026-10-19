@@ -63,8 +63,7 @@ Optional/Result local construction. Presence queries borrow the active tag.
 O0/O2 runtime cases exercise retained and autoreleased returns, callbacks,
 throwing Blocks, C++ members, Objective-C messages, failure arms and native
 exception cleanup. MRC managed `try?`, weak/unsafe Block carriers
-and nested managed payloads remain
-outside this slice.
+remain outside this slice.
 
 Explicit `__objc3_copy`/`__objc3_move` construction of Objective-C++ ARC locals
 uses native strong, weak and unsafe object initialization and strong Block
@@ -81,7 +80,7 @@ replacement and exact self-aliasing. C++ assignment preserves the destination
 lvalue; snapshots clean up when LHS evaluation throws. Installed O0/O2 witnesses
 and live editor probes cover both languages.
 
-The Linux direct-carrier call contract uses extension ABI revision 4. Ordinary
+The Linux direct-carrier call contract uses extension ABI revision 7. Ordinary
 functions, callbacks and C++ members pass caller-owned argument snapshots by
 pointer; callees borrow and may replace those snapshots. Snapshots clean up at
 the caller's full-expression boundary, including later-argument and callee
@@ -93,9 +92,11 @@ invocation now support the runtime-encoded direct-carrier subset. A second
 installed suite, `qualify-runtime-carrier-calls.py`, covers reflection, class and
 instance dispatch, protocol/super/direct calls, nil receivers, heap Blocks and
 native Objective-C/C++ exceptions, with matching PCH, ThinLTO and module checks.
-Live clangd probes include returned message and Block values. Typed-error
-signatures, ivar/captured carrier storage, volatile and nested managed storage
-remain diagnostic boundaries. The
+Live clangd probes include returned message and Block values. Synchronous typed
+errors and recursive Optional/Result ownership now compose with these calls,
+including owned match snapshots and optionalization of managed results.
+Ivar/captured carrier storage, arrays/enclosing records and volatile managed
+storage remain diagnostic boundaries. The
 [call contract](../../../../docs/roadmap/linux_managed_call_abi.md) records the
 target and ownership limits; the
 [runtime contract](../../../../docs/roadmap/linux_runtime_call_abi.md) specifies

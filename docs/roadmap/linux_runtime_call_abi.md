@@ -1,12 +1,12 @@
 # Linux runtime carrier calls
 
-Extension ABI revision 6 extends the [owned carrier call contract](linux_managed_call_abi.md)
+Extension ABI revision 7 extends the [owned carrier call contract](linux_managed_call_abi.md)
 through Objective-C messages and Block invocation on Linux x86-64, GNUstep 2.2,
 with ARC and the ordinary nonvariadic C calling convention. It preserves
 caller-owned argument snapshots and fresh caller-owned result storage. Native
 Objective-C and C++ exceptions unwind those snapshots; the
 [typed-error contract](linux_managed_typed_errors.md) defines synchronous ObjC3
-success/failure storage and propagation under revision 6.
+success/failure storage and propagation under revision 7.
 
 ## Runtime encoding
 
@@ -14,7 +14,7 @@ The compiler publishes a versioned nominal encoding for each supported storage
 and ownership shape. A strong object Optional encodes as:
 
 ```text
-{__objc3_v6_optional_S40=B(__objc3_v6_payload=@)}
+{__objc3_v7_optional_S40=B(__objc3_v7_payload=@)}
 ```
 
 The nominal name contains the carrier kind and each arm's ownership code (`S`
@@ -32,7 +32,10 @@ character pointers and void pointers. Int128, half/extended floats, arbitrary
 pointed-to records and nontrivial plain records remain outside this subset.
 The admitted leaf codes are `v @ # : * c C s S i I l L q Q B f d D`, `@?` and
 `^v`; other qualifier or aggregate encodings retain diagnostics.
-The broader ordinary-function subset retains its existing bounds.
+Nested Optional/Result arms use an `N` marker and a SHA-256 child identity;
+their bodies recursively describe native storage. The
+[recursive contract](linux_recursive_carriers.md) defines ownership and encoding
+bounds. The broader ordinary-function subset retains its existing bounds.
 
 Method and Block signatures retain Clang's source argument-frame convention.
 They describe the logical value size; the hidden result pointer is not a source
@@ -42,7 +45,7 @@ record encodings alone do not describe C++ special-member semantics. Runtime
 reflection is qualified; generic aggregate FFI coercion, forwarding and
 Foundation invocation adapters require ownership-aware implementation.
 
-Revision 6 is a hard cutover. Rebuild providers, consumers, PCH and semantic
+Revision 7 is a hard cutover. Rebuild providers, consumers, PCH and semantic
 interfaces with the same sealed SDK; source identity and module locks enforce
 that coherence.
 
@@ -63,10 +66,10 @@ Heap Blocks with ordinary ARC object captures can accept and return managed
 carriers. The ordinary Block copy/dispose helpers retain those captured objects;
 the invoke function borrows caller-owned value parameters. Capturing a carrier
 value itself, carrier ivars/properties, pointer/reference carrier signatures,
-variadics, alternate conventions, MRC, volatile or recursive managed storage,
+variadics, alternate conventions, MRC, volatile managed storage, arrays and enclosing records,
 mandatory tail calls retain explicit diagnostic boundaries. The
 [typed-error contract](linux_managed_typed_errors.md) now composes managed
-signatures with synchronous throws under revision 6.
+signatures with synchronous throws under revision 7.
 
 ## Installed qualification
 

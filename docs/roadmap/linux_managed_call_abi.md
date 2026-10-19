@@ -69,10 +69,13 @@ Objective-C messages and Blocks now admit direct managed parameters and results
 under the runtime encoding contract. Managed signatures with ObjC3 typed throws
 now preserve success/failure ownership across those callable forms. Variadic
 calls, alternate calling conventions, MRC,
-volatile carriers, nested managed storage and reference-bound returned
+volatile carriers, arrays/enclosing records and reference-bound returned
 temporaries remain diagnostic boundaries. Mandatory tail calls are incompatible
 with these owned value temporaries. These boundaries are checked before object
 publication; they are separate from supported native C++ exception unwinding.
 
-Next, carry the same active-arm rules through recursive storage before promoting public syntax.
+The [recursive carrier contract](linux_recursive_carriers.md) now extends these
+rules through nested Optional/Result values, managed matching and aggregate
+optionalization under extension ABI 7. Next, complete enclosing storage and
+capture operations before promoting public syntax.
 [GNUstep 2.2 direct dispatch](linux_direct_dispatch.md) is now qualified.
