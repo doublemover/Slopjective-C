@@ -108,7 +108,8 @@ def _build_sdk(repo: Path, base: Path, fetch: bool, install_root: Path, foundati
     receipt_path = directory / 'release.json'
     if receipt_path.exists():
         receipt = json.loads(receipt_path.read_text())
-        verify_sdk(Path(receipt['build_prefix']), receipt['seal_sha256'])
+        # Publication makes the checked archive authoritative. The mutable
+        # candidate may have been reclaimed or edited after release.
         installed = install(Path(receipt['archive']), receipt['archive_sha256'], install_root)
         return {**receipt, 'installed': installed, 'cache_hit': True,
                 'elapsed_seconds': round(time.monotonic() - started, 6)}
