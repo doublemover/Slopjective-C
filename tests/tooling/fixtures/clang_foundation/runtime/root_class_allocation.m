@@ -24,7 +24,7 @@ __attribute__((objc_root_class))
 @end
 @interface RedirectAlloc : AllocRoot @end
 @implementation RedirectAlloc
-+ (id)alloc { return [AllocRoot alloc]; }
++ (id)alloc { return (id)[AllocRoot alloc]; }
 @end
 @interface NilInit : AllocRoot @end
 @implementation NilInit
