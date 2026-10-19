@@ -265,7 +265,7 @@ Native validation checks O0/O2 behavior, ABI, ownership, cleanup, expected
 failures, installed interface consumers and editor tools. Evidence records bind
 source, compiler, runtime, system headers and executable contents and reject
 changes during validation. The
-[Linux SDK acceptance receipt](docs/support/linux_cxx_interface_acceptance.json)
+[Linux SDK acceptance receipt](docs/support/linux_explicit_source_graph_acceptance.json)
 records the qualified archive and fresh-host checks; each new SDK has its own
 qualification and release receipt. Runtime timings must be distinguished from
 compile and wrapper timings when comparing performance.
