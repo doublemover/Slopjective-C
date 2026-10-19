@@ -53,7 +53,20 @@ int RunNativeDriver(int argc, char **argv) {
       objc = true;
     } else if (arg == "--objcxx") {
       cxx = objc = true;
-
+    } else if (arg == "-x" || arg.starts_with("-x")) {
+      // Clang language overrides also select linker runtime defaults. A .m
+      // input explicitly compiled as Objective-C++ needs the C++ driver.
+      std::string language;
+      forwarded.push_back(arg);
+      if (arg == "-x") {
+        if (++i == argc) { std::cerr << "-x requires a language\n"; return 2; }
+        language = argv[i];
+        forwarded.push_back(language);
+      } else {
+        language = arg.substr(2);
+      }
+      if (language.find("c++") != std::string::npos) cxx = true;
+      if (language.starts_with("objective-c")) objc = true;
     } else if (arg == "--arc") {
       forwarded.push_back("-fobjc-arc");
     } else if (arg == "--runtime" || arg == "--profile" || arg == "--target") {

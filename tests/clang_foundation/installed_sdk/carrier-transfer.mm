@@ -146,6 +146,13 @@ static bool transfer_try_optional_results() {
     Strong success = __objc3_try_optional(checked_value(object, nil));
     Strong failure = __objc3_try_optional(checked_value(object, error));
     Strong nil_success = __objc3_try_optional(checked_value(nil, nil));
+    Strong assigned = __objc3_none(id);
+    assigned = __objc3_try_optional(checked_value(object, nil));
+    if (!__objc3_has_value(assigned)) return false;
+    assigned = __objc3_try_optional(checked_value(object, error));
+    if (__objc3_has_value(assigned)) return false;
+    assigned = __objc3_try_optional(checked_value(nil, nil));
+    if (!__objc3_has_value(assigned)) return false;
     {
       Strong copy = __objc3_copy(success);
       Strong moved = __objc3_move(copy);

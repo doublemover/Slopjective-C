@@ -97,8 +97,14 @@ initialization for explicit Objective-C++ local copy/move construction. Its IR
 and PCH checks cover strong objects, weak storage, unsafe pointers, Blocks,
 Result arms and template instantiation. O0/O2 runtime witnesses add source
 evaluation, nil/none, weak zeroing, typed-error optionalization and exception
-cleanup. Implicit managed copying, assignment, returns and nested managed
-payloads retain their diagnostic boundaries.
+cleanup. Implicit direct ARC carrier copying and assignment are also qualified
+in Objective-C and Objective-C++: the selected RHS is preserved before LHS
+evaluation and old-arm destruction, including self-aliasing, all Result arm
+transitions, weak zeroing, Blocks, C++ sequencing and exception cleanup.
+Volatile carriers, by-value returns and nested managed payloads retain their
+diagnostic boundaries. Patch export preserves canonical section ordering and
+metadata across untracked and intent-to-add source files, so index bookkeeping
+does not change unrelated patch identities.
 
 [`scripts/qualify_linux_archive.sh`](../../scripts/qualify_linux_archive.sh)
 qualifies the actual archive on fresh Debian/Ubuntu hosts: install and relocation,
