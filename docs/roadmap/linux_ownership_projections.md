@@ -89,3 +89,26 @@ optimization-stable fingerprints and transitive re-export visibility. Runtime
 witnesses observe retained factories, borrowed and autoreleased returns, final
 release counts, ARC Optional lifetime and weak zeroing. Separate sanitizer runs
 instrument the mixed-mode provider and consumer code.
+
+The [Linux acceptance receipt](../support/linux_ownership_projection_acceptance.json)
+binds the qualified archive, all twelve projection configurations, sanitizer
+commands, native tests and fresh Debian 13/Ubuntu 26.04 runs to the implementation.
+Runtime-header redeclarations of native `id` and `Class` retain their language
+identity; unrelated external typedef aliases still require a resolved interface.
+
+Reproduce all twelve sanitizer configurations with the pinned bootstrap's Clang
+resource directory, which contains the ASan runtime archives. Use a fresh output
+directory outside the checkout:
+
+```sh
+python -B -m scripts.qualify_linux_ownership_sanitizers \
+  --sdk-root "$OBJC3C_SDK_ROOT" \
+  --resource-dir "$OBJC3C_BOOTSTRAP_LLVM_ROOT/lib/clang/23" \
+  --output-dir /tmp/objc3-ownership-sanitizers
+```
+
+The report records all 72 commands, fixture and sanitizer-runtime hashes, the SDK
+seal and each executable. Providers, re-exports and consumers are instrumented;
+the installed Objective-C runtime is loaded as shipped. The SDK seal is verified
+before and after qualification, and a failed run replaces its running summary
+with explicit failure evidence.
