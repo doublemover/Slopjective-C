@@ -33,7 +33,11 @@ The runtime is pinned libobjc2 2.3 plus the Linux patch inventory in
 Preparation and verification require the exact pinned commit and patch bytes.
 Unowned edits, extra files, changed patch checksums and mismatched revisions fail
 without replacing source. The builder verifies source again after installation.
-The runtime itself now compiles with GNUstep 2.2 and explicit exception support.
+The runtime itself now compiles with GNUstep 2.2 and explicit exception support. Allocation helpers use explicit fallback message dispatch so the
+compiler cannot fold them into recursive calls. A failed custom allocation
+returns nil before inspecting the instance class. Six native runtime CTests
+include class substitution, allocWithZone, nil allocation and nil initialization;
+runtime tests have a 30-second timeout.
 
 When a heap Block's copy helper throws, generated code destroys its completed
 captures and the runtime frees the uncommitted allocation. Objective-C exceptions
