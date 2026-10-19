@@ -12,13 +12,12 @@ import subprocess
 import sys
 import time
 
-# The standalone builder imports helpers from a sealed, possibly user-owned
-# SDK. Python bytecode caches must never modify that installation.
-sys.dont_write_bytecode = True
-
 if __package__:
     from .sdk_example import dependencies, digest, environment, hashes, reusable, write_json
 else:
+    # Standalone helpers live in a sealed, possibly user-owned SDK. Keep
+    # bytecode out of that installation without changing library callers.
+    sys.dont_write_bytecode = True
     from sdk_example import dependencies, digest, environment, hashes, reusable, write_json
 
 WORKSPACE = 'objc3c.source-workspace.v1'
@@ -146,10 +145,13 @@ def build_graph(sdk: Path, workspace: Path, output: Path, optimization='O2') -> 
     output = output.resolve()
     if optimization not in ('O0', 'O2'):
         raise ValueError('optimization must be O0 or O2')
-    # The workspace is immutable while compiling, including unused manifests.
-    for source in (sdk, graph['workspace'].parent):
+    # Build directories may live in the workspace, but never inside (or above)
+    # a source root. Protect unused packages as well as the selected closure.
+    protected = [sdk, graph['application']['root'],
+                 *[config['root'] for config in graph['packages'].values()]]
+    for source in protected:
         if output.is_relative_to(source) or source.is_relative_to(output):
-            raise ValueError('build output must be separate from the SDK and source workspace')
+            raise ValueError('build output must be separate from the SDK and every source root')
     output.mkdir(parents=True, exist_ok=True)
     with (output / '.build.lock').open('a+b') as lock:
         fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)

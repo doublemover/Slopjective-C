@@ -19,9 +19,10 @@ npm run objc3c -- build-packages --workspace ./packages/workspace.json \
 ```
 
 Select an installed SDK with `OBJC3C_SDK_ROOT` or `--sdk-root`. The SDK is verified
-before and after building. Sources and output must be outside that immutable SDK;
-output must also be outside the source workspace. The installed example is copied
-to an editable workspace above.
+before and after building. Sources and output must be outside that immutable SDK.
+Output may live under the workspace, such as `packages/build`, but must be
+separate from every package/application source root, including unused packages.
+The installed example is copied to an editable workspace above.
 
 ## Workspace and package contracts
 

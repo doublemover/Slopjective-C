@@ -120,11 +120,20 @@ def test_source_directory_links_are_rejected(workspace):
         source_inputs(root)
 
 
-def test_output_cannot_modify_source_workspace(workspace, tmp_path):
+def test_output_cannot_modify_a_source_root(workspace, tmp_path):
     sdk = tmp_path / 'sdk'
     sdk.mkdir()
     with pytest.raises(ValueError, match='separate'):
-        build_graph(sdk, workspace, workspace.parent / 'build')
+        build_graph(sdk, workspace, workspace.parent / 'leaf/build')
+
+
+def test_output_also_protects_unselected_source_roots(workspace, tmp_path):
+    sdk = tmp_path / 'sdk'
+    sdk.mkdir()
+    edit(workspace, lambda data: data['application']['dependencies'].__setitem__(0,
+         {'name':'fixture.Leaf', 'package':'leaf-v1', 'visibility':'private'}))
+    with pytest.raises(ValueError, match='separate'):
+        build_graph(sdk, workspace, workspace.parent / 'right/build')
 
 
 def test_standalone_builder_does_not_write_bytecode_into_sdk(tmp_path):

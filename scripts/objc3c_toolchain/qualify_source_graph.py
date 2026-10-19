@@ -35,7 +35,7 @@ def qualify(sdk: Path, output: Path) -> dict:
             data = json.loads(workspace.read_text())
             data['application']['ownership'] = ownership
             workspace.write_text(json.dumps(data))
-            build = root / case_prefix
+            build = sources / 'build' / case_prefix
             all_nodes = {'fixture.Leaf', 'fixture.Left', 'fixture.Right', 'fixture.Top', '@application'}
 
             def run(label, expected):
