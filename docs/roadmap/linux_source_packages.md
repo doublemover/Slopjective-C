@@ -26,12 +26,12 @@ The installed example is copied to an editable workspace above.
 
 ## Workspace and package contracts
 
-A workspace uses `schema: "objc3c.source-workspace.v3"`, a `packages` array of
+A workspace uses `schema: "objc3c.source-workspace.v4"`, a `packages` array of
 relative package-manifest paths, and an `application` object. The application
 specifies a relative `root`, relative `source`, explicit `language`, `standard`,
 `ownership`, and `dependencies`.
 
-Each package manifest uses `schema: "objc3c.source-package.v3"`, a canonical
+Each package manifest uses `schema: "objc3c.source-package.v4"`, a canonical
 module `name`, an exact opaque `package` identity, a relative `source`,
 `language`, `standard`, `ownership`, `provider_ownership`, and `dependencies`. Its source root is the manifest's directory.
 Application and package roots must be separate. Source paths and symbolic links
@@ -46,7 +46,7 @@ Unknown fields, duplicate modules/edges, unresolved locks and cycles are errors.
 Unused declarations are validated, but only the application's dependency closure
 is built.
 
-The v3 manifests require every mode field and reject earlier versions. Supported modes are:
+The v4 manifests require every mode field and reject earlier versions. Supported modes are:
 
 | Language        | Standard         | Ownership      | Source suffix         |
 | --------------- | ---------------- | -------------- | --------------------- |
@@ -91,7 +91,7 @@ publication boundary preserves earlier object/interface products on rejected
 compilation. Manifest preflight rejection leaves the prior completed record
 untouched; its retained manifest hashes identify the source state it describes.
 
-`package-installation.json` v3 records each selected module's full identity,
+`package-installation.json` v4 records each selected module's full identity,
 explicit language/standard/ownership mode, direct
 visibility locks and relative object/interface/sidecar paths with content hashes.
 Its content identity is reproduced by unchanged builds. The record describes the
@@ -127,3 +127,8 @@ the actual object compilation mode and must be explicit for every package. Equal
 modes produce an ordinary interface. Different ARC/MRC modes require a closed
 provider with no dependencies and emit a provenance-checked projected interface.
 The application has no separate provider mode.
+
+Every package requires an `exports` array. Select native root declaration names
+or use `["*"]` for the complete supported surface. See the
+[public module surface contract](linux_public_module_surfaces.md) for private
+type checks and incremental invalidation rules.

@@ -38,3 +38,6 @@ int projected_destroyed(void) { return destroyed; }
 #ifdef __cplusplus
 }
 #endif
+
+struct ProjectionPrivate { int value; };
+int projection_private(struct ProjectionPrivate value) { return value.value; }

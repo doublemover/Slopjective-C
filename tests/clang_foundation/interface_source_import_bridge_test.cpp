@@ -154,6 +154,11 @@ void TestPreloadedLookups() {
   assert(bridge.LookupQualified("fixture.A", "ErrorAlias", 0).status ==
          QualifiedModuleLookupStatus::Found);
   assert(bridge.LookupUnqualified("ErrorAlias", 0).size() == 1);
+  const auto paired = bridge.LookupQualified("fixture.A", "Error", 0);
+  assert(paired.status == QualifiedModuleLookupStatus::Found);
+  assert(paired.declarations.size() == 1 &&
+         llvm::isa<clang::TypedefNameDecl>(paired.declarations.front()));
+
   assert(consumer->hasSema());
   {
     // ExternalSemaSource must resolve its accumulated candidates itself:

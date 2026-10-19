@@ -20,9 +20,9 @@ else:
     sys.dont_write_bytecode = True
     from sdk_example import dependencies, digest, environment, hashes, reusable, write_json
 
-WORKSPACE = 'objc3c.source-workspace.v3'
-PACKAGE = 'objc3c.source-package.v3'
-REPORT = 'objc3c.source-graph-build.v3'
+WORKSPACE = 'objc3c.source-workspace.v4'
+PACKAGE = 'objc3c.source-package.v4'
+REPORT = 'objc3c.source-graph-build.v4'
 APP = '@application'
 NAME = re.compile(r'[A-Za-z_]\w*(?:\.[A-Za-z_]\w*)*', re.ASCII)
 
@@ -78,6 +78,15 @@ def validate_provider(config: dict) -> None:
         raise ValueError('ownership lock projection requires a closed provider without dependencies')
 
 
+def validate_exports(values) -> list[str]:
+    if (not isinstance(values, list) or not values or len(values) > 256 or
+            any(not isinstance(name, str) or not name or len(name.encode('utf-8')) > 256 or
+                any(ord(char) < 33 or ord(char) == 127 for char in name) for name in values) or
+            len(set(values)) != len(values) or ('*' in values and len(values) != 1)):
+        raise ValueError('exports require distinct declaration names or a single wildcard')
+    return sorted(values)
+
+
 def load_graph(workspace: Path) -> dict:
     workspace = workspace.resolve(strict=True)
     data = json.loads(workspace.read_text())
@@ -91,7 +100,8 @@ def load_graph(workspace: Path) -> dict:
     for name in data['packages']:
         path = within(root, name, 'package manifest')
         config = json.loads(path.read_text())
-        fields(config, {'schema', 'name', 'package', 'source', 'ownership', 'provider_ownership', 'language', 'standard', 'dependencies'}, str(path))
+        fields(config, {'schema', 'name', 'package', 'source', 'ownership', 'provider_ownership', 'exports', 'language', 'standard', 'dependencies'}, str(path))
+        config['exports'] = validate_exports(config['exports'])
         module = config['name']
         if (config['schema'] != PACKAGE or not isinstance(module, str) or not NAME.fullmatch(module) or
                 module in packages or
@@ -256,6 +266,9 @@ def _build(sdk: Path, graph: dict, output: Path, optimization: str) -> dict:
             dependency_record = directory / 'dependencies.json'
             command += ['--emit-dependency-record', str(dependency_record)]
             products.append(dependency_record)
+        if name != APP:
+            for declaration in config['exports']:
+                command += ['--export-declaration', declaration]
         command += ['--', '--no-default-config', '-std=' + config['standard'], '-fblocks', '-' + optimization,
                     '-isystem', str(sdk / 'include'),
                     '-MD', '-MF', str(depfile), '-MT', 'dependencies']
@@ -307,12 +320,12 @@ def _build(sdk: Path, graph: dict, output: Path, optimization: str) -> dict:
     verify()
     # Relocatable installation inventory: identities and direct visibility locks
     # accompany content hashes of each installed object/interface/sidecar.
-    inventory = {'schema': 'objc3c.package-installation.v3', 'sdk_seal': seal,
+    inventory = {'schema': 'objc3c.package-installation.v4', 'sdk_seal': seal,
                  'target': target, 'optimization': optimization,
                  'application_mode': {key: app[key] for key in ('language', 'standard', 'ownership')}, 'packages': [
                      {'module': identities[name], 'language': packages[name]['language'],
                       'standard': packages[name]['standard'], 'ownership': packages[name]['ownership'],
-                      'provider_ownership': packages[name]['provider_ownership'],
+                      'provider_ownership': packages[name]['provider_ownership'], 'exports': packages[name]['exports'],
                       'dependencies': packages[name]['dependencies'],
                       'artifacts': {str(path.relative_to(output)): digest(path) for path in
                                     (directories[name] / 'module.o', paths[name], paths[name].with_suffix('.objc3i.json'))}}

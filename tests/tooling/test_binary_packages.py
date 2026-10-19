@@ -29,13 +29,41 @@ def bundle(tmp_path):
                                 'public_import': edge['visibility'] == 'public',
                                 'reexported': edge['visibility'] == 'public'} for edge in dependencies]
         (directory / (name + '.objc3i.json')).write_text(json.dumps({'schema_id':'objc3c.semantic-interface.v2','schema_major':2,'ownership_projection':'','module': identity, 'dependencies': native_dependencies}))
-        rows.append({'language': 'objective-c++', 'standard': 'c++20', 'ownership': 'arc', 'provider_ownership': 'arc',
+        rows.append({'language': 'objective-c++', 'standard': 'c++20', 'ownership': 'arc', 'provider_ownership': 'arc', 'exports': ['*'],
                      'module': identity, 'dependencies': dependencies,
                      'artifacts': {path.relative_to(root).as_posix(): packages.digest(path) for path in directory.iterdir()}})
     manifest = {'schema': packages.SCHEMA, 'sdk_seal': 'b' * 64, 'target': 'x86_64-unknown-linux-gnu',
                 'optimization': 'O2', 'packages': rows}
     (root / 'package.json').write_text(json.dumps(manifest))
     return root, manifest, packages.content_hash(manifest)
+
+
+@pytest.mark.parametrize('damage', [None, 'missing', 'extra', 'duplicate', 'empty', 'old-schema'])
+def test_selected_exports_bind_native_public_roots(bundle, tmp_path, damage):
+    source, manifest, _ = bundle
+    for row in manifest['packages']:
+        row['exports'] = ['Answer', 'answer']
+        name = row['module']['canonical_name']
+        path = source / f'modules/{name}/{name}.objc3i.json'
+        sidecar = json.loads(path.read_text())
+        sidecar['declarations'] = [{'kind': 'Typedef', 'qualified_name': 'Answer'},
+                                   {'kind': 'Function', 'qualified_name': 'answer'},
+                                   {'kind': 'Field', 'qualified_name': 'member'}]
+        path.write_text(json.dumps(sidecar))
+        row['artifacts'][str(path.relative_to(source))] = packages.digest(path)
+    row = manifest['packages'][0]
+    if damage == 'missing': row['exports'] = ['answer']
+    elif damage == 'extra': row['exports'].append('hidden')
+    elif damage == 'duplicate': row['exports'].append('answer')
+    elif damage == 'empty': row['exports'] = []
+    elif damage == 'old-schema': manifest['schema'] = 'objc3c.binary-package.v2'
+    (source / 'package.json').write_text(json.dumps(manifest))
+    identity = packages.content_hash(manifest)
+    if damage:
+        with pytest.raises(ValueError, match='exports|schema'):
+            packages.install(source, identity, tmp_path / 'store')
+    else:
+        assert packages.install(source, identity, tmp_path / 'store')['status'] == 'PASS'
 
 
 def test_install_is_relocatable_idempotent_and_content_addressed(bundle, tmp_path):

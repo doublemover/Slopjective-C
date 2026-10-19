@@ -567,6 +567,8 @@ CompileResult Compile(const CompileRequest &request) {
        (request.module_name.empty() || request.package_identity.empty())) ||
       (request.projected_arc.has_value() &&
        (!objc || !request.objc3 || !request.emit_semantic_interface)) ||
+      (!request.interface_exports.empty() &&
+       !request.emit_semantic_interface) ||
       (!request.interface_output_path.empty() &&
        !request.emit_semantic_interface) ||
       (request.emit != EmitKind::Syntax && request.output_path.empty())) {

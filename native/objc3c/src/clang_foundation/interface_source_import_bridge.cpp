@@ -196,7 +196,8 @@ bool InterfaceSourceImportBridge::ValidateVisibleExports(
     auto artifact = artifacts.find(module_name);
     if (artifact == artifacts.end()) continue;
     for (const auto &decl : artifact->second.declarations) {
-      const bool tag = decl.kind == "Record" || decl.kind == "Enum";
+      const bool tag = decl.kind == "Record" || decl.kind == "CXXRecord" ||
+                       decl.kind == "Enum";
       const std::string key = (tag ? "tag:" : "ordinary:") + decl.qualified_name;
       auto &prior_exports = names[key];
       for (const auto &prior : prior_exports) {
@@ -313,6 +314,34 @@ QualifiedModuleLookup InterfaceSourceImportBridge::LookupQualified(
   result.identifier = identifier.str();
   AppendModuleDeclarations(canonical_module_name, identifier,
                           identifier_namespace, result.declarations);
+  if (result.declarations.size() > 1) {
+    const auto *first =
+        llvm::dyn_cast<clang::TypeDecl>(result.declarations.front());
+    if (first) {
+      const auto &context = first->getASTContext();
+      const auto type = context.getTypeDeclType(first);
+      const bool same_type = std::all_of(
+          result.declarations.begin(), result.declarations.end(),
+          [&](const auto *declaration) {
+            const auto *named_type =
+                llvm::dyn_cast<clang::TypeDecl>(declaration);
+            return named_type && &named_type->getASTContext() == &context &&
+                   context.hasSameType(type,
+                                       context.getTypeDeclType(named_type));
+          });
+      if (same_type) {
+        auto preferred = std::find_if(
+            result.declarations.begin(), result.declarations.end(),
+            [](const auto *declaration) {
+              return llvm::isa<clang::TypedefNameDecl>(declaration);
+            });
+        auto *declaration = preferred == result.declarations.end()
+                                ? result.declarations.front()
+                                : *preferred;
+        result.declarations = {declaration};
+      }
+    }
+  }
   if (!IsVisible(canonical_module_name)) {
     // An unloaded registry entry has no export list yet. Once its artifact
     // is known, only an actual export should trigger the import diagnostic.

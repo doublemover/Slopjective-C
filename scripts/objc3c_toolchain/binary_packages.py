@@ -15,14 +15,14 @@ import tempfile
 
 if __package__:
     from .sdk_example import dependencies, digest, environment, hashes, write_json
-    from .source_graph import NAME, fields, locks, source_inputs, validate_mode, validate_provider, within
+    from .source_graph import NAME, fields, locks, source_inputs, validate_mode, validate_provider, validate_exports, within
 else:
     sys.dont_write_bytecode = True
     from sdk_example import dependencies, digest, environment, hashes, write_json
-    from build import NAME, fields, locks, source_inputs, validate_mode, validate_provider, within
+    from build import NAME, fields, locks, source_inputs, validate_mode, validate_provider, validate_exports, within
 
-SCHEMA = 'objc3c.binary-package.v2'
-CONSUMER = 'objc3c.binary-consumer.v2'
+SCHEMA = 'objc3c.binary-package.v3'
+CONSUMER = 'objc3c.binary-consumer.v3'
 HASH = re.compile('[0-9a-f]{64}', re.ASCII)
 MODE = ('language', 'standard', 'ownership')
 IDENTITY = {'canonical_name', 'extension_abi', 'language_profile', 'language_revision',
@@ -68,7 +68,7 @@ def package_rows(manifest: dict) -> dict:
         raise ValueError('binary package must contain modules')
     rows = {}
     for row in manifest['packages']:
-        fields(row, {*MODE, 'provider_ownership', 'module', 'dependencies', 'artifacts'}, 'binary module')
+        fields(row, {*MODE, 'provider_ownership', 'exports', 'module', 'dependencies', 'artifacts'}, 'binary module')
         module = row['module']
         fields(module, IDENTITY, 'module identity')
         if any(not isinstance(value, str) or not value for value in module.values()):
@@ -80,6 +80,8 @@ def package_rows(manifest: dict) -> dict:
         suffix = {'objective-c': '.m', 'objective-c++': '.mm', 'c++': '.cpp'}.get(row['language'], '') if isinstance(row['language'], str) else ''
         validate_mode(row, Path('module' + suffix))
         validate_provider(row)
+        if validate_exports(row['exports']) != row['exports']:
+            raise ValueError('binary exports must be canonical')
         runtime = ('no-objc-runtime' if row['language'] == 'c++' else 'gnustep-2.2') + ';' + ('arc' if row['ownership'] == 'arc' else 'manual-reference-counting')
         if (module['target_triple'] != manifest['target'] or module['runtime_abi'] != runtime or
                 ';language=' + row['language'] + ';' not in module['language_profile'] or
@@ -142,6 +144,17 @@ def verify_files(root: Path, manifest: dict, *, exact: bool):
         sidecar = json.loads((root / f'modules/{name}/{name}.objc3i.json').read_text())
         if not isinstance(sidecar, dict) or sidecar.get('module') != row['module']:
             raise ValueError('binary package sidecar differs from its module identity')
+        if row['exports'] != ['*']:
+            root_kinds = {'Function', 'Var', 'Record', 'CXXRecord', 'Enum', 'Typedef',
+                          'TypeAlias', 'ObjCInterface', 'ObjCProtocol', 'ObjCCategory'}
+            declarations = sidecar.get('declarations')
+            if (not isinstance(declarations, list) or
+                    any(not isinstance(declaration, dict) or
+                        not isinstance(declaration.get('kind'), str) or
+                        not isinstance(declaration.get('qualified_name'), str) for declaration in declarations) or
+                    {declaration.get('qualified_name') for declaration in declarations
+                     if declaration.get('kind') in root_kinds} != set(row['exports'])):
+                raise ValueError('binary exports differ from the native public root declarations')
         projection = sidecar.get('ownership_projection')
         projected = row['provider_ownership'] != row['ownership']
         if (not isinstance(projection, str) or bool(projection) != projected or
@@ -237,8 +250,8 @@ def publish(sdk: Path, build: Path, store: Path) -> dict:
         inventory = json.loads((build / 'package-installation.json').read_text())
         fields(inventory, {'schema', 'sdk_seal', 'target', 'optimization', 'application_mode', 'packages', 'content_sha256'}, 'installation inventory')
         unhashed = {key: value for key, value in inventory.items() if key != 'content_sha256'}
-        if (inventory['schema'] != 'objc3c.package-installation.v3' or content_hash(unhashed) != inventory['content_sha256'] or
-                not isinstance(report, dict) or report.get('schema') != 'objc3c.source-graph-build.v3' or report.get('status') != 'PASS' or
+        if (inventory['schema'] != 'objc3c.package-installation.v4' or content_hash(unhashed) != inventory['content_sha256'] or
+                not isinstance(report, dict) or report.get('schema') != 'objc3c.source-graph-build.v4' or report.get('status') != 'PASS' or
                 report.get('installation') != inventory):
             raise ValueError('publication requires a completed, matching source build inventory')
         manifest = {key: inventory[key] for key in ('sdk_seal', 'target', 'optimization', 'packages')}
@@ -326,7 +339,7 @@ def consume(sdk: Path, package: Path, expected: str, application: Path, output: 
             raise ValueError('consumer sources changed during compilation')
         if hashes(map(Path, tracked)) != tracked:
             raise ValueError('consumer header dependencies changed during compilation')
-        report = {'schema': 'objc3c.binary-consumer-build.v2', 'status': 'PASS', 'package_content_sha256': expected,
+        report = {'schema': 'objc3c.binary-consumer-build.v3', 'status': 'PASS', 'package_content_sha256': expected,
                   'sdk_seal': identity['seal_sha256'], 'modules': order, 'sources': sources, 'dependencies': tracked, 'commands': commands,
                   'provider_compilations': 0, 'executable_sha256': digest(executable)}
         write_json(report_path, report)

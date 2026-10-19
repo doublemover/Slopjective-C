@@ -6,7 +6,19 @@ import shutil
 
 import pytest
 
-from scripts.objc3c_toolchain.source_graph import build_graph, load_graph, source_inputs
+from scripts.objc3c_toolchain.source_graph import build_graph, load_graph, source_inputs, validate_exports
+
+
+@pytest.mark.parametrize('values', [None, [], [''], ['*', 'answer'], ['x', 'x'],
+                                   ['space name'], [7], ['x\n'], ['x' * 257]])
+def test_rejects_invalid_export_policies(values):
+    with pytest.raises(ValueError, match='exports'):
+        validate_exports(values)
+
+
+def test_export_selection_is_canonical():
+    assert validate_exports(['answer', 'API']) == ['API', 'answer']
+    assert validate_exports(['*']) == ['*']
 
 FIXTURE = Path(__file__).resolve().parents[1] / 'clang_foundation/source_graph'
 
@@ -194,9 +206,9 @@ def test_explicit_language_and_standard_modes_resolve_the_diamond(workspace, lan
 def test_mode_cutover_and_incompatible_edges_fail_before_compilation(workspace, case, match):
     leaf = workspace.parent / 'leaf/package.json'
     if case == 'old-workspace':
-        edit(workspace, lambda data: data.update(schema='objc3c.source-workspace.v2'))
+        edit(workspace, lambda data: data.update(schema='objc3c.source-workspace.v3'))
     elif case == 'old-package':
-        edit(leaf, lambda data: data.update(schema='objc3c.source-package.v2'))
+        edit(leaf, lambda data: data.update(schema='objc3c.source-package.v3'))
     elif case == 'missing-mode':
         edit(leaf, lambda data: data.pop('language'))
     elif case == 'unknown-language':

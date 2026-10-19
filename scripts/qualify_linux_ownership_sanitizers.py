@@ -102,6 +102,9 @@ def qualify(sdk: Path, resource: Path, output: Path) -> dict:
                         if name:
                             command.extend(['--emit-interface', modules / (name + '.objc3i'),
                                             '--module', name, '--package', package])
+                            config = json.loads((sources / part / 'package.json').read_text())
+                            for declaration in config['exports']:
+                                command.extend(['--export-declaration', declaration])
                         if part != 'provider':
                             dependency, dep_package = (('fixture.Ownership', 'ownership-v1')
                                                        if part == 'reexport'

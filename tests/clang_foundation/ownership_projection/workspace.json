@@ -1,5 +1,5 @@
 {
-  "schema": "objc3c.source-workspace.v3",
+  "schema": "objc3c.source-workspace.v4",
   "packages": ["provider/package.json", "reexport/package.json"],
   "application": {
     "root": "app",

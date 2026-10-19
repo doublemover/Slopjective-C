@@ -20,6 +20,7 @@ int RunCompiler(int argc, char **argv) {
            "[--emit-llvm path] [--arc] [--profile name] [--strict-concurrency] "
            "[--emit-interface path.objc3i --module name --package identity] "
            "[--project-ownership arc|mrc] "
+           "[--export-declaration name] "
            "[--target triple] [--runtime abi] [--module-search-path dir] "
            "[--sdk-root dir] "
            "[--import-module name fingerprint package "
@@ -93,6 +94,8 @@ int RunCompiler(int argc, char **argv) {
       request.module_imports.push_back(std::move(module));
     } else if (argument == "--objcxx")
       request.language = BaseLanguage::ObjectiveCxx;
+    else if (argument == "--export-declaration" && has_values(1))
+      request.interface_exports.emplace_back(argv[++i]);
     else if (argument == "--project-ownership" && has_values(1)) {
       std::string mode = argv[++i];
       if (mode != "arc" && mode != "mrc") {
@@ -146,7 +149,9 @@ int RunCompiler(int argc, char **argv) {
   }
   const bool objc = request.language == BaseLanguage::ObjectiveC ||
                     request.language == BaseLanguage::ObjectiveCxx;
-  if ((request.projected_arc.has_value() &&
+  if ((!request.interface_exports.empty() &&
+       !request.emit_semantic_interface) ||
+      (request.projected_arc.has_value() &&
        (!request.emit_semantic_interface || !request.objc3)) ||
       ((request.objc3 || request.arc || !request.objc_runtime.empty()) &&
        !objc) ||
