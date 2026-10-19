@@ -97,6 +97,41 @@ static int block_failure(void) {
   record_copy_fails=false;
   return 0;
 }
+static RecordCall return_cleanup(int key) {
+  FailCleanup fail;
+  return record_make(key);
+}
+static RecordCall return_nrvo_outer(int key) {
+  FailCleanup fail;
+  RecordCall result=record_make(key);
+  return result;
+}
+static RecordCall return_nrvo_inner(int key) {
+  RecordCall result=record_make(key);
+  FailCleanup fail;
+  return result;
+}
+static RecordCall return_nrvo_body(int key) {
+  RecordCall result=record_make(key);
+  throw 42;
+  return result;
+}
+struct ReturnParameter {
+  RecordStrong value;
+  ~ReturnParameter() noexcept(false) { throw 42; }
+};
+static RecordCall return_parameter(ReturnParameter parameter) { return record_make(85); }
+static int return_failures(void) {
+  RecordCall (*functions[])(int)={return_cleanup,return_nrvo_outer,return_nrvo_inner,return_nrvo_body};
+  for(int i=0;i!=4;++i) {
+    int key=80+i;
+    try { functions[i](key); CHECK(0); }
+    catch(int error) { CHECK(error==42 && record_destroyed(key)==1); }
+  }
+  try { return_parameter(ReturnParameter{record_value(84)}); CHECK(0); }
+  catch(int error) { CHECK(error==42 && record_destroyed(84)==1 && record_destroyed(85)==1); }
+  return 0;
+}
 static int cpp(void) {
   static_assert(!__is_trivially_copyable(RecordPair));
   static_assert(!__is_trivially_destructible(RecordPair));
@@ -142,6 +177,7 @@ static int cpp(void) {
   }
   CHECK(record_destroyed(58)==1);
   CHECK(block_failure()==0);
+  CHECK(return_failures()==0);
   return 0;
 }
 #endif
@@ -205,8 +241,34 @@ static int hybrid(void) {
   CHECK(record_destroyed(54)==1 && observed==(id)0);
   return 0;
 }
+static void fail_record_cleanup(int *key) { @throw record_object(*key+1); }
+static struct RecordCall return_c_cleanup(int key) {
+  int cleanup __attribute__((cleanup(fail_record_cleanup)))=key;
+  return record_make(key);
+}
+static struct RecordCall return_c_named(int key) {
+  int cleanup __attribute__((cleanup(fail_record_cleanup)))=key;
+  struct RecordCall result=record_make(key);
+  return result;
+}
+static RecordWeak fail_record_weak(void) { @throw record_object(89); }
+static struct RecordCall return_partial_record(void) {
+  return (struct RecordCall){42,record_value(88),fail_record_weak()};
+}
+static int native_return_failures(void) {
+  @autoreleasepool {
+    @try { return_c_cleanup(90); CHECK(0); }
+    @catch(id error) { CHECK(error && record_destroyed(90)==1); }
+    @try { return_c_named(92); CHECK(0); }
+    @catch(id error) { CHECK(error && record_destroyed(92)==1); }
+    @try { return_partial_record(); CHECK(0); }
+    @catch(id error) { CHECK(error && record_destroyed(88)==1); }
+  }
+  CHECK(record_destroyed(89)==1 && record_destroyed(91)==1 && record_destroyed(93)==1);
+  return 0;
+}
 int main(void) {
-  CHECK(ordinary()==0);CHECK(failures()==0);CHECK(calls()==0);CHECK(typed_exits()==0);CHECK(hybrid()==0);
+  CHECK(ordinary()==0);CHECK(failures()==0);CHECK(calls()==0);CHECK(typed_exits()==0);CHECK(hybrid()==0);CHECK(native_return_failures()==0);
 #ifdef __cplusplus
   CHECK(cpp()==0);
 #endif

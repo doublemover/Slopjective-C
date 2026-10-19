@@ -18,7 +18,11 @@ Completed fields and array elements become owned before initializer temporaries
 are destroyed. Failed initialization destroys the completed prefix in reverse
 order. This applies to native exceptions, typed-error propagation, C++ constructor
 failure, and a throwing temporary destructor after a completed initialization.
-Generated C++ copies and assignments account for potentially throwing Block
+Return storage remains callee-owned through initializer temporaries, lexical
+cleanups, and parameter destruction. Named return optimization transfers that
+obligation after the local cleanup relinquishes its result. Exceptional exits
+destroy completed results exactly once. Generated C++ copies and assignments
+account for potentially throwing Block
 copies in their exception specifications. Associated lookup visits carrier
 payload types.
 
