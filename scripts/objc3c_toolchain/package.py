@@ -204,9 +204,15 @@ def package_sdk(repo: Path, prefix: Path, validation_report: Path, cache_dir: Pa
     from .qualify_source_modules import qualify
     from .qualify_source_graph import qualify as qualify_graph
 
+    manifest = json.loads((repo / 'toolchains/llvm/manifest.json').read_text())
+    budget = min(4, resource_limits(manifest['build'])['compile_jobs'])
+    graph_jobs = min(2, budget)
+    # Reserve graph workers within the same compiler-process budget used by
+    # the other installed gates; nested qualification does not add capacity.
+    workers = budget - graph_jobs + 1
     tasks = {
         'installed_source_modules': partial(qualify, prefix, validation_report.parent / 'installed-source-modules'),
-        'installed_source_graph': partial(qualify_graph, prefix, validation_report.parent / 'installed-source-graph'),
+        'installed_source_graph': partial(qualify_graph, prefix, validation_report.parent / 'installed-source-graph', jobs=graph_jobs),
     }
     suites = (
         ('installed_carrier_calls', 'carrier-calls', {'executions': 9, 'commands': 47}),
@@ -223,8 +229,6 @@ def package_sdk(repo: Path, prefix: Path, validation_report: Path, cache_dir: Pa
     for key, suite, counts in suites:
         tasks[key] = partial(_qualify_call_suite, prefix, validation_report.parent / ('installed-' + suite),
                              data['seal_sha256'], suite, counts)
-    manifest = json.loads((repo / 'toolchains/llvm/manifest.json').read_text())
-    workers = min(4, resource_limits(manifest['build'])['compile_jobs'])
     qualification = _run_qualifications(tasks, workers)
     cache_dir.mkdir(parents=True, exist_ok=True)
     archive = cache_dir / (source['build_id'] + '-linux-x86_64-' + data['seal_sha256'][:16] + '.tar.zst')
@@ -252,7 +256,8 @@ def package_sdk(repo: Path, prefix: Path, validation_report: Path, cache_dir: Pa
     receipt = {'archive': str(archive), 'archive_sha256': _file_hash(archive),
                'archive_bytes': archive.stat().st_size, 'seal_sha256': data['seal_sha256'],
                'source_build_id': source['build_id'],
-               **qualification}
+               'qualification_parallelism': {'compiler_budget': budget,
+                    'installed_gates': workers, 'graph_cases': graph_jobs}, **qualification}
     archive.with_suffix('.json').write_text(json.dumps(receipt, indent=2) + '\n')
     return {**receipt, 'cache_hit': False}
 

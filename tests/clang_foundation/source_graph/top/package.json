@@ -1,5 +1,5 @@
 {
-  "schema": "objc3c.source-package.v1",
+  "schema": "objc3c.source-package.v2",
   "name": "fixture.Top",
   "package": "top-v1",
   "source": "module.m",
@@ -15,5 +15,7 @@
       "package": "right-v1",
       "visibility": "private"
     }
-  ]
+  ],
+  "language": "objective-c",
+  "standard": "c17"
 }
