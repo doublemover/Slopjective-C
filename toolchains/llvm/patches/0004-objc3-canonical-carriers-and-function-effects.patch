@@ -573,10 +573,44 @@ index 41ddd88a8..d1b3d82af 100644
    void VisitCompoundStmt(const CompoundStmt *Node);
    void VisitCXXExpansionStmtPattern(const CXXExpansionStmtPattern *Node);
 diff --git a/clang/include/clang/AST/TypeBase.h b/clang/include/clang/AST/TypeBase.h
-index c9658775f..14a35a5ea 100644
+index c9658775f..1c8a4a52a 100644
 --- a/clang/include/clang/AST/TypeBase.h
 +++ b/clang/include/clang/AST/TypeBase.h
-@@ -3362,6 +3362,66 @@ public:
+@@ -1490,7 +1490,10 @@ public:
+     PDIK_ARCWeak,
+ 
+     /// The type is a struct containing a field whose type is not PCK_Trivial.
+-    PDIK_Struct
++    PDIK_Struct,
++
++    /// An ObjC3 value carrier with explicit active-arm storage operations.
++    PDIK_ObjC3Carrier
+   };
+ 
+   /// Functions to query basic properties of non-trivial C struct types.
+@@ -1529,7 +1532,10 @@ public:
+     /// semantics are too complex to express here, in part because they depend
+     /// on the exact constructor or assignment operator that is chosen by
+     /// overload resolution to do the copy.
+-    PCK_Struct
++    PCK_Struct,
++
++    /// An ObjC3 carrier whose selected arm requires a generated value copy.
++    PCK_ObjC3Carrier
+   };
+ 
+   /// Check if this is a non-trivial type that would cause a C struct
+@@ -1550,7 +1556,8 @@ public:
+     DK_cxx_destructor,
+     DK_objc_strong_lifetime,
+     DK_objc_weak_lifetime,
+-    DK_nontrivial_c_struct
++    DK_nontrivial_c_struct,
++    DK_objc3_carrier
+   };
+ 
+   /// Returns a nonzero value if objects of this type require
+@@ -3362,6 +3369,66 @@ public:
    static bool classof(const Type *T) { return T->getTypeClass() == Complex; }
  };
  
@@ -643,7 +677,7 @@ index c9658775f..14a35a5ea 100644
  /// Sugar for parentheses used when specifying types.
  class ParenType : public Type, public llvm::FoldingSetNode {
    friend class ASTContext; // ASTContext creates these.
-@@ -4819,11 +4879,14 @@ public:
+@@ -4819,11 +4886,14 @@ public:
      LLVM_PREFERRED_TYPE(bool)
      unsigned EffectsHaveConditions : 1;
      unsigned NumFunctionEffects : 4;
@@ -659,7 +693,7 @@ index c9658775f..14a35a5ea 100644
    };
  
    /// A holder for extra information from attributes which aren't part of an
-@@ -5102,6 +5165,41 @@ public:
+@@ -5102,6 +5172,41 @@ public:
    }
  };
  
@@ -701,7 +735,7 @@ index c9658775f..14a35a5ea 100644
  /// A FunctionEffect plus a potential boolean expression determining whether
  /// the effect is declared (e.g. nonblocking(expr)). Generally the condition
  /// expression when present, is dependent.
-@@ -5368,7 +5466,7 @@ class FunctionProtoType final
+@@ -5368,7 +5473,7 @@ class FunctionProtoType final
            FunctionType::FunctionTypeExtraAttributeInfo,
            FunctionType::FunctionTypeArmAttributes, FunctionType::ExceptionType,
            Expr *, FunctionDecl *, FunctionType::ExtParameterInfo, Qualifiers,
@@ -710,7 +744,7 @@ index c9658775f..14a35a5ea 100644
    friend class ASTContext; // ASTContext creates these.
    friend TrailingObjects;
  
-@@ -5409,6 +5507,8 @@ class FunctionProtoType final
+@@ -5409,6 +5514,8 @@ class FunctionProtoType final
    // * Optionally, an array of getNumFunctionEffects() EffectConditionExpr.
    //   Present only when getNumFunctionEffectConditions() > 0.
    //
@@ -719,7 +753,7 @@ index c9658775f..14a35a5ea 100644
    // The optional FunctionTypeExtraBitfields has to be before the data
    // related to the exception specification since it contains the number
    // of exception types.
-@@ -5462,6 +5562,7 @@ public:
+@@ -5462,6 +5569,7 @@ public:
      SourceLocation EllipsisLoc;
      FunctionEffectsRef FunctionEffects;
      FunctionTypeExtraAttributeInfo ExtraAttributeInfo;
@@ -727,7 +761,7 @@ index c9658775f..14a35a5ea 100644
  
      LLVM_PREFERRED_TYPE(bool)
      unsigned Variadic : 1;
-@@ -5496,6 +5597,8 @@ public:
+@@ -5496,6 +5604,8 @@ public:
        return ExceptionSpec.Type == EST_Dynamic ||
               requiresFunctionProtoTypeArmAttributes() ||
               requiresFunctionProtoTypeExtraAttributeInfo() ||
@@ -736,7 +770,7 @@ index c9658775f..14a35a5ea 100644
               !FunctionEffects.empty();
      }
  
-@@ -5561,6 +5664,14 @@ private:
+@@ -5561,6 +5671,14 @@ private:
      return getNumFunctionEffects();
    }
  
@@ -751,7 +785,7 @@ index c9658775f..14a35a5ea 100644
    /// Determine whether there are any argument types that
    /// contain an unexpanded parameter pack.
    static bool containsAnyUnexpandedParameterPack(const QualType *ArgArray,
-@@ -5671,9 +5782,33 @@ public:
+@@ -5671,9 +5789,33 @@ public:
      EPI.ExtraAttributeInfo = getExtraAttributeInfo();
      EPI.AArch64SMEAttributes = getAArch64SMEAttributes();
      EPI.FunctionEffects = getFunctionEffects();
@@ -1310,7 +1344,7 @@ index f98b0f358..e1611058b 100644
    /// source.
    ///
 diff --git a/clang/include/clang/Sema/Sema.h b/clang/include/clang/Sema/Sema.h
-index 11550340a..72e393c21 100644
+index 11550340a..b404609d9 100644
 --- a/clang/include/clang/Sema/Sema.h
 +++ b/clang/include/clang/Sema/Sema.h
 @@ -15,6 +15,8 @@
@@ -1340,7 +1374,22 @@ index 11550340a..72e393c21 100644
    /// Map of current shadowing declarations to shadowed declarations. Warn if
    /// it looks like the user is trying to modify the shadowing declaration.
    llvm::DenseMap<const NamedDecl *, const NamedDecl *> ShadowingDecls;
-@@ -11247,6 +11253,83 @@ public:
+@@ -5582,6 +5588,14 @@ public:
+     /// The set of exceptions in the exception specification.
+     const QualType *data() const { return Exceptions.data(); }
+ 
++    /// Include a generated operation that can propagate a native exception.
++    void CalledPotentiallyThrowingOperation() {
++      if (ComputedEST != EST_MSAny) {
++        ComputedEST = EST_None;
++        ClearExceptions();
++      }
++    }
++
+     /// Integrate another called method into the collected data.
+     void CalledDecl(SourceLocation CallLoc, const CXXMethodDecl *Method);
+ 
+@@ -11247,6 +11261,83 @@ public:
                              LabelDecl *Label, SourceLocation LabelLoc);
  
    void ActOnStartOfDeferStmt(SourceLocation DeferLoc, Scope *CurScope);
@@ -1424,7 +1473,7 @@ index 11550340a..72e393c21 100644
    void ActOnDeferStmtError(Scope *CurScope);
    StmtResult ActOnEndOfDeferStmt(Stmt *Body, Scope *CurScope);
  
-@@ -15357,6 +15440,11 @@ public:
+@@ -15357,6 +15448,11 @@ public:
                               SourceLocation Loc, DeclarationName Entity,
                               const FunctionProtoType::ExtProtoInfo &EPI);
  
@@ -2988,10 +3037,18 @@ index 9799c8651..3ee58bf5b 100644
    if (D->isVariadic())
      OS << " variadic";
 diff --git a/clang/lib/AST/Type.cpp b/clang/lib/AST/Type.cpp
-index 42d148715..450208f96 100644
+index 42d148715..834f669df 100644
 --- a/clang/lib/AST/Type.cpp
 +++ b/clang/lib/AST/Type.cpp
-@@ -2535,6 +2535,17 @@ bool Type::isIncompleteType(NamedDecl **Def) const {
+@@ -13,6 +13,7 @@
+ #include "clang/AST/Type.h"
+ #include "Linkage.h"
+ #include "clang/AST/ASTContext.h"
++#include "clang/AST/ObjC3TypeContracts.h"
+ #include "clang/AST/Attr.h"
+ #include "clang/AST/CharUnits.h"
+ #include "clang/AST/Decl.h"
+@@ -2535,6 +2536,17 @@ bool Type::isIncompleteType(NamedDecl **Def) const {
    switch (CanonicalType->getTypeClass()) {
    default:
      return false;
@@ -3009,7 +3066,7 @@ index 42d148715..450208f96 100644
    case Builtin:
      // Void is the only incomplete builtin type.  Per C99 6.2.5p19, it can never
      // be completed.
-@@ -2617,6 +2628,15 @@ bool Type::isAlwaysIncompleteType() const {
+@@ -2617,6 +2629,15 @@ bool Type::isAlwaysIncompleteType() const {
    if (isa<TagType>(CanonicalType))
      return false;
  
@@ -3025,7 +3082,27 @@ index 42d148715..450208f96 100644
    // Other types are incompletable.
    //
    // E.g. `char[]` and `void`. The type is incomplete and no future
-@@ -3800,6 +3820,8 @@ FunctionProtoType::FunctionProtoType(QualType result, ArrayRef<QualType> params,
+@@ -3075,6 +3096,9 @@ bool QualType::isTrapType() const {
+ 
+ QualType::PrimitiveDefaultInitializeKind
+ QualType::isNonTrivialToPrimitiveDefaultInitialize() const {
++  if (hasObjC3CarrierManagedPayload(QualType(getTypePtr()->getBaseElementTypeUnsafe(), 0)))
++    return PDIK_ObjC3Carrier;
++
+   if (const auto *RD =
+           getTypePtr()->getBaseElementTypeUnsafe()->getAsRecordDecl())
+     if (RD->isNonTrivialToPrimitiveDefaultInitialize())
+@@ -3091,6 +3115,9 @@ QualType::isNonTrivialToPrimitiveDefaultInitialize() const {
+ }
+ 
+ QualType::PrimitiveCopyKind QualType::isNonTrivialToPrimitiveCopy() const {
++  if (hasObjC3CarrierManagedPayload(QualType(getTypePtr()->getBaseElementTypeUnsafe(), 0)))
++    return PCK_ObjC3Carrier;
++
+   if (const auto *RD =
+           getTypePtr()->getBaseElementTypeUnsafe()->getAsRecordDecl())
+     if (RD->isNonTrivialToPrimitiveCopy())
+@@ -3800,6 +3827,8 @@ FunctionProtoType::FunctionProtoType(QualType result, ArrayRef<QualType> params,
      FunctionTypeBits.HasExtraBitfields = true;
      auto &ExtraBits = *getTrailingObjects<FunctionTypeExtraBitfields>();
      ExtraBits = FunctionTypeExtraBitfields();
@@ -3034,7 +3111,7 @@ index 42d148715..450208f96 100644
    } else {
      FunctionTypeBits.HasExtraBitfields = false;
    }
-@@ -3831,6 +3853,13 @@ FunctionProtoType::FunctionProtoType(QualType result, ArrayRef<QualType> params,
+@@ -3831,6 +3860,13 @@ FunctionProtoType::FunctionProtoType(QualType result, ArrayRef<QualType> params,
      argSlot[i] = params[i];
    }
  
@@ -3048,7 +3125,7 @@ index 42d148715..450208f96 100644
    // Propagate the SME ACLE attributes.
    if (epi.AArch64SMEAttributes != SME_NormalFunction) {
      auto &ArmTypeAttrs = *getTrailingObjects<FunctionTypeArmAttributes>();
-@@ -3950,6 +3979,10 @@ FunctionProtoType::FunctionProtoType(QualType result, ArrayRef<QualType> params,
+@@ -3950,6 +3986,10 @@ FunctionProtoType::FunctionProtoType(QualType result, ArrayRef<QualType> params,
        addDependence(TypeDependence::DependentInstantiation);
      }
    }
@@ -3059,7 +3136,7 @@ index 42d148715..450208f96 100644
  }
  
  bool FunctionProtoType::hasDependentExceptionSpec() const {
-@@ -4034,7 +4067,7 @@ void FunctionProtoType::Profile(llvm::FoldingSetNodeID &ID, QualType Result,
+@@ -4034,7 +4074,7 @@ void FunctionProtoType::Profile(llvm::FoldingSetNodeID &ID, QualType Result,
    // combined with AArch64 SME Attributes and extra attribute info, to save
    // space:
    //      int
@@ -3068,7 +3145,7 @@ index 42d148715..450208f96 100644
    //
    // There is no ambiguity between the consumed arguments and an empty EH
    // spec because of the leading 'bool' which unambiguously indicates
-@@ -4081,6 +4114,16 @@ void FunctionProtoType::Profile(llvm::FoldingSetNodeID &ID, QualType Result,
+@@ -4081,6 +4121,16 @@ void FunctionProtoType::Profile(llvm::FoldingSetNodeID &ID, QualType Result,
      if (HasConds)
        ID.AddPointer(epi.FunctionEffects.Conditions[Idx].getCondition());
    }
@@ -3085,7 +3162,7 @@ index 42d148715..450208f96 100644
  }
  
  void FunctionProtoType::Profile(llvm::FoldingSetNodeID &ID,
-@@ -4996,11 +5039,20 @@ static CachedProperties computeCachedProperties(const Type *T) {
+@@ -4996,11 +5046,20 @@ static CachedProperties computeCachedProperties(const Type *T) {
      return Cache::get(cast<ConstantMatrixType>(T)->getElementType());
    case Type::FunctionNoProto:
      return Cache::get(cast<FunctionType>(T)->getReturnType());
@@ -3106,7 +3183,7 @@ index 42d148715..450208f96 100644
      return result;
    }
    case Type::ObjCInterface: {
-@@ -5098,11 +5150,21 @@ LinkageInfo LinkageComputer::computeTypeLinkageInfo(const Type *T) {
+@@ -5098,11 +5157,21 @@ LinkageInfo LinkageComputer::computeTypeLinkageInfo(const Type *T) {
          cast<ConstantMatrixType>(T)->getElementType());
    case Type::FunctionNoProto:
      return computeTypeLinkageInfo(cast<FunctionType>(T)->getReturnType());
@@ -3128,7 +3205,7 @@ index 42d148715..450208f96 100644
      return LV;
    }
    case Type::ObjCInterface:
-@@ -5284,6 +5346,8 @@ bool Type::canHaveNullability(bool ResultIfUnknown) const {
+@@ -5284,6 +5353,8 @@ bool Type::canHaveNullability(bool ResultIfUnknown) const {
    }
  
    // Non-pointer types.
@@ -3137,6 +3214,16 @@ index 42d148715..450208f96 100644
    case Type::Complex:
    case Type::LValueReference:
    case Type::RValueReference:
+@@ -5558,6 +5629,9 @@ bool Type::isHLSLStandardLayoutRecordOrArrayOf() const {
+ }
+ 
+ QualType::DestructionKind QualType::isDestructedTypeImpl(QualType type) {
++  if (hasObjC3CarrierManagedPayload(QualType(type->getBaseElementTypeUnsafe(), 0)))
++    return DK_objc3_carrier;
++
+   switch (type.getObjCLifetime()) {
+   case Qualifiers::OCL_None:
+   case Qualifiers::OCL_ExplicitNone:
 diff --git a/clang/lib/AST/TypeLoc.cpp b/clang/lib/AST/TypeLoc.cpp
 index 7e72a8513..f96915a43 100644
 --- a/clang/lib/AST/TypeLoc.cpp
@@ -4319,7 +4406,7 @@ index 2add7c6aa..c0ce01b05 100644
    I.Fun.TrailingReturnTypeLoc   = TrailingReturnTypeLoc;
    I.Fun.MethodQualifiers        = nullptr;
 diff --git a/clang/lib/Sema/JumpDiagnostics.cpp b/clang/lib/Sema/JumpDiagnostics.cpp
-index b4a9cc120..51a4419c3 100644
+index b4a9cc120..55a41aa67 100644
 --- a/clang/lib/Sema/JumpDiagnostics.cpp
 +++ b/clang/lib/Sema/JumpDiagnostics.cpp
 @@ -14,6 +14,7 @@
@@ -4342,7 +4429,27 @@ index b4a9cc120..51a4419c3 100644
        switch (VD->getType().isDestructedType()) {
        case QualType::DK_objc_strong_lifetime:
          return ScopePair(diag::note_protected_by_objc_strong_init,
-@@ -406,6 +412,24 @@ void JumpScopeChecker::BuildScopeInformation(Stmt *S,
+@@ -167,7 +173,8 @@ static ScopePair GetDiagForGotoScopeDecl(Sema &S, const Decl *D) {
+         return ScopePair(diag::note_protected_by_objc_weak_init,
+                          diag::note_exits_objc_weak);
+ 
+-      case QualType::DK_nontrivial_c_struct:
++      case QualType::DK_objc3_carrier:
++    case QualType::DK_nontrivial_c_struct:
+         return ScopePair(diag::note_protected_by_non_trivial_c_struct_init,
+                          diag::note_exits_dtor);
+ 
+@@ -273,7 +280,8 @@ void JumpScopeChecker::BuildScopeInformation(VarDecl *D,
+         Diags = ScopePair(diag::note_enters_block_captures_weak,
+                           diag::note_exits_block_captures_weak);
+         break;
+-      case QualType::DK_nontrivial_c_struct:
++      case QualType::DK_objc3_carrier:
++    case QualType::DK_nontrivial_c_struct:
+         Diags = ScopePair(diag::note_enters_block_captures_non_trivial_c_struct,
+                           diag::note_exits_block_captures_non_trivial_c_struct);
+         break;
+@@ -406,6 +414,24 @@ void JumpScopeChecker::BuildScopeInformation(Stmt *S,
      return;
    }
  
@@ -4610,7 +4717,7 @@ index 000000000..f07788326
 +  llvm_unreachable("all ObjC3 match patterns handled");
 +}
 diff --git a/clang/lib/Sema/SemaDecl.cpp b/clang/lib/Sema/SemaDecl.cpp
-index 6a25a799a..6db9ba539 100644
+index 6a25a799a..5706fa17a 100644
 --- a/clang/lib/Sema/SemaDecl.cpp
 +++ b/clang/lib/Sema/SemaDecl.cpp
 @@ -13,6 +13,7 @@
@@ -4648,7 +4755,89 @@ index 6a25a799a..6db9ba539 100644
    QualType OldQTypeForComparison = OldQType;
    if (Context.hasAnyFunctionEffects()) {
      const auto OldFX = Old->getFunctionEffects();
-@@ -14943,9 +14964,55 @@ void Sema::addLifetimeBoundToImplicitThis(CXXMethodDecl *MD) {
+@@ -12615,10 +12636,44 @@ bool Sema::CheckFunctionDeclaration(Scope *S, FunctionDecl *NewFD,
+     // But, issue any diagnostic on the first declaration only.
+     if (Previous.empty() && NewFD->isExternC()) {
+       QualType R = NewFD->getReturnType();
++      bool ObjC3CCompatible = false;
++      const auto &Triple = Context.getTargetInfo().getTriple();
++      if (getLangOpts().ObjC3 && getLangOpts().ObjCAutoRefCount &&
++          Triple.isOSLinux() && Triple.isGNUEnvironment() &&
++          Triple.getArch() == llvm::Triple::x86_64 &&
++          getLangOpts().ObjCRuntime.getAsString() == "gnustep-2.2") {
++        unsigned Budget = 256;
++        auto Compatible = [&](auto &&Self, QualType T, unsigned Depth) -> bool {
++          if (Depth > 64 || Budget == 0 || T.isNull() || T->isDependentType()) return false;
++          --Budget;
++          if (T->isVoidType()) return true;
++          if (T->isIncompleteType() || T->isReferenceType() || T->isMemberPointerType()) return false;
++          if (const auto *Array = Context.getAsArrayType(T))
++            return isa<ConstantArrayType>(Array) && Self(Self, Array->getElementType(), Depth + 1);
++          if (const auto *Optional = T->getAs<ObjC3OptionalType>())
++            return Self(Self, Optional->getElementType(), Depth + 1);
++          if (const auto *Result = T->getAs<ObjC3ResultType>())
++            return Self(Self, Result->getSuccessType(), Depth + 1) &&
++                   Self(Self, Result->getErrorType(), Depth + 1);
++          if (const auto *RD = T->getAsRecordDecl()) {
++            if (RD->isUnion() || RD->hasAttr<PackedAttr>()) return false;
++            if (const auto *CXX = dyn_cast<CXXRecordDecl>(RD))
++              if (!CXX->isAggregate() || CXX->getNumBases() ||
++                  CXX->hasUserDeclaredConstructor() || CXX->hasUserDeclaredDestructor() ||
++                  CXX->hasUserDeclaredCopyAssignment() || CXX->hasUserDeclaredMoveAssignment() ||
++                  isa<ClassTemplateSpecializationDecl>(CXX)) return false;
++            for (const auto *Field : RD->fields())
++              if (!Self(Self, Field->getType(), Depth + 1)) return false;
++            return true;
++          }
++          return T->isScalarType() || T->isAnyComplexType() || T->isVectorType();
++        };
++        ObjC3CCompatible = containsObjC3CarrierManagedStorage(R) && Compatible(Compatible, R, 0);
++      }
+       if (R->isIncompleteType() && !R->isVoidType())
+         Diag(NewFD->getLocation(), diag::warn_return_value_udt_incomplete)
+             << NewFD << R;
+-      else if (!R.isPODType(Context) && !R->isVoidType() &&
++      else if (!ObjC3CCompatible && !R.isPODType(Context) && !R->isVoidType() &&
+                !R->isObjCObjectPointerType())
+         Diag(NewFD->getLocation(), diag::warn_return_value_udt) << NewFD << R;
+     }
+@@ -13600,6 +13655,11 @@ struct DiagNonTrivalCUnionDefaultInitializeVisitor
+     return Super::visitWithKind(PDIK, QT, FD, InNonTrivialUnion);
+   }
+ 
++  void visitObjC3Carrier(QualType QT, const FieldDecl *FD,
++                          bool InNonTrivialUnion) {
++    visitARCStrong(QT, FD, InNonTrivialUnion);
++  }
++
+   void visitARCStrong(QualType QT, const FieldDecl *FD,
+                       bool InNonTrivialUnion) {
+     if (InNonTrivialUnion)
+@@ -13666,6 +13726,11 @@ struct DiagNonTrivalCUnionDestructedTypeVisitor
+     return Super::visitWithKind(DK, QT, FD, InNonTrivialUnion);
+   }
+ 
++  void visitObjC3Carrier(QualType QT, const FieldDecl *FD,
++                          bool InNonTrivialUnion) {
++    visitARCStrong(QT, FD, InNonTrivialUnion);
++  }
++
+   void visitARCStrong(QualType QT, const FieldDecl *FD,
+                       bool InNonTrivialUnion) {
+     if (InNonTrivialUnion)
+@@ -13731,6 +13796,11 @@ struct DiagNonTrivalCUnionCopyVisitor
+     return Super::visitWithKind(PCK, QT, FD, InNonTrivialUnion);
+   }
+ 
++  void visitObjC3Carrier(QualType QT, const FieldDecl *FD,
++                          bool InNonTrivialUnion) {
++    visitARCStrong(QT, FD, InNonTrivialUnion);
++  }
++
+   void visitARCStrong(QualType QT, const FieldDecl *FD,
+                       bool InNonTrivialUnion) {
+     if (InNonTrivialUnion)
+@@ -14943,9 +15013,55 @@ void Sema::addLifetimeBoundToImplicitThis(CXXMethodDecl *MD) {
    MD->setTypeSourceInfo(TLB.getTypeSourceInfo(Context, AttributedType));
  }
  
@@ -4704,11 +4893,77 @@ index 6a25a799a..6db9ba539 100644
    CUDA().MaybeAddConstantAttr(var);
  
    if (getLangOpts().OpenCL) {
+@@ -20223,7 +20339,8 @@ void Sema::ActOnFields(Scope *S, SourceLocation RecLoc, Decl *EnclosingDecl,
+             RecordArgPassingKind::CanNeverPassInRegs)
+           Record->setArgPassingRestrictions(
+               RecordArgPassingKind::CanNeverPassInRegs);
+-      } else if (FT.getQualifiers().getObjCLifetime() == Qualifiers::OCL_Weak) {
++      } else if (FT.getQualifiers().getObjCLifetime() == Qualifiers::OCL_Weak ||
++                 containsObjC3CarrierManagedStorage(FT)) {
+         Record->setArgPassingRestrictions(
+             RecordArgPassingKind::CanNeverPassInRegs);
+       } else if (PointerAuthQualifier Q = FT.getPointerAuth();
 diff --git a/clang/lib/Sema/SemaDeclCXX.cpp b/clang/lib/Sema/SemaDeclCXX.cpp
-index b0669c602..243228124 100644
+index b0669c602..925c21bcf 100644
 --- a/clang/lib/Sema/SemaDeclCXX.cpp
 +++ b/clang/lib/Sema/SemaDeclCXX.cpp
-@@ -11172,6 +11172,13 @@ static void diagnoseInvalidDeclaratorChunks(Sema &S, Declarator &D,
+@@ -13,6 +13,7 @@
+ #include "TypeLocBuilder.h"
+ #include "clang/AST/ASTConsumer.h"
+ #include "clang/AST/ASTContext.h"
++#include "clang/AST/ObjC3TypeContracts.h"
+ #include "clang/AST/ASTMutationListener.h"
+ #include "clang/AST/CXXInheritance.h"
+ #include "clang/AST/CharUnits.h"
+@@ -5164,7 +5165,8 @@ BuildImplicitMemberInitializer(Sema &SemaRef, CXXConstructorDecl *Constructor,
+     }
+   }
+ 
+-  if (FieldBaseElementType.hasNonTrivialObjCLifetime()) {
++  if (FieldBaseElementType.hasNonTrivialObjCLifetime() ||
++      hasObjC3CarrierManagedPayload(FieldBaseElementType)) {
+     // ARC and Weak:
+     //   Default-initialize Objective-C pointers to NULL.
+     CXXMemberInit
+@@ -7471,6 +7473,13 @@ void Sema::CheckCompletedCXXClass(Scope *S, CXXRecordDecl *Record) {
+   else if (Record->hasNonTrivialDestructor())
+     Record->setParamDestroyedInCallee(CanPass);
+ 
++  // Managed record arguments have one ownership boundary in C and C++:
++  // the callee destroys an initialized argument; the caller protects it only
++  // until the call is entered. Weak subobjects keep their original addresses.
++  if (getLangOpts().ObjCAutoRefCount &&
++      containsObjC3CarrierManagedStorage(Context.getCanonicalTagType(Record)))
++    Record->setParamDestroyedInCallee(true);
++
+   if (getLangOpts().ForceEmitVTables) {
+     // If we want to emit all the vtables, we need to mark it as used.  This
+     // is especially required for cases like vtable assumption loads.
+@@ -9809,7 +9818,8 @@ bool SpecialMemberDeletionInfo::shouldDeleteForVariantObjCPtrMember(
+   // The defaulted special functions are defined as deleted if this is a variant
+   // member with a non-trivial ownership type, e.g., ObjC __strong or __weak
+   // type under ARC.
+-  if (!FieldType.hasNonTrivialObjCLifetime())
++  if (!FieldType.hasNonTrivialObjCLifetime() &&
++      !hasObjC3CarrierManagedPayload(FieldType))
+     return false;
+ 
+   // Don't make the defaulted default constructor defined as deleted if the
+@@ -10765,6 +10775,13 @@ void Sema::checkIllFormedTrivialABIStruct(CXXRecordDecl &RD) {
+     // Ill-formed if the field is an ObjectiveC pointer or of a type that is
+     // non-trivial for the purpose of calls.
+     QualType FT = FD->getType();
++    if (containsObjC3CarrierManagedStorage(FT)) {
++      unsigned ID = getDiagnostics().getCustomDiagID(DiagnosticsEngine::Warning,
++          "'trivial_abi' is ignored on records with managed carrier fields");
++      Diag(RD.getLocation(), ID);
++      RD.dropAttr<TrivialABIAttr>();
++      return;
++    }
+     if (FT.getObjCLifetime() == Qualifiers::OCL_Weak) {
+       PrintDiagAndRemoveAttr(4);
+       return;
+@@ -11172,6 +11189,13 @@ static void diagnoseInvalidDeclaratorChunks(Sema &S, Declarator &D,
  
  QualType Sema::CheckConstructorDeclarator(Declarator &D, QualType R,
                                            StorageClass &SC) {
@@ -4722,7 +4977,7 @@ index b0669c602..243228124 100644
    bool isVirtual = D.getDeclSpec().isVirtualSpecified();
  
    // C++ [class.ctor]p3:
-@@ -11371,6 +11378,13 @@ bool Sema::CheckDestructor(CXXDestructorDecl *Destructor) {
+@@ -11371,6 +11395,13 @@ bool Sema::CheckDestructor(CXXDestructorDecl *Destructor) {
  
  QualType Sema::CheckDestructorDeclarator(Declarator &D, QualType R,
                                           StorageClass& SC) {
@@ -4736,7 +4991,31 @@ index b0669c602..243228124 100644
    // C++ [class.dtor]p1:
    //   [...] A typedef-name that names a class is a class-name
    //   (7.1.3); however, a typedef-name that names a class shall not
-@@ -18882,6 +18896,22 @@ bool Sema::CheckOverridingFunctionAttributes(CXXMethodDecl *New,
+@@ -14149,6 +14180,11 @@ bool SpecialMemberExceptionSpecInfo::visitBase(CXXBaseSpecifier *Base) {
+ }
+ 
+ bool SpecialMemberExceptionSpecInfo::visitField(FieldDecl *FD) {
++  if ((CSM == CXXSpecialMemberKind::CopyConstructor ||
++       CSM == CXXSpecialMemberKind::CopyAssignment) &&
++      containsObjC3CarrierThrowingCopy(FD->getType()))
++    ExceptSpec.CalledPotentiallyThrowingOperation();
++
+   if (CSM == CXXSpecialMemberKind::DefaultConstructor &&
+       FD->hasInClassInitializer()) {
+     Expr *E = FD->getInClassInitializer();
+@@ -14218,6 +14254,11 @@ ComputeDefaultedSpecialMemberExceptionSpec(
+   //   An implicitly declared special member function (Clause 12) shall have an
+   //   exception-specification. [...]
+   SpecialMemberExceptionSpecInfo Info(S, MD, CSM, ICI, MD->getLocation());
++  if ((CSM == CXXSpecialMemberKind::CopyConstructor ||
++       CSM == CXXSpecialMemberKind::CopyAssignment) &&
++      containsObjC3CarrierThrowingCopy(S.Context.getCanonicalTagType(ClassDecl)))
++    Info.ExceptSpec.CalledPotentiallyThrowingOperation();
++
+   if (ClassDecl->isInvalidDecl())
+     return Info.ExceptSpec;
+ 
+@@ -18882,6 +18923,22 @@ bool Sema::CheckOverridingFunctionAttributes(CXXMethodDecl *New,
    const auto *NewFT = New->getType()->castAs<FunctionProtoType>();
    const auto *OldFT = Old->getType()->castAs<FunctionProtoType>();
  
@@ -12684,4 +12963,163 @@ index 000000000..191eebdc7
 +void permitted_exit(id object) {
 +  { Strong values[2] = {__objc3_some(id, object)}; goto done; }
 + done:;
++}
+diff --git a/clang/include/clang/AST/NonTrivialTypeVisitor.h b/clang/include/clang/AST/NonTrivialTypeVisitor.h
+index 80f247347..cab777bfd 100644
+--- a/clang/include/clang/AST/NonTrivialTypeVisitor.h
++++ b/clang/include/clang/AST/NonTrivialTypeVisitor.h
+@@ -30,6 +30,8 @@ template <class Derived, class RetTy = void> struct DestructedTypeVisitor {
+     switch (DK) {
+     case QualType::DK_objc_strong_lifetime:
+       return asDerived().visitARCStrong(FT, std::forward<Ts>(Args)...);
++    case QualType::DK_objc3_carrier:
++      return asDerived().visitObjC3Carrier(FT, std::forward<Ts>(Args)...);
+     case QualType::DK_nontrivial_c_struct:
+       return asDerived().visitStruct(FT, std::forward<Ts>(Args)...);
+     case QualType::DK_none:
+@@ -62,6 +64,8 @@ struct DefaultInitializedTypeVisitor {
+       return asDerived().visitARCStrong(FT, std::forward<Ts>(Args)...);
+     case QualType::PDIK_ARCWeak:
+       return asDerived().visitARCWeak(FT, std::forward<Ts>(Args)...);
++    case QualType::PDIK_ObjC3Carrier:
++      return asDerived().visitObjC3Carrier(FT, std::forward<Ts>(Args)...);
+     case QualType::PDIK_Struct:
+       return asDerived().visitStruct(FT, std::forward<Ts>(Args)...);
+     case QualType::PDIK_Trivial:
+@@ -95,6 +99,8 @@ struct CopiedTypeVisitor {
+       return asDerived().visitARCWeak(FT, std::forward<Ts>(Args)...);
+     case QualType::PCK_PtrAuth:
+       return asDerived().visitPtrAuth(FT, std::forward<Ts>(Args)...);
++    case QualType::PCK_ObjC3Carrier:
++      return asDerived().visitObjC3Carrier(FT, std::forward<Ts>(Args)...);
+     case QualType::PCK_Struct:
+       return asDerived().visitStruct(FT, std::forward<Ts>(Args)...);
+     case QualType::PCK_Trivial:
+diff --git a/clang/lib/AST/DeclCXX.cpp b/clang/lib/AST/DeclCXX.cpp
+index 0573cdf95..be0805e51 100644
+--- a/clang/lib/AST/DeclCXX.cpp
++++ b/clang/lib/AST/DeclCXX.cpp
+@@ -12,6 +12,7 @@
+ 
+ #include "clang/AST/DeclCXX.h"
+ #include "clang/AST/ASTContext.h"
++#include "clang/AST/ObjC3TypeContracts.h"
+ #include "clang/AST/ASTLambda.h"
+ #include "clang/AST/ASTMutationListener.h"
+ #include "clang/AST/ASTUnresolvedSet.h"
+@@ -1066,6 +1067,27 @@ void CXXRecordDecl::addedMember(Decl *D) {
+     // Automatic Reference Counting: the presence of a member of Objective-C pointer type
+     // that does not explicitly have no lifetime makes the class a non-POD.
+     QualType T = Context.getBaseElementType(Field->getType());
++    if (hasObjC3CarrierManagedPayload(T)) {
++      setHasObjectMember(true);
++      auto &Data = data();
++      Data.PlainOldData = false;
++      Data.HasTrivialSpecialMembers = 0;
++      Data.HasTrivialSpecialMembersForCall = 0;
++      Data.HasIrrelevantDestructor = false;
++      setArgPassingRestrictions(RecordArgPassingKind::CanNeverPassInRegs);
++      if (isUnion()) {
++        Data.DefaultedCopyConstructorIsDeleted = true;
++        Data.DefaultedMoveConstructorIsDeleted = true;
++        Data.DefaultedCopyAssignmentIsDeleted = true;
++        Data.DefaultedMoveAssignmentIsDeleted = true;
++        Data.DefaultedDestructorIsDeleted = true;
++        Data.NeedOverloadResolutionForCopyConstructor = true;
++        Data.NeedOverloadResolutionForMoveConstructor = true;
++        Data.NeedOverloadResolutionForCopyAssignment = true;
++        Data.NeedOverloadResolutionForMoveAssignment = true;
++        Data.NeedOverloadResolutionForDestructor = true;
++      }
++    }
+     if (T->isObjCRetainableType() || T.isObjCGCStrong()) {
+       if (T.hasNonTrivialObjCLifetime()) {
+         // Objective-C Automatic Reference Counting:
+diff --git a/clang/lib/Sema/SemaChecking.cpp b/clang/lib/Sema/SemaChecking.cpp
+index 2a8395e26..81b59c8d3 100644
+--- a/clang/lib/Sema/SemaChecking.cpp
++++ b/clang/lib/Sema/SemaChecking.cpp
+@@ -10821,6 +10821,9 @@ struct SearchNonTrivialToInitializeField
+     Super::visitWithKind(PDIK, FT, SL);
+   }
+ 
++  void visitObjC3Carrier(QualType FT, SourceLocation SL) {
++    visitARCStrong(FT, SL);
++  }
+   void visitARCStrong(QualType FT, SourceLocation SL) {
+     S.DiagRuntimeBehavior(SL, E, S.PDiag(diag::note_nontrivial_field) << 1);
+   }
+@@ -10863,6 +10866,9 @@ struct SearchNonTrivialToCopyField
+     Super::visitWithKind(PCK, FT, SL);
+   }
+ 
++  void visitObjC3Carrier(QualType FT, SourceLocation SL) {
++    visitARCStrong(FT, SL);
++  }
+   void visitARCStrong(QualType FT, SourceLocation SL) {
+     S.DiagRuntimeBehavior(SL, E, S.PDiag(diag::note_nontrivial_field) << 0);
+   }
+diff --git a/clang/lib/Sema/SemaLookup.cpp b/clang/lib/Sema/SemaLookup.cpp
+index fe2763213..967a54378 100644
+--- a/clang/lib/Sema/SemaLookup.cpp
++++ b/clang/lib/Sema/SemaLookup.cpp
+@@ -3151,6 +3151,7 @@ addAssociatedClassesAndNamespaces(AssociatedLookup &Result, QualType Ty) {
+   //   and classes are determined in the following way:
+ 
+   SmallVector<const Type *, 16> Queue;
++  llvm::SmallPtrSet<const Type *, 16> SeenCarriers;
+   const Type *T = Ty->getCanonicalTypeInternal().getTypePtr();
+ 
+   while (true) {
+@@ -3171,6 +3172,17 @@ addAssociatedClassesAndNamespaces(AssociatedLookup &Result, QualType Ty) {
+ 
+     //    -- If T is a pointer to U or an array of U, its associated
+     //       namespaces and classes are those associated with U.
++    case Type::ObjC3Optional:
++      if (!SeenCarriers.insert(T).second) break;
++      T = cast<ObjC3OptionalType>(T)->getElementType().getCanonicalType().getTypePtr();
++      continue;
++    case Type::ObjC3Result: {
++      if (!SeenCarriers.insert(T).second) break;
++      const auto *ResultType = cast<ObjC3ResultType>(T);
++      Queue.push_back(ResultType->getSuccessType().getCanonicalType().getTypePtr());
++      T = ResultType->getErrorType().getCanonicalType().getTypePtr();
++      continue;
++    }
+     case Type::Pointer:
+       T = cast<PointerType>(T)->getPointeeType().getTypePtr();
+       continue;
+diff --git a/clang/test/ObjC3/Sema/carrier-record-traits.mm b/clang/test/ObjC3/Sema/carrier-record-traits.mm
+new file mode 100644
+index 000000000..34d94d18b
+--- /dev/null
++++ b/clang/test/ObjC3/Sema/carrier-record-traits.mm
+@@ -0,0 +1,28 @@
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -std=c++20 -fblocks -fexceptions -fcxx-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -fsyntax-only -verify %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -std=c++20 -fblocks -fexceptions -fcxx-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -emit-pch -o %t.pch %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c++ -std=c++20 -fblocks -fexceptions -fcxx-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -include-pch %t.pch -fsyntax-only /dev/null
++// expected-no-diagnostics
++typedef __objc3_optional(id) Strong;
++typedef __objc3_optional(id __weak) Weak;
++typedef void (^Action)(void);
++typedef __objc3_optional(Action) Block;
++struct Managed { Strong value; };
++struct Blocks { Block value; };
++struct Weaks { Weak value; };
++struct Hybrid { Strong value; Action action; };
++static_assert(!__is_trivially_copyable(Managed));
++static_assert(!__is_trivially_destructible(Managed));
++static_assert(!__is_nothrow_constructible(Blocks, const Blocks &));
++static_assert(!__is_nothrow_assignable(Blocks &, const Blocks &));
++static_assert(!__is_nothrow_constructible(Hybrid, const Hybrid &));
++static_assert(__is_nothrow_constructible(Weaks, const Weaks &));
++static_assert(__is_nothrow_constructible(Blocks, Blocks &&));
++namespace Payload {
++struct Value {};
++int associated(__objc3_optional(Value));
++int associated(__objc3_result(int, Value));
++}
++void adl(__objc3_optional(Payload::Value) optional,
++         __objc3_result(int, Payload::Value) result) {
++  (void)associated(optional); (void)associated(result);
 +}

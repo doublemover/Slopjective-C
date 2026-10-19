@@ -733,17 +733,59 @@ index 74209f579..e5978ff2a 100644
      // annot_cxxscope if it would be valid.  This handles things like x::y, etc.
      if (getLangOpts().CPlusPlus) {
 diff --git a/clang/lib/Sema/SemaExceptionSpec.cpp b/clang/lib/Sema/SemaExceptionSpec.cpp
-index 0ed5c35c4..2d3e90a61 100644
+index 0ed5c35c4..b7d001ba9 100644
 --- a/clang/lib/Sema/SemaExceptionSpec.cpp
 +++ b/clang/lib/Sema/SemaExceptionSpec.cpp
-@@ -1340,6 +1340,21 @@ CanThrowResult Sema::canThrow(const Stmt *S) {
+@@ -14,6 +14,7 @@
+ #include "clang/AST/CXXInheritance.h"
+ #include "clang/AST/Expr.h"
+ #include "clang/AST/ExprCXX.h"
++#include "clang/AST/ObjC3TypeContracts.h"
+ #include "clang/AST/StmtObjC.h"
+ #include "clang/AST/StmtSYCL.h"
+ #include "clang/AST/TypeLoc.h"
+@@ -1340,6 +1341,55 @@ CanThrowResult Sema::canThrow(const Stmt *S) {
      return mergeCanThrow(CT, canSubStmtsThrow(*this, S));
    }
  
++  case Expr::ObjC3CarrierTransferExprClass: {
++    const auto *Transfer = cast<ObjC3CarrierTransferExpr>(S);
++    CanThrowResult CT = Transfer->isValueDependent() ? CT_Dependent : CT_Cannot;
++    bool Copies = !Transfer->isMove() ||
++                  Transfer->getSource()->getType().isConstQualified();
++    if (Copies && containsObjC3CarrierThrowingCopy(Transfer->getCarrierType()))
++      CT = CT_Can;
++    return mergeCanThrow(CT, canSubStmtsThrow(*this, S));
++  }
 +  case Expr::ObjC3OptionalExprClass:
-+  case Expr::ObjC3ResultExprClass:
-+    return mergeCanThrow(cast<Expr>(S)->isValueDependent() ? CT_Dependent : CT_Cannot,
-+                         canSubStmtsThrow(*this, S));
++  case Expr::ObjC3ResultExprClass: {
++    const auto *E = cast<Expr>(S);
++    CanThrowResult CT = E->isValueDependent() ? CT_Dependent : CT_Cannot;
++    QualType Payload;
++    if (const auto *Optional = dyn_cast<ObjC3OptionalExpr>(E)) {
++      if (Optional->getKind() == ObjC3OptionalExpr::Kind::Some)
++        Payload = Optional->getCarrierType()->castAs<ObjC3OptionalType>()->getElementType();
++    } else if (const auto *Result = dyn_cast<ObjC3ResultExpr>(E)) {
++      const auto *Type = Result->getCarrierType()->castAs<ObjC3ResultType>();
++      if (Result->getKind() == ObjC3ResultExpr::Kind::Ok) Payload = Type->getSuccessType();
++      if (Result->getKind() == ObjC3ResultExpr::Kind::Err) Payload = Type->getErrorType();
++    }
++    if (!Payload.isNull() &&
++        ((Payload->isBlockPointerType() && Payload.getObjCLifetime() == Qualifiers::OCL_Strong) ||
++         containsObjC3CarrierThrowingCopy(Payload))) CT = CT_Can;
++    return mergeCanThrow(CT, canSubStmtsThrow(*this, S));
++  }
++  case Stmt::ObjC3MatchStmtClass:
++  case Expr::ObjC3MatchExprClass: {
++    const Expr *Scrutinee = isa<ObjC3MatchStmt>(S)
++        ? cast<ObjC3MatchStmt>(S)->getScrutinee()
++        : cast<ObjC3MatchExpr>(S)->getScrutinee();
++    CanThrowResult CT = Scrutinee->isValueDependent() ? CT_Dependent : CT_Cannot;
++    if (containsObjC3CarrierThrowingCopy(Scrutinee->getType())) CT = CT_Can;
++    return mergeCanThrow(CT, canSubStmtsThrow(*this, S));
++  }
++  case Stmt::ObjC3MatchArmClass:
++    return canSubStmtsThrow(*this, S);
 +
 +  case Expr::ObjC3TryExprClass: {
 +    // ObjC3 error propagation is not C++ EH. Preserve only native C++ throws
@@ -758,7 +800,7 @@ index 0ed5c35c4..2d3e90a61 100644
    case Expr::CXXDefaultArgExprClass:
      return canThrow(cast<CXXDefaultArgExpr>(S)->getExpr());
  
-@@ -1617,6 +1632,14 @@ CanThrowResult Sema::canThrow(const Stmt *S) {
+@@ -1617,6 +1667,14 @@ CanThrowResult Sema::canThrow(const Stmt *S) {
      return canSubStmtsThrow(*this, S);
    }
  
