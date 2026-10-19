@@ -131,7 +131,7 @@ index d638d9772..24208e04d 100644
  		abort();
  	}
 diff --git a/fast_paths.m b/fast_paths.m
-index ec2f646a2..7bc3fbbb1 100644
+index ec2f646a2..97508cbaf 100644
 --- a/fast_paths.m
 +++ b/fast_paths.m
 @@ -1,4 +1,5 @@
@@ -161,6 +161,14 @@ index ec2f646a2..7bc3fbbb1 100644
  }
  
  /**
+@@ -63,6 +67,7 @@ objc_alloc_init(Class cls)
+ 		return nil;
+ 	}
+ 	id instance = objc_alloc(cls);
++	if (UNLIKELY(instance == nil)) { return nil; }
+ 	// If +alloc was overwritten, it is not guaranteed that it returns
+ 	// an instance of cls.
+ 	cls = classForObject(instance);
 diff --git a/objcxx_eh.cc b/objcxx_eh.cc
 index 8ef5baf33..67576d48e 100644
 --- a/objcxx_eh.cc
