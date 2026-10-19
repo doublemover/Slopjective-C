@@ -48,3 +48,7 @@ The next storage milestone applies these operations to enclosing records and
 their implicit copy, assignment and destruction, then Objective-C ivars and
 properties and reference or `__block` captures. Public syntax and feature
 promotion follow a bounded, fully qualified synchronous contract.
+
+The [acceptance receipt](../support/linux_managed_array_acceptance.json) binds
+implementation commit `be9af16f5` to the exact ABI 9 archive, all installed suites,
+ASan/LSan and LLDB evidence, and ordinary-user Debian 13 and Ubuntu 26.04 results.
