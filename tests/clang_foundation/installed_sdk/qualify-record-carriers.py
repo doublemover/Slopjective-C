@@ -87,7 +87,7 @@ def qualify(sdk: Path, output: Path) -> dict:
                         '--', '-' + optimization, '-fblocks'])
                     identity = json.loads(interface.with_suffix('.objc3i.json').read_text())['module']
                     imported = output / (key + '-import.o')
-                    run(key + '-import', [compiler, 'carrier-record-import.m', '--objc3', '--arc',
+                    run(key + '-import-object', [compiler, 'carrier-record-import.m', '--objc3', '--arc',
                         '--source-imports', '--module-search-path', directory, '--import-module', 'RecordCarriers',
                         identity['semantic_fingerprint'], 'record-carriers-v1', '--emit-object', imported,
                         '--emit-dependency-record', output / (key + '-dependencies.json'), '--',

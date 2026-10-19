@@ -634,10 +634,10 @@ index 000000000..67afeccdc
 +}
 diff --git a/clang/unittests/AST/ObjC3TypeContractsTest.cpp b/clang/unittests/AST/ObjC3TypeContractsTest.cpp
 new file mode 100644
-index 000000000..4ee64e383
+index 000000000..6fdb78372
 --- /dev/null
 +++ b/clang/unittests/AST/ObjC3TypeContractsTest.cpp
-@@ -0,0 +1,449 @@
+@@ -0,0 +1,497 @@
 +//===--- ObjC3TypeContractsTest.cpp - AST value type facts ----------------===//
 +//
 +// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
@@ -646,6 +646,7 @@ index 000000000..4ee64e383
 +//===----------------------------------------------------------------------===//
 +
 +#include "clang/AST/ASTContext.h"
++#include "clang/AST/ASTImporter.h"
 +#include "clang/AST/DeclCXX.h"
 +#include "clang/AST/DeclObjC.h"
 +#include "clang/AST/DeclTemplate.h"
@@ -1085,5 +1086,52 @@ index 000000000..4ee64e383
 +        Context.getCanonicalTagType(findRecord(Context, "Managed"))));
 +    EXPECT_FALSE(containsObjC3CarrierManagedStorage(
 +        Context.getCanonicalTagType(findRecord(Context, "View"))));
++  }
++}
++
++TEST(ObjC3TypeContracts, ImportedManagedRecordsPreserveLifetimeAndCallABI) {
++  for (bool CXX : {false, true}) {
++    const std::string Code = R"objc(
++      typedef __objc3_optional(id) Strong;
++      typedef __objc3_optional(id __weak) Weak;
++      struct Imported { Strong value; Weak weak; Strong values[2]; };
++      struct Outer { struct Imported child; };
++    )objc";
++    std::vector<std::string> Args = {
++        "-x", CXX ? "objective-c++" : "objective-c",
++        CXX ? "-std=c++20" : "-std=c17", "-fobjc-version=3",
++        "-fobjc-runtime=gnustep-2.2", "-fobjc-arc",
++        "-target", "x86_64-unknown-linux-gnu"};
++    auto From = tooling::buildASTFromCodeWithArgs(Code, Args, "record-from.mm");
++    auto To = tooling::buildASTFromCodeWithArgs(
++        "", Args, "record-to.mm", "clang-tool",
++        std::make_shared<PCHContainerOperations>(),
++        tooling::getClangStripDependencyFileAdjuster(),
++        {{"record-from.mm", Code}});
++    ASSERT_TRUE(From);
++    ASSERT_TRUE(To);
++    ASSERT_FALSE(From->getDiagnostics().hasErrorOccurred());
++    ASTImporter Importer(To->getASTContext(), To->getFileManager(),
++                         From->getASTContext(), From->getFileManager(), false);
++    for (llvm::StringRef Name : {"Imported", "Outer"}) {
++      auto *Source = const_cast<RecordDecl *>(
++          findRecord(From->getASTContext(), Name));
++      ASSERT_NE(Source, nullptr);
++      auto Result = Importer.Import(Source);
++      if (!Result)
++        FAIL() << llvm::toString(Result.takeError());
++      const auto *Target = cast<RecordDecl>(*Result);
++      EXPECT_EQ(Target->hasObjectMember(), Source->hasObjectMember());
++      EXPECT_EQ(Target->isNonTrivialToPrimitiveDefaultInitialize(),
++                Source->isNonTrivialToPrimitiveDefaultInitialize());
++      EXPECT_EQ(Target->isNonTrivialToPrimitiveCopy(),
++                Source->isNonTrivialToPrimitiveCopy());
++      EXPECT_EQ(Target->isNonTrivialToPrimitiveDestroy(),
++                Source->isNonTrivialToPrimitiveDestroy());
++      EXPECT_EQ(Target->isParamDestroyedInCallee(),
++                Source->isParamDestroyedInCallee());
++      EXPECT_EQ(Target->getArgPassingRestrictions(),
++                Source->getArgPassingRestrictions());
++    }
 +  }
 +}

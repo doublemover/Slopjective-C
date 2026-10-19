@@ -2024,10 +2024,18 @@ index 222881154..7aeec9298 100644
      CANONICAL_TYPE(ObjCObjectPointer)
      CANONICAL_TYPE(OverflowBehavior)
 diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
-index d743717ad..f46385507 100644
+index d743717ad..070d1e54b 100644
 --- a/clang/lib/AST/ASTImporter.cpp
 +++ b/clang/lib/AST/ASTImporter.cpp
-@@ -592,6 +592,10 @@ namespace clang {
+@@ -13,6 +13,7 @@
+ 
+ #include "clang/AST/ASTImporter.h"
+ #include "clang/AST/ASTContext.h"
++#include "clang/AST/ObjC3TypeContracts.h"
+ #include "clang/AST/ASTDiagnostic.h"
+ #include "clang/AST/ASTImporterSharedState.h"
+ #include "clang/AST/ASTLambda.h"
+@@ -592,6 +593,10 @@ namespace clang {
      ExpectedStmt VisitDefaultStmt(DefaultStmt *S);
      ExpectedStmt VisitLabelStmt(LabelStmt *S);
      ExpectedStmt VisitAttributedStmt(AttributedStmt *S);
@@ -2038,7 +2046,7 @@ index d743717ad..f46385507 100644
      ExpectedStmt VisitIfStmt(IfStmt *S);
      ExpectedStmt VisitSwitchStmt(SwitchStmt *S);
      ExpectedStmt VisitWhileStmt(WhileStmt *S);
-@@ -627,6 +631,15 @@ namespace clang {
+@@ -627,6 +632,15 @@ namespace clang {
      ExpectedStmt VisitExpr(Expr *E);
      ExpectedStmt VisitSourceLocExpr(SourceLocExpr *E);
      ExpectedStmt VisitVAArgExpr(VAArgExpr *E);
@@ -2054,7 +2062,7 @@ index d743717ad..f46385507 100644
      ExpectedStmt VisitChooseExpr(ChooseExpr *E);
      ExpectedStmt VisitConvertVectorExpr(ConvertVectorExpr *E);
      ExpectedStmt VisitShuffleVectorExpr(ShuffleVectorExpr *E);
-@@ -1426,6 +1439,27 @@ ExpectedType ASTNodeImporter::VisitComplexType(const ComplexType *T) {
+@@ -1426,6 +1440,27 @@ ExpectedType ASTNodeImporter::VisitComplexType(const ComplexType *T) {
    return Importer.getToContext().getComplexType(*ToElementTypeOrErr);
  }
  
@@ -2082,7 +2090,7 @@ index d743717ad..f46385507 100644
  ExpectedType ASTNodeImporter::VisitPointerType(const PointerType *T) {
    ExpectedType ToPointeeTypeOrErr = import(T->getPointeeType());
    if (!ToPointeeTypeOrErr)
-@@ -1626,6 +1660,12 @@ ASTNodeImporter::VisitFunctionProtoType(const FunctionProtoType *T) {
+@@ -1626,6 +1661,12 @@ ASTNodeImporter::VisitFunctionProtoType(const FunctionProtoType *T) {
        importChecked(Err, FromEPI.ExceptionSpec.SourceTemplate);
    ToEPI.ExceptionSpec.Exceptions = ExceptionTypes;
  
@@ -2095,7 +2103,34 @@ index d743717ad..f46385507 100644
    if (Err)
      return std::move(Err);
  
-@@ -4120,6 +4160,7 @@ ExpectedDecl ASTNodeImporter::VisitFunctionDecl(FunctionDecl *D) {
+@@ -2559,6 +2600,26 @@ Error ASTNodeImporter::ImportDefinition(
+     return Error::success();
+   }
+ 
++  // Import bypasses the Sema field checks that establish C record lifetime
++  // and call ABI facts. Preserve these bits for owned records in both modes.
++  if (Importer.getFromContext().getLangOpts().ObjC3 &&
++      containsObjC3CarrierManagedStorage(
++          Importer.getFromContext().getCanonicalTagType(From))) {
++    To->setHasObjectMember(From->hasObjectMember());
++    To->setNonTrivialToPrimitiveDefaultInitialize(
++        From->isNonTrivialToPrimitiveDefaultInitialize());
++    To->setNonTrivialToPrimitiveCopy(From->isNonTrivialToPrimitiveCopy());
++    To->setNonTrivialToPrimitiveDestroy(From->isNonTrivialToPrimitiveDestroy());
++    To->setParamDestroyedInCallee(From->isParamDestroyedInCallee());
++    To->setArgPassingRestrictions(From->getArgPassingRestrictions());
++    To->setHasNonTrivialToPrimitiveDefaultInitializeCUnion(
++        From->hasNonTrivialToPrimitiveDefaultInitializeCUnion());
++    To->setHasNonTrivialToPrimitiveDestructCUnion(
++        From->hasNonTrivialToPrimitiveDestructCUnion());
++    To->setHasNonTrivialToPrimitiveCopyCUnion(
++        From->hasNonTrivialToPrimitiveCopyCUnion());
++  }
++
+   To->startDefinition();
+   // Set the definition to complete even if it is really not complete during
+   // import. Some AST constructs (expressions) require the record layout
+@@ -4120,6 +4181,7 @@ ExpectedDecl ASTNodeImporter::VisitFunctionDecl(FunctionDecl *D) {
  
    QualType FromTy = D->getType();
    TypeSourceInfo *FromTSI = D->getTypeSourceInfo();
@@ -2103,7 +2138,7 @@ index d743717ad..f46385507 100644
    // Set to true if we do not import the type of the function as is. There are
    // cases when the original type would result in an infinite recursion during
    // the import. To avoid an infinite recursion when importing, we create the
-@@ -4175,6 +4216,46 @@ ExpectedDecl ASTNodeImporter::VisitFunctionDecl(FunctionDecl *D) {
+@@ -4175,6 +4237,46 @@ ExpectedDecl ASTNodeImporter::VisitFunctionDecl(FunctionDecl *D) {
    if (Err)
      return std::move(Err);
  
@@ -2150,7 +2185,7 @@ index d743717ad..f46385507 100644
    // Import the function parameters.
    SmallVector<ParmVarDecl *, 8> Parameters;
    for (auto *P : D->parameters()) {
-@@ -5062,6 +5143,14 @@ ExpectedDecl ASTNodeImporter::VisitObjCMethodDecl(ObjCMethodDecl *D) {
+@@ -5062,6 +5164,14 @@ ExpectedDecl ASTNodeImporter::VisitObjCMethodDecl(ObjCMethodDecl *D) {
        if (FoundMethod->isInstanceMethod() != D->isInstanceMethod())
          continue;
  
@@ -2165,7 +2200,7 @@ index d743717ad..f46385507 100644
        // Check return types.
        if (!Importer.IsStructurallyEquivalent(D->getReturnType(),
                                               FoundMethod->getReturnType())) {
-@@ -5124,6 +5213,7 @@ ExpectedDecl ASTNodeImporter::VisitObjCMethodDecl(ObjCMethodDecl *D) {
+@@ -5124,6 +5234,7 @@ ExpectedDecl ASTNodeImporter::VisitObjCMethodDecl(ObjCMethodDecl *D) {
    Error Err = Error::success();
    auto ToEndLoc = importChecked(Err, D->getEndLoc());
    auto ToReturnType = importChecked(Err, D->getReturnType());
@@ -2173,7 +2208,7 @@ index d743717ad..f46385507 100644
    auto ToReturnTypeSourceInfo =
        importChecked(Err, D->getReturnTypeSourceInfo());
    if (Err)
-@@ -5138,6 +5228,8 @@ ExpectedDecl ASTNodeImporter::VisitObjCMethodDecl(ObjCMethodDecl *D) {
+@@ -5138,6 +5249,8 @@ ExpectedDecl ASTNodeImporter::VisitObjCMethodDecl(ObjCMethodDecl *D) {
            D->getImplementationControl(), D->hasRelatedResultType()))
      return ToMethod;
  
@@ -2182,7 +2217,7 @@ index d743717ad..f46385507 100644
    // FIXME: When we decide to merge method definitions, we'll need to
    // deal with implicit parameters.
  
-@@ -7328,6 +7420,60 @@ ExpectedStmt ASTNodeImporter::VisitAttributedStmt(AttributedStmt *S) {
+@@ -7328,6 +7441,60 @@ ExpectedStmt ASTNodeImporter::VisitAttributedStmt(AttributedStmt *S) {
        Importer.getToContext(), *ToAttrLocOrErr, ToAttrs, *ToSubStmtOrErr);
  }
  
@@ -2243,7 +2278,7 @@ index d743717ad..f46385507 100644
  ExpectedStmt ASTNodeImporter::VisitIfStmt(IfStmt *S) {
  
    Error Err = Error::success();
-@@ -7775,6 +7921,133 @@ ExpectedStmt ASTNodeImporter::VisitVAArgExpr(VAArgExpr *E) {
+@@ -7775,6 +7942,133 @@ ExpectedStmt ASTNodeImporter::VisitVAArgExpr(VAArgExpr *E) {
                  E->getVarargABI());
  }
  
@@ -2377,7 +2412,7 @@ index d743717ad..f46385507 100644
  ExpectedStmt ASTNodeImporter::VisitChooseExpr(ChooseExpr *E) {
  
    Error Err = Error::success();
-@@ -9715,7 +9988,97 @@ Expected<TypeSourceInfo *> ASTImporter::Import(TypeSourceInfo *FromTSI) {
+@@ -9715,7 +10009,97 @@ Expected<TypeSourceInfo *> ASTImporter::Import(TypeSourceInfo *FromTSI) {
    if (!BeginLocOrErr)
      return BeginLocOrErr.takeError();
  

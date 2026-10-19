@@ -14512,12 +14512,18 @@ index 0a383c8f9..b5566a357 100644
    std::string FuncName = GenName.getName(QT, IsVolatile);
 diff --git a/clang/lib/CodeGen/CGObjC3ManagedStorage.cpp b/clang/lib/CodeGen/CGObjC3ManagedStorage.cpp
 new file mode 100644
-index 000000000..9489733ea
+index 000000000..e44878c60
 --- /dev/null
 +++ b/clang/lib/CodeGen/CGObjC3ManagedStorage.cpp
-@@ -0,0 +1,383 @@
+@@ -0,0 +1,391 @@
 +//===--- CGObjC3ManagedStorage.cpp - Owned enclosing storage
 +//----------------===//
++//
++// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
++// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
++//
++//===----------------------------------------------------------------------===//
++
 +#include "CGObjC3ManagedStorage.h"
 +#include "CGCleanup.h"
 +#include "CGDebugInfo.h"
@@ -14797,13 +14803,15 @@ index 000000000..9489733ea
 +  return describe(CGM.getContext(), CGM, Type, Description, Budget);
 +}
 +
-+bool CodeGen::supportsObjC3ManagedRecordCallABI(CodeGenModule &CGM, QualType Type) {
++bool CodeGen::supportsObjC3ManagedRecordCallABI(CodeGenModule &CGM,
++                                                QualType Type) {
 +  const auto &Triple = CGM.getTarget().getTriple();
 +  return !Type.isNull() && Type->isRecordType() &&
-+      CGM.getLangOpts().ObjCAutoRefCount && Triple.isOSLinux() &&
-+      Triple.isGNUEnvironment() && Triple.getArch() == llvm::Triple::x86_64 &&
-+      CGM.getLangOpts().ObjCRuntime.getAsString() == "gnustep-2.2" &&
-+      supportsObjC3ManagedRecordLifetime(CGM, Type);
++         CGM.getLangOpts().ObjCAutoRefCount && Triple.isOSLinux() &&
++         Triple.isGNUEnvironment() &&
++         Triple.getArch() == llvm::Triple::x86_64 &&
++         CGM.getLangOpts().ObjCRuntime.getAsString() == "gnustep-2.2" &&
++         supportsObjC3ManagedRecordLifetime(CGM, Type);
 +}
 +
 +llvm::Function *CodeGen::getObjC3ManagedStorageFunction(CodeGenModule &CGM,
@@ -14819,8 +14827,8 @@ index 000000000..9489733ea
 +  }
 +  llvm::SHA256 Hash;
 +  Hash.update(Description);
-+  std::string Name = "__objc3_v10_storage_" + std::to_string(unsigned(Op)) + "_" +
-+                     llvm::toHex(Hash.final());
++  std::string Name = "__objc3_v10_storage_" + std::to_string(unsigned(Op)) +
++                     "_" + llvm::toHex(Hash.final());
 +  if (auto *F = CGM.getModule().getFunction(Name))
 +    return F;
 +  bool Binary = Op != Operation::DefaultInitialize && Op != Operation::Destroy;
@@ -14901,12 +14909,18 @@ index 000000000..9489733ea
 +}
 diff --git a/clang/lib/CodeGen/CGObjC3ManagedStorage.h b/clang/lib/CodeGen/CGObjC3ManagedStorage.h
 new file mode 100644
-index 000000000..0f63ed7d3
+index 000000000..79b8fbaa9
 --- /dev/null
 +++ b/clang/lib/CodeGen/CGObjC3ManagedStorage.h
-@@ -0,0 +1,35 @@
+@@ -0,0 +1,41 @@
 +//===--- CGObjC3ManagedStorage.h - Owned enclosing storage --------*- C++
 +//-*-===//
++//
++// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
++// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
++//
++//===----------------------------------------------------------------------===//
++
 +#ifndef LLVM_CLANG_LIB_CODEGEN_CGOBJC3MANAGEDSTORAGE_H
 +#define LLVM_CLANG_LIB_CODEGEN_CGOBJC3MANAGEDSTORAGE_H
 +#include "Address.h"
