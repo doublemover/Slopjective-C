@@ -34,6 +34,24 @@ semantic interface identity; and live Linux editor behavior. Extend the installe
 imports/managed-values/errors/cleanup sample as the public syntax becomes ready.
 Private migration intrinsics do not justify a public feature claim.
 
+The next implementation sequence is:
+
+1. Define managed parameter and return ownership together with the physical
+   callable ABI. Qualify caller/callee cleanup, consumed and borrowed values,
+   retained/autoreleased results and typed-error success/error paths across
+   functions, callbacks, Blocks, C++ members and Objective-C messages. Reject
+   unsupported conventions before emitting a call.
+2. Extend active-arm lifetime operations through nested carriers, arrays and
+   enclosing records. Cover partial initialization, assignment, destruction and
+   exceptions before admitting those storage forms to the callable ABI.
+3. Finish the bounded public Optional/Result and synchronous throws contract,
+   including ownership and module interface identity. Add public syntax and
+   promote its feature predicates only after that complete contract passes the
+   installed Linux suite.
+4. Publish immutable packages from the qualified interface and object inventory,
+   with explicit ownership projections and consumer verification. Keep registry
+   transport separate from content identity and installation correctness.
+
 ## Installed module foundation and structured concurrency
 
 The installed source example now rebuilds both providers and consumers, emits

@@ -80,6 +80,7 @@ for optimization in O0 O2; do
       -fexceptions -fobjc-arc-exceptions -"$optimization" -g -o carrier-assignment
     env -u LD_LIBRARY_PATH ./carrier-assignment
     "$OBJC3C_SDK_ROOT/bin/llvm-dwarfdump" --verify ./carrier-assignment
+    printf 'Installed ARC assignment (%s, %s): PASS\n' "$language" "$optimization"
   done
 done
 "$OBJC3C_SDK_ROOT/bin/llvm-dwarfdump" --verify ./carrier-transfer
