@@ -1,12 +1,12 @@
 # Linux runtime carrier calls
 
-Extension ABI revision 5 extends the [owned carrier call contract](linux_managed_call_abi.md)
-through Objective-C messages and Block invocation on Linux x86-64, GNUstep 2.0,
+Extension ABI revision 6 extends the [owned carrier call contract](linux_managed_call_abi.md)
+through Objective-C messages and Block invocation on Linux x86-64, GNUstep 2.2,
 with ARC and the ordinary nonvariadic C calling convention. It preserves
 caller-owned argument snapshots and fresh caller-owned result storage. Native
 Objective-C and C++ exceptions unwind those snapshots; the
 [typed-error contract](linux_managed_typed_errors.md) defines synchronous ObjC3
-success/failure storage and propagation under revision 5.
+success/failure storage and propagation under revision 6.
 
 ## Runtime encoding
 
@@ -14,7 +14,7 @@ The compiler publishes a versioned nominal encoding for each supported storage
 and ownership shape. A strong object Optional encodes as:
 
 ```text
-{__objc3_v5_optional_S40=B(__objc3_v5_payload=@)}
+{__objc3_v6_optional_S40=B(__objc3_v6_payload=@)}
 ```
 
 The nominal name contains the carrier kind and each arm's ownership code (`S`
@@ -42,7 +42,7 @@ record encodings alone do not describe C++ special-member semantics. Runtime
 reflection is qualified; generic aggregate FFI coercion, forwarding and
 Foundation invocation adapters require ownership-aware implementation.
 
-Revision 5 is a hard cutover. Rebuild providers, consumers, PCH and semantic
+Revision 6 is a hard cutover. Rebuild providers, consumers, PCH and semantic
 interfaces with the same sealed SDK; source identity and module locks enforce
 that coherence.
 
@@ -56,9 +56,8 @@ spilling remaining pointers to the stack.
 A nil receiver initializes an all-zero result: Optional becomes none; Result
 becomes Err with a zero payload. This also applies to discarded results, since
 their full-expression cleanup still reads the selected tag and payload. Caller
-argument snapshots clean up even when no method body runs. GNUstep 2.0 ignores
-`objc_direct`; existing annotations therefore exercise ordinary dispatch. True
-direct dispatch needs a separate runtime-profile cutover and qualification.
+argument snapshots clean up even when no method body runs. The [direct-dispatch contract](linux_direct_dispatch.md) qualifies native method
+symbols, lazy class initialization, nil results and imported method identity.
 
 Heap Blocks with ordinary ARC object captures can accept and return managed
 carriers. The ordinary Block copy/dispose helpers retain those captured objects;
@@ -67,7 +66,7 @@ value itself, carrier ivars/properties, pointer/reference carrier signatures,
 variadics, alternate conventions, MRC, volatile or recursive managed storage,
 mandatory tail calls retain explicit diagnostic boundaries. The
 [typed-error contract](linux_managed_typed_errors.md) now composes managed
-signatures with synchronous throws under revision 5.
+signatures with synchronous throws under revision 6.
 
 ## Installed qualification
 

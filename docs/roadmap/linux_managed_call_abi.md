@@ -2,7 +2,7 @@
 
 The native migration contract admits direct ARC Optional/Result values with
 strong, weak or unsafe Objective-C object leaves and strong Block leaves on
-Linux x86-64, GNUstep 2.0, using the ordinary nonvariadic C calling convention.
+Linux x86-64, GNUstep 2.2, using the ordinary nonvariadic C calling convention.
 It applies to Objective-C and Objective-C++ free functions, function-pointer
 callbacks, C++ members and constructors, virtual dispatch, member pointers and
 template instantiations. Ordinary Blocks remain supported as payload values.
@@ -74,5 +74,5 @@ temporaries remain diagnostic boundaries. Mandatory tail calls are incompatible
 with these owned value temporaries. These boundaries are checked before object
 publication; they are separate from supported native C++ exception unwinding.
 
-Next, carry the same active-arm rules through recursive storage and qualify a
-runtime profile supporting true direct dispatch before promoting public syntax.
+Next, carry the same active-arm rules through recursive storage before promoting public syntax.
+[GNUstep 2.2 direct dispatch](linux_direct_dispatch.md) is now qualified.
