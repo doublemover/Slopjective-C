@@ -1,0 +1,18 @@
+{
+  "schema": "objc3c.source-workspace.v3",
+  "packages": ["provider/package.json", "reexport/package.json"],
+  "application": {
+    "root": "app",
+    "source": "main.m",
+    "ownership": "arc",
+    "language": "objective-c",
+    "standard": "c17",
+    "dependencies": [
+      {
+        "name": "fixture.Reexport",
+        "package": "reexport-v1",
+        "visibility": "private"
+      }
+    ]
+  }
+}

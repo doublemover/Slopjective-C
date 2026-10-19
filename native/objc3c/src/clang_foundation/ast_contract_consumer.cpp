@@ -78,7 +78,11 @@ class ContractConsumer final : public clang::ASTConsumer,
     declarations.erase(std::unique(declarations.begin(), declarations.end(),
         [](const auto &a, const auto &b) { return a.stable_id == b.stable_id; }),
         declarations.end());
-    if (request_.emit_semantic_interface)
+    if (request_.emit_semantic_interface && request_.projected_arc.has_value())
+      result_.interface_artifact = EmitOwnershipProjection(
+          context, request_.module_name, request_.package_identity,
+          *request_.projected_arc, result_.resolved_interface_dependencies);
+    else if (request_.emit_semantic_interface)
       result_.interface_artifact = EmitSemanticInterface(
           context, request_.module_name, request_.package_identity,
           result_.resolved_interface_dependencies,

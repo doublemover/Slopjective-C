@@ -1,0 +1,17 @@
+{
+  "schema": "objc3c.source-package.v3",
+  "name": "fixture.Reexport",
+  "package": "reexport-v1",
+  "source": "module.m",
+  "ownership": "arc",
+  "provider_ownership": "arc",
+  "language": "objective-c",
+  "standard": "c17",
+  "dependencies": [
+    {
+      "name": "fixture.Ownership",
+      "package": "ownership-v1",
+      "visibility": "public"
+    }
+  ]
+}

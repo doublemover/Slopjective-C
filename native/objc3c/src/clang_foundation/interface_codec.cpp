@@ -259,6 +259,15 @@ llvm::Error ValidateForEncoding(
     return Invalid("unsupported semantic interface schema version");
   if (!IsSha256(sidecar.canonical_source_sha256))
     return Invalid("source binding must be a lowercase SHA256 digest");
+  if (!valid_text(sidecar.ownership_projection))
+    return Invalid(
+        "ownership projection exceeds string bound or is invalid UTF-8");
+  const bool projected = std::find(sidecar.required_semantics.begin(),
+                                   sidecar.required_semantics.end(),
+                                   "objc3.ownership-projection.v1") !=
+                         sidecar.required_semantics.end();
+  if (projected != !sidecar.ownership_projection.empty())
+    return Invalid("ownership projection provenance and capability must agree");
   const auto &module = sidecar.module;
   if (module.canonical_name.empty() || module.semantic_fingerprint.empty() ||
       module.target_triple.empty() || module.runtime_abi.empty() ||
@@ -367,6 +376,7 @@ llvm::Expected<std::string> EncodeSemanticInterfaceSidecar(
               {"schema_minor", static_cast<std::int64_t>(sidecar.schema_minor)},
               {"module", EncodeModule(sidecar.module)},
               {"source_binding_sha256", sidecar.canonical_source_sha256},
+              {"ownership_projection", sidecar.ownership_projection},
               {"required_semantics", std::move(encoded_semantics)},
               {"declarations", std::move(encoded_declarations)},
               {"dependencies", std::move(encoded_dependencies)}};
@@ -390,9 +400,12 @@ llvm::Expected<SemanticInterfaceSidecar> DecodeSemanticInterfaceSidecar(
   if (!parsed) return parsed.takeError();
   const auto *root = parsed->getAsObject();
   if (!root) return Invalid("sidecar root must be a JSON object");
-  if (auto error = CheckKeys(*root,
-      {"schema_id", "schema_major", "schema_minor", "module",
-       "source_binding_sha256", "required_semantics", "declarations", "dependencies"}, "/"))
+  if (auto error =
+          CheckKeys(*root,
+                    {"schema_id", "schema_major", "schema_minor", "module",
+                     "source_binding_sha256", "ownership_projection",
+                     "required_semantics", "declarations", "dependencies"},
+                    "/"))
     return std::move(error);
 
   auto schema = RequiredString(*root, "schema_id", "/");
@@ -408,6 +421,11 @@ llvm::Expected<SemanticInterfaceSidecar> DecodeSemanticInterfaceSidecar(
   SemanticInterfaceSidecar result;
   result.schema_major = static_cast<unsigned>(*major);
   result.schema_minor = static_cast<unsigned>(*minor);
+  auto projection =
+      RequiredStringAllowEmpty(*root, "ownership_projection", "/");
+  if (!projection)
+    return projection.takeError();
+  result.ownership_projection = std::move(*projection);
   auto *module_object = root->getObject("module");
   if (!module_object) return Invalid("/module: required object missing or has wrong type");
   auto module = DecodeModule(*module_object, "/module");
@@ -458,6 +476,9 @@ llvm::Expected<SemanticInterfaceSidecar> DecodeSemanticInterfaceSidecar(
       return Invalid(llvm::formatv("/dependencies/{0}: duplicate module identity", i).str());
     result.dependencies.push_back(std::move(*dependency));
   }
+  const bool projected = seen_semantics.count("objc3.ownership-projection.v1");
+  if (projected != !result.ownership_projection.empty())
+    return Invalid("ownership projection provenance and capability must agree");
   return result;
 }
 

@@ -5,9 +5,10 @@
 
 namespace objc3::clang_foundation {
 
-inline constexpr unsigned kInterfaceSchemaMajor = 1;
+inline constexpr unsigned kInterfaceSchemaMajor = 2;
 inline constexpr unsigned kInterfaceSchemaMinor = 0;
-inline constexpr const char *kInterfaceSchemaId = "objc3c.semantic-interface.v1";
+inline constexpr const char *kInterfaceSchemaId =
+    "objc3c.semantic-interface.v2";
 
 // Identity fields that can change the meaning or link contract of an import.
 // File paths and timestamps intentionally do not participate.
@@ -70,6 +71,9 @@ struct SemanticInterfaceSidecar {
   unsigned schema_minor = kInterfaceSchemaMinor;
   InterfaceModuleIdentity module;
   std::string canonical_source_sha256;
+  // Canonical producer sidecar for a verified opposite-ownership C ABI view.
+  // Its source binding names these exact canonical declaration bytes.
+  std::string ownership_projection;
   std::vector<std::string> required_semantics;
   std::vector<InterfaceDeclarationIdentity> declarations;
   std::vector<InterfaceDependency> dependencies;

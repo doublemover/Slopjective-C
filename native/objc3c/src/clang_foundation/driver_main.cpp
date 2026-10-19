@@ -19,6 +19,7 @@ int RunCompiler(int argc, char **argv) {
            "path] "
            "[--emit-llvm path] [--arc] [--profile name] [--strict-concurrency] "
            "[--emit-interface path.objc3i --module name --package identity] "
+           "[--project-ownership arc|mrc] "
            "[--target triple] [--runtime abi] [--module-search-path dir] "
            "[--sdk-root dir] "
            "[--import-module name fingerprint package "
@@ -92,7 +93,14 @@ int RunCompiler(int argc, char **argv) {
       request.module_imports.push_back(std::move(module));
     } else if (argument == "--objcxx")
       request.language = BaseLanguage::ObjectiveCxx;
-    else if (argument == "--arc")
+    else if (argument == "--project-ownership" && has_values(1)) {
+      std::string mode = argv[++i];
+      if (mode != "arc" && mode != "mrc") {
+        std::cerr << "projection ownership must be arc or mrc\n";
+        return 2;
+      }
+      request.projected_arc = mode == "arc";
+    } else if (argument == "--arc")
       request.arc = true;
     else if (argument == "--strict-concurrency")
       request.strict_concurrency = true;
@@ -138,7 +146,10 @@ int RunCompiler(int argc, char **argv) {
   }
   const bool objc = request.language == BaseLanguage::ObjectiveC ||
                     request.language == BaseLanguage::ObjectiveCxx;
-  if (((request.objc3 || request.arc || !request.objc_runtime.empty()) && !objc) ||
+  if ((request.projected_arc.has_value() &&
+       (!request.emit_semantic_interface || !request.objc3)) ||
+      ((request.objc3 || request.arc || !request.objc_runtime.empty()) &&
+       !objc) ||
       (!request.objc3 && request.profile != SemanticProfile::Compatibility) ||
       (request.strict_concurrency && !request.objc3) ||
       (request.emit_semantic_interface &&

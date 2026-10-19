@@ -15,14 +15,14 @@ import tempfile
 
 if __package__:
     from .sdk_example import dependencies, digest, environment, hashes, write_json
-    from .source_graph import NAME, fields, locks, source_inputs, validate_mode, within
+    from .source_graph import NAME, fields, locks, source_inputs, validate_mode, validate_provider, within
 else:
     sys.dont_write_bytecode = True
     from sdk_example import dependencies, digest, environment, hashes, write_json
-    from build import NAME, fields, locks, source_inputs, validate_mode, within
+    from build import NAME, fields, locks, source_inputs, validate_mode, validate_provider, within
 
-SCHEMA = 'objc3c.binary-package.v1'
-CONSUMER = 'objc3c.binary-consumer.v1'
+SCHEMA = 'objc3c.binary-package.v2'
+CONSUMER = 'objc3c.binary-consumer.v2'
 HASH = re.compile('[0-9a-f]{64}', re.ASCII)
 MODE = ('language', 'standard', 'ownership')
 IDENTITY = {'canonical_name', 'extension_abi', 'language_profile', 'language_revision',
@@ -68,7 +68,7 @@ def package_rows(manifest: dict) -> dict:
         raise ValueError('binary package must contain modules')
     rows = {}
     for row in manifest['packages']:
-        fields(row, {*MODE, 'module', 'dependencies', 'artifacts'}, 'binary module')
+        fields(row, {*MODE, 'provider_ownership', 'module', 'dependencies', 'artifacts'}, 'binary module')
         module = row['module']
         fields(module, IDENTITY, 'module identity')
         if any(not isinstance(value, str) or not value for value in module.values()):
@@ -79,6 +79,7 @@ def package_rows(manifest: dict) -> dict:
         check_hash(module['semantic_fingerprint'])
         suffix = {'objective-c': '.m', 'objective-c++': '.mm', 'c++': '.cpp'}.get(row['language'], '') if isinstance(row['language'], str) else ''
         validate_mode(row, Path('module' + suffix))
+        validate_provider(row)
         runtime = ('no-objc-runtime' if row['language'] == 'c++' else 'gnustep-2.2') + ';' + ('arc' if row['ownership'] == 'arc' else 'manual-reference-counting')
         if (module['target_triple'] != manifest['target'] or module['runtime_abi'] != runtime or
                 ';language=' + row['language'] + ';' not in module['language_profile'] or
@@ -141,6 +142,32 @@ def verify_files(root: Path, manifest: dict, *, exact: bool):
         sidecar = json.loads((root / f'modules/{name}/{name}.objc3i.json').read_text())
         if not isinstance(sidecar, dict) or sidecar.get('module') != row['module']:
             raise ValueError('binary package sidecar differs from its module identity')
+        projection = sidecar.get('ownership_projection')
+        projected = row['provider_ownership'] != row['ownership']
+        if (not isinstance(projection, str) or bool(projection) != projected or
+                sidecar.get('schema_id') != 'objc3c.semantic-interface.v2' or
+                sidecar.get('schema_major') != 2):
+            raise ValueError('binary provider ownership differs from its native projection')
+        if projected:
+            producer = json.loads(projection)
+            if not isinstance(producer, dict) or not isinstance(producer.get('module'), dict):
+                raise ValueError('binary projection producer must have an object identity')
+            identity = producer['module']
+            producer_identity = dict(row['module'])
+            producer_identity['canonical_name'] += '.__ownership_producer'
+            producer_identity['runtime_abi'] = 'gnustep-2.2;' + ('arc' if row['provider_ownership'] == 'arc' else 'manual-reference-counting')
+            producer_identity['language_profile'] = producer_identity['language_profile'].replace(
+                ';arc=' + str(row['ownership'] == 'arc').lower() + ';',
+                ';arc=' + str(row['provider_ownership'] == 'arc').lower() + ';')
+            producer_identity['semantic_fingerprint'] = identity.get('semantic_fingerprint')
+            if (identity != producer_identity or producer.get('schema_id') != 'objc3c.semantic-interface.v2' or producer.get('schema_major') != 2 or producer.get('dependencies') != [] or
+                    producer.get('ownership_projection') != '' or
+                    producer.get('source_binding_sha256') != sidecar.get('source_binding_sha256') or
+                    producer.get('source_binding_sha256') != digest(root / f'modules/{name}/{name}.objc3i') or
+                    not isinstance(sidecar.get('required_semantics'), list) or
+                    'objc3.ownership-projection.v1' not in sidecar['required_semantics']):
+                raise ValueError('binary projection producer proof differs from its ownership lock')
+            check_hash(identity['semantic_fingerprint'])
         expected_dependencies = [
             {'module': modules[edge['name']]['module'],
              'public_import': edge['visibility'] == 'public',
@@ -210,8 +237,8 @@ def publish(sdk: Path, build: Path, store: Path) -> dict:
         inventory = json.loads((build / 'package-installation.json').read_text())
         fields(inventory, {'schema', 'sdk_seal', 'target', 'optimization', 'application_mode', 'packages', 'content_sha256'}, 'installation inventory')
         unhashed = {key: value for key, value in inventory.items() if key != 'content_sha256'}
-        if (inventory['schema'] != 'objc3c.package-installation.v2' or content_hash(unhashed) != inventory['content_sha256'] or
-                not isinstance(report, dict) or report.get('schema') != 'objc3c.source-graph-build.v2' or report.get('status') != 'PASS' or
+        if (inventory['schema'] != 'objc3c.package-installation.v3' or content_hash(unhashed) != inventory['content_sha256'] or
+                not isinstance(report, dict) or report.get('schema') != 'objc3c.source-graph-build.v3' or report.get('status') != 'PASS' or
                 report.get('installation') != inventory):
             raise ValueError('publication requires a completed, matching source build inventory')
         manifest = {key: inventory[key] for key in ('sdk_seal', 'target', 'optimization', 'packages')}
@@ -299,7 +326,7 @@ def consume(sdk: Path, package: Path, expected: str, application: Path, output: 
             raise ValueError('consumer sources changed during compilation')
         if hashes(map(Path, tracked)) != tracked:
             raise ValueError('consumer header dependencies changed during compilation')
-        report = {'schema': 'objc3c.binary-consumer-build.v1', 'status': 'PASS', 'package_content_sha256': expected,
+        report = {'schema': 'objc3c.binary-consumer-build.v2', 'status': 'PASS', 'package_content_sha256': expected,
                   'sdk_seal': identity['seal_sha256'], 'modules': order, 'sources': sources, 'dependencies': tracked, 'commands': commands,
                   'provider_compilations': 0, 'executable_sha256': digest(executable)}
         write_json(report_path, report)

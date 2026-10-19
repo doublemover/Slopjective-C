@@ -30,7 +30,7 @@ def qualify_case(sdk: Path, output: Path, language: str, standard: str, ownershi
             new = old.with_suffix(suffix)
             if old != new:
                 old.rename(new)
-            data.update(language=language, standard=standard, ownership=ownership, source=new.name)
+            data.update(language=language, standard=standard, ownership=ownership, provider_ownership=ownership, source=new.name)
             manifest.write_text(json.dumps(data))
         workspace = sources / 'workspace.json'
         config = json.loads(workspace.read_text())

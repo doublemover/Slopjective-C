@@ -559,12 +559,16 @@ CompileResult Compile(const CompileRequest &request) {
   const bool objc = request.language == BaseLanguage::ObjectiveC ||
                     request.language == BaseLanguage::ObjectiveCxx;
   if (request.input_path.empty() ||
-      ((request.objc3 || request.arc || !request.objc_runtime.empty()) && !objc) ||
+      ((request.objc3 || request.arc || !request.objc_runtime.empty()) &&
+       !objc) ||
       (!request.objc3 && request.profile != SemanticProfile::Compatibility) ||
       (request.strict_concurrency && !request.objc3) ||
       (request.emit_semantic_interface &&
        (request.module_name.empty() || request.package_identity.empty())) ||
-      (!request.interface_output_path.empty() && !request.emit_semantic_interface) ||
+      (request.projected_arc.has_value() &&
+       (!objc || !request.objc3 || !request.emit_semantic_interface)) ||
+      (!request.interface_output_path.empty() &&
+       !request.emit_semantic_interface) ||
       (request.emit != EmitKind::Syntax && request.output_path.empty())) {
     result.failure = "Input path, base language, or output request is invalid";
     return result;

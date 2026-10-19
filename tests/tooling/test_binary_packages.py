@@ -16,7 +16,7 @@ def bundle(tmp_path):
     root.mkdir()
     rows = []
     for name, dependencies in [('fixture.Leaf', []), ('fixture.Top', [{'name': 'fixture.Leaf', 'package': 'leaf-v1', 'visibility': 'public'}])]:
-        identity = {'canonical_name': name, 'extension_abi': 'objc3-extension-abi-12:pinned',
+        identity = {'canonical_name': name, 'extension_abi': 'objc3-extension-abi-13:pinned',
                     'language_profile': 'objc3=enabled;arc=true;language=objective-c++;standard=c++20;blocks=true',
                     'language_revision': '202610', 'package_identity': 'leaf-v1' if name.endswith('Leaf') else 'top-v1',
                     'runtime_abi': 'gnustep-2.2;arc', 'semantic_fingerprint': 'a' * 64,
@@ -28,8 +28,8 @@ def bundle(tmp_path):
         native_dependencies = [{'module': next(row['module'] for row in rows if row['module']['canonical_name'] == edge['name']),
                                 'public_import': edge['visibility'] == 'public',
                                 'reexported': edge['visibility'] == 'public'} for edge in dependencies]
-        (directory / (name + '.objc3i.json')).write_text(json.dumps({'module': identity, 'dependencies': native_dependencies}))
-        rows.append({'language': 'objective-c++', 'standard': 'c++20', 'ownership': 'arc',
+        (directory / (name + '.objc3i.json')).write_text(json.dumps({'schema_id':'objc3c.semantic-interface.v2','schema_major':2,'ownership_projection':'','module': identity, 'dependencies': native_dependencies}))
+        rows.append({'language': 'objective-c++', 'standard': 'c++20', 'ownership': 'arc', 'provider_ownership': 'arc',
                      'module': identity, 'dependencies': dependencies,
                      'artifacts': {path.relative_to(root).as_posix(): packages.digest(path) for path in directory.iterdir()}})
     manifest = {'schema': packages.SCHEMA, 'sdk_seal': 'b' * 64, 'target': 'x86_64-unknown-linux-gnu',
@@ -241,3 +241,76 @@ def test_malformed_sidecar_shape_rejects_with_updated_hashes(bundle, tmp_path):
     (root / 'package.json').write_text(json.dumps(manifest))
     with pytest.raises(ValueError, match='sidecar differs'):
         packages.install(root, packages.content_hash(manifest), tmp_path / 'installed')
+
+
+def projected_bundle(bundle):
+    root, manifest, _ = bundle
+    leaf = manifest['packages'][0]
+    leaf['provider_ownership'] = 'mrc'
+    path = root / 'modules/fixture.Leaf/fixture.Leaf.objc3i.json'
+    sidecar = json.loads(path.read_text())
+    producer = copy.deepcopy(sidecar)
+    producer['module']['canonical_name'] += '.__ownership_producer'
+    producer['module']['runtime_abi'] = 'gnustep-2.2;manual-reference-counting'
+    producer['module']['language_profile'] = producer['module']['language_profile'].replace(';arc=true;', ';arc=false;')
+    producer['module']['semantic_fingerprint'] = 'c' * 64
+    producer['source_binding_sha256'] = packages.digest(path.with_suffix(''))
+    sidecar['source_binding_sha256'] = producer['source_binding_sha256']
+    sidecar['ownership_projection'] = json.dumps(producer)
+    sidecar['required_semantics'] = ['objc3.ownership-projection.v1']
+    return root, manifest, leaf, path, sidecar, producer
+
+
+def save_projection(root, manifest, row, path, sidecar):
+    path.write_text(json.dumps(sidecar))
+    row['artifacts'][path.relative_to(root).as_posix()] = packages.digest(path)
+    (root / 'package.json').write_text(json.dumps(manifest))
+    return packages.content_hash(manifest)
+
+
+def test_source_free_install_preserves_opposite_mode_producer_proof(bundle, tmp_path):
+    root, manifest, leaf, path, sidecar, _ = projected_bundle(bundle)
+    expected = save_projection(root, manifest, leaf, path, sidecar)
+    installed = packages.install(root, expected, tmp_path / 'store')
+    actual = packages.verify_package(Path(installed['package']), expected)
+    assert actual['packages'][0]['provider_ownership'] == 'mrc'
+    assert actual['packages'][0]['ownership'] == 'arc'
+
+
+@pytest.mark.parametrize('damage', ['producer-mode', 'package', 'nested', 'source', 'missing-capability',
+    'missing-proof', 'unmarked-projection', 'language', 'standard', 'extension', 'old-schema', 'dependencies', 'nonobject-producer', 'nonobject-identity', 'nonarray-capabilities'])
+def test_recomputed_package_identity_cannot_erase_projection_contract(bundle, tmp_path, damage):
+    root, manifest, leaf, path, sidecar, producer = projected_bundle(bundle)
+    if damage == 'nonobject-producer':
+        producer = []
+    elif damage == 'nonobject-identity':
+        producer['module'] = []
+    elif damage == 'nonarray-capabilities':
+        sidecar['required_semantics'] = None
+    elif damage == 'producer-mode':
+        producer['module']['runtime_abi'] = 'gnustep-2.2;arc'
+    elif damage == 'package':
+        producer['module']['package_identity'] = 'wrong-package'
+    elif damage == 'nested':
+        producer['ownership_projection'] = 'nested'
+    elif damage == 'source':
+        producer['source_binding_sha256'] = 'd' * 64
+    elif damage == 'missing-capability':
+        sidecar['required_semantics'] = []
+    elif damage == 'unmarked-projection':
+        leaf['provider_ownership'] = 'arc'
+    elif damage == 'language':
+        producer['module']['language_profile'] = producer['module']['language_profile'].replace('objective-c++', 'objective-c')
+    elif damage == 'standard':
+        producer['module']['language_profile'] = producer['module']['language_profile'].replace('c++20', 'c++23')
+    elif damage == 'extension':
+        producer['module']['extension_abi'] = 'wrong-compiler'
+    elif damage == 'old-schema':
+        producer['schema_major'] = 1
+    elif damage == 'dependencies':
+        producer['dependencies'] = [{'forged': True}]
+    sidecar['ownership_projection'] = '' if damage == 'missing-proof' else json.dumps(producer)
+    expected = save_projection(root, manifest, leaf, path, sidecar)
+    with pytest.raises(ValueError, match='projection|ownership'):
+        packages.install(root, expected, tmp_path / 'rejected')
+    assert not (tmp_path / 'rejected').exists()
