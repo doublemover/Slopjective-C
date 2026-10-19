@@ -58,7 +58,13 @@
       "runtime_linker": "ld.lld",
       "runtime_generator": "Ninja",
       "glibc_minimum": "2.41",
-      "libstdcxx_symbol_minimum": "GLIBCXX_3.4.33"
+      "libstdcxx_symbol_minimum": "GLIBCXX_3.4.33",
+      "source_patches": [
+        {
+          "file": "scripts/objc3c_toolchain_runtime/patches/0001-linux22-owned-value-unwind.patch",
+          "sha256": "55686209c4ec1f665e7b0a7e320ecf76bc026b344f53d13cddc52b8514047b16"
+        }
+      ]
     },
     "macos-arm64": {
       "target_triple": "arm64-apple-macosx",

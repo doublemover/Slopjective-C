@@ -81,3 +81,9 @@ void managed_nested_probe(id input) {
     case __objc3_case_none: { }
   }
 }
+
+int managed_capture_probe(id input) {
+  __objc3_optional(id) captured = __objc3_some(id, input);
+  int (^snapshot)(void) = ^int { return __objc3_has_value(captured); };
+  return snapshot();
+}

@@ -168,7 +168,7 @@ index e3f74d73f..15bac0545 100644
    VTableBuilder.cpp
 diff --git a/clang/lib/AST/ObjC3TypeContracts.cpp b/clang/lib/AST/ObjC3TypeContracts.cpp
 new file mode 100644
-index 000000000..67e84f5a0
+index 000000000..65ddc76c0
 --- /dev/null
 +++ b/clang/lib/AST/ObjC3TypeContracts.cpp
 @@ -0,0 +1,403 @@
@@ -502,7 +502,7 @@ index 000000000..67e84f5a0
 +    } else {
 +      return false;
 +    }
-+    std::string Name = IsOptional ? "__objc3_v7_optional" : "__objc3_v7_result";
++    std::string Name = IsOptional ? "__objc3_v8_optional" : "__objc3_v8_result";
 +    std::string Fields;
 +    for (QualType Leaf : Leaves) {
 +      if (Leaf.isVolatileQualified())
@@ -566,7 +566,7 @@ index 000000000..67e84f5a0
 +        ObjC3CarrierRepresentationInfo::Status::Materialized)
 +      return false;
 +    // Recursively mirror native boolean/union layout and ownership identity.
-+    Out = "{" + Name + "=B(__objc3_v7_payload=" + Fields + ")}";
++    Out = "{" + Name + "=B(__objc3_v8_payload=" + Fields + ")}";
 +    return true;
 +  };
 +  std::string Result;
@@ -577,7 +577,7 @@ index 000000000..67e84f5a0
 +}
 diff --git a/clang/unittests/AST/ObjC3TypeContractsTest.cpp b/clang/unittests/AST/ObjC3TypeContractsTest.cpp
 new file mode 100644
-index 000000000..98996d00e
+index 000000000..a0ef91268
 --- /dev/null
 +++ b/clang/unittests/AST/ObjC3TypeContractsTest.cpp
 @@ -0,0 +1,380 @@
@@ -686,8 +686,8 @@ index 000000000..98996d00e
 +  EXPECT_TRUE(Trivial.Destroy.IsTrivial);
 +  std::string Encoding;
 +  ASSERT_TRUE(getObjC3CarrierRuntimeEncoding(Context, Nested, Encoding));
-+  EXPECT_NE(Encoding.find("__objc3_v7_optional_N"), std::string::npos);
-+  EXPECT_NE(Encoding.find("__objc3_v7_optional_W40="), std::string::npos);
++  EXPECT_NE(Encoding.find("__objc3_v8_optional_N"), std::string::npos);
++  EXPECT_NE(Encoding.find("__objc3_v8_optional_W40="), std::string::npos);
 +  EXPECT_LT(Encoding.size(), 600u);
 +  // The runtime representation remains linear for a long Optional chain.
 +  QualType Deep = Nested;

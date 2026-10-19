@@ -80,6 +80,8 @@ python3 -B "$OBJC3C_SDK_ROOT/share/objc3c/examples/native/qualify-direct-carrier
   --sdk-root "$OBJC3C_SDK_ROOT" --output-dir ./direct-carrier-evidence
 python3 -B "$OBJC3C_SDK_ROOT/share/objc3c/examples/native/qualify-nested-carrier-calls.py" \
   --sdk-root "$OBJC3C_SDK_ROOT" --output-dir ./nested-carrier-evidence
+python3 -B "$OBJC3C_SDK_ROOT/share/objc3c/examples/native/qualify-captured-carriers.py" \
+  --sdk-root "$OBJC3C_SDK_ROOT" --output-dir ./captured-carrier-evidence
 for optimization in O0 O2; do
   objc3c carrier-transfer.mm -std=c++20 -fexceptions -fobjc-arc-exceptions \
     -"$optimization" -g -o carrier-transfer

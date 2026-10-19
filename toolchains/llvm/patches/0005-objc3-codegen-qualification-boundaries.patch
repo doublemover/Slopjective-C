@@ -78,36 +78,122 @@ index 61e13d492..b4d457303 100644
  
    switch (atomics.getEvaluationKind()) {
 diff --git a/clang/lib/CodeGen/CGBlocks.cpp b/clang/lib/CodeGen/CGBlocks.cpp
-index 0683a4937..22fa3e1ca 100644
+index 0683a4937..c650c1b10 100644
 --- a/clang/lib/CodeGen/CGBlocks.cpp
 +++ b/clang/lib/CodeGen/CGBlocks.cpp
-@@ -14,6 +14,8 @@
+@@ -14,6 +14,11 @@
  #include "CGCXXABI.h"
  #include "CGDebugInfo.h"
  #include "CGObjCRuntime.h"
 +#include "CGObjC3TypedErrors.h"
 +#include "CGObjC3ABIBoundaries.h"
++#include "CGObjC3ArcCarriers.h"
++#include "clang/AST/ObjC3TypeContracts.h"
++#include "llvm/Support/SHA256.h"
  #include "CGOpenCLRuntime.h"
  #include "CodeGenFunction.h"
  #include "CodeGenModule.h"
-@@ -762,6 +764,16 @@ static void computeBlockInfo(CodeGenModule &CGM, CodeGenFunction *CGF,
+@@ -32,6 +37,25 @@
+ using namespace clang;
+ using namespace CodeGen;
+ 
++namespace {
++void destroyObjC3CapturedValue(CodeGenFunction &CGF, Address Addr, QualType Type) {
++  emitObjC3CarrierDestroyActiveARCPayload(CGF, Type, Addr, true, true, true);
++}
++void initializeObjC3Capture(CodeGenFunction &CGF, QualType Type,
++                           Address Destination, Address Source,
++                           SourceLocation Loc) {
++  auto Saved = CGF.getObjC3CarrierLocalInitState();
++  CGF.setObjC3CarrierLocalInitState(
++      {Destination, Type.getCanonicalType().getUnqualifiedType()});
++  bool Emitted = emitObjC3CarrierARCCopy(CGF, Type, Destination, Source,
++                                        false, false, true, Loc);
++  assert(Emitted && "admitted capture must use active-arm initialization");
++  (void)Emitted;
++  CGF.setObjC3CarrierLocalInitState(Saved);
++}
++} // namespace
++
++
+ CGBlockInfo::CGBlockInfo(const BlockDecl *block, StringRef name)
+     : Name(name), CXXThisIndex(0), CanBeGlobal(false), NeedsCopyDispose(false),
+       NoEscape(false), HasCXXObject(false), UsesStret(false),
+@@ -453,6 +477,7 @@ static llvm::Constant *tryCaptureAsConstant(CodeGenModule &CGM,
+ 
+   // We can only do this if the variable is const.
+   if (!type.isConstQualified()) return nullptr;
++  if (hasObjC3CarrierManagedPayload(type)) return nullptr;
+ 
+   // Furthermore, in C++ we have to worry about mutable fields:
+   // C++ [dcl.type.cv]p4:
+@@ -762,6 +787,22 @@ static void computeBlockInfo(CodeGenModule &CGM, CodeGenFunction *CGF,
  
  /// Emit a block literal expression in the current function.
  llvm::Value *CodeGenFunction::EmitBlockLiteral(const BlockExpr *blockExpr) {
 +  if (diagnoseUnsupportedObjC3RuntimeFunction(
 +          CGM, QualType(blockExpr->getFunctionType(), 0), blockExpr->getExprLoc()))
 +    return llvm::UndefValue::get(ConvertType(blockExpr->getType()));
-+  for (const auto &Capture : blockExpr->getBlockDecl()->captures())
-+    if (diagnoseUnsupportedObjC3ValueABI(CGM, Capture.getVariable()->getType(),
++  for (const auto &Capture : blockExpr->getBlockDecl()->captures()) {
++    QualType Type = Capture.getVariable()->getType();
++    // Forwarded by-reference storage and enclosing aggregate captures need
++    // their own subobject operations. Admit only owned carrier value captures.
++    if (!Capture.isByRef() && supportsObjC3CarrierRuntimeCallABI(CGM, Type))
++      continue;
++    if (diagnoseUnsupportedObjC3ValueABI(CGM, Type,
 +                                        Capture.getVariable()->getLocation()))
 +      return llvm::UndefValue::get(ConvertType(blockExpr->getType()));
++  }
 +  if (CGM.getTypes().diagnoseUnsupportedObjC3Effects(
 +          blockExpr->getType(), blockExpr->getBlockDecl()))
 +    return llvm::UndefValue::get(ConvertType(blockExpr->getType()));
    // If the block has no captures, we won't have a pre-computed
    // layout for it.
    if (!blockExpr->getBlockDecl()->hasCaptures())
-@@ -1282,6 +1294,10 @@ void CodeGenModule::setAddrOfGlobalBlock(const BlockExpr *BE,
+@@ -997,6 +1038,10 @@ llvm::Value *CodeGenFunction::EmitBlockLiteral(const CGBlockInfo &blockInfo) {
+         EmitSynthesizedCXXCopyCtor(blockField, src, copyExpr);
+       }
+ 
++    } else if (supportsObjC3CarrierRuntimeCallABI(CGM, type)) {
++      initializeObjC3Capture(*this, type, blockField, src,
++                              variable->getLocation());
++
+     // If it's a reference variable, copy the reference into the block field.
+     } else if (type->getAs<ReferenceType>()) {
+       Builder.CreateStore(src.emitRawPointer(*this), blockField);
+@@ -1056,9 +1101,10 @@ llvm::Value *CodeGenFunction::EmitBlockLiteral(const CGBlockInfo &blockInfo) {
+     if (CI.isByRef())
+       continue;
+ 
++    const bool IsObjC3Carrier = supportsObjC3CarrierRuntimeCallABI(CGM, type);
+     // Ignore objects that aren't destructed.
+     QualType::DestructionKind dtorKind = type.isDestructedType();
+-    if (dtorKind == QualType::DK_none)
++    if (dtorKind == QualType::DK_none && !IsObjC3Carrier)
+       continue;
+ 
+     CodeGenFunction::Destroyer *destroyer;
+@@ -1069,7 +1115,9 @@ llvm::Value *CodeGenFunction::EmitBlockLiteral(const CGBlockInfo &blockInfo) {
+     // For const-qualified captures, emit clang.arc.use to ensure the captured
+     // object doesn't get released while we are still depending on its validity
+     // within the block.
+-    if (type.isConstQualified() &&
++    if (IsObjC3Carrier) {
++      destroyer = destroyObjC3CapturedValue;
++    } else if (type.isConstQualified() &&
+         type.getObjCLifetime() == Qualifiers::OCL_Strong &&
+         CGM.getCodeGenOpts().OptimizationLevel != 0) {
+       assert(CGM.getLangOpts().ObjCAutoRefCount &&
+@@ -1082,7 +1130,7 @@ llvm::Value *CodeGenFunction::EmitBlockLiteral(const CGBlockInfo &blockInfo) {
+     }
+ 
+     CleanupKind cleanupKind = NormalCleanup;
+-    bool useArrayEHCleanup = needsEHCleanup(dtorKind);
++    bool useArrayEHCleanup = IsObjC3Carrier || needsEHCleanup(dtorKind);
+     if (useArrayEHCleanup)
+       cleanupKind = NormalAndEHCleanup;
+ 
+@@ -1282,6 +1330,10 @@ void CodeGenModule::setAddrOfGlobalBlock(const BlockExpr *BE,
  llvm::Constant *
  CodeGenModule::GetAddrOfGlobalBlock(const BlockExpr *BE,
                                      StringRef Name) {
@@ -118,7 +204,7 @@ index 0683a4937..22fa3e1ca 100644
    if (llvm::Constant *Block = getAddrOfGlobalBlockIfEmitted(BE))
      return Block;
  
-@@ -1501,6 +1517,15 @@ llvm::Function *CodeGenFunction::GenerateBlockFunction(
+@@ -1501,6 +1553,15 @@ llvm::Function *CodeGenFunction::GenerateBlockFunction(
  
    // Create the function declaration.
    const FunctionProtoType *fnType = blockInfo.getBlockExpr()->getFunctionType();
@@ -134,7 +220,7 @@ index 0683a4937..22fa3e1ca 100644
    const CGFunctionInfo &fnInfo =
      CGM.getTypes().arrangeBlockFunctionDeclaration(fnType, args);
    if (CGM.ReturnSlotInterferesWithArgs(fnInfo))
-@@ -1569,7 +1594,11 @@ llvm::Function *CodeGenFunction::GenerateBlockFunction(
+@@ -1569,7 +1630,11 @@ llvm::Function *CodeGenFunction::GenerateBlockFunction(
    // Save a spot to insert the debug information for all the DeclRefExprs.
    llvm::BasicBlock *entry = Builder.GetInsertBlock();
    llvm::BasicBlock::iterator entry_ptr = Builder.GetInsertPoint();
@@ -147,7 +233,7 @@ index 0683a4937..22fa3e1ca 100644
  
    if (IsLambdaConversionToBlock)
      EmitLambdaBlockInvokeBody();
-@@ -1583,8 +1612,10 @@ llvm::Function *CodeGenFunction::GenerateBlockFunction(
+@@ -1583,8 +1648,10 @@ llvm::Function *CodeGenFunction::GenerateBlockFunction(
    llvm::BasicBlock *resume = Builder.GetInsertBlock();
  
    // Go back to the entry.
@@ -160,6 +246,67 @@ index 0683a4937..22fa3e1ca 100644
    else
      entry_ptr = entry->end();
    Builder.SetInsertPoint(entry, entry_ptr);
+@@ -1642,6 +1709,10 @@ computeCopyInfoForBlockCapture(const BlockDecl::Capture &CI, QualType T,
+     return std::make_pair(BlockCaptureEntityKind::BlockObject, Flags);
+   }
+ 
++  if (!CI.isByRef() && LangOpts.ObjCAutoRefCount &&
++      hasObjC3CarrierManagedPayload(T))
++    return std::make_pair(BlockCaptureEntityKind::ObjC3Carrier, BlockFieldFlags());
++
+   if (T.hasAddressDiscriminatedPointerAuth())
+     return std::make_pair(
+         BlockCaptureEntityKind::AddressDiscriminatedPointerAuth, Flags);
+@@ -1766,6 +1837,16 @@ static std::string getBlockCaptureStr(const CGBlockInfo::Capture &Cap,
+     Str += llvm::to_string(TyStr.size()) + TyStr.c_str();
+     break;
+   }
++  case BlockCaptureEntityKind::ObjC3Carrier: {
++    std::string Encoding;
++    bool Encoded = getObjC3CarrierRuntimeEncoding(Ctx, CaptureTy, Encoding);
++    assert(Encoded && "admitted carrier capture must have an encoding");
++    (void)Encoded;
++    llvm::SHA256 Hash;
++    Hash.update(Encoding);
++    Str += "objc3v8_" + llvm::toHex(Hash.final());
++    break;
++  }
+   case BlockCaptureEntityKind::ARCWeak:
+     Str += "w";
+     break;
+@@ -1865,6 +1946,10 @@ static void pushCaptureCleanup(BlockCaptureEntityKind CaptureKind,
+   bool EHOnly = ForCopyHelper;
+ 
+   switch (CaptureKind) {
++  case BlockCaptureEntityKind::ObjC3Carrier:
++    CGF.pushDestroy(EHOnly ? EHCleanup : NormalAndEHCleanup, Field, CaptureType,
++                      destroyObjC3CapturedValue, false);
++    break;
+   case BlockCaptureEntityKind::CXXRecord:
+   case BlockCaptureEntityKind::ARCWeak:
+   case BlockCaptureEntityKind::NonTrivialCStruct:
+@@ -1980,6 +2065,10 @@ CodeGenFunction::GenerateCopyHelperFunction(const CGBlockInfo &blockInfo) {
+     Address dstField = Builder.CreateStructGEP(dst, index);
+ 
+     switch (capture.CopyKind) {
++    case BlockCaptureEntityKind::ObjC3Carrier:
++      initializeObjC3Capture(*this, captureType, dstField, srcField,
++                              CI.getVariable()->getLocation());
++      break;
+     case BlockCaptureEntityKind::CXXRecord:
+       // If there's an explicit copy expression, we do that.
+       assert(CI.getCopyExpr() && "copy expression for variable is missing");
+@@ -2078,6 +2167,10 @@ computeDestroyInfoForBlockCapture(const BlockDecl::Capture &CI, QualType T,
+     return std::make_pair(BlockCaptureEntityKind::BlockObject, Flags);
+   }
+ 
++  if (!CI.isByRef() && LangOpts.ObjCAutoRefCount &&
++      hasObjC3CarrierManagedPayload(T))
++    return std::make_pair(BlockCaptureEntityKind::ObjC3Carrier, BlockFieldFlags());
++
+   switch (T.isDestructedType()) {
+   case QualType::DK_cxx_destructor:
+     return std::make_pair(BlockCaptureEntityKind::CXXRecord, BlockFieldFlags());
 diff --git a/clang/lib/CodeGen/CGCall.cpp b/clang/lib/CodeGen/CGCall.cpp
 index 08cb9860f..ba9d38db1 100644
 --- a/clang/lib/CodeGen/CGCall.cpp
@@ -1328,7 +1475,7 @@ index 6f7b7e7d6..98213d9b0 100644
      Address Addr =
          SourceLVal.getAddress().withElementType(CGF.ConvertTypeForMem(DestTy));
 diff --git a/clang/lib/CodeGen/CGObjC.cpp b/clang/lib/CodeGen/CGObjC.cpp
-index c724a063b..2ca88a56c 100644
+index c724a063b..b8a1658c3 100644
 --- a/clang/lib/CodeGen/CGObjC.cpp
 +++ b/clang/lib/CodeGen/CGObjC.cpp
 @@ -12,6 +12,9 @@
@@ -1408,6 +1555,25 @@ index c724a063b..2ca88a56c 100644
    StartObjCMethod(OMD, OMD->getClassInterface());
    PGO->assignRegionCounters(GlobalDecl(OMD), CurFn);
    assert(isa<CompoundStmt>(OMD->getBody()));
+@@ -2380,6 +2422,18 @@ llvm::Value *CodeGenFunction::EmitARCRetainNonBlock(llvm::Value *value) {
+ /// if it can prove that the block never escapes except down the stack.
+ llvm::Value *CodeGenFunction::EmitARCRetainBlock(llvm::Value *value,
+                                                  bool mandatory) {
++  const auto &Runtime = getLangOpts().ObjCRuntime;
++  if (getLangOpts().ObjC3 && CGM.getTarget().getTriple().isOSLinux() &&
++      Runtime.getKind() == ObjCRuntime::GNUstep &&
++      Runtime.getVersion() == VersionTuple(2, 2)) {
++    // A GNUstep heap copy can invoke captured C++ copy constructors. LLVM's
++    // objc_retainBlock intrinsic is nounwind, which would discard caller
++    // cleanups if a constructor throws. Use the throwing runtime operation.
++    ASTContext &Ctx = getContext();
++    auto Copy = CGM.CreateRuntimeFunction(Ctx.VoidPtrTy, {Ctx.VoidPtrTy},
++                                          "_Block_copy");
++    return EmitRuntimeCallOrInvoke(Copy, {value});
++  }
+   llvm::Value *result
+     = emitARCValueOperation(*this, value, nullptr,
+                             CGM.getObjCEntrypoints().objc_retainBlock,
 diff --git a/clang/lib/CodeGen/CGObjC3ABIBoundaries.cpp b/clang/lib/CodeGen/CGObjC3ABIBoundaries.cpp
 new file mode 100644
 index 000000000..d6b719da8
@@ -1636,10 +1802,10 @@ index 000000000..2ae11a4ba
 +#endif
 diff --git a/clang/lib/CodeGen/CGObjC3ArcCarriers.cpp b/clang/lib/CodeGen/CGObjC3ArcCarriers.cpp
 new file mode 100644
-index 000000000..a1eb697a8
+index 000000000..bac7dc81e
 --- /dev/null
 +++ b/clang/lib/CodeGen/CGObjC3ArcCarriers.cpp
-@@ -0,0 +1,702 @@
+@@ -0,0 +1,703 @@
 +//===--- CGObjC3ArcCarriers.cpp - ARC local carrier lowering --*- C++ -*-===//
 +// Private native ARC operations for the first direct-local carrier slice.
 +#include "CGObjC3ArcCarriers.h"
@@ -2218,6 +2384,7 @@ index 000000000..a1eb697a8
 +        if (!isa<ParmVarDecl>(VD) && VD->isLocalVarDecl() &&
 +            !VD->hasGlobalStorage() &&
 +            !CGF.ObjC3BorrowedMatchBindings.contains(VD) &&
++            !Ref->refersToEnclosingVariableOrCapture() &&
 +            !isObjC3CarrierARCLocalInitializer(CGF.CGM, *VD))
 +          return Fail();
 +    // Borrow initialized storage. By-value parameters are caller-owned slots;
@@ -12975,7 +13142,7 @@ new file mode 100644
 +  return __objc3_has_value(copy);
 +}
 +// CHECK-LABEL: define{{.*}} @{{.*}}copy_block
-+// CHECK: call ptr @llvm.objc.retainBlock
++// CHECK: call ptr @_Block_copy
 +// CHECK: store i8 1
 +// CHECK: call void @llvm.objc.storeStrong
 +
@@ -13142,7 +13309,7 @@ index 000000000..120df1f31
 +#endif
 diff --git a/clang/test/ObjC3/CodeGen/carrier-arc-assignment.m b/clang/test/ObjC3/CodeGen/carrier-arc-assignment.m
 new file mode 100644
-index 000000000..1806fbfca
+index 000000000..8c5a68855
 --- /dev/null
 +++ b/clang/test/ObjC3/CodeGen/carrier-arc-assignment.m
 @@ -0,0 +1,63 @@
@@ -13199,7 +13366,7 @@ index 000000000..1806fbfca
 +  *destination = *source;
 +}
 +// CHECK-LABEL: define{{.*}}assign_block
-+// CHECK: call ptr @llvm.objc.retainBlock
++// CHECK: call ptr @_Block_copy
 +// CHECK: call void @llvm.objc.storeStrong
 +
 +void construct_rhs(Strong *destination, id object) {
@@ -13326,7 +13493,7 @@ index 000000000..530728ff0
 +#endif
 diff --git a/clang/test/ObjC3/CodeGen/carrier-runtime-call-abi.m b/clang/test/ObjC3/CodeGen/carrier-runtime-call-abi.m
 new file mode 100644
-index 000000000..22a765e77
+index 000000000..18a965a2c
 --- /dev/null
 +++ b/clang/test/ObjC3/CodeGen/carrier-runtime-call-abi.m
 @@ -0,0 +1,45 @@
@@ -13337,7 +13504,7 @@ index 000000000..22a765e77
 +typedef __objc3_optional(id) Strong;
 +typedef __objc3_optional(id __weak) Weak;
 +const char *encoding = @encode(Strong);
-+// CHECK: c"{__objc3_v7_optional_S40=B(__objc3_v7_payload=@)}\00"
++// CHECK: c"{__objc3_v8_optional_S40=B(__objc3_v8_payload=@)}\00"
 +__attribute__((objc_root_class))
 +@interface Receiver
 +- (Strong)echo:(Strong)value;
@@ -13377,10 +13544,11 @@ index 000000000..22a765e77
 +// CHECK: call void @llvm.objc.storeStrong
 diff --git a/clang/test/ObjC3/CodeGen/carrier-runtime-call-boundaries.m b/clang/test/ObjC3/CodeGen/carrier-runtime-call-boundaries.m
 new file mode 100644
-index 000000000..b0d932815
+index 000000000..4cbc2e6fc
 --- /dev/null
 +++ b/clang/test/ObjC3/CodeGen/carrier-runtime-call-boundaries.m
-@@ -0,0 +1,56 @@
+@@ -0,0 +1,58 @@
++// RUN: rm -f %t.capture.ll
 +// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -DCAPTURE -emit-llvm -o %t.capture.ll -verify %s
 +// RUN: test ! -e %t.capture.ll
 +// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -DIVAR -emit-llvm -o %t.ivar.ll -verify %s
@@ -13397,7 +13565,8 @@ index 000000000..b0d932815
 +
 +typedef __objc3_optional(id) Strong;
 +#ifdef CAPTURE
-+void reject(Strong value) { // expected-error {{ObjC3 carrier operation 'by-value call ABI'}}
++void reject(Strong incoming) { // expected-error {{ObjC3 carrier operation 'ARC carrier copy destination'}}
++  __block Strong value = incoming; // expected-error {{ObjC3 carrier operation 'by-value call ABI'}}
 +  void (^block)(void) = ^{ (void)__objc3_has_value(value); };
 +}
 +#endif
@@ -13613,3 +13782,45 @@ index 000000000..ffd53f461
 +// CHECK: call ptr @llvm.objc.retain
 +// CHECK: objc3.match.selected
 +// CHECK: call void @llvm.objc.storeStrong
+diff --git a/clang/lib/CodeGen/CGBlocks.h b/clang/lib/CodeGen/CGBlocks.h
+index b2e850046..68697b9e7 100644
+--- a/clang/lib/CodeGen/CGBlocks.h
++++ b/clang/lib/CodeGen/CGBlocks.h
+@@ -150,6 +150,7 @@ enum class BlockCaptureEntityKind {
+   ARCWeak,
+   ARCStrong,
+   NonTrivialCStruct,
++  ObjC3Carrier, // Active-arm copy and destruction of an owned capture
+   BlockObject, // Assign or release
+ };
+ 
+diff --git a/clang/test/ObjC3/CodeGen/carrier-block-capture.m b/clang/test/ObjC3/CodeGen/carrier-block-capture.m
+new file mode 100644
+index 000000000..6c8f72edc
+--- /dev/null
++++ b/clang/test/ObjC3/CodeGen/carrier-block-capture.m
+@@ -0,0 +1,24 @@
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -fblocks -fexceptions -fobjc-arc-exceptions -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c++ -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -fblocks -fexceptions -fobjc-arc-exceptions -emit-llvm -o - %s | FileCheck %s
++
++typedef __objc3_optional(id) Strong;
++typedef __objc3_optional(id __weak) Weak;
++typedef __objc3_optional(Strong) Nested;
++typedef Nested (^StrongCapture)(void);
++typedef Weak (^WeakCapture)(void);
++StrongCapture capture_strong(Nested value) { return ^{ return value; }; }
++// CHECK-LABEL: define{{.*}}capture_strong
++// CHECK: call ptr @llvm.objc.retain
++// A Block copy can invoke a C++ copy constructor; the throwing runtime call
++// must preserve the caller's initialized capture and lexical EH cleanups.
++// CHECK: invoke ptr @_Block_copy
++// CHECK: landingpad
++
++WeakCapture capture_weak(Weak value) { return ^{ return value; }; }
++// CHECK-LABEL: define{{.*}}capture_weak
++// CHECK: call void @llvm.objc.copyWeak
++// CHECK: invoke ptr @_Block_copy
++// CHECK: call void @llvm.objc.destroyWeak
++// Distinct strong/weak helper identities bind their complete ownership shape.
++// CHECK: define linkonce_odr hidden void @__copy_helper_block_{{.*}}objc3v
++// CHECK: call void @llvm.objc.copyWeak

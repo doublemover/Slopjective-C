@@ -4824,10 +4824,18 @@ index 04ba52809..e73762664 100644
      CvtQTToAstBitMask(ReturnQT.getObjCDeclQualifier()));
  
 diff --git a/clang/lib/Sema/SemaExpr.cpp b/clang/lib/Sema/SemaExpr.cpp
-index 5d4c5ff7d..60f0b15f2 100644
+index 5d4c5ff7d..973399859 100644
 --- a/clang/lib/Sema/SemaExpr.cpp
 +++ b/clang/lib/Sema/SemaExpr.cpp
-@@ -4701,6 +4701,20 @@ static void captureVariablyModifiedType(ASTContext &Context, QualType T,
+@@ -15,6 +15,7 @@
+ #include "UsedDeclVisitor.h"
+ #include "clang/AST/ASTConsumer.h"
+ #include "clang/AST/ASTContext.h"
++#include "clang/AST/ObjC3TypeContracts.h"
+ #include "clang/AST/ASTDiagnostic.h"
+ #include "clang/AST/ASTLambda.h"
+ #include "clang/AST/ASTMutationListener.h"
+@@ -4701,6 +4702,20 @@ static void captureVariablyModifiedType(ASTContext &Context, QualType T,
      case Type::Atomic:
        T = cast<AtomicType>(Ty)->getValueType();
        break;
@@ -4848,7 +4856,7 @@ index 5d4c5ff7d..60f0b15f2 100644
      case Type::PredefinedSugar:
        T = cast<PredefinedSugarType>(Ty)->desugar();
        break;
-@@ -9422,7 +9436,85 @@ static AssignConvertType checkPointerTypesForAssignment(Sema &S,
+@@ -9422,7 +9437,85 @@ static AssignConvertType checkPointerTypesForAssignment(Sema &S,
      return AssignConvertType::FunctionVoidPointer;
    }
  
@@ -4935,7 +4943,7 @@ index 5d4c5ff7d..60f0b15f2 100644
            diag::warn_typecheck_convert_incompatible_function_pointer_strict,
            Loc) &&
        RHSType->isFunctionPointerType() && LHSType->isFunctionPointerType() &&
-@@ -9431,7 +9523,6 @@ static AssignConvertType checkPointerTypesForAssignment(Sema &S,
+@@ -9431,7 +9524,6 @@ static AssignConvertType checkPointerTypesForAssignment(Sema &S,
  
    // C99 6.5.16.1p1 (constraint 3): both operands are pointers to qualified or
    // unqualified versions of compatible types, ...
@@ -4943,7 +4951,7 @@ index 5d4c5ff7d..60f0b15f2 100644
  
    if (ltrans->isOverflowBehaviorType() || rtrans->isOverflowBehaviorType()) {
      if (!S.Context.hasSameType(ltrans, rtrans)) {
-@@ -9452,7 +9543,22 @@ static AssignConvertType checkPointerTypesForAssignment(Sema &S,
+@@ -9452,7 +9544,22 @@ static AssignConvertType checkPointerTypesForAssignment(Sema &S,
      }
    }
  
@@ -4967,7 +4975,7 @@ index 5d4c5ff7d..60f0b15f2 100644
      // Check if the pointee types are compatible ignoring the sign.
      // We explicitly check for char so that we catch "char" vs
      // "unsigned char" on systems where "char" is unsigned.
-@@ -9524,12 +9630,20 @@ static AssignConvertType checkPointerTypesForAssignment(Sema &S,
+@@ -9524,12 +9631,20 @@ static AssignConvertType checkPointerTypesForAssignment(Sema &S,
      const auto *LFPT = dyn_cast<FunctionProtoType>(LFT);
      const auto *RFPT = dyn_cast<FunctionProtoType>(RFT);
      if (LFPT && RFPT) {
@@ -4990,7 +4998,7 @@ index 5d4c5ff7d..60f0b15f2 100644
        rtrans = S.Context.getFunctionType(LFPT->getReturnType(),
                                           LFPT->getParamTypes(), EPI);
      } else if (RFPT) {
-@@ -9592,12 +9706,60 @@ static AssignConvertType checkBlockPointerTypesForAssignment(Sema &S,
+@@ -9592,12 +9707,60 @@ static AssignConvertType checkBlockPointerTypesForAssignment(Sema &S,
    //  * CVR and address space of LHS should be a superset of CVR and address
    //  space of RHS.
    //  * unqualified types should be compatible.
@@ -5053,6 +5061,17 @@ index 5d4c5ff7d..60f0b15f2 100644
      return AssignConvertType::IncompatibleBlockPointer;
  
    return ConvTy;
+@@ -17218,7 +17381,9 @@ ExprResult Sema::ActOnBlockStmtExpr(SourceLocation CaretLoc,
+     // variables needs destruction.
+     for (const auto &CI : Result->getBlockDecl()->captures()) {
+       const VarDecl *var = CI.getVariable();
+-      if (var->getType().isDestructedType() != QualType::DK_none) {
++      if (var->getType().isDestructedType() != QualType::DK_none ||
++          (getLangOpts().ObjCAutoRefCount &&
++           hasObjC3CarrierManagedPayload(var->getType()))) {
+         setFunctionHasBranchProtectedScope();
+         break;
+       }
 diff --git a/clang/lib/Sema/SemaObjC3CarrierARC.cpp b/clang/lib/Sema/SemaObjC3CarrierARC.cpp
 new file mode 100644
 index 000000000..80830c638

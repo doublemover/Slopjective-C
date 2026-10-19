@@ -185,6 +185,7 @@ PACKETS = {
         "clang/lib/CodeGen/CMakeLists.txt",
         "clang/lib/CodeGen/CGCall.cpp",
         "clang/lib/CodeGen/CGBlocks.cpp",
+        "clang/lib/CodeGen/CGBlocks.h",
         "clang/lib/CodeGen/CGAtomic.cpp",
         "clang/lib/CodeGen/CGDecl.cpp",
         "clang/lib/CodeGen/CGDebugInfo.cpp",

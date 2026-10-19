@@ -9,6 +9,10 @@ import subprocess
 import sys
 from pathlib import Path
 
+if not __package__:
+    sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
+from scripts.objc3c_toolchain_runtime.source_patches import verify_source
+
 PIN = "e877e782fb965c4e870d2ecf6aff58dddc6290ae"
 WINDOWS_TOOLS = ("clang.exe", "clang++.exe", "lld-link.exe")
 LINUX_TOOLS = ("clang", "clang++", "ld.lld")
@@ -88,6 +92,11 @@ def main() -> int:
             return fail(f"cannot read local runtime revision: {exc}")
         if revision != PIN:
             return fail(f"runtime source is {revision}, expected pinned commit {PIN}")
+        if args.profile == 'linux-x86_64':
+            try:
+                verify_source(Path(__file__).resolve().parents[2], args.source, profile)
+            except (OSError, ValueError, subprocess.SubprocessError) as exc:
+                return fail(f"runtime source patch verification failed: {exc}")
         cmake = args.source / "CMakeLists.txt"
         if not cmake.is_file():
             return fail("pinned checkout has no top-level CMakeLists.txt")
