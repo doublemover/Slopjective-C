@@ -53,3 +53,8 @@ outcomes before the archive can be published.
 
 Public Optional/Result, synchronous throws, async/await, and actors remain reserved
 until their public syntax and contracts have complete installed evidence.
+
+The [acceptance receipt](../support/linux_heap_storage_acceptance.json) binds
+implementation commit `036c9cabb` to the ABI 11 archive, installed suites,
+ASan/LSan, live editor and LLDB checks, and unprivileged Debian 13 and Ubuntu
+26.04 qualification.

@@ -1,7 +1,7 @@
 # Linux forward development
 
 The active product is the Clang-only Linux x86-64 SDK. The
-[acceptance receipt](../support/linux_managed_record_acceptance.json) identifies its
+[acceptance receipt](../support/linux_heap_storage_acceptance.json) identifies its
 exact archive, source, native execution and fresh-distribution evidence. Tool
 versions come from [the manifest](../../toolchains/llvm/manifest.json); public
 language claims come from [the capability authority](../../schemas/objc3-language-capabilities.json).
@@ -68,6 +68,15 @@ O0, O2 and ThinLTO, plus PCH and semantic imports; ten rejected forms bound that
 contract. Eight installed sanitizer configurations and record-aware editor and
 LLDB probes qualify the exact archive. The native runtime preserves Objective-C
 exception objects when C++ cleanup resumes into C catches.
+The [heap storage milestone](linux_heap_storage.md) now qualifies Objective-C
+ivars, nonatomic properties, whole-record runtime calls and captures, and shared
+Block forwarding cells. Constructor rollback destroys completed ivars and
+superclass state before freeing the allocation. Nine installed suites cover 93
+executions, 48 traps and 37 rejected forms; twenty ASan/LSan configurations and
+record/shared-capture LLDB probes qualify the archive. Both clean distributions
+pass the complete suite as ordinary users. The source-bound receipt above names
+implementation commit `036c9cabb` and the exact archive.
+
 The managed public core targets ARC. Define the public bounded contract and
 syntax together with their feature queries and capability predicates. Promote a
 feature only when that contract has complete evidence.
