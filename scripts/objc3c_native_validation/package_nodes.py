@@ -169,7 +169,7 @@ def _clang_arguments(toolchain: dict[str, Any]) -> list[str]:
 
 def _module_identity(interface: Path, sidecar: Path) -> dict[str, str]:
     payload = _json(sidecar)
-    if payload.get("schema_id") != "objc3c.semantic-interface.v1" or payload.get("schema_major") != 1:
+    if payload.get("schema_id") != "objc3c.semantic-interface.v2" or payload.get("schema_major") != 2:
         raise ValueError("unsupported native semantic interface sidecar")
     identity = payload.get("module")
     if not isinstance(identity, dict) or any(not isinstance(identity.get(key), str) or not identity[key]
