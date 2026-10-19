@@ -86,3 +86,11 @@ catch recovery, optionalization, failed assignment, nil receivers, managed retur
 cleanup, native unwinding, weak zeroing and deliberate traps. Sanitizer, editor,
 DWARF/LLDB and relocated ordinary-user Debian/Ubuntu checks bind the shipped
 archive.
+
+The [source-bound acceptance receipt](../support/linux_public_core_acceptance.json)
+records the exact producing implementation, archive, installed suites, sanitizer
+configurations, live debugger/editor probes and fresh distribution results.
+
+Six ASan/LSan configurations execute the public typed-error and callable-widening
+programs in Objective-C17 and Objective-C++20/23 at O0/O2. Consumer, provider and
+native fixture code is instrumented; the SDK runtime is loaded as shipped.

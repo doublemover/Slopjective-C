@@ -102,8 +102,12 @@ describe the Result contract. Queries remain false outside the qualified target,
 runtime and profile or without ObjC3 opt-in. Private compiler entry points used
 by AST owner tests are implementation details with no public compatibility claim.
 
-Acceptance requires dedicated public parsing, diagnostics, native execution,
+The qualified archive passes dedicated public parsing, diagnostics, native execution,
 printing and PCH tests; all installed ownership/ABI/interface/storage/package
 witnesses use the public grammar. Live clangd probes, ASan/LSan configurations,
 DWARF and LLDB sessions, and relocated Debian 13 and Ubuntu 26.04 consumers bind
-the exact published archive. Feature predicates are promoted with that evidence.
+the exact published archive. Feature predicates describe that qualified contract.
+
+The [source-bound acceptance receipt](../support/linux_public_core_acceptance.json)
+records the exact producing implementation, archive, installed suites, sanitizer
+configurations, live debugger/editor probes and fresh distribution results.

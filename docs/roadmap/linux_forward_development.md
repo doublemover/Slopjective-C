@@ -1,7 +1,7 @@
 # Linux forward development
 
 The active product is the Clang-only Linux x86-64 SDK. The
-[acceptance receipt](../support/linux_immutable_package_acceptance.json) identifies
+[acceptance receipt](../support/linux_public_core_acceptance.json) identifies
 its exact archive, implementation, installed execution and fresh-distribution
 evidence. Tool versions come from [the manifest](../../toolchains/llvm/manifest.json);
 public language claims come from [the capability authority](../../schemas/objc3-language-capabilities.json).
@@ -39,17 +39,14 @@ The implemented foundations have separate bounded contracts:
 
 ## Next implementation sequence
 
-1. Complete the public-core archive acceptance with all installed suites,
-   sanitizer configurations, live editor/debugger sessions and relocated
-   ordinary-user Debian 13 and Ubuntu 26.04 consumers.
-2. Add explicit ownership projections as a separate language and interface
+1. Add explicit ownership projections as a separate language and interface
    contract. Preserve exact content identities and mode locks; define each
    cross-ownership operation before accepting it.
-3. Define public module syntax with its native declaration, visibility and
+2. Define public module syntax with its native declaration, visibility and
    dependency identity rules. The existing offline source graph and immutable
    package store provide compilation and installation foundations. Registry
    transport is a separate concern.
-4. Build structured task groups, cancellation and actor isolation on that
+3. Build structured task groups, cancellation and actor isolation on that
    ownership and module foundation. Require deterministic error/cleanup tests,
    native threaded execution and sanitizer evidence before feature promotion.
 
