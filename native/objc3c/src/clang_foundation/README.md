@@ -81,16 +81,23 @@ replacement and exact self-aliasing. C++ assignment preserves the destination
 lvalue; snapshots clean up when LHS evaluation throws. Installed O0/O2 witnesses
 and live editor probes cover both languages.
 
-The Linux direct-carrier call contract uses extension ABI revision 3. Ordinary
+The Linux direct-carrier call contract uses extension ABI revision 4. Ordinary
 functions, callbacks and C++ members pass caller-owned argument snapshots by
 pointer; callees borrow and may replace those snapshots. Snapshots clean up at
 the caller's full-expression boundary, including later-argument and callee
 exceptions. Returns initialize fresh caller-owned storage. The installed
 `qualify-carrier-calls.py` suite executes separate provider/consumer builds at
 O0/O2/ThinLTO, semantic imports and PCH, including weak storage, virtual
-adjustment thunks and register exhaustion. Objective-C message and Block carrier
-signatures, typed-error signatures, volatile and nested managed storage remain
-diagnostic boundaries. The
+adjustment thunks and register exhaustion. Objective-C messages and Block
+invocation now support the runtime-encoded direct-carrier subset. A second
+installed suite, `qualify-runtime-carrier-calls.py`, covers reflection, class and
+instance dispatch, protocol/super/direct calls, nil receivers, heap Blocks and
+native Objective-C/C++ exceptions, with matching PCH, ThinLTO and module checks.
+Live clangd probes include returned message and Block values. Typed-error
+signatures, ivar/captured carrier storage, volatile and nested managed storage
+remain diagnostic boundaries. The
 [call contract](../../../../docs/roadmap/linux_managed_call_abi.md) records the
-target and ownership limits.
+target and ownership limits; the
+[runtime contract](../../../../docs/roadmap/linux_runtime_call_abi.md) specifies
+the encoding and dispatch subset.
 The editor and interface consumers use the same sealed SDK and Linux target.

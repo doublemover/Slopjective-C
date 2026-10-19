@@ -29,6 +29,8 @@ leaves, and plain arms whose encodings the shipped runtime can parse: ordinary
 integers through 64 bits, bool, float, double, long double, void, selectors,
 character pointers and void pointers. Int128, half/extended floats, arbitrary
 pointed-to records and nontrivial plain records remain outside this subset.
+The admitted leaf codes are `v @ # : * c C s S i I l L q Q B f d D`, `@?` and
+`^v`; other qualifier or aggregate encodings retain diagnostics.
 The broader ordinary-function subset retains its existing bounds.
 
 Method and Block signatures retain Clang's source argument-frame convention.

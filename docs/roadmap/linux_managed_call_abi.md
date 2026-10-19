@@ -35,7 +35,8 @@ Tag queries borrow initialized local, parameter, reference or pointer storage.
 A query on a managed call result constructs an owned temporary and cleans it
 up at the end of the full expression.
 
-Extension ABI revision 3 identifies this contract. Compiler identity and locked
+Extension ABI revision 3 introduced this contract; revision 4 extends it through
+the [runtime-encoded callable subset](linux_runtime_call_abi.md). Compiler identity and locked
 semantic interfaces bind consumers to that revision and the complete patch
 identity. Physical representation similarity does not establish interchange
 with another SDK.
@@ -63,14 +64,14 @@ units. A live installed-SDK witness inspects the callee's parameter and copied
 local, then the caller's returned local, checks their shared payload identity
 and continues the application to a successful exit.
 
-Blocks whose own parameters or results contain carriers and Objective-C message
-values still require a runtime signature-encoding contract. Managed signatures
-with ObjC3 typed throws, variadic calls, alternate calling conventions, MRC,
+Objective-C messages and Blocks now admit direct managed parameters and results
+under the runtime encoding contract. Managed signatures with ObjC3 typed throws,
+variadic calls, alternate calling conventions, MRC,
 volatile carriers, nested managed storage and reference-bound returned
 temporaries remain diagnostic boundaries. Mandatory tail calls are incompatible
 with these owned value temporaries. These boundaries are checked before object
 publication; they are separate from supported native C++ exception unwinding.
 
-Next, define the runtime encoding and typed-error success/failure ownership
-contracts, qualify those callable forms, and carry the same active-arm rules
+Next, define typed-error success/failure ownership, qualify its composition
+with these callable forms, and carry the same active-arm rules
 through recursive storage before promoting public syntax.
