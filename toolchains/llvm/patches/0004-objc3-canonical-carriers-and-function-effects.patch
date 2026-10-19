@@ -2640,10 +2640,18 @@ index e0b62591a..549a1ca48 100644
        return false;
      for (unsigned I = 0, N = Proto1->getNumParams(); I != N; ++I) {
 diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
-index 4be3e977b..bd3be91ad 100644
+index 4be3e977b..ca55bf932 100644
 --- a/clang/lib/AST/DeclPrinter.cpp
 +++ b/clang/lib/AST/DeclPrinter.cpp
-@@ -818,6 +818,24 @@ void DeclPrinter::VisitFunctionDecl(FunctionDecl *D) {
+@@ -71,6 +71,7 @@ namespace {
+     void VisitFunctionDecl(FunctionDecl *D);
+     void VisitFriendDecl(FriendDecl *D);
+     void VisitFieldDecl(FieldDecl *D);
++    void VisitObjCIvarDecl(ObjCIvarDecl *D);
+     void VisitVarDecl(VarDecl *D);
+     void VisitLabelDecl(LabelDecl *D);
+     void VisitParmVarDecl(ParmVarDecl *D);
+@@ -818,6 +819,24 @@ void DeclPrinter::VisitFunctionDecl(FunctionDecl *D) {
        }
      }
  
@@ -2668,7 +2676,39 @@ index 4be3e977b..bd3be91ad 100644
      if (CDecl) {
        if (!Policy.TerseOutput)
          PrintConstructorInitializers(CDecl, Proto);
-@@ -1485,6 +1503,20 @@ void DeclPrinter::VisitObjCMethodDecl(ObjCMethodDecl *OMD) {
+@@ -923,8 +942,10 @@ void DeclPrinter::VisitFieldDecl(FieldDecl *D) {
+   if (!Policy.SuppressSpecifiers && D->isModulePrivate())
+     Out << "__module_private__ ";
+ 
+-  Out << D->getASTContext().getUnqualifiedObjCPointerType(D->getType()).
+-         stream(Policy, D->getName(), Indentation);
++  QualType FieldType = D->getType();
++  if (!Context.getLangOpts().ObjC3)
++    FieldType = D->getASTContext().getUnqualifiedObjCPointerType(FieldType);
++  Out << FieldType.stream(Policy, D->getName(), Indentation);
+ 
+   if (D->isBitField()) {
+     Out << " : ";
+@@ -944,6 +965,18 @@ void DeclPrinter::VisitFieldDecl(FieldDecl *D) {
+     Out << ' ' << *Attrs;
+ }
+ 
++void DeclPrinter::VisitObjCIvarDecl(ObjCIvarDecl *D) {
++  switch (D->getAccessControl()) {
++  case ObjCIvarDecl::Private: Indent() << "@private\n"; break;
++  case ObjCIvarDecl::Protected: Indent() << "@protected\n"; break;
++  case ObjCIvarDecl::Public: Indent() << "@public\n"; break;
++  case ObjCIvarDecl::Package: Indent() << "@package\n"; break;
++  case ObjCIvarDecl::None: break;
++  }
++  Indent();
++  VisitFieldDecl(D);
++}
++
+ void DeclPrinter::VisitLabelDecl(LabelDecl *D) {
+   Out << *D << ":";
+ }
+@@ -1485,6 +1518,20 @@ void DeclPrinter::VisitObjCMethodDecl(ObjCMethodDecl *OMD) {
    if (OMD->isVariadic())
        Out << ", ...";
  
@@ -2689,6 +2729,43 @@ index 4be3e977b..bd3be91ad 100644
    if (std::optional<std::string> Attrs = prettyPrintAttributes(OMD))
      Out << ' ' << *Attrs;
  
+@@ -1512,8 +1559,8 @@ void DeclPrinter::VisitObjCImplementationDecl(ObjCImplementationDecl *OID) {
+     eolnOut = true;
+     Indentation += Policy.Indentation;
+     for (const auto *I : OID->ivars()) {
+-      Indent() << I->getASTContext().getUnqualifiedObjCPointerType(I->getType()).
+-                    getAsString(Policy) << ' ' << *I << ";\n";
++      VisitObjCIvarDecl(const_cast<ObjCIvarDecl *>(I));
++      Out << ";\n";
+     }
+     Indentation -= Policy.Indentation;
+     Out << "}\n";
+@@ -1568,9 +1615,8 @@ void DeclPrinter::VisitObjCInterfaceDecl(ObjCInterfaceDecl *OID) {
+     eolnOut = true;
+     Indentation += Policy.Indentation;
+     for (const auto *I : OID->ivars()) {
+-      Indent() << I->getASTContext()
+-                      .getUnqualifiedObjCPointerType(I->getType())
+-                      .getAsString(Policy) << ' ' << *I << ";\n";
++      VisitObjCIvarDecl(const_cast<ObjCIvarDecl *>(I));
++      Out << ";\n";
+     }
+     Indentation -= Policy.Indentation;
+     Out << "}\n";
+@@ -1631,9 +1677,10 @@ void DeclPrinter::VisitObjCCategoryDecl(ObjCCategoryDecl *PID) {
+   if (PID->ivar_size() > 0) {
+     Out << "{\n";
+     Indentation += Policy.Indentation;
+-    for (const auto *I : PID->ivars())
+-      Indent() << I->getASTContext().getUnqualifiedObjCPointerType(I->getType()).
+-                    getAsString(Policy) << ' ' << *I << ";\n";
++    for (const auto *I : PID->ivars()) {
++      VisitObjCIvarDecl(const_cast<ObjCIvarDecl *>(I));
++      Out << ";\n";
++    }
+     Indentation -= Policy.Indentation;
+     Out << "}\n";
+   }
 diff --git a/clang/lib/AST/ItaniumMangle.cpp b/clang/lib/AST/ItaniumMangle.cpp
 index 172a19f8f..024ef12a8 100644
 --- a/clang/lib/AST/ItaniumMangle.cpp
@@ -3601,10 +3678,10 @@ index 6262e8b20..0f31276d8 100644
    if (Tok.isOneOf(tok::amp, tok::ampamp)) {
 diff --git a/clang/lib/Parse/ParseObjC3Match.cpp b/clang/lib/Parse/ParseObjC3Match.cpp
 new file mode 100644
-index 000000000..3fde25e33
+index 000000000..94deef077
 --- /dev/null
 +++ b/clang/lib/Parse/ParseObjC3Match.cpp
-@@ -0,0 +1,366 @@
+@@ -0,0 +1,370 @@
 +#include "clang/AST/ObjC3MatchSemantic.h"
 +#include "clang/Basic/DiagnosticParse.h"
 +#include "clang/Parse/Parser.h"
@@ -3791,6 +3868,8 @@ index 000000000..3fde25e33
 +                              "__objc3_match", tok::r_paren))
 +    return ExprError();
 +  ExprResult Scrutinee = ParseExpression();
++  if (Scrutinee.isUsable())
++    Scrutinee = Actions.CheckPlaceholderExpr(Scrutinee.get());
 +  if (Scrutinee.isInvalid() || Parens.consumeClose())
 +    return ExprError();
 +  if (Tok.isNot(tok::l_brace)) {
@@ -3894,6 +3973,8 @@ index 000000000..3fde25e33
 +                              "__objc3_match_stmt", tok::r_paren))
 +    return StmtError();
 +  ExprResult Scrutinee = ParseExpression();
++  if (Scrutinee.isUsable())
++    Scrutinee = Actions.CheckPlaceholderExpr(Scrutinee.get());
 +  if (Scrutinee.isInvalid() || Parens.consumeClose())
 +    return StmtError();
 +  if (Tok.isNot(tok::l_brace)) {
@@ -7470,16 +7551,18 @@ index 11cd159c0..0d8f5d01b 100644
  TreeTransform<Derived>::TransformChooseExpr(ChooseExpr *E) {
 diff --git a/clang/lib/Sema/TreeTransformObjC3Match.inc b/clang/lib/Sema/TreeTransformObjC3Match.inc
 new file mode 100644
-index 000000000..7a7c5f388
+index 000000000..9dedbba25
 --- /dev/null
 +++ b/clang/lib/Sema/TreeTransformObjC3Match.inc
-@@ -0,0 +1,187 @@
+@@ -0,0 +1,199 @@
 +// H4-native-match TreeTransform template definitions. Include after the
 +// TreeTransform class declarations and before explicit instantiation sites.
 +
 +template <typename Derived>
 +StmtResult TreeTransform<Derived>::TransformObjC3MatchStmt(ObjC3MatchStmt *Old) {
 +  ExprResult Scrutinee = getDerived().TransformExpr(Old->getScrutinee());
++  if (Scrutinee.isUsable())
++    Scrutinee = SemaRef.CheckPlaceholderExpr(Scrutinee.get());
 +  if (Scrutinee.isInvalid())
 +    return StmtError();
 +
@@ -7490,6 +7573,10 @@ index 000000000..7a7c5f388
 +    Pattern.Kind = OldArm->getPatternKind();
 +    Pattern.Location = OldArm->getPatternLoc();
 +    Pattern.WrittenCarrierType = OldArm->getCanonicalPatternType();
++    // An unresolved member has no written carrier type to substitute.
++    // Reclassify its match after the property type becomes known.
++    if (Pattern.WrittenCarrierType == SemaRef.Context.DependentTy)
++      Pattern.WrittenCarrierType = QualType();
 +    if (!Pattern.WrittenCarrierType.isNull()) {
 +      Pattern.WrittenCarrierType =
 +          getDerived().TransformType(Pattern.WrittenCarrierType);
@@ -7519,7 +7606,7 @@ index 000000000..7a7c5f388
 +    if (VarDecl *OldBinding = OldArm->getBindingDecl()) {
 +      if (!State.Binding)
 +        return StmtError();
-+      TransformedLocalDecls[OldBinding] = State.Binding;
++      getDerived().transformedLocalDecl(OldBinding, {State.Binding});
 +    }
 +
 +    ExprResult Guard;
@@ -7547,6 +7634,8 @@ index 000000000..7a7c5f388
 +template <typename Derived>
 +ExprResult TreeTransform<Derived>::TransformObjC3MatchExpr(ObjC3MatchExpr *Old) {
 +  ExprResult Scrutinee = getDerived().TransformExpr(Old->getScrutinee());
++  if (Scrutinee.isUsable())
++    Scrutinee = SemaRef.CheckPlaceholderExpr(Scrutinee.get());
 +  if (Scrutinee.isInvalid())
 +    return ExprError();
 +
@@ -7557,6 +7646,10 @@ index 000000000..7a7c5f388
 +    Pattern.Kind = OldArm->getPatternKind();
 +    Pattern.Location = OldArm->getPatternLoc();
 +    Pattern.WrittenCarrierType = OldArm->getCanonicalPatternType();
++    // An unresolved member has no written carrier type to substitute.
++    // Reclassify its match after the property type becomes known.
++    if (Pattern.WrittenCarrierType == SemaRef.Context.DependentTy)
++      Pattern.WrittenCarrierType = QualType();
 +    if (!Pattern.WrittenCarrierType.isNull()) {
 +      Pattern.WrittenCarrierType =
 +          getDerived().TransformType(Pattern.WrittenCarrierType);
@@ -7586,7 +7679,7 @@ index 000000000..7a7c5f388
 +    if (VarDecl *OldBinding = OldArm->getBindingDecl()) {
 +      if (!State.Binding)
 +        return ExprError();
-+      TransformedLocalDecls[OldBinding] = State.Binding;
++      getDerived().transformedLocalDecl(OldBinding, {State.Binding});
 +    }
 +
 +    ExprResult Guard;
@@ -13157,4 +13250,86 @@ index 000000000..34d94d18b
 +void adl(__objc3_optional(Payload::Value) optional,
 +         __objc3_result(int, Payload::Value) result) {
 +  (void)associated(optional); (void)associated(result);
++}
+diff --git a/clang/test/ObjC3/AST/Inputs/carrier-heap-pch.h b/clang/test/ObjC3/AST/Inputs/carrier-heap-pch.h
+new file mode 100644
+index 000000000..8a4112677
+--- /dev/null
++++ b/clang/test/ObjC3/AST/Inputs/carrier-heap-pch.h
+@@ -0,0 +1,17 @@
++typedef __objc3_optional(id) Strong;
++typedef __objc3_optional(id __weak) Weak;
++struct HeapRecord { int marker; Strong value; Weak weak; Strong values[2]; };
++__attribute__((objc_root_class))
++@interface HeapBox { Class isa;
++@public
++  Strong _value;
++  Weak _weak;
++  struct HeapRecord _record;
++  Strong _values[2];
++  id __weak _nativeWeak;
++}
++@property(nonatomic) Strong value;
++@property(nonatomic) Weak weak;
++@property(nonatomic) struct HeapRecord record;
++- (struct HeapRecord)echo:(struct HeapRecord)record;
++@end
+diff --git a/clang/test/ObjC3/AST/carrier-heap-pch.mm b/clang/test/ObjC3/AST/carrier-heap-pch.mm
+new file mode 100644
+index 000000000..16e387dff
+--- /dev/null
++++ b/clang/test/ObjC3/AST/carrier-heap-pch.mm
+@@ -0,0 +1,10 @@
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -fblocks -fexceptions -fobjc-arc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -x objective-c++ -std=c++20 -fcxx-exceptions -emit-pch -o %t.pch %S/Inputs/carrier-heap-pch.h
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -fblocks -fexceptions -fobjc-arc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -x objective-c++ -std=c++20 -fcxx-exceptions -include-pch %t.pch -emit-llvm -o - %s | FileCheck %s
++// REQUIRES: x86-registered-target
++extern "C" int (^pch_shared(HeapBox *box))(void) {
++  __block struct HeapRecord value = box.record;
++  return ^int { return value.marker; };
++}
++// CHECK-LABEL: define{{.*}} ptr @pch_shared
++// CHECK: objc_msg_lookup_sender
++// CHECK: @_Block_object_dispose
+diff --git a/clang/test/ObjC3/AST/carrier-heap-print.m b/clang/test/ObjC3/AST/carrier-heap-print.m
+new file mode 100644
+index 000000000..7d286fe5a
+--- /dev/null
++++ b/clang/test/ObjC3/AST/carrier-heap-print.m
+@@ -0,0 +1,10 @@
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -fblocks -fexceptions -fobjc-arc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -x objective-c -ast-print %s | FileCheck %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -fblocks -fexceptions -fobjc-arc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -x objective-c -ast-print %s > %t.m
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -fblocks -fexceptions -fobjc-arc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -x objective-c -fsyntax-only -Werror %t.m
++#include "Inputs/carrier-heap-pch.h"
++// CHECK: @public
++// CHECK: Strong _value;
++// CHECK: Weak _weak;
++// CHECK: struct HeapRecord _record;
++// CHECK: Strong _values[2];
++// CHECK: __weak id _nativeWeak;
+diff --git a/clang/test/ObjC3/AST/carrier-property-match.mm b/clang/test/ObjC3/AST/carrier-property-match.mm
+new file mode 100644
+index 000000000..b6f0d18c7
+--- /dev/null
++++ b/clang/test/ObjC3/AST/carrier-property-match.mm
+@@ -0,0 +1,21 @@
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -fblocks -fexceptions -fobjc-arc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -x objective-c++ -std=c++20 -fcxx-exceptions -emit-llvm -o %t.ll -verify %s
++// expected-no-diagnostics
++#include "Inputs/carrier-heap-pch.h"
++template<class T> int property_match(T box) {
++  int result = __objc3_match(box.value) {
++    case __objc3_case_some(let object) => object ? 1 : 0;
++    case __objc3_case_none => 0;
++  };
++  __objc3_match_stmt(box.weak) {
++    case __objc3_case_some(let object): { result += object ? 1 : 0; }
++    case __objc3_case_none: { }
++  }
++  return result;
++}
++int instantiate(HeapBox *box) { return property_match(box); }
++int concrete(HeapBox *box) {
++  return __objc3_match(box.value) {
++    case __objc3_case_some(let object) => 1;
++    case __objc3_case_none => 0;
++  };
 +}

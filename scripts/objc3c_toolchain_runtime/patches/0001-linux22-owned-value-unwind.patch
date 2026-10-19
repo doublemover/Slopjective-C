@@ -185,6 +185,32 @@ index ec2f646a2..97508cbaf 100644
  	// If +alloc was overwritten, it is not guaranteed that it returns
  	// an instance of cls.
  	cls = classForObject(instance);
+diff --git a/gc_none.c b/gc_none.c
+index f263f37ba..29cb171eb 100644
+--- a/gc_none.c
++++ b/gc_none.c
+@@ -8,7 +8,12 @@
+ 
+ static id allocate_class(Class cls, size_t extraBytes)
+ {
+-	size_t size = cls->instance_size + extraBytes + sizeof(intptr_t);
++	size_t size;
++	if (__builtin_add_overflow((size_t)cls->instance_size, extraBytes, &size) ||
++	    __builtin_add_overflow(size, sizeof(intptr_t), &size))
++	{
++		return nil;
++	}
+ 	intptr_t *addr =
+ #ifdef _WIN32
+ 	// Malloc on Windows doesn't guarantee 32-byte alignment, but we
+@@ -18,6 +23,7 @@ static id allocate_class(Class cls, size_t extraBytes)
+ #else
+ 		calloc(size, 1);
+ #endif
++	if (addr == NULL) { return nil; }
+ 	return (id)(addr + 1);
+ }
+ 
 diff --git a/objcxx_eh.cc b/objcxx_eh.cc
 index 8ef5baf33..67576d48e 100644
 --- a/objcxx_eh.cc
@@ -260,3 +286,90 @@ index 5ac70a39d..c151ab2c5 100644
  /**
   * The GNU C++ exception personality function, provided by libsupc++ (GNU) or
   * libcxxrt (PathScale).
+diff --git a/runtime.c b/runtime.c
+index be03c3f70..8f52a9c73 100644
+--- a/runtime.c
++++ b/runtime.c
+@@ -28,16 +28,13 @@ void objc_send_initialize(id object);
+ /**
+  * Calls C++ destructors in the correct order.
+  */
+-PRIVATE void call_cxx_destruct(id obj)
++static void call_cxx_destruct_for_class(Class cls, id obj)
+ {
+ 	static SEL cxx_destruct;
+ 	if (NULL == cxx_destruct)
+ 	{
+ 		cxx_destruct = sel_registerName(".cxx_destruct");
+ 	}
+-	// Don't call object_getClass(), because we want to get hidden classes too
+-	Class cls = classForObject(obj);
+-
+ 	while (cls)
+ 	{
+ 		// If we're deallocating a class with a hidden class, then the
+@@ -51,6 +48,34 @@ PRIVATE void call_cxx_destruct(id obj)
+ 	}
+ }
+ 
++PRIVATE void call_cxx_destruct(id obj)
++{
++	// Retain hidden classes while finding the first destructor.
++	call_cxx_destruct_for_class(classForObject(obj), obj);
++}
++
++struct constructor_cleanup
++{
++	Class completed_superclass;
++	id object;
++};
++
++static void rollback_superclass_construction(struct constructor_cleanup *cleanup)
++{
++	if (cleanup->completed_superclass)
++	{
++		call_cxx_destruct_for_class(cleanup->completed_superclass, cleanup->object);
++	}
++}
++
++static void free_failed_construction(id *object)
++{
++	if (*object)
++	{
++		gc->free_object(*object);
++	}
++}
++
+ static void call_cxx_construct_for_class(Class cls, id obj)
+ {
+ 	static SEL cxx_construct;
+@@ -63,10 +88,16 @@ static void call_cxx_construct_for_class(Class cls, id obj)
+ 	{
+ 		call_cxx_construct_for_class(cls->super_class, obj);
+ 	}
++	// The compiler destroys the failed class's completed ivar prefix. This
++	// frame owns only the superclass chain that completed before that call.
++	struct constructor_cleanup cleanup
++		__attribute__((cleanup(rollback_superclass_construction))) =
++		{ cls->super_class, obj };
+ 	if (cls->cxx_construct)
+ 	{
+ 		cls->cxx_construct(obj, cxx_construct);
+ 	}
++	cleanup.completed_superclass = Nil;
+ }
+ 
+ PRIVATE void call_cxx_construct(id obj)
+@@ -359,9 +390,12 @@ id class_createInstance(Class cls, size_t extraBytes)
+ 	// its isa pointer!
+ 	if (cls->instance_size < sizeof(Class)) { return nil; }
+ 	id obj = gc->allocate_class(cls, extraBytes);
++	if (obj == nil) { return nil; }
++	id allocation __attribute__((cleanup(free_failed_construction))) = obj;
+ 	obj->isa = cls;
+ 	checkARCAccessorsSlow(cls);
+ 	call_cxx_construct(obj);
++	allocation = nil;
+ 	return obj;
+ }
+ 

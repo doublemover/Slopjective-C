@@ -65,6 +65,44 @@ def verify_sdk(prefix: Path, expected: str | None = None) -> dict:
     return {**data, 'seal_sha256': seal}
 
 
+
+def _run_qualifications(tasks: dict, workers: int) -> dict:
+    from concurrent.futures import ThreadPoolExecutor
+
+    results, failures = {}, []
+    # Always join every independent gate before reporting failure. Each gate owns
+    # a disjoint output directory, so its receipt and logs survive other failures.
+    with ThreadPoolExecutor(max_workers=max(1, workers)) as executor:
+        futures = {name: executor.submit(task) for name, task in tasks.items()}
+        for name, future in futures.items():
+            try:
+                results[name] = future.result()
+            except Exception as error:
+                failures.append(f'{name}: {error}')
+    if failures:
+        raise ValueError('installed SDK qualification failed: ' + '; '.join(failures))
+    return results
+
+
+def _qualify_call_suite(prefix: Path, output: Path, seal: str, suite: str, counts: dict) -> dict:
+    import subprocess
+
+    output.mkdir(parents=True, exist_ok=True)
+    with (output / 'execution.log').open('w') as log:
+        result = subprocess.run([os.sys.executable, '-B',
+            str(prefix / 'share/objc3c/examples/native' / ('qualify-' + suite + '.py')),
+            '--sdk-root', str(prefix), '--output-dir', str(output)],
+            stdout=log, stderr=subprocess.STDOUT, timeout=1200)
+    if result.returncode:
+        raise ValueError(f'{suite} failed; see {output / "execution.log"}')
+    evidence = json.loads((output / 'qualification.json').read_text())
+    if (evidence.get('status') != 'PASS' or evidence.get('sdk_seal') != seal
+            or any(len(evidence.get(key, [])) != count for key, count in counts.items())
+            or any(row['exit_code'] != row['expected_exit_code'] for row in evidence['commands'])):
+        raise ValueError(f'{suite} qualification receipt is incomplete')
+    return evidence
+
+
 def package_sdk(repo: Path, prefix: Path, validation_report: Path, cache_dir: Path) -> dict:
     from compression import zstd
 
@@ -161,133 +199,32 @@ def package_sdk(repo: Path, prefix: Path, validation_report: Path, cache_dir: Pa
     data['seal_sha256'] = _digest(data)
     (prefix / MANIFEST).write_text(json.dumps(data, indent=2) + '\n')
     (prefix / MANIFEST).chmod(0o644)
+    from functools import partial
+    from .host import resource_limits
     from .qualify_source_modules import qualify
-    module_evidence = qualify(prefix, validation_report.parent / 'installed-source-modules')
     from .qualify_source_graph import qualify as qualify_graph
-    graph_evidence = qualify_graph(prefix, validation_report.parent / 'installed-source-graph')
-    calls_directory = validation_report.parent / 'installed-carrier-calls'
-    calls_directory.mkdir(parents=True, exist_ok=True)
-    with (calls_directory / 'execution.log').open('w') as log:
-        result = subprocess.run([os.sys.executable, '-B',
-            str(prefix / 'share/objc3c/examples/native/qualify-carrier-calls.py'),
-            '--sdk-root', str(prefix), '--output-dir', str(calls_directory)],
-            stdout=log, stderr=subprocess.STDOUT, timeout=1200)
-    if result.returncode:
-        raise ValueError(f'installed managed call qualification failed; see {calls_directory / "execution.log"}')
-    call_evidence = json.loads((calls_directory / 'qualification.json').read_text())
-    if (call_evidence['status'] != 'PASS' or call_evidence['sdk_seal'] != data['seal_sha256']
-            or len(call_evidence['executions']) != 9):
-        raise ValueError('installed managed call qualification receipt is incomplete')
-    runtime_calls_directory = validation_report.parent / 'installed-runtime-carrier-calls'
-    runtime_calls_directory.mkdir(parents=True, exist_ok=True)
-    with (runtime_calls_directory / 'execution.log').open('w') as log:
-        result = subprocess.run([os.sys.executable, '-B',
-            str(prefix / 'share/objc3c/examples/native/qualify-runtime-carrier-calls.py'),
-            '--sdk-root', str(prefix), '--output-dir', str(runtime_calls_directory)],
-            stdout=log, stderr=subprocess.STDOUT, timeout=1200)
-    if result.returncode:
-        raise ValueError(f'installed runtime call qualification failed; see {runtime_calls_directory / "execution.log"}')
-    runtime_call_evidence = json.loads((runtime_calls_directory / 'qualification.json').read_text())
-    if (runtime_call_evidence['status'] != 'PASS' or runtime_call_evidence['sdk_seal'] != data['seal_sha256']
-            or len(runtime_call_evidence['executions']) != 9):
-        raise ValueError('installed runtime call qualification receipt is incomplete')
-    throws_directory = validation_report.parent / 'installed-managed-throws'
-    throws_directory.mkdir(parents=True, exist_ok=True)
-    with (throws_directory / 'execution.log').open('w') as log:
-        result = subprocess.run([os.sys.executable, '-B',
-            str(prefix / 'share/objc3c/examples/native/qualify-managed-throws.py'),
-            '--sdk-root', str(prefix), '--output-dir', str(throws_directory)],
-            stdout=log, stderr=subprocess.STDOUT, timeout=1200)
-    if result.returncode:
-        raise ValueError(f'installed managed throws qualification failed; see {throws_directory / "execution.log"}')
-    throws_evidence = json.loads((throws_directory / 'qualification.json').read_text())
-    if (throws_evidence['status'] != 'PASS' or throws_evidence['sdk_seal'] != data['seal_sha256']
-            or len(throws_evidence['executions']) != 9
-            or len(throws_evidence['forced_failures']) != 18
-            or any(row['exit_code'] != row['expected_exit_code']
-                   for row in throws_evidence['commands'])):
-        raise ValueError('installed managed throws qualification receipt is incomplete')
-    direct_directory = validation_report.parent / 'installed-direct-carrier-calls'
-    direct_directory.mkdir(parents=True, exist_ok=True)
-    with (direct_directory / 'execution.log').open('w') as log:
-        result = subprocess.run([os.sys.executable, '-B',
-            str(prefix / 'share/objc3c/examples/native/qualify-direct-carrier-calls.py'),
-            '--sdk-root', str(prefix), '--output-dir', str(direct_directory)],
-            stdout=log, stderr=subprocess.STDOUT, timeout=1200)
-    if result.returncode:
-        raise ValueError(f'installed direct call qualification failed; see {direct_directory / "execution.log"}')
-    direct_evidence = json.loads((direct_directory / 'qualification.json').read_text())
-    if (direct_evidence['status'] != 'PASS' or direct_evidence['sdk_seal'] != data['seal_sha256']
-            or len(direct_evidence['executions']) != 9
-            or len(direct_evidence['forced_failures']) != 12
-            or len(direct_evidence['runtime_rejections']) != 9
-            or any(row['exit_code'] != row['expected_exit_code'] for row in direct_evidence['commands'])):
-        raise ValueError('installed direct call qualification receipt is incomplete')
-    nested_directory = validation_report.parent / 'installed-nested-carrier-calls'
-    nested_directory.mkdir(parents=True, exist_ok=True)
-    with (nested_directory / 'execution.log').open('w') as log:
-        result = subprocess.run([os.sys.executable, '-B',
-            str(prefix / 'share/objc3c/examples/native/qualify-nested-carrier-calls.py'),
-            '--sdk-root', str(prefix), '--output-dir', str(nested_directory)],
-            stdout=log, stderr=subprocess.STDOUT, timeout=1200)
-    if result.returncode:
-        raise ValueError(f'installed nested call qualification failed; see {nested_directory / "execution.log"}')
-    nested_evidence = json.loads((nested_directory / 'qualification.json').read_text())
-    if (nested_evidence['status'] != 'PASS' or nested_evidence['sdk_seal'] != data['seal_sha256']
-            or len(nested_evidence['executions']) != 9
-            or len(nested_evidence['forced_failures']) != 6
-            or len(nested_evidence['commands']) != 65
-            or any(row['exit_code'] != row['expected_exit_code'] for row in nested_evidence['commands'])):
-        raise ValueError('installed nested call qualification receipt is incomplete')
-    capture_directory = validation_report.parent / 'installed-captured-carriers'
-    capture_directory.mkdir(parents=True, exist_ok=True)
-    with (capture_directory / 'execution.log').open('w') as log:
-        result = subprocess.run([os.sys.executable, '-B',
-            str(prefix / 'share/objc3c/examples/native/qualify-captured-carriers.py'),
-            '--sdk-root', str(prefix), '--output-dir', str(capture_directory)],
-            stdout=log, stderr=subprocess.STDOUT, timeout=1200)
-    if result.returncode:
-        raise ValueError(f'installed captured carrier qualification failed; see {capture_directory / "execution.log"}')
-    capture_evidence = json.loads((capture_directory / 'qualification.json').read_text())
-    if (capture_evidence['status'] != 'PASS' or capture_evidence['sdk_seal'] != data['seal_sha256']
-            or len(capture_evidence['executions']) != 9
-            or len(capture_evidence['forced_failures']) != 6
-            or len(capture_evidence['commands']) != 77
-            or any(row['exit_code'] != row['expected_exit_code'] for row in capture_evidence['commands'])):
-        raise ValueError('installed captured carrier qualification receipt is incomplete')
-    array_directory = validation_report.parent / 'installed-array-carriers'
-    array_directory.mkdir(parents=True, exist_ok=True)
-    with (array_directory / 'execution.log').open('w') as log:
-        result = subprocess.run([os.sys.executable, '-B',
-            str(prefix / 'share/objc3c/examples/native/qualify-array-carriers.py'),
-            '--sdk-root', str(prefix), '--output-dir', str(array_directory)],
-            stdout=log, stderr=subprocess.STDOUT, timeout=1200)
-    if result.returncode:
-        raise ValueError(f'installed array carrier qualification failed; see {array_directory / "execution.log"}')
-    array_evidence = json.loads((array_directory / 'qualification.json').read_text())
-    if (array_evidence['status'] != 'PASS' or array_evidence['sdk_seal'] != data['seal_sha256']
-            or len(array_evidence['executions']) != 9
-            or len(array_evidence['forced_failures']) != 6
-            or len(array_evidence['commands']) != 77
-            or len(array_evidence['rejections']) != 6
-            or any(row['exit_code'] != row['expected_exit_code'] for row in array_evidence['commands'])):
-        raise ValueError('installed array carrier qualification receipt is incomplete')
-    record_directory = validation_report.parent / 'installed-record-carriers'
-    record_directory.mkdir(parents=True, exist_ok=True)
-    with (record_directory / 'execution.log').open('w') as log:
-        result = subprocess.run([os.sys.executable, '-B',
-            str(prefix / 'share/objc3c/examples/native/qualify-record-carriers.py'),
-            '--sdk-root', str(prefix), '--output-dir', str(record_directory)],
-            stdout=log, stderr=subprocess.STDOUT, timeout=1200)
-    if result.returncode:
-        raise ValueError(f'installed record carrier qualification failed; see {record_directory / "execution.log"}')
-    record_evidence = json.loads((record_directory / 'qualification.json').read_text())
-    if (record_evidence['status'] != 'PASS' or record_evidence['sdk_seal'] != data['seal_sha256']
-            or len(record_evidence['executions']) != 15
-            or len(record_evidence['rejections']) != 10
-            or len(record_evidence['commands']) != 99
-            or any(row['exit_code'] != row['expected_exit_code'] for row in record_evidence['commands'])):
-        raise ValueError('installed record carrier qualification receipt is incomplete')
+
+    tasks = {
+        'installed_source_modules': partial(qualify, prefix, validation_report.parent / 'installed-source-modules'),
+        'installed_source_graph': partial(qualify_graph, prefix, validation_report.parent / 'installed-source-graph'),
+    }
+    suites = (
+        ('installed_carrier_calls', 'carrier-calls', {'executions': 9, 'commands': 47}),
+        ('installed_runtime_carrier_calls', 'runtime-carrier-calls', {'executions': 9, 'commands': 53}),
+        ('installed_managed_throws', 'managed-throws', {'executions': 9, 'commands': 71, 'forced_failures': 18}),
+        ('installed_direct_calls', 'direct-carrier-calls', {'executions': 9, 'commands': 80, 'forced_failures': 12, 'runtime_rejections': 9}),
+        ('installed_nested_calls', 'nested-carrier-calls', {'executions': 9, 'commands': 65, 'forced_failures': 6}),
+        ('installed_captured_carriers', 'captured-carriers', {'executions': 9, 'commands': 77, 'forced_failures': 6}),
+        ('installed_array_carriers', 'array-carriers', {'executions': 9, 'commands': 77, 'forced_failures': 6, 'rejections': 6}),
+        ('installed_record_carriers', 'record-carriers', {'executions': 15, 'commands': 99, 'rejections': 10}),
+        ('installed_heap_carriers', 'heap-carriers', {'executions': 15, 'commands': 101, 'rejections': 12}),
+    )
+    for key, suite, counts in suites:
+        tasks[key] = partial(_qualify_call_suite, prefix, validation_report.parent / ('installed-' + suite),
+                             data['seal_sha256'], suite, counts)
+    manifest = json.loads((repo / 'toolchains/llvm/manifest.json').read_text())
+    workers = min(4, resource_limits(manifest['build'])['compile_jobs'])
+    qualification = _run_qualifications(tasks, workers)
     cache_dir.mkdir(parents=True, exist_ok=True)
     archive = cache_dir / (source['build_id'] + '-linux-x86_64-' + data['seal_sha256'][:16] + '.tar.zst')
     if archive.exists():
@@ -314,15 +251,7 @@ def package_sdk(repo: Path, prefix: Path, validation_report: Path, cache_dir: Pa
     receipt = {'archive': str(archive), 'archive_sha256': _file_hash(archive),
                'archive_bytes': archive.stat().st_size, 'seal_sha256': data['seal_sha256'],
                'source_build_id': source['build_id'],
-               'installed_source_modules': module_evidence, 'installed_source_graph': graph_evidence,
-               'installed_carrier_calls': call_evidence,
-               'installed_runtime_carrier_calls': runtime_call_evidence,
-               'installed_managed_throws': throws_evidence,
-               'installed_direct_calls': direct_evidence,
-               'installed_nested_calls': nested_evidence,
-               'installed_captured_carriers': capture_evidence,
-               'installed_array_carriers': array_evidence,
-               'installed_record_carriers': record_evidence}
+               **qualification}
     archive.with_suffix('.json').write_text(json.dumps(receipt, indent=2) + '\n')
     return {**receipt, 'cache_hit': False}
 

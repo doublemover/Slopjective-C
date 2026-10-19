@@ -1,5 +1,6 @@
 #include <objc/runtime.h>
 #include <stdio.h>
+#include <stdint.h>
 typedef struct _NSZone NSZone;
 id objc_alloc_init(Class type) __attribute__((ns_returns_retained));
 id objc_allocWithZone(Class type) __attribute__((ns_returns_retained));
@@ -31,6 +32,8 @@ __attribute__((objc_root_class))
 - (id)init { return (id)0; }
 @end
 int main(void) {
+  CHECK(class_createInstance(objc_getClass("AllocRoot"), SIZE_MAX) == (id)0);
+  CHECK(class_createInstance(objc_getClass("AllocRoot"), SIZE_MAX-sizeof(intptr_t)) == (id)0);
   CHECK(objc_alloc_init((Class)0) == (id)0);
   CHECK(objc_alloc_init(objc_getClass("NilAlloc")) == (id)0);
   CHECK([[NilAlloc alloc] init] == (id)0);

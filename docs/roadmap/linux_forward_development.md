@@ -23,7 +23,7 @@ O0/O2 witnesses cover all Result arm transitions, self/aliased assignment, weak
 zeroing, Blocks, typed-error optionalization, sequencing and native unwinding.
 Live clangd probes cover both languages. The
 [managed call ABI](linux_managed_call_abi.md) now extends direct carriers through
-ordinary functions, callbacks and C++ members under extension ABI revision 10.
+ordinary functions, callbacks and C++ members under extension ABI revision 11.
 Caller-owned snapshots preserve each argument at evaluation time and clean up
 at full-expression boundaries; returns initialize fresh caller-owned storage.
 Nine installed executions cover separate provider/consumer compilation at
@@ -80,10 +80,10 @@ Private migration intrinsics do not justify a public feature claim.
 
 The next implementation sequence is:
 
-1. Extend the qualified record operations into Objective-C ivars/properties,
-   whole-record runtime signatures and Block captures, and reference/`__block`
-   storage. Cover partial construction, heap migration, ownership metadata,
-   weak registrations and exceptional copying before admitting each form.
+1. Complete bounded C++ semantic interfaces with explicit linkage and data-record
+   identity. Objective-C heap storage, runtime record calls, whole-record captures,
+   and shared `__block` cells are implemented under the
+   [heap storage contract](linux_heap_storage.md).
 2. Finish the bounded public Optional/Result and synchronous throws contract,
    including ownership and module interface identity. Add public syntax and
    promote its feature predicates only after that complete contract passes the
