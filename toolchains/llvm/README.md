@@ -105,6 +105,9 @@ Volatile carriers, by-value returns and nested managed payloads retain their
 diagnostic boundaries. Patch export preserves canonical section ordering and
 metadata across untracked and intent-to-add source files, so index bookkeeping
 does not change unrelated patch identities.
+The [assignment acceptance receipt](../../docs/support/linux_arc_assignment_acceptance.json)
+binds the compiler and native execution results to the exact SDK archive,
+installed editor/debugger checks and ordinary-user Debian/Ubuntu acceptance.
 
 [`scripts/qualify_linux_archive.sh`](../../scripts/qualify_linux_archive.sh)
 qualifies the actual archive on fresh Debian/Ubuntu hosts: install and relocation,

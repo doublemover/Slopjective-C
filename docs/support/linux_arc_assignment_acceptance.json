@@ -1,0 +1,374 @@
+{
+  "schema": "objc3c.linux-arc-assignment-acceptance.v1",
+  "status": "PASS",
+  "accepted_utc": "2026-10-19T03:12:13.589648+00:00",
+  "implementation_commit": "8eadd2dadfa670df2237a539b1d25a67aa6bd197",
+  "source_build_id": "llvmorg-23.1.3-0d261d1ca552-90e9b543482d-fd761312",
+  "upstream_commit": "0d261d1ca552c95a8f007e061c787ac7132fbcbc",
+  "patch_digest": "90e9b543482d4e682a8c25af1936fe905d5962bd8e7e190268f2973e433e8f85",
+  "frontend_inputs": "a8b6e2ef8229ecb759de16ec284f903b467cefe0549dbff5dc722a461044bada",
+  "build_input_identity": "671767fd85cc388f7110adf8efc4160e439d658fc337a158c67a158b0aebb00d",
+  "archive": "out/toolchains/sdk-cache/llvmorg-23.1.3-0d261d1ca552-90e9b543482d-fd761312-linux-x86_64-0d4ffc9beb2fafd7.tar.zst",
+  "archive_sha256": "38a2ce5808e5fc3a3f3ecac3f2294ef12e127aa430e3e16ba581cd640901e45a",
+  "archive_bytes": 427024817,
+  "seal_sha256": "0d4ffc9beb2fafd7f9d2368fa14f9b7f8216fa5815927fa45ad6947eff44a4f5",
+  "target": "x86_64-unknown-linux-gnu",
+  "linux_abi": {
+    "glibc_minimum": "2.41",
+    "libstdcxx_symbol_minimum": "GLIBCXX_3.4.33"
+  },
+  "sdk_entries": 4168,
+  "sdk_files_and_links": 3908,
+  "contract": {
+    "languages": ["Objective-C C17", "Objective-C++ C++20"],
+    "ownership": "ARC",
+    "leaves": [
+      "strong Objective-C object",
+      "zeroing weak Objective-C object",
+      "unsafe-unretained Objective-C object",
+      "strong Block"
+    ],
+    "implicit_copy": "Copy the selected arm of initialized, nonvolatile borrowed storage into a direct local; preserve the source and its tag.",
+    "assignment": "Snapshot the selected RHS before LHS evaluation or old-arm destruction; consume the snapshot through native strong/Block initialization and weak move operations.",
+    "result": "All Ok/Err replacement transitions, including managed/plain and strong/weak arm combinations.",
+    "cpp": "Return the actual destination lvalue, evaluate each operand once, sequence RHS before LHS, and clean snapshots when LHS evaluation throws.",
+    "existing_transfers": "Explicit copy/move construction composes with assignment and typed-error optionalization; source tags survive moves.",
+    "boundaries": [
+      "volatile managed carriers",
+      "managed by-value call/return ABI",
+      "nested managed carrier storage",
+      "managed MRC adaptation",
+      "public Optional/Result/throws syntax"
+    ],
+    "public_feature_authority": "Only the existing qualified defer claim is public; Optional/Result/throws feature predicates remain reserved."
+  },
+  "source_hashes": {
+    "toolchains/llvm/patches/0005-objc3-codegen-qualification-boundaries.patch": "5ffe1768744e889cb565cebb615ec9e94256592f3852f7242552440688c3a7db",
+    "native/objc3c/src/clang_foundation/driver_native.cpp": "34b8a77034951737b56c62073e7d6e8bf31ae11f42a9e1ed3b2a9115b4121cd7",
+    "scripts/objc3c_toolchain/export_development_patches.py": "0da98b5bb3dc0718eb18f774d3fbfb59e0821759e81c473d6f306d9347226f9b",
+    "scripts/objc3c_toolchain/qualify_installed.py": "b9762abfa88d06dcef6367b5c41092d5ac42dcdcef68e9b269c428afcbede929",
+    "scripts/qualify_linux_archive.sh": "0f17833f1a61fe92197ce15322d55ebe65654ce50bb301b4cacec9a38b712645",
+    "tests/clang_foundation/installed_sdk/carrier-assignment.m": "0f35f895e23b8024456f8ef095afd7d2f3314a0bd02373febb4bf76a40fe6358",
+    "tests/clang_foundation/installed_sdk/carrier-transfer.mm": "f55a7fc41c4446ce3da05f6dfead25a4e52792b95c2dedf126739b75f8b55e25",
+    "tests/tooling/fixtures/objc3_editor/reserved_intrinsics.m": "0b804558bc630e873cb07294062fa9e35f6bc448310a19262f323ac7e15936d7",
+    "tests/tooling/fixtures/objc3_editor/reserved_intrinsics.mm": "0b804558bc630e873cb07294062fa9e35f6bc448310a19262f323ac7e15936d7",
+    "tests/tooling/fixtures/objc3_editor/qualification-cases.json": "dbb48d783c5ab2171133ea0f35c8041e745d16a7fd815ed010c5e9cd8463bb92"
+  },
+  "qualification": {
+    "compiler_tests": 164,
+    "compiler_platform_skips": 3,
+    "ast_tests": 46,
+    "tooling_tests": 145,
+    "tooling_skips": 1,
+    "tooling_subtests": 33,
+    "frontend_ctests": 16,
+    "runtime_ctests": 5,
+    "native_nodes": 13,
+    "native_runtime_executions": 76,
+    "installed_consumer_commands": 30,
+    "installed_assignment_commands": [
+      {
+        "name": "carrier-assignment-compile-objective-c-O0",
+        "exit_code": 0,
+        "elapsed_seconds": 0.202978
+      },
+      {
+        "name": "carrier-assignment-run-objective-c-O0",
+        "exit_code": 0,
+        "elapsed_seconds": 0.002676
+      },
+      {
+        "name": "carrier-assignment-compile-objective-c++-O0",
+        "exit_code": 0,
+        "elapsed_seconds": 0.26034
+      },
+      {
+        "name": "carrier-assignment-run-objective-c++-O0",
+        "exit_code": 0,
+        "elapsed_seconds": 0.002998
+      },
+      {
+        "name": "carrier-assignment-compile-objective-c-O2",
+        "exit_code": 0,
+        "elapsed_seconds": 0.259307
+      },
+      {
+        "name": "carrier-assignment-run-objective-c-O2",
+        "exit_code": 0,
+        "elapsed_seconds": 0.002395
+      },
+      {
+        "name": "carrier-assignment-compile-objective-c++-O2",
+        "exit_code": 0,
+        "elapsed_seconds": 0.2957
+      },
+      {
+        "name": "carrier-assignment-run-objective-c++-O2",
+        "exit_code": 0,
+        "elapsed_seconds": 0.00238
+      },
+      {
+        "name": "carrier-assignment-dwarf-objective-c",
+        "exit_code": 0,
+        "elapsed_seconds": 0.002609
+      },
+      {
+        "name": "carrier-assignment-dwarf-objective-c++",
+        "exit_code": 0,
+        "elapsed_seconds": 0.003686
+      }
+    ],
+    "source_module_builds": 14,
+    "source_module_rejections": 6,
+    "source_graph_builds": 28,
+    "source_graph_rejections": 8,
+    "live_editor": {
+      ".m": {
+        "standard": "c17",
+        "probes": [
+          "ordinary_parameter",
+          "optional_match_payload",
+          "managed_optional_object",
+          "managed_implicit_copy_assignment"
+        ],
+        "transcript_sha256": "9d166d16980207748761f3cfe5fd81d731d64f2f49aa8458aa96d9547b4e3bc6"
+      },
+      ".mm": {
+        "standard": "c++20",
+        "probes": [
+          "ordinary_parameter",
+          "optional_match_payload",
+          "managed_optional_object",
+          "managed_implicit_copy_assignment",
+          "managed_optional_copy"
+        ],
+        "transcript_sha256": "0c96c5de6de420c1068e82684bbb819fb781cb0b6caa86e4b6273f2dc1cf7d14"
+      }
+    },
+    "live_carrier_debugger": {
+      "status": "PASS",
+      "outside_checkout": true,
+      "breakpoint": "carrier-assignment.m:40",
+      "inspected": ["implicit", "destination"],
+      "state": true,
+      "shared_payload_identity": true,
+      "continued_exit_code": 0,
+      "log_sha256": "b1c7839ad0244390c35ad0f39a95c58f9a325ffc2c4d12fe30fdc9e44e7e5422",
+      "executable_sha256": "2018c55f3e1ca317de4999b9516307707d724f52f8dbdf7ba232de72adec4e4f"
+    },
+    "cross_module_ownership": {
+      "status": "PASS",
+      "outside_checkout": true,
+      "sdk_seal": "0d4ffc9beb2fafd7f9d2368fa14f9b7f8216fa5815927fa45ad6947eff44a4f5",
+      "support_source": "extern id class_createInstance(Class cls, __SIZE_TYPE__ extra) __attribute__((ns_returns_retained));\nextern id object_dispose(id value);\nstatic int destroyed;\n__attribute__((objc_root_class))\n@interface ImportedProbe { Class isa; }\n+ (id)new;\n@end\n@implementation ImportedProbe\n+ (id)new { return class_createInstance(self, 0); }\n- (void)dealloc { ++destroyed; object_dispose(self); }\n@end\n",
+      "provider_source": "typedef __objc3_optional(id) ObjectValue;\ntypedef __objc3_optional(id __weak) WeakValue;\n#include \"support.h\"\nid make(void) __attribute__((ns_returns_retained));\nid make(void) { return [ImportedProbe new]; }\nint destructions(void) { return destroyed; }\nvoid replace(ObjectValue *destination, const ObjectValue *source) { *destination = *source; }\nvoid replace_weak(WeakValue *destination, const WeakValue *source) { *destination = *source; }\n",
+      "consumer_source": "@import Ownership;\nint main(void) {\n  id object = @Ownership.make();\n  __weak id observer = object;\n  @Ownership.ObjectValue source = __objc3_some(id, object);\n  @Ownership.ObjectValue destination = source;\n  @Ownership.WeakValue weak_source = __objc3_some(id __weak, object);\n  @Ownership.WeakValue weak_destination = weak_source;\n  object = (id)0;\n  @Ownership.replace(&destination, &source);\n  @Ownership.replace_weak(&weak_destination, &weak_source);\n  source = __objc3_none(id);\n  if (observer == (id)0) return 1;\n  destination = __objc3_none(id);\n  if (observer != (id)0 || @Ownership.destructions() != 1) return 2;\n  if (!__objc3_has_value(weak_destination)) return 3;\n  weak_destination = __objc3_none(id __weak);\n  return __objc3_has_value(weak_destination) ? 4 : 0;\n}\n",
+      "records": [
+        {
+          "optimization": "O0",
+          "semantic_fingerprint": "78062a2ca757d835ebef9b88a5d35f90a5e154851dde71b284c3b93bc24a89be",
+          "commands": [
+            {
+              "name": "provider",
+              "argv": [
+                "/workspace/Slopjective-C/out/toolchains/linux-sdk/sdks/0d4ffc9beb2fafd7f9d2368fa14f9b7f8216fa5815927fa45ad6947eff44a4f5/bin/objc3c",
+                "/workspace/arc-assignment-imports/provider.m",
+                "--objc3",
+                "--arc",
+                "--runtime",
+                "gnustep-2.0",
+                "--target",
+                "x86_64-unknown-linux-gnu",
+                "--module",
+                "Ownership",
+                "--package",
+                "ownership-v1",
+                "--emit-object",
+                "/workspace/arc-assignment-imports/O0/provider.o",
+                "--emit-interface",
+                "/workspace/arc-assignment-imports/O0/Ownership.objc3i",
+                "--",
+                "-O0",
+                "-I",
+                "/workspace/Slopjective-C/out/toolchains/linux-sdk/sdks/0d4ffc9beb2fafd7f9d2368fa14f9b7f8216fa5815927fa45ad6947eff44a4f5/include",
+                "-fblocks"
+              ],
+              "exit_code": 0
+            },
+            {
+              "name": "consumer",
+              "argv": [
+                "/workspace/Slopjective-C/out/toolchains/linux-sdk/sdks/0d4ffc9beb2fafd7f9d2368fa14f9b7f8216fa5815927fa45ad6947eff44a4f5/bin/objc3c",
+                "/workspace/arc-assignment-imports/consumer.m",
+                "--objc3",
+                "--arc",
+                "--runtime",
+                "gnustep-2.0",
+                "--target",
+                "x86_64-unknown-linux-gnu",
+                "--source-imports",
+                "--module-search-path",
+                "/workspace/arc-assignment-imports/O0",
+                "--import-module",
+                "Ownership",
+                "78062a2ca757d835ebef9b88a5d35f90a5e154851dde71b284c3b93bc24a89be",
+                "ownership-v1",
+                "--emit-object",
+                "/workspace/arc-assignment-imports/O0/consumer.o",
+                "--emit-dependency-record",
+                "/workspace/arc-assignment-imports/O0/dependencies.json",
+                "--",
+                "-O0",
+                "-I",
+                "/workspace/Slopjective-C/out/toolchains/linux-sdk/sdks/0d4ffc9beb2fafd7f9d2368fa14f9b7f8216fa5815927fa45ad6947eff44a4f5/include",
+                "-fblocks"
+              ],
+              "exit_code": 0
+            },
+            {
+              "name": "link",
+              "argv": [
+                "/workspace/Slopjective-C/out/toolchains/linux-sdk/sdks/0d4ffc9beb2fafd7f9d2368fa14f9b7f8216fa5815927fa45ad6947eff44a4f5/bin/objc3c",
+                "/workspace/arc-assignment-imports/O0/provider.o",
+                "/workspace/arc-assignment-imports/O0/consumer.o",
+                "-o",
+                "/workspace/arc-assignment-imports/O0/application"
+              ],
+              "exit_code": 0
+            },
+            {
+              "name": "run",
+              "argv": ["/workspace/arc-assignment-imports/O0/application"],
+              "exit_code": 0
+            }
+          ],
+          "executable_sha256": "690395ae57dd9bceccf209c8665c108df96ab29b5f965152a559b24a7b7f551e"
+        },
+        {
+          "optimization": "O2",
+          "semantic_fingerprint": "78062a2ca757d835ebef9b88a5d35f90a5e154851dde71b284c3b93bc24a89be",
+          "commands": [
+            {
+              "name": "provider",
+              "argv": [
+                "/workspace/Slopjective-C/out/toolchains/linux-sdk/sdks/0d4ffc9beb2fafd7f9d2368fa14f9b7f8216fa5815927fa45ad6947eff44a4f5/bin/objc3c",
+                "/workspace/arc-assignment-imports/provider.m",
+                "--objc3",
+                "--arc",
+                "--runtime",
+                "gnustep-2.0",
+                "--target",
+                "x86_64-unknown-linux-gnu",
+                "--module",
+                "Ownership",
+                "--package",
+                "ownership-v1",
+                "--emit-object",
+                "/workspace/arc-assignment-imports/O2/provider.o",
+                "--emit-interface",
+                "/workspace/arc-assignment-imports/O2/Ownership.objc3i",
+                "--",
+                "-O2",
+                "-I",
+                "/workspace/Slopjective-C/out/toolchains/linux-sdk/sdks/0d4ffc9beb2fafd7f9d2368fa14f9b7f8216fa5815927fa45ad6947eff44a4f5/include",
+                "-fblocks"
+              ],
+              "exit_code": 0
+            },
+            {
+              "name": "consumer",
+              "argv": [
+                "/workspace/Slopjective-C/out/toolchains/linux-sdk/sdks/0d4ffc9beb2fafd7f9d2368fa14f9b7f8216fa5815927fa45ad6947eff44a4f5/bin/objc3c",
+                "/workspace/arc-assignment-imports/consumer.m",
+                "--objc3",
+                "--arc",
+                "--runtime",
+                "gnustep-2.0",
+                "--target",
+                "x86_64-unknown-linux-gnu",
+                "--source-imports",
+                "--module-search-path",
+                "/workspace/arc-assignment-imports/O2",
+                "--import-module",
+                "Ownership",
+                "78062a2ca757d835ebef9b88a5d35f90a5e154851dde71b284c3b93bc24a89be",
+                "ownership-v1",
+                "--emit-object",
+                "/workspace/arc-assignment-imports/O2/consumer.o",
+                "--emit-dependency-record",
+                "/workspace/arc-assignment-imports/O2/dependencies.json",
+                "--",
+                "-O2",
+                "-I",
+                "/workspace/Slopjective-C/out/toolchains/linux-sdk/sdks/0d4ffc9beb2fafd7f9d2368fa14f9b7f8216fa5815927fa45ad6947eff44a4f5/include",
+                "-fblocks"
+              ],
+              "exit_code": 0
+            },
+            {
+              "name": "link",
+              "argv": [
+                "/workspace/Slopjective-C/out/toolchains/linux-sdk/sdks/0d4ffc9beb2fafd7f9d2368fa14f9b7f8216fa5815927fa45ad6947eff44a4f5/bin/objc3c",
+                "/workspace/arc-assignment-imports/O2/provider.o",
+                "/workspace/arc-assignment-imports/O2/consumer.o",
+                "-o",
+                "/workspace/arc-assignment-imports/O2/application"
+              ],
+              "exit_code": 0
+            },
+            {
+              "name": "run",
+              "argv": ["/workspace/arc-assignment-imports/O2/application"],
+              "exit_code": 0
+            }
+          ],
+          "executable_sha256": "e00ea539f561193bec5ff2c54f832679fbcd9daf21d6aac5fdbce9f0d7298d1b"
+        }
+      ]
+    },
+    "fresh_distributions": [
+      {
+        "distribution": "debian13",
+        "image": "debian:13-slim@sha256:a29215f6a35e51e22adffa17f89e9d2ef06214e64a2bad10d765c46aea49f11f",
+        "log": "out/toolchains/arc-assignment-distribution-acceptance/debian13.log",
+        "status": "PASS",
+        "exit_code": 0,
+        "elapsed_seconds": 302.217617,
+        "log_sha256": "2676222290cf3cb3302df915a36f2db9ecb69bc1ea1962ebabc1d6612469bc33",
+        "graph_builds": 28,
+        "graph_rejections": 8,
+        "ordinary_user": true,
+        "arc_assignment_runs": 4,
+        "arc_assignment_languages": ["objective-c", "objective-c++"],
+        "arc_assignment_optimizations": ["O0", "O2"]
+      },
+      {
+        "distribution": "ubuntu2604",
+        "image": "ubuntu:26.04@sha256:c098726dd9b9733f3e885f8de0ef375206a311b0a317eadc40d347b1115fb944",
+        "log": "out/toolchains/arc-assignment-distribution-acceptance/ubuntu2604.log",
+        "status": "PASS",
+        "exit_code": 0,
+        "elapsed_seconds": 358.476112,
+        "log_sha256": "2d4568436c838d84cfdbe97946afdfe72d34cb6e21ff7d8d7c21f9db46329d8b",
+        "graph_builds": 28,
+        "graph_rejections": 8,
+        "ordinary_user": true,
+        "arc_assignment_runs": 4,
+        "arc_assignment_languages": ["objective-c", "objective-c++"],
+        "arc_assignment_optimizations": ["O0", "O2"]
+      }
+    ]
+  },
+  "evidence": {
+    "release": "out/toolchains/linux-sdk-builds/671767fd85cc388f7110adf8efc4160e439d658fc337a158c67a158b0aebb00d/release.json",
+    "release_sha256": "0f83e95fb49ac7255e1cc9ac1f9b0f0b4b2eb371530808b22bd5e634b95ccebc",
+    "native_summary": "out/native-validation/linux-sdk-20261019T025702104847Z/summary.json",
+    "native_summary_sha256": "c030e8416c202c13e5187e973855511f06285768db3a62fda79a7af03eb70493",
+    "editor": "out/native-validation/linux-sdk-20261019T025702104847Z/nodes/editor-qualification-cc506ad2/editor/results.json",
+    "editor_sha256": "ab2a48439c75cb26704ac4fae3b3a3ed32388a3684fead96b960e5e6022e40fd",
+    "archive_acceptance": "out/toolchains/arc-assignment-distribution-acceptance/acceptance.json",
+    "archive_acceptance_sha256": "2a293ec4532e97fed8760a8fd195556411a44c40b64733ae177f2ab4a53997d9",
+    "archive_qualification_script": "scripts/qualify_linux_archive.sh",
+    "archive_qualification_script_sha256": "0f17833f1a61fe92197ce15322d55ebe65654ce50bb301b4cacec9a38b712645"
+  }
+}
