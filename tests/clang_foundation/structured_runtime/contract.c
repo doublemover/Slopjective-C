@@ -23,8 +23,12 @@ static objc3_service_status move_int(void *destination, void *source) {
 }
 #ifdef __cplusplus
 #define INT_ALIGNMENT alignof(int)
+#define ZERO_INIT                                                              \
+  {                                                                            \
+  }
 #else
 #define INT_ALIGNMENT _Alignof(int)
+#define ZERO_INIT {0}
 #endif
 static const objc3_value_ops int_ops = {sizeof(objc3_value_ops),
                                         OBJC3_VALUE_OPS_VERSION,
@@ -52,7 +56,7 @@ static void destroy_frame(void *context) {
 }
 static void resume(objc3_task_t *task, void *context) {
   Frame *frame = (Frame *)context;
-  objc3_completion completion = {0};
+  objc3_completion completion = ZERO_INIT;
   completion.struct_size = sizeof(completion);
   completion.version = OBJC3_SERVICE_ABI_VERSION;
   objc3_error_t *error = NULL;
@@ -74,7 +78,7 @@ static objc3_task_t *start(objc3_executor_t *executor, Trace *trace, int fail) {
   assert(frame);
   frame->trace = trace;
   frame->fail = fail;
-  objc3_task_start_options options = {0};
+  objc3_task_start_options options = ZERO_INIT;
   options.struct_size = sizeof(options);
   options.version = OBJC3_SERVICE_ABI_VERSION;
   options.executor = executor;
@@ -89,7 +93,7 @@ static objc3_task_t *start(objc3_executor_t *executor, Trace *trace, int fail) {
 }
 
 static void groups(void) {
-  Trace trace = {0};
+  Trace trace = ZERO_INIT;
   objc3_executor_t *executor = NULL;
   assert(objc3_executor_create(1, &executor) == OBJC3_SERVICE_OK);
   objc3_task_group_t *parent = NULL, *child = NULL;
@@ -164,7 +168,7 @@ typedef struct Job {
 static void actor_job(void *context);
 static void destroy_job(void *context) {
   Job *job = (Job *)context;
-  objc3_current_actor_facts current = {0};
+  objc3_current_actor_facts current = ZERO_INIT;
   current.struct_size = sizeof(current);
   current.version = OBJC3_ACTOR_SERVICE_VERSION;
   assert(objc3_actor_current_facts(&current) == OBJC3_SERVICE_OK);
@@ -184,7 +188,7 @@ static Job *job_for(ActorTrace *trace, objc3_actor_t *actor, int value) {
 static void actor_job(void *context) {
   Job *job = (Job *)context;
   ActorTrace *trace = job->trace;
-  objc3_current_actor_facts current = {0};
+  objc3_current_actor_facts current = ZERO_INIT;
   current.struct_size = sizeof(current);
   current.version = OBJC3_ACTOR_SERVICE_VERSION;
   assert(objc3_actor_current_facts(&current) == OBJC3_SERVICE_OK);
@@ -194,7 +198,7 @@ static void actor_job(void *context) {
   assert(trace->ran < 3);
   trace->sequence[trace->ran++] = job->value;
   if (job->value == 1) {
-    objc3_actor_hop_facts facts = {0};
+    objc3_actor_hop_facts facts = ZERO_INIT;
     facts.struct_size = sizeof(facts);
     facts.version = OBJC3_ACTOR_SERVICE_VERSION;
     assert(objc3_actor_enqueue(trace->second, actor_job,
@@ -211,7 +215,7 @@ static void actor_job(void *context) {
 static void actors(void) {
   objc3_executor_t *executor = NULL;
   assert(objc3_executor_create(1, &executor) == OBJC3_SERVICE_OK);
-  ActorTrace trace = {0};
+  ActorTrace trace = ZERO_INIT;
   assert(objc3_actor_create(executor, &trace.first) == OBJC3_SERVICE_OK);
   assert(objc3_actor_create(executor, &trace.second) == OBJC3_SERVICE_OK);
   assert(objc3_actor_identity(trace.first) !=
@@ -220,7 +224,7 @@ static void actors(void) {
          objc3_actor_executor_identity(trace.second));
   assert(objc3_actor_retain(trace.first) == trace.first);
   objc3_actor_release(trace.first);
-  objc3_actor_hop_facts facts = {0};
+  objc3_actor_hop_facts facts = ZERO_INIT;
   facts.struct_size = sizeof(facts);
   facts.version = 99;
   Job *job = job_for(&trace, trace.first, 1);
@@ -255,7 +259,7 @@ static void actors(void) {
   objc3_actor_release(trace.second);
   objc3_actor_release(trace.first);
   objc3_executor_release(executor);
-  objc3_current_actor_facts current = {0};
+  objc3_current_actor_facts current = ZERO_INIT;
   current.struct_size = sizeof(current);
   current.version = OBJC3_ACTOR_SERVICE_VERSION;
   assert(objc3_actor_current_facts(&current) == OBJC3_SERVICE_OK &&
