@@ -117,3 +117,9 @@ before taking the selector lock. Growth covers the full required depth in one
 operation. Dispatch's built-in selectors initialize before classes can receive
 messages, avoiding lazy registration under the class-initialization lock. The
 ARC/MRC threaded coroutine probes retain TSan's lock-order diagnostics.
+
+The [acceptance receipt](../support/linux_task_coroutines_acceptance.json) binds
+the installed SDK, its source and runtime identities, native/debugger matrices,
+sanitizer instrumentation and fresh Debian/Ubuntu executions. The
+[latency report](../support/linux_task_coroutines_latency.json) records five quiet
+runs against the current regression budgets.

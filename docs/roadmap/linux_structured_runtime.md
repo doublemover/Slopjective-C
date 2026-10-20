@@ -22,9 +22,10 @@ ancestors before entering the group's completion queue. `objc3_task_group_next`
 polls direct task completions without blocking or pumping. It returns a retained
 task, `NOT_READY`, or `CLOSED` when a closed group's direct tasks have drained.
 Nested groups join recursively and keep separate completion queues.
-Register a completion waiter on a returned task to inspect its stored outcome;
-an already completed task invokes it immediately. The view is borrowed for the
-callback, so callers copy a payload or retain an error before keeping it.
+Inspect a retained task with `objc3_task_get_completion` or register a completion
+waiter; an already completed task invokes the waiter immediately. A polled view
+is borrowed until task release; a callback view is borrowed for callback scope.
+Callers copy a payload or retain an error before keeping it independently.
 
 Join requires a closed group and includes terminal completion, registered
 callbacks and frame cleanup. A wait on pending work from its own task or serial
@@ -51,7 +52,9 @@ ownership transfer, reentry, hop identities, serial mailboxes and cleanup. The
 worker probe demonstrates simultaneous execution on two executors, serialized
 actor queues, 130 actor jobs and 128 group tasks.
 
-The [Linux acceptance receipt](../support/linux_module_names_acceptance.json)
+The [Linux acceptance receipt](../support/linux_task_coroutines_acceptance.json)
 binds 22 installed language/optimization executions, native worker tests,
 instrumented ASan/LeakSanitizer/UBSan/ThreadSanitizer at O0/O2, and fresh
 Debian/Ubuntu archive qualification to the exact implementation and SDK seal.
+The [native coroutine bridge](linux_task_coroutines.md) adds queued dependency
+handoff, cancellation wakeup, compiler-owned frames and callback autorelease pools.
