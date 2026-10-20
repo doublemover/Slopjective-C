@@ -167,7 +167,8 @@ def package_sdk(repo: Path, prefix: Path, validation_report: Path, cache_dir: Pa
                                 ('qualify_public_surfaces.py', 'qualify_public_surfaces.py'),
                                 ('qualify_api_availability.py', 'qualify_api_availability.py'),
                                 ('qualify_module_spi.py', 'qualify_module_spi.py'),
-                                ('qualify_module_names.py', 'qualify_module_names.py')):
+                                ('qualify_module_names.py', 'qualify_module_names.py'),
+                                ('qualify_module_names_debugger.py', 'qualify_module_names_debugger.py')):
         shutil.copyfile(Path(__file__).with_name(original), builder / installed)
     shutil.copytree(repo / 'tests/clang_foundation/source_graph',
                     prefix / 'share/objc3c/examples/packages')

@@ -50,6 +50,21 @@ def foundation_identity(sdk: Path) -> str:
     return hashlib.sha256(json.dumps(selected, sort_keys=True).encode()).hexdigest()
 
 
+def adopt_candidate_foundation(repo: Path, source: Path, prefix: Path,
+                               *, expected_contents: str) -> dict:
+    """Use the verified candidate copy as the build SDK and retire its stage."""
+    signature = foundation_identity(source)
+    if signature != expected_contents or foundation_identity(prefix) != signature:
+        raise ValueError('candidate foundation differs from its source; preserving staging outputs')
+    stage = repo / 'out/toolchains/objc3-development/stage-linux-x86_64'
+    reclaimed = source.absolute() == stage.absolute() and not source.is_symlink()
+    result = {'source': str(source), 'prefix': str(prefix),
+              'foundation_contents': signature, 'duplicate_stage_reclaimed': reclaimed}
+    if reclaimed:
+        shutil.rmtree(source)
+    return result
+
+
 def input_identity(repo: Path, sdk: Path) -> dict:
     files = set()
     for directory in ('scripts/objc3c_toolchain', 'scripts/objc3c_toolchain_runtime',
@@ -198,6 +213,8 @@ def _build_sdk(repo: Path, base: Path, fetch: bool, install_root: Path, foundati
     copy_foundation(sdk, prefix)
     report = {'status': 'running', 'input_identity': identity['sha256'], 'build_prefix': str(prefix),
               'foundation': foundation, 'commands': []}
+    foundation_source = sdk
+    sdk = prefix
     env = {**os.environ, 'LD_LIBRARY_PATH': str(sdk / 'lib'), 'PYTHONDONTWRITEBYTECODE': '1',
            'CCACHE_COMPILERCHECK': 'content'}
     def run(name, command):
@@ -211,6 +228,8 @@ def _build_sdk(repo: Path, base: Path, fetch: bool, install_root: Path, foundati
         if result.returncode:
             raise ValueError(f'Linux SDK {name} failed; see {directory / (name + ".log")}')
     try:
+        report['candidate_foundation'] = adopt_candidate_foundation(
+            repo, foundation_source, prefix, expected_contents=identity['foundation_contents'])
         runtime = repo / 'out/toolchains/libobjc2-v2.3'
         run('runtime', [sys.executable, '-B', '-m', 'scripts.objc3c_toolchain_runtime.build_linux',
             '--repo', repo, '--compiler-root', sdk, '--report-file', directory / 'runtime-report.json',

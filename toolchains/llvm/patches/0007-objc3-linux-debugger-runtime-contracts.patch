@@ -1,0 +1,266 @@
+diff --git a/lldb/source/Plugins/ExpressionParser/Clang/ClangExpressionParser.cpp b/lldb/source/Plugins/ExpressionParser/Clang/ClangExpressionParser.cpp
+index deab9a2a5..dbcfc721c 100644
+--- a/lldb/source/Plugins/ExpressionParser/Clang/ClangExpressionParser.cpp
++++ b/lldb/source/Plugins/ExpressionParser/Clang/ClangExpressionParser.cpp
+@@ -693,7 +693,7 @@ static void SetupLangOpts(CompilerInstance &compiler,
+                                   VersionTuple(10, 7));
+         break;
+       case ObjCLanguageRuntime::ObjCRuntimeVersions::eGNUstep_libobjc2:
+-        lang_opts.ObjCRuntime.set(ObjCRuntime::GNUstep, VersionTuple(2, 0));
++        lang_opts.ObjCRuntime.set(ObjCRuntime::GNUstep, VersionTuple(2, 2));
+         break;
+       }
+ 
+diff --git a/lldb/source/Plugins/ExpressionParser/Clang/IRForTarget.cpp b/lldb/source/Plugins/ExpressionParser/Clang/IRForTarget.cpp
+index adfb5bd1e..4cbe635fa 100644
+--- a/lldb/source/Plugins/ExpressionParser/Clang/IRForTarget.cpp
++++ b/lldb/source/Plugins/ExpressionParser/Clang/IRForTarget.cpp
+@@ -15,6 +15,7 @@
+ #include "Plugins/TypeSystem/Clang/TypeSystemClang.h"
+ #include "llvm/IR/Constants.h"
+ #include "llvm/IR/DataLayout.h"
++#include "llvm/IR/IRBuilder.h"
+ #include "llvm/IR/InstrTypes.h"
+ #include "llvm/IR/Instructions.h"
+ #include "llvm/IR/Intrinsics.h"
+@@ -843,6 +844,55 @@ bool IRForTarget::RewriteObjCSelector(Instruction *selector_load) {
+   return true;
+ }
+ 
++bool IRForTarget::InitializeGNUObjCSelectors(llvm::Function &Wrapper) {
++  llvm::FunctionCallee Register;
++  auto *Pointer = llvm::PointerType::getUnqual(m_module->getContext());
++  llvm::IRBuilder<> Builder(&*Wrapper.getEntryBlock().getFirstInsertionPt());
++  for (auto &Global : m_module->globals()) {
++    if (!Global.getName().starts_with(".objc_selector_") ||
++        !Global.hasInitializer())
++      continue;
++    const auto *Initializer =
++        llvm::dyn_cast<llvm::ConstantStruct>(Global.getInitializer());
++    if (!Initializer || Initializer->getNumOperands() != 2 ||
++        !Initializer->getOperand(0)->getType()->isPointerTy() ||
++        !Initializer->getOperand(1)->getType()->isPointerTy()) {
++      m_error_stream.Printf("Unsupported GNUstep selector layout\n");
++      return false;
++    }
++    if (!Register) {
++      bool MissingWeak = false;
++      const auto Address = m_execution_unit.FindSymbol(
++          lldb_private::ConstString("sel_registerTypedName_np"), MissingWeak);
++      if (Address == LLDB_INVALID_ADDRESS || MissingWeak) {
++        m_error_stream.Printf(
++            "Couldn't find GNUstep typed selector registration\n");
++        return false;
++      }
++      auto *Type = llvm::FunctionType::get(Pointer, {Pointer, Pointer}, false);
++      auto *Callee = llvm::ConstantExpr::getIntToPtr(
++          llvm::ConstantInt::get(m_intptr_ty, Address), Pointer);
++      Register = {Type, Callee};
++    }
++    // JIT modules do not execute the ELF image's Objective-C loader. Register
++    // each selector and initialize this module's two-pointer selector storage.
++    // Keeping its address also covers selectors embedded in constant arrays.
++    Global.setLinkage(llvm::GlobalValue::InternalLinkage);
++    Global.setVisibility(llvm::GlobalValue::DefaultVisibility);
++    Global.setComdat(nullptr);
++    Global.setConstant(false);
++    auto *Canonical = Builder.CreateCall(
++        Register, {Initializer->getOperand(0), Initializer->getOperand(1)},
++        "objc.selector");
++    const auto Alignment =
++        m_target_data->getABITypeAlign(Global.getValueType());
++    Builder.CreateMemCpy(
++        &Global, Alignment, Canonical, Alignment,
++        m_target_data->getTypeAllocSize(Global.getValueType()));
++  }
++  return true;
++}
++
+ bool IRForTarget::RewriteObjCSelectors(BasicBlock &basic_block) {
+   lldb_private::Log *log(GetLog(LLDBLog::Expressions));
+ 
+@@ -1717,6 +1767,9 @@ bool IRForTarget::runOnModule(Module &llvm_module) {
+     return false;
+   }
+ 
++  if (main_function && !InitializeGNUObjCSelectors(*main_function))
++    return false;
++
+   for (llvm::Function &function : *m_module) {
+     for (llvm::BasicBlock &bb : function) {
+       if (!RewriteObjCSelectors(bb)) {
+diff --git a/lldb/source/Plugins/ExpressionParser/Clang/IRForTarget.h b/lldb/source/Plugins/ExpressionParser/Clang/IRForTarget.h
+index 575d9f83b..ee29c5d7f 100644
+--- a/lldb/source/Plugins/ExpressionParser/Clang/IRForTarget.h
++++ b/lldb/source/Plugins/ExpressionParser/Clang/IRForTarget.h
+@@ -192,6 +192,8 @@ private:
+   ///     True on success; false otherwise
+   bool RewriteObjCSelectors(llvm::BasicBlock &basic_block);
+ 
++  bool InitializeGNUObjCSelectors(llvm::Function &wrapper);
++
+   /// A basic block-level pass to find all newly-declared persistent
+   /// variables and register them with the ClangExprDeclMap.  This allows them
+   /// to be materialized and dematerialized like normal external variables.
+diff --git a/lldb/source/Plugins/SymbolFile/DWARF/DWARFASTParserClang.cpp b/lldb/source/Plugins/SymbolFile/DWARF/DWARFASTParserClang.cpp
+index b60f1d9e4..ab38e06fb 100644
+--- a/lldb/source/Plugins/SymbolFile/DWARF/DWARFASTParserClang.cpp
++++ b/lldb/source/Plugins/SymbolFile/DWARF/DWARFASTParserClang.cpp
+@@ -14,6 +14,7 @@
+ #include "DWARFDeclContext.h"
+ #include "DWARFDefines.h"
+ #include "DWARFFormValue.h"
++#include "ObjCRuntimeName.h"
+ #include "SymbolFileDWARF.h"
+ #include "SymbolFileDWARFDebugMap.h"
+ #include "SymbolFileDWARFDwo.h"
+@@ -40,6 +41,7 @@
+ #include "lldb/Utility/StreamString.h"
+ #include "lldb/lldb-private-enumerations.h"
+ 
++#include "clang/AST/Attr.h"
+ #include "clang/AST/CXXInheritance.h"
+ #include "clang/AST/DeclBase.h"
+ #include "clang/AST/DeclCXX.h"
+@@ -1159,6 +1161,11 @@ bool DWARFASTParserClang::ParseObjCMethod(
+     return false;
+   }
+ 
++  if (attrs.is_objc_direct_call && attrs.mangled_name &&
++      llvm::StringRef(attrs.mangled_name).starts_with("__objc3_method_"))
++    objc_method_decl->addAttr(clang::AsmLabelAttr::Create(
++        m_ast.getASTContext(), attrs.mangled_name, clang::SourceRange()));
++
+   LinkDeclContextToDIE(objc_method_decl, die);
+   m_ast.SetMetadataAsUserID(objc_method_decl, die.GetID());
+ 
+@@ -1757,6 +1764,9 @@ TypeSP DWARFASTParserClang::ParseStructureLikeDIE(
+   LanguageType cu_language = SymbolFileDWARF::GetLanguage(*die.GetCU());
+   Log *log = GetLog(DWARFLog::TypeCompletion | DWARFLog::Lookups);
+ 
++  const bool IsObjC = attrs.class_language == eLanguageTypeObjC ||
++                      attrs.class_language == eLanguageTypeObjC_plus_plus;
++  const auto RuntimeName = IsObjC ? GetObjCRuntimeName(die) : attrs.name.GetStringRef();
+   ConstString unique_typename(attrs.name);
+   Declaration unique_decl(attrs.decl);
+   uint64_t byte_size = attrs.byte_size.value_or(0);
+@@ -1764,6 +1774,8 @@ TypeSP DWARFASTParserClang::ParseStructureLikeDIE(
+   if (attrs.name) {
+     GetUniqueTypeNameAndDeclaration(die, cu_language, unique_typename,
+                                     unique_decl);
++    if (RuntimeName != attrs.name.GetStringRef())
++      unique_typename = ConstString(RuntimeName);
+     if (log) {
+       dwarf->GetObjectFile()->GetModule()->LogMessage(
+           log, "SymbolFileDWARF({0:p}) - {1:x16}: {2} has unique name: {3} ",
+@@ -1907,6 +1919,12 @@ TypeSP DWARFASTParserClang::ParseStructureLikeDIE(
+         tag_decl_kind, attrs.class_language, metadata, attrs.exports_symbols);
+   }
+ 
++  if (clang_type && RuntimeName != attrs.name.GetStringRef())
++    if (const auto *ObjCType = ClangUtil::GetQualType(clang_type)
++                                   ->getAs<clang::ObjCInterfaceType>())
++      ObjCType->getDecl()->addAttr(clang::ObjCRuntimeNameAttr::Create(
++          m_ast.getASTContext(), RuntimeName, clang::SourceRange()));
++
+   TypeSP type_sp = dwarf->MakeType(
+       die.GetID(), attrs.name, attrs.byte_size, nullptr, LLDB_INVALID_UID,
+       Type::eEncodingIsUID, &attrs.decl, clang_type,
+diff --git a/lldb/source/Plugins/SymbolFile/DWARF/ObjCRuntimeName.h b/lldb/source/Plugins/SymbolFile/DWARF/ObjCRuntimeName.h
+new file mode 100644
+index 000000000..639d83f48
+--- /dev/null
++++ b/lldb/source/Plugins/SymbolFile/DWARF/ObjCRuntimeName.h
+@@ -0,0 +1,26 @@
++//===-- ObjCRuntimeName.h - Objective-C native type identities -*- C++ -*-===//
++// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
++// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
++#ifndef LLDB_SOURCE_PLUGINS_SYMBOLFILE_DWARF_OBJCRUNTIMENAME_H
++#define LLDB_SOURCE_PLUGINS_SYMBOLFILE_DWARF_OBJCRUNTIMENAME_H
++#include "DWARFDIE.h"
++#include "llvm/BinaryFormat/Dwarf.h"
++namespace lldb_private::plugin::dwarf {
++inline llvm::StringRef GetObjCRuntimeName(const DWARFDIE &DIE) {
++  if (!DIE)
++    return {};
++  for (const auto &Child : DIE.children()) {
++    if (Child.Tag() != llvm::dwarf::DW_TAG_LLVM_annotation)
++      continue;
++    const auto *Name = Child.GetName();
++    if (Name && llvm::StringRef(Name) == "objc_runtime_name")
++      if (const auto *Value = Child.GetAttributeValueAsString(
++              llvm::dwarf::DW_AT_const_value, nullptr))
++        if (*Value)
++          return Value;
++  }
++  const auto *Name = DIE.GetName();
++  return Name ? llvm::StringRef(Name) : llvm::StringRef();
++}
++} // namespace lldb_private::plugin::dwarf
++#endif
+diff --git a/lldb/source/Plugins/SymbolFile/DWARF/SymbolFileDWARF.cpp b/lldb/source/Plugins/SymbolFile/DWARF/SymbolFileDWARF.cpp
+index 8075c8f61..4d18ca113 100644
+--- a/lldb/source/Plugins/SymbolFile/DWARF/SymbolFileDWARF.cpp
++++ b/lldb/source/Plugins/SymbolFile/DWARF/SymbolFileDWARF.cpp
+@@ -7,6 +7,7 @@
+ //===----------------------------------------------------------------------===//
+ 
+ #include "SymbolFileDWARF.h"
++#include "ObjCRuntimeName.h"
+ #include "clang/Basic/ABI.h"
+ #include "llvm/ADT/STLExtras.h"
+ #include "llvm/ADT/StringExtras.h"
+@@ -3105,6 +3106,10 @@ Symbol *SymbolFileDWARF::GetObjCClassSymbol(ConstString objc_class_name) {
+       objc_class_symbol = symtab->FindFirstSymbolWithNameAndType(
+           objc_class_name, eSymbolTypeObjCClass, Symtab::eDebugNo,
+           Symtab::eVisibilityAny);
++      if (!objc_class_symbol)
++        objc_class_symbol = symtab->FindFirstSymbolWithNameAndType(
++            ConstString("._OBJC_CLASS_" + objc_class_name.GetStringRef().str()),
++            eSymbolTypeData, Symtab::eDebugNo, Symtab::eVisibilityAny);
+     }
+   }
+   return objc_class_symbol;
+@@ -3117,7 +3122,15 @@ TypeSP SymbolFileDWARF::FindCompleteObjCDefinitionTypeForDIE(
+ 
+   TypeSP type_sp;
+ 
+-  if (!type_name || (must_be_implementation && !GetObjCClassSymbol(type_name)))
++  auto TypeContext = die;
++  while (TypeContext && !IsStructOrClassTag(TypeContext.Tag()))
++    TypeContext = TypeContext.GetParent();
++  const auto ContextRuntimeName = GetObjCRuntimeName(TypeContext);
++  const bool HasRuntimeBinding = TypeContext && TypeContext.GetName() &&
++      ContextRuntimeName != llvm::StringRef(TypeContext.GetName());
++  const auto RuntimeName = HasRuntimeBinding ? ContextRuntimeName : type_name.GetStringRef();
++  if (!type_name ||
++      (must_be_implementation && !GetObjCClassSymbol(ConstString(RuntimeName))))
+     return type_sp;
+ 
+   m_index->GetCompleteObjCClass(
+@@ -3126,6 +3139,8 @@ TypeSP SymbolFileDWARF::FindCompleteObjCDefinitionTypeForDIE(
+         // itself!
+         if (type_die == die || !IsStructOrClassTag(type_die.Tag()))
+           return IterationAction::Continue;
++        if (HasRuntimeBinding && GetObjCRuntimeName(type_die) != RuntimeName)
++          return IterationAction::Continue;
+ 
+         if (must_be_implementation) {
+           const bool try_resolving_type = type_die.GetAttributeValueAsUnsigned(
+diff --git a/lldb/source/Plugins/ExpressionParser/Clang/ClangExpressionDeclMap.cpp b/lldb/source/Plugins/ExpressionParser/Clang/ClangExpressionDeclMap.cpp
+index 2278e30d5..9e54015c9 100644
+--- a/lldb/source/Plugins/ExpressionParser/Clang/ClangExpressionDeclMap.cpp
++++ b/lldb/source/Plugins/ExpressionParser/Clang/ClangExpressionDeclMap.cpp
+@@ -1843,7 +1843,11 @@ void ClangExpressionDeclMap::AddOneFunction(NameSearchContext &context,
+         (Language::LanguageIsObjC(lang) &&
+          !Language::LanguageIsCPlusPlus(lang));
+ 
+-    if (!extern_c) {
++    // Module-owned C functions have an explicit native binding. Import the
++    // DWARF declaration, including its asm label, instead of synthesizing a
++    // declaration whose linker name is the source spelling.
++    const bool module_owned = name.starts_with("__objc3_m_");
++    if (!extern_c || module_owned) {
+       TypeSystem *type_system = function->GetDeclContext().GetTypeSystem();
+       if (llvm::isa<TypeSystemClang>(type_system)) {
+         clang::DeclContext *src_decl_context =

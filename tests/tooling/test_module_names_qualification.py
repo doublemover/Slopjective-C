@@ -29,6 +29,7 @@ def test_failure_joins_all_cases_and_replaces_stale_success(tmp_path, monkeypatc
         return row(*mode)
 
     monkeypatch.setattr(qualification, 'qualify_case', invoke)
+    monkeypatch.setattr(qualification, 'qualify_debugger', lambda *a: {'status': 'PASS', 'executions': 6})
     with pytest.raises(ValueError, match='forced owned-name failure'):
         qualification.qualify(sdk, output, jobs=2)
     assert len(called) == 16
@@ -46,6 +47,7 @@ def test_optimization_cannot_change_either_provider_fingerprint(tmp_path, monkey
         return result
 
     monkeypatch.setattr(qualification, 'qualify_case', invoke)
+    monkeypatch.setattr(qualification, 'qualify_debugger', lambda *a: {'status': 'PASS', 'executions': 6})
     with pytest.raises(ValueError, match='optimization'):
         qualification.qualify(sdk, tmp_path / 'output', jobs=2)
     assert json.loads((tmp_path / 'output/qualification.json').read_text())['status'] == 'FAIL'

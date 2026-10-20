@@ -47,11 +47,20 @@ names, reparses canonical bindings and rejects mismatches before AST mutation.
 Opposite ARC/MRC projections retain the producer's bindings. Immutable packages
 carry these interfaces and objects together under the exact SDK seal.
 
+DWARF preserves the source spelling and native runtime name. LLDB reconstructs
+that binding for ivar and class expressions and preserves direct-method linker
+names, including category ownership. Module-owned C functions retain their native
+binding in expression calls. GNUstep JIT expressions initialize typed selectors
+before message dispatch, including selectors stored in constant arrays. Installed
+debugger probes verify ivars, instance and class messages, direct calls, category
+direct calls and native function calls in
+Objective-C17 and Objective-C++20/23 under ARC and MRC.
+
 The contract covers externally visible global functions and variables and
 Objective-C runtime roots. Internal-linkage declarations retain ordinary native
 linkage. Private function and variable template specializations receive owned
 names when instantiated and referenced. Private namespace functions and variables
-also receive owned names. C++ member functions, RTTI and non-data public types retain their existing C++ ABI and
+also receive owned names. C++ members, RTTI and non-data public types retain their existing C++ ABI and
 remain outside this module naming contract. Explicit conflicting ABI labels,
 runtime aliases, exported inline variables and provider entry points are
 diagnosed.

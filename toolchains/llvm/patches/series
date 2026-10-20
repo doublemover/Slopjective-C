@@ -4,3 +4,4 @@
 0004-objc3-canonical-carriers-and-function-effects.patch
 0005-objc3-codegen-qualification-boundaries.patch
 0006-objc3-native-carrier-expressions.patch
+0007-objc3-linux-debugger-runtime-contracts.patch

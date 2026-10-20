@@ -133,12 +133,13 @@ def test_packaging_input_edit_prevents_installation(tmp_path, monkeypatch):
     monkeypatch.setattr(linux_sdk, 'verify_development', lambda *a: {'build_id': 'llvm-build'})
     changed = False
     monkeypatch.setattr(linux_sdk, 'input_identity', lambda *a: {
-        'sha256': 'edited' if changed else 'qualified'})
+        'sha256': 'edited' if changed else 'qualified', 'foundation_contents': 'foundation'})
     monkeypatch.setattr(linux_sdk, 'copy_foundation', lambda _, prefix: prefix.mkdir())
     monkeypatch.setattr(linux_sdk, 'build_plans', lambda *a, **kw: {
         'configure': {'host_environment': {'resource_limits': {'compile_jobs': 1}}}})
     monkeypatch.setattr(linux_sdk, 'qualify_installed', lambda *a: {'status': 'PASS'})
     monkeypatch.setattr(linux_sdk, 'reclaim_frontend_tests', lambda *a: {'test_executables': 0, 'bytes': 0, 'outputs': []})
+    monkeypatch.setattr(linux_sdk, 'adopt_candidate_foundation', lambda *a, **kw: {'duplicate_stage_reclaimed': False})
 
     def execute(command, **kwargs):
         if 'scripts.objc3c_toolchain_runtime.build_linux' in command:
@@ -207,3 +208,40 @@ def test_invalid_ctest_inventory_preserves_outputs(tmp_path, monkeypatch):
     with pytest.raises(ValueError, match='CTest'):
         reclaim_frontend_tests(tmp_path)
     assert executable.read_bytes() == b'keep'
+
+
+def test_candidate_foundation_reclaims_only_the_verified_stage(tmp_path):
+    from scripts.objc3c_toolchain import linux_sdk
+    stage = tmp_path / 'out/toolchains/objc3-development/stage-linux-x86_64'
+    (stage / 'bin').mkdir(parents=True)
+    (stage / 'bin/clang').write_bytes(b'qualified foundation')
+    prefix = tmp_path / 'candidate'
+    linux_sdk.copy_foundation(stage, prefix)
+    expected = linux_sdk.foundation_identity(stage)
+    result = linux_sdk.adopt_candidate_foundation(tmp_path, stage, prefix, expected_contents=expected)
+    assert result['duplicate_stage_reclaimed'] and not stage.exists()
+    assert linux_sdk.foundation_identity(prefix) == expected == result['foundation_contents']
+
+
+def test_damaged_candidate_preserves_its_source_stage(tmp_path):
+    from scripts.objc3c_toolchain import linux_sdk
+    stage = tmp_path / 'out/toolchains/objc3-development/stage-linux-x86_64'
+    (stage / 'bin').mkdir(parents=True)
+    (stage / 'bin/clang').write_bytes(b'qualified foundation')
+    prefix = tmp_path / 'candidate'
+    linux_sdk.copy_foundation(stage, prefix)
+    (prefix / 'bin/clang').write_bytes(b'wrong compiler')
+    with pytest.raises(ValueError, match='preserving staging'):
+        linux_sdk.adopt_candidate_foundation(tmp_path, stage, prefix, expected_contents=linux_sdk.foundation_identity(stage))
+    assert (stage / 'bin/clang').read_bytes() == b'qualified foundation'
+
+
+def test_candidate_never_reclaims_an_installed_foundation(tmp_path):
+    from scripts.objc3c_toolchain import linux_sdk
+    installed = tmp_path / 'installed-sdk'
+    (installed / 'bin').mkdir(parents=True)
+    (installed / 'bin/clang').write_bytes(b'qualified foundation')
+    prefix = tmp_path / 'candidate'
+    linux_sdk.copy_foundation(installed, prefix)
+    result = linux_sdk.adopt_candidate_foundation(tmp_path, installed, prefix, expected_contents=linux_sdk.foundation_identity(installed))
+    assert not result['duplicate_stage_reclaimed'] and installed.is_dir()

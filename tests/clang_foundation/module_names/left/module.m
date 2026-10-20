@@ -35,7 +35,7 @@ static int destroyed;
 + (int)categoryValue;
 @end
 @implementation RuntimeTwin (Shared)
-+ (int)categoryValue { return [self directValue]; }
++ (int)categoryValue { return [RuntimeTwin directValue]; }
 @end
 #endif
 int left_value(void) {

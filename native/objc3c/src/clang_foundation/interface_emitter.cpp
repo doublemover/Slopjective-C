@@ -370,7 +370,10 @@ std::string AvailabilityIdentity(const clang::NamedDecl *declaration) {
     } else {
       continue;
     }
-    attributes.push_back(std::move(value));
+    // ASTImporter can retain the same availability fact on several inherited
+    // redeclarations. Repetition does not change the declaration contract.
+    if (std::find(attributes.begin(), attributes.end(), value) == attributes.end())
+      attributes.push_back(std::move(value));
   }
   std::string result;
   for (const auto &value : attributes)

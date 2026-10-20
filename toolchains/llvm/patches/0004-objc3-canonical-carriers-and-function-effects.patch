@@ -2642,10 +2642,19 @@ index e0b62591a..549a1ca48 100644
        return false;
      for (unsigned I = 0, N = Proto1->getNumParams(); I != N; ++I) {
 diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
-index 4be3e977b..cec1ffa34 100644
+index 4be3e977b..1768b7af5 100644
 --- a/clang/lib/AST/DeclPrinter.cpp
 +++ b/clang/lib/AST/DeclPrinter.cpp
-@@ -71,6 +71,7 @@ namespace {
+@@ -22,6 +22,8 @@
+ #include "clang/AST/PrettyPrinter.h"
+ #include "clang/Basic/Module.h"
+ #include "clang/Basic/SourceManager.h"
++#include "llvm/ADT/STLExtras.h"
++#include "llvm/ADT/SmallVector.h"
+ #include "llvm/ADT/StringExtras.h"
+ #include "llvm/Support/raw_ostream.h"
+ using namespace clang;
+@@ -71,6 +73,7 @@ namespace {
      void VisitFunctionDecl(FunctionDecl *D);
      void VisitFriendDecl(FriendDecl *D);
      void VisitFieldDecl(FieldDecl *D);
@@ -2653,7 +2662,17 @@ index 4be3e977b..cec1ffa34 100644
      void VisitVarDecl(VarDecl *D);
      void VisitLabelDecl(LabelDecl *D);
      void VisitParmVarDecl(ParmVarDecl *D);
-@@ -269,7 +270,13 @@ DeclPrinter::prettyPrintAttributes(const Decl *D,
+@@ -265,11 +268,24 @@ DeclPrinter::prettyPrintAttributes(const Decl *D,
+   std::string AttrStr;
+   llvm::raw_string_ostream AOut(AttrStr);
+   llvm::ListSeparator LS(" ");
+-  for (auto *A : D->getAttrs()) {
++  SmallVector<const Attr *, 8> Attributes(D->attr_begin(), D->attr_end());
++  if (Policy.PolishForDeclaration)
++    llvm::stable_sort(Attributes, [](const Attr *L, const Attr *R) {
++      return isa<AsmLabelAttr>(L) && !isa<AsmLabelAttr>(R);
++    });
++  for (const auto *A : Attributes) {
      if (A->isInherited() || A->isImplicit())
        continue;
      // Print out the keyword attributes, they aren't regular attributes.
@@ -2663,12 +2682,14 @@ index 4be3e977b..cec1ffa34 100644
 +    const auto *SPI = dyn_cast<AnnotateAttr>(A);
 +    if (Policy.PolishForDeclaration && !A->isKeywordAttribute() &&
 +        !isa<DeprecatedAttr, UnavailableAttr, AvailabilityAttr>(A) &&
-+        !(SPI && SPI->getAnnotation().starts_with("objc3.spi:") &&
++        !(SPI &&
++          (SPI->getAnnotation().starts_with("objc3.spi:") ||
++           SPI->getAnnotation().starts_with("objc3.module-name:")) &&
 +          SPI->args_size() == 0))
        continue;
      switch (A->getKind()) {
  #define ATTR(X)
-@@ -282,7 +289,66 @@ DeclPrinter::prettyPrintAttributes(const Decl *D,
+@@ -282,7 +298,71 @@ DeclPrinter::prettyPrintAttributes(const Decl *D,
               "Default not a valid for an attribute location");
        if (Pos == AttrPosAsWritten::Default || Pos == APos) {
          AOut << LS;
@@ -2730,13 +2751,18 @@ index 4be3e977b..cec1ffa34 100644
 +            PrintString(Availability->getMessage());
 +          }
 +          AOut << ")))";
++        } else if (const auto *Label = dyn_cast<AsmLabelAttr>(A);
++                   Policy.PolishForDeclaration && Label) {
++          AOut << "__asm__(";
++          PrintString(Label->getLabel());
++          AOut << ')';
 +        } else {
 +          A->printPretty(AOut, Policy);
 +        }
        }
        break;
      }
-@@ -818,6 +884,24 @@ void DeclPrinter::VisitFunctionDecl(FunctionDecl *D) {
+@@ -818,6 +898,24 @@ void DeclPrinter::VisitFunctionDecl(FunctionDecl *D) {
        }
      }
  
@@ -2761,7 +2787,7 @@ index 4be3e977b..cec1ffa34 100644
      if (CDecl) {
        if (!Policy.TerseOutput)
          PrintConstructorInitializers(CDecl, Proto);
-@@ -923,8 +1007,10 @@ void DeclPrinter::VisitFieldDecl(FieldDecl *D) {
+@@ -923,8 +1021,10 @@ void DeclPrinter::VisitFieldDecl(FieldDecl *D) {
    if (!Policy.SuppressSpecifiers && D->isModulePrivate())
      Out << "__module_private__ ";
  
@@ -2774,7 +2800,7 @@ index 4be3e977b..cec1ffa34 100644
  
    if (D->isBitField()) {
      Out << " : ";
-@@ -944,6 +1030,18 @@ void DeclPrinter::VisitFieldDecl(FieldDecl *D) {
+@@ -944,6 +1044,18 @@ void DeclPrinter::VisitFieldDecl(FieldDecl *D) {
      Out << ' ' << *Attrs;
  }
  
@@ -2793,7 +2819,7 @@ index 4be3e977b..cec1ffa34 100644
  void DeclPrinter::VisitLabelDecl(LabelDecl *D) {
    Out << *D << ":";
  }
-@@ -1485,6 +1583,20 @@ void DeclPrinter::VisitObjCMethodDecl(ObjCMethodDecl *OMD) {
+@@ -1485,6 +1597,20 @@ void DeclPrinter::VisitObjCMethodDecl(ObjCMethodDecl *OMD) {
    if (OMD->isVariadic())
        Out << ", ...";
  
@@ -2814,7 +2840,7 @@ index 4be3e977b..cec1ffa34 100644
    if (std::optional<std::string> Attrs = prettyPrintAttributes(OMD))
      Out << ' ' << *Attrs;
  
-@@ -1512,8 +1624,8 @@ void DeclPrinter::VisitObjCImplementationDecl(ObjCImplementationDecl *OID) {
+@@ -1512,8 +1638,8 @@ void DeclPrinter::VisitObjCImplementationDecl(ObjCImplementationDecl *OID) {
      eolnOut = true;
      Indentation += Policy.Indentation;
      for (const auto *I : OID->ivars()) {
@@ -2825,7 +2851,7 @@ index 4be3e977b..cec1ffa34 100644
      }
      Indentation -= Policy.Indentation;
      Out << "}\n";
-@@ -1568,9 +1680,8 @@ void DeclPrinter::VisitObjCInterfaceDecl(ObjCInterfaceDecl *OID) {
+@@ -1568,9 +1694,8 @@ void DeclPrinter::VisitObjCInterfaceDecl(ObjCInterfaceDecl *OID) {
      eolnOut = true;
      Indentation += Policy.Indentation;
      for (const auto *I : OID->ivars()) {
@@ -2837,7 +2863,7 @@ index 4be3e977b..cec1ffa34 100644
      }
      Indentation -= Policy.Indentation;
      Out << "}\n";
-@@ -1587,6 +1698,8 @@ void DeclPrinter::VisitObjCInterfaceDecl(ObjCInterfaceDecl *OID) {
+@@ -1587,6 +1712,8 @@ void DeclPrinter::VisitObjCInterfaceDecl(ObjCInterfaceDecl *OID) {
  }
  
  void DeclPrinter::VisitObjCProtocolDecl(ObjCProtocolDecl *PID) {
@@ -2846,7 +2872,7 @@ index 4be3e977b..cec1ffa34 100644
    if (!PID->isThisDeclarationADefinition()) {
      Out << "@protocol " << *PID << ";\n";
      return;
-@@ -1619,6 +1732,8 @@ void DeclPrinter::VisitObjCCategoryImplDecl(ObjCCategoryImplDecl *PID) {
+@@ -1619,6 +1746,8 @@ void DeclPrinter::VisitObjCCategoryImplDecl(ObjCCategoryImplDecl *PID) {
  }
  
  void DeclPrinter::VisitObjCCategoryDecl(ObjCCategoryDecl *PID) {
@@ -2855,7 +2881,7 @@ index 4be3e977b..cec1ffa34 100644
    Out << "@interface ";
    if (const auto *CID = PID->getClassInterface())
      Out << *CID;
-@@ -1631,9 +1746,10 @@ void DeclPrinter::VisitObjCCategoryDecl(ObjCCategoryDecl *PID) {
+@@ -1631,9 +1760,10 @@ void DeclPrinter::VisitObjCCategoryDecl(ObjCCategoryDecl *PID) {
    if (PID->ivar_size() > 0) {
      Out << "{\n";
      Indentation += Policy.Indentation;
@@ -2869,7 +2895,7 @@ index 4be3e977b..cec1ffa34 100644
      Indentation -= Policy.Indentation;
      Out << "}\n";
    }
-@@ -1762,6 +1878,8 @@ void DeclPrinter::VisitObjCPropertyDecl(ObjCPropertyDecl *PDecl) {
+@@ -1762,6 +1892,8 @@ void DeclPrinter::VisitObjCPropertyDecl(ObjCPropertyDecl *PDecl) {
    if (!StringRef(TypeStr).ends_with("*"))
      Out << ' ';
    Out << *PDecl;
@@ -12587,10 +12613,10 @@ index 000000000..31689c431
 +} // namespace
 diff --git a/clang/unittests/AST/ObjC3FunctionEffectTest.cpp b/clang/unittests/AST/ObjC3FunctionEffectTest.cpp
 new file mode 100644
-index 000000000..d36c2645e
+index 000000000..979a60a3f
 --- /dev/null
 +++ b/clang/unittests/AST/ObjC3FunctionEffectTest.cpp
-@@ -0,0 +1,293 @@
+@@ -0,0 +1,327 @@
 +//===--- ObjC3FunctionEffectTest.cpp - function type effects --------------===//
 +// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
 +// See https://llvm.org/LICENSE.txt for license information.
@@ -12881,6 +12907,40 @@ index 000000000..d36c2645e
 +  auto Reparsed = parse(Printed);
 +  ASSERT_TRUE(Reparsed);
 +  EXPECT_FALSE(Reparsed->getDiagnostics().hasErrorOccurred());
++}
++
++TEST(ObjC3FunctionEffect, PolishedNativeNamesRoundTripInCAndCxx) {
++  for (bool Cxx : {false, true}) {
++    const char *Filename = Cxx ? "names.mm" : "names.m";
++    const std::vector<std::string> Args = {Cxx ? "-std=c++20" : "-std=c17"};
++    auto AST = tooling::buildASTFromCodeWithArgs(R"(
++      int value(void) __asm__("owned_value")
++          __attribute__((annotate("objc3.spi:Testing")));
++      extern int global __asm__("owned_global")
++          __attribute__((deprecated("old global"), annotate("objc3.spi:Testing")));
++      __attribute__((objc_root_class)) @interface Root @end
++      __attribute__((annotate("objc3.module-name:__objc3_m_category")))
++      @interface Root (SourceCategory) @end
++    )",
++                                                 Args, Filename);
++    ASSERT_TRUE(AST);
++    ASSERT_FALSE(AST->getDiagnostics().hasErrorOccurred());
++    PrintingPolicy Policy(AST->getASTContext().getLangOpts());
++    Policy.PolishForDeclaration = true;
++    std::string Printed;
++    llvm::raw_string_ostream Out(Printed);
++    AST->getASTContext().getTranslationUnitDecl()->print(Out, Policy);
++    Out.flush();
++    EXPECT_NE(Printed.find("__asm__(\"owned_value\")"), std::string::npos);
++    const auto Global = Printed.find("__asm__(\"owned_global\")");
++    ASSERT_NE(Global, std::string::npos);
++    EXPECT_LT(Global, Printed.find("deprecated(\"old global\")"));
++    EXPECT_NE(Printed.find("objc3.module-name:__objc3_m_category"),
++              std::string::npos);
++    auto Reparsed = tooling::buildASTFromCodeWithArgs(Printed, Args, Filename);
++    ASSERT_TRUE(Reparsed);
++    EXPECT_FALSE(Reparsed->getDiagnostics().hasErrorOccurred()) << Printed;
++  }
 +}
 +
 +} // namespace
@@ -13956,3 +14016,135 @@ index 000000000..23474186a
 +  (void)callback;
 +}
 +int unevaluated(void) { return sizeof(checked()); }
+diff --git a/clang/include/clang/AST/ObjC3ModuleNames.h b/clang/include/clang/AST/ObjC3ModuleNames.h
+new file mode 100644
+index 000000000..be8c12416
+--- /dev/null
++++ b/clang/include/clang/AST/ObjC3ModuleNames.h
+@@ -0,0 +1,22 @@
++//===--- ObjC3ModuleNames.h - Native module category bindings ----*- C++
++//-*-===//
++// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
++// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
++#ifndef LLVM_CLANG_AST_OBJC3MODULENAMES_H
++#define LLVM_CLANG_AST_OBJC3MODULENAMES_H
++#include "clang/AST/Attr.h"
++#include "clang/AST/DeclObjC.h"
++namespace clang {
++inline llvm::StringRef getObjC3ModuleCategoryName(const ObjCCategoryDecl *D) {
++  for (const auto *A : D->specific_attrs<AnnotateAttr>())
++    if (A->getAnnotation().starts_with("objc3.module-name:") &&
++        A->args_size() == 0)
++      return A->getAnnotation().drop_front(18);
++  return {};
++}
++inline llvm::StringRef getObjC3RuntimeCategoryName(const ObjCCategoryDecl *D) {
++  const auto Name = getObjC3ModuleCategoryName(D);
++  return Name.empty() ? D->getName() : Name;
++}
++} // namespace clang
++#endif // LLVM_CLANG_AST_OBJC3MODULENAMES_H
+diff --git a/clang/lib/AST/Mangle.cpp b/clang/lib/AST/Mangle.cpp
+index 76c51b8d9..df916197c 100644
+--- a/clang/lib/AST/Mangle.cpp
++++ b/clang/lib/AST/Mangle.cpp
+@@ -17,6 +17,7 @@
+ #include "clang/AST/DeclObjC.h"
+ #include "clang/AST/DeclTemplate.h"
+ #include "clang/AST/ExprCXX.h"
++#include "clang/AST/ObjC3ModuleNames.h"
+ #include "clang/AST/StmtVisitor.h"
+ #include "clang/AST/VTableBuilder.h"
+ #include "clang/Basic/ABI.h"
+@@ -57,18 +58,16 @@ void clang::mangleObjCMethodName(raw_ostream &OS, bool includePrefixByte,
+ // FIXME: For blocks we currently mimic GCC's mangling scheme, which leaves
+ // much to be desired. Come up with a better mangling scheme.
+ 
+-static void mangleFunctionBlock(MangleContext &Context,
+-                                StringRef Outer,
+-                                const BlockDecl *BD,
+-                                raw_ostream &Out) {
++static void mangleFunctionBlock(MangleContext &Context, StringRef Outer,
++                                const BlockDecl *BD, raw_ostream &Out) {
+   unsigned discriminator = Context.getBlockId(BD, true);
+   if (discriminator == 0)
+     Out << "__" << Outer << "_block_invoke";
+   else
+-    Out << "__" << Outer << "_block_invoke_" << discriminator+1;
++    Out << "__" << Outer << "_block_invoke_" << discriminator + 1;
+ }
+ 
+-void MangleContext::anchor() { }
++void MangleContext::anchor() {}
+ 
+ enum CCMangling {
+   CCM_Other,
+@@ -366,8 +365,7 @@ void MangleContext::mangleMSGuidDecl(const MSGuidDecl *GD,
+   }
+ }
+ 
+-void MangleContext::mangleGlobalBlock(const BlockDecl *BD,
+-                                      const NamedDecl *ID,
++void MangleContext::mangleGlobalBlock(const BlockDecl *BD, const NamedDecl *ID,
+                                       raw_ostream &Out) {
+   unsigned discriminator = getBlockId(BD, false);
+   if (ID) {
+@@ -380,7 +378,7 @@ void MangleContext::mangleGlobalBlock(const BlockDecl *BD,
+   if (discriminator == 0)
+     Out << "_block_invoke";
+   else
+-    Out << "_block_invoke_" << discriminator+1;
++    Out << "_block_invoke_" << discriminator + 1;
+ }
+ 
+ void MangleContext::mangleCtorBlock(const CXXConstructorDecl *CD,
+@@ -392,8 +390,8 @@ void MangleContext::mangleCtorBlock(const CXXConstructorDecl *CD,
+   mangleFunctionBlock(*this, Buffer, BD, ResStream);
+ }
+ 
+-void MangleContext::mangleDtorBlock(const CXXDestructorDecl *DD,
+-                                    CXXDtorType DT, const BlockDecl *BD,
++void MangleContext::mangleDtorBlock(const CXXDestructorDecl *DD, CXXDtorType DT,
++                                    const BlockDecl *BD,
+                                     raw_ostream &ResStream) {
+   SmallString<64> Buffer;
+   llvm::raw_svector_ostream Out(Buffer);
+@@ -442,12 +440,37 @@ void MangleContext::mangleObjCMethodName(const ObjCMethodDecl *MD,
+                                          bool includeCategoryNamespace,
+                                          bool useDirectABI) const {
+   if (getASTContext().getLangOpts().ObjCRuntime.isGNUFamily()) {
++    if (MD->isDirectMethod())
++      if (const auto *Label = MD->getAttr<AsmLabelAttr>()) {
++        OS << Label->getLabel();
++        return;
++      }
++    const auto RuntimeClassName =
++        MD->getClassInterface()->getObjCRuntimeNameAsString();
++    const auto *Category = MD->getCategory();
++    const StringRef RuntimeCategoryName =
++        Category ? getObjC3RuntimeCategoryName(Category) : StringRef();
++    const bool OwnedCategory = RuntimeCategoryName.starts_with("__objc3_m_");
++    if (RuntimeClassName.starts_with("__objc3_m_") || OwnedCategory) {
++      // Encode each boundary, including category ownership for direct methods.
++      const auto CategoryName = (includeCategoryNamespace || OwnedCategory)
++                                    ? RuntimeCategoryName
++                                    : StringRef();
++      const auto SelectorName = MD->getSelector().getAsString();
++      OS << "__objc3_method_" << (MD->isClassMethod() ? "c" : "i") << "_R"
++         << RuntimeClassName.size() << '_'
++         << llvm::toHex(RuntimeClassName, true) << "_C" << CategoryName.size()
++         << '_' << llvm::toHex(CategoryName, true) << "_S"
++         << SelectorName.size() << '_' << llvm::toHex(SelectorName, true)
++         << ((useDirectABI || MD->isDirectMethod()) ? "_D" : "_M");
++      return;
++    }
+     // This is the mangling we've always used on the GNU runtimes, but it
+     // has obvious collisions in the face of underscores within class
+     // names, category names, and selectors; maybe we should improve it.
+ 
+     OS << (MD->isClassMethod() ? "_c_" : "_i_")
+-       << MD->getClassInterface()->getName() << '_';
++       << MD->getClassInterface()->getObjCRuntimeNameAsString() << '_';
+ 
+     if (includeCategoryNamespace) {
+       if (auto category = MD->getCategory())

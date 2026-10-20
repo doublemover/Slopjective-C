@@ -243,6 +243,15 @@ PACKETS = {
         "clang/unittests/AST/ObjC3ResultExprTest.cpp",
         "clang/unittests/AST/ObjC3CarrierExprSemanticsTest.cpp",
     ],
+    "0007-objc3-linux-debugger-runtime-contracts.patch": [
+        "lldb/source/Plugins/SymbolFile/DWARF/ObjCRuntimeName.h",
+        "lldb/source/Plugins/SymbolFile/DWARF/DWARFASTParserClang.cpp",
+        "lldb/source/Plugins/SymbolFile/DWARF/SymbolFileDWARF.cpp",
+        "lldb/source/Plugins/ExpressionParser/Clang/ClangExpressionParser.cpp",
+        "lldb/source/Plugins/ExpressionParser/Clang/ClangExpressionDeclMap.cpp",
+        "lldb/source/Plugins/ExpressionParser/Clang/IRForTarget.cpp",
+        "lldb/source/Plugins/ExpressionParser/Clang/IRForTarget.h",
+    ],
 }
 
 

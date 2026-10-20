@@ -541,6 +541,31 @@ InterfaceImportReport InterfaceImportSession::ImportInto(
   std::vector<std::unique_ptr<clang::ASTImporter>> importers;
   for (auto index : impl_->import_order) {
     auto &module = impl_->modules[index];
+    // Keep canonical origins as FileEntries in the consumer. ASTImporter's
+    // buffer-only fallback loses the filename needed by native C typedef USRs
+    // and by the owning-source boundary for imported declarations.
+    auto &source_manager = module.ast->getSourceManager();
+    for (unsigned i = 0; i < source_manager.local_sloc_entry_size(); ++i) {
+      const auto &entry = source_manager.getLocalSLocEntry(i);
+      if (!entry.isFile()) continue;
+      const auto &cache = entry.getFile().getContentCache();
+      if (!cache.OrigEntry ||
+          !cache.OrigEntry->getName().ends_with(".objc3i"))
+        continue;
+      auto buffer = cache.getBufferOrNone(module.ast->getDiagnostics(),
+                                           module.ast->getFileManager(), {});
+      if (!buffer) {
+        Add(report.diagnostics, "O3IFC143",
+            "canonical interface source buffer is unavailable",
+            module.sidecar.module.canonical_name);
+        return report;
+      }
+      auto file = target_file_manager.getVirtualFileRef(
+          cache.OrigEntry->getName(), buffer->getBufferSize(), 0);
+      target_context.getSourceManager().overrideFileContents(
+          file, llvm::MemoryBuffer::getMemBufferCopy(
+                    buffer->getBuffer(), cache.OrigEntry->getName()));
+    }
     std::set<std::string> expected_ids;
     for (const auto &identity : module.sidecar.declarations)
       expected_ids.insert(identity.stable_id);
