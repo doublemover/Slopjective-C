@@ -77,6 +77,8 @@ symbols, source/header edits, complete reuse, package identity changes and
 relocated immutable consumers after deleting producer sources. The matrix covers
 Objective-C17 ARC/MRC, Objective-C++20/23 ARC/MRC and C++20/23 at O0/O2.
 
-This implementation is under development; its installed qualification and
-archive acceptance are required before the current Linux acceptance receipt
-advances.
+The [Linux acceptance receipt](../support/linux_module_names_acceptance.json)
+binds the native compiler tests, 96 installed source/package executions,
+88 rejection probes, three debugger matrices across six language/ownership modes,
+and fresh Debian/Ubuntu archive qualification to the exact implementation and SDK
+seal.
