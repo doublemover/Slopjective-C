@@ -28,6 +28,8 @@ struct CompileRequest {
   bool arc = false;
   bool strict_concurrency = false;
   bool emit_semantic_interface = false;
+  bool module_owned_names = false;
+  std::string module_source_root;
   std::optional<bool> projected_arc;
   std::vector<std::string> interface_exports;
   std::string target_triple;

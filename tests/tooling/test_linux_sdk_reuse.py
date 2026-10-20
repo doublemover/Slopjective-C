@@ -138,6 +138,7 @@ def test_packaging_input_edit_prevents_installation(tmp_path, monkeypatch):
     monkeypatch.setattr(linux_sdk, 'build_plans', lambda *a, **kw: {
         'configure': {'host_environment': {'resource_limits': {'compile_jobs': 1}}}})
     monkeypatch.setattr(linux_sdk, 'qualify_installed', lambda *a: {'status': 'PASS'})
+    monkeypatch.setattr(linux_sdk, 'reclaim_frontend_tests', lambda *a: {'test_executables': 0, 'bytes': 0, 'outputs': []})
 
     def execute(command, **kwargs):
         if 'scripts.objc3c_toolchain_runtime.build_linux' in command:
@@ -165,3 +166,44 @@ def test_packaging_input_edit_prevents_installation(tmp_path, monkeypatch):
     report = json.loads((repo / 'out/toolchains/linux-sdk-builds/qualified/build-report.json').read_text())
     assert report['status'] == 'FAIL'
     assert not (repo / 'out/toolchains/linux-sdk-builds/qualified/release.json').exists()
+
+
+def test_reclaims_only_owned_ctest_executables(tmp_path, monkeypatch):
+    from scripts.objc3c_toolchain.linux_sdk import reclaim_frontend_tests
+    build = tmp_path / 'build'
+    build.mkdir()
+    executable = build / 'objc3_interface_test'
+    executable.write_bytes(b'qualified executable')
+    executable.chmod(0o700)
+    compiler = build / 'objc3c'
+    compiler.write_bytes(b'compiler')
+    compiler.chmod(0o700)
+    outside = tmp_path / 'objc3_outside_test'
+    outside.write_bytes(b'outside')
+    outside.chmod(0o700)
+    link = build / 'objc3_link_test'
+    link.symlink_to(outside)
+    source = build / 'objc3_source_test'
+    source.write_bytes(b'not executable')
+    source.chmod(0o600)
+    metadata = {'tests': [{'command': [str(path)]} for path in
+                          (executable, compiler, outside, link, source, executable)]}
+    monkeypatch.setattr('scripts.objc3c_toolchain.linux_sdk.subprocess.check_output',
+                        lambda *args, **kwargs: json.dumps(metadata))
+    result = reclaim_frontend_tests(build)
+    assert result['test_executables'] == 1 and result['bytes'] == len(b'qualified executable')
+    assert not executable.exists()
+    assert compiler.read_bytes() == b'compiler' and outside.read_bytes() == b'outside'
+    assert link.is_symlink() and source.read_bytes() == b'not executable'
+
+
+def test_invalid_ctest_inventory_preserves_outputs(tmp_path, monkeypatch):
+    from scripts.objc3c_toolchain.linux_sdk import reclaim_frontend_tests
+    executable = tmp_path / 'objc3_interface_test'
+    executable.write_bytes(b'keep')
+    executable.chmod(0o700)
+    monkeypatch.setattr('scripts.objc3c_toolchain.linux_sdk.subprocess.check_output',
+                        lambda *args, **kwargs: '{}')
+    with pytest.raises(ValueError, match='CTest'):
+        reclaim_frontend_tests(tmp_path)
+    assert executable.read_bytes() == b'keep'

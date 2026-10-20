@@ -544,12 +544,14 @@ void BuildDependencyRecord(const CompileRequest &request,
     if (i) json += ',';
     const auto &decl = result.imported_declarations[i];
     json += "{\"id\":" + JsonQuote(decl.stable_id) +
-      ",\"kind\":" + JsonQuote(decl.kind) +
-      ",\"name\":" + JsonQuote(decl.qualified_name) +
-      ",\"type\":" + JsonQuote(decl.canonical_type_identity) +
-      ",\"async\":" + (decl.effects.is_async ? "true" : "false") +
-      ",\"throws_kind\":" + JsonQuote(decl.effects.throws_kind) +
-      ",\"error_type\":" + JsonQuote(decl.effects.error_type_identity) + '}';
+            ",\"kind\":" + JsonQuote(decl.kind) +
+            ",\"name\":" + JsonQuote(decl.qualified_name) +
+            ",\"native_symbol_name\":" + JsonQuote(decl.native_symbol_name) +
+            ",\"type\":" + JsonQuote(decl.canonical_type_identity) +
+            ",\"async\":" + (decl.effects.is_async ? "true" : "false") +
+            ",\"throws_kind\":" + JsonQuote(decl.effects.throws_kind) +
+            ",\"error_type\":" + JsonQuote(decl.effects.error_type_identity) +
+            '}';
   }
   json += "]}";
   result.semantic_dependency_record = std::move(json);
@@ -582,7 +584,15 @@ CompileResult Compile(const CompileRequest &request) {
   }
   const bool objc = request.language == BaseLanguage::ObjectiveC ||
                     request.language == BaseLanguage::ObjectiveCxx;
-  if (request.input_path.empty() ||
+  if (request.module_owned_names &&
+      request.module_name.ends_with(".__ownership_producer")) {
+    result.failure = "the ownership-producer module suffix is reserved";
+    return result;
+  }
+  if ((!request.module_source_root.empty() && !request.module_owned_names) ||
+      (request.module_owned_names &&
+       (request.module_name.empty() || request.package_identity.empty())) ||
+      request.input_path.empty() ||
       ((request.objc3 || request.arc || !request.objc_runtime.empty()) &&
        !objc) ||
       (!request.objc3 && request.profile != SemanticProfile::Compatibility) ||

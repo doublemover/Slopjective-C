@@ -20,7 +20,8 @@ int RunCompiler(int argc, char **argv) {
            "[--emit-llvm path] [--arc] [--profile name] [--strict-concurrency] "
            "[--emit-interface path.objc3i --module name --package identity] "
            "[--project-ownership arc|mrc] "
-           "[--export-declaration name] "
+           "[--export-declaration name] [--module-owned-names] "
+           "[--module-source-root dir] "
            "[--target triple] [--runtime abi] [--module-search-path dir] "
            "[--sdk-root dir] "
            "[--import-module name fingerprint package "
@@ -69,7 +70,11 @@ int RunCompiler(int argc, char **argv) {
         request.arguments.emplace_back(argv[i]);
       break;
     }
-    if (argument == "--objc3")
+    if (argument == "--module-source-root" && has_values(1))
+      request.module_source_root = argv[++i];
+    else if (argument == "--module-owned-names")
+      request.module_owned_names = true;
+    else if (argument == "--objc3")
       request.objc3 = true;
     else if (argument == "--import-spi" && has_values(1) &&
              !request.module_imports.empty())

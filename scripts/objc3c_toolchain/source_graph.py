@@ -245,7 +245,7 @@ def _build(sdk: Path, graph: dict, output: Path, optimization: str) -> dict:
         if name != APP:
             interface = paths[name]
             sidecar = interface.with_suffix('.objc3i.json')
-            command += ['--emit-interface', str(interface), '--module', name, '--package', config['package']]
+            command += ['--emit-interface', str(interface), '--module', name, '--package', config['package'], '--module-owned-names', '--module-source-root', str(config['root'])]
             products += [interface, sidecar]
         direct = config['dependencies']
         # Every transitive artifact is physically available, while only direct

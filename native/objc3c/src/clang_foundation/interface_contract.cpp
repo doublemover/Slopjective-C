@@ -1,4 +1,5 @@
 #include "clang_foundation/interface_contract.h"
+#include "clang_foundation/module_names.h"
 
 #include <algorithm>
 #include <cctype>
@@ -38,6 +39,8 @@ std::string DeclarationKey(const InterfaceDeclarationIdentity &d) {
       << d.effects.ownership_identity;
   if (!d.spi_group.empty())
     Field(out, "spi-group", d.spi_group);
+  if (!d.native_symbol_name.empty())
+    Field(out, "native-symbol-name", d.native_symbol_name);
   return out.str();
 }
 bool HasEffects(const InterfaceEffectIdentity &e) {
@@ -84,15 +87,17 @@ bool SameInterfaceDeclarationIdentity(
     const InterfaceDeclarationIdentity &right) {
   return std::tie(left.stable_id, left.kind, left.qualified_name,
                   left.canonical_type_identity, left.spi_group,
-                  left.effects.is_async, left.effects.is_throwing,
-                  left.effects.throws_kind, left.effects.error_type_identity,
+                  left.native_symbol_name, left.effects.is_async,
+                  left.effects.is_throwing, left.effects.throws_kind,
+                  left.effects.error_type_identity,
                   left.effects.actor_isolation_identity,
                   left.effects.executor_affinity_identity,
                   left.effects.ownership_identity) ==
          std::tie(right.stable_id, right.kind, right.qualified_name,
                   right.canonical_type_identity, right.spi_group,
-                  right.effects.is_async, right.effects.is_throwing,
-                  right.effects.throws_kind, right.effects.error_type_identity,
+                  right.native_symbol_name, right.effects.is_async,
+                  right.effects.is_throwing, right.effects.throws_kind,
+                  right.effects.error_type_identity,
                   right.effects.actor_isolation_identity,
                   right.effects.executor_affinity_identity,
                   right.effects.ownership_identity);
@@ -215,6 +220,19 @@ InterfaceContractValidation ValidateSemanticInterface(
   for (const auto &d : sidecar.declarations)
     if (!d.spi_group.empty() && !IsValidSPIGroup(d.spi_group))
       Add(result, "O3IFC019", "invalid SPI group", d.stable_id);
+  const bool has_names =
+      std::any_of(sidecar.declarations.begin(), sidecar.declarations.end(),
+                  [](const auto &d) { return !d.native_symbol_name.empty(); });
+  if (has_names != std::binary_search(required.begin(), required.end(),
+                                      "objc3.module-owned-names.v1"))
+    Add(result, "O3IFC020",
+        "module-owned names and required capability must agree",
+        expected.canonical_name);
+  for (const auto &d : sidecar.declarations)
+    if (!HasValidModuleOwnedName(sidecar.module, d))
+      Add(result, "O3IFC020",
+          "native symbol name differs from its module ownership contract",
+          d.stable_id);
   const bool effect_semantic = std::binary_search(
       required.begin(), required.end(), "objc3.canonical-function-effects.v1");
   for (const auto &declaration : sidecar.declarations)

@@ -16,7 +16,8 @@ int CompileFrontendOptions(const objc3c_frontend_v2_options *options,
                            size_t import_count, bool source_directed_imports,
                            const char *compiler_sdk_root,
                            const objc3c_frontend_v3_spi_grant *spi_grants,
-                           size_t spi_grant_count,
+                           size_t spi_grant_count, bool module_owned_names,
+                           const char *module_source_root,
                            objc3c_frontend_v2_result **out_result) {
   if (!out_result) return 2;
   *out_result = nullptr;
@@ -33,11 +34,17 @@ int CompileFrontendOptions(const objc3c_frontend_v2_options *options,
     return 2;
   const bool objc = options->language == 2 || options->language == 3;
   if (((options->objc3 || options->arc ||
-        (options->objc_runtime && *options->objc_runtime)) && !objc) ||
+        (options->objc_runtime && *options->objc_runtime)) &&
+       !objc) ||
       (!options->objc3 && options->profile != 0) ||
       (options->strict_concurrency && !options->objc3) ||
-      (options->emit != 0 && (!options->output_path || !*options->output_path)) ||
+      (options->emit != 0 &&
+       (!options->output_path || !*options->output_path)) ||
       (options->emit_semantic_interface &&
+       (!options->module_name || !*options->module_name ||
+        !options->package_identity || !*options->package_identity)) ||
+      (module_source_root && (!module_owned_names || !*module_source_root)) ||
+      (module_owned_names &&
        (!options->module_name || !*options->module_name ||
         !options->package_identity || !*options->package_identity)) ||
       (import_count && !search_path_count) ||
@@ -61,6 +68,8 @@ int CompileFrontendOptions(const objc3c_frontend_v2_options *options,
     request.arc = options->arc != 0;
     request.strict_concurrency = options->strict_concurrency != 0;
     request.emit_semantic_interface = options->emit_semantic_interface != 0;
+    request.module_owned_names = module_owned_names;
+    request.module_source_root = string(module_source_root);
     request.source_directed_imports = source_directed_imports;
     request.module_name = string(options->module_name);
     request.package_identity = string(options->package_identity);
@@ -117,7 +126,7 @@ extern "C" int objc3c_frontend_v2_compile(
     const objc3c_frontend_v2_options *options,
     objc3c_frontend_v2_result **out_result) {
   return CompileFrontendOptions(options, nullptr, 0, nullptr, 0, false, nullptr,
-                                nullptr, 0, out_result);
+                                nullptr, 0, false, nullptr, out_result);
 }
 
 extern "C" int objc3c_frontend_v3_compile(
@@ -143,16 +152,33 @@ extern "C" int objc3c_frontend_v3_compile(
   const char *sdk_root = options->struct_size >= SDKOffset + sizeof(options->compiler_sdk_root)
       ? options->compiler_sdk_root : nullptr;
   constexpr size_t SPIOffset = offsetof(objc3c_frontend_v3_options, spi_grants);
-  if (options->struct_size > SPIOffset &&
-      options->struct_size < sizeof(*options))
+  constexpr size_t SPIEnd =
+      offsetof(objc3c_frontend_v3_options, spi_grant_count) +
+      sizeof(options->spi_grant_count);
+  constexpr size_t NamingEnd =
+      offsetof(objc3c_frontend_v3_options, module_owned_names) +
+      sizeof(options->module_owned_names);
+  if (options->struct_size > SPIOffset && options->struct_size < SPIEnd)
     return 2;
-  const bool has_spi_tail = options->struct_size >= sizeof(*options);
-  return CompileFrontendOptions(
-      &options->base, options->interface_search_paths,
-      options->interface_search_path_count, options->imports,
-      options->import_count, source_directed_imports, sdk_root,
-      has_spi_tail ? options->spi_grants : nullptr,
-      has_spi_tail ? options->spi_grant_count : 0, out_result);
+  const bool has_spi_tail = options->struct_size >= SPIEnd;
+  const bool owned =
+      options->struct_size >= NamingEnd && options->module_owned_names;
+  if (options->struct_size >= NamingEnd && options->module_owned_names > 1)
+    return 2;
+  constexpr size_t RootOffset =
+      offsetof(objc3c_frontend_v3_options, module_source_root);
+  constexpr size_t RootEnd = RootOffset + sizeof(options->module_source_root);
+  if (options->struct_size > RootOffset && options->struct_size < RootEnd)
+    return 2;
+  const char *source_root =
+      options->struct_size >= RootEnd ? options->module_source_root : nullptr;
+  return CompileFrontendOptions(&options->base, options->interface_search_paths,
+                                options->interface_search_path_count,
+                                options->imports, options->import_count,
+                                source_directed_imports, sdk_root,
+                                has_spi_tail ? options->spi_grants : nullptr,
+                                has_spi_tail ? options->spi_grant_count : 0,
+                                owned, source_root, out_result);
 }
 
 extern "C" void objc3c_frontend_v2_result_destroy(objc3c_frontend_v2_result *result) {

@@ -1,4 +1,5 @@
 #include "clang_foundation/interface_codec.h"
+#include "clang_foundation/module_names.h"
 
 #include <algorithm>
 #include <array>
@@ -189,6 +190,8 @@ Object EncodeDeclaration(const InterfaceDeclarationIdentity &declaration) {
       {"qualified_name", declaration.qualified_name},
       {"canonical_type_identity", declaration.canonical_type_identity},
       {"effects", EncodeEffects(declaration.effects)}};
+  if (!declaration.native_symbol_name.empty())
+    result["native_symbol_name"] = declaration.native_symbol_name;
   if (!declaration.spi_group.empty())
     result["spi_group"] = declaration.spi_group;
   return result;
@@ -199,13 +202,19 @@ llvm::Expected<InterfaceDeclarationIdentity> DecodeDeclaration(
   const auto path = llvm::formatv("/declarations/{0}", index).str();
   const auto *object = value.getAsObject();
   if (!object) return Invalid(llvm::formatv("{0}: expected object", path).str());
-  if (auto error =
-          CheckKeys(*object,
-                    {"stable_id", "kind", "qualified_name",
-                     "canonical_type_identity", "effects", "spi_group"},
-                    path))
+  if (auto error = CheckKeys(*object,
+                             {"stable_id", "kind", "qualified_name",
+                              "canonical_type_identity", "effects", "spi_group",
+                              "native_symbol_name"},
+                             path))
     return std::move(error);
   InterfaceDeclarationIdentity result;
+  if (object->get("native_symbol_name")) {
+    auto name = RequiredString(*object, "native_symbol_name", path);
+    if (!name)
+      return name.takeError();
+    result.native_symbol_name = std::move(*name);
+  }
   if (object->get("spi_group")) {
     auto group = RequiredString(*object, "spi_group", path);
     if (!group)
@@ -307,6 +316,19 @@ llvm::Error ValidateForEncoding(
   for (const auto &d : sidecar.declarations)
     if (!d.spi_group.empty() && !IsValidSPIGroup(d.spi_group))
       return Invalid("invalid SPI group");
+  const bool has_names =
+      std::any_of(sidecar.declarations.begin(), sidecar.declarations.end(),
+                  [](const auto &d) { return !d.native_symbol_name.empty(); });
+  const bool name_capability = std::find(sidecar.required_semantics.begin(),
+                                         sidecar.required_semantics.end(),
+                                         "objc3.module-owned-names.v1") !=
+                               sidecar.required_semantics.end();
+  if (has_names != name_capability)
+    return Invalid("module-owned names and required capability must agree");
+  for (const auto &d : sidecar.declarations)
+    if (!HasValidModuleOwnedName(sidecar.module, d))
+      return Invalid(
+          "native symbol name differs from its module ownership contract");
   const auto &module = sidecar.module;
   if (module.canonical_name.empty() || module.semantic_fingerprint.empty() ||
       module.target_triple.empty() || module.runtime_abi.empty() ||
