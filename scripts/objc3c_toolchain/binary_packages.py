@@ -316,6 +316,8 @@ def consume(sdk: Path, package: Path, expected: str, application: Path, output: 
             row = rows[edge['name']]['module']
             command += ['--import-module', edge['name'], row['semantic_fingerprint'], edge['package'],
                         '--reexport-import' if edge['visibility'] == 'public' else '--private-import']
+            for group in edge.get('spi', []):
+                command += ['--import-spi', group]
         command += ['--', '--no-default-config', '-std=' + config['standard'], '-fblocks',
                     '-' + manifest['optimization'], '-isystem', str(sdk / 'include'),
                     '-MD', '-MF', str(depfile), '-MT', 'dependencies']

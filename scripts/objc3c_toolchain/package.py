@@ -165,7 +165,8 @@ def package_sdk(repo: Path, prefix: Path, validation_report: Path, cache_dir: Pa
                                 ('qualify_binary_packages.py', 'qualify_binary_packages.py'),
                                 ('qualify_ownership_projections.py', 'qualify_ownership_projections.py'),
                                 ('qualify_public_surfaces.py', 'qualify_public_surfaces.py'),
-                                ('qualify_api_availability.py', 'qualify_api_availability.py')):
+                                ('qualify_api_availability.py', 'qualify_api_availability.py'),
+                                ('qualify_module_spi.py', 'qualify_module_spi.py')):
         shutil.copyfile(Path(__file__).with_name(original), builder / installed)
     shutil.copytree(repo / 'tests/clang_foundation/source_graph',
                     prefix / 'share/objc3c/examples/packages')
@@ -175,6 +176,8 @@ def package_sdk(repo: Path, prefix: Path, validation_report: Path, cache_dir: Pa
                     prefix / 'share/objc3c/examples/public-module-surface')
     shutil.copytree(repo / 'tests/clang_foundation/api_availability',
                     prefix / 'share/objc3c/examples/api-availability')
+    shutil.copytree(repo / 'tests/clang_foundation/module_spi',
+                    prefix / 'share/objc3c/examples/module-spi')
     launcher = prefix / 'bin/objc3c-build'
     launcher.write_text('#!/bin/sh\nset -eu\n'
         'prefix=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)\n'
@@ -223,6 +226,7 @@ def package_sdk(repo: Path, prefix: Path, validation_report: Path, cache_dir: Pa
     from .qualify_ownership_projections import qualify as qualify_projections
     from .qualify_public_surfaces import qualify as qualify_surfaces
     from .qualify_api_availability import qualify as qualify_availability
+    from .qualify_module_spi import qualify as qualify_spi
 
     manifest = json.loads((repo / 'toolchains/llvm/manifest.json').read_text())
     budget = min(4, resource_limits(manifest['build'])['compile_jobs'])
@@ -237,6 +241,7 @@ def package_sdk(repo: Path, prefix: Path, validation_report: Path, cache_dir: Pa
         'installed_ownership_projections': partial(qualify_projections, prefix, validation_report.parent / 'installed-ownership-projections', jobs=1),
         'installed_public_surfaces': partial(qualify_surfaces, prefix, validation_report.parent / 'installed-public-surfaces', jobs=1),
         'installed_api_availability': partial(qualify_availability, prefix, validation_report.parent / 'installed-api-availability', jobs=1),
+        'installed_module_spi': partial(qualify_spi, prefix, validation_report.parent / 'installed-module-spi', jobs=1),
     }
     suites = (
         ('installed_carrier_calls', 'carrier-calls', {'executions': 9, 'commands': 47}),
@@ -281,7 +286,7 @@ def package_sdk(repo: Path, prefix: Path, validation_report: Path, cache_dir: Pa
                'archive_bytes': archive.stat().st_size, 'seal_sha256': data['seal_sha256'],
                'source_build_id': source['build_id'],
                'qualification_parallelism': {'compiler_budget': budget,
-                    'installed_gates': workers, 'graph_cases': graph_jobs, 'projection_cases': 1, 'surface_cases': 1, 'availability_cases': 1}, **qualification}
+                    'installed_gates': workers, 'graph_cases': graph_jobs, 'projection_cases': 1, 'surface_cases': 1, 'availability_cases': 1, 'spi_cases': 1}, **qualification}
     archive.with_suffix('.json').write_text(json.dumps(receipt, indent=2) + '\n')
     return {**receipt, 'cache_hit': False}
 

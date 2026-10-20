@@ -196,6 +196,13 @@ bool InterfaceSourceImportBridge::ValidateVisibleExports(
     auto artifact = artifacts.find(module_name);
     if (artifact == artifacts.end()) continue;
     for (const auto &decl : artifact->second.declarations) {
+      const bool direct = directly_imported_.count(module_name) ||
+                          module_name == importing_module;
+      const auto request = requests_.find(module_name);
+      if (!decl.spi_group.empty() &&
+          (!direct || request == requests_.end() ||
+           !IsGrantedSPI(decl, request->second.spi_groups)))
+        continue;
       const bool tag = decl.kind == "Record" || decl.kind == "CXXRecord" ||
                        decl.kind == "Enum";
       const std::string key = (tag ? "tag:" : "ordinary:") + decl.qualified_name;
@@ -419,7 +426,8 @@ SourceModuleImportStatus InterfaceSourceImportBridge::ImportObjC3Module(
       return SourceModuleImportStatus::AlreadyVisible;
 
     const auto prior_artifact = artifacts_.find(canonical_name.str());
-    if (prior_artifact != artifacts_.end()) {
+    if (prior_artifact != artifacts_.end() &&
+        requests_.at(canonical_name.str()).spi_groups.empty()) {
       const auto &request = requests_.at(canonical_name.str());
       if (!SameIdentity(prior_artifact->second.module,
                         request.locked_identity)) {

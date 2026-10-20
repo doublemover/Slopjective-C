@@ -238,6 +238,11 @@ The [public module surface contract](docs/roadmap/linux_public_module_surfaces.m
 selects exported roots, rejects private type leaks and preserves dependent build
 reuse across private implementation edits.
 
+The [named SPI contract](docs/roadmap/linux_module_spi.md) preserves privileged
+module partitions and exact-provider grants through native imports, source
+builds and relocated immutable packages. Re-exports retain public visibility
+without forwarding privileges.
+
 The [public availability contract](docs/roadmap/linux_api_availability.md) keeps
 native deprecation, unavailability and platform metadata in semantic identities
 and preserves their diagnostics in source-free consumers. Public metadata edits

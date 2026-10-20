@@ -50,7 +50,8 @@ const std::vector<llvm::StringRef> kSupportedSemantics = {
     "objc3.direct-dispatch.v1",
     "objc3.cxx-data-interfaces.v1",
     "objc3.ownership-projection.v1",
-    "objc3.api-availability.v1"};
+    "objc3.api-availability.v1",
+    "objc3.api-partitions.v1"};
 
 void Add(std::vector<InterfaceContractDiagnostic> &out, const llvm::Twine &code,
          const llvm::Twine &message, const llvm::Twine &subject = llvm::Twine()) {
@@ -287,6 +288,20 @@ std::unique_ptr<InterfaceImportSession> InterfaceImportSession::Prepare(
           input.locked_identity.canonical_name);
       continue;
     }
+    std::set<std::string> groups;
+    for (const auto &group : input.spi_groups) {
+      if (input.spi_groups.size() > 64 || !IsValidSPIGroup(group) ||
+          !groups.insert(group).second ||
+          std::none_of(sidecar->declarations.begin(),
+                       sidecar->declarations.end(),
+                       [&](const auto &d) { return d.spi_group == group; }))
+        Add(diagnostics, "O3IFC159",
+            "SPI grants require distinct existing groups on the exact provider",
+            group);
+    }
+    if (!input.direct_import && !input.spi_groups.empty())
+      Add(diagnostics, "O3IFC159", "SPI grants require a direct import",
+          sidecar->module.canonical_name);
     const auto existing = module_index.find(sidecar->module.canonical_name);
     if (existing != module_index.end()) {
       auto &prior = impl->modules[existing->second];
@@ -295,6 +310,13 @@ std::unique_ptr<InterfaceImportSession> InterfaceImportSession::Prepare(
         Add(diagnostics, "O3IFC136",
             "the same canonical module name was resolved to conflicting artifacts",
             sidecar->module.canonical_name);
+      prior.input.spi_groups.insert(prior.input.spi_groups.end(),
+                                    input.spi_groups.begin(),
+                                    input.spi_groups.end());
+      std::sort(prior.input.spi_groups.begin(), prior.input.spi_groups.end());
+      prior.input.spi_groups.erase(std::unique(prior.input.spi_groups.begin(),
+                                               prior.input.spi_groups.end()),
+                                   prior.input.spi_groups.end());
       if (input.direct_import) {
         if (prior.input.direct_import) {
           prior.input.public_import |= input.public_import;
@@ -435,6 +457,8 @@ std::unique_ptr<InterfaceImportSession> InterfaceImportSession::Prepare(
   }
   for (const auto &module : impl->modules) {
     for (const auto &decl : module.sidecar.declarations) {
+      if (!IsGrantedSPI(decl, module.input.spi_groups))
+        continue;
       const auto [it, inserted] = by_stable_id.emplace(decl.stable_id, decl);
       if (!inserted && !SameInterfaceDeclarationIdentity(it->second, decl)) {
         Add(diagnostics, "O3IFC132",
@@ -514,18 +538,6 @@ InterfaceImportReport InterfaceImportSession::ImportInto(
         module.ast->getASTContext(), module.ast->getFileManager(),
         /*MinimalImport=*/false, shared_state);
     auto *from_tu = module.ast->getASTContext().getTranslationUnitDecl();
-    for (auto *decl : from_tu->decls()) {
-      if (decl->isImplicit()) continue;
-      auto imported = importer->Import(decl);
-      if (!imported) {
-        Add(report.diagnostics, "O3IFC142",
-            ModuleImportFailure(module.sidecar.module,
-                llvm::Twine("could not be inserted into consumer lookup: ") +
-                    llvm::toString(imported.takeError())),
-            module.sidecar.module.canonical_name);
-        return report;
-      }
-    }
     // Use the importer's actual source-to-target mappings. A matching USR in
     // another module or in the consumer does not prove this export imported.
     ExportedDeclarationCollector exported(module.ast->getASTContext(), expected_ids);
@@ -537,6 +549,8 @@ InterfaceImportReport InterfaceImportSession::ImportInto(
       return report;
     }
     for (const auto &expected : module.sidecar.declarations) {
+      if (!IsGrantedSPI(expected, module.input.spi_groups))
+        continue;
       auto imported = importer->Import(exported.Declarations.at(expected.stable_id));
       if (!imported) {
         Add(report.diagnostics, "O3IFC142",
@@ -582,10 +596,16 @@ InterfaceImportReport InterfaceImportSession::ImportInto(
   std::set<std::string> hidden_ids;
   std::set<std::string> visible_ids;
   for (const auto &module : impl_->modules) {
-    auto &destination = !source_scoped_visibility && impl_->visible_modules.count(
-        module.sidecar.module.canonical_name) ? visible_ids : hidden_ids;
-    for (const auto &identity : module.sidecar.declarations)
+    for (const auto &identity : module.sidecar.declarations) {
+      auto &destination =
+          !source_scoped_visibility &&
+                  impl_->visible_modules.count(
+                      module.sidecar.module.canonical_name) &&
+                  IsGrantedSPI(identity, module.input.spi_groups)
+              ? visible_ids
+              : hidden_ids;
       destination.insert(identity.stable_id);
+    }
   }
   for (const auto &id : visible_ids) hidden_ids.erase(id);
   auto *target_tu = target_context.getTranslationUnitDecl();

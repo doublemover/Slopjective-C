@@ -36,6 +36,8 @@ std::string DeclarationKey(const InterfaceDeclarationIdentity &d) {
       << d.effects.actor_isolation_identity << '\n'
       << d.effects.executor_affinity_identity << '\n'
       << d.effects.ownership_identity;
+  if (!d.spi_group.empty())
+    Field(out, "spi-group", d.spi_group);
   return out.str();
 }
 bool HasEffects(const InterfaceEffectIdentity &e) {
@@ -61,18 +63,34 @@ void Add(InterfaceContractValidation &r, std::string code,
 }
 }  // namespace
 
+bool IsValidSPIGroup(const std::string &group) {
+  auto letter = [](unsigned char c) {
+    return (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z') || c == '_';
+  };
+  return !group.empty() && group.size() <= 64 && letter(group.front()) &&
+         std::all_of(group.begin(), group.end(), [&](unsigned char c) {
+           return letter(c) || (c >= '0' && c <= '9');
+         });
+}
+bool IsGrantedSPI(const InterfaceDeclarationIdentity &declaration,
+                  const std::vector<std::string> &groups) {
+  return declaration.spi_group.empty() ||
+         std::find(groups.begin(), groups.end(), declaration.spi_group) !=
+             groups.end();
+}
+
 bool SameInterfaceDeclarationIdentity(
     const InterfaceDeclarationIdentity &left,
     const InterfaceDeclarationIdentity &right) {
   return std::tie(left.stable_id, left.kind, left.qualified_name,
-                  left.canonical_type_identity,
+                  left.canonical_type_identity, left.spi_group,
                   left.effects.is_async, left.effects.is_throwing,
                   left.effects.throws_kind, left.effects.error_type_identity,
                   left.effects.actor_isolation_identity,
                   left.effects.executor_affinity_identity,
                   left.effects.ownership_identity) ==
          std::tie(right.stable_id, right.kind, right.qualified_name,
-                  right.canonical_type_identity,
+                  right.canonical_type_identity, right.spi_group,
                   right.effects.is_async, right.effects.is_throwing,
                   right.effects.throws_kind, right.effects.error_type_identity,
                   right.effects.actor_isolation_identity,
@@ -187,6 +205,16 @@ InterfaceContractValidation ValidateSemanticInterface(
     Add(result, "O3IFC016",
         "C++ declarations are missing their semantic interface capability",
         expected.canonical_name);
+  const bool has_spi =
+      std::any_of(sidecar.declarations.begin(), sidecar.declarations.end(),
+                  [](const auto &d) { return !d.spi_group.empty(); });
+  if (has_spi != std::binary_search(required.begin(), required.end(),
+                                    "objc3.api-partitions.v1"))
+    Add(result, "O3IFC019", "SPI metadata and required capability must agree",
+        expected.canonical_name);
+  for (const auto &d : sidecar.declarations)
+    if (!d.spi_group.empty() && !IsValidSPIGroup(d.spi_group))
+      Add(result, "O3IFC019", "invalid SPI group", d.stable_id);
   const bool effect_semantic = std::binary_search(
       required.begin(), required.end(), "objc3.canonical-function-effects.v1");
   for (const auto &declaration : sidecar.declarations)

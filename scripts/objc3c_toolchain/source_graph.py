@@ -45,15 +45,25 @@ def locks(values, label: str) -> list[dict]:
     if not isinstance(values, list):
         raise ValueError(f'{label}: dependencies must be an array')
     seen = set()
+    canonical = []
     for value in values:
-        fields(value, {'name', 'package', 'visibility'}, label)
+        value = dict(value) if isinstance(value, dict) else value
+        fields(value, {'name', 'package', 'visibility'} | ({'spi'} if isinstance(value, dict) and 'spi' in value else set()), label)
+        if 'spi' in value:
+            groups = value['spi']
+            if (not isinstance(groups, list) or not groups or len(groups) > 64 or
+                    any(not isinstance(g, str) or len(g) > 64 or not re.fullmatch(r'[A-Za-z_]\w*', g, re.ASCII) for g in groups) or
+                    len(set(groups)) != len(groups)):
+                raise ValueError(f'{label}: SPI grants require distinct ASCII group identifiers')
+            value['spi'] = sorted(groups)
         name, identity = value['name'], value['package']
         if (not isinstance(name, str) or not NAME.fullmatch(name) or name in seen or
                 not isinstance(identity, str) or not identity.strip() or
                 value['visibility'] not in ('public', 'private')):
             raise ValueError(f'{label}: invalid or duplicate dependency lock')
         seen.add(name)
-    return sorted(values, key=lambda row: row['name'])
+        canonical.append(value)
+    return sorted(canonical, key=lambda row: row['name'])
 
 
 
@@ -263,6 +273,8 @@ def _build(sdk: Path, graph: dict, output: Path, optimization: str) -> dict:
                 identity = identities[module]
                 command += ['--import-module', module, identity['semantic_fingerprint'], dependency['package']]
                 command.append('--reexport-import' if dependency['visibility'] == 'public' else '--private-import')
+                for group in dependency.get('spi', []):
+                    command += ['--import-spi', group]
             dependency_record = directory / 'dependencies.json'
             command += ['--emit-dependency-record', str(dependency_record)]
             products.append(dependency_record)

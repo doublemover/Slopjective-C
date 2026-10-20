@@ -48,7 +48,8 @@ ARC/MRC and C++20/23 at O0/O2. Sixteen cases exercise cold and reused source
 graphs, private edits, public metadata edits, relocated source-free packages,
 native deprecation/unavailability errors and forged interface metadata. Failure
 checks preserve the prior consumer object and remove stale success records.
-Privileged SPI and module-owned linker/runtime names remain separate contracts.
+[Privileged SPI](linux_module_spi.md) has a separate implemented contract.
+Module-owned linker/runtime names remain a future milestone.
 
 The [acceptance receipt](../support/linux_api_availability_acceptance.json) binds
 the installed qualification, sanitizer runs and fresh Debian/Ubuntu archives to

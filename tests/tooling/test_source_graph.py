@@ -6,7 +6,7 @@ import shutil
 
 import pytest
 
-from scripts.objc3c_toolchain.source_graph import build_graph, load_graph, source_inputs, validate_exports
+from scripts.objc3c_toolchain.source_graph import build_graph, load_graph, source_inputs, validate_exports, locks
 
 
 @pytest.mark.parametrize('values', [None, [], [''], ['*', 'answer'], ['x', 'x'],
@@ -274,3 +274,18 @@ def test_projected_provider_rejects_a_dependency_closure(workspace):
     edit(workspace.parent / 'top/package.json', lambda d: d.update(provider_ownership='mrc'))
     with pytest.raises(ValueError, match='closed provider'):
         load_graph(workspace)
+
+
+@pytest.mark.parametrize('groups', [None, [], [''], ['*'], ['Two Words'], ['a', 'a'],
+                                      ['x' * 65], ['é'], [1], [{}], ['a'] * 65])
+def test_spi_dependency_grants_are_bounded(groups):
+    with pytest.raises(ValueError, match='SPI'):
+        locks([{'name': 'Example', 'package': 'v1', 'visibility': 'private', 'spi': groups}], 'test')
+
+
+def test_spi_grants_are_canonical_without_mutating_the_lock():
+    edge = {'name': 'Example', 'package': 'v1', 'visibility': 'public', 'spi': ['Testing', 'Diagnostics']}
+    canonical = locks([edge], 'test')
+    assert canonical[0]['spi'] == ['Diagnostics', 'Testing']
+    assert edge['spi'] == ['Testing', 'Diagnostics']
+    assert canonical != [edge]

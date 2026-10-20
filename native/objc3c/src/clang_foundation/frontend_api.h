@@ -55,6 +55,13 @@ typedef struct objc3c_frontend_v3_import {
   uint8_t reexported;
 } objc3c_frontend_v3_import;
 
+/* Explicit SPI grants are attached to a locked direct module, never
+ * re-exported. Group names contain 1..64 ASCII identifier characters. */
+typedef struct objc3c_frontend_v3_spi_grant {
+  const char *canonical_name;
+  const char *group;
+} objc3c_frontend_v3_spi_grant;
+
 /* Set the outer ABI to V3 and the embedded base ABI to V2, with both struct
  * sizes initialized. The source_directed_imports tail is optional: callers
  * supplying the older prefix ending at import_count retain eager imports.
@@ -75,6 +82,9 @@ typedef struct objc3c_frontend_v3_options {
   /* Optional size-guarded tail. A relocated SDK must have the same driver
    * bytes and resource contents as the SDK linked into this library. */
   const char *compiler_sdk_root;
+  /* Optional size-guarded tail; entries require an existing import lock. */
+  const objc3c_frontend_v3_spi_grant *spi_grants;
+  size_t spi_grant_count;
 } objc3c_frontend_v3_options;
 
 typedef struct objc3c_frontend_v2_location {

@@ -1,0 +1,20 @@
+{
+  "schema": "objc3c.source-package.v4",
+  "name": "fixture.SPILeaf",
+  "package": "spi-leaf-v1",
+  "source": "module.m",
+  "language": "objective-c",
+  "standard": "c17",
+  "ownership": "arc",
+  "provider_ownership": "arc",
+  "exports": [
+    "spi_public",
+    "spi_secret",
+    "spi_global",
+    "SPIValue",
+    "SPIAlias",
+    "SPIChoice",
+    "spi_other"
+  ],
+  "dependencies": []
+}

@@ -19,6 +19,10 @@ namespace objc3::clang_foundation {
 [[nodiscard]] std::string
 ReadInterfaceLanguageProfile(const clang::LangOptions &language);
 
+// SPI applies to a complete exported root, including its native members.
+[[nodiscard]] std::string
+ReadInterfaceSPIGroup(const clang::NamedDecl *declaration);
+
 // Clang USR with file-scope C typedef locations normalized for artifact moves.
 [[nodiscard]] std::string ReadInterfaceDeclarationStableId(
     const clang::NamedDecl *declaration);

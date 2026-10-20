@@ -47,10 +47,14 @@ The implemented foundations have separate bounded contracts:
   deprecation, unavailability and platform metadata through imports, ownership
   projections and source-free packages. Metadata edits invalidate dependents.
 
+- [Named module SPI](linux_module_spi.md) binds native partitions and exact-provider
+  grants through qualified lookup, source recipes and immutable consumers.
+  Re-exports do not forward privileges.
+
 ## Next implementation sequence
 
-1. Extend the bounded public module API with privileged SPI and module-owned
-   linker/runtime naming contracts. Native availability metadata, native imports,
+1. Extend the bounded public module API with module-owned linker/runtime naming
+   contracts. Privileged SPI is implemented. Native availability metadata, native imports,
    qualified lookup, explicit export selection and immutable dependency
    identities are implemented. Registry transport is a separate concern.
 2. Build structured task groups, cancellation and actor isolation on that

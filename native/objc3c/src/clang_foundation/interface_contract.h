@@ -39,6 +39,8 @@ struct InterfaceDeclarationIdentity {
   std::string qualified_name;
   std::string canonical_type_identity;
   InterfaceEffectIdentity effects;
+  // Empty for public API. A named SPI group is a required semantic contract.
+  std::string spi_group;
 };
 
 // Compare the complete declaration contract, including every modeled effect.
@@ -97,6 +99,10 @@ struct InterfaceContractValidation {
   std::vector<InterfaceContractDiagnostic> diagnostics;
   [[nodiscard]] bool ok() const { return diagnostics.empty(); }
 };
+
+[[nodiscard]] bool IsValidSPIGroup(const std::string &group);
+[[nodiscard]] bool IsGrantedSPI(const InterfaceDeclarationIdentity &declaration,
+                                const std::vector<std::string> &groups);
 
 // Stable fingerprint input sorts semantically unordered collections and omits
 // source formatting and its own fingerprint. The sidecar codec owns JSON.

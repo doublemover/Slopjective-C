@@ -1,7 +1,8 @@
 #include "clang_foundation/frontend_api.h"
 
-#include <memory>
 #include "clang_foundation/compile_session.h"
+#include <algorithm>
+#include <memory>
 
 struct objc3c_frontend_v2_result {
   objc3::clang_foundation::CompileResult value;
@@ -9,22 +10,27 @@ struct objc3c_frontend_v2_result {
 
 namespace {
 int CompileFrontendOptions(const objc3c_frontend_v2_options *options,
-    const char *const *search_paths, size_t search_path_count,
-    const objc3c_frontend_v3_import *imports, size_t import_count,
-    bool source_directed_imports, const char *compiler_sdk_root,
-    objc3c_frontend_v2_result **out_result) {
+                           const char *const *search_paths,
+                           size_t search_path_count,
+                           const objc3c_frontend_v3_import *imports,
+                           size_t import_count, bool source_directed_imports,
+                           const char *compiler_sdk_root,
+                           const objc3c_frontend_v3_spi_grant *spi_grants,
+                           size_t spi_grant_count,
+                           objc3c_frontend_v2_result **out_result) {
   if (!out_result) return 2;
   *out_result = nullptr;
   if (!options || options->struct_size < sizeof(*options) ||
       options->abi_version != OBJC3C_FRONTEND_V2_ABI || !options->input_path ||
-      !*options->input_path ||
-      options->language > 3 || options->emit > 2 || options->profile > 3 ||
-      options->objc3 > 1 || options->arc > 1 ||
+      !*options->input_path || options->language > 3 || options->emit > 2 ||
+      options->profile > 3 || options->objc3 > 1 || options->arc > 1 ||
       options->strict_concurrency > 1 || options->emit_semantic_interface > 1 ||
       (!options->arguments && options->argument_count) ||
       (!options->source && options->source_size) ||
       (!search_paths && search_path_count) || (!imports && import_count) ||
-      (compiler_sdk_root && !*compiler_sdk_root)) return 2;
+      (compiler_sdk_root && !*compiler_sdk_root) ||
+      (!spi_grants && spi_grant_count) || spi_grant_count > 4096)
+    return 2;
   const bool objc = options->language == 2 || options->language == 3;
   if (((options->objc3 || options->arc ||
         (options->objc_runtime && *options->objc_runtime)) && !objc) ||
@@ -82,6 +88,20 @@ int CompileFrontendOptions(const objc3c_frontend_v2_options *options,
       module.reexported = item.reexported != 0;
       request.module_imports.push_back(std::move(module));
     }
+    for (size_t i = 0; i < spi_grant_count; ++i) {
+      const auto &grant = spi_grants[i];
+      if (!grant.canonical_name || !grant.group ||
+          !IsValidSPIGroup(grant.group))
+        return 2;
+      auto found =
+          std::find_if(request.module_imports.begin(),
+                       request.module_imports.end(), [&](const auto &m) {
+                         return m.canonical_name == grant.canonical_name;
+                       });
+      if (found == request.module_imports.end())
+        return 2;
+      found->spi_groups.emplace_back(grant.group);
+    }
     auto result = std::make_unique<objc3c_frontend_v2_result>();
     result->value = Compile(request);
     int status = result->value.success ? 0 : 1;
@@ -96,7 +116,8 @@ int CompileFrontendOptions(const objc3c_frontend_v2_options *options,
 extern "C" int objc3c_frontend_v2_compile(
     const objc3c_frontend_v2_options *options,
     objc3c_frontend_v2_result **out_result) {
-  return CompileFrontendOptions(options, nullptr, 0, nullptr, 0, false, nullptr, out_result);
+  return CompileFrontendOptions(options, nullptr, 0, nullptr, 0, false, nullptr,
+                                nullptr, 0, out_result);
 }
 
 extern "C" int objc3c_frontend_v3_compile(
@@ -121,9 +142,17 @@ extern "C" int objc3c_frontend_v3_compile(
     return 2;
   const char *sdk_root = options->struct_size >= SDKOffset + sizeof(options->compiler_sdk_root)
       ? options->compiler_sdk_root : nullptr;
-  return CompileFrontendOptions(&options->base, options->interface_search_paths,
+  constexpr size_t SPIOffset = offsetof(objc3c_frontend_v3_options, spi_grants);
+  if (options->struct_size > SPIOffset &&
+      options->struct_size < sizeof(*options))
+    return 2;
+  const bool has_spi_tail = options->struct_size >= sizeof(*options);
+  return CompileFrontendOptions(
+      &options->base, options->interface_search_paths,
       options->interface_search_path_count, options->imports,
-      options->import_count, source_directed_imports, sdk_root, out_result);
+      options->import_count, source_directed_imports, sdk_root,
+      has_spi_tail ? options->spi_grants : nullptr,
+      has_spi_tail ? options->spi_grant_count : 0, out_result);
 }
 
 extern "C" void objc3c_frontend_v2_result_destroy(objc3c_frontend_v2_result *result) {
