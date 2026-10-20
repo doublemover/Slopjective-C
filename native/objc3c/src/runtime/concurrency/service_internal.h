@@ -9,6 +9,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <deque>
+#include <memory>
 #include <mutex>
 #include <thread>
 #include <vector>
@@ -47,6 +48,11 @@ struct objc3_executor final {
 };
 
 struct objc3_task final {
+  struct AwaitTarget {
+    std::mutex mutex;
+    objc3_task_t *task;
+    explicit AwaitTarget(objc3_task_t *value) : task(value) {}
+  };
   struct Waiter {
     objc3_completion_callback callback;
     void *context;
@@ -62,8 +68,12 @@ struct objc3_task final {
   objc3_frame_destroy destroy{nullptr};
   bool terminal{false};
   bool completion_claimed{false};
+  bool resume_after_completion_claim{false};
   bool resume_queued{false};
   bool resume_active{false};
+  bool awaiting{false};
+  uint64_t await_generation{0};
+  std::shared_ptr<AwaitTarget> await_target;
   uint32_t callbacks_active{0};
   bool frame_destroying{false};
   bool frame_destroyed{true};

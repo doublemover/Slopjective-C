@@ -3,6 +3,11 @@
 #include <new>
 #include <utility>
 
+// Pure C/C++ service consumers need no Objective-C runtime dependency. When
+// linked into an Objective-C program, each callback owns an autorelease scope.
+extern "C" void *objc_autoreleasePoolPush(void) __attribute__((weak));
+extern "C" void objc_autoreleasePoolPop(void *) __attribute__((weak));
+
 namespace {
 
 constexpr uint32_t kMaximumWorkerExecutors = 8;
@@ -16,6 +21,14 @@ struct ExecutorIdentityScope {
   explicit ExecutorIdentityScope(uint64_t identity) noexcept
       : previous(std::exchange(current_executor_logical_identity, identity)) {}
   ~ExecutorIdentityScope() { current_executor_logical_identity = previous; }
+};
+
+struct CallbackAutoreleasePool {
+  bool active = objc_autoreleasePoolPush && objc_autoreleasePoolPop;
+  void *token = active ? objc_autoreleasePoolPush() : nullptr;
+  ~CallbackAutoreleasePool() {
+    if (active) objc_autoreleasePoolPop(token);
+  }
 };
 
 bool allocate_executor_identity(uint64_t *out_identity) noexcept {
@@ -45,6 +58,7 @@ bool reserve_worker_slot() noexcept {
 void run_callback(objc3_executor_t *executor,
                   const objc3_executor_t::WorkItem &item) noexcept {
   ExecutorIdentityScope current(executor->identity);
+  CallbackAutoreleasePool pool;
   try {
     item.callback(item.context);
   } catch (...) {

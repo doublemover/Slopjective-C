@@ -42,11 +42,146 @@ index 91ab85d94..39b18d208 100644
 -}
 \ No newline at end of file
 +}
+diff --git a/dtable.c b/dtable.c
+index a6f164172..4b2a9c4d5 100644
+--- a/dtable.c
++++ b/dtable.c
+@@ -43,6 +43,14 @@ PRIVATE mutex_t initialize_lock;
+  * 2^x in increments of 8. */
+ static uint32_t dtable_depth = 8;
+ 
++// Published once during loader initialization, before any class can initialize.
++// Registering these lazily while holding initialize_lock reverses the required
++// runtime -> initialize -> selector lock order when a new selector grows tables.
++static struct {
++	SEL alloc, allocWithZone, init, isTrivialAllocInit;
++	SEL retain, release, autorelease, isARC, initialize;
++} dispatch_selectors;
++
+ #ifndef NO_SAFE_CACHING
+ _Atomic(uint64_t) objc_method_cache_version;
+ #endif
+@@ -97,14 +105,10 @@ static void checkFastAllocInit(Class cls)
+ 	{
+ 		return;
+ 	}
+-	static SEL alloc, allocWithZone, init, isTrivialAllocInit;
+-	if (NULL == alloc)
+-	{
+-		alloc = sel_registerName("alloc");
+-		allocWithZone = sel_registerName("allocWithZone:");
+-		init = sel_registerName("init");
+-		isTrivialAllocInit = sel_registerName("_TrivialAllocInit");
+-	}
++	SEL alloc = dispatch_selectors.alloc;
++	SEL allocWithZone = dispatch_selectors.allocWithZone;
++	SEL init = dispatch_selectors.init;
++	SEL isTrivialAllocInit = dispatch_selectors.isTrivialAllocInit;
+ 	Class metaclass = cls->isa;
+ 	Class isTrivialOwner = ownerForMethod(metaclass, isTrivialAllocInit);
+ 	// If nothing in this hierarchy opts in to trivial alloc / init behaviour, give up.
+@@ -147,14 +151,10 @@ static void checkFastAllocInit(Class cls)
+ static void checkARCAccessors(Class cls)
+ {
+ 	checkFastAllocInit(cls);
+-	static SEL retain, release, autorelease, isARC;
+-	if (NULL == retain)
+-	{
+-		retain = sel_registerName("retain");
+-		release = sel_registerName("release");
+-		autorelease = sel_registerName("autorelease");
+-		isARC = sel_registerName("_ARCCompliantRetainRelease");
+-	}
++	SEL retain = dispatch_selectors.retain;
++	SEL release = dispatch_selectors.release;
++	SEL autorelease = dispatch_selectors.autorelease;
++	SEL isARC = dispatch_selectors.isARC;
+ 	Class owner = ownerForMethod(cls, retain);
+ 	if ((NULL != owner) && !ownsMethod(owner, isARC))
+ 	{
+@@ -194,14 +194,10 @@ PRIVATE void checkARCAccessorsSlow(Class cls)
+ 	{
+ 		return;
+ 	}
+-	static SEL retain, release, autorelease, isARC;
+-	if (NULL == retain)
+-	{
+-		retain = sel_registerName("retain");
+-		release = sel_registerName("release");
+-		autorelease = sel_registerName("autorelease");
+-		isARC = sel_registerName("_ARCCompliantRetainRelease");
+-	}
++	SEL retain = dispatch_selectors.retain;
++	SEL release = dispatch_selectors.release;
++	SEL autorelease = dispatch_selectors.autorelease;
++	SEL isARC = dispatch_selectors.isARC;
+ 	BOOL superIsFast = YES;
+ 	if (cls->super_class != Nil)
+ 	{
+@@ -259,6 +255,19 @@ PRIVATE void init_dispatch_tables ()
+ #endif
+ }
+ 
++PRIVATE void init_dispatch_selectors(void)
++{
++	dispatch_selectors.alloc = sel_registerName("alloc");
++	dispatch_selectors.allocWithZone = sel_registerName("allocWithZone:");
++	dispatch_selectors.init = sel_registerName("init");
++	dispatch_selectors.isTrivialAllocInit = sel_registerName("_TrivialAllocInit");
++	dispatch_selectors.retain = sel_registerName("retain");
++	dispatch_selectors.release = sel_registerName("release");
++	dispatch_selectors.autorelease = sel_registerName("autorelease");
++	dispatch_selectors.isARC = sel_registerName("_ARCCompliantRetainRelease");
++	dispatch_selectors.initialize = sel_registerName("initialize");
++}
++
+ #if defined(WITH_TRACING) && defined (__x86_64)
+ static int init;
+ 
+@@ -613,13 +622,14 @@ Class class_table_next(void **e);
+ PRIVATE void objc_resize_dtables(uint32_t newSize)
+ {
+ 	// If dtables already have enough space to store all registered selectors, do nothing
+-	if (1<<dtable_depth > newSize) { return; }
++	if (UINT64_C(1)<<dtable_depth > newSize) { return; }
+ 
+ 	LOCK_RUNTIME_FOR_SCOPE();
+ 
+-	if (1<<dtable_depth > newSize) { return; }
++	if (UINT64_C(1)<<dtable_depth > newSize) { return; }
+ 
+-	dtable_depth += 8;
++	do { dtable_depth += 8; }
++	while (UINT64_C(1)<<dtable_depth <= newSize);
+ 
+ 	uint32_t oldShift = uninstalled_dtable->shift;
+ 	dtable_t old_uninstalled_dtable = uninstalled_dtable;
+@@ -811,11 +821,7 @@ OBJC_PUBLIC void objc_send_initialize(id object)
+ 	// to finish setting up the temporary dtable.
+ 	UNLOCK_RUNTIME();
+ 
+-	static SEL initializeSel = 0;
+-	if (0 == initializeSel)
+-	{
+-		initializeSel = sel_registerName("initialize");
+-	}
++	SEL initializeSel = dispatch_selectors.initialize;
+ 
+ 	struct objc_method *initializeSlot = skipMeta ? 0 :
+ 			objc_dtable_lookup(dtable, initializeSel->index);
 diff --git a/eh_personality.c b/eh_personality.c
-index d638d9772..bbba88140 100644
+index d638d9772..7f1fefdc6 100644
 --- a/eh_personality.c
 +++ b/eh_personality.c
-@@ -192,15 +192,26 @@ static inline _Unwind_Reason_Code continueUnwinding(struct _Unwind_Exception *ex
+@@ -5,6 +5,7 @@
+ #include "objc/runtime.h"
+ #include "objc/hooks.h"
+ #include "objc/objc-exception.h"
++#include "objc/objc-arc.h"
+ #include "class.h"
+ #include "objcxx_eh.h"
+ 
+@@ -192,15 +193,28 @@ static inline _Unwind_Reason_Code continueUnwinding(struct _Unwind_Exception *ex
  	return _URC_CONTINUE_UNWIND;
  }
  
@@ -59,7 +194,9 @@ index d638d9772..bbba88140 100644
 +	struct objc_exception *ex = objc_exception_from_header(e);
 +	struct thread_data *td = get_thread_data_fast();
 +	if (td->caughtExceptions == ex) { td->caughtExceptions = ex->next; }
++	id object = ex->object;
 +	free(ex);
++	objc_release(object);
 +}
  
 -	free((struct objc_exception*) ((char*)e - offsetof(struct objc_exception,
@@ -80,7 +217,15 @@ index d638d9772..bbba88140 100644
  }
  
  void objc_exception_rethrow(struct _Unwind_Exception *e);
-@@ -252,7 +263,7 @@ void objc_exception_throw(id object)
+@@ -247,12 +261,14 @@ void objc_exception_throw(id object)
+ 	ex->unwindHeader.exception_class = objc_exception_class;
+ 	ex->unwindHeader.exception_cleanup = cleanup;
+ 
+-	ex->object = object;
++	// A C++ exception_ptr can keep this header alive after the throwing frame
++	// and its autorelease pool have drained. Own the object for that lifetime.
++	ex->object = objc_retain(object);
+ 
  	td->cxxCaughtException = NO;
  
  	_Unwind_Reason_Code err = _Unwind_RaiseException(&ex->unwindHeader);
@@ -89,7 +234,7 @@ index d638d9772..bbba88140 100644
  	if (_URC_END_OF_STACK == err && 0 != _objc_unexpected_exception)
  	{
  		_objc_unexpected_exception(object);
-@@ -546,7 +557,7 @@ static inline _Unwind_Reason_Code internal_objc_personality(int version,
+@@ -546,7 +562,7 @@ static inline _Unwind_Reason_Code internal_objc_personality(int version,
  		object = ex->object;
  		if (!isNew)
  		{
@@ -98,7 +243,7 @@ index d638d9772..bbba88140 100644
  		}
  	}
  
-@@ -584,7 +595,7 @@ BEGIN_PERSONALITY_FUNCTION(__gnustep_objcxx_personality_v0)
+@@ -584,7 +600,7 @@ BEGIN_PERSONALITY_FUNCTION(__gnustep_objcxx_personality_v0)
  		struct objc_exception *ex = objc_exception_from_header(exceptionObject);
  		if (0 == ex->cxx_exception)
  		{
@@ -107,7 +252,7 @@ index d638d9772..bbba88140 100644
  		}
  		// We now have two copies of the _Unwind_Exception object (which stores
  		// state for the unwinder) in flight.  Make sure that they're in sync.
-@@ -648,7 +659,14 @@ OBJC_PUBLIC id objc_begin_catch(struct _Unwind_Exception *exceptionObject)
+@@ -648,7 +664,14 @@ OBJC_PUBLIC id objc_begin_catch(struct _Unwind_Exception *exceptionObject)
  	{
  		DEBUG_LOG("c++ catch\n");
  		td->current_exception_type = CXX;
@@ -123,7 +268,7 @@ index d638d9772..bbba88140 100644
  	}
  #endif
  	DEBUG_LOG("foreign exception catch\n");
-@@ -717,7 +735,7 @@ OBJC_PUBLIC void objc_end_catch(void)
+@@ -717,7 +740,7 @@ OBJC_PUBLIC void objc_end_catch(void)
  	if (ex->catch_count == 0)
  	{
  		td->caughtExceptions = ex->next;
@@ -132,7 +277,7 @@ index d638d9772..bbba88140 100644
  	}
  }
  
-@@ -735,10 +753,11 @@ OBJC_PUBLIC void objc_exception_rethrow(struct _Unwind_Exception *e)
+@@ -735,10 +758,11 @@ OBJC_PUBLIC void objc_exception_rethrow(struct _Unwind_Exception *e)
  		// rethrown exception in objc_end_catch
  		ex->catch_count = -ex->catch_count;
  		_Unwind_Reason_Code err = _Unwind_Resume_or_Rethrow(e);
@@ -211,11 +356,52 @@ index f263f37ba..29cb171eb 100644
  	return (id)(addr + 1);
  }
  
+diff --git a/loader.c b/loader.c
+index 449d7a7ce..18d026dc6 100644
+--- a/loader.c
++++ b/loader.c
+@@ -56,6 +56,7 @@ static void init_runtime(void)
+ 		init_dispatch_tables();
+ 		init_protocol_table();
+ 		init_class_tables();
++		init_dispatch_selectors();
+ 		init_alias_table();
+ 		init_early_blocks();
+ 		init_arc();
+diff --git a/loader.h b/loader.h
+index 541c31eee..adf23f784 100644
+--- a/loader.h
++++ b/loader.h
+@@ -89,6 +89,7 @@ void init_class_tables(void);
+  * Initialise the dispatch table machinery.
+  */
+ void init_dispatch_tables(void);
++void init_dispatch_selectors(void);
+ 
+ /**
+  * Initialise the protocol tables.
 diff --git a/objcxx_eh.cc b/objcxx_eh.cc
-index 8ef5baf33..67576d48e 100644
+index 8ef5baf33..a1f588e86 100644
 --- a/objcxx_eh.cc
 +++ b/objcxx_eh.cc
-@@ -48,6 +48,12 @@ std::atomic<ptrdiff_t> type_info_offset;
+@@ -17,6 +17,16 @@ uint64_t cxx_exception_class;
+ 
+ using namespace __cxxabiv1;
+ 
++// The Linux profile uses GNU libstdc++'s refcounted primary-exception ABI.
++// Initialize its destructor and in-flight reference exactly as __cxa_throw
++// does, so exception_ptr capture and dependent rethrow retain the native owner.
++namespace __cxxabiv1
++{
++	struct __cxa_refcounted_exception;
++	extern "C" __cxa_refcounted_exception *__cxa_init_primary_exception(
++		void *, std::type_info *, void (*)(void *)) noexcept;
++}
++
+ namespace
+ {
+ /**
+@@ -48,20 +58,21 @@ std::atomic<ptrdiff_t> type_info_offset;
   */
  std::atomic<size_t> exception_struct_size;
  
@@ -228,16 +414,24 @@ index 8ef5baf33..67576d48e 100644
  
  /**
   * Exception cleanup function for C++ exceptions that wrap Objective-C
-@@ -61,6 +67,8 @@ void exception_cleanup(_Unwind_Reason_Code reason,
- 	// exception structure + padding to the pointer to the generic exception
- 	// structure field of the enclosing structure.
- 	auto *cxxEx = pointer_add<__cxa_exception>(ex, exception_struct_size);
-+	auto *payload = reinterpret_cast<ObjCExceptionPayload*>(cxxEx);
+  * exceptions.
+  */
+-void exception_cleanup(_Unwind_Reason_Code reason,
+-                       struct _Unwind_Exception *ex)
++void exception_payload_destroy(void *value)
+ {
+-	// __cxa_exception takes a pointer to the end of the __cxa_exception
+-	// structure, and so we find that by adding the size of the generic
+-	// exception structure + padding to the pointer to the generic exception
+-	// structure field of the enclosing structure.
+-	auto *cxxEx = pointer_add<__cxa_exception>(ex, exception_struct_size);
+-	__cxa_free_exception(cxxEx);
++	auto *payload = static_cast<ObjCExceptionPayload*>(value);
 +	objc_delete_exception(payload->original);
- 	__cxa_free_exception(cxxEx);
  }
  
-@@ -215,10 +223,13 @@ extern "C"
+ }
+@@ -215,18 +226,32 @@ extern "C"
   */
  OBJC_PUBLIC gnustep::libobjc::__objc_id_type_info __objc_id_type_info;
  
@@ -251,10 +445,17 @@ index 8ef5baf33..67576d48e 100644
 +		__cxa_allocate_exception(sizeof(ObjCExceptionPayload)));
 +	newEx->object = obj;
 +	newEx->original = original;
++	auto *primary = __cxa_init_primary_exception(
++		newEx, &__objc_id_type_info, exception_payload_destroy);
++	// GNU's refcounted header starts with its atomic word. One reference
++	// belongs to the in-flight throw; exception_ptr adds independent owners.
++	__atomic_store_n(reinterpret_cast<int*>(primary), 1, __ATOMIC_RELAXED);
  	_Unwind_Exception *ex = pointer_add<_Unwind_Exception>(newEx, -exception_struct_size);
- 	*pointer_add<std::type_info*>(ex, type_info_offset) = &__objc_id_type_info;
- 	ex->exception_class = cxx_exception_class;
-@@ -227,6 +238,14 @@ struct _Unwind_Exception *objc_init_cxx_exception(id obj)
+-	*pointer_add<std::type_info*>(ex, type_info_offset) = &__objc_id_type_info;
+-	ex->exception_class = cxx_exception_class;
+-	ex->exception_cleanup = exception_cleanup;
++	assert(ex->exception_class == cxx_exception_class);
+ 	__cxa_get_globals()->uncaughtExceptions++;
  	return ex;
  }
  
@@ -373,3 +574,64 @@ index be03c3f70..8f52a9c73 100644
  	return obj;
  }
  
+diff --git a/selector_table.cc b/selector_table.cc
+index 3723ad57f..89e0c99e1 100644
+--- a/selector_table.cc
++++ b/selector_table.cc
+@@ -401,7 +401,6 @@ static inline void register_selector_locked(SEL aSel)
+ 	if (nullptr == aSel->types)
+ 	{
+ 		add_selector_to_table(aSel);
+-		objc_resize_dtables(selector_list->size());
+ 		return;
+ 	}
+ 	SEL untyped = selector_lookup(aSel->name, 0);
+@@ -426,16 +425,15 @@ static inline void register_selector_locked(SEL aSel)
+ 		(*selector_list)[aSel->index].add_types(aSel->types);
+ 		TDD((*selector_list)[untyped->index].add_types(aSel->types));
+ 	}
+-	objc_resize_dtables(selector_list->size());
+ }
+ /**
+  * Registers a selector.  This assumes that the argument is never deallocated.
+  */
+ extern "C" PRIVATE SEL objc_register_selector(SEL aSel)
+ {
+-	if (isSelRegistered(aSel))
+ 	{
+-		return aSel;
++		LockGuard g{selector_table_lock};
++		if (isSelRegistered(aSel)) { return aSel; }
+ 	}
+ 	UnregisteredSelector unregistered{aSel->name, aSel->types};
+ 	// Check that this isn't already registered, before we try
+@@ -447,7 +445,20 @@ extern "C" PRIVATE SEL objc_register_selector(SEL aSel)
+ 		return registered;
+ 	}
+ 	assert(!(aSel->types && (strstr(aSel->types, "@\"") != nullptr)));
++	// Only mutation needs the runtime lock. Registered-selector reads must
++	// remain valid while initialize_lock is held after releasing runtime_mutex.
++	LOCK_RUNTIME_FOR_SCOPE();
++	// The runtime lock serializes writers. Grow before taking the selector
++	// lock, so growth never waits on initialize_lock while blocking readers
++	// that already hold initialize_lock. A typed selector can add two slots.
++	objc_resize_dtables(selector_list->size() + 2);
+ 	LockGuard g{selector_table_lock};
++	registered = selector_lookup(aSel->name, aSel->types);
++	if (nullptr != registered && eq(unregistered, registered))
++	{
++		aSel->name = registered->name;
++		return registered;
++	}
+ 	register_selector_locked(aSel);
+ 	return aSel;
+ }
+@@ -463,6 +474,8 @@ SEL objc_register_selector_copy(UnregisteredSelector &aSel, BOOL copyArgs)
+ 	{
+ 		return copy;
+ 	}
++	LOCK_RUNTIME_FOR_SCOPE();
++	objc_resize_dtables(selector_list->size() + 2);
+ 	LockGuard g{selector_table_lock};
+ 	copy = selector_lookup(aSel.name, aSel.types);
+ 	if (nullptr != copy && selector_identical(aSel, copy))

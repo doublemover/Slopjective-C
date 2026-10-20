@@ -57,6 +57,7 @@ def qualify_installed(repo: Path, prefix: Path, output: Path) -> dict:
              '-DCMAKE_EXE_LINKER_FLAGS=-fuse-ld=lld'])
         run('embedding-build', ['cmake', '--build', client / 'build', '--parallel', '2'])
         run('embedding-run', [client / 'build/embedding', prefix])
+        run('embedding-dwarf', [prefix / 'bin/llvm-dwarfdump', '--verify', client / 'build/embedding'])
         run('dwarf', [prefix / 'bin/llvm-dwarfdump', '--verify', client / 'application-O0'])
         run('carrier-transfer-dwarf', [prefix / 'bin/llvm-dwarfdump', '--verify', client / 'carrier-transfer-O0'])
         for language in ('objective-c', 'objective-c++'):
