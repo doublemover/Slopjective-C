@@ -75,6 +75,7 @@ python3 -B "$OBJC3C_SDK_ROOT/share/objc3c/source-build/qualify_ownership_project
 python3 -B "$OBJC3C_SDK_ROOT/share/objc3c/source-build/qualify_public_surfaces.py" --output-dir ./public-surface-evidence
 python3 -B "$OBJC3C_SDK_ROOT/share/objc3c/source-build/qualify_api_availability.py" --output-dir ./api-availability-evidence
 python3 -B "$OBJC3C_SDK_ROOT/share/objc3c/source-build/qualify_module_spi.py" --output-dir ./module-spi-evidence
+python3 -B "$OBJC3C_SDK_ROOT/share/objc3c/source-build/qualify_structured_runtime.py" --output-dir ./structured-runtime-evidence
 python3 -B "$OBJC3C_SDK_ROOT/share/objc3c/examples/native/qualify-carrier-calls.py" \
   --sdk-root "$OBJC3C_SDK_ROOT" --output-dir ./carrier-call-evidence
 python3 -B "$OBJC3C_SDK_ROOT/share/objc3c/examples/native/qualify-runtime-carrier-calls.py" \

@@ -14,6 +14,8 @@ extern "C" {
 typedef struct objc3_task objc3_task_t;
 typedef struct objc3_executor objc3_executor_t;
 typedef struct objc3_error objc3_error_t;
+typedef struct objc3_task_group objc3_task_group_t;
+typedef struct objc3_actor objc3_actor_t;
 
 typedef enum objc3_service_status {
   OBJC3_SERVICE_OK = 0,
@@ -126,6 +128,76 @@ objc3_service_status objc3_executor_enqueue(objc3_executor_t *executor,
 objc3_service_status objc3_executor_pump(objc3_executor_t *executor,
                                          uint32_t limit,
                                          uint32_t *out_executed);
+
+/* A group owns its registered tasks and child groups. The parent association
+ * is optional. Close recursively prevents new registrations; cancel requests
+ * cooperative cancellation without closing. The first failed task cancels its
+ * siblings and propagates through the parent tree before publishing completion.
+ * Close and join before releasing the last caller-owned reference. */
+objc3_service_status objc3_task_group_create(objc3_task_group_t *parent,
+                                            objc3_task_group_t **out_group);
+objc3_task_group_t *objc3_task_group_retain(objc3_task_group_t *group);
+void objc3_task_group_release(objc3_task_group_t *group);
+objc3_service_status objc3_task_group_add(objc3_task_group_t *group,
+                                         objc3_task_t *task);
+objc3_service_status objc3_task_group_close(objc3_task_group_t *group);
+objc3_service_status objc3_task_group_cancel(objc3_task_group_t *group);
+/* next never blocks or pumps. It returns one retained direct child task in
+ * completion order, NOT_READY while none is ready, or CLOSED after a closed
+ * group drains. Nested groups are joined recursively, not flattened here. */
+objc3_service_status objc3_task_group_next(objc3_task_group_t *group,
+                                          objc3_task_t **out_task);
+/* join waits for closed groups, terminal tasks, callbacks and frame cleanup.
+ * A wait that would block a task's current serial/manual executor returns
+ * NOT_READY. The caller can pump a manual executor and retry. */
+objc3_service_status objc3_task_group_join(objc3_task_group_t *group);
+
+#define OBJC3_ACTOR_SERVICE_VERSION 1u
+typedef void (*objc3_actor_job)(void *context);
+typedef void (*objc3_actor_context_destroy)(void *context);
+
+/* These are logical actor/executor identities, independent of physical thread
+ * identity. A different actor on the same executor still requires an actor hop.
+ * Initialize struct_size and version before calling either facts API. */
+typedef struct objc3_actor_hop_facts {
+  uint32_t struct_size;
+  uint32_t version;
+  uint64_t actor_identity;
+  uint64_t current_actor_identity;
+  uint64_t target_executor_identity;
+  uint64_t current_executor_identity;
+  uint32_t actor_hop;
+  uint32_t executor_hop;
+} objc3_actor_hop_facts;
+
+typedef struct objc3_current_actor_facts {
+  uint32_t struct_size;
+  uint32_t version;
+  uint64_t actor_identity;
+  uint64_t executor_identity;
+} objc3_current_actor_facts;
+
+objc3_service_status objc3_actor_create(objc3_executor_t *executor,
+                                       objc3_actor_t **out_actor);
+objc3_actor_t *objc3_actor_retain(objc3_actor_t *actor);
+void objc3_actor_release(objc3_actor_t *actor);
+uint64_t objc3_actor_identity(const objc3_actor_t *actor);
+uint64_t objc3_actor_executor_identity(const objc3_actor_t *actor);
+/* On success ownership of context transfers to the actor. destroy runs once
+ * after job returns, or after cancellation discards the queued job. On failure
+ * the caller keeps ownership and out_facts is unchanged. Jobs are serialized;
+ * enqueue records the hop and always queues, including same-actor reentry. */
+objc3_service_status objc3_actor_enqueue(objc3_actor_t *actor,
+                                        objc3_actor_job job, void *context,
+                                        objc3_actor_context_destroy destroy,
+                                        objc3_actor_hop_facts *out_facts);
+objc3_service_status objc3_actor_close(objc3_actor_t *actor);
+objc3_service_status objc3_actor_cancel(objc3_actor_t *actor);
+/* join includes context cleanup. Active jobs finish cooperatively. Manual or
+ * current-executor pending waits return NOT_READY; a callback cannot join its
+ * own actor. Last caller release cancels unexecuted mailbox jobs. */
+objc3_service_status objc3_actor_join(objc3_actor_t *actor);
+objc3_service_status objc3_actor_current_facts(objc3_current_actor_facts *out_facts);
 
 #ifdef __cplusplus
 }
