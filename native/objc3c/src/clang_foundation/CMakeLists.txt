@@ -72,6 +72,7 @@ add_library(objc3_runtime_services STATIC
   ../runtime/concurrency/service_task.cpp
   ../runtime/concurrency/service_group.cpp
   ../runtime/concurrency/service_actor.cpp
+  ../runtime/concurrency/service_public.cpp
   ../runtime/stdlib/text_service.cpp
   ../runtime/stdlib/collections_service.cpp
   ../runtime/stdlib/generic_collection_service.cpp
@@ -200,6 +201,11 @@ if (BUILD_TESTING)
   target_link_libraries(objc3_task_services_test PRIVATE objc3_runtime_services)
   add_test(NAME objc3_task_services COMMAND objc3_task_services_test)
   set_tests_properties(objc3_task_services PROPERTIES TIMEOUT 30)
+  add_executable(objc3_structured_runtime_test
+    ../../../../tests/clang_foundation/structured_runtime/worker.cpp)
+  target_link_libraries(objc3_structured_runtime_test PRIVATE objc3_runtime_services)
+  add_test(NAME objc3_structured_runtime COMMAND objc3_structured_runtime_test)
+  set_tests_properties(objc3_structured_runtime PROPERTIES TIMEOUT 30)
   add_executable(objc3_generic_collection_service_test
     ../../tests/generic_collection_service_test.cpp)
   target_link_libraries(objc3_generic_collection_service_test PRIVATE objc3_runtime_services)
@@ -223,7 +229,7 @@ if (BUILD_TESTING)
       objc3_ownership_projection_test objc3_interface_module_names_test objc3_interface_spi_test objc3_interface_availability_test objc3_interface_exports_test objc3_interface_emitter_test objc3_interface_artifact_io_test objc3_interface_import_test
       objc3_interface_import_api_test
       objc3_interface_module_resolution_test objc3_interface_module_provenance_test
-      objc3_interface_source_import_bridge_test objc3_task_services_test
+      objc3_interface_source_import_bridge_test objc3_task_services_test objc3_structured_runtime_test
       objc3_generic_collection_service_test objc3_generic_associative_service_test
       objc3_text_scalar_boundary_test)
     if (MSVC)

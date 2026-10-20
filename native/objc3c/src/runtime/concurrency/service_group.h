@@ -17,6 +17,8 @@ objc3_service_status task_group_close(TaskGroup *group);
 objc3_service_status task_group_cancel(TaskGroup *group);
 objc3_service_status task_group_next_completed(TaskGroup *group,
                                               objc3_task_t **out_task);
+objc3_service_status task_group_try_next_completed(TaskGroup *group,
+                                                  objc3_task_t **out_task);
 objc3_service_status task_group_join(TaskGroup *group);
 
 #if defined(OBJC3_RUNTIME_SERVICE_TESTING)

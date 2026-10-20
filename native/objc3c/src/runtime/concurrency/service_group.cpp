@@ -148,6 +148,27 @@ bool all_tasks_complete_locked(const TaskGroup *group) {
                      [](const auto &entry) { return entry.completed; });
 }
 
+objc3_service_status take_completed_locked(TaskGroup *group,
+                                             objc3_task_t **out_task,
+                                             bool *available = nullptr) {
+  if (available) *available = false;
+  TaskGroup::TaskEntry *next = nullptr;
+  for (auto &entry : group->tasks)
+    if (entry.completed && !entry.consumed &&
+        (!next || entry.completion_order < next->completion_order))
+      next = &entry;
+  if (next) {
+    if (available) *available = true;
+    *out_task = objc3_task_retain(next->task);
+    if (!*out_task) return OBJC3_SERVICE_NOT_READY;
+    next->consumed = true;
+    return OBJC3_SERVICE_OK;
+  }
+  if (group->failure_propagation_failed) return OBJC3_SERVICE_NOT_READY;
+  return group->closed && all_tasks_complete_locked(group)
+             ? OBJC3_SERVICE_CLOSED : OBJC3_SERVICE_NOT_READY;
+}
+
 void task_completed(void *opaque, const objc3_completion *completion) {
   auto *observer = static_cast<ObserverContext *>(opaque);
   TaskGroup *group = observer->group;
@@ -423,20 +444,10 @@ objc3_service_status task_group_next_completed(TaskGroup *group,
   }
   std::unique_lock<std::mutex> lock(group->mutex);
   for (;;) {
-    TaskGroup::TaskEntry *next = nullptr;
-    for (auto &entry : group->tasks)
-      if (entry.completed && !entry.consumed &&
-          (!next || entry.completion_order < next->completion_order))
-        next = &entry;
-    if (next) {
-      *out_task = objc3_task_retain(next->task);
-      if (!*out_task) return OBJC3_SERVICE_NOT_READY;
-      next->consumed = true;
-      return OBJC3_SERVICE_OK;
-    }
-    if (group->failure_propagation_failed) return OBJC3_SERVICE_NOT_READY;
-    if (group->closed && all_tasks_complete_locked(group))
-      return OBJC3_SERVICE_CLOSED;
+    bool available = false;
+    const auto result = take_completed_locked(group, out_task, &available);
+    if (result != OBJC3_SERVICE_NOT_READY || available || group->failure_propagation_failed)
+      return result;
     group->changed.wait(lock, [group] {
       if (group->failure_propagation_failed) return true;
       if (group->closed && all_tasks_complete_locked(group)) return true;
@@ -446,6 +457,15 @@ objc3_service_status task_group_next_completed(TaskGroup *group,
                          });
     });
   }
+}
+
+objc3_service_status task_group_try_next_completed(TaskGroup *group,
+                                                   objc3_task_t **out_task) {
+  if (!out_task) return OBJC3_SERVICE_INVALID_ARGUMENT;
+  *out_task = nullptr;
+  if (!group) return OBJC3_SERVICE_INVALID_ARGUMENT;
+  std::lock_guard<std::mutex> lock(group->mutex);
+  return take_completed_locked(group, out_task);
 }
 
 objc3_service_status task_group_join(TaskGroup *group) {
