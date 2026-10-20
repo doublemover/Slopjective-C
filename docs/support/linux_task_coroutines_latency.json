@@ -1,0 +1,69 @@
+{
+  "schema": "objc3.development-latency.v1",
+  "recorded_utc": "2026-10-20T15:00:31.995559+00:00",
+  "repetitions": 5,
+  "python": "3.15.0",
+  "script_sha256": "2bc3018fabf20b8088197b4ed30b90d74a4b7001c07b5cb8e765b3a885ab904e",
+  "scope": "Warm installed command latency; runtime excludes compilation/linking and SDK admission.",
+  "cpu_quota": "400000 100000",
+  "cpu_model": "AMD EPYC 7763 64-Core Processor",
+  "peak_child_rss_kib": 89992,
+  "memory_scope": "Maximum individual descendant RSS for benchmark commands; not aggregate tree memory.",
+  "results": [
+    {
+      "sdk": "/workspace/Slopjective-C/out/toolchains/linux-sdk/sdks/4610220c88632b2fe3bb4d7d8312af70c747f0ab30a28c1434b2cbc17c5bee62",
+      "seal_sha256": "4610220c88632b2fe3bb4d7d8312af70c747f0ab30a28c1434b2cbc17c5bee62",
+      "samples_seconds": {
+        "python_startup": [
+          0.017096903990022838, 0.012740817008307204, 0.012859738984843716, 0.011924071004614234,
+          0.013109389023156837
+        ],
+        "compiler_version": [
+          0.15833453499362804, 0.15760049497475848, 0.16165155998896807, 0.1580507610051427,
+          0.15698350698221475
+        ],
+        "direct_syntax": [
+          0.008836968016112223, 0.008017108018975705, 0.007842889986932278, 0.008002160000614822,
+          0.008520953997503966
+        ],
+        "public_syntax": [
+          0.15940915499231778, 0.16352273701340891, 0.16568816598737612, 0.16307412297464907,
+          0.16359895499772392
+        ],
+        "public_compile_and_link": [
+          0.17571206597494893, 0.17882518700207584, 0.17856992699671537, 0.17959700798382983,
+          0.18007823097286746
+        ],
+        "program_runtime": [
+          0.0022653280175291, 0.0025188839936163276, 0.0022678230016026646, 0.002451567997923121,
+          0.0026822619838640094
+        ]
+      },
+      "median_seconds": {
+        "python_startup": 0.012859738984843716,
+        "compiler_version": 0.1580507610051427,
+        "direct_syntax": 0.008017108018975705,
+        "public_syntax": 0.16352273701340891,
+        "public_compile_and_link": 0.17882518700207584,
+        "program_runtime": 0.002451567997923121
+      },
+      "source_build_id": "llvmorg-23.1.3-0d261d1ca552-2835000899bf-fd761312"
+    }
+  ],
+  "budget_check": {
+    "status": "PASS",
+    "failures": [],
+    "authority": "/workspace/Slopjective-C/docs/support/linux_public_core_latency.json",
+    "authority_sha256": "6689ea21d84546257aefcc608e779520b295adb3fda0700ed6f744d97ae9fac8"
+  },
+  "implementation_commit": "c9733e7e8d824eb0dc7a894d1a1fa65b7bf8505c",
+  "budgets": {
+    "context": "Same CPU model and cgroup quota, warm median of at least three runs; 50% headroom plus 10 ms over this five-run AMD baseline.",
+    "median_seconds": {
+      "compiler_version": 0.246709,
+      "direct_syntax": 0.023991,
+      "public_syntax": 0.250837,
+      "public_compile_and_link": 0.272751
+    }
+  }
+}
