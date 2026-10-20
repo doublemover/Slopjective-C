@@ -77,6 +77,48 @@ def test_editor_qualification_changes_invalidate_release_reuse(tmp_path, monkeyp
     assert linux_sdk.input_identity(repo, prefix)['sha256'] != before
 
 
+def identity_project(tmp_path, monkeypatch, configure):
+    from scripts.objc3c_toolchain import linux_sdk
+    from scripts.objc3c_native_validation import plan
+    repo = tmp_path / 'project'
+    for name in ('scripts/install_objc3c_linux.sh',
+                 'out/toolchains/objc3-development/build-linux-x86_64/bin/llvm-tblgen'):
+        path = repo / name
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text('qualified input')
+    monkeypatch.setattr(linux_sdk, 'build_plans', lambda *a, **kw: {'configure': configure})
+    monkeypatch.setattr(linux_sdk, 'facade_identity', lambda *a: {'sha256': 'frontend'})
+    monkeypatch.setattr(plan, 'build_plan', lambda *a, **kw: {'selected_nodes': []})
+    return repo, sdk(tmp_path / 'sdk')
+
+
+def test_reclaiming_foundation_outputs_preserves_release_reuse(tmp_path, monkeypatch):
+    from scripts.objc3c_toolchain import linux_sdk
+    configure = {'identity': 'with-stage', 'command': ['cmake', '-DASSERTIONS=ON'],
+                 'source_tree': 'source', 'build_config_digest': 'config',
+                 'sdk_consumers': {'resource_dir': {'path': '/stage/resources', 'sha256': 'headers'}}}
+    repo, prefix = identity_project(tmp_path, monkeypatch, configure)
+    before = linux_sdk.input_identity(repo, prefix)['sha256']
+    configure['identity'] = 'without-stage'
+    configure['sdk_consumers']['resource_dir']['sha256'] = None
+    assert linux_sdk.input_identity(repo, prefix)['sha256'] == before
+    # A mutable build-tree inventory is also an output, not a release input.
+    configure['sdk_consumers']['build_tree_resource_dir'] = {'path': '/build/resources', 'sha256': 'new-output'}
+    assert linux_sdk.input_identity(repo, prefix)['sha256'] == before
+
+
+@pytest.mark.parametrize('field', ['command', 'source_tree', 'build_config_digest', 'host_environment'])
+def test_foundation_configuration_changes_invalidate_release_reuse(tmp_path, monkeypatch, field):
+    from scripts.objc3c_toolchain import linux_sdk
+    configure = {'identity': 'plan', 'command': ['cmake', '-DASSERTIONS=ON'],
+                 'source_tree': 'source', 'build_config_digest': 'config',
+                 'host_environment': {'clang_sha256': 'bootstrap'}}
+    repo, prefix = identity_project(tmp_path, monkeypatch, configure)
+    before = linux_sdk.input_identity(repo, prefix)['sha256']
+    configure[field] = {'changed': configure[field]}
+    assert linux_sdk.input_identity(repo, prefix)['sha256'] != before
+
+
 def test_packaging_input_edit_prevents_installation(tmp_path, monkeypatch):
     """Edits during the installed source suite must not publish stale evidence."""
     from scripts.objc3c_toolchain import linux_sdk

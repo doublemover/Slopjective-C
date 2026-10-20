@@ -67,7 +67,14 @@ def input_identity(repo: Path, sdk: Path) -> dict:
     files.add(repo / 'out/toolchains/objc3-development/build-linux-x86_64/bin/llvm-tblgen')
     inputs = {path.relative_to(repo).as_posix(): hashlib.sha256(path.read_bytes()).hexdigest()
               for path in sorted(files)}
-    payload = {'foundation_contents': foundation_identity(sdk), 'foundation_plan': build_plans(repo, host='linux-x86_64')['configure']['identity'],
+    configure = build_plans(repo, host='linux-x86_64')['configure']
+    # The build plan reports mutable output inventories for consumers. Release
+    # reuse binds the actual foundation contents separately; reclaiming its
+    # duplicate stage must not change the source/configuration identity.
+    foundation_inputs = {key: value for key, value in configure.items()
+                         if key not in ('identity', 'sdk_consumers')}
+    foundation_plan = hashlib.sha256(json.dumps(foundation_inputs, sort_keys=True).encode()).hexdigest()
+    payload = {'foundation_contents': foundation_identity(sdk), 'foundation_plan': foundation_plan,
                'frontend': facade_identity(repo)['sha256'], 'inputs': inputs}
     return {'sha256': hashlib.sha256(json.dumps(payload, sort_keys=True).encode()).hexdigest(), **payload}
 
