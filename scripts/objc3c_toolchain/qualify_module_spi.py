@@ -92,12 +92,12 @@ def qualify_case(sdk: Path, output: Path, language: str, standard: str,
         original_object = packages.digest(consumer / 'application.o')
         rejections = []
 
-        def failure(name: str, content: str = publication['content_sha256']):
+        def failure(name: str, content: str = publication['content_sha256'], *, native_code: str | None = None):
             try:
                 packages.consume(sdk, package, content, application, consumer)
             except subprocess.CalledProcessError:
                 log = consumer / 'command-0.log'
-                if 'error:' not in log.read_text():
+                if (native_code or 'error:') not in log.read_text():
                     raise ValueError('SPI rejection lacks a native compiler diagnostic: ' + name)
                 if (consumer / 'consumer-report.json').exists() or packages.digest(consumer / 'application.o') != original_object:
                     raise ValueError('SPI rejection retained success or replaced the previous object')
@@ -134,7 +134,7 @@ def qualify_case(sdk: Path, output: Path, language: str, standard: str,
         missing = json.loads(json.dumps(granted_config))
         next(edge for edge in missing['dependencies'] if edge['name'] == 'fixture.SPILeaf')['spi'] = ['Missing']
         packages.write_json(application, missing)
-        failure('unknown-provider-group')
+        failure('unknown-provider-group', native_code='O3IFC159')
         packages.write_json(application, config)
         failure('revoked-grant')
         packages.write_json(application, granted_config)
@@ -162,7 +162,7 @@ def qualify_case(sdk: Path, output: Path, language: str, standard: str,
                 row = next(row for row in manifest['packages'] if row['module']['canonical_name'] == 'fixture.SPILeaf')
                 for path in (module, sidecar): row['artifacts'][path.relative_to(package).as_posix()] = packages.digest(path)
                 packages.write_json(manifest_path, manifest)
-                failure(damage, packages.content_hash(manifest))
+                failure(damage, packages.content_hash(manifest), native_code='O3IFC')
                 if 'O3IFC' not in (consumer / 'command-0.log').read_text():
                     raise ValueError('SPI damage was not rejected by native semantic validation')
                 rejections[-1]['native_interface_rejection'] = True
