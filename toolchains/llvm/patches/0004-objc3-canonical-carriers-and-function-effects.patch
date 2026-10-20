@@ -6554,10 +6554,10 @@ index 000000000..132028f71
 +} // namespace clang
 diff --git a/clang/lib/Sema/SemaObjC3Effects.cpp b/clang/lib/Sema/SemaObjC3Effects.cpp
 new file mode 100644
-index 000000000..51915772f
+index 000000000..dc41140d1
 --- /dev/null
 +++ b/clang/lib/Sema/SemaObjC3Effects.cpp
-@@ -0,0 +1,86 @@
+@@ -0,0 +1,88 @@
 +//===--- SemaObjC3Effects.cpp - ObjC3 callable effects -------------------===//
 +//
 +// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
@@ -6610,7 +6610,9 @@ index 000000000..51915772f
 +      Function->getObjC3FunctionEffects().Throws != ObjC3ThrowsKind::None ||
 +      Function->getReturnType()->isReferenceType() ||
 +      Function->getReturnType().isVolatileQualified() ||
-+      Function->getReturnType()->isObjCRetainableType() ||
++      (Function->getReturnType()->isObjCRetainableType() &&
++       !Function->getReturnType()->isObjCObjectPointerType() &&
++       !Function->getReturnType()->isBlockPointerType()) ||
 +      Function->getReturnType()->isUndeducedType())
 +    return Unsupported();
 +  QualType Result = Function->getReturnType();
@@ -14412,7 +14414,7 @@ index 76c51b8d9..df916197c 100644
      if (includeCategoryNamespace) {
        if (auto category = MD->getCategory())
 diff --git a/clang/lib/Sema/SemaCoroutine.cpp b/clang/lib/Sema/SemaCoroutine.cpp
-index 4b99e4454..22bd27c39 100644
+index 4b99e4454..7f0223bff 100644
 --- a/clang/lib/Sema/SemaCoroutine.cpp
 +++ b/clang/lib/Sema/SemaCoroutine.cpp
 @@ -14,6 +14,7 @@
@@ -14461,7 +14463,7 @@ index 4b99e4454..22bd27c39 100644
    // Ignore previous expr evaluation contexts.
    EnterExpressionEvaluationContextForFunction PotentiallyEvaluated(
        *this, Sema::ExpressionEvaluationContext::PotentiallyEvaluated,
-@@ -1054,6 +1070,42 @@ StmtResult Sema::BuildCoreturnStmt(SourceLocation Loc, Expr *E,
+@@ -1054,6 +1070,51 @@ StmtResult Sema::BuildCoreturnStmt(SourceLocation Loc, Expr *E,
      E = R.get();
    }
  
@@ -14486,8 +14488,17 @@ index 4b99e4454..22bd27c39 100644
 +        }
 +        NamedReturnInfo NRInfo =
 +            getNamedReturnInfo(E, SimplerImplicitMoveMode::ForceOn);
++        // The promise receives this value as an argument, not as a physical
++        // Objective-C function result. InitializeResult would insert an ARC
++        // produce-object cast whose +1 is normally balanced by that function's
++        // autoreleasing epilogue; a task-returning coroutine has no such
++        // epilogue. The runtime promise retains/copies its own result payload.
++        InitializedEntity ResultEntity =
++            LogicalResult->isObjCRetainableType()
++                ? InitializedEntity::InitializeTemporary(LogicalResult)
++                : InitializedEntity::InitializeResult(Loc, LogicalResult);
 +        ExprResult Converted = PerformMoveOrCopyInitialization(
-+            InitializedEntity::InitializeResult(Loc, LogicalResult), NRInfo, E);
++            ResultEntity, NRInfo, E);
 +        if (Converted.isInvalid())
 +          return StmtError();
 +        E = Converted.get();
@@ -14504,7 +14515,7 @@ index 4b99e4454..22bd27c39 100644
    VarDecl *Promise = FSI->CoroutinePromise;
    ExprResult PC;
    if (E && (isa<InitListExpr>(E) || !E->getType()->isVoidType())) {
-@@ -1868,7 +1920,10 @@ bool CoroutineStmtBuilder::makeGroDeclAndReturnStmt() {
+@@ -1868,7 +1929,10 @@ bool CoroutineStmtBuilder::makeGroDeclAndReturnStmt() {
    assert(!GroType->isDependentType() &&
           "get_return_object type must no longer be dependent");
  
@@ -14542,21 +14553,26 @@ index e84e79aee..777bdabd4 100644
    /// Creates a TypeSourceInfo for the given type.
 diff --git a/clang/test/ObjC3/AST/native-async-pch.mm b/clang/test/ObjC3/AST/native-async-pch.mm
 new file mode 100644
-index 000000000..de14daf05
+index 000000000..d2f7e566c
 --- /dev/null
 +++ b/clang/test/ObjC3/AST/native-async-pch.mm
-@@ -0,0 +1,12 @@
+@@ -0,0 +1,17 @@
 +// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -emit-pch -o %t %s
 +// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -DBUILD_CONSUMER -include-pch %t -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
 +#ifndef BUILD_CONSUMER
 +#include "../CodeGen/Inputs/native-async-task.h"
 +inline int persistent(int value) __objc3_async { return value; }
++inline id persistent_object(id value) __objc3_async { return value; }
 +#else
 +static_assert(__is_same(decltype(persistent(3)), objc3::task<int>));
 +// CHECK: define{{.*}} void @_Z8consumerv(
 +// CHECK: llvm.coro.id
 +// CHECK: {{call|invoke}} void @_Z10persistenti(
 +int consumer() __objc3_async { return __objc3_await persistent(3); }
++static_assert(__is_same(decltype(persistent_object((id)0)), objc3::task<id>));
++id object_consumer(id value) __objc3_async {
++  return __objc3_await persistent_object(value);
++}
 +#endif
 diff --git a/clang/test/ObjC3/Parser/native-async-return.mm b/clang/test/ObjC3/Parser/native-async-return.mm
 new file mode 100644
@@ -14597,3 +14613,65 @@ index 000000000..7867b4318
 +  __objc3_await 1; // expected-error {{native await requires an async Objective-C++20/23 function context}}
 +  return 0;
 +}
+diff --git a/clang/include/clang/Basic/TokenKinds.def b/clang/include/clang/Basic/TokenKinds.def
+index f07d8ebb7..c38ea9742 100644
+--- a/clang/include/clang/Basic/TokenKinds.def
++++ b/clang/include/clang/Basic/TokenKinds.def
+@@ -603,6 +603,8 @@ TYPE_TRAIT_1(__is_object, IsObject, KEYCXX)
+ TYPE_TRAIT_1(__is_scalar, IsScalar, KEYCXX)
+ TYPE_TRAIT_1(__is_compound, IsCompound, KEYCXX)
+ TYPE_TRAIT_1(__is_pointer, IsPointer, KEYCXX)
++TYPE_TRAIT_1(__objc3_is_object_pointer, ObjC3IsObjectPointer, KEYCXX)
++TYPE_TRAIT_1(__objc3_is_block_pointer, ObjC3IsBlockPointer, KEYCXX)
+ TYPE_TRAIT_1(__is_member_object_pointer, IsMemberObjectPointer, KEYCXX)
+ TYPE_TRAIT_1(__is_member_function_pointer, IsMemberFunctionPointer, KEYCXX)
+ TYPE_TRAIT_1(__is_member_pointer, IsMemberPointer, KEYCXX)
+diff --git a/clang/lib/Sema/SemaTypeTraits.cpp b/clang/lib/Sema/SemaTypeTraits.cpp
+index e3ae6095c..de75a85e7 100644
+--- a/clang/lib/Sema/SemaTypeTraits.cpp
++++ b/clang/lib/Sema/SemaTypeTraits.cpp
+@@ -350,6 +350,8 @@ static bool CheckUnaryTypeTraitTypeCompleteness(Sema &S, TypeTrait UTT,
+   case UTT_IsArray:
+   case UTT_IsBoundedArray:
+   case UTT_IsPointer:
++  case UTT_ObjC3IsObjectPointer:
++  case UTT_ObjC3IsBlockPointer:
+   case UTT_IsLvalueReference:
+   case UTT_IsRvalueReference:
+   case UTT_IsMemberFunctionPointer:
+@@ -669,6 +671,10 @@ static bool EvaluateUnaryTypeTrait(Sema &Self, TypeTrait UTT,
+     return T->isIncompleteArrayType();
+   case UTT_IsPointer:
+     return T->isAnyPointerType();
++  case UTT_ObjC3IsObjectPointer:
++    return T->isObjCObjectPointerType();
++  case UTT_ObjC3IsBlockPointer:
++    return T->isBlockPointerType();
+   case UTT_IsLvalueReference:
+     return T->isLValueReferenceType();
+   case UTT_IsRvalueReference:
+diff --git a/clang/test/ObjC3/AST/task-result-type-traits.mm b/clang/test/ObjC3/AST/task-result-type-traits.mm
+new file mode 100644
+index 000000000..362fc86d1
+--- /dev/null
++++ b/clang/test/ObjC3/AST/task-result-type-traits.mm
+@@ -0,0 +1,19 @@
++// RUN: %clang_cc1 -std=c++20 -fblocks -fobjc-runtime=gnustep-2.2 -fobjc-arc -fsyntax-only -verify %s
++// RUN: %clang_cc1 -std=c++23 -fblocks -fobjc-runtime=gnustep-2.2 -fsyntax-only -verify %s
++// expected-no-diagnostics
++@class Object;
++@protocol Protocol
++@end
++using Block = int (^)(int);
++using VariadicBlock = int (^)(int, ...);
++struct Incomplete;
++struct Convertible { operator id(); };
++template<class T> constexpr bool object = __objc3_is_object_pointer(T);
++template<class T> constexpr bool block = __objc3_is_block_pointer(T);
++static_assert(object<id> && object<Class> && object<Object *>);
++static_assert(object<id<Protocol>> && object<Object *const>);
++static_assert(!object<Block> && !object<void *> && !object<Convertible>);
++static_assert(!object<Incomplete> && !object<decltype(nullptr)>);
++static_assert(block<Block> && block<VariadicBlock> && block<Block const>);
++static_assert(!block<id> && !block<void *> && !block<int (*)(int)>);
++static_assert(!block<Incomplete> && !block<Convertible> && !block<int>);

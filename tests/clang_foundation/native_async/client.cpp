@@ -8,6 +8,109 @@ static void pump(objc3_executor_t *executor, unsigned limit = 100000) {
   assert(objc3_executor_pump(executor, limit, &count) == OBJC3_SERVICE_OK);
 }
 
+#ifdef __OBJC__
+static void owned_results(objc3_executor_t *executor) {
+  static_assert(std::is_same_v<objc3::task_handle<NativeAsyncResult *>,
+                               objc3::task_handle<NativeAsyncResult *__unsafe_unretained>>);
+  static_assert(std::is_same_v<objc3::task<NativeAsyncResult *>,
+                               objc3::task<NativeAsyncResult *__unsafe_unretained>>);
+  static_assert(std::is_same_v<decltype(native_result_object(1)),
+                               objc3::task<NativeAsyncResult *>>);
+  static_assert(std::is_same_v<decltype(native_result_block(1)),
+                               objc3::task<native_result_reader>>);
+  static_assert(std::is_same_v<decltype(native_result_protocol(1)),
+                               objc3::task<id<NativeAsyncResultProtocol>>>);
+  const auto before = native_result_destructions();
+  {
+    auto result = native_result_object(42).start(executor);
+    pump(executor);
+    assert(native_result_destructions() == before);
+    @autoreleasepool {
+      auto copied = result;
+      NativeAsyncResult *value = result.result();
+      result = {};
+      assert(native_result_number(value) == 42);
+      assert(native_result_number(copied.result()) == 42);
+      copied = {};
+      // Extracted +0 results outlive every handle until this pool is drained.
+      assert(native_result_number(value) == 42);
+    }
+    assert(native_result_destructions() == before + 1);
+  }
+  {
+    auto result = native_result_block(40).start(executor);
+    pump(executor);
+    assert(native_result_destructions() == before + 1);
+    @autoreleasepool {
+      native_result_reader value = result.result();
+      result = {};
+      assert(value(2) == 42);
+    }
+    assert(native_result_destructions() == before + 2);
+  }
+  {
+    auto result = native_result_protocol(42).start(executor);
+    auto relay = native_result_relay(nullptr, 73).start(executor);
+    auto nil = native_result_nil().start(executor);
+    auto nil_block = native_result_nil_block().start(executor);
+    auto null_value = native_identity(nullptr).start(executor);
+    auto metaclass = native_result_class().start(executor);
+    pump(executor);
+    @autoreleasepool {
+      id<NativeAsyncResultProtocol> value = result.result();
+      NativeAsyncResult *relayed = relay.result();
+      result = {};
+      relay = {};
+      assert([value number] == 42 && native_result_number(relayed) == 73);
+      assert(nil.result() == (id)0 && nil_block.result() == 0);
+      assert(null_value.result() == nullptr && metaclass.result() != (Class)0);
+    }
+    assert(native_result_destructions() == before + 4);
+  }
+  {
+    auto source = native_result_object(42).start(executor);
+    auto first = native_result_shared(source).start(executor);
+    auto second = native_result_shared(source).start(executor);
+    auto lazy = native_result_lazy(native_result_object(73)).start(executor);
+    pump(executor);
+    source = {};
+    @autoreleasepool {
+      NativeAsyncResult *left = first.result(), *right = second.result();
+      NativeAsyncResult *moved = lazy.result();
+      first = {};
+      second = {};
+      lazy = {};
+      assert(left == right && native_result_number(left) == 42);
+      assert(native_result_number(moved) == 73);
+    }
+    assert(native_result_destructions() == before + 6);
+  }
+  {
+    auto failed = native_result_object(96, true).start(executor);
+    auto cancelled = native_result_object(1).start(executor);
+    auto abandoned = native_result_object(2).start(executor);
+    pump(executor, 3);
+    cancelled.cancel();
+    abandoned = {};
+    pump(executor);
+    bool caught = false;
+    try {
+      (void)failed.result();
+    } catch (int value) {
+      caught = value == 96;
+    }
+    assert(caught);
+    caught = false;
+    try {
+      (void)cancelled.result();
+    } catch (const objc3::task_cancelled &) {
+      caught = true;
+    }
+    assert(caught && native_result_destructions() == before + 9);
+  }
+}
+#endif
+
 int main() {
   objc3_executor_t *executor = nullptr;
   assert(objc3_executor_create(1, &executor) == OBJC3_SERVICE_OK);
@@ -145,6 +248,9 @@ int main() {
     assert(state->entered == state->destroyed);
   }
   assert(state->parents == state->deferred);
+#ifdef __OBJC__
+  owned_results(executor);
+#endif
   objc3_executor_release(executor);
   // Worker execution exercises nested frame creation and publication races.
   assert(objc3_executor_create(0, &executor) == OBJC3_SERVICE_OK);
@@ -172,7 +278,8 @@ int main() {
   std::vector<objc3::task_handle<int>> hopped;
   for (unsigned index = 0; index != 32; ++index) {
     auto value = native_actor_owned(first, second, index % 2).start_on(first);
-    assert(objc3_task_group_add(group, value.native_handle()) == OBJC3_SERVICE_OK);
+    assert(objc3_task_group_add(group, value.native_handle()) ==
+           OBJC3_SERVICE_OK);
     hopped.push_back(std::move(value));
   }
   // A failed task cancels siblings, so each frame must preserve ownership on
@@ -180,12 +287,47 @@ int main() {
   assert(objc3_task_group_close(group) == OBJC3_SERVICE_OK);
   assert(objc3_task_group_join(group) == OBJC3_SERVICE_OK);
   for (const auto &value : hopped) {
-    try { assert(value.result() == 42); }
-    catch (int error) { assert(error == 42); }
-    catch (const objc3::task_cancelled &) {}
+    try {
+      assert(value.result() == 42);
+    } catch (int error) {
+      assert(error == 42);
+    } catch (const objc3::task_cancelled &) {
+    }
   }
   assert(native_object_destructions() == 36);
   hopped.clear();
+  const auto before_results = native_result_destructions();
+  std::vector<objc3::task_handle<NativeAsyncResult *>> objects;
+  std::vector<objc3::task_handle<native_result_reader>> readers;
+  for (int index = 0; index != 64; ++index) {
+    objects.push_back(native_result_relay(second, index).start_on(first));
+    readers.push_back(native_result_block(index).start_on(second));
+  }
+  for (int index = 0; index != 64; ++index) {
+    objects[index].wait();
+    readers[index].wait();
+    @autoreleasepool {
+      NativeAsyncResult *value = objects[index].result();
+      auto reader = readers[index].result();
+      objects[index] = {};
+      readers[index] = {};
+      assert(native_result_number(value) == index && reader(1) == index + 1);
+    }
+  }
+  // Terminal completion can precede the final callback's frame destruction
+  // and autorelease-pool drain. Observe both worker queues before counting.
+  std::atomic<unsigned> drained{0};
+  auto fence = +[](void *context) {
+    auto &count = *static_cast<std::atomic<unsigned> *>(context);
+    count.fetch_add(1, std::memory_order_release);
+    count.notify_all();
+  };
+  assert(objc3_executor_enqueue(executor, fence, &drained) == OBJC3_SERVICE_OK);
+  assert(objc3_executor_enqueue(other, fence, &drained) == OBJC3_SERVICE_OK);
+  for (auto count = drained.load(std::memory_order_acquire); count != 2;
+       count = drained.load(std::memory_order_acquire))
+    drained.wait(count, std::memory_order_acquire);
+  assert(native_result_destructions() == before_results + 128);
   objc3_task_group_release(group);
   assert(objc3_actor_close(first) == OBJC3_SERVICE_OK);
   assert(objc3_actor_close(second) == OBJC3_SERVICE_OK);

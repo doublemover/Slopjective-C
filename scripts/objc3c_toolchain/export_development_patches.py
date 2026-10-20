@@ -62,6 +62,7 @@ PACKETS = {
     "0004-objc3-canonical-carriers-and-function-effects.patch": [
         "clang/CMakeLists.txt",
         "clang/include/clang/Basic/ObjC3Syntax.h",
+        "clang/include/clang/Basic/TokenKinds.def",
         "clang/include/clang/AST/ASTContext.h",
         "clang/include/clang/AST/ASTNodeTraverser.h",
         "clang/include/clang/AST/AbstractBasicReader.h",
@@ -145,6 +146,7 @@ PACKETS = {
         "clang/lib/Sema/SemaDeclObjC.cpp",
         "clang/lib/Sema/SemaExpr.cpp",
         "clang/lib/Sema/SemaExprCXX.cpp",
+        "clang/lib/Sema/SemaTypeTraits.cpp",
         "clang/lib/Sema/SemaOverload.cpp",
         "clang/lib/Sema/SemaTemplate.cpp",
         "clang/lib/Sema/SemaTemplateDeduction.cpp",

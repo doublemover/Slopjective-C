@@ -15858,10 +15858,10 @@ index 000000000..2efab2309
 +auto member_callback(callback fn) { return Caller().call(fn); }
 diff --git a/clang/test/ObjC3/CodeGen/native-async-boundaries.mm b/clang/test/ObjC3/CodeGen/native-async-boundaries.mm
 new file mode 100644
-index 000000000..915e70cb4
+index 000000000..01236208d
 --- /dev/null
 +++ b/clang/test/ObjC3/CodeGen/native-async-boundaries.mm
-@@ -0,0 +1,25 @@
+@@ -0,0 +1,26 @@
 +// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -DTEST_KIND=5 -emit-llvm -o /dev/null -verify %s
 +// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -DTEST_KIND=1 -emit-llvm -o /dev/null -verify %s
 +// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -DTEST_KIND=2 -emit-llvm -o /dev/null -verify %s
@@ -15878,8 +15878,9 @@ index 000000000..915e70cb4
 +struct Receiver { int method() __objc3_async; };
 +int Receiver::method() __objc3_async { return 1; } // expected-error {{ObjC3 async/throws callable ABI lowering}}
 +#elif TEST_KIND == 3
-+id rejected_object() __objc3_async {
-+  return (id)0; // expected-error {{native async task lowering requires}}
++int &rejected_reference() __objc3_async {
++  static int value;
++  return value; // expected-error {{native async task lowering requires}}
 +}
 +#elif TEST_KIND == 5
 +struct Operand {};
@@ -15887,3 +15888,43 @@ index 000000000..915e70cb4
 +#elif TEST_KIND == 4
 +auto use_early() { return early(); }
 +#endif
+diff --git a/clang/test/ObjC3/CodeGen/native-async-owned-results.mm b/clang/test/ObjC3/CodeGen/native-async-owned-results.mm
+new file mode 100644
+index 000000000..40774b374
+--- /dev/null
++++ b/clang/test/ObjC3/CodeGen/native-async-owned-results.mm
+@@ -0,0 +1,34 @@
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -fobjc-arc -fexceptions -fcxx-exceptions -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -std=c++23 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -fexceptions -fcxx-exceptions -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++#include "Inputs/native-async-task.h"
++@class Object;
++@protocol Value
++@end
++using Reader = int (^)(int);
++
++// The physical return remains a native task object. ARC must not apply an
++// Objective-C result convention to that physical return buffer.
++// CHECK-LABEL: define{{.*}} void @_Z6objectP6Object(
++// CHECK: llvm.coro.id
++Object *object(Object *value) __objc3_async { return value; }
++static_assert(__is_same(decltype(object((Object *)0)), objc3::task<Object *>));
++
++// CHECK-LABEL: define{{.*}} void @_Z8protocol{{.*}}(
++// CHECK: llvm.coro.id
++id<Value> protocol(id<Value> value) __objc3_async { return value; }
++
++// CHECK-LABEL: define{{.*}} void @_Z6readerU13block_pointerFiiE(
++// CHECK: llvm.coro.id
++Reader reader(Reader value) __objc3_async { return value; }
++static_assert(__is_same(decltype(reader((Reader)0)), objc3::task<Reader>));
++
++// CHECK-LABEL: define{{.*}} void @_Z5relayP6Object(
++// CHECK: llvm.coro.id
++// CHECK: {{call|invoke}} void @_Z6objectP6Object(
++Object *relay(Object *value) __objc3_async {
++  return __objc3_await object(value);
++}
++
++using ObjectCallback = Object *(*)(Object *) __objc3_async;
++ObjectCallback callback = object;
++auto indirect(ObjectCallback call, Object *value) { return call(value); }

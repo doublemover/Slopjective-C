@@ -56,6 +56,79 @@ inline void check(objc3_service_status status) {
     throw service_failure(status);
 }
 
+template <class T, class = void> struct result_traits {
+  using abi_type = T;
+  using storage = T;
+  static T get(const T &value) { return value; }
+};
+template <> struct result_traits<void> {
+  using abi_type = void;
+};
+
+#ifdef __OBJC__
+// Use opaque runtime calls so ARC and MRC instantiate the same owned payload
+// representation. In particular, an MRC provider must copy a stack Block before
+// its coroutine frame is reclaimed. Keep these declarations independent of the
+// runtime headers' ownership-qualified Objective-C declarations.
+extern "C" void *objc3_task_result_retain(void *) __asm__("objc_retain");
+extern "C" void objc3_task_result_release(void *) __asm__("objc_release");
+extern "C" void *
+objc3_task_result_autorelease(void *) __asm__("objc_autorelease");
+extern "C" void *
+objc3_task_result_block_copy(const void *) __asm__("_Block_copy");
+extern "C" void
+objc3_task_result_block_release(const void *) __asm__("_Block_release");
+
+template <class T>
+inline constexpr bool retained_result =
+    __objc3_is_object_pointer(T) || __objc3_is_block_pointer(T);
+
+template <class T> class retained_result_value {
+  void *value_;
+  static void *copy(void *value) {
+    if (!value)
+      return nullptr;
+    if constexpr (__objc3_is_object_pointer(T))
+      return objc3_task_result_retain(value);
+    else {
+      auto *owned = objc3_task_result_block_copy(value);
+      if (!owned)
+        throw std::bad_alloc();
+      return owned;
+    }
+  }
+
+public:
+  explicit retained_result_value(T value)
+      : value_(copy((__bridge void *)value)) {}
+  retained_result_value(const retained_result_value &other)
+      : value_(copy(other.value_)) {}
+  retained_result_value &operator=(const retained_result_value &) = delete;
+  ~retained_result_value() {
+    if constexpr (__objc3_is_object_pointer(T))
+      objc3_task_result_release(value_);
+    else
+      objc3_task_result_block_release(value_);
+  }
+  T get() const {
+    // Both ownership modes return a +0 value valid through the current pool.
+    // A nested await can therefore release its private child immediately after
+    // extracting the result. MRC callers retain values across later suspension.
+    return (__bridge T)objc3_task_result_autorelease(copy(value_));
+  }
+};
+
+template <class T>
+struct result_traits<T, std::enable_if_t<retained_result<T>>> {
+  // Native C++ mangling distinguishes implicit ARC strong template arguments
+  // from MRC arguments. The opaque payload supplies ownership itself, so its
+  // type and the public handle use an explicit borrowed pointer identity.
+  using abi_type = __unsafe_unretained T;
+  using storage = retained_result_value<abi_type>;
+  static T get(const storage &value) { return value.get(); }
+};
+#endif
+
 template <class T> struct value_ops {
   static_assert(std::is_copy_constructible_v<T> &&
                 std::is_nothrow_destructible_v<T>);
@@ -99,14 +172,15 @@ inline void rethrow_completion(const objc3_completion &completion) {
 }
 
 template <class T> struct result_storage {
-  std::optional<T> value;
+  using stored_type = typename result_traits<T>::storage;
+  std::optional<stored_type> value;
   template <class U> void return_value(U &&result) {
     value.emplace(std::forward<U>(result));
   }
   void set_completion(objc3_completion &completion) {
     completion.has_payload = 1;
     completion.payload = &*value;
-    completion.payload_ops = &value_ops<T>::descriptor;
+    completion.payload_ops = &value_ops<stored_type>::descriptor;
   }
 };
 template <> struct result_storage<void> {
@@ -115,30 +189,35 @@ template <> struct result_storage<void> {
 };
 } // namespace task_detail
 
-template <class T = void> class task;
+template <class T> class basic_task;
+template <class T = void>
+using task = basic_task<typename task_detail::result_traits<T>::abi_type>;
+template <class T> class basic_task_handle;
+template <class T = void>
+using task_handle = basic_task_handle<typename task_detail::result_traits<T>::abi_type>;
 
 /* A retained terminal result or running task. Releasing the last handle while
  * suspended cancels and destroys its frame. Explicit cancellation wakes await;
  * a shared dependency continues independently. Destruction does not wait for
  * the dependency's completion. */
-template <class T = void> class task_handle {
+template <class T> class basic_task_handle {
   static_assert(std::is_void_v<T> ||
                 (std::is_object_v<T> && !std::is_volatile_v<T>));
   objc3_task_t *task_ = nullptr;
-  explicit task_handle(objc3_task_t *value) noexcept : task_(value) {}
-  template <class> friend class task;
+  explicit basic_task_handle(objc3_task_t *value) noexcept : task_(value) {}
+  template <class> friend class basic_task;
 
 public:
-  task_handle() noexcept = default;
-  task_handle(const task_handle &other) noexcept
+  basic_task_handle() noexcept = default;
+  basic_task_handle(const basic_task_handle &other) noexcept
       : task_(objc3_task_retain(other.task_)) {}
-  task_handle(task_handle &&other) noexcept
+  basic_task_handle(basic_task_handle &&other) noexcept
       : task_(std::exchange(other.task_, nullptr)) {}
-  task_handle &operator=(task_handle other) noexcept {
+  basic_task_handle &operator=(basic_task_handle other) noexcept {
     std::swap(task_, other.task_);
     return *this;
   }
-  ~task_handle() { objc3_task_release(task_); }
+  ~basic_task_handle() { objc3_task_release(task_); }
   objc3_task_t *native_handle() const noexcept { return task_; }
   explicit operator bool() const noexcept { return task_ != nullptr; }
   void cancel() const noexcept { objc3_task_request_cancel(task_); }
@@ -148,13 +227,16 @@ public:
     task_detail::check(objc3_task_get_completion(task_, &completion));
     task_detail::rethrow_completion(completion);
     if constexpr (!std::is_void_v<T>) {
+      using traits = task_detail::result_traits<T>;
       // Handles are created only by the corresponding native promise. Check
       // the descriptor as well so accidental C-side completion fails closed.
       const auto *ops = completion.payload_ops;
       if (!completion.has_payload || !ops ||
-          ops->copy_init != task_detail::value_ops<T>::copy)
+          ops->copy_init !=
+              task_detail::value_ops<typename traits::storage>::copy)
         throw service_failure(OBJC3_SERVICE_INVALID_ARGUMENT);
-      return *static_cast<const T *>(completion.payload);
+      return traits::get(
+          *static_cast<const typename traits::storage *>(completion.payload));
     } else if (completion.has_payload) {
       throw service_failure(OBJC3_SERVICE_INVALID_ARGUMENT);
     }
@@ -175,11 +257,13 @@ class [[nodiscard]] task_destination {
 public:
   explicit task_destination(objc3_executor_t *executor)
       : executor_(objc3_executor_retain(executor)) {
-    if (!executor_) throw service_failure(OBJC3_SERVICE_INVALID_ARGUMENT);
+    if (!executor_)
+      throw service_failure(OBJC3_SERVICE_INVALID_ARGUMENT);
   }
   explicit task_destination(objc3_actor_t *actor)
       : actor_(objc3_actor_retain(actor)) {
-    if (!actor_) throw service_failure(OBJC3_SERVICE_INVALID_ARGUMENT);
+    if (!actor_)
+      throw service_failure(OBJC3_SERVICE_INVALID_ARGUMENT);
   }
   task_destination(const task_destination &) = delete;
   task_destination(task_destination &&other) noexcept
@@ -202,7 +286,7 @@ inline task_destination hop_to(objc3_actor_t *actor) {
 /* Lazy, move-only compiler-owned coroutine frame. start transfers the frame
  * to the C task service and schedules its first resume on an explicit executor.
  * Arguments follow standard C++ coroutine lifetime rules: pass owned values. */
-template <class T> class [[nodiscard]] task {
+template <class T> class [[nodiscard]] basic_task {
 public:
   struct promise_type : task_detail::result_storage<T> {
     objc3_task_t *owner = nullptr; // Borrowed only during a runtime resume.
@@ -220,8 +304,8 @@ public:
       ::operator delete(frame, alignment);
     }
 
-    task get_return_object() noexcept {
-      return task(coroutine::from_promise(*this));
+    basic_task get_return_object() noexcept {
+      return basic_task(coroutine::from_promise(*this));
     }
     std::suspend_always initial_suspend() noexcept { return {}; }
     std::suspend_always final_suspend() noexcept { return {}; }
@@ -242,8 +326,8 @@ public:
       ~dependency_awaiter() {
         if (owned) {
           objc3_completion completion{};
-          if (objc3_task_get_completion(dependency.native_handle(), &completion) ==
-              OBJC3_SERVICE_NOT_READY)
+          if (objc3_task_get_completion(dependency.native_handle(),
+                                        &completion) == OBJC3_SERVICE_NOT_READY)
             dependency.cancel();
         }
       }
@@ -258,16 +342,16 @@ public:
         return dependency.result();
       }
     };
-    template <class U> auto await_transform(task_handle<U> dependency) {
+    template <class U> auto await_transform(basic_task_handle<U> dependency) {
       return dependency_awaiter<U>{owner, std::move(dependency)};
     }
 
-    template <class U> auto await_transform(task<U> dependency) {
+    template <class U> auto await_transform(basic_task<U> dependency) {
       if (objc3_task_is_cancel_requested(owner))
         throw task_cancelled();
-      return dependency_awaiter<U>{owner,
-                                   std::move(dependency).start_impl(
-                                       nullptr, nullptr, owner), true};
+      return dependency_awaiter<U>{
+          owner, std::move(dependency).start_impl(nullptr, nullptr, owner),
+          true};
     }
 
     struct hop_awaiter {
@@ -276,14 +360,16 @@ public:
       bool await_ready() const noexcept { return false; }
       void await_suspend(std::coroutine_handle<>) {
         task_detail::check(objc3_task_hop(parent, destination.executor(),
-                                         destination.actor()));
+                                          destination.actor()));
       }
       void await_resume() {
-        if (objc3_task_is_cancel_requested(parent)) throw task_cancelled();
+        if (objc3_task_is_cancel_requested(parent))
+          throw task_cancelled();
       }
     };
     auto await_transform(task_destination destination) {
-      if (objc3_task_is_cancel_requested(owner)) throw task_cancelled();
+      if (objc3_task_is_cancel_requested(owner))
+        throw task_cancelled();
       return hop_awaiter{owner, std::move(destination)};
     }
 
@@ -363,12 +449,13 @@ public:
 private:
   using coroutine = std::coroutine_handle<promise_type>;
   coroutine frame_;
-  explicit task(coroutine frame) noexcept : frame_(frame) {}
-  template <class> friend class task;
+  explicit basic_task(coroutine frame) noexcept : frame_(frame) {}
+  template <class> friend class basic_task;
 
   task_handle<T> start_impl(objc3_executor_t *executor, objc3_actor_t *actor,
                             objc3_task_t *parent = nullptr) {
-    if (!frame_) throw service_failure(OBJC3_SERVICE_INVALID_ARGUMENT);
+    if (!frame_)
+      throw service_failure(OBJC3_SERVICE_INVALID_ARGUMENT);
     objc3_task_start_options options{};
     options.struct_size = sizeof(options);
     options.version = OBJC3_SERVICE_ABI_VERSION;
@@ -378,17 +465,18 @@ private:
     options.resume = promise_type::resume;
     options.destroy = promise_type::destroy;
     objc3_task_t *started = nullptr;
-    task_detail::check(parent ? objc3_task_start_child(parent, &options, &started)
-                              : objc3_task_start(&options, &started));
+    task_detail::check(parent
+                           ? objc3_task_start_child(parent, &options, &started)
+                           : objc3_task_start(&options, &started));
     frame_ = {};
     return task_handle<T>(started);
   }
 
 public:
-  task(const task &) = delete;
-  task &operator=(const task &) = delete;
-  task(task &&other) noexcept : frame_(std::exchange(other.frame_, {})) {}
-  task &operator=(task &&other) noexcept {
+  basic_task(const basic_task &) = delete;
+  basic_task &operator=(const basic_task &) = delete;
+  basic_task(basic_task &&other) noexcept : frame_(std::exchange(other.frame_, {})) {}
+  basic_task &operator=(basic_task &&other) noexcept {
     if (this != &other) {
       if (frame_)
         frame_.destroy();
@@ -396,7 +484,7 @@ public:
     }
     return *this;
   }
-  ~task() {
+  ~basic_task() {
     if (frame_)
       frame_.destroy();
   }

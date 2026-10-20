@@ -16,6 +16,12 @@ def configurations():
             for optimization in ('O0', 'O2') for ownership in ('arc', 'mrc')]
 
 
+def execution_configurations():
+    return [(*mode, provider)
+            for mode in configurations()
+            for provider in (mode[2], 'mrc' if mode[2] == 'arc' else 'arc')]
+
+
 def qualify(repo: Path, compiler_root: Path, resource_root: Path, output: Path,
             *, objc_runtime: Path | None = None) -> dict:
     repo, compiler_root = repo.resolve(strict=True), compiler_root.resolve(strict=True)
@@ -46,8 +52,10 @@ def qualify(repo: Path, compiler_root: Path, resource_root: Path, output: Path,
             raise ValueError('instrumented native async failed: ' + label)
 
     try:
-        for sanitizer, optimization, ownership in configurations():
+        for sanitizer, optimization, ownership, provider in execution_configurations():
             label = sanitizer.replace(',', '-') + '-' + optimization + '-' + ownership
+            if provider != ownership:
+                label += '-provider-' + provider
             executable = output / label
             env = {**os.environ, 'ASAN_OPTIONS': 'detect_leaks=1:halt_on_error=1',
                    'UBSAN_OPTIONS': 'halt_on_error=1:print_stacktrace=1',
@@ -68,23 +76,28 @@ def qualify(repo: Path, compiler_root: Path, resource_root: Path, output: Path,
                 obj.unlink(missing_ok=True)
             run(label + '-runtime-build', [*common, '-c', *sources], env, cwd=objects_dir)
             flags = ['-x', 'objective-c++', '-fobjc-version=3',
-                     '-fobjc-runtime=gnustep-2.2', '-fblocks',
-                     '-fobjc-arc' if ownership == 'arc' else '-fno-objc-arc']
-            run(label + '-build', [*common, '-fuse-ld=lld', *objects, *flags,
-                fixture / 'provider.cpp', fixture / 'client.cpp',
-                '-x', 'none', objc_runtime, '-Wl,-rpath,' + str(objc_runtime.parent),
+                     '-fobjc-runtime=gnustep-2.2', '-fblocks']
+            for name, mode in (('provider', provider), ('client', ownership)):
+                obj = objects_dir / (name + '.o')
+                run(label + '-' + name + '-build', [*common, *flags,
+                    '-fobjc-arc' if mode == 'arc' else '-fno-objc-arc',
+                    '-c', fixture / (name + '.cpp'), '-o', obj], env)
+                objects.append(obj)
+            run(label + '-link', [*common, '-fuse-ld=lld', *objects,
+                objc_runtime, '-Wl,-rpath,' + str(objc_runtime.parent),
                 '-o', executable], env)
             run(label + '-execute', [executable], env)
             for obj in objects:
                 obj.unlink()
             objects_dir.rmdir()
             cases.append({'sanitizer': sanitizer, 'optimization': optimization, 'ownership': ownership,
+                          'provider_ownership': provider,
                           'executable_sha256': digest(executable)})
         report = {'schema': 'objc3c.native-async-sanitizers.v1', 'status': 'PASS',
                   'compiler_root': str(compiler_root), 'compiler_sha256': digest(compiler_root / 'bin/clang'),
                   'sanitizer_resource_root': str(resource_root),
                   'objc_runtime_sha256': digest(objc_runtime),
-                  'instrumentation': 'Objective-C++ native async provider/client and C++ task, executor, group, actor, value/error services',
+                  'instrumentation': 'Objective-C++ native async provider/client in all ARC/MRC pairs and C++ task, executor, group, actor, value/error services',
                   'executions': cases, 'commands': commands,
                   'source_hashes': {str(path.relative_to(repo)): digest(path) for path in inputs},
                   'sanitizer_runtime_sha256': {str(path.relative_to(resource_root)): digest(path)
