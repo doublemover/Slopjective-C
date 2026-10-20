@@ -84,3 +84,22 @@ cross-worker actor hops, inherited children, retained lazy destinations,
 cancellation, queue exhaustion and deferred publication. ARC objects, Blocks and
 native exception payloads are exercised across actor suspension with instrumented
 runtime services and clients.
+
+The [acceptance receipt](../support/linux_task_hops_acceptance.json) binds the
+exact SDK archive, all 22 installed package gates, 66 sanitizer configurations
+and fresh Debian 13/Ubuntu 26.04 task-destination qualification. The fresh runs
+include relocation, embedding, ordinary-user runtime/coroutine matrices and
+source-free async packages. The LLVM compiler foundation is byte-identical to
+the preceding native async release. The
+[latency report](../support/linux_task_hops_latency.json) records five quiet
+command measurements against the current budgets.
+
+Six additional O0 LLDB cases inspect local identities in a frame resumed after
+an actor hop, across C++20/23 and Objective-C++ ARC/MRC. Reproduce them from a
+checkout against the installed SDK:
+
+```sh
+python -B scripts/qualify_linux_task_hops_debugger.py \
+  --sdk-root out/toolchains/linux-sdk/current \
+  --output-dir out/task-hops/hop-debugger
+```
