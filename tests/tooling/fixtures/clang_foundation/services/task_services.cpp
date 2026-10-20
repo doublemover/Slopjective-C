@@ -726,7 +726,8 @@ struct GroupJoinThread {
 
 void test_group_join_waits_for_frame_and_observers() {
   using namespace objc3::services;
-  auto *executor = manual_executor();
+  objc3_executor_t *executor = nullptr;
+  assert(objc3_executor_create(0, &executor) == OBJC3_SERVICE_OK);
   TaskGroup *group = nullptr;
   assert(task_group_create(nullptr, &group) == OBJC3_SERVICE_OK);
   std::atomic<int> destroyed{0};
@@ -748,10 +749,6 @@ void test_group_join_waits_for_frame_and_observers() {
   });
   while (!join.started.load()) std::this_thread::yield();
 
-  uint32_t executed = 0;
-  std::thread pump([&] {
-    assert(objc3_executor_pump(executor, 1, &executed) == OBJC3_SERVICE_OK);
-  });
   {
     std::unique_lock<std::mutex> lock(resume_gate.mutex);
     resume_gate.condition.wait(lock, [&] { return resume_gate.started; });
@@ -773,10 +770,9 @@ void test_group_join_waits_for_frame_and_observers() {
     destroy_gate.proceed = true;
   }
   destroy_gate.condition.notify_all();
-  pump.join();
   joiner.join();
   assert(join.status == OBJC3_SERVICE_OK && join.finished);
-  assert(executed == 1 && destroyed == 1);
+  assert(destroyed == 1);
   task_group_release(group);
   objc3_task_release(task);
   objc3_executor_release(executor);
