@@ -74,7 +74,7 @@ def qualify_case(sdk: Path, output: Path, language: str, standard: str,
                 raise ValueError('private function/global names escaped module ownership')
             if language != 'c++' and '._OBJC_CLASS_RuntimeTwin' in symbols:
                 raise ValueError('private Objective-C class retained its shared runtime name')
-            if '++' in language and any(old in symbols for old in ('private_template', 'private_variable', 'private_namespace_helper', 'private_namespace_global')):
+            if '++' in language and any(old in symbols for old in ('private_template', 'private_variable', 'private_namespace_helper', 'private_namespace_global', 'private_initializer', 'private_tls', 'private_reference')):
                 raise ValueError('private template or namespace declaration retained its shared C++ symbol')
             symbol_sets.append(names)
             symbol_evidence[name] = {'sha256': hashlib.sha256(symbols.encode()).hexdigest(), 'owned_names': len(names)}

@@ -2905,10 +2905,24 @@ index 4be3e977b..1768b7af5 100644
      Out << ';';
  }
 diff --git a/clang/lib/AST/ItaniumMangle.cpp b/clang/lib/AST/ItaniumMangle.cpp
-index 172a19f8f..024ef12a8 100644
+index 172a19f8f..1f1815ae1 100644
 --- a/clang/lib/AST/ItaniumMangle.cpp
 +++ b/clang/lib/AST/ItaniumMangle.cpp
-@@ -2477,6 +2477,8 @@ bool CXXNameMangler::mangleUnresolvedTypeOrSimpleId(QualType Ty,
+@@ -1062,6 +1062,13 @@ const RecordDecl *CXXNameMangler::GetLocalClassDecl(const Decl *D) {
+ void CXXNameMangler::mangleNameWithAbiTags(
+     GlobalDecl GD, ArrayRef<StringRef> AdditionalAbiTags) {
+   const NamedDecl *ND = cast<NamedDecl>(GD.getDecl());
++  // Companion symbols and local entities must use the same module ownership
++  // as their variable or enclosing function, including guards and TLS helpers.
++  if (const auto *Label = ND->getAttr<AsmLabelAttr>();
++      Label && Label->getLabel().starts_with("__objc3_m_")) {
++    Out << Label->getLabel().size() << Label->getLabel();
++    return;
++  }
+   //  <name> ::= [<module-name>] <nested-name>
+   //         ::= [<module-name>] <unscoped-name>
+   //         ::= [<module-name>] <unscoped-template-name> <template-args>
+@@ -2477,6 +2484,8 @@ bool CXXNameMangler::mangleUnresolvedTypeOrSimpleId(QualType Ty,
    case Type::ObjCInterface:
    case Type::ObjCObjectPointer:
    case Type::ObjCTypeParam:
@@ -2917,7 +2931,7 @@ index 172a19f8f..024ef12a8 100644
    case Type::Atomic:
    case Type::Pipe:
    case Type::MacroQualified:
-@@ -4626,6 +4628,22 @@ void CXXNameMangler::mangleType(const AtomicType *T) {
+@@ -4626,6 +4635,22 @@ void CXXNameMangler::mangleType(const AtomicType *T) {
    mangleType(T->getValueType());
  }
  
@@ -2940,7 +2954,7 @@ index 172a19f8f..024ef12a8 100644
  void CXXNameMangler::mangleType(const PipeType *T) {
    // Pipe type mangling rules are described in SPIR 2.0 specification
    // A.1 Data types and A.3 Summary of changes
-@@ -5505,6 +5523,35 @@ recurse:
+@@ -5505,6 +5530,35 @@ recurse:
      break;
    }
  
@@ -2976,7 +2990,7 @@ index 172a19f8f..024ef12a8 100644
    case Expr::CXXTypeidExprClass: {
      NotPrimaryExpr();
      const CXXTypeidExpr *TIE = cast<CXXTypeidExpr>(E);
-@@ -5978,6 +6025,46 @@ recurse:
+@@ -5978,6 +6032,46 @@ recurse:
    case Expr::HLSLOutArgExprClass:
      llvm_unreachable(
          "cannot mangle hlsl temporary value; mangling wrong thing?");

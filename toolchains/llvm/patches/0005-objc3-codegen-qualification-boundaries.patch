@@ -15700,3 +15700,23 @@ index 000000000..3b96ca9ab
 +// CHECK: ![[ANNOTATIONS]] = !{![[ANNOTATION:[0-9]+]]}
 +// CHECK: ![[ANNOTATION]] = !{!"objc_runtime_name", !"OwnedDebugRoot"}
 +// CHECK: !{!"objc_runtime_name", !"OwnedForward"}
+diff --git a/clang/test/ObjC3/CodeGen/module-native-companions.cpp b/clang/test/ObjC3/CodeGen/module-native-companions.cpp
+new file mode 100644
+index 000000000..2aa06c88c
+--- /dev/null
++++ b/clang/test/ObjC3/CodeGen/module-native-companions.cpp
+@@ -0,0 +1,14 @@
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -std=c++20 -emit-llvm -o - %s | FileCheck %s
++int create();
++template<int N> int variable __asm__("__objc3_m_variable") = N + create();
++template<class T> int function() __asm__("__objc3_m_function");
++template<class T> int function() { static int local = create(); return local; }
++thread_local int tls __asm__("__objc3_m_tls") = create();
++const int &reference __asm__("__objc3_m_reference") = create();
++int use() { return variable<0> + function<int>() + tls + reference; }
++// CHECK-DAG: @_ZGV{{[0-9]+}}__objc3_m_variable =
++// CHECK-DAG: @_ZZ{{[0-9]+}}__objc3_m_function{{.*}}E5local =
++// CHECK-DAG: @_ZGVZ{{[0-9]+}}__objc3_m_function{{.*}}E5local =
++// CHECK-DAG: @_ZTH{{[0-9]+}}__objc3_m_tls =
++// CHECK-DAG: define {{.*}} @_ZTW{{[0-9]+}}__objc3_m_tls(
++// CHECK-DAG: @_ZGR{{[0-9]+}}__objc3_m_reference_ =

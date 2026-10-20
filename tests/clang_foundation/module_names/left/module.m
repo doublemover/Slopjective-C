@@ -40,7 +40,7 @@ static int destroyed;
 #endif
 int left_value(void) {
 #ifdef __cplusplus
-  if (private_template<int>(0) + private_template<long>(0) + private_variable<0> != 3 * PRIVATE_TEMPLATE_BIAS || PrivateNamespace::private_namespace_helper() != 0) return -1;
+  if (private_template<int>(0) + private_template<long>(0) + private_variable<0> != 3 * PRIVATE_TEMPLATE_BIAS || private_tls != PRIVATE_TEMPLATE_BIAS || private_reference != PRIVATE_TEMPLATE_BIAS || PrivateNamespace::private_namespace_helper() != 0) return -1;
 #endif
 #ifdef __OBJC__
   int observed = 0;

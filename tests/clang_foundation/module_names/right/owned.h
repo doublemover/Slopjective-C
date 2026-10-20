@@ -3,8 +3,14 @@ int shared_helper(void);
 extern int shared_global;
 #ifdef __cplusplus
 #define PRIVATE_TEMPLATE_BIAS 2
-template<class T> T private_template(T value) { return value + PRIVATE_TEMPLATE_BIAS; }
-template<int N> int private_variable = N + PRIVATE_TEMPLATE_BIAS;
+inline int private_initializer() { return PRIVATE_TEMPLATE_BIAS; }
+template<class T> T private_template(T value) {
+  static int local_bias = private_initializer();
+  return value + local_bias;
+}
+template<int N> int private_variable = N + private_initializer();
+thread_local int private_tls = private_initializer();
+const int &private_reference = private_initializer();
 namespace PrivateNamespace {
 int private_namespace_global = 0;
 int private_namespace_helper() { return private_namespace_global; }

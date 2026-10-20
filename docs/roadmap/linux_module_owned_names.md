@@ -60,7 +60,9 @@ The contract covers externally visible global functions and variables and
 Objective-C runtime roots. Internal-linkage declarations retain ordinary native
 linkage. Private function and variable template specializations receive owned
 names when instantiated and referenced. Private namespace functions and variables
-also receive owned names. C++ members, RTTI and non-data public types retain their existing C++ ABI and
+also receive owned names. Initialization guards, template-function local statics,
+thread-local initialization/wrapper functions and lifetime-extended temporaries
+derive their companion names from the same native binding. C++ members, RTTI and non-data public types retain their existing C++ ABI and
 remain outside this module naming contract. Explicit conflicting ABI labels,
 runtime aliases, exported inline variables and provider entry points are
 diagnosed.

@@ -37,8 +37,14 @@ CompileRequest Request(const fs::path &root, BaseLanguage language,
     #define OWNED_HELPER(name) int name(void) { return 0; }
     OWNED_HELPER(header_helper)
     #ifdef __cplusplus
-    template<class T> T private_template(T value) { return value; }
-    template<int N> int private_variable = N;
+    inline int private_initializer() { return 1; }
+    template<class T> T private_template(T value) {
+      static int local_bias = private_initializer();
+      return value + local_bias;
+    }
+    template<int N> int private_variable = N + private_initializer();
+    thread_local int private_tls = private_initializer();
+    const int &private_reference = private_initializer();
     namespace PrivateNamespace {
       int private_namespace_global = 0;
       int private_namespace_helper() { return private_namespace_global; }
@@ -51,7 +57,7 @@ CompileRequest Request(const fs::path &root, BaseLanguage language,
     int module_value(int value);
     int module_value(int value) { 
       #ifdef __cplusplus
-      return private_template<int>(value) + private_template<long>(module_global) + private_variable<0> + header_helper() + PrivateNamespace::private_namespace_helper();
+      return private_template<int>(value) + private_template<long>(module_global) + private_variable<0> + private_tls + private_reference + header_helper() + PrivateNamespace::private_namespace_helper();
       #else
       return value + module_global + header_helper();
       #endif
@@ -145,6 +151,9 @@ void Check(const fs::path &root, BaseLanguage language,
   if (language == BaseLanguage::Cxx || language == BaseLanguage::ObjectiveCxx) {
     assert(ir.find("private_template") == std::string::npos);
     assert(ir.find("private_variable") == std::string::npos);
+    assert(ir.find("private_initializer") == std::string::npos);
+    assert(ir.find("private_tls") == std::string::npos);
+    assert(ir.find("private_reference") == std::string::npos);
     assert(ir.find("private_namespace_helper") == std::string::npos);
     assert(ir.find("private_namespace_global") == std::string::npos);
   }
