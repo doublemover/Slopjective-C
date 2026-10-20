@@ -82,6 +82,7 @@ target_compile_options(objc3_runtime_services INTERFACE
   "$<$<COMPILE_LANG_AND_ID:CXX,Clang>:-fcoro-aligned-allocation>"
   "$<$<COMPILE_LANG_AND_ID:OBJCXX,Clang>:-fcoro-aligned-allocation>")
 target_link_options(objc3_runtime_services INTERFACE
+  "-fuse-ld=lld"
   "LINKER:-z,dead-reloc-in-nonalloc=.debug_addr=0xffffffffffffffff"
   "LINKER:-z,dead-reloc-in-nonalloc=.debug_info=0xffffffffffffffff")
 target_include_directories(objc3_runtime_services PUBLIC

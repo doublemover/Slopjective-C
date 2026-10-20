@@ -61,6 +61,8 @@ def qualify(sdk: Path, output: Path) -> dict:
                 elif ownership == 'arc': compile_command.append('-fobjc-arc')
                 run(label + '-compile', compile_command, root)
                 run(label + '-link', [sdk / 'bin/clang++', '--no-default-config', '-fuse-ld=lld', obj,
+                    '-Wl,-z,dead-reloc-in-nonalloc=.debug_addr=0xffffffffffffffff',
+                    '-Wl,-z,dead-reloc-in-nonalloc=.debug_info=0xffffffffffffffff',
                     '-L' + str(sdk / 'lib'), '-lobjc3_runtime_services', '-lobjc', '-pthread',
                     '-Wl,-rpath,' + str(sdk / 'lib'), '-o', executable], root)
                 run(label + '-run', [executable], root)

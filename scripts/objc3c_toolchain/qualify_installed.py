@@ -53,8 +53,7 @@ def qualify_installed(repo: Path, prefix: Path, output: Path) -> dict:
         run('multiple-sources', [compiler, 'extra.c', 'multiple.c', '-o', 'multiple'])
         run('run-multiple', [client / 'multiple'])
         run('embedding-configure', ['cmake', '-S', client, '-B', client / 'build', '-G', 'Ninja',
-             f'-DCMAKE_PREFIX_PATH={prefix}', f'-DCMAKE_CXX_COMPILER={prefix / "bin/clang++"}',
-             '-DCMAKE_EXE_LINKER_FLAGS=-fuse-ld=lld'])
+             f'-DCMAKE_PREFIX_PATH={prefix}', f'-DCMAKE_CXX_COMPILER={prefix / "bin/clang++"}'])
         run('embedding-build', ['cmake', '--build', client / 'build', '--parallel', '2'])
         run('embedding-run', [client / 'build/embedding', prefix])
         run('embedding-dwarf', [prefix / 'bin/llvm-dwarfdump', '--verify', client / 'build/embedding'])
