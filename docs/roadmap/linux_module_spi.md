@@ -73,3 +73,9 @@ metadata, while preserving the previous object after failed compilation.
 Module-owned linker/runtime naming and concurrency remain separate milestones.
 The native object linkage of these SPI declarations follows ordinary C,
 Objective-C and C++ rules.
+
+The [acceptance receipt](../support/linux_module_spi_acceptance.json) binds the
+qualified archive, native tests, installed execution, sanitizer and debugger
+evidence, fresh Debian 13 and Ubuntu 26.04 runs, and cached archive reuse. The
+[latency report](../support/linux_module_spi_latency.json) records warm command
+measurements and regression budgets for the measured CPU and quota.
