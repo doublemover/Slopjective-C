@@ -6,6 +6,15 @@ completion, explicit value operations and bounded serial executors. Language
 async/await syntax, compiler actor isolation and automatic capture adaptation
 remain reserved pending their own compiler implementation and qualification.
 
+Include `<objc3c/runtime/objc3_runtime_services.h>` from the installed SDK. A
+CMake consumer imports its include path and thread dependency through the runtime
+target:
+
+```cmake
+find_package(objc3c REQUIRED CONFIG)
+target_link_libraries(application PRIVATE objc3c::RuntimeServices)
+```
+
 Groups retain registered tasks and nested groups. Closing a group recursively
 prevents registration. Cancellation requests cooperative cancellation throughout
 the tree. The first failed task requests sibling cancellation through its
@@ -42,5 +51,7 @@ ownership transfer, reentry, hop identities, serial mailboxes and cleanup. The
 worker probe demonstrates simultaneous execution on two executors, serialized
 actor queues, 130 actor jobs and 128 group tasks.
 
-This milestone is under development. Native, installed, threaded and sanitizer
-execution must pass before its acceptance receipt advances the Linux SDK.
+The [Linux acceptance receipt](../support/linux_module_names_acceptance.json)
+binds 22 installed language/optimization executions, native worker tests,
+instrumented ASan/LeakSanitizer/UBSan/ThreadSanitizer at O0/O2, and fresh
+Debian/Ubuntu archive qualification to the exact implementation and SDK seal.

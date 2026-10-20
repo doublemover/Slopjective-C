@@ -70,7 +70,9 @@ source-free immutable consumers. It checks ordinary and qualified rejections,
 revocation, unknown groups, Objective-C selector isolation and tampered native
 metadata, while preserving the previous object after failed compilation.
 
-Module-owned linker/runtime naming and concurrency remain separate milestones.
+The [native naming contract](linux_module_owned_names.md) and
+[structured runtime services](linux_structured_runtime.md) build on these module
+boundaries. Language async/await and compiler actor isolation remain reserved.
 The native object linkage of these SPI declarations follows ordinary C,
 Objective-C and C++ rules.
 

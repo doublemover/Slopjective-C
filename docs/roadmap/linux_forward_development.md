@@ -1,7 +1,7 @@
 # Linux forward development
 
 The active product is the Clang-only Linux x86-64 SDK. The
-[acceptance receipt](../support/linux_module_spi_acceptance.json) identifies
+[acceptance receipt](../support/linux_module_names_acceptance.json) identifies
 its exact archive, implementation, installed execution and fresh-distribution
 evidence. Tool versions come from [the manifest](../../toolchains/llvm/manifest.json);
 public language claims come from [the capability authority](../../schemas/objc3-language-capabilities.json).
@@ -51,15 +51,25 @@ The implemented foundations have separate bounded contracts:
   grants through qualified lookup, source recipes and immutable consumers.
   Re-exports do not forward privileges.
 
-## Next implementation sequence
+- [Module-owned native names](linux_module_owned_names.md) isolate functions,
+  globals, classes, protocols, categories and concrete private template bindings
+  across providers. Canonical imports and Linux LLDB preserve the native binding.
+- [Structured runtime services](linux_structured_runtime.md) expose task groups,
+  nested cancellation, completion polling and serial actor mailboxes through the
+  installed C ABI. Threaded and sanitizer qualification covers runtime ownership
+  and cleanup.
 
-1. Extend the bounded public module API with module-owned linker/runtime naming
-   contracts. Privileged SPI is implemented. Native availability metadata, native imports,
-   qualified lookup, explicit export selection and immutable dependency
-   identities are implemented. Registry transport is a separate concern.
-2. Build structured task groups, cancellation and actor isolation on that
-   ownership and module foundation. Require deterministic error/cleanup tests,
-   native threaded execution and sanitizer evidence before feature promotion.
+## Next compiler milestones
+
+1. Lower native async functions and await expressions into resumable task frames.
+   Define suspension ownership, checked typed-error propagation, cancellation,
+   callback publication and cleanup before promoting the language capability.
+   Reuse the public task and group ABI and require source-free imports, O0/O2
+   native execution, debug information and instrumented runtime/client evidence.
+2. Add compiler actor isolation and awaited executor hops. Preserve isolation in
+   callable types and canonical interfaces, diagnose unsynchronized access, and
+   retain mailbox serialization, logical identity and cleanup through nested
+   calls. Promote the language capability after native compiler qualification.
 
 ## Architecture and release performance
 
