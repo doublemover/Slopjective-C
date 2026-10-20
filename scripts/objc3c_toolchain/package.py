@@ -169,6 +169,7 @@ def package_sdk(repo: Path, prefix: Path, validation_report: Path, cache_dir: Pa
                                 ('qualify_module_spi.py', 'qualify_module_spi.py'),
                                 ('qualify_module_names.py', 'qualify_module_names.py'),
                                 ('qualify_module_names_debugger.py', 'qualify_module_names_debugger.py'),
+                                ('qualify_module_names_collision_debugger.py', 'qualify_module_names_collision_debugger.py'),
                                 ('qualify_structured_runtime.py', 'qualify_structured_runtime.py')):
         shutil.copyfile(Path(__file__).with_name(original), builder / installed)
     shutil.copytree(repo / 'tests/clang_foundation/source_graph',

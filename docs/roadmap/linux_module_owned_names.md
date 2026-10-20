@@ -54,7 +54,11 @@ binding in expression calls. GNUstep JIT expressions initialize typed selectors
 before message dispatch, including selectors stored in constant arrays. Installed
 debugger probes verify ivars, instance and class messages, direct calls, category
 direct calls and native function calls in
-Objective-C17 and Objective-C++20/23 under ARC and MRC.
+Objective-C17 and Objective-C++20/23 under ARC and MRC. A second matrix stops in
+both providers with duplicate private source names and verifies that the current
+frame selects its module's globals, functions, thread-local variables, classes,
+direct calls, inheritance and categories. It checks function and Objective-C
+method frames, including private functions defined in separate source files.
 
 The contract covers externally visible global functions and variables and
 Objective-C runtime roots. Internal-linkage declarations retain ordinary native

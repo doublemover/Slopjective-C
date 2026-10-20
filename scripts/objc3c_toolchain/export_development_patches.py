@@ -248,6 +248,7 @@ PACKETS = {
         "lldb/source/Plugins/SymbolFile/DWARF/DWARFASTParserClang.cpp",
         "lldb/source/Plugins/SymbolFile/DWARF/SymbolFileDWARF.cpp",
         "lldb/source/Plugins/ExpressionParser/Clang/ClangExpressionParser.cpp",
+        "lldb/source/Plugins/ExpressionParser/Clang/ObjC3MethodNames.h",
         "lldb/source/Plugins/ExpressionParser/Clang/ClangExpressionDeclMap.cpp",
         "lldb/source/Plugins/ExpressionParser/Clang/IRForTarget.cpp",
         "lldb/source/Plugins/ExpressionParser/Clang/IRForTarget.h",

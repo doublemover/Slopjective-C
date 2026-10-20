@@ -16,12 +16,14 @@ if __package__:
     from .source_graph import build_graph
     from .qualify_public_surfaces import prepare, case_workspace
     from .qualify_module_names_debugger import qualify as qualify_debugger
+    from .qualify_module_names_collision_debugger import qualify as qualify_collision_debugger
 else:
     sys.dont_write_bytecode = True
     import binary_packages as packages
     from build import build_graph
     from qualify_public_surfaces import prepare, case_workspace
     from qualify_module_names_debugger import qualify as qualify_debugger
+    from qualify_module_names_collision_debugger import qualify as qualify_collision_debugger
 
 CAPABILITY = 'objc3.module-owned-names.v1'
 NATIVE_NAME = re.compile(r'__objc3_m_[0-9a-f]{64}_[0-9a-f]{64}')
@@ -190,9 +192,12 @@ def qualify(sdk: Path, output: Path, jobs: int = 1) -> dict:
     debugger = None
     try: debugger = qualify_debugger(sdk, output / 'debugger')
     except Exception as error: failures.append(str(error))
+    collision_debugger = None
+    try: collision_debugger = qualify_collision_debugger(sdk, output / 'collision-debugger')
+    except Exception as error: failures.append(str(error))
     report = {'schema': 'objc3c.module-names-qualification.v1', 'status': 'FAIL' if failures else 'PASS',
               'cases': cases, 'executions': sum(row['source_executions'] + row['binary_executions'] for row in cases),
-              'rejections': sum(len(row['rejections']) for row in cases), 'debugger': debugger, 'failures': failures}
+              'rejections': sum(len(row['rejections']) for row in cases), 'debugger': debugger, 'collision_debugger': collision_debugger, 'failures': failures}
     packages.write_json(receipt, report)
     if failures: raise ValueError('; '.join(failures))
     return report
@@ -207,7 +212,8 @@ def main(argv=None) -> int:
     report = qualify(args.sdk_root or Path(__file__).resolve().parents[3], args.output_dir, args.jobs)
     print(json.dumps({'status': report['status'], 'module_names_executions': report['executions'],
                       'module_names_rejections': report['rejections'],
-                      'module_names_debugger_executions': report['debugger']['executions']}))
+                      'module_names_debugger_executions': report['debugger']['executions'],
+                      'module_names_collision_debugger_executions': report['collision_debugger']['executions']}))
     return 0
 
 

@@ -781,7 +781,7 @@ index 08cb9860f..5c93b5119 100644
  
        // If the value is offset in memory, apply the offset now.
 diff --git a/clang/lib/CodeGen/CGDebugInfo.cpp b/clang/lib/CodeGen/CGDebugInfo.cpp
-index 7421733ef..88cb57f43 100644
+index 7421733ef..f382865e8 100644
 --- a/clang/lib/CodeGen/CGDebugInfo.cpp
 +++ b/clang/lib/CodeGen/CGDebugInfo.cpp
 @@ -31,6 +31,7 @@
@@ -914,18 +914,32 @@ index 7421733ef..88cb57f43 100644
    case Type::Record:
      return CreateType(cast<RecordType>(Ty));
    case Type::Enum:
-@@ -4828,8 +4910,10 @@ llvm::DISubprogram *CGDebugInfo::getObjCMethodDeclaration(
+@@ -4828,8 +4910,15 @@ llvm::DISubprogram *CGDebugInfo::getObjCMethodDeclaration(
    if (It == TypeCache.end())
      return nullptr;
    auto *InterfaceType = cast<llvm::DICompositeType>(It->second);
-+  const std::string LinkageName = OMD->isDirectMethod()
-+      ? CGM.getObjCRuntime().getSymbolNameForMethod(OMD, false, true) : "";
++  const auto NativeName = CGM.getObjCRuntime().getSymbolNameForMethod(
++      OMD, false, OMD->isDirectMethod());
++  const std::string LinkageName =
++      OMD->isDirectMethod() ||
++              llvm::StringRef(NativeName).starts_with("__objc3_method_")
++          ? NativeName
++          : "";
    llvm::DISubprogram *FD = DBuilder.createFunction(
 -      InterfaceType, getObjCMethodName(OMD), StringRef(),
 +      InterfaceType, getObjCMethodName(OMD), LinkageName,
        InterfaceType->getFile(), LineNo, FnType, LineNo, Flags, SPFlags);
    DBuilder.finalizeSubprogram(FD);
    ObjCMethodCache[ID].push_back({FD, OMD->isDirectMethod()});
+@@ -4969,6 +5058,8 @@ void CGDebugInfo::emitFunctionStart(GlobalDecl GD, SourceLocation Loc,
+         KeyInstructions && !isa_and_present<CoroutineBodyStmt>(FD->getBody());
+   } else if (const auto *OMD = dyn_cast<ObjCMethodDecl>(D)) {
+     Name = getObjCMethodName(OMD);
++    if (Fn->getName().starts_with("__objc3_method_"))
++      LinkageName = Fn->getName();
+     Flags |= llvm::DINode::FlagPrototyped;
+   } else if (isa<VarDecl>(D) &&
+              GD.getDynamicInitKind() != DynamicInitKind::NoStub) {
 diff --git a/clang/lib/CodeGen/CGDecl.cpp b/clang/lib/CodeGen/CGDecl.cpp
 index e84e05e8e..340e58124 100644
 --- a/clang/lib/CodeGen/CGDecl.cpp
@@ -15675,10 +15689,10 @@ index 000000000..efdc2b6fc
 +// CHECK-DAG: c"__objc3_m_Category\00"
 diff --git a/clang/test/ObjC3/CodeGen/module-runtime-names-debug.m b/clang/test/ObjC3/CodeGen/module-runtime-names-debug.m
 new file mode 100644
-index 000000000..3b96ca9ab
+index 000000000..5bb2cfe07
 --- /dev/null
 +++ b/clang/test/ObjC3/CodeGen/module-runtime-names-debug.m
-@@ -0,0 +1,21 @@
+@@ -0,0 +1,31 @@
 +// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -fobjc-runtime=gnustep-2.2 -debug-info-kind=standalone -emit-llvm -o - %s | FileCheck %s
 +// Preserve source spelling and the distinct runtime binding for debuggers.
 +__attribute__((objc_root_class, objc_runtime_name("OwnedDebugRoot")))
@@ -15695,11 +15709,21 @@ index 000000000..3b96ca9ab
 +Forward *forward;
 +SourceRoot *root;
 +
++__attribute__((objc_root_class, objc_runtime_name("__objc3_m_debug")))
++@interface OwnedSource
++- (int)value;
++@end
++@implementation OwnedSource
++- (int)value { return 1; }
++@end
++OwnedSource *owned;
++
 +// CHECK: !DICompositeType(tag: DW_TAG_structure_type, name: "SourceRoot",{{.*}}annotations: ![[ANNOTATIONS:[0-9]+]])
 +// CHECK: !DISubprogram(name: "-[SourceRoot directRead]", linkageName: "_i_OwnedDebugRoot__directRead",
 +// CHECK: ![[ANNOTATIONS]] = !{![[ANNOTATION:[0-9]+]]}
 +// CHECK: ![[ANNOTATION]] = !{!"objc_runtime_name", !"OwnedDebugRoot"}
 +// CHECK: !{!"objc_runtime_name", !"OwnedForward"}
++// CHECK: distinct !DISubprogram(name: "-[OwnedSource value]", linkageName: "__objc3_method_i_R{{[0-9]+}}_{{[0-9a-f]+}}_C0__S5_76616c7565_M",
 diff --git a/clang/test/ObjC3/CodeGen/module-native-companions.cpp b/clang/test/ObjC3/CodeGen/module-native-companions.cpp
 new file mode 100644
 index 000000000..2aa06c88c

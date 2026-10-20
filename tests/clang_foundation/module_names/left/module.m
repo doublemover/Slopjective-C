@@ -65,3 +65,5 @@ int left_value(void) {
 }
 
 int implementation_only(void) { return 7; }
+
+int debugger_marker(void) { return shared_global; }

@@ -1,8 +1,16 @@
 diff --git a/lldb/source/Plugins/ExpressionParser/Clang/ClangExpressionParser.cpp b/lldb/source/Plugins/ExpressionParser/Clang/ClangExpressionParser.cpp
-index deab9a2a5..dbcfc721c 100644
+index deab9a2a5..9ca21299f 100644
 --- a/lldb/source/Plugins/ExpressionParser/Clang/ClangExpressionParser.cpp
 +++ b/lldb/source/Plugins/ExpressionParser/Clang/ClangExpressionParser.cpp
-@@ -693,7 +693,7 @@ static void SetupLangOpts(CompilerInstance &compiler,
+@@ -69,6 +69,7 @@
+ #include "ClangPersistentVariables.h"
+ #include "IRDynamicChecks.h"
+ #include "IRForTarget.h"
++#include "ObjC3MethodNames.h"
+ #include "ModuleDependencyCollector.h"
+ 
+ #include "Plugins/TypeSystem/Clang/TypeSystemClang.h"
+@@ -693,7 +694,7 @@ static void SetupLangOpts(CompilerInstance &compiler,
                                    VersionTuple(10, 7));
          break;
        case ObjCLanguageRuntime::ObjCRuntimeVersions::eGNUstep_libobjc2:
@@ -11,6 +19,20 @@ index deab9a2a5..dbcfc721c 100644
          break;
        }
  
+@@ -1488,8 +1489,12 @@ bool ClangExpressionParser::RewriteExpression(
+ static bool FindFunctionInModule(ConstString &mangled_name,
+                                  llvm::Module *module, const char *orig_name) {
+   for (const auto &func : module->getFunctionList()) {
++    if (func.isDeclaration())
++      continue;
+     const StringRef &name = func.getName();
+-    if (name.contains(orig_name)) {
++    const auto Method = ParseObjC3MethodNames(name);
++    if (name.contains(orig_name) ||
++        (Method && llvm::StringRef(Method->Selector).contains(orig_name))) {
+       mangled_name.SetString(name);
+       return true;
+     }
 diff --git a/lldb/source/Plugins/ExpressionParser/Clang/IRForTarget.cpp b/lldb/source/Plugins/ExpressionParser/Clang/IRForTarget.cpp
 index adfb5bd1e..4cbe635fa 100644
 --- a/lldb/source/Plugins/ExpressionParser/Clang/IRForTarget.cpp
@@ -103,7 +125,7 @@ index 575d9f83b..ee29c5d7f 100644
    /// variables and register them with the ClangExprDeclMap.  This allows them
    /// to be materialized and dematerialized like normal external variables.
 diff --git a/lldb/source/Plugins/SymbolFile/DWARF/DWARFASTParserClang.cpp b/lldb/source/Plugins/SymbolFile/DWARF/DWARFASTParserClang.cpp
-index b60f1d9e4..ab38e06fb 100644
+index b60f1d9e4..0be95c914 100644
 --- a/lldb/source/Plugins/SymbolFile/DWARF/DWARFASTParserClang.cpp
 +++ b/lldb/source/Plugins/SymbolFile/DWARF/DWARFASTParserClang.cpp
 @@ -14,6 +14,7 @@
@@ -122,7 +144,17 @@ index b60f1d9e4..ab38e06fb 100644
  #include "clang/AST/CXXInheritance.h"
  #include "clang/AST/DeclBase.h"
  #include "clang/AST/DeclCXX.h"
-@@ -1159,6 +1161,11 @@ bool DWARFASTParserClang::ParseObjCMethod(
+@@ -1131,8 +1133,7 @@ bool DWARFASTParserClang::ParseObjCMethod(
+     return false;
+ 
+   TypeSP complete_objc_class_type_sp =
+-      dwarf->FindCompleteObjCDefinitionTypeForDIE(DWARFDIE(), class_name,
+-                                                  false);
++      dwarf->FindCompleteObjCDefinitionTypeForDIE(die, class_name, false);
+ 
+   if (!complete_objc_class_type_sp)
+     return false;
+@@ -1159,6 +1160,11 @@ bool DWARFASTParserClang::ParseObjCMethod(
      return false;
    }
  
@@ -134,7 +166,7 @@ index b60f1d9e4..ab38e06fb 100644
    LinkDeclContextToDIE(objc_method_decl, die);
    m_ast.SetMetadataAsUserID(objc_method_decl, die.GetID());
  
-@@ -1757,6 +1764,9 @@ TypeSP DWARFASTParserClang::ParseStructureLikeDIE(
+@@ -1757,6 +1763,9 @@ TypeSP DWARFASTParserClang::ParseStructureLikeDIE(
    LanguageType cu_language = SymbolFileDWARF::GetLanguage(*die.GetCU());
    Log *log = GetLog(DWARFLog::TypeCompletion | DWARFLog::Lookups);
  
@@ -144,7 +176,7 @@ index b60f1d9e4..ab38e06fb 100644
    ConstString unique_typename(attrs.name);
    Declaration unique_decl(attrs.decl);
    uint64_t byte_size = attrs.byte_size.value_or(0);
-@@ -1764,6 +1774,8 @@ TypeSP DWARFASTParserClang::ParseStructureLikeDIE(
+@@ -1764,6 +1773,8 @@ TypeSP DWARFASTParserClang::ParseStructureLikeDIE(
    if (attrs.name) {
      GetUniqueTypeNameAndDeclaration(die, cu_language, unique_typename,
                                      unique_decl);
@@ -153,7 +185,7 @@ index b60f1d9e4..ab38e06fb 100644
      if (log) {
        dwarf->GetObjectFile()->GetModule()->LogMessage(
            log, "SymbolFileDWARF({0:p}) - {1:x16}: {2} has unique name: {3} ",
-@@ -1907,6 +1919,12 @@ TypeSP DWARFASTParserClang::ParseStructureLikeDIE(
+@@ -1907,6 +1918,12 @@ TypeSP DWARFASTParserClang::ParseStructureLikeDIE(
          tag_decl_kind, attrs.class_language, metadata, attrs.exports_symbols);
    }
  
@@ -199,18 +231,19 @@ index 000000000..639d83f48
 +} // namespace lldb_private::plugin::dwarf
 +#endif
 diff --git a/lldb/source/Plugins/SymbolFile/DWARF/SymbolFileDWARF.cpp b/lldb/source/Plugins/SymbolFile/DWARF/SymbolFileDWARF.cpp
-index 8075c8f61..4d18ca113 100644
+index 8075c8f61..879a85fb4 100644
 --- a/lldb/source/Plugins/SymbolFile/DWARF/SymbolFileDWARF.cpp
 +++ b/lldb/source/Plugins/SymbolFile/DWARF/SymbolFileDWARF.cpp
-@@ -7,6 +7,7 @@
+@@ -7,6 +7,8 @@
  //===----------------------------------------------------------------------===//
  
  #include "SymbolFileDWARF.h"
 +#include "ObjCRuntimeName.h"
++#include "Plugins/ExpressionParser/Clang/ObjC3MethodNames.h"
  #include "clang/Basic/ABI.h"
  #include "llvm/ADT/STLExtras.h"
  #include "llvm/ADT/StringExtras.h"
-@@ -3105,6 +3106,10 @@ Symbol *SymbolFileDWARF::GetObjCClassSymbol(ConstString objc_class_name) {
+@@ -3105,6 +3107,10 @@ Symbol *SymbolFileDWARF::GetObjCClassSymbol(ConstString objc_class_name) {
        objc_class_symbol = symtab->FindFirstSymbolWithNameAndType(
            objc_class_name, eSymbolTypeObjCClass, Symtab::eDebugNo,
            Symtab::eVisibilityAny);
@@ -221,7 +254,7 @@ index 8075c8f61..4d18ca113 100644
      }
    }
    return objc_class_symbol;
-@@ -3117,7 +3122,15 @@ TypeSP SymbolFileDWARF::FindCompleteObjCDefinitionTypeForDIE(
+@@ -3117,7 +3123,26 @@ TypeSP SymbolFileDWARF::FindCompleteObjCDefinitionTypeForDIE(
  
    TypeSP type_sp;
  
@@ -230,15 +263,26 @@ index 8075c8f61..4d18ca113 100644
 +  while (TypeContext && !IsStructOrClassTag(TypeContext.Tag()))
 +    TypeContext = TypeContext.GetParent();
 +  const auto ContextRuntimeName = GetObjCRuntimeName(TypeContext);
-+  const bool HasRuntimeBinding = TypeContext && TypeContext.GetName() &&
-+      ContextRuntimeName != llvm::StringRef(TypeContext.GetName());
-+  const auto RuntimeName = HasRuntimeBinding ? ContextRuntimeName : type_name.GetStringRef();
++  // Definitions may inherit their native linkage from the declaration DIE.
++  const char *LinkageName = die ? die.GetDIE()->GetAttributeValueAsString(
++                                      die.GetCU(), DW_AT_linkage_name, "", true)
++                                : "";
++  if (die && !*LinkageName)
++    LinkageName = die.GetDIE()->GetAttributeValueAsString(
++        die.GetCU(), DW_AT_MIPS_linkage_name, "", true);
++  const auto Method = ParseObjC3MethodNames(LinkageName);
++  const bool HasRuntimeBinding =
++      Method || (TypeContext && TypeContext.GetName() &&
++                 ContextRuntimeName != llvm::StringRef(TypeContext.GetName()));
++  const auto RuntimeName = Method              ? llvm::StringRef(Method->Class)
++                           : HasRuntimeBinding ? ContextRuntimeName
++                                               : type_name.GetStringRef();
 +  if (!type_name ||
 +      (must_be_implementation && !GetObjCClassSymbol(ConstString(RuntimeName))))
      return type_sp;
  
    m_index->GetCompleteObjCClass(
-@@ -3126,6 +3139,8 @@ TypeSP SymbolFileDWARF::FindCompleteObjCDefinitionTypeForDIE(
+@@ -3126,6 +3151,8 @@ TypeSP SymbolFileDWARF::FindCompleteObjCDefinitionTypeForDIE(
          // itself!
          if (type_die == die || !IsStructOrClassTag(type_die.Tag()))
            return IterationAction::Continue;
@@ -247,11 +291,165 @@ index 8075c8f61..4d18ca113 100644
  
          if (must_be_implementation) {
            const bool try_resolving_type = type_die.GetAttributeValueAsUnsigned(
+@@ -3145,7 +3172,7 @@ TypeSP SymbolFileDWARF::FindCompleteObjCDefinitionTypeForDIE(
+             m_objfile_sp->GetFileSpec().GetFilename().AsCString("<Unknown>"),
+             type_die.GetID(), type_cu->GetID());
+ 
+-        if (die)
++        if (die && IsStructOrClassTag(die.Tag()))
+           GetDIEToType()[die.GetDIE()] = resolved_type;
+         type_sp = resolved_type->shared_from_this();
+         return IterationAction::Stop;
 diff --git a/lldb/source/Plugins/ExpressionParser/Clang/ClangExpressionDeclMap.cpp b/lldb/source/Plugins/ExpressionParser/Clang/ClangExpressionDeclMap.cpp
-index 2278e30d5..9e54015c9 100644
+index 2278e30d5..47ffd3451 100644
 --- a/lldb/source/Plugins/ExpressionParser/Clang/ClangExpressionDeclMap.cpp
 +++ b/lldb/source/Plugins/ExpressionParser/Clang/ClangExpressionDeclMap.cpp
-@@ -1843,7 +1843,11 @@ void ClangExpressionDeclMap::AddOneFunction(NameSearchContext &context,
+@@ -16,6 +16,7 @@
+ #include "ClangUtil.h"
+ 
+ #include "NameSearchContext.h"
++#include "ObjC3MethodNames.h"
+ #include "Plugins/TypeSystem/Clang/TypeSystemClang.h"
+ #include "lldb/Core/Address.h"
+ #include "lldb/Core/Mangled.h"
+@@ -54,6 +55,7 @@
+ #include "clang/AST/ASTConsumer.h"
+ #include "clang/AST/ASTContext.h"
+ #include "clang/AST/ASTImporter.h"
++#include "clang/AST/DeclObjC.h"
+ #include "clang/AST/Decl.h"
+ #include "clang/AST/DeclarationName.h"
+ #include "clang/AST/RecursiveASTVisitor.h"
+@@ -67,6 +69,40 @@ using namespace clang;
+ static const char *g_lldb_local_vars_namespace_cstr = "$__lldb_local_vars";
+ 
+ namespace {
++llvm::StringRef ModuleOwner(llvm::StringRef Name) {
++  constexpr llvm::StringLiteral Prefix = "__objc3_m_";
++  constexpr size_t OwnerLength = Prefix.size() + 64 + 1;
++  if (Name.starts_with(Prefix) && Name.size() > OwnerLength &&
++      Name[OwnerLength - 1] == '_')
++    return Name.take_front(OwnerLength);
++  return {};
++}
++
++std::string FrameModuleOwner(StackFrame &Frame) {
++  auto sc = Frame.GetSymbolContext(eSymbolContextFunction);
++  if (!sc.function)
++    return {};
++  auto Owner =
++      ModuleOwner(sc.function->GetMangled().GetMangledName().GetStringRef());
++  if (!Owner.empty())
++    return Owner.str();
++  if (auto Method = ParseObjC3MethodNames(
++          sc.function->GetMangled().GetMangledName().GetStringRef())) {
++    Owner = ModuleOwner(Method->Category);
++    if (Owner.empty())
++      Owner = ModuleOwner(Method->Class);
++    if (!Owner.empty())
++      return Owner.str();
++  }
++  auto Context = sc.function->GetDeclContext();
++  if (llvm::isa_and_nonnull<TypeSystemClang>(Context.GetTypeSystem()))
++    if (const auto *Method = llvm::dyn_cast_or_null<ObjCMethodDecl>(
++            static_cast<DeclContext *>(Context.GetOpaqueDeclContext())))
++      if (const auto *Interface = Method->getClassInterface())
++        return ModuleOwner(Interface->getObjCRuntimeNameAsString()).str();
++  return {};
++}
++
+ /// A lambda is represented by Clang as an artifical class whose
+ /// members are the lambda captures. If we capture a 'this' pointer,
+ /// the artifical class will contain a member variable named 'this'.
+@@ -727,6 +763,47 @@ void ClangExpressionDeclMap::FindExternalVisibleDecls(
+     FindExternalVisibleDecls(context, lldb::ModuleSP(), namespace_decl);
+   }
+ 
++  // Source spellings of module-owned Objective-C classes can occur in several
++  // compile units. Prefer the current frame's module binding before the global
++  // type lookup, which otherwise returns the first same-spelled class.
++  if (!context.m_found_type && m_parser_vars &&
++      isa<TranslationUnitDecl>(context.m_decl_context)) {
++    if (StackFrame *frame = m_parser_vars->m_exe_ctx.GetFramePtr()) {
++      const auto sc = frame->GetSymbolContext(eSymbolContextCompUnit |
++                                              eSymbolContextModule);
++      if (sc.comp_unit && sc.module_sp) {
++        const auto Owner = FrameModuleOwner(*frame);
++        TypeQuery query(name, TypeQueryOptions::e_exact_match);
++        TypeResults results;
++        sc.module_sp->FindTypes(query, results);
++        for (const TypeSP &type : results.GetTypeMap().Types()) {
++          auto *scope = type->GetSymbolContextScope();
++          if (Owner.empty() &&
++              (!scope ||
++               scope->CalculateSymbolContextCompileUnit() != sc.comp_unit))
++            continue;
++          CompilerType full_type = type->GetFullCompilerType();
++          if (!ClangUtil::IsClangType(full_type))
++            continue;
++          const auto *ObjCType =
++              ClangUtil::GetQualType(full_type)->getAs<ObjCInterfaceType>();
++          if (!ObjCType ||
++              !ObjCType->getDecl()->getObjCRuntimeNameAsString().starts_with(
++                  "__objc3_m_"))
++            continue;
++          if (!Owner.empty() &&
++              ModuleOwner(ObjCType->getDecl()->getObjCRuntimeNameAsString()) !=
++                  Owner)
++            continue;
++          if (CompilerType copied = GuardedCopyType(full_type)) {
++            context.AddTypeDecl(copied);
++            context.m_found_type = true;
++            break;
++          }
++        }
++      }
++    }
++  }
+   ClangASTSource::FindExternalVisibleDecls(context);
+ }
+ 
+@@ -1281,6 +1358,39 @@ bool ClangExpressionDeclMap::LookupFunction(
+         sc_list);
+   }
+ 
++  // Distinct modules may use the same source function name and signature.
++  // Keep the current module's owned definitions before ordinary overload
++  // pruning; importing another module's declaration would replace its binding.
++  if (StackFrame *frame = m_parser_vars->m_exe_ctx.GetFramePtr()) {
++    CompileUnit *unit =
++        frame->GetSymbolContext(eSymbolContextCompUnit).comp_unit;
++    auto is_owned = [](const SymbolContext &sc) {
++      return sc.function && sc.function->GetMangled()
++                                .GetMangledName()
++                                .GetStringRef()
++                                .starts_with("__objc3_m_");
++    };
++    const auto Owner = FrameModuleOwner(*frame);
++    auto is_current = [&](const SymbolContext &sc) {
++      if (!is_owned(sc))
++        return false;
++      return Owner.empty() ? sc.function->GetCompileUnit() == unit
++                           : ModuleOwner(sc.function->GetMangled()
++                                             .GetMangledName()
++                                             .GetStringRef()) == Owner;
++    };
++    bool has_current_owned = false;
++    for (const auto &sc : sc_list)
++      has_current_owned |= is_current(sc);
++    if (has_current_owned) {
++      SymbolContextList preferred;
++      for (const auto &sc : sc_list)
++        if (!is_owned(sc) || is_current(sc))
++          preferred.Append(sc);
++      sc_list = preferred;
++    }
++  }
++
+   // If we found more than one function, see if we can use the frame's decl
+   // context to remove functions that are shadowed by other functions which
+   // match in type but are nearer in scope.
+@@ -1843,7 +1953,11 @@ void ClangExpressionDeclMap::AddOneFunction(NameSearchContext &context,
          (Language::LanguageIsObjC(lang) &&
           !Language::LanguageIsCPlusPlus(lang));
  
@@ -264,3 +462,69 @@ index 2278e30d5..9e54015c9 100644
        TypeSystem *type_system = function->GetDeclContext().GetTypeSystem();
        if (llvm::isa<TypeSystemClang>(type_system)) {
          clang::DeclContext *src_decl_context =
+diff --git a/lldb/source/Plugins/ExpressionParser/Clang/ObjC3MethodNames.h b/lldb/source/Plugins/ExpressionParser/Clang/ObjC3MethodNames.h
+new file mode 100644
+index 000000000..81a3347a9
+--- /dev/null
++++ b/lldb/source/Plugins/ExpressionParser/Clang/ObjC3MethodNames.h
+@@ -0,0 +1,60 @@
++//===-- ObjC3MethodNames.h - Owned GNUstep method symbols ---------*- C++
++//-*-===//
++//
++// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
++// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
++//
++//===----------------------------------------------------------------------===//
++#ifndef LLDB_PLUGINS_EXPRESSIONPARSER_CLANG_OBJC3METHODNAMES_H
++#define LLDB_PLUGINS_EXPRESSIONPARSER_CLANG_OBJC3METHODNAMES_H
++
++#include "llvm/ADT/StringExtras.h"
++#include "llvm/ADT/StringRef.h"
++#include <optional>
++#include <string>
++
++namespace lldb_private {
++struct ObjC3MethodNames {
++  std::string Class;
++  std::string Category;
++  std::string Selector;
++  bool IsClassMethod = false;
++  bool IsDirect = false;
++};
++
++inline std::optional<ObjC3MethodNames>
++ParseObjC3MethodNames(llvm::StringRef Name) {
++  Name.consume_front("\01");
++  if (!Name.consume_front("__objc3_method_"))
++    return std::nullopt;
++  ObjC3MethodNames Result;
++  if (Name.consume_front("c_"))
++    Result.IsClassMethod = true;
++  else if (!Name.consume_front("i_"))
++    return std::nullopt;
++  auto Field = [&](llvm::StringRef Tag, std::string &Value) {
++    if (!Name.consume_front(Tag))
++      return false;
++    const auto Split = Name.split('_');
++    size_t Size = 0;
++    if (Split.first.empty() || Split.first.getAsInteger(10, Size))
++      return false;
++    Name = Split.second;
++    if (Size > Name.size() / 2 ||
++        !llvm::tryGetFromHex(Name.take_front(Size * 2), Value))
++      return false;
++    Name = Name.drop_front(Size * 2);
++    return Name.consume_front("_");
++  };
++  if (!Field("R", Result.Class) || !Field("C", Result.Category) ||
++      !Field("S", Result.Selector) || Result.Class.empty() ||
++      Result.Selector.empty())
++    return std::nullopt;
++  if (Name == "D")
++    Result.IsDirect = true;
++  else if (Name != "M")
++    return std::nullopt;
++  return Result;
++}
++} // namespace lldb_private
++#endif
