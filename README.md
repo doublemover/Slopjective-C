@@ -261,6 +261,10 @@ continuation on the parent's executor; cancellation, abandonment, retained value
 Block captures and captured Objective-C exceptions preserve native cleanup.
 Worker callbacks drain autoreleased temporaries.
 
+The [task destination bridge](docs/roadmap/linux_task_hops.md) adds actor-bound
+starts, queued executor and actor hops, and inherited child destinations. Service
+ABI 3 requires rebuilding runtime clients, coroutine providers and packages.
+
 The [native async compiler stage](docs/roadmap/linux_native_async.md) lowers
 logical-result free functions and native awaits into Objective-C++20/23 task
 frames, including nested private children, deferred cleanup and source-free

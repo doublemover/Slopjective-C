@@ -265,8 +265,150 @@ static void actors(void) {
   assert(objc3_actor_current_facts(&current) == OBJC3_SERVICE_OK &&
          current.actor_identity == 0 && current.executor_identity == 0);
 }
+typedef struct HopFrame {
+  objc3_actor_t *first;
+  objc3_actor_t *second;
+  objc3_executor_t *other;
+  objc3_task_t *child;
+  unsigned step;
+  int destroyed;
+  objc3_task_group_t *group;
+  objc3_task_t *task;
+} HopFrame;
+static void pending_wait_from_other_executor(void *opaque) {
+  HopFrame *frame = (HopFrame *)opaque;
+  // The pending task can hop here after the check. Waiting would prevent its
+  // future continuation from running, even though its current actor is elsewhere.
+  assert(objc3_task_wait(frame->task) == OBJC3_SERVICE_NOT_READY);
+  assert(objc3_task_group_join(frame->group) == OBJC3_SERVICE_NOT_READY);
+}
+static objc3_current_actor_facts current_destination(void) {
+  objc3_current_actor_facts facts = ZERO_INIT;
+  facts.struct_size = sizeof(facts);
+  facts.version = OBJC3_ACTOR_SERVICE_VERSION;
+  assert(objc3_actor_current_facts(&facts) == OBJC3_SERVICE_OK);
+  return facts;
+}
+static void child_resume(objc3_task_t *task, void *opaque) {
+  HopFrame *frame = (HopFrame *)opaque;
+  assert(current_destination().actor_identity ==
+         objc3_actor_identity(frame->second));
+  objc3_completion completion = ZERO_INIT;
+  completion.struct_size = sizeof(completion);
+  completion.version = OBJC3_SERVICE_ABI_VERSION;
+  assert(objc3_task_complete(task, &completion) == OBJC3_SERVICE_OK);
+}
+static void hop_resume(objc3_task_t *task, void *opaque) {
+  HopFrame *frame = (HopFrame *)opaque;
+  objc3_current_actor_facts current = current_destination();
+  assert(objc3_task_hop(task, NULL, NULL) == OBJC3_SERVICE_INVALID_ARGUMENT);
+  assert(objc3_task_hop(task, frame->other, frame->first) ==
+         OBJC3_SERVICE_INVALID_ARGUMENT);
+  switch (frame->step++) {
+  case 0:
+    assert(current.actor_identity == objc3_actor_identity(frame->first));
+    assert(objc3_task_hop(task, NULL, frame->second) == OBJC3_SERVICE_OK);
+    break;
+  case 1:
+    assert(current.actor_identity == objc3_actor_identity(frame->second));
+    assert(objc3_task_schedule_resume(task) == OBJC3_SERVICE_OK);
+    break;
+  case 2: {
+    assert(current.actor_identity == objc3_actor_identity(frame->second));
+    objc3_task_start_options options = ZERO_INIT;
+    options.struct_size = sizeof(options);
+    options.version = OBJC3_SERVICE_ABI_VERSION;
+    options.resume = child_resume;
+    options.frame = frame;
+    options.destroy = destroy_int;
+    options.executor = frame->other;
+    assert(objc3_task_start_child(task, &options, &frame->child) ==
+           OBJC3_SERVICE_INVALID_ARGUMENT);
+    options.executor = NULL;
+    assert(objc3_task_start_child(task, &options, &frame->child) ==
+           OBJC3_SERVICE_OK);
+    assert(objc3_task_await(task, frame->child) == OBJC3_SERVICE_OK);
+    assert(objc3_task_hop(task, frame->other, NULL) ==
+           OBJC3_SERVICE_INVALID_ARGUMENT);
+    break;
+  }
+  case 3:
+    assert(current.actor_identity == objc3_actor_identity(frame->second));
+    objc3_task_release(frame->child);
+    frame->child = NULL;
+    assert(objc3_task_hop(task, frame->other, NULL) == OBJC3_SERVICE_OK);
+    break;
+  case 4:
+    assert(current.actor_identity == 0 && current.executor_identity != 0);
+    assert(current.executor_identity !=
+           objc3_actor_executor_identity(frame->first));
+    assert(objc3_task_hop(task, NULL, frame->first) == OBJC3_SERVICE_OK);
+    break;
+  case 5: {
+    assert(current.actor_identity == objc3_actor_identity(frame->first));
+    objc3_completion completion = ZERO_INIT;
+    completion.struct_size = sizeof(completion);
+    completion.version = OBJC3_SERVICE_ABI_VERSION;
+    assert(objc3_task_complete(task, &completion) == OBJC3_SERVICE_OK);
+    break;
+  }
+  default:
+    assert(0);
+  }
+}
+static void hop_destroy(void *opaque) {
+  ++((HopFrame *)opaque)->destroyed;
+}
+static void task_hops(void) {
+  HopFrame frame = ZERO_INIT;
+  objc3_executor_t *executor = NULL;
+  assert(objc3_executor_create(1, &executor) == OBJC3_SERVICE_OK);
+  assert(objc3_executor_create(1, &frame.other) == OBJC3_SERVICE_OK);
+  assert(objc3_actor_create(executor, &frame.first) == OBJC3_SERVICE_OK);
+  assert(objc3_actor_create(executor, &frame.second) == OBJC3_SERVICE_OK);
+  objc3_task_start_options options = ZERO_INIT;
+  options.struct_size = sizeof(options);
+  options.version = 2; // The previous start layout is an unsupported ABI.
+  options.actor = frame.first;
+  options.resume = hop_resume;
+  options.destroy = hop_destroy;
+  options.frame = &frame;
+  objc3_task_t *task = NULL;
+  assert(objc3_task_start(&options, &task) == OBJC3_SERVICE_UNSUPPORTED_VERSION);
+  assert(!task && !frame.destroyed);
+  options.version = OBJC3_SERVICE_ABI_VERSION;
+  options.executor = executor;
+  assert(objc3_task_start(&options, &task) == OBJC3_SERVICE_INVALID_ARGUMENT);
+  assert(!task && !frame.destroyed);
+  options.executor = NULL;
+  assert(objc3_task_start(&options, &task) == OBJC3_SERVICE_OK);
+  frame.task = task;
+  assert(objc3_task_group_create(NULL, &frame.group) == OBJC3_SERVICE_OK);
+  assert(objc3_task_group_add(frame.group, task) == OBJC3_SERVICE_OK);
+  assert(objc3_task_group_close(frame.group) == OBJC3_SERVICE_OK);
+  assert(objc3_executor_enqueue(frame.other, pending_wait_from_other_executor,
+                                 &frame) == OBJC3_SERVICE_OK);
+  uint32_t executed = 0;
+  assert(objc3_executor_pump(frame.other, 1, &executed) == OBJC3_SERVICE_OK);
+  assert(executed == 1 && frame.step == 0);
+  assert(objc3_task_hop(task, executor, NULL) == OBJC3_SERVICE_INVALID_ARGUMENT);
+  assert(objc3_executor_pump(executor, 100, &executed) == OBJC3_SERVICE_OK);
+  assert(frame.step == 4 && !frame.destroyed);
+  assert(objc3_executor_pump(frame.other, 100, &executed) == OBJC3_SERVICE_OK);
+  assert(frame.step == 5 && !frame.destroyed);
+  assert(objc3_executor_pump(executor, 100, &executed) == OBJC3_SERVICE_OK);
+  assert(frame.step == 6 && frame.destroyed == 1);
+  assert(objc3_task_group_join(frame.group) == OBJC3_SERVICE_OK);
+  objc3_task_group_release(frame.group);
+  objc3_task_release(task);
+  objc3_actor_release(frame.second);
+  objc3_actor_release(frame.first);
+  objc3_executor_release(frame.other);
+  objc3_executor_release(executor);
+}
 int main(void) {
   groups();
   actors();
+  task_hops();
   return 0;
 }

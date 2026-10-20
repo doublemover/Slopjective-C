@@ -36,9 +36,10 @@ the promise. The private physical return ABI uses the task class, including its
 native C++ return-object convention. Every participant must use the same compiler
 extension ABI and runtime header.
 
-Awaiting a lazy task starts a private child on the parent's executor. Leaving
+Awaiting a lazy task starts a private child on the parent's current destination. Leaving
 that await cancels an unfinished private child, including parent cancellation,
-exception unwinding and frame abandonment. Awaiting an existing `task_handle<T>`
+exception unwinding and frame abandonment. The runtime also supports
+[actor-bound starts and executor hops](linux_task_hops.md). Awaiting an existing `task_handle<T>`
 keeps its shared dependency semantics. Cancellation remains cooperative;
 code between suspension points must check cancellation when necessary.
 

@@ -63,6 +63,7 @@ struct objc3_task final {
   mutable std::mutex mutex;
   std::condition_variable completed;
   objc3_executor_t *executor{nullptr};
+  objc3_actor_t *actor{nullptr};
   void *frame{nullptr};
   objc3_task_resume resume{nullptr};
   objc3_frame_destroy destroy{nullptr};
@@ -71,6 +72,7 @@ struct objc3_task final {
   bool resume_after_completion_claim{false};
   bool resume_queued{false};
   bool resume_active{false};
+  bool resume_requested{false};
   bool awaiting{false};
   uint64_t await_generation{0};
   std::shared_ptr<AwaitTarget> await_target;

@@ -21,4 +21,7 @@ objc3::task_handle<int> start_owned_child(objc3_executor_t *,
                                          std::shared_ptr<coroutine_state>);
 objc3::task_handle<std::string> start_failure(objc3_executor_t *);
 objc3::task_handle<void> start_foreign_error(objc3_executor_t *);
+objc3::task_handle<int> start_actor_hops(
+    objc3_actor_t *, objc3_actor_t *, objc3_executor_t *,
+    std::shared_ptr<coroutine_state>, unsigned);
 #endif

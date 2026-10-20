@@ -139,4 +139,35 @@ int native_object_error() __objc3_async {
 int native_exception_number(__unsafe_unretained id value) {
   return ((NativeAsyncValue *)value)->number;
 }
+int native_actor_owned(objc3_actor_t *first, objc3_actor_t *second,
+                       bool fail) __objc3_async {
+  NativeAsyncValue *value = [NativeAsyncValue new];
+#if !__has_feature(objc_arc)
+  struct release_owner {
+    NativeAsyncValue *value;
+    ~release_owner() { objc_release(value); }
+  } owner{value};
+#endif
+  value->number = 42;
+  int (^read)(void) = ^{ return value->number; };
+  auto actor_identity = [] {
+    objc3_current_actor_facts facts{};
+    facts.struct_size = sizeof(facts);
+    facts.version = OBJC3_ACTOR_SERVICE_VERSION;
+    if (objc3_actor_current_facts(&facts) != OBJC3_SERVICE_OK)
+      __builtin_trap();
+    return facts.actor_identity;
+  };
+  if (actor_identity() != objc3_actor_identity(first)) __builtin_trap();
+  __objc3_await objc3::hop_to(second);
+  if (actor_identity() != objc3_actor_identity(second)) __builtin_trap();
+  __objc3_await objc3::task_yield;
+  if (actor_identity() != objc3_actor_identity(second)) __builtin_trap();
+  int result = __objc3_await native_identity(read());
+  if (actor_identity() != objc3_actor_identity(second)) __builtin_trap();
+  __objc3_await objc3::hop_to(first);
+  if (actor_identity() != objc3_actor_identity(first)) __builtin_trap();
+  if (fail) throw result;
+  return result;
+}
 #endif

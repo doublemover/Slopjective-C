@@ -67,6 +67,10 @@ The implemented foundations have separate bounded contracts:
 
 ## Next compiler milestones
 
+The [task destination bridge](linux_task_hops.md) supplies actor-bound resumes,
+explicit executor/actor hops and inherited child destinations. Compiler isolation
+and the public language contract still require the following work.
+
 1. Extend the Objective-C++ native async stage to pure Objective-C functions and
    the public language contract.
    Define suspension ownership, checked typed-error propagation, cancellation,

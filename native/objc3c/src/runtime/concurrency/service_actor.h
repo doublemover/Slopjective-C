@@ -24,6 +24,8 @@ Actor *actor_retain(Actor *actor);
 void actor_release(Actor *actor);
 uint64_t actor_identity(const Actor *actor) noexcept;
 uint64_t actor_executor_identity(const Actor *actor) noexcept;
+// Borrowed while the caller keeps the actor alive.
+objc3_executor_t *actor_executor(Actor *actor) noexcept;
 
 // On success the actor owns context and calls destroy exactly once, after the
 // job returns or when cancellation discards the queued job. On failure the

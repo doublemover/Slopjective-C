@@ -480,6 +480,9 @@ objc3_service_status task_group_join(TaskGroup *group) {
     std::unique_lock<std::mutex> lock(group->mutex);
     if (!group->closed) return OBJC3_SERVICE_NOT_READY;
     if (group->failure_propagation_failed) return OBJC3_SERVICE_NOT_READY;
+    if ((group->registrations_inflight != 0 || group->child_closures_inflight != 0) &&
+        executor_current_identity() != 0)
+      return OBJC3_SERVICE_NOT_READY;
     group->changed.wait(lock, [group] {
       return group->registrations_inflight == 0 &&
              group->child_closures_inflight == 0;

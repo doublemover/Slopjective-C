@@ -1,6 +1,6 @@
 #include "objc3_runtime_services.h"
 
-_Static_assert(OBJC3_SERVICE_ABI_VERSION == 2u, "expected service ABI v2");
+_Static_assert(OBJC3_SERVICE_ABI_VERSION == 3u, "expected service ABI v3");
 _Static_assert(OBJC3_VALUE_OPS_VERSION == 1u, "expected value ops v1");
 
 int objc3_task_services_c18_header_check(void) {

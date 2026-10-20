@@ -41,10 +41,12 @@ C++ coroutine lifetime rules: pass owned values when they must outlive the call.
 Use named coroutine functions rather than a temporary capturing coroutine lambda
 whose closure could expire while its frame remains suspended.
 
-Awaiting a lazy `task<T>` starts a private child on the parent's executor. The
+Awaiting a lazy `task<T>` starts a private child on the parent's current destination. The
 parent owns that await and cancels the child if it leaves the await before the
 child completes. Awaiting a retained `task_handle<T>` preserves the independent
-lifetime of a shared dependency.
+lifetime of a shared dependency. Tasks can also start on actor mailboxes and
+[hop between retained destinations](linux_task_hops.md), preserving affinity
+through later yields and dependency waits.
 
 Awaiting a handle always queues a continuation on the parent's executor, even
 when the dependency is already complete. It never blocks a worker, pumps a manual
@@ -57,7 +59,9 @@ alive while inspecting the outcome.
 leaves the output unchanged. The view remains borrowed from the retained task.
 `task_handle<T>::result()` copies a completed value and reports a pending result
 as `service_failure(NOT_READY)`. `wait()` is an explicit blocking operation with
-the public runtime's current-executor restrictions. Manual executor owners pump
+the public runtime's executor callback restrictions. A pending wait from any
+runtime executor callback returns `NOT_READY`, because a task may hop back to
+that executor. Manual executor owners pump
 explicitly. Zero and false are present values; void success has no payload.
 Results require copy construction and a nonthrowing destructor.
 

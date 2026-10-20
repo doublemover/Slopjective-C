@@ -160,4 +160,40 @@ int main() {
   objc3_executor_release(executor);
   assert(state->entered == state->destroyed);
   assert(state->parents == state->deferred);
+#ifdef __OBJC__
+  objc3_executor_t *other = nullptr;
+  assert(objc3_executor_create(0, &other) == OBJC3_SERVICE_OK);
+  assert(objc3_executor_create(0, &executor) == OBJC3_SERVICE_OK);
+  objc3_actor_t *first = nullptr, *second = nullptr;
+  assert(objc3_actor_create(executor, &first) == OBJC3_SERVICE_OK);
+  assert(objc3_actor_create(other, &second) == OBJC3_SERVICE_OK);
+  objc3_task_group_t *group = nullptr;
+  assert(objc3_task_group_create(nullptr, &group) == OBJC3_SERVICE_OK);
+  std::vector<objc3::task_handle<int>> hopped;
+  for (unsigned index = 0; index != 32; ++index) {
+    auto value = native_actor_owned(first, second, index % 2).start_on(first);
+    assert(objc3_task_group_add(group, value.native_handle()) == OBJC3_SERVICE_OK);
+    hopped.push_back(std::move(value));
+  }
+  // A failed task cancels siblings, so each frame must preserve ownership on
+  // success, exception propagation or cancellation during a cross-worker hop.
+  assert(objc3_task_group_close(group) == OBJC3_SERVICE_OK);
+  assert(objc3_task_group_join(group) == OBJC3_SERVICE_OK);
+  for (const auto &value : hopped) {
+    try { assert(value.result() == 42); }
+    catch (int error) { assert(error == 42); }
+    catch (const objc3::task_cancelled &) {}
+  }
+  assert(native_object_destructions() == 36);
+  hopped.clear();
+  objc3_task_group_release(group);
+  assert(objc3_actor_close(first) == OBJC3_SERVICE_OK);
+  assert(objc3_actor_close(second) == OBJC3_SERVICE_OK);
+  assert(objc3_actor_join(first) == OBJC3_SERVICE_OK);
+  assert(objc3_actor_join(second) == OBJC3_SERVICE_OK);
+  objc3_actor_release(second);
+  objc3_actor_release(first);
+  objc3_executor_release(other);
+  objc3_executor_release(executor);
+#endif
 }

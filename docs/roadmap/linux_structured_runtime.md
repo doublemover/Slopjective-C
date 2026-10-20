@@ -28,8 +28,8 @@ is borrowed until task release; a callback view is borrowed for callback scope.
 Callers copy a payload or retain an error before keeping it independently.
 
 Join requires a closed group and includes terminal completion, registered
-callbacks and frame cleanup. A wait on pending work from its own task or serial
-executor returns `NOT_READY`. Manual executor owners pump explicitly and retry.
+callbacks and frame cleanup. A wait on pending work from its own task or any
+runtime executor callback returns `NOT_READY`. Manual executor owners pump explicitly and retry.
 Callers close and join before releasing their final group reference.
 
 Actors serialize jobs on a chosen executor. Successful enqueue transfers context
@@ -58,3 +58,5 @@ instrumented ASan/LeakSanitizer/UBSan/ThreadSanitizer at O0/O2, and fresh
 Debian/Ubuntu archive qualification to the exact implementation and SDK seal.
 The [native coroutine bridge](linux_task_coroutines.md) adds queued dependency
 handoff, cancellation wakeup, compiler-owned frames and callback autorelease pools.
+The [task destination bridge](linux_task_hops.md) adds actor-bound resumable tasks
+and explicit executor hops while preserving mailbox identity across suspension.
