@@ -327,6 +327,53 @@ std::string ExportRootName(const clang::NamedDecl *declaration) {
   return {};
 }
 
+// Read native attribute fields rather than source spellings or macro names.
+// Length-delimited fields preserve messages, replacement text and platform
+// contracts without ambiguity from punctuation or source attribute spelling.
+std::string AvailabilityIdentity(const clang::NamedDecl *declaration) {
+  std::vector<std::string> attributes;
+  for (const auto *attribute : declaration->attrs()) {
+    if (attribute->isImplicit())
+      continue;
+    std::string value;
+    auto field = [&](llvm::StringRef text) {
+      value += std::to_string(text.size()) + ":" + text.str();
+    };
+    if (const auto *deprecated =
+            llvm::dyn_cast<clang::DeprecatedAttr>(attribute)) {
+      field("deprecated");
+      field(deprecated->getMessage());
+      field(deprecated->getReplacement());
+    } else if (const auto *unavailable =
+                   llvm::dyn_cast<clang::UnavailableAttr>(attribute)) {
+      field("unavailable");
+      field(unavailable->getMessage());
+    } else if (const auto *availability =
+                   llvm::dyn_cast<clang::AvailabilityAttr>(attribute)) {
+      field("availability");
+      field(availability->getPlatform()->getName());
+      field(availability->getIntroduced().normalize().getAsString());
+      field(availability->getDeprecated().normalize().getAsString());
+      field(availability->getObsoleted().normalize().getAsString());
+      field(availability->getUnavailable() ? "true" : "false");
+      field(availability->getMessage());
+      field(availability->getStrict() ? "true" : "false");
+      field(availability->getReplacement());
+      field(std::to_string(availability->getPriority()));
+      field(availability->getEnvironment()
+                ? availability->getEnvironment()->getName()
+                : "");
+    } else {
+      continue;
+    }
+    attributes.push_back(std::move(value));
+  }
+  std::string result;
+  for (const auto &value : attributes)
+    result += std::to_string(value.size()) + ":" + value;
+  return result;
+}
+
 bool SelectedExport(const clang::NamedDecl *declaration,
                     const std::vector<std::string> &exports) {
   return exports.empty() ||
@@ -653,6 +700,9 @@ class InterfaceCollector final
     }
     for (const auto *attribute : declaration->attrs()) {
       if (attribute->isImplicit()) continue;
+      if (llvm::isa<clang::DeprecatedAttr, clang::UnavailableAttr,
+                    clang::AvailabilityAttr>(attribute))
+        continue;
       if (llvm::isa<clang::ObjCMethodDecl>(declaration) &&
           llvm::isa<clang::ObjCDirectAttr>(attribute))
         continue;
@@ -754,7 +804,9 @@ void PrintRootDeclaration(clang::NamedDecl *declaration,
     policy.TerseOutput = true;
     // Print modeled ownership exactly once, independently of whether the
     // original declaration placed its GNU attribute before or after the type.
-    policy.SuppressDeclAttributes = true;
+    // Declaration polishing retains modeled native availability while the
+    // ownership attribute below remains canonical across ARC and MRC.
+    policy.SuppressDeclAttributes = false;
   }
   if (llvm::isa<clang::VarDecl>(declaration)) {
     policy.SuppressInitializers = true;
@@ -884,6 +936,9 @@ bool ReadInterfaceDeclarationIdentity(
   identity.canonical_type_identity =
       DeclarationTypeIdentity(representative, context);
   if (identity.canonical_type_identity.empty()) return false;
+  const auto availability = AvailabilityIdentity(representative);
+  if (!availability.empty())
+    identity.canonical_type_identity += ";api-availability=" + availability;
   if (auto *value = llvm::dyn_cast<clang::ValueDecl>(representative)) {
     identity.effects = ReadCanonicalFunctionEffects(value->getType(), context);
     const auto lifetime = value->getType().getObjCLifetime();
@@ -1020,6 +1075,9 @@ InterfaceEmissionArtifact EmitSemanticInterface(
   if (collector.UsesCanonicalFunctionEffects())
     sidecar.required_semantics.push_back("objc3.canonical-function-effects.v1");
   for (const auto &declaration : sidecar.declarations) {
+    if (declaration.canonical_type_identity.find(";api-availability=") !=
+        std::string::npos)
+      sidecar.required_semantics.push_back("objc3.api-availability.v1");
     if (declaration.kind == "ObjCMethod" &&
         declaration.canonical_type_identity.find(";dispatch=direct") != std::string::npos)
       sidecar.required_semantics.push_back("objc3.direct-dispatch.v1");
@@ -1044,9 +1102,13 @@ InterfaceEmissionArtifact EmitSemanticInterface(
   sidecar.canonical_source_sha256 = ComputeInterfaceSourceSha256(result.source_bytes);
 
   const std::vector<llvm::StringRef> supported_semantics = {
-      "objc3.canonical-function-effects.v1", "objc3.native-carrier-types.v1",
-      "objc3.native-return-ownership.v1",    "objc3.direct-dispatch.v1",
-      "objc3.cxx-data-interfaces.v1",        "objc3.ownership-projection.v1"};
+      "objc3.canonical-function-effects.v1",
+      "objc3.native-carrier-types.v1",
+      "objc3.native-return-ownership.v1",
+      "objc3.direct-dispatch.v1",
+      "objc3.cxx-data-interfaces.v1",
+      "objc3.ownership-projection.v1",
+      "objc3.api-availability.v1"};
   auto encoded = EncodeSemanticInterfaceSidecar(sidecar, supported_semantics);
   if (!encoded) {
     AddDiagnostic(result, "O3IFC120",
@@ -1122,9 +1184,13 @@ InterfaceEmissionArtifact EmitSemanticInterface(
 
 namespace {
 const std::vector<llvm::StringRef> kProjectionSemantics = {
-    "objc3.canonical-function-effects.v1", "objc3.native-carrier-types.v1",
-    "objc3.native-return-ownership.v1",    "objc3.direct-dispatch.v1",
-    "objc3.cxx-data-interfaces.v1",        "objc3.ownership-projection.v1"};
+    "objc3.canonical-function-effects.v1",
+    "objc3.native-carrier-types.v1",
+    "objc3.native-return-ownership.v1",
+    "objc3.direct-dispatch.v1",
+    "objc3.cxx-data-interfaces.v1",
+    "objc3.ownership-projection.v1",
+    "objc3.api-availability.v1"};
 
 bool ProjectionMode(const clang::ASTContext &context) {
   const auto &lang = context.getLangOpts();

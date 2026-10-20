@@ -46,6 +46,24 @@ int main() {
   assert(!ValidateSemanticInterface(sidecar, target, sidecar.canonical_source_sha256,
                                     {decl}, {}).ok());
   auto drift = decl;
+  auto availability = sidecar;
+  auto annotated = decl;
+  annotated.canonical_type_identity += ";api-availability=deprecated";
+  availability.declarations = {annotated};
+  assert(!ValidateSemanticInterface(availability, module,
+                                    availability.canonical_source_sha256,
+                                    {annotated}, {})
+              .ok());
+  availability.required_semantics = {"objc3.api-availability.v1"};
+  assert(ValidateSemanticInterface(availability, module,
+                                   availability.canonical_source_sha256,
+                                   {annotated}, {"objc3.api-availability.v1"})
+             .ok());
+  availability.declarations = {decl};
+  assert(!ValidateSemanticInterface(availability, module,
+                                    availability.canonical_source_sha256,
+                                    {decl}, {"objc3.api-availability.v1"})
+              .ok());
   drift.canonical_type_identity = "long ()";
   assert(!ValidateSemanticInterface(sidecar, module, sidecar.canonical_source_sha256,
                                     {drift}, {}).ok());

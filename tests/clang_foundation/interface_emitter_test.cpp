@@ -45,7 +45,7 @@ void TestOrdinaryCDeclarationsRoundTrip() {
 
 void TestUnmodeledAttributesFailClosed() {
   auto ast = clang::tooling::buildASTFromCodeWithArgs(
-      "__attribute__((deprecated)) int old_api(void);\n",
+      "__attribute__((noinline)) int old_api(void);\n",
       {"-x", "c", "-std=c11", "--target=x86_64-unknown-linux-gnu"},
       "attributed_fixture.c");
   assert(ast && !ast->getDiagnostics().hasErrorOccurred());

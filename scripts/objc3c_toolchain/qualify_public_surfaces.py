@@ -20,8 +20,8 @@ else:
     from build import build_graph
 
 
-def prepare(sdk: Path, root: Path, language: str, standard: str, ownership: str) -> Path:
-    shutil.copytree(sdk / 'share/objc3c/examples/public-module-surface', root)
+def prepare(sdk: Path, root: Path, language: str, standard: str, ownership: str, *, fixture: str = "public-module-surface") -> Path:
+    shutil.copytree(sdk / "share/objc3c/examples" / fixture, root)
     suffix = {'objective-c': '.m', 'objective-c++': '.mm', 'c++': '.cpp'}[language]
     for path in root.glob('*/package.json'):
         config = json.loads(path.read_text())

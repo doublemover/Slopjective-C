@@ -1,0 +1,21 @@
+{
+  "schema": "objc3c.source-package.v4",
+  "name": "fixture.AvailabilityLeaf",
+  "package": "availability-leaf-v1",
+  "source": "module.m",
+  "language": "objective-c",
+  "standard": "c17",
+  "ownership": "arc",
+  "provider_ownership": "arc",
+  "exports": [
+    "AvailabilityValue",
+    "availability_value",
+    "availability_old",
+    "availability_removed",
+    "availability_old_global",
+    "AvailabilityOldAlias",
+    "AvailabilityChoice",
+    "availability_platform"
+  ],
+  "dependencies": []
+}

@@ -238,6 +238,11 @@ The [public module surface contract](docs/roadmap/linux_public_module_surfaces.m
 selects exported roots, rejects private type leaks and preserves dependent build
 reuse across private implementation edits.
 
+The [public availability contract](docs/roadmap/linux_api_availability.md) keeps
+native deprecation, unavailability and platform metadata in semantic identities
+and preserves their diagnostics in source-free consumers. Public metadata edits
+invalidate dependent compilations.
+
 The [ownership projection workflow](docs/roadmap/linux_ownership_projections.md)
 connects closed ARC and MRC C APIs through explicit native return ownership.
 Consumer-mode interfaces bind their original producer contract; source graphs and

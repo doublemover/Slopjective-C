@@ -44,10 +44,14 @@ The implemented foundations have separate bounded contracts:
   across private implementation edits. Source manifests v4 and binary packages
   v3 require explicit export policies. Semantic interfaces remain schema 2.
 
+- [Public API availability](linux_api_availability.md) preserves native
+  deprecation, unavailability and platform metadata through imports, ownership
+  projections and source-free packages. Metadata edits invalidate dependents.
+
 ## Next implementation sequence
 
-1. Extend the bounded public module API with privileged SPI, availability
-   metadata and module-owned linker/runtime naming contracts. Native imports,
+1. Extend the bounded public module API with privileged SPI and module-owned
+   linker/runtime naming contracts. Native availability metadata is implemented. Native imports,
    qualified lookup, explicit export selection and immutable dependency
    identities are implemented. Registry transport is a separate concern.
 2. Build structured task groups, cancellation and actor isolation on that
