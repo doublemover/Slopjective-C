@@ -218,6 +218,64 @@ void Projection(const fs::path &root, bool arc) {
   assert(result.interface_artifact->source_bytes.find("use new factory") !=
          std::string::npos);
 }
+void ScopedRedeclarations(const fs::path &root, const std::string &standard,
+                          bool arc) {
+  auto provider =
+      Request(root / "scoped.mm", BaseLanguage::ObjectiveCxx, standard, arc,
+              "struct SharedValue;\n"
+              "typedef struct SharedValue { int value; int old_field "
+              "__attribute__((deprecated(\"old shared field\"))); } "
+              "SharedValue;\n"
+              "enum SharedChoice { shared_choice = 42 };\n");
+  provider.emit_semantic_interface = true;
+  provider.module_name = "ScopedLeaf";
+  provider.package_identity = "scoped-leaf";
+  provider.interface_output_path = (root / "ScopedLeaf.objc3i").string();
+  auto leaf = Compile(provider);
+  assert(leaf.success && leaf.interface_artifact);
+  InterfaceImportInput input;
+  input.source_path = provider.interface_output_path;
+  input.locked_identity = leaf.interface_artifact->identity;
+  input.public_import = input.reexported = true;
+  auto top = provider;
+  top.source_text = "int top_api(SharedValue *);\n";
+  top.module_name = "ScopedTop";
+  top.package_identity = "scoped-top";
+  top.interface_output_path = (root / "ScopedTop.objc3i").string();
+  top.imported_interfaces = {input};
+  auto exported = Compile(top);
+  assert(exported.success && exported.interface_artifact);
+
+  auto client = Request(root / "scoped-client.mm", BaseLanguage::ObjectiveCxx,
+                        standard, arc, "");
+  client.source_directed_imports = true;
+  client.interface_search_paths = {root.string()};
+  InterfaceModuleRequest locked;
+  locked.canonical_name = "ScopedTop";
+  locked.locked_identity = exported.interface_artifact->identity;
+  locked.initially_visible = false;
+  client.module_imports = {locked};
+  client.arguments.push_back("-Werror=deprecated-declarations");
+  // Source-scoped imports hide the full redeclaration set before activating
+  // a re-export. Different preceding declarations vary AST allocation order.
+  for (unsigned iteration = 0; iteration != 8; ++iteration) {
+    const auto prefix = "int allocation_pad[" + std::to_string(iteration + 1) +
+                        "];\n@import ScopedTop;\n";
+    client.source_text = prefix + "int use(SharedValue *v) { return v->value + "
+                                  "shared_choice; }\n";
+    assert(Compile(client).success);
+    client.source_text =
+        prefix + "int use(SharedValue *v) { return v->old_field; }\n";
+    auto rejected = Compile(client);
+    assert(!rejected.success);
+    bool diagnostic = false;
+    for (const auto &row : rejected.diagnostics)
+      diagnostic |= row.message.find("old shared field") != std::string::npos;
+    assert(diagnostic);
+  }
+  client.source_text = "int use(SharedValue *v) { return shared_choice; }\n";
+  assert(!Compile(client).success);
+}
 } // namespace
 int main() {
   auto root = fs::temp_directory_path() / "objc3 native availability";
@@ -228,8 +286,10 @@ int main() {
     Check(root, BaseLanguage::Cxx, standard, false);
   for (bool arc : {false, true}) {
     Check(root, BaseLanguage::ObjectiveC, "c17", arc);
-    for (const auto &standard : {"c++20", "c++23"})
+    for (const auto &standard : {"c++20", "c++23"}) {
       Check(root, BaseLanguage::ObjectiveCxx, standard, arc);
+      ScopedRedeclarations(root, standard, arc);
+    }
     Projection(root, arc);
   }
   fs::remove_all(root);
