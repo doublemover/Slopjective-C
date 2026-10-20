@@ -13,12 +13,12 @@ import sys
 import time
 
 if __package__:
-    from .sdk_example import dependencies, digest, environment, hashes, reusable, write_json
+    from .sdk_example import coroutine_compile_flags, runtime_link_flags, dependencies, digest, environment, hashes, reusable, write_json
 else:
     # Standalone helpers live in a sealed, possibly user-owned SDK. Keep
     # bytecode out of that installation without changing library callers.
     sys.dont_write_bytecode = True
-    from sdk_example import dependencies, digest, environment, hashes, reusable, write_json
+    from sdk_example import coroutine_compile_flags, runtime_link_flags, dependencies, digest, environment, hashes, reusable, write_json
 
 WORKSPACE = 'objc3c.source-workspace.v4'
 PACKAGE = 'objc3c.source-package.v4'
@@ -281,7 +281,7 @@ def _build(sdk: Path, graph: dict, output: Path, optimization: str) -> dict:
         if name != APP:
             for declaration in config['exports']:
                 command += ['--export-declaration', declaration]
-        command += ['--', '--no-default-config', '-std=' + config['standard'], '-fblocks', '-' + optimization,
+        command += ['--', '--no-default-config', '-std=' + config['standard'], *coroutine_compile_flags(config['language']), '-fblocks', '-' + optimization,
                     '-isystem', str(sdk / 'include'),
                     '-MD', '-MF', str(depfile), '-MT', 'dependencies']
         # A source implementation edit rebuilds that package. Importers depend
@@ -318,7 +318,7 @@ def _build(sdk: Path, graph: dict, output: Path, optimization: str) -> dict:
     report_path.unlink(missing_ok=True)
     subprocess.run([str(sdk / 'bin/clang++'), '--no-default-config', '--target=' + target,
                     '-fuse-ld=lld', *[str(directories[name] / 'module.o') for name in graph['order']],
-                    str(directories[APP] / 'module.o'), '-L' + str(sdk / 'lib'), '-lobjc',
+                    str(directories[APP] / 'module.o'), '-L' + str(sdk / 'lib'), *runtime_link_flags(sdk),
                     '-Wl,-rpath,' + str(sdk / 'lib'), '-o', str(executable)],
                    env=env, check=True, timeout=180)
     run_env = dict(env)

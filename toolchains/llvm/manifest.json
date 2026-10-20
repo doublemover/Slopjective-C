@@ -11,11 +11,11 @@
   "patches": [
     {
       "file": "0001-objc3-language-mode-and-build-identity.patch",
-      "sha256": "a28cb5bac0c34d19feed3d3d128211be2c75a4aa724c07d261ed8c7d9451d6c9"
+      "sha256": "b56476079e99f5fbc7faa7c673cf98eb3210421a07345504fd69ca21359d14df"
     },
     {
       "file": "0002-objc3-native-defer-statement.patch",
-      "sha256": "e7fb2e9974c2198dbe58b931267f413338d4d71f30f670fa2cc8b818551d1b6e"
+      "sha256": "ede8ec8e4e305944434e1c2907c52489e003b651657cc07c69147307371b2f3a"
     },
     {
       "file": "0003-objc3-native-payload-type-facts.patch",
@@ -23,15 +23,15 @@
     },
     {
       "file": "0004-objc3-canonical-carriers-and-function-effects.patch",
-      "sha256": "22f1e2e8c4abe356c34ee5c26cf14cb71e856f7386b9e892b901d784f1784e4c"
+      "sha256": "8d6d5ce523b29566040143745ce717993888e3f34e6698ec51a2f2fb4f316bda"
     },
     {
       "file": "0005-objc3-codegen-qualification-boundaries.patch",
-      "sha256": "8d68f023d33183e342a42744b5b8f180623df875855d47d8e9a2b50c8486f4e3"
+      "sha256": "c1f00835b63a0bcdd86148f0201338d7c21dd0a8606845ccf49a826177a0bc9f"
     },
     {
       "file": "0006-objc3-native-carrier-expressions.patch",
-      "sha256": "f6fce9f8bca241a245496cf524802bbd483ec9af2af12c7fed6fa5cd1c741183"
+      "sha256": "50f93776e1ed92ffcc2d23afdb96a58a55cfaa15a7055f9d6bbff5fba2b4430a"
     },
     {
       "file": "0007-objc3-linux-debugger-runtime-contracts.patch",

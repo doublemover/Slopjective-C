@@ -41,6 +41,11 @@ C++ coroutine lifetime rules: pass owned values when they must outlive the call.
 Use named coroutine functions rather than a temporary capturing coroutine lambda
 whose closure could expire while its frame remains suspended.
 
+Awaiting a lazy `task<T>` starts a private child on the parent's executor. The
+parent owns that await and cancels the child if it leaves the await before the
+child completes. Awaiting a retained `task_handle<T>` preserves the independent
+lifetime of a shared dependency.
+
 Awaiting a handle always queues a continuation on the parent's executor, even
 when the dependency is already complete. It never blocks a worker, pumps a manual
 executor or runs the parent inline on the dependency's executor. C clients use

@@ -40,11 +40,18 @@ objc3::task<int> parent(objc3::task_handle<int> dependency,
   ++state->continued;
   co_return value + 42;
 }
-objc3::task<int> chain(objc3_executor_t *executor, unsigned depth) {
+objc3::task<int> chain(unsigned depth) {
   if (!depth)
     co_return 1;
-  int value = co_await chain(executor, depth - 1).start(executor);
+  int value = co_await chain(depth - 1);
   co_return value + 1;
+}
+objc3::task<int> owned_parent(std::shared_ptr<coroutine_state> state) {
+  cleanup guard{state};
+  ++state->entered;
+  int value = co_await leaf(state);
+  ++state->continued;
+  co_return value + 42;
 }
 objc3::task<std::string> failure() {
   co_await objc3::task_yield;
@@ -74,7 +81,11 @@ objc3::task_handle<int> start_parent(objc3_executor_t *executor,
 }
 objc3::task_handle<int> start_chain(objc3_executor_t *executor,
                                     unsigned depth) {
-  return chain(executor, depth).start(executor);
+  return chain(depth).start(executor);
+}
+objc3::task_handle<int> start_owned_child(
+    objc3_executor_t *executor, std::shared_ptr<coroutine_state> state) {
+  return owned_parent(std::move(state)).start(executor);
 }
 objc3::task_handle<std::string> start_failure(objc3_executor_t *executor) {
   return failure().start(executor);

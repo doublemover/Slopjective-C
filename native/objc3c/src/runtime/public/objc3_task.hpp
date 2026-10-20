@@ -123,8 +123,7 @@ template <class T = void> class task;
  * the dependency's completion. */
 template <class T = void> class task_handle {
   static_assert(std::is_void_v<T> ||
-                (std::is_object_v<T> && !std::is_const_v<T> &&
-                 !std::is_volatile_v<T>));
+                (std::is_object_v<T> && !std::is_volatile_v<T>));
   objc3_task_t *task_ = nullptr;
   explicit task_handle(objc3_task_t *value) noexcept : task_(value) {}
   template <class> friend class task;
@@ -174,6 +173,7 @@ template <class T> class [[nodiscard]] task {
 public:
   struct promise_type : task_detail::result_storage<T> {
     objc3_task_t *owner = nullptr; // Borrowed only during a runtime resume.
+    objc3_executor_t *executor = nullptr; // Owned by the enclosing C task.
     std::exception_ptr failure;
     bool failed = false;
     using coroutine = std::coroutine_handle<promise_type>;
@@ -201,6 +201,20 @@ public:
     template <class U> struct dependency_awaiter {
       objc3_task_t *parent;
       task_handle<U> dependency;
+      bool owned = false;
+      dependency_awaiter(objc3_task_t *parent, task_handle<U> dependency,
+                         bool owned = false)
+          : parent(parent), dependency(std::move(dependency)), owned(owned) {}
+      dependency_awaiter(const dependency_awaiter &) = delete;
+      dependency_awaiter(dependency_awaiter &&) = default;
+      ~dependency_awaiter() {
+        if (owned) {
+          objc3_completion completion{};
+          if (objc3_task_get_completion(dependency.native_handle(), &completion) ==
+              OBJC3_SERVICE_NOT_READY)
+            dependency.cancel();
+        }
+      }
       bool await_ready() const noexcept { return false; }
       void await_suspend(std::coroutine_handle<>) {
         task_detail::check(
@@ -214,6 +228,13 @@ public:
     };
     template <class U> auto await_transform(task_handle<U> dependency) {
       return dependency_awaiter<U>{owner, std::move(dependency)};
+    }
+
+    template <class U> auto await_transform(task<U> dependency) {
+      if (objc3_task_is_cancel_requested(owner))
+        throw task_cancelled();
+      return dependency_awaiter<U>{owner,
+                                   std::move(dependency).start(executor), true};
     }
 
     struct checkpoint_awaiter {
@@ -317,6 +338,7 @@ public:
     options.struct_size = sizeof(options);
     options.version = OBJC3_SERVICE_ABI_VERSION;
     options.executor = executor;
+    frame_.promise().executor = executor;
     options.frame = frame_.address();
     options.resume = promise_type::resume;
     options.destroy = promise_type::destroy;
@@ -328,4 +350,9 @@ public:
 };
 
 } // namespace objc3
+
+// Reserved compiler hook. The canonical source function retains its logical
+// result type; evaluated native async calls return this lazy runtime carrier.
+template <class T> using __objc3_async_task = objc3::task<T>;
+
 #endif

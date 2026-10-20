@@ -331,6 +331,25 @@ void manual_contract() {
     pump(executor, 10000);
     assert(chain.result() == 2049);
   }
+  {
+    auto state = std::make_shared<coroutine_state>();
+    auto parent = start_owned_child(executor, state);
+    pump(executor, 2);
+    assert(state->entered == 2 && state->destroyed == 0);
+    parent.cancel();
+    pump(executor, 32);
+    cancelled([&] { (void)parent.result(); });
+    assert(state->destroyed == 2 && state->continued == 0);
+  }
+  {
+    auto state = std::make_shared<coroutine_state>();
+    auto parent = start_owned_child(executor, state);
+    pump(executor, 2);
+    parent = {};
+    pump(executor, 32);
+    assert(state->entered == 2 && state->destroyed == 2 &&
+           state->continued == 0);
+  }
 #ifdef __OBJC__
   {
     auto state = std::make_shared<coroutine_state>();

@@ -318,7 +318,7 @@ index 95cfd19c0..804b26750 100644
 +  return D;
 +}
 diff --git a/clang/lib/AST/Expr.cpp b/clang/lib/AST/Expr.cpp
-index 0bb9c6aa0..11df4193d 100644
+index 0bb9c6aa0..89eacf0e1 100644
 --- a/clang/lib/AST/Expr.cpp
 +++ b/clang/lib/AST/Expr.cpp
 @@ -42,6 +42,123 @@
@@ -445,7 +445,23 @@ index 0bb9c6aa0..11df4193d 100644
  const Expr *Expr::getBestDynamicClassTypeExpr() const {
    const Expr *E = this;
    while (true) {
-@@ -2653,6 +2770,12 @@ bool Expr::isUnusedResultAWarning(const Expr *&WarnE, SourceLocation &Loc,
+@@ -1633,6 +1750,15 @@ QualType CallExpr::getCallReturnType(const ASTContext &Ctx) const {
+   }
+ 
+   const FunctionType *FnType = CalleeType->castAs<FunctionType>();
++  const bool FreeCall = !isa<CXXMemberCallExpr, CXXOperatorCallExpr>(this) &&
++      !getCallee()->getType()->isBlockPointerType() &&
++      !isa_and_nonnull<CXXMethodDecl>(getDirectCallee());
++  if (const auto *Proto = dyn_cast<FunctionProtoType>(FnType))
++    if (FreeCall && Proto->getObjC3FunctionEffects().Async &&
++        Proto->getObjC3FunctionEffects().Throws == ObjC3ThrowsKind::None)
++      if (QualType Task = Ctx.getObjC3AsyncTaskType(Proto->getReturnType());
++          !Task.isNull())
++        return Task;
+   return FnType->getReturnType();
+ }
+ 
+@@ -2653,6 +2779,12 @@ bool Expr::isUnusedResultAWarning(const Expr *&WarnE, SourceLocation &Loc,
      Loc = getExprLoc();
      R1 = getSourceRange();
      return true;
@@ -458,7 +474,7 @@ index 0bb9c6aa0..11df4193d 100644
    case ParenExprClass:
      return cast<ParenExpr>(this)->getSubExpr()->
        isUnusedResultAWarning(WarnE, Loc, R1, R2, Ctx);
-@@ -3691,6 +3814,13 @@ namespace {
+@@ -3691,6 +3823,13 @@ namespace {
            E->HasSideEffects(Context, IncludePossibleEffects))
          HasSideEffects = true;
      }
@@ -472,7 +488,7 @@ index 0bb9c6aa0..11df4193d 100644
    };
  }
  
-@@ -3870,6 +4000,49 @@ bool Expr::HasSideEffects(const ASTContext &Ctx,
+@@ -3870,6 +4009,49 @@ bool Expr::HasSideEffects(const ASTContext &Ctx,
      return cast<GenericSelectionExpr>(this)->getResultExpr()->HasSideEffects(
          Ctx, IncludePossibleEffects);
  
@@ -684,7 +700,7 @@ index fdefb6d6b..ae47c3ef7 100644
    VisitExpr(S);
  }
 diff --git a/clang/lib/Parse/ParseExpr.cpp b/clang/lib/Parse/ParseExpr.cpp
-index 74209f579..01ac8c212 100644
+index 74209f579..0da28d63f 100644
 --- a/clang/lib/Parse/ParseExpr.cpp
 +++ b/clang/lib/Parse/ParseExpr.cpp
 @@ -20,6 +20,7 @@
@@ -695,10 +711,27 @@ index 74209f579..01ac8c212 100644
  #include "clang/AST/ASTContext.h"
  #include "clang/AST/Availability.h"
  #include "clang/AST/ExprCXX.h"
-@@ -890,6 +891,47 @@ Parser::ParseCastExpression(CastParseKind ParseKind, bool isAddressOfOperand,
+@@ -890,6 +891,64 @@ Parser::ParseCastExpression(CastParseKind ParseKind, bool isAddressOfOperand,
    ParseIdentifier: {    // primary-expression: identifier
                          // unqualified-id: identifier
                          // constant: enumeration-constant
++    if (getLangOpts().ObjC3 && Tok.getIdentifierInfo() &&
++        Tok.getIdentifierInfo()->isStr("__objc3_await")) {
++      SourceLocation AwaitLoc = ConsumeToken();
++      const auto *FD = dyn_cast<FunctionDecl>(Actions.CurContext);
++      const auto *FT = FD ? FD->getType()->getAs<FunctionProtoType>() : nullptr;
++      if (!getLangOpts().CPlusPlus20 || !FT ||
++          !FT->getObjC3FunctionEffects().Async) {
++        Diag(AwaitLoc, diag::err_objc3_await_context);
++        return ExprError();
++      }
++      if (NotPrimaryExpression)
++        *NotPrimaryExpression = true;
++      Res = ParseCastExpression(CastParseKind::AnyCastExpr);
++      if (!Res.isInvalid())
++        Res = Actions.ActOnCoawaitExpr(getCurScope(), AwaitLoc, Res.get());
++      return Res;
++    }
 +    if (getLangOpts().ObjC3 && Tok.is(tok::identifier) &&
 +        Tok.getIdentifierInfo() &&
 +        (classifyObjC3Syntax(Tok.getIdentifierInfo()->getName(), NextToken().is(tok::l_paren)) == ObjC3Syntax::Some ||

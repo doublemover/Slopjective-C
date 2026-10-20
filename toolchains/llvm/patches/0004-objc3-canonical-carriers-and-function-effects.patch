@@ -11,7 +11,7 @@ index 89f584c5d..bf2c43690 100644
      )
  
 diff --git a/clang/include/clang/AST/ASTContext.h b/clang/include/clang/AST/ASTContext.h
-index 7ed6509c3..43c75b129 100644
+index 7ed6509c3..69a765fda 100644
 --- a/clang/include/clang/AST/ASTContext.h
 +++ b/clang/include/clang/AST/ASTContext.h
 @@ -218,6 +218,29 @@ struct PFPField {
@@ -44,10 +44,14 @@ index 7ed6509c3..43c75b129 100644
  /// Holds long-lived AST nodes (such as types and decls) that can be
  /// referred to throughout the semantic analysis of a file.
  class ASTContext : public RefCountedBase<ASTContext> {
-@@ -226,6 +249,10 @@ class ASTContext : public RefCountedBase<ASTContext> {
+@@ -226,6 +249,14 @@ class ASTContext : public RefCountedBase<ASTContext> {
    mutable SmallVector<Type *, 0> Types;
    mutable llvm::FoldingSet<ExtQuals> ExtQualNodes;
    mutable llvm::FoldingSet<ComplexType> ComplexTypes;
++  // Derived runtime representation of a logical async return type. Sema
++  // instantiates the installed task template before executable use. This cache
++  // is reconstructed on PCH/import use; it is not callable effect identity.
++  llvm::DenseMap<QualType, QualType> ObjC3AsyncTaskTypes;
 +  mutable llvm::FoldingSet<ObjC3OptionalType> ObjC3OptionalTypes;
 +  mutable llvm::FoldingSet<ObjC3ResultType> ObjC3ResultTypes;
 +  mutable llvm::DenseMap<const Type *, ObjC3CarrierRepresentationInfo>
@@ -55,13 +59,20 @@ index 7ed6509c3..43c75b129 100644
    mutable llvm::FoldingSet<PointerType> PointerTypes{GeneralTypesLog2InitSize};
    mutable llvm::FoldingSet<AdjustedType> AdjustedTypes;
    mutable llvm::FoldingSet<BlockPointerType> BlockPointerTypes;
-@@ -1629,6 +1656,19 @@ public:
+@@ -1629,6 +1660,26 @@ public:
      return CanQualType::CreateUnsafe(getComplexType((QualType) T));
    }
  
 +  /// Return the canonical Optional carrier for ElementType. Type aliases are
 +  /// stripped from the identity key, while source spelling lives in TypeLoc.
 +  QualType getObjC3OptionalType(QualType ElementType) const;
++
++  QualType getObjC3AsyncTaskType(QualType Result) const {
++    return ObjC3AsyncTaskTypes.lookup(getCanonicalType(Result));
++  }
++  void setObjC3AsyncTaskType(QualType Result, QualType Task) {
++    ObjC3AsyncTaskTypes[getCanonicalType(Result)] = Task;
++  }
 +
 +  /// Return the canonical Result carrier for the two payload types.
 +  QualType getObjC3ResultType(QualType SuccessType, QualType ErrorType) const;
@@ -955,7 +966,7 @@ index 24df18dba..d1e9f885a 100644
    SourceLocation TypeofLoc;
    SourceLocation LParenLoc;
 diff --git a/clang/include/clang/AST/TypeProperties.td b/clang/include/clang/AST/TypeProperties.td
-index e2168d0a0..73885bb7c 100644
+index e2168d0a0..5830ffb7d 100644
 --- a/clang/include/clang/AST/TypeProperties.td
 +++ b/clang/include/clang/AST/TypeProperties.td
 @@ -17,6 +17,25 @@ let Class = ComplexType in {
@@ -984,12 +995,17 @@ index e2168d0a0..73885bb7c 100644
  let Class = PointerType in {
    def : Property<"pointeeType", QualType> {
      let Read = [{ node->getPointeeType() }];
-@@ -346,6 +365,15 @@ let Class = FunctionProtoType in {
+@@ -346,6 +365,20 @@ let Class = FunctionProtoType in {
    def : Property<"functionEffectConds", Array<EffectConditionExpr>> {
      let Read = [{ node->getFunctionEffectConditions() }];
    }
 +  def : Property<"objc3Async", Bool> {
 +    let Read = [{ node->isObjC3Async() }];
++  }
++  def : Property<"objc3AsyncTaskType", Optional<QualType>> {
++    let Read = [{ makeOptionalFromNullable(node->isObjC3Async()
++        ? W.getASTContext().getObjC3AsyncTaskType(node->getReturnType())
++        : QualType()) }];
 +  }
 +  def : Property<"objc3ThrowsKind", ObjC3ThrowsKind> {
 +    let Read = [{ node->getObjC3ThrowsKind() }];
@@ -1000,10 +1016,12 @@ index e2168d0a0..73885bb7c 100644
  
    def : Creator<[{
      auto extInfo = FunctionType::ExtInfo(noReturn, hasRegParm, regParm,
-@@ -364,6 +392,11 @@ let Class = FunctionProtoType in {
+@@ -364,6 +397,13 @@ let Class = FunctionProtoType in {
        extParameterInfo.empty() ? nullptr : extParameterInfo.data();
      epi.AArch64SMEAttributes = AArch64SMEAttributes;
      epi.FunctionEffects = FunctionEffectsRef::create(functionEffects, functionEffectConds);
++    if (objc3AsyncTaskType)
++      ctx.setObjC3AsyncTaskType(returnType, *objc3AsyncTaskType);
 +    epi.ObjC3Effects.Async = objc3Async;
 +    epi.ObjC3Effects.Throws = objc3ThrowsKind;
 +    epi.ObjC3Effects.ErrorType = objc3ErrorType.value_or(QualType());
@@ -1023,12 +1041,16 @@ index b3c3b25aa..5bc4502a8 100644
 +def ObjC3MatchDuplicate : DiagGroup<"objc3-match-duplicate">;
 +def ObjC3MatchUnreachable : DiagGroup<"objc3-match-unreachable">;
 diff --git a/clang/include/clang/Basic/DiagnosticParseKinds.td b/clang/include/clang/Basic/DiagnosticParseKinds.td
-index 7671f003c..d1b48ff3b 100644
+index 7671f003c..af92b2d03 100644
 --- a/clang/include/clang/Basic/DiagnosticParseKinds.td
 +++ b/clang/include/clang/Basic/DiagnosticParseKinds.td
-@@ -12,6 +12,15 @@
+@@ -11,7 +11,19 @@
+ //===----------------------------------------------------------------------===//
  
  let Component = "Parse" in {
++def err_objc3_await_context : Error<
++  "native await requires an async Objective-C++20/23 function context">;
++
  let CategoryName = "Parse Issue" in {
 +
 +def err_objc3_duplicate_function_effect : Error<
@@ -1042,7 +1064,7 @@ index 7671f003c..d1b48ff3b 100644
  // C++11 compatibility with C++98.
  defm enum_fixed_underlying_type : CXX11Compat<
    "enumeration types with a fixed underlying type are",
-@@ -1920,4 +1929,9 @@ def err_hlsl_number_literal_underflow : Error<
+@@ -1920,4 +1932,9 @@ def err_hlsl_number_literal_underflow : Error<
    "float literal has a magnitude that is too small to be represented as a float type">;
  def err_hlsl_rootsig_non_zero_flag : Error<"flag value is neither a literal 0 nor a named value">;
  
@@ -1053,12 +1075,18 @@ index 7671f003c..d1b48ff3b 100644
 +
  } // end of Parser diagnostics
 diff --git a/clang/include/clang/Basic/DiagnosticSemaKinds.td b/clang/include/clang/Basic/DiagnosticSemaKinds.td
-index 2cb79b6ba..947af8183 100644
+index 2cb79b6ba..a1a07584b 100644
 --- a/clang/include/clang/Basic/DiagnosticSemaKinds.td
 +++ b/clang/include/clang/Basic/DiagnosticSemaKinds.td
-@@ -12,6 +12,38 @@
+@@ -11,7 +11,44 @@
+ //===----------------------------------------------------------------------===//
  
  let Component = "Sema" in {
++def err_objc3_async_task_unsupported : Error<
++  "native async task lowering requires a non-variadic Linux x86-64 Objective-C++20/23 free function with a concrete value or void result and no throws effect">;
++def err_objc3_async_defer_suspend : Error<"cannot suspend from a defer statement">;
++def err_objc3_async_task_header : Error<
++  "native async task lowering requires the installed <objc3_task.hpp> header">;
  let CategoryName = "Semantic Issue" in {
 +def err_objc3_ambiguous_method_effect : Error<
 +  "ambiguous ObjC3 async/throws effects for message %0">;
@@ -1095,7 +1123,7 @@ index 2cb79b6ba..947af8183 100644
  // C++11 compatibility with C++98.
  defm nonclass_type_friend : CXX11Compat<"non-class friend type %0 is">;
  defm static_data_member_in_union : CXX11Compat<"static data member %0 in union is">;
-@@ -7010,6 +7042,13 @@ def note_protected_by_objc_synchronized : Note<
+@@ -7010,6 +7047,13 @@ def note_protected_by_objc_synchronized : Note<
    "jump bypasses initialization of @synchronized block">;
  def note_protected_by_objc_autoreleasepool : Note<
    "jump bypasses auto release push of @autoreleasepool block">;
@@ -1109,7 +1137,7 @@ index 2cb79b6ba..947af8183 100644
  def note_protected_by_cxx_try : Note<
    "jump bypasses initialization of try block">;
  def note_protected_by_cxx_catch : Note<
-@@ -7026,6 +7065,10 @@ def note_protected_by_objc_strong_init : Note<
+@@ -7026,6 +7070,10 @@ def note_protected_by_objc_strong_init : Note<
    "jump bypasses initialization of __strong variable">;
  def note_protected_by_objc_weak_init : Note<
    "jump bypasses initialization of __weak variable">;
@@ -1120,7 +1148,7 @@ index 2cb79b6ba..947af8183 100644
  def note_protected_by_non_trivial_c_struct_init : Note<
    "jump bypasses initialization of variable of non-trivial C struct type">;
  def note_protected_by_defer_stmt : Note<"jump bypasses defer statement">;
-@@ -8001,6 +8044,25 @@ def warn_param_mismatched_alignment : Warning<
+@@ -8001,6 +8049,25 @@ def warn_param_mismatched_alignment : Warning<
  
  def err_objc_object_assignment : Error<
    "cannot assign to class object (%0 invalid)">;
@@ -1146,7 +1174,7 @@ index 2cb79b6ba..947af8183 100644
  def err_typecheck_invalid_operands : Error<
    "invalid operands to binary expression (%0 and %1)">, Deferrable;
  def note_typecheck_invalid_operands_converted : Note<
-@@ -14367,4 +14429,17 @@ def err_cuda_device_kernel_launch_not_supported
+@@ -14367,4 +14434,17 @@ def err_cuda_device_kernel_launch_not_supported
  def err_cuda_device_kernel_launch_require_rdc
      : Error<"kernel launch from __device__ or __global__ function requires "
              "relocatable device code (i.e. requires -fgpu-rdc)">;
@@ -1346,7 +1374,7 @@ index f98b0f358..e1611058b 100644
    /// source.
    ///
 diff --git a/clang/include/clang/Sema/Sema.h b/clang/include/clang/Sema/Sema.h
-index 11550340a..b404609d9 100644
+index 11550340a..c37332849 100644
 --- a/clang/include/clang/Sema/Sema.h
 +++ b/clang/include/clang/Sema/Sema.h
 @@ -15,6 +15,8 @@
@@ -1475,12 +1503,14 @@ index 11550340a..b404609d9 100644
    void ActOnDeferStmtError(Scope *CurScope);
    StmtResult ActOnEndOfDeferStmt(Stmt *Body, Scope *CurScope);
  
-@@ -15357,6 +15448,11 @@ public:
+@@ -15357,6 +15448,13 @@ public:
                               SourceLocation Loc, DeclarationName Entity,
                               const FunctionProtoType::ExtProtoInfo &EPI);
  
 +  /// Validate the shape of the distinct ObjC3 async/throws function effects.
 +  /// Returns false after issuing a diagnostic when the payload is malformed.
++  QualType BuildObjC3AsyncTaskType(const FunctionProtoType *Function,
++                                  SourceLocation Loc, bool Diagnose = true);
 +  bool CheckObjC3FunctionEffects(const ObjC3FunctionEffectInfo &Effects,
 +                                 SourceLocation Loc);
 +
@@ -2026,7 +2056,7 @@ index 222881154..7aeec9298 100644
      CANONICAL_TYPE(ObjCObjectPointer)
      CANONICAL_TYPE(OverflowBehavior)
 diff --git a/clang/lib/AST/ASTImporter.cpp b/clang/lib/AST/ASTImporter.cpp
-index d743717ad..070d1e54b 100644
+index d743717ad..b94ebf6be 100644
 --- a/clang/lib/AST/ASTImporter.cpp
 +++ b/clang/lib/AST/ASTImporter.cpp
 @@ -13,6 +13,7 @@
@@ -2092,10 +2122,19 @@ index d743717ad..070d1e54b 100644
  ExpectedType ASTNodeImporter::VisitPointerType(const PointerType *T) {
    ExpectedType ToPointeeTypeOrErr = import(T->getPointeeType());
    if (!ToPointeeTypeOrErr)
-@@ -1626,6 +1661,12 @@ ASTNodeImporter::VisitFunctionProtoType(const FunctionProtoType *T) {
+@@ -1626,6 +1661,21 @@ ASTNodeImporter::VisitFunctionProtoType(const FunctionProtoType *T) {
        importChecked(Err, FromEPI.ExceptionSpec.SourceTemplate);
    ToEPI.ExceptionSpec.Exceptions = ExceptionTypes;
  
++  if (FromEPI.ObjC3Effects.Async) {
++    QualType Task = Importer.getFromContext().getObjC3AsyncTaskType(
++        T->getReturnType());
++    if (!Task.isNull()) {
++      QualType ToTask = importChecked(Err, Task);
++      if (!Err)
++        Importer.getToContext().setObjC3AsyncTaskType(*ToReturnTypeOrErr, ToTask);
++    }
++  }
 +  ToEPI.ObjC3Effects.Async = FromEPI.ObjC3Effects.Async;
 +  ToEPI.ObjC3Effects.Throws = FromEPI.ObjC3Effects.Throws;
 +  if (FromEPI.ObjC3Effects.Throws == ObjC3ThrowsKind::Typed)
@@ -2105,7 +2144,7 @@ index d743717ad..070d1e54b 100644
    if (Err)
      return std::move(Err);
  
-@@ -2559,6 +2600,26 @@ Error ASTNodeImporter::ImportDefinition(
+@@ -2559,6 +2609,26 @@ Error ASTNodeImporter::ImportDefinition(
      return Error::success();
    }
  
@@ -2132,7 +2171,7 @@ index d743717ad..070d1e54b 100644
    To->startDefinition();
    // Set the definition to complete even if it is really not complete during
    // import. Some AST constructs (expressions) require the record layout
-@@ -4120,6 +4181,7 @@ ExpectedDecl ASTNodeImporter::VisitFunctionDecl(FunctionDecl *D) {
+@@ -4120,6 +4190,7 @@ ExpectedDecl ASTNodeImporter::VisitFunctionDecl(FunctionDecl *D) {
  
    QualType FromTy = D->getType();
    TypeSourceInfo *FromTSI = D->getTypeSourceInfo();
@@ -2140,7 +2179,7 @@ index d743717ad..070d1e54b 100644
    // Set to true if we do not import the type of the function as is. There are
    // cases when the original type would result in an infinite recursion during
    // the import. To avoid an infinite recursion when importing, we create the
-@@ -4175,6 +4237,46 @@ ExpectedDecl ASTNodeImporter::VisitFunctionDecl(FunctionDecl *D) {
+@@ -4175,6 +4246,46 @@ ExpectedDecl ASTNodeImporter::VisitFunctionDecl(FunctionDecl *D) {
    if (Err)
      return std::move(Err);
  
@@ -2187,7 +2226,7 @@ index d743717ad..070d1e54b 100644
    // Import the function parameters.
    SmallVector<ParmVarDecl *, 8> Parameters;
    for (auto *P : D->parameters()) {
-@@ -5062,6 +5164,14 @@ ExpectedDecl ASTNodeImporter::VisitObjCMethodDecl(ObjCMethodDecl *D) {
+@@ -5062,6 +5173,14 @@ ExpectedDecl ASTNodeImporter::VisitObjCMethodDecl(ObjCMethodDecl *D) {
        if (FoundMethod->isInstanceMethod() != D->isInstanceMethod())
          continue;
  
@@ -2202,7 +2241,7 @@ index d743717ad..070d1e54b 100644
        // Check return types.
        if (!Importer.IsStructurallyEquivalent(D->getReturnType(),
                                               FoundMethod->getReturnType())) {
-@@ -5124,6 +5234,7 @@ ExpectedDecl ASTNodeImporter::VisitObjCMethodDecl(ObjCMethodDecl *D) {
+@@ -5124,6 +5243,7 @@ ExpectedDecl ASTNodeImporter::VisitObjCMethodDecl(ObjCMethodDecl *D) {
    Error Err = Error::success();
    auto ToEndLoc = importChecked(Err, D->getEndLoc());
    auto ToReturnType = importChecked(Err, D->getReturnType());
@@ -2210,7 +2249,7 @@ index d743717ad..070d1e54b 100644
    auto ToReturnTypeSourceInfo =
        importChecked(Err, D->getReturnTypeSourceInfo());
    if (Err)
-@@ -5138,6 +5249,8 @@ ExpectedDecl ASTNodeImporter::VisitObjCMethodDecl(ObjCMethodDecl *D) {
+@@ -5138,6 +5258,8 @@ ExpectedDecl ASTNodeImporter::VisitObjCMethodDecl(ObjCMethodDecl *D) {
            D->getImplementationControl(), D->hasRelatedResultType()))
      return ToMethod;
  
@@ -2219,7 +2258,7 @@ index d743717ad..070d1e54b 100644
    // FIXME: When we decide to merge method definitions, we'll need to
    // deal with implicit parameters.
  
-@@ -7328,6 +7441,60 @@ ExpectedStmt ASTNodeImporter::VisitAttributedStmt(AttributedStmt *S) {
+@@ -7328,6 +7450,60 @@ ExpectedStmt ASTNodeImporter::VisitAttributedStmt(AttributedStmt *S) {
        Importer.getToContext(), *ToAttrLocOrErr, ToAttrs, *ToSubStmtOrErr);
  }
  
@@ -2280,7 +2319,7 @@ index d743717ad..070d1e54b 100644
  ExpectedStmt ASTNodeImporter::VisitIfStmt(IfStmt *S) {
  
    Error Err = Error::success();
-@@ -7775,6 +7942,133 @@ ExpectedStmt ASTNodeImporter::VisitVAArgExpr(VAArgExpr *E) {
+@@ -7775,6 +7951,133 @@ ExpectedStmt ASTNodeImporter::VisitVAArgExpr(VAArgExpr *E) {
                  E->getVarargABI());
  }
  
@@ -2414,7 +2453,7 @@ index d743717ad..070d1e54b 100644
  ExpectedStmt ASTNodeImporter::VisitChooseExpr(ChooseExpr *E) {
  
    Error Err = Error::success();
-@@ -9715,7 +10009,97 @@ Expected<TypeSourceInfo *> ASTImporter::Import(TypeSourceInfo *FromTSI) {
+@@ -9715,7 +10018,97 @@ Expected<TypeSourceInfo *> ASTImporter::Import(TypeSourceInfo *FromTSI) {
    if (!BeginLocOrErr)
      return BeginLocOrErr.takeError();
  
@@ -2905,7 +2944,7 @@ index 4be3e977b..1768b7af5 100644
      Out << ';';
  }
 diff --git a/clang/lib/AST/ItaniumMangle.cpp b/clang/lib/AST/ItaniumMangle.cpp
-index 172a19f8f..1f1815ae1 100644
+index 172a19f8f..f8db3cd90 100644
 --- a/clang/lib/AST/ItaniumMangle.cpp
 +++ b/clang/lib/AST/ItaniumMangle.cpp
 @@ -1062,6 +1062,13 @@ const RecordDecl *CXXNameMangler::GetLocalClassDecl(const Decl *D) {
@@ -2931,7 +2970,25 @@ index 172a19f8f..1f1815ae1 100644
    case Type::Atomic:
    case Type::Pipe:
    case Type::MacroQualified:
-@@ -4626,6 +4635,22 @@ void CXXNameMangler::mangleType(const AtomicType *T) {
+@@ -3707,6 +3716,17 @@ CXXNameMangler::mangleExtParameterInfo(FunctionProtoType::ExtParameterInfo PI) {
+ // <function-type> ::= [<CV-qualifiers>] F [Y]
+ //                      <bare-function-type> [<ref-qualifier>] E
+ void CXXNameMangler::mangleType(const FunctionProtoType *T) {
++  const auto Effects = T->getObjC3FunctionEffects();
++  if (Effects.Async)
++    Out << "U11objc3_async";
++  if (Effects.Throws != ObjC3ThrowsKind::None) {
++    Out << "U12objc3_throws";
++    if (Effects.Throws == ObjC3ThrowsKind::Typed) {
++      Out << 'I';
++      mangleType(Effects.ErrorType);
++      Out << 'E';
++    }
++  }
+   unsigned SMEAttrs = T->getAArch64SMEAttributes();
+ 
+   if (SMEAttrs)
+@@ -4626,6 +4646,22 @@ void CXXNameMangler::mangleType(const AtomicType *T) {
    mangleType(T->getValueType());
  }
  
@@ -2954,7 +3011,7 @@ index 172a19f8f..1f1815ae1 100644
  void CXXNameMangler::mangleType(const PipeType *T) {
    // Pipe type mangling rules are described in SPIR 2.0 specification
    // A.1 Data types and A.3 Summary of changes
-@@ -5505,6 +5530,35 @@ recurse:
+@@ -5505,6 +5541,35 @@ recurse:
      break;
    }
  
@@ -2990,7 +3047,7 @@ index 172a19f8f..1f1815ae1 100644
    case Expr::CXXTypeidExprClass: {
      NotPrimaryExpr();
      const CXXTypeidExpr *TIE = cast<CXXTypeidExpr>(E);
-@@ -5978,6 +6032,46 @@ recurse:
+@@ -5978,6 +6043,46 @@ recurse:
    case Expr::HLSLOutArgExprClass:
      llvm_unreachable(
          "cannot mangle hlsl temporary value; mangling wrong thing?");
@@ -5006,7 +5063,7 @@ index 000000000..f07788326
 +  llvm_unreachable("all ObjC3 match patterns handled");
 +}
 diff --git a/clang/lib/Sema/SemaDecl.cpp b/clang/lib/Sema/SemaDecl.cpp
-index 6a25a799a..e6c3725c1 100644
+index 6a25a799a..167d942e4 100644
 --- a/clang/lib/Sema/SemaDecl.cpp
 +++ b/clang/lib/Sema/SemaDecl.cpp
 @@ -10,9 +10,11 @@
@@ -5186,16 +5243,35 @@ index 6a25a799a..e6c3725c1 100644
    CUDA().MaybeAddConstantAttr(var);
  
    if (getLangOpts().OpenCL) {
-@@ -16714,6 +16831,8 @@ Decl *Sema::ActOnFinishFunctionBody(Decl *dcl, Stmt *Body, bool IsInstantiation,
+@@ -16714,6 +16831,27 @@ Decl *Sema::ActOnFinishFunctionBody(Decl *dcl, Stmt *Body, bool IsInstantiation,
                                      bool RetainFunctionScopeInfo) {
    FunctionScopeInfo *FSI = getCurFunction();
    FunctionDecl *FD = dcl ? dcl->getAsFunction() : nullptr;
++  if (FD && Body && !FD->isInvalidDecl()) {
++    if (const auto *FT = FD->getType()->getAs<FunctionProtoType>()) {
++      if (FT->getObjC3FunctionEffects().Async && getLangOpts().CPlusPlus20 &&
++          FT->getObjC3FunctionEffects().Throws == ObjC3ThrowsKind::None &&
++          !Context.getObjC3AsyncTaskType(FT->getReturnType()).isNull() &&
++          !FSI->isCoroutine()) {
++        // An implicit co_return creates the promise even for a void function
++        // with an empty body; native return statements are co_return above.
++        if (FD->getReturnType()->isVoidType()) {
++          StmtResult End = ActOnCoreturnStmt(getCurScope(), Body->getEndLoc(), nullptr);
++          if (End.isInvalid())
++            FD->setInvalidDecl();
++        } else {
++          Diag(FD->getLocation(), diag::err_objc3_async_task_unsupported);
++          FD->setInvalidDecl();
++        }
++      }
++    }
++  }
 +  if (dcl && !dcl->isInvalidDecl() && diagnoseObjC3UncheckedCalls(*this, Body))
 +    dcl->setInvalidDecl();
  
    if (FSI->UsesFPIntrin && FD && !FD->hasAttr<StrictFPAttr>())
      FD->addAttr(StrictFPAttr::CreateImplicit(Context));
-@@ -20223,7 +20342,8 @@ void Sema::ActOnFields(Scope *S, SourceLocation RecLoc, Decl *EnclosingDecl,
+@@ -20223,7 +20361,8 @@ void Sema::ActOnFields(Scope *S, SourceLocation RecLoc, Decl *EnclosingDecl,
              RecordArgPassingKind::CanNeverPassInRegs)
            Record->setArgPassingRestrictions(
                RecordArgPassingKind::CanNeverPassInRegs);
@@ -5449,7 +5525,7 @@ index 04ba52809..e73762664 100644
      CvtQTToAstBitMask(ReturnQT.getObjCDeclQualifier()));
  
 diff --git a/clang/lib/Sema/SemaExpr.cpp b/clang/lib/Sema/SemaExpr.cpp
-index 5d4c5ff7d..750a37b6d 100644
+index 5d4c5ff7d..83fe6a067 100644
 --- a/clang/lib/Sema/SemaExpr.cpp
 +++ b/clang/lib/Sema/SemaExpr.cpp
 @@ -10,11 +10,13 @@
@@ -5487,7 +5563,29 @@ index 5d4c5ff7d..750a37b6d 100644
      case Type::PredefinedSugar:
        T = cast<PredefinedSugarType>(Ty)->desugar();
        break;
-@@ -9422,7 +9438,85 @@ static AssignConvertType checkPointerTypesForAssignment(Sema &S,
+@@ -7276,7 +7292,20 @@ ExprResult Sema::BuildResolvedCallExpr(Expr *Fn, NamedDecl *NDecl,
+     return ExprError();
+ 
+   // We know the result type of the call, set it.
+-  TheCall->setType(FuncT->getCallResultType(Context));
++  QualType CallResult = FuncT->getCallResultType(Context);
++  if (Proto && Proto->getObjC3FunctionEffects().Async &&
++      Proto->getObjC3FunctionEffects().Throws == ObjC3ThrowsKind::None &&
++      (!Context.getObjC3AsyncTaskType(Proto->getReturnType()).isNull() ||
++       !Context.getTranslationUnitDecl()
++            ->lookup(&Context.Idents.get("__objc3_async_task")).empty())) {
++    if (Fn->getType()->isBlockPointerType() ||
++        isa_and_nonnull<CXXMethodDecl>(FDecl))
++      return ExprError(Diag(LParenLoc, diag::err_objc3_async_task_unsupported));
++    CallResult = BuildObjC3AsyncTaskType(Proto, LParenLoc);
++    if (CallResult.isNull())
++      return ExprError();
++  }
++  TheCall->setType(CallResult);
+   TheCall->setValueKind(Expr::getValueKindForType(FuncT->getReturnType()));
+ 
+   // WebAssembly tables can't be used as arguments.
+@@ -9422,7 +9451,85 @@ static AssignConvertType checkPointerTypesForAssignment(Sema &S,
      return AssignConvertType::FunctionVoidPointer;
    }
  
@@ -5574,7 +5672,7 @@ index 5d4c5ff7d..750a37b6d 100644
            diag::warn_typecheck_convert_incompatible_function_pointer_strict,
            Loc) &&
        RHSType->isFunctionPointerType() && LHSType->isFunctionPointerType() &&
-@@ -9431,7 +9525,6 @@ static AssignConvertType checkPointerTypesForAssignment(Sema &S,
+@@ -9431,7 +9538,6 @@ static AssignConvertType checkPointerTypesForAssignment(Sema &S,
  
    // C99 6.5.16.1p1 (constraint 3): both operands are pointers to qualified or
    // unqualified versions of compatible types, ...
@@ -5582,7 +5680,7 @@ index 5d4c5ff7d..750a37b6d 100644
  
    if (ltrans->isOverflowBehaviorType() || rtrans->isOverflowBehaviorType()) {
      if (!S.Context.hasSameType(ltrans, rtrans)) {
-@@ -9452,7 +9545,22 @@ static AssignConvertType checkPointerTypesForAssignment(Sema &S,
+@@ -9452,7 +9558,22 @@ static AssignConvertType checkPointerTypesForAssignment(Sema &S,
      }
    }
  
@@ -5606,7 +5704,7 @@ index 5d4c5ff7d..750a37b6d 100644
      // Check if the pointee types are compatible ignoring the sign.
      // We explicitly check for char so that we catch "char" vs
      // "unsigned char" on systems where "char" is unsigned.
-@@ -9524,12 +9632,20 @@ static AssignConvertType checkPointerTypesForAssignment(Sema &S,
+@@ -9524,12 +9645,20 @@ static AssignConvertType checkPointerTypesForAssignment(Sema &S,
      const auto *LFPT = dyn_cast<FunctionProtoType>(LFT);
      const auto *RFPT = dyn_cast<FunctionProtoType>(RFT);
      if (LFPT && RFPT) {
@@ -5629,7 +5727,7 @@ index 5d4c5ff7d..750a37b6d 100644
        rtrans = S.Context.getFunctionType(LFPT->getReturnType(),
                                           LFPT->getParamTypes(), EPI);
      } else if (RFPT) {
-@@ -9592,12 +9708,60 @@ static AssignConvertType checkBlockPointerTypesForAssignment(Sema &S,
+@@ -9592,12 +9721,60 @@ static AssignConvertType checkBlockPointerTypesForAssignment(Sema &S,
    //  * CVR and address space of LHS should be a superset of CVR and address
    //  space of RHS.
    //  * unqualified types should be compatible.
@@ -5692,7 +5790,7 @@ index 5d4c5ff7d..750a37b6d 100644
      return AssignConvertType::IncompatibleBlockPointer;
  
    return ConvTy;
-@@ -17056,6 +17220,8 @@ ExprResult Sema::ActOnBlockStmtExpr(SourceLocation CaretLoc,
+@@ -17056,6 +17233,8 @@ ExprResult Sema::ActOnBlockStmtExpr(SourceLocation CaretLoc,
  
    BlockScopeInfo *BSI = cast<BlockScopeInfo>(FunctionScopes.back());
    BlockDecl *BD = BSI->TheDecl;
@@ -5701,7 +5799,7 @@ index 5d4c5ff7d..750a37b6d 100644
  
    maybeAddDeclWithEffects(BD);
  
-@@ -17218,7 +17384,9 @@ ExprResult Sema::ActOnBlockStmtExpr(SourceLocation CaretLoc,
+@@ -17218,7 +17397,9 @@ ExprResult Sema::ActOnBlockStmtExpr(SourceLocation CaretLoc,
      // variables needs destruction.
      for (const auto &CI : Result->getBlockDecl()->captures()) {
        const VarDecl *var = CI.getVariable();
@@ -6456,10 +6554,10 @@ index 000000000..132028f71
 +} // namespace clang
 diff --git a/clang/lib/Sema/SemaObjC3Effects.cpp b/clang/lib/Sema/SemaObjC3Effects.cpp
 new file mode 100644
-index 000000000..08106a8da
+index 000000000..51915772f
 --- /dev/null
 +++ b/clang/lib/Sema/SemaObjC3Effects.cpp
-@@ -0,0 +1,25 @@
+@@ -0,0 +1,86 @@
 +//===--- SemaObjC3Effects.cpp - ObjC3 callable effects -------------------===//
 +//
 +// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
@@ -6468,7 +6566,12 @@ index 000000000..08106a8da
 +//
 +//===----------------------------------------------------------------------===//
 +
++#include "clang/AST/ASTContext.h"
++#include "clang/AST/DeclTemplate.h"
 +#include "clang/AST/Type.h"
++#include "clang/Basic/TargetInfo.h"
++#include "clang/Sema/Lookup.h"
++#include "clang/Sema/Template.h"
 +#include "clang/Basic/DiagnosticSema.h"
 +#include "clang/Sema/Sema.h"
 +
@@ -6484,6 +6587,62 @@ index 000000000..08106a8da
 +
 +  Diag(Loc, diag::err_objc3_invalid_function_effect_shape);
 +  return false;
++}
++
++QualType Sema::BuildObjC3AsyncTaskType(const FunctionProtoType *Function,
++                                      SourceLocation Loc, bool Diagnose) {
++  if (!Function->getObjC3FunctionEffects().Async)
++    return Function->getReturnType();
++  auto Unsupported = [&]() -> QualType {
++    if (Diagnose)
++      Diag(Loc, diag::err_objc3_async_task_unsupported);
++    return {};
++  };
++  const auto &Triple = Context.getTargetInfo().getTriple();
++  if (!getLangOpts().ObjC3 || !getLangOpts().ObjC ||
++      !getLangOpts().CPlusPlus20 ||
++      !getLangOpts().Coroutines || getLangOpts().ObjC3Profile != 0 ||
++      getLangOpts().ObjCRuntime.getAsString() != "gnustep-2.2" ||
++      Context.getTargetInfo().getPointerWidth(LangAS::Default) != 64 ||
++      !Triple.isOSLinux() ||
++      Triple.getArch() != llvm::Triple::x86_64 || Function->isVariadic() ||
++      Function->getCallConv() != CC_C ||
++      Function->getObjC3FunctionEffects().Throws != ObjC3ThrowsKind::None ||
++      Function->getReturnType()->isReferenceType() ||
++      Function->getReturnType().isVolatileQualified() ||
++      Function->getReturnType()->isObjCRetainableType() ||
++      Function->getReturnType()->isUndeducedType())
++    return Unsupported();
++  QualType Result = Function->getReturnType();
++  if (Result->isDependentType())
++    return Context.DependentTy;
++  if (QualType Existing = Context.getObjC3AsyncTaskType(Result);
++      !Existing.isNull())
++    return Existing;
++  // The reserved alias is provided by the installed task runtime header. Keep
++  // logical return types in the canonical function type and its serialized
++  // effects; only evaluated calls and coroutine return objects use this type.
++  LookupResult Lookup(*this, &Context.Idents.get("__objc3_async_task"), Loc,
++                      LookupOrdinaryName);
++  Lookup.suppressDiagnostics();
++  LookupQualifiedName(Lookup, Context.getTranslationUnitDecl());
++  auto *Template = Lookup.getAsSingle<TypeAliasTemplateDecl>();
++  if (!Template) {
++    if (Diagnose)
++      Diag(Loc, diag::err_objc3_async_task_header);
++    return {};
++  }
++  TemplateArgumentListInfo Args(Loc, Loc);
++  Args.addArgument(TemplateArgumentLoc(
++      TemplateArgument(Result), Context.getTrivialTypeSourceInfo(Result, Loc)));
++  QualType Task = CheckTemplateIdType(ElaboratedTypeKeyword::None,
++                                      TemplateName(Template), Loc, Args,
++                                      /*Scope=*/nullptr,
++                                      /*ForNestedNameSpecifier=*/false);
++  if (Task.isNull() || RequireCompleteType(Loc, Task, diag::err_incomplete_type))
++    return {};
++  Context.setObjC3AsyncTaskType(Result, Task);
++  return Task;
 +}
 diff --git a/clang/lib/Sema/SemaObjC3ErrorContext.h b/clang/lib/Sema/SemaObjC3ErrorContext.h
 new file mode 100644
@@ -7326,7 +7485,7 @@ index eafda3219..1572515ef 100644
    // function types are obviously different.
    if (FromFunctionType->getNumParams() != ToFunctionType->getNumParams() ||
 diff --git a/clang/lib/Sema/SemaStmt.cpp b/clang/lib/Sema/SemaStmt.cpp
-index 4d12b6c72..393e51671 100644
+index 4d12b6c72..7cf90d573 100644
 --- a/clang/lib/Sema/SemaStmt.cpp
 +++ b/clang/lib/Sema/SemaStmt.cpp
 @@ -4031,17 +4031,20 @@ Sema::ActOnReturnStmt(SourceLocation ReturnLoc, Expr *RetValExp,
@@ -7350,6 +7509,16 @@ index 4d12b6c72..393e51671 100644
    DiagnoseEmptyStmtBody(DeferLoc, Body, diag::warn_empty_defer_body);
    setFunctionHasBranchProtectedScope();
    return DeferStmt::Create(Context, DeferLoc, Body);
+@@ -4088,6 +4091,9 @@ StmtResult Sema::BuildReturnStmt(SourceLocation ReturnLoc, Expr *RetValExp,
+   FunctionDecl *FD = getCurFunctionDecl();
+   if (FD) {
+     FnRetType = FD->getReturnType();
++    if (getCurFunction()->isCoroutine() &&
++        FD->getType()->castAs<FunctionProtoType>()->getObjC3FunctionEffects().Async)
++      FnRetType = Context.getObjC3AsyncTaskType(FnRetType);
+     if (FD->hasAttrs())
+       Attrs = &FD->getAttrs();
+     if (FD->isNoReturn() && !getCurFunction()->isCoroutine())
 diff --git a/clang/lib/Sema/SemaTemplate.cpp b/clang/lib/Sema/SemaTemplate.cpp
 index 7286a0c2f..cb50e6ea8 100644
 --- a/clang/lib/Sema/SemaTemplate.cpp
@@ -7457,7 +7626,7 @@ index 3c45806c4..967bb047b 100644
      if (!OnlyDeduced)
        MarkUsedTemplateParameters(Ctx,
 diff --git a/clang/lib/Sema/SemaType.cpp b/clang/lib/Sema/SemaType.cpp
-index 3f0a7304d..7b58dcdc2 100644
+index 3f0a7304d..ed8db7261 100644
 --- a/clang/lib/Sema/SemaType.cpp
 +++ b/clang/lib/Sema/SemaType.cpp
 @@ -2703,6 +2703,9 @@ QualType Sema::BuildFunctionType(QualType T,
@@ -7489,7 +7658,17 @@ index 3f0a7304d..7b58dcdc2 100644
  
          // Otherwise, we have a function with a parameter list that is
          // potentially variadic.
-@@ -6045,6 +6060,18 @@ namespace {
+@@ -5430,6 +5445,9 @@ static TypeSourceInfo *GetFullTypeForDeclarator(TypeProcessingState &state,
+           EPI.TypeQuals.addAddressSpace(AS);
+         }
+         T = Context.getFunctionType(T, ParamTys, EPI);
++        if (EPI.ObjC3Effects.Async && S.getLangOpts().CPlusPlus20)
++          S.BuildObjC3AsyncTaskType(T->castAs<FunctionProtoType>(),
++                                    FTI.ObjC3AsyncLoc, false);
+       }
+       break;
+     }
+@@ -6045,6 +6063,18 @@ namespace {
        Sema::GetTypeFromParser(DS.getRepAsType(), &RepTInfo);
        TL.copy(RepTInfo->getTypeLoc());
      }
@@ -7508,7 +7687,7 @@ index 3f0a7304d..7b58dcdc2 100644
      void VisitTemplateSpecializationTypeLoc(TemplateSpecializationTypeLoc TL) {
        TypeSourceInfo *TInfo = nullptr;
        Sema::GetTypeFromParser(DS.getRepAsType(), &TInfo);
-@@ -6305,6 +6332,10 @@ namespace {
+@@ -6305,6 +6335,10 @@ namespace {
          TL.setParam(tpi++, Param);
        }
        TL.setExceptionSpecRange(FTI.getExceptionSpecRange());
@@ -12394,10 +12573,10 @@ index 000000000..a265ccc8e
 +}
 diff --git a/clang/unittests/AST/ObjC3FunctionEffectImportTest.cpp b/clang/unittests/AST/ObjC3FunctionEffectImportTest.cpp
 new file mode 100644
-index 000000000..31689c431
+index 000000000..3d215aace
 --- /dev/null
 +++ b/clang/unittests/AST/ObjC3FunctionEffectImportTest.cpp
-@@ -0,0 +1,227 @@
+@@ -0,0 +1,261 @@
 +//===--- ObjC3FunctionEffectImportTest.cpp - effect type import -----------===//
 +// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -12624,19 +12803,54 @@ index 000000000..31689c431
 +  }
 +}
 +
++TEST(ObjC3FunctionEffectImport, DerivedAsyncTaskTypeImportsWithLogicalSignature) {
++  const std::string Code = R"(
++    namespace objc3 { template<class T> struct task { T value; }; }
++    template<class T> using __objc3_async_task = objc3::task<T>;
++    int async_value(int) __objc3_async;
++  )";
++  const std::vector<std::string> Args = {
++      "-x", "objective-c++", "-std=c++20", "-fobjc-version=3",
++      "-target", "x86_64-unknown-linux-gnu", "-fobjc-runtime=gnustep-2.2"};
++  auto From = tooling::buildASTFromCodeWithArgs(Code, Args, "async-from.mm");
++  auto To = tooling::buildASTFromCodeWithArgs(
++      "", Args, "async-to.mm", "clang-tool",
++      std::make_shared<PCHContainerOperations>(),
++      tooling::getClangStripDependencyFileAdjuster(), {{"async-from.mm", Code}});
++  ASSERT_TRUE(From);
++  ASSERT_TRUE(To);
++  ASTContext &FC = From->getASTContext(), &TC = To->getASTContext();
++  const auto *FD = findFunction(FC, "async_value");
++  ASSERT_NE(FD, nullptr);
++  ASSERT_FALSE(FC.getObjC3AsyncTaskType(FC.IntTy).isNull());
++  EXPECT_TRUE(TC.getObjC3AsyncTaskType(TC.IntTy).isNull());
++  ASTImporter Importer(TC, To->getFileManager(), FC, From->getFileManager(),
++                       /*MinimalImport=*/false);
++  auto Imported = Importer.Import(FD->getType());
++  ASSERT_TRUE(bool(Imported)) << llvm::toString(Imported.takeError());
++  const auto *FT = (*Imported)->castAs<FunctionProtoType>();
++  EXPECT_TRUE(FT->getObjC3FunctionEffects().Async);
++  EXPECT_TRUE(TC.hasSameType(FT->getReturnType(), TC.IntTy));
++  QualType Task = TC.getObjC3AsyncTaskType(TC.IntTy);
++  ASSERT_FALSE(Task.isNull());
++  EXPECT_TRUE(Task->isRecordType());
++  EXPECT_FALSE(TC.hasSameType(Task, FT->getReturnType()));
++}
++
 +} // namespace
 diff --git a/clang/unittests/AST/ObjC3FunctionEffectTest.cpp b/clang/unittests/AST/ObjC3FunctionEffectTest.cpp
 new file mode 100644
-index 000000000..979a60a3f
+index 000000000..6b3cc6b29
 --- /dev/null
 +++ b/clang/unittests/AST/ObjC3FunctionEffectTest.cpp
-@@ -0,0 +1,327 @@
+@@ -0,0 +1,363 @@
 +//===--- ObjC3FunctionEffectTest.cpp - function type effects --------------===//
 +// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
 +// See https://llvm.org/LICENSE.txt for license information.
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 +//===----------------------------------------------------------------------===//
 +
++#include "../../lib/Sema/TypeLocBuilder.h"
 +#include "clang/AST/ASTContext.h"
 +#include "clang/AST/Decl.h"
 +#include "clang/AST/DeclTemplate.h"
@@ -12955,6 +13169,41 @@ index 000000000..979a60a3f
 +    ASSERT_TRUE(Reparsed);
 +    EXPECT_FALSE(Reparsed->getDiagnostics().hasErrorOccurred()) << Printed;
 +  }
++}
++
++
++TEST(ObjC3FunctionEffects, SynthesizedFunctionLocationsClearReusedEffects) {
++  auto AST = parse("");
++  ASSERT_TRUE(AST);
++  ASTContext &C = AST->getASTContext();
++  QualType F = C.getFunctionType(C.VoidTy, {}, {});
++  TypeLocBuilder Builder;
++  Builder.pushTrivial(C, C.VoidTy, SourceLocation());
++  auto First = Builder.push<FunctionProtoTypeLoc>(F);
++  SourceLocation Old = SourceLocation::getFromRawEncoding(17);
++  First.setObjC3AsyncLoc(Old);
++  First.setObjC3ThrowsLoc(Old);
++  First.setObjC3ThrowsPayloadRange(SourceRange(Old, Old));
++  First.setObjC3ThrowsPayloadInfo(C.getTrivialTypeSourceInfo(C.IntTy));
++  Builder.clear();
++  Builder.pushTrivial(C, C.VoidTy, SourceLocation());
++  auto Reused = Builder.push<FunctionProtoTypeLoc>(F);
++  EXPECT_TRUE(Reused.getObjC3AsyncLoc().isInvalid());
++  EXPECT_TRUE(Reused.getObjC3ThrowsLoc().isInvalid());
++  EXPECT_TRUE(Reused.getObjC3ThrowsPayloadRange().isInvalid());
++  EXPECT_EQ(Reused.getObjC3ThrowsPayloadInfo(), nullptr);
++}
++
++TEST(ObjC3FunctionEffects, DerivedAsyncTaskCachePreservesResultQualifiers) {
++  auto AST = parse("struct Value {}; struct PlainTask {}; struct ConstTask {};");
++  ASSERT_TRUE(AST);
++  ASTContext &C = AST->getASTContext();
++  QualType Value = recordType(C, "Value");
++  QualType Plain = recordType(C, "PlainTask"), Const = recordType(C, "ConstTask");
++  C.setObjC3AsyncTaskType(Value, Plain);
++  C.setObjC3AsyncTaskType(C.getConstType(Value), Const);
++  EXPECT_TRUE(C.hasSameType(C.getObjC3AsyncTaskType(Value), Plain));
++  EXPECT_TRUE(C.hasSameType(C.getObjC3AsyncTaskType(C.getConstType(Value)), Const));
 +}
 +
 +} // namespace
@@ -14162,3 +14411,189 @@ index 76c51b8d9..df916197c 100644
  
      if (includeCategoryNamespace) {
        if (auto category = MD->getCategory())
+diff --git a/clang/lib/Sema/SemaCoroutine.cpp b/clang/lib/Sema/SemaCoroutine.cpp
+index 4b99e4454..22bd27c39 100644
+--- a/clang/lib/Sema/SemaCoroutine.cpp
++++ b/clang/lib/Sema/SemaCoroutine.cpp
+@@ -14,6 +14,7 @@
+ //===----------------------------------------------------------------------===//
+ 
+ #include "CoroutineStmtBuilder.h"
++#include "SemaObjC3ErrorContext.h"
+ #include "clang/AST/ASTLambda.h"
+ #include "clang/AST/Decl.h"
+ #include "clang/AST/Expr.h"
+@@ -56,6 +57,12 @@ static QualType lookupPromiseType(Sema &S, const FunctionDecl *FD,
+   const FunctionProtoType *FnType = FD->getType()->castAs<FunctionProtoType>();
+   const SourceLocation FuncLoc = FD->getLocation();
+ 
++  QualType CoroutineResult = FnType->getReturnType();
++  if (FnType->getObjC3FunctionEffects().Async) {
++    CoroutineResult = S.BuildObjC3AsyncTaskType(FnType, KwLoc);
++    if (CoroutineResult.isNull())
++      return {};
++  }
+   ClassTemplateDecl *CoroTraits =
+       S.lookupCoroutineTraits(KwLoc, FuncLoc);
+   if (!CoroTraits)
+@@ -68,7 +75,7 @@ static QualType lookupPromiseType(Sema &S, const FunctionDecl *FD,
+     Args.addArgument(TemplateArgumentLoc(
+         TemplateArgument(T), S.Context.getTrivialTypeSourceInfo(T, KwLoc)));
+   };
+-  AddArg(FnType->getReturnType());
++  AddArg(CoroutineResult);
+   // If the function is a non-static member function, add the type
+   // of the implicit object parameter before the formal parameters.
+   if (auto *MD = dyn_cast<CXXMethodDecl>(FD)) {
+@@ -697,6 +704,15 @@ static void checkReturnStmtInCoroutine(Sema &S, FunctionScopeInfo *FSI) {
+ 
+ bool Sema::ActOnCoroutineBodyStart(Scope *SC, SourceLocation KWLoc,
+                                    StringRef Keyword) {
++  if (llvm::is_contained(ObjC3DeferOwnerStack,
++                         getCurrentObjC3CallableContext(*this))) {
++    if (Keyword == "co_return")
++      Diag(KWLoc, diag::err_jump_out_of_defer_stmt) << diag::DeferJumpKind::Return;
++    else
++      Diag(KWLoc, diag::err_objc3_async_defer_suspend);
++    return false;
++  }
++
+   // Ignore previous expr evaluation contexts.
+   EnterExpressionEvaluationContextForFunction PotentiallyEvaluated(
+       *this, Sema::ExpressionEvaluationContext::PotentiallyEvaluated,
+@@ -1054,6 +1070,42 @@ StmtResult Sema::BuildCoreturnStmt(SourceLocation Loc, Expr *E,
+     E = R.get();
+   }
+ 
++  // A native async function has a logical result independent of the runtime
++  // promise. Apply ordinary return copy-initialization before the generic
++  // promise's return_value; otherwise explicit constructors/conversions and
++  // braced returns would inherit the runtime template's forwarding rules.
++  if (const auto *FD = getCurFunctionDecl(/*AllowLambda=*/true)) {
++    const auto *FT = FD->getType()->castAs<FunctionProtoType>();
++    QualType LogicalResult = FT->getReturnType();
++    if (FT->getObjC3FunctionEffects().Async &&
++        !LogicalResult->isDependentType() && (!E || !E->isTypeDependent())) {
++      if (LogicalResult->isVoidType()) {
++        if (E && (isa<InitListExpr>(E) || !E->getType()->isVoidType())) {
++          Diag(Loc, diag::err_objc3_async_task_unsupported);
++          return StmtError();
++        }
++      } else {
++        if (!E || (!isa<InitListExpr>(E) && E->getType()->isVoidType())) {
++          Diag(Loc, diag::err_objc3_async_task_unsupported);
++          return StmtError();
++        }
++        NamedReturnInfo NRInfo =
++            getNamedReturnInfo(E, SimplerImplicitMoveMode::ForceOn);
++        ExprResult Converted = PerformMoveOrCopyInitialization(
++            InitializedEntity::InitializeResult(Loc, LogicalResult), NRInfo, E);
++        if (Converted.isInvalid())
++          return StmtError();
++        E = Converted.get();
++        // A semantically typed aggregate InitListExpr still participates in
++        // template deduction as an untyped braced argument. Materialize the
++        // initialized logical value before forwarding it to return_value<U>.
++        if (isa<InitListExpr>(E))
++          E = CreateMaterializeTemporaryExpr(LogicalResult, E,
++                                              /*BoundToLvalueReference=*/false);
++      }
++    }
++  }
++
+   VarDecl *Promise = FSI->CoroutinePromise;
+   ExprResult PC;
+   if (E && (isa<InitListExpr>(E) || !E->getType()->isVoidType())) {
+@@ -1868,7 +1920,10 @@ bool CoroutineStmtBuilder::makeGroDeclAndReturnStmt() {
+   assert(!GroType->isDependentType() &&
+          "get_return_object type must no longer be dependent");
+ 
+-  QualType const FnRetType = FD.getReturnType();
++  QualType const FnRetType =
++      FD.getType()->castAs<FunctionProtoType>()->getObjC3FunctionEffects().Async
++          ? S.Context.getObjC3AsyncTaskType(FD.getReturnType())
++          : FD.getReturnType();
+   assert(!FnRetType->isDependentType() &&
+          "get_return_object type must no longer be dependent");
+ 
+diff --git a/clang/lib/Sema/TypeLocBuilder.h b/clang/lib/Sema/TypeLocBuilder.h
+index e84e79aee..777bdabd4 100644
+--- a/clang/lib/Sema/TypeLocBuilder.h
++++ b/clang/lib/Sema/TypeLocBuilder.h
+@@ -103,7 +103,18 @@ public:
+     TyLocType Loc = TypeLoc(T, nullptr).castAs<TyLocType>();
+     size_t LocalSize = Loc.getLocalDataSize();
+     unsigned LocalAlign = Loc.getLocalDataAlignment();
+-    return pushImpl(T, LocalSize, LocalAlign).castAs<TyLocType>();
++    TyLocType Result = pushImpl(T, LocalSize, LocalAlign).castAs<TyLocType>();
++    // Upstream synthesized function locations (notably CTAD guides) fill only
++    // their known fields. Initialize the extension fields at allocation so a
++    // reused builder buffer cannot serialize stale locations or a TypeSourceInfo
++    // pointer from an unrelated node. Transforms can then copy real effects.
++    if (auto Function = Result.template getAs<FunctionTypeLoc>()) {
++      Function.setObjC3AsyncLoc(SourceLocation());
++      Function.setObjC3ThrowsLoc(SourceLocation());
++      Function.setObjC3ThrowsPayloadRange(SourceRange());
++      Function.setObjC3ThrowsPayloadInfo(nullptr);
++    }
++    return Result;
+   }
+ 
+   /// Creates a TypeSourceInfo for the given type.
+diff --git a/clang/test/ObjC3/AST/native-async-pch.mm b/clang/test/ObjC3/AST/native-async-pch.mm
+new file mode 100644
+index 000000000..de14daf05
+--- /dev/null
++++ b/clang/test/ObjC3/AST/native-async-pch.mm
+@@ -0,0 +1,12 @@
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -emit-pch -o %t %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fexceptions -fcxx-exceptions -DBUILD_CONSUMER -include-pch %t -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++#ifndef BUILD_CONSUMER
++#include "../CodeGen/Inputs/native-async-task.h"
++inline int persistent(int value) __objc3_async { return value; }
++#else
++static_assert(__is_same(decltype(persistent(3)), objc3::task<int>));
++// CHECK: define{{.*}} void @_Z8consumerv(
++// CHECK: llvm.coro.id
++// CHECK: {{call|invoke}} void @_Z10persistenti(
++int consumer() __objc3_async { return __objc3_await persistent(3); }
++#endif
+diff --git a/clang/test/ObjC3/Parser/native-async-return.mm b/clang/test/ObjC3/Parser/native-async-return.mm
+new file mode 100644
+index 000000000..9c8b9fd6c
+--- /dev/null
++++ b/clang/test/ObjC3/Parser/native-async-return.mm
+@@ -0,0 +1,22 @@
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fsyntax-only -verify %s
++#include "../CodeGen/Inputs/native-async-task.h"
++struct Explicit { explicit operator int() const; }; // expected-note {{explicit conversion function is not a candidate}}
++int explicit_conversion(Explicit value) __objc3_async {
++  return value; // expected-error {{no viable conversion}}
++}
++int missing_value() __objc3_async {
++  return; // expected-error {{native async task lowering requires}}
++}
++void unexpected_value() __objc3_async {
++  return 1; // expected-error {{native async task lowering requires}}
++}
++
++int defer_return() __objc3_async {
++  defer { return 1; } // expected-error {{cannot return from a defer statement}}
++  return 2;
++}
++int cleanup_dependency() __objc3_async;
++int defer_suspend() __objc3_async {
++  defer { __objc3_await cleanup_dependency(); } // expected-error {{cannot suspend from a defer statement}}
++  return 2;
++}
+diff --git a/clang/test/ObjC3/Parser/native-await-context.mm b/clang/test/ObjC3/Parser/native-await-context.mm
+new file mode 100644
+index 000000000..7867b4318
+--- /dev/null
++++ b/clang/test/ObjC3/Parser/native-await-context.mm
+@@ -0,0 +1,5 @@
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fsyntax-only -verify %s
++int regular() {
++  __objc3_await 1; // expected-error {{native await requires an async Objective-C++20/23 function context}}
++  return 0;
++}
