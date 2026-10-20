@@ -63,6 +63,49 @@ void run_executor_dispatch(void *context) {
   destroy_dispatch(context);
 }
 
+// The task mutex covers both reservation and publication. These enqueue APIs
+// always queue and never invoke user code inline. A destination worker cannot
+// enter the task until this lock is released, and another wake cannot overtake
+// the publication of a deferred resume. Failed dispatch references are released
+// after unlocking, since final release can destroy a frame or call observers.
+objc3_service_status queue_resume_locked(objc3_task_t *task,
+                                         ResumeDispatch *&rejected) {
+  if (task->completion_claimed) {
+    task->resume_after_completion_claim = true;
+    return OBJC3_SERVICE_OK;
+  }
+  auto *dispatch = new (std::nothrow) ResumeDispatch{task};
+  if (!dispatch) return OBJC3_SERVICE_OUT_OF_MEMORY;
+  if (!objc3_task_internal_retain(task)) {
+    delete dispatch;
+    return OBJC3_SERVICE_NOT_READY;
+  }
+  task->resume_queued = true;
+  objc3_service_status status;
+  if (task->actor) {
+    objc3_actor_hop_facts facts{};
+    facts.struct_size = sizeof(facts);
+    facts.version = OBJC3_ACTOR_SERVICE_VERSION;
+    status = objc3_actor_enqueue(task->actor, run_dispatch, dispatch,
+                                 destroy_dispatch, &facts);
+  } else {
+    status = objc3_executor_enqueue(task->executor, run_executor_dispatch,
+                                     dispatch);
+  }
+  if (status != OBJC3_SERVICE_OK) {
+    task->resume_queued = false;
+    rejected = dispatch;
+  }
+  return status;
+}
+
+void release_rejected_dispatch(ResumeDispatch *dispatch) {
+  if (!dispatch) return;
+  auto *task = dispatch->task;
+  delete dispatch;
+  objc3_task_internal_release(task);
+}
+
 struct AwaitContinuation {
   std::shared_ptr<objc3_task::AwaitTarget> target;
   uint64_t generation;
@@ -380,16 +423,21 @@ extern "C" void objc3_task_release(objc3_task_t *task) {
 extern "C" void objc3_task_request_cancel(objc3_task_t *task) {
   if (!task || !objc3_task_internal_retain(task)) return;
   TaskReleaseGuard guard{task};
+  if (objc3_task_mark_cancel(task)) objc3_task_wake_cancelled(task);
+}
+
+bool objc3_task_mark_cancel(objc3_task_t *task) {
   task->cancel_requested.store(true, std::memory_order_release);
-  bool wake = false;
-  {
-    std::lock_guard<std::mutex> lock(task->mutex);
-    if (!task->terminal && task->awaiting) {
-      task->awaiting = false;
-      wake = true;
-    }
+  std::lock_guard<std::mutex> lock(task->mutex);
+  if (!task->terminal && task->awaiting) {
+    task->awaiting = false;
+    return true;
   }
-  if (wake) wake_awaiting_task(task);
+  return false;
+}
+
+void objc3_task_wake_cancelled(objc3_task_t *task) {
+  wake_awaiting_task(task);
 }
 
 extern "C" int objc3_task_is_cancel_requested(const objc3_task_t *task) {
@@ -398,9 +446,8 @@ extern "C" int objc3_task_is_cancel_requested(const objc3_task_t *task) {
 
 extern "C" objc3_service_status objc3_task_schedule_resume(objc3_task_t *task) {
   if (!task) return OBJC3_SERVICE_INVALID_ARGUMENT;
-  ResumeDispatch *dispatch = nullptr;
-  objc3_executor_t *executor = nullptr;
-  objc3_actor_t *actor = nullptr;
+  ResumeDispatch *rejected = nullptr;
+  objc3_service_status status;
   {
     std::lock_guard<std::mutex> lock(task->mutex);
     if (task->terminal)
@@ -419,49 +466,9 @@ extern "C" objc3_service_status objc3_task_schedule_resume(objc3_task_t *task) {
       task->resume_requested = true;
       return OBJC3_SERVICE_OK;
     }
-    executor = objc3_executor_retain(task->executor);
-    actor = task->actor ? objc3_actor_retain(task->actor) : nullptr;
-    if (!executor || (task->actor && !actor)) {
-      objc3_actor_release(actor);
-      objc3_executor_release(executor);
-      return OBJC3_SERVICE_NOT_READY;
-    }
-    dispatch = new (std::nothrow) ResumeDispatch{task};
-    if (!dispatch) {
-      objc3_actor_release(actor);
-      objc3_executor_release(executor);
-      return OBJC3_SERVICE_OUT_OF_MEMORY;
-    }
-    if (!objc3_task_internal_retain(task)) {
-      delete dispatch;
-      objc3_actor_release(actor);
-      objc3_executor_release(executor);
-      return OBJC3_SERVICE_NOT_READY;
-    }
-    task->resume_queued = true;
+    status = queue_resume_locked(task, rejected);
   }
-  objc3_service_status status;
-  if (actor) {
-    objc3_actor_hop_facts facts{};
-    facts.struct_size = sizeof(facts);
-    facts.version = OBJC3_ACTOR_SERVICE_VERSION;
-    status = objc3_actor_enqueue(actor, run_dispatch, dispatch,
-                                 destroy_dispatch, &facts);
-  } else {
-    status = objc3_executor_enqueue(executor, run_executor_dispatch, dispatch);
-  }
-  // A worker may already have resumed, hopped and released its old target
-  // before enqueue returns. Keep the enqueue call's destination alive too.
-  objc3_actor_release(actor);
-  objc3_executor_release(executor);
-  if (status != OBJC3_SERVICE_OK) {
-    {
-      std::lock_guard<std::mutex> lock(task->mutex);
-      task->resume_queued = false;
-    }
-    delete dispatch;
-    objc3_task_internal_release(task);
-  }
+  release_rejected_dispatch(rejected);
   return status;
 }
 
@@ -697,12 +704,14 @@ void objc3_service_run_task_resume(void *context) {
   }
   void *frame_to_destroy = nullptr;
   objc3_frame_destroy frame_destructor = nullptr;
-  bool resume_requested = false;
+  ResumeDispatch *rejected = nullptr;
+  objc3_service_status dispatch_status = OBJC3_SERVICE_OK;
   {
     std::lock_guard<std::mutex> lock(task->mutex);
     if (resume) task->resume_active = false;
-    resume_requested = !task->terminal &&
-                       std::exchange(task->resume_requested, false);
+    const bool resume_requested = std::exchange(task->resume_requested, false);
+    if (!task->terminal && resume_requested)
+      dispatch_status = queue_resume_locked(task, rejected);
     if (task->terminal && !task->resume_active && task->frame) {
       frame_to_destroy = std::exchange(task->frame, nullptr);
       frame_destructor = task->destroy;
@@ -713,5 +722,6 @@ void objc3_service_run_task_resume(void *context) {
     finish_frame_destruction(task, frame_to_destroy, frame_destructor);
   else
     task->completed.notify_all();
-  if (resume_requested) wake_awaiting_task(task);
+  release_rejected_dispatch(rejected);
+  if (dispatch_status != OBJC3_SERVICE_OK) cancel_task(task);
 }

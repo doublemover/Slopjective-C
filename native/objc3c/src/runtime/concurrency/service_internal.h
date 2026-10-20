@@ -98,5 +98,9 @@ void objc3_service_run_task_resume(void *context);
 void objc3_task_destroy_frame(void *frame, objc3_frame_destroy destroy);
 objc3_task_t *objc3_task_current_callback() noexcept;
 objc3_service_status objc3_task_wait_quiescent(objc3_task_t *task);
+// Marking cannot invoke callbacks. Wake only after releasing group/publication
+// locks; failed dispatch can synchronously complete the task and its observers.
+bool objc3_task_mark_cancel(objc3_task_t *task);
+void objc3_task_wake_cancelled(objc3_task_t *task);
 
 #endif

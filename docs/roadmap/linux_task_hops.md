@@ -59,6 +59,10 @@ groups before closing their actors. Actor join covers mailbox work, while group
 join covers task completion, registered completion callbacks and frame cleanup.
 Pending task waits and group joins return `NOT_READY` from any runtime executor
 callback: a task can hop back to that executor after the wait begins.
+Group cancellation marks sibling and ancestor cancellation flags before
+publishing failure. It dispatches their wakeups after releasing group and failure
+publication locks, so a failed dispatch can complete tasks and reenter group APIs
+without deadlocking.
 
 Mailbox affinity governs resume segments. Completion observers and forced frame
 destruction retain the public task service's existing callback rules and may run

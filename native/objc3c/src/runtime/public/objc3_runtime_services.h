@@ -111,6 +111,8 @@ objc3_task_t *objc3_task_retain(objc3_task_t *task);
 void objc3_task_release(objc3_task_t *task);
 void objc3_task_request_cancel(objc3_task_t *task);
 int objc3_task_is_cancel_requested(const objc3_task_t *task);
+/* Coalesce outstanding wake requests. A wake during an active resume queues
+ * one continuation after that callback returns; native resumes never overlap. */
 objc3_service_status objc3_task_schedule_resume(objc3_task_t *task);
 /* Change destination from this task's active resume and request a queued
  * continuation. Select exactly one of executor or actor. Always suspend after
