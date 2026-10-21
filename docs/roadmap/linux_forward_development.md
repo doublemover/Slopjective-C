@@ -1,7 +1,7 @@
 # Linux forward development
 
 The active product is the Clang-only Linux x86-64 SDK. The
-[acceptance receipt](../support/linux_direct_dispatch_acceptance.json) identifies its
+[acceptance receipt](../support/linux_recursive_carrier_acceptance.json) identifies its
 exact archive, source, native execution and fresh-distribution evidence. Tool
 versions come from [the manifest](../../toolchains/llvm/manifest.json); public
 language claims come from [the capability authority](../../schemas/objc3-language-capabilities.json).
@@ -23,7 +23,7 @@ O0/O2 witnesses cover all Result arm transitions, self/aliased assignment, weak
 zeroing, Blocks, typed-error optionalization, sequencing and native unwinding.
 Live clangd probes cover both languages. The
 [managed call ABI](linux_managed_call_abi.md) now extends direct carriers through
-ordinary functions, callbacks and C++ members under extension ABI revision 6.
+ordinary functions, callbacks and C++ members under extension ABI revision 7.
 Caller-owned snapshots preserve each argument at evaluation time and clean up
 at full-expression boundaries; returns initialize fresh caller-owned storage.
 Nine installed executions cover separate provider/consumer compilation at
@@ -43,9 +43,14 @@ until its cleanups finish; native exceptions destroy it before unwinding.
 cutover: native method symbols, lazy initialization, nil/error cleanup and
 imported direct-method identity are qualified. Runtime metadata excludes direct
 implementations because their ABI omits `_cmd`. The SDK rejects obsolete runtime
-profiles and requires a complete rebuild. Nested storage remains implementation work.
+profiles and requires a complete rebuild. The
+[recursive carrier contract](linux_recursive_carriers.md) extends ownership through
+nested Optional/Result values under ABI 7, including managed matching and
+optionalization of managed call results. Nine installed executions and six traps
+cover imports, PCH, metadata, weak/Block leaves and exceptional cleanup.
+Arrays, enclosing records and captures remain implementation work.
 The managed public core targets ARC. MRC adaptation remains outside its release
-contract; weak/unsafe Block payloads and nested managed carriers still need
+contract; weak/unsafe Block payloads and enclosing managed storage still need
 explicit semantics and lowering. Define the public bounded contract and
 syntax together with their feature queries and capability predicates. Promote a
 feature only when that contract has complete evidence.
@@ -58,10 +63,10 @@ Private migration intrinsics do not justify a public feature claim.
 
 The next implementation sequence is:
 
-1. Extend active-arm lifetime operations through nested carriers, arrays and
+1. Extend active-arm lifetime operations through arrays and
    enclosing records. Cover partial initialization, assignment, destruction and
    exceptions before admitting those storage forms to the callable ABI. Define
-   optionalization of managed results on these recursive operations. Extend
+   the remaining aggregate forms on these recursive operations. Extend
    the same operations into ivars/properties and Block value captures, including
    payload-aware copy/dispose helpers and weak registrations.
 2. Finish the bounded public Optional/Result and synchronous throws contract,

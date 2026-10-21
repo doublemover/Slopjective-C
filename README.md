@@ -184,7 +184,9 @@ replacement, weak zeroing, Blocks, sequencing and native exceptions in both
 Objective-C and Objective-C++ at O0 and O2.
 
 Linux ARC functions now pass and return these direct carriers by value under
-extension ABI revision 6. Each argument gets a caller-owned snapshot when it is
+extension ABI revision 7. The [recursive carrier contract](docs/roadmap/linux_recursive_carriers.md)
+extends ownership through nested Optional/Result values, managed match snapshots
+and optionalization of managed results. Each argument gets a caller-owned snapshot when it is
 evaluated; that snapshot survives later argument evaluation and is destroyed at
 the full-expression boundary, including exception exits. Results initialize
 fresh caller-owned storage. Separate provider/consumer witnesses cover ordinary
@@ -213,7 +215,7 @@ SDK/output options for nine executions and eighteen forced-failure checks.
 
 The [managed call contract](docs/roadmap/linux_managed_call_abi.md) defines the
 ownership and target bounds. Carrier storage in ivars or Block captures,
-volatile carriers, nested managed storage and managed MRC transfers still need
+volatile carriers, arrays/enclosing records and managed MRC transfers still need
 dedicated implementation. GNUstep 2.2 supports [true direct dispatch](docs/roadmap/linux_direct_dispatch.md),
 including lazy class initialization and managed typed-error calls.
 
@@ -243,7 +245,7 @@ Native validation checks O0/O2 behavior, ABI, ownership, cleanup, expected
 failures, installed interface consumers and editor tools. Evidence records bind
 source, compiler, runtime, system headers and executable contents and reject
 changes during validation. The
-[Linux SDK acceptance receipt](docs/support/linux_direct_dispatch_acceptance.json)
+[Linux SDK acceptance receipt](docs/support/linux_recursive_carrier_acceptance.json)
 records the qualified archive and fresh-host checks; each new SDK has its own
 qualification and release receipt. Runtime timings must be distinguished from
 compile and wrapper timings when comparing performance.
