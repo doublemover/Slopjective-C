@@ -1379,7 +1379,7 @@ index f98b0f358..e1611058b 100644
    /// source.
    ///
 diff --git a/clang/include/clang/Sema/Sema.h b/clang/include/clang/Sema/Sema.h
-index 11550340a..f69305128 100644
+index 11550340a..39ae64a94 100644
 --- a/clang/include/clang/Sema/Sema.h
 +++ b/clang/include/clang/Sema/Sema.h
 @@ -15,6 +15,8 @@
@@ -1433,7 +1433,17 @@ index 11550340a..f69305128 100644
      /// Integrate another called method into the collected data.
      void CalledDecl(SourceLocation CallLoc, const CXXMethodDecl *Method);
  
-@@ -11247,6 +11261,83 @@ public:
+@@ -10017,7 +10031,8 @@ public:
+   DeclResult ActOnModuleImport(SourceLocation StartLoc,
+                                SourceLocation ExportLoc,
+                                SourceLocation ImportLoc, ModuleIdPath Path,
+-                               bool IsPartition = false);
++                               bool IsPartition = false,
++                               bool IsObjCAtImport = false);
+   DeclResult ActOnModuleImport(SourceLocation StartLoc,
+                                SourceLocation ExportLoc,
+                                SourceLocation ImportLoc, Module *M,
+@@ -11247,6 +11262,83 @@ public:
                              LabelDecl *Label, SourceLocation LabelLoc);
  
    void ActOnStartOfDeferStmt(SourceLocation DeferLoc, Scope *CurScope);
@@ -1517,7 +1527,7 @@ index 11550340a..f69305128 100644
    void ActOnDeferStmtError(Scope *CurScope);
    StmtResult ActOnEndOfDeferStmt(Stmt *Body, Scope *CurScope);
  
-@@ -15357,6 +15448,13 @@ public:
+@@ -15357,6 +15449,13 @@ public:
                               SourceLocation Loc, DeclarationName Entity,
                               const FunctionProtoType::ExtProtoInfo &EPI);
  
@@ -4662,7 +4672,7 @@ index 1477fc38b..526116382 100644
    if (!TrySkipAttributes())
      return TPResult::Ambiguous;
 diff --git a/clang/lib/Parse/Parser.cpp b/clang/lib/Parse/Parser.cpp
-index 5e1fd4df1..f11e176da 100644
+index 5e1fd4df1..7b85a2644 100644
 --- a/clang/lib/Parse/Parser.cpp
 +++ b/clang/lib/Parse/Parser.cpp
 @@ -10,6 +10,9 @@
@@ -4684,7 +4694,7 @@ index 5e1fd4df1..f11e176da 100644
      return ParseObjCAtDirectives(Attrs, DeclSpecAttrs);
    case tok::minus:
    case tok::plus:
-@@ -2520,6 +2525,34 @@ Decl *Parser::ParseModuleImport(SourceLocation AtLoc,
+@@ -2520,13 +2525,41 @@ Decl *Parser::ParseModuleImport(SourceLocation AtLoc,
    if (SeenError)
      return nullptr;
  
@@ -4719,6 +4729,14 @@ index 5e1fd4df1..f11e176da 100644
    DeclResult Import;
    if (HeaderUnit)
      Import =
+         Actions.ActOnModuleImport(StartLoc, ExportLoc, ImportLoc, HeaderUnit);
+   else if (!Path.empty())
+     Import = Actions.ActOnModuleImport(StartLoc, ExportLoc, ImportLoc, Path,
+-                                       IsPartition);
++                                       IsPartition, IsObjCAtImport);
+   if (Import.isInvalid())
+     return nullptr;
+ 
 diff --git a/clang/lib/Sema/CMakeLists.txt b/clang/lib/Sema/CMakeLists.txt
 index ef729e22c..ff5c21e5d 100644
 --- a/clang/lib/Sema/CMakeLists.txt
@@ -5090,7 +5108,7 @@ index 000000000..f07788326
 +  llvm_unreachable("all ObjC3 match patterns handled");
 +}
 diff --git a/clang/lib/Sema/SemaDecl.cpp b/clang/lib/Sema/SemaDecl.cpp
-index 6a25a799a..a97d9adb5 100644
+index 6a25a799a..8e47dacd1 100644
 --- a/clang/lib/Sema/SemaDecl.cpp
 +++ b/clang/lib/Sema/SemaDecl.cpp
 @@ -10,6 +10,7 @@
@@ -5137,13 +5155,13 @@ index 6a25a799a..a97d9adb5 100644
    QualType OldQTypeForComparison = OldQType;
    if (Context.hasAnyFunctionEffects()) {
      const auto OldFX = Old->getFunctionEffects();
-@@ -12615,10 +12638,44 @@ bool Sema::CheckFunctionDeclaration(Scope *S, FunctionDecl *NewFD,
+@@ -12615,10 +12638,50 @@ bool Sema::CheckFunctionDeclaration(Scope *S, FunctionDecl *NewFD,
      // But, issue any diagnostic on the first declaration only.
      if (Previous.empty() && NewFD->isExternC()) {
        QualType R = NewFD->getReturnType();
 +      bool ObjC3CCompatible = false;
 +      const auto &Triple = Context.getTargetInfo().getTriple();
-+      if (getLangOpts().ObjC3 && getLangOpts().ObjCAutoRefCount &&
++      if (getLangOpts().ObjC3 &&
 +          Triple.isOSLinux() && Triple.isGNUEnvironment() &&
 +          Triple.getArch() == llvm::Triple::x86_64 &&
 +          getLangOpts().ObjCRuntime.getAsString() == "gnustep-2.2") {
@@ -5173,7 +5191,13 @@ index 6a25a799a..a97d9adb5 100644
 +          }
 +          return T->isScalarType() || T->isAnyComplexType() || T->isVectorType();
 +        };
-+        ObjC3CCompatible = containsObjC3CarrierManagedStorage(R) && Compatible(Compatible, R, 0);
++        const bool PlainCarrier =
++            isa<ObjC3OptionalType, ObjC3ResultType>(R.getCanonicalType()) &&
++            !hasObjC3CarrierManagedPayload(R);
++        ObjC3CCompatible =
++            (PlainCarrier || (getLangOpts().ObjCAutoRefCount &&
++                              containsObjC3CarrierManagedStorage(R))) &&
++            Compatible(Compatible, R, 0);
 +      }
        if (R->isIncompleteType() && !R->isVoidType())
          Diag(NewFD->getLocation(), diag::warn_return_value_udt_incomplete)
@@ -5183,7 +5207,7 @@ index 6a25a799a..a97d9adb5 100644
                 !R->isObjCObjectPointerType())
          Diag(NewFD->getLocation(), diag::warn_return_value_udt) << NewFD << R;
      }
-@@ -13600,6 +13657,11 @@ struct DiagNonTrivalCUnionDefaultInitializeVisitor
+@@ -13600,6 +13663,11 @@ struct DiagNonTrivalCUnionDefaultInitializeVisitor
      return Super::visitWithKind(PDIK, QT, FD, InNonTrivialUnion);
    }
  
@@ -5195,7 +5219,7 @@ index 6a25a799a..a97d9adb5 100644
    void visitARCStrong(QualType QT, const FieldDecl *FD,
                        bool InNonTrivialUnion) {
      if (InNonTrivialUnion)
-@@ -13666,6 +13728,11 @@ struct DiagNonTrivalCUnionDestructedTypeVisitor
+@@ -13666,6 +13734,11 @@ struct DiagNonTrivalCUnionDestructedTypeVisitor
      return Super::visitWithKind(DK, QT, FD, InNonTrivialUnion);
    }
  
@@ -5207,7 +5231,7 @@ index 6a25a799a..a97d9adb5 100644
    void visitARCStrong(QualType QT, const FieldDecl *FD,
                        bool InNonTrivialUnion) {
      if (InNonTrivialUnion)
-@@ -13731,6 +13798,11 @@ struct DiagNonTrivalCUnionCopyVisitor
+@@ -13731,6 +13804,11 @@ struct DiagNonTrivalCUnionCopyVisitor
      return Super::visitWithKind(PCK, QT, FD, InNonTrivialUnion);
    }
  
@@ -5219,7 +5243,7 @@ index 6a25a799a..a97d9adb5 100644
    void visitARCStrong(QualType QT, const FieldDecl *FD,
                        bool InNonTrivialUnion) {
      if (InNonTrivialUnion)
-@@ -14943,9 +15015,55 @@ void Sema::addLifetimeBoundToImplicitThis(CXXMethodDecl *MD) {
+@@ -14943,9 +15021,55 @@ void Sema::addLifetimeBoundToImplicitThis(CXXMethodDecl *MD) {
    MD->setTypeSourceInfo(TLB.getTypeSourceInfo(Context, AttributedType));
  }
  
@@ -5275,7 +5299,7 @@ index 6a25a799a..a97d9adb5 100644
    CUDA().MaybeAddConstantAttr(var);
  
    if (getLangOpts().OpenCL) {
-@@ -16714,6 +16832,26 @@ Decl *Sema::ActOnFinishFunctionBody(Decl *dcl, Stmt *Body, bool IsInstantiation,
+@@ -16714,6 +16838,26 @@ Decl *Sema::ActOnFinishFunctionBody(Decl *dcl, Stmt *Body, bool IsInstantiation,
                                      bool RetainFunctionScopeInfo) {
    FunctionScopeInfo *FSI = getCurFunction();
    FunctionDecl *FD = dcl ? dcl->getAsFunction() : nullptr;
@@ -5302,7 +5326,7 @@ index 6a25a799a..a97d9adb5 100644
  
    if (FSI->UsesFPIntrin && FD && !FD->hasAttr<StrictFPAttr>())
      FD->addAttr(StrictFPAttr::CreateImplicit(Context));
-@@ -16728,10 +16866,11 @@ Decl *Sema::ActOnFinishFunctionBody(Decl *dcl, Stmt *Body, bool IsInstantiation,
+@@ -16728,10 +16872,11 @@ Decl *Sema::ActOnFinishFunctionBody(Decl *dcl, Stmt *Body, bool IsInstantiation,
    sema::AnalysisBasedWarnings::Policy *ActivePolicy = nullptr;
  
    // If we skip function body, we can't tell if a function is a coroutine.
@@ -5317,7 +5341,7 @@ index 6a25a799a..a97d9adb5 100644
        CheckCoroutineWrapper(FD);
    }
  
-@@ -20223,7 +20362,8 @@ void Sema::ActOnFields(Scope *S, SourceLocation RecLoc, Decl *EnclosingDecl,
+@@ -20223,7 +20368,8 @@ void Sema::ActOnFields(Scope *S, SourceLocation RecLoc, Decl *EnclosingDecl,
              RecordArgPassingKind::CanNeverPassInRegs)
            Record->setArgPassingRestrictions(
                RecordArgPassingKind::CanNeverPassInRegs);
@@ -5481,7 +5505,7 @@ index b0669c602..fc697c911 100644
    QualType NewClassTy, OldClassTy;
  
 diff --git a/clang/lib/Sema/SemaDeclObjC.cpp b/clang/lib/Sema/SemaDeclObjC.cpp
-index 04ba52809..3877347d8 100644
+index 04ba52809..8f8448568 100644
 --- a/clang/lib/Sema/SemaDeclObjC.cpp
 +++ b/clang/lib/Sema/SemaDeclObjC.cpp
 @@ -137,8 +137,39 @@ static void diagnoseNoescape(const ParmVarDecl *NewD, const ParmVarDecl *OldD,
@@ -5524,6 +5548,44 @@ index 04ba52809..3877347d8 100644
    ASTContext &Context = getASTContext();
    if (Overridden->hasRelatedResultType() &&
        !NewMethod->hasRelatedResultType()) {
+@@ -1290,16 +1321,16 @@ ObjCProtocolDecl *SemaObjC::ActOnStartProtocolInterface(
+   return PDecl;
+ }
+ 
+-static bool NestedProtocolHasNoDefinition(ObjCProtocolDecl *PDecl,
++static bool NestedProtocolHasNoDefinition(Sema &S, ObjCProtocolDecl *PDecl,
+                                           ObjCProtocolDecl *&UndefinedProtocol) {
+   if (!PDecl->hasDefinition() ||
+-      !PDecl->getDefinition()->isUnconditionallyVisible()) {
++      !S.isVisible(PDecl->getDefinition())) {
+     UndefinedProtocol = PDecl;
+     return true;
+   }
+ 
+   for (auto *PI : PDecl->protocols())
+-    if (NestedProtocolHasNoDefinition(PI, UndefinedProtocol)) {
++    if (NestedProtocolHasNoDefinition(S, PI, UndefinedProtocol)) {
+       UndefinedProtocol = PI;
+       return true;
+     }
+@@ -1349,7 +1380,7 @@ void SemaObjC::FindProtocolDeclaration(bool WarnOnDeclarations,
+     ObjCProtocolDecl *UndefinedProtocol;
+ 
+     if (WarnOnDeclarations &&
+-        NestedProtocolHasNoDefinition(PDecl, UndefinedProtocol)) {
++        NestedProtocolHasNoDefinition(SemaRef, PDecl, UndefinedProtocol)) {
+       Diag(Pair.getLoc(), diag::warn_undef_protocolref)
+           << Pair.getIdentifierInfo();
+       Diag(UndefinedProtocol->getLocation(), diag::note_protocol_decl_undefined)
+@@ -1479,7 +1510,7 @@ void SemaObjC::actOnObjCTypeArgsOrProtocolQualifiers(
+       // FIXME: Recover nicely in the hidden case.
+       ObjCProtocolDecl *forwardDecl = nullptr;
+       if (warnOnIncompleteProtocols &&
+-          NestedProtocolHasNoDefinition(proto, forwardDecl)) {
++          NestedProtocolHasNoDefinition(SemaRef, proto, forwardDecl)) {
+         Diag(identifierLocs[i], diag::warn_undef_protocolref)
+           << proto->getDeclName();
+         Diag(forwardDecl->getLocation(), diag::note_protocol_decl_undefined)
 @@ -2595,6 +2626,7 @@ static bool checkMethodFamilyMismatch(Sema &S, ObjCMethodDecl *impl,
  void SemaObjC::WarnConflictingTypedMethods(ObjCMethodDecl *ImpMethodDecl,
                                             ObjCMethodDecl *MethodDecl,
@@ -15716,4 +15778,61 @@ index 000000000..f58119570
 +      identity<decltype(record)>(), "objc3.async.local.v1:", 21) == 0);
 +}
 +#endif
++#endif
+diff --git a/clang/lib/Sema/SemaModule.cpp b/clang/lib/Sema/SemaModule.cpp
+index caa61a99a..f91893e46 100644
+--- a/clang/lib/Sema/SemaModule.cpp
++++ b/clang/lib/Sema/SemaModule.cpp
+@@ -560,7 +560,7 @@ Sema::ActOnPrivateModuleFragmentDecl(SourceLocation ModuleLoc,
+ DeclResult Sema::ActOnModuleImport(SourceLocation StartLoc,
+                                    SourceLocation ExportLoc,
+                                    SourceLocation ImportLoc, ModuleIdPath Path,
+-                                   bool IsPartition) {
++                                   bool IsPartition, bool IsObjCAtImport) {
+   assert((!IsPartition || getLangOpts().CPlusPlusModules) &&
+          "partition seen in non-C++20 code?");
+ 
+@@ -581,7 +581,7 @@ DeclResult Sema::ActOnModuleImport(SourceLocation StartLoc,
+     ModuleNameLoc =
+         IdentifierLoc(Path[0].getLoc(), PP.getIdentifierInfo(ModuleName));
+     Path = ModuleIdPath(ModuleNameLoc);
+-  } else if (getLangOpts().CPlusPlusModules) {
++  } else if (getLangOpts().CPlusPlusModules && !IsObjCAtImport) {
+     ModuleName = ModuleLoader::getFlatNameFromPath(Path);
+     ModuleNameLoc =
+         IdentifierLoc(Path[0].getLoc(), PP.getIdentifierInfo(ModuleName));
+diff --git a/clang/test/ObjC3/Sema/Inputs/at-import/deep.h b/clang/test/ObjC3/Sema/Inputs/at-import/deep.h
+new file mode 100644
+index 000000000..530fe751d
+--- /dev/null
++++ b/clang/test/ObjC3/Sema/Inputs/at-import/deep.h
+@@ -0,0 +1,3 @@
++int objc3_deep_symbol(void);
++@protocol ObjC3ImportedError
++@end
+diff --git a/clang/test/ObjC3/Sema/Inputs/at-import/module.modulemap b/clang/test/ObjC3/Sema/Inputs/at-import/module.modulemap
+new file mode 100644
+index 000000000..4e6ebad9a
+--- /dev/null
++++ b/clang/test/ObjC3/Sema/Inputs/at-import/module.modulemap
+@@ -0,0 +1 @@
++module objc3_test { explicit module deep { header "deep.h" export * } }
+diff --git a/clang/test/ObjC3/Sema/dotted-at-import.mm b/clang/test/ObjC3/Sema/dotted-at-import.mm
+new file mode 100644
+index 000000000..b8aef2224
+--- /dev/null
++++ b/clang/test/ObjC3/Sema/dotted-at-import.mm
+@@ -0,0 +1,13 @@
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fmodules -fimplicit-module-maps -fmodules-cache-path=%t/20 -I %S/Inputs/at-import -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++23 -fmodules -fimplicit-module-maps -fmodules-cache-path=%t/23 -I %S/Inputs/at-import -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fsyntax-only -verify %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fmodules -fimplicit-module-maps -fmodules-cache-path=%t/pch -I %S/Inputs/at-import -emit-pch -o %t.pch %s
++// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fmodules -fimplicit-module-maps -fmodules-cache-path=%t/pch -I %S/Inputs/at-import -include-pch %t.pch -fsyntax-only -verify %s
++// expected-no-diagnostics
++#ifndef OBJC3_DOTTED_AT_IMPORT_TEST
++#define OBJC3_DOTTED_AT_IMPORT_TEST
++@import objc3_test.deep;
++__attribute__((objc_root_class)) @interface ImportedProtocolUser <ObjC3ImportedError> @end
++int imported_symbol() { return objc3_deep_symbol(); }
++#else
++int imported_from_pch() { return objc3_deep_symbol(); }
 +#endif

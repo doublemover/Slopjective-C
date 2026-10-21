@@ -23,7 +23,7 @@ from .sdk_example import write_json
 
 PROJECT_SDK_PREFIXES = ('bin/objc3', 'bin/clang-scan-deps', 'lib/libobjc',
                         'lib/cmake/objc3c/', 'include/objc/', 'include/objc3c/',
-                        'include/runtime/', 'share/objc3c/')
+                        'include/objc3/', 'include/runtime/', 'share/objc3c/')
 
 
 def is_project_sdk_path(name: str) -> bool:
@@ -70,7 +70,7 @@ def input_identity(repo: Path, sdk: Path) -> dict:
     files = set()
     for directory in ('scripts/objc3c_toolchain', 'scripts/objc3c_toolchain_runtime',
                       'scripts/objc3c_native_validation', 'tests/clang_foundation',
-                      'tests/tooling/fixtures/clang_foundation', 'native/objc3c/src/runtime'):
+                      'tests/tooling/fixtures/clang_foundation', 'native/objc3c/src/runtime', 'stdlib/include'):
         files.update(path for path in (repo / directory).rglob('*') if path.is_file()
                      and '__pycache__' not in path.parts and path.suffix not in ('.pyc',))
     # Qualification owners, including editor fixtures and shared executor code,
@@ -80,6 +80,7 @@ def input_identity(repo: Path, sdk: Path) -> dict:
     for node in qualification['selected_nodes']:
         files.update(repo / name for name in node['identity_inputs'])
     files.add(repo / 'scripts/install_objc3c_linux.sh')
+    files.add(repo / 'stdlib/module_inventory.json')
     files.add(repo / 'out/toolchains/objc3-development/build-linux-x86_64/bin/llvm-tblgen')
     inputs = {path.relative_to(repo).as_posix(): hashlib.sha256(path.read_bytes()).hexdigest()
               for path in sorted(files)}

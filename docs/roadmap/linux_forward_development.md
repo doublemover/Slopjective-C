@@ -1,229 +1,121 @@
-# Linux forward development
+# Objective-C 3.0 on Linux
 
-The active product is the Clang-only Linux x86-64 SDK. The
-[acceptance receipt](../support/linux_async_blocks_acceptance.json) identifies
-its exact archive, implementation, installed execution and fresh-distribution
-evidence. Tool versions come from [the manifest](../../toolchains/llvm/manifest.json);
-public language claims come from [the capability authority](../../schemas/objc3-language-capabilities.json).
+The target is Objective-C 3.0 as defined by `spec/`, implemented by the patched
+Clang toolchain. C17 and C++20/23 name the underlying Clang source modes; they
+are not separate Objective-C product versions. Linux x86-64 with GNUstep 2.2 is
+the currently qualified runtime target. Windows and compatibility with retired
+frontends are outside the active development plan.
 
-## Public synchronous core
+The [language capability authority](../../schemas/objc3-language-capabilities.json)
+records public compiler claims. The [library inventory](../../stdlib/module_inventory.json)
+records native library coverage against the
+[standard-library contract](../../spec/STANDARD_LIBRARY_CONTRACT.md). Existing
+historical milestone checklists do not establish current Clang conformance.
 
-The [public Optional/Result contract](linux_public_carriers.md) and
-[synchronous error contract](linux_public_errors.md) now have native compiler
-syntax in Objective-C17 and Objective-C++20/23. Extension ABI 19 requires a full
-rebuild of objects, PCH files, semantic interfaces and packages. The public
-feature predicates describe the bounded Linux x86-64 GNUstep 2.2 compatibility
-profile; async/await and actors remain reserved.
+## Delivered foundations
 
-The release qualification carries public syntax through the installed ownership,
-call, runtime, typed-error, direct-dispatch, recursive-value, capture, array,
-record, heap and C++ interface suites. Explicit checked calls are required for
-evaluated throwing calls, including nested arguments and receivers. Local ARC
-values preserve native strong, weak, unsafe and Block ownership; managed MRC
-transfer and unsupported storage are diagnosed. Native exceptions retain native
-cleanup and unwinding behavior.
+The [SDK refresh receipt](../support/linux_sdk_refresh_acceptance.json) identifies
+the last activated archive and its actual installed tests. That release includes
+extension ABI 20, service ABI 4, the shared C/C++ async frame/result contract,
+per-callback and per-resume autorelease pools, fair actor scheduling and the
+current SDK-independent package install command. New development must produce a
+new archive and receipt before it is described as delivered in that SDK.
 
-The implemented foundations have separate bounded contracts:
+The public synchronous compiler supports native `defer`, `Optional`, `Result`
+and checked `throws` in the bounded compatibility profile. Its ownership and
+ABI tests cover strong/weak/unsafe objects, Blocks, nested carriers, arrays,
+records, heap storage, direct dispatch, typed errors and native unwinding.
 
-- [Managed calls](linux_managed_call_abi.md),
-  [runtime calls](linux_runtime_call_abi.md),
-  [typed errors](linux_managed_typed_errors.md) and
-  [GNUstep 2.2 direct dispatch](linux_direct_dispatch.md).
-- [Recursive values](linux_recursive_carriers.md),
-  [owned captures](linux_owned_block_captures.md),
-  [arrays](linux_managed_arrays.md), [records](linux_managed_records.md) and
-  [heap storage](linux_heap_storage.md).
-- [C++ semantic interfaces](linux_cxx_interfaces.md),
-  [explicit source packages](linux_source_packages.md) and
-  [immutable packages](linux_immutable_packages.md).
-- [Explicit ownership projections](linux_ownership_projections.md) connect
-  closed ARC and MRC C APIs, including source-free packages and transitive
-  consumer-mode re-exports.
-- [Public module surfaces](linux_public_module_surfaces.md) select native root
-  declarations, reject private type leaks and preserve dependent build reuse
-  across private implementation edits. Source manifests v4 and binary packages
-  v3 require explicit export policies. Semantic interfaces remain schema 2.
-- [Public API availability](linux_api_availability.md) preserves native
-  deprecation, unavailability and platform metadata through imports, ownership
-  projections and source-free packages. Metadata edits invalidate dependents.
+Native semantic interfaces preserve callable effects, ownership, availability,
+module-owned names, explicit exports and SPI. Source graphs and immutable binary
+packages support separately compiled and source-free providers. Installed editor
+and LLDB tests exercise the same canonical identities.
 
-- [Named module SPI](linux_module_spi.md) binds native partitions and exact-provider
-  grants through qualified lookup, source recipes and immutable consumers.
-  Re-exports do not forward privileges.
+The structured runtime supplies groups, cancellation, task outcomes, serial
+actors, executor destinations and suspended dependency/hop scheduling. The
+Objective-C++ coroutine compiler supports async functions, methods and Blocks
+through reserved spellings. Public async/await and actors remain reserved.
+The [shared ABI contract](linux_async_c_abi.md) no longer exposes C++ promise
+layout at the C frame boundary.
 
-- [Module-owned native names](linux_module_owned_names.md) isolate functions,
-  globals, classes, protocols, categories and concrete private template bindings
-  across providers. Canonical imports and Linux LLDB preserve the native binding.
-- [Structured runtime services](linux_structured_runtime.md) expose task groups,
-  nested cancellation, completion polling and serial actor mailboxes through the
-  installed C ABI. Threaded and sanitizer qualification covers runtime ownership
-  and cleanup.
-- [Resumable task bridge](linux_task_coroutines.md) connects native C++20/23 and
-  Objective-C++ coroutine frames to the public task ABI, with queued awaits,
-  cancellation wakeup, retained results and native frame cleanup.
-- [Native async function development](linux_native_async.md) connects logical
-  results and canonical async effects to Objective-C++20/23 task frames through
-  reserved compiler spellings. [Owned async results](linux_async_owned_results.md)
-  retain objects and copy Blocks through nested awaits, canonical ARC/MRC task
-  carriers and source-free providers. [Checked async errors](linux_async_checked_errors.md)
-  add owned deferred Error objects, checked awaits and suspending handlers.
-  [C++ async callables](linux_async_cxx_callables.md) extend this compiler work to
-  member functions, virtual calls, member pointers and operators, with bounded
-  source-free aggregate method interfaces. [Checked async value results](linux_async_value_results.md)
-  add records, complex values and member pointers without constructing an absent
-  result; direct automatic Optional initialization preserves C++ payload lifetimes.
-  [Async Objective-C methods](linux_async_objc_methods.md) add dynamic, protocol,
-  superclass and direct messages, owned lazy receivers, checked errors and
-  source-free method interfaces. [Async Objective-C++ Blocks](linux_async_blocks.md)
-  add owned suspended captures, checked Block calls, PCH bodies and source-free
-  Block aliases and factories. Public async/await remains reserved.
+## Active completion sequence
 
-## Next compiler milestones
+Each milestone includes implementation, diagnostics, imports, ownership,
+execution and installed-archive tests before its capability is promoted.
 
-The [shared C/C++ async frame and result ABI](linux_async_c_abi.md) introduces
-the extension ABI 20 development cutover and service ABI 4. It removes C++
-promise layout from the C frame boundary and copy-function identity from result
-matching. Its Objective-C17 providers use explicit resume callbacks; native
-Objective-C async syntax remains the next compiler step.
+1. **Native standard library.** Replace the retired `module`/`fn` sources and
+   synthetic integer helpers with canonical Clang modules backed by the real
+   runtime. Ship core discovery/versioning, lazy nil-to-error helpers, validated
+   UTF-8, concrete/generic collections and structured runtime declarations.
+   Exercise mixed Objective-C/Objective-C++ providers, ARC/MRC consumers, O0/O2,
+   cached imports and expected failures. Implement typed key paths and strict
+   system helpers as their compiler semantics become available.
+2. **Core type and control-flow completion.** Reconcile every Part 3 and Part 5
+   requirement with the current AST and diagnostics: generic constraints,
+   optional binding/chaining, `guard`, exhaustive matching, typed key paths and
+   flow-sensitive refinements. Carry these through PCH and semantic interfaces.
+3. **Native Objective-C async.** Lower functions, methods and Blocks to the
+   existing C frame ABI without requiring C++ source. Preserve live locals,
+   cleanup, owned results/errors, native exceptions and cancellation across
+   suspension. Recognize structured versus detached spawn and enforce awaited
+   effectful calls before promoting public syntax.
+4. **Isolation and concurrency safety.** Implement actor/global-actor callable
+   metadata, awaited executor crossings, isolated state access and Sendable
+   transfer checks. Preserve logical identity and mailbox fairness through
+   nested calls, imports and source-free packages.
+5. **Ownership and strict profiles.** Complete resource, borrowed/lifetime,
+   capture and escape rules from Part 8. Enable Core, Strict, Strict Concurrency
+   and Strict System only when the full relevant checklist and required library
+   modules pass, including required diagnostics and fix-its.
+6. **Remaining specified feature sets.** Complete the specified reflection,
+   metaprogramming/property behavior, foreign/Swift interop and tooling surfaces.
+   Optional feature-set status must remain explicit until its entire contract
+   is implemented and tested.
+7. **Release and architecture coverage.** Run the actual new archive on fresh
+   supported Linux distributions, publish its exact content identity and
+   installation evidence, then qualify AArch64 on a native host. Emulation and
+   cross-compilation can find bugs but do not establish native support.
 
-The [task destination bridge](linux_task_hops.md) supplies actor-bound resumes,
-explicit executor/actor hops and inherited child destinations. Compiler isolation
-and the public language contract still require the following work.
+The standard-library cutover is version 2. Its inventory distinguishes completed
+module contracts from partial and unimplemented modules. Importing a module
+alone does not establish profile conformance. No placeholder key-path or system
+module may turn a missing implementation into apparent coverage.
 
-1. Implement a native Objective-C async milestone with a shared C/C++ frame and
-   typed completion contract. Keep C++ promise storage private and preserve
-   validated result ownership, checked errors, native exceptions and cancellation
-   across language boundaries. Use one hard cutover for that ABI and the native
-   Objective-C lowering of functions, methods and Blocks. Preserve cleanup and
-   owned values across execution-slice autorelease pools.
-   Align public await-required calls and library-recognized task spawning with
-   the language contract before promoting the capability. The qualified
-   Objective-C++ stage already includes checked errors, methods and async Blocks.
-   Require Objective-C17 and Objective-C++20/23 canonical imports, source-free
-   packages, O0/O2 execution, debugger values and instrumented services/clients.
-2. Add compiler actor isolation and awaited executor hops. Preserve isolation in
-   callable types and canonical interfaces, diagnose unsynchronized access, and
-   retain mailbox serialization, logical identity and cleanup through nested
-   calls. Promote the language capability after native compiler qualification.
+## Development and release operation
 
-## Architecture and release performance
+Use one hard cutover for source, objects, interfaces, packages and installed SDK
+artifacts when an ABI changes. Retain the current archive/installation and active
+compiler source/build tree. Remove superseded generated artifacts once a new
+release is verified; Git and pinned source/patch inputs preserve history.
+Preserve unique authored work before removing a worktree.
 
-AArch64 requires a separate native host/runtime/ABI milestone. Cross-compilation
-and emulation can probe implementation choices; support requires a real native
-host running the installed archive, ownership, interfaces, editor and debugger
-checks. The current qualified architecture remains x86-64.
+| Location                 | Purpose                                                    |
+| ------------------------ | ---------------------------------------------------------- |
+| `out/toolchains/`        | Active compiler/build and current SDK archive/installation |
+| `out/native-validation/` | Current native execution receipts and diagnostics          |
+| `out/session/`           | Local handoff records and PR drafts                        |
+| `scratch/`               | Disposable experiments and temporary review worktrees      |
 
-Keep retained build timings, compiler concurrency limits, content-addressed
-reuse and archive identities as release inputs. Publication records a verified
-qualified archive before reclaiming its staging prefix; interrupted installation
-resumes from that archive without recompiling or repeating qualification.
+These output roots are gitignored. Maintained code belongs under `scripts/`,
+`native/`, `stdlib/` or `tests/`; outputs do not belong beside source files.
 
-Release reuse hashes foundation contents and immutable configure inputs. Mutable
-staging inventories do not participate: reclaiming a duplicate foundation stage
-preserves reuse. Source, bootstrap and build configuration changes still
-invalidate the release identity.
+This instance has a four-CPU quota and 16 GiB of RAM. Use four compile jobs and
+one link job, a bounded 1 GB ccache with content-based compiler checks, and the
+private mode-0700 `/tmp/objc3c-1000` directory exported as `TMPDIR` by managed
+activation. `/tmp` already uses RAM; no extra ramdisk reservation is needed.
+Keep persistent compiler objects, SDKs and ccache on disk. Disposable integration
+executables and service archives use case-scoped temporary directories and are
+reclaimed on success or failure; logs and receipts remain on disk.
 
-Frontend CTests are built and executed one target at a time. Reclaim only the
-passed generated test executables; preserve failures, compiler binaries, objects
-and libraries. This keeps the complete test inventory affordable within the 32 GiB
-workspace when qualification is explicitly requested.
+The ignored local `linux-dev` CMake preset targets the current frontend build.
+The SDK pipeline enables all required qualification independently. Frontend
+CTest executables are built and executed serially, then passed binaries are
+reclaimed to stay within the disk budget. Source, configuration and actual
+foundation contents determine reuse; deleting a duplicate stage does not
+invalidate an unchanged foundation.
 
-Archive installation verifies a complete staged extraction even when the target
-seal already exists. Reserve space for that extraction.
-
-Development uses hard cutovers. Retain the current SDK archive, its installed
-prefix and the active compiler source/build tree. Remove superseded SDK archives
-and obsolete source/build checkpoints after a cutover; do not accumulate local
-rollback snapshots. Git and the pinned source/patch inputs preserve development
-history. Historical receipts describe completed runs without requiring their
-binary artifacts to remain on the development instance.
-
-Remove obsolete generated packages, test outputs, temporary compiled probes and
-clean merged worktrees as milestones are superseded. Preserve authored source
-and work that has not entered the current development history.
-
-Keep project work inside the checkout using the following layout. These local
-output paths are covered by the committed `.gitignore`.
-
-| Location                               | Purpose                                                      |
-| -------------------------------------- | ------------------------------------------------------------ |
-| `out/toolchains/`                      | Current SDK archive, installation and active compiler/build  |
-| `out/native-validation/`               | Current native run receipts and diagnostics                  |
-| `out/session/`                         | Local handoff records, PR draft text and workspace inventory |
-| `scratch/scripts/`                     | One-off experiment scripts; never an automatic pipeline      |
-| `scratch/sources/`, `scratch/patches/` | Standalone source experiments                                |
-| `scratch/notes/`, `scratch/metadata/`  | Local working notes and experiment metadata                  |
-| `scratch/experiments/`                 | Remaining experiment fixtures grouped by task                |
-| `scratch/worktrees/`                   | Temporary worktrees, removed when their task is complete     |
-
-Do not scatter scripts, build outputs or review checkouts across `/workspace`.
-Reusable maintained scripts belong in `scripts/`. Preserve unique commits with
-Git references before removing their working copies; keep the active checkout
-as the sole persistent worktree. Managed tools in `.cloud-setup` and platform
-directories stay outside this project layout.
-
-The current development instance has a four-CPU quota and 16 GiB of RAM.
-Retain four compile jobs and one link job. The managed activation script now
-caps ccache at 1 GB while retaining content-based compiler checks and default
-compression. This is a bounded compilation cache, separate from SDK archive
-retention.
-
-Local editor configuration uses the current patched SDK's `clangd` through
-`out/bin/clangd`. The launcher limits workers to two, disables background
-indexing and stores open-file preambles in memory. Activation selects this
-launcher without changing the bootstrap compiler. The ignored `.clangd`
-selects the frontend compilation database or the LLVM database according to
-the edited source path. A root `compile_commands.json` symlink follows the
-generated frontend database; stale retired-staging paths in that metadata were
-redirected to the current installed SDK.
-
-The ignored `native/objc3c/CMakeUserPresets.json` supplies a `linux-dev` preset
-using Ninja, LLD, ccache, the current SDK and the existing frontend build tree.
-It disables `BUILD_TESTING` for that local preset and selects only `objc3c`,
-`clang-scan-deps` and `objc3_runtime_services`, with four build jobs. It does not
-change SDK qualification scripts. When development builds are explicitly
-resumed, configure with this preset before rebuilding to replace the old
-staging-root CMake setting:
-
-```sh
-cd native/objc3c
-cmake --preset linux-dev
-cmake --build --preset linux-dev
-```
-
-These settings have been written without running CMake configuration, builds,
-tests, benchmarks or a language server. Instance-specific presets, editor
-configuration and compilation databases remain ignored; the shared ignore rules
-and these instructions are committed. Machine-local configuration details are
-recorded in `out/session/development-configuration.json`.
-
-Temporary compiler I/O now uses the private, mode-0700 project directory
-`/tmp/objc3c-1000` in this instance. Managed activation creates it and exports
-`TMPDIR`; the local development preset passes the same setting. It uses the
-existing RAM-backed `/tmp` mount without a new memory reservation or mount.
-Python's `TemporaryDirectory` and compiler-driver temporary files inherit this
-location.
-
-The native async, task coroutine, structured runtime and shared C ABI sanitizer
-runners now keep disposable executables, objects and service archives in
-case-scoped temporary directories. Those directories are removed when the case
-exits, including ordinary failure unwinding. Logs, executable digests and JSON
-receipts stay in the requested output directory on disk. Persistent compiler
-objects, SDK archives/installations and ccache remain on disk. This avoids
-retaining an entire matrix of disposable binaries in RAM or on disk.
-
-Cleanup/report-preservation coverage for these runners now passes in the tooling
-suite. The user reauthorized tests and validation for the four open P2/P3 fixes.
-The [current SDK delivery receipt](../support/linux_sdk_refresh_acceptance.json)
-now binds these changes and the runtime fixes to a rebuilt, activated archive.
-The superseded installation and archive have been removed.
-
-Keep checks proportional to the changed behavior and reuse completed results
-for unchanged inputs. Do not repeat broad qualification for rollback history or
-make it the default next milestone. Run focused regression and integration
-checks for the current implementation changes.
-
-Long-running development controllers must wait for their child processes during
-shutdown. This instance uses `tail` as PID 1 and retains orphaned zombie process
-records; a proper reaping init is an environment startup concern. Those records
-are not running tests and consume no CPU or resident memory.
+`out/bin/clangd` uses the current patched SDK, two workers and in-memory
+preambles. The ignored `.clangd` and root compilation database select current
+build paths. After an SDK cutover, reconfigure the frontend against
+`out/toolchains/linux-sdk/current` so no deleted candidate path remains in the
+compilation database.

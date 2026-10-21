@@ -108,8 +108,13 @@ install(TARGETS objc3c_build_defaults EXPORT objc3cTargets)
 set_target_properties(objc3c_frontend_v2 PROPERTIES EXPORT_NAME Frontend)
 set_target_properties(objc3_runtime_services PROPERTIES EXPORT_NAME RuntimeServices)
 install(FILES frontend_api.h DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/objc3c)
-install(FILES ../runtime/public/objc3_runtime_services.h ../runtime/public/objc3_task.hpp
-  DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/objc3c/runtime)
+install(DIRECTORY ../runtime/public/
+  DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/objc3c/runtime
+  FILES_MATCHING PATTERN "*.h" PATTERN "*.hpp")
+install(DIRECTORY "${_objc3_repo}/stdlib/include/objc3"
+  DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
+install(FILES "${_objc3_repo}/stdlib/module_inventory.json"
+  DESTINATION share/objc3c/stdlib)
 target_include_directories(objc3c_frontend_v2 INTERFACE "$<INSTALL_INTERFACE:include>")
 install(EXPORT objc3cTargets NAMESPACE objc3c:: DESTINATION lib/cmake/objc3c)
 include(CMakePackageConfigHelpers)
@@ -118,6 +123,9 @@ configure_package_config_file("${CMAKE_CURRENT_SOURCE_DIR}/../../cmake/objc3cCon
 install(FILES "${CMAKE_CURRENT_BINARY_DIR}/objc3cConfig.cmake" DESTINATION lib/cmake/objc3c)
 
 if (BUILD_TESTING)
+  add_executable(objc3_stdlib_map_count_test ../../tests/stdlib_map_count_test.cpp)
+  target_link_libraries(objc3_stdlib_map_count_test PRIVATE objc3_runtime_services)
+  add_test(NAME objc3_stdlib_map_count COMMAND objc3_stdlib_map_count_test)
   add_executable(objc3_sdk_identity_test ../../../../tests/clang_foundation/sdk_identity_test.cpp)
   target_include_directories(objc3_sdk_identity_test SYSTEM PRIVATE ${LLVM_INCLUDE_DIRS} ${CLANG_INCLUDE_DIRS})
   target_link_libraries(objc3_sdk_identity_test PRIVATE objc3c_clang_foundation)

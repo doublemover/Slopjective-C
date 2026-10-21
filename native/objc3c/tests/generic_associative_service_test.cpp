@@ -1,4 +1,4 @@
-#include "runtime/stdlib/generic_associative_service.h"
+#include "runtime/public/generic_associative_service.h"
 
 #include <cassert>
 #include <cstdint>

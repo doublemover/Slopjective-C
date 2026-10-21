@@ -1,7 +1,7 @@
 #ifndef OBJC3_RUNTIME_STDLIB_GENERIC_ASSOCIATIVE_SERVICE_H
 #define OBJC3_RUNTIME_STDLIB_GENERIC_ASSOCIATIVE_SERVICE_H
 
-#include "runtime/stdlib/generic_collection_service.h"
+#include "generic_collection_service.h"
 
 #ifdef __cplusplus
 extern "C" {

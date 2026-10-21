@@ -115,6 +115,8 @@ PACKETS = {
         "clang/lib/AST/MicrosoftMangle.cpp",
         "clang/lib/Parse/CMakeLists.txt",
         "clang/lib/Parse/ParseDecl.cpp",
+        "clang/lib/Parse/Parser.cpp",
+        "clang/lib/Sema/SemaModule.cpp",
         "clang/lib/Parse/ParseTentative.cpp",
         "clang/lib/Parse/Parser.cpp",
         "clang/lib/Parse/ParseObjc.cpp",

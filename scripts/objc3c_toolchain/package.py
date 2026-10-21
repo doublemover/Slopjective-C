@@ -173,6 +173,7 @@ def package_sdk(repo: Path, prefix: Path, validation_report: Path, cache_dir: Pa
                                 ('qualify_structured_runtime.py', 'qualify_structured_runtime.py'),
                                 ('qualify_task_coroutines.py', 'qualify_task_coroutines.py'),
                                 ('qualify_async_c_abi.py', 'qualify_async_c_abi.py'),
+                                ('qualify_stdlib.py', 'qualify_stdlib.py'),
                                 ('qualify_native_async.py', 'qualify_native_async.py'),
                                 ('qualify_native_async_packages.py', 'qualify_native_async_packages.py')):
         shutil.copyfile(Path(__file__).with_name(original), builder / installed)
@@ -192,6 +193,8 @@ def package_sdk(repo: Path, prefix: Path, validation_report: Path, cache_dir: Pa
                     prefix / 'share/objc3c/examples/structured-runtime')
     shutil.copytree(repo / 'tests/clang_foundation/task_coroutines',
                     prefix / 'share/objc3c/examples/task-coroutines')
+    shutil.copytree(repo / 'tests/clang_foundation/stdlib',
+                    prefix / 'share/objc3c/examples/stdlib')
     shutil.copytree(repo / 'tests/clang_foundation/async_c_abi',
                     prefix / 'share/objc3c/examples/async-c-abi')
     shutil.copytree(repo / 'tests/clang_foundation/native_async',
@@ -253,6 +256,7 @@ def package_sdk(repo: Path, prefix: Path, validation_report: Path, cache_dir: Pa
     from .qualify_structured_runtime import qualify as qualify_structured
     from .qualify_task_coroutines import qualify as qualify_coroutines
     from .qualify_async_c_abi import qualify as qualify_async_c_abi
+    from .qualify_stdlib import qualify as qualify_stdlib
     from .qualify_native_async import qualify as qualify_async
     from .qualify_native_async_packages import qualify as qualify_async_packages
 
@@ -273,6 +277,7 @@ def package_sdk(repo: Path, prefix: Path, validation_report: Path, cache_dir: Pa
         'installed_module_names': partial(qualify_names, prefix, validation_report.parent / 'installed-module-names', jobs=1),
         'installed_structured_runtime': partial(qualify_structured, prefix, validation_report.parent / 'installed-structured-runtime'),
         'installed_task_coroutines': partial(qualify_coroutines, prefix, validation_report.parent / 'installed-task-coroutines'),
+        'installed_stdlib': partial(qualify_stdlib, prefix, validation_report.parent / 'installed-stdlib'),
         'installed_async_c_abi': partial(qualify_async_c_abi, prefix, validation_report.parent / 'installed-async-c-abi'),
         'installed_native_async': partial(qualify_async, prefix, validation_report.parent / 'installed-native-async'),
         'installed_native_async_packages': partial(qualify_async_packages, prefix, validation_report.parent / 'installed-native-async-packages'),

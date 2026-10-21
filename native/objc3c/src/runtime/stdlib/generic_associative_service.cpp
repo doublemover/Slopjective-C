@@ -1,4 +1,4 @@
-#include "runtime/stdlib/generic_associative_service.h"
+#include "runtime/public/generic_associative_service.h"
 
 #include "runtime/services/value_storage.h"
 #include "runtime/stdlib/opaque_service_storage.h"

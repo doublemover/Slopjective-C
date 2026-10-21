@@ -2209,10 +2209,10 @@ index c724a063b..28e416bf9 100644
                              CGM.getObjCEntrypoints().objc_retainBlock,
 diff --git a/clang/lib/CodeGen/CGObjC3ABIBoundaries.cpp b/clang/lib/CodeGen/CGObjC3ABIBoundaries.cpp
 new file mode 100644
-index 000000000..b51c6b689
+index 000000000..3477607ea
 --- /dev/null
 +++ b/clang/lib/CodeGen/CGObjC3ABIBoundaries.cpp
-@@ -0,0 +1,212 @@
+@@ -0,0 +1,226 @@
 +//===--- CGObjC3ABIBoundaries.cpp - Unqualified native boundaries
 +//----------===//
 +// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
@@ -2269,6 +2269,18 @@ index 000000000..b51c6b689
 +        return Found;
 +  }
 +  return {};
++}
++
++// Trivial scalar carriers use the same AST-owned record representation as
++// ordinary calls. Keep this separate from the ARC capture contract: admitting
++// a callable signature must not select managed copy/dispose hooks for a plain
++// capture. The runtime encoder independently bounds the supported leaf types.
++bool supportsPlainCarrierRuntimeABI(CodeGenModule &CGM, QualType Type) {
++  if (Type.isNull() || hasObjC3CarrierManagedPayload(Type) ||
++      !supportsObjC3CarrierCopyPayload(CGM, Type))
++    return false;
++  std::string Encoding;
++  return getObjC3CarrierRuntimeEncoding(CGM.getContext(), Type, Encoding);
 +}
 +
 +bool diagnose(CodeGenModule &CGM, QualType Type, SourceLocation Loc,
@@ -2328,6 +2340,7 @@ index 000000000..b51c6b689
 +        (FPT->getObjC3FunctionEffects().Throws == ObjC3ThrowsKind::None ||
 +         supportsObjC3ErrorOutFunction(CGM, FPT, nullptr, false)) &&
 +        (supportsObjC3CarrierRuntimeCallABI(CGM, T) ||
++         supportsPlainCarrierRuntimeABI(CGM, T) ||
 +         supportsObjC3ManagedRecordRuntimeABI(CGM, T)))
 +      return false;
 +    return diagnose(CGM, T, Loc, true, "runtime callable type encoding");
@@ -2386,6 +2399,7 @@ index 000000000..b51c6b689
 +         supportsObjC3ErrorOutMethod(CGM, Method)) &&
 +        !Method->getObjC3FunctionEffects().Async &&
 +        (supportsObjC3CarrierRuntimeCallABI(CGM, T) ||
++         supportsPlainCarrierRuntimeABI(CGM, T) ||
 +         supportsObjC3ManagedRecordRuntimeABI(CGM, T)))
 +      return false;
 +    if (diagnoseUnsupportedObjC3ValueABI(CGM, T, Loc))
@@ -3365,7 +3379,7 @@ index 000000000..fdf223326
 +#endif
 diff --git a/clang/lib/CodeGen/CGObjC3Carriers.cpp b/clang/lib/CodeGen/CGObjC3Carriers.cpp
 new file mode 100644
-index 000000000..f5f5c2568
+index 000000000..a02965ebd
 --- /dev/null
 +++ b/clang/lib/CodeGen/CGObjC3Carriers.cpp
 @@ -0,0 +1,1300 @@
@@ -4319,7 +4333,7 @@ index 000000000..f5f5c2568
 +                       CGM.getTarget().getCXXABI().isMicrosoft();
 +  const bool Linux = Triple.isOSLinux() && Triple.isGNUEnvironment() &&
 +                     CGM.getTarget().getCXXABI().isItaniumFamily();
-+  if (Ctx.getLangOpts().CPlusPlus ||
++  if ((Ctx.getLangOpts().CPlusPlus && !Linux) ||
 +      Triple.getArch() != llvm::Triple::x86_64 || (!Windows && !Linux))
 +    return false;
 +
@@ -16691,3 +16705,27 @@ index 000000000..20a145342
 +// CHECK: invoke ptr @_Block_copy
 +// CHECK: initial_suspend
 +// CHECK: __objc3_task_error_create
+diff --git a/clang/test/ObjC3/CodeGen/public-scalar-blocks.m b/clang/test/ObjC3/CodeGen/public-scalar-blocks.m
+new file mode 100644
+index 000000000..1c4bdde3c
+--- /dev/null
++++ b/clang/test/ObjC3/CodeGen/public-scalar-blocks.m
+@@ -0,0 +1,18 @@
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c -std=c17 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -Werror=return-type-c-linkage -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c -std=c17 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -Werror=return-type-c-linkage -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c++ -std=c++20 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -Werror=return-type-c-linkage -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c++ -std=c++23 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -Werror=return-type-c-linkage -emit-llvm -o - %s | FileCheck %s
++// CHECK: __objc3_v12_optional_P69
++// CHECK: __objc3_v12_result_P69_P69
++// CHECK-LABEL: define{{.*}} @{{.*}}scalar_blocks
++#ifdef __cplusplus
++extern "C"
++#endif
++Result(int, int) scalar_blocks(Optional(int) value) {
++  return (^Result(int, int)(Optional(int) input) {
++    match(input) {
++      case .Some(let payload): { return Ok(int, int, payload); }
++      case .None: { return Err(int, int, -1); }
++    }
++  })(value);
++}

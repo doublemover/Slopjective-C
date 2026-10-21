@@ -1,0 +1,7 @@
+module objc3 {
+  explicit module core { header "core.h" export * }
+  explicit module errors { header "errors.h" export * }
+  explicit module text { header "text.h" export * }
+  explicit module collections { header "collections.h" export * }
+  explicit module concurrency { header "concurrency.h" export * }
+}

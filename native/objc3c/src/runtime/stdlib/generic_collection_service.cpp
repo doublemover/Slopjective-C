@@ -1,4 +1,4 @@
-#include "runtime/stdlib/generic_collection_service.h"
+#include "runtime/public/generic_collection_service.h"
 
 #include "runtime/stdlib/opaque_service_storage.h"
 

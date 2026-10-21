@@ -1,7 +1,7 @@
 #ifndef OBJC3_RUNTIME_STDLIB_GENERIC_COLLECTION_SERVICE_H
 #define OBJC3_RUNTIME_STDLIB_GENERIC_COLLECTION_SERVICE_H
 
-#include "runtime/public/objc3_runtime_services.h"
+#include "objc3_runtime_services.h"
 
 #ifdef __cplusplus
 extern "C" {

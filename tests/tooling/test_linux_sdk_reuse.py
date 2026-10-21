@@ -41,7 +41,7 @@ def test_cached_foundation_cannot_restore_removed_project_components(tmp_path):
     stale = ('bin/objc3c-clang', 'bin/objc3-managed-sample.o',
              'lib/libobjc3c_removed.a', 'lib/cmake/objc3c/Removed.cmake',
              'include/objc/retired.h', 'include/objc3c/retired.h',
-             'include/runtime/retired.h', 'share/objc3c/examples/retired.m',
+             'include/runtime/retired.h', 'include/objc3/retired.h', 'share/objc3c/examples/retired.m',
              'objc3-sdk.json')
     for name in stale:
         path = prefix / name
@@ -62,7 +62,7 @@ def test_editor_qualification_changes_invalidate_release_reuse(tmp_path, monkeyp
     from scripts.objc3c_native_validation import plan
     repo = tmp_path / 'project'
     fixture = 'tests/tooling/fixtures/objc3_editor/qualification-cases.json'
-    for name in ('scripts/install_objc3c_linux.sh',
+    for name in ('scripts/install_objc3c_linux.sh', 'stdlib/module_inventory.json',
                  'out/toolchains/objc3-development/build-linux-x86_64/bin/llvm-tblgen', fixture):
         path = repo / name
         path.parent.mkdir(parents=True, exist_ok=True)
@@ -81,7 +81,7 @@ def identity_project(tmp_path, monkeypatch, configure):
     from scripts.objc3c_toolchain import linux_sdk
     from scripts.objc3c_native_validation import plan
     repo = tmp_path / 'project'
-    for name in ('scripts/install_objc3c_linux.sh',
+    for name in ('scripts/install_objc3c_linux.sh', 'stdlib/module_inventory.json',
                  'out/toolchains/objc3-development/build-linux-x86_64/bin/llvm-tblgen'):
         path = repo / name
         path.parent.mkdir(parents=True, exist_ok=True)
@@ -204,3 +204,15 @@ def test_candidate_never_reclaims_an_installed_foundation(tmp_path):
     linux_sdk.copy_foundation(installed, prefix)
     result = linux_sdk.adopt_candidate_foundation(tmp_path, installed, prefix, expected_contents=linux_sdk.foundation_identity(installed))
     assert not result['duplicate_stage_reclaimed'] and installed.is_dir()
+
+
+@pytest.mark.parametrize('name', ['stdlib/include/objc3/text.h', 'stdlib/module_inventory.json'])
+def test_standard_library_edits_invalidate_sdk_reuse(tmp_path, monkeypatch, name):
+    from scripts.objc3c_toolchain import linux_sdk
+    repo, prefix = identity_project(tmp_path, monkeypatch, {'command': ['cmake']})
+    path = repo / name
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text('before')
+    before = linux_sdk.input_identity(repo, prefix)['sha256']
+    path.write_text('after')
+    assert linux_sdk.input_identity(repo, prefix)['sha256'] != before

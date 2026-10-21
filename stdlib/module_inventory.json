@@ -1,77 +1,145 @@
 {
-  "contract_id": "objc3c.stdlib.module_inventory.v1",
-  "schema_version": 1,
+  "contract_id": "objc3c.stdlib.module_inventory.v2",
+  "schema_version": 2,
   "spec_contract": "spec/STANDARD_LIBRARY_CONTRACT.md",
+  "module_map": "include/objc3/module.modulemap",
+  "profile_conformance_claimed": false,
   "canonical_modules": [
     {
       "module": "objc3.core",
-      "implementation_module": "objc3_core",
       "capability_id": "objc3.cap.core",
       "required_profile": "Core and above",
-      "workspace_root": "stdlib/modules/objc3.core",
-      "source": "stdlib/modules/objc3.core/module.objc3",
-      "smoke_source": "stdlib/modules/objc3.core/smoke.objc3",
-      "manifest": "stdlib/modules/objc3.core/module.json"
+      "module_semver": {
+        "major": 2,
+        "minor": 0,
+        "patch": 0
+      },
+      "header": "include/objc3/core.h",
+      "status": "implemented",
+      "implemented": [
+        "language/profile revision",
+        "target-aware compiler feature queries",
+        "byte spans"
+      ],
+      "remaining": []
     },
     {
       "module": "objc3.errors",
-      "implementation_module": "objc3_errors",
       "capability_id": "objc3.cap.errors",
       "required_profile": "Core and above",
-      "workspace_root": "stdlib/modules/objc3.errors",
-      "source": "stdlib/modules/objc3.errors/module.objc3",
-      "smoke_source": "stdlib/modules/objc3.errors/smoke.objc3",
-      "manifest": "stdlib/modules/objc3.errors/module.json"
+      "module_semver": {
+        "major": 2,
+        "minor": 0,
+        "patch": 0
+      },
+      "header": "include/objc3/errors.h",
+      "status": "partial",
+      "implemented": [
+        "Error protocol",
+        "native Result constructors and inspection",
+        "lazy generic okOr",
+        "checked generic orThrow",
+        "typed runtime error boxes"
+      ],
+      "remaining": [
+        "general status/NSError adapters",
+        "Error-constrained generic factory validation for Core/Strict"
+      ]
     },
     {
       "module": "objc3.text",
-      "implementation_module": "objc3_text",
       "capability_id": "objc3.cap.text",
       "required_profile": "Core and above",
-      "workspace_root": "stdlib/modules/objc3.text",
-      "source": "stdlib/modules/objc3.text/module.objc3",
-      "smoke_source": "stdlib/modules/objc3.text/smoke.objc3",
-      "manifest": "stdlib/modules/objc3.text/module.json"
+      "module_semver": {
+        "major": 2,
+        "minor": 0,
+        "patch": 0
+      },
+      "header": "include/objc3/text.h",
+      "status": "implemented",
+      "implemented": [
+        "checked UTF-8 construction",
+        "byte/scalar counts",
+        "scalar prefixes and slices",
+        "concatenation",
+        "search",
+        "reusable builders",
+        "explicit status and ownership"
+      ],
+      "remaining": []
     },
     {
       "module": "objc3.collections",
-      "implementation_module": "objc3_collections",
       "capability_id": "objc3.cap.collections",
       "required_profile": "Core and above",
-      "workspace_root": "stdlib/modules/objc3.collections",
-      "source": "stdlib/modules/objc3.collections/module.objc3",
-      "smoke_source": "stdlib/modules/objc3.collections/smoke.objc3",
-      "manifest": "stdlib/modules/objc3.collections/module.json"
+      "module_semver": {
+        "major": 2,
+        "minor": 0,
+        "patch": 0
+      },
+      "header": "include/objc3/collections.h",
+      "status": "implemented",
+      "implemented": [
+        "typed i32 arrays/maps/sets",
+        "defaulted lookup with observable failures",
+        "prefix counts",
+        "mutation-aware iteration",
+        "generic value-operation collections"
+      ],
+      "remaining": []
     },
     {
       "module": "objc3.concurrency",
-      "implementation_module": "objc3_concurrency",
       "capability_id": "objc3.cap.concurrency",
       "required_profile": "Core and above",
-      "workspace_root": "stdlib/modules/objc3.concurrency",
-      "source": "stdlib/modules/objc3.concurrency/module.objc3",
-      "smoke_source": "stdlib/modules/objc3.concurrency/smoke.objc3",
-      "manifest": "stdlib/modules/objc3.concurrency/module.json"
+      "module_semver": {
+        "major": 2,
+        "minor": 0,
+        "patch": 0
+      },
+      "header": "include/objc3/concurrency.h",
+      "status": "partial",
+      "implemented": [
+        "task/frame ABI",
+        "task groups",
+        "cancellation",
+        "executor/actor destinations and hops",
+        "C++ coroutine adapter"
+      ],
+      "remaining": [
+        "native Objective-C async lowering",
+        "public spawn recognition",
+        "await-required crossings",
+        "compiler isolation and Sendable"
+      ]
     },
     {
       "module": "objc3.keypath",
-      "implementation_module": "objc3_keypath",
       "capability_id": "objc3.cap.keypath",
       "required_profile": "Core and above",
-      "workspace_root": "stdlib/modules/objc3.keypath",
-      "source": "stdlib/modules/objc3.keypath/module.objc3",
-      "smoke_source": "stdlib/modules/objc3.keypath/smoke.objc3",
-      "manifest": "stdlib/modules/objc3.keypath/module.json"
+      "module_semver": {
+        "major": 2,
+        "minor": 0,
+        "patch": 0
+      },
+      "header": null,
+      "status": "unimplemented",
+      "implemented": [],
+      "remaining": ["typed literals", "typed application", "component metadata"]
     },
     {
       "module": "objc3.system",
-      "implementation_module": "objc3_system",
       "capability_id": "objc3.cap.system",
       "required_profile": "Strict System",
-      "workspace_root": "stdlib/modules/objc3.system",
-      "source": "stdlib/modules/objc3.system/module.objc3",
-      "smoke_source": "stdlib/modules/objc3.system/smoke.objc3",
-      "manifest": "stdlib/modules/objc3.system/module.json"
+      "module_semver": {
+        "major": 2,
+        "minor": 0,
+        "patch": 0
+      },
+      "header": null,
+      "status": "unimplemented",
+      "implemented": [],
+      "remaining": ["resource cleanup", "borrow/lifetime intrinsics", "strict-system diagnostics"]
     }
   ]
 }
