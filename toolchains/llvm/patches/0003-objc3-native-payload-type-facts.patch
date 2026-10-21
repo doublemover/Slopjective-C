@@ -168,10 +168,10 @@ index e3f74d73f..15bac0545 100644
    VTableBuilder.cpp
 diff --git a/clang/lib/AST/ObjC3TypeContracts.cpp b/clang/lib/AST/ObjC3TypeContracts.cpp
 new file mode 100644
-index 000000000..65ddc76c0
+index 000000000..ceadf2f94
 --- /dev/null
 +++ b/clang/lib/AST/ObjC3TypeContracts.cpp
-@@ -0,0 +1,403 @@
+@@ -0,0 +1,401 @@
 +//===--- ObjC3TypeContracts.cpp - Clang-backed value type facts ----------===//
 +//
 +// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
@@ -502,7 +502,7 @@ index 000000000..65ddc76c0
 +    } else {
 +      return false;
 +    }
-+    std::string Name = IsOptional ? "__objc3_v8_optional" : "__objc3_v8_result";
++    std::string Name = IsOptional ? "__objc3_v9_optional" : "__objc3_v9_result";
 +    std::string Fields;
 +    for (QualType Leaf : Leaves) {
 +      if (Leaf.isVolatileQualified())
@@ -530,8 +530,6 @@ index 000000000..65ddc76c0
 +          default:
 +            return false;
 +          }
-+          if (Leaf->isBlockPointerType() && Ownership != 'S')
-+            return false;
 +        } else if (!(Leaf->isVoidType() || Leaf->isIntegerType() ||
 +                     Leaf->isEnumeralType() || Leaf->isRealFloatingType() ||
 +                     Leaf->isPointerType())) {
@@ -566,7 +564,7 @@ index 000000000..65ddc76c0
 +        ObjC3CarrierRepresentationInfo::Status::Materialized)
 +      return false;
 +    // Recursively mirror native boolean/union layout and ownership identity.
-+    Out = "{" + Name + "=B(__objc3_v8_payload=" + Fields + ")}";
++    Out = "{" + Name + "=B(__objc3_v9_payload=" + Fields + ")}";
 +    return true;
 +  };
 +  std::string Result;
@@ -577,10 +575,10 @@ index 000000000..65ddc76c0
 +}
 diff --git a/clang/unittests/AST/ObjC3TypeContractsTest.cpp b/clang/unittests/AST/ObjC3TypeContractsTest.cpp
 new file mode 100644
-index 000000000..a0ef91268
+index 000000000..b1013f415
 --- /dev/null
 +++ b/clang/unittests/AST/ObjC3TypeContractsTest.cpp
-@@ -0,0 +1,380 @@
+@@ -0,0 +1,407 @@
 +//===--- ObjC3TypeContractsTest.cpp - AST value type facts ----------------===//
 +//
 +// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
@@ -686,8 +684,8 @@ index 000000000..a0ef91268
 +  EXPECT_TRUE(Trivial.Destroy.IsTrivial);
 +  std::string Encoding;
 +  ASSERT_TRUE(getObjC3CarrierRuntimeEncoding(Context, Nested, Encoding));
-+  EXPECT_NE(Encoding.find("__objc3_v8_optional_N"), std::string::npos);
-+  EXPECT_NE(Encoding.find("__objc3_v8_optional_W40="), std::string::npos);
++  EXPECT_NE(Encoding.find("__objc3_v9_optional_N"), std::string::npos);
++  EXPECT_NE(Encoding.find("__objc3_v9_optional_W40="), std::string::npos);
 +  EXPECT_LT(Encoding.size(), 600u);
 +  // The runtime representation remains linear for a long Optional chain.
 +  QualType Deep = Nested;
@@ -710,6 +708,33 @@ index 000000000..a0ef91268
 +  // Runtime encodings and lowering deliberately bound expanded arm work.
 +  EXPECT_FALSE(getObjC3CarrierRuntimeEncoding(Context, Shared, Encoding));
 +  EXPECT_EQ(Encoding, "unchanged");
++}
++
++TEST(ObjC3TypeContracts, BlockCarrierOwnershipHasDistinctRuntimeIdentity) {
++  auto AST = parse(R"objc(
++    typedef void (^Action)(void);
++    extern __objc3_optional(Action) Strong;
++    extern __objc3_optional(Action __weak) Weak;
++    extern __objc3_optional(Action __unsafe_unretained) Unsafe;
++  )objc", {"-x", "objective-c++", "-std=c++20", "-fobjc-version=3",
++           "-fobjc-runtime=gnustep-2.2", "-fobjc-arc", "-fblocks",
++           "-target", "x86_64-unknown-linux-gnu"});
++  ASSERT_TRUE(AST);
++  ASSERT_FALSE(AST->getDiagnostics().hasErrorOccurred());
++  ASTContext &Context = AST->getASTContext();
++  std::string Strong, Weak, Unsafe;
++  ASSERT_TRUE(getObjC3CarrierRuntimeEncoding(
++      Context, findVar(Context, "Strong")->getType(), Strong));
++  ASSERT_TRUE(getObjC3CarrierRuntimeEncoding(
++      Context, findVar(Context, "Weak")->getType(), Weak));
++  ASSERT_TRUE(getObjC3CarrierRuntimeEncoding(
++      Context, findVar(Context, "Unsafe")->getType(), Unsafe));
++  EXPECT_NE(Strong, Weak);
++  EXPECT_NE(Weak, Unsafe);
++  EXPECT_NE(Strong, Unsafe);
++  EXPECT_NE(Strong.find("optional_S403F="), std::string::npos);
++  EXPECT_NE(Weak.find("optional_W403F="), std::string::npos);
++  EXPECT_NE(Unsafe.find("optional_U403F="), std::string::npos);
 +}
 +
 +TEST(ObjC3TypeContracts, PreservesCanonicalAndTargetLayoutFacts) {

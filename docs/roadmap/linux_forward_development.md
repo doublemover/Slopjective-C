@@ -1,7 +1,7 @@
 # Linux forward development
 
 The active product is the Clang-only Linux x86-64 SDK. The
-[acceptance receipt](../support/linux_owned_capture_acceptance.json) identifies its
+[acceptance receipt](../support/linux_managed_array_acceptance.json) identifies its
 exact archive, source, native execution and fresh-distribution evidence. Tool
 versions come from [the manifest](../../toolchains/llvm/manifest.json); public
 language claims come from [the capability authority](../../schemas/objc3-language-capabilities.json).
@@ -23,7 +23,7 @@ O0/O2 witnesses cover all Result arm transitions, self/aliased assignment, weak
 zeroing, Blocks, typed-error optionalization, sequencing and native unwinding.
 Live clangd probes cover both languages. The
 [managed call ABI](linux_managed_call_abi.md) now extends direct carriers through
-ordinary functions, callbacks and C++ members under extension ABI revision 8.
+ordinary functions, callbacks and C++ members under extension ABI revision 9.
 Caller-owned snapshots preserve each argument at evaluation time and clean up
 at full-expression boundaries; returns initialize fresh caller-owned storage.
 Nine installed executions cover separate provider/consumer compilation at
@@ -53,10 +53,15 @@ through stack and heap closures under ABI 8. Copy/dispose helpers preserve
 selected arms and weak registrations; compiler and runtime unwinding clean up
 failed copies and Objective-C/C++ exception adapters. Nine installed executions
 and six traps cover separate compilation, imports, PCH and mixed-language frames.
-Arrays and enclosing records remain implementation work.
+[Managed arrays](linux_managed_arrays.md) now extend local lifetime operations
+through constant-size multidimensional arrays under ABI 9. Completed values are
+owned before initializer temporaries run; partial construction destroys only the
+completed prefix in reverse order. Weak and unsafe Block payloads preserve
+native ownership, runtime metadata and closure behavior. Nine installed
+executions, six traps and six rejected storage cases cover that boundary.
+Enclosing records remain the next storage milestone.
 The managed public core targets ARC. MRC adaptation remains outside its release
-contract; weak/unsafe Block payloads and enclosing managed storage still need
-explicit semantics and lowering. Define the public bounded contract and
+contract; enclosing managed records still need explicit semantics and lowering. Define the public bounded contract and
 syntax together with their feature queries and capability predicates. Promote a
 feature only when that contract has complete evidence.
 
@@ -68,8 +73,7 @@ Private migration intrinsics do not justify a public feature claim.
 
 The next implementation sequence is:
 
-1. Extend active-arm lifetime operations through arrays and
-   enclosing records. Cover partial initialization, assignment, destruction and
+1. Extend active-arm lifetime operations through enclosing records. Cover partial initialization, assignment, destruction and
    exceptions before admitting those storage forms to the callable ABI. Define
    the remaining aggregate forms on these recursive operations. Extend
    those operations into ivars/properties and reference/`__block` captures,

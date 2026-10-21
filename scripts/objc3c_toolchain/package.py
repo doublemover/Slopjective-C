@@ -255,6 +255,23 @@ def package_sdk(repo: Path, prefix: Path, validation_report: Path, cache_dir: Pa
             or len(capture_evidence['commands']) != 77
             or any(row['exit_code'] != row['expected_exit_code'] for row in capture_evidence['commands'])):
         raise ValueError('installed captured carrier qualification receipt is incomplete')
+    array_directory = validation_report.parent / 'installed-array-carriers'
+    array_directory.mkdir(parents=True, exist_ok=True)
+    with (array_directory / 'execution.log').open('w') as log:
+        result = subprocess.run([os.sys.executable, '-B',
+            str(prefix / 'share/objc3c/examples/native/qualify-array-carriers.py'),
+            '--sdk-root', str(prefix), '--output-dir', str(array_directory)],
+            stdout=log, stderr=subprocess.STDOUT, timeout=1200)
+    if result.returncode:
+        raise ValueError(f'installed array carrier qualification failed; see {array_directory / "execution.log"}')
+    array_evidence = json.loads((array_directory / 'qualification.json').read_text())
+    if (array_evidence['status'] != 'PASS' or array_evidence['sdk_seal'] != data['seal_sha256']
+            or len(array_evidence['executions']) != 9
+            or len(array_evidence['forced_failures']) != 6
+            or len(array_evidence['commands']) != 77
+            or len(array_evidence['rejections']) != 6
+            or any(row['exit_code'] != row['expected_exit_code'] for row in array_evidence['commands'])):
+        raise ValueError('installed array carrier qualification receipt is incomplete')
     cache_dir.mkdir(parents=True, exist_ok=True)
     archive = cache_dir / (source['build_id'] + '-linux-x86_64-' + data['seal_sha256'][:16] + '.tar.zst')
     if archive.exists():
@@ -287,7 +304,8 @@ def package_sdk(repo: Path, prefix: Path, validation_report: Path, cache_dir: Pa
                'installed_managed_throws': throws_evidence,
                'installed_direct_calls': direct_evidence,
                'installed_nested_calls': nested_evidence,
-               'installed_captured_carriers': capture_evidence}
+               'installed_captured_carriers': capture_evidence,
+               'installed_array_carriers': array_evidence}
     archive.with_suffix('.json').write_text(json.dumps(receipt, indent=2) + '\n')
     return {**receipt, 'cache_hit': False}
 

@@ -1019,7 +1019,7 @@ index 7671f003c..1eb06de58 100644
 +
  } // end of Parser diagnostics
 diff --git a/clang/include/clang/Basic/DiagnosticSemaKinds.td b/clang/include/clang/Basic/DiagnosticSemaKinds.td
-index 2cb79b6ba..856ee2168 100644
+index 2cb79b6ba..a695492a6 100644
 --- a/clang/include/clang/Basic/DiagnosticSemaKinds.td
 +++ b/clang/include/clang/Basic/DiagnosticSemaKinds.td
 @@ -12,6 +12,36 @@
@@ -1073,7 +1073,18 @@ index 2cb79b6ba..856ee2168 100644
  def note_protected_by_cxx_try : Note<
    "jump bypasses initialization of try block">;
  def note_protected_by_cxx_catch : Note<
-@@ -8001,6 +8038,25 @@ def warn_param_mismatched_alignment : Warning<
+@@ -7026,6 +7063,10 @@ def note_protected_by_objc_strong_init : Note<
+   "jump bypasses initialization of __strong variable">;
+ def note_protected_by_objc_weak_init : Note<
+   "jump bypasses initialization of __weak variable">;
++def note_protected_by_objc3_managed_init : Note<
++  "jump bypasses initialization of managed carrier storage">;
++def note_exits_objc3_managed : Note<
++  "jump exits lifetime of managed carrier storage">;
+ def note_protected_by_non_trivial_c_struct_init : Note<
+   "jump bypasses initialization of variable of non-trivial C struct type">;
+ def note_protected_by_defer_stmt : Note<"jump bypasses defer statement">;
+@@ -8001,6 +8042,25 @@ def warn_param_mismatched_alignment : Warning<
  
  def err_objc_object_assignment : Error<
    "cannot assign to class object (%0 invalid)">;
@@ -1099,7 +1110,7 @@ index 2cb79b6ba..856ee2168 100644
  def err_typecheck_invalid_operands : Error<
    "invalid operands to binary expression (%0 and %1)">, Deferrable;
  def note_typecheck_invalid_operands_converted : Note<
-@@ -14367,4 +14423,17 @@ def err_cuda_device_kernel_launch_not_supported
+@@ -14367,4 +14427,17 @@ def err_cuda_device_kernel_launch_not_supported
  def err_cuda_device_kernel_launch_require_rdc
      : Error<"kernel launch from __device__ or __global__ function requires "
              "relocatable device code (i.e. requires -fgpu-rdc)">;
@@ -4308,10 +4319,30 @@ index 2add7c6aa..c0ce01b05 100644
    I.Fun.TrailingReturnTypeLoc   = TrailingReturnTypeLoc;
    I.Fun.MethodQualifiers        = nullptr;
 diff --git a/clang/lib/Sema/JumpDiagnostics.cpp b/clang/lib/Sema/JumpDiagnostics.cpp
-index b4a9cc120..aedb6e28b 100644
+index b4a9cc120..51a4419c3 100644
 --- a/clang/lib/Sema/JumpDiagnostics.cpp
 +++ b/clang/lib/Sema/JumpDiagnostics.cpp
-@@ -406,6 +406,24 @@ void JumpScopeChecker::BuildScopeInformation(Stmt *S,
+@@ -14,6 +14,7 @@
+ #include "clang/AST/DeclCXX.h"
+ #include "clang/AST/Expr.h"
+ #include "clang/AST/ExprCXX.h"
++#include "clang/AST/ObjC3TypeContracts.h"
+ #include "clang/AST/StmtCXX.h"
+ #include "clang/AST/StmtObjC.h"
+ #include "clang/AST/StmtOpenACC.h"
+@@ -158,6 +159,11 @@ static ScopePair GetDiagForGotoScopeDecl(Sema &S, const Decl *D) {
+                        diag::note_exits_cleanup);
+ 
+     if (VD->hasLocalStorage()) {
++      if (S.getLangOpts().ObjC3 && S.getLangOpts().ObjCAutoRefCount &&
++          hasObjC3CarrierManagedPayload(
++              S.Context.getBaseElementType(VD->getType())))
++        return ScopePair(diag::note_protected_by_objc3_managed_init,
++                         diag::note_exits_objc3_managed);
+       switch (VD->getType().isDestructedType()) {
+       case QualType::DK_objc_strong_lifetime:
+         return ScopePair(diag::note_protected_by_objc_strong_init,
+@@ -406,6 +412,24 @@ void JumpScopeChecker::BuildScopeInformation(Stmt *S,
      return;
    }
  
@@ -4579,10 +4610,18 @@ index 000000000..f07788326
 +  llvm_unreachable("all ObjC3 match patterns handled");
 +}
 diff --git a/clang/lib/Sema/SemaDecl.cpp b/clang/lib/Sema/SemaDecl.cpp
-index 6a25a799a..bad51e499 100644
+index 6a25a799a..6db9ba539 100644
 --- a/clang/lib/Sema/SemaDecl.cpp
 +++ b/clang/lib/Sema/SemaDecl.cpp
-@@ -4025,6 +4025,26 @@ bool Sema::MergeFunctionDecl(FunctionDecl *New, NamedDecl *&OldD, Scope *S,
+@@ -13,6 +13,7 @@
+ #include "TypeLocBuilder.h"
+ #include "clang/AST/ASTConsumer.h"
+ #include "clang/AST/ASTContext.h"
++#include "clang/AST/ObjC3TypeContracts.h"
+ #include "clang/AST/ASTLambda.h"
+ #include "clang/AST/CXXInheritance.h"
+ #include "clang/AST/CharUnits.h"
+@@ -4025,6 +4026,26 @@ bool Sema::MergeFunctionDecl(FunctionDecl *New, NamedDecl *&OldD, Scope *S,
      return true;
    }
  
@@ -4609,14 +4648,19 @@ index 6a25a799a..bad51e499 100644
    QualType OldQTypeForComparison = OldQType;
    if (Context.hasAnyFunctionEffects()) {
      const auto OldFX = Old->getFunctionEffects();
-@@ -14943,9 +14963,50 @@ void Sema::addLifetimeBoundToImplicitThis(CXXMethodDecl *MD) {
+@@ -14943,9 +14964,55 @@ void Sema::addLifetimeBoundToImplicitThis(CXXMethodDecl *MD) {
    MD->setTypeSourceInfo(TLB.getTypeSourceInfo(Context, AttributedType));
  }
  
 +static void checkObjC3CarrierLocalDestruction(Sema &S, VarDecl *VD) {
-+  if (!S.getLangOpts().ObjC3 || !S.getLangOpts().CPlusPlus ||
++  if (!S.getLangOpts().ObjC3 ||
 +      !VD->hasLocalStorage() || !VD->hasInit() ||
 +      VD->getType()->isDependentType() || VD->getInit()->containsErrors())
++    return;
++  if (S.getLangOpts().ObjCAutoRefCount && hasObjC3CarrierManagedPayload(
++          S.Context.getBaseElementType(VD->getType())))
++    S.setFunctionHasBranchProtectedScope();
++  if (!S.getLangOpts().CPlusPlus)
 +    return;
 +  QualType Carrier = S.Context.getCanonicalType(VD->getType());
 +  const Type *Ty = Carrier.getTypePtr();
@@ -5074,10 +5118,10 @@ index 5d4c5ff7d..973399859 100644
        }
 diff --git a/clang/lib/Sema/SemaObjC3CarrierARC.cpp b/clang/lib/Sema/SemaObjC3CarrierARC.cpp
 new file mode 100644
-index 000000000..80830c638
+index 000000000..93e547b81
 --- /dev/null
 +++ b/clang/lib/Sema/SemaObjC3CarrierARC.cpp
-@@ -0,0 +1,91 @@
+@@ -0,0 +1,89 @@
 +//===--- SemaObjC3CarrierARC.cpp - ARC payload admission --------*- C++ -*-===//
 +#include "SemaObjC3CarrierARC.h"
 +#include "clang/AST/ASTContext.h"
@@ -5122,12 +5166,10 @@ index 000000000..80830c638
 +  if (PayloadType.isNull() || PayloadType->isDependentType())
 +    return false;
 +
-+  // Strong ARC Blocks use native block-copy initialization and destruction.
-+  // Other Block ownership conventions remain outside this qualified slice.
++  // ARC Block payloads preserve native strong, zeroing weak, and explicit
++  // unsafe storage conventions. Autoreleasing remains a call-only convention.
 +  if (PayloadType->isBlockPointerType() &&
-+      (!S.getLangOpts().ObjCAutoRefCount ||
-+       (PayloadType.getObjCLifetime() != Qualifiers::OCL_None &&
-+        PayloadType.getObjCLifetime() != Qualifiers::OCL_Strong))) {
++      !S.getLangOpts().ObjCAutoRefCount) {
 +    S.Diag(Loc, diag::err_objc3_carrier_payload_unsupported) << PayloadType;
 +    return true;
 +  }
@@ -8528,10 +8570,10 @@ index 000000000..a5c7b2fb5
 +RecoveredResult recovered_result;
 diff --git a/clang/test/ObjC3/Sema/carrier-arc-ownership.mm b/clang/test/ObjC3/Sema/carrier-arc-ownership.mm
 new file mode 100644
-index 000000000..bbc806d2c
+index 000000000..ad835d466
 --- /dev/null
 +++ b/clang/test/ObjC3/Sema/carrier-arc-ownership.mm
-@@ -0,0 +1,29 @@
+@@ -0,0 +1,36 @@
 +// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c++ -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -fblocks -std=c++20 -verify -fsyntax-only %s
 +
 +typedef __objc3_optional(id) StrongOptional;
@@ -8543,8 +8585,8 @@ index 000000000..bbc806d2c
 +typedef __objc3_optional(id __autoreleasing) AutoreleasingOptional; // expected-error {{payload type}} 
 +typedef void (^Action)(void);
 +typedef __objc3_optional(Action) BlockOptional;
-+typedef __objc3_optional(Action __weak) WeakBlockOptional; // expected-error {{payload type}}
-+typedef __objc3_optional(Action __unsafe_unretained) UnsafeBlockOptional; // expected-error {{payload type}}
++typedef __objc3_optional(Action __weak) WeakBlockOptional;
++typedef __objc3_optional(Action __unsafe_unretained) UnsafeBlockOptional;
 +typedef __objc3_optional(struct ContainsRetainableField) AggregateOptional; // expected-error {{payload type}}
 +
 +void accepted_types(id object) {
@@ -8561,6 +8603,13 @@ index 000000000..bbc806d2c
 +typedef __objc3_optional(ArrayOfRetainableFields) ArrayAggregate; // expected-error {{payload type}}
 +typedef __objc3_optional(DerivedManaged) DerivedAggregate; // expected-error {{payload type}}
 +typedef __objc3_optional(StrongOptional) NestedManagedCarrier;
++
++typedef __objc3_optional(Action __autoreleasing) AutoreleasingBlockOptional; // expected-error {{payload type}}
++void accepted_block_types(Action action) {
++  WeakBlockOptional weak = __objc3_some(Action __weak, action);
++  UnsafeBlockOptional unsafe = __objc3_some(Action __unsafe_unretained, action);
++  (void)weak; (void)unsafe;
++}
 diff --git a/clang/test/ObjC3/Sema/carrier-builtin-classification.c b/clang/test/ObjC3/Sema/carrier-builtin-classification.c
 new file mode 100644
 index 000000000..2d6b281ad
@@ -12581,4 +12630,58 @@ index 000000000..c71050aa5
 +Strong &reference() __objc3_throws(id<Error>);
 +void reject_reference() {
 +  __objc3_try_force(reference()); // expected-error {{returns a prvalue}}
++}
+diff --git a/clang/lib/Sema/SemaInit.cpp b/clang/lib/Sema/SemaInit.cpp
+index 09d9f1eab..27dad60f9 100644
+--- a/clang/lib/Sema/SemaInit.cpp
++++ b/clang/lib/Sema/SemaInit.cpp
+@@ -1436,7 +1436,9 @@ void InitListChecker::CheckListElementTypes(const InitializedEntity &Entity,
+     // parts.
+     CheckComplexType(Entity, IList, DeclType, Index,
+                      StructuredList, StructuredIndex);
+-  } else if (DeclType->isScalarType()) {
++  } else if (DeclType->isScalarType() ||
++             DeclType->getAs<ObjC3OptionalType>() ||
++             DeclType->getAs<ObjC3ResultType>()) {
+     CheckScalarType(Entity, IList, DeclType, Index,
+                     StructuredList, StructuredIndex);
+   } else if (DeclType->isVectorType()) {
+@@ -1611,7 +1613,9 @@ void InitListChecker::CheckSubElementType(const InitializedEntity &Entity,
+     }
+ 
+     // Fall through for subaggregate initialization
+-  } else if (ElemType->isScalarType() || ElemType->isAtomicType()) {
++  } else if (ElemType->isScalarType() || ElemType->isAtomicType() ||
++             ElemType->getAs<ObjC3OptionalType>() ||
++             ElemType->getAs<ObjC3ResultType>()) {
+     // FIXME: Need to handle atomic aggregate types with implicit init lists.
+     return CheckScalarType(Entity, IList, ElemType, Index,
+                            StructuredList, StructuredIndex);
+diff --git a/clang/test/ObjC3/Sema/carrier-managed-jumps.m b/clang/test/ObjC3/Sema/carrier-managed-jumps.m
+new file mode 100644
+index 000000000..191eebdc7
+--- /dev/null
++++ b/clang/test/ObjC3/Sema/carrier-managed-jumps.m
+@@ -0,0 +1,22 @@
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c -std=c17 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fobjc-arc -verify -fsyntax-only %s
++typedef __objc3_optional(id) Strong;
++void bypass(id object) {
++  goto done; // expected-error {{cannot jump}}
++  Strong value = __objc3_some(id, object); // expected-note {{jump bypasses initialization of managed carrier storage}}
++ done:;
++}
++void bypass_array(id object) {
++  goto done; // expected-error {{cannot jump}}
++  Strong values[2] = {__objc3_some(id, object)}; // expected-note {{jump bypasses initialization of managed carrier storage}}
++ done:;
++}
++void switch_bypass(int selector, id object) {
++  switch (selector) {
++    Strong values[2] = {__objc3_some(id, object)}; // expected-note {{jump bypasses initialization of managed carrier storage}}
++    case 1:; // expected-error {{cannot jump}}
++  }
++}
++void permitted_exit(id object) {
++  { Strong values[2] = {__objc3_some(id, object)}; goto done; }
++ done:;
 +}

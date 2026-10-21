@@ -87,3 +87,10 @@ int managed_capture_probe(id input) {
   int (^snapshot)(void) = ^int { return __objc3_has_value(captured); };
   return snapshot();
 }
+
+void managed_array_probe(id input, Action action) {
+  __objc3_optional(id) managed_values[2] = {__objc3_some(id, input)};
+  __objc3_optional(Action __weak) weak_action = __objc3_some(Action __weak, action);
+  (void)__objc3_has_value(managed_values[0]);
+  (void)__objc3_has_value(weak_action);
+}

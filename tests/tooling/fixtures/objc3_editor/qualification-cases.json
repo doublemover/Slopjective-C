@@ -98,6 +98,24 @@
       "declaration_name": "captured",
       "hover_type": "__objc3_optional",
       "completion_name": "captured"
+    },
+    {
+      "name": "managed_carrier_array",
+      "use_line": "(void)__objc3_has_value(managed_values[0]);",
+      "use_name": "managed_values",
+      "declaration_line": "__objc3_optional(id) managed_values[2] =",
+      "declaration_name": "managed_values",
+      "hover_type": "__objc3_optional",
+      "completion_name": "managed_values"
+    },
+    {
+      "name": "managed_weak_block_carrier",
+      "use_line": "(void)__objc3_has_value(weak_action);",
+      "use_name": "weak_action",
+      "declaration_line": "__objc3_optional(Action __weak) weak_action =",
+      "declaration_name": "weak_action",
+      "hover_type": "__objc3_optional",
+      "completion_name": "weak_action"
     }
   ],
   "cases": [
