@@ -5,10 +5,11 @@ from __future__ import annotations
 import hashlib
 import json
 import os
-import shutil
 import subprocess
 from pathlib import Path
 from typing import Any
+
+from objc3c_tooling.llvm_discovery import find_llvm_tool_path
 
 from .paths import ROOT
 
@@ -135,7 +136,8 @@ def _clangxx() -> str:
     configured = os.environ.get("OBJC3C_NATIVE_EXECUTION_CLANG_PATH")
     if configured:
         return configured
-    return shutil.which("clang++") or "clang++"
+    discovered = find_llvm_tool_path("clang++")
+    return str(discovered) if discovered else "clang++"
 
 
 def _link_driver_args() -> list[str]:

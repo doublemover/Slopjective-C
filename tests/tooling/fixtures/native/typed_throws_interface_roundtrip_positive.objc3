@@ -1,0 +1,8 @@
+module TypedThrowsInterfaceRoundtripPositive;
+
+@interface TypedThrowingLoader
+- (i32)loadValue throws(NSError);
+- (i32)classifyValue:(i32)value throws(ErrorBox*);
+@end
+
+extern fn loadFromInterface(value: i32) throws(NSError) -> i32;

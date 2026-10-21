@@ -1,0 +1,45 @@
+{
+  "case_id": "generic_callable_cross_module_mangling_policy_mismatch",
+  "issue_ref": 8235,
+  "expected_diagnostic_code": "O3S206",
+  "source_truth": "fixture-level import contract until module importer enforcement is wired",
+  "exported_callable": {
+    "module": "GenericCallablePolicyProvider",
+    "callable_kind": "function",
+    "callable_name": "identity",
+    "generic_parameter_names_source_order": [
+      "T"
+    ],
+    "generic_parameter_variance_source_order": [
+      ""
+    ],
+    "generic_parameter_constraints_lexicographic": [
+      []
+    ],
+    "generic_callable_reification_policy": "erased_default",
+    "generic_callable_mangling_policy_id": "objc3c.generic-callable.semantic-mangling.v1",
+    "generic_callable_signature_replay_key": "kind=function;name=identity;generic_arity=1;names=T;variance=;constraints=[];reification_policy=erased_default;mangling_policy_id=objc3c.generic-callable.semantic-mangling.v1"
+  },
+  "imported_redeclaration": {
+    "module": "GenericCallablePolicyConsumer",
+    "callable_kind": "function",
+    "callable_name": "identity",
+    "generic_parameter_names_source_order": [
+      "T"
+    ],
+    "generic_parameter_variance_source_order": [
+      ""
+    ],
+    "generic_parameter_constraints_lexicographic": [
+      []
+    ],
+    "generic_callable_reification_policy": "explicit_reified",
+    "generic_callable_mangling_policy_id": "objc3c.generic-callable.reified-semantic-mangling.v1",
+    "generic_callable_signature_replay_key": "kind=function;name=identity;generic_arity=1;names=T;variance=;constraints=[];reification_policy=explicit_reified;mangling_policy_id=objc3c.generic-callable.reified-semantic-mangling.v1"
+  },
+  "required_rejection": [
+    "imported replay key mismatch",
+    "reification policy mismatch",
+    "mangling policy id mismatch"
+  ]
+}

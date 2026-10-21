@@ -1,0 +1,817 @@
+{
+  "contract_id": "objc3c.platform.host-promotion.reviewed-source-inputs.v1",
+  "schema_version": 1,
+  "source_path": "tests/tooling/fixtures/platform_hardening/host_promotion_reviewed_source_inputs.json",
+  "host_promotion_contract_path": "tests/tooling/fixtures/platform_hardening/platform_host_promotion_evidence_contract.json",
+  "promotion_model": {
+    "generated_reports_are_source_truth": false,
+    "source_review_required": true,
+    "default_promotion_allowed": false,
+    "stale_evidence_allowed": false,
+    "prose_only_evidence_allowed": false,
+    "promotion_allowed_rule": "promotion_allowed is true only when every required reviewed-source record resolves to a promotion-ready checked-source record, generated reports remain non-truth inputs, hosted-runner/toolchain/package artifacts are referenced from platform-scoped generated reports, and blockers are empty",
+    "required_durable_fixture_paths": [
+      "tests/tooling/fixtures/platform_hardening/host_promotion_reviewed_source_inputs.json",
+      "tests/tooling/fixtures/platform_hardening/platform_host_promotion_evidence_contract.json",
+      "tests/tooling/fixtures/platform_hardening/platform_toolchain_support_evidence.json",
+      "tests/tooling/fixtures/platform_support/source_truth_matrix.json"
+    ],
+    "support_promotion_action": "review-platform-support-promotion",
+    "support_promotion_helper": "scripts/promote_objc3c_platform_support.py",
+    "support_promotion_apply_command_template": "npm run objc3c -- review-platform-support-promotion -- --platform-id <platform> --apply",
+    "required_durable_application_paths": [
+      "scripts/promote_objc3c_platform_support.py",
+      "tests/tooling/fixtures/platform_hardening/host_promotion_reviewed_source_inputs.json",
+      "tests/tooling/fixtures/platform_hardening/platform_host_promotion_evidence_contract.json",
+      "tests/tooling/fixtures/platform_hardening/platform_toolchain_support_evidence.json",
+      "tests/tooling/fixtures/platform_support/source_truth_matrix.json"
+    ],
+    "required_hosted_promotion_artifact_suffixes": [
+      "host-evidence-report.json",
+      "promotion-readiness-requirements.json",
+      "review-candidate-source-truth.json",
+      "llvm-capabilities.json",
+      "build/native_build_summary.json",
+      "build/object-identity.json",
+      "build/debug-identity.json",
+      "package/objc3c-runnable-toolchain-package.json",
+      "package/runtime-library-manifest.json",
+      "install/install-receipt.json",
+      "install/end-to-end-summary.json",
+      "install/install-distribution-credibility-summary.json",
+      "install/install-distribution-verification.json",
+      "install/clean-install-distribution-receipt.json",
+      "execution/runtime-load-probe.json",
+      "execution/hosted-execution-smoke-summary.json",
+      "execution/native-execution-smoke-summary.json"
+    ],
+    "required_record_types_before_promotion_allowed": [
+      "host_identity",
+      "toolchain_probe",
+      "package_root",
+      "install_receipt",
+      "native_execution",
+      "object_identity",
+      "debug_identity",
+      "package_install_identity",
+      "runtime_load_link_proof"
+    ],
+    "record_sections": {
+      "host_identity": "host_identity_records",
+      "toolchain_probe": "toolchain_probe_records",
+      "package_root": "package_root_evidence_records",
+      "install_receipt": "install_receipt_records",
+      "native_execution": "native_execution_evidence_records",
+      "object_identity": "object_identity_records",
+      "debug_identity": "debug_identity_records",
+      "package_install_identity": "package_install_identity_records",
+      "runtime_load_link_proof": "runtime_load_link_proof_records"
+    },
+    "record_id_fields": {
+      "host_identity": "host_identity_record_id",
+      "toolchain_probe": "toolchain_probe_record_id",
+      "package_root": "package_root_record_id",
+      "install_receipt": "install_receipt_record_id",
+      "native_execution": "native_execution_record_id",
+      "object_identity": "object_identity_record_id",
+      "debug_identity": "debug_identity_record_id",
+      "package_install_identity": "package_install_identity_record_id",
+      "runtime_load_link_proof": "runtime_load_link_proof_record_id"
+    }
+  },
+  "platforms": [
+    {
+      "platform_id": "linux-x64",
+      "issue_ref": 8228,
+      "support_row_id": "objc3c.platform.linux-x64.unsupported",
+      "package_variant_row_id": "objc3c.package.runtime.linux-x64.release.fail-closed",
+      "generated_input_record_id": "objc3c.evidence.hosted-ci.linux-x64.generated-host-run",
+      "generated_input_support_truth": false,
+      "review_decision": "blocked-until-reviewed-source-records-pass",
+      "reviewed_source_paths": [
+        "tests/tooling/fixtures/platform_hardening/host_promotion_reviewed_source_inputs.json",
+        "tests/tooling/fixtures/platform_hardening/platform_host_promotion_evidence_contract.json",
+        "tests/tooling/fixtures/platform_hardening/platform_toolchain_support_evidence.json",
+        "tests/tooling/fixtures/platform_support/source_truth_matrix.json"
+      ],
+      "required_record_types_before_promotion_allowed": [
+        "host_identity",
+        "toolchain_probe",
+        "package_root",
+        "install_receipt",
+        "native_execution",
+        "object_identity",
+        "debug_identity",
+        "package_install_identity",
+        "runtime_load_link_proof"
+      ],
+      "required_record_ids": {
+        "host_identity_record_id": "objc3c.host.linux-x64.identity.fail-closed",
+        "toolchain_probe_record_id": "objc3c.host.linux-x64.toolchain-probes.fail-closed",
+        "package_root_record_id": "objc3c.package-root.linux-x64.release.fail-closed",
+        "install_receipt_record_id": "objc3c.install-receipt.linux-x64.release.missing",
+        "native_execution_record_id": "objc3c.native-execution.linux-x64.release.missing",
+        "object_identity_record_id": "objc3c.object-identity.linux-x64.release.missing",
+        "debug_identity_record_id": "objc3c.debug-identity.linux-x64.release.missing",
+        "package_install_identity_record_id": "objc3c.package-install-identity.linux-x64.release.missing",
+        "runtime_load_link_proof_record_id": "objc3c.runtime-load-link.linux-x64.release.missing"
+      },
+      "not_promotion_ready_record_types": [
+        "host_identity",
+        "toolchain_probe",
+        "package_root",
+        "install_receipt",
+        "native_execution",
+        "object_identity",
+        "debug_identity",
+        "package_install_identity",
+        "runtime_load_link_proof"
+      ],
+      "remaining_blockers": [
+        "generated-only-evidence",
+        "wrong-object-debug-format",
+        "wrong-architecture",
+        "missing-package-root",
+        "runtime-load-failure",
+        "missing-install-receipt",
+        "unsupported-llvm-version",
+        "sanitizer-variant-leakage"
+      ],
+      "promotion_allowed": false,
+      "support_truth": false
+    },
+    {
+      "platform_id": "darwin-arm64",
+      "issue_ref": 8229,
+      "support_row_id": "objc3c.platform.darwin-arm64.unsupported",
+      "package_variant_row_id": "objc3c.package.runtime.darwin-arm64.release.fail-closed",
+      "generated_input_record_id": "objc3c.evidence.hosted-ci.darwin-arm64.generated-host-run",
+      "generated_input_support_truth": false,
+      "review_decision": "blocked-until-reviewed-source-records-pass",
+      "reviewed_source_paths": [
+        "tests/tooling/fixtures/platform_hardening/host_promotion_reviewed_source_inputs.json",
+        "tests/tooling/fixtures/platform_hardening/platform_host_promotion_evidence_contract.json",
+        "tests/tooling/fixtures/platform_hardening/platform_toolchain_support_evidence.json",
+        "tests/tooling/fixtures/platform_support/source_truth_matrix.json"
+      ],
+      "required_record_types_before_promotion_allowed": [
+        "host_identity",
+        "toolchain_probe",
+        "package_root",
+        "install_receipt",
+        "native_execution",
+        "object_identity",
+        "debug_identity",
+        "package_install_identity",
+        "runtime_load_link_proof"
+      ],
+      "required_record_ids": {
+        "host_identity_record_id": "objc3c.host.darwin-arm64.identity.fail-closed",
+        "toolchain_probe_record_id": "objc3c.host.darwin-arm64.toolchain-probes.fail-closed",
+        "package_root_record_id": "objc3c.package-root.darwin-arm64.release.fail-closed",
+        "install_receipt_record_id": "objc3c.install-receipt.darwin-arm64.release.missing",
+        "native_execution_record_id": "objc3c.native-execution.darwin-arm64.release.missing",
+        "object_identity_record_id": "objc3c.object-identity.darwin-arm64.release.missing",
+        "debug_identity_record_id": "objc3c.debug-identity.darwin-arm64.release.missing",
+        "package_install_identity_record_id": "objc3c.package-install-identity.darwin-arm64.release.missing",
+        "runtime_load_link_proof_record_id": "objc3c.runtime-load-link.darwin-arm64.release.missing"
+      },
+      "not_promotion_ready_record_types": [
+        "host_identity",
+        "toolchain_probe",
+        "package_root",
+        "install_receipt",
+        "native_execution",
+        "object_identity",
+        "debug_identity",
+        "package_install_identity",
+        "runtime_load_link_proof"
+      ],
+      "remaining_blockers": [
+        "generated-only-evidence",
+        "wrong-object-debug-format",
+        "wrong-architecture",
+        "missing-package-root",
+        "runtime-load-failure",
+        "missing-install-receipt",
+        "unsupported-llvm-version",
+        "sanitizer-variant-leakage"
+      ],
+      "promotion_allowed": false,
+      "support_truth": false
+    }
+  ],
+  "host_identity_records": [
+    {
+      "record_type": "host_identity",
+      "record_id": "objc3c.host.linux-x64.identity.fail-closed",
+      "platform_id": "linux-x64",
+      "support_row_id": "objc3c.platform.linux-x64.unsupported",
+      "claim_state": "fail-closed",
+      "promotion_allowed": false,
+      "platform_ids": [],
+      "host_os": "linux",
+      "host_arch": "x64",
+      "host_system": "linux",
+      "host_machine": "x86_64",
+      "host_triples": [
+        "x86_64-unknown-linux-gnu"
+      ],
+      "source_paths": [
+        "tests/tooling/fixtures/platform_hardening/host_promotion_reviewed_source_inputs.json",
+        "tests/tooling/fixtures/platform_hardening/platform_toolchain_support_evidence.json"
+      ],
+      "evidence_ids": [
+        "objc3c.evidence.unsupported.linux-x64.fail-closed"
+      ],
+      "unsupported_behavior": "fail-closed"
+    },
+    {
+      "record_type": "host_identity",
+      "record_id": "objc3c.host.darwin-arm64.identity.fail-closed",
+      "platform_id": "darwin-arm64",
+      "support_row_id": "objc3c.platform.darwin-arm64.unsupported",
+      "claim_state": "fail-closed",
+      "promotion_allowed": false,
+      "platform_ids": [],
+      "host_os": "darwin",
+      "host_arch": "arm64",
+      "host_system": "darwin",
+      "host_machine": "arm64",
+      "host_triples": [
+        "aarch64-apple-darwin"
+      ],
+      "source_paths": [
+        "tests/tooling/fixtures/platform_hardening/host_promotion_reviewed_source_inputs.json",
+        "tests/tooling/fixtures/platform_hardening/platform_toolchain_support_evidence.json"
+      ],
+      "evidence_ids": [
+        "objc3c.evidence.unsupported.darwin-arm64.fail-closed"
+      ],
+      "unsupported_behavior": "fail-closed"
+    }
+  ],
+  "toolchain_probe_records": [
+    {
+      "record_type": "toolchain_probe",
+      "record_id": "objc3c.host.linux-x64.toolchain-probes.fail-closed",
+      "platform_id": "linux-x64",
+      "claim_state": "fail-closed",
+      "promotion_allowed": false,
+      "platform_ids": [],
+      "required_components": [
+        "llvm",
+        "clang",
+        "cmake",
+        "ninja",
+        "python",
+        "node",
+        "pwsh"
+      ],
+      "required_missing_probe_classes": [
+        "toolchain",
+        "native-object-emission",
+        "package-root",
+        "native-execution"
+      ],
+      "component_probes": [
+        {
+          "component": "llvm",
+          "tool_names": [
+            "clang",
+            "clang++",
+            "llc",
+            "llvm-ar",
+            "headers-libs"
+          ],
+          "exit_code": -1,
+          "capability_status": "not-reviewed"
+        }
+      ],
+      "source_paths": [
+        "tests/tooling/fixtures/platform_hardening/host_promotion_reviewed_source_inputs.json",
+        "tests/tooling/fixtures/platform_hardening/platform_toolchain_support_evidence.json"
+      ],
+      "evidence_ids": [
+        "objc3c.evidence.unsupported.linux-x64.fail-closed"
+      ],
+      "unsupported_behavior": "fail-closed"
+    },
+    {
+      "record_type": "toolchain_probe",
+      "record_id": "objc3c.host.darwin-arm64.toolchain-probes.fail-closed",
+      "platform_id": "darwin-arm64",
+      "claim_state": "fail-closed",
+      "promotion_allowed": false,
+      "platform_ids": [],
+      "required_components": [
+        "llvm",
+        "clang",
+        "cmake",
+        "ninja",
+        "python",
+        "node",
+        "pwsh"
+      ],
+      "required_missing_probe_classes": [
+        "toolchain",
+        "native-object-emission",
+        "package-root",
+        "native-execution"
+      ],
+      "component_probes": [
+        {
+          "component": "llvm",
+          "tool_names": [
+            "clang",
+            "clang++",
+            "llc",
+            "llvm-ar",
+            "headers-libs"
+          ],
+          "exit_code": -1,
+          "capability_status": "not-reviewed"
+        }
+      ],
+      "source_paths": [
+        "tests/tooling/fixtures/platform_hardening/host_promotion_reviewed_source_inputs.json",
+        "tests/tooling/fixtures/platform_hardening/platform_toolchain_support_evidence.json"
+      ],
+      "evidence_ids": [
+        "objc3c.evidence.unsupported.darwin-arm64.fail-closed"
+      ],
+      "unsupported_behavior": "fail-closed"
+    }
+  ],
+  "package_root_evidence_records": [
+    {
+      "record_type": "package_root",
+      "record_id": "objc3c.package-root.linux-x64.release.fail-closed",
+      "platform_id": "linux-x64",
+      "target_platform_id": "linux-x64",
+      "package_variant_row_id": "objc3c.package.runtime.linux-x64.release.fail-closed",
+      "claim_state": "fail-closed",
+      "promotion_allowed": false,
+      "platform_ids": [],
+      "object_format": "ELF",
+      "debug_format": "DWARF",
+      "runtime_library_names": [
+        "libobjc3-runtime.so"
+      ],
+      "package_root_layout": [
+        "artifacts/package/objc3c-runnable-toolchain-package.json",
+        "artifacts/bin/objc3c-native",
+        "artifacts/lib/libobjc3-runtime.so",
+        "stdlib/workspace.json",
+        "stdlib/modules/objc3.core/module.json",
+        "docs/runbooks/objc3c_packaging_channels.md"
+      ],
+      "loader_path_policy": "ELF rpath, RUNPATH, or package-root loader resolution must be proven before support",
+      "source_paths": [
+        "tests/tooling/fixtures/platform_hardening/host_promotion_reviewed_source_inputs.json",
+        "tests/tooling/fixtures/platform_hardening/platform_toolchain_support_evidence.json"
+      ],
+      "evidence_ids": [
+        "objc3c.evidence.unsupported.linux-x64.fail-closed"
+      ],
+      "unsupported_behavior": "fail-closed"
+    },
+    {
+      "record_type": "package_root",
+      "record_id": "objc3c.package-root.darwin-arm64.release.fail-closed",
+      "platform_id": "darwin-arm64",
+      "target_platform_id": "darwin-arm64",
+      "package_variant_row_id": "objc3c.package.runtime.darwin-arm64.release.fail-closed",
+      "claim_state": "fail-closed",
+      "promotion_allowed": false,
+      "platform_ids": [],
+      "object_format": "Mach-O",
+      "debug_format": "DWARF/dSYM",
+      "runtime_library_names": [
+        "libobjc3-runtime.dylib"
+      ],
+      "package_root_layout": [
+        "artifacts/package/objc3c-runnable-toolchain-package.json",
+        "artifacts/bin/objc3c-native",
+        "artifacts/lib/libobjc3-runtime.dylib",
+        "stdlib/workspace.json",
+        "stdlib/modules/objc3.core/module.json",
+        "docs/runbooks/objc3c_packaging_channels.md"
+      ],
+      "loader_path_policy": "@rpath, install_name, codesign, and package-root loader behavior must be proven before support",
+      "source_paths": [
+        "tests/tooling/fixtures/platform_hardening/host_promotion_reviewed_source_inputs.json",
+        "tests/tooling/fixtures/platform_hardening/platform_toolchain_support_evidence.json"
+      ],
+      "evidence_ids": [
+        "objc3c.evidence.unsupported.darwin-arm64.fail-closed"
+      ],
+      "unsupported_behavior": "fail-closed"
+    }
+  ],
+  "install_receipt_records": [
+    {
+      "record_type": "install_receipt",
+      "record_id": "objc3c.install-receipt.linux-x64.release.missing",
+      "platform_id": "linux-x64",
+      "package_variant_row_id": "objc3c.package.runtime.linux-x64.release.fail-closed",
+      "package_root_record_id": "objc3c.package-root.linux-x64.release.fail-closed",
+      "package_install_identity_record_id": "objc3c.package-install-identity.linux-x64.release.missing",
+      "claim_state": "fail-closed",
+      "promotion_allowed": false,
+      "platform_ids": [],
+      "install_receipt_path": "tmp/reports/platform-host-evidence/linux-x64/install/install-receipt.json",
+      "install_receipt_present": false,
+      "generated_report_path": "tmp/reports/platform-host-evidence/linux-x64/install/install-receipt.json",
+      "generated_report_support_truth": false,
+      "source_paths": [
+        "tests/tooling/fixtures/platform_hardening/host_promotion_reviewed_source_inputs.json",
+        "tests/tooling/fixtures/platform_hardening/platform_toolchain_support_evidence.json"
+      ],
+      "evidence_ids": [
+        "objc3c.evidence.unsupported.linux-x64.fail-closed"
+      ],
+      "unsupported_behavior": "fail-closed"
+    },
+    {
+      "record_type": "install_receipt",
+      "record_id": "objc3c.install-receipt.darwin-arm64.release.missing",
+      "platform_id": "darwin-arm64",
+      "package_variant_row_id": "objc3c.package.runtime.darwin-arm64.release.fail-closed",
+      "package_root_record_id": "objc3c.package-root.darwin-arm64.release.fail-closed",
+      "package_install_identity_record_id": "objc3c.package-install-identity.darwin-arm64.release.missing",
+      "claim_state": "fail-closed",
+      "promotion_allowed": false,
+      "platform_ids": [],
+      "install_receipt_path": "tmp/reports/platform-host-evidence/darwin-arm64/install/install-receipt.json",
+      "install_receipt_present": false,
+      "generated_report_path": "tmp/reports/platform-host-evidence/darwin-arm64/install/install-receipt.json",
+      "generated_report_support_truth": false,
+      "source_paths": [
+        "tests/tooling/fixtures/platform_hardening/host_promotion_reviewed_source_inputs.json",
+        "tests/tooling/fixtures/platform_hardening/platform_toolchain_support_evidence.json"
+      ],
+      "evidence_ids": [
+        "objc3c.evidence.unsupported.darwin-arm64.fail-closed"
+      ],
+      "unsupported_behavior": "fail-closed"
+    }
+  ],
+  "native_execution_evidence_records": [
+    {
+      "record_type": "native_execution",
+      "record_id": "objc3c.native-execution.linux-x64.release.missing",
+      "platform_id": "linux-x64",
+      "package_variant_row_id": "objc3c.package.runtime.linux-x64.release.fail-closed",
+      "host_identity_record_id": "objc3c.host.linux-x64.identity.fail-closed",
+      "package_root_record_id": "objc3c.package-root.linux-x64.release.fail-closed",
+      "claim_state": "missing-host-execution",
+      "promotion_allowed": false,
+      "platform_ids": [],
+      "runtime_library_names": [
+        "libobjc3-runtime.so"
+      ],
+      "package_root_layout": [
+        "artifacts/package/objc3c-runnable-toolchain-package.json",
+        "artifacts/bin/objc3c-native",
+        "artifacts/lib/libobjc3-runtime.so",
+        "stdlib/workspace.json",
+        "stdlib/modules/objc3.core/module.json",
+        "docs/runbooks/objc3c_packaging_channels.md"
+      ],
+      "loader_policy": "ELF rpath, RUNPATH, or package-root loader resolution must be proven before support",
+      "native_execution_required": true,
+      "native_execution_passed": false,
+      "execution_evidence_ids": [],
+      "source_paths": [
+        "tests/tooling/fixtures/platform_hardening/host_promotion_reviewed_source_inputs.json",
+        "tests/tooling/fixtures/platform_hardening/platform_toolchain_support_evidence.json"
+      ],
+      "evidence_ids": [
+        "objc3c.evidence.unsupported.linux-x64.fail-closed"
+      ],
+      "unsupported_behavior": "fail-closed"
+    },
+    {
+      "record_type": "native_execution",
+      "record_id": "objc3c.native-execution.darwin-arm64.release.missing",
+      "platform_id": "darwin-arm64",
+      "package_variant_row_id": "objc3c.package.runtime.darwin-arm64.release.fail-closed",
+      "host_identity_record_id": "objc3c.host.darwin-arm64.identity.fail-closed",
+      "package_root_record_id": "objc3c.package-root.darwin-arm64.release.fail-closed",
+      "claim_state": "missing-host-execution",
+      "promotion_allowed": false,
+      "platform_ids": [],
+      "runtime_library_names": [
+        "libobjc3-runtime.dylib"
+      ],
+      "package_root_layout": [
+        "artifacts/package/objc3c-runnable-toolchain-package.json",
+        "artifacts/bin/objc3c-native",
+        "artifacts/lib/libobjc3-runtime.dylib",
+        "stdlib/workspace.json",
+        "stdlib/modules/objc3.core/module.json",
+        "docs/runbooks/objc3c_packaging_channels.md"
+      ],
+      "loader_policy": "@rpath, install_name, codesign, and package-root loader behavior must be proven before support",
+      "native_execution_required": true,
+      "native_execution_passed": false,
+      "execution_evidence_ids": [],
+      "source_paths": [
+        "tests/tooling/fixtures/platform_hardening/host_promotion_reviewed_source_inputs.json",
+        "tests/tooling/fixtures/platform_hardening/platform_toolchain_support_evidence.json"
+      ],
+      "evidence_ids": [
+        "objc3c.evidence.unsupported.darwin-arm64.fail-closed"
+      ],
+      "unsupported_behavior": "fail-closed"
+    }
+  ],
+  "object_identity_records": [
+    {
+      "record_type": "object_identity",
+      "record_id": "objc3c.object-identity.linux-x64.release.missing",
+      "platform_id": "linux-x64",
+      "package_variant_row_id": "objc3c.package.runtime.linux-x64.release.fail-closed",
+      "package_root_record_id": "objc3c.package-root.linux-x64.release.fail-closed",
+      "claim_state": "fail-closed",
+      "promotion_allowed": false,
+      "platform_ids": [],
+      "object_format": "ELF",
+      "debug_format": "DWARF",
+      "target_triple": "x86_64-unknown-linux-gnu",
+      "arch": "x64",
+      "generated_report_path": "tmp/reports/platform-host-evidence/linux-x64/build/object-identity.json",
+      "generated_report_support_truth": false,
+      "source_paths": [
+        "tests/tooling/fixtures/platform_hardening/host_promotion_reviewed_source_inputs.json",
+        "tests/tooling/fixtures/platform_hardening/platform_toolchain_support_evidence.json"
+      ],
+      "evidence_ids": [
+        "objc3c.evidence.unsupported.linux-x64.fail-closed"
+      ],
+      "unsupported_behavior": "fail-closed"
+    },
+    {
+      "record_type": "object_identity",
+      "record_id": "objc3c.object-identity.darwin-arm64.release.missing",
+      "platform_id": "darwin-arm64",
+      "package_variant_row_id": "objc3c.package.runtime.darwin-arm64.release.fail-closed",
+      "package_root_record_id": "objc3c.package-root.darwin-arm64.release.fail-closed",
+      "claim_state": "fail-closed",
+      "promotion_allowed": false,
+      "platform_ids": [],
+      "object_format": "Mach-O",
+      "debug_format": "DWARF/dSYM",
+      "target_triple": "aarch64-apple-darwin",
+      "arch": "arm64",
+      "generated_report_path": "tmp/reports/platform-host-evidence/darwin-arm64/build/object-identity.json",
+      "generated_report_support_truth": false,
+      "source_paths": [
+        "tests/tooling/fixtures/platform_hardening/host_promotion_reviewed_source_inputs.json",
+        "tests/tooling/fixtures/platform_hardening/platform_toolchain_support_evidence.json"
+      ],
+      "evidence_ids": [
+        "objc3c.evidence.unsupported.darwin-arm64.fail-closed"
+      ],
+      "unsupported_behavior": "fail-closed"
+    }
+  ],
+  "debug_identity_records": [
+    {
+      "record_type": "debug_identity",
+      "record_id": "objc3c.debug-identity.linux-x64.release.missing",
+      "platform_id": "linux-x64",
+      "package_variant_row_id": "objc3c.package.runtime.linux-x64.release.fail-closed",
+      "package_root_record_id": "objc3c.package-root.linux-x64.release.fail-closed",
+      "claim_state": "fail-closed",
+      "promotion_allowed": false,
+      "platform_ids": [],
+      "object_format": "ELF",
+      "debug_format": "DWARF",
+      "target_triple": "x86_64-unknown-linux-gnu",
+      "arch": "x64",
+      "generated_report_path": "tmp/reports/platform-host-evidence/linux-x64/build/debug-identity.json",
+      "generated_report_support_truth": false,
+      "source_paths": [
+        "tests/tooling/fixtures/platform_hardening/host_promotion_reviewed_source_inputs.json",
+        "tests/tooling/fixtures/platform_hardening/platform_toolchain_support_evidence.json"
+      ],
+      "evidence_ids": [
+        "objc3c.evidence.unsupported.linux-x64.fail-closed"
+      ],
+      "unsupported_behavior": "fail-closed"
+    },
+    {
+      "record_type": "debug_identity",
+      "record_id": "objc3c.debug-identity.darwin-arm64.release.missing",
+      "platform_id": "darwin-arm64",
+      "package_variant_row_id": "objc3c.package.runtime.darwin-arm64.release.fail-closed",
+      "package_root_record_id": "objc3c.package-root.darwin-arm64.release.fail-closed",
+      "claim_state": "fail-closed",
+      "promotion_allowed": false,
+      "platform_ids": [],
+      "object_format": "Mach-O",
+      "debug_format": "DWARF/dSYM",
+      "target_triple": "aarch64-apple-darwin",
+      "arch": "arm64",
+      "generated_report_path": "tmp/reports/platform-host-evidence/darwin-arm64/build/debug-identity.json",
+      "generated_report_support_truth": false,
+      "platform_specific_debug_proofs": {
+        "dsym_uuid_required": true,
+        "dsym_uuid_arch": "arm64",
+        "dsym_uuid_match_required": true,
+        "required_debug_proofs": [
+          "mach_o_arm64_architecture",
+          "binary_dsym_uuid",
+          "dsym_uuid_arch_arm64",
+          "binary_dsym_uuid_match"
+        ],
+        "debug_proof_failure_behavior": "fail-closed-before-package-publication"
+      },
+      "source_paths": [
+        "tests/tooling/fixtures/platform_hardening/host_promotion_reviewed_source_inputs.json",
+        "tests/tooling/fixtures/platform_hardening/platform_toolchain_support_evidence.json"
+      ],
+      "evidence_ids": [
+        "objc3c.evidence.unsupported.darwin-arm64.fail-closed"
+      ],
+      "unsupported_behavior": "fail-closed"
+    }
+  ],
+  "package_install_identity_records": [
+    {
+      "record_type": "package_install_identity",
+      "record_id": "objc3c.package-install-identity.linux-x64.release.missing",
+      "platform_id": "linux-x64",
+      "package_variant_row_id": "objc3c.package.runtime.linux-x64.release.fail-closed",
+      "package_root_record_id": "objc3c.package-root.linux-x64.release.fail-closed",
+      "claim_state": "fail-closed",
+      "promotion_allowed": false,
+      "platform_ids": [],
+      "object_format": "ELF",
+      "debug_format": "DWARF",
+      "package_root_layout": [
+        "artifacts/package/objc3c-runnable-toolchain-package.json",
+        "artifacts/bin/objc3c-native",
+        "artifacts/lib/libobjc3-runtime.so",
+        "stdlib/workspace.json",
+        "stdlib/modules/objc3.core/module.json",
+        "docs/runbooks/objc3c_packaging_channels.md"
+      ],
+      "package_manifest_path": "tmp/reports/platform-host-evidence/linux-x64/package/objc3c-runnable-toolchain-package.json",
+      "runtime_library_manifest_path": "tmp/reports/platform-host-evidence/linux-x64/package/runtime-library-manifest.json",
+      "install_receipt_path": "tmp/reports/platform-host-evidence/linux-x64/install/install-receipt.json",
+      "install_receipt_present": false,
+      "installed_root_execution_summary_path": "tmp/reports/platform-host-evidence/linux-x64/install/end-to-end-summary.json",
+      "installed_root_execution_present": false,
+      "offline_installed_root_execution_present": false,
+      "generated_report_path": "tmp/reports/platform-host-evidence/linux-x64/install/install-receipt.json",
+      "generated_report_support_truth": false,
+      "source_paths": [
+        "tests/tooling/fixtures/platform_hardening/host_promotion_reviewed_source_inputs.json",
+        "tests/tooling/fixtures/platform_hardening/platform_toolchain_support_evidence.json"
+      ],
+      "evidence_ids": [
+        "objc3c.evidence.unsupported.linux-x64.fail-closed"
+      ],
+      "unsupported_behavior": "fail-closed"
+    },
+    {
+      "record_type": "package_install_identity",
+      "record_id": "objc3c.package-install-identity.darwin-arm64.release.missing",
+      "platform_id": "darwin-arm64",
+      "package_variant_row_id": "objc3c.package.runtime.darwin-arm64.release.fail-closed",
+      "package_root_record_id": "objc3c.package-root.darwin-arm64.release.fail-closed",
+      "claim_state": "fail-closed",
+      "promotion_allowed": false,
+      "platform_ids": [],
+      "object_format": "Mach-O",
+      "debug_format": "DWARF/dSYM",
+      "package_root_layout": [
+        "artifacts/package/objc3c-runnable-toolchain-package.json",
+        "artifacts/bin/objc3c-native",
+        "artifacts/lib/libobjc3-runtime.dylib",
+        "stdlib/workspace.json",
+        "stdlib/modules/objc3.core/module.json",
+        "docs/runbooks/objc3c_packaging_channels.md"
+      ],
+      "package_manifest_path": "tmp/reports/platform-host-evidence/darwin-arm64/package/objc3c-runnable-toolchain-package.json",
+      "runtime_library_manifest_path": "tmp/reports/platform-host-evidence/darwin-arm64/package/runtime-library-manifest.json",
+      "install_receipt_path": "tmp/reports/platform-host-evidence/darwin-arm64/install/install-receipt.json",
+      "install_receipt_present": false,
+      "installed_root_execution_summary_path": "tmp/reports/platform-host-evidence/darwin-arm64/install/end-to-end-summary.json",
+      "installed_root_execution_present": false,
+      "offline_installed_root_execution_present": false,
+      "generated_report_path": "tmp/reports/platform-host-evidence/darwin-arm64/install/install-receipt.json",
+      "generated_report_support_truth": false,
+      "source_paths": [
+        "tests/tooling/fixtures/platform_hardening/host_promotion_reviewed_source_inputs.json",
+        "tests/tooling/fixtures/platform_hardening/platform_toolchain_support_evidence.json"
+      ],
+      "evidence_ids": [
+        "objc3c.evidence.unsupported.darwin-arm64.fail-closed"
+      ],
+      "unsupported_behavior": "fail-closed"
+    }
+  ],
+  "runtime_load_link_proof_records": [
+    {
+      "record_type": "runtime_load_link_proof",
+      "record_id": "objc3c.runtime-load-link.linux-x64.release.missing",
+      "platform_id": "linux-x64",
+      "package_variant_row_id": "objc3c.package.runtime.linux-x64.release.fail-closed",
+      "package_root_record_id": "objc3c.package-root.linux-x64.release.fail-closed",
+      "native_execution_record_id": "objc3c.native-execution.linux-x64.release.missing",
+      "claim_state": "fail-closed",
+      "promotion_allowed": false,
+      "platform_ids": [],
+      "object_format": "ELF",
+      "debug_format": "DWARF",
+      "package_root_layout": [
+        "artifacts/package/objc3c-runnable-toolchain-package.json",
+        "artifacts/bin/objc3c-native",
+        "artifacts/lib/libobjc3-runtime.so",
+        "stdlib/workspace.json",
+        "stdlib/modules/objc3.core/module.json",
+        "docs/runbooks/objc3c_packaging_channels.md"
+      ],
+      "runtime_library_names": [
+        "libobjc3-runtime.so"
+      ],
+      "runtime_library_manifest_path": "tmp/reports/platform-host-evidence/linux-x64/package/runtime-library-manifest.json",
+      "linker_flags": [
+        "-lobjc3-runtime"
+      ],
+      "loader_policy": "ELF rpath, RUNPATH, or package-root loader resolution must be proven before support",
+      "load_probe_path": "tmp/reports/platform-host-evidence/linux-x64/execution/runtime-load-probe.json",
+      "load_probe_exit_code": -1,
+      "resolved_runtime_paths": [],
+      "generated_report_path": "tmp/reports/platform-host-evidence/linux-x64/execution/runtime-load-probe.json",
+      "generated_report_support_truth": false,
+      "source_paths": [
+        "tests/tooling/fixtures/platform_hardening/host_promotion_reviewed_source_inputs.json",
+        "tests/tooling/fixtures/platform_hardening/platform_toolchain_support_evidence.json"
+      ],
+      "evidence_ids": [
+        "objc3c.evidence.unsupported.linux-x64.fail-closed"
+      ],
+      "unsupported_behavior": "fail-closed"
+    },
+    {
+      "record_type": "runtime_load_link_proof",
+      "record_id": "objc3c.runtime-load-link.darwin-arm64.release.missing",
+      "platform_id": "darwin-arm64",
+      "package_variant_row_id": "objc3c.package.runtime.darwin-arm64.release.fail-closed",
+      "package_root_record_id": "objc3c.package-root.darwin-arm64.release.fail-closed",
+      "native_execution_record_id": "objc3c.native-execution.darwin-arm64.release.missing",
+      "claim_state": "fail-closed",
+      "promotion_allowed": false,
+      "platform_ids": [],
+      "object_format": "Mach-O",
+      "debug_format": "DWARF/dSYM",
+      "package_root_layout": [
+        "artifacts/package/objc3c-runnable-toolchain-package.json",
+        "artifacts/bin/objc3c-native",
+        "artifacts/lib/libobjc3-runtime.dylib",
+        "stdlib/workspace.json",
+        "stdlib/modules/objc3.core/module.json",
+        "docs/runbooks/objc3c_packaging_channels.md"
+      ],
+      "runtime_library_names": [
+        "libobjc3-runtime.dylib"
+      ],
+      "runtime_library_manifest_path": "tmp/reports/platform-host-evidence/darwin-arm64/package/runtime-library-manifest.json",
+      "linker_flags": [
+        "-lobjc3-runtime"
+      ],
+      "loader_policy": "@rpath, install_name, codesign, and package-root loader behavior must be proven before support",
+      "load_probe_path": "tmp/reports/platform-host-evidence/darwin-arm64/execution/runtime-load-probe.json",
+      "load_probe_exit_code": -1,
+      "resolved_runtime_paths": [],
+      "platform_specific_runtime_proofs": {
+        "install_name_required": true,
+        "rpath_required": true,
+        "codesign_required": true,
+        "expected_arch": "arm64",
+        "load_commands_required": [
+          "LC_ID_DYLIB",
+          "LC_RPATH",
+          "LC_LOAD_DYLIB"
+        ],
+        "executable_runtime_reference_required": true,
+        "runtime_proof_failure_behavior": "fail-closed-before-native-execution-claim"
+      },
+      "generated_report_path": "tmp/reports/platform-host-evidence/darwin-arm64/execution/runtime-load-probe.json",
+      "generated_report_support_truth": false,
+      "source_paths": [
+        "tests/tooling/fixtures/platform_hardening/host_promotion_reviewed_source_inputs.json",
+        "tests/tooling/fixtures/platform_hardening/platform_toolchain_support_evidence.json"
+      ],
+      "evidence_ids": [
+        "objc3c.evidence.unsupported.darwin-arm64.fail-closed"
+      ],
+      "unsupported_behavior": "fail-closed"
+    }
+  ]
+}

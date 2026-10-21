@@ -1,0 +1,4 @@
+module negativeDirectImportAmbiguous;
+
+@import Foundation;
+@import foundation;

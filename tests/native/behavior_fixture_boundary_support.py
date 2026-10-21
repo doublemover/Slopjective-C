@@ -18,8 +18,10 @@ from objc3c_tooling.behavior_fixtures import (
     load_behavior_fixture_catalog,
     load_manifest_fixture_entries,
 )
+from objc3c_tooling.artifact_identity import current_host_artifact_identity
 
-NATIVE_EXE = ROOT / "artifacts" / "bin" / "objc3c-native.exe"
+ARTIFACT_IDENTITY = current_host_artifact_identity()
+NATIVE_EXE = ROOT / ARTIFACT_IDENTITY.native_executable_relative_path
 EXPECTED_BOUNDARY_BY_KIND = {
     "positive": "canonical-positive",
     "negative": "canonical-rejection",

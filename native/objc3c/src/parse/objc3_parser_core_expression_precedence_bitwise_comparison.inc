@@ -1,3 +1,0 @@
-#include "parse/objc3_parser_core_expression_precedence_bitwise_comparison_bitwise.inc"
-#include "parse/objc3_parser_core_expression_precedence_bitwise_comparison_comparison.inc"
-#include "parse/objc3_parser_core_expression_precedence_bitwise_comparison_shift.inc"

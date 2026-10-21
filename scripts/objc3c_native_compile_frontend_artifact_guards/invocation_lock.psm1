@@ -112,9 +112,10 @@ function Assert-Objc3cNativeFrontendInvocationLockExpectedBinaries {
     [Parameter(Mandatory = $true)][string]$LockPath
   )
 
+  $extension = if ([System.Environment]::OSVersion.Platform -eq [System.PlatformID]::Win32NT) { ".exe" } else { "" }
   $expectedBinaries = [ordered]@{
-    "objc3c-native" = "artifacts/bin/objc3c-native.exe"
-    "objc3c-frontend-c-api-runner" = "artifacts/bin/objc3c-frontend-c-api-runner.exe"
+    "objc3c-native" = "artifacts/bin/objc3c-native$extension"
+    "objc3c-frontend-c-api-runner" = "artifacts/bin/objc3c-frontend-c-api-runner$extension"
   }
   foreach ($binaryName in $expectedBinaries.Keys) {
     if (-not $BinaryIndex.ContainsKey($binaryName)) {

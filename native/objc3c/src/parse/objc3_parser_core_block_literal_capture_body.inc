@@ -1,4 +1,0 @@
-#include "parse/objc3_parser_core_block_literal_capture_body_start.inc"
-#include "parse/objc3_parser_core_block_literal_capture_body_explicit_model.inc"
-#include "parse/objc3_parser_core_block_literal_capture_body_inferred_model.inc"
-#include "parse/objc3_parser_core_block_literal_capture_body_model.inc"

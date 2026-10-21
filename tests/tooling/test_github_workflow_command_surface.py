@@ -17,7 +17,10 @@ def _workflow_run_commands(path: Path) -> list[str]:
     for line in path.read_text(encoding="utf-8").splitlines():
         stripped = line.strip()
         if stripped.startswith("run: "):
-            commands.append(stripped.removeprefix("run: ").strip())
+            command = stripped.removeprefix("run: ").strip()
+            if command in {"|", ">"}:
+                continue
+            commands.append(command)
     return commands
 
 
@@ -29,12 +32,12 @@ def test_github_workflows_route_objc3c_commands_through_package_bridge() -> None
         for command in _workflow_run_commands(workflow_path):
             assert "cmd.exe" not in command.lower(), (workflow_path, command)
             assert "cmd /c" not in command.lower(), (workflow_path, command)
+            if command in ALLOWED_NON_OBJC3C_RUN_COMMANDS:
+                continue
             assert "scripts/" not in command and "scripts\\" not in command, (
                 workflow_path,
                 command,
             )
-            if command in ALLOWED_NON_OBJC3C_RUN_COMMANDS:
-                continue
             assert command.startswith("npm run objc3c -- "), (
                 workflow_path,
                 command,

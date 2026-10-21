@@ -1,0 +1,290 @@
+{
+  "schema_version": 1,
+  "upstream": {
+    "name": "llvm-project",
+    "url": "https://github.com/llvm/llvm-project.git",
+    "tag": "llvmorg-23.1.3",
+    "tag_object": "856f0005e57023e63664c560a829c620360ea1f1",
+    "commit": "0d261d1ca552c95a8f007e061c787ac7132fbcbc"
+  },
+  "patch_series": "toolchains/llvm/patches/series",
+  "patches": [
+    {
+      "file": "0001-objc3-language-mode-and-build-identity.patch",
+      "sha256": "92c247d7f01196afb010bbbad4d5dac69d0c35c49b5333dd8bc4c3a37e9de17e"
+    },
+    {
+      "file": "0002-objc3-native-defer-statement.patch",
+      "sha256": "447674c7c07c9cb2c32f4cf8acf86be4ffa57474fd2e2488928eebd51749fb26"
+    },
+    {
+      "file": "0003-objc3-native-payload-type-facts.patch",
+      "sha256": "7c0e1e0115a2259c70e065ea7710168e01e5d019875a5d92d960b88d626f2550"
+    },
+    {
+      "file": "0004-objc3-canonical-carriers-and-function-effects.patch",
+      "sha256": "e5ab7e82ef046ae2377c540979e144c0a42863733e5d9008ce3648e355bfa185"
+    },
+    {
+      "file": "0005-objc3-codegen-qualification-boundaries.patch",
+      "sha256": "bedd21704363829d1704e40bbb758dd538dc4c4cf8d1476a6bfbf83c7a305b7e"
+    },
+    {
+      "file": "0006-objc3-native-carrier-expressions.patch",
+      "sha256": "3e56fefc184b35551225848a5692a9d8048b7e84aff129c3bf08aa72f7fcd5bc"
+    }
+  ],
+  "pristine_baseline_build_id": "llvmorg-23.1.3-0d261d1ca552-pristine-v1",
+  "build": {
+    "generator": "Ninja",
+    "configuration": "Release",
+    "target_triple": "x86_64-pc-windows-msvc",
+    "host_toolset": "Visual Studio 2022 v143",
+    "windows_sdk_version": "10.0.26100.0",
+    "windows_crt": "MD",
+    "assertions": true,
+    "rtti": true,
+    "eh": true,
+    "targets": ["X86"],
+    "projects": ["clang", "lld", "clang-tools-extra", "lldb"],
+    "build_targets": [
+      "clang",
+      "FileCheck",
+      "count",
+      "not",
+      "llvm-config",
+      "llvm-nm",
+      "clang-resource-headers",
+      "lld",
+      "llc",
+      "llvm-ar",
+      "llvm-ranlib",
+      "llvm-readobj",
+      "llvm-objdump",
+      "clangTooling",
+      "clangIndex",
+      "clangCodeGen",
+      "clangFrontend",
+      "clangDriver",
+      "ObjC3TypeContractsTests",
+      "clangd",
+      "clang-format",
+      "lldb",
+      "lldb-server",
+      "llvm-dwarfdump"
+    ],
+    "build_target_groups": [
+      {
+        "name": "compiler_and_test_tools",
+        "targets": [
+          "clang",
+          "FileCheck",
+          "count",
+          "not",
+          "llvm-config",
+          "llvm-nm",
+          "clang-resource-headers",
+          "lld",
+          "llc",
+          "llvm-ar",
+          "llvm-ranlib",
+          "llvm-readobj",
+          "llvm-objdump"
+        ]
+      },
+      {
+        "name": "objc3_facade_libraries",
+        "targets": ["clangTooling", "clangIndex", "clangCodeGen", "clangFrontend", "clangDriver"]
+      },
+      {
+        "name": "native_type_contract_tests",
+        "targets": ["ObjC3TypeContractsTests"]
+      },
+      {
+        "name": "native_editor_tools",
+        "targets": ["clangd", "clang-format"]
+      },
+      {
+        "name": "native_debugger_tools",
+        "targets": ["lldb", "lldb-server", "llvm-dwarfdump"]
+      }
+    ],
+    "distribution_components": [
+      "clang",
+      "lld",
+      "clangd",
+      "clang-format",
+      "clang-resource-headers",
+      "clang-headers",
+      "clang-cmake-exports",
+      "llvm-headers",
+      "cmake-exports",
+      "llc",
+      "llvm-ar",
+      "llvm-ranlib",
+      "llvm-readobj",
+      "llvm-objdump",
+      "lldb",
+      "lldb-server",
+      "llvm-dwarfdump",
+      "liblldb",
+      "LLVMABI",
+      "LLVMAggressiveInstCombine",
+      "LLVMAnalysis",
+      "LLVMAsmParser",
+      "LLVMAsmPrinter",
+      "LLVMBinaryFormat",
+      "LLVMBitReader",
+      "LLVMBitWriter",
+      "LLVMBitstreamReader",
+      "LLVMCFGuard",
+      "LLVMCGData",
+      "LLVMCodeGen",
+      "LLVMCodeGenTypes",
+      "LLVMCore",
+      "LLVMCoroutines",
+      "LLVMCoverage",
+      "LLVMDebugInfoBTF",
+      "LLVMDebugInfoCodeView",
+      "LLVMDebugInfoDWARF",
+      "LLVMDebugInfoDWARFLowLevel",
+      "LLVMDebugInfoGSYM",
+      "LLVMDebugInfoMSF",
+      "LLVMDebugInfoPDB",
+      "LLVMDemangle",
+      "LLVMExtensions",
+      "LLVMFrontendAtomic",
+      "LLVMFrontendDirective",
+      "LLVMFrontendDriver",
+      "LLVMFrontendHLSL",
+      "LLVMFrontendOffloading",
+      "LLVMFrontendOpenMP",
+      "LLVMGlobalISel",
+      "LLVMHipStdPar",
+      "LLVMIRPrinter",
+      "LLVMIRReader",
+      "LLVMInstCombine",
+      "LLVMInstrumentation",
+      "LLVMLTO",
+      "LLVMLinker",
+      "LLVMMC",
+      "LLVMMCDisassembler",
+      "LLVMMCParser",
+      "LLVMObjCARCOpts",
+      "LLVMObject",
+      "LLVMObjectYAML",
+      "LLVMOption",
+      "LLVMPasses",
+      "LLVMPlugins",
+      "LLVMProfileData",
+      "LLVMRemarks",
+      "LLVMSandboxIR",
+      "LLVMScalarOpts",
+      "LLVMSelectionDAG",
+      "LLVMSupport",
+      "LLVMSymbolize",
+      "LLVMTarget",
+      "LLVMTargetParser",
+      "LLVMTextAPI",
+      "LLVMTransformUtils",
+      "LLVMVectorize",
+      "LLVMWindowsDriver",
+      "LLVMX86AsmParser",
+      "LLVMX86CodeGen",
+      "LLVMX86Desc",
+      "LLVMX86Info",
+      "LLVMipo",
+      "clangAPINotes",
+      "clangAST",
+      "clangASTMatchers",
+      "clangAnalysis",
+      "clangAnalysisLifetimeSafety",
+      "clangBasic",
+      "clangCodeGen",
+      "clangDependencyScanning",
+      "clangDriver",
+      "clangEdit",
+      "clangFormat",
+      "clangFrontend",
+      "clangIndex",
+      "clangLex",
+      "clangOptions",
+      "clangParse",
+      "clangRewrite",
+      "clangScalableStaticAnalysisAnalyses",
+      "clangScalableStaticAnalysisCore",
+      "clangScalableStaticAnalysisFrontend",
+      "clangScalableStaticAnalysisSourceTransformation",
+      "clangSema",
+      "clangSerialization",
+      "clangSupport",
+      "clangTooling",
+      "clangToolingCore",
+      "clangToolingInclusions",
+      "clangUnifiedSymbolResolution"
+    ],
+    "test_suite": "clang/test/ObjC3",
+    "runtimes": [],
+    "bootstrap": false,
+    "include_tests": true,
+    "compile_jobs": 4,
+    "link_jobs": 1,
+    "test_binaries": ["tools/clang/unittests/AST/ObjC3TypeContractsTests.exe"],
+    "clangd_tidy_checks": false
+  },
+  "host_tools": {
+    "python": "3.15.0",
+    "node": "26.12.0",
+    "npm": "12.2.1",
+    "powershell": "7.6.7",
+    "cmake": "4.4.4",
+    "ninja": "1.13.2",
+    "ccache": "4.14.2",
+    "uv": "0.13.1",
+    "pip": "26.2.1",
+    "pytest": "9.1.1",
+    "jsonschema": "4.26.0"
+  },
+  "ci_actions": {
+    "actions/checkout": {
+      "tag": "v7.0.1",
+      "commit": "3d3c42e5aac5ba805825da76410c181273ba90b1"
+    },
+    "actions/configure-pages": {
+      "tag": "v6.0.0",
+      "commit": "45bfe0192ca1faeb007ade9deae92b16b8254a0d"
+    },
+    "actions/deploy-pages": {
+      "tag": "v5.0.1",
+      "commit": "368f82528645a54fb793d4d04e342629a3f51346"
+    },
+    "actions/github-script": {
+      "tag": "v9.0.0",
+      "commit": "3a2844b7e9c422d3c10d287c895573f7108da1b3"
+    },
+    "actions/jekyll-build-pages": {
+      "tag": "v1.0.13",
+      "commit": "44a6e6beabd48582f863aeeb6cb2151cc1716697"
+    },
+    "actions/setup-node": {
+      "tag": "v7.1.0",
+      "commit": "949feb2413d6458794dcd2491c4babbbce0c15c1"
+    },
+    "actions/setup-python": {
+      "tag": "v7.0.0",
+      "commit": "5fda3b95a4ea91299a34e894583c3862153e4b97"
+    },
+    "actions/upload-artifact": {
+      "tag": "v7.0.2",
+      "commit": "cf430e030ddbb5b0abf93d22962f4752f3646cd9"
+    },
+    "actions/upload-pages-artifact": {
+      "tag": "v5.0.0",
+      "commit": "fc324d3547104276b827a68afc52ff2a11cc49c9"
+    },
+    "actions/download-artifact": {
+      "tag": "v8.0.2",
+      "commit": "9000827ccba6bdab643e8b6fd33ac0654aef8333"
+    }
+  }
+}

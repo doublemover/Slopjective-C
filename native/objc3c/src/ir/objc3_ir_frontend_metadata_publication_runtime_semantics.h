@@ -1,5 +1,0 @@
-#pragma once
-
-#include "ir/objc3_ir_frontend_metadata_publication_runtime_semantics_dispatch_ownership.h"
-#include "ir/objc3_ir_frontend_metadata_publication_runtime_semantics_block_arc.h"
-#include "ir/objc3_ir_frontend_metadata_publication_runtime_semantics_error_handling.h"

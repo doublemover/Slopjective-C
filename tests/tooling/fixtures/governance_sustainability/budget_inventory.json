@@ -12,11 +12,11 @@
   },
   "measured_budget_surfaces": [
     {
-      "surface_id": "package-bridge-budget",
-      "source": "package.json:scripts",
-      "measurement_kind": "objc3c-bridge-count",
-      "current_budget_source": "scripts/ci/check_task_hygiene.py:PACKAGE_BRIDGE_BUDGET",
-      "owner_surface": "scripts/ci/check_task_hygiene.py"
+      "surface_id": "public-command-budget",
+      "source": "scripts.objc3c_workflow + package.json:scripts",
+      "measurement_kind": "bridge-and-action-count",
+      "current_budget_source": "scripts/source_hygiene/public_command_contract.py:MAX_PACKAGE_BRIDGES",
+      "owner_surface": "scripts/check_objc3c_public_command_budget.py"
     },
     {
       "surface_id": "public-workflow-action-surface",
@@ -25,10 +25,10 @@
       "owner_surface": "scripts.objc3c_workflow"
     },
     {
-      "surface_id": "package-bridge-surface",
-      "source": "package.json:scripts.objc3c",
-      "measurement_kind": "bridge-presence",
-      "owner_surface": "scripts.objc3c_workflow"
+      "surface_id": "public-command-category-surface",
+      "source": "scripts/objc3c_workflow/action_payload_category.py",
+      "measurement_kind": "registered-action-category-surface",
+      "owner_surface": "scripts/objc3c_workflow/action_payload_category.py"
     },
     {
       "surface_id": "checked-in-runbook-surface",

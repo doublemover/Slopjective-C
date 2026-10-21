@@ -1,0 +1,76 @@
+# Native Clang compiler
+
+`objc3c` is the public Linux compiler. The default CMake build uses only the
+qualified LLVM/Clang 23.1.3 frontend, with native C, C++, Objective-C and
+Objective-C++ types, ownership and ABI. The former optional migration build
+switch, custom parser/lowering and custom runtime integration have been removed.
+
+Use `python -m scripts.objc3c_toolchain build-sdk --fetch` from the repository
+root to build, test, install, qualify, archive and activate the complete SDK.
+The [root README](../../../../README.md) describes public commands and support.
+For focused frontend development against an existing qualified SDK:
+
+```sh
+sdk="$PWD/out/toolchains/objc3-development/stage-linux-x86_64"
+cmake -S native/objc3c -B out/toolchains/objc3-facade/build-linux-x86_64 -G Ninja \
+  -DOBJC3C_CLANG_FOUNDATION_ROOT="$sdk" \
+  -DCMAKE_CXX_COMPILER="$OBJC3C_BOOTSTRAP_LLVM_ROOT/bin/clang++"
+cmake --build out/toolchains/objc3-facade/build-linux-x86_64 --parallel 4
+ctest --test-dir out/toolchains/objc3-facade/build-linux-x86_64 --no-tests=error --output-on-failure
+```
+
+The standard driver supports compilation and linking, multiple translation
+units, debug information and Clang dependency options. The semantic-interface
+operations and the C embedding API share an in-process compile session. Interface
+operations take a source before normalized options; raw Clang arguments follow
+`--`. For example:
+
+```sh
+objc3c provider.m --objc3 --arc --emit-object Provider.o \
+  --emit-interface Provider.objc3i --module Provider --package example.provider \
+  -- -O2 -fblocks
+objc3c consumer.m --objc3 --arc --emit-object Consumer.o \
+  --module-search-path modules --import-module Provider FINGERPRINT example.provider \
+  --source-imports --emit-dependency-record Consumer.dependencies.json
+objc3c Consumer.o Provider.o -o application
+```
+
+The installed `share/objc3c/examples/managed/build.py` provides a source-built
+provider/consumer workflow. It compiles the MRC implementation, derives an ARC
+interface from exported declarations, and compiles an ARC consumer against the
+locked identity. Clang depfiles and content hashes control incremental reuse;
+the consumer emits a v2 semantic dependency record. The installed `qualify.py`
+checks O0/O2 builds, implementation versus API invalidation, preserved timestamps,
+damaged artifacts, reproducible dependency records and rejected package,
+fingerprint and ownership locks outside the checkout.
+
+Installed frontends discover their adjacent SDK or accept `--sdk-root`. Driver
+and resource content hashes must match the SDK linked into the frontend. The
+C API's `compiler_sdk_root` selects the same verified relocation. Installed
+`objc3c::Frontend` and `objc3c::RuntimeServices` CMake targets provide explicit
+embedding and independent native service libraries. Clang C++ implementation
+types do not cross the C embedding API.
+
+Public capability claims follow
+[`schemas/objc3-language-capabilities.json`](../../../../schemas/objc3-language-capabilities.json).
+`defer` is qualified for Linux x86-64/GNUstep 2.0/compatibility under ARC and
+MRC. Optional/Result, synchronous typed errors and match fixtures remain bounded
+native migration facilities; their complete public syntax is pending.
+
+The native typed-error milestone includes direct `try?` initialization of strong
+ARC object and Block Optional locals, plus strong Block payloads in direct
+Optional/Result local construction. Presence queries borrow the active tag.
+O0/O2 runtime cases exercise retained and autoreleased returns, callbacks,
+throwing Blocks, C++ members, Objective-C messages, failure arms and native
+exception cleanup. MRC managed `try?`, weak/unsafe Block carriers, managed carrier
+assignment, implicit copy, by-value return and nested managed payloads remain
+outside this slice.
+
+Explicit `__objc3_copy`/`__objc3_move` construction of Objective-C++ ARC locals
+uses native strong, weak and unsafe object initialization and strong Block
+initialization. The source is evaluated once and only its active arm is read.
+Mutable strong/weak moves clear the source payload while retaining its tag;
+const strong moves copy the payload. IR/PCH, O0/O2 ownership/unwind execution,
+installed typed-error/transfer consumers and live clangd probes qualify this
+bounded construction contract.
+The editor and interface consumers use the same sealed SDK and Linux target.

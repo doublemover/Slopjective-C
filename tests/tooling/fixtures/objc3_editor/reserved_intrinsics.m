@@ -1,0 +1,40 @@
+#define throws(value) (value)
+typedef __objc3_optional( int ) MaybeInt;
+@protocol Probe
+- (int)async:(int)async throws:(int)state;
+@end
+int async(int value){return throws(value);}
+void exercise(void){__objc3_some( int,0); __objc3_none( int );__objc3_has_value(__objc3_none( int ));}
+typedef __objc3_result( int,long ) IntOrLong;
+int scalar_match(int input){MaybeInt maybe=__objc3_some(int,input);IntOrLong outcome=__objc3_ok(int,long,input);int selected=0;
+__objc3_match_stmt(maybe){case __objc3_case_some(let payload):{selected=throws(payload);}case __objc3_case_none:{selected=0;}}
+__objc3_match_stmt(outcome){case .Ok(let success):{selected+=success;}case .Err(let error):{selected+=(int)error;}}
+return __objc3_is_ok(outcome)?selected:async(input);}
+
+@protocol Error @end
+@protocol MessageProbe
+- (int)checked:(int)value __objc3_throws(id<Error>);
+@end
+int message_probe(id<MessageProbe> receiver){return __objc3_try_force([receiver checked:0]);}
+
+void defer_probe(int *value) { defer { ++*value; } }
+
+id managed_probe(id value) __objc3_throws(id<Error>);
+typedef void (^Action)(void);
+Action managed_action(void) __objc3_throws(id<Error>);
+void managed_optional_probe(id input) {
+  __objc3_optional(id) object = __objc3_try_optional(managed_probe(input));
+  __objc3_optional(Action) action = __objc3_try_optional(managed_action());
+  (void)__objc3_has_value(object);
+  (void)__objc3_has_value(action);
+}
+
+#ifdef __cplusplus
+void managed_transfer_probe(id input) {
+  __objc3_optional(id) source = __objc3_some(id, input);
+  __objc3_optional(id) copied = __objc3_copy(source);
+  __objc3_optional(id) moved = __objc3_move(copied);
+  (void)__objc3_has_value(copied);
+  (void)__objc3_has_value(moved);
+}
+#endif

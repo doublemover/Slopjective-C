@@ -1,0 +1,25 @@
+{
+  "schema_version": 1,
+  "contract_id": "objc3c.typed_throws.interface_mismatch_negative.v1",
+  "issue_ref": 8233,
+  "fixture_role": "negative_contract",
+  "source_surface": "throws(E)",
+  "unsupported_claim": "typed-throws-interface-erasure",
+  "expected_failure": {
+    "throws_kind": "typed",
+    "typed_payload_arity": 1,
+    "declared_error_type_must_match_payload": true,
+    "silent_erasure_allowed": false,
+    "mismatch_diagnostic": "O3IFC8238"
+  },
+  "rejected_drift_examples": [
+    "throws_kind=untyped with declared_error_type=id<Error> for a typed source payload",
+    "typed_payload_arity=0 for throws(E)",
+    "declared_error_type changed from source canonical payload spelling"
+  ],
+  "owned_boundaries": [
+    "native/objc3c/src/artifacts/objc3_frontend_textual_interface_payload_artifact.cpp",
+    "native/objc3c/src/artifacts/objc3_frontend_textual_interface_payload_import.cpp",
+    "schemas/objc3c-standalone-textual-interface-payload-v1.schema.json"
+  ]
+}

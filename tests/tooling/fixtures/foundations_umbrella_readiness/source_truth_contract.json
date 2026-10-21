@@ -1,0 +1,256 @@
+{
+  "contract_id": "objc3c.foundations.umbrella_readiness.source_truth.v1",
+  "schema_version": 1,
+  "issue": "OBJ3-NEXT-FOUNDATIONS-UMBRELLA-READINESS",
+  "schema_path": "schemas/objc3c-foundations-umbrella-source-truth-v1.schema.json",
+  "source_path": "tests/tooling/fixtures/foundations_umbrella_readiness/source_truth_contract.json",
+  "roadmap_issue_refs": [
+    8238,
+    8208,
+    8213
+  ],
+  "claim_policy": {
+    "local_temp_source_truth_allowed": false,
+    "generated_output_source_truth_allowed": false,
+    "fallback_success_allowed": false,
+    "wrapper_only_action_allowed": false,
+    "public_commands_must_resolve_to_action_catalog": true,
+    "capability_rows_must_match_matrix": true,
+    "umbrella_projection_must_reference_source_contract": true
+  },
+  "schema_contracts": [
+    {
+      "schema_id": "objc3c-standalone-textual-interface-payload-v1",
+      "path": "schemas/objc3c-standalone-textual-interface-payload-v1.schema.json",
+      "required_by": [
+        8238
+      ]
+    },
+    {
+      "schema_id": "objc3c-umbrella-readiness-v1",
+      "path": "schemas/objc3c-umbrella-readiness-v1.schema.json",
+      "required_by": [
+        8208
+      ]
+    },
+    {
+      "schema_id": "objc3c-advanced-runtime-executable-contract-v1",
+      "path": "schemas/objc3c-advanced-runtime-executable-contract-v1.schema.json",
+      "required_by": [
+        8213
+      ]
+    },
+    {
+      "schema_id": "objc3c-foundations-umbrella-source-truth-v1",
+      "path": "schemas/objc3c-foundations-umbrella-source-truth-v1.schema.json",
+      "required_by": [
+        8238,
+        8208,
+        8213
+      ]
+    }
+  ],
+  "capability_truth_rows": [
+    {
+      "capability_id": "modules.standalone-textual-interface-payload",
+      "expected_state": "implemented",
+      "evidence_paths": [
+        "schemas/objc3c-standalone-textual-interface-payload-v1.schema.json",
+        "tests/tooling/fixtures/module_interfaces/standalone_textual_interface_payload.json",
+        "scripts/check_objc3c_standalone_textual_interface_payload.py",
+        "native/objc3c/src/artifacts/objc3_frontend_textual_interface_payload_artifact.cpp",
+        "native/objc3c/src/artifacts/objc3_frontend_textual_interface_payload_import.cpp"
+      ],
+      "required_public_commands": [
+        "npm run objc3c -- validate-standalone-textual-interface-payload"
+      ]
+    },
+    {
+      "capability_id": "capability.governance.umbrella-readiness",
+      "expected_state": "internal",
+      "evidence_paths": [
+        "schemas/objc3c-umbrella-readiness-v1.schema.json",
+        "docs/support/umbrella_readiness.json",
+        "scripts/capability_docs_validator/umbrella_readiness.py",
+        "scripts/check_objc3c_umbrella_readiness.py",
+        "scripts/objc3c_workflow/action_catalog_core_documentation_validation.py",
+        "scripts/objc3c_workflow/action_handlers_core_documentation_validation.py"
+      ],
+      "required_public_commands": [
+        "npm run objc3c -- validate-umbrella-readiness"
+      ]
+    },
+    {
+      "capability_id": "language.advanced-runtime-closure",
+      "expected_state": "implemented",
+      "evidence_paths": [
+        "schemas/objc3c-advanced-runtime-executable-contract-v1.schema.json",
+        "tests/tooling/fixtures/advanced_runtime_closure/native_artifact_contract.json",
+        "tests/tooling/fixtures/advanced_runtime_closure/executable_runtime_contract_surfaces.json",
+        "tests/tooling/fixtures/advanced_runtime_closure/advanced_runtime_integration_closure_contract.json",
+        "scripts/check_objc3c_advanced_runtime_closure.py"
+      ],
+      "required_public_commands": [
+        "npm run objc3c -- validate-advanced-runtime-closure"
+      ]
+    }
+  ],
+  "canonical_fixtures": [
+    {
+      "fixture_id": "standalone-textual-interface-positive",
+      "path": "tests/tooling/fixtures/module_interfaces/standalone_textual_interface_payload.json",
+      "issue_refs": [
+        8238,
+        8208
+      ],
+      "capability_id": "modules.standalone-textual-interface-payload"
+    },
+    {
+      "fixture_id": "advanced-runtime-native-artifact-contract",
+      "path": "tests/tooling/fixtures/advanced_runtime_closure/native_artifact_contract.json",
+      "issue_refs": [
+        8213,
+        8208
+      ],
+      "capability_id": "language.advanced-runtime-closure"
+    },
+    {
+      "fixture_id": "advanced-runtime-executable-contract",
+      "path": "tests/tooling/fixtures/advanced_runtime_closure/executable_runtime_contract_surfaces.json",
+      "issue_refs": [
+        8213,
+        8208
+      ],
+      "capability_id": "language.advanced-runtime-closure"
+    },
+    {
+      "fixture_id": "advanced-runtime-integration-closure",
+      "path": "tests/tooling/fixtures/advanced_runtime_closure/advanced_runtime_integration_closure_contract.json",
+      "issue_refs": [
+        8213,
+        8208
+      ],
+      "capability_id": "language.advanced-runtime-closure"
+    }
+  ],
+  "workflow_action_contracts": [
+    {
+      "action": "validate-standalone-textual-interface-payload",
+      "command": "npm run objc3c -- validate-standalone-textual-interface-payload",
+      "backend": "python:scripts/check_objc3c_standalone_textual_interface_payload.py",
+      "owner_surface": "scripts/objc3c_workflow/actions/runtime_runnable_interop.py",
+      "required_by": [
+        "modules.standalone-textual-interface-payload"
+      ],
+      "wrapper_only": false
+    },
+    {
+      "action": "validate-umbrella-readiness",
+      "command": "npm run objc3c -- validate-umbrella-readiness",
+      "backend": "python:scripts/check_objc3c_umbrella_readiness.py --check",
+      "owner_surface": "scripts/objc3c_workflow/actions/docs_documentation.py",
+      "required_by": [
+        "capability.governance.umbrella-readiness"
+      ],
+      "wrapper_only": false
+    },
+    {
+      "action": "validate-advanced-runtime-closure",
+      "command": "npm run objc3c -- validate-advanced-runtime-closure",
+      "backend": "python:scripts/check_objc3c_advanced_runtime_closure.py",
+      "owner_surface": "scripts/objc3c_workflow/action_catalog_runtime_architecture.py",
+      "required_by": [
+        "language.advanced-runtime-closure"
+      ],
+      "wrapper_only": false
+    },
+    {
+      "action": "validate-foundations-umbrella-source-truth",
+      "command": "npm run objc3c -- validate-foundations-umbrella-source-truth",
+      "backend": "python:scripts/check_objc3c_foundations_umbrella_source_truth.py",
+      "owner_surface": "scripts/objc3c_workflow/actions/docs_documentation.py",
+      "required_by": [
+        "modules.standalone-textual-interface-payload",
+        "capability.governance.umbrella-readiness",
+        "language.advanced-runtime-closure"
+      ],
+      "wrapper_only": false
+    }
+  ],
+  "umbrella_readiness_contract": {
+    "source_path": "docs/support/umbrella_readiness.json",
+    "projection_path": "docs/support/umbrella_readiness.md",
+    "validator": "scripts/check_objc3c_umbrella_readiness.py",
+    "projection_authoritative_data_must_include": [
+      "tests/tooling/fixtures/foundations_umbrella_readiness/source_truth_contract.json"
+    ],
+    "required_entry_capability_ids": [
+      "runtime.object-model.full-realization",
+      "language.advanced-runtime-closure",
+      "language.evolution.umbrella-alignment"
+    ],
+    "ready_entry_capability_ids": [
+      "language.advanced-runtime-closure"
+    ],
+    "blocked_entry_capability_ids": [
+      "runtime.object-model.full-realization",
+      "language.evolution.umbrella-alignment"
+    ]
+  },
+  "negative_case_contracts": [
+    {
+      "case_id": "stale-schema",
+      "surface": "standalone-textual-interface",
+      "source": "scripts/check_objc3c_standalone_textual_interface_payload.py",
+      "expected_failure": "schema validation failed before payload import"
+    },
+    {
+      "case_id": "unlocked-import",
+      "surface": "standalone-textual-interface",
+      "source": "scripts/check_objc3c_standalone_textual_interface_payload.py",
+      "expected_failure": "package lock/trust identity required"
+    },
+    {
+      "case_id": "hidden-declaration",
+      "surface": "standalone-textual-interface",
+      "source": "scripts/check_objc3c_standalone_textual_interface_payload.py",
+      "expected_failure": "implementation declarations remain reserved metadata"
+    },
+    {
+      "case_id": "count-drift",
+      "surface": "standalone-textual-interface",
+      "source": "scripts/check_objc3c_standalone_textual_interface_payload.py",
+      "expected_failure": "source_counts drift is fail-closed"
+    },
+    {
+      "case_id": "reserved-roundtrip",
+      "surface": "standalone-textual-interface",
+      "source": "scripts/check_objc3c_standalone_textual_interface_payload.py",
+      "expected_failure": "reserved importer status cannot pass as supported"
+    },
+    {
+      "case_id": "generated-source-path",
+      "surface": "umbrella-readiness",
+      "source": "scripts/capability_docs_validator/umbrella_readiness.py",
+      "expected_failure": "temp, generated, build, and dist paths cannot satisfy readiness evidence"
+    },
+    {
+      "case_id": "unregistered-public-command",
+      "surface": "workflow-action",
+      "source": "scripts/capability_docs_validator/umbrella_readiness.py",
+      "expected_failure": "satisfied public commands must resolve to ACTION_SPECS"
+    },
+    {
+      "case_id": "capability-state-drift",
+      "surface": "capability-truth",
+      "source": "scripts/check_objc3c_foundations_umbrella_source_truth.py",
+      "expected_failure": "contract expected_state must match docs/support/capability_matrix.json"
+    },
+    {
+      "case_id": "advanced-runtime-readiness-regression",
+      "surface": "advanced-runtime-closure",
+      "source": "docs/support/umbrella_readiness.json",
+      "expected_failure": "implemented advanced runtime closure must remain ready and blocker-free"
+    }
+  ]
+}

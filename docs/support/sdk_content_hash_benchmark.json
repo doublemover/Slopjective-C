@@ -1,0 +1,27 @@
+{
+  "sdk_seal": "434f74c020ad0c61cd7a2d9e260c1a2442bd66fb1d10daf787d6b05a80d485eb",
+  "driver_bytes": 181952160,
+  "concurrent_work": "LLVM compilation with four jobs",
+  "seconds": {
+    "portable": [
+      2.6625638370023808, 2.027439540997875, 1.9099628900003154, 2.1495382790017175,
+      2.2209274000015284
+    ],
+    "hardware": [
+      0.26956467399941175, 0.3032245819995296, 0.294051410000975, 0.27885082400098327,
+      0.3465394960003323
+    ]
+  },
+  "median_seconds": {
+    "portable": 2.1495382790017175,
+    "hardware": 0.294051410000975
+  },
+  "speedup": 7.310076421652221,
+  "schema": "objc3.sdk.hash-performance.v1",
+  "algorithm": "SHA-256",
+  "scope": "Complete SDK driver and resource content verification; interleaved warm measurements under an unrelated four-job LLVM build.",
+  "portable_implementation_commit": "9663a6fcc",
+  "crypto_library": "OpenSSL 3.5.7 9 Jun 2026 (Library: OpenSSL 3.5.7 9 Jun 2026)",
+  "harness_sha256": "1bf5d91abed76db648ab23942874f1c537e0d728daf16e43a40c23013c864f59",
+  "harness": "scripts/benchmarks/sdk_content_hash.cpp"
+}

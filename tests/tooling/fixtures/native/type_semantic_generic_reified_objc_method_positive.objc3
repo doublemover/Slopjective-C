@@ -1,0 +1,29 @@
+module TypeSemanticGenericReifiedObjcMethodPositive;
+
+@protocol Persistable
+@end
+
+@interface SemanticBox <Persistable>
+@property (readonly) id title;
+@end
+
+@implementation SemanticBox
+@end
+
+@interface ReifiedGenericMethodVault
+@reify_generics
+- <T : id<Persistable>> (T)echo:(T)value;
+@end
+
+@implementation ReifiedGenericMethodVault
+@reify_generics
+- <T : id<Persistable>> (T)echo:(T)value {
+  return value;
+}
+@end
+
+fn consumeReifiedGenericObjcMethod(vault: ReifiedGenericMethodVault *?, box: SemanticBox *?) -> i32 {
+  let record = [vault? echo:box];
+  let title = [record? title];
+  return 0;
+}

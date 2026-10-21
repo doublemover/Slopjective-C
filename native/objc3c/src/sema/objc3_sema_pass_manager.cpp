@@ -1,5 +1,0 @@
-#include "sema/objc3_sema_pass_manager_execution.inc"
-#include "sema/objc3_sema_pass_manager_type_metadata_handoff.inc"
-#include "sema/objc3_sema_pass_manager_parity_publication.inc"
-#include "sema/objc3_sema_pass_manager_parity_validation.inc"
-#include "sema/objc3_sema_pass_manager_closeout_signoff.inc"

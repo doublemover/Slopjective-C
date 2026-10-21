@@ -16,3 +16,4 @@ class EvidenceOwner:
 class EvidenceFamily:
     boundary_inventory: str
     owners: tuple[EvidenceOwner, ...]
+    additional_source_owner_policy: tuple[tuple[str, object], ...] = ()

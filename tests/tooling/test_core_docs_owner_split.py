@@ -94,9 +94,11 @@ def test_core_docs_catalog_preserves_owner_aggregation() -> None:
         "format-markdown",
         "lint-markdown",
         "validate-umbrella-readiness",
+        "validate-foundations-umbrella-source-truth",
     )
     assert "check-public-command-budget" in CORE_DOCS_ACTION_SPECS
     assert "validate-umbrella-readiness" in CORE_DOCS_ACTION_SPECS
+    assert "validate-foundations-umbrella-source-truth" in CORE_DOCS_ACTION_SPECS
 
 
 def test_core_docs_child_catalogs_use_owner_constants() -> None:
@@ -175,6 +177,10 @@ def test_core_docs_public_commands_and_paths_are_explicit_owner_surface() -> Non
     assert docs_documentation.CHECK_NATIVE_DOCS_ACTION == "check-native-docs"
     assert docs_documentation.VALIDATE_UMBRELLA_READINESS_ACTION == "validate-umbrella-readiness"
     assert (
+        docs_documentation.VALIDATE_FOUNDATIONS_UMBRELLA_SOURCE_TRUTH_ACTION
+        == "validate-foundations-umbrella-source-truth"
+    )
+    assert (
         docs_public_commands.CHECK_PUBLIC_COMMAND_BUDGET_ACTION
         == "check-public-command-budget"
     )
@@ -196,4 +202,7 @@ def test_core_docs_public_commands_and_paths_are_explicit_owner_surface() -> Non
 
     assert docs_documentation.VALIDATE_UMBRELLA_READINESS_COMMAND[1] == (
         "scripts/check_objc3c_umbrella_readiness.py"
+    )
+    assert docs_documentation.VALIDATE_FOUNDATIONS_UMBRELLA_SOURCE_TRUTH_COMMAND[1] == (
+        "scripts/check_objc3c_foundations_umbrella_source_truth.py"
     )

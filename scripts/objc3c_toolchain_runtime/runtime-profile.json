@@ -1,0 +1,72 @@
+{
+  "schema_version": 1,
+  "profiles": {
+    "windows-x86_64": {
+      "target_triple": "x86_64-pc-windows-msvc",
+      "runtime_family": "libobjc2",
+      "runtime_release": "2.3",
+      "runtime_commit": "e877e782fb965c4e870d2ecf6aff58dddc6290ae",
+      "runtime_source": "https://github.com/gnustep/libobjc2.git",
+      "objc_abi_flag": "-fobjc-runtime=gnustep-2.0",
+      "robin_map_release": "v1.4.0",
+      "robin_map_commit": "4ec1bf19c6a96125ea22062f38c2cf5b958e448e",
+      "robin_map_source": "https://github.com/Tessil/robin-map.git",
+      "blocks_provider": "libobjc2-embedded",
+      "runtime_build_drivers": [
+        "clang.exe",
+        "clang++.exe"
+      ],
+      "runtime_linker": "lld-link.exe",
+      "runtime_generator": "Ninja",
+      "runtime_toolset": "Visual Studio 2022 v143",
+      "v143_toolset_version": "14.44.35207",
+      "llvm_stage0_version": "23.1.3",
+      "llvm_stage0_commit": "0d261d1ca552c95a8f007e061c787ac7132fbcbc",
+      "cmake_version": "4.4.4",
+      "ninja_version": "1.13.2",
+      "windows_sdk_version": "10.0.26100.0",
+      "runtime_crt": "UCRT dynamic",
+      "client_drivers": [
+        "clang.exe",
+        "clang++.exe",
+        "clang-cl.exe"
+      ],
+      "runtime_build_with_clang_cl": false,
+      "foundation_required_for_runtime_fixture": false
+    },
+    "linux-x86_64": {
+      "target_triple": "x86_64-unknown-linux-gnu",
+      "runtime_family": "libobjc2",
+      "runtime_release": "2.3",
+      "runtime_commit": "e877e782fb965c4e870d2ecf6aff58dddc6290ae",
+      "objc_abi_flag": "-fobjc-runtime=gnustep-2.0",
+      "blocks_provider": "libobjc2-embedded",
+      "runtime_build_with_clang_cl": false,
+      "foundation_required_for_runtime_fixture": false,
+      "runtime_source": "https://github.com/gnustep/libobjc2.git",
+      "robin_map_release": "v1.4.1",
+      "robin_map_commit": "bd14e6830a1474fed9d2d03f5c3b0683d818d540",
+      "robin_map_source": "https://github.com/Tessil/robin-map.git",
+      "llvm_stage0_version": "23.1.3",
+      "llvm_stage0_commit": "0d261d1ca552c95a8f007e061c787ac7132fbcbc",
+      "cmake_version": "4.4.4",
+      "ninja_version": "1.13.2",
+      "runtime_build_drivers": [
+        "clang",
+        "clang++"
+      ],
+      "runtime_linker": "ld.lld",
+      "runtime_generator": "Ninja",
+      "glibc_minimum": "2.41",
+      "libstdcxx_symbol_minimum": "GLIBCXX_3.4.33"
+    },
+    "macos-arm64": {
+      "target_triple": "arm64-apple-macosx",
+      "runtime_family": "apple-system-libobjc",
+      "runtime_release": "system-sdk",
+      "objc_abi_flag": "platform default",
+      "blocks_provider": "apple-system",
+      "foundation_required_for_runtime_fixture": false
+    }
+  }
+}

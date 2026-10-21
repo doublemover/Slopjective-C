@@ -57,7 +57,7 @@ fn main() -> i32 {
   let descriptor_array = objc3_runtime_stdlib_collections_array3_descriptor_i32(array_descriptor, 1, 2, 3, 3);
   let descriptor_map = objc3_runtime_stdlib_collections_map_entry_descriptor_i32(map_descriptor, 3, 30);
   let descriptor_set = objc3_runtime_stdlib_collections_set3_descriptor_i32(set_descriptor, 1, 1, 2, 3);
-  return 272
+  return 16
     + array_handle
     - array_handle
     + objc3_runtime_stdlib_collections_array_count_i32(array_handle)

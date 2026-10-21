@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 from .model import (
+    LOCAL_DEPENDENCY_RESOLUTION,
+    LOCAL_DEPENDENCY_SOURCE,
     LOCAL_PACKAGE_ABI_IDENTITY,
     LOCAL_PACKAGE_LANGUAGE_VERSION,
     LOCAL_PACKAGE_TRUST_KEY_ID,
@@ -11,6 +13,7 @@ from .model import (
     PackageManagerPaths,
     build_lock_components,
     cache_payload_from_mirror_package,
+    collect_dependency_source_authority_failures,
     collect_lock_model_failures,
     default_trust_policy_payload,
     file_digest,
@@ -27,6 +30,13 @@ from .operations import (
     package_operation_plan,
     package_operation_receipt,
 )
+from .network_publication import (
+    NETWORK_DEPENDENCY_RESOLUTION_CONTRACT_ID,
+    PACKAGE_RELEASE_CHANNEL_PUBLICATION_CONTRACT_ID,
+    collect_package_network_publication_failures,
+    collect_package_network_resolution_failures,
+    collect_package_release_channel_publication_failures,
+)
 from .trust import (
     LOCAL_PACKAGE_SIGNING_BACKEND,
     LOCAL_PACKAGE_TRUST_ROOT_ID,
@@ -34,27 +44,37 @@ from .trust import (
     SIGNATURE_ENVELOPE_CONTRACT_ID,
     collect_manifest_trust_failures,
     collect_signature_envelope_failures,
+    collect_trust_policy_failures,
     production_signing_reserved_diagnostic,
     sign_manifest_trust_envelope,
 )
 
 __all__ = [
     "LOCAL_PACKAGE_ABI_IDENTITY",
+    "LOCAL_DEPENDENCY_RESOLUTION",
+    "LOCAL_DEPENDENCY_SOURCE",
     "LOCAL_PACKAGE_LANGUAGE_VERSION",
     "LOCAL_PACKAGE_TRUST_KEY_ID",
     "PACKAGE_MANAGER_TAMPER_CODE",
     "PACKAGE_MANIFEST_CONTRACT_ID",
+    "NETWORK_DEPENDENCY_RESOLUTION_CONTRACT_ID",
     "PACKAGE_OPERATION_PLAN_CONTRACT_ID",
     "PACKAGE_OPERATION_RECEIPT_CONTRACT_ID",
+    "PACKAGE_RELEASE_CHANNEL_PUBLICATION_CONTRACT_ID",
     "PackageManagerPaths",
     "PackageOperationError",
     "PackageOperationRequest",
     "build_lock_components",
     "cache_payload_from_mirror_package",
+    "collect_dependency_source_authority_failures",
     "collect_lock_model_failures",
     "collect_manifest_trust_failures",
+    "collect_package_network_publication_failures",
+    "collect_package_network_resolution_failures",
     "collect_package_operation_failures",
+    "collect_package_release_channel_publication_failures",
     "collect_signature_envelope_failures",
+    "collect_trust_policy_failures",
     "default_trust_policy_payload",
     "file_digest",
     "LOCAL_PACKAGE_SIGNING_BACKEND",

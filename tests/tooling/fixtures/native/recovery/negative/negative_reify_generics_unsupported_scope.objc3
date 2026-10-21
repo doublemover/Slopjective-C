@@ -1,0 +1,9 @@
+// Negative fixture: @reify_generics is declaration-scoped and only applies to
+// generic callable declarations.
+// Expected diagnostic code(s): O3P114.
+module NegativeReifyGenericsUnsupportedScope;
+
+@interface ReifyScopeProbe
+@reify_generics
+@property (readonly) id value;
+@end

@@ -4,30 +4,246 @@
   "title": "objc3c Package Channels Manifest",
   "type": "object",
   "additionalProperties": false,
+  "allOf": [
+    {
+      "if": {
+        "required": ["sanitizer_variant"],
+        "properties": { "sanitizer_variant": { "const": "release" } }
+      },
+      "then": {
+        "properties": {
+          "package_id": {
+            "enum": [
+              "org.objc3c.runtime:objc3c-runtime-release",
+              "org.objc3c.runtime:objc3c-runtime-linux-x64-release",
+              "org.objc3c.runtime:objc3c-runtime-darwin-arm64-release"
+            ]
+          },
+          "package_channel_id": {
+            "enum": [
+              "windows-x64-release",
+              "linux-x64-release",
+              "darwin-arm64-release"
+            ]
+          },
+          "payload_contract": {
+            "properties": {
+              "required_entries": {
+                "not": {
+                  "contains": {
+                    "enum": [
+                      "share/objc3c/sanitizer/asan-metadata.json",
+                      "share/objc3c/sanitizer/ubsan-metadata.json",
+                      "share/objc3c/sanitizer/asan-runtime-libraries.json",
+                      "share/objc3c/sanitizer/ubsan-runtime-libraries.json",
+                      "artifacts/runtime/sanitizer/address/clang_rt.asan_dynamic-x86_64.dll",
+                      "artifacts/runtime/sanitizer/address/clang_rt.asan_dynamic-x86_64.lib",
+                      "artifacts/runtime/sanitizer/address/clang_rt.asan_dynamic_runtime_thunk-x86_64.lib",
+                      "artifacts/runtime/sanitizer/undefined/clang_rt.ubsan_standalone-x86_64.lib",
+                      "artifacts/runtime/sanitizer/undefined/clang_rt.ubsan_standalone_cxx-x86_64.lib"
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "required": ["sanitizer_variant", "platform_id"],
+        "properties": {
+          "sanitizer_variant": { "const": "release" },
+          "platform_id": { "const": "windows-x64" }
+        }
+      },
+      "then": {
+        "properties": {
+          "package_id": { "const": "org.objc3c.runtime:objc3c-runtime-release" },
+          "package_channel_id": { "const": "windows-x64-release" },
+          "payload_contract": {
+            "properties": {
+              "target_platform_id": { "const": "windows-x64" }
+            }
+          },
+          "receipt_contracts": {
+            "properties": {
+              "install_receipt": { "$ref": "#/$defs/windowsReleaseReceiptContract" },
+              "offline_install_receipt": { "$ref": "#/$defs/windowsReleaseReceiptContract" }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "required": ["sanitizer_variant", "platform_id"],
+        "properties": {
+          "sanitizer_variant": { "const": "release" },
+          "platform_id": { "const": "linux-x64" }
+        }
+      },
+      "then": {
+        "properties": {
+          "package_id": { "const": "org.objc3c.runtime:objc3c-runtime-linux-x64-release" },
+          "package_channel_id": { "const": "linux-x64-release" },
+          "payload_contract": {
+            "properties": {
+              "target_platform_id": { "const": "linux-x64" }
+            }
+          },
+          "receipt_contracts": {
+            "properties": {
+              "install_receipt": { "$ref": "#/$defs/linuxReleaseReceiptContract" },
+              "offline_install_receipt": { "$ref": "#/$defs/linuxReleaseReceiptContract" }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "required": ["sanitizer_variant", "platform_id"],
+        "properties": {
+          "sanitizer_variant": { "const": "release" },
+          "platform_id": { "const": "darwin-arm64" }
+        }
+      },
+      "then": {
+        "properties": {
+          "package_id": { "const": "org.objc3c.runtime:objc3c-runtime-darwin-arm64-release" },
+          "package_channel_id": { "const": "darwin-arm64-release" },
+          "payload_contract": {
+            "properties": {
+              "target_platform_id": { "const": "darwin-arm64" }
+            }
+          },
+          "receipt_contracts": {
+            "properties": {
+              "install_receipt": { "$ref": "#/$defs/darwinReleaseReceiptContract" },
+              "offline_install_receipt": { "$ref": "#/$defs/darwinReleaseReceiptContract" }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "required": ["sanitizer_variant"],
+        "properties": { "sanitizer_variant": { "const": "address" } }
+      },
+      "then": {
+        "properties": {
+          "platform_id": { "const": "windows-x64" },
+          "package_id": { "const": "org.objc3c.runtime:objc3c-runtime-asan" },
+          "package_channel_id": { "const": "windows-x64-sanitizer-asan" },
+          "payload_contract": {
+            "properties": {
+              "target_platform_id": { "const": "windows-x64" },
+              "required_entries": {
+                "allOf": [
+                  { "contains": { "const": "share/objc3c/sanitizer/asan-metadata.json" } },
+                  { "contains": { "const": "share/objc3c/sanitizer/asan-runtime-libraries.json" } },
+                  { "contains": { "const": "artifacts/runtime/sanitizer/address/clang_rt.asan_dynamic-x86_64.dll" } },
+                  { "contains": { "const": "artifacts/runtime/sanitizer/address/clang_rt.asan_dynamic-x86_64.lib" } },
+                  { "contains": { "const": "artifacts/runtime/sanitizer/address/clang_rt.asan_dynamic_runtime_thunk-x86_64.lib" } }
+                ]
+              }
+            }
+          },
+          "receipt_contracts": {
+            "properties": {
+              "install_receipt": { "$ref": "#/$defs/addressSanitizerReceiptContract" },
+              "offline_install_receipt": { "$ref": "#/$defs/addressSanitizerReceiptContract" }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "required": ["sanitizer_variant"],
+        "properties": { "sanitizer_variant": { "const": "undefined" } }
+      },
+      "then": {
+        "properties": {
+          "platform_id": { "const": "windows-x64" },
+          "package_id": { "const": "org.objc3c.runtime:objc3c-runtime-ubsan" },
+          "package_channel_id": { "const": "windows-x64-sanitizer-ubsan" },
+          "payload_contract": {
+            "properties": {
+              "target_platform_id": { "const": "windows-x64" },
+              "required_entries": {
+                "allOf": [
+                  { "contains": { "const": "share/objc3c/sanitizer/ubsan-metadata.json" } },
+                  { "contains": { "const": "share/objc3c/sanitizer/ubsan-runtime-libraries.json" } },
+                  { "contains": { "const": "artifacts/runtime/sanitizer/undefined/clang_rt.ubsan_standalone-x86_64.lib" } },
+                  { "contains": { "const": "artifacts/runtime/sanitizer/undefined/clang_rt.ubsan_standalone_cxx-x86_64.lib" } }
+                ]
+              }
+            }
+          },
+          "receipt_contracts": {
+            "properties": {
+              "install_receipt": { "$ref": "#/$defs/undefinedSanitizerReceiptContract" },
+              "offline_install_receipt": { "$ref": "#/$defs/undefinedSanitizerReceiptContract" }
+            }
+          }
+        }
+      }
+    }
+  ],
   "required": [
     "contract_id",
     "generated_at_utc",
     "status",
     "platform_id",
+    "package_id",
+    "package_channel_id",
+    "sanitizer_variant",
     "package_root",
     "platform_support_matrix",
     "supported_platform_ids",
     "support_tiers",
+    "package_runtime_models",
     "implemented_channels",
     "interop_loader_metadata",
     "installer_signature",
     "archive_digests",
     "payload_contract",
     "receipt_contracts",
+    "reusable_runnable_package_identity_contract",
     "portable_archive",
     "installer_archive",
-    "offline_archive"
+    "offline_archive",
+    "support_truth",
+    "native_execution_claimed"
   ],
   "properties": {
     "contract_id": { "const": "objc3c.packaging.channels.summary.v1" },
     "generated_at_utc": { "type": "string" },
     "status": { "const": "PASS" },
-    "platform_id": { "type": "string" },
+    "platform_id": { "enum": ["windows-x64", "linux-x64", "darwin-arm64"] },
+    "package_id": {
+      "enum": [
+        "org.objc3c.runtime:objc3c-runtime-release",
+        "org.objc3c.runtime:objc3c-runtime-linux-x64-release",
+        "org.objc3c.runtime:objc3c-runtime-darwin-arm64-release",
+        "org.objc3c.runtime:objc3c-runtime-asan",
+        "org.objc3c.runtime:objc3c-runtime-ubsan"
+      ]
+    },
+    "package_channel_id": {
+      "enum": [
+        "windows-x64-release",
+        "linux-x64-release",
+        "darwin-arm64-release",
+        "windows-x64-sanitizer-asan",
+        "windows-x64-sanitizer-ubsan"
+      ]
+    },
+    "sanitizer_variant": { "enum": ["release", "address", "undefined"] },
     "package_root": { "type": "string" },
     "platform_support_matrix": { "type": "string" },
     "supported_platform_ids": {
@@ -39,6 +255,9 @@
       "type": "array",
       "items": { "$ref": "#/$defs/supportTier" },
       "minItems": 1
+    },
+    "package_runtime_models": {
+      "$ref": "#/$defs/packageRuntimeModels"
     },
     "implemented_channels": {
       "type": "array",
@@ -62,9 +281,15 @@
     "receipt_contracts": {
       "$ref": "#/$defs/receiptContracts"
     },
+    "reusable_runnable_package_identity_contract": {
+      "$ref": "#/$defs/reusableRunnablePackageIdentityContract"
+    },
     "portable_archive": { "type": "string" },
     "installer_archive": { "type": "string" },
-    "offline_archive": { "type": "string" }
+    "offline_archive": { "type": "string" },
+    "support_truth": { "const": false },
+    "native_execution_claimed": { "const": false },
+    "release_foundation_artifacts": { "type": "object" }
   },
   "$defs": {
     "supportTier": {
@@ -78,6 +303,261 @@
           "type": "array",
           "items": { "type": "string" }
         }
+      }
+    },
+    "packageRuntimeModels": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/packageRuntimeModel" },
+      "minItems": 1,
+      "allOf": [
+        {
+          "contains": {
+            "type": "object",
+            "properties": {
+              "platform_id": { "const": "linux-x64" },
+              "support_state": { "const": "unsupported" },
+              "claim_state": { "const": "fail-closed" },
+              "package_id": {
+                "const": "org.objc3c.runtime:objc3c-runtime-linux-x64-release"
+              },
+              "required_missing_evidence_classes": {
+                "allOf": [
+                  { "contains": { "const": "build" } },
+                  { "contains": { "const": "package" } },
+                  { "contains": { "const": "install" } },
+                  { "contains": { "const": "execution" } }
+                ]
+              },
+              "unsupported_behavior": { "const": "fail-closed" },
+              "support_truth": { "const": false },
+              "native_execution_required": { "const": true },
+              "native_execution_claimed": { "const": false },
+              "promotion_allowed": { "const": false }
+            },
+            "required": [
+              "platform_id",
+              "support_state",
+              "claim_state",
+              "package_id",
+              "required_missing_evidence_classes",
+              "unsupported_behavior",
+              "support_truth",
+              "native_execution_required",
+              "native_execution_claimed",
+              "promotion_allowed"
+            ]
+          }
+        },
+        {
+          "contains": {
+            "type": "object",
+            "properties": {
+              "platform_id": { "const": "darwin-arm64" },
+              "support_state": { "const": "unsupported" },
+              "claim_state": { "const": "fail-closed" },
+              "package_id": {
+                "const": "org.objc3c.runtime:objc3c-runtime-darwin-arm64-release"
+              },
+              "required_missing_evidence_classes": {
+                "allOf": [
+                  { "contains": { "const": "build" } },
+                  { "contains": { "const": "package" } },
+                  { "contains": { "const": "install" } },
+                  { "contains": { "const": "execution" } }
+                ]
+              },
+              "unsupported_behavior": { "const": "fail-closed" },
+              "support_truth": { "const": false },
+              "native_execution_required": { "const": true },
+              "native_execution_claimed": { "const": false },
+              "promotion_allowed": { "const": false }
+            },
+            "required": [
+              "platform_id",
+              "support_state",
+              "claim_state",
+              "package_id",
+              "required_missing_evidence_classes",
+              "unsupported_behavior",
+              "support_truth",
+              "native_execution_required",
+              "native_execution_claimed",
+              "promotion_allowed"
+            ]
+          }
+        }
+      ]
+    },
+    "packageRuntimeModel": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "platform_id",
+        "target_platform_id",
+        "host_os",
+        "host_arch",
+        "support_state",
+        "claim_state",
+        "package_id",
+        "package_channel_id",
+        "package_variant_row_id",
+        "runtime_variant",
+        "runtime_library_ids",
+        "runtime_library_names",
+        "package_root_layout",
+        "missing_runtime_behavior",
+        "unsupported_behavior",
+        "required_evidence_classes",
+        "required_missing_evidence_classes",
+        "support_truth",
+        "native_execution_required",
+        "native_execution_claimed",
+        "promotion_allowed"
+      ],
+      "properties": {
+        "platform_id": {
+          "enum": ["windows-x64", "linux-x64", "darwin-arm64"]
+        },
+        "target_platform_id": {
+          "enum": ["windows-x64", "linux-x64", "darwin-arm64"]
+        },
+        "host_os": { "enum": ["windows", "linux", "darwin"] },
+        "host_arch": { "enum": ["x64", "arm64"] },
+        "support_state": { "enum": ["supported", "unsupported"] },
+        "claim_state": { "enum": ["evidence-bound", "fail-closed"] },
+        "package_id": {
+          "enum": [
+            "org.objc3c.runtime:objc3c-runtime-release",
+            "org.objc3c.runtime:objc3c-runtime-linux-x64-release",
+            "org.objc3c.runtime:objc3c-runtime-darwin-arm64-release"
+          ]
+        },
+        "package_channel_id": {
+          "enum": [
+            "windows-x64-release",
+            "linux-x64-release",
+            "darwin-arm64-release"
+          ]
+        },
+        "package_variant_row_id": {
+          "type": "string",
+          "pattern": "^objc3c\\.package\\.runtime\\."
+        },
+        "runtime_variant": { "const": "release" },
+        "runtime_library_ids": {
+          "type": "array",
+          "items": { "const": "objc3-runtime" },
+          "minItems": 1,
+          "uniqueItems": true
+        },
+        "runtime_library_names": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "minItems": 1,
+          "uniqueItems": true
+        },
+        "package_root_layout": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "minItems": 1,
+          "uniqueItems": true
+        },
+        "missing_runtime_behavior": {
+          "const": "fail-closed-before-native-execution-claim"
+        },
+        "unsupported_behavior": { "const": "fail-closed" },
+        "required_evidence_classes": {
+          "type": "array",
+          "items": {
+            "enum": ["build", "package", "install", "execution"]
+          },
+          "minItems": 1,
+          "uniqueItems": true
+        },
+        "required_missing_evidence_classes": {
+          "type": "array",
+          "items": {
+            "enum": ["build", "package", "install", "execution"]
+          },
+          "uniqueItems": true
+        },
+        "support_truth": { "const": false },
+        "native_execution_required": { "const": true },
+        "native_execution_claimed": { "const": false },
+        "promotion_allowed": { "const": false }
+      }
+    },
+    "receiptPackageRuntimeModel": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "target_platform_id",
+        "package_id",
+        "package_channel_id",
+        "sanitizer_variant",
+        "runtime_variant",
+        "runtime_library_ids",
+        "runtime_library_names",
+        "package_root_layout",
+        "missing_runtime_behavior",
+        "unsupported_behavior",
+        "support_truth",
+        "native_execution_claimed"
+      ],
+      "properties": {
+        "target_platform_id": {
+          "enum": ["windows-x64", "linux-x64", "darwin-arm64"]
+        },
+        "package_id": {
+          "enum": [
+            "org.objc3c.runtime:objc3c-runtime-release",
+            "org.objc3c.runtime:objc3c-runtime-linux-x64-release",
+            "org.objc3c.runtime:objc3c-runtime-darwin-arm64-release",
+            "org.objc3c.runtime:objc3c-runtime-asan",
+            "org.objc3c.runtime:objc3c-runtime-ubsan"
+          ]
+        },
+        "package_channel_id": {
+          "enum": [
+            "windows-x64-release",
+            "linux-x64-release",
+            "darwin-arm64-release",
+            "windows-x64-sanitizer-asan",
+            "windows-x64-sanitizer-ubsan"
+          ]
+        },
+        "sanitizer_variant": { "enum": ["release", "address", "undefined"] },
+        "runtime_variant": {
+          "enum": ["release", "sanitizer=address", "sanitizer=undefined"]
+        },
+        "runtime_library_ids": {
+          "type": "array",
+          "items": {
+            "enum": ["objc3-runtime", "clang_rt.asan", "clang_rt.ubsan"]
+          },
+          "minItems": 1,
+          "uniqueItems": true
+        },
+        "runtime_library_names": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "minItems": 1,
+          "uniqueItems": true
+        },
+        "package_root_layout": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "minItems": 1
+        },
+        "missing_runtime_behavior": {
+          "enum": [
+            "fail-closed-before-native-execution-claim",
+            "fail-closed-before-package-install"
+          ]
+        },
+        "unsupported_behavior": { "const": "fail-closed" },
+        "support_truth": { "const": false },
+        "native_execution_claimed": { "const": false }
       }
     },
     "installerSignature": {
@@ -176,6 +656,7 @@
         "manifest_relative_path",
         "manifest_artifact",
         "manifest_sha256",
+        "target_platform_id",
         "required_entries",
         "entry_digests",
         "clean_room_source_policy"
@@ -188,6 +669,9 @@
         },
         "manifest_artifact": { "type": "string", "minLength": 1 },
         "manifest_sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+        "target_platform_id": {
+          "enum": ["windows-x64", "linux-x64", "darwin-arm64"]
+        },
         "required_entries": {
           "type": "array",
           "items": { "$ref": "#/$defs/payloadEntryPath" },
@@ -201,14 +685,261 @@
         "clean_room_source_policy": { "const": "fresh-owned-tmp-root-only" }
       }
     },
+    "reusableRunnablePackageIdentityContract": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "contract_id",
+        "manifest_relative_path",
+        "required_fields",
+        "target_platforms",
+        "reuse_policy",
+        "generated_evidence_policy"
+      ],
+      "properties": {
+        "contract_id": {
+          "const": "objc3c.packaging.channels.reusable-runnable-package-identity.v1"
+        },
+        "manifest_relative_path": {
+          "const": "artifacts/package/objc3c-runnable-toolchain-package.json"
+        },
+        "required_fields": {
+          "const": [
+            "target_platform_id",
+            "target_triple",
+            "object_format",
+            "debug_format",
+            "runtime_library_kind",
+            "native_executable",
+            "runtime_library",
+            "runtime_library_name",
+            "package_root_layout",
+            "support_truth",
+            "native_execution_claimed"
+          ]
+        },
+        "target_platforms": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/reusableRunnablePackageTargetIdentity" },
+          "minItems": 3,
+          "maxItems": 3,
+          "allOf": [
+            { "contains": { "$ref": "#/$defs/windowsReusableRunnablePackageIdentity" } },
+            { "contains": { "$ref": "#/$defs/linuxReusableRunnablePackageIdentity" } },
+            { "contains": { "$ref": "#/$defs/darwinReusableRunnablePackageIdentity" } }
+          ]
+        },
+        "reuse_policy": {
+          "const": "manifest-target-and-artifact-identity-must-match-requested-platform"
+        },
+        "generated_evidence_policy": {
+          "const": "generated-host-output-is-review-input-not-source-truth"
+        }
+      }
+    },
+    "releasePackageRootLayout": {
+      "oneOf": [
+        {
+          "const": [
+            "artifacts/package/objc3c-runnable-toolchain-package.json",
+            "artifacts/bin/objc3c-native.exe",
+            "artifacts/lib/objc3_runtime.lib",
+            "stdlib/workspace.json",
+            "stdlib/modules/objc3.core/module.json",
+            "docs/runbooks/objc3c_packaging_channels.md"
+          ]
+        },
+        {
+          "const": [
+            "artifacts/package/objc3c-runnable-toolchain-package.json",
+            "artifacts/bin/objc3c-native",
+            "artifacts/lib/libobjc3-runtime.so",
+            "stdlib/workspace.json",
+            "stdlib/modules/objc3.core/module.json",
+            "docs/runbooks/objc3c_packaging_channels.md"
+          ]
+        },
+        {
+          "const": [
+            "artifacts/package/objc3c-runnable-toolchain-package.json",
+            "artifacts/bin/objc3c-native",
+            "artifacts/lib/libobjc3-runtime.dylib",
+            "stdlib/workspace.json",
+            "stdlib/modules/objc3.core/module.json",
+            "docs/runbooks/objc3c_packaging_channels.md"
+          ]
+        }
+      ]
+    },
+    "reusableRunnablePackageTargetIdentity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "target_platform_id",
+        "package_id",
+        "package_channel_id",
+        "target_triple",
+        "object_format",
+        "debug_format",
+        "runtime_library_kind",
+        "native_executable",
+        "runtime_library",
+        "runtime_library_name",
+        "package_root_layout",
+        "support_truth",
+        "native_execution_claimed"
+      ],
+      "properties": {
+        "target_platform_id": {
+          "enum": ["windows-x64", "linux-x64", "darwin-arm64"]
+        },
+        "package_id": {
+          "enum": [
+            "org.objc3c.runtime:objc3c-runtime-release",
+            "org.objc3c.runtime:objc3c-runtime-linux-x64-release",
+            "org.objc3c.runtime:objc3c-runtime-darwin-arm64-release"
+          ]
+        },
+        "package_channel_id": {
+          "enum": [
+            "windows-x64-release",
+            "linux-x64-release",
+            "darwin-arm64-release"
+          ]
+        },
+        "target_triple": {
+          "enum": [
+            "x86_64-pc-windows-msvc",
+            "x86_64-unknown-linux-gnu",
+            "aarch64-apple-darwin"
+          ]
+        },
+        "object_format": { "enum": ["COFF", "ELF", "Mach-O"] },
+        "debug_format": { "enum": ["CodeView/PDB", "DWARF", "DWARF/dSYM"] },
+        "runtime_library_kind": { "enum": ["static-archive", "shared-library"] },
+        "native_executable": {
+          "enum": ["artifacts/bin/objc3c-native.exe", "artifacts/bin/objc3c-native"]
+        },
+        "runtime_library": {
+          "enum": [
+            "artifacts/lib/objc3_runtime.lib",
+            "artifacts/lib/libobjc3-runtime.so",
+            "artifacts/lib/libobjc3-runtime.dylib"
+          ]
+        },
+        "runtime_library_name": {
+          "enum": [
+            "objc3_runtime.lib",
+            "libobjc3-runtime.so",
+            "libobjc3-runtime.dylib"
+          ]
+        },
+        "package_root_layout": { "$ref": "#/$defs/releasePackageRootLayout" },
+        "support_truth": { "const": false },
+        "native_execution_claimed": { "const": false }
+      }
+    },
+    "windowsReusableRunnablePackageIdentity": {
+      "type": "object",
+      "properties": {
+        "target_platform_id": { "const": "windows-x64" },
+        "package_id": { "const": "org.objc3c.runtime:objc3c-runtime-release" },
+        "package_channel_id": { "const": "windows-x64-release" },
+        "target_triple": { "const": "x86_64-pc-windows-msvc" },
+        "object_format": { "const": "COFF" },
+        "debug_format": { "const": "CodeView/PDB" },
+        "runtime_library_kind": { "const": "static-archive" },
+        "native_executable": { "const": "artifacts/bin/objc3c-native.exe" },
+        "runtime_library": { "const": "artifacts/lib/objc3_runtime.lib" },
+        "runtime_library_name": { "const": "objc3_runtime.lib" },
+        "package_root_layout": {
+          "const": [
+            "artifacts/package/objc3c-runnable-toolchain-package.json",
+            "artifacts/bin/objc3c-native.exe",
+            "artifacts/lib/objc3_runtime.lib",
+            "stdlib/workspace.json",
+            "stdlib/modules/objc3.core/module.json",
+            "docs/runbooks/objc3c_packaging_channels.md"
+          ]
+        },
+        "support_truth": { "const": false },
+        "native_execution_claimed": { "const": false }
+      }
+    },
+    "linuxReusableRunnablePackageIdentity": {
+      "type": "object",
+      "properties": {
+        "target_platform_id": { "const": "linux-x64" },
+        "package_id": { "const": "org.objc3c.runtime:objc3c-runtime-linux-x64-release" },
+        "package_channel_id": { "const": "linux-x64-release" },
+        "target_triple": { "const": "x86_64-unknown-linux-gnu" },
+        "object_format": { "const": "ELF" },
+        "debug_format": { "const": "DWARF" },
+        "runtime_library_kind": { "const": "shared-library" },
+        "native_executable": { "const": "artifacts/bin/objc3c-native" },
+        "runtime_library": { "const": "artifacts/lib/libobjc3-runtime.so" },
+        "runtime_library_name": { "const": "libobjc3-runtime.so" },
+        "package_root_layout": {
+          "const": [
+            "artifacts/package/objc3c-runnable-toolchain-package.json",
+            "artifacts/bin/objc3c-native",
+            "artifacts/lib/libobjc3-runtime.so",
+            "stdlib/workspace.json",
+            "stdlib/modules/objc3.core/module.json",
+            "docs/runbooks/objc3c_packaging_channels.md"
+          ]
+        },
+        "support_truth": { "const": false },
+        "native_execution_claimed": { "const": false }
+      }
+    },
+    "darwinReusableRunnablePackageIdentity": {
+      "type": "object",
+      "properties": {
+        "target_platform_id": { "const": "darwin-arm64" },
+        "package_id": { "const": "org.objc3c.runtime:objc3c-runtime-darwin-arm64-release" },
+        "package_channel_id": { "const": "darwin-arm64-release" },
+        "target_triple": { "const": "aarch64-apple-darwin" },
+        "object_format": { "const": "Mach-O" },
+        "debug_format": { "const": "DWARF/dSYM" },
+        "runtime_library_kind": { "const": "shared-library" },
+        "native_executable": { "const": "artifacts/bin/objc3c-native" },
+        "runtime_library": { "const": "artifacts/lib/libobjc3-runtime.dylib" },
+        "runtime_library_name": { "const": "libobjc3-runtime.dylib" },
+        "package_root_layout": {
+          "const": [
+            "artifacts/package/objc3c-runnable-toolchain-package.json",
+            "artifacts/bin/objc3c-native",
+            "artifacts/lib/libobjc3-runtime.dylib",
+            "stdlib/workspace.json",
+            "stdlib/modules/objc3.core/module.json",
+            "docs/runbooks/objc3c_packaging_channels.md"
+          ]
+        },
+        "support_truth": { "const": false },
+        "native_execution_claimed": { "const": false }
+      }
+    },
     "payloadEntryPath": {
       "enum": [
         "artifacts/package/objc3c-runnable-toolchain-package.json",
         "artifacts/bin/objc3c-native.exe",
+        "artifacts/bin/objc3c-native",
         "artifacts/lib/objc3_runtime.lib",
+        "artifacts/lib/libobjc3-runtime.so",
+        "artifacts/lib/libobjc3-runtime.dylib",
         "stdlib/workspace.json",
         "stdlib/modules/objc3.core/module.json",
-        "docs/runbooks/objc3c_packaging_channels.md"
+        "docs/runbooks/objc3c_packaging_channels.md",
+        "share/objc3c/sanitizer/asan-metadata.json",
+        "share/objc3c/sanitizer/ubsan-metadata.json",
+        "share/objc3c/sanitizer/asan-runtime-libraries.json",
+        "share/objc3c/sanitizer/ubsan-runtime-libraries.json",
+        "artifacts/runtime/sanitizer/address/clang_rt.asan_dynamic-x86_64.dll",
+        "artifacts/runtime/sanitizer/address/clang_rt.asan_dynamic-x86_64.lib",
+        "artifacts/runtime/sanitizer/address/clang_rt.asan_dynamic_runtime_thunk-x86_64.lib",
+        "artifacts/runtime/sanitizer/undefined/clang_rt.ubsan_standalone-x86_64.lib",
+        "artifacts/runtime/sanitizer/undefined/clang_rt.ubsan_standalone_cxx-x86_64.lib"
       ]
     },
     "payloadEntryDigest": {
@@ -274,7 +1005,15 @@
         "payload_required_entries",
         "required_fields",
         "network_policy",
-        "rollback_required"
+        "rollback_required",
+        "package_id",
+        "package_channel_id",
+        "sanitizer_variant",
+        "target_platform_id",
+        "package_runtime_model",
+        "emitted_platform_fields",
+        "support_truth",
+        "native_execution_claimed"
       ],
       "properties": {
         "contract_id": { "const": "objc3c.packaging.channels.install-receipt.v1" },
@@ -309,14 +1048,235 @@
               "payload_manifest",
               "payload_manifest_sha256",
               "payload_required_entries",
-              "installed_at_utc"
+              "target_platform_id",
+              "package_id",
+              "package_channel_id",
+              "sanitizer_variant",
+              "package_runtime_model",
+              "support_truth",
+              "native_execution_claimed",
+              "installed_at_utc",
+              "sanitizer_package_variant"
             ]
           },
           "minItems": 1
         },
         "network_policy": { "enum": ["local-filesystem-only", "no-network"] },
         "rollback_required": { "const": true },
+        "package_id": {
+          "enum": [
+            "org.objc3c.runtime:objc3c-runtime-release",
+            "org.objc3c.runtime:objc3c-runtime-linux-x64-release",
+            "org.objc3c.runtime:objc3c-runtime-darwin-arm64-release",
+            "org.objc3c.runtime:objc3c-runtime-asan",
+            "org.objc3c.runtime:objc3c-runtime-ubsan"
+          ]
+        },
+        "package_channel_id": {
+          "enum": [
+            "windows-x64-release",
+            "linux-x64-release",
+            "darwin-arm64-release",
+            "windows-x64-sanitizer-asan",
+            "windows-x64-sanitizer-ubsan"
+          ]
+        },
+        "sanitizer_variant": { "enum": ["release", "address", "undefined"] },
+        "target_platform_id": {
+          "enum": ["windows-x64", "linux-x64", "darwin-arm64"]
+        },
+        "package_runtime_model": {
+          "$ref": "#/$defs/receiptPackageRuntimeModel"
+        },
+        "emitted_platform_fields": {
+          "type": "array",
+          "items": {
+            "enum": [
+              "target_platform_id",
+              "package_id",
+              "package_channel_id",
+              "sanitizer_variant",
+              "package_runtime_model",
+              "support_truth",
+              "native_execution_claimed"
+            ]
+          },
+          "minItems": 1,
+          "uniqueItems": true
+        },
+        "sanitizer_install_selector": {
+          "enum": ["sanitizer=address", "sanitizer=undefined"]
+        },
+        "sanitizer_runtime_library_manifest_path": {
+          "enum": [
+            "share/objc3c/sanitizer/asan-runtime-libraries.json",
+            "share/objc3c/sanitizer/ubsan-runtime-libraries.json"
+          ]
+        },
+        "sanitizer_runtime_library_required_entries": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/payloadEntryPath" },
+          "minItems": 1
+        },
+        "missing_runtime_behavior": { "const": "fail-closed-before-package-install" },
+        "support_truth": { "const": false },
+        "native_execution_claimed": { "const": false },
         "delegates_to": { "const": "local-installer" }
+      }
+    },
+    "windowsReleaseReceiptContract": {
+      "type": "object",
+      "properties": {
+        "package_id": { "const": "org.objc3c.runtime:objc3c-runtime-release" },
+        "package_channel_id": { "const": "windows-x64-release" },
+        "sanitizer_variant": { "const": "release" },
+        "target_platform_id": { "const": "windows-x64" },
+        "package_runtime_model": {
+          "properties": {
+            "target_platform_id": { "const": "windows-x64" },
+            "package_id": { "const": "org.objc3c.runtime:objc3c-runtime-release" },
+            "package_channel_id": { "const": "windows-x64-release" },
+            "sanitizer_variant": { "const": "release" },
+            "runtime_variant": { "const": "release" }
+          }
+        },
+        "support_truth": { "const": false },
+        "native_execution_claimed": { "const": false }
+      }
+    },
+    "linuxReleaseReceiptContract": {
+      "type": "object",
+      "properties": {
+        "package_id": { "const": "org.objc3c.runtime:objc3c-runtime-linux-x64-release" },
+        "package_channel_id": { "const": "linux-x64-release" },
+        "sanitizer_variant": { "const": "release" },
+        "target_platform_id": { "const": "linux-x64" },
+        "package_runtime_model": {
+          "properties": {
+            "target_platform_id": { "const": "linux-x64" },
+            "package_id": { "const": "org.objc3c.runtime:objc3c-runtime-linux-x64-release" },
+            "package_channel_id": { "const": "linux-x64-release" },
+            "sanitizer_variant": { "const": "release" },
+            "runtime_variant": { "const": "release" }
+          }
+        },
+        "support_truth": { "const": false },
+        "native_execution_claimed": { "const": false }
+      }
+    },
+    "darwinReleaseReceiptContract": {
+      "type": "object",
+      "properties": {
+        "package_id": { "const": "org.objc3c.runtime:objc3c-runtime-darwin-arm64-release" },
+        "package_channel_id": { "const": "darwin-arm64-release" },
+        "sanitizer_variant": { "const": "release" },
+        "target_platform_id": { "const": "darwin-arm64" },
+        "package_runtime_model": {
+          "properties": {
+            "target_platform_id": { "const": "darwin-arm64" },
+            "package_id": { "const": "org.objc3c.runtime:objc3c-runtime-darwin-arm64-release" },
+            "package_channel_id": { "const": "darwin-arm64-release" },
+            "sanitizer_variant": { "const": "release" },
+            "runtime_variant": { "const": "release" }
+          }
+        },
+        "support_truth": { "const": false },
+        "native_execution_claimed": { "const": false }
+      }
+    },
+    "addressSanitizerReceiptContract": {
+      "type": "object",
+      "required": [
+        "sanitizer_install_selector",
+        "sanitizer_runtime_library_manifest_path",
+        "sanitizer_runtime_library_required_entries",
+        "missing_runtime_behavior"
+      ],
+      "properties": {
+        "package_id": { "const": "org.objc3c.runtime:objc3c-runtime-asan" },
+        "package_channel_id": { "const": "windows-x64-sanitizer-asan" },
+        "sanitizer_variant": { "const": "address" },
+        "target_platform_id": { "const": "windows-x64" },
+        "package_runtime_model": {
+          "properties": {
+            "target_platform_id": { "const": "windows-x64" },
+            "package_id": { "const": "org.objc3c.runtime:objc3c-runtime-asan" },
+            "package_channel_id": { "const": "windows-x64-sanitizer-asan" },
+            "sanitizer_variant": { "const": "address" },
+            "runtime_variant": { "const": "sanitizer=address" }
+          }
+        },
+        "sanitizer_install_selector": { "const": "sanitizer=address" },
+        "sanitizer_runtime_library_manifest_path": {
+          "const": "share/objc3c/sanitizer/asan-runtime-libraries.json"
+        },
+        "sanitizer_runtime_library_required_entries": {
+          "allOf": [
+            { "contains": { "const": "share/objc3c/sanitizer/asan-runtime-libraries.json" } },
+            { "contains": { "const": "artifacts/runtime/sanitizer/address/clang_rt.asan_dynamic-x86_64.dll" } },
+            { "contains": { "const": "artifacts/runtime/sanitizer/address/clang_rt.asan_dynamic-x86_64.lib" } },
+            { "contains": { "const": "artifacts/runtime/sanitizer/address/clang_rt.asan_dynamic_runtime_thunk-x86_64.lib" } }
+          ]
+        },
+        "missing_runtime_behavior": { "const": "fail-closed-before-package-install" },
+        "payload_required_entries": {
+          "allOf": [
+            { "contains": { "const": "share/objc3c/sanitizer/asan-metadata.json" } },
+            { "contains": { "const": "share/objc3c/sanitizer/asan-runtime-libraries.json" } }
+          ]
+        },
+        "required_fields": {
+          "contains": { "const": "sanitizer_package_variant" }
+        },
+        "support_truth": { "const": false },
+        "native_execution_claimed": { "const": false }
+      }
+    },
+    "undefinedSanitizerReceiptContract": {
+      "type": "object",
+      "required": [
+        "sanitizer_install_selector",
+        "sanitizer_runtime_library_manifest_path",
+        "sanitizer_runtime_library_required_entries",
+        "missing_runtime_behavior"
+      ],
+      "properties": {
+        "package_id": { "const": "org.objc3c.runtime:objc3c-runtime-ubsan" },
+        "package_channel_id": { "const": "windows-x64-sanitizer-ubsan" },
+        "sanitizer_variant": { "const": "undefined" },
+        "target_platform_id": { "const": "windows-x64" },
+        "package_runtime_model": {
+          "properties": {
+            "target_platform_id": { "const": "windows-x64" },
+            "package_id": { "const": "org.objc3c.runtime:objc3c-runtime-ubsan" },
+            "package_channel_id": { "const": "windows-x64-sanitizer-ubsan" },
+            "sanitizer_variant": { "const": "undefined" },
+            "runtime_variant": { "const": "sanitizer=undefined" }
+          }
+        },
+        "sanitizer_install_selector": { "const": "sanitizer=undefined" },
+        "sanitizer_runtime_library_manifest_path": {
+          "const": "share/objc3c/sanitizer/ubsan-runtime-libraries.json"
+        },
+        "sanitizer_runtime_library_required_entries": {
+          "allOf": [
+            { "contains": { "const": "share/objc3c/sanitizer/ubsan-runtime-libraries.json" } },
+            { "contains": { "const": "artifacts/runtime/sanitizer/undefined/clang_rt.ubsan_standalone-x86_64.lib" } },
+            { "contains": { "const": "artifacts/runtime/sanitizer/undefined/clang_rt.ubsan_standalone_cxx-x86_64.lib" } }
+          ]
+        },
+        "missing_runtime_behavior": { "const": "fail-closed-before-package-install" },
+        "payload_required_entries": {
+          "allOf": [
+            { "contains": { "const": "share/objc3c/sanitizer/ubsan-metadata.json" } },
+            { "contains": { "const": "share/objc3c/sanitizer/ubsan-runtime-libraries.json" } }
+          ]
+        },
+        "required_fields": {
+          "contains": { "const": "sanitizer_package_variant" }
+        },
+        "support_truth": { "const": false },
+        "native_execution_claimed": { "const": false }
       }
     },
     "interopLoaderMetadata": {

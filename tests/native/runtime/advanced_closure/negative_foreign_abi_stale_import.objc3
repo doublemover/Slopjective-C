@@ -1,0 +1,14 @@
+// Expected advanced-runtime diagnostic: advanced-runtime.foreign-abi-stale-import
+module AdvancedRuntimeClosureNegativeForeignAbiStaleImport;
+
+extern fn staleImportedForeignAbi() -> i32
+    __attribute__((objc_foreign,
+                   objc_foreign_type(named("c-abi")),
+                   objc_mixed_image(named("ForeignRuntimeCore")),
+                   objc_package_entry(named("ForeignRuntime.staleImport"))));
+
+fn consumeStaleImportedForeignAbi() -> i32 {
+  // Stale import surface replay keys cannot satisfy the foreign ABI runtime
+  // closure, even when C ABI metadata is otherwise present.
+  return staleImportedForeignAbi();
+}

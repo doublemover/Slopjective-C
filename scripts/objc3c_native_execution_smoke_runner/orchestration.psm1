@@ -61,31 +61,60 @@ function Invoke-Objc3cNativeExecutionSmokeCore {
     $totalSelectedFixtures = $selectedPositiveFixtures.Count + $selectedNegativeFixtures.Count
     $fixtureIndex = 0
     $lastCompletedFixture = "none"
+    $currentFixtureKind = "unknown"
+    $currentFixtureRel = "unknown"
 
-    foreach ($fixture in $selectedPositiveFixtures) {
-      $fixtureIndex += 1
-      Invoke-PositiveExecutionSmokeFixture `
-        -Fixture $fixture `
-        -Context $context `
-        -FixtureIndex $fixtureIndex `
-        -TotalSelectedFixtures $totalSelectedFixtures `
-        -SuiteStopwatch $suiteStopwatch `
-        -Results $results `
-        -CaseTimings $caseTimings `
-        -LastCompletedFixture ([ref]$lastCompletedFixture)
+    try {
+      foreach ($fixture in $selectedPositiveFixtures) {
+        $fixtureIndex += 1
+        $currentFixtureKind = "positive"
+        $currentFixtureRel = Get-RepoRelativePath -Path $fixture.FullName -Root $context.repo_root
+        Invoke-PositiveExecutionSmokeFixture `
+          -Fixture $fixture `
+          -Context $context `
+          -FixtureIndex $fixtureIndex `
+          -TotalSelectedFixtures $totalSelectedFixtures `
+          -SuiteStopwatch $suiteStopwatch `
+          -Results $results `
+          -CaseTimings $caseTimings `
+          -LastCompletedFixture ([ref]$lastCompletedFixture)
+      }
+
+      foreach ($fixture in $selectedNegativeFixtures) {
+        $fixtureIndex += 1
+        $currentFixtureKind = "negative"
+        $currentFixtureRel = Get-RepoRelativePath -Path $fixture.FullName -Root $context.repo_root
+        Invoke-NegativeExecutionSmokeFixture `
+          -Fixture $fixture `
+          -Context $context `
+          -FixtureIndex $fixtureIndex `
+          -TotalSelectedFixtures $totalSelectedFixtures `
+          -SuiteStopwatch $suiteStopwatch `
+          -Results $results `
+          -CaseTimings $caseTimings `
+          -LastCompletedFixture ([ref]$lastCompletedFixture)
+      }
     }
-
-    foreach ($fixture in $selectedNegativeFixtures) {
-      $fixtureIndex += 1
-      Invoke-NegativeExecutionSmokeFixture `
-        -Fixture $fixture `
+    catch {
+      Write-FailedExecutionSmokeSummary `
         -Context $context `
-        -FixtureIndex $fixtureIndex `
-        -TotalSelectedFixtures $totalSelectedFixtures `
         -SuiteStopwatch $suiteStopwatch `
         -Results $results `
         -CaseTimings $caseTimings `
-        -LastCompletedFixture ([ref]$lastCompletedFixture)
+        -FixtureList $FixtureList `
+        -FixtureGlob $FixtureGlob `
+        -ShardIndex $ShardIndex `
+        -ShardCount $ShardCount `
+        -Limit $Limit `
+        -SelectedPositiveCount $selectedPositiveFixtures.Count `
+        -SelectedNegativeCount $selectedNegativeFixtures.Count `
+        -FailedFixtureKind $currentFixtureKind `
+        -FailedFixtureRel $currentFixtureRel `
+        -FailedFixtureIndex $fixtureIndex `
+        -TotalSelectedFixtures $totalSelectedFixtures `
+        -LastCompletedFixture $lastCompletedFixture `
+        -ErrorRecord $_
+      throw
     }
 
     Write-ExecutionSmokeSummary `

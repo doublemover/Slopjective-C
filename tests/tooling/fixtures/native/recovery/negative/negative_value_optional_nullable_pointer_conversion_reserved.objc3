@@ -1,0 +1,4 @@
+// Expected diagnostic code(s): O3P159.
+module NegativeValueOptionalNullablePointerConversionReserved;
+
+extern fn maybeObject(value: Optional<id>?) -> i32;

@@ -1,0 +1,13 @@
+// Strict-concurrency negative fixture: task-group add requires a group scope.
+module StrictConcurrencyTaskLifecycleNegative;
+
+extern fn objc3_task_group_add_task_i32(seed: i32) -> i32;
+
+async fn invalidTaskLifecycle(seed: i32) -> i32
+    __attribute__((objc_executor(named("strict-concurrency")))) {
+  return objc3_task_group_add_task_i32(seed);
+}
+
+fn main() -> i32 {
+  return 0;
+}

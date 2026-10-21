@@ -96,6 +96,44 @@
       ]
     },
     {
+      "case_id": "statement-stepping-without-native-debug-evidence",
+      "expected_code": "statement-stepping-evidence-missing",
+      "mutation": {
+        "path": [
+          "native_debug_info",
+          "statement_stepping_evidence"
+        ],
+        "value": []
+      }
+    },
+    {
+      "case_id": "statement-stepping-source-span-drift",
+      "expected_code": "statement-stepping-span-drift",
+      "mutation": {
+        "path": [
+          "native_debug_info",
+          "statement_stepping_evidence",
+          0,
+          "source_range",
+          "end_column"
+        ],
+        "value": 41
+      }
+    },
+    {
+      "case_id": "statement-stepping-generated-only-map",
+      "expected_code": "statement-stepping-generated-only",
+      "mutation": {
+        "path": [
+          "native_debug_info",
+          "statement_stepping_evidence",
+          0,
+          "source_map_entry_id"
+        ],
+        "value": "smap.generated_accessor"
+      }
+    },
+    {
       "case_id": "package-boundary-mismatch",
       "expected_code": "package-boundary-mismatch",
       "mutation": {
@@ -118,6 +156,18 @@
           "line"
         ],
         "value": 20
+      }
+    },
+    {
+      "case_id": "native-debug-info-row-drift",
+      "expected_code": "native-debug-info-drift",
+      "mutation": {
+        "path": [
+          "native_debug_info",
+          "native_line_table_row_ids",
+          2
+        ],
+        "value": "lt.stale_native_debug_info_row"
       }
     },
     {
@@ -153,6 +203,133 @@
             "evidence": [
               "debug_maps"
             ]
+          }
+        ]
+      }
+    },
+    {
+      "case_id": "inline-frame-missing-callee",
+      "expected_code": "source-map-entry-missing",
+      "mutation": {
+        "path": [
+          "inline_frames",
+          "frames",
+          0,
+          "callee_source_map_entry_id"
+        ],
+        "value": "smap.missing_inline_callee"
+      }
+    },
+    {
+      "case_id": "inline-frame-missing-frame-id",
+      "expected_code": "inline-frame-id-missing",
+      "mutation": {
+        "path": [
+          "inline_frames",
+          "frames",
+          0,
+          "frame_id"
+        ],
+        "value": ""
+      }
+    },
+    {
+      "case_id": "inline-frame-missing-callsite-callee-span",
+      "expected_code": "inline-frame-source-span-missing",
+      "mutation": {
+        "path": [
+          "inline_frames",
+          "frames",
+          0,
+          "callee_body_span",
+          "line"
+        ],
+        "value": 0
+      }
+    },
+    {
+      "case_id": "inline-frame-source-map-drift",
+      "expected_code": "inline-frame-range-drift",
+      "mutation": {
+        "path": [
+          "inline_frames",
+          "frames",
+          0,
+          "inlined_callsite_span",
+          "column"
+        ],
+        "value": 16
+      }
+    },
+    {
+      "case_id": "inline-frame-ambiguous-stepping-policy",
+      "expected_code": "inline-frame-stepping-policy-ambiguous",
+      "mutation": {
+        "path": [
+          "inline_frames",
+          "frames",
+          0,
+          "stepping_policy"
+        ],
+        "value": "ambiguous"
+      }
+    },
+    {
+      "case_id": "inline-frame-generated-only-map",
+      "expected_code": "inline-frame-generated-only-map",
+      "mutation": {
+        "path": [
+          "inline_frames",
+          "frames",
+          0,
+          "callee_source_map_entry_id"
+        ],
+        "value": "smap.generated_accessor"
+      }
+    },
+    {
+      "case_id": "inline-frame-native-range-drift",
+      "expected_code": "inline-native-range-drift",
+      "mutation": {
+        "path": [
+          "inline_frames",
+          "native_ranges",
+          0,
+          "artifact_symbol_id"
+        ],
+        "value": "_objc3_DebugMaps_Foundation_stale_inline_artifact"
+      }
+    },
+    {
+      "case_id": "inline-frame-non-inlining-proof",
+      "expected_code": "inline-frame-optimization-drift",
+      "mutation": {
+        "path": [
+          "inline_frames",
+          "frames",
+          0,
+          "optimization_proof_id"
+        ],
+        "value": "opt.direct_dispatch"
+      }
+    },
+    {
+      "case_id": "inline-frame-failure-record",
+      "expected_code": "inline-frame-failure",
+      "mutation": {
+        "path": [
+          "inline_frames",
+          "failures"
+        ],
+        "value": [
+          {
+            "failure_id": "inline.failure.missing_callee_body",
+            "native_range": {
+              "start_offset": 48,
+              "end_offset": 76
+            },
+            "failure_code": "missing-callee-body-span",
+            "missing_identity": "callee_body_span"
           }
         ]
       }

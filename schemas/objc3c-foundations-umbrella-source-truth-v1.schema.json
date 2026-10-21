@@ -1,0 +1,376 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://objc3c.dev/schemas/objc3c-foundations-umbrella-source-truth-v1.schema.json",
+  "title": "objc3c Foundations Umbrella Source Truth Contract",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "contract_id",
+    "schema_version",
+    "issue",
+    "schema_path",
+    "source_path",
+    "roadmap_issue_refs",
+    "claim_policy",
+    "schema_contracts",
+    "capability_truth_rows",
+    "canonical_fixtures",
+    "workflow_action_contracts",
+    "umbrella_readiness_contract",
+    "negative_case_contracts"
+  ],
+  "properties": {
+    "contract_id": {
+      "const": "objc3c.foundations.umbrella_readiness.source_truth.v1"
+    },
+    "schema_version": {
+      "type": "integer",
+      "const": 1
+    },
+    "issue": {
+      "const": "OBJ3-NEXT-FOUNDATIONS-UMBRELLA-READINESS"
+    },
+    "schema_path": {
+      "const": "schemas/objc3c-foundations-umbrella-source-truth-v1.schema.json"
+    },
+    "source_path": {
+      "const": "tests/tooling/fixtures/foundations_umbrella_readiness/source_truth_contract.json"
+    },
+    "roadmap_issue_refs": {
+      "type": "array",
+      "items": {
+        "type": "integer",
+        "enum": [
+          8208,
+          8213,
+          8238
+        ]
+      },
+      "minItems": 3,
+      "uniqueItems": true
+    },
+    "claim_policy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "local_temp_source_truth_allowed",
+        "generated_output_source_truth_allowed",
+        "fallback_success_allowed",
+        "wrapper_only_action_allowed",
+        "public_commands_must_resolve_to_action_catalog",
+        "capability_rows_must_match_matrix",
+        "umbrella_projection_must_reference_source_contract"
+      ],
+      "properties": {
+        "local_temp_source_truth_allowed": {
+          "const": false
+        },
+        "generated_output_source_truth_allowed": {
+          "const": false
+        },
+        "fallback_success_allowed": {
+          "const": false
+        },
+        "wrapper_only_action_allowed": {
+          "const": false
+        },
+        "public_commands_must_resolve_to_action_catalog": {
+          "const": true
+        },
+        "capability_rows_must_match_matrix": {
+          "const": true
+        },
+        "umbrella_projection_must_reference_source_contract": {
+          "const": true
+        }
+      }
+    },
+    "schema_contracts": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/schemaContract"
+      },
+      "minItems": 3,
+      "uniqueItems": true
+    },
+    "capability_truth_rows": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/capabilityTruthRow"
+      },
+      "minItems": 3,
+      "uniqueItems": true
+    },
+    "canonical_fixtures": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/canonicalFixture"
+      },
+      "minItems": 4,
+      "uniqueItems": true
+    },
+    "workflow_action_contracts": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/workflowActionContract"
+      },
+      "minItems": 4,
+      "uniqueItems": true
+    },
+    "umbrella_readiness_contract": {
+      "$ref": "#/$defs/umbrellaReadinessContract"
+    },
+    "negative_case_contracts": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/negativeCaseContract"
+      },
+      "minItems": 8,
+      "uniqueItems": true
+    }
+  },
+  "$defs": {
+    "repoPath": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "^(?![A-Za-z]:)(?![/\\\\])(?!(?:tmp|temp|generated|build|dist)(?:/|\\\\))(?!.*(?:^|[/\\\\])\\.\\.(?:[/\\\\]|$)).+"
+    },
+    "capabilityId": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9._-]*$"
+    },
+    "publicCommand": {
+      "type": "string",
+      "pattern": "^npm run objc3c -- [a-z0-9][a-z0-9-]*(?: .*)?$"
+    },
+    "schemaContract": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema_id",
+        "path",
+        "required_by"
+      ],
+      "properties": {
+        "schema_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "path": {
+          "$ref": "#/$defs/repoPath"
+        },
+        "required_by": {
+          "type": "array",
+          "items": {
+            "type": "integer",
+            "enum": [
+              8208,
+              8213,
+              8238
+            ]
+          },
+          "minItems": 1,
+          "uniqueItems": true
+        }
+      }
+    },
+    "capabilityTruthRow": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "capability_id",
+        "expected_state",
+        "evidence_paths",
+        "required_public_commands"
+      ],
+      "properties": {
+        "capability_id": {
+          "$ref": "#/$defs/capabilityId"
+        },
+        "expected_state": {
+          "enum": [
+            "implemented",
+            "internal",
+            "reserved",
+            "rejected"
+          ]
+        },
+        "evidence_paths": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/repoPath"
+          },
+          "minItems": 1,
+          "uniqueItems": true
+        },
+        "required_public_commands": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/publicCommand"
+          },
+          "uniqueItems": true
+        }
+      }
+    },
+    "canonicalFixture": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "fixture_id",
+        "path",
+        "issue_refs",
+        "capability_id"
+      ],
+      "properties": {
+        "fixture_id": {
+          "type": "string",
+          "pattern": "^[a-z0-9][a-z0-9._-]*$"
+        },
+        "path": {
+          "$ref": "#/$defs/repoPath"
+        },
+        "issue_refs": {
+          "type": "array",
+          "items": {
+            "type": "integer",
+            "enum": [
+              8208,
+              8213,
+              8238
+            ]
+          },
+          "minItems": 1,
+          "uniqueItems": true
+        },
+        "capability_id": {
+          "$ref": "#/$defs/capabilityId"
+        }
+      }
+    },
+    "workflowActionContract": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "action",
+        "command",
+        "backend",
+        "owner_surface",
+        "required_by",
+        "wrapper_only"
+      ],
+      "properties": {
+        "action": {
+          "type": "string",
+          "pattern": "^[a-z0-9][a-z0-9-]*$"
+        },
+        "command": {
+          "$ref": "#/$defs/publicCommand"
+        },
+        "backend": {
+          "type": "string",
+          "minLength": 1
+        },
+        "owner_surface": {
+          "$ref": "#/$defs/repoPath"
+        },
+        "required_by": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/capabilityId"
+          },
+          "minItems": 1,
+          "uniqueItems": true
+        },
+        "wrapper_only": {
+          "const": false
+        }
+      }
+    },
+    "umbrellaReadinessContract": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "source_path",
+        "projection_path",
+        "validator",
+        "projection_authoritative_data_must_include",
+        "required_entry_capability_ids",
+        "ready_entry_capability_ids",
+        "blocked_entry_capability_ids"
+      ],
+      "properties": {
+        "source_path": {
+          "const": "docs/support/umbrella_readiness.json"
+        },
+        "projection_path": {
+          "const": "docs/support/umbrella_readiness.md"
+        },
+        "validator": {
+          "const": "scripts/check_objc3c_umbrella_readiness.py"
+        },
+        "projection_authoritative_data_must_include": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/repoPath"
+          },
+          "minItems": 1,
+          "uniqueItems": true
+        },
+        "required_entry_capability_ids": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/capabilityId"
+          },
+          "minItems": 1,
+          "uniqueItems": true
+        },
+        "ready_entry_capability_ids": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/capabilityId"
+          },
+          "uniqueItems": true
+        },
+        "blocked_entry_capability_ids": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/capabilityId"
+          },
+          "uniqueItems": true
+        }
+      }
+    },
+    "negativeCaseContract": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "case_id",
+        "surface",
+        "source",
+        "expected_failure"
+      ],
+      "properties": {
+        "case_id": {
+          "type": "string",
+          "pattern": "^[a-z0-9][a-z0-9._-]*$"
+        },
+        "surface": {
+          "enum": [
+            "standalone-textual-interface",
+            "umbrella-readiness",
+            "workflow-action",
+            "capability-truth",
+            "advanced-runtime-closure"
+          ]
+        },
+        "source": {
+          "$ref": "#/$defs/repoPath"
+        },
+        "expected_failure": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    }
+  }
+}

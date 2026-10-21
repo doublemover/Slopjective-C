@@ -6,6 +6,8 @@ import json
 from pathlib import Path
 from typing import Any, Callable
 
+from .paths import ARTIFACT_IDENTITY
+
 
 ARTIFACT_REGISTRY_KEY_CONTRACT_ID = "objc3c.runtime.acceptance.artifact.registry.key.v1"
 ARTIFACT_REGISTRY_SUMMARY_CONTRACT_ID = "objc3c.runtime.acceptance.artifact.registry.v1"
@@ -18,7 +20,7 @@ ARTIFACT_REGISTRY_REUSE_MODEL = (
 
 def required_compile_artifacts(emit_prefix: str) -> list[str]:
     return [
-        f"{emit_prefix}.obj",
+        ARTIFACT_IDENTITY.object_artifact_name(emit_prefix),
         f"{emit_prefix}.ll",
         f"{emit_prefix}.manifest.json",
         f"{emit_prefix}.runtime-registration-manifest.json",

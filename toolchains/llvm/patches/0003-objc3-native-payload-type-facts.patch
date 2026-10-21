@@ -1,0 +1,743 @@
+diff --git a/clang/include/clang/AST/ObjC3TypeContracts.h b/clang/include/clang/AST/ObjC3TypeContracts.h
+new file mode 100644
+index 000000000..a211eaea1
+--- /dev/null
++++ b/clang/include/clang/AST/ObjC3TypeContracts.h
+@@ -0,0 +1,133 @@
++//===--- ObjC3TypeContracts.h - Clang-backed value type facts ---*- C++ -*-===//
++//
++// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
++// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
++//
++//===----------------------------------------------------------------------===//
++//
++// Query-only type and target-layout facts used by Slopjective-C value carriers.
++// This is deliberately not a second type system: both input and canonical
++// Clang QualTypes remain the identity of the source and payload.
++//
++//===----------------------------------------------------------------------===//
++
++#ifndef LLVM_CLANG_AST_OBJC3TYPECONTRACTS_H
++#define LLVM_CLANG_AST_OBJC3TYPECONTRACTS_H
++
++#include "clang/AST/CharUnits.h"
++#include "clang/AST/Type.h"
++#include "clang/Basic/Specifiers.h"
++
++namespace clang {
++
++class ASTContext;
++
++/// The carrier position is context for callers and diagnostics. It does not
++/// enable optional/result syntax or impose a general copyability policy.
++enum class ObjC3PayloadPosition : unsigned char {
++  OptionalElement,
++  ResultSuccess,
++  ResultError,
++  ThrowsPayload,
++};
++
++enum class ObjC3PayloadTypeKind : unsigned char {
++  Invalid,
++  Void,
++  Builtin,
++  Enumeration,
++  CPointer,
++  ObjCObjectPointer,
++  BlockPointer,
++  MemberPointer,
++  Function,
++  Reference,
++  Record,
++  Array,
++  Atomic,
++  ObjCObject,
++  OtherObject,
++};
++
++/// A reason the current carrier layout adapter cannot describe this shape.
++/// These are implementation facts for diagnostics and future adapters, not
++/// declarations that C/Objective-C types of that shape are generally illegal.
++enum class ObjC3PayloadTypeIssue : unsigned char {
++  None,
++  NullType,
++  Dependent,
++  VariablyModified,
++  Incomplete,
++  Function,
++  Reference,
++  ArrayNeedsElementOperations,
++  AtomicNeedsAtomicOperations,
++  RecordHasFlexibleArrayMember,
++  NotAnObjectType,
++};
++
++enum class ObjC3ValueOperation : unsigned char { Copy, Move, Destroy };
++
++/// Facts about an operation, not permission to use it. Sema must resolve
++/// overloads, accessibility, deleted functions, and language conversions for
++/// the actual expression/context. `KnownDeleted` is only positive evidence.
++struct ObjC3ValueOperationFacts {
++  bool IsTrivial = true;
++  bool NeedsGeneratedOperation = false;
++  bool RequiresSemaResolution = false;
++  bool KnownDeleted = false;
++};
++
++/// A value-like snapshot tied to one ASTContext and target. Do not persist this
++/// instead of QualType or treat it as a parallel canonical type graph.
++struct ObjC3ValueTypeFacts {
++  QualType WrittenType;
++  QualType CanonicalType;
++  ObjC3PayloadPosition Position = ObjC3PayloadPosition::OptionalElement;
++  ObjC3PayloadTypeKind Kind = ObjC3PayloadTypeKind::Invalid;
++  ObjC3PayloadTypeIssue Issue = ObjC3PayloadTypeIssue::NullType;
++
++  /// Void is a tag-only value form; it has no object layout or payload bytes.
++  /// A complete object type has target-owned Size and Alignment, which may be
++  /// zero-sized where the target and language permit it.
++  bool HasObjectLayout = false;
++  CharUnits Size = CharUnits::Zero();
++  CharUnits Alignment = CharUnits::Zero();
++
++  /// ObjC object and block pointers retain their native QualType identity.
++  /// Effective lifetime records ARC's implicit lifetime when ARC is enabled.
++  bool IsObjCObjectPointer = false;
++  bool IsBlockPointer = false;
++  bool HasExplicitObjCLifetime = false;
++  Qualifiers::ObjCLifetime WrittenObjCLifetime = Qualifiers::OCL_None;
++  Qualifiers::ObjCLifetime EffectiveObjCLifetime = Qualifiers::OCL_None;
++
++  bool IsRecord = false;
++  bool IsUnion = false;
++  bool IsAbstractRecord = false;
++  bool HasARCManagedRecordFields = false;
++  bool IsTriviallyCopyable = false;
++
++  ObjC3ValueOperationFacts Copy;
++  ObjC3ValueOperationFacts Move;
++  ObjC3ValueOperationFacts Destroy;
++
++  bool isValid() const { return Issue == ObjC3PayloadTypeIssue::None; }
++  bool isVoidTagOnly() const {
++    return isValid() && Kind == ObjC3PayloadTypeKind::Void;
++  }
++};
++
++/// Classify one payload using Clang's canonical QualType, record facts, ARC
++/// ownership, and target layout. The returned facts do not replace Sema's
++/// context-sensitive special-member checks or CodeGen's ABI classification.
++[[nodiscard]] ObjC3ValueTypeFacts getObjC3ValueTypeFacts(
++    const ASTContext &Context, QualType PayloadType,
++    ObjC3PayloadPosition Position);
++
++} // namespace clang
++
++#endif // LLVM_CLANG_AST_OBJC3TYPECONTRACTS_H
++
++
++
+diff --git a/clang/lib/AST/CMakeLists.txt b/clang/lib/AST/CMakeLists.txt
+index e3f74d73f..15bac0545 100644
+--- a/clang/lib/AST/CMakeLists.txt
++++ b/clang/lib/AST/CMakeLists.txt
+@@ -58,6 +58,7 @@ add_clang_library(clangAST
+   DynamicRecursiveASTVisitor.cpp
+   ParentMapContext.cpp
+   Expr.cpp
++  ObjC3MatchNodes.cpp
+   ExprClassification.cpp
+   ExprConcepts.cpp
+   ExprConstant.cpp
+@@ -131,6 +132,7 @@ add_clang_library(clangAST
+   TemplateName.cpp
+   TextNodeDumper.cpp
+   Type.cpp
++  ObjC3TypeContracts.cpp
+   TypeLoc.cpp
+   TypePrinter.cpp
+   VTableBuilder.cpp
+diff --git a/clang/lib/AST/ObjC3TypeContracts.cpp b/clang/lib/AST/ObjC3TypeContracts.cpp
+new file mode 100644
+index 000000000..3c17df85b
+--- /dev/null
++++ b/clang/lib/AST/ObjC3TypeContracts.cpp
+@@ -0,0 +1,247 @@
++//===--- ObjC3TypeContracts.cpp - Clang-backed value type facts ----------===//
++//
++// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
++// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
++//
++//===----------------------------------------------------------------------===//
++
++#include "clang/AST/ObjC3TypeContracts.h"
++
++#include "clang/AST/ASTContext.h"
++#include "clang/AST/DeclCXX.h"
++#include "clang/AST/DeclObjC.h"
++#include "clang/AST/Type.h"
++#include "clang/Basic/LangOptions.h"
++
++using namespace clang;
++
++namespace {
++
++ObjC3ValueOperationFacts trivialOperation() { return {}; }
++
++ObjC3ValueOperationFacts generatedOperation(bool trivial,
++                                            bool knownDeleted = false,
++                                            bool needsSema = false) {
++  ObjC3ValueOperationFacts Facts;
++  Facts.IsTrivial = trivial;
++  Facts.NeedsGeneratedOperation = !trivial && !knownDeleted;
++  Facts.RequiresSemaResolution = needsSema;
++  Facts.KnownDeleted = knownDeleted;
++  return Facts;
++}
++
++bool isRetainablePointer(QualType QT) {
++  const Type *Ty = QT.getTypePtr();
++  return Ty->isObjCObjectPointerType() || Ty->isBlockPointerType() ||
++         Ty->isObjCNSObjectType();
++}
++
++bool hasARCManagedRecordField(QualType QT) {
++  if (const auto *AT = QT->getAsArrayTypeUnsafe())
++    return hasARCManagedRecordField(AT->getElementType());
++
++  const Qualifiers::ObjCLifetime Lifetime = QT.getObjCLifetime();
++  if (Lifetime == Qualifiers::OCL_Strong || Lifetime == Qualifiers::OCL_Weak)
++    return true;
++
++  const RecordType *RT = QT->getAs<RecordType>();
++  if (!RT)
++    return false;
++  for (const FieldDecl *Field : RT->getDecl()->fields())
++    if (hasARCManagedRecordField(Field->getType()))
++      return true;
++  return false;
++}
++
++void classifyLifetime(const ASTContext &Context, QualType QT,
++                      ObjC3ValueTypeFacts &Facts) {
++  Facts.IsObjCObjectPointer = QT->isObjCObjectPointerType();
++  Facts.IsBlockPointer = QT->isBlockPointerType();
++  Facts.HasExplicitObjCLifetime = QT.hasQualifiers() &&
++      QT.getQualifiers().hasObjCLifetime();
++  Facts.WrittenObjCLifetime = QT.getObjCLifetime();
++  Facts.EffectiveObjCLifetime = Facts.WrittenObjCLifetime;
++  if (Context.getLangOpts().ObjCAutoRefCount && isRetainablePointer(QT) &&
++      Facts.EffectiveObjCLifetime == Qualifiers::OCL_None)
++    Facts.EffectiveObjCLifetime = QT->getObjCARCImplicitLifetime();
++}
++
++ObjC3ValueOperationFacts recordOperationFacts(
++    const CXXRecordDecl *Record, ObjC3ValueOperation Operation,
++    bool IsTrivial) {
++  if (!Record)
++    return generatedOperation(IsTrivial);
++
++  bool KnownDeleted = false;
++  // Even a trivial C++ special member may be private, deleted, or select a
++  // different overload for this expression. Facts cannot authorize its use.
++  const bool RequiresSema = true;
++  switch (Operation) {
++  case ObjC3ValueOperation::Copy:
++    if (!Record->needsOverloadResolutionForCopyConstructor())
++      KnownDeleted = Record->defaultedCopyConstructorIsDeleted();
++    break;
++  case ObjC3ValueOperation::Move:
++    // A missing move constructor may still select a copy constructor. Sema
++    // decides that at the use site; never infer move-only or noncopyable policy.
++    if (Record->hasMoveConstructor() &&
++        !Record->needsOverloadResolutionForMoveConstructor())
++      KnownDeleted = Record->defaultedMoveConstructorIsDeleted();
++    break;
++  case ObjC3ValueOperation::Destroy:
++    if (!Record->needsOverloadResolutionForDestructor())
++      KnownDeleted = Record->defaultedDestructorIsDeleted();
++    if (const CXXDestructorDecl *Dtor = Record->getDestructor())
++      KnownDeleted |= Dtor->isDeleted();
++    break;
++  }
++  return generatedOperation(IsTrivial, KnownDeleted, RequiresSema);
++}
++
++ObjC3PayloadTypeIssue reject(ObjC3ValueTypeFacts &Facts,
++                             ObjC3PayloadTypeIssue Issue) {
++  Facts.Issue = Issue;
++  return Issue;
++}
++
++} // namespace
++
++ObjC3ValueTypeFacts clang::getObjC3ValueTypeFacts(
++    const ASTContext &Context, QualType PayloadType,
++    ObjC3PayloadPosition Position) {
++  ObjC3ValueTypeFacts Facts;
++  Facts.WrittenType = PayloadType;
++  Facts.Position = Position;
++  if (PayloadType.isNull())
++    return Facts;
++  Facts.CanonicalType = Context.getCanonicalType(PayloadType);
++
++  const Type *Ty = PayloadType.getTypePtr();
++  if (Ty->isDependentType()) {
++    reject(Facts, ObjC3PayloadTypeIssue::Dependent);
++    return Facts;
++  }
++  if (Ty->isVariablyModifiedType()) {
++    reject(Facts, ObjC3PayloadTypeIssue::VariablyModified);
++    return Facts;
++  }
++  if (Ty->isFunctionType()) {
++    Facts.Kind = ObjC3PayloadTypeKind::Function;
++    reject(Facts, ObjC3PayloadTypeIssue::Function);
++    return Facts;
++  }
++  if (Ty->isReferenceType()) {
++    Facts.Kind = ObjC3PayloadTypeKind::Reference;
++    reject(Facts, ObjC3PayloadTypeIssue::Reference);
++    return Facts;
++  }
++  if (Ty->isVoidType()) {
++    Facts.Kind = ObjC3PayloadTypeKind::Void;
++    Facts.Issue = ObjC3PayloadTypeIssue::None;
++    Facts.Copy = trivialOperation();
++    Facts.Move = trivialOperation();
++    Facts.Destroy = trivialOperation();
++    return Facts;
++  }
++  if (Ty->isIncompleteType()) {
++    reject(Facts, ObjC3PayloadTypeIssue::Incomplete);
++    return Facts;
++  }
++  if (Ty->isArrayType()) {
++    Facts.Kind = ObjC3PayloadTypeKind::Array;
++    reject(Facts, ObjC3PayloadTypeIssue::ArrayNeedsElementOperations);
++    return Facts;
++  }
++  if (Ty->isAtomicType()) {
++    Facts.Kind = ObjC3PayloadTypeKind::Atomic;
++    reject(Facts, ObjC3PayloadTypeIssue::AtomicNeedsAtomicOperations);
++    return Facts;
++  }
++  if (!Ty->isObjectType()) {
++    reject(Facts, ObjC3PayloadTypeIssue::NotAnObjectType);
++    return Facts;
++  }
++
++  if (Ty->isBuiltinType())
++    Facts.Kind = ObjC3PayloadTypeKind::Builtin;
++  else if (Ty->isEnumeralType())
++    Facts.Kind = ObjC3PayloadTypeKind::Enumeration;
++  else if (Ty->isObjCObjectPointerType())
++    Facts.Kind = ObjC3PayloadTypeKind::ObjCObjectPointer;
++  else if (Ty->isBlockPointerType())
++    Facts.Kind = ObjC3PayloadTypeKind::BlockPointer;
++  else if (Ty->isPointerType())
++    Facts.Kind = ObjC3PayloadTypeKind::CPointer;
++  else if (Ty->isMemberPointerType())
++    Facts.Kind = ObjC3PayloadTypeKind::MemberPointer;
++  else if (Ty->isRecordType())
++    Facts.Kind = ObjC3PayloadTypeKind::Record;
++  else if (Ty->isObjCObjectType())
++    Facts.Kind = ObjC3PayloadTypeKind::ObjCObject;
++  else
++    Facts.Kind = ObjC3PayloadTypeKind::OtherObject;
++
++  if (Facts.Kind == ObjC3PayloadTypeKind::ObjCObject) {
++    reject(Facts, ObjC3PayloadTypeIssue::NotAnObjectType);
++    return Facts;
++  }
++
++  if (const RecordType *RecordTy = Ty->getAs<RecordType>()) {
++    const RecordDecl *Record = RecordTy->getDecl();
++    Facts.IsRecord = true;
++    Facts.IsUnion = Record->isUnion();
++    Facts.HasARCManagedRecordFields = hasARCManagedRecordField(PayloadType);
++    Facts.IsAbstractRecord = false;
++    Facts.IsTriviallyCopyable = PayloadType.isTriviallyCopyableType(Context);
++    if (Record->hasFlexibleArrayMember()) {
++      reject(Facts, ObjC3PayloadTypeIssue::RecordHasFlexibleArrayMember);
++      return Facts;
++    }
++
++    if (const auto *CXXRecord = dyn_cast<CXXRecordDecl>(Record)) {
++      Facts.IsAbstractRecord = CXXRecord->isAbstract();
++      Facts.Copy = recordOperationFacts(
++          CXXRecord, ObjC3ValueOperation::Copy,
++          CXXRecord->hasTrivialCopyConstructor());
++      Facts.Move = recordOperationFacts(
++          CXXRecord, ObjC3ValueOperation::Move,
++          CXXRecord->hasTrivialMoveConstructor());
++      Facts.Destroy = recordOperationFacts(
++          CXXRecord, ObjC3ValueOperation::Destroy,
++          CXXRecord->hasTrivialDestructor());
++    } else {
++      const auto CopyKind = PayloadType.isNonTrivialToPrimitiveCopy();
++      const auto MoveKind =
++          PayloadType.isNonTrivialToPrimitiveDestructiveMove();
++      Facts.Copy = generatedOperation(CopyKind == QualType::PCK_Trivial);
++      Facts.Move = generatedOperation(MoveKind == QualType::PCK_Trivial);
++      Facts.Destroy = generatedOperation(
++          PayloadType.isDestructedType() == QualType::DK_none);
++    }
++  } else {
++    classifyLifetime(Context, PayloadType, Facts);
++    const bool ARCManaged = Context.getLangOpts().ObjCAutoRefCount &&
++        (Facts.EffectiveObjCLifetime == Qualifiers::OCL_Strong ||
++         Facts.EffectiveObjCLifetime == Qualifiers::OCL_Weak);
++    Facts.IsTriviallyCopyable = PayloadType.isTriviallyCopyableType(Context);
++    const bool IsNonTrivialBlock = Facts.IsBlockPointer;
++    Facts.Copy = generatedOperation(!ARCManaged && !IsNonTrivialBlock);
++    Facts.Move = generatedOperation(!ARCManaged && !IsNonTrivialBlock);
++    Facts.Destroy = generatedOperation(
++        !ARCManaged && !IsNonTrivialBlock &&
++        PayloadType.isDestructedType() == QualType::DK_none);
++  }
++
++  const TypeInfoChars Layout = Context.getTypeInfoInChars(PayloadType);
++  Facts.Size = Layout.Width;
++  Facts.Alignment = Layout.Align;
++  Facts.HasObjectLayout = true;
++  Facts.Issue = ObjC3PayloadTypeIssue::None;
++  return Facts;
++}
++
++
++
++
++
++
+diff --git a/clang/unittests/AST/ObjC3TypeContractsTest.cpp b/clang/unittests/AST/ObjC3TypeContractsTest.cpp
+new file mode 100644
+index 000000000..96b6f028c
+--- /dev/null
++++ b/clang/unittests/AST/ObjC3TypeContractsTest.cpp
+@@ -0,0 +1,325 @@
++//===--- ObjC3TypeContractsTest.cpp - AST value type facts ----------------===//
++//
++// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
++// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
++//
++//===----------------------------------------------------------------------===//
++
++#include "clang/AST/ASTContext.h"
++#include "clang/AST/DeclCXX.h"
++#include "clang/AST/DeclObjC.h"
++#include "clang/AST/DeclTemplate.h"
++#include "clang/AST/ObjC3TypeContracts.h"
++#include "clang/AST/RecursiveASTVisitor.h"
++#include "clang/Frontend/ASTUnit.h"
++#include "clang/Tooling/Tooling.h"
++#include "gtest/gtest.h"
++
++#include <memory>
++#include <string>
++#include <vector>
++
++using namespace clang;
++
++namespace {
++
++std::unique_ptr<ASTUnit> parse(llvm::StringRef Source,
++                               std::vector<std::string> Args) {
++  return tooling::buildASTFromCodeWithArgs(Source, Args, "objc3-value-types.mm");
++}
++
++const NamedDecl *lookup(ASTContext &Context, llvm::StringRef Name) {
++  IdentifierInfo &II = Context.Idents.get(Name);
++  auto Decls = Context.getTranslationUnitDecl()->lookup(&II);
++  return Decls.empty() ? nullptr : Decls.front();
++}
++
++const VarDecl *findVar(ASTContext &Context, llvm::StringRef Name) {
++  if (const auto *D = dyn_cast_or_null<VarDecl>(lookup(Context, Name)))
++    return D;
++  return nullptr;
++}
++
++const FunctionDecl *findFunction(ASTContext &Context, llvm::StringRef Name) {
++  if (const auto *D = dyn_cast_or_null<FunctionDecl>(lookup(Context, Name)))
++    return D;
++  return nullptr;
++}
++
++const RecordDecl *findRecord(ASTContext &Context, llvm::StringRef Name) {
++  if (const auto *D = dyn_cast_or_null<RecordDecl>(lookup(Context, Name)))
++    return D;
++  return nullptr;
++}
++
++class LocalVarFinder : public RecursiveASTVisitor<LocalVarFinder> {
++public:
++  explicit LocalVarFinder(llvm::StringRef Name) : Name(Name) {}
++  bool VisitVarDecl(VarDecl *Decl) {
++    if (Decl->getName() == Name)
++      Found = Decl;
++    return Found == nullptr;
++  }
++  const VarDecl *get() const { return Found; }
++private:
++  llvm::StringRef Name;
++  const VarDecl *Found = nullptr;
++};
++
++const VarDecl *findLocalVar(ASTContext &Context, llvm::StringRef Name) {
++  LocalVarFinder Finder(Name);
++  Finder.TraverseDecl(Context.getTranslationUnitDecl());
++  return Finder.get();
++}
++
++} // namespace
++
++TEST(ObjC3TypeContracts, PreservesCanonicalAndTargetLayoutFacts) {
++  auto AST = parse(R"cpp(
++    struct Plain { int Value; };
++    extern int BuiltinValue;
++    extern int *NativePointer;
++    extern Plain RecordValue;
++    void FunctionType(int);
++  )cpp", {"-std=c++20"});
++  ASSERT_TRUE(AST);
++  ASTContext &Context = AST->getASTContext();
++
++  auto Builtin = getObjC3ValueTypeFacts(
++      Context, findVar(Context, "BuiltinValue")->getType(),
++      ObjC3PayloadPosition::OptionalElement);
++  ASSERT_TRUE(Builtin.isValid());
++  EXPECT_EQ(Builtin.Kind, ObjC3PayloadTypeKind::Builtin);
++  EXPECT_EQ(Builtin.WrittenType, findVar(Context, "BuiltinValue")->getType());
++  EXPECT_EQ(Builtin.CanonicalType,
++            Context.getCanonicalType(findVar(Context, "BuiltinValue")->getType()));
++  EXPECT_TRUE(Builtin.HasObjectLayout);
++  auto IntLayout = Context.getTypeInfoInChars(Builtin.CanonicalType);
++  EXPECT_EQ(Builtin.Size, IntLayout.Width);
++  EXPECT_EQ(Builtin.Alignment, IntLayout.Align);
++  EXPECT_TRUE(Builtin.Copy.IsTrivial);
++  EXPECT_FALSE(Builtin.Copy.NeedsGeneratedOperation);
++
++  auto Void = getObjC3ValueTypeFacts(Context, Context.VoidTy,
++                                     ObjC3PayloadPosition::ResultSuccess);
++  ASSERT_TRUE(Void.isValid());
++  EXPECT_TRUE(Void.isVoidTagOnly());
++  EXPECT_FALSE(Void.HasObjectLayout);
++  EXPECT_EQ(Void.Size, CharUnits::Zero());
++
++  auto Pointer = getObjC3ValueTypeFacts(
++      Context, findVar(Context, "NativePointer")->getType(),
++      ObjC3PayloadPosition::ResultSuccess);
++  ASSERT_TRUE(Pointer.isValid());
++  EXPECT_EQ(Pointer.Kind, ObjC3PayloadTypeKind::CPointer);
++  EXPECT_EQ(Pointer.CanonicalType->getTypeClass(), Type::Pointer);
++  EXPECT_EQ(Pointer.CanonicalType->getPointeeType(), Context.IntTy);
++
++  auto Function = getObjC3ValueTypeFacts(
++      Context, findFunction(Context, "FunctionType")->getType(),
++      ObjC3PayloadPosition::ThrowsPayload);
++  EXPECT_EQ(Function.Issue, ObjC3PayloadTypeIssue::Function);
++}
++
++TEST(ObjC3TypeContracts, ReportsShapeFailuresWithoutInventingRepresentations) {
++  auto AST = parse(R"cpp(
++    struct Incomplete;
++    extern Incomplete IncompleteValue;
++    extern int &ReferenceValue;
++    extern int FixedArray[3];
++    int VariableArray(int Count) { int VariableValue[Count]; return 0; }
++    int FunctionType(int);
++    template <typename T> void Dependent(T Value);
++  )cpp", {"-std=c++20", "-Wno-vla"});
++  ASSERT_TRUE(AST);
++  ASTContext &Context = AST->getASTContext();
++
++  auto Incomplete = getObjC3ValueTypeFacts(
++      Context, findVar(Context, "IncompleteValue")->getType(),
++      ObjC3PayloadPosition::ResultError);
++  EXPECT_EQ(Incomplete.Issue, ObjC3PayloadTypeIssue::Incomplete);
++
++  auto Reference = getObjC3ValueTypeFacts(
++      Context, findVar(Context, "ReferenceValue")->getType(),
++      ObjC3PayloadPosition::OptionalElement);
++  EXPECT_EQ(Reference.Issue, ObjC3PayloadTypeIssue::Reference);
++
++  auto Array = getObjC3ValueTypeFacts(
++      Context, findVar(Context, "FixedArray")->getType(),
++      ObjC3PayloadPosition::OptionalElement);
++  EXPECT_EQ(Array.Issue, ObjC3PayloadTypeIssue::ArrayNeedsElementOperations);
++  EXPECT_EQ(Array.Kind, ObjC3PayloadTypeKind::Array);
++
++  LocalVarFinder Finder("VariableValue");
++  Finder.TraverseDecl(Context.getTranslationUnitDecl());
++  ASSERT_NE(Finder.get(), nullptr);
++  auto VLA = getObjC3ValueTypeFacts(
++      Context, Finder.get()->getType(),
++      ObjC3PayloadPosition::OptionalElement);
++  EXPECT_EQ(VLA.Issue, ObjC3PayloadTypeIssue::VariablyModified);
++
++  const auto *Template = dyn_cast<FunctionTemplateDecl>(lookup(Context, "Dependent"));
++  ASSERT_NE(Template, nullptr);
++  const ParmVarDecl *Param = *Template->getTemplatedDecl()->param_begin();
++  auto Dependent = getObjC3ValueTypeFacts(
++      Context, Param->getType(), ObjC3PayloadPosition::ResultError);
++  EXPECT_EQ(Dependent.Issue, ObjC3PayloadTypeIssue::Dependent);
++}
++
++TEST(ObjC3TypeContracts, ReportsRecordOperationsAndDefersUseSiteAccessToSema) {
++  auto AST = parse(R"cpp(
++    struct Nontrivial {
++      Nontrivial(const Nontrivial &);
++      Nontrivial(Nontrivial &&);
++      ~Nontrivial();
++    };
++    struct DeletedCopy {
++      DeletedCopy(const DeletedCopy &) = delete;
++    };
++    extern Nontrivial NontrivialValue;
++    extern DeletedCopy DeletedCopyValue;
++  )cpp", {"-std=c++20"});
++  ASSERT_TRUE(AST);
++  ASTContext &Context = AST->getASTContext();
++
++  auto Nontrivial = getObjC3ValueTypeFacts(
++      Context, findVar(Context, "NontrivialValue")->getType(),
++      ObjC3PayloadPosition::ResultSuccess);
++  ASSERT_TRUE(Nontrivial.isValid());
++  EXPECT_EQ(Nontrivial.Kind, ObjC3PayloadTypeKind::Record);
++  EXPECT_TRUE(Nontrivial.Copy.NeedsGeneratedOperation);
++  EXPECT_TRUE(Nontrivial.Copy.RequiresSemaResolution);
++  EXPECT_TRUE(Nontrivial.Move.NeedsGeneratedOperation);
++  EXPECT_TRUE(Nontrivial.Destroy.NeedsGeneratedOperation);
++
++  auto DeletedCopy = getObjC3ValueTypeFacts(
++      Context, findVar(Context, "DeletedCopyValue")->getType(),
++      ObjC3PayloadPosition::OptionalElement);
++  ASSERT_TRUE(DeletedCopy.isValid());
++  EXPECT_TRUE(DeletedCopy.Copy.RequiresSemaResolution);
++  // Carrier shape queries do not globally ban noncopyable C++ types. Sema
++  // decides whether a particular source expression needs the deleted copy.
++  EXPECT_FALSE(DeletedCopy.Move.KnownDeleted);
++}
++
++TEST(ObjC3TypeContracts, SeparatesObjCStrongWeakBlockAndAggregateOwnership) {
++  auto AST = parse(R"objc(
++    @interface NSObject @end
++    __strong id StrongValue;
++    __weak id WeakValue;
++    __unsafe_unretained id UnretainedValue;
++    void (^BlockValue)(void);
++    struct StrongFields { __strong id Value; };
++    struct UnsafeFields { __unsafe_unretained id Value; };
++    void lifetimeParameters(__autoreleasing id AutoreleasingValue);
++  )objc", {"-x", "objective-c", "-fobjc-arc", "-fblocks",
++            "-fobjc-runtime=gnustep-2.0"});
++  ASSERT_TRUE(AST);
++  ASTContext &Context = AST->getASTContext();
++
++  auto Strong = getObjC3ValueTypeFacts(
++      Context, findVar(Context, "StrongValue")->getType(),
++      ObjC3PayloadPosition::OptionalElement);
++  ASSERT_TRUE(Strong.isValid());
++  EXPECT_TRUE(Strong.IsObjCObjectPointer);
++  EXPECT_FALSE(Strong.IsBlockPointer);
++  EXPECT_EQ(Strong.WrittenObjCLifetime, Qualifiers::OCL_Strong);
++  EXPECT_EQ(Strong.EffectiveObjCLifetime, Qualifiers::OCL_Strong);
++  EXPECT_TRUE(Strong.Copy.NeedsGeneratedOperation);
++
++  auto Weak = getObjC3ValueTypeFacts(
++      Context, findVar(Context, "WeakValue")->getType(),
++      ObjC3PayloadPosition::OptionalElement);
++  ASSERT_TRUE(Weak.isValid());
++  EXPECT_EQ(Weak.WrittenObjCLifetime, Qualifiers::OCL_Weak);
++  EXPECT_TRUE(Weak.Destroy.NeedsGeneratedOperation);
++
++  auto Unretained = getObjC3ValueTypeFacts(
++      Context, findVar(Context, "UnretainedValue")->getType(),
++      ObjC3PayloadPosition::OptionalElement);
++  ASSERT_TRUE(Unretained.isValid());
++  EXPECT_EQ(Unretained.WrittenObjCLifetime, Qualifiers::OCL_ExplicitNone);
++  EXPECT_FALSE(Unretained.Copy.NeedsGeneratedOperation);
++  EXPECT_FALSE(Unretained.Destroy.NeedsGeneratedOperation);
++
++  const FunctionDecl *LifetimeParameters =
++      findFunction(Context, "lifetimeParameters");
++  ASSERT_NE(LifetimeParameters, nullptr);
++  auto Autoreleasing = getObjC3ValueTypeFacts(
++      Context, LifetimeParameters->getParamDecl(0)->getType(),
++      ObjC3PayloadPosition::OptionalElement);
++  ASSERT_TRUE(Autoreleasing.isValid());
++  EXPECT_EQ(Autoreleasing.WrittenObjCLifetime, Qualifiers::OCL_Autoreleasing);
++  EXPECT_FALSE(Autoreleasing.Copy.NeedsGeneratedOperation);
++  EXPECT_FALSE(Autoreleasing.Destroy.NeedsGeneratedOperation);
++
++  auto Block = getObjC3ValueTypeFacts(
++      Context, findVar(Context, "BlockValue")->getType(),
++      ObjC3PayloadPosition::ResultSuccess);
++  ASSERT_TRUE(Block.isValid());
++  EXPECT_EQ(Block.Kind, ObjC3PayloadTypeKind::BlockPointer);
++  EXPECT_TRUE(Block.IsBlockPointer);
++  EXPECT_FALSE(Block.IsObjCObjectPointer);
++  EXPECT_TRUE(Block.Copy.NeedsGeneratedOperation);
++  EXPECT_TRUE(Block.Destroy.NeedsGeneratedOperation);
++
++  const RecordDecl *StrongFields = findRecord(Context, "StrongFields");
++  ASSERT_NE(StrongFields, nullptr);
++  auto Aggregate = getObjC3ValueTypeFacts(
++      Context, Context.getCanonicalTagType(StrongFields),
++      ObjC3PayloadPosition::ResultSuccess);
++  ASSERT_TRUE(Aggregate.isValid());
++  EXPECT_TRUE(Aggregate.IsRecord);
++  EXPECT_TRUE(Aggregate.HasARCManagedRecordFields);
++  EXPECT_TRUE(Aggregate.Destroy.NeedsGeneratedOperation);
++
++  const RecordDecl *UnsafeFields = findRecord(Context, "UnsafeFields");
++  ASSERT_NE(UnsafeFields, nullptr);
++  auto UnsafeAggregate = getObjC3ValueTypeFacts(
++      Context, Context.getCanonicalTagType(UnsafeFields),
++      ObjC3PayloadPosition::ResultSuccess);
++  ASSERT_TRUE(UnsafeAggregate.isValid());
++  EXPECT_FALSE(UnsafeAggregate.HasARCManagedRecordFields);
++  EXPECT_TRUE(UnsafeAggregate.Copy.IsTrivial);
++  EXPECT_TRUE(UnsafeAggregate.Destroy.IsTrivial);
++}
++
++TEST(ObjC3TypeContracts, BlockCarrierOperationsRemainExplicitWithoutARC) {
++  auto AST = parse(R"objc(
++    void (^BlockValue)(void);
++  )objc", {"-x", "objective-c", "-fblocks"});
++  ASSERT_TRUE(AST);
++  ASTContext &Context = AST->getASTContext();
++
++  auto Block = getObjC3ValueTypeFacts(
++      Context, findVar(Context, "BlockValue")->getType(),
++      ObjC3PayloadPosition::ResultSuccess);
++  ASSERT_TRUE(Block.isValid());
++  EXPECT_FALSE(Context.getLangOpts().ObjCAutoRefCount);
++  EXPECT_TRUE(Block.IsBlockPointer);
++  EXPECT_TRUE(Block.Copy.NeedsGeneratedOperation);
++  EXPECT_TRUE(Block.Destroy.NeedsGeneratedOperation);
++}
++
++TEST(ObjC3TypeContracts, MarksAtomicAndFlexibleArrayForSpecializedAdapters) {
++  auto AST = parse(R"c(
++    _Atomic(int) AtomicValue;
++    struct FlexibleRecord { int Count; int Data[]; };
++    struct FlexibleRecord FlexibleValue;
++  )c", {"-x", "c", "-std=c11"});
++  ASSERT_TRUE(AST);
++  ASTContext &Context = AST->getASTContext();
++
++  auto Atomic = getObjC3ValueTypeFacts(
++      Context, findVar(Context, "AtomicValue")->getType(),
++      ObjC3PayloadPosition::OptionalElement);
++  EXPECT_EQ(Atomic.Kind, ObjC3PayloadTypeKind::Atomic);
++  EXPECT_EQ(Atomic.Issue, ObjC3PayloadTypeIssue::AtomicNeedsAtomicOperations);
++
++  auto Flexible = getObjC3ValueTypeFacts(
++      Context, findVar(Context, "FlexibleValue")->getType(),
++      ObjC3PayloadPosition::ResultSuccess);
++  EXPECT_EQ(Flexible.Kind, ObjC3PayloadTypeKind::Record);
++  EXPECT_EQ(Flexible.Issue,
++            ObjC3PayloadTypeIssue::RecordHasFlexibleArrayMember);
++}

@@ -37,6 +37,9 @@ EXPECTED_REQUIRED_PATHS = {
     "waiver_registry": "tests/tooling/fixtures/performance_governance/waivers.json",
     "workflow_surface": "tests/tooling/fixtures/performance_governance/workflow_surface.json",
     "schema_surface": "tests/tooling/fixtures/performance_governance/schema_surface.json",
+    "optimization_runtime_debug_safety_contract": (
+        "tests/tooling/fixtures/performance_governance/optimization_runtime_debug_safety_contract.json"
+    ),
 }
 
 EXPECTED_UPSTREAM_REPORTS = (
@@ -60,6 +63,8 @@ EXPECTED_CHECKED_IN_SOURCES = (
     "tests/tooling/fixtures/performance_governance/schema_surface.json",
     "tests/tooling/fixtures/performance_governance/workflow_surface.json",
     "tests/tooling/fixtures/performance_governance/waivers.json",
+    "tests/tooling/fixtures/performance_governance/optimization_runtime_debug_safety_contract.json",
+    "schemas/objc3c-optimization-runtime-debug-safety-v1.schema.json",
     "tests/tooling/fixtures/performance/benchmark_portfolio.json",
     "tests/tooling/fixtures/performance/comparative_baseline_manifest.json",
     "tests/tooling/fixtures/compiler_throughput/workload_manifest.json",
@@ -88,6 +93,8 @@ EXPECTED_OWNER_SPLIT = {
         "tests/tooling/fixtures/performance_governance/lab_policy.json",
         "tests/tooling/fixtures/performance_governance/waivers.json",
         "tests/tooling/fixtures/performance_governance/workflow_surface.json",
+        "tests/tooling/fixtures/performance_governance/optimization_runtime_debug_safety_contract.json",
+        "schemas/objc3c-optimization-runtime-debug-safety-v1.schema.json",
     ],
     "compiler_throughput": [
         "tests/tooling/fixtures/compiler_throughput/source_surface.json",

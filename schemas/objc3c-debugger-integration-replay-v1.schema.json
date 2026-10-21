@@ -1,0 +1,231 @@
+{
+  "$id": "https://objc3c.dev/schemas/objc3c-debugger-integration-replay-v1.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "objc3c Debugger Integration Replay",
+  "type": "object",
+  "required": [
+    "contract_id",
+    "source_map_bundle",
+    "protocol_contract",
+    "debug_configuration",
+    "lldb_plugin",
+    "stepping_plan",
+    "value_inspection",
+    "negative_cases"
+  ],
+  "properties": {
+    "$schema": {
+      "type": "string"
+    },
+    "contract_id": {
+      "const": "objc3c.debugger-integration.replay.v1"
+    },
+    "source_map_bundle": {
+      "type": "string",
+      "pattern": "^[^\\\\]+$"
+    },
+    "protocol_contract": {
+      "type": "object",
+      "required": [
+        "contract_id",
+        "compiler_identity_id",
+        "rejects_generated_only_maps",
+        "requires_inline_frame_chains",
+        "requires_step_over_emitted_native_debug_info",
+        "requires_step_operations",
+        "requires_object_model_step_contexts",
+        "rejects_private_snapshot_only_evidence",
+        "requires_native_debug_info_evidence_links",
+        "requires_supported_runtime_metadata"
+      ],
+      "properties": {
+        "contract_id": {
+          "const": "objc3c.lldb-plugin.protocol.v1"
+        },
+        "rejects_generated_only_maps": {
+          "const": true
+        },
+        "requires_inline_frame_chains": {
+          "const": true
+        },
+        "requires_step_over_emitted_native_debug_info": {
+          "const": true
+        },
+        "requires_step_operations": {
+          "type": "array",
+          "allOf": [
+            { "contains": { "const": "step-in" } },
+            { "contains": { "const": "step-over" } },
+            { "contains": { "const": "step-out" } }
+          ]
+        },
+        "requires_object_model_step_contexts": {
+          "type": "array",
+          "allOf": [
+            { "contains": { "const": "method-call" } },
+            { "contains": { "const": "property-accessor" } },
+            { "contains": { "const": "category-method" } },
+            { "contains": { "const": "protocol-method-body" } },
+            { "contains": { "const": "reflection-probe-call" } }
+          ]
+        },
+        "rejects_private_snapshot_only_evidence": {
+          "const": true
+        },
+        "requires_native_debug_info_evidence_links": {
+          "const": true
+        },
+        "requires_supported_runtime_metadata": {
+          "const": true
+        }
+      },
+      "additionalProperties": true
+    },
+    "debug_configuration": {
+      "type": "object",
+      "required": [
+        "profile",
+        "optimization",
+        "native_debug_info"
+      ],
+      "properties": {
+        "profile": {
+          "const": "debug"
+        },
+        "optimization": {
+          "enum": [
+            "none",
+            "debug-preserved"
+          ]
+        },
+        "native_debug_info": {
+          "const": "present"
+        }
+      },
+      "additionalProperties": true
+    },
+    "lldb_plugin": {
+      "type": "object",
+      "required": [
+        "commands"
+      ],
+      "properties": {
+        "commands": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "required": [
+              "command_id",
+              "plugin_command",
+              "script_entry",
+              "replayable"
+            ],
+            "properties": {
+              "replayable": {
+                "const": true
+              }
+            },
+            "additionalProperties": true
+          }
+        }
+      },
+      "additionalProperties": true
+    },
+    "stepping_plan": {
+      "type": "object",
+      "required": [
+        "records"
+      ],
+      "properties": {
+        "records": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/steppingRecord"
+          }
+        }
+      },
+      "additionalProperties": true
+    },
+    "value_inspection": {
+      "type": "object",
+      "required": [
+        "records"
+      ],
+      "properties": {
+        "records": {
+          "type": "array",
+          "minItems": 1
+        }
+      },
+      "additionalProperties": true
+    }
+  },
+  "$defs": {
+    "steppingRecord": {
+      "type": "object",
+      "required": [
+        "record_id",
+        "status",
+        "step_kind",
+        "step_operation",
+        "statement_unit_id",
+        "runtime_context_kind",
+        "runtime_context_id",
+        "artifact_scope",
+        "source_map_entry_id",
+        "debug_map_entry_id",
+        "source_digest",
+        "lldb_command_id"
+      ],
+      "properties": {
+        "status": {
+          "enum": [
+            "supported",
+            "unsupported"
+          ]
+        },
+        "step_kind": {
+          "enum": [
+            "statement",
+            "function",
+            "method",
+            "message-send",
+            "property-access",
+            "runtime-helper-call"
+          ]
+        },
+        "step_operation": {
+          "enum": [
+            "step-in",
+            "step-over",
+            "step-out"
+          ]
+        },
+        "runtime_context_kind": {
+          "enum": [
+            "statement",
+            "function-call",
+            "method-call",
+            "property-accessor",
+            "category-method",
+            "protocol-method-body",
+            "reflection-probe-call"
+          ]
+        },
+        "artifact_scope": {
+          "const": "public-production-artifact"
+        },
+        "private_snapshot_only": {
+          "const": false
+        },
+        "claims_stepping": {
+          "type": "boolean"
+        }
+      },
+      "additionalProperties": true
+    }
+  },
+  "additionalProperties": true
+}

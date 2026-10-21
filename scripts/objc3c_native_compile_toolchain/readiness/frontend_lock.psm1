@@ -6,9 +6,10 @@ function Get-NativeCompilerExpectedFrontendLockBinaries {
     [Parameter(Mandatory = $true)][string]$CompilerRepoRoot
   )
 
+  $extension = if ([System.Environment]::OSVersion.Platform -eq [System.PlatformID]::Win32NT) { ".exe" } else { "" }
   return @{
-    "objc3c-native" = (Join-Path $CompilerRepoRoot "artifacts/bin/objc3c-native.exe")
-    "objc3c-frontend-c-api-runner" = (Join-Path $CompilerRepoRoot "artifacts/bin/objc3c-frontend-c-api-runner.exe")
+    "objc3c-native" = (Join-Path $CompilerRepoRoot "artifacts/bin/objc3c-native$extension")
+    "objc3c-frontend-c-api-runner" = (Join-Path $CompilerRepoRoot "artifacts/bin/objc3c-frontend-c-api-runner$extension")
   }
 }
 

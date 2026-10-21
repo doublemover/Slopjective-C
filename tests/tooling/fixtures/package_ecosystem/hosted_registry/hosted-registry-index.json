@@ -1,12 +1,340 @@
 {
   "contract_id": "objc3c.package_ecosystem.hosted_registry_index.v1",
+  "issue_refs": [
+    8220
+  ],
   "registry_id": "objc3c-hosted-registry-fixture-v1",
   "registry_version": 1,
   "registry_state": "not-revoked",
+  "provider_model": {
+    "provider_id": "schema-backed-hosted-registry-provider-v1",
+    "network_fetch": {
+      "separated_from_resolution": true,
+      "policy": "forbidden-fail-closed",
+      "live_fetch_enabled": false
+    },
+    "transport": {
+      "transport_id": "public-hosted-registry-network-transport-v1",
+      "mode": "disabled-live-public-transport",
+      "separated_from_resolver": true,
+      "live_transport_enabled": false,
+      "resolver_invocation_allowed": false,
+      "request_policy": "fail-closed-before-resolver",
+      "unsupported_diagnostic": "live-transport-disabled",
+      "fallback_registry_success": false
+    },
+    "resolver": {
+      "resolver_id": "deterministic-hosted-registry-offline-resolver-v1",
+      "selection_policy": "exact-pinned-version-only",
+      "allow_unpinned_versions": false,
+      "fallback_registry_success": false
+    },
+    "trust_validator": {
+      "validator_id": "schema-backed-hosted-registry-trust-validator-v1",
+      "requires_schema": true,
+      "requires_signature": true,
+      "requires_trust_root": true,
+      "requires_revocation_check": true,
+      "requires_cache_identity": true,
+      "requires_offline_mirror_handoff": true,
+      "allows_local_install_fallback": false
+    }
+  },
+  "snapshot": {
+    "snapshot_id": "objc3c-hosted-registry-fixture-v1@1",
+    "registry_id": "objc3c-hosted-registry-fixture-v1",
+    "sequence": 1,
+    "previous_snapshot_id": "bootstrap",
+    "source_lock_digest": "sha256:4444444444444444444444444444444444444444444444444444444444444444",
+    "rollback_policy": "monotonic-sequence-required",
+    "network_fetch_observed": false
+  },
+  "snapshot_fetch": {
+    "fetcher_id": "deterministic-hosted-registry-snapshot-fetcher-v1",
+    "transport_policy": {
+      "policy_id": "explicit-hosted-registry-transport-policy-v1",
+      "transport_id": "public-hosted-registry-network-transport-v1",
+      "mode": "deterministic-offline-snapshot-replay",
+      "allowed_transport": "checked-in-registry-snapshot",
+      "live_network_allowed": false,
+      "registry_url_allowed": false,
+      "resolver_invocation_before_trust": false,
+      "request_policy": "fail-closed-before-network",
+      "unsupported_diagnostic": "live-transport-disabled",
+      "unavailable_behavior": "fail-closed",
+      "fallback_registry_success": false
+    },
+    "snapshot_source": {
+      "source_kind": "checked-in-hosted-registry-snapshot",
+      "registry_id": "objc3c-hosted-registry-fixture-v1",
+      "registry_index_path": "tests/tooling/fixtures/package_ecosystem/hosted_registry/hosted-registry-index.json",
+      "offline_mirror_path": "tests/tooling/fixtures/package_ecosystem/hosted_registry/offline-mirror-index.json",
+      "source_lock": "tests/tooling/fixtures/package_ecosystem/hosted_registry/fixture-lock.json",
+      "source_lock_digest": "sha256:4444444444444444444444444444444444444444444444444444444444444444",
+      "snapshot_id": "objc3c-hosted-registry-fixture-v1@1",
+      "snapshot_sequence": 1
+    },
+    "trust_enforcement": {
+      "trust_root_id": "objc3c-local-deterministic-trust-root-v1",
+      "signature_required": true,
+      "trust_root_required": true,
+      "revocation_required": true,
+      "cache_identity_required": true,
+      "offline_mirror_handoff_required": true,
+      "unknown_trust_root_policy": "fail-closed",
+      "revoked_subject_policy": "fail-closed",
+      "digest_drift_policy": "fail-closed"
+    },
+    "lock_materialization": {
+      "contract_id": "objc3c.package_ecosystem.hosted_registry_materialized_lock.v1",
+      "policy": "lockfile-first-offline-mirror-handoff-v1",
+      "selection_policy": "exact-pinned-version-only",
+      "lock_source": "tests/tooling/fixtures/package_ecosystem/hosted_registry/fixture-lock.json",
+      "offline_mirror_path": "tests/tooling/fixtures/package_ecosystem/hosted_registry/offline-mirror-index.json",
+      "lock_required_before_resolution": true,
+      "offline_mirror_handoff_required": true,
+      "offline_replay_sufficient": true,
+      "network_required_after_lock": false,
+      "local_install_fallback_for_unverified_artifacts": false,
+      "fallback_registry_success": false
+    }
+  },
+  "service_boundary": {
+    "support_state": "fixture-only-offline",
+    "supported_capability_id": "ecosystem.package-manager.hosted-registry-fixture",
+    "reserved_capability_id": "ecosystem.package-manager.public-hosted-registry",
+    "availability": "not-claimed",
+    "auth": "not-implemented-reserved",
+    "moderation": "not-implemented-reserved",
+    "live_network_fetch": "forbidden-fail-closed",
+    "fallback_registry_success": false,
+    "package_manager_parity": "not-claimed",
+    "local_offline_replay_preserved": true
+  },
+  "live_service_boundary": {
+    "contract_id": "objc3c.package_ecosystem.public_hosted_registry_live_service_contract.v1",
+    "capability_id": "ecosystem.package-manager.public-hosted-registry",
+    "claim_state": "reserved-fail-closed",
+    "activation_state": "inactive-live-service-unavailable",
+    "unsupported_mode": "live-public-registry-unsupported",
+    "fallback_registry_success": false,
+    "offline_replay_preserved": true,
+    "network_transport": {
+      "transport_id": "public-hosted-registry-network-transport-v1",
+      "mode": "disabled-live-public-transport",
+      "separated_from_resolver": true,
+      "enabled": false,
+      "request_policy": "fail-closed-before-resolver",
+      "unsupported_diagnostic": "live-transport-disabled",
+      "fallback_registry_success": false
+    },
+    "production_records": {
+      "auth": {
+        "record_id": "production-auth-reserved-fail-closed-v1",
+        "state": "reserved-fail-closed",
+        "active": false,
+        "unavailable_behavior": "fail-closed",
+        "unsupported_diagnostic": "production-auth-unavailable"
+      },
+      "moderation": {
+        "record_id": "production-moderation-reserved-fail-closed-v1",
+        "state": "reserved-fail-closed",
+        "active": false,
+        "unavailable_behavior": "fail-closed",
+        "unsupported_diagnostic": "production-moderation-unavailable"
+      },
+      "trust_root": {
+        "record_id": "production-trust-root-reserved-fail-closed-v1",
+        "state": "reserved-fail-closed",
+        "active": false,
+        "unavailable_behavior": "fail-closed",
+        "unsupported_diagnostic": "production-trust-root-unavailable"
+      },
+      "availability": {
+        "record_id": "production-availability-reserved-fail-closed-v1",
+        "state": "reserved-fail-closed",
+        "active": false,
+        "unavailable_behavior": "fail-closed",
+        "unsupported_diagnostic": "production-availability-unavailable"
+      }
+    },
+    "lock_offline_handoff": {
+      "policy": "lockfile-first-offline-mirror-handoff-v1",
+      "lock_required_before_live_resolution": true,
+      "offline_mirror_handoff_required": true,
+      "offline_replay_preserved": true,
+      "network_required_after_lock": false,
+      "unsupported_live_resolution_behavior": "fail-closed-before-network"
+    },
+    "diagnostics": [
+      "live-public-service-unavailable",
+      "live-transport-disabled",
+      "production-auth-unavailable",
+      "production-availability-unavailable",
+      "production-moderation-unavailable",
+      "production-trust-root-unavailable",
+      "unsupported-live-service-mode"
+    ]
+  },
+  "hosted_service": {
+    "service_contract_id": "objc3c.package_ecosystem.hosted_registry_service.v1",
+    "service_id": "objc3c-hermetic-hosted-registry-service-v1",
+    "schema": "objc3c-package-hosted-registry-service-v1",
+    "service_fixture_path": "tests/tooling/fixtures/package_ecosystem/hosted_registry/service/hosted-registry-service.json",
+    "network_policy": "hermetic-no-network-service",
+    "public_service_claim": "reserved-live-public-service",
+    "validation_behavior": "service-contract-required-before-resolution",
+    "no_network_fallback": "fail-closed",
+    "fallback_registry_success": false,
+    "default_auth_subject_id": "fixture-developer",
+    "default_auth_token_id": "fixture-developer-token-v1"
+  },
+  "service_availability": {
+    "state": "offline-fixture-available",
+    "live_service_available": false,
+    "network_fetch_allowed": false,
+    "failure_policy": "unavailable-fails-closed",
+    "health_source": "checked-in-fixture-only"
+  },
+  "endpoint_identity": {
+    "registry_id": "objc3c-hosted-registry-fixture-v1",
+    "endpoint_id": "objc3c-hosted-registry-fixture-endpoint-v1",
+    "channel_id": "stable-fixture",
+    "base_url": "https://registry.objc3c.invalid/fixture/v1",
+    "availability_claim": "fixture-metadata-only",
+    "network_fetch": "forbidden-fail-closed",
+    "fallback_registry_success": false
+  },
   "network_policy": "offline-fixture-metadata-only",
   "resolver": "deterministic-hosted-registry-offline-resolver-v1",
   "language_version": "3.0",
   "abi_identity": "objc3-abi-2025Q4",
+  "lock_materialization": {
+    "policy": "lockfile-first-offline-mirror-handoff-v1",
+    "source_lock": "tests/tooling/fixtures/package_ecosystem/hosted_registry/fixture-lock.json",
+    "offline_replay_sufficient": true,
+    "network_required_after_lock": false,
+    "unsigned_artifact_local_install_fallback": false
+  },
+  "lock_trust_material": {
+    "source_lock": "tests/tooling/fixtures/package_ecosystem/hosted_registry/fixture-lock.json",
+    "source_lock_digest": "sha256:4444444444444444444444444444444444444444444444444444444444444444",
+    "trust_root_id": "objc3c-local-deterministic-trust-root-v1",
+    "offline_mirror_path": "tests/tooling/fixtures/package_ecosystem/hosted_registry/offline-mirror-index.json",
+    "cache_policy": "offline-cache-required-digest-pinned",
+    "provenance_policy": "source-owned-package-manifest-required"
+  },
+  "failure_modes": [
+    "ambiguous-module-identity",
+    "ambiguous-version-selection",
+    "cache-identity-drift",
+    "dependency-cycle",
+    "digest-drift",
+    "duplicate-version-entry",
+    "endpoint-channel-drift",
+    "fallback-registry-success",
+    "invalid-semver",
+    "live-network-fetch",
+    "live-public-service-unavailable",
+    "live-transport-disabled",
+    "lock-materialization-drift",
+    "missing-package-provenance",
+    "missing-service-auth",
+    "offline-mirror-handoff-drift",
+    "production-auth-unavailable",
+    "production-availability-unavailable",
+    "production-moderation-unavailable",
+    "production-trust-root-unavailable",
+    "registry-trust-mismatch",
+    "revoked-subject",
+    "rollback-snapshot",
+    "service-auth-token-drift",
+    "service-availability-unavailable",
+    "service-contract-drift",
+    "service-index-drift",
+    "service-moderation-blocked",
+    "service-revocation-unavailable",
+    "snapshot-fetch-policy-drift",
+    "snapshot-source-digest-drift",
+    "transport-policy-drift",
+    "unavailable-registry",
+    "unlocked-version-selection",
+    "unpinned-hosted-dependency",
+    "unsigned-hosted-artifact",
+    "unknown-trust-root",
+    "unknown-service-auth-subject",
+    "unsupported-live-service-mode",
+    "unsupported-platform",
+    "yanked-version"
+  ],
+  "package_versions": [
+    {
+      "package_id": "fixture:network.core",
+      "package_version": "1.0.0",
+      "semver": {
+        "major": 1,
+        "minor": 0,
+        "patch": 0
+      },
+      "version_state": "available",
+      "yank_state": "not-yanked",
+      "supported_platforms": [
+        "windows-x64"
+      ],
+      "selection_policy": "exact-pinned-version-only"
+    }
+  ],
+  "dependency_records": [],
+  "trust_results": [
+    {
+      "trust_result_id": "fixture-network-core-1.0.0-trust-result",
+      "package_id": "fixture:network.core",
+      "package_version": "1.0.0",
+      "status": "verified",
+      "trust_root_id": "objc3c-local-deterministic-trust-root-v1",
+      "package_signature_id": "sha256:ebdad2e83df00f75a7bcfb4d4079eeeedc285d191591ef135b5ab35c7ec11c3f",
+      "registry_signature_id": "sha256:2e2ee5f236794ddd4ffa060a252400bed69bfd4f7413795794faeb4e6777279a",
+      "revocation_checked": true,
+      "allows_local_install_fallback": false
+    }
+  ],
+  "revocation_state": {
+    "checked": true,
+    "registry_state": "not-revoked",
+    "revoked_registry_ids": [],
+    "revoked_package_ids": [],
+    "revoked_signature_ids": [],
+    "revoked_trust_root_ids": []
+  },
+  "yank_state": {
+    "policy": "yanked-versions-fail-closed",
+    "yanked_versions": []
+  },
+  "cache_identities": [
+    {
+      "cache_key": "fixture:network.core@1.0.0",
+      "package_id": "fixture:network.core",
+      "package_version": "1.0.0",
+      "cache_path": "tests/tooling/fixtures/package_ecosystem/hosted_registry/cache/network-core.json",
+      "cache_digest": "sha256:3333333333333333333333333333333333333333333333333333333333333333",
+      "source_digest": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
+      "manifest_digest": "sha256:2222222222222222222222222222222222222222222222222222222222222222",
+      "cache_origin": "offline-mirror-lock-materialized"
+    }
+  ],
+  "offline_mirror_handoffs": [
+    {
+      "handoff_id": "fixture-network-core-1.0.0-offline-mirror-handoff",
+      "package_id": "fixture:network.core",
+      "package_version": "1.0.0",
+      "mirror_path": "tests/tooling/fixtures/package_ecosystem/hosted_registry/offline-mirror-index.json",
+      "source_lock": "tests/tooling/fixtures/package_ecosystem/hosted_registry/fixture-lock.json",
+      "cache_key": "fixture:network.core@1.0.0",
+      "requires_lock_materialization": true,
+      "network_required_after_lock": false,
+      "local_install_fallback_for_unverified_artifacts": false
+    }
+  ],
   "packages": [
     {
       "package_id": "fixture:network.core",
@@ -81,7 +409,8 @@
   "revocations": {
     "revoked_registry_ids": [],
     "revoked_package_ids": [],
-    "revoked_signature_ids": []
+    "revoked_signature_ids": [],
+    "revoked_trust_root_ids": []
   },
   "replay": {
     "commands": [

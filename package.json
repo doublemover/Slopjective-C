@@ -2,10 +2,15 @@
   "name": "slopjective-c",
   "private": true,
   "devDependencies": {
-    "markdownlint-cli2": "^0.20.0",
-    "prettier": "^3.2.5"
+    "markdownlint-cli2": "0.23.3",
+    "prettier": "3.9.10"
   },
   "scripts": {
-    "objc3c": "python -m scripts.objc3c_workflow"
+    "objc3c": "python -m scripts.objc3c_toolchain"
+  },
+  "packageManager": "npm@12.2.1",
+  "engines": {
+    "node": "26.12.0",
+    "npm": "12.2.1"
   }
 }

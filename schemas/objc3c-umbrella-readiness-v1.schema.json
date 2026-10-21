@@ -75,7 +75,8 @@
     },
     "repoPath": {
       "type": "string",
-      "minLength": 1
+      "minLength": 1,
+      "pattern": "^(?![A-Za-z]:)(?![/\\\\])(?!(?:tmp|temp|generated|build|dist)(?:/|\\\\))(?!.*(?:^|[/\\\\])\\.\\.(?:[/\\\\]|$)).+"
     },
     "publicCommand": {
       "type": "string",

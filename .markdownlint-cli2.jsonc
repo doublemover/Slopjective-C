@@ -10,11 +10,11 @@
     "MD031": false,
     "MD032": false,
     "MD033": {
-      "allowed_elements": ["a"]
+      "allowed_elements": ["a"],
     },
     "MD036": false,
     "MD049": false,
-    "MD051": false
+    "MD051": false,
   },
   "globs": [
     "**/*.md",
@@ -24,6 +24,8 @@
     "!reports/**",
     "!spec/planning/**",
     "!tests/tooling/fixtures/**",
-    "!tmp/**"
-  ]
+    "!tmp/**",
+    "!temp/**",
+    "!out/toolchains/**",
+  ],
 }

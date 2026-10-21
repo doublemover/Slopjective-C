@@ -1,0 +1,255 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://objc3c.dev/schemas/objc3c-platform-hosted-runner-capability-summaries-v1.schema.json",
+  "title": "objc3c Platform Hosted Runner Capability Summaries",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "contract_id",
+    "schema_version",
+    "schema_path",
+    "source_path",
+    "support_claim_policy",
+    "workflow_gate_policy",
+    "issue_refs",
+    "summaries",
+    "forbidden_success_claims"
+  ],
+  "properties": {
+    "contract_id": {
+      "const": "objc3c.platform.hosted-runner.capability-summaries.v1"
+    },
+    "schema_version": {
+      "const": 1
+    },
+    "schema_path": {
+      "const": "schemas/objc3c-platform-hosted-runner-capability-summaries-v1.schema.json"
+    },
+    "source_path": {
+      "const": "tests/tooling/fixtures/platform_hardening/hosted_runner_capability_summaries.json"
+    },
+    "support_claim_policy": {
+      "const": "summary-only-no-support-promotion"
+    },
+    "workflow_gate_policy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "optional_hosted_gate_missing_llc_result",
+        "required_conformance_minima_missing_llc_result",
+        "required_conformance_minima_env",
+        "clang_substitute_success_allowed"
+      ],
+      "properties": {
+        "optional_hosted_gate_missing_llc_result": {
+          "const": "skip-no-success-claim"
+        },
+        "required_conformance_minima_missing_llc_result": {
+          "const": "fail-closed-required-native-object-emission"
+        },
+        "required_conformance_minima_env": {
+          "const": "OBJC3C_REQUIRE_HOSTED_NATIVE_OBJECT_EMISSION"
+        },
+        "clang_substitute_success_allowed": {
+          "const": false
+        }
+      }
+    },
+    "issue_refs": {
+      "type": "array",
+      "items": {
+        "enum": [
+          8206,
+          8228,
+          8229,
+          8230,
+          8231,
+          8232
+        ]
+      },
+      "minItems": 6,
+      "uniqueItems": true
+    },
+    "summaries": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/summary"
+      }
+    },
+    "forbidden_success_claims": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "minItems": 1,
+      "uniqueItems": true
+    }
+  },
+  "$defs": {
+    "platformId": {
+      "enum": [
+        "windows-x64",
+        "linux-x64",
+        "darwin-arm64"
+      ]
+    },
+    "summary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "summary_id",
+        "summary_kind",
+        "issue_ref",
+        "claim_state",
+        "platform_ids",
+        "hosted_runner",
+        "required_evidence_classes",
+        "required_missing_evidence_classes",
+        "native_object_emission_status",
+        "publication_allowed",
+        "diagnostic"
+      ],
+      "properties": {
+        "summary_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "summary_kind": {
+          "enum": [
+            "platform",
+            "sanitizer",
+            "toolchain"
+          ]
+        },
+        "issue_ref": {
+          "enum": [
+            8206,
+            8228,
+            8229,
+            8230,
+            8231,
+            8232
+          ]
+        },
+        "claim_state": {
+          "enum": [
+            "evidence-bound",
+            "unsupported",
+            "reserved",
+            "fail-closed"
+          ]
+        },
+        "platform_ids": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/platformId"
+          },
+          "uniqueItems": true
+        },
+        "hosted_runner": {
+          "type": "string",
+          "minLength": 1
+        },
+        "required_evidence_classes": {
+          "type": "array",
+          "items": {
+            "enum": [
+              "build",
+              "package",
+              "install",
+              "execution",
+              "toolchain",
+              "native-object-emission"
+            ]
+          },
+          "uniqueItems": true
+        },
+        "required_missing_evidence_classes": {
+          "type": "array",
+          "items": {
+            "enum": [
+              "build",
+              "package",
+              "install",
+              "execution",
+              "toolchain",
+              "native-object-emission"
+            ]
+          },
+          "uniqueItems": true
+        },
+        "native_object_emission_status": {
+          "enum": [
+            "native_object_emission_supported",
+            "native_object_emission_missing_llc",
+            "native_object_emission_filetype_obj_unavailable",
+            "native_object_emission_target_object_unavailable",
+            "native_object_emission_mixed_toolchain_root",
+            "native_object_emission_mismatched_tool_versions",
+            "native_object_emission_unsupported_tool_version",
+            "native_object_emission_unresolved_tool_version"
+          ]
+        },
+        "publication_allowed": {
+          "type": "boolean"
+        },
+        "diagnostic": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "claim_state": {
+                "const": "evidence-bound"
+              }
+            },
+            "required": [
+              "claim_state"
+            ]
+          },
+          "then": {
+            "properties": {
+              "publication_allowed": {
+                "const": true
+              },
+              "required_missing_evidence_classes": {
+                "const": []
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "claim_state": {
+                "enum": [
+                  "unsupported",
+                  "reserved",
+                  "fail-closed"
+                ]
+              }
+            },
+            "required": [
+              "claim_state"
+            ]
+          },
+          "then": {
+            "properties": {
+              "platform_ids": {
+                "const": []
+              },
+              "publication_allowed": {
+                "const": false
+              }
+            }
+          }
+        }
+      ]
+    }
+  }
+}

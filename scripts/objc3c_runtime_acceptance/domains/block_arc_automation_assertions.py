@@ -78,9 +78,8 @@ def _assert_owned_capture_surfaces(artifacts: BlockArcAutomationArtifacts) -> No
         "expected owned object capture fixture LLVM IR to emit concrete block descriptors that own invoke thunks",
     )
     expect(
-        "getelementptr inbounds { i64, i64, i32, i32, i32, ptr }"
-        in artifacts.owned_ll,
-        "expected owned object capture fixture LLVM IR to load invoke thunks through block descriptors",
+        "call i32 @__objc3_block_invoke_" in artifacts.owned_ll,
+        "expected owned object capture fixture LLVM IR to call the local invoke thunk directly",
     )
 
 

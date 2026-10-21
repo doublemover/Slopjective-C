@@ -131,7 +131,9 @@ def main() -> int:
                 build_lock_command,
                 public_workflow_command("package-sign"),
                 public_workflow_command("package-verify"),
+                public_workflow_command("validate-package-security-hardening"),
                 public_workflow_command("validate-package-manager-model"),
+                public_workflow_command("validate-direct-import-module-syntax"),
                 authoring_check_command,
             ]
         },
@@ -154,6 +156,11 @@ def main() -> int:
         "dependency_count": len(dependencies),
         "provenance_count": len(provenance),
         "package_manifest_count": len(package_manifest_paths),
+        "module_graph_count": sum(
+            1
+            for package in packages
+            if isinstance(package.get("module_graph"), dict)
+        ),
         "package_manifest_root": repo_rel(PACKAGE_MANIFEST_ROOT),
         "language_version": LOCAL_PACKAGE_LANGUAGE_VERSION,
         "abi_identity": LOCAL_PACKAGE_ABI_IDENTITY,

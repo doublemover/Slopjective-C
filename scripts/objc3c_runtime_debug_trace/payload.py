@@ -787,6 +787,8 @@ def _inspection_queries(
 
 def _source_mapping(debug_map: dict[str, Any]) -> dict[str, Any]:
     anchors = _list_payload(debug_map.get("declaration_breakpoints"))
+    inline_frames = _list_payload(debug_map.get("inline_frames"))
+    inline_failures = _list_payload(debug_map.get("inline_frame_failures"))
     span_ids = [
         _anchor_span_id(_object_payload(anchor))
         for anchor in anchors
@@ -800,6 +802,18 @@ def _source_mapping(debug_map: dict[str, Any]) -> dict[str, Any]:
             native_debug_info_evidence.get("evidence_id", "") or ""
         ),
         "native_debug_info_fail_closed_reason": _native_debug_info_blocker(debug_map),
+        "inline_frame_status": str(debug_map.get("inline_frame_status", "") or "reserved"),
+        "inline_frame_count": len(inline_frames),
+        "inline_frame_failure_count": len(inline_failures),
+        "inline_frame_ids": [
+            str(_object_payload(frame).get("frame_id", "") or "")
+            for frame in inline_frames
+            if str(_object_payload(frame).get("frame_id", "") or "")
+        ],
+        "inline_frame_fail_closed_reason": str(
+            debug_map.get("inline_frame_fail_closed_reason", "")
+            or "inline-frame source-map records are not emitted on the canonical toolchain path"
+        ),
         "declaration_anchor_count": len(anchors),
         "span_evidence_count": len(span_ids),
         "span_evidence_ids": span_ids,

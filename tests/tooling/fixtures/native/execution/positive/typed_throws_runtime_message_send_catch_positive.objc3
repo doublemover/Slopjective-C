@@ -1,0 +1,46 @@
+module TypedThrowsRuntimeMessageSendCatchPositive;
+
+__attribute__((objc_direct_members, objc_final, objc_sealed))
+@interface PlainLoader
++ (i32)loadValue:(i32)value;
+@end
+
+@implementation PlainLoader
++ (i32)loadValue:(i32)value {
+  return value + 10;
+}
+@end
+
+__attribute__((objc_direct_members, objc_final, objc_sealed))
+@interface TypedThrowingLoader
++ (i32)loadValue:(i32)value throws(NSError);
+@end
+
+@implementation TypedThrowingLoader
++ (i32)loadValue:(i32)value throws(NSError) {
+  if (value == 0) {
+    throw 77;
+  }
+  return value;
+}
+@end
+
+fn typedMessageCatch(value: i32) -> i32 {
+  do {
+    return try [TypedThrowingLoader loadValue:value];
+  } catch (NSError* error) {
+    return 1;
+  }
+}
+
+fn bridgeMessageCatch(value: i32) -> i32 {
+  do {
+    return try [TypedThrowingLoader loadValue:value];
+  } catch (id<Error> error) {
+    return 2;
+  }
+}
+
+fn main() -> i32 {
+  return typedMessageCatch(0) + bridgeMessageCatch(0);
+}

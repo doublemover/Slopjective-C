@@ -1,0 +1,11 @@
+@PACKAGE_INIT@
+include(CMakeFindDependencyMacro)
+set(_objc3_prefix "${PACKAGE_PREFIX_DIR}")
+set(LLVM_DIR "${_objc3_prefix}/lib/cmake/llvm")
+set(Clang_DIR "${_objc3_prefix}/lib/cmake/clang")
+find_dependency(LLVM @LLVM_PACKAGE_VERSION@ EXACT CONFIG PATHS "${LLVM_DIR}" NO_DEFAULT_PATH)
+find_dependency(Clang CONFIG PATHS "${Clang_DIR}" NO_DEFAULT_PATH)
+find_dependency(Threads)
+find_dependency(OpenSSL 3.5 COMPONENTS Crypto)
+include("${CMAKE_CURRENT_LIST_DIR}/objc3cTargets.cmake")
+check_required_components(objc3c)

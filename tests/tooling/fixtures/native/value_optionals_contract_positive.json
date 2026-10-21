@@ -1,0 +1,118 @@
+{
+  "contract_id": "objc3c.value_optional.contract.v1",
+  "issue_ref": 8234,
+  "canonical_spelling": "Optional<T>",
+  "source_status": "semantic-type-signature-admitted-packed-and-full-i64-runtime-abi",
+  "semantic_model": {
+    "type_admission_supported": true,
+    "explicit_present_absent_construction_modeled": true,
+    "explicit_absent_construction_supported": true,
+    "explicit_present_construction_supported": true,
+    "binding_narrowing_supported": true,
+    "binding_failure_diagnostic_supported": true,
+    "unwrap_requires_presence_check": true,
+    "unwrap_failure_diagnostic_supported": true,
+    "nil_bridge_diagnostic_supported": true,
+    "runtime_abi_payload_scope": "supported-packed-scalar-id-handle-and-full-i64-payload-forms",
+    "supported_runtime_payload_forms": [
+      "i32",
+      "bool",
+      "id",
+      "i64"
+    ],
+    "supported_runtime_helper_payload_forms": [
+      "i32",
+      "bool",
+      "id",
+      "i64"
+    ],
+    "full_width_i64_runtime_helper_supported": true,
+    "full_width_i64_language_call_abi_supported": true,
+    "implicit_nil_absence_allowed": false,
+    "optional_id_distinct_from_nullable_object_pointer": true
+  },
+  "abi_layout": {
+    "layout_id": "objc3.value_optional.inline_presence_payload.v1",
+    "layout_status": "stable-packed-presence-payload-runtime-lowered",
+    "presence_field": "has_value",
+    "payload_storage_field": "payload",
+    "payload_cleanup_contract": "payload-cleanup-after-narrowed-scope",
+    "absence_state": "has_value=false",
+    "presence_state": "has_value=true",
+    "stable_layout_contract_supported": true,
+    "executable_lowering_contract_supported": true,
+    "runtime_execution_supported": true,
+    "lowering_supported": true,
+    "ir_payload_emission_supported": true,
+    "call_abi_lowering_supported": true,
+    "broad_public_runtime_support_claim_allowed": false
+  },
+  "lowering_contract": {
+    "contract_id": "objc3c.value_optional.lowering.contract.v1",
+    "status": "stable-packed-abi-carrier-runtime-execution-supported",
+    "executable_lowering_status": "packed-presence-payload-runtime-abi-lowered",
+    "construction_contract": "explicit-absent-present-constructors-only",
+    "absent_construction_kind": "absent-without-payload",
+    "present_construction_kind": "present-with-payload",
+    "absent_construction_forbids_payload": true,
+    "present_construction_requires_payload": true,
+    "checked_unwrap_requires_presence_proof": true,
+    "unchecked_unwrap_supported": false,
+    "binding_failure_diagnostic": "binding-failure-branches-to-absent-path",
+    "unwrap_failure_diagnostic": "unwrap-requires-proven-has-value",
+    "nil_bridge_diagnostic": "nil-bridging-to-optional-is-rejected",
+    "remaining_runtime_boundary": "unchecked-unwrap-property-ivar-storage-and-nullable-pointer-bridging-remain-reserved",
+    "runtime_construction_supported": true,
+    "runtime_unwrap_supported": true,
+    "ir_payload_emission_supported": true,
+    "call_abi_lowering_supported": true,
+    "runtime_abi_payload_scope": "supported-packed-scalar-id-handle-and-full-i64-payload-forms"
+  },
+  "interface_roundtrip_status": "semantic-carrier-roundtrips-bounded-packed-runtime-abi",
+  "records": {
+    "optional_type": {
+      "type_id": "Optional<i32>",
+      "payload_type": "i32",
+      "abi_layout": "objc3.value_optional.inline_presence_payload.v1",
+      "semantic_model": "first-class-value-optional-type-constructor",
+      "canonical_spelling": "Optional<i32>"
+    },
+    "optional_value": {
+      "value_id": "source-only:optional-i32-carrier",
+      "optional_type": "Optional<i32>",
+      "construction_contract": "explicit-absent-present-constructors-only",
+      "presence_state": "has_value",
+      "payload_storage": "payload",
+      "absence_state": "has_value=false",
+      "present_state": "has_value=true",
+      "payload_lifetime": "payload-live-only-when-has_value-true"
+    },
+    "optional_flow": {
+      "source_span": "tests/tooling/fixtures/native/value_optionals_type_signatures_positive.objc3:3:1",
+      "narrowing_kind": "binding-or-guard-binding",
+      "before_type": "Optional<i32>",
+      "after_type": "i32",
+      "cleanup_contract": "payload-cleanup-after-narrowed-scope",
+      "binding_failure_diagnostic": "binding-failure-branches-to-absent-path",
+      "presence_test_required": true
+    },
+    "optional_rejection": {
+      "source_span": "tests/tooling/fixtures/native/recovery/negative/negative_value_optional_nested_lowercase_alias_reserved.objc3:4:1",
+      "spelling": "optional<i32>",
+      "conversion_attempt": "lowercase-alias",
+      "diagnostic": "O3C004"
+    }
+  },
+  "fail_closed": {
+    "lowercase_alias_accepted": false,
+    "nested_value_optional_runtime_supported": false,
+    "generic_payload_runtime_supported": false,
+    "property_storage_supported": false,
+    "ivar_storage_supported": false,
+    "nil_to_scalar_coercion_allowed": false,
+    "implicit_nil_absence_allowed": false,
+    "nullable_pointer_conversion_allowed": false,
+    "unchecked_unwrap_allowed": false,
+    "throws_result_conversion_allowed": false
+  }
+}

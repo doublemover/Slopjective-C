@@ -8,6 +8,8 @@ from pathlib import Path
 
 import pytest
 
+from scripts.objc3c_tooling.artifact_identity import current_host_artifact_identity
+
 
 ROOT = Path(__file__).resolve().parents[2]
 SCRIPTS_ROOT = ROOT / "scripts"
@@ -15,6 +17,7 @@ if str(SCRIPTS_ROOT) not in sys.path:
     sys.path.insert(0, str(SCRIPTS_ROOT))
 SCRIPT_PATH = ROOT / "scripts" / "run_objc3c_stress_crash_triage.py"
 SIGNATURE_SHA256 = "a" * 64
+ARTIFACT_IDENTITY = current_host_artifact_identity()
 
 
 def _load_runner():
@@ -63,7 +66,10 @@ def _write_valid_fixture(run_root: Path) -> tuple[Path, Path, Path]:
     minimized_dir.mkdir(parents=True, exist_ok=True)
 
     (failure_dir / "source.objc3").write_text("@interface Broken\n", encoding="utf-8")
-    _write_json(failure_dir / "invocation.json", {"compiler": "artifacts/bin/objc3c-native.exe"})
+    _write_json(
+        failure_dir / "invocation.json",
+        {"compiler": ARTIFACT_IDENTITY.native_executable_relative_path},
+    )
     _write_json(
         failure_dir / "failure-summary.json",
         {

@@ -1,0 +1,4 @@
+// Expected diagnostic code(s): O3C004.
+module NegativeValueOptionalNestedLowercaseAliasReserved;
+
+extern fn nested(value: Optional<optional<i32>>) -> i32;

@@ -1,6 +1,6 @@
 # Part 0 — Baseline and Normative References {#part-0}
 
-_Working draft v0.11 — last updated 2026-02-27_
+_Working draft v0.12 - last updated 2026-10-09_
 
 ## 0.1 Purpose {#part-0-1}
 
@@ -22,17 +22,39 @@ The table below is the complete normative reference index for this draft.
 No external source is normative unless it appears here with an `NR-*` identifier.
 For each identifier, a conforming toolchain release shall pin an immutable tuple: `(version or edition, date or release stamp, commit or artifact hash)`.
 
-| ID                  | Canonical reference                                                         | Version / edition      | Date / release stamp               | Commit / artifact hash                                       | Exact normative scope in this draft                                                                                                             |
-| ------------------- | --------------------------------------------------------------------------- | ---------------------- | ---------------------------------- | ------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------- |
-| **NR-C18**          | ISO/IEC 9899:2018 (C18)                                                     | ISO/IEC 9899:2018      | 2018 edition                       | N/A (published standard text)                                | Core C lexical grammar, preprocessing model, declarators, expression semantics, and inherited C UB categories unless explicitly overridden.     |
-| **NR-CPP20**        | ISO/IEC 14882:2020 (C++20)                                                  | ISO/IEC 14882:2020     | 2020 edition                       | N/A (published standard text)                                | C++ core-language rules that apply in mixed Objective-C++ translation units where this draft allows C++ interop.                                |
-| **NR-LLVM-OBJC**    | LLVM/Clang Objective-C language + ARC behavior                              | `llvmorg-18.1.8`       | Release stamp for `llvmorg-18.1.8` | Git commit resolved by tag `llvmorg-18.1.8`                  | Objective-C front-end baseline for ARC qualifier semantics, retain/release insertion, method-family inference, and legacy ObjC diagnostics.     |
-| **NR-BLOCKS-ABI**   | Clang Blocks specification and block ABI model                              | `llvmorg-18.1.8`       | Release stamp for `llvmorg-18.1.8` | Git commit resolved by tag `llvmorg-18.1.8`                  | Block object representation, capture semantics, calling convention, and copy/dispose helper contracts used by Parts 4/7/8.                      |
-| **NR-OBJC-RUNTIME** | Objective-C runtime profile bundle for selected platform family             | `objc3-runtime-2025Q4` | Profile stamp `2025Q4`             | Artifact digest(s) listed in `objc3-runtime-2025Q4` manifest | Runtime class/metaclass model, selector identity, dispatch and category attachment semantics, and runtime constraints referenced by Parts 9/11. |
-| **NR-ABI-PLATFORM** | Platform C/ObjC ABI profile bundle selected by the toolchain conformance ID | `objc3-abi-2025Q4`     | Profile stamp `2025Q4`             | Artifact digest(s) listed in `objc3-abi-2025Q4` manifest     | Calling conventions, data layout assumptions, symbol/linkage contracts, and ABI boundaries where this draft does not define a replacement ABI.  |
+| ID                  | Canonical reference                                                       | Version / edition         | Date / release stamp              | Commit / artifact hash                                                              | Exact normative scope in this draft                                                                                                         |
+| ------------------- | ------------------------------------------------------------------------- | ------------------------- | --------------------------------- | ----------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| **NR-C18**          | ISO/IEC 9899:2018 (C18)                                                   | ISO/IEC 9899:2018         | 2018 edition                      | N/A (published standard text)                                                       | Core C lexical grammar, preprocessing model, declarators, expression semantics, and inherited C UB categories unless explicitly overridden. |
+| **NR-CPP20**        | ISO/IEC 14882:2020 (C++20)                                                | ISO/IEC 14882:2020        | 2020 edition                      | N/A (published standard text)                                                       | C++ core-language rules that apply in mixed Objective-C++ translation units where this draft allows C++ interop.                            |
+| **NR-LLVM-OBJC**    | LLVM/Clang Objective-C language + ARC behavior                            | `llvmorg-23.1.3`          | Immutable tag object pinned below | `0d261d1ca552c95a8f007e061c787ac7132fbcbc`                                          | Objective-C front-end baseline for ARC qualifier semantics, retain/release insertion, method-family inference, and legacy ObjC diagnostics. |
+| **NR-BLOCKS-ABI**   | Clang Blocks specification and block ABI model                            | `llvmorg-23.1.3`          | Immutable tag object pinned below | `0d261d1ca552c95a8f007e061c787ac7132fbcbc`                                          | Block object representation, capture semantics, calling convention, and copy/dispose helper contracts used by Parts 4/7/8.                  |
+| **NR-OBJC-RUNTIME** | Platform-native Objective-C runtime profile bundle                        | `objc3-runtime-2026Q4-v2` | Profile revision 2                | Exact source/tool inputs in `scripts/objc3c_toolchain_runtime/runtime-profile.json` | Native class/metaclass layout, selector identity, dispatch, ARC/weak and Blocks; Slop service objects are separate versioned opaque types.  |
+| **NR-ABI-PLATFORM** | Target C/ObjC ABI profile bundle selected by the toolchain conformance ID | `objc3-abi-2026Q4-v2`     | Profile revision 2                | Same profile bundle plus the locked Clang build manifest                            | Target-owned calling conventions, aggregate layout, symbol/linkage and explicit extension service ABI boundaries.                           |
 
 Conforming implementations shall publish concrete URLs and resolved hashes for `NR-LLVM-OBJC`, `NR-BLOCKS-ABI`, `NR-OBJC-RUNTIME`, and `NR-ABI-PLATFORM` in release notes or conformance reports.
 For published language standards (`NR-C18`, `NR-CPP20`), the cited edition text is the immutable artifact.
+
+The annotated LLVM tag object is
+`856f0005e57023e63664c560a829c620360ea1f1`. The resolved source commit and
+ordered downstream patch SHA256 records are locked in
+`toolchains/llvm/manifest.json`; build identity includes that entire ordered
+stack. Upgrading LLVM is an explicit compatibility event.
+
+Windows and Linux select libobjc2 v2.3 at
+`e877e782fb965c4e870d2ecf6aff58dddc6290ae`, GNUstep runtime ABI 2.0 and its
+embedded Blocks implementation. macOS selects Apple system libobjc/Blocks with
+the actual SDK/deployment tuple recorded by the build. Windows runtime builds
+use GNU-style clang/clang++ drivers and Ninja in the MSVC v143 environment, LLD,
+the selected UCRT/Windows SDK and dynamic CRT. A runtime-building clang-cl
+restriction does not imply that every client clang-cl invocation is unsupported.
+Platform framework availability is qualified separately from language support.
+
+Ordinary objects use native `id`, `Class`, `SEL` and `IMP` representations and
+platform dispatch/ARC/weak/Blocks. Historical i32 object handles are private
+legacy ABI values and shall not masquerade as native object pointers. Slop text,
+collections, tasks, typed errors and carriers use explicit extension service
+types until their deliberate migration. The reference revision selects required
+behavior, not a claim that every target or extension is already qualified.
 
 ### 0.2.2 Reference precedence and conflict rules {#part-0-2-2}
 

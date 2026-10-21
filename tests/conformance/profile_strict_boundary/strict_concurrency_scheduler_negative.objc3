@@ -1,0 +1,13 @@
+// Strict-concurrency negative fixture: detached tasks cannot use main executor affinity.
+module StrictConcurrencySchedulerNegative;
+
+extern fn objc3_detached_task_i32(seed: i32) -> i32;
+
+async fn invalidScheduler(seed: i32) -> i32
+    __attribute__((objc_executor(main))) {
+  return objc3_detached_task_i32(seed);
+}
+
+fn main() -> i32 {
+  return 0;
+}

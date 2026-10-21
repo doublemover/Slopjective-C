@@ -99,8 +99,8 @@ def main() -> int:
     expect("scripts/build_governance_extension_review_workflow_summary.py" in required_scripts, "artifact contract omits workflow summary script", failures)
 
     required_mentions = {
-        "runbook_mentions_workflow": "python scripts/build_governance_extension_review_workflow_summary.py" in runbook_text,
-        "runbook_mentions_proposal_tool": "python scripts/publish_new_work_proposal.py" in runbook_text,
+        "runbook_mentions_workflow": "npm run objc3c -- validate-governance-sustainability" in runbook_text,
+        "runbook_mentions_proposal_tool": "npm run objc3c -- validate-governance-sustainability" in runbook_text,
         "runbook_mentions_template": "tests/tooling/fixtures/governance_sustainability/new_work_proposal_template.json" in runbook_text,
     }
     for key, value in required_mentions.items():

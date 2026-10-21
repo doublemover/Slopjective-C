@@ -4,10 +4,12 @@ import hashlib
 from dataclasses import dataclass
 from pathlib import Path
 
+from objc3c_tooling.artifact_identity import current_host_artifact_identity
 from objc3c_tooling.paths import ROOT, display_path
 
 
-FRONTEND_RUNNER = ROOT / "artifacts" / "bin" / "objc3c-frontend-c-api-runner.exe"
+ARTIFACT_IDENTITY = current_host_artifact_identity()
+FRONTEND_RUNNER = ROOT / ARTIFACT_IDENTITY.frontend_runner_relative_path
 DEFAULT_SOURCE = ROOT / "tests" / "tooling" / "fixtures" / "native" / "hello.objc3"
 REPORT_ROOT = ROOT / "tmp" / "reports" / "developer-tooling" / "editor-surface"
 ARTIFACT_ROOT = ROOT / "tmp" / "artifacts" / "developer-tooling" / "editor-surface"

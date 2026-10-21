@@ -39,7 +39,11 @@ PACKAGE_LOCK_SOURCE_PATHS = (
     "stdlib/workspace.json",
     "stdlib/package_surface.json",
     "stdlib/advanced_helper_package_surface.json",
+    "tests/tooling/fixtures/package_ecosystem/package_ecosystem_umbrella_contract.json",
+    "tests/tooling/fixtures/package_ecosystem/direct_import_module_syntax_contract.json",
     "tests/tooling/fixtures/package_ecosystem/dependency_lock_policy.json",
+    "tests/tooling/fixtures/package_ecosystem/negative_package_metadata_contracts.json",
+    "tests/tooling/fixtures/package_ecosystem/package_security_hardening_contract.json",
     "tests/tooling/fixtures/package_ecosystem/package_manager_model_contract.json",
     "tests/tooling/fixtures/package_ecosystem/package_authoring_workflow_contract.json",
 )
@@ -55,7 +59,7 @@ PACKAGE_LOCK_PUBLIC_ACTIONS = (
         validation_tier="repo",
         guarantee_owner=(
             "package locks stay deterministic, provenance-bearing, and derived "
-            "from checked-in local package surfaces"
+            "from checked-in local package and module graph surfaces"
         ),
         schema_contracts=(PACKAGE_LOCK_SCHEMA,),
         source_paths=PACKAGE_LOCK_SOURCE_PATHS,
@@ -71,7 +75,8 @@ PACKAGE_LOCK_PUBLIC_ACTIONS = (
         validation_tier="repo",
         guarantee_owner=(
             "package signing stays explicit about trust roots, revocation, "
-            "digest subjects, and the reserved production backend"
+            "digest subjects, repo-relative non-overwriting trust paths, "
+            "installer/update-key policy hooks, and the reserved production backend"
         ),
         schema_contracts=(PACKAGE_MANIFEST_SCHEMA, PACKAGE_SIGNING_TRUST_SCHEMA),
         source_paths=PACKAGE_LOCK_SOURCE_PATHS,
@@ -88,28 +93,69 @@ PACKAGE_LOCK_PUBLIC_ACTIONS = (
         guarantee_owner=(
             "package verification fails closed for missing signatures, bad "
             "digests, unknown trust roots, revoked subjects, and reserved "
-            "production signing"
+            "production signing before any unsafe trust path can succeed"
         ),
         schema_contracts=(PACKAGE_MANIFEST_SCHEMA, PACKAGE_SIGNING_TRUST_SCHEMA),
         source_paths=PACKAGE_LOCK_SOURCE_PATHS,
         pass_through_args=True,
     ),
     PackagePublicWorkflowAction(
+        action="validate-package-security-hardening",
+        summary=(
+            "validate package trust policy, extraction path safety, "
+            "installer/update-key reservations, and release/registry trust-root "
+            "fail-closed contracts"
+        ),
+        script_path="scripts/check_objc3c_package_security_hardening.py",
+        validation_tier="repo",
+        guarantee_owner=(
+            "package security claims stay bound to repo-relative trust inputs, "
+            "non-overwriting signature outputs, pre-mutation extraction plans, "
+            "reserved installer/update keys, and reserved release/registry "
+            "trust roots"
+        ),
+        schema_contracts=(PACKAGE_MANIFEST_SCHEMA, PACKAGE_LOCK_SCHEMA, PACKAGE_SIGNING_TRUST_SCHEMA),
+        source_paths=PACKAGE_LOCK_SOURCE_PATHS,
+        generated_paths=(
+            "tmp/reports/package-ecosystem/package-security-hardening-summary.json",
+        ),
+    ),
+    PackagePublicWorkflowAction(
         action="validate-package-manager-model",
         summary=(
             "validate generated package manifests, local dependency resolution, "
-            "language/ABI requirements, and package trust metadata"
+            "module graph source truth, language/ABI requirements, and package "
+            "trust metadata"
         ),
         script_path="scripts/check_objc3c_package_manager_model.py",
         validation_tier="repo",
         guarantee_owner=(
             "package manager claims stay grounded in generated package "
-            "manifests, deterministic local locks, fail-closed network "
-            "resolution, and package trust envelopes"
+            "manifests, deterministic local locks, shared module graph metadata, "
+            "fail-closed network resolution, and package trust envelopes"
         ),
         schema_contracts=(PACKAGE_MANIFEST_SCHEMA, PACKAGE_LOCK_SCHEMA),
         source_paths=PACKAGE_LOCK_SOURCE_PATHS,
         generated_paths=(PACKAGE_MANIFEST_ARTIFACT_ROOT, PACKAGE_LOCK_ARTIFACT_PATH),
+    ),
+    PackagePublicWorkflowAction(
+        action="validate-direct-import-module-syntax",
+        summary=(
+            "validate direct @import token, parser, AST, package provenance, "
+            "and fail-closed negative metadata contracts"
+        ),
+        script_path="scripts/check_objc3c_direct_import_module_syntax.py",
+        validation_tier="repo",
+        guarantee_owner=(
+            "direct @import claims stay source-owned, parser-admitted only as "
+            "deterministic module identity records, and locked to package "
+            "provenance before resolution"
+        ),
+        schema_contracts=(PACKAGE_MANIFEST_SCHEMA, PACKAGE_LOCK_SCHEMA),
+        source_paths=PACKAGE_LOCK_SOURCE_PATHS,
+        generated_paths=(
+            "tmp/reports/package-ecosystem/direct-import-module-syntax-summary.json",
+        ),
     ),
     PackagePublicWorkflowAction(
         action="validate-package-authoring",

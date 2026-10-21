@@ -1,71 +1,39 @@
-name: ObjC3C Core CI
-
+name: Native Linux tooling
 on:
   pull_request:
-    paths:
-      - ".github/workflows/task-hygiene.yml"
-      - ".npmrc"
-      - "package.json"
-      - "package-lock.json"
-      - "native/**"
-      - "scripts/**"
-      - "tests/tooling/**"
   push:
-    branches: ["main"]
-    paths:
-      - ".github/workflows/task-hygiene.yml"
-      - ".npmrc"
-      - "package.json"
-      - "package-lock.json"
-      - "native/**"
-      - "scripts/**"
-      - "tests/tooling/**"
-
+    branches: [main]
 permissions:
   contents: read
-
-concurrency:
-  group: objc3c-core-${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
-
 jobs:
-  native-smoke:
-    runs-on: windows-latest
-    timeout-minutes: 90
+  tooling:
+    runs-on: ubuntu-26.04
     steps:
-      - uses: actions/checkout@v4
-
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
         with:
-          node-version: "20"
-
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
-
-      - name: Install Node dependencies
-        run: npm ci
-
-      - name: Run canonical maintainer lint workflow
-        run: npm run objc3c -- lint
-
-      - name: Install Python test dependencies
-        run: python -m pip install --upgrade pytest
-
-      - name: Build native objc3c artifacts
-        run: npm run objc3c -- build-native-binaries
-
-      - name: Refresh binary-derived frontend contract artifacts
-        run: npm run objc3c -- build-native-contracts
-
-      - name: Probe hosted-runner LLVM capabilities
-        run: npm run objc3c -- check-hosted-llvm-capabilities
-
-      - name: Validate capability discovery and routing code paths
-        run: npm run objc3c -- test-llvm-capability-routing
-
-      - name: Verify capability-routed source parity when llc is available
-        run: npm run objc3c -- test-capability-routed-source-parity
-
-      - name: Run hosted native execution smoke when llc is available
-        run: npm run objc3c -- test-hosted-execution-smoke
+          python-version: "3.15.0"
+      - run: |
+          sudo apt-get update
+          sudo apt-get install -y zstd
+          python -m pip install uv==0.13.1
+          uv sync --locked --group dev
+      - name: Tool pins and generated capabilities
+        run: |
+          uv run python -m scripts.objc3c_toolchain check-host-tools
+          uv run python -m scripts.objc3c_toolchain.generate_features --check
+      - name: SDK integrity, installer and native validation owners
+        run: >-
+          uv run python -m pytest -q
+          tests/tooling/test_toolchain_host_tools.py
+          tests/tooling/test_toolchain_build.py
+          tests/tooling/test_objc3c_toolchain_prepare.py
+          tests/tooling/test_toolchain_package.py
+          tests/tooling/test_toolchain_install.py
+          tests/tooling/test_linux_sdk_reuse.py
+          tests/tooling/test_toolchain_facade_identity.py
+          tests/tooling/test_clang_feature_authority.py
+          tests/tooling/test_native_validation_editor.py
+          tests/tooling/test_native_validation_plan.py
+          tests/tooling/test_native_validation_artifacts.py
+          tests/tooling/test_native_validation_cli.py

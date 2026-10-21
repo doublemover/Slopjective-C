@@ -1,0 +1,216 @@
+{
+  "contract_id": "objc3c.package_ecosystem.hosted_registry_negative_cases.v1",
+  "issue_refs": [
+    8220
+  ],
+  "diagnostic_code": "O3PKG8055",
+  "fixture_index": "tests/tooling/fixtures/package_ecosystem/hosted_registry/hosted-registry-index.json",
+  "offline_mirror": "tests/tooling/fixtures/package_ecosystem/hosted_registry/offline-mirror-index.json",
+  "cases": [
+    {
+      "case_id": "unpinned-hosted-dependency",
+      "failure_mode": "unpinned-hosted-dependency",
+      "expected_failure": "O3PKG8055: unpinned hosted dependency for fixture:network.core"
+    },
+    {
+      "case_id": "live-network-fetch",
+      "failure_mode": "live-network-fetch",
+      "expected_failure": "O3PKG8055: network fetch request rejected"
+    },
+    {
+      "case_id": "live-public-service-unavailable",
+      "failure_mode": "live-public-service-unavailable",
+      "expected_failure": "O3PKG8055: live public hosted registry service unavailable"
+    },
+    {
+      "case_id": "live-transport-disabled",
+      "failure_mode": "live-transport-disabled",
+      "expected_failure": "O3PKG8055: live public hosted registry transport disabled"
+    },
+    {
+      "case_id": "transport-policy-drift",
+      "failure_mode": "transport-policy-drift",
+      "expected_failure": "O3PKG8055: hosted registry snapshot transport allows live network fetch"
+    },
+    {
+      "case_id": "snapshot-fetch-policy-drift",
+      "failure_mode": "snapshot-fetch-policy-drift",
+      "expected_failure": "O3PKG8055: hosted registry snapshot fetch policy drifted"
+    },
+    {
+      "case_id": "snapshot-source-digest-drift",
+      "failure_mode": "snapshot-source-digest-drift",
+      "expected_failure": "O3PKG8055: hosted registry snapshot source digest drifted"
+    },
+    {
+      "case_id": "lock-materialization-drift",
+      "failure_mode": "lock-materialization-drift",
+      "expected_failure": "O3PKG8055: hosted registry lock materialization policy drifted"
+    },
+    {
+      "case_id": "unsupported-live-service-mode",
+      "failure_mode": "unsupported-live-service-mode",
+      "expected_failure": "O3PKG8055: unsupported live hosted registry service mode"
+    },
+    {
+      "case_id": "production-auth-unavailable",
+      "failure_mode": "production-auth-unavailable",
+      "expected_failure": "O3PKG8055: live public hosted registry auth activated"
+    },
+    {
+      "case_id": "production-moderation-unavailable",
+      "failure_mode": "production-moderation-unavailable",
+      "expected_failure": "O3PKG8055: live public hosted registry moderation activated"
+    },
+    {
+      "case_id": "production-trust-root-unavailable",
+      "failure_mode": "production-trust-root-unavailable",
+      "expected_failure": "O3PKG8055: live public hosted registry trust_root activated"
+    },
+    {
+      "case_id": "production-availability-unavailable",
+      "failure_mode": "production-availability-unavailable",
+      "expected_failure": "O3PKG8055: live public hosted registry availability activated"
+    },
+    {
+      "case_id": "fallback-registry-success",
+      "failure_mode": "fallback-registry-success",
+      "expected_failure": "O3PKG8055: fallback registry success path is forbidden"
+    },
+    {
+      "case_id": "ambiguous-module-identity",
+      "failure_mode": "ambiguous-module-identity",
+      "expected_failure": "O3PKG8055: nondeterministic candidates for fixture:network.core"
+    },
+    {
+      "case_id": "unlocked-version-selection",
+      "failure_mode": "unlocked-version-selection",
+      "expected_failure": "O3PKG8055: unpinned hosted dependency for fixture:network.core"
+    },
+    {
+      "case_id": "registry-trust-mismatch",
+      "failure_mode": "registry-trust-mismatch",
+      "expected_failure": "O3PKG8055: hosted registry trust root mismatch for fixture:network.core"
+    },
+    {
+      "case_id": "endpoint-channel-drift",
+      "failure_mode": "endpoint-channel-drift",
+      "expected_failure": "O3PKG8055: hosted registry endpoint channel_id drifted"
+    },
+    {
+      "case_id": "missing-package-provenance",
+      "failure_mode": "missing-package-provenance",
+      "expected_failure": "O3PKG8055: missing package provenance for fixture:network.core"
+    },
+    {
+      "case_id": "missing-service-auth",
+      "failure_mode": "missing-service-auth",
+      "expected_failure": "O3PKG8055: missing hosted registry service auth policy"
+    },
+    {
+      "case_id": "unknown-service-auth-subject",
+      "failure_mode": "unknown-service-auth-subject",
+      "expected_failure": "O3PKG8055: unknown hosted registry service auth subject fixture:unknown"
+    },
+    {
+      "case_id": "service-auth-token-drift",
+      "failure_mode": "service-auth-token-drift",
+      "expected_failure": "O3PKG8055: hosted registry service auth token drift for fixture-developer"
+    },
+    {
+      "case_id": "service-contract-drift",
+      "failure_mode": "service-contract-drift",
+      "expected_failure": "O3PKG8055: hosted registry service contract id drifted"
+    },
+    {
+      "case_id": "service-index-drift",
+      "failure_mode": "service-index-drift",
+      "expected_failure": "O3PKG8055: hosted registry service index path drifted"
+    },
+    {
+      "case_id": "service-revocation-unavailable",
+      "failure_mode": "service-revocation-unavailable",
+      "expected_failure": "O3PKG8055: hosted registry service revocation unavailable"
+    },
+    {
+      "case_id": "service-moderation-blocked",
+      "failure_mode": "service-moderation-blocked",
+      "expected_failure": "O3PKG8055: hosted registry service moderation blocked package"
+    },
+    {
+      "case_id": "service-availability-unavailable",
+      "failure_mode": "service-availability-unavailable",
+      "expected_failure": "O3PKG8055: hosted registry service availability state drifted"
+    },
+    {
+      "case_id": "unknown-trust-root",
+      "failure_mode": "unknown-trust-root",
+      "expected_failure": "O3PKG8055: unknown trust root unknown-registry-root"
+    },
+    {
+      "case_id": "revoked-subject",
+      "failure_mode": "revoked-subject",
+      "expected_failure": "O3PKG8055: revoked package fixture:network.core"
+    },
+    {
+      "case_id": "digest-drift",
+      "failure_mode": "digest-drift",
+      "expected_failure": "O3PKG8055: registry metadata digest mismatch for fixture:network.core"
+    },
+    {
+      "case_id": "ambiguous-version-selection",
+      "failure_mode": "ambiguous-version-selection",
+      "expected_failure": "O3PKG8055: ambiguous version selection for fixture:network.core"
+    },
+    {
+      "case_id": "unavailable-registry",
+      "failure_mode": "unavailable-registry",
+      "expected_failure": "O3PKG8055: hosted registry unavailable"
+    },
+    {
+      "case_id": "rollback-snapshot",
+      "failure_mode": "rollback-snapshot",
+      "expected_failure": "O3PKG8055: rollback snapshot for fixture:network.core"
+    },
+    {
+      "case_id": "duplicate-version-entry",
+      "failure_mode": "duplicate-version-entry",
+      "expected_failure": "O3PKG8055: duplicate package version entry for fixture:network.core@1.0.0"
+    },
+    {
+      "case_id": "unsupported-platform",
+      "failure_mode": "unsupported-platform",
+      "expected_failure": "O3PKG8055: unsupported platform linux-x64 for fixture:network.core"
+    },
+    {
+      "case_id": "invalid-semver",
+      "failure_mode": "invalid-semver",
+      "expected_failure": "O3PKG8055: invalid semver for fixture:network.core@01.0.0"
+    },
+    {
+      "case_id": "dependency-cycle",
+      "failure_mode": "dependency-cycle",
+      "expected_failure": "O3PKG8055: dependency cycle detected at fixture:network.core"
+    },
+    {
+      "case_id": "offline-mirror-handoff-drift",
+      "failure_mode": "offline-mirror-handoff-drift",
+      "expected_failure": "O3PKG8055: offline mirror handoff drift for fixture:network.core@1.0.0"
+    },
+    {
+      "case_id": "unsigned-hosted-artifact",
+      "failure_mode": "unsigned-hosted-artifact",
+      "expected_failure": "O3PKG8055: unsigned hosted artifact fixture:network.core@1.0.0"
+    },
+    {
+      "case_id": "cache-identity-drift",
+      "failure_mode": "cache-identity-drift",
+      "expected_failure": "O3PKG8055: cache identity drift for fixture:network.core@1.0.0"
+    },
+    {
+      "case_id": "yanked-version",
+      "failure_mode": "yanked-version",
+      "expected_failure": "O3PKG8055: yanked hosted registry version fixture:network.core@1.0.0"
+    }
+  ]
+}

@@ -1,2 +1,0 @@
-#include "parse/objc3_parser_core_objc_interface_declarations_finalization_semantic_links.inc"
-#include "parse/objc3_parser_core_objc_interface_declarations_finalization_member_packets.inc"

@@ -7,6 +7,7 @@ import sys
 from datetime import datetime
 
 from objc3c_runtime_acceptance.cli_arguments import parse_args
+from objc3c_runtime_acceptance.checksums import verified_input_hashes
 from objc3c_runtime_acceptance.execution import run_case_factories
 from objc3c_runtime_acceptance.native_binaries import resolve_native_binary_set
 from objc3c_runtime_acceptance.progress_format import repo_display_path
@@ -55,22 +56,27 @@ def main(argv: list[str] | None = None) -> int:
         f"runtime-acceptance-progress-log: {repo_display_path(progress_path)}",
         flush=True,
     )
-    results = run_case_factories(
-        case_factories,
-        acceptance_progress=acceptance_progress,
-    )
+    with verified_input_hashes((native_binaries.native_exe, native_binaries.runtime_lib)) as hashes:
+        results = run_case_factories(
+            case_factories,
+            acceptance_progress=acceptance_progress,
+        )
 
-    summary = assemble_runtime_acceptance_summary(
-        args=args,
-        run_dir=run_dir,
-        report_path=report_path,
-        progress_path=progress_path,
-        clangxx=native_binaries.clangxx,
-        results=results,
-        acceptance_progress=acceptance_progress,
-        scenarios=scenarios,
-        available_suites=RUNTIME_ACCEPTANCE_SUITE_CASES,
-    )
+        summary = assemble_runtime_acceptance_summary(
+            args=args,
+            run_dir=run_dir,
+            report_path=report_path,
+            progress_path=progress_path,
+            clangxx=native_binaries.clangxx,
+            results=results,
+            acceptance_progress=acceptance_progress,
+            scenarios=scenarios,
+            available_suites=RUNTIME_ACCEPTANCE_SUITE_CASES,
+        )
+    summary["validated_input_hashes"] = {
+        "full_reads": hashes["full_reads"], "reused_reads": hashes["reused_reads"],
+        "verification_model": "compiler-runtime-content-snapshot-with-final-fresh-rehash",
+    }
     persist_runtime_acceptance_reports(
         progress_path=progress_path,
         report_path=report_path,

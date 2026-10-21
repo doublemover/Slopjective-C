@@ -19,12 +19,6 @@ function Invoke-Objc3cNativeCompileCacheRestore {
     -CacheContext $CacheContext `
     -DestinationRoot $ParsedArgs.out_dir
   if ($cacheRestore.restored) {
-    Write-Objc3cNativeCompileSuccessArtifacts `
-      -RepoRoot $RepoRoot `
-      -ParsedArgs $ParsedArgs `
-      -InputPath $InputPath `
-      -CompilerBinaryPath $CompilerBinaryPath `
-      -WrapperScriptPath $WrapperScriptPath
     Write-Output "cache_hit=true"
     exit ([int]$cacheRestore.exit_code)
   }

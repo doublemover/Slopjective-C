@@ -293,9 +293,8 @@ M270-B001 implementation note:
   `frontend.pipeline.semantic_surface.objc_part7_actor_isolation_and_sendable_semantic_model`
 - the truthful lane-B proof consumes the `M270-A002` actor-member source packet
   and the already-landed aggregated actor/sendability sema counters
-- strict-concurrency selection/reporting remains fail-closed and later `M270`
-  work still owns dedicated actor-isolation diagnostics, sendability
-  enforcement, and runnable actor runtime behavior
+- strict-concurrency selection/reporting is now a live profile boundary; later
+  `M270` work still owns broader runnable actor runtime behavior
 
 M270-B002 enforcement note:
 
@@ -476,9 +475,9 @@ The packet must separate:
 - source-only recognized claims
 - unsupported fail-closed claims
 
-Until strictness, strict concurrency, effects, async/await, actors, blocks, and
-ARC are live, that packet is the canonical source used to avoid over-claiming
-Objective-C 3 conformance.
+Until effects, async/await runtime behavior, actors, blocks, and ARC are live,
+that packet is the canonical source used to avoid over-claiming Objective-C 3
+conformance.
 
 ## M264 frontend selection truth surface (implementation note)
 
@@ -490,14 +489,15 @@ frontend currently accepts and advertises:
 
 That surface must keep the current state explicit:
 
-- language-version and canonical rejection selection are live
+- language-version, language-profile, strictness, and strict-concurrency
+  selection are live
 - retired compatibility selections fail closed and are not support claims
-- strictness / strict-concurrency selection remain unsupported
+- strict-system selection remains rejected as a non-native frontend profile
 - feature-macro claim publication remains unsupported
 
-This prevents the driver/frontend layer from implying Strict, Strict
-Concurrency, or feature-macro conformance before those surfaces are actually
-implemented end to end.
+This prevents the driver/frontend layer from implying strict-system or
+feature-macro conformance before those surfaces are actually implemented end to
+end.
 
 ## M264 semantic claim legality packet (implementation note)
 
@@ -508,9 +508,9 @@ classifies the currently live truth surface:
 
 That packet must keep the semantic classification explicit:
 
-- canonical-only mode and canonical rejection combinations are valid live selections
+- canonical, strict, and strict-concurrency modes are valid live selections
 - source-only recognized claims remain downgraded and never promote to runnable
-- strictness / strict-concurrency selection remain rejected
+- strict-system selection remains rejected
 - feature-macro publication remains suppressed
 
 This is the semantic boundary later lowering/runtime/reporting lanes must
@@ -550,8 +550,9 @@ That lowering boundary must keep the current state explicit:
   `no-standalone-interface-payload-yet`
 - runnable claims stay bounded to the shipped native subset
 - source-only recognized claims stay downgraded
-- strictness, strict concurrency, and feature-macro publication remain
-  unsupported until they become executable end to end
+- strict and strict-concurrency profile selection are executable native
+  profile boundaries, while strict-system and feature-macro publication remain
+  fail-closed until system evidence lands
 
 ## M264 machine-readable runtime capability reporting (implementation note)
 
@@ -565,11 +566,11 @@ runtime/public capability payloads:
 
 Current required truth:
 
-- profile `core` is claimed
-- profiles `strict`, `strict-concurrency`, and `strict-system` are
-  not-claimed
-- mode `strictness=permissive`
-- mode `concurrency=off`
+- profiles `core`, `strict`, and `strict-concurrency` are claimed
+- profile `strict-system` is not-claimed
+- mode `strictness=strict` is published for strict and strict-concurrency
+  profile runs
+- mode `concurrency=strict` is published for strict-concurrency profile runs
 - optional features `throws`, `async-await`, `actors`, `blocks`, and `arc`
   remain not-claimed
 - the public report remains replay-stable until a later publication lane owns
@@ -580,9 +581,8 @@ Current required truth:
 The driver/runtime-adjacent publication boundary must also stay explicit:
 
 - native CLI accepts `--objc3-conformance-profile`
-- current live profile is `core`
-- known future profiles `strict`, `strict-concurrency`, and `strict-system`
-  fail closed before publication
+- current live profiles are `core`, `strict`, and `strict-concurrency`
+- known system profile `strict-system` fails closed before publication
 - both driver surfaces publish
   `module.objc3-conformance-publication.json`
 - the publication artifact points back to the lowered conformance report, the
@@ -606,16 +606,17 @@ Current truthful support:
   `module.objc3-conformance-publication.json`
 - validation writes
   `module.objc3-conformance-validation.json`
-- the validated selected profile remains `core`
+- validated selected profiles may be `core`, `strict`, or
+  `strict-concurrency`; `strict-system` remains rejected
 
 ## M264 versioning and conformance truth gate (implementation note)
 
 The lane-E gate freezes one integrated evidence boundary:
 
-- claimed profile remains `core`
+- claimed profile set includes `core`, `strict`, and `strict-concurrency`
 - retired compatibility selection remains fail-closed
 - canonical rejection remains live
-- strictness and strict concurrency remain fail-closed
+- strict-system remains fail-closed
 - feature-macro claims remain suppressed
 - runtime/public capability reports remain a truthful projection of the lowered
   conformance report
@@ -631,12 +632,11 @@ the shipped surface.
 
 That closeout matrix must keep the current truth explicit:
 
-- claimed profile remains `core`
-- canonical-only mode remains the only live mode; retired legacy selection
-  remains fail-closed
+- claimed profile set includes `core`, `strict`, and `strict-concurrency`
+- canonical remains the default mode; retired legacy selection remains
+  fail-closed
 - canonical rejection remains live
-- strict, strict-concurrency, and strict-system remain unclaimed and fail
-  closed
+- strict-system remains unclaimed and fails closed
 - feature-macro publication remains suppressed
 - JSON remains the only runnable emit/validate format
 - native CLI evidence remains:

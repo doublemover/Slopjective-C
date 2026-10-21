@@ -25,6 +25,9 @@ def _capability_details(capability_summary: LLVMCapabilitySummary) -> dict[str, 
         "clang_found": capability_summary.clang_found,
         "llc_found": capability_summary.llc_found,
         "llc_supports_filetype_obj": capability_summary.llc_supports_filetype_obj,
+        "llc_supports_target_object_emission": (
+            capability_summary.llc_supports_target_object_emission
+        ),
         "parity_ready": capability_summary.parity_ready,
         "blockers": list(capability_summary.blockers),
     }
@@ -66,18 +69,27 @@ def resolve_source_mode_routing(args: argparse.Namespace) -> ResolvedSourceModeR
                 f"{blockers}"
             )
         if args.route_cli_backend_from_capabilities:
-            effective_backend = (
-                "llvm-direct" if capability_summary.llc_supports_filetype_obj else "clang"
-            )
+            if (
+                capability_summary.llc_found
+                and capability_summary.llc_supports_filetype_obj
+                and capability_summary.llc_supports_target_object_emission
+            ):
+                effective_backend = "llvm-direct"
+            else:
+                capability_failures.append(
+                    "capability routing fail-closed: routed llvm-direct backend requires llc --filetype=obj target object emission"
+                )
         if effective_backend == "clang" and not capability_summary.clang_found:
             capability_failures.append(
                 "capability routing fail-closed: clang backend selected but capability summary reports clang unavailable"
             )
         if effective_backend == "llvm-direct" and (
-            not capability_summary.llc_found or not capability_summary.llc_supports_filetype_obj
+            not capability_summary.llc_found
+            or not capability_summary.llc_supports_filetype_obj
+            or not capability_summary.llc_supports_target_object_emission
         ):
             capability_failures.append(
-                "capability routing fail-closed: llvm-direct backend selected but llc --filetype=obj capability is unavailable"
+                "capability routing fail-closed: llvm-direct backend selected but llc --filetype=obj target object emission is unavailable"
             )
         if effective_clang_path is None:
             effective_clang_path = Path(capability_summary.clang_path)

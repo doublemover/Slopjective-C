@@ -1,0 +1,6 @@
+// Negative fixture: C/Objective-C style generic free-function declarations
+// remain reserved; admitted generic free functions use fn name<T>(...).
+// Expected diagnostic code(s): O3P114.
+module NegativeCStyleGenericFunctionReserved;
+
+<T> T GenericIdentity(T value);

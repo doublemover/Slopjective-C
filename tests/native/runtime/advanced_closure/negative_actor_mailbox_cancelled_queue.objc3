@@ -1,0 +1,21 @@
+// Expected advanced-runtime diagnostic: advanced-runtime.actor-mailbox-cancelled-queue
+module AdvancedRuntimeClosureNegativeActorMailboxCancelledQueue;
+
+extern fn objc3_runtime_actor_bind_executor_i32(actor_handle: i32, executor_tag: i32) -> i32;
+extern fn objc3_runtime_actor_mailbox_enqueue_i32(actor_handle: i32, value: i32, executor_tag: i32) -> i32;
+extern fn objc3_runtime_actor_mailbox_cancel_i32(actor_handle: i32, executor_tag: i32) -> i32;
+extern fn objc3_runtime_actor_mailbox_drain_next_i32(actor_handle: i32, executor_tag: i32) -> i32;
+
+actor class CancelledMailboxQueueActor
+- (i32)drainCancelledMessage:(i32)seed;
+@end
+
+@implementation CancelledMailboxQueueActor
+- (i32)drainCancelledMessage:(i32)seed {
+  objc3_runtime_actor_bind_executor_i32(seed, 1);
+  objc3_runtime_actor_mailbox_enqueue_i32(seed, seed + 1, 1);
+  objc3_runtime_actor_mailbox_cancel_i32(seed, 1);
+  // Cancelled queued messages must not be treated as delivered work.
+  return objc3_runtime_actor_mailbox_drain_next_i32(seed, 1);
+}
+@end

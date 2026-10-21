@@ -1,0 +1,150 @@
+{
+  "contract_id": "objc3.clang-foundation.linux-milestone.v1",
+  "qualified_on": "2026-10-18",
+  "role": "acceptance receipt; language and platform capability authorities remain separate",
+  "source_build_id": "llvmorg-23.1.3-0d261d1ca552-2fb07f866fe4-fd761312",
+  "upstream_commit": "0d261d1ca552c95a8f007e061c787ac7132fbcbc",
+  "patch_digest": "2fb07f866fe4eaca1f75d60399a8c2d82fd85f8b05189e640ae63cc4dbb797e4",
+  "host_tools": {
+    "python": "3.15.0",
+    "node": "26.12.0",
+    "npm": "12.2.1",
+    "powershell": "7.6.7",
+    "cmake": "4.4.4",
+    "ninja": "1.13.2",
+    "ccache": "4.14.1",
+    "uv": "0.13.1",
+    "pip": "26.2.1",
+    "pytest": "9.1.1",
+    "jsonschema": "4.26.0"
+  },
+  "target": {
+    "triple": "x86_64-unknown-linux-gnu",
+    "runtime": "gnustep-2.0",
+    "profile": "compatibility",
+    "distribution": "Debian 13",
+    "fresh_container": "debian:13-slim@sha256:a29215f6a35e51e22adffa17f89e9d2ef06214e64a2bad10d765c46aea49f11f"
+  },
+  "correctness": {
+    "extension_lit_passed": 160,
+    "extension_lit_unsupported": 3,
+    "ast_passed": 46,
+    "facade_ctest_passed": 16,
+    "linux_runtime_ctest_passed": 5,
+    "native_nodes_passed": 13,
+    "native_runtime_evidence_count": 76,
+    "expected_trap_executions": 32,
+    "focused_tooling_passed": 221,
+    "focused_tooling_skipped": 3,
+    "tooling_subtests_passed": 33,
+    "fresh_container_compile_link_run_debug_cmake_client": "PASS",
+    "extracted_archive_verify_rebuild_run": "PASS",
+    "legacy_public_smoke": "PASS",
+    "showcase_performance_portfolio": "PASS",
+    "runtime_dispatch_performance": "PASS"
+  },
+  "sdk_archive": {
+    "archive_sha256": "6bdd8813d7d0e6142d89c01579ec01ef1eb9beee6e56def848afd2f297e9d68d",
+    "archive_bytes": 386828898,
+    "seal_sha256": "17fa149d1320c8175e81011be2847a6f03b4b820cc28f89dda70b3b2cd49459d",
+    "filename": "llvmorg-23.1.3-0d261d1ca552-2fb07f866fe4-fd761312-linux-x86_64-17fa149d1320c817.tar.zst"
+  },
+  "measurements": {
+    "cpu_quota": 4,
+    "memory_limit_bytes": 17179869184,
+    "cold_clean_llvm_build_seconds": null,
+    "cold_clean_llvm_measurement_note": "initial build was interrupted and overlapped other work; no comparable cold timing is claimed",
+    "sdk_warm_build_test_stage_wall_seconds": [78.96716, 66.632542, 61.340069],
+    "sdk_warm_build_test_stage_executor_seconds": [72.384156, 62.26256, 57.205984],
+    "native_full_seconds": 42.66074,
+    "native_reuse_seconds": [11.445873, 10.012063, 10.19246],
+    "facade_noop_build_plus_16_tests_seconds": [3.094915, 2.523304, 2.408751],
+    "sdk_package_cold_seconds": 34.155849,
+    "sdk_package_cache_hit_seconds": 14.806546,
+    "public_smoke_baseline_seconds": 97.204,
+    "public_smoke_after_seconds": 83.991522,
+    "runtime_acceptance_before_isolated_seconds": 61.801,
+    "runtime_acceptance_after_seconds": 39.263559,
+    "startup": {
+      "python": {
+        "warmup_seconds": 0.021799,
+        "measured_seconds": [0.028142, 0.041505, 0.023848]
+      },
+      "powershell": {
+        "warmup_seconds": 0.519489,
+        "measured_seconds": [0.48429, 0.513416, 0.557817]
+      }
+    },
+    "scope": "same host, shared capacity; warm SDK runs overlapped fresh-container setup; no LLVM 22 versus 23 or pure runtime speedup claim",
+    "warm_environment_setup_seconds": 17.527471,
+    "cold_environment_setup_seconds": null
+  },
+  "regression_envelopes_seconds": {
+    "sdk_warm_build_test_stage_seconds": 90,
+    "native_full_seconds": 60,
+    "native_reuse_seconds": 15,
+    "facade_noop_build_test_seconds": 5,
+    "sdk_cache_hit_seconds": 20
+  },
+  "budget_enforcement": "receipt acceptance on this host; public composite gates retain validation_timing_budgets as their decision owner",
+  "evidence": [
+    {
+      "path": "out/native-validation/public-defer-sdk-qualified/summary.json",
+      "sha256": "ecff2787d5875ccf9b705dc097c258965fa091c5df2dd3e10cd24f564c29f918"
+    },
+    {
+      "path": "tmp/cloud-setup-logs/fresh-linux-sdk-qualification-final.log",
+      "sha256": "ef9367b6148d42864b8f8a9bf66e96a061473f1354a9babdbb64c6f8f8d7380b"
+    },
+    {
+      "path": "tmp/cloud-setup-logs/final-archive-relocation.log",
+      "sha256": "4bb45a964ce1f50d8481b66321c3b89ec56cd206710d43911e7d51999034d36c"
+    },
+    {
+      "path": "tmp/cloud-setup-logs/final-native-qualification.log",
+      "sha256": "4f980d705c4a455d36bf49356980255a689ddc4295c4eefea624ca7c39425999"
+    },
+    {
+      "path": "tmp/cloud-setup-logs/final-foundation-tooling-tests.log",
+      "sha256": "4302f9173812e8d6bcea3f109d511814f1d03c8ca5c9a9cdab76a7c40b33776b"
+    },
+    {
+      "path": "tmp/cloud-setup-logs/final-version-check.json",
+      "sha256": "527a87e93b181fccc0b6ce9f4e991121217965d007de77056cd8225016f17fda"
+    },
+    {
+      "path": "tmp/cloud-setup-logs/final-upstream-tag-refresh.txt",
+      "sha256": "271111e1ec2c791a81726cb36695ea47e5a579e01e545c3152c4deaac537ea3f"
+    },
+    {
+      "path": "tmp/cloud-setup-logs/benchmark-replay-receipt.json",
+      "sha256": "4e485c1f8be7ade98a1ad2c25ee6a13d702bb2b424feb56c3de787050fa9af13"
+    },
+    {
+      "path": "tmp/reports/performance/benchmark-summary.json",
+      "sha256": "c23ce672db43d7abb90b59e8bcc9ae8293798672565c235eed6a8363b3d126fd"
+    },
+    {
+      "path": "tmp/reports/runtime-performance/benchmark-summary.json",
+      "sha256": "04e9b3a7cca623db11a48b840c367440fcb52383fa09dd5aaf806da3684a7ab3"
+    },
+    {
+      "path": "tmp/cloud-setup-logs/final-ccache-stats.txt",
+      "sha256": "e719b927b38a0ac26ccfe204ccff9cabf8ed9f52b3f76cfcdf5bc1ddf290fe16"
+    },
+    {
+      "path": "tmp/cloud-setup-logs/warm-sdk-measurements.json",
+      "sha256": "fcc847f1301a651d9eefe7e9c4a774fee8c205a11aa68c4a1c09427d2f27b016"
+    },
+    {
+      "path": "tmp/cloud-setup-logs/warm-environment-setup-measurement.json",
+      "sha256": "2a6777a27c4af7228a1a5c6d1eb1d0462e1071190b1e06978cf2c95272a3b3bf"
+    }
+  ],
+  "remaining": [
+    "Windows/macOS LLVM 23 native requalification and current Windows build-tools/SDK audit",
+    "Legacy public compiler Linux platform-row promotion through its own runtime evidence",
+    "Public Optional/Result/throws syntax and associated complete capability qualification",
+    "Representative release LTO/PGO trials and a comparable clean-build/peak-RSS baseline"
+  ]
+}

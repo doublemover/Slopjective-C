@@ -1,0 +1,70 @@
+{
+  "schema_version": 1,
+  "compiler_family": "clang-foundation",
+  "language_revision": 202610,
+  "extension_abi_revision": 2,
+  "features": [
+    {
+      "name": "defer",
+      "macro": "DEFER",
+      "aliases": [],
+      "state": "implemented",
+      "qualified_targets": [
+        {
+          "triple": "x86_64-unknown-linux-gnu",
+          "runtime": "gnustep-2.0",
+          "profile": "compatibility",
+          "evidence": [
+            "clang/test/ObjC3/CodeGen/public-defer.c",
+            "carriers:expression:clang:defer-public-runtime:O0",
+            "carriers:expression:clang:defer-public-runtime:O2",
+            "native-package:consumer-eager",
+            "native-package:consumer-source",
+            "editor:qualification"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "optionals",
+      "macro": "OPTIONALS",
+      "aliases": [
+        "OPTIONAL"
+      ],
+      "state": "reserved",
+      "qualified_targets": []
+    },
+    {
+      "name": "result",
+      "macro": "RESULT",
+      "aliases": [],
+      "state": "reserved",
+      "qualified_targets": []
+    },
+    {
+      "name": "throws",
+      "macro": "THROWS",
+      "aliases": [
+        "TYPED_THROWS"
+      ],
+      "state": "reserved",
+      "qualified_targets": []
+    },
+    {
+      "name": "async_await",
+      "macro": "ASYNC_AWAIT",
+      "aliases": [
+        "ASYNC"
+      ],
+      "state": "reserved",
+      "qualified_targets": []
+    },
+    {
+      "name": "actors",
+      "macro": "ACTORS",
+      "aliases": [],
+      "state": "reserved",
+      "qualified_targets": []
+    }
+  ]
+}

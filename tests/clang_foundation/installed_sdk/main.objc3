@@ -1,0 +1,37 @@
+#include <objc/runtime.h>
+#include <stdio.h>
+#include <stdlib.h>
+
+static int destroyed;
+__attribute__((objc_root_class))
+@interface ManagedBuffer { Class isa; char *_bytes; }
++ (id)alloc;
+- (id)init;
+- (char *)bytes;
+@end
+@implementation ManagedBuffer
++ (id)alloc { return class_createInstance(self, 0); }
+- (id)init { _bytes = (char *)calloc(1, 32); return self; }
+- (char *)bytes { return _bytes; }
+- (void)dealloc { free(_bytes); ++destroyed; object_dispose(self); }
+@end
+static int cleanup_order;
+static int work(void) {
+  FILE *file = tmpfile();
+  if (!file) return 1;
+  defer { fclose(file); cleanup_order = cleanup_order * 10 + 1; }
+  {
+    ManagedBuffer *buffer = [[ManagedBuffer alloc] init];
+    if (![buffer bytes]) return 2;
+    defer { cleanup_order = cleanup_order * 10 + 2; }
+    fputs("native Linux application\n", file);
+    rewind(file);
+    if (!fgets([buffer bytes], 32, file)) return 3;
+    printf("%s", [buffer bytes]);
+  }
+  return destroyed == 1 ? 0 : 4;
+}
+int main(void) {
+  int result = work();
+  return result ? result : (cleanup_order == 21 && destroyed == 1 ? 0 : 5);
+}

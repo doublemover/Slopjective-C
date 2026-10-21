@@ -1,0 +1,51 @@
+{
+  "contract_id": "objc3c.package_ecosystem.direct_import_module_syntax.v1",
+  "issue_refs": [
+    8219
+  ],
+  "diagnostic_codes": [
+    "O3MOD8219",
+    "O3PKG8055"
+  ],
+  "token_contract": {
+    "token_kind": "KwAtImport",
+    "spelling": "@import",
+    "directive_keyword": "import"
+  },
+  "parser_contract": {
+    "ast_record": "Objc3ModuleImportDecl",
+    "ast_vector": "module_imports",
+    "identity_key_prefix": "objc3.module-import:",
+    "package_resolution": "required-locked-package-provenance",
+    "malformed_diagnostic": "O3MOD8219"
+  },
+  "positive_fixtures": [
+    "tests/tooling/fixtures/native/direct_import_syntax_consumer.objc3",
+    "tests/tooling/fixtures/native/module_import_lookup_consumer.objc3",
+    "tests/tooling/fixtures/native/module_import_lookup_provider.objc3"
+  ],
+  "negative_fixtures": [
+    {
+      "path": "tests/tooling/fixtures/native/recovery/negative/negative_direct_import_malformed_module_identity.objc3",
+      "expected_diagnostic": "O3MOD8219",
+      "failure_mode": "malformed-module-identity"
+    },
+    {
+      "path": "tests/tooling/fixtures/native/recovery/negative/negative_direct_import_without_package_provenance.objc3",
+      "expected_diagnostic": "O3PKG8055",
+      "failure_mode": "missing-package-provenance"
+    },
+    {
+      "path": "tests/tooling/fixtures/native/recovery/negative/negative_direct_import_ambiguous_module_identity.objc3",
+      "expected_diagnostic": "O3PKG8055",
+      "failure_mode": "ambiguous-module-identity"
+    }
+  ],
+  "module_graph_contract": {
+    "direct_import_syntax": "supported-fail-closed",
+    "direct_imports_field": "module_graph.direct_imports",
+    "required_package_provenance": "locked-package",
+    "missing_provenance_diagnostic": "O3PKG8055"
+  },
+  "claim_boundary": "Direct @import syntax is parser-admitted only as a deterministic module identity record; package resolution must be satisfied by checked-in locked package provenance, and ambiguous or unproven module identities fail closed."
+}

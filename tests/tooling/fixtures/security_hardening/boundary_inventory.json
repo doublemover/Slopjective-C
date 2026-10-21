@@ -64,7 +64,8 @@
     "runtime_hardening_owner": {
       "source_contract": "tests/tooling/fixtures/security_hardening/runtime_hardening_contract.json",
       "supporting_contracts": [
-        "tests/tooling/fixtures/security_hardening/sanitizer_validation_contract.json"
+        "tests/tooling/fixtures/security_hardening/sanitizer_validation_contract.json",
+        "tests/tooling/fixtures/security_hardening/sanitizer_package_install_model_contract.json"
       ],
       "summary_implementation_anchor": "scripts/build_security_hardening_artifact_contract_summary.py",
       "check_implementation_anchors": [
@@ -122,7 +123,7 @@
     "native/objc3c/src/sema/objc3_semantic_passes.cpp",
     "native/objc3c/src/pipeline/frontend_pipeline_orchestration.cpp",
     "native/objc3c/src/artifacts/objc3_frontend_artifacts.cpp",
-    "native/objc3c/src/io/objc3_process.cpp"
+    "native/objc3c/src/io/objc3_process_execution.cpp"
   ],
   "policy_contract_paths": [
     "tests/tooling/fixtures/release_foundation/provenance_policy.json",

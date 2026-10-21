@@ -201,7 +201,10 @@
       "evidence-log-performance-evidence",
       "unsupported-benchmark-claim",
       "compatibility-retired-route-performance-claim",
-      "wrapper-only-action-surface"
+      "wrapper-only-action-surface",
+      "optimization-speedup-without-safety-proof",
+      "generated-report-optimization-source-truth",
+      "optimization-runtime-miss-success-path"
     ],
     "required_public_claim_inputs": [
       "checked_in_benchmark_source",
@@ -217,6 +220,9 @@
     "no evidence-log performance evidence",
     "no unsupported benchmark claims",
     "no compatibility or retired route performance claim",
-    "no wrapper-only action surface"
+    "no wrapper-only action surface",
+    "no optimization speedup without runtime/debug safety proof",
+    "no generated optimization report promoted as source truth",
+    "no runtime miss behavior counted as optimization success"
   ]
 }

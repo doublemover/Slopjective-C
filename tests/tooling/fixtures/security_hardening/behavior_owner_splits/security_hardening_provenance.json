@@ -25,7 +25,7 @@
     "native_path:native/objc3c/src/sema/objc3_semantic_passes.cpp",
     "native_path:native/objc3c/src/pipeline/frontend_pipeline_orchestration.cpp",
     "native_path:native/objc3c/src/artifacts/objc3_frontend_artifacts.cpp",
-    "native_path:native/objc3c/src/io/objc3_process.cpp",
+    "native_path:native/objc3c/src/io/objc3_process_execution.cpp",
     "report_paths:tmp/reports/security-hardening/*",
     "report_paths:tmp/reports/release-foundation/*",
     "report_paths:tmp/reports/release-operations/*",

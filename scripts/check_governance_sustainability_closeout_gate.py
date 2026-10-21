@@ -190,8 +190,8 @@ def main() -> int:
         "contract_id": "objc3c.governance.sustainability.closeout_gate.v1",
         "status": "PASS" if ok else "FAIL",
         "issue": "governance-closeout-gate",
-        "runbook_mentions_closeout_gate": "check_governance_sustainability_closeout_gate.py" in runbook_text,
-        "runbook_mentions_closeout_summary": str(SUMMARY_PATH.relative_to(ROOT)).replace("\\", "/") in runbook_text,
+        "runbook_mentions_closeout_gate": "npm run objc3c -- validate-governance-sustainability" in runbook_text,
+        "runbook_mentions_closeout_summary": "tests/tooling/fixtures/governance_sustainability/artifact_contract.json" in runbook_text,
         "command_count": len(COMMANDS),
         "commands": command_results,
     }

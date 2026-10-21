@@ -1,0 +1,16 @@
+// Expected advanced-runtime diagnostic: advanced-runtime.scheduler-shutdown-drain-missing-evidence
+module AdvancedRuntimeClosureNegativeSchedulerShutdownDrainMissingEvidence;
+
+extern fn objc3_runtime_enter_task_group_scope_i32(executor_tag: i32) -> i32;
+extern fn objc3_runtime_add_task_group_task_i32(executor_tag: i32) -> i32;
+extern fn objc3_runtime_wait_task_group_next_i32(executor_tag: i32) -> i32;
+
+async fn shutdownDrainWithoutImportedEvidence(seed: i32) -> i32
+    __attribute__((objc_scheduler_guarantee(shutdown_drain))) {
+  // shutdown_drain_ready and shutdown_replay_key are required before this can
+  // be treated as scheduler shutdown/drain evidence.
+  let scoped = objc3_runtime_enter_task_group_scope_i32(3);
+  let queued = objc3_runtime_add_task_group_task_i32(3);
+  let drained = objc3_runtime_wait_task_group_next_i32(3);
+  return scoped + queued + drained + seed;
+}

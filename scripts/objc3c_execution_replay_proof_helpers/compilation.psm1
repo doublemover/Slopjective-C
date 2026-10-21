@@ -31,7 +31,8 @@ function Invoke-ReplayCompile {
   $manifestPath = Join-Path $outDir "module.manifest.json"
   $diagPath = Join-Path $outDir "module.diagnostics.txt"
   $irPath = Join-Path $outDir "module.ll"
-  $objPath = Join-Path $outDir "module.obj"
+  $objectName = if ([System.Environment]::OSVersion.Platform -eq [System.PlatformID]::Win32NT) { "module.obj" } else { "module.o" }
+  $objPath = Join-Path $outDir $objectName
   foreach ($artifactPath in @($manifestPath, $diagPath, $irPath, $objPath)) {
     if (!(Test-Path -LiteralPath $artifactPath -PathType Leaf)) {
       throw "execution replay proof FAIL: missing replay artifact $artifactPath"

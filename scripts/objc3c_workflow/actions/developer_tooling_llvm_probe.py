@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import argparse
 import subprocess
 import sys
 
@@ -11,6 +12,7 @@ from ..commands import run
 from ..environment import ROOT
 from .developer_tooling_llvm_contracts import (
     default_llvm_capabilities_command,
+    capability_probe_command,
     hosted_llvm_probe_command,
 )
 from .developer_tooling_paths import (
@@ -18,8 +20,15 @@ from .developer_tooling_paths import (
 )
 
 
-def action_check_llvm_capabilities(_: list[str]) -> int:
-    return run(default_llvm_capabilities_command())
+def action_check_llvm_capabilities(rest: list[str]) -> int:
+    parser = argparse.ArgumentParser(prog="npm run objc3c -- check-llvm-capabilities")
+    parser.add_argument("--summary-out")
+    args = parser.parse_args(rest[1:] if rest[:1] == ["--"] else rest)
+    return run(
+        capability_probe_command(args.summary_out)
+        if args.summary_out is not None
+        else default_llvm_capabilities_command()
+    )
 
 
 def run_hosted_llvm_probe() -> tuple[int, dict[str, object]]:

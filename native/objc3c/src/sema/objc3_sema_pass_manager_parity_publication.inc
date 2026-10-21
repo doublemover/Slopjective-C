@@ -1,5 +1,0 @@
-#include "sema/objc3_sema_pass_manager_parity_feature_totals.inc"
-#include "sema/objc3_sema_pass_manager_parity_symbol_type_totals.inc"
-#include "sema/objc3_sema_pass_manager_parity_block_dispatch_arc_totals.inc"
-#include "sema/objc3_sema_pass_manager_parity_diagnostics_parser_readiness.inc"
-#include "sema/objc3_sema_pass_manager_parity_semantic_readiness.inc"

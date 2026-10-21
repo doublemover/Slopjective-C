@@ -1,0 +1,217 @@
+{
+  "$schema": "https://objc3c.dev/schemas/objc3c-generic-callable-model-v1.schema.json",
+  "contract_id": "objc3c.native.generic_callable_reification_contract.v1",
+  "schema_version": 2,
+  "issue_refs": [
+    8207,
+    8235
+  ],
+  "owner_phase": "parser-sema-artifact",
+  "policy": {
+    "source_truth": "checked-in native source fixtures and semantic metadata fields",
+    "generated_report_source_truth_allowed": false,
+    "validation_required_before_support_expansion": true,
+    "module_or_profile_implicit_reification_allowed": false,
+    "runtime_specialization_claim_allowed": false
+  },
+  "umbrella_alignment": {
+    "umbrella_contract": "tests/tooling/fixtures/native/language_evolution_umbrella_contract.json",
+    "profile_widening_allowed": false,
+    "objc2_compatibility_path_allowed": false,
+    "runtime_reification_claim_allowed": false,
+    "module_or_profile_implicit_reification_allowed": false
+  },
+  "accepted_surfaces": [
+    {
+      "surface": "generic_free_function",
+      "canonical_syntax": "fn name<T>(param: T) -> T",
+      "parser_owner": "native/objc3c/src/parse/objc3_parser_core_objc_declarations_function_entrypoint_parser_handoff_generic_parameters.inc",
+      "sema_owner": "native/objc3c/src/sema/objc3_semantic_passes_generic_function_call_substitution.inc",
+      "positive_fixture": "tests/tooling/fixtures/native/type_semantic_generic_function_positive.objc3",
+      "metadata_fields": [
+        "generic_parameter_names_source_order",
+        "generic_parameter_variance_source_order",
+        "generic_parameter_constraints_lexicographic",
+        "generic_callable_signature_replay_key",
+        "generic_callable_reification_policy",
+        "generic_callable_mangling_policy_id",
+        "generic_callable_contract_deterministic"
+      ],
+      "reification_policy": "erased_default",
+      "mangling_policy_id": "objc3c.generic-callable.semantic-mangling.v1"
+    },
+    {
+      "surface": "generic_free_function_explicit_reified_metadata_policy",
+      "canonical_syntax": "@reify_generics fn name<T>(param: T) -> T",
+      "parser_owner": "native/objc3c/src/parse/objc3_parser_core_interop_profiles_top_level_dispatch.inc",
+      "sema_owner": "native/objc3c/src/sema/objc3_semantic_passes_integration_surface_function_builder_surface_construction.inc",
+      "positive_fixture": "tests/tooling/fixtures/native/type_semantic_generic_reified_function_positive.objc3",
+      "metadata_fields": [
+        "generic_callable_reification_policy",
+        "generic_callable_mangling_policy_id",
+        "generic_callable_signature_replay_key"
+      ],
+      "reification_policy": "explicit_reified",
+      "mangling_policy_id": "objc3c.generic-callable.reified-semantic-mangling.v1",
+      "runtime_specialization_claimed": false
+    },
+    {
+      "surface": "objective_c_generic_method",
+      "canonical_syntax": "- <T>(T)identity:(T)value;",
+      "parser_owner": "native/objc3c/src/parse/objc3_parser_core_objc_method_decl_parser_signature_header.inc",
+      "sema_owner": "native/objc3c/src/sema/objc3_semantic_passes_property_and_protocol_model_method_metadata.inc",
+      "positive_fixture": "tests/tooling/fixtures/native/type_semantic_generic_objc_method_positive.objc3",
+      "metadata_fields": [
+        "generic_parameter_names_source_order",
+        "generic_parameter_variance_source_order",
+        "generic_parameter_constraints_lexicographic",
+        "generic_callable_signature_replay_key",
+        "generic_callable_reification_policy",
+        "generic_callable_mangling_policy_id",
+        "generic_callable_contract_deterministic"
+      ],
+      "selector_identity_includes_generic_clause": false,
+      "reification_policy": "erased_default",
+      "mangling_policy_id": "objc3c.generic-callable.semantic-mangling.v1"
+    },
+    {
+      "surface": "objective_c_generic_method_explicit_reified_metadata_policy",
+      "canonical_syntax": "@reify_generics - <T>(T)identity:(T)value;",
+      "parser_owner": "native/objc3c/src/parse/objc3_parser_core_objc_interface_declarations_members.inc",
+      "sema_owner": "native/objc3c/src/sema/objc3_semantic_passes_property_and_protocol_model_method_metadata.inc",
+      "positive_fixture": "tests/tooling/fixtures/native/type_semantic_generic_reified_objc_method_positive.objc3",
+      "metadata_fields": [
+        "generic_callable_reification_policy",
+        "generic_callable_mangling_policy_id",
+        "generic_callable_signature_replay_key"
+      ],
+      "selector_identity_includes_generic_clause": false,
+      "reification_policy": "explicit_reified",
+      "mangling_policy_id": "objc3c.generic-callable.reified-semantic-mangling.v1",
+      "runtime_specialization_claimed": false
+    }
+  ],
+  "source_anchors": {
+    "schema": "schemas/objc3c-generic-callable-model-v1.schema.json",
+    "ast_generic_parameter_record": "native/objc3c/src/ast/objc3_ast_generic_param_decl_nodes.h",
+    "function_marker_fields": "native/objc3c/src/ast/objc3_ast_function_decl_nodes.h",
+    "method_marker_fields": "native/objc3c/src/ast/objc3_ast_method_decl_nodes.h",
+    "policy_constants": "native/objc3c/src/sema/objc3_semantic_passes_generic_callable_contracts.inc",
+    "substitution_engine": "native/objc3c/src/sema/objc3_semantic_passes_generic_function_call_substitution.inc",
+    "type_handoff_fields": "native/objc3c/src/sema/objc3_sema_contract_type_handoff_callable_records_generic_callable_fields.inc",
+    "function_semantic_metadata_fields": "native/objc3c/src/sema/objc3_sema_contract_semantic_type_metadata_function_records.h",
+    "method_semantic_metadata_fields": "native/objc3c/src/sema/objc3_sema_contract_semantic_type_metadata_method_records.h",
+    "artifact_publication": "native/objc3c/src/artifacts/json/semantic_type_manifest_records.cpp"
+  },
+  "claimable_metadata_requirements": [
+    "generic_callable_contract_deterministic is true",
+    "generic_callable_reification_policy is erased_default or explicit_reified",
+    "erased_default callables use objc3c.generic-callable.semantic-mangling.v1",
+    "explicit_reified callables use objc3c.generic-callable.reified-semantic-mangling.v1",
+    "generic_callable_signature_replay_key matches source-order name, variance, lexicographic constraints, selector/function identity, reification policy, and mangling policy",
+    "Objective-C selector identity excludes generic type parameters",
+    "call-site generic substitution binds source-order generic parameters before validating protocol constraints"
+  ],
+  "reserved_surfaces": [
+    {
+      "surface": "c_style_generic_free_function",
+      "canonical_reserved_shape": "<T> T GenericIdentity(T value);",
+      "diagnostic_code": "O3P114",
+      "negative_fixture": "tests/tooling/fixtures/native/recovery/negative/negative_cstyle_generic_function_reserved.objc3"
+    },
+    {
+      "surface": "selector_local_generic_method_clause",
+      "canonical_reserved_shape": "- (id)map<T>:(id)value;",
+      "diagnostic_code": "O3P114",
+      "negative_fixture": "tests/tooling/fixtures/native/recovery/negative/negative_generic_method_selector_form_ambiguous.objc3"
+    },
+    {
+      "surface": "unsupported_reification_scope",
+      "canonical_reserved_shape": "@reify_generics @property (readonly) id value;",
+      "diagnostic_code": "O3P114",
+      "negative_fixture": "tests/tooling/fixtures/native/recovery/negative/negative_reify_generics_unsupported_scope.objc3"
+    }
+  ],
+  "fail_closed_semantic_contracts": [
+    {
+      "contract": "generic_free_function_redeclaration_signature_drift",
+      "diagnostic_code": "O3S206",
+      "negative_fixture": "tests/tooling/fixtures/native/recovery/negative/negative_type_semantic_generic_function_signature_drift.objc3",
+      "required_invariants": [
+        "generic arity",
+        "source-order parameter names",
+        "source-order variance markers",
+        "lexicographic constraints per parameter",
+        "reification policy",
+        "mangling policy id",
+        "generic callable signature replay key"
+      ]
+    },
+    {
+      "contract": "generic_method_override_signature_drift",
+      "diagnostic_code": "O3S206",
+      "negative_fixture": "tests/tooling/fixtures/native/recovery/negative/negative_type_semantic_generic_method_override_mismatch.objc3",
+      "required_invariants": [
+        "selector identity",
+        "generic arity",
+        "source-order parameter names",
+        "source-order variance markers",
+        "lexicographic constraints per parameter",
+        "reification policy",
+        "mangling policy id",
+        "generic callable signature replay key"
+      ]
+    },
+    {
+      "contract": "generic_callable_constraint_cycle",
+      "diagnostic_code": "O3S206",
+      "negative_fixture": "tests/tooling/fixtures/native/recovery/negative/negative_type_semantic_generic_callable_constraint_cycle.objc3",
+      "required_invariants": [
+        "generic parameter constraints form an acyclic relation",
+        "non-protocol constraints are rejected unless they are only used to diagnose a cycle"
+      ]
+    },
+    {
+      "contract": "erased_to_reified_redeclaration_drift",
+      "diagnostic_code": "O3S206",
+      "negative_fixture": "tests/tooling/fixtures/native/recovery/negative/negative_type_semantic_erased_to_reified_redeclaration_drift.objc3",
+      "required_invariants": [
+        "redeclarations preserve generic callable reification policy",
+        "redeclarations preserve declared mangling policy id"
+      ]
+    },
+    {
+      "contract": "cross_module_mangling_policy_mismatch",
+      "diagnostic_code": "O3S206",
+      "negative_fixture": "tests/tooling/fixtures/native/generic_callable_cross_module_mangling_policy_mismatch.json",
+      "required_invariants": [
+        "imported replay keys preserve declared mangling policy",
+        "semantic equality across modules includes reification policy and mangling policy id"
+      ]
+    }
+  ],
+  "unsupported_boundaries": [
+    "C/Objective-C style generic free-function declarations",
+    "selector-local generic method type-parameter clauses",
+    "generic function overloading by generic signature",
+    "variadic generic parameters",
+    "module-wide implicit generic reification",
+    "runtime-specialized generic metadata or body cloning"
+  ],
+  "remaining_blockers": [
+    {
+      "blocker_id": "generic-callable-runtime-specialization",
+      "required_next_work": [
+        "define ABI-governed non-erased callable metadata if runtime specialization becomes a support claim",
+        "prove body specialization or runtime metadata lookup with native runtime evidence before promoting runtime reification"
+      ]
+    },
+    {
+      "blocker_id": "generic-callable-import-policy-enforcement",
+      "required_next_work": [
+        "wire module importer validation against generic_callable_reification_policy and generic_callable_mangling_policy_id",
+        "keep cross-module mangling policy mismatch fail-closed until importer evidence exists"
+      ]
+    }
+  ]
+}

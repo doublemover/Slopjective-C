@@ -17,6 +17,9 @@ from scripts.objc3c_workflow.action_catalog_release_foundation import (
 from scripts.objc3c_workflow.action_catalog_packaging_channels import (
     PACKAGING_CHANNEL_ACTION_SPECS,
 )
+from scripts.objc3c_workflow.actions.sanitizer_runtime_evidence import (
+    SANITIZER_RUNTIME_EVIDENCE_ACTION_SPECS,
+)
 from scripts.objc3c_workflow.action_catalog_release_operations import (
     RELEASE_OPERATIONS_ACTION_SPECS,
 )
@@ -48,6 +51,8 @@ OWNER_POLICY_EXTENSION_KEYS = {
     "canonical_rejection_owner",
     "provenance_owner",
     "release_drill_owner",
+    "sanitizer_execution_evidence_contract",
+    "sanitizer_runtime_evidence_actions",
     "trust_owner",
     "wrapper_only_allowed",
 }
@@ -75,6 +80,34 @@ def _assert_owner_policy_matches_model(
         for path_key in ("canonical_rejection_owner", "provenance_owner"):
             if path_key in owner_policy:
                 assert (ROOT / str(owner_policy[path_key])).is_file()
+        if "sanitizer_execution_evidence_contract" in owner_policy:
+            contract = owner_policy["sanitizer_execution_evidence_contract"]
+            assert isinstance(contract, dict)
+            assert (ROOT / str(contract["source_contract"])).is_file()
+            assert (ROOT / str(contract["schema"])).is_file()
+            assert (ROOT / str(contract["checker"])).is_file()
+            assert contract["support_truth"] is False
+            assert contract["native_execution_claimed"] is False
+            assert contract["support_promotion_allowed"] is False
+        if "sanitizer_runtime_evidence_actions" in owner_policy:
+            action_policy = owner_policy["sanitizer_runtime_evidence_actions"]
+            assert isinstance(action_policy, dict)
+            assert action_policy["support_claim_authority"] is False
+            assert action_policy["generated_report_capability_truth_allowed"] is False
+            assert action_policy["native_execution_claim_promotion_allowed"] is False
+            assert action_policy["action_aliases_allowed"] is False
+            assert action_policy["fallback_sanitizer_variant_allowed"] is False
+            assert action_policy["fallback_target_platform_allowed"] is False
+            assert action_policy["report_or_probe_rerouting_allowed"] is False
+            assert action_policy["package_root_rerouting_allowed"] is False
+            assert action_policy["fixture_rerouting_allowed"] is False
+            assert action_policy["public_pass_through_args_allowed"] is False
+            actions = action_policy["actions"]
+            assert isinstance(actions, dict)
+            assert set(actions) == {
+                "check-sanitizer-runtime-evidence-asan",
+                "check-sanitizer-runtime-evidence-ubsan",
+            }
         if "wrapper_only_allowed" in owner_policy:
             assert owner_policy["wrapper_only_allowed"] is False
         for role_key in ("trust_owner", "release_drill_owner"):
@@ -151,9 +184,10 @@ def test_release_channel_catalogs_are_contract_facades() -> None:
     assert RELEASE_FOUNDATION_ACTION_SPECS == release_action_specs(
         RELEASE_FOUNDATION_ACTION_CONTRACTS
     )
-    assert PACKAGING_CHANNEL_ACTION_SPECS == release_action_specs(
-        PACKAGING_CHANNEL_ACTION_CONTRACTS
-    )
+    assert PACKAGING_CHANNEL_ACTION_SPECS == {
+        **release_action_specs(PACKAGING_CHANNEL_ACTION_CONTRACTS),
+        **SANITIZER_RUNTIME_EVIDENCE_ACTION_SPECS,
+    }
     assert RELEASE_OPERATIONS_ACTION_SPECS == release_action_specs(
         RELEASE_OPERATIONS_ACTION_CONTRACTS
     )
@@ -215,6 +249,22 @@ def test_packaging_and_release_operations_publish_hard_cutover_guardrails() -> N
         "toolchain_archive_claim_owner": "platform-hardening-build-package-validation",
         "toolchain_archive_claim_requires_owner": True,
         "package_payload_owner_action": "package-runnable-toolchain",
+        "sanitizer_runtime_evidence_actions": [
+            "check-sanitizer-runtime-evidence-asan",
+            "check-sanitizer-runtime-evidence-ubsan",
+        ],
+        "sanitizer_runtime_promotion_evidence_action": "check-security-sanitizer-runtime-promotion-evidence",
+        "sanitizer_runtime_promotion_generated_only_allowed": False,
+        "sanitizer_runtime_promotion_source_contract_required": True,
+        "sanitizer_runtime_promotion_negative_cases_required": True,
+        "sanitizer_runtime_evidence_action_aliases_allowed": False,
+        "sanitizer_runtime_evidence_fallback_sanitizer_variant_allowed": False,
+        "sanitizer_runtime_evidence_fallback_target_platform_allowed": False,
+        "sanitizer_runtime_evidence_report_or_probe_rerouting_allowed": False,
+        "sanitizer_runtime_evidence_package_root_rerouting_allowed": False,
+        "sanitizer_runtime_evidence_fixture_rerouting_allowed": False,
+        "sanitizer_runtime_evidence_public_pass_through_args_allowed": False,
+        "sanitizer_runtime_evidence_support_promotion_allowed": False,
         "evidence_log_release_claim_allowed": False,
         "wrapper_only_action_surface_allowed": False,
     }

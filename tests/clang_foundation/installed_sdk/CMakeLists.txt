@@ -1,0 +1,6 @@
+cmake_minimum_required(VERSION 4.4.4)
+project(objc3_installed_embedding LANGUAGES CXX)
+find_package(objc3c REQUIRED CONFIG)
+add_executable(embedding main.cpp)
+target_link_libraries(embedding PRIVATE objc3c::Frontend objc3c::RuntimeServices)
+target_compile_features(embedding PRIVATE cxx_std_20)

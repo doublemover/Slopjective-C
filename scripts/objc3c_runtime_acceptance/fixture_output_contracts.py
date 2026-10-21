@@ -11,6 +11,7 @@ from .compile_backends import explicit_live_error_runtime_args
 from .compile_truth import COMPILE_OUTPUT_TRUTHFULNESS_CONTRACT_ID
 from .compile_truth import COMPILE_PROVENANCE_CONTRACT_ID
 from .fixture_compile_runner import run_fixture_compile
+from .paths import ARTIFACT_IDENTITY
 
 
 def compile_fixture_with_args(
@@ -30,7 +31,7 @@ def compile_fixture_with_args(
         raise RuntimeError(
             f"fixture compile failed for {fixture}:\nSTDOUT:\n{result.stdout}\nSTDERR:\n{result.stderr}"
         )
-    obj_path = out_dir / "module.obj"
+    obj_path = out_dir / ARTIFACT_IDENTITY.module_object_artifact_name
     if not obj_path.is_file():
         raise RuntimeError(f"fixture compile did not publish {obj_path}")
     provenance_path = out_dir / "module.compile-provenance.json"

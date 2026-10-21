@@ -29,7 +29,12 @@ __all__ = [
 for _exported_name in __all__:
     _exported = globals()[_exported_name]
     if inspect.isclass(_exported) or inspect.isfunction(_exported):
-        _exported.__module__ = __name__
+        try:
+            _exported.__module__ = __name__
+        except (AttributeError, TypeError):
+            # Some Python versions report immutable typing aliases as classes.
+            # Their originating module metadata is not ours to rewrite.
+            pass
 
 del _exported
 del _exported_name

@@ -1,6 +1,11 @@
 Set-StrictMode -Version Latest
 
 Import-Module (Join-Path $PSScriptRoot "..\objc3c_runnable_toolchain_package_helpers.psm1") -Force -DisableNameChecking
+Import-Module (Join-Path $PSScriptRoot "..\objc3c_native_cmake.psm1") -Force -DisableNameChecking
+
+function Get-RunnableToolchainPackageCoreArtifactRelativePaths {
+  return Get-Objc3cNativePackageArtifactRelativePaths
+}
 
 function Get-RunnableToolchainPackagePrivateBuildRoot {
   param(
@@ -19,10 +24,11 @@ function Get-RunnableToolchainPackagePrivateBuildRoot {
 }
 
 function Get-RunnableToolchainPackageGeneratedArtifactPaths {
+  $coreArtifacts = Get-RunnableToolchainPackageCoreArtifactRelativePaths
   return @(
-    "artifacts/bin/objc3c-native.exe",
-    "artifacts/bin/objc3c-frontend-c-api-runner.exe",
-    "artifacts/lib/objc3_runtime.lib",
+    $coreArtifacts.NativeExecutable,
+    $coreArtifacts.CapiRunnerExecutable,
+    $coreArtifacts.RuntimeLibrary,
     "tmp/artifacts/objc3c-native/frontend_source_graph.json",
     "tmp/artifacts/objc3c-native/frontend_invocation_lock.json",
     "tmp/artifacts/objc3c-native/frontend_core_feature_expansion.json",
@@ -33,8 +39,304 @@ function Get-RunnableToolchainPackageGeneratedArtifactPaths {
     "tmp/artifacts/objc3c-native/frontend_conformance_matrix.json",
     "tmp/artifacts/objc3c-native/frontend_conformance_corpus.json",
     "tmp/artifacts/objc3c-native/frontend_integration_closeout.json",
+    "share/objc3c/sanitizer/asan-metadata.json",
+    "share/objc3c/sanitizer/ubsan-metadata.json",
+    "share/objc3c/sanitizer/asan-runtime-libraries.json",
+    "share/objc3c/sanitizer/ubsan-runtime-libraries.json",
+    "artifacts/runtime/sanitizer/address/clang_rt.asan_dynamic-x86_64.dll",
+    "artifacts/runtime/sanitizer/address/clang_rt.asan_dynamic-x86_64.lib",
+    "artifacts/runtime/sanitizer/address/clang_rt.asan_dynamic_runtime_thunk-x86_64.lib",
+    "artifacts/runtime/sanitizer/undefined/clang_rt.ubsan_standalone-x86_64.lib",
+    "artifacts/runtime/sanitizer/undefined/clang_rt.ubsan_standalone_cxx-x86_64.lib",
     "tmp/build-objc3c-native/repo_superclean_source_of_truth.json"
   )
+}
+
+function Get-RunnableToolchainPackageSanitizerVariantMetadata {
+  param(
+    [ValidateSet("release", "address", "undefined")]
+    [string]$SanitizerVariant = "release"
+  )
+
+  if ($SanitizerVariant -eq "release") {
+    return $null
+  }
+
+  if ($SanitizerVariant -eq "address") {
+    $metadata = [ordered]@{
+      package_id = "org.objc3c.runtime:objc3c-runtime-asan"
+      package_variant_row_id = "objc3c.package.sanitizer.asan.reserved"
+      package_channel_id = "windows-x64-sanitizer-asan"
+      target_platform_id = "windows-x64"
+      sanitizer = "address"
+      selected_runtime_variant = "sanitizer=address"
+      install_selector = "sanitizer=address"
+      metadata_manifest_path = "share/objc3c/sanitizer/asan-metadata.json"
+      runtime_library_manifest_path = "share/objc3c/sanitizer/asan-runtime-libraries.json"
+      runtime_library_payload_entries = @(
+        "artifacts/runtime/sanitizer/address/clang_rt.asan_dynamic-x86_64.dll",
+        "artifacts/runtime/sanitizer/address/clang_rt.asan_dynamic-x86_64.lib",
+        "artifacts/runtime/sanitizer/address/clang_rt.asan_dynamic_runtime_thunk-x86_64.lib"
+      )
+      runtime_library_ids = @("objc3-runtime", "clang_rt.asan")
+      compiler_flags = @("-fsanitize=address", "-fno-omit-frame-pointer")
+      linker_flags = @("-fsanitize=address")
+      environment = "ASAN_OPTIONS"
+      missing_runtime_behavior = "fail-closed-before-package-install"
+    }
+    return $metadata
+  }
+
+  $metadata = [ordered]@{
+    package_id = "org.objc3c.runtime:objc3c-runtime-ubsan"
+    package_variant_row_id = "objc3c.package.sanitizer.ubsan.reserved"
+    package_channel_id = "windows-x64-sanitizer-ubsan"
+    target_platform_id = "windows-x64"
+    sanitizer = "undefined"
+    selected_runtime_variant = "sanitizer=undefined"
+    install_selector = "sanitizer=undefined"
+    metadata_manifest_path = "share/objc3c/sanitizer/ubsan-metadata.json"
+    runtime_library_manifest_path = "share/objc3c/sanitizer/ubsan-runtime-libraries.json"
+    runtime_library_payload_entries = @(
+      "artifacts/runtime/sanitizer/undefined/clang_rt.ubsan_standalone-x86_64.lib",
+      "artifacts/runtime/sanitizer/undefined/clang_rt.ubsan_standalone_cxx-x86_64.lib"
+    )
+    runtime_library_ids = @("objc3-runtime", "clang_rt.ubsan")
+    compiler_flags = @("-fsanitize=undefined", "-fno-omit-frame-pointer")
+    linker_flags = @("-fsanitize=undefined")
+    environment = "UBSAN_OPTIONS"
+    trap_or_recover_mode = "trap"
+    missing_runtime_behavior = "fail-closed-before-package-install"
+  }
+  return $metadata
+}
+
+function Get-RunnableToolchainPackageSanitizerRuntimeRoot {
+  param(
+    [Parameter(Mandatory = $true)][string]$LlvmRoot,
+    [Parameter(Mandatory = $true)][string]$SanitizerVariant
+  )
+
+  $clangRoot = Join-Path $LlvmRoot "lib\clang"
+  if (!(Test-Path -LiteralPath $clangRoot -PathType Container)) {
+    throw "runnable toolchain package FAIL: sanitizer runtime clang root missing before package install: $clangRoot"
+  }
+
+  $versionDirs = @(
+    Get-ChildItem -LiteralPath $clangRoot -Directory -ErrorAction Stop |
+      Sort-Object -Property Name -Descending
+  )
+  foreach ($versionDir in $versionDirs) {
+    $candidate = Join-Path $versionDir.FullName "lib\windows"
+    if (Test-Path -LiteralPath $candidate -PathType Container) {
+      return $candidate
+    }
+  }
+
+  throw "runnable toolchain package FAIL: sanitizer runtime library root missing before package install for $SanitizerVariant under $clangRoot"
+}
+
+function Assert-RunnableToolchainPackageSanitizerRuntimePreflight {
+  param(
+    [Parameter(Mandatory = $true)][string]$RepoRoot,
+    [ValidateSet("release", "address", "undefined")]
+    [string]$SanitizerVariant = "release"
+  )
+
+  $metadata = Get-RunnableToolchainPackageSanitizerVariantMetadata -SanitizerVariant $SanitizerVariant
+  if ($null -eq $metadata) {
+    return
+  }
+
+  $toolchain = Resolve-Objc3cNativeToolchain -RepoRoot $RepoRoot
+  $runtimeRoot = Get-RunnableToolchainPackageSanitizerRuntimeRoot `
+    -LlvmRoot $toolchain.LlvmRoot `
+    -SanitizerVariant $SanitizerVariant
+
+  foreach ($relativePath in @($metadata["runtime_library_payload_entries"])) {
+    $fileName = Split-Path -Leaf $relativePath
+    $sourcePath = Join-Path $runtimeRoot $fileName
+    if (!(Test-Path -LiteralPath $sourcePath -PathType Leaf)) {
+      throw "runnable toolchain package FAIL: sanitizer runtime library missing before native build for ${SanitizerVariant}: $fileName in $runtimeRoot"
+    }
+  }
+}
+
+function Copy-RunnableToolchainPackageSanitizerRuntimeLibraries {
+  param(
+    [Parameter(Mandatory = $true)][string]$RepoRoot,
+    [Parameter(Mandatory = $true)][string]$PackageRoot,
+    [ValidateSet("release", "address", "undefined")]
+    [string]$SanitizerVariant = "release"
+  )
+
+  $metadata = Get-RunnableToolchainPackageSanitizerVariantMetadata -SanitizerVariant $SanitizerVariant
+  if ($null -eq $metadata) {
+    return
+  }
+
+  $toolchain = Resolve-Objc3cNativeToolchain -RepoRoot $RepoRoot
+  $runtimeRoot = Get-RunnableToolchainPackageSanitizerRuntimeRoot `
+    -LlvmRoot $toolchain.LlvmRoot `
+    -SanitizerVariant $SanitizerVariant
+
+  $runtimeArtifacts = @()
+  foreach ($relativePath in @($metadata["runtime_library_payload_entries"])) {
+    $fileName = Split-Path -Leaf $relativePath
+    $sourcePath = Join-Path $runtimeRoot $fileName
+    if (!(Test-Path -LiteralPath $sourcePath -PathType Leaf)) {
+      throw "runnable toolchain package FAIL: sanitizer runtime library missing before package install for ${SanitizerVariant}: $fileName in $runtimeRoot"
+    }
+
+    $targetPath = Join-Path $PackageRoot ($relativePath -replace '/', [System.IO.Path]::DirectorySeparatorChar)
+    $targetDir = Split-Path -Parent $targetPath
+    New-Item -ItemType Directory -Force -Path $targetDir | Out-Null
+    Copy-Item -LiteralPath $sourcePath -Destination $targetPath -Force
+    $targetItem = Get-Item -LiteralPath $targetPath
+    $runtimeArtifacts += [ordered]@{
+      runtime_library_id = if ($SanitizerVariant -eq "address") { "clang_rt.asan" } else { "clang_rt.ubsan" }
+      artifact = $relativePath
+      source_file_name = $fileName
+      size_bytes = [int64]$targetItem.Length
+      sha256 = (Get-FileHash -LiteralPath $targetPath -Algorithm SHA256).Hash.ToLowerInvariant()
+      install_required = $true
+    }
+  }
+
+  $manifestPath = Join-Path $PackageRoot ($metadata["runtime_library_manifest_path"] -replace '/', [System.IO.Path]::DirectorySeparatorChar)
+  $manifestDir = Split-Path -Parent $manifestPath
+  New-Item -ItemType Directory -Force -Path $manifestDir | Out-Null
+  $manifest = [ordered]@{
+    contract_id = "objc3c.sanitizer.runtime-library-manifest.v1"
+    target_platform_id = $metadata["target_platform_id"]
+    sanitizer = $SanitizerVariant
+    runtime_library_ids = $metadata["runtime_library_ids"]
+    runtime_library_artifacts = $runtimeArtifacts
+    runtime_library_root_kind = "llvm-clang-runtime-windows-x64"
+    missing_runtime_behavior = $metadata["missing_runtime_behavior"]
+    support_truth = $false
+    native_execution_claimed = $false
+  }
+  $manifest | ConvertTo-Json -Depth 8 | Set-Content -LiteralPath $manifestPath -Encoding utf8
+}
+
+function Assert-RunnableToolchainPackageSanitizerRuntimeManifestPayload {
+  param(
+    [Parameter(Mandatory = $true)][string]$PackageRoot,
+    [Parameter(Mandatory = $true)][string]$RuntimeLibraryManifestPath,
+    [Parameter(Mandatory = $true)]$Payload,
+    [ValidateSet("address", "undefined")]
+    [Parameter(Mandatory = $true)][string]$SanitizerVariant
+  )
+
+  $metadata = Get-RunnableToolchainPackageSanitizerVariantMetadata -SanitizerVariant $SanitizerVariant
+  if ([string]($Payload["contract_id"]) -ne "objc3c.sanitizer.runtime-library-manifest.v1" -or
+      [string]($Payload["target_platform_id"]) -ne [string]($metadata["target_platform_id"]) -or
+      [string]($Payload["sanitizer"]) -ne $SanitizerVariant -or
+      [string]($Payload["runtime_library_root_kind"]) -ne "llvm-clang-runtime-windows-x64" -or
+      [string]($Payload["missing_runtime_behavior"]) -ne [string]($metadata["missing_runtime_behavior"]) -or
+      $Payload["support_truth"] -ne $false -or
+      $Payload["native_execution_claimed"] -ne $false) {
+    throw "runnable toolchain package FAIL: sanitizer runtime library manifest identity drifted: $RuntimeLibraryManifestPath"
+  }
+
+  $expectedRuntimeLibraryIds = @($metadata["runtime_library_ids"])
+  $actualRuntimeLibraryIds = @($Payload["runtime_library_ids"])
+  if (($actualRuntimeLibraryIds -join "`0") -ne ($expectedRuntimeLibraryIds -join "`0")) {
+    throw "runnable toolchain package FAIL: sanitizer runtime library ids drifted: $RuntimeLibraryManifestPath"
+  }
+
+  $runtimeArtifacts = @($Payload["runtime_library_artifacts"])
+  $expectedArtifacts = @($metadata["runtime_library_payload_entries"])
+  if ($runtimeArtifacts.Count -ne $expectedArtifacts.Count) {
+    throw "runnable toolchain package FAIL: sanitizer runtime library artifact count drifted: $RuntimeLibraryManifestPath"
+  }
+
+  $expectedRuntimeLibraryId = if ($SanitizerVariant -eq "address") { "clang_rt.asan" } else { "clang_rt.ubsan" }
+  foreach ($relativePath in $expectedArtifacts) {
+    $artifactRecord = @($runtimeArtifacts | Where-Object { [string]($_["artifact"]) -eq [string]$relativePath })
+    if ($artifactRecord.Count -ne 1) {
+      throw "runnable toolchain package FAIL: sanitizer runtime library artifact path drifted: $relativePath"
+    }
+    $artifact = $artifactRecord[0]
+    $fileName = Split-Path -Leaf $relativePath
+    $targetPath = Join-Path $PackageRoot ($relativePath -replace '/', [System.IO.Path]::DirectorySeparatorChar)
+    if ([string]($artifact["runtime_library_id"]) -ne $expectedRuntimeLibraryId -or
+        [string]($artifact["source_file_name"]) -ne $fileName -or
+        [int64]($artifact["size_bytes"]) -lt 1 -or
+        $artifact["install_required"] -ne $true -or
+        [string]($artifact["sha256"]) -notmatch '^[0-9a-f]{64}$' -or
+        !(Test-Path -LiteralPath $targetPath -PathType Leaf)) {
+      throw "runnable toolchain package FAIL: sanitizer runtime library artifact metadata drifted: $relativePath"
+    }
+    $expectedHash = (Get-FileHash -LiteralPath $targetPath -Algorithm SHA256).Hash.ToLowerInvariant()
+    if ([string]($artifact["sha256"]) -ne $expectedHash) {
+      throw "runnable toolchain package FAIL: sanitizer runtime library artifact digest drifted: $relativePath"
+    }
+  }
+}
+
+function Get-RunnableToolchainPackageSanitizerRuntimeManifestPayload {
+  param(
+    [Parameter(Mandatory = $true)][string]$PackageRoot,
+    [Parameter(Mandatory = $true)][string]$RuntimeLibraryManifestPath,
+    [ValidateSet("address", "undefined")]
+    [Parameter(Mandatory = $true)][string]$SanitizerVariant
+  )
+
+  $manifestPath = Join-Path $PackageRoot ($RuntimeLibraryManifestPath -replace '/', [System.IO.Path]::DirectorySeparatorChar)
+  if (!(Test-Path -LiteralPath $manifestPath -PathType Leaf)) {
+    throw "runnable toolchain package FAIL: sanitizer runtime library manifest missing before metadata publication: $RuntimeLibraryManifestPath"
+  }
+  $payload = Get-Content -LiteralPath $manifestPath -Raw | ConvertFrom-Json -AsHashtable
+  Assert-RunnableToolchainPackageSanitizerRuntimeManifestPayload `
+    -PackageRoot $PackageRoot `
+    -RuntimeLibraryManifestPath $RuntimeLibraryManifestPath `
+    -Payload $payload `
+    -SanitizerVariant $SanitizerVariant
+  return $payload
+}
+
+function Write-RunnableToolchainPackageSanitizerMetadata {
+  param(
+    [Parameter(Mandatory = $true)][string]$PackageRoot,
+    [ValidateSet("release", "address", "undefined")]
+    [string]$SanitizerVariant = "release"
+  )
+
+  $metadata = Get-RunnableToolchainPackageSanitizerVariantMetadata -SanitizerVariant $SanitizerVariant
+  if ($null -eq $metadata) {
+    return
+  }
+
+  $metadata["contract_id"] = "objc3c.sanitizer.runtime-package-metadata.v1"
+  $runtimeManifest = Get-RunnableToolchainPackageSanitizerRuntimeManifestPayload `
+    -PackageRoot $PackageRoot `
+    -RuntimeLibraryManifestPath $metadata["runtime_library_manifest_path"] `
+    -SanitizerVariant $SanitizerVariant
+  $runtimeManifestPath = Join-Path $PackageRoot ($metadata["runtime_library_manifest_path"] -replace '/', [System.IO.Path]::DirectorySeparatorChar)
+  $metadata["runtime_library_manifest_digest"] = "sha256:" + (Get-FileHash -LiteralPath $runtimeManifestPath -Algorithm SHA256).Hash.ToLowerInvariant()
+  $metadata["runtime_library_artifacts"] = $runtimeManifest["runtime_library_artifacts"]
+  $metadata["support_truth"] = $false
+  $metadata["native_execution_claimed"] = $false
+  $nativeExecutionContract = [ordered]@{
+    native_execution_required_before_support = $true
+    native_execution_record_required = $true
+    native_execution_record_fields = @("executable_path", "target_platform_id", "sanitizer", "runtime_library_ids", "runtime_library_artifacts", "environment", "exit_code", "diagnostic_records")
+    missing_native_execution_behavior = "fail-closed-before-support-promotion"
+    native_execution_claimed = $false
+  }
+  if ($SanitizerVariant -eq "undefined") {
+    $nativeExecutionContract["native_execution_record_fields"] += "trap_or_recover_mode"
+  }
+  $metadata["native_execution_contract"] = $nativeExecutionContract
+  $metadata["default_release_channel_allowed"] = $false
+  $metadata["release_runtime_mixing_allowed"] = $false
+
+  $metadataPath = Join-Path $PackageRoot ($metadata["metadata_manifest_path"] -replace '/', [System.IO.Path]::DirectorySeparatorChar)
+  $metadataDir = Split-Path -Parent $metadataPath
+  New-Item -ItemType Directory -Force -Path $metadataDir | Out-Null
+  $metadata | ConvertTo-Json -Depth 8 | Set-Content -LiteralPath $metadataPath -Encoding utf8
 }
 
 function Test-RunnableToolchainPackageGeneratedArtifactPath {
@@ -154,9 +456,10 @@ function Copy-RunnableToolchainPackageRepoSupercleanSurface {
   }
 
   $payload = Get-Content -LiteralPath $sourcePath -Raw | ConvertFrom-Json -AsHashtable
-  $payload["native_build_outputs"]["native_executable"] = "artifacts/bin/objc3c-native.exe"
-  $payload["native_build_outputs"]["frontend_c_api_runner"] = "artifacts/bin/objc3c-frontend-c-api-runner.exe"
-  $payload["native_build_outputs"]["runtime_library"] = "artifacts/lib/objc3_runtime.lib"
+  $coreArtifacts = Get-RunnableToolchainPackageCoreArtifactRelativePaths
+  $payload["native_build_outputs"]["native_executable"] = $coreArtifacts.NativeExecutable
+  $payload["native_build_outputs"]["frontend_c_api_runner"] = $coreArtifacts.CapiRunnerExecutable
+  $payload["native_build_outputs"]["runtime_library"] = $coreArtifacts.RuntimeLibrary
   $payload["native_build_outputs"]["compile_commands"] = "tmp/build-objc3c-native/compile_commands.json"
 
   foreach ($entry in @($payload["frontend_contract_artifacts"])) {
@@ -195,6 +498,8 @@ function Invoke-RunnableToolchainPackageBuild {
     [Parameter(Mandatory = $true)][string]$RepoRoot,
     [Parameter(Mandatory = $true)][string]$PackageRoot,
     [Parameter(Mandatory = $true)][string]$BuildScript,
+    [ValidateSet("release", "address", "undefined")]
+    [string]$SanitizerVariant = "release",
     [int]$Parallelism = 0
   )
 
@@ -210,6 +515,10 @@ function Invoke-RunnableToolchainPackageBuild {
   $libraryOutputDir = Join-Path $PackageRoot "artifacts/lib"
   $frontendArtifactRoot = Join-Path $PackageRoot "tmp/artifacts/objc3c-native"
 
+  Assert-RunnableToolchainPackageSanitizerRuntimePreflight `
+    -RepoRoot $RepoRoot `
+    -SanitizerVariant $SanitizerVariant
+
   & $BuildScript `
     -ExecutionMode full `
     -BuildDir $buildDir `
@@ -217,6 +526,7 @@ function Invoke-RunnableToolchainPackageBuild {
     -LibraryOutputDir $libraryOutputDir `
     -FrontendArtifactRoot $frontendArtifactRoot `
     -SummaryPath $summaryPath `
+    -SanitizerVariant $SanitizerVariant `
     -Parallelism $Parallelism |
     ForEach-Object { Write-Host $_ }
   if ($LASTEXITCODE -ne 0) {
@@ -230,6 +540,13 @@ function Invoke-RunnableToolchainPackageBuild {
     -RepoRoot $RepoRoot `
     -PackageRoot $PackageRoot `
     -BuildDir $buildDir
+  Copy-RunnableToolchainPackageSanitizerRuntimeLibraries `
+    -RepoRoot $RepoRoot `
+    -PackageRoot $PackageRoot `
+    -SanitizerVariant $SanitizerVariant
+  Write-RunnableToolchainPackageSanitizerMetadata `
+    -PackageRoot $PackageRoot `
+    -SanitizerVariant $SanitizerVariant
   Remove-RunnableToolchainPackagePrivateBuildRoot `
     -RepoRoot $RepoRoot `
     -PackageRoot $PackageRoot
@@ -414,9 +731,10 @@ function Get-RunnableToolchainStagedRelativePaths {
 function Set-RunnableToolchainPackagedOutputTimestamps {
   param([Parameter(Mandatory = $true)][string]$PackageRoot)
 
-  $packagedNativeExecutablePath = Join-Path $PackageRoot "artifacts\bin\objc3c-native.exe"
-  $packagedFrontendRunnerPath = Join-Path $PackageRoot "artifacts\bin\objc3c-frontend-c-api-runner.exe"
-  $packagedRuntimeLibraryPath = Join-Path $PackageRoot "artifacts\lib\objc3_runtime.lib"
+  $coreArtifacts = Get-RunnableToolchainPackageCoreArtifactRelativePaths
+  $packagedNativeExecutablePath = Join-Path $PackageRoot ($coreArtifacts.NativeExecutable -replace '/', [System.IO.Path]::DirectorySeparatorChar)
+  $packagedFrontendRunnerPath = Join-Path $PackageRoot ($coreArtifacts.CapiRunnerExecutable -replace '/', [System.IO.Path]::DirectorySeparatorChar)
+  $packagedRuntimeLibraryPath = Join-Path $PackageRoot ($coreArtifacts.RuntimeLibrary -replace '/', [System.IO.Path]::DirectorySeparatorChar)
   $normalizedOutputTimestamp = [datetime]::UtcNow
   foreach ($outputPath in @($packagedNativeExecutablePath, $packagedFrontendRunnerPath, $packagedRuntimeLibraryPath)) {
     if (Test-Path -LiteralPath $outputPath -PathType Leaf) {
@@ -432,6 +750,8 @@ function Invoke-RunnableToolchainPackageStaging {
     [Parameter(Mandatory = $true)][string]$PackageRoot,
     [Parameter(Mandatory = $true)][string]$ManifestPath,
     [Parameter(Mandatory = $true)][string]$BuildScript,
+    [ValidateSet("release", "address", "undefined")]
+    [string]$SanitizerVariant = "release",
     [int]$Parallelism = 0
   )
 
@@ -440,6 +760,7 @@ function Invoke-RunnableToolchainPackageStaging {
     -RepoRoot $RepoRoot `
     -PackageRoot $PackageRoot `
     -BuildScript $BuildScript `
+    -SanitizerVariant $SanitizerVariant `
     -Parallelism $Parallelism
   $inputFiles = @(Get-RunnableToolchainPackageInputFiles -RepoRoot $RepoRoot)
   $copiedRelativePaths = @(Copy-RunnableToolchainPackageInputs `

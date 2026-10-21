@@ -1,5 +1,0 @@
-#include "parse/objc3_parser_block_literal_mutated_identifiers_statement_traversal_expressions.inc"
-#include "parse/objc3_parser_block_literal_mutated_identifiers_statement_traversal_branch_body.inc"
-#include "parse/objc3_parser_block_literal_mutated_identifiers_statement_traversal_loop_for.inc"
-#include "parse/objc3_parser_block_literal_mutated_identifiers_statement_traversal_switch.inc"
-#include "parse/objc3_parser_block_literal_mutated_identifiers_statement_traversal_dispatch.inc"

@@ -101,7 +101,7 @@ def main() -> int:
         "issue": "governance-budget-inventory",
         "contract_id": contract["contract_id"],
         "runbook_mentions_contract": "tests/tooling/fixtures/governance_sustainability/budget_inventory.json" in runbook_text,
-        "summary_script_matches_runbook": "python scripts/build_governance_budget_inventory_summary.py" in runbook_text,
+        "summary_script_matches_runbook": "npm run objc3c -- validate-governance-sustainability" in runbook_text,
         "measured": measured,
         "explicit_non_goal_count": len(contract["explicit_non_goals"]),
         "successor_issue_count": len(contract["successor_issues"]),

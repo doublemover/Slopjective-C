@@ -1,0 +1,619 @@
+#include "clang_foundation/interface_import.h"
+#include "clang_foundation/interface_module_resolver.h"
+
+#include <algorithm>
+#include <cstdint>
+#include <map>
+#include <memory>
+#include <set>
+#include <tuple>
+#include <utility>
+
+#include "clang/AST/ASTContext.h"
+#include "clang/AST/ASTImporter.h"
+#include "clang/AST/ASTImporterSharedState.h"
+#include "clang/AST/Decl.h"
+#include "clang/AST/DeclCXX.h"
+#include "clang/AST/DeclContextInternals.h"
+#include "clang/AST/RecursiveASTVisitor.h"
+#include "clang/Basic/Diagnostic.h"
+#include "clang/Basic/FileManager.h"
+#include "clang/Basic/LangOptions.h"
+#include "clang/Basic/SourceManager.h"
+#include "clang/Frontend/ASTUnit.h"
+#include "clang/UnifiedSymbolResolution/USRGeneration.h"
+#include "clang/Tooling/Tooling.h"
+#include "clang_foundation/interface_codec.h"
+#include "clang_foundation/interface_emitter.h"
+#include "clang_foundation/interface_validation.h"
+#include "llvm/ADT/ArrayRef.h"
+#include "llvm/ADT/SmallString.h"
+#include "llvm/ADT/StringRef.h"
+#include "llvm/ADT/StringExtras.h"
+#include "llvm/ADT/Twine.h"
+#include "llvm/Support/Error.h"
+#include "llvm/Support/FileSystem.h"
+#include "llvm/Support/VirtualFileSystem.h"
+#include "llvm/Support/MemoryBuffer.h"
+#include "llvm/Support/Path.h"
+
+namespace objc3::clang_foundation {
+namespace {
+constexpr std::uint64_t kMaxInterfaceBytes = 32ull * 1024ull * 1024ull;
+constexpr llvm::StringLiteral kCarrierSemantics = "objc3.native-carrier-types.v1";
+constexpr llvm::StringLiteral kEffectSemantics = "objc3.canonical-function-effects.v1";
+const std::vector<llvm::StringRef> kSupportedSemantics = {
+    kCarrierSemantics, kEffectSemantics, "objc3.native-return-ownership.v1"};
+
+void Add(std::vector<InterfaceContractDiagnostic> &out, const llvm::Twine &code,
+         const llvm::Twine &message, const llvm::Twine &subject = llvm::Twine()) {
+  out.push_back({code.str(), message.str(), subject.str()});
+}
+
+bool SameIdentity(const InterfaceModuleIdentity &a,
+                  const InterfaceModuleIdentity &b) {
+  return std::tie(a.canonical_name, a.semantic_fingerprint, a.target_triple,
+                  a.runtime_abi, a.extension_abi, a.language_revision,
+                  a.language_profile, a.package_identity) ==
+         std::tie(b.canonical_name, b.semantic_fingerprint, b.target_triple,
+                  b.runtime_abi, b.extension_abi, b.language_revision,
+                  b.language_profile, b.package_identity);
+}
+
+bool CompatibleTarget(const InterfaceModuleIdentity &module,
+                      const InterfaceImportTarget &target) {
+  return module.target_triple == target.target_triple &&
+         module.runtime_abi == target.runtime_abi &&
+         module.extension_abi == target.extension_abi &&
+         module.language_revision == target.language_revision &&
+         module.language_profile == target.language_profile;
+}
+
+bool ReadBoundedFile(llvm::StringRef path, std::string &contents,
+                     std::vector<InterfaceContractDiagnostic> &diagnostics,
+                     llvm::StringRef kind) {
+  std::uint64_t size = 0;
+  if (auto error = llvm::sys::fs::file_size(path, size)) {
+    Add(diagnostics, "O3IFC130",
+        llvm::Twine("cannot stat ") + kind + " artifact: " + error.message(), path);
+    return false;
+  }
+  if (size > kMaxInterfaceBytes) {
+    Add(diagnostics, "O3IFC130",
+        llvm::Twine(kind) + " artifact exceeds the 32 MiB import bound", path);
+    return false;
+  }
+  auto buffer = llvm::MemoryBuffer::getFile(path);
+  if (!buffer) {
+    Add(diagnostics, "O3IFC130",
+        llvm::Twine("cannot read ") + kind + " artifact: " +
+            buffer.getError().message(), path);
+    return false;
+  }
+  if ((*buffer)->getBufferSize() > kMaxInterfaceBytes) {
+    Add(diagnostics, "O3IFC130",
+        llvm::Twine(kind) + " artifact grew beyond the 32 MiB import bound while being read", path);
+    return false;
+  }
+  contents.assign((*buffer)->getBufferStart(), (*buffer)->getBufferEnd());
+  return true;
+}
+
+class ExportedDeclarationCollector final
+    : public clang::RecursiveASTVisitor<ExportedDeclarationCollector> {
+public:
+  ExportedDeclarationCollector(clang::ASTContext &context,
+                                const std::set<std::string> &expected_ids)
+      : context_(context), expected_ids_(expected_ids) {}
+
+  bool VisitNamedDecl(clang::NamedDecl *decl) {
+    if (decl->isImplicit() || !decl->getLocation().isValid() ||
+        !context_.getSourceManager().isWrittenInMainFile(decl->getLocation()))
+      return true;
+    const auto stable_id = ReadInterfaceDeclarationStableId(decl);
+    if (stable_id.empty()) return true;
+    if (expected_ids_.count(stable_id)) Declarations[stable_id] = decl;
+    return true;
+  }
+
+  std::map<std::string, clang::NamedDecl *> Declarations;
+private:
+  clang::ASTContext &context_;
+  const std::set<std::string> &expected_ids_;
+};
+
+bool IsTranslationUnitLookupDeclaration(const clang::NamedDecl *decl) {
+  if (!decl->getIdentifier()) return false;
+  const auto *context = decl->getDeclContext();
+  while (context && context->isTransparentContext()) context = context->getParent();
+  return context && context->isTranslationUnit();
+}
+
+class NamedDeclarationSnapshot final
+    : public clang::RecursiveASTVisitor<NamedDeclarationSnapshot> {
+public:
+  bool VisitNamedDecl(clang::NamedDecl *decl) {
+    Declarations.insert(decl);
+    return true;
+  }
+  std::set<clang::NamedDecl *> Declarations;
+};
+
+bool CheckExportCollisions(
+    const std::vector<InterfaceDeclarationIdentity> &declarations,
+    bool allow_function_overloads,
+    std::vector<InterfaceContractDiagnostic> &diagnostics) {
+  std::map<std::string, InterfaceDeclarationIdentity> by_name;
+  for (const auto &decl : declarations) {
+    const bool is_tag = decl.kind == "Record" || decl.kind == "Enum";
+    const std::string lookup_key = (is_tag ? "tag:" : "ordinary:") + decl.qualified_name;
+    const auto found = by_name.find(lookup_key);
+    if (found == by_name.end()) {
+      by_name.emplace(lookup_key, decl);
+      continue;
+    }
+    const auto &prior = found->second;
+    if (SameInterfaceDeclarationIdentity(prior, decl))
+      continue; // Same canonical export re-exported through two modules.
+    if (allow_function_overloads && prior.kind == "Function" &&
+        decl.kind == "Function" && prior.stable_id != decl.stable_id)
+      continue;
+    Add(diagnostics, "O3IFC132",
+        "multiple imported modules provide incompatible declarations with the same lookup name",
+        decl.qualified_name);
+    return false;
+  }
+  return true;
+}
+
+std::string ModuleImportFailure(const InterfaceModuleIdentity &module,
+                                const llvm::Twine &reason) {
+  return (llvm::Twine("interface '") + module.canonical_name + "' " + reason).str();
+}
+} // namespace
+
+struct InterfaceImportSession::Impl {
+  struct Module {
+    InterfaceImportInput input;
+    SemanticInterfaceSidecar sidecar;
+    std::string source_bytes;
+    std::unique_ptr<clang::ASTUnit> ast;
+  };
+  InterfaceImportTarget target;
+  std::vector<Module> modules;
+  std::vector<std::size_t> import_order;
+  std::vector<InterfaceDependency> direct_dependencies;
+  std::set<std::string> visible_modules;
+};
+
+InterfaceImportSession::InterfaceImportSession(std::unique_ptr<Impl> impl)
+    : impl_(std::move(impl)) {}
+InterfaceImportSession::~InterfaceImportSession() = default;
+InterfaceImportSession::InterfaceImportSession(InterfaceImportSession &&) noexcept = default;
+InterfaceImportSession &InterfaceImportSession::operator=(InterfaceImportSession &&) noexcept = default;
+
+std::vector<std::string> BuildInterfaceASTArguments(
+    llvm::ArrayRef<std::string> user_arguments, llvm::StringRef language,
+    llvm::StringRef standard, const InterfaceImportTarget &target) {
+  std::vector<std::string> args = {"-fsyntax-only", "-x", language.str(),
+                                   "-std=" + standard.str()};
+  for (std::size_t i = 0; i < user_arguments.size(); ++i) {
+    const auto &arg = user_arguments[i];
+    if (arg == "-c" || arg == "-S" || arg == "-emit-llvm" ||
+        arg == "-fsyntax-only")
+      continue;
+    if (arg == "-o" || arg == "-x" || arg == "-target" ||
+        arg == "--target") {
+      ++i;
+      continue;
+    }
+    if (arg == "-I" || arg == "-isystem" || arg == "-iquote" ||
+        arg == "-idirafter" || arg == "-include" || arg == "-imacros" ||
+        arg == "-D" || arg == "-U" || arg == "-F" ||
+        arg == "-resource-dir" || arg == "-working-directory") {
+      if (i + 1 < user_arguments.size()) {
+        args.push_back(arg);
+        args.push_back(user_arguments[++i]);
+      }
+      continue;
+    }
+    if (arg.empty()) continue;
+    if (arg.front() == '-') args.push_back(arg);
+  }
+  if (!target.target_triple.empty())
+    args.push_back("--target=" + target.target_triple);
+  if (target.objc && !target.objc_runtime.empty())
+    args.push_back("-fobjc-runtime=" + target.objc_runtime);
+  if (target.objc && target.arc) args.push_back("-fobjc-arc");
+  if (target.blocks) args.push_back("-fblocks");
+  if (target.objc3) {
+    args.push_back("-fobjc-version=3");
+    if (!target.objc3_profile.empty())
+      args.push_back("-fobjc3-profile=" + target.objc3_profile);
+    if (target.strict_concurrency)
+      args.push_back("-fobjc3-strict-concurrency");
+  }
+  return args;
+}
+std::unique_ptr<InterfaceImportSession> InterfaceImportSession::Prepare(
+    const std::vector<InterfaceImportInput> &inputs,
+    const InterfaceImportTarget &target,
+    std::vector<InterfaceContractDiagnostic> &diagnostics) {
+  auto impl = std::make_unique<Impl>();
+  impl->target = target;
+  if (inputs.empty()) return std::unique_ptr<InterfaceImportSession>(
+      new InterfaceImportSession(std::move(impl)));
+
+  std::map<std::string, std::size_t> module_index;
+  for (const auto &input : inputs) {
+    if (input.source_path.empty() || input.locked_identity.canonical_name.empty()) {
+      Add(diagnostics, "O3IFC131",
+          "interface source path and locked canonical module identity are required",
+          input.source_path);
+      continue;
+    }
+    std::string sidecar_path = input.sidecar_path.empty()
+        ? input.source_path + ".json" : input.sidecar_path;
+    std::string source_bytes, sidecar_json;
+    if (!ReadBoundedFile(input.source_path, source_bytes, diagnostics, "source") ||
+        !ReadBoundedFile(sidecar_path, sidecar_json, diagnostics, "sidecar"))
+      continue;
+    auto sidecar = DecodeSemanticInterfaceSidecar(
+        sidecar_json, source_bytes,
+        llvm::ArrayRef<llvm::StringRef>(kSupportedSemantics));
+    if (!sidecar) {
+      Add(diagnostics, "O3IFC133",
+          llvm::Twine("invalid interface sidecar: ") + llvm::toString(sidecar.takeError()),
+          input.locked_identity.canonical_name);
+      continue;
+    }
+    if (!SameIdentity(sidecar->module, input.locked_identity)) {
+      Add(diagnostics, "O3IFC134",
+          "sidecar identity does not match the dependency lock",
+          input.locked_identity.canonical_name);
+      continue;
+    }
+    if (!CompatibleTarget(sidecar->module, target)) {
+      Add(diagnostics, "O3IFC135",
+          "interface target, runtime, extension ABI, language revision, or profile differs from the consumer",
+          input.locked_identity.canonical_name);
+      continue;
+    }
+    const auto existing = module_index.find(sidecar->module.canonical_name);
+    if (existing != module_index.end()) {
+      auto &prior = impl->modules[existing->second];
+      if (!SameIdentity(prior.sidecar.module, sidecar->module) ||
+          prior.source_bytes != source_bytes)
+        Add(diagnostics, "O3IFC136",
+            "the same canonical module name was resolved to conflicting artifacts",
+            sidecar->module.canonical_name);
+      if (input.direct_import) {
+        if (prior.input.direct_import) {
+          prior.input.public_import |= input.public_import;
+          prior.input.reexported |= input.reexported;
+        } else {
+          prior.input.direct_import = true;
+          prior.input.public_import = input.public_import;
+          prior.input.reexported = input.reexported;
+        }
+      }
+      continue;
+    }
+
+    Impl::Module module;
+    module.input = input;
+    module.sidecar = std::move(*sidecar);
+    module.source_bytes = std::move(source_bytes);
+    module_index.emplace(module.sidecar.module.canonical_name, impl->modules.size());
+    impl->modules.push_back(std::move(module));
+  }
+  if (!diagnostics.empty()) return nullptr;
+
+  std::vector<InterfaceDependencyNode> graph_nodes;
+  graph_nodes.reserve(impl->modules.size());
+  for (const auto &module : impl->modules)
+    graph_nodes.push_back({module.sidecar.module, module.sidecar.dependencies});
+  auto graph = ResolveInterfaceDependencyGraph(graph_nodes);
+  for (const auto &d : graph.diagnostics)
+    Add(diagnostics, d.code, d.message,
+        llvm::join(d.modules, ", "));
+  if (!graph.ok()) return nullptr;
+
+  // Parse in dependency-first order. A dependent canonical interface can
+  // include prior emitted interfaces, so parsing every source standalone
+  // before graph resolution is both order-dependent and semantically wrong.
+  for (const auto &name : graph.topological_order) {
+    const auto index = module_index.at(name);
+    auto &module = impl->modules[index];
+    clang::tooling::FileContentMappings virtual_files;
+    llvm::SmallString<256> include_directory(module.input.source_path);
+    llvm::sys::path::remove_filename(include_directory);
+    std::vector<InterfaceSourceArtifact> dependency_sources;
+    std::set<std::string> dependency_closure;
+    std::vector<std::string> dependency_worklist;
+    for (const auto &dependency : module.sidecar.dependencies)
+      dependency_worklist.push_back(dependency.module.canonical_name);
+    for (std::size_t cursor = 0; cursor < dependency_worklist.size(); ++cursor) {
+      // Appending nested dependencies can reallocate this worklist.
+      const auto dependency_name = dependency_worklist[cursor];
+      if (!dependency_closure.insert(dependency_name).second) continue;
+      const auto dep_it = module_index.find(dependency_name);
+      if (dep_it == module_index.end() || !impl->modules[dep_it->second].ast) {
+        Add(diagnostics, "O3IFC140",
+            "dependency was not parsed before its importing module",
+            dependency_name);
+        continue;
+      }
+      const auto &provider = impl->modules[dep_it->second];
+      for (const auto &nested : provider.sidecar.dependencies)
+        dependency_worklist.push_back(nested.module.canonical_name);
+      llvm::SmallString<256> include_path(include_directory);
+      llvm::sys::path::append(include_path, BuildInterfaceIncludePath(dependency_name));
+      virtual_files.emplace_back(include_path.str().str(), provider.source_bytes);
+      InterfaceSourceArtifact source;
+      source.module = provider.sidecar.module;
+      source.virtual_include_path = BuildInterfaceIncludePath(dependency_name);
+      source.source_bytes = provider.source_bytes;
+      source.declarations = provider.sidecar.declarations;
+      source.dependencies = provider.sidecar.dependencies;
+      dependency_sources.push_back(std::move(source));
+    }
+    if (!diagnostics.empty()) return nullptr;
+    auto ast_arguments = target.ast_arguments;
+    ast_arguments.push_back("-iquote");
+    ast_arguments.push_back(include_directory.empty() ? "." : include_directory.str().str());
+    module.ast = clang::tooling::buildASTFromCodeWithArgs(
+        module.source_bytes, ast_arguments, module.input.source_path,
+        "clang-tool", std::make_shared<clang::PCHContainerOperations>(),
+        clang::tooling::getClangStripDependencyFileAdjuster(), virtual_files,
+        nullptr, llvm::vfs::createPhysicalFileSystem());
+    if (!module.ast || module.ast->getDiagnostics().hasErrorOccurred()) {
+      Add(diagnostics, "O3IFC137",
+          "Clang rejected the generated interface source in the consumer language and target mode",
+          module.sidecar.module.canonical_name);
+      return nullptr;
+    }
+    auto regenerated = EmitSemanticInterface(
+        module.ast->getASTContext(), module.sidecar.module.canonical_name,
+        module.sidecar.module.package_identity, module.sidecar.dependencies,
+        dependency_sources);
+    if (!regenerated.success || regenerated.source_bytes != module.source_bytes) {
+      Add(diagnostics, regenerated.diagnostics.empty()
+              ? "O3IFC138" : regenerated.diagnostics.front().code,
+          regenerated.diagnostics.empty()
+              ? "interface source is not the canonical Clang-emitted declaration set"
+              : regenerated.diagnostics.front().message,
+          module.sidecar.module.canonical_name);
+      return nullptr;
+    }
+    auto regenerated_sidecar = DecodeSemanticInterfaceSidecar(
+        regenerated.sidecar_json, regenerated.source_bytes,
+        llvm::ArrayRef<llvm::StringRef>(kSupportedSemantics));
+    if (!regenerated_sidecar ||
+        !SameIdentity(regenerated.identity, module.sidecar.module) ||
+        BuildSemanticFingerprintInput(*regenerated_sidecar) !=
+            BuildSemanticFingerprintInput(module.sidecar)) {
+      if (!regenerated_sidecar) llvm::consumeError(regenerated_sidecar.takeError());
+      Add(diagnostics, "O3IFC139",
+          "parsed Clang declarations do not reproduce the sidecar type/effect identities",
+          module.sidecar.module.canonical_name);
+      return nullptr;
+    }
+  }
+
+  std::vector<InterfaceDeclarationIdentity> visible_declarations;
+  std::map<std::string, InterfaceDeclarationIdentity> by_stable_id;
+  for (const auto &module : impl->modules) {
+    if (module.input.direct_import)
+      impl->direct_dependencies.push_back({
+          module.sidecar.module, module.input.reexported, module.input.public_import});
+  }
+  // The root-visible set includes direct imports and only dependencies reached
+  // through an explicitly re-exported edge. Private implementation dependencies
+  // remain available to type reconstruction but do not enter collision checks.
+  std::vector<std::string> visibility_worklist;
+  for (const auto &module : impl->modules)
+    if (module.input.direct_import) {
+      impl->visible_modules.insert(module.sidecar.module.canonical_name);
+      visibility_worklist.push_back(module.sidecar.module.canonical_name);
+    }
+  for (std::size_t cursor = 0; cursor < visibility_worklist.size(); ++cursor) {
+    const auto current = module_index.at(visibility_worklist[cursor]);
+    for (const auto &dependency : impl->modules[current].sidecar.dependencies) {
+      if (!dependency.reexported || !dependency.public_import) continue;
+      if (impl->visible_modules.insert(dependency.module.canonical_name).second)
+        visibility_worklist.push_back(dependency.module.canonical_name);
+    }
+  }
+  for (const auto &module : impl->modules) {
+    for (const auto &decl : module.sidecar.declarations) {
+      const auto [it, inserted] = by_stable_id.emplace(decl.stable_id, decl);
+      if (!inserted && !SameInterfaceDeclarationIdentity(it->second, decl)) {
+        Add(diagnostics, "O3IFC132",
+            "one declaration identity has conflicting canonical signatures across providers",
+            decl.stable_id);
+        return nullptr;
+      }
+      if (impl->visible_modules.count(module.sidecar.module.canonical_name))
+        visible_declarations.push_back(decl);
+    }
+  }
+  if (!CheckExportCollisions(visible_declarations,
+                             target.allow_function_overloads, diagnostics))
+    return nullptr;
+  for (const auto &name : graph.topological_order) {
+    const auto found = module_index.find(name);
+    if (found == module_index.end()) {
+      Add(diagnostics, "O3IFC140",
+          "resolved dependency graph contains a module without a validated artifact", name);
+      return nullptr;
+    }
+    impl->import_order.push_back(found->second);
+  }
+  std::sort(impl->direct_dependencies.begin(), impl->direct_dependencies.end(),
+      [](const auto &a, const auto &b) {
+        return a.module.canonical_name < b.module.canonical_name;
+      });
+  return std::unique_ptr<InterfaceImportSession>(
+      new InterfaceImportSession(std::move(impl)));
+}
+
+InterfaceImportReport InterfaceImportSession::ImportInto(
+    clang::ASTContext &target_context, clang::FileManager &target_file_manager,
+    bool source_scoped_visibility,
+    std::shared_ptr<clang::ASTImporterSharedState> shared_state) {
+  InterfaceImportReport report;
+  if (!impl_) {
+    Add(report.diagnostics, "O3IFC141", "import session was not prepared");
+    return report;
+  }
+  report.direct_dependencies = impl_->direct_dependencies;
+  report.visible_module_names.assign(impl_->visible_modules.begin(),
+                                     impl_->visible_modules.end());
+  for (auto index : impl_->import_order)
+    report.resolved_modules.push_back(impl_->modules[index].sidecar.module);
+  // The importer lookup table retains hidden dependency declarations across
+  // source-directed sessions without exposing them to consumer Sema lookup.
+  if (!shared_state)
+    shared_state = std::make_shared<clang::ASTImporterSharedState>(
+        *target_context.getTranslationUnitDecl());
+  NamedDeclarationSnapshot preexisting;
+  preexisting.TraverseDecl(target_context.getTranslationUnitDecl());
+  std::set<std::string> recorded_ids;
+  std::vector<std::unique_ptr<clang::ASTImporter>> importers;
+  for (auto index : impl_->import_order) {
+    auto &module = impl_->modules[index];
+    std::set<std::string> expected_ids;
+    for (const auto &identity : module.sidecar.declarations)
+      expected_ids.insert(identity.stable_id);
+    auto importer = std::make_unique<clang::ASTImporter>(
+        target_context, target_file_manager,
+        module.ast->getASTContext(), module.ast->getFileManager(),
+        /*MinimalImport=*/false, shared_state);
+    auto *from_tu = module.ast->getASTContext().getTranslationUnitDecl();
+    for (auto *decl : from_tu->decls()) {
+      if (decl->isImplicit()) continue;
+      auto imported = importer->Import(decl);
+      if (!imported) {
+        Add(report.diagnostics, "O3IFC142",
+            ModuleImportFailure(module.sidecar.module,
+                llvm::Twine("could not be inserted into consumer lookup: ") +
+                    llvm::toString(imported.takeError())),
+            module.sidecar.module.canonical_name);
+        return report;
+      }
+    }
+    // Use the importer's actual source-to-target mappings. A matching USR in
+    // another module or in the consumer does not prove this export imported.
+    ExportedDeclarationCollector exported(module.ast->getASTContext(), expected_ids);
+    exported.TraverseDecl(from_tu);
+    if (exported.Declarations.size() != expected_ids.size()) {
+      Add(report.diagnostics, "O3IFC144",
+          "the canonical source has no declaration for every sidecar export identity",
+          module.sidecar.module.canonical_name);
+      return report;
+    }
+    for (const auto &expected : module.sidecar.declarations) {
+      auto imported = importer->Import(exported.Declarations.at(expected.stable_id));
+      if (!imported) {
+        Add(report.diagnostics, "O3IFC142",
+            ModuleImportFailure(module.sidecar.module,
+                llvm::Twine("could not import an exported declaration: ") +
+                    llvm::toString(imported.takeError())), expected.stable_id);
+        return report;
+      }
+      auto *named = llvm::dyn_cast_or_null<clang::NamedDecl>(*imported);
+      if (!named || &named->getASTContext() != &target_context) {
+        Add(report.diagnostics, "O3IFC143",
+            "ASTImporter did not produce a declaration owned by the consumer ASTContext",
+            expected.stable_id);
+        return report;
+      }
+      InterfaceDeclarationIdentity actual;
+      if (!ReadInterfaceDeclarationIdentity(named, target_context, actual) ||
+          !SameInterfaceDeclarationIdentity(expected, actual)) {
+        Add(report.diagnostics, "O3IFC144",
+            "ASTImporter changed an exported declaration's canonical type, layout, or effects",
+            expected.stable_id);
+        return report;
+      }
+      if (recorded_ids.insert(actual.stable_id).second)
+        report.imported_declarations.push_back(std::move(actual));
+      if (IsTranslationUnitLookupDeclaration(named)) {
+        report.declarations_by_module[module.sidecar.module.canonical_name]
+            .push_back(named);
+        if (!source_scoped_visibility &&
+            impl_->visible_modules.count(module.sidecar.module.canonical_name) &&
+            std::find(report.visible_lookup_declarations.begin(),
+                      report.visible_lookup_declarations.end(), named) ==
+                report.visible_lookup_declarations.end())
+          report.visible_lookup_declarations.push_back(named);
+      }
+    }
+    report.dependency_order.push_back(module.sidecar.module.canonical_name);
+    importers.push_back(std::move(importer));
+  }
+  // Dependencies required only to spell a visible provider's public types
+  // remain alive in AST nodes but are removed from TU lookup when they are
+  // neither directly imported nor re-exported to this consumer.
+  std::set<std::string> hidden_ids;
+  std::set<std::string> visible_ids;
+  for (const auto &module : impl_->modules) {
+    auto &destination = !source_scoped_visibility && impl_->visible_modules.count(
+        module.sidecar.module.canonical_name) ? visible_ids : hidden_ids;
+    for (const auto &identity : module.sidecar.declarations)
+      destination.insert(identity.stable_id);
+  }
+  for (const auto &id : visible_ids) hidden_ids.erase(id);
+  auto *target_tu = target_context.getTranslationUnitDecl();
+  // Build before removing roots so transparent enum constants can be hidden
+  // from TU lookup while remaining intact in their enum's semantic AST.
+  auto *lookup = target_tu->buildLookup();
+  NamedDeclarationSnapshot all_declarations;
+  all_declarations.TraverseDecl(target_tu);
+  std::vector<clang::NamedDecl *> hide;
+  for (auto *named : all_declarations.Declarations) {
+    if (named->isImplicit() || preexisting.Declarations.count(named) ||
+        !IsTranslationUnitLookupDeclaration(named))
+      continue;
+    const auto stable_id = ReadInterfaceDeclarationStableId(named);
+    if (!stable_id.empty() && hidden_ids.count(stable_id))
+      hide.push_back(named);
+  }
+  for (auto *decl : hide) {
+    if (decl->getLexicalDeclContext() == target_tu)
+      target_tu->removeDecl(decl);
+    if (lookup) {
+      auto found = lookup->find(decl->getDeclName());
+      if (found != lookup->end() && !found->second.isNull()) {
+        const auto entries = found->second.getLookupResult();
+        if (std::find(entries.begin(), entries.end(), decl) != entries.end())
+          found->second.remove(decl);
+      }
+    }
+  }
+
+  report.success = true;
+  return report;
+}
+
+std::vector<InterfaceSourceArtifact>
+InterfaceImportSession::GetSourceArtifacts() const {
+  std::vector<InterfaceSourceArtifact> result;
+  if (!impl_) return result;
+  result.reserve(impl_->import_order.size());
+  for (auto index : impl_->import_order) {
+    const auto &module = impl_->modules[index];
+    InterfaceSourceArtifact source;
+    source.module = module.sidecar.module;
+    source.virtual_include_path = BuildInterfaceIncludePath(
+        module.sidecar.module.canonical_name);
+    source.source_bytes = module.source_bytes;
+    source.declarations = module.sidecar.declarations;
+    source.dependencies = module.sidecar.dependencies;
+    result.push_back(std::move(source));
+  }
+  return result;
+}
+
+} // namespace objc3::clang_foundation

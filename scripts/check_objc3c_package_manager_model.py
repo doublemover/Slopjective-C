@@ -17,6 +17,7 @@ from objc3c_tooling.json_io import load_json_object as load_json
 from objc3c_tooling.paths import repo_rel
 from objc3c_tooling.subprocesses import python_script_command
 from objc3c_package_manager.model import (
+    DIRECT_IMPORT_SYNTAX_SUPPORT,
     LOCAL_PACKAGE_ABI_IDENTITY,
     LOCAL_PACKAGE_LANGUAGE_VERSION,
     LOCAL_PACKAGE_TRUST_KEY_ID,
@@ -100,6 +101,11 @@ def main() -> int:
         expect(manifest.get("contract_id") == PACKAGE_MANIFEST_CONTRACT_ID, f"manifest contract drifted for {package_id}", failures)
         expect(manifest.get("language", {}).get("version") == LOCAL_PACKAGE_LANGUAGE_VERSION, f"manifest language drifted for {package_id}", failures)
         expect(manifest.get("abi", {}).get("identity") == LOCAL_PACKAGE_ABI_IDENTITY, f"manifest ABI drifted for {package_id}", failures)
+        module_graph = manifest.get("module_graph", {})
+        expect(isinstance(module_graph, dict), f"manifest module graph missing for {package_id}", failures)
+        if not isinstance(module_graph, dict):
+            module_graph = {}
+        expect(module_graph.get("direct_import_syntax") == DIRECT_IMPORT_SYNTAX_SUPPORT, f"manifest direct import syntax drifted for {package_id}", failures)
         expect(manifest.get("registry", {}).get("network_resolution") == "unsupported-fail-closed", f"manifest network support widened for {package_id}", failures)
         trust = manifest.get("trust", {})
         expect(isinstance(trust, dict) and trust.get("signing_key_id") == LOCAL_PACKAGE_TRUST_KEY_ID, f"manifest signing key drifted for {package_id}", failures)
@@ -127,6 +133,16 @@ def main() -> int:
         "package_count": len(packages) if isinstance(packages, list) else 0,
         "dependency_count": len(dependencies) if isinstance(dependencies, list) else 0,
         "package_manifest_count": len(manifests),
+        "module_graph_count": (
+            sum(
+                1
+                for package in packages
+                if isinstance(package, dict)
+                and isinstance(package.get("module_graph"), dict)
+            )
+            if isinstance(packages, list)
+            else 0
+        ),
         "language_version": package_manager.get("language_version") if isinstance(package_manager, dict) else None,
         "abi_identity": package_manager.get("abi_identity") if isinstance(package_manager, dict) else None,
         "trust_key_id": LOCAL_PACKAGE_TRUST_KEY_ID,

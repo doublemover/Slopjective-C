@@ -13,7 +13,7 @@
       "source": "tests/native/e2e/cross_lane/text_collections_package.objc3",
       "module_name": "CrossLaneTextCollectionsPackage",
       "module_declaration": "module CrossLaneTextCollectionsPackage;",
-      "source_sha256": "4f46629b08db75e719cdbfb72b948dd3cf53000f4e74eea14ecbd42aad8a3eae",
+      "source_sha256": "d798b4bb844a4a663d1012b6b77f0c0c52387cb312e0f3d76ea4f20ce8b15380",
       "required_tokens": [
         "module CrossLaneTextCollectionsPackage;",
         "objc_import_module(named(\"CrossLaneFixtureProvider\"))",
@@ -32,7 +32,7 @@
         "source": "tests/native/e2e/cross_lane/text_collections_package_provider.objc3",
         "module_name": "CrossLaneFixtureProvider",
         "module_declaration": "module CrossLaneFixtureProvider;",
-        "source_sha256": "13dfff4f3236caf069fab63f904f5767bec818a78b1568b6c4af80693c223022",
+        "source_sha256": "48bf94935803f55e436a9c02727dda4509d08fa983a57aa1ecf6ab9866fd91c9",
         "required_tokens": [
           "module CrossLaneFixtureProvider;",
           "fn importedPackageSeed() -> i32",

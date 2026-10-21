@@ -1,0 +1,173 @@
+{
+  "schema": "objc3.linux.sdk.acceptance.v1",
+  "accepted_utc": "2026-10-18T23:47:59.906053+00:00",
+  "status": "PASS",
+  "source_build_id": "llvmorg-23.1.3-0d261d1ca552-8f5780415752-fd761312",
+  "upstream_commit": "0d261d1ca552c95a8f007e061c787ac7132fbcbc",
+  "patch_digest": "8f5780415752686f7c7e62b31a7c724dcd8946254ef672995d7ac70af4a7043c",
+  "frontend_inputs": "ca24e4a548544810ef0f41c36142a887724c5c363927bb8d8db6ac66a18a3763",
+  "archive_sha256": "7fa8e1eaa4aea501844ac28948143e8f333020f4a7fa51c4b59d6bb705bf3438",
+  "archive_bytes": 413666219,
+  "seal_sha256": "6b641d981f5df588e12bf5275c419690419fa62b09a2e41a1961e7d1e6bb1716",
+  "sealed_files": 3892,
+  "target": "x86_64-unknown-linux-gnu",
+  "linux_abi": {
+    "glibc_minimum": "2.41",
+    "libstdcxx_symbol_minimum": "GLIBCXX_3.4.33"
+  },
+  "development_tools": {
+    "python": "3.15.0",
+    "node": "26.12.0",
+    "npm": "12.2.1",
+    "cmake": "4.4.4",
+    "ninja": "1.13.2",
+    "ccache": "4.14.2",
+    "uv": "0.13.1",
+    "pip": "26.2.1",
+    "pytest": "9.1.1",
+    "jsonschema": "4.26.0"
+  },
+  "runtime": {
+    "libobjc2": "2.3",
+    "robin_map": "1.4.1"
+  },
+  "qualification": {
+    "build_identity": "f3de38319c43eebc381f41ad26da9eb77398dfe5311e6c99a347d91985d5631c",
+    "nodes": [
+      "carriers:expression:clang",
+      "carriers:abi:clang",
+      "carriers:cpp-lifetime:clang",
+      "carriers:arc-lifetime:clang",
+      "carriers:match:clang",
+      "carriers:match:objc3c-clang",
+      "carriers:transfer:clang",
+      "carriers:transfer:objc3c-clang",
+      "typed-errors:clang",
+      "native-package:provider",
+      "native-package:consumer-eager",
+      "native-package:consumer-source",
+      "editor:qualification"
+    ],
+    "runtime_count": 76,
+    "native_report": "out/native-validation/linux-sdk-20261018T233927951914Z/summary.json",
+    "frontend_ctests": 16,
+    "runtime_ctests": 5,
+    "installed_commands": 20,
+    "tooling_tests": {
+      "passed": 245,
+      "skipped": 3,
+      "subtests": 33
+    },
+    "fresh_distributions": [
+      {
+        "distribution": "debian13",
+        "image": "debian:13-slim@sha256:a29215f6a35e51e22adffa17f89e9d2ef06214e64a2bad10d765c46aea49f11f",
+        "parallel_jobs": 2,
+        "exit_code": 0,
+        "elapsed_seconds": 198.699712,
+        "archive_sha256": "7fa8e1eaa4aea501844ac28948143e8f333020f4a7fa51c4b59d6bb705bf3438",
+        "seal_sha256": "6b641d981f5df588e12bf5275c419690419fa62b09a2e41a1961e7d1e6bb1716",
+        "log": "/workspace/scratch/objc3-fresh-debian13-arc-transfer.log"
+      },
+      {
+        "distribution": "ubuntu2604",
+        "image": "ubuntu:26.04@sha256:c098726dd9b9733f3e885f8de0ef375206a311b0a317eadc40d347b1115fb944",
+        "parallel_jobs": 2,
+        "exit_code": 0,
+        "elapsed_seconds": 252.923362,
+        "archive_sha256": "7fa8e1eaa4aea501844ac28948143e8f333020f4a7fa51c4b59d6bb705bf3438",
+        "seal_sha256": "6b641d981f5df588e12bf5275c419690419fa62b09a2e41a1961e7d1e6bb1716",
+        "log": "/workspace/scratch/objc3-fresh-ubuntu2604-arc-transfer.log"
+      }
+    ],
+    "llvm_extension_tests": {
+      "passed": 162,
+      "unsupported": 3
+    },
+    "ast_contract_tests": 46,
+    "cached_verifier_regression": "PASS: modified verifier and compiler are rejected using code from the checksum-verified archive",
+    "archive_runner_sha256": "cc65b47a08b93f5c82a10211e531acd4adb3deb25e5703e4e121a4c5e3d72b69",
+    "archive_checks": [
+      "installation and relocation under umask 077",
+      "full file, directory, mode and relative-link seal",
+      "O0/O2 managed imports/errors/cleanup sample rebuilt outside checkout",
+      "DWARF validation and LLDB variable/expression evaluation",
+      "separate unprivileged user compiles, runs, rebuilds the installed sample and debugs native code",
+      "ordinary-user O0/O2 source-provider/module invalidation and rejected identity suite",
+      "ordinary-user O0/O2 explicit ARC carrier transfer, typed-error optionalization, weak zeroing, Blocks and native unwind",
+      "installed Objective-C++ carrier transfer DWARF verification"
+    ],
+    "source_modules": {
+      "report": "docs/support/linux_source_module_acceptance.json",
+      "builds": 14,
+      "rejected_imports": 6,
+      "source_builder_sha256": "5e3bb6ebd17e13fbb9f544778f483397c2abc6eed3373e993c372943c63232cf"
+    }
+  },
+  "timings": {
+    "sdk_pipeline_seconds": 301.276193,
+    "native_validation_seconds": 27.840618,
+    "foundation_admission": {
+      "status": "passed",
+      "source_identity": "llvmorg-23.1.3-0d261d1ca552-8f5780415752-fd761312",
+      "started_utc": "2026-10-18T23:37:05.520925+00:00",
+      "run_directory": "/workspace/Slopjective-C/out/toolchains/objc3-development/build-linux-x86_64/foundation-runs/20261018T233705.520947Z",
+      "elapsed_seconds": 52.622178,
+      "finished_utc": "2026-10-18T23:37:58.143157+00:00"
+    },
+    "foundation_phase_seconds": {
+      "configure": 24.426713,
+      "build": 9.0988,
+      "test": 2.647971,
+      "stage": 12.930558
+    },
+    "verified_sdk_reuse_seconds": 33.754136,
+    "limits": "Incremental LLVM and frontend builds; not a cold LLVM build. Module stage observations are single correctness-suite cases. Program smoke latency is not representative application runtime throughput.",
+    "development_latency_report": "docs/support/linux_development_latency.json",
+    "budget_check": {
+      "status": "PASS",
+      "failures": [],
+      "authority": "docs/support/linux_development_latency.json",
+      "authority_sha256": "f33db63850ca67b859249d2351ce49fd72e5e95dea04e9929c157575ee2cdb69"
+    },
+    "compiler_command_medians_seconds": {
+      "python_startup": 0.030813106001005508,
+      "compiler_version": 0.2612544940056978,
+      "direct_syntax": 0.018590915999084245,
+      "public_syntax": 0.22440549800376175,
+      "public_compile_and_link": 0.29486932199506555,
+      "program_runtime": 0.0040421640005661175
+    },
+    "compiler_command_repetitions": 5,
+    "compiler_command_peak_child_rss_kib": 94488,
+    "memory_scope": "Maximum individual descendant RSS for benchmark commands; not aggregate tree memory.",
+    "module_stage_report": "docs/support/linux_source_module_acceptance.json"
+  },
+  "hard_cutover": {
+    "obsolete_native_source_files_removed": 5313,
+    "remaining_native_source_files": 59,
+    "compiler": "Clang only",
+    "runtime_integration": "native libobjc2 plus explicit independent service library"
+  },
+  "system_crypto": {
+    "build_host": "OpenSSL 3.5.7",
+    "required_api": "OpenSSL >= 3.5",
+    "provider": "tested distribution packages"
+  },
+  "sdk_schema": "objc3.sdk.v2",
+  "sealed_entries": 4145,
+  "native_milestone": {
+    "scope": "Explicit Objective-C++ ARC Optional/Result local copy/move construction for direct strong/weak/unsafe object leaves and strong Blocks, extending direct construction and strong object/Block try? initialization.",
+    "semantics": "Source glvalues are evaluated once; only active arms initialize. Copies preserve the source; mutable strong/weak moves clear its payload while preserving its tag. Const strong moves copy. Native ARC registers destruction and unwinding cleanup.",
+    "evidence": "IR and PCH round trips; O0/O2 exact object destruction, weak zeroing, nil/none, both Result arms, captured Blocks, templates, failed source evaluation, typed-error optionalization, defer and native exceptions; installed compiler consumers and live clangd navigation/hover/completion.",
+    "installed_witness": "share/objc3c/examples/native/carrier-transfer.mm",
+    "editor_report": "out/native-validation/linux-sdk-20261018T233927951914Z/nodes/editor-qualification-cc506ad2/editor/results.json",
+    "limits": "Explicit local construction only; implicit managed copying, assignment, by-value returns, nested managed carriers, managed MRC transfer and weak/unsafe Blocks remain unsupported.",
+    "public_status": "defer qualified; Optional/Result and synchronous throws remain reserved pending complete public-language qualification."
+  },
+  "installed_module_milestone": {
+    "scope": "Source-built MRC provider, derived ARC interface and managed consumer; content-verified compilation reuse, always-linked executable and v2 dependency records.",
+    "acceptance": "14 O0/O2 builds and six rejected imports on the qualified SDK and each fresh ordinary-user distribution; private body/header, API and damaged artifact cases; spaces and quotes in source paths.",
+    "limits": "Bounded installed example graph; general multi-package resolution and public module syntax remain future work."
+  }
+}

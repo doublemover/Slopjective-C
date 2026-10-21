@@ -18,6 +18,7 @@ from objc3c_package_manager.trust import (  # noqa: E402
     PackageTrustError,
     load_trust_policy,
     production_signing_reserved_diagnostic,
+    resolve_package_trust_cli_path,
     sign_manifest_trust_envelope,
 )
 from objc3c_tooling.json_io import load_json_object as load_json, write_json_file  # noqa: E402
@@ -57,8 +58,23 @@ def main(argv: list[str] | None = None) -> int:
         return 1
 
     try:
-        manifest = load_json(ROOT / args.manifest if not Path(args.manifest).is_absolute() else Path(args.manifest))
-        trust_policy = load_trust_policy(args.trust_policy) if args.trust_policy else None
+        manifest_path = resolve_package_trust_cli_path(
+            args.manifest,
+            root=ROOT,
+            purpose="package manifest input",
+        )
+        manifest = load_json(manifest_path)
+        trust_policy = (
+            load_trust_policy(
+                resolve_package_trust_cli_path(
+                    args.trust_policy,
+                    root=ROOT,
+                    purpose="package trust policy input",
+                )
+            )
+            if args.trust_policy
+            else None
+        )
         envelope = sign_manifest_trust_envelope(
             manifest,
             manifest_digest=package_manifest_digest(manifest),
@@ -71,9 +87,19 @@ def main(argv: list[str] | None = None) -> int:
         return 1
 
     if args.out:
-        output_path = ROOT / args.out if not Path(args.out).is_absolute() else Path(args.out)
+        try:
+            output_path = resolve_package_trust_cli_path(
+                args.out,
+                root=ROOT,
+                purpose="package signature envelope output",
+                must_exist=False,
+                reject_existing=True,
+            )
+        except PackageTrustError as exc:
+            print(str(exc), file=sys.stderr)
+            return 1
         write_json_file(output_path, envelope)
-        print(f"signature_envelope: {output_path.relative_to(ROOT).as_posix() if output_path.is_relative_to(ROOT) else output_path}")
+        print(f"signature_envelope: {output_path.relative_to(ROOT).as_posix()}")
     else:
         sys.stdout.write(json.dumps(envelope, indent=2, sort_keys=True) + "\n")
     print("objc3c-package-sign: PASS")

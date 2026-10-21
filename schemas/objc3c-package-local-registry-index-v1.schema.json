@@ -163,6 +163,213 @@
         }
       }
     },
+    "moduleGraph": {
+      "type": "object",
+      "required": [
+        "contract_id",
+        "package_id",
+        "package_source_kind",
+        "source",
+        "source_digest",
+        "source_authority",
+        "source_authority_digest",
+        "module_name",
+        "resolver",
+        "direct_import_syntax",
+        "direct_imports",
+        "import_edges",
+        "unsafe_metadata_policy"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "contract_id": {
+          "const": "objc3c.package_ecosystem.module_graph.v1"
+        },
+        "package_id": {
+          "$ref": "#/$defs/packageId"
+        },
+        "package_source_kind": {
+          "enum": [
+            "stdlib-module-manifest",
+            "showcase-workspace-manifest"
+          ]
+        },
+        "source": {
+          "type": "string",
+          "minLength": 1
+        },
+        "source_digest": {
+          "$ref": "#/$defs/sha256"
+        },
+        "source_authority": {
+          "enum": [
+            "stdlib/module_inventory.json",
+            "showcase/portfolio.json"
+          ]
+        },
+        "source_authority_digest": {
+          "$ref": "#/$defs/sha256"
+        },
+        "module_name": {
+          "type": "object",
+          "required": ["canonical", "implementation", "case_sensitive"],
+          "additionalProperties": false,
+          "properties": {
+            "canonical": {
+              "type": "string",
+              "minLength": 1
+            },
+            "implementation": {
+              "type": "string",
+              "minLength": 1
+            },
+            "case_sensitive": {
+              "const": true
+            }
+          }
+        },
+        "resolver": {
+          "const": "checked-in-local-registry"
+        },
+        "direct_import_syntax": {
+          "const": "supported-fail-closed"
+        },
+        "direct_imports": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/directImportRecord"
+          }
+        },
+        "import_edges": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/moduleImportEdge"
+          }
+        },
+        "unsafe_metadata_policy": {
+          "type": "object",
+          "required": [
+            "missing_module_graph",
+            "missing_package_manifest",
+            "manual_sidecar_manifest",
+            "network_or_hosted_metadata"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "missing_module_graph": {
+              "const": "fail-closed"
+            },
+            "missing_package_manifest": {
+              "const": "fail-closed"
+            },
+            "manual_sidecar_manifest": {
+              "const": "fail-closed"
+            },
+            "network_or_hosted_metadata": {
+              "const": "fail-closed"
+            }
+          }
+        }
+      }
+    },
+    "directImportRecord": {
+      "type": "object",
+      "required": [
+        "syntax",
+        "source_module",
+        "imported_module",
+        "to_package_id",
+        "package_provenance",
+        "source_authority",
+        "source_authority_digest",
+        "resolution",
+        "required_version",
+        "missing_provenance_diagnostic"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "syntax": {
+          "const": "@import"
+        },
+        "source_module": {
+          "type": "string",
+          "minLength": 1
+        },
+        "imported_module": {
+          "type": "string",
+          "minLength": 1
+        },
+        "to_package_id": {
+          "$ref": "#/$defs/packageId"
+        },
+        "package_provenance": {
+          "const": "locked-package"
+        },
+        "source_authority": {
+          "enum": [
+            "stdlib/module_inventory.json",
+            "showcase/portfolio.json"
+          ]
+        },
+        "source_authority_digest": {
+          "$ref": "#/$defs/sha256"
+        },
+        "resolution": {
+          "const": "locked-local-registry"
+        },
+        "required_version": {
+          "$ref": "#/$defs/semver"
+        },
+        "missing_provenance_diagnostic": {
+          "const": "O3PKG8055"
+        }
+      }
+    },
+    "moduleImportEdge": {
+      "type": "object",
+      "required": [
+        "from_module",
+        "to_module",
+        "to_package_id",
+        "source",
+        "source_authority",
+        "source_authority_digest",
+        "resolution",
+        "required_version"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "from_module": {
+          "type": "string",
+          "minLength": 1
+        },
+        "to_module": {
+          "type": "string",
+          "minLength": 1
+        },
+        "to_package_id": {
+          "$ref": "#/$defs/packageId"
+        },
+        "source": {
+          "const": "checked-in-local-workspace"
+        },
+        "source_authority": {
+          "enum": [
+            "stdlib/module_inventory.json",
+            "showcase/portfolio.json"
+          ]
+        },
+        "source_authority_digest": {
+          "$ref": "#/$defs/sha256"
+        },
+        "resolution": {
+          "const": "locked-local-registry"
+        },
+        "required_version": {
+          "$ref": "#/$defs/semver"
+        }
+      }
+    },
     "trust": {
       "type": "object",
       "required": [
@@ -343,6 +550,8 @@
         "from",
         "to",
         "source",
+        "source_authority",
+        "source_authority_digest",
         "language_requirement",
         "abi_requirement",
         "resolution",
@@ -361,6 +570,15 @@
         },
         "source": {
           "const": "checked-in-local-workspace"
+        },
+        "source_authority": {
+          "enum": [
+            "stdlib/module_inventory.json",
+            "showcase/portfolio.json"
+          ]
+        },
+        "source_authority_digest": {
+          "$ref": "#/$defs/sha256"
         },
         "language_requirement": {
           "const": "3.0"
@@ -396,6 +614,7 @@
         "language_version",
         "abi_identity",
         "package_manifest",
+        "module_graph",
         "provenance_id",
         "trust",
         "version",
@@ -432,6 +651,9 @@
         },
         "package_manifest": {
           "$ref": "#/$defs/packageManifestRef"
+        },
+        "module_graph": {
+          "$ref": "#/$defs/moduleGraph"
         },
         "provenance_id": {
           "type": "string",
@@ -524,6 +746,8 @@
             "required": [
               "from",
               "to",
+              "source_authority",
+              "source_authority_digest",
               "required_version",
               "resolved_version",
               "target_source_digest",
@@ -533,6 +757,15 @@
             "properties": {
               "from": { "$ref": "#/$defs/packageId" },
               "to": { "$ref": "#/$defs/packageId" },
+              "source_authority": {
+                "enum": [
+                  "stdlib/module_inventory.json",
+                  "showcase/portfolio.json"
+                ]
+              },
+              "source_authority_digest": {
+                "$ref": "#/$defs/sha256"
+              },
               "required_version": { "$ref": "#/$defs/semver" },
               "resolved_version": { "$ref": "#/$defs/semver" },
               "target_source_digest": { "$ref": "#/$defs/sha256" },

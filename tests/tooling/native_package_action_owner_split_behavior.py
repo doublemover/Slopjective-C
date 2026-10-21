@@ -86,6 +86,7 @@ def assert_runnable_toolchain_package_spec_publishes_platform_owner_contract() -
     }
 
     spec = NATIVE_PACKAGE_TOOLCHAIN_ACTION_SPECS["package-runnable-toolchain"]
+    assert spec.pass_through_args is True
     assert_contains_all(
         spec.guarantee_owner,
         [
@@ -121,9 +122,17 @@ def assert_runnable_toolchain_package_uses_strictmode_safe_staging_lookup() -> N
 
     assert_contains_all(script_text, ["$staging.StagedRelativePaths"])
     assert_contains_all(
+        script_text,
+        [
+            "$Module.ExportedCommands.ContainsKey($commandName)",
+            "imported platform evidence module did not export required command",
+        ],
+    )
+    assert_excludes_all(script_text, ["Get-Command `\n    -Module $Module.Name"])
+    assert_contains_all(
         staging_text,
         [
-            "& $BuildScript | ForEach-Object { Write-Host $_ }",
+            "-SanitizerVariant $SanitizerVariant `",
             "return [pscustomobject]@{",
         ],
     )
@@ -140,6 +149,26 @@ def assert_runnable_toolchain_package_includes_compile_wrapper_dependencies() ->
     assert_contains_all(
         core_toolchain_text,
         [
+            "scripts/normalize_coff_archive_timestamps.py",
+            "scripts/objc3c_native_artifact_io.psm1",
+            "scripts/objc3c_native_cmake.psm1",
+            "scripts/objc3c_native_cmake/build.psm1",
+            "scripts/objc3c_native_frontend_contracts/exports.psm1",
+            "scripts/objc3c_native_frontend_contracts/shared_sources.psm1",
+            (
+                "scripts/objc3c_native_frontend_artifacts/orchestration/"
+                "packet_generation.psm1"
+            ),
+            (
+                "scripts/objc3c_native_frontend_closeout_edge_artifacts/"
+                "orchestration.psm1"
+            ),
+            (
+                "scripts/objc3c_native_frontend_closeout_conformance_artifacts/"
+                "orchestration.psm1"
+            ),
+            "scripts/objc3c_native_superclean_surface.psm1",
+            "scripts/objc3c_native_superclean_surface_catalog/program_surfaces.psm1",
             "scripts/objc3c_native_compile_arguments.ps1",
             "scripts/objc3c_shared/json_io.py",
             "scripts/objc3c_shared/schema_registry.py",
@@ -177,6 +206,16 @@ def assert_runnable_toolchain_package_includes_compile_wrapper_dependencies() ->
             "function Get-RepoRelativePythonSharedFiles",
             "function Get-RepoRelativeRuntimeProbeFiles",
             "function Get-RepoRelativeWorkflowPythonFiles",
+            "scripts/normalize_coff_archive_timestamps.py",
+            "scripts/objc3c_native_artifact_io.psm1",
+            "scripts/objc3c_native_cmake",
+            "scripts/objc3c_native_frontend_contracts",
+            "scripts/objc3c_native_frontend_artifacts",
+            "scripts/objc3c_native_frontend_closeout_artifacts.psm1",
+            "scripts/objc3c_native_frontend_closeout_edge_artifacts",
+            "scripts/objc3c_native_frontend_closeout_conformance_artifacts",
+            "scripts/objc3c_native_superclean_surface.psm1",
+            "scripts/objc3c_native_superclean_surface_catalog",
             "scripts/objc3c_native_execution_smoke_helpers",
             "scripts/objc3c_native_execution_smoke_runner",
             "scripts/objc3c_execution_replay_proof_helpers",
@@ -212,16 +251,30 @@ def assert_runnable_toolchain_package_includes_compile_wrapper_dependencies() ->
 def assert_native_package_public_order_and_owner_membership() -> None:
     assert tuple(NATIVE_PACKAGE_ACTION_SPECS) == (
         "package-runnable-toolchain",
+        "package-runnable-toolchain-asan",
+        "package-runnable-toolchain-ubsan",
         "proof-objc3c",
     )
     assert NATIVE_PACKAGE_ACTION_SPECS["package-runnable-toolchain"] is (
         NATIVE_PACKAGE_TOOLCHAIN_ACTION_SPECS["package-runnable-toolchain"]
+    )
+    assert NATIVE_PACKAGE_ACTION_SPECS["package-runnable-toolchain-asan"] is (
+        NATIVE_PACKAGE_TOOLCHAIN_ACTION_SPECS["package-runnable-toolchain-asan"]
+    )
+    assert NATIVE_PACKAGE_ACTION_SPECS["package-runnable-toolchain-ubsan"] is (
+        NATIVE_PACKAGE_TOOLCHAIN_ACTION_SPECS["package-runnable-toolchain-ubsan"]
     )
     assert NATIVE_PACKAGE_ACTION_SPECS["proof-objc3c"] is (
         NATIVE_PACKAGE_PROOF_ACTION_SPECS["proof-objc3c"]
     )
     assert NATIVE_PACKAGE_ACTION_HANDLERS["package-runnable-toolchain"] is (
         NATIVE_PACKAGE_TOOLCHAIN_ACTION_HANDLERS["package-runnable-toolchain"]
+    )
+    assert NATIVE_PACKAGE_ACTION_HANDLERS["package-runnable-toolchain-asan"] is (
+        NATIVE_PACKAGE_TOOLCHAIN_ACTION_HANDLERS["package-runnable-toolchain-asan"]
+    )
+    assert NATIVE_PACKAGE_ACTION_HANDLERS["package-runnable-toolchain-ubsan"] is (
+        NATIVE_PACKAGE_TOOLCHAIN_ACTION_HANDLERS["package-runnable-toolchain-ubsan"]
     )
     assert NATIVE_PACKAGE_ACTION_HANDLERS["proof-objc3c"] is (
         NATIVE_PACKAGE_PROOF_ACTION_HANDLERS["proof-objc3c"]

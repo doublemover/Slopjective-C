@@ -1,0 +1,15 @@
+// Expected advanced-runtime diagnostic: advanced-runtime.foreign-abi-unsafe-mixed-image
+module AdvancedRuntimeClosureNegativeForeignAbiUnsafeMixedImage;
+
+extern fn unsafeMixedImageBridge() -> i32
+    __attribute__((objc_foreign,
+                   objc_foreign_type(named("c-abi")),
+                   objc_mixed_image(named("../UnsafeImage")),
+                   objc_package_entry(named("ForeignRuntime.unsafeMixedImage"))));
+
+fn consumeUnsafeMixedImageBridge() -> i32 {
+  // Mixed image path traversal is not package/runtime identity evidence:
+  // package_runtime_identity_ready must remain false and
+  // unsafe_mixed_image_negative_case_count must block Swift/C++ ABI mirroring.
+  return unsafeMixedImageBridge();
+}

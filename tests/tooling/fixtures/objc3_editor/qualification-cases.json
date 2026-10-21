@@ -1,0 +1,72 @@
+{
+  "schema_version": 1,
+  "format_style": "LLVM",
+  "required_ordinary_spellings": [
+    "async",
+    "throws",
+    "throws:",
+    "defer {"
+  ],
+  "required_private_spellings": [
+    "__objc3_optional",
+    "__objc3_result",
+    "__objc3_some",
+    "__objc3_none",
+    "__objc3_has_value",
+    "__objc3_ok",
+    "__objc3_is_ok",
+    "__objc3_match_stmt",
+    "__objc3_case_some",
+    "__objc3_case_none",
+    "case.Ok(let success):",
+    "case.Err(let error):",
+    "__objc3_throws(id<Error>)",
+    "__objc3_try_force([receiver checked:0])",
+    "__objc3_try_optional",
+    "__objc3_copy",
+    "__objc3_move"
+  ],
+  "live_probes": [
+    {
+      "name": "optional_match_payload",
+      "use_line": "selected = throws(payload);",
+      "use_name": "payload",
+      "declaration_line": "case __objc3_case_some(let payload):",
+      "declaration_name": "payload",
+      "hover_type": "const int",
+      "completion_name": "payload"
+    },
+    {
+      "name": "managed_optional_object",
+      "use_line": "(void)__objc3_has_value(object);",
+      "use_name": "object",
+      "declaration_line": "__objc3_optional(id) object =",
+      "declaration_name": "object",
+      "hover_type": "__objc3_optional",
+      "completion_name": "object"
+    }
+  ],
+  "cases": [
+    {
+      "source": "reserved_intrinsics.m",
+      "language": "objective-c",
+      "standard": "c17"
+    },
+    {
+      "source": "reserved_intrinsics.mm",
+      "language": "objective-c++",
+      "standard": "c++20",
+      "live_probes": [
+        {
+          "name": "managed_optional_copy",
+          "use_line": "(void)__objc3_has_value(copied);",
+          "use_name": "copied",
+          "declaration_line": "__objc3_optional(id) copied = __objc3_copy(source);",
+          "declaration_name": "copied",
+          "hover_type": "__objc3_optional",
+          "completion_name": "copied"
+        }
+      ]
+    }
+  ]
+}

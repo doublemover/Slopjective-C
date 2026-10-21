@@ -1,0 +1,337 @@
+{
+  "contract_id": "objc3c.security.hardening.sanitizer.runtime-promotion-evidence.contract.v1",
+  "schema_version": 1,
+  "surface_kind": "security-sanitizer-runtime-promotion-evidence-contract",
+  "source_path": "tests/tooling/fixtures/security_hardening/sanitizer_runtime_promotion_evidence_contract.json",
+  "schema_path": "schemas/objc3c-sanitizer-runtime-promotion-evidence-v1.schema.json",
+  "existing_runtime_evidence_policy": {
+    "existing_runtime_evidence_contract": "tests/tooling/fixtures/security_hardening/sanitizer_execution_evidence_contract.json",
+    "generated_runtime_evidence_support_truth": false,
+    "generated_runtime_evidence_promotion_allowed": false,
+    "generated_only_evidence_allowed": false
+  },
+  "promotion_policy": {
+    "source_owned_promotion_authority": true,
+    "generated_evidence_required": true,
+    "generated_evidence_support_truth": false,
+    "durable_source_contract_required": true,
+    "source_generated_agreement_required": true,
+    "package_install_execution_detection_required": true,
+    "promotion_result": "eligible-only-when-source-contract-and-generated-evidence-agree"
+  },
+  "pinned_public_actions": [
+    {
+      "public_action": "check-sanitizer-runtime-evidence-asan",
+      "action_role": "generated-runtime-evidence",
+      "sanitizer": "address",
+      "target_platform_id": "windows-x64",
+      "required": true,
+      "implementation_state": "wired-public-action",
+      "action_aliases_allowed": false
+    },
+    {
+      "public_action": "check-sanitizer-runtime-evidence-ubsan",
+      "action_role": "generated-runtime-evidence",
+      "sanitizer": "undefined",
+      "target_platform_id": "windows-x64",
+      "required": true,
+      "implementation_state": "wired-public-action",
+      "action_aliases_allowed": false
+    },
+    {
+      "public_action": "check-security-sanitizer-runtime-promotion-evidence",
+      "action_role": "source-owned-promotion-gate",
+      "target_platform_id": "windows-x64",
+      "required": true,
+      "implementation_state": "wired-public-action",
+      "action_aliases_allowed": false
+    }
+  ],
+  "required_evidence_classes": [
+    {
+      "class_id": "package",
+      "required": true,
+      "source_truth": "only-through-source-promotion-contract",
+      "generated_evidence_required": true,
+      "required_path_fields": [
+        "package_manifest_path",
+        "runtime_manifest_path"
+      ],
+      "promotion_result": "required-for-promotion"
+    },
+    {
+      "class_id": "install",
+      "required": true,
+      "source_truth": "only-through-source-promotion-contract",
+      "generated_evidence_required": true,
+      "required_path_fields": [
+        "probe_path"
+      ],
+      "promotion_result": "required-for-promotion"
+    },
+    {
+      "class_id": "execution",
+      "required": true,
+      "source_truth": "only-through-source-promotion-contract",
+      "generated_evidence_required": true,
+      "required_path_fields": [
+        "summary_path",
+        "diagnostics_path",
+        "packaged_smoke_path"
+      ],
+      "promotion_result": "required-for-promotion"
+    },
+    {
+      "class_id": "detection",
+      "required": true,
+      "source_truth": "only-through-source-promotion-contract",
+      "generated_evidence_required": true,
+      "required_path_fields": [
+        "detection_stderr_path"
+      ],
+      "promotion_result": "fail-closed-when-missing-or-mismatched"
+    }
+  ],
+  "positive_contract_fixtures": [
+    {
+      "case_id": "objc3c.sanitizer.address.runtime-promotion.windows-x64.source-generated-agreement",
+      "variant_id": "objc3c.toolchain.sanitizer.address",
+      "issue_ref": 8230,
+      "sanitizer": "address",
+      "target_platform_id": "windows-x64",
+      "package_id": "org.objc3c.runtime:objc3c-runtime-asan",
+      "package_channel_id": "windows-x64-sanitizer-asan",
+      "source_contract_path": "tests/tooling/fixtures/security_hardening/sanitizer_runtime_promotion_evidence_contract.json",
+      "runtime_library_manifest_path": "share/objc3c/sanitizer/asan-runtime-libraries.json",
+      "required_evidence_classes": [
+        "package",
+        "install",
+        "execution",
+        "detection"
+      ],
+      "generated_evidence_paths": {
+        "summary_path": "tmp/reports/sanitizer-runtime-evidence/address/summary.json",
+        "probe_path": "tmp/reports/sanitizer-runtime-evidence/address/probe.json",
+        "diagnostics_path": "tmp/reports/sanitizer-runtime-evidence/address/diagnostics.json",
+        "package_manifest_path": "tmp/sre/pkg/check-sanitizer-runtime-evidence-asan/address/package/artifacts/package/objc3c-runnable-toolchain-package.json",
+        "runtime_manifest_path": "tmp/sre/pkg/check-sanitizer-runtime-evidence-asan/address/package/share/objc3c/sanitizer/asan-runtime-libraries.json",
+        "detection_stderr_path": "tmp/reports/sanitizer-runtime-evidence/address/probe-work/address_detection.stderr.txt",
+        "packaged_smoke_path": "tmp/sre/pkg/check-sanitizer-runtime-evidence-asan/address/package/tmp/artifacts/objc3c-native/execution-smoke/sre-address-address/summary.json"
+      },
+      "digest_requirements": {
+        "source_contract_digest_computed_at_validation": true,
+        "summary_digest_computed_at_validation": true,
+        "probe_digest_computed_at_validation": true,
+        "diagnostics_digest_computed_at_validation": true,
+        "package_manifest_digest_matches_summary": true,
+        "runtime_manifest_digest_matches_probe": true,
+        "detection_stderr_digest_computed_at_validation": true,
+        "packaged_smoke_digest_computed_at_validation": true
+      },
+      "expected_detection": {
+        "record_id": "objc3c.sanitizer.address.heap-use-after-free",
+        "record_kind": "asan-diagnostic",
+        "required_stderr_token": "ERROR: AddressSanitizer: heap-use-after-free",
+        "expected_exit_code": 1,
+        "missing_detection_behavior": "fail-closed-before-support-promotion"
+      },
+      "agreement_requirements": {
+        "source_contract_digest_matches_generated_summary": true,
+        "package_manifest_digest_matches_summary": true,
+        "runtime_manifest_digest_matches_probe": true,
+        "sanitizer_token_matches_package_channel": true,
+        "expected_detection_matches_stderr": true,
+        "release_runtime_mixing_allowed": false
+      },
+      "support_promotion_allowed": true,
+      "promotion_result": "eligible-only-when-source-contract-and-generated-evidence-agree"
+    },
+    {
+      "case_id": "objc3c.sanitizer.undefined.runtime-promotion.windows-x64.source-generated-agreement",
+      "variant_id": "objc3c.toolchain.sanitizer.undefined",
+      "issue_ref": 8231,
+      "sanitizer": "undefined",
+      "target_platform_id": "windows-x64",
+      "package_id": "org.objc3c.runtime:objc3c-runtime-ubsan",
+      "package_channel_id": "windows-x64-sanitizer-ubsan",
+      "source_contract_path": "tests/tooling/fixtures/security_hardening/sanitizer_runtime_promotion_evidence_contract.json",
+      "runtime_library_manifest_path": "share/objc3c/sanitizer/ubsan-runtime-libraries.json",
+      "required_evidence_classes": [
+        "package",
+        "install",
+        "execution",
+        "detection"
+      ],
+      "generated_evidence_paths": {
+        "summary_path": "tmp/reports/sanitizer-runtime-evidence/undefined/summary.json",
+        "probe_path": "tmp/reports/sanitizer-runtime-evidence/undefined/probe.json",
+        "diagnostics_path": "tmp/reports/sanitizer-runtime-evidence/undefined/diagnostics.json",
+        "package_manifest_path": "tmp/sre/pkg/check-sanitizer-runtime-evidence-ubsan/undefined/package/artifacts/package/objc3c-runnable-toolchain-package.json",
+        "runtime_manifest_path": "tmp/sre/pkg/check-sanitizer-runtime-evidence-ubsan/undefined/package/share/objc3c/sanitizer/ubsan-runtime-libraries.json",
+        "detection_stderr_path": "tmp/reports/sanitizer-runtime-evidence/undefined/probe-work/undefined_detection.stderr.txt",
+        "packaged_smoke_path": "tmp/sre/pkg/check-sanitizer-runtime-evidence-ubsan/undefined/package/tmp/artifacts/objc3c-native/execution-smoke/sre-undefined-undefined/summary.json"
+      },
+      "digest_requirements": {
+        "source_contract_digest_computed_at_validation": true,
+        "summary_digest_computed_at_validation": true,
+        "probe_digest_computed_at_validation": true,
+        "diagnostics_digest_computed_at_validation": true,
+        "package_manifest_digest_matches_summary": true,
+        "runtime_manifest_digest_matches_probe": true,
+        "detection_stderr_digest_computed_at_validation": true,
+        "packaged_smoke_digest_computed_at_validation": true
+      },
+      "expected_detection": {
+        "record_id": "objc3c.sanitizer.undefined.signed-integer-overflow",
+        "record_kind": "ubsan-trap",
+        "required_stderr_token": "runtime error: signed integer overflow",
+        "expected_exit_code": 1,
+        "missing_detection_behavior": "fail-closed-before-support-promotion"
+      },
+      "trap_or_recover_mode": "trap",
+      "agreement_requirements": {
+        "source_contract_digest_matches_generated_summary": true,
+        "package_manifest_digest_matches_summary": true,
+        "runtime_manifest_digest_matches_probe": true,
+        "sanitizer_token_matches_package_channel": true,
+        "expected_detection_matches_stderr": true,
+        "release_runtime_mixing_allowed": false
+      },
+      "support_promotion_allowed": true,
+      "promotion_result": "eligible-only-when-source-contract-and-generated-evidence-agree"
+    }
+  ],
+  "negative_contract_fixtures": [
+    {
+      "case_id": "objc3c.sanitizer.address.runtime-promotion.reject.generated-only-evidence",
+      "variant_id": "objc3c.toolchain.sanitizer.address",
+      "failure_kind": "generated-only-evidence",
+      "failure_class": "generated-runtime-evidence-without-source-owned-promotion-contract",
+      "required_behavior": "fail-closed-before-support-promotion",
+      "blocks": [
+        "package",
+        "install",
+        "execution",
+        "detection",
+        "support-promotion"
+      ],
+      "support_promotion_allowed": false,
+      "generated_only_evidence_allowed": false
+    },
+    {
+      "case_id": "objc3c.sanitizer.undefined.runtime-promotion.reject.stale-digest",
+      "variant_id": "objc3c.toolchain.sanitizer.undefined",
+      "failure_kind": "stale-digest",
+      "failure_class": "source-generated-digest-mismatch",
+      "required_behavior": "fail-closed-before-support-promotion",
+      "blocks": [
+        "package",
+        "install",
+        "execution",
+        "detection",
+        "support-promotion"
+      ],
+      "support_promotion_allowed": false,
+      "generated_only_evidence_allowed": false
+    },
+    {
+      "case_id": "objc3c.sanitizer.address.runtime-promotion.reject.missing-package-manifest",
+      "variant_id": "objc3c.toolchain.sanitizer.address",
+      "failure_kind": "missing-package-manifest",
+      "failure_class": "generated-package-manifest-missing",
+      "required_behavior": "fail-closed-before-package-install",
+      "blocks": [
+        "package",
+        "support-promotion"
+      ],
+      "support_promotion_allowed": false,
+      "generated_only_evidence_allowed": false
+    },
+    {
+      "case_id": "objc3c.sanitizer.undefined.runtime-promotion.reject.missing-runtime-manifest",
+      "variant_id": "objc3c.toolchain.sanitizer.undefined",
+      "failure_kind": "missing-runtime-manifest",
+      "failure_class": "generated-runtime-library-manifest-missing",
+      "required_behavior": "fail-closed-before-package-install",
+      "blocks": [
+        "package",
+        "install",
+        "support-promotion"
+      ],
+      "support_promotion_allowed": false,
+      "generated_only_evidence_allowed": false
+    },
+    {
+      "case_id": "objc3c.sanitizer.address.runtime-promotion.reject.wrong-sanitizer-token",
+      "variant_id": "objc3c.toolchain.sanitizer.address",
+      "failure_kind": "wrong-sanitizer-token",
+      "failure_class": "sanitizer-token-package-channel-mismatch",
+      "required_behavior": "fail-closed-before-native-execution-claim",
+      "blocks": [
+        "package",
+        "install",
+        "execution",
+        "support-promotion"
+      ],
+      "support_promotion_allowed": false,
+      "generated_only_evidence_allowed": false
+    },
+    {
+      "case_id": "objc3c.sanitizer.undefined.runtime-promotion.reject.release-runtime-mixing",
+      "variant_id": "objc3c.toolchain.sanitizer.undefined",
+      "failure_kind": "release-runtime-mixing",
+      "failure_class": "release-runtime-artifact-in-sanitizer-package",
+      "required_behavior": "fail-closed-before-native-execution-claim",
+      "blocks": [
+        "package",
+        "install",
+        "execution",
+        "support-promotion"
+      ],
+      "support_promotion_allowed": false,
+      "generated_only_evidence_allowed": false
+    },
+    {
+      "case_id": "objc3c.sanitizer.address.runtime-promotion.reject.unsupported-host",
+      "variant_id": "objc3c.toolchain.sanitizer.address",
+      "failure_kind": "unsupported-host",
+      "failure_class": "unsupported-sanitizer-runtime-platform",
+      "required_behavior": "fail-closed-before-capability-promotion",
+      "blocks": [
+        "package",
+        "install",
+        "execution",
+        "detection",
+        "support-promotion"
+      ],
+      "support_promotion_allowed": false,
+      "generated_only_evidence_allowed": false
+    },
+    {
+      "case_id": "objc3c.sanitizer.undefined.runtime-promotion.reject.missing-packaged-smoke",
+      "variant_id": "objc3c.toolchain.sanitizer.undefined",
+      "failure_kind": "missing-packaged-smoke",
+      "failure_class": "packaged-native-smoke-summary-missing",
+      "required_behavior": "fail-closed-before-native-execution-claim",
+      "blocks": [
+        "execution",
+        "support-promotion"
+      ],
+      "support_promotion_allowed": false,
+      "generated_only_evidence_allowed": false
+    },
+    {
+      "case_id": "objc3c.sanitizer.address.runtime-promotion.reject.missing-expected-detection",
+      "variant_id": "objc3c.toolchain.sanitizer.address",
+      "failure_kind": "missing-expected-detection",
+      "failure_class": "expected-sanitizer-diagnostic-not-found-in-stderr",
+      "required_behavior": "fail-closed-before-support-promotion",
+      "blocks": [
+        "detection",
+        "support-promotion"
+      ],
+      "support_promotion_allowed": false,
+      "generated_only_evidence_allowed": false
+    }
+  ]
+}

@@ -17,6 +17,13 @@ WORKFLOW_REPORT = ROOT / "tmp" / "reports" / "objc3c-public-workflow" / "validat
 RESPONSE_DRILL_SUMMARY = ROOT / "tmp" / "reports" / "security-hardening" / "response-drill-summary.json"
 RUNTIME_HARDENING_SUMMARY = ROOT / "tmp" / "reports" / "security-hardening" / "runtime-hardening-summary.json"
 SANITIZER_VALIDATION_SUMMARY = ROOT / "tmp" / "reports" / "security-hardening" / "sanitizer-validation-summary.json"
+SANITIZER_EXECUTION_EVIDENCE_SUMMARY = (
+    ROOT
+    / "tmp"
+    / "reports"
+    / "security-hardening"
+    / "sanitizer-execution-evidence-summary.json"
+)
 LANGUAGE_RUNTIME_THREAT_MODEL_SUMMARY = ROOT / "tmp" / "reports" / "security-hardening" / "language-runtime-threat-model-summary.json"
 POSTURE_SUMMARY = ROOT / "tmp" / "reports" / "security-hardening" / "security-posture-summary.json"
 PUBLICATION_SUMMARY = ROOT / "tmp" / "reports" / "security-hardening" / "publication-summary.json"
@@ -27,6 +34,7 @@ REQUIRED_STEPS = [
     "check-security-hardening-schema-surface",
     "check-security-runtime-hardening",
     "check-security-sanitizer-validation",
+    "check-security-sanitizer-execution-evidence",
     "check-security-language-runtime-threat-model",
     "build-security-posture",
     "check-security-response-drill",
@@ -66,6 +74,7 @@ def main() -> int:
         RESPONSE_DRILL_SUMMARY,
         RUNTIME_HARDENING_SUMMARY,
         SANITIZER_VALIDATION_SUMMARY,
+        SANITIZER_EXECUTION_EVIDENCE_SUMMARY,
         LANGUAGE_RUNTIME_THREAT_MODEL_SUMMARY,
         POSTURE_SUMMARY,
         PUBLICATION_SUMMARY,
@@ -77,6 +86,7 @@ def main() -> int:
     response_drill = load_json(RESPONSE_DRILL_SUMMARY)
     runtime_hardening = load_json(RUNTIME_HARDENING_SUMMARY)
     sanitizer_validation = load_json(SANITIZER_VALIDATION_SUMMARY)
+    sanitizer_execution_evidence = load_json(SANITIZER_EXECUTION_EVIDENCE_SUMMARY)
     language_runtime_threat_model = load_json(LANGUAGE_RUNTIME_THREAT_MODEL_SUMMARY)
     posture = load_json(POSTURE_SUMMARY)
     publication = load_json(PUBLICATION_SUMMARY)
@@ -88,6 +98,9 @@ def main() -> int:
         return 1
     if sanitizer_validation.get("status") != "PASS":
         print("objc3c-security-hardening-integration: FAIL\n- sanitizer validation did not pass", file=sys.stderr)
+        return 1
+    if sanitizer_execution_evidence.get("status") != "PASS":
+        print("objc3c-security-hardening-integration: FAIL\n- sanitizer execution evidence did not pass", file=sys.stderr)
         return 1
     if language_runtime_threat_model.get("status") != "PASS":
         print("objc3c-security-hardening-integration: FAIL\n- language/runtime threat model did not pass", file=sys.stderr)
@@ -107,6 +120,7 @@ def main() -> int:
         "response_drill_summary_path": repo_rel(RESPONSE_DRILL_SUMMARY),
         "runtime_hardening_summary_path": repo_rel(RUNTIME_HARDENING_SUMMARY),
         "sanitizer_validation_summary_path": repo_rel(SANITIZER_VALIDATION_SUMMARY),
+        "sanitizer_execution_evidence_summary_path": repo_rel(SANITIZER_EXECUTION_EVIDENCE_SUMMARY),
         "language_runtime_threat_model_summary_path": repo_rel(LANGUAGE_RUNTIME_THREAT_MODEL_SUMMARY),
         "posture_summary_path": repo_rel(POSTURE_SUMMARY),
         "publication_summary_path": repo_rel(PUBLICATION_SUMMARY),
@@ -114,6 +128,7 @@ def main() -> int:
         "response_trust_state": response_drill.get("trust_state"),
         "runtime_memory_safety_boundary": runtime_hardening.get("memory_safety_boundary"),
         "sanitizer_coverage_matrix": sanitizer_validation.get("coverage_matrix"),
+        "sanitizer_execution_public_action": sanitizer_execution_evidence.get("public_action"),
         "language_runtime_threat_count": language_runtime_threat_model.get("threat_count"),
     }
     SUMMARY_PATH.parent.mkdir(parents=True, exist_ok=True)

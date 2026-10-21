@@ -1,0 +1,17 @@
+// Expected diagnostic code(s): O3S206.
+module NegativeTypedThrowsIncompatibleCatch;
+
+fn decode(value: i32) throws(NSError) -> i32 {
+  if (value == 0) {
+    throw 77;
+  }
+  return value;
+}
+
+fn main() -> i32 {
+  do {
+    return try decode(0);
+  } catch (ErrorBox* error) {
+    return 1;
+  }
+}

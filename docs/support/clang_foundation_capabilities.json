@@ -1,0 +1,84 @@
+{
+  "schema_version": 1,
+  "authority": "schemas/objc3-language-capabilities.json",
+  "authority_sha256": "f7d2bb730f1b8273786981b77c278cf17e11e5c49e6613ccba77ca37f9d5fe52",
+  "compiler_family": "clang-foundation",
+  "language_revision": 202610,
+  "extension_abi_revision": 2,
+  "features": [
+    {
+      "name": "defer",
+      "macro": "DEFER",
+      "aliases": [],
+      "state": "implemented",
+      "qualified_targets": [
+        {
+          "triple": "x86_64-unknown-linux-gnu",
+          "runtime": "gnustep-2.0",
+          "profile": "compatibility",
+          "evidence": [
+            "clang/test/ObjC3/CodeGen/public-defer.c",
+            "carriers:expression:clang:defer-public-runtime:O0",
+            "carriers:expression:clang:defer-public-runtime:O2",
+            "native-package:consumer-eager",
+            "native-package:consumer-source",
+            "editor:qualification"
+          ]
+        }
+      ],
+      "feature_query": "objc3_defer",
+      "public_macro": "__OBJC3_FEATURE_DEFER__"
+    },
+    {
+      "name": "optionals",
+      "macro": "OPTIONALS",
+      "aliases": [
+        "OPTIONAL"
+      ],
+      "state": "reserved",
+      "qualified_targets": [],
+      "feature_query": "objc3_optionals",
+      "public_macro": "__OBJC3_FEATURE_OPTIONALS__"
+    },
+    {
+      "name": "result",
+      "macro": "RESULT",
+      "aliases": [],
+      "state": "reserved",
+      "qualified_targets": [],
+      "feature_query": "objc3_result",
+      "public_macro": "__OBJC3_FEATURE_RESULT__"
+    },
+    {
+      "name": "throws",
+      "macro": "THROWS",
+      "aliases": [
+        "TYPED_THROWS"
+      ],
+      "state": "reserved",
+      "qualified_targets": [],
+      "feature_query": "objc3_throws",
+      "public_macro": "__OBJC3_FEATURE_THROWS__"
+    },
+    {
+      "name": "async_await",
+      "macro": "ASYNC_AWAIT",
+      "aliases": [
+        "ASYNC"
+      ],
+      "state": "reserved",
+      "qualified_targets": [],
+      "feature_query": "objc3_async_await",
+      "public_macro": "__OBJC3_FEATURE_ASYNC_AWAIT__"
+    },
+    {
+      "name": "actors",
+      "macro": "ACTORS",
+      "aliases": [],
+      "state": "reserved",
+      "qualified_targets": [],
+      "feature_query": "objc3_actors",
+      "public_macro": "__OBJC3_FEATURE_ACTORS__"
+    }
+  ]
+}

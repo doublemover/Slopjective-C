@@ -29,7 +29,11 @@ def action_validate_release_operations(rest: list[str]) -> int:
     steps = []
     if not skip_upstream:
         packaging_channels_command = (
-            [sys.executable, str(PACKAGING_CHANNELS_INTEGRATION_PY)]
+            [
+                sys.executable,
+                str(PACKAGING_CHANNELS_INTEGRATION_PY),
+                "--use-existing-validate-report",
+            ]
             if reuse_upstream_report
             else workflow_command("validate-packaging-channels")
         )

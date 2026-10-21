@@ -4,13 +4,16 @@ from __future__ import annotations
 
 from pathlib import Path
 
+from objc3c_tooling.artifact_identity import current_host_artifact_identity
+
 ROOT = Path(__file__).resolve().parents[2]
+ARTIFACT_IDENTITY = current_host_artifact_identity()
 REPORT_ROOT = ROOT / "tmp" / "reports" / "release_claims" / "publication_matrix"
 JSON_OUT = REPORT_ROOT / "release_runtime_claim_matrix.json"
 MD_OUT = REPORT_ROOT / "release_runtime_claim_matrix.md"
 
-NATIVE_EXE = ROOT / "artifacts" / "bin" / "objc3c-native.exe"
-RUNNER_EXE = ROOT / "artifacts" / "bin" / "objc3c-frontend-c-api-runner.exe"
+NATIVE_EXE = ROOT / ARTIFACT_IDENTITY.native_executable_relative_path
+RUNNER_EXE = ROOT / ARTIFACT_IDENTITY.frontend_runner_relative_path
 HELLO_FIXTURE = ROOT / "tests" / "tooling" / "fixtures" / "native" / "hello.objc3"
 METADATA_FIXTURE = (
     ROOT

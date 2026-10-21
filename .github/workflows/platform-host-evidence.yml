@@ -1,0 +1,68 @@
+name: Linux SDK release qualification
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  build:
+    runs-on: ubuntu-26.04
+    container: debian:13
+    timeout-minutes: 360
+    env:
+      OBJC3C_CLOUD_SETUP_ROOT: /opt/objc3c-host
+    steps:
+      - name: Development prerequisites
+        run: |
+          apt-get update
+          apt-get install -y --no-install-recommends git curl ca-certificates python3 python3-venv xz-utils zstd g++ zlib1g-dev libzstd-dev libssl-dev
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Pinned host tools
+        shell: bash
+        run: bash scripts/setup_cloud_environment.sh
+      - name: Build and qualify complete SDK
+        shell: bash
+        run: |
+          source /opt/objc3c-host/activate.sh
+          python -m scripts.objc3c_toolchain build-sdk --fetch > release.json.log
+      - name: Upload shipped archives and qualification receipts
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: objc3c-linux-sdk
+          path: |
+            out/toolchains/sdk-cache/*.tar.zst
+            out/toolchains/sdk-cache/*.tar.json
+            scripts/install_objc3c_linux.sh
+            scripts/objc3c_toolchain/install_sdk.py
+            scripts/qualify_linux_archive.sh
+          if-no-files-found: error
+      - name: Upload detailed evidence
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: objc3c-linux-evidence
+          path: |
+            out/toolchains/linux-sdk-builds/**/*.log
+            out/toolchains/linux-sdk-builds/**/build-report.json
+            out/toolchains/linux-sdk-builds/**/release.json
+            out/native-validation/**/summary.json
+            release.json.log
+  install:
+    needs: build
+    runs-on: ubuntu-26.04
+    strategy:
+      fail-fast: false
+      matrix:
+        distribution: ["debian:13", "ubuntu:26.04"]
+    container: ${{ matrix.distribution }}
+    steps:
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: objc3c-linux-sdk
+          path: /release
+      - name: Install, relocate, build, embed, debug and run the shipped archive
+        shell: sh
+        run: |
+          archive=$(find /release -name '*.tar.zst')
+          receipt=$(find /release -name '*.tar.json')
+          expected_sha=$(sed -n 's/ *"archive_sha256": "\([a-f0-9]*\)".*/\1/p' "$receipt")
+          sh /release/scripts/qualify_linux_archive.sh "$archive" "$expected_sha" /opt/objc3c

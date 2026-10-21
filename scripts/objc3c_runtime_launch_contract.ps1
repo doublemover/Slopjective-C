@@ -5,6 +5,19 @@ $script:Objc3cRuntimeLaunchExecutionSmokeCommandSurface = "scripts/check_objc3c_
 $script:Objc3cRuntimeLaunchArchiveResolutionModel = "registration-manifest-runtime-archive-path-is-authoritative"
 $script:Objc3cRuntimeLaunchDriverLinkerFlagConsumptionModel = "registration-manifest-driver-linker-flags-feed-proof-and-smoke-link-commands"
 
+Import-Module (Join-Path $PSScriptRoot "objc3c_native_cmake.psm1") -Force -DisableNameChecking
+
+function Convert-Objc3cLaunchContractRelativePathForHost {
+  param([Parameter(Mandatory = $true)][string]$RelativePath)
+
+  return $RelativePath.Replace('/', [System.IO.Path]::DirectorySeparatorChar)
+}
+
+function Get-Objc3cRuntimeLaunchDefaultRuntimeLibraryRelativePath {
+  $coreArtifacts = Get-Objc3cNativePackageArtifactRelativePaths
+  return $coreArtifacts.RuntimeLibrary
+}
+
 function Get-Objc3cLaunchContractRepoRelativePath {
   param(
     [Parameter(Mandatory = $true)][string]$RepoRoot,
@@ -24,7 +37,9 @@ function Get-Objc3cLaunchContractRepoRelativePath {
   }
 
   $repoRootResolved = (Resolve-Path -LiteralPath $RepoRoot).Path
-  return [System.IO.Path]::GetFullPath((Join-Path $repoRootResolved $normalized.Replace('/', '\\')))
+  return [System.IO.Path]::GetFullPath(
+    (Join-Path $repoRootResolved (Convert-Objc3cLaunchContractRelativePathForHost -RelativePath $normalized))
+  )
 }
 
 function Read-Objc3cJsonArtifact {
@@ -50,7 +65,7 @@ function Get-Objc3cRuntimeLaunchContract {
     [Parameter(Mandatory = $true)][string]$CompileDir,
     [Parameter(Mandatory = $true)][string]$RepoRoot,
     [string]$EmitPrefix = "module",
-    [string]$DefaultRuntimeLibraryRelativePath = "artifacts/lib/objc3_runtime.lib"
+    [string]$DefaultRuntimeLibraryRelativePath = ""
   )
 
   if (!(Test-Path -LiteralPath $CompileDir -PathType Container)) {
@@ -58,6 +73,9 @@ function Get-Objc3cRuntimeLaunchContract {
   }
 
   $repoRootResolved = (Resolve-Path -LiteralPath $RepoRoot).Path
+  if ([string]::IsNullOrWhiteSpace($DefaultRuntimeLibraryRelativePath)) {
+    $DefaultRuntimeLibraryRelativePath = Get-Objc3cRuntimeLaunchDefaultRuntimeLibraryRelativePath
+  }
   $compileDirResolved = (Resolve-Path -LiteralPath $CompileDir).Path
   $registrationManifestPath = Join-Path $compileDirResolved ($EmitPrefix + ".runtime-registration-manifest.json")
   $mainManifestPath = Join-Path $compileDirResolved ($EmitPrefix + ".manifest.json")
@@ -112,7 +130,7 @@ function Get-Objc3cRuntimeLaunchContract {
     throw "runtime launch contract FAIL: runtime library missing at $runtimeLibraryPath"
   }
 
-  $defaultRuntimeLibraryPath = Get-Objc3cLaunchContractRepoRelativePath -RepoRoot $repoRootResolved -RelativePath $DefaultRuntimeLibraryRelativePath -Label "default runtime archive"
+  $defaultRuntimeLibraryPath = Get-Objc3cLaunchContractRepoRelativePath -RepoRoot $repoRootResolved -RelativePath $DefaultRuntimeLibraryRelativePath -Label "default runtime library"
   $resolvedRuntimeLibrary = [System.IO.Path]::GetFullPath($runtimeLibraryPath)
   $resolvedDefaultRuntimeLibrary = [System.IO.Path]::GetFullPath($defaultRuntimeLibraryPath)
 
@@ -176,7 +194,7 @@ function Assert-Objc3cRuntimeLaunchContract {
     [Parameter(Mandatory = $true)][string]$CompileDir,
     [Parameter(Mandatory = $true)][string]$RepoRoot,
     [string]$EmitPrefix = "module",
-    [string]$DefaultRuntimeLibraryRelativePath = "artifacts/lib/objc3_runtime.lib"
+    [string]$DefaultRuntimeLibraryRelativePath = ""
   )
 
   $null = Get-Objc3cRuntimeLaunchContract `

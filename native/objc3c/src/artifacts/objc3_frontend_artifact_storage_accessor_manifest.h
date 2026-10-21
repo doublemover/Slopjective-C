@@ -1,5 +1,0 @@
-#pragma once
-
-#include "artifacts/objc3_frontend_artifact_storage_accessor_abi_manifest.h"
-#include "artifacts/objc3_frontend_artifact_storage_accessor_reflection_manifest.h"
-#include "artifacts/objc3_frontend_artifact_storage_accessor_source_manifest.h"

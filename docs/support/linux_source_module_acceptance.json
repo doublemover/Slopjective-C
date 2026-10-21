@@ -1,0 +1,249 @@
+{
+  "schema": "objc3c.installed-source-modules.v1",
+  "status": "PASS",
+  "sdk_seal": "6b641d981f5df588e12bf5275c419690419fa62b09a2e41a1961e7d1e6bb1716",
+  "outside_checkout": true,
+  "builds": [
+    {
+      "optimization": "O0",
+      "case": "cold",
+      "reused_stages": [],
+      "build_seconds": 0.791948,
+      "sdk_admission_seconds": 2.177127,
+      "sdk_final_verification_seconds": 2.409037,
+      "elapsed_seconds": 5.378115,
+      "sdk_seal": "6b641d981f5df588e12bf5275c419690419fa62b09a2e41a1961e7d1e6bb1716",
+      "fingerprint": "ba1901c83cb09c302b8fb831f94e3d123ce4c08467eb237de0ee75663ab50ee5"
+    },
+    {
+      "optimization": "O0",
+      "case": "warm",
+      "reused_stages": ["arc-interface", "consumer", "provider"],
+      "build_seconds": 0.053196,
+      "sdk_admission_seconds": 2.421639,
+      "sdk_final_verification_seconds": 2.102072,
+      "elapsed_seconds": 4.576909,
+      "sdk_seal": "6b641d981f5df588e12bf5275c419690419fa62b09a2e41a1961e7d1e6bb1716",
+      "fingerprint": "ba1901c83cb09c302b8fb831f94e3d123ce4c08467eb237de0ee75663ab50ee5"
+    },
+    {
+      "optimization": "O0",
+      "case": "provider-body-preserved-mtime",
+      "reused_stages": ["arc-interface", "consumer"],
+      "build_seconds": 0.298029,
+      "sdk_admission_seconds": 2.006062,
+      "sdk_final_verification_seconds": 1.97663,
+      "elapsed_seconds": 4.280723,
+      "sdk_seal": "6b641d981f5df588e12bf5275c419690419fa62b09a2e41a1961e7d1e6bb1716",
+      "fingerprint": "ba1901c83cb09c302b8fb831f94e3d123ce4c08467eb237de0ee75663ab50ee5"
+    },
+    {
+      "optimization": "O0",
+      "case": "private-header-preserved-mtime",
+      "reused_stages": ["arc-interface", "consumer"],
+      "build_seconds": 0.281504,
+      "sdk_admission_seconds": 1.935045,
+      "sdk_final_verification_seconds": 2.049394,
+      "elapsed_seconds": 4.265946,
+      "sdk_seal": "6b641d981f5df588e12bf5275c419690419fa62b09a2e41a1961e7d1e6bb1716",
+      "fingerprint": "ba1901c83cb09c302b8fb831f94e3d123ce4c08467eb237de0ee75663ab50ee5"
+    },
+    {
+      "optimization": "O0",
+      "case": "missing-consumer-output",
+      "reused_stages": ["arc-interface", "provider"],
+      "build_seconds": 0.304143,
+      "sdk_admission_seconds": 1.954498,
+      "sdk_final_verification_seconds": 1.88259,
+      "elapsed_seconds": 4.141233,
+      "sdk_seal": "6b641d981f5df588e12bf5275c419690419fa62b09a2e41a1961e7d1e6bb1716",
+      "fingerprint": "ba1901c83cb09c302b8fb831f94e3d123ce4c08467eb237de0ee75663ab50ee5"
+    },
+    {
+      "optimization": "O0",
+      "case": "damaged-interface-preserved-mtime",
+      "reused_stages": ["consumer", "provider"],
+      "build_seconds": 0.257237,
+      "sdk_admission_seconds": 1.90013,
+      "sdk_final_verification_seconds": 1.980103,
+      "elapsed_seconds": 4.137472,
+      "sdk_seal": "6b641d981f5df588e12bf5275c419690419fa62b09a2e41a1961e7d1e6bb1716",
+      "fingerprint": "ba1901c83cb09c302b8fb831f94e3d123ce4c08467eb237de0ee75663ab50ee5"
+    },
+    {
+      "optimization": "O0",
+      "case": "provider-api",
+      "reused_stages": [],
+      "build_seconds": 0.798283,
+      "sdk_admission_seconds": 1.803885,
+      "sdk_final_verification_seconds": 1.810889,
+      "elapsed_seconds": 4.41306,
+      "sdk_seal": "6b641d981f5df588e12bf5275c419690419fa62b09a2e41a1961e7d1e6bb1716",
+      "fingerprint": "18026386ceb8c447c37cafedaad66aa3fbe56cd782dd409188a5138c957a0878"
+    },
+    {
+      "optimization": "O2",
+      "case": "cold",
+      "reused_stages": [],
+      "build_seconds": 0.835923,
+      "sdk_admission_seconds": 2.17776,
+      "sdk_final_verification_seconds": 1.928669,
+      "elapsed_seconds": 4.942355,
+      "sdk_seal": "6b641d981f5df588e12bf5275c419690419fa62b09a2e41a1961e7d1e6bb1716",
+      "fingerprint": "ba1901c83cb09c302b8fb831f94e3d123ce4c08467eb237de0ee75663ab50ee5"
+    },
+    {
+      "optimization": "O2",
+      "case": "warm",
+      "reused_stages": ["arc-interface", "consumer", "provider"],
+      "build_seconds": 0.043238,
+      "sdk_admission_seconds": 1.852564,
+      "sdk_final_verification_seconds": 1.920755,
+      "elapsed_seconds": 3.81656,
+      "sdk_seal": "6b641d981f5df588e12bf5275c419690419fa62b09a2e41a1961e7d1e6bb1716",
+      "fingerprint": "ba1901c83cb09c302b8fb831f94e3d123ce4c08467eb237de0ee75663ab50ee5"
+    },
+    {
+      "optimization": "O2",
+      "case": "provider-body-preserved-mtime",
+      "reused_stages": ["arc-interface", "consumer"],
+      "build_seconds": 0.313499,
+      "sdk_admission_seconds": 1.899083,
+      "sdk_final_verification_seconds": 1.954189,
+      "elapsed_seconds": 4.166774,
+      "sdk_seal": "6b641d981f5df588e12bf5275c419690419fa62b09a2e41a1961e7d1e6bb1716",
+      "fingerprint": "ba1901c83cb09c302b8fb831f94e3d123ce4c08467eb237de0ee75663ab50ee5"
+    },
+    {
+      "optimization": "O2",
+      "case": "private-header-preserved-mtime",
+      "reused_stages": ["arc-interface", "consumer"],
+      "build_seconds": 0.388537,
+      "sdk_admission_seconds": 2.029436,
+      "sdk_final_verification_seconds": 1.934094,
+      "elapsed_seconds": 4.352071,
+      "sdk_seal": "6b641d981f5df588e12bf5275c419690419fa62b09a2e41a1961e7d1e6bb1716",
+      "fingerprint": "ba1901c83cb09c302b8fb831f94e3d123ce4c08467eb237de0ee75663ab50ee5"
+    },
+    {
+      "optimization": "O2",
+      "case": "missing-consumer-output",
+      "reused_stages": ["arc-interface", "provider"],
+      "build_seconds": 0.311085,
+      "sdk_admission_seconds": 1.923659,
+      "sdk_final_verification_seconds": 2.156381,
+      "elapsed_seconds": 4.391128,
+      "sdk_seal": "6b641d981f5df588e12bf5275c419690419fa62b09a2e41a1961e7d1e6bb1716",
+      "fingerprint": "ba1901c83cb09c302b8fb831f94e3d123ce4c08467eb237de0ee75663ab50ee5"
+    },
+    {
+      "optimization": "O2",
+      "case": "damaged-interface-preserved-mtime",
+      "reused_stages": ["consumer", "provider"],
+      "build_seconds": 0.259935,
+      "sdk_admission_seconds": 2.17037,
+      "sdk_final_verification_seconds": 1.894594,
+      "elapsed_seconds": 4.324902,
+      "sdk_seal": "6b641d981f5df588e12bf5275c419690419fa62b09a2e41a1961e7d1e6bb1716",
+      "fingerprint": "ba1901c83cb09c302b8fb831f94e3d123ce4c08467eb237de0ee75663ab50ee5"
+    },
+    {
+      "optimization": "O2",
+      "case": "provider-api",
+      "reused_stages": [],
+      "build_seconds": 0.823128,
+      "sdk_admission_seconds": 1.981945,
+      "sdk_final_verification_seconds": 2.04455,
+      "elapsed_seconds": 4.849626,
+      "sdk_seal": "6b641d981f5df588e12bf5275c419690419fa62b09a2e41a1961e7d1e6bb1716",
+      "fingerprint": "18026386ceb8c447c37cafedaad66aa3fbe56cd782dd409188a5138c957a0878"
+    }
+  ],
+  "rejected_imports": [
+    {
+      "optimization": "O0",
+      "case": "fingerprint",
+      "exit_code": 1,
+      "diagnostic": "O3IFC134",
+      "outputs_absent": true
+    },
+    {
+      "optimization": "O0",
+      "case": "package",
+      "exit_code": 1,
+      "diagnostic": "O3IFC134",
+      "outputs_absent": true
+    },
+    {
+      "optimization": "O0",
+      "case": "ownership",
+      "exit_code": 1,
+      "diagnostic": "O3IFC134",
+      "outputs_absent": true
+    },
+    {
+      "optimization": "O2",
+      "case": "fingerprint",
+      "exit_code": 1,
+      "diagnostic": "O3IFC134",
+      "outputs_absent": true
+    },
+    {
+      "optimization": "O2",
+      "case": "package",
+      "exit_code": 1,
+      "diagnostic": "O3IFC134",
+      "outputs_absent": true
+    },
+    {
+      "optimization": "O2",
+      "case": "ownership",
+      "exit_code": 1,
+      "diagnostic": "O3IFC134",
+      "outputs_absent": true
+    }
+  ],
+  "source_builder_sha256": "5e3bb6ebd17e13fbb9f544778f483397c2abc6eed3373e993c372943c63232cf",
+  "limits": "Example module graph, not a general package manager. Build timings exclude full SDK admission and final verification; elapsed timings include both. The native linker runs on every invocation.",
+  "accepted_utc": "2026-10-18T23:47:59.906053+00:00",
+  "source_build_id": "llvmorg-23.1.3-0d261d1ca552-8f5780415752-fd761312",
+  "archive_sha256": "7fa8e1eaa4aea501844ac28948143e8f333020f4a7fa51c4b59d6bb705bf3438",
+  "fresh_distributions": [
+    {
+      "distribution": "debian13",
+      "image": "debian:13-slim@sha256:a29215f6a35e51e22adffa17f89e9d2ef06214e64a2bad10d765c46aea49f11f",
+      "parallel_jobs": 2,
+      "exit_code": 0,
+      "elapsed_seconds": 198.699712,
+      "archive_sha256": "7fa8e1eaa4aea501844ac28948143e8f333020f4a7fa51c4b59d6bb705bf3438",
+      "seal_sha256": "6b641d981f5df588e12bf5275c419690419fa62b09a2e41a1961e7d1e6bb1716",
+      "log": "/workspace/scratch/objc3-fresh-debian13-arc-transfer.log"
+    },
+    {
+      "distribution": "ubuntu2604",
+      "image": "ubuntu:26.04@sha256:c098726dd9b9733f3e885f8de0ef375206a311b0a317eadc40d347b1115fb944",
+      "parallel_jobs": 2,
+      "exit_code": 0,
+      "elapsed_seconds": 252.923362,
+      "archive_sha256": "7fa8e1eaa4aea501844ac28948143e8f333020f4a7fa51c4b59d6bb705bf3438",
+      "seal_sha256": "6b641d981f5df588e12bf5275c419690419fa62b09a2e41a1961e7d1e6bb1716",
+      "log": "/workspace/scratch/objc3-fresh-ubuntu2604-arc-transfer.log"
+    }
+  ],
+  "measurement_scope": "One cold and one warm observation per optimization in a correctness suite; these are not regression budgets or statistical throughput claims. Full SDK admission and final verification remain in elapsed timings.",
+  "upstream_refresh": {
+    "llvm": "llvmorg-23.1.3",
+    "cmake": "v4.4.4",
+    "ninja": "v1.13.2",
+    "ccache": "v4.14.2",
+    "uv": "0.13.1",
+    "npm": "v12.2.1",
+    "node": "v26.12.0"
+  },
+  "compiler_command_budget_check": {
+    "status": "PASS",
+    "failures": [],
+    "authority": "docs/support/linux_development_latency.json",
+    "authority_sha256": "f33db63850ca67b859249d2351ce49fd72e5e95dea04e9929c157575ee2cdb69"
+  }
+}
