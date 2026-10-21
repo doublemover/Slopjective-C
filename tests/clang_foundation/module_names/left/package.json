@@ -1,0 +1,14 @@
+{
+  "schema": "objc3c.source-package.v4",
+  "name": "fixture.NamesLeft",
+  "package": "names-left-v1",
+  "source": "module.m",
+  "language": "objective-c",
+  "standard": "c17",
+  "ownership": "arc",
+  "provider_ownership": "arc",
+  "exports": [
+    "left_value"
+  ],
+  "dependencies": []
+}

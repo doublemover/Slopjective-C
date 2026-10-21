@@ -2,6 +2,7 @@ typedef int LeafValue;
 int leaf(void) { return 40; }
 
 #if defined(__OBJC__) && defined(__cplusplus) && __has_feature(objc_arc)
+#include <objc/runtime.h>
 extern "C" id class_createInstance(Class cls, unsigned long extra)
     __attribute__((ns_returns_retained));
 extern "C" id object_dispose(id object);

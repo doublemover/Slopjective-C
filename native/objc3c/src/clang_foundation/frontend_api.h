@@ -85,6 +85,10 @@ typedef struct objc3c_frontend_v3_options {
   /* Optional size-guarded tail; entries require an existing import lock. */
   const objc3c_frontend_v3_spi_grant *spi_grants;
   size_t spi_grant_count;
+  /* Optional tail: apply module-owned native names before code generation. */
+  uint8_t module_owned_names;
+  /* Optional tail: owning source/header tree; NULL uses the input directory. */
+  const char *module_source_root;
 } objc3c_frontend_v3_options;
 
 typedef struct objc3c_frontend_v2_location {

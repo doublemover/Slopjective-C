@@ -78,6 +78,7 @@ PACKETS = {
         "clang/include/clang/AST/ObjC3MatchCoverage.h",
         "clang/include/clang/AST/ObjC3MatchNodes.inc",
         "clang/include/clang/AST/ObjC3MatchSemantic.h",
+        "clang/include/clang/AST/ObjC3ModuleNames.h",
         "clang/include/clang/AST/TypeBase.h",
         "clang/include/clang/AST/TypeLoc.h",
         "clang/include/clang/AST/TypeLocNodes.def",
@@ -101,6 +102,7 @@ PACKETS = {
         "clang/lib/AST/ODRHash.cpp",
         "clang/lib/AST/ObjC3MatchNodes.cpp",
         "clang/lib/AST/DeclPrinter.cpp",
+        "clang/lib/AST/Mangle.cpp",
         "clang/lib/AST/TextNodeDumper.cpp",
         "clang/lib/AST/JSONNodeDumper.cpp",
         "clang/lib/AST/Type.cpp",
@@ -240,6 +242,16 @@ PACKETS = {
         "clang/unittests/AST/ObjC3OptionalExprTest.cpp",
         "clang/unittests/AST/ObjC3ResultExprTest.cpp",
         "clang/unittests/AST/ObjC3CarrierExprSemanticsTest.cpp",
+    ],
+    "0007-objc3-linux-debugger-runtime-contracts.patch": [
+        "lldb/source/Plugins/SymbolFile/DWARF/ObjCRuntimeName.h",
+        "lldb/source/Plugins/SymbolFile/DWARF/DWARFASTParserClang.cpp",
+        "lldb/source/Plugins/SymbolFile/DWARF/SymbolFileDWARF.cpp",
+        "lldb/source/Plugins/ExpressionParser/Clang/ClangExpressionParser.cpp",
+        "lldb/source/Plugins/ExpressionParser/Clang/ObjC3MethodNames.h",
+        "lldb/source/Plugins/ExpressionParser/Clang/ClangExpressionDeclMap.cpp",
+        "lldb/source/Plugins/ExpressionParser/Clang/IRForTarget.cpp",
+        "lldb/source/Plugins/ExpressionParser/Clang/IRForTarget.h",
     ],
 }
 

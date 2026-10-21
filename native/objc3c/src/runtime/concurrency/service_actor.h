@@ -9,30 +9,15 @@ namespace objc3::services {
 
 struct Actor;
 
-using ActorJob = void (*)(void *context);
-using ActorContextDestroy = void (*)(void *context);
+using ActorJob = objc3_actor_job;
+using ActorContextDestroy = objc3_actor_context_destroy;
 
-constexpr uint32_t kActorServiceVersion = 1;
+constexpr uint32_t kActorServiceVersion = OBJC3_ACTOR_SERVICE_VERSION;
 
 // Facts describe logical identities, not the physical worker thread. A
 // different actor on the same executor still requires an actor hop.
-struct ActorHopFacts {
-  uint32_t struct_size;
-  uint32_t version;
-  uint64_t actor_identity;
-  uint64_t current_actor_identity;
-  uint64_t target_executor_identity;
-  uint64_t current_executor_identity;
-  uint32_t actor_hop;
-  uint32_t executor_hop;
-};
-
-struct CurrentActorFacts {
-  uint32_t struct_size;
-  uint32_t version;
-  uint64_t actor_identity;
-  uint64_t executor_identity;
-};
+using ActorHopFacts = objc3_actor_hop_facts;
+using CurrentActorFacts = objc3_current_actor_facts;
 
 objc3_service_status actor_create(objc3_executor_t *executor, Actor **out_actor);
 Actor *actor_retain(Actor *actor);

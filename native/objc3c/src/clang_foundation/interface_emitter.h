@@ -43,7 +43,8 @@ ReadInterfaceSPIGroup(const clang::NamedDecl *declaration);
     const std::vector<InterfaceDependency> &resolved_dependencies = {},
     const std::vector<InterfaceSourceArtifact> &dependency_sources = {},
     llvm::StringRef ownership_projection = {},
-    const std::vector<std::string> &exports = {});
+    const std::vector<std::string> &exports = {},
+    const std::string &source_root = {});
 
 // Emit a distinct consumer-mode interface, retaining the canonical producer
 // proof. The native object remains compiled under the producer's ownership.
@@ -51,6 +52,7 @@ ReadInterfaceSPIGroup(const clang::NamedDecl *declaration);
     clang::ASTContext &producer, llvm::StringRef canonical_module_name,
     llvm::StringRef package_identity, bool consumer_arc,
     const std::vector<InterfaceDependency> &dependencies = {},
-    const std::vector<std::string> &exports = {});
+    const std::vector<std::string> &exports = {},
+    const std::string &source_root = {});
 
 }  // namespace objc3::clang_foundation

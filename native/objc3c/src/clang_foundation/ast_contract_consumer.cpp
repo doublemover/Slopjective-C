@@ -1,6 +1,7 @@
 #include "clang_foundation/ast_contract_consumer.h"
 #include "clang_foundation/ast_effect_identity.h"
 #include "clang_foundation/interface_emitter.h"
+#include "clang_foundation/module_names.h"
 
 #include <algorithm>
 #include "clang/AST/ASTContext.h"
@@ -19,9 +20,42 @@ class ContractConsumer final : public clang::ASTConsumer,
   ContractConsumer(const CompileRequest &request, CompileResult &result)
       : request_(request), result_(result) {}
 
+  void Initialize(clang::ASTContext &context) override {
+    context_ = &context;
+    if (request_.module_owned_names) {
+      source_root_ =
+          NormalizeModuleSourceRoot(context, request_.module_source_root);
+      const auto main = context.getSourceManager().getLocForStartOfFile(
+          context.getSourceManager().getMainFileID());
+      if (!IsModuleOwnedSource(context, main, source_root_)) {
+        const auto id = context.getDiagnostics().getCustomDiagID(
+            clang::DiagnosticsEngine::Error, "%0");
+        context.getDiagnostics().Report(main, id)
+            << "module source root does not contain the compilation input";
+      }
+    }
+  }
+  void
+  HandleInlineFunctionDefinition(clang::FunctionDecl *declaration) override {
+    if (request_.module_owned_names)
+      (void)ApplyModuleOwnedNames(*context_, declaration, request_.module_name,
+                                  request_.package_identity, source_root_);
+  }
+  void HandleCXXImplicitFunctionInstantiation(
+      clang::FunctionDecl *declaration) override {
+    HandleInlineFunctionDefinition(declaration);
+  }
+  bool HandleTopLevelDecl(clang::DeclGroupRef group) override {
+    if (request_.module_owned_names)
+      for (auto *declaration : group)
+        if (!ApplyModuleOwnedNames(*context_, declaration, request_.module_name,
+                                   request_.package_identity, source_root_))
+          return false;
+    return true;
+  }
   bool VisitObjCMethodDecl(clang::ObjCMethodDecl *decl) {
     if (!context_ || decl->isImplicit() ||
-        !context_->getSourceManager().isWrittenInMainFile(decl->getLocation()))
+        !IsModuleOwnedSource(*context_, decl->getLocation(), source_root_))
       return true;
     InterfaceDeclarationIdentity identity;
     if (ReadInterfaceDeclarationIdentity(decl, *context_, identity))
@@ -31,7 +65,7 @@ class ContractConsumer final : public clang::ASTConsumer,
 
   bool VisitNamedDecl(clang::NamedDecl *decl) {
     if (decl->isImplicit() || !decl->getIdentifier() || !context_ ||
-        !context_->getSourceManager().isWrittenInMainFile(decl->getLocation()))
+        !IsModuleOwnedSource(*context_, decl->getLocation(), source_root_))
       return true;
     if (auto *function = llvm::dyn_cast<clang::FunctionDecl>(decl)) {
       if (!function->isExternallyVisible()) return true;
@@ -63,6 +97,8 @@ class ContractConsumer final : public clang::ASTConsumer,
     }
     const auto ownership = ReadNativeReturnOwnership(decl);
     if (!ownership.empty()) identity.effects.ownership_identity = ownership;
+    identity.native_symbol_name = ReadNativeSymbolName(decl);
+    identity.spi_group = ReadInterfaceSPIGroup(decl);
     result_.declarations.push_back(std::move(identity));
     return true;
   }
@@ -82,18 +118,20 @@ class ContractConsumer final : public clang::ASTConsumer,
       result_.interface_artifact = EmitOwnershipProjection(
           context, request_.module_name, request_.package_identity,
           *request_.projected_arc, result_.resolved_interface_dependencies,
-          request_.interface_exports);
+          request_.interface_exports, source_root_);
     else if (request_.emit_semantic_interface)
       result_.interface_artifact = EmitSemanticInterface(
           context, request_.module_name, request_.package_identity,
           result_.resolved_interface_dependencies,
-          result_.resolved_interface_sources, {}, request_.interface_exports);
+          result_.resolved_interface_sources, {}, request_.interface_exports,
+          source_root_);
   }
 
  private:
   const CompileRequest &request_;
   CompileResult &result_;
   clang::ASTContext *context_ = nullptr;
+  std::string source_root_;
 };
 }  // namespace
 

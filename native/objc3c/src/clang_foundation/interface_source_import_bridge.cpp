@@ -203,9 +203,16 @@ bool InterfaceSourceImportBridge::ValidateVisibleExports(
           (!direct || request == requests_.end() ||
            !IsGrantedSPI(decl, request->second.spi_groups)))
         continue;
+      if (decl.kind == "ObjCMethod" || decl.kind == "ObjCProperty" ||
+          decl.kind == "ObjCIvar" || decl.kind == "Field" ||
+          decl.kind == "ObjCCategory")
+        continue;
       const bool tag = decl.kind == "Record" || decl.kind == "CXXRecord" ||
                        decl.kind == "Enum";
-      const std::string key = (tag ? "tag:" : "ordinary:") + decl.qualified_name;
+      const std::string key = (decl.kind == "ObjCProtocol" ? "protocol:"
+                               : tag                       ? "tag:"
+                                                           : "ordinary:") +
+                              decl.qualified_name;
       auto &prior_exports = names[key];
       for (const auto &prior : prior_exports) {
         const auto &old = *prior.identity;

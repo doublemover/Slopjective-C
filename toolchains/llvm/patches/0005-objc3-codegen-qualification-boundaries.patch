@@ -781,7 +781,7 @@ index 08cb9860f..5c93b5119 100644
  
        // If the value is offset in memory, apply the offset now.
 diff --git a/clang/lib/CodeGen/CGDebugInfo.cpp b/clang/lib/CodeGen/CGDebugInfo.cpp
-index 7421733ef..7d4225f73 100644
+index 7421733ef..f382865e8 100644
 --- a/clang/lib/CodeGen/CGDebugInfo.cpp
 +++ b/clang/lib/CodeGen/CGDebugInfo.cpp
 @@ -31,6 +31,7 @@
@@ -792,7 +792,56 @@ index 7421733ef..7d4225f73 100644
  #include "clang/Basic/SourceManager.h"
  #include "clang/Basic/Version.h"
  #include "clang/CodeGen/ModuleBuilder.h"
-@@ -4312,6 +4313,76 @@ llvm::DIType *CGDebugInfo::CreateTypeNode(QualType Ty, llvm::DIFile *Unit) {
+@@ -3443,6 +3444,18 @@ static bool hasDefaultSetterName(const ObjCPropertyDecl *PD,
+          Setter->getDeclName().getObjCSelector().getNameForSlot(0);
+ }
+ 
++static llvm::DINodeArray
++objcRuntimeNameAnnotations(const ObjCInterfaceDecl *ID,
++                           llvm::DIBuilder &Builder,
++                           llvm::LLVMContext &Context) {
++  const auto RuntimeName = ID->getObjCRuntimeNameAsString();
++  if (RuntimeName == ID->getName())
++    return {};
++  llvm::Metadata *Fields[] = {llvm::MDString::get(Context, "objc_runtime_name"),
++                              llvm::MDString::get(Context, RuntimeName)};
++  return Builder.getOrCreateArray({llvm::MDNode::get(Context, Fields)});
++}
++
+ llvm::DIType *CGDebugInfo::CreateType(const ObjCInterfaceType *Ty,
+                                       llvm::DIFile *Unit) {
+   ObjCInterfaceDecl *ID = Ty->getDecl();
+@@ -3456,7 +3469,8 @@ llvm::DIType *CGDebugInfo::CreateType(const ObjCInterfaceType *Ty,
+   // and this is not the compile unit with the implementation of the type (which
+   // may contain hidden ivars).
+   if (DebugTypeExtRefs && ID->isFromASTFile() && ID->getDefinition() &&
+-      !ID->getImplementation())
++      !ID->getImplementation() &&
++      ID->getObjCRuntimeNameAsString() == ID->getName())
+     return DBuilder.createForwardDecl(
+         llvm::dwarf::DW_TAG_structure_type, ID->getName(),
+         getDeclContextDescriptor(ID), Unit, 0, RuntimeLang);
+@@ -3472,7 +3486,8 @@ llvm::DIType *CGDebugInfo::CreateType(const ObjCInterfaceType *Ty,
+     llvm::DIScope *Mod = getParentModuleOrNull(ID);
+     llvm::DIType *FwdDecl = DBuilder.createReplaceableCompositeType(
+         llvm::dwarf::DW_TAG_structure_type, ID->getName(), Mod ? Mod : TheCU,
+-        DefUnit, Line, RuntimeLang);
++        DefUnit, Line, RuntimeLang, 0, 0, llvm::DINode::FlagFwdDecl, "",
++        objcRuntimeNameAnnotations(ID, DBuilder, CGM.getLLVMContext()));
+     ObjCInterfaceCache.push_back(ObjCInterfaceCacheEntry(Ty, FwdDecl, Unit));
+     return FwdDecl;
+   }
+@@ -3605,7 +3620,8 @@ llvm::DIType *CGDebugInfo::CreateTypeDefinition(const ObjCInterfaceType *Ty,
+   llvm::DIScope *Mod = getParentModuleOrNull(ID);
+   llvm::DICompositeType *RealDecl = DBuilder.createStructType(
+       Mod ? Mod : Unit, ID->getName(), DefUnit, Line, Size, Align, Flags,
+-      nullptr, llvm::DINodeArray(), RuntimeLang);
++      nullptr, llvm::DINodeArray(), RuntimeLang, nullptr, "", nullptr, 0,
++      objcRuntimeNameAnnotations(ID, DBuilder, CGM.getLLVMContext()));
+ 
+   QualType QTy(Ty, 0);
+   TypeCache[QTy.getAsOpaquePtr()].reset(RealDecl);
+@@ -4312,6 +4328,72 @@ llvm::DIType *CGDebugInfo::CreateTypeNode(QualType Ty, llvm::DIFile *Unit) {
      return CreateType(cast<BlockPointerType>(Ty), Unit);
    case Type::Typedef:
      return CreateType(cast<TypedefType>(Ty), Unit);
@@ -817,8 +866,7 @@ index 7421733ef..7d4225f73 100644
 +        Representation.Type.isNull())
 +      return DiagnoseUnavailable();
 +
-+    const RecordType *PhysicalRecord =
-+        Representation.Type->getAs<RecordType>();
++    const RecordType *PhysicalRecord = Representation.Type->getAs<RecordType>();
 +    if (!PhysicalRecord || PhysicalRecord->getDecl() != Representation.Record ||
 +        !Ctx.hasSameType(Representation.Type,
 +                         Ctx.getCanonicalTagType(Representation.Record)) ||
@@ -832,25 +880,23 @@ index 7421733ef..7d4225f73 100644
 +    };
 +    bool LayoutMatches = false;
 +    if (const auto *Optional = dyn_cast<ObjC3OptionalType>(Ty)) {
-+      LayoutMatches = !Representation.SuccessField &&
-+                      !Representation.ErrorField &&
-+                      MatchesPayload(Representation.ValueField,
-+                                     Optional->getElementType());
++      LayoutMatches =
++          !Representation.SuccessField && !Representation.ErrorField &&
++          MatchesPayload(Representation.ValueField, Optional->getElementType());
 +    } else if (const auto *Result = dyn_cast<ObjC3ResultType>(Ty)) {
-+      LayoutMatches = !Representation.ValueField &&
-+                      MatchesPayload(Representation.SuccessField,
-+                                     Result->getSuccessType()) &&
-+                      MatchesPayload(Representation.ErrorField,
-+                                     Result->getErrorType());
++      LayoutMatches =
++          !Representation.ValueField &&
++          MatchesPayload(Representation.SuccessField,
++                         Result->getSuccessType()) &&
++          MatchesPayload(Representation.ErrorField, Result->getErrorType());
 +    }
 +    const bool HasPayloadStorage = Representation.ValueField ||
 +                                   Representation.SuccessField ||
 +                                   Representation.ErrorField;
-+    LayoutMatches &= HasPayloadStorage
-+                         ? Representation.PayloadUnion &&
-+                               Representation.PayloadField
-+                         : !Representation.PayloadUnion &&
-+                               !Representation.PayloadField;
++    LayoutMatches &=
++        HasPayloadStorage
++            ? Representation.PayloadUnion && Representation.PayloadField
++            : !Representation.PayloadUnion && !Representation.PayloadField;
 +    if (!LayoutMatches)
 +      return DiagnoseUnavailable();
 +
@@ -858,8 +904,7 @@ index 7421733ef..7d4225f73 100644
 +    // target's actual size, alignment, union offset, and payload-qualified
 +    // fields. The typedef wrapper gives debuggers the canonical source carrier
 +    // identity without inventing a parallel layout or operation semantics.
-+    llvm::DIType *PhysicalType =
-+        getOrCreateType(Representation.Type, Unit);
++    llvm::DIType *PhysicalType = getOrCreateType(Representation.Type, Unit);
 +    if (!PhysicalType)
 +      return DiagnoseUnavailable();
 +    return DBuilder.createTypedef(PhysicalType,
@@ -869,6 +914,32 @@ index 7421733ef..7d4225f73 100644
    case Type::Record:
      return CreateType(cast<RecordType>(Ty));
    case Type::Enum:
+@@ -4828,8 +4910,15 @@ llvm::DISubprogram *CGDebugInfo::getObjCMethodDeclaration(
+   if (It == TypeCache.end())
+     return nullptr;
+   auto *InterfaceType = cast<llvm::DICompositeType>(It->second);
++  const auto NativeName = CGM.getObjCRuntime().getSymbolNameForMethod(
++      OMD, false, OMD->isDirectMethod());
++  const std::string LinkageName =
++      OMD->isDirectMethod() ||
++              llvm::StringRef(NativeName).starts_with("__objc3_method_")
++          ? NativeName
++          : "";
+   llvm::DISubprogram *FD = DBuilder.createFunction(
+-      InterfaceType, getObjCMethodName(OMD), StringRef(),
++      InterfaceType, getObjCMethodName(OMD), LinkageName,
+       InterfaceType->getFile(), LineNo, FnType, LineNo, Flags, SPFlags);
+   DBuilder.finalizeSubprogram(FD);
+   ObjCMethodCache[ID].push_back({FD, OMD->isDirectMethod()});
+@@ -4969,6 +5058,8 @@ void CGDebugInfo::emitFunctionStart(GlobalDecl GD, SourceLocation Loc,
+         KeyInstructions && !isa_and_present<CoroutineBodyStmt>(FD->getBody());
+   } else if (const auto *OMD = dyn_cast<ObjCMethodDecl>(D)) {
+     Name = getObjCMethodName(OMD);
++    if (Fn->getName().starts_with("__objc3_method_"))
++      LinkageName = Fn->getName();
+     Flags |= llvm::DINode::FlagPrototyped;
+   } else if (isa<VarDecl>(D) &&
+              GD.getDynamicInitKind() != DynamicInitKind::NoStub) {
 diff --git a/clang/lib/CodeGen/CGDecl.cpp b/clang/lib/CodeGen/CGDecl.cpp
 index e84e05e8e..340e58124 100644
 --- a/clang/lib/CodeGen/CGDecl.cpp
@@ -6303,19 +6374,57 @@ index 000000000..736fe8cb4
 +
 +#endif
 diff --git a/clang/lib/CodeGen/CGObjCGNU.cpp b/clang/lib/CodeGen/CGObjCGNU.cpp
-index 9742b496c..0b3835b73 100644
+index 9742b496c..288c676b6 100644
 --- a/clang/lib/CodeGen/CGObjCGNU.cpp
 +++ b/clang/lib/CodeGen/CGObjCGNU.cpp
-@@ -16,6 +16,8 @@
+@@ -15,6 +15,8 @@
+ 
  #include "CGCXXABI.h"
  #include "CGCleanup.h"
- #include "CGObjCRuntime.h"
 +#include "CGObjC3ArcCarriers.h"
 +#include "CGObjC3ManagedStorage.h"
+ #include "CGObjCRuntime.h"
  #include "CodeGenFunction.h"
  #include "CodeGenModule.h"
- #include "CodeGenTypes.h"
-@@ -1559,6 +1561,30 @@ class CGObjCGNUstep2 : public CGObjCGNUstep {
+@@ -24,6 +26,7 @@
+ #include "clang/AST/Attr.h"
+ #include "clang/AST/Decl.h"
+ #include "clang/AST/DeclObjC.h"
++#include "clang/AST/ObjC3ModuleNames.h"
+ #include "clang/AST/RecordLayout.h"
+ #include "clang/AST/StmtObjC.h"
+ #include "clang/Basic/SourceManager.h"
+@@ -514,8 +517,9 @@ protected:
+   /// encoding as well.
+   virtual std::string GetIVarOffsetVariableName(const ObjCInterfaceDecl *ID,
+                                                 const ObjCIvarDecl *Ivar) {
+-    const std::string Name = "__objc_ivar_offset_" + ID->getNameAsString()
+-      + '.' + Ivar->getNameAsString();
++    const std::string Name = "__objc_ivar_offset_" +
++                             ID->getObjCRuntimeNameAsString().str() + '.' +
++                             Ivar->getNameAsString();
+     return Name;
+   }
+   /// Returns the variable used to store the offset of an instance variable.
+@@ -1346,7 +1350,7 @@ class CGObjCGNUstep2 : public CGObjCGNUstep {
+ 
+   llvm::Value *GenerateProtocolRef(CodeGenFunction &CGF,
+                                    const ObjCProtocolDecl *PD) override {
+-    auto Name = PD->getNameAsString();
++    auto Name = PD->getObjCRuntimeNameAsString().str();
+     auto *&Ref = ExistingProtocolRefs[Name];
+     if (!Ref) {
+       auto *&Protocol = ExistingProtocols[Name];
+@@ -1386,7 +1390,7 @@ class CGObjCGNUstep2 : public CGObjCGNUstep {
+     // Do nothing - we only emit referenced protocols.
+   }
+   llvm::Constant *GenerateProtocolRef(const ObjCProtocolDecl *PD) override {
+-    std::string ProtocolName = PD->getNameAsString();
++    std::string ProtocolName = PD->getObjCRuntimeNameAsString().str();
+     auto *&Protocol = ExistingProtocols[ProtocolName];
+     if (Protocol)
+       return Protocol;
+@@ -1559,6 +1563,30 @@ class CGObjCGNUstep2 : public CGObjCGNUstep {
      return CGM.getCXXABI().getCatchAllTypeInfo();
    }
    llvm::Function *ModuleInitFunction() override {
@@ -6346,7 +6455,143 @@ index 9742b496c..0b3835b73 100644
      llvm::Function *LoadFunction = llvm::Function::Create(
        llvm::FunctionType::get(llvm::Type::getVoidTy(VMContext), false),
        llvm::GlobalValue::LinkOnceODRLinkage, ".objcv2_load_function",
-@@ -2976,7 +3002,9 @@ CGObjCGNU::GenerateMessageSend(CodeGenFunction &CGF,
+@@ -1708,8 +1736,9 @@ class CGObjCGNUstep2 : public CGObjCGNUstep {
+     std::string TypeEncoding;
+     CGM.getContext().getObjCEncodingForType(Ivar->getType(), TypeEncoding);
+     TypeEncoding = GetSymbolNameForTypeEncoding(TypeEncoding);
+-    const std::string Name = "__objc_ivar_offset_" + ID->getNameAsString()
+-      + '.' + Ivar->getNameAsString() + '.' + TypeEncoding;
++    const std::string Name = "__objc_ivar_offset_" +
++                             ID->getObjCRuntimeNameAsString().str() + '.' +
++                             Ivar->getNameAsString() + '.' + TypeEncoding;
+     return Name;
+   }
+   llvm::Value *EmitIvarOffset(CodeGenFunction &CGF,
+@@ -1741,7 +1770,7 @@ class CGObjCGNUstep2 : public CGObjCGNUstep {
+     // Get the class name
+     ObjCInterfaceDecl *classDecl =
+         const_cast<ObjCInterfaceDecl *>(OID->getClassInterface());
+-    std::string className = classDecl->getNameAsString();
++    std::string className = classDecl->getObjCRuntimeNameAsString().str();
+     auto *classNameConstant = MakeConstantString(className);
+ 
+     ConstantInitBuilder builder(CGM);
+@@ -1807,7 +1836,8 @@ class CGObjCGNUstep2 : public CGObjCGNUstep {
+       OID->getClassInterface()->getSuperClass();
+     llvm::Constant *SuperClass = nullptr;
+     if (SuperClassDecl) {
+-      auto SuperClassName = SymbolForClass(SuperClassDecl->getNameAsString());
++      auto SuperClassName =
++          SymbolForClass(SuperClassDecl->getObjCRuntimeNameAsString().str());
+       SuperClass = TheModule.getNamedGlobal(SuperClassName);
+       if (!SuperClass)
+       {
+@@ -1995,8 +2025,8 @@ class CGObjCGNUstep2 : public CGObjCGNUstep {
+ 
+       if (SuperClass) {
+         std::pair<llvm::GlobalVariable*, int> v{classStruct, 1};
+-        EarlyInitList.emplace_back(std::string(SuperClass->getName()),
+-                                   std::move(v));
++        EarlyInitList.emplace_back(
++            std::string(SuperClass->getName()), std::move(v));
+       }
+ 
+     }
+@@ -2547,8 +2577,8 @@ llvm::Value *CGObjCGNU::GetClassNamed(CodeGenFunction &CGF,
+ // techniques can modify the name -> class mapping.
+ llvm::Value *CGObjCGNU::GetClass(CodeGenFunction &CGF,
+                                  const ObjCInterfaceDecl *OID) {
+-  auto *Value =
+-      GetClassNamed(CGF, OID->getNameAsString(), OID->isWeakImported());
++  auto *Value = GetClassNamed(CGF, OID->getObjCRuntimeNameAsString().str(),
++                              OID->isWeakImported());
+   if (auto *ClassSymbol = dyn_cast<llvm::GlobalVariable>(Value))
+     CGM.setGVProperties(ClassSymbol, OID);
+   return Value;
+@@ -2634,7 +2664,7 @@ llvm::Constant *CGObjCGNU::GetEHType(QualType T) {
+   assert(OPT && "Invalid @catch type.");
+   const ObjCInterfaceDecl *IDecl = OPT->getObjectType()->getInterface();
+   assert(IDecl && "Invalid @catch type.");
+-  return MakeConstantString(IDecl->getIdentifier()->getName());
++  return MakeConstantString(IDecl->getObjCRuntimeNameAsString());
+ }
+ 
+ llvm::Constant *CGObjCGNUstep::GetEHType(QualType T) {
+@@ -2666,8 +2696,7 @@ llvm::Constant *CGObjCGNUstep::GetEHType(QualType T) {
+   assert(PT && "Invalid @catch type.");
+   const ObjCInterfaceType *IT = PT->getInterfaceType();
+   assert(IT && "Invalid @catch type.");
+-  std::string className =
+-      std::string(IT->getDecl()->getIdentifier()->getName());
++  std::string className = IT->getDecl()->getObjCRuntimeNameAsString().str();
+ 
+   std::string typeinfoName = "__objc_eh_typeinfo_" + className;
+ 
+@@ -2810,8 +2839,9 @@ CGObjCGNU::GenerateMessageSendSuper(CodeGenFunction &CGF,
+   llvm::Value *ReceiverClass = nullptr;
+   bool isV2ABI = isRuntime(ObjCRuntime::GNUstep, 2);
+   if (isV2ABI) {
+-    ReceiverClass = GetClassNamed(CGF,
+-        Class->getSuperClass()->getNameAsString(), /*isWeak*/false);
++    ReceiverClass = GetClassNamed(
++        CGF, Class->getSuperClass()->getObjCRuntimeNameAsString().str(),
++        /*isWeak*/ false);
+     if (IsClassMessage)  {
+       // Load the isa pointer of the superclass is this is a class method.
+       ReceiverClass =
+@@ -2828,8 +2858,9 @@ CGObjCGNU::GenerateMessageSendSuper(CodeGenFunction &CGF,
+         classLookupFunction = CGM.CreateRuntimeFunction(llvm::FunctionType::get(
+               IdTy, PtrTy, true), "objc_get_class");
+       }
+-      ReceiverClass = Builder.CreateCall(classLookupFunction,
+-          MakeConstantString(Class->getNameAsString()));
++      ReceiverClass = Builder.CreateCall(
++          classLookupFunction,
++          MakeConstantString(Class->getObjCRuntimeNameAsString().str()));
+     } else {
+       // Set up global aliases for the metaclass or class pointer if they do not
+       // already exist.  These will are forward-references which will be set to
+@@ -2840,14 +2871,16 @@ CGObjCGNU::GenerateMessageSendSuper(CodeGenFunction &CGF,
+         if (!MetaClassPtrAlias) {
+           MetaClassPtrAlias = llvm::GlobalAlias::create(
+               IdElemTy, 0, llvm::GlobalValue::InternalLinkage,
+-              ".objc_metaclass_ref" + Class->getNameAsString(), &TheModule);
++              ".objc_metaclass_ref" + Class->getObjCRuntimeNameAsString().str(),
++              &TheModule);
+         }
+         ReceiverClass = MetaClassPtrAlias;
+       } else {
+         if (!ClassPtrAlias) {
+           ClassPtrAlias = llvm::GlobalAlias::create(
+               IdElemTy, 0, llvm::GlobalValue::InternalLinkage,
+-              ".objc_class_ref" + Class->getNameAsString(), &TheModule);
++              ".objc_class_ref" + Class->getObjCRuntimeNameAsString().str(),
++              &TheModule);
+         }
+         ReceiverClass = ClassPtrAlias;
+       }
+@@ -2876,7 +2909,9 @@ CGObjCGNU::GenerateMessageSendSuper(CodeGenFunction &CGF,
+ 
+   llvm::Metadata *impMD[] = {
+       llvm::MDString::get(VMContext, Sel.getAsString()),
+-      llvm::MDString::get(VMContext, Class->getSuperClass()->getNameAsString()),
++      llvm::MDString::get(
++          VMContext,
++          Class->getSuperClass()->getObjCRuntimeNameAsString().str()),
+       llvm::ConstantAsMetadata::get(llvm::ConstantInt::get(
+           llvm::Type::getInt1Ty(VMContext), IsClassMessage))};
+   llvm::MDNode *node = llvm::MDNode::get(VMContext, impMD);
+@@ -2928,7 +2963,8 @@ CGObjCGNU::GenerateMessageSend(CodeGenFunction &CGF,
+ 
+   llvm::Metadata *impMD[] = {
+       llvm::MDString::get(VMContext, Sel.getAsString()),
+-      llvm::MDString::get(VMContext, Class ? Class->getNameAsString() : ""),
++      llvm::MDString::get(
++          VMContext, Class ? Class->getObjCRuntimeNameAsString().str() : ""),
+       llvm::ConstantAsMetadata::get(llvm::ConstantInt::get(
+           llvm::Type::getInt1Ty(VMContext), Class != nullptr))};
+   llvm::MDNode *node = llvm::MDNode::get(VMContext, impMD);
+@@ -2976,7 +3012,9 @@ CGObjCGNU::GenerateMessageSend(CodeGenFunction &CGF,
      // If the return value isn't flagged as unused, and the result
      // type isn't in our narrow set where we assume compatibility,
      // we need a nil check to ensure a nil value.
@@ -6357,7 +6602,7 @@ index 9742b496c..0b3835b73 100644
        if (ResultType->isVoidType()) {
          // void results are definitely okay.
        } else if (ResultType->hasPointerRepresentation() &&
-@@ -3141,6 +3169,15 @@ GenerateMethodList(StringRef ClassName,
+@@ -3141,6 +3179,15 @@ GenerateMethodList(StringRef ClassName,
                     StringRef CategoryName,
                     ArrayRef<const ObjCMethodDecl*> Methods,
                     bool isClassMethodList) {
@@ -6373,6 +6618,98 @@ index 9742b496c..0b3835b73 100644
    if (Methods.empty())
      return NULLPtr;
  
+@@ -3403,7 +3450,8 @@ llvm::Value *CGObjCGNU::GenerateProtocolRef(CodeGenFunction &CGF,
+ }
+ 
+ llvm::Constant *CGObjCGNU::GenerateProtocolRef(const ObjCProtocolDecl *PD) {
+-  llvm::Constant *&protocol = ExistingProtocols[PD->getNameAsString()];
++  llvm::Constant *&protocol =
++      ExistingProtocols[PD->getObjCRuntimeNameAsString().str()];
+   if (!protocol)
+     GenerateProtocol(PD);
+   assert(protocol && "Unknown protocol");
+@@ -3440,7 +3488,7 @@ void CGObjCGNU::GenerateProtocol(const ObjCProtocolDecl *PD) {
+   if (PD->isNonRuntimeProtocol())
+     return;
+ 
+-  std::string ProtocolName = PD->getNameAsString();
++  std::string ProtocolName = PD->getObjCRuntimeNameAsString().str();
+ 
+   // Use the protocol definition, if there is one.
+   if (const ObjCProtocolDecl *Def = PD->getDefinition())
+@@ -3448,7 +3496,7 @@ void CGObjCGNU::GenerateProtocol(const ObjCProtocolDecl *PD) {
+ 
+   SmallVector<std::string, 16> Protocols;
+   for (const auto *PI : PD->protocols())
+-    Protocols.push_back(PI->getNameAsString());
++    Protocols.push_back(PI->getObjCRuntimeNameAsString().str());
+   SmallVector<const ObjCMethodDecl*, 16> InstanceMethods;
+   SmallVector<const ObjCMethodDecl*, 16> OptionalInstanceMethods;
+   for (const auto *I : PD->instance_methods())
+@@ -3590,14 +3638,15 @@ llvm::Constant *CGObjCGNU::GenerateCategoryProtocolList(const
+       GetRuntimeProtocolList(RefPro.begin(), RefPro.end());
+   SmallVector<std::string, 16> Protocols;
+   for (const auto *PD : RuntimeProtos)
+-    Protocols.push_back(PD->getNameAsString());
++    Protocols.push_back(PD->getObjCRuntimeNameAsString().str());
+   return GenerateProtocolList(Protocols);
+ }
+ 
+ void CGObjCGNU::GenerateCategory(const ObjCCategoryImplDecl *OCD) {
+   const ObjCInterfaceDecl *Class = OCD->getClassInterface();
+-  std::string ClassName = Class->getNameAsString();
+-  std::string CategoryName = OCD->getNameAsString();
++  std::string ClassName = Class->getObjCRuntimeNameAsString().str();
++  std::string CategoryName =
++      getObjC3RuntimeCategoryName(OCD->getCategoryDecl()).str();
+ 
+   // Collect the names of referenced protocols
+   const ObjCCategoryDecl *CatDecl = OCD->getCategoryDecl();
+@@ -3734,7 +3783,7 @@ void CGObjCGNU::RegisterAlias(const ObjCCompatibleAliasDecl *OAD) {
+   // Get the class declaration for which the alias is specified.
+   ObjCInterfaceDecl *ClassDecl =
+     const_cast<ObjCInterfaceDecl *>(OAD->getClassInterface());
+-  ClassAliases.emplace_back(ClassDecl->getNameAsString(),
++  ClassAliases.emplace_back(ClassDecl->getObjCRuntimeNameAsString().str(),
+                             OAD->getNameAsString());
+ }
+ 
+@@ -3746,14 +3795,14 @@ void CGObjCGNU::GenerateClass(const ObjCImplementationDecl *OID) {
+     OID->getClassInterface()->getSuperClass();
+   std::string SuperClassName;
+   if (SuperClassDecl) {
+-    SuperClassName = SuperClassDecl->getNameAsString();
++    SuperClassName = SuperClassDecl->getObjCRuntimeNameAsString().str();
+     EmitClassRef(SuperClassName);
+   }
+ 
+   // Get the class name
+   ObjCInterfaceDecl *ClassDecl =
+       const_cast<ObjCInterfaceDecl *>(OID->getClassInterface());
+-  std::string ClassName = ClassDecl->getNameAsString();
++  std::string ClassName = ClassDecl->getObjCRuntimeNameAsString().str();
+ 
+   // Emit the symbol that is used to generate linker errors if this class is
+   // referenced in other modules but not declared.
+@@ -3865,7 +3914,7 @@ void CGObjCGNU::GenerateClass(const ObjCImplementationDecl *OID) {
+       GetRuntimeProtocolList(RefProtocols.begin(), RefProtocols.end());
+   SmallVector<std::string, 16> Protocols;
+   for (const auto *I : RuntimeProtocols)
+-    Protocols.push_back(I->getNameAsString());
++    Protocols.push_back(I->getObjCRuntimeNameAsString().str());
+ 
+   // Get the superclass pointer.
+   llvm::Constant *SuperClass;
+@@ -4468,7 +4517,8 @@ llvm::Value *CGObjCGNU::EmitIvarOffset(CodeGenFunction &CGF,
+               CharUnits::fromQuantity(4)),
+           PtrDiffTy);
+     std::string name = "__objc_ivar_offset_value_" +
+-      Interface->getNameAsString() +"." + Ivar->getNameAsString();
++                       Interface->getObjCRuntimeNameAsString().str() + "." +
++                       Ivar->getNameAsString();
+     CharUnits Align = CGM.getIntAlign();
+     llvm::Value *Offset = TheModule.getGlobalVariable(name);
+     if (!Offset) {
 diff --git a/clang/lib/CodeGen/CGStmt.cpp b/clang/lib/CodeGen/CGStmt.cpp
 index 27e74d966..75ec7683c 100644
 --- a/clang/lib/CodeGen/CGStmt.cpp
@@ -15273,3 +15610,137 @@ index 000000000..e25bbbc2c
 +  __block struct HeapRecord shared = input;
 +  return ^int { return shared.marker + __objc3_has_value(shared.value); };
 +}
+diff --git a/clang/test/ObjC3/CodeGen/module-runtime-names.m b/clang/test/ObjC3/CodeGen/module-runtime-names.m
+new file mode 100644
+index 000000000..efdc2b6fc
+--- /dev/null
++++ b/clang/test/ObjC3/CodeGen/module-runtime-names.m
+@@ -0,0 +1,71 @@
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -fobjc-runtime=gnustep-2.2 -fexceptions -fobjc-exceptions -fobjc-arc -emit-llvm -o - %s | FileCheck %s --implicit-check-not=@._OBJC_CLASS_SourceRoot --implicit-check-not=@._OBJC_CLASS_SourceChild --implicit-check-not=@._OBJC_PROTOCOL_SourceProtocol
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -fobjc-runtime=gnustep-2.2 -fexceptions -fobjc-exceptions -x objective-c++ -std=c++20 -fcxx-exceptions -emit-llvm -o - %s | FileCheck %s --implicit-check-not=@._OBJC_CLASS_SourceRoot --implicit-check-not=@._OBJC_CLASS_SourceChild --implicit-check-not=@._OBJC_PROTOCOL_SourceProtocol --check-prefixes=CHECK,CXX
++// Runtime names govern definitions, references, ivars, protocols, inheritance,
++// direct methods and typed exception metadata under GNUstep 2.2.
++__attribute__((objc_runtime_name("OwnedProtocol")))
++@protocol SourceProtocol
++- (int)value;
++@end
++
++__attribute__((objc_root_class,objc_runtime_name("OwnedRoot")))
++@interface SourceRoot <SourceProtocol> {
++@public
++  Class isa;
++  int slot;
++}
+++ (Class)class;
++- (int)value;
++- (int)directValue __attribute__((objc_direct));
++@end
++@implementation SourceRoot
+++ (Class)class { return self; }
++- (int)value { return slot; }
++- (int)directValue { return slot + 1; }
++@end
++
++__attribute__((objc_runtime_name("OwnedChild")))
++@interface SourceChild : SourceRoot @end
++@implementation SourceChild
++- (int)value { return [super value] + 1; }
++@end
++
++Class class_reference(void) { return [SourceRoot class]; }
++id protocol_reference(void) { return (id)@protocol(SourceProtocol); }
++int ivar_reference(SourceRoot *object) { return object->slot; }
++int direct_reference(SourceRoot *object) { return [object directValue]; }
++int exception_reference(SourceRoot *object) {
++  @try { @throw object; }
++  @catch (SourceRoot *caught) { return [caught directValue]; }
++}
++
++// CHECK-DAG: @._OBJC_CLASS_OwnedRoot =
++// CHECK-DAG: @._OBJC_CLASS_OwnedChild =
++// CHECK-DAG: @._OBJC_REF_CLASS_OwnedRoot =
++// CHECK-DAG: @._OBJC_PROTOCOL_OwnedProtocol =
++// CHECK-DAG: @__objc_ivar_offset_OwnedRoot.slot.i =
++// CHECK-DAG: define{{.*}} @_i_OwnedRoot__directValue(
++// CXX-DAG: @__objc_eh_typeinfo_OwnedRoot =
++
++__attribute__((objc_root_class, objc_runtime_name("__objc3_m_Class")))
++@interface OwnedMethods
+++ (int)a_b:(int)value;
+++ (int)a:(int)value b:(int)other;
+++ (int)direct __attribute__((objc_direct));
++@end
++@implementation OwnedMethods
+++ (int)a_b:(int)value { return value; }
+++ (int)a:(int)value b:(int)other { return value + other; }
+++ (int)direct { return 42; }
++@end
++__attribute__((annotate("objc3.module-name:__objc3_m_Category")))
++@interface OwnedMethods (SourceCategory)
+++ (int)category;
++@end
++@implementation OwnedMethods (SourceCategory)
+++ (int)category { return [OwnedMethods direct]; }
++@end
++// CHECK-DAG: define{{.*}} @__objc3_method_c_R15_5f5f6f626a63335f6d5f436c617373_C0__S4_615f623a_M(
++// CHECK-DAG: define{{.*}} @__objc3_method_c_R15_5f5f6f626a63335f6d5f436c617373_C0__S4_613a623a_M(
++// CHECK-DAG: define{{.*}} @__objc3_method_c_R15_5f5f6f626a63335f6d5f436c617373_C0__S6_646972656374_D(
++// CHECK-DAG: define{{.*}} @__objc3_method_c_R15_5f5f6f626a63335f6d5f436c617373_C18_5f5f6f626a63335f6d5f43617465676f7279_S8_63617465676f7279_M(
++// CHECK-DAG: c"__objc3_m_Category\00"
+diff --git a/clang/test/ObjC3/CodeGen/module-runtime-names-debug.m b/clang/test/ObjC3/CodeGen/module-runtime-names-debug.m
+new file mode 100644
+index 000000000..5bb2cfe07
+--- /dev/null
++++ b/clang/test/ObjC3/CodeGen/module-runtime-names-debug.m
+@@ -0,0 +1,31 @@
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -fobjc-runtime=gnustep-2.2 -debug-info-kind=standalone -emit-llvm -o - %s | FileCheck %s
++// Preserve source spelling and the distinct runtime binding for debuggers.
++__attribute__((objc_root_class, objc_runtime_name("OwnedDebugRoot")))
++@interface SourceRoot { int value; }
++- (int)read;
++- (int)directRead __attribute__((objc_direct));
++@end
++@implementation SourceRoot
++- (int)read { return value; }
++- (int)directRead { return value + 1; }
++@end
++__attribute__((objc_runtime_name("OwnedForward")))
++@interface Forward @end
++Forward *forward;
++SourceRoot *root;
++
++__attribute__((objc_root_class, objc_runtime_name("__objc3_m_debug")))
++@interface OwnedSource
++- (int)value;
++@end
++@implementation OwnedSource
++- (int)value { return 1; }
++@end
++OwnedSource *owned;
++
++// CHECK: !DICompositeType(tag: DW_TAG_structure_type, name: "SourceRoot",{{.*}}annotations: ![[ANNOTATIONS:[0-9]+]])
++// CHECK: !DISubprogram(name: "-[SourceRoot directRead]", linkageName: "_i_OwnedDebugRoot__directRead",
++// CHECK: ![[ANNOTATIONS]] = !{![[ANNOTATION:[0-9]+]]}
++// CHECK: ![[ANNOTATION]] = !{!"objc_runtime_name", !"OwnedDebugRoot"}
++// CHECK: !{!"objc_runtime_name", !"OwnedForward"}
++// CHECK: distinct !DISubprogram(name: "-[OwnedSource value]", linkageName: "__objc3_method_i_R{{[0-9]+}}_{{[0-9a-f]+}}_C0__S5_76616c7565_M",
+diff --git a/clang/test/ObjC3/CodeGen/module-native-companions.cpp b/clang/test/ObjC3/CodeGen/module-native-companions.cpp
+new file mode 100644
+index 000000000..2aa06c88c
+--- /dev/null
++++ b/clang/test/ObjC3/CodeGen/module-native-companions.cpp
+@@ -0,0 +1,14 @@
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -std=c++20 -emit-llvm -o - %s | FileCheck %s
++int create();
++template<int N> int variable __asm__("__objc3_m_variable") = N + create();
++template<class T> int function() __asm__("__objc3_m_function");
++template<class T> int function() { static int local = create(); return local; }
++thread_local int tls __asm__("__objc3_m_tls") = create();
++const int &reference __asm__("__objc3_m_reference") = create();
++int use() { return variable<0> + function<int>() + tls + reference; }
++// CHECK-DAG: @_ZGV{{[0-9]+}}__objc3_m_variable =
++// CHECK-DAG: @_ZZ{{[0-9]+}}__objc3_m_function{{.*}}E5local =
++// CHECK-DAG: @_ZGVZ{{[0-9]+}}__objc3_m_function{{.*}}E5local =
++// CHECK-DAG: @_ZTH{{[0-9]+}}__objc3_m_tls =
++// CHECK-DAG: define {{.*}} @_ZTW{{[0-9]+}}__objc3_m_tls(
++// CHECK-DAG: @_ZGR{{[0-9]+}}__objc3_m_reference_ =

@@ -243,6 +243,19 @@ module partitions and exact-provider grants through native imports, source
 builds and relocated immutable packages. Re-exports retain public visibility
 without forwarding privileges.
 
+The [module-owned naming contract](docs/roadmap/linux_module_owned_names.md)
+binds native functions, globals, classes, protocols and categories to their
+module and package identity. Independent providers can reuse private source
+names. Canonical interfaces, ownership projections, immutable packages and the
+Linux debugger preserve those bindings.
+
+The [structured runtime API](docs/roadmap/linux_structured_runtime.md) provides
+public C task groups and serial actor mailboxes, including nested cancellation,
+completion polling, logical hop facts and cleanup-aware joins. Native worker
+execution and instrumented ASan, LeakSanitizer, UBSan and ThreadSanitizer checks
+cover O0/O2 behavior. Language async/await and compiler actor isolation remain
+reserved.
+
 The [public availability contract](docs/roadmap/linux_api_availability.md) keeps
 native deprecation, unavailability and platform metadata in semantic identities
 and preserves their diagnostics in source-free consumers. Public metadata edits
@@ -285,11 +298,11 @@ Native validation checks O0/O2 behavior, ABI, ownership, cleanup, expected
 failures, installed interface consumers and editor tools. Evidence records bind
 source, compiler, runtime, system headers and executable contents and reject
 changes during validation. The
-[Linux SDK acceptance receipt](docs/support/linux_module_spi_acceptance.json)
+[Linux SDK acceptance receipt](docs/support/linux_module_names_acceptance.json)
 records the qualified archive and fresh-host checks; each new SDK has its own
 qualification and release receipt. Runtime timings must be distinguished from
 compile and wrapper timings when comparing performance.
-The [current latency report](docs/support/linux_module_spi_latency.json) records
+The [current latency report](docs/support/linux_module_names_latency.json) records
 warm command measurements and regression budgets for its AMD CPU model and quota.
 The [historical paired report](docs/support/linux_development_latency.json) retains
 the earlier Intel measurements; cross-CPU speedup comparisons are inapplicable.

@@ -1,0 +1,272 @@
+#include "objc3_runtime_services.h"
+#include <assert.h>
+#include <stdlib.h>
+#include <string.h>
+
+typedef struct Trace {
+  int destroyed;
+  int completed;
+  int failed;
+  int cancelled;
+} Trace;
+typedef struct Frame {
+  Trace *trace;
+  int fail;
+} Frame;
+static objc3_service_status copy_int(void *destination, const void *source) {
+  memcpy(destination, source, sizeof(int));
+  return OBJC3_SERVICE_OK;
+}
+static void destroy_int(void *value) { (void)value; }
+static objc3_service_status move_int(void *destination, void *source) {
+  return copy_int(destination, source);
+}
+#ifdef __cplusplus
+#define INT_ALIGNMENT alignof(int)
+#define ZERO_INIT                                                              \
+  {                                                                            \
+  }
+#else
+#define INT_ALIGNMENT _Alignof(int)
+#define ZERO_INIT {0}
+#endif
+static const objc3_value_ops int_ops = {sizeof(objc3_value_ops),
+                                        OBJC3_VALUE_OPS_VERSION,
+                                        sizeof(int),
+                                        INT_ALIGNMENT,
+                                        copy_int,
+                                        move_int,
+                                        destroy_int};
+static void completed(void *context, const objc3_completion *completion) {
+  Trace *trace = (Trace *)context;
+  ++trace->completed;
+  trace->failed += completion->kind == OBJC3_COMPLETION_ERROR;
+  trace->cancelled += completion->kind == OBJC3_COMPLETION_CANCELLED;
+}
+static void inspect_failed(void *context, const objc3_completion *completion) {
+  int *observed = (int *)context;
+  assert(completion->kind == OBJC3_COMPLETION_ERROR && completion->error);
+  assert(*(const int *)objc3_error_payload(completion->error) == 42);
+  ++*observed;
+}
+static void destroy_frame(void *context) {
+  Frame *frame = (Frame *)context;
+  ++frame->trace->destroyed;
+  free(frame);
+}
+static void resume(objc3_task_t *task, void *context) {
+  Frame *frame = (Frame *)context;
+  objc3_completion completion = ZERO_INIT;
+  completion.struct_size = sizeof(completion);
+  completion.version = OBJC3_SERVICE_ABI_VERSION;
+  objc3_error_t *error = NULL;
+  if (objc3_task_is_cancel_requested(task)) {
+    completion.kind = OBJC3_COMPLETION_CANCELLED;
+  } else if (frame->fail) {
+    int payload = 42;
+    assert(objc3_error_create(&payload, &int_ops, &error) == OBJC3_SERVICE_OK);
+    completion.kind = OBJC3_COMPLETION_ERROR;
+    completion.error = error;
+  } else {
+    completion.kind = OBJC3_COMPLETION_SUCCESS;
+  }
+  assert(objc3_task_complete(task, &completion) == OBJC3_SERVICE_OK);
+  objc3_error_release(error);
+}
+static objc3_task_t *start(objc3_executor_t *executor, Trace *trace, int fail) {
+  Frame *frame = (Frame *)malloc(sizeof(Frame));
+  assert(frame);
+  frame->trace = trace;
+  frame->fail = fail;
+  objc3_task_start_options options = ZERO_INIT;
+  options.struct_size = sizeof(options);
+  options.version = OBJC3_SERVICE_ABI_VERSION;
+  options.executor = executor;
+  options.frame = frame;
+  options.resume = resume;
+  options.destroy = destroy_frame;
+  options.completion = completed;
+  options.completion_context = trace;
+  objc3_task_t *task = NULL;
+  assert(objc3_task_start(&options, &task) == OBJC3_SERVICE_OK);
+  return task;
+}
+
+static void groups(void) {
+  Trace trace = ZERO_INIT;
+  objc3_executor_t *executor = NULL;
+  assert(objc3_executor_create(1, &executor) == OBJC3_SERVICE_OK);
+  objc3_task_group_t *parent = NULL, *child = NULL;
+  assert(objc3_task_group_create(NULL, &parent) == OBJC3_SERVICE_OK);
+  assert(objc3_task_group_create(parent, &child) == OBJC3_SERVICE_OK);
+  assert(objc3_task_group_retain(parent) == parent);
+  objc3_task_group_release(parent);
+  objc3_task_t *failed = start(executor, &trace, 1);
+  objc3_task_t *sibling = start(executor, &trace, 0);
+  objc3_task_t *ancestor_sibling = start(executor, &trace, 0);
+  assert(objc3_task_group_add(child, failed) == OBJC3_SERVICE_OK);
+  assert(objc3_task_group_add(child, failed) == OBJC3_SERVICE_INVALID_ARGUMENT);
+  assert(objc3_task_group_add(child, sibling) == OBJC3_SERVICE_OK);
+  assert(objc3_task_group_add(parent, ancestor_sibling) == OBJC3_SERVICE_OK);
+  objc3_task_t *next = failed;
+  assert(objc3_task_group_next(NULL, &next) == OBJC3_SERVICE_INVALID_ARGUMENT &&
+         !next);
+  assert(objc3_task_group_next(child, &next) == OBJC3_SERVICE_NOT_READY &&
+         !next);
+  assert(objc3_task_group_join(parent) == OBJC3_SERVICE_NOT_READY);
+  assert(objc3_task_group_close(parent) == OBJC3_SERVICE_OK);
+  assert(objc3_task_group_add(parent, failed) == OBJC3_SERVICE_CLOSED);
+  assert(objc3_task_group_join(parent) == OBJC3_SERVICE_NOT_READY);
+  uint32_t executed = 0;
+  assert(objc3_executor_pump(executor, 1, &executed) == OBJC3_SERVICE_OK &&
+         executed == 1);
+  assert(objc3_task_is_cancel_requested(sibling));
+  assert(objc3_task_is_cancel_requested(ancestor_sibling));
+  assert(objc3_task_group_next(child, &next) == OBJC3_SERVICE_OK &&
+         next == failed);
+  int observed = 0;
+  assert(objc3_task_add_waiter(next, inspect_failed, &observed) ==
+         OBJC3_SERVICE_OK);
+  assert(observed == 1);
+  objc3_task_release(next);
+  assert(objc3_task_group_next(child, &next) == OBJC3_SERVICE_NOT_READY &&
+         !next);
+  assert(objc3_executor_pump(executor, 8, &executed) == OBJC3_SERVICE_OK &&
+         executed == 2);
+  assert(objc3_task_group_join(parent) == OBJC3_SERVICE_OK);
+  assert(trace.completed == 3 && trace.destroyed == 3 && trace.failed == 1 &&
+         trace.cancelled == 2);
+  assert(objc3_task_group_next(child, &next) == OBJC3_SERVICE_OK &&
+         next == sibling);
+  objc3_task_release(next);
+  assert(objc3_task_group_next(child, &next) == OBJC3_SERVICE_CLOSED && !next);
+  assert(objc3_task_group_next(parent, &next) == OBJC3_SERVICE_OK &&
+         next == ancestor_sibling);
+  objc3_task_release(next);
+  assert(objc3_task_group_next(parent, &next) == OBJC3_SERVICE_CLOSED && !next);
+  assert(objc3_task_group_cancel(parent) == OBJC3_SERVICE_OK);
+  objc3_task_release(failed);
+  objc3_task_release(sibling);
+  objc3_task_release(ancestor_sibling);
+  objc3_task_group_release(child);
+  objc3_task_group_release(parent);
+  objc3_executor_release(executor);
+}
+
+typedef struct ActorTrace {
+  objc3_actor_t *first;
+  objc3_actor_t *second;
+  int ran;
+  int destroyed;
+  int sequence[3];
+} ActorTrace;
+typedef struct Job {
+  ActorTrace *trace;
+  objc3_actor_t *actor;
+  int value;
+} Job;
+static void actor_job(void *context);
+static void destroy_job(void *context) {
+  Job *job = (Job *)context;
+  objc3_current_actor_facts current = ZERO_INIT;
+  current.struct_size = sizeof(current);
+  current.version = OBJC3_ACTOR_SERVICE_VERSION;
+  assert(objc3_actor_current_facts(&current) == OBJC3_SERVICE_OK);
+  assert(current.actor_identity == objc3_actor_identity(job->actor));
+  assert(objc3_actor_join(job->actor) == OBJC3_SERVICE_NOT_READY);
+  ++job->trace->destroyed;
+  free(job);
+}
+static Job *job_for(ActorTrace *trace, objc3_actor_t *actor, int value) {
+  Job *job = (Job *)malloc(sizeof(Job));
+  assert(job);
+  job->trace = trace;
+  job->actor = actor;
+  job->value = value;
+  return job;
+}
+static void actor_job(void *context) {
+  Job *job = (Job *)context;
+  ActorTrace *trace = job->trace;
+  objc3_current_actor_facts current = ZERO_INIT;
+  current.struct_size = sizeof(current);
+  current.version = OBJC3_ACTOR_SERVICE_VERSION;
+  assert(objc3_actor_current_facts(&current) == OBJC3_SERVICE_OK);
+  assert(current.actor_identity == objc3_actor_identity(job->actor));
+  assert(current.executor_identity ==
+         objc3_actor_executor_identity(job->actor));
+  assert(trace->ran < 3);
+  trace->sequence[trace->ran++] = job->value;
+  if (job->value == 1) {
+    objc3_actor_hop_facts facts = ZERO_INIT;
+    facts.struct_size = sizeof(facts);
+    facts.version = OBJC3_ACTOR_SERVICE_VERSION;
+    assert(objc3_actor_enqueue(trace->second, actor_job,
+                               job_for(trace, trace->second, 2), destroy_job,
+                               &facts) == OBJC3_SERVICE_OK);
+    assert(facts.actor_hop == 1 && facts.executor_hop == 0);
+    assert(facts.current_actor_identity == current.actor_identity);
+    assert(objc3_actor_enqueue(trace->first, actor_job,
+                               job_for(trace, trace->first, 3), destroy_job,
+                               &facts) == OBJC3_SERVICE_OK);
+    assert(facts.actor_hop == 0 && facts.executor_hop == 0);
+  }
+}
+static void actors(void) {
+  objc3_executor_t *executor = NULL;
+  assert(objc3_executor_create(1, &executor) == OBJC3_SERVICE_OK);
+  ActorTrace trace = ZERO_INIT;
+  assert(objc3_actor_create(executor, &trace.first) == OBJC3_SERVICE_OK);
+  assert(objc3_actor_create(executor, &trace.second) == OBJC3_SERVICE_OK);
+  assert(objc3_actor_identity(trace.first) !=
+         objc3_actor_identity(trace.second));
+  assert(objc3_actor_executor_identity(trace.first) ==
+         objc3_actor_executor_identity(trace.second));
+  assert(objc3_actor_retain(trace.first) == trace.first);
+  objc3_actor_release(trace.first);
+  objc3_actor_hop_facts facts = ZERO_INIT;
+  facts.struct_size = sizeof(facts);
+  facts.version = 99;
+  Job *job = job_for(&trace, trace.first, 1);
+  objc3_actor_hop_facts before = facts;
+  assert(objc3_actor_enqueue(trace.first, actor_job, job, destroy_job,
+                             &facts) == OBJC3_SERVICE_UNSUPPORTED_VERSION);
+  assert(memcmp(&facts, &before, sizeof(facts)) == 0 && trace.destroyed == 0);
+  facts.version = OBJC3_ACTOR_SERVICE_VERSION;
+  assert(objc3_actor_enqueue(trace.first, actor_job, job, destroy_job,
+                             &facts) == OBJC3_SERVICE_OK);
+  assert(facts.actor_hop == 1 && facts.executor_hop == 1);
+  uint32_t executed = 0;
+  assert(objc3_executor_pump(executor, 8, &executed) == OBJC3_SERVICE_OK);
+  assert(trace.ran == 3 && trace.destroyed == 3);
+  assert(trace.sequence[0] == 1 && trace.sequence[1] == 3 &&
+         trace.sequence[2] == 2);
+  assert(objc3_actor_close(trace.first) == OBJC3_SERVICE_OK);
+  assert(objc3_actor_close(trace.second) == OBJC3_SERVICE_OK);
+  assert(objc3_actor_join(trace.first) == OBJC3_SERVICE_OK);
+  assert(objc3_actor_join(trace.second) == OBJC3_SERVICE_OK);
+  objc3_actor_t *cancelled = NULL;
+  assert(objc3_actor_create(executor, &cancelled) == OBJC3_SERVICE_OK);
+  assert(objc3_actor_enqueue(cancelled, actor_job,
+                             job_for(&trace, cancelled, 9), destroy_job,
+                             &facts) == OBJC3_SERVICE_OK);
+  assert(objc3_actor_cancel(cancelled) == OBJC3_SERVICE_OK);
+  assert(objc3_actor_join(cancelled) == OBJC3_SERVICE_NOT_READY);
+  assert(objc3_executor_pump(executor, 8, &executed) == OBJC3_SERVICE_OK);
+  assert(objc3_actor_join(cancelled) == OBJC3_SERVICE_OK &&
+         trace.destroyed == 4 && trace.ran == 3);
+  objc3_actor_release(cancelled);
+  objc3_actor_release(trace.second);
+  objc3_actor_release(trace.first);
+  objc3_executor_release(executor);
+  objc3_current_actor_facts current = ZERO_INIT;
+  current.struct_size = sizeof(current);
+  current.version = OBJC3_ACTOR_SERVICE_VERSION;
+  assert(objc3_actor_current_facts(&current) == OBJC3_SERVICE_OK &&
+         current.actor_identity == 0 && current.executor_identity == 0);
+}
+int main(void) {
+  groups();
+  actors();
+  return 0;
+}

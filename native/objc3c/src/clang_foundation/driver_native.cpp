@@ -25,7 +25,8 @@ bool UsesInterfaceCompiler(int argc, char **argv) {
     if (arg == "--") break;
     if (arg == "--emit-object" || arg == "--emit-llvm" ||
         arg == "--emit-interface" || arg == "--project-ownership" ||
-        arg == "--export-declaration" || arg == "--import-spi" ||
+        arg == "--export-declaration" || arg == "--module-source-root" ||
+        arg == "--module-owned-names" || arg == "--import-spi" ||
         arg == "--import-module" || arg == "--emit-dependency-record" ||
         arg == "--source-imports")
       return true;

@@ -51,7 +51,8 @@ const std::vector<llvm::StringRef> kSupportedSemantics = {
     "objc3.cxx-data-interfaces.v1",
     "objc3.ownership-projection.v1",
     "objc3.api-availability.v1",
-    "objc3.api-partitions.v1"};
+    "objc3.api-partitions.v1",
+    "objc3.module-owned-names.v1"};
 
 void Add(std::vector<InterfaceContractDiagnostic> &out, const llvm::Twine &code,
          const llvm::Twine &message, const llvm::Twine &subject = llvm::Twine()) {
@@ -153,9 +154,16 @@ bool CheckExportCollisions(
     std::vector<InterfaceContractDiagnostic> &diagnostics) {
   std::map<std::string, InterfaceDeclarationIdentity> by_name;
   for (const auto &decl : declarations) {
+    if (decl.kind == "ObjCMethod" || decl.kind == "ObjCProperty" ||
+        decl.kind == "ObjCIvar" || decl.kind == "Field" ||
+        decl.kind == "ObjCCategory")
+      continue;
     const bool is_tag = decl.kind == "Record" || decl.kind == "CXXRecord" ||
                         decl.kind == "Enum";
-    const std::string lookup_key = (is_tag ? "tag:" : "ordinary:") + decl.qualified_name;
+    const std::string lookup_key = (decl.kind == "ObjCProtocol" ? "protocol:"
+                                    : is_tag                    ? "tag:"
+                                                                : "ordinary:") +
+                                   decl.qualified_name;
     const auto found = by_name.find(lookup_key);
     if (found == by_name.end()) {
       by_name.emplace(lookup_key, decl);
@@ -393,7 +401,10 @@ std::unique_ptr<InterfaceImportSession> InterfaceImportSession::Prepare(
     ast_arguments.push_back("-iquote");
     ast_arguments.push_back(include_directory.empty() ? "." : include_directory.str().str());
     module.ast = clang::tooling::buildASTFromCodeWithArgs(
-        module.source_bytes, ast_arguments, module.input.source_path,
+        module.source_bytes, ast_arguments,
+        (include_directory.str() + "/" +
+         BuildInterfaceIncludePath(module.sidecar.module.canonical_name))
+            .str(),
         "clang-tool", std::make_shared<clang::PCHContainerOperations>(),
         clang::tooling::getClangStripDependencyFileAdjuster(), virtual_files,
         nullptr, llvm::vfs::createPhysicalFileSystem());
@@ -530,6 +541,31 @@ InterfaceImportReport InterfaceImportSession::ImportInto(
   std::vector<std::unique_ptr<clang::ASTImporter>> importers;
   for (auto index : impl_->import_order) {
     auto &module = impl_->modules[index];
+    // Keep canonical origins as FileEntries in the consumer. ASTImporter's
+    // buffer-only fallback loses the filename needed by native C typedef USRs
+    // and by the owning-source boundary for imported declarations.
+    auto &source_manager = module.ast->getSourceManager();
+    for (unsigned i = 0; i < source_manager.local_sloc_entry_size(); ++i) {
+      const auto &entry = source_manager.getLocalSLocEntry(i);
+      if (!entry.isFile()) continue;
+      const auto &cache = entry.getFile().getContentCache();
+      if (!cache.OrigEntry ||
+          !cache.OrigEntry->getName().ends_with(".objc3i"))
+        continue;
+      auto buffer = cache.getBufferOrNone(module.ast->getDiagnostics(),
+                                           module.ast->getFileManager(), {});
+      if (!buffer) {
+        Add(report.diagnostics, "O3IFC143",
+            "canonical interface source buffer is unavailable",
+            module.sidecar.module.canonical_name);
+        return report;
+      }
+      auto file = target_file_manager.getVirtualFileRef(
+          cache.OrigEntry->getName(), buffer->getBufferSize(), 0);
+      target_context.getSourceManager().overrideFileContents(
+          file, llvm::MemoryBuffer::getMemBufferCopy(
+                    buffer->getBuffer(), cache.OrigEntry->getName()));
+    }
     std::set<std::string> expected_ids;
     for (const auto &identity : module.sidecar.declarations)
       expected_ids.insert(identity.stable_id);

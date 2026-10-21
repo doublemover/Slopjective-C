@@ -41,6 +41,7 @@ struct InterfaceDeclarationIdentity {
   InterfaceEffectIdentity effects;
   // Empty for public API. A named SPI group is a required semantic contract.
   std::string spi_group;
+  std::string native_symbol_name;
 };
 
 // Compare the complete declaration contract, including every modeled effect.

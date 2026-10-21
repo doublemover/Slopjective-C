@@ -1,6 +1,7 @@
 #include "clang_foundation/interface_emitter.h"
-#include "clang_foundation/interface_module_resolver.h"
 #include "clang_foundation/ast_effect_identity.h"
+#include "clang_foundation/interface_module_resolver.h"
+#include "clang_foundation/module_names.h"
 
 #include <algorithm>
 #include <cstdint>
@@ -54,9 +55,9 @@ std::string CanonicalType(clang::QualType type,
 }
 
 bool IsInMainFile(const clang::ASTContext &context,
-                  clang::SourceLocation location) {
-  return location.isValid() &&
-         context.getSourceManager().isWrittenInMainFile(location);
+                  clang::SourceLocation location,
+                  const std::string &source_root = {}) {
+  return IsModuleOwnedSource(context, location, source_root);
 }
 
 bool IsTopLevel(const clang::NamedDecl *declaration) {
@@ -67,26 +68,28 @@ bool IsTopLevel(const clang::NamedDecl *declaration) {
 }
 
 bool IsPublicContainer(const clang::DeclContext *context,
-                       const clang::ASTContext &ast) {
+                       const clang::ASTContext &ast,
+                       const std::string &source_root = {}) {
   if (const auto *interface = llvm::dyn_cast<clang::ObjCInterfaceDecl>(context))
-    return IsInMainFile(ast, interface->getLocation()) &&
+    return IsInMainFile(ast, interface->getLocation(), source_root) &&
            interface->isExternallyVisible();
   if (const auto *protocol = llvm::dyn_cast<clang::ObjCProtocolDecl>(context))
-    return IsInMainFile(ast, protocol->getLocation()) &&
+    return IsInMainFile(ast, protocol->getLocation(), source_root) &&
            protocol->isExternallyVisible();
   if (const auto *category = llvm::dyn_cast<clang::ObjCCategoryDecl>(context)) {
     const auto *interface = category->getClassInterface();
     return !category->IsClassExtension() && interface &&
-           IsInMainFile(ast, category->getLocation()) &&
+           IsInMainFile(ast, category->getLocation(), source_root) &&
            interface->isExternallyVisible();
   }
   return false;
 }
 
 bool IsIdentityCandidate(const clang::NamedDecl *declaration,
-                         const clang::ASTContext &context) {
+                         const clang::ASTContext &context,
+                         const std::string &source_root = {}) {
   if (declaration->isImplicit() ||
-      !IsInMainFile(context, declaration->getLocation()))
+      !IsInMainFile(context, declaration->getLocation(), source_root))
     return false;
 
   if (IsTopLevel(declaration)) {
@@ -123,7 +126,8 @@ bool IsIdentityCandidate(const clang::NamedDecl *declaration,
                 llvm::cast<clang::EnumDecl>(declaration->getDeclContext())));
   if (llvm::isa<clang::ObjCMethodDecl, clang::ObjCPropertyDecl,
                 clang::ObjCIvarDecl>(declaration))
-    return IsPublicContainer(declaration->getDeclContext(), context);
+    return IsPublicContainer(declaration->getDeclContext(), context,
+                             source_root);
   return false;
 }
 
@@ -366,7 +370,10 @@ std::string AvailabilityIdentity(const clang::NamedDecl *declaration) {
     } else {
       continue;
     }
-    attributes.push_back(std::move(value));
+    // ASTImporter can retain the same availability fact on several inherited
+    // redeclarations. Repetition does not change the declaration contract.
+    if (std::find(attributes.begin(), attributes.end(), value) == attributes.end())
+      attributes.push_back(std::move(value));
   }
   std::string result;
   for (const auto &value : attributes)
@@ -410,9 +417,10 @@ class TypeDependencyVisitor final
                          InterfaceEmissionArtifact &result,
                          const std::set<std::string> &resolved_ids,
                          const std::vector<std::string> &exports,
-                         std::string spi_group)
+                         std::string spi_group, const std::string &source_root)
        : context_(context), result_(result), resolved_ids_(resolved_ids),
-         exports_(exports), spi_group_(std::move(spi_group)) {}
+         exports_(exports), spi_group_(std::move(spi_group)),
+         source_root_(source_root) {}
 
    void CheckVisibility(const clang::NamedDecl *declaration) {
      if (declaration) {
@@ -512,15 +520,22 @@ class TypeDependencyVisitor final
   const std::set<std::string> &resolved_ids_;
   const std::vector<std::string> &exports_;
   std::string spi_group_;
+  std::string source_root_;
+  bool IsInMainFile(const clang::ASTContext &context,
+                    clang::SourceLocation location) const {
+    return IsModuleOwnedSource(context, location, source_root_);
+  }
 };
 
 bool CheckTypeDependencies(const clang::NamedDecl *declaration,
                            const clang::ASTContext &context,
                            InterfaceEmissionArtifact &result,
                            const std::set<std::string> &resolved_ids,
-                           const std::vector<std::string> &exports = {}) {
+                           const std::vector<std::string> &exports = {},
+                           const std::string &source_root = {}) {
   TypeDependencyVisitor visitor(context, result, resolved_ids, exports,
-                                ReadInterfaceSPIGroup(declaration));
+                                ReadInterfaceSPIGroup(declaration),
+                                source_root);
   auto check = [&](clang::QualType type) {
     if (type.isNull()) return;
     visitor.TraverseType(type);
@@ -544,12 +559,14 @@ bool CheckTypeDependencies(const clang::NamedDecl *declaration,
     for (const auto *protocol : interface->protocols())
       visitor.CheckVisibility(protocol);
     if (const auto *superclass = interface->getSuperClass())
-      if (!IsInMainFile(context, superclass->getLocation()))
+      if (!IsInMainFile(context, superclass->getLocation(), source_root) &&
+          !visitor.IsResolved(superclass))
         AddDiagnostic(result, "O3IFC112",
                       "Objective-C superclass dependency has no resolved interface identity",
                       superclass->getNameAsString());
     for (const auto *protocol : interface->protocols())
-      if (!IsInMainFile(context, protocol->getLocation()))
+      if (!IsInMainFile(context, protocol->getLocation(), source_root) &&
+          !visitor.IsResolved(protocol))
         AddDiagnostic(result, "O3IFC112",
                       "adopted Objective-C protocol dependency has no resolved interface identity",
                       protocol->getNameAsString());
@@ -558,7 +575,8 @@ bool CheckTypeDependencies(const clang::NamedDecl *declaration,
   if (const auto *protocol = llvm::dyn_cast<clang::ObjCProtocolDecl>(declaration))
     for (const auto *adopted : protocol->protocols()) {
       visitor.CheckVisibility(adopted);
-      if (!IsInMainFile(context, adopted->getLocation()))
+      if (!IsInMainFile(context, adopted->getLocation(), source_root) &&
+          !visitor.IsResolved(adopted))
         AddDiagnostic(result, "O3IFC112",
                       "adopted Objective-C protocol dependency has no resolved interface identity",
                       adopted->getNameAsString());
@@ -631,9 +649,10 @@ class InterfaceCollector final
    InterfaceCollector(clang::ASTContext &context,
                       InterfaceEmissionArtifact &result,
                       const std::set<std::string> &resolved_ids,
-                      const std::vector<std::string> &exports = {})
+                      const std::vector<std::string> &exports = {},
+                      const std::string &source_root = {})
        : context_(context), result_(result), resolved_ids_(resolved_ids),
-         exports_(exports) {}
+         exports_(exports), source_root_(source_root) {}
 
    // Function bodies and initializers do not contribute public declarations.
    bool TraverseStmt(clang::Stmt *) { return true; }
@@ -682,7 +701,7 @@ class InterfaceCollector final
         return true;
       }
     }
-    if (!IsIdentityCandidate(declaration, context_)) {
+    if (!IsIdentityCandidate(declaration, context_, source_root_)) {
       // Native C typedefs can have no linkage while naming a callable contract.
       // Validate their type even when the current public identity model does
       // not export them, rather than silently accepting unqualified effects.
@@ -690,7 +709,7 @@ class InterfaceCollector final
           IsInMainFile(context_, declaration->getLocation()) &&
           llvm::isa<clang::TypedefNameDecl>(declaration))
         CheckTypeDependencies(declaration, context_, result_, resolved_ids_,
-                              exports_);
+                              exports_, source_root_);
       return true;
     }
     if (auto *method = llvm::dyn_cast<clang::ObjCMethodDecl>(declaration)) {
@@ -706,6 +725,14 @@ class InterfaceCollector final
         return true;
       }
     }
+    if (auto *variable = llvm::dyn_cast<clang::VarDecl>(declaration);
+        variable && variable->isInline()) {
+      AddDiagnostic(result_, "O3IFC115",
+                    "inline variable definitions cannot be represented without "
+                    "their initializer",
+                    variable->getQualifiedNameAsString());
+      return true;
+    }
     if (auto *function = llvm::dyn_cast<clang::FunctionDecl>(declaration)) {
       if (function->isInlineSpecified()) {
         AddDiagnostic(result_, "O3IFC115",
@@ -716,6 +743,13 @@ class InterfaceCollector final
     }
     for (const auto *attribute : declaration->attrs()) {
       if (attribute->isImplicit()) continue;
+      if (const auto *annotation =
+              llvm::dyn_cast<clang::AnnotateAttr>(attribute);
+          annotation &&
+          annotation->getAnnotation().starts_with("objc3.module-name:") &&
+          llvm::isa<clang::ObjCCategoryDecl>(declaration) &&
+          annotation->args_size() == 0)
+        continue;
       if (const auto *annotation =
               llvm::dyn_cast<clang::AnnotateAttr>(attribute);
           annotation && annotation->getAnnotation().starts_with("objc3.spi:")) {
@@ -734,6 +768,12 @@ class InterfaceCollector final
         }
         continue;
       }
+      if ((llvm::isa<clang::FunctionDecl, clang::VarDecl>(declaration) &&
+           llvm::isa<clang::AsmLabelAttr>(attribute)) ||
+          (llvm::isa<clang::ObjCInterfaceDecl, clang::ObjCProtocolDecl>(
+               declaration) &&
+           llvm::isa<clang::ObjCRuntimeNameAttr>(attribute)))
+        continue;
       if (llvm::isa<clang::DeprecatedAttr, clang::UnavailableAttr,
                     clang::AvailabilityAttr>(attribute))
         continue;
@@ -775,8 +815,9 @@ class InterfaceCollector final
     }
     auto *representative = Representative(declaration);
     const std::string stable_id = identity.stable_id;
-    uses_function_effects_ |= CheckTypeDependencies(
-        representative, context_, result_, resolved_ids_, exports_);
+    uses_function_effects_ |=
+        CheckTypeDependencies(representative, context_, result_, resolved_ids_,
+                              exports_, source_root_);
 
     const auto found = declarations_.find(stable_id);
     if (found == declarations_.end() ||
@@ -789,12 +830,12 @@ class InterfaceCollector final
   std::vector<clang::NamedDecl *> RootDeclarations() const {
     auto roots = root_declarations_;
     const auto &source_manager = context_.getSourceManager();
-    std::sort(roots.begin(), roots.end(), [&](const auto *a, const auto *b) {
-      const auto a_offset = source_manager.getFileOffset(a->getLocation());
-      const auto b_offset = source_manager.getFileOffset(b->getLocation());
-      if (a_offset != b_offset) return a_offset < b_offset;
-      return a->getQualifiedNameAsString() < b->getQualifiedNameAsString();
-    });
+    std::stable_sort(roots.begin(), roots.end(),
+                     [&](const auto *a, const auto *b) {
+                       return source_manager.isBeforeInTranslationUnit(
+                           source_manager.getExpansionLoc(a->getLocation()),
+                           source_manager.getExpansionLoc(b->getLocation()));
+                     });
     return roots;
   }
 
@@ -812,6 +853,11 @@ class InterfaceCollector final
   InterfaceEmissionArtifact &result_;
   const std::set<std::string> &resolved_ids_;
   const std::vector<std::string> exports_;
+  std::string source_root_;
+  bool IsInMainFile(const clang::ASTContext &context,
+                    clang::SourceLocation location) const {
+    return IsModuleOwnedSource(context, location, source_root_);
+  }
   std::map<std::string, clang::NamedDecl *> declarations_;
   std::map<std::string, InterfaceDeclarationIdentity> identities_;
   std::vector<clang::NamedDecl *> root_declarations_;
@@ -854,6 +900,12 @@ void PrintRootDeclaration(clang::NamedDecl *declaration,
           llvm::dyn_cast<clang::ObjCInterfaceDecl>(declaration))
     if (const auto *root = interface->getAttr<clang::ObjCRootClassAttr>()) {
       root->printPretty(out, policy);
+      out << '\n';
+    }
+  if (llvm::isa<clang::ObjCInterfaceDecl, clang::ObjCProtocolDecl>(declaration))
+    if (const auto *runtime =
+            declaration->getAttr<clang::ObjCRuntimeNameAttr>()) {
+      runtime->printPretty(out, policy);
       out << '\n';
     }
   declaration->print(out, policy);
@@ -906,16 +958,16 @@ std::vector<std::string> RoundTripArguments(const clang::ASTContext &context) {
 bool SameDeclaration(const InterfaceDeclarationIdentity &a,
                      const InterfaceDeclarationIdentity &b) {
   return std::tie(a.stable_id, a.kind, a.qualified_name, a.spi_group,
-                  a.canonical_type_identity, a.effects.is_async,
-                  a.effects.is_throwing, a.effects.throws_kind,
-                  a.effects.error_type_identity,
+                  a.native_symbol_name, a.canonical_type_identity,
+                  a.effects.is_async, a.effects.is_throwing,
+                  a.effects.throws_kind, a.effects.error_type_identity,
                   a.effects.actor_isolation_identity,
                   a.effects.executor_affinity_identity,
                   a.effects.ownership_identity) ==
          std::tie(b.stable_id, b.kind, b.qualified_name, b.spi_group,
-                  b.canonical_type_identity, b.effects.is_async,
-                  b.effects.is_throwing, b.effects.throws_kind,
-                  b.effects.error_type_identity,
+                  b.native_symbol_name, b.canonical_type_identity,
+                  b.effects.is_async, b.effects.is_throwing,
+                  b.effects.throws_kind, b.effects.error_type_identity,
                   b.effects.actor_isolation_identity,
                   b.effects.executor_affinity_identity,
                   b.effects.ownership_identity);
@@ -977,6 +1029,7 @@ bool ReadInterfaceDeclarationIdentity(
   auto *representative = Representative(declaration);
   identity.stable_id = stable_id;
   identity.spi_group = ReadInterfaceSPIGroup(representative);
+  identity.native_symbol_name = ReadNativeSymbolName(representative);
   identity.kind = declaration->getDeclKindName();
   identity.qualified_name = declaration->getQualifiedNameAsString();
   if (identity.qualified_name.empty())
@@ -1017,7 +1070,7 @@ InterfaceEmissionArtifact EmitSemanticInterface(
     const std::vector<InterfaceDependency> &resolved_dependencies,
     const std::vector<InterfaceSourceArtifact> &dependency_sources,
     llvm::StringRef ownership_projection,
-    const std::vector<std::string> &exports) {
+    const std::vector<std::string> &exports, const std::string &source_root) {
   InterfaceEmissionArtifact result;
   if (canonical_module_name.empty() || package_identity.empty()) {
     AddDiagnostic(result, "O3IFC100",
@@ -1069,7 +1122,7 @@ InterfaceEmissionArtifact EmitSemanticInterface(
   if (!ValidateExportNames(exports, result))
     return result;
   InterfaceCollector collector(context, result, resolved_declaration_ids,
-                               exports);
+                               exports, source_root);
   collector.TraverseDecl(context.getTranslationUnitDecl());
   collector.ValidateSelection();
   if (!result.diagnostics.empty()) return result;
@@ -1118,6 +1171,19 @@ InterfaceEmissionArtifact EmitSemanticInterface(
   sidecar.module = result.identity;
   sidecar.declarations = collector.Identities();
   sidecar.dependencies = resolved_dependencies;
+  for (const auto &d : sidecar.declarations) {
+    if (d.native_symbol_name.empty())
+      continue;
+    if (!HasValidModuleOwnedName(sidecar.module, d)) {
+      AddDiagnostic(
+          result, "O3IFC160",
+          "native symbol name differs from its module ownership contract",
+          d.stable_id);
+      result.source_bytes.clear();
+      return result;
+    }
+    sidecar.required_semantics.push_back("objc3.module-owned-names.v1");
+  }
   if (lang.CPlusPlus)
     sidecar.required_semantics.push_back("objc3.cxx-data-interfaces.v1");
   if (collector.UsesCanonicalFunctionEffects())
@@ -1155,7 +1221,8 @@ InterfaceEmissionArtifact EmitSemanticInterface(
       "objc3.canonical-function-effects.v1", "objc3.native-carrier-types.v1",
       "objc3.native-return-ownership.v1",    "objc3.direct-dispatch.v1",
       "objc3.cxx-data-interfaces.v1",        "objc3.ownership-projection.v1",
-      "objc3.api-availability.v1",           "objc3.api-partitions.v1"};
+      "objc3.api-availability.v1",           "objc3.api-partitions.v1",
+      "objc3.module-owned-names.v1"};
   auto encoded = EncodeSemanticInterfaceSidecar(sidecar, supported_semantics);
   if (!encoded) {
     AddDiagnostic(result, "O3IFC120",
@@ -1234,7 +1301,8 @@ const std::vector<llvm::StringRef> kProjectionSemantics = {
     "objc3.canonical-function-effects.v1", "objc3.native-carrier-types.v1",
     "objc3.native-return-ownership.v1",    "objc3.direct-dispatch.v1",
     "objc3.cxx-data-interfaces.v1",        "objc3.ownership-projection.v1",
-    "objc3.api-availability.v1",           "objc3.api-partitions.v1"};
+    "objc3.api-availability.v1",           "objc3.api-partitions.v1",
+    "objc3.module-owned-names.v1"};
 
 bool ProjectionMode(const clang::ASTContext &context) {
   const auto &lang = context.getLangOpts();
@@ -1274,7 +1342,8 @@ bool ProjectionType(clang::QualType type, bool result) {
 
 bool ProjectionAPI(clang::ASTContext &context,
                    InterfaceEmissionArtifact &result,
-                   const std::vector<std::string> &exports = {}) {
+                   const std::vector<std::string> &exports = {},
+                   const std::string &source_root = {}) {
   if (!ProjectionMode(context)) {
     AddDiagnostic(result, "O3IFC150",
                   "ownership projections require the qualified ObjC3 Linux "
@@ -1284,7 +1353,8 @@ bool ProjectionAPI(clang::ASTContext &context,
   const std::set<std::string> no_dependencies;
   if (!ValidateExportNames(exports, result))
     return false;
-  InterfaceCollector collector(context, result, no_dependencies, exports);
+  InterfaceCollector collector(context, result, no_dependencies, exports,
+                               source_root);
   collector.TraverseDecl(context.getTranslationUnitDecl());
   collector.ValidateSelection();
   if (!result.diagnostics.empty())
@@ -1384,12 +1454,11 @@ bool ValidateOwnershipProjection(clang::ASTContext &context,
 }
 } // namespace
 
-InterfaceEmissionArtifact
-EmitOwnershipProjection(clang::ASTContext &producer,
-                        llvm::StringRef canonical_module_name,
-                        llvm::StringRef package_identity, bool consumer_arc,
-                        const std::vector<InterfaceDependency> &dependencies,
-                        const std::vector<std::string> &exports) {
+InterfaceEmissionArtifact EmitOwnershipProjection(
+    clang::ASTContext &producer, llvm::StringRef canonical_module_name,
+    llvm::StringRef package_identity, bool consumer_arc,
+    const std::vector<InterfaceDependency> &dependencies,
+    const std::vector<std::string> &exports, const std::string &source_root) {
   InterfaceEmissionArtifact result;
   if (producer.getLangOpts().ObjCAutoRefCount == consumer_arc ||
       !dependencies.empty()) {
@@ -1398,11 +1467,11 @@ EmitOwnershipProjection(clang::ASTContext &producer,
                   "a closed provider API");
     return result;
   }
-  if (!ProjectionAPI(producer, result, exports))
+  if (!ProjectionAPI(producer, result, exports, source_root))
     return result;
   auto original = EmitSemanticInterface(
       producer, canonical_module_name.str() + ".__ownership_producer",
-      package_identity, {}, {}, {}, exports);
+      package_identity, {}, {}, {}, exports, source_root);
   if (!original.success)
     return original;
   auto ast = clang::tooling::buildASTFromCodeWithArgs(
