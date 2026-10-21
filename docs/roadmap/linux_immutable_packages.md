@@ -21,7 +21,7 @@ The repository equivalent is `python -B -m scripts.objc3c_toolchain packages`,
 followed by the same `publish`, `install` or `consume` arguments. Select the SDK
 with `--sdk-root` before the subcommand or `OBJC3C_SDK_ROOT`.
 
-A consumer manifest uses `schema: "objc3c.binary-consumer.v1"`, a relative
+A consumer manifest uses `schema: "objc3c.binary-consumer.v2"`, a relative
 `source`, explicit `language`, `standard`, `ownership`, and `dependencies`.
 Dependency entries contain the exact module `name`, `package` identity and
 `visibility` (`public` or `private`), following the
@@ -31,7 +31,7 @@ package and the SDK.
 
 ```json
 {
-  "schema": "objc3c.binary-consumer.v1",
+  "schema": "objc3c.binary-consumer.v2",
   "source": "main.mm",
   "language": "objective-c++",
   "standard": "c++23",
@@ -43,7 +43,7 @@ package and the SDK.
 Publication requires the successful v2 build report and matching installation
 inventory. It validates every retained object, interface and sidecar against the
 inventory, preserving full native module identities and dependency visibility.
-A package's `package.json` uses `objc3c.binary-package.v1` and records its exact
+A package's `package.json` uses `objc3c.binary-package.v2` and records its exact
 producing SDK seal, target, optimization and module inventory. The content hash
 covers canonical JSON with sorted object keys; artifact hashes bind every byte.
 Consumers require the producing SDK seal, language, standard, ownership and
@@ -59,9 +59,9 @@ are read-only; every use verifies their hashes.
 
 The store can be relocated or copied between compatible native Linux x86-64
 hosts. Pass its content identity separately to installation and consumption.
-Directory transport and trust in that identity belong to the caller. Remote
-registries, version selection and cross-ownership adaptation remain separate
-milestones.
+Directory transport and trust in that identity belong to the caller. Remote registries and version selection remain separate milestones.
+[Closed C ABI ownership projections](linux_ownership_projections.md) preserve the
+actual provider mode and canonical producer proof in the binary inventory.
 
 Consumer compilation preserves native public/private transitive visibility,
 selects only the requested dependency closure and never compiles a provider.
@@ -82,3 +82,9 @@ fresh-distribution gates run this suite outside the checkout as ordinary users.
 The [source-bound acceptance receipt](../support/linux_immutable_package_acceptance.json)
 records the exact producing archive, all-mode source-free consumers, fault tests,
 installed gates, sanitizer/debugger evidence and clean Debian/Ubuntu results.
+
+Binary v2 modules record `provider_ownership` separately from the consumer mode.
+Publication, installation and consumption check its agreement with native
+projection provenance before compilation. The compiler reconstructs the exact
+opposite-mode producer contract when it imports the projected interface. Earlier
+binary formats and interfaces require rebuilding with the current SDK.

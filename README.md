@@ -234,6 +234,12 @@ interchange to bounded global APIs and public data records, with exact language,
 standard, ownership and linkage identity. C++20 and C++23 consumers cover C/C++
 linkage, overloads, owned records, source imports and ThinLTO.
 
+The [ownership projection workflow](docs/roadmap/linux_ownership_projections.md)
+connects closed ARC and MRC C APIs through explicit native return ownership.
+Consumer-mode interfaces bind their original producer contract; source graphs and
+immutable packages record the actual provider mode and preserve exact mode locks.
+Interface schema 2, source manifests v3 and binary packages v2 require regeneration.
+
 The [immutable package workflow](docs/roadmap/linux_immutable_packages.md) publishes
 verified native dependency closures into local content-addressed stores. Consumers
 compile against relocated installations after producer sources are removed, with
@@ -265,11 +271,11 @@ Native validation checks O0/O2 behavior, ABI, ownership, cleanup, expected
 failures, installed interface consumers and editor tools. Evidence records bind
 source, compiler, runtime, system headers and executable contents and reject
 changes during validation. The
-[Linux SDK acceptance receipt](docs/support/linux_public_core_acceptance.json)
+[Linux SDK acceptance receipt](docs/support/linux_ownership_projection_acceptance.json)
 records the qualified archive and fresh-host checks; each new SDK has its own
 qualification and release receipt. Runtime timings must be distinguished from
 compile and wrapper timings when comparing performance.
-The [current latency report](docs/support/linux_public_core_latency.json) records
+The [current latency report](docs/support/linux_ownership_projection_latency.json) records
 warm command measurements and regression budgets for its AMD CPU model and quota.
 The [historical paired report](docs/support/linux_development_latency.json) retains
 the earlier Intel measurements; cross-CPU speedup comparisons are inapplicable.

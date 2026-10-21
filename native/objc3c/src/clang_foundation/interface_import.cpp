@@ -44,8 +44,12 @@ constexpr std::uint64_t kMaxInterfaceBytes = 32ull * 1024ull * 1024ull;
 constexpr llvm::StringLiteral kCarrierSemantics = "objc3.native-carrier-types.v1";
 constexpr llvm::StringLiteral kEffectSemantics = "objc3.canonical-function-effects.v1";
 const std::vector<llvm::StringRef> kSupportedSemantics = {
-    kCarrierSemantics, kEffectSemantics, "objc3.native-return-ownership.v1",
-    "objc3.direct-dispatch.v1", "objc3.cxx-data-interfaces.v1"};
+    kCarrierSemantics,
+    kEffectSemantics,
+    "objc3.native-return-ownership.v1",
+    "objc3.direct-dispatch.v1",
+    "objc3.cxx-data-interfaces.v1",
+    "objc3.ownership-projection.v1"};
 
 void Add(std::vector<InterfaceContractDiagnostic> &out, const llvm::Twine &code,
          const llvm::Twine &message, const llvm::Twine &subject = llvm::Twine()) {
@@ -379,7 +383,7 @@ std::unique_ptr<InterfaceImportSession> InterfaceImportSession::Prepare(
     auto regenerated = EmitSemanticInterface(
         module.ast->getASTContext(), module.sidecar.module.canonical_name,
         module.sidecar.module.package_identity, module.sidecar.dependencies,
-        dependency_sources);
+        dependency_sources, module.sidecar.ownership_projection);
     if (!regenerated.success || regenerated.source_bytes != module.source_bytes) {
       Add(diagnostics, regenerated.diagnostics.empty()
               ? "O3IFC138" : regenerated.diagnostics.front().code,

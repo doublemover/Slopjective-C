@@ -89,7 +89,7 @@ class FakeNativeCommands:
                 object_path.write_bytes(b"mock native provider object")
             interface = Path(command[command.index("--emit-interface") + 1])
             interface.write_text("typedef int Answer;\nAnswer answer(void);\n", encoding="utf-8")
-            sidecar = {"schema_id": "objc3c.semantic-interface.v1", "schema_major": 1,
+            sidecar = {"schema_id": "objc3c.semantic-interface.v2", "schema_major": 2,
                        "module": identity, "source_binding_sha256": hashlib.sha256(interface.read_bytes()).hexdigest(),
                        "declarations": [{"qualified_name": package.MODULE + "::Answer", "kind": "typedef"},
                                         {"qualified_name": package.MODULE + "::answer", "kind": "function"}]}

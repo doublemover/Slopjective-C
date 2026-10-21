@@ -159,7 +159,7 @@ def set_mode(workspace, language, standard, ownership):
         new = old.with_suffix(suffix)
         if old != new:
             old.rename(new)
-        data.update(language=language, standard=standard, ownership=ownership, source=new.name)
+        data.update(language=language, standard=standard, ownership=ownership, provider_ownership=ownership, source=new.name)
         manifest.write_text(json.dumps(data))
     data = json.loads(workspace.read_text())
     old = workspace.parent / data['application']['root'] / data['application']['source']
@@ -194,9 +194,9 @@ def test_explicit_language_and_standard_modes_resolve_the_diamond(workspace, lan
 def test_mode_cutover_and_incompatible_edges_fail_before_compilation(workspace, case, match):
     leaf = workspace.parent / 'leaf/package.json'
     if case == 'old-workspace':
-        edit(workspace, lambda data: data.update(schema='objc3c.source-workspace.v1'))
+        edit(workspace, lambda data: data.update(schema='objc3c.source-workspace.v2'))
     elif case == 'old-package':
-        edit(leaf, lambda data: data.update(schema='objc3c.source-package.v1'))
+        edit(leaf, lambda data: data.update(schema='objc3c.source-package.v2'))
     elif case == 'missing-mode':
         edit(leaf, lambda data: data.pop('language'))
     elif case == 'unknown-language':
@@ -241,3 +241,24 @@ def test_parallel_graph_failure_replaces_a_stale_receipt_and_joins_cases(tmp_pat
     assert report['status'] == 'FAIL' and len(report['failures']) == 1
     assert len(completed) == 16
     assert 'compile.log' in report['failures'][0]['error']
+
+
+def test_explicit_projection_keeps_consumer_mode_and_records_provider_mode(workspace):
+    edit(workspace.parent / 'leaf/package.json', lambda d: d.update(provider_ownership='mrc'))
+    graph = load_graph(workspace)
+    leaf = graph['packages']['fixture.Leaf']
+    assert leaf['ownership'] == 'arc' and leaf['provider_ownership'] == 'mrc'
+    assert graph['application']['ownership'] == 'arc'
+
+
+@pytest.mark.parametrize('provider', ['automatic', None, True, 'none'])
+def test_provider_ownership_requires_a_supported_explicit_mode(workspace, provider):
+    edit(workspace.parent / 'leaf/package.json', lambda d: d.update(provider_ownership=provider))
+    with pytest.raises(ValueError, match='provider ownership'):
+        load_graph(workspace)
+
+
+def test_projected_provider_rejects_a_dependency_closure(workspace):
+    edit(workspace.parent / 'top/package.json', lambda d: d.update(provider_ownership='mrc'))
+    with pytest.raises(ValueError, match='closed provider'):
+        load_graph(workspace)

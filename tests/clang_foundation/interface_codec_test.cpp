@@ -93,11 +93,12 @@ int main() {
   assert(Fails(DecodeSemanticInterfaceSidecar(wrong_type, source, supported)));
   auto unknown_field = ReplaceOnce(*encoded, "\"schema_id\":", "\"future_field\":0,\"schema_id\":");
   assert(Fails(DecodeSemanticInterfaceSidecar(unknown_field, source, supported)));
-  auto duplicate_key = ReplaceOnce(*encoded,
-      "\"schema_id\":\"objc3c.semantic-interface.v1\"",
-      "\"schema_id\":\"objc3c.semantic-interface.v1\",\"schema_id\":\"bad\"");
+  auto duplicate_key = ReplaceOnce(
+      *encoded, "\"schema_id\":\"objc3c.semantic-interface.v2\"",
+      "\"schema_id\":\"objc3c.semantic-interface.v2\",\"schema_id\":\"bad\"");
   assert(Fails(DecodeSemanticInterfaceSidecar(duplicate_key, source, supported)));
-  auto future_schema = ReplaceOnce(*encoded, "\"schema_major\":1", "\"schema_major\":2");
+  auto future_schema =
+      ReplaceOnce(*encoded, "\"schema_major\":2", "\"schema_major\":3");
   assert(Fails(DecodeSemanticInterfaceSidecar(future_schema, source, supported)));
   auto duplicate_id = ReplaceOnce(*encoded, "\"stable_id\":\"c:@answerCount\"",
                                   "\"stable_id\":\"c:@F@answer\"");

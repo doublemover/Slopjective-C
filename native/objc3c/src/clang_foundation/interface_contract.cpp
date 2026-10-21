@@ -87,6 +87,7 @@ std::string BuildSemanticFingerprintInput(const SemanticInterfaceSidecar &sideca
   // Exclude the fingerprint itself and source bytes to avoid self-reference
   // and rebuild invalidation for comments/formatting in the generated source.
   ModuleFields(out, "module", sidecar.module, false);
+  Field(out, "ownership-projection", sidecar.ownership_projection);
   auto semantics = sidecar.required_semantics;
   std::sort(semantics.begin(), semantics.end());
   for (const auto &s : semantics) Field(out, "required", s);
@@ -134,6 +135,13 @@ InterfaceContractValidation ValidateSemanticInterface(
       !IsSha256(canonical_source_sha256) ||
       sidecar.canonical_source_sha256 != canonical_source_sha256)
     Add(result, "O3IFC005", "generated canonical source digest mismatch", expected.canonical_name);
+  const bool projection_semantic = std::find(sidecar.required_semantics.begin(),
+                                             sidecar.required_semantics.end(),
+                                             "objc3.ownership-projection.v1") !=
+                                   sidecar.required_semantics.end();
+  if (projection_semantic != !sidecar.ownership_projection.empty())
+    Add(result, "O3IFC017",
+        "ownership projection provenance and capability must agree");
   auto supported = supported_required_semantics;
   std::sort(supported.begin(), supported.end());
   auto required = sidecar.required_semantics;

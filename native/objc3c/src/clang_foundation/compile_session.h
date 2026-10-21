@@ -28,6 +28,7 @@ struct CompileRequest {
   bool arc = false;
   bool strict_concurrency = false;
   bool emit_semantic_interface = false;
+  std::optional<bool> projected_arc;
   std::string target_triple;
   std::string objc_runtime;
   std::vector<std::string> arguments;

@@ -1,0 +1,11 @@
+{
+  "schema": "objc3c.source-package.v3",
+  "name": "fixture.Ownership",
+  "package": "ownership-v1",
+  "source": "module.m",
+  "ownership": "arc",
+  "provider_ownership": "mrc",
+  "language": "objective-c",
+  "standard": "c17",
+  "dependencies": []
+}

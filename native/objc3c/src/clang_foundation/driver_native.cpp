@@ -24,8 +24,9 @@ bool UsesInterfaceCompiler(int argc, char **argv) {
     std::string_view arg(argv[i]);
     if (arg == "--") break;
     if (arg == "--emit-object" || arg == "--emit-llvm" ||
-        arg == "--emit-interface" || arg == "--import-module" ||
-        arg == "--emit-dependency-record" || arg == "--source-imports")
+        arg == "--emit-interface" || arg == "--project-ownership" ||
+        arg == "--import-module" || arg == "--emit-dependency-record" ||
+        arg == "--source-imports")
       return true;
   }
   return false;
@@ -157,8 +158,13 @@ int RunNativeDriver(int argc, char **raw_argv) {
       std::cout << "objc3c frontend " << CompiledFrontendSourceIdentity() << '\n' << std::flush;
     if (arg == "--help")
       std::cout << "objc3c: native Objective-C 3 compiler (ARC by default).\n"
-                   "Use -fno-objc-arc for manual ownership; --emit-interface for semantic modules.\n"
-                   "Clang compilation, linking, diagnostics and dependency options follow.\n\n" << std::flush;
+                   "Use -fno-objc-arc for manual ownership; --emit-interface "
+                   "for semantic modules.\n"
+                   "Use --project-ownership arc|mrc to emit an opposite-mode "
+                   "closed C ABI interface.\n"
+                   "Clang compilation, linking, diagnostics and dependency "
+                   "options follow.\n\n"
+                << std::flush;
   }
   // A bootstrap or unrelated SDK's LD_LIBRARY_PATH must never replace this
   // installation's libraries. Do not change the parent shell environment.

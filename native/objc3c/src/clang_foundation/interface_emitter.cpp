@@ -342,13 +342,20 @@ class TypeDependencyVisitor final
 
   bool VisitTypedefType(clang::TypedefType *type) {
     const auto *declaration = type->getDecl();
-    // Compiler-provided id/Class/SEL are native language types, with no
-    // external module to resolve. Compare declarations, never spellings.
-    if (context_.getLangOpts().ObjC && declaration &&
-        (declaration == context_.getObjCIdDecl() ||
-         declaration == context_.getObjCClassDecl() ||
-         declaration == context_.getObjCSelDecl()))
-      return true;
+    // Runtime headers redeclare these compiler-provided language types. Accept
+    // only the same native name and type, without additional typedef contracts.
+    if (context_.getLangOpts().ObjC && declaration) {
+      for (const auto *builtin :
+           {context_.getObjCIdDecl(), context_.getObjCClassDecl(),
+            context_.getObjCSelDecl()}) {
+        if (declaration == builtin ||
+            (builtin && !declaration->hasAttrs() &&
+             declaration->getIdentifier() == builtin->getIdentifier() &&
+             context_.hasSameType(declaration->getUnderlyingType(),
+                                  builtin->getUnderlyingType())))
+          return true;
+      }
+    }
     if (declaration && !IsInMainFile(context_, declaration->getLocation()) &&
         !IsResolved(declaration))
       AddDiagnostic(result_, "O3IFC112",
@@ -809,11 +816,18 @@ bool ReadInterfaceDeclarationIdentity(
   return true;
 }
 
+namespace {
+bool ValidateOwnershipProjection(clang::ASTContext &context,
+                                 llvm::StringRef producer_sidecar,
+                                 InterfaceEmissionArtifact &result);
+}
+
 InterfaceEmissionArtifact EmitSemanticInterface(
     clang::ASTContext &context, llvm::StringRef canonical_module_name,
     llvm::StringRef package_identity,
     const std::vector<InterfaceDependency> &resolved_dependencies,
-    const std::vector<InterfaceSourceArtifact> &dependency_sources) {
+    const std::vector<InterfaceSourceArtifact> &dependency_sources,
+    llvm::StringRef ownership_projection) {
   InterfaceEmissionArtifact result;
   if (canonical_module_name.empty() || package_identity.empty()) {
     AddDiagnostic(result, "O3IFC100",
@@ -894,7 +908,19 @@ InterfaceEmissionArtifact EmitSemanticInterface(
     return result;
   }
 
+  if (!ownership_projection.empty() &&
+      (!resolved_dependencies.empty() ||
+       !ValidateOwnershipProjection(context, ownership_projection, result))) {
+    if (result.diagnostics.empty())
+      AddDiagnostic(result, "O3IFC150",
+                    "ownership projections cannot have dependencies");
+    result.source_bytes.clear();
+    return result;
+  }
   SemanticInterfaceSidecar sidecar;
+  sidecar.ownership_projection = ownership_projection.str();
+  if (!ownership_projection.empty())
+    sidecar.required_semantics.push_back("objc3.ownership-projection.v1");
   sidecar.module = result.identity;
   sidecar.declarations = collector.Identities();
   sidecar.dependencies = resolved_dependencies;
@@ -928,8 +954,8 @@ InterfaceEmissionArtifact EmitSemanticInterface(
 
   const std::vector<llvm::StringRef> supported_semantics = {
       "objc3.canonical-function-effects.v1", "objc3.native-carrier-types.v1",
-      "objc3.native-return-ownership.v1", "objc3.direct-dispatch.v1",
-      "objc3.cxx-data-interfaces.v1"};
+      "objc3.native-return-ownership.v1",    "objc3.direct-dispatch.v1",
+      "objc3.cxx-data-interfaces.v1",        "objc3.ownership-projection.v1"};
   auto encoded = EncodeSemanticInterfaceSidecar(sidecar, supported_semantics);
   if (!encoded) {
     AddDiagnostic(result, "O3IFC120",
@@ -1000,6 +1026,199 @@ InterfaceEmissionArtifact EmitSemanticInterface(
 
   result.sidecar_json = std::move(*encoded);
   result.success = true;
+  return result;
+}
+
+namespace {
+const std::vector<llvm::StringRef> kProjectionSemantics = {
+    "objc3.canonical-function-effects.v1", "objc3.native-carrier-types.v1",
+    "objc3.native-return-ownership.v1",    "objc3.direct-dispatch.v1",
+    "objc3.cxx-data-interfaces.v1",        "objc3.ownership-projection.v1"};
+
+bool ProjectionMode(const clang::ASTContext &context) {
+  const auto &lang = context.getLangOpts();
+  llvm::StringRef standard =
+      clang::LangStandard::getLangStandardForKind(lang.LangStd).getName();
+  const bool supported_standard =
+      lang.CPlusPlus ? (standard == "c++20" || standard == "c++23")
+                     : standard == "c17";
+  return supported_standard && lang.ObjC && lang.ObjC3 &&
+         lang.ObjCRuntime.getAsString() == "gnustep-2.2" &&
+         static_cast<unsigned>(lang.ObjC3Profile) == 0 &&
+         context.getTargetInfo().getTriple().str() ==
+             "x86_64-unknown-linux-gnu";
+}
+
+bool ProjectionType(clang::QualType type, bool result) {
+  if (type.isNull() || type.isVolatileQualified() || type->isAtomicType())
+    return false;
+  const auto lifetime = type.getObjCLifetime();
+  if (lifetime != clang::Qualifiers::OCL_None &&
+      lifetime != clang::Qualifiers::OCL_Strong)
+    return false;
+  type = type.getCanonicalType();
+  if (type->isObjCIdType())
+    return true;
+  if (type->isVoidType())
+    return result;
+  if (type->isRealType() && !type->isVectorType())
+    return true;
+  if (const auto *pointer = type->getAs<clang::PointerType>()) {
+    const auto pointee = pointer->getPointeeType();
+    return !pointee.isVolatileQualified() && !pointee->isAtomicType() &&
+           (pointee->isVoidType() || pointee->isRealType());
+  }
+  return false;
+}
+
+bool ProjectionAPI(clang::ASTContext &context,
+                   InterfaceEmissionArtifact &result) {
+  if (!ProjectionMode(context)) {
+    AddDiagnostic(result, "O3IFC150",
+                  "ownership projections require the qualified ObjC3 Linux "
+                  "GNUstep 2.2 compatibility mode");
+    return false;
+  }
+  const std::set<std::string> no_dependencies;
+  InterfaceCollector collector(context, result, no_dependencies);
+  collector.TraverseDecl(context.getTranslationUnitDecl());
+  if (!result.diagnostics.empty())
+    return false;
+  const auto roots = collector.RootDeclarations();
+  if (roots.empty()) {
+    AddDiagnostic(result, "O3IFC150",
+                  "ownership projection requires a nonempty C function API");
+    return false;
+  }
+  for (const auto *root : roots) {
+    const auto *function = llvm::dyn_cast<clang::FunctionDecl>(root);
+    const auto *prototype =
+        function ? function->getType()->getAs<clang::FunctionProtoType>()
+                 : nullptr;
+    bool valid = function && prototype &&
+                 (!context.getLangOpts().CPlusPlus || function->isExternC()) &&
+                 !prototype->isVariadic() &&
+                 prototype->getCallConv() == clang::CC_C &&
+                 prototype->getExceptionSpecType() == clang::EST_None &&
+                 !prototype->getObjC3FunctionEffects().Async &&
+                 prototype->getObjC3FunctionEffects().Throws ==
+                     clang::ObjC3ThrowsKind::None &&
+                 ProjectionType(function->getReturnType(), true);
+    if (valid && function->getReturnType()->isObjCIdType())
+      valid = !ReadNativeReturnOwnership(function).empty();
+    if (valid)
+      for (const auto *parameter : function->parameters())
+        valid &= ProjectionType(parameter->getType(), false) &&
+                 !parameter->hasAttrs() && !parameter->hasDefaultArg();
+    if (!valid) {
+      AddDiagnostic(result, "O3IFC151",
+                    "ownership projection accepts only prototyped C ABI "
+                    "functions with borrowed parameters, scalar/pointer types, "
+                    "and explicit native ownership for id returns",
+                    root->getQualifiedNameAsString());
+      return false;
+    }
+  }
+  return true;
+}
+
+std::vector<std::string> ProjectionArguments(const clang::ASTContext &context,
+                                             bool arc) {
+  auto args = RoundTripArguments(context);
+  args.erase(std::remove(args.begin(), args.end(), "-fobjc-arc"), args.end());
+  args.push_back(arc ? "-fobjc-arc" : "-fno-objc-arc");
+  return args;
+}
+
+bool ValidateOwnershipProjection(clang::ASTContext &context,
+                                 llvm::StringRef producer_sidecar,
+                                 InterfaceEmissionArtifact &result) {
+  if (!ProjectionAPI(context, result))
+    return false;
+  auto original = DecodeSemanticInterfaceSidecar(
+      producer_sidecar, result.source_bytes, kProjectionSemantics);
+  if (!original) {
+    AddDiagnostic(result, "O3IFC152",
+                  "invalid ownership projection producer: " +
+                      llvm::toString(original.takeError()));
+    return false;
+  }
+  if (!original->ownership_projection.empty() ||
+      !original->dependencies.empty() ||
+      original->module.canonical_name !=
+          result.identity.canonical_name + ".__ownership_producer" ||
+      original->module.package_identity != result.identity.package_identity) {
+    AddDiagnostic(result, "O3IFC152",
+                  "ownership projection producer identity, dependency closure, "
+                  "or nesting is invalid");
+    return false;
+  }
+  auto ast = clang::tooling::buildASTFromCodeWithArgs(
+      result.source_bytes,
+      ProjectionArguments(context, !context.getLangOpts().ObjCAutoRefCount),
+      context.getLangOpts().CPlusPlus ? "ownership-producer.mm"
+                                      : "ownership-producer.m");
+  if (!ast || ast->getDiagnostics().hasErrorOccurred() ||
+      !ProjectionAPI(ast->getASTContext(), result)) {
+    if (result.diagnostics.empty())
+      AddDiagnostic(result, "O3IFC153",
+                    "ownership projection producer cannot be reconstructed");
+    return false;
+  }
+  auto regenerated = EmitSemanticInterface(ast->getASTContext(),
+                                           original->module.canonical_name,
+                                           original->module.package_identity);
+  if (!regenerated.success || regenerated.source_bytes != result.source_bytes ||
+      regenerated.sidecar_json != producer_sidecar) {
+    AddDiagnostic(result, "O3IFC154",
+                  "ownership projection does not reproduce its canonical "
+                  "opposite-mode producer contract");
+    return false;
+  }
+  return true;
+}
+} // namespace
+
+InterfaceEmissionArtifact
+EmitOwnershipProjection(clang::ASTContext &producer,
+                        llvm::StringRef canonical_module_name,
+                        llvm::StringRef package_identity, bool consumer_arc,
+                        const std::vector<InterfaceDependency> &dependencies) {
+  InterfaceEmissionArtifact result;
+  if (producer.getLangOpts().ObjCAutoRefCount == consumer_arc ||
+      !dependencies.empty()) {
+    AddDiagnostic(result, "O3IFC150",
+                  "ownership projection requires opposite ownership modes and "
+                  "a closed provider API");
+    return result;
+  }
+  if (!ProjectionAPI(producer, result))
+    return result;
+  auto original = EmitSemanticInterface(
+      producer, canonical_module_name.str() + ".__ownership_producer",
+      package_identity);
+  if (!original.success)
+    return original;
+  auto ast = clang::tooling::buildASTFromCodeWithArgs(
+      original.source_bytes, ProjectionArguments(producer, consumer_arc),
+      producer.getLangOpts().CPlusPlus ? "ownership-consumer.mm"
+                                       : "ownership-consumer.m");
+  if (!ast || ast->getDiagnostics().hasErrorOccurred()) {
+    AddDiagnostic(result, "O3IFC153",
+                  "ownership projection cannot be parsed in the consumer mode");
+    return result;
+  }
+  result =
+      EmitSemanticInterface(ast->getASTContext(), canonical_module_name,
+                            package_identity, {}, {}, original.sidecar_json);
+  if (result.success && result.source_bytes != original.source_bytes) {
+    result.success = false;
+    result.source_bytes.clear();
+    result.sidecar_json.clear();
+    AddDiagnostic(
+        result, "O3IFC154",
+        "ownership projection changed its native declaration contract");
+  }
   return result;
 }
 

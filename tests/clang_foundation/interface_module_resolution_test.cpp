@@ -378,10 +378,10 @@ int main() {
     std::string json;
     { std::ifstream input(sidecar, std::ios::binary);
       json.assign(std::istreambuf_iterator<char>(input), {}); }
-    const auto version = json.find("\"schema_major\":1");
+    const auto version = json.find("\"schema_major\":2");
     assert(version != std::string::npos);
-    json.replace(version, std::string("\"schema_major\":1").size(),
-                 "\"schema_major\":2");
+    json.replace(version, std::string("\"schema_major\":2").size(),
+                 "\"schema_major\":3");
     std::ofstream output(sidecar, std::ios::binary | std::ios::trunc);
     output << json;
   }

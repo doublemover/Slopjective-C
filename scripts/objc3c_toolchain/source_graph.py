@@ -20,9 +20,9 @@ else:
     sys.dont_write_bytecode = True
     from sdk_example import dependencies, digest, environment, hashes, reusable, write_json
 
-WORKSPACE = 'objc3c.source-workspace.v2'
-PACKAGE = 'objc3c.source-package.v2'
-REPORT = 'objc3c.source-graph-build.v2'
+WORKSPACE = 'objc3c.source-workspace.v3'
+PACKAGE = 'objc3c.source-package.v3'
+REPORT = 'objc3c.source-graph-build.v3'
 APP = '@application'
 NAME = re.compile(r'[A-Za-z_]\w*(?:\.[A-Za-z_]\w*)*', re.ASCII)
 
@@ -70,6 +70,14 @@ def validate_mode(config: dict, source: Path) -> None:
         raise ValueError('ownership must be arc/mrc for Objective-C modes or none for C++')
 
 
+def validate_provider(config: dict) -> None:
+    mode = config['provider_ownership']
+    if mode not in (('none',) if config['language'] == 'c++' else ('arc', 'mrc')):
+        raise ValueError('provider ownership must be explicit and match the language')
+    if mode != config['ownership'] and config['dependencies']:
+        raise ValueError('ownership lock projection requires a closed provider without dependencies')
+
+
 def load_graph(workspace: Path) -> dict:
     workspace = workspace.resolve(strict=True)
     data = json.loads(workspace.read_text())
@@ -83,7 +91,7 @@ def load_graph(workspace: Path) -> dict:
     for name in data['packages']:
         path = within(root, name, 'package manifest')
         config = json.loads(path.read_text())
-        fields(config, {'schema', 'name', 'package', 'source', 'ownership', 'language', 'standard', 'dependencies'}, str(path))
+        fields(config, {'schema', 'name', 'package', 'source', 'ownership', 'provider_ownership', 'language', 'standard', 'dependencies'}, str(path))
         module = config['name']
         if (config['schema'] != PACKAGE or not isinstance(module, str) or not NAME.fullmatch(module) or
                 module in packages or
@@ -96,6 +104,7 @@ def load_graph(workspace: Path) -> dict:
         source = within(directory, config['source'], 'package source')
         validate_mode(config, source)
         config['dependencies'] = locks(config['dependencies'], module)
+        validate_provider(config)
         packages[module] = {**config, 'root': directory, 'input': source, 'manifest': path}
         manifests[path] = digest(path)
     app = data['application']
@@ -207,8 +216,11 @@ def _build(sdk: Path, graph: dict, output: Path, optimization: str) -> dict:
             command += ['--objc3', '--runtime', 'gnustep-2.2']
         if config['language'] == 'objective-c++':
             command.append('--objcxx')
-        if config['ownership'] == 'arc':
+        provider_mode = config.get('provider_ownership', config['ownership'])
+        if provider_mode == 'arc':
             command.append('--arc')
+        if provider_mode != config['ownership']:
+            command += ['--project-ownership', config['ownership']]
         products = [obj, depfile]
         if name != APP:
             interface = paths[name]
@@ -295,11 +307,12 @@ def _build(sdk: Path, graph: dict, output: Path, optimization: str) -> dict:
     verify()
     # Relocatable installation inventory: identities and direct visibility locks
     # accompany content hashes of each installed object/interface/sidecar.
-    inventory = {'schema': 'objc3c.package-installation.v2', 'sdk_seal': seal,
+    inventory = {'schema': 'objc3c.package-installation.v3', 'sdk_seal': seal,
                  'target': target, 'optimization': optimization,
                  'application_mode': {key: app[key] for key in ('language', 'standard', 'ownership')}, 'packages': [
                      {'module': identities[name], 'language': packages[name]['language'],
                       'standard': packages[name]['standard'], 'ownership': packages[name]['ownership'],
+                      'provider_ownership': packages[name]['provider_ownership'],
                       'dependencies': packages[name]['dependencies'],
                       'artifacts': {str(path.relative_to(output)): digest(path) for path in
                                     (directories[name] / 'module.o', paths[name], paths[name].with_suffix('.objc3i.json'))}}
