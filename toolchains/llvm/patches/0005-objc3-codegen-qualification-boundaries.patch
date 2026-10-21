@@ -352,7 +352,7 @@ index 0683a4937..653efb258 100644
          CGM, byrefInfo, NonTrivialCStructByrefHelpers(valueAlignment, type));
  
 diff --git a/clang/lib/CodeGen/CGCall.cpp b/clang/lib/CodeGen/CGCall.cpp
-index 08cb9860f..427fe42ba 100644
+index 08cb9860f..0d8ec0c4d 100644
 --- a/clang/lib/CodeGen/CGCall.cpp
 +++ b/clang/lib/CodeGen/CGCall.cpp
 @@ -12,6 +12,11 @@
@@ -564,7 +564,19 @@ index 08cb9860f..427fe42ba 100644
    // Add one to account for `this`. It's a bit awkward here, but we don't count
    // `this` in similar places elsewhere.
    ExtParameterInfoList paramInfos =
-@@ -1023,6 +1124,17 @@ const CGFunctionInfo &CodeGenTypes::arrangeLLVMFunctionInfo(
+@@ -787,7 +888,10 @@ const CGFunctionInfo &CodeGenTypes::arrangeCXXMethodCall(
+   CanQualTypeList argTypes = getArgTypesForCall(Context, args);
+ 
+   FunctionType::ExtInfo info = proto->getExtInfo();
+-  return arrangeLLVMFunctionInfo(GetReturnType(proto->getReturnType()),
++  QualType ResultType = proto->getReturnType();
++  if (proto->getObjC3FunctionEffects().Async)
++    ResultType = Context.getObjC3AsyncTaskType(ResultType);
++  return arrangeLLVMFunctionInfo(GetReturnType(ResultType),
+                                  FnInfoOpts::IsInstanceMethod, argTypes, info,
+                                  paramInfos, required);
+ }
+@@ -1023,6 +1127,17 @@ const CGFunctionInfo &CodeGenTypes::arrangeLLVMFunctionInfo(
    assert(llvm::all_of(argTypes,
                        [](CanQualType T) { return T.isCanonicalAsParam(); }));
  
@@ -582,7 +594,7 @@ index 08cb9860f..427fe42ba 100644
    // Lookup or create unique function info.
    llvm::FoldingSetNodeID ID;
    bool isInstanceMethod =
-@@ -3150,8 +3262,9 @@ void CodeGenModule::ConstructAttributeList(StringRef Name,
+@@ -3150,8 +3265,9 @@ void CodeGenModule::ConstructAttributeList(StringRef Name,
            // This includes trivially-destructible objects, as well as objects
            // whose destruction / clean-up is carried out within the callee
            // (e.g., Obj-C ARC-managed structs, MSVC callee-destroyed objects).
@@ -594,7 +606,7 @@ index 08cb9860f..427fe42ba 100644
              Attrs.addDeadOnReturnAttr(llvm::DeadOnReturnInfo());
          }
        }
-@@ -4369,6 +4482,38 @@ void CodeGenFunction::EmitFunctionEpilog(
+@@ -4369,6 +4485,38 @@ void CodeGenFunction::EmitFunctionEpilog(
  
    case ABIArgInfo::Extend:
    case ABIArgInfo::Direct:
@@ -633,7 +645,7 @@ index 08cb9860f..427fe42ba 100644
      if (RetAI.getCoerceToType() == ConvertType(RetTy) &&
          RetAI.getDirectOffset() == 0) {
        // The internal return value temp always will have pointer-to-return-type
-@@ -4998,7 +5143,7 @@ void CodeGenFunction::EmitCallArgs(
+@@ -4998,7 +5146,7 @@ void CodeGenFunction::EmitCallArgs(
      const auto *MD = dyn_cast<const ObjCMethodDecl *>(Prototype.P);
      if (MD) {
        IsVariadic = MD->isVariadic();
@@ -642,7 +654,7 @@ index 08cb9860f..427fe42ba 100644
            MD, CGM.getTarget().getTriple().isOSWindows());
        ArgTypes.assign(MD->param_type_begin() + ParamsToSkip,
                        MD->param_type_end());
-@@ -5121,6 +5266,17 @@ void CodeGenFunction::EmitCallArgs(
+@@ -5121,6 +5269,17 @@ void CodeGenFunction::EmitCallArgs(
      // Reverse the writebacks to match the MSVC ABI.
      Args.reverseWritebacks();
    }
@@ -660,7 +672,7 @@ index 08cb9860f..427fe42ba 100644
  }
  
  namespace {
-@@ -5205,6 +5361,16 @@ void CodeGenFunction::EmitCallArg(CallArgList &args, const Expr *E,
+@@ -5205,6 +5364,16 @@ void CodeGenFunction::EmitCallArg(CallArgList &args, const Expr *E,
      return args.add(EmitReferenceBindingToExpr(E), type);
    }
  
@@ -677,7 +689,7 @@ index 08cb9860f..427fe42ba 100644
    bool HasAggregateEvalKind = hasAggregateEvaluationKind(type);
  
    // In the Microsoft C++ ABI, aggregate arguments are destructed by the callee.
-@@ -5227,7 +5393,10 @@ void CodeGenFunction::EmitCallArg(CallArgList &args, const Expr *E,
+@@ -5227,7 +5396,10 @@ void CodeGenFunction::EmitCallArg(CallArgList &args, const Expr *E,
      if (DestroyedInCallee)
        Slot.setExternallyDestructed();
  
@@ -689,7 +701,7 @@ index 08cb9860f..427fe42ba 100644
      RValue RV = Slot.asRValue();
      args.add(RV, type);
  
-@@ -5577,6 +5746,14 @@ RValue CodeGenFunction::EmitCall(const CGFunctionInfo &CallInfo,
+@@ -5577,6 +5749,14 @@ RValue CodeGenFunction::EmitCall(const CGFunctionInfo &CallInfo,
    // FIXME: We no longer need the types from CallArgs; lift up and simplify.
  
    assert(Callee.isOrdinary() || Callee.isVirtual());
@@ -704,7 +716,7 @@ index 08cb9860f..427fe42ba 100644
  
    // Handle struct-return functions by passing a pointer to the
    // location that we would like to return into.
-@@ -5710,6 +5887,42 @@ RValue CodeGenFunction::EmitCall(const CGFunctionInfo &CallInfo,
+@@ -5710,6 +5890,42 @@ RValue CodeGenFunction::EmitCall(const CGFunctionInfo &CallInfo,
      bool ArgHasMaybeUndefAttr =
          IsArgumentMaybeUndef(TargetDecl, CallInfo.getNumRequiredArgs(), ArgNo);
  
@@ -747,7 +759,7 @@ index 08cb9860f..427fe42ba 100644
      switch (ArgInfo.getKind()) {
      case ABIArgInfo::InAlloca: {
        assert(NumIRArgs == 0);
-@@ -5771,9 +5984,12 @@ RValue CodeGenFunction::EmitCall(const CGFunctionInfo &CallInfo,
+@@ -5771,9 +5987,12 @@ RValue CodeGenFunction::EmitCall(const CGFunctionInfo &CallInfo,
          //    we cannot force it to be sufficiently aligned.
          // 3. If the argument is byval, but RV is not located in default
          //    or alloca address space.
@@ -763,7 +775,7 @@ index 08cb9860f..427fe42ba 100644
          CharUnits Align = ArgInfo.getIndirectAlign();
          const llvm::DataLayout *TD = &CGM.getDataLayout();
  
-@@ -5788,7 +6004,7 @@ RValue CodeGenFunction::EmitCall(const CGFunctionInfo &CallInfo,
+@@ -5788,7 +6007,7 @@ RValue CodeGenFunction::EmitCall(const CGFunctionInfo &CallInfo,
                                               Align.getAsAlign(),
                                               *TD) < Align.getAsAlign()) {
            NeedCopy = true;
@@ -772,7 +784,7 @@ index 08cb9860f..427fe42ba 100644
            auto LV = I->getKnownLValue();
  
            bool isByValOrRef =
-@@ -5917,8 +6133,11 @@ RValue CodeGenFunction::EmitCall(const CGFunctionInfo &CallInfo,
+@@ -5917,8 +6136,11 @@ RValue CodeGenFunction::EmitCall(const CGFunctionInfo &CallInfo,
          Src = CreateMemTempWithoutCast(I->Ty, "coerce");
          I->copyInto(*this, Src);
        } else {
@@ -6814,7 +6826,7 @@ index 27e74d966..75ec7683c 100644
                            ReturnValue, Qualifiers(),
                            AggValueSlot::IsDestructed,
 diff --git a/clang/lib/CodeGen/CGVTables.cpp b/clang/lib/CodeGen/CGVTables.cpp
-index 9e4218646..0c53a6096 100644
+index 9e4218646..fb44979a0 100644
 --- a/clang/lib/CodeGen/CGVTables.cpp
 +++ b/clang/lib/CodeGen/CGVTables.cpp
 @@ -11,6 +11,7 @@
@@ -6825,7 +6837,7 @@ index 9e4218646..0c53a6096 100644
  #include "CGDebugInfo.h"
  #include "CodeGenFunction.h"
  #include "CodeGenModule.h"
-@@ -304,6 +305,17 @@ void CodeGenFunction::StartThunk(llvm::Function *Fn, GlobalDecl GD,
+@@ -304,6 +305,20 @@ void CodeGenFunction::StartThunk(llvm::Function *Fn, GlobalDecl GD,
                                                  FunctionArgs);
    }
  
@@ -6840,10 +6852,13 @@ index 9e4218646..0c53a6096 100644
 +    ObjC3FunctionErrorOutDecl = Out;
 +  }
 +
++  if (!IsUnprototyped && FPT->getObjC3FunctionEffects().Async)
++    ResultType = getContext().getObjC3AsyncTaskType(ResultType);
++
    // Start defining the function.
    auto NL = ApplyDebugLocation::CreateEmpty(*this);
    StartFunction(GlobalDecl(), ResultType, Fn, FnInfo, FunctionArgs,
-@@ -378,6 +390,8 @@ void CodeGenFunction::EmitCallAndReturnForThunk(llvm::FunctionCallee Callee,
+@@ -378,6 +393,8 @@ void CodeGenFunction::EmitCallAndReturnForThunk(llvm::FunctionCallee Callee,
    // Add the rest of the arguments.
    for (const ParmVarDecl *PD : MD->parameters())
      EmitDelegateCallArg(CallArgs, PD, SourceLocation());
@@ -6852,6 +6867,15 @@ index 9e4218646..0c53a6096 100644
  
    const FunctionProtoType *FPT = MD->getType()->castAs<FunctionProtoType>();
  
+@@ -404,6 +421,8 @@ void CodeGenFunction::EmitCallAndReturnForThunk(llvm::FunctionCallee Callee,
+                             : CGM.getCXXABI().hasMostDerivedReturn(CurGD)
+                                   ? CGM.getContext().VoidPtrTy
+                                   : FPT->getReturnType();
++  if (FPT->getObjC3FunctionEffects().Async)
++    ResultType = getContext().getObjC3AsyncTaskType(ResultType);
+   ReturnValueSlot Slot;
+   if (!ResultType->isVoidType() &&
+       (CurFnInfo->getReturnInfo().getKind() == ABIArgInfo::Indirect ||
 diff --git a/clang/lib/CodeGen/CMakeLists.txt b/clang/lib/CodeGen/CMakeLists.txt
 index 853f038c4..d988e673e 100644
 --- a/clang/lib/CodeGen/CMakeLists.txt
@@ -7151,7 +7175,7 @@ index 313a364e8..2b5a0a98b 100644
    case Decl::CXXConversion:
    case Decl::CXXMethod:
 diff --git a/clang/lib/CodeGen/CodeGenTypes.cpp b/clang/lib/CodeGen/CodeGenTypes.cpp
-index 55fe21658..4990abaea 100644
+index 55fe21658..10a9839c7 100644
 --- a/clang/lib/CodeGen/CodeGenTypes.cpp
 +++ b/clang/lib/CodeGen/CodeGenTypes.cpp
 @@ -11,6 +11,8 @@
@@ -7171,7 +7195,7 @@ index 55fe21658..4990abaea 100644
  #include "llvm/IR/DataLayout.h"
  #include "llvm/IR/DerivedTypes.h"
  #include "llvm/IR/Module.h"
-@@ -299,9 +302,103 @@ void CodeGenTypes::RefreshTypeCacheForClass(const CXXRecordDecl *RD) {
+@@ -299,9 +302,108 @@ void CodeGenTypes::RefreshTypeCacheForClass(const CXXRecordDecl *RD) {
    }
  }
  
@@ -7234,7 +7258,7 @@ index 55fe21658..4990abaea 100644
 +    } else if (const auto *RefTy = dyn_cast<ReferenceType>(Ty)) {
 +      VisitSelf(VisitSelf, RefTy->getPointeeType(), true, AsyncABI);
 +    } else if (const auto *MPT = dyn_cast<MemberPointerType>(Ty)) {
-+      VisitSelf(VisitSelf, MPT->getPointeeType(), true, false);
++      VisitSelf(VisitSelf, MPT->getPointeeType(), true, AsyncABI);
 +    } else if (const auto *AT = dyn_cast<ArrayType>(Ty)) {
 +      VisitSelf(VisitSelf, AT->getElementType(), true, true);
 +    } else if (const auto *Optional = dyn_cast<ObjC3OptionalType>(Ty)) {
@@ -7257,8 +7281,13 @@ index 55fe21658..4990abaea 100644
 +  const bool PrefixedDeclaration = !T.isNull() && T->isFunctionType() && D &&
 +      isa<ObjCMethodDecl, CXXConstructorDecl, CXXDestructorDecl>(D);
 +  const auto *Function = dyn_cast_or_null<FunctionDecl>(D);
-+  const bool AsyncMember = D && isa<CXXMethodDecl, ObjCMethodDecl, BlockDecl>(D);
-+  const bool AsyncOperator = Function && Function->isOverloadedOperator();
++  const bool AsyncMember = D && isa<ObjCMethodDecl, BlockDecl>(D);
++  const bool AsyncOperator = Function &&
++      (isa<CXXConversionDecl>(Function) ||
++       Function->getOverloadedOperator() == OO_New ||
++       Function->getOverloadedOperator() == OO_Array_New ||
++       Function->getOverloadedOperator() == OO_Delete ||
++       Function->getOverloadedOperator() == OO_Array_Delete);
 +  Visit(Visit, T, !PrefixedDeclaration, !AsyncMember && !AsyncOperator);
 +  return FoundUnsupportedEffect;
 +}
@@ -7275,7 +7304,7 @@ index 55fe21658..4990abaea 100644
    // First, check whether we can build the full function type.  If the
    // function type depends on an incomplete type (e.g. a struct or enum), we
    // cannot lower the function type.
-@@ -357,6 +454,20 @@ llvm::Type *CodeGenTypes::ConvertType(QualType T) {
+@@ -357,6 +459,20 @@ llvm::Type *CodeGenTypes::ConvertType(QualType T) {
  
    const Type *Ty = T.getTypePtr();
  
@@ -7296,7 +7325,7 @@ index 55fe21658..4990abaea 100644
    // For the device-side compilation, CUDA device builtin surface/texture types
    // may be represented in different types.
    if (Context.getLangOpts().CUDAIsDevice) {
-@@ -389,6 +500,8 @@ llvm::Type *CodeGenTypes::ConvertType(QualType T) {
+@@ -389,6 +505,8 @@ llvm::Type *CodeGenTypes::ConvertType(QualType T) {
    // If we don't have it in the cache, convert it now.
    llvm::Type *ResultType = nullptr;
    switch (Ty->getTypeClass()) {
@@ -13515,10 +13544,10 @@ index 000000000..3e0db3683
 +#endif
 diff --git a/clang/test/ObjC3/CodeGen/typed-error-pointer-boundaries.mm b/clang/test/ObjC3/CodeGen/typed-error-pointer-boundaries.mm
 new file mode 100644
-index 000000000..9fce35c47
+index 000000000..b4ef22820
 --- /dev/null
 +++ b/clang/test/ObjC3/CodeGen/typed-error-pointer-boundaries.mm
-@@ -0,0 +1,30 @@
+@@ -0,0 +1,31 @@
 +// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fblocks -fobjc-runtime=gnustep-2.2 -fobjc-version=3 -DTEST_KIND=1 -emit-llvm -o /dev/null -verify %s
 +// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fblocks -fobjc-runtime=gnustep-2.2 -fobjc-version=3 -DTEST_KIND=2 -emit-llvm -o /dev/null -verify %s
 +// RUN: %clang_cc1 -x objective-c++ -std=c++20 -fblocks -fobjc-runtime=gnustep-2.2 -fobjc-version=3 -DTEST_KIND=3 -emit-llvm -o /dev/null -verify %s
@@ -13542,10 +13571,11 @@ index 000000000..9fce35c47
 +struct Derived : Base { Callback good; };
 +Derived Value; // expected-error {{ObjC3 async/throws callable ABI lowering}}
 +#elif TEST_KIND == 4
++#include "Inputs/native-async-task.h"
 +struct Receiver {
 +  int member_effect(int) __objc3_async __objc3_throws(E);
 +};
-+int Receiver::member_effect(int value) __objc3_async __objc3_throws(E) { // expected-error {{ObjC3 async/throws callable ABI lowering}}
++int Receiver::member_effect(int value) __objc3_async __objc3_throws(E) { // expected-no-diagnostics
 +  return value;
 +}
 +#endif
@@ -15926,7 +15956,7 @@ index 000000000..2efab2309
 +auto member_callback(callback fn) { return Caller().call(fn); }
 diff --git a/clang/test/ObjC3/CodeGen/native-async-boundaries.mm b/clang/test/ObjC3/CodeGen/native-async-boundaries.mm
 new file mode 100644
-index 000000000..01236208d
+index 000000000..6de89e48a
 --- /dev/null
 +++ b/clang/test/ObjC3/CodeGen/native-async-boundaries.mm
 @@ -0,0 +1,26 @@
@@ -15944,7 +15974,7 @@ index 000000000..01236208d
 +async_block rejected; // expected-error {{ObjC3 async/throws callable ABI lowering}}
 +#elif TEST_KIND == 2
 +struct Receiver { int method() __objc3_async; };
-+int Receiver::method() __objc3_async { return 1; } // expected-error {{ObjC3 async/throws callable ABI lowering}}
++int Receiver::method() __objc3_async { return 1; } // expected-no-diagnostics
 +#elif TEST_KIND == 3
 +int &rejected_reference() __objc3_async {
 +  static int value;
@@ -15952,7 +15982,7 @@ index 000000000..01236208d
 +}
 +#elif TEST_KIND == 5
 +struct Operand {};
-+int operator+(Operand, Operand) __objc3_async { return 1; } // expected-error {{ObjC3 async/throws callable ABI lowering}}
++int operator+(Operand, Operand) __objc3_async { return 1; } // expected-no-diagnostics
 +#elif TEST_KIND == 4
 +auto use_early() { return early(); }
 +#endif
@@ -16102,3 +16132,55 @@ index 000000000..942666dcb
 +void ordinary() {}
 +// CHECK-LABEL: define{{.*}} i32 @parameters(
 +int parameters(value) int value; { return value + 1; }
+diff --git a/clang/test/ObjC3/CodeGen/native-async-cxx-callables.mm b/clang/test/ObjC3/CodeGen/native-async-cxx-callables.mm
+new file mode 100644
+index 000000000..d14d14e53
+--- /dev/null
++++ b/clang/test/ObjC3/CodeGen/native-async-cxx-callables.mm
+@@ -0,0 +1,46 @@
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -emit-llvm -o %t %s
++// RUN: FileCheck %s < %t
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -std=c++23 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -fobjc-arc -emit-llvm -o /dev/null -verify %s
++// expected-no-diagnostics
++#include "Inputs/native-async-task.h"
++@protocol Error @end
++struct Prefix { virtual ~Prefix() {} long padding; };
++struct Base {
++  virtual int value(int) const __objc3_async = 0;
++  virtual int checked(bool, id<Error>) const __objc3_async __objc3_throws(id<Error>) = 0;
++};
++struct Worker : Prefix, Base {
++  int bias;
++  int value(int n) const __objc3_async override { return bias + n; }
++  int checked(bool fail, id<Error> error) const __objc3_async __objc3_throws(id<Error>) override {
++    if (fail) __objc3_throw(error);
++    return bias;
++  }
++  static int constant() __objc3_async { return 7; }
++  int operator()(int n) const __objc3_async { return __objc3_await value(n); }
++  int operator[](int n) const __objc3_async { return bias + n; }
++  int operator-() const __objc3_async { return -bias; }
++  int qualified() & __objc3_async { return bias; }
++  int qualified() && __objc3_async { return bias + 1; }
++#if __cplusplus > 202002L
++  int explicit_object(this Worker self, int n) __objc3_async { return self.bias + n; }
++#endif
++};
++int operator+(const Worker &w, int n) __objc3_async { return __objc3_await w.value(n); }
++using Member = int (Worker::*)(int) const __objc3_async;
++using CheckedMember = int (Base::*)(bool, id<Error>) const __objc3_async __objc3_throws(id<Error>);
++int invoke(Worker &w, Base &b, Member member, CheckedMember checked, id<Error> error)
++    __objc3_async __objc3_throws(id<Error>) {
++  int a = __objc3_await b.value(1);
++  int c = __objc3_await (w.*member)(2);
++  int d = __objc3_try(__objc3_await (b.*checked)(false, error));
++  int e = __objc3_await w(3);
++  int f = __objc3_await w[4];
++  int g = __objc3_await -w;
++  int h = __objc3_await (w + 5);
++  return a + c + d + e + f + g + h + __objc3_await Worker::constant();
++}
++Worker instantiate;
++// A secondary-base virtual thunk returns the task carrier through sret.
++// CHECK: define {{.*}}void @_ZThn16_NK6Worker5valueEi(ptr {{.*}}sret
++// CHECK: define {{.*}}void @_ZThn16_NK6Worker7checkedEbPU15objcproto5Error11objc_object(ptr {{.*}}sret

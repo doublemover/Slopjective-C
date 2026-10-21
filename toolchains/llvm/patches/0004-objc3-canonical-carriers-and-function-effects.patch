@@ -1075,15 +1075,17 @@ index 7671f003c..af92b2d03 100644
 +
  } // end of Parser diagnostics
 diff --git a/clang/include/clang/Basic/DiagnosticSemaKinds.td b/clang/include/clang/Basic/DiagnosticSemaKinds.td
-index 2cb79b6ba..5a7270305 100644
+index 2cb79b6ba..d753a53a9 100644
 --- a/clang/include/clang/Basic/DiagnosticSemaKinds.td
 +++ b/clang/include/clang/Basic/DiagnosticSemaKinds.td
-@@ -11,7 +11,44 @@
+@@ -11,7 +11,46 @@
  //===----------------------------------------------------------------------===//
  
  let Component = "Sema" in {
 +def err_objc3_async_task_unsupported : Error<
-+  "native async task lowering requires a non-variadic Linux x86-64 Objective-C++20/23 free function with a concrete value or void result (scalar or void for checked throws)">;
++  "native async task lowering requires a non-variadic Linux x86-64 Objective-C++20/23 function with a concrete value or void result (scalar or void for checked throws)">;
++def err_objc3_async_covariant_return : Error<
++  "native async overrides require identical logical result types">;
 +def err_objc3_async_defer_suspend : Error<"cannot suspend from a defer statement">;
 +def err_objc3_async_task_header : Error<
 +  "native async task lowering requires the installed <objc3_task.hpp> header">;
@@ -1123,7 +1125,7 @@ index 2cb79b6ba..5a7270305 100644
  // C++11 compatibility with C++98.
  defm nonclass_type_friend : CXX11Compat<"non-class friend type %0 is">;
  defm static_data_member_in_union : CXX11Compat<"static data member %0 in union is">;
-@@ -7010,6 +7047,13 @@ def note_protected_by_objc_synchronized : Note<
+@@ -7010,6 +7049,13 @@ def note_protected_by_objc_synchronized : Note<
    "jump bypasses initialization of @synchronized block">;
  def note_protected_by_objc_autoreleasepool : Note<
    "jump bypasses auto release push of @autoreleasepool block">;
@@ -1137,7 +1139,7 @@ index 2cb79b6ba..5a7270305 100644
  def note_protected_by_cxx_try : Note<
    "jump bypasses initialization of try block">;
  def note_protected_by_cxx_catch : Note<
-@@ -7026,6 +7070,10 @@ def note_protected_by_objc_strong_init : Note<
+@@ -7026,6 +7072,10 @@ def note_protected_by_objc_strong_init : Note<
    "jump bypasses initialization of __strong variable">;
  def note_protected_by_objc_weak_init : Note<
    "jump bypasses initialization of __weak variable">;
@@ -1148,7 +1150,7 @@ index 2cb79b6ba..5a7270305 100644
  def note_protected_by_non_trivial_c_struct_init : Note<
    "jump bypasses initialization of variable of non-trivial C struct type">;
  def note_protected_by_defer_stmt : Note<"jump bypasses defer statement">;
-@@ -8001,6 +8049,25 @@ def warn_param_mismatched_alignment : Warning<
+@@ -8001,6 +8051,25 @@ def warn_param_mismatched_alignment : Warning<
  
  def err_objc_object_assignment : Error<
    "cannot assign to class object (%0 invalid)">;
@@ -1174,7 +1176,7 @@ index 2cb79b6ba..5a7270305 100644
  def err_typecheck_invalid_operands : Error<
    "invalid operands to binary expression (%0 and %1)">, Deferrable;
  def note_typecheck_invalid_operands_converted : Note<
-@@ -14367,4 +14434,17 @@ def err_cuda_device_kernel_launch_not_supported
+@@ -14367,4 +14436,17 @@ def err_cuda_device_kernel_launch_not_supported
  def err_cuda_device_kernel_launch_require_rdc
      : Error<"kernel launch from __device__ or __global__ function requires "
              "relocatable device code (i.e. requires -fgpu-rdc)">;
@@ -5281,7 +5283,7 @@ index 6a25a799a..28b81c77e 100644
              RecordArgPassingKind::CanNeverPassInRegs);
        } else if (PointerAuthQualifier Q = FT.getPointerAuth();
 diff --git a/clang/lib/Sema/SemaDeclCXX.cpp b/clang/lib/Sema/SemaDeclCXX.cpp
-index b0669c602..925c21bcf 100644
+index b0669c602..fc697c911 100644
 --- a/clang/lib/Sema/SemaDeclCXX.cpp
 +++ b/clang/lib/Sema/SemaDeclCXX.cpp
 @@ -13,6 +13,7 @@
@@ -5415,6 +5417,24 @@ index b0669c602..925c21bcf 100644
    if (OldFT->hasExtParameterInfos()) {
      for (unsigned I = 0, E = OldFT->getNumParams(); I != E; ++I)
        // A parameter of the overriding method should be annotated with noescape
+@@ -19001,6 +19058,17 @@ bool Sema::CheckOverridingFunctionReturnType(const CXXMethodDecl *New,
+       NewTy->isDependentType() || OldTy->isDependentType())
+     return false;
+ 
++  // Async overrides return task<R>, whose carrier is invariant in R. A
++  // native covariant thunk cannot adjust the result inside a suspended task.
++  if (New->getType()->castAs<FunctionProtoType>()
++          ->getObjC3FunctionEffects().Async ||
++      Old->getType()->castAs<FunctionProtoType>()
++          ->getObjC3FunctionEffects().Async) {
++    Diag(New->getLocation(), diag::err_objc3_async_covariant_return);
++    Diag(Old->getLocation(), diag::note_overridden_virtual_function);
++    return true;
++  }
++
+   // Check if the return types are covariant
+   QualType NewClassTy, OldClassTy;
+ 
 diff --git a/clang/lib/Sema/SemaDeclObjC.cpp b/clang/lib/Sema/SemaDeclObjC.cpp
 index 04ba52809..e73762664 100644
 --- a/clang/lib/Sema/SemaDeclObjC.cpp
@@ -5524,7 +5544,7 @@ index 04ba52809..e73762664 100644
      CvtQTToAstBitMask(ReturnQT.getObjCDeclQualifier()));
  
 diff --git a/clang/lib/Sema/SemaExpr.cpp b/clang/lib/Sema/SemaExpr.cpp
-index 5d4c5ff7d..fea174760 100644
+index 5d4c5ff7d..aea5ca2d5 100644
 --- a/clang/lib/Sema/SemaExpr.cpp
 +++ b/clang/lib/Sema/SemaExpr.cpp
 @@ -10,11 +10,13 @@
@@ -5562,7 +5582,7 @@ index 5d4c5ff7d..fea174760 100644
      case Type::PredefinedSugar:
        T = cast<PredefinedSugarType>(Ty)->desugar();
        break;
-@@ -7276,7 +7292,19 @@ ExprResult Sema::BuildResolvedCallExpr(Expr *Fn, NamedDecl *NDecl,
+@@ -7276,7 +7292,18 @@ ExprResult Sema::BuildResolvedCallExpr(Expr *Fn, NamedDecl *NDecl,
      return ExprError();
  
    // We know the result type of the call, set it.
@@ -5572,8 +5592,7 @@ index 5d4c5ff7d..fea174760 100644
 +      (!Context.getObjC3AsyncTaskType(Proto->getReturnType()).isNull() ||
 +       !Context.getTranslationUnitDecl()
 +            ->lookup(&Context.Idents.get("__objc3_async_task")).empty())) {
-+    if (Fn->getType()->isBlockPointerType() ||
-+        isa_and_nonnull<CXXMethodDecl>(FDecl))
++    if (Fn->getType()->isBlockPointerType())
 +      return ExprError(Diag(LParenLoc, diag::err_objc3_async_task_unsupported));
 +    CallResult = BuildObjC3AsyncTaskType(Proto, LParenLoc);
 +    if (CallResult.isNull())
@@ -5583,7 +5602,7 @@ index 5d4c5ff7d..fea174760 100644
    TheCall->setValueKind(Expr::getValueKindForType(FuncT->getReturnType()));
  
    // WebAssembly tables can't be used as arguments.
-@@ -9422,7 +9450,85 @@ static AssignConvertType checkPointerTypesForAssignment(Sema &S,
+@@ -9422,7 +9449,85 @@ static AssignConvertType checkPointerTypesForAssignment(Sema &S,
      return AssignConvertType::FunctionVoidPointer;
    }
  
@@ -5670,7 +5689,7 @@ index 5d4c5ff7d..fea174760 100644
            diag::warn_typecheck_convert_incompatible_function_pointer_strict,
            Loc) &&
        RHSType->isFunctionPointerType() && LHSType->isFunctionPointerType() &&
-@@ -9431,7 +9537,6 @@ static AssignConvertType checkPointerTypesForAssignment(Sema &S,
+@@ -9431,7 +9536,6 @@ static AssignConvertType checkPointerTypesForAssignment(Sema &S,
  
    // C99 6.5.16.1p1 (constraint 3): both operands are pointers to qualified or
    // unqualified versions of compatible types, ...
@@ -5678,7 +5697,7 @@ index 5d4c5ff7d..fea174760 100644
  
    if (ltrans->isOverflowBehaviorType() || rtrans->isOverflowBehaviorType()) {
      if (!S.Context.hasSameType(ltrans, rtrans)) {
-@@ -9452,7 +9557,22 @@ static AssignConvertType checkPointerTypesForAssignment(Sema &S,
+@@ -9452,7 +9556,22 @@ static AssignConvertType checkPointerTypesForAssignment(Sema &S,
      }
    }
  
@@ -5702,7 +5721,7 @@ index 5d4c5ff7d..fea174760 100644
      // Check if the pointee types are compatible ignoring the sign.
      // We explicitly check for char so that we catch "char" vs
      // "unsigned char" on systems where "char" is unsigned.
-@@ -9524,12 +9644,20 @@ static AssignConvertType checkPointerTypesForAssignment(Sema &S,
+@@ -9524,12 +9643,20 @@ static AssignConvertType checkPointerTypesForAssignment(Sema &S,
      const auto *LFPT = dyn_cast<FunctionProtoType>(LFT);
      const auto *RFPT = dyn_cast<FunctionProtoType>(RFT);
      if (LFPT && RFPT) {
@@ -5725,7 +5744,7 @@ index 5d4c5ff7d..fea174760 100644
        rtrans = S.Context.getFunctionType(LFPT->getReturnType(),
                                           LFPT->getParamTypes(), EPI);
      } else if (RFPT) {
-@@ -9592,12 +9720,60 @@ static AssignConvertType checkBlockPointerTypesForAssignment(Sema &S,
+@@ -9592,12 +9719,60 @@ static AssignConvertType checkBlockPointerTypesForAssignment(Sema &S,
    //  * CVR and address space of LHS should be a superset of CVR and address
    //  space of RHS.
    //  * unqualified types should be compatible.
@@ -5788,7 +5807,7 @@ index 5d4c5ff7d..fea174760 100644
      return AssignConvertType::IncompatibleBlockPointer;
  
    return ConvTy;
-@@ -17056,6 +17232,8 @@ ExprResult Sema::ActOnBlockStmtExpr(SourceLocation CaretLoc,
+@@ -17056,6 +17231,8 @@ ExprResult Sema::ActOnBlockStmtExpr(SourceLocation CaretLoc,
  
    BlockScopeInfo *BSI = cast<BlockScopeInfo>(FunctionScopes.back());
    BlockDecl *BD = BSI->TheDecl;
@@ -5797,7 +5816,7 @@ index 5d4c5ff7d..fea174760 100644
  
    maybeAddDeclWithEffects(BD);
  
-@@ -17218,7 +17396,9 @@ ExprResult Sema::ActOnBlockStmtExpr(SourceLocation CaretLoc,
+@@ -17218,7 +17395,9 @@ ExprResult Sema::ActOnBlockStmtExpr(SourceLocation CaretLoc,
      // variables needs destruction.
      for (const auto &CI : Result->getBlockDecl()->captures()) {
        const VarDecl *var = CI.getVariable();
@@ -7469,7 +7488,7 @@ index 000000000..85e92f994
 +  return ObjC3ThrowStmt::Create(Context, KeywordLoc, FullExpr.get(), SemiLoc);
 +}
 diff --git a/clang/lib/Sema/SemaOverload.cpp b/clang/lib/Sema/SemaOverload.cpp
-index eafda3219..1572515ef 100644
+index eafda3219..6f85a6608 100644
 --- a/clang/lib/Sema/SemaOverload.cpp
 +++ b/clang/lib/Sema/SemaOverload.cpp
 @@ -2036,6 +2036,36 @@ bool Sema::IsFunctionConversion(QualType FromType, QualType ToType) const {
@@ -7537,6 +7556,102 @@ index eafda3219..1572515ef 100644
    // Perform the quick checks that will tell us whether these
    // function types are obviously different.
    if (FromFunctionType->getNumParams() != ToFunctionType->getNumParams() ||
+@@ -15187,7 +15238,10 @@ ExprResult Sema::BuildCXXMemberCallExpr(Expr *E, NamedDecl *FoundDecl,
+     }
+   }
+   CallExpr *CE;
+-  QualType ResultType = Method->getReturnType();
++  QualType ResultType = BuildObjC3AsyncTaskType(
++      Method->getType()->castAs<FunctionProtoType>(), Method->getLocation());
++  if (ResultType.isNull())
++    return ExprError();
+   ExprValueKind VK = Expr::getValueKindForType(ResultType);
+   ResultType = ResultType.getNonLValueExprType(Context);
+   if (Method->isExplicitObjectMemberFunction()) {
+@@ -15339,7 +15393,10 @@ Sema::CreateOverloadedUnaryOp(SourceLocation OpLoc, UnaryOperatorKind Opc,
+         return ExprError();
+ 
+       // Determine the result type.
+-      QualType ResultTy = FnDecl->getReturnType();
++      QualType ResultTy = BuildObjC3AsyncTaskType(
++          FnDecl->getType()->castAs<FunctionProtoType>(), FnDecl->getLocation());
++      if (ResultTy.isNull())
++        return ExprError();
+       ExprValueKind VK = Expr::getValueKindForType(ResultTy);
+       ResultTy = ResultTy.getNonLValueExprType(Context);
+ 
+@@ -15742,7 +15799,10 @@ ExprResult Sema::CreateOverloadedBinOp(SourceLocation OpLoc,
+           return ExprError();
+ 
+         // Determine the result type.
+-        QualType ResultTy = FnDecl->getReturnType();
++        QualType ResultTy = BuildObjC3AsyncTaskType(
++            FnDecl->getType()->castAs<FunctionProtoType>(), FnDecl->getLocation());
++        if (ResultTy.isNull())
++          return ExprError();
+         ExprValueKind VK = Expr::getValueKindForType(ResultTy);
+         ResultTy = ResultTy.getNonLValueExprType(Context);
+ 
+@@ -16196,7 +16256,10 @@ ExprResult Sema::CreateOverloadedArraySubscriptExpr(SourceLocation LLoc,
+           return ExprError();
+ 
+         // Determine the result type
+-        QualType ResultTy = FnDecl->getReturnType();
++        QualType ResultTy = BuildObjC3AsyncTaskType(
++            FnDecl->getType()->castAs<FunctionProtoType>(), FnDecl->getLocation());
++        if (ResultTy.isNull())
++          return ExprError();
+         ExprValueKind VK = Expr::getValueKindForType(ResultTy);
+         ResultTy = ResultTy.getNonLValueExprType(Context);
+ 
+@@ -16308,6 +16371,11 @@ ExprResult Sema::BuildCallToMemberFunction(Scope *S, Expr *MemExprE,
+ 
+     const FunctionProtoType *proto = fnType->castAs<FunctionProtoType>();
+     QualType resultType = proto->getCallResultType(Context);
++    if (proto->getObjC3FunctionEffects().Async) {
++      resultType = BuildObjC3AsyncTaskType(proto, LParenLoc);
++      if (resultType.isNull())
++        return ExprError();
++    }
+     ExprValueKind valueKind = Expr::getValueKindForType(proto->getReturnType());
+ 
+     // Check that the object type isn't more qualified than the
+@@ -16511,7 +16579,10 @@ ExprResult Sema::BuildCallToMemberFunction(Scope *S, Expr *MemExprE,
+     MemExpr = cast<MemberExpr>(MemExprE->IgnoreParens());
+   }
+ 
+-  QualType ResultType = Method->getReturnType();
++  QualType ResultType = BuildObjC3AsyncTaskType(
++      Method->getType()->castAs<FunctionProtoType>(), Method->getLocation());
++  if (ResultType.isNull())
++    return ExprError();
+   ExprValueKind VK = Expr::getValueKindForType(ResultType);
+   ResultType = ResultType.getNonLValueExprType(Context);
+ 
+@@ -16863,7 +16934,10 @@ Sema::BuildCallToObjectOfClassType(Scope *S, Expr *Obj,
+   DiagnoseSentinelCalls(Method, LParenLoc, Args);
+ 
+   // Once we've built TheCall, all of the expressions are properly owned.
+-  QualType ResultTy = Method->getReturnType();
++  QualType ResultTy = BuildObjC3AsyncTaskType(
++      Method->getType()->castAs<FunctionProtoType>(), Method->getLocation());
++  if (ResultTy.isNull())
++    return true;
+   ExprValueKind VK = Expr::getValueKindForType(ResultTy);
+   ResultTy = ResultTy.getNonLValueExprType(Context);
+ 
+@@ -16992,7 +17066,10 @@ ExprResult Sema::BuildOverloadedArrowExpr(Scope *S, Expr *Base,
+   if (FnExpr.isInvalid())
+     return ExprError();
+ 
+-  QualType ResultTy = Method->getReturnType();
++  QualType ResultTy = BuildObjC3AsyncTaskType(
++      Method->getType()->castAs<FunctionProtoType>(), Method->getLocation());
++  if (ResultTy.isNull())
++    return ExprError();
+   ExprValueKind VK = Expr::getValueKindForType(ResultTy);
+   ResultTy = ResultTy.getNonLValueExprType(Context);
+ 
 diff --git a/clang/lib/Sema/SemaStmt.cpp b/clang/lib/Sema/SemaStmt.cpp
 index 4d12b6c72..7cf90d573 100644
 --- a/clang/lib/Sema/SemaStmt.cpp
@@ -14816,4 +14931,53 @@ index 000000000..f2de486ab
 +  catch (int) {
 +    return __objc3_await plain(); // expected-error {{cannot be used in the handler of a try block}}
 +  }
++}
+diff --git a/clang/test/ObjC3/AST/native-async-cxx-pch.mm b/clang/test/ObjC3/AST/native-async-cxx-pch.mm
+new file mode 100644
+index 000000000..a0729465d
+--- /dev/null
++++ b/clang/test/ObjC3/AST/native-async-cxx-pch.mm
+@@ -0,0 +1,22 @@
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -emit-pch -o %t %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -include-pch %t -emit-llvm -o /dev/null -verify %s
++// expected-no-diagnostics
++#ifndef NATIVE_CXX_PCH
++#define NATIVE_CXX_PCH
++#include "../CodeGen/Inputs/native-async-task.h"
++@protocol Error @end
++struct Worker {
++  int checked(bool fail, id<Error> error) const __objc3_async __objc3_throws(id<Error>) {
++    if (fail) __objc3_throw(error);
++    return 42;
++  }
++  template <class T> T echo(T value) const __objc3_async { return value; }
++  int operator()(int value) const __objc3_async { return value; }
++};
++using Member = int (Worker::*)(bool, id<Error>) const __objc3_async __objc3_throws(id<Error>);
++#else
++int invoke(Worker &w, Member member, id<Error> error) __objc3_async __objc3_throws(id<Error>) {
++  int result = __objc3_try(__objc3_await (w.*member)(false, error));
++  return result + __objc3_await w.echo(42) + __objc3_await w(7);
++}
++#endif
+diff --git a/clang/test/ObjC3/Sema/native-async-cxx-boundaries.mm b/clang/test/ObjC3/Sema/native-async-cxx-boundaries.mm
+new file mode 100644
+index 000000000..d098d378c
+--- /dev/null
++++ b/clang/test/ObjC3/Sema/native-async-cxx-boundaries.mm
+@@ -0,0 +1,15 @@
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -fsyntax-only -verify %s
++#include "../CodeGen/Inputs/native-async-task.h"
++struct Base {
++  virtual Base *clone() __objc3_async; // expected-note {{overridden virtual function is here}}
++};
++struct Derived : Base {
++  Derived *clone() __objc3_async override; // expected-error {{native async overrides require identical logical result types}}
++};
++@protocol Error @end
++struct Worker {
++  int checked() const __objc3_async __objc3_throws(id<Error>);
++};
++int unchecked(Worker &w) __objc3_async {
++  return __objc3_await w.checked(); // expected-error 2 {{throwing call requires an explicit tryValue, tryOptional or tryForce expression}}
 +}

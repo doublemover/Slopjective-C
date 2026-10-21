@@ -68,7 +68,7 @@ This stage admits real scalar, enumeration, C pointer, Objective-C object,
 protocol, Class, Block and void results for checked async functions. C++ record,
 complex, member pointer, reference, variadic and undeduced checked results remain
 outside the lowering contract. Ordinary nonthrowing async functions retain their
-existing C++ value result support. Async methods, async Blocks, pure Objective-C
+existing C++ value result support. Objective-C async methods, async Blocks, pure Objective-C
 async lowering and compiler actor isolation remain future compiler milestones.
 Public async/await and actor capability predicates remain reserved.
 

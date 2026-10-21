@@ -109,4 +109,48 @@ template <class T> T native_identity(T value) __objc3_async {
   __objc3_await objc3::task_yield;
   return value;
 }
+
+// The implicit receiver is borrowed, as for a native C++ coroutine. The
+// consumer keeps it alive until every member task has finished or cancelled.
+struct native_async_prefix {
+  virtual ~native_async_prefix() = default;
+  long padding = 1;
+};
+struct native_async_base {
+  virtual ~native_async_base() = default;
+  virtual int value(std::shared_ptr<async_state>, int) const __objc3_async = 0;
+  virtual int checked(std::shared_ptr<async_state>, bool) const
+      __objc3_async __objc3_throws(id<NativeFirstError>) = 0;
+};
+struct native_async_worker : native_async_prefix, native_async_base {
+  int bias = 40;
+  int value(std::shared_ptr<async_state>, int) const __objc3_async override;
+  int checked(std::shared_ptr<async_state>, bool) const
+      __objc3_async __objc3_throws(id<NativeFirstError>) override;
+  static int constant(int) __objc3_async;
+  int operator()(int) const __objc3_async;
+  int operator[](int) const __objc3_async;
+  int operator-() const __objc3_async;
+  int qualified() & __objc3_async;
+  int qualified() && __objc3_async;
+  int hopped(objc3_actor_t *, std::shared_ptr<async_state>) const __objc3_async;
+  template <class T> T echo(T value) const __objc3_async {
+    __objc3_await objc3::task_yield;
+    return value;
+  }
+#if __cplusplus > 202002L
+  int copied(this native_async_worker self, int value) __objc3_async {
+    __objc3_await objc3::task_yield;
+    return self.bias + value;
+  }
+#endif
+};
+using native_member_callback = int (native_async_worker::*)(
+    std::shared_ptr<async_state>, int) const __objc3_async;
+using native_checked_member_callback = int (native_async_base::*)(
+    std::shared_ptr<async_state>, bool) const
+    __objc3_async __objc3_throws(id<NativeFirstError>);
+int operator+(const native_async_worker &, int) __objc3_async;
+int native_member_apply(const native_async_worker &, native_member_callback,
+                        std::shared_ptr<async_state>, int) __objc3_async;
 #endif

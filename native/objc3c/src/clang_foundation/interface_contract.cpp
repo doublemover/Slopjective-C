@@ -210,6 +210,14 @@ InterfaceContractValidation ValidateSemanticInterface(
     Add(result, "O3IFC016",
         "C++ declarations are missing their semantic interface capability",
         expected.canonical_name);
+  const bool has_cxx_members = std::any_of(
+      sidecar.declarations.begin(), sidecar.declarations.end(),
+      [](const auto &d) { return d.kind == "CXXMethod"; });
+  if (has_cxx_members != std::binary_search(
+          required.begin(), required.end(), "objc3.cxx-member-interfaces.v1"))
+    Add(result, "O3IFC021",
+        "C++ member declarations and required capability must agree",
+        expected.canonical_name);
   const bool has_spi =
       std::any_of(sidecar.declarations.begin(), sidecar.declarations.end(),
                   [](const auto &d) { return !d.spi_group.empty(); });

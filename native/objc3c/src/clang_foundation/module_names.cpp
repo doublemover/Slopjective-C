@@ -28,7 +28,8 @@ bool HasValidModuleOwnedName(const InterfaceModuleIdentity &module,
                              const InterfaceDeclarationIdentity &declaration) {
   if (declaration.native_symbol_name.empty())
     return true;
-  if (declaration.kind != "Function" && declaration.kind != "Var" &&
+  if (declaration.kind != "Function" && declaration.kind != "CXXMethod" &&
+      declaration.kind != "Var" &&
       declaration.kind != "ObjCInterface" &&
       declaration.kind != "ObjCProtocol" && declaration.kind != "ObjCCategory")
     return false;
@@ -112,14 +113,17 @@ public:
     return VisitNamedDecl(expression->getDecl());
   }
   bool VisitNamedDecl(clang::NamedDecl *decl) {
-    if (decl->isImplicit() || !decl->getIdentifier() ||
+    if (decl->isImplicit() ||
+        (!decl->getIdentifier() && !llvm::isa<clang::CXXMethodDecl>(decl)) ||
+        llvm::isa<clang::CXXConstructorDecl, clang::CXXDestructorDecl,
+                  clang::CXXConversionDecl>(decl) ||
         !IsModuleOwnedSource(context_, decl->getLocation(), source_root_))
       return true;
     const auto *owner = decl->getDeclContext();
     while (owner && llvm::isa<clang::LinkageSpecDecl>(owner))
       owner = owner->getParent();
     if (!owner || (!owner->isTranslationUnit() &&
-                   !llvm::isa<clang::NamespaceDecl>(owner)))
+                   !llvm::isa<clang::NamespaceDecl, clang::CXXRecordDecl>(owner)))
       return true;
     if (llvm::isa<clang::ObjCCompatibleAliasDecl>(decl))
       return Error(

@@ -478,3 +478,52 @@ int native_checked_hop(objc3_actor_t *first, objc3_actor_t *second,
   __objc3_await objc3::hop_to(first);
   return value;
 }
+
+extern "C" __attribute__((noinline)) void
+objc3_native_async_member_checkpoint(int result, int bias) {
+  if (result != 42 || bias != 40) __builtin_trap();
+}
+int native_async_worker::value(std::shared_ptr<async_state> state, int n) const
+    __objc3_async {
+  frame_guard guard(state);
+  int result = bias + __objc3_await native_leaf(state, n);
+  if (n == 2) objc3_native_async_member_checkpoint(result, bias);
+  return result;
+}
+int native_async_worker::checked(std::shared_ptr<async_state> state, bool fail) const
+    __objc3_async __objc3_throws(id<NativeFirstError>) {
+  frame_guard guard(state);
+  return __objc3_try(__objc3_await native_checked_leaf(state, fail));
+}
+int native_async_worker::constant(int n) __objc3_async {
+  __objc3_await objc3::task_yield;
+  return n;
+}
+int native_async_worker::operator()(int n) const __objc3_async {
+  __objc3_await objc3::task_yield;
+  return bias + n;
+}
+int native_async_worker::operator[](int n) const __objc3_async { return bias + n; }
+int native_async_worker::operator-() const __objc3_async { return -bias; }
+int native_async_worker::qualified() & __objc3_async { return bias; }
+int native_async_worker::qualified() && __objc3_async { return bias + 1; }
+int operator+(const native_async_worker &worker, int n) __objc3_async {
+  __objc3_await objc3::task_yield;
+  return worker.bias + n;
+}
+int native_member_apply(const native_async_worker &worker,
+                        native_member_callback member,
+                        std::shared_ptr<async_state> state, int n) __objc3_async {
+  return __objc3_await (worker.*member)(std::move(state), n);
+}
+int native_async_worker::hopped(objc3_actor_t *actor,
+                                std::shared_ptr<async_state> state) const __objc3_async {
+  __objc3_await objc3::hop_to(actor);
+  int result = __objc3_await value(std::move(state), 2);
+  objc3_current_actor_facts facts{};
+  facts.struct_size = sizeof(facts);
+  facts.version = OBJC3_ACTOR_SERVICE_VERSION;
+  if (objc3_actor_current_facts(&facts) != OBJC3_SERVICE_OK ||
+      facts.actor_identity != objc3_actor_identity(actor)) __builtin_trap();
+  return result;
+}

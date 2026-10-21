@@ -80,3 +80,20 @@ int native_module_checked(int value, bool fail)
   if (fail) __objc3_throw((id<NativeModuleError>)error);
   return value;
 }
+
+struct NativeModuleWorker {
+  int bias;
+  int value(int) const __objc3_async;
+  int checked(int, bool) const __objc3_async __objc3_throws(id<NativeModuleError>);
+  int operator()(int) const __objc3_async;
+};
+int NativeModuleWorker::value(int n) const __objc3_async {
+  return bias + __objc3_await native_module_value(n - 1);
+}
+int NativeModuleWorker::checked(int n, bool fail) const
+    __objc3_async __objc3_throws(id<NativeModuleError>) {
+  return __objc3_try(__objc3_await native_module_checked(n, fail));
+}
+int NativeModuleWorker::operator()(int n) const __objc3_async {
+  return __objc3_await value(n);
+}

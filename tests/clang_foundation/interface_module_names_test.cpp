@@ -93,6 +93,15 @@ CompileRequest Request(const fs::path &root, BaseLanguage language,
     @end
   )";
   r.interface_exports = {"module_value", "module_global", "HeaderValue"};
+  if (language == BaseLanguage::Cxx || language == BaseLanguage::ObjectiveCxx) {
+    *r.source_text += R"(
+      struct MemberValue { int slot; int get() const; int operator()(int) const; };
+      int MemberValue::get() const { return slot; }
+      int MemberValue::operator()(int n) const { return slot + n; }
+    )";
+    r.interface_exports.push_back("MemberValue");
+  }
+
   if (r.objc3)
     r.interface_exports.insert(r.interface_exports.end(),
                                {"Root", "Protocol", "Child", "Extension"});
@@ -112,7 +121,7 @@ void Success(const CompileResult &r) {
 const std::vector<llvm::StringRef> semantics = {
     "objc3.canonical-function-effects.v1", "objc3.native-carrier-types.v1",
     "objc3.native-return-ownership.v1",    "objc3.direct-dispatch.v1",
-    "objc3.cxx-data-interfaces.v1",        "objc3.ownership-projection.v1",
+    "objc3.cxx-data-interfaces.v1", "objc3.cxx-member-interfaces.v1",        "objc3.ownership-projection.v1",
     "objc3.api-availability.v1",           "objc3.api-partitions.v1",
     "objc3.module-owned-names.v1"};
 void Check(const fs::path &root, BaseLanguage language,
@@ -127,7 +136,7 @@ void Check(const fs::path &root, BaseLanguage language,
       built.interface_artifact->source_bytes, semantics);
   assert(sidecar);
   for (const auto &d : sidecar->declarations) {
-    if (d.kind == "Function" || d.kind == "Var" || d.kind == "ObjCInterface" ||
+    if (d.kind == "Function" || d.kind == "CXXMethod" || d.kind == "Var" || d.kind == "ObjCInterface" ||
         d.kind == "ObjCProtocol" || d.kind == "ObjCCategory") {
       assert(!d.native_symbol_name.empty());
       assert(d.native_symbol_name ==

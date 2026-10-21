@@ -273,6 +273,9 @@ The [owned async result contract](docs/roadmap/linux_async_owned_results.md) add
 object, protocol, Class and Block results, with canonical task carriers across
 ARC/MRC providers and consumers. [Checked async errors](docs/roadmap/linux_async_checked_errors.md)
 add owned deferred errors, checked awaits and typed handlers that can suspend.
+[C++ async callables](docs/roadmap/linux_async_cxx_callables.md) extend this stage
+to members, virtual dispatch, member pointers and awaitable operators, including
+public aggregate methods in source-free packages.
 Extension ABI 16 requires every object, PCH, semantic interface and package to be
 rebuilt. Public async/await and compiler actor isolation remain reserved.
 

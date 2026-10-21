@@ -1,7 +1,7 @@
 # Linux forward development
 
 The active product is the Clang-only Linux x86-64 SDK. The
-[acceptance receipt](../support/linux_async_owned_results_acceptance.json) identifies
+[acceptance receipt](../support/linux_async_checked_errors_acceptance.json) identifies
 its exact archive, implementation, installed execution and fresh-distribution
 evidence. Tool versions come from [the manifest](../../toolchains/llvm/manifest.json);
 public language claims come from [the capability authority](../../schemas/objc3-language-capabilities.json).
@@ -10,7 +10,7 @@ public language claims come from [the capability authority](../../schemas/objc3-
 
 The [public Optional/Result contract](linux_public_carriers.md) and
 [synchronous error contract](linux_public_errors.md) now have native compiler
-syntax in Objective-C17 and Objective-C++20/23. Extension ABI 15 requires a full
+syntax in Objective-C17 and Objective-C++20/23. Extension ABI 16 requires a full
 rebuild of objects, PCH files, semantic interfaces and packages. The public
 feature predicates describe the bounded Linux x86-64 GNUstep 2.2 compatibility
 profile; async/await and actors remain reserved.
@@ -67,7 +67,9 @@ The implemented foundations have separate bounded contracts:
   retain objects and copy Blocks through nested awaits, canonical ARC/MRC task
   carriers and source-free providers. [Checked async errors](linux_async_checked_errors.md)
   add owned deferred Error objects, checked awaits and suspending handlers.
-  Public async/await remains reserved.
+  [C++ async callables](linux_async_cxx_callables.md) extend this compiler work to
+  member functions, virtual calls, member pointers and operators, with bounded
+  source-free aggregate method interfaces. Public async/await remains reserved.
 
 ## Next compiler milestones
 

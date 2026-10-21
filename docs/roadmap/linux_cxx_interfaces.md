@@ -14,8 +14,13 @@ the original mode. Consumers reproduce the declaration and module identities
 before importing any declarations. The actual target AST must match its
 prepared import session.
 
-Records with bases, explicit special members, methods, private fields, member
-initializers or nested declarations are rejected. Public templates, named
+Public, out-of-line method declarations on aggregate records are also modeled
+by [the C++ async callable contract](linux_async_cxx_callables.md). They require
+`objc3.cxx-member-interfaces.v1`, canonical static/instance and effect identity,
+and module-owned native symbols.
+
+Records with bases, explicit special members, inline or template methods, private
+fields, member initializers or nested declarations are rejected. Public templates, named
 namespaces, default arguments, inline definitions and constant-expression
 exports require further modeling. Private implementation declarations inside an
 anonymous namespace do not become exports. Unsupported public declarations

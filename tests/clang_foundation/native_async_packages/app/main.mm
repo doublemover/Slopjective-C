@@ -49,6 +49,27 @@ int actor_application(objc3_actor_t *actor) __objc3_async {
   return result == 42 ? [object number] + reader(0) : 0;
 }
 
+
+int member_application(NativeModuleWorker &worker, NativeModuleWorker &base,
+                       objc3_actor_t *actor) __objc3_async {
+  static_assert(std::is_same_v<decltype(worker(2)), objc3::task<int>>);
+  using Member = int (NativeModuleWorker::*)(int) const __objc3_async;
+  using Checked = int (NativeModuleWorker::*)(int, bool) const
+      __objc3_async __objc3_throws(id<NativeModuleError>);
+  Member member = &NativeModuleWorker::value;
+  Checked checked = &NativeModuleWorker::checked;
+  __objc3_await objc3::hop_to(actor);
+  if (__objc3_await (base.*member)(2) != 42 || __objc3_await worker(3) != 43)
+    return 0;
+  __objc3_do {
+    if (__objc3_try(__objc3_await base.checked(42, false)) != 42) return 0;
+    return __objc3_try(__objc3_await (base.*checked)(96, true));
+  } __objc3_catch(id<NativeModuleError> error) {
+    __objc3_await objc3::task_yield;
+    return [(NativeModuleResult *)error number] == 96 ? 42 : 0;
+  }
+}
+
 int main() {
   objc3_executor_t *executor = nullptr;
   if (objc3_executor_create(1, &executor) != OBJC3_SERVICE_OK)
@@ -83,6 +104,12 @@ int main() {
   if (objc3_executor_pump(executor, 100, &executed) != OBJC3_SERVICE_OK ||
       pending.result() != 42)
     return 8;
+  pending = {};
+  NativeModuleWorker worker{40};
+  auto *base = static_cast<NativeModuleWorker *>(&worker);
+  pending = member_application(worker, *base, actor).start(executor);
+  if (objc3_executor_pump(executor, 100, &executed) != OBJC3_SERVICE_OK ||
+      pending.result() != 42) return 10;
   pending = {};
   if (objc3_actor_close(actor) != OBJC3_SERVICE_OK ||
       objc3_actor_join(actor) != OBJC3_SERVICE_OK)
