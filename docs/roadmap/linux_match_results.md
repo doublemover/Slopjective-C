@@ -53,8 +53,8 @@ with a C17 base and Objective-C++ in C++20/23 mode, under ARC/MRC and O0/O2.
 Separate ARC interface consumers execute after provider source removal. O0 C++
 debugger checks inspect the copied record and its live-object count in both
 ordinary and PCH cases. The [acceptance receipt](../support/linux_match_results_acceptance.json)
-binds the admitted development compiler and fixtures; it distinguishes that
-compiler from the last activated SDK.
+binds the activated SDK, compiler, fixtures, installed tests and fresh Debian 13 /
+Ubuntu 26.04 archive consumers.
 
 ```sh
 python3 -B SDK/share/objc3c/source-build/qualify_match_results.py \
@@ -66,6 +66,7 @@ installed native library and match gates as an ordinary user after installation,
 relocation, embedding and debugger checks.
 
 SDK packaging installs the fixtures and runner and executes this gate. The
-activated native-library SDK remains identified by its own
-[delivery receipt](../support/linux_native_stdlib_acceptance.json) until a new
-compiler archive is built and activated.
+[delivery receipt](../support/linux_match_results_acceptance.json) identifies the
+rebuilt, activated compiler archive and all 25 installed suites. The preceding
+[native-library receipt](../support/linux_native_stdlib_acceptance.json) remains a
+historical record; its superseded installation and archive have been removed.
