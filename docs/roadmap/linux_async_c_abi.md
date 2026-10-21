@@ -1,13 +1,13 @@
 # Linux shared async frame and result ABI
 
 Extension ABI 20 and task service ABI 4 introduce a common lazy frame carrier
-and typed completion contract for C17, Objective-C17 and C++20/23. Rebuild
+and typed completion contract for C17, Objective-C 3.0 (C17 base mode) and C++20/23. Rebuild
 compilers, headers, objects, PCH files, semantic interfaces and packages together.
 The task header requires the qualified compiler's type-identity builtin.
 
 This milestone supplies the runtime boundary for native Objective-C async
-lowering. Objective-C17 providers in this milestone implement resume callbacks
-in C; the reserved async syntax still requires Objective-C++20/23. Public
+lowering. Objective-C 3.0 (C17 base mode) providers in this milestone implement resume callbacks
+in C; the reserved async syntax still requires Objective-C++ (C++20/23 mode). Public
 async/await and actor capability predicates remain reserved.
 
 ## Delivered SDK — 2026-10-21
@@ -124,8 +124,8 @@ compile reuse and the exact SDK header contract.
 
 Development qualification passes 20 mixed-language configurations and 114
 commands, including ten resumed-frame debugger cases. C providers compile as
-C17, Objective-C providers as Objective-C17, and consumers as C++20/23 or
-Objective-C++20/23 at O0/O2 with all ARC/MRC provider-consumer pairs.
+C17, Objective-C providers as Objective-C 3.0 (C17 base mode), and consumers as C++20/23 or
+Objective-C++ (C++20/23 mode) at O0/O2 with all ARC/MRC provider-consumer pairs.
 
 Execution covers moves, abandonment, failed starts, reentrant destruction,
 typed handle adoption, zero results, records, complex values, 256-byte-aligned
@@ -224,7 +224,7 @@ No acceptance finalizer or automatic closeout is running.
 
 ### Subsequent compiler work
 
-Native Objective-C17 async syntax lowering still needs its own AST/Sema/CodeGen
+Native Objective-C 3.0 (C17 base mode) async syntax lowering still needs its own AST/Sema/CodeGen
 implementation for functions, methods and Blocks, with frame-resident values,
 cleanup, checked errors and ownership across suspension. Removing the C++
 language guard alone would not supply that implementation. Public await-required

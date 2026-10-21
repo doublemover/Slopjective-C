@@ -54,7 +54,7 @@ binding in expression calls. GNUstep JIT expressions initialize typed selectors
 before message dispatch, including selectors stored in constant arrays. Installed
 debugger probes verify ivars, instance and class messages, direct calls, category
 direct calls and native function calls in
-Objective-C17 and Objective-C++20/23 under ARC and MRC. A second matrix stops in
+Objective-C 3.0 (C17 base mode) and Objective-C++ (C++20/23 mode) under ARC and MRC. A second matrix stops in
 both providers with duplicate private source names and verifies that the current
 frame selects its module's globals, functions, thread-local variables, classes,
 direct calls, inheritance and categories. It checks function and Objective-C
@@ -75,7 +75,7 @@ Installed qualification links providers with identical private function, global,
 class, protocol, category and template source names. It checks native object
 symbols, source/header edits, complete reuse, package identity changes and
 relocated immutable consumers after deleting producer sources. The matrix covers
-Objective-C17 ARC/MRC, Objective-C++20/23 ARC/MRC and C++20/23 at O0/O2.
+Objective-C 3.0 (C17 base mode) ARC/MRC, Objective-C++ (C++20/23 mode) ARC/MRC and C++20/23 at O0/O2.
 
 The [Linux acceptance receipt](../support/linux_module_names_acceptance.json)
 binds the native compiler tests, 96 installed source/package executions,

@@ -266,10 +266,10 @@ Worker callbacks drain autoreleased temporaries.
 
 The [task destination bridge](docs/roadmap/linux_task_hops.md) adds actor-bound
 starts, queued executor and actor hops, and inherited child destinations. Service
-ABI 3 requires rebuilding runtime clients, coroutine providers and packages.
+ABI 4 requires rebuilding runtime clients, coroutine providers and packages.
 
 The [native async compiler stage](docs/roadmap/linux_native_async.md) lowers
-logical-result free functions and native awaits into Objective-C++20/23 task
+logical-result free functions and native awaits into Objective-C++ (C++20/23 mode) task
 frames, including nested private children, deferred cleanup and source-free
 package imports. It uses the reserved `__objc3_async` and `__objc3_await` spellings.
 The [owned async result contract](docs/roadmap/linux_async_owned_results.md) adds
@@ -289,7 +289,7 @@ one reports an invalid-argument service failure.
 [Async Objective-C++ Blocks](docs/roadmap/linux_async_blocks.md) own their captures
 before suspension, including C++ copies and `__block` forwarding, and preserve
 checked errors through source-free Block interfaces.
-Extension ABI 19 requires every object, PCH, semantic interface and package to be
+Extension ABI 20 requires every object, PCH, semantic interface and package to be
 rebuilt. Public async/await and compiler actor isolation remain reserved.
 
 The [public availability contract](docs/roadmap/linux_api_availability.md) keeps
@@ -318,6 +318,15 @@ The former custom parser, `fn` module dialect and its historical capability
 inventory no longer describe the public compiler. Historical roadmap and
 support reports remain in the repository as records of earlier work.
 
+The [native standard library](stdlib/README.md) provides canonical Clang imports
+for `objc3.core`, `objc3.errors`, `objc3.text`, `objc3.collections` and
+`objc3.concurrency`. Compile with `-fmodules` through `objc3c`; the installed SDK
+supplies the module map and headers. Version 2 replaces the retired library
+sources and synthetic integer helpers. The [module inventory](stdlib/module_inventory.json)
+records implemented APIs and remaining conformance obligations; typed key paths,
+strict-system support and public concurrency compiler semantics remain work in
+progress.
+
 ## Validation and development
 
 ```sh
@@ -334,7 +343,7 @@ Native validation checks O0/O2 behavior, ABI, ownership, cleanup, expected
 failures, installed interface consumers and editor tools. Evidence records bind
 source, compiler, runtime, system headers and executable contents and reject
 changes during validation. The
-[Linux SDK acceptance receipt](docs/support/linux_async_blocks_acceptance.json)
+[Linux SDK acceptance receipt](docs/support/linux_native_stdlib_acceptance.json)
 records the qualified archive and fresh-host checks; each new SDK has its own
 qualification and release receipt. Runtime timings must be distinguished from
 compile and wrapper timings when comparing performance.

@@ -1,6 +1,6 @@
 # Linux checked async errors
 
-The reserved Objective-C++20/23 async compiler stage carries checked Error
+The reserved Objective-C++ (C++20/23 mode) async compiler stage carries checked Error
 objects through suspended Linux x86-64 LP64 GNUstep 2.2 tasks. A checked async
 function keeps its logical result, async effect and exact error type in its
 canonical function type. Its physical result is a lazy `objc3::task<R>`.

@@ -60,7 +60,7 @@ callback cannot join itself, and pending manual/current-executor waits return
 `NOT_READY`. Last caller release cancels remaining mailbox work. Callbacks obey
 the public C ABI's ownership and exception contract.
 
-The installed suite covers C17, Objective-C17 ARC/MRC, Objective-C++20/23 ARC/MRC
+The installed suite covers C17, Objective-C 3.0 (C17 base mode) ARC/MRC, Objective-C++ (C++20/23 mode) ARC/MRC
 and C++20/23 at O0/O2, plus C++20/23 worker execution at both optimization levels.
 It checks nested cancellation, nonblocking completion polling, manual pumping,
 ownership transfer, reentry, hop identities, serial mailboxes and cleanup. The

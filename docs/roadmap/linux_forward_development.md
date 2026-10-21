@@ -14,9 +14,9 @@ historical milestone checklists do not establish current Clang conformance.
 
 ## Delivered foundations
 
-The [SDK refresh receipt](../support/linux_sdk_refresh_acceptance.json) identifies
+The [native-library SDK receipt](../support/linux_native_stdlib_acceptance.json) identifies
 the last activated archive and its actual installed tests. That release includes
-extension ABI 20, service ABI 4, the shared C/C++ async frame/result contract,
+extension ABI 20, service ABI 4, the shared C/C++ async frame/result contract, native standard-library modules,
 per-callback and per-resume autorelease pools, fair actor scheduling and the
 current SDK-independent package install command. New development must produce a
 new archive and receipt before it is described as delivered in that SDK.

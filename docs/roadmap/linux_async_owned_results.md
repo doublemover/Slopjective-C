@@ -2,7 +2,7 @@
 
 Native async free functions can return Objective-C object pointers, protocol
 qualified object pointers, `Class` and Block pointers in the Linux x86-64 LP64
-GNUstep 2.2 compatibility profile. This extends the reserved Objective-C++20/23
+GNUstep 2.2 compatibility profile. This extends the reserved Objective-C++ (C++20/23 mode)
 `__objc3_async` and `__objc3_await` compiler stage. Public async/await, pure
 Objective-C async lowering and compiler actor isolation remain reserved.
 [Checked async errors](linux_async_checked_errors.md) extend this stage with
