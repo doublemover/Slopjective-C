@@ -1,0 +1,70 @@
+{
+  "schema": "objc3.development-latency.v1",
+  "recorded_utc": "2026-10-19T14:21:14.775195+00:00",
+  "repetitions": 5,
+  "python": "3.15.0",
+  "script_sha256": "2bc3018fabf20b8088197b4ed30b90d74a4b7001c07b5cb8e765b3a885ab904e",
+  "scope": "Warm installed command latency; runtime excludes compilation/linking and SDK admission.",
+  "cpu_quota": "400000 100000",
+  "cpu_model": "AMD EPYC 7763 64-Core Processor",
+  "peak_child_rss_kib": 94088,
+  "memory_scope": "Maximum individual descendant RSS for benchmark commands; not aggregate tree memory.",
+  "results": [
+    {
+      "sdk": "/workspace/Slopjective-C/out/toolchains/linux-sdk/sdks/6f0ce537b52aba75512fb8d71213af7866e2c268f148aca0704e4efd4301115d",
+      "seal_sha256": "6f0ce537b52aba75512fb8d71213af7866e2c268f148aca0704e4efd4301115d",
+      "samples_seconds": {
+        "python_startup": [
+          0.015149336999456864, 0.01348234499891987, 0.01291029999993043, 0.012259135997737758,
+          0.015244535999954678
+        ],
+        "compiler_version": [
+          0.16350993899686728, 0.15758975799690234, 0.15327881300618174, 0.15780622100282926,
+          0.15849705400614766
+        ],
+        "direct_syntax": [
+          0.009493589997873642, 0.009475896004005335, 0.008925239999371115, 0.008312410995131359,
+          0.009327006999228615
+        ],
+        "public_syntax": [
+          0.15860292000434129, 0.16867125400312943, 0.16055794100248022, 0.15822039100021357,
+          0.16866306299925782
+        ],
+        "public_compile_and_link": [
+          0.17516724899905967, 0.17297747999691637, 0.17317274699598784, 0.18114509800216183,
+          0.20747816199582303
+        ],
+        "program_runtime": [
+          0.0025070909978239797, 0.0023127860040403903, 0.0021844740040251054, 0.00276869200024521,
+          0.002669585999683477
+        ]
+      },
+      "median_seconds": {
+        "python_startup": 0.01348234499891987,
+        "compiler_version": 0.15780622100282926,
+        "direct_syntax": 0.009327006999228615,
+        "public_syntax": 0.16055794100248022,
+        "public_compile_and_link": 0.17516724899905967,
+        "program_runtime": 0.0025070909978239797
+      },
+      "source_build_id": "llvmorg-23.1.3-0d261d1ca552-a1ba447dc014-fd761312"
+    }
+  ],
+  "implementation_commit": "1f2ef3dd9bf0149947689b18315db57b77a9d13c",
+  "budget_comparison": {
+    "status": "NOT_COMPARABLE",
+    "reason": "CPU model differs from the historical Intel baseline; no cross-CPU regression or speedup claim.",
+    "authority_sha256": "f33db63850ca67b859249d2351ce49fd72e5e95dea04e9929c157575ee2cdb69",
+    "baseline_cpu_model": "INTEL(R) XEON(R) PLATINUM 8573C",
+    "baseline_cpu_quota": "400000 100000"
+  },
+  "budgets": {
+    "context": "Same CPU model and cgroup quota, warm median of at least three runs; 50% headroom plus 10 ms over this five-run AMD baseline.",
+    "median_seconds": {
+      "compiler_version": 0.246709,
+      "direct_syntax": 0.023991,
+      "public_syntax": 0.250837,
+      "public_compile_and_link": 0.272751
+    }
+  }
+}

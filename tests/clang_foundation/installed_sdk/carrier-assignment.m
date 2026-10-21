@@ -15,14 +15,14 @@ __attribute__((objc_root_class))
 - (void)dealloc { ++destroyed[key]; object_dispose(self); }
 @end
 
-typedef __objc3_optional(id) Strong;
-typedef __objc3_optional(id __weak) Weak;
-typedef __objc3_optional(id __unsafe_unretained) Unsafe;
-typedef __objc3_result(id, id) Outcome;
-typedef __objc3_result(id, id __weak) Mixed;
-typedef __objc3_result(id, int) ScalarError;
+typedef Optional(id) Strong;
+typedef Optional(id __weak) Weak;
+typedef Optional(id __unsafe_unretained) Unsafe;
+typedef Result(id, id) Outcome;
+typedef Result(id, id __weak) Mixed;
+typedef Result(id, int) ScalarError;
 typedef void (^Action)(void);
-typedef __objc3_optional(Action) OptionalAction;
+typedef Optional(Action) OptionalAction;
 
 #define REQUIRE(condition) do { if (!(condition)) return __LINE__; } while (0)
 
@@ -32,35 +32,35 @@ static int optional_assignment(void) {
     id a = [AssignmentProbe newWithKey:0];
     id b = [AssignmentProbe newWithKey:1];
     first = a; second = b;
-    Strong destination = __objc3_some(id, a);
-    const Strong source = __objc3_some(id, b);
+    Strong destination = Some(id, a);
+    const Strong source = Some(id, b);
     a = nil; b = nil;
     Strong implicit = source;
     destination = implicit;
     REQUIRE(first == nil && second != nil && destroyed[0] == 1);
     destination = destination;
-    implicit = __objc3_none(id);
-    REQUIRE(__objc3_has_value(destination) && second != nil);
-    destination = __objc3_some(id, nil);
-    REQUIRE(__objc3_has_value(destination) && second != nil);
-    destination = __objc3_none(id);
-    REQUIRE(!__objc3_has_value(destination));
+    implicit = None(id);
+    REQUIRE(hasValue(destination) && second != nil);
+    destination = Some(id, nil);
+    REQUIRE(hasValue(destination) && second != nil);
+    destination = None(id);
+    REQUIRE(!hasValue(destination));
   }
   REQUIRE(second == nil && destroyed[1] == 1);
   {
-    Strong absent = __objc3_none(id);
-    Strong present = __objc3_some(id, nil);
+    Strong absent = None(id);
+    Strong present = Some(id, nil);
     const Strong copy = present;
     absent = present;
-    REQUIRE(__objc3_has_value(absent) && __objc3_has_value(copy));
-    present = __objc3_none(id);
+    REQUIRE(hasValue(absent) && hasValue(copy));
+    present = None(id);
     absent = present;
-    REQUIRE(!__objc3_has_value(absent));
+    REQUIRE(!hasValue(absent));
     // Conditional construction and assignment preserve explicit nil presence.
     Strong selected = destroyed[0] ? copy : present;
-    REQUIRE(__objc3_has_value(selected));
-    selected = destroyed[0] ? __objc3_none(id) : __objc3_some(id, nil);
-    REQUIRE(!__objc3_has_value(selected));
+    REQUIRE(hasValue(selected));
+    selected = destroyed[0] ? None(id) : Some(id, nil);
+    REQUIRE(!hasValue(selected));
   }
   return 0;
 }
@@ -75,21 +75,21 @@ static int result_transitions(void) {
         id oldObject = [AssignmentProbe newWithKey:oldKey];
         id newObject = [AssignmentProbe newWithKey:newKey];
         oldObserver = oldObject; newObserver = newObject;
-        Outcome destination = initial ? __objc3_ok(id, id, oldObject)
-                                      : __objc3_err(id, id, oldObject);
-        Outcome source = final ? __objc3_ok(id, id, newObject)
-                               : __objc3_err(id, id, newObject);
+        Outcome destination = initial ? Ok(id, id, oldObject)
+                                      : Err(id, id, oldObject);
+        Outcome source = final ? Ok(id, id, newObject)
+                               : Err(id, id, newObject);
         oldObject = nil; newObject = nil;
         Outcome copy = source;
         destination = copy;
-        REQUIRE(__objc3_is_ok(destination) == (final != 0));
+        REQUIRE(isOk(destination) == (final != 0));
         REQUIRE(oldObserver == nil && newObserver != nil);
         REQUIRE(destroyed[oldKey] == 1);
-        source = __objc3_ok(id, id, nil);
-        copy = __objc3_err(id, id, nil);
+        source = Ok(id, id, nil);
+        copy = Err(id, id, nil);
         REQUIRE(newObserver != nil);
         destination = destination;
-        REQUIRE(__objc3_is_ok(destination) == (final != 0));
+        REQUIRE(isOk(destination) == (final != 0));
       }
       REQUIRE(newObserver == nil && destroyed[newKey] == 1);
     }
@@ -102,53 +102,53 @@ static int weak_and_unsafe(void) {
   {
     id object = [AssignmentProbe newWithKey:10];
     observer = object;
-    Weak source = __objc3_some(id __weak, object);
+    Weak source = Some(id __weak, object);
     const Weak copy = source;
-    Weak destination = __objc3_none(id __weak);
+    Weak destination = None(id __weak);
     destination = source;
     destination = destination;
-    source = __objc3_none(id __weak);
+    source = None(id __weak);
     object = nil;
     REQUIRE(observer == nil && destroyed[10] == 1);
-    REQUIRE(__objc3_has_value(copy) && __objc3_has_value(destination));
+    REQUIRE(hasValue(copy) && hasValue(destination));
     // Copying zeroed weak storage must keep a present nil payload.
     destination = copy;
-    REQUIRE(__objc3_has_value(destination));
-    destination = __objc3_none(id __weak);
-    REQUIRE(!__objc3_has_value(destination));
+    REQUIRE(hasValue(destination));
+    destination = None(id __weak);
+    REQUIRE(!hasValue(destination));
   }
   {
     id object = [AssignmentProbe newWithKey:11];
     observer = object;
-    Unsafe source = __objc3_some(id __unsafe_unretained, object);
+    Unsafe source = Some(id __unsafe_unretained, object);
     Unsafe destination = source;
     destination = source;
     destination = destination;
     object = nil;
     REQUIRE(observer == nil && destroyed[11] == 1);
-    REQUIRE(__objc3_has_value(destination));
-    destination = __objc3_none(id __unsafe_unretained);
+    REQUIRE(hasValue(destination));
+    destination = None(id __unsafe_unretained);
   }
   {
     id object = [AssignmentProbe newWithKey:12];
     observer = object;
-    Mixed value = __objc3_ok(id, id __weak, object);
-    Mixed weak = __objc3_err(id, id __weak, object);
+    Mixed value = Ok(id, id __weak, object);
+    Mixed weak = Err(id, id __weak, object);
     object = nil;
     value = weak;
-    REQUIRE(observer == nil && !__objc3_is_ok(value));
-    value = __objc3_ok(id, id __weak, nil);
-    REQUIRE(__objc3_is_ok(value));
+    REQUIRE(observer == nil && !isOk(value));
+    value = Ok(id, id __weak, nil);
+    REQUIRE(isOk(value));
   }
   {
     id object = [AssignmentProbe newWithKey:13];
     observer = object;
-    ScalarError value = __objc3_ok(id, int, object);
+    ScalarError value = Ok(id, int, object);
     object = nil;
-    value = __objc3_err(id, int, 42);
-    REQUIRE(observer == nil && !__objc3_is_ok(value));
-    value = __objc3_ok(id, int, nil);
-    REQUIRE(__objc3_is_ok(value));
+    value = Err(id, int, 42);
+    REQUIRE(observer == nil && !isOk(value));
+    value = Ok(id, int, nil);
+    REQUIRE(isOk(value));
   }
   return 0;
 }
@@ -156,22 +156,22 @@ static int weak_and_unsafe(void) {
 static int blocks(void) {
   __weak id observer = nil;
   {
-    OptionalAction source = __objc3_none(Action);
+    OptionalAction source = None(Action);
     {
       id object = [AssignmentProbe newWithKey:14];
       observer = object;
       Action action = ^{ if (!object) __builtin_trap(); };
-      source = __objc3_some(Action, action);
+      source = Some(Action, action);
       object = nil; action = nil;
     }
     OptionalAction destination = source;
     destination = source;
     destination = destination;
-    source = __objc3_none(Action);
+    source = None(Action);
     REQUIRE(observer != nil);
-    destination = __objc3_some(Action, nil);
+    destination = Some(Action, nil);
     REQUIRE(observer == nil && destroyed[14] == 1);
-    REQUIRE(__objc3_has_value(destination));
+    REQUIRE(hasValue(destination));
   }
   return 0;
 }
@@ -187,7 +187,7 @@ static const Strong &right(const Strong &source) {
   return source;
 }
 static Strong &mutating_left(Strong &destination, Strong &source, bool fail) {
-  source = __objc3_none(id);
+  source = None(id);
   if (fail) throw 42;
   return destination;
 }
@@ -196,32 +196,32 @@ static const Strong &throwing_right(const Strong &source) {
   return source;
 }
 static int sequencing_and_unwind(void) {
-  Strong source = __objc3_some(id, nil);
-  Strong destination = __objc3_none(id);
+  Strong source = Some(id, nil);
+  Strong destination = None(id);
   sequence = leftCalls = rightCalls = 0;
   Strong &reference = (left(destination) = right(source));
   REQUIRE(&reference == &destination && sequence == 12);
   REQUIRE(leftCalls == 1 && rightCalls == 1);
   Strong copy = (destination = source);
-  REQUIRE(__objc3_has_value(copy));
-  Strong other = __objc3_none(id);
+  REQUIRE(hasValue(copy));
+  Strong other = None(id);
   other = destination = source;
-  REQUIRE(__objc3_has_value(other));
-  destination = __objc3_move(copy);
-  REQUIRE(__objc3_has_value(copy) && __objc3_has_value(destination));
+  REQUIRE(hasValue(other));
+  destination = moveValue(copy);
+  REQUIRE(hasValue(copy) && hasValue(destination));
   {
     __weak id observer = nil;
     id object = [AssignmentProbe newWithKey:18];
     observer = object;
-    Strong original = __objc3_some(id, object);
+    Strong original = Some(id, object);
     object = nil;
-    destination = __objc3_move(original);
-    REQUIRE(__objc3_has_value(original) && observer != nil);
-    destination = __objc3_move(destination);
-    REQUIRE(__objc3_has_value(destination) && observer != nil);
+    destination = moveValue(original);
+    REQUIRE(hasValue(original) && observer != nil);
+    destination = moveValue(destination);
+    REQUIRE(hasValue(destination) && observer != nil);
     Strong movedFromCopy = original;
-    REQUIRE(__objc3_has_value(movedFromCopy));
-    destination = __objc3_none(id);
+    REQUIRE(hasValue(movedFromCopy));
+    destination = None(id);
     REQUIRE(observer == nil && destroyed[18] == 1);
   }
   for (int iteration = 0; iteration != 2; ++iteration) {
@@ -231,13 +231,13 @@ static int sequencing_and_unwind(void) {
     {
       id object = [AssignmentProbe newWithKey:key];
       observer = object;
-      Strong original = __objc3_some(id, object);
+      Strong original = Some(id, object);
       object = nil;
       try {
         mutating_left(destination, original, fail) = original;
         REQUIRE(!fail && observer != nil);
-        REQUIRE(!__objc3_has_value(original));
-        destination = __objc3_none(id);
+        REQUIRE(!hasValue(original));
+        destination = None(id);
       } catch (int error) {
         REQUIRE(fail && error == 42 && observer == nil);
       }
@@ -251,11 +251,11 @@ static int sequencing_and_unwind(void) {
   try {
     id object = [AssignmentProbe newWithKey:17];
     observer = object;
-    Strong original = __objc3_some(id, object);
+    Strong original = Some(id, object);
     Strong implicit = original;
-    Weak weak = __objc3_some(id __weak, object);
+    Weak weak = Some(id __weak, object);
     Weak weakCopy = weak;
-    implicit = __objc3_move(original);
+    implicit = moveValue(original);
     weakCopy = weak;
     object = nil;
     throw 44;

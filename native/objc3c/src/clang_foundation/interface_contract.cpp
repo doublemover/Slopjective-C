@@ -191,8 +191,10 @@ InterfaceContractValidation ValidateSemanticInterface(
   const bool carrier_semantic = std::binary_search(
       required.begin(), required.end(), "objc3.native-carrier-types.v1");
   for (const auto &declaration : sidecar.declarations)
-    if ((declaration.canonical_type_identity.find("__objc3_optional(") != std::string::npos ||
-         declaration.canonical_type_identity.find("__objc3_result(") != std::string::npos) &&
+    if ((declaration.canonical_type_identity.find("Optional(") !=
+             std::string::npos ||
+         declaration.canonical_type_identity.find("Result(") !=
+             std::string::npos) &&
         !carrier_semantic)
       Add(result, "O3IFC013",
           "carrier declaration is missing the native carrier type semantic capability",

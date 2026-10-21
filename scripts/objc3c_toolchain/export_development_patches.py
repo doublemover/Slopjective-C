@@ -61,6 +61,7 @@ PACKETS = {
     ],
     "0004-objc3-canonical-carriers-and-function-effects.patch": [
         "clang/CMakeLists.txt",
+        "clang/include/clang/Basic/ObjC3Syntax.h",
         "clang/include/clang/AST/ASTContext.h",
         "clang/include/clang/AST/ASTNodeTraverser.h",
         "clang/include/clang/AST/AbstractBasicReader.h",
@@ -165,6 +166,9 @@ PACKETS = {
         "clang/unittests/AST/ObjC3MatchImporterTest.cpp",
         "clang/test/ObjC3/AST",
         "clang/test/ObjC3/Sema",
+        "clang/test/ObjC3/Parser/public-carriers.mm",
+        "clang/test/ObjC3/Parser/public-errors.mm",
+        "clang/test/ObjC3/Parser/public-carriers-disabled.c",
         "clang/test/ObjC3/Parser/type-constructors.m",
         "clang/test/ObjC3/Parser/type-constructors.mm",
         "clang/test/ObjC3/Parser/type-contexts.mm",

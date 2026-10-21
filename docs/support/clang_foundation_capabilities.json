@@ -1,10 +1,10 @@
 {
   "schema_version": 1,
   "authority": "schemas/objc3-language-capabilities.json",
-  "authority_sha256": "7fcf9b1b2c36d64b119b9d23ac7f177b5d46cbfa32f74ac711493cf69008da3d",
+  "authority_sha256": "33b35a0c318aa4505f4ea234ff7e8c56f969b0979a004c67c7e59526f1f27fa8",
   "compiler_family": "clang-foundation",
   "language_revision": 202610,
-  "extension_abi_revision": 12,
+  "extension_abi_revision": 13,
   "features": [
     {
       "name": "defer",
@@ -35,8 +35,21 @@
       "aliases": [
         "OPTIONAL"
       ],
-      "state": "reserved",
-      "qualified_targets": [],
+      "state": "implemented",
+      "qualified_targets": [
+        {
+          "triple": "x86_64-unknown-linux-gnu",
+          "runtime": "gnustep-2.2",
+          "profile": "compatibility",
+          "evidence": [
+            "clang/test/ObjC3/Parser/public-carriers.mm",
+            "clang/test/ObjC3/AST/public-carriers-print.mm",
+            "clang/test/ObjC3/LanguageMode/public-carriers-feature.m",
+            "installed-public-carrier-call-storage-and-package-suites",
+            "editor:qualification"
+          ]
+        }
+      ],
       "feature_query": "objc3_optionals",
       "public_macro": "__OBJC3_FEATURE_OPTIONALS__"
     },
@@ -44,8 +57,21 @@
       "name": "result",
       "macro": "RESULT",
       "aliases": [],
-      "state": "reserved",
-      "qualified_targets": [],
+      "state": "implemented",
+      "qualified_targets": [
+        {
+          "triple": "x86_64-unknown-linux-gnu",
+          "runtime": "gnustep-2.2",
+          "profile": "compatibility",
+          "evidence": [
+            "clang/test/ObjC3/Parser/public-carriers.mm",
+            "clang/test/ObjC3/AST/public-carriers-print.mm",
+            "clang/test/ObjC3/LanguageMode/public-carriers-feature.m",
+            "installed-public-carrier-call-storage-and-package-suites",
+            "editor:qualification"
+          ]
+        }
+      ],
       "feature_query": "objc3_result",
       "public_macro": "__OBJC3_FEATURE_RESULT__"
     },
@@ -55,8 +81,20 @@
       "aliases": [
         "TYPED_THROWS"
       ],
-      "state": "reserved",
-      "qualified_targets": [],
+      "state": "implemented",
+      "qualified_targets": [
+        {
+          "triple": "x86_64-unknown-linux-gnu",
+          "runtime": "gnustep-2.2",
+          "profile": "compatibility",
+          "evidence": [
+            "clang/test/ObjC3/Parser/public-errors.mm",
+            "installed-managed-throws-18-forced-failures",
+            "installed-runtime-direct-nested-record-heap-call-suites",
+            "editor:qualification"
+          ]
+        }
+      ],
       "feature_query": "objc3_throws",
       "public_macro": "__OBJC3_FEATURE_THROWS__"
     },

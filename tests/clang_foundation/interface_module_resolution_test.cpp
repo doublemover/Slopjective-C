@@ -130,7 +130,7 @@ void WriteArtifact(const InterfaceEmissionArtifact &artifact,
 void TestCxxSourceImports(const std::filesystem::path &root) {
   auto provider =
       Producer("cpp-provider.mm", "fixture.Cxx", "pkg-cxx",
-               "typedef __objc3_optional(id) Strong; "
+               "typedef Optional(id) Strong; "
                "struct Owned { int marker; Strong value; }; "
                "extern \"C\" Owned c_echo(Owned); Owned cpp_echo(Owned); "
                "int overloaded(int); long overloaded(long);");
@@ -153,7 +153,7 @@ void TestCxxSourceImports(const std::filesystem::path &root) {
     consumer.module_imports = {Locked(built.interface_artifact->identity)};
     consumer.source_text =
         std::string(source_directed ? "@import fixture.Cxx;\n" : "") +
-        "int consume(void) { @fixture.Cxx.Owned input{42,__objc3_none(id)}; "
+        "int consume(void) { @fixture.Cxx.Owned input{42,None(id)}; "
         "auto output=@fixture.Cxx.cpp_echo(c_echo(input)); "
         "return output.marker + overloaded(42) + (int)overloaded(42L); }";
     auto imported = Compile(consumer);
@@ -194,9 +194,9 @@ int main() {
   std::filesystem::create_directories(root);
 
   auto a = Compile(Producer("provider-a.m", "fixture.A", "pkg-A",
-      "typedef struct Error { int code; } Error;\n"
-      "typedef Error ErrorAlias;\n"
-      "typedef __objc3_optional(int) MaybeInt;\n"));
+                            "typedef struct Error { int code; } Error;\n"
+                            "typedef Error ErrorAlias;\n"
+                            "typedef Optional(int) MaybeInt;\n"));
   assert(a.success && a.interface_artifact && a.interface_artifact->success);
   WriteArtifact(*a.interface_artifact, root / "A.objc3i");
 
@@ -221,9 +221,9 @@ int main() {
   assert(!deferred_resolution.artifacts.front().direct_import);
 
   auto b = Producer("provider-b.m", "fixture.B", "pkg-B",
-      "int answer(void);\n"
-      "MaybeInt maybe_value(void);\n"
-      "int error_code(ErrorAlias value) __objc3_throws(ErrorAlias);\n");
+                    "int answer(void);\n"
+                    "MaybeInt maybe_value(void);\n"
+                    "int error_code(ErrorAlias value) throws(ErrorAlias);\n");
   b.interface_search_paths = {root.string()};
   b.module_imports = {Locked(a.interface_artifact->identity, true)};
   auto built_b = Compile(b);
@@ -242,16 +242,18 @@ int main() {
   // The C consumer is given only B's locked identity and the artifact root.
   // Neither provider source file is an input to this compile.
   assert(CompileV3Consumer(root, built_b.interface_artifact->identity,
-      "int use_imported_types(void) { ErrorAlias e = {0}; "
-      "MaybeInt m = maybe_value(); (void)m; "
-      "return error_code(e) + answer(); }\n"));
+                           "int use_imported_types(void) { ErrorAlias e = {0}; "
+                           "MaybeInt m = maybe_value(); (void)m; "
+                           "return tryForce(error_code(e)) + answer(); }\n"));
 
   // Source mode keeps the lock-backed registry invisible until the matching
   // directive. Provider source paths are absent from this consumer request.
-  assert(CompileV3Consumer(root, built_b.interface_artifact->identity,
+  assert(CompileV3Consumer(
+      root, built_b.interface_artifact->identity,
       "@import fixture.B;\n"
       "int use_source_import(void) { @fixture.A.ErrorAlias e = {0}; "
-      "return @fixture.B.answer() + error_code(e); }\n", true));
+      "return @fixture.B.answer() + tryForce(error_code(e)); }\n",
+      true));
   assert(!CompileV3Consumer(root, built_b.interface_artifact->identity,
       "int use_before_import(void) { return answer(); }\n", true));
   assert(CompileV3Consumer(root, built_b.interface_artifact->identity,
@@ -298,10 +300,10 @@ int main() {
     assert(mismatched_language);
   }
 
-  auto hidden_b = Producer("provider-b-private.m", "fixture.B.private",
-                           "pkg-B-private",
-      "int answer(void);\n"
-      "int error_code(ErrorAlias value) __objc3_throws(ErrorAlias);\n");
+  auto hidden_b =
+      Producer("provider-b-private.m", "fixture.B.private", "pkg-B-private",
+               "int answer(void);\n"
+               "int error_code(ErrorAlias value) throws(ErrorAlias);\n");
   hidden_b.interface_search_paths = {root.string()};
   hidden_b.module_imports = {Locked(a.interface_artifact->identity, false)};
   auto private_artifact = Compile(hidden_b);
@@ -318,12 +320,13 @@ int main() {
       "@import fixture.B.private;\n"
       "int use_hidden_qualified(void) { return @fixture.A.ErrorAlias.code; }\n",
       true));
-  assert(CompileV3Consumer(root, private_artifact.interface_artifact->identity,
+  assert(CompileV3Consumer(
+      root, private_artifact.interface_artifact->identity,
       "@import fixture.B.private;\n"
       "@import fixture.A;\n"
       "int use_after_direct_import(void) { ErrorAlias e = {0}; "
-      "return error_code(e) + answer(); }\n", true,
-      &a.interface_artifact->identity));
+      "return tryForce(error_code(e)) + answer(); }\n",
+      true, &a.interface_artifact->identity));
 
   // A reexport marker on a private edge does not publish its dependency, but
   // that direct private dependency is still usable while compiling B itself.

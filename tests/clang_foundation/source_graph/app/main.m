@@ -8,18 +8,18 @@ int main(void) {
     if (owned.marker != 42 || @fixture.Leaf.package_destroyed())
       return 10;
     auto copy = owned;
-    owned.value = __objc3_none(id);
+    owned.value = None(id);
     if (@fixture.Leaf.package_destroyed())
       return 11;
-    copy.value = __objc3_none(id);
+    copy.value = None(id);
     if (@fixture.Leaf.package_destroyed() != 1)
       return 12;
-    __objc3_match_stmt(owned.weak) {
-    case __objc3_case_some(let object): {
+    match(owned.weak) {
+    case .Some(let object): {
       if (object != (id)0)
         return 13;
     }
-    case __objc3_case_none: {
+    case .None: {
       return 14;
     }
     }

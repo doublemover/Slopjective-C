@@ -51,13 +51,14 @@ int main() {
   effect_request.language = BaseLanguage::ObjectiveCxx;
   effect_request.input_path = "objc3c-session-effects.mm";
   effect_request.objc3 = true;
-  effect_request.source_text = "struct Error {}; typedef Error ErrorAlias; "
+  effect_request.source_text =
+      "struct Error {}; typedef Error ErrorAlias; "
       "void asynchronous() __objc3_async; "
-      "void throwing() __objc3_throws(ErrorAlias); "
-      "typedef void TypedCallback(void) __objc3_throws(ErrorAlias); "
+      "void throwing() throws(ErrorAlias); "
+      "typedef void TypedCallback(void) throws(ErrorAlias); "
       "TypedCallback *callback; "
       "@interface MethodEffects "
-      "- (int)messageEffect:(int)value __objc3_throws(ErrorAlias); @end "
+      "- (int)messageEffect:(int)value throws(ErrorAlias); @end "
       "void native_noexcept() noexcept;";
   auto observed_effects = Compile(effect_request);
   assert(observed_effects.success);
@@ -97,7 +98,7 @@ int main() {
   auto carrier_request = effect_request;
   carrier_request.input_path = "objc3c-session-carriers.mm";
   carrier_request.source_text =
-      "typedef __objc3_optional(int) A; typedef __objc3_optional(long) B; "
+      "typedef Optional(int) A; typedef Optional(long) B; "
       "void consume(A *); void consume(B *);";
   auto carrier_symbols = Compile(carrier_request);
   assert(carrier_symbols.success);
@@ -116,14 +117,14 @@ int main() {
   // selected zero remains present; the zero-valued error remains an error.
   constexpr char carrier_code[] =
       "extern void record(int); "
-      "typedef __objc3_optional(int) MaybeInt; "
-      "typedef __objc3_result(int, long long) IntResult; "
+      "typedef Optional(int) MaybeInt; "
+      "typedef Result(int, long long) IntResult; "
       "int carrier_presence(void) { "
       "__objc3_defer { record(9); } "
-      "MaybeInt value = __objc3_some(int, 0); "
-      "MaybeInt copied = __objc3_none(int); copied = value; "
-      "IntResult error = __objc3_err(int, long long, 0); "
-      "return __objc3_has_value(copied) && !__objc3_is_ok(error); }";
+      "MaybeInt value = Some(int, 0); "
+      "MaybeInt copied = None(int); copied = value; "
+      "IntResult error = Err(int, long long, 0); "
+      "return hasValue(copied) && !isOk(error); }";
   auto carrier_values = request;
   carrier_values.language = BaseLanguage::ObjectiveC;
   carrier_values.objc3 = true;
@@ -164,8 +165,7 @@ int main() {
   assert(native_carrier_ir == read_ir(carrier_options.output_path));
   objc3c_frontend_v2_result_destroy(carrier_result);
   // A failed native query preserves a prior emitted artifact through the C ABI.
-  constexpr char invalid_query[] =
-      "void bad(void) { (void)__objc3_has_value(42); }";
+  constexpr char invalid_query[] = "void bad(void) { (void)hasValue(42); }";
   carrier_options.source = invalid_query;
   carrier_options.source_size = sizeof(invalid_query) - 1;
   carrier_result = nullptr;

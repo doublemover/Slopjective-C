@@ -63,12 +63,13 @@ void TestThreeModuleSemanticLookupAndIdentity() {
   const auto b_path = root / "b.objc3i";
 
   auto a = EmitModule(root / "a.m", a_path, "test.provider_a",
-      "typedef struct ErrorA { int code; } ErrorA; "
-      "typedef __objc3_optional(int) MaybeInt; "
-      "typedef __objc3_result(int, ErrorA) IntResult; "
-      "int provider(void) __objc3_throws(ErrorA);");
+                      "typedef struct ErrorA { int code; } ErrorA; "
+                      "typedef Optional(int) MaybeInt; "
+                      "typedef Result(int, ErrorA) IntResult; "
+                      "int provider(void) throws(ErrorA);");
   assert(a.success && a.interface_artifact && a.interface_artifact->success);
-  assert(a.interface_artifact->source_bytes.find("__objc3_optional") != std::string::npos);
+  assert(a.interface_artifact->source_bytes.find("Optional") !=
+         std::string::npos);
   assert(a.interface_artifact->sidecar_json.find("canonical-function-effects.v1") != std::string::npos);
   assert(a.interface_artifact->sidecar_json.find("native-carrier-types.v1") != std::string::npos);
 
@@ -82,12 +83,12 @@ void TestThreeModuleSemanticLookupAndIdentity() {
          "test.provider_a");
 
   auto consumer = ModuleRequest(root / "consumer.m", "",
-      "int consume(void) __objc3_throws(ErrorA) { "
-      "  MaybeInt zero = __objc3_some(int, 0); "
-      "  IntResult value = __objc3_ok(int, ErrorA, 0); "
-      "  return relay() + __objc3_try(provider()) + "
-      "         __objc3_has_value(zero) + __objc3_is_ok(value); "
-      "}");
+                                "int consume(void) throws(ErrorA) { "
+                                "  MaybeInt zero = Some(int, 0); "
+                                "  IntResult value = Ok(int, ErrorA, 0); "
+                                "  return relay() + tryValue(provider()) + "
+                                "         hasValue(zero) + isOk(value); "
+                                "}");
   consumer.emit_semantic_interface = false;
   consumer.imported_interfaces = {
       ImportOf(a_path, a.interface_artifact->identity),
@@ -111,9 +112,11 @@ void TestThreeModuleSemanticLookupAndIdentity() {
           decl.effects.error_type_identity.find("ErrorA") != std::string::npos;
     }
     if (decl.qualified_name == "MaybeInt")
-      saw_optional = decl.canonical_type_identity.find("__objc3_optional") != std::string::npos;
+      saw_optional =
+          decl.canonical_type_identity.find("Optional") != std::string::npos;
     if (decl.qualified_name == "IntResult")
-      saw_result = decl.canonical_type_identity.find("__objc3_result") != std::string::npos;
+      saw_result =
+          decl.canonical_type_identity.find("Result") != std::string::npos;
   }
   assert(saw_typed_effect && saw_optional && saw_result);
   fs::remove_all(root);

@@ -101,7 +101,7 @@ def main() -> int:
     cases = json.loads((fixtures / "qualification-cases.json").read_text(encoding="utf-8"))
     normalized_dir = work / "normalized"
     normalized_dir.mkdir(parents=True, exist_ok=True)
-    expected_formatted = (fixtures / "reserved_intrinsics.formatted").read_text(encoding="utf-8").replace("\r\n", "\n")
+    expected_formatted = (fixtures / "public_core.formatted").read_text(encoding="utf-8").replace("\r\n", "\n")
     expected_source_hash: str | None = None
     normalized_sources: list[tuple[Path, dict[str, Any]]] = []
     format_evidence: dict[str, Any] = {}
@@ -118,8 +118,10 @@ def main() -> int:
             require(spelling in formatted, f"clang-format changed or removed ordinary spelling {spelling!r}")
         for spelling in cases.get("required_private_spellings", []):
             require(spelling in formatted, f"clang-format changed or removed private spelling {spelling!r}")
+        for spelling in cases.get("required_public_spellings", []):
+            require(spelling in formatted, f"clang-format changed or removed public spelling {spelling!r}")
         require(formatted == expected_formatted,
-                f"clang-format output for {source_fixture.name} differs from reserved_intrinsics.formatted; actual saved in {work}")
+                f"clang-format output for {source_fixture.name} differs from public_core.formatted; actual saved in {work}")
         normalized = (normalized_dir / source_fixture.name).resolve()
         normalized.write_text(formatted, encoding="utf-8", newline="\n")
         second_format = run([str(tools["clang-format"]), f"--style={cases['format_style']}",

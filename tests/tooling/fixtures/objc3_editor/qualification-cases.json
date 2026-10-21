@@ -7,119 +7,101 @@
     "throws:",
     "defer {"
   ],
-  "required_private_spellings": [
-    "__objc3_optional",
-    "__objc3_result",
-    "__objc3_some",
-    "__objc3_none",
-    "__objc3_has_value",
-    "__objc3_ok",
-    "__objc3_is_ok",
-    "__objc3_match_stmt",
-    "__objc3_case_some",
-    "__objc3_case_none",
-    "case.Ok(let success):",
-    "case.Err(let error):",
-    "__objc3_throws(id<Error>)",
-    "__objc3_try_force([receiver checked:0])",
-    "__objc3_try_optional",
-    "__objc3_copy",
-    "__objc3_move"
-  ],
+  "required_private_spellings": [],
   "live_probes": [
     {
       "name": "optional_match_payload",
       "use_line": "selected = throws(payload);",
       "use_name": "payload",
-      "declaration_line": "case __objc3_case_some(let payload):",
+      "declaration_line": "case.Some(let payload):",
       "declaration_name": "payload",
       "hover_type": "const int",
       "completion_name": "payload"
     },
     {
       "name": "managed_optional_object",
-      "use_line": "(void)__objc3_has_value(object);",
+      "use_line": "(void)hasValue(object);",
       "use_name": "object",
-      "declaration_line": "__objc3_optional(id) object =",
+      "declaration_line": "Optional(id) object =",
       "declaration_name": "object",
-      "hover_type": "__objc3_optional",
+      "hover_type": "Optional",
       "completion_name": "object"
     },
     {
       "name": "managed_implicit_copy_assignment",
-      "use_line": "(void)__objc3_has_value(implicit);",
+      "use_line": "(void)hasValue(implicit);",
       "use_name": "implicit",
-      "declaration_line": "__objc3_optional(id) implicit = original;",
+      "declaration_line": "Optional(id) implicit = original;",
       "declaration_name": "implicit",
-      "hover_type": "__objc3_optional",
+      "hover_type": "Optional",
       "completion_name": "implicit"
     },
     {
       "name": "managed_runtime_call_result",
-      "use_line": "(void)__objc3_has_value(block_result);",
+      "use_line": "(void)hasValue(block_result);",
       "use_name": "block_result",
-      "declaration_line": "__objc3_optional(id) block_result = callback(message_result);",
+      "declaration_line": "Optional(id) block_result = callback(message_result);",
       "declaration_name": "block_result",
-      "hover_type": "__objc3_optional",
+      "hover_type": "Optional",
       "completion_name": "block_result"
     },
     {
       "name": "managed_typed_error_result",
-      "use_line": "(void)__objc3_has_value(throwing_result);",
+      "use_line": "(void)hasValue(throwing_result);",
       "use_name": "throwing_result",
-      "declaration_line": "__objc3_optional(id) throwing_result =",
+      "declaration_line": "Optional(id) throwing_result =",
       "declaration_name": "throwing_result",
-      "hover_type": "__objc3_optional",
+      "hover_type": "Optional",
       "completion_name": "throwing_result"
     },
     {
       "name": "managed_direct_call_result",
-      "use_line": "(void)__objc3_has_value(direct_result);",
+      "use_line": "(void)hasValue(direct_result);",
       "use_name": "direct_result",
-      "declaration_line": "__objc3_optional(id) direct_result =",
+      "declaration_line": "Optional(id) direct_result =",
       "declaration_name": "direct_result",
-      "hover_type": "__objc3_optional",
+      "hover_type": "Optional",
       "completion_name": "direct_result"
     },
     {
       "name": "managed_recursive_carrier",
-      "use_line": "(void)__objc3_has_value(nested);",
+      "use_line": "(void)hasValue(nested);",
       "use_name": "nested",
-      "declaration_line": "__objc3_optional(ManagedInner) nested =",
+      "declaration_line": "Optional(ManagedInner) nested =",
       "declaration_name": "nested",
-      "hover_type": "__objc3_optional",
+      "hover_type": "Optional",
       "completion_name": "nested"
     },
     {
       "name": "managed_carrier_capture",
-      "use_line": "return __objc3_has_value(captured);",
+      "use_line": "return hasValue(captured);",
       "use_name": "captured",
-      "declaration_line": "__objc3_optional(id) captured =",
+      "declaration_line": "Optional(id) captured =",
       "declaration_name": "captured",
-      "hover_type": "__objc3_optional",
+      "hover_type": "Optional",
       "completion_name": "captured"
     },
     {
       "name": "managed_carrier_array",
-      "use_line": "(void)__objc3_has_value(managed_values[0]);",
+      "use_line": "(void)hasValue(managed_values[0]);",
       "use_name": "managed_values",
-      "declaration_line": "__objc3_optional(id) managed_values[2] =",
+      "declaration_line": "Optional(id) managed_values[2] =",
       "declaration_name": "managed_values",
-      "hover_type": "__objc3_optional",
+      "hover_type": "Optional",
       "completion_name": "managed_values"
     },
     {
       "name": "managed_weak_block_carrier",
-      "use_line": "(void)__objc3_has_value(weak_action);",
+      "use_line": "(void)hasValue(weak_action);",
       "use_name": "weak_action",
-      "declaration_line": "__objc3_optional(Action __weak) weak_action =",
+      "declaration_line": "Optional(Action __weak) weak_action =",
       "declaration_name": "weak_action",
-      "hover_type": "__objc3_optional",
+      "hover_type": "Optional",
       "completion_name": "weak_action"
     },
     {
       "name": "managed_enclosing_record",
-      "use_line": "(void)__objc3_has_value(managed_record.values[0]);",
+      "use_line": "(void)hasValue(managed_record.values[0]);",
       "use_name": "managed_record",
       "declaration_line": "struct ManagedRecord managed_record = managed_record_echo(source);",
       "declaration_name": "managed_record",
@@ -128,11 +110,11 @@
     },
     {
       "name": "managed_heap_property",
-      "use_line": "(void)__objc3_has_value(heap_value);",
+      "use_line": "(void)hasValue(heap_value);",
       "use_name": "heap_value",
-      "declaration_line": "__objc3_optional(id) heap_value = receiver.stored;",
+      "declaration_line": "Optional(id) heap_value = receiver.stored;",
       "declaration_name": "heap_value",
-      "hover_type": "__objc3_optional",
+      "hover_type": "Optional",
       "completion_name": "heap_value"
     },
     {
@@ -147,27 +129,27 @@
   ],
   "cases": [
     {
-      "source": "reserved_intrinsics.m",
+      "source": "public_core.m",
       "language": "objective-c",
       "standard": "c17"
     },
     {
-      "source": "reserved_intrinsics.mm",
+      "source": "public_core.mm",
       "language": "objective-c++",
       "standard": "c++20",
       "live_probes": [
         {
           "name": "managed_optional_copy",
-          "use_line": "(void)__objc3_has_value(copied);",
+          "use_line": "(void)hasValue(copied);",
           "use_name": "copied",
-          "declaration_line": "__objc3_optional(id) copied = __objc3_copy(source);",
+          "declaration_line": "Optional(id) copied = copyValue(source);",
           "declaration_name": "copied",
-          "hover_type": "__objc3_optional",
+          "hover_type": "Optional",
           "completion_name": "copied"
         },
         {
           "name": "cxx_data_record_linkage",
-          "use_line": "(void)__objc3_has_value(cxx_record.value);",
+          "use_line": "(void)hasValue(cxx_record.value);",
           "use_name": "cxx_record",
           "declaration_line": "CxxInterfaceRecord cxx_record =",
           "declaration_name": "cxx_record",
@@ -176,5 +158,24 @@
         }
       ]
     }
+  ],
+  "required_public_spellings": [
+    "Optional",
+    "Result",
+    "Some",
+    "None",
+    "hasValue",
+    "Ok",
+    "isOk",
+    "match",
+    ".Some",
+    ".None",
+    "case.Ok(let success):",
+    "case.Err(let error):",
+    "copyValue",
+    "moveValue",
+    "throws(id<Error>)",
+    "tryForce([receiver checked:0])",
+    "tryOptional"
   ]
 }

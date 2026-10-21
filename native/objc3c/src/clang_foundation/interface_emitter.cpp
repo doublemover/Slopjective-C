@@ -911,8 +911,10 @@ InterfaceEmissionArtifact EmitSemanticInterface(
       sidecar.required_semantics.push_back("objc3.canonical-function-effects.v1");
     if (effects.ownership_identity.starts_with("native-return:"))
       sidecar.required_semantics.push_back("objc3.native-return-ownership.v1");
-    if (declaration.canonical_type_identity.find("__objc3_optional(") != std::string::npos ||
-        declaration.canonical_type_identity.find("__objc3_result(") != std::string::npos)
+    if (declaration.canonical_type_identity.find("Optional(") !=
+            std::string::npos ||
+        declaration.canonical_type_identity.find("Result(") !=
+            std::string::npos)
       sidecar.required_semantics.push_back("objc3.native-carrier-types.v1");
   }
   std::sort(sidecar.required_semantics.begin(), sidecar.required_semantics.end());

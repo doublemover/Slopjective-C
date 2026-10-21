@@ -22,7 +22,7 @@ static int values(void) {
   {
     NestedStrong source = nested_make(5);
     block = ^{ return nested_state(source); };
-    source = __objc3_none(CallStrong);
+    source = None(CallStrong);
     CHECK(block() == 0 && !call_destroyed(5));
   }
   // Stack-literal storage lives to the end of its enclosing scope; only the
@@ -33,7 +33,7 @@ static int values(void) {
     NestedStrong value = factory();
     factory = (CapturedValue)0;
     CHECK(nested_state(value) == 0 && !call_destroyed(6));
-    value = __objc3_none(CallStrong); CHECK(call_destroyed(6) == 1);
+    value = None(CallStrong); CHECK(call_destroyed(6) == 1);
   }
   CHECK(capture_noescape(7) == 0 && call_destroyed(7) == 1);
   return 0;
@@ -41,14 +41,14 @@ static int values(void) {
 static int errors(void) {
   CapturedThrowing block = capture_throwing(8);
   {
-    NestedStrong value = __objc3_try_force(block(9, 0));
+    NestedStrong value = tryForce(block(9, 0));
     CHECK(nested_state(value) == 0 && !call_destroyed(8) && call_destroyed(9) == 1);
   }
   CHECK(!call_destroyed(8));
   @autoreleasepool {
     int caught = 0;
-    __objc3_do { NestedStrong value = __objc3_try(block(10, 1)); }
-    __objc3_catch(id<Error> error) { CHECK(error != (id)0); caught = 1; }
+    handle { NestedStrong value = tryValue(block(10, 1)); }
+    catch(id<Error> error) { CHECK(error != (id)0); caught = 1; }
     CHECK(caught && !call_destroyed(8) && call_destroyed(10) == 2);
   }
   block = (CapturedThrowing)0; CHECK(call_destroyed(8) == 1);
@@ -79,7 +79,7 @@ static int errors(void) {
 int main(int argc, char **argv) {
   if (argc == 2 && !strcmp(argv[1], "force-capture")) {
     CapturedThrowing block = capture_throwing(42);
-    NestedStrong value = __objc3_try_force(block(43, 1));
+    NestedStrong value = tryForce(block(43, 1));
     return nested_state(value);
   }
   int result = values();

@@ -684,30 +684,41 @@ index fdefb6d6b..ae47c3ef7 100644
    VisitExpr(S);
  }
 diff --git a/clang/lib/Parse/ParseExpr.cpp b/clang/lib/Parse/ParseExpr.cpp
-index 74209f579..e5978ff2a 100644
+index 74209f579..01ac8c212 100644
 --- a/clang/lib/Parse/ParseExpr.cpp
 +++ b/clang/lib/Parse/ParseExpr.cpp
-@@ -890,6 +890,44 @@ Parser::ParseCastExpression(CastParseKind ParseKind, bool isAddressOfOperand,
+@@ -20,6 +20,7 @@
+ ///
+ //===----------------------------------------------------------------------===//
+ 
++#include "clang/Basic/ObjC3Syntax.h"
+ #include "clang/AST/ASTContext.h"
+ #include "clang/AST/Availability.h"
+ #include "clang/AST/ExprCXX.h"
+@@ -890,6 +891,47 @@ Parser::ParseCastExpression(CastParseKind ParseKind, bool isAddressOfOperand,
    ParseIdentifier: {    // primary-expression: identifier
                          // unqualified-id: identifier
                          // constant: enumeration-constant
 +    if (getLangOpts().ObjC3 && Tok.is(tok::identifier) &&
 +        Tok.getIdentifierInfo() &&
-+        (Tok.getIdentifierInfo()->isStr("__objc3_some") ||
-+         Tok.getIdentifierInfo()->isStr("__objc3_none") ||
-+         Tok.getIdentifierInfo()->isStr("__objc3_has_value"))) {
++        (classifyObjC3Syntax(Tok.getIdentifierInfo()->getName(), NextToken().is(tok::l_paren)) == ObjC3Syntax::Some ||
++         classifyObjC3Syntax(Tok.getIdentifierInfo()->getName(), NextToken().is(tok::l_paren)) == ObjC3Syntax::None ||
++         classifyObjC3Syntax(Tok.getIdentifierInfo()->getName(), NextToken().is(tok::l_paren)) == ObjC3Syntax::HasValue)) {
 +      Res = ParseObjC3OptionalExpression();
 +      break;
 +    }
 +    if (getLangOpts().ObjC3 && Tok.getIdentifierInfo() &&
-+        Tok.getIdentifierInfo()->isStr("__objc3_match")) {
++        classifyObjC3Syntax(Tok.getIdentifierInfo()->getName(), NextToken().is(tok::l_paren)) == ObjC3Syntax::MatchExpression) {
 +      Res = ParseObjC3MatchExpression();
 +      break;
 +    }
 +
 +    if (getLangOpts().ObjC3 && Tok.is(tok::identifier) &&
 +        Tok.getIdentifierInfo() &&
-+        (Tok.getIdentifierInfo()->isStr("__objc3_try") ||
++        ((Tok.getIdentifierInfo()->isStr("tryValue") && NextToken().is(tok::l_paren)) ||
++         (Tok.getIdentifierInfo()->isStr("tryOptional") && NextToken().is(tok::l_paren)) ||
++         (Tok.getIdentifierInfo()->isStr("tryForce") && NextToken().is(tok::l_paren)) ||
++         Tok.getIdentifierInfo()->isStr("__objc3_try") ||
 +         Tok.getIdentifierInfo()->isStr("__objc3_try_optional") ||
 +         Tok.getIdentifierInfo()->isStr("__objc3_try_force"))) {
 +      Res = ParseObjC3TryExpression();
@@ -715,16 +726,16 @@ index 74209f579..e5978ff2a 100644
 +    }
 +    if (getLangOpts().ObjC3 && Tok.is(tok::identifier) &&
 +        Tok.getIdentifierInfo() &&
-+        (Tok.getIdentifierInfo()->isStr("__objc3_ok") ||
-+         Tok.getIdentifierInfo()->isStr("__objc3_err") ||
-+         Tok.getIdentifierInfo()->isStr("__objc3_is_ok"))) {
++        (classifyObjC3Syntax(Tok.getIdentifierInfo()->getName(), NextToken().is(tok::l_paren)) == ObjC3Syntax::Ok ||
++         classifyObjC3Syntax(Tok.getIdentifierInfo()->getName(), NextToken().is(tok::l_paren)) == ObjC3Syntax::Err ||
++         classifyObjC3Syntax(Tok.getIdentifierInfo()->getName(), NextToken().is(tok::l_paren)) == ObjC3Syntax::IsOk)) {
 +      Res = ParseObjC3ResultExpression();
 +      break;
 +    }
 +    if (getLangOpts().ObjC3 && Tok.is(tok::identifier) &&
 +        Tok.getIdentifierInfo() &&
-+        (Tok.getIdentifierInfo()->isStr("__objc3_copy") ||
-+         Tok.getIdentifierInfo()->isStr("__objc3_move"))) {
++        (classifyObjC3Syntax(Tok.getIdentifierInfo()->getName(), NextToken().is(tok::l_paren)) == ObjC3Syntax::Copy ||
++         classifyObjC3Syntax(Tok.getIdentifierInfo()->getName(), NextToken().is(tok::l_paren)) == ObjC3Syntax::Move)) {
 +      Res = ParseObjC3CarrierTransferExpression();
 +      break;
 +    }

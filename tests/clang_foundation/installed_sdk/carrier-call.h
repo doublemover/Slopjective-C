@@ -1,11 +1,11 @@
 #pragma once
-typedef __objc3_optional(id) CallStrong;
-typedef __objc3_optional(id __weak) CallWeak;
-typedef __objc3_optional(id __unsafe_unretained) CallUnsafe;
-typedef __objc3_result(id, id) CallOutcome;
-typedef __objc3_result(id, id __weak) CallMixed;
+typedef Optional(id) CallStrong;
+typedef Optional(id __weak) CallWeak;
+typedef Optional(id __unsafe_unretained) CallUnsafe;
+typedef Result(id, id) CallOutcome;
+typedef Result(id, id __weak) CallMixed;
 typedef void (^CallAction)(void);
-typedef __objc3_optional(CallAction) CallBlock;
+typedef Optional(CallAction) CallBlock;
 
 id call_object(int key) __attribute__((ns_returns_retained));
 int call_destroyed(int key);

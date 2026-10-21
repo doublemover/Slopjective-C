@@ -15,5 +15,5 @@ __attribute__((objc_root_class))
 void takes_variadic(int first,...);
 void rejected(void) { takes_variadic(0,record_make(0)); }
 #elif CASE == 5
-struct RecordCall rejected(void) __objc3_throws(id<Error>) { return record_make(0); }
+struct RecordCall rejected(void) throws(id<Error>) { return record_make(0); }
 #endif
