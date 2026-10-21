@@ -1,7 +1,7 @@
 # Linux forward development
 
 The active product is the Clang-only Linux x86-64 SDK. The
-[acceptance receipt](../support/linux_managed_call_acceptance.json) identifies its
+[acceptance receipt](../support/linux_runtime_call_acceptance.json) identifies its
 exact archive, source, native execution and fresh-distribution evidence. Tool
 versions come from [the manifest](../../toolchains/llvm/manifest.json); public
 language claims come from [the capability authority](../../schemas/objc3-language-capabilities.json).
@@ -23,34 +23,42 @@ O0/O2 witnesses cover all Result arm transitions, self/aliased assignment, weak
 zeroing, Blocks, typed-error optionalization, sequencing and native unwinding.
 Live clangd probes cover both languages. The
 [managed call ABI](linux_managed_call_abi.md) now extends direct carriers through
-ordinary functions, callbacks and C++ members under extension ABI revision 3.
+ordinary functions, callbacks and C++ members under extension ABI revision 4.
 Caller-owned snapshots preserve each argument at evaluation time and clean up
 at full-expression boundaries; returns initialize fresh caller-owned storage.
 Nine installed executions cover separate provider/consumer compilation at
 O0/O2/ThinLTO, PCH and semantic module imports, including virtual adjustment
-thunks, register exhaustion and native exception cleanup. Nested storage remains
-separate implementation work.
-Managed MRC `try?`, weak/unsafe Block carriers and nested managed carriers still
-need explicit semantics and lowering. Define the public bounded contract and
+thunks, register exhaustion and native exception cleanup. The
+[runtime callable contract](linux_runtime_call_abi.md) adds nine installed
+Objective-C/Block executions with versioned ownership encodings, class/instance/
+protocol/super/direct dispatch, nil results, heap Blocks, reflection and native
+Objective-C/C++ unwinding. Live editor probes cover returned message and Block
+values. Typed-error composition and nested storage remain implementation work.
+The managed public core targets ARC. MRC adaptation remains outside its release
+contract; weak/unsafe Block payloads and nested managed carriers still need
+explicit semantics and lowering. Define the public bounded contract and
 syntax together with their feature queries and capability predicates. Promote a
 feature only when that contract has complete evidence.
 
 Acceptance requires O0/O2 execution across functions, callbacks, Blocks, C++
-members and Objective-C messages; ARC/MRC cleanup and native unwinding; installed
+members and Objective-C messages; ARC cleanup and native unwinding; installed
 semantic interface identity; and live Linux editor behavior. Extend the installed
 imports/managed-values/errors/cleanup sample as the public syntax becomes ready.
 Private migration intrinsics do not justify a public feature claim.
 
 The next implementation sequence is:
 
-1. Extend managed callable ownership into Objective-C messages and Block value
-   signatures with an explicit runtime encoding and copy/dispose contract, then
-   compose managed signatures with typed-error success/error transport. Preserve
-   the qualified caller-owned snapshot and return-storage rules through each
-   callable form; reject unsupported conventions before emitting a call.
+1. Compose managed signatures with typed-error success/error transport. Define
+   result-slot initialization on success, failure and propagation; error
+   ownership during parameter cleanup; forced and propagating results; and
+   cleanup when a native exception interrupts either path. Preserve the
+   qualified snapshot and return-storage rules across each callable form.
+   Define optionalization of managed results with recursive storage in step 2.
 2. Extend active-arm lifetime operations through nested carriers, arrays and
    enclosing records. Cover partial initialization, assignment, destruction and
-   exceptions before admitting those storage forms to the callable ABI.
+   exceptions before admitting those storage forms to the callable ABI. Extend
+   the same operations into ivars/properties and Block value captures, including
+   payload-aware copy/dispose helpers and weak registrations.
 3. Finish the bounded public Optional/Result and synchronous throws contract,
    including ownership and module interface identity. Add public syntax and
    promote its feature predicates only after that complete contract passes the

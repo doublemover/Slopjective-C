@@ -1,0 +1,830 @@
+{
+  "schema": "objc3c.linux-runtime-call-acceptance.v1",
+  "status": "PASS",
+  "accepted_utc": "2026-10-19T04:45:01.684877+00:00",
+  "implementation_commit": "531bdf164a9caa32510661c3468c1f33fd9362f7",
+  "source_build_id": "llvmorg-23.1.3-0d261d1ca552-b5527eabbaf0-fd761312",
+  "extension_abi_revision": 4,
+  "upstream_commit": "0d261d1ca552c95a8f007e061c787ac7132fbcbc",
+  "patch_digest": "b5527eabbaf0d35e3f998c3ac6d77f55404b80f83509779924cb6c55a2093ed8",
+  "frontend_inputs": "a6d094908cb2f707e7e4f3347719d6514bfc9a1471f12ef00a23542c637f34f6",
+  "build_input_identity": "fb63f90fd11bc5c1fdbd281edd733a2e1d27bab8a0358518ffcb334164b36cbd",
+  "archive": "out/toolchains/sdk-cache/llvmorg-23.1.3-0d261d1ca552-b5527eabbaf0-fd761312-linux-x86_64-37775c3b195a821f.tar.zst",
+  "archive_sha256": "7e08f30b17ab2d46e1fbfd80151a61dbedbf4afa264d48521b69f15559c94adc",
+  "archive_bytes": 427102032,
+  "seal_sha256": "37775c3b195a821fc29431d093cba6a54eb188b10f9cb408da53b424780ac13c",
+  "target": "x86_64-unknown-linux-gnu",
+  "linux_abi": {
+    "glibc_minimum": "2.41",
+    "libstdcxx_symbol_minimum": "GLIBCXX_3.4.33"
+  },
+  "sdk_entries": 4180,
+  "sdk_files_and_links": 3920,
+  "contract": {
+    "languages": ["Objective-C C17", "Objective-C++ C++20"],
+    "ownership": "ARC",
+    "leaves": [
+      "strong Objective-C object",
+      "zeroing weak Objective-C object",
+      "unsafe-unretained Objective-C object",
+      "strong Block"
+    ],
+    "callable_forms": [
+      "Objective-C class/instance/protocol/super/direct messages",
+      "heap and global Block invocation",
+      "nonvariadic ordinary C-convention functions",
+      "function-pointer callbacks",
+      "C++ instance and static members",
+      "virtual calls and adjustment thunks",
+      "member pointers",
+      "constructors",
+      "templates"
+    ],
+    "parameters": "Each argument initializes an isolated caller-owned snapshot at argument evaluation; the callee borrows and may assign the slot; caller destroys its final selected arm at full-expression completion, including native exception exits.",
+    "results": "Fresh caller-owned sret storage; selected-arm copy or explicit move initialization; discarded results and forwarded arguments receive full-expression cleanup.",
+    "physical_abi": "Managed arguments use pointers without byval or dead_on_return; parameter and result pointers consume SysV integer registers and spill as pointers after register exhaustion; weak storage retains its address.",
+    "queries": "Borrow initialized local, parameter, reference or pointer storage; managed call and message results use owned full-expression temporaries.",
+    "runtime_encoding": "Versioned v4 nominal encodings bind carrier kind, each arm storage encoding and strong/weak/unsafe/plain ownership. Native boolean/union layout preserves size/alignment. Source types and interface locks retain full semantic identity.",
+    "runtime_link_policy": "Discarded COMDAT addresses in DWARF 5 .debug_addr pools use all-ones tombstones so duplicate Block helpers retain valid debug ranges.",
+    "nil_receiver": "Zero-initialize Optional none or Result Err with zero payload, including discarded results. Caller snapshots clean up when no body runs.",
+    "boundaries": [
+      "carrier ivars and properties",
+      "carrier value captures",
+      "pointer/reference carrier runtime signatures",
+      "ObjC3 typed-throws managed signatures",
+      "variadic and alternate calling conventions",
+      "mandatory tail calls",
+      "reference-bound returned temporaries",
+      "volatile managed carriers",
+      "nested managed storage",
+      "managed MRC transfers",
+      "runtime int128/half/extended-float/record arms",
+      "generic aggregate FFI and forwarding",
+      "public Optional/Result/throws syntax"
+    ],
+    "public_feature_authority": "Existing qualified defer remains public; Optional/Result/throws feature predicates remain reserved."
+  },
+  "source_hashes": {
+    "toolchains/llvm/patches/0001-objc3-language-mode-and-build-identity.patch": "a0763c0848a76bbe5fb92632463d4e2d394fdd2a8542142b0d689b4727a39dc3",
+    "toolchains/llvm/patches/0004-objc3-canonical-carriers-and-function-effects.patch": "32cff5fc08b6eddec3625b286ad6d6716c8b8a398734babcfc02e63ee5d5a0bd",
+    "toolchains/llvm/patches/0003-objc3-native-payload-type-facts.patch": "61a3ddef9c6f6a08e9d66bb98791f96adeb73a33790e9cfb6c8a3e99beb3aa7a",
+    "toolchains/llvm/patches/0005-objc3-codegen-qualification-boundaries.patch": "6d662674c82a014fcdf744a82593352a5f29f3691ac0bcfdb4642a9a1961d391",
+    "scripts/objc3c_toolchain/export_development_patches.py": "c692e49e3bd92e4cb1059690394ca41729a917d24263602b40b3b069d588e182",
+    "scripts/objc3c_toolchain/package.py": "80ee2cdf29c356920f9b3a56cc49c0763a2e5ecacb1c1449243dd926789210be",
+    "scripts/qualify_linux_archive.sh": "71f83021324b107c614611ff22dbfb5f9868d3b252624af1080b49466c284ed6",
+    "native/objc3c/src/clang_foundation/driver_native.cpp": "781bc7fb0e3f1520fa12e80f192eed423d647b6a044cf9956f18ee584ed53ae4",
+    "tests/clang_foundation/installed_sdk/carrier-call.h": "a1d39a034d52f574074b69da84ad3a9f67b7a1b527152c090a9de68287f2d2f0",
+    "tests/clang_foundation/installed_sdk/carrier-call-provider.m": "7a40296c11035312bf162e2e08fd1ba4fe29cb4874cf1cb2470b5919eadf9495",
+    "tests/clang_foundation/installed_sdk/carrier-call-main.m": "568979a1d277becafda24b71b3dbcf0fc50edb1caca63d68e0385c39ec972921",
+    "tests/clang_foundation/installed_sdk/carrier-call-module.m": "2f4861eacb7bf5548ea5d7d765dbdd65e45427719c03a0718fd3746d3c26f912",
+    "tests/clang_foundation/installed_sdk/carrier-call-import.m": "1d43a0404f9583c08cda3a8f028a76b19cf9b6fed895b682e9fbacab17ff63a5",
+    "tests/clang_foundation/installed_sdk/carrier-runtime-call.h": "ba65782d1835bdbf62eaf3dc734eef6e9ff272616ab3c85216d52daef80b070c",
+    "tests/clang_foundation/installed_sdk/carrier-runtime-provider.m": "805d45ab9faa3ff660395477d85f71b302d83a67e64bcfdd7f49abf25c254cb6",
+    "tests/clang_foundation/installed_sdk/carrier-runtime-main.m": "64aff2ed03744ff90a6e5a2f1b0a4343a0817c01ee2c4996a30210a049b5e541",
+    "tests/clang_foundation/installed_sdk/carrier-runtime-module.m": "196b59395a5620e9fed77b0afa297cb9ee4521bf56c04a921ca16f30aa9df1c6",
+    "tests/clang_foundation/installed_sdk/carrier-runtime-import.m": "4579bd9ca0e257091f86448824612d03d61469a228320f91b09195d62519abb4",
+    "tests/clang_foundation/installed_sdk/qualify-carrier-calls.py": "534cdbbd7489dc30aeb4e284885b37e59818194e9e9f119d3d603308defaaffb",
+    "tests/clang_foundation/installed_sdk/qualify-runtime-carrier-calls.py": "c2d28650bfa775c1fabe3f1a1a84ea694aebba1175015055c73a8f9784befe49",
+    "tests/tooling/fixtures/objc3_editor/qualification-cases.json": "745874c3828c6a6027411a73fbda4c88f0d3af1be6de2a5bbbf02ad023ff0e1c",
+    "tests/tooling/fixtures/objc3_editor/reserved_intrinsics.m": "a23677ffca03907f3723c8126e975d5484040268a32398a42b800c4bee1b2055",
+    "tests/tooling/fixtures/objc3_editor/reserved_intrinsics.mm": "a23677ffca03907f3723c8126e975d5484040268a32398a42b800c4bee1b2055",
+    "tests/tooling/fixtures/objc3_editor/reserved_intrinsics.formatted": "371cfb131caa9d5257c982c7bccaa08268a2df4b81f36270a0c73f2be502c46a"
+  },
+  "qualification": {
+    "compiler_tests": 169,
+    "compiler_platform_skips": 3,
+    "ast_tests": 46,
+    "tooling_tests": 145,
+    "tooling_skips": 1,
+    "tooling_subtests": 33,
+    "frontend_ctests": 16,
+    "runtime_ctests": 5,
+    "native_nodes": 13,
+    "native_runtime_executions": 76,
+    "installed_consumer_commands": 30,
+    "installed_carrier_calls": {
+      "schema": "objc3c.installed-carrier-calls.v1",
+      "status": "PASS",
+      "sdk_seal": "37775c3b195a821fc29431d093cba6a54eb188b10f9cb408da53b424780ac13c",
+      "commands": [
+        {
+          "name": "seal-before",
+          "exit_code": 0,
+          "elapsed_seconds": 1.552978
+        },
+        {
+          "name": "objective-c-O0-provider",
+          "exit_code": 0,
+          "elapsed_seconds": 0.179972
+        },
+        {
+          "name": "objective-c-O0-consumer",
+          "exit_code": 0,
+          "elapsed_seconds": 0.24204
+        },
+        {
+          "name": "objective-c-O0-link",
+          "exit_code": 0,
+          "elapsed_seconds": 0.185507
+        },
+        {
+          "name": "objective-c-O0",
+          "exit_code": 0,
+          "elapsed_seconds": 0.002906
+        },
+        {
+          "name": "objective-c-O0-dwarf",
+          "exit_code": 0,
+          "elapsed_seconds": 0.003624
+        },
+        {
+          "name": "objective-c-O0-interface",
+          "exit_code": 0,
+          "elapsed_seconds": 0.156636
+        },
+        {
+          "name": "objective-c-O0-import",
+          "exit_code": 0,
+          "elapsed_seconds": 0.168673
+        },
+        {
+          "name": "objective-c-O0-import-link",
+          "exit_code": 0,
+          "elapsed_seconds": 0.171618
+        },
+        {
+          "name": "objective-c-O0-import",
+          "exit_code": 0,
+          "elapsed_seconds": 0.002836
+        },
+        {
+          "name": "objective-c-O0-import-dwarf",
+          "exit_code": 0,
+          "elapsed_seconds": 0.002862
+        },
+        {
+          "name": "objective-c-O2-provider",
+          "exit_code": 0,
+          "elapsed_seconds": 0.200659
+        },
+        {
+          "name": "objective-c-O2-consumer",
+          "exit_code": 0,
+          "elapsed_seconds": 0.271448
+        },
+        {
+          "name": "objective-c-O2-link",
+          "exit_code": 0,
+          "elapsed_seconds": 0.172251
+        },
+        {
+          "name": "objective-c-O2",
+          "exit_code": 0,
+          "elapsed_seconds": 0.002754
+        },
+        {
+          "name": "objective-c-O2-dwarf",
+          "exit_code": 0,
+          "elapsed_seconds": 0.003329
+        },
+        {
+          "name": "objective-c-O2-interface",
+          "exit_code": 0,
+          "elapsed_seconds": 0.157631
+        },
+        {
+          "name": "objective-c-O2-import",
+          "exit_code": 0,
+          "elapsed_seconds": 0.178395
+        },
+        {
+          "name": "objective-c-O2-import-link",
+          "exit_code": 0,
+          "elapsed_seconds": 0.168384
+        },
+        {
+          "name": "objective-c-O2-import",
+          "exit_code": 0,
+          "elapsed_seconds": 0.002417
+        },
+        {
+          "name": "objective-c-O2-import-dwarf",
+          "exit_code": 0,
+          "elapsed_seconds": 0.002762
+        },
+        {
+          "name": "objective-c-O2-thinlto-provider",
+          "exit_code": 0,
+          "elapsed_seconds": 0.181916
+        },
+        {
+          "name": "objective-c-O2-thinlto-consumer",
+          "exit_code": 0,
+          "elapsed_seconds": 0.219299
+        },
+        {
+          "name": "objective-c-O2-thinlto-link",
+          "exit_code": 0,
+          "elapsed_seconds": 0.226515
+        },
+        {
+          "name": "objective-c-O2-thinlto",
+          "exit_code": 0,
+          "elapsed_seconds": 0.003077
+        },
+        {
+          "name": "objective-c-O2-thinlto-dwarf",
+          "exit_code": 0,
+          "elapsed_seconds": 0.003372
+        },
+        {
+          "name": "objective-c++-O0-provider",
+          "exit_code": 0,
+          "elapsed_seconds": 0.194056
+        },
+        {
+          "name": "objective-c++-O0-consumer",
+          "exit_code": 0,
+          "elapsed_seconds": 0.204014
+        },
+        {
+          "name": "objective-c++-O0-link",
+          "exit_code": 0,
+          "elapsed_seconds": 0.195252
+        },
+        {
+          "name": "objective-c++-O0",
+          "exit_code": 0,
+          "elapsed_seconds": 0.003046
+        },
+        {
+          "name": "objective-c++-O0-dwarf",
+          "exit_code": 0,
+          "elapsed_seconds": 0.003535
+        },
+        {
+          "name": "objective-c++-O2-provider",
+          "exit_code": 0,
+          "elapsed_seconds": 0.213159
+        },
+        {
+          "name": "objective-c++-O2-consumer",
+          "exit_code": 0,
+          "elapsed_seconds": 0.330789
+        },
+        {
+          "name": "objective-c++-O2-link",
+          "exit_code": 0,
+          "elapsed_seconds": 0.173236
+        },
+        {
+          "name": "objective-c++-O2",
+          "exit_code": 0,
+          "elapsed_seconds": 0.003059
+        },
+        {
+          "name": "objective-c++-O2-dwarf",
+          "exit_code": 0,
+          "elapsed_seconds": 0.003421
+        },
+        {
+          "name": "objective-c++-O2-thinlto-provider",
+          "exit_code": 0,
+          "elapsed_seconds": 0.195795
+        },
+        {
+          "name": "objective-c++-O2-thinlto-consumer",
+          "exit_code": 0,
+          "elapsed_seconds": 0.258871
+        },
+        {
+          "name": "objective-c++-O2-thinlto-link",
+          "exit_code": 0,
+          "elapsed_seconds": 0.260779
+        },
+        {
+          "name": "objective-c++-O2-thinlto",
+          "exit_code": 0,
+          "elapsed_seconds": 0.002911
+        },
+        {
+          "name": "objective-c++-O2-thinlto-dwarf",
+          "exit_code": 0,
+          "elapsed_seconds": 0.003778
+        },
+        {
+          "name": "pch-header",
+          "exit_code": 0,
+          "elapsed_seconds": 0.165546
+        },
+        {
+          "name": "pch-consumer",
+          "exit_code": 0,
+          "elapsed_seconds": 0.338399
+        },
+        {
+          "name": "pch-link",
+          "exit_code": 0,
+          "elapsed_seconds": 0.17802
+        },
+        {
+          "name": "pch-application",
+          "exit_code": 0,
+          "elapsed_seconds": 0.002953
+        },
+        {
+          "name": "pch-application-dwarf",
+          "exit_code": 0,
+          "elapsed_seconds": 0.003205
+        },
+        {
+          "name": "seal-after",
+          "exit_code": 0,
+          "elapsed_seconds": 1.424398
+        }
+      ],
+      "executions": [
+        {
+          "name": "objective-c-O0",
+          "executable_sha256": "68c307d6c169c7ec8e0f142a777bfd5500a1437e220ca1e61a61637c26fa3c81"
+        },
+        {
+          "name": "objective-c-O0-import",
+          "executable_sha256": "326974038140e27b753d82aa28a1b93e1b8e3c131bc1f8feedf4fc9ad38363b0"
+        },
+        {
+          "name": "objective-c-O2",
+          "executable_sha256": "4ec9a2b41069a00c19e700d1fafb4b566957dbfe90fa0781f9c911a56830a3e5"
+        },
+        {
+          "name": "objective-c-O2-import",
+          "executable_sha256": "7e46c556c8554d930f77c9beedb6e31351564ba10ecfe8e2cc0512f95ac91945"
+        },
+        {
+          "name": "objective-c-O2-thinlto",
+          "executable_sha256": "9dfab398efda5c079b5b867fd4026e34b790b25af0f07665b0eea3bbb0927d44"
+        },
+        {
+          "name": "objective-c++-O0",
+          "executable_sha256": "7eacef3da8bc73a883b10ca3034b78326fd4ef194ae512032f6e21f5b6b94834"
+        },
+        {
+          "name": "objective-c++-O2",
+          "executable_sha256": "393a1c667cb01258b010e0d18e612819f7422f7e85932921b24bc5a5497f6ffc"
+        },
+        {
+          "name": "objective-c++-O2-thinlto",
+          "executable_sha256": "5403ac2dfb97acd825d12cb67f6b0df3f0f6f4607f410c515541615a961a7a0d"
+        },
+        {
+          "name": "pch-application",
+          "executable_sha256": "bb627e7d18007747a4fe0a64fc3418b4f90a93c225210ecb1ca96696fe77e1c5"
+        }
+      ],
+      "source_hashes": {
+        "carrier-call.h": "a1d39a034d52f574074b69da84ad3a9f67b7a1b527152c090a9de68287f2d2f0",
+        "carrier-call-provider.m": "7a40296c11035312bf162e2e08fd1ba4fe29cb4874cf1cb2470b5919eadf9495",
+        "carrier-call-main.m": "568979a1d277becafda24b71b3dbcf0fc50edb1caca63d68e0385c39ec972921",
+        "carrier-call-module.m": "2f4861eacb7bf5548ea5d7d765dbdd65e45427719c03a0718fd3746d3c26f912",
+        "carrier-call-import.m": "1d43a0404f9583c08cda3a8f028a76b19cf9b6fed895b682e9fbacab17ff63a5"
+      },
+      "interfaces": [
+        {
+          "optimization": "O0",
+          "semantic_fingerprint": "64133551c81b2e8d88642fa8c08804466c5a194cc534053920d63362c217dafa",
+          "runtime_abi": "gnustep-2.0;arc"
+        },
+        {
+          "optimization": "O2",
+          "semantic_fingerprint": "64133551c81b2e8d88642fa8c08804466c5a194cc534053920d63362c217dafa",
+          "runtime_abi": "gnustep-2.0;arc"
+        }
+      ]
+    },
+    "installed_runtime_carrier_calls": {
+      "schema": "objc3c.installed-runtime-carrier-calls.v1",
+      "status": "PASS",
+      "sdk_seal": "37775c3b195a821fc29431d093cba6a54eb188b10f9cb408da53b424780ac13c",
+      "commands": [
+        {
+          "name": "seal-before",
+          "exit_code": 0,
+          "elapsed_seconds": 1.434448
+        },
+        {
+          "name": "objective-c-O0-base",
+          "exit_code": 0,
+          "elapsed_seconds": 0.182819
+        },
+        {
+          "name": "objective-c-O0-provider",
+          "exit_code": 0,
+          "elapsed_seconds": 0.176211
+        },
+        {
+          "name": "objective-c-O0-consumer",
+          "exit_code": 0,
+          "elapsed_seconds": 0.213758
+        },
+        {
+          "name": "objective-c-O0-link",
+          "exit_code": 0,
+          "elapsed_seconds": 0.173682
+        },
+        {
+          "name": "objective-c-O0",
+          "exit_code": 0,
+          "elapsed_seconds": 0.002867
+        },
+        {
+          "name": "objective-c-O0-dwarf",
+          "exit_code": 0,
+          "elapsed_seconds": 0.003526
+        },
+        {
+          "name": "objective-c-O0-interface",
+          "exit_code": 0,
+          "elapsed_seconds": 0.161526
+        },
+        {
+          "name": "objective-c-O0-import",
+          "exit_code": 0,
+          "elapsed_seconds": 0.172565
+        },
+        {
+          "name": "objective-c-O0-import-link",
+          "exit_code": 0,
+          "elapsed_seconds": 0.170154
+        },
+        {
+          "name": "objective-c-O0-import",
+          "exit_code": 0,
+          "elapsed_seconds": 0.002508
+        },
+        {
+          "name": "objective-c-O0-import-dwarf",
+          "exit_code": 0,
+          "elapsed_seconds": 0.003479
+        },
+        {
+          "name": "objective-c-O2-base",
+          "exit_code": 0,
+          "elapsed_seconds": 0.226665
+        },
+        {
+          "name": "objective-c-O2-provider",
+          "exit_code": 0,
+          "elapsed_seconds": 0.200808
+        },
+        {
+          "name": "objective-c-O2-consumer",
+          "exit_code": 0,
+          "elapsed_seconds": 0.31087
+        },
+        {
+          "name": "objective-c-O2-link",
+          "exit_code": 0,
+          "elapsed_seconds": 0.169944
+        },
+        {
+          "name": "objective-c-O2",
+          "exit_code": 0,
+          "elapsed_seconds": 0.003163
+        },
+        {
+          "name": "objective-c-O2-dwarf",
+          "exit_code": 0,
+          "elapsed_seconds": 0.003652
+        },
+        {
+          "name": "objective-c-O2-interface",
+          "exit_code": 0,
+          "elapsed_seconds": 0.156726
+        },
+        {
+          "name": "objective-c-O2-import",
+          "exit_code": 0,
+          "elapsed_seconds": 0.182083
+        },
+        {
+          "name": "objective-c-O2-import-link",
+          "exit_code": 0,
+          "elapsed_seconds": 0.175836
+        },
+        {
+          "name": "objective-c-O2-import",
+          "exit_code": 0,
+          "elapsed_seconds": 0.002401
+        },
+        {
+          "name": "objective-c-O2-import-dwarf",
+          "exit_code": 0,
+          "elapsed_seconds": 0.003541
+        },
+        {
+          "name": "objective-c-O2-thinlto-base",
+          "exit_code": 0,
+          "elapsed_seconds": 0.180651
+        },
+        {
+          "name": "objective-c-O2-thinlto-provider",
+          "exit_code": 0,
+          "elapsed_seconds": 0.178478
+        },
+        {
+          "name": "objective-c-O2-thinlto-consumer",
+          "exit_code": 0,
+          "elapsed_seconds": 0.248891
+        },
+        {
+          "name": "objective-c-O2-thinlto-link",
+          "exit_code": 0,
+          "elapsed_seconds": 0.25831
+        },
+        {
+          "name": "objective-c-O2-thinlto",
+          "exit_code": 0,
+          "elapsed_seconds": 0.002865
+        },
+        {
+          "name": "objective-c-O2-thinlto-dwarf",
+          "exit_code": 0,
+          "elapsed_seconds": 0.003667
+        },
+        {
+          "name": "objective-c++-O0-base",
+          "exit_code": 0,
+          "elapsed_seconds": 0.199002
+        },
+        {
+          "name": "objective-c++-O0-provider",
+          "exit_code": 0,
+          "elapsed_seconds": 0.183223
+        },
+        {
+          "name": "objective-c++-O0-consumer",
+          "exit_code": 0,
+          "elapsed_seconds": 0.219726
+        },
+        {
+          "name": "objective-c++-O0-link",
+          "exit_code": 0,
+          "elapsed_seconds": 0.191854
+        },
+        {
+          "name": "objective-c++-O0",
+          "exit_code": 0,
+          "elapsed_seconds": 0.002916
+        },
+        {
+          "name": "objective-c++-O0-dwarf",
+          "exit_code": 0,
+          "elapsed_seconds": 0.003452
+        },
+        {
+          "name": "objective-c++-O2-base",
+          "exit_code": 0,
+          "elapsed_seconds": 0.212627
+        },
+        {
+          "name": "objective-c++-O2-provider",
+          "exit_code": 0,
+          "elapsed_seconds": 0.205815
+        },
+        {
+          "name": "objective-c++-O2-consumer",
+          "exit_code": 0,
+          "elapsed_seconds": 0.34318
+        },
+        {
+          "name": "objective-c++-O2-link",
+          "exit_code": 0,
+          "elapsed_seconds": 0.170407
+        },
+        {
+          "name": "objective-c++-O2",
+          "exit_code": 0,
+          "elapsed_seconds": 0.002774
+        },
+        {
+          "name": "objective-c++-O2-dwarf",
+          "exit_code": 0,
+          "elapsed_seconds": 0.004118
+        },
+        {
+          "name": "objective-c++-O2-thinlto-base",
+          "exit_code": 0,
+          "elapsed_seconds": 0.190325
+        },
+        {
+          "name": "objective-c++-O2-thinlto-provider",
+          "exit_code": 0,
+          "elapsed_seconds": 0.185581
+        },
+        {
+          "name": "objective-c++-O2-thinlto-consumer",
+          "exit_code": 0,
+          "elapsed_seconds": 0.272963
+        },
+        {
+          "name": "objective-c++-O2-thinlto-link",
+          "exit_code": 0,
+          "elapsed_seconds": 0.265197
+        },
+        {
+          "name": "objective-c++-O2-thinlto",
+          "exit_code": 0,
+          "elapsed_seconds": 0.002937
+        },
+        {
+          "name": "objective-c++-O2-thinlto-dwarf",
+          "exit_code": 0,
+          "elapsed_seconds": 0.004015
+        },
+        {
+          "name": "pch-header",
+          "exit_code": 0,
+          "elapsed_seconds": 0.178756
+        },
+        {
+          "name": "pch-consumer",
+          "exit_code": 0,
+          "elapsed_seconds": 0.362698
+        },
+        {
+          "name": "pch-link",
+          "exit_code": 0,
+          "elapsed_seconds": 0.207298
+        },
+        {
+          "name": "pch-application",
+          "exit_code": 0,
+          "elapsed_seconds": 0.006245
+        },
+        {
+          "name": "pch-application-dwarf",
+          "exit_code": 0,
+          "elapsed_seconds": 0.003761
+        },
+        {
+          "name": "seal-after",
+          "exit_code": 0,
+          "elapsed_seconds": 1.482672
+        }
+      ],
+      "executions": [
+        {
+          "name": "objective-c-O0",
+          "executable_sha256": "f87acdab745f84fc8cb546b47113e6e3920c888df80aa1ce58a367a3182ec551"
+        },
+        {
+          "name": "objective-c-O0-import",
+          "executable_sha256": "9ea723cb61ca4f04244b1c37c639d67af5dded50ce8838cbc10a013388f9c8a3"
+        },
+        {
+          "name": "objective-c-O2",
+          "executable_sha256": "41c4f3b37463385a06b513e6e068a9d9d0374971f660d95b6863bf6fac47688a"
+        },
+        {
+          "name": "objective-c-O2-import",
+          "executable_sha256": "1421948ed0b7b35fdeeba3eae41559425d2d1ece16dad69f7df9f0413292f0c0"
+        },
+        {
+          "name": "objective-c-O2-thinlto",
+          "executable_sha256": "218756536efa4a2b4f47c24fa77762ad1dc9d6d611477e1daf8d29120cccadec"
+        },
+        {
+          "name": "objective-c++-O0",
+          "executable_sha256": "8ad0a465a0b072a8a21f206f42a208edea9238e53016c62ea61653ecaf2b763b"
+        },
+        {
+          "name": "objective-c++-O2",
+          "executable_sha256": "088c5aedb2a893ee566218baee24e0ba81ae6c6bfa1bdbf4226c913b9e325de4"
+        },
+        {
+          "name": "objective-c++-O2-thinlto",
+          "executable_sha256": "c6cd90046d64ac2151b590825f8df1db70bdd169cfd881df1b043dc6fed549a3"
+        },
+        {
+          "name": "pch-application",
+          "executable_sha256": "0a7c444a759819e5ef370541e117ef48d6971cdae0d471638b69696378bbe11b"
+        }
+      ],
+      "source_hashes": {
+        "carrier-call.h": "a1d39a034d52f574074b69da84ad3a9f67b7a1b527152c090a9de68287f2d2f0",
+        "carrier-call-provider.m": "7a40296c11035312bf162e2e08fd1ba4fe29cb4874cf1cb2470b5919eadf9495",
+        "carrier-runtime-call.h": "ba65782d1835bdbf62eaf3dc734eef6e9ff272616ab3c85216d52daef80b070c",
+        "carrier-runtime-provider.m": "805d45ab9faa3ff660395477d85f71b302d83a67e64bcfdd7f49abf25c254cb6",
+        "carrier-runtime-main.m": "64aff2ed03744ff90a6e5a2f1b0a4343a0817c01ee2c4996a30210a049b5e541",
+        "carrier-runtime-module.m": "196b59395a5620e9fed77b0afa297cb9ee4521bf56c04a921ca16f30aa9df1c6",
+        "carrier-runtime-import.m": "4579bd9ca0e257091f86448824612d03d61469a228320f91b09195d62519abb4"
+      },
+      "interfaces": [
+        {
+          "optimization": "O0",
+          "semantic_fingerprint": "f211069384c89e4859ed232a0418a940ef3a318673df12eb40a1eea6c2b586cf",
+          "runtime_abi": "gnustep-2.0;arc"
+        },
+        {
+          "optimization": "O2",
+          "semantic_fingerprint": "f211069384c89e4859ed232a0418a940ef3a318673df12eb40a1eea6c2b586cf",
+          "runtime_abi": "gnustep-2.0;arc"
+        }
+      ]
+    },
+    "source_module_builds": 14,
+    "source_module_rejections": 6,
+    "source_graph_builds": 28,
+    "source_graph_rejections": 8,
+    "live_editor": {
+      ".m": {
+        "standard": "c17",
+        "probes": [
+          "ordinary_parameter",
+          "optional_match_payload",
+          "managed_optional_object",
+          "managed_implicit_copy_assignment",
+          "managed_runtime_call_result"
+        ],
+        "transcript_sha256": "a1fd90bb47e4475754e87c58c04d87fe66d04ba05d383e0c463ebb4036c4c06d"
+      },
+      ".mm": {
+        "standard": "c++20",
+        "probes": [
+          "ordinary_parameter",
+          "optional_match_payload",
+          "managed_optional_object",
+          "managed_implicit_copy_assignment",
+          "managed_runtime_call_result",
+          "managed_optional_copy"
+        ],
+        "transcript_sha256": "453acb9ac5f7294a4e245e2a674bd19f9239e04a6bc174d1dc5409862b7f9ca6"
+      }
+    },
+    "live_runtime_call_debugger": {
+      "status": "PASS",
+      "sdk_seal": "37775c3b195a821fc29431d093cba6a54eb188b10f9cb408da53b424780ac13c",
+      "outside_checkout": true,
+      "debug_flags": ["-O0", "-g", "-fstandalone-debug"],
+      "parameter_and_result_state": true,
+      "shared_payload_identity": true,
+      "inspected": [
+        "Objective-C method parameter value",
+        "caller returned result after source clearing"
+      ],
+      "breakpoints": ["carrier-runtime-provider.m:16", "carrier-runtime-main.m:43"],
+      "continued_exit_code": 0,
+      "log_sha256": "2abce5c3c8bb3259696d1b1437eae98082ecffd641b26bf27b70db386414249f",
+      "executable_sha256": "c50820bcb41e0bd4a1368c5dea2cdd11d4e1ee7651408ab2e442d2a058ac8bd1"
+    },
+    "fresh_distributions": [
+      {
+        "distribution": "debian13",
+        "image": "debian:13-slim@sha256:a29215f6a35e51e22adffa17f89e9d2ef06214e64a2bad10d765c46aea49f11f",
+        "log": "out/toolchains/runtime-call-distribution-acceptance/debian13.log",
+        "status": "PASS",
+        "exit_code": 0,
+        "elapsed_seconds": 315.507848,
+        "log_sha256": "a2d77a32c73ae0f7b5e7559df4956277d355d1bf15420116f72aa7733f8621e5",
+        "graph_builds": 28,
+        "graph_rejections": 8,
+        "ordinary_user": true,
+        "managed_call_executions": 9,
+        "runtime_call_executions": 9,
+        "arc_assignment_runs": 4,
+        "arc_assignment_languages": ["objective-c", "objective-c++"],
+        "arc_assignment_optimizations": ["O0", "O2"]
+      },
+      {
+        "distribution": "ubuntu2604",
+        "image": "ubuntu:26.04@sha256:c098726dd9b9733f3e885f8de0ef375206a311b0a317eadc40d347b1115fb944",
+        "log": "out/toolchains/runtime-call-distribution-acceptance/ubuntu2604.log",
+        "status": "PASS",
+        "exit_code": 0,
+        "elapsed_seconds": 405.443902,
+        "log_sha256": "671460c448fa01d6f9fab5000973413f65b0ce8a5bff46084ad7f115b95a5bd3",
+        "graph_builds": 28,
+        "graph_rejections": 8,
+        "ordinary_user": true,
+        "managed_call_executions": 9,
+        "runtime_call_executions": 9,
+        "arc_assignment_runs": 4,
+        "arc_assignment_languages": ["objective-c", "objective-c++"],
+        "arc_assignment_optimizations": ["O0", "O2"]
+      }
+    ]
+  },
+  "evidence": {
+    "release": "out/toolchains/linux-sdk-builds/fb63f90fd11bc5c1fdbd281edd733a2e1d27bab8a0358518ffcb334164b36cbd/release.json",
+    "release_sha256": "1877b71b7fc3fc361946be6224a72cc5aac6e5879f3870ec39d9e19455b03268",
+    "native_summary": "out/native-validation/linux-sdk-20261019T042850338802Z/summary.json",
+    "native_summary_sha256": "7cf1981ef7343ba5f10ba49ede37a2086068e53206a85e1e7cbf004ca844b5ba",
+    "editor": "out/native-validation/linux-sdk-20261019T042850338802Z/nodes/editor-qualification-cc506ad2/editor/results.json",
+    "editor_sha256": "7d6331b72e7f8b768e98a8228111b8a150b35bee08c121e13f9e6f0b140a2d2b",
+    "archive_acceptance": "out/toolchains/runtime-call-distribution-acceptance/acceptance.json",
+    "archive_acceptance_sha256": "d431538546908991c3fb06495e184967186f1d9a9cbe960e02a088ff6604c6f3",
+    "archive_qualification_script": "scripts/qualify_linux_archive.sh",
+    "archive_qualification_script_sha256": "71f83021324b107c614611ff22dbfb5f9868d3b252624af1080b49466c284ed6",
+    "tooling_log_sha256": "d837f205f2e0d7ccbf3d8f7bdc375a9f24dfb0cf7da42ed1289f9c2c027dc32c"
+  }
+}

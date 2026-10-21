@@ -1473,10 +1473,18 @@ index 9f1da65e0..ba3f05189 100644
  
  #undef TYPE_BIT_CODE
 diff --git a/clang/lib/AST/ASTContext.cpp b/clang/lib/AST/ASTContext.cpp
-index 222881154..9cc37a413 100644
+index 222881154..7aeec9298 100644
 --- a/clang/lib/AST/ASTContext.cpp
 +++ b/clang/lib/AST/ASTContext.cpp
-@@ -2490,6 +2490,15 @@ TypeInfo ASTContext::getTypeInfoImpl(const Type *T) const {
+@@ -11,6 +11,7 @@
+ //===----------------------------------------------------------------------===//
+ 
+ #include "clang/AST/ASTContext.h"
++#include "clang/AST/ObjC3TypeContracts.h"
+ #include "ByteCode/Context.h"
+ #include "CXXABI.h"
+ #include "clang/AST/APValue.h"
+@@ -2490,6 +2491,15 @@ TypeInfo ASTContext::getTypeInfoImpl(const Type *T) const {
      Align = EltInfo.Align;
      break;
    }
@@ -1492,7 +1500,7 @@ index 222881154..9cc37a413 100644
    case Type::ObjCObject:
      return getTypeInfo(cast<ObjCObjectType>(T)->getBaseType().getTypePtr());
    case Type::Adjusted:
-@@ -3388,7 +3397,16 @@ ASTContext::getPointerAuthVTablePointerDiscriminator(const CXXRecordDecl *RD) {
+@@ -3388,7 +3398,16 @@ ASTContext::getPointerAuthVTablePointerDiscriminator(const CXXRecordDecl *RD) {
  /// other. Therefore this encoding function must be careful to only distinguish
  /// types if there is no third type with which they are both required to be
  /// compatible.
@@ -1510,7 +1518,7 @@ index 222881154..9cc37a413 100644
                                               raw_ostream &OS, QualType QT) {
    // FIXME: Consider address space qualifiers.
    const Type *T = QT.getCanonicalType().getTypePtr();
-@@ -3412,13 +3430,16 @@ static void encodeTypeForFunctionPointerAuth(const ASTContext &Ctx,
+@@ -3412,13 +3431,16 @@ static void encodeTypeForFunctionPointerAuth(const ASTContext &Ctx,
                                       cast<ReferenceType>(T)->getPointeeType());
      return;
  
@@ -1532,7 +1540,7 @@ index 222881154..9cc37a413 100644
  
    case Type::ObjCObjectPointer:
    case Type::BlockPointer:
-@@ -3601,6 +3622,17 @@ static void encodeTypeForFunctionPointerAuth(const ASTContext &Ctx,
+@@ -3601,6 +3623,17 @@ static void encodeTypeForFunctionPointerAuth(const ASTContext &Ctx,
      }
      llvm_unreachable("should never get here");
    }
@@ -1550,7 +1558,7 @@ index 222881154..9cc37a413 100644
    case Type::Record: {
      const RecordDecl *RD = T->castAsCanonical<RecordType>()->getDecl();
      const IdentifierInfo *II = RD->getIdentifier();
-@@ -3968,6 +4000,179 @@ QualType ASTContext::getComplexType(QualType T) const {
+@@ -3968,6 +4001,179 @@ QualType ASTContext::getComplexType(QualType T) const {
    return QualType(New, 0);
  }
  
@@ -1730,7 +1738,7 @@ index 222881154..9cc37a413 100644
  /// getPointerType - Return the uniqued reference to the type for a pointer to
  /// the specified type.
  QualType ASTContext::getPointerType(QualType T) const {
-@@ -4359,12 +4564,15 @@ QualType ASTContext::getVariableArrayDecayedType(QualType type) const {
+@@ -4359,12 +4565,15 @@ QualType ASTContext::getVariableArrayDecayedType(QualType type) const {
      llvm_unreachable("type should never be variably-modified");
  
    // These types can be variably-modified but should never need to
@@ -1747,7 +1755,7 @@ index 222881154..9cc37a413 100644
      return type;
  
    // These types can be variably-modified.  All these modifications
-@@ -5052,6 +5260,12 @@ static bool isCanonicalExceptionSpecification(
+@@ -5052,6 +5261,12 @@ static bool isCanonicalExceptionSpecification(
  QualType ASTContext::getFunctionTypeInternal(
      QualType ResultTy, ArrayRef<QualType> ArgArray,
      const FunctionProtoType::ExtProtoInfo &EPI, bool OnlyWantCanonical) const {
@@ -1760,7 +1768,7 @@ index 222881154..9cc37a413 100644
    size_t NumArgs = ArgArray.size();
  
    // Unique functions, to guarantee there is only one function of a particular
-@@ -5090,7 +5304,9 @@ QualType ASTContext::getFunctionTypeInternal(
+@@ -5090,7 +5305,9 @@ QualType ASTContext::getFunctionTypeInternal(
  
    // Determine whether the type being created is already canonical or not.
    bool isCanonical = !Unique && IsCanonicalExceptionSpec &&
@@ -1771,7 +1779,7 @@ index 222881154..9cc37a413 100644
    for (unsigned i = 0; i != NumArgs && isCanonical; ++i)
      if (!ArgArray[i].isCanonicalAsParam())
        isCanonical = false;
-@@ -5111,6 +5327,9 @@ QualType ASTContext::getFunctionTypeInternal(
+@@ -5111,6 +5328,9 @@ QualType ASTContext::getFunctionTypeInternal(
      llvm::SmallVector<QualType, 8> ExceptionTypeStorage;
      FunctionProtoType::ExtProtoInfo CanonicalEPI = EPI;
      CanonicalEPI.HasTrailingReturn = false;
@@ -1781,7 +1789,7 @@ index 222881154..9cc37a413 100644
  
      if (IsCanonicalExceptionSpec) {
        // Exception spec is already OK.
-@@ -5176,14 +5395,15 @@ QualType ASTContext::getFunctionTypeInternal(
+@@ -5176,14 +5396,15 @@ QualType ASTContext::getFunctionTypeInternal(
        FunctionType::FunctionTypeExtraAttributeInfo,
        FunctionType::FunctionTypeArmAttributes, FunctionType::ExceptionType,
        Expr *, FunctionDecl *, FunctionProtoType::ExtParameterInfo, Qualifiers,
@@ -1799,7 +1807,7 @@ index 222881154..9cc37a413 100644
  
    auto *FTP = (FunctionProtoType *)Allocate(Size, alignof(FunctionProtoType));
    FunctionProtoType::ExtProtoInfo newEPI = EPI;
-@@ -8907,6 +9127,11 @@ std::string ASTContext::getObjCEncodingForBlock(const BlockExpr *Expr) const {
+@@ -8907,6 +9128,11 @@ std::string ASTContext::getObjCEncodingForBlock(const BlockExpr *Expr) const {
    QualType BlockTy =
        Expr->getType()->castAs<BlockPointerType>()->getPointeeType();
    QualType BlockReturnTy = BlockTy->castAs<FunctionType>()->getReturnType();
@@ -1811,7 +1819,7 @@ index 222881154..9cc37a413 100644
    // Encode result type.
    if (getLangOpts().EncodeExtendedBlockSig)
      getObjCEncodingForMethodParameter(Decl::OBJC_TQ_None, BlockReturnTy, S,
-@@ -8926,6 +9151,8 @@ std::string ASTContext::getObjCEncodingForBlock(const BlockExpr *Expr) const {
+@@ -8926,6 +9152,8 @@ std::string ASTContext::getObjCEncodingForBlock(const BlockExpr *Expr) const {
      assert(sz.isPositive() && "BlockExpr - Incomplete param type");
      ParmOffset += sz;
    }
@@ -1820,7 +1828,7 @@ index 222881154..9cc37a413 100644
    // Size of the argument frame
    S += charUnitsToString(ParmOffset);
    // Block pointer and offset.
-@@ -8952,6 +9179,10 @@ std::string ASTContext::getObjCEncodingForBlock(const BlockExpr *Expr) const {
+@@ -8952,6 +9180,10 @@ std::string ASTContext::getObjCEncodingForBlock(const BlockExpr *Expr) const {
      ParmOffset += getObjCEncodingTypeSize(PType);
    }
  
@@ -1831,7 +1839,7 @@ index 222881154..9cc37a413 100644
    return S;
  }
  
-@@ -9021,6 +9252,8 @@ std::string ASTContext::getObjCEncodingForMethodDecl(const ObjCMethodDecl *Decl,
+@@ -9021,6 +9253,8 @@ std::string ASTContext::getObjCEncodingForMethodDecl(const ObjCMethodDecl *Decl,
    std::string S;
    getObjCEncodingForMethodParameter(Decl->getObjCDeclQualifier(),
                                      Decl->getReturnType(), S, Extended);
@@ -1840,7 +1848,7 @@ index 222881154..9cc37a413 100644
    // Compute size of all parameters.
    // Start with computing size of a pointer in number of bytes.
    // FIXME: There might(should) be a better way of doing this computation!
-@@ -9039,6 +9272,8 @@ std::string ASTContext::getObjCEncodingForMethodDecl(const ObjCMethodDecl *Decl,
+@@ -9039,6 +9273,8 @@ std::string ASTContext::getObjCEncodingForMethodDecl(const ObjCMethodDecl *Decl,
             "getObjCEncodingForMethodDecl - Incomplete param type");
      ParmOffset += sz;
    }
@@ -1849,7 +1857,7 @@ index 222881154..9cc37a413 100644
    S += charUnitsToString(ParmOffset);
    S += "@0:";
    S += charUnitsToString(PtrSize);
-@@ -9062,6 +9297,10 @@ std::string ASTContext::getObjCEncodingForMethodDecl(const ObjCMethodDecl *Decl,
+@@ -9062,6 +9298,10 @@ std::string ASTContext::getObjCEncodingForMethodDecl(const ObjCMethodDecl *Decl,
      S += charUnitsToString(ParmOffset);
      ParmOffset += getObjCEncodingTypeSize(PType);
    }
@@ -1860,16 +1868,16 @@ index 222881154..9cc37a413 100644
  
    return S;
  }
-@@ -9764,6 +10003,16 @@ void ASTContext::getObjCEncodingForTypeImpl(QualType T, std::string &S,
+@@ -9764,6 +10004,16 @@ void ASTContext::getObjCEncodingForTypeImpl(QualType T, std::string &S,
        *NotEncodedT = T;
      return;
  
-+  // These compiler-owned carrier types have no Objective-C runtime type
-+  // encoding yet. Treat them like other unsupported encodings: report the
-+  // missing component through NotEncodedT instead of falling through to an
-+  // assertion or inventing an encoding from the private storage layout.
++  // Admit only the explicit versioned runtime callable contract. Other
++  // carrier shapes still report a missing encoding instead of guessing one.
 +  case Type::ObjC3Optional:
 +  case Type::ObjC3Result:
++    if (getObjC3CarrierRuntimeEncoding(*this, CT, S))
++      return;
 +    if (NotEncodedT)
 +      *NotEncodedT = T;
 +    return;
@@ -1877,7 +1885,7 @@ index 222881154..9cc37a413 100644
    // We could see an undeduced auto type here during error recovery.
    // Just ignore it.
    case Type::Auto:
-@@ -11694,6 +11943,17 @@ QualType ASTContext::mergeFunctionTypes(QualType lhs, QualType rhs,
+@@ -11694,6 +11944,17 @@ QualType ASTContext::mergeFunctionTypes(QualType lhs, QualType rhs,
      if (lproto->getMethodQuals() != rproto->getMethodQuals())
        return {};
  
@@ -1895,7 +1903,7 @@ index 222881154..9cc37a413 100644
      // Function protos with different 'cfi_salt' values aren't compatible.
      if (lproto->getExtraAttributeInfo().CFISalt !=
          rproto->getExtraAttributeInfo().CFISalt)
-@@ -11772,6 +12032,11 @@ QualType ASTContext::mergeFunctionTypes(QualType lhs, QualType rhs,
+@@ -11772,6 +12033,11 @@ QualType ASTContext::mergeFunctionTypes(QualType lhs, QualType rhs,
    const FunctionProtoType *proto = lproto ? lproto : rproto;
    if (proto) {
      assert((AllowCXX || !proto->hasExceptionSpec()) && "C++ shouldn't be here");
@@ -1907,7 +1915,7 @@ index 222881154..9cc37a413 100644
      if (proto->isVariadic())
        return {};
      // Check that the types are compatible with the types that
-@@ -12047,6 +12312,13 @@ QualType ASTContext::mergeTypes(QualType LHS, QualType RHS, bool OfBlockPointer,
+@@ -12047,6 +12313,13 @@ QualType ASTContext::mergeTypes(QualType LHS, QualType RHS, bool OfBlockPointer,
    case Type::OverflowBehavior:
      llvm_unreachable("Types are eliminated above");
  
@@ -1921,7 +1929,7 @@ index 222881154..9cc37a413 100644
    case Type::Pointer:
    {
      // Merge two pointer types, while trying to preserve typedef info
-@@ -14464,6 +14736,24 @@ static QualType getCommonNonSugarTypeNode(const ASTContext &Ctx, const Type *X,
+@@ -14464,6 +14737,24 @@ static QualType getCommonNonSugarTypeNode(const ASTContext &Ctx, const Type *X,
          getCommonSizeModifier(AX, AY), getCommonIndexTypeCVRQualifiers(AX, AY));
      return Ctx.getArrayParameterType(ArrayTy);
    }
@@ -1946,7 +1954,7 @@ index 222881154..9cc37a413 100644
    case Type::Atomic: {
      const auto *AX = cast<AtomicType>(X), *AY = cast<AtomicType>(Y);
      return Ctx.getAtomicType(
-@@ -14743,6 +15033,8 @@ static QualType getCommonSugarTypeNode(const ASTContext &Ctx, const Type *X,
+@@ -14743,6 +15034,8 @@ static QualType getCommonSugarTypeNode(const ASTContext &Ctx, const Type *X,
      CANONICAL_TYPE(HLSLInlineSpirv)
      CANONICAL_TYPE(LValueReference)
      CANONICAL_TYPE(ObjCInterface)
@@ -12465,10 +12473,10 @@ index 000000000..c40497364
 +  }
 +}
 diff --git a/clang/lib/Sema/SemaExprCXX.cpp b/clang/lib/Sema/SemaExprCXX.cpp
-index 538604aa2..0546dec20 100644
+index 538604aa2..f9eb0c5cc 100644
 --- a/clang/lib/Sema/SemaExprCXX.cpp
 +++ b/clang/lib/Sema/SemaExprCXX.cpp
-@@ -6604,6 +6604,44 @@ ExprResult Sema::MaybeBindToTemporary(Expr *E) {
+@@ -6604,6 +6604,48 @@ ExprResult Sema::MaybeBindToTemporary(Expr *E) {
  
    assert(!isa<CXXBindTemporaryExpr>(E) && "Double-bound temporary?");
  
@@ -12503,6 +12511,10 @@ index 538604aa2..0546dec20 100644
 +            NeedsCarrierCleanup |= IsManagedCarrier(Parameter);
 +      }
 +    }
++    if (const auto *Message = dyn_cast<ObjCMessageExpr>(E))
++      if (const ObjCMethodDecl *Method = Message->getMethodDecl())
++        for (const ParmVarDecl *Parameter : Method->parameters())
++          NeedsCarrierCleanup |= IsManagedCarrier(Parameter->getType());
 +    if (const auto *Construct = dyn_cast<CXXConstructExpr>(E))
 +      for (const ParmVarDecl *Parameter : Construct->getConstructor()->parameters())
 +        NeedsCarrierCleanup |= IsManagedCarrier(Parameter->getType());

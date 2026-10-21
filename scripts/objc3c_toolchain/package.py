@@ -178,6 +178,19 @@ def package_sdk(repo: Path, prefix: Path, validation_report: Path, cache_dir: Pa
     if (call_evidence['status'] != 'PASS' or call_evidence['sdk_seal'] != data['seal_sha256']
             or len(call_evidence['executions']) != 9):
         raise ValueError('installed managed call qualification receipt is incomplete')
+    runtime_calls_directory = validation_report.parent / 'installed-runtime-carrier-calls'
+    runtime_calls_directory.mkdir(parents=True, exist_ok=True)
+    with (runtime_calls_directory / 'execution.log').open('w') as log:
+        result = subprocess.run([os.sys.executable, '-B',
+            str(prefix / 'share/objc3c/examples/native/qualify-runtime-carrier-calls.py'),
+            '--sdk-root', str(prefix), '--output-dir', str(runtime_calls_directory)],
+            stdout=log, stderr=subprocess.STDOUT, timeout=1200)
+    if result.returncode:
+        raise ValueError(f'installed runtime call qualification failed; see {runtime_calls_directory / "execution.log"}')
+    runtime_call_evidence = json.loads((runtime_calls_directory / 'qualification.json').read_text())
+    if (runtime_call_evidence['status'] != 'PASS' or runtime_call_evidence['sdk_seal'] != data['seal_sha256']
+            or len(runtime_call_evidence['executions']) != 9):
+        raise ValueError('installed runtime call qualification receipt is incomplete')
     cache_dir.mkdir(parents=True, exist_ok=True)
     archive = cache_dir / (source['build_id'] + '-linux-x86_64-' + data['seal_sha256'][:16] + '.tar.zst')
     if archive.exists():
@@ -205,7 +218,8 @@ def package_sdk(repo: Path, prefix: Path, validation_report: Path, cache_dir: Pa
                'archive_bytes': archive.stat().st_size, 'seal_sha256': data['seal_sha256'],
                'source_build_id': source['build_id'],
                'installed_source_modules': module_evidence, 'installed_source_graph': graph_evidence,
-               'installed_carrier_calls': call_evidence}
+               'installed_carrier_calls': call_evidence,
+               'installed_runtime_carrier_calls': runtime_call_evidence}
     archive.with_suffix('.json').write_text(json.dumps(receipt, indent=2) + '\n')
     return {**receipt, 'cache_hit': False}
 

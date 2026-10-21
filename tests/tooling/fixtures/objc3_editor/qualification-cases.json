@@ -53,6 +53,15 @@
       "declaration_name": "implicit",
       "hover_type": "__objc3_optional",
       "completion_name": "implicit"
+    },
+    {
+      "name": "managed_runtime_call_result",
+      "use_line": "(void)__objc3_has_value(block_result);",
+      "use_name": "block_result",
+      "declaration_line": "__objc3_optional(id) block_result = callback(message_result);",
+      "declaration_name": "block_result",
+      "hover_type": "__objc3_optional",
+      "completion_name": "block_result"
     }
   ],
   "cases": [

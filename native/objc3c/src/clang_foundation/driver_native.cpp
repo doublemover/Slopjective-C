@@ -125,7 +125,11 @@ int RunNativeDriver(int argc, char **argv) {
     for (const auto &arg : forwarded)
       if (arg == "-c" || arg == "-S" || arg == "-E" || arg == "-fsyntax-only" ||
           arg == "-M" || arg == "-MM") link = false;
-    if (link) args.insert(args.end(), {"-lobjc", "-Wl,-rpath," + (root / "lib").string()});
+    if (link) args.insert(args.end(), {"-lobjc", "-Wl,-rpath," + (root / "lib").string(),
+        // DWARF 5 address pools must distinguish discarded COMDAT helpers
+        // from live code at address zero. In particular, separate Block
+        // providers commonly emit identical copy/dispose helpers.
+        "-Wl,-z,dead-reloc-in-nonalloc=.debug_addr=0xffffffffffffffff"});
   }
   for (const auto &arg : forwarded) {
     if (arg == "--version")

@@ -102,18 +102,23 @@ in Objective-C and Objective-C++: the selected RHS is preserved before LHS
 evaluation and old-arm destruction, including self-aliasing, all Result arm
 transitions, weak zeroing, Blocks, C++ sequencing and exception cleanup.
 Direct managed carriers also cross native function and C++ callable boundaries
-under extension ABI revision 3. Caller-owned argument snapshots preserve source
+under extension ABI revision 4. Caller-owned argument snapshots preserve source
 values at argument evaluation and clean up at full-expression boundaries;
 returned values initialize fresh caller-owned storage. Separate provider and
 consumer compilation covers O0/O2/ThinLTO, PCH, semantic module imports,
 register exhaustion, virtual adjustment thunks and native exceptions. See the
 [managed call contract](../../docs/roadmap/linux_managed_call_abi.md).
-Objective-C message and Block value signatures, typed-error signatures,
-volatile carriers and nested managed payloads retain diagnostic boundaries.
+Objective-C messages and Block invocation now share that lifetime contract for
+the [runtime-encoded subset](../../docs/roadmap/linux_runtime_call_abi.md).
+Versioned encodings preserve storage and ownership identity; nil receivers
+initialize even discarded managed results before cleanup. Installed O0/O2,
+ThinLTO, PCH and semantic imports cover dispatch, reflection and native
+exceptions. Typed-error signatures, ivar/captured carrier storage, volatile
+carriers and nested managed payloads retain diagnostic boundaries.
 Patch export preserves canonical section ordering and
 metadata across untracked and intent-to-add source files, so index bookkeeping
 does not change unrelated patch identities.
-The [managed call acceptance receipt](../../docs/support/linux_managed_call_acceptance.json)
+The [runtime call acceptance receipt](../../docs/support/linux_runtime_call_acceptance.json)
 binds the compiler and native execution results to the exact SDK archive,
 installed editor/debugger checks and ordinary-user Debian/Ubuntu acceptance.
 
