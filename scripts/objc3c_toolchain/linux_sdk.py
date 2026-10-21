@@ -17,6 +17,7 @@ from .facade import facade_identity
 from .install_sdk import install
 from .package import inventory, package_sdk, verify_sdk
 from .qualify_installed import qualify_installed
+from .sdk_example import write_json
 
 
 PROJECT_SDK_PREFIXES = ('bin/objc3', 'bin/clang-scan-deps', 'lib/libobjc',
@@ -80,6 +81,31 @@ def build_sdk(repo: Path, *, fetch: bool = False, install_root: Path | None = No
         return _build_sdk(repo, base, fetch, install_root or repo / 'out/toolchains/linux-sdk', foundation_sdk)
 
 
+def _install_qualified_archive(report: dict, directory: Path, install_root: Path,
+                              *, expected_identity: str) -> dict:
+    """Publish an already qualified archive without retaining a second SDK copy."""
+    if (report.get('status') != 'awaiting-installation' or
+            report.get('input_identity') != expected_identity or
+            report.get('build_prefix') != str(directory / 'prefix')):
+        raise ValueError('qualified archive does not match the pending build identity')
+    archive = Path(report['archive']).resolve(strict=True)
+    with archive.open('rb') as stream:
+        if hashlib.file_digest(stream, 'sha256').hexdigest() != report['archive_sha256']:
+            raise ValueError('qualified archive checksum differs; candidate preserved')
+    prefix = directory / 'prefix'
+    if prefix.is_symlink() or (prefix.exists() and not prefix.is_dir()):
+        raise ValueError('build candidate is not an owned directory; preserving it')
+    # Persist the successful qualification before reclamation. A process may
+    # stop during deletion or extraction; the next invocation resumes from
+    # this exact archive without compiling or qualifying the product again.
+    write_json(directory / 'qualified-archive.json', report)
+    if prefix.exists():
+        shutil.rmtree(prefix)
+    report['build_candidate_reclaimed'] = True
+    report['installed'] = install(archive, report['archive_sha256'], install_root)
+    return report
+
+
 def _build_sdk(repo: Path, base: Path, fetch: bool, install_root: Path, foundation_sdk: Path | None) -> dict:
     started = time.monotonic()
     # Pin the bootstrap before activating or installing a product SDK. A product
@@ -113,6 +139,21 @@ def _build_sdk(repo: Path, base: Path, fetch: bool, install_root: Path, foundati
         installed = install(Path(receipt['archive']), receipt['archive_sha256'], install_root)
         return {**receipt, 'installed': installed, 'cache_hit': True,
                 'elapsed_seconds': round(time.monotonic() - started, 6)}
+    pending = directory / 'qualified-archive.json'
+    if pending.is_file():
+        report = json.loads(pending.read_text())
+        try:
+            report = _install_qualified_archive(report, directory, install_root,
+                                                expected_identity=identity['sha256'])
+            report.update(status='PASS', resumed_qualified_archive=True,
+                          elapsed_seconds=round(time.monotonic() - started, 6))
+            write_json(receipt_path, report)
+            return {**report, 'cache_hit': False}
+        except Exception as error:
+            report.update(status='FAIL', error=str(error))
+            raise
+        finally:
+            write_json(directory / 'build-report.json', report)
     prefix = directory / 'prefix'
     if prefix.exists():
         raise ValueError(f'incomplete SDK build preserved at {directory}; inspect it before removing it and retrying')
@@ -178,8 +219,10 @@ def _build_sdk(repo: Path, base: Path, fetch: bool, install_root: Path, foundati
         # preceding native validation batch.
         if input_identity(repo, sdk) != identity:
             raise ValueError('SDK inputs changed during packaging; candidate has not been published')
-        installed = install(Path(receipt['archive']), receipt['archive_sha256'], install_root)
-        report.update(receipt, status='PASS', installed=installed,
+        report.update(receipt, status='awaiting-installation')
+        _install_qualified_archive(report, directory, install_root,
+                                   expected_identity=identity['sha256'])
+        report.update(status='PASS', resumed_qualified_archive=False,
                       elapsed_seconds=round(time.monotonic() - started, 6))
         receipt_path.write_text(json.dumps(report, indent=2) + '\n')
         return {**report, 'cache_hit': False}

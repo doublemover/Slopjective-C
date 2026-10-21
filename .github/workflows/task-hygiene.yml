@@ -32,6 +32,7 @@ jobs:
           tests/tooling/test_toolchain_package.py
           tests/tooling/test_toolchain_install.py
           tests/tooling/test_linux_sdk_reuse.py
+          tests/tooling/test_linux_sdk_publication.py
           tests/tooling/test_source_graph.py
           tests/tooling/test_binary_packages.py
           tests/tooling/test_toolchain_runtime_report.py
