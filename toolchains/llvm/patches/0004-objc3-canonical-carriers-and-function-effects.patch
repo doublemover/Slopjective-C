@@ -15995,10 +15995,10 @@ index 000000000..c6e1d3870
 +} // expected-error {{non-void function does not return a value}}
 diff --git a/clang/unittests/AST/ObjC3CheckedErrorCFGTest.cpp b/clang/unittests/AST/ObjC3CheckedErrorCFGTest.cpp
 new file mode 100644
-index 000000000..130dcc05f
+index 000000000..40c6e3471
 --- /dev/null
 +++ b/clang/unittests/AST/ObjC3CheckedErrorCFGTest.cpp
-@@ -0,0 +1,206 @@
+@@ -0,0 +1,293 @@
 +//===--- ObjC3CheckedErrorCFGTest.cpp - Checked-error CFG paths -----------===//
 +// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -16047,7 +16047,14 @@ index 000000000..130dcc05f
 +    int value() throws(id<Error>);
 +    [[noreturn]] int stop() throws(id<Error>);
 +    struct Local { ~Local(); };
-+    struct Receiver { [[noreturn]] int fail() throws(id<Error>); };
++    struct Receiver {
++      [[noreturn]] int fail() throws(id<Error>);
++      [[noreturn]] virtual int dynamic() throws(id<Error>);
++      [[noreturn]] virtual int native();
++    };
++    __attribute__((objc_root_class)) @interface MessageReceiver
++    - (int)stop throws(id<Error>) __attribute__((noreturn));
++    @end
 +    void reaches_normal_try() throws(id<Error>) { (void)tryValue(value()); marker(); }
 +    void reaches_optional() { (void)tryOptional(value()); marker(); }
 +    void reaches_force_success() { (void)tryForce(value()); marker(); }
@@ -16107,6 +16114,13 @@ index 000000000..130dcc05f
 +    void exits_noreturn_member_force(Receiver &r) {
 +      (void)tryForce(r.fail()); marker();
 +    }
++    void reaches_checked_virtual_override(Receiver &r) {
++      (void)tryForce(r.dynamic()); marker();
++    }
++    void reaches_native_virtual_override(Receiver &r) { (void)r.native(); marker(); }
++    void reaches_nil_receiver() {
++      (void)tryForce([(MessageReceiver *)0 stop]); marker();
++    }
 +    void reaches_handler_native_exception() {
 +      try {
 +        handle { throwError(error); } catch(id<Error> e) { throw 1; }
@@ -16143,7 +16157,7 @@ index 000000000..130dcc05f
 +    EXPECT_FALSE(Printed.empty());
 +    ++Cases;
 +  }
-+  EXPECT_EQ(21u, Cases);
++  EXPECT_EQ(24u, Cases);
 +}
 +
 +TEST(ObjC3CheckedErrorCFG, PropagationDestroysOnlyObjectsInsideItsHandler) {
@@ -16205,3 +16219,105 @@ index 000000000..130dcc05f
 +  EXPECT_EQ(0u, Outer);
 +  EXPECT_EQ(1u, Dispatches);
 +}
++
++TEST(ObjC3CheckedErrorCFG, UnmatchedHandlerCleansInterveningScopes) {
++  auto AST = tooling::buildASTFromCodeWithArgs(
++      R"(
++    @protocol Error @end
++    @protocol First <Error> @end
++    @protocol Second <Error> @end
++    extern id<First> error;
++    extern id<Second> other;
++    extern bool choice;
++    struct Local { ~Local(); };
++    void test() {
++      Local outer;
++      handle {
++        Local middle;
++        handle { Local inner; if (choice) throwError(error); throwError(other); }
++        catch(id<First> e) {}
++      } catch(id<Error> e) {}
++    }
++  )",
++      {"-x", "objective-c++", "-std=c++20", "-fobjc-version=3",
++       "-fobjc-runtime=gnustep-2.2"},
++      "checked-unmatched-dtors.mm");
++  ASSERT_TRUE(AST);
++  ASSERT_FALSE(AST->getDiagnostics().hasErrorOccurred());
++  FunctionDecl *FD = nullptr;
++  for (Decl *D : AST->getASTContext().getTranslationUnitDecl()->decls())
++    if (auto *Candidate = dyn_cast<FunctionDecl>(D))
++      if (Candidate->hasBody())
++        FD = Candidate;
++  ASSERT_TRUE(FD);
++  const auto *Body = cast<CompoundStmt>(FD->getBody());
++  const auto *Outer = cast<ObjC3DoCatchStmt>(Body->body_back());
++  const auto *Inner =
++      cast<ObjC3DoCatchStmt>(cast<CompoundStmt>(Outer->getBody())->body_back());
++  CFG::BuildOptions Options;
++  Options.AddImplicitDtors = true;
++  Options.setAllAlwaysAdd();
++  auto Graph = CFG::buildCFG(FD, FD->getBody(), &AST->getASTContext(), Options);
++  ASSERT_TRUE(Graph);
++  const CFGBlock *Dispatch = nullptr;
++  for (const CFGBlock *Block : *Graph)
++    if (Block->getTerminatorStmt() == Inner && Block->succ_size() == 2)
++      Dispatch = Block;
++  ASSERT_TRUE(Dispatch);
++  const CFGBlock *Fallback = (Dispatch->succ_begin() + 1)->getReachableBlock();
++  ASSERT_TRUE(Fallback);
++  llvm::SmallVector<const CFGBlock *, 8> Pending{Fallback};
++  llvm::DenseSet<const CFGBlock *> Seen;
++  unsigned InnerDtors = 0, MiddleDtors = 0, OuterDtors = 0, Dispatches = 0;
++  while (!Pending.empty()) {
++    const CFGBlock *Block = Pending.pop_back_val();
++    if (!Seen.insert(Block).second)
++      continue;
++    if (Block->getTerminatorStmt() == Outer && Block->succ_size() == 2) {
++      ++Dispatches;
++      continue;
++    }
++    for (const CFGElement &Element : *Block)
++      if (auto Dtor = Element.getAs<CFGAutomaticObjDtor>()) {
++        InnerDtors += Dtor->getVarDecl()->getName() == "inner";
++        MiddleDtors += Dtor->getVarDecl()->getName() == "middle";
++        OuterDtors += Dtor->getVarDecl()->getName() == "outer";
++      }
++    for (const auto &Edge : Block->succs())
++      if (const CFGBlock *Next = Edge.getReachableBlock())
++        Pending.push_back(Next);
++  }
++  EXPECT_EQ(0u, InnerDtors);
++  EXPECT_EQ(1u, MiddleDtors);
++  EXPECT_EQ(0u, OuterDtors);
++  EXPECT_EQ(1u, Dispatches);
++}
+diff --git a/clang/test/ObjC3/Sema/checked-error-fallthrough.m b/clang/test/ObjC3/Sema/checked-error-fallthrough.m
+new file mode 100644
+index 000000000..98428be33
+--- /dev/null
++++ b/clang/test/ObjC3/Sema/checked-error-fallthrough.m
+@@ -0,0 +1,23 @@
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c -std=c17 -fobjc-runtime=gnustep-2.2 -fobjc-version=3 -Werror=return-type -verify %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c -std=c17 -fobjc-runtime=gnustep-2.2 -fobjc-version=3 -fobjc-arc -Werror=return-type -verify %s
++@protocol Error @end
++extern id<Error> error;
++int value(void) throws(id<Error>);
++_Noreturn int stop(void) throws(id<Error>);
++int checked_throw(void) throws(id<Error>) { throwError(error); }
++int checked_value(void) throws(id<Error>) { return tryValue(value()); }
++int checked_handler(void) {
++  handle { throwError(error); } catch(id<Error> caught) { return 1; }
++}
++int missing_value(void) throws(id<Error>) { (void)tryValue(value()); } // expected-error {{non-void function does not return a value}}
++int missing_force(void) { (void)tryForce(value()); } // expected-error {{non-void function does not return a value}}
++int missing_optional(void) { (void)tryOptional(value()); } // expected-error {{non-void function does not return a value}}
++int caught_fallthrough(void) {
++  handle { throwError(error); } catch(id<Error> caught) {}
++} // expected-error {{non-void function does not return a value}}
++int no_normal_success(void) throws(id<Error>) { (void)tryValue(stop()); }
++int no_force_success(void) { (void)tryForce(stop()); }
++int no_optional_success(void) { (void)tryOptional(stop()); } // expected-error {{non-void function does not return a value}}
++int caught_noreturn(void) {
++  handle { (void)tryValue(stop()); } catch(id<Error> caught) {}
++} // expected-error {{non-void function does not return a value}}

@@ -1,8 +1,27 @@
 diff --git a/clang/lib/Analysis/CFG.cpp b/clang/lib/Analysis/CFG.cpp
-index bb8e98a89..8b4eaa55d 100644
+index bb8e98a89..d1ed4acad 100644
 --- a/clang/lib/Analysis/CFG.cpp
 +++ b/clang/lib/Analysis/CFG.cpp
-@@ -531,6 +531,10 @@ class CFGBuilder {
+@@ -66,6 +66,18 @@
+ 
+ using namespace clang;
+ 
++// A noreturn attribute on a virtual declaration is not inherited by an
++// overriding method. An unqualified call through an extensible class may
++// dispatch to an override that returns normally.
++static bool mayCallReturningOverride(const CallExpr *Call) {
++  const auto *Method = dyn_cast_or_null<CXXMethodDecl>(Call->getDirectCallee());
++  if (!Method || !Method->isVirtual() || Method->hasAttr<FinalAttr>() ||
++      Method->getParent()->hasAttr<FinalAttr>())
++    return false;
++  const auto *Member = dyn_cast<MemberExpr>(Call->getCallee()->IgnoreParenImpCasts());
++  return !Member || !Member->hasQualifier();
++}
++
+ static SourceLocation GetEndLoc(Decl *D) {
+   if (VarDecl *VD = dyn_cast<VarDecl>(D))
+     if (Expr *Ex = VD->getInit())
+@@ -531,6 +543,10 @@ class CFGBuilder {
    // The frontend forbids mixing SEH __try with either try or @try.
    // So having one for all three is enough.
    CFGBlock *TryTerminatedBlock = nullptr;
@@ -13,7 +32,7 @@ index bb8e98a89..8b4eaa55d 100644
  
    // Current position in local scope.
    LocalScope::const_iterator ScopePos;
-@@ -634,6 +638,10 @@ private:
+@@ -634,6 +650,10 @@ private:
    CFGBlock *VisitObjCAtCatchStmt(ObjCAtCatchStmt *S);
    CFGBlock *VisitObjCAtSynchronizedStmt(ObjCAtSynchronizedStmt *S);
    CFGBlock *VisitObjCAtThrowStmt(ObjCAtThrowStmt *S);
@@ -24,7 +43,7 @@ index bb8e98a89..8b4eaa55d 100644
    CFGBlock *VisitObjCAtTryStmt(ObjCAtTryStmt *S);
    CFGBlock *VisitObjCAutoreleasePoolStmt(ObjCAutoreleasePoolStmt *S);
    CFGBlock *VisitObjCForCollectionStmt(ObjCForCollectionStmt *S);
-@@ -2349,6 +2357,24 @@ CFGBlock *CFGBuilder::Visit(Stmt * S, AddStmtChoice asc,
+@@ -2349,6 +2369,24 @@ CFGBlock *CFGBuilder::Visit(Stmt * S, AddStmtChoice asc,
      default:
        return VisitStmt(S, asc);
  
@@ -49,17 +68,17 @@ index bb8e98a89..8b4eaa55d 100644
      case Stmt::ImplicitValueInitExprClass:
        if (BuildOpts.OmitImplicitValueInitializers)
          return Block;
-@@ -2921,6 +2947,9 @@ CFGBlock *CFGBuilder::VisitCallExpr(CallExpr *C, AddStmtChoice asc) {
+@@ -2921,6 +2959,9 @@ CFGBlock *CFGBuilder::VisitCallExpr(CallExpr *C, AddStmtChoice asc) {
    if (!CanThrow(C->getCallee(), *Context))
      AddEHEdge = false;
  
-+  if (C == ObjC3CheckedCall)
++  if (C == ObjC3CheckedCall || mayCallReturningOverride(C))
 +    NoReturn = false;
 +
    if (OmitArguments) {
      assert(!NoReturn && "noreturn calls with unevaluated args not implemented");
      assert(!AddEHEdge && "EH calls with unevaluated args not implemented");
-@@ -4229,6 +4258,121 @@ CFGBlock *CFGBuilder::VisitObjCAtCatchStmt(ObjCAtCatchStmt *CS) {
+@@ -4229,6 +4270,130 @@ CFGBlock *CFGBuilder::VisitObjCAtCatchStmt(ObjCAtCatchStmt *CS) {
    return CatchBlock;
  }
  
@@ -85,15 +104,17 @@ index bb8e98a89..8b4eaa55d 100644
 +  if (const auto *C = dyn_cast<CallExpr>(Call)) {
 +    QualType CalleeType = C->getCallee()->getType();
 +    if (CalleeType == Context->BoundMemberTy)
-+      CalleeType = Expr::findBoundMemberType(CalleeType);
++      CalleeType = Expr::findBoundMemberType(C->getCallee());
 +    if (!CalleeType.isNull())
 +      NoReturn = getFunctionExtInfo(*CalleeType).getNoReturn();
 +    if (const FunctionDecl *FD = C->getDirectCallee())
 +      NoReturn |= FD->isNoReturn() || FD->isAnalyzerNoReturn();
-+  } else if (const auto *Message = dyn_cast<ObjCMessageExpr>(Call)) {
-+    if (const ObjCMethodDecl *Method = Message->getMethodDecl())
-+      NoReturn = Method->hasAttr<NoReturnAttr>();
++    if (mayCallReturningOverride(C))
++      NoReturn = false;
 +  }
++  // Objective-C messaging a nil receiver can succeed without invoking the
++  // noreturn method. Keep that normal edge unless a separate receiver proof
++  // establishes that the method must actually execute.
 +
 +  // Keep a distinct normal continuation, even at function end: checked failure
 +  // must not hide a successful call's ordinary fallthrough from -Wreturn-type.
@@ -168,8 +189,15 @@ index bb8e98a89..8b4eaa55d 100644
 +    if (CatchAll)
 +      break;
 +  }
-+  if (!CatchAll)
-+    addSuccessor(Dispatch, Previous ? Previous : &cfg->getExit());
++  if (!CatchAll) {
++    Succ = Previous ? Previous : &cfg->getExit();
++    Block = createBlock();
++    Block->setTerminator(S);
++    // The protected body's own locals are already gone. An unmatched error
++    // also leaves scopes between this handler and the outer destination.
++    addAutomaticObjHandling(ScopePos, ObjC3ErrorDispatchScope, S);
++    addSuccessor(Dispatch, Block);
++  }
 +  Succ = Continuation;
 +  SaveAndRestore SaveDispatch(ObjC3ErrorDispatchBlock, Dispatch);
 +  SaveAndRestore SaveDispatchScope(ObjC3ErrorDispatchScope, ScopePos);
@@ -181,7 +209,7 @@ index bb8e98a89..8b4eaa55d 100644
  CFGBlock *CFGBuilder::VisitObjCAtThrowStmt(ObjCAtThrowStmt *S) {
    // If we were in the middle of a block we stop processing that block.
    if (badCFG)
-@@ -5806,6 +5950,8 @@ public:
+@@ -5806,6 +5971,8 @@ public:
      Terminator->getCond()->printPretty(OS, Helper, Policy);
    }
  
@@ -190,7 +218,7 @@ index bb8e98a89..8b4eaa55d 100644
    void VisitCXXTryStmt(CXXTryStmt *) { OS << "try ..."; }
  
    void VisitObjCAtTryStmt(ObjCAtTryStmt *) { OS << "@try ..."; }
-@@ -6230,6 +6376,13 @@ static void print_block(raw_ostream &OS, const CFG* cfg,
+@@ -6230,6 +6397,13 @@ static void print_block(raw_ostream &OS, const CFG* cfg,
        else
          OS << "...";
        OS << ")";
@@ -592,7 +620,7 @@ index 0683a4937..339fc3e0a 100644
          CGM, byrefInfo, NonTrivialCStructByrefHelpers(valueAlignment, type));
  
 diff --git a/clang/lib/CodeGen/CGCall.cpp b/clang/lib/CodeGen/CGCall.cpp
-index 08cb9860f..02f6ad02c 100644
+index 08cb9860f..e8f589725 100644
 --- a/clang/lib/CodeGen/CGCall.cpp
 +++ b/clang/lib/CodeGen/CGCall.cpp
 @@ -12,6 +12,11 @@
@@ -615,10 +643,10 @@ index 08cb9860f..02f6ad02c 100644
  #include "llvm/ADT/StringExtras.h"
  #include "llvm/Analysis/ValueTracking.h"
  #include "llvm/IR/Assumptions.h"
-@@ -234,19 +240,73 @@ using ExtParameterInfoList =
+@@ -232,21 +238,75 @@ static void appendParameterTypes(
+ using ExtParameterInfoList =
+     SmallVector<FunctionProtoType::ExtParameterInfo, 16>;
  
- /// Arrange the LLVM function layout for a value of the given function
- /// type, on top of any implicit parameters already stored.
 +// A checked error is a language-level exceptional exit, implemented as an
 +// ordinary ABI return through the hidden error output. A logical noreturn
 +// promise must never become LLVM noreturn on that transport function or call.
@@ -635,6 +663,8 @@ index 08cb9860f..02f6ad02c 100644
 +  return usesObjC3CheckedReturn(FT) ? Info.withNoReturn(false) : Info;
 +}
 +
+ /// Arrange the LLVM function layout for a value of the given function
+ /// type, on top of any implicit parameters already stored.
  static const CGFunctionInfo &
  arrangeLLVMFunctionInfo(CodeGenTypes &CGT, bool instanceMethod,
                          SmallVectorImpl<CanQualType> &prefix,
@@ -11018,16 +11048,17 @@ index 000000000..c33b652d0
 +#endif
 diff --git a/clang/test/ObjC3/CodeGen/Inputs/typed-error-mrc-runtime.mm b/clang/test/ObjC3/CodeGen/Inputs/typed-error-mrc-runtime.mm
 new file mode 100644
-index 000000000..0c748de14
+index 000000000..de8517d4f
 --- /dev/null
 +++ b/clang/test/ObjC3/CodeGen/Inputs/typed-error-mrc-runtime.mm
-@@ -0,0 +1,173 @@
+@@ -0,0 +1,178 @@
 +// Compile this translation unit with -fno-objc-arc. All source-owned references
 +// are explicitly balanced. The compiler owns a separate error transport retain.
 +#include "typed-error-mixed-runtime.h"
 +
 +typedef __objc3_optional(int) MRCOptionalInt;
 +static int MRCCleanupEvents;
++namespace { static int run_noreturn_checks(); }
 +
 +struct OwnedError {
 +  RuntimeError Object = (RuntimeError)make_zero_code_error();
@@ -11174,6 +11205,8 @@ index 000000000..0c748de14
 +    if (zero_code_error_retain_count(error) != 1) return 98;
 +  }
 +  if (zero_code_error_deallocations() != Before + 1) return 99;
++  int NoreturnResult = run_noreturn_checks();
++  if (NoreturnResult) return NoreturnResult;
 +  return verify_mrc_physical_error_abi() ? 0 : 100;
 +}
 +
@@ -11195,6 +11228,8 @@ index 000000000..0c748de14
 +#include "typed-error-message-mrc-runtime.inc"
 +
 +#include "typed-error-managed-mrc-runtime.inc"
++
++#include "typed-error-noreturn-runtime.inc"
 diff --git a/clang/test/ObjC3/CodeGen/Inputs/typed-error-native-runtime-support.m b/clang/test/ObjC3/CodeGen/Inputs/typed-error-native-runtime-support.m
 new file mode 100644
 index 000000000..d916c3497
@@ -17340,61 +17375,64 @@ index 8e692fac7..884d8c541 100644
      // statement (if it exists).
 diff --git a/clang/test/ObjC3/CodeGen/Inputs/typed-error-noreturn-runtime.inc b/clang/test/ObjC3/CodeGen/Inputs/typed-error-noreturn-runtime.inc
 new file mode 100644
-index 000000000..106070265
+index 000000000..b11510f62
 --- /dev/null
 +++ b/clang/test/ObjC3/CodeGen/Inputs/typed-error-noreturn-runtime.inc
-@@ -0,0 +1,62 @@
+@@ -0,0 +1,69 @@
 +// Native checked-error exits return through their ABI error output even when
 +// the source function promises no ordinary success. Exercise optimized calls,
 +// local handlers, propagation, optional swallowing and independent native EH.
++namespace {
++using NoreturnError = ZeroCodeError *;
 +static int NoreturnEvents;
 +struct NoreturnCleanup {
 +  ~NoreturnCleanup() { ++NoreturnEvents; }
 +};
-+[[noreturn]] static int checked_noreturn(TestError Error) throws(TestError) {
++[[noreturn]] static int checked_noreturn(NoreturnError Error) throws(NoreturnError) {
 +  NoreturnCleanup Local;
 +  throwError(Error);
 +}
 +struct NoreturnReceiver {
-+  [[noreturn]] int fail(TestError Error) throws(TestError) {
++  [[noreturn]] int fail(NoreturnError Error) throws(NoreturnError) {
 +    NoreturnCleanup Local;
 +    throwError(Error);
 +  }
-+  [[noreturn]] virtual int dynamic(TestError Error) throws(TestError) {
++  [[noreturn]] virtual int dynamic(NoreturnError Error) throws(NoreturnError) {
 +    NoreturnCleanup Local;
 +    throwError(Error);
 +  }
 +};
-+[[noreturn]] static int checked_noreturn_native(TestError) throws(TestError) {
++[[noreturn]] static int checked_noreturn_native(NoreturnError) throws(NoreturnError) {
 +  NoreturnCleanup Local;
 +  throw 91;
 +}
-+static int checked_noreturn_propagate(TestError Error) throws(TestError) {
++static int checked_noreturn_propagate(NoreturnError Error) throws(NoreturnError) {
 +  NoreturnCleanup Local;
 +  return tryValue(checked_noreturn(Error));
 +}
 +static int run_noreturn_checks() {
 +  @autoreleasepool {
-+    TestError Error = (TestError)make_zero_code_error();
++    NoreturnError Error = (NoreturnError)make_zero_code_error();
 +    int Before = NoreturnEvents;
 +    int Caught = 0;
 +    handle { (void)tryValue(checked_noreturn(Error)); return 201; }
-+    catch(TestError Received) { Caught += Received == Error; }
++    catch(NoreturnError Received) { Caught += Received == Error; }
 +    auto Callback = &checked_noreturn;
 +    handle { (void)tryValue(Callback(Error)); return 202; }
-+    catch(TestError Received) { Caught += Received == Error; }
++    catch(NoreturnError Received) { Caught += Received == Error; }
 +    NoreturnReceiver Receiver;
 +    handle { (void)tryValue(Receiver.fail(Error)); return 203; }
-+    catch(TestError Received) { Caught += Received == Error; }
++    catch(NoreturnError Received) { Caught += Received == Error; }
 +    auto Member = &NoreturnReceiver::fail;
 +    handle { (void)tryValue((Receiver.*Member)(Error)); return 204; }
-+    catch(TestError Received) { Caught += Received == Error; }
++    catch(NoreturnError Received) { Caught += Received == Error; }
 +    NoreturnReceiver *Dynamic = &Receiver;
 +    handle { (void)tryValue(Dynamic->dynamic(Error)); return 205; }
-+    catch(TestError Received) { Caught += Received == Error; }
++    catch(NoreturnError Received) { Caught += Received == Error; }
 +    handle { (void)tryValue(checked_noreturn_propagate(Error)); return 206; }
-+    catch(TestError Received) { Caught += Received == Error; }
-+    if (Caught != 6 || NoreturnEvents != Before + 7) return 207;
++    catch(NoreturnError Received) { Caught += Received == Error; }
++    if (Caught != 6) return 207;
++    if (NoreturnEvents != Before + 7) return 211;
 +    auto Missing = tryOptional(checked_noreturn(Error));
 +    if (hasValue(Missing) || NoreturnEvents != Before + 8) return 208;
 +    try {
@@ -17403,23 +17441,53 @@ index 000000000..106070265
 +    } catch(int Value) {
 +      if (Value != 91 || NoreturnEvents != Before + 9) return 210;
 +    }
++#if !__has_feature(objc_arc)
++    [Error release];
++#endif
 +  }
 +  return 0;
 +}
++} // namespace
 diff --git a/clang/test/ObjC3/CodeGen/checked-error-noreturn-transport.mm b/clang/test/ObjC3/CodeGen/checked-error-noreturn-transport.mm
 new file mode 100644
-index 000000000..223d2cf02
+index 000000000..a7d7239ae
 --- /dev/null
 +++ b/clang/test/ObjC3/CodeGen/checked-error-noreturn-transport.mm
-@@ -0,0 +1,18 @@
+@@ -0,0 +1,19 @@
 +// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c++ -std=c++20 -fobjc-runtime=gnustep-2.2 -fobjc-version=3 -fobjc-arc -emit-llvm -o - %s | FileCheck %s
 +// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c++ -std=c++23 -fobjc-runtime=gnustep-2.2 -fobjc-version=3 -emit-llvm -o - %s | FileCheck %s
 +@protocol Error @end
 +using E = id<Error>;
 +extern "C" [[noreturn]] int failure(E error) throws(E) { throwError(error); }
-+// CHECK-LABEL: define{{.*}} i32 @failure({{.*}}) #[[TRANSPORT:[0-9]+]]
++// CHECK-LABEL: define{{.*}} i32 @failure(
++// CHECK-SAME: ) #[[TRANSPORT:[0-9]+]]
 +// CHECK: ret i32
 +extern "C" int handled(E error) {
++  handle { (void)tryValue(failure(error)); }
++  catch(E caught) { return caught == error; }
++  return 0;
++}
++// CHECK-LABEL: define{{.*}} i32 @handled(
++// CHECK: call i32 @failure(
++// CHECK: objc3.try.failed
++// CHECK: objc3.catch.dispatch:
++// CHECK: ret i32
++// CHECK: attributes #[[TRANSPORT]] = { {{(mustprogress )?}}noinline {{(nounwind )?}}optnone
+diff --git a/clang/test/ObjC3/CodeGen/checked-error-noreturn-transport.m b/clang/test/ObjC3/CodeGen/checked-error-noreturn-transport.m
+new file mode 100644
+index 000000000..bff3f2e04
+--- /dev/null
++++ b/clang/test/ObjC3/CodeGen/checked-error-noreturn-transport.m
+@@ -0,0 +1,19 @@
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c -std=c17 -fobjc-runtime=gnustep-2.2 -fobjc-version=3 -fobjc-arc -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c -std=c17 -fobjc-runtime=gnustep-2.2 -fobjc-version=3 -emit-llvm -o - %s | FileCheck %s
++@protocol Error @end
++typedef id<Error> E;
++_Noreturn int failure(E error) throws(E) { throwError(error); }
++// CHECK-LABEL: define{{.*}} i32 @failure(
++// CHECK-SAME: ) #[[TRANSPORT:[0-9]+]]
++// CHECK: ret i32
++int handled(E error) {
 +  handle { (void)tryValue(failure(error)); }
 +  catch(E caught) { return caught == error; }
 +  return 0;
