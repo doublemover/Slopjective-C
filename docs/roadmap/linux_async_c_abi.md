@@ -114,6 +114,112 @@ both services and clients instrumented. Sanitizer libraries come from the pinned
 LLVM resource directory and are identified in the receipt; GNU libobjc is loaded
 as shipped. Value-only C/C++ bridge clients are checked to link without libobjc.
 
-Full installed SDK, source-free package and fresh-distribution qualification are
-the next release gates. Native Objective-C syntax lowering, public await-required
-calls, recognized task spawning and compiler isolation remain subsequent work.
+## Progress at the requested pause — 2026-10-21
+
+Development, builds, tests, acceptance and automatic closeout are stopped at the
+user's request. [PR #8274](https://github.com/doublemover/Slopjective-C/pull/8274)
+remains a draft. The implementation is committed through
+`e6412ec2b776f2e0a83f63518a12f775df7bbf22`; this documentation update records the
+handoff without changing compiler or SDK inputs.
+
+The final host SDK build completed successfully before the stop. Its receipt
+reports all 23 installed package gates and the installed driver/embedding gate
+passing. That includes the new C frame package path, which was a failure in an
+earlier candidate and is fixed in this implementation. The installed archive is
+available locally; acceptance of that archive is incomplete.
+
+| Completed coverage                     | Recorded result                                          |
+| -------------------------------------- | -------------------------------------------------------- |
+| Compiler foundation                    | 219 lit tests passed; 3 unsupported; 57 AST tests passed |
+| Frontend and runtime                   | 24 frontend CTests and 8 GNU runtime tests passed        |
+| Native integration                     | 13 selected validation nodes passed                      |
+| Installed driver/embedding             | 37 commands passed                                       |
+| Installed package gates                | All 23 passed, including source-free C17 and C++ frames  |
+| Shared C/C++ async bridge              | 20 configurations, 114 commands and 10 LLDB cases passed |
+| Existing native async bridge           | 16 configurations and 104 commands passed                |
+| Immutable async packages               | 12 cases and 36 executions passed                        |
+| Tooling                                | 327 tests passed, 1 skipped; 33 subtests                 |
+| GitHub checks on implementation commit | Policy, tooling and documentation passed                 |
+
+The final SDK build took 1,458 seconds. Its exact identities are:
+
+```text
+implementation: e6412ec2b776f2e0a83f63518a12f775df7bbf22
+LLVM source: llvmorg-23.1.3-0d261d1ca552-655bdb15865c-fd761312
+SDK input: c39d60a34fb8ee21f7349101a09f631940b38ff098d069de6b6eaee49f810c70
+SDK seal: 10417938178eb64c0b8908e399b102124342713f3773b76a02eb856b51991fda
+archive SHA-256: b9e310e1267e37d4c8df4d8d87be1fa8555ddb2ca2d45f9d6226f49968a07582
+archive bytes: 429953314
+```
+
+The archive is
+`out/toolchains/sdk-cache/llvmorg-23.1.3-0d261d1ca552-655bdb15865c-fd761312-linux-x86_64-10417938178eb64c.tar.zst`.
+The build and installed-gate results are in
+`out/toolchains/linux-sdk-builds/<SDK input>/release.json`.
+Native integration evidence is in
+`out/native-validation/linux-sdk-20261021T160115587216Z/summary.json`.
+These generated outputs stay outside Git; the identities above identify the
+local results rather than claiming the archive has been uploaded to GitHub.
+
+### Interrupted and pending acceptance
+
+The final acceptance run was stopped during `native-async-sanitizers`, before
+that suite produced its final receipt. Partial logs are retained, but this
+attempt has no sanitizer-suite PASS. Earlier development bridge sanitizer runs
+passed 40 configurations, and the preceding installed SDK passed 16 native
+async sanitizer configurations. Those results do not establish sanitizer
+acceptance for the final archive above.
+
+An earlier coroutine sanitizer run failed to link because its build driver
+omitted `services/objc_task_error.cpp`, which now supplies shared object/Block
+reference operations. Commit `62fcbbfac` corrected that driver; focused ARC
+ASan/UBSan and MRC TSan checks passed. Full final-archive qualification of this
+fix remains pending. Commit `e6412ec2b` then normalized the two C17 fixture JSON
+files before the successful final SDK build.
+
+Remaining acceptance work is explicitly paused:
+
+1. Complete the final archive's 114 sanitizer configurations and the checked
+   ABI, regression and post-hop debugger checks.
+2. Run ordinary-user archive consumers on fresh Debian 13 and Ubuntu 26.04.
+3. Record latency against the existing budgets, SDK-bound frontend CTests and
+   a release-cache reuse witness.
+4. Publish the acceptance and latency receipts, then refresh the current
+   release documentation to ABI 20. Existing ABI 19 release receipts describe
+   their earlier qualified snapshots and have not been relabeled.
+
+Local interrupted-run status and logs remain under `out/async-c-abi/acceptance/`;
+`out/async-c-abi/stopped-at-user-request.json` records the stopped process tree.
+No acceptance finalizer or automatic closeout is running.
+
+### Subsequent compiler work
+
+Native Objective-C17 async syntax lowering still needs its own AST/Sema/CodeGen
+implementation for functions, methods and Blocks, with frame-resident values,
+cleanup, checked errors and ownership across suspension. Removing the C++
+language guard alone would not supply that implementation. Public await-required
+calls, recognized child/detached/group spawning and compiler actor isolation
+remain later milestones; public async/actor predicates stay reserved.
+
+One unverified follow-up is to check type identities for same-named module-owned
+Objective-C classes and protocols. Read-only inspection found that native type
+mangling uses source names while module ownership supplies runtime names. No
+reproducer was run, so this is an investigation item rather than a confirmed
+defect. Native AArch64 qualification also requires a separate native host; this
+milestone's host evidence is Linux x86-64.
+
+### Workspace storage
+
+At the pause the 32 GiB filesystem was 99% full, with approximately 472 MiB
+available. The main consumers were 34 retained SDK archives (14 GiB), LLVM
+source and build outputs (5.8 GiB), a preserved source checkpoint (2.7 GiB), the
+installed SDK (1.5 GiB), earlier Linux packages (698 MiB) and native validation
+evidence (544 MiB). These sizes are rounded and are not a complete filesystem
+inventory.
+
+Qualified archives, source checkpoints, compiler/build objects and diagnostic
+evidence remain preserved. Earlier evidence was compressed with indexed
+recovery information; only duplicate generated installations and rebuildable
+compiler cache data were reclaimed. The temporary foundation RAM filesystem
+was released after the final SDK completed. Further archive retention or
+offloading work is deferred with development.
