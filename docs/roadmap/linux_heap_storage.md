@@ -19,7 +19,8 @@ zeroing and object destruction. Matching and tag queries accept property
 expressions, including template substitution. Semantic interfaces preserve ivar
 access, native strong/weak qualifiers, array declarators, and effective property
 attributes. Objective-C++ header PCH and mixed-language object linkage are
-qualified; C++ semantic interfaces remain explicitly rejected.
+qualified; ABI 12 extends semantic interchange through the bounded
+[C++ interface contract](linux_cxx_interfaces.md).
 
 A by-value Block owns its carrier or record snapshot. A shared capture moves its
 owned state into the runtime forwarding cell once, and all closures follow that

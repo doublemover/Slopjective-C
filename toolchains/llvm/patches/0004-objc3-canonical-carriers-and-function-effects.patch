@@ -13333,3 +13333,59 @@ index 000000000..b6f0d18c7
 +    case __objc3_case_none => 0;
 +  };
 +}
+diff --git a/clang/include/clang/Sema/MultiplexExternalSemaSource.h b/clang/include/clang/Sema/MultiplexExternalSemaSource.h
+index 6c117feaa..b9cfc37fb 100644
+--- a/clang/include/clang/Sema/MultiplexExternalSemaSource.h
++++ b/clang/include/clang/Sema/MultiplexExternalSemaSource.h
+@@ -256,6 +256,12 @@ public:
+   /// \return true to tell Sema to recover using the LookupResult.
+   bool LookupUnqualified(LookupResult &R, Scope *S) override;
+ 
++  ObjC3SourceImportResult HandleObjC3SourceImport(
++      llvm::StringRef CanonicalModule, SourceLocation ImportLoc) override;
++  ObjC3QualifiedNameLookupStatus LookupObjC3QualifiedName(
++      llvm::ArrayRef<IdentifierInfo *> Components, unsigned IdentifierNamespace,
++      llvm::SmallVectorImpl<NamedDecl *> &Declarations) override;
++
+   /// Read the set of tentative definitions known to the external Sema
+   /// source.
+   ///
+diff --git a/clang/lib/Sema/MultiplexExternalSemaSource.cpp b/clang/lib/Sema/MultiplexExternalSemaSource.cpp
+index 49bd9596f..360694978 100644
+--- a/clang/lib/Sema/MultiplexExternalSemaSource.cpp
++++ b/clang/lib/Sema/MultiplexExternalSemaSource.cpp
+@@ -272,6 +272,34 @@ bool MultiplexExternalSemaSource::LookupUnqualified(LookupResult &R, Scope *S){
+   return !R.empty();
+ }
+ 
++ObjC3SourceImportResult MultiplexExternalSemaSource::HandleObjC3SourceImport(
++    llvm::StringRef CanonicalModule, SourceLocation ImportLoc) {
++  for (size_t I = 0, N = Sources.size(); I != N; ++I) {
++    auto Source = Sources[I];
++    auto Result = Source->HandleObjC3SourceImport(CanonicalModule, ImportLoc);
++    if (Result != ObjC3SourceImportResult::NotHandled)
++      return Result;
++  }
++  return ObjC3SourceImportResult::NotHandled;
++}
++
++ObjC3QualifiedNameLookupStatus
++MultiplexExternalSemaSource::LookupObjC3QualifiedName(
++    llvm::ArrayRef<IdentifierInfo *> Components, unsigned IdentifierNamespace,
++    llvm::SmallVectorImpl<NamedDecl *> &Declarations) {
++  for (size_t I = 0, N = Sources.size(); I != N; ++I) {
++    auto Source = Sources[I];
++    SmallVector<NamedDecl *, 4> Candidates;
++    auto Result = Source->LookupObjC3QualifiedName(
++        Components, IdentifierNamespace, Candidates);
++    if (Result != ObjC3QualifiedNameLookupStatus::NotHandled) {
++      Declarations.append(Candidates.begin(), Candidates.end());
++      return Result;
++    }
++  }
++  return ObjC3QualifiedNameLookupStatus::NotHandled;
++}
++
+ void MultiplexExternalSemaSource::ReadTentativeDefinitions(
+                                      SmallVectorImpl<VarDecl*> &TentativeDefs) {
+   for(size_t i = 0; i < Sources.size(); ++i)

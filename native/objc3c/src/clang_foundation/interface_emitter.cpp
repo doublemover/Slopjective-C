@@ -11,21 +11,23 @@
 #include <utility>
 #include <vector>
 
+#include "clang_foundation/interface_codec.h"
 #include "clang/AST/ASTContext.h"
 #include "clang/AST/Attr.h"
 #include "clang/AST/Decl.h"
+#include "clang/AST/DeclCXX.h"
 #include "clang/AST/DeclObjC.h"
+#include "clang/AST/DeclTemplate.h"
 #include "clang/AST/PrettyPrinter.h"
-#include "clang/AST/RecursiveASTVisitor.h"
 #include "clang/AST/RecordLayout.h"
+#include "clang/AST/RecursiveASTVisitor.h"
 #include "clang/AST/Type.h"
 #include "clang/Basic/LangOptions.h"
 #include "clang/Basic/LangStandard.h"
 #include "clang/Basic/ObjC3Foundation.h"
 #include "clang/Basic/SourceManager.h"
-#include "clang/UnifiedSymbolResolution/USRGeneration.h"
 #include "clang/Tooling/Tooling.h"
-#include "clang_foundation/interface_codec.h"
+#include "clang/UnifiedSymbolResolution/USRGeneration.h"
 #include "llvm/ADT/SmallString.h"
 #include "llvm/ADT/SmallVector.h"
 #include "llvm/Support/Error.h"
@@ -59,6 +61,8 @@ bool IsInMainFile(const clang::ASTContext &context,
 
 bool IsTopLevel(const clang::NamedDecl *declaration) {
   const auto *context = declaration->getDeclContext();
+  while (context && llvm::isa<clang::LinkageSpecDecl>(context))
+    context = context->getParent();
   return context && context->isTranslationUnit();
 }
 
@@ -94,8 +98,7 @@ bool IsIdentityCandidate(const clang::NamedDecl *declaration,
     // C typedef names have no linkage, but are public module lookup names.
     if (llvm::isa<clang::TypedefNameDecl>(declaration)) return true;
     if (const auto *tag = llvm::dyn_cast<clang::TagDecl>(declaration))
-      return !llvm::isa<clang::CXXRecordDecl>(tag) &&
-             tag->isExternallyVisible();
+      return tag->isExternallyVisible();
     if (const auto *objc = llvm::dyn_cast<clang::ObjCInterfaceDecl>(declaration))
       return objc->isExternallyVisible();
     if (const auto *protocol = llvm::dyn_cast<clang::ObjCProtocolDecl>(declaration))
@@ -107,11 +110,17 @@ bool IsIdentityCandidate(const clang::NamedDecl *declaration,
     return false;
   }
 
-  if (const auto *field = llvm::dyn_cast<clang::FieldDecl>(declaration))
-    return !llvm::isa<clang::CXXRecordDecl>(field->getDeclContext()) &&
-           field->getIdentifier() != nullptr;
+  if (const auto *field = llvm::dyn_cast<clang::FieldDecl>(declaration)) {
+    const auto *owner =
+        llvm::dyn_cast<clang::RecordDecl>(field->getDeclContext());
+    return field->getIdentifier() && owner &&
+           (!context.getLangOpts().CPlusPlus || IsTopLevel(owner));
+  }
   if (llvm::isa<clang::EnumConstantDecl>(declaration))
-    return llvm::isa<clang::EnumDecl>(declaration->getDeclContext());
+    return llvm::isa<clang::EnumDecl>(declaration->getDeclContext()) &&
+           (!context.getLangOpts().CPlusPlus ||
+            IsTopLevel(
+                llvm::cast<clang::EnumDecl>(declaration->getDeclContext())));
   if (llvm::isa<clang::ObjCMethodDecl, clang::ObjCPropertyDecl,
                 clang::ObjCIvarDecl>(declaration))
     return IsPublicContainer(declaration->getDeclContext(), context);
@@ -180,6 +189,9 @@ std::string EnumIdentity(const clang::EnumDecl *enumeration,
                          const clang::ASTContext &context) {
   std::string text = "enum{" + CanonicalType(
       context.getCanonicalTagType(enumeration), context);
+  text += std::string(";scoped=") +
+          (enumeration->isScoped() ? "true" : "false") +
+          ";fixed=" + (enumeration->isFixed() ? "true" : "false");
   // Integer representation participates in enum calling/layout ABI even when
   // the enumerator spellings and values are unchanged (for example short enums).
   if (!enumeration->getIntegerType().isNull())
@@ -282,10 +294,19 @@ std::string DeclarationTypeIdentity(const clang::NamedDecl *declaration,
       type = context.getFunctionNoProtoType(no_proto->getReturnType(),
           no_proto->getExtInfo().withProducesResult(false));
     }
-    return CanonicalType(type, context);
+    return CanonicalType(type, context) +
+           (context.getLangOpts().CPlusPlus
+                ? ";language-linkage=" + std::to_string(static_cast<unsigned>(
+                                             function->getLanguageLinkage()))
+                : "");
   }
   if (const auto *value = llvm::dyn_cast<clang::ValueDecl>(declaration)) {
     std::string identity = CanonicalType(value->getType(), context);
+    if (const auto *variable = llvm::dyn_cast<clang::VarDecl>(value);
+        variable && context.getLangOpts().CPlusPlus)
+      identity +=
+          ";language-linkage=" +
+          std::to_string(static_cast<unsigned>(variable->getLanguageLinkage()));
     const auto lifetime = value->getType().getObjCLifetime();
     if (lifetime != clang::Qualifiers::OCL_None)
       identity += ";objc-lifetime=" + std::to_string(static_cast<unsigned>(lifetime));
@@ -416,6 +437,62 @@ bool CheckTypeDependencies(const clang::NamedDecl *declaration,
   return visitor.UsesCanonicalFunctionEffects;
 }
 
+bool IsBoundedCxxDeclaration(const clang::NamedDecl *declaration,
+                             InterfaceEmissionArtifact &result) {
+  const auto *record = llvm::dyn_cast<clang::CXXRecordDecl>(declaration);
+  bool supported = true;
+  if (record && record->isCompleteDefinition()) {
+    supported =
+        !record->isDependentContext() && !record->getDescribedClassTemplate() &&
+        record->getTemplateSpecializationKind() == clang::TSK_Undeclared &&
+        record->isAggregate() && !record->isUnion() &&
+        record->getNumBases() == 0 && !record->isPolymorphic() &&
+        !record->hasUserDeclaredConstructor() &&
+        !record->hasUserDeclaredDestructor() &&
+        !record->hasUserDeclaredCopyConstructor() &&
+        !record->hasUserDeclaredMoveConstructor() &&
+        !record->hasUserDeclaredCopyAssignment() &&
+        !record->hasUserDeclaredMoveAssignment();
+    for (const auto *member : record->decls()) {
+      if (member->isImplicit() || llvm::isa<clang::AccessSpecDecl>(member))
+        continue;
+      const auto *field = llvm::dyn_cast<clang::FieldDecl>(member);
+      supported &= field && field->getAccess() == clang::AS_public &&
+                   !field->isMutable() && !field->hasInClassInitializer();
+    }
+  }
+  if (IsTopLevel(declaration)) {
+    supported &=
+        !llvm::isa<clang::TemplateDecl, clang::UsingDecl,
+                   clang::UsingDirectiveDecl, clang::NamespaceAliasDecl>(
+            declaration);
+    if (const auto *space = llvm::dyn_cast<clang::NamespaceDecl>(declaration))
+      supported &= space->isAnonymousNamespace();
+    if (const auto *function = llvm::dyn_cast<clang::FunctionDecl>(declaration);
+        function && function->isExternallyVisible()) {
+      supported &= !function->isTemplated() &&
+                   !function->getTrailingRequiresClause() &&
+                   !function->isInlined() && !function->isDefaulted();
+      for (const auto *parameter : function->parameters())
+        supported &= !parameter->hasDefaultArg();
+    }
+    if (const auto *variable = llvm::dyn_cast<clang::VarDecl>(declaration);
+        variable && variable->isExternallyVisible())
+      supported &=
+          !variable->isConstexpr() && !variable->isInline() &&
+          variable->getTLSKind() == clang::VarDecl::TLS_None &&
+          !(variable->hasInit() && variable->mightBeUsableInConstantExpressions(
+                                       declaration->getASTContext()));
+  }
+  if (!supported)
+    AddDiagnostic(result, "O3IFC101",
+                  "C++ semantic interfaces require global declarations and "
+                  "public data records without templates, bases, explicit "
+                  "special members, defaults, or nested declarations",
+                  declaration->getQualifiedNameAsString());
+  return supported;
+}
+
 class InterfaceCollector final
     : public clang::RecursiveASTVisitor<InterfaceCollector> {
  public:
@@ -435,6 +512,13 @@ class InterfaceCollector final
   }
 
   bool VisitNamedDecl(clang::NamedDecl *declaration) {
+    if (!result_.diagnostics.empty())
+      return true;
+    if (context_.getLangOpts().CPlusPlus && !declaration->isImplicit() &&
+        IsInMainFile(context_, declaration->getLocation()) &&
+        IsTopLevel(declaration) &&
+        !IsBoundedCxxDeclaration(declaration, result_))
+      return true;
     if (const auto *category = llvm::dyn_cast<clang::ObjCCategoryDecl>(declaration)) {
       if (category->IsClassExtension() &&
           IsInMainFile(context_, category->getLocation())) {
@@ -560,6 +644,13 @@ class InterfaceCollector final
 void PrintRootDeclaration(clang::NamedDecl *declaration,
                           clang::ASTContext &context,
                           llvm::raw_ostream &out) {
+  const auto *function = llvm::dyn_cast<clang::FunctionDecl>(declaration);
+  const auto *variable = llvm::dyn_cast<clang::VarDecl>(declaration);
+  const bool c_linkage =
+      context.getLangOpts().CPlusPlus && ((function && function->isExternC()) ||
+                                          (variable && variable->isExternC()));
+  if (c_linkage)
+    out << "extern \"C\" {\n";
   clang::PrintingPolicy policy(context.getLangOpts());
   policy.PrintAsCanonical = true;
   policy.FullyQualifiedName = true;
@@ -601,6 +692,8 @@ void PrintRootDeclaration(clang::NamedDecl *declaration,
     return;
   }
   out << ";\n";
+  if (c_linkage)
+    out << "}\n";
 }
 
 std::vector<std::string> RoundTripArguments(const clang::ASTContext &context) {
@@ -608,7 +701,9 @@ std::vector<std::string> RoundTripArguments(const clang::ASTContext &context) {
   const auto &standard = clang::LangStandard::getLangStandardForKind(lang.LangStd);
   std::vector<std::string> args = {
       "-fsyntax-only", "--target=" + context.getTargetInfo().getTriple().str(),
-      std::string("-x"), lang.ObjC ? "objective-c" : "c",
+      std::string("-x"),
+      lang.ObjC ? (lang.CPlusPlus ? "objective-c++" : "objective-c")
+                : (lang.CPlusPlus ? "c++" : "c"),
       "-std=" + std::string(standard.getName())};
   if (lang.ObjC) {
     args.push_back("-fobjc-runtime=" + lang.ObjCRuntime.getAsString());
@@ -649,6 +744,24 @@ bool SameDeclaration(const InterfaceDeclarationIdentity &a,
 
 }  // namespace
 
+std::string ReadInterfaceLanguageProfile(const clang::LangOptions &lang) {
+  static constexpr const char *profiles[] = {
+      "compatibility", "strict", "strict-concurrency", "strict-system"};
+  const auto index = static_cast<unsigned>(lang.ObjC3Profile);
+  const auto &standard =
+      clang::LangStandard::getLangStandardForKind(lang.LangStd);
+  return std::string("objc3=") + (lang.ObjC3 ? "enabled" : "disabled") +
+         ";profile=" +
+         (index < std::size(profiles) ? profiles[index] : "unknown") +
+         ";strict-concurrency=" +
+         (lang.ObjC3StrictConcurrency ? "true" : "false") +
+         ";arc=" + (lang.ObjCAutoRefCount ? "true" : "false") + ";language=" +
+         (lang.ObjC ? (lang.CPlusPlus ? "objective-c++" : "objective-c")
+                    : (lang.CPlusPlus ? "c++" : "c")) +
+         ";standard=" + standard.getName() +
+         ";blocks=" + (lang.Blocks ? "true" : "false");
+}
+
 std::string ReadInterfaceDeclarationStableId(
     const clang::NamedDecl *declaration) {
   if (!declaration) return {};
@@ -657,9 +770,7 @@ std::string ReadInterfaceDeclarationStableId(
   // Native USRs encode filenames for C typedefs because those names have no
   // linkage. Module provenance provides the provider identity; physical source
   // and canonical artifact filenames must not change the exported type name.
-  if (!declaration->getASTContext().getLangOpts().CPlusPlus &&
-      llvm::isa<clang::TypedefNameDecl>(declaration) &&
-      declaration->getDeclContext()->isTranslationUnit())
+  if (llvm::isa<clang::TypedefNameDecl>(declaration) && IsTopLevel(declaration))
     return "c:@T@" + declaration->getNameAsString();
   return usr.str().str();
 }
@@ -710,12 +821,6 @@ InterfaceEmissionArtifact EmitSemanticInterface(
     return result;
   }
   const auto &lang = context.getLangOpts();
-  if (lang.CPlusPlus) {
-    AddDiagnostic(result, "O3IFC101",
-                  "Objective-C++/C++ interface emission is not yet supported",
-                  canonical_module_name);
-    return result;
-  }
   std::map<std::string, const InterfaceSourceArtifact *> sources_by_name;
   std::set<std::string> resolved_declaration_ids;
   for (const auto &source : dependency_sources) {
@@ -754,16 +859,7 @@ InterfaceEmissionArtifact EmitSemanticInterface(
   result.identity.language_revision = lang.ObjC3
       ? std::to_string(lang.ObjC3Revision)
       : "objc3-disabled";
-  static constexpr const char *profiles[] = {
-      "compatibility", "strict", "strict-concurrency", "strict-system"};
-  const auto profile_index = static_cast<unsigned>(lang.ObjC3Profile);
-  result.identity.language_profile =
-      std::string("objc3=") + (lang.ObjC3 ? "enabled" : "disabled") +
-      ";profile=" + (profile_index < std::size(profiles)
-                           ? profiles[profile_index]
-                           : "unknown") +
-      ";strict-concurrency=" + (lang.ObjC3StrictConcurrency ? "true" : "false") +
-      ";arc=" + (lang.ObjCAutoRefCount ? "true" : "false");
+  result.identity.language_profile = ReadInterfaceLanguageProfile(lang);
   result.identity.package_identity = package_identity.str();
 
   InterfaceCollector collector(context, result, resolved_declaration_ids);
@@ -802,6 +898,8 @@ InterfaceEmissionArtifact EmitSemanticInterface(
   sidecar.module = result.identity;
   sidecar.declarations = collector.Identities();
   sidecar.dependencies = resolved_dependencies;
+  if (lang.CPlusPlus)
+    sidecar.required_semantics.push_back("objc3.cxx-data-interfaces.v1");
   if (collector.UsesCanonicalFunctionEffects())
     sidecar.required_semantics.push_back("objc3.canonical-function-effects.v1");
   for (const auto &declaration : sidecar.declarations) {
@@ -828,7 +926,8 @@ InterfaceEmissionArtifact EmitSemanticInterface(
 
   const std::vector<llvm::StringRef> supported_semantics = {
       "objc3.canonical-function-effects.v1", "objc3.native-carrier-types.v1",
-      "objc3.native-return-ownership.v1", "objc3.direct-dispatch.v1"};
+      "objc3.native-return-ownership.v1", "objc3.direct-dispatch.v1",
+      "objc3.cxx-data-interfaces.v1"};
   auto encoded = EncodeSemanticInterfaceSidecar(sidecar, supported_semantics);
   if (!encoded) {
     AddDiagnostic(result, "O3IFC120",
@@ -837,8 +936,11 @@ InterfaceEmissionArtifact EmitSemanticInterface(
     return result;
   }
 
-  const auto input_file = lang.ObjC ? "objc3-interface-roundtrip.m"
-                                    : "objc3-interface-roundtrip.c";
+  const auto input_file =
+      lang.ObjC ? (lang.CPlusPlus ? "objc3-interface-roundtrip.mm"
+                                  : "objc3-interface-roundtrip.m")
+                : (lang.CPlusPlus ? "objc3-interface-roundtrip.cpp"
+                                  : "objc3-interface-roundtrip.c");
   clang::tooling::FileContentMappings virtual_files;
   for (const auto &entry : sources_by_name)
     virtual_files.emplace_back(entry.second->virtual_include_path.empty()

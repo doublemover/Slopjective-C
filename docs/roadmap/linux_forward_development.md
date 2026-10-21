@@ -1,7 +1,7 @@
 # Linux forward development
 
 The active product is the Clang-only Linux x86-64 SDK. The
-[acceptance receipt](../support/linux_heap_storage_acceptance.json) identifies its
+[acceptance receipt](../support/linux_cxx_interface_acceptance.json) identifies its
 exact archive, source, native execution and fresh-distribution evidence. Tool
 versions come from [the manifest](../../toolchains/llvm/manifest.json); public
 language claims come from [the capability authority](../../schemas/objc3-language-capabilities.json).
@@ -74,8 +74,17 @@ Block forwarding cells. Constructor rollback destroys completed ivars and
 superclass state before freeing the allocation. Nine installed suites cover 93
 executions, 48 traps and 37 rejected forms; twenty ASan/LSan configurations and
 record/shared-capture LLDB probes qualify the archive. Both clean distributions
-pass the complete suite as ordinary users. The source-bound receipt above names
-implementation commit `036c9cabb` and the exact archive.
+pass the complete suite as ordinary users. The heap milestone has its own source-bound receipt.
+
+The [C++ semantic interface milestone](linux_cxx_interfaces.md) extends installed
+interchange to C++20 and C++23 global APIs, overloads and public data records.
+Exact language, standard, linkage, ownership and target identity locks preserve
+owned values through eager and source-position imports. The active SDK passes
+184 compiler tests, 51 native AST tests and ten installed suites with 109
+executions, 48 traps and 55 rejected forms. Twenty-four sanitizer configurations,
+record/shared-capture LLDB sessions, live editor probes and fresh ordinary-user
+Debian 13 and Ubuntu 26.04 qualification bind the archive to implementation
+commit `09659f530`.
 
 The managed public core targets ARC. Define the public bounded contract and
 syntax together with their feature queries and capability predicates. Promote a
@@ -89,10 +98,10 @@ Private migration intrinsics do not justify a public feature claim.
 
 The next implementation sequence is:
 
-1. Complete bounded C++ semantic interfaces with explicit linkage and data-record
-   identity. Objective-C heap storage, runtime record calls, whole-record captures,
-   and shared `__block` cells are implemented under the
-   [heap storage contract](linux_heap_storage.md).
+1. Qualify the bounded [C++ semantic interface contract](linux_cxx_interfaces.md),
+   including explicit language/standard identity, linkage, data records and
+   source imports. Extend the source-package builder to matching C++ package
+   graphs with the same exact identity locks.
 2. Finish the bounded public Optional/Result and synchronous throws contract,
    including ownership and module interface identity. Add public syntax and
    promote its feature predicates only after that complete contract passes the

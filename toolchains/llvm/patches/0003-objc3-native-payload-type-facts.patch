@@ -173,7 +173,7 @@ index e3f74d73f..15bac0545 100644
    VTableBuilder.cpp
 diff --git a/clang/lib/AST/ObjC3TypeContracts.cpp b/clang/lib/AST/ObjC3TypeContracts.cpp
 new file mode 100644
-index 000000000..cfb9ed527
+index 000000000..0cbae1d21
 --- /dev/null
 +++ b/clang/lib/AST/ObjC3TypeContracts.cpp
 @@ -0,0 +1,455 @@
@@ -561,7 +561,7 @@ index 000000000..cfb9ed527
 +    } else {
 +      return false;
 +    }
-+    std::string Name = IsOptional ? "__objc3_v11_optional" : "__objc3_v11_result";
++    std::string Name = IsOptional ? "__objc3_v12_optional" : "__objc3_v12_result";
 +    std::string Fields;
 +    for (QualType Leaf : Leaves) {
 +      if (Leaf.isVolatileQualified())
@@ -623,7 +623,7 @@ index 000000000..cfb9ed527
 +        ObjC3CarrierRepresentationInfo::Status::Materialized)
 +      return false;
 +    // Recursively mirror native boolean/union layout and ownership identity.
-+    Out = "{" + Name + "=B(__objc3_v11_payload=" + Fields + ")}";
++    Out = "{" + Name + "=B(__objc3_v12_payload=" + Fields + ")}";
 +    return true;
 +  };
 +  std::string Result;
@@ -634,10 +634,10 @@ index 000000000..cfb9ed527
 +}
 diff --git a/clang/unittests/AST/ObjC3TypeContractsTest.cpp b/clang/unittests/AST/ObjC3TypeContractsTest.cpp
 new file mode 100644
-index 000000000..3990f9aa2
+index 000000000..de356a5f7
 --- /dev/null
 +++ b/clang/unittests/AST/ObjC3TypeContractsTest.cpp
-@@ -0,0 +1,497 @@
+@@ -0,0 +1,557 @@
 +//===--- ObjC3TypeContractsTest.cpp - AST value type facts ----------------===//
 +//
 +// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
@@ -653,6 +653,7 @@ index 000000000..3990f9aa2
 +#include "clang/AST/ObjC3TypeContracts.h"
 +#include "clang/AST/RecursiveASTVisitor.h"
 +#include "clang/Frontend/ASTUnit.h"
++#include "clang/Sema/MultiplexExternalSemaSource.h"
 +#include "clang/Tooling/Tooling.h"
 +#include "gtest/gtest.h"
 +
@@ -744,8 +745,8 @@ index 000000000..3990f9aa2
 +  EXPECT_TRUE(Trivial.Destroy.IsTrivial);
 +  std::string Encoding;
 +  ASSERT_TRUE(getObjC3CarrierRuntimeEncoding(Context, Nested, Encoding));
-+  EXPECT_NE(Encoding.find("__objc3_v11_optional_N"), std::string::npos);
-+  EXPECT_NE(Encoding.find("__objc3_v11_optional_W40="), std::string::npos);
++  EXPECT_NE(Encoding.find("__objc3_v12_optional_N"), std::string::npos);
++  EXPECT_NE(Encoding.find("__objc3_v12_optional_W40="), std::string::npos);
 +  EXPECT_LT(Encoding.size(), 600u);
 +  // The runtime representation remains linear for a long Optional chain.
 +  QualType Deep = Nested;
@@ -1134,4 +1135,63 @@ index 000000000..3990f9aa2
 +                Source->getArgPassingRestrictions());
 +    }
 +  }
++}
++
++TEST(ObjC3SourceImports, MultiplexPreservesClaimsErrorsAndNativeFallback) {
++  class Source final : public ExternalSemaSource {
++  public:
++    ObjC3SourceImportResult Import = ObjC3SourceImportResult::NotHandled;
++    ObjC3QualifiedNameLookupStatus Lookup = ObjC3QualifiedNameLookupStatus::NotHandled;
++    NamedDecl *Candidate = nullptr;
++    unsigned Imports = 0, Lookups = 0;
++    ObjC3SourceImportResult HandleObjC3SourceImport(
++        llvm::StringRef, SourceLocation) override {
++      ++Imports;
++      return Import;
++    }
++    ObjC3QualifiedNameLookupStatus LookupObjC3QualifiedName(
++        llvm::ArrayRef<IdentifierInfo *>, unsigned,
++        llvm::SmallVectorImpl<NamedDecl *> &Declarations) override {
++      ++Lookups;
++      if (Candidate) Declarations.push_back(Candidate);
++      return Lookup;
++    }
++  };
++  auto Native = llvm::makeIntrusiveRefCnt<Source>();
++  auto Registry = llvm::makeIntrusiveRefCnt<Source>();
++  auto Multiplex = llvm::makeIntrusiveRefCnt<MultiplexExternalSemaSource>(Native, Registry);
++  Registry->Import = ObjC3SourceImportResult::Handled;
++  EXPECT_EQ(Multiplex->HandleObjC3SourceImport("Locked.Data", {}), ObjC3SourceImportResult::Handled);
++  EXPECT_EQ(Native->Imports, 1u);
++  EXPECT_EQ(Registry->Imports, 1u);
++  Native->Import = ObjC3SourceImportResult::Error;
++  EXPECT_EQ(Multiplex->HandleObjC3SourceImport("Locked.Data", {}), ObjC3SourceImportResult::Error);
++  EXPECT_EQ(Registry->Imports, 1u);
++  Native->Import = Registry->Import = ObjC3SourceImportResult::NotHandled;
++  EXPECT_EQ(Multiplex->HandleObjC3SourceImport("Native.Module", {}), ObjC3SourceImportResult::NotHandled);
++
++  auto AST = parse("int prior; int exported;", {"-x", "c++", "-std=c++20"});
++  ASSERT_TRUE(AST);
++  Native->Candidate = const_cast<NamedDecl *>(lookup(AST->getASTContext(), "prior"));
++  Registry->Candidate = const_cast<NamedDecl *>(lookup(AST->getASTContext(), "exported"));
++  ASSERT_TRUE(Native->Candidate && Registry->Candidate);
++  Registry->Lookup = ObjC3QualifiedNameLookupStatus::Found;
++  SmallVector<NamedDecl *, 4> Declarations;
++  EXPECT_EQ(Multiplex->LookupObjC3QualifiedName({}, 0, Declarations), ObjC3QualifiedNameLookupStatus::Found);
++  ASSERT_EQ(Declarations.size(), 1u);
++  EXPECT_EQ(Declarations.front(), Registry->Candidate);
++  Native->Candidate = nullptr;
++  for (auto Status : {ObjC3QualifiedNameLookupStatus::ModuleNotVisible,
++                      ObjC3QualifiedNameLookupStatus::NotFound,
++                      ObjC3QualifiedNameLookupStatus::Ambiguous}) {
++    Native->Lookup = Status;
++    unsigned Before = Registry->Lookups;
++    Declarations.clear();
++    EXPECT_EQ(Multiplex->LookupObjC3QualifiedName({}, 0, Declarations), Status);
++    EXPECT_EQ(Registry->Lookups, Before);
++    EXPECT_TRUE(Declarations.empty());
++  }
++  Native->Lookup = Registry->Lookup = ObjC3QualifiedNameLookupStatus::NotHandled;
++  EXPECT_EQ(Multiplex->LookupObjC3QualifiedName({}, 0, Declarations), ObjC3QualifiedNameLookupStatus::NotHandled);
++  EXPECT_TRUE(Declarations.empty());
 +}
