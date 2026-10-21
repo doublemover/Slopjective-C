@@ -1,7 +1,7 @@
 # Linux forward development
 
 The active product is the Clang-only Linux x86-64 SDK. The
-[acceptance receipt](../support/linux_runtime_call_acceptance.json) identifies its
+[acceptance receipt](../support/linux_managed_typed_error_acceptance.json) identifies its
 exact archive, source, native execution and fresh-distribution evidence. Tool
 versions come from [the manifest](../../toolchains/llvm/manifest.json); public
 language claims come from [the capability authority](../../schemas/objc3-language-capabilities.json).
@@ -23,7 +23,7 @@ O0/O2 witnesses cover all Result arm transitions, self/aliased assignment, weak
 zeroing, Blocks, typed-error optionalization, sequencing and native unwinding.
 Live clangd probes cover both languages. The
 [managed call ABI](linux_managed_call_abi.md) now extends direct carriers through
-ordinary functions, callbacks and C++ members under extension ABI revision 4.
+ordinary functions, callbacks and C++ members under extension ABI revision 5.
 Caller-owned snapshots preserve each argument at evaluation time and clean up
 at full-expression boundaries; returns initialize fresh caller-owned storage.
 Nine installed executions cover separate provider/consumer compilation at
@@ -31,9 +31,16 @@ O0/O2/ThinLTO, PCH and semantic module imports, including virtual adjustment
 thunks, register exhaustion and native exception cleanup. The
 [runtime callable contract](linux_runtime_call_abi.md) adds nine installed
 Objective-C/Block executions with versioned ownership encodings, class/instance/
-protocol/super/direct dispatch, nil results, heap Blocks, reflection and native
+protocol/super dispatch, nil results, heap Blocks, reflection and native
 Objective-C/C++ unwinding. Live editor probes cover returned message and Block
-values. Typed-error composition and nested storage remain implementation work.
+values. The [managed typed-error contract](linux_managed_typed_errors.md) now
+composes managed signatures with synchronous error transport across these call
+forms. Nine installed executions and eighteen forced-failure checks cover
+success, propagation, catch recovery, failed assignment, native unwinding,
+metadata, PCH and semantic imports. A completed return value stays callee-owned
+until its cleanups finish; native exceptions destroy it before unwinding.
+Nested storage remains implementation work. GNUstep 2.0 ignores `objc_direct`;
+true direct dispatch requires a runtime-profile cutover and qualification.
 The managed public core targets ARC. MRC adaptation remains outside its release
 contract; weak/unsafe Block payloads and nested managed carriers still need
 explicit semantics and lowering. Define the public bounded contract and
@@ -48,15 +55,14 @@ Private migration intrinsics do not justify a public feature claim.
 
 The next implementation sequence is:
 
-1. Compose managed signatures with typed-error success/error transport. Define
-   result-slot initialization on success, failure and propagation; error
-   ownership during parameter cleanup; forced and propagating results; and
-   cleanup when a native exception interrupts either path. Preserve the
-   qualified snapshot and return-storage rules across each callable form.
-   Define optionalization of managed results with recursive storage in step 2.
+1. Cut over the Linux runtime profile to a modern GNUstep ABI that supports
+   true direct methods. Qualify class initialization, nil receivers, managed
+   results, typed errors, reflection, interfaces and installed packages. The
+   shipped libobjc2 is current; the compiler's GNUstep 2.0 profile is the gap.
 2. Extend active-arm lifetime operations through nested carriers, arrays and
    enclosing records. Cover partial initialization, assignment, destruction and
-   exceptions before admitting those storage forms to the callable ABI. Extend
+   exceptions before admitting those storage forms to the callable ABI. Define
+   optionalization of managed results on these recursive operations. Extend
    the same operations into ivars/properties and Block value captures, including
    payload-aware copy/dispose helpers and weak registrations.
 3. Finish the bounded public Optional/Result and synchronous throws contract,

@@ -11,7 +11,7 @@
   "patches": [
     {
       "file": "0001-objc3-language-mode-and-build-identity.patch",
-      "sha256": "a0763c0848a76bbe5fb92632463d4e2d394fdd2a8542142b0d689b4727a39dc3"
+      "sha256": "5f4a406077fc6366de97feae92cf69cb9b424f9cd42e8190f2962171d1c7ac6d"
     },
     {
       "file": "0002-objc3-native-defer-statement.patch",
@@ -19,15 +19,15 @@
     },
     {
       "file": "0003-objc3-native-payload-type-facts.patch",
-      "sha256": "61a3ddef9c6f6a08e9d66bb98791f96adeb73a33790e9cfb6c8a3e99beb3aa7a"
+      "sha256": "e6c3a573492108d3ca26604c675f53d59a82a4a6ad77dbb73fad1428646712b1"
     },
     {
       "file": "0004-objc3-canonical-carriers-and-function-effects.patch",
-      "sha256": "32cff5fc08b6eddec3625b286ad6d6716c8b8a398734babcfc02e63ee5d5a0bd"
+      "sha256": "fd920db00a089e824f276f128cf765d7f807d810584cb216c91cab3bd1ce83f7"
     },
     {
       "file": "0005-objc3-codegen-qualification-boundaries.patch",
-      "sha256": "6d662674c82a014fcdf744a82593352a5f29f3691ac0bcfdb4642a9a1961d391"
+      "sha256": "65668f487b2e58684036030c983d9b6485e443819aa73d131a6032bdc9aaa19c"
     },
     {
       "file": "0006-objc3-native-carrier-expressions.patch",
@@ -45,8 +45,15 @@
     "assertions": true,
     "rtti": true,
     "eh": true,
-    "targets": ["X86"],
-    "projects": ["clang", "lld", "clang-tools-extra", "lldb"],
+    "targets": [
+      "X86"
+    ],
+    "projects": [
+      "clang",
+      "lld",
+      "clang-tools-extra",
+      "lldb"
+    ],
     "build_targets": [
       "clang",
       "FileCheck",
@@ -94,19 +101,34 @@
       },
       {
         "name": "objc3_facade_libraries",
-        "targets": ["clangTooling", "clangIndex", "clangCodeGen", "clangFrontend", "clangDriver"]
+        "targets": [
+          "clangTooling",
+          "clangIndex",
+          "clangCodeGen",
+          "clangFrontend",
+          "clangDriver"
+        ]
       },
       {
         "name": "native_type_contract_tests",
-        "targets": ["ObjC3TypeContractsTests"]
+        "targets": [
+          "ObjC3TypeContractsTests"
+        ]
       },
       {
         "name": "native_editor_tools",
-        "targets": ["clangd", "clang-format"]
+        "targets": [
+          "clangd",
+          "clang-format"
+        ]
       },
       {
         "name": "native_debugger_tools",
-        "targets": ["lldb", "lldb-server", "llvm-dwarfdump"]
+        "targets": [
+          "lldb",
+          "lldb-server",
+          "llvm-dwarfdump"
+        ]
       }
     ],
     "distribution_components": [
@@ -229,7 +251,9 @@
     "include_tests": true,
     "compile_jobs": 4,
     "link_jobs": 1,
-    "test_binaries": ["tools/clang/unittests/AST/ObjC3TypeContractsTests.exe"],
+    "test_binaries": [
+      "tools/clang/unittests/AST/ObjC3TypeContractsTests.exe"
+    ],
     "clangd_tidy_checks": false
   },
   "host_tools": {

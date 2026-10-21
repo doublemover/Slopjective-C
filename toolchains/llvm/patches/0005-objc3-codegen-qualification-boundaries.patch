@@ -1410,10 +1410,10 @@ index c724a063b..2ca88a56c 100644
    assert(isa<CompoundStmt>(OMD->getBody()));
 diff --git a/clang/lib/CodeGen/CGObjC3ABIBoundaries.cpp b/clang/lib/CodeGen/CGObjC3ABIBoundaries.cpp
 new file mode 100644
-index 000000000..4443357e8
+index 000000000..d6b719da8
 --- /dev/null
 +++ b/clang/lib/CodeGen/CGObjC3ABIBoundaries.cpp
-@@ -0,0 +1,176 @@
+@@ -0,0 +1,178 @@
 +//===--- CGObjC3ABIBoundaries.cpp - Unqualified native boundaries
 +//----------===//
 +// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
@@ -1518,7 +1518,8 @@ index 000000000..4443357e8
 +  auto Check = [&](QualType T) {
 +    if (!FPT->isVariadic() && FPT->getCallConv() == CC_C &&
 +        !FPT->getObjC3FunctionEffects().Async &&
-+        FPT->getObjC3FunctionEffects().Throws == ObjC3ThrowsKind::None &&
++        (FPT->getObjC3FunctionEffects().Throws == ObjC3ThrowsKind::None ||
++         supportsObjC3ErrorOutFunction(CGM, FPT, nullptr, false)) &&
 +        supportsObjC3CarrierRuntimeCallABI(CGM, T))
 +      return false;
 +    return diagnose(CGM, T, Loc, true, "runtime callable type encoding");
@@ -1556,7 +1557,8 @@ index 000000000..4443357e8
 +  auto Check = [&](QualType T, SourceLocation Loc) {
 +    if (!Method->isVariadic() &&
 +        getObjCMethodCallingConvention(Method, false) == CC_C &&
-+        Method->getObjC3FunctionEffects().Throws == ObjC3ThrowsKind::None &&
++        (Method->getObjC3FunctionEffects().Throws == ObjC3ThrowsKind::None ||
++         supportsObjC3ErrorOutMethod(CGM, Method)) &&
 +        !Method->getObjC3FunctionEffects().Async &&
 +        supportsObjC3CarrierRuntimeCallABI(CGM, T))
 +      return false;
@@ -1634,10 +1636,10 @@ index 000000000..2ae11a4ba
 +#endif
 diff --git a/clang/lib/CodeGen/CGObjC3ArcCarriers.cpp b/clang/lib/CodeGen/CGObjC3ArcCarriers.cpp
 new file mode 100644
-index 000000000..6ebe04027
+index 000000000..fea00f408
 --- /dev/null
 +++ b/clang/lib/CodeGen/CGObjC3ArcCarriers.cpp
-@@ -0,0 +1,633 @@
+@@ -0,0 +1,682 @@
 +//===--- CGObjC3ArcCarriers.cpp - ARC local carrier lowering --*- C++ -*-===//
 +// Private native ARC operations for the first direct-local carrier slice.
 +#include "CGObjC3ArcCarriers.h"
@@ -1859,8 +1861,8 @@ index 000000000..6ebe04027
 +  if (const auto *Result = dyn_cast<ObjC3ResultExpr>(E))
 +    return Result->getKind() == ObjC3ResultExpr::Kind::Ok ||
 +           Result->getKind() == ObjC3ResultExpr::Kind::Err;
-+  if (const auto *Try = dyn_cast<ObjC3TryExpr>(E))
-+    return Try->getKind() == ObjC3TryExpr::Kind::Optionalize;
++  if (isa<ObjC3TryExpr>(E))
++    return true;
 +  if (const auto *Binary = dyn_cast<BinaryOperator>(E))
 +    return Binary->getOpcode() == BO_Assign;
 +  if (const auto *Conditional = dyn_cast<ConditionalOperator>(E))
@@ -1978,6 +1980,54 @@ index 000000000..6ebe04027
 +                                                QualType Type,
 +                                                Address Storage) {
 +  CGF.pushFullExprCleanup<DestroyARCSnapshot>(NormalAndEHCleanup, Type, Storage);
++}
++
++namespace {
++struct DestroyARCReturnOnEH final : EHScopeStack::Cleanup {
++  void Emit(CodeGenFunction &CGF, Flags) override {
++    auto *Destroy = CGF.createBasicBlock("objc3.arc.return.destroy");
++    auto *Done = CGF.createBasicBlock("objc3.arc.return.cleanup.done");
++    CGF.Builder.CreateCondBr(
++        CGF.Builder.CreateLoad(CGF.ObjC3CarrierReturnInitialized), Destroy, Done);
++    CGF.EmitBlock(Destroy);
++    emitObjC3CarrierDestroyActiveARCPayload(CGF, CGF.FnRetTy, CGF.ReturnValue,
++                                          true, true, true);
++    CGF.Builder.CreateBr(Done);
++    CGF.EmitBlock(Done);
++  }
++};
++} // namespace
++
++void CodeGen::emitObjC3CarrierARCReturnProlog(CodeGenFunction &CGF) {
++  if (CGF.CurFuncIsThunk ||
++      !supportsObjC3CarrierARCCallABI(CGF.CGM, CGF.FnRetTy))
++    return;
++  CGF.ObjC3CarrierReturnInitialized = CGF.CreateTempAlloca(
++      CGF.Builder.getInt1Ty(), CharUnits::One(), "objc3.arc.return.initialized");
++  CGF.Builder.CreateStore(CGF.Builder.getFalse(),
++                          CGF.ObjC3CarrierReturnInitialized);
++  // Outlive return-expression, lexical and parameter cleanups. Ownership
++  // crosses to the caller only when the callee actually returns normally.
++  if (CGF.getLangOpts().Exceptions)
++    CGF.EHStack.pushCleanup<DestroyARCReturnOnEH>(EHCleanup);
++}
++
++bool CodeGen::emitObjC3CarrierARCErrorReturn(CodeGenFunction &CGF) {
++  if (!CGF.ObjC3CarrierReturnInitialized.isValid())
++    return false;
++  auto *Destroy = CGF.createBasicBlock("objc3.arc.error.return.destroy");
++  auto *Empty = CGF.createBasicBlock("objc3.arc.error.return.empty");
++  CGF.Builder.CreateCondBr(
++      CGF.Builder.CreateLoad(CGF.ObjC3CarrierReturnInitialized), Destroy, Empty);
++  CGF.EmitBlock(Destroy);
++  emitObjC3CarrierDestroyActiveARCPayload(CGF, CGF.FnRetTy, CGF.ReturnValue,
++                                        true, true, true);
++  CGF.Builder.CreateBr(Empty);
++  CGF.EmitBlock(Empty);
++  CGF.EmitNullInitialization(CGF.ReturnValue, CGF.FnRetTy);
++  CGF.Builder.CreateStore(CGF.Builder.getFalse(),
++                          CGF.ObjC3CarrierReturnInitialized);
++  return true;
 +}
 +
 +bool CodeGen::emitObjC3CarrierARCCopy(
@@ -2162,7 +2212,8 @@ index 000000000..6ebe04027
 +    // reference and pointer views use the same active-tag read.
 +    Storage = CGF.EmitLValue(Operand).getAddress();
 +  } else {
-+    if (!isa<CallExpr, ObjCMessageExpr>(Operand->IgnoreParenImpCasts()) ||
++    if (!isa<CallExpr, ObjCMessageExpr, ObjC3TryExpr>(
++            Operand->IgnoreParenImpCasts()) ||
 +        !supportsObjC3CarrierARCCallABI(CGF.CGM, CarrierType))
 +      return Fail();
 +    Storage = CGF.CreateMemTemp(CarrierType, "objc3.arc.query.return");
@@ -2273,10 +2324,10 @@ index 000000000..6ebe04027
 +
 diff --git a/clang/lib/CodeGen/CGObjC3ArcCarriers.h b/clang/lib/CodeGen/CGObjC3ArcCarriers.h
 new file mode 100644
-index 000000000..6252a2ca9
+index 000000000..24a081d42
 --- /dev/null
 +++ b/clang/lib/CodeGen/CGObjC3ArcCarriers.h
-@@ -0,0 +1,73 @@
+@@ -0,0 +1,78 @@
 +//===--- CGObjC3ArcCarriers.h - ARC local carrier adapter ------*- C++ -*-===//
 +// Staged private adapter; no source ABI or capability promotion.
 +#ifndef LLVM_CLANG_LIB_CODEGEN_CGOBJC3ARCCARRIERS_H
@@ -2306,6 +2357,11 @@ index 000000000..6252a2ca9
 +/// full expression and is destroyed on both normal and exception exits.
 +void pushObjC3CarrierARCTemporaryCleanup(CodeGenFunction &CGF, QualType Type,
 +                                        Address Storage);
++/// Keep a completed result owned by the callee until all return cleanups finish.
++void emitObjC3CarrierARCReturnProlog(CodeGenFunction &CGF);
++/// A typed failure produces a valid empty result, replacing a completed result
++/// if failure originates in a return cleanup.
++bool emitObjC3CarrierARCErrorReturn(CodeGenFunction &CGF);
 +bool containsObjC3CarrierARCPayload(CodeGenModule &CGM, QualType CarrierType);
 +bool hasObjC3CarrierARCCleanup(CodeGenModule &CGM, QualType CarrierType);
 +bool hasObjC3CarrierStrongPayload(CodeGenModule &CGM, QualType CarrierType);
@@ -2352,10 +2408,10 @@ index 000000000..6252a2ca9
 +#endif
 diff --git a/clang/lib/CodeGen/CGObjC3Carriers.cpp b/clang/lib/CodeGen/CGObjC3Carriers.cpp
 new file mode 100644
-index 000000000..1493f2ae7
+index 000000000..09637baa6
 --- /dev/null
 +++ b/clang/lib/CodeGen/CGObjC3Carriers.cpp
-@@ -0,0 +1,1287 @@
+@@ -0,0 +1,1283 @@
 +//===--- CGObjC3Carriers.cpp - ObjC3 carrier CodeGen adapter ----*- C++ -*-===//
 +//
 +//===----------------------------------------------------------------------===//
@@ -3405,10 +3461,6 @@ index 000000000..1493f2ae7
 +    if (Found.isNull())
 +      return false;
 +
-+    if (containsObjC3CarrierARCPayload(CGM, T) &&
-+        FPT->getObjC3FunctionEffects().Throws != ObjC3ThrowsKind::None)
-+      return Diagnose(T);
-+
 +    QualType Projection;
 +    if (getObjC3CarrierABIProjectionType(CGM, T, Projection))
 +      return false;
@@ -3851,16 +3903,17 @@ index 000000000..c41f46904
 +#endif
 diff --git a/clang/lib/CodeGen/CGObjC3ErrorHandlers.cpp b/clang/lib/CodeGen/CGObjC3ErrorHandlers.cpp
 new file mode 100644
-index 000000000..df7863eee
+index 000000000..a42ddf741
 --- /dev/null
 +++ b/clang/lib/CodeGen/CGObjC3ErrorHandlers.cpp
-@@ -0,0 +1,216 @@
+@@ -0,0 +1,217 @@
 +//===--- CGObjC3ErrorHandlers.cpp - ObjC3 error handlers
 +//--------------------===//
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 +
 +#include "CGObjC3ErrorHandlers.h"
 +#include "CGObjC3TypedErrors.h"
++#include "CGObjC3ArcCarriers.h"
 +#include "CGObjCRuntime.h"
 +#include "CodeGenFunction.h"
 +#include "CodeGenModule.h"
@@ -3902,7 +3955,7 @@ index 000000000..df7863eee
 +    CGF.Builder.ClearInsertionPoint();
 +    return;
 +  }
-+  if (!CGF.FnRetTy->isVoidType())
++  if (!CGF.FnRetTy->isVoidType() && !emitObjC3CarrierARCErrorReturn(CGF))
 +    CGF.Builder.CreateStore(
 +        llvm::Constant::getNullValue(CGF.ConvertType(CGF.FnRetTy)),
 +        CGF.ReturnValue);
@@ -4807,10 +4860,10 @@ index 000000000..554f67296
 +#endif
 diff --git a/clang/lib/CodeGen/CGObjC3TypedErrors.cpp b/clang/lib/CodeGen/CGObjC3TypedErrors.cpp
 new file mode 100644
-index 000000000..3d8ac1d14
+index 000000000..72c51848b
 --- /dev/null
 +++ b/clang/lib/CodeGen/CGObjC3TypedErrors.cpp
-@@ -0,0 +1,570 @@
+@@ -0,0 +1,611 @@
 +//===--- CGObjC3TypedErrors.cpp - ObjC3 error-output CodeGen -----*- C++
 +//-*-===//
 +//
@@ -5036,7 +5089,8 @@ index 000000000..3d8ac1d14
 +      return false;
 +  }
 +  if (!FPT->getReturnType()->isVoidType() &&
-+      !CodeGenFunction::hasScalarEvaluationKind(FPT->getReturnType()))
++      !CodeGenFunction::hasScalarEvaluationKind(FPT->getReturnType()) &&
++      !supportsObjC3CarrierARCCallABI(CGM, FPT->getReturnType()))
 +    return false;
 +
 +  if (FPT->getReturnType()->isReferenceType())
@@ -5280,8 +5334,48 @@ index 000000000..3d8ac1d14
 +                                        const ObjC3TryExpr &E,
 +                                        AggValueSlot Dest) {
 +  if (E.getKind() != ObjC3TryExpr::Kind::Optionalize) {
-+    CGF.CGM.ErrorUnsupported(&E, "non-optional aggregate try result");
-+    return false;
++    const Expr *Call = nullptr;
++    if (!supportsObjC3CarrierARCCallABI(CGF.CGM, E.getType()) ||
++        !isSupportedTryCall(CGF, E, Call)) {
++      CGF.CGM.ErrorUnsupported(&E, "unsupported aggregate typed throws result");
++      return false;
++    }
++    QualType ErrorType, ParameterType;
++    if (!getObjC3ErrorOutTypes(CGF.CGM, ErrorType, ParameterType))
++      return false;
++    Address ErrorSlot = CGF.CreateMemTemp(ErrorType, "objc3.error.out");
++    LValue ErrorLV = CGF.MakeAddrLValue(ErrorSlot, ErrorType);
++    CGF.EmitStoreOfScalar(
++        llvm::Constant::getNullValue(CGF.ConvertType(ErrorType)), ErrorLV,
++        /*isInit=*/true);
++    {
++      ScopedObjC3ErrorOutCall ErrorOut(CGF, ErrorSlot, ErrorType, Call);
++      // Reuse ordinary fresh-sret lowering, including discarded-result and
++      // argument ownership. A typed failure initializes an empty carrier.
++      CGF.EmitAggExpr(E.getOperand(), Dest);
++    }
++    llvm::Value *Error = CGF.EmitLoadOfScalar(ErrorLV, E.getExprLoc());
++    auto *Failure = CGF.createBasicBlock("objc3.try.failure");
++    auto *Success = CGF.createBasicBlock("objc3.try.success");
++    CGF.Builder.CreateCondBr(CGF.Builder.CreateIsNotNull(Error), Failure, Success);
++    CGF.EmitBlock(Failure);
++    if (E.getKind() == ObjC3TryExpr::Kind::Force) {
++      CGF.EmitTrapCall(llvm::Intrinsic::trap);
++      CGF.Builder.CreateUnreachable();
++    } else {
++      Address Storage = getObjC3ErrorDestinationStorage(CGF);
++      if (!Storage.isValid()) {
++        CGF.CGM.ErrorUnsupported(&E, "typed error propagation without error-out context");
++        CGF.EmitTrapCall(llvm::Intrinsic::trap);
++        CGF.Builder.CreateUnreachable();
++      } else {
++        storeOwnedObjC3Error(CGF, Storage, CGF.EmitARCRetainNonBlock(Error),
++                            ErrorType);
++        emitObjC3ErrorTransfer(CGF);
++      }
++    }
++    CGF.EmitBlock(Success);
++    return true;
 +  }
 +  const bool ARCLocal =
 +      supportsObjC3CarrierARCLocalLifetime(CGF.CGM, E.getType());
@@ -5504,7 +5598,7 @@ index 9742b496c..7e1b6d904 100644
          // void results are definitely okay.
        } else if (ResultType->hasPointerRepresentation() &&
 diff --git a/clang/lib/CodeGen/CGStmt.cpp b/clang/lib/CodeGen/CGStmt.cpp
-index 27e74d966..2cb996ad3 100644
+index 27e74d966..97e23c306 100644
 --- a/clang/lib/CodeGen/CGStmt.cpp
 +++ b/clang/lib/CodeGen/CGStmt.cpp
 @@ -13,6 +13,9 @@
@@ -5545,12 +5639,14 @@ index 27e74d966..2cb996ad3 100644
    case Stmt::ReturnStmtClass:  EmitReturnStmt(cast<ReturnStmt>(*S));      break;
  
    case Stmt::SwitchStmtClass:  EmitSwitchStmt(cast<SwitchStmt>(*S));      break;
-@@ -1697,6 +1721,10 @@ void CodeGenFunction::EmitReturnStmt(const ReturnStmt &S) {
+@@ -1697,6 +1721,12 @@ void CodeGenFunction::EmitReturnStmt(const ReturnStmt &S) {
                                  /*isInit*/ true);
        break;
      case TEK_Aggregate:
 +      if (CodeGen::supportsObjC3CarrierARCCallABI(CGM, RV->getType())) {
 +        CodeGen::emitObjC3CarrierARCValueInit(*this, RV, ReturnValue);
++        if (ObjC3CarrierReturnInitialized.isValid())
++          Builder.CreateStore(Builder.getTrue(), ObjC3CarrierReturnInitialized);
 +        break;
 +      }
        EmitAggExpr(RV, AggValueSlot::forAddr(
@@ -5614,19 +5710,20 @@ index 853f038c4..6f7dcb332 100644
    CGObjCMac.cpp
    CGObjCRuntime.cpp
 diff --git a/clang/lib/CodeGen/CodeGenFunction.cpp b/clang/lib/CodeGen/CodeGenFunction.cpp
-index 7629b42dd..02433746b 100644
+index 7629b42dd..c41380c74 100644
 --- a/clang/lib/CodeGen/CodeGenFunction.cpp
 +++ b/clang/lib/CodeGen/CodeGenFunction.cpp
-@@ -19,6 +19,8 @@
+@@ -19,6 +19,9 @@
  #include "CGHLSLRuntime.h"
  #include "CGOpenMPRuntime.h"
  #include "CodeGenModule.h"
 +#include "CGObjC3Carriers.h"
++#include "CGObjC3ArcCarriers.h"
 +#include "CGObjC3TypedErrors.h"
  #include "CodeGenPGO.h"
  #include "TargetInfo.h"
  #include "clang/AST/ASTContext.h"
-@@ -289,6 +291,8 @@ TypeEvaluationKind CodeGenFunction::getEvaluationKind(QualType type) {
+@@ -289,6 +292,8 @@ TypeEvaluationKind CodeGenFunction::getEvaluationKind(QualType type) {
      case Type::IncompleteArray:
      case Type::VariableArray:
      case Type::Record:
@@ -5635,7 +5732,7 @@ index 7629b42dd..02433746b 100644
      case Type::ObjCObject:
      case Type::ObjCInterface:
      case Type::ArrayParameter:
-@@ -420,6 +424,11 @@ void CodeGenFunction::FinishFunction(SourceLocation EndLoc) {
+@@ -420,6 +425,11 @@ void CodeGenFunction::FinishFunction(SourceLocation EndLoc) {
  
    // Emit function epilog (to return).
    llvm::DebugLoc Loc = EmitReturnBlock();
@@ -5647,10 +5744,11 @@ index 7629b42dd..02433746b 100644
  
    if (ShouldInstrumentFunction()) {
      if (CGM.getCodeGenOpts().InstrumentFunctions)
-@@ -1274,7 +1283,13 @@ void CodeGenFunction::StartFunction(GlobalDecl GD, QualType RetTy,
+@@ -1274,7 +1284,14 @@ void CodeGenFunction::StartFunction(GlobalDecl GD, QualType RetTy,
      }
    }
  
++  emitObjC3CarrierARCReturnProlog(*this);
 +  // Native adjustment thunks forward the caller's physical error output.
 +  // They do not initialize it or acquire another pending-error reference.
 +  if (ObjC3FunctionErrorOutDecl && !CurFuncIsThunk)
@@ -5661,7 +5759,7 @@ index 7629b42dd..02433746b 100644
  
    if (const CXXMethodDecl *MD = dyn_cast_if_present<CXXMethodDecl>(D);
        MD && !MD->isStatic()) {
-@@ -1455,6 +1470,15 @@ QualType CodeGenFunction::BuildFunctionArgList(GlobalDecl GD,
+@@ -1455,6 +1472,15 @@ QualType CodeGenFunction::BuildFunctionArgList(GlobalDecl GD,
  
    if (MD && (isa<CXXConstructorDecl>(MD) || isa<CXXDestructorDecl>(MD)))
      CGM.getCXXABI().addImplicitStructorParams(*this, ResTy, Args);
@@ -5677,7 +5775,7 @@ index 7629b42dd..02433746b 100644
  
    return ResTy;
  }
-@@ -1463,6 +1487,11 @@ void CodeGenFunction::GenerateCode(GlobalDecl GD, llvm::Function *Fn,
+@@ -1463,6 +1489,11 @@ void CodeGenFunction::GenerateCode(GlobalDecl GD, llvm::Function *Fn,
                                     const CGFunctionInfo &FnInfo) {
    assert(Fn && "generating code for null Function");
    const FunctionDecl *FD = cast<FunctionDecl>(GD.getDecl());
@@ -5689,7 +5787,7 @@ index 7629b42dd..02433746b 100644
    CurGD = GD;
  
    FunctionArgList Args;
-@@ -2556,6 +2585,8 @@ void CodeGenFunction::EmitVariablyModifiedType(QualType type) {
+@@ -2556,6 +2587,8 @@ void CodeGenFunction::EmitVariablyModifiedType(QualType type) {
        llvm_unreachable("unexpected dependent type!");
  
      // These types are never variably-modified.
@@ -5699,7 +5797,7 @@ index 7629b42dd..02433746b 100644
      case Type::Complex:
      case Type::Vector:
 diff --git a/clang/lib/CodeGen/CodeGenFunction.h b/clang/lib/CodeGen/CodeGenFunction.h
-index e7c24f1f3..afbfa0c5f 100644
+index e7c24f1f3..b9cde840d 100644
 --- a/clang/lib/CodeGen/CodeGenFunction.h
 +++ b/clang/lib/CodeGen/CodeGenFunction.h
 @@ -79,6 +79,9 @@ class ObjCForCollectionStmt;
@@ -5720,7 +5818,7 @@ index e7c24f1f3..afbfa0c5f 100644
  
  // clang-format off
  /// The kind of evaluation to perform on values of a particular
-@@ -290,6 +294,38 @@ public:
+@@ -290,6 +294,39 @@ public:
    CodeGenModule &CGM; // Per-module state.
    const TargetInfo &Target;
  
@@ -5731,6 +5829,7 @@ index e7c24f1f3..afbfa0c5f 100644
 +  Address ObjC3CallErrorOutStorage = Address::invalid();
 +  QualType ObjC3CallErrorOutValueType;
 +  const Expr *ObjC3CallErrorOutExpr = nullptr;
++  Address ObjC3CarrierReturnInitialized = Address::invalid();
 +
 +  // ObjC3 nontrivial payload construction is admitted only while initializing
 +  // the exact direct carrier local that owns the destination storage.
@@ -5759,7 +5858,7 @@ index e7c24f1f3..afbfa0c5f 100644
    // For EH/SEH outlined funclets, this field points to parent's CGF
    CodeGenFunction *ParentCGF = nullptr;
  
-@@ -3641,6 +3677,11 @@ public:
+@@ -3641,6 +3678,11 @@ public:
    /// This function may clear the current insertion point; callers should use
    /// EnsureInsertPoint if they wish to subsequently generate code without first
    /// calling EmitBlock, EmitBranch, or EmitStmt.
@@ -13123,7 +13222,7 @@ index 000000000..3e1d91c36
 +// CHECK: call void @llvm.objc.storeStrong
 diff --git a/clang/test/ObjC3/CodeGen/carrier-arc-call-boundaries.mm b/clang/test/ObjC3/CodeGen/carrier-arc-call-boundaries.mm
 new file mode 100644
-index 000000000..d1c309b9b
+index 000000000..678e66108
 --- /dev/null
 +++ b/clang/test/ObjC3/CodeGen/carrier-arc-call-boundaries.mm
 @@ -0,0 +1,32 @@
@@ -13149,8 +13248,8 @@ index 000000000..d1c309b9b
 +#endif
 +#ifdef THROWS
 +@protocol Error @end
-+Strong rejected(void) __objc3_throws(id<Error>) { // expected-error {{ObjC3 async/throws callable ABI lowering}}
-+  return __objc3_none(id);
++__objc3_optional(int) rejected(void) __objc3_throws(id<Error>) { // expected-error {{ObjC3 async/throws callable ABI lowering}}
++  return __objc3_none(int);
 +}
 +#endif
 +#ifdef MUSTTAIL
@@ -13161,7 +13260,7 @@ index 000000000..d1c309b9b
 +#endif
 diff --git a/clang/test/ObjC3/CodeGen/carrier-runtime-call-abi.m b/clang/test/ObjC3/CodeGen/carrier-runtime-call-abi.m
 new file mode 100644
-index 000000000..ac3bc359a
+index 000000000..fa0407d8d
 --- /dev/null
 +++ b/clang/test/ObjC3/CodeGen/carrier-runtime-call-abi.m
 @@ -0,0 +1,45 @@
@@ -13172,7 +13271,7 @@ index 000000000..ac3bc359a
 +typedef __objc3_optional(id) Strong;
 +typedef __objc3_optional(id __weak) Weak;
 +const char *encoding = @encode(Strong);
-+// CHECK: c"{__objc3_v4_optional_S40=B(__objc3_v4_payload=@)}\00"
++// CHECK: c"{__objc3_v5_optional_S40=B(__objc3_v5_payload=@)}\00"
 +__attribute__((objc_root_class))
 +@interface Receiver
 +- (Strong)echo:(Strong)value;
@@ -13297,3 +13396,67 @@ index 000000000..baa96e292
 +  callback(value); // expected-error {{ObjC3 carrier operation 'runtime callable type encoding'}}
 +}
 +#endif
+diff --git a/clang/test/ObjC3/CodeGen/carrier-typed-error-abi.m b/clang/test/ObjC3/CodeGen/carrier-typed-error-abi.m
+new file mode 100644
+index 000000000..7f1d0bae4
+--- /dev/null
++++ b/clang/test/ObjC3/CodeGen/carrier-typed-error-abi.m
+@@ -0,0 +1,58 @@
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c -std=c17 -fblocks -fexceptions -fobjc-arc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.0 -fobjc-arc -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c++ -std=c++20 -fblocks -fexceptions -fcxx-exceptions -fobjc-arc-exceptions -fobjc-version=3 -fobjc-runtime=gnustep-2.0 -fobjc-arc -emit-llvm -o - %s | FileCheck %s
++// REQUIRES: x86-registered-target
++@protocol Error @end
++typedef __objc3_optional(id) Strong;
++typedef __objc3_result(id, id __weak) Mixed;
++void fail(void) __objc3_throws(id<Error>);
++Strong value(Strong input, int error) __objc3_throws(id<Error>) {
++  if (error) __objc3_try(fail());
++  return input;
++}
++// CHECK-LABEL: define{{.*}} void {{.*}}value{{.*}}sret(
++// CHECK-NOT: byval
++// CHECK-NOT: dead_on_return
++// CHECK: objc3.error.out
++// CHECK: objc3.try.failure
++// CHECK: llvm.memset
++// CHECK: llvm.objc.retain
++// CHECK: objc3.error.publish
++// CHECK: llvm.objc.autorelease
++Strong forward(Strong input) __objc3_throws(id<Error>) {
++  return __objc3_try(value(input, 1));
++}
++// CHECK-LABEL: define{{.*}} void {{.*}}forward{{.*}}sret(
++// CHECK: objc3.arc.argument
++// CHECK: {{call|invoke}} void {{.*}}value
++// CHECK: objc3.try.failure
++// CHECK: objc3.arc.error.return.empty
++Strong force(Strong input) { return __objc3_try_force(value(input, 0)); }
++// CHECK-LABEL: define{{.*}} void {{.*}}force{{.*}}sret(
++// CHECK: {{call|invoke}} void {{.*}}value
++// CHECK: {{call|invoke}} void @llvm.trap
++// CHECK: unreachable
++int query(Strong input) { return __objc3_has_value(__objc3_try_force(value(input, 0))); }
++// CHECK-LABEL: define{{.*}} i32 {{.*}}query
++// CHECK: objc3.arc.query.return
++// CHECK: {{call|invoke}} void {{.*}}value
++// CHECK: {{call|invoke}} void @llvm.trap
++// CHECK: objc3.carrier.tag
++typedef Mixed (^Callback)(Mixed) __objc3_throws(id<Error>);
++Mixed invoke(Callback callback, Mixed input) __objc3_throws(id<Error>) {
++  return __objc3_try(callback(input));
++}
++// CHECK-LABEL: define{{.*}} void {{.*}}invoke{{.*}}sret(
++// CHECK: llvm.objc.copyWeak
++// CHECK: {{call|invoke}} void %{{.*}}sret(
++// CHECK: objc3.try.failure
++// CHECK: llvm.objc.destroyWeak
++__attribute__((objc_root_class))
++@interface Receiver
++- (Strong)value:(Strong)input __objc3_throws(id<Error>);
++@end
++Strong message(Receiver *receiver, Strong input) __objc3_throws(id<Error>) {
++  return __objc3_try([receiver value:input]);
++}
++// CHECK-LABEL: define{{.*}} void {{.*}}message{{.*}}sret(
++// CHECK: objc_msg_lookup_sender
++// CHECK: objc3.try.failure

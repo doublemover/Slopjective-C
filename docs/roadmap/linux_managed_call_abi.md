@@ -35,8 +35,9 @@ Tag queries borrow initialized local, parameter, reference or pointer storage.
 A query on a managed call result constructs an owned temporary and cleans it
 up at the end of the full expression.
 
-Extension ABI revision 3 introduced this contract; revision 4 extends it through
-the [runtime-encoded callable subset](linux_runtime_call_abi.md). Compiler identity and locked
+Extension ABI revision 3 introduced this contract; revision 4 extended it through
+the [runtime-encoded callable subset](linux_runtime_call_abi.md), and revision 5
+adds [managed typed-error calls](linux_managed_typed_errors.md). Compiler identity and locked
 semantic interfaces bind consumers to that revision and the complete patch
 identity. Physical representation similarity does not establish interchange
 with another SDK.
@@ -65,13 +66,13 @@ local, then the caller's returned local, checks their shared payload identity
 and continues the application to a successful exit.
 
 Objective-C messages and Blocks now admit direct managed parameters and results
-under the runtime encoding contract. Managed signatures with ObjC3 typed throws,
-variadic calls, alternate calling conventions, MRC,
+under the runtime encoding contract. Managed signatures with ObjC3 typed throws
+now preserve success/failure ownership across those callable forms. Variadic
+calls, alternate calling conventions, MRC,
 volatile carriers, nested managed storage and reference-bound returned
 temporaries remain diagnostic boundaries. Mandatory tail calls are incompatible
 with these owned value temporaries. These boundaries are checked before object
 publication; they are separate from supported native C++ exception unwinding.
 
-Next, define typed-error success/failure ownership, qualify its composition
-with these callable forms, and carry the same active-arm rules
-through recursive storage before promoting public syntax.
+Next, carry the same active-arm rules through recursive storage and qualify a
+runtime profile supporting true direct dispatch before promoting public syntax.

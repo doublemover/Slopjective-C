@@ -62,6 +62,15 @@
       "declaration_name": "block_result",
       "hover_type": "__objc3_optional",
       "completion_name": "block_result"
+    },
+    {
+      "name": "managed_typed_error_result",
+      "use_line": "(void)__objc3_has_value(throwing_result);",
+      "use_name": "throwing_result",
+      "declaration_line": "__objc3_optional(id) throwing_result =",
+      "declaration_name": "throwing_result",
+      "hover_type": "__objc3_optional",
+      "completion_name": "throwing_result"
     }
   ],
   "cases": [

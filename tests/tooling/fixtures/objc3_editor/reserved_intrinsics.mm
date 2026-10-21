@@ -56,3 +56,9 @@ void managed_runtime_call_probe(id<ManagedRuntimeProbe> receiver,
   __objc3_optional(id) block_result = callback(message_result);
   (void)__objc3_has_value(block_result);
 }
+
+__objc3_optional(id) managed_throwing_value(__objc3_optional(id) input) __objc3_throws(id<Error>);
+void managed_throwing_call_probe(id input) {
+  __objc3_optional(id) throwing_result = __objc3_try_force(managed_throwing_value(__objc3_some(id, input)));
+  (void)__objc3_has_value(throwing_result);
+}

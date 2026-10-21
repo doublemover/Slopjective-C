@@ -12525,3 +12525,25 @@ index 538604aa2..f9eb0c5cc 100644
    // If the result is a glvalue, we shouldn't bind it.
    if (E->isGLValue())
      return E;
+diff --git a/clang/test/ObjC3/Sema/carrier-typed-error-boundaries.mm b/clang/test/ObjC3/Sema/carrier-typed-error-boundaries.mm
+new file mode 100644
+index 000000000..e7ebd50d0
+--- /dev/null
++++ b/clang/test/ObjC3/Sema/carrier-typed-error-boundaries.mm
+@@ -0,0 +1,16 @@
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x objective-c++ -std=c++20 -fblocks -fobjc-version=3 -fobjc-runtime=gnustep-2.0 -fobjc-arc -fsyntax-only -verify %s
++@protocol Error @end
++typedef __objc3_optional(id) Strong;
++Strong value(Strong input) __objc3_throws(id<Error>);
++Strong force(Strong input) { return __objc3_try_force(value(input)); }
++Strong forward(Strong input) __objc3_throws(id<Error>) { return __objc3_try(value(input)); }
++Strong missing_context(Strong input) {
++  return __objc3_try(value(input)); // expected-error {{requires a matching throwing function}}
++}
++void nested_optional(Strong input) {
++  __objc3_try_optional(value(input)); // expected-error {{payload type}}
++}
++Strong &reference() __objc3_throws(id<Error>);
++void reject_reference() {
++  __objc3_try_force(reference()); // expected-error {{returns a prvalue}}
++}
