@@ -632,9 +632,18 @@ CompileResult Compile(const CompileRequest &request) {
   if (!request.target_triple.empty()) arguments.push_back("--target=" + request.target_triple);
   if (objc) {
     auto runtime = request.objc_runtime;
-    if (runtime.empty() && !parsed_arguments.hasArg(clang::options::OPT_fobjc_runtime_EQ) &&
-        (selected_target.isOSWindows() || selected_target.isOSLinux()))
-      runtime = "gnustep-2.0";
+    if (runtime.empty() && !parsed_arguments.hasArg(clang::options::OPT_fobjc_runtime_EQ)) {
+      if (selected_target.isOSLinux()) runtime = "gnustep-2.2";
+      else if (selected_target.isOSWindows()) runtime = "gnustep-2.0";
+    }
+    auto selected_runtime = runtime.empty()
+        ? parsed_arguments.getLastArgValue(clang::options::OPT_fobjc_runtime_EQ)
+        : llvm::StringRef(runtime);
+    if (request.objc3 && selected_target.isOSLinux() &&
+        selected_runtime != "gnustep-2.2") {
+      result.failure = "Linux Objective-C 3 requires GNUstep 2.2; rebuild with the current SDK";
+      return result;
+    }
     if (!runtime.empty()) arguments.push_back("-fobjc-runtime=" + runtime);
   }
   if (objc) arguments.push_back(request.arc ? "-fobjc-arc" : "-fno-objc-arc");

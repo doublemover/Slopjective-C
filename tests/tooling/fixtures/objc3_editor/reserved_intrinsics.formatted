@@ -92,3 +92,14 @@ void managed_throwing_call_probe(id input) {
       __objc3_try_force(managed_throwing_value(__objc3_some(id, input)));
   (void)__objc3_has_value(throwing_result);
 }
+
+__attribute__((objc_root_class))
+@interface ManagedDirectProbe
+- (__objc3_optional(id))directEcho:(__objc3_optional(id))input
+    __objc3_throws(id<Error>)__attribute__((objc_direct));
+@end
+void managed_direct_probe(ManagedDirectProbe *receiver, id input) {
+  __objc3_optional(id) direct_result =
+      __objc3_try_force([receiver directEcho:__objc3_some(id, input)]);
+  (void)__objc3_has_value(direct_result);
+}

@@ -1,7 +1,7 @@
 # Linux forward development
 
 The active product is the Clang-only Linux x86-64 SDK. The
-[acceptance receipt](../support/linux_managed_typed_error_acceptance.json) identifies its
+[acceptance receipt](../support/linux_direct_dispatch_acceptance.json) identifies its
 exact archive, source, native execution and fresh-distribution evidence. Tool
 versions come from [the manifest](../../toolchains/llvm/manifest.json); public
 language claims come from [the capability authority](../../schemas/objc3-language-capabilities.json).
@@ -23,7 +23,7 @@ O0/O2 witnesses cover all Result arm transitions, self/aliased assignment, weak
 zeroing, Blocks, typed-error optionalization, sequencing and native unwinding.
 Live clangd probes cover both languages. The
 [managed call ABI](linux_managed_call_abi.md) now extends direct carriers through
-ordinary functions, callbacks and C++ members under extension ABI revision 5.
+ordinary functions, callbacks and C++ members under extension ABI revision 6.
 Caller-owned snapshots preserve each argument at evaluation time and clean up
 at full-expression boundaries; returns initialize fresh caller-owned storage.
 Nine installed executions cover separate provider/consumer compilation at
@@ -39,8 +39,11 @@ forms. Nine installed executions and eighteen forced-failure checks cover
 success, propagation, catch recovery, failed assignment, native unwinding,
 metadata, PCH and semantic imports. A completed return value stays callee-owned
 until its cleanups finish; native exceptions destroy it before unwinding.
-Nested storage remains implementation work. GNUstep 2.0 ignores `objc_direct`;
-true direct dispatch requires a runtime-profile cutover and qualification.
+[GNUstep 2.2 direct dispatch](linux_direct_dispatch.md) now closes the runtime
+cutover: native method symbols, lazy initialization, nil/error cleanup and
+imported direct-method identity are qualified. Runtime metadata excludes direct
+implementations because their ABI omits `_cmd`. The SDK rejects obsolete runtime
+profiles and requires a complete rebuild. Nested storage remains implementation work.
 The managed public core targets ARC. MRC adaptation remains outside its release
 contract; weak/unsafe Block payloads and nested managed carriers still need
 explicit semantics and lowering. Define the public bounded contract and
@@ -55,21 +58,17 @@ Private migration intrinsics do not justify a public feature claim.
 
 The next implementation sequence is:
 
-1. Cut over the Linux runtime profile to a modern GNUstep ABI that supports
-   true direct methods. Qualify class initialization, nil receivers, managed
-   results, typed errors, reflection, interfaces and installed packages. The
-   shipped libobjc2 is current; the compiler's GNUstep 2.0 profile is the gap.
-2. Extend active-arm lifetime operations through nested carriers, arrays and
+1. Extend active-arm lifetime operations through nested carriers, arrays and
    enclosing records. Cover partial initialization, assignment, destruction and
    exceptions before admitting those storage forms to the callable ABI. Define
    optionalization of managed results on these recursive operations. Extend
    the same operations into ivars/properties and Block value captures, including
    payload-aware copy/dispose helpers and weak registrations.
-3. Finish the bounded public Optional/Result and synchronous throws contract,
+2. Finish the bounded public Optional/Result and synchronous throws contract,
    including ownership and module interface identity. Add public syntax and
    promote its feature predicates only after that complete contract passes the
    installed Linux suite.
-4. Publish immutable packages from the qualified interface and object inventory,
+3. Publish immutable packages from the qualified interface and object inventory,
    with explicit ownership projections and consumer verification. Keep registry
    transport separate from content identity and installation correctness.
 

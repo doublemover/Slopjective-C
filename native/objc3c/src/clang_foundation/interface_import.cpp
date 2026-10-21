@@ -43,7 +43,7 @@ constexpr std::uint64_t kMaxInterfaceBytes = 32ull * 1024ull * 1024ull;
 constexpr llvm::StringLiteral kCarrierSemantics = "objc3.native-carrier-types.v1";
 constexpr llvm::StringLiteral kEffectSemantics = "objc3.canonical-function-effects.v1";
 const std::vector<llvm::StringRef> kSupportedSemantics = {
-    kCarrierSemantics, kEffectSemantics, "objc3.native-return-ownership.v1"};
+    kCarrierSemantics, kEffectSemantics, "objc3.native-return-ownership.v1", "objc3.direct-dispatch.v1"};
 
 void Add(std::vector<InterfaceContractDiagnostic> &out, const llvm::Twine &code,
          const llvm::Twine &message, const llvm::Twine &subject = llvm::Twine()) {

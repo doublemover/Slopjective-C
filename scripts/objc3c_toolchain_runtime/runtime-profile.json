@@ -39,7 +39,7 @@
       "runtime_family": "libobjc2",
       "runtime_release": "2.3",
       "runtime_commit": "e877e782fb965c4e870d2ecf6aff58dddc6290ae",
-      "objc_abi_flag": "-fobjc-runtime=gnustep-2.0",
+      "objc_abi_flag": "-fobjc-runtime=gnustep-2.2",
       "blocks_provider": "libobjc2-embedded",
       "runtime_build_with_clang_cl": false,
       "foundation_required_for_runtime_fixture": false,

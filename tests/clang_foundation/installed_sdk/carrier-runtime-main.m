@@ -7,7 +7,7 @@
 #define CHECK(test) do { if (!(test)) return __LINE__; } while (0)
 static int metadata(void) {
   const char *strong = @encode(CallStrong), *weak = @encode(CallWeak);
-  CHECK(strstr(strong, "__objc3_v5_optional_S40=") != 0);
+  CHECK(strstr(strong, "__objc3_v6_optional_S40=") != 0);
   CHECK(strcmp(strong, weak) && strcmp(strong, @encode(CallUnsafe)));
   CHECK(objc_sizeof_type(strong) == sizeof(CallStrong));
   CHECK(objc_alignof_type(strong) == __alignof__(CallStrong));

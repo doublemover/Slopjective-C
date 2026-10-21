@@ -22,7 +22,8 @@ class ClangFoundationRuntimeProfileTests(unittest.TestCase):
             profile = manifest["profiles"][name]
             self.assertEqual(profile["runtime_release"], "2.3")
             self.assertEqual(profile["runtime_commit"], expected)
-            self.assertEqual(profile["objc_abi_flag"], "-fobjc-runtime=gnustep-2.0")
+            self.assertEqual(profile["objc_abi_flag"], "-fobjc-runtime=gnustep-" +
+                             ("2.2" if name == "linux-x86_64" else "2.0"))
             self.assertEqual(profile["blocks_provider"], "libobjc2-embedded")
         windows = manifest["profiles"]["windows-x86_64"]
         self.assertEqual(windows["runtime_build_drivers"], ["clang.exe", "clang++.exe"])

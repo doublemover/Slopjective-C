@@ -133,7 +133,7 @@ def main() -> int:
     normalized_argv: dict[str, list[str]] = {}
     for path, case in normalized_sources:
         argv = [str(clang), "-x", case["language"], f"-std={case['standard']}", "-fobjc-version=3",
-                "--target=" + args.target, "-fobjc-runtime=gnustep-2.0",
+                "--target=" + args.target, "-fobjc-runtime=gnustep-2.2",
                 "-fobjc-arc", "-fblocks",
                 f"-resource-dir={resource_dir}", "-fsyntax-only", str(path)]
         normalized_argv[path.suffix] = argv

@@ -28,7 +28,7 @@ def run_linux_fixture_node(repo: Path, node: dict, output: Path, toolchain: dict
     environment = dict(os.environ)
     environment.update(toolchain["environment"])
     timeout = float(node.get("timeout_seconds", 1200))
-    base = ["--target=" + toolchain["target_triple"], "-fobjc-runtime=gnustep-2.0", "-fblocks",
+    base = ["--target=" + toolchain["target_triple"], "-fobjc-runtime=gnustep-2.2", "-fblocks",
             "-resource-dir", toolchain["resource_dir"], "-I", str(inputs)]
     for path in toolchain["runtime"]["include_dirs"]:
         base += ["-I", path]
@@ -63,7 +63,7 @@ def run_linux_fixture_node(repo: Path, node: dict, output: Path, toolchain: dict
             flags += ["-fexceptions", "-fcxx-exceptions", "-fobjc-arc-exceptions"]
         if driver == "objc3c-clang":
             command = [toolchain["tools"]["facade"], str(source), "--objc3", "--emit-object", str(target),
-                       "--target", toolchain["target_triple"], "--runtime", "gnustep-2.0", "--", *flags]
+                       "--target", toolchain["target_triple"], "--runtime", "gnustep-2.2", "--", *flags]
             if "++" in language:
                 command.insert(3, "--objcxx")
         else:

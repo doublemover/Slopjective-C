@@ -1,8 +1,8 @@
 # Linux managed typed-error calls
 
-Extension ABI revision 5 composes direct ARC Optional/Result parameters and
+Extension ABI revision 6 composes direct ARC Optional/Result parameters and
 results with the private synchronous typed-error transport on Linux x86-64,
-GNUstep 2.0. Providers, consumers, PCH and semantic interfaces must be rebuilt
+GNUstep 2.2. Providers, consumers, PCH and semantic interfaces must be rebuilt
 with one sealed SDK. Public Optional/Result/throws predicates remain reserved.
 
 ## Ownership and control flow
@@ -46,9 +46,9 @@ not a source argument. Managed encodings use revision-5 nominal names and keep
 strong, weak, unsafe and Block leaf ownership distinct.
 
 Nil message receivers return an empty managed result without a typed error;
-their caller-owned argument snapshots still clean up. GNUstep 2.0 ignores
-`objc_direct`, so true direct dispatch is not qualified by this SDK. It needs a
-separate runtime-profile cutover and executable evidence.
+their caller-owned argument snapshots still clean up.
+[True direct dispatch](linux_direct_dispatch.md) now uses the same ownership
+and error contract under GNUstep 2.2.
 
 Optionalizing a managed carrier result would create nested managed storage and
 remains rejected. Optionalization of scalar/object/Block results with managed

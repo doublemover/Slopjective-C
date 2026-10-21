@@ -47,7 +47,7 @@ function(objc3c_configure_linux_runtime runtime_source runtime_build robin_sourc
   add_library(objc3_native_runtime_profile INTERFACE)
   target_link_libraries(objc3_native_runtime_profile INTERFACE objc3_runtime::objc)
   target_compile_options(objc3_native_runtime_profile INTERFACE
-    "$<$<OR:$<COMPILE_LANGUAGE:OBJC>,$<COMPILE_LANGUAGE:OBJCXX>>:-fobjc-runtime=gnustep-2.0>")
+    "$<$<OR:$<COMPILE_LANGUAGE:OBJC>,$<COMPILE_LANGUAGE:OBJCXX>>:-fobjc-runtime=gnustep-2.2>")
   target_link_options(objc3_native_runtime_profile INTERFACE -fuse-ld=lld)
   set(OBJC3_NATIVE_RUNTIME_PROFILE linux-x86_64-libobjc2 CACHE STRING "Native Objective-C runtime profile" FORCE)
   set(OBJC3_NATIVE_RUNTIME_LIBOBJC2_DLL "${_runtime_library}" CACHE FILEPATH "Pinned native runtime library" FORCE)

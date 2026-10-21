@@ -1,6 +1,10 @@
 #include "clang_foundation/driver_native.h"
 #include "clang_foundation/sdk_identity.h"
 #include "clang_foundation/source_identity.h"
+#include "clang/Driver/Driver.h"
+#include "llvm/ADT/SmallVector.h"
+#include "llvm/Support/Allocator.h"
+#include "llvm/Support/Error.h"
 #include "llvm/Support/FileSystem.h"
 #include "llvm/Support/Program.h"
 
@@ -27,9 +31,17 @@ bool UsesInterfaceCompiler(int argc, char **argv) {
   return false;
 }
 
-int RunNativeDriver(int argc, char **argv) {
+int RunNativeDriver(int argc, char **raw_argv) {
   namespace fs = std::filesystem;
   using namespace objc3::clang_foundation;
+  llvm::SmallVector<const char *, 32> expanded(raw_argv, raw_argv + argc);
+  llvm::BumpPtrAllocator allocator;
+  if (auto error = clang::driver::expandResponseFiles(expanded, false, allocator)) {
+    std::cerr << llvm::toString(std::move(error)) << '\n';
+    return 2;
+  }
+  argc = expanded.size();
+  const char **argv = expanded.data();
   if (argc < 2) {
     std::cerr << "usage: objc3c <sources or objects> [-o program] [-c] [Clang options]\n"
                  "       objc3c <source> --emit-interface module.objc3i --module name --package identity\n";
@@ -113,7 +125,16 @@ int RunNativeDriver(int argc, char **argv) {
   // Linking object-only invocations must also resolve C++ runtime references.
   std::string program = cxx || (!source && !query) ? (root / "bin/clang++").string() : clang;
   std::vector<std::string> args{program, "-resource-dir", resources};
-  if (objc) args.insert(args.end(), {"-fobjc-version=3", "-fobjc-runtime=gnustep-2.0",
+  if (objc) {
+    std::string_view selected_runtime = "-fobjc-runtime=gnustep-2.2";
+    for (const auto &arg : forwarded)
+      if (arg.starts_with("-fobjc-runtime=")) selected_runtime = arg;
+    if (selected_runtime != "-fobjc-runtime=gnustep-2.2") {
+      std::cerr << "Linux Objective-C 3 requires GNUstep 2.2; rebuild with the current SDK\n";
+      return 2;
+    }
+  }
+  if (objc) args.insert(args.end(), {"-fobjc-version=3", "-fobjc-runtime=gnustep-2.2",
                                     "-fblocks", "-fobjc-arc"});
   if (objcxx) args.insert(args.end(), {"-x", "objective-c++"});
   // Defaults precede user arguments so explicit ARC/MRC/runtime choices win.

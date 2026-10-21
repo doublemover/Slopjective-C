@@ -94,7 +94,7 @@ def qualify(sdk: Path, output: Path) -> dict:
                 obj = client / (optimization + '-' + case + '.o')
                 deps = obj.with_suffix('.json')
                 command = [str(sdk / 'bin/objc3c'), str(sources / 'main.m'), '--objc3',
-                    '--target', identity['target_triple'], '--runtime', 'gnustep-2.0',
+                    '--target', identity['target_triple'], '--runtime', 'gnustep-2.2',
                     '--source-imports', '--module-search-path', str(build / 'modules'),
                     '--import-module', identity['canonical_name'], fingerprint, package,
                     '--emit-object', str(obj), '--emit-dependency-record', str(deps)]

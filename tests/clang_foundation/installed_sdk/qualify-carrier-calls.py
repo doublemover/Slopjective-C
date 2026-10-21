@@ -96,7 +96,7 @@ def qualify(sdk: Path, output: Path) -> dict:
         execute('pch-application', executable)
         assert len(report['executions']) == 9
         assert report['interfaces'][0]['semantic_fingerprint'] == report['interfaces'][1]['semantic_fingerprint']
-        assert all(row['runtime_abi'] == 'gnustep-2.0;arc' for row in report['interfaces'])
+        assert all(row['runtime_abi'] == 'gnustep-2.2;arc' for row in report['interfaces'])
         run('seal-after', [sys.executable, '-B', sdk / 'share/objc3c/verify-sdk.py', sdk])
         report['status'] = 'PASS'
     except BaseException as error:

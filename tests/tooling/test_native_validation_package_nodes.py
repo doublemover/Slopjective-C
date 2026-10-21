@@ -46,7 +46,7 @@ def _setup(tmp_path: Path) -> tuple[Path, dict]:
 def _identity(toolchain: dict, *, arc: bool = False) -> dict:
     return {"canonical_name": package.MODULE, "package_identity": package.PACKAGE,
             "semantic_fingerprint": ("d" if arc else "c") * 64, "target_triple": toolchain["target_triple"],
-            "runtime_abi": "objc-runtime=gnustep-2.0;" + ("arc" if arc else "manual-reference-counting"),
+            "runtime_abi": "objc-runtime=gnustep-2.2;" + ("arc" if arc else "manual-reference-counting"),
             "extension_abi": "objc3-extension-abi-2:" + toolchain["patch_digest"],
             "language_revision": "objc3-enabled", "language_profile": "compatibility"}
 

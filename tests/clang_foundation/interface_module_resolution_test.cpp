@@ -105,7 +105,7 @@ bool CompileV3Consumer(const std::filesystem::path &root,
       assert(json.find("\"patch_digest\":") != std::string::npos);
       assert(json.find("ObjC3-patches=") != std::string::npos);
       assert(json.find("\"target\":\"x86_64-unknown-linux-gnu\"") != std::string::npos);
-      assert(json.find("\"runtime\":\"gnustep-2.0\"") != std::string::npos);
+      assert(json.find("\"runtime\":\"gnustep-2.2\"") != std::string::npos);
       assert(json.find("\"name\":\"" + identity.canonical_name +
           "\",\"fingerprint\":\"" + identity.semantic_fingerprint + "\"") !=
           std::string::npos);

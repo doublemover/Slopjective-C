@@ -190,7 +190,7 @@ def _build(sdk: Path, graph: dict, output: Path, optimization: str) -> dict:
         directory = directories[name]
         obj, depfile = directory / 'module.o', directory / 'module.d'
         command = [str(sdk / 'bin/objc3c'), str(config['input']), '--objc3',
-                   '--target', target, '--runtime', 'gnustep-2.0', '--emit-object', str(obj)]
+                   '--target', target, '--runtime', 'gnustep-2.2', '--emit-object', str(obj)]
         if config['ownership'] == 'arc':
             command.append('--arc')
         products = [obj, depfile]
@@ -250,7 +250,7 @@ def _build(sdk: Path, graph: dict, output: Path, optimization: str) -> dict:
         nodes[name]['elapsed_seconds'] = round(time.monotonic() - tick, 6)
         if name != APP:
             identity = json.loads(sidecar.read_text())['module']
-            runtime = 'gnustep-2.0;' + ('arc' if config['ownership'] == 'arc' else 'manual-reference-counting')
+            runtime = 'gnustep-2.2;' + ('arc' if config['ownership'] == 'arc' else 'manual-reference-counting')
             if (identity['canonical_name'] != name or identity['package_identity'] != config['package'] or
                     identity['target_triple'] != target or identity['runtime_abi'] != runtime):
                 raise ValueError(f'compiled interface identity differs from package lock: {name}')
