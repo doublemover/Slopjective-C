@@ -55,6 +55,7 @@ PACKETS = {
     ],
     "0003-objc3-native-payload-type-facts.patch": [
         "clang/include/clang/AST/ObjC3TypeContracts.h",
+        "clang/include/clang/AST/ObjC3Async.h",
         "clang/lib/AST/ObjC3TypeContracts.cpp",
         "clang/lib/AST/CMakeLists.txt",
         "clang/unittests/AST/ObjC3TypeContractsTest.cpp",
@@ -211,6 +212,7 @@ PACKETS = {
         "clang/lib/CodeGen/CGObjC3ErrorHandlers.cpp",
         "clang/lib/CodeGen/CMakeLists.txt",
         "clang/lib/CodeGen/CGCall.cpp",
+        "clang/lib/CodeGen/CGCoroutine.cpp",
         "clang/lib/CodeGen/CGBlocks.cpp",
         "clang/lib/CodeGen/CGBlocks.h",
         "clang/lib/CodeGen/CGAtomic.cpp",

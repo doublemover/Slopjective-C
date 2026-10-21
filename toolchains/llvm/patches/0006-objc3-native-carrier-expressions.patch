@@ -318,7 +318,7 @@ index 95cfd19c0..804b26750 100644
 +  return D;
 +}
 diff --git a/clang/lib/AST/Expr.cpp b/clang/lib/AST/Expr.cpp
-index 0bb9c6aa0..89eacf0e1 100644
+index 0bb9c6aa0..5dceabb78 100644
 --- a/clang/lib/AST/Expr.cpp
 +++ b/clang/lib/AST/Expr.cpp
 @@ -42,6 +42,123 @@
@@ -445,7 +445,7 @@ index 0bb9c6aa0..89eacf0e1 100644
  const Expr *Expr::getBestDynamicClassTypeExpr() const {
    const Expr *E = this;
    while (true) {
-@@ -1633,6 +1750,15 @@ QualType CallExpr::getCallReturnType(const ASTContext &Ctx) const {
+@@ -1633,6 +1750,14 @@ QualType CallExpr::getCallReturnType(const ASTContext &Ctx) const {
    }
  
    const FunctionType *FnType = CalleeType->castAs<FunctionType>();
@@ -453,15 +453,14 @@ index 0bb9c6aa0..89eacf0e1 100644
 +      !getCallee()->getType()->isBlockPointerType() &&
 +      !isa_and_nonnull<CXXMethodDecl>(getDirectCallee());
 +  if (const auto *Proto = dyn_cast<FunctionProtoType>(FnType))
-+    if (FreeCall && Proto->getObjC3FunctionEffects().Async &&
-+        Proto->getObjC3FunctionEffects().Throws == ObjC3ThrowsKind::None)
++    if (FreeCall && Proto->getObjC3FunctionEffects().Async)
 +      if (QualType Task = Ctx.getObjC3AsyncTaskType(Proto->getReturnType());
 +          !Task.isNull())
 +        return Task;
    return FnType->getReturnType();
  }
  
-@@ -2653,6 +2779,12 @@ bool Expr::isUnusedResultAWarning(const Expr *&WarnE, SourceLocation &Loc,
+@@ -2653,6 +2778,12 @@ bool Expr::isUnusedResultAWarning(const Expr *&WarnE, SourceLocation &Loc,
      Loc = getExprLoc();
      R1 = getSourceRange();
      return true;
@@ -474,7 +473,7 @@ index 0bb9c6aa0..89eacf0e1 100644
    case ParenExprClass:
      return cast<ParenExpr>(this)->getSubExpr()->
        isUnusedResultAWarning(WarnE, Loc, R1, R2, Ctx);
-@@ -3691,6 +3823,13 @@ namespace {
+@@ -3691,6 +3822,13 @@ namespace {
            E->HasSideEffects(Context, IncludePossibleEffects))
          HasSideEffects = true;
      }
@@ -488,7 +487,7 @@ index 0bb9c6aa0..89eacf0e1 100644
    };
  }
  
-@@ -3870,6 +4009,49 @@ bool Expr::HasSideEffects(const ASTContext &Ctx,
+@@ -3870,6 +4008,49 @@ bool Expr::HasSideEffects(const ASTContext &Ctx,
      return cast<GenericSelectionExpr>(this)->getResultExpr()->HasSideEffects(
          Ctx, IncludePossibleEffects);
  

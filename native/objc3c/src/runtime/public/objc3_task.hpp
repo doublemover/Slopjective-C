@@ -1,6 +1,11 @@
 #ifndef OBJC3_TASK_HPP
 #define OBJC3_TASK_HPP
 
+#if defined(__OBJC3_EXTENSION_ABI_REVISION__) && \
+    __OBJC3_EXTENSION_ABI_REVISION__ != 16
+#error "The task bridge requires Objective-C 3 extension ABI 16; rebuild the compiler and all providers."
+#endif
+
 #include "objc3_runtime_services.h"
 
 #include <coroutine>
@@ -78,6 +83,8 @@ extern "C" void *
 objc3_task_result_block_copy(const void *) __asm__("_Block_copy");
 extern "C" void
 objc3_task_result_block_release(const void *) __asm__("_Block_release");
+extern "C" objc3_error_t *__objc3_task_error_create(void *) noexcept;
+extern "C" void *__objc3_task_error_object(const objc3_error_t *) noexcept;
 
 template <class T>
 inline constexpr bool retained_result =
@@ -171,11 +178,12 @@ inline void rethrow_completion(const objc3_completion &completion) {
   throw task_error(completion.error);
 }
 
-template <class T> struct result_storage {
+template <class T, class Promise> struct result_storage {
   using stored_type = typename result_traits<T>::storage;
   std::optional<stored_type> value;
   template <class U> void return_value(U &&result) {
     value.emplace(std::forward<U>(result));
+    static_cast<Promise *>(this)->__objc3_clear_error();
   }
   void set_completion(objc3_completion &completion) {
     completion.has_payload = 1;
@@ -183,8 +191,10 @@ template <class T> struct result_storage {
     completion.payload_ops = &value_ops<stored_type>::descriptor;
   }
 };
-template <> struct result_storage<void> {
-  void return_void() noexcept {}
+template <class Promise> struct result_storage<void, Promise> {
+  void return_void() noexcept {
+    static_cast<Promise *>(this)->__objc3_clear_error();
+  }
   void set_completion(objc3_completion &) noexcept {}
 };
 } // namespace task_detail
@@ -195,6 +205,15 @@ using task = basic_task<typename task_detail::result_traits<T>::abi_type>;
 template <class T> class basic_task_handle;
 template <class T = void>
 using task_handle = basic_task_handle<typename task_detail::result_traits<T>::abi_type>;
+
+namespace task_detail {
+// A compiler-generated checked await supplies a frame-resident error slot.
+// Only scalar/void logical results are admitted by the current compiler stage.
+template <class T> struct checked_dependency {
+  basic_task<T> dependency;
+  void **error;
+};
+} // namespace task_detail
 
 /* A retained terminal result or running task. Releasing the last handle while
  * suspended cancels and destroys its frame. Explicit cancellation wakes await;
@@ -288,10 +307,21 @@ inline task_destination hop_to(objc3_actor_t *actor) {
  * Arguments follow standard C++ coroutine lifetime rules: pass owned values. */
 template <class T> class [[nodiscard]] basic_task {
 public:
-  struct promise_type : task_detail::result_storage<T> {
+  struct promise_type : task_detail::result_storage<T, promise_type> {
+    promise_type() noexcept = default;
     objc3_task_t *owner = nullptr; // Borrowed only during a runtime resume.
     std::exception_ptr failure;
     bool failed = false;
+    // Reserved compiler ABI: a checked error bypasses native exception handlers
+    // and reaches final suspension through the ordinary coroutine cleanups.
+    objc3_error_t *__objc3_error = nullptr;
+    bool __objc3_error_raised = false;
+    ~promise_type() { objc3_error_release(__objc3_error); }
+    void __objc3_clear_error() noexcept {
+      auto *previous = std::exchange(__objc3_error, nullptr);
+      __objc3_error_raised = false;
+      objc3_error_release(previous);
+    }
     using coroutine = std::coroutine_handle<promise_type>;
 
     // Require Clang's -fcoro-aligned-allocation: the full frame can have more
@@ -354,6 +384,41 @@ public:
           true};
     }
 
+#ifdef __OBJC__
+    template <class U>
+    struct checked_dependency_awaiter : dependency_awaiter<U> {
+      void **error;
+      checked_dependency_awaiter(dependency_awaiter<U> dependency, void **error)
+          : dependency_awaiter<U>(std::move(dependency)), error(error) {}
+      U await_resume() {
+        if (objc3_task_is_cancel_requested(this->parent))
+          throw task_cancelled();
+        objc3_completion completion{};
+        task_detail::check(objc3_task_get_completion(
+            this->dependency.native_handle(), &completion));
+        if (completion.kind == OBJC3_COMPLETION_ERROR) {
+          if (void *object =
+                  task_detail::__objc3_task_error_object(completion.error)) {
+            // The compiler's autoreleasing slot is consumed before its pool
+            // drains, independently of private-child frame reclamation.
+            *error = task_detail::objc3_task_result_autorelease(
+                task_detail::objc3_task_result_retain(object));
+            if constexpr (!std::is_void_v<U>)
+              return U{};
+            else
+              return;
+          }
+        }
+        return this->dependency.result();
+      }
+    };
+    template <class U>
+    auto await_transform(task_detail::checked_dependency<U> checked) {
+      auto dependency = await_transform(std::move(checked.dependency));
+      return checked_dependency_awaiter<U>{std::move(dependency), checked.error};
+    }
+#endif
+
     struct hop_awaiter {
       objc3_task_t *parent;
       task_destination destination;
@@ -398,7 +463,12 @@ public:
       completion.version = OBJC3_SERVICE_ABI_VERSION;
       completion.kind = OBJC3_COMPLETION_SUCCESS;
       objc3_error_t *error = nullptr;
-      if (failed && !failure) {
+      if (__objc3_error_raised && !failed) {
+        error = objc3_error_retain(__objc3_error);
+        completion.kind = error ? OBJC3_COMPLETION_ERROR
+                                : OBJC3_COMPLETION_CANCELLED;
+        completion.error = error;
+      } else if (failed && !failure) {
         // A foreign exception may have no C++ exception_ptr representation.
         // It must never publish an uninitialized successful result.
         completion.kind = OBJC3_COMPLETION_CANCELLED;
@@ -501,5 +571,12 @@ public:
 // Reserved compiler hook. The canonical source function retains its logical
 // result type; evaluated native async calls return this lazy runtime carrier.
 template <class T> using __objc3_async_task = objc3::task<T>;
+
+#ifdef __OBJC__
+template <class T>
+auto __objc3_async_checked(objc3::basic_task<T> dependency, void **error) {
+  return objc3::task_detail::checked_dependency<T>{std::move(dependency), error};
+}
+#endif
 
 #endif

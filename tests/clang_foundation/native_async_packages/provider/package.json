@@ -12,7 +12,10 @@
     "NativeModuleResult",
     "native_module_reader",
     "native_module_object",
-    "native_module_block"
+    "native_module_block",
+    "Error",
+    "NativeModuleError",
+    "native_module_checked"
   ],
   "dependencies": []
 }
