@@ -1,7 +1,7 @@
 # Linux forward development
 
 The active product is the Clang-only Linux x86-64 SDK. The
-[acceptance receipt](../support/linux_managed_array_acceptance.json) identifies its
+[acceptance receipt](../support/linux_managed_record_acceptance.json) identifies its
 exact archive, source, native execution and fresh-distribution evidence. Tool
 versions come from [the manifest](../../toolchains/llvm/manifest.json); public
 language claims come from [the capability authority](../../schemas/objc3-language-capabilities.json).
@@ -23,7 +23,7 @@ O0/O2 witnesses cover all Result arm transitions, self/aliased assignment, weak
 zeroing, Blocks, typed-error optionalization, sequencing and native unwinding.
 Live clangd probes cover both languages. The
 [managed call ABI](linux_managed_call_abi.md) now extends direct carriers through
-ordinary functions, callbacks and C++ members under extension ABI revision 9.
+ordinary functions, callbacks and C++ members under extension ABI revision 10.
 Caller-owned snapshots preserve each argument at evaluation time and clean up
 at full-expression boundaries; returns initialize fresh caller-owned storage.
 Nine installed executions cover separate provider/consumer compilation at
@@ -59,9 +59,16 @@ owned before initializer temporaries run; partial construction destroys only the
 completed prefix in reverse order. Weak and unsafe Block payloads preserve
 native ownership, runtime metadata and closure behavior. Nine installed
 executions, six traps and six rejected storage cases cover that boundary.
-Enclosing records remain the next storage milestone.
-The managed public core targets ARC. MRC adaptation remains outside its release
-contract; enclosing managed records still need explicit semantics and lowering. Define the public bounded contract and
+[Managed records](linux_managed_records.md) now extend these operations through
+C and C++ enclosing storage under ABI 10, including native ARC fields, partial
+initialization, generated special members, and return cleanup. Ordinary functions
+share a callee-owned indirect record argument convention across C and C++.
+Fifteen installed executions cover every C/C++ provider/consumer combination at
+O0, O2 and ThinLTO, plus PCH and semantic imports; ten rejected forms bound that
+contract. Eight installed sanitizer configurations and record-aware editor and
+LLDB probes qualify the exact archive. The native runtime preserves Objective-C
+exception objects when C++ cleanup resumes into C catches.
+The managed public core targets ARC. Define the public bounded contract and
 syntax together with their feature queries and capability predicates. Promote a
 feature only when that contract has complete evidence.
 
@@ -73,11 +80,10 @@ Private migration intrinsics do not justify a public feature claim.
 
 The next implementation sequence is:
 
-1. Extend active-arm lifetime operations through enclosing records. Cover partial initialization, assignment, destruction and
-   exceptions before admitting those storage forms to the callable ABI. Define
-   the remaining aggregate forms on these recursive operations. Extend
-   those operations into ivars/properties and reference/`__block` captures,
-   including partial construction and weak registrations.
+1. Extend the qualified record operations into Objective-C ivars/properties,
+   whole-record runtime signatures and Block captures, and reference/`__block`
+   storage. Cover partial construction, heap migration, ownership metadata,
+   weak registrations and exceptional copying before admitting each form.
 2. Finish the bounded public Optional/Result and synchronous throws contract,
    including ownership and module interface identity. Add public syntax and
    promote its feature predicates only after that complete contract passes the

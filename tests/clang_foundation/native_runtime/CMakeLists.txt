@@ -26,3 +26,9 @@ foreach(_case IN ITEMS root_class_arc_weak_blocks root_class_arc_consumed root_c
 endforeach()
 
 objc3c_install_native_runtime(TARGET objc3_native_adapter DESTINATION ".")
+
+add_executable(exception_adapter "${_fixtures}/exception_adapter.m" "${_fixtures}/exception_adapter.mm")
+target_compile_features(exception_adapter PRIVATE cxx_std_20)
+target_compile_options(exception_adapter PRIVATE -fobjc-arc -fblocks -fexceptions -fobjc-arc-exceptions)
+target_link_libraries(exception_adapter PRIVATE objc3_native_adapter)
+add_test(NAME exception_adapter COMMAND exception_adapter)

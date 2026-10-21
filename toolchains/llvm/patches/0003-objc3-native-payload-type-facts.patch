@@ -1,9 +1,9 @@
 diff --git a/clang/include/clang/AST/ObjC3TypeContracts.h b/clang/include/clang/AST/ObjC3TypeContracts.h
 new file mode 100644
-index 000000000..0a8bf0ab6
+index 000000000..c0a4d44d6
 --- /dev/null
 +++ b/clang/include/clang/AST/ObjC3TypeContracts.h
-@@ -0,0 +1,142 @@
+@@ -0,0 +1,147 @@
 +//===--- ObjC3TypeContracts.h - Clang-backed value type facts ---*- C++ -*-===//
 +//
 +// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
@@ -30,6 +30,11 @@ index 000000000..0a8bf0ab6
 +class ASTContext;
 +/// Managed leaves in a recursively nested Optional/Result storage graph.
 +bool hasObjC3CarrierManagedPayload(QualType Type);
++/// Whether a carrier occurs by value in this object, including array and record
++/// subobjects. Pointers and references are views, never owned subobjects.
++bool containsObjC3CarrierManagedStorage(QualType Type);
++bool containsObjC3CarrierThrowingCopy(QualType Type);
++
 +
 +/// Versioned storage/ownership encoding for the qualified Linux ARC callable
 +/// subset. This describes a nontrivial owned value, not a byte-copyable record.
@@ -168,10 +173,10 @@ index e3f74d73f..15bac0545 100644
    VTableBuilder.cpp
 diff --git a/clang/lib/AST/ObjC3TypeContracts.cpp b/clang/lib/AST/ObjC3TypeContracts.cpp
 new file mode 100644
-index 000000000..ceadf2f94
+index 000000000..67afeccdc
 --- /dev/null
 +++ b/clang/lib/AST/ObjC3TypeContracts.cpp
-@@ -0,0 +1,401 @@
+@@ -0,0 +1,455 @@
 +//===--- ObjC3TypeContracts.cpp - Clang-backed value type facts ----------===//
 +//
 +// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
@@ -188,6 +193,7 @@ index 000000000..ceadf2f94
 +#include "clang/Basic/LangOptions.h"
 +#include "clang/Basic/TargetInfo.h"
 +#include "llvm/ADT/DenseMap.h"
++#include "llvm/ADT/SmallPtrSet.h"
 +#include "llvm/ADT/StringExtras.h"
 +#include "llvm/Support/SHA256.h"
 +
@@ -215,20 +221,30 @@ index 000000000..ceadf2f94
 +}
 +
 +bool hasARCManagedRecordField(QualType QT) {
-+  if (const auto *AT = QT->getAsArrayTypeUnsafe())
-+    return hasARCManagedRecordField(AT->getElementType());
-+
-+  const Qualifiers::ObjCLifetime Lifetime = QT.getObjCLifetime();
-+  if (Lifetime == Qualifiers::OCL_Strong || Lifetime == Qualifiers::OCL_Weak)
-+    return true;
-+
-+  const RecordType *RT = QT->getAs<RecordType>();
-+  if (!RT)
-+    return false;
-+  for (const FieldDecl *Field : RT->getDecl()->fields())
-+    if (hasARCManagedRecordField(Field->getType()))
++  llvm::SmallPtrSet<const Type *, 16> Seen;
++  auto Visit = [&](auto &&Self, QualType T) -> bool {
++    const auto Lifetime = T.getObjCLifetime();
++    if (Lifetime == Qualifiers::OCL_Strong || Lifetime == Qualifiers::OCL_Weak)
 +      return true;
-+  return false;
++    if (!Seen.insert(T.getCanonicalType().getTypePtr()).second) return false;
++    if (const auto *Array = T->getAsArrayTypeUnsafe())
++      return Self(Self, Array->getElementType());
++    if (const auto *Optional = T->getAs<ObjC3OptionalType>())
++      return Self(Self, Optional->getElementType());
++    if (const auto *Result = T->getAs<ObjC3ResultType>())
++      return Self(Self, Result->getSuccessType()) || Self(Self, Result->getErrorType());
++    if (const auto *Record = T->getAs<RecordType>()) {
++      const auto *RD = Record->getDecl()->getDefinition();
++      if (!RD) return false;
++      if (const auto *CXX = dyn_cast<CXXRecordDecl>(RD))
++        for (const auto &Base : CXX->bases())
++          if (Self(Self, Base.getType())) return true;
++      for (const auto *Field : RD->fields())
++        if (Self(Self, Field->getType())) return true;
++    }
++    return false;
++  };
++  return Visit(Visit, QT);
 +}
 +
 +void classifyLifetime(const ASTContext &Context, QualType QT,
@@ -301,6 +317,49 @@ index 000000000..ceadf2f94
 +  };
 +  return !Type.isNull() && isa<ObjC3OptionalType, ObjC3ResultType>(
 +      Type.getCanonicalType().getTypePtr()) && Visit(Visit, Type, 0);
++}
++
++namespace {
++bool containsStorage(QualType Type, bool ThrowingCopy, unsigned &Budget,
++                     unsigned Depth = 0, bool InCarrier = false) {
++  if (Type.isNull()) return false;
++  if (Depth > 64 || Budget == 0) return true;
++  --Budget;
++  if (const auto *Array = Type->getAsArrayTypeUnsafe())
++    return containsStorage(Array->getElementType(), ThrowingCopy, Budget,
++                           Depth + 1, InCarrier);
++  if (const auto *Optional = Type->getAs<ObjC3OptionalType>())
++    return ThrowingCopy ? containsStorage(Optional->getElementType(), true,
++        Budget, Depth + 1, true) : hasObjC3CarrierManagedPayload(Type);
++  if (const auto *Result = Type->getAs<ObjC3ResultType>())
++    return ThrowingCopy ?
++        containsStorage(Result->getSuccessType(), true, Budget, Depth + 1, true) ||
++        containsStorage(Result->getErrorType(), true, Budget, Depth + 1, true) :
++        hasObjC3CarrierManagedPayload(Type);
++  if (ThrowingCopy && InCarrier && Type->isBlockPointerType())
++    return Type.getObjCLifetime() == Qualifiers::OCL_Strong;
++  if (const auto *Record = Type->getAs<RecordType>()) {
++    if (ThrowingCopy && containsObjC3CarrierManagedStorage(Type)) InCarrier = true;
++    const auto *RD = Record->getDecl()->getDefinition();
++    if (!RD) return false;
++    if (const auto *CXX = dyn_cast<CXXRecordDecl>(RD))
++      for (const auto &Base : CXX->bases())
++        if (containsStorage(Base.getType(), ThrowingCopy, Budget, Depth + 1,
++                            InCarrier)) return true;
++    for (const auto *Field : RD->fields())
++      if (containsStorage(Field->getType(), ThrowingCopy, Budget, Depth + 1,
++                          InCarrier)) return true;
++  }
++  return false;
++}
++}
++bool clang::containsObjC3CarrierManagedStorage(QualType Type) {
++  unsigned Budget = 256;
++  return containsStorage(Type, false, Budget);
++}
++bool clang::containsObjC3CarrierThrowingCopy(QualType Type) {
++  unsigned Budget = 256;
++  return containsStorage(Type, true, Budget);
 +}
 +
 +static ObjC3ValueTypeFacts
@@ -502,7 +561,7 @@ index 000000000..ceadf2f94
 +    } else {
 +      return false;
 +    }
-+    std::string Name = IsOptional ? "__objc3_v9_optional" : "__objc3_v9_result";
++    std::string Name = IsOptional ? "__objc3_v10_optional" : "__objc3_v10_result";
 +    std::string Fields;
 +    for (QualType Leaf : Leaves) {
 +      if (Leaf.isVolatileQualified())
@@ -564,7 +623,7 @@ index 000000000..ceadf2f94
 +        ObjC3CarrierRepresentationInfo::Status::Materialized)
 +      return false;
 +    // Recursively mirror native boolean/union layout and ownership identity.
-+    Out = "{" + Name + "=B(__objc3_v9_payload=" + Fields + ")}";
++    Out = "{" + Name + "=B(__objc3_v10_payload=" + Fields + ")}";
 +    return true;
 +  };
 +  std::string Result;
@@ -575,10 +634,10 @@ index 000000000..ceadf2f94
 +}
 diff --git a/clang/unittests/AST/ObjC3TypeContractsTest.cpp b/clang/unittests/AST/ObjC3TypeContractsTest.cpp
 new file mode 100644
-index 000000000..b1013f415
+index 000000000..6fdb78372
 --- /dev/null
 +++ b/clang/unittests/AST/ObjC3TypeContractsTest.cpp
-@@ -0,0 +1,407 @@
+@@ -0,0 +1,497 @@
 +//===--- ObjC3TypeContractsTest.cpp - AST value type facts ----------------===//
 +//
 +// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
@@ -587,6 +646,7 @@ index 000000000..b1013f415
 +//===----------------------------------------------------------------------===//
 +
 +#include "clang/AST/ASTContext.h"
++#include "clang/AST/ASTImporter.h"
 +#include "clang/AST/DeclCXX.h"
 +#include "clang/AST/DeclObjC.h"
 +#include "clang/AST/DeclTemplate.h"
@@ -684,8 +744,8 @@ index 000000000..b1013f415
 +  EXPECT_TRUE(Trivial.Destroy.IsTrivial);
 +  std::string Encoding;
 +  ASSERT_TRUE(getObjC3CarrierRuntimeEncoding(Context, Nested, Encoding));
-+  EXPECT_NE(Encoding.find("__objc3_v9_optional_N"), std::string::npos);
-+  EXPECT_NE(Encoding.find("__objc3_v9_optional_W40="), std::string::npos);
++  EXPECT_NE(Encoding.find("__objc3_v10_optional_N"), std::string::npos);
++  EXPECT_NE(Encoding.find("__objc3_v10_optional_W40="), std::string::npos);
 +  EXPECT_LT(Encoding.size(), 600u);
 +  // The runtime representation remains linear for a long Optional chain.
 +  QualType Deep = Nested;
@@ -985,4 +1045,93 @@ index 000000000..b1013f415
 +  EXPECT_EQ(Flexible.Kind, ObjC3PayloadTypeKind::Record);
 +  EXPECT_EQ(Flexible.Issue,
 +            ObjC3PayloadTypeIssue::RecordHasFlexibleArrayMember);
++}
++
++TEST(ObjC3TypeContracts, EnclosingManagedRecordsHaveNativeLifetimeFacts) {
++  for (bool CXX : {false, true}) {
++    auto AST = parse(R"objc(
++      typedef __objc3_optional(id) Strong;
++      typedef __objc3_optional(id __weak) Weak;
++      typedef void (^Action)(void);
++      struct Managed { Strong value; Weak weak; Strong array[2]; };
++      struct Nested { struct Managed values[2]; };
++      struct Hybrid { Strong value; Action action; };
++      struct View { struct Managed *pointer; };
++    )objc", {"-x", CXX ? "objective-c++" : "objective-c",
++             CXX ? "-std=c++20" : "-std=c17", "-fobjc-version=3",
++             "-fobjc-runtime=gnustep-2.2", "-fobjc-arc", "-fblocks",
++             "-target", "x86_64-unknown-linux-gnu"});
++    ASSERT_TRUE(AST);
++    ASSERT_FALSE(AST->getDiagnostics().hasErrorOccurred());
++    ASTContext &Context = AST->getASTContext();
++    for (llvm::StringRef Name : {"Managed", "Nested", "Hybrid"}) {
++      const RecordDecl *RD = findRecord(Context, Name);
++      ASSERT_NE(RD, nullptr);
++      QualType T = Context.getCanonicalTagType(RD);
++      EXPECT_TRUE(containsObjC3CarrierManagedStorage(T));
++      auto Facts = getObjC3ValueTypeFacts(
++          Context, T, ObjC3PayloadPosition::OptionalElement);
++      EXPECT_TRUE(Facts.HasARCManagedRecordFields);
++      EXPECT_FALSE(Facts.IsTriviallyCopyable);
++      EXPECT_TRUE(Facts.Destroy.NeedsGeneratedOperation);
++      if (CXX) {
++        const auto *Class = cast<CXXRecordDecl>(RD);
++        EXPECT_FALSE(Class->hasTrivialDestructor());
++        EXPECT_TRUE(Class->isParamDestroyedInCallee());
++      }
++    }
++    EXPECT_TRUE(containsObjC3CarrierThrowingCopy(
++        Context.getCanonicalTagType(findRecord(Context, "Hybrid"))));
++    EXPECT_FALSE(containsObjC3CarrierThrowingCopy(
++        Context.getCanonicalTagType(findRecord(Context, "Managed"))));
++    EXPECT_FALSE(containsObjC3CarrierManagedStorage(
++        Context.getCanonicalTagType(findRecord(Context, "View"))));
++  }
++}
++
++TEST(ObjC3TypeContracts, ImportedManagedRecordsPreserveLifetimeAndCallABI) {
++  for (bool CXX : {false, true}) {
++    const std::string Code = R"objc(
++      typedef __objc3_optional(id) Strong;
++      typedef __objc3_optional(id __weak) Weak;
++      struct Imported { Strong value; Weak weak; Strong values[2]; };
++      struct Outer { struct Imported child; };
++    )objc";
++    std::vector<std::string> Args = {
++        "-x", CXX ? "objective-c++" : "objective-c",
++        CXX ? "-std=c++20" : "-std=c17", "-fobjc-version=3",
++        "-fobjc-runtime=gnustep-2.2", "-fobjc-arc",
++        "-target", "x86_64-unknown-linux-gnu"};
++    auto From = tooling::buildASTFromCodeWithArgs(Code, Args, "record-from.mm");
++    auto To = tooling::buildASTFromCodeWithArgs(
++        "", Args, "record-to.mm", "clang-tool",
++        std::make_shared<PCHContainerOperations>(),
++        tooling::getClangStripDependencyFileAdjuster(),
++        {{"record-from.mm", Code}});
++    ASSERT_TRUE(From);
++    ASSERT_TRUE(To);
++    ASSERT_FALSE(From->getDiagnostics().hasErrorOccurred());
++    ASTImporter Importer(To->getASTContext(), To->getFileManager(),
++                         From->getASTContext(), From->getFileManager(), false);
++    for (llvm::StringRef Name : {"Imported", "Outer"}) {
++      auto *Source = const_cast<RecordDecl *>(
++          findRecord(From->getASTContext(), Name));
++      ASSERT_NE(Source, nullptr);
++      auto Result = Importer.Import(Source);
++      if (!Result)
++        FAIL() << llvm::toString(Result.takeError());
++      const auto *Target = cast<RecordDecl>(*Result);
++      EXPECT_EQ(Target->hasObjectMember(), Source->hasObjectMember());
++      EXPECT_EQ(Target->isNonTrivialToPrimitiveDefaultInitialize(),
++                Source->isNonTrivialToPrimitiveDefaultInitialize());
++      EXPECT_EQ(Target->isNonTrivialToPrimitiveCopy(),
++                Source->isNonTrivialToPrimitiveCopy());
++      EXPECT_EQ(Target->isNonTrivialToPrimitiveDestroy(),
++                Source->isNonTrivialToPrimitiveDestroy());
++      EXPECT_EQ(Target->isParamDestroyedInCallee(),
++                Source->isParamDestroyedInCallee());
++      EXPECT_EQ(Target->getArgPassingRestrictions(),
++                Source->getArgPassingRestrictions());
++    }
++  }
 +}

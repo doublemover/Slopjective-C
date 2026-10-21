@@ -43,7 +43,7 @@ index 91ab85d94..39b18d208 100644
 \ No newline at end of file
 +}
 diff --git a/eh_personality.c b/eh_personality.c
-index d638d9772..24208e04d 100644
+index d638d9772..bbba88140 100644
 --- a/eh_personality.c
 +++ b/eh_personality.c
 @@ -192,15 +192,26 @@ static inline _Unwind_Reason_Code continueUnwinding(struct _Unwind_Exception *ex
@@ -107,7 +107,23 @@ index d638d9772..24208e04d 100644
  		}
  		// We now have two copies of the _Unwind_Exception object (which stores
  		// state for the unwinder) in flight.  Make sure that they're in sync.
-@@ -717,7 +728,7 @@ OBJC_PUBLIC void objc_end_catch(void)
+@@ -648,7 +659,14 @@ OBJC_PUBLIC id objc_begin_catch(struct _Unwind_Exception *exceptionObject)
+ 	{
+ 		DEBUG_LOG("c++ catch\n");
+ 		td->current_exception_type = CXX;
+-		return __cxa_begin_catch(exceptionObject);
++		// A C++ cleanup frame can resume with the Objective-C adapter while
++		// the selected handler belongs to an Objective-C frame. No C++
++		// handler then populated adjustedPtr. Begin the C++ catch to balance
++		// its lifetime, but recover the Objective-C object from its payload.
++		int isObjC = 0;
++		id object = objc_object_for_cxx_exception(exceptionObject, &isObjC);
++		void *caught = __cxa_begin_catch(exceptionObject);
++		return isObjC ? object : caught;
+ 	}
+ #endif
+ 	DEBUG_LOG("foreign exception catch\n");
+@@ -717,7 +735,7 @@ OBJC_PUBLIC void objc_end_catch(void)
  	if (ex->catch_count == 0)
  	{
  		td->caughtExceptions = ex->next;
@@ -116,7 +132,7 @@ index d638d9772..24208e04d 100644
  	}
  }
  
-@@ -735,10 +746,11 @@ OBJC_PUBLIC void objc_exception_rethrow(struct _Unwind_Exception *e)
+@@ -735,10 +753,11 @@ OBJC_PUBLIC void objc_exception_rethrow(struct _Unwind_Exception *e)
  		// rethrown exception in objc_end_catch
  		ex->catch_count = -ex->catch_count;
  		_Unwind_Reason_Code err = _Unwind_Resume_or_Rethrow(e);

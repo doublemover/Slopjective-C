@@ -116,6 +116,15 @@
       "declaration_name": "weak_action",
       "hover_type": "__objc3_optional",
       "completion_name": "weak_action"
+    },
+    {
+      "name": "managed_enclosing_record",
+      "use_line": "(void)__objc3_has_value(managed_record.values[0]);",
+      "use_name": "managed_record",
+      "declaration_line": "struct ManagedRecord managed_record = managed_record_echo(source);",
+      "declaration_name": "managed_record",
+      "hover_type": "ManagedRecord",
+      "completion_name": "managed_record"
     }
   ],
   "cases": [

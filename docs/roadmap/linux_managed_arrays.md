@@ -26,8 +26,9 @@ hold weak carriers after their factory returns and observe zeroing when the
 last strong owner releases the captured Block.
 
 An array declaration requires an initializer and constant dimensions. Variable
-length arrays, `__block` arrays, enclosing-record array subobjects and whole-array
-capture or copying require further lifetime operations. Their admission remains
+length arrays, `__block` arrays and whole-array capture or copying require
+further lifetime operations. [ABI 10](linux_managed_records.md) now qualifies
+enclosing-record array subobjects with native field lifetime operations. Their admission remains
 separate from local array construction and element operations. The public
 Optional/Result and synchronous throws feature predicates remain reserved.
 
@@ -44,9 +45,9 @@ python3 -B "$OBJC3C_SDK_ROOT/share/objc3c/examples/native/qualify-array-carriers
   --sdk-root "$OBJC3C_SDK_ROOT" --output-dir ./array-carrier-evidence
 ```
 
-The next storage milestone applies these operations to enclosing records and
-their implicit copy, assignment and destruction, then Objective-C ivars and
-properties and reference or `__block` captures. Public syntax and feature
+[Managed records](linux_managed_records.md) apply these operations to enclosing
+storage and its implicit copy, assignment and destruction. Objective-C ivars and
+properties and reference or `__block` captures follow that foundation. Public syntax and feature
 promotion follow a bounded, fully qualified synchronous contract.
 
 The [acceptance receipt](../support/linux_managed_array_acceptance.json) binds
