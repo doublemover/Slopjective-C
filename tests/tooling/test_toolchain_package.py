@@ -96,3 +96,73 @@ def test_seal_rejects_absolute_internal_link_that_cannot_relocate(tmp_path):
     (prefix / "bin/absolute").symlink_to(prefix / "bin/clang")
     with pytest.raises(ValueError, match="escapes"):
         inventory(prefix)
+
+
+def test_independent_release_gates_execute_concurrently(tmp_path):
+    import subprocess
+    import sys
+    from scripts.objc3c_toolchain.package import _run_qualifications
+
+    script = '''
+from pathlib import Path
+import sys, time
+root, name, peer = Path(sys.argv[1]), sys.argv[2], sys.argv[3]
+(root / name).write_text('started')
+deadline = time.monotonic() + 5
+while not (root / peer).exists():
+    if time.monotonic() > deadline:
+        raise SystemExit('release gates ran serially')
+    time.sleep(.01)
+'''
+    def gate(name, peer):
+        subprocess.run([sys.executable, '-B', '-c', script, str(tmp_path), name, peer],
+                       check=True, timeout=10)
+        return {'status': 'PASS'}
+
+    result = _run_qualifications({'first': lambda: gate('first', 'second'),
+                                  'second': lambda: gate('second', 'first')}, 2)
+    assert set(result) == {'first', 'second'}
+
+
+def test_release_failure_joins_other_gates_and_preserves_their_evidence(tmp_path):
+    import subprocess
+    import sys
+    from scripts.objc3c_toolchain.package import _run_qualifications
+
+    def failed():
+        raise ValueError('failed source import; see import.log')
+
+    def completed():
+        subprocess.run([sys.executable, '-B', '-c',
+                        'import pathlib,sys,time; time.sleep(.1); pathlib.Path(sys.argv[1]).write_text("PASS")',
+                        str(tmp_path / 'qualification.json')], check=True, timeout=10)
+        return {'status': 'PASS'}
+
+    with pytest.raises(ValueError, match='import: failed source import; see import.log'):
+        _run_qualifications({'import': failed, 'calls': completed}, 2)
+    assert (tmp_path / 'qualification.json').read_text() == 'PASS'
+
+
+@pytest.mark.parametrize('damage', ['status', 'seal', 'count', 'command'])
+def test_release_gate_rejects_successful_process_with_invalid_receipt(tmp_path, damage):
+    from scripts.objc3c_toolchain.package import _qualify_call_suite
+
+    sdk = tmp_path / 'sdk'
+    examples = sdk / 'share/objc3c/examples/native'
+    examples.mkdir(parents=True)
+    evidence = {'status': 'PASS', 'sdk_seal': 'sealed', 'executions': [{}],
+                'commands': [{'exit_code': 0, 'expected_exit_code': 0}]}
+    if damage == 'status':
+        evidence['status'] = 'FAIL'
+    elif damage == 'seal':
+        evidence['sdk_seal'] = 'other'
+    elif damage == 'count':
+        evidence['executions'] = []
+    else:
+        evidence['commands'][0]['exit_code'] = 1
+    (examples / 'qualify-probe.py').write_text(
+        'import json,pathlib,sys\n'
+        'output = pathlib.Path(sys.argv[sys.argv.index("--output-dir") + 1])\n'
+        f'(output / "qualification.json").write_text({json.dumps(evidence)!r})\n')
+    with pytest.raises(ValueError, match='receipt is incomplete'):
+        _qualify_call_suite(sdk, tmp_path / 'evidence', 'sealed', 'probe', {'executions': 1})

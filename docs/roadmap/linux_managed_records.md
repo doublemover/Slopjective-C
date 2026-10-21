@@ -32,8 +32,9 @@ record snapshot, including cleanup during native unwinding. C and C++ use the
 same convention for matching C-compatible record declarations. Direct carrier
 arguments retain their separately documented caller-owned convention. This is
 a hard ABI cutover; rebuild every dependent object and semantic interface.
-Objective-C methods, Block signatures and captures of whole records, and typed
-throws record signatures remain separate admission boundaries.
+The [heap storage milestone](linux_heap_storage.md) extends qualified data
+records into Objective-C methods, Block signatures and captures. Typed throws
+record signatures remain a separate admission boundary.
 
 The native runtime preserves an Objective-C exception's object when C++ cleanup
 frames resume unwinding into a C handler. A permanent two-language CTest covers
@@ -53,8 +54,8 @@ python3 -B "$OBJC3C_SDK_ROOT/share/objc3c/examples/native/qualify-record-carrier
 ```
 
 Public Optional/Result and synchronous throws predicates remain reserved until
-the bounded public syntax and contract are qualified. Ivar/property storage and
-reference or `__block` captures require their own lifetime integration.
+the bounded public syntax and contract are qualified. Qualified ivar/property storage and shared `__block` captures are now covered
+by the heap storage milestone.
 
 The [acceptance receipt](../support/linux_managed_record_acceptance.json) binds
 implementation commit `e2626d31c` to the exact ABI 10 archive, installed execution,

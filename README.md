@@ -218,8 +218,10 @@ ownership and target bounds. [Owned Block captures](docs/roadmap/linux_owned_blo
 active-arm lifetime through stack/heap closures and exceptional copying. The [managed record contract](docs/roadmap/linux_managed_records.md) extends
 active-arm ownership through enclosing C and C++ records and fixed-size record
 arrays. Ordinary synchronous functions use callee-owned record snapshots and a
-common C/C++ indirect ABI. Carrier storage in ivars, reference captures, volatile
-carriers and managed MRC transfers still need dedicated implementation. GNUstep 2.2 supports [true direct dispatch](docs/roadmap/linux_direct_dispatch.md),
+common C/C++ indirect ABI. The [heap storage contract](docs/roadmap/linux_heap_storage.md)
+extends ownership into ivars, nonatomic properties, whole-record runtime calls
+and shared Block captures, including constructor rollback. Volatile carriers
+and managed MRC transfers remain outside the qualified contract. GNUstep 2.2 supports [true direct dispatch](docs/roadmap/linux_direct_dispatch.md),
 including lazy class initialization and managed typed-error calls.
 
 Public Optional/Result and synchronous throws syntax, managed payload
@@ -248,7 +250,7 @@ Native validation checks O0/O2 behavior, ABI, ownership, cleanup, expected
 failures, installed interface consumers and editor tools. Evidence records bind
 source, compiler, runtime, system headers and executable contents and reject
 changes during validation. The
-[Linux SDK acceptance receipt](docs/support/linux_owned_capture_acceptance.json)
+[Linux SDK acceptance receipt](docs/support/linux_heap_storage_acceptance.json)
 records the qualified archive and fresh-host checks; each new SDK has its own
 qualification and release receipt. Runtime timings must be distinguished from
 compile and wrapper timings when comparing performance.

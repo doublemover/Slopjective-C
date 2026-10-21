@@ -1,7 +1,7 @@
 # Linux forward development
 
 The active product is the Clang-only Linux x86-64 SDK. The
-[acceptance receipt](../support/linux_managed_record_acceptance.json) identifies its
+[acceptance receipt](../support/linux_heap_storage_acceptance.json) identifies its
 exact archive, source, native execution and fresh-distribution evidence. Tool
 versions come from [the manifest](../../toolchains/llvm/manifest.json); public
 language claims come from [the capability authority](../../schemas/objc3-language-capabilities.json).
@@ -23,7 +23,7 @@ O0/O2 witnesses cover all Result arm transitions, self/aliased assignment, weak
 zeroing, Blocks, typed-error optionalization, sequencing and native unwinding.
 Live clangd probes cover both languages. The
 [managed call ABI](linux_managed_call_abi.md) now extends direct carriers through
-ordinary functions, callbacks and C++ members under extension ABI revision 10.
+ordinary functions, callbacks and C++ members under extension ABI revision 11.
 Caller-owned snapshots preserve each argument at evaluation time and clean up
 at full-expression boundaries; returns initialize fresh caller-owned storage.
 Nine installed executions cover separate provider/consumer compilation at
@@ -68,6 +68,15 @@ O0, O2 and ThinLTO, plus PCH and semantic imports; ten rejected forms bound that
 contract. Eight installed sanitizer configurations and record-aware editor and
 LLDB probes qualify the exact archive. The native runtime preserves Objective-C
 exception objects when C++ cleanup resumes into C catches.
+The [heap storage milestone](linux_heap_storage.md) now qualifies Objective-C
+ivars, nonatomic properties, whole-record runtime calls and captures, and shared
+Block forwarding cells. Constructor rollback destroys completed ivars and
+superclass state before freeing the allocation. Nine installed suites cover 93
+executions, 48 traps and 37 rejected forms; twenty ASan/LSan configurations and
+record/shared-capture LLDB probes qualify the archive. Both clean distributions
+pass the complete suite as ordinary users. The source-bound receipt above names
+implementation commit `036c9cabb` and the exact archive.
+
 The managed public core targets ARC. Define the public bounded contract and
 syntax together with their feature queries and capability predicates. Promote a
 feature only when that contract has complete evidence.
@@ -80,10 +89,10 @@ Private migration intrinsics do not justify a public feature claim.
 
 The next implementation sequence is:
 
-1. Extend the qualified record operations into Objective-C ivars/properties,
-   whole-record runtime signatures and Block captures, and reference/`__block`
-   storage. Cover partial construction, heap migration, ownership metadata,
-   weak registrations and exceptional copying before admitting each form.
+1. Complete bounded C++ semantic interfaces with explicit linkage and data-record
+   identity. Objective-C heap storage, runtime record calls, whole-record captures,
+   and shared `__block` cells are implemented under the
+   [heap storage contract](linux_heap_storage.md).
 2. Finish the bounded public Optional/Result and synchronous throws contract,
    including ownership and module interface identity. Add public syntax and
    promote its feature predicates only after that complete contract passes the

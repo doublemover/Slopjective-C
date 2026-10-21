@@ -240,6 +240,40 @@ void TestDirectMethodIdentityRoundTrip() {
   }
 }
 
+void TestManagedIvarAndPropertyRoundTrip() {
+  const std::vector<std::string> args = {
+      "-x", "objective-c", "-std=c17", "-fobjc-version=3", "-fobjc-arc",
+      "-fobjc-runtime=gnustep-2.2", "--target=x86_64-unknown-linux-gnu"};
+  std::string previous;
+  for (const char *access : {"@public", "@protected", "@private", "@package"}) {
+    const std::string source =
+        "typedef __objc3_optional(id) Strong; "
+        "typedef __objc3_optional(id __weak) Weak; "
+        "struct Record { int marker; Strong value; }; "
+        "__attribute__((objc_root_class)) @interface Heap { Class isa; " +
+        std::string(access) + " Strong values[2]; Weak weak; "
+        "id __strong nativeStrong; id __weak nativeWeak; } "
+        "@property(nonatomic) Strong value; "
+        "@property(nonatomic) struct Record record; @end";
+    auto ast = clang::tooling::buildASTFromCodeWithArgs(source, args, "heap.m");
+    assert(ast && !ast->getDiagnostics().hasErrorOccurred());
+    auto emitted = EmitSemanticInterface(ast->getASTContext(), "fixture.heap", "test");
+    for (const auto &diagnostic : emitted.diagnostics)
+      std::fprintf(stderr, "%s: %s\n", diagnostic.code.c_str(), diagnostic.message.c_str());
+    assert(emitted.success && emitted.identity.semantic_fingerprint != previous);
+    assert(emitted.source_bytes.find(access) != std::string::npos);
+    assert(emitted.source_bytes.find("values[2]") != std::string::npos);
+    assert(emitted.source_bytes.find("__weak id nativeWeak") != std::string::npos);
+    assert(emitted.source_bytes.find("__strong id nativeStrong") != std::string::npos);
+    previous = emitted.identity.semantic_fingerprint;
+    auto round = clang::tooling::buildASTFromCodeWithArgs(emitted.source_bytes, args, "round.m");
+    assert(round && !round->getDiagnostics().hasErrorOccurred());
+    auto regenerated = EmitSemanticInterface(round->getASTContext(), "fixture.heap", "test");
+    assert(regenerated.success && regenerated.source_bytes == emitted.source_bytes);
+    assert(regenerated.identity.semantic_fingerprint == previous);
+  }
+}
+
 }  // namespace
 
 int main() {
@@ -249,5 +283,6 @@ int main() {
   TestTypedEffectSemanticInterfacesRoundTrip();
   TestManagedReturnOwnershipRoundTrips();
   TestDirectMethodIdentityRoundTrip();
+  TestManagedIvarAndPropertyRoundTrip();
   return 0;
 }

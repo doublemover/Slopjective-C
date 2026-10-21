@@ -7,7 +7,7 @@
 #define CHECK(x) do { if (!(x)) { fprintf(stderr, "nested failure %d: %s\n", __LINE__, #x); return __LINE__; } } while (0)
 static int metadata(void) {
   const char *strong = @encode(NestedStrong), *weak = @encode(NestedWeak);
-  CHECK(strstr(strong, "__objc3_v10_optional_N") && strstr(strong, "__objc3_v10_optional_S40="));
+  CHECK(strstr(strong, "__objc3_v11_optional_N") && strstr(strong, "__objc3_v11_optional_S40="));
   CHECK(strcmp(strong, weak));
   CHECK(objc_sizeof_type(strong) == sizeof(NestedStrong));
   CHECK(objc_alignof_type(strong) == __alignof__(NestedStrong));

@@ -38,7 +38,7 @@ def qualify(sdk: Path, output: Path) -> dict:
         with (output / (name + '.log')).open('w') as log:
             result = subprocess.run(list(map(str, args)), cwd=sources, env=env,
                                     stdout=log, stderr=subprocess.STDOUT, timeout=180)
-        report['commands'].append({'name': name, 'exit_code': result.returncode,
+        report['commands'].append({'name': name, 'exit_code': result.returncode, 'expected_exit_code': 0,
                                    'elapsed_seconds': round(time.monotonic() - started, 6)})
         save()
         if result.returncode:

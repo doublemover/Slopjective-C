@@ -256,7 +256,7 @@ std::string DeclarationTypeIdentity(const clang::NamedDecl *declaration,
     return ObjCMethodIdentity(method, context);
   if (const auto *property = llvm::dyn_cast<clang::ObjCPropertyDecl>(declaration))
     return CanonicalType(property->getType(), context) + ";objc-property-attributes=" +
-           std::to_string(static_cast<unsigned>(property->getPropertyAttributesAsWritten()));
+           std::to_string(static_cast<unsigned>(property->getPropertyAttributes()));
   if (const auto *record = llvm::dyn_cast<clang::RecordDecl>(declaration))
     return RecordLayoutIdentity(record, context);
   if (const auto *enumeration = llvm::dyn_cast<clang::EnumDecl>(declaration))
@@ -464,14 +464,6 @@ class InterfaceCollector final
                       category->getClassInterface()
                           ? category->getClassInterface()->getNameAsString()
                           : "<unknown-class>");
-        return true;
-      }
-    }
-    if (auto *ivar = llvm::dyn_cast<clang::ObjCIvarDecl>(declaration)) {
-      if (ivar->getAccessControl() != clang::ObjCIvarDecl::None) {
-        AddDiagnostic(result_, "O3IFC114",
-                      "explicit Objective-C ivar access is not preserved by Clang's interface printer",
-                      ivar->getNameAsString());
         return true;
       }
     }
