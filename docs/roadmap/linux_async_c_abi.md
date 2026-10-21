@@ -238,3 +238,19 @@ approximately 21 GiB free. Authored probe source files, current SDK/build state,
 final build receipts and interrupted acceptance logs remain. Five clean
 worktrees with commits outside the current branch's history were retained.
 No tests or qualification were resumed.
+
+The final organization pass removed the obsolete ignored `tmp/` and `artifacts/`
+build folders, more scattered binaries/logs and all five remaining checkout
+copies. Their commits are preserved and pushed under `unintegrated-source/`
+branches named `concurrency-development`, `naming-review`,
+`packages-development`, `spi-review` and `task-bridge-review`. The active
+checkout is now the only worktree.
+
+Loose experiment sources, scripts and notes were consolidated under `scratch/`;
+local handoff and cleanup records moved to `out/session/`. Both directories,
+all generated `out/` contents and pytest caches are excluded by the committed
+`.gitignore`, including on fresh clones. The organization pass reclaimed another
+1.26 GiB, leaving filesystem usage at 29% with approximately 22 GiB available.
+The workspace root now contains only the project checkout, managed cloud tools
+and the platform's `shared` and `library-files` directories. Current SDK/build
+state and authored experiment sources remain; tests and validation stay stopped.

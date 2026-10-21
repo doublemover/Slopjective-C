@@ -142,6 +142,26 @@ Remove obsolete generated packages, test outputs, temporary compiled probes and
 clean merged worktrees as milestones are superseded. Preserve authored source
 and work that has not entered the current development history.
 
+Keep project work inside the checkout using the following layout. These local
+output paths are covered by the committed `.gitignore`.
+
+| Location                               | Purpose                                                      |
+| -------------------------------------- | ------------------------------------------------------------ |
+| `out/toolchains/`                      | Current SDK archive, installation and active compiler/build  |
+| `out/native-validation/`               | Current native run receipts and diagnostics                  |
+| `out/session/`                         | Local handoff records, PR draft text and workspace inventory |
+| `scratch/scripts/`                     | One-off experiment scripts; never an automatic pipeline      |
+| `scratch/sources/`, `scratch/patches/` | Standalone source experiments                                |
+| `scratch/notes/`, `scratch/metadata/`  | Local working notes and experiment metadata                  |
+| `scratch/experiments/`                 | Remaining experiment fixtures grouped by task                |
+| `scratch/worktrees/`                   | Temporary worktrees, removed when their task is complete     |
+
+Do not scatter scripts, build outputs or review checkouts across `/workspace`.
+Reusable maintained scripts belong in `scripts/`. Preserve unique commits with
+Git references before removing their working copies; keep the active checkout
+as the sole persistent worktree. Managed tools in `.cloud-setup` and platform
+directories stay outside this project layout.
+
 Keep checks proportional to the changed behavior and reuse completed results
 for unchanged inputs. Do not repeat broad qualification for rollback history or
 make it the default next milestone. The current user-requested pause stops all
