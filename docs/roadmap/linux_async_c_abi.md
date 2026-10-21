@@ -211,55 +211,42 @@ reproducer was run, so this is an investigation item rather than a confirmed
 defect. Native AArch64 qualification also requires a separate native host; this
 milestone's host evidence is Linux x86-64.
 
-### Workspace storage
+### Workspace and development state
 
-At the pause the 32 GiB filesystem was 99% full, with approximately 472 MiB
-available. The main consumers were 34 retained SDK archives (14 GiB), LLVM
-source and build outputs (5.8 GiB), a preserved source checkpoint (2.7 GiB), the
-installed SDK (1.5 GiB), earlier Linux packages (698 MiB) and native validation
-evidence (544 MiB). These sizes are rounded and are not a complete filesystem
-inventory.
+The 32 GiB filesystem is now approximately 29% used, with 22 GiB available.
+Cleanup removed 33 superseded SDK archives, the obsolete Linux 22 checkpoint,
+all 21 old checkout copies, legacy package/build folders, superseded test
+outputs, crash reproducers and compiled probes. The last housekeeping pass
+also removed 35 obsolete toolchain output folders and 33 merged or duplicate
+local branches. Historical binary rollback artifacts are not retained.
 
-The user then reaffirmed the hard-cutover policy. Superseded SDK archives and
-the obsolete Linux 22 source/build checkpoint were removed: 33 archives plus
-the checkpoint reclaimed approximately 16 GiB. Filesystem use fell to 46%,
-with 17 GiB available; the remaining SDK cache occupies 412 MiB. The current SDK
-archive and installed prefix, active compiler source/build tree and small
-diagnostic receipts remain. Historical binary artifacts are no longer retained
-for rollback. The temporary foundation RAM filesystem was released after the
-final SDK completed. Future work follows the
-[current-artifact retention policy](linux_forward_development.md#architecture-and-release-performance).
+The active checkout is the sole worktree. Five source heads outside its history
+were preserved and pushed under `unintegrated-source/` branches named
+`concurrency-development`, `naming-review`, `packages-development`, `spi-review`
+and `task-bridge-review`. These preserve source commits without full checkout
+copies. Other unmerged and platform references remain untouched.
 
-A further cleanup removed obsolete Linux packages, older validation runs,
-superseded milestone outputs, failed-build bundles, old runtime build caches,
-temporary test directories, 16 clean merged worktrees and compiled scratch
-probes. It reclaimed another 3.75 GiB, leaving the filesystem 33% used with
-approximately 21 GiB free. Authored probe source files, current SDK/build state,
-final build receipts and interrupted acceptance logs remain. Five clean
-worktrees with commits outside the current branch's history were retained.
-No tests or qualification were resumed.
+The retained build state consists of the active LLVM source/build tree, current
+SDK archive and installation, current frontend build, active runtime sources
+and current receipts. Final build receipts and interrupted acceptance logs
+remain available. Machine-local housekeeping records are in `out/session/`.
 
-The final organization pass removed the obsolete ignored `tmp/` and `artifacts/`
-build folders, more scattered binaries/logs and all five remaining checkout
-copies. Their commits are preserved and pushed under `unintegrated-source/`
-branches named `concurrency-development`, `naming-review`,
-`packages-development`, `spi-review` and `task-bridge-review`. The active
-checkout is now the only worktree.
+Loose authored experiments, scripts, patches and notes are under `scratch/`.
+The committed `.gitignore` covers that directory, all generated `out/` contents,
+pytest caches, local clangd configuration, compilation databases and CMake user
+presets. The workspace root contains only the checkout, managed cloud tools
+and the platform's `shared` and `library-files` directories.
 
-Loose experiment sources, scripts and notes were consolidated under `scratch/`;
-local handoff and cleanup records moved to `out/session/`. Both directories,
-all generated `out/` contents and pytest caches are excluded by the committed
-`.gitignore`, including on fresh clones. The organization pass reclaimed another
-1.26 GiB, leaving filesystem usage at 29% with approximately 22 GiB available.
-The workspace root now contains only the project checkout, managed cloud tools
-and the platform's `shared` and `library-files` directories. Current SDK/build
-state and authored experiment sources remain; tests and validation stay stopped.
-
-Local development settings now cap ccache at 1 GB, select the current patched
+Local development settings cap ccache at 1 GB, select the current patched
 clangd with two workers and background indexing disabled, repair the editor's
-retired-staging include paths and provide a frontend/runtime-only `linux-dev`
-CMake user preset. Compilation databases, editor configuration and user presets
-are covered by shared ignore rules. These are configuration changes only;
-no configuration probes, compilation or validation were run. See the
-[development setup](linux_forward_development.md#architecture-and-release-performance)
-for details.
+retired-staging paths and provide a frontend/runtime-only `linux-dev` CMake
+user preset. Four compile jobs and one link job match the four-CPU quota and
+16 GiB memory limit. See the
+[development setup](linux_forward_development.md#architecture-and-release-performance).
+These settings have not been exercised by a new configuration, build or test.
+
+Tests, validation, automatic acceptance and background indexing remain stopped.
+Thirty-three old compiler/test process entries were confirmed to be zombies,
+with no live compiler/test processes and no resident memory. They are adopted
+by PID 1 (`tail`); reaping those records requires proper init handling rather
+than termination of an active project process. No instance restart was made.

@@ -125,8 +125,8 @@ invalidate the release identity.
 
 Frontend CTests are built and executed one target at a time. Reclaim only the
 passed generated test executables; preserve failures, compiler binaries, objects
-and libraries. This keeps the complete test inventory affordable as archives
-accumulate in the 32 GiB workspace.
+and libraries. This keeps the complete test inventory affordable within the 32 GiB
+workspace when qualification is explicitly requested.
 
 Archive installation verifies a complete staged extraction even when the target
 seal already exists. Reserve space for that extraction.
@@ -201,3 +201,8 @@ Keep checks proportional to the changed behavior and reuse completed results
 for unchanged inputs. Do not repeat broad qualification for rollback history or
 make it the default next milestone. The current user-requested pause stops all
 tests and qualification; resuming those requires a subsequent instruction.
+
+Long-running development controllers must wait for their child processes during
+shutdown. This instance uses `tail` as PID 1 and retains orphaned zombie process
+records; a proper reaping init is an environment startup concern. Those records
+are not running tests and consume no CPU or resident memory.
