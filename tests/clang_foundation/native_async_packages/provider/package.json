@@ -24,7 +24,11 @@
     "native_module_complex_value",
     "native_module_data_value",
     "NativeModuleMethodProtocol",
-    "NativeModuleMethods"
+    "NativeModuleMethods",
+    "native_module_async_block",
+    "native_module_checked_block",
+    "native_module_async_factory",
+    "native_module_checked_factory"
   ],
   "dependencies": []
 }

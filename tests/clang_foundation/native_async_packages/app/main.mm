@@ -130,7 +130,13 @@ int objc_method_application(objc3_actor_t *actor) __objc3_async {
 int block_application(objc3_actor_t *actor) __objc3_async {
   __objc3_await objc3::hop_to(actor);
   native_module_async_block block = __objc3_await native_module_async_factory(40);
+#if !__has_feature(objc_arc)
+  consumer_result_owner block_owner{objc_retain((id)block)};
+#endif
   native_module_checked_block checked = __objc3_await native_module_checked_factory();
+#if !__has_feature(objc_arc)
+  consumer_result_owner checked_owner{objc_retain((id)checked)};
+#endif
   static_assert(std::is_same_v<decltype(block(2)), objc3::task<int>>);
   if (__objc3_await block(2) != 42) return 0;
   __objc3_do {
