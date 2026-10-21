@@ -9253,10 +9253,10 @@ index 000000000..ccceacf2e
 +}
 diff --git a/clang/test/ObjC3/CodeGen/Inputs/match-guard-cleanup-runtime.mm b/clang/test/ObjC3/CodeGen/Inputs/match-guard-cleanup-runtime.mm
 new file mode 100644
-index 000000000..f8dff5da4
+index 000000000..b41e00769
 --- /dev/null
 +++ b/clang/test/ObjC3/CodeGen/Inputs/match-guard-cleanup-runtime.mm
-@@ -0,0 +1,106 @@
+@@ -0,0 +1,110 @@
 +typedef __objc3_optional(int) MaybeInt;
 +
 +static int Failure;
@@ -9279,10 +9279,14 @@ index 000000000..f8dff5da4
 +}
 +
 +static void check_scalar_lvalue(int &Source) {
++  const int Snapshot = Source;
 +  __objc3_match_stmt (Source) {
 +  case let Borrowed: {
-+    if (&Borrowed != &Source || Borrowed != Source)
++    if (&Borrowed == &Source || Borrowed != Snapshot)
 +      Failure = 1;
++    Source += 10;
++    if (Borrowed != Snapshot)
++      Failure = 16;
 +  }
 +  }
 +}
