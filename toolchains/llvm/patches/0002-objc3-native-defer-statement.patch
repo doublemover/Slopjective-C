@@ -692,7 +692,7 @@ index 000000000..b6b085f25
 +  return Result;
 +}
 diff --git a/clang/lib/Parse/ParseStmt.cpp b/clang/lib/Parse/ParseStmt.cpp
-index 44b51a985..dd2d20a30 100644
+index 44b51a985..ca53c31fd 100644
 --- a/clang/lib/Parse/ParseStmt.cpp
 +++ b/clang/lib/Parse/ParseStmt.cpp
 @@ -11,6 +11,7 @@
@@ -756,7 +756,7 @@ index 44b51a985..dd2d20a30 100644
      if (Next.is(tok::colon)) { // C99 6.8.1: labeled-statement
        // Both C++11 and GNU attributes preceding the label appertain to the
        // label, so put them in a single list to pass on to
-@@ -173,7 +203,18 @@ Retry:
+@@ -173,7 +203,19 @@ Retry:
  
      // Look up the identifier, and typo-correct it to a keyword if it's not
      // found.
@@ -765,9 +765,10 @@ index 44b51a985..dd2d20a30 100644
 +        getLangOpts().ObjC3 && Next.is(tok::l_paren) &&
 +        isObjC3TypeSyntax(Tok.getIdentifierInfo()->getName(),
 +                            NextToken().is(tok::l_paren));
-+    StartsObjC3CarrierExpression =
-+        getLangOpts().ObjC3 && Next.is(tok::l_paren) &&
-+        isObjC3ExpressionSyntax(Tok.getIdentifierInfo()->getName());
++    StartsObjC3CarrierExpression = getLangOpts().ObjC3 &&
++        (Tok.getIdentifierInfo()->isStr("__objc3_await") ||
++         (Next.is(tok::l_paren) &&
++          isObjC3ExpressionSyntax(Tok.getIdentifierInfo()->getName())));
 +    // Keep the private constructor token available to declaration
 +    // disambiguation. Ordinary identifier annotation treats its argument list
 +    // as an expression before the carrier type parser can consume it.
@@ -776,7 +777,7 @@ index 44b51a985..dd2d20a30 100644
        // Try to limit which sets of keywords should be included in typo
        // correction based on what the next token is.
        StatementFilterCCC CCC(Next);
-@@ -196,6 +237,7 @@ Retry:
+@@ -196,6 +238,7 @@ Retry:
    }
  
    default: {
@@ -784,7 +785,7 @@ index 44b51a985..dd2d20a30 100644
      if (getLangOpts().CPlusPlus && MaybeParseCXX11Attributes(CXX11Attrs, true))
        goto Retry;
  
-@@ -208,7 +250,8 @@ Retry:
+@@ -208,7 +251,8 @@ Retry:
      // in C++, we always allow a declaration, but in C we need to check whether
      // we're in a statement context that allows declarations. e.g., in C, the
      // following is invalid: if (1) int x;
@@ -794,7 +795,7 @@ index 44b51a985..dd2d20a30 100644
           (StmtCtx & ParsedStmtContext::AllowDeclarationsInC) !=
               ParsedStmtContext()) &&
          ((GNUAttributeLoc.isValid() && !(HaveAttrs && AllAttrsAreStmtAttrs)) ||
-@@ -2464,6 +2507,14 @@ StmtResult Parser::ParseReturnStatement() {
+@@ -2464,6 +2508,14 @@ StmtResult Parser::ParseReturnStatement() {
    assert((Tok.is(tok::kw_return) || Tok.is(tok::kw_co_return)) &&
           "Not a return stmt!");
    bool IsCoreturn = Tok.is(tok::kw_co_return);

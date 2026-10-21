@@ -209,6 +209,8 @@ static int member_flow(native_async_worker &worker, native_async_base &base,
   assert(__objc3_await base.value(state, 2) == 42);
   native_member_callback member = &native_async_worker::value;
   assert(__objc3_await native_member_apply(worker, member, state, 3) == 43);
+  if (__objc3_await (worker.*member)(state, 2) != 42 ||
+      __objc3_await worker(3) != 43) return 0;
   assert(__objc3_await worker(4) == 44);
   assert(__objc3_await worker[5] == 45);
   assert(__objc3_await -worker == -40);

@@ -4,7 +4,9 @@ The reserved Objective-C++20/23 async stage extends logical-result task lowering
 to ordinary C++ member functions, static members, const and ref-qualified members,
 member pointers and overloaded operators. Virtual calls preserve the physical
 `objc3::task<R>` return ABI, including secondary-base `this` adjustment thunks.
-The canonical callable type keeps its logical result, async effect and exact
+Native await remains an expression in conditions and standalone statements,
+including indirect member calls. The canonical callable type keeps its logical
+result, async effect and exact
 checked error type. Checked calls surround the await with the same checked forms
 as [free functions](linux_async_checked_errors.md).
 

@@ -4583,7 +4583,7 @@ index eb50b0e85..cc907879f 100644
    case tok::code_completion:
      cutOffParsing();
 diff --git a/clang/lib/Parse/ParseTentative.cpp b/clang/lib/Parse/ParseTentative.cpp
-index 1477fc38b..937733412 100644
+index 1477fc38b..526116382 100644
 --- a/clang/lib/Parse/ParseTentative.cpp
 +++ b/clang/lib/Parse/ParseTentative.cpp
 @@ -11,6 +11,7 @@
@@ -4594,7 +4594,7 @@ index 1477fc38b..937733412 100644
  #include "clang/Parse/Parser.h"
  #include "clang/Parse/RAIIObjectsForParser.h"
  #include "clang/Sema/ParsedTemplate.h"
-@@ -1022,6 +1023,17 @@ Parser::TPResult
+@@ -1022,6 +1023,19 @@ Parser::TPResult
  Parser::isCXXDeclarationSpecifier(ImplicitTypenameContext AllowImplicitTypename,
                                    Parser::TPResult BracedCastResult,
                                    bool *InvalidAsDeclSpec) {
@@ -4602,8 +4602,10 @@ index 1477fc38b..937733412 100644
 +    return isObjC3QualifiedTypeNameAhead() ? TPResult::True : TPResult::False;
 +  // Preserve contextual expressions during C++ condition/type-id speculation.
 +  if (getLangOpts().ObjC3 && Tok.is(tok::identifier) &&
-+      Tok.getIdentifierInfo() && NextToken().is(tok::l_paren) &&
-+      isObjC3ExpressionSyntax(Tok.getIdentifierInfo()->getName()))
++      Tok.getIdentifierInfo() &&
++      (Tok.getIdentifierInfo()->isStr("__objc3_await") ||
++       (NextToken().is(tok::l_paren) &&
++        isObjC3ExpressionSyntax(Tok.getIdentifierInfo()->getName()))))
 +    return TPResult::False;
 +  if (getLangOpts().ObjC3 && Tok.is(tok::identifier) &&
 +      isObjC3TypeSyntax(Tok.getIdentifierInfo()->getName(),
@@ -4612,7 +4614,7 @@ index 1477fc38b..937733412 100644
    auto IsPlaceholderSpecifier = [&](TemplateIdAnnotation *TemplateId,
                                      int Lookahead) {
      // We have a placeholder-constraint (we check for 'auto' or 'decltype' to
-@@ -1892,6 +1904,23 @@ Parser::TryParseFunctionDeclarator(bool MayHaveTrailingReturnType) {
+@@ -1892,6 +1906,23 @@ Parser::TryParseFunctionDeclarator(bool MayHaveTrailingReturnType) {
      }
    }
  
@@ -14790,14 +14792,33 @@ index 000000000..9c8b9fd6c
 +}
 diff --git a/clang/test/ObjC3/Parser/native-await-context.mm b/clang/test/ObjC3/Parser/native-await-context.mm
 new file mode 100644
-index 000000000..7867b4318
+index 000000000..1747c7280
 --- /dev/null
 +++ b/clang/test/ObjC3/Parser/native-await-context.mm
-@@ -0,0 +1,5 @@
+@@ -0,0 +1,24 @@
 +// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fsyntax-only -verify %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -std=c++23 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fsyntax-only -verify %s
++#include "../CodeGen/Inputs/native-async-task.h"
 +int regular() {
 +  __objc3_await 1; // expected-error {{native await requires an async Objective-C++20/23 function context}}
 +  return 0;
++}
++
++struct Worker {
++  int value(int) const __objc3_async;
++  int operator()(int) const __objc3_async;
++};
++int conditions(Worker &worker) __objc3_async {
++  using Member = int (Worker::*)(int) const __objc3_async;
++  Member member = &Worker::value;
++  // Tentative condition parsing must leave the reserved unary spelling intact.
++  if (__objc3_await (worker.*member)(2) != 42 || __objc3_await worker(3) != 43)
++    return 0;
++  while (__objc3_await worker.value(0)) break;
++  for (; __objc3_await (worker.*member)(0);) break;
++  switch (__objc3_await worker.value(2)) { case 2: break; }
++  __objc3_await (worker.*member)(2);
++  return 42;
 +}
 diff --git a/clang/include/clang/Basic/TokenKinds.def b/clang/include/clang/Basic/TokenKinds.def
 index f07d8ebb7..c38ea9742 100644
