@@ -33,6 +33,8 @@ struct InterfaceImportInput {
   bool public_import = false;
   bool direct_import = true;
   bool reexported = false;
+  // Explicit grants to this exact provider; never inherited by dependencies.
+  std::vector<std::string> spi_groups;
 };
 
 struct InterfaceImportTarget {

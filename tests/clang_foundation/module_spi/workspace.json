@@ -1,0 +1,18 @@
+{
+  "schema": "objc3c.source-workspace.v4",
+  "packages": ["leaf/package.json", "top/package.json"],
+  "application": {
+    "root": "app",
+    "source": "main.m",
+    "language": "objective-c",
+    "standard": "c17",
+    "ownership": "arc",
+    "dependencies": [
+      {
+        "name": "fixture.SPITop",
+        "package": "spi-top-v1",
+        "visibility": "private"
+      }
+    ]
+  }
+}

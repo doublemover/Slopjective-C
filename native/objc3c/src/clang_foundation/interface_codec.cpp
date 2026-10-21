@@ -183,11 +183,15 @@ llvm::Expected<InterfaceEffectIdentity> DecodeEffects(const Object &object,
 }
 
 Object EncodeDeclaration(const InterfaceDeclarationIdentity &declaration) {
-  return Object{{"stable_id", declaration.stable_id},
-                {"kind", declaration.kind},
-                {"qualified_name", declaration.qualified_name},
-                {"canonical_type_identity", declaration.canonical_type_identity},
-                {"effects", EncodeEffects(declaration.effects)}};
+  Object result{
+      {"stable_id", declaration.stable_id},
+      {"kind", declaration.kind},
+      {"qualified_name", declaration.qualified_name},
+      {"canonical_type_identity", declaration.canonical_type_identity},
+      {"effects", EncodeEffects(declaration.effects)}};
+  if (!declaration.spi_group.empty())
+    result["spi_group"] = declaration.spi_group;
+  return result;
 }
 
 llvm::Expected<InterfaceDeclarationIdentity> DecodeDeclaration(
@@ -195,10 +199,21 @@ llvm::Expected<InterfaceDeclarationIdentity> DecodeDeclaration(
   const auto path = llvm::formatv("/declarations/{0}", index).str();
   const auto *object = value.getAsObject();
   if (!object) return Invalid(llvm::formatv("{0}: expected object", path).str());
-  if (auto error = CheckKeys(*object,
-      {"stable_id", "kind", "qualified_name", "canonical_type_identity", "effects"}, path))
+  if (auto error =
+          CheckKeys(*object,
+                    {"stable_id", "kind", "qualified_name",
+                     "canonical_type_identity", "effects", "spi_group"},
+                    path))
     return std::move(error);
   InterfaceDeclarationIdentity result;
+  if (object->get("spi_group")) {
+    auto group = RequiredString(*object, "spi_group", path);
+    if (!group)
+      return group.takeError();
+    if (!IsValidSPIGroup(*group))
+      return Invalid("invalid SPI group");
+    result.spi_group = std::move(*group);
+  }
 #define READ_DECL_FIELD(field, key)                                        \
   do {                                                                      \
     auto text = RequiredString(*object, key, path);                         \
@@ -280,6 +295,18 @@ llvm::Error ValidateForEncoding(
           "objc3.api-availability.v1") != sidecar.required_semantics.end();
   if (has_availability != availability_capability)
     return Invalid("native availability metadata and capability must agree");
+  const bool has_spi =
+      std::any_of(sidecar.declarations.begin(), sidecar.declarations.end(),
+                  [](const auto &d) { return !d.spi_group.empty(); });
+  const bool spi_capability =
+      std::find(sidecar.required_semantics.begin(),
+                sidecar.required_semantics.end(),
+                "objc3.api-partitions.v1") != sidecar.required_semantics.end();
+  if (has_spi != spi_capability)
+    return Invalid("SPI metadata and required capability must agree");
+  for (const auto &d : sidecar.declarations)
+    if (!d.spi_group.empty() && !IsValidSPIGroup(d.spi_group))
+      return Invalid("invalid SPI group");
   const auto &module = sidecar.module;
   if (module.canonical_name.empty() || module.semantic_fingerprint.empty() ||
       module.target_triple.empty() || module.runtime_abi.empty() ||

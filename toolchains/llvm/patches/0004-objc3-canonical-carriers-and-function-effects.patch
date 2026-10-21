@@ -2642,7 +2642,7 @@ index e0b62591a..549a1ca48 100644
        return false;
      for (unsigned I = 0, N = Proto1->getNumParams(); I != N; ++I) {
 diff --git a/clang/lib/AST/DeclPrinter.cpp b/clang/lib/AST/DeclPrinter.cpp
-index 4be3e977b..bbe2d24ec 100644
+index 4be3e977b..cec1ffa34 100644
 --- a/clang/lib/AST/DeclPrinter.cpp
 +++ b/clang/lib/AST/DeclPrinter.cpp
 @@ -71,6 +71,7 @@ namespace {
@@ -2653,19 +2653,22 @@ index 4be3e977b..bbe2d24ec 100644
      void VisitVarDecl(VarDecl *D);
      void VisitLabelDecl(LabelDecl *D);
      void VisitParmVarDecl(ParmVarDecl *D);
-@@ -269,7 +270,10 @@ DeclPrinter::prettyPrintAttributes(const Decl *D,
+@@ -269,7 +270,13 @@ DeclPrinter::prettyPrintAttributes(const Decl *D,
      if (A->isInherited() || A->isImplicit())
        continue;
      // Print out the keyword attributes, they aren't regular attributes.
 -    if (Policy.PolishForDeclaration && !A->isKeywordAttribute())
 +    // Availability changes whether clients can name or call an API. Keep its
 +    // native attributes when printing a reusable declaration contract.
++    const auto *SPI = dyn_cast<AnnotateAttr>(A);
 +    if (Policy.PolishForDeclaration && !A->isKeywordAttribute() &&
-+        !isa<DeprecatedAttr, UnavailableAttr, AvailabilityAttr>(A))
++        !isa<DeprecatedAttr, UnavailableAttr, AvailabilityAttr>(A) &&
++        !(SPI && SPI->getAnnotation().starts_with("objc3.spi:") &&
++          SPI->args_size() == 0))
        continue;
      switch (A->getKind()) {
  #define ATTR(X)
-@@ -282,7 +286,66 @@ DeclPrinter::prettyPrintAttributes(const Decl *D,
+@@ -282,7 +289,66 @@ DeclPrinter::prettyPrintAttributes(const Decl *D,
               "Default not a valid for an attribute location");
        if (Pos == AttrPosAsWritten::Default || Pos == APos) {
          AOut << LS;
@@ -2733,7 +2736,7 @@ index 4be3e977b..bbe2d24ec 100644
        }
        break;
      }
-@@ -818,6 +881,24 @@ void DeclPrinter::VisitFunctionDecl(FunctionDecl *D) {
+@@ -818,6 +884,24 @@ void DeclPrinter::VisitFunctionDecl(FunctionDecl *D) {
        }
      }
  
@@ -2758,7 +2761,7 @@ index 4be3e977b..bbe2d24ec 100644
      if (CDecl) {
        if (!Policy.TerseOutput)
          PrintConstructorInitializers(CDecl, Proto);
-@@ -923,8 +1004,10 @@ void DeclPrinter::VisitFieldDecl(FieldDecl *D) {
+@@ -923,8 +1007,10 @@ void DeclPrinter::VisitFieldDecl(FieldDecl *D) {
    if (!Policy.SuppressSpecifiers && D->isModulePrivate())
      Out << "__module_private__ ";
  
@@ -2771,7 +2774,7 @@ index 4be3e977b..bbe2d24ec 100644
  
    if (D->isBitField()) {
      Out << " : ";
-@@ -944,6 +1027,18 @@ void DeclPrinter::VisitFieldDecl(FieldDecl *D) {
+@@ -944,6 +1030,18 @@ void DeclPrinter::VisitFieldDecl(FieldDecl *D) {
      Out << ' ' << *Attrs;
  }
  
@@ -2790,7 +2793,7 @@ index 4be3e977b..bbe2d24ec 100644
  void DeclPrinter::VisitLabelDecl(LabelDecl *D) {
    Out << *D << ":";
  }
-@@ -1485,6 +1580,20 @@ void DeclPrinter::VisitObjCMethodDecl(ObjCMethodDecl *OMD) {
+@@ -1485,6 +1583,20 @@ void DeclPrinter::VisitObjCMethodDecl(ObjCMethodDecl *OMD) {
    if (OMD->isVariadic())
        Out << ", ...";
  
@@ -2811,7 +2814,7 @@ index 4be3e977b..bbe2d24ec 100644
    if (std::optional<std::string> Attrs = prettyPrintAttributes(OMD))
      Out << ' ' << *Attrs;
  
-@@ -1512,8 +1621,8 @@ void DeclPrinter::VisitObjCImplementationDecl(ObjCImplementationDecl *OID) {
+@@ -1512,8 +1624,8 @@ void DeclPrinter::VisitObjCImplementationDecl(ObjCImplementationDecl *OID) {
      eolnOut = true;
      Indentation += Policy.Indentation;
      for (const auto *I : OID->ivars()) {
@@ -2822,7 +2825,7 @@ index 4be3e977b..bbe2d24ec 100644
      }
      Indentation -= Policy.Indentation;
      Out << "}\n";
-@@ -1568,9 +1677,8 @@ void DeclPrinter::VisitObjCInterfaceDecl(ObjCInterfaceDecl *OID) {
+@@ -1568,9 +1680,8 @@ void DeclPrinter::VisitObjCInterfaceDecl(ObjCInterfaceDecl *OID) {
      eolnOut = true;
      Indentation += Policy.Indentation;
      for (const auto *I : OID->ivars()) {
@@ -2834,7 +2837,7 @@ index 4be3e977b..bbe2d24ec 100644
      }
      Indentation -= Policy.Indentation;
      Out << "}\n";
-@@ -1587,6 +1695,8 @@ void DeclPrinter::VisitObjCInterfaceDecl(ObjCInterfaceDecl *OID) {
+@@ -1587,6 +1698,8 @@ void DeclPrinter::VisitObjCInterfaceDecl(ObjCInterfaceDecl *OID) {
  }
  
  void DeclPrinter::VisitObjCProtocolDecl(ObjCProtocolDecl *PID) {
@@ -2843,7 +2846,7 @@ index 4be3e977b..bbe2d24ec 100644
    if (!PID->isThisDeclarationADefinition()) {
      Out << "@protocol " << *PID << ";\n";
      return;
-@@ -1619,6 +1729,8 @@ void DeclPrinter::VisitObjCCategoryImplDecl(ObjCCategoryImplDecl *PID) {
+@@ -1619,6 +1732,8 @@ void DeclPrinter::VisitObjCCategoryImplDecl(ObjCCategoryImplDecl *PID) {
  }
  
  void DeclPrinter::VisitObjCCategoryDecl(ObjCCategoryDecl *PID) {
@@ -2852,7 +2855,7 @@ index 4be3e977b..bbe2d24ec 100644
    Out << "@interface ";
    if (const auto *CID = PID->getClassInterface())
      Out << *CID;
-@@ -1631,9 +1743,10 @@ void DeclPrinter::VisitObjCCategoryDecl(ObjCCategoryDecl *PID) {
+@@ -1631,9 +1746,10 @@ void DeclPrinter::VisitObjCCategoryDecl(ObjCCategoryDecl *PID) {
    if (PID->ivar_size() > 0) {
      Out << "{\n";
      Indentation += Policy.Indentation;
@@ -2866,7 +2869,7 @@ index 4be3e977b..bbe2d24ec 100644
      Indentation -= Policy.Indentation;
      Out << "}\n";
    }
-@@ -1762,6 +1875,8 @@ void DeclPrinter::VisitObjCPropertyDecl(ObjCPropertyDecl *PDecl) {
+@@ -1762,6 +1878,8 @@ void DeclPrinter::VisitObjCPropertyDecl(ObjCPropertyDecl *PDecl) {
    if (!StringRef(TypeStr).ends_with("*"))
      Out << ' ';
    Out << *PDecl;
@@ -12584,10 +12587,10 @@ index 000000000..31689c431
 +} // namespace
 diff --git a/clang/unittests/AST/ObjC3FunctionEffectTest.cpp b/clang/unittests/AST/ObjC3FunctionEffectTest.cpp
 new file mode 100644
-index 000000000..25ee90b87
+index 000000000..d36c2645e
 --- /dev/null
 +++ b/clang/unittests/AST/ObjC3FunctionEffectTest.cpp
-@@ -0,0 +1,259 @@
+@@ -0,0 +1,293 @@
 +//===--- ObjC3FunctionEffectTest.cpp - function type effects --------------===//
 +// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
 +// See https://llvm.org/LICENSE.txt for license information.
@@ -12633,7 +12636,8 @@ index 000000000..25ee90b87
 +}
 +
 +TEST(ObjC3FunctionEffects, CanonicalTypedPayloadParticipatesInTypeIdentity) {
-+  auto AST = parse("struct Error {}; typedef Error ErrorAlias; struct Other {};");
++  auto AST =
++      parse("struct Error {}; typedef Error ErrorAlias; struct Other {};");
 +  ASSERT_TRUE(AST);
 +  ASTContext &Context = AST->getASTContext();
 +  QualType Error = recordType(Context, "Error");
@@ -12641,20 +12645,20 @@ index 000000000..25ee90b87
 +      &Context.Idents.get("ErrorAlias"));
 +  ASSERT_FALSE(AliasDecls.empty());
 +  auto *AliasDecl = cast<TypedefNameDecl>(AliasDecls.front());
-+  QualType ErrorAlias = Context.getTypedefType(
-+      ElaboratedTypeKeyword::None, NestedNameSpecifier(std::nullopt), AliasDecl);
++  QualType ErrorAlias =
++      Context.getTypedefType(ElaboratedTypeKeyword::None,
++                             NestedNameSpecifier(std::nullopt), AliasDecl);
 +  QualType Other = recordType(Context, "Other");
 +
-+  QualType Typed = functionType(
-+      Context, {false, ObjC3ThrowsKind::Typed, Error});
-+  QualType TypedAlias = functionType(
-+      Context, {false, ObjC3ThrowsKind::Typed, ErrorAlias});
-+  QualType TypedOther = functionType(
-+      Context, {false, ObjC3ThrowsKind::Typed, Other});
++  QualType Typed =
++      functionType(Context, {false, ObjC3ThrowsKind::Typed, Error});
++  QualType TypedAlias =
++      functionType(Context, {false, ObjC3ThrowsKind::Typed, ErrorAlias});
++  QualType TypedOther =
++      functionType(Context, {false, ObjC3ThrowsKind::Typed, Other});
 +  EXPECT_TRUE(Context.hasSameType(Typed, TypedAlias));
 +  EXPECT_FALSE(Context.hasSameType(Typed, TypedOther));
-+  EXPECT_EQ(Typed->castAs<FunctionProtoType>()->getObjC3ErrorType(),
-+            Error);
++  EXPECT_EQ(Typed->castAs<FunctionProtoType>()->getObjC3ErrorType(), Error);
 +}
 +
 +TEST(ObjC3FunctionEffects, SugaredPayloadProfileMatchesLookupAcrossRehash) {
@@ -12665,14 +12669,15 @@ index 000000000..25ee90b87
 +      &Context.Idents.get("ErrorAlias"));
 +  ASSERT_FALSE(AliasDecls.empty());
 +  auto *AliasDecl = cast<TypedefNameDecl>(AliasDecls.front());
-+  QualType ErrorAlias = Context.getTypedefType(
-+      ElaboratedTypeKeyword::None, NestedNameSpecifier(std::nullopt),
-+      AliasDecl);
++  QualType ErrorAlias =
++      Context.getTypedefType(ElaboratedTypeKeyword::None,
++                             NestedNameSpecifier(std::nullopt), AliasDecl);
 +
 +  FunctionProtoType::ExtProtoInfo EPI;
 +  EPI.ObjC3Effects = {false, ObjC3ThrowsKind::Typed, ErrorAlias};
 +
-+  QualType First = Context.getFunctionType(Context.VoidTy, {Context.IntTy}, EPI);
++  QualType First =
++      Context.getFunctionType(Context.VoidTy, {Context.IntTy}, EPI);
 +  ASSERT_FALSE(First.isNull());
 +  const auto *FirstFPT = First->castAs<FunctionProtoType>();
 +  llvm::FoldingSetNodeID LookupProfile;
@@ -12694,7 +12699,8 @@ index 000000000..25ee90b87
 +  for (unsigned I = 0; I != 256; ++I) {
 +    Parameter = Context.getPointerType(Parameter);
 +    ParameterTypes.push_back(Parameter);
-+    QualType Function = Context.getFunctionType(Context.VoidTy, {Parameter}, EPI);
++    QualType Function =
++        Context.getFunctionType(Context.VoidTy, {Parameter}, EPI);
 +    ASSERT_FALSE(Function.isNull());
 +    FunctionTypes.push_back(Function);
 +  }
@@ -12713,12 +12719,12 @@ index 000000000..25ee90b87
 +
 +  QualType Plain = functionType(Context, {});
 +  QualType Async = functionType(Context, {true, ObjC3ThrowsKind::None, {}});
-+  QualType Untyped = functionType(
-+      Context, {false, ObjC3ThrowsKind::Untyped, {}});
-+  QualType AsyncUntyped = functionType(
-+      Context, {true, ObjC3ThrowsKind::Untyped, {}});
-+  QualType Typed = functionType(
-+      Context, {false, ObjC3ThrowsKind::Typed, Error});
++  QualType Untyped =
++      functionType(Context, {false, ObjC3ThrowsKind::Untyped, {}});
++  QualType AsyncUntyped =
++      functionType(Context, {true, ObjC3ThrowsKind::Untyped, {}});
++  QualType Typed =
++      functionType(Context, {false, ObjC3ThrowsKind::Typed, Error});
 +  EXPECT_FALSE(Context.hasSameType(Plain, Async));
 +  EXPECT_FALSE(Context.hasSameType(Plain, Untyped));
 +  EXPECT_FALSE(Context.hasSameType(Untyped, Typed));
@@ -12735,10 +12741,10 @@ index 000000000..25ee90b87
 +  ASTContext &Context = AST->getASTContext();
 +  QualType Error = recordType(Context, "Error");
 +  FunctionProtoType::ExceptionSpecInfo Noexcept(EST_BasicNoexcept);
-+  QualType Typed = functionType(
-+      Context, {false, ObjC3ThrowsKind::Typed, Error});
-+  QualType TypedNoexcept = functionType(
-+      Context, {false, ObjC3ThrowsKind::Typed, Error}, Noexcept);
++  QualType Typed =
++      functionType(Context, {false, ObjC3ThrowsKind::Typed, Error});
++  QualType TypedNoexcept =
++      functionType(Context, {false, ObjC3ThrowsKind::Typed, Error}, Noexcept);
 +  EXPECT_FALSE(Context.hasSameType(Typed, TypedNoexcept));
 +  EXPECT_EQ(Typed->castAs<FunctionProtoType>()->getObjC3ErrorType(), Error);
 +  EXPECT_EQ(TypedNoexcept->castAs<FunctionProtoType>()->getExceptionSpecType(),
@@ -12750,8 +12756,8 @@ index 000000000..25ee90b87
 +  ASSERT_TRUE(AST);
 +  ASTContext &Context = AST->getASTContext();
 +  QualType Error = recordType(Context, "Error");
-+  QualType AsyncTyped = functionType(
-+      Context, {true, ObjC3ThrowsKind::Typed, Error});
++  QualType AsyncTyped =
++      functionType(Context, {true, ObjC3ThrowsKind::Typed, Error});
 +  EXPECT_EQ(AsyncTyped.getAsString(Context.getPrintingPolicy()),
 +            "void () async throws(Error)");
 +  PrintingPolicy DeclarationPolicy(Context.getPrintingPolicy());
@@ -12771,8 +12777,8 @@ index 000000000..25ee90b87
 +  ASSERT_TRUE(AST);
 +  ASTContext &Context = AST->getASTContext();
 +  auto findTemplateTypeParameter = [&](llvm::StringRef Name) {
-+    auto Decls = Context.getTranslationUnitDecl()->lookup(
-+        &Context.Idents.get(Name));
++    auto Decls =
++        Context.getTranslationUnitDecl()->lookup(&Context.Idents.get(Name));
 +    assert(!Decls.empty());
 +    auto *Template = cast<ClassTemplateDecl>(Decls.front());
 +    return cast<TemplateTypeParmDecl>(
@@ -12780,15 +12786,14 @@ index 000000000..25ee90b87
 +  };
 +
 +  QualType T = Context.getTypeDeclType(findTemplateTypeParameter("Box"));
-+  QualType TPayload = functionType(
-+      Context, {false, ObjC3ThrowsKind::Typed, T});
++  QualType TPayload = functionType(Context, {false, ObjC3ThrowsKind::Typed, T});
 +  ASSERT_FALSE(TPayload.isNull());
 +  EXPECT_TRUE(TPayload->isInstantiationDependentType());
 +  EXPECT_TRUE(TPayload->getDependence() & TypeDependence::Dependent);
 +
 +  QualType Ts = Context.getTypeDeclType(findTemplateTypeParameter("PackBox"));
-+  QualType PackPayload = functionType(
-+      Context, {false, ObjC3ThrowsKind::Typed, Ts});
++  QualType PackPayload =
++      functionType(Context, {false, ObjC3ThrowsKind::Typed, Ts});
 +  ASSERT_FALSE(PackPayload.isNull());
 +  EXPECT_TRUE(PackPayload->isInstantiationDependentType());
 +  EXPECT_TRUE(PackPayload->getDependence() & TypeDependence::UnexpandedPack);
@@ -12801,12 +12806,13 @@ index 000000000..25ee90b87
 +
 +  FunctionProtoType::ExtProtoInfo MissingPayload;
 +  MissingPayload.ObjC3Effects.Throws = ObjC3ThrowsKind::Typed;
-+  EXPECT_TRUE(Context.getFunctionType(Context.VoidTy, {}, MissingPayload)
-+                  .isNull());
++  EXPECT_TRUE(
++      Context.getFunctionType(Context.VoidTy, {}, MissingPayload).isNull());
 +
 +  FunctionProtoType::ExtProtoInfo InvalidKind;
 +  InvalidKind.ObjC3Effects.Throws = static_cast<ObjC3ThrowsKind>(3);
-+  EXPECT_TRUE(Context.getFunctionType(Context.VoidTy, {}, InvalidKind).isNull());
++  EXPECT_TRUE(
++      Context.getFunctionType(Context.VoidTy, {}, InvalidKind).isNull());
 +}
 +
 +TEST(ObjC3FunctionEffect, PolishedAvailabilityContractsRoundTrip) {
@@ -12841,6 +12847,37 @@ index 000000000..25ee90b87
 +  EXPECT_NE(Printed.find("old category"), std::string::npos);
 +  EXPECT_NE(Printed.find("old property"), std::string::npos);
 +  EXPECT_NE(Printed.find("use new method"), std::string::npos);
++  auto Reparsed = parse(Printed);
++  ASSERT_TRUE(Reparsed);
++  EXPECT_FALSE(Reparsed->getDiagnostics().hasErrorOccurred());
++}
++
++TEST(ObjC3FunctionEffect, PolishedSPIAnnotationsRoundTrip) {
++  auto AST = parse(R"(
++    __attribute__((annotate("objc3.spi:Testing"))) int secret(void);
++    extern int global __attribute__((annotate("objc3.spi:Testing")));
++    struct __attribute__((annotate("objc3.spi:Testing"))) Value { int field; };
++    enum __attribute__((annotate("objc3.spi:Testing"))) Choice { item };
++    typedef int Alias __attribute__((annotate("objc3.spi:Testing")));
++    __attribute__((annotate("objc3.spi:Testing"))) @interface Secret @end
++    __attribute__((annotate("objc3.spi:Testing"))) @protocol Protocol @end
++    __attribute__((annotate("unmodeled"))) int ordinary(void);
++  )");
++  ASSERT_TRUE(AST);
++  ASSERT_FALSE(AST->getDiagnostics().hasErrorOccurred());
++  PrintingPolicy Policy(AST->getASTContext().getLangOpts());
++  Policy.PolishForDeclaration = true;
++  std::string Printed;
++  llvm::raw_string_ostream Out(Printed);
++  AST->getASTContext().getTranslationUnitDecl()->print(Out, Policy);
++  Out.flush();
++  unsigned Count = 0;
++  for (size_t Pos = 0;
++       (Pos = Printed.find("objc3.spi:Testing", Pos)) != std::string::npos;
++       ++Pos)
++    ++Count;
++  EXPECT_EQ(Count, 7u);
++  EXPECT_EQ(Printed.find("unmodeled"), std::string::npos);
 +  auto Reparsed = parse(Printed);
 +  ASSERT_TRUE(Reparsed);
 +  EXPECT_FALSE(Reparsed->getDiagnostics().hasErrorOccurred());

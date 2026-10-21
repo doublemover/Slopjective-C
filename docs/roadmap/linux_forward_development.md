@@ -1,7 +1,7 @@
 # Linux forward development
 
 The active product is the Clang-only Linux x86-64 SDK. The
-[acceptance receipt](../support/linux_api_availability_acceptance.json) identifies
+[acceptance receipt](../support/linux_module_spi_acceptance.json) identifies
 its exact archive, implementation, installed execution and fresh-distribution
 evidence. Tool versions come from [the manifest](../../toolchains/llvm/manifest.json);
 public language claims come from [the capability authority](../../schemas/objc3-language-capabilities.json).
@@ -47,10 +47,14 @@ The implemented foundations have separate bounded contracts:
   deprecation, unavailability and platform metadata through imports, ownership
   projections and source-free packages. Metadata edits invalidate dependents.
 
+- [Named module SPI](linux_module_spi.md) binds native partitions and exact-provider
+  grants through qualified lookup, source recipes and immutable consumers.
+  Re-exports do not forward privileges.
+
 ## Next implementation sequence
 
-1. Extend the bounded public module API with privileged SPI and module-owned
-   linker/runtime naming contracts. Native availability metadata, native imports,
+1. Extend the bounded public module API with module-owned linker/runtime naming
+   contracts. Privileged SPI is implemented. Native availability metadata, native imports,
    qualified lookup, explicit export selection and immutable dependency
    identities are implemented. Registry transport is a separate concern.
 2. Build structured task groups, cancellation and actor isolation on that

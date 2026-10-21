@@ -18,6 +18,7 @@ struct InterfaceModuleRequest {
   // validated/prepared but become visible only when the parser encounters
   // their source-level @import directive.
   bool initially_visible = true;
+  std::vector<std::string> spi_groups;
 };
 
 struct InterfaceModuleResolution {

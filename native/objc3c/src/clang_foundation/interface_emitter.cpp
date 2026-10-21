@@ -409,11 +409,22 @@ class TypeDependencyVisitor final
    TypeDependencyVisitor(const clang::ASTContext &context,
                          InterfaceEmissionArtifact &result,
                          const std::set<std::string> &resolved_ids,
-                         const std::vector<std::string> &exports)
+                         const std::vector<std::string> &exports,
+                         std::string spi_group)
        : context_(context), result_(result), resolved_ids_(resolved_ids),
-         exports_(exports) {}
+         exports_(exports), spi_group_(std::move(spi_group)) {}
 
    void CheckVisibility(const clang::NamedDecl *declaration) {
+     if (declaration) {
+       const auto group = ReadInterfaceSPIGroup(declaration);
+       if (!group.empty() &&
+           (group != spi_group_ ||
+            !IsInMainFile(context_, declaration->getLocation())))
+         AddDiagnostic(
+             result_, "O3IFC158",
+             "exported signature references SPI outside its local group",
+             declaration->getQualifiedNameAsString());
+     }
      if (declaration && IsInMainFile(context_, declaration->getLocation()) &&
          !SelectedExport(declaration, exports_))
        AddDiagnostic(
@@ -500,6 +511,7 @@ class TypeDependencyVisitor final
   InterfaceEmissionArtifact &result_;
   const std::set<std::string> &resolved_ids_;
   const std::vector<std::string> &exports_;
+  std::string spi_group_;
 };
 
 bool CheckTypeDependencies(const clang::NamedDecl *declaration,
@@ -507,7 +519,8 @@ bool CheckTypeDependencies(const clang::NamedDecl *declaration,
                            InterfaceEmissionArtifact &result,
                            const std::set<std::string> &resolved_ids,
                            const std::vector<std::string> &exports = {}) {
-  TypeDependencyVisitor visitor(context, result, resolved_ids, exports);
+  TypeDependencyVisitor visitor(context, result, resolved_ids, exports,
+                                ReadInterfaceSPIGroup(declaration));
   auto check = [&](clang::QualType type) {
     if (type.isNull()) return;
     visitor.TraverseType(type);
@@ -550,6 +563,9 @@ bool CheckTypeDependencies(const clang::NamedDecl *declaration,
                       "adopted Objective-C protocol dependency has no resolved interface identity",
                       adopted->getNameAsString());
     }
+  if (const auto *category =
+          llvm::dyn_cast<clang::ObjCCategoryDecl>(declaration))
+    visitor.CheckVisibility(category->getClassInterface());
   return visitor.UsesCanonicalFunctionEffects;
 }
 
@@ -700,6 +716,24 @@ class InterfaceCollector final
     }
     for (const auto *attribute : declaration->attrs()) {
       if (attribute->isImplicit()) continue;
+      if (const auto *annotation =
+              llvm::dyn_cast<clang::AnnotateAttr>(attribute);
+          annotation && annotation->getAnnotation().starts_with("objc3.spi:")) {
+        const auto group = annotation->getAnnotation().drop_front(10).str();
+        unsigned count = 0;
+        for (const auto *a : declaration->specific_attrs<clang::AnnotateAttr>())
+          count += a->getAnnotation().starts_with("objc3.spi:");
+        if (!IsTopLevel(declaration) ||
+            llvm::isa<clang::ObjCCategoryDecl>(declaration) ||
+            !IsValidSPIGroup(group) || count != 1 || annotation->args_size()) {
+          AddDiagnostic(result_, "O3IFC157",
+                        "SPI requires one valid group on an exported root; "
+                        "categories and members cannot define SPI groups",
+                        declaration->getQualifiedNameAsString());
+          return true;
+        }
+        continue;
+      }
       if (llvm::isa<clang::DeprecatedAttr, clang::UnavailableAttr,
                     clang::AvailabilityAttr>(attribute))
         continue;
@@ -871,23 +905,36 @@ std::vector<std::string> RoundTripArguments(const clang::ASTContext &context) {
 
 bool SameDeclaration(const InterfaceDeclarationIdentity &a,
                      const InterfaceDeclarationIdentity &b) {
-  return std::tie(a.stable_id, a.kind, a.qualified_name,
-                  a.canonical_type_identity,
-                  a.effects.is_async, a.effects.is_throwing,
-                  a.effects.throws_kind, a.effects.error_type_identity,
+  return std::tie(a.stable_id, a.kind, a.qualified_name, a.spi_group,
+                  a.canonical_type_identity, a.effects.is_async,
+                  a.effects.is_throwing, a.effects.throws_kind,
+                  a.effects.error_type_identity,
                   a.effects.actor_isolation_identity,
                   a.effects.executor_affinity_identity,
                   a.effects.ownership_identity) ==
-         std::tie(b.stable_id, b.kind, b.qualified_name,
-                  b.canonical_type_identity,
-                  b.effects.is_async, b.effects.is_throwing,
-                  b.effects.throws_kind, b.effects.error_type_identity,
+         std::tie(b.stable_id, b.kind, b.qualified_name, b.spi_group,
+                  b.canonical_type_identity, b.effects.is_async,
+                  b.effects.is_throwing, b.effects.throws_kind,
+                  b.effects.error_type_identity,
                   b.effects.actor_isolation_identity,
                   b.effects.executor_affinity_identity,
                   b.effects.ownership_identity);
 }
 
 }  // namespace
+
+std::string ReadInterfaceSPIGroup(const clang::NamedDecl *declaration) {
+  while (declaration && !IsTopLevel(declaration))
+    declaration =
+        llvm::dyn_cast<clang::NamedDecl>(declaration->getDeclContext());
+  if (!declaration)
+    return {};
+  declaration = Representative(const_cast<clang::NamedDecl *>(declaration));
+  for (const auto *a : declaration->specific_attrs<clang::AnnotateAttr>())
+    if (a->getAnnotation().starts_with("objc3.spi:"))
+      return a->getAnnotation().drop_front(10).str();
+  return {};
+}
 
 std::string ReadInterfaceLanguageProfile(const clang::LangOptions &lang) {
   static constexpr const char *profiles[] = {
@@ -929,6 +976,7 @@ bool ReadInterfaceDeclarationIdentity(
   if (stable_id.empty()) return false;
   auto *representative = Representative(declaration);
   identity.stable_id = stable_id;
+  identity.spi_group = ReadInterfaceSPIGroup(representative);
   identity.kind = declaration->getDeclKindName();
   identity.qualified_name = declaration->getQualifiedNameAsString();
   if (identity.qualified_name.empty())
@@ -1075,6 +1123,8 @@ InterfaceEmissionArtifact EmitSemanticInterface(
   if (collector.UsesCanonicalFunctionEffects())
     sidecar.required_semantics.push_back("objc3.canonical-function-effects.v1");
   for (const auto &declaration : sidecar.declarations) {
+    if (!declaration.spi_group.empty())
+      sidecar.required_semantics.push_back("objc3.api-partitions.v1");
     if (declaration.canonical_type_identity.find(";api-availability=") !=
         std::string::npos)
       sidecar.required_semantics.push_back("objc3.api-availability.v1");
@@ -1102,13 +1152,10 @@ InterfaceEmissionArtifact EmitSemanticInterface(
   sidecar.canonical_source_sha256 = ComputeInterfaceSourceSha256(result.source_bytes);
 
   const std::vector<llvm::StringRef> supported_semantics = {
-      "objc3.canonical-function-effects.v1",
-      "objc3.native-carrier-types.v1",
-      "objc3.native-return-ownership.v1",
-      "objc3.direct-dispatch.v1",
-      "objc3.cxx-data-interfaces.v1",
-      "objc3.ownership-projection.v1",
-      "objc3.api-availability.v1"};
+      "objc3.canonical-function-effects.v1", "objc3.native-carrier-types.v1",
+      "objc3.native-return-ownership.v1",    "objc3.direct-dispatch.v1",
+      "objc3.cxx-data-interfaces.v1",        "objc3.ownership-projection.v1",
+      "objc3.api-availability.v1",           "objc3.api-partitions.v1"};
   auto encoded = EncodeSemanticInterfaceSidecar(sidecar, supported_semantics);
   if (!encoded) {
     AddDiagnostic(result, "O3IFC120",
@@ -1184,13 +1231,10 @@ InterfaceEmissionArtifact EmitSemanticInterface(
 
 namespace {
 const std::vector<llvm::StringRef> kProjectionSemantics = {
-    "objc3.canonical-function-effects.v1",
-    "objc3.native-carrier-types.v1",
-    "objc3.native-return-ownership.v1",
-    "objc3.direct-dispatch.v1",
-    "objc3.cxx-data-interfaces.v1",
-    "objc3.ownership-projection.v1",
-    "objc3.api-availability.v1"};
+    "objc3.canonical-function-effects.v1", "objc3.native-carrier-types.v1",
+    "objc3.native-return-ownership.v1",    "objc3.direct-dispatch.v1",
+    "objc3.cxx-data-interfaces.v1",        "objc3.ownership-projection.v1",
+    "objc3.api-availability.v1",           "objc3.api-partitions.v1"};
 
 bool ProjectionMode(const clang::ASTContext &context) {
   const auto &lang = context.getLangOpts();

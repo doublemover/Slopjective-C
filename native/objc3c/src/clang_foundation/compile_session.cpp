@@ -472,7 +472,8 @@ std::string JsonQuote(llvm::StringRef value) {
   return out;
 }
 
-void BuildDependencyRecord(CompileResult &result) {
+void BuildDependencyRecord(const CompileRequest &request,
+                           CompileResult &result) {
   std::string json = "{\"schema\":\"objc3c.dependency-record.v2\",\"toolchain\":{\"compiler\":" +
       JsonQuote(result.compiler_identity) + ",\"driver_path\":" +
       JsonQuote(result.compiler_driver_path) + ",\"driver_sha256\":" +
@@ -514,6 +515,29 @@ void BuildDependencyRecord(CompileResult &result) {
   for (std::size_t i = 0; i < result.visible_module_names.size(); ++i) {
     if (i) json += ',';
     json += JsonQuote(result.visible_module_names[i]);
+  }
+  json += "],\"spi_grants\":[";
+  std::map<std::string, std::vector<std::string>> grants;
+  for (const auto &module : request.module_imports)
+    if (std::any_of(result.resolved_interface_dependencies.begin(),
+                    result.resolved_interface_dependencies.end(),
+                    [&](const auto &d) {
+                      return d.module.canonical_name == module.canonical_name;
+                    }))
+      grants[module.canonical_name] = module.spi_groups;
+  for (const auto &input : request.imported_interfaces)
+    if (input.direct_import)
+      grants[input.locked_identity.canonical_name] = input.spi_groups;
+  bool first_grant = true;
+  for (auto &[name, groups] : grants) {
+    std::sort(groups.begin(), groups.end());
+    for (const auto &group : groups) {
+      if (!first_grant)
+        json += ',';
+      first_grant = false;
+      json += "{\"module\":" + JsonQuote(name) +
+              ",\"group\":" + JsonQuote(group) + '}';
+    }
   }
   json += "],\"imported_declarations\":[";
   for (std::size_t i = 0; i < result.imported_declarations.size(); ++i) {
@@ -717,7 +741,7 @@ CompileResult Compile(const CompileRequest &request) {
     result.failure = "Semantic interface emission failed";
   }
   if (result.success && !result.resolved_module_identities.empty())
-    BuildDependencyRecord(result);
+    BuildDependencyRecord(request, result);
   if (result.success && std::any_of(result.interface_input_paths.begin(),
           result.interface_input_paths.end(), aliases_record)) {
     result.success = false;

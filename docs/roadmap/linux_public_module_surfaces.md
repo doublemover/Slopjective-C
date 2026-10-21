@@ -85,8 +85,9 @@ policy expansion and a relocated source-free binary consumer. The gate records
 80 executions and 128 rejection checks. It also checks optimization-independent
 fingerprints and failure reports after every concurrent case has joined.
 
-Privileged SPI, availability metadata expansion, additional public C++ constructs
-and module-owned linker/runtime naming require separate contracts. Concurrency
+[Named SPI](linux_module_spi.md) and [native availability](linux_api_availability.md)
+have separate implemented contracts. Additional public C++ constructs and
+module-owned linker/runtime naming remain future work. Concurrency
 features retain their reserved status until their native execution and ownership
 requirements are implemented and qualified.
 

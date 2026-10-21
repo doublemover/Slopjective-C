@@ -238,6 +238,11 @@ The [public module surface contract](docs/roadmap/linux_public_module_surfaces.m
 selects exported roots, rejects private type leaks and preserves dependent build
 reuse across private implementation edits.
 
+The [named SPI contract](docs/roadmap/linux_module_spi.md) preserves privileged
+module partitions and exact-provider grants through native imports, source
+builds and relocated immutable packages. Re-exports retain public visibility
+without forwarding privileges.
+
 The [public availability contract](docs/roadmap/linux_api_availability.md) keeps
 native deprecation, unavailability and platform metadata in semantic identities
 and preserves their diagnostics in source-free consumers. Public metadata edits
@@ -280,11 +285,11 @@ Native validation checks O0/O2 behavior, ABI, ownership, cleanup, expected
 failures, installed interface consumers and editor tools. Evidence records bind
 source, compiler, runtime, system headers and executable contents and reject
 changes during validation. The
-[Linux SDK acceptance receipt](docs/support/linux_api_availability_acceptance.json)
+[Linux SDK acceptance receipt](docs/support/linux_module_spi_acceptance.json)
 records the qualified archive and fresh-host checks; each new SDK has its own
 qualification and release receipt. Runtime timings must be distinguished from
 compile and wrapper timings when comparing performance.
-The [current latency report](docs/support/linux_api_availability_latency.json) records
+The [current latency report](docs/support/linux_module_spi_latency.json) records
 warm command measurements and regression budgets for its AMD CPU model and quota.
 The [historical paired report](docs/support/linux_development_latency.json) retains
 the earlier Intel measurements; cross-CPU speedup comparisons are inapplicable.

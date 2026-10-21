@@ -24,7 +24,8 @@ int RunCompiler(int argc, char **argv) {
            "[--target triple] [--runtime abi] [--module-search-path dir] "
            "[--sdk-root dir] "
            "[--import-module name fingerprint package "
-           "[--private-import] [--reexport-import]] [--source-imports] "
+           "[--private-import] [--reexport-import] [--import-spi group]] "
+           "[--source-imports] "
            "[--emit-dependency-record path] "
            "[-- <clang arguments>]\n";
     return 2;
@@ -70,6 +71,9 @@ int RunCompiler(int argc, char **argv) {
     }
     if (argument == "--objc3")
       request.objc3 = true;
+    else if (argument == "--import-spi" && has_values(1) &&
+             !request.module_imports.empty())
+      request.module_imports.back().spi_groups.emplace_back(argv[++i]);
     else if (argument == "--source-imports")
       request.source_directed_imports = true;
     else if (argument == "--sdk-root" && has_values(1))
