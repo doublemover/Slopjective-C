@@ -20,10 +20,14 @@ static int next_scalar() {
 }
 
 static void check_scalar_lvalue(int &Source) {
+  const int Snapshot = Source;
   __objc3_match_stmt (Source) {
   case let Borrowed: {
-    if (&Borrowed != &Source || Borrowed != Source)
+    if (&Borrowed == &Source || Borrowed != Snapshot)
       Failure = 1;
+    Source += 10;
+    if (Borrowed != Snapshot)
+      Failure = 16;
   }
   }
 }

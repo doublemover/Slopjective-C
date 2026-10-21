@@ -327,6 +327,11 @@ records implemented APIs and remaining conformance obligations; typed key paths,
 strict-system support and public concurrency compiler semantics remain work in
 progress.
 
+The [native match result contract](docs/roadmap/linux_match_results.md) adds
+record, carrier, object, Block, complex, vector and C++ member-pointer results,
+owned scrutinee snapshots and independent mutable case bindings. Its acceptance
+receipt binds the activated SDK and fresh Debian 13 / Ubuntu 26.04 checks.
+
 ## Validation and development
 
 ```sh
@@ -343,7 +348,7 @@ Native validation checks O0/O2 behavior, ABI, ownership, cleanup, expected
 failures, installed interface consumers and editor tools. Evidence records bind
 source, compiler, runtime, system headers and executable contents and reject
 changes during validation. The
-[Linux SDK acceptance receipt](docs/support/linux_native_stdlib_acceptance.json)
+[Linux SDK acceptance receipt](docs/support/linux_match_results_acceptance.json)
 records the qualified archive and fresh-host checks; each new SDK has its own
 qualification and release receipt. Runtime timings must be distinguished from
 compile and wrapper timings when comparing performance.

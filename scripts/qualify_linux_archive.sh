@@ -3,7 +3,7 @@
 set -eu
 qualification_scope=${4:-full}
 case "$qualification_scope" in
-  full|task-destinations|stdlib) ;;
+  full|task-destinations|stdlib|match-results) ;;
   *) printf 'Unknown Linux qualification scope: %s\n' "$qualification_scope" >&2; exit 2 ;;
 esac
 archive=$1
@@ -86,7 +86,10 @@ python3 -B "$OBJC3C_SDK_ROOT/share/objc3c/source-build/qualify_module_spi.py" --
 python3 -B "$OBJC3C_SDK_ROOT/share/objc3c/source-build/qualify_module_names.py" --output-dir ./module-names-evidence
 fi
 python3 -B "$OBJC3C_SDK_ROOT/share/objc3c/source-build/qualify_stdlib.py" --output-dir ./stdlib-evidence
-if [ "$qualification_scope" != stdlib ]; then
+if [ "$qualification_scope" = full ] || [ "$qualification_scope" = match-results ]; then
+python3 -B "$OBJC3C_SDK_ROOT/share/objc3c/source-build/qualify_match_results.py" --output-dir ./match-result-evidence
+fi
+if [ "$qualification_scope" = full ] || [ "$qualification_scope" = task-destinations ]; then
 python3 -B "$OBJC3C_SDK_ROOT/share/objc3c/source-build/qualify_structured_runtime.py" --output-dir ./structured-runtime-evidence
 python3 -B "$OBJC3C_SDK_ROOT/share/objc3c/source-build/qualify_task_coroutines.py" --output-dir ./task-coroutine-evidence
 python3 -B "$OBJC3C_SDK_ROOT/share/objc3c/source-build/qualify_async_c_abi.py" --output-dir ./async-c-abi-evidence
@@ -134,6 +137,8 @@ fi
 python3 "$OBJC3C_SDK_ROOT/share/objc3c/verify-sdk.py" "$OBJC3C_SDK_ROOT"
 if [ "$qualification_scope" = full ]; then
   printf 'Unprivileged Linux SDK consumer: PASS\n'
+elif [ "$qualification_scope" = match-results ]; then
+  printf 'Unprivileged Linux native match consumer: PASS\n'
 elif [ "$qualification_scope" = stdlib ]; then
   printf 'Unprivileged Linux native standard-library consumer: PASS\n'
 else
@@ -142,6 +147,8 @@ fi
 SH
 if [ "$qualification_scope" = full ]; then
   printf 'Fresh Linux archive qualification: PASS\n'
+elif [ "$qualification_scope" = match-results ]; then
+  printf 'Fresh Linux native match qualification: PASS\n'
 elif [ "$qualification_scope" = stdlib ]; then
   printf 'Fresh Linux native standard-library qualification: PASS\n'
 else

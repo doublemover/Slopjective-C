@@ -14,15 +14,18 @@ historical milestone checklists do not establish current Clang conformance.
 
 ## Delivered foundations
 
-The [native-library SDK receipt](../support/linux_native_stdlib_acceptance.json) identifies
-the last activated archive and its actual installed tests. That release includes
+The [current SDK receipt](../support/linux_match_results_acceptance.json) identifies
+the activated archive, its 25 installed suites and fresh Debian 13 / Ubuntu 26.04 checks. That release includes
 extension ABI 20, service ABI 4, the shared C/C++ async frame/result contract, native standard-library modules,
 per-callback and per-resume autorelease pools, fair actor scheduling and the
 current SDK-independent package install command. New development must produce a
 new archive and receipt before it is described as delivered in that SDK.
 
 The public synchronous compiler supports native `defer`, `Optional`, `Result`
-and checked `throws` in the bounded compatibility profile. Its ownership and
+and checked `throws` in the bounded compatibility profile. Native `match` now
+constructs aggregate, reference, complex/vector and C++ member-pointer results;
+its bindings use stable snapshots and independent mutable case storage, with
+native weak loads and C++ copy/exception rules. Its ownership and
 ABI tests cover strong/weak/unsafe objects, Blocks, nested carriers, arrays,
 records, heap storage, direct dispatch, typed errors and native unwinding.
 
