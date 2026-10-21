@@ -70,6 +70,31 @@ int member_application(NativeModuleWorker &worker, NativeModuleWorker &base,
   }
 }
 
+int checked_values_application(objc3_actor_t *actor) __objc3_async {
+  __objc3_await objc3::hop_to(actor);
+  using Record = NativeModuleValue (*)(int, bool)
+      __objc3_async __objc3_throws(id<NativeModuleError>);
+  Record function = native_module_record;
+  auto value = __objc3_try_force(__objc3_await function(42, false));
+  auto number = __objc3_try_force(__objc3_await native_module_complex_value(40, false));
+  auto data = __objc3_try_force(__objc3_await native_module_data_value(false));
+  auto some = __objc3_try_optional(__objc3_await function(42, false));
+  auto none = __objc3_try_optional(__objc3_await function(96, true));
+  if (!__objc3_has_value(some) || __objc3_has_value(none) || value.*data != 42 ||
+      __real__ number + __imag__ number != 42 || value.padding[4] != 5) return 0;
+  __objc3_do {
+    (void)__objc3_try(__objc3_await function(96, true));
+  } __objc3_catch(id<NativeModuleError> error) {
+    __objc3_await objc3::task_yield;
+    objc3_current_actor_facts facts{};
+    facts.struct_size = sizeof(facts); facts.version = OBJC3_ACTOR_SERVICE_VERSION;
+    return objc3_actor_current_facts(&facts) == OBJC3_SERVICE_OK &&
+        facts.actor_identity == objc3_actor_identity(actor) &&
+        [(NativeModuleResult *)error number] == 96 ? 42 : 0;
+  }
+  return 0;
+}
+
 int main() {
   objc3_executor_t *executor = nullptr;
   if (objc3_executor_create(1, &executor) != OBJC3_SERVICE_OK)
@@ -110,6 +135,10 @@ int main() {
   pending = member_application(worker, *base, actor).start(executor);
   if (objc3_executor_pump(executor, 100, &executed) != OBJC3_SERVICE_OK ||
       pending.result() != 42) return 10;
+  pending = {};
+  pending = checked_values_application(actor).start(executor);
+  if (objc3_executor_pump(executor, 200, &executed) != OBJC3_SERVICE_OK ||
+      pending.result() != 42) return 11;
   pending = {};
   if (objc3_actor_close(actor) != OBJC3_SERVICE_OK ||
       objc3_actor_join(actor) != OBJC3_SERVICE_OK)

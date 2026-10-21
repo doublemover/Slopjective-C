@@ -426,6 +426,51 @@ int main() {
   owned_results(executor);
   checked_results(executor);
   member_results(executor);
+  {
+    for (unsigned kind = 0; kind != 6; ++kind) {
+      auto result = native_checked_values(state, kind).start(executor);
+      pump(executor);
+      assert(result.result() == (kind ? 96 : 42));
+    }
+    assert(state->values == 0);
+    for (bool fail : {false, true}) {
+      auto optional = native_checked_value_optional(state, fail).start(executor);
+      auto discarded = native_checked_value_discard(state, fail).start(executor);
+      pump(executor);
+      assert(optional.result() == (fail ? 96 : 42));
+      assert(discarded.result() == 42);
+    }
+    assert(state->values == 0);
+    {
+      auto result = native_checked_value_inline(state).start(executor);
+      auto copied = result;
+      pump(executor);
+      { auto value = copied.result(); assert(value.value == 42); }
+      result = {};
+      assert(copied.result().value == 42);
+    }
+    assert(state->values == 0 && state->copies > 0 && state->moves > 0);
+    {
+      auto cpp = native_checked_value(state, false, 1).start(executor);
+      auto objc = native_checked_value(state, false, 2).start(executor);
+      pump(executor);
+      bool caught = false;
+      try { (void)cpp.result(); } catch (int n) { caught = n == 73; }
+      assert(caught);
+      caught = false;
+      @try { (void)objc.result(); } @catch (id error) { caught = error != (id)0; }
+      assert(caught);
+    }
+    auto cancelled = native_checked_value_relay(state, true).start(executor);
+    pump(executor, 1);
+    cancelled.cancel();
+    pump(executor);
+    try { (void)cancelled.result(); assert(false); }
+    catch (const objc3::task_cancelled &) {}
+    assert(state->values == 0);
+  }
+
+
 #endif
   objc3_executor_release(executor);
   // Worker execution exercises nested frame creation and publication races.

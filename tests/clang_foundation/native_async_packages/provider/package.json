@@ -16,7 +16,13 @@
     "Error",
     "NativeModuleError",
     "native_module_checked",
-    "NativeModuleWorker"
+    "NativeModuleWorker",
+    "NativeModuleValue",
+    "native_module_complex",
+    "native_module_data",
+    "native_module_record",
+    "native_module_complex_value",
+    "native_module_data_value"
   ],
   "dependencies": []
 }

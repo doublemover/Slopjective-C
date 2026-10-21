@@ -1819,10 +1819,10 @@ index bc35ffdaa..7aa399437 100644
    Address SrcPtr = Src.getAddress();
  
 diff --git a/clang/lib/CodeGen/CGExprComplex.cpp b/clang/lib/CodeGen/CGExprComplex.cpp
-index 4d98ee995..70e28b502 100644
+index 4d98ee995..12e0f7720 100644
 --- a/clang/lib/CodeGen/CGExprComplex.cpp
 +++ b/clang/lib/CodeGen/CGExprComplex.cpp
-@@ -10,6 +10,7 @@
+@@ -10,9 +10,11 @@
  //
  //===----------------------------------------------------------------------===//
  
@@ -1830,7 +1830,11 @@ index 4d98ee995..70e28b502 100644
  #include "CGDebugInfo.h"
  #include "CGOpenMPRuntime.h"
  #include "CodeGenFunction.h"
-@@ -102,6 +103,16 @@ public:
++#include "CGObjC3TypedErrors.h"
+ #include "CodeGenModule.h"
+ #include "ConstantEmitter.h"
+ #include "clang/AST/StmtVisitor.h"
+@@ -102,6 +104,15 @@ public:
      llvm_unreachable("Stmt can't have complex result type!");
    }
    ComplexPairTy VisitExpr(Expr *S);
@@ -1840,8 +1844,7 @@ index 4d98ee995..70e28b502 100644
 +  }
 +
 +  ComplexPairTy VisitObjC3TryExpr(ObjC3TryExpr *E) {
-+    CGF.ErrorUnsupported(E, "Slop typed-error try ABI");
-+    return CGF.GetUndefRValue(E->getType()).getComplexVal();
++    return emitObjC3TryScalarExpr(CGF, *E).getComplexVal();
 +  }
 +
    ComplexPairTy VisitConstantExpr(ConstantExpr *E) {
@@ -3226,10 +3229,10 @@ index 000000000..fdf223326
 +#endif
 diff --git a/clang/lib/CodeGen/CGObjC3Carriers.cpp b/clang/lib/CodeGen/CGObjC3Carriers.cpp
 new file mode 100644
-index 000000000..c0b253402
+index 000000000..f5f5c2568
 --- /dev/null
 +++ b/clang/lib/CodeGen/CGObjC3Carriers.cpp
-@@ -0,0 +1,1291 @@
+@@ -0,0 +1,1300 @@
 +//===--- CGObjC3Carriers.cpp - ObjC3 carrier CodeGen adapter ----*- C++ -*-===//
 +//
 +//===----------------------------------------------------------------------===//
@@ -3268,7 +3271,8 @@ index 000000000..c0b253402
 +    return isa<ConstantArrayType>(Array) &&
 +           hasOnlyTrivialCallABILeaves(Ctx, Array->getElementType());
 +  if (T->isVoidType() || T->isIntegerType() || T->isEnumeralType() ||
-+      T->isRealFloatingType() || T->isPointerType())
++      T->isRealFloatingType() || T->isPointerType() ||
++      T->isAnyComplexType() || T->isMemberPointerType())
 +    return !T->isObjCObjectPointerType() && !T->isBlockPointerType() &&
 +           T.getObjCLifetime() == Qualifiers::OCL_None;
 +
@@ -3510,7 +3514,7 @@ index 000000000..c0b253402
 +      // survive, while evaluating the child exactly once.
 +      const bool PayloadIsVolatile =
 +          DestinationIsVolatile || PayloadType.isVolatileQualified();
-+      if (PayloadType->isScalarType()) {
++      if (CodeGenFunction::hasScalarEvaluationKind(PayloadType)) {
 +        llvm::Value *Value = CGF.EmitScalarExpr(Payload);
 +        CGF.EmitStoreOfScalar(Value, PayloadStorage, PayloadIsVolatile,
 +                              PayloadType, AlignmentSource::Type,
@@ -3649,6 +3653,14 @@ index 000000000..c0b253402
 +
 +  const bool SrcVolatile = SourceIsVolatile || PayloadType.isVolatileQualified();
 +  const bool DstVolatile = DestinationIsVolatile || PayloadType.isVolatileQualified();
++  if (Ty->isAnyComplexType()) {
++    QualType SrcType = SrcVolatile ? Ctx.getVolatileType(PayloadType) : PayloadType;
++    QualType DstType = DstVolatile ? Ctx.getVolatileType(PayloadType) : PayloadType;
++    auto Value = CGF.EmitLoadOfComplex(CGF.MakeAddrLValue(Source, SrcType), Loc);
++    CGF.EmitStoreOfComplex(Value, CGF.MakeAddrLValue(Destination, DstType),
++                           IsInitialization);
++    return true;
++  }
 +  if (Ty->isScalarType()) {
 +    llvm::Value *Value =
 +        CGF.EmitLoadOfScalar(Source, SrcVolatile, PayloadType, Loc);
@@ -5703,10 +5715,10 @@ index 000000000..554f67296
 +#endif
 diff --git a/clang/lib/CodeGen/CGObjC3TypedErrors.cpp b/clang/lib/CodeGen/CGObjC3TypedErrors.cpp
 new file mode 100644
-index 000000000..eaa9648c6
+index 000000000..35572c09e
 --- /dev/null
 +++ b/clang/lib/CodeGen/CGObjC3TypedErrors.cpp
-@@ -0,0 +1,654 @@
+@@ -0,0 +1,720 @@
 +//===--- CGObjC3TypedErrors.cpp - ObjC3 error-output CodeGen -----*- C++
 +//-*-===//
 +//
@@ -5739,6 +5751,15 @@ index 000000000..eaa9648c6
 +
 +using namespace clang;
 +using namespace clang::CodeGen;
++
++namespace clang::CodeGen {
++struct ObjC3AsyncErrorHandler {
++  const Expr *Call;
++  Address Storage;
++  QualType Type;
++  llvm::BasicBlock *Failure;
++};
++} // namespace clang::CodeGen
 +
 +namespace {
 +
@@ -5828,30 +5849,72 @@ index 000000000..eaa9648c6
 +  QualType PreviousType;
 +  const Expr *PreviousCall;
 +  std::unique_ptr<CodeGenFunction::OpaqueValueMapping> AsyncSlot;
++  ObjC3AsyncErrorHandler *PreviousAsync;
++  std::unique_ptr<ObjC3AsyncErrorHandler> Async;
++  std::unique_ptr<CodeGenFunction::ConditionalEvaluation> Conditional;
 +
 +public:
 +  ScopedObjC3ErrorOutCall(CodeGenFunction &CGF, Address Storage,
-+                          QualType ValueType, const Expr *Call)
++                          QualType ValueType, const Expr *Call,
++                          llvm::BasicBlock *Failure)
 +      : CGF(CGF), PreviousStorage(CGF.ObjC3CallErrorOutStorage),
 +        PreviousType(CGF.ObjC3CallErrorOutValueType),
-+        PreviousCall(CGF.ObjC3CallErrorOutExpr) {
++        PreviousCall(CGF.ObjC3CallErrorOutExpr),
++        PreviousAsync(CGF.ObjC3AsyncError) {
 +    if (const auto *Adapter = getObjC3CheckedAsyncAdapter(Call)) {
 +      auto *Slot = cast<OpaqueValueExpr>(Adapter->getArg(1)->IgnoreImpCasts());
 +      AsyncSlot = std::make_unique<CodeGenFunction::OpaqueValueMapping>(
 +          CGF, Slot, RValue::get(Storage.emitRawPointer(CGF)));
++      Async = std::make_unique<ObjC3AsyncErrorHandler>(ObjC3AsyncErrorHandler{
++          Adapter, Storage, ValueType, Failure});
++      CGF.ObjC3AsyncError = Async.get();
++      // Result temporaries only become live on the successful resume edge.
++      Conditional = std::make_unique<CodeGenFunction::ConditionalEvaluation>(CGF);
++      Conditional->begin(CGF);
 +    }
 +    CGF.ObjC3CallErrorOutStorage = Storage;
 +    CGF.ObjC3CallErrorOutValueType = ValueType;
 +    CGF.ObjC3CallErrorOutExpr = Call;
 +  }
 +  ~ScopedObjC3ErrorOutCall() {
++    if (Conditional)
++      Conditional->end(CGF);
 +    CGF.ObjC3CallErrorOutStorage = PreviousStorage;
 +    CGF.ObjC3CallErrorOutValueType = PreviousType;
 +    CGF.ObjC3CallErrorOutExpr = PreviousCall;
++    CGF.ObjC3AsyncError = PreviousAsync;
 +  }
 +};
 +
 +} // namespace
++
++const Expr *CodeGen::emitObjC3CheckedAsyncResume(CodeGenFunction &CGF,
++                                                  const CoawaitExpr &E) {
++  const auto *Adapter = getObjC3CheckedAsyncAdapter(&E);
++  if (!Adapter)
++    return E.getResumeExpr();
++  auto *Handler = CGF.ObjC3AsyncError;
++  const auto *Resume = dyn_cast<BinaryOperator>(E.getResumeExpr());
++  if (!Handler || Handler->Call != Adapter || !Resume ||
++      Resume->getOpcode() != BO_Comma) {
++    CGF.CGM.ErrorUnsupported(&E, "checked async resume without error context");
++    return E.getResumeExpr();
++  }
++  CGF.EmitIgnoredExpr(Resume->getLHS());
++  llvm::Value *Error = CGF.EmitLoadOfScalar(
++      CGF.MakeAddrLValue(Handler->Storage, Handler->Type), E.getExprLoc());
++  auto *Failure = CGF.createBasicBlock("objc3.await.failure");
++  auto *Success = CGF.createBasicBlock("objc3.await.success");
++  CGF.Builder.CreateCondBr(CGF.Builder.CreateIsNotNull(Error), Failure, Success);
++  CGF.EmitBlock(Failure);
++  // The enclosing checked expression still owns its awaiter and argument
++  // temporaries. Optional failure rejoins that scope; propagating failure
++  // runs its ordinary transfer cleanups. Success-only result cleanups are
++  // guarded by the scoped ConditionalEvaluation.
++  CGF.Builder.CreateBr(Handler->Failure);
++  CGF.EmitBlock(Success);
++  return Resume->getRHS();
++}
 +
 +bool CodeGen::isObjC3AsyncThrowingFunction(const CodeGenFunction &CGF) {
 +  const auto *FD = dyn_cast_or_null<FunctionDecl>(CGF.CurCodeDecl);
@@ -6154,9 +6217,10 @@ index 000000000..eaa9648c6
 +      llvm::Constant::getNullValue(CGF.ConvertType(ErrorValueType));
 +  CGF.EmitStoreOfScalar(Nil, ErrorSlotLV, /*isInit=*/true);
 +
++  llvm::BasicBlock *Failure = CGF.createBasicBlock("objc3.try.failure");
 +  RValue CallValue;
 +  {
-+    ScopedObjC3ErrorOutCall ErrorOut(CGF, ErrorSlot, ErrorValueType, Call);
++    ScopedObjC3ErrorOutCall ErrorOut(CGF, ErrorSlot, ErrorValueType, Call, Failure);
 +    // Keep ARC's consume/reclaim casts around managed call results. The raw
 +    // call is still the exact key for the hidden error output, but stripping
 +    // these casts would leak +1 results or miss return-value ownership.
@@ -6167,11 +6231,12 @@ index 000000000..eaa9648c6
 +
 +  llvm::Value *Error = CGF.EmitLoadOfScalar(ErrorSlotLV, E.getExprLoc());
 +  llvm::Value *Failed = CGF.Builder.CreateIsNotNull(Error, "objc3.try.failed");
-+  llvm::BasicBlock *Failure = CGF.createBasicBlock("objc3.try.failure");
 +  llvm::BasicBlock *Success = CGF.createBasicBlock("objc3.try.success");
 +  CGF.Builder.CreateCondBr(Failed, Failure, Success);
 +
 +  CGF.EmitBlock(Failure);
++  // The pre-result await edge bypasses the post-call load.
++  Error = CGF.EmitLoadOfScalar(ErrorSlotLV, E.getExprLoc());
 +  switch (E.getKind()) {
 +  case ObjC3TryExpr::Kind::Optionalize:
 +    llvm_unreachable("aggregate try? is emitted by the aggregate visitor");
@@ -6206,7 +6271,8 @@ index 000000000..eaa9648c6
 +                                        AggValueSlot Dest) {
 +  if (E.getKind() != ObjC3TryExpr::Kind::Optionalize) {
 +    const Expr *Call = nullptr;
-+    if (!supportsObjC3CarrierARCCallABI(CGF.CGM, E.getType()) ||
++    if ((!getObjC3CheckedAsyncAdapter(E.getOperand()) &&
++         !supportsObjC3CarrierARCCallABI(CGF.CGM, E.getType())) ||
 +        !isSupportedTryCall(CGF, E, Call)) {
 +      CGF.CGM.ErrorUnsupported(&E, "unsupported aggregate typed throws result");
 +      return false;
@@ -6219,17 +6285,18 @@ index 000000000..eaa9648c6
 +    CGF.EmitStoreOfScalar(
 +        llvm::Constant::getNullValue(CGF.ConvertType(ErrorType)), ErrorLV,
 +        /*isInit=*/true);
++    auto *Failure = CGF.createBasicBlock("objc3.try.failure");
 +    {
-+      ScopedObjC3ErrorOutCall ErrorOut(CGF, ErrorSlot, ErrorType, Call);
++      ScopedObjC3ErrorOutCall ErrorOut(CGF, ErrorSlot, ErrorType, Call, Failure);
 +      // Reuse ordinary fresh-sret lowering, including discarded-result and
 +      // argument ownership. A typed failure initializes an empty carrier.
 +      CGF.EmitAggExpr(E.getOperand(), Dest);
 +    }
 +    llvm::Value *Error = CGF.EmitLoadOfScalar(ErrorLV, E.getExprLoc());
-+    auto *Failure = CGF.createBasicBlock("objc3.try.failure");
 +    auto *Success = CGF.createBasicBlock("objc3.try.success");
 +    CGF.Builder.CreateCondBr(CGF.Builder.CreateIsNotNull(Error), Failure, Success);
 +    CGF.EmitBlock(Failure);
++    Error = CGF.EmitLoadOfScalar(ErrorLV, E.getExprLoc());
 +    if (E.getKind() == ObjC3TryExpr::Kind::Force) {
 +      CGF.EmitTrapCall(llvm::Intrinsic::trap);
 +      CGF.Builder.CreateUnreachable();
@@ -6250,8 +6317,10 @@ index 000000000..eaa9648c6
 +  }
 +  const bool ARCLocal =
 +      supportsObjC3CarrierARCLocalLifetime(CGF.CGM, E.getType());
++  const bool CppLocal = getObjC3CheckedAsyncAdapter(E.getOperand()) &&
++      supportsObjC3CarrierCppLocalLifetime(CGF.CGM, E.getType());
 +  if (!supportsObjC3CarrierCopyPayload(CGF.CGM, E.getType()) &&
-+      (!ARCLocal || (!Dest.isIgnored() &&
++      (!(ARCLocal || CppLocal) || (!Dest.isIgnored() &&
 +                    (Dest.isVolatile() ||
 +                     !CGF.isObjC3CarrierLocalInitialization(
 +                         Dest.getAddress(), E.getType()))))) {
@@ -6263,8 +6332,9 @@ index 000000000..eaa9648c6
 +      CodeGenFunction::getEvaluationKind(E.getOperand()->getType()) == TEK_Aggregate;
 +  if (!isSupportedTryCall(CGF, E, Call) ||
 +      (!E.getOperand()->getType()->isVoidType() &&
++       CodeGenFunction::getEvaluationKind(E.getOperand()->getType()) != TEK_Complex &&
 +       !CodeGenFunction::hasScalarEvaluationKind(E.getOperand()->getType()) &&
-+       !(AggregateOperand && supportsObjC3CarrierARCCallABI(CGF.CGM, E.getOperand()->getType())))) {
++       !(AggregateOperand && (CppLocal || supportsObjC3CarrierARCCallABI(CGF.CGM, E.getOperand()->getType()))))) {
 +    CGF.CGM.ErrorUnsupported(&E, "unsupported typed throws optional result");
 +    return false;
 +  }
@@ -6279,9 +6349,10 @@ index 000000000..eaa9648c6
 +  CGF.EmitStoreOfScalar(
 +      llvm::Constant::getNullValue(CGF.ConvertType(ErrorValueType)),
 +      ErrorSlotLV, /*isInit=*/true);
++  llvm::BasicBlock *Failure = CGF.createBasicBlock("objc3.try.failure");
 +  RValue CallValue;
 +  {
-+    ScopedObjC3ErrorOutCall ErrorOut(CGF, ErrorSlot, ErrorValueType, Call);
++    ScopedObjC3ErrorOutCall ErrorOut(CGF, ErrorSlot, ErrorValueType, Call, Failure);
 +    // Keep ARC's consume/reclaim casts around managed call results. The raw
 +    // call is still the exact key for the hidden error output, but stripping
 +    // these casts would leak +1 results or miss return-value ownership.
@@ -6295,7 +6366,11 @@ index 000000000..eaa9648c6
 +          CGF.CGM.ErrorUnsupported(&E, "nested try? payload storage");
 +          return false;
 +        }
-+        emitObjC3CarrierARCValueInit(CGF, E.getOperand(), Payload);
++        if (ARCLocal)
++          emitObjC3CarrierARCValueInit(CGF, E.getOperand(), Payload);
++        else
++          CGF.EmitAnyExprToMem(E.getOperand(), Payload, Qualifiers(),
++                               /*IsInit=*/true);
 +      }
 +    } else CallValue = E.getOperand()->getType()->isObjCRetainableType()
 +                    ? RValue::get(CGF.EmitScalarExpr(E.getOperand()))
@@ -6304,7 +6379,6 @@ index 000000000..eaa9648c6
 +
 +  llvm::Value *Error = CGF.EmitLoadOfScalar(ErrorSlotLV, E.getExprLoc());
 +  llvm::Value *Failed = CGF.Builder.CreateIsNotNull(Error, "objc3.try.failed");
-+  llvm::BasicBlock *Failure = CGF.createBasicBlock("objc3.try.failure");
 +  llvm::BasicBlock *Success = CGF.createBasicBlock("objc3.try.success");
 +  llvm::BasicBlock *Continue = CGF.createBasicBlock("objc3.try.continue");
 +  CGF.Builder.CreateCondBr(Failed, Failure, Success);
@@ -6332,26 +6406,30 @@ index 000000000..eaa9648c6
 +    if (!E.getOperand()->getType()->isVoidType() && !AggregateOperand) {
 +      Address Payload = getObjC3CarrierPayloadAddress(
 +          CGF, Dest.getAddress(), E.getType(), ObjC3CarrierPayloadArm::Value);
-+      if (!Payload.isValid() || !CallValue.isScalar()) {
++      if (!Payload.isValid() || (!CallValue.isScalar() && !CallValue.isComplex())) {
 +        CGF.CGM.ErrorUnsupported(&E, "unsupported try? Optional payload");
 +        return false;
 +      }
 +      QualType PayloadType = Representation.ValueField->getType();
 +      LValue PayloadLV = CGF.MakeAddrLValue(Payload, PayloadType);
-+      llvm::Value *Value = CallValue.getScalarVal();
-+      if (ARCLocal) {
-+        // The operand keeps its ordinary ARC consume/reclaim cleanups. The
-+        // engaged Optional needs an independent strong reference after those
-+        // full-expression cleanups run. Acquire it only on the success edge.
-+        if (PayloadType.getObjCLifetime() != Qualifiers::OCL_Strong) {
-+          CGF.CGM.ErrorUnsupported(&E, "non-strong managed try? payload");
-+          return false;
++      if (CallValue.isComplex()) {
++        CGF.EmitStoreOfComplex(CallValue.getComplexVal(), PayloadLV, /*isInit=*/true);
++      } else {
++        llvm::Value *Value = CallValue.getScalarVal();
++        if (ARCLocal) {
++          // The operand keeps its ordinary ARC consume/reclaim cleanups. The
++          // engaged Optional needs an independent strong reference after those
++          // full-expression cleanups run. Acquire it only on the success edge.
++          if (PayloadType.getObjCLifetime() != Qualifiers::OCL_Strong) {
++            CGF.CGM.ErrorUnsupported(&E, "non-strong managed try? payload");
++            return false;
++          }
++          Value = PayloadType->isBlockPointerType()
++                      ? CGF.EmitARCRetainBlock(Value, /*mandatory=*/true)
++                      : CGF.EmitARCRetainNonBlock(Value);
 +        }
-+        Value = PayloadType->isBlockPointerType()
-+                    ? CGF.EmitARCRetainBlock(Value, /*mandatory=*/true)
-+                    : CGF.EmitARCRetainNonBlock(Value);
++        CGF.EmitStoreOfScalar(Value, PayloadLV, /*isInit=*/true);
 +      }
-+      CGF.EmitStoreOfScalar(Value, PayloadLV, /*isInit=*/true);
 +    }
 +    emitObjC3CarrierStoreTag(CGF, Dest.getAddress(), E.getType(),
 +                             llvm::ConstantInt::getTrue(CGF.getLLVMContext()),
@@ -6363,10 +6441,10 @@ index 000000000..eaa9648c6
 +}
 diff --git a/clang/lib/CodeGen/CGObjC3TypedErrors.h b/clang/lib/CodeGen/CGObjC3TypedErrors.h
 new file mode 100644
-index 000000000..20ee41201
+index 000000000..73f1baa4f
 --- /dev/null
 +++ b/clang/lib/CodeGen/CGObjC3TypedErrors.h
-@@ -0,0 +1,64 @@
+@@ -0,0 +1,67 @@
 +//===--- CGObjC3TypedErrors.h - ObjC3 error-output CodeGen -------*- C++
 +//-*-===//
 +//
@@ -6392,6 +6470,7 @@ index 000000000..20ee41201
 +class FunctionProtoType;
 +class VarDecl;
 +class ObjC3TryExpr;
++class CoawaitExpr;
 +class ObjC3ThrowStmt;
 +class QualType;
 +class SourceLocation;
@@ -6423,6 +6502,8 @@ index 000000000..20ee41201
 +                            QualType ErrorValueType, llvm::Value *ErrorValue,
 +                            SourceLocation Loc);
 +bool emitObjC3ThrowStmt(CodeGenFunction &CGF, const ObjC3ThrowStmt &S);
++const Expr *emitObjC3CheckedAsyncResume(CodeGenFunction &CGF,
++                                         const CoawaitExpr &E);
 +RValue emitObjC3TryScalarExpr(CodeGenFunction &CGF, const ObjC3TryExpr &E);
 +bool emitObjC3TryAggregateExpr(CodeGenFunction &CGF, const ObjC3TryExpr &E,
 +                               AggValueSlot Dest);
@@ -6991,7 +7072,7 @@ index 7629b42dd..165d26433 100644
      case Type::Complex:
      case Type::Vector:
 diff --git a/clang/lib/CodeGen/CodeGenFunction.h b/clang/lib/CodeGen/CodeGenFunction.h
-index e7c24f1f3..42cfffccb 100644
+index e7c24f1f3..1c1456452 100644
 --- a/clang/lib/CodeGen/CodeGenFunction.h
 +++ b/clang/lib/CodeGen/CodeGenFunction.h
 @@ -79,6 +79,9 @@ class ObjCForCollectionStmt;
@@ -7004,15 +7085,16 @@ index e7c24f1f3..42cfffccb 100644
  class ObjCAutoreleasePoolStmt;
  class OMPUseDevicePtrClause;
  class OMPUseDeviceAddrClause;
-@@ -103,6 +106,7 @@ class RegionCodeGenTy;
+@@ -103,6 +106,8 @@ class RegionCodeGenTy;
  class TargetCodeGenInfo;
  struct OMPTaskDataTy;
  struct CGCoroData;
 +struct ObjC3ErrorHandler;
++struct ObjC3AsyncErrorHandler;
  
  // clang-format off
  /// The kind of evaluation to perform on values of a particular
-@@ -290,6 +294,55 @@ public:
+@@ -290,6 +295,56 @@ public:
    CodeGenModule &CGM; // Per-module state.
    const TargetInfo &Target;
  
@@ -7023,6 +7105,7 @@ index e7c24f1f3..42cfffccb 100644
 +  Address ObjC3CallErrorOutStorage = Address::invalid();
 +  QualType ObjC3CallErrorOutValueType;
 +  const Expr *ObjC3CallErrorOutExpr = nullptr;
++  ObjC3AsyncErrorHandler *ObjC3AsyncError = nullptr;
 +  Address ObjC3CarrierReturnInitialized = Address::invalid();
 +  llvm::SmallPtrSet<const VarDecl *, 8> ObjC3BorrowedMatchBindings;
 +
@@ -7068,7 +7151,7 @@ index e7c24f1f3..42cfffccb 100644
    // For EH/SEH outlined funclets, this field points to parent's CGF
    CodeGenFunction *ParentCGF = nullptr;
  
-@@ -2297,6 +2350,7 @@ public:
+@@ -2297,6 +2352,7 @@ public:
        return false;
      case QualType::DK_cxx_destructor:
      case QualType::DK_objc_weak_lifetime:
@@ -7076,7 +7159,7 @@ index e7c24f1f3..42cfffccb 100644
      case QualType::DK_nontrivial_c_struct:
        return getLangOpts().Exceptions;
      case QualType::DK_objc_strong_lifetime:
-@@ -3641,6 +3695,11 @@ public:
+@@ -3641,6 +3697,11 @@ public:
    /// This function may clear the current insertion point; callers should use
    /// EnsureInsertPoint if they wish to subsequently generate code without first
    /// calling EmitBlock, EmitBranch, or EmitStmt.
@@ -7088,7 +7171,7 @@ index e7c24f1f3..42cfffccb 100644
    void EmitStmt(const Stmt *S, ArrayRef<const Attr *> Attrs = {});
  
    /// EmitSimpleStmt - Try to emit a "simple" statement which does not
-@@ -3691,6 +3750,7 @@ public:
+@@ -3691,6 +3752,7 @@ public:
  
    void EmitCoroutineBody(const CoroutineBodyStmt &S);
    void EmitCoreturnStmt(const CoreturnStmt &S);
@@ -12759,7 +12842,7 @@ index 000000000..4d6df1540
 +// CHECK: load volatile i8
 diff --git a/clang/test/ObjC3/CodeGen/try-throw-fail-closed.mm b/clang/test/ObjC3/CodeGen/try-throw-fail-closed.mm
 new file mode 100644
-index 000000000..20ff52c3e
+index 000000000..86b38ae6e
 --- /dev/null
 +++ b/clang/test/ObjC3/CodeGen/try-throw-fail-closed.mm
 @@ -0,0 +1,42 @@
@@ -12797,7 +12880,7 @@ index 000000000..20ff52c3e
 +#elif TEST_KIND == 5
 +_Complex double force_complex() {
 +  _Complex double complex_call(void) __objc3_throws(Error);
-+  return __objc3_try_force(complex_call()); // complex-error {{Slop typed-error try ABI}}
++  return __objc3_try_force(complex_call()); // complex-error {{unsupported typed throws call shape}}
 +}
 +#elif TEST_KIND == 6
 +void reject_unqualified_handler() {
@@ -15860,10 +15943,10 @@ index 000000000..2aa06c88c
 +// CHECK-DAG: @_ZGR{{[0-9]+}}__objc3_m_reference_ =
 diff --git a/clang/test/ObjC3/CodeGen/Inputs/native-async-task.h b/clang/test/ObjC3/CodeGen/Inputs/native-async-task.h
 new file mode 100644
-index 000000000..732b10fa2
+index 000000000..771b59585
 --- /dev/null
 +++ b/clang/test/ObjC3/CodeGen/Inputs/native-async-task.h
-@@ -0,0 +1,52 @@
+@@ -0,0 +1,53 @@
 +#ifndef NATIVE_ASYNC_TASK_TEST_H
 +#define NATIVE_ASYNC_TASK_TEST_H
 +#include "../../../CodeGenCoroutines/Inputs/coroutine.h"
@@ -15908,6 +15991,7 @@ index 000000000..732b10fa2
 +};
 +}
 +template<class T> struct checked_async_adapter {
++  void __objc3_check_error();
 +  bool await_ready() noexcept;
 +  void await_suspend(std::coroutine_handle<>) noexcept;
 +  T await_resume();
@@ -16027,10 +16111,35 @@ index 000000000..40774b374
 +ObjectCallback callback = object;
 +auto indirect(ObjectCallback call, Object *value) { return call(value); }
 diff --git a/clang/lib/CodeGen/CGCoroutine.cpp b/clang/lib/CodeGen/CGCoroutine.cpp
-index bf896f133..e24241585 100644
+index bf896f133..b6071bc4d 100644
 --- a/clang/lib/CodeGen/CGCoroutine.cpp
 +++ b/clang/lib/CodeGen/CGCoroutine.cpp
-@@ -389,6 +389,40 @@ RValue CodeGenFunction::EmitCoyieldExpr(const CoyieldExpr &E,
+@@ -11,6 +11,7 @@
+ //===----------------------------------------------------------------------===//
+ 
+ #include "CGCleanup.h"
++#include "CGObjC3TypedErrors.h"
+ #include "CGDebugInfo.h"
+ #include "CodeGenFunction.h"
+ #include "clang/AST/StmtCXX.h"
+@@ -366,11 +367,14 @@ static LValueOrRValue emitSuspendExpression(CodeGenFunction &CGF, CGCoroData &Co
+     return Res;
+   }
+ 
++  const Expr *Resume = S.getResumeExpr();
++  if (const auto *Await = dyn_cast<CoawaitExpr>(&S))
++    Resume = emitObjC3CheckedAsyncResume(CGF, *Await);
+   LValueOrRValue Res;
+   if (forLValue)
+-    Res.LV = CGF.EmitLValue(S.getResumeExpr());
++    Res.LV = CGF.EmitLValue(Resume);
+   else
+-    Res.RV = CGF.EmitAnyExpr(S.getResumeExpr(), aggSlot, ignoreResult);
++    Res.RV = CGF.EmitAnyExpr(Resume, aggSlot, ignoreResult);
+ 
+   return Res;
+ }
+@@ -389,6 +393,40 @@ RValue CodeGenFunction::EmitCoyieldExpr(const CoyieldExpr &E,
                                 aggSlot, ignoreResult, /*forLValue*/false).RV;
  }
  
@@ -16184,3 +16293,68 @@ index 000000000..d14d14e53
 +// A secondary-base virtual thunk returns the task carrier through sret.
 +// CHECK: define {{.*}}void @_ZThn16_NK6Worker5valueEi(ptr {{.*}}sret
 +// CHECK: define {{.*}}void @_ZThn16_NK6Worker7checkedEbPU15objcproto5Error11objc_object(ptr {{.*}}sret
+diff --git a/clang/test/ObjC3/CodeGen/native-async-value-results.mm b/clang/test/ObjC3/CodeGen/native-async-value-results.mm
+new file mode 100644
+index 000000000..15e9531a8
+--- /dev/null
++++ b/clang/test/ObjC3/CodeGen/native-async-value-results.mm
+@@ -0,0 +1,59 @@
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -std=c++20 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -fobjc-arc -fexceptions -fcxx-exceptions -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -std=c++23 -fobjc-version=3 -fobjc-runtime=gnustep-2.2 -fblocks -fexceptions -fcxx-exceptions -disable-llvm-passes -emit-llvm -o - %s | FileCheck %s
++#include "Inputs/native-async-task.h"
++@protocol Error @end
++struct Value {
++  int number;
++  Value() = delete;
++  Value(int);
++  Value(const Value &);
++  ~Value();
++};
++Value produce(bool) __objc3_async __objc3_throws(id<Error>);
++// CHECK-LABEL: define{{.*}} void @_Z9propagate
++// CHECK: __objc3_check_error
++// CHECK: br i1
++// CHECK: objc3.await.success:
++// CHECK: await_resume
++Value propagate(bool fail) __objc3_async __objc3_throws(id<Error>) {
++  return __objc3_try(__objc3_await produce(fail));
++}
++// CHECK-LABEL: define{{.*}} void @_Z8optional
++// CHECK: __objc3_check_error
++// CHECK: objc3.await.success:
++// CHECK: await_resume
++// CHECK: objc3.try.failure:
++int optional(bool fail) __objc3_async {
++  auto result = __objc3_try_optional(__objc3_await produce(fail));
++  return __objc3_has_value(result);
++}
++using Complex = __complex__ double;
++Complex complex_value(bool) __objc3_async __objc3_throws(id<Error>);
++Complex relay_complex(bool fail) __objc3_async __objc3_throws(id<Error>) {
++  return __objc3_try(__objc3_await complex_value(fail));
++}
++using Data = int Value::*;
++using Method = int (Value::*)(int) const;
++Data data(bool) __objc3_async __objc3_throws(id<Error>);
++Method method(bool) __objc3_async __objc3_throws(id<Error>);
++int optional_pointers(bool fail) __objc3_async {
++  auto d = __objc3_try_optional(__objc3_await data(fail));
++  auto m = __objc3_try_optional(__objc3_await method(fail));
++  auto c = __objc3_try_optional(__objc3_await complex_value(fail));
++  return __objc3_has_value(d) + __objc3_has_value(m) + __objc3_has_value(c);
++}
++// Trivial complex carrier transfers retain volatile source and destination
++// access, rather than silently treating the payload as an ordinary scalar.
++// CHECK-LABEL: define{{.*}} void @_Z13volatile_copy
++// CHECK: load volatile double
++// CHECK: store volatile double
++void volatile_copy(volatile __objc3_optional(Complex) *destination,
++                   const volatile __objc3_optional(Complex) *source) {
++  *destination = *source;
++}
++
++void complex_some(Complex input) {
++  auto value = __objc3_some(Complex, input);
++  auto copy = value;
++  (void)__objc3_has_value(copy);
++}

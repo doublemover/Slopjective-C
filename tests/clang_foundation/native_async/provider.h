@@ -7,7 +7,7 @@
 
 struct async_state {
   std::atomic<int> entered{0}, destroyed{0}, resumed{0}, parents{0},
-      deferred{0};
+      deferred{0}, values{0}, copies{0}, moves{0};
 };
 int native_leaf(std::shared_ptr<async_state>, int) __objc3_async;
 int native_parent(std::shared_ptr<async_state>, int) __objc3_async;
@@ -96,6 +96,47 @@ int native_checked_untyped_recover(std::shared_ptr<async_state>) __objc3_async;
 int native_checked_indirect(std::shared_ptr<async_state>) __objc3_async;
 int native_checked_hop(objc3_actor_t *, objc3_actor_t *, std::shared_ptr<async_state>)
     __objc3_async;
+
+// No default constructor: checked failure must not fabricate a result object.
+struct alignas(64) async_checked_value {
+  std::shared_ptr<async_state> state;
+  int value;
+  async_checked_value() = delete;
+  async_checked_value(std::shared_ptr<async_state> s, int n)
+      : state(std::move(s)), value(n) { ++state->values; }
+  async_checked_value(const async_checked_value &other)
+      : state(other.state), value(other.value) { ++state->values; ++state->copies; }
+  async_checked_value(async_checked_value &&other) noexcept
+      : state(other.state), value(other.value) { ++state->values; ++state->moves; }
+  ~async_checked_value() { --state->values; }
+};
+struct async_checked_target {
+  int value = 40;
+  int add(int n) const { return value + n; }
+};
+using async_checked_data = int async_checked_target::*;
+using async_checked_method = int (async_checked_target::*)(int) const;
+using async_checked_complex = __complex__ double;
+async_checked_value native_checked_value(std::shared_ptr<async_state>, bool, int = 0)
+    __objc3_async __objc3_throws(id<NativeFirstError>);
+async_checked_value native_checked_value_relay(std::shared_ptr<async_state>, bool)
+    __objc3_async __objc3_throws(id<NativeFirstError>);
+std::string native_checked_text(std::shared_ptr<async_state>, bool)
+    __objc3_async __objc3_throws(id<NativeFirstError>);
+async_checked_complex native_checked_complex(std::shared_ptr<async_state>, bool)
+    __objc3_async __objc3_throws(id<NativeFirstError>);
+async_checked_data native_checked_data(std::shared_ptr<async_state>, bool)
+    __objc3_async __objc3_throws(id<NativeFirstError>);
+async_checked_method native_checked_method(std::shared_ptr<async_state>, bool)
+    __objc3_async __objc3_throws(id<NativeFirstError>);
+int native_checked_values(std::shared_ptr<async_state>, unsigned) __objc3_async;
+int native_checked_value_optional(std::shared_ptr<async_state>, bool) __objc3_async;
+int native_checked_value_discard(std::shared_ptr<async_state>, bool) __objc3_async;
+inline async_checked_value native_checked_value_inline(std::shared_ptr<async_state> state)
+    __objc3_async __objc3_throws(id<NativeFirstError>) {
+  return __objc3_try(__objc3_await native_checked_value_relay(std::move(state), false));
+}
+
 inline int native_checked_inline(std::shared_ptr<async_state> state)
     __objc3_async __objc3_throws(id<NativeFirstError>) {
   return __objc3_try(__objc3_await native_checked_parent(std::move(state), false));

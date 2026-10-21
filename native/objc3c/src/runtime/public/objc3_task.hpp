@@ -2,8 +2,8 @@
 #define OBJC3_TASK_HPP
 
 #if defined(__OBJC3_EXTENSION_ABI_REVISION__) && \
-    __OBJC3_EXTENSION_ABI_REVISION__ != 16
-#error "The task bridge requires Objective-C 3 extension ABI 16; rebuild the compiler and all providers."
+    __OBJC3_EXTENSION_ABI_REVISION__ != 17
+#error "The task bridge requires Objective-C 3 extension ABI 17; rebuild the compiler and all providers."
 #endif
 
 #include "objc3_runtime_services.h"
@@ -208,7 +208,7 @@ using task_handle = basic_task_handle<typename task_detail::result_traits<T>::ab
 
 namespace task_detail {
 // A compiler-generated checked await supplies a frame-resident error slot.
-// Only scalar/void logical results are admitted by the current compiler stage.
+// The compiler checks the error slot before evaluating await_resume.
 template <class T> struct checked_dependency {
   basic_task<T> dependency;
   void **error;
@@ -390,7 +390,7 @@ public:
       void **error;
       checked_dependency_awaiter(dependency_awaiter<U> dependency, void **error)
           : dependency_awaiter<U>(std::move(dependency)), error(error) {}
-      U await_resume() {
+      void __objc3_check_error() {
         if (objc3_task_is_cancel_requested(this->parent))
           throw task_cancelled();
         objc3_completion completion{};
@@ -403,13 +403,10 @@ public:
             // drains, independently of private-child frame reclamation.
             *error = task_detail::objc3_task_result_autorelease(
                 task_detail::objc3_task_result_retain(object));
-            if constexpr (!std::is_void_v<U>)
-              return U{};
-            else
-              return;
+            return;
           }
         }
-        return this->dependency.result();
+        task_detail::rethrow_completion(completion);
       }
     };
     template <class U>

@@ -1197,10 +1197,10 @@ index 000000000..de356a5f7
 +}
 diff --git a/clang/include/clang/AST/ObjC3Async.h b/clang/include/clang/AST/ObjC3Async.h
 new file mode 100644
-index 000000000..697872fe9
+index 000000000..19417724b
 --- /dev/null
 +++ b/clang/include/clang/AST/ObjC3Async.h
-@@ -0,0 +1,29 @@
+@@ -0,0 +1,30 @@
 +//===--- ObjC3Async.h - Reserved checked async AST bridge --------*- C++ -*-===//
 +// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 +#ifndef LLVM_CLANG_AST_OBJC3ASYNC_H
@@ -1208,11 +1208,8 @@ index 000000000..697872fe9
 +#include "clang/AST/Decl.h"
 +#include "clang/AST/ExprCXX.h"
 +namespace clang {
-+inline const CallExpr *getObjC3CheckedAsyncAdapter(const Expr *E) {
-+  const auto *Await = dyn_cast<CoawaitExpr>(E->IgnoreImplicit());
-+  if (!Await)
-+    return nullptr;
-+  const auto *Call = dyn_cast<CallExpr>(Await->getOperand()->IgnoreImplicit());
++inline const CallExpr *getObjC3CheckedAsyncAdapterCall(const Expr *E) {
++  const auto *Call = dyn_cast<CallExpr>(E->IgnoreImplicit());
 +  const auto *FD = Call ? Call->getDirectCallee() : nullptr;
 +  if (!FD || !FD->getIdentifier() ||
 +      !FD->getIdentifier()->isStr("__objc3_async_checked") ||
@@ -1220,6 +1217,10 @@ index 000000000..697872fe9
 +      !isa<OpaqueValueExpr>(Call->getArg(1)->IgnoreImpCasts()))
 +    return nullptr;
 +  return Call;
++}
++inline const CallExpr *getObjC3CheckedAsyncAdapter(const Expr *E) {
++  const auto *Await = dyn_cast<CoawaitExpr>(E->IgnoreImplicit());
++  return Await ? getObjC3CheckedAsyncAdapterCall(Await->getOperand()) : nullptr;
 +}
 +inline const Expr *getObjC3AsyncSourceCall(const Expr *E) {
 +  if (const auto *Adapter = getObjC3CheckedAsyncAdapter(E))
