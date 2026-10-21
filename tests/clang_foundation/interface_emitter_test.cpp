@@ -278,6 +278,54 @@ void TestManagedIvarAndPropertyRoundTrip() {
 }
 
 void TestBoundedCxxSemanticInterfaces() {
+  {
+    const std::vector<llvm::StringRef> semantics = {
+        "objc3.cxx-data-interfaces.v1", "objc3.cxx-member-interfaces.v1",
+        "objc3.canonical-function-effects.v1"};
+    std::string previous;
+    for (const char *signature : {
+             "int get() const __objc3_async __objc3_throws(id<First>);",
+             "int get() const __objc3_async __objc3_throws(id<Second>);",
+             "static int get() __objc3_async __objc3_throws(id<Second>);"}) {
+      const std::string source =
+          std::string("@protocol Error @end @protocol First<Error> @end "
+                      "@protocol Second<Error> @end struct Worker { int value; ") +
+          signature + " };";
+      const std::vector<std::string> args = {
+          "-x", "objective-c++", "-std=c++20", "-fobjc-version=3",
+          "-fobjc-runtime=gnustep-2.2", "--target=x86_64-unknown-linux-gnu"};
+      auto ast = clang::tooling::buildASTFromCodeWithArgs(source, args, "members.mm");
+      assert(ast && !ast->getDiagnostics().hasErrorOccurred());
+      auto emitted = EmitSemanticInterface(ast->getASTContext(), "fixture.members", "test");
+      for (const auto &diagnostic : emitted.diagnostics)
+        std::fprintf(stderr, "%s: %s\n", diagnostic.code.c_str(), diagnostic.message.c_str());
+      assert(emitted.success && emitted.identity.semantic_fingerprint != previous);
+      auto decoded = DecodeSemanticInterfaceSidecar(
+          emitted.sidecar_json, emitted.source_bytes, semantics);
+      assert(decoded);
+      bool found = false;
+      for (const auto &declaration : decoded->declarations)
+        if (declaration.kind == "CXXMethod") {
+          found = true;
+          assert(declaration.effects.is_async && declaration.effects.is_throwing);
+          assert(declaration.canonical_type_identity.find(";cxx-method=") != std::string::npos);
+        }
+      assert(found);
+      previous = emitted.identity.semantic_fingerprint;
+      auto round = clang::tooling::buildASTFromCodeWithArgs(
+          emitted.source_bytes, args, "round-members.mm");
+      assert(round && !round->getDiagnostics().hasErrorOccurred());
+      auto regenerated = EmitSemanticInterface(round->getASTContext(), "fixture.members", "test");
+      assert(regenerated.success && regenerated.identity.semantic_fingerprint == previous);
+      std::erase(decoded->required_semantics, "objc3.cxx-member-interfaces.v1");
+      decoded->module.semantic_fingerprint = ComputeInterfaceSourceSha256(
+          BuildSemanticFingerprintInput(*decoded));
+      auto invalid = EncodeSemanticInterfaceSidecar(*decoded, semantics);
+      assert(!invalid);
+      assert(llvm::toString(invalid.takeError()).find(
+                 "C++ member declarations and required capability") != std::string::npos);
+    }
+  }
   std::string prior;
   const std::vector<llvm::StringRef> semantics = {
       "objc3.canonical-function-effects.v1", "objc3.native-carrier-types.v1",
@@ -359,7 +407,7 @@ void TestBoundedCxxSemanticInterfaces() {
         "template<class T> struct Generic { T value; };",
         "struct Base { int value; }; struct Derived : Base { int second; };",
         "struct Special { Special(); int value; };",
-        "struct Method { int value; int get() const; };",
+        "struct Method { int value; inline int get() const { return value; } };",
         "class Hidden { int value; };", "struct Default { int value=42; };",
         "struct Nested { struct Inner { int value; }; Inner child; };",
         "int api(int argument=42);", "inline int api() { return 42; }",

@@ -199,6 +199,92 @@ static void checked_results(objc3_executor_t *executor) {
   assert(state->parents == state->deferred);
 }
 
+
+static int member_flow(native_async_worker &worker, native_async_base &base,
+                       std::shared_ptr<async_state> state) __objc3_async {
+  static_assert(std::is_same_v<decltype(worker.value(state, 2)), objc3::task<int>>);
+  static_assert(std::is_same_v<decltype(worker(2)), objc3::task<int>>);
+  static_assert(!std::is_same_v<native_member_callback,
+      int (native_async_worker::*)(std::shared_ptr<async_state>, int) const>);
+  assert(__objc3_await base.value(state, 2) == 42);
+  native_member_callback member = &native_async_worker::value;
+  assert(__objc3_await native_member_apply(worker, member, state, 3) == 43);
+  if (__objc3_await (worker.*member)(state, 2) != 42 ||
+      __objc3_await worker(3) != 43) return 0;
+  assert(__objc3_await worker(4) == 44);
+  assert(__objc3_await worker[5] == 45);
+  assert(__objc3_await -worker == -40);
+  assert(__objc3_await (worker + 6) == 46);
+  assert(__objc3_await native_async_worker::constant(7) == 7);
+  assert(__objc3_await worker.qualified() == 40);
+  assert(__objc3_await std::move(worker).qualified() == 41);
+  assert(__objc3_await worker.echo(std::string("member template")) == "member template");
+  assert(__objc3_try_force(__objc3_await base.checked(state, false)) == 42);
+  native_checked_member_callback checked = &native_async_base::checked;
+  bool handled = false;
+  __objc3_do {
+    (void)__objc3_try(__objc3_await (base.*checked)(state, true));
+  } __objc3_catch(id<NativeFirstError> error) {
+    __objc3_await objc3::task_yield;
+    handled = error != nullptr;
+  }
+  assert(handled);
+  auto optional = __objc3_try_optional(__objc3_await base.checked(state, true));
+  assert(__objc3_match(optional) {
+    case __objc3_case_some(let value) => (static_cast<void>(value), false);
+    case __objc3_case_none => true;
+  });
+#if __cplusplus > 202002L
+  auto copied = worker.copied(2);
+  worker.bias = 70;
+  assert(__objc3_await std::move(copied) == 42);
+  worker.bias = 40;
+#endif
+  return 42;
+}
+static void member_results(objc3_executor_t *executor) {
+  native_async_worker worker;
+  auto *base = static_cast<native_async_base *>(&worker);
+  assert(static_cast<void *>(base) != static_cast<void *>(&worker));
+  auto state = std::make_shared<async_state>();
+  const auto before = native_checked_destructions();
+  {
+    auto result = member_flow(worker, *base, state).start(executor);
+    pump(executor);
+    assert(result.result() == 42);
+  }
+  assert(native_checked_destructions() == before + 3);
+  {
+    auto cancelled = worker.value(state, 1).start(executor);
+    auto abandoned = worker.value(state, 1).start(executor);
+    pump(executor, 2);
+    cancelled.cancel();
+    abandoned = {};
+    pump(executor);
+    bool caught = false;
+    try { (void)cancelled.result(); }
+    catch (const objc3::task_cancelled &) { caught = true; }
+    assert(caught);
+    auto failed = worker.value(state, -73).start(executor);
+    pump(executor);
+    caught = false;
+    try { (void)failed.result(); } catch (int n) { caught = n == -73; }
+    assert(caught);
+  }
+  objc3_actor_t *actor = nullptr;
+  assert(objc3_actor_create(executor, &actor) == OBJC3_SERVICE_OK);
+  {
+    auto hopped = worker.hopped(actor, state).start(executor);
+    pump(executor);
+    assert(hopped.result() == 42);
+  }
+  assert(objc3_actor_close(actor) == OBJC3_SERVICE_OK);
+  assert(objc3_actor_join(actor) == OBJC3_SERVICE_OK);
+  objc3_actor_release(actor);
+  assert(state->entered == state->destroyed);
+  assert(state->parents == state->deferred);
+}
+
 int main() {
   objc3_executor_t *executor = nullptr;
   assert(objc3_executor_create(1, &executor) == OBJC3_SERVICE_OK);
@@ -339,6 +425,7 @@ int main() {
 #ifdef __OBJC__
   owned_results(executor);
   checked_results(executor);
+  member_results(executor);
 #endif
   objc3_executor_release(executor);
   // Worker execution exercises nested frame creation and publication races.

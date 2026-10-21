@@ -85,13 +85,13 @@ cancellation, queue exhaustion and deferred publication. ARC objects, Blocks and
 native exception payloads are exercised across actor suspension with instrumented
 runtime services and clients.
 
-The [acceptance receipt](../support/linux_async_checked_errors_acceptance.json) binds the
+The [acceptance receipt](../support/linux_async_cxx_callables_acceptance.json) binds the
 exact SDK archive, all 22 installed package gates, 66 sanitizer configurations
 and fresh Debian 13/Ubuntu 26.04 task-destination qualification. The fresh runs
 include relocation, embedding, ordinary-user runtime/coroutine matrices and
 source-free async packages. The LLVM compiler foundation is byte-identical to
 the preceding native async release. The
-[latency report](../support/linux_async_checked_errors_latency.json) records five quiet
+[latency report](../support/linux_async_cxx_callables_latency.json) records five quiet
 command measurements against the current budgets.
 
 Six additional O0 LLDB cases inspect local identities in a frame resumed after

@@ -60,6 +60,12 @@ def qualify(sdk: Path, output: Path) -> dict:
                     raise ValueError('native async interface erased the callable effect')
                 if not has_checked_async(metadata['declarations']):
                     raise ValueError('native async interface erased checked error identity')
+                members = [row for row in metadata['declarations']
+                           if row.get('kind') == 'CXXMethod']
+                if (not members or not has_checked_async(members)
+                        or 'objc3.cxx-member-interfaces.v1' not in metadata['required_semantics']
+                        or any(not row.get('native_symbol_name') for row in members)):
+                    raise ValueError('native async interface lost owned C++ member contracts')
                 interface_sha = packages.digest(metadata_path)
                 publication = packages.publish(sdk, built, root / 'publication')
                 packages.install(Path(publication['package']), publication['content_sha256'],

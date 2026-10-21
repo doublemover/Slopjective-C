@@ -15,7 +15,8 @@
     "native_module_block",
     "Error",
     "NativeModuleError",
-    "native_module_checked"
+    "native_module_checked",
+    "NativeModuleWorker"
   ],
   "dependencies": []
 }

@@ -68,7 +68,7 @@ This stage admits real scalar, enumeration, C pointer, Objective-C object,
 protocol, Class, Block and void results for checked async functions. C++ record,
 complex, member pointer, reference, variadic and undeduced checked results remain
 outside the lowering contract. Ordinary nonthrowing async functions retain their
-existing C++ value result support. Async methods, async Blocks, pure Objective-C
+existing C++ value result support. Objective-C async methods, async Blocks, pure Objective-C
 async lowering and compiler actor isolation remain future compiler milestones.
 Public async/await and actor capability predicates remain reserved.
 
@@ -78,9 +78,9 @@ type. The task service remains ABI 3; reserved object-error bridge symbols ship
 in a separate archive member so ordinary C++ task programs retain their existing
 link dependencies. ARC and MRC providers use the same owned error representation.
 
-The [installed SDK acceptance receipt](../support/linux_async_checked_errors_acceptance.json)
+The [installed SDK acceptance receipt](../support/linux_async_cxx_callables_acceptance.json)
 binds this contract to its exact compiler, runtime, source inputs and archive.
-It records 206 compiler tests, 57 AST tests, 318 current tooling tests, all 22
+It records 209 compiler tests, 57 AST tests, 318 current tooling tests, all 22
 installed package gates and 74 instrumented configurations. Native execution
 covers sixteen C++20/23, O0/O2 and ARC/MRC provider/consumer configurations,
 including checked object, Block and void results, copied error handles, native
@@ -96,5 +96,5 @@ Ubuntu 26.04 consumers run as ordinary users under the explicit
 debugger/embedding, structured runtime, coroutine and source-free async package
 checks. The full 22 package gates run during SDK publication. Sanitizers
 instrument runtime services and clients; GNU libobjc is loaded as shipped.
-The [latency report](../support/linux_async_checked_errors_latency.json) records
+The [latency report](../support/linux_async_cxx_callables_latency.json) records
 five quiet repetitions against the existing release budgets.

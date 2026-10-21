@@ -319,6 +319,14 @@ llvm::Error ValidateForEncoding(
   const bool has_names =
       std::any_of(sidecar.declarations.begin(), sidecar.declarations.end(),
                   [](const auto &d) { return !d.native_symbol_name.empty(); });
+  const bool has_cxx_members = std::any_of(
+      sidecar.declarations.begin(), sidecar.declarations.end(),
+      [](const auto &d) { return d.kind == "CXXMethod"; });
+  const bool member_capability = std::find(
+      sidecar.required_semantics.begin(), sidecar.required_semantics.end(),
+      "objc3.cxx-member-interfaces.v1") != sidecar.required_semantics.end();
+  if (has_cxx_members != member_capability)
+    return Invalid("C++ member declarations and required capability must agree");
   const bool name_capability = std::find(sidecar.required_semantics.begin(),
                                          sidecar.required_semantics.end(),
                                          "objc3.module-owned-names.v1") !=

@@ -113,6 +113,10 @@ bool IsIdentityCandidate(const clang::NamedDecl *declaration,
     return false;
   }
 
+  if (const auto *method = llvm::dyn_cast<clang::CXXMethodDecl>(declaration))
+    return method->getAccess() == clang::AS_public &&
+           IsTopLevel(method->getParent());
+
   if (const auto *field = llvm::dyn_cast<clang::FieldDecl>(declaration)) {
     const auto *owner =
         llvm::dyn_cast<clang::RecordDecl>(field->getDeclContext());
@@ -607,8 +611,21 @@ bool IsBoundedCxxDeclaration(const clang::NamedDecl *declaration,
       if (member->isImplicit() || llvm::isa<clang::AccessSpecDecl>(member))
         continue;
       const auto *field = llvm::dyn_cast<clang::FieldDecl>(member);
-      supported &= field && field->getAccess() == clang::AS_public &&
-                   !field->isMutable() && !field->hasInClassInitializer();
+      if (field) {
+        supported &= field->getAccess() == clang::AS_public &&
+                     !field->isMutable() && !field->hasInClassInitializer();
+        continue;
+      }
+      const auto *method = llvm::dyn_cast<clang::CXXMethodDecl>(member);
+      supported &= method && !llvm::isa<clang::CXXConversionDecl>(method) &&
+                   method->getAccess() == clang::AS_public &&
+                   !method->isTemplated() && !method->isVirtual() &&
+                   !method->isInlined() && !method->isDefaulted() &&
+                   !method->isDeleted() && !method->isConstexpr() &&
+                   !method->getTrailingRequiresClause();
+      if (method)
+        for (const auto *parameter : method->parameters())
+          supported &= !parameter->hasDefaultArg();
     }
   }
   if (IsTopLevel(declaration)) {
@@ -637,7 +654,8 @@ bool IsBoundedCxxDeclaration(const clang::NamedDecl *declaration,
   if (!supported)
     AddDiagnostic(result, "O3IFC101",
                   "C++ semantic interfaces require global declarations and "
-                  "public data records without templates, bases, explicit "
+                  "public aggregate records and out-of-line public methods without "
+                  "templates, bases, explicit "
                   "special members, defaults, or nested declarations",
                   declaration->getQualifiedNameAsString());
   return supported;
@@ -880,6 +898,11 @@ void PrintRootDeclaration(clang::NamedDecl *declaration,
   policy.SuppressScope = false;
   policy.SuppressUnwrittenScope = false;
   policy.PolishForDeclaration = true;
+  // Member names inside a record must be relative to that record. Fully
+  // qualified function spelling would print invalid `Worker::get` inside it.
+  if (llvm::isa<clang::CXXRecordDecl>(declaration))
+    policy.FullyQualifiedName = false;
+
   if (llvm::isa<clang::FunctionDecl>(declaration)) {
     policy.TerseOutput = true;
     // Print modeled ownership exactly once, independently of whether the
@@ -1037,6 +1060,9 @@ bool ReadInterfaceDeclarationIdentity(
   identity.canonical_type_identity =
       DeclarationTypeIdentity(representative, context);
   if (identity.canonical_type_identity.empty()) return false;
+  if (const auto *method = llvm::dyn_cast<clang::CXXMethodDecl>(representative))
+    identity.canonical_type_identity += method->isStatic()
+        ? ";cxx-method=static" : ";cxx-method=instance";
   const auto availability = AvailabilityIdentity(representative);
   if (!availability.empty())
     identity.canonical_type_identity += ";api-availability=" + availability;
@@ -1194,6 +1220,8 @@ InterfaceEmissionArtifact EmitSemanticInterface(
     if (declaration.canonical_type_identity.find(";api-availability=") !=
         std::string::npos)
       sidecar.required_semantics.push_back("objc3.api-availability.v1");
+    if (declaration.kind == "CXXMethod")
+      sidecar.required_semantics.push_back("objc3.cxx-member-interfaces.v1");
     if (declaration.kind == "ObjCMethod" &&
         declaration.canonical_type_identity.find(";dispatch=direct") != std::string::npos)
       sidecar.required_semantics.push_back("objc3.direct-dispatch.v1");
@@ -1220,7 +1248,8 @@ InterfaceEmissionArtifact EmitSemanticInterface(
   const std::vector<llvm::StringRef> supported_semantics = {
       "objc3.canonical-function-effects.v1", "objc3.native-carrier-types.v1",
       "objc3.native-return-ownership.v1",    "objc3.direct-dispatch.v1",
-      "objc3.cxx-data-interfaces.v1",        "objc3.ownership-projection.v1",
+      "objc3.cxx-data-interfaces.v1",        "objc3.cxx-member-interfaces.v1",
+    "objc3.ownership-projection.v1",
       "objc3.api-availability.v1",           "objc3.api-partitions.v1",
       "objc3.module-owned-names.v1"};
   auto encoded = EncodeSemanticInterfaceSidecar(sidecar, supported_semantics);
@@ -1300,7 +1329,8 @@ namespace {
 const std::vector<llvm::StringRef> kProjectionSemantics = {
     "objc3.canonical-function-effects.v1", "objc3.native-carrier-types.v1",
     "objc3.native-return-ownership.v1",    "objc3.direct-dispatch.v1",
-    "objc3.cxx-data-interfaces.v1",        "objc3.ownership-projection.v1",
+    "objc3.cxx-data-interfaces.v1",        "objc3.cxx-member-interfaces.v1",
+    "objc3.ownership-projection.v1",
     "objc3.api-availability.v1",           "objc3.api-partitions.v1",
     "objc3.module-owned-names.v1"};
 

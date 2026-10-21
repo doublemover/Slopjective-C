@@ -7,7 +7,7 @@ struct Special { Special(); int value; };
 #elif CASE == 4
 struct Base { int value; }; struct Derived : Base { int second; };
 #elif CASE == 5
-struct Methods { int value; int get() const; };
+struct Methods { int value; int get() const { return value; } };
 #elif CASE == 6
 class Hidden { int value; };
 #elif CASE == 7
