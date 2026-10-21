@@ -1,6 +1,11 @@
 #!/bin/sh
 # Run in a fresh Debian/Ubuntu host or container with only release files mounted.
 set -eu
+qualification_scope=${4:-full}
+case "$qualification_scope" in
+  full|task-destinations) ;;
+  *) printf 'Unknown Linux qualification scope: %s\n' "$qualification_scope" >&2; exit 2 ;;
+esac
 archive=$1
 expected_sha=$2
 install_root=$3
@@ -59,9 +64,10 @@ cmake --build build --parallel 2
 "$OBJC3C_SDK_ROOT/bin/llvm-dwarfdump" --verify ./build/embedding
 python3 "$OBJC3C_SDK_ROOT/share/objc3c/verify-sdk.py" "$OBJC3C_SDK_ROOT"
 useradd --create-home --shell /bin/sh objc3-sdk-user
-runuser -u objc3-sdk-user -- sh -s -- "$install_root-relocated" <<'SH'
+runuser -u objc3-sdk-user -- sh -s -- "$install_root-relocated" "$qualification_scope" <<'SH'
 set -eu
 . "$1/activate.sh"
+qualification_scope=$2
 sdk_user_work=$(mktemp -d)
 trap 'rm -rf -- "$sdk_user_work"' EXIT
 cd "$sdk_user_work"
@@ -69,6 +75,7 @@ cp -R "$OBJC3C_SDK_ROOT/share/objc3c/examples/native/." .
 objc3c main.objc3 -O0 -g -o application
 env -u LD_LIBRARY_PATH ./application
 python3 "$OBJC3C_SDK_ROOT/share/objc3c/examples/managed/build.py" --output-dir ./managed
+if [ "$qualification_scope" = full ]; then
 python3 "$OBJC3C_SDK_ROOT/share/objc3c/examples/managed/qualify.py" --output-dir ./module-evidence
 python3 "$OBJC3C_SDK_ROOT/share/objc3c/source-build/qualify.py" --output-dir ./package-evidence
 python3 -B "$OBJC3C_SDK_ROOT/share/objc3c/source-build/qualify_binary_packages.py" --output-dir ./binary-package-evidence
@@ -77,10 +84,12 @@ python3 -B "$OBJC3C_SDK_ROOT/share/objc3c/source-build/qualify_public_surfaces.p
 python3 -B "$OBJC3C_SDK_ROOT/share/objc3c/source-build/qualify_api_availability.py" --output-dir ./api-availability-evidence
 python3 -B "$OBJC3C_SDK_ROOT/share/objc3c/source-build/qualify_module_spi.py" --output-dir ./module-spi-evidence
 python3 -B "$OBJC3C_SDK_ROOT/share/objc3c/source-build/qualify_module_names.py" --output-dir ./module-names-evidence
+fi
 python3 -B "$OBJC3C_SDK_ROOT/share/objc3c/source-build/qualify_structured_runtime.py" --output-dir ./structured-runtime-evidence
 python3 -B "$OBJC3C_SDK_ROOT/share/objc3c/source-build/qualify_task_coroutines.py" --output-dir ./task-coroutine-evidence
 python3 -B "$OBJC3C_SDK_ROOT/share/objc3c/source-build/qualify_native_async.py" --output-dir ./native-async-evidence
 python3 -B "$OBJC3C_SDK_ROOT/share/objc3c/source-build/qualify_native_async_packages.py" --output-dir ./native-async-package-evidence
+if [ "$qualification_scope" = full ]; then
 python3 -B "$OBJC3C_SDK_ROOT/share/objc3c/examples/native/qualify-carrier-calls.py" \
   --sdk-root "$OBJC3C_SDK_ROOT" --output-dir ./carrier-call-evidence
 python3 -B "$OBJC3C_SDK_ROOT/share/objc3c/examples/native/qualify-runtime-carrier-calls.py" \
@@ -115,9 +124,18 @@ for optimization in O0 O2; do
   done
 done
 "$OBJC3C_SDK_ROOT/bin/llvm-dwarfdump" --verify ./carrier-transfer
+fi
 "$OBJC3C_SDK_ROOT/bin/lldb" --batch -o 'settings set target.disable-aslr false' \
   -o 'breakpoint set --name main' -o run -o 'expression -- cleanup_order + 42' -o continue ./application
 python3 "$OBJC3C_SDK_ROOT/share/objc3c/verify-sdk.py" "$OBJC3C_SDK_ROOT"
-printf 'Unprivileged Linux SDK consumer: PASS\n'
+if [ "$qualification_scope" = full ]; then
+  printf 'Unprivileged Linux SDK consumer: PASS\n'
+else
+  printf 'Unprivileged Linux task destination consumer: PASS\n'
+fi
 SH
-printf 'Fresh Linux archive qualification: PASS\n'
+if [ "$qualification_scope" = full ]; then
+  printf 'Fresh Linux archive qualification: PASS\n'
+else
+  printf 'Fresh Linux task destination qualification: PASS\n'
+fi

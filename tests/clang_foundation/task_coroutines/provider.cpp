@@ -69,6 +69,53 @@ objc3::task<void> foreign_error() {
   throw owned;
   co_return;
 }
+objc3_current_actor_facts current_destination() {
+  objc3_current_actor_facts facts{};
+  facts.struct_size = sizeof(facts);
+  facts.version = OBJC3_ACTOR_SERVICE_VERSION;
+  assert(objc3_actor_current_facts(&facts) == OBJC3_SERVICE_OK);
+  return facts;
+}
+objc3::task<int> actor_child(uint64_t actor) {
+  assert(current_destination().actor_identity == actor);
+  co_await objc3::task_yield;
+  assert(current_destination().actor_identity == actor);
+  co_return 17;
+}
+objc3::task<int> actor_hops(objc3_actor_t *first, objc3_actor_t *second,
+                            objc3_executor_t *executor,
+                            std::shared_ptr<coroutine_state> state,
+                            unsigned iterations) {
+  cleanup guard{state};
+  ++state->entered;
+  const auto first_id = objc3_actor_identity(first);
+  const auto second_id = objc3_actor_identity(second);
+  const auto first_executor = objc3_actor_executor_identity(first);
+  std::string live = "preserved while hopping";
+  assert(current_destination().actor_identity == first_id);
+  co_await objc3::hop_to(first);
+  assert(co_await actor_child(first_id) == 17);
+  for (unsigned index = 0; index != iterations; ++index) {
+    co_await objc3::hop_to(second);
+    auto facts = current_destination();
+    assert(facts.actor_identity == second_id);
+    assert(facts.executor_identity == objc3_actor_executor_identity(second));
+    co_await objc3::task_yield;
+    assert(current_destination().actor_identity == second_id);
+    assert(co_await actor_child(second_id) == 17);
+    co_await objc3::hop_to(executor);
+    facts = current_destination();
+    assert(facts.actor_identity == 0 && facts.executor_identity != 0);
+    assert(facts.executor_identity != first_executor);
+    co_await objc3::task_yield;
+    assert(current_destination().executor_identity == facts.executor_identity);
+    co_await objc3::hop_to(first);
+    assert(current_destination().actor_identity == first_id);
+    assert(live == "preserved while hopping");
+    ++state->continued;
+  }
+  co_return 42;
+}
 } // namespace
 objc3::task_handle<int> start_leaf(objc3_executor_t *executor,
                                    std::shared_ptr<coroutine_state> state) {
@@ -92,4 +139,10 @@ objc3::task_handle<std::string> start_failure(objc3_executor_t *executor) {
 }
 objc3::task_handle<void> start_foreign_error(objc3_executor_t *executor) {
   return foreign_error().start(executor);
+}
+objc3::task_handle<int> start_actor_hops(
+    objc3_actor_t *first, objc3_actor_t *second, objc3_executor_t *executor,
+    std::shared_ptr<coroutine_state> state, unsigned iterations) {
+  return actor_hops(first, second, executor, std::move(state), iterations)
+      .start_on(first);
 }

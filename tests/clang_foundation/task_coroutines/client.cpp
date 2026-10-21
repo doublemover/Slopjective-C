@@ -493,8 +493,309 @@ void worker_contract() {
   objc3_executor_release(second);
   objc3_executor_release(first);
 }
+objc3::task<void> queued_actor_hop(objc3_actor_t *target,
+                                   std::shared_ptr<coroutine_state> state) {
+  struct guard {
+    std::shared_ptr<coroutine_state> state;
+    ~guard() { ++state->destroyed; }
+  } lifetime{state};
+  ++state->entered;
+  co_await objc3::hop_to(target);
+  ++state->continued;
+}
+objc3::task<int> owned_destination(objc3::task_destination target) {
+  co_await std::move(target);
+  co_await objc3::task_yield;
+  co_return 42;
+}
+void actor_hop_contract(bool manual) {
+  objc3_executor_t *first = nullptr, *other = nullptr;
+  assert(objc3_executor_create(manual, &first) == OBJC3_SERVICE_OK);
+  assert(objc3_executor_create(manual, &other) == OBJC3_SERVICE_OK);
+  objc3_actor_t *a = nullptr, *b = nullptr, *c = nullptr;
+  assert(objc3_actor_create(first, &a) == OBJC3_SERVICE_OK);
+  assert(objc3_actor_create(first, &b) == OBJC3_SERVICE_OK);
+  assert(objc3_actor_create(other, &c) == OBJC3_SERVICE_OK);
+  objc3_task_group_t *group = nullptr;
+  assert(objc3_task_group_create(nullptr, &group) == OBJC3_SERVICE_OK);
+  std::vector<objc3::task_handle<int>> tasks;
+  std::vector<std::shared_ptr<coroutine_state>> states;
+  for (unsigned index = 0; index != 64; ++index) {
+    auto state = std::make_shared<coroutine_state>();
+    auto task = start_actor_hops(a, index % 2 ? b : c, other, state, 8);
+    assert(objc3_task_group_add(group, task.native_handle()) == OBJC3_SERVICE_OK);
+    states.push_back(state);
+    tasks.push_back(std::move(task));
+  }
+  assert(objc3_task_group_close(group) == OBJC3_SERVICE_OK);
+  if (manual) {
+    for (unsigned round = 0; round != 32; ++round) {
+      pump(first, 100000);
+      pump(other, 100000);
+    }
+  }
+  assert(objc3_task_group_join(group) == OBJC3_SERVICE_OK);
+  for (unsigned index = 0; index != tasks.size(); ++index) {
+    assert(tasks[index].result() == 42);
+    assert(states[index]->entered == 1 && states[index]->destroyed == 1);
+    assert(states[index]->continued == 8);
+  }
+  tasks.clear();
+  objc3_task_group_release(group);
+  assert(objc3_actor_close(a) == OBJC3_SERVICE_OK);
+  assert(objc3_actor_close(b) == OBJC3_SERVICE_OK);
+  assert(objc3_actor_close(c) == OBJC3_SERVICE_OK);
+  assert(objc3_actor_join(a) == OBJC3_SERVICE_OK);
+  assert(objc3_actor_join(b) == OBJC3_SERVICE_OK);
+  assert(objc3_actor_join(c) == OBJC3_SERVICE_OK);
+  objc3_actor_release(c);
+  objc3_actor_release(b);
+  objc3_actor_release(a);
+  objc3_executor_release(other);
+  objc3_executor_release(first);
+}
+void cancelled_actor_hop_contract() {
+  objc3_executor_t *executor = nullptr;
+  assert(objc3_executor_create(1, &executor) == OBJC3_SERVICE_OK);
+  for (unsigned mode = 0; mode != 4; ++mode) {
+    objc3_actor_t *actor = nullptr;
+    assert(objc3_actor_create(executor, &actor) == OBJC3_SERVICE_OK);
+    auto state = std::make_shared<coroutine_state>();
+    auto task = queued_actor_hop(actor, state).start(executor);
+    pump(executor);
+    assert(state->entered == 1 && state->continued == 0);
+    if (mode == 0) {
+      assert(objc3_actor_cancel(actor) == OBJC3_SERVICE_OK);
+    } else if (mode == 1) {
+      task.cancel();
+    } else if (mode == 2) {
+      // Closing an actor rejects the next continuation after a dependency.
+      assert(objc3_actor_close(actor) == OBJC3_SERVICE_OK);
+      task.cancel();
+    } else {
+      task = {};
+      assert(objc3_actor_cancel(actor) == OBJC3_SERVICE_OK);
+    }
+    pump(executor, 100000);
+    if (task) cancelled([&] { task.result(); });
+    assert(state->destroyed == 1 && state->continued == 0);
+    assert(objc3_actor_close(actor) == OBJC3_SERVICE_OK);
+    assert(objc3_actor_join(actor) == OBJC3_SERVICE_OK);
+    objc3_actor_release(actor);
+  }
+  // The hop value retains the actor before the lazy frame starts.
+  objc3_actor_t *actor = nullptr;
+  assert(objc3_actor_create(executor, &actor) == OBJC3_SERVICE_OK);
+  auto task = owned_destination(objc3::hop_to(actor)).start(executor);
+  objc3_actor_release(actor);
+  pump(executor, 100000);
+  assert(task.result() == 42);
+  objc3_executor_release(executor);
+}
+
+void failed_actor_dispatch_contract() {
+  objc3_executor_t *source = nullptr, *target = nullptr;
+  assert(objc3_executor_create(1, &source) == OBJC3_SERVICE_OK);
+  assert(objc3_executor_create(1, &target) == OBJC3_SERVICE_OK);
+  for (unsigned mode = 0; mode != 3; ++mode) {
+    objc3_actor_t *actor = nullptr;
+    assert(objc3_actor_create(target, &actor) == OBJC3_SERVICE_OK);
+    if (mode == 0) {
+      assert(objc3_actor_close(actor) == OBJC3_SERVICE_OK);
+      auto lazy = queued_actor_hop(actor, std::make_shared<coroutine_state>());
+      bool rejected = false;
+      try { (void)std::move(lazy).start_on(actor); }
+      catch (const objc3::service_failure &error) {
+        rejected = error.status() == OBJC3_SERVICE_CLOSED;
+      }
+      assert(rejected); // Failure leaves the unstarted frame owned by lazy.
+    } else if (mode == 1) {
+      objc3_actor_hop_facts facts{};
+      facts.struct_size = sizeof(facts);
+      facts.version = OBJC3_ACTOR_SERVICE_VERSION;
+      for (unsigned count = 0; count != 1024; ++count)
+        assert(objc3_actor_enqueue(actor, noop, nullptr, nullptr, &facts) ==
+               OBJC3_SERVICE_OK);
+    } else {
+      for (unsigned count = 0; count != 1024; ++count)
+        assert(objc3_executor_enqueue(target, noop, nullptr) == OBJC3_SERVICE_OK);
+    }
+    auto state = std::make_shared<coroutine_state>();
+    auto task = queued_actor_hop(actor, state).start(source);
+    pump(source, 100000);
+    cancelled([&] { task.result(); });
+    assert(state->entered == 1 && state->continued == 0 && state->destroyed == 1);
+    pump(target, 100000);
+    assert(objc3_actor_close(actor) == OBJC3_SERVICE_OK);
+    assert(objc3_actor_join(actor) == OBJC3_SERVICE_OK);
+    objc3_actor_release(actor);
+  }
+  objc3_executor_release(target);
+  objc3_executor_release(source);
+}
+
+objc3::task<int> actor_dependency(objc3::task_handle<int> dependency,
+                                  std::shared_ptr<coroutine_state> state) {
+  struct guard {
+    std::shared_ptr<coroutine_state> state;
+    ~guard() { ++state->destroyed; }
+  } lifetime{state};
+  ++state->entered;
+  int value = co_await dependency;
+  ++state->continued;
+  co_return value;
+}
+void group_cancel_dispatch_failure_contract() {
+  objc3_executor_t *executor = nullptr, *other = nullptr;
+  assert(objc3_executor_create(1, &executor) == OBJC3_SERVICE_OK);
+  assert(objc3_executor_create(1, &other) == OBJC3_SERVICE_OK);
+  for (unsigned mode = 0; mode != 5; ++mode) {
+    objc3_actor_t *actor = nullptr;
+    assert(objc3_actor_create(executor, &actor) == OBJC3_SERVICE_OK);
+    auto child_state = std::make_shared<coroutine_state>();
+    auto state = std::make_shared<coroutine_state>();
+    auto dependency = start_leaf(other, child_state);
+    auto parent = actor_dependency(dependency, state).start_on(actor);
+    pump(executor, 100000);
+    assert(state->entered == 1 && state->continued == 0);
+    objc3_task_group_t *root = nullptr, *nested = nullptr, *failed_group = nullptr;
+    assert(objc3_task_group_create(nullptr, &root) == OBJC3_SERVICE_OK);
+    assert(objc3_task_group_create(root, &nested) == OBJC3_SERVICE_OK);
+    assert(objc3_task_group_create(root, &failed_group) == OBJC3_SERVICE_OK);
+    assert(objc3_task_group_add(nested, parent.native_handle()) == OBJC3_SERVICE_OK);
+    objc3::task_handle<std::string> failure;
+    if (mode == 1) {
+      failure = start_failure(executor);
+      assert(objc3_task_group_add(failed_group, failure.native_handle()) ==
+             OBJC3_SERVICE_OK);
+    }
+    assert(objc3_task_group_close(root) == OBJC3_SERVICE_OK);
+    assert(objc3_task_add_waiter(
+               parent.native_handle(),
+               [](void *context, const objc3_completion *completion) {
+                 assert(completion->kind == OBJC3_COMPLETION_CANCELLED);
+                 // Reentry must not encounter a group or failure-publication
+                 // lock held by the cancellation that triggered this callback.
+                 assert(objc3_task_group_cancel(
+                            static_cast<objc3_task_group_t *>(context)) ==
+                        OBJC3_SERVICE_OK);
+               }, root) == OBJC3_SERVICE_OK);
+    if (mode < 2) {
+      assert(objc3_actor_close(actor) == OBJC3_SERVICE_OK);
+    } else if (mode == 2) {
+      assert(objc3_actor_cancel(actor) == OBJC3_SERVICE_OK);
+    } else if (mode == 3) {
+      objc3_actor_hop_facts facts{};
+      facts.struct_size = sizeof(facts);
+      facts.version = OBJC3_ACTOR_SERVICE_VERSION;
+      for (unsigned count = 0; count != 1024; ++count)
+        assert(objc3_actor_enqueue(actor, noop, nullptr, nullptr, &facts) ==
+               OBJC3_SERVICE_OK);
+    } else {
+      for (unsigned count = 0; count != 1024; ++count)
+        assert(objc3_executor_enqueue(executor, noop, nullptr) == OBJC3_SERVICE_OK);
+    }
+    if (mode != 1)
+      assert(objc3_task_group_cancel(root) == OBJC3_SERVICE_OK);
+    pump(executor, 100000);
+    assert(objc3_task_group_join(root) == OBJC3_SERVICE_OK);
+    cancelled([&] { parent.result(); });
+    assert(state->destroyed == 1 && state->continued == 0);
+    // Group cancellation never owns this shared dependency.
+    assert(!objc3_task_is_cancel_requested(dependency.native_handle()));
+    child_state->ready = true;
+    pump(other, 100000);
+    assert(dependency.result() == 0);
+    objc3_task_group_release(failed_group);
+    objc3_task_group_release(nested);
+    objc3_task_group_release(root);
+    assert(objc3_actor_close(actor) == OBJC3_SERVICE_OK);
+    assert(objc3_actor_join(actor) == OBJC3_SERVICE_OK);
+    objc3_actor_release(actor);
+  }
+  objc3_executor_release(other);
+  objc3_executor_release(executor);
+}
+
+struct held_hop_frame {
+  objc3_executor_t *target = nullptr;
+  std::mutex mutex;
+  std::condition_variable changed;
+  bool held = false, released = false;
+  unsigned resumes = 0;
+  std::atomic<unsigned> destroyed{0};
+};
+void held_hop_resume(objc3_task_t *task, void *context) {
+  auto &frame = *static_cast<held_hop_frame *>(context);
+  if (++frame.resumes == 1) {
+    assert(objc3_task_hop(task, frame.target, nullptr) == OBJC3_SERVICE_OK);
+    std::unique_lock lock(frame.mutex);
+    frame.held = true;
+    frame.changed.notify_all();
+    assert(frame.changed.wait_for(lock, std::chrono::seconds(5),
+                                  [&] { return frame.released; }));
+  } else {
+    objc3_completion completion{};
+    completion.struct_size = sizeof(completion);
+    completion.version = OBJC3_SERVICE_ABI_VERSION;
+    assert(objc3_task_complete(task, &completion) == OBJC3_SERVICE_OK);
+  }
+}
+void hop_publication_contract() {
+  objc3_executor_t *source = nullptr, *target = nullptr;
+  assert(objc3_executor_create(0, &source) == OBJC3_SERVICE_OK);
+  assert(objc3_executor_create(1, &target) == OBJC3_SERVICE_OK);
+  held_hop_frame frame{};
+  frame.target = target;
+  objc3_task_start_options options{};
+  options.struct_size = sizeof(options);
+  options.version = OBJC3_SERVICE_ABI_VERSION;
+  options.executor = source;
+  options.frame = &frame;
+  options.resume = held_hop_resume;
+  options.destroy = [](void *context) {
+    ++static_cast<held_hop_frame *>(context)->destroyed;
+  };
+  objc3_task_t *task = nullptr;
+  assert(objc3_task_start(&options, &task) == OBJC3_SERVICE_OK);
+  {
+    std::unique_lock lock(frame.mutex);
+    assert(frame.changed.wait_for(lock, std::chrono::seconds(5),
+                                  [&] { return frame.held; }));
+    uint32_t executed = 99;
+    assert(objc3_executor_pump(target, 100, &executed) == OBJC3_SERVICE_OK);
+    assert(executed == 0); // Nothing published while the source owns the frame.
+    assert(objc3_task_hop(task, target, nullptr) ==
+           OBJC3_SERVICE_INVALID_ARGUMENT);
+    std::vector<std::thread> wakes;
+    for (unsigned index = 0; index != 8; ++index)
+      wakes.emplace_back([&] {
+        for (unsigned wake = 0; wake != 16; ++wake)
+          assert(objc3_task_schedule_resume(task) == OBJC3_SERVICE_OK);
+      });
+    for (auto &wake : wakes) wake.join();
+    assert(objc3_executor_pump(target, 100, &executed) == OBJC3_SERVICE_OK);
+    assert(executed == 0); // Active and concurrent requests coalesce before publication.
+    frame.released = true;
+    frame.changed.notify_all();
+  }
+  // Joining the source executor observes publication of the target job.
+  objc3_executor_release(source);
+  uint32_t executed = 0;
+  assert(objc3_executor_pump(target, 100, &executed) == OBJC3_SERVICE_OK);
+  assert(executed == 1);
+  assert(frame.resumes == 2 && frame.destroyed == 1);
+  objc3_task_release(task);
+  objc3_executor_release(target);
+}
 } // namespace
 int main() {
   manual_contract();
   worker_contract();
+  actor_hop_contract(true);
+  actor_hop_contract(false);
+  cancelled_actor_hop_contract();
+  failed_actor_dispatch_contract();
+  group_cancel_dispatch_failure_contract();
+  hop_publication_contract();
 }

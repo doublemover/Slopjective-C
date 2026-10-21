@@ -117,19 +117,55 @@ objc3_service_status snapshot_failure_ancestors(TaskGroup *group,
   }
 }
 
+struct CancellationBatch {
+  struct Entry { objc3_task_t *task; bool wake; };
+  std::vector<Entry> entries;
+  objc3_service_status request(objc3_task_t *task) {
+    if (!objc3_task_retain(task)) return OBJC3_SERVICE_NOT_READY;
+    try { entries.push_back({task, false}); }
+    catch (...) {
+      objc3_task_release(task);
+      return OBJC3_SERVICE_OUT_OF_MEMORY;
+    }
+    entries.back().wake = objc3_task_mark_cancel(task);
+    return OBJC3_SERVICE_OK;
+  }
+  ~CancellationBatch() {
+    for (const auto &entry : entries) {
+      if (entry.wake) objc3_task_wake_cancelled(entry.task);
+      objc3_task_release(entry.task);
+    }
+  }
+};
+
+objc3_service_status mark_group_cancel(TaskGroup *group,
+                                       CancellationBatch &cancellations);
+
 objc3_service_status cancel_group_siblings_locked(
-    TaskGroup *group, TaskGroup *failed_child = nullptr,
+    TaskGroup *group, CancellationBatch &cancellations,
+    TaskGroup *failed_child = nullptr,
     objc3_task_t *failed_task = nullptr) {
   group->cancelled = true;
   for (auto &entry : group->tasks)
-    if (!entry.completed && entry.task != failed_task)
-      objc3_task_request_cancel(entry.task);
+    if (!entry.completed && entry.task != failed_task) {
+      const auto status = cancellations.request(entry.task);
+      if (status != OBJC3_SERVICE_OK) return status;
+    }
   for (auto *child : group->children) {
     if (child == failed_child) continue;
-    const objc3_service_status status = task_group_cancel(child);
+    auto *retained = task_group_retain(child);
+    if (!retained) return OBJC3_SERVICE_NOT_READY;
+    const objc3_service_status status = mark_group_cancel(retained, cancellations);
+    task_group_release(retained);
     if (status != OBJC3_SERVICE_OK) return status;
   }
   return OBJC3_SERVICE_OK;
+}
+
+objc3_service_status mark_group_cancel(TaskGroup *group,
+                                       CancellationBatch &cancellations) {
+  std::lock_guard<std::mutex> lock(group->mutex);
+  return cancel_group_siblings_locked(group, cancellations);
 }
 
 bool contains_task(TaskGroup *group, objc3_task_t *task) {
@@ -177,6 +213,9 @@ void task_completed(void *opaque, const objc3_completion *completion) {
   bool publish_completion = false;
   objc3_service_status propagation_status = OBJC3_SERVICE_OK;
   AncestorLeases ancestors;
+  // Destroy after failure_order: cancellation flags publish under its lock,
+  // while dispatch and any synchronous completion callbacks run without it.
+  CancellationBatch cancellations;
   const bool is_failure = completion->kind == OBJC3_COMPLETION_ERROR;
   if (is_failure)
     propagation_status = snapshot_failure_ancestors(group, ancestors);
@@ -196,7 +235,8 @@ void task_completed(void *opaque, const objc3_completion *completion) {
       if (found->failed && publish_completion) {
         if (!group->first_failure_seen) {
           group->first_failure_seen = true;
-          propagation_status = cancel_group_siblings_locked(group, nullptr, task);
+          propagation_status = cancel_group_siblings_locked(
+              group, cancellations, nullptr, task);
         }
         propagate_failure = propagation_status == OBJC3_SERVICE_OK;
       }
@@ -220,7 +260,8 @@ void task_completed(void *opaque, const objc3_completion *completion) {
           propagation_status = OBJC3_SERVICE_NOT_READY;
         } else if (!parent->first_failure_seen) {
           parent->first_failure_seen = true;
-          propagation_status = cancel_group_siblings_locked(parent, failed_child);
+          propagation_status = cancel_group_siblings_locked(
+              parent, cancellations, failed_child);
         }
       }
       parent->changed.notify_all();
@@ -375,6 +416,7 @@ objc3_service_status task_group_add_task(TaskGroup *group, objc3_task_t *task) {
     task_group_release(group);
     return status;
   }
+  bool cancel_after_registration = false;
   {
     std::lock_guard<std::mutex> lock(group->mutex);
     --group->registrations_inflight;
@@ -383,8 +425,9 @@ objc3_service_status task_group_add_task(TaskGroup *group, objc3_task_t *task) {
                                 return entry.task == task;
                               });
     if (group->cancelled && found != group->tasks.end() && !found->completed)
-      objc3_task_request_cancel(task);
+      cancel_after_registration = true;
   }
+  if (cancel_after_registration) objc3_task_request_cancel(task);
   group->changed.notify_all();
   return OBJC3_SERVICE_OK;
 }
@@ -412,21 +455,8 @@ objc3_service_status task_group_close(TaskGroup *group) {
 
 objc3_service_status task_group_cancel(TaskGroup *group) {
   if (!group) return OBJC3_SERVICE_INVALID_ARGUMENT;
-  std::unique_lock<std::mutex> lock(group->mutex);
-  group->cancelled = true;
-  for (auto &entry : group->tasks)
-    if (!entry.completed) objc3_task_request_cancel(entry.task);
-  size_t index = 0;
-  while (index < group->children.size()) {
-    auto *child = task_group_retain(group->children[index++]);
-    if (!child) return OBJC3_SERVICE_NOT_READY;
-    lock.unlock();
-    const auto status = task_group_cancel(child);
-    task_group_release(child);
-    lock.lock();
-    if (status != OBJC3_SERVICE_OK) return status;
-  }
-  return OBJC3_SERVICE_OK;
+  CancellationBatch cancellations;
+  return mark_group_cancel(group, cancellations);
 }
 
 objc3_service_status task_group_next_completed(TaskGroup *group,
@@ -480,6 +510,9 @@ objc3_service_status task_group_join(TaskGroup *group) {
     std::unique_lock<std::mutex> lock(group->mutex);
     if (!group->closed) return OBJC3_SERVICE_NOT_READY;
     if (group->failure_propagation_failed) return OBJC3_SERVICE_NOT_READY;
+    if ((group->registrations_inflight != 0 || group->child_closures_inflight != 0) &&
+        executor_current_identity() != 0)
+      return OBJC3_SERVICE_NOT_READY;
     group->changed.wait(lock, [group] {
       return group->registrations_inflight == 0 &&
              group->child_closures_inflight == 0;

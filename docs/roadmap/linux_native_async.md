@@ -36,9 +36,10 @@ the promise. The private physical return ABI uses the task class, including its
 native C++ return-object convention. Every participant must use the same compiler
 extension ABI and runtime header.
 
-Awaiting a lazy task starts a private child on the parent's executor. Leaving
+Awaiting a lazy task starts a private child on the parent's current destination. Leaving
 that await cancels an unfinished private child, including parent cancellation,
-exception unwinding and frame abandonment. Awaiting an existing `task_handle<T>`
+exception unwinding and frame abandonment. The runtime also supports
+[actor-bound starts and executor hops](linux_task_hops.md). Awaiting an existing `task_handle<T>`
 keeps its shared dependency semantics. Cancellation remains cooperative;
 code between suspension points must check cancellation when necessary.
 
@@ -67,10 +68,10 @@ typed-error propagation across suspension, async methods and Blocks, and compile
 actor isolation. These require separate execution and ownership qualification
 before the public language capability can be promoted.
 
-The [installed SDK acceptance receipt](../support/linux_native_async_acceptance.json)
+The [installed SDK acceptance receipt](../support/linux_task_hops_acceptance.json)
 binds this stage to its exact compiler, runtime, archive and source inputs. It
 records eight native execution configurations, source-free package consumption,
 frame debugging, instrumented runtime/client checks and ordinary-user execution
 on fresh Debian 13 and Ubuntu 26.04 systems. The
-[latency report](../support/linux_native_async_latency.json) retains the measured
+[latency report](../support/linux_task_hops_latency.json) retains the measured
 command costs and budget comparisons for the qualified SDK.

@@ -23,6 +23,7 @@ void native_empty() __objc3_async;
 #ifdef __OBJC__
 int native_owned(bool) __objc3_async;
 int native_object_error() __objc3_async;
+int native_actor_owned(objc3_actor_t *, objc3_actor_t *, bool) __objc3_async;
 int native_exception_number(__unsafe_unretained id);
 unsigned native_object_destructions();
 #endif

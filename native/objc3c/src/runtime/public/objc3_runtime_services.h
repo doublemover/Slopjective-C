@@ -8,7 +8,7 @@
 extern "C" {
 #endif
 
-#define OBJC3_SERVICE_ABI_VERSION 2u
+#define OBJC3_SERVICE_ABI_VERSION 3u
 #define OBJC3_VALUE_OPS_VERSION 1u
 
 typedef struct objc3_task objc3_task_t;
@@ -79,7 +79,10 @@ typedef void (*objc3_task_resume)(objc3_task_t *task, void *frame);
 typedef void (*objc3_frame_destroy)(void *frame);
 typedef void (*objc3_executor_callback)(void *context);
 
-/* start transfers frame ownership only on success. A task keeps its executor
+/* start transfers frame ownership only on success. Select exactly one of
+ * executor or actor. An actor task resumes through its serial mailbox, including
+ * after dependencies and yields; suspension permits other mailbox jobs to run.
+ * A task keeps its selected destination
  * alive, owns its stored outcome until final release, invokes each registered
  * completion callback once, and destroys its frame exactly once after terminal
  * completion and after active resume returns. Synchronous completion is valid.
@@ -93,15 +96,32 @@ typedef struct objc3_task_start_options {
   objc3_frame_destroy destroy;
   objc3_completion_callback completion;
   void *completion_context;
+  objc3_actor_t *actor;
 } objc3_task_start_options;
 
 objc3_service_status objc3_task_start(const objc3_task_start_options *options,
                                      objc3_task_t **out_task);
+/* Start a private child from the parent's active resume, inheriting its current
+ * destination. Both destination fields in options must be null. Ownership
+ * transfers only on success, as for start. No parent-child ownership is implied. */
+objc3_service_status objc3_task_start_child(
+    objc3_task_t *parent, const objc3_task_start_options *options,
+    objc3_task_t **out_task);
 objc3_task_t *objc3_task_retain(objc3_task_t *task);
 void objc3_task_release(objc3_task_t *task);
 void objc3_task_request_cancel(objc3_task_t *task);
 int objc3_task_is_cancel_requested(const objc3_task_t *task);
+/* Coalesce outstanding wake requests. A wake during an active resume queues
+ * one continuation after that callback returns; native resumes never overlap. */
 objc3_service_status objc3_task_schedule_resume(objc3_task_t *task);
+/* Change destination from this task's active resume and request a queued
+ * continuation. Select exactly one of executor or actor. Always suspend after
+ * success, including a same-destination hop. Later yields/dependencies retain
+ * this destination until another hop. Resumption cannot overlap the active
+ * callback. A failed deferred dispatch terminalizes as cancellation. */
+objc3_service_status objc3_task_hop(objc3_task_t *task,
+                                   objc3_executor_t *executor,
+                                   objc3_actor_t *actor);
 /* complete copies a successful payload and retains an error; the caller keeps
  * ownership of its supplied view. It rejects invalid states and duplicate
  * completion. Runtime locks must never enclose user callbacks/destruction. */
@@ -123,7 +143,7 @@ objc3_service_status objc3_task_await(objc3_task_t *parent,
 objc3_service_status objc3_task_get_completion(
     objc3_task_t *task, objc3_completion *out_completion);
 /* wait blocks until terminal completion; it does not pump a manual executor.
- * A pending wait from the task itself or its current serial executor returns
+ * A pending wait from the task itself or any runtime executor callback returns
  * NOT_READY so queued task work can continue. Completed waits remain valid. */
 objc3_service_status objc3_task_wait(objc3_task_t *task);
 
@@ -162,7 +182,7 @@ objc3_service_status objc3_task_group_cancel(objc3_task_group_t *group);
 objc3_service_status objc3_task_group_next(objc3_task_group_t *group,
                                           objc3_task_t **out_task);
 /* join waits for closed groups, terminal tasks, callbacks and frame cleanup.
- * A wait that would block a task's current serial/manual executor returns
+ * A wait that would block a runtime executor callback or a manual task returns
  * NOT_READY. The caller can pump a manual executor and retry. */
 objc3_service_status objc3_task_group_join(objc3_task_group_t *group);
 

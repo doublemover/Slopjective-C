@@ -63,6 +63,7 @@ struct objc3_task final {
   mutable std::mutex mutex;
   std::condition_variable completed;
   objc3_executor_t *executor{nullptr};
+  objc3_actor_t *actor{nullptr};
   void *frame{nullptr};
   objc3_task_resume resume{nullptr};
   objc3_frame_destroy destroy{nullptr};
@@ -71,6 +72,7 @@ struct objc3_task final {
   bool resume_after_completion_claim{false};
   bool resume_queued{false};
   bool resume_active{false};
+  bool resume_requested{false};
   bool awaiting{false};
   uint64_t await_generation{0};
   std::shared_ptr<AwaitTarget> await_target;
@@ -96,5 +98,9 @@ void objc3_service_run_task_resume(void *context);
 void objc3_task_destroy_frame(void *frame, objc3_frame_destroy destroy);
 objc3_task_t *objc3_task_current_callback() noexcept;
 objc3_service_status objc3_task_wait_quiescent(objc3_task_t *task);
+// Marking cannot invoke callbacks. Wake only after releasing group/publication
+// locks; failed dispatch can synchronously complete the task and its observers.
+bool objc3_task_mark_cancel(objc3_task_t *task);
+void objc3_task_wake_cancelled(objc3_task_t *task);
 
 #endif

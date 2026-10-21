@@ -187,6 +187,10 @@ uint64_t actor_executor_identity(const Actor *actor) noexcept {
   return actor ? actor->executor->identity : 0;
 }
 
+objc3_executor_t *actor_executor(Actor *actor) noexcept {
+  return actor ? actor->executor : nullptr;
+}
+
 objc3_service_status actor_enqueue(Actor *actor, ActorJob job, void *context,
                                   ActorContextDestroy destroy,
                                   ActorHopFacts *out_facts) {

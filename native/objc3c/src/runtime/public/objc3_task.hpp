@@ -166,6 +166,39 @@ struct task_yield_t {};
 inline constexpr task_checkpoint_t task_checkpoint{};
 inline constexpr task_yield_t task_yield{};
 
+/* A retained destination can safely be passed by value into a lazy frame.
+ * Hops always queue and preserve the destination through later suspension. */
+class [[nodiscard]] task_destination {
+  objc3_executor_t *executor_ = nullptr;
+  objc3_actor_t *actor_ = nullptr;
+
+public:
+  explicit task_destination(objc3_executor_t *executor)
+      : executor_(objc3_executor_retain(executor)) {
+    if (!executor_) throw service_failure(OBJC3_SERVICE_INVALID_ARGUMENT);
+  }
+  explicit task_destination(objc3_actor_t *actor)
+      : actor_(objc3_actor_retain(actor)) {
+    if (!actor_) throw service_failure(OBJC3_SERVICE_INVALID_ARGUMENT);
+  }
+  task_destination(const task_destination &) = delete;
+  task_destination(task_destination &&other) noexcept
+      : executor_(std::exchange(other.executor_, nullptr)),
+        actor_(std::exchange(other.actor_, nullptr)) {}
+  ~task_destination() {
+    objc3_actor_release(actor_);
+    objc3_executor_release(executor_);
+  }
+  objc3_executor_t *executor() const noexcept { return executor_; }
+  objc3_actor_t *actor() const noexcept { return actor_; }
+};
+inline task_destination hop_to(objc3_executor_t *executor) {
+  return task_destination(executor);
+}
+inline task_destination hop_to(objc3_actor_t *actor) {
+  return task_destination(actor);
+}
+
 /* Lazy, move-only compiler-owned coroutine frame. start transfers the frame
  * to the C task service and schedules its first resume on an explicit executor.
  * Arguments follow standard C++ coroutine lifetime rules: pass owned values. */
@@ -173,7 +206,6 @@ template <class T> class [[nodiscard]] task {
 public:
   struct promise_type : task_detail::result_storage<T> {
     objc3_task_t *owner = nullptr; // Borrowed only during a runtime resume.
-    objc3_executor_t *executor = nullptr; // Owned by the enclosing C task.
     std::exception_ptr failure;
     bool failed = false;
     using coroutine = std::coroutine_handle<promise_type>;
@@ -234,7 +266,25 @@ public:
       if (objc3_task_is_cancel_requested(owner))
         throw task_cancelled();
       return dependency_awaiter<U>{owner,
-                                   std::move(dependency).start(executor), true};
+                                   std::move(dependency).start_impl(
+                                       nullptr, nullptr, owner), true};
+    }
+
+    struct hop_awaiter {
+      objc3_task_t *parent;
+      task_destination destination;
+      bool await_ready() const noexcept { return false; }
+      void await_suspend(std::coroutine_handle<>) {
+        task_detail::check(objc3_task_hop(parent, destination.executor(),
+                                         destination.actor()));
+      }
+      void await_resume() {
+        if (objc3_task_is_cancel_requested(parent)) throw task_cancelled();
+      }
+    };
+    auto await_transform(task_destination destination) {
+      if (objc3_task_is_cancel_requested(owner)) throw task_cancelled();
+      return hop_awaiter{owner, std::move(destination)};
     }
 
     struct checkpoint_awaiter {
@@ -314,6 +364,25 @@ private:
   using coroutine = std::coroutine_handle<promise_type>;
   coroutine frame_;
   explicit task(coroutine frame) noexcept : frame_(frame) {}
+  template <class> friend class task;
+
+  task_handle<T> start_impl(objc3_executor_t *executor, objc3_actor_t *actor,
+                            objc3_task_t *parent = nullptr) {
+    if (!frame_) throw service_failure(OBJC3_SERVICE_INVALID_ARGUMENT);
+    objc3_task_start_options options{};
+    options.struct_size = sizeof(options);
+    options.version = OBJC3_SERVICE_ABI_VERSION;
+    options.executor = executor;
+    options.actor = actor;
+    options.frame = frame_.address();
+    options.resume = promise_type::resume;
+    options.destroy = promise_type::destroy;
+    objc3_task_t *started = nullptr;
+    task_detail::check(parent ? objc3_task_start_child(parent, &options, &started)
+                              : objc3_task_start(&options, &started));
+    frame_ = {};
+    return task_handle<T>(started);
+  }
 
 public:
   task(const task &) = delete;
@@ -332,20 +401,10 @@ public:
       frame_.destroy();
   }
   task_handle<T> start(objc3_executor_t *executor) && {
-    if (!frame_)
-      throw service_failure(OBJC3_SERVICE_INVALID_ARGUMENT);
-    objc3_task_start_options options{};
-    options.struct_size = sizeof(options);
-    options.version = OBJC3_SERVICE_ABI_VERSION;
-    options.executor = executor;
-    frame_.promise().executor = executor;
-    options.frame = frame_.address();
-    options.resume = promise_type::resume;
-    options.destroy = promise_type::destroy;
-    objc3_task_t *started = nullptr;
-    task_detail::check(objc3_task_start(&options, &started));
-    frame_ = {};
-    return task_handle<T>(started);
+    return start_impl(executor, nullptr);
+  }
+  task_handle<T> start_on(objc3_actor_t *actor) && {
+    return start_impl(nullptr, actor);
   }
 };
 

@@ -1,7 +1,7 @@
 # Linux forward development
 
 The active product is the Clang-only Linux x86-64 SDK. The
-[acceptance receipt](../support/linux_native_async_acceptance.json) identifies
+[acceptance receipt](../support/linux_task_hops_acceptance.json) identifies
 its exact archive, implementation, installed execution and fresh-distribution
 evidence. Tool versions come from [the manifest](../../toolchains/llvm/manifest.json);
 public language claims come from [the capability authority](../../schemas/objc3-language-capabilities.json).
@@ -66,6 +66,10 @@ The implemented foundations have separate bounded contracts:
   reserved compiler spellings. Public async/await remains reserved.
 
 ## Next compiler milestones
+
+The [task destination bridge](linux_task_hops.md) supplies actor-bound resumes,
+explicit executor/actor hops and inherited child destinations. Compiler isolation
+and the public language contract still require the following work.
 
 1. Extend the Objective-C++ native async stage to pure Objective-C functions and
    the public language contract.
