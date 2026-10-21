@@ -65,6 +65,7 @@ interfaces and packages. The task service remains ABI 3. Every provider and
 consumer uses the new compiler and runtime header. Native header consumers cover
 all four provider/consumer ARC/MRC pairs; semantic and immutable packages retain
 their explicit ownership-mode identity.
+The underlying C++ task and handle class ABI changes for every result type.
 
 The qualification owner covers sixteen native provider/PCH/consumer
 configurations across C++20/23, O0/O2 and all ARC/MRC pairs. O0 cases inspect
@@ -75,3 +76,11 @@ cross-worker actor hops. ASan/LeakSanitizer/UBSan and ThreadSanitizer instrument
 the task services and clients in all ownership pairs. Source-free package
 consumers preserve imported object and Block result types and execute after
 provider sources and build directories have been removed.
+
+The [acceptance receipt](../support/linux_async_owned_results_acceptance.json)
+binds the exact SDK archive to the compiler and AST tests, 22 installed package
+gates, 74 sanitizer configurations, frame debugging and ordinary-user archive
+consumers on Debian 13 and Ubuntu 26.04. Fresh-distribution qualification uses
+the explicit `task-destinations` scope; the full package matrix runs during SDK
+publication. The [latency report](../support/linux_async_owned_results_latency.json)
+records five quiet repetitions against the existing command budgets.

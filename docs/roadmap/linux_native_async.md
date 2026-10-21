@@ -57,21 +57,27 @@ Source and immutable package builders supply the full-frame allocation option
 and link the installed task runtime. Imported function declarations preserve the
 async effect and logical result; providers retain their module-owned native
 symbols after relocation.
-Extension ABI 14 requires a full rebuild of objects, PCH files, semantic
+Extension ABI 15 requires a full rebuild of objects, PCH files, semantic
 interfaces and packages.
 
-This stage supports ordinary free functions with C++ value or void results and no throws
-effect. Direct Objective-C object and Block results remain reserved.
+This stage supports ordinary free functions with C++ value, void, Objective-C
+object/protocol/Class and Block results and no throws effect. The
+[owned result contract](linux_async_owned_results.md) retains objects and copies
+Blocks independently of frame cleanup. Successful reads and awaits return +0
+values through the current autorelease pool; ARC locals retain across later
+suspension, while MRC code retains explicitly. Task and handle types normalize
+direct Objective-C pointer ownership for a consistent native C++ ABI.
 
 The remaining language work includes pure Objective-C async lowering, checked
-typed-error propagation across suspension, async methods and Blocks, and compiler
+typed-error propagation across suspension, async methods and async Blocks, and compiler
 actor isolation. These require separate execution and ownership qualification
 before the public language capability can be promoted.
 
-The [installed SDK acceptance receipt](../support/linux_task_hops_acceptance.json)
+The [installed SDK acceptance receipt](../support/linux_async_owned_results_acceptance.json)
 binds this stage to its exact compiler, runtime, archive and source inputs. It
-records eight native execution configurations, source-free package consumption,
+records sixteen native execution configurations across all ARC/MRC
+provider/consumer pairs, source-free object and Block package consumption,
 frame debugging, instrumented runtime/client checks and ordinary-user execution
 on fresh Debian 13 and Ubuntu 26.04 systems. The
-[latency report](../support/linux_task_hops_latency.json) retains the measured
+[latency report](../support/linux_async_owned_results_latency.json) retains the measured
 command costs and budget comparisons for the qualified SDK.
