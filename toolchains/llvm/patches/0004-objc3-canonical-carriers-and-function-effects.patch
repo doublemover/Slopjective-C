@@ -12464,3 +12464,52 @@ index 000000000..c40497364
 +    EXPECT_EQ(&ErrorRecord->getASTContext(), &ToContext);
 +  }
 +}
+diff --git a/clang/lib/Sema/SemaExprCXX.cpp b/clang/lib/Sema/SemaExprCXX.cpp
+index 538604aa2..0546dec20 100644
+--- a/clang/lib/Sema/SemaExprCXX.cpp
++++ b/clang/lib/Sema/SemaExprCXX.cpp
+@@ -6604,6 +6604,44 @@ ExprResult Sema::MaybeBindToTemporary(Expr *E) {
+ 
+   assert(!isa<CXXBindTemporaryExpr>(E) && "Double-bound temporary?");
+ 
++  // Managed carrier arguments and results own CodeGen temporaries without a
++  // CXXRecordDecl destructor. They still require an ordinary full-expression
++  // cleanup boundary, including for C calls, member calls and constructors.
++  auto IsManagedCarrier = [](QualType T) {
++    auto IsManaged = [](QualType Leaf) {
++      return Leaf->isObjCObjectPointerType() || Leaf->isBlockPointerType();
++    };
++    if (const auto *Optional = T->getAs<ObjC3OptionalType>())
++      return IsManaged(Optional->getElementType());
++    if (const auto *Result = T->getAs<ObjC3ResultType>())
++      return IsManaged(Result->getSuccessType()) || IsManaged(Result->getErrorType());
++    return false;
++  };
++  if (getLangOpts().ObjCAutoRefCount) {
++    bool NeedsCarrierCleanup = !E->isGLValue() && IsManagedCarrier(E->getType());
++    if (const auto *Call = dyn_cast<CallExpr>(E)) {
++      QualType Called = Call->getCallee()->getType();
++      if (Call->getCallee()->hasPlaceholderType(BuiltinType::BoundMember))
++        Called = Expr::findBoundMemberType(Call->getCallee());
++      if (!Called.isNull()) {
++        if (const auto *Pointer = Called->getAs<PointerType>())
++          Called = Pointer->getPointeeType();
++        else if (const auto *Block = Called->getAs<BlockPointerType>())
++          Called = Block->getPointeeType();
++        else if (const auto *Member = Called->getAs<MemberPointerType>())
++          Called = Member->getPointeeType();
++        if (const auto *Proto = Called->getAs<FunctionProtoType>())
++          for (QualType Parameter : Proto->param_types())
++            NeedsCarrierCleanup |= IsManagedCarrier(Parameter);
++      }
++    }
++    if (const auto *Construct = dyn_cast<CXXConstructExpr>(E))
++      for (const ParmVarDecl *Parameter : Construct->getConstructor()->parameters())
++        NeedsCarrierCleanup |= IsManagedCarrier(Parameter->getType());
++    if (NeedsCarrierCleanup)
++      Cleanup.setExprNeedsCleanups(true);
++  }
++
+   // If the result is a glvalue, we shouldn't bind it.
+   if (E->isGLValue())
+     return E;

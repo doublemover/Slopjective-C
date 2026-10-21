@@ -62,8 +62,8 @@ ARC object and Block Optional locals, plus strong Block payloads in direct
 Optional/Result local construction. Presence queries borrow the active tag.
 O0/O2 runtime cases exercise retained and autoreleased returns, callbacks,
 throwing Blocks, C++ members, Objective-C messages, failure arms and native
-exception cleanup. MRC managed `try?`, weak/unsafe Block carriers,
-by-value return and nested managed payloads remain
+exception cleanup. MRC managed `try?`, weak/unsafe Block carriers
+and nested managed payloads remain
 outside this slice.
 
 Explicit `__objc3_copy`/`__objc3_move` construction of Objective-C++ ARC locals
@@ -79,6 +79,18 @@ fresh storage before evaluating the LHS or destroying its old active payload.
 Native strong/Block initialization and weak copy/move/destroy operations handle
 replacement and exact self-aliasing. C++ assignment preserves the destination
 lvalue; snapshots clean up when LHS evaluation throws. Installed O0/O2 witnesses
-and live editor probes cover both languages; volatile and nested managed storage
-and managed by-value ABI remain diagnostic boundaries.
+and live editor probes cover both languages.
+
+The Linux direct-carrier call contract uses extension ABI revision 3. Ordinary
+functions, callbacks and C++ members pass caller-owned argument snapshots by
+pointer; callees borrow and may replace those snapshots. Snapshots clean up at
+the caller's full-expression boundary, including later-argument and callee
+exceptions. Returns initialize fresh caller-owned storage. The installed
+`qualify-carrier-calls.py` suite executes separate provider/consumer builds at
+O0/O2/ThinLTO, semantic imports and PCH, including weak storage, virtual
+adjustment thunks and register exhaustion. Objective-C message and Block carrier
+signatures, typed-error signatures, volatile and nested managed storage remain
+diagnostic boundaries. The
+[call contract](../../../../docs/roadmap/linux_managed_call_abi.md) records the
+target and ownership limits.
 The editor and interface consumers use the same sealed SDK and Linux target.

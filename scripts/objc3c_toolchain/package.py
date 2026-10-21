@@ -165,6 +165,19 @@ def package_sdk(repo: Path, prefix: Path, validation_report: Path, cache_dir: Pa
     module_evidence = qualify(prefix, validation_report.parent / 'installed-source-modules')
     from .qualify_source_graph import qualify as qualify_graph
     graph_evidence = qualify_graph(prefix, validation_report.parent / 'installed-source-graph')
+    calls_directory = validation_report.parent / 'installed-carrier-calls'
+    calls_directory.mkdir(parents=True, exist_ok=True)
+    with (calls_directory / 'execution.log').open('w') as log:
+        result = subprocess.run([os.sys.executable, '-B',
+            str(prefix / 'share/objc3c/examples/native/qualify-carrier-calls.py'),
+            '--sdk-root', str(prefix), '--output-dir', str(calls_directory)],
+            stdout=log, stderr=subprocess.STDOUT, timeout=1200)
+    if result.returncode:
+        raise ValueError(f'installed managed call qualification failed; see {calls_directory / "execution.log"}')
+    call_evidence = json.loads((calls_directory / 'qualification.json').read_text())
+    if (call_evidence['status'] != 'PASS' or call_evidence['sdk_seal'] != data['seal_sha256']
+            or len(call_evidence['executions']) != 9):
+        raise ValueError('installed managed call qualification receipt is incomplete')
     cache_dir.mkdir(parents=True, exist_ok=True)
     archive = cache_dir / (source['build_id'] + '-linux-x86_64-' + data['seal_sha256'][:16] + '.tar.zst')
     if archive.exists():
@@ -191,7 +204,8 @@ def package_sdk(repo: Path, prefix: Path, validation_report: Path, cache_dir: Pa
     receipt = {'archive': str(archive), 'archive_sha256': _file_hash(archive),
                'archive_bytes': archive.stat().st_size, 'seal_sha256': data['seal_sha256'],
                'source_build_id': source['build_id'],
-               'installed_source_modules': module_evidence, 'installed_source_graph': graph_evidence}
+               'installed_source_modules': module_evidence, 'installed_source_graph': graph_evidence,
+               'installed_carrier_calls': call_evidence}
     archive.with_suffix('.json').write_text(json.dumps(receipt, indent=2) + '\n')
     return {**receipt, 'cache_hit': False}
 
