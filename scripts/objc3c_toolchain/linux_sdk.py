@@ -259,8 +259,8 @@ def _build_sdk(repo: Path, base: Path, fetch: bool, install_root: Path, foundati
         jobs = build_plans(repo, host='linux-x86_64')['configure']['host_environment']['resource_limits']['compile_jobs']
         run('frontend-build', ['cmake', '--build', frontend, '--parallel', str(jobs)])
         run('frontend-tests', ['ctest', '--test-dir', frontend, '--no-tests=error', '--output-on-failure'])
-        run('frontend-install', ['cmake', '--install', frontend, '--prefix', prefix])
         report['frontend_test_output_reclamation'] = reclaim_frontend_tests(frontend)
+        run('frontend-install', ['cmake', '--install', frontend, '--prefix', prefix])
         report['installed_qualification'] = qualify_installed(repo, prefix, directory / 'installed-qualification')
         env['OBJC3C_CLANG_FOUNDATION_ROOT'] = str(prefix)
         run_id = 'linux-sdk-' + datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%S%fZ')

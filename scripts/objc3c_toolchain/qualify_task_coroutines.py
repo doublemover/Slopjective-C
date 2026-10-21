@@ -28,18 +28,20 @@ def configurations():
 
 def qualify(sdk: Path, output: Path, *, fixture: Path | None = None,
             headers: Path | None = None, runtime_library: Path | None = None,
-            objc_runtime: Path | None = None) -> dict:
+            objc_runtime: Path | None = None, compiler: Path | None = None) -> dict:
     sdk, output = sdk.resolve(strict=True), output.resolve()
     packages.disjoint(output, sdk)
     output.mkdir(parents=True, exist_ok=True)
     receipt = output / 'qualification.json'
     receipt.unlink(missing_ok=True)
     manifest = json.loads((sdk / 'objc3-sdk.json').read_text())
-    development = any(value is not None for value in (fixture, headers, runtime_library, objc_runtime))
+    development = any(value is not None for value in (fixture, headers, runtime_library, objc_runtime, compiler))
     fixture = fixture or sdk / 'share/objc3c/examples/task-coroutines'
     headers = headers or sdk / 'include/objc3c/runtime'
     runtime_library = runtime_library or sdk / 'lib/libobjc3_runtime_services.a'
     objc_runtime = objc_runtime or sdk / 'lib/libobjc.so'
+    native_compiler = compiler or sdk / "bin/clang"
+    compiler = compiler or sdk / "bin/objc3c"
     env = environment(sdk)
     env['LD_LIBRARY_PATH'] = str(objc_runtime.parent) + ':' + str(sdk / 'lib')
     commands, cases = [], []
@@ -64,15 +66,17 @@ def qualify(sdk: Path, output: Path, *, fixture: Path | None = None,
                 flags = ['-x', language, '-std=' + standard, '-' + optimization, '-g',
                          '-UNDEBUG', '-Wall', '-Wextra', '-Werror',
                          '-Wno-unused-command-line-argument', '-fcoro-aligned-allocation',
+                         '-fobjc-runtime=gnustep-2.2', '-fblocks',
                          '-I' + str(headers)]
+                if language == 'objective-c++': flags.append('-fobjc-version=3')
                 if ownership == 'arc': flags.append('-fobjc-arc')
                 elif ownership == 'mrc': flags.append('-fno-objc-arc')
-                run(label + '-provider', [sdk / 'bin/objc3c', *flags, root / 'provider.cpp',
+                run(label + '-provider', [compiler, *flags, root / 'provider.cpp',
                     '-c', '-o', root / 'provider.o'], root)
                 # The consumer must build and execute without implementation
                 # source; only its header and the native provider object remain.
                 (root / 'provider.cpp').unlink()
-                run(label + '-consumer', [sdk / 'bin/objc3c', *flags, root / 'client.cpp',
+                run(label + '-consumer', [compiler, *flags, root / 'client.cpp',
                     '-c', '-o', root / 'client.o'], root)
                 executable = root / 'client'
                 run(label + '-link', [sdk / 'bin/clang++', '--no-default-config', '-fuse-ld=lld',
@@ -103,6 +107,7 @@ def qualify(sdk: Path, output: Path, *, fixture: Path | None = None,
                               'executable_sha256': packages.digest(executable)})
         report = {'schema': 'objc3c.task-coroutine-qualification.v1', 'status': 'PASS',
                   'sdk_seal': manifest['seal_sha256'],
+                  'compiler_sha256': packages.digest(native_compiler.resolve()),
                   'runtime_binding': 'development-overlay' if development else 'sealed-sdk',
                   'runtime_library_sha256': packages.digest(runtime_library),
                   'objc_runtime_sha256': packages.digest(objc_runtime),

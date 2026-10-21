@@ -59,6 +59,7 @@ int RunNativeDriver(int argc, char **raw_argv) {
       [](const char *arg) { return std::string_view(arg) == "--objcxx"; });
   std::vector<std::string> forwarded;
   bool cxx = false, objc = false, source = false, query = false;
+  bool header = false;
   for (int i = 1; i < argc; ++i) {
     std::string arg(argv[i]);
     if (arg == "--sdk-root") {
@@ -82,6 +83,9 @@ int RunNativeDriver(int argc, char **raw_argv) {
       }
       if (language.find("c++") != std::string::npos) cxx = true;
       if (language.starts_with("objective-c")) objc = true;
+      // Clang infers precompilation from a header language without requiring
+      // -c. Linker inputs under that -x would become extra PCH output jobs.
+      if (language.ends_with("-header")) header = true;
     } else if (arg == "--arc") {
       forwarded.push_back("-fobjc-arc");
     } else if (arg == "--runtime" || arg == "--profile" || arg == "--target") {
@@ -145,7 +149,7 @@ int RunNativeDriver(int argc, char **raw_argv) {
   if (!query) {
     args.insert(args.end(), {"-I" + (root / "include").string(),
         "-L" + (root / "lib").string(), "-fuse-ld=lld"});
-    bool link = true;
+    bool link = !header;
     for (const auto &arg : forwarded)
       if (arg == "-c" || arg == "-S" || arg == "-E" || arg == "-fsyntax-only" ||
           arg == "-M" || arg == "-MM") link = false;

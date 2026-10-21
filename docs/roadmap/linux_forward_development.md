@@ -1,7 +1,7 @@
 # Linux forward development
 
 The active product is the Clang-only Linux x86-64 SDK. The
-[acceptance receipt](../support/linux_task_coroutines_acceptance.json) identifies
+[acceptance receipt](../support/linux_native_async_acceptance.json) identifies
 its exact archive, implementation, installed execution and fresh-distribution
 evidence. Tool versions come from [the manifest](../../toolchains/llvm/manifest.json);
 public language claims come from [the capability authority](../../schemas/objc3-language-capabilities.json).
@@ -10,7 +10,7 @@ public language claims come from [the capability authority](../../schemas/objc3-
 
 The [public Optional/Result contract](linux_public_carriers.md) and
 [synchronous error contract](linux_public_errors.md) now have native compiler
-syntax in Objective-C17 and Objective-C++20/23. Extension ABI 13 requires a full
+syntax in Objective-C17 and Objective-C++20/23. Extension ABI 14 requires a full
 rebuild of objects, PCH files, semantic interfaces and packages. The public
 feature predicates describe the bounded Linux x86-64 GNUstep 2.2 compatibility
 profile; async/await and actors remain reserved.
@@ -61,10 +61,14 @@ The implemented foundations have separate bounded contracts:
 - [Resumable task bridge](linux_task_coroutines.md) connects native C++20/23 and
   Objective-C++ coroutine frames to the public task ABI, with queued awaits,
   cancellation wakeup, retained results and native frame cleanup.
+- [Native async function development](linux_native_async.md) connects logical
+  results and canonical async effects to Objective-C++20/23 task frames through
+  reserved compiler spellings. Public async/await remains reserved.
 
 ## Next compiler milestones
 
-1. Lower native async functions and await expressions into resumable task frames.
+1. Extend the Objective-C++ native async stage to pure Objective-C functions and
+   the public language contract.
    Define suspension ownership, checked typed-error propagation, cancellation,
    callback publication and cleanup before promoting the language capability.
    Reuse the public task/group ABI and its resumable coroutine bridge. Require

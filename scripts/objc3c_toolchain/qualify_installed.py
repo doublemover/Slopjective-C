@@ -28,6 +28,15 @@ def qualify_installed(repo: Path, prefix: Path, output: Path) -> dict:
         compiler = prefix / 'bin/objc3c'
         run('version', [compiler, '--version'])
         run('help', [compiler, '--help'])
+        for standard in ('c++20', 'c++23'):
+            pch = client / ('driver-' + standard + '.pch')
+            application = client / ('pch-application-' + standard)
+            mode = ['-x', 'objective-c++-header'] if standard == 'c++20' else ['-xobjective-c++-header']
+            run('pch-generate-' + standard, [compiler, *mode, '-std=' + standard,
+                '-g', 'driver-pch.h', '-o', pch])
+            run('pch-consume-' + standard, [compiler, '-std=' + standard,
+                '-g', '-include-pch', pch, 'driver-pch.mm', '-o', application])
+            run('pch-execute-' + standard, [application])
         for optimize in ('O0', 'O2'):
             application = client / ('application-' + optimize)
             run(f'compile-{optimize}', [compiler, 'main.objc3', f'-{optimize}', '-g',

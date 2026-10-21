@@ -1,0 +1,14 @@
+{
+  "schema": "objc3c.source-workspace.v4",
+  "packages": ["provider/package.json"],
+  "application": {
+    "root": "app",
+    "source": "main.mm",
+    "language": "objective-c++",
+    "standard": "c++20",
+    "ownership": "arc",
+    "dependencies": [
+      { "name": "fixture.NativeAsync", "package": "native-async-v1", "visibility": "private" }
+    ]
+  }
+}

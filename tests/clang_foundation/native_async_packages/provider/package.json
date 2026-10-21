@@ -1,0 +1,14 @@
+{
+  "schema": "objc3c.source-package.v4",
+  "name": "fixture.NativeAsync",
+  "package": "native-async-v1",
+  "source": "module.mm",
+  "language": "objective-c++",
+  "standard": "c++20",
+  "ownership": "arc",
+  "provider_ownership": "arc",
+  "exports": [
+    "native_module_value"
+  ],
+  "dependencies": []
+}

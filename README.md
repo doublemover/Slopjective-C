@@ -259,8 +259,14 @@ The [resumable task bridge](docs/roadmap/linux_task_coroutines.md) connects nati
 C++20/23 and Objective-C++ coroutine frames to the task ABI. Awaiting queues the
 continuation on the parent's executor; cancellation, abandonment, retained values,
 Block captures and captured Objective-C exceptions preserve native cleanup.
-Worker callbacks drain autoreleased temporaries. Objective-C async/await syntax
-and compiler actor isolation remain reserved.
+Worker callbacks drain autoreleased temporaries.
+
+The [native async compiler stage](docs/roadmap/linux_native_async.md) lowers
+logical-result free functions and native awaits into Objective-C++20/23 task
+frames, including nested private children, deferred cleanup and source-free
+package imports. It uses the reserved `__objc3_async` and `__objc3_await` spellings.
+Extension ABI 14 requires every object, PCH, semantic interface and package to be
+rebuilt. Public async/await and compiler actor isolation remain reserved.
 
 The [public availability contract](docs/roadmap/linux_api_availability.md) keeps
 native deprecation, unavailability and platform metadata in semantic identities
@@ -304,11 +310,11 @@ Native validation checks O0/O2 behavior, ABI, ownership, cleanup, expected
 failures, installed interface consumers and editor tools. Evidence records bind
 source, compiler, runtime, system headers and executable contents and reject
 changes during validation. The
-[Linux SDK acceptance receipt](docs/support/linux_task_coroutines_acceptance.json)
+[Linux SDK acceptance receipt](docs/support/linux_native_async_acceptance.json)
 records the qualified archive and fresh-host checks; each new SDK has its own
 qualification and release receipt. Runtime timings must be distinguished from
 compile and wrapper timings when comparing performance.
-The [current latency report](docs/support/linux_task_coroutines_latency.json) records
+The [current latency report](docs/support/linux_native_async_latency.json) records
 warm command measurements and regression budgets for its AMD CPU model and quota.
 The [historical paired report](docs/support/linux_development_latency.json) retains
 the earlier Intel measurements; cross-CPU speedup comparisons are inapplicable.

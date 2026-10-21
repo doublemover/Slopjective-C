@@ -14,11 +14,11 @@ import sys
 import tempfile
 
 if __package__:
-    from .sdk_example import dependencies, digest, environment, hashes, write_json
+    from .sdk_example import coroutine_compile_flags, runtime_link_flags, dependencies, digest, environment, hashes, write_json
     from .source_graph import NAME, fields, locks, source_inputs, validate_mode, validate_provider, validate_exports, within
 else:
     sys.dont_write_bytecode = True
-    from sdk_example import dependencies, digest, environment, hashes, write_json
+    from sdk_example import coroutine_compile_flags, runtime_link_flags, dependencies, digest, environment, hashes, write_json
     from build import NAME, fields, locks, source_inputs, validate_mode, validate_provider, validate_exports, within
 
 SCHEMA = 'objc3c.binary-package.v3'
@@ -318,14 +318,14 @@ def consume(sdk: Path, package: Path, expected: str, application: Path, output: 
                         '--reexport-import' if edge['visibility'] == 'public' else '--private-import']
             for group in edge.get('spi', []):
                 command += ['--import-spi', group]
-        command += ['--', '--no-default-config', '-std=' + config['standard'], '-fblocks',
+        command += ['--', '--no-default-config', '-std=' + config['standard'], *coroutine_compile_flags(config['language']), '-fblocks',
                     '-' + manifest['optimization'], '-isystem', str(sdk / 'include'),
                     '-MD', '-MF', str(depfile), '-MT', 'dependencies']
         env = environment(sdk)
         env.pop('LD_AUDIT', None)
         commands = [command, [str(sdk / 'bin/clang++'), '--no-default-config', '--target=' + manifest['target'],
                     '-fuse-ld=lld', str(obj), *[str(package / 'modules' / name / 'module.o') for name in order],
-                    '-L' + str(sdk / 'lib'), '-lobjc', '-Wl,-rpath,' + str(sdk / 'lib'), '-o', str(executable)]]
+                    '-L' + str(sdk / 'lib'), *runtime_link_flags(sdk), '-Wl,-rpath,' + str(sdk / 'lib'), '-o', str(executable)]]
         for index, argv in enumerate(commands):
             with (output / f'command-{index}.log').open('w') as stream:
                 subprocess.run(argv, cwd=output, env=env, stdout=stream, stderr=subprocess.STDOUT, check=True, timeout=180)

@@ -85,6 +85,17 @@ def reusable(record: dict, key: str) -> bool:
         return False
 
 
+def runtime_link_flags(sdk: Path) -> list[str]:
+    """The installed task/value ABI is part of the native package runtime."""
+    return [str(sdk / 'lib/libobjc3_runtime_services.a'), '-lobjc', '-pthread',
+            '-Wl,-z,dead-reloc-in-nonalloc=.debug_addr=0xffffffffffffffff',
+            '-Wl,-z,dead-reloc-in-nonalloc=.debug_info=0xffffffffffffffff']
+
+
+def coroutine_compile_flags(language: str) -> list[str]:
+    return ['-fcoro-aligned-allocation'] if '++' in language else []
+
+
 def environment(sdk: Path) -> dict:
     result = dict(os.environ)
     for name in ('CPATH', 'C_INCLUDE_PATH', 'CPLUS_INCLUDE_PATH', 'OBJC_INCLUDE_PATH',
@@ -203,7 +214,7 @@ def build(sdk: Path, sources: Path, output: Path, optimization: str,
     # Relink every invocation so host CRT/system-library changes are admitted by
     # the native linker. No timestamp or cached host-library assumption is used.
     subprocess.run([str(sdk / 'bin/clang++'), '--no-default-config', '--target=' + target,
-                    '-fuse-ld=lld', str(consumer), str(obj), '-L' + str(sdk / 'lib'), '-lobjc',
+                    '-fuse-ld=lld', str(consumer), str(obj), '-L' + str(sdk / 'lib'), *runtime_link_flags(sdk),
                     '-Wl,-rpath,' + rpath, '-o', str(executable)], env=env, check=True, timeout=180)
     link_seconds = time.monotonic() - tick
     run_env = dict(env)
