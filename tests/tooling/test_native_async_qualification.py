@@ -14,6 +14,10 @@ def test_native_async_matrix_covers_objcpp_standards_and_ownership():
     assert {mode[1] for mode in modes} == {'c++20', 'c++23'}
     assert {mode[2] for mode in modes if mode[0] == 'objective-c++'} == {'arc', 'mrc'}
     assert {mode[3] for mode in modes} == {'O0', 'O2'}
+    executions = qualification.execution_configurations()
+    assert len(executions) == len(set(executions)) == 16
+    assert {(mode[2], mode[3]) for mode in executions} == {
+        ('arc', 'arc'), ('mrc', 'mrc'), ('arc', 'mrc'), ('mrc', 'arc')}
 
 
 def test_failed_native_async_provider_replaces_stale_success(tmp_path, monkeypatch):
@@ -50,6 +54,10 @@ def test_native_async_sanitizers_cover_owned_and_unowned_objcpp():
     assert len(modes) == len(set(modes)) == 8
     assert {mode[2] for mode in modes} == {'arc', 'mrc'}
     assert {mode[0] for mode in modes} == {'address,undefined', 'thread'}
+    executions = sanitizers.execution_configurations()
+    assert len(executions) == len(set(executions)) == 16
+    assert {(mode[2], mode[3]) for mode in executions} == {
+        ('arc', 'arc'), ('mrc', 'mrc'), ('arc', 'mrc'), ('mrc', 'arc')}
 
 
 def test_native_async_package_failure_replaces_stale_success(tmp_path, monkeypatch):

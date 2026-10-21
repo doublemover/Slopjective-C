@@ -26,6 +26,23 @@ int native_object_error() __objc3_async;
 int native_actor_owned(objc3_actor_t *, objc3_actor_t *, bool) __objc3_async;
 int native_exception_number(__unsafe_unretained id);
 unsigned native_object_destructions();
+@class NativeAsyncResult;
+@protocol NativeAsyncResultProtocol
+- (int)number;
+@end
+using native_result_reader = int (^)(int);
+NativeAsyncResult *native_result_object(int, bool = false) __objc3_async;
+id<NativeAsyncResultProtocol> native_result_protocol(int) __objc3_async;
+native_result_reader native_result_block(int) __objc3_async;
+NativeAsyncResult *native_result_relay(objc3_actor_t *, int) __objc3_async;
+NativeAsyncResult *native_result_shared(
+    objc3::task_handle<NativeAsyncResult *>) __objc3_async;
+NativeAsyncResult *native_result_lazy(objc3::task<NativeAsyncResult *>) __objc3_async;
+id native_result_nil() __objc3_async;
+native_result_reader native_result_nil_block() __objc3_async;
+Class native_result_class() __objc3_async;
+int native_result_number(__unsafe_unretained id);
+unsigned native_result_destructions();
 #endif
 
 using native_callback = int (*)(std::shared_ptr<async_state>,

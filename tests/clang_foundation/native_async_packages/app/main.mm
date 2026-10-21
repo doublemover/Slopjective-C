@@ -1,17 +1,35 @@
 #include <objc3c/runtime/objc3_task.hpp>
+#include <objc/runtime.h>
 @import fixture.NativeAsync;
+static_assert(std::is_same_v<decltype(native_module_object(1)),
+                             objc3::task<NativeModuleResult *>>);
+static_assert(std::is_same_v<decltype(native_module_block(1)),
+                             objc3::task<native_module_reader>>);
+
+#if !__has_feature(objc_arc)
+#include <objc/objc-arc.h>
+struct consumer_result_owner {
+  id value;
+  ~consumer_result_owner() { objc_release(value); }
+};
+#endif
 
 int actor_application(objc3_actor_t *actor) __objc3_async {
   __objc3_await objc3::hop_to(actor);
   auto expected = objc3_actor_identity(actor);
   int result = __objc3_await native_module_value(41);
+  NativeModuleResult *object = __objc3_await native_module_object(21);
+#if !__has_feature(objc_arc)
+  consumer_result_owner owner{objc_retain(object)};
+#endif
+  native_module_reader reader = __objc3_await native_module_block(21);
   objc3_current_actor_facts facts{};
   facts.struct_size = sizeof(facts);
   facts.version = OBJC3_ACTOR_SERVICE_VERSION;
   if (objc3_actor_current_facts(&facts) != OBJC3_SERVICE_OK ||
       facts.actor_identity != expected)
     return 0;
-  return result;
+  return result == 42 ? [object number] + reader(0) : 0;
 }
 
 int main() {
@@ -24,8 +42,21 @@ int main() {
       executed != 2 || pending.result() != 42)
     return 2;
   pending = {};
+  auto object = native_module_object(40).start(executor);
+  auto block = native_module_block(40).start(executor);
+  if (objc3_executor_pump(executor, 100, &executed) != OBJC3_SERVICE_OK)
+    return 6;
+  @autoreleasepool {
+    NativeModuleResult *value = object.result();
+    native_module_reader reader = block.result();
+    object = {};
+    block = {};
+    if ([value number] != 40 || reader(2) != 42)
+      return 7;
+  }
   objc3_actor_t *actor = nullptr;
-  if (objc3_actor_create(executor, &actor) != OBJC3_SERVICE_OK) return 3;
+  if (objc3_actor_create(executor, &actor) != OBJC3_SERVICE_OK)
+    return 3;
   pending = actor_application(actor).start(executor);
   if (objc3_executor_pump(executor, 100, &executed) != OBJC3_SERVICE_OK ||
       pending.result() != 42)

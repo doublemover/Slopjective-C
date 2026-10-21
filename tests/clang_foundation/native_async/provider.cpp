@@ -149,7 +149,9 @@ int native_actor_owned(objc3_actor_t *first, objc3_actor_t *second,
   } owner{value};
 #endif
   value->number = 42;
-  int (^read)(void) = ^{ return value->number; };
+  int (^read)(void) = ^{
+    return value->number;
+  };
   auto actor_identity = [] {
     objc3_current_actor_facts facts{};
     facts.struct_size = sizeof(facts);
@@ -158,16 +160,143 @@ int native_actor_owned(objc3_actor_t *first, objc3_actor_t *second,
       __builtin_trap();
     return facts.actor_identity;
   };
-  if (actor_identity() != objc3_actor_identity(first)) __builtin_trap();
+  if (actor_identity() != objc3_actor_identity(first))
+    __builtin_trap();
   __objc3_await objc3::hop_to(second);
-  if (actor_identity() != objc3_actor_identity(second)) __builtin_trap();
+  if (actor_identity() != objc3_actor_identity(second))
+    __builtin_trap();
   __objc3_await objc3::task_yield;
-  if (actor_identity() != objc3_actor_identity(second)) __builtin_trap();
+  if (actor_identity() != objc3_actor_identity(second))
+    __builtin_trap();
   int result = __objc3_await native_identity(read());
-  if (actor_identity() != objc3_actor_identity(second)) __builtin_trap();
+  if (actor_identity() != objc3_actor_identity(second))
+    __builtin_trap();
   __objc3_await objc3::hop_to(first);
-  if (actor_identity() != objc3_actor_identity(first)) __builtin_trap();
-  if (fail) throw result;
+  if (actor_identity() != objc3_actor_identity(first))
+    __builtin_trap();
+  if (fail)
+    throw result;
   return result;
 }
+
+static std::atomic<unsigned> result_destructions{0};
+__attribute__((objc_root_class))
+@interface NativeAsyncResult<NativeAsyncResultProtocol> {
+  Class isa;
+@public
+  int value;
+}
++ (id)new;
+@end
+@implementation NativeAsyncResult
++ (id)new {
+  return class_createInstance(self, 0);
+}
+- (int)number {
+  return value;
+}
+- (void)dealloc {
+  ++result_destructions;
+  object_dispose(self);
+}
+#if !__has_feature(objc_arc)
+- (void)_ARCCompliantRetainRelease {
+}
+#endif
+@end
+
+#if !__has_feature(objc_arc)
+extern "C" id objc_retain(__unsafe_unretained id);
+struct result_owner {
+  id value;
+  ~result_owner() { objc_release(value); }
+};
+#endif
+
+NativeAsyncResult *native_result_object(int number, bool fail) __objc3_async {
+  NativeAsyncResult *result = [NativeAsyncResult new];
+#if !__has_feature(objc_arc)
+  result_owner owner{result};
+#endif
+  result->value = number;
+  __objc3_await objc3::task_yield;
+  if (fail)
+    throw number;
+  return result;
+}
+
+id<NativeAsyncResultProtocol> native_result_protocol(int number) __objc3_async {
+  return __objc3_await native_result_object(number);
+}
+
+native_result_reader native_result_block(int number) __objc3_async {
+  NativeAsyncResult *result = [NativeAsyncResult new];
+#if !__has_feature(objc_arc)
+  result_owner owner{result};
+#endif
+  result->value = number;
+  __objc3_await objc3::task_yield;
+  // MRC must copy this frame-local Block before destroying its capture storage.
+  return ^(int delta) {
+    return result->value + delta;
+  };
+}
+
+NativeAsyncResult *native_result_relay(objc3_actor_t *actor,
+                                       int number) __objc3_async {
+  NativeAsyncResult *result = __objc3_await native_result_object(number);
+#if !__has_feature(objc_arc)
+  result_owner owner{objc_retain(result)};
+#endif
+  if (actor)
+    __objc3_await objc3::hop_to(actor);
+  __objc3_await objc3::task_yield;
+  extern void objc3_native_async_result_checkpoint(int, const char *);
+  objc3_native_async_result_checkpoint(result->value, "owned result");
+  return result;
+}
+
+__attribute__((noinline)) void
+objc3_native_async_result_checkpoint(int value, const char *kind) {
+  if (value < 0 || kind[0] != 'o')
+    __builtin_trap();
+}
+
+NativeAsyncResult *native_result_shared(
+    objc3::task_handle<NativeAsyncResult *> dependency) __objc3_async {
+  NativeAsyncResult *result = __objc3_await dependency;
+#if !__has_feature(objc_arc)
+  result_owner owner{objc_retain(result)};
+#endif
+  __objc3_await objc3::task_yield;
+  return result;
+}
+
+NativeAsyncResult *native_result_lazy(
+    objc3::task<NativeAsyncResult *> dependency) __objc3_async {
+  NativeAsyncResult *result = __objc3_await std::move(dependency);
+#if !__has_feature(objc_arc)
+  result_owner owner{objc_retain(result)};
+#endif
+  __objc3_await objc3::task_yield;
+  return result;
+}
+
+id native_result_nil() __objc3_async {
+  __objc3_await objc3::task_yield;
+  return (id)0;
+}
+native_result_reader native_result_nil_block() __objc3_async {
+  __objc3_await objc3::task_yield;
+  return (native_result_reader)0;
+}
+extern "C" Class objc_getClass(const char *);
+Class native_result_class() __objc3_async {
+  __objc3_await objc3::task_yield;
+  return objc_getClass("NativeAsyncResult");
+}
+int native_result_number(__unsafe_unretained id value) {
+  return ((NativeAsyncResult *)value)->value;
+}
+unsigned native_result_destructions() { return result_destructions.load(); }
 #endif

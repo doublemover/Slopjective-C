@@ -25,6 +25,12 @@ def configurations():
     return [(*mode, optimization) for mode in modes for optimization in ('O0', 'O2')]
 
 
+def execution_configurations():
+    return [(language, standard, ownership, provider, optimization)
+            for language, standard, ownership, optimization in configurations()
+            for provider in (ownership, 'mrc' if ownership == 'arc' else 'arc')]
+
+
 def qualify(sdk: Path, output: Path, *, fixture: Path | None = None,
             headers: Path | None = None, runtime_library: Path | None = None,
             objc_runtime: Path | None = None, compiler: Path | None = None) -> dict:
@@ -58,8 +64,10 @@ def qualify(sdk: Path, output: Path, *, fixture: Path | None = None,
     try:
         with tempfile.TemporaryDirectory(prefix="objc3 coroutines 'outside checkout ") as temporary:
             root = Path(temporary)
-            for language, standard, ownership, optimization in configurations():
+            for language, standard, ownership, provider, optimization in execution_configurations():
                 label = '-'.join((language, standard, ownership, optimization))
+                if provider != ownership:
+                    label += '-provider-' + provider
                 for name in ('provider.cpp', 'provider.h', 'client.cpp'):
                     shutil.copyfile(fixture / name, root / name)
                 flags = ['-x', language, '-std=' + standard, '-' + optimization, '-g',
@@ -69,7 +77,10 @@ def qualify(sdk: Path, output: Path, *, fixture: Path | None = None,
                          '-I' + str(headers)]
                 if ownership == 'arc': flags.append('-fobjc-arc')
                 elif ownership == 'mrc': flags.append('-fno-objc-arc')
-                run(label + '-provider', [compiler, *flags, root / 'provider.cpp',
+                provider_flags = [flag for flag in flags
+                                  if flag not in ('-fobjc-arc', '-fno-objc-arc')]
+                provider_flags.append('-fobjc-arc' if provider == 'arc' else '-fno-objc-arc')
+                run(label + '-provider', [compiler, *provider_flags, root / 'provider.cpp',
                     '-c', '-o', root / 'provider.o'], root)
                 # The consumer must build and execute without implementation
                 # source; only its header and the native provider object remain.
@@ -91,22 +102,31 @@ def qualify(sdk: Path, output: Path, *, fixture: Path | None = None,
                 run(label + '-execute', [executable], root)
                 run(label + '-dwarf', [sdk / 'bin/llvm-dwarfdump', '--verify', executable], root)
                 debugger_values = None
+                owned_result_debugger_values = None
                 if optimization == 'O0':
                     debugger = [sdk / 'bin/lldb', '--batch']
                     for query in ('settings set target.disable-aslr false',
                             'breakpoint set -n objc3_native_async_checkpoint', 'run',
                             "expression -- (int)(value == 42 && text[0] == 'p')",
                             'frame select 1', 'expression -- (int)(result == 42)',
-                            'breakpoint disable 1', 'continue'):
+                            'breakpoint disable 1',
+                            'breakpoint set -n objc3_native_async_result_checkpoint', 'continue',
+                            'frame select 0',
+                            "expression -- (int)(value == 73 && kind[0] == 'o')",
+                            'frame select 1', 'expression -- (int)(number == 73 && result != 0)',
+                            'breakpoint disable 2', 'continue'):
                         debugger += ['-o', query]
                     log = run(label + '-lldb', [*debugger, executable], root)
                     text = log.read_text()
-                    debugger_values = list(map(int, re.findall(r'\(int\) \$\d+ = (-?\d+)', text)))
-                    if debugger_values != [1, 1] or 'exited with status = 0' not in text:
+                    values = list(map(int, re.findall(r'\(int\) \$\d+ = (-?\d+)', text)))
+                    debugger_values, owned_result_debugger_values = values[:2], values[2:]
+                    if values != [1, 1, 1, 1] or 'exited with status = 0' not in text:
                         raise ValueError('native coroutine debugger lost resumed frame values: ' + label)
                 cases.append({'language': language, 'standard': standard, 'ownership': ownership,
+                              'provider_ownership': provider,
                               'optimization': optimization, 'provider_source_removed': True, 'pch_consumer': True,
                               'debugger_values': debugger_values,
+                              'owned_result_debugger_values': owned_result_debugger_values,
                               'executable_sha256': packages.digest(executable)})
         report = {'schema': 'objc3c.native-async-qualification.v1', 'status': 'PASS',
                   'sdk_seal': manifest['seal_sha256'],

@@ -63,7 +63,11 @@ the public runtime's executor callback restrictions. A pending wait from any
 runtime executor callback returns `NOT_READY`, because a task may hop back to
 that executor. Manual executor owners pump
 explicitly. Zero and false are present values; void success has no payload.
-Results require copy construction and a nonthrowing destructor.
+Results require copy construction and a nonthrowing destructor. Direct
+Objective-C object and Block results use the retained payload and +0 extraction
+described by the [owned result contract](linux_async_owned_results.md). Public
+`task<R>` and `task_handle<R>` aliases preserve canonical direct-object pointer
+identity across ARC and MRC under extension ABI 15.
 
 Cancellation is cooperative. Cancelling an awaiting parent queues its
 continuation so `co_await` throws `task_cancelled` and native lexical cleanup
@@ -127,8 +131,8 @@ operation. Dispatch's built-in selectors initialize before classes can receive
 messages, avoiding lazy registration under the class-initialization lock. The
 ARC/MRC threaded coroutine probes retain TSan's lock-order diagnostics.
 
-The [acceptance receipt](../support/linux_task_hops_acceptance.json) binds
+The [acceptance receipt](../support/linux_async_owned_results_acceptance.json) binds
 the installed SDK, its source and runtime identities, native/debugger matrices,
 sanitizer instrumentation and fresh Debian/Ubuntu executions. The
-[latency report](../support/linux_task_hops_latency.json) records five quiet
+[latency report](../support/linux_async_owned_results_latency.json) records five quiet
 runs against the current regression budgets.
