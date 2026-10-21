@@ -6,6 +6,7 @@ import json
 import os
 from pathlib import Path
 import subprocess
+import tempfile
 
 from .binary_packages import digest, disjoint, write_json
 from .qualify_async_c_abi import qualify as qualify_bridge
@@ -47,26 +48,26 @@ def qualify(repo: Path, sdk: Path, resource_root: Path, output: Path, *, compile
 
     try:
         for sanitizer in ('address,undefined', 'thread'):
-            label = sanitizer.replace(',', '-')
-            objects = output / (label + '-objects')
-            objects.mkdir(exist_ok=True)
-            for old in objects.glob('*.o'):
-                old.unlink()
-            run(label + '-runtime-build', [compiler, '--no-default-config',
-                '-std=c++20', '-O1', '-g', '-fno-omit-frame-pointer', '-pthread',
-                '-resource-dir', resource_root,
-                '-fsanitize=' + sanitizer, '-I' + str(repo / 'native/objc3c/src'),
-                '-c', *sources], objects)
-            library = output / (label + '-services.a')
-            library.unlink(missing_ok=True)
-            run(label + '-runtime-archive', [compiler.parent / 'llvm-ar', 'rcs',
-                library, *sorted(objects.glob('*.o'))], objects)
-            result = qualify_bridge(sdk, output / label, compiler=compiler,
-                fixture=fixture, headers=headers, runtime_library=library,
-                sanitizer=sanitizer, resource_root=resource_root)
-            results.append({'sanitizer': sanitizer, 'executions': result['executions'],
-                            'service_library_sha256': digest(library),
-                            'qualification_sha256': digest(output / label / 'qualification.json')})
+            with tempfile.TemporaryDirectory(prefix='objc3-c-abi-services-') as temporary:
+                work = Path(temporary)
+                label = sanitizer.replace(',', '-')
+                objects = work / (label + '-objects')
+                objects.mkdir(exist_ok=True)
+                run(label + '-runtime-build', [compiler, '--no-default-config',
+                    '-std=c++20', '-O1', '-g', '-fno-omit-frame-pointer', '-pthread',
+                    '-resource-dir', resource_root,
+                    '-fsanitize=' + sanitizer, '-I' + str(repo / 'native/objc3c/src'),
+                    '-c', *sources], objects)
+                library = work / (label + '-services.a')
+                library.unlink(missing_ok=True)
+                run(label + '-runtime-archive', [compiler.parent / 'llvm-ar', 'rcs',
+                    library, *sorted(objects.glob('*.o'))], objects)
+                result = qualify_bridge(sdk, output / label, compiler=compiler,
+                    fixture=fixture, headers=headers, runtime_library=library,
+                    sanitizer=sanitizer, resource_root=resource_root)
+                results.append({'sanitizer': sanitizer, 'executions': result['executions'],
+                                'service_library_sha256': digest(library),
+                                'qualification_sha256': digest(output / label / 'qualification.json')})
         report = {'schema': 'objc3c.async-c-abi-sanitizer-qualification.v1',
                   'status': 'PASS', 'sdk_seal': manifest['seal_sha256'],
                   'input_binding': 'development-overlay' if development else 'sealed-sdk',

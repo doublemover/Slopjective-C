@@ -250,3 +250,11 @@ Thirty-three old compiler/test process entries were confirmed to be zombies,
 with no live compiler/test processes and no resident memory. They are adopted
 by PID 1 (`tail`); reaping those records requires proper init handling rather
 than termination of an active project process. No instance restart was made.
+
+Subsequent tooling now routes compiler temporaries through private RAM-backed
+`TMPDIR` and scopes sanitizer executables, objects and service archives to
+temporary directories cleaned after each case. Durable logs, hashes and receipts
+remain on disk, as do the incremental compiler build, SDK and compilation cache.
+Cleanup/report-preservation test coverage was added but not run under the
+current pause. These tooling changes postdate the qualified SDK snapshot above;
+no rebuilt SDK or new validation result is claimed.

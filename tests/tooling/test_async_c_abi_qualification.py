@@ -4,6 +4,7 @@ from types import SimpleNamespace
 import pytest
 
 from scripts.objc3c_toolchain import qualify_async_c_abi as qualification
+from scripts.objc3c_toolchain import qualify_async_c_abi_sanitizers as sanitizers
 
 
 @pytest.mark.parametrize('failure_stage', [0, 1])
@@ -42,3 +43,38 @@ def test_failed_c_or_cpp_compilation_cannot_leave_reusable_success(
     assert command['exit_code'] == 1
     assert command['log_sha256'] == qualification.packages.digest(
         output / (command['name'] + '.log'))
+
+
+def test_failed_instrumented_service_build_cleans_scratch_and_keeps_report(
+        tmp_path, monkeypatch):
+    repo, sdk, resources, output = (tmp_path / name for name in
+                                    ('repo', 'sdk', 'resources', 'output'))
+    resources.mkdir()
+    runtime = repo / 'native/objc3c/src/runtime/public'
+    installed = sdk / 'include/objc3c/runtime'
+    runtime.mkdir(parents=True)
+    installed.mkdir(parents=True)
+    for name in ('objc3_runtime_services.h', 'objc3_task.hpp'):
+        (runtime / name).write_text('matching header')
+        (installed / name).write_text('matching header')
+    (sdk / 'objc3-sdk.json').write_text(json.dumps({'seal_sha256': 'a' * 64}))
+    output.mkdir()
+    receipt = output / 'qualification.json'
+    receipt.write_text('{"status":"PASS"}')
+    workspaces = []
+
+    def run(argv, **kwargs):
+        workspaces.append(kwargs['cwd'].parent)
+        (kwargs['cwd'] / 'partial.o').write_bytes(b'partial object')
+        kwargs['stdout'].write('forced service compilation failure\n')
+        return SimpleNamespace(returncode=1)
+
+    monkeypatch.setattr(sanitizers.subprocess, 'run', run)
+    with pytest.raises(ValueError, match='instrumented async C ABI runtime failed'):
+        sanitizers.qualify(repo, sdk, resources, output)
+    report = json.loads(receipt.read_text())
+    assert report['status'] == 'FAIL' and not report['sanitizers']
+    assert workspaces and all(path != output for path in workspaces)
+    assert all(not path.exists() for path in workspaces)
+    assert report['commands'][0]['log_sha256'] == sanitizers.digest(
+        output / 'address-undefined-runtime-build.log')

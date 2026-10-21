@@ -197,6 +197,26 @@ configuration and compilation databases remain ignored; the shared ignore rules
 and these instructions are committed. Machine-local configuration details are
 recorded in `out/session/development-configuration.json`.
 
+Temporary compiler I/O now uses the private, mode-0700 project directory
+`/tmp/objc3c-1000` in this instance. Managed activation creates it and exports
+`TMPDIR`; the local development preset passes the same setting. It uses the
+existing RAM-backed `/tmp` mount without a new memory reservation or mount.
+Python's `TemporaryDirectory` and compiler-driver temporary files inherit this
+location.
+
+The native async, task coroutine, structured runtime and shared C ABI sanitizer
+runners now keep disposable executables, objects and service archives in
+case-scoped temporary directories. Those directories are removed when the case
+exits, including ordinary failure unwinding. Logs, executable digests and JSON
+receipts stay in the requested output directory on disk. Persistent compiler
+objects, SDK archives/installations and ccache remain on disk. This avoids
+retaining an entire matrix of disposable binaries in RAM or on disk.
+
+Cleanup/report-preservation coverage was added for these runners. It has not
+been executed: project builds, tests and validation remain paused. The current
+SDK receipt still identifies its earlier qualified implementation snapshot;
+these later tooling edits have not been incorporated into a rebuilt SDK.
+
 Keep checks proportional to the changed behavior and reuse completed results
 for unchanged inputs. Do not repeat broad qualification for rollback history or
 make it the default next milestone. The current user-requested pause stops all

@@ -6,6 +6,7 @@ import json
 import os
 from pathlib import Path
 import subprocess
+import tempfile
 
 from .binary_packages import digest, disjoint, write_json
 
@@ -39,20 +40,22 @@ def qualify(repo: Path, compiler_root: Path, resource_root: Path, output: Path) 
     try:
         for sanitizer in ('address,undefined', 'thread'):
             for optimization in ('O0', 'O2'):
-                label = sanitizer.replace(',', '-') + '-' + optimization
-                executable = output / label
-                env = {**os.environ, 'ASAN_OPTIONS': 'detect_leaks=1:halt_on_error=1',
-                       'UBSAN_OPTIONS': 'halt_on_error=1:print_stacktrace=1',
-                       'TSAN_OPTIONS': 'halt_on_error=1'}
-                run(label + '-build', [compiler_root / 'bin/clang++', '--no-default-config',
-                    '-std=c++20', '-g', '-' + optimization, '-UNDEBUG', '-fno-omit-frame-pointer',
-                    '-fsanitize=' + sanitizer, '-resource-dir', resource_root, '-pthread', '-fuse-ld=lld',
-                    '-I' + str(repo / 'native/objc3c/src'),
-                    '-I' + str(repo / 'native/objc3c/src/runtime/public'),
-                    *sources, fixture, '-o', executable], env)
-                run(label + '-execute', [executable], env)
-                cases.append({'sanitizer': sanitizer, 'optimization': optimization,
-                              'executable_sha256': digest(executable)})
+                with tempfile.TemporaryDirectory(prefix='objc3-structured-sanitizers-') as temporary:
+                    work = Path(temporary)
+                    label = sanitizer.replace(',', '-') + '-' + optimization
+                    executable = work / label
+                    env = {**os.environ, 'ASAN_OPTIONS': 'detect_leaks=1:halt_on_error=1',
+                           'UBSAN_OPTIONS': 'halt_on_error=1:print_stacktrace=1',
+                           'TSAN_OPTIONS': 'halt_on_error=1'}
+                    run(label + '-build', [compiler_root / 'bin/clang++', '--no-default-config',
+                        '-std=c++20', '-g', '-' + optimization, '-UNDEBUG', '-fno-omit-frame-pointer',
+                        '-fsanitize=' + sanitizer, '-resource-dir', resource_root, '-pthread', '-fuse-ld=lld',
+                        '-I' + str(repo / 'native/objc3c/src'),
+                        '-I' + str(repo / 'native/objc3c/src/runtime/public'),
+                        *sources, fixture, '-o', executable], env)
+                    run(label + '-execute', [executable], env)
+                    cases.append({'sanitizer': sanitizer, 'optimization': optimization,
+                                  'executable_sha256': digest(executable)})
         report = {'schema': 'objc3c.structured-runtime-sanitizers.v1', 'status': 'PASS',
                   'compiler_root': str(compiler_root), 'compiler_sha256': digest(compiler_root / 'bin/clang'),
                   'sanitizer_resource_root': str(resource_root),

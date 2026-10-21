@@ -88,10 +88,14 @@ def test_native_async_sanitizer_failure_preserves_report(tmp_path, monkeypatch, 
     receipt = output / 'qualification.json'
     receipt.write_text('{"status":"PASS"}')
     calls = []
+    workspaces = []
 
     def run(argv, **kwargs):
         calls.append(argv)
         kwargs['stdout'].write('forced native async sanitizer failure\n')
+        if kwargs.get('cwd'):
+            workspaces.append(kwargs['cwd'].parent)
+            (kwargs['cwd'] / 'partial.o').write_bytes(b'partial object')
         return SimpleNamespace(returncode=int(len(calls) > failed_command))
 
     monkeypatch.setattr(sanitizers.subprocess, 'run', run)
@@ -104,6 +108,8 @@ def test_native_async_sanitizer_failure_preserves_report(tmp_path, monkeypatch, 
     assert '-fobjc-version=3' not in calls[0]
     if failed_command:
         assert '-fobjc-version=3' in calls[1] and 'objective-c++' in calls[1]
+    assert workspaces and all(path != output for path in workspaces)
+    assert all(not path.exists() for path in workspaces)
     log = output / report['commands'][-1]['name']
     assert report['commands'][-1]['log_sha256'] == sanitizers.digest(log.with_suffix('.log'))
 

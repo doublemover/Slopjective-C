@@ -6,6 +6,7 @@ import json
 import os
 from pathlib import Path
 import subprocess
+import tempfile
 
 from .binary_packages import digest, disjoint, write_json
 
@@ -54,46 +55,43 @@ def qualify(repo: Path, compiler_root: Path, resource_root: Path, output: Path,
 
     try:
         for sanitizer, optimization, ownership, provider in execution_configurations():
-            label = sanitizer.replace(',', '-') + '-' + optimization + '-' + ownership
-            if provider != ownership:
-                label += '-provider-' + provider
-            executable = output / label
-            env = {**os.environ, 'ASAN_OPTIONS': 'detect_leaks=1:halt_on_error=1',
-                   'UBSAN_OPTIONS': 'halt_on_error=1:print_stacktrace=1',
-                   'TSAN_OPTIONS': 'halt_on_error=1'}
-            env['LD_LIBRARY_PATH'] = str(objc_runtime.parent)
-            common = [compiler_root / 'bin/clang++', '--no-default-config',
-                      '-std=c++20', '-g', '-' + optimization, '-UNDEBUG',
-                      '-fno-omit-frame-pointer', '-fcoro-aligned-allocation',
-                      '-fsanitize=' + sanitizer, '-resource-dir', resource_root,
-                      '-pthread', '-I' + str(repo / 'native/objc3c/src'),
-                      '-I' + str(repo / 'native/objc3c/src/runtime/public')]
-            # Preserve the shipped runtime's C++ language mode. The native
-            # language option is valid only on the Objective-C++ sources.
-            objects_dir = output / (label + '-objects')
-            objects_dir.mkdir(exist_ok=True)
-            objects = [objects_dir / (source.stem + '.o') for source in sources]
-            for obj in objects:
-                obj.unlink(missing_ok=True)
-            run(label + '-runtime-build', [*common, '-c', *sources], env, cwd=objects_dir)
-            flags = ['-x', 'objective-c++', '-fobjc-version=3',
-                     '-fobjc-runtime=gnustep-2.2', '-fblocks']
-            for name, mode in (('provider', provider), ('client', ownership)):
-                obj = objects_dir / (name + '.o')
-                run(label + '-' + name + '-build', [*common, *flags,
-                    '-fobjc-arc' if mode == 'arc' else '-fno-objc-arc',
-                    '-c', fixture / (name + '.cpp'), '-o', obj], env)
-                objects.append(obj)
-            run(label + '-link', [*common, '-fuse-ld=lld', *objects,
-                objc_runtime, '-Wl,-rpath,' + str(objc_runtime.parent),
-                '-o', executable], env)
-            run(label + '-execute', [executable], env)
-            for obj in objects:
-                obj.unlink()
-            objects_dir.rmdir()
-            cases.append({'sanitizer': sanitizer, 'optimization': optimization, 'ownership': ownership,
-                          'provider_ownership': provider,
-                          'executable_sha256': digest(executable)})
+            with tempfile.TemporaryDirectory(prefix='objc3-native-async-') as temporary:
+                work = Path(temporary)
+                label = sanitizer.replace(',', '-') + '-' + optimization + '-' + ownership
+                if provider != ownership:
+                    label += '-provider-' + provider
+                executable = work / label
+                env = {**os.environ, 'ASAN_OPTIONS': 'detect_leaks=1:halt_on_error=1',
+                       'UBSAN_OPTIONS': 'halt_on_error=1:print_stacktrace=1',
+                       'TSAN_OPTIONS': 'halt_on_error=1'}
+                env['LD_LIBRARY_PATH'] = str(objc_runtime.parent)
+                common = [compiler_root / 'bin/clang++', '--no-default-config',
+                          '-std=c++20', '-g', '-' + optimization, '-UNDEBUG',
+                          '-fno-omit-frame-pointer', '-fcoro-aligned-allocation',
+                          '-fsanitize=' + sanitizer, '-resource-dir', resource_root,
+                          '-pthread', '-I' + str(repo / 'native/objc3c/src'),
+                          '-I' + str(repo / 'native/objc3c/src/runtime/public')]
+                # Preserve the shipped runtime's C++ language mode. The native
+                # language option is valid only on the Objective-C++ sources.
+                objects_dir = work / (label + '-objects')
+                objects_dir.mkdir(exist_ok=True)
+                objects = [objects_dir / (source.stem + '.o') for source in sources]
+                run(label + '-runtime-build', [*common, '-c', *sources], env, cwd=objects_dir)
+                flags = ['-x', 'objective-c++', '-fobjc-version=3',
+                         '-fobjc-runtime=gnustep-2.2', '-fblocks']
+                for name, mode in (('provider', provider), ('client', ownership)):
+                    obj = objects_dir / (name + '.o')
+                    run(label + '-' + name + '-build', [*common, *flags,
+                        '-fobjc-arc' if mode == 'arc' else '-fno-objc-arc',
+                        '-c', fixture / (name + '.cpp'), '-o', obj], env)
+                    objects.append(obj)
+                run(label + '-link', [*common, '-fuse-ld=lld', *objects,
+                    objc_runtime, '-Wl,-rpath,' + str(objc_runtime.parent),
+                    '-o', executable], env)
+                run(label + '-execute', [executable], env)
+                cases.append({'sanitizer': sanitizer, 'optimization': optimization, 'ownership': ownership,
+                              'provider_ownership': provider,
+                              'executable_sha256': digest(executable)})
         report = {'schema': 'objc3c.native-async-sanitizers.v1', 'status': 'PASS',
                   'compiler_root': str(compiler_root), 'compiler_sha256': digest(compiler_root / 'bin/clang'),
                   'sanitizer_resource_root': str(resource_root),

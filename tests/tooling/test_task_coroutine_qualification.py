@@ -1,4 +1,5 @@
 import json
+from pathlib import Path
 from types import SimpleNamespace
 
 import pytest
@@ -55,6 +56,7 @@ def test_instrumented_failure_preserves_diagnostics(tmp_path, monkeypatch):
     def run(argv, **kwargs):
         calls.append(argv)
         kwargs['stdout'].write('forced sanitizer failure\n')
+        Path(argv[-1]).write_bytes(b'partial executable')
         return SimpleNamespace(returncode=1)
 
     monkeypatch.setattr(sanitizers.subprocess, 'run', run)
@@ -64,6 +66,9 @@ def test_instrumented_failure_preserves_diagnostics(tmp_path, monkeypatch):
     assert report['status'] == 'FAIL' and not report['executions']
     assert len(calls) == 1 and '-fsanitize=address,undefined' in calls[0]
     assert '-fcoro-aligned-allocation' in calls[0]
+    executable = Path(calls[0][-1])
+    assert executable.parent != output
+    assert not executable.parent.exists()
     assert report['commands'][0]['log_sha256'] == sanitizers.digest(output / 'address-undefined-O0-none-build.log')
 
 
