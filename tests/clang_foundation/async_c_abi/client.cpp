@@ -61,6 +61,41 @@ static int load(const int &value) {
   return __atomic_load_n(&value, __ATOMIC_ACQUIRE);
 }
 
+template <class T> static objc3::task<T> private_result(T value) {
+  co_await objc3::task_yield;
+  co_return value;
+}
+
+static void private_nominal_types(objc3_executor_t *executor) {
+  auto first = [value = 42] { return value; };
+  auto second = [value = 96] { return value; };
+  using First = decltype(first);
+  using Second = decltype(second);
+  const auto *a = objc3::task_detail::result_type<First>();
+  const auto *b = objc3::task_detail::result_type<Second>();
+  assert(a->identity_domain && b->identity_domain &&
+         a->identity_domain != b->identity_domain);
+  assert(!objc3_async_result_type_equal(a, b));
+  auto frame = private_result(first).release_native();
+  auto original = frame.context;
+  bool rejected = false;
+  try {
+    (void)objc3::task<Second>::from_native(&frame);
+  } catch (const objc3::service_failure &error) {
+    rejected = error.status() == OBJC3_SERVICE_TYPE_MISMATCH;
+  }
+  assert(rejected && frame.context == original);
+  auto task = objc3::task<First>::from_native(&frame).start(executor);
+  pump(executor);
+  assert(task.result()() == 42);
+  struct {
+    int value;
+  } record{42};
+  auto record_task = private_result(record).start(executor);
+  pump(executor);
+  assert(record_task.result().value == 42);
+}
+
 static void lifecycle(objc3_executor_t *executor) {
   int destroyed = 0;
   auto frame = bridge_c_int(42, 0, &destroyed);
@@ -280,6 +315,7 @@ int main() {
   @autoreleasepool {
 #endif
     lifecycle(executor);
+    private_nominal_types(executor);
     typed_results(executor);
     actor_and_worker(executor);
 #ifdef __OBJC__

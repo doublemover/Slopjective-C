@@ -1,0 +1,12 @@
+{
+  "schema": "objc3c.source-package.v4",
+  "name": "fixture.CFrame",
+  "package": "c-frame-v1",
+  "source": "module.m",
+  "language": "objective-c",
+  "standard": "c17",
+  "ownership": "arc",
+  "provider_ownership": "arc",
+  "exports": ["c_frame_factory", "c_frame_destroyed"],
+  "dependencies": []
+}

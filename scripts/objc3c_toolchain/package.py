@@ -198,6 +198,8 @@ def package_sdk(repo: Path, prefix: Path, validation_report: Path, cache_dir: Pa
                     prefix / 'share/objc3c/examples/native-async')
     shutil.copytree(repo / 'tests/clang_foundation/native_async_packages',
                     prefix / 'share/objc3c/examples/native-async-packages')
+    shutil.copytree(repo / 'tests/clang_foundation/async_c_frame_packages',
+                    prefix / 'share/objc3c/examples/async-c-frame-packages')
     launcher = prefix / 'bin/objc3c-build'
     launcher.write_text('#!/bin/sh\nset -eu\n'
         'prefix=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)\n'

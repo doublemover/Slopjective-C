@@ -51,6 +51,9 @@ spell their ownership explicitly.
 A result descriptor combines that identity with its size, alignment and value,
 object, Block or void representation. Runtime validation compares identity bytes
 and layout rather than descriptor addresses or copy-function addresses.
+Private C++ types, including local records and closures, additionally carry a
+per-type identity domain. Distinct private types remain distinct even if their
+native mangled spellings coincide. External C/C++ identities have no domain.
 Providers must agree on complete named-type definitions, as with a native C ABI;
 this descriptor does not establish compatibility between conflicting definitions.
 
@@ -75,6 +78,21 @@ Checked Objective-C errors and native C++ exceptions retain their separate
 transport behavior. C can inspect a failed completion without interpreting a
 private C++ exception payload. A C++ caller continues to receive native exception
 rethrowing through the established task bridge.
+
+## Source-free frame interfaces
+
+Exported frame factories use the installed SDK declaration in canonical
+interfaces. The frontend admits that declaration only after checking the exact
+public header bytes, native record layout and callback signatures. The required
+`objc3.sdk-runtime-frames.v4.<header-sha256>` semantic binds importers to that
+header. Internal reparsing reconstructs the trusted declaration without retaining
+the provider's filesystem paths. Modified headers, packed layouts and shortened
+enums fail before publication; unrelated external types still need resolved
+interface dependencies.
+
+The immutable package gate covers C17 frame factories and C++ coroutine frame
+exports after provider sources are removed. Both paths check relocation, complete
+compile reuse and the exact SDK header contract.
 
 ## Qualification
 

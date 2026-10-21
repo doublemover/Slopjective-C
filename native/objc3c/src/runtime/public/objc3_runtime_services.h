@@ -73,6 +73,9 @@ typedef struct objc3_async_result_type {
   uint32_t reserved;
   const char *identity;
   uint64_t identity_size;
+  /* Null for external canonical types. A local/private type additionally uses
+   * a unique, stable per-type token whose lifetime covers all its tasks. */
+  const void *identity_domain;
 } objc3_async_result_type;
 
 objc3_service_status

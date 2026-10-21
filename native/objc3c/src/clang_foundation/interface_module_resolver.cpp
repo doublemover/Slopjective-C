@@ -1,4 +1,5 @@
 #include "clang_foundation/interface_module_resolver.h"
+#include "clang_foundation/runtime_interface_types.h"
 
 #include <algorithm>
 #include <cstdint>
@@ -23,12 +24,17 @@ namespace {
 constexpr std::uint64_t kMaxArtifactBytes = 32ull * 1024ull * 1024ull;
 constexpr std::size_t kMaxSearchEntries = 50000;
 const std::vector<llvm::StringRef> kSupportedSemantics = {
-    "objc3.canonical-function-effects.v1", "objc3.native-carrier-types.v1",
-    "objc3.native-return-ownership.v1",    "objc3.direct-dispatch.v1",
-    "objc3.cxx-data-interfaces.v1",        "objc3.cxx-member-interfaces.v1",
+    "objc3.canonical-function-effects.v1",
+    "objc3.native-carrier-types.v1",
+    "objc3.native-return-ownership.v1",
+    "objc3.direct-dispatch.v1",
+    "objc3.cxx-data-interfaces.v1",
+    "objc3.cxx-member-interfaces.v1",
     "objc3.ownership-projection.v1",
-    "objc3.api-availability.v1",           "objc3.api-partitions.v1",
-    "objc3.module-owned-names.v1"};
+    "objc3.api-availability.v1",
+    "objc3.api-partitions.v1",
+    "objc3.module-owned-names.v1",
+    RuntimeInterfaceSemantic()};
 
 void Add(InterfaceModuleResolution &result, llvm::StringRef code,
          const llvm::Twine &message, llvm::StringRef subject = {}) {

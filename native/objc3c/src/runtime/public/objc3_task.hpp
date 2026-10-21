@@ -199,6 +199,13 @@ template <class T> const objc3_async_result_type *result_type() {
   using traits = result_traits<T>;
   static constexpr const char *identity =
       __builtin_objc3_type_identity((typename traits::abi_type *)nullptr);
+  // A mutable per-instantiation object cannot be folded with another type's
+  // token. External types remain interoperable with C using their native key;
+  // local and anonymous types preserve nominal identity without callback IDs.
+  static unsigned char domain;
+  static constexpr bool local =
+      __builtin_strncmp(identity, "objc3.async.local.v1:",
+                        sizeof("objc3.async.local.v1:") - 1) == 0;
   static const objc3_async_result_type type{sizeof(objc3_async_result_type),
                                             OBJC3_ASYNC_ABI_VERSION,
                                             traits::storage_size,
@@ -206,7 +213,8 @@ template <class T> const objc3_async_result_type *result_type() {
                                             traits::kind,
                                             0,
                                             identity,
-                                            __builtin_strlen(identity)};
+                                            __builtin_strlen(identity),
+                                            local ? &domain : nullptr};
   return &type;
 }
 

@@ -20,6 +20,16 @@ objc3_async_result_type_validate(const objc3_async_result_type *type) {
       std::memchr(type->identity, 0, type->identity_size) ||
       type->identity[type->identity_size] != 0)
     return OBJC3_SERVICE_INVALID_ARGUMENT;
+  constexpr char local_prefix[] = "objc3.async.local.v1:";
+  constexpr char external_prefix[] = "objc3.async.v1:";
+  const bool local =
+      type->identity_size > sizeof(local_prefix) - 1 &&
+      std::memcmp(type->identity, local_prefix, sizeof(local_prefix) - 1) == 0;
+  const bool external = type->identity_size > sizeof(external_prefix) - 1 &&
+                        std::memcmp(type->identity, external_prefix,
+                                    sizeof(external_prefix) - 1) == 0;
+  if ((!local && !external) || local != (type->identity_domain != nullptr))
+    return OBJC3_SERVICE_INVALID_ARGUMENT;
   switch (type->kind) {
   case OBJC3_ASYNC_VOID:
     return type->storage_size == 0 && type->storage_alignment == 1
@@ -46,6 +56,7 @@ objc3_async_result_type_equal(const objc3_async_result_type *left,
          left->kind == right->kind &&
          left->storage_size == right->storage_size &&
          left->storage_alignment == right->storage_alignment &&
+         left->identity_domain == right->identity_domain &&
          left->identity_size == right->identity_size &&
          std::memcmp(left->identity, right->identity, left->identity_size) == 0;
 }

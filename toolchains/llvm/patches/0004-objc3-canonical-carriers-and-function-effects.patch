@@ -14130,10 +14130,18 @@ index 0573cdf95..be0805e51 100644
        if (T.hasNonTrivialObjCLifetime()) {
          // Objective-C Automatic Reference Counting:
 diff --git a/clang/lib/Sema/SemaChecking.cpp b/clang/lib/Sema/SemaChecking.cpp
-index 2a8395e26..8f8990e0c 100644
+index 2a8395e26..0dab90695 100644
 --- a/clang/lib/Sema/SemaChecking.cpp
 +++ b/clang/lib/Sema/SemaChecking.cpp
-@@ -2991,6 +2991,31 @@ Sema::CheckBuiltinFunctionCall(FunctionDecl *FDecl, unsigned BuiltinID,
+@@ -29,6 +29,7 @@
+ #include "clang/AST/ExprObjC.h"
+ #include "clang/AST/FormatString.h"
+ #include "clang/AST/IgnoreExpr.h"
++#include "clang/AST/Mangle.h"
+ #include "clang/AST/NSAPI.h"
+ #include "clang/AST/NonTrivialTypeVisitor.h"
+ #include "clang/AST/OperationKinds.h"
+@@ -2991,6 +2992,37 @@ Sema::CheckBuiltinFunctionCall(FunctionDecl *FDecl, unsigned BuiltinID,
  
    FPOptions FPO;
    switch (BuiltinID) {
@@ -14148,12 +14156,18 @@ index 2a8395e26..8f8990e0c 100644
 +      Diag(Argument->getExprLoc(), diag::err_objc3_type_identity_pointer);
 +      return ExprError();
 +    }
-+    // Reuse Clang's canonical Itanium type identity, independent of source
-+    // aliases, C/C++ spelling, callback addresses, and provider ownership mode.
++    // Use native host mangling, not SYCL's device lambda numbering. Types with
++    // local linkage additionally require a nominal token in the result ABI:
++    // their spelling alone cannot identify a type across translation units.
 +    QualType Type =
 +        Pointer->getPointeeType().getCanonicalType().getUnqualifiedType();
-+    std::string Identity = "objc3.async.v1:" +
-+                           SYCLUniqueStableNameExpr::ComputeName(Context, Type);
++    std::unique_ptr<ItaniumMangleContext> Mangler(
++        ItaniumMangleContext::create(Context, Context.getDiagnostics()));
++    std::string Identity = Type->getLinkage() == Linkage::External
++                               ? "objc3.async.v1:"
++                               : "objc3.async.local.v1:";
++    llvm::raw_string_ostream Stream(Identity);
++    Mangler->mangleCanonicalTypeName(Type, Stream);
 +    QualType Element =
 +        Context.adjustStringLiteralBaseType(Context.CharTy.withConst());
 +    QualType Array = Context.getConstantArrayType(
@@ -14165,7 +14179,7 @@ index 2a8395e26..8f8990e0c 100644
    case Builtin::BI__builtin___get_unsafe_stack_start:
    case Builtin::BI__builtin___get_unsafe_stack_bottom:
      Diag(TheCall->getBeginLoc(), diag::warn_deprecated_builtin)
-@@ -10821,6 +10846,9 @@ struct SearchNonTrivialToInitializeField
+@@ -10821,6 +10853,9 @@ struct SearchNonTrivialToInitializeField
      Super::visitWithKind(PDIK, FT, SL);
    }
  
@@ -14175,7 +14189,7 @@ index 2a8395e26..8f8990e0c 100644
    void visitARCStrong(QualType FT, SourceLocation SL) {
      S.DiagRuntimeBehavior(SL, E, S.PDiag(diag::note_nontrivial_field) << 1);
    }
-@@ -10863,6 +10891,9 @@ struct SearchNonTrivialToCopyField
+@@ -10863,6 +10898,9 @@ struct SearchNonTrivialToCopyField
      Super::visitWithKind(PCK, FT, SL);
    }
  
@@ -15660,10 +15674,10 @@ index 344a712dd..a868bc7fe 100644
    let Attributes = [NoThrow, Const, CustomTypeChecking, Constexpr];
 diff --git a/clang/test/ObjC3/Sema/native-async-type-identity.c b/clang/test/ObjC3/Sema/native-async-type-identity.c
 new file mode 100644
-index 000000000..c8d03a904
+index 000000000..f58119570
 --- /dev/null
 +++ b/clang/test/ObjC3/Sema/native-async-type-identity.c
-@@ -0,0 +1,31 @@
+@@ -0,0 +1,39 @@
 +// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x c -std=c17 -emit-llvm -o - %s | FileCheck %s
 +// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x c++ -std=c++20 -emit-llvm -o - %s | FileCheck %s
 +// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -x c -std=c17 -DNEGATIVE -fsyntax-only -verify %s
@@ -15693,5 +15707,13 @@ index 000000000..c8d03a904
 +static_assert(__builtin_strcmp(identity<unsigned>(), identity<int>()) != 0);
 +static_assert(__builtin_strcmp(identity<Pair>(),
 +                              __builtin_objc3_type_identity((Pair *)0)) == 0);
++void local_type_keys() {
++  auto closure = [value = 42] { return value; };
++  struct { int value; } record;
++  static_assert(__builtin_strncmp(
++      identity<decltype(closure)>(), "objc3.async.local.v1:", 21) == 0);
++  static_assert(__builtin_strncmp(
++      identity<decltype(record)>(), "objc3.async.local.v1:", 21) == 0);
++}
 +#endif
 +#endif

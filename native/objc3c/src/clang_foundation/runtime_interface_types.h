@@ -1,0 +1,28 @@
+#pragma once
+
+#include "llvm/ADT/StringRef.h"
+#include <string>
+#include <utility>
+#include <vector>
+
+namespace clang {
+class ASTContext;
+class NamedDecl;
+} // namespace clang
+
+namespace objc3::clang_foundation {
+
+// A known SDK type is admitted only from the exact public header compiled into
+// this frontend, with its native layout and callable fields checked as well.
+bool IsQualifiedRuntimeFrameType(const clang::NamedDecl *declaration,
+                                 const clang::ASTContext &context);
+llvm::StringRef RuntimeInterfaceSemantic();
+
+// Canonical interfaces reconstruct the SDK declaration without carrying the
+// provider's filesystem paths into the consumer. Integer typedefs use the
+// target compiler's builtin types, rather than the host libc's headers.
+void AddRuntimeInterfaceFiles(
+    std::vector<std::pair<std::string, std::string>> &files,
+    std::vector<std::string> &arguments);
+
+} // namespace objc3::clang_foundation

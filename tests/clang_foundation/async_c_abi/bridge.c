@@ -12,7 +12,8 @@
    K,                                                                          \
    0,                                                                          \
    TYPE_ID(T),                                                                 \
-   sizeof(TYPE_ID(T)) - 1}
+   sizeof(TYPE_ID(T)) - 1,                                                     \
+   0}
 
 static const objc3_async_result_type int_type =
     RESULT_TYPE(int, OBJC3_ASYNC_VALUE);
@@ -32,7 +33,8 @@ static const objc3_async_result_type void_type = {
     OBJC3_ASYNC_VOID,
     0,
     TYPE_ID(void),
-    sizeof(TYPE_ID(void)) - 1};
+    sizeof(TYPE_ID(void)) - 1,
+    0};
 
 static int copies;
 static int reject_copy;

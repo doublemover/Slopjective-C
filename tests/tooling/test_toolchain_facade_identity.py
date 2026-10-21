@@ -6,7 +6,8 @@ from scripts.objc3c_toolchain.facade import facade_identity
 
 def source_repo(tmp_path: Path) -> Path:
     for name in ('native/objc3c/CMakeLists.txt', 'scripts/objc3c_toolchain/facade.py',
-                 'native/objc3c/src/clang_foundation/compile_session.cpp'):
+                 'native/objc3c/src/clang_foundation/compile_session.cpp',
+                 'native/objc3c/src/runtime/public/objc3_runtime_services.h'):
         path = tmp_path / name
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text('original input\n')
@@ -39,3 +40,21 @@ def test_documentation_does_not_recompile_frontend(tmp_path):
     before = facade_identity(repo)
     (repo / 'native/objc3c/src/clang_foundation/README.md').write_text('documentation update\n')
     assert facade_identity(repo) == before
+
+
+def test_runtime_type_contract_invalidates_its_frontend_provenance(tmp_path):
+    repo = source_repo(tmp_path)
+    before = facade_identity(repo)
+    header = repo / 'native/objc3c/src/runtime/public/objc3_runtime_services.h'
+    stamp = header.stat()
+    header.write_text('modified input\n')
+    os.utime(header, ns=(stamp.st_atime_ns, stamp.st_mtime_ns))
+    assert facade_identity(repo)['sha256'] != before['sha256']
+
+
+def test_embedded_runtime_header_template_invalidates_frontend_identity(tmp_path):
+    repo = source_repo(tmp_path)
+    before = facade_identity(repo)
+    template = repo / 'native/objc3c/src/clang_foundation/runtime_interface_header.h.in'
+    template.write_text('embedded header template\n')
+    assert facade_identity(repo)['sha256'] != before['sha256']

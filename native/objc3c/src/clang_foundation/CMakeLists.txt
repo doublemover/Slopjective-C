@@ -13,6 +13,7 @@ add_library(objc3c_clang_foundation STATIC
   module_names.cpp
   interface_codec.cpp
   interface_emitter.cpp
+  runtime_interface_types.cpp
   interface_artifact_io.cpp
   interface_validation.cpp
   interface_import.cpp
@@ -23,6 +24,12 @@ set_source_files_properties(source_identity.cpp PROPERTIES
 target_include_directories(objc3c_clang_foundation SYSTEM PRIVATE
   ${LLVM_INCLUDE_DIRS} ${CLANG_INCLUDE_DIRS})
 target_link_libraries(objc3c_clang_foundation PUBLIC objc3c_build_defaults)
+set(_runtime_services_header "${CMAKE_CURRENT_SOURCE_DIR}/../runtime/public/objc3_runtime_services.h")
+set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS "${_runtime_services_header}")
+file(SHA256 "${_runtime_services_header}" _runtime_services_header_sha256)
+file(READ "${_runtime_services_header}" _runtime_services_header_source)
+configure_file(runtime_interface_header.h.in runtime_interface_header.h @ONLY)
+target_include_directories(objc3c_clang_foundation PRIVATE "${CMAKE_CURRENT_BINARY_DIR}")
 find_package(OpenSSL 3.5 REQUIRED COMPONENTS Crypto)
 target_link_libraries(objc3c_clang_foundation PRIVATE OpenSSL::Crypto
   clangTooling clangFrontend clangCodeGen clangIndex)

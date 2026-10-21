@@ -1,5 +1,6 @@
 #include "clang_foundation/compile_session.h"
 #include "clang_foundation/interface_artifact_io.h"
+#include "clang_foundation/runtime_interface_types.h"
 #include "llvm/ADT/StringRef.h"
 
 #include <cassert>
@@ -67,7 +68,93 @@ void Write(const std::filesystem::path &path, const std::string &bytes) {
 
 CompileResult SourceConsumer(const std::filesystem::path &root,
                              const InterfaceModuleIdentity &direct_module,
-                             std::string source, std::string input = "consumer.m") {
+                             std::string source,
+                             std::string input = "consumer.m");
+
+void CheckRuntimeFrameProvenance(const std::filesystem::path &root) {
+  std::vector<std::pair<std::string, std::string>> files;
+  std::vector<std::string> arguments;
+  AddRuntimeInterfaceFiles(files, arguments);
+  const auto sdk = root / "trusted-sdk";
+  for (const auto &[name, bytes] : files) {
+    const auto path = sdk / std::filesystem::path(name).lexically_relative(
+                                "/__objc3_canonical_runtime");
+    std::filesystem::create_directories(path.parent_path());
+    Write(path, bytes);
+  }
+  const auto header = sdk / "objc3c/runtime/objc3_runtime_services.h";
+  const auto header_bytes = Read(header);
+  const std::string source =
+      "#include <objc3c/runtime/objc3_runtime_services.h>\n"
+      "objc3_async_frame frame_factory(void);\n";
+  auto request = Module("runtime-frame.m", "fixture.RuntimeFrame",
+                        "runtime-frame", source);
+  request.arguments.insert(request.arguments.end(), {"-I", sdk.string()});
+  request.interface_exports = {"frame_factory"};
+  const auto path = ArtifactPath(root, request.module_name);
+  request.interface_output_path = path.string();
+  auto result = Compile(request);
+  assert(result.success && result.interface_artifact);
+  assert(result.interface_artifact->sidecar_json.find(
+             RuntimeInterfaceSemantic().str()) != std::string::npos);
+  const auto published_source = Read(path);
+  const auto published_sidecar = Read(path.string() + ".json");
+  const auto identity = result.interface_artifact->identity;
+
+  // An interface consumer must not need the provider's SDK include paths.
+  std::filesystem::remove_all(sdk);
+  assert(SourceConsumer(
+             root, identity,
+             "@import fixture.RuntimeFrame;\n"
+             "unsigned frame_version(void) { __auto_type frame = "
+             "@fixture.RuntimeFrame.frame_factory(); return frame.version; }\n")
+             .success);
+  for (const auto &[name, bytes] : files) {
+    const auto restored = sdk / std::filesystem::path(name).lexically_relative(
+                                    "/__objc3_canonical_runtime");
+    std::filesystem::create_directories(restored.parent_path());
+    Write(restored, bytes);
+  }
+
+  for (const auto &prefix : {std::string("#pragma pack(1)\n"), std::string()}) {
+    request.source_text = prefix + source;
+    Write(header,
+          header_bytes + (prefix.empty() ? "// altered SDK header\n" : ""));
+    assert(!Compile(request).success);
+    assert(Read(path) == published_source);
+    assert(Read(path.string() + ".json") == published_sidecar);
+  }
+  Write(header, header_bytes);
+  request.source_text = source;
+  request.arguments.push_back("-fshort-enums");
+  assert(!Compile(request).success);
+  assert(Read(path) == published_source);
+  assert(Read(path.string() + ".json") == published_sidecar);
+
+  auto drifted = published_sidecar;
+  const auto marker = drifted.find(RuntimeInterfaceSemantic().str());
+  assert(marker != std::string::npos);
+  const auto last = marker + RuntimeInterfaceSemantic().size() - 1;
+  drifted[last] = drifted[last] == '0' ? '1' : '0';
+  Write(path.string() + ".json", drifted);
+  assert(!SourceConsumer(root, identity, "@import fixture.RuntimeFrame;\n")
+              .success);
+  Write(path.string() + ".json", published_sidecar);
+
+  // Admitting the SDK frame must not admit unrelated external declarations.
+  const auto unrelated = sdk / "unrelated.h";
+  Write(unrelated, "typedef struct Unresolved { int value; } Unresolved;\n");
+  request.arguments.pop_back();
+  request.interface_exports = {"unresolved_factory"};
+  request.source_text =
+      "#include <unrelated.h>\nUnresolved unresolved_factory(void);\n";
+  assert(!Compile(request).success);
+  assert(Read(path) == published_source);
+}
+
+CompileResult SourceConsumer(const std::filesystem::path &root,
+                             const InterfaceModuleIdentity &direct_module,
+                             std::string source, std::string input) {
   CompileRequest request;
   request.input_path = std::move(input);
   request.source_text = std::move(source);
@@ -102,6 +189,8 @@ int main() {
       "objc3c-module-provenance-locked-chain";
   std::filesystem::remove_all(root);
   std::filesystem::create_directories(root);
+
+  CheckRuntimeFrameProvenance(root);
 
   const auto a = BuildModule(root, "fixture.A", "pkg-a",
       "int root_api(void);\n"

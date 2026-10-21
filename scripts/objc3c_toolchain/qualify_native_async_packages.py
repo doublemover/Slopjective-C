@@ -43,48 +43,33 @@ def qualify(sdk: Path, output: Path) -> dict:
     manifest = json.loads((sdk / 'objc3-sdk.json').read_text())
     cases = []
     try:
-        for language, standard, ownership, optimization in configurations():
+        modes = [(*mode, 'native-async-packages', 'fixture.NativeAsync')
+                 for mode in configurations()]
+        modes += [('objective-c', 'c17', ownership, optimization,
+                   'async-c-frame-packages', 'fixture.CFrame')
+                  for ownership in ('arc', 'mrc') for optimization in ('O0', 'O2')]
+        for language, standard, ownership, optimization, fixture, module in modes:
             label = '-'.join((language, standard, ownership, optimization))
             with case_workspace(output, label) as root:
                 workspace = prepare(sdk, root / 'sources', language, standard, ownership,
-                                    fixture='native-async-packages')
+                                    fixture=fixture)
                 built = root / 'built'
                 first = build_graph(sdk, workspace, built, optimization)
                 repeated = build_graph(sdk, workspace, built, optimization)
                 if len(repeated['nodes']) != 2 or not all(
                         row['reused'] for row in repeated['nodes'].values()):
                     raise ValueError('native async package failed complete compile reuse')
-                metadata_path = built / 'modules/fixture.NativeAsync/fixture.NativeAsync.objc3i.json'
+                metadata_path = built / 'modules' / module / (module + '.objc3i.json')
                 metadata = json.loads(metadata_path.read_text())
-                if not has_async(metadata['declarations']):
-                    raise ValueError('native async interface erased the callable effect')
-                if not has_checked_async(metadata['declarations']):
-                    raise ValueError('native async interface erased checked error identity')
-                members = [row for row in metadata['declarations']
-                           if row.get('kind') == 'CXXMethod']
-                if (not members or not has_checked_async(members)
-                        or 'objc3.cxx-member-interfaces.v1' not in metadata['required_semantics']
-                        or any(not row.get('native_symbol_name') for row in members)):
-                    raise ValueError('native async interface lost owned C++ member contracts')
-                objc_methods = [row for row in metadata['declarations']
-                                if row.get('kind') == 'ObjCMethod']
-                if not has_checked_async(objc_methods):
-                    raise ValueError('native async interface lost Objective-C method effects')
-                names = {row['qualified_name']: row for row in metadata['declarations']}
-                for name in ('native_module_frame', 'native_module_object_frame',
-                             'native_module_block_frame'):
-                    if name not in names:
-                        raise ValueError('native async C frame factory missing: ' + name)
-                for name in ('native_module_record', 'native_module_complex_value',
-                             'native_module_data_value'):
-                    if name not in names or not has_checked_async(names[name]):
-                        raise ValueError('native async value interface lost checked identity: ' + name)
-                for name in ('native_module_async_factory', 'native_module_checked_factory',
-                             'native_module_async_block', 'native_module_checked_block'):
-                    if name not in names or not has_async(names[name]):
-                        raise ValueError('native async Block interface lost effects: ' + name)
-                if not has_checked_async(names['native_module_checked_block']):
-                    raise ValueError('native async Block interface lost checked error identity')
+                runtime_semantic = 'objc3.sdk-runtime-frames.v4.' + packages.digest(
+                    sdk / 'include/objc3c/runtime/objc3_runtime_services.h')
+                if runtime_semantic not in metadata['required_semantics']:
+                    raise ValueError('native async interface lost its exact SDK frame contract')
+                if language == 'objective-c++':
+                    check_cpp_metadata(metadata)
+                elif {row['qualified_name'] for row in metadata['declarations']} != {
+                        'c_frame_factory', 'c_frame_destroyed'}:
+                    raise ValueError('C frame interface lost its exported factories')
                 interface_sha = packages.digest(metadata_path)
                 publication = packages.publish(sdk, built, root / 'publication')
                 packages.install(Path(publication['package']), publication['content_sha256'],
@@ -108,6 +93,7 @@ def qualify(sdk: Path, output: Path) -> dict:
                 cases.append({'language': language, 'standard': standard,
                     'ownership': ownership, 'optimization': optimization,
                     'provider_source_removed': True, 'provider_compilations': 0,
+                    'runtime_semantic': runtime_semantic,
                     'interface_sha256': interface_sha, 'package_sha256': publication['content_sha256'],
                     'source_graph': first, 'reused_graph': repeated, 'consumer': consumed})
         report = {'schema': 'objc3c.native-async-packages.v1', 'status': 'PASS',
@@ -120,6 +106,38 @@ def qualify(sdk: Path, output: Path) -> dict:
         raise
     packages.write_json(receipt, report)
     return report
+
+
+def check_cpp_metadata(metadata):
+    if not has_async(metadata['declarations']):
+        raise ValueError('native async interface erased the callable effect')
+    if not has_checked_async(metadata['declarations']):
+        raise ValueError('native async interface erased checked error identity')
+    members = [row for row in metadata['declarations']
+               if row.get('kind') == 'CXXMethod']
+    if (not members or not has_checked_async(members)
+            or 'objc3.cxx-member-interfaces.v1' not in metadata['required_semantics']
+            or any(not row.get('native_symbol_name') for row in members)):
+        raise ValueError('native async interface lost owned C++ member contracts')
+    objc_methods = [row for row in metadata['declarations']
+                    if row.get('kind') == 'ObjCMethod']
+    if not has_checked_async(objc_methods):
+        raise ValueError('native async interface lost Objective-C method effects')
+    names = {row['qualified_name']: row for row in metadata['declarations']}
+    for name in ('native_module_frame', 'native_module_object_frame',
+                 'native_module_block_frame'):
+        if name not in names:
+            raise ValueError('native async C frame factory missing: ' + name)
+    for name in ('native_module_record', 'native_module_complex_value',
+                 'native_module_data_value'):
+        if name not in names or not has_checked_async(names[name]):
+            raise ValueError('native async value interface lost checked identity: ' + name)
+    for name in ('native_module_async_factory', 'native_module_checked_factory',
+                 'native_module_async_block', 'native_module_checked_block'):
+        if name not in names or not has_async(names[name]):
+            raise ValueError('native async Block interface lost effects: ' + name)
+    if not has_checked_async(names['native_module_checked_block']):
+        raise ValueError('native async Block interface lost checked error identity')
 
 
 def main(argv=None):
