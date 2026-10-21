@@ -138,6 +138,10 @@ rollback snapshots. Git and the pinned source/patch inputs preserve development
 history. Historical receipts describe completed runs without requiring their
 binary artifacts to remain on the development instance.
 
+Remove obsolete generated packages, test outputs, temporary compiled probes and
+clean merged worktrees as milestones are superseded. Preserve authored source
+and work that has not entered the current development history.
+
 Keep checks proportional to the changed behavior and reuse completed results
 for unchanged inputs. Do not repeat broad qualification for rollback history or
 make it the default next milestone. The current user-requested pause stops all

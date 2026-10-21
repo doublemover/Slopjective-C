@@ -229,3 +229,12 @@ diagnostic receipts remain. Historical binary artifacts are no longer retained
 for rollback. The temporary foundation RAM filesystem was released after the
 final SDK completed. Future work follows the
 [current-artifact retention policy](linux_forward_development.md#architecture-and-release-performance).
+
+A further cleanup removed obsolete Linux packages, older validation runs,
+superseded milestone outputs, failed-build bundles, old runtime build caches,
+temporary test directories, 16 clean merged worktrees and compiled scratch
+probes. It reclaimed another 3.75 GiB, leaving the filesystem 33% used with
+approximately 21 GiB free. Authored probe source files, current SDK/build state,
+final build receipts and interrupted acceptance logs remain. Five clean
+worktrees with commits outside the current branch's history were retained.
+No tests or qualification were resumed.
